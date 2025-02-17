@@ -1,0 +1,10 @@
+[
+    {
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.cocy.twa",
+        "sha256_cert_fingerprints": ["SHA256: C4:6C:B2:43:F0:FE:85:7B:C4:36:C0:4C:3D:AF:47:88:94:47:12:C6:1D:E9:01:F8:24:D6:9B:98:48:17:6A:71"]
+      }
+    }
+  ]

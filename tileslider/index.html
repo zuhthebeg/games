@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Sliding Puzzle - Image & Number Puzzle Game</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="stylesheet" href="style.css?v=1.0.9">
+    <meta name="description" content="Free online sliding puzzle game! Challenge yourself with number puzzles and custom image puzzles. Supports 3x3 to 9x9 difficulty levels">
+    <meta name="keywords" content="number puzzle, sliding puzzle, tile game, online puzzle, brain game, free game">
+    <meta property="og:title" content="Online Sliding Puzzle Game - Number & Image Challenge">
+    <meta property="og:description" content="Engaging sliding puzzle game! Free brain training for mobile and PC">
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607"
+    crossorigin="anonymous"></script>
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-TVZ5GGHC');</script>
+    <!-- End Google Tag Manager -->
+</head>
+<body>
+    <div id="game-container">
+        <div id="controls">
+            <select id="level-select">
+                <option value="3" selected>3⨉3</option>
+                <option value="4">4x4</option>
+                <option value="5">5x5</option>
+                <option value="6">6x6</option>
+                <option value="7">7x7</option>
+                <option value="8">8x8</option>
+                <option value="9">9x9</option>
+            </select>
+            <button id="random-image-btn" title="랜덤 이미지">🎲</button>
+            <button id="image-upload-btn" title="이미지 업로드">🖼️</button>
+            <button onclick="startNewGameWithBlank()">♻️</button>
+        </div>
+        <div id="stats">
+            <div>⏳ <span id="timer">0</span></div>
+            <div>🏃‍‍ <span id="moves">0</span></div>
+            <div id="hint-container">
+                💡<span id="hint-count">0</span>
+            </div>
+        </div>
+        <div id="puzzle-board"></div>
+    </div>
+
+    <!-- 승리 팝업 추가 -->
+    <div class="overlay" id="overlay"></div>
+    <div class="win-popup" id="win-popup" style="display: none;">
+        <div id="win-stats"></div>
+        <div class="win-popup-buttons">
+            <button onclick="startNewGameWithBlank()">🔄</button>
+            <button onclick="closeWinPopup()">⬅️</button>
+        </div>
+    </div>
+
+    <!-- 기존 승리 팝업 아래에 추가 -->
+    <div class="ad-popup" style="display: none;">
+        🎲 Loading Random Image... 
+    </div>
+
+    <div id="score-board">
+        <h3 data-i18n="high-scores">🏆</h3>
+        <ul id="high-scores"></ul>
+    </div>
+
+    <script src="script.js?v=1.0.9"></script>
+</body>
+</html>

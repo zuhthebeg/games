@@ -1,0 +1,674 @@
+:root {
+    --main-color: #2c3e50;
+    --correct-color: #27ae60;
+    --empty-color: #34495e;
+    --text-color: #ecf0f1;
+    --neon-blue: #00f3ff;
+    --neon-pink: #ff00ff;
+    --space-black: #0a0a16;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Malgun Gothic', sans-serif;
+    background: var(--main-color);
+    touch-action: manipulation;
+    padding: 10px;
+}
+
+#game-container {
+    width: 100%;
+    max-width: 500px;
+    margin: 10px auto;
+}
+
+#controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+select, button {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    cursor: pointer;
+    flex: 1;
+    backdrop-filter: blur(5px);
+}
+
+button {
+    max-width: 100px;
+    background: rgba(255,255,255,0.1);
+    color: var(--text-color);
+}
+
+button:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+#stats {
+    display: flex;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.1);
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    color: var(--text-color);
+    gap: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+/* 점수판 스타일 추가 */
+#score-board {
+    width: 100%;
+    max-width: 500px;
+    margin: 2px auto;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 15px;
+    color: var(--text-color);
+}
+
+#score-board h3 {
+    margin-bottom: 10px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 32px;
+}
+
+.reset-scores {
+    display: none !important;
+}
+
+#high-scores {
+    list-style: none;
+}
+
+#high-scores li {
+    padding: 12px 16px;
+    margin: 8px 0;
+    background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    border-radius: 8px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2),
+               -1px -1px 2px rgba(255,255,255,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s ease;
+}
+
+#high-scores li:hover {
+    transform: translateY(-2px);
+}
+
+#high-scores li::before {
+    content: "🏆";
+    margin-right: 10px;
+}
+
+#puzzle-board {
+    display: grid;
+    background: var(--main-color);
+    gap: 2px;
+    border-radius: 6px;
+    overflow: hidden;
+    touch-action: none;
+    width: 100%;
+    aspect-ratio: 1;
+    position: relative;
+    margin: 0.5rem 0;
+}
+
+.tile {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #ecf0f1;
+    font-size: 4rem;
+    font-weight: bold;
+    color: var(--main-color);
+    transition: transform 0.3s ease;
+    user-select: none;
+    position: absolute;
+    will-change: transform;
+    /* 6x6 이상 그리드 대응 추가 */
+    @media (min-width: 481px) {
+        &[data-grid-size="6"] { font-size: 2.8rem; }
+        &[data-grid-size="7"] { font-size: 2.4rem; }
+        &[data-grid-size="8"] { font-size: 2.0rem; }
+        &[data-grid-size="9"] { font-size: 1.6rem; }
+    }
+}
+
+/* 이미지 모드에서 숫자 숨기기 */
+.tile.image-mode {
+    color: transparent;
+    text-shadow: none;
+}
+
+.tile.correct {
+    background: var(--correct-color);
+    color: var(--text-color);
+}
+
+.tile.empty {
+    background: var(--empty-color);
+    border: 2px dashed #95a5a6;
+    opacity: 0.8;
+}
+
+@media (max-width: 480px) {
+    .tile {
+        font-size: 4rem;
+        /* 모바일에서 6x6 이상 대응 */
+        &[data-grid-size="6"] { font-size: 2.0rem; }
+        &[data-grid-size="7"] { font-size: 1.8rem; }
+        &[data-grid-size="8"] { font-size: 1.6rem; }
+        &[data-grid-size="9"] { font-size: 1.4rem; }
+    }
+}
+
+/* 승리 팝업 스타일 추가 */
+.win-popup {
+    background: rgba(245, 245, 245, 0.98);
+    border: 2px solid #2c3e50;
+    box-shadow: 0 0 25px rgba(44, 62, 80, 0.2);
+    color: #2c3e50;
+}
+
+#win-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    font-size: 24px;
+    margin: 20px 0;
+}
+
+.win-popup h2 {
+    color: #e74c3c;
+    text-shadow: 0 0 8px rgba(231, 76, 60, 0.3);
+}
+
+.win-popup-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.win-popup button {
+    background: #2c3e50;
+    color: white;
+    border: none;
+}
+
+.win-popup button:hover {
+    background: #34495e;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    display: none;
+}
+
+/* 팝업 닫기 버튼 스타일 수정 */
+.popup-content {
+    position: relative;
+    padding: 30px;
+}
+#close-popup {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    font-size: 28px;
+    padding: 0 8px;
+    line-height: 1;
+}
+
+/* 최고 기록 애니메이션 추가 */
+@keyframes scoreRise {
+    0% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes confetti {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+.high-score-entry {
+    animation: scoreRise 0.5s ease-out;
+}
+
+.confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background: #ffd700;
+    opacity: 0;
+    z-index: 1000;
+    animation: confetti 2s ease-out;
+}
+
+/* 언어 선택기 관련 CSS 제거 */
+#language-select {
+    display: none !important;
+}
+
+/* 기호 기본 크기 조정 */
+#stats div {
+    font-size: 24px;
+}
+
+/* 승리 팝업 기호 */
+.win-popup p::before {
+    font-size: 48px;
+}
+
+#win-stats {
+    font-size: 32px;
+}
+
+/* 컨트롤 버튼 기호 */
+button {
+    padding: 15px;
+    font-size: 32px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(145deg, 
+        rgba(255,255,255,0.15), 
+        rgba(255,255,255,0.05));
+    box-shadow: 3px 3px 6px rgba(0,0,0,0.3),
+               -2px -2px 4px rgba(255,255,255,0.1);
+    transition: all 0.2s ease;
+}
+
+button:active {
+    transform: scale(0.95);
+    box-shadow: inset 2px 2px 4px rgba(0,0,0,0.2),
+               inset -2px -2px 4px rgba(255,255,255,0.1);
+}
+
+#level-select {
+    padding: 7px 15px;
+    font-size: 32px;
+    height: auto;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: rgba(255,255,255,0.1);
+    color: var(--text-color);
+    border-radius: 8px;
+}
+
+/* 드롭다운 옵션 스타일 */
+#level-select option {
+    background: var(--space-black); /* 어두운 배경색 사용 */
+    color: var(--text-color);
+    padding: 8px 12px;
+}
+
+/* 포커스 시 아웃라인 제거 */
+#level-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+}
+
+/* 인터넷 익스플로러 대응 */
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+    #level-select {
+        color: #000; /* IE에서 텍스트 색상 강제 설정 */
+    }
+}
+
+#overlay {
+    display: none; /* 초기 상태 숨김 */
+}
+
+#win-stats span {
+    padding: 8px 15px;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 5px;
+}
+
+/* 클리어 효과 애니메이션 */
+.clear-effect {
+    z-index: 10000; /* 최상위 레이어 설정 */
+    position: fixed;
+    padding: 1rem; /* 패딩 조정 (기존 2rem → 1.5rem) */
+    top: 20%;
+    left: 50%; /* 화면 가운데 정렬 */
+    transform: translateX(-50%) translateZ(0); /* X축 중앙 정렬 + 하드웨어 가속 */
+    pointer-events: none;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5); /* 반투명 검은색 배경 추가 */
+    border-radius: 20px; /* 모서리 둥글게 처리 */
+}
+
+.clear-text {
+    font-size: 110px;
+    font-family: 'Impact', sans-serif;
+    color: #ffdd40;
+    text-shadow: 
+        0 0 20px #ff9f43,
+        0 0 40px #ff9f43,
+        0 0 60px #ff9f43,
+        0 0 80px #ff9f43;
+    animation: 
+        textPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+        neonGlow 1.2s ease-in-out infinite alternate;
+    /* 모바일 대응 개선 */
+    @media (max-width: 480px) {
+        font-size: 60px;  /* 크기 축소 */
+        text-shadow: 
+            0 0 10px #ff9f43,
+            0 0 20px #ff9f43;
+        max-width: 100%;  /* 화면 벗어남 방지 */
+        transform: scale(0.9);  /* 비율 조정 */
+        word-wrap: break-word;  /* 긴 텍스트 대비 */
+    }
+}
+
+@keyframes neonGlow {
+    from { text-shadow: 0 0 20px #ff9f43; }
+    to { text-shadow: 0 0 50px #ff9f43, 0 0 70px #ff9f43; }
+}
+
+@keyframes textPop {
+    0% { 
+        transform: scale(0) rotate(-15deg);
+        opacity: 0;
+    }
+    80% { 
+        transform: scale(1.1) rotate(5deg);
+        opacity: 1;
+    }
+    100% { 
+        transform: scale(1) rotate(0);
+    }
+    /* 모바일 애니메이션 최적화 */
+    @media (max-width: 480px) {
+        80% { 
+            transform: scale(1.05) rotate(3deg);  /* 회전량 감소 */
+        }
+    }
+}
+
+.particles {
+    background: radial-gradient(circle, 
+        rgba(255,221,64,0.8) 0%, 
+        rgba(255,159,67,0.6) 50%, 
+        transparent 100%);
+    animation: particles 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 9999; /* 텍스트 아래 레이어 설정 */
+}
+
+.error-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #e74c3c;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { bottom: -50px; }
+    to { bottom: 20px; }
+}
+
+.image-loader {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    padding: 20px 30px;
+    border-radius: 10px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 1000;
+}
+
+.loader-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loader-text {
+    font-size: 16px;
+}
+
+.loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 9999;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* 모바일 대응 개선 */
+@media (max-width: 480px) {
+    #high-scores li {
+        font-size: 14px;
+        padding: 10px;
+    }
+    
+    button {
+        font-size: 24px;
+        padding: 12px;
+    }
+}
+
+#random-image-btn {
+    background-color: #BA68C8;
+    color: white;
+    border: 2px solid #AB47BC;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    position: relative; /* 상대 위치 추가 */
+}
+
+/* 수정된 전체 화면 광고 팝업 스타일 */
+.ad-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    color: white;
+    display: none;
+    z-index: 1001;
+    animation: popupFadeIn 0.3s ease-out;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+@keyframes popupFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.ad-popup.hide {
+    animation: popupFadeOut 0.3s ease-in forwards;
+}
+
+@keyframes popupFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.ad-popup-content {
+    max-width: 600px;
+    font-size: 1.5em;
+    line-height: 1.5;
+    text-align: center;
+    width: 100%;
+}
+
+.ad-popup-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+/* 주사위 회전 애니메이션 추가 */
+@keyframes diceSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.dice-spin {
+    display: inline-block;
+    animation: diceSpin 1.5s ease-in-out infinite;
+    font-size: 2em;
+    margin-bottom: 15px;
+}
+
+.loading-text {
+    font-size: 1.2em;
+    margin-top: 5px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.loading-subtext {
+    font-size: 0.8em;
+    opacity: 0.8;
+    margin-top: 8px;
+}
+
+/* 힌트 버튼 스타일 변경 */
+#hint-btn {
+    background: none;
+    border: none;
+    color: #4CAF50;
+    padding: 0 8px;
+    font-size: 24px;
+    cursor: pointer;
+    align-items: center;
+    gap: 4px;
+    margin-left: 10px;
+}
+
+#hint-btn::before {
+    content: "💡";
+    font-size: 16px;
+}
+
+.image-mode-active #hint-btn {
+    display: flex;
+}
+
+/* 힌트 표시 스타일 단순화 */
+.tile.hint-visible {
+    color: white !important; /* 숫자 투명화 */
+}
+
+.tile.hint-visible::after {
+    content: attr(data-value);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white; /* 흰색 텍스트 */
+    font-size: 1.2em;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* 불필요한 애니메이션 및 효과 제거 */
+
+#hint-container {
+    display: none;
+    margin-left: 15px;
+    color: #ffffff; /* 기본 텍스트 색상 */
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background-color: rgba(0,0,0,0.05);
+}
+
+#hint-container:hover {
+    background-color: rgba(0,0,0,0.1);
+}
+
+.image-mode-active #hint-container {
+    display: block;
+}
+
+#hint-count {
+    margin-left: 3px;
+}
+

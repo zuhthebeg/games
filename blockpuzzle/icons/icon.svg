@@ -1,0 +1,16 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="512" height="512" fill="#3498db"/>
+    <g transform="translate(64, 64) scale(0.75)">
+        <!-- 퍼즐 조각 모양 -->
+        <rect x="50" y="50" width="150" height="150" rx="15" fill="#ecf0f1"/>
+        <rect x="210" y="50" width="150" height="150" rx="15" fill="#27ae60"/>
+        <rect x="370" y="50" width="150" height="150" rx="15" fill="#ecf0f1"/>
+        <rect x="50" y="210" width="150" height="150" rx="15" fill="#27ae60"/>
+        <rect x="210" y="210" width="150" height="150" rx="15" fill="#ecf0f1"/>
+        <rect x="370" y="210" width="150" height="150" rx="15" fill="#27ae60"/>
+        <rect x="50" y="370" width="150" height="150" rx="15" fill="#ecf0f1"/>
+        <rect x="210" y="370" width="150" height="150" rx="15" fill="#27ae60"/>
+        <!-- 빈 칸 -->
+        <rect x="370" y="370" width="150" height="150" rx="15" fill="#34495e" stroke="#95a5a6" stroke-width="8" stroke-dasharray="15,15"/>
+    </g>
+</svg> 

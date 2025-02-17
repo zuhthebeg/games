@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Puzzle</title>
+    <style>
+        /* 이전 스타일 유지 */
+        body {
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Arial', sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            min-height: 100vh;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 1px;
+            background-color: #3d3d3d;
+            padding: 1px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background-color: #3d3d3d;
+            border: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .cell.filled {
+            background-color: #00ff88;
+            animation: fillCell 0.3s ease forwards;
+        }
+
+        .block-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px;
+            background: #3d3d3d;
+            border-radius: 5px;
+        }
+
+        .block-wrapper {
+            cursor: grab;
+        }
+
+        .block-grid {
+            display: grid;
+            gap: 1px;
+            background-color: #2d2d2d;
+            padding: 1px;
+            border-radius: 3px;
+        }
+
+        .block-cell {
+            background-color: #00ff88;
+            border: 1px solid #00cc6a;
+        }
+
+        .score {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #00ff88;
+        }
+
+        @keyframes fillCell {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="score">Score: <span id="score">0</span></div>
+        <div id="board" class="board"></div>
+        <div id="block-container" class="block-container"></div>
+    </div>
+
+    <script>
+        // 게임 상수
+        const BOARD_SIZE = 9;
+        
+        // 게임 상태 변수
+        let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(false));
+        let score = 0;
+        let draggedBlock = null;
+        let dragOffset = { x: 0, y: 0 };
+
+        // 블록 패턴
+        const BLOCK_PATTERNS = [
+            [[1]],
+            [[1,1]],
+            [[1],[1]],
+            [[1,1,1]],
+            [[1,1],[1,1]]
+        ];
+
+        // 게임 초기화
+        function initGame() {
+            createBoard();
+            generateNewBlocks();
+            updateScore();
+        }
+
+        // 보드 생성
+        function createBoard() {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+            
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        // 새로운 블록 생성
+        function generateNewBlocks() {
+            const container = document.getElementById('block-container');
+            container.innerHTML = '';
+            
+            const cellSize = document.querySelector('.cell').offsetWidth;
+            
+            for (let i = 0; i < 3; i++) {
+                const pattern = BLOCK_PATTERNS[Math.floor(Math.random() * BLOCK_PATTERNS.length)];
+                const blockWrapper = createBlockElement(pattern, cellSize);
+                initDragEvents(blockWrapper);
+                container.appendChild(blockWrapper);
+            }
+        }
+
+        // 블록 엘리먼트 생성
+        function createBlockElement(pattern, cellSize) {
+            const blockWrapper = document.createElement('div');
+            blockWrapper.className = 'block-wrapper';
+            blockWrapper.dataset.pattern = JSON.stringify(pattern);
+            
+            const blockGrid = document.createElement('div');
+            blockGrid.className = 'block-grid';
+            blockGrid.style.gridTemplateColumns = `repeat(${pattern[0].length}, 1fr)`;
+            
+            pattern.forEach(row => {
+                row.forEach(cell => {
+                    const blockCell = document.createElement('div');
+                    if (cell === 1) {
+                        blockCell.className = 'block-cell';
+                        blockCell.style.width = `${cellSize}px`;
+                        blockCell.style.height = `${cellSize}px`;
+                    }
+                    blockGrid.appendChild(blockCell);
+                });
+            });
+            
+            blockWrapper.appendChild(blockGrid);
+            return blockWrapper;
+        }
+
+        // 드래그 이벤트 초기화
+        function initDragEvents(blockWrapper) {
+            blockWrapper.addEventListener('mousedown', startDragging);
+            blockWrapper.addEventListener('touchstart', startDragging, { passive: false });
+            
+            document.addEventListener('mousemove', handleDrag);
+            document.addEventListener('touchmove', handleDrag, { passive: false });
+            
+            document.addEventListener('mouseup', endDragging);
+            document.addEventListener('touchend', endDragging);
+        }
+
+        // 드래그 시작
+        function startDragging(e) {
+            e.preventDefault();
+            draggedBlock = e.currentTarget;
+            
+            const rect = draggedBlock.getBoundingClientRect();
+            const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+            
+            dragOffset.x = clientX - rect.left;
+            dragOffset.y = clientY - rect.top;
+            
+            draggedBlock.style.position = 'fixed';
+            draggedBlock.style.zIndex = '1000';
+            
+            updateBlockPosition(clientX, clientY);
+        }
+
+        // 드래그 중
+        function handleDrag(e) {
+            if (!draggedBlock) return;
+            e.preventDefault();
+            
+            const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+            
+            updateBlockPosition(clientX, clientY);
+        }
+
+        // 블록 위치 업데이트
+        function updateBlockPosition(clientX, clientY) {
+            draggedBlock.style.left = `${clientX - dragOffset.x}px`;
+            draggedBlock.style.top = `${clientY - dragOffset.y}px`;
+        }
+
+        // 드래그 종료
+        function endDragging(e) {
+            if (!draggedBlock) return;
+            
+            const boardRect = document.getElementById('board').getBoundingClientRect();
+            const clientX = e.type === 'mouseup' ? e.clientX : e.changedTouches[0].clientX;
+            const clientY = e.type === 'mouseup' ? e.clientY : e.changedTouches[0].clientY;
+            
+            if (isOverBoard(clientX, clientY, boardRect)) {
+                const row = Math.floor((clientY - boardRect.top) / (boardRect.width / BOARD_SIZE));
+                const col = Math.floor((clientX - boardRect.left) / (boardRect.width / BOARD_SIZE));
+                
+                tryPlaceBlock(row, col);
+            }
+            
+            resetDraggedBlock();
+        }
+
+        // 보드 위에 있는지 확인
+        function isOverBoard(x, y, boardRect) {
+            return x >= boardRect.left && x <= boardRect.right &&
+                   y >= boardRect.top && y <= boardRect.bottom;
+        }
+
+        // 블록 배치 시도
+        function tryPlaceBlock(row, col) {
+            const pattern = JSON.parse(draggedBlock.dataset.pattern);
+            if (canPlaceBlock(row, col, pattern)) {
+                placeBlock(row, col, pattern);
+                draggedBlock.remove();
+                if (document.querySelectorAll('.block-wrapper').length === 0) {
+                    generateNewBlocks();
+                }
+                checkLines();
+            }
+        }
+
+        // 블록 배치 가능 확인
+        function canPlaceBlock(row, col, pattern) {
+            for (let i = 0; i < pattern.length; i++) {
+                for (let j = 0; j < pattern[0].length; j++) {
+                    if (pattern[i][j] === 1) {
+                        const newRow = row + i;
+                        const newCol = col + j;
+                        
+                        if (newRow >= BOARD_SIZE || newCol >= BOARD_SIZE || board[newRow][newCol]) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        // 블록 배치
+        function placeBlock(row, col, pattern) {
+            pattern.forEach((patternRow, i) => {
+                patternRow.forEach((cell, j) => {
+                    if (cell === 1) {
+                        const newRow = row + i;
+                        const newCol = col + j;
+                        board[newRow][newCol] = true;
+                        const cellElement = document.querySelector(`[data-row="${newRow}"][data-col="${newCol}"]`);
+                        cellElement.classList.add('filled');
+                    }
+                });
+            });
+            score += pattern.flat().filter(cell => cell === 1).length;
+            updateScore();
+        }
+
+        // 줄 확인
+        function checkLines() {
+            let linesCleared = 0;
+            
+            // 가로줄 확인
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                if (board[row].every(cell => cell)) {
+                    clearLine(row, 'row');
+                    linesCleared++;
+                }
+            }
+            
+            // 세로줄 확인
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                if (board.every(row => row[col])) {
+                    clearLine(col, 'column');
+                    linesCleared++;
+                }
+            }
+            
+            if (linesCleared > 0) {
+                score += linesCleared * 100;
+                updateScore();
+            }
+        }
+
+        // 줄 제거
+        function clearLine(index, type) {
+            if (type === 'row') {
+                board[index] = Array(BOARD_SIZE).fill(false);
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    const cell = document.querySelector(`[data-row="${index}"][data-col="${col}"]`);
+                    cell.classList.remove('filled');
+                }
+            } else {
+                for (let row = 0; row < BOARD_SIZE; row++) {
+                    board[row][index] = false;
+                    const cell = document.querySelector(`[data-row="${row}"][data-col="${index}"]`);
+                    cell.classList.remove('filled');
+                }
+            }
+        }
+
+        // 드래그된 블록 리셋
+        function resetDraggedBlock() {
+            if (draggedBlock) {
+                draggedBlock.style.position = '';
+                draggedBlock.style.left = '';
+                draggedBlock.style.top = '';
+                draggedBlock.style.zIndex = '';
+                draggedBlock = null;
+            }
+        }
+
+        // 점수 업데이트
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+
+        // 게임 시작
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>

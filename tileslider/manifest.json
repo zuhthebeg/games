@@ -1,0 +1,17 @@
+{
+  "name": "Tile Slider",
+  "short_name": "Slider Puzzle",
+  "description": "Sliding Number & Image puzzle game",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#2c3e50",
+  "theme_color": "#2c3e50",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+} 
