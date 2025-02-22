@@ -558,6 +558,25 @@
             0%, 100% { opacity: 0.4; transform: scale(1); }
             50% { opacity: 0.8; transform: scale(1.05); }
         }
+
+        /* 차감 효과 스타일 추가 */
+        .score-effect.deduction {
+            color: #ff4757 !important; /* 빨간색 */
+            text-shadow: 0 0 15px rgba(255, 71, 87, 0.5);
+            font-size: 1.8em;
+            animation: scoreDeduction 1.5s ease-out forwards;
+        }
+
+        @keyframes scoreDeduction {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -150%) scale(0.8);
+            }
+        }
     </style>
 </head>
     <!-- Google tag (gtag.js) -->
@@ -623,6 +642,13 @@
         // 전역 변수 추가
         let isValidDrag = false;
         let hintPreviewCells = [];
+
+        // 전역 변수에 힌트 비용 추가
+        const HINT_COSTS = {
+            refresh: 20,
+            rotate: 10,
+            placement: 5
+        };
 
         // 레벨 시스템 구현 (수정 버전)
         const BLOCK_CATEGORIES = {
@@ -726,6 +752,7 @@
             setDifficulty(currentLevel);
             updateScore();
             createHintPanel();
+            updateButtonStates(); // 초기 버튼 상태 설정
         }
 
         // 보드 생성
@@ -1079,7 +1106,7 @@
             }
         }
 
-        // 줄 확인
+        // 수정된 checkLines 함수
         function checkLines() {
             let linesCleared = 0;
             const rows = [];
@@ -1109,63 +1136,32 @@
             cols.forEach(col => clearLine(col, 'column'));
 
             if (linesCleared > 0) {
-                const isConsecutive = currentTurn - lastClearTurn === 1;
-                comboCount = isConsecutive ? comboCount + 1 : 1; // 연속 성공 시에만 콤보 증가
+                comboCount++; // 무조건 콤보 증가
                 lastClearTurn = currentTurn;
 
                 const baseScore = linesCleared * 100;
-                const comboBonus = comboCount > 0 ? 1 + (comboCount * 0.5) : 1;
+                const comboBonus = 1 + (comboCount * 0.5); // 기본 1배 보장
                 const crossBonus = crossCount > 1 ? 1 + (crossCount * 0.3) : 1;
                 const totalScore = Math.round(baseScore * comboBonus * crossBonus);
 
                 score += totalScore;
                 updateScore();
                 showEffect({
-                    combo: comboCount,
+                    combo: comboCount, // 현재 콤보 수 전달
                     cross: crossCount,
                     score: totalScore
                 });
-            }
-
-            return linesCleared > 0; // 클리어 성공 여부 반환
-        }
-
-        // 줄 제거
-        function clearLine(index, type) {
-            const particles = ['-5deg', '5deg', '0deg']; // 파티클 방향 변수
-            
-            if (type === 'row') {
-                for (let col = 0; col < BOARD_SIZE; col++) {
-                    const cell = document.querySelector(`[data-row="${index}"][data-col="${col}"]`);
-                    cell.style.setProperty('--tx', Math.random() * 2 - 1);
-                    cell.style.setProperty('--ty', Math.random() * 2 - 1);
-                    cell.classList.add('clearing');
-                }
-                setTimeout(() => {
-                    board[index] = Array(BOARD_SIZE).fill(false);
-                    for (let col = 0; col < BOARD_SIZE; col++) {
-                        const cell = document.querySelector(`[data-row="${index}"][data-col="${col}"]`);
-                        cell.classList.remove('filled', 'clearing');
-                    }
-                }, 300);
             } else {
-                for (let row = 0; row < BOARD_SIZE; row++) {
-                    const cell = document.querySelector(`[data-row="${row}"][data-col="${index}"]`);
-                    cell.classList.add('clearing');
-                }
-                setTimeout(() => {
-                    for (let row = 0; row < BOARD_SIZE; row++) {
-                        board[row][index] = false;
-                        const cell = document.querySelector(`[data-row="${row}"][data-col="${index}"]`);
-                        cell.classList.remove('filled', 'clearing');
-                    }
-                }, 300);
+                comboCount = 0; // 줄 클리어 실패 시 콤보 리셋
             }
+
+            return linesCleared > 0;
         }
 
         // 점수 업데이트
         function updateScore() {
             document.getElementById('score').textContent = score;
+            updateButtonStates(); // 점수 변경 시 버튼 상태 업데이트
         }
 
         // 게임 오버 처리
@@ -1190,24 +1186,29 @@
         // initGame 호출로 게임 시작
         initGame();
 
-        function showEffect({combo, cross, score}) {
+        // 수정된 showEffect 함수
+        function showEffect({combo, cross, score, type}) {
             const effectDiv = document.createElement('div');
-            effectDiv.className = 'score-effect';
+            effectDiv.className = `score-effect ${type || ''}`;
             
-            // 콤보/크로스 조합에 따른 스타일 설정
-            if(combo > 1 && cross > 1) {
-                effectDiv.dataset.both = true;
-                effectDiv.textContent = `${combo} Combo! ✖ ${cross} Cross! +${score}`;
-            } 
-            else if(combo > 1) {
-                effectDiv.dataset.combo = combo;
-                effectDiv.textContent = `${combo} Combo! +${score}`;
+            if(type === 'deduction') {
+                effectDiv.textContent = `-${score}`;
+            } else {
+                // 콤보/크로스 조합에 따른 스타일 설정
+                if(combo >= 1 && cross >= 1) {  // 1이상 조건으로 변경
+                    effectDiv.dataset.both = true;
+                    effectDiv.textContent = `${combo} Combo! ✖ ${cross} Cross! +${score}`;
+                } 
+                else if(combo >= 1) {  // >1에서 >=1로 조건 변경
+                    effectDiv.dataset.combo = combo;
+                    effectDiv.textContent = `${combo} Combo! +${score}`;
+                }
+                else if(cross >= 1) {  // >1에서 >=1로 조건 변경
+                    effectDiv.dataset.cross = cross;
+                    effectDiv.textContent = `${cross} Cross! +${score}`;
+                }
             }
-            else if(cross > 1) {
-                effectDiv.dataset.cross = cross;
-                effectDiv.textContent = `${cross} Cross! +${score}`;
-            }
-
+            
             // 랜덤 위치 설정
             effectDiv.style.left = `calc(50% + ${Math.random() * 20 - 10}px)`;
             effectDiv.style.transform = `translate(-50%, -50%) rotate(${Math.random() * 10 - 5}deg)`;
@@ -1293,13 +1294,43 @@
             document.body.appendChild(newPanel);
         }
 
-        // 블록 새로고침
+        // 버튼 상태 업데이트 함수
+        function updateButtonStates() {
+            const buttons = document.querySelectorAll('.hint-panel button');
+            buttons.forEach(btn => {
+                const cost = getButtonCost(btn);
+                btn.disabled = score < cost;
+                btn.style.opacity = score < cost ? 0.5 : 1;
+            });
+        }
+
+        // 버튼별 비용 확인
+        function getButtonCost(button) {
+            if(button.onclick.toString().includes('refresh')) return HINT_COSTS.refresh;
+            if(button.onclick.toString().includes('rotate')) return HINT_COSTS.rotate;
+            if(button.onclick.toString().includes('showPossible')) return HINT_COSTS.placement;
+            return 0;
+        }
+
+        // 수정된 refreshBlocks 함수
         function refreshBlocks() {
+            if(score < HINT_COSTS.refresh) return;
+            const cost = HINT_COSTS.refresh;
+            score -= cost;
+            updateScore();
+            showEffect({ score: cost, type: 'deduction' }); // 차감 효과 표시
             generateNewBlocks(true);
         }
 
-        // 현재 블록 회전
+        // 수정된 rotateCurrentBlocks 함수
         function rotateCurrentBlocks() {
+            if(score < HINT_COSTS.rotate) return;
+            const cost = HINT_COSTS.rotate;
+            score -= cost;
+            updateScore();
+            showEffect({ score: cost, type: 'deduction' }); // 차감 효과 표시
+            
+            // 기존 회전 로직 유지
             document.querySelectorAll('.block-wrapper').forEach(block => {
                 const pattern = JSON.parse(block.dataset.pattern);
                 const rotated = rotatePattern(pattern);
@@ -1336,6 +1367,13 @@
 
         // 수정된 showPossiblePlacement 함수
         function showPossiblePlacement() {
+            if(score < HINT_COSTS.placement) return;
+            const cost = HINT_COSTS.placement;
+            score -= cost;
+            updateScore();
+            showEffect({ score: cost, type: 'deduction' }); // 차감 효과 표시
+            
+            // 기존 힌트 표시 로직 유지
             const firstBlock = document.querySelector('.block-wrapper');
             if (!firstBlock) return;
 
@@ -1399,6 +1437,30 @@
                 pattern = rotated;
             }
             return pattern;
+        }
+
+        // 추가할 clearLine 함수
+        function clearLine(index, type) {
+            // 보드 데이터 업데이트
+            if (type === 'row') {
+                board[index].fill(false);
+            } else {
+                for (let row = 0; row < BOARD_SIZE; row++) {
+                    board[row][index] = false;
+                }
+            }
+
+            // 애니메이션 처리
+            const selector = type === 'row' 
+                ? `[data-row="${index}"]` 
+                : `[data-col="${index}"]`;
+            
+            document.querySelectorAll(selector).forEach(cell => {
+                cell.classList.add('clearing');
+                setTimeout(() => {
+                    cell.classList.remove('filled', 'clearing');
+                }, 800);
+            });
         }
     </script>
 </body>
