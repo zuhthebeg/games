@@ -546,6 +546,18 @@
                 0 0 20px rgba(45,152,218,0.4);
             font-size: 3.2em;
         }
+
+        /* 힌트 미리보기 스타일 추가 */
+        .cell.hint-preview {
+            background-color: #e67e22 !important;
+            opacity: 0.6;
+            animation: hintPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes hintPulse {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
     </style>
 </head>
     <!-- Google tag (gtag.js) -->
@@ -607,6 +619,10 @@
         let comboCount = 0;
         let lastClearTurn = 0;
         let currentTurn = 0;
+
+        // 전역 변수 추가
+        let isValidDrag = false;
+        let hintPreviewCells = [];
 
         // 레벨 시스템 구현 (수정 버전)
         const BLOCK_CATEGORIES = {
@@ -937,6 +953,7 @@
         function clearPreview() {
             previewCells.forEach(cell => cell.classList.remove('preview'));
             previewCells = [];
+            clearHintPreview(); // 힌트도 함께 제거
         }
 
         // 드래그 종료
@@ -1317,42 +1334,54 @@
             });
         }
 
-        // 배치 가능 위치 힌트
+        // 수정된 showPossiblePlacement 함수
         function showPossiblePlacement() {
-            const blocks = document.querySelectorAll('.block-wrapper');
-            blocks.forEach(block => {
-                const pattern = JSON.parse(block.dataset.pattern);
-                for(let y = 0; y < BOARD_SIZE; y++) {
-                    for(let x = 0; x < BOARD_SIZE; x++) {
-                        if(isValidPosition(y, x, pattern)) {
-                            highlightPossibleArea(y, x, pattern);
-                            return;
-                        }
+            const firstBlock = document.querySelector('.block-wrapper');
+            if (!firstBlock) return;
+
+            const pattern = JSON.parse(firstBlock.dataset.pattern);
+            let found = false;
+
+            // 보드 전체 스캔 (음수 위치 포함)
+            for(let y = -pattern.length + 1; y < BOARD_SIZE; y++) {
+                for(let x = -pattern[0].length + 1; x < BOARD_SIZE; x++) {
+                    if(isValidPosition(y, x, pattern)) {
+                        highlightPossibleArea(y, x, pattern);
+                        found = true;
+                        break;
                     }
                 }
-            });
+                if(found) break;
+            }
+
+            // 5초 후 자동 초기화
+            if(found) setTimeout(clearHintPreview, 5000);
         }
 
-        // 힌트 영역 강조
+        // 수정된 highlightPossibleArea 함수
         function highlightPossibleArea(row, col, pattern) {
-            clearPreview();
+            clearHintPreview();
             pattern.forEach((r, i) => {
                 r.forEach((c, j) => {
-                    if(c === 1 && board[row + i]?.[col + j] !== undefined) {
-                        const cell = boardCells[row + i][col + j];
-                        cell.classList.add('hint-preview');
-                        previewCells.push(cell);
+                    if(c === 1) {
+                        const y = row + i;
+                        const x = col + j;
+                        if(y >= 0 && y < BOARD_SIZE && x >= 0 && x < BOARD_SIZE) {
+                            const cell = boardCells[y][x];
+                            cell.classList.add('hint-preview');
+                            hintPreviewCells.push(cell);
+                        }
                     }
                 });
             });
-            setTimeout(clearPreview, 2000);
         }
 
-        // 힌트 초기화
-        function clearHint() {
-            document.querySelectorAll('.hint-preview').forEach(cell => {
+        // 새로운 힌트 초기화 함수
+        function clearHintPreview() {
+            hintPreviewCells.forEach(cell => {
                 cell.classList.remove('hint-preview');
             });
+            hintPreviewCells = [];
         }
 
         // 회전 함수 수정 (4방향 회전 지원)
