@@ -15,35 +15,36 @@
         /* 이전 스타일 유지 */
         body {
             margin: 0;
-            padding: 10px;
+            padding: 5px;
             display: flex;
             flex-direction: column;
             align-items: center;
             font-family: 'Arial', sans-serif;
             background: #6b4f40; /* 어두운 우드톤 */
             color: #fff3e0;     /* 크림색 텍스트 */
-            min-height: 100vh;
+            min-height: -webkit-fill-available;
             touch-action: none;
             user-select: none;
         }
 
         .game-container {
             width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
+            max-width: 100%;
+            padding: 10px;
+            margin: 5px auto;
             background: #8b6b4d; /* 중간 우드톤 */
-            padding: 15px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             border: 2px solid #5d432f; /* 우드 테두리 */
+            box-sizing: border-box;
         }
 
         .board {
             display: grid;
             grid-template-columns: repeat(9, 1fr);
-            gap: 1px;
+            gap: 0.5px;
             background-color: #a78b72; /* 밝은 우드톤 */
-            padding: 2px;
+            padding: 1px;
             border-radius: 5px;
             margin-bottom: 15px;
             border: 1px solid #5d432f;
@@ -68,9 +69,10 @@
 
         .block-container {
             display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            padding: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 5px;
+            padding: 5px;
             background: #a78b72;
             border-radius: 5px;
             border: 1px solid #8b6b4d;
@@ -78,6 +80,8 @@
 
         .block-wrapper {
             cursor: grab;
+            transform: scale(0.9);
+            touch-action: none;
         }
 
         .block-grid {
@@ -111,6 +115,21 @@
         .cell.preview {
             background-color: rgba(255, 167, 38, 0.3);
             border: 2px solid #fb8c00;
+        }
+
+        @media (max-width: 380px) {
+            .cell {
+                font-size: 0.8em;
+            }
+            .block-wrapper {
+                transform: scale(0.85);
+            }
+        }
+
+        @media (orientation: portrait) {
+            .game-container {
+                max-width: 95vw;
+            }
         }
     </style>
 </head>
