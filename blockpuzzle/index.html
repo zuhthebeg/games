@@ -100,10 +100,17 @@
         .block-grid {
             display: grid;
             gap: 1px;
-            background-color: #8b6b4d; /* 중간 우드톤 */
+            background-color: transparent;  /* 그리드 배경 투명화 */
             padding: 1px;
             border-radius: 3px;
             border: 1px solid #5d432f;
+        }
+
+        /* 빈 셀 스타일 처리 */
+        .block-grid > div:not(.block-cell) {
+            background-color: transparent !important;
+            border: 1px solid transparent !important;
+            box-shadow: none !important;
         }
 
         .block-cell {
@@ -319,6 +326,9 @@
                         blockCell.style.width = `${baseSize}px`;
                         blockCell.style.height = `${baseSize}px`;
                     }
+                    // 빈 셀도 동일한 크기 유지
+                    blockCell.style.width = `${baseSize}px`; 
+                    blockCell.style.height = `${baseSize}px`;
                     blockGrid.appendChild(blockCell);
                 });
             });
