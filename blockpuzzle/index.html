@@ -253,65 +253,60 @@
             margin-top: 15px;
         }
 
-        /* 단순화된 버튼 디자인 */
         .difficulty-btn {
             position: relative;
-            padding: 12px 20px;
-            border: 2px solid #5d432f;
+            padding: 12px;
+            border: 2px solid #5d432f !important;
             border-radius: 6px;
             cursor: pointer;
-            background: #8b6b4d;
-            color: #fff3e0;
+            background: #a78b72 !important; /* 힌트 버튼과 동일한 배경색 */
             min-width: 50px;
             transition: all 0.2s ease;
+            font-size: 1.3em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff3e0; /* 힌트 버튼과 동일한 글자색 */
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2); /* 힌트 버튼과 동일한 그림자 */
         }
 
-        /* 활성화 상태 강조 */
+        /* 활성화 상태 스타일 */
         .difficulty-btn.active {
-            background: #5d432f;
-            border-color: #ffd54f;
-            box-shadow: inset 0 0 8px rgba(255,213,79,0.3);
+            background: #8b6b4d !important; /* 힌트 버튼 호버 색상과 동일 */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
         }
 
-        /* 블록 크기 표시 */
+        /* 호버 효과 추가 */
+        .difficulty-btn:hover {
+            background: #8b6b4d !important;
+            transform: scale(1.05);
+        }
+
+        /* 우측하단 숫자 스타일 */
         .difficulty-btn::after {
             content: attr(data-size);
             position: absolute;
-            bottom: 2px;
-            right: 2px;
-            font-size: 0.6em;
-            color: #ffd54f;
+            bottom: 5px;
+            right: 5px;
+            font-size: 1em; /* 폰트 크기 증가 */
+            color: #fff3e0;
             opacity: 0.9;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        /* 기존 레벨별 색상 코드 제거 */
+        [data-level="beginner"],
+        [data-level="intermediate"],
+        [data-level="advanced"],
+        [data-level="chaos"] { 
+            background: transparent !important; 
         }
 
         /* 카오스 모드 표시 */
         [data-level="chaos"]::after {
             content: "?" !important;
         }
-
-        /* 난이도별 색상 및 텍스트 */
-        [data-level="beginner"] { 
-            background: #8b4513; 
-            data-size: "3";
-        }
-        [data-level="intermediate"] { 
-            background: #2e8b57;
-            data-size: "4"; 
-        }
-        [data-level="advanced"] { 
-            background: #b22222;
-            data-size: "5"; 
-        }
-        [data-level="chaos"] { 
-            background: #4b0082;
-            data-size: "?"; 
-        }
-
-        /* 버튼 순서 재배치 */
-        [data-level="beginner"] { order: 1; }
-        [data-level="intermediate"] { order: 2; }
-        [data-level="advanced"] { order: 3; }
-        [data-level="chaos"] { order: 4; }
 
         /* 게임 오버 오버레이 */
         body.game-over::before {
