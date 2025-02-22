@@ -59,6 +59,7 @@
             align-items: center;
             transition: all 0.2s ease;
             box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+            will-change: transform, opacity;
         }
 
         .cell.filled {
@@ -139,6 +140,7 @@
             border: 1px solid #8b4513; /* 블록 컨테이너 테두리 색상 */
             opacity: 0.5; /* 반투명 효과 */
             box-shadow: inset 0 0 5px rgba(0,0,0,0.2); /* 블록 셀과 동일 효과 */
+            transition: opacity 0.1s linear;
         }
 
         @media (max-width: 380px) {
@@ -333,6 +335,10 @@
         let previewCells = [];
         let currentLevel = 'intermediate'; // 전역 변수로 이동
 
+        // 성능 최적화를 위한 변수 추가
+        let lastValidPosition = null;
+        const boardCells = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(null));
+
         // 레벨 시스템 구현 (수정 버전)
         const BLOCK_CATEGORIES = {
             beginner: [ 
@@ -407,6 +413,7 @@
                     cell.dataset.row = i;
                     cell.dataset.col = j;
                     boardElement.appendChild(cell);
+                    boardCells[i][j] = cell; // 캐시 저장
                 }
             }
         }
@@ -530,52 +537,58 @@
             return true;
         }
 
+        // 미리보기 성능 개선 버전
         function showPreview(x, y) {
-            clearPreview();
-            
+            if (!draggedBlock) return;
+
+            const pattern = JSON.parse(draggedBlock.dataset.pattern);
             const boardRect = document.getElementById('board').getBoundingClientRect();
             const cellSize = boardRect.width / BOARD_SIZE;
-            
-            const pattern = JSON.parse(draggedBlock.dataset.pattern);
+
             const row = Math.round((y - boardRect.top - cellSize/2) / cellSize);
             const col = Math.round((x - boardRect.left - cellSize/2) / cellSize);
             const adjustRow = row - Math.floor(pattern.length/2);
             const adjustCol = col - Math.floor(pattern[0].length/2);
 
-            // 1. 전체 블록 유효성 검사 강화
-            if (!isValidPosition(adjustRow, adjustCol, pattern)) return;
+            // 위치 변경 없으면 업데이트 생략
+            if (lastValidPosition?.row === adjustRow && lastValidPosition?.col === adjustCol) return;
+            lastValidPosition = {row: adjustRow, col: adjustCol};
 
-            // 2. 실제 보드와 충돌 검사
-            let hasConflict = false;
-            pattern.forEach((patternRow, i) => {
-                patternRow.forEach((cell, j) => {
+            clearPreview();
+
+            // 유효성 검사 최적화
+            let isValid = true;
+            outer: for (let i = 0; i < pattern.length; i++) {
+                for (let j = 0; j < pattern[0].length; j++) {
+                    if (pattern[i][j] === 1) {
+                        const y = adjustRow + i;
+                        const x = adjustCol + j;
+                        if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE || board[y][x]) {
+                            isValid = false;
+                            break outer;
+                        }
+                    }
+                }
+            }
+
+            if (!isValid) return;
+
+            // 일괄 업데이트
+            const updates = [];
+            pattern.forEach((row, i) => {
+                row.forEach((cell, j) => {
                     if (cell === 1) {
-                        const previewRow = adjustRow + i;
-                        const previewCol = adjustCol + j;
-                        if (board[previewRow][previewCol]) {
-                            hasConflict = true;
+                        const y = adjustRow + i;
+                        const x = adjustCol + j;
+                        if (boardCells[y]?.[x]) {
+                            updates.push(boardCells[y][x]);
                         }
                     }
                 });
             });
-            if (hasConflict) return;
 
-            // 3. 미리보기 표시
-            pattern.forEach((patternRow, i) => {
-                patternRow.forEach((cell, j) => {
-                    if (cell === 1) {
-                        const previewRow = adjustRow + i;
-                        const previewCol = adjustCol + j;
-                        const cellElement = document.querySelector(
-                            `[data-row="${previewRow}"][data-col="${previewCol}"]`
-                        );
-                        if (cellElement) {
-                            cellElement.classList.add('preview');
-                            previewCells.push(cellElement);
-                        }
-                    }
-                });
-            });
+            updates.forEach(cell => cell.classList.add('preview'));
+            previewCells = updates;
         }
 
         function clearPreview() {
