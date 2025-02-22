@@ -255,31 +255,52 @@
 
         .difficulty-btn {
             position: relative;
-            padding: 12px;
+            padding: 15px; /* 적정 크기로 조정 */
             border: 2px solid #5d432f !important;
             border-radius: 6px;
             cursor: pointer;
-            background: #a78b72 !important; /* 힌트 버튼과 동일한 배경색 */
-            min-width: 50px;
-            transition: all 0.2s ease;
-            font-size: 1.3em;
+            background: 
+                linear-gradient(145deg, 
+                    #8b4513 0%, 
+                    #a0522d 20%, 
+                    #8b4513 50%, 
+                    #654321 100% 
+                ) !important;
+            min-width: 50px; /* 원래 크기로 복구 */
+            min-height: 50px;
+            transition: all 0.3s ease; /* 전환 효과 시간 증가 */
+            font-size: 1.8em; /* 적정 크기 조정 */
+            aspect-ratio: 1;
+            box-shadow: 
+                inset 0 1px 3px rgba(255,255,255,0.1),
+                inset 0 -1px 3px rgba(0,0,0,0.3) !important; /* 외부 그림자 제거 */
             display: flex;
             justify-content: center;
             align-items: center;
-            color: #fff3e0; /* 힌트 버튼과 동일한 글자색 */
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2); /* 힌트 버튼과 동일한 그림자 */
         }
 
         /* 활성화 상태 스타일 */
         .difficulty-btn.active {
-            background: #8b6b4d !important; /* 힌트 버튼 호버 색상과 동일 */
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+            background: 
+                linear-gradient(145deg, 
+                    #6b4f40 0%, 
+                    #8b6b4d 20%, 
+                    #6b4f40 50%, 
+                    #5d432f 100% 
+                ) !important;
+            transform: scale(0.95); /* 약간 축소 효과 */
         }
 
         /* 호버 효과 추가 */
         .difficulty-btn:hover {
-            background: #8b6b4d !important;
             transform: scale(1.05);
+            background: 
+                linear-gradient(145deg, 
+                    #a0522d 0%, 
+                    #8b4513 20%, 
+                    #a0522d 50%, 
+                    #8b6b4d 100% 
+                ) !important;
         }
 
         /* 우측하단 숫자 스타일 */
@@ -288,7 +309,7 @@
             position: absolute;
             bottom: 5px;
             right: 5px;
-            font-size: 1em; /* 폰트 크기 증가 */
+            font-size: 0.6em; /* 상대적 크기 조정 */
             color: #fff3e0;
             opacity: 0.9;
             font-weight: 700;
@@ -421,17 +442,20 @@
 
         /* 힌트 패널 스타일 개선 */
         .hint-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             display: flex;
             justify-content: center;
             gap: 8px;
-            margin: 10px 0;
-            padding: 8px;
-            background: #8b6b4d; /* 레벨 버튼과 동일한 배경 */
-            border-radius: 6px;
-            border: 2px solid #5d432f; /* 레벨 버튼 테두리 스타일 */
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            width: fit-content;
-            align-self: center;
+            margin: 0;
+            padding: 12px;
+            background: #8b6b4d;
+            border-radius: 10px 10px 0 0;
+            border: 2px solid #5d432f;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+            z-index: 2000;
         }
 
         .hint-panel button {
@@ -456,12 +480,13 @@
         /* 모바일 대응 */
         @media (max-width: 480px) {
             .hint-panel {
-                padding: 6px;
+                padding: 10px;
                 gap: 6px;
+                border-radius: 8px 8px 0 0;
             }
             .hint-panel button {
-                padding: 10px;
-                font-size: 1.1em;
+                padding: 12px;
+                font-size: 1.2em;
             }
             .board {
                 grid-template-columns: repeat(9, 35px); /* 약간 축소 */
@@ -538,8 +563,8 @@
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     <div class="difficulty-picker">
-        <button class="difficulty-btn active" data-level="intermediate" data-size="4">■</button>
         <button class="difficulty-btn" data-level="beginner" data-size="3">■</button>
+        <button class="difficulty-btn active" data-level="intermediate" data-size="4">■</button>
         <button class="difficulty-btn" data-level="advanced" data-size="5">■</button>
         <button class="difficulty-btn" data-level="chaos" data-size="?">■</button>
     </div>
@@ -654,14 +679,29 @@
             return true; // 모든 블록 배치 불가
         }
 
-        // 난이도 변경 함수 수정
+        // 수정된 setDifficulty 함수
         function setDifficulty(level) {
             currentLevel = level;
             document.querySelectorAll('.difficulty-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.level === level);
+                btn.classList.remove('active'); // 모든 버튼에서 active 제거
+                if(btn.dataset.level === level) {
+                    btn.classList.add('active'); // 선택된 버튼에만 active 추가
+                }
             });
             generateNewBlocks();
         }
+
+        // 수정된 이벤트 리스너 (이벤트 위임 방식으로 변경)
+        document.querySelector('.difficulty-picker').addEventListener('click', function(e) {
+            if(e.target.classList.contains('difficulty-btn')) {
+                setDifficulty(e.target.dataset.level);
+                // 버튼 애니메이션 효과
+                e.target.animate([
+                    { transform: 'scale(1.2)', opacity: 0.8 },
+                    { transform: 'scale(1)', opacity: 1 }
+                ], { duration: 300 });
+            }
+        });
 
         // 게임 초기화 함수에 난이도 설정 추가
         function initGame() {
@@ -965,7 +1005,6 @@
                 if (document.querySelectorAll('.block-wrapper').length === 0) {
                     generateNewBlocks();
                 }
-                checkLines();
             }
         }
 
@@ -994,6 +1033,7 @@
 
         // 블록 배치
         function placeBlock(row, col, pattern) {
+            currentTurn++;  // 블록 배치 시 무조건 턴 증가
             pattern.forEach((patternRow, i) => {
                 patternRow.forEach((cell, j) => {
                     if (cell === 1) {
@@ -1007,6 +1047,13 @@
             });
             score += pattern.flat().filter(cell => cell === 1).length;
             updateScore();
+            
+            const linesCleared = checkLines();  // 라인 클리어 결과 저장
+            
+            if (!linesCleared) {
+                // 라인 클리어 실패 시 콤보 리셋
+                comboCount = 0;
+            }
             
             if (checkGameOver()) {
                 handleGameOver();
@@ -1045,14 +1092,13 @@
             cols.forEach(col => clearLine(col, 'column'));
 
             if (linesCleared > 0) {
-                currentTurn++;
                 const isConsecutive = currentTurn - lastClearTurn === 1;
-                comboCount = isConsecutive ? comboCount + 1 : 1;
+                comboCount = isConsecutive ? comboCount + 1 : 1; // 연속 성공 시에만 콤보 증가
                 lastClearTurn = currentTurn;
 
                 const baseScore = linesCleared * 100;
-                const comboBonus = comboCount > 1 ? comboCount * 0.5 : 1;
-                const crossBonus = crossCount > 1 ? crossCount * 0.7 : 1;
+                const comboBonus = comboCount > 0 ? 1 + (comboCount * 0.5) : 1;
+                const crossBonus = crossCount > 1 ? 1 + (crossCount * 0.3) : 1;
                 const totalScore = Math.round(baseScore * comboBonus * crossBonus);
 
                 score += totalScore;
@@ -1064,7 +1110,7 @@
                 });
             }
 
-            return linesCleared > 0;
+            return linesCleared > 0; // 클리어 성공 여부 반환
         }
 
         // 줄 제거
@@ -1104,18 +1150,6 @@
         function updateScore() {
             document.getElementById('score').textContent = score;
         }
-
-        // 이벤트 바인딩 강화
-        document.querySelectorAll('.difficulty-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                setDifficulty(this.dataset.level);
-                // 버튼 애니메이션 효과
-                this.animate([
-                    { transform: 'scale(1.2)', opacity: 0.8 },
-                    { transform: 'scale(1)', opacity: 1 }
-                ], { duration: 300 });
-            });
-        });
 
         // 게임 오버 처리
         function handleGameOver() {
