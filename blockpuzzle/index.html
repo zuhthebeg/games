@@ -390,6 +390,25 @@
             draggedBlock.style.top = `${clientY - dragOffset.y}px`;
         }
 
+        function isValidPosition(row, col, pattern) {
+            // 모든 패턴 셀이 유효한지 엄격히 검사
+            for (let i = 0; i < pattern.length; i++) {
+                for (let j = 0; j < pattern[0].length; j++) {
+                    if (pattern[i][j] === 1) {
+                        const x = col + j;
+                        const y = row + i;
+                        // 3가지 조건 동시 검사
+                        if (x < 0 || x >= BOARD_SIZE || 
+                            y < 0 || y >= BOARD_SIZE || 
+                            board[y][x]) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
         function showPreview(x, y) {
             clearPreview();
             
@@ -402,41 +421,40 @@
             const adjustRow = row - Math.floor(pattern.length/2);
             const adjustCol = col - Math.floor(pattern[0].length/2);
 
+            // 1. 전체 블록 유효성 검사 강화
             if (!isValidPosition(adjustRow, adjustCol, pattern)) return;
 
+            // 2. 실제 보드와 충돌 검사
+            let hasConflict = false;
             pattern.forEach((patternRow, i) => {
                 patternRow.forEach((cell, j) => {
                     if (cell === 1) {
                         const previewRow = adjustRow + i;
                         const previewCol = adjustCol + j;
-                        if (isWithinBoard(previewRow, previewCol)) {
-                            const cellElement = document.querySelector(
-                                `[data-row="${previewRow}"][data-col="${previewCol}"]`
-                            );
-                            if (cellElement && !board[previewRow][previewCol]) {
-                                cellElement.classList.add('preview');
-                                previewCells.push(cellElement);
-                            }
+                        if (board[previewRow][previewCol]) {
+                            hasConflict = true;
                         }
                     }
                 });
             });
-        }
+            if (hasConflict) return;
 
-        // 보드 내 유효 위치 여부 검사
-        function isValidPosition(row, col, pattern) {
-            return pattern.every((r, i) => 
-                r.every((c, j) => {
-                    const x = col + j;
-                    const y = row + i;
-                    return c !== 1 || (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE);
-                })
-            );
-        }
-
-        // 개별 셀 위치 검증
-        function isWithinBoard(row, col) {
-            return row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE;
+            // 3. 미리보기 표시
+            pattern.forEach((patternRow, i) => {
+                patternRow.forEach((cell, j) => {
+                    if (cell === 1) {
+                        const previewRow = adjustRow + i;
+                        const previewCol = adjustCol + j;
+                        const cellElement = document.querySelector(
+                            `[data-row="${previewRow}"][data-col="${previewCol}"]`
+                        );
+                        if (cellElement) {
+                            cellElement.classList.add('preview');
+                            previewCells.push(cellElement);
+                        }
+                    }
+                });
+            });
         }
 
         function clearPreview() {
