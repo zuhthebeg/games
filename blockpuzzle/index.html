@@ -84,8 +84,8 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 5px;
-            padding: 5px;
+            gap: 8px;
+            padding: 10px;
             background: #a78b72;
             border-radius: 5px;
             border: 1px solid #8b6b4d;
@@ -204,6 +204,11 @@
                 background: #8b6b4d;
             }
         }
+
+        /* 대형 블록 대응 */
+        .block-grid[style*="repeat(4"] {
+            transform: scale(0.8);
+        }
     </style>
 </head>
     <!-- Google tag (gtag.js) -->
@@ -237,8 +242,17 @@
         let dragOffset = { x: 0, y: 0 };
         let previewCells = [];
 
-        // 블록 패턴
+        // 블록 패턴 확장 (테트리스 7종 + 기존 5종)
         const BLOCK_PATTERNS = [
+            // 테트리스 블록
+            [[1,1,1,1]],          // I
+            [[1,1],[1,1]],        // O
+            [[1,1,1],[0,1,0]],    // T
+            [[1,1,0],[0,1,1]],    // S
+            [[0,1,1],[1,1,0]],    // Z
+            [[1,1,1],[1,0,0]],    // J
+            [[1,1,1],[0,0,1]],    // L
+            // 기존 블록
             [[1]],
             [[1,1]],
             [[1],[1]],
@@ -276,6 +290,7 @@
             
             const cellSize = document.querySelector('.cell').offsetWidth;
             
+            // 더 다양한 크기 대응을 위한 그리드 사이즈 계산
             for (let i = 0; i < 3; i++) {
                 const pattern = BLOCK_PATTERNS[Math.floor(Math.random() * BLOCK_PATTERNS.length)];
                 const blockWrapper = createBlockElement(pattern, cellSize);
@@ -294,13 +309,15 @@
             blockGrid.className = 'block-grid';
             blockGrid.style.gridTemplateColumns = `repeat(${pattern[0].length}, 1fr)`;
             
+            // 패턴에 따라 셀 크기 동적 조정
+            const baseSize = Math.min(cellSize * 0.9, 40); // 최대 40px 제한
             pattern.forEach(row => {
                 row.forEach(cell => {
                     const blockCell = document.createElement('div');
                     if (cell === 1) {
                         blockCell.className = 'block-cell';
-                        blockCell.style.width = `${cellSize}px`;
-                        blockCell.style.height = `${cellSize}px`;
+                        blockCell.style.width = `${baseSize}px`;
+                        blockCell.style.height = `${baseSize}px`;
                     }
                     blockGrid.appendChild(blockCell);
                 });
@@ -364,25 +381,41 @@
             clearPreview();
             
             const boardRect = document.getElementById('board').getBoundingClientRect();
-            if (!isOverBoard(x, y, boardRect)) return;
+            const cellSize = boardRect.width / BOARD_SIZE;
+            
+            // 보드 경계 20% 확장 영역까지 허용
+            const expandedBoardRect = {
+                left: boardRect.left - cellSize * 0.2,
+                right: boardRect.right + cellSize * 0.2,
+                top: boardRect.top - cellSize * 0.2,
+                bottom: boardRect.bottom + cellSize * 0.2
+            };
+
+            if (!isOverBoard(x, y, expandedBoardRect)) return;
 
             const pattern = JSON.parse(draggedBlock.dataset.pattern);
-            // 패턴 크기 고려한 위치 계산
-            const row = Math.floor((y - boardRect.top) / (boardRect.width / BOARD_SIZE)) - (pattern.length - 1);
-            const col = Math.floor((x - boardRect.left) / (boardRect.width / BOARD_SIZE)) - (pattern[0].length - 1);
+            // 셀 중앙 기준으로 계산 (50% 오차 허용)
+            const row = Math.round((y - boardRect.top - cellSize/2) / cellSize);
+            const col = Math.round((x - boardRect.left - cellSize/2) / cellSize);
 
-            if (canPlaceBlock(row, col, pattern)) {
+            // 패턴 위치 보정 (중심에서 오른쪽 하단으로)
+            const adjustRow = row - Math.floor(pattern.length/2);
+            const adjustCol = col - Math.floor(pattern[0].length/2);
+
+            if (canPlaceBlock(adjustRow, adjustCol, pattern)) {
                 pattern.forEach((patternRow, i) => {
                     patternRow.forEach((cell, j) => {
                         if (cell === 1) {
-                            const previewRow = row + i;
-                            const previewCol = col + j;
-                            if(previewRow >= 0 && previewCol >= 0) { // 음수 인덱스 방지
+                            const previewRow = adjustRow + i;
+                            const previewCol = adjustCol + j;
+                            if(previewRow >= 0 && previewCol >= 0) {
                                 const cellElement = document.querySelector(
                                     `[data-row="${previewRow}"][data-col="${previewCol}"]`
                                 );
-                                cellElement.classList.add('preview');
-                                previewCells.push(cellElement);
+                                if(cellElement) {
+                                    cellElement.classList.add('preview');
+                                    previewCells.push(cellElement);
+                                }
                             }
                         }
                     });
@@ -406,11 +439,14 @@
             
             if (isOverBoard(clientX, clientY, boardRect)) {
                 const pattern = JSON.parse(draggedBlock.dataset.pattern);
-                // 패턴 크기 고려한 정확한 위치 계산
-                const row = Math.floor((clientY - boardRect.top) / (boardRect.width / BOARD_SIZE)) - (pattern.length - 1);
-                const col = Math.floor((clientX - boardRect.left) / (boardRect.width / BOARD_SIZE)) - (pattern[0].length - 1);
+                // 미리보기 계산과 동일한 로직 사용
+                const cellSize = boardRect.width / BOARD_SIZE;
+                const row = Math.round((clientY - boardRect.top - cellSize/2) / cellSize);
+                const col = Math.round((clientX - boardRect.left - cellSize/2) / cellSize);
+                const adjustRow = row - Math.floor(pattern.length/2);
+                const adjustCol = col - Math.floor(pattern[0].length/2);
                 
-                tryPlaceBlock(row, col);
+                tryPlaceBlock(adjustRow, adjustCol);
             }
             
             resetDraggedBlock();
@@ -425,8 +461,8 @@
         // 블록 배치 시도
         function tryPlaceBlock(row, col) {
             const pattern = JSON.parse(draggedBlock.dataset.pattern);
-            // 미리보기와 동일한 유효성 검사
-            if (row >= 0 && col >= 0 && canPlaceBlock(row, col, pattern)) {
+            // 미리보기에서 사용한 canPlaceBlock과 동일한 조건
+            if (canPlaceBlock(row, col, pattern)) {  // 음수 체크 제거
                 placeBlock(row, col, pattern);
                 draggedBlock.remove();
                 if (document.querySelectorAll('.block-wrapper').length === 0) {
@@ -438,8 +474,9 @@
 
         // 블록 배치 가능 확인
         function canPlaceBlock(row, col, pattern) {
-            // 음수 위치 방지 조건 추가
-            if (row < 0 || col < 0) return false;
+            // 버퍼 영역 내에서만 체크
+            const buffer = 1;
+            if (row < -buffer || col < -buffer) return false;
             
             for (let i = 0; i < pattern.length; i++) {
                 for (let j = 0; j < pattern[0].length; j++) {
@@ -447,7 +484,9 @@
                         const newRow = row + i;
                         const newCol = col + j;
                         
-                        if (newRow >= BOARD_SIZE || newCol >= BOARD_SIZE || board[newRow][newCol]) {
+                        if (newRow >= BOARD_SIZE + buffer || 
+                            newCol >= BOARD_SIZE + buffer || 
+                            (newRow >= 0 && newCol >= 0 && board[newRow][newCol])) {
                             return false;
                         }
                     }
