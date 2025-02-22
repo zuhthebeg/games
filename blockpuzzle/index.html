@@ -37,17 +37,22 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             border: 2px solid #5d432f; /* 우드 테두리 */
             box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* 가로 중앙 정렬 추가 */
         }
 
         .board {
             display: grid;
-            grid-template-columns: repeat(9, 1fr);
-            gap: 0.5px;
-            background-color: #a78b72; /* 밝은 우드톤 */
+            grid-template-columns: repeat(9, 40px); /* 고정 크기 */
+            grid-template-rows: repeat(9, 40px);
+            gap: 1px;
+            background-color: #a78b72;
             padding: 1px;
             border-radius: 5px;
             margin-bottom: 15px;
             border: 1px solid #5d432f;
+            width: fit-content; /* 내용물에 맞게 너비 고정 */
         }
 
         .cell {
@@ -91,12 +96,18 @@
             background: #a78b72;
             border-radius: 5px;
             border: 1px solid #8b6b4d;
+            width: fit-content; /* 컨테이너 너비 고정 */
+            margin: 0 auto; /* 중앙 정렬 */
         }
 
         .block-wrapper {
             cursor: grab;
-            transform: scale(0.9);
             touch-action: none;
+            transition: transform 0.2s;
+            transform-origin: center;
+            width: fit-content;
+            height: fit-content;
+            margin: 2px; /* 상하 여백 축소 */
         }
 
         .block-grid {
@@ -106,6 +117,9 @@
             padding: 1px;
             border-radius: 3px;
             border: none;
+            width: max-content !important;
+            transform-origin: center;
+            transition: none !important;
         }
 
         /* 빈 셀 스타일 처리 */
@@ -116,9 +130,17 @@
         }
 
         .block-cell {
-            background-color: #a0522d;
-            border: 1px solid #8b4513;
-            box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+            background: 
+                linear-gradient(145deg, 
+                    #8b4513 0%, 
+                    #a0522d 20%, 
+                    #8b4513 50%, 
+                    #654321 100%
+                ) !important;
+            border: 1px solid #5d432f !important;
+            box-shadow: 
+                inset 0 1px 3px rgba(255,255,255,0.1),
+                inset 0 -1px 3px rgba(0,0,0,0.3) !important;
         }
 
         .score {
@@ -218,22 +240,15 @@
         }
 
         /* 대형 블록 대응 */
-        .block-grid[style*="repeat(5"] { transform: scale(0.7); }
-        .block-grid[style*="repeat(4"] { transform: scale(0.75); }
-        .block-grid[style*="repeat(3"] { transform: scale(0.8); }
-        .block-grid[style*="repeat(2"] { transform: scale(0.9); }
+ 
 
         /* 난이도 선택기 재조정 */
         .difficulty-picker {
             display: flex;
-            gap: 10px;
-            padding: 12px;
-            background: #8b6b4d;
-            border-radius: 10px;
-            margin: 15px auto;
-            width: fit-content;
-            border: 2px solid #5d432f;
-            justify-content: start; /* 왼쪽 정렬 */
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
         }
 
         /* 단순화된 버튼 디자인 */
@@ -372,6 +387,82 @@
         .test-panel button:hover {
             opacity: 1;
         }
+
+        /* 힌트 패널 스타일 개선 */
+        .hint-panel {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 10px 0;
+            padding: 8px;
+            background: #8b6b4d; /* 레벨 버튼과 동일한 배경 */
+            border-radius: 6px;
+            border: 2px solid #5d432f; /* 레벨 버튼 테두리 스타일 */
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            width: fit-content;
+            align-self: center;
+        }
+
+        .hint-panel button {
+            padding: 12px;
+            border: 2px solid #5d432f;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #a78b72; /* 레벨 버튼 배경과 유사 */
+            color: #fff3e0;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hint-panel button:hover {
+            background: #8b6b4d;
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* 모바일 대응 */
+        @media (max-width: 480px) {
+            .hint-panel {
+                padding: 6px;
+                gap: 6px;
+            }
+            .hint-panel button {
+                padding: 10px;
+                font-size: 1.1em;
+            }
+            .board {
+                grid-template-columns: repeat(9, 35px); /* 약간 축소 */
+                grid-template-rows: repeat(9, 35px);
+            }
+            
+       
+            
+            .game-container {
+                padding: 5px; /* 패딩 축소 */
+            }
+            .block-container {
+                gap: 6px; /* 모바일에서 간격 축소 */
+                padding: 8px;
+            }
+            
+            .block-wrapper {
+                margin: 1px; /* 모바일 여백 최소화 */
+                transform: scale(0.85);
+            }
+        }
+
+        /* 회전 시 크기 변화 방지 */
+        .block-wrapper:hover {
+            transform: scale(0.9) !important; /* 호버 시 약간 축소 */
+        }
+
+        /* 회전 애니메이션 추가 */
+        @keyframes smoothRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(90deg); }
+        }
     </style>
 </head>
     <!-- Google tag (gtag.js) -->
@@ -404,6 +495,13 @@
     <div class="test-panel">
         <button onclick="testCombo()">테스트 콤보</button>
         <button onclick="testCross()">테스트 크로스</button>
+    </div>
+
+    <!-- 힌트 패널 수정 -->
+    <div class="hint-panel">
+        <button onclick="refreshBlocks()">🔄</button>
+        <button onclick="rotateCurrentBlocks()">↻</button>
+        <button onclick="showPossiblePlacement()">💡</button>
     </div>
 
     <script>
@@ -506,9 +604,10 @@
         // 게임 초기화 함수에 난이도 설정 추가
         function initGame() {
             createBoard();
-            currentLevel = 'intermediate'; // 명시적 설정
+            currentLevel = 'intermediate';
             setDifficulty(currentLevel);
             updateScore();
+            createHintPanel();
         }
 
         // 보드 생성
@@ -528,14 +627,15 @@
             }
         }
 
-        // 새로운 블록 생성
-        function generateNewBlocks() {
+        // 힌트 시스템 변수
+        let hintActive = false;
+
+        // 블록 생성 로직 수정
+        function generateNewBlocks(force = false) {
             const container = document.getElementById('block-container');
+            if(!force && container.children.length > 0) return;
+            
             container.innerHTML = '';
-            
-            // 보드가 초기화되었는지 확인
-            if(!document.querySelector('.cell')) createBoard();
-            
             const cellSize = document.querySelector('.cell').offsetWidth;
             const patterns = BLOCK_CATEGORIES[currentLevel];
             
@@ -555,7 +655,7 @@
             
             const blockGrid = document.createElement('div');
             blockGrid.className = 'block-grid';
-            blockGrid.style.gridTemplateColumns = `repeat(${pattern[0].length}, 1fr)`;
+            blockGrid.style.gridTemplateColumns = `repeat(${pattern[0].length}, ${cellSize}px)`;
             
             // 패턴에 따라 셀 크기 동적 조정
             const baseSize = Math.min(cellSize * 0.9, 40); // 최대 40px 제한
@@ -1046,6 +1146,111 @@
                 }, 5000); // 5초 후 자동 숨김
             }
         });
+
+        // 힌트 패널 생성
+        function createHintPanel() {
+            const panel = document.querySelector('.hint-panel');
+            if (panel) return; // 이미 존재하면 생성하지 않음
+            
+            const newPanel = document.createElement('div');
+            newPanel.className = 'hint-panel';
+            newPanel.innerHTML = `
+                <button onclick="refreshBlocks()">🔄</button>
+                <button onclick="rotateCurrentBlocks()">↻</button>
+                <button onclick="showPossiblePlacement()">💡</button>
+            `;
+            document.body.appendChild(newPanel);
+        }
+
+        // 블록 새로고침
+        function refreshBlocks() {
+            generateNewBlocks(true);
+        }
+
+        // 현재 블록 회전
+        function rotateCurrentBlocks() {
+            document.querySelectorAll('.block-wrapper').forEach(block => {
+                const pattern = JSON.parse(block.dataset.pattern);
+                const rotated = rotatePattern(pattern);
+                
+                // 그리드 요소 재생성 방식 변경
+                const grid = block.querySelector('.block-grid');
+                grid.style.animation = 'smoothRotate 0.3s ease-in-out'; // 회전 애니메이션 추가
+                
+                // 기존 요소 제거 대신 스타일 업데이트
+                grid.innerHTML = ''; // 기존 내용 제거
+                rotated.forEach(row => {
+                    row.forEach(cell => {
+                        const div = document.createElement('div');
+                        div.className = cell === 1 ? 'block-cell' : '';
+                        div.style.width = '100%';
+                        div.style.height = '100%';
+                        div.style.minWidth = '30px'; // 크기 고정 추가
+                        div.style.minHeight = '30px';
+                        grid.appendChild(div);
+                    });
+                });
+                
+                // 애니메이션 종료 후 초기화
+                setTimeout(() => {
+                    grid.style.animation = '';
+                    block.dataset.pattern = JSON.stringify(rotated);
+                    grid.style.gridTemplateColumns = `repeat(${rotated[0].length}, 30px)`; // 고정 값 사용
+                }, 300);
+            });
+        }
+
+        // 배치 가능 위치 힌트
+        function showPossiblePlacement() {
+            const blocks = document.querySelectorAll('.block-wrapper');
+            blocks.forEach(block => {
+                const pattern = JSON.parse(block.dataset.pattern);
+                for(let y = 0; y < BOARD_SIZE; y++) {
+                    for(let x = 0; x < BOARD_SIZE; x++) {
+                        if(isValidPosition(y, x, pattern)) {
+                            highlightPossibleArea(y, x, pattern);
+                            return;
+                        }
+                    }
+                }
+            });
+        }
+
+        // 힌트 영역 강조
+        function highlightPossibleArea(row, col, pattern) {
+            clearPreview();
+            pattern.forEach((r, i) => {
+                r.forEach((c, j) => {
+                    if(c === 1 && board[row + i]?.[col + j] !== undefined) {
+                        const cell = boardCells[row + i][col + j];
+                        cell.classList.add('hint-preview');
+                        previewCells.push(cell);
+                    }
+                });
+            });
+            setTimeout(clearPreview, 2000);
+        }
+
+        // 힌트 초기화
+        function clearHint() {
+            document.querySelectorAll('.hint-preview').forEach(cell => {
+                cell.classList.remove('hint-preview');
+            });
+        }
+
+        // 회전 함수 수정 (정확한 90도 회전)
+        function rotatePattern(pattern) {
+            const N = pattern.length;
+            const M = pattern[0].length;
+            const rotated = Array(M).fill().map(() => Array(N).fill(0));
+            
+            for (let i = 0; i < N; i++) {
+                for (let j = 0; j < M; j++) {
+                    rotated[j][N-1-i] = pattern[i][j];
+                }
+            }
+            return rotated;
+        }
     </script>
 </body>
 </html>
