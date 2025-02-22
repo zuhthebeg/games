@@ -78,6 +78,7 @@
                     transparent 1px 4px
                 );
             animation: fillCell 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+            opacity: 1; /* 미리보기와 동일한 스타일, 투명도만 다름 */
         }
 
         .block-container {
@@ -100,10 +101,10 @@
         .block-grid {
             display: grid;
             gap: 1px;
-            background-color: transparent;  /* 그리드 배경 투명화 */
+            background-color: transparent;
             padding: 1px;
             border-radius: 3px;
-            border: 1px solid #5d432f;
+            border: none;
         }
 
         /* 빈 셀 스타일 처리 */
@@ -114,7 +115,7 @@
         }
 
         .block-cell {
-            background-color: #a0522d; /* 진한 나무 색상 */
+            background-color: #a0522d;
             border: 1px solid #8b4513;
             box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
         }
@@ -134,8 +135,22 @@
         }
 
         .cell.preview {
-            background-color: rgba(255, 167, 38, 0.3);
-            border: 2px solid #fb8c00;
+            background-color: #8b4513; /* 실제 블록 색상과 동일 */
+            border: 2px solid #654321; /* 실제 블록 테두리 색상 */
+            opacity: 0.7; /* 투명도만 다르게 설정 */
+            background-image: 
+                linear-gradient(to bottom right, 
+                    rgba(0,0,0,0.1) 25%, 
+                    transparent 25%, 
+                    transparent 50%, 
+                    rgba(0,0,0,0.1) 50%, 
+                    rgba(0,0,0,0.1) 75%, 
+                    transparent 75%),
+                repeating-linear-gradient(
+                    45deg,
+                    #654321 0 1px,
+                    transparent 1px 4px
+                );
         }
 
         @media (max-width: 380px) {
@@ -393,44 +408,49 @@
             const boardRect = document.getElementById('board').getBoundingClientRect();
             const cellSize = boardRect.width / BOARD_SIZE;
             
-            // 보드 경계 20% 확장 영역까지 허용
-            const expandedBoardRect = {
-                left: boardRect.left - cellSize * 0.2,
-                right: boardRect.right + cellSize * 0.2,
-                top: boardRect.top - cellSize * 0.2,
-                bottom: boardRect.bottom + cellSize * 0.2
-            };
-
-            if (!isOverBoard(x, y, expandedBoardRect)) return;
-
             const pattern = JSON.parse(draggedBlock.dataset.pattern);
-            // 셀 중앙 기준으로 계산 (50% 오차 허용)
             const row = Math.round((y - boardRect.top - cellSize/2) / cellSize);
             const col = Math.round((x - boardRect.left - cellSize/2) / cellSize);
-
-            // 패턴 위치 보정 (중심에서 오른쪽 하단으로)
             const adjustRow = row - Math.floor(pattern.length/2);
             const adjustCol = col - Math.floor(pattern[0].length/2);
 
-            if (canPlaceBlock(adjustRow, adjustCol, pattern)) {
-                pattern.forEach((patternRow, i) => {
-                    patternRow.forEach((cell, j) => {
-                        if (cell === 1) {
-                            const previewRow = adjustRow + i;
-                            const previewCol = adjustCol + j;
-                            if(previewRow >= 0 && previewCol >= 0) {
-                                const cellElement = document.querySelector(
-                                    `[data-row="${previewRow}"][data-col="${previewCol}"]`
-                                );
-                                if(cellElement) {
-                                    cellElement.classList.add('preview');
-                                    previewCells.push(cellElement);
-                                }
+            // 보드 경계 체크 강화
+            if (!isValidPosition(adjustRow, adjustCol, pattern)) return;
+
+            pattern.forEach((patternRow, i) => {
+                patternRow.forEach((cell, j) => {
+                    if (cell === 1) {
+                        const previewRow = adjustRow + i;
+                        const previewCol = adjustCol + j;
+                        // 실제 보드 범위 내 셀만 미리보기 표시
+                        if (isWithinBoard(previewRow, previewCol)) {
+                            const cellElement = document.querySelector(
+                                `[data-row="${previewRow}"][data-col="${previewCol}"]`
+                            );
+                            if (cellElement && !board[previewRow][previewCol]) {
+                                cellElement.classList.add('preview');
+                                previewCells.push(cellElement);
                             }
                         }
-                    });
+                    }
                 });
-            }
+            });
+        }
+
+        // 보드 내 유효 위치 여부 검사
+        function isValidPosition(row, col, pattern) {
+            return pattern.every((r, i) => 
+                r.every((c, j) => {
+                    const x = col + j;
+                    const y = row + i;
+                    return c !== 1 || (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE);
+                })
+            );
+        }
+
+        // 개별 셀 위치 검증
+        function isWithinBoard(row, col) {
+            return row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE;
         }
 
         function clearPreview() {
