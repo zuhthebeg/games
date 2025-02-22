@@ -577,6 +577,64 @@
                 transform: translate(-50%, -150%) scale(0.8);
             }
         }
+
+        /* 시간 표시 스타일 수정 */
+        .time-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 15px;
+            font-size: 1.1em;
+        }
+
+        /* 게임 오버 레이어 팝업 스타일 */
+        .game-over-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #8b6b4d;
+            padding: 25px;
+            border-radius: 15px;
+            border: 3px solid #5d432f;
+            text-align: center;
+            z-index: 3000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            animation: popupAppear 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        @keyframes popupAppear {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            80% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .game-over-popup h2 {
+            color: #ffd54f;
+            margin: 0 0 15px 0;
+            font-size: 2em;
+        }
+
+        .game-over-popup p {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+
+        .game-over-popup button {
+            background: #a78b72;
+            border: 2px solid #5d432f;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 8px;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .game-over-popup button:hover {
+            background: #8b6b4d;
+            transform: scale(1.05);
+        }
     </style>
 </head>
     <!-- Google tag (gtag.js) -->
@@ -600,7 +658,10 @@
         <button class="difficulty-btn" data-level="chaos" data-size="?">■</button>
     </div>
     <div class="game-container">
-        <div class="score">Score: <span id="score">0</span></div>
+        <div class="score">
+            Score: <span id="score">0</span>
+            <div class="time-display">⏰ 0s</div>
+        </div>
         <div id="board" class="board"></div>
         <div id="block-container" class="block-container"></div>
     </div>
@@ -616,6 +677,14 @@
         <button onclick="refreshBlocks()">🔄</button>
         <button onclick="rotateCurrentBlocks()">↻</button>
         <button onclick="showPossiblePlacement()">💡</button>
+    </div>
+
+    <!-- 게임 오버 팝업 (초기 숨김) -->
+    <div id="gameOverPopup" class="game-over-popup" style="display: none;">
+        <h2 id="popupTitle">GAME OVER</h2>
+        <p>Score: <span id="popupScore">0</span></p>
+        <p>Time: <span id="popupTime">0</span>s</p>
+        <button onclick="resetGame()">Play Again</button>
     </div>
 
     <script>
@@ -645,9 +714,9 @@
 
         // 전역 변수에 힌트 비용 추가
         const HINT_COSTS = {
-            refresh: 20,
-            rotate: 10,
-            placement: 5
+            refresh: 10,
+            rotate: 5,
+            placement: 1
         };
 
         // 레벨 시스템 구현 (수정 버전)
@@ -702,6 +771,13 @@
         // 게임 상태 변수에 gameOver 추가
         let gameOver = false;
 
+        // 게임 상태 변수 추가
+        let gameStartTime = null;
+        let currentTime = 0;
+        let timerInterval = null;
+        let gameClear = false;
+        let isGameRunning = false;
+
         // 게임 종료 조건 검사 함수
         function checkGameOver() {
             const patterns = BLOCK_CATEGORIES[currentLevel];
@@ -745,14 +821,21 @@
             }
         });
 
-        // 게임 초기화 함수에 난이도 설정 추가
+        // 수정된 initGame 함수
         function initGame() {
             createBoard();
             currentLevel = 'intermediate';
             setDifficulty(currentLevel);
             updateScore();
             createHintPanel();
-            updateButtonStates(); // 초기 버튼 상태 설정
+            updateButtonStates();
+            
+            // 타이머 초기화
+            gameStartTime = Date.now();
+            currentTime = 0;
+            gameClear = false;
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
         }
 
         // 보드 생성
@@ -1077,6 +1160,11 @@
 
         // 블록 배치
         function placeBlock(row, col, pattern) {
+            if (!isGameRunning) {
+                isGameRunning = true;
+                gameStartTime = Date.now();
+                timerInterval = setInterval(updateTimer, 1000);
+            }
             currentTurn++;  // 블록 배치 시 무조건 턴 증가
             pattern.forEach((patternRow, i) => {
                 patternRow.forEach((cell, j) => {
@@ -1160,26 +1248,42 @@
 
         // 점수 업데이트
         function updateScore() {
-            document.getElementById('score').textContent = score;
-            updateButtonStates(); // 점수 변경 시 버튼 상태 업데이트
+            document.getElementById('score').innerHTML = `
+                ${score}
+            `;
+            updateButtonStates();
+            
+            // 10000점 달성 시 게임 클리어
+            if(score >= 10000 && !gameClear) {
+                handleGameOver();
+            }
         }
 
         // 게임 오버 처리
         function handleGameOver() {
-            gameOver = true;
-            document.body.classList.add('game-over');
-            setTimeout(() => {
-                alert(`Game Over! Final Score: ${score}`);
-                resetGame();
-            }, 300);
+            isGameRunning = false;
+            clearInterval(timerInterval);
+            
+            const popup = document.getElementById('gameOverPopup');
+            popup.style.display = 'block';
+            document.getElementById('popupScore').textContent = score;
+            document.getElementById('popupTime').textContent = currentTime;
+            
+            if(score >= 10000) {
+                document.getElementById('popupTitle').textContent = 'CLEAR!!';
+                popup.style.background = '#6b4f40';
+            } else {
+                document.body.classList.add('game-over');
+            }
         }
 
         // 게임 리셋
         function resetGame() {
+            document.getElementById('gameOverPopup').style.display = 'none';
+            document.body.classList.remove('game-over');
             board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(false));
             score = 0;
-            gameOver = false;
-            document.body.classList.remove('game-over');
+            gameClear = false;
             initGame();
         }
 
@@ -1263,9 +1367,25 @@
         testPanel.innerHTML = `
             <button onclick="testCombo()">테스트 콤보</button>
             <button onclick="testCross()">테스트 크로스</button>
+            <button onclick="testGameOver()">게임오버 테스트</button>
+            <button onclick="testGameClear()">게임클리어 테스트</button>
         `;
         testPanel.style.display = 'none';
         document.body.appendChild(testPanel);
+
+        // 테스트용 게임오버 함수
+        function testGameOver() {
+            score = 5000;
+            currentTime = 120;
+            handleGameOver();
+        }
+
+        // 테스트용 게임클리어 함수 
+        function testGameClear() {
+            score = 10000;
+            currentTime = 240;
+            handleGameOver();
+        }
 
         // 스코어 클릭 이벤트 리스너
         document.getElementById('score').addEventListener('click', function() {
@@ -1461,6 +1581,14 @@
                     cell.classList.remove('filled', 'clearing');
                 }, 800);
             });
+        }
+
+        // 시간 업데이트 함수
+        function updateTimer() {
+            if (!isGameRunning) return;
+            const current = Math.floor((Date.now() - gameStartTime) / 1000);
+            currentTime = current;
+            document.querySelector('.time-display').textContent = `⏰ ${current}s`;
         }
     </script>
 </body>
