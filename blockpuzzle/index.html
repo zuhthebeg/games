@@ -103,11 +103,11 @@
         .block-wrapper {
             cursor: grab;
             touch-action: none;
-            transition: transform 0.2s;
-            transform-origin: center;
+            transition: transform 0.3s ease;
             width: fit-content;
             height: fit-content;
-            margin: 2px; /* 상하 여백 축소 */
+            margin: 8px;
+            position: relative; /* 상대 위치 추가 */
         }
 
         .block-grid {
@@ -118,8 +118,8 @@
             border-radius: 3px;
             border: none;
             width: max-content !important;
-            transform-origin: center;
-            transition: none !important;
+            grid-template-columns: repeat(var(--cols, 1), 36px); /* 고정 크기 */
+            grid-auto-rows: 36px; /* 고정 높이 */
         }
 
         /* 빈 셀 스타일 처리 */
@@ -130,12 +130,14 @@
         }
 
         .block-cell {
+            width: 36px !important;    /* 명시적 크기 지정 */
+            height: 36px !important;    /* 36px 고정 */
             background: 
                 linear-gradient(145deg, 
                     #8b4513 0%, 
                     #a0522d 20%, 
                     #8b4513 50%, 
-                    #654321 100%
+                    #654321 100% 
                 ) !important;
             border: 1px solid #5d432f !important;
             box-shadow: 
@@ -451,6 +453,14 @@
                 margin: 1px; /* 모바일 여백 최소화 */
                 transform: scale(0.85);
             }
+            .block-grid {
+                grid-template-columns: repeat(var(--cols, 1), 30px); /* 모바일 30px */
+                grid-auto-rows: 30px;
+            }
+            .block-cell {
+                width: 30px !important;
+                height: 30px !important;
+            }
         }
 
         /* 회전 시 크기 변화 방지 */
@@ -460,8 +470,8 @@
 
         /* 회전 애니메이션 추가 */
         @keyframes smoothRotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(90deg); }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(90deg); }
         }
     </style>
 </head>
@@ -653,9 +663,13 @@
             blockWrapper.className = 'block-wrapper';
             blockWrapper.dataset.pattern = JSON.stringify(pattern);
             
+            const container = document.createElement('div');
+            container.style.display = 'inline-block';
+            container.style.margin = '8px';
+            
             const blockGrid = document.createElement('div');
             blockGrid.className = 'block-grid';
-            blockGrid.style.gridTemplateColumns = `repeat(${pattern[0].length}, ${cellSize}px)`;
+            blockGrid.style.setProperty('--cols', pattern[0].length); /* CSS 변수 사용 */
             
             // 패턴에 따라 셀 크기 동적 조정
             const baseSize = Math.min(cellSize * 0.9, 40); // 최대 40px 제한
@@ -674,7 +688,8 @@
                 });
             });
             
-            blockWrapper.appendChild(blockGrid);
+            container.appendChild(blockGrid);
+            blockWrapper.appendChild(container);
             return blockWrapper;
         }
 
@@ -1135,30 +1150,33 @@
             document.querySelectorAll('.block-wrapper').forEach(block => {
                 const pattern = JSON.parse(block.dataset.pattern);
                 const rotated = rotatePattern(pattern);
+                const blockGrid = block.querySelector('.block-grid');
                 
-                // 그리드 요소 재생성 방식 변경
-                const grid = block.querySelector('.block-grid');
-                grid.style.animation = 'smoothRotate 0.3s ease-in-out'; // 회전 애니메이션 추가
+                // 애니메이션 시작
+                blockGrid.style.transition = 'transform 0.3s ease';
+                blockGrid.style.transform = 'rotate(90deg)';
                 
-                // 기존 요소 제거 대신 스타일 업데이트
-                grid.innerHTML = ''; // 기존 내용 제거
-                rotated.forEach(row => {
-                    row.forEach(cell => {
-                        const div = document.createElement('div');
-                        div.className = cell === 1 ? 'block-cell' : '';
-                        div.style.width = '100%';
-                        div.style.height = '100%';
-                        div.style.minWidth = '30px'; // 크기 고정 추가
-                        div.style.minHeight = '30px';
-                        grid.appendChild(div);
-                    });
-                });
-                
-                // 애니메이션 종료 후 초기화
                 setTimeout(() => {
-                    grid.style.animation = '';
+                    // 실제 패턴 업데이트
+                    blockGrid.style.transition = 'none';
+                    blockGrid.style.transform = 'rotate(0deg)';
+                    
+                    // 그리드 내용 업데이트
+                    blockGrid.innerHTML = ''; // 기존 내용 제거
+                    rotated.forEach(row => {
+                        const rowDiv = document.createElement('div');
+                        rowDiv.style.display = 'contents'; // 레이아웃 유지
+                        row.forEach(cell => {
+                            const cellDiv = document.createElement('div');
+                            cellDiv.className = cell === 1 ? 'block-cell' : '';
+                            rowDiv.appendChild(cellDiv);
+                        });
+                        blockGrid.appendChild(rowDiv);
+                    });
+                    
+                    // 데이터 업데이트
                     block.dataset.pattern = JSON.stringify(rotated);
-                    grid.style.gridTemplateColumns = `repeat(${rotated[0].length}, 30px)`; // 고정 값 사용
+                    blockGrid.style.gridTemplateColumns = `repeat(${rotated[0].length}, 36px)`;
                 }, 300);
             });
         }
