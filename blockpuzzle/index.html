@@ -107,6 +107,11 @@
             0% { transform: scale(0.8); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
         }
+
+        .cell.preview {
+            background-color: rgba(255, 167, 38, 0.3);
+            border: 2px solid #fb8c00;
+        }
     </style>
 </head>
     <!-- Google tag (gtag.js) -->
@@ -138,6 +143,7 @@
         let score = 0;
         let draggedBlock = null;
         let dragOffset = { x: 0, y: 0 };
+        let previewCells = [];
 
         // 블록 패턴
         const BLOCK_PATTERNS = [
@@ -251,6 +257,7 @@
             const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
             
             updateBlockPosition(clientX, clientY);
+            showPreview(clientX, clientY);
         }
 
         // 블록 위치 업데이트
@@ -259,10 +266,43 @@
             draggedBlock.style.top = `${clientY - dragOffset.y}px`;
         }
 
+        function showPreview(x, y) {
+            clearPreview();
+            
+            const boardRect = document.getElementById('board').getBoundingClientRect();
+            if (!isOverBoard(x, y, boardRect)) return;
+
+            const row = Math.floor((y - boardRect.top) / (boardRect.width / BOARD_SIZE));
+            const col = Math.floor((x - boardRect.left) / (boardRect.width / BOARD_SIZE));
+            const pattern = JSON.parse(draggedBlock.dataset.pattern);
+
+            if (canPlaceBlock(row, col, pattern)) {
+                pattern.forEach((patternRow, i) => {
+                    patternRow.forEach((cell, j) => {
+                        if (cell === 1) {
+                            const previewRow = row + i;
+                            const previewCol = col + j;
+                            const cellElement = document.querySelector(
+                                `[data-row="${previewRow}"][data-col="${previewCol}"]`
+                            );
+                            cellElement.classList.add('preview');
+                            previewCells.push(cellElement);
+                        }
+                    });
+                });
+            }
+        }
+
+        function clearPreview() {
+            previewCells.forEach(cell => cell.classList.remove('preview'));
+            previewCells = [];
+        }
+
         // 드래그 종료
         function endDragging(e) {
             if (!draggedBlock) return;
             
+            clearPreview();
             const boardRect = document.getElementById('board').getBoundingClientRect();
             const clientX = e.type === 'mouseup' ? e.clientX : e.changedTouches[0].clientX;
             const clientY = e.type === 'mouseup' ? e.clientY : e.changedTouches[0].clientY;
