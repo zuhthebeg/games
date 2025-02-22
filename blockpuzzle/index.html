@@ -295,6 +295,83 @@
         [data-level="intermediate"] { order: 2; }
         [data-level="advanced"] { order: 3; }
         [data-level="chaos"] { order: 4; }
+
+        /* 게임 오버 오버레이 */
+        body.game-over::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+        }
+
+        .game-over .cell {
+            filter: grayscale(80%);
+            opacity: 0.5;
+        }
+
+        /* 효과 애니메이션 */
+        .score-effect {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ffd54f;
+            text-shadow: 0 0 10px rgba(255,213,79,0.8);
+            animation: scorePop 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+            pointer-events: none;
+            z-index: 2000;
+            text-align: center;
+        }
+
+        @keyframes scorePop {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            50% { text-shadow: 0 0 20px rgba(255,213,79,0.9); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+        }
+
+        /* 콤보별 추가 효과 */
+        .score-effect[data-combo="2"] { color: #2ecc71; }
+        .score-effect[data-combo="3"] { color: #e74c3c; }
+        .score-effect[data-combo^="4"] { color: #9b59b6; animation-duration: 1.5s; }
+
+        /* 크로스 효과 */
+        .score-effect[data-cross="2"] { text-shadow: 0 0 20px #e67e22; }
+        .score-effect[data-cross="3"] { text-shadow: 0 0 30px #e74c3c; }
+
+        .test-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 3000;
+            display: none; /* 초기 상태 숨김 */
+        }
+        
+        .test-panel button {
+            display: block;
+            margin: 5px;
+            padding: 8px 12px;
+            background: #e74c3c;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        .test-panel button:hover {
+            opacity: 1;
+        }
     </style>
 </head>
     <!-- Google tag (gtag.js) -->
@@ -323,6 +400,12 @@
         <div id="block-container" class="block-container"></div>
     </div>
 
+    <!-- 테스트 패널 (실제 게임에는 노출되지 않음) -->
+    <div class="test-panel">
+        <button onclick="testCombo()">테스트 콤보</button>
+        <button onclick="testCross()">테스트 크로스</button>
+    </div>
+
     <script>
         // 게임 상수
         const BOARD_SIZE = 9;
@@ -338,6 +421,11 @@
         // 성능 최적화를 위한 변수 추가
         let lastValidPosition = null;
         const boardCells = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(null));
+
+        // 점수 관련 전역 변수 추가
+        let comboCount = 0;
+        let lastClearTurn = 0;
+        let currentTurn = 0;
 
         // 레벨 시스템 구현 (수정 버전)
         const BLOCK_CATEGORIES = {
@@ -383,6 +471,28 @@
             [[1,1],[1,1],[1,1],[1,1]],   
             [[1,1,1],[1,0,1],[1,1,1]]     
         ];
+
+        // 게임 상태 변수에 gameOver 추가
+        let gameOver = false;
+
+        // 게임 종료 조건 검사 함수
+        function checkGameOver() {
+            const patterns = BLOCK_CATEGORIES[currentLevel];
+            const availableBlocks = document.querySelectorAll('.block-wrapper');
+            
+            // 모든 블록에 대해 배치 가능한 위치 있는지 확인
+            for (const block of availableBlocks) {
+                const pattern = JSON.parse(block.dataset.pattern);
+                for (let y = 0; y < BOARD_SIZE - pattern.length + 1; y++) {
+                    for (let x = 0; x < BOARD_SIZE - pattern[0].length + 1; x++) {
+                        if (isValidPosition(y, x, pattern)) {
+                            return false; // 배치 가능한 위치 존재
+                        }
+                    }
+                }
+            }
+            return true; // 모든 블록 배치 불가
+        }
 
         // 난이도 변경 함수 수정
         function setDifficulty(level) {
@@ -678,6 +788,12 @@
             });
             score += pattern.flat().filter(cell => cell === 1).length;
             updateScore();
+            
+            if (checkGameOver()) {
+                handleGameOver();
+            } else {
+                generateNewBlocks();
+            }
         }
 
         // 줄 확인
@@ -767,8 +883,169 @@
             });
         });
 
+        // 게임 오버 처리
+        function handleGameOver() {
+            gameOver = true;
+            document.body.classList.add('game-over');
+            setTimeout(() => {
+                alert(`Game Over! Final Score: ${score}`);
+                resetGame();
+            }, 300);
+        }
+
+        // 게임 리셋
+        function resetGame() {
+            board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(false));
+            score = 0;
+            gameOver = false;
+            document.body.classList.remove('game-over');
+            initGame();
+        }
+
         // initGame 호출로 게임 시작
         initGame();
+
+        function clearLines() {
+            const linesToClear = [];
+            let crossCount = 0;
+
+            // 가로/세로 라인 검사
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                if (board[i].every(cell => cell)) linesToClear.push({type: 'row', index: i});
+                if (board.map(row => row[i]).every(cell => cell)) linesToClear.push({type: 'col', index: i});
+            }
+
+            // 크로스 계산
+            crossCount = linesToClear.length;
+
+            // 라인 클리어 애니메이션
+            linesToClear.forEach(line => {
+                const cells = line.type === 'row' 
+                    ? boardCells[line.index] 
+                    : boardCells.map(row => row[line.index]);
+                
+                cells.forEach(cell => {
+                    cell.classList.add('clearing');
+                    setTimeout(() => cell.classList.remove('clearing'), 800);
+                });
+            });
+
+            // 콤보 시스템
+            currentTurn++;
+            if (linesToClear.length > 0) {
+                if (currentTurn - lastClearTurn === 1) comboCount++;
+                else comboCount = 1;
+                lastClearTurn = currentTurn;
+            }
+
+            // 점수 계산
+            const baseScore = linesToClear.length * 10;
+            const comboMultiplier = Math.max(1, comboCount);
+            const crossMultiplier = Math.max(1, crossCount);
+            const totalScore = baseScore * comboMultiplier * crossMultiplier;
+            
+            score += totalScore;
+            updateScore();
+
+            // 효과 표시
+            if (comboCount > 1 || crossCount > 1) {
+                showEffect({
+                    combo: comboCount,
+                    cross: crossCount,
+                    score: totalScore
+                });
+            }
+
+            // 실제 보드 업데이트
+            linesToClear.forEach(line => {
+                if (line.type === 'row') {
+                    board[line.index].fill(false);
+                } else {
+                    board.forEach(row => row[line.index] = false);
+                }
+            });
+
+            return linesToClear.length > 0;
+        }
+
+        function showEffect({combo, cross, score}) {
+            const effectDiv = document.createElement('div');
+            effectDiv.className = 'score-effect';
+            
+            let effectText = '';
+            if (cross > 1) effectText += `${cross} CROSS! `;
+            if (combo > 1) effectText += `${combo} COMBO! `;
+            effectText += `+${score}`;
+
+            effectDiv.textContent = effectText;
+            document.body.appendChild(effectDiv);
+
+            setTimeout(() => {
+                effectDiv.remove();
+            }, 2000);
+        }
+
+        // 테스트용 함수
+        function testCombo() {
+            const testCases = [
+                { lines: 1, combo: 1 },
+                { lines: 1, combo: 2 },
+                { lines: 1, combo: 3 },
+                { lines: 1, combo: 4 }
+            ];
+            
+            testCases.forEach((tc, i) => {
+                setTimeout(() => {
+                    showEffect({
+                        combo: tc.combo,
+                        cross: tc.lines,
+                        score: 10 * tc.lines * tc.combo
+                    });
+                }, i * 1000);
+            });
+        }
+
+        function testCross() {
+            const testCases = [
+                { lines: 2, combo: 1 },
+                { lines: 3, combo: 1 },
+                { lines: 2, combo: 2 },
+                { lines: 3, combo: 3 }
+            ];
+            
+            testCases.forEach((tc, i) => {
+                setTimeout(() => {
+                    showEffect({
+                        combo: tc.combo,
+                        cross: tc.lines,
+                        score: 10 * tc.lines * tc.combo
+                    });
+                }, i * 1000);
+            });
+        }
+
+        // 테스트 패널 토글 기능 추가
+        let testClickCount = 0;
+        const testPanel = document.createElement('div');
+        testPanel.className = 'test-panel';
+        testPanel.innerHTML = `
+            <button onclick="testCombo()">테스트 콤보</button>
+            <button onclick="testCross()">테스트 크로스</button>
+        `;
+        testPanel.style.display = 'none';
+        document.body.appendChild(testPanel);
+
+        // 스코어 클릭 이벤트 리스너
+        document.getElementById('score').addEventListener('click', function() {
+            testClickCount++;
+            if (testClickCount >= 5) {
+                testPanel.style.display = 'block';
+                setTimeout(() => {
+                    testPanel.style.display = 'none';
+                    testClickCount = 0;
+                }, 5000); // 5초 후 자동 숨김
+            }
+        });
     </script>
 </body>
 </html>
