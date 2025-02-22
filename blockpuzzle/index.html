@@ -635,6 +635,21 @@
             background: #8b6b4d;
             transform: scale(1.05);
         }
+
+        /* 효과 애니메이션 조정 */
+        .score-effect.combo {
+            animation: scorePop 1s ease-out forwards;
+        }
+        .score-effect.cross {
+            animation: crossPop 1s ease-out forwards;
+            z-index: 2001; /* 콤보 위에 표시 */
+        }
+
+        @keyframes crossPop {
+            0% { transform: translateY(0) scale(0); opacity: 0; }
+            50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-40px) scale(1); opacity: 0; }
+        }
     </style>
 </head>
     <!-- Google tag (gtag.js) -->
@@ -670,6 +685,8 @@
     <div class="test-panel">
         <button onclick="testCombo()">테스트 콤보</button>
         <button onclick="testCross()">테스트 크로스</button>
+        <button onclick="testGameOver()">게임오버 테스트</button>
+        <button onclick="testGameClear()">게임클리어 테스트</button>
     </div>
 
     <!-- 힌트 패널 수정 -->
@@ -1217,30 +1234,43 @@
             }
 
             // 크로스 계산 (가로+세로 동시 클리어)
-            const crossCount = rows.length + cols.length > 1 ? rows.length + cols.length : 0;
+            let crossCount = 0;
+            rows.forEach(r => {
+                cols.forEach(c => {
+                    if (board[r][c]) { // 교차점이 실제 채워져 있었는지 확인
+                        crossCount++;
+                    }
+                });
+            });
 
             // 클리어 애니메이션 처리
             rows.forEach(row => clearLine(row, 'row'));
             cols.forEach(col => clearLine(col, 'column'));
 
             if (linesCleared > 0) {
-                comboCount++; // 무조건 콤보 증가
+                comboCount = linesCleared;
                 lastClearTurn = currentTurn;
 
-                const baseScore = linesCleared * 100;
-                const comboBonus = 1 + (comboCount * 0.5); // 기본 1배 보장
-                const crossBonus = crossCount > 1 ? 1 + (crossCount * 0.3) : 1;
-                const totalScore = Math.round(baseScore * comboBonus * crossBonus);
+                const baseScore = 100 * linesCleared;
+                const crossBonus = crossCount > 0 ? 2 : 1;
+                const totalScore = baseScore * crossBonus;
 
                 score += totalScore;
                 updateScore();
+                
+                // 콤보 효과 표시 (항상 실행)
                 showEffect({
-                    combo: comboCount, // 현재 콤보 수 전달
-                    cross: crossCount,
-                    score: totalScore
+                    combo: linesCleared,
+                    score: baseScore
                 });
-            } else {
-                comboCount = 0; // 줄 클리어 실패 시 콤보 리셋
+                
+                // 크로스 추가 효과 표시
+                if(crossCount > 0) {
+                    showEffect({
+                        cross: crossCount,
+                        score: totalScore - baseScore
+                    });
+                }
             }
 
             return linesCleared > 0;
@@ -1291,34 +1321,25 @@
         initGame();
 
         // 수정된 showEffect 함수
-        function showEffect({combo, cross, score, type}) {
+        function showEffect({combo, cross, score}) {
             const effectDiv = document.createElement('div');
-            effectDiv.className = `score-effect ${type || ''}`;
+            effectDiv.className = `score-effect ${cross ? 'cross' : 'combo'}`;
             
-            if(type === 'deduction') {
-                effectDiv.textContent = `-${score}`;
-            } else {
-                // 콤보/크로스 조합에 따른 스타일 설정
-                if(combo >= 1 && cross >= 1) {  // 1이상 조건으로 변경
-                    effectDiv.dataset.both = true;
-                    effectDiv.textContent = `${combo} Combo! ✖ ${cross} Cross! +${score}`;
-                } 
-                else if(combo >= 1) {  // >1에서 >=1로 조건 변경
-                    effectDiv.dataset.combo = combo;
-                    effectDiv.textContent = `${combo} Combo! +${score}`;
-                }
-                else if(cross >= 1) {  // >1에서 >=1로 조건 변경
-                    effectDiv.dataset.cross = cross;
-                    effectDiv.textContent = `${cross} Cross! +${score}`;
-                }
+            if(combo) {
+                effectDiv.dataset.combo = combo;
+                effectDiv.textContent = `${combo} Combo! +${score}`;
+                effectDiv.style.color = '#e74c3c'; // 빨간색
+            }
+            else if(cross) {
+                effectDiv.dataset.cross = cross;
+                effectDiv.textContent = `X${cross} Cross! +${score}`;
+                effectDiv.style.color = '#3498db'; // 파란색
+                effectDiv.style.marginTop = '30px'; // 위치 조정
             }
             
-            // 랜덤 위치 설정
-            effectDiv.style.left = `calc(50% + ${Math.random() * 20 - 10}px)`;
-            effectDiv.style.transform = `translate(-50%, -50%) rotate(${Math.random() * 10 - 5}deg)`;
-            
+            effectDiv.style.left = `calc(50% + ${Math.random()*40-20}px)`;
             document.body.appendChild(effectDiv);
-            setTimeout(() => effectDiv.remove(), 5000);
+            setTimeout(() => effectDiv.remove(), 3000);
         }
 
         // 테스트용 함수
