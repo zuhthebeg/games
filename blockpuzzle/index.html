@@ -340,27 +340,61 @@
             font-weight: bold;
             color: #ffd54f;
             text-shadow: 0 0 10px rgba(255,213,79,0.8);
-            animation: scorePop 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+            animation: scorePop 3s cubic-bezier(0.33, 1, 0.68, 1) forwards;
             pointer-events: none;
             z-index: 2000;
             text-align: center;
         }
 
         @keyframes scorePop {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
-            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-            50% { text-shadow: 0 0 20px rgba(255,213,79,0.9); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            0% { 
+                opacity: 0; 
+                transform: translate(-50%, -50%) scale(0) rotate(-15deg);
+                filter: blur(5px);
+            }
+            20% { 
+                opacity: 1; 
+                transform: translate(-50%, -50%) scale(1.5) rotate(5deg);
+                filter: blur(0);
+            }
+            40% {
+                text-shadow: 0 0 30px rgba(255,213,79,0.9),
+                             0 0 20px rgba(231,76,60,0.8);
+            }
+            60% {
+                transform: translate(-50%, -50%) scale(1.2) translateY(-50px) rotate(10deg);
+            }
+            100% { 
+                opacity: 0; 
+                transform: translate(-50%, -50%) scale(0.8) translateY(-150px) rotate(15deg);
+                filter: blur(2px);
+            }
         }
 
-        /* 콤보별 추가 효과 */
-        .score-effect[data-combo="2"] { color: #2ecc71; }
-        .score-effect[data-combo="3"] { color: #e74c3c; }
-        .score-effect[data-combo^="4"] { color: #9b59b6; animation-duration: 1.5s; }
+        /* 콤보별 추가 효과 확장 */
+        .score-effect[data-combo="2"] { 
+            color: #2ecc71;
+            text-shadow: 0 0 20px rgba(46,204,113,0.7);
+        }
+        .score-effect[data-combo="3"] { 
+            color: #e74c3c;
+            text-shadow: 0 0 25px rgba(231,76,60,0.8);
+        }
+        .score-effect[data-combo^="4"] { 
+            color: #9b59b6;
+            text-shadow: 0 0 30px rgba(155,89,182,0.9);
+            animation-duration: 2.2s;
+        }
 
-        /* 크로스 효과 */
-        .score-effect[data-cross="2"] { text-shadow: 0 0 20px #e67e22; }
-        .score-effect[data-cross="3"] { text-shadow: 0 0 30px #e74c3c; }
+        /* 크로스 효과 강화 */
+        .score-effect[data-cross="2"] { 
+            text-shadow: 0 0 30px #e67e22,
+                         0 0 15px rgba(230,126,34,0.6);
+        }
+        .score-effect[data-cross="3"] { 
+            text-shadow: 0 0 40px #e74c3c,
+                         0 0 25px rgba(231,76,60,0.7);
+        }
 
         .test-panel {
             position: fixed;
@@ -472,6 +506,25 @@
         @keyframes smoothRotate {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(90deg); }
+        }
+
+        .score-effect[data-combo] {
+            color: #ff4757 !important; /* 빨강 */
+            text-shadow: 0 0 30px rgba(255,71,87,0.7);
+        }
+
+        .score-effect[data-cross] {
+            color: #2d98da !important; /* 파랑 */
+            text-shadow: 0 0 30px rgba(45,152,218,0.7);
+        }
+
+        .score-effect[data-both] {
+            color: #a55eea !important; /* 보라 */
+            text-shadow: 
+                0 0 30px rgba(165,94,234,0.7),
+                0 0 20px rgba(255,71,87,0.4),
+                0 0 20px rgba(45,152,218,0.4);
+            font-size: 3.2em;
         }
     </style>
 </head>
@@ -728,13 +781,28 @@
         // 드래그 중
         function handleDrag(e) {
             if (!draggedBlock) return;
-            e.preventDefault();
             
-            const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
-            const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+            try {
+                e.preventDefault();
+                const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+                const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+                
+                updateBlockPosition(clientX, clientY);
+                isValidDrag = checkValidDragPosition(clientX, clientY); // 유효 위치 확인
+                showPreview(clientX, clientY);
+            } catch (error) {
+                console.error('Drag error:', error);
+                safeResetDraggedBlock();
+            }
+        }
+
+        function checkValidDragPosition(x, y) {
+            const board = document.getElementById('board');
+            if (!board) return false;
             
-            updateBlockPosition(clientX, clientY);
-            showPreview(clientX, clientY);
+            const rect = board.getBoundingClientRect();
+            return x >= rect.left && x <= rect.right &&
+                   y >= rect.top && y <= rect.bottom;
         }
 
         // 블록 위치 업데이트
@@ -825,24 +893,50 @@
         function endDragging(e) {
             if (!draggedBlock) return;
             
-            clearPreview();
-            const boardRect = document.getElementById('board').getBoundingClientRect();
-            const clientX = e.type === 'mouseup' ? e.clientX : e.changedTouches[0].clientX;
-            const clientY = e.type === 'mouseup' ? e.clientY : e.changedTouches[0].clientY;
-            
-            if (isOverBoard(clientX, clientY, boardRect)) {
-                const pattern = JSON.parse(draggedBlock.dataset.pattern);
-                // 미리보기 계산과 동일한 로직 사용
-                const cellSize = boardRect.width / BOARD_SIZE;
-                const row = Math.round((clientY - boardRect.top - cellSize/2) / cellSize);
-                const col = Math.round((clientX - boardRect.left - cellSize/2) / cellSize);
-                const adjustRow = row - Math.floor(pattern.length/2);
-                const adjustCol = col - Math.floor(pattern[0].length/2);
+            // 안전한 DOM 접근
+            const board = document.getElementById('board');
+            if (!board) return;
+
+            try {
+                clearPreview();
+                const boardRect = board.getBoundingClientRect();
+                const clientX = e.type === 'mouseup' ? e.clientX : e.changedTouches[0].clientX;
+                const clientY = e.type === 'mouseup' ? e.clientY : e.changedTouches[0].clientY;
                 
-                tryPlaceBlock(adjustRow, adjustCol);
+                if (isOverBoard(clientX, clientY, boardRect) && isValidDrag) {
+                    const pattern = JSON.parse(draggedBlock.dataset.pattern);
+                    const cellSize = boardRect.width / BOARD_SIZE;
+                    const row = Math.round((clientY - boardRect.top - cellSize/2) / cellSize);
+                    const col = Math.round((clientX - boardRect.left - cellSize/2) / cellSize);
+                    const adjustRow = row - Math.floor(pattern.length/2);
+                    const adjustCol = col - Math.floor(pattern[0].length/2);
+                    
+                    tryPlaceBlock(adjustRow, adjustCol);
+                }
+            } catch (error) {
+                console.error('Drag end error:', error);
+            } finally {
+                safeResetDraggedBlock();
             }
-            
-            resetDraggedBlock();
+        }
+
+        function safeResetDraggedBlock() {
+            if (draggedBlock) {
+                // 안전한 스타일 복구
+                if (draggedBlock.style) {
+                    draggedBlock.style.position = '';
+                    draggedBlock.style.left = '';
+                    draggedBlock.style.top = '';
+                    draggedBlock.style.zIndex = '';
+                }
+                // 부모 노드가 존재하면 원래 위치로 복구
+                if (draggedBlock.parentNode) {
+                    const container = document.getElementById('block-container');
+                    if (container) container.appendChild(draggedBlock);
+                }
+                draggedBlock = null;
+            }
+            isValidDrag = false;
         }
 
         // 보드 위에 있는지 확인
@@ -996,17 +1090,6 @@
             }
         }
 
-        // 드래그된 블록 리셋
-        function resetDraggedBlock() {
-            if (draggedBlock) {
-                draggedBlock.style.position = '';
-                draggedBlock.style.left = '';
-                draggedBlock.style.top = '';
-                draggedBlock.style.zIndex = '';
-                draggedBlock = null;
-            }
-        }
-
         // 점수 업데이트
         function updateScore() {
             document.getElementById('score').textContent = score;
@@ -1050,17 +1133,26 @@
             const effectDiv = document.createElement('div');
             effectDiv.className = 'score-effect';
             
-            // 데이터 속성 추가
-            if(combo > 1) effectDiv.dataset.combo = combo;
-            if(cross > 1) effectDiv.dataset.cross = cross;
-            
-            effectDiv.textContent = 
-                (cross > 1 ? `${cross}CROSS ` : '') + 
-                (combo > 1 ? `${combo}COMBO ` : '') + 
-                `+${score}`;
+            // 콤보/크로스 조합에 따른 스타일 설정
+            if(combo > 1 && cross > 1) {
+                effectDiv.dataset.both = true;
+                effectDiv.textContent = `${combo} Combo! ✖ ${cross} Cross! +${score}`;
+            } 
+            else if(combo > 1) {
+                effectDiv.dataset.combo = combo;
+                effectDiv.textContent = `${combo} Combo! +${score}`;
+            }
+            else if(cross > 1) {
+                effectDiv.dataset.cross = cross;
+                effectDiv.textContent = `${cross} Cross! +${score}`;
+            }
 
+            // 랜덤 위치 설정
+            effectDiv.style.left = `calc(50% + ${Math.random() * 20 - 10}px)`;
+            effectDiv.style.transform = `translate(-50%, -50%) rotate(${Math.random() * 10 - 5}deg)`;
+            
             document.body.appendChild(effectDiv);
-            setTimeout(() => effectDiv.remove(), 1200);
+            setTimeout(() => effectDiv.remove(), 5000);
         }
 
         // 테스트용 함수
