@@ -899,11 +899,13 @@
         // 줄 확인
         function checkLines() {
             let linesCleared = 0;
-            
+            const rows = [];
+            const cols = [];
+
             // 가로줄 확인
             for (let row = 0; row < BOARD_SIZE; row++) {
                 if (board[row].every(cell => cell)) {
-                    clearLine(row, 'row');
+                    rows.push(row);
                     linesCleared++;
                 }
             }
@@ -911,15 +913,39 @@
             // 세로줄 확인
             for (let col = 0; col < BOARD_SIZE; col++) {
                 if (board.every(row => row[col])) {
-                    clearLine(col, 'column');
+                    cols.push(col);
                     linesCleared++;
                 }
             }
-            
+
+            // 크로스 계산 (가로+세로 동시 클리어)
+            const crossCount = rows.length + cols.length > 1 ? rows.length + cols.length : 0;
+
+            // 클리어 애니메이션 처리
+            rows.forEach(row => clearLine(row, 'row'));
+            cols.forEach(col => clearLine(col, 'column'));
+
             if (linesCleared > 0) {
-                score += linesCleared * 100;
+                currentTurn++;
+                const isConsecutive = currentTurn - lastClearTurn === 1;
+                comboCount = isConsecutive ? comboCount + 1 : 1;
+                lastClearTurn = currentTurn;
+
+                const baseScore = linesCleared * 100;
+                const comboBonus = comboCount > 1 ? comboCount * 0.5 : 1;
+                const crossBonus = crossCount > 1 ? crossCount * 0.7 : 1;
+                const totalScore = Math.round(baseScore * comboBonus * crossBonus);
+
+                score += totalScore;
                 updateScore();
+                showEffect({
+                    combo: comboCount,
+                    cross: crossCount,
+                    score: totalScore
+                });
             }
+
+            return linesCleared > 0;
         }
 
         // 줄 제거
@@ -1005,84 +1031,21 @@
         // initGame 호출로 게임 시작
         initGame();
 
-        function clearLines() {
-            const linesToClear = [];
-            let crossCount = 0;
-
-            // 가로/세로 라인 검사
-            for (let i = 0; i < BOARD_SIZE; i++) {
-                if (board[i].every(cell => cell)) linesToClear.push({type: 'row', index: i});
-                if (board.map(row => row[i]).every(cell => cell)) linesToClear.push({type: 'col', index: i});
-            }
-
-            // 크로스 계산
-            crossCount = linesToClear.length;
-
-            // 라인 클리어 애니메이션
-            linesToClear.forEach(line => {
-                const cells = line.type === 'row' 
-                    ? boardCells[line.index] 
-                    : boardCells.map(row => row[line.index]);
-                
-                cells.forEach(cell => {
-                    cell.classList.add('clearing');
-                    setTimeout(() => cell.classList.remove('clearing'), 800);
-                });
-            });
-
-            // 콤보 시스템
-            currentTurn++;
-            if (linesToClear.length > 0) {
-                if (currentTurn - lastClearTurn === 1) comboCount++;
-                else comboCount = 1;
-                lastClearTurn = currentTurn;
-            }
-
-            // 점수 계산
-            const baseScore = linesToClear.length * 10;
-            const comboMultiplier = Math.max(1, comboCount);
-            const crossMultiplier = Math.max(1, crossCount);
-            const totalScore = baseScore * comboMultiplier * crossMultiplier;
-            
-            score += totalScore;
-            updateScore();
-
-            // 효과 표시
-            if (comboCount > 1 || crossCount > 1) {
-                showEffect({
-                    combo: comboCount,
-                    cross: crossCount,
-                    score: totalScore
-                });
-            }
-
-            // 실제 보드 업데이트
-            linesToClear.forEach(line => {
-                if (line.type === 'row') {
-                    board[line.index].fill(false);
-                } else {
-                    board.forEach(row => row[line.index] = false);
-                }
-            });
-
-            return linesToClear.length > 0;
-        }
-
         function showEffect({combo, cross, score}) {
             const effectDiv = document.createElement('div');
             effectDiv.className = 'score-effect';
             
-            let effectText = '';
-            if (cross > 1) effectText += `${cross} CROSS! `;
-            if (combo > 1) effectText += `${combo} COMBO! `;
-            effectText += `+${score}`;
+            // 데이터 속성 추가
+            if(combo > 1) effectDiv.dataset.combo = combo;
+            if(cross > 1) effectDiv.dataset.cross = cross;
+            
+            effectDiv.textContent = 
+                (cross > 1 ? `${cross}CROSS ` : '') + 
+                (combo > 1 ? `${combo}COMBO ` : '') + 
+                `+${score}`;
 
-            effectDiv.textContent = effectText;
             document.body.appendChild(effectDiv);
-
-            setTimeout(() => {
-                effectDiv.remove();
-            }, 2000);
+            setTimeout(() => effectDiv.remove(), 1200);
         }
 
         // 테스트용 함수
