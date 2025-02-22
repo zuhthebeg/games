@@ -658,6 +658,17 @@
             75% { transform: translate(-50%, -50%) translateX(-5px) rotate(-3deg) scale(1.1); }
         }
     </style>
+    <!-- SEO 최적화 -->
+    <meta name="keywords" content="Block Puzzle, 블록 퍼즐, Brain Game, 두뇌 게임, Puzzle Strategy, 퍼즐 전략, Casual Game, 캐주얼 게임, Block Fitting, 블록 맞추기, Time Killer, 시간 떼우기, Logic Game, 논리 게임, Free Puzzle, 무료 퍼즐, Online Puzzle, 온라인 퍼즐">
+    <meta name="description" content="전략적인 블록 배치로 고득점을 노려보세요! 2D 블록 퍼즐 게임으로 공간 인지력과 문제 해결 능력을 키울 수 있는 중독성 강한 퍼즐 게임">
+    <meta name="author" content="COCY.IO">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Block Puzzle Master - COCY.IO">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://game.cocy.io/blockpuzzle/icons.svg">
+    <meta property="og:url" content="https://game.cocy.io/blockpuzzle/">
+    <meta property="og:description" content="도전적인 블록 배치 게임! 최고 점수를 달성하고 친구들과 경쟁해보세요">
 </head>
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-MHYFCQ35XR"></script>
@@ -710,6 +721,35 @@
         <p>Score: <span id="popupScore">0</span></p>
         <p>Time: <span id="popupTime">0</span>s</p>
         <button onclick="resetGame()">Play Again</button>
+    </div>
+
+    <!-- 푸터 섹션 -->
+    <div style="
+        text-align: center;
+        padding: 20px 0;
+        color: #888;
+        font-family: 'Arial', sans-serif;
+        position: relative;
+        z-index: 100;
+        background: rgba(255,255,255,0.1);
+        margin-top: 30px;
+    ">
+        <a href="https://cocy.io" 
+           target="_blank" 
+           style="
+               color: #6b4f40;
+               text-decoration: none;
+               font-weight: bold;
+               transition: color 0.3s;
+               display: inline-block;
+               margin: 0 10px;
+           "
+           onmouseover="this.style.color='#8b7355'" 
+           onmouseout="this.style.color='#6b4f40'">
+            COCY.IO
+        </a>
+        <span style="color: #666;">|</span>
+        <span style="font-size: 0.9em;">All rights reserved © 2025</span>
     </div>
 
     <script>
@@ -822,13 +862,11 @@
             }
             if(hasPossibleMoves) return false;
 
-            // 2. 힌트 사용 가능성 재확인 (실제 사용 가능한지)
-            const canRefresh = (score - HINT_COSTS.refresh) >= 0;
-            const canRotate = (score - HINT_COSTS.rotate) >= 0;
-            const canPlacement = (score - HINT_COSTS.placement) >= 0;
+            // 2. 모든 힌트 사용 가능 여부 확인 (실제 사용 가능한지)
+            const canUseAnyHint = Object.values(HINT_COSTS).some(cost => score >= cost);
             
             // 3. 최종 판단
-            return !(canRefresh || canRotate || canPlacement);
+            return !canUseAnyHint;
         }
 
         // 패턴 배치 가능 여부 확인 함수
@@ -1522,8 +1560,11 @@
             const cost = HINT_COSTS.refresh;
             score -= cost;
             updateScore();
-            showEffect({ score: cost, type: 'deduction' }); // 차감 효과 표시
+            showEffect({ score: cost, type: 'deduction' });
             generateNewBlocks(true);
+            
+            // 힌트 사용 후 게임 오버 확인
+            if(checkGameOver()) handleGameOver();
         }
 
         // 수정된 rotateCurrentBlocks 함수
@@ -1532,7 +1573,7 @@
             const cost = HINT_COSTS.rotate;
             score -= cost;
             updateScore();
-            showEffect({ score: cost, type: 'deduction' }); // 차감 효과 표시
+            showEffect({ score: cost, type: 'deduction' });
             
             // 기존 회전 로직 유지
             document.querySelectorAll('.block-wrapper').forEach(block => {
@@ -1567,6 +1608,9 @@
                     blockGrid.style.gridTemplateColumns = `repeat(${rotated[0].length}, 36px)`;
                 }, 300);
             });
+            
+            // 힌트 사용 후 게임 오버 확인
+            if(checkGameOver()) handleGameOver();
         }
 
         // 수정된 showPossiblePlacement 함수
@@ -1603,6 +1647,9 @@
             } else {
                 setTimeout(clearHintPreview, 5000);
             }
+            
+            // 힌트 사용 후 게임 오버 확인
+            if(checkGameOver()) handleGameOver();
         }
 
         // 수정된 highlightPossibleArea 함수
