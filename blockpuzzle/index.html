@@ -220,6 +220,69 @@
         .block-grid[style*="repeat(4"] { transform: scale(0.75); }
         .block-grid[style*="repeat(3"] { transform: scale(0.8); }
         .block-grid[style*="repeat(2"] { transform: scale(0.9); }
+
+        /* 난이도 선택기 재디자인 */
+        .difficulty-picker {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            padding: 12px;
+            background: #8b6b4d;
+            border-radius: 15px;
+            margin: 20px auto;
+            width: 280px;
+            border: 3px solid #5d432f;
+            position: relative;
+        }
+
+        .difficulty-btn {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #a78b72;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            position: relative;
+            color: #fff3e0;
+        }
+
+        .difficulty-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        .difficulty-btn:hover::after {
+            opacity: 1;
+        }
+
+        .difficulty-btn.active {
+            background: #6b4f40;
+            transform: scale(1.15) rotate(8deg);
+            box-shadow: 0 4px 20px rgba(255,213,79,0.4);
+            filter: brightness(1.2);
+        }
+
+        /* 난이도별 아이콘 디테일 */
+        [data-level="beginner"] { background: #8b4513; content: '🪵'; }
+        [data-level="intermediate"] { background: #2e8b57; }
+        [data-level="advanced"] { background: #b22222; }
+        [data-level="chaos"] { background: #4b0082; }
     </style>
 </head>
     <!-- Google tag (gtag.js) -->
@@ -236,6 +299,20 @@
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MJPN92FN"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
+    <div class="difficulty-picker">
+        <button class="difficulty-btn active" 
+                data-level="intermediate"
+                data-tooltip="Basic (Tetris Blocks)">⎔</button>
+        <button class="difficulty-btn" 
+                data-level="beginner"
+                data-tooltip="Simple Shapes">🪵</button>
+        <button class="difficulty-btn" 
+                data-level="advanced"
+                data-tooltip="Complex Blocks">🔥</button>
+        <button class="difficulty-btn" 
+                data-level="chaos"
+                data-tooltip="All Mix">🌪️</button>
+    </div>
     <div class="game-container">
         <div class="score">Score: <span id="score">0</span></div>
         <div id="board" class="board"></div>
@@ -246,59 +323,73 @@
         // 게임 상수
         const BOARD_SIZE = 9;
         
-        // 게임 상태 변수
+        // 게임 상태 변수 선언 부분 수정
         let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(false));
         let score = 0;
         let draggedBlock = null;
         let dragOffset = { x: 0, y: 0 };
         let previewCells = [];
+        let currentLevel = 'intermediate'; // 전역 변수로 이동
 
-        // 블록 패턴 확장 (테트리스 7종 + 기존 5종 + 새로 추가된 ㄱ자 블록 4방향)
-        const BLOCK_PATTERNS = [
-            // 테트리스 블록
-            [[1,1,1,1]],          // I
-            [[1,1],[1,1]],        // O
-            [[1,1,1],[0,1,0]],    // T
-            [[1,1,0],[0,1,1]],    // S
-            [[0,1,1],[1,1,0]],    // Z
-            [[1,1,1],[1,0,0]],    // J
-            [[1,1,1],[0,0,1]],    // L
-            // 새로 추가된 ㄱ자 블록 (4방향)
-            [[1,1],[1,0]],        // 기본 ㄱ
-            [[1,0],[1,1]],        // 90도 회전
-            [[0,1],[1,1]],        // 180도 회전  
-            [[1,1],[0,1]],        // 270도 회전
-            // 기존 블록들
-            [[1]],
-            [[1,1]],
-            [[1],[1]],
-            [[1,1,1]],
-            [[1,1],[1,1]],
-            // 5칸 블록들
-            [[1,1,1,1,1]],                    // I-5 (5x1)
-            [[1,1,1],[1,0,0],[1,0,0]],        // L-5
-            [[1,1,1],[0,1,0],[0,1,0]],        // T-5 
-            [[1,1],[1,1],[1,0]],              // 계단형 5
-            [[1,1,1,1],[0,0,0,1]],            // J-5
-            // 6칸 블록들
-            [[1,1,1],[1,1,1]],                // 3x2 사각형
-            [[1,1,1,1],[1,1,0,0]],            // 4x2 ㄱ자
-            [[1,1,1],[1,0,1],[1,0,1]],        // H형 터널
-            [[1,0,1],[1,1,1],[1,0,1]],        // 십자형
-            // 7칸 블록들
-            [[1,1,1,1],[1,1,1,0]],            // 4x2 ㄹ자
-            [[1,1,1],[1,1,1],[1,0,0]],        // 대형 L
-            [[1,1,1,1,1],[0,1,0,0,0]],        // 장착형
-            // 8칸 블록
-            [[1,1,1,1],[1,1,1,1]],            // 4x2 블록
-            [[1,1],[1,1],[1,1],[1,1]],        // 2x4 블록
-            [[1,1,1],[1,0,1],[1,1,1]]          // 프레임형
+        // 레벨 시스템 구현 (수정 버전)
+        const BLOCK_CATEGORIES = {
+            beginner: [ 
+                [[1]],
+                [[1,1]],
+                [[1],[1]],
+                [[1,1,1]],
+                [[1,1],[1,0]],
+                [[1,0],[1,1]],
+                [[0,1],[1,1]],
+                [[1,1],[0,1]]
+            ],
+            intermediate: [ 
+                [[1,1,1,1]],          
+                [[1,1],[1,1]],        
+                [[1,1,1],[0,1,0]],    
+                [[1,1,0],[0,1,1]],    
+                [[0,1,1],[1,1,0]],    
+                [[1,1,1],[1,0,0]],    
+                [[1,1,1],[0,0,1]]     
+            ],
+            advanced: [ 
+                [[1,1,1,1,1]], 
+                [[1,1,1],[1,0,0],[1,0,0]],
+                [[1,1,1],[0,1,0],[0,1,0]],
+                [[1,1],[1,1],[1,0]],
+                [[1,1,1,1],[0,0,0,1]],
+                [[1,1,1],[1,1,1]],
+                [[1,1,1,1],[1,1,0,0]],
+                [[1,1,1],[1,0,1],[1,0,1]],
+                [[1,0,1],[1,1,1],[1,0,1]]
+            ],
+            chaos: [] // 초기 빈 배열
+        };
+
+        // 카오스 배열 별도 초기화
+        BLOCK_CATEGORIES.chaos = [
+            ...BLOCK_CATEGORIES.beginner,
+            ...BLOCK_CATEGORIES.intermediate,
+            ...BLOCK_CATEGORIES.advanced,
+            [[1,1,1,1],[1,1,1,1]],       
+            [[1,1],[1,1],[1,1],[1,1]],   
+            [[1,1,1],[1,0,1],[1,1,1]]     
         ];
 
-        // 게임 초기화
+        // 난이도 변경 함수 수정
+        function setDifficulty(level) {
+            currentLevel = level;
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.level === level);
+            });
+            generateNewBlocks();
+        }
+
+        // 게임 초기화 함수에 난이도 설정 추가
         function initGame() {
             createBoard();
-            generateNewBlocks();
+            currentLevel = 'intermediate'; // 명시적 설정
+            setDifficulty(currentLevel);
             updateScore();
         }
 
@@ -323,11 +414,14 @@
             const container = document.getElementById('block-container');
             container.innerHTML = '';
             
-            const cellSize = document.querySelector('.cell').offsetWidth;
+            // 보드가 초기화되었는지 확인
+            if(!document.querySelector('.cell')) createBoard();
             
-            // 더 다양한 크기 대응을 위한 그리드 사이즈 계산
+            const cellSize = document.querySelector('.cell').offsetWidth;
+            const patterns = BLOCK_CATEGORIES[currentLevel];
+            
             for (let i = 0; i < 3; i++) {
-                const pattern = BLOCK_PATTERNS[Math.floor(Math.random() * BLOCK_PATTERNS.length)];
+                const pattern = patterns[Math.floor(Math.random() * patterns.length)];
                 const blockWrapper = createBlockElement(pattern, cellSize);
                 initDragEvents(blockWrapper);
                 container.appendChild(blockWrapper);
@@ -646,8 +740,20 @@
             document.getElementById('score').textContent = score;
         }
 
-        // 게임 시작
-        document.addEventListener('DOMContentLoaded', initGame);
+        // 이벤트 바인딩 강화
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                setDifficulty(this.dataset.level);
+                // 버튼 애니메이션 효과
+                this.animate([
+                    { transform: 'scale(1.2)', opacity: 0.8 },
+                    { transform: 'scale(1)', opacity: 1 }
+                ], { duration: 300 });
+            });
+        });
+
+        // initGame 호출로 게임 시작
+        initGame();
     </script>
 </body>
 </html>
