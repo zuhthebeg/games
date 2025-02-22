@@ -672,3 +672,22 @@ button:active {
     margin-left: 3px;
 }
 
+.footer {
+    text-align: center;
+    padding: 15px 0;
+    margin-top: 30px;
+    color: #807b7b;
+    font-size: 0.9em;
+    border-top: 1px solid #eee;
+}
+
+.footer a {
+    color: #ecedee;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.footer a:hover {
+    color: #3498db;
+    text-decoration: underline;
+}
