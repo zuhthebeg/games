@@ -1322,25 +1322,30 @@
             cols.forEach(col => clearLine(col, 'column'));
 
             if (linesCleared > 0) {
-                comboCount = linesCleared;
+                // 콤보 계산 로직 개선 (클리어한 줄 수 누적)
+                if(currentTurn - lastClearTurn === 1) {
+                    comboCount += linesCleared; // 연속 턴 시 줄 수 누적
+                } else {
+                    comboCount = linesCleared; // 새 콤보 시작 시 초기화
+                }
                 lastClearTurn = currentTurn;
 
-                const baseScore = 100 * linesCleared;
+                const baseScore = 100 * linesCleared * comboCount; // 줄 수 × 누적 콤보
                 const crossBonus = crossCount > 0 ? 2 : 1;
                 const totalScore = baseScore * crossBonus;
 
                 score += totalScore;
                 updateScore();
                 
-                // 콤보 효과 즉시 표시 (배수 표시 추가)
+                // 콤보 효과 표시
                 showEffect({
-                    text: `${linesCleared} COMBO\n+${baseScore}`,
+                    text: `${comboCount} COMBO\n+${baseScore}`,
                     type: 'combo',
                     fontSize: '2.5em',
                     color: '#ffd54f'
                 });
                 
-                // 크로스 효과 1초 지연 후 표시 (배수 강조)
+                // 크로스 효과 1초 지연 후 표시
                 if(crossCount > 0) {
                     setTimeout(() => {
                         showEffect({
@@ -1352,6 +1357,8 @@
                         });
                     }, 1000);
                 }
+            } else {
+                comboCount = 0; // 클리어 실패 시 콤보 리셋
             }
 
             return linesCleared > 0;
