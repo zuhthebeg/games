@@ -159,7 +159,7 @@
         function initGame() {
             createBoard();
             currentLevel = 'intermediate';
-            setDifficulty(currentLevel); // 초기 설정도 setDifficulty 사용
+            setDifficulty(currentLevel);
             updateScore();
             createHintPanel();
             updateButtonStates();
@@ -170,6 +170,10 @@
             gameClear = false;
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(updateTimer, 1000);
+            
+            // 트로피 버튼 가시성 업데이트
+            const hasRecords = checkExistingRecords();
+            document.querySelector('.trophy-btn').style.display = hasRecords ? 'flex' : 'none';
         }
 
         // 보드 생성
@@ -463,9 +467,8 @@
 
         // 블록 배치 가능 확인
         function canPlaceBlock(row, col, pattern) {
-            // 버퍼 영역 내에서만 체크
-            const buffer = 1;
-            if (row < -buffer || col < -buffer) return false;
+            // 버퍼 영역 체크 제거하고 정확한 경계 검사
+            if (row < 0 || col < 0) return false;
             
             for (let i = 0; i < pattern.length; i++) {
                 for (let j = 0; j < pattern[0].length; j++) {
@@ -473,9 +476,8 @@
                         const newRow = row + i;
                         const newCol = col + j;
                         
-                        if (newRow >= BOARD_SIZE + buffer || 
-                            newCol >= BOARD_SIZE + buffer || 
-                            (newRow >= 0 && newCol >= 0 && board[newRow][newCol])) {
+                        // 보드 경계를 벗어나는지 정확히 검사
+                        if (newRow >= BOARD_SIZE || newCol >= BOARD_SIZE || board[newRow][newCol]) {
                             return false;
                         }
                     }
@@ -1007,28 +1009,35 @@
             return pattern;
         }
 
-        // 추가할 clearLine 함수
+        // 수정된 clearLine 함수 (애니메이션 복구)
         function clearLine(index, type) {
-            // 보드 데이터 업데이트
+            // 애니메이션 시작
             if (type === 'row') {
-                board[index].fill(false);
+                document.querySelectorAll(`[data-row="${index}"]`).forEach(cell => {
+                    cell.classList.add('clearing');
+                });
             } else {
                 for (let row = 0; row < BOARD_SIZE; row++) {
-                    board[row][index] = false;
+                    const cell = document.querySelector(`[data-row="${row}"][data-col="${index}"]`);
+                    cell.classList.add('clearing');
                 }
             }
 
-            // 애니메이션 처리
-            const selector = type === 'row' 
-                ? `[data-row="${index}"]` 
-                : `[data-col="${index}"]`;
-            
-            document.querySelectorAll(selector).forEach(cell => {
-                cell.classList.add('clearing');
-                setTimeout(() => {
-                    cell.classList.remove('filled', 'clearing');
-                }, 800);
-            });
+            // 0.3초 후 데이터 업데이트 및 애니메이션 제거
+            setTimeout(() => {
+                if (type === 'row') {
+                    board[index].fill(false);
+                    document.querySelectorAll(`[data-row="${index}"]`).forEach(cell => {
+                        cell.classList.remove('filled', 'clearing');
+                    });
+                } else {
+                    for (let row = 0; row < BOARD_SIZE; row++) {
+                        board[row][index] = false;
+                        const cell = document.querySelector(`[data-row="${row}"][data-col="${index}"]`);
+                        cell.classList.remove('filled', 'clearing');
+                    }
+                }
+            }, 300); // CSS 애니메이션 시간과 일치
         }
 
         // 시간 업데이트 함수
@@ -1083,7 +1092,6 @@
             
             // 스코어보드 표시 조건 개선
             const hasRecords = records.length > 0;
-            document.getElementById('scoreboard').style.display = hasRecords ? 'block' : 'none';
         }
 
         // 스코어보드 초기화 함수 수정
@@ -1121,6 +1129,7 @@
         window.addEventListener('load', () => {
             const records = JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
             updateScoreboard(records[currentLevel] || []);
+            document.getElementById('scoreboard').classList.remove('visible'); // 확실한 초기화
         });
 
         // 콤보 테스트 셋업 함수 (오른쪽 2열 + 아래쪽 2줄 비우기)
@@ -1223,3 +1232,47 @@
             localStorage.setItem('blockPuzzleRecords', JSON.stringify(records));
             updateScoreboard(records[currentLevel] || []);
         }
+
+        // 스코어보드 토글 함수 추가
+        function toggleScoreboard(e) {
+            e.stopPropagation();
+            const scoreboard = document.getElementById('scoreboard');
+            const isVisible = scoreboard.classList.contains('visible');
+            
+            if(isVisible) {
+                scoreboard.classList.remove('visible');
+                document.removeEventListener('click', closeScoreboardOnOutsideClick);
+            } else {
+                scoreboard.classList.add('visible');
+                document.addEventListener('click', closeScoreboardOnOutsideClick);
+            }
+        }
+
+        function closeScoreboardOnOutsideClick(e) {
+            const scoreboard = document.getElementById('scoreboard');
+            const clickedInsidePopup = scoreboard.contains(e.target);
+            const clickedTrophyBtn = e.target.closest('.trophy-btn');
+            
+            if(!clickedInsidePopup && !clickedTrophyBtn) {
+                scoreboard.classList.remove('visible');
+                document.removeEventListener('click', closeScoreboardOnOutsideClick);
+            }
+        }
+
+        // 기록 존재 여부 확인 함수 추가
+        function checkExistingRecords() {
+            const records = JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
+            return Object.values(records).some(levelRecords => levelRecords.length > 0);
+        }
+
+        // 백드롭 스타일 추가 (CSS)
+        `.scoreboard-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1999;
+            backdrop-filter: blur(3px);
+        }`

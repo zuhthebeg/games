@@ -25,6 +25,13 @@
     <meta property="og:image" content="https://game.cocy.io/blockpuzzle/icons.svg">
     <meta property="og:url" content="https://game.cocy.io/blockpuzzle/">
     <meta property="og:description" content="도전적인 블록 배치 게임! 최고 점수를 달성하고 친구들과 경쟁해보세요">
+
+    <!-- PWA 필수 메타태그 추가 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
 </head>
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-MHYFCQ35XR"></script>
@@ -50,7 +57,10 @@
         <div class="score">
             Score: <span id="score">0</span>
             <div class="time-display">⏰ 0s</div>
-            <button class="auto-demo-btn" onclick="startAutoDemo()">🤖</button>
+            <div class="button-container">
+                <button class="auto-demo-btn" onclick="startAutoDemo()">🤖</button>
+                <button class="trophy-btn" onclick="toggleScoreboard(event)">🏆</button>
+            </div>
         </div>
         <div id="board" class="board"></div>
         <div id="block-container" class="block-container"></div>
@@ -82,22 +92,8 @@
     </div>
 
     <!-- 스코어보드 추가 -->
-    <div id="scoreboard" style="
-        position: fixed;
-        bottom: 5%;
-        left: 10px;
-        background: rgba(107, 79, 64, 0.9);
-        padding: 15px;
-        border-radius: 10px;
-        border: 2px solid #5d432f;
-        color: #fff3e0;
-        z-index: 100;
-        min-width: 180px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        backdrop-filter: blur(5px);
-        display: none;
-    ">
-        <h3 style="margin:0 0 10px 0; color: #ffd54f;">Best Records</h3>
+    <div id="scoreboard" class="scoreboard-popup">
+        <h3>Best Records</h3>
         <div id="scoreList"></div>
     </div>
 

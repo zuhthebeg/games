@@ -81,8 +81,10 @@ body {
     background: #a78b72;
     border-radius: 5px;
     border: 1px solid #8b6b4d;
-    width: fit-content; /* 컨테이너 너비 고정 */
-    margin: 0 auto; /* 중앙 정렬 */
+    width: 372px; /* 고정 너비 설정 */
+    height: 180px; /* 고정 높이 설정 */
+    margin: 0 auto;
+    overflow: hidden; /* 내용이 넘칠 경우 숨김 처리 */
 }
 
 .block-wrapper {
@@ -136,6 +138,15 @@ body {
     margin-bottom: 15px;
     color: #ffd54f; /* 골드색 점수표시 */
     text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.button-container {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
 }
 
 @keyframes fillCell {
@@ -512,7 +523,8 @@ body.game-over::before {
         padding: 5px; /* 패딩 축소 */
     }
     .block-container {
-        gap: 6px; /* 모바일에서 간격 축소 */
+        width: 340px; /* 모바일에서 약간 축소 */
+        height: 160px;
         padding: 8px;
     }
     /*
@@ -777,4 +789,69 @@ body.game-over::before {
 .auto-demo-btn:disabled {
     opacity: 0.6;
     filter: grayscale(0.8);
+}
+
+/* 수정된 스코어보드 스타일 */
+.scoreboard-popup {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(107, 79, 64, 0.95);
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid #5d432f;
+    box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    z-index: 2000;
+    min-width: 300px;
+    max-width: 90vw;
+    color: #fff3e0;
+    display: none; /* 기본값은 숨김 */
+}
+
+.scoreboard-popup.visible {
+    display: block; /* !important 제거 */
+    animation: popupScale 0.3s ease-out;
+}
+
+@keyframes popupScale {
+    0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* 초기 트로피 버튼 숨김 */
+.trophy-btn {
+    display: none; /* 초기값 none으로 설정 */
+    background: linear-gradient(45deg, #ffd54f, #f9a825);
+    border: 2px solid #5d432f;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    margin-left: 10px;
+    font-size: 1.2em;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.trophy-btn:hover {
+    transform: scale(1.1);
+    background: linear-gradient(45deg, #f9a825, #ffd54f);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+/* 추가된 스코어보드 스타일 */
+.scoreboard-popup h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.4em;
+    text-align: center;
+}
+
+#scoreList {
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-right: 10px;
 }

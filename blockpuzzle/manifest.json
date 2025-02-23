@@ -1,7 +1,7 @@
 {
-    "name": "블럭 퍼즐",
-    "short_name": "블럭퍼즐",
-    "description": "블럭 퍼즐 게임",
+    "name": "Block Puzzle",
+    "short_name": "Block Puzzle",
+    "description": "Block Puzzle, 전략적인 블록 배치로 고득점을 노리는 중독성 강한 퍼즐 게임",
     "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#2c3e50",
