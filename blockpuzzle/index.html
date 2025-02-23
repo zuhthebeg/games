@@ -1232,13 +1232,10 @@
         // 블록 배치 시도
         function tryPlaceBlock(row, col) {
             const pattern = JSON.parse(draggedBlock.dataset.pattern);
-            // 미리보기에서 사용한 canPlaceBlock과 동일한 조건
-            if (canPlaceBlock(row, col, pattern)) {  // 음수 체크 제거
+            if (canPlaceBlock(row, col, pattern)) {
                 placeBlock(row, col, pattern);
                 draggedBlock.remove();
-                if (document.querySelectorAll('.block-wrapper').length === 0) {
-                    generateNewBlocks();
-                }
+                generateNewBlocks();
             }
         }
 
@@ -1294,6 +1291,19 @@
                 comboCount = 0;
             }
             
+            // Clean 보너스 체크 (보드 전체가 비어있는지 확인)
+            const isBoardEmpty = board.flat().every(cell => !cell);
+            if(isBoardEmpty) {
+                score += 1000;
+                showEffect({
+                    text: 'Clean! +1000',
+                    color: '#2ecc71',
+                    position: { x: '50%', y: '50%' },
+                    fontSize: '3em'
+                });
+                updateScore();
+            }
+
             if (checkGameOver()) {
                 handleGameOver();
             } else {
@@ -1430,17 +1440,20 @@
             effectDiv.className = 'score-effect';
             effectDiv.textContent = options.text;
             
-            // 기본 위치 설정 추가
-            const defaultPosition = { x: '20%', y: '10%' };
-            effectDiv.style.left = options.position?.x || defaultPosition.x;
-            effectDiv.style.top = options.position?.y || defaultPosition.y;
-            
+            effectDiv.style.left = options.position?.x || '20%';
+            effectDiv.style.top = options.position?.y || '10%';
             effectDiv.style.color = options.color || '#ff0000';
-            effectDiv.style.fontSize = '1.5em';
+            effectDiv.style.fontSize = options.fontSize || '1.5em';
             effectDiv.style.fontWeight = 'bold';
-            effectDiv.style.textShadow = '0 0 8px rgba(255,0,0,0.8)';
+            effectDiv.style.textShadow = `0 0 8px ${options.color ? `${options.color}80` : 'rgba(255,0,0,0.8)'}`;
             effectDiv.style.zIndex = '9999';
             effectDiv.style.position = 'fixed';
+            effectDiv.style.textAlign = 'center';
+            
+            if(options.position?.x === '50%') {
+                effectDiv.style.transform = 'translateX(-50%)';
+            }
+            
             effectDiv.style.animation = 'deductEffect 1s ease-out forwards';
             
             document.body.appendChild(effectDiv);
