@@ -561,18 +561,12 @@
             color: #ff4757 !important; /* 빨간색 */
             text-shadow: 0 0 15px rgba(255, 71, 87, 0.5);
             font-size: 1.8em;
-            animation: scoreDeduction 1.5s ease-out forwards;
+            animation: deductEffect 1s ease-out forwards;
         }
 
-        @keyframes scoreDeduction {
-            0% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -150%) scale(0.8);
-            }
+        @keyframes deductEffect {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-50px); }
         }
 
         /* 시간 표시 스타일 수정 */
@@ -667,6 +661,29 @@
             0% { transform: translateY(0) scale(1); opacity: 0; }
             30% { transform: translateY(-50px) scale(1.5); opacity: 1; }
             100% { transform: translateY(-150px) scale(0.8); opacity: 0; }
+        }
+
+        @keyframes deductionPop {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            50% { opacity: 0.9; transform: translateY(-20px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+        }
+
+        .score-effect {
+            font-family: 'Arial Black', sans-serif;
+            font-weight: 900;
+            font-size: 1.2em;
+        }
+
+        @keyframes deductEffect {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-50px); }
+        }
+
+        @keyframes comboEffect {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
         }
     </style>
     <!-- SEO 최적화 -->
@@ -1408,27 +1425,28 @@
         // initGame 호출로 게임 시작
         initGame();
 
-        // 수정된 showEffect 함수
+        // 최종 수정된 showEffect 함수
         function showEffect(options) {
             const effectDiv = document.createElement('div');
-            effectDiv.className = `score-effect ${options.type || ''}`;
+            effectDiv.className = 'score-effect';
             effectDiv.textContent = options.text;
             
-            // 스타일 동적 적용
-            effectDiv.style.fontSize = options.fontSize || '2em';
-            effectDiv.style.color = options.color || '#fff';
-            effectDiv.style.textShadow = `0 0 20px ${options.color || '#fff'}`;
+            // 필수 스타일 강제 적용
+            effectDiv.style.position = 'fixed';
+            effectDiv.style.left = options.position?.x ? `${options.position.x}px` : '90%';
+            effectDiv.style.top = options.position?.y ? `${options.position.y}px` : '10%';
+            effectDiv.style.color = options.color || '#ff0000';
+            effectDiv.style.fontSize = '2em';
+            effectDiv.style.fontWeight = 'bold';
+            effectDiv.style.textShadow = '0 0 8px rgba(255,0,0,0.8)';
+            effectDiv.style.zIndex = '9999';
+            effectDiv.style.transform = 'translateX(-50%)';
             
-            // 애니메이션 타입별 설정
-            if(options.type === 'combo') {
-                effectDiv.style.animation = 'comboPop 1s ease-out';
-            } 
-            else if(options.type === 'cross') {
-                effectDiv.style.animation = 'crossRise 1.5s ease-out';
-            }
-
+            // 애니메이션
+            effectDiv.style.animation = 'deductEffect 1s ease-out forwards';
+            
             document.body.appendChild(effectDiv);
-            setTimeout(() => effectDiv.remove(), options.duration || 2000);
+            setTimeout(() => effectDiv.remove(), 1000);
         }
 
         // 테스트용 함수
@@ -1573,16 +1591,22 @@
             return 0;
         }
 
-        // 수정된 refreshBlocks 함수
+        // 수정된 refreshBlocks 함수 (단순화)
         function refreshBlocks() {
             if(score < HINT_COSTS.refresh) return;
             const cost = HINT_COSTS.refresh;
             score -= cost;
             updateScore();
-            showEffect({ score: cost, type: 'deduction' });
-            generateNewBlocks(true);
             
-            // 힌트 사용 후 게임 오버 확인
+            // 차감 효과 표시 (위치 고정)
+            showEffect({
+                text: `-${cost}`,
+                type: 'deduction',
+                color: '#ff0000',
+                position: { x: window.innerWidth - 100, y: 60 } // 우측 상단 고정 위치
+            });
+            
+            generateNewBlocks(true);
             if(checkGameOver()) handleGameOver();
         }
 
@@ -1592,8 +1616,15 @@
             const cost = HINT_COSTS.rotate;
             score -= cost;
             updateScore();
-            showEffect({ score: cost, type: 'deduction' });
             
+            // 차감 효과 표시 추가
+            showEffect({
+                text: `-${cost}`,
+                type: 'deduction',
+                color: '#ff0000',
+                position: { x: window.innerWidth - 100, y: 60 }
+            });
+
             // 기존 회전 로직 유지
             document.querySelectorAll('.block-wrapper').forEach(block => {
                 const pattern = JSON.parse(block.dataset.pattern);
@@ -1638,8 +1669,15 @@
             const cost = HINT_COSTS.placement;
             score -= cost;
             updateScore();
-            showEffect({ score: cost, type: 'deduction' });
             
+            // 차감 효과 표시 추가
+            showEffect({
+                text: `-${cost}`,
+                type: 'deduction',
+                color: '#ff0000',
+                position: { x: window.innerWidth - 100, y: 60 }
+            });
+
             let found = false;
             const blocks = document.querySelectorAll('.block-wrapper');
             
