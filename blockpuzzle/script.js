@@ -92,6 +92,14 @@
         let isAutoPlaying = false;
         let autoPlayInterval = null;
 
+        // 레벨별 높이 설정 객체 추가 (약 70번째 줄 근처)
+        const LEVEL_SETTINGS = {
+            beginner: { size: 3, containerHeight: '140px' },
+            intermediate: { size: 4, containerHeight: '180px' },
+            advanced: { size: 5, containerHeight: '220px' },
+            chaos: { size: 9, containerHeight: '260px' }
+        };
+
         // 게임 종료 조건 검사 함수
         function checkGameOver() {
             const availableBlocks = document.querySelectorAll('.block-wrapper');
@@ -129,6 +137,14 @@
         // 수정된 setDifficulty 함수
         function setDifficulty(level) {
             currentLevel = level;
+            const { containerHeight } = LEVEL_SETTINGS[level];
+            
+            // 블록 컨테이너 높이 동적 설정
+            document.documentElement.style.setProperty(
+                '--block-container-height', 
+                containerHeight
+            );
+            
             document.querySelectorAll('.difficulty-btn').forEach(btn => {
                 btn.classList.remove('active'); // 모든 버튼에서 active 제거
                 if(btn.dataset.level === level) {
@@ -1111,6 +1127,14 @@
         // 레벨 변경 시 스코어보드 업데이트
         function setDifficulty(level) {
             currentLevel = level;
+            const { containerHeight } = LEVEL_SETTINGS[level];
+            
+            // 블록 컨테이너 높이 동적 설정
+            document.documentElement.style.setProperty(
+                '--block-container-height', 
+                containerHeight
+            );
+            
             document.querySelectorAll('.difficulty-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if(btn.dataset.level === level) {

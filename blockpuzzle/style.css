@@ -81,8 +81,8 @@ body {
     background: #a78b72;
     border-radius: 5px;
     border: 1px solid #8b6b4d;
-    width: 372px; /* 고정 너비 설정 */
-    height: 180px; /* 고정 높이 설정 */
+    width: 372px;
+    height: var(--block-container-height, 180px);
     margin: 0 auto;
     overflow: hidden; /* 내용이 넘칠 경우 숨김 처리 */
 }
@@ -523,8 +523,8 @@ body.game-over::before {
         padding: 5px; /* 패딩 축소 */
     }
     .block-container {
-        width: 340px; /* 모바일에서 약간 축소 */
-        height: 160px;
+        width: 340px;
+        height: calc(var(--block-container-height, 180px) - 20px);
         padding: 8px;
     }
     /*
