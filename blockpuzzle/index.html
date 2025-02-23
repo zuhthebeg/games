@@ -967,7 +967,7 @@
                 JSON.stringify(p) !== JSON.stringify([[1,1],[1,0],[0,1]])
             );
 
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < 2; i++) {  // 3 -> 2로 수정
                 let pattern = filteredPatterns[Math.floor(Math.random() * filteredPatterns.length)];
                 
                 // 기존 회전 로직 유지
