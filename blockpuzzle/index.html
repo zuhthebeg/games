@@ -187,58 +187,93 @@
                 transform: scale(1) rotate(0deg);
                 opacity: 1;
                 background-color: #8b4513;
-                filter: brightness(1);
+                filter: brightness(1) hue-rotate(0deg);
             }
-            50% { 
-                transform: scale(1.2) rotate(-2deg);
-                opacity: 0.8;
-                background-color: #6b4f40;
-                filter: brightness(1.2);
-                box-shadow: inset 0 0 15px rgba(107, 79, 64, 0.5);
+            20% {
+                transform: scale(1.5) rotate(-5deg);
+                background: linear-gradient(45deg, #ffd54f, #e74c3c);
+                filter: brightness(1.5) hue-rotate(90deg);
+            }
+            40% {
+                transform: scale(0.8) rotate(5deg);
+                background: radial-gradient(circle, #ffd54f 20%, #e74c3c 80%);
+                box-shadow: 0 0 30px rgba(255,213,79,0.8);
+            }
+            60% {
+                transform: scale(1.2) rotate(-3deg);
+                background: #6b4f40;
+                filter: contrast(200%);
             }
             100% { 
-                transform: scale(0.8) rotate(2deg);
+                transform: scale(0.5) rotate(15deg);
                 opacity: 0;
                 background-color: #a78b72;
-                filter: brightness(0.8);
+                filter: brightness(0.5) blur(2px);
             }
         }
 
         .clearing {
-            animation: lineClear 0.8s cubic-bezier(0.33, 1, 0.68, 1) forwards;
-            background-image: linear-gradient(45deg, 
-                transparent 25%, 
-                rgba(0,0,0,0.1) 25%, 
-                rgba(0,0,0,0.1) 50%, 
-                transparent 50%);
-            background-size: 4px 4px;
+            animation: lineClear 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+            background-image: 
+                linear-gradient(62deg, 
+                    transparent 29%, 
+                    rgba(255,255,255,0.3) 30%, 
+                    rgba(255,255,255,0.3) 70%, 
+                    transparent 71%),
+                repeating-linear-gradient(
+                    -45deg,
+                    rgba(0,0,0,0.2) 0 2px,
+                    transparent 2px 8px
+                );
+            z-index: 500;
         }
 
-        /* 나뭇조각 파티클 효과 */
+        /* 나뭇조각 파티클 효과 강화 */
         .clearing::after {
             content: '';
             position: absolute;
-            width: 4px;
-            height: 4px;
+            width: 6px;
+            height: 6px;
             background: #5d432f;
-            animation: woodParticle 1s ease-out forwards;
+            animation: woodParticle 1.2s ease-out forwards;
+            box-shadow: 0 0 10px #8b4513;
         }
 
         @keyframes woodParticle {
             0% { 
                 opacity: 1;
                 transform: translate(0, 0) rotate(0deg);
+                filter: drop-shadow(0 0 5px #ffd54f);
             }
             100% { 
                 opacity: 0;
                 transform: 
                     translate(
-                        calc(var(--tx) * 30px), 
-                        calc(var(--ty) * 30px)
+                        calc(var(--tx) * 80px), 
+                        calc(var(--ty) * 80px)
                     )
-                    rotate(720deg);
+                    rotate(1440deg);
                 background: #8b6b4d;
+                filter: blur(1px);
             }
+        }
+
+        /* 추가 파티클 효과 */
+        .clearing::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, 
+                rgba(255,213,79,0.5) 0%, 
+                transparent 70%);
+            animation: particleGlow 1s ease-out forwards;
+        }
+
+        @keyframes particleGlow {
+            0% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(2); }
+            100% { opacity: 0; transform: scale(3); }
         }
 
         /* 대형 블록 대응 */
