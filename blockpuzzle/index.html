@@ -855,6 +855,7 @@
     <!-- 게임 오버 팝업 (초기 숨김) -->
     <div id="gameOverPopup" class="game-over-popup" style="display: none;">
         <h2 id="popupTitle">GAME OVER</h2>
+        <p>Level: <span id="popupLevel">${currentLevel.toUpperCase()}</span></p>
         <p>Score: <span id="popupScore">0</span></p>
         <p>Time: <span id="popupTime">0</span>s</p>
         <button onclick="resetGame()">Play Again</button>
@@ -1528,6 +1529,7 @@
             popup.style.display = 'block';
             document.getElementById('popupScore').textContent = score;
             document.getElementById('popupTime').textContent = currentTime;
+            document.getElementById('popupLevel').textContent = currentLevel.toUpperCase();
             
             if(score >= 10000) {
                 document.getElementById('popupTitle').textContent = 'CLEAR!!';
@@ -1537,7 +1539,6 @@
                 document.body.classList.add('game-over');
             }
             
-            // 게임 시작 시 스코어보드 초기화
             updateScoreboard(JSON.parse(localStorage.getItem('blockPuzzleRecords') || '[]'));
         }
 
@@ -1548,9 +1549,18 @@
             board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(false));
             score = 0;
             gameClear = false;
-            redrawBoard(); // 보드 다시 그리기
-            generateNewBlocks(true); // 강제 블록 생성
+            isGameRunning = false; // 게임 실행 상태 초기화
+            currentTime = 0; // 시간 초기화
+            document.querySelector('.time-display').textContent = `⏰ 0s`; // 시간 표시 업데이트
+            redrawBoard();
+            generateNewBlocks(true);
             updateScore();
+            
+            // 타이머 완전 초기화
+            if(timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
         }
 
         // initGame 호출로 게임 시작
@@ -1941,9 +1951,15 @@
 
         function updateScoreboard(records) {
             const scoreList = document.getElementById('scoreList');
+            
+            // records가 배열이 아닌 경우 처리
+            if (!Array.isArray(records)) {
+                records = [];
+            }
+            
             scoreList.innerHTML = records.map((record, index) => `
                 <div style="margin: 8px 0; font-size: 0.9em;">
-                    <span style="color: #ffd54f; font-weight: bold;">${record.level}</span>
+                    <span style="color: #ffd54f; font-weight: bold;">${record.level?.toUpperCase() || 'N/A'}</span>
                     ${['🥇','🥈','🥉'][index]} 
                     <span style="color: #d2b48c;">${record.date}</span><br>
                     ⏱${record.time}s | 🎯${record.score}
@@ -1955,18 +1971,16 @@
 
         // 스코어보드 초기화 함수 수정
         function resetScoreboard(all = false) {
-            const records = JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
+            let records = JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
             
             if(all) {
-                localStorage.removeItem('blockPuzzleRecords');
+                records = {};
             } else {
                 delete records[currentLevel];
-                localStorage.setItem('blockPuzzleRecords', JSON.stringify(records));
             }
             
-            // 즉시 스코어보드 업데이트
-            const updatedRecords = all ? {} : JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
-            updateScoreboard(updatedRecords[currentLevel] || []);
+            localStorage.setItem('blockPuzzleRecords', JSON.stringify(records));
+            updateScoreboard(Array.isArray(records[currentLevel]) ? records[currentLevel] : []);
         }
 
         // 레벨 변경 시 스코어보드 업데이트
@@ -1980,8 +1994,7 @@
             });
             const records = JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
             updateScoreboard(records[level] || []);
-            resetGame();
-            generateNewBlocks();
+            resetGame(); // 게임 리셋 호출
         }
 
         // 페이지 로드 시 기존 기록 로드
@@ -2038,10 +2051,11 @@
             }
         }
 
-        // 게임 클리어 테스트 셋업
+        // 게임 클리어 테스트 셋업 함수 수정
         function setupGameClearTest() {
-            score = 9999;
+            score = 10000; // 최소 클리어 점수 설정
             updateScore();
+            handleGameOver(); // 강제로 게임 오버 처리
         }
 
         // 자동 데모 관련 변수
