@@ -724,6 +724,75 @@
                 transform: translateY(0);
             }
         }
+
+        /* 튜토리얼 버튼 스타일 추가 */
+        .tutorial-btn {
+            background: linear-gradient(45deg, #8e44ad, #3498db);
+            border: 2px solid #2c3e50;
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            color: white;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 1.2em;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .tutorial-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #3498db, #8e44ad);
+        }
+
+        .tutorial-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 자동 데모 버튼 스타일 변경 */
+        .auto-demo-btn {
+            background: linear-gradient(45deg, #a78b72, #8b6b4d); /* 우드톤 그라데이션 */
+            border: 2px solid #5d432f; /* 어두운 우드 색상 */
+            /* 나머지 스타일 유지 */
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            color: #fff3e0; /* 크림색 텍스트 */
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 1.2em;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .auto-demo-btn:hover {
+            background: linear-gradient(45deg, #8b6b4d, #a78b72); /* 그라데이션 방향 반전 */
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .auto-demo-btn.demo-active {
+            animation: demoPulse 1s infinite, colorShift 2s infinite alternate;
+        }
+
+        @keyframes demoPulse {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(15deg) scale(1.1); }
+            50% { transform: rotate(-15deg) scale(1.2); }
+            75% { transform: rotate(10deg) scale(1.1); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+
+        @keyframes colorShift {
+            from { filter: brightness(100%); }
+            to { filter: brightness(120%); }
+        }
+
+        .auto-demo-btn:disabled {
+            opacity: 0.6;
+            filter: grayscale(0.8);
+        }
     </style>
     <!-- SEO 최적화 -->
     <meta name="keywords" content="Block Puzzle, 블록 퍼즐, Brain Game, 두뇌 게임, Puzzle Strategy, 퍼즐 전략, Casual Game, 캐주얼 게임, Block Fitting, 블록 맞추기, Time Killer, 시간 떼우기, Logic Game, 논리 게임, Free Puzzle, 무료 퍼즐, Online Puzzle, 온라인 퍼즐">
@@ -761,6 +830,7 @@
         <div class="score">
             Score: <span id="score">0</span>
             <div class="time-display">⏰ 0s</div>
+            <button class="auto-demo-btn" onclick="startAutoDemo()">🤖</button>
         </div>
         <div id="board" class="board"></div>
         <div id="block-container" class="block-container"></div>
@@ -1936,6 +2006,37 @@
         function setupGameClearTest() {
             score = 9999;
             updateScore();
+        }
+
+        // 자동 데모 관련 변수
+        let isAutoDemoRunning = false;
+
+        function startAutoDemo() {
+            if(isAutoDemoRunning) return;
+            
+            const demoBtn = document.querySelector('.auto-demo-btn');
+            demoBtn.disabled = true;
+            demoBtn.classList.add('demo-active');
+            
+            isAutoDemoRunning = true;
+            if(!isAutoPlaying) toggleAutoPlay();
+            
+            // 10초 후 자동 종료
+            setTimeout(() => {
+                if(isAutoPlaying) toggleAutoPlay();
+                demoBtn.classList.remove('demo-active');
+                demoBtn.disabled = false;
+                isAutoDemoRunning = false;
+            }, 10000);
+        }
+
+        // 보드 다시 그리기 함수 추가
+        function redrawBoard() {
+            board.forEach((row, y) => {
+                row.forEach((filled, x) => {
+                    boardCells[y][x].classList.toggle('filled', filled);
+                });
+            });
         }
     </script>
 </body>
