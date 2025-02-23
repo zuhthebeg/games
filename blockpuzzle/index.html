@@ -768,11 +768,10 @@
 
     <!-- 테스트 패널 (실제 게임에는 노출되지 않음) -->
     <div class="test-panel">
-        <button onclick="testCombo()">테스트 콤보</button>
-        <button onclick="testCross()">테스트 크로스</button>
+        <button onclick="setupComboTest()">콤보 테스트</button>
+        <button onclick="setupCrossTest()">크로스 테스트</button>
+        <button onclick="setupGameClearTest()">클리어 테스트</button>
         <button onclick="toggleAutoPlay()">자동플레이 ${isAutoPlaying ? '중지' : '시작'}</button>
-        <button onclick="testGameOver()">게임오버 테스트</button>
-        <button onclick="testGameClear()">게임클리어 테스트</button>
     </div>
 
     <!-- 힌트 패널 수정 -->
@@ -1548,11 +1547,10 @@
         // 테스트 패널 토글 기능 추가
         let testClickCount = 0;
         const testPanelHTML = `
-            <button onclick="testCombo()">테스트 콤보</button>
-            <button onclick="testCross()">테스트 크로스</button>
+            <button onclick="setupComboTest()">콤보 테스트</button>
+            <button onclick="setupCrossTest()">크로스 테스트</button>
+            <button onclick="setupGameClearTest()">클리어 테스트</button>
             <button onclick="toggleAutoPlay()">자동플레이 ${isAutoPlaying ? '중지' : '시작'}</button>
-            <button onclick="testGameOver()">게임오버 테스트</button>
-            <button onclick="testGameClear()">게임클리어 테스트</button>
         `;
         document.getElementById('score').addEventListener('click', function() {
             testClickCount++;
@@ -1600,7 +1598,7 @@
         // 자동플레이 토글 함수
         function toggleAutoPlay() {
             isAutoPlaying = !isAutoPlaying;
-            const btn = document.querySelector('.test-panel button:nth-child(3)');
+            const btn = document.querySelector('.test-panel button:nth-child(4)');
             btn.textContent = `자동플레이 ${isAutoPlaying ? '중지' : '시작'}`;
             btn.style.background = isAutoPlaying ? '#27ae60' : '#e74c3c';
             
@@ -1884,6 +1882,61 @@
         window.addEventListener('load', () => {
             updateScoreboard(JSON.parse(localStorage.getItem('blockPuzzleRecords') || '[]'));
         });
+
+        // 콤보 테스트 셋업 함수 (오른쪽 2열 + 아래쪽 2줄 비우기)
+        function setupComboTest() {
+            // 전체 보드 초기화
+            board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(false));
+            document.querySelectorAll('.cell').forEach(cell => cell.classList.remove('filled'));
+
+            // 7x7 영역 채우기 (오른쪽 2열, 아래쪽 2줄 제외)
+            for(let y = 0; y < BOARD_SIZE - 2; y++) {
+                for(let x = 0; x < BOARD_SIZE - 2; x++) {
+                    board[y][x] = true;
+                    boardCells[y][x].classList.add('filled');
+                }
+            }
+        }
+
+        // 크로스 테스트 셋업 함수 (우측 상단 6칸 비우기 + 오른쪽/아래쪽 채우기)
+        function setupCrossTest() {
+            score = 1000;
+            updateScore();
+            
+            // 전체 보드 초기화
+            board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(false));
+            document.querySelectorAll('.cell').forEach(cell => cell.classList.remove('filled'));
+
+            // 1. 맨 위 가로 두 줄 채우기 (0-1행 전체)
+            for(let y = 0; y < 2; y++) {
+                for(let x = 0; x < BOARD_SIZE; x++) {
+                    board[y][x] = true;
+                    boardCells[y][x].classList.add('filled');
+                }
+            }
+
+            // 2. 오른쪽 세로 두 줄 채우기 (7-8열 전체)
+            for(let y = 0; y < BOARD_SIZE; y++) {
+                for(let x = BOARD_SIZE - 2; x < BOARD_SIZE; x++) {
+                    board[y][x] = true;
+                    boardCells[y][x].classList.add('filled');
+                }
+            }
+
+            // 3. 오른쪽 맨 위 네 칸 비우기 (0-1행, 7-8열)
+            for(let y = 0; y < 2; y++) {
+                for(let x = BOARD_SIZE - 2; x < BOARD_SIZE; x++) {
+                    board[y][x] = false; // 1,2단계에서 채운 부분 덮어씀
+                    boardCells[y][x].classList.remove('filled');
+                }
+            }
+        }
+
+        // 게임 클리어 테스트 셋업
+        function setupGameClearTest() {
+            score = 9999;
+            updateScore();
+        }
     </script>
 </body>
 </html>
