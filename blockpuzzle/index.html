@@ -1105,8 +1105,8 @@
             const boardRect = document.getElementById('board').getBoundingClientRect();
             const cellSize = boardRect.width / BOARD_SIZE;
 
-            const row = Math.round((y - boardRect.top - cellSize/2) / cellSize);
-            const col = Math.round((x - boardRect.left - cellSize/2) / cellSize);
+            const row = Math.floor((y - boardRect.top) / cellSize);
+            const col = Math.floor((x - boardRect.left) / cellSize);
             const adjustRow = row - Math.floor(pattern.length/2);
             const adjustCol = col - Math.floor(pattern[0].length/2);
 
