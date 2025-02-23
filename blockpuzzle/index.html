@@ -1522,6 +1522,9 @@
 
         // 게임 오버 처리
         function handleGameOver() {
+            if(gameOver) return; // 이미 게임 오버 상태면 중복 실행 방지
+            gameOver = true;
+            
             isGameRunning = false;
             clearInterval(timerInterval);
             
@@ -1531,7 +1534,8 @@
             document.getElementById('popupTime').textContent = currentTime;
             document.getElementById('popupLevel').textContent = currentLevel.toUpperCase();
             
-            if(score >= 10000) {
+            if(score >= 10000 && !gameClear) {
+                gameClear = true;
                 document.getElementById('popupTitle').textContent = 'CLEAR!!';
                 popup.style.background = '#6b4f40';
                 updateClearRecords(score, currentTime); // 클리어 시 기록 저장
@@ -1539,17 +1543,19 @@
                 document.body.classList.add('game-over');
             }
             
-            updateScoreboard(JSON.parse(localStorage.getItem('blockPuzzleRecords') || '[]'));
+            const records = JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
+            updateScoreboard(records[currentLevel] || []);
         }
 
         // 게임 리셋
         function resetGame() {
+            gameOver = false; // 게임 오버 상태 리셋
+            gameClear = false;
             document.getElementById('gameOverPopup').style.display = 'none';
             document.body.classList.remove('game-over');
             board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(false));
             score = 0;
-            gameClear = false;
-            isGameRunning = false; // 게임 실행 상태 초기화
+            // 게임 실행 상태 초기화
             currentTime = 0; // 시간 초기화
             document.querySelector('.time-display').textContent = `⏰ 0s`; // 시간 표시 업데이트
             redrawBoard();
@@ -1952,7 +1958,6 @@
         function updateScoreboard(records) {
             const scoreList = document.getElementById('scoreList');
             
-            // records가 배열이 아닌 경우 처리
             if (!Array.isArray(records)) {
                 records = [];
             }
@@ -1966,7 +1971,9 @@
                 </div>
             `).join('');
             
-            document.getElementById('scoreboard').style.display = records.length ? 'block' : 'none';
+            // 스코어보드 표시 조건 개선
+            const hasRecords = records.length > 0;
+            document.getElementById('scoreboard').style.display = hasRecords ? 'block' : 'none';
         }
 
         // 스코어보드 초기화 함수 수정
@@ -1997,9 +2004,10 @@
             resetGame(); // 게임 리셋 호출
         }
 
-        // 페이지 로드 시 기존 기록 로드
+        // 페이지 로드 시 스코어보드 초기화
         window.addEventListener('load', () => {
-            updateScoreboard(JSON.parse(localStorage.getItem('blockPuzzleRecords') || '[]'));
+            const records = JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
+            updateScoreboard(records[currentLevel] || []);
         });
 
         // 콤보 테스트 셋업 함수 (오른쪽 2열 + 아래쪽 2줄 비우기)
@@ -2089,12 +2097,22 @@
             });
         }
 
-        // 테스트 패널 이벤트 리스너 수정 (더블클릭 시 전체 기록 삭제)
-        document.querySelector('.test-panel').addEventListener('dblclick', function() {
-            if(confirm('모든 레벨의 기록을 초기화할까요?')) {
-                resetScoreboard(true);
+        // 테스트 패널 이벤트 리스너 수정
+        document.querySelector('.test-panel').addEventListener('click', function(e) {
+            if(e.target.textContent === '기록 초기화') {
+                if(confirm('모든 기록을 초기화할까요?')) {
+                    resetScoreboard(true);
+                }
             }
         });
+
+        // resetScoreboard 함수 수정 (전체 삭제 옵션 제거)
+        function resetScoreboard() {
+            const records = JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
+            delete records[currentLevel];
+            localStorage.setItem('blockPuzzleRecords', JSON.stringify(records));
+            updateScoreboard(records[currentLevel] || []);
+        }
     </script>
 </body>
 </html>
