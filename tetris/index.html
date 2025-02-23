@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클래식 테트리스</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: black;
+        }
+        .game-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        canvas {
+            border: 2px solid white;
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="tetris" width="300" height="600"></canvas>
+        <canvas id="preview" width="100" height="300"></canvas>
+    </div>
+    <script>
+        const canvas = document.getElementById('tetris');
+        const ctx = canvas.getContext('2d');
+        const previewCanvas = document.getElementById('preview');
+        const previewCtx = previewCanvas.getContext('2d');
+        
+        const ROWS = 20;
+        const COLUMNS = 10;
+        const BLOCK_SIZE = 30;
+        const PREVIEW_BLOCK_SIZE = 20;
+        const COLORS = ['cyan', 'blue', 'orange', 'yellow', 'green', 'red', 'purple'];
+        
+        const SHAPES = [
+            [[1, 1, 1, 1]],
+            [[1, 1, 1], [0, 0, 1]],
+            [[1, 1, 1], [1, 0, 0]],
+            [[1, 1], [1, 1]],
+            [[0, 1, 1], [1, 1, 0]],
+            [[1, 1, 0], [0, 1, 1]],
+            [[0, 1, 0], [1, 1, 1]]
+        ];
+        
+        let board = Array.from({ length: ROWS }, () => Array(COLUMNS).fill(0));
+        let nextPieces = Array.from({ length: 5 }, () => createPiece());
+        let currentPiece = createPiece();
+        let dropCounter = 0;
+        let dropInterval = 1000;
+        let lastTime = 0;
+        
+        const SRS_KICKS = {
+            '0>>1': [[0,0], [-1,0], [-1,1], [0,-2], [-1,-2]],  
+            '1>>0': [[0,0], [1,0], [1,-1], [0,2], [1,2]],      
+            '1>>2': [[0,0], [1,0], [1,-1], [0,2], [1,2]],     
+            '2>>1': [[0,0], [-1,0], [-1,1], [0,-2], [-1,-2]],   
+            '2>>3': [[0,0], [1,0], [1,1], [0,-2], [1,-2]],       
+            '3>>2': [[0,0], [-1,0], [-1,-1], [0,2], [-1,2]],  
+            '3>>0': [[0,0], [-1,0], [-1,1], [0,-2], [-1,-2]],     
+            '0>>3': [[0,0], [1,0], [1,-1], [0,2], [1,2]]    
+        };
+
+        let rotationState = 0; // 0: 0°, 1: 90°, 2: 180°, 3: 270°
+        
+        let score = 0;
+        let lines = 0;
+        let clearAnimation = null;
+        let combo = 0;
+        let lastClearCount = 0;
+
+        function drawBlock(x, y, color, size = BLOCK_SIZE, context = ctx) {
+            context.fillStyle = color;
+            context.fillRect(x * size, y * size, size, size);
+            context.strokeStyle = 'black';
+            context.strokeRect(x * size, y * size, size, size);
+        }
+        
+        function drawGrid() {
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLUMNS; x++) {
+                    const colorIndex = board[y][x];
+                    const color = colorIndex === 8 ? 'white' : 
+                                colorIndex ? COLORS[colorIndex - 1] : 'black';
+                    drawBlock(x, y, color);
+                }
+            }
+        }
+        
+        function createPiece() {
+            let index = Math.floor(Math.random() * SHAPES.length);
+            return { shape: SHAPES[index], color: COLORS[index], x: 3, y: 0 };
+        }
+        
+        function drawPiece(piece) {
+            piece.shape.forEach((row, dy) => {
+                row.forEach((cell, dx) => {
+                    if (cell) {
+                        drawBlock(piece.x + dx, piece.y + dy, piece.color);
+                    }
+                });
+            });
+        }
+        
+        function collide(piece = currentPiece) {
+            return piece.shape.some((row, dy) => {
+                return row.some((cell, dx) => {
+                    if (cell) {
+                        const newX = piece.x + dx;
+                        const newY = piece.y + dy;
+                        return newX < 0 || newX >= COLUMNS || newY >= ROWS || (newY >= 0 && board[newY][newX]);
+                    }
+                    return false;
+                });
+            });
+        }
+        
+        function checkLineClear() {
+            let linesToClear = [];
+            for(let y = ROWS - 1; y >= 0; y--) {
+                if(board[y].every(cell => cell !== 0)) {
+                    linesToClear.push(y);
+                }
+            }
+            
+            if(linesToClear.length > 0) {
+                // 콤보 계산
+                combo = lastClearCount > 0 ? combo + 1 : 0;
+                lastClearCount = linesToClear.length;
+                
+                // 점수 계산 (공식 테트리스 규칙)
+                const linePoints = [100, 300, 500, 800][linesToClear.length - 1];
+                const comboBonus = 50 * combo;
+                const levelBonus = Math.floor(lines / 10) * 50;
+                score += linePoints + comboBonus + levelBonus;
+
+                // 애니메이션 (1회 점멸)
+                let flashCount = 0;
+                clearAnimation = setInterval(() => {
+                    linesToClear.forEach(y => {
+                        board[y] = flashCount % 2 === 0 ? 
+                            Array(COLUMNS).fill(8) : 
+                            board[y].map(c => c === 8 ? 0 : c);
+                    });
+                    flashCount++;
+                    if(flashCount >= 2) {
+                        clearInterval(clearAnimation);
+                        // 줄 제거 및 보드 업데이트 (수정된 부분)
+                        lines += linesToClear.length;
+                        const newBoard = board.filter((_, y) => !linesToClear.includes(y));
+                        while(newBoard.length < ROWS) {
+                            newBoard.unshift(Array(COLUMNS).fill(0));
+                        }
+                        board = newBoard;
+                        combo++;
+                    }
+                }, 100);
+            } else {
+                if(lastClearCount > 0) combo = 0;
+                lastClearCount = 0;
+            }
+        }
+        
+        function mergePiece() {
+            currentPiece.shape.forEach((row, dy) => {
+                row.forEach((cell, dx) => {
+                    if (cell) {
+                        let newY = currentPiece.y + dy;
+                        let newX = currentPiece.x + dx;
+                        if (newY < ROWS) {
+                            board[newY][newX] = COLORS.indexOf(currentPiece.color) + 1;
+                        }
+                    }
+                });
+            });
+            currentPiece = nextPieces.shift() || createPiece();
+            nextPieces.push(createPiece());
+            checkLineClear();
+        }
+        
+        function movePieceDown() {
+            currentPiece.y++;
+            if (collide()) {
+                currentPiece.y--;
+                mergePiece();
+            }
+        }
+        
+        function rotatePiece(clockwise = true) {
+            const prevState = rotationState;
+            const newState = (prevState + (clockwise ? 1 : -1) + 4) % 4;
+            const kickKey = `${prevState}>>${newState}`;
+            
+            const original = {
+                shape: currentPiece.shape,
+                x: currentPiece.x,
+                y: currentPiece.y,
+                state: rotationState
+            };
+
+            // SRS 회전 적용 (수정된 부분)
+            currentPiece.shape = original.shape[0].map((_, i) =>
+                original.shape.map(row => clockwise ? 
+                    row[row.length-1-i] : // CW: 열 역순
+                    row[i]                // CCW: 열 순서 유지
+                )
+            );
+            if(!clockwise) currentPiece.shape = currentPiece.shape.reverse();
+
+            // T스핀 감지 (공식 규칙)
+            let isTSpin = false;
+            if(currentPiece.color === COLORS[6]) { // T-블록인 경우
+                const kickUsed = original.x !== currentPiece.x || original.y !== currentPiece.y;
+                const corners = [
+                    {x: currentPiece.x, y: currentPiece.y}, // 좌상
+                    {x: currentPiece.x + 2, y: currentPiece.y}, // 우상
+                    {x: currentPiece.x, y: currentPiece.y + 2}, // 좌하
+                    {x: currentPiece.x + 2, y: currentPiece.y + 2} // 우하
+                ];
+                
+                const filledCorners = corners.filter(pos => 
+                    pos.y >= 0 && pos.y < ROWS && 
+                    pos.x >= 0 && pos.x < COLUMNS && 
+                    board[pos.y][pos.x]
+                ).length;
+
+                // T스핀 조건: 킥 발생 + 3개 이상 코너 차지
+                if(kickUsed && filledCorners >= 3) {
+                    isTSpin = true;
+                    score += 400;
+                    console.log('T-Spin!');
+                }
+            }
+
+            // 킥 테스트 순서 최적화
+            const kickTests = (SRS_KICKS[kickKey] || []).concat(
+                [[-2,0], [2,0]]  // 추가 수평 킥
+            );
+
+            for(const [dx, dy] of kickTests) {
+                currentPiece.x += dx;
+                currentPiece.y += dy;
+                if(!collide()) {
+                    rotationState = newState;
+                    return;
+                }
+                currentPiece.x = original.x;
+                currentPiece.y = original.y;
+            }
+
+            // 실패 시 롤백
+            currentPiece.shape = original.shape;
+            rotationState = original.state;
+        }
+        
+        function drawPreview() {
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            nextPieces.forEach((piece, index) => {
+                const shape = piece.shape;
+                const startY = index * 4 * PREVIEW_BLOCK_SIZE;
+                
+                shape.forEach((row, dy) => {
+                    row.forEach((cell, dx) => {
+                        if (cell) {
+                            previewCtx.fillStyle = piece.color;
+                            previewCtx.fillRect(
+                                dx * PREVIEW_BLOCK_SIZE + 10,
+                                startY + dy * PREVIEW_BLOCK_SIZE,
+                                PREVIEW_BLOCK_SIZE - 2,
+                                PREVIEW_BLOCK_SIZE - 2
+                            );
+                        }
+                    });
+                });
+            });
+        }
+        
+        function drawGhost() {
+            const ghost = {...currentPiece};
+            while(!collide(ghost)) {
+                ghost.y++;
+            }
+            ghost.y--;
+            
+            ctx.globalAlpha = 0.2; // 전체 투명도 설정
+            ghost.shape.forEach((row, dy) => {
+                row.forEach((cell, dx) => {
+                    if (cell) {
+                        // 내부 채움
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                        ctx.fillRect(
+                            (ghost.x + dx) * BLOCK_SIZE + 1,
+                            (ghost.y + dy) * BLOCK_SIZE + 1,
+                            BLOCK_SIZE - 2,
+                            BLOCK_SIZE - 2
+                        );
+                        // 테두리
+                        ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(
+                            (ghost.x + dx) * BLOCK_SIZE + 1,
+                            (ghost.y + dy) * BLOCK_SIZE + 1,
+                            BLOCK_SIZE - 2,
+                            BLOCK_SIZE - 2
+                        );
+                    }
+                });
+            });
+            ctx.globalAlpha = 1.0; // 투명도 초기화
+        }
+        
+        function update(time = 0) {
+            const deltaTime = time - lastTime;
+            lastTime = time;
+            dropCounter += deltaTime;
+            if (dropCounter > dropInterval) {
+                movePieceDown();
+                dropCounter = 0;
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            drawGhost();
+            drawPiece(currentPiece);
+            drawPreview();
+            requestAnimationFrame(update);
+        }
+        
+        function hardDrop() {
+            while(!collide()) {
+                currentPiece.y++;
+            }
+            currentPiece.y--;
+            mergePiece();
+        }
+        
+        function moveHorizontal(dx) {
+            currentPiece.x += dx;
+            if (collide()) {
+                currentPiece.x -= dx;
+                return false;
+            }
+            return true;
+        }
+        
+        document.addEventListener('keydown', (event) => {
+            if (event.key === ' ') {  // 스페이스 바 하드 드롭
+                hardDrop();
+                event.preventDefault();
+                return;
+            }
+            // 컨트롤 키 단독 처리 (수정된 부분)
+            if (event.key === 'Control' && !event.altKey && !event.shiftKey && !event.metaKey) {
+                rotatePiece(false);
+                event.preventDefault();
+                return;
+            }
+            
+            if (event.key === 'ArrowLeft') moveHorizontal(-1);
+            else if (event.key === 'ArrowRight') moveHorizontal(1);
+            else if (event.key === 'ArrowDown') movePieceDown();
+            else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                rotatePiece(true);
+            }
+        });
+        
+        update();
+    </script>
+</body>
+</html>
