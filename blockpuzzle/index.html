@@ -1178,15 +1178,14 @@
         function endDragging(e) {
             if (!draggedBlock) return;
             
-            // 안전한 DOM 접근
-            const board = document.getElementById('board');
-            if (!board) return;
-
             try {
                 clearPreview();
+                const board = document.getElementById('board');
+                if (!board) return;
+
                 const boardRect = board.getBoundingClientRect();
-                const clientX = e.type === 'mouseup' ? e.clientX : e.changedTouches[0].clientX;
-                const clientY = e.type === 'mouseup' ? e.clientY : e.changedTouches[0].clientY;
+                const clientX = e.type === 'mouseup' ? e.clientX : (e.changedTouches?.[0]?.clientX || 0);
+                const clientY = e.type === 'mouseup' ? e.clientY : (e.changedTouches?.[0]?.clientY || 0);
                 
                 if (isOverBoard(clientX, clientY, boardRect) && isValidDrag) {
                     const pattern = JSON.parse(draggedBlock.dataset.pattern);
@@ -1431,18 +1430,17 @@
             effectDiv.className = 'score-effect';
             effectDiv.textContent = options.text;
             
-            // 필수 스타일 강제 적용
-            effectDiv.style.position = 'fixed';
-            effectDiv.style.left = options.position?.x ? `${options.position.x}px` : '90%';
-            effectDiv.style.top = options.position?.y ? `${options.position.y}px` : '10%';
+            // 기본 위치 설정 추가
+            const defaultPosition = { x: '20%', y: '10%' };
+            effectDiv.style.left = options.position?.x || defaultPosition.x;
+            effectDiv.style.top = options.position?.y || defaultPosition.y;
+            
             effectDiv.style.color = options.color || '#ff0000';
-            effectDiv.style.fontSize = '2em';
+            effectDiv.style.fontSize = '1.5em';
             effectDiv.style.fontWeight = 'bold';
             effectDiv.style.textShadow = '0 0 8px rgba(255,0,0,0.8)';
             effectDiv.style.zIndex = '9999';
-            effectDiv.style.transform = 'translateX(-50%)';
-            
-            // 애니메이션
+            effectDiv.style.position = 'fixed';
             effectDiv.style.animation = 'deductEffect 1s ease-out forwards';
             
             document.body.appendChild(effectDiv);
@@ -1583,27 +1581,26 @@
             });
         }
 
-        // 버튼별 비용 확인
+        // 버튼별 비용 확인 함수
         function getButtonCost(button) {
-            if(button.onclick.toString().includes('refresh')) return HINT_COSTS.refresh;
-            if(button.onclick.toString().includes('rotate')) return HINT_COSTS.rotate;
-            if(button.onclick.toString().includes('showPossible')) return HINT_COSTS.placement;
+            if(button.textContent.includes('🔄')) return HINT_COSTS.refresh;
+            if(button.textContent.includes('↻')) return HINT_COSTS.rotate;
+            if(button.textContent.includes('💡')) return HINT_COSTS.placement;
             return 0;
         }
 
-        // 수정된 refreshBlocks 함수 (단순화)
+        // 수정된 refreshBlocks 함수
         function refreshBlocks() {
             if(score < HINT_COSTS.refresh) return;
             const cost = HINT_COSTS.refresh;
             score -= cost;
             updateScore();
             
-            // 차감 효과 표시 (위치 고정)
             showEffect({
                 text: `-${cost}`,
                 type: 'deduction',
                 color: '#ff0000',
-                position: { x: window.innerWidth - 100, y: 60 } // 우측 상단 고정 위치
+                position: { x: '20%', y: '10%' } // 화면 왼쪽 상단으로 위치 변경
             });
             
             generateNewBlocks(true);
@@ -1617,12 +1614,11 @@
             score -= cost;
             updateScore();
             
-            // 차감 효과 표시 추가
             showEffect({
                 text: `-${cost}`,
                 type: 'deduction',
                 color: '#ff0000',
-                position: { x: window.innerWidth - 100, y: 60 }
+                position: { x: '20%', y: '10%' }
             });
 
             // 기존 회전 로직 유지
@@ -1661,6 +1657,7 @@
             
             // 힌트 사용 후 게임 오버 확인
             if(checkGameOver()) handleGameOver();
+            updateButtonStates();
         }
 
         // 수정된 showPossiblePlacement 함수
@@ -1670,12 +1667,11 @@
             score -= cost;
             updateScore();
             
-            // 차감 효과 표시 추가
             showEffect({
                 text: `-${cost}`,
                 type: 'deduction',
                 color: '#ff0000',
-                position: { x: window.innerWidth - 100, y: 60 }
+                position: { x: '20%', y: '10%' }
             });
 
             let found = false;
@@ -1707,6 +1703,7 @@
             
             // 힌트 사용 후 게임 오버 확인
             if(checkGameOver()) handleGameOver();
+            updateButtonStates();
         }
 
         // 수정된 highlightPossibleArea 함수
