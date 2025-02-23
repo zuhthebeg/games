@@ -842,6 +842,7 @@
         <button onclick="setupCrossTest()">크로스 테스트</button>
         <button onclick="setupGameClearTest()">클리어 테스트</button>
         <button onclick="toggleAutoPlay()">자동플레이 ${isAutoPlaying ? '중지' : '시작'}</button>
+        <button onclick="resetScoreboard()">기록 초기화</button> <!-- 추가 -->
     </div>
 
     <!-- 힌트 패널 수정 -->
@@ -1032,6 +1033,7 @@
                     btn.classList.add('active'); // 선택된 버튼에만 active 추가
                 }
             });
+            resetGame(); // 게임 초기화 추가
             generateNewBlocks();
         }
 
@@ -1051,7 +1053,7 @@
         function initGame() {
             createBoard();
             currentLevel = 'intermediate';
-            setDifficulty(currentLevel);
+            setDifficulty(currentLevel); // 초기 설정도 setDifficulty 사용
             updateScore();
             createHintPanel();
             updateButtonStates();
@@ -1546,7 +1548,9 @@
             board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(false));
             score = 0;
             gameClear = false;
-            initGame();
+            redrawBoard(); // 보드 다시 그리기
+            generateNewBlocks(true); // 강제 블록 생성
+            updateScore();
         }
 
         // initGame 호출로 게임 시작
@@ -1621,6 +1625,7 @@
             <button onclick="setupCrossTest()">크로스 테스트</button>
             <button onclick="setupGameClearTest()">클리어 테스트</button>
             <button onclick="toggleAutoPlay()">자동플레이 ${isAutoPlaying ? '중지' : '시작'}</button>
+            <button onclick="resetScoreboard()">기록 초기화</button> <!-- 이 줄 추가 -->
         `;
         document.getElementById('score').addEventListener('click', function() {
             testClickCount++;
@@ -1910,7 +1915,9 @@
 
         // 로컬스토리지 관련 함수 추가
         function updateClearRecords(score, time) {
-            const records = JSON.parse(localStorage.getItem('blockPuzzleRecords') || '[]');
+            const records = JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
+            if(!records[currentLevel]) records[currentLevel] = [];
+            
             const newRecord = {
                 date: new Date().toLocaleString('ko-KR', { 
                     year: 'numeric', 
@@ -1919,33 +1926,62 @@
                     hour: '2-digit', 
                     minute: '2-digit', 
                     second: '2-digit',
-                    hour12: false // 24시간 형식으로 변경
+                    hour12: false
                 }).replace(/(\d+)\. (\d+)\. (\d+)\. (\d+):(\d+):(\d+)/, '$1-$2-$3 $4:$5:$6'),
                 time: time,
-                score: score
+                score: score,
+                level: currentLevel
             };
             
-            // 최신 기록을 앞에 추가하고 상위 3개만 유지
-            records.unshift(newRecord);
-            const updatedRecords = records.slice(0, 3);
-            localStorage.setItem('blockPuzzleRecords', JSON.stringify(updatedRecords));
-            
-            // 스코어보드 업데이트
-            updateScoreboard(updatedRecords);
+            records[currentLevel].unshift(newRecord);
+            records[currentLevel] = records[currentLevel].slice(0, 3);
+            localStorage.setItem('blockPuzzleRecords', JSON.stringify(records));
+            updateScoreboard(records[currentLevel]);
         }
 
         function updateScoreboard(records) {
             const scoreList = document.getElementById('scoreList');
             scoreList.innerHTML = records.map((record, index) => `
                 <div style="margin: 8px 0; font-size: 0.9em;">
+                    <span style="color: #ffd54f; font-weight: bold;">${record.level}</span>
                     ${['🥇','🥈','🥉'][index]} 
                     <span style="color: #d2b48c;">${record.date}</span><br>
                     ⏱${record.time}s | 🎯${record.score}
                 </div>
             `).join('');
             
-            // 기록이 있을 때만 표시
             document.getElementById('scoreboard').style.display = records.length ? 'block' : 'none';
+        }
+
+        // 스코어보드 초기화 함수 수정
+        function resetScoreboard(all = false) {
+            const records = JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
+            
+            if(all) {
+                localStorage.removeItem('blockPuzzleRecords');
+            } else {
+                delete records[currentLevel];
+                localStorage.setItem('blockPuzzleRecords', JSON.stringify(records));
+            }
+            
+            // 즉시 스코어보드 업데이트
+            const updatedRecords = all ? {} : JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
+            updateScoreboard(updatedRecords[currentLevel] || []);
+        }
+
+        // 레벨 변경 시 스코어보드 업데이트
+        function setDifficulty(level) {
+            currentLevel = level;
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.dataset.level === level) {
+                    btn.classList.add('active');
+                }
+            });
+            const records = JSON.parse(localStorage.getItem('blockPuzzleRecords') || '{}');
+            updateScoreboard(records[level] || []);
+            resetGame();
+            generateNewBlocks();
         }
 
         // 페이지 로드 시 기존 기록 로드
@@ -2038,6 +2074,13 @@
                 });
             });
         }
+
+        // 테스트 패널 이벤트 리스너 수정 (더블클릭 시 전체 기록 삭제)
+        document.querySelector('.test-panel').addEventListener('dblclick', function() {
+            if(confirm('모든 레벨의 기록을 초기화할까요?')) {
+                resetScoreboard(true);
+            }
+        });
     </script>
 </body>
 </html>
