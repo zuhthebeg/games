@@ -287,7 +287,7 @@
             document.addEventListener('mouseup', endDragging);
             document.addEventListener('touchend', endDragging);
         }
-
+/*
         // 드래그 시작
         function startDragging(e) {
             e.preventDefault();
@@ -308,6 +308,26 @@
             updateBlockPosition(clientX, clientY);
         }
 
+*/
+
+// 드래그 시작
+function startDragging(e) {
+    e.preventDefault();
+    draggedBlock = e.currentTarget;
+    
+    const rect = draggedBlock.getBoundingClientRect();
+    const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+    const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+    
+    // 블록의 중앙을 기준으로 오프셋 계산
+    dragOffset.x = rect.width / 2;
+    dragOffset.y = rect.height / 2;
+    
+    draggedBlock.style.position = 'fixed';
+    draggedBlock.style.zIndex = '1000';
+    
+    updateBlockPosition(clientX, clientY);
+}
         // 드래그 중
         function handleDrag(e) {
             if (!draggedBlock) return;
