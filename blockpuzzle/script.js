@@ -356,6 +356,60 @@
             return true;
         }
 
+// 미리보기 성능 개선 버전
+function showPreview(x, y) {
+    if (!draggedBlock) return;
+
+    const pattern = JSON.parse(draggedBlock.dataset.pattern);
+    const boardRect = document.getElementById('board').getBoundingClientRect();
+    const cellSize = boardRect.width / BOARD_SIZE;
+
+    const row = Math.floor((y - boardRect.top) / cellSize);
+    const col = Math.floor((x - boardRect.left) / cellSize);
+    const adjustRow = row - Math.floor(pattern.length/2);
+    const adjustCol = col - Math.floor(pattern[0].length/2);
+
+    // 위치 변경 없으면 업데이트 생략
+    if (lastValidPosition?.row === adjustRow && lastValidPosition?.col === adjustCol) return;
+    lastValidPosition = {row: adjustRow, col: adjustCol};
+
+    clearPreview();
+
+    // 유효성 검사 최적화
+    let isValid = true;
+    outer: for (let i = 0; i < pattern.length; i++) {
+        for (let j = 0; j < pattern[0].length; j++) {
+            if (pattern[i][j] === 1) {
+                const y = adjustRow + i;
+                const x = adjustCol + j;
+                if (x < -1 || x >= BOARD_SIZE + 1 || y < -1 || y >= BOARD_SIZE + 1 || board[y]?.[x]) {
+                    isValid = false;
+                    break outer;
+                }
+            }
+        }
+    }
+
+    if (!isValid) return;
+
+    // 일괄 업데이트
+    const updates = [];
+    pattern.forEach((row, i) => {
+        row.forEach((cell, j) => {
+            if (cell === 1) {
+                const y = adjustRow + i;
+                const x = adjustCol + j;
+                if (boardCells[y]?.[x]) {
+                    updates.push(boardCells[y][x]);
+                }
+            }
+        });
+    });
+
+    updates.forEach(cell => cell.classList.add('preview'));
+    previewCells = updates;
+}
+/*
         // 미리보기 성능 개선 버전
         function showPreview(x, y) {
             if (!draggedBlock) return;
@@ -409,7 +463,7 @@
             updates.forEach(cell => cell.classList.add('preview'));
             previewCells = updates;
         }
-
+*/
         function clearPreview() {
             previewCells.forEach(cell => cell.classList.remove('preview'));
             previewCells = [];
