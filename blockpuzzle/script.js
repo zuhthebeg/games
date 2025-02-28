@@ -576,6 +576,60 @@ function showPreview(x, y) {
             return true;
         }
 
+
+// 블록 배치
+function placeBlock(row, col, pattern) {
+    if (!isGameRunning) {
+        isGameRunning = true;
+        gameStartTime = Date.now();
+        timerInterval = setInterval(updateTimer, 1000);
+    }
+    currentTurn++;  // 블록 배치 시 무조건 턴 증가
+    pattern.forEach((patternRow, i) => {
+        patternRow.forEach((cell, j) => {
+            if (cell === 1) {
+                const newRow = row + i;
+                const newCol = col + j;
+                board[newRow][newCol] = true;
+                const cellElement = document.querySelector(`[data-row="${newRow}"][data-col="${newCol}"]`);
+                cellElement.classList.add('filled');
+            }
+        });
+    });
+    score += pattern.flat().filter(cell => cell === 1).length;
+    updateScore();
+    
+    const linesCleared = checkLines();  // 라인 클리어 결과 저장
+    
+    if (!linesCleared) {
+        // 라인 클리어 실패 시 콤보 리셋
+        comboCount = 0;
+    }
+    
+    // Delay the Clean bonus check to ensure it runs after combo and cross effects
+    setTimeout(() => {
+        // Clean 보너스 체크 (보드 전체가 비어있는지 확인)
+        const isBoardEmpty = board.flat().every(cell => !cell);
+        if(isBoardEmpty) {
+            score += 1000;
+            showEffect({
+                text: 'Clean! +1000',
+                color: '#2ecc71',
+                position: { x: '50%', y: '50%' },
+                fontSize: '3em'
+            });
+            updateScore();
+        }
+    }, 1500); // Delay to ensure it runs after combo and cross effects
+
+    if (checkGameOver()) {
+        handleGameOver();
+    } else {
+        generateNewBlocks();
+    }
+}
+
+/*
         // 블록 배치
         function placeBlock(row, col, pattern) {
             if (!isGameRunning) {
@@ -624,6 +678,8 @@ function showPreview(x, y) {
                 generateNewBlocks();
             }
         }
+
+*/
 
         // 수정된 checkLines 함수
         function checkLines() {
