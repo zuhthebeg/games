@@ -287,28 +287,7 @@
             document.addEventListener('mouseup', endDragging);
             document.addEventListener('touchend', endDragging);
         }
-/*
-        // 드래그 시작
-        function startDragging(e) {
-            e.preventDefault();
-            draggedBlock = e.currentTarget;
-            
-            const rect = draggedBlock.getBoundingClientRect();
-            const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
-            const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
-            
-            // 오른쪽 하단 기준 오프셋 계산
-            const pattern = JSON.parse(draggedBlock.dataset.pattern);
-            dragOffset.x = clientX - (rect.left + rect.width - pattern[0].length * rect.width/pattern[0].length);
-            dragOffset.y = clientY - (rect.top + rect.height - pattern.length * rect.height/pattern.length);
-            
-            draggedBlock.style.position = 'fixed';
-            draggedBlock.style.zIndex = '1000';
-            
-            updateBlockPosition(clientX, clientY);
-        }
 
-*/
 
 // 드래그 시작
 function startDragging(e) {
@@ -429,61 +408,7 @@ function showPreview(x, y) {
     updates.forEach(cell => cell.classList.add('preview'));
     previewCells = updates;
 }
-/*
-        // 미리보기 성능 개선 버전
-        function showPreview(x, y) {
-            if (!draggedBlock) return;
 
-            const pattern = JSON.parse(draggedBlock.dataset.pattern);
-            const boardRect = document.getElementById('board').getBoundingClientRect();
-            const cellSize = boardRect.width / BOARD_SIZE;
-
-            const row = Math.floor((y - boardRect.top) / cellSize);
-            const col = Math.floor((x - boardRect.left) / cellSize);
-            const adjustRow = row - Math.floor(pattern.length/2);
-            const adjustCol = col - Math.floor(pattern[0].length/2);
-
-            // 위치 변경 없으면 업데이트 생략
-            if (lastValidPosition?.row === adjustRow && lastValidPosition?.col === adjustCol) return;
-            lastValidPosition = {row: adjustRow, col: adjustCol};
-
-            clearPreview();
-
-            // 유효성 검사 최적화
-            let isValid = true;
-            outer: for (let i = 0; i < pattern.length; i++) {
-                for (let j = 0; j < pattern[0].length; j++) {
-                    if (pattern[i][j] === 1) {
-                        const y = adjustRow + i;
-                        const x = adjustCol + j;
-                        if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE || board[y][x]) {
-                            isValid = false;
-                            break outer;
-                        }
-                    }
-                }
-            }
-
-            if (!isValid) return;
-
-            // 일괄 업데이트
-            const updates = [];
-            pattern.forEach((row, i) => {
-                row.forEach((cell, j) => {
-                    if (cell === 1) {
-                        const y = adjustRow + i;
-                        const x = adjustCol + j;
-                        if (boardCells[y]?.[x]) {
-                            updates.push(boardCells[y][x]);
-                        }
-                    }
-                });
-            });
-
-            updates.forEach(cell => cell.classList.add('preview'));
-            previewCells = updates;
-        }
-*/
         function clearPreview() {
             previewCells.forEach(cell => cell.classList.remove('preview'));
             previewCells = [];
