@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="모던 지뢰찾기 - 클래식 게임을 현대적으로 재해석한 버전">
+    <title>모던 지뢰찾기 | COCY.IO</title>
+    <style>
+        :root {
+            --primary: #6b4f40;
+            --secondary: #8b6b4d;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --text: #fff3e0;
+            --cell-bg: #d2b48c;
+            --theme-btn-bg: 255,255,255;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 5px;
+            min-height: 100vh;
+            background: var(--primary);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .game-container {
+            background: var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 2px solid #5d432f;
+            width: 95%;
+            max-width: 800px;
+            margin-top: 20px;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+
+        .level-selector {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .level-btn {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 10px 5px;
+            font-size: clamp(12px, 3vw, 14px);
+            border: none;
+            border-radius: 8px;
+            background: #a78b72;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .level-btn.active {
+            background: var(--primary);
+            transform: scale(0.95);
+        }
+
+        .level-btn::after {
+            content: '';
+            display: block;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+
+        .level-btn[data-level="beginner"]::after {
+            content: 'lv1';
+        }
+
+        .level-btn[data-level="intermediate"]::after {
+            content: 'lv2';
+        }
+
+        .level-btn[data-level="expert"]::after {
+            content: 'lv3';
+        }
+
+        .game-board {
+            display: grid;
+            gap: 2px;
+            background: var(--secondary);
+            padding: 3px;
+            border-radius: 5px;
+            margin: 15px 0;
+            width: 95%;
+            max-width: 95vw;
+            grid-template-columns: repeat(var(--grid-size), minmax(25px, 1fr));
+        }
+
+        .cell {
+            background: var(--cell-bg);
+            border: 1px solid var(--secondary);
+            border-radius: 3px;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            min-width: 25px;
+            min-height: 25px;
+            font-size: clamp(12px, 2.5vw, 18px);
+        }
+
+        .cell.revealed {
+            background: #f1f2f6;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+
+        .cell.mine {
+            background: var(--danger) !important;
+        }
+
+        .flagged::after {
+            content: '🚩';
+            font-size: 1.2em;
+        }
+
+        .item-panel {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .item-btn {
+            position: relative;
+            background: none;
+            border: none;
+            padding: 12px;
+            font-size: 1.8em;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .item-count {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 0.6em;
+            background: rgba(var(--text), 0.9);
+            color: rgba(var(--primary), 0.9);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 480px) {
+            .level-selector {
+                gap: 5px;
+            }
+            .level-btn {
+                padding: 8px 2px;
+            }
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            z-index: 100;
+        }
+
+        .status-bar {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 10px;
+            text-align: center;
+            padding: 10px;
+            background: #8b6b4d;
+            border: 2px solid #5d432f;
+            color: white;
+        }
+
+        .timer {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            order: 2;
+        }
+
+        .mines-count {
+            order: 1;
+            text-align: left;
+        }
+
+        .theme-container {
+            order: 3;
+            text-align: right;
+        }
+
+        .dark-mode {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --cell-bg: #7f8c8d;
+            --text: #ecf0f1;
+            --theme-btn-bg: 44,62,80;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(var(--theme-btn-bg), 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        /* 방패 활성화 효과 */
+        .shield-active .game-board {
+            box-shadow: 0 0 15px 3px #3498db;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .item-btn.active-shield {
+            animation: shield-pulse 1.5s infinite;
+        }
+
+        @keyframes shield-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .shield-timer {
+            position: absolute;
+            bottom: -20px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.8em;
+            color: #3498db;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .shield-active .shield-timer {
+            opacity: 1;
+        }
+
+        .shield-active-effect {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4em;
+            pointer-events: none;
+            animation: shield-protect 1s ease-out;
+            z-index: 2000;
+            text-shadow: 0 0 20px rgba(52, 152, 219, 0.8);
+        }
+
+        @keyframes shield-protect {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(3); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .hint-mine {
+            animation: hint-blink 1s ease 3;
+        }
+
+        @keyframes hint-blink {
+            0% { background: #ffeb3b; }
+            50% { background: #ff5722; }
+            100% { background: var(--cell-bg); }
+        }
+
+        .radar-scan {
+            animation: radar-pulse 1s ease;
+            background: rgba(76, 175, 80, 0.3);
+        }
+
+        @keyframes radar-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .game-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.result-popup {
+    background: var(--primary);
+    padding: 2rem;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    animation: popup 0.3s ease;
+}
+
+@keyframes popup {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+    </style>
+</head>
+<body>
+    <div id="gameOverlay" class="game-overlay" style="display: none;">
+        <div class="result-popup">
+            <h2 id="resultMessage"></h2>
+            <button onclick="initGame()" class="restart-btn">🔄 다시 시작</button>
+        </div>
+    </div>
+    <footer>
+        © 2025 COCY.IO All rights reserved.
+    </footer>
+
+    <div class="game-container">
+        <div class="status-bar">
+            <div class="mines-count">💣×<span id="remaining-mines">0</span></div>
+            <div class="timer">⏳<span id="timer">00:00</span></div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+        </div>
+        <br>
+        <div class="level-selector">
+            <button class="level-btn active" data-level="beginner">6×6</button>
+            <button class="level-btn" data-level="intermediate">9×9</button>
+            <button class="level-btn" data-level="expert">12×12</button>
+        </div>
+        
+        <div class="game-board" id="board"></div>
+        
+        <div class="item-panel">
+            <button class="item-btn" data-item="radar">
+                🛰️
+                <span class="item-count">3</span>
+            </button>
+            <button class="item-btn" data-item="shield">
+                🛡️
+                <span class="item-count">1</span>
+                <span id="shield-timer" class="shield-timer"></span>
+            </button>
+            <button class="item-btn" data-item="hint">
+                💡
+                <span class="item-count">5</span>
+            </button>
+        </div>
+    </div>
+
+<script>
+const LEVELS = {
+    beginner: { size: 6, mines: 6 },
+    intermediate: { size: 9, mines: 12 },
+    expert: { size: 12, mines: 24 }
+};
+
+const ITEM_STOCK = {
+    radar: 3,
+    shield: 1,
+    hint: 5
+};
+
+let gameState = {
+    level: 'beginner',
+    board: [],
+    mines: new Set(),
+    revealed: new Set(),
+    flagged: new Set(),
+    items: {
+        radar: { count: ITEM_STOCK.radar },
+        shield: { count: ITEM_STOCK.shield },
+        hint: { count: ITEM_STOCK.hint }
+    },
+    gameOver: false,
+    shieldActive: false,
+    time: 0,
+    timerId: null,
+    totalMines: 0
+};
+
+// 게임 초기화
+function initGame() {
+
+    document.getElementById('gameOverlay').style.display = 'none';
+    const {size, mines} = LEVELS[gameState.level];
+    gameState.totalMines = mines;
+    gameState.board = Array(size).fill().map(() => Array(size).fill(0));
+    gameState.mines = new Set();
+    gameState.revealed = new Set();
+    gameState.flagged = new Set();
+    gameState.gameOver = false;
+    gameState.shieldActive = false;
+
+    // 지뢰 배치
+    while(gameState.mines.size < mines) {
+        const x = Math.floor(Math.random() * size);
+        const y = Math.floor(Math.random() * size);
+        gameState.mines.add(`${x},${y}`);
+    }
+
+    // 숫자 계산
+    for(let x = 0; x < size; x++) {
+        for(let y = 0; y < size; y++) {
+            if(gameState.mines.has(`${x},${y}`)) continue;
+            let count = 0;
+            for(let dx = -1; dx <= 1; dx++) {
+                for(let dy = -1; dy <= 1; dy++) {
+                    if(dx === 0 && dy === 0) continue;
+                    if(gameState.mines.has(`${x+dx},${y+dy}`)) count++;
+                }
+            }
+            gameState.board[x][y] = count;
+        }
+    }
+
+    adjustCellSize();
+    renderBoard();
+    updateStatus();
+    startTimer();
+    gameState.items = {
+        radar: { count: ITEM_STOCK.radar },
+        shield: { count: ITEM_STOCK.shield },
+        hint: { count: ITEM_STOCK.hint }
+    };
+    updateItemDisplay();
+    initEventListeners();
+}
+
+// 게임 보드 렌더링
+function renderBoard() {
+    const {size} = LEVELS[gameState.level];
+    const board = document.getElementById('board');
+    board.style.gridTemplateColumns = `repeat(${size}, minmax(25px, 1fr))`;
+    
+    board.textContent = '';
+    const fragment = document.createDocumentFragment();
+
+    for(let x = 0; x < size; x++) {
+        for(let y = 0; y < size; y++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.x = x;
+            cell.dataset.y = y;
+            
+            if(gameState.revealed.has(`${x},${y}`)) {
+                cell.classList.add('revealed');
+                cell.textContent = gameState.board[x][y] || '';
+            }
+            
+            if(gameState.flagged.has(`${x},${y}`)) {
+                cell.textContent = '🚩';
+                cell.style.color = '#e74c3c';
+            }
+            
+            if(gameState.mines.has(`${x},${y}`) && gameState.gameOver) {
+                cell.classList.add('mine');
+            }
+
+            cell.onclick = handleClick;
+            cell.oncontextmenu = handleRightClick;
+            fragment.appendChild(cell);
+        }
+    }
+    
+    board.appendChild(fragment);
+    adjustCellSize();
+    updateStatus();
+}
+
+// 클릭 핸들러
+function handleClick(e) {
+    if(gameState.gameOver) return;
+    const cell = e.target.closest('.cell');
+    if(!cell) return;
+    
+    const x = parseInt(cell.dataset.x, 10);
+    const y = parseInt(cell.dataset.y, 10);
+    
+    if(gameState.flagged.has(`${x},${y}`)) return;
+    
+    if(gameState.mines.has(`${x},${y}`)) {
+        if(gameState.shieldActive) {
+            handleShieldUse();
+            return;
+        }
+        endGame(false); // alert 대신 endGame 호출
+        return;
+    }
+    
+    reveal(x, y);
+    checkWin();
+}
+
+// 우클릭 핸들러 수정
+function handleRightClick(e) {
+    e.preventDefault();
+    const cell = e.target.closest('.cell');
+    if(!cell || gameState.gameOver) return;
+    
+    const x = parseInt(cell.dataset.x);
+    const y = parseInt(cell.dataset.y);
+    
+    if(gameState.revealed.has(`${x},${y}`)) return;
+    
+    // 깃발 토글 로직
+    if(gameState.flagged.has(`${x},${y}`)) {
+        gameState.flagged.delete(`${x},${y}`);
+        cell.textContent = '';
+    } else {
+        gameState.flagged.add(`${x},${y}`);
+        cell.textContent = '🚩';
+    }
+    
+    updateStatus();
+    checkWin();
+}
+
+// 칸 열기
+function reveal(x, y) {
+    const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+    if(!cell || gameState.revealed.has(`${x},${y}`)) return;
+
+    gameState.revealed.add(`${x},${y}`);
+    cell.classList.add('revealed');
+
+    // 주변 지뢰 개수 계산
+    let mineCount = 0;
+    for(let dx = -1; dx <= 1; dx++) {
+        for(let dy = -1; dy <= 1; dy++) {
+            if(gameState.mines.has(`${x+dx},${y+dy}`)) {
+                mineCount++;
+            }
+        }
+    }
+    
+    cell.textContent = mineCount || '';
+}
+
+// 승리 조건 체크
+function checkWin() {
+    const {size, mines} = LEVELS[gameState.level];
+    const totalCells = size * size;
+    if(totalCells - gameState.revealed.size === mines) {
+        endGame(true); // alert 대신 endGame 호출
+    }
+}
+
+// 방패 기능 개선
+let shieldTimerId = null;
+
+function useShield() {
+    const shieldBtn = document.querySelector('[data-item="shield"]');
+    shieldActive = true;
+    document.body.classList.add('shield-active');
+    shieldBtn.classList.add('active-shield');
+
+    let timeLeft = 5;
+    updateShieldTimer(timeLeft);
+
+    shieldTimerId = setInterval(() => {
+        timeLeft--;
+        updateShieldTimer(timeLeft);
+        
+        if(timeLeft <= 0) {
+            clearInterval(shieldTimerId);
+            shieldActive = false;
+            document.body.classList.remove('shield-active');
+            shieldBtn.classList.remove('active-shield');
+            document.getElementById('shield-timer').textContent = '';
+        }
+    }, 1000);
+}
+
+function updateShieldTimer(seconds) {
+    const timerElement = document.getElementById('shield-timer');
+    timerElement.textContent = `🛡️ ${seconds}s`;
+}
+
+// 게임 오버 체크 수정
+function checkGameOver(x, y) {
+    if(gameState.mines.has(`${x},${y}`)) {
+        if(gameState.shieldActive) {
+            gameState.shieldActive = false;
+            gameState.items.shield.count--;
+            updateItemDisplay();
+            showShieldEffect();
+            return false;
+        }
+        endGame(false);
+        return true;
+    }
+    return false;
+}
+
+function showShieldEffect() {
+    const effect = document.createElement('div');
+    effect.className = 'shield-active-effect';
+    effect.textContent = '🛡️';
+    document.body.appendChild(effect);
+    
+    setTimeout(() => {
+        effect.remove();
+    }, 1000);
+}
+
+// 힌트 사용 핸들러 최종 수정
+let isHintProcessing = false;
+
+function useHint() {
+    if(isHintProcessing || gameState.gameOver) return;
+    
+    const hintItem = gameState.items.hint;
+    if(hintItem.count < 1) return;
+    
+    hintItem.count--;
+    updateItemDisplay();
+    
+    const mineCells = getUnrevealedMineCells();
+    if(mineCells.length === 0) return;
+    
+    highlightRandomMine(mineCells);
+    isHintProcessing = true;
+    setTimeout(() => isHintProcessing = false, 1000);
+}
+
+function getUnrevealedMineCells() {
+    return Array.from(document.querySelectorAll('.cell:not(.revealed)'))
+        .filter(cell => {
+            const x = parseInt(cell.dataset.x);
+            const y = parseInt(cell.dataset.y);
+            return gameState.mines.has(`${x},${y}`);
+        });
+}
+
+function highlightRandomMine(mineCells) {
+    const randomMine = mineCells[Math.floor(Math.random() * mineCells.length)];
+    randomMine.classList.add('hint-mine');
+    setTimeout(() => randomMine.classList.remove('hint-mine'), 2000);
+}
+
+// 반응형 보드 구현
+function adjustCellSize() {
+    const {size} = LEVELS[gameState.level];
+    const board = document.getElementById('board');
+    const cellSize = Math.min(
+        (board.offsetWidth - (size - 1) * 2) / size,
+        50
+    );
+    document.documentElement.style.setProperty('--cell-size', `${cellSize}px`);
+}
+
+window.addEventListener('resize', () => {
+    adjustCellSize();
+    renderBoard();
+});
+
+// 이벤트 리스너 통합 관리
+function initEventListeners() {
+    // 레벨 버튼
+    document.querySelector('.level-selector').addEventListener('click', (e) => {
+        const btn = e.target.closest('.level-btn');
+        if(btn && !btn.classList.contains('active')) {
+            document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            gameState.level = btn.dataset.level;
+            initGame();
+        }
+    });
+
+    // 아이템 버튼
+    document.querySelector('.item-panel').addEventListener('click', (e) => {
+        const btn = e.target.closest('.item-btn');
+        if(!btn || gameState.gameOver) return;
+        
+        const itemType = btn.dataset.item;
+        switch(itemType) {
+            case 'radar': useRadar(); break;
+            case 'shield': useShield(); break;
+            case 'hint': useHint(); break;
+        }
+    });
+
+    // 셀 클릭 이벤트
+    document.getElementById('board').addEventListener('click', (e) => {
+        handleClick(e);
+    });
+    document.getElementById('board').addEventListener('contextmenu', (e) => {
+        handleRightClick(e);
+    });
+}
+
+// 초기 게임 시작
+initGame();
+
+// SEO 개선을 위한 메타 데이터 추가
+document.addEventListener('DOMContentLoaded', () => {
+    const metaTheme = document.createElement('meta');
+    metaTheme.name = "theme-color";
+    metaTheme.content = "#6b4f40";
+    document.head.appendChild(metaTheme);
+});
+
+// 모바일 터치 핸들러 개선
+let touchStartTime = 0;
+let touchTimer;
+
+document.addEventListener('touchstart', (e) => {
+    if(e.target.closest('.cell')) {
+        touchStartTime = Date.now();
+        touchTimer = setTimeout(() => {
+            handleRightClick(e);
+        }, 500);
+    }
+}, {passive: true});
+
+document.addEventListener('touchend', (e) => {
+    clearTimeout(touchTimer);
+    if(Date.now() - touchStartTime < 500) {
+        handleClick(e);
+    }
+});
+
+// 남은 지뢰 계산 로직 보완
+function updateStatus() {
+    const remaining = gameState.totalMines - gameState.flagged.size;
+    document.getElementById('remaining-mines').textContent = 
+        `${remaining >= 0 ? remaining : 0}`;
+}
+
+// 게임 종료 처리 함수 수정
+function endGame(isWin) {
+    clearInterval(gameState.timerId);
+    gameState.gameOver = true;
+    
+    const overlay = document.getElementById('gameOverlay');
+    const message = document.getElementById('resultMessage');
+    
+    if(isWin) {
+        message.textContent = '🎉 승리했습니다!';
+        message.style.color = '#2ecc71';
+    } else {
+        message.textContent = '💥 게임 오버!';
+        message.style.color = '#e74c3c';
+        revealAllMines();
+    }
+    
+    overlay.style.display = 'flex';
+}
+function revealAllMines() {
+    document.querySelectorAll('.cell').forEach(cell => {
+        const x = cell.dataset.x;
+        const y = cell.dataset.y;
+        if(gameState.mines.has(`${x},${y}`)) {
+            cell.textContent = '💣';
+        }
+    });
+}
+// 타이머 시작
+function startTimer() {
+    if(gameState.timerId) clearInterval(gameState.timerId);
+    gameState.time = 0;
+    gameState.timerId = setInterval(() => {
+        gameState.time++;
+        document.getElementById('timer').textContent = 
+            `${String(Math.floor(gameState.time/60)).padStart(2,'0')}:${String(gameState.time%60).padStart(2,'0')}`;
+    }, 1000);
+}
+
+// 다크 모드 토글 기능
+function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    if(navigator.vibrate) navigator.vibrate(50);
+}
+
+// 진동 효과 통합
+function handleCellAction() {
+    if(navigator.vibrate) navigator.vibrate(30);
+}
+
+// 아이템 기능 실행
+function executeItemEffect(itemType) {
+    switch(itemType) {
+        case 'radar': useRadar(); break;
+        case 'shield': useShield(); break;
+        case 'hint': useHint(); break;
+    }
+}
+
+// 아이템 클릭 핸들러 단일화
+document.querySelector('.item-panel').addEventListener('click', function(e) {
+    const itemBtn = e.target.closest('.item-btn');
+    if(!itemBtn) return;
+    
+    const itemType = itemBtn.dataset.item;
+    if(itemType === 'hint') {
+        useHint();
+    }
+    // 다른 아이템 처리...
+});
+
+// 아이템 표시 업데이트 함수 추가
+function updateItemDisplay() {
+    document.querySelectorAll('.item-btn').forEach(btn => {
+        const itemType = btn.dataset.item;
+        const count = gameState.items[itemType].count;
+        const countElement = btn.querySelector('.item-count');
+        
+        countElement.textContent = count;
+        btn.style.opacity = count > 0 ? 1 : 0.4;
+        countElement.style.visibility = count > 0 ? 'visible' : 'hidden';
+    });
+}
+
+// 레이더 기능 추가
+function useRadar() {
+    if(gameState.items.radar.count < 1) return;
+    
+    gameState.items.radar.count--;
+    updateItemDisplay();
+    
+    // 3x3 영역 스캔
+    const unrevealed = Array.from(document.querySelectorAll('.cell:not(.revealed)'));
+    const targetCell = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+    targetCell.classList.add('radar-scan');
+    setTimeout(() => targetCell.classList.remove('radar-scan'), 1000);
+}
+</script>
+</body>
+</html>

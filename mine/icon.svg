@@ -1,0 +1,15 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 배경 사각형 -->
+    <rect width="100" height="100" fill="#BDBDBD"/>
+    
+    <!-- 격자선 -->
+    <path d="M20 20V80M40 20V80M60 20V80M80 20V80M20 20H80M20 40H80M20 60H80M20 80H80" 
+          stroke="#757575" stroke-width="2"/>
+    
+    <!-- 지뢰 (검은색 원) -->
+    <circle cx="70" cy="70" r="8" fill="black"/>
+    
+    <!-- 깃발 -->
+    <path d="M30 30L50 20V40" fill="#FF1744"/> <!-- 삼각형 부분 -->
+    <path d="M50 40V70" stroke="#FF1744" stroke-width="3"/> <!-- 깃대 부분 -->
+</svg>
