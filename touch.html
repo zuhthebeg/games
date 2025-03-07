@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>큐브 터치 게임</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #222;
+            color: white;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+            margin: auto;
+            background: #444;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">점수: 0</div>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const cubeSize = 50; 
+        const ground = [];
+        const rows = Math.floor(canvas.height / cubeSize);
+        const cols = Math.floor(canvas.width / cubeSize);
+
+        for (let r = 0; r < rows; r++) {
+            ground.push(Array(cols).fill(null));
+        }
+
+        let score = 0;
+        let level = 1;
+        let speed = 3;
+        let currentCube = createCube();
+        let direction = 1;
+        let falling = false;
+
+        function createCube() {
+            return {
+                x: 0,
+                y: 0,
+                width: cubeSize,
+                height: cubeSize,
+                color: getRandomColor()
+            };
+        }
+
+        function getRandomColor() {
+            return `hsl(${Math.random() * 360}, 80%, 60%)`;
+        }
+
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGround();
+
+            if (!falling) {
+                currentCube.x += speed * direction;
+                if (currentCube.x + cubeSize >= canvas.width || currentCube.x <= 0) {
+                    direction *= -1;
+                }
+            } else {
+                if (currentCube.y + cubeSize < canvas.height) {
+                    currentCube.y += speed;
+                } else {
+                    placeCube();
+                }
+            }
+
+            ctx.fillStyle = currentCube.color;
+            ctx.fillRect(currentCube.x, currentCube.y, currentCube.width, currentCube.height);
+
+            requestAnimationFrame(update);
+        }
+
+        function drawGround() {
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (ground[r][c]) {
+                        ctx.fillStyle = ground[r][c];
+                        ctx.fillRect(c * cubeSize, r * cubeSize, cubeSize, cubeSize);
+                    }
+                }
+            }
+        }
+
+        function placeCube() {
+            let row = Math.floor(currentCube.y / cubeSize);
+            let col = Math.floor(currentCube.x / cubeSize);
+
+            if (row < rows && col < cols) {
+                ground[row][col] = currentCube.color;
+                score += (level * 10);
+                document.getElementById("score").textContent = "점수: " + score;
+            }
+
+            level++;
+            speed += 0.5;
+            if (level > 6) level = 1;
+            falling = false;
+            currentCube = createCube();
+        }
+
+        canvas.addEventListener("click", () => {
+            if (!falling) {
+                falling = true;
+            } else {
+                falling = false;
+            }
+        });
+
+        update();
+    </script>
+</body>
+</html>
