@@ -135,4 +135,73 @@
       if (phase === "horizontal") {
         // 수평 이동 중 클릭 → 낙하 시작 (x좌표 고정)
         phase = "falling";
-      } else if (phase ===
+      } else if (phase === "falling") {
+        // 낙하 중 클릭하고 아직 바닥 튕기지 않았다면 → 즉시 튕겨 올림
+        if (!bounceUsed) {
+          bounceUsed = true;
+          verticalSpeed = -verticalSpeed;
+          phase = "upward";
+        }
+      } else if (phase === "upward") {
+        // 상승 중 클릭하면 그 자리에서 멈춤
+        phase = "stopped";
+        scorePiece();
+      }
+    });
+
+    // 메인 게임 루프
+    function update() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 넷(펼친 정육면체) 그리기
+      netSquares.forEach(square => {
+        const rx = netOffsetX + square.x;
+        const ry = netOffsetY + square.y;
+        ctx.fillStyle = "#eee";
+        ctx.fillRect(rx, ry, cubeSize, cubeSize);
+        ctx.strokeStyle = "#999";
+        ctx.strokeRect(rx, ry, cubeSize, cubeSize);
+      });
+
+      // 현재 큐브 위치 업데이트
+      if (phase === "horizontal") {
+        // 수평 이동 – 좌우 벽에 닿으면 방향 전환
+        piece.x += horizontalSpeed * direction;
+        if (piece.x <= 0 || piece.x + piece.size >= canvas.width) {
+          direction *= -1;
+          // 경계를 벗어나지 않도록 보정
+          piece.x = Math.max(0, Math.min(piece.x, canvas.width - piece.size));
+        }
+      } else if (phase === "falling" || phase === "upward") {
+        // 수직 이동 (낙하 또는 상승)
+        piece.y += verticalSpeed;
+        // 낙하 중 바닥(캔버스 하단)에 닿으면 (한번만 튕김)
+        if (phase === "falling" && piece.y + piece.size >= canvas.height) {
+          if (!bounceUsed) {
+            piece.y = canvas.height - piece.size;
+            bounceUsed = true;
+            verticalSpeed = -verticalSpeed;
+            phase = "upward";
+          } else {
+            piece.y = canvas.height - piece.size;
+          }
+        }
+        // 상승 중 화면 상단에 도달하면 고정
+        if (phase === "upward" && piece.y <= 0) {
+          piece.y = 0;
+          verticalSpeed = 0;
+        }
+      }
+      // (phase가 "stopped"면 piece는 고정)
+
+      // 현재 큐브 그리기
+      ctx.fillStyle = piece.color;
+      ctx.fillRect(piece.x, piece.y, piece.size, piece.size);
+
+      requestAnimationFrame(update);
+    }
+
+    update();
+  </script>
+</body>
+</html>
