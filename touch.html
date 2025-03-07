@@ -102,225 +102,210 @@
     </div>
   </div>
   <script>
-    // 캔버스 및 부모 크기에 맞게 사이즈 조절
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    function resizeCanvas() {
-      canvas.width = canvas.parentElement.clientWidth;
-      canvas.height = canvas.parentElement.clientHeight;
-      calculateNetOffsets();
-    }
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+    // DOMContentLoaded로 모든 요소가 준비된 후 실행
+    document.addEventListener("DOMContentLoaded", () => {
+      const container = document.getElementById("game-container");
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
 
-    // 게임 변수
-    const maxLevel = 6;
-    let level = 1;
-    let totalScore = 0;
-    const levelScores = [];
-    let phase = "horizontal"; // "horizontal", "falling", "upward", "stopped"
-    let bounceUsed = false;
-    let direction = 1; // 좌우 이동 방향
-    let horizontalSpeed = 4 + level;
-    let verticalSpeed = 5 + level * 1.5;
-    let gameEnded = false;
+      // 부모 컨테이너의 크기를 이용해 캔버스 사이즈 지정
+      function resizeCanvas() {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        calculateNetOffsets();
+      }
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
 
-    // 큐브(정육면체) 크기
-    const cubeSize = 80;
+      // 게임 변수
+      const maxLevel = 6;
+      let level = 1;
+      let totalScore = 0;
+      const levelScores = [];
+      let phase = "horizontal"; // "horizontal", "falling", "upward", "stopped"
+      let bounceUsed = false;
+      let direction = 1; // 좌우 이동 방향
+      let horizontalSpeed = 4 + level;
+      let verticalSpeed = 5 + level * 1.5;
+      let gameEnded = false;
 
-    // 펼쳐진 정육면체(넷) – 각 면의 색상 지정 (U, L, F, R, B, D)
-    const netTileColors = {
-      U: "#ffffff",
-      L: "#ff9933",
-      F: "#66cc66",
-      R: "#ff3333",
-      B: "#3333ff",
-      D: "#ffff66"
-    };
-    const netSquares = [
-      { face: 'U', x: cubeSize,       y: 0,             color: netTileColors['U'] },
-      { face: 'L', x: 0,              y: cubeSize,      color: netTileColors['L'] },
-      { face: 'F', x: cubeSize,       y: cubeSize,      color: netTileColors['F'] },
-      { face: 'R', x: cubeSize * 2,   y: cubeSize,      color: netTileColors['R'] },
-      { face: 'B', x: cubeSize * 3,   y: cubeSize,      color: netTileColors['B'] },
-      { face: 'D', x: cubeSize * 2,   y: cubeSize * 2,  color: netTileColors['D'] }
-    ];
-    const netWidth = 4 * cubeSize;
-    const netHeight = 3 * cubeSize;
-    let netOffsetX = 0;
-    let netOffsetY = 0;
-    function calculateNetOffsets() {
-      netOffsetX = (canvas.width - netWidth) / 2;
-      netOffsetY = canvas.height - netHeight - 20;
-    }
-    calculateNetOffsets();
+      // 큐브(정육면체) 크기
+      const cubeSize = 80;
 
-    // 게임 오브젝트: 떨어지는 큐브 (떨어지는 면)
-    let piece = createPiece();
-    function createPiece() {
-      // 6면 중 랜덤 선택 → 해당 면의 색상을 가진 큐브 생성
-      const faces = Object.keys(netTileColors);
-      const randomFace = faces[Math.floor(Math.random() * faces.length)];
-      return {
-        x: 0,
-        y: 20,
-        size: cubeSize,
-        color: netTileColors[randomFace],
-        targetFace: randomFace
+      // 펼쳐진 정육면체(넷) – 각 면의 색상 지정 (U, L, F, R, B, D)
+      const netTileColors = {
+        U: "#ffffff",
+        L: "#ff9933",
+        F: "#66cc66",
+        R: "#ff3333",
+        B: "#3333ff",
+        D: "#ffff66"
       };
-    }
-
-    // 두 사각형의 겹치는 면적 계산
-    function rectOverlap(x1, y1, w1, h1, x2, y2, w2, h2) {
-      const xOverlap = Math.max(0, Math.min(x1 + w1, x2 + w2) - Math.max(x1, x2));
-      const yOverlap = Math.max(0, Math.min(y1 + h1, y2 + h2) - Math.max(y1, y2));
-      return xOverlap * yOverlap;
-    }
-
-    // 사이드바 업데이트: 각 레벨 점수와 총 점수 표시
-    function updateSidebar() {
-      const levelScoresList = document.getElementById("levelScores");
-      levelScoresList.innerHTML = "";
-      levelScores.forEach((score, idx) => {
-        const li = document.createElement("li");
-        li.textContent = `레벨 ${idx + 1}: ${score} 점`;
-        levelScoresList.appendChild(li);
-      });
-      document.getElementById("totalScore").textContent = `총 점수: ${totalScore} 점`;
-    }
-
-    // 리더보드 업데이트: localStorage에서 기록 불러오기 (상위 5개)
-    function updateLeaderboard() {
-      const leaderboardList = document.getElementById("leaderboardList");
-      leaderboardList.innerHTML = "";
-      let records = JSON.parse(localStorage.getItem("cubeGameRecords") || "[]");
-      records.sort((a, b) => b.score - a.score);
-      records.slice(0, 5).forEach(rec => {
-        const li = document.createElement("li");
-        li.textContent = `${rec.time} - ${rec.score} 점`;
-        leaderboardList.appendChild(li);
-      });
-    }
-
-    // 게임 종료 처리 (6레벨 종료 시)
-    function gameOver() {
-      gameEnded = true;
-      // localStorage에 기록 저장 (점수와 시간)
-      const record = { score: totalScore, time: new Date().toLocaleString() };
-      let records = JSON.parse(localStorage.getItem("cubeGameRecords") || "[]");
-      records.push(record);
-      localStorage.setItem("cubeGameRecords", JSON.stringify(records));
-      updateLeaderboard();
-      // 캔버스에 게임 종료 메시지 출력
-      ctx.fillStyle = "rgba(0,0,0,0.7)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#fff";
-      ctx.font = "40px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText("게임 종료", canvas.width / 2, canvas.height / 2);
-    }
-
-    // 점수 계산: 큐브와 해당 면(타겟)의 겹친 면적에 따라 점수를 산정
-    function scorePiece() {
-      const targetTile = netSquares.find(tile => tile.face === piece.targetFace);
-      const rx = netOffsetX + targetTile.x;
-      const ry = netOffsetY + targetTile.y;
-      const overlapArea = rectOverlap(piece.x, piece.y, piece.size, piece.size, rx, ry, cubeSize, cubeSize);
-      const ratio = overlapArea / (piece.size * piece.size);
-      const points = Math.floor(ratio * 100 * level);
-      totalScore += points;
-      levelScores.push(points);
-      updateSidebar();
-    }
-
-    // 캔버스 클릭 이벤트 처리
-    canvas.addEventListener("click", () => {
-      if (phase === "horizontal") {
-        phase = "falling";
-      } else if (phase === "falling") {
-        if (!bounceUsed) {
-          bounceUsed = true;
-          verticalSpeed = -verticalSpeed;
-          phase = "upward";
-        }
-      } else if (phase === "upward") {
-        phase = "stopped";
-        scorePiece();
-        setTimeout(() => {
-          if (level < maxLevel) {
-            level++;
-            horizontalSpeed = 4 + level;
-            verticalSpeed = 5 + level * 1.5;
-            phase = "horizontal";
-            bounceUsed = false;
-            piece = createPiece();
-          } else {
-            gameOver();
-          }
-        }, 800);
+      const netSquares = [
+        { face: 'U', x: cubeSize,       y: 0,             color: netTileColors['U'] },
+        { face: 'L', x: 0,              y: cubeSize,      color: netTileColors['L'] },
+        { face: 'F', x: cubeSize,       y: cubeSize,      color: netTileColors['F'] },
+        { face: 'R', x: cubeSize * 2,   y: cubeSize,      color: netTileColors['R'] },
+        { face: 'B', x: cubeSize * 3,   y: cubeSize,      color: netTileColors['B'] },
+        { face: 'D', x: cubeSize * 2,   y: cubeSize * 2,  color: netTileColors['D'] }
+      ];
+      const netWidth = 4 * cubeSize;
+      const netHeight = 3 * cubeSize;
+      let netOffsetX = 0;
+      let netOffsetY = 0;
+      function calculateNetOffsets() {
+        netOffsetX = (canvas.width - netWidth) / 2;
+        netOffsetY = canvas.height - netHeight - 20;
       }
-    });
+      calculateNetOffsets();
 
-    // 리더보드 토글 버튼 이벤트
-    document.getElementById("toggleLeaderboard").addEventListener("click", () => {
-      const leaderboard = document.getElementById("leaderboard");
-      if (leaderboard.style.display === "none" || leaderboard.style.display === "") {
-        leaderboard.style.display = "block";
-      } else {
-        leaderboard.style.display = "none";
+      // 게임 오브젝트: 떨어지는 큐브 (해당 면)
+      let piece = createPiece();
+      function createPiece() {
+        const faces = Object.keys(netTileColors);
+        const randomFace = faces[Math.floor(Math.random() * faces.length)];
+        return {
+          x: 0,
+          y: 20,
+          size: cubeSize,
+          color: netTileColors[randomFace],
+          targetFace: randomFace
+        };
       }
-    });
 
-    // 메인 게임 루프
-    function update() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // 펼쳐진 정육면체(넷) 그리기 – 각 면은 지정된 색상으로 채움
-      netSquares.forEach(tile => {
-        const rx = netOffsetX + tile.x;
-        const ry = netOffsetY + tile.y;
-        ctx.fillStyle = tile.color;
-        ctx.fillRect(rx, ry, cubeSize, cubeSize);
-        ctx.strokeStyle = "#000";
-        ctx.strokeRect(rx, ry, cubeSize, cubeSize);
-      });
-      
-      // 큐브 이동 처리
-      if (phase === "horizontal") {
-        piece.x += horizontalSpeed * direction;
-        if (piece.x <= 0 || piece.x + piece.size >= canvas.width) {
-          direction *= -1;
-          piece.x = Math.max(0, Math.min(piece.x, canvas.width - piece.size));
-        }
-      } else if (phase === "falling" || phase === "upward") {
-        piece.y += verticalSpeed;
-        // 바닥 도달 시 (한번만 튕김)
-        if (phase === "falling" && piece.y + piece.size >= canvas.height) {
+      function rectOverlap(x1, y1, w1, h1, x2, y2, w2, h2) {
+        const xOverlap = Math.max(0, Math.min(x1 + w1, x2 + w2) - Math.max(x1, x2));
+        const yOverlap = Math.max(0, Math.min(y1 + h1, y2 + h2) - Math.max(y1, y2));
+        return xOverlap * yOverlap;
+      }
+
+      function updateSidebar() {
+        const levelScoresList = document.getElementById("levelScores");
+        levelScoresList.innerHTML = "";
+        levelScores.forEach((score, idx) => {
+          const li = document.createElement("li");
+          li.textContent = `레벨 ${idx + 1}: ${score} 점`;
+          levelScoresList.appendChild(li);
+        });
+        document.getElementById("totalScore").textContent = `총 점수: ${totalScore} 점`;
+      }
+
+      function updateLeaderboard() {
+        const leaderboardList = document.getElementById("leaderboardList");
+        leaderboardList.innerHTML = "";
+        let records = JSON.parse(localStorage.getItem("cubeGameRecords") || "[]");
+        records.sort((a, b) => b.score - a.score);
+        records.slice(0, 5).forEach(rec => {
+          const li = document.createElement("li");
+          li.textContent = `${rec.time} - ${rec.score} 점`;
+          leaderboardList.appendChild(li);
+        });
+      }
+
+      function gameOver() {
+        gameEnded = true;
+        const record = { score: totalScore, time: new Date().toLocaleString() };
+        let records = JSON.parse(localStorage.getItem("cubeGameRecords") || "[]");
+        records.push(record);
+        localStorage.setItem("cubeGameRecords", JSON.stringify(records));
+        updateLeaderboard();
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff";
+        ctx.font = "40px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("게임 종료", canvas.width / 2, canvas.height / 2);
+      }
+
+      function scorePiece() {
+        const targetTile = netSquares.find(tile => tile.face === piece.targetFace);
+        const rx = netOffsetX + targetTile.x;
+        const ry = netOffsetY + targetTile.y;
+        const overlapArea = rectOverlap(piece.x, piece.y, piece.size, piece.size, rx, ry, cubeSize, cubeSize);
+        const ratio = overlapArea / (piece.size * piece.size);
+        const points = Math.floor(ratio * 100 * level);
+        totalScore += points;
+        levelScores.push(points);
+        updateSidebar();
+      }
+
+      canvas.addEventListener("click", () => {
+        if (phase === "horizontal") {
+          phase = "falling";
+        } else if (phase === "falling") {
           if (!bounceUsed) {
-            piece.y = canvas.height - piece.size;
             bounceUsed = true;
             verticalSpeed = -verticalSpeed;
             phase = "upward";
-          } else {
-            piece.y = canvas.height - piece.size;
+          }
+        } else if (phase === "upward") {
+          phase = "stopped";
+          scorePiece();
+          setTimeout(() => {
+            if (level < maxLevel) {
+              level++;
+              horizontalSpeed = 4 + level;
+              verticalSpeed = 5 + level * 1.5;
+              phase = "horizontal";
+              bounceUsed = false;
+              piece = createPiece();
+            } else {
+              gameOver();
+            }
+          }, 800);
+        }
+      });
+
+      document.getElementById("toggleLeaderboard").addEventListener("click", () => {
+        const leaderboard = document.getElementById("leaderboard");
+        leaderboard.style.display = (leaderboard.style.display === "none" || leaderboard.style.display === "") ? "block" : "none";
+      });
+
+      function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 넷(펼쳐진 정육면체) 그리기
+        netSquares.forEach(tile => {
+          const rx = netOffsetX + tile.x;
+          const ry = netOffsetY + tile.y;
+          ctx.fillStyle = tile.color;
+          ctx.fillRect(rx, ry, cubeSize, cubeSize);
+          ctx.strokeStyle = "#000";
+          ctx.strokeRect(rx, ry, cubeSize, cubeSize);
+        });
+        
+        // 큐브 이동 처리
+        if (phase === "horizontal") {
+          piece.x += horizontalSpeed * direction;
+          if (piece.x <= 0 || piece.x + piece.size >= canvas.width) {
+            direction *= -1;
+            piece.x = Math.max(0, Math.min(piece.x, canvas.width - piece.size));
+          }
+        } else if (phase === "falling" || phase === "upward") {
+          piece.y += verticalSpeed;
+          if (phase === "falling" && piece.y + piece.size >= canvas.height) {
+            if (!bounceUsed) {
+              piece.y = canvas.height - piece.size;
+              bounceUsed = true;
+              verticalSpeed = -verticalSpeed;
+              phase = "upward";
+            } else {
+              piece.y = canvas.height - piece.size;
+            }
+          }
+          if (phase === "upward" && piece.y <= 0) {
+            piece.y = 0;
+            verticalSpeed = 0;
           }
         }
-        if (phase === "upward" && piece.y <= 0) {
-          piece.y = 0;
-          verticalSpeed = 0;
+        
+        ctx.fillStyle = piece.color;
+        ctx.fillRect(piece.x, piece.y, piece.size, piece.size);
+        if (!gameEnded) {
+          requestAnimationFrame(update);
         }
       }
-      // phase가 "stopped"이면 큐브는 고정된 채로 남음
-
-      // 큐브 그리기
-      ctx.fillStyle = piece.color;
-      ctx.fillRect(piece.x, piece.y, piece.size, piece.size);
-
-      if (!gameEnded) {
-        requestAnimationFrame(update);
-      }
-    }
-    update();
+      update();
+    });
   </script>
 </body>
 </html>
