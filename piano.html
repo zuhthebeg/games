@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>리듬게임 - 피아노 건반</title>
+  <style>
+    /* 전체 배경 및 기본 설정 */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+    /* 게임 전체 영역 */
+    .game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    /* 노트가 떨어지는 영역 (건반 위쪽) */
+    .falling-area {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 100px; /* 건반 높이 고려 */
+      overflow: hidden;
+    }
+    /* 건반 영역 */
+    .key-container {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100px;
+      display: flex;
+    }
+    /* 각 피아노 건반 */
+    .piano-key {
+      flex: 1;
+      margin: 2px;
+      border: 1px solid #333;
+      background: #fff;
+      border-radius: 5px;
+      text-align: center;
+      line-height: 100px;
+      color: #000;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.1s;
+    }
+    .piano-key.active {
+      background: #ff0;
+    }
+    /* 떨어지는 노트 */
+    .note {
+      position: absolute;
+      height: 20px;
+      background: #f00;
+      border-radius: 10px;
+      left: 5%;
+      width: 90%;
+      animation: fall linear;
+    }
+    @keyframes fall {
+      0% { top: -20px; }
+      100% { top: calc(100% - 100px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="falling-area" id="fallingArea"></div>
+    <div class="key-container" id="keyContainer">
+      <!-- 건반은 JS로 생성됩니다. -->
+    </div>
+  </div>
+
+  <script>
+    // 7개의 피아노 건반 (노트와 주파수)
+    const keys = [
+      { note: 'C', frequency: 261.63 },
+      { note: 'D', frequency: 293.66 },
+      { note: 'E', frequency: 329.63 },
+      { note: 'F', frequency: 349.23 },
+      { note: 'G', frequency: 392.00 },
+      { note: 'A', frequency: 440.00 },
+      { note: 'B', frequency: 493.88 }
+    ];
+
+    const keyContainer = document.getElementById('keyContainer');
+    const fallingArea = document.getElementById('fallingArea');
+
+    // 건반 생성
+    keys.forEach((key, index) => {
+      const keyDiv = document.createElement('div');
+      keyDiv.classList.add('piano-key');
+      keyDiv.textContent = key.note;
+      keyDiv.dataset.index = index;
+      keyContainer.appendChild(keyDiv);
+      // 클릭 시 해당 음 재생
+      keyDiv.addEventListener('click', () => playNote(key.frequency, keyDiv));
+    });
+
+    // Web Audio API 초기화
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playNote(frequency, keyDiv) {
+      // 시각적 효과
+      keyDiv.classList.add('active');
+      setTimeout(() => keyDiv.classList.remove('active'), 150);
+      
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+      // 간단한 ADSR envelope
+      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 0.05);
+      gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.35);
+    }
+
+    // 떨어지는 노트 생성 함수
+    function createFallingNote() {
+      const noteDiv = document.createElement('div');
+      noteDiv.classList.add('note');
+      // 랜덤 건반 번호 선택
+      const colIndex = Math.floor(Math.random() * keys.length);
+      noteDiv.dataset.colIndex = colIndex;
+      // 건반의 너비에 맞춰 위치 조정
+      const keyWidth = keyContainer.clientWidth / keys.length;
+      noteDiv.style.left = (colIndex * keyWidth + keyWidth * 0.05) + 'px';
+      noteDiv.style.width = (keyWidth * 0.9) + 'px';
+      // 노트 애니메이션 지속시간 (조절 가능)
+      const duration = 3; // 초 단위
+      noteDiv.style.animationDuration = duration + 's';
+      fallingArea.appendChild(noteDiv);
+
+      // 애니메이션 종료 후 제거
+      noteDiv.addEventListener('animationend', () => {
+        fallingArea.removeChild(noteDiv);
+      });
+    }
+
+    // 일정 간격으로 노트 생성 (리듬에 맞게 간격 조절 가능)
+    setInterval(createFallingNote, 1000);
+
+    // 키보드 입력 지원 (Q, W, E, R, T, Y, U)
+    document.addEventListener('keydown', (e) => {
+      const keyMap = {
+        'q': 0,
+        'w': 1,
+        'e': 2,
+        'r': 3,
+        't': 4,
+        'y': 5,
+        'u': 6
+      };
+      const keyIndex = keyMap[e.key];
+      if (keyIndex !== undefined) {
+        const keyInfo = keys[keyIndex];
+        const keyDiv = keyContainer.children[keyIndex];
+        playNote(keyInfo.frequency, keyDiv);
+      }
+    });
+  </script>
+</body>
+</html>
