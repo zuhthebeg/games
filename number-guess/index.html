@@ -3,14 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>number-guess</title>
+    <title>숫자 맞추기 게임</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>number-guess</h1>
-        <p>앱이 생성되었습니다.</p>
+        <h1>🎲 숫자 맞추기 게임</h1>
+        <p class="description">1부터 100 사이의 숫자를 맞춰보세요!</p>
+
+        <div class="game-info">
+            <div class="info-item">
+                <span class="label">시도 횟수:</span>
+                <span class="value" id="attempts">0</span>
+            </div>
+            <div class="info-item">
+                <span class="label">최고 기록:</span>
+                <span class="value" id="bestScore">-</span>
+            </div>
+        </div>
+
+        <div class="message" id="message">숫자를 입력하고 추측 버튼을 누르세요!</div>
+
+        <div class="input-group">
+            <input type="number" id="guessInput" min="1" max="100" placeholder="1-100 사이의 숫자" autofocus>
+            <button id="guessBtn" class="btn-primary">추측</button>
+        </div>
+
+        <div class="history">
+            <h3>시도 기록</h3>
+            <div id="historyList" class="history-list"></div>
+        </div>
+
+        <button id="resetBtn" class="btn-secondary">새 게임</button>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
