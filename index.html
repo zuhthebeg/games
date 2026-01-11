@@ -3,187 +3,405 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SANDBOX - game</title>
-    <!-- 파비콘 추가 -->
-    <link rel="icon" href="https://cocy.io/favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="https://cocy.io/favicon.ico" type="image/x-icon">
-       
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607"
-    crossorigin="anonymous"></script>
-
-<!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-MJPN92FN');</script>
-<!-- End Google Tag Manager -->
-        <!-- Three.js CDN importmap -->
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.132.2/build/three.module.js",
-            "three/examples/jsm/controls/": "https://unpkg.com/three@0.132.2/examples/jsm/controls/"
+    <title>게임 포털 - Game.cocy.io</title>
+    <style>
+        :root {
+            --primary: #ec4899;
+            --secondary: #8b5cf6;
+            --accent: #f59e0b;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
         }
-    }
-    </script>
-    
-    <!-- Google Fonts 추가 -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-   
-    <link href="https://cocy.io/common.css" rel="stylesheet">
 
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f172a;
+                --card-bg: #1e293b;
+                --text: #f1f5f9;
+                --text-secondary: #94a3b8;
+                --border: #334155;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+            padding: 3rem 1.5rem;
+            text-align: center;
+            color: white;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .search-box {
+            max-width: 600px;
+            margin: -2rem auto 3rem;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--card-bg);
+            color: var(--text);
+            box-shadow: var(--shadow);
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+        }
+
+        .category {
+            margin-bottom: 3rem;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 3px solid var(--border);
+        }
+
+        .category-icon {
+            font-size: 2rem;
+        }
+
+        .category-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .category-count {
+            margin-left: auto;
+            padding: 0.25rem 0.75rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s;
+        }
+
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+
+        .game-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .game-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .game-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            background: linear-gradient(135deg, #ec489915, #8b5cf615);
+        }
+
+        .game-info {
+            flex: 1;
+        }
+
+        .game-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .game-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .badge-new {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-hot {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-dev {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .game-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .game-meta {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-tag {
+            padding: 0.25rem 0.75rem;
+            background: var(--bg);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .category-header {
+                flex-wrap: wrap;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .game-card {
+            animation: fadeIn 0.4s ease-out;
+        }
+    </style>
 </head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-MHYFCQ35XR"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-MHYFCQ35XR');
-</script>
 <body>
-<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MJPN92FN"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
-    <div id="scene-container"></div>
-    
-    <div class="portal-container">
-        <h1 class="portal-title">SANDBOX</h1>
-        <div class="game-grid">
-            <!-- 동적으로 게임 카드 추가 -->
+    <div class="header">
+        <h1>🎮 게임 포털</h1>
+        <p>재미있는 게임을 즐겨보세요</p>
+    </div>
+
+    <div class="container">
+        <div class="search-box">
+            <input
+                type="text"
+                class="search-input"
+                id="searchInput"
+                placeholder="🔍 게임 검색..."
+                autocomplete="off"
+            >
         </div>
+
+        <div id="categoriesContainer"></div>
     </div>
 
-    <div class="footer">
-        <p>© 2025 COCY.IO All rights reserved.</p>
-    </div>
-
-    <script type="module">
-        // CDN에서 모듈 임포트
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-
-        // three.js 초기화 함수
-        const initScene = () => {
-            const scene = new THREE.Scene();
-            const container = document.getElementById('scene-container');
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ 
-                alpha: true, 
-                antialias: true 
-            });
-            
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            container.appendChild(renderer.domElement);
-
-            // 파티클 생성
-            const particles = new THREE.BufferGeometry();
-            const particleCount = 1000;
-            const posArray = new Float32Array(particleCount * 3);
-
-            for(let i = 0; i < particleCount * 3; i++) {
-                posArray[i] = (Math.random() - 0.5) * 10;
-            }
-
-            particles.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-            const material = new THREE.PointsMaterial({
-                size: 0.005,
-                color: new THREE.Color(
-                    getComputedStyle(document.documentElement)
-                        .getPropertyValue('--neon-blue').trim()
-                )
-            });
-
-            const particleMesh = new THREE.Points(particles, material);
-            scene.add(particleMesh);
-
-            camera.position.z = 3;
-
-            // OrbitControls 초기화
-            const controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableZoom = false;
-
-            // 애니메이션 루프
-            function animate() {
-                requestAnimationFrame(animate);
-                particleMesh.rotation.y += 0.001;
-                controls.update();
-                renderer.render(scene, camera);
-            }
-            animate();
-
-            // 리사이즈 핸들러
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-        };
-
-        // 게임 데이터 로드 함수
-        const loadGameData = async () => {
-            try {
-                const response = await fetch('./apps.json');
-                return await response.json();
-            } catch (error) {
-                console.error('게임 데이터 로딩 실패:', error);
-                return [];
+    <script>
+        const categories = {
+            'puzzle': {
+                icon: '🧩',
+                title: '퍼즐 게임',
+                games: ['tileslider', 'blockpuzzle']
+            },
+            'classic': {
+                icon: '🕹️',
+                title: '클래식 게임',
+                games: ['snake', 'mine', 'rps']
+            },
+            'casual': {
+                icon: '🎯',
+                title: '캐주얼 게임',
+                games: ['number-guess']
+            },
+            'tracker': {
+                icon: '📊',
+                title: '트래커',
+                games: ['pikmin']
             }
         };
 
-        // 게임 카드 생성 함수 (수정된 비동기 버전)
-        const createGameCards = async () => {
-            const grid = document.querySelector('.game-grid');
-            const games = await loadGameData();
-            
-            // 'tool' 카테고리만 필터링
-            const filteredGames = games.filter(game => game.category === 'game');
+        const gamesData = {
+            'number-guess': { title: '숫자 맞추기', desc: '간단한 숫자 맞추기 게임', badge: 'NEW', badgeClass: 'badge-new', icon: '🎲' },
+            'rps': { title: '가위바위보', desc: '클래식 가위바위보 게임', badge: 'NEW', badgeClass: 'badge-new', icon: '✊' },
+            'tileslider': { title: '타일 슬라이더', desc: '슬라이딩 숫자/이미지 퍼즐', badge: 'HOT', badgeClass: 'badge-hot', icon: '🔢' },
+            'blockpuzzle': { title: '블럭 퍼즐', desc: '블럭 조합 퍼즐', badge: 'NEW', badgeClass: 'badge-new', icon: '🧱' },
+            'pikmin': { title: '피크민 트래커', desc: '피크민 수집 관리', badge: 'HOT', badgeClass: 'badge-hot', icon: '🌱' },
+            'snake': { title: 'Snake', desc: '클래식 뱀 게임', badge: 'DEV', badgeClass: 'badge-dev', icon: '🐍' },
+            'mine': { title: '지뢰찾기', desc: '클래식 지뢰찾기 게임', badge: 'DEV', badgeClass: 'badge-dev', icon: '💣' }
+        };
 
-            // 기존 카드 초기화
-            grid.innerHTML = '';
+        function renderCategories(filter = '') {
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = '';
 
-            // 필터링된 게임으로 카드 생성
-            filteredGames.forEach(game => {
-                const card = document.createElement('div');
-                card.className = 'game-card';
-                card.dataset.game = game.title.toLowerCase().replace(/\s+/g, '');
-                
-                card.innerHTML = `
-                    <div class="card-header">
-                        ${game.badge ? `<span class="badge">${game.badge}</span>` : ''}
-                        <img src="${game.icon}" alt="${game.title} 아이콘" class="game-icon">
+            Object.entries(categories).forEach(([catId, catData]) => {
+                const filteredGames = catData.games.filter(gameId => {
+                    const game = gamesData[gameId];
+                    return !filter ||
+                           game.title.toLowerCase().includes(filter) ||
+                           game.desc.toLowerCase().includes(filter);
+                });
+
+                if (filteredGames.length === 0 && filter) return;
+
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+
+                categoryDiv.innerHTML = `
+                    <div class="category-header">
+                        <span class="category-icon">${catData.icon}</span>
+                        <h2 class="category-title">${catData.title}</h2>
+                        <span class="category-count">${filteredGames.length}</span>
                     </div>
-                    <h3 class="card-title">${game.title}</h3>
-                    <p>${game.desc}</p>
-                    <div class="meta-info">
-                        <div class="platforms">
-                            ${game.platforms.map(p => `<span class="platform-tag">${p}</span>`).join('')}
-                        </div>
-                        <div class="languages">
-                            ${game.languages.map(l => `<span class="lang-tag">${l}</span>`).join('')}
-                        </div>
+                    <div class="games-grid">
+                        ${filteredGames.map(gameId => {
+                            const game = gamesData[gameId];
+                            return `
+                                <a href="https://game.cocy.io/${gameId}/" class="game-card">
+                                    <div class="game-header">
+                                        <div class="game-icon">${game.icon}</div>
+                                        <div class="game-info">
+                                            <div class="game-title">${game.title}</div>
+                                            <span class="game-badge ${game.badgeClass}">${game.badge}</span>
+                                        </div>
+                                    </div>
+                                    <div class="game-desc">${game.desc}</div>
+                                    <div class="game-meta">
+                                        <span class="meta-tag">🌍 Web</span>
+                                    </div>
+                                </a>
+                            `;
+                        }).join('')}
                     </div>
                 `;
 
-                card.addEventListener('click', (e) => {
-                    if(!e.target.closest('.badge, .game-icon')) {
-                        window.location.href = game.url;
-                    }
-                });
-
-                grid.appendChild(card);
+                container.appendChild(categoryDiv);
             });
-        };
 
-        // 초기화 실행 (비동기 처리 추가)
-        window.addEventListener('DOMContentLoaded', async () => {
-            initScene();
-            await createGameCards();
+            if (container.children.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <h3>검색 결과가 없습니다</h3>
+                        <p>다른 키워드로 검색해보세요</p>
+                    </div>
+                `;
+            }
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            renderCategories(e.target.value.toLowerCase());
         });
+
+        renderCategories();
     </script>
 </body>
 </html>

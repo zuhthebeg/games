@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SANDBOX - game</title>
+    <!-- 파비콘 추가 -->
+    <link rel="icon" href="https://cocy.io/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="https://cocy.io/favicon.ico" type="image/x-icon">
+       
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607"
+    crossorigin="anonymous"></script>
+
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MJPN92FN');</script>
+<!-- End Google Tag Manager -->
+        <!-- Three.js CDN importmap -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.132.2/build/three.module.js",
+            "three/examples/jsm/controls/": "https://unpkg.com/three@0.132.2/examples/jsm/controls/"
+        }
+    }
+    </script>
+    
+    <!-- Google Fonts 추가 -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+   
+    <link href="https://cocy.io/common.css" rel="stylesheet">
+
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MHYFCQ35XR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-MHYFCQ35XR');
+</script>
+<body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MJPN92FN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+    <div id="scene-container"></div>
+    
+    <div class="portal-container">
+        <h1 class="portal-title">SANDBOX</h1>
+        <div class="game-grid">
+            <!-- 동적으로 게임 카드 추가 -->
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2025 COCY.IO All rights reserved.</p>
+    </div>
+
+    <script type="module">
+        // CDN에서 모듈 임포트
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+        // three.js 초기화 함수
+        const initScene = () => {
+            const scene = new THREE.Scene();
+            const container = document.getElementById('scene-container');
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ 
+                alpha: true, 
+                antialias: true 
+            });
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            // 파티클 생성
+            const particles = new THREE.BufferGeometry();
+            const particleCount = 1000;
+            const posArray = new Float32Array(particleCount * 3);
+
+            for(let i = 0; i < particleCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 10;
+            }
+
+            particles.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const material = new THREE.PointsMaterial({
+                size: 0.005,
+                color: new THREE.Color(
+                    getComputedStyle(document.documentElement)
+                        .getPropertyValue('--neon-blue').trim()
+                )
+            });
+
+            const particleMesh = new THREE.Points(particles, material);
+            scene.add(particleMesh);
+
+            camera.position.z = 3;
+
+            // OrbitControls 초기화
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableZoom = false;
+
+            // 애니메이션 루프
+            function animate() {
+                requestAnimationFrame(animate);
+                particleMesh.rotation.y += 0.001;
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // 리사이즈 핸들러
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        };
+
+        // 게임 데이터 로드 함수
+        const loadGameData = async () => {
+            try {
+                const response = await fetch('./apps.json');
+                return await response.json();
+            } catch (error) {
+                console.error('게임 데이터 로딩 실패:', error);
+                return [];
+            }
+        };
+
+        // 게임 카드 생성 함수 (수정된 비동기 버전)
+        const createGameCards = async () => {
+            const grid = document.querySelector('.game-grid');
+            const games = await loadGameData();
+            
+            // 'tool' 카테고리만 필터링
+            const filteredGames = games.filter(game => game.category === 'game');
+
+            // 기존 카드 초기화
+            grid.innerHTML = '';
+
+            // 필터링된 게임으로 카드 생성
+            filteredGames.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.dataset.game = game.title.toLowerCase().replace(/\s+/g, '');
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        ${game.badge ? `<span class="badge">${game.badge}</span>` : ''}
+                        <img src="${game.icon}" alt="${game.title} 아이콘" class="game-icon">
+                    </div>
+                    <h3 class="card-title">${game.title}</h3>
+                    <p>${game.desc}</p>
+                    <div class="meta-info">
+                        <div class="platforms">
+                            ${game.platforms.map(p => `<span class="platform-tag">${p}</span>`).join('')}
+                        </div>
+                        <div class="languages">
+                            ${game.languages.map(l => `<span class="lang-tag">${l}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', (e) => {
+                    if(!e.target.closest('.badge, .game-icon')) {
+                        window.location.href = game.url;
+                    }
+                });
+
+                grid.appendChild(card);
+            });
+        };
+
+        // 초기화 실행 (비동기 처리 추가)
+        window.addEventListener('DOMContentLoaded', async () => {
+            initScene();
+            await createGameCards();
+        });
+    </script>
+</body>
+</html>
