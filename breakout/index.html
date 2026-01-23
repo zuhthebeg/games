@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>벽돌깨기 - Breakout</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>벽돌깨기</h1>
+            <div class="stats">
+                <span class="score">점수: <strong id="score">0</strong></span>
+                <span class="lives">생명: <strong id="lives">3</strong></span>
+            </div>
+        </header>
+
+        <div class="game-wrapper">
+            <canvas id="gameCanvas"></canvas>
+            <div class="overlay" id="overlay">
+                <div class="overlay-content">
+                    <h2 id="overlayTitle">벽돌깨기</h2>
+                    <p id="overlayMessage">화면을 터치하거나 클릭하여 시작</p>
+                    <button class="btn" id="startBtn">게임 시작</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-info">
+            <p>🖱️ 마우스 또는 👆 터치로 패들 조작</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

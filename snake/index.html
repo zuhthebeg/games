@@ -3,209 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>모던 스네이크 게임 - 터치 지원 온라인 게임 | Classic Snake Game</title>
-    <meta name="description" content="HTML5로 제작된 터치 지원 모던 스네이크 게임. 모바일과 PC에서 모두 즐길 수 있는 고전 게임의 현대적 버전. Play the modern version of classic snake game with touch controls, works on both mobile and desktop devices.">
-    <meta name="keywords" content="스네이크 게임, 고전 게임, 터치 게임, 온라인 게임, HTML5 게임, snake game, classic game, touch game, online game, HTML5 game">
-    <meta property="og:title" content="모던 스네이크 게임 - 터치 지원 온라인 게임">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://example.com/snake-game">
-    <meta property="og:image" content="https://example.com/images/snake-game-preview.png">
-    <meta property="og:description" content="HTML5로 제작된 터치 지원 모던 스네이크 게임">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Modern Snake Game - Touch Enabled Online Game">
-    <meta name="twitter:description" content="Play the modern version of classic snake game with touch controls">
-    <meta name="twitter:image" content="https://example.com/images/snake-game-preview.png">
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #1a1a1a;
-            color: white;
-            font-family: 'Arial', sans-serif;
-        }
-
-        .game-container {
-            width: 100%;
-            max-width: 400px;
-            position: relative;
-        }
-
-        canvas {
-            background-color: #333;
-            border: 2px solid #4CAF50;
-            display: block;
-            margin: 0 auto;
-        }
-
-        .game-info {
-            text-align: center;
-            margin-top: 10px;
-        }
-
-        button {
-            padding: 10px;
-            margin: 5px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
+    <title>Snake Game - 스네이크 게임</title>
+    <meta name="description" content="클래식 스네이크 게임 - 뱀을 조종하여 먹이를 먹고 점수를 올리세요!">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
 </head>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MJPN92FN"
-        height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-        <!-- End Google Tag Manager (noscript) -->
 <body>
-    <div class="game-container">
-        <canvas id="gameCanvas" width="400" height="400"></canvas>
-        <div class="game-info">
-            <p>Score: <span id="score">0</span></p>
-            <button id="startButton">Start Game</button>
-        </div>
+    <div class="container">
+        <header>
+            <h1>🐍 Snake Game</h1>
+            <p class="subtitle">클래식 스네이크 게임</p>
+        </header>
+
+        <main>
+            <div class="game-wrapper">
+                <div class="score-board">
+                    <div class="score-item">
+                        <span class="label">점수</span>
+                        <span class="value" id="score">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="label">최고점수</span>
+                        <span class="value" id="highScore">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="label">레벨</span>
+                        <span class="value" id="level">1</span>
+                    </div>
+                </div>
+
+                <div class="game-container">
+                    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+                    <div class="game-overlay" id="gameOverlay">
+                        <div class="overlay-content">
+                            <h2 id="overlayTitle">스네이크 게임</h2>
+                            <p id="overlayMessage">화살표 키 또는 WASD로 조종하세요</p>
+                            <button class="btn btn-primary" id="startBtn">게임 시작</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <button class="btn btn-secondary" id="pauseBtn" disabled>일시정지</button>
+                        <button class="btn btn-secondary" id="restartBtn" disabled>재시작</button>
+                    </div>
+
+                    <div class="mobile-controls" id="mobileControls">
+                        <div class="dpad">
+                            <button class="dpad-btn dpad-up" data-direction="up" aria-label="위로">▲</button>
+                            <button class="dpad-btn dpad-left" data-direction="left" aria-label="왼쪽">◄</button>
+                            <button class="dpad-btn dpad-center"></button>
+                            <button class="dpad-btn dpad-right" data-direction="right" aria-label="오른쪽">►</button>
+                            <button class="dpad-btn dpad-down" data-direction="down" aria-label="아래로">▼</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="instructions">
+                    <h3>조작법</h3>
+                    <ul>
+                        <li><strong>화살표 키</strong> 또는 <strong>WASD</strong>: 뱀 조종</li>
+                        <li><strong>P</strong>: 일시정지</li>
+                        <li><strong>스페이스</strong>: 게임 시작/재시작</li>
+                    </ul>
+                    <h3>게임 규칙</h3>
+                    <ul>
+                        <li>🍎 빨간 먹이를 먹으면 뱀이 길어지고 점수가 올라갑니다</li>
+                        <li>💎 황금 먹이(5점마다)는 보너스 점수를 줍니다</li>
+                        <li>벽이나 자기 몸에 부딪히면 게임 오버!</li>
+                        <li>10점마다 레벨이 올라가고 속도가 빨라집니다</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Made with 💚 by <a href="https://cocy.io" target="_blank">cocy.io</a></p>
+        </footer>
     </div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startButton = document.getElementById('startButton');
-        const scoreDisplay = document.getElementById('score');
-        let snake = [{x: 200, y: 200}];
-        let food = {x: Math.floor(Math.random() * 39) * 10, y: Math.floor(Math.random() * 39) * 10};
-        let dx = 10, dy = 0;
-        let score = 0;
-        let gameLoop;
-
-        function drawSnake() {
-            snake.forEach(segment => {
-                ctx.fillStyle = '#4CAF50';
-                ctx.fillRect(segment.x, segment.y, 10, 10);
-                ctx.strokeStyle = 'white';
-                ctx.strokeRect(segment.x, segment.y, 10, 10);
-            });
-        }
-
-        function drawFood() {
-            ctx.fillStyle = 'red';
-            ctx.fillRect(food.x, food.y, 10, 10);
-        }
-
-        function moveSnake() {
-            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
-            snake.unshift(head);
-            if (head.x === food.x && head.y === food.y) {
-                score += 10;
-                scoreDisplay.textContent = score;
-                food = {x: Math.floor(Math.random() * 39) * 10, y: Math.floor(Math.random() * 39) * 10};
-            } else {
-                snake.pop();
-            }
-        }
-
-        function gameOver() {
-            clearInterval(gameLoop);
-            alert(`Game Over! Your score: ${score}`);
-        }
-
-        function checkCollision() {
-            const head = snake[0];
-            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || 
-                snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)) {
-                gameOver();
-            }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawSnake();
-            drawFood();
-            moveSnake();
-            checkCollision();
-        }
-
-        function startGame() {
-            // 터치 컨트롤 개선
-            let touchStartX = 0;
-            let touchStartY = 0;
-            
-            canvas.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-            });
-
-            canvas.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                const touchEndX = e.touches[0].clientX;
-                const touchEndY = e.touches[0].clientY;
-                const deltaX = touchEndX - touchStartX;
-                const deltaY = touchEndY - touchStartY;
-
-                if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    // 수평 이동
-                    if (deltaX > 0 && dx === 0) { // 오른쪽
-                        dx = 10;
-                        dy = 0;
-                    } else if (deltaX < 0 && dx === 0) { // 왼쪽
-                        dx = -10;
-                        dy = 0;
-                    }
-                } else {
-                    // 수직 이동
-                    if (deltaY > 0 && dy === 0) { // 아래
-                        dx = 0;
-                        dy = 10;
-                    } else if (deltaY < 0 && dy === 0) { // 위
-                        dx = 0;
-                        dy = -10;
-                    }
-                }
-            });
-
-            // 키보드 이벤트는 유지 (PC에서도 플레이 가능해야 하므로)
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowUp' && dy === 0) { dx = 0; dy = -10; }
-                else if (e.key === 'ArrowDown' && dy === 0) { dx = 0; dy = 10; }
-                else if (e.key === 'ArrowLeft' && dx === 0) { dx = -10; dy = 0; }
-                else if (e.key === 'ArrowRight' && dx === 0) { dx = 10; dy = 0; }
-            });
-
-            score = 0;
-            scoreDisplay.textContent = score;
-            snake = [{x: 200, y: 200}];
-            food = {x: Math.floor(Math.random() * 39) * 10, y: Math.floor(Math.random() * 39) * 10};
-            dx = 10;
-            dy = 0;
-
-            clearInterval(gameLoop);
-            gameLoop = setInterval(draw, 100);
-        }
-
-        startButton.addEventListener('click', startGame);
-    </script>
-        <!-- 푸터 위치 수정 -->
-        <footer style="
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 10px;
-        text-align: center;
-        z-index: 100;
-    ">
-        © 2025 COCY.IO All rights reserved.
-    </footer>
+    <script src="app.js"></script>
 </body>
 </html>

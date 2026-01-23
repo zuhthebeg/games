@@ -201,6 +201,20 @@
         "category": "game"
     },
     {
+        "title": "벽돌깨기",
+        "icon": "https://game.cocy.io/breakout/icon.svg",
+        "url": "https://game.cocy.io/breakout/",
+        "desc": "클래식 벽돌깨기 게임",
+        "badge": "NEW",
+        "platforms": [
+            "WEB"
+        ],
+        "languages": [
+            "🌍"
+        ],
+        "category": "game"
+    },
+    {
         "title": "D-Day Counter",
         "icon": "https://tool.cocy.io/dday/icon.svg",
         "url": "https://tool.cocy.io/dday/",
