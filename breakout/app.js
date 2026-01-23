@@ -18,6 +18,108 @@ let paddle, ball, bricks;
 // Colors
 const colors = ['#ec4899', '#8b5cf6', '#f59e0b', '#10b981', '#3b82f6', '#ef4444'];
 
+// Audio
+let audioCtx = null;
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
+
+function playSound(type, pitch = 1) {
+    if (!audioCtx) return;
+
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+
+    switch (type) {
+        case 'paddle':
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(220, now);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialDecayToValueAtTime(0.01, now + 0.15);
+            oscillator.start(now);
+            oscillator.stop(now + 0.15);
+            break;
+
+        case 'brick':
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(440 * pitch, now);
+            oscillator.frequency.exponentialDecayToValueAtTime(880 * pitch, now + 0.05);
+            gainNode.gain.setValueAtTime(0.15, now);
+            gainNode.gain.exponentialDecayToValueAtTime(0.01, now + 0.1);
+            oscillator.start(now);
+            oscillator.stop(now + 0.1);
+            break;
+
+        case 'wall':
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(150, now);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.exponentialDecayToValueAtTime(0.01, now + 0.08);
+            oscillator.start(now);
+            oscillator.stop(now + 0.08);
+            break;
+
+        case 'lose':
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(300, now);
+            oscillator.frequency.exponentialDecayToValueAtTime(100, now + 0.3);
+            gainNode.gain.setValueAtTime(0.2, now);
+            gainNode.gain.exponentialDecayToValueAtTime(0.01, now + 0.3);
+            oscillator.start(now);
+            oscillator.stop(now + 0.3);
+            break;
+
+        case 'gameover':
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(200, now);
+            oscillator.frequency.exponentialDecayToValueAtTime(50, now + 0.5);
+            gainNode.gain.setValueAtTime(0.25, now);
+            gainNode.gain.exponentialDecayToValueAtTime(0.01, now + 0.5);
+            oscillator.start(now);
+            oscillator.stop(now + 0.5);
+            break;
+
+        case 'win':
+            playWinSound();
+            return;
+    }
+}
+
+function playWinSound() {
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.1);
+        gain.gain.exponentialDecayToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.3);
+
+        osc.start(audioCtx.currentTime + i * 0.1);
+        osc.stop(audioCtx.currentTime + i * 0.1 + 0.3);
+    });
+}
+
+// Polyfill for exponentialDecayToValueAtTime
+if (!AudioParam.prototype.exponentialDecayToValueAtTime) {
+    AudioParam.prototype.exponentialDecayToValueAtTime = function(value, endTime) {
+        this.exponentialRampToValueAtTime(Math.max(value, 0.0001), endTime);
+    };
+}
+
 function resizeCanvas() {
     const rect = canvas.parentElement.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
@@ -147,11 +249,13 @@ function update() {
     if (ball.x - ball.radius < 0 || ball.x + ball.radius > width) {
         ball.dx = -ball.dx;
         ball.x = Math.max(ball.radius, Math.min(width - ball.radius, ball.x));
+        playSound('wall');
     }
 
     if (ball.y - ball.radius < 0) {
         ball.dy = -ball.dy;
         ball.y = ball.radius;
+        playSound('wall');
     }
 
     // Paddle collision
@@ -176,6 +280,8 @@ function update() {
             ball.dx = (ball.dx / currentSpeed) * maxSpeed;
             ball.dy = (ball.dy / currentSpeed) * maxSpeed;
         }
+
+        playSound('paddle');
     }
 
     // Brick collision
@@ -190,6 +296,7 @@ function update() {
             brick.visible = false;
             score += brick.points;
             scoreEl.textContent = score;
+            playSound('brick', 0.8 + (brick.points / 50) * 0.6);
 
             // Determine collision side
             const overlapLeft = ball.x + ball.radius - brick.x;
@@ -210,6 +317,7 @@ function update() {
 
     // Check win
     if (bricks.every(b => !b.visible)) {
+        playSound('win');
         gameWin();
         return;
     }
@@ -220,8 +328,10 @@ function update() {
         livesEl.textContent = lives;
 
         if (lives <= 0) {
+            playSound('gameover');
             gameOver();
         } else {
+            playSound('lose');
             resetBall();
         }
     }
@@ -234,6 +344,7 @@ function gameLoop() {
 }
 
 function startGame() {
+    initAudio();
     score = 0;
     lives = 3;
     scoreEl.textContent = score;
