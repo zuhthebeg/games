@@ -47,19 +47,49 @@
             gap: 20px;
         }
 
+        .canvas-wrapper {
+            aspect-ratio: 7 / 4;
+            width: 100%;
+            max-width: 700px;
+            position: relative;
+        }
+
         #billiardsCanvas {
             background: linear-gradient(135deg, #2d5016 0%, #3a6b1f 100%);
             border: 3px solid #8B4513;
             border-radius: 8px;
             width: 100%;
-            max-width: 700px;
-            height: 400px;
+            height: 100%;
+            display: block;
         }
 
         .sidebar {
             display: flex;
             flex-direction: column;
             gap: 12px;
+            position: relative;
+        }
+
+        .toggle-btn {
+            display: none;
+            background: #2a5298;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+        }
+
+        @media (max-width: 1024px) {
+            .toggle-btn {
+                display: block;
+            }
+
+            .sidebar.hidden {
+                display: none;
+            }
         }
 
         .control-panel {
@@ -193,6 +223,14 @@
             .main-content {
                 grid-template-columns: 1fr;
             }
+
+            .canvas-wrapper {
+                max-width: 100%;
+            }
+
+            .control-panel {
+                max-height: 70vh;
+            }
         }
     </style>
 </head>
@@ -203,9 +241,12 @@
         </div>
 
         <div class="main-content">
-            <canvas id="billiardsCanvas" width="700" height="400"></canvas>
+            <div class="canvas-wrapper">
+                <canvas id="billiardsCanvas" width="700" height="400"></canvas>
+            </div>
 
-            <div class="sidebar">
+            <button class="toggle-btn" id="toggleBtn" onclick="toggleSidebar()">⚙️ 컨트롤 열기</button>
+            <div class="sidebar" id="sidebar">
                 <!-- 컨트롤 패널 -->
                 <div class="control-panel">
                     <div class="control-group">
@@ -350,21 +391,51 @@
             if (gameState.isRunning) return;
 
             const presets = {
-                break: { angle: 0, power: 180, spin: 50, h: 0 },
-                topspin: { angle: 0, power: 150, spin: 100, h: 0 },
-                bottomspin: { angle: 0, power: 140, spin: -100, h: 0 },
-                doublespin: { angle: 30, power: 120, spin: 80, h: 60 },
-                sideroll: { angle: 45, power: 100, spin: 0, h: 100 },
-                english: { angle: 15, power: 110, spin: 0, h: 80 },
+                break: { 
+                    angle: 0, power: 180, spin: 50, h: 0,
+                    cue: { x: 100, y: 200 },
+                    ball1: { x: 350, y: 200 },
+                    ball2: { x: 550, y: 170 }
+                },
+                topspin: { 
+                    angle: 0, power: 150, spin: 100, h: 0,
+                    cue: { x: 100, y: 200 },
+                    ball1: { x: 350, y: 200 },
+                    ball2: { x: 550, y: 170 }
+                },
+                bottomspin: { 
+                    angle: 0, power: 140, spin: -100, h: 0,
+                    cue: { x: 100, y: 200 },
+                    ball1: { x: 350, y: 200 },
+                    ball2: { x: 550, y: 170 }
+                },
+                doublespin: { 
+                    angle: 30, power: 120, spin: 80, h: 60,
+                    cue: { x: 100, y: 200 },
+                    ball1: { x: 350, y: 200 },
+                    ball2: { x: 550, y: 170 }
+                },
+                sideroll: { 
+                    angle: 45, power: 100, spin: 0, h: 100,
+                    cue: { x: 100, y: 200 },
+                    ball1: { x: 350, y: 200 },
+                    ball2: { x: 550, y: 170 }
+                },
+                english: { 
+                    angle: 15, power: 110, spin: 0, h: 80,
+                    cue: { x: 100, y: 200 },
+                    ball1: { x: 350, y: 200 },
+                    ball2: { x: 550, y: 170 }
+                },
             };
 
             const preset = presets[type];
             if (!preset) return;
 
-            // 공 배치 초기화
-            gameState.cueBall = { x: 100, y: 200, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
-            gameState.ball1 = { x: 350, y: 200, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
-            gameState.ball2 = { x: 550, y: 170, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            // 공 배치 초기화 (프리셋별로 다른 배치)
+            gameState.cueBall = { x: preset.cue.x, y: preset.cue.y, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.ball1 = { x: preset.ball1.x, y: preset.ball1.y, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.ball2 = { x: preset.ball2.x, y: preset.ball2.y, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
             gameState.cushionHits = 0;
             gameState.ball1Hit = false;
             gameState.ball2Hit = false;
@@ -623,6 +694,13 @@
                 ctx.stroke();
                 ctx.setLineDash([]);
             }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const btn = document.getElementById('toggleBtn');
+            sidebar.classList.toggle('hidden');
+            btn.textContent = sidebar.classList.contains('hidden') ? '⚙️ 컨트롤 열기' : '⚙️ 컨트롤 닫기';
         }
 
         function gameLoop() {
