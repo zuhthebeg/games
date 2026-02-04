@@ -344,9 +344,9 @@
         };
 
         let gameState = {
-            cueBall: { x: 100, y: 300, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
-            ball1: { x: 320, y: 140, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
-            ball2: { x: 550, y: 110, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
+            cueBall: { x: 100, y: 280, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
+            ball1: { x: 350, y: 150, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
+            ball2: { x: 580, y: 100, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
             ballRadius: 8,
             margin: 10,
             tableW: 700,
@@ -390,11 +390,11 @@
         function loadPreset(type) {
             if (gameState.isRunning) return;
 
-            // 기본 초구 배치 (이미지 기준)
+            // 기본 초구 배치 (PBA 캐롬 당구 표준)
             const defaultBallPos = {
-                cue: { x: 100, y: 300 },      // 노란공 - 좌측 하단
-                ball1: { x: 320, y: 140 },    // 빨간공 - 중앙 위쪽
-                ball2: { x: 550, y: 110 }     // 흰공 - 우측 상단
+                cue: { x: 100, y: 280 },      // 노란공 - 좌측 하단
+                ball1: { x: 350, y: 150 },    // 빨간공 - 중앙
+                ball2: { x: 580, y: 100 }     // 흰공 - 우측 상단
             };
 
             const presets = {
@@ -471,9 +471,9 @@
         }
 
         function resetGame() {
-            gameState.cueBall = { x: 100, y: 300, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
-            gameState.ball1 = { x: 320, y: 140, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
-            gameState.ball2 = { x: 550, y: 110, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.cueBall = { x: 100, y: 280, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.ball1 = { x: 350, y: 150, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.ball2 = { x: 580, y: 100, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
             gameState.isRunning = false;
             gameState.cushionHits = 0;
             gameState.ball1Hit = false;
