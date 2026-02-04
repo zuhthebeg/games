@@ -237,7 +237,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎱 3쿠션 당구 시뮬레이터 v3.0</h1>
+            <h1>🎱 3쿠션 당구 시뮬레이터 v3.1</h1>
         </div>
 
         <div class="main-content">
@@ -344,9 +344,9 @@
         };
 
         let gameState = {
-            cueBall: { x: 100, y: 200, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
-            ball1: { x: 350, y: 200, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
-            ball2: { x: 550, y: 170, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
+            cueBall: { x: 100, y: 300, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
+            ball1: { x: 320, y: 140, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
+            ball2: { x: 550, y: 110, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
             ballRadius: 8,
             margin: 10,
             tableW: 700,
@@ -390,42 +390,37 @@
         function loadPreset(type) {
             if (gameState.isRunning) return;
 
+            // 기본 초구 배치 (이미지 기준)
+            const defaultBallPos = {
+                cue: { x: 100, y: 300 },      // 노란공 - 좌측 하단
+                ball1: { x: 320, y: 140 },    // 빨간공 - 중앙 위쪽
+                ball2: { x: 550, y: 110 }     // 흰공 - 우측 상단
+            };
+
             const presets = {
                 break: { 
                     angle: 0, power: 180, spin: 50, h: 0,
-                    cue: { x: 100, y: 200 },
-                    ball1: { x: 350, y: 200 },
-                    ball2: { x: 550, y: 170 }
+                    ...defaultBallPos
                 },
                 topspin: { 
                     angle: 0, power: 150, spin: 100, h: 0,
-                    cue: { x: 100, y: 200 },
-                    ball1: { x: 350, y: 200 },
-                    ball2: { x: 550, y: 170 }
+                    ...defaultBallPos
                 },
                 bottomspin: { 
                     angle: 0, power: 140, spin: -100, h: 0,
-                    cue: { x: 100, y: 200 },
-                    ball1: { x: 350, y: 200 },
-                    ball2: { x: 550, y: 170 }
+                    ...defaultBallPos
                 },
                 doublespin: { 
                     angle: 30, power: 120, spin: 80, h: 60,
-                    cue: { x: 100, y: 200 },
-                    ball1: { x: 350, y: 200 },
-                    ball2: { x: 550, y: 170 }
+                    ...defaultBallPos
                 },
                 sideroll: { 
                     angle: 45, power: 100, spin: 0, h: 100,
-                    cue: { x: 100, y: 200 },
-                    ball1: { x: 350, y: 200 },
-                    ball2: { x: 550, y: 170 }
+                    ...defaultBallPos
                 },
                 english: { 
                     angle: 15, power: 110, spin: 0, h: 80,
-                    cue: { x: 100, y: 200 },
-                    ball1: { x: 350, y: 200 },
-                    ball2: { x: 550, y: 170 }
+                    ...defaultBallPos
                 },
             };
 
@@ -476,9 +471,9 @@
         }
 
         function resetGame() {
-            gameState.cueBall = { x: 100, y: 200, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
-            gameState.ball1 = { x: 350, y: 200, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
-            gameState.ball2 = { x: 550, y: 170, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.cueBall = { x: 100, y: 300, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.ball1 = { x: 320, y: 140, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.ball2 = { x: 550, y: 110, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
             gameState.isRunning = false;
             gameState.cushionHits = 0;
             gameState.ball1Hit = false;
