@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3쿠션 당구 시뮬레이터 PRO</title>
+    <title>3쿠션 당구 시뮬레이터</title>
     <style>
         * {
             margin: 0;
@@ -27,7 +27,7 @@
             box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
             padding: 20px;
             width: 100%;
-            max-width: 1200px;
+            max-width: 1000px;
         }
 
         .header {
@@ -37,93 +37,61 @@
 
         .header h1 {
             color: #1e3c72;
-            font-size: 28px;
+            font-size: 24px;
             margin-bottom: 5px;
         }
 
-        .header p {
-            color: #666;
-            font-size: 13px;
-        }
-
-        .main-layout {
+        .main-content {
             display: grid;
-            grid-template-columns: 1fr 300px;
+            grid-template-columns: 1fr 280px;
             gap: 20px;
-            align-items: start;
-        }
-
-        @media (max-width: 768px) {
-            .main-layout {
-                grid-template-columns: 1fr;
-            }
         }
 
         #billiardsCanvas {
             background: linear-gradient(135deg, #2d5016 0%, #3a6b1f 100%);
             border: 3px solid #8B4513;
             border-radius: 8px;
-            display: block;
             width: 100%;
             max-width: 700px;
-            margin: 0 auto;
-            cursor: crosshair;
+            height: 400px;
         }
 
-        .controls {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 10px;
+        .sidebar {
             display: flex;
             flex-direction: column;
             gap: 12px;
+        }
+
+        .control-panel {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 600px;
+            overflow-y: auto;
         }
 
         .control-group {
             display: flex;
             flex-direction: column;
             gap: 6px;
+            margin-bottom: 10px;
         }
 
         .control-group label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             color: #333;
         }
 
         .control-group input[type="range"] {
             width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: #ddd;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        .control-group input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #2a5298;
-            cursor: pointer;
-        }
-
-        .control-group input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #2a5298;
-            cursor: pointer;
-            border: none;
+            height: 5px;
         }
 
         .value-display {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
         }
 
@@ -131,56 +99,25 @@
             background: #fff3cd;
             padding: 10px;
             border-radius: 8px;
-            font-size: 12px;
-            display: grid;
-            gap: 6px;
+            font-size: 11px;
+            margin-bottom: 10px;
         }
 
         .stat-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-        }
-
-        .stat-label {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .stat-value {
-            color: #2a5298;
-            font-weight: bold;
+            margin-bottom: 3px;
         }
 
         .buttons {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .scenario-section {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 2px solid #ddd;
-        }
-
-        .scenario-label {
-            font-size: 11px;
-            font-weight: bold;
-            color: #666;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .scenario-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
             gap: 6px;
+            margin-bottom: 10px;
         }
 
         button {
-            padding: 10px;
+            flex: 1;
+            padding: 8px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -192,7 +129,6 @@
         .btn-shoot {
             background: #28a745;
             color: white;
-            grid-column: 1 / -1;
         }
 
         .btn-shoot:hover:not(:disabled) {
@@ -207,77 +143,54 @@
         .btn-reset {
             background: #dc3545;
             color: white;
-            grid-column: 1 / -1;
         }
 
         .btn-reset:hover {
             background: #c82333;
         }
 
-        .btn-scenario {
-            background: #17a2b8;
-            color: white;
-            font-size: 11px;
+        .preset-tabs {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .preset-btn {
             padding: 8px;
+            font-size: 10px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
         }
 
-        .btn-scenario:hover:not(:disabled) {
-            background: #138496;
+        .preset-btn:hover {
+            border-color: #2a5298;
+            background: #e7f3ff;
         }
 
-        .btn-scenario:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+        .preset-btn.active {
+            background: #2a5298;
+            color: white;
+            border-color: #2a5298;
         }
 
         .instructions {
             background: #e7f3ff;
             padding: 10px;
             border-radius: 8px;
-            border-left: 4px solid #2a5298;
             font-size: 11px;
-            line-height: 1.5;
-            color: #333;
+            line-height: 1.4;
+            border-left: 3px solid #2a5298;
         }
 
-        .instructions strong {
-            color: #2a5298;
-        }
-
-        .spin-indicator {
-            background: #e8f5e9;
-            padding: 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            color: #333;
-            margin-top: 8px;
-        }
-
-        .spin-indicator-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 4px 0;
-        }
-
-        .spin-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #4caf50;
-        }
-
-        @media (max-width: 768px) {
-            .main-layout {
-                grid-template-columns: 1fr;
-            }
-
-            .controls {
-                width: 100%;
-            }
-
-            .scenario-buttons {
+        @media (max-width: 1024px) {
+            .main-content {
                 grid-template-columns: 1fr;
             }
         }
@@ -286,114 +199,93 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎱 3쿠션 당구 시뮬레이터 PRO</h1>
-            <p>v3.0 - 고급 스핀 메커니크 & 케이스 시뮬레이션</p>
+            <h1>🎱 3쿠션 당구 시뮬레이터 v3.0</h1>
         </div>
 
-        <div class="main-layout">
-            <div>
-                <canvas id="billiardsCanvas" width="700" height="400"></canvas>
-            </div>
+        <div class="main-content">
+            <canvas id="billiardsCanvas" width="700" height="400"></canvas>
 
-            <div class="controls">
-                <div class="control-group">
-                    <label>각도 (°)</label>
-                    <input type="range" id="angleInput" min="0" max="360" value="0" />
-                    <div class="value-display">
-                        <span>0°</span>
-                        <span id="angleValue">0°</span>
-                        <span>360°</span>
+            <div class="sidebar">
+                <!-- 컨트롤 패널 -->
+                <div class="control-panel">
+                    <div class="control-group">
+                        <label>각도 (°)</label>
+                        <input type="range" id="angleInput" min="0" max="360" value="0">
+                        <div class="value-display">
+                            <span>0°</span>
+                            <span id="angleValue">0°</span>
+                            <span>360°</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>힘 (Power)</label>
+                        <input type="range" id="powerInput" min="1" max="200" value="100">
+                        <div class="value-display">
+                            <span>약</span>
+                            <span id="powerValue">100</span>
+                            <span>강</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>톱/버텀 스핀</label>
+                        <input type="range" id="spinInput" min="-100" max="100" value="0">
+                        <div class="value-display">
+                            <span>버텀</span>
+                            <span id="spinValue">0</span>
+                            <span>톱</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>좌/우 스핀</label>
+                        <input type="range" id="horizontalSpinInput" min="-100" max="100" value="0">
+                        <div class="value-display">
+                            <span>좌</span>
+                            <span id="horizontalSpinValue">0</span>
+                            <span>우</span>
+                        </div>
+                    </div>
+
+                    <div class="stats">
+                        <div class="stat-row">
+                            <span>쿠션:</span>
+                            <span id="cushionHits">0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>점수:</span>
+                            <span id="score">0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>상태:</span>
+                            <span id="status">준비중</span>
+                        </div>
+                    </div>
+
+                    <div class="buttons">
+                        <button class="btn-shoot" id="shootBtn" onclick="shoot()">⚡슈팅</button>
+                        <button class="btn-reset" onclick="resetGame()">리셋</button>
                     </div>
                 </div>
 
-                <div class="control-group">
-                    <label>힘 (Power)</label>
-                    <input type="range" id="powerInput" min="1" max="200" value="50" />
-                    <div class="value-display">
-                        <span>약</span>
-                        <span id="powerValue">50</span>
-                        <span>강</span>
-                    </div>
+                <!-- 프리셋 탭 -->
+                <div class="preset-tabs">
+                    <button class="preset-btn" onclick="loadPreset('break')">💥 초구</button>
+                    <button class="preset-btn" onclick="loadPreset('topspin')">⬆️ 톱스핀</button>
+                    <button class="preset-btn" onclick="loadPreset('bottomspin')">⬇️ 버텀</button>
+                    <button class="preset-btn" onclick="loadPreset('doublespin')">⭐ 더블</button>
+                    <button class="preset-btn" onclick="loadPreset('sideroll')">🔄 옆돌</button>
+                    <button class="preset-btn" onclick="loadPreset('english')">🎯 잉글리</button>
                 </div>
 
-                <div class="control-group">
-                    <label>수직 스핀 (Vertical Spin)</label>
-                    <input type="range" id="spinInput" min="-100" max="100" value="0" />
-                    <div class="value-display">
-                        <span>버텀스핀</span>
-                        <span id="spinValue">0</span>
-                        <span>톱스핀</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label>횡 스핀 (Horizontal Spin)</label>
-                    <input type="range" id="horizontalSpinInput" min="-100" max="100" value="0" />
-                    <div class="value-display">
-                        <span>좌회전</span>
-                        <span id="horizontalSpinValue">0</span>
-                        <span>우회전</span>
-                    </div>
-                </div>
-
-                <div class="spin-indicator">
-                    <strong>스핀 상태:</strong>
-                    <div class="spin-indicator-row">
-                        <span>톱/버텀</span>
-                        <span id="spinStatus">없음</span>
-                    </div>
-                    <div class="spin-indicator-row">
-                        <span>좌/우회전</span>
-                        <span id="spinStatusHorz">없음</span>
-                    </div>
-                    <div class="spin-indicator-row">
-                        <span>복합 스핀</span>
-                        <span id="spinStatusDouble">없음</span>
-                    </div>
-                </div>
-
-                <div class="stats">
-                    <div class="stat-row">
-                        <span class="stat-label">쿠션 충돌:</span>
-                        <span class="stat-value" id="cushionHits">0</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">포인트:</span>
-                        <span class="stat-value" id="score">0</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">상태:</span>
-                        <span class="stat-value" id="status">준비중</span>
-                    </div>
-                </div>
-
-                <div class="buttons">
-                    <button class="btn-shoot" id="shootBtn" onclick="shoot()">🎯 슈팅</button>
-                    <button class="btn-reset" onclick="resetGame()">🔄 리셋</button>
-                </div>
-
-                <div class="scenario-section">
-                    <div class="scenario-label">⚡ 케이스 시뮬레이션</div>
-                    <div class="scenario-buttons">
-                        <button class="btn-scenario" onclick="loadScenario('breakshot')">초구(Breaking)</button>
-                        <button class="btn-scenario" onclick="loadScenario('doublespin')">더블스핀</button>
-                        <button class="btn-scenario" onclick="loadScenario('sideroll')">옆돌리기</button>
-                        <button class="btn-scenario" onclick="loadScenario('toptspin')">톱스핀</button>
-                        <button class="btn-scenario" onclick="loadScenario('bottomspin')">버텀스핀</button>
-                        <button class="btn-scenario" onclick="loadScenario('english')">잉글리시</button>
-                    </div>
-                </div>
-
+                <!-- 안내 -->
                 <div class="instructions">
-                    <strong>📖 3쿠션 PBA 규칙:</strong><br>
-                    • 흰공(중앙) + 빨간공(우측)칠하기<br>
-                    • 쿠션 3번 이상 충돌 필수<br>
-                    • 두 공 모두 + 3쿠션 = 1점<br>
-                    <br>
-                    <strong>🎮 초구 배치:</strong><br>
-                    • 노란공(좌측) - 사용자 수구<br>
-                    • 흰공(중앙) - 제1적구<br>
-                    • 빨간공(우측) - 제2적구
+                    <strong>📖 규칙:</strong><br>
+                    • 노란공 ← 사용자 수구<br>
+                    • 흰공 + 빨간공 맞히기<br>
+                    • 쿠션 3회 이상<br>
+                    • 모두 만족 = 1점
                 </div>
             </div>
         </div>
@@ -403,592 +295,298 @@
         const canvas = document.getElementById('billiardsCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Physics Constants (개선된 물리 상수)
         const PHYSICS = {
-            friction: 0.985,           // 속도 감소 (낮을수록 느려짐)
-            spinFriction: 0.92,        // 스핀 감소
-            spinToVelocity: 0.08,      // 횡스핀 -> 속도 변환 계수
-            verticalSpinForce: 0.12,   // 수직스핀 영향도
-            ballRadius: 8,
-            tableWidth: 700,
-            tableHeight: 400,
-            margin: 10,
-            elasticity: 0.92,          // 쿠션 탄성
-            ballElasticity: 0.90,      // 공-공 충돌 탄성
-            spinMultiplier: 0.25,      // 스핀 효과 배수 (증가시 더 강한 스핀 효과)
+            friction: 0.985,
+            spinFriction: 0.92,
+            spinMultiplier: 0.2,
+            elasticity: 0.92,
         };
 
-        // Game state
         let gameState = {
-            cueBall: { 
-                x: 100, 
-                y: 200, 
-                vx: 0, 
-                vy: 0, 
-                spinVertical: 0,  // 톱/버텀스핀 (위/아래 축)
-                spinX: 0,          // 횡스핀 (좌/우 회전)
-                spinY: 0,          // 종방향 스핀
-            },
-            targetBall1: { 
-                x: 350, 
-                y: 200, 
-                vx: 0, 
-                vy: 0, 
-                spinVertical: 0,
-                spinX: 0,
-                spinY: 0,
-            },
-            targetBall2: { 
-                x: 550, 
-                y: 170, 
-                vx: 0, 
-                vy: 0, 
-                spinVertical: 0,
-                spinX: 0,
-                spinY: 0,
-            },
+            cueBall: { x: 100, y: 200, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
+            ball1: { x: 350, y: 200, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
+            ball2: { x: 550, y: 170, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 },
+            ballRadius: 8,
+            margin: 10,
+            tableW: 700,
+            tableH: 400,
             cushionHits: 0,
             score: 0,
             isRunning: false,
-            redBallHit: false,
-            whiteBallHit: false,
-            mode: 'normal', // normal, breakshot
+            ball1Hit: false,
+            ball2Hit: false,
         };
 
-        const angleInput = document.getElementById('angleInput');
-        const powerInput = document.getElementById('powerInput');
-        const spinInput = document.getElementById('spinInput');
-        const horizontalSpinInput = document.getElementById('horizontalSpinInput');
-        const angleValue = document.getElementById('angleValue');
-        const powerValue = document.getElementById('powerValue');
-        const spinValue = document.getElementById('spinValue');
-        const horizontalSpinValue = document.getElementById('horizontalSpinValue');
-        const cushionHitsDisplay = document.getElementById('cushionHits');
-        const scoreDisplay = document.getElementById('score');
-        const statusDisplay = document.getElementById('status');
-        const shootBtn = document.getElementById('shootBtn');
-        const spinStatus = document.getElementById('spinStatus');
-        const spinStatusHorz = document.getElementById('spinStatusHorz');
-        const spinStatusDouble = document.getElementById('spinStatusDouble');
+        const elements = {
+            angle: document.getElementById('angleInput'),
+            power: document.getElementById('powerInput'),
+            spin: document.getElementById('spinInput'),
+            horizontal: document.getElementById('horizontalSpinInput'),
+            angleVal: document.getElementById('angleValue'),
+            powerVal: document.getElementById('powerValue'),
+            spinVal: document.getElementById('spinValue'),
+            horizVal: document.getElementById('horizontalSpinValue'),
+            cushion: document.getElementById('cushionHits'),
+            score: document.getElementById('score'),
+            status: document.getElementById('status'),
+            shootBtn: document.getElementById('shootBtn'),
+        };
 
-        // Update display values
-        angleInput.addEventListener('input', () => {
-            angleValue.textContent = angleInput.value + '°';
+        // 이벤트 리스너
+        elements.angle.addEventListener('input', (e) => {
+            elements.angleVal.textContent = e.target.value + '°';
+        });
+        elements.power.addEventListener('input', (e) => {
+            elements.powerVal.textContent = e.target.value;
+        });
+        elements.spin.addEventListener('input', (e) => {
+            elements.spinVal.textContent = e.target.value;
+        });
+        elements.horizontal.addEventListener('input', (e) => {
+            elements.horizVal.textContent = e.target.value;
         });
 
-        powerInput.addEventListener('input', () => {
-            powerValue.textContent = powerInput.value;
-        });
-
-        spinInput.addEventListener('input', () => {
-            const spinVal = parseInt(spinInput.value);
-            spinValue.textContent = spinVal;
-            updateSpinStatus();
-        });
-
-        horizontalSpinInput.addEventListener('input', () => {
-            const spinVal = parseInt(horizontalSpinInput.value);
-            horizontalSpinValue.textContent = spinVal;
-            updateSpinStatus();
-        });
-
-        function updateSpinStatus() {
-            const vertical = parseInt(spinInput.value);
-            const horizontal = parseInt(horizontalSpinInput.value);
-
-            // 수직 스핀 상태
-            if (vertical === 0) {
-                spinStatus.textContent = '없음';
-            } else if (vertical > 0) {
-                spinStatus.textContent = `톱스핀 (${vertical})`;
-            } else {
-                spinStatus.textContent = `버텀스핀 (${Math.abs(vertical)})`;
-            }
-
-            // 횡 스핀 상태
-            if (horizontal === 0) {
-                spinStatusHorz.textContent = '없음';
-            } else if (horizontal > 0) {
-                spinStatusHorz.textContent = `우회전 (${horizontal})`;
-            } else {
-                spinStatusHorz.textContent = `좌회전 (${Math.abs(horizontal)})`;
-            }
-
-            // 복합 스핀 상태
-            if (Math.abs(vertical) > 0 && Math.abs(horizontal) > 0) {
-                spinStatusDouble.textContent = '⭐ 더블스핀';
-            } else {
-                spinStatusDouble.textContent = '없음';
-            }
-        }
-
-        // 케이스 시나리오 로드
-        function loadScenario(scenario) {
+        function loadPreset(type) {
             if (gameState.isRunning) return;
 
-            switch (scenario) {
-                case 'breakshot':
-                    // 초구: 강한 파워, 중앙 각도, 톱스핀
-                    angleInput.value = 0;
-                    powerInput.value = 180;
-                    spinInput.value = 50;    // 톱스핀
-                    horizontalSpinInput.value = 0;
-                    gameState.mode = 'breakshot';
-                    break;
+            const presets = {
+                break: { angle: 0, power: 180, spin: 50, h: 0 },
+                topspin: { angle: 0, power: 150, spin: 100, h: 0 },
+                bottomspin: { angle: 0, power: 140, spin: -100, h: 0 },
+                doublespin: { angle: 30, power: 120, spin: 80, h: 60 },
+                sideroll: { angle: 45, power: 100, spin: 0, h: 100 },
+                english: { angle: 15, power: 110, spin: 0, h: 80 },
+            };
 
-                case 'doublespin':
-                    // 더블스핀: 톱스핀 + 우회전 동시 적용
-                    angleInput.value = 30;
-                    powerInput.value = 120;
-                    spinInput.value = 80;    // 강한 톱스핀
-                    horizontalSpinInput.value = 60;  // 강한 우회전
-                    gameState.mode = 'normal';
-                    break;
+            const preset = presets[type];
+            if (!preset) return;
 
-                case 'sideroll':
-                    // 옆돌리기: 강한 횡스핀만
-                    angleInput.value = 45;
-                    powerInput.value = 100;
-                    spinInput.value = 0;     // 수직스핀 없음
-                    horizontalSpinInput.value = 100;  // 강한 우회전
-                    gameState.mode = 'normal';
-                    break;
+            // 공 배치 초기화
+            gameState.cueBall = { x: 100, y: 200, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.ball1 = { x: 350, y: 200, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.ball2 = { x: 550, y: 170, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.cushionHits = 0;
+            gameState.ball1Hit = false;
+            gameState.ball2Hit = false;
 
-                case 'toptspin':
-                    // 톱스핀: 진행방향 유지, 강한 강타력
-                    angleInput.value = 0;
-                    powerInput.value = 150;
-                    spinInput.value = 100;   // 최대 톱스핀
-                    horizontalSpinInput.value = 0;
-                    gameState.mode = 'normal';
-                    break;
-
-                case 'bottomspin':
-                    // 버텀스핀: 진행방향 약화, 되돌아오는 경향
-                    angleInput.value = 0;
-                    powerInput.value = 140;
-                    spinInput.value = -100;  // 최대 버텀스핀
-                    horizontalSpinInput.value = 0;
-                    gameState.mode = 'normal';
-                    break;
-
-                case 'english':
-                    // 잉글리시: 약간의 각도 + 횡스핀
-                    angleInput.value = 15;
-                    powerInput.value = 110;
-                    spinInput.value = 0;
-                    horizontalSpinInput.value = 80;  // 강한 우회전
-                    gameState.mode = 'normal';
-                    break;
-            }
-
-            // UI 업데이트
-            angleValue.textContent = angleInput.value + '°';
-            powerValue.textContent = powerInput.value;
-            spinValue.textContent = spinInput.value;
-            horizontalSpinValue.textContent = horizontalSpinInput.value;
-            updateSpinStatus();
+            // 컨트롤 업데이트
+            elements.angle.value = preset.angle;
+            elements.power.value = preset.power;
+            elements.spin.value = preset.spin;
+            elements.horizontal.value = preset.h;
+            elements.angleVal.textContent = preset.angle + '°';
+            elements.powerVal.textContent = preset.power;
+            elements.spinVal.textContent = preset.spin;
+            elements.horizVal.textContent = preset.h;
 
             // 자동 슈팅
-            setTimeout(() => {
-                shoot();
-            }, 300);
+            setTimeout(() => shoot(), 300);
         }
 
         function shoot() {
             if (gameState.isRunning) return;
 
-            const angle = (parseInt(angleInput.value) * Math.PI) / 180;
-            const power = parseInt(powerInput.value);
-            const verticalSpin = parseInt(spinInput.value);
-            const horizontalSpin = parseInt(horizontalSpinInput.value);
-            
-            // 속도 계산 (파워에 비례)
-            const speed = power * 0.5;
+            const angle = (parseInt(elements.angle.value) * Math.PI) / 180;
+            const power = parseInt(elements.power.value);
+            const vertSpin = parseInt(elements.spin.value);
+            const horzSpin = parseInt(elements.horizontal.value);
 
-            // 초구 모드에서는 흰공 배치
-            if (gameState.mode === 'breakshot') {
-                gameState.cueBall.x = 100;
-                gameState.cueBall.y = 200;
-            }
-
-            // 초기 속도 (각도 기반)
-            gameState.cueBall.vx = Math.cos(angle) * speed;
-            gameState.cueBall.vy = Math.sin(angle) * speed;
-
-            // 수직 스핀 (톱/버텀스핀)
-            // 양수: 톱스핀 (위쪽 회전 = 앞으로 나아가려는 힘)
-            // 음수: 버텀스핀 (아래쪽 회전 = 뒤로 가려는 힘)
-            gameState.cueBall.spinVertical = verticalSpin * PHYSICS.spinMultiplier;
-
-            // 횡 스핀 (좌/우 회전)
-            // 양수: 우회전 (오른쪽으로 휘는 효과)
-            // 음수: 좌회전 (왼쪽으로 휘는 효과)
-            const spinMag = Math.abs(horizontalSpin);
-            gameState.cueBall.spinX = Math.cos(angle + Math.PI / 2) * spinMag * PHYSICS.spinMultiplier * 0.3;
-            gameState.cueBall.spinY = Math.sin(angle + Math.PI / 2) * spinMag * PHYSICS.spinMultiplier * 0.3;
+            gameState.cueBall.vx = Math.cos(angle) * power * 0.3;
+            gameState.cueBall.vy = Math.sin(angle) * power * 0.3;
+            gameState.cueBall.spinVert = vertSpin * PHYSICS.spinMultiplier;
+            gameState.cueBall.spinHorz = horzSpin * PHYSICS.spinMultiplier;
 
             gameState.isRunning = true;
             gameState.cushionHits = 0;
-            gameState.redBallHit = false;
-            gameState.whiteBallHit = false;
-            shootBtn.disabled = true;
-            statusDisplay.textContent = '진행중...';
+            gameState.ball1Hit = false;
+            gameState.ball2Hit = false;
+            elements.shootBtn.disabled = true;
+            elements.status.textContent = '진행중...';
         }
 
         function resetGame() {
-            gameState = {
-                cueBall: { x: 100, y: 200, vx: 0, vy: 0, spinVertical: 0, spinX: 0, spinY: 0 },
-                targetBall1: { x: 350, y: 200, vx: 0, vy: 0, spinVertical: 0, spinX: 0, spinY: 0 },
-                targetBall2: { x: 550, y: 170, vx: 0, vy: 0, spinVertical: 0, spinX: 0, spinY: 0 },
-                cushionHits: 0,
-                score: gameState.score,
-                isRunning: false,
-                redBallHit: false,
-                whiteBallHit: false,
-                mode: 'normal',
-            };
+            gameState.cueBall = { x: 100, y: 200, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.ball1 = { x: 350, y: 200, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.ball2 = { x: 550, y: 170, vx: 0, vy: 0, spinVert: 0, spinHorz: 0 };
+            gameState.isRunning = false;
+            gameState.cushionHits = 0;
+            gameState.ball1Hit = false;
+            gameState.ball2Hit = false;
 
-            angleInput.value = 0;
-            angleValue.textContent = '0°';
-            powerInput.value = 50;
-            powerValue.textContent = '50';
-            spinInput.value = 0;
-            spinValue.textContent = '0';
-            horizontalSpinInput.value = 0;
-            horizontalSpinValue.textContent = '0';
-            cushionHitsDisplay.textContent = '0';
-            statusDisplay.textContent = '준비중';
-            shootBtn.disabled = false;
-            updateSpinStatus();
+            elements.angle.value = 0;
+            elements.power.value = 100;
+            elements.spin.value = 0;
+            elements.horizontal.value = 0;
+            elements.angleVal.textContent = '0°';
+            elements.powerVal.textContent = '100';
+            elements.spinVal.textContent = '0';
+            elements.horizVal.textContent = '0';
+            elements.cushion.textContent = '0';
+            elements.status.textContent = '준비중';
+            elements.shootBtn.disabled = false;
         }
 
         function updatePhysics() {
             if (!gameState.isRunning) return;
 
-            const balls = [gameState.cueBall, gameState.targetBall1, gameState.targetBall2];
-
-            balls.forEach(ball => {
-                // 1. 기본 속도 감소 (마찰력)
+            [gameState.cueBall, gameState.ball1, gameState.ball2].forEach(ball => {
+                // 속도 감소
                 ball.vx *= PHYSICS.friction;
                 ball.vy *= PHYSICS.friction;
+                ball.spinVert *= PHYSICS.spinFriction;
+                ball.spinHorz *= PHYSICS.spinFriction;
 
-                // 2. 스핀 감소
-                ball.spinX *= PHYSICS.spinFriction;
-                ball.spinY *= PHYSICS.spinFriction;
-                ball.spinVertical *= PHYSICS.spinFriction;
-
-                // 3. 횡 스핀이 측면 편향에 영향 (English 효과)
-                const spinMagnitude = Math.sqrt(ball.spinX * ball.spinX + ball.spinY * ball.spinY);
-                if (spinMagnitude > 0.1) {
-                    const angle = Math.atan2(ball.vy, ball.vx);
-                    const perpendicular = angle + Math.PI / 2;
-                    ball.vx += Math.cos(perpendicular) * spinMagnitude * PHYSICS.spinToVelocity;
-                    ball.vy += Math.sin(perpendicular) * spinMagnitude * PHYSICS.spinToVelocity;
-                }
-
-                // 4. 수직 스핀이 진행 속도에 영향 (톱/버텀스핀 효과)
+                // 스핀 → 속도 변환
                 const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-                if (speed > 0.1 && Math.abs(ball.spinVertical) > 0.1) {
+                if (speed > 0.1) {
                     const angle = Math.atan2(ball.vy, ball.vx);
-                    // 톱스핀(+): 진행 방향 유지/강화
-                    // 버텀스핀(-): 진행 방향 약화
-                    ball.vx += Math.cos(angle) * ball.spinVertical * PHYSICS.verticalSpinForce * 0.05;
-                    ball.vy += Math.sin(angle) * ball.spinVertical * PHYSICS.verticalSpinForce * 0.05;
+                    
+                    // 수직 스핀 (톱/버텀)
+                    ball.vx += Math.cos(angle) * ball.spinVert * 0.08;
+                    ball.vy += Math.sin(angle) * ball.spinVert * 0.08;
+                    
+                    // 횡 스핀 (좌/우)
+                    const perpAngle = angle + Math.PI / 2;
+                    ball.vx += Math.cos(perpAngle) * ball.spinHorz * 0.06;
+                    ball.vy += Math.sin(perpAngle) * ball.spinHorz * 0.06;
                 }
 
-                // 5. 매우 작은 속도는 0으로 처리
                 if (Math.abs(ball.vx) < 0.05) ball.vx = 0;
                 if (Math.abs(ball.vy) < 0.05) ball.vy = 0;
-                if (Math.abs(ball.spinX) < 0.02) ball.spinX = 0;
-                if (Math.abs(ball.spinY) < 0.02) ball.spinY = 0;
-                if (Math.abs(ball.spinVertical) < 0.02) ball.spinVertical = 0;
+                if (Math.abs(ball.spinVert) < 0.05) ball.spinVert = 0;
+                if (Math.abs(ball.spinHorz) < 0.05) ball.spinHorz = 0;
 
-                // 6. 위치 업데이트
                 ball.x += ball.vx;
                 ball.y += ball.vy;
             });
 
-            // 쿠션 충돌 처리
-            balls.forEach((ball, idx) => {
-                checkCushionCollision(ball, idx === 0);
+            // 쿠션 충돌
+            [gameState.cueBall, gameState.ball1, gameState.ball2].forEach((ball, idx) => {
+                checkCushion(ball, idx === 0);
             });
 
-            // 공-공 충돌 처리
-            checkBallCollision(gameState.cueBall, gameState.targetBall1);
-            checkBallCollision(gameState.cueBall, gameState.targetBall2);
-            checkBallCollision(gameState.targetBall1, gameState.targetBall2);
+            // 공-공 충돌
+            checkCollision(gameState.cueBall, gameState.ball1, true);
+            checkCollision(gameState.cueBall, gameState.ball2, false);
+            checkCollision(gameState.ball1, gameState.ball2);
 
-            // 게임 종료 조건 확인
-            const totalSpeed =
-                Math.abs(gameState.cueBall.vx) +
-                Math.abs(gameState.cueBall.vy) +
-                Math.abs(gameState.targetBall1.vx) +
-                Math.abs(gameState.targetBall1.vy) +
-                Math.abs(gameState.targetBall2.vx) +
-                Math.abs(gameState.targetBall2.vy);
+            // 점수 판정
+            if (gameState.ball1Hit && gameState.ball2Hit && gameState.cushionHits >= 3) {
+                gameState.score++;
+                elements.score.textContent = gameState.score;
+                gameState.ball1Hit = false;
+                gameState.ball2Hit = false;
+                gameState.cushionHits = 0;
+            }
 
-            if (totalSpeed < 0.1) {
+            // 종료 판정
+            const totalSpeed = Math.abs(gameState.cueBall.vx) + Math.abs(gameState.cueBall.vy) +
+                             Math.abs(gameState.ball1.vx) + Math.abs(gameState.ball1.vy) +
+                             Math.abs(gameState.ball2.vx) + Math.abs(gameState.ball2.vy);
+
+            if (totalSpeed < 0.05) {
                 gameState.isRunning = false;
-                statusDisplay.textContent = '완료';
-                shootBtn.disabled = false;
-
-                // 점수 판정
-                if (gameState.redBallHit && gameState.whiteBallHit && gameState.cushionHits >= 3) {
-                    gameState.score++;
-                    scoreDisplay.textContent = gameState.score;
-                    statusDisplay.textContent = '✅ 1점!';
-                }
+                elements.status.textContent = '완료';
+                elements.shootBtn.disabled = false;
             }
         }
 
-        function checkCushionCollision(ball, isCueBall) {
-            let hitWall = false;
+        function checkCushion(ball, isCue) {
+            let hit = false;
 
-            // 상단 쿠션
-            if (ball.y - PHYSICS.ballRadius < PHYSICS.margin) {
-                ball.y = PHYSICS.margin + PHYSICS.ballRadius;
+            if (ball.y - gameState.ballRadius < gameState.margin) {
+                ball.y = gameState.margin + gameState.ballRadius;
                 ball.vy *= -PHYSICS.elasticity;
-                // 수평 스핀은 약간 감소
-                ball.spinX *= 0.7;
-                // 수직 스핀은 부분적으로 반전 (역회전)
-                ball.spinVertical *= -0.5;
-                hitWall = true;
+                ball.spinHorz *= -0.8;
+                ball.spinVert *= -0.6;
+                hit = true;
             }
-
-            // 하단 쿠션
-            if (ball.y + PHYSICS.ballRadius > PHYSICS.tableHeight - PHYSICS.margin) {
-                ball.y = PHYSICS.tableHeight - PHYSICS.margin - PHYSICS.ballRadius;
+            if (ball.y + gameState.ballRadius > gameState.tableH - gameState.margin) {
+                ball.y = gameState.tableH - gameState.margin - gameState.ballRadius;
                 ball.vy *= -PHYSICS.elasticity;
-                ball.spinX *= 0.7;
-                ball.spinVertical *= -0.5;
-                hitWall = true;
+                ball.spinHorz *= -0.8;
+                ball.spinVert *= -0.6;
+                hit = true;
             }
-
-            // 좌측 쿠션
-            if (ball.x - PHYSICS.ballRadius < PHYSICS.margin) {
-                ball.x = PHYSICS.margin + PHYSICS.ballRadius;
+            if (ball.x - gameState.ballRadius < gameState.margin) {
+                ball.x = gameState.margin + gameState.ballRadius;
                 ball.vx *= -PHYSICS.elasticity;
-                ball.spinY *= 0.7;
-                ball.spinVertical *= -0.5;
-                hitWall = true;
+                ball.spinVert *= -0.8;
+                ball.spinHorz *= -0.6;
+                hit = true;
             }
-
-            // 우측 쿠션
-            if (ball.x + PHYSICS.ballRadius > PHYSICS.tableWidth - PHYSICS.margin) {
-                ball.x = PHYSICS.tableWidth - PHYSICS.margin - PHYSICS.ballRadius;
+            if (ball.x + gameState.ballRadius > gameState.tableW - gameState.margin) {
+                ball.x = gameState.tableW - gameState.margin - gameState.ballRadius;
                 ball.vx *= -PHYSICS.elasticity;
-                ball.spinY *= 0.7;
-                ball.spinVertical *= -0.5;
-                hitWall = true;
+                ball.spinVert *= -0.8;
+                ball.spinHorz *= -0.6;
+                hit = true;
             }
 
-            // 수구 쿠션 충돌 카운트
-            if (hitWall && isCueBall) {
+            if (hit && isCue) {
                 gameState.cushionHits++;
-                cushionHitsDisplay.textContent = gameState.cushionHits;
+                elements.cushion.textContent = gameState.cushionHits;
             }
         }
 
-        function checkBallCollision(ball1, ball2) {
-            const dx = ball2.x - ball1.x;
-            const dy = ball2.y - ball1.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const minDistance = PHYSICS.ballRadius * 2;
+        function checkCollision(b1, b2, isCueBall) {
+            const dx = b2.x - b1.x;
+            const dy = b2.y - b1.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const minDist = gameState.ballRadius * 2;
 
-            if (distance < minDistance && distance > 0.1) {
-                // 충돌 각도
+            if (dist < minDist) {
                 const angle = Math.atan2(dy, dx);
-                const cos = Math.cos(angle);
                 const sin = Math.sin(angle);
+                const cos = Math.cos(angle);
 
-                // 속도를 충돌 좌표계로 변환
-                const vx1 = ball1.vx * cos + ball1.vy * sin;
-                const vy1 = ball1.vy * cos - ball1.vx * sin;
-                const vx2 = ball2.vx * cos + ball2.vy * sin;
-                const vy2 = ball2.vy * cos - ball2.vx * sin;
+                const v1x = b1.vx * cos + b1.vy * sin;
+                const v1y = b1.vy * cos - b1.vx * sin;
+                const v2x = b2.vx * cos + b2.vy * sin;
+                const v2y = b2.vy * cos - b2.vx * sin;
 
-                // 탄성 충돌 (질량이 같다고 가정)
-                const vx1_new = vx2 * PHYSICS.ballElasticity;
-                const vx2_new = vx1 * PHYSICS.ballElasticity;
+                b1.vx = v2x * cos - v1y * sin;
+                b1.vy = v1y * cos + v2x * sin;
+                b2.vx = v1x * cos - v2y * sin;
+                b2.vy = v2y * cos + v1x * sin;
 
-                // 원래 좌표계로 변환
-                ball1.vx = vx1_new * cos - vy1 * sin;
-                ball1.vy = vy1 * cos + vx1_new * sin;
-                ball2.vx = vx2_new * cos - vy2 * sin;
-                ball2.vy = vy2 * cos + vx2_new * sin;
+                const overlap = minDist - dist;
+                b1.x -= (overlap / 2) * cos;
+                b1.y -= (overlap / 2) * sin;
+                b2.x += (overlap / 2) * cos;
+                b2.y += (overlap / 2) * sin;
 
-                // 공 분리
-                const overlap = minDistance - distance;
-                ball1.x -= (overlap / 2 + 0.5) * cos;
-                ball1.y -= (overlap / 2 + 0.5) * sin;
-                ball2.x += (overlap / 2 + 0.5) * cos;
-                ball2.y += (overlap / 2 + 0.5) * sin;
+                b2.spinVert += b1.spinVert * 0.3;
+                b2.spinHorz += b1.spinHorz * 0.3;
 
-                // 스핀 전달 (약간)
-                ball2.spinX += ball1.spinX * 0.2;
-                ball2.spinY += ball1.spinY * 0.2;
-                ball2.spinVertical += ball1.spinVertical * 0.1;
-
-                // 3쿠션 규칙: 수구가 제1적구/제2적구와 접촉 추적
-                if (ball1 === gameState.cueBall && ball2 === gameState.targetBall1) {
-                    gameState.whiteBallHit = true;
-                }
-                if (ball1 === gameState.cueBall && ball2 === gameState.targetBall2) {
-                    gameState.redBallHit = true;
-                }
-                if (ball1 === gameState.targetBall1 && ball2 === gameState.cueBall) {
-                    gameState.whiteBallHit = true;
-                }
-                if (ball1 === gameState.targetBall2 && ball2 === gameState.cueBall) {
-                    gameState.redBallHit = true;
+                if (isCueBall) {
+                    if (b2 === gameState.ball1) gameState.ball1Hit = true;
+                    if (b2 === gameState.ball2) gameState.ball2Hit = true;
                 }
             }
         }
 
         function draw() {
-            // 배경 그리기 (반투명)
-            ctx.fillStyle = 'rgba(45, 80, 22, 0.1)';
+            ctx.fillStyle = 'rgba(45, 80, 22, 0.2)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 당구대 테두리
+            // 테이블 테두리
             ctx.strokeStyle = '#8B4513';
             ctx.lineWidth = 3;
-            ctx.strokeRect(
-                PHYSICS.margin,
-                PHYSICS.margin,
-                PHYSICS.tableWidth - PHYSICS.margin * 2,
-                PHYSICS.tableHeight - PHYSICS.margin * 2
-            );
+            ctx.strokeRect(gameState.margin, gameState.margin, gameState.tableW - gameState.margin * 2, gameState.tableH - gameState.margin * 2);
 
-            // 다이아몬드 포인트 그리기
-            drawDiamondPoints();
-
-            // 모서리 쿠션
-            ctx.fillStyle = '#654321';
-            const corners = [
-                { x: PHYSICS.margin, y: PHYSICS.margin },
-                { x: PHYSICS.tableWidth - PHYSICS.margin, y: PHYSICS.margin },
-                { x: PHYSICS.margin, y: PHYSICS.tableHeight - PHYSICS.margin },
-                { x: PHYSICS.tableWidth - PHYSICS.margin, y: PHYSICS.tableHeight - PHYSICS.margin },
-            ];
-
-            corners.forEach(corner => {
-                ctx.fillRect(corner.x - 4, corner.y - 4, 8, 8);
-            });
-
-            // 수구 그리기 (노란공)
-            ctx.fillStyle = '#ffdd44';
-            ctx.beginPath();
-            ctx.arc(gameState.cueBall.x, gameState.cueBall.y, PHYSICS.ballRadius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#999';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            // 수구 스핀 표시
-            if (gameState.cueBall.spinVertical !== 0) {
-                const color = gameState.cueBall.spinVertical > 0 ? '#0066ff' : '#ff3333';
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(gameState.cueBall.x, gameState.cueBall.y, PHYSICS.ballRadius + 2, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.fillStyle = color;
-                ctx.font = 'bold 9px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                const spinLabel = gameState.cueBall.spinVertical > 0 ? 'TS' : 'BS';
-                ctx.fillText(spinLabel, gameState.cueBall.x, gameState.cueBall.y - 14);
-            }
-
-            if (Math.abs(gameState.cueBall.spinX) + Math.abs(gameState.cueBall.spinY) > 0.1) {
-                ctx.strokeStyle = '#ffaa00';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([3, 3]);
-                ctx.beginPath();
-                ctx.arc(gameState.cueBall.x, gameState.cueBall.y, PHYSICS.ballRadius + 4.5, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                ctx.fillStyle = '#ffaa00';
-                ctx.font = 'bold 8px Arial';
-                ctx.fillText('EN', gameState.cueBall.x, gameState.cueBall.y + 14);
-            }
-
-            // 목표공 그리기 (흰공, 빨간공)
-            [gameState.targetBall1, gameState.targetBall2].forEach((ball, idx) => {
-                ctx.fillStyle = idx === 0 ? '#ffffff' : '#ff4444';
-                ctx.beginPath();
-                ctx.arc(ball.x, ball.y, PHYSICS.ballRadius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#333';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-
-                // 공 라벨
-                ctx.fillStyle = '#333';
-                ctx.font = 'bold 10px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(idx === 0 ? '①' : '②', ball.x, ball.y);
-            });
-
-            // 각도 가이드라인 (게임 진행 중이 아닐 때)
-            if (!gameState.isRunning) {
-                const angle = (parseInt(angleInput.value) * Math.PI) / 180;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(gameState.cueBall.x, gameState.cueBall.y);
-                ctx.lineTo(
-                    gameState.cueBall.x + Math.cos(angle) * (PHYSICS.tableWidth - PHYSICS.margin),
-                    gameState.cueBall.y + Math.sin(angle) * (PHYSICS.tableHeight - PHYSICS.margin)
-                );
-                ctx.stroke();
-                ctx.setLineDash([]);
-            }
-        }
-
-        function drawDiamondPoints() {
+            // 18 다이아몬드
             ctx.fillStyle = 'rgba(255, 200, 100, 0.5)';
-            const tableW = PHYSICS.tableWidth - PHYSICS.margin * 2;
-            const tableH = PHYSICS.tableHeight - PHYSICS.margin * 2;
             const diamonds = [];
-
-            // 좌측 장쿠션 (7개)
-            for (let i = 0; i <= 6; i++) {
-                diamonds.push({
-                    x: PHYSICS.margin,
-                    y: PHYSICS.margin + (tableH / 6) * i
-                });
+            for (let i = 0; i < 7; i++) {
+                diamonds.push({ x: gameState.margin, y: gameState.margin + (gameState.tableH - gameState.margin * 2) * i / 6 });
+                diamonds.push({ x: gameState.tableW - gameState.margin, y: gameState.margin + (gameState.tableH - gameState.margin * 2) * i / 6 });
             }
+            diamonds.push({ x: gameState.margin + (gameState.tableW - gameState.margin * 2) / 3, y: gameState.margin });
+            diamonds.push({ x: gameState.margin + (gameState.tableW - gameState.margin * 2) * 2 / 3, y: gameState.margin });
+            diamonds.push({ x: gameState.margin + (gameState.tableW - gameState.margin * 2) / 3, y: gameState.tableH - gameState.margin });
+            diamonds.push({ x: gameState.margin + (gameState.tableW - gameState.margin * 2) * 2 / 3, y: gameState.tableH - gameState.margin });
 
-            // 우측 장쿠션 (7개)
-            for (let i = 0; i <= 6; i++) {
-                diamonds.push({
-                    x: PHYSICS.margin + tableW,
-                    y: PHYSICS.margin + (tableH / 6) * i
-                });
-            }
-
-            // 상단 단쿠션 (3개)
-            for (let i = 0; i <= 2; i++) {
-                diamonds.push({
-                    x: PHYSICS.margin + (tableW / 2) * i,
-                    y: PHYSICS.margin
-                });
-            }
-
-            // 하단 단쿠션 (3개)
-            for (let i = 0; i <= 2; i++) {
-                diamonds.push({
-                    x: PHYSICS.margin + (tableW / 2) * i,
-                    y: PHYSICS.margin + tableH
-                });
-            }
-
-            // 다이아몬드 그리기
             diamonds.forEach(d => {
                 ctx.save();
                 ctx.translate(d.x, d.y);
@@ -996,6 +594,35 @@
                 ctx.fillRect(-2.5, -2.5, 5, 5);
                 ctx.restore();
             });
+
+            // 공들
+            ctx.fillStyle = '#ffdd44';
+            ctx.beginPath();
+            ctx.arc(gameState.cueBall.x, gameState.cueBall.y, gameState.ballRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(gameState.ball1.x, gameState.ball1.y, gameState.ballRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ff4444';
+            ctx.beginPath();
+            ctx.arc(gameState.ball2.x, gameState.ball2.y, gameState.ballRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 가이드라인
+            if (!gameState.isRunning) {
+                const angle = (parseInt(elements.angle.value) * Math.PI) / 180;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(gameState.cueBall.x, gameState.cueBall.y);
+                ctx.lineTo(gameState.cueBall.x + Math.cos(angle) * 500, gameState.cueBall.y + Math.sin(angle) * 500);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
         }
 
         function gameLoop() {
@@ -1004,8 +631,6 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // 초기화
-        updateSpinStatus();
         gameLoop();
     </script>
 </body>

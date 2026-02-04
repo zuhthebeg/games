@@ -215,6 +215,20 @@
         "category": "game"
     },
     {
+        "title": "3쿠션 당구 시뮬레이터",
+        "icon": "https://game.cocy.io/billiards/icon.svg",
+        "url": "https://game.cocy.io/billiards/",
+        "desc": "PBA 3쿠션 당구 물리 시뮬레이터 - 초구, 스핀, 다이아몬드 시스템",
+        "badge": "HOT",
+        "platforms": [
+            "WEB"
+        ],
+        "languages": [
+            "🌍"
+        ],
+        "category": "game"
+    },
+    {
         "title": "D-Day Counter",
         "icon": "https://tool.cocy.io/dday/icon.svg",
         "url": "https://tool.cocy.io/dday/",
