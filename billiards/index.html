@@ -119,6 +119,62 @@
       border-color: #4fc3f7;
     }
 
+    /* 파워/각도 슬라이더 */
+    #sliderControls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 12px;
+      min-width: 180px;
+    }
+    
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .slider-group label {
+      font-size: 12px;
+      color: #ccc;
+    }
+    
+    .slider-group input[type="range"] {
+      width: 100%;
+      height: 8px;
+      -webkit-appearance: none;
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+      outline: none;
+    }
+    
+    .slider-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #4fc3f7;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    
+    .slider-group input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: #4fc3f7;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+    
+    #btnShootSlider {
+      background: rgba(79, 195, 247, 0.4);
+      border-color: #4fc3f7;
+      font-weight: bold;
+    }
+
     /* 5x5 Spin Control with Extreme Buttons */
     #spinControl {
       display: flex;
@@ -438,6 +494,18 @@
     </div>
 
     <div id="controls">
+      <!-- 파워/각도 슬라이더 -->
+      <div id="sliderControls">
+        <div class="slider-group">
+          <label>🎯 각도: <span id="angleValue">0</span>°</label>
+          <input type="range" id="angleSlider" min="0" max="359" value="0">
+        </div>
+        <div class="slider-group">
+          <label>💪 파워: <span id="powerSliderValue">50</span>%</label>
+          <input type="range" id="powerSlider" min="20" max="100" value="50">
+        </div>
+        <button class="btn" id="btnShootSlider">🎱 발사</button>
+      </div>
       <div id="spinControl">
         <button class="spin-extreme" data-spin="0,-3">⬆️ 극상</button>
         <div class="spin-middle-row">
@@ -656,7 +724,31 @@
       
       if (state.isDragging && !state.isDraggingBall) {
         drawAimLine();
+      } else if (!state.isPlaying) {
+        // 슬라이더 기반 가이드라인 표시
+        drawSliderAimLine();
       }
+    }
+    
+    function drawSliderAimLine() {
+      const angleSlider = document.getElementById('angleSlider');
+      const powerSlider = document.getElementById('powerSlider');
+      if (!angleSlider || !powerSlider) return;
+      
+      const cueBall = balls[0];
+      const angle = parseInt(angleSlider.value) * Math.PI / 180;
+      const power = parseInt(powerSlider.value);
+      
+      // 가이드라인
+      ctx.strokeStyle = 'rgba(100, 200, 255, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.moveTo(cueBall.x, cueBall.y);
+      const length = power * 2;
+      ctx.lineTo(cueBall.x + Math.cos(angle) * length, cueBall.y + Math.sin(angle) * length);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     function drawTable() {
@@ -1575,6 +1667,29 @@
         resetBallPositions();
         updateScoreDisplay();
         draw();
+      });
+      
+      // 파워/각도 슬라이더
+      const angleSlider = document.getElementById('angleSlider');
+      const powerSlider = document.getElementById('powerSlider');
+      const angleValue = document.getElementById('angleValue');
+      const powerSliderValue = document.getElementById('powerSliderValue');
+      
+      angleSlider.addEventListener('input', () => {
+        angleValue.textContent = angleSlider.value;
+        draw(); // 가이드라인 업데이트
+      });
+      
+      powerSlider.addEventListener('input', () => {
+        powerSliderValue.textContent = powerSlider.value;
+      });
+      
+      // 슬라이더로 발사 버튼
+      document.getElementById('btnShootSlider').addEventListener('click', () => {
+        if (state.isPlaying) return;
+        const angle = parseInt(angleSlider.value) * Math.PI / 180;
+        const power = parseInt(powerSlider.value);
+        shoot(angle, power);
       });
       
       // v5.2: 전체화면 버튼
