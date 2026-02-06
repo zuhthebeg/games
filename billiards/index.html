@@ -628,12 +628,13 @@
 
     function resetBallPositions() {
       const margin = TABLE.railWidth;
-      balls[0].x = margin + playWidth * 0.25;
+      // 초구 배치: 수구(흰공)는 우측, 노란공은 좌측
+      balls[0].x = margin + playWidth * 0.75;  // 흰공 (수구) - 우측
       balls[0].y = margin + playHeight * 0.5;
-      balls[1].x = margin + playWidth * 0.7;
-      balls[1].y = margin + playHeight * 0.35;
-      balls[2].x = margin + playWidth * 0.7;
-      balls[2].y = margin + playHeight * 0.65;
+      balls[1].x = margin + playWidth * 0.5;   // 빨간공 - 중앙
+      balls[1].y = margin + playHeight * 0.25;
+      balls[2].x = margin + playWidth * 0.25;  // 노란공 - 좌측
+      balls[2].y = margin + playHeight * 0.5;
     }
 
     // ===== 그리기 함수들 =====
@@ -1253,6 +1254,19 @@
       });
       
       draw();
+      
+      // 해법 클릭 시 실제로 발사
+      const solution = state.solutions[index];
+      if (solution && !state.isPlaying) {
+        // 패널 닫기
+        document.getElementById('solutionsPanel').classList.remove('open');
+        
+        // 1초 후 발사
+        setTimeout(() => {
+          const angle = solution.angle * Math.PI / 180;
+          shoot(angle, solution.power);
+        }, 500);
+      }
     }
 
     // ===== 이벤트 핸들러 =====
