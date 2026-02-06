@@ -273,31 +273,36 @@
       color: #888;
     }
 
-    #orientationWarning {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(26, 29, 46, 0.98);
-      z-index: 1000;
-      flex-direction: column;
+    /* Fullscreen mode */
+    body.fullscreen {
+      background: #000;
+    }
+    body.fullscreen #gameContainer {
+      padding: 0;
+      max-width: none;
+      height: 100vh;
+      justify-content: center;
+    }
+    body.fullscreen #header {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+    }
+    body.fullscreen #controls {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+    }
+    body.fullscreen #canvasWrapper {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      padding: 20px;
-    }
-
-    #orientationWarning .icon {
-      font-size: 60px;
-      margin-bottom: 20px;
-      animation: rotate 1s ease-in-out infinite alternate;
-    }
-
-    @keyframes rotate {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(90deg); }
     }
 
     #statusMessage {
@@ -332,12 +337,6 @@
       display: none;
     }
 
-    @media (orientation: portrait) and (max-width: 768px) {
-      #orientationWarning {
-        display: flex;
-      }
-    }
-
     @media (max-width: 600px) {
       #scoreBoard {
         font-size: 12px;
@@ -358,12 +357,6 @@
   </style>
 </head>
 <body>
-  <div id="orientationWarning">
-    <div class="icon">📱</div>
-    <h2>가로 모드로 전환해주세요</h2>
-    <p>더 나은 경험을 위해 기기를 가로로 돌려주세요</p>
-  </div>
-
   <div id="gameContainer">
     <div id="header">
       <div id="scoreBoard">
@@ -390,6 +383,7 @@
         <div class="spin-cell" data-spin="0,1"></div>
         <div class="spin-cell" data-spin="1,1"></div>
       </div>
+      <button class="btn" id="btnFullscreen">⛶ 전체화면</button>
       <button class="btn" id="btnTrajectory">📍 궤적</button>
       <button class="btn" id="btnSolution">💡 해법 찾기</button>
       <button class="btn" id="btnPresets">📚 예시</button>
@@ -436,11 +430,14 @@
     };
 
     // ===== 테이블 설정 =====
+    // 실제 3쿠션 규격: 테이블 2840mm × 1420mm, 공 직경 61.5mm
+    // 공 직경 / 테이블 폭 = 61.5 / 2840 = 0.0217 (2.17%)
     const TABLE = {
       ratio: 2,
       railWidth: 30,
-      ballRadius: 12
+      ballRadiusRatio: 0.0217 // 실제 비율
     };
+    // ballRadius는 resizeCanvas에서 동적 계산
 
     // ===== 공 정의 =====
     let balls = [
@@ -519,8 +516,16 @@
     let tableWidth, tableHeight, playWidth, playHeight;
 
     function resizeCanvas() {
-      const maxWidth = Math.min(window.innerWidth * 0.92, 1200);
-      const maxHeight = window.innerHeight * 0.6;
+      const isFullscreen = document.body.classList.contains('fullscreen') || document.fullscreenElement;
+      
+      let maxWidth, maxHeight;
+      if (isFullscreen) {
+        maxWidth = window.innerWidth * 0.95;
+        maxHeight = window.innerHeight * 0.85;
+      } else {
+        maxWidth = Math.min(window.innerWidth * 0.92, 1200);
+        maxHeight = window.innerHeight * 0.6;
+      }
       
       let w = maxWidth;
       let h = w / TABLE.ratio;
@@ -534,8 +539,15 @@
       canvas.height = h;
       tableWidth = w;
       tableHeight = h;
+      
+      // 레일 폭도 테이블 크기에 비례
+      TABLE.railWidth = Math.max(20, w * 0.03);
+      
       playWidth = w - TABLE.railWidth * 2;
       playHeight = h - TABLE.railWidth * 2;
+      
+      // 공 반지름: 실제 비율로 계산 (플레이 영역 기준)
+      TABLE.ballRadius = Math.max(8, playWidth * TABLE.ballRadiusRatio);
       
       resetBallPositions();
     }
@@ -1357,6 +1369,41 @@
         resetBallPositions();
         updateScoreDisplay();
         draw();
+      });
+      
+      // 전체화면 버튼
+      document.getElementById('btnFullscreen').addEventListener('click', () => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+          document.body.classList.remove('fullscreen');
+          document.getElementById('btnFullscreen').textContent = '⛶ 전체화면';
+        } else {
+          document.documentElement.requestFullscreen().then(() => {
+            document.body.classList.add('fullscreen');
+            document.getElementById('btnFullscreen').textContent = '⛶ 창모드';
+          }).catch(() => {
+            // 전체화면 API 지원 안 하면 CSS만으로 최대화
+            document.body.classList.toggle('fullscreen');
+            document.getElementById('btnFullscreen').textContent = 
+              document.body.classList.contains('fullscreen') ? '⛶ 창모드' : '⛶ 전체화면';
+          });
+        }
+        setTimeout(() => {
+          resizeCanvas();
+          draw();
+        }, 100);
+      });
+      
+      // 전체화면 변경 감지
+      document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+          document.body.classList.remove('fullscreen');
+          document.getElementById('btnFullscreen').textContent = '⛶ 전체화면';
+        }
+        setTimeout(() => {
+          resizeCanvas();
+          draw();
+        }, 100);
       });
       
       // 게임 루프
