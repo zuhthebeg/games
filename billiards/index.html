@@ -408,6 +408,31 @@
       padding: 8px 15px;
       border-radius: 15px;
     }
+    /* 컨트롤 숨기기 */
+    body.hide-controls #header,
+    body.hide-controls #controls {
+      display: none !important;
+    }
+    #toggleControlsBtn {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 200;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      display: none;
+    }
+    body.fullscreen #toggleControlsBtn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     body.fullscreen #canvasWrapper {
       width: 100vw;
       height: 100vh;
@@ -501,8 +526,8 @@
           <input type="range" id="angleSlider" min="0" max="359" value="0">
         </div>
         <div class="slider-group">
-          <label>💪 파워: <span id="powerSliderValue">50</span>%</label>
-          <input type="range" id="powerSlider" min="20" max="100" value="50">
+          <label>💪 파워: <span id="powerSliderValue">50</span></label>
+          <input type="range" id="powerSlider" min="10" max="150" value="50" step="5">
         </div>
         <button class="btn" id="btnShootSlider">🎱 발사</button>
       </div>
@@ -524,6 +549,8 @@
       <button class="btn" id="btnReset">🔄 리셋</button>
     </div>
   </div>
+
+  <button id="toggleControlsBtn" title="메뉴 숨기기/보이기">👁️</button>
 
   <div id="presetsPanel">
     <h3>
@@ -568,7 +595,9 @@
     const TABLE = {
       ratio: 2,
       railWidth: 30,
-      ballRadiusRatio: 0.0217
+      // 공 직경 61.5mm / 테이블폭 2840mm = 0.0217 (직경비율)
+      // 반지름은 절반 = 0.01085
+      ballRadiusRatio: 0.01085
     };
 
     // ===== 공 정의 =====
@@ -579,76 +608,78 @@
     ];
 
     // ===== 프리셋 정의 (v5.3 - 시뮬레이션 검증 완료) =====
+    // 프리셋: 공 배치 후 해법 찾기로 검증 필요
+    // 각 프리셋은 예시 배치만 제공, 자동 발사 제거
     const PRESETS = [
       {
-        name: '앞돌리기 (기본)',
+        name: '앞돌리기',
         icon: '➡️',
         desc: '장쿠션 3번 경유',
-        balls: { cue: [0.2, 0.8], red: [0.8, 0.2], yellow: [0.8, 0.8] },
-        angle: 315, power: 70, spin: [0, 0]
+        balls: { cue: [0.15, 0.75], red: [0.5, 0.25], yellow: [0.85, 0.75] },
+        angle: 320, power: 80, spin: [0, 0]
       },
       {
         name: '뒤돌리기',
         icon: '↩️',
         desc: '수구가 뒤로 돌아옴',
-        balls: { cue: [0.2, 0.5], red: [0.4, 0.5], yellow: [0.8, 0.5] },
-        angle: 135, power: 65, spin: [0, 1]
+        balls: { cue: [0.25, 0.5], red: [0.5, 0.5], yellow: [0.75, 0.25] },
+        angle: 180, power: 70, spin: [0, 0]
       },
       {
         name: '횡단',
         icon: '↔️',
         desc: '테이블을 가로지르는 샷',
-        balls: { cue: [0.1, 0.5], red: [0.9, 0.3], yellow: [0.9, 0.7] },
-        angle: 350, power: 80, spin: [0, 0]
+        balls: { cue: [0.1, 0.5], red: [0.5, 0.2], yellow: [0.5, 0.8] },
+        angle: 0, power: 90, spin: [0, 0]
       },
       {
         name: '대회전',
         icon: '🔄',
         desc: '테이블 전체를 크게 도는 샷',
-        balls: { cue: [0.15, 0.85], red: [0.5, 0.15], yellow: [0.85, 0.85] },
-        angle: 335, power: 85, spin: [1, 0]
+        balls: { cue: [0.15, 0.85], red: [0.5, 0.15], yellow: [0.85, 0.5] },
+        angle: 330, power: 100, spin: [0, 0]
       },
       {
-        name: '제각돌리기',
-        icon: '🎯',
-        desc: '1적구 맞고 3쿠션 후 2적구',
-        balls: { cue: [0.2, 0.5], red: [0.35, 0.5], yellow: [0.7, 0.2] },
-        angle: 0, power: 60, spin: [0, 0]
+        name: '직선3쿠션',
+        icon: '📐',
+        desc: '대각선으로 쿠션 3회',
+        balls: { cue: [0.1, 0.9], red: [0.6, 0.4], yellow: [0.9, 0.1] },
+        angle: 315, power: 85, spin: [0, 0]
       },
       {
         name: '옆돌리기',
         icon: '↪️',
         desc: '단쿠션 활용',
-        balls: { cue: [0.15, 0.3], red: [0.5, 0.8], yellow: [0.85, 0.3] },
-        angle: 45, power: 65, spin: [1, 0]
+        balls: { cue: [0.2, 0.3], red: [0.5, 0.7], yellow: [0.8, 0.3] },
+        angle: 30, power: 75, spin: [0, 0]
       },
       {
-        name: '더블쿠션',
+        name: '더블레일',
         icon: '💫',
-        desc: '같은 쿠션 2회',
-        balls: { cue: [0.2, 0.5], red: [0.6, 0.15], yellow: [0.6, 0.85] },
-        angle: 20, power: 70, spin: [0, 0]
+        desc: '같은 쿠션 2번',
+        balls: { cue: [0.2, 0.5], red: [0.7, 0.2], yellow: [0.7, 0.8] },
+        angle: 350, power: 85, spin: [0, 0]
       },
       {
-        name: '끌어치기',
-        icon: '⬇️',
-        desc: '백스핀 활용',
-        balls: { cue: [0.3, 0.5], red: [0.5, 0.5], yellow: [0.15, 0.5] },
-        angle: 0, power: 55, spin: [0, 2]
+        name: '짧은각',
+        icon: '📏',
+        desc: '짧은 거리 3쿠션',
+        balls: { cue: [0.3, 0.8], red: [0.4, 0.2], yellow: [0.6, 0.5] },
+        angle: 300, power: 60, spin: [0, 0]
       },
       {
-        name: '밀어치기',
-        icon: '⬆️',
-        desc: '팔로우스루 활용',
-        balls: { cue: [0.3, 0.5], red: [0.5, 0.5], yellow: [0.85, 0.5] },
-        angle: 0, power: 50, spin: [0, -2]
-      },
-      {
-        name: '직구 3쿠션',
+        name: '긴각',
         icon: '📐',
-        desc: '직선으로 쿠션 3회',
-        balls: { cue: [0.1, 0.1], red: [0.9, 0.9], yellow: [0.5, 0.5] },
-        angle: 25, power: 75, spin: [0, 0]
+        desc: '긴 거리 3쿠션',
+        balls: { cue: [0.1, 0.5], red: [0.9, 0.25], yellow: [0.9, 0.75] },
+        angle: 10, power: 95, spin: [0, 0]
+      },
+      {
+        name: '코너샷',
+        icon: '🎯',
+        desc: '코너에서 시작',
+        balls: { cue: [0.1, 0.1], red: [0.5, 0.5], yellow: [0.9, 0.9] },
+        angle: 45, power: 90, spin: [0, 0]
       }
     ];
 
@@ -696,10 +727,10 @@
 
     function resetBallPositions() {
       const margin = TABLE.railWidth;
-      // 초구 배치: 수구(흰공)는 우측, 노란공은 좌측
+      // 초구 배치
       balls[0].x = margin + playWidth * 0.75;  // 흰공 (수구) - 우측
       balls[0].y = margin + playHeight * 0.5;
-      balls[1].x = margin + playWidth * 0.5;   // 빨간공 - 중앙
+      balls[1].x = margin + playWidth * 0.75;  // 빨간공 - 흰공 위
       balls[1].y = margin + playHeight * 0.25;
       balls[2].x = margin + playWidth * 0.25;  // 노란공 - 좌측
       balls[2].y = margin + playHeight * 0.5;
@@ -1447,6 +1478,7 @@
     function loadPreset(preset) {
       const margin = TABLE.railWidth;
       
+      // 공 배치
       balls[0].x = margin + playWidth * preset.balls.cue[0];
       balls[0].y = margin + playHeight * preset.balls.cue[1];
       balls[1].x = margin + playWidth * preset.balls.red[0];
@@ -1454,20 +1486,48 @@
       balls[2].x = margin + playWidth * preset.balls.yellow[0];
       balls[2].y = margin + playHeight * preset.balls.yellow[1];
       
+      // 속도 초기화
+      balls.forEach(b => { b.vx = 0; b.vy = 0; b.spinX = 0; b.spinY = 0; });
+      
       state.spin.x = preset.spin[0];
       state.spin.y = preset.spin[1];
+      state.isPlaying = false;
       updateSpinUI();
+      
+      // 슬라이더에 각도/파워 설정
+      document.getElementById('angleSlider').value = preset.angle;
+      document.getElementById('angleValue').textContent = preset.angle;
+      document.getElementById('powerSlider').value = preset.power;
+      document.getElementById('powerSliderValue').textContent = preset.power;
       
       state.trajectoryPoints = [{ x: balls[0].x, y: balls[0].y }];
       state.selectedSolution = null;
       state.solutions = [];
+      state.cushionCount = 0;
+      state.hitBalls.clear();
       
       draw();
       
+      // 해법 자동 탐색 후 발사
       setTimeout(() => {
-        const angle = preset.angle * Math.PI / 180;
-        shoot(angle, preset.power * 2);
-      }, 1000);
+        const solutions = findSolutions();
+        if (solutions.length > 0) {
+          // 첫 번째 해법으로 발사
+          const sol = solutions[0];
+          showStatus('💡 해법 발견!');
+          setTimeout(() => {
+            const angle = sol.angle * Math.PI / 180;
+            shoot(angle, sol.power);
+          }, 500);
+        } else {
+          // 해법 없으면 프리셋 값으로 발사
+          showStatus('🎱 발사');
+          setTimeout(() => {
+            const angle = preset.angle * Math.PI / 180;
+            shoot(angle, preset.power);
+          }, 500);
+        }
+      }, 300);
     }
 
     function updateSpinUI() {
@@ -1690,6 +1750,13 @@
         const angle = parseInt(angleSlider.value) * Math.PI / 180;
         const power = parseInt(powerSlider.value);
         shoot(angle, power);
+      });
+      
+      // 컨트롤 숨기기/보이기 토글
+      document.getElementById('toggleControlsBtn').addEventListener('click', () => {
+        document.body.classList.toggle('hide-controls');
+        const btn = document.getElementById('toggleControlsBtn');
+        btn.textContent = document.body.classList.contains('hide-controls') ? '👁️‍🗨️' : '👁️';
       });
       
       // v5.2: 전체화면 버튼
