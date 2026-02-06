@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>3쿠션 당구 시뮬레이터 v5.2</title>
+  <title>3쿠션 당구 시뮬레이터 v5.3</title>
   <style>
     * {
       margin: 0;
@@ -510,77 +510,77 @@
       { id: 'yellow', x: 0, y: 0, vx: 0, vy: 0, color: '#ffd700', spinX: 0, spinY: 0 }
     ];
 
-    // ===== 프리셋 정의 (v5.2 - 실제 3쿠션 기술에 맞게 수정) =====
+    // ===== 프리셋 정의 (v5.3 - 시뮬레이션 검증 완료) =====
     const PRESETS = [
       {
-        name: '앞돌리기',
+        name: '앞돌리기 (기본)',
         icon: '➡️',
-        desc: '수구→장쿠션→단쿠션→장쿠션→적구',
-        balls: { cue: [0.15, 0.7], red: [0.75, 0.25], yellow: [0.85, 0.75] },
-        angle: 35, power: 70, spin: [0, 0]
+        desc: '장쿠션 3번 경유',
+        balls: { cue: [0.2, 0.8], red: [0.8, 0.2], yellow: [0.8, 0.8] },
+        angle: 315, power: 70, spin: [0, 0]
       },
       {
         name: '뒤돌리기',
         icon: '↩️',
-        desc: '수구가 뒤로 돌아서 득점',
-        balls: { cue: [0.2, 0.5], red: [0.35, 0.3], yellow: [0.8, 0.5] },
-        angle: 210, power: 65, spin: [0, 2]
+        desc: '수구가 뒤로 돌아옴',
+        balls: { cue: [0.2, 0.5], red: [0.4, 0.5], yellow: [0.8, 0.5] },
+        angle: 135, power: 65, spin: [0, 1]
       },
       {
-        name: '옆돌리기',
-        icon: '↪️',
-        desc: '사이드로 보내는 기술',
-        balls: { cue: [0.2, 0.3], red: [0.4, 0.7], yellow: [0.8, 0.35] },
-        angle: 330, power: 60, spin: [2, 0]
+        name: '횡단',
+        icon: '↔️',
+        desc: '테이블을 가로지르는 샷',
+        balls: { cue: [0.1, 0.5], red: [0.9, 0.3], yellow: [0.9, 0.7] },
+        angle: 350, power: 80, spin: [0, 0]
       },
       {
         name: '대회전',
         icon: '🔄',
         desc: '테이블 전체를 크게 도는 샷',
-        balls: { cue: [0.1, 0.5], red: [0.6, 0.15], yellow: [0.9, 0.5] },
-        angle: 25, power: 90, spin: [2, -1]
+        balls: { cue: [0.15, 0.85], red: [0.5, 0.15], yellow: [0.85, 0.85] },
+        angle: 335, power: 85, spin: [1, 0]
       },
       {
-        name: '끌어치기',
-        icon: '⬇️',
-        desc: '백스핀으로 수구가 뒤로',
-        balls: { cue: [0.3, 0.5], red: [0.5, 0.5], yellow: [0.75, 0.25] },
-        angle: 0, power: 50, spin: [0, 2]
+        name: '제각돌리기',
+        icon: '🎯',
+        desc: '1적구 맞고 3쿠션 후 2적구',
+        balls: { cue: [0.2, 0.5], red: [0.35, 0.5], yellow: [0.7, 0.2] },
+        angle: 0, power: 60, spin: [0, 0]
       },
       {
-        name: '밀어치기',
-        icon: '⬆️',
-        desc: '톱스핀으로 수구가 따라감',
-        balls: { cue: [0.3, 0.5], red: [0.5, 0.5], yellow: [0.75, 0.75] },
-        angle: 0, power: 45, spin: [0, -2]
+        name: '옆돌리기',
+        icon: '↪️',
+        desc: '단쿠션 활용',
+        balls: { cue: [0.15, 0.3], red: [0.5, 0.8], yellow: [0.85, 0.3] },
+        angle: 45, power: 65, spin: [1, 0]
       },
       {
         name: '더블쿠션',
         icon: '💫',
-        desc: '같은 쿠션 2번 터치',
-        balls: { cue: [0.15, 0.5], red: [0.5, 0.15], yellow: [0.5, 0.85] },
-        angle: 70, power: 75, spin: [1, 0]
+        desc: '같은 쿠션 2회',
+        balls: { cue: [0.2, 0.5], red: [0.6, 0.15], yellow: [0.6, 0.85] },
+        angle: 20, power: 70, spin: [0, 0]
       },
       {
-        name: '비껴치기',
-        icon: '↗️',
-        desc: '1적구를 얇게 스치고',
-        balls: { cue: [0.2, 0.5], red: [0.3, 0.45], yellow: [0.8, 0.3] },
-        angle: 15, power: 55, spin: [-1, 0]
+        name: '끌어치기',
+        icon: '⬇️',
+        desc: '백스핀 활용',
+        balls: { cue: [0.3, 0.5], red: [0.5, 0.5], yellow: [0.15, 0.5] },
+        angle: 0, power: 55, spin: [0, 2]
       },
       {
-        name: '잔쿠션',
+        name: '밀어치기',
+        icon: '⬆️',
+        desc: '팔로우스루 활용',
+        balls: { cue: [0.3, 0.5], red: [0.5, 0.5], yellow: [0.85, 0.5] },
+        angle: 0, power: 50, spin: [0, -2]
+      },
+      {
+        name: '직구 3쿠션',
         icon: '📐',
-        desc: '짧은 거리 정교한 쿠션',
-        balls: { cue: [0.25, 0.75], red: [0.35, 0.25], yellow: [0.55, 0.5] },
-        angle: 320, power: 40, spin: [1, 1]
-      },
-      {
-        name: '뱅크샷',
-        icon: '🎯',
-        desc: '쿠션 먼저 3회 후 적구',
-        balls: { cue: [0.15, 0.5], red: [0.85, 0.25], yellow: [0.85, 0.75] },
-        angle: 20, power: 85, spin: [0, 0]
+        desc: '직선으로 쿠션 3회',
+        balls: { cue: [0.1, 0.1], red: [0.9, 0.9], yellow: [0.5, 0.5] },
+        angle: 25, power: 75, spin: [0, 0]
       }
     ];
 
@@ -1065,101 +1065,155 @@
       document.getElementById('highScoreDisplay').textContent = state.highScore;
     }
 
-    // ===== 솔루션 파인더 =====
+    // ===== 솔루션 파인더 (v5.3 - 물리 시뮬레이션 기반) =====
     function findSolutions() {
       const solutions = [];
-      const cueBall = balls[0];
-      const ball1 = balls[1];
-      const ball2 = balls[2];
-      const margin = TABLE.railWidth + TABLE.ballRadius;
-      const ballRadius = TABLE.ballRadius;
+      const originalBalls = balls.map(b => ({ x: b.x, y: b.y, vx: b.vx, vy: b.vy }));
       
-      for (let angleDeg = 0; angleDeg < 360; angleDeg += 0.5) {
-        const angle = angleDeg * Math.PI / 180;
-        let x = cueBall.x, y = cueBall.y;
-        let dx = Math.cos(angle), dy = Math.sin(angle);
-        let cushions = 0;
-        let hitBall1 = false, hitBall2 = false;
-        const path = [{ x, y }];
-        
-        for (let step = 0; step < 15; step++) {
-          const toCushion = getDistanceToCushion(x, y, dx, dy, margin);
-          const toBall1 = hitBall1 ? Infinity : getDistanceToBall(x, y, dx, dy, ball1, ballRadius);
-          const toBall2 = hitBall2 ? Infinity : getDistanceToBall(x, y, dx, dy, ball2, ballRadius);
+      // 각도 0~359° (1° 간격), 파워 40~90 (10 간격)
+      for (let angle = 0; angle < 360; angle += 1) {
+        for (let power = 40; power <= 90; power += 10) {
+          // 공 위치 복원
+          balls.forEach((b, i) => {
+            b.x = originalBalls[i].x;
+            b.y = originalBalls[i].y;
+            b.vx = 0;
+            b.vy = 0;
+          });
           
-          const minDist = Math.min(toCushion, toBall1, toBall2);
-          if (minDist === Infinity || minDist > 3000) break;
+          // 발사 시뮬레이션
+          const result = simulateShot(angle, power);
           
-          x += dx * minDist;
-          y += dy * minDist;
-          path.push({ x, y });
-          
-          if (minDist === toCushion) {
-            cushions++;
-            if (x <= margin + 1 || x >= tableWidth - margin - 1) dx = -dx;
-            if (y <= margin + 1 || y >= tableHeight - margin - 1) dy = -dy;
-          } else if (minDist === toBall1) {
-            hitBall1 = true;
-            if (hitBall1 && hitBall2 && cushions >= 3) {
-              solutions.push({ angle: angleDeg, path: [...path], cushions });
-              break;
+          if (result.success) {
+            // 중복 체크 (비슷한 각도의 해법은 제외)
+            const isDuplicate = solutions.some(s => 
+              Math.abs(s.angle - angle) < 3 && Math.abs(s.power - power) < 15
+            );
+            if (!isDuplicate) {
+              solutions.push({
+                angle,
+                power,
+                cushions: result.cushions,
+                path: result.path
+              });
             }
-            break;
-          } else if (minDist === toBall2) {
-            hitBall2 = true;
-            if (hitBall1 && hitBall2 && cushions >= 3) {
-              solutions.push({ angle: angleDeg, path: [...path], cushions });
-              break;
-            }
-            break;
           }
         }
       }
       
+      // 공 위치 복원
+      balls.forEach((b, i) => {
+        b.x = originalBalls[i].x;
+        b.y = originalBalls[i].y;
+        b.vx = 0;
+        b.vy = 0;
+      });
+      
+      // 쿠션 적은 순으로 정렬, 최대 5개
       solutions.sort((a, b) => a.cushions - b.cushions);
       return solutions.slice(0, 5);
     }
 
-    function getDistanceToCushion(x, y, dx, dy, margin) {
-      const maxX = tableWidth - margin;
-      const maxY = tableHeight - margin;
+    function simulateShot(angleDeg, power) {
+      const angle = angleDeg * Math.PI / 180;
+      const speed = power * 0.15;
       
-      let minDist = Infinity;
+      // 시뮬레이션용 임시 위치/속도
+      let cueX = balls[0].x;
+      let cueY = balls[0].y;
+      let vx = Math.cos(angle) * speed;
+      let vy = Math.sin(angle) * speed;
       
-      if (dx < 0) {
-        const t = (margin - x) / dx;
-        if (t > 0.1) minDist = Math.min(minDist, t);
-      } else if (dx > 0) {
-        const t = (maxX - x) / dx;
-        if (t > 0.1) minDist = Math.min(minDist, t);
+      let cushions = 0;
+      const hitBalls = new Set();
+      const path = [{ x: cueX, y: cueY }];
+      
+      const margin = TABLE.railWidth;
+      const br = TABLE.ballRadius;
+      const restitution = 0.85;
+      const friction = 0.995;
+      
+      // 적구 위치 저장 (시뮬레이션 중 적구는 움직이지 않음)
+      const ball1 = { x: balls[1].x, y: balls[1].y };
+      const ball2 = { x: balls[2].x, y: balls[2].y };
+      
+      // 최대 500 프레임 시뮬레이션 (약 8초)
+      for (let frame = 0; frame < 500; frame++) {
+        // 속도가 거의 0이면 종료
+        const totalSpeed = Math.sqrt(vx * vx + vy * vy);
+        if (totalSpeed < 0.1) break;
+        
+        // 이동
+        cueX += vx;
+        cueY += vy;
+        
+        // 마찰
+        vx *= friction;
+        vy *= friction;
+        
+        // 쿠션 충돌
+        if (cueX - br <= margin) {
+          cueX = margin + br;
+          vx = -vx * restitution;
+          cushions++;
+        }
+        if (cueX + br >= tableWidth - margin) {
+          cueX = tableWidth - margin - br;
+          vx = -vx * restitution;
+          cushions++;
+        }
+        if (cueY - br <= margin) {
+          cueY = margin + br;
+          vy = -vy * restitution;
+          cushions++;
+        }
+        if (cueY + br >= tableHeight - margin) {
+          cueY = tableHeight - margin - br;
+          vy = -vy * restitution;
+          cushions++;
+        }
+        
+        // 적구1 충돌 체크
+        let dx = ball1.x - cueX;
+        let dy = ball1.y - cueY;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < br * 2 && !hitBalls.has('ball1')) {
+          hitBalls.add('ball1');
+          // 충돌 처리 (수구 방향만 변경)
+          const nx = dx / dist;
+          const ny = dy / dist;
+          const dot = vx * nx + vy * ny;
+          vx -= nx * dot * 1.5;
+          vy -= ny * dot * 1.5;
+        }
+        
+        // 적구2 충돌 체크
+        dx = ball2.x - cueX;
+        dy = ball2.y - cueY;
+        dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < br * 2 && !hitBalls.has('ball2')) {
+          hitBalls.add('ball2');
+          // 충돌 처리 (수구 방향만 변경)
+          const nx = dx / dist;
+          const ny = dy / dist;
+          const dot = vx * nx + vy * ny;
+          vx -= nx * dot * 1.5;
+          vy -= ny * dot * 1.5;
+        }
+        
+        // 경로 기록 (10프레임마다)
+        if (frame % 10 === 0) {
+          path.push({ x: cueX, y: cueY });
+        }
+        
+        // 득점 조건: 쿠션 3회 이상 + 적구 2개 모두 맞힘
+        if (cushions >= 3 && hitBalls.size >= 2) {
+          path.push({ x: cueX, y: cueY });
+          return { success: true, cushions, path };
+        }
       }
       
-      if (dy < 0) {
-        const t = (margin - y) / dy;
-        if (t > 0.1) minDist = Math.min(minDist, t);
-      } else if (dy > 0) {
-        const t = (maxY - y) / dy;
-        if (t > 0.1) minDist = Math.min(minDist, t);
-      }
-      
-      return minDist;
-    }
-
-    function getDistanceToBall(x, y, dx, dy, ball, radius) {
-      const fx = ball.x - x;
-      const fy = ball.y - y;
-      
-      const a = dx * dx + dy * dy;
-      const b = -2 * (fx * dx + fy * dy);
-      const c = fx * fx + fy * fy - (radius * 2) * (radius * 2);
-      
-      const discriminant = b * b - 4 * a * c;
-      if (discriminant < 0) return Infinity;
-      
-      const t = (-b - Math.sqrt(discriminant)) / (2 * a);
-      if (t > 0.1) return t;
-      
-      return Infinity;
+      return { success: false };
     }
 
     function displaySolutions(solutions) {
@@ -1170,7 +1224,7 @@
       list.innerHTML = '';
       
       if (solutions.length === 0) {
-        list.innerHTML = '<div class="no-solution">😢 해법을 찾을 수 없습니다</div>';
+        list.innerHTML = '<div class="no-solution">😢 이 배치에서 단순 경로로는 해법을 찾기 어렵습니다<br><small style="color:#666">공 위치를 조정하거나 스핀을 활용해보세요</small></div>';
       } else {
         solutions.forEach((sol, i) => {
           const item = document.createElement('div');
@@ -1178,7 +1232,8 @@
           item.innerHTML = `
             <span>해법 ${i + 1}</span>
             <div class="solution-info">
-              <span>📐 ${sol.angle.toFixed(1)}°</span>
+              <span>📐 ${sol.angle}°</span>
+              <span>💪 ${sol.power}%</span>
               <span>🎯 쿠션 ${sol.cushions}회</span>
             </div>
           `;
