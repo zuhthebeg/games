@@ -1,1450 +1,1375 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>3쿠션 당구 시뮬레이터 v4.0</title>
-<style>
-/* ============================================================
-   CSS - 3쿠션 당구 시뮬레이터 v4.0
-   ============================================================ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>3쿠션 당구 시뮬레이터 v5.0</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
 
-:root {
-  --bg: #1a1d2e;
-  --panel-bg: rgba(30, 35, 55, 0.85);
-  --panel-border: rgba(255,255,255,0.1);
-  --accent: #4fc3f7;
-  --accent2: #81c784;
-  --text: #e0e0e0;
-  --text-dim: #888;
-  --gold: #ffd700;
-  --red: #dc3545;
-  --white-ball: #ffffff;
-  --table-green: #1a5c26;
-  --rail-brown: #5a3a1a;
-  --rail-light: #8b6914;
-  --glass-bg: rgba(255,255,255,0.06);
-  --glass-border: rgba(255,255,255,0.12);
-}
+    body {
+      background: #1a1d2e;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
 
-html, body {
-  width: 100%; height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  overflow-x: hidden;
-}
+    #gameContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 100vw;
+      padding: 10px;
+    }
 
-/* Layout */
-#app {
-  display: flex;
-  width: 100%; min-height: 100vh;
-}
+    #header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 90vw;
+      padding: 10px 20px;
+      margin-bottom: 10px;
+    }
 
-/* Left: Table area */
-#table-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  min-width: 0;
-}
+    #scoreBoard {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 10px 20px;
+      display: flex;
+      gap: 20px;
+      font-size: 16px;
+    }
 
-/* Right: Control panel */
-#control-panel {
-  width: 320px;
-  min-width: 300px;
-  max-height: 100vh;
-  overflow-y: auto;
-  padding: 16px 14px;
-  background: var(--panel-bg);
-  border-left: 1px solid var(--panel-border);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.15) transparent;
-}
+    #scoreBoard span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
 
-#control-panel::-webkit-scrollbar { width: 5px; }
-#control-panel::-webkit-scrollbar-track { background: transparent; }
-#control-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+    .score-value {
+      font-weight: bold;
+      font-size: 20px;
+      color: #4fc3f7;
+    }
 
-/* Canvas */
-#gameCanvas {
-  cursor: crosshair;
-  border-radius: 4px;
-  touch-action: none;
-  max-width: 100%;
-}
+    #canvasWrapper {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-/* Status bar */
-#status-bar {
-  display: flex;
-  gap: 16px;
-  padding: 8px 16px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 10px;
-  margin-top: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-  font-size: 14px;
-  backdrop-filter: blur(10px);
-  width: 100%;
-  max-width: 800px;
-}
+    #gameCanvas {
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
 
-.stat { display: flex; align-items: center; gap: 6px; }
-.stat-label { color: var(--text-dim); font-size: 12px; }
-.stat-value { font-weight: 700; font-size: 16px; }
-.stat-value.cushion { color: var(--accent); }
-.stat-value.score { color: var(--gold); }
-.stat-value.status-text { color: var(--accent2); font-size: 13px; }
+    #controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+    }
 
-/* Glass card */
-.card {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 14px;
-  backdrop-filter: blur(10px);
-}
+    .btn {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
 
-.card-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--accent);
-  margin-bottom: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
+    .btn:hover, .btn:active {
+      background: rgba(255,255,255,0.25);
+      transform: scale(1.05);
+    }
 
-/* Sliders */
-.slider-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+    .btn.active {
+      background: rgba(79, 195, 247, 0.4);
+      border-color: #4fc3f7;
+    }
 
-.slider-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-}
+    #spinControl {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 8px;
+      display: grid;
+      grid-template-columns: repeat(3, 28px);
+      gap: 3px;
+    }
 
-.slider-header span:last-child {
-  color: var(--accent);
-  font-weight: 600;
-}
+    .spin-cell {
+      width: 28px;
+      height: 28px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
 
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(255,255,255,0.1);
-  outline: none;
-  cursor: pointer;
-}
+    .spin-cell:hover {
+      background: rgba(255,255,255,0.2);
+    }
 
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background: var(--accent);
-  cursor: pointer;
-  border: 2px solid #fff;
-}
+    .spin-cell.active {
+      background: rgba(79, 195, 247, 0.5);
+      border-color: #4fc3f7;
+    }
 
-input[type="range"]::-moz-range-thumb {
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background: var(--accent);
-  cursor: pointer;
-  border: 2px solid #fff;
-}
+    #presetsPanel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(26, 29, 46, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+      max-height: 50vh;
+      overflow-y: auto;
+      z-index: 100;
+    }
 
-/* Spin diagram */
-#spin-diagram {
-  width: 100px; height: 100px;
-  margin: 0 auto;
-  position: relative;
-  cursor: pointer;
-}
+    #presetsPanel.open {
+      transform: translateY(0);
+    }
 
-#spin-canvas {
-  width: 100px; height: 100px;
-  border-radius: 50%;
-}
+    #presetsPanel h3 {
+      padding: 15px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      position: sticky;
+      top: 0;
+      background: rgba(26, 29, 46, 0.98);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-/* Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 16px;
-  border: 1px solid var(--glass-border);
-  border-radius: 8px;
-  background: var(--glass-bg);
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
+    .preset-list {
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+    }
 
-.btn:hover { background: rgba(255,255,255,0.12); border-color: var(--accent); }
-.btn:active { transform: scale(0.97); }
+    .preset-item {
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
 
-.btn-primary {
-  background: linear-gradient(135deg, #4fc3f7, #29b6f6);
-  border-color: #4fc3f7;
-  color: #111;
-}
+    .preset-item:hover, .preset-item:active {
+      background: rgba(79, 195, 247, 0.3);
+      transform: scale(1.02);
+    }
 
-.btn-primary:hover { background: linear-gradient(135deg, #81d4fa, #4fc3f7); }
+    .preset-item .icon {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
 
-.btn-danger {
-  border-color: var(--red);
-  color: var(--red);
-}
+    .preset-item .name {
+      font-size: 13px;
+      color: #ccc;
+    }
 
-.btn-danger:hover { background: rgba(220,53,69,0.15); }
+    #solutionsPanel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(26, 29, 46, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+      max-height: 40vh;
+      overflow-y: auto;
+      z-index: 100;
+    }
 
-.btn-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
+    #solutionsPanel.open {
+      transform: translateY(0);
+    }
 
-.btn-row .btn { flex: 1; min-width: 0; }
+    #solutionsPanel h3 {
+      padding: 15px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      position: sticky;
+      top: 0;
+      background: rgba(26, 29, 46, 0.98);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-/* Preset grid */
-.preset-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
+    .solution-list {
+      padding: 10px;
+    }
 
-.preset-btn {
-  padding: 8px 6px;
-  font-size: 12px;
-  text-align: center;
-  border-radius: 6px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.2s;
-}
+    .solution-item {
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 12px 15px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
 
-.preset-btn:hover {
-  background: rgba(79,195,247,0.15);
-  border-color: var(--accent);
-  color: var(--accent);
-}
+    .solution-item:hover, .solution-item:active {
+      background: rgba(79, 195, 247, 0.3);
+    }
 
-.preset-btn:active { transform: scale(0.96); }
+    .solution-item.selected {
+      background: rgba(79, 195, 247, 0.4);
+      border: 1px solid #4fc3f7;
+    }
 
-/* Trajectory toggle */
-.toggle-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-}
+    .solution-info {
+      display: flex;
+      gap: 15px;
+      font-size: 14px;
+    }
 
-.toggle {
-  width: 42px; height: 22px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 11px;
-  position: relative;
-  cursor: pointer;
-  transition: background 0.2s;
-}
+    .no-solution {
+      text-align: center;
+      padding: 30px;
+      color: #888;
+    }
 
-.toggle.active { background: var(--accent); }
+    #orientationWarning {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(26, 29, 46, 0.98);
+      z-index: 1000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
 
-.toggle::after {
-  content: '';
-  position: absolute;
-  width: 18px; height: 18px;
-  background: #fff;
-  border-radius: 50%;
-  top: 2px; left: 2px;
-  transition: left 0.2s;
-}
+    #orientationWarning .icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+      animation: rotate 1s ease-in-out infinite alternate;
+    }
 
-.toggle.active::after { left: 22px; }
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(90deg); }
+    }
 
-/* Mobile */
-@media (max-width: 900px) {
-  #app {
-    flex-direction: column;
-  }
+    #statusMessage {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8);
+      padding: 20px 40px;
+      border-radius: 15px;
+      font-size: 24px;
+      font-weight: bold;
+      z-index: 200;
+      display: none;
+      animation: fadeInOut 1.5s ease;
+    }
 
-  #table-area {
-    padding: 8px;
-  }
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+      20%, 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
 
-  #control-panel {
-    width: 100%;
-    min-width: 0;
-    max-height: none;
-    border-left: none;
-    border-top: 1px solid var(--panel-border);
-    padding: 12px;
-    flex-direction: column;
-  }
+    #powerIndicator {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+      display: none;
+    }
 
-  #status-bar {
-    font-size: 12px;
-    gap: 10px;
-    padding: 6px 10px;
-  }
+    @media (orientation: portrait) and (max-width: 768px) {
+      #orientationWarning {
+        display: flex;
+      }
+    }
 
-  .preset-grid {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-}
-
-@media (max-width: 500px) {
-  .preset-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  
-  .btn-row { flex-direction: column; }
-  .btn-row .btn { flex: auto; }
-}
-
-/* Info text */
-.info-text {
-  font-size: 11px;
-  color: var(--text-dim);
-  line-height: 1.5;
-  text-align: center;
-}
-
-/* Version badge */
-.version-badge {
-  text-align: center;
-  font-size: 11px;
-  color: var(--text-dim);
-  padding: 4px;
-}
-</style>
+    @media (max-width: 600px) {
+      #scoreBoard {
+        font-size: 12px;
+        padding: 8px 12px;
+        gap: 10px;
+      }
+      .score-value {
+        font-size: 16px;
+      }
+      .btn {
+        padding: 10px 14px;
+        font-size: 12px;
+      }
+      #header {
+        padding: 5px 10px;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div id="orientationWarning">
+    <div class="icon">📱</div>
+    <h2>가로 모드로 전환해주세요</h2>
+    <p>더 나은 경험을 위해 기기를 가로로 돌려주세요</p>
+  </div>
 
-<div id="app">
-  <!-- Left: Table -->
-  <div id="table-area">
-    <canvas id="gameCanvas"></canvas>
-    <div id="status-bar">
-      <div class="stat">
-        <span class="stat-label">쿠션</span>
-        <span class="stat-value cushion" id="cushionCount">0</span>
+  <div id="gameContainer">
+    <div id="header">
+      <div id="scoreBoard">
+        <span>점수: <span class="score-value" id="scoreDisplay">0</span></span>
+        <span>이닝: <span class="score-value" id="inningDisplay">1</span></span>
+        <span>최고: <span class="score-value" id="highScoreDisplay">0</span></span>
       </div>
-      <div class="stat">
-        <span class="stat-label">점수</span>
-        <span class="stat-value score" id="scoreDisplay">0</span>
+    </div>
+
+    <div id="canvasWrapper">
+      <canvas id="gameCanvas"></canvas>
+      <div id="powerIndicator">파워: <span id="powerValue">0</span>%</div>
+    </div>
+
+    <div id="controls">
+      <div id="spinControl">
+        <div class="spin-cell" data-spin="-1,-1"></div>
+        <div class="spin-cell" data-spin="0,-1"></div>
+        <div class="spin-cell" data-spin="1,-1"></div>
+        <div class="spin-cell" data-spin="-1,0"></div>
+        <div class="spin-cell active" data-spin="0,0"></div>
+        <div class="spin-cell" data-spin="1,0"></div>
+        <div class="spin-cell" data-spin="-1,1"></div>
+        <div class="spin-cell" data-spin="0,1"></div>
+        <div class="spin-cell" data-spin="1,1"></div>
       </div>
-      <div class="stat">
-        <span class="stat-label">최고</span>
-        <span class="stat-value score" id="highScore">0</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value status-text" id="statusText">준비</span>
-      </div>
+      <button class="btn" id="btnTrajectory">📍 궤적</button>
+      <button class="btn" id="btnSolution">💡 해법 찾기</button>
+      <button class="btn" id="btnPresets">📚 예시</button>
+      <button class="btn" id="btnReset">🔄 리셋</button>
     </div>
   </div>
 
-  <!-- Right: Controls -->
-  <div id="control-panel">
-    <!-- Angle & Power -->
-    <div class="card">
-      <div class="card-title">⚙️ 조작</div>
-      <div class="slider-group">
-        <div class="slider-header">
-          <span>각도</span>
-          <span id="angleValue">0°</span>
-        </div>
-        <input type="range" id="angleSlider" min="0" max="359" value="0" step="1">
-      </div>
-      <div class="slider-group" style="margin-top:10px">
-        <div class="slider-header">
-          <span>파워</span>
-          <span id="powerValue">100</span>
-        </div>
-        <input type="range" id="powerSlider" min="1" max="200" value="100" step="1">
-      </div>
-    </div>
-
-    <!-- Spin -->
-    <div class="card">
-      <div class="card-title">🎯 당점 (스핀)</div>
-      <div style="display:flex;align-items:center;gap:16px;justify-content:center">
-        <canvas id="spin-canvas" width="100" height="100"></canvas>
-        <div style="font-size:12px;color:var(--text-dim);line-height:1.8">
-          <div id="spinLabel">중앙</div>
-          <div style="margin-top:4px;font-size:11px">클릭으로 선택</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="card">
-      <div class="card-title">🎮 실행</div>
-      <div class="btn-row">
-        <button class="btn btn-primary" id="shootBtn" onclick="shoot()">🚀 발사</button>
-        <button class="btn btn-danger" id="resetBtn" onclick="resetGame()">↺ 리셋</button>
-      </div>
-      <div class="toggle-row" style="margin-top:10px">
-        <span>궤적 표시</span>
-        <div class="toggle active" id="trailToggle" onclick="toggleTrail()"></div>
-      </div>
-      <div class="toggle-row" style="margin-top:6px">
-        <span>공 배치 모드</span>
-        <div class="toggle" id="placeToggle" onclick="togglePlaceMode()"></div>
-      </div>
-    </div>
-
-    <!-- Presets -->
-    <div class="card">
-      <div class="card-title">📚 프리셋 (자동 시연)</div>
-      <div class="preset-grid" id="presetGrid"></div>
-    </div>
-
-    <!-- Info -->
-    <div class="info-text">
-      수구(노란공)를 캔버스에서 드래그하여 방향 설정<br>
-      배치 모드에서 공을 드래그하여 위치 변경
-    </div>
-
-    <div class="version-badge">3쿠션 당구 시뮬레이터 v4.0</div>
+  <div id="presetsPanel">
+    <h3>
+      <span>📚 예시 샷</span>
+      <button class="btn" id="btnClosePresets">✕</button>
+    </h3>
+    <div class="preset-list" id="presetList"></div>
   </div>
-</div>
 
-<script>
-/* ============================================================
-   3쿠션 당구 시뮬레이터 v4.0 - JavaScript
-   ============================================================ */
+  <div id="solutionsPanel">
+    <h3>
+      <span>💡 해법</span>
+      <button class="btn" id="btnCloseSolutions">✕</button>
+    </h3>
+    <div class="solution-list" id="solutionList"></div>
+  </div>
 
-// ─────────────── 상수 & 설정 ───────────────
-const TABLE_RATIO = 2; // 2:1 (2.84m x 1.42m)
-const BALL_DIAMETER_MM = 61.5;
-const TABLE_WIDTH_MM = 2840;
-const TABLE_HEIGHT_MM = 1420;
-const BALL_RADIUS_RATIO = (BALL_DIAMETER_MM / 2) / TABLE_WIDTH_MM;
+  <div id="statusMessage"></div>
 
-const FRICTION = 0.993;          // 프레임당 마찰 계수
-const SPIN_FRICTION = 0.985;     // 스핀 감쇠
-const CUSHION_RESTITUTION = 0.85; // 쿠션 반발 계수
-const SPIN_TRANSFER = 0.015;     // 스핀→속도 전달률
-const MIN_SPEED = 0.08;          // 정지 판정 속도
+  <script>
+    // ===== 게임 상태 =====
+    const state = {
+      score: 0,
+      inning: 1,
+      highScore: parseInt(localStorage.getItem('billiards_highscore')) || 0,
+      isPlaying: false,
+      isDragging: false,
+      isDraggingBall: null,
+      dragStart: { x: 0, y: 0 },
+      dragCurrent: { x: 0, y: 0 },
+      spin: { x: 0, y: 0 },
+      showTrajectory: false,
+      trajectoryPoints: [],
+      cushionCount: 0,
+      hitBalls: new Set(),
+      solutions: [],
+      selectedSolution: null
+    };
 
-// 색상
-const COLORS = {
-  cueBall:   '#ffd700',  // 노란공 (수구)
-  ball1:     '#ffffff',  // 흰공 (1적구)
-  ball2:     '#dc3545',  // 빨간공 (2적구)
-  cloth:     '#1a5c26',
-  rail:      '#5a3a1a',
-  railOuter: '#3e2510',
-  railInner: '#7a5a2a',
-  diamond:   '#d4af37',
-};
+    // ===== 테이블 설정 =====
+    const TABLE = {
+      ratio: 2,
+      railWidth: 30,
+      ballRadius: 12
+    };
 
-// ─────────────── 전역 상태 ───────────────
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+    // ===== 공 정의 =====
+    let balls = [
+      { id: 'cue', x: 0, y: 0, vx: 0, vy: 0, color: '#ffffff', spinX: 0, spinY: 0 },
+      { id: 'red', x: 0, y: 0, vx: 0, vy: 0, color: '#dc3545', spinX: 0, spinY: 0 },
+      { id: 'yellow', x: 0, y: 0, vx: 0, vy: 0, color: '#ffd700', spinX: 0, spinY: 0 }
+    ];
 
-let W, H;                // 캔버스 크기
-let tableX, tableY;      // 테이블 좌상단 (캔버스 내)
-let tableW, tableH;      // 테이블 내부 크기 (px)
-let railSize;            // 레일 두께 (px)
-let ballRadius;          // 공 반지름 (px)
+    // ===== 프리셋 정의 =====
+    const PRESETS = [
+      {
+        name: '앞돌리기',
+        icon: '➡️',
+        balls: { cue: [0.2, 0.5], red: [0.7, 0.3], yellow: [0.7, 0.7] },
+        angle: 30, power: 60, spin: [0, 0]
+      },
+      {
+        name: '뒤돌리기',
+        icon: '↩️',
+        balls: { cue: [0.25, 0.5], red: [0.5, 0.25], yellow: [0.75, 0.5] },
+        angle: 150, power: 70, spin: [0, 1]
+      },
+      {
+        name: '옆돌리기',
+        icon: '↪️',
+        balls: { cue: [0.2, 0.7], red: [0.5, 0.3], yellow: [0.8, 0.5] },
+        angle: 45, power: 65, spin: [1, 0]
+      },
+      {
+        name: '대회전',
+        icon: '🔄',
+        balls: { cue: [0.15, 0.5], red: [0.5, 0.15], yellow: [0.85, 0.5] },
+        angle: 60, power: 85, spin: [1, 1]
+      },
+      {
+        name: '끌어치기',
+        icon: '⬇️',
+        balls: { cue: [0.3, 0.6], red: [0.5, 0.4], yellow: [0.7, 0.3] },
+        angle: 350, power: 55, spin: [0, 1]
+      },
+      {
+        name: '밀어치기',
+        icon: '⬆️',
+        balls: { cue: [0.3, 0.4], red: [0.5, 0.6], yellow: [0.7, 0.7] },
+        angle: 10, power: 50, spin: [0, -1]
+      },
+      {
+        name: '더블쿠션',
+        icon: '💫',
+        balls: { cue: [0.2, 0.5], red: [0.6, 0.2], yellow: [0.6, 0.8] },
+        angle: 25, power: 75, spin: [0, 0]
+      },
+      {
+        name: '비껴치기',
+        icon: '↗️',
+        balls: { cue: [0.25, 0.5], red: [0.4, 0.5], yellow: [0.75, 0.3] },
+        angle: 20, power: 45, spin: [-1, 0]
+      },
+      {
+        name: '잔쿠션',
+        icon: '📐',
+        balls: { cue: [0.3, 0.8], red: [0.5, 0.2], yellow: [0.7, 0.5] },
+        angle: 340, power: 50, spin: [1, 0]
+      },
+      {
+        name: '뱅크샷',
+        icon: '🎯',
+        balls: { cue: [0.2, 0.5], red: [0.8, 0.3], yellow: [0.8, 0.7] },
+        angle: 15, power: 80, spin: [0, 0]
+      }
+    ];
 
-// 공 상태 (위치는 테이블 내부 좌표, 0~1 정규화)
-let balls = [];
-let score = 0;
-let highScore = parseInt(localStorage.getItem('billiards_high') || '0');
-let cushionCount = 0;
-let hitBalls = new Set();  // 수구가 맞힌 적구 인덱스
-let isAnimating = false;
-let showTrail = true;
-let placeMode = false;
-let trail = [];            // 수구 궤적
-let gameState = 'ready';   // ready, aiming, shooting, done
+    // ===== 캔버스 초기화 =====
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let tableWidth, tableHeight, playWidth, playHeight;
 
-// 스핀: -1~1 (x: 좌우, y: 상하)
-let spinX = 0, spinY = 0;
+    function resizeCanvas() {
+      const maxWidth = Math.min(window.innerWidth * 0.92, 1200);
+      const maxHeight = window.innerHeight * 0.6;
+      
+      let w = maxWidth;
+      let h = w / TABLE.ratio;
+      
+      if (h > maxHeight) {
+        h = maxHeight;
+        w = h * TABLE.ratio;
+      }
+      
+      canvas.width = w;
+      canvas.height = h;
+      tableWidth = w;
+      tableHeight = h;
+      playWidth = w - TABLE.railWidth * 2;
+      playHeight = h - TABLE.railWidth * 2;
+      
+      resetBallPositions();
+    }
 
-// 조작
-let angle = 0;
-let power = 100;
-let isDragging = false;
-let dragStart = null;
-let placingBall = -1; // 드래그 배치 중인 공 인덱스
+    function resetBallPositions() {
+      const margin = TABLE.railWidth;
+      balls[0].x = margin + playWidth * 0.25;
+      balls[0].y = margin + playHeight * 0.5;
+      balls[1].x = margin + playWidth * 0.7;
+      balls[1].y = margin + playHeight * 0.35;
+      balls[2].x = margin + playWidth * 0.7;
+      balls[2].y = margin + playHeight * 0.65;
+    }
 
-// ─────────────── 초기화 ───────────────
-function initBalls() {
-  // 기본 배치: 수구 좌측, 적구들 우측
-  balls = [
-    { x: 0.25, y: 0.5,  vx: 0, vy: 0, spinX: 0, spinY: 0, color: COLORS.cueBall, name: '수구' },
-    { x: 0.72, y: 0.32, vx: 0, vy: 0, spinX: 0, spinY: 0, color: COLORS.ball1, name: '1적구' },
-    { x: 0.72, y: 0.68, vx: 0, vy: 0, spinX: 0, spinY: 0, color: COLORS.ball2, name: '2적구' },
-  ];
-}
-
-function resize() {
-  const area = document.getElementById('table-area');
-  const maxW = area.clientWidth - 24;
-  const maxH = area.clientHeight - 80;
-
-  // 테이블 2:1 비율에 맞추되 레일 공간 확보
-  railSize = Math.max(18, Math.min(maxW, maxH) * 0.03);
-
-  const totalRail = railSize * 2;
-  let tw = maxW - totalRail;
-  let th = tw / TABLE_RATIO;
-
-  if (th + totalRail > maxH) {
-    th = maxH - totalRail;
-    tw = th * TABLE_RATIO;
-  }
-
-  tableW = Math.floor(tw);
-  tableH = Math.floor(th);
-
-  W = tableW + totalRail;
-  H = tableH + totalRail;
-
-  canvas.width = W;
-  canvas.height = H;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
-
-  tableX = railSize;
-  tableY = railSize;
-
-  ballRadius = tableW * BALL_RADIUS_RATIO;
-  if (ballRadius < 6) ballRadius = 6;
-
-  draw();
-}
-
-// ─────────────── 좌표 변환 ───────────────
-function normToPixel(nx, ny) {
-  return [tableX + nx * tableW, tableY + ny * tableH];
-}
-
-function pixelToNorm(px, py) {
-  return [(px - tableX) / tableW, (py - tableY) / tableH];
-}
-
-// ─────────────── 그리기 ───────────────
-function draw() {
-  ctx.clearRect(0, 0, W, H);
-  drawTable();
-  drawTrail();
-  drawBalls();
-  if (gameState === 'ready' || gameState === 'aiming') {
-    drawGuideline();
-  }
-}
-
-function drawTable() {
-  // 외곽 레일 (어두운 나무)
-  ctx.fillStyle = COLORS.railOuter;
-  ctx.fillRect(0, 0, W, H);
-
-  // 내곽 레일 (밝은 나무)
-  const ri = railSize * 0.25;
-  ctx.fillStyle = COLORS.rail;
-  ctx.fillRect(ri, ri, W - ri*2, H - ri*2);
-
-  // 레일 하이라이트
-  ctx.fillStyle = COLORS.railInner;
-  ctx.fillRect(railSize * 0.5, railSize * 0.5, W - railSize, H - railSize);
-
-  // 쿠션 (레일 안쪽 경사면)
-  const cushW = railSize * 0.3;
-  ctx.fillStyle = '#2d7a3a';
-  // 상
-  ctx.fillRect(tableX - cushW, tableY - cushW, tableW + cushW*2, cushW);
-  // 하
-  ctx.fillRect(tableX - cushW, tableY + tableH, tableW + cushW*2, cushW);
-  // 좌
-  ctx.fillRect(tableX - cushW, tableY, cushW, tableH);
-  // 우
-  ctx.fillRect(tableX + tableW, tableY, cushW, tableH);
-
-  // 당구천
-  ctx.fillStyle = COLORS.cloth;
-  ctx.fillRect(tableX, tableY, tableW, tableH);
-
-  // 당구천 텍스처 (미세한 노이즈)
-  ctx.globalAlpha = 0.03;
-  for (let i = 0; i < tableW; i += 4) {
-    for (let j = 0; j < tableH; j += 4) {
-      if (Math.random() > 0.5) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(tableX + i, tableY + j, 2, 2);
+    // ===== 그리기 함수들 =====
+    function draw() {
+      ctx.clearRect(0, 0, tableWidth, tableHeight);
+      drawTable();
+      drawDiamonds();
+      drawSpots();
+      
+      if (state.showTrajectory && state.trajectoryPoints.length > 1) {
+        drawTrajectory();
+      }
+      
+      if (state.selectedSolution !== null && state.solutions[state.selectedSolution]) {
+        drawSolutionPath(state.solutions[state.selectedSolution]);
+      }
+      
+      drawBalls();
+      
+      if (state.isDragging && !state.isDraggingBall) {
+        drawAimLine();
       }
     }
-  }
-  ctx.globalAlpha = 1;
 
-  // 중앙 스팟
-  ctx.beginPath();
-  ctx.arc(tableX + tableW/2, tableY + tableH/2, 3, 0, Math.PI*2);
-  ctx.fillStyle = '#fff';
-  ctx.globalAlpha = 0.4;
-  ctx.fill();
-  ctx.globalAlpha = 1;
-
-  // 헤드 스팟 (수구 기본 위치)
-  ctx.beginPath();
-  ctx.arc(tableX + tableW*0.25, tableY + tableH/2, 3, 0, Math.PI*2);
-  ctx.fillStyle = '#fff';
-  ctx.globalAlpha = 0.3;
-  ctx.fill();
-  ctx.globalAlpha = 1;
-
-  // 풋 스팟
-  ctx.beginPath();
-  ctx.arc(tableX + tableW*0.75, tableY + tableH/2, 3, 0, Math.PI*2);
-  ctx.fillStyle = '#fff';
-  ctx.globalAlpha = 0.3;
-  ctx.fill();
-  ctx.globalAlpha = 1;
-
-  // 다이아몬드 마커
-  drawDiamonds();
-}
-
-function drawDiamonds() {
-  const dSize = Math.max(4, railSize * 0.18);
-  ctx.fillStyle = COLORS.diamond;
-
-  // 긴 쪽 (상/하): 각 7개 다이아몬드 (테이블을 8등분)
-  for (let i = 1; i <= 7; i++) {
-    const x = tableX + (tableW * i / 8);
-    // 상단 레일
-    drawDiamond(x, tableY - railSize * 0.5, dSize);
-    // 하단 레일
-    drawDiamond(x, tableY + tableH + railSize * 0.5, dSize);
-  }
-
-  // 짧은 쪽 (좌/우): 각 3개 다이아몬드 (테이블을 4등분)
-  for (let i = 1; i <= 3; i++) {
-    const y = tableY + (tableH * i / 4);
-    // 좌측 레일
-    drawDiamond(tableX - railSize * 0.5, y, dSize);
-    // 우측 레일
-    drawDiamond(tableX + tableW + railSize * 0.5, y, dSize);
-  }
-}
-
-function drawDiamond(cx, cy, size) {
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - size);
-  ctx.lineTo(cx + size * 0.7, cy);
-  ctx.lineTo(cx, cy + size);
-  ctx.lineTo(cx - size * 0.7, cy);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function drawBalls() {
-  balls.forEach((ball, i) => {
-    const [px, py] = normToPixel(ball.x, ball.y);
-
-    // 그림자
-    ctx.beginPath();
-    ctx.arc(px + 2, py + 2, ballRadius, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fill();
-
-    // 공 본체
-    ctx.beginPath();
-    ctx.arc(px, py, ballRadius, 0, Math.PI * 2);
-
-    // 그라디언트
-    const grad = ctx.createRadialGradient(px - ballRadius*0.3, py - ballRadius*0.3, ballRadius*0.1, px, py, ballRadius);
-    if (i === 0) { // 노란공
-      grad.addColorStop(0, '#fff8c4');
-      grad.addColorStop(0.5, ball.color);
-      grad.addColorStop(1, '#b8960f');
-    } else if (i === 1) { // 흰공
-      grad.addColorStop(0, '#ffffff');
-      grad.addColorStop(0.5, '#f0f0f0');
-      grad.addColorStop(1, '#c0c0c0');
-    } else { // 빨간공
-      grad.addColorStop(0, '#ff6b7a');
-      grad.addColorStop(0.5, ball.color);
-      grad.addColorStop(1, '#8b1a25');
+    function drawTable() {
+      // 레일 (갈색)
+      ctx.fillStyle = '#5d4037';
+      ctx.fillRect(0, 0, tableWidth, tableHeight);
+      
+      // 레일 테두리
+      ctx.strokeStyle = '#3e2723';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(0, 0, tableWidth, tableHeight);
+      
+      // 플레이 영역 (녹색)
+      ctx.fillStyle = '#1a5c26';
+      ctx.fillRect(TABLE.railWidth, TABLE.railWidth, playWidth, playHeight);
+      
+      // 쿠션 라인
+      ctx.strokeStyle = '#2e7d32';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(TABLE.railWidth, TABLE.railWidth, playWidth, playHeight);
     }
-    ctx.fillStyle = grad;
-    ctx.fill();
 
-    // 테두리
-    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // 하이라이트
-    ctx.beginPath();
-    ctx.arc(px - ballRadius * 0.25, py - ballRadius * 0.25, ballRadius * 0.25, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fill();
-  });
-}
-
-function drawGuideline() {
-  if (isAnimating) return;
-  const cue = balls[0];
-  const [cx, cy] = normToPixel(cue.x, cue.y);
-  const rad = angle * Math.PI / 180;
-  const len = 60 + power * 0.8;
-
-  ctx.setLineDash([6, 4]);
-  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.lineTo(cx + Math.cos(rad) * len, cy + Math.sin(rad) * len);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // 큐 스틱 (반대 방향)
-  ctx.strokeStyle = '#c4a35a';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(cx - Math.cos(rad) * (ballRadius + 4), cy - Math.sin(rad) * (ballRadius + 4));
-  ctx.lineTo(cx - Math.cos(rad) * (ballRadius + 80 + power * 0.3), cy - Math.sin(rad) * (ballRadius + 80 + power * 0.3));
-  ctx.stroke();
-
-  // 큐 팁
-  ctx.strokeStyle = '#87ceeb';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(cx - Math.cos(rad) * (ballRadius + 2), cy - Math.sin(rad) * (ballRadius + 2));
-  ctx.lineTo(cx - Math.cos(rad) * (ballRadius + 8), cy - Math.sin(rad) * (ballRadius + 8));
-  ctx.stroke();
-}
-
-function drawTrail() {
-  if (!showTrail || trail.length < 2) return;
-  ctx.setLineDash([3, 3]);
-  ctx.strokeStyle = 'rgba(255,215,0,0.35)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  const [sx, sy] = normToPixel(trail[0].x, trail[0].y);
-  ctx.moveTo(sx, sy);
-  for (let i = 1; i < trail.length; i++) {
-    const [px, py] = normToPixel(trail[i].x, trail[i].y);
-    ctx.lineTo(px, py);
-  }
-  ctx.stroke();
-  ctx.setLineDash([]);
-}
-
-// ─────────────── 스핀 다이어그램 ───────────────
-const spinCanvas = document.getElementById('spin-canvas');
-const spinCtx = spinCanvas.getContext('2d');
-
-function drawSpinDiagram() {
-  const w = 100, h = 100, r = 42;
-  spinCtx.clearRect(0, 0, w, h);
-
-  // 공 외곽
-  spinCtx.beginPath();
-  spinCtx.arc(50, 50, r, 0, Math.PI * 2);
-  const grad = spinCtx.createRadialGradient(42, 42, 5, 50, 50, r);
-  grad.addColorStop(0, '#fff8c4');
-  grad.addColorStop(0.6, '#ffd700');
-  grad.addColorStop(1, '#b8960f');
-  spinCtx.fillStyle = grad;
-  spinCtx.fill();
-  spinCtx.strokeStyle = 'rgba(0,0,0,0.3)';
-  spinCtx.lineWidth = 1;
-  spinCtx.stroke();
-
-  // 9개 당점 그리드
-  for (let sy = -1; sy <= 1; sy++) {
-    for (let sx = -1; sx <= 1; sx++) {
-      const px = 50 + sx * 22;
-      const py = 50 + sy * 22;
-      const isSelected = (sx === spinX && sy === spinY);
-
-      spinCtx.beginPath();
-      spinCtx.arc(px, py, isSelected ? 7 : 4, 0, Math.PI * 2);
-      spinCtx.fillStyle = isSelected ? '#ff4444' : 'rgba(0,0,0,0.3)';
-      spinCtx.fill();
-      if (isSelected) {
-        spinCtx.strokeStyle = '#fff';
-        spinCtx.lineWidth = 2;
-        spinCtx.stroke();
+    function drawDiamonds() {
+      ctx.fillStyle = '#ffd700';
+      const diamondSize = 6;
+      const margin = TABLE.railWidth;
+      
+      // 긴 레일 다이아몬드 (7개씩)
+      for (let i = 1; i <= 7; i++) {
+        const x = margin + (playWidth / 8) * i;
+        // 상단
+        ctx.beginPath();
+        ctx.arc(x, margin / 2, diamondSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        // 하단
+        ctx.beginPath();
+        ctx.arc(x, tableHeight - margin / 2, diamondSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // 짧은 레일 다이아몬드 (3개씩)
+      for (let i = 1; i <= 3; i++) {
+        const y = margin + (playHeight / 4) * i;
+        // 좌측
+        ctx.beginPath();
+        ctx.arc(margin / 2, y, diamondSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        // 우측
+        ctx.beginPath();
+        ctx.arc(tableWidth - margin / 2, y, diamondSize / 2, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
-  }
 
-  // 라벨 업데이트
-  const yLabels = ['상단', '중앙', '하단'];
-  const xLabels = ['좌', '', '우'];
-  const yL = yLabels[spinY + 1];
-  const xL = xLabels[spinX + 1];
-  let label = yL + (xL ? ' ' + xL : '');
-  if (spinX === 0 && spinY === 0) label = '중앙 (무회전)';
-  document.getElementById('spinLabel').textContent = label;
-}
+    function drawSpots() {
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      const spotSize = 4;
+      const margin = TABLE.railWidth;
+      
+      // 센터 스팟
+      ctx.beginPath();
+      ctx.arc(margin + playWidth / 2, margin + playHeight / 2, spotSize, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 헤드 스팟
+      ctx.beginPath();
+      ctx.arc(margin + playWidth * 0.25, margin + playHeight / 2, spotSize, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 풋 스팟
+      ctx.beginPath();
+      ctx.arc(margin + playWidth * 0.75, margin + playHeight / 2, spotSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
-spinCanvas.addEventListener('click', (e) => {
-  const rect = spinCanvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) / rect.width * 100;
-  const y = (e.clientY - rect.top) / rect.height * 100;
+    function drawBalls() {
+      balls.forEach(ball => {
+        // 그림자
+        ctx.beginPath();
+        ctx.arc(ball.x + 3, ball.y + 3, TABLE.ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fill();
+        
+        // 공
+        const gradient = ctx.createRadialGradient(
+          ball.x - 4, ball.y - 4, 0,
+          ball.x, ball.y, TABLE.ballRadius
+        );
+        gradient.addColorStop(0, lightenColor(ball.color, 50));
+        gradient.addColorStop(0.5, ball.color);
+        gradient.addColorStop(1, darkenColor(ball.color, 30));
+        
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, TABLE.ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // 하이라이트
+        ctx.beginPath();
+        ctx.arc(ball.x - 3, ball.y - 3, TABLE.ballRadius * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fill();
+      });
+    }
 
-  // 어느 당점에 가장 가까운지
-  let bestDist = Infinity;
-  let bsx = 0, bsy = 0;
-  for (let sy = -1; sy <= 1; sy++) {
-    for (let sx = -1; sx <= 1; sx++) {
-      const px = 50 + sx * 22;
-      const py = 50 + sy * 22;
-      const d = Math.hypot(x - px, y - py);
-      if (d < bestDist) {
-        bestDist = d;
-        bsx = sx;
-        bsy = sy;
+    function drawAimLine() {
+      const cueBall = balls[0];
+      const dx = state.dragStart.x - state.dragCurrent.x;
+      const dy = state.dragStart.y - state.dragCurrent.y;
+      const power = Math.min(Math.sqrt(dx * dx + dy * dy), 200);
+      
+      if (power < 10) return;
+      
+      const angle = Math.atan2(dy, dx);
+      
+      // 예상 경로 계산 (간단한 반사)
+      const path = calculatePredictedPath(cueBall.x, cueBall.y, angle, power);
+      
+      // 가이드라인 그리기
+      ctx.setLineDash([10, 10]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) {
+        ctx.lineTo(path[i].x, path[i].y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // 파워 바
+      const powerPercent = Math.round((power / 200) * 100);
+      document.getElementById('powerValue').textContent = powerPercent;
+      document.getElementById('powerIndicator').style.display = 'block';
+    }
+
+    function calculatePredictedPath(startX, startY, angle, power) {
+      const path = [{ x: startX, y: startY }];
+      let x = startX, y = startY;
+      let dx = Math.cos(angle), dy = Math.sin(angle);
+      const margin = TABLE.railWidth + TABLE.ballRadius;
+      const maxDist = power * 3;
+      let traveled = 0;
+      
+      for (let i = 0; i < 5 && traveled < maxDist; i++) {
+        const toLeft = (margin - x) / dx;
+        const toRight = (tableWidth - margin - x) / dx;
+        const toTop = (margin - y) / dy;
+        const toBottom = (tableHeight - margin - y) / dy;
+        
+        let minDist = Infinity;
+        let hitWall = '';
+        
+        if (dx < 0 && toLeft > 0 && toLeft < minDist) { minDist = toLeft; hitWall = 'left'; }
+        if (dx > 0 && toRight > 0 && toRight < minDist) { minDist = toRight; hitWall = 'right'; }
+        if (dy < 0 && toTop > 0 && toTop < minDist) { minDist = toTop; hitWall = 'top'; }
+        if (dy > 0 && toBottom > 0 && toBottom < minDist) { minDist = toBottom; hitWall = 'bottom'; }
+        
+        if (minDist === Infinity || minDist > maxDist - traveled) {
+          const remaining = maxDist - traveled;
+          path.push({ x: x + dx * remaining, y: y + dy * remaining });
+          break;
+        }
+        
+        x += dx * minDist;
+        y += dy * minDist;
+        traveled += minDist;
+        path.push({ x, y });
+        
+        if (hitWall === 'left' || hitWall === 'right') dx = -dx;
+        if (hitWall === 'top' || hitWall === 'bottom') dy = -dy;
+      }
+      
+      return path;
+    }
+
+    function drawTrajectory() {
+      ctx.strokeStyle = 'rgba(79, 195, 247, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(state.trajectoryPoints[0].x, state.trajectoryPoints[0].y);
+      for (let i = 1; i < state.trajectoryPoints.length; i++) {
+        ctx.lineTo(state.trajectoryPoints[i].x, state.trajectoryPoints[i].y);
+      }
+      ctx.stroke();
+    }
+
+    function drawSolutionPath(solution) {
+      if (!solution || !solution.path) return;
+      
+      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = 'rgba(100, 180, 255, 0.8)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(solution.path[0].x, solution.path[0].y);
+      for (let i = 1; i < solution.path.length; i++) {
+        ctx.lineTo(solution.path[i].x, solution.path[i].y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // 쿠션 포인트 표시
+      solution.path.forEach((point, i) => {
+        if (i > 0 && i < solution.path.length - 1) {
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(100, 180, 255, 0.8)';
+          ctx.fill();
+        }
+      });
+    }
+
+    // ===== 물리 엔진 =====
+    function update() {
+      if (!state.isPlaying) return;
+      
+      const substeps = 4;
+      for (let s = 0; s < substeps; s++) {
+        updatePhysics();
+      }
+      
+      // 모든 공이 정지했는지 확인
+      let allStopped = true;
+      balls.forEach(ball => {
+        const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+        if (speed > 0.1) allStopped = false;
+      });
+      
+      if (allStopped) {
+        endTurn();
       }
     }
-  }
-  spinX = bsx;
-  spinY = bsy;
-  drawSpinDiagram();
-});
 
-spinCanvas.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  const rect = spinCanvas.getBoundingClientRect();
-  const x = (touch.clientX - rect.left) / rect.width * 100;
-  const y = (touch.clientY - rect.top) / rect.height * 100;
-  let bestDist = Infinity, bsx = 0, bsy = 0;
-  for (let sy = -1; sy <= 1; sy++) {
-    for (let sx = -1; sx <= 1; sx++) {
-      const px = 50 + sx * 22, py = 50 + sy * 22;
-      const d = Math.hypot(x - px, y - py);
-      if (d < bestDist) { bestDist = d; bsx = sx; bsy = sy; }
-    }
-  }
-  spinX = bsx; spinY = bsy;
-  drawSpinDiagram();
-});
-
-// ─────────────── 물리엔진 ───────────────
-function shoot() {
-  if (isAnimating) return;
-
-  const rad = angle * Math.PI / 180;
-  const speed = power * 0.00045;
-
-  const cue = balls[0];
-  cue.vx = Math.cos(rad) * speed;
-  cue.vy = Math.sin(rad) * speed;
-
-  // 스핀 적용
-  cue.spinX = spinX * 0.4;  // 좌우 사이드스핀
-  cue.spinY = spinY * 0.4;  // 상하 톱/백스핀
-
-  // 초기화
-  cushionCount = 0;
-  hitBalls = new Set();
-  trail = [{ x: cue.x, y: cue.y }];
-  gameState = 'shooting';
-  isAnimating = true;
-
-  updateStatus('발사!');
-  updateCushionDisplay();
-  requestAnimationFrame(gameLoop);
-}
-
-function gameLoop() {
-  if (!isAnimating) return;
-
-  // 물리 시뮬레이션 (서브스텝)
-  const subSteps = 3;
-  for (let s = 0; s < subSteps; s++) {
-    updatePhysics();
-  }
-
-  // 궤적 기록 (매 3프레임)
-  if (showTrail && trail.length < 5000) {
-    const cue = balls[0];
-    const last = trail[trail.length - 1];
-    if (!last || Math.hypot(cue.x - last.x, cue.y - last.y) > 0.003) {
-      trail.push({ x: cue.x, y: cue.y });
-    }
-  }
-
-  draw();
-
-  // 정지 판정
-  const moving = balls.some(b => Math.hypot(b.vx, b.vy) > MIN_SPEED * 0.00045);
-  if (!moving) {
-    isAnimating = false;
-    gameState = 'done';
-    checkScore();
-    return;
-  }
-
-  requestAnimationFrame(gameLoop);
-}
-
-function updatePhysics() {
-  // 정규화된 공 반지름 (x축, y축 각각)
-  const brX = ballRadius / tableW;
-  const brY = ballRadius / tableH;
-
-  balls.forEach((ball, i) => {
-    if (Math.abs(ball.vx) < 1e-7 && Math.abs(ball.vy) < 1e-7) return;
-
-    // 스핀→속도 전달 (마찰을 통해, 수구만)
-    if (i === 0) {
-      ball.vx += ball.spinX * SPIN_TRANSFER * 0.001;
-      ball.vy += ball.spinY * SPIN_TRANSFER * 0.001;
-      ball.spinX *= SPIN_FRICTION;
-      ball.spinY *= SPIN_FRICTION;
-      if (Math.abs(ball.spinX) < 0.001) ball.spinX = 0;
-      if (Math.abs(ball.spinY) < 0.001) ball.spinY = 0;
-    }
-
-    // 이동
-    ball.x += ball.vx;
-    ball.y += ball.vy;
-
-    // 마찰
-    ball.vx *= FRICTION;
-    ball.vy *= FRICTION;
-
-    // 쿠션 충돌 (x축: 0~1, y축: 0~1, 반지름은 각 축에 맞게)
-    // 좌측 쿠션
-    if (ball.x < brX) {
-      ball.x = brX;
-      ball.vx = Math.abs(ball.vx) * CUSHION_RESTITUTION;
-      if (i === 0) {
-        ball.vy += ball.spinX * 0.003;   // 잉글리시
-        ball.vx += ball.spinY * 0.001;   // 톱/백스핀
-        registerCushion();
+    function updatePhysics() {
+      const margin = TABLE.railWidth + TABLE.ballRadius;
+      const friction = 0.992;
+      const cushionRestitution = 0.85;
+      
+      balls.forEach(ball => {
+        // 마찰
+        ball.vx *= friction;
+        ball.vy *= friction;
+        
+        // 스핀 효과
+        if (ball.id === 'cue') {
+          ball.vx += ball.spinX * 0.01;
+          ball.vy += ball.spinY * 0.01;
+          ball.spinX *= 0.98;
+          ball.spinY *= 0.98;
+        }
+        
+        // 이동
+        ball.x += ball.vx / 4;
+        ball.y += ball.vy / 4;
+        
+        // 궤적 기록
+        if (ball.id === 'cue' && state.showTrajectory) {
+          const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+          if (speed > 0.5 && state.trajectoryPoints.length < 1000) {
+            const lastPoint = state.trajectoryPoints[state.trajectoryPoints.length - 1];
+            if (!lastPoint || Math.abs(ball.x - lastPoint.x) > 5 || Math.abs(ball.y - lastPoint.y) > 5) {
+              state.trajectoryPoints.push({ x: ball.x, y: ball.y });
+            }
+          }
+        }
+        
+        // 쿠션 충돌
+        if (ball.x <= margin) {
+          ball.x = margin;
+          ball.vx = -ball.vx * cushionRestitution;
+          // 사이드스핀 효과
+          if (ball.id === 'cue') {
+            ball.vy += ball.spinX * 0.3;
+            if (ball === balls[0]) state.cushionCount++;
+          }
+        }
+        if (ball.x >= tableWidth - margin) {
+          ball.x = tableWidth - margin;
+          ball.vx = -ball.vx * cushionRestitution;
+          if (ball.id === 'cue') {
+            ball.vy -= ball.spinX * 0.3;
+            if (ball === balls[0]) state.cushionCount++;
+          }
+        }
+        if (ball.y <= margin) {
+          ball.y = margin;
+          ball.vy = -ball.vy * cushionRestitution;
+          if (ball.id === 'cue') {
+            ball.vx += ball.spinY * 0.3;
+            if (ball === balls[0]) state.cushionCount++;
+          }
+        }
+        if (ball.y >= tableHeight - margin) {
+          ball.y = tableHeight - margin;
+          ball.vy = -ball.vy * cushionRestitution;
+          if (ball.id === 'cue') {
+            ball.vx -= ball.spinY * 0.3;
+            if (ball === balls[0]) state.cushionCount++;
+          }
+        }
+      });
+      
+      // 공-공 충돌
+      for (let i = 0; i < balls.length; i++) {
+        for (let j = i + 1; j < balls.length; j++) {
+          checkBallCollision(balls[i], balls[j]);
+        }
       }
     }
-    // 우측 쿠션
-    if (ball.x > 1 - brX) {
-      ball.x = 1 - brX;
-      ball.vx = -Math.abs(ball.vx) * CUSHION_RESTITUTION;
-      if (i === 0) {
-        ball.vy -= ball.spinX * 0.003;
-        ball.vx -= ball.spinY * 0.001;
-        registerCushion();
-      }
-    }
-    // 상단 쿠션
-    if (ball.y < brY) {
-      ball.y = brY;
-      ball.vy = Math.abs(ball.vy) * CUSHION_RESTITUTION;
-      if (i === 0) {
-        ball.vx += ball.spinX * 0.003;
-        ball.vy += ball.spinY * 0.001;
-        registerCushion();
-      }
-    }
-    // 하단 쿠션
-    if (ball.y > 1 - brY) {
-      ball.y = 1 - brY;
-      ball.vy = -Math.abs(ball.vy) * CUSHION_RESTITUTION;
-      if (i === 0) {
-        ball.vx -= ball.spinX * 0.003;
-        ball.vy -= ball.spinY * 0.001;
-        registerCushion();
-      }
-    }
-  });
 
-  // 공-공 충돌 (픽셀 공간에서 거리 계산)
-  for (let i = 0; i < balls.length; i++) {
-    for (let j = i + 1; j < balls.length; j++) {
-      // 정규화 좌표를 픽셀로 변환하여 거리 계산
-      const pxI = balls[i].x * tableW;
-      const pyI = balls[i].y * tableH;
-      const pxJ = balls[j].x * tableW;
-      const pyJ = balls[j].y * tableH;
-
-      const dx = pxJ - pxI;
-      const dy = pyJ - pyI;
-      const dist = Math.hypot(dx, dy);
-      const minDist = ballRadius * 2;
-
-      if (dist < minDist && dist > 0.01) {
-        // 충돌 법선 벡터 (픽셀 공간)
+    function checkBallCollision(a, b) {
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const minDist = TABLE.ballRadius * 2;
+      
+      if (dist < minDist && dist > 0) {
+        // 충돌 감지
+        if (a.id === 'cue' || b.id === 'cue') {
+          const other = a.id === 'cue' ? b : a;
+          if (!state.hitBalls.has(other.id)) {
+            state.hitBalls.add(other.id);
+          }
+        }
+        
+        // 충돌 해결
         const nx = dx / dist;
         const ny = dy / dist;
-
-        // 겹침 해소 (정규화 좌표로 변환)
-        const overlap = (minDist - dist) * 0.5;
-        balls[i].x -= (nx * overlap) / tableW;
-        balls[i].y -= (ny * overlap) / tableH;
-        balls[j].x += (nx * overlap) / tableW;
-        balls[j].y += (ny * overlap) / tableH;
-
-        // 속도를 픽셀/프레임 단위로 변환
-        const vix = balls[i].vx * tableW;
-        const viy = balls[i].vy * tableH;
-        const vjx = balls[j].vx * tableW;
-        const vjy = balls[j].vy * tableH;
-
-        // 법선 방향 상대 속도
-        const relVn = (vix - vjx) * nx + (viy - vjy) * ny;
-
-        if (relVn > 0) {
-          // 동일 질량 탄성 충돌: 법선 방향 속도 교환
-          const impX = nx * relVn;
-          const impY = ny * relVn;
-
-          balls[i].vx -= impX / tableW;
-          balls[i].vy -= impY / tableH;
-          balls[j].vx += impX / tableW;
-          balls[j].vy += impY / tableH;
-
-          // 수구 충돌 등록
-          if (i === 0) {
-            hitBalls.add(j);
-            balls[i].spinX *= 0.5;
-            balls[i].spinY *= 0.5;
+        
+        const overlap = minDist - dist;
+        a.x -= nx * overlap / 2;
+        a.y -= ny * overlap / 2;
+        b.x += nx * overlap / 2;
+        b.y += ny * overlap / 2;
+        
+        // 탄성 충돌
+        const dvx = a.vx - b.vx;
+        const dvy = a.vy - b.vy;
+        const dvn = dvx * nx + dvy * ny;
+        
+        if (dvn > 0) {
+          // 스핀 효과 (드로우/팔로우)
+          if (a.id === 'cue') {
+            const spinEffect = a.spinY * 0.5;
+            a.vx -= dvn * nx - spinEffect * nx;
+            a.vy -= dvn * ny - spinEffect * ny;
+          } else {
+            a.vx -= dvn * nx;
+            a.vy -= dvn * ny;
           }
-          if (j === 0) {
-            hitBalls.add(i);
-            balls[j].spinX *= 0.5;
-            balls[j].spinY *= 0.5;
+          
+          if (b.id === 'cue') {
+            const spinEffect = b.spinY * 0.5;
+            b.vx += dvn * nx - spinEffect * nx;
+            b.vy += dvn * ny - spinEffect * ny;
+          } else {
+            b.vx += dvn * nx;
+            b.vy += dvn * ny;
           }
         }
       }
     }
-  }
-}
 
-function registerCushion() {
-  cushionCount++;
-  updateCushionDisplay();
-}
-
-function updateCushionDisplay() {
-  document.getElementById('cushionCount').textContent = cushionCount;
-}
-
-function checkScore() {
-  if (cushionCount >= 3 && hitBalls.size >= 2) {
-    score++;
-    updateStatus('✅ 득점! (+1)');
-    if (score > highScore) {
-      highScore = score;
-      localStorage.setItem('billiards_high', highScore.toString());
+    function endTurn() {
+      state.isPlaying = false;
+      balls.forEach(ball => {
+        ball.vx = 0;
+        ball.vy = 0;
+        ball.spinX = 0;
+        ball.spinY = 0;
+      });
+      
+      // 득점 판정
+      const scored = state.hitBalls.size >= 2 && state.cushionCount >= 3;
+      
+      if (scored) {
+        state.score++;
+        showMessage('🎉 득점! +1');
+        if (state.score > state.highScore) {
+          state.highScore = state.score;
+          localStorage.setItem('billiards_highscore', state.highScore);
+        }
+      } else {
+        if (state.hitBalls.size < 2) {
+          showMessage('❌ 두 적구를 맞히세요');
+        } else {
+          showMessage(`❌ 쿠션 ${state.cushionCount}회 (3회 이상 필요)`);
+        }
+      }
+      
+      state.inning++;
+      updateScoreDisplay();
+      
+      // 리셋
+      state.cushionCount = 0;
+      state.hitBalls.clear();
+      document.getElementById('powerIndicator').style.display = 'none';
     }
-  } else {
-    if (hitBalls.size < 2) {
-      updateStatus('❌ 적구 2개 미맞힘');
-    } else {
-      updateStatus(`❌ 쿠션 부족 (${cushionCount}/3)`);
+
+    function showMessage(text) {
+      const msg = document.getElementById('statusMessage');
+      msg.textContent = text;
+      msg.style.display = 'block';
+      setTimeout(() => {
+        msg.style.display = 'none';
+      }, 1500);
     }
-  }
-  document.getElementById('scoreDisplay').textContent = score;
-  document.getElementById('highScore').textContent = highScore;
-  gameState = 'ready';
-}
 
-function updateStatus(text) {
-  document.getElementById('statusText').textContent = text;
-}
-
-// ─────────────── 컨트롤 이벤트 ───────────────
-const angleSlider = document.getElementById('angleSlider');
-const powerSlider = document.getElementById('powerSlider');
-
-angleSlider.addEventListener('input', () => {
-  angle = parseInt(angleSlider.value);
-  document.getElementById('angleValue').textContent = angle + '°';
-  if (!isAnimating) draw();
-});
-
-powerSlider.addEventListener('input', () => {
-  power = parseInt(powerSlider.value);
-  document.getElementById('powerValue').textContent = power;
-  if (!isAnimating) draw();
-});
-
-// ─────────────── 캔버스 인터랙션 ───────────────
-function getEventPos(e) {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  if (e.touches) {
-    return {
-      x: (e.touches[0].clientX - rect.left) * scaleX,
-      y: (e.touches[0].clientY - rect.top) * scaleY,
-    };
-  }
-  return {
-    x: (e.clientX - rect.left) * scaleX,
-    y: (e.clientY - rect.top) * scaleY,
-  };
-}
-
-function findBallAt(px, py) {
-  for (let i = 0; i < balls.length; i++) {
-    const [bx, by] = normToPixel(balls[i].x, balls[i].y);
-    if (Math.hypot(px - bx, py - by) < ballRadius + 8) return i;
-  }
-  return -1;
-}
-
-canvas.addEventListener('mousedown', onPointerDown);
-canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onPointerDown(e); }, { passive: false });
-
-canvas.addEventListener('mousemove', onPointerMove);
-canvas.addEventListener('touchmove', (e) => { e.preventDefault(); onPointerMove(e); }, { passive: false });
-
-canvas.addEventListener('mouseup', onPointerUp);
-canvas.addEventListener('touchend', (e) => { onPointerUp(e); });
-
-function onPointerDown(e) {
-  if (isAnimating) return;
-  const pos = getEventPos(e);
-  const hitIdx = findBallAt(pos.x, pos.y);
-
-  if (placeMode && hitIdx >= 0) {
-    placingBall = hitIdx;
-    return;
-  }
-
-  if (hitIdx === 0) {
-    // 수구 드래그 → 방향 설정
-    isDragging = true;
-    dragStart = pos;
-    gameState = 'aiming';
-  }
-}
-
-function onPointerMove(e) {
-  if (isAnimating) return;
-  const pos = getEventPos(e);
-
-  if (placeMode && placingBall >= 0) {
-    const [nx, ny] = pixelToNorm(pos.x, pos.y);
-    const br = ballRadius / tableW;
-    const brY = ballRadius / tableH;
-    balls[placingBall].x = Math.max(br, Math.min(1 - br, nx));
-    balls[placingBall].y = Math.max(brY, Math.min(1 - brY, ny));
-    draw();
-    return;
-  }
-
-  if (isDragging && dragStart) {
-    const [cx, cy] = normToPixel(balls[0].x, balls[0].y);
-    // 반대 방향으로 발사
-    const dx = dragStart.x - pos.x;
-    const dy = dragStart.y - pos.y;
-    if (Math.hypot(dx, dy) > 5) {
-      angle = Math.round(Math.atan2(dy, dx) * 180 / Math.PI);
-      if (angle < 0) angle += 360;
-      angleSlider.value = angle;
-      document.getElementById('angleValue').textContent = angle + '°';
-
-      // 드래그 거리로 파워 조절
-      const dragDist = Math.hypot(dx, dy);
-      power = Math.min(200, Math.max(1, Math.round(dragDist * 0.8)));
-      powerSlider.value = power;
-      document.getElementById('powerValue').textContent = power;
+    function updateScoreDisplay() {
+      document.getElementById('scoreDisplay').textContent = state.score;
+      document.getElementById('inningDisplay').textContent = state.inning;
+      document.getElementById('highScoreDisplay').textContent = state.highScore;
     }
-    draw();
-  }
-}
 
-function onPointerUp(e) {
-  if (placeMode && placingBall >= 0) {
-    placingBall = -1;
-    return;
-  }
-
-  if (isDragging) {
-    isDragging = false;
-    const endPos = e.changedTouches ? {
-      x: (e.changedTouches[0].clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.getBoundingClientRect().width),
-      y: (e.changedTouches[0].clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.getBoundingClientRect().height),
-    } : getEventPos(e);
-
-    if (dragStart && Math.hypot(endPos.x - dragStart.x, endPos.y - dragStart.y) > 15) {
-      shoot();
+    // ===== 솔루션 파인더 =====
+    function findSolutions() {
+      const solutions = [];
+      const cueBall = balls[0];
+      const ball1 = balls[1];
+      const ball2 = balls[2];
+      const margin = TABLE.railWidth + TABLE.ballRadius;
+      const ballRadius = TABLE.ballRadius;
+      
+      for (let angleDeg = 0; angleDeg < 360; angleDeg += 0.5) {
+        const angle = angleDeg * Math.PI / 180;
+        let x = cueBall.x, y = cueBall.y;
+        let dx = Math.cos(angle), dy = Math.sin(angle);
+        let cushions = 0;
+        let hitBall1 = false, hitBall2 = false;
+        const path = [{ x, y }];
+        
+        for (let step = 0; step < 15; step++) {
+          // 쿠션까지 거리
+          const toCushion = getDistanceToCushion(x, y, dx, dy, margin);
+          // 적구까지 거리
+          const toBall1 = hitBall1 ? Infinity : getDistanceToBall(x, y, dx, dy, ball1, ballRadius);
+          const toBall2 = hitBall2 ? Infinity : getDistanceToBall(x, y, dx, dy, ball2, ballRadius);
+          
+          const minDist = Math.min(toCushion, toBall1, toBall2);
+          if (minDist === Infinity || minDist > 3000) break;
+          
+          x += dx * minDist;
+          y += dy * minDist;
+          path.push({ x, y });
+          
+          if (minDist === toCushion) {
+            cushions++;
+            // 반사
+            if (x <= margin + 1 || x >= tableWidth - margin - 1) dx = -dx;
+            if (y <= margin + 1 || y >= tableHeight - margin - 1) dy = -dy;
+          } else if (minDist === toBall1) {
+            hitBall1 = true;
+            if (hitBall1 && hitBall2 && cushions >= 3) {
+              solutions.push({ angle: angleDeg, path: [...path], cushions });
+              break;
+            }
+            // 방향 변경 (간단화: 공을 맞으면 멈춤으로 처리하거나 계속 진행)
+            break;
+          } else if (minDist === toBall2) {
+            hitBall2 = true;
+            if (hitBall1 && hitBall2 && cushions >= 3) {
+              solutions.push({ angle: angleDeg, path: [...path], cushions });
+              break;
+            }
+            break;
+          }
+        }
+      }
+      
+      // 쿠션 수가 적은 순으로 정렬, 최대 5개
+      solutions.sort((a, b) => a.cushions - b.cushions);
+      return solutions.slice(0, 5);
     }
-    dragStart = null;
-  }
-}
 
-// ─────────────── 토글 ───────────────
-function toggleTrail() {
-  showTrail = !showTrail;
-  document.getElementById('trailToggle').classList.toggle('active', showTrail);
-  if (!isAnimating) draw();
-}
+    function getDistanceToCushion(x, y, dx, dy, margin) {
+      const maxX = tableWidth - margin;
+      const maxY = tableHeight - margin;
+      
+      let minDist = Infinity;
+      
+      if (dx < 0) {
+        const t = (margin - x) / dx;
+        if (t > 0.1) minDist = Math.min(minDist, t);
+      } else if (dx > 0) {
+        const t = (maxX - x) / dx;
+        if (t > 0.1) minDist = Math.min(minDist, t);
+      }
+      
+      if (dy < 0) {
+        const t = (margin - y) / dy;
+        if (t > 0.1) minDist = Math.min(minDist, t);
+      } else if (dy > 0) {
+        const t = (maxY - y) / dy;
+        if (t > 0.1) minDist = Math.min(minDist, t);
+      }
+      
+      return minDist;
+    }
 
-function togglePlaceMode() {
-  placeMode = !placeMode;
-  document.getElementById('placeToggle').classList.toggle('active', placeMode);
-  canvas.style.cursor = placeMode ? 'grab' : 'crosshair';
-}
+    function getDistanceToBall(x, y, dx, dy, ball, radius) {
+      const fx = ball.x - x;
+      const fy = ball.y - y;
+      
+      const a = dx * dx + dy * dy;
+      const b = -2 * (fx * dx + fy * dy);
+      const c = fx * fx + fy * fy - (radius * 2) * (radius * 2);
+      
+      const discriminant = b * b - 4 * a * c;
+      if (discriminant < 0) return Infinity;
+      
+      const t = (-b - Math.sqrt(discriminant)) / (2 * a);
+      if (t > 0.1) return t;
+      
+      return Infinity;
+    }
 
-// ─────────────── 리셋 ───────────────
-function resetGame() {
-  isAnimating = false;
-  score = 0;
-  cushionCount = 0;
-  hitBalls = new Set();
-  trail = [];
-  gameState = 'ready';
-  initBalls();
-  updateStatus('준비');
-  document.getElementById('scoreDisplay').textContent = '0';
-  document.getElementById('cushionCount').textContent = '0';
-  draw();
-}
+    function displaySolutions(solutions) {
+      state.solutions = solutions;
+      state.selectedSolution = null;
+      
+      const list = document.getElementById('solutionList');
+      list.innerHTML = '';
+      
+      if (solutions.length === 0) {
+        list.innerHTML = '<div class="no-solution">😢 해법을 찾을 수 없습니다</div>';
+      } else {
+        solutions.forEach((sol, i) => {
+          const item = document.createElement('div');
+          item.className = 'solution-item';
+          item.innerHTML = `
+            <span>해법 ${i + 1}</span>
+            <div class="solution-info">
+              <span>📐 ${sol.angle.toFixed(1)}°</span>
+              <span>🎯 쿠션 ${sol.cushions}회</span>
+            </div>
+          `;
+          item.addEventListener('click', () => selectSolution(i));
+          list.appendChild(item);
+        });
+      }
+      
+      document.getElementById('solutionsPanel').classList.add('open');
+    }
 
-// ─────────────── 프리셋 ───────────────
-const presets = [
-  {
-    name: '앞돌리기',
-    desc: '기본 3쿠션',
-    balls: [
-      { x: 0.20, y: 0.70 },
-      { x: 0.20, y: 0.25 },
-      { x: 0.75, y: 0.25 },
-    ],
-    angle: 350,
-    power: 120,
-    spinX: 1,
-    spinY: 0,
-  },
-  {
-    name: '뒤돌리기',
-    desc: '뒤로 돌아서',
-    balls: [
-      { x: 0.25, y: 0.50 },
-      { x: 0.50, y: 0.25 },
-      { x: 0.80, y: 0.75 },
-    ],
-    angle: 200,
-    power: 130,
-    spinX: -1,
-    spinY: 0,
-  },
-  {
-    name: '옆돌리기',
-    desc: '사이드 기술',
-    balls: [
-      { x: 0.25, y: 0.50 },
-      { x: 0.50, y: 0.15 },
-      { x: 0.75, y: 0.50 },
-    ],
-    angle: 330,
-    power: 110,
-    spinX: 1,
-    spinY: -1,
-  },
-  {
-    name: '비껴치기',
-    desc: '얇게 스치고',
-    balls: [
-      { x: 0.30, y: 0.50 },
-      { x: 0.42, y: 0.45 },
-      { x: 0.75, y: 0.75 },
-    ],
-    angle: 15,
-    power: 105,
-    spinX: 1,
-    spinY: 0,
-  },
-  {
-    name: '끌어치기',
-    desc: '드로우 백스핀',
-    balls: [
-      { x: 0.30, y: 0.50 },
-      { x: 0.55, y: 0.50 },
-      { x: 0.80, y: 0.25 },
-    ],
-    angle: 0,
-    power: 95,
-    spinX: 0,
-    spinY: 1,
-  },
-  {
-    name: '밀어치기',
-    desc: '팔로우 톱스핀',
-    balls: [
-      { x: 0.30, y: 0.50 },
-      { x: 0.55, y: 0.50 },
-      { x: 0.80, y: 0.75 },
-    ],
-    angle: 0,
-    power: 100,
-    spinX: 0,
-    spinY: -1,
-  },
-  {
-    name: '대회전',
-    desc: '빅볼 풀테이블',
-    balls: [
-      { x: 0.15, y: 0.75 },
-      { x: 0.15, y: 0.25 },
-      { x: 0.85, y: 0.50 },
-    ],
-    angle: 340,
-    power: 160,
-    spinX: 1,
-    spinY: -1,
-  },
-  {
-    name: '더블쿠션',
-    desc: '같은 쿠션 2번',
-    balls: [
-      { x: 0.20, y: 0.80 },
-      { x: 0.20, y: 0.20 },
-      { x: 0.60, y: 0.50 },
-    ],
-    angle: 310,
-    power: 125,
-    spinX: 1,
-    spinY: 0,
-  },
-  {
-    name: '잔쿠션',
-    desc: '짧은 정교한 샷',
-    balls: [
-      { x: 0.40, y: 0.55 },
-      { x: 0.55, y: 0.40 },
-      { x: 0.65, y: 0.60 },
-    ],
-    angle: 300,
-    power: 70,
-    spinX: -1,
-    spinY: 0,
-  },
-  {
-    name: '뱅크샷',
-    desc: '직접 쿠션 경유',
-    balls: [
-      { x: 0.15, y: 0.50 },
-      { x: 0.85, y: 0.30 },
-      { x: 0.85, y: 0.70 },
-    ],
-    angle: 20,
-    power: 145,
-    spinX: 0,
-    spinY: 0,
-  },
-  {
-    name: '키스샷',
-    desc: '적구 활용',
-    balls: [
-      { x: 0.25, y: 0.50 },
-      { x: 0.50, y: 0.50 },
-      { x: 0.75, y: 0.30 },
-    ],
-    angle: 5,
-    power: 100,
-    spinX: 0,
-    spinY: -1,
-  },
-  {
-    name: '세이프티',
-    desc: '방어 배치',
-    balls: [
-      { x: 0.25, y: 0.50 },
-      { x: 0.60, y: 0.20 },
-      { x: 0.80, y: 0.80 },
-    ],
-    angle: 345,
-    power: 60,
-    spinX: -1,
-    spinY: 1,
-  },
-];
+    function selectSolution(index) {
+      state.selectedSolution = index;
+      
+      document.querySelectorAll('.solution-item').forEach((item, i) => {
+        item.classList.toggle('selected', i === index);
+      });
+      
+      draw();
+    }
 
-function loadPreset(idx) {
-  if (isAnimating) return;
-  const p = presets[idx];
-  
-  // 공 배치
-  balls = [
-    { x: p.balls[0].x, y: p.balls[0].y, vx: 0, vy: 0, spinX: 0, spinY: 0, color: COLORS.cueBall, name: '수구' },
-    { x: p.balls[1].x, y: p.balls[1].y, vx: 0, vy: 0, spinX: 0, spinY: 0, color: COLORS.ball1, name: '1적구' },
-    { x: p.balls[2].x, y: p.balls[2].y, vx: 0, vy: 0, spinX: 0, spinY: 0, color: COLORS.ball2, name: '2적구' },
-  ];
+    // ===== 이벤트 핸들러 =====
+    function getEventPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : e;
+      return {
+        x: (touch.clientX - rect.left) * (canvas.width / rect.width),
+        y: (touch.clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
 
-  // 설정
-  angle = p.angle;
-  power = p.power;
-  spinX = p.spinX;
-  spinY = p.spinY;
+    function handleStart(e) {
+      if (state.isPlaying) return;
+      
+      const pos = getEventPos(e);
+      
+      // 공 드래그 체크
+      for (const ball of balls) {
+        const dx = pos.x - ball.x;
+        const dy = pos.y - ball.y;
+        if (Math.sqrt(dx * dx + dy * dy) < TABLE.ballRadius * 1.5) {
+          if (ball.id === 'cue') {
+            // 수구 - 발사 모드
+            state.isDragging = true;
+            state.dragStart = pos;
+            state.dragCurrent = pos;
+            state.trajectoryPoints = [{ x: ball.x, y: ball.y }];
+          } else {
+            // 적구 - 배치 모드
+            state.isDraggingBall = ball;
+          }
+          return;
+        }
+      }
+    }
 
-  angleSlider.value = angle;
-  powerSlider.value = power;
-  document.getElementById('angleValue').textContent = angle + '°';
-  document.getElementById('powerValue').textContent = power;
+    function handleMove(e) {
+      if (state.isDraggingBall) {
+        const pos = getEventPos(e);
+        const margin = TABLE.railWidth + TABLE.ballRadius;
+        state.isDraggingBall.x = Math.max(margin, Math.min(tableWidth - margin, pos.x));
+        state.isDraggingBall.y = Math.max(margin, Math.min(tableHeight - margin, pos.y));
+        draw();
+      } else if (state.isDragging) {
+        state.dragCurrent = getEventPos(e);
+        draw();
+      }
+    }
 
-  trail = [];
-  cushionCount = 0;
-  hitBalls = new Set();
-  gameState = 'ready';
-  updateCushionDisplay();
+    function handleEnd(e) {
+      if (state.isDraggingBall) {
+        state.isDraggingBall = null;
+        state.selectedSolution = null;
+        state.solutions = [];
+        draw();
+      } else if (state.isDragging) {
+        const dx = state.dragStart.x - state.dragCurrent.x;
+        const dy = state.dragStart.y - state.dragCurrent.y;
+        const power = Math.min(Math.sqrt(dx * dx + dy * dy), 200);
+        
+        if (power > 15) {
+          shoot(Math.atan2(dy, dx), power);
+        }
+        
+        state.isDragging = false;
+        document.getElementById('powerIndicator').style.display = 'none';
+        draw();
+      }
+    }
 
-  drawSpinDiagram();
-  draw();
+    function shoot(angle, power) {
+      state.isPlaying = true;
+      state.cushionCount = 0;
+      state.hitBalls.clear();
+      state.selectedSolution = null;
+      state.solutions = [];
+      
+      const speed = power * 0.15;
+      balls[0].vx = Math.cos(angle) * speed;
+      balls[0].vy = Math.sin(angle) * speed;
+      balls[0].spinX = state.spin.x * speed * 0.3;
+      balls[0].spinY = state.spin.y * speed * 0.3;
+      
+      state.trajectoryPoints = [{ x: balls[0].x, y: balls[0].y }];
+    }
 
-  // 자동 발사 (500ms 후)
-  updateStatus(`프리셋: ${p.name}`);
-  setTimeout(() => shoot(), 500);
-}
+    // ===== 프리셋 =====
+    function loadPreset(preset) {
+      const margin = TABLE.railWidth;
+      
+      balls[0].x = margin + playWidth * preset.balls.cue[0];
+      balls[0].y = margin + playHeight * preset.balls.cue[1];
+      balls[1].x = margin + playWidth * preset.balls.red[0];
+      balls[1].y = margin + playHeight * preset.balls.red[1];
+      balls[2].x = margin + playWidth * preset.balls.yellow[0];
+      balls[2].y = margin + playHeight * preset.balls.yellow[1];
+      
+      state.spin.x = preset.spin[0];
+      state.spin.y = preset.spin[1];
+      updateSpinUI();
+      
+      state.trajectoryPoints = [{ x: balls[0].x, y: balls[0].y }];
+      state.selectedSolution = null;
+      state.solutions = [];
+      
+      draw();
+      
+      // 1초 후 자동 발사
+      setTimeout(() => {
+        const angle = preset.angle * Math.PI / 180;
+        shoot(angle, preset.power * 2);
+      }, 1000);
+    }
 
-function buildPresetGrid() {
-  const grid = document.getElementById('presetGrid');
-  presets.forEach((p, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'preset-btn';
-    btn.textContent = p.name;
-    btn.title = p.desc;
-    btn.onclick = () => loadPreset(i);
-    grid.appendChild(btn);
-  });
-}
+    function updateSpinUI() {
+      document.querySelectorAll('.spin-cell').forEach(cell => {
+        const [sx, sy] = cell.dataset.spin.split(',').map(Number);
+        cell.classList.toggle('active', sx === state.spin.x && sy === state.spin.y);
+      });
+    }
 
-// ─────────────── 초기화 실행 ───────────────
-function init() {
-  initBalls();
-  buildPresetGrid();
-  drawSpinDiagram();
-  document.getElementById('highScore').textContent = highScore;
-  resize();
-}
+    function populatePresets() {
+      const list = document.getElementById('presetList');
+      PRESETS.forEach((preset, i) => {
+        const item = document.createElement('div');
+        item.className = 'preset-item';
+        item.innerHTML = `
+          <div class="icon">${preset.icon}</div>
+          <div class="name">${preset.name}</div>
+        `;
+        item.addEventListener('click', () => {
+          document.getElementById('presetsPanel').classList.remove('open');
+          loadPreset(preset);
+        });
+        list.appendChild(item);
+      });
+    }
 
-window.addEventListener('resize', resize);
-window.addEventListener('load', init);
-</script>
+    // ===== 유틸리티 =====
+    function lightenColor(color, percent) {
+      const num = parseInt(color.replace('#', ''), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = Math.min(255, (num >> 16) + amt);
+      const G = Math.min(255, (num >> 8 & 0x00FF) + amt);
+      const B = Math.min(255, (num & 0x0000FF) + amt);
+      return `rgb(${R},${G},${B})`;
+    }
+
+    function darkenColor(color, percent) {
+      const num = parseInt(color.replace('#', ''), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = Math.max(0, (num >> 16) - amt);
+      const G = Math.max(0, (num >> 8 & 0x00FF) - amt);
+      const B = Math.max(0, (num & 0x0000FF) - amt);
+      return `rgb(${R},${G},${B})`;
+    }
+
+    // ===== 초기화 =====
+    function init() {
+      resizeCanvas();
+      populatePresets();
+      updateScoreDisplay();
+      
+      // 이벤트 리스너
+      canvas.addEventListener('mousedown', handleStart);
+      canvas.addEventListener('mousemove', handleMove);
+      canvas.addEventListener('mouseup', handleEnd);
+      canvas.addEventListener('mouseleave', handleEnd);
+      
+      canvas.addEventListener('touchstart', handleStart, { passive: true });
+      canvas.addEventListener('touchmove', handleMove, { passive: true });
+      canvas.addEventListener('touchend', handleEnd);
+      
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        draw();
+      });
+      
+      // 스핀 컨트롤
+      document.querySelectorAll('.spin-cell').forEach(cell => {
+        cell.addEventListener('click', () => {
+          const [sx, sy] = cell.dataset.spin.split(',').map(Number);
+          state.spin.x = sx;
+          state.spin.y = sy;
+          updateSpinUI();
+        });
+      });
+      
+      // 버튼들
+      document.getElementById('btnTrajectory').addEventListener('click', () => {
+        state.showTrajectory = !state.showTrajectory;
+        document.getElementById('btnTrajectory').classList.toggle('active', state.showTrajectory);
+        draw();
+      });
+      
+      document.getElementById('btnSolution').addEventListener('click', () => {
+        if (state.isPlaying) return;
+        const solutions = findSolutions();
+        displaySolutions(solutions);
+      });
+      
+      document.getElementById('btnPresets').addEventListener('click', () => {
+        document.getElementById('presetsPanel').classList.toggle('open');
+        document.getElementById('solutionsPanel').classList.remove('open');
+      });
+      
+      document.getElementById('btnClosePresets').addEventListener('click', () => {
+        document.getElementById('presetsPanel').classList.remove('open');
+      });
+      
+      document.getElementById('btnCloseSolutions').addEventListener('click', () => {
+        document.getElementById('solutionsPanel').classList.remove('open');
+        state.selectedSolution = null;
+        draw();
+      });
+      
+      document.getElementById('btnReset').addEventListener('click', () => {
+        state.score = 0;
+        state.inning = 1;
+        state.isPlaying = false;
+        state.cushionCount = 0;
+        state.hitBalls.clear();
+        state.trajectoryPoints = [];
+        state.selectedSolution = null;
+        state.solutions = [];
+        balls.forEach(ball => {
+          ball.vx = 0;
+          ball.vy = 0;
+          ball.spinX = 0;
+          ball.spinY = 0;
+        });
+        resetBallPositions();
+        updateScoreDisplay();
+        draw();
+      });
+      
+      // 게임 루프
+      function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+      }
+      
+      gameLoop();
+    }
+
+    init();
+  </script>
 </body>
 </html>
