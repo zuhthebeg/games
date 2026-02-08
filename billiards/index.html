@@ -299,6 +299,9 @@
 
     .solution-list {
       padding: 10px;
+      max-height: calc(40vh - 60px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .solution-item {
@@ -666,7 +669,7 @@
       playWidth = w - TABLE.railWidth * 2;
       playHeight = h - TABLE.railWidth * 2;
       
-      TABLE.ballRadius = Math.max(8, playWidth * TABLE.ballRadiusRatio);
+      TABLE.ballRadius = Math.max(5, playWidth * TABLE.ballRadiusRatio);
       
       resetBallPositions();
     }
@@ -727,10 +730,13 @@
       ctx.stroke();
       ctx.setLineDash([]);
       
-      // 고스트볼 (적구와 접촉 위치 표시)
+      // 고스트볼 (적구와 접촉 위치 표시) + 두께 미리보기
+      let firstContact = null;
       [balls[1], balls[2]].forEach(targetBall => {
         const contact = findContactPoint(cueBall, targetBall, angle);
         if (contact) {
+          if (!firstContact) firstContact = { contact, targetBall };
+          
           // 고스트볼 (반투명 수구 위치)
           ctx.beginPath();
           ctx.arc(contact.ghostX, contact.ghostY, TABLE.ballRadius, 0, Math.PI * 2);
@@ -747,6 +753,72 @@
           ctx.fill();
         }
       });
+      
+      // 두께 미리보기 (우측 상단에 확대 표시)
+      if (firstContact) {
+        drawThicknessPreview(firstContact.contact, firstContact.targetBall);
+      }
+    }
+    
+    // 두께 미리보기 - 공 접촉 확대 이미지
+    function drawThicknessPreview(contact, targetBall) {
+      const previewSize = Math.min(120, tableWidth * 0.15);
+      const previewX = tableWidth - previewSize - 10;
+      const previewY = 10;
+      const previewRadius = previewSize * 0.35;
+      
+      // 반투명 배경
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.beginPath();
+      ctx.roundRect(previewX - 5, previewY - 5, previewSize + 10, previewSize + 30, 10);
+      ctx.fill();
+      
+      // 중앙 좌표 (적구 중심 기준)
+      const centerX = previewX + previewSize / 2;
+      const centerY = previewY + previewSize / 2;
+      
+      // 스케일 계산 (실제 공 위치를 미리보기 크기에 맞춤)
+      const scale = previewRadius / TABLE.ballRadius;
+      
+      // 고스트볼과 적구의 상대 위치
+      const relX = (contact.ghostX - targetBall.x) * scale;
+      const relY = (contact.ghostY - targetBall.y) * scale;
+      
+      // 적구 그리기 (중앙)
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, previewRadius, 0, Math.PI * 2);
+      ctx.fillStyle = targetBall.color;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // 수구 (고스트볼) 그리기
+      ctx.beginPath();
+      ctx.arc(centerX + relX, centerY + relY, previewRadius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // 접촉점 표시
+      const contactRelX = ((contact.contactX - targetBall.x) * scale);
+      const contactRelY = ((contact.contactY - targetBall.y) * scale);
+      ctx.beginPath();
+      ctx.arc(centerX + contactRelX, centerY + contactRelY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffeb3b';
+      ctx.fill();
+      
+      // 두께 % 계산 (정면=100%, 얇게=0%)
+      const distToCenter = Math.sqrt(relX * relX + relY * relY);
+      const thickness = Math.max(0, Math.round((1 - distToCenter / (previewRadius * 2)) * 100));
+      
+      // 두께 텍스트
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`두께: ${thickness}%`, centerX, previewY + previewSize + 18);
     }
     
     // 수구가 적구와 접촉하는 지점 계산
@@ -1188,14 +1260,14 @@
       document.getElementById('highScoreDisplay').textContent = state.highScore;
     }
 
-    // ===== 솔루션 파인더 (v5.3 - 물리 시뮬레이션 기반) =====
+    // ===== 솔루션 파인더 (v5.7 - 넓은 파워 범위) =====
     function findSolutions() {
       const solutions = [];
       const originalBalls = balls.map(b => ({ x: b.x, y: b.y, vx: b.vx, vy: b.vy }));
       
-      // 각도 0~359° (1° 간격), 파워 40~90 (10 간격)
-      for (let angle = 0; angle < 360; angle += 1) {
-        for (let power = 40; power <= 90; power += 10) {
+      // 각도 0~359° (2° 간격), 파워 20~150 (15 간격) - 슬라이더 범위와 일치
+      for (let angle = 0; angle < 360; angle += 2) {
+        for (let power = 20; power <= 150; power += 15) {
           // 공 위치 복원
           balls.forEach((b, i) => {
             b.x = originalBalls[i].x;
