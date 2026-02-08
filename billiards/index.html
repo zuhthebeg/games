@@ -467,7 +467,7 @@
         <span>점수: <span class="score-value" id="scoreDisplay">0</span></span>
         <span>이닝: <span class="score-value" id="inningDisplay">1</span></span>
         <span>최고: <span class="score-value" id="highScoreDisplay">0</span></span>
-        <span style="opacity:0.4;font-size:10px;margin-left:10px">v6.0</span>
+        <span style="opacity:0.4;font-size:10px;margin-left:10px">v6.1</span>
       </div>
     </div>
 
@@ -558,79 +558,79 @@
       { id: 'yellow', x: 0, y: 0, vx: 0, vy: 0, color: '#ffd700', spinX: 0, spinY: 0 }
     ];
 
-    // ===== 프리셋 정의 (v5.3 - 시뮬레이션 검증 완료) =====
-    // 프리셋: 공 배치 후 해법 찾기로 검증 필요
-    // 각 프리셋은 예시 배치만 제공, 자동 발사 제거
+    // ===== 프리셋 정의 (v6.1 - 실제 3쿠션 패턴 기반) =====
+    // 두께: 1/2=반반, 얇게=1/4, 두껍게=3/4
+    // 스핀: [좌우회전, 상하회전] -3~+3 범위
     const PRESETS = [
       {
-        name: '앞돌리기',
-        icon: '➡️',
-        desc: '장쿠션 3번 경유',
-        balls: { cue: [0.15, 0.75], red: [0.5, 0.25], yellow: [0.85, 0.75] },
-        angle: 320, power: 80, spin: [0, 0]
+        name: '옆돌리기 반반',
+        icon: '↪️',
+        desc: '1/2두께 무회전 기본샷',
+        balls: { cue: [0.2, 0.7], red: [0.35, 0.45], yellow: [0.7, 0.15] },
+        angle: 315, power: 70, spin: [0, 0]
+      },
+      {
+        name: '옆돌리기 끌어',
+        icon: '⬇️',
+        desc: '하단당점 끌어치기',
+        balls: { cue: [0.2, 0.65], red: [0.35, 0.5], yellow: [0.5, 0.2] },
+        angle: 320, power: 75, spin: [0, -2]
       },
       {
         name: '뒤돌리기',
         icon: '↩️',
-        desc: '수구가 뒤로 돌아옴',
-        balls: { cue: [0.25, 0.5], red: [0.5, 0.5], yellow: [0.75, 0.25] },
-        angle: 180, power: 70, spin: [0, 0]
+        desc: '1적구 맞고 뒤로 돌아옴',
+        balls: { cue: [0.75, 0.7], red: [0.6, 0.5], yellow: [0.2, 0.3] },
+        angle: 200, power: 65, spin: [1, 0]
       },
       {
-        name: '횡단',
-        icon: '↔️',
-        desc: '테이블을 가로지르는 샷',
-        balls: { cue: [0.1, 0.5], red: [0.5, 0.2], yellow: [0.5, 0.8] },
-        angle: 0, power: 90, spin: [0, 0]
+        name: '앞돌리기',
+        icon: '➡️',
+        desc: '장쿠션 타고 앞으로',
+        balls: { cue: [0.15, 0.5], red: [0.4, 0.3], yellow: [0.85, 0.5] },
+        angle: 25, power: 80, spin: [2, 0]
       },
       {
         name: '대회전',
         icon: '🔄',
-        desc: '테이블 전체를 크게 도는 샷',
-        balls: { cue: [0.15, 0.85], red: [0.5, 0.15], yellow: [0.85, 0.5] },
-        angle: 330, power: 100, spin: [0, 0]
-      },
-      {
-        name: '직선3쿠션',
-        icon: '📐',
-        desc: '대각선으로 쿠션 3회',
-        balls: { cue: [0.1, 0.9], red: [0.6, 0.4], yellow: [0.9, 0.1] },
-        angle: 315, power: 85, spin: [0, 0]
-      },
-      {
-        name: '옆돌리기',
-        icon: '↪️',
-        desc: '단쿠션 활용',
-        balls: { cue: [0.2, 0.3], red: [0.5, 0.7], yellow: [0.8, 0.3] },
-        angle: 30, power: 75, spin: [0, 0]
+        desc: '테이블 한바퀴 돌기',
+        balls: { cue: [0.2, 0.85], red: [0.15, 0.3], yellow: [0.8, 0.15] },
+        angle: 340, power: 120, spin: [1, 1]
       },
       {
         name: '더블레일',
         icon: '💫',
-        desc: '같은 쿠션 2번',
-        balls: { cue: [0.2, 0.5], red: [0.7, 0.2], yellow: [0.7, 0.8] },
-        angle: 350, power: 85, spin: [0, 0]
+        desc: '같은 장쿠션 2번',
+        balls: { cue: [0.3, 0.5], red: [0.55, 0.25], yellow: [0.75, 0.7] },
+        angle: 350, power: 85, spin: [0, 1]
       },
       {
-        name: '짧은각',
+        name: '짧은 옆돌리기',
         icon: '📏',
-        desc: '짧은 거리 3쿠션',
-        balls: { cue: [0.3, 0.8], red: [0.4, 0.2], yellow: [0.6, 0.5] },
-        angle: 300, power: 60, spin: [0, 0]
+        desc: '가까운 거리 3쿠션',
+        balls: { cue: [0.25, 0.75], red: [0.4, 0.55], yellow: [0.6, 0.35] },
+        angle: 310, power: 55, spin: [0, 0]
       },
       {
-        name: '긴각',
+        name: '긴 옆돌리기',
         icon: '📐',
-        desc: '긴 거리 3쿠션',
-        balls: { cue: [0.1, 0.5], red: [0.9, 0.25], yellow: [0.9, 0.75] },
-        angle: 10, power: 95, spin: [0, 0]
+        desc: '먼 거리 3팁 회전',
+        balls: { cue: [0.15, 0.7], red: [0.35, 0.35], yellow: [0.85, 0.2] },
+        angle: 330, power: 90, spin: [3, 0]
       },
       {
-        name: '코너샷',
+        name: '비껴치기',
         icon: '🎯',
-        desc: '코너에서 시작',
-        balls: { cue: [0.1, 0.1], red: [0.5, 0.5], yellow: [0.9, 0.9] },
-        angle: 45, power: 90, spin: [0, 0]
+        desc: '얇은 두께로 비껴맞힘',
+        balls: { cue: [0.5, 0.8], red: [0.5, 0.55], yellow: [0.2, 0.2] },
+        angle: 270, power: 60, spin: [-2, 0]
+      },
+      {
+        name: '제각돌리기',
+        icon: '⭐',
+        desc: '1적구 제자리, 수구만 이동',
+        balls: { cue: [0.3, 0.6], red: [0.45, 0.45], yellow: [0.7, 0.2] },
+        angle: 315, power: 50, spin: [0, -1]
       }
     ];
 
