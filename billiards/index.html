@@ -467,7 +467,7 @@
         <span>점수: <span class="score-value" id="scoreDisplay">0</span></span>
         <span>이닝: <span class="score-value" id="inningDisplay">1</span></span>
         <span>최고: <span class="score-value" id="highScoreDisplay">0</span></span>
-        <span style="opacity:0.4;font-size:10px;margin-left:10px">v6.2</span>
+        <span style="opacity:0.4;font-size:10px;margin-left:10px">v6.3</span>
       </div>
     </div>
 
@@ -558,79 +558,80 @@
       { id: 'yellow', x: 0, y: 0, vx: 0, vy: 0, color: '#ffd700', spinX: 0, spinY: 0 }
     ];
 
-    // ===== 프리셋 정의 (v6.1 - 실제 3쿠션 패턴 기반) =====
+    // ===== 프리셋 정의 (v6.2 - 각도 자동계산) =====
     // 두께: 1/2=반반, 얇게=1/4, 두껍게=3/4
     // 스핀: [좌우회전, 상하회전] -3~+3 범위
+    // angle: -1이면 자동으로 1적구 방향 계산
     const PRESETS = [
       {
         name: '옆돌리기 반반',
         icon: '↪️',
         desc: '1/2두께 무회전 기본샷',
         balls: { cue: [0.2, 0.7], red: [0.35, 0.45], yellow: [0.7, 0.15] },
-        angle: 315, power: 70, spin: [0, 0]
+        angle: -1, power: 70, spin: [0, 0]
       },
       {
         name: '옆돌리기 끌어',
         icon: '⬇️',
         desc: '하단당점 끌어치기',
         balls: { cue: [0.2, 0.65], red: [0.35, 0.5], yellow: [0.5, 0.2] },
-        angle: 320, power: 75, spin: [0, -2]
+        angle: -1, power: 75, spin: [0, -2]
       },
       {
         name: '뒤돌리기',
         icon: '↩️',
         desc: '1적구 맞고 뒤로 돌아옴',
         balls: { cue: [0.75, 0.7], red: [0.6, 0.5], yellow: [0.2, 0.3] },
-        angle: 200, power: 65, spin: [1, 0]
+        angle: -1, power: 65, spin: [1, 0]
       },
       {
         name: '앞돌리기',
         icon: '➡️',
         desc: '장쿠션 타고 앞으로',
         balls: { cue: [0.15, 0.5], red: [0.4, 0.3], yellow: [0.85, 0.5] },
-        angle: 25, power: 80, spin: [2, 0]
+        angle: -1, power: 80, spin: [2, 0]
       },
       {
         name: '대회전',
         icon: '🔄',
         desc: '테이블 한바퀴 돌기',
         balls: { cue: [0.2, 0.85], red: [0.15, 0.3], yellow: [0.8, 0.15] },
-        angle: 340, power: 120, spin: [1, 1]
+        angle: -1, power: 120, spin: [1, 1]
       },
       {
         name: '더블레일',
         icon: '💫',
         desc: '같은 장쿠션 2번',
         balls: { cue: [0.3, 0.5], red: [0.55, 0.25], yellow: [0.75, 0.7] },
-        angle: 350, power: 85, spin: [0, 1]
+        angle: -1, power: 85, spin: [0, 1]
       },
       {
         name: '짧은 옆돌리기',
         icon: '📏',
         desc: '가까운 거리 3쿠션',
         balls: { cue: [0.25, 0.75], red: [0.4, 0.55], yellow: [0.6, 0.35] },
-        angle: 310, power: 55, spin: [0, 0]
+        angle: -1, power: 55, spin: [0, 0]
       },
       {
         name: '긴 옆돌리기',
         icon: '📐',
         desc: '먼 거리 3팁 회전',
         balls: { cue: [0.15, 0.7], red: [0.35, 0.35], yellow: [0.85, 0.2] },
-        angle: 330, power: 90, spin: [3, 0]
+        angle: -1, power: 90, spin: [3, 0]
       },
       {
         name: '비껴치기',
         icon: '🎯',
         desc: '얇은 두께로 비껴맞힘',
         balls: { cue: [0.5, 0.8], red: [0.5, 0.55], yellow: [0.2, 0.2] },
-        angle: 270, power: 60, spin: [-2, 0]
+        angle: -1, power: 60, spin: [-2, 0]
       },
       {
         name: '제각돌리기',
         icon: '⭐',
         desc: '1적구 제자리, 수구만 이동',
         balls: { cue: [0.3, 0.6], red: [0.45, 0.45], yellow: [0.7, 0.2] },
-        angle: 315, power: 50, spin: [0, -1]
+        angle: -1, power: 50, spin: [0, -1]
       }
     ];
 
@@ -1652,9 +1653,19 @@
       state.isPlaying = false;
       updateSpinUI();
       
+      // 각도 계산 (preset.angle이 -1이면 1적구 방향으로 자동계산)
+      let angle = preset.angle;
+      if (angle < 0) {
+        const dx = balls[1].x - balls[0].x;
+        const dy = balls[1].y - balls[0].y;
+        angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        if (angle < 0) angle += 360;
+        angle = Math.round(angle);
+      }
+      
       // 슬라이더에 각도/파워 설정
-      document.getElementById('angleSlider').value = preset.angle;
-      document.getElementById('angleValue').textContent = preset.angle;
+      document.getElementById('angleSlider').value = angle;
+      document.getElementById('angleValue').textContent = angle;
       document.getElementById('powerSlider').value = preset.power;
       document.getElementById('powerSliderValue').textContent = preset.power;
       
@@ -1666,24 +1677,14 @@
       
       draw();
       
-      // 해법 자동 탐색 후 발사
+      // 해법 탐색 (자동 발사 제거 - 사용자가 직접 샷)
       setTimeout(() => {
         const solutions = findSolutions();
         if (solutions.length > 0) {
-          // 첫 번째 해법으로 발사
-          const sol = solutions[0];
-          showStatus('💡 해법 발견!');
-          setTimeout(() => {
-            const angle = sol.angle * Math.PI / 180;
-            shoot(angle, sol.power);
-          }, 500);
+          displaySolutions(solutions);
+          showStatus('💡 해법 ' + solutions.length + '개 발견');
         } else {
-          // 해법 없으면 프리셋 값으로 발사
-          showStatus('🎱 발사');
-          setTimeout(() => {
-            const angle = preset.angle * Math.PI / 180;
-            shoot(angle, preset.power);
-          }, 500);
+          showStatus('📐 각도 조정 후 샷!');
         }
       }, 300);
     }
