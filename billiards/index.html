@@ -467,7 +467,7 @@
         <span>점수: <span class="score-value" id="scoreDisplay">0</span></span>
         <span>이닝: <span class="score-value" id="inningDisplay">1</span></span>
         <span>최고: <span class="score-value" id="highScoreDisplay">0</span></span>
-        <span style="opacity:0.4;font-size:10px;margin-left:10px">v6.1</span>
+        <span style="opacity:0.4;font-size:10px;margin-left:10px">v6.2</span>
       </div>
     </div>
 
@@ -793,12 +793,21 @@
       const centerX = previewX + previewSize / 2;
       const centerY = previewY + previewSize / 2;
       
-      // 스케일 계산 (실제 공 위치를 미리보기 크기에 맞춤)
-      const scale = previewRadius / TABLE.ballRadius;
+      // 두께 % 계산 (정면=100%, 얇게=0%)
+      const thickness = Math.round(contact.thicknessRatio * 100);
       
-      // 고스트볼과 적구의 상대 위치
-      const relX = (contact.ghostX - targetBall.x) * scale;
-      const relY = (contact.ghostY - targetBall.y) * scale;
+      // 수구 위치: 두께에 따라 겹침 표현
+      // 두께 100% = 정중앙 통과 (완전 겹침)
+      // 두께 50% = 반만 겹침
+      // 두께 0% = 가장자리 (거의 안 겹침)
+      const overlapDist = previewRadius * 2 * (1 - contact.thicknessRatio);
+      
+      // 고스트볼 방향 (적구→고스트볼 방향)
+      const gx = contact.ghostX - targetBall.x;
+      const gy = contact.ghostY - targetBall.y;
+      const gDist = Math.sqrt(gx * gx + gy * gy);
+      const gnx = gDist > 0 ? gx / gDist : 1;
+      const gny = gDist > 0 ? gy / gDist : 0;
       
       // 적구 그리기 (중앙)
       ctx.beginPath();
@@ -809,26 +818,24 @@
       ctx.lineWidth = 1;
       ctx.stroke();
       
-      // 수구 (고스트볼) 그리기
+      // 수구 (고스트볼) 그리기 - 겹침 표현
+      const cueX = centerX + gnx * overlapDist;
+      const cueY = centerY + gny * overlapDist;
       ctx.beginPath();
-      ctx.arc(centerX + relX, centerY + relY, previewRadius, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.arc(cueX, cueY, previewRadius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
       ctx.lineWidth = 2;
       ctx.stroke();
       
-      // 접촉점 표시
-      const contactRelX = ((contact.contactX - targetBall.x) * scale);
-      const contactRelY = ((contact.contactY - targetBall.y) * scale);
+      // 접촉점 표시 (두 공 겹치는 부분)
+      const contactPtX = (centerX + cueX) / 2;
+      const contactPtY = (centerY + cueY) / 2;
       ctx.beginPath();
-      ctx.arc(centerX + contactRelX, centerY + contactRelY, 4, 0, Math.PI * 2);
+      ctx.arc(contactPtX, contactPtY, 4, 0, Math.PI * 2);
       ctx.fillStyle = '#ffeb3b';
       ctx.fill();
-      
-      // 두께 % 계산 (정면=100%, 얇게=0%)
-      const distToCenter = Math.sqrt(relX * relX + relY * relY);
-      const thickness = Math.max(0, Math.round((1 - distToCenter / (previewRadius * 2)) * 100));
       
       // 두께 텍스트
       ctx.fillStyle = '#fff';
@@ -869,7 +876,10 @@
       const contactX = (ghostX + targetBall.x) / 2;
       const contactY = (ghostY + targetBall.y) / 2;
       
-      return { ghostX, ghostY, contactX, contactY };
+      // 두께 계산용: 발사선과 적구 중심 사이 거리 비율
+      const thicknessRatio = 1 - (distToLine / minDist);
+      
+      return { ghostX, ghostY, contactX, contactY, distToLine, thicknessRatio };
     }
 
     function drawTable() {
