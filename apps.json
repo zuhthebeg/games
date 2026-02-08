@@ -1,5 +1,19 @@
 [
     {
+        "title": "포커",
+        "icon": "https://game.cocy.io/poker/icon.svg",
+        "url": "https://game.cocy.io/poker/",
+        "desc": "1:1 텍사스 홀덤 포커",
+        "badge": "NEW",
+        "platforms": [
+            "WEB"
+        ],
+        "languages": [
+            "🌍"
+        ],
+        "category": "game"
+    },
+    {
         "title": "간단한 숫자",
         "icon": "https://game.cocy.io/number-guess/icon.svg",
         "url": "https://game.cocy.io/number-guess/",
