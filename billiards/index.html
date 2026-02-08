@@ -277,9 +277,10 @@
       border-top: 1px solid rgba(255,255,255,0.1);
       transform: translateY(100%);
       transition: transform 0.3s ease;
-      max-height: 40vh;
-      overflow-y: auto;
+      max-height: 50vh;
       z-index: 100;
+      display: flex;
+      flex-direction: column;
     }
 
     #solutionsPanel.open {
@@ -289,19 +290,19 @@
     #solutionsPanel h3 {
       padding: 15px 20px;
       border-bottom: 1px solid rgba(255,255,255,0.1);
-      position: sticky;
-      top: 0;
       background: rgba(26, 29, 46, 0.98);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
     }
 
     .solution-list {
       padding: 10px;
-      max-height: calc(40vh - 60px);
-      overflow-y: auto;
+      flex: 1;
+      overflow-y: scroll;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
 
     .solution-item {
@@ -767,10 +768,21 @@
       const previewY = 10;
       const previewRadius = previewSize * 0.35;
       
-      // 반투명 배경
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      // 반투명 배경 (둥근 모서리)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      const rx = previewX - 5, ry = previewY - 5;
+      const rw = previewSize + 10, rh = previewSize + 30, rr = 10;
       ctx.beginPath();
-      ctx.roundRect(previewX - 5, previewY - 5, previewSize + 10, previewSize + 30, 10);
+      ctx.moveTo(rx + rr, ry);
+      ctx.lineTo(rx + rw - rr, ry);
+      ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + rr);
+      ctx.lineTo(rx + rw, ry + rh - rr);
+      ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - rr, ry + rh);
+      ctx.lineTo(rx + rr, ry + rh);
+      ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - rr);
+      ctx.lineTo(rx, ry + rr);
+      ctx.quadraticCurveTo(rx, ry, rx + rr, ry);
+      ctx.closePath();
       ctx.fill();
       
       // 중앙 좌표 (적구 중심 기준)
@@ -1323,47 +1335,47 @@
       const hitBalls = new Set();
       const path = [{ x: cueX, y: cueY }];
       
-      const margin = TABLE.railWidth;
       const br = TABLE.ballRadius;
-      const restitution = 0.88; // 실제 물리와 동일
+      const margin = TABLE.railWidth + br; // 실제 물리와 동일하게!
+      const restitution = 0.88;
       const friction = 0.996;
       
       // 적구 위치 저장 (시뮬레이션 중 적구는 움직이지 않음)
       const ball1 = { x: balls[1].x, y: balls[1].y };
       const ball2 = { x: balls[2].x, y: balls[2].y };
       
-      // 최대 500 프레임 시뮬레이션 (약 8초)
-      for (let frame = 0; frame < 500; frame++) {
+      // 최대 800 프레임 시뮬레이션 (충분한 시간)
+      for (let frame = 0; frame < 800; frame++) {
         // 속도가 거의 0이면 종료
         const totalSpeed = Math.sqrt(vx * vx + vy * vy);
-        if (totalSpeed < 0.1) break;
+        if (totalSpeed < 0.05) break;
+        
+        // 마찰 먼저 (실제 물리와 동일한 순서)
+        vx *= friction;
+        vy *= friction;
         
         // 이동
         cueX += vx;
         cueY += vy;
         
-        // 마찰
-        vx *= friction;
-        vy *= friction;
-        
-        // 쿠션 충돌
-        if (cueX - br <= margin) {
-          cueX = margin + br;
+        // 쿠션 충돌 (실제 물리와 동일)
+        if (cueX <= margin) {
+          cueX = margin;
           vx = -vx * restitution;
           cushions++;
         }
-        if (cueX + br >= tableWidth - margin) {
-          cueX = tableWidth - margin - br;
+        if (cueX >= tableWidth - margin) {
+          cueX = tableWidth - margin;
           vx = -vx * restitution;
           cushions++;
         }
-        if (cueY - br <= margin) {
-          cueY = margin + br;
+        if (cueY <= margin) {
+          cueY = margin;
           vy = -vy * restitution;
           cushions++;
         }
-        if (cueY + br >= tableHeight - margin) {
-          cueY = tableHeight - margin - br;
+        if (cueY >= tableHeight - margin) {
+          cueY = tableHeight - margin;
           vy = -vy * restitution;
           cushions++;
         }
@@ -1372,28 +1384,41 @@
         let dx = ball1.x - cueX;
         let dy = ball1.y - cueY;
         let dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < br * 2 && !hitBalls.has('ball1')) {
+        const minDist = br * 2;
+        if (dist < minDist && !hitBalls.has('ball1')) {
           hitBalls.add('ball1');
-          // 충돌 처리 (수구 방향만 변경)
+          // 분리
+          const overlap = minDist - dist;
           const nx = dx / dist;
           const ny = dy / dist;
+          cueX -= nx * overlap;
+          cueY -= ny * overlap;
+          // 반사 (탄성 충돌)
           const dot = vx * nx + vy * ny;
-          vx -= nx * dot * 1.5;
-          vy -= ny * dot * 1.5;
+          if (dot > 0) {
+            vx -= nx * dot * 1.8;
+            vy -= ny * dot * 1.8;
+          }
         }
         
         // 적구2 충돌 체크
         dx = ball2.x - cueX;
         dy = ball2.y - cueY;
         dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < br * 2 && !hitBalls.has('ball2')) {
+        if (dist < minDist && !hitBalls.has('ball2')) {
           hitBalls.add('ball2');
-          // 충돌 처리 (수구 방향만 변경)
+          // 분리
+          const overlap = minDist - dist;
           const nx = dx / dist;
           const ny = dy / dist;
+          cueX -= nx * overlap;
+          cueY -= ny * overlap;
+          // 반사 (탄성 충돌)
           const dot = vx * nx + vy * ny;
-          vx -= nx * dot * 1.5;
-          vy -= ny * dot * 1.5;
+          if (dot > 0) {
+            vx -= nx * dot * 1.8;
+            vy -= ny * dot * 1.8;
+          }
         }
         
         // 경로 기록 (10프레임마다)
