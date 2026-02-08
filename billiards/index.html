@@ -467,7 +467,7 @@
         <span>점수: <span class="score-value" id="scoreDisplay">0</span></span>
         <span>이닝: <span class="score-value" id="inningDisplay">1</span></span>
         <span>최고: <span class="score-value" id="highScoreDisplay">0</span></span>
-        <span style="opacity:0.4;font-size:10px;margin-left:10px">v5.9</span>
+        <span style="opacity:0.4;font-size:10px;margin-left:10px">v6.0</span>
       </div>
     </div>
 
@@ -685,6 +685,9 @@
       balls[1].y = margin + playHeight * 0.35;
       balls[2].x = margin + playWidth * 0.25;  // 노란공 - 좌측 중앙
       balls[2].y = margin + playHeight * 0.5;
+      
+      // 노란공 방향으로 조준
+      setTimeout(aimTowardsYellow, 50);
     }
 
     // ===== 그리기 함수들 =====
@@ -760,15 +763,6 @@
       if (firstContact) {
         drawThicknessPreview(firstContact.contact, firstContact.targetBall);
       }
-      
-      // 디버그: 항상 각도/파워 표시
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.fillRect(10, 10, 100, 30);
-      ctx.fillStyle = '#fff';
-      ctx.font = '11px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText(`각도: ${parseInt(angleSlider.value)}°`, 15, 28);
-      ctx.fillText(`파워: ${power}`, 70, 28);
     }
     
     // 두께 미리보기 - 공 접촉 확대 이미지
@@ -987,6 +981,34 @@
       }
       ctx.stroke();
       ctx.setLineDash([]);
+      
+      // 두께 미리보기 (드래그 조준 시)
+      let firstContact = null;
+      [balls[1], balls[2]].forEach(targetBall => {
+        const contact = findContactPoint(cueBall, targetBall, angle);
+        if (contact) {
+          if (!firstContact) firstContact = { contact, targetBall };
+          
+          // 고스트볼
+          ctx.beginPath();
+          ctx.arc(contact.ghostX, contact.ghostY, TABLE.ballRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 4]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // 접촉점
+          ctx.beginPath();
+          ctx.arc(contact.contactX, contact.contactY, 4, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 200, 0, 0.9)';
+          ctx.fill();
+        }
+      });
+      
+      if (firstContact) {
+        drawThicknessPreview(firstContact.contact, firstContact.targetBall);
+      }
       
       const powerPercent = Math.round((power / 200) * 100);
       document.getElementById('powerValue').textContent = powerPercent;
@@ -1265,6 +1287,26 @@
       state.cushionCount = 0;
       state.hitBalls.clear();
       document.getElementById('powerIndicator').style.display = 'none';
+      
+      // 노란공 방향으로 각도 설정
+      aimTowardsYellow();
+    }
+    
+    function aimTowardsYellow() {
+      const cueBall = balls[0];
+      const yellowBall = balls[2]; // yellow
+      const dx = yellowBall.x - cueBall.x;
+      const dy = yellowBall.y - cueBall.y;
+      let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      if (angle < 0) angle += 360;
+      angle = Math.round(angle);
+      
+      const angleSlider = document.getElementById('angleSlider');
+      const angleValue = document.getElementById('angleValue');
+      if (angleSlider && angleValue) {
+        angleSlider.value = angle;
+        angleValue.textContent = angle;
+      }
     }
 
     function showMessage(text) {
