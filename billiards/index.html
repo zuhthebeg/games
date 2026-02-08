@@ -1014,30 +1014,27 @@
 
     function updatePhysics() {
       const margin = TABLE.railWidth + TABLE.ballRadius;
-      const friction = 0.992;
-      const cushionRestitution = 0.85;
+      const friction = 0.996; // 더 낮은 마찰 (공이 더 오래 굴러감)
+      const cushionRestitution = 0.88; // 쿠션 반발력
       
       balls.forEach(ball => {
         ball.vx *= friction;
         ball.vy *= friction;
         
-        // v5.2: 스핀 효과 강화 (범위 -3~+3)
+        // v5.6: 스핀 효과 - 미세한 커브만 (속도 영향 제거)
         if (ball.id === 'cue') {
-          // 사이드스핀: 커브 효과
-          ball.vx += ball.spinX * 0.012;
-          ball.vy += ball.spinY * 0.012;
+          // 사이드스핀: 아주 미세한 커브
+          const curveEffect = 0.003;
+          ball.vx += ball.spinX * curveEffect;
+          ball.vy += ball.spinY * curveEffect;
           
-          // 톱스핀/백스핀: 속도 영향 (spin.y * 0.1)
-          const speedFactor = 1 + (ball.spinY * -0.03);
-          ball.vx *= speedFactor;
-          ball.vy *= speedFactor;
-          
-          ball.spinX *= 0.98;
-          ball.spinY *= 0.98;
+          // 스핀 감쇠
+          ball.spinX *= 0.995;
+          ball.spinY *= 0.995;
         }
         
-        ball.x += ball.vx / 4;
-        ball.y += ball.vy / 4;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
         
         if (ball.id === 'cue' && state.showTrajectory) {
           const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
@@ -1049,8 +1046,8 @@
           }
         }
         
-        // 쿠션 충돌 (v5.2: 스핀 효과 강화 - spin * 5°)
-        const spinAngleFactor = 0.4; // spin * 5° 효과를 속도 변화로 표현
+        // 쿠션 충돌 - 스핀 효과 완화
+        const spinAngleFactor = 0.15; // 쿠션에서 스핀이 반사각에 미치는 영향
         
         if (ball.x <= margin) {
           ball.x = margin;
@@ -1242,7 +1239,7 @@
 
     function simulateShot(angleDeg, power) {
       const angle = angleDeg * Math.PI / 180;
-      const speed = power * 0.15;
+      const speed = power * 0.08; // 실제 발사와 동일
       
       // 시뮬레이션용 임시 위치/속도
       let cueX = balls[0].x;
@@ -1256,8 +1253,8 @@
       
       const margin = TABLE.railWidth;
       const br = TABLE.ballRadius;
-      const restitution = 0.85;
-      const friction = 0.995;
+      const restitution = 0.88; // 실제 물리와 동일
+      const friction = 0.996;
       
       // 적구 위치 저장 (시뮬레이션 중 적구는 움직이지 않음)
       const ball1 = { x: balls[1].x, y: balls[1].y };
@@ -1467,11 +1464,11 @@
       state.selectedSolution = null;
       state.solutions = [];
       
-      const speed = power * 0.15;
+      const speed = power * 0.08; // 적절한 속도 (100파워 = 8 픽셀/프레임)
       balls[0].vx = Math.cos(angle) * speed;
       balls[0].vy = Math.sin(angle) * speed;
-      balls[0].spinX = state.spin.x * speed * 0.3;
-      balls[0].spinY = state.spin.y * speed * 0.3;
+      balls[0].spinX = state.spin.x * 0.5; // 스핀은 고정값 (-3~+3 → -1.5~+1.5)
+      balls[0].spinY = state.spin.y * 0.5;
       
       state.trajectoryPoints = [{ x: balls[0].x, y: balls[0].y }];
     }
