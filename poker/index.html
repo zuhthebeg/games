@@ -805,9 +805,9 @@
             <!-- Players will be listed here -->
         </div>
         
-        <div class="waiting-actions">
+        <div class="waiting-actions" id="waitingActions">
             <button class="btn" id="readyBtn" onclick="toggleReady()">준비</button>
-            <button class="btn primary" id="startBtn" onclick="startMultiplayerGame()" style="display:none;">게임 시작</button>
+            <button class="btn primary" id="startBtn" onclick="startMultiplayerGame()">게임 시작</button>
         </div>
         <p id="waitingMessage" style="color:#9ca3af;margin-top:15px;">다른 플레이어를 기다리는 중...</p>
     </div>
@@ -1720,7 +1720,17 @@
             document.getElementById('lobby').classList.add('hidden');
             document.getElementById('waitingRoom').classList.remove('hidden');
             document.getElementById('displayRoomCode').textContent = roomCode;
-            document.getElementById('startBtn').style.display = isHost ? 'block' : 'none';
+            
+            // Reset button states
+            const startBtn = document.getElementById('startBtn');
+            const readyBtn = document.getElementById('readyBtn');
+            startBtn.classList.remove('loading');
+            readyBtn.classList.remove('loading');
+            
+            // Host: show start button, hide ready button
+            // Non-host: show ready button, hide start button
+            startBtn.style.display = isHost ? 'inline-block' : 'none';
+            readyBtn.style.display = isHost ? 'none' : 'inline-block';
             
             // Generate QR code
             const joinUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
@@ -1751,6 +1761,18 @@
             const playerList = document.getElementById('playerList');
             const myId = multiplayerClient.getMyUserId();
             
+            // Update isHost based on server state
+            const me = state.players.find(p => p.id === myId);
+            if (me) {
+                isHost = me.isHost;
+            }
+            
+            // Update button visibility based on host status
+            const startBtn = document.getElementById('startBtn');
+            const readyBtn = document.getElementById('readyBtn');
+            startBtn.style.display = isHost ? 'inline-block' : 'none';
+            readyBtn.style.display = isHost ? 'none' : 'inline-block';
+            
             playerList.innerHTML = state.players.map(p => `
                 <div class="player-item">
                     <span class="name">${p.isHost ? '👑 ' : ''}${p.nickname || 'Player'} ${p.id === myId ? '(나)' : ''}</span>
@@ -1758,12 +1780,16 @@
                 </div>
             `).join('');
             
-            // Update start button visibility
+            // Update start button for host
             if (isHost) {
-                const allReady = state.players.filter(p => !p.isHost).every(p => p.isReady);
+                const others = state.players.filter(p => !p.isHost);
+                const allReady = others.length > 0 && others.every(p => p.isReady);
                 const canStart = state.players.length >= 2 && allReady;
-                document.getElementById('startBtn').disabled = !canStart;
+                startBtn.disabled = !canStart;
+                startBtn.classList.remove('loading'); // Clear loading state
                 document.getElementById('waitingMessage').textContent = canStart ? '게임을 시작할 수 있습니다!' : '다른 플레이어를 기다리는 중...';
+            } else {
+                document.getElementById('waitingMessage').textContent = myReady ? '방장이 시작하기를 기다리는 중...' : '준비 버튼을 눌러주세요';
             }
             
             // Check if game started
@@ -2128,8 +2154,12 @@
             
             // Reset ready state
             myReady = false;
-            document.getElementById('readyBtn').textContent = '준비';
-            document.getElementById('readyBtn').classList.remove('primary');
+            const readyBtn = document.getElementById('readyBtn');
+            const startBtn = document.getElementById('startBtn');
+            readyBtn.textContent = '준비';
+            readyBtn.classList.remove('primary', 'loading');
+            startBtn.classList.remove('loading');
+            startBtn.disabled = true;
             
             refreshWaitingRoom();
         }
@@ -2243,6 +2273,6 @@
         // Check for room code in URL
         checkUrlRoom();
     </script>
-    <script src="multiplayer.js?v=5"></script>
+    <script src="multiplayer.js?v=6"></script>
 </body>
 </html>
