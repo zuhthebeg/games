@@ -1769,10 +1769,11 @@
             const playerList = document.getElementById('playerList');
             const myId = multiplayerClient.getMyUserId();
             
-            // Update isHost based on server state
+            // Update isHost and myReady based on server state
             const me = state.players.find(p => p.id === myId);
             if (me) {
                 isHost = me.isHost;
+                myReady = me.isReady;
             }
             
             // Update button visibility based on host status
@@ -1782,6 +1783,10 @@
             startBtn.style.display = isHost ? 'inline-block' : 'none';
             readyBtn.style.display = isHost ? 'none' : 'inline-block';
             destroyBtn.style.display = isHost ? 'inline-block' : 'none';
+            
+            // Sync ready button text with server state
+            readyBtn.textContent = myReady ? '준비취소' : '준비';
+            readyBtn.classList.toggle('primary', myReady);
             
             playerList.innerHTML = state.players.map(p => `
                 <div class="player-item">
@@ -1831,13 +1836,14 @@
             btn.classList.add('loading');
             
             try {
-                myReady = !myReady;
-                await multiplayerClient.setReady(myReady);
+                const newReady = !myReady;
+                await multiplayerClient.setReady(newReady);
+                // Server confirmed, now update local state
+                myReady = newReady;
                 btn.textContent = myReady ? '준비취소' : '준비';
                 btn.classList.toggle('primary', myReady);
             } catch (e) {
-                myReady = !myReady; // rollback
-                alert('준비 상태 변경 실패');
+                alert('준비 상태 변경 실패: ' + e.message);
             } finally {
                 btn.classList.remove('loading');
             }
@@ -2214,15 +2220,18 @@
             document.getElementById('gameContainer').style.display = 'none';
             document.getElementById('waitingRoom').classList.remove('hidden');
             
-            // Reset ready state
-            myReady = false;
+            // Reset button loading states
             const readyBtn = document.getElementById('readyBtn');
             const startBtn = document.getElementById('startBtn');
-            readyBtn.textContent = '준비';
-            readyBtn.classList.remove('primary', 'loading');
+            readyBtn.classList.remove('loading');
             startBtn.classList.remove('loading');
             startBtn.disabled = true;
             
+            // Reconnect event listeners for waiting room
+            multiplayerClient.onStateChange = updateWaitingRoom;
+            multiplayerClient.onEvent = handleMultiplayerEvent;
+            
+            // Fetch latest state (this will sync myReady and isHost)
             refreshWaitingRoom();
         }
 
@@ -2239,31 +2248,29 @@
             leaveMultiplayerGame(true); // skip confirm
         }
 
-        function leaveMultiplayerGame(skipConfirm = false) {
+        async function leaveMultiplayerGame(skipConfirm = false) {
             if (skipConfirm || confirm('게임을 나가시겠습니까?')) {
-                leaveWaitingRoom();
+                if (multiplayerClient) {
+                    try {
+                        await multiplayerClient.leaveRoom();
+                    } catch (e) {
+                        console.error('Leave error:', e);
+                    }
+                    MultiplayerClient.resetInstance();
+                    multiplayerClient = null;
+                }
+                
+                isHost = false;
+                myReady = false;
+                isMultiplayer = false;
                 document.getElementById('gameContainer').style.display = 'none';
+                document.getElementById('waitingRoom').classList.add('hidden');
+                document.getElementById('lobby').classList.remove('hidden');
+                
                 // Reset header
                 const header = document.querySelector('.header-buttons');
                 header.innerHTML = '<button class="btn" onclick="showRules()">📖 룰</button><button class="btn primary" onclick="newGame()">새 게임</button>';
             }
-        }
-
-        async function leaveWaitingRoom() {
-            if (multiplayerClient) {
-                try {
-                    await multiplayerClient.leaveRoom();
-                } catch (e) {
-                    console.error('Leave error:', e);
-                }
-                multiplayerClient.stopListening();
-                multiplayerClient = null;
-            }
-            
-            isHost = false;
-            myReady = false;
-            document.getElementById('waitingRoom').classList.add('hidden');
-            document.getElementById('modeSelect').classList.remove('hidden');
         }
 
         function copyRoomCode() {
