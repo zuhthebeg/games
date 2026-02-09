@@ -689,6 +689,55 @@
         }
 
         .copy-btn:hover { background: rgba(255,255,255,0.1); }
+
+        /* Loading States */
+        .btn.loading, .mode-btn.loading {
+            pointer-events: none;
+            opacity: 0.7;
+            position: relative;
+        }
+
+        .btn.loading::after, .mode-btn.loading::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .share-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .share-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: var(--text);
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .share-btn:hover { background: rgba(255,255,255,0.2); }
+        .share-btn.primary { background: var(--chip); color: #000; border-color: var(--chip); }
     </style>
 </head>
 <body>
@@ -740,7 +789,10 @@
         <h2>대기실</h2>
         <div class="room-code-label">방 코드</div>
         <div class="room-code" id="displayRoomCode">------</div>
-        <button class="copy-btn" onclick="copyRoomCode()">📋 코드 복사</button>
+        <div class="share-buttons">
+            <button class="share-btn" onclick="copyRoomCode()">📋 코드 복사</button>
+            <button class="share-btn primary" onclick="shareRoomLink()">🔗 링크 공유</button>
+        </div>
         
         <div class="player-list" id="playerList">
             <!-- Players will be listed here -->
@@ -1557,6 +1609,9 @@
         }
 
         async function createMultiplayerRoom() {
+            const btn = event.target;
+            if (btn.classList.contains('loading')) return;
+            
             const nickname = document.getElementById('nicknameInput').value.trim();
             if (!nickname || nickname.length < 2) {
                 alert('닉네임을 2자 이상 입력하세요');
@@ -1564,6 +1619,7 @@
             }
             
             localStorage.setItem('poker_nickname', nickname);
+            btn.classList.add('loading');
             
             try {
                 multiplayerClient = new MultiplayerClient();
@@ -1575,10 +1631,15 @@
                 showWaitingRoom(room.roomId);
             } catch (e) {
                 alert('방 생성 실패: ' + e.message);
+            } finally {
+                btn.classList.remove('loading');
             }
         }
 
         async function joinMultiplayerRoom() {
+            const btn = event.target;
+            if (btn.classList.contains('loading')) return;
+            
             const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
             if (!roomCode || roomCode.length !== 6) {
                 alert('6자리 방 코드를 입력하세요');
@@ -1590,6 +1651,7 @@
                 nickname = 'Player_' + Math.random().toString(36).substr(2, 4);
             }
             localStorage.setItem('poker_nickname', nickname);
+            btn.classList.add('loading');
             
             try {
                 multiplayerClient = new MultiplayerClient();
@@ -1601,6 +1663,8 @@
                 showWaitingRoom(roomCode);
             } catch (e) {
                 alert('입장 실패: ' + e.message);
+            } finally {
+                btn.classList.remove('loading');
             }
         }
 
@@ -1664,22 +1728,34 @@
         }
 
         async function toggleReady() {
+            const btn = document.getElementById('readyBtn');
+            if (btn.classList.contains('loading')) return;
+            btn.classList.add('loading');
+            
             try {
                 myReady = !myReady;
                 await multiplayerClient.setReady(myReady);
-                document.getElementById('readyBtn').textContent = myReady ? '준비취소' : '준비';
-                document.getElementById('readyBtn').classList.toggle('primary', myReady);
+                btn.textContent = myReady ? '준비취소' : '준비';
+                btn.classList.toggle('primary', myReady);
             } catch (e) {
+                myReady = !myReady; // rollback
                 alert('준비 상태 변경 실패');
+            } finally {
+                btn.classList.remove('loading');
             }
         }
 
         async function startMultiplayerGame() {
+            const btn = document.getElementById('startBtn');
+            if (btn.classList.contains('loading') || btn.disabled) return;
+            btn.classList.add('loading');
+            
             try {
                 await multiplayerClient.startGame();
                 // Game will start via event
             } catch (e) {
                 alert('게임 시작 실패: ' + e.message);
+                btn.classList.remove('loading');
             }
         }
 
@@ -1717,12 +1793,54 @@
         function copyRoomCode() {
             const code = document.getElementById('displayRoomCode').textContent;
             navigator.clipboard.writeText(code).then(() => {
-                const btn = document.querySelector('.copy-btn');
-                btn.textContent = '✓ 복사됨!';
-                setTimeout(() => btn.textContent = '📋 코드 복사', 2000);
+                showToast('코드 복사됨!');
             }).catch(() => {
-                alert('코드: ' + code);
+                prompt('코드를 복사하세요:', code);
             });
+        }
+
+        function shareRoomLink() {
+            const code = document.getElementById('displayRoomCode').textContent;
+            const url = `${window.location.origin}${window.location.pathname}?room=${code}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: '포커 게임 초대',
+                    text: `포커 게임에 참가하세요! 방 코드: ${code}`,
+                    url: url
+                }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('링크 복사됨!');
+                }).catch(() => {
+                    prompt('링크를 복사하세요:', url);
+                });
+            }
+        }
+
+        function showToast(msg) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = msg;
+            toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:8px;z-index:999;animation:fadeIn 0.3s;';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        // URL 파라미터로 방 코드가 있으면 자동 입장
+        function checkUrlRoom() {
+            const params = new URLSearchParams(window.location.search);
+            const roomCode = params.get('room');
+            if (roomCode) {
+                // Clear URL params
+                window.history.replaceState({}, '', window.location.pathname);
+                // Show lobby with room code filled
+                showLobby();
+                document.getElementById('roomCodeInput').value = roomCode;
+            }
         }
 
         // Override newGame for single player
@@ -1737,6 +1855,9 @@
 
         // 초기화 - 모드 선택 화면 표시
         // updateDisplay(); // Skip - game container is hidden
+        
+        // Check for room code in URL
+        checkUrlRoom();
     </script>
     <script src="multiplayer.js"></script>
 </body>
