@@ -525,6 +525,7 @@
                 gameName: '🏝️ 카탄',
                 container: document.getElementById('app'),
                 maxPlayers: 4,
+                supportsLocal: false,  // 멀티플레이어 전용
                 onGameStart: handleGameStart,
                 onGameEvent: handleGameEvent,
                 onLeave: () => { gameState = null; myView = null; }
