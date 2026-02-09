@@ -795,6 +795,7 @@
         <h2>대기실</h2>
         <div class="room-code-label">방 코드</div>
         <div class="room-code" id="displayRoomCode">------</div>
+        <div id="qrCode" style="margin:15px 0;"></div>
         <div class="share-buttons">
             <button class="share-btn" onclick="copyRoomCode()">📋 코드 복사</button>
             <button class="share-btn primary" onclick="shareRoomLink()">🔗 링크 공유</button>
@@ -1721,6 +1722,11 @@
             document.getElementById('displayRoomCode').textContent = roomCode;
             document.getElementById('startBtn').style.display = isHost ? 'block' : 'none';
             
+            // Generate QR code
+            const joinUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(joinUrl)}`;
+            document.getElementById('qrCode').innerHTML = `<img src="${qrUrl}" alt="QR Code" style="border-radius:8px;background:#fff;padding:8px;">`;
+            
             // Start listening for updates
             multiplayerClient.onStateChange = updateWaitingRoom;
             multiplayerClient.onEvent = handleMultiplayerEvent;
@@ -2237,6 +2243,6 @@
         // Check for room code in URL
         checkUrlRoom();
     </script>
-    <script src="multiplayer.js?v=4"></script>
+    <script src="multiplayer.js?v=5"></script>
 </body>
 </html>
