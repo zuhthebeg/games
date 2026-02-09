@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>포커 - 1:1 텍사스 홀덤</title>
+    <title>포커 - 텍사스 홀덤</title>
     <link rel="icon" href="icon.svg" type="image/svg+xml">
     <style>
         :root {
@@ -472,10 +472,288 @@
             font-size: 0.9rem;
             color: var(--gold);
         }
+
+        /* ===== Multiplayer UI ===== */
+        .mode-select {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            gap: 20px;
+        }
+
+        .mode-select.hidden { display: none; }
+
+        .mode-select h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .mode-select p {
+            color: #9ca3af;
+            margin-bottom: 30px;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .mode-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding: 30px 40px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: var(--gold);
+            transform: translateY(-4px);
+        }
+
+        .mode-btn .icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .mode-btn .label {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .mode-btn .desc {
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-top: 5px;
+        }
+
+        /* Lobby */
+        .lobby {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            z-index: 200;
+            overflow-y: auto;
+        }
+
+        .lobby.hidden { display: none; }
+
+        .lobby-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .lobby-header h2 {
+            flex: 1;
+            font-size: 1.5rem;
+        }
+
+        .lobby-content {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .lobby-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .lobby-section h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group input {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .input-group input::placeholder {
+            color: #666;
+        }
+
+        /* Waiting Room */
+        .waiting-room {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 200;
+        }
+
+        .waiting-room.hidden { display: none; }
+
+        .room-code {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 8px;
+            color: var(--gold);
+            margin: 20px 0;
+        }
+
+        .room-code-label {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+
+        .player-list {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            margin: 20px 0;
+        }
+
+        .player-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .player-item:last-child { border-bottom: none; }
+
+        .player-item .name { flex: 1; }
+
+        .player-item .status {
+            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .player-item .status.ready {
+            background: var(--chip);
+            color: #000;
+        }
+
+        .player-item .status.host {
+            background: var(--gold);
+            color: #000;
+        }
+
+        .waiting-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .copy-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .copy-btn:hover { background: rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
-    <div class="game-container">
+    <!-- Mode Selection -->
+    <div class="mode-select" id="modeSelect">
+        <h1>🃏 텍사스 홀덤</h1>
+        <p>게임 모드를 선택하세요</p>
+        <div class="mode-buttons">
+            <button class="mode-btn" onclick="startSinglePlayer()">
+                <span class="icon">🤖</span>
+                <span class="label">싱글플레이</span>
+                <span class="desc">AI와 1:1 대전</span>
+            </button>
+            <button class="mode-btn" onclick="showLobby()">
+                <span class="icon">👥</span>
+                <span class="label">멀티플레이</span>
+                <span class="desc">친구와 대전</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Multiplayer Lobby -->
+    <div class="lobby hidden" id="lobby">
+        <div class="lobby-header">
+            <button class="btn" onclick="backToModeSelect()">← 뒤로</button>
+            <h2>👥 멀티플레이</h2>
+        </div>
+        <div class="lobby-content">
+            <div class="lobby-section">
+                <h3>🎮 새 게임 만들기</h3>
+                <div class="input-group">
+                    <input type="text" id="nicknameInput" placeholder="닉네임 입력" maxlength="20">
+                    <button class="btn primary" onclick="createMultiplayerRoom()">방 만들기</button>
+                </div>
+            </div>
+            <div class="lobby-section">
+                <h3>🔗 방 참가하기</h3>
+                <div class="input-group">
+                    <input type="text" id="roomCodeInput" placeholder="방 코드 (6자리)" maxlength="6" style="text-transform: uppercase;">
+                    <button class="btn primary" onclick="joinMultiplayerRoom()">참가</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Waiting Room -->
+    <div class="waiting-room hidden" id="waitingRoom">
+        <button class="btn" onclick="leaveWaitingRoom()" style="position:absolute;top:20px;left:20px;">← 나가기</button>
+        <h2>대기실</h2>
+        <div class="room-code-label">방 코드</div>
+        <div class="room-code" id="displayRoomCode">------</div>
+        <button class="copy-btn" onclick="copyRoomCode()">📋 코드 복사</button>
+        
+        <div class="player-list" id="playerList">
+            <!-- Players will be listed here -->
+        </div>
+        
+        <div class="waiting-actions">
+            <button class="btn" id="readyBtn" onclick="toggleReady()">준비</button>
+            <button class="btn primary" id="startBtn" onclick="startMultiplayerGame()" style="display:none;">게임 시작</button>
+        </div>
+        <p id="waitingMessage" style="color:#9ca3af;margin-top:15px;">다른 플레이어를 기다리는 중...</p>
+    </div>
+
+    <div class="game-container" id="gameContainer" style="display:none;">
         <header>
             <h1>🃏 포커</h1>
             <div class="header-buttons">
@@ -1249,8 +1527,217 @@
             if (e.target.id === 'rulesModal') closeRules();
         });
 
-        // 초기화
-        updateDisplay();
+        // ===== Multiplayer Mode =====
+        let multiplayerClient = null;
+        let isMultiplayer = false;
+        let isHost = false;
+        let myReady = false;
+
+        function startSinglePlayer() {
+            isMultiplayer = false;
+            document.getElementById('modeSelect').classList.add('hidden');
+            document.getElementById('gameContainer').style.display = 'block';
+            updateDisplay();
+        }
+
+        function showLobby() {
+            document.getElementById('modeSelect').classList.add('hidden');
+            document.getElementById('lobby').classList.remove('hidden');
+            
+            // Restore nickname if saved
+            const savedNickname = localStorage.getItem('poker_nickname');
+            if (savedNickname) {
+                document.getElementById('nicknameInput').value = savedNickname;
+            }
+        }
+
+        function backToModeSelect() {
+            document.getElementById('lobby').classList.add('hidden');
+            document.getElementById('modeSelect').classList.remove('hidden');
+        }
+
+        async function createMultiplayerRoom() {
+            const nickname = document.getElementById('nicknameInput').value.trim();
+            if (!nickname || nickname.length < 2) {
+                alert('닉네임을 2자 이상 입력하세요');
+                return;
+            }
+            
+            localStorage.setItem('poker_nickname', nickname);
+            
+            try {
+                multiplayerClient = new MultiplayerClient();
+                await multiplayerClient.ensureAuth();
+                await multiplayerClient.setNickname(nickname);
+                
+                const room = await multiplayerClient.createRoom({ startingChips: 1000, bigBlind: 20 });
+                isHost = true;
+                showWaitingRoom(room.roomId);
+            } catch (e) {
+                alert('방 생성 실패: ' + e.message);
+            }
+        }
+
+        async function joinMultiplayerRoom() {
+            const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            if (!roomCode || roomCode.length !== 6) {
+                alert('6자리 방 코드를 입력하세요');
+                return;
+            }
+            
+            let nickname = document.getElementById('nicknameInput').value.trim();
+            if (!nickname || nickname.length < 2) {
+                nickname = 'Player_' + Math.random().toString(36).substr(2, 4);
+            }
+            localStorage.setItem('poker_nickname', nickname);
+            
+            try {
+                multiplayerClient = new MultiplayerClient();
+                await multiplayerClient.ensureAuth();
+                await multiplayerClient.setNickname(nickname);
+                
+                await multiplayerClient.joinRoom(roomCode);
+                isHost = false;
+                showWaitingRoom(roomCode);
+            } catch (e) {
+                alert('입장 실패: ' + e.message);
+            }
+        }
+
+        function showWaitingRoom(roomCode) {
+            document.getElementById('lobby').classList.add('hidden');
+            document.getElementById('waitingRoom').classList.remove('hidden');
+            document.getElementById('displayRoomCode').textContent = roomCode;
+            document.getElementById('startBtn').style.display = isHost ? 'block' : 'none';
+            
+            // Start listening for updates
+            multiplayerClient.onStateChange = updateWaitingRoom;
+            multiplayerClient.onEvent = handleMultiplayerEvent;
+            multiplayerClient.startListening();
+            
+            // Initial state load
+            refreshWaitingRoom();
+        }
+
+        async function refreshWaitingRoom() {
+            try {
+                const state = await multiplayerClient.getRoomState();
+                updateWaitingRoom(state);
+            } catch (e) {
+                console.error('Failed to refresh:', e);
+            }
+        }
+
+        function updateWaitingRoom(state) {
+            if (!state || !state.players) return;
+            
+            const playerList = document.getElementById('playerList');
+            const myId = multiplayerClient.getMyUserId();
+            
+            playerList.innerHTML = state.players.map(p => `
+                <div class="player-item">
+                    <span class="name">${p.isHost ? '👑 ' : ''}${p.nickname || 'Player'} ${p.id === myId ? '(나)' : ''}</span>
+                    <span class="status ${p.isReady ? 'ready' : ''} ${p.isHost ? 'host' : ''}">${p.isHost ? '방장' : (p.isReady ? '준비완료' : '대기중')}</span>
+                </div>
+            `).join('');
+            
+            // Update start button visibility
+            if (isHost) {
+                const allReady = state.players.filter(p => !p.isHost).every(p => p.isReady);
+                const canStart = state.players.length >= 2 && allReady;
+                document.getElementById('startBtn').disabled = !canStart;
+                document.getElementById('waitingMessage').textContent = canStart ? '게임을 시작할 수 있습니다!' : '다른 플레이어를 기다리는 중...';
+            }
+            
+            // Check if game started
+            if (state.status === 'playing') {
+                startMultiplayerGameFromState(state);
+            }
+        }
+
+        function handleMultiplayerEvent(type, data) {
+            console.log('MP Event:', type, data);
+            
+            if (type === 'game_started') {
+                refreshWaitingRoom();
+            }
+        }
+
+        async function toggleReady() {
+            try {
+                myReady = !myReady;
+                await multiplayerClient.setReady(myReady);
+                document.getElementById('readyBtn').textContent = myReady ? '준비취소' : '준비';
+                document.getElementById('readyBtn').classList.toggle('primary', myReady);
+            } catch (e) {
+                alert('준비 상태 변경 실패');
+            }
+        }
+
+        async function startMultiplayerGame() {
+            try {
+                await multiplayerClient.startGame();
+                // Game will start via event
+            } catch (e) {
+                alert('게임 시작 실패: ' + e.message);
+            }
+        }
+
+        function startMultiplayerGameFromState(state) {
+            isMultiplayer = true;
+            document.getElementById('waitingRoom').classList.add('hidden');
+            document.getElementById('gameContainer').style.display = 'block';
+            
+            // TODO: Update game UI for multiplayer
+            // For now, show message
+            showMessage('멀티플레이어 게임 시작! (구현 중)');
+            
+            // The full multiplayer game rendering would require more extensive changes
+            // to handle multiple players, server-side state, etc.
+            console.log('Multiplayer game state:', state);
+        }
+
+        async function leaveWaitingRoom() {
+            if (multiplayerClient) {
+                try {
+                    await multiplayerClient.leaveRoom();
+                } catch (e) {
+                    console.error('Leave error:', e);
+                }
+                multiplayerClient.stopListening();
+                multiplayerClient = null;
+            }
+            
+            isHost = false;
+            myReady = false;
+            document.getElementById('waitingRoom').classList.add('hidden');
+            document.getElementById('modeSelect').classList.remove('hidden');
+        }
+
+        function copyRoomCode() {
+            const code = document.getElementById('displayRoomCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = '✓ 복사됨!';
+                setTimeout(() => btn.textContent = '📋 코드 복사', 2000);
+            }).catch(() => {
+                alert('코드: ' + code);
+            });
+        }
+
+        // Override newGame for single player
+        const originalNewGame = newGame;
+        newGame = function() {
+            if (isMultiplayer) {
+                // TODO: Handle multiplayer new game
+                return;
+            }
+            originalNewGame();
+        };
+
+        // 초기화 - 모드 선택 화면 표시
+        // updateDisplay(); // Skip - game container is hidden
     </script>
+    <script src="multiplayer.js"></script>
 </body>
 </html>
