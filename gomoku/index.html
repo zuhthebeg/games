@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>오목 - Gomoku</title>
+    <title>?�목 - Gomoku</title>
     <link rel="icon" href="icon.svg">
     <style>
         :root {
@@ -193,8 +193,8 @@
 <body>
     <div id="app"></div>
 
-    <script src="/lib/multiplayer.js"></script>
-    <script src="/lib/multiplayer-ui.js"></script>
+    <script src="/lib/multiplayer.js?v=202602100852"></script>
+    <script src="/lib/multiplayer-ui.js?v=202602100852"></script>
     <script>
         // ===== Game State =====
         const BOARD_SIZE = 15;
@@ -211,7 +211,7 @@
         function init() {
             mpUI = new MultiplayerUI({
                 gameType: 'gomoku',
-                gameName: '⚫⚪ 오목',
+                gameName: '?�⚪ ?�목',
                 container: document.getElementById('app'),
                 maxPlayers: 2,
                 onGameStart: handleGameStart,
@@ -275,7 +275,7 @@
                 }
             };
             
-            showToast(`게임 시작! 당신은 ${myColor === 'black' ? '흑' : '백'}입니다`);
+            showToast(`게임 ?�작! ?�신?� ${myColor === 'black' ? '?? : '�?}?�니??);
         }
 
         // ===== Board Logic =====
@@ -290,7 +290,7 @@
             
             if (isMultiplayer) {
                 if (myColor !== currentPlayer) {
-                    showToast('상대 차례입니다');
+                    showToast('?��? 차�??�니??);
                     return;
                 }
                 sendMove(row, col);
@@ -314,7 +314,7 @@
                 placeStone(row, col, myColor);
                 renderGame({ lastMove: { row, col } });
             } catch (e) {
-                showToast('실패: ' + e.message);
+                showToast('?�패: ' + e.message);
             }
         }
 
@@ -365,14 +365,14 @@
         function showResult(winner) {
             if (isMultiplayer) {
                 mpUI.showResult({
-                    title: winner === myColor ? '🎉 승리!' : '😢 패배',
-                    detail: (winner === 'black' ? '흑' : '백') + ' 승리',
+                    title: winner === myColor ? '?�� ?�리!' : '?�� ?�배',
+                    detail: (winner === 'black' ? '?? : '�?) + ' ?�리',
                     isWin: winner === myColor,
                     showRematch: true
                 });
             } else {
                 mpUI.showResult({
-                    title: (winner === 'black' ? '⚫ 흑' : '⚪ 백') + ' 승리!',
+                    title: (winner === 'black' ? '???? : '??�?) + ' ?�리!',
                     isWin: null,
                     showRematch: false
                 });
@@ -405,11 +405,11 @@
                     <div class="game-header">
                         <div class="player-info ${currentPlayer === 'black' && !gameOver ? 'active' : ''}">
                             <div class="stone black"></div>
-                            <span>${isMultiplayer ? blackName : '흑'}${gs.players?.find(p => p.color === 'black')?.id === myId ? ' (나)' : ''}</span>
+                            <span>${isMultiplayer ? blackName : '??}${gs.players?.find(p => p.color === 'black')?.id === myId ? ' (??' : ''}</span>
                         </div>
                         <div class="player-info ${currentPlayer === 'white' && !gameOver ? 'active' : ''}">
                             <div class="stone white"></div>
-                            <span>${isMultiplayer ? whiteName : '백'}${gs.players?.find(p => p.color === 'white')?.id === myId ? ' (나)' : ''}</span>
+                            <span>${isMultiplayer ? whiteName : '�?}${gs.players?.find(p => p.color === 'white')?.id === myId ? ' (??' : ''}</span>
                         </div>
                     </div>
                     
@@ -420,13 +420,13 @@
                     <div class="game-status">
                         ${gameOver ? '게임 종료' : 
                           (isMultiplayer ? 
-                            (myColor === currentPlayer ? '내 차례' : '상대 차례') :
-                            (currentPlayer === 'black' ? '흑' : '백') + '의 차례')}
+                            (myColor === currentPlayer ? '??차�?' : '?��? 차�?') :
+                            (currentPlayer === 'black' ? '?? : '�?) + '??차�?')}
                     </div>
                     
                     <div class="game-actions">
-                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">새 게임</button>' : ''}
-                        <button class="btn" onclick="exitGame()">나가기</button>
+                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">??게임</button>' : ''}
+                        <button class="btn" onclick="exitGame()">?��?�?/button>
                     </div>
                 </div>
             `;
@@ -477,7 +477,7 @@
 
         function exitGame() {
             if (isMultiplayer && mpUI.getClient()) {
-                if (confirm('게임을 나가시겠습니까?')) {
+                if (confirm('게임???��??�겠?�니�?')) {
                     mpUI.getClient().leaveRoom().catch(() => {});
                     MultiplayerClient.resetInstance();
                     isMultiplayer = false;

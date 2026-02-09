@@ -491,22 +491,22 @@
 <body>
     <div id="app"></div>
 
-    <script src="/lib/multiplayer.js"></script>
-    <script src="/lib/multiplayer-ui.js"></script>
+    <script src="/lib/multiplayer.js?v=202602100852"></script>
+    <script src="/lib/multiplayer-ui.js?v=202602100852"></script>
     <script>
         // ===== Constants =====
         const RESOURCE_ICONS = {
-            brick: '🧱',
-            lumber: '🌲',
-            wool: '🐑',
-            grain: '🌾',
+            brick: '?��',
+            lumber: '?��',
+            wool: '?��',
+            grain: '?��',
             ore: '�ite'
         };
 
         const RESOURCE_NAMES = {
             brick: '벽돌',
-            lumber: '나무',
-            wool: '양모',
+            lumber: '?�무',
+            wool: '?�모',
             grain: '밀',
             ore: '광석'
         };
@@ -522,10 +522,10 @@
         function init() {
             mpUI = new MultiplayerUI({
                 gameType: 'catan',
-                gameName: '🏝️ 카탄',
+                gameName: '?���?카탄',
                 container: document.getElementById('app'),
                 maxPlayers: 4,
-                supportsLocal: false,  // 멀티플레이어 전용
+                supportsLocal: false,  // 멀?�플?�이???�용
                 onGameStart: handleGameStart,
                 onGameEvent: handleGameEvent,
                 onLeave: () => { gameState = null; myView = null; }
@@ -556,7 +556,7 @@
             };
             
             renderGame();
-            showToast('게임 시작! 초기 마을을 배치하세요');
+            showToast('게임 ?�작! 초기 마을??배치?�세??);
         }
 
         function handleGameEvent(type, data) {
@@ -586,9 +586,9 @@
                                  style="border-color: ${p.color}">
                                 <div class="name" style="color: ${p.color}">${p.nickname}</div>
                                 <div class="stats">
-                                    <span>🃏 ${p.resourceCount || 0}</span>
-                                    <span>🏆 ${p.victoryPoints || 0}점</span>
-                                    ${p.usedKnights ? `<span>⚔️ ${p.usedKnights}</span>` : ''}
+                                    <span>?�� ${p.resourceCount || 0}</span>
+                                    <span>?�� ${p.victoryPoints || 0}??/span>
+                                    ${p.usedKnights ? `<span>?�️ ${p.usedKnights}</span>` : ''}
                                 </div>
                             </div>
                         `).join('')}
@@ -624,7 +624,7 @@
                     
                     <!-- Build menu -->
                     <div class="build-menu ${buildMode ? 'active' : ''}" id="buildMenu">
-                        <h3>건설하기</h3>
+                        <h3>건설?�기</h3>
                         <div class="build-options">
                             ${renderBuildOptions()}
                         </div>
@@ -639,59 +639,59 @@
         function getStatusMessage(gs, isMyTurn, currentPlayer) {
             if (gs.winner) {
                 const winner = gs.players.find(p => p.id === gs.winner);
-                return `🎉 ${winner?.nickname} 승리!`;
+                return `?�� ${winner?.nickname} ?�리!`;
             }
             
             if (gs.turnPhase === 'setup1' || gs.turnPhase === 'setup2') {
-                return isMyTurn ? '🏠 마을과 도로를 배치하세요' : `${currentPlayer?.nickname}의 배치 차례`;
+                return isMyTurn ? '?�� 마을�??�로�?배치?�세?? : `${currentPlayer?.nickname}??배치 차�?`;
             }
             
             if (gs.turnPhase === 'roll') {
-                return isMyTurn ? '🎲 주사위를 굴리세요' : `${currentPlayer?.nickname}의 주사위 차례`;
+                return isMyTurn ? '?�� 주사?��? 굴리?�요' : `${currentPlayer?.nickname}??주사??차�?`;
             }
             
             if (gs.turnPhase === 'robber') {
-                return isMyTurn ? '🏴‍☠️ 도둑을 이동하세요' : `${currentPlayer?.nickname}이 도둑을 이동 중`;
+                return isMyTurn ? '?��?�☠�??�둑???�동?�세?? : `${currentPlayer?.nickname}???�둑???�동 �?;
             }
             
             if (gs.turnPhase === 'discard') {
-                return myView?.mustDiscard ? '❌ 카드를 버리세요' : '다른 플레이어가 카드를 버리는 중...';
+                return myView?.mustDiscard ? '??카드�?버리?�요' : '?�른 ?�레?�어가 카드�?버리??�?..';
             }
             
             if (gs.turnPhase === 'main') {
                 if (gs.lastRoll) {
                     return isMyTurn ? 
-                        `🎲 ${gs.lastRoll[0]}+${gs.lastRoll[1]}=${gs.lastRoll[0]+gs.lastRoll[1]} | 건설, 거래, 턴 종료` :
-                        `${currentPlayer?.nickname}의 차례`;
+                        `?�� ${gs.lastRoll[0]}+${gs.lastRoll[1]}=${gs.lastRoll[0]+gs.lastRoll[1]} | 건설, 거래, ??종료` :
+                        `${currentPlayer?.nickname}??차�?`;
                 }
             }
             
-            return isMyTurn ? '내 차례' : `${currentPlayer?.nickname}의 차례`;
+            return isMyTurn ? '??차�?' : `${currentPlayer?.nickname}??차�?`;
         }
 
         function renderActionButtons(gs, isMyTurn) {
             const buttons = [];
             
             if (gs.turnPhase === 'roll' && isMyTurn) {
-                buttons.push(`<button class="btn primary" onclick="rollDice()">🎲 주사위</button>`);
+                buttons.push(`<button class="btn primary" onclick="rollDice()">?�� 주사??/button>`);
             }
             
             if (gs.turnPhase === 'main' && isMyTurn) {
-                buttons.push(`<button class="btn" onclick="toggleBuildMenu()">🏗️ 건설</button>`);
-                buttons.push(`<button class="btn" onclick="showTradeModal()">🤝 거래</button>`);
-                buttons.push(`<button class="btn" onclick="endTurn()">✅ 턴 종료</button>`);
+                buttons.push(`<button class="btn" onclick="toggleBuildMenu()">?���?건설</button>`);
+                buttons.push(`<button class="btn" onclick="showTradeModal()">?�� 거래</button>`);
+                buttons.push(`<button class="btn" onclick="endTurn()">????종료</button>`);
             }
             
             if ((gs.turnPhase === 'setup1' || gs.turnPhase === 'setup2') && isMyTurn) {
-                buttons.push(`<button class="btn primary" onclick="setBuildMode('settlement')">🏠 마을</button>`);
-                buttons.push(`<button class="btn primary" onclick="setBuildMode('road')">🛤️ 도로</button>`);
+                buttons.push(`<button class="btn primary" onclick="setBuildMode('settlement')">?�� 마을</button>`);
+                buttons.push(`<button class="btn primary" onclick="setBuildMode('road')">?���??�로</button>`);
             }
             
             if (!isMyTurn) {
-                buttons.push(`<button class="btn" disabled>대기 중...</button>`);
+                buttons.push(`<button class="btn" disabled>?��?�?..</button>`);
             }
             
-            buttons.push(`<button class="btn danger" onclick="exitGame()">나가기</button>`);
+            buttons.push(`<button class="btn danger" onclick="exitGame()">?��?�?/button>`);
             
             return buttons.join('');
         }
@@ -706,27 +706,27 @@
             
             return `
                 <div class="build-option ${canRoad ? '' : 'disabled'}" onclick="setBuildMode('road')">
-                    <span class="icon">🛤️</span>
-                    <span>도로</span>
-                    <span class="cost">🧱1 🌲1</span>
+                    <span class="icon">?���?/span>
+                    <span>?�로</span>
+                    <span class="cost">?��1 ?��1</span>
                 </div>
                 <div class="build-option ${canSettlement ? '' : 'disabled'}" onclick="setBuildMode('settlement')">
-                    <span class="icon">🏠</span>
+                    <span class="icon">?��</span>
                     <span>마을</span>
-                    <span class="cost">🧱1 🌲1 🐑1 🌾1</span>
+                    <span class="cost">?��1 ?��1 ?��1 ?��1</span>
                 </div>
                 <div class="build-option ${canCity ? '' : 'disabled'}" onclick="setBuildMode('city')">
-                    <span class="icon">🏰</span>
-                    <span>도시</span>
-                    <span class="cost">🌾2 ⛰️3</span>
+                    <span class="icon">?��</span>
+                    <span>?�시</span>
+                    <span class="cost">?��2 ?�️3</span>
                 </div>
                 <div class="build-option ${canDevCard ? '' : 'disabled'}" onclick="buyDevCard()">
-                    <span class="icon">🃏</span>
+                    <span class="icon">?��</span>
                     <span>개발카드</span>
-                    <span class="cost">🐑1 🌾1 ⛰️1</span>
+                    <span class="cost">?��1 ?��1 ?�️1</span>
                 </div>
                 <div class="build-option" onclick="closeBuildMenu()">
-                    <span class="icon">❌</span>
+                    <span class="icon">??/span>
                     <span>취소</span>
                 </div>
             `;
@@ -750,7 +750,7 @@
                     <div class="hex ${hex.type}" style="left: ${pos.x}px; top: ${pos.y}px" data-hex="${idx}">
                         <span class="resource-icon">${getHexIcon(hex.type)}</span>
                         ${hex.number ? `<span class="number ${isHot ? 'hot' : ''}">${hex.number}</span>` : ''}
-                        ${hex.hasRobber ? '<span class="robber">🏴‍☠️</span>' : ''}
+                        ${hex.hasRobber ? '<span class="robber">?��?�☠�?/span>' : ''}
                     </div>
                 `;
             });
@@ -791,12 +791,12 @@
 
         function getHexIcon(type) {
             const icons = {
-                brick: '🧱',
-                lumber: '🌲',
-                wool: '🐑',
-                grain: '🌾',
-                ore: '⛰️',
-                desert: '🏜️'
+                brick: '?��',
+                lumber: '?��',
+                wool: '?��',
+                grain: '?��',
+                ore: '?�️',
+                desert: '?���?
             };
             return icons[type] || '';
         }
@@ -818,7 +818,7 @@
             try {
                 await mpUI.sendAction({ type: 'roll_dice' });
             } catch (e) {
-                showToast('실패: ' + e.message);
+                showToast('?�패: ' + e.message);
             }
         }
 
@@ -843,7 +843,7 @@
             try {
                 await mpUI.sendAction({ type: 'end_turn' });
             } catch (e) {
-                showToast('실패: ' + e.message);
+                showToast('?�패: ' + e.message);
             }
         }
 
@@ -860,7 +860,7 @@
 
         function setBuildMode(mode) {
             buildMode = mode;
-            showToast(`${mode === 'settlement' ? '마을' : mode === 'road' ? '도로' : '도시'} 건설 위치를 선택하세요`);
+            showToast(`${mode === 'settlement' ? '마을' : mode === 'road' ? '?�로' : '?�시'} 건설 ?�치�??�택?�세??);
             closeBuildMenu();
             renderGame();
         }
@@ -870,7 +870,7 @@
                 await mpUI.sendAction({ type: 'build_settlement', payload: { vertexIndex } });
                 buildMode = null;
             } catch (e) {
-                showToast('실패: ' + e.message);
+                showToast('?�패: ' + e.message);
             }
         }
 
@@ -879,7 +879,7 @@
                 await mpUI.sendAction({ type: 'build_road', payload: { edgeIndex } });
                 buildMode = null;
             } catch (e) {
-                showToast('실패: ' + e.message);
+                showToast('?�패: ' + e.message);
             }
         }
 
@@ -888,7 +888,7 @@
                 await mpUI.sendAction({ type: 'build_city', payload: { vertexIndex } });
                 buildMode = null;
             } catch (e) {
-                showToast('실패: ' + e.message);
+                showToast('?�패: ' + e.message);
             }
         }
 
@@ -896,9 +896,9 @@
             try {
                 await mpUI.sendAction({ type: 'buy_dev_card' });
                 closeBuildMenu();
-                showToast('개발 카드를 구매했습니다!');
+                showToast('개발 카드�?구매?�습?�다!');
             } catch (e) {
-                showToast('실패: ' + e.message);
+                showToast('?�패: ' + e.message);
             }
         }
 
@@ -907,17 +907,17 @@
             try {
                 await mpUI.sendAction({ type: 'move_robber', payload: { hexIndex } });
             } catch (e) {
-                showToast('실패: ' + e.message);
+                showToast('?�패: ' + e.message);
             }
         }
 
         function showTradeModal() {
-            showToast('거래 기능 준비 중...');
+            showToast('거래 기능 준�?�?..');
             // TODO: Implement trade modal
         }
 
         function exitGame() {
-            if (confirm('게임을 나가시겠습니까?')) {
+            if (confirm('게임???��??�겠?�니�?')) {
                 if (mpUI.getClient()) {
                     mpUI.getClient().leaveRoom().catch(() => {});
                     MultiplayerClient.resetInstance();

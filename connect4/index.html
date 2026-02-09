@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>삼인 사목 - Connect 4</title>
+    <title>?�인 ?�목 - Connect 4</title>
     <link rel="icon" href="icon.svg">
     <style>
         :root {
@@ -214,8 +214,8 @@
 <body>
     <div id="app"></div>
 
-    <script src="/lib/multiplayer.js"></script>
-    <script src="/lib/multiplayer-ui.js"></script>
+    <script src="/lib/multiplayer.js?v=202602100852"></script>
+    <script src="/lib/multiplayer-ui.js?v=202602100852"></script>
     <script>
         // ===== Constants =====
         const COLS = 7;
@@ -237,10 +237,10 @@
         function init() {
             mpUI = new MultiplayerUI({
                 gameType: 'connect4',
-                gameName: '🔴🟡🔵 삼인 사목',
+                gameName: '?��?��?�� ?�인 ?�목',
                 container: document.getElementById('app'),
                 maxPlayers: 3,
-                supportsLocal: false,  // 멀티플레이어 전용
+                supportsLocal: false,  // 멀?�플?�이???�용
                 onGameStart: handleGameStart,
                 onGameEvent: handleGameEvent,
                 onLeave: () => { isMultiplayer = false; }
@@ -307,11 +307,11 @@
                 }
             };
             
-            showToast(`게임 시작! 당신은 ${getColorName(myColor)}입니다`);
+            showToast(`게임 ?�작! ?�신?� ${getColorName(myColor)}?�니??);
         }
 
         function getColorName(color) {
-            return { red: '빨강🔴', yellow: '노랑🟡', blue: '파랑🔵' }[color] || color;
+            return { red: '빨강?��', yellow: '?�랑?��', blue: '?�랑?��' }[color] || color;
         }
 
         // ===== Board Logic =====
@@ -332,7 +332,7 @@
             if (isMultiplayer) {
                 const myId = mpUI.getClient().getMyUserId();
                 if (currentPlayer.id !== myId) {
-                    showToast('당신의 차례가 아닙니다');
+                    showToast('?�신??차�?가 ?�닙?�다');
                     return;
                 }
                 sendDrop(col);
@@ -360,7 +360,7 @@
             try {
                 await mpUI.sendAction({ type: 'drop', payload: { col } });
             } catch (e) {
-                showToast('실패: ' + e.message);
+                showToast('?�패: ' + e.message);
             }
         }
 
@@ -442,14 +442,14 @@
                 const myId = mpUI.getClient().getMyUserId();
                 const isWin = winnerPlayer?.id === myId;
                 mpUI.showResult({
-                    title: isWin ? '🎉 승리!' : '😢 패배',
-                    detail: winnerPlayer ? `${getColorName(winnerPlayer.color)} ${winnerPlayer.nickname} 승리` : '무승부',
+                    title: isWin ? '?�� ?�리!' : '?�� ?�배',
+                    detail: winnerPlayer ? `${getColorName(winnerPlayer.color)} ${winnerPlayer.nickname} ?�리` : '무승부',
                     isWin,
                     showRematch: true
                 });
             } else {
                 mpUI.showResult({
-                    title: winnerPlayer ? `${getColorName(winnerPlayer.color)} 승리!` : '무승부',
+                    title: winnerPlayer ? `${getColorName(winnerPlayer.color)} ?�리!` : '무승부',
                     isWin: null,
                     showRematch: false
                 });
@@ -475,7 +475,7 @@
                         ${players.map((p, i) => `
                             <div class="player-tag ${p.color} ${i === currentPlayerIndex && !gameOver ? 'active' : ''}">
                                 <div class="disc ${p.color}"></div>
-                                <span>${p.nickname}${p.id === myId ? ' (나)' : ''}</span>
+                                <span>${p.nickname}${p.id === myId ? ' (??' : ''}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -484,8 +484,8 @@
                         ${gameOver ? '게임 종료' : `
                             <div class="disc ${currentPlayer?.color}"></div>
                             <span>${isMultiplayer ? 
-                                (isMyTurn ? '내 차례!' : `${currentPlayer?.nickname}의 차례`) : 
-                                `${currentPlayer?.nickname}의 차례`}</span>
+                                (isMyTurn ? '??차�?!' : `${currentPlayer?.nickname}??차�?`) : 
+                                `${currentPlayer?.nickname}??차�?`}</span>
                         `}
                     </div>
                     
@@ -495,8 +495,7 @@
                                 <button class="col-btn" 
                                         onclick="handleDrop(${col})"
                                         ${gameOver || board[0][col] !== null || (isMultiplayer && !isMyTurn) ? 'disabled' : ''}>
-                                    ▼
-                                </button>
+                                    ??                                </button>
                             `).join('')}
                         </div>
                         
@@ -506,8 +505,8 @@
                     </div>
                     
                     <div class="game-actions">
-                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">새 게임</button>' : ''}
-                        <button class="btn" onclick="exitGame()">나가기</button>
+                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">??게임</button>' : ''}
+                        <button class="btn" onclick="exitGame()">?��?�?/button>
                     </div>
                 </div>
             `;
@@ -537,7 +536,7 @@
 
         function exitGame() {
             if (isMultiplayer && mpUI.getClient()) {
-                if (confirm('게임을 나가시겠습니까?')) {
+                if (confirm('게임???��??�겠?�니�?')) {
                     mpUI.getClient().leaveRoom().catch(() => {});
                     MultiplayerClient.resetInstance();
                     isMultiplayer = false;
