@@ -58,7 +58,15 @@ class MultiplayerClient {
                 bigBlind: config.bigBlind || 20,
             },
             maxPlayers: config.maxPlayers || 8,
+            isPublic: config.isPublic || false,
         });
+        this.roomId = res.roomId;
+        return res;
+    }
+
+    async joinRandom(gameType = 'poker') {
+        await this.ensureAuth();
+        const res = await this.request('POST', '/api/match/random', { gameType });
         this.roomId = res.roomId;
         return res;
     }

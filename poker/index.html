@@ -768,16 +768,22 @@
         <div class="lobby-content">
             <div class="lobby-section">
                 <h3>🎮 새 게임 만들기</h3>
-                <div class="input-group">
+                <div class="input-group" style="margin-bottom:10px;">
                     <input type="text" id="nicknameInput" placeholder="닉네임 입력" maxlength="20">
-                    <button class="btn primary" onclick="createMultiplayerRoom()">방 만들기</button>
                 </div>
+                <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;">
+                    <input type="checkbox" id="publicRoomCheck" checked style="width:18px;height:18px;">
+                    <span>🌐 랜덤 참가 허용 (공개 방)</span>
+                </label>
+                <button class="btn primary" onclick="createMultiplayerRoom()" style="width:100%;">방 만들기</button>
             </div>
             <div class="lobby-section">
-                <h3>🔗 방 참가하기</h3>
+                <h3>🎲 빠른 참가</h3>
+                <button class="btn primary" onclick="joinRandomRoom()" style="width:100%;margin-bottom:12px;">🎲 랜덤 매칭</button>
+                <div style="text-align:center;color:#666;margin:8px 0;">또는</div>
                 <div class="input-group">
                     <input type="text" id="roomCodeInput" placeholder="방 코드 (6자리)" maxlength="6" style="text-transform: uppercase;">
-                    <button class="btn primary" onclick="joinMultiplayerRoom()">참가</button>
+                    <button class="btn" onclick="joinMultiplayerRoom()">참가</button>
                 </div>
             </div>
         </div>
@@ -1622,15 +1628,51 @@
             btn.classList.add('loading');
             
             try {
+                const isPublic = document.getElementById('publicRoomCheck').checked;
+                
                 multiplayerClient = new MultiplayerClient();
                 await multiplayerClient.ensureAuth();
                 await multiplayerClient.setNickname(nickname);
                 
-                const room = await multiplayerClient.createRoom({ startingChips: 1000, bigBlind: 20 });
+                const room = await multiplayerClient.createRoom({ startingChips: 1000, bigBlind: 20, isPublic });
                 isHost = true;
                 showWaitingRoom(room.roomId);
             } catch (e) {
                 alert('방 생성 실패: ' + e.message);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        }
+
+        async function joinRandomRoom() {
+            const btn = event.target;
+            if (btn.classList.contains('loading')) return;
+            
+            let nickname = document.getElementById('nicknameInput').value.trim();
+            if (!nickname || nickname.length < 2) {
+                nickname = 'Player_' + Math.random().toString(36).substr(2, 4);
+            }
+            localStorage.setItem('poker_nickname', nickname);
+            btn.classList.add('loading');
+            
+            try {
+                multiplayerClient = new MultiplayerClient();
+                await multiplayerClient.ensureAuth();
+                await multiplayerClient.setNickname(nickname);
+                
+                const result = await multiplayerClient.joinRandom('poker');
+                isHost = false;
+                showWaitingRoom(result.roomId);
+                
+                if (result.alreadyJoined) {
+                    showToast('이미 참가한 방입니다');
+                }
+            } catch (e) {
+                if (e.message.includes('공개 방이 없')) {
+                    alert('현재 참가 가능한 공개 방이 없습니다.\n새 방을 만들어보세요!');
+                } else {
+                    alert('랜덤 매칭 실패: ' + e.message);
+                }
             } finally {
                 btn.classList.remove('loading');
             }
