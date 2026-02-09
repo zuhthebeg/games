@@ -1,5 +1,19 @@
 [
     {
+        "title": "삼인 사목",
+        "icon": "https://game.cocy.io/connect4/icon.svg",
+        "url": "https://game.cocy.io/connect4/",
+        "desc": "3인 실시간 사목 대결",
+        "badge": "NEW",
+        "platforms": [
+            "WEB"
+        ],
+        "languages": [
+            "🌍"
+        ],
+        "category": "game"
+    },
+    {
         "title": "오목",
         "icon": "https://game.cocy.io/gomoku/icon.svg",
         "url": "https://game.cocy.io/gomoku/",
