@@ -303,6 +303,16 @@
 
     <script>
         const categories = {
+            'multiplayer': {
+                icon: '👥',
+                title: '멀티플레이어',
+                games: ['poker', 'gomoku', 'connect4', 'catan']
+            },
+            'simulation': {
+                icon: '🎱',
+                title: '시뮬레이션',
+                games: ['billiards']
+            },
             'puzzle': {
                 icon: '🧩',
                 title: '퍼즐 게임',
@@ -326,6 +336,11 @@
         };
 
         const gamesData = {
+            'poker': { title: '텍사스 홀덤', desc: '1:1 실시간 포커 대결', badge: 'NEW', badgeClass: 'badge-new', icon: '🃏' },
+            'gomoku': { title: '오목', desc: '1:1 실시간 오목 대결', badge: 'NEW', badgeClass: 'badge-new', icon: '⚫' },
+            'connect4': { title: '삼인 사목', desc: '2-3인 실시간 사목 대결', badge: 'NEW', badgeClass: 'badge-new', icon: '🔴' },
+            'catan': { title: '카탄', desc: '3-4인 전략 보드게임', badge: 'NEW', badgeClass: 'badge-new', icon: '🏝️' },
+            'billiards': { title: '3쿠션 당구', desc: 'PBA 스타일 당구 시뮬레이터', badge: 'HOT', badgeClass: 'badge-hot', icon: '🎱' },
             'number-guess': { title: '숫자 맞추기', desc: '간단한 숫자 맞추기 게임', badge: 'NEW', badgeClass: 'badge-new', icon: '🎲' },
             'rps': { title: '가위바위보', desc: '클래식 가위바위보 게임', badge: 'NEW', badgeClass: 'badge-new', icon: '✊' },
             'tileslider': { title: '타일 슬라이더', desc: '슬라이딩 숫자/이미지 퍼즐', badge: 'HOT', badgeClass: 'badge-hot', icon: '🔢' },
