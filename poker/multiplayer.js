@@ -116,6 +116,10 @@ class MultiplayerClient {
         return await this.sendAction({ type: 'allin' });
     }
 
+    async rematch() {
+        return await this.request('POST', `/api/rooms/${this.roomId}/rematch`);
+    }
+
     // ===== Real-time Updates =====
     startListening() {
         if (!this.roomId || !this.token) return;

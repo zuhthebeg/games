@@ -1988,15 +1988,13 @@
             const overlay = document.getElementById('resultOverlay');
             const title = document.getElementById('resultTitle');
             const detail = document.getElementById('resultDetail');
-            const nextBtn = overlay.querySelector('button');
             
             const gs = state.gameState;
             const myId = multiplayerClient.getMyUserId();
             const me = gs.players.find(p => p.id === myId);
             const opponent = gs.players.find(p => p.id !== myId);
             
-            // Determine winner by chip count change (simple heuristic)
-            // In reality we'd track this from win events
+            // Determine winner by chip count change
             if (me.chips > opponent.chips) {
                 title.textContent = '🎉 이번 핸드 승리!';
                 title.className = 'result-title win';
@@ -2009,19 +2007,64 @@
             }
             
             detail.textContent = `내 칩: ${me.chips} | 상대 칩: ${opponent.chips}`;
-            nextBtn.textContent = '대기실로';
-            nextBtn.onclick = () => {
-                overlay.classList.remove('active');
-                // Go back to waiting room for next hand
+            
+            // Replace button with rematch options
+            const existingBtn = overlay.querySelector('button');
+            if (existingBtn) existingBtn.remove();
+            
+            const btnContainer = document.createElement('div');
+            btnContainer.style.cssText = 'display:flex;gap:10px;justify-content:center;margin-top:20px;';
+            btnContainer.innerHTML = `
+                <button class="btn primary" onclick="requestRematch()">🔄 리매치</button>
+                <button class="btn" onclick="exitToLobby()">나가기</button>
+            `;
+            overlay.appendChild(btnContainer);
+            
+            overlay.classList.add('active');
+        }
+
+        async function requestRematch() {
+            const btn = event.target;
+            if (btn.classList.contains('loading')) return;
+            btn.classList.add('loading');
+            
+            try {
+                await multiplayerClient.rematch();
+                
+                // Go back to waiting room
+                document.getElementById('resultOverlay').classList.remove('active');
+                // Remove added buttons
+                const btnContainer = document.querySelector('#resultOverlay > div[style*="flex"]');
+                if (btnContainer) btnContainer.remove();
+                // Restore original button
+                const overlay = document.getElementById('resultOverlay');
+                if (!overlay.querySelector('button.btn.primary[onclick="nextHand()"]')) {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn primary';
+                    btn.onclick = nextHand;
+                    btn.textContent = '다음 핸드';
+                    overlay.appendChild(btn);
+                }
+                
                 document.getElementById('gameContainer').style.display = 'none';
                 document.getElementById('waitingRoom').classList.remove('hidden');
                 myReady = false;
                 document.getElementById('readyBtn').textContent = '준비';
                 document.getElementById('readyBtn').classList.remove('primary');
                 refreshWaitingRoom();
-            };
+            } catch (e) {
+                alert('리매치 요청 실패: ' + e.message);
+                btn.classList.remove('loading');
+            }
+        }
+
+        function exitToLobby() {
+            document.getElementById('resultOverlay').classList.remove('active');
+            // Remove added buttons
+            const btnContainer = document.querySelector('#resultOverlay > div[style*="flex"]');
+            if (btnContainer) btnContainer.remove();
             
-            overlay.classList.add('active');
+            leaveMultiplayerGame();
         }
 
         function leaveMultiplayerGame() {
