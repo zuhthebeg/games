@@ -1735,10 +1735,15 @@
             readyBtn.style.display = isHost ? 'none' : 'inline-block';
             document.getElementById('destroyBtn').style.display = isHost ? 'inline-block' : 'none';
             
-            // Generate QR code
-            const joinUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
+            // Generate QR code with room code
+            const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '');
+            const joinUrl = `${baseUrl}/?room=${roomCode}`;
+            console.log('QR URL:', joinUrl); // debug
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(joinUrl)}`;
-            document.getElementById('qrCode').innerHTML = `<img src="${qrUrl}" alt="QR Code" style="border-radius:8px;background:#fff;padding:8px;">`;
+            document.getElementById('qrCode').innerHTML = `
+                <img src="${qrUrl}" alt="QR Code" style="border-radius:8px;background:#fff;padding:8px;">
+                <div style="font-size:0.7rem;color:#666;margin-top:4px;">${joinUrl}</div>
+            `;
             
             // Start listening for updates
             multiplayerClient.onStateChange = updateWaitingRoom;
