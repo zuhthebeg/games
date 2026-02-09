@@ -1,5 +1,19 @@
 [
     {
+        "title": "카탄",
+        "icon": "https://game.cocy.io/catan/icon.svg",
+        "url": "https://game.cocy.io/catan/",
+        "desc": "3-4인 전략 보드게임 - 자원, 건설, 거래",
+        "badge": "NEW",
+        "platforms": [
+            "WEB"
+        ],
+        "languages": [
+            "🌍"
+        ],
+        "category": "game"
+    },
+    {
         "title": "삼인 사목",
         "icon": "https://game.cocy.io/connect4/icon.svg",
         "url": "https://game.cocy.io/connect4/",

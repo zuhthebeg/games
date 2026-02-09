@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Ocean background -->
+  <rect width="100" height="100" fill="#2c5f8a" rx="12"/>
+  
+  <!-- Hex tiles -->
+  <polygon points="50,15 70,27 70,52 50,64 30,52 30,27" fill="#228b22"/>
+  <polygon points="30,52 50,64 50,89 30,77 10,65 10,40" fill="#ffd700"/>
+  <polygon points="70,52 90,40 90,65 70,77 50,89 50,64" fill="#b5651d"/>
+  
+  <!-- Number token -->
+  <circle cx="50" cy="40" r="12" fill="#e6c87a"/>
+  <text x="50" y="45" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">8</text>
+  
+  <!-- Settlement -->
+  <path d="M 25 70 L 25 80 L 15 80 L 15 70 L 20 65 Z" fill="#e74c3c"/>
+  
+  <!-- Road -->
+  <rect x="75" y="70" width="15" height="5" rx="2" fill="#3498db" transform="rotate(-30 82 72)"/>
+</svg>

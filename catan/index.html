@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>카탄 - Catan</title>
+    <link rel="icon" href="icon.svg">
+    <style>
+        :root {
+            --bg: #1a3d5c;
+            --ocean: #2c5f8a;
+            --sand: #e6c87a;
+            --text: #fff;
+            --brick: #b5651d;
+            --lumber: #228b22;
+            --wool: #90ee90;
+            --grain: #ffd700;
+            --ore: #708090;
+            --desert: #deb887;
+            --accent: #4ecca3;
+            --danger: #ff6b6b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--ocean);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        #app { min-height: 100vh; }
+
+        /* ===== Game Screen Layout ===== */
+        .game-screen {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Top bar - other players */
+        .top-bar {
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(0,0,0,0.2);
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+
+        .player-card {
+            flex-shrink: 0;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 8px 12px;
+            min-width: 120px;
+            border-left: 4px solid #666;
+        }
+
+        .player-card.active {
+            background: rgba(255,255,255,0.1);
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .player-card .name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .player-card .stats {
+            display: flex;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: #aaa;
+        }
+
+        /* Map container */
+        .map-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            overflow: auto;
+            touch-action: pan-x pan-y;
+        }
+
+        .map-wrapper {
+            position: relative;
+            transform-origin: center;
+        }
+
+        /* Hexagonal grid */
+        .hex-grid {
+            position: relative;
+        }
+
+        .hex {
+            position: absolute;
+            width: 70px;
+            height: 80px;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .hex:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .hex.brick { background: var(--brick); }
+        .hex.lumber { background: var(--lumber); }
+        .hex.wool { background: var(--wool); }
+        .hex.grain { background: var(--grain); }
+        .hex.ore { background: var(--ore); }
+        .hex.desert { background: var(--desert); }
+
+        .hex .number {
+            background: var(--sand);
+            color: #333;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hex .number.hot {
+            color: #c00;
+        }
+
+        .hex .resource-icon {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+
+        .hex .robber {
+            position: absolute;
+            font-size: 1.5rem;
+        }
+
+        /* Vertices (settlements/cities) */
+        .vertex {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 20;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .vertex:hover, .vertex.buildable {
+            opacity: 1;
+        }
+
+        .vertex.buildable {
+            background: rgba(78, 204, 163, 0.5);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        .vertex.settlement, .vertex.city {
+            opacity: 1;
+            background: none;
+        }
+
+        .vertex .building {
+            font-size: 1.2rem;
+        }
+
+        /* Edges (roads) */
+        .edge {
+            position: absolute;
+            width: 30px;
+            height: 8px;
+            transform-origin: center;
+            cursor: pointer;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .edge:hover, .edge.buildable {
+            opacity: 1;
+        }
+
+        .edge.buildable {
+            background: rgba(78, 204, 163, 0.5);
+        }
+
+        .edge.road {
+            opacity: 1;
+            height: 10px;
+        }
+
+        /* Bottom panel - my resources & actions */
+        .bottom-panel {
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            padding: 12px;
+            flex-shrink: 0;
+        }
+
+        .my-resources {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .resource-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            min-width: 50px;
+        }
+
+        .resource-item .icon {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+
+        .resource-item .count {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            background: rgba(255,255,255,0.15);
+            color: var(--text);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn.primary {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .btn.danger {
+            background: var(--danger);
+        }
+
+        .btn.loading::after {
+            content: '';
+            width: 14px;
+            height: 14px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 6px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Dice display */
+        .dice-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 20px;
+            z-index: 100;
+            animation: dice-in 0.5s ease-out;
+        }
+
+        @keyframes dice-in {
+            from { transform: translate(-50%, -50%) scale(0) rotate(180deg); }
+            to { transform: translate(-50%, -50%) scale(1) rotate(0); }
+        }
+
+        .dice {
+            width: 60px;
+            height: 60px;
+            background: #fff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #333;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        /* Status message */
+        .status-bar {
+            text-align: center;
+            padding: 8px;
+            font-size: 0.9rem;
+            background: rgba(0,0,0,0.2);
+        }
+
+        /* Build menu */
+        .build-menu {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            border-radius: 12px;
+            padding: 16px;
+            display: none;
+            z-index: 50;
+        }
+
+        .build-menu.active {
+            display: block;
+        }
+
+        .build-menu h3 {
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .build-options {
+            display: flex;
+            gap: 12px;
+        }
+
+        .build-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .build-option:hover:not(.disabled) {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .build-option.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .build-option .icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .build-option .cost {
+            font-size: 0.75rem;
+            color: #aaa;
+        }
+
+        /* Trade modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 300;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .hex {
+                width: 50px;
+                height: 58px;
+            }
+            
+            .hex .number {
+                width: 22px;
+                height: 22px;
+                font-size: 0.75rem;
+            }
+            
+            .resource-item {
+                padding: 6px 8px;
+                min-width: 40px;
+            }
+            
+            .resource-item .icon {
+                font-size: 1.2rem;
+            }
+            
+            .btn {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .game-screen {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            
+            .top-bar {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .map-container {
+                flex: 1;
+            }
+            
+            .bottom-panel {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script src="/lib/multiplayer.js"></script>
+    <script src="/lib/multiplayer-ui.js"></script>
+    <script>
+        // ===== Constants =====
+        const RESOURCE_ICONS = {
+            brick: '🧱',
+            lumber: '🌲',
+            wool: '🐑',
+            grain: '🌾',
+            ore: '�ite'
+        };
+
+        const RESOURCE_NAMES = {
+            brick: '벽돌',
+            lumber: '나무',
+            wool: '양모',
+            grain: '밀',
+            ore: '광석'
+        };
+
+        // ===== State =====
+        let mpUI = null;
+        let gameState = null;
+        let myView = null;
+        let buildMode = null; // 'settlement', 'road', 'city', null
+        let showingDice = false;
+
+        // ===== Initialize =====
+        function init() {
+            mpUI = new MultiplayerUI({
+                gameType: 'catan',
+                gameName: '🏝️ 카탄',
+                container: document.getElementById('app'),
+                maxPlayers: 4,
+                onGameStart: handleGameStart,
+                onGameEvent: handleGameEvent,
+                onLeave: () => { gameState = null; myView = null; }
+            });
+
+            const roomCode = MultiplayerUI.checkUrlRoom();
+            if (roomCode) {
+                mpUI._renderLobby();
+                setTimeout(() => {
+                    document.getElementById('mp-room-code').value = roomCode;
+                }, 100);
+            } else {
+                mpUI.show();
+            }
+        }
+
+        // ===== Game Start =====
+        function handleGameStart(state) {
+            gameState = state;
+            myView = state.myView || {};
+            
+            mpUI.getClient().onStateChange = (newState) => {
+                if (newState.status === 'playing') {
+                    gameState = newState;
+                    myView = newState.myView || {};
+                    renderGame();
+                }
+            };
+            
+            renderGame();
+            showToast('게임 시작! 초기 마을을 배치하세요');
+        }
+
+        function handleGameEvent(type, data) {
+            console.log('Event:', type, data);
+            
+            if (type === 'roll') {
+                showDice(data.payload.dice);
+            }
+        }
+
+        // ===== Render Game =====
+        function renderGame() {
+            if (!gameState || !gameState.gameState) return;
+            
+            const gs = gameState.gameState;
+            const myId = mpUI.getClient().getMyUserId();
+            const me = gs.players.find(p => p.id === myId);
+            const currentPlayer = gs.players[gs.currentPlayerIndex];
+            const isMyTurn = currentPlayer?.id === myId;
+            
+            document.getElementById('app').innerHTML = `
+                <div class="game-screen">
+                    <!-- Other players -->
+                    <div class="top-bar">
+                        ${gs.players.filter(p => p.id !== myId).map(p => `
+                            <div class="player-card ${gs.currentPlayerIndex === gs.players.indexOf(p) ? 'active' : ''}" 
+                                 style="border-color: ${p.color}">
+                                <div class="name" style="color: ${p.color}">${p.nickname}</div>
+                                <div class="stats">
+                                    <span>🃏 ${p.resourceCount || 0}</span>
+                                    <span>🏆 ${p.victoryPoints || 0}점</span>
+                                    ${p.usedKnights ? `<span>⚔️ ${p.usedKnights}</span>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="status-bar">
+                        ${getStatusMessage(gs, isMyTurn, currentPlayer)}
+                    </div>
+                    
+                    <!-- Map -->
+                    <div class="map-container">
+                        <div class="map-wrapper">
+                            ${renderHexGrid(gs)}
+                        </div>
+                    </div>
+                    
+                    <!-- My panel -->
+                    <div class="bottom-panel">
+                        <div class="my-resources">
+                            ${Object.entries(myView.resources || {}).map(([res, count]) => `
+                                <div class="resource-item">
+                                    <span class="icon">${RESOURCE_ICONS[res]}</span>
+                                    <span class="count">${count}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="action-buttons">
+                            ${renderActionButtons(gs, isMyTurn)}
+                        </div>
+                    </div>
+                    
+                    <!-- Build menu -->
+                    <div class="build-menu ${buildMode ? 'active' : ''}" id="buildMenu">
+                        <h3>건설하기</h3>
+                        <div class="build-options">
+                            ${renderBuildOptions()}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add event listeners for hex grid
+            setupMapListeners(gs);
+        }
+
+        function getStatusMessage(gs, isMyTurn, currentPlayer) {
+            if (gs.winner) {
+                const winner = gs.players.find(p => p.id === gs.winner);
+                return `🎉 ${winner?.nickname} 승리!`;
+            }
+            
+            if (gs.turnPhase === 'setup1' || gs.turnPhase === 'setup2') {
+                return isMyTurn ? '🏠 마을과 도로를 배치하세요' : `${currentPlayer?.nickname}의 배치 차례`;
+            }
+            
+            if (gs.turnPhase === 'roll') {
+                return isMyTurn ? '🎲 주사위를 굴리세요' : `${currentPlayer?.nickname}의 주사위 차례`;
+            }
+            
+            if (gs.turnPhase === 'robber') {
+                return isMyTurn ? '🏴‍☠️ 도둑을 이동하세요' : `${currentPlayer?.nickname}이 도둑을 이동 중`;
+            }
+            
+            if (gs.turnPhase === 'discard') {
+                return myView?.mustDiscard ? '❌ 카드를 버리세요' : '다른 플레이어가 카드를 버리는 중...';
+            }
+            
+            if (gs.turnPhase === 'main') {
+                if (gs.lastRoll) {
+                    return isMyTurn ? 
+                        `🎲 ${gs.lastRoll[0]}+${gs.lastRoll[1]}=${gs.lastRoll[0]+gs.lastRoll[1]} | 건설, 거래, 턴 종료` :
+                        `${currentPlayer?.nickname}의 차례`;
+                }
+            }
+            
+            return isMyTurn ? '내 차례' : `${currentPlayer?.nickname}의 차례`;
+        }
+
+        function renderActionButtons(gs, isMyTurn) {
+            const buttons = [];
+            
+            if (gs.turnPhase === 'roll' && isMyTurn) {
+                buttons.push(`<button class="btn primary" onclick="rollDice()">🎲 주사위</button>`);
+            }
+            
+            if (gs.turnPhase === 'main' && isMyTurn) {
+                buttons.push(`<button class="btn" onclick="toggleBuildMenu()">🏗️ 건설</button>`);
+                buttons.push(`<button class="btn" onclick="showTradeModal()">🤝 거래</button>`);
+                buttons.push(`<button class="btn" onclick="endTurn()">✅ 턴 종료</button>`);
+            }
+            
+            if ((gs.turnPhase === 'setup1' || gs.turnPhase === 'setup2') && isMyTurn) {
+                buttons.push(`<button class="btn primary" onclick="setBuildMode('settlement')">🏠 마을</button>`);
+                buttons.push(`<button class="btn primary" onclick="setBuildMode('road')">🛤️ 도로</button>`);
+            }
+            
+            if (!isMyTurn) {
+                buttons.push(`<button class="btn" disabled>대기 중...</button>`);
+            }
+            
+            buttons.push(`<button class="btn danger" onclick="exitGame()">나가기</button>`);
+            
+            return buttons.join('');
+        }
+
+        function renderBuildOptions() {
+            const res = myView?.resources || {};
+            
+            const canRoad = res.brick >= 1 && res.lumber >= 1;
+            const canSettlement = res.brick >= 1 && res.lumber >= 1 && res.wool >= 1 && res.grain >= 1;
+            const canCity = res.grain >= 2 && res.ore >= 3;
+            const canDevCard = res.wool >= 1 && res.grain >= 1 && res.ore >= 1;
+            
+            return `
+                <div class="build-option ${canRoad ? '' : 'disabled'}" onclick="setBuildMode('road')">
+                    <span class="icon">🛤️</span>
+                    <span>도로</span>
+                    <span class="cost">🧱1 🌲1</span>
+                </div>
+                <div class="build-option ${canSettlement ? '' : 'disabled'}" onclick="setBuildMode('settlement')">
+                    <span class="icon">🏠</span>
+                    <span>마을</span>
+                    <span class="cost">🧱1 🌲1 🐑1 🌾1</span>
+                </div>
+                <div class="build-option ${canCity ? '' : 'disabled'}" onclick="setBuildMode('city')">
+                    <span class="icon">🏰</span>
+                    <span>도시</span>
+                    <span class="cost">🌾2 ⛰️3</span>
+                </div>
+                <div class="build-option ${canDevCard ? '' : 'disabled'}" onclick="buyDevCard()">
+                    <span class="icon">🃏</span>
+                    <span>개발카드</span>
+                    <span class="cost">🐑1 🌾1 ⛰️1</span>
+                </div>
+                <div class="build-option" onclick="closeBuildMenu()">
+                    <span class="icon">❌</span>
+                    <span>취소</span>
+                </div>
+            `;
+        }
+
+        // ===== Hex Grid Rendering =====
+        function renderHexGrid(gs) {
+            if (!gs.hexes) return '';
+            
+            // Hex positions (pre-calculated for 3-4-5-4-3 layout)
+            const hexPositions = calculateHexPositions();
+            
+            let html = '<div class="hex-grid">';
+            
+            // Render hexes
+            gs.hexes.forEach((hex, idx) => {
+                const pos = hexPositions[idx];
+                const isHot = hex.number === 6 || hex.number === 8;
+                
+                html += `
+                    <div class="hex ${hex.type}" style="left: ${pos.x}px; top: ${pos.y}px" data-hex="${idx}">
+                        <span class="resource-icon">${getHexIcon(hex.type)}</span>
+                        ${hex.number ? `<span class="number ${isHot ? 'hot' : ''}">${hex.number}</span>` : ''}
+                        ${hex.hasRobber ? '<span class="robber">🏴‍☠️</span>' : ''}
+                    </div>
+                `;
+            });
+            
+            // Render vertices (simplified - just corners of hexes)
+            // In a real implementation, we'd calculate exact vertex positions
+            
+            html += '</div>';
+            return html;
+        }
+
+        function calculateHexPositions() {
+            // Pre-calculated positions for 19 hexes in 3-4-5-4-3 pattern
+            const hexWidth = window.innerWidth < 600 ? 50 : 70;
+            const hexHeight = window.innerWidth < 600 ? 58 : 80;
+            const offsetX = hexWidth * 0.75;
+            const offsetY = hexHeight * 0.5;
+            
+            const rows = [3, 4, 5, 4, 3];
+            const positions = [];
+            let idx = 0;
+            
+            const totalWidth = 5 * offsetX;
+            const totalHeight = 5 * hexHeight * 0.75;
+            
+            rows.forEach((count, rowIdx) => {
+                const rowOffset = (5 - count) * offsetX / 2;
+                for (let col = 0; col < count; col++) {
+                    positions.push({
+                        x: rowOffset + col * offsetX,
+                        y: rowIdx * hexHeight * 0.75
+                    });
+                }
+            });
+            
+            return positions;
+        }
+
+        function getHexIcon(type) {
+            const icons = {
+                brick: '🧱',
+                lumber: '🌲',
+                wool: '🐑',
+                grain: '🌾',
+                ore: '⛰️',
+                desert: '🏜️'
+            };
+            return icons[type] || '';
+        }
+
+        function setupMapListeners(gs) {
+            // Add click handlers to hexes for robber movement
+            document.querySelectorAll('.hex').forEach(hex => {
+                hex.onclick = () => {
+                    if (gs.turnPhase === 'robber') {
+                        const hexIdx = parseInt(hex.dataset.hex);
+                        moveRobber(hexIdx);
+                    }
+                };
+            });
+        }
+
+        // ===== Actions =====
+        async function rollDice() {
+            try {
+                await mpUI.sendAction({ type: 'roll_dice' });
+            } catch (e) {
+                showToast('실패: ' + e.message);
+            }
+        }
+
+        function showDice(dice) {
+            showingDice = true;
+            
+            const display = document.createElement('div');
+            display.className = 'dice-display';
+            display.innerHTML = `
+                <div class="dice">${dice[0]}</div>
+                <div class="dice">${dice[1]}</div>
+            `;
+            document.body.appendChild(display);
+            
+            setTimeout(() => {
+                display.remove();
+                showingDice = false;
+            }, 2000);
+        }
+
+        async function endTurn() {
+            try {
+                await mpUI.sendAction({ type: 'end_turn' });
+            } catch (e) {
+                showToast('실패: ' + e.message);
+            }
+        }
+
+        function toggleBuildMenu() {
+            const menu = document.getElementById('buildMenu');
+            menu?.classList.toggle('active');
+        }
+
+        function closeBuildMenu() {
+            const menu = document.getElementById('buildMenu');
+            menu?.classList.remove('active');
+            buildMode = null;
+        }
+
+        function setBuildMode(mode) {
+            buildMode = mode;
+            showToast(`${mode === 'settlement' ? '마을' : mode === 'road' ? '도로' : '도시'} 건설 위치를 선택하세요`);
+            closeBuildMenu();
+            renderGame();
+        }
+
+        async function buildSettlement(vertexIndex) {
+            try {
+                await mpUI.sendAction({ type: 'build_settlement', payload: { vertexIndex } });
+                buildMode = null;
+            } catch (e) {
+                showToast('실패: ' + e.message);
+            }
+        }
+
+        async function buildRoad(edgeIndex) {
+            try {
+                await mpUI.sendAction({ type: 'build_road', payload: { edgeIndex } });
+                buildMode = null;
+            } catch (e) {
+                showToast('실패: ' + e.message);
+            }
+        }
+
+        async function buildCity(vertexIndex) {
+            try {
+                await mpUI.sendAction({ type: 'build_city', payload: { vertexIndex } });
+                buildMode = null;
+            } catch (e) {
+                showToast('실패: ' + e.message);
+            }
+        }
+
+        async function buyDevCard() {
+            try {
+                await mpUI.sendAction({ type: 'buy_dev_card' });
+                closeBuildMenu();
+                showToast('개발 카드를 구매했습니다!');
+            } catch (e) {
+                showToast('실패: ' + e.message);
+            }
+        }
+
+        async function moveRobber(hexIndex) {
+            // For simplicity, no steal target selection
+            try {
+                await mpUI.sendAction({ type: 'move_robber', payload: { hexIndex } });
+            } catch (e) {
+                showToast('실패: ' + e.message);
+            }
+        }
+
+        function showTradeModal() {
+            showToast('거래 기능 준비 중...');
+            // TODO: Implement trade modal
+        }
+
+        function exitGame() {
+            if (confirm('게임을 나가시겠습니까?')) {
+                if (mpUI.getClient()) {
+                    mpUI.getClient().leaveRoom().catch(() => {});
+                    MultiplayerClient.resetInstance();
+                }
+                mpUI.show();
+            }
+        }
+
+        function showToast(msg) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
+        init();
+    </script>
+</body>
+</html>
