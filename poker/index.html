@@ -808,6 +808,8 @@
         <div class="waiting-actions" id="waitingActions">
             <button class="btn" id="readyBtn" onclick="toggleReady()">준비</button>
             <button class="btn primary" id="startBtn" onclick="startMultiplayerGame()">게임 시작</button>
+            <button class="btn" id="leaveBtn" onclick="leaveWaitingRoom()">나가기</button>
+            <button class="btn" id="destroyBtn" onclick="destroyRoom()" style="background:#ef4444;border-color:#ef4444;display:none;">🗑️ 방 폭파</button>
         </div>
         <p id="waitingMessage" style="color:#9ca3af;margin-top:15px;">다른 플레이어를 기다리는 중...</p>
     </div>
@@ -1727,10 +1729,11 @@
             startBtn.classList.remove('loading');
             readyBtn.classList.remove('loading');
             
-            // Host: show start button, hide ready button
-            // Non-host: show ready button, hide start button
+            // Host: show start button & destroy button, hide ready button
+            // Non-host: show ready button, hide start & destroy buttons
             startBtn.style.display = isHost ? 'inline-block' : 'none';
             readyBtn.style.display = isHost ? 'none' : 'inline-block';
+            document.getElementById('destroyBtn').style.display = isHost ? 'inline-block' : 'none';
             
             // Generate QR code
             const joinUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
@@ -1770,8 +1773,10 @@
             // Update button visibility based on host status
             const startBtn = document.getElementById('startBtn');
             const readyBtn = document.getElementById('readyBtn');
+            const destroyBtn = document.getElementById('destroyBtn');
             startBtn.style.display = isHost ? 'inline-block' : 'none';
             readyBtn.style.display = isHost ? 'none' : 'inline-block';
+            destroyBtn.style.display = isHost ? 'inline-block' : 'none';
             
             playerList.innerHTML = state.players.map(p => `
                 <div class="player-item">
@@ -1803,6 +1808,15 @@
             
             if (type === 'game_started') {
                 refreshWaitingRoom();
+            } else if (type === 'room_destroyed') {
+                // Room was destroyed by host
+                MultiplayerClient.resetInstance();
+                multiplayerClient = null;
+                isHost = false;
+                myReady = false;
+                document.getElementById('waitingRoom').classList.add('hidden');
+                document.getElementById('lobby').classList.remove('hidden');
+                alert('방이 폭파되었습니다.');
             }
         }
 
@@ -1819,6 +1833,49 @@
             } catch (e) {
                 myReady = !myReady; // rollback
                 alert('준비 상태 변경 실패');
+            } finally {
+                btn.classList.remove('loading');
+            }
+        }
+
+        async function leaveWaitingRoom() {
+            const btn = document.getElementById('leaveBtn');
+            if (btn.classList.contains('loading')) return;
+            btn.classList.add('loading');
+            
+            try {
+                await multiplayerClient.leaveRoom();
+                MultiplayerClient.resetInstance();
+                multiplayerClient = null;
+                isHost = false;
+                myReady = false;
+                document.getElementById('waitingRoom').classList.add('hidden');
+                document.getElementById('lobby').classList.remove('hidden');
+            } catch (e) {
+                console.error('Leave error:', e);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        }
+
+        async function destroyRoom() {
+            if (!confirm('정말 방을 폭파하시겠습니까?\n모든 플레이어가 퇴장됩니다.')) return;
+            
+            const btn = document.getElementById('destroyBtn');
+            if (btn.classList.contains('loading')) return;
+            btn.classList.add('loading');
+            
+            try {
+                await multiplayerClient.destroyRoom();
+                MultiplayerClient.resetInstance();
+                multiplayerClient = null;
+                isHost = false;
+                myReady = false;
+                document.getElementById('waitingRoom').classList.add('hidden');
+                document.getElementById('lobby').classList.remove('hidden');
+                showToast('방이 폭파되었습니다');
+            } catch (e) {
+                alert('방 폭파 실패: ' + e.message);
             } finally {
                 btn.classList.remove('loading');
             }

@@ -134,6 +134,21 @@ class MultiplayerClient {
         }
     }
 
+    async destroyRoom() {
+        if (!this.roomId) return { message: 'Not in a room' };
+        this.stopListening();
+        const roomId = this.roomId;
+        this.roomId = null;
+        this.lastSeq = 0;
+        try {
+            const res = await this.request('POST', `/api/rooms/${roomId}/destroy`);
+            return res;
+        } catch (e) {
+            console.log('Destroy room error:', e.message);
+            throw e;
+        }
+    }
+
     async getRoomState() {
         if (!this.roomId) throw new Error('Not in a room');
         return await this.request('GET', `/api/rooms/${this.roomId}`);
@@ -232,6 +247,15 @@ class MultiplayerClient {
                 }
             } catch (e) {
                 console.error('Polling error:', e);
+                // If room not found (404), trigger room_destroyed event
+                if (e.status === 404) {
+                    this.stopListening();
+                    this.roomId = null;
+                    this.lastSeq = 0;
+                    if (this.onEvent) {
+                        this.onEvent('room_destroyed', { reason: 'Room no longer exists' });
+                    }
+                }
             }
         }, 1000);
     }
