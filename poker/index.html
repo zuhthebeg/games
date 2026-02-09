@@ -1759,18 +1759,279 @@
             }
         }
 
+        let mpState = null; // Multiplayer game state
+
         function startMultiplayerGameFromState(state) {
             isMultiplayer = true;
+            mpState = state;
+            
             document.getElementById('waitingRoom').classList.add('hidden');
             document.getElementById('gameContainer').style.display = 'block';
             
-            // TODO: Update game UI for multiplayer
-            // For now, show message
-            showMessage('멀티플레이어 게임 시작! (구현 중)');
+            // Update header for multiplayer
+            const header = document.querySelector('.header-buttons');
+            header.innerHTML = '<button class="btn" onclick="showRules()">📖 룰</button><button class="btn" onclick="leaveMultiplayerGame()">나가기</button>';
             
-            // The full multiplayer game rendering would require more extensive changes
-            // to handle multiple players, server-side state, etc.
-            console.log('Multiplayer game state:', state);
+            // Change opponent name
+            const myId = multiplayerClient.getMyUserId();
+            const opponent = state.players.find(p => p.id !== myId);
+            if (opponent) {
+                document.querySelector('.opponent-area .player-name').textContent = '👤 ' + (opponent.nickname || 'Player');
+            }
+            document.querySelector('.my-area .player-name').textContent = '👤 나';
+            
+            // Setup event handlers
+            multiplayerClient.onStateChange = updateMultiplayerDisplay;
+            multiplayerClient.onEvent = handleGameEvent;
+            
+            updateMultiplayerDisplay(state);
+            showMessage('게임 시작!');
+        }
+
+        function updateMultiplayerDisplay(state) {
+            if (!state || !state.gameState) return;
+            mpState = state;
+            
+            const gs = state.gameState;
+            const myView = state.myView || gs;
+            const myId = multiplayerClient.getMyUserId();
+            
+            // Find me and opponent
+            const me = gs.players.find(p => p.id === myId);
+            const opponent = gs.players.find(p => p.id !== myId);
+            
+            if (!me || !opponent) return;
+            
+            // Update chips
+            document.getElementById('myChips').textContent = me.chips;
+            document.getElementById('opponentChips').textContent = opponent.chips;
+            document.getElementById('potAmount').textContent = gs.pot;
+            
+            // Update bets
+            document.getElementById('myBet').textContent = me.bet > 0 ? `베팅: ${me.bet}` : '';
+            document.getElementById('opponentBet').textContent = opponent.bet > 0 ? `베팅: ${opponent.bet}` : '';
+            
+            // My cards
+            const myHand = myView.myHand || [];
+            document.getElementById('myCards').innerHTML = myHand.map(c => renderCard(c)).join('');
+            
+            // Opponent cards (hidden unless showdown)
+            const showOpponent = gs.phase === 'showdown' || gs.phase === 'finished';
+            const oppHand = myView.showdownHands?.[opponent.id] || [];
+            if (showOpponent && oppHand.length > 0) {
+                document.getElementById('opponentCards').innerHTML = oppHand.map(c => renderCard(c)).join('');
+            } else {
+                document.getElementById('opponentCards').innerHTML = opponent.folded ? '' : 
+                    '<div class="card back"></div><div class="card back"></div>';
+            }
+            
+            // Community cards
+            document.getElementById('communityCards').innerHTML = gs.communityCards.map(c => renderCard(c)).join('');
+            
+            // Dealer button
+            const imDealer = gs.dealerSeat === me.seat;
+            document.getElementById('myDealer').style.display = imDealer ? 'inline' : 'none';
+            document.getElementById('opponentDealer').style.display = !imDealer ? 'inline' : 'none';
+            
+            // Hand evaluation display
+            if (myHand.length > 0 && gs.communityCards.length >= 3) {
+                const hand = evaluateHand([...myHand, ...gs.communityCards]);
+                document.getElementById('myHand').textContent = HAND_NAMES[hand.rank];
+                document.getElementById('myHand').style.display = 'block';
+            } else {
+                document.getElementById('myHand').style.display = 'none';
+            }
+            
+            if (showOpponent && oppHand.length > 0 && gs.communityCards.length >= 3) {
+                const hand = evaluateHand([...oppHand, ...gs.communityCards]);
+                document.getElementById('opponentHand').textContent = HAND_NAMES[hand.rank];
+                document.getElementById('opponentHand').style.display = 'block';
+            } else {
+                document.getElementById('opponentHand').style.display = 'none';
+            }
+            
+            // Show phase
+            const phaseNames = { preflop: '프리플랍', flop: '플랍', turn: '턴', river: '리버', showdown: '쇼다운', finished: '종료' };
+            if (gs.phase !== 'finished') {
+                showMessage(phaseNames[gs.phase] || gs.phase);
+            }
+            
+            // Betting controls - only if it's my turn and game is active
+            const isMyTurn = myView.isMyTurn && !me.folded && !me.isAllIn && gs.phase !== 'showdown' && gs.phase !== 'finished';
+            if (isMyTurn) {
+                showMultiplayerBettingControls(me, gs.currentBet, gs.bigBlind);
+            } else {
+                document.getElementById('bettingControls').style.display = 'none';
+            }
+            
+            // Game over
+            if (gs.phase === 'finished') {
+                handleMultiplayerGameEnd(state);
+            }
+        }
+
+        function showMultiplayerBettingControls(me, currentBet, minRaise) {
+            const controls = document.getElementById('bettingControls');
+            const buttons = document.getElementById('betButtons');
+            const raiseContainer = document.getElementById('raiseContainer');
+            
+            controls.style.display = 'block';
+            
+            const toCall = currentBet - me.bet;
+            const canRaise = me.chips > toCall;
+            
+            let html = '<button class="bet-btn fold" onclick="mpAction(\'fold\')">폴드</button>';
+            
+            if (toCall === 0) {
+                html += '<button class="bet-btn check" onclick="mpAction(\'check\')">체크</button>';
+            } else if (toCall > 0 && me.chips >= toCall) {
+                html += `<button class="bet-btn call" onclick="mpAction('call')">콜 (${Math.min(toCall, me.chips)})</button>`;
+            }
+            
+            if (canRaise && me.chips > toCall) {
+                html += '<button class="bet-btn raise" onclick="mpAction(\'raise\')">레이즈</button>';
+                raiseContainer.style.display = 'flex';
+                
+                const slider = document.getElementById('betSlider');
+                const minTotal = currentBet + minRaise;
+                slider.min = minTotal;
+                slider.max = me.chips + me.bet;
+                slider.value = Math.min(minTotal * 2, me.chips + me.bet);
+                updateBetDisplay();
+            } else {
+                raiseContainer.style.display = 'none';
+            }
+            
+            if (me.chips > 0) {
+                html += `<button class="bet-btn allin" onclick="mpAction('allin')">올인 (${me.chips})</button>`;
+            }
+            
+            buttons.innerHTML = html;
+        }
+
+        async function mpAction(action) {
+            // Disable controls while sending
+            document.getElementById('bettingControls').style.display = 'none';
+            
+            try {
+                let result;
+                switch (action) {
+                    case 'fold':
+                        result = await multiplayerClient.fold();
+                        break;
+                    case 'check':
+                        result = await multiplayerClient.check();
+                        break;
+                    case 'call':
+                        result = await multiplayerClient.call();
+                        break;
+                    case 'raise':
+                        const amount = parseInt(document.getElementById('betSlider').value);
+                        result = await multiplayerClient.raise(amount);
+                        break;
+                    case 'allin':
+                        result = await multiplayerClient.allIn();
+                        break;
+                }
+                
+                // State will update via onStateChange
+                if (result && result.gameState) {
+                    updateMultiplayerDisplay({ ...mpState, gameState: result.gameState, myView: result.myView });
+                }
+            } catch (e) {
+                alert('액션 실패: ' + e.message);
+                // Re-fetch state to show controls if still my turn
+                const state = await multiplayerClient.getRoomState();
+                updateMultiplayerDisplay(state);
+            }
+        }
+
+        function handleGameEvent(type, data) {
+            console.log('Game Event:', type, data);
+            
+            // Show action messages
+            const actionMsgs = {
+                fold: '폴드',
+                check: '체크',
+                call: '콜',
+                raise: '레이즈',
+                allin: '올인',
+                flop: '플랍',
+                turn: '턴',
+                river: '리버'
+            };
+            
+            if (actionMsgs[type]) {
+                const myId = multiplayerClient.getMyUserId();
+                const isMe = data.userId === myId;
+                if (!isMe && ['fold', 'check', 'call', 'raise', 'allin'].includes(type)) {
+                    const amount = data.payload?.amount ? ` (${data.payload.amount})` : '';
+                    showToast(`상대: ${actionMsgs[type]}${amount}`);
+                }
+            }
+            
+            if (type === 'win') {
+                const myId = multiplayerClient.getMyUserId();
+                const isMe = data.playerId === myId;
+                setTimeout(() => {
+                    const hand = data.payload?.hand || '';
+                    if (isMe) {
+                        showToast(`🎉 승리! ${hand ? hand + '으로 ' : ''}+${data.payload?.amount}`);
+                    } else {
+                        showToast(`😢 패배 ${hand ? '(상대: ' + hand + ')' : ''}`);
+                    }
+                }, 500);
+            }
+        }
+
+        function handleMultiplayerGameEnd(state) {
+            const overlay = document.getElementById('resultOverlay');
+            const title = document.getElementById('resultTitle');
+            const detail = document.getElementById('resultDetail');
+            const nextBtn = overlay.querySelector('button');
+            
+            const gs = state.gameState;
+            const myId = multiplayerClient.getMyUserId();
+            const me = gs.players.find(p => p.id === myId);
+            const opponent = gs.players.find(p => p.id !== myId);
+            
+            // Determine winner by chip count change (simple heuristic)
+            // In reality we'd track this from win events
+            if (me.chips > opponent.chips) {
+                title.textContent = '🎉 이번 핸드 승리!';
+                title.className = 'result-title win';
+            } else if (me.chips < opponent.chips) {
+                title.textContent = '😢 이번 핸드 패배';
+                title.className = 'result-title lose';
+            } else {
+                title.textContent = '🤝 무승부';
+                title.className = 'result-title tie';
+            }
+            
+            detail.textContent = `내 칩: ${me.chips} | 상대 칩: ${opponent.chips}`;
+            nextBtn.textContent = '대기실로';
+            nextBtn.onclick = () => {
+                overlay.classList.remove('active');
+                // Go back to waiting room for next hand
+                document.getElementById('gameContainer').style.display = 'none';
+                document.getElementById('waitingRoom').classList.remove('hidden');
+                myReady = false;
+                document.getElementById('readyBtn').textContent = '준비';
+                document.getElementById('readyBtn').classList.remove('primary');
+                refreshWaitingRoom();
+            };
+            
+            overlay.classList.add('active');
+        }
+
+        function leaveMultiplayerGame() {
+            if (confirm('게임을 나가시겠습니까?')) {
+                leaveWaitingRoom();
+                document.getElementById('gameContainer').style.display = 'none';
+                // Reset header
+                const header = document.querySelector('.header-buttons');
+                header.innerHTML = '<button class="btn" onclick="showRules()">📖 룰</button><button class="btn primary" onclick="newGame()">새 게임</button>';
+            }
         }
 
         async function leaveWaitingRoom() {
