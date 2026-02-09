@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>오목 - Gomoku</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='35' cy='35' r='15' fill='%23000'/><circle cx='65' cy='65' r='15' fill='%23fff' stroke='%23000' stroke-width='2'/></svg>">
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --board: #dcb35c;
+            --board-line: #8b6914;
+            --text: #eee;
+            --black: #111;
+            --white: #f5f5f5;
+            --accent: #4ecca3;
+            --danger: #ff6b6b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--text);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover { background: rgba(255,255,255,0.2); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn.primary { background: var(--accent); border-color: var(--accent); color: #000; }
+        .btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+        .btn.loading { pointer-events: none; opacity: 0.7; }
+        .btn.loading::after {
+            content: ''; width: 14px; height: 14px;
+            border: 2px solid transparent; border-top-color: currentColor;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+            display: inline-block; margin-left: 8px; vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Mode Selection */
+        .mode-select {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .mode-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .mode-btn {
+            padding: 20px;
+            font-size: 1.1rem;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); }
+
+        /* Lobby */
+        .lobby {
+            max-width: 400px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .lobby.hidden, .waiting-room.hidden, .game-container.hidden { display: none; }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .lobby-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* Waiting Room */
+        .waiting-room {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .room-code {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 6px;
+            color: var(--accent);
+            margin: 15px 0;
+        }
+
+        .player-list {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px;
+            width: 100%;
+            max-width: 350px;
+            margin: 15px 0;
+        }
+
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .player-item:last-child { border-bottom: none; }
+
+        .player-item .status {
+            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .player-item .status.ready { background: var(--accent); color: #000; }
+        .player-item .status.host { background: #ffd700; color: #000; }
+
+        .waiting-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .share-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        /* Game Board */
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 0 5px;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .player-info.active {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .player-info .stone {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        .player-info .stone.black { background: var(--black); }
+        .player-info .stone.white { background: var(--white); border: 1px solid #999; }
+
+        .board-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%;
+            background: var(--board);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .board {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+            padding: 3%;
+        }
+
+        .cell {
+            position: relative;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .cell::before {
+            content: '';
+            position: absolute;
+            background: var(--board-line);
+        }
+
+        /* Horizontal lines */
+        .cell::before {
+            left: 50%;
+            right: -50%;
+            top: 50%;
+            height: 1px;
+            transform: translateY(-50%);
+        }
+
+        .cell::after {
+            content: '';
+            position: absolute;
+            background: var(--board-line);
+            top: 50%;
+            bottom: -50%;
+            left: 50%;
+            width: 1px;
+            transform: translateX(-50%);
+        }
+
+        /* Edge cells */
+        .cell[data-col="14"]::before { right: 50%; }
+        .cell[data-row="14"]::after { bottom: 50%; }
+
+        .cell:hover:not(.occupied)::before,
+        .cell:hover:not(.occupied)::after {
+            background: var(--accent);
+        }
+
+        .cell .stone {
+            position: absolute;
+            width: 85%;
+            height: 85%;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .cell .stone.black {
+            background: radial-gradient(circle at 30% 30%, #444, var(--black));
+        }
+
+        .cell .stone.white {
+            background: radial-gradient(circle at 30% 30%, #fff, #ddd);
+            border: 1px solid #ccc;
+        }
+
+        .cell .stone.last {
+            box-shadow: 0 0 0 3px var(--danger);
+        }
+
+        .cell .stone.win {
+            animation: pulse 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: translate(-50%, -50%) scale(1); }
+            to { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* Star points */
+        .cell.star::before {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--board-line);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+        }
+
+        .game-status {
+            text-align: center;
+            padding: 15px;
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+
+        .game-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* Result Overlay */
+        .result-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .result-overlay.active { display: flex; }
+
+        .result-content {
+            background: var(--bg);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            max-width: 350px;
+        }
+
+        .result-title {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        .result-title.win { color: var(--accent); }
+        .result-title.lose { color: var(--danger); }
+
+        .result-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mode Selection -->
+    <div class="mode-select" id="modeSelect">
+        <h1>⚫⚪ 오목</h1>
+        <p>게임 모드를 선택하세요</p>
+        <div class="mode-buttons">
+            <button class="mode-btn" onclick="showLobby()">👥 멀티플레이어</button>
+            <button class="mode-btn" onclick="startLocalGame()">🎮 로컬 대전 (1기기 2인)</button>
+        </div>
+    </div>
+
+    <!-- Multiplayer Lobby -->
+    <div class="lobby hidden" id="lobby">
+        <h1>👥 멀티플레이어</h1>
+        
+        <div class="input-group">
+            <label>닉네임</label>
+            <input type="text" id="nicknameInput" placeholder="2자 이상" maxlength="12">
+        </div>
+        
+        <div class="checkbox-group">
+            <input type="checkbox" id="publicRoomCheck" checked>
+            <label for="publicRoomCheck">공개 방 (랜덤 매칭 허용)</label>
+        </div>
+        
+        <div class="lobby-buttons">
+            <button class="btn primary" onclick="createRoom()">🏠 방 만들기</button>
+            <button class="btn" onclick="joinRandom()">🎲 랜덤 매칭</button>
+            <div style="display:flex;gap:10px;margin-top:10px;">
+                <input type="text" id="roomCodeInput" placeholder="방 코드" maxlength="6" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:10px;color:var(--text);text-transform:uppercase;">
+                <button class="btn" onclick="joinRoom()">입장</button>
+            </div>
+            <button class="btn" onclick="backToModeSelect()" style="margin-top:10px;">← 뒤로</button>
+        </div>
+    </div>
+
+    <!-- Waiting Room -->
+    <div class="waiting-room hidden" id="waitingRoom">
+        <h2>대기실</h2>
+        <div class="room-code" id="displayRoomCode">------</div>
+        <div id="qrCode"></div>
+        
+        <div class="share-buttons">
+            <button class="btn" onclick="copyRoomCode()">📋 코드 복사</button>
+            <button class="btn" onclick="shareRoomLink()">🔗 링크 공유</button>
+        </div>
+        
+        <div class="player-list" id="playerList"></div>
+        
+        <div class="waiting-actions">
+            <button class="btn" id="readyBtn" onclick="toggleReady()">준비</button>
+            <button class="btn primary" id="startBtn" onclick="startGame()">게임 시작</button>
+            <button class="btn" id="leaveBtn" onclick="leaveRoom()">나가기</button>
+            <button class="btn danger" id="destroyBtn" onclick="destroyRoom()">🗑️ 방 폭파</button>
+        </div>
+        <p id="waitingMessage" style="color:#9ca3af;margin-top:15px;text-align:center;">대기 중...</p>
+    </div>
+
+    <!-- Game Container -->
+    <div class="game-container hidden" id="gameContainer">
+        <div class="game-header">
+            <div class="player-info" id="blackPlayer">
+                <div class="stone black"></div>
+                <span id="blackName">흑</span>
+            </div>
+            <div class="player-info" id="whitePlayer">
+                <div class="stone white"></div>
+                <span id="whiteName">백</span>
+            </div>
+        </div>
+        
+        <div class="board-container">
+            <div class="board" id="board"></div>
+        </div>
+        
+        <div class="game-status" id="gameStatus">흑의 차례</div>
+        
+        <div class="game-actions" id="gameActions">
+            <button class="btn" onclick="leaveGame()">나가기</button>
+        </div>
+    </div>
+
+    <!-- Result Overlay -->
+    <div class="result-overlay" id="resultOverlay">
+        <div class="result-content">
+            <div class="result-title" id="resultTitle">승리!</div>
+            <p id="resultDetail"></p>
+            <div class="result-buttons" id="resultButtons">
+                <button class="btn primary" id="rematchBtn" onclick="requestRematch()">🔄 리매치</button>
+                <button class="btn" onclick="exitGame()">나가기</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/lib/multiplayer.js?v=1"></script>
+    <script>
+        // ===== Game State =====
+        let board = [];
+        let currentPlayer = 'black';
+        let gameOver = false;
+        let isMultiplayer = false;
+        let isLocalGame = false;
+        let myColor = null;
+        let multiplayerClient = null;
+        let isHost = false;
+        let myReady = false;
+        let mpState = null;
+
+        const BOARD_SIZE = 15;
+        const STAR_POINTS = [
+            [3, 3], [3, 7], [3, 11],
+            [7, 3], [7, 7], [7, 11],
+            [11, 3], [11, 7], [11, 11]
+        ];
+
+        // ===== Board Initialization =====
+        function initBoard() {
+            board = [];
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                board.push(new Array(BOARD_SIZE).fill(null));
+            }
+            currentPlayer = 'black';
+            gameOver = false;
+            renderBoard();
+            updateStatus();
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    // Star points
+                    if (STAR_POINTS.some(([r, c]) => r === row && c === col)) {
+                        cell.classList.add('star');
+                    }
+                    
+                    // Stone
+                    if (board[row][col]) {
+                        const stone = document.createElement('div');
+                        stone.className = `stone ${board[row][col]}`;
+                        cell.appendChild(stone);
+                        cell.classList.add('occupied');
+                    }
+                    
+                    cell.onclick = () => handleCellClick(row, col);
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        function updateStatus() {
+            const status = document.getElementById('gameStatus');
+            const colorName = currentPlayer === 'black' ? '흑' : '백';
+            
+            if (gameOver) {
+                status.textContent = '게임 종료';
+            } else if (isMultiplayer) {
+                if (myColor === currentPlayer) {
+                    status.textContent = '내 차례 (' + colorName + ')';
+                } else {
+                    status.textContent = '상대 차례 (' + colorName + ')';
+                }
+            } else {
+                status.textContent = colorName + '의 차례';
+            }
+            
+            // Highlight current player
+            document.getElementById('blackPlayer').classList.toggle('active', currentPlayer === 'black' && !gameOver);
+            document.getElementById('whitePlayer').classList.toggle('active', currentPlayer === 'white' && !gameOver);
+        }
+
+        // ===== Game Logic =====
+        function handleCellClick(row, col) {
+            if (gameOver) return;
+            if (board[row][col]) return;
+            
+            if (isMultiplayer) {
+                if (myColor !== currentPlayer) {
+                    showToast('상대 차례입니다');
+                    return;
+                }
+                sendMove(row, col);
+            } else {
+                placeStone(row, col, currentPlayer);
+            }
+        }
+
+        function placeStone(row, col, color, isLast = true) {
+            board[row][col] = color;
+            
+            const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            if (cell && !cell.querySelector('.stone')) {
+                const stone = document.createElement('div');
+                stone.className = `stone ${color}`;
+                if (isLast) stone.classList.add('last');
+                cell.appendChild(stone);
+                cell.classList.add('occupied');
+            }
+            
+            // Remove last marker from previous stone
+            if (isLast) {
+                document.querySelectorAll('.stone.last').forEach(s => {
+                    if (s.parentElement !== cell) s.classList.remove('last');
+                });
+            }
+            
+            // Check win
+            const winLine = checkWin(row, col, color);
+            if (winLine) {
+                gameOver = true;
+                highlightWinLine(winLine);
+                if (!isMultiplayer) {
+                    setTimeout(() => showResult(color), 500);
+                }
+            } else {
+                currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+            }
+            
+            updateStatus();
+        }
+
+        function checkWin(row, col, color) {
+            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+            
+            for (const [dr, dc] of directions) {
+                const line = [{ row, col }];
+                
+                for (let i = 1; i < 5; i++) {
+                    const r = row + dr * i, c = col + dc * i;
+                    if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && board[r][c] === color) {
+                        line.push({ row: r, col: c });
+                    } else break;
+                }
+                
+                for (let i = 1; i < 5; i++) {
+                    const r = row - dr * i, c = col - dc * i;
+                    if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && board[r][c] === color) {
+                        line.push({ row: r, col: c });
+                    } else break;
+                }
+                
+                if (line.length >= 5) return line;
+            }
+            return null;
+        }
+
+        function highlightWinLine(line) {
+            line.forEach(({ row, col }) => {
+                const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"] .stone`);
+                if (cell) cell.classList.add('win');
+            });
+        }
+
+        function showResult(winner) {
+            const overlay = document.getElementById('resultOverlay');
+            const title = document.getElementById('resultTitle');
+            const detail = document.getElementById('resultDetail');
+            
+            if (isMultiplayer) {
+                if (winner === myColor) {
+                    title.textContent = '🎉 승리!';
+                    title.className = 'result-title win';
+                } else {
+                    title.textContent = '😢 패배';
+                    title.className = 'result-title lose';
+                }
+                detail.textContent = (winner === 'black' ? '흑' : '백') + ' 승리';
+                document.getElementById('rematchBtn').style.display = '';
+            } else {
+                title.textContent = (winner === 'black' ? '⚫ 흑' : '⚪ 백') + ' 승리!';
+                title.className = 'result-title';
+                detail.textContent = '';
+                document.getElementById('rematchBtn').style.display = 'none';
+            }
+            
+            overlay.classList.add('active');
+        }
+
+        // ===== Local Game =====
+        function startLocalGame() {
+            isLocalGame = true;
+            isMultiplayer = false;
+            document.getElementById('modeSelect').classList.add('hidden');
+            document.getElementById('gameContainer').classList.remove('hidden');
+            document.getElementById('blackName').textContent = '흑 (Player 1)';
+            document.getElementById('whiteName').textContent = '백 (Player 2)';
+            document.getElementById('gameActions').innerHTML = `
+                <button class="btn" onclick="initBoard()">새 게임</button>
+                <button class="btn" onclick="exitGame()">나가기</button>
+            `;
+            initBoard();
+        }
+
+        // ===== Multiplayer =====
+        function showLobby() {
+            document.getElementById('modeSelect').classList.add('hidden');
+            document.getElementById('lobby').classList.remove('hidden');
+            
+            const saved = localStorage.getItem('gomoku_nickname');
+            if (saved) document.getElementById('nicknameInput').value = saved;
+        }
+
+        function backToModeSelect() {
+            document.getElementById('lobby').classList.add('hidden');
+            document.getElementById('modeSelect').classList.remove('hidden');
+        }
+
+        async function createRoom() {
+            const btn = event.target;
+            if (btn.classList.contains('loading')) return;
+            
+            const nickname = document.getElementById('nicknameInput').value.trim();
+            if (!nickname || nickname.length < 2) {
+                alert('닉네임을 2자 이상 입력하세요');
+                return;
+            }
+            
+            localStorage.setItem('gomoku_nickname', nickname);
+            btn.classList.add('loading');
+            
+            try {
+                multiplayerClient = MultiplayerClient.getInstance();
+                await multiplayerClient.ensureAuth();
+                await multiplayerClient.setNickname(nickname);
+                
+                const isPublic = document.getElementById('publicRoomCheck').checked;
+                const room = await multiplayerClient.createRoom('gomoku', { maxPlayers: 2, isPublic });
+                
+                isHost = true;
+                showWaitingRoom(room.roomId);
+            } catch (e) {
+                alert('방 생성 실패: ' + e.message);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        }
+
+        async function joinRandom() {
+            const btn = event.target;
+            if (btn.classList.contains('loading')) return;
+            
+            const nickname = document.getElementById('nicknameInput').value.trim() || 'Player_' + Math.random().toString(36).substr(2, 4);
+            localStorage.setItem('gomoku_nickname', nickname);
+            btn.classList.add('loading');
+            
+            try {
+                multiplayerClient = MultiplayerClient.getInstance();
+                await multiplayerClient.ensureAuth();
+                await multiplayerClient.setNickname(nickname);
+                
+                const result = await multiplayerClient.joinRandom('gomoku');
+                isHost = false;
+                showWaitingRoom(result.roomId);
+            } catch (e) {
+                if (e.message.includes('공개 방이 없')) {
+                    alert('현재 참가 가능한 방이 없습니다. 방을 만들어보세요!');
+                } else {
+                    alert('매칭 실패: ' + e.message);
+                }
+            } finally {
+                btn.classList.remove('loading');
+            }
+        }
+
+        async function joinRoom() {
+            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            if (!code || code.length !== 6) {
+                alert('6자리 방 코드를 입력하세요');
+                return;
+            }
+            
+            const nickname = document.getElementById('nicknameInput').value.trim() || 'Player_' + Math.random().toString(36).substr(2, 4);
+            localStorage.setItem('gomoku_nickname', nickname);
+            
+            try {
+                multiplayerClient = MultiplayerClient.getInstance();
+                await multiplayerClient.ensureAuth();
+                await multiplayerClient.setNickname(nickname);
+                
+                await multiplayerClient.joinRoom(code);
+                isHost = false;
+                showWaitingRoom(code);
+            } catch (e) {
+                alert('입장 실패: ' + e.message);
+            }
+        }
+
+        function showWaitingRoom(roomCode) {
+            document.getElementById('lobby').classList.add('hidden');
+            document.getElementById('waitingRoom').classList.remove('hidden');
+            document.getElementById('displayRoomCode').textContent = roomCode;
+            
+            // QR Code
+            const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '');
+            const joinUrl = `${baseUrl}/?room=${roomCode}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(joinUrl)}`;
+            document.getElementById('qrCode').innerHTML = `<img src="${qrUrl}" style="border-radius:8px;background:#fff;padding:6px;">`;
+            
+            // Button visibility
+            document.getElementById('startBtn').style.display = isHost ? '' : 'none';
+            document.getElementById('readyBtn').style.display = isHost ? 'none' : '';
+            document.getElementById('destroyBtn').style.display = isHost ? '' : 'none';
+            
+            // Event handlers
+            multiplayerClient.onStateChange = updateWaitingRoom;
+            multiplayerClient.onEvent = handleEvent;
+            multiplayerClient.startListening();
+            
+            refreshWaitingRoom();
+        }
+
+        async function refreshWaitingRoom() {
+            try {
+                const state = await multiplayerClient.getRoomState();
+                updateWaitingRoom(state);
+            } catch (e) {
+                console.error('Refresh error:', e);
+            }
+        }
+
+        function updateWaitingRoom(state) {
+            if (!state || !state.players) return;
+            
+            const myId = multiplayerClient.getMyUserId();
+            const me = state.players.find(p => p.id === myId);
+            
+            if (me) {
+                isHost = me.isHost;
+                myReady = me.isReady;
+            }
+            
+            // Update buttons
+            document.getElementById('startBtn').style.display = isHost ? '' : 'none';
+            document.getElementById('readyBtn').style.display = isHost ? 'none' : '';
+            document.getElementById('destroyBtn').style.display = isHost ? '' : 'none';
+            
+            const readyBtn = document.getElementById('readyBtn');
+            readyBtn.textContent = myReady ? '준비취소' : '준비';
+            readyBtn.classList.toggle('primary', myReady);
+            
+            // Player list
+            document.getElementById('playerList').innerHTML = state.players.map(p => `
+                <div class="player-item">
+                    <span>${p.isHost ? '👑 ' : ''}${p.nickname || 'Player'} ${p.id === myId ? '(나)' : ''}</span>
+                    <span class="status ${p.isReady ? 'ready' : ''} ${p.isHost ? 'host' : ''}">${p.isHost ? '방장' : (p.isReady ? '준비완료' : '대기중')}</span>
+                </div>
+            `).join('');
+            
+            // Start button state
+            const startBtn = document.getElementById('startBtn');
+            if (isHost) {
+                const others = state.players.filter(p => !p.isHost);
+                const canStart = state.players.length >= 2 && others.every(p => p.isReady);
+                startBtn.disabled = !canStart;
+                document.getElementById('waitingMessage').textContent = canStart ? '게임 시작 가능!' : '상대를 기다리는 중...';
+            } else {
+                document.getElementById('waitingMessage').textContent = myReady ? '방장이 시작하기를 기다리는 중...' : '준비 버튼을 눌러주세요';
+            }
+            
+            // Game started
+            if (state.status === 'playing') {
+                startMultiplayerGame(state);
+            }
+        }
+
+        function handleEvent(type, data) {
+            console.log('Event:', type, data);
+            
+            if (type === 'room_destroyed') {
+                MultiplayerClient.resetInstance();
+                multiplayerClient = null;
+                document.getElementById('waitingRoom').classList.add('hidden');
+                document.getElementById('gameContainer').classList.add('hidden');
+                document.getElementById('lobby').classList.remove('hidden');
+                alert('방이 폭파되었습니다');
+            } else if (type === 'place' && isMultiplayer) {
+                // Stone placed by opponent
+                const { row, col, color } = data.payload || {};
+                if (row !== undefined && col !== undefined) {
+                    const myId = multiplayerClient.getMyUserId();
+                    if (data.playerId !== myId) {
+                        placeStone(row, col, color);
+                    }
+                }
+            } else if (type === 'game_end') {
+                refreshGameState();
+            } else if (type === 'rematch_ready') {
+                const myId = multiplayerClient.getMyUserId();
+                if (data.userId !== myId) {
+                    showToast('상대가 리매치를 요청했습니다');
+                    setTimeout(() => goToWaitingRoom(), 1000);
+                }
+            }
+        }
+
+        async function toggleReady() {
+            const btn = document.getElementById('readyBtn');
+            if (btn.classList.contains('loading')) return;
+            btn.classList.add('loading');
+            
+            try {
+                const newReady = !myReady;
+                await multiplayerClient.setReady(newReady);
+                myReady = newReady;
+                btn.textContent = myReady ? '준비취소' : '준비';
+                btn.classList.toggle('primary', myReady);
+            } catch (e) {
+                alert('실패: ' + e.message);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        }
+
+        async function startGame() {
+            const btn = document.getElementById('startBtn');
+            if (btn.classList.contains('loading') || btn.disabled) return;
+            btn.classList.add('loading');
+            
+            try {
+                await multiplayerClient.startGame();
+            } catch (e) {
+                alert('시작 실패: ' + e.message);
+                btn.classList.remove('loading');
+            }
+        }
+
+        function startMultiplayerGame(state) {
+            isMultiplayer = true;
+            isLocalGame = false;
+            mpState = state;
+            
+            document.getElementById('waitingRoom').classList.add('hidden');
+            document.getElementById('gameContainer').classList.remove('hidden');
+            
+            const gs = state.gameState;
+            const myId = multiplayerClient.getMyUserId();
+            const me = gs.players.find(p => p.id === myId);
+            const opponent = gs.players.find(p => p.id !== myId);
+            
+            myColor = me?.color;
+            currentPlayer = gs.players.find(p => p.id === gs.currentPlayer)?.color || 'black';
+            
+            // Set player names
+            const blackP = gs.players.find(p => p.color === 'black');
+            const whiteP = gs.players.find(p => p.color === 'white');
+            document.getElementById('blackName').textContent = (blackP?.nickname || '흑') + (blackP?.id === myId ? ' (나)' : '');
+            document.getElementById('whiteName').textContent = (whiteP?.nickname || '백') + (whiteP?.id === myId ? ' (나)' : '');
+            
+            // Set up board from state
+            board = gs.board.map(row => row.map(cell => {
+                if (!cell) return null;
+                const p = gs.players.find(pl => pl.id === cell);
+                return p?.color || null;
+            }));
+            
+            gameOver = !!gs.winner;
+            renderBoard();
+            
+            // Highlight last move
+            if (gs.lastMove) {
+                const { row, col } = gs.lastMove;
+                const stone = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"] .stone`);
+                if (stone) stone.classList.add('last');
+            }
+            
+            // Highlight win line
+            if (gs.winLine) {
+                highlightWinLine(gs.winLine);
+            }
+            
+            updateStatus();
+            
+            // Setup event handlers
+            multiplayerClient.onStateChange = updateMultiplayerGame;
+            multiplayerClient.onEvent = handleEvent;
+            
+            if (gameOver && gs.winner && gs.winner !== 'draw') {
+                const winnerColor = gs.players.find(p => p.id === gs.winner)?.color;
+                setTimeout(() => showResult(winnerColor), 500);
+            }
+            
+            showToast('게임 시작! ' + (myColor === 'black' ? '당신은 흑입니다' : '당신은 백입니다'));
+        }
+
+        function updateMultiplayerGame(state) {
+            if (!state || !state.gameState) return;
+            mpState = state;
+            
+            const gs = state.gameState;
+            const myId = multiplayerClient.getMyUserId();
+            
+            // Update board
+            board = gs.board.map(row => row.map(cell => {
+                if (!cell) return null;
+                const p = gs.players.find(pl => pl.id === cell);
+                return p?.color || null;
+            }));
+            
+            currentPlayer = gs.players.find(p => p.id === gs.currentPlayer)?.color || 'black';
+            gameOver = !!gs.winner;
+            
+            renderBoard();
+            
+            if (gs.lastMove) {
+                const { row, col } = gs.lastMove;
+                const stone = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"] .stone`);
+                if (stone) stone.classList.add('last');
+            }
+            
+            if (gs.winLine) {
+                highlightWinLine(gs.winLine);
+            }
+            
+            updateStatus();
+            
+            if (gameOver && gs.winner && gs.winner !== 'draw') {
+                const winnerColor = gs.players.find(p => p.id === gs.winner)?.color;
+                setTimeout(() => showResult(winnerColor), 500);
+            }
+        }
+
+        async function sendMove(row, col) {
+            try {
+                const result = await multiplayerClient.sendAction({ type: 'place', payload: { row, col } });
+                // Optimistically place stone
+                placeStone(row, col, myColor);
+            } catch (e) {
+                alert('실패: ' + e.message);
+            }
+        }
+
+        async function refreshGameState() {
+            try {
+                const state = await multiplayerClient.getRoomState();
+                updateMultiplayerGame(state);
+            } catch (e) {
+                console.error('Refresh error:', e);
+            }
+        }
+
+        async function requestRematch() {
+            const btn = document.getElementById('rematchBtn');
+            if (btn.classList.contains('loading')) return;
+            btn.classList.add('loading');
+            
+            try {
+                await multiplayerClient.rematch();
+                goToWaitingRoom();
+            } catch (e) {
+                alert('리매치 요청 실패: ' + e.message);
+                btn.classList.remove('loading');
+            }
+        }
+
+        function goToWaitingRoom() {
+            document.getElementById('resultOverlay').classList.remove('active');
+            document.getElementById('gameContainer').classList.add('hidden');
+            document.getElementById('waitingRoom').classList.remove('hidden');
+            
+            document.getElementById('readyBtn').classList.remove('loading');
+            document.getElementById('startBtn').classList.remove('loading');
+            
+            multiplayerClient.onStateChange = updateWaitingRoom;
+            multiplayerClient.onEvent = handleEvent;
+            
+            refreshWaitingRoom();
+        }
+
+        async function leaveRoom() {
+            const btn = document.getElementById('leaveBtn');
+            if (btn.classList.contains('loading')) return;
+            btn.classList.add('loading');
+            
+            try {
+                await multiplayerClient.leaveRoom();
+                MultiplayerClient.resetInstance();
+                multiplayerClient = null;
+                isHost = false;
+                myReady = false;
+                document.getElementById('waitingRoom').classList.add('hidden');
+                document.getElementById('lobby').classList.remove('hidden');
+            } catch (e) {
+                console.error('Leave error:', e);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        }
+
+        async function destroyRoom() {
+            if (!confirm('정말 방을 폭파하시겠습니까?')) return;
+            
+            const btn = document.getElementById('destroyBtn');
+            if (btn.classList.contains('loading')) return;
+            btn.classList.add('loading');
+            
+            try {
+                await multiplayerClient.destroyRoom();
+                MultiplayerClient.resetInstance();
+                multiplayerClient = null;
+                document.getElementById('waitingRoom').classList.add('hidden');
+                document.getElementById('lobby').classList.remove('hidden');
+                showToast('방 폭파 완료');
+            } catch (e) {
+                alert('실패: ' + e.message);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        }
+
+        function leaveGame() {
+            if (isMultiplayer) {
+                if (confirm('게임을 나가시겠습니까?')) {
+                    if (multiplayerClient) {
+                        multiplayerClient.leaveRoom().catch(() => {});
+                        MultiplayerClient.resetInstance();
+                        multiplayerClient = null;
+                    }
+                    document.getElementById('gameContainer').classList.add('hidden');
+                    document.getElementById('resultOverlay').classList.remove('active');
+                    document.getElementById('lobby').classList.remove('hidden');
+                    isMultiplayer = false;
+                }
+            } else {
+                exitGame();
+            }
+        }
+
+        function exitGame() {
+            if (multiplayerClient) {
+                multiplayerClient.leaveRoom().catch(() => {});
+                MultiplayerClient.resetInstance();
+                multiplayerClient = null;
+            }
+            
+            document.getElementById('resultOverlay').classList.remove('active');
+            document.getElementById('gameContainer').classList.add('hidden');
+            document.getElementById('waitingRoom').classList.add('hidden');
+            document.getElementById('lobby').classList.add('hidden');
+            document.getElementById('modeSelect').classList.remove('hidden');
+            
+            isMultiplayer = false;
+            isLocalGame = false;
+        }
+
+        // ===== Utilities =====
+        function copyRoomCode() {
+            const code = document.getElementById('displayRoomCode').textContent;
+            navigator.clipboard.writeText(code).then(() => showToast('코드 복사됨!')).catch(() => prompt('코드:', code));
+        }
+
+        function shareRoomLink() {
+            const code = document.getElementById('displayRoomCode').textContent;
+            const url = `${window.location.origin}${window.location.pathname}?room=${code}`;
+            
+            if (navigator.share) {
+                navigator.share({ title: '오목 대결', text: `오목 한 판 하자! 방 코드: ${code}`, url }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(url).then(() => showToast('링크 복사됨!')).catch(() => prompt('링크:', url));
+            }
+        }
+
+        function showToast(msg) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        // Check URL for room code
+        function checkUrlRoom() {
+            const params = new URLSearchParams(window.location.search);
+            const roomCode = params.get('room');
+            if (roomCode) {
+                window.history.replaceState({}, '', window.location.pathname);
+                showLobby();
+                document.getElementById('roomCodeInput').value = roomCode;
+            }
+        }
+
+        checkUrlRoom();
+    </script>
+</body>
+</html>

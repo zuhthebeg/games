@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#dcb35c" rx="10"/>
+  <!-- Grid lines -->
+  <g stroke="#8b6914" stroke-width="1.5">
+    <line x1="20" y1="20" x2="20" y2="80"/>
+    <line x1="35" y1="20" x2="35" y2="80"/>
+    <line x1="50" y1="20" x2="50" y2="80"/>
+    <line x1="65" y1="20" x2="65" y2="80"/>
+    <line x1="80" y1="20" x2="80" y2="80"/>
+    <line x1="20" y1="20" x2="80" y2="20"/>
+    <line x1="20" y1="35" x2="80" y2="35"/>
+    <line x1="20" y1="50" x2="80" y2="50"/>
+    <line x1="20" y1="65" x2="80" y2="65"/>
+    <line x1="20" y1="80" x2="80" y2="80"/>
+  </g>
+  <!-- Stones -->
+  <circle cx="35" cy="35" r="12" fill="#111"/>
+  <circle cx="50" cy="50" r="12" fill="#111"/>
+  <circle cx="65" cy="35" r="12" fill="#f5f5f5" stroke="#999" stroke-width="1"/>
+  <circle cx="50" cy="65" r="12" fill="#f5f5f5" stroke="#999" stroke-width="1"/>
+  <circle cx="35" cy="65" r="12" fill="#111"/>
+</svg>

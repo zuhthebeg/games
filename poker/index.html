@@ -1642,7 +1642,11 @@
                 await multiplayerClient.ensureAuth();
                 await multiplayerClient.setNickname(nickname);
                 
-                const room = await multiplayerClient.createRoom({ startingChips: 1000, bigBlind: 20, isPublic });
+                const room = await multiplayerClient.createRoom('poker', { 
+                    gameConfig: { startingChips: 1000, bigBlind: 20 },
+                    maxPlayers: 2,
+                    isPublic 
+                });
                 isHost = true;
                 showWaitingRoom(room.roomId);
             } catch (e) {
@@ -2061,25 +2065,14 @@
             document.getElementById('bettingControls').style.display = 'none';
             
             try {
-                let result;
-                switch (action) {
-                    case 'fold':
-                        result = await multiplayerClient.fold();
-                        break;
-                    case 'check':
-                        result = await multiplayerClient.check();
-                        break;
-                    case 'call':
-                        result = await multiplayerClient.call();
-                        break;
-                    case 'raise':
-                        const amount = parseInt(document.getElementById('betSlider').value);
-                        result = await multiplayerClient.raise(amount);
-                        break;
-                    case 'allin':
-                        result = await multiplayerClient.allIn();
-                        break;
+                let actionData = { type: action };
+                
+                if (action === 'raise') {
+                    const amount = parseInt(document.getElementById('betSlider').value);
+                    actionData.payload = { amount };
                 }
+                
+                const result = await multiplayerClient.sendAction(actionData);
                 
                 // State will update via onStateChange
                 if (result && result.gameState) {
@@ -2342,6 +2335,6 @@
         // Check for room code in URL
         checkUrlRoom();
     </script>
-    <script src="multiplayer.js?v=6"></script>
+    <script src="/lib/multiplayer.js?v=1"></script>
 </body>
 </html>

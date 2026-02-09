@@ -1,5 +1,19 @@
 [
     {
+        "title": "오목",
+        "icon": "https://game.cocy.io/gomoku/icon.svg",
+        "url": "https://game.cocy.io/gomoku/",
+        "desc": "실시간 1:1 오목 대결",
+        "badge": "NEW",
+        "platforms": [
+            "WEB"
+        ],
+        "languages": [
+            "🌍"
+        ],
+        "category": "game"
+    },
+    {
         "title": "포커",
         "icon": "https://game.cocy.io/poker/icon.svg",
         "url": "https://game.cocy.io/poker/",
