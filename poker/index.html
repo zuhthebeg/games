@@ -1602,6 +1602,11 @@
             document.getElementById('modeSelect').classList.add('hidden');
             document.getElementById('lobby').classList.remove('hidden');
             
+            // Clean up any previous multiplayer state
+            if (multiplayerClient) {
+                multiplayerClient.cleanup();
+            }
+            
             // Restore nickname if saved
             const savedNickname = localStorage.getItem('poker_nickname');
             if (savedNickname) {
@@ -1630,7 +1635,7 @@
             try {
                 const isPublic = document.getElementById('publicRoomCheck').checked;
                 
-                multiplayerClient = new MultiplayerClient();
+                multiplayerClient = MultiplayerClient.getInstance();
                 await multiplayerClient.ensureAuth();
                 await multiplayerClient.setNickname(nickname);
                 
@@ -1656,7 +1661,7 @@
             btn.classList.add('loading');
             
             try {
-                multiplayerClient = new MultiplayerClient();
+                multiplayerClient = MultiplayerClient.getInstance();
                 await multiplayerClient.ensureAuth();
                 await multiplayerClient.setNickname(nickname);
                 
@@ -1696,7 +1701,7 @@
             btn.classList.add('loading');
             
             try {
-                multiplayerClient = new MultiplayerClient();
+                multiplayerClient = MultiplayerClient.getInstance();
                 await multiplayerClient.ensureAuth();
                 await multiplayerClient.setNickname(nickname);
                 
@@ -2232,6 +2237,6 @@
         // Check for room code in URL
         checkUrlRoom();
     </script>
-    <script src="multiplayer.js?v=3"></script>
+    <script src="multiplayer.js?v=4"></script>
 </body>
 </html>

@@ -5,10 +5,14 @@
 
 const RELAY_URL = 'https://relay.cocy.io';
 
+// Singleton instance
+let _mpClientInstance = null;
+
 class MultiplayerClient {
     constructor() {
         this.token = localStorage.getItem('relay_token');
         this.userId = localStorage.getItem('relay_userId');
+        this.nickname = localStorage.getItem('relay_nickname');
         this.roomId = null;
         this.eventSource = null;
         this.lastSeq = 0;
@@ -18,15 +22,35 @@ class MultiplayerClient {
         this.pollingInterval = null;
     }
 
+    static getInstance() {
+        if (!_mpClientInstance) {
+            _mpClientInstance = new MultiplayerClient();
+        }
+        return _mpClientInstance;
+    }
+
+    static resetInstance() {
+        if (_mpClientInstance) {
+            _mpClientInstance.stopListening();
+            _mpClientInstance.roomId = null;
+        }
+        _mpClientInstance = null;
+    }
+
     // ===== Auth =====
     async ensureAuth() {
         if (this.token && this.userId) {
             // Verify token is still valid
             try {
                 const res = await this.request('GET', '/api/auth/me');
-                if (res.id) return true;
+                if (res.id) {
+                    this.userId = res.id;
+                    this.nickname = res.nickname;
+                    return true;
+                }
             } catch (e) {
                 // Token invalid, clear it
+                this.clearAuth();
             }
         }
 
@@ -39,12 +63,28 @@ class MultiplayerClient {
         return true;
     }
 
+    clearAuth() {
+        this.token = null;
+        this.userId = null;
+        this.nickname = null;
+        localStorage.removeItem('relay_token');
+        localStorage.removeItem('relay_userId');
+        localStorage.removeItem('relay_nickname');
+    }
+
     async setNickname(nickname) {
+        // If same nickname and already authenticated, skip
+        if (this.nickname === nickname && this.userId) {
+            return { id: this.userId, nickname: this.nickname };
+        }
+        
         const res = await this.request('POST', '/api/auth/register', { nickname });
         this.token = res.token;
         this.userId = res.user.id;
+        this.nickname = res.user.nickname;
         localStorage.setItem('relay_token', this.token);
         localStorage.setItem('relay_userId', this.userId);
+        localStorage.setItem('relay_nickname', this.nickname);
         return res.user;
     }
 
@@ -79,11 +119,19 @@ class MultiplayerClient {
     }
 
     async leaveRoom() {
-        if (!this.roomId) return;
+        if (!this.roomId) return { message: 'Not in a room' };
         this.stopListening();
-        const res = await this.request('POST', `/api/rooms/${this.roomId}/leave`);
+        const roomId = this.roomId;
         this.roomId = null;
-        return res;
+        this.lastSeq = 0;
+        try {
+            const res = await this.request('POST', `/api/rooms/${roomId}/leave`);
+            return res;
+        } catch (e) {
+            // Ignore leave errors (room might be deleted)
+            console.log('Leave room error (ignored):', e.message);
+            return { message: 'Left room' };
+        }
     }
 
     async getRoomState() {
@@ -155,7 +203,7 @@ class MultiplayerClient {
             // Listen for all event types
             const eventTypes = ['player_joined', 'player_left', 'player_ready', 'game_started', 
                                'action', 'fold', 'check', 'call', 'raise', 'allin',
-                               'flop', 'turn', 'river', 'win', 'game_ended'];
+                               'flop', 'turn', 'river', 'win', 'game_ended', 'rematch_ready', 'host_changed'];
 
             eventTypes.forEach(type => {
                 this.eventSource.addEventListener(type, (e) => {
@@ -251,6 +299,13 @@ class MultiplayerClient {
 
     isInRoom() {
         return !!this.roomId;
+    }
+
+    // Clean up any previous room state
+    async cleanup() {
+        this.stopListening();
+        this.roomId = null;
+        this.lastSeq = 0;
     }
 }
 
