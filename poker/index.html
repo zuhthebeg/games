@@ -2024,9 +2024,23 @@
                     }
                 }, 500);
             }
+            
+            // Handle rematch - other player requested rematch, go to waiting room
+            if (type === 'rematch_ready') {
+                const myId = multiplayerClient.getMyUserId();
+                if (data.userId !== myId) {
+                    showToast('상대가 리매치를 요청했습니다!');
+                    setTimeout(() => goToWaitingRoom(), 1000);
+                }
+            }
         }
 
+        let gameEndHandled = false;
+
         function handleMultiplayerGameEnd(state) {
+            if (gameEndHandled) return;
+            gameEndHandled = true;
+            
             const overlay = document.getElementById('resultOverlay');
             const title = document.getElementById('resultTitle');
             const detail = document.getElementById('resultDetail');
@@ -2050,67 +2064,80 @@
             
             detail.textContent = `내 칩: ${me.chips} | 상대 칩: ${opponent.chips}`;
             
-            // Replace button with rematch options
+            // Clear old buttons
+            overlay.querySelectorAll('.mp-buttons').forEach(el => el.remove());
             const existingBtn = overlay.querySelector('button');
-            if (existingBtn) existingBtn.remove();
+            if (existingBtn) existingBtn.style.display = 'none';
             
+            // Add rematch buttons
             const btnContainer = document.createElement('div');
+            btnContainer.className = 'mp-buttons';
             btnContainer.style.cssText = 'display:flex;gap:10px;justify-content:center;margin-top:20px;';
             btnContainer.innerHTML = `
-                <button class="btn primary" onclick="requestRematch()">🔄 리매치</button>
-                <button class="btn" onclick="exitToLobby()">나가기</button>
+                <button class="btn primary" id="rematchBtn">🔄 리매치</button>
+                <button class="btn" id="exitBtn">나가기</button>
             `;
             overlay.appendChild(btnContainer);
+            
+            document.getElementById('rematchBtn').onclick = requestRematch;
+            document.getElementById('exitBtn').onclick = exitToLobby;
             
             overlay.classList.add('active');
         }
 
         async function requestRematch() {
-            const btn = event.target;
-            if (btn.classList.contains('loading')) return;
+            const btn = document.getElementById('rematchBtn');
+            if (!btn || btn.classList.contains('loading')) return;
             btn.classList.add('loading');
+            btn.textContent = '요청 중...';
             
             try {
                 await multiplayerClient.rematch();
-                
-                // Go back to waiting room
-                document.getElementById('resultOverlay').classList.remove('active');
-                // Remove added buttons
-                const btnContainer = document.querySelector('#resultOverlay > div[style*="flex"]');
-                if (btnContainer) btnContainer.remove();
-                // Restore original button
-                const overlay = document.getElementById('resultOverlay');
-                if (!overlay.querySelector('button.btn.primary[onclick="nextHand()"]')) {
-                    const btn = document.createElement('button');
-                    btn.className = 'btn primary';
-                    btn.onclick = nextHand;
-                    btn.textContent = '다음 핸드';
-                    overlay.appendChild(btn);
-                }
-                
-                document.getElementById('gameContainer').style.display = 'none';
-                document.getElementById('waitingRoom').classList.remove('hidden');
-                myReady = false;
-                document.getElementById('readyBtn').textContent = '준비';
-                document.getElementById('readyBtn').classList.remove('primary');
-                refreshWaitingRoom();
+                goToWaitingRoom();
             } catch (e) {
                 alert('리매치 요청 실패: ' + e.message);
                 btn.classList.remove('loading');
+                btn.textContent = '🔄 리매치';
             }
         }
 
-        function exitToLobby() {
-            document.getElementById('resultOverlay').classList.remove('active');
-            // Remove added buttons
-            const btnContainer = document.querySelector('#resultOverlay > div[style*="flex"]');
-            if (btnContainer) btnContainer.remove();
+        function goToWaitingRoom() {
+            gameEndHandled = false;
             
-            leaveMultiplayerGame();
+            // Hide overlay and clean up
+            const overlay = document.getElementById('resultOverlay');
+            overlay.classList.remove('active');
+            overlay.querySelectorAll('.mp-buttons').forEach(el => el.remove());
+            const existingBtn = overlay.querySelector('button');
+            if (existingBtn) existingBtn.style.display = '';
+            
+            // Switch screens
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('waitingRoom').classList.remove('hidden');
+            
+            // Reset ready state
+            myReady = false;
+            document.getElementById('readyBtn').textContent = '준비';
+            document.getElementById('readyBtn').classList.remove('primary');
+            
+            refreshWaitingRoom();
         }
 
-        function leaveMultiplayerGame() {
-            if (confirm('게임을 나가시겠습니까?')) {
+        function exitToLobby() {
+            gameEndHandled = false;
+            
+            // Hide overlay and clean up
+            const overlay = document.getElementById('resultOverlay');
+            overlay.classList.remove('active');
+            overlay.querySelectorAll('.mp-buttons').forEach(el => el.remove());
+            const existingBtn = overlay.querySelector('button');
+            if (existingBtn) existingBtn.style.display = '';
+            
+            leaveMultiplayerGame(true); // skip confirm
+        }
+
+        function leaveMultiplayerGame(skipConfirm = false) {
+            if (skipConfirm || confirm('게임을 나가시겠습니까?')) {
                 leaveWaitingRoom();
                 document.getElementById('gameContainer').style.display = 'none';
                 // Reset header
@@ -2205,6 +2232,6 @@
         // Check for room code in URL
         checkUrlRoom();
     </script>
-    <script src="multiplayer.js?v=2"></script>
+    <script src="multiplayer.js?v=3"></script>
 </body>
 </html>
