@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>무기 강화 & 배틀</title>
     <link rel="icon" href="icon.svg">
-    <script src="/lib/multiplayer.js?v=20260210v5"></script>
-    <script src="/lib/multiplayer-ui.js?v=20260210v5"></script>
+    <script src="/lib/multiplayer.js?v=20260210v6"></script>
+    <script src="/lib/multiplayer-ui.js?v=20260210v6"></script>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -153,14 +153,33 @@
         }
 
         .weapon-icon {
-            font-size: 72px;
-            filter: drop-shadow(0 0 20px currentColor);
+            width: 80px;
+            height: 80px;
+            filter: drop-shadow(0 0 15px currentColor);
             transition: all 0.3s;
         }
 
         .weapon-icon.shake { animation: shake 0.5s ease-in-out; }
-        .weapon-icon.glow-success { filter: drop-shadow(0 0 40px var(--success)); }
-        .weapon-icon.glow-fail { filter: drop-shadow(0 0 40px var(--fail)); }
+        .weapon-icon.glow-success { filter: drop-shadow(0 0 30px var(--success)) drop-shadow(0 0 60px var(--success)) brightness(1.3); }
+        .weapon-icon.glow-fail { filter: drop-shadow(0 0 30px var(--fail)) drop-shadow(0 0 60px var(--fail)) brightness(0.8); }
+        .weapon-icon.hit { animation: hitEffect 0.3s ease-out; }
+        
+        @keyframes hitEffect {
+            0% { transform: scale(1) rotate(0); }
+            25% { transform: scale(1.2) rotate(-10deg); }
+            50% { transform: scale(0.9) rotate(5deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+        
+        /* Screen shake for attacks */
+        .screen-shake { animation: screenShake 0.3s ease-out; }
+        @keyframes screenShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-5px); }
+            40% { transform: translateX(5px); }
+            60% { transform: translateX(-3px); }
+            80% { transform: translateX(3px); }
+        }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0) rotate(0); }
@@ -596,16 +615,102 @@
     <canvas class="confetti" id="confetti"></canvas>
 
     <script>
+        // ===== SOUND EFFECTS (Web Audio API) =====
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        
+        function ensureAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+            return audioCtx;
+        }
+        
+        function playSound(type) {
+            try {
+                const ctx = ensureAudio();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                switch(type) {
+                    case 'enhance':
+                        osc.frequency.setValueAtTime(300, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.1);
+                        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                        osc.start(); osc.stop(ctx.currentTime + 0.2);
+                        break;
+                    case 'success':
+                        osc.frequency.setValueAtTime(523, ctx.currentTime); // C5
+                        osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1); // E5
+                        osc.frequency.setValueAtTime(784, ctx.currentTime + 0.2); // G5
+                        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                        osc.start(); osc.stop(ctx.currentTime + 0.4);
+                        break;
+                    case 'fail':
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(200, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
+                        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                        osc.start(); osc.stop(ctx.currentTime + 0.3);
+                        break;
+                    case 'destroy':
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(150, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.5);
+                        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                        osc.start(); osc.stop(ctx.currentTime + 0.5);
+                        // Add explosion noise
+                        const noise = ctx.createBufferSource();
+                        const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
+                        const data = buffer.getChannelData(0);
+                        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / 3000);
+                        noise.buffer = buffer;
+                        const noiseGain = ctx.createGain();
+                        noiseGain.gain.setValueAtTime(0.3, ctx.currentTime);
+                        noiseGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                        noise.connect(noiseGain);
+                        noiseGain.connect(ctx.destination);
+                        noise.start();
+                        break;
+                    case 'attack':
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(150, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.15);
+                        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                        osc.start(); osc.stop(ctx.currentTime + 0.15);
+                        break;
+                    case 'crit':
+                        osc.frequency.setValueAtTime(800, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+                        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                        osc.start(); osc.stop(ctx.currentTime + 0.2);
+                        break;
+                }
+            } catch(e) { console.log('Audio error:', e); }
+        }
+        
+        function vibrate(pattern) {
+            if (navigator.vibrate) navigator.vibrate(pattern);
+        }
+
         // ===== WEAPON DATABASE =====
+        // Icons from game-icons.net (CC0 license)
+        const ICON_BASE = 'https://game-icons.net/icons/ffffff/000000/1x1';
         const WEAPON_TYPES = {
-            sword: { name: '검', icon: '🗡️', bonus: { damage: 1.0, crit: 1.0 } },
-            axe: { name: '도끼', icon: '🪓', bonus: { damage: 1.15, crit: 0.9 } },
-            spear: { name: '창', icon: '🔱', bonus: { damage: 0.95, crit: 1.1 } },
-            hammer: { name: '망치', icon: '🔨', bonus: { damage: 1.2, crit: 0.85 } },
-            dagger: { name: '단검', icon: '🔪', bonus: { damage: 0.85, crit: 1.25 } },
-            staff: { name: '지팡이', icon: '🪄', bonus: { damage: 0.9, crit: 1.0, special: true } },
-            katana: { name: '태도', icon: '⚔️', bonus: { damage: 1.05, crit: 1.15 } },
-            scythe: { name: '낫', icon: '🌙', bonus: { damage: 1.1, crit: 1.05 } }
+            sword:  { name: '검',     img: `${ICON_BASE}/lorc/broadsword.svg`,       bonus: { damage: 1.0, crit: 1.0 } },
+            axe:    { name: '도끼',   img: `${ICON_BASE}/lorc/battle-axe.svg`,       bonus: { damage: 1.15, crit: 0.9 } },
+            spear:  { name: '창',     img: `${ICON_BASE}/lorc/spear-hook.svg`,       bonus: { damage: 0.95, crit: 1.1 } },
+            hammer: { name: '망치',   img: `${ICON_BASE}/lorc/warhammer.svg`,        bonus: { damage: 1.2, crit: 0.85 } },
+            dagger: { name: '단검',   img: `${ICON_BASE}/lorc/plain-dagger.svg`,     bonus: { damage: 0.85, crit: 1.25 } },
+            staff:  { name: '지팡이', img: `${ICON_BASE}/lorc/wizard-staff.svg`,     bonus: { damage: 0.9, crit: 1.0, special: true } },
+            katana: { name: '태도',   img: `${ICON_BASE}/lorc/katana.svg`,           bonus: { damage: 1.05, crit: 1.15 } },
+            scythe: { name: '낫',     img: `${ICON_BASE}/lorc/scythe.svg`,           bonus: { damage: 1.1, crit: 1.05 } }
         };
 
         const GRADES = {
@@ -731,8 +836,18 @@
                 grade,
                 name,
                 level: 0,
-                icon: typeData.icon
+                img: typeData.img  // Image URL from game-icons.net
             };
+        }
+        
+        // Get weapon image HTML with proper coloring
+        function getWeaponImgHtml(weapon, size = 80) {
+            const gradeData = GRADES[weapon.grade];
+            // Use CSS filter to colorize the white SVG icon
+            return `<img src="${WEAPON_TYPES[weapon.type].img}" 
+                         class="weapon-icon" 
+                         style="width:${size}px;height:${size}px;filter:drop-shadow(0 0 15px ${gradeData.color}) brightness(0) invert(1);" 
+                         alt="${weapon.name}">`;
         }
 
         function getWeaponStats(weapon) {
@@ -815,7 +930,10 @@
                         </div>
 
                         <div class="weapon-icon-area">
-                            <div class="weapon-icon" style="color: ${gradeData.color}">${weapon.icon}</div>
+                            <img src="${WEAPON_TYPES[weapon.type].img}" 
+                                 class="weapon-icon" 
+                                 style="filter:drop-shadow(0 0 20px ${gradeData.color});"
+                                 alt="${weapon.name}">
                         </div>
 
                         <div class="weapon-stats">
@@ -918,7 +1036,11 @@
                         </div>
 
                         <div class="weapon-icon-area">
-                            <div class="weapon-icon" id="weaponIcon" style="color: ${gradeData.color}">${weapon.icon}</div>
+                            <img src="${WEAPON_TYPES[weapon.type].img}" 
+                                 class="weapon-icon" 
+                                 id="weaponIcon"
+                                 style="filter:drop-shadow(0 0 20px ${gradeData.color});"
+                                 alt="${weapon.name}">
                         </div>
 
                         <div class="weapon-stats">
@@ -994,6 +1116,8 @@
 
             const weaponIcon = document.getElementById('weaponIcon');
             weaponIcon.classList.add('shake');
+            playSound('enhance');
+            vibrate(50);
             setTimeout(() => weaponIcon.classList.remove('shake'), 500);
 
             const roll = Math.random() * 100;
@@ -1007,8 +1131,12 @@
                 toLevel = fromLevel + 1;
                 result = 'success';
                 state.stats.successes++;
-                weaponIcon.classList.add('glow-success');
-                setTimeout(() => weaponIcon.classList.remove('glow-success'), 1000);
+                setTimeout(() => {
+                    playSound('success');
+                    vibrate([50, 50, 100]);
+                    weaponIcon.classList.add('glow-success');
+                }, 300);
+                setTimeout(() => weaponIcon.classList.remove('glow-success'), 1300);
             } else if (rates.destroy > 0 && roll < rates.success + rates.destroy) {
                 // Destroy! 💥
                 result = 'destroy';
@@ -1026,14 +1154,26 @@
                     }
                 }
                 
-                weaponIcon.classList.add('glow-fail');
-                setTimeout(() => weaponIcon.classList.remove('glow-fail'), 1000);
+                setTimeout(() => {
+                    playSound('destroy');
+                    vibrate([100, 50, 100, 50, 200]);
+                    weaponIcon.classList.add('glow-fail');
+                    document.body.classList.add('screen-shake');
+                }, 300);
+                setTimeout(() => {
+                    weaponIcon.classList.remove('glow-fail');
+                    document.body.classList.remove('screen-shake');
+                }, 1300);
             } else {
                 // Fail - just stays the same (no downgrade!)
                 result = 'fail';
                 state.stats.fails++;
-                weaponIcon.classList.add('glow-fail');
-                setTimeout(() => weaponIcon.classList.remove('glow-fail'), 1000);
+                setTimeout(() => {
+                    playSound('fail');
+                    vibrate(100);
+                    weaponIcon.classList.add('glow-fail');
+                }, 300);
+                setTimeout(() => weaponIcon.classList.remove('glow-fail'), 1300);
             }
 
             if (newWeapon) {
@@ -1161,9 +1301,30 @@
 
         function handleBattleEvent(type, data) {
             if (type === 'state_update') {
+                // Check log for attack events to play sounds
+                const gs = data.gameState || data;
+                const lastLog = gs.log?.[gs.log.length - 1];
+                if (lastLog) {
+                    if (lastLog.type === 'crit') {
+                        playSound('crit');
+                        vibrate([50, 30, 100]);
+                        document.body.classList.add('screen-shake');
+                        setTimeout(() => document.body.classList.remove('screen-shake'), 300);
+                    } else if (lastLog.type === 'damage') {
+                        playSound('attack');
+                        vibrate(50);
+                    }
+                }
                 battleState = data;
                 renderBattle();
             } else if (type === 'game_end') {
+                if (data.winnerId === mpUI.getClient().getMyUserId()) {
+                    playSound('success');
+                    vibrate([100, 50, 100, 50, 200]);
+                } else {
+                    playSound('destroy');
+                    vibrate([200, 100, 200]);
+                }
                 showBattleResult(data);
             }
         }
@@ -1179,10 +1340,14 @@
 
             const myGrade = me?.weaponGrade ? GRADES[me.weaponGrade] : GRADES.common;
             const enemyGrade = enemy?.weaponGrade ? GRADES[enemy.weaponGrade] : GRADES.common;
+            
+            // Get weapon images from type
+            const myWeaponImg = WEAPON_TYPES[me?.weaponType]?.img || WEAPON_TYPES.sword.img;
+            const enemyWeaponImg = WEAPON_TYPES[enemy?.weaponType]?.img || WEAPON_TYPES.sword.img;
 
             // Status badges
-            const enemyStatus = enemy?.isDefending ? '🛡️ 방어중' : (enemy?.counterReady ? '⚡ 카운터 준비' : '');
-            const myStatus = me?.isDefending ? '🛡️ 방어중' : (me?.counterReady ? '⚡ 카운터 준비!' : '');
+            const enemyStatus = enemy?.isDefending ? '🛡️ 방어중' : (enemy?.counterReady ? '⚡ 카운터' : '');
+            const myStatus = me?.isDefending ? '🛡️ 방어중' : (me?.counterReady ? '⚡ 카운터!' : '');
 
             document.getElementById('app').innerHTML = `
                 <div class="battle-screen">
@@ -1196,7 +1361,8 @@
                             <div class="fighter-header">
                                 <span class="fighter-name">👤 ${enemy?.nickname || '상대'} ${enemyStatus}</span>
                                 <span class="fighter-weapon" style="color:${enemyGrade.color}">
-                                    [${enemyGrade.name}] +${enemy?.weaponLevel || 0} ${enemy?.weaponIcon || '🗡️'}
+                                    <img src="${enemyWeaponImg}" style="width:20px;height:20px;vertical-align:middle;filter:drop-shadow(0 0 3px ${enemyGrade.color});">
+                                    [${enemyGrade.name}] +${enemy?.weaponLevel || 0}
                                 </span>
                             </div>
                             <div class="hp-bar-container">
@@ -1215,7 +1381,8 @@
                             <div class="fighter-header">
                                 <span class="fighter-name">🎮 ${me?.nickname || '나'} ${myStatus}</span>
                                 <span class="fighter-weapon" style="color:${myGrade.color}">
-                                    [${myGrade.name}] +${me?.weaponLevel || 0} ${me?.weaponIcon || '🗡️'}
+                                    <img src="${myWeaponImg}" style="width:20px;height:20px;vertical-align:middle;filter:drop-shadow(0 0 3px ${myGrade.color});">
+                                    [${myGrade.name}] +${me?.weaponLevel || 0}
                                 </span>
                             </div>
                             <div class="hp-bar-container">
