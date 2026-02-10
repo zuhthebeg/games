@@ -164,6 +164,65 @@
         .weapon-icon.glow-fail { filter: drop-shadow(0 0 30px var(--fail)) drop-shadow(0 0 60px var(--fail)) brightness(0.8); }
         .weapon-icon.hit { animation: hitEffect 0.3s ease-out; }
         
+        /* Enhancement Level Backgrounds */
+        .weapon-card.level-0-3 { background: linear-gradient(135deg, #1a1a1a 0%, #252525 100%); }
+        .weapon-card.level-4-7 { background: linear-gradient(135deg, #1a1a2a 0%, #252540 100%); }
+        .weapon-card.level-8-9 { 
+            background: linear-gradient(135deg, #1a2a3a 0%, #2a4050 100%); 
+            animation: glowPulse8 3s ease-in-out infinite;
+        }
+        .weapon-card.level-10-12 { 
+            background: linear-gradient(135deg, #2a1a3a 0%, #4a2a5a 100%); 
+            animation: glowPulse10 2.5s ease-in-out infinite;
+        }
+        .weapon-card.level-13-15 { 
+            background: linear-gradient(135deg, #3a1a1a 0%, #5a2a2a 100%); 
+            animation: glowPulse13 2s ease-in-out infinite;
+        }
+        .weapon-card.level-16-18 { 
+            background: linear-gradient(135deg, #3a2a1a 0%, #6a4a1a 100%); 
+            animation: glowPulse16 1.5s ease-in-out infinite;
+            box-shadow: 0 0 30px rgba(255,150,0,0.3);
+        }
+        .weapon-card.level-19-20 { 
+            background: linear-gradient(45deg, #1a0a2a, #2a1a4a, #1a3a4a, #2a1a4a, #1a0a2a);
+            background-size: 400% 400%;
+            animation: rainbowBg 4s ease infinite, glowPulse20 1s ease-in-out infinite;
+            box-shadow: 0 0 50px rgba(255,100,255,0.5), 0 0 100px rgba(100,200,255,0.3);
+        }
+        .weapon-card.level-21 { 
+            background: linear-gradient(45deg, #ff0080, #ff8c00, #40e0d0, #ff0080);
+            background-size: 600% 600%;
+            animation: rainbowBg 2s ease infinite;
+            box-shadow: 0 0 60px rgba(255,0,128,0.6), 0 0 120px rgba(255,140,0,0.4);
+        }
+        
+        @keyframes glowPulse8 {
+            0%, 100% { box-shadow: 0 0 15px rgba(100,150,255,0.2); }
+            50% { box-shadow: 0 0 25px rgba(100,150,255,0.4); }
+        }
+        @keyframes glowPulse10 {
+            0%, 100% { box-shadow: 0 0 20px rgba(150,100,255,0.3); }
+            50% { box-shadow: 0 0 35px rgba(150,100,255,0.5); }
+        }
+        @keyframes glowPulse13 {
+            0%, 100% { box-shadow: 0 0 25px rgba(255,100,100,0.3); }
+            50% { box-shadow: 0 0 45px rgba(255,100,100,0.6); }
+        }
+        @keyframes glowPulse16 {
+            0%, 100% { box-shadow: 0 0 30px rgba(255,150,0,0.3); }
+            50% { box-shadow: 0 0 60px rgba(255,200,0,0.6); }
+        }
+        @keyframes glowPulse20 {
+            0%, 100% { box-shadow: 0 0 50px rgba(255,100,255,0.5), 0 0 100px rgba(100,200,255,0.3); }
+            50% { box-shadow: 0 0 80px rgba(255,100,255,0.8), 0 0 150px rgba(100,200,255,0.5); }
+        }
+        @keyframes rainbowBg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
         @keyframes hitEffect {
             0% { transform: scale(1) rotate(0); }
             25% { transform: scale(1.2) rotate(-10deg); }
@@ -988,6 +1047,119 @@
             mastery: { attacks: 0, kills: 0 }  // 숙련도 시스템
         };
         
+        // ===== CLOUD SYNC =====
+        let cloudSyncEnabled = false;
+        let lastSyncTime = 0;
+        const SYNC_DEBOUNCE_MS = 3000; // 3초마다 최대 1회 동기화
+        
+        async function checkCloudSync() {
+            // multiplayer.js의 ensureAuth 통해 토큰 확인
+            if (typeof MultiplayerClient === 'undefined') return;
+            const token = localStorage.getItem('cocy_auth_token');
+            if (!token) return;
+            
+            try {
+                // 토큰이 익명인지 확인 (sub 필드가 있으면 로그인 유저)
+                const parts = token.split('.');
+                if (parts.length !== 3) return;
+                const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                
+                if (payload.sub) {
+                    // 로그인 유저! 클라우드 동기화 활성화
+                    cloudSyncEnabled = true;
+                    console.log('☁️ Cloud sync enabled for logged-in user');
+                    await loadFromCloud();
+                }
+            } catch (e) {
+                console.log('Cloud sync check failed:', e);
+            }
+        }
+        
+        async function loadFromCloud() {
+            if (!cloudSyncEnabled) return;
+            const token = localStorage.getItem('cocy_auth_token');
+            if (!token) return;
+            
+            try {
+                const res = await fetch('https://relay.cocy.io/api/user/data', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) return;
+                
+                const data = await res.json();
+                if (data.gold !== undefined) {
+                    // 서버 데이터가 있으면 병합 (서버 우선)
+                    const serverData = data.data || {};
+                    
+                    // 로컬과 서버 중 더 진행된 쪽 사용
+                    const localGold = state.gold;
+                    const serverGold = data.gold;
+                    
+                    if (serverGold > 0 || serverData.weapon) {
+                        // 서버에 데이터 있음 - 서버 우선
+                        state.gold = serverGold;
+                        if (serverData.weapon) state.weapon = serverData.weapon;
+                        if (serverData.mastery) state.mastery = serverData.mastery;
+                        if (serverData.stats) state.stats = serverData.stats;
+                        if (serverData.protectionScrolls !== undefined) state.protectionScrolls = serverData.protectionScrolls;
+                        
+                        // 로컬에도 저장
+                        localStorage.setItem('enhance_game_v3', JSON.stringify(state));
+                        console.log('☁️ Loaded from cloud:', state.gold, 'G');
+                    } else if (localGold > 0) {
+                        // 서버 비어있고 로컬에 데이터 있음 - 업로드
+                        await saveToCloud();
+                    }
+                }
+            } catch (e) {
+                console.log('Cloud load failed:', e);
+            }
+        }
+        
+        async function saveToCloud() {
+            if (!cloudSyncEnabled) return;
+            
+            // 디바운싱
+            const now = Date.now();
+            if (now - lastSyncTime < SYNC_DEBOUNCE_MS) return;
+            lastSyncTime = now;
+            
+            const token = localStorage.getItem('cocy_auth_token');
+            if (!token) return;
+            
+            try {
+                await fetch('https://relay.cocy.io/api/user/data', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        gold: state.gold,
+                        weapon: state.weapon,
+                        mastery: state.mastery,
+                        stats: state.stats,
+                        protectionScrolls: state.protectionScrolls
+                    })
+                });
+                console.log('☁️ Saved to cloud');
+            } catch (e) {
+                console.log('Cloud save failed:', e);
+            }
+        }
+        
+        // 강화 레벨에 따른 카드 클래스
+        function getLevelClass(level) {
+            if (level >= 21) return 'level-21';
+            if (level >= 19) return 'level-19-20';
+            if (level >= 16) return 'level-16-18';
+            if (level >= 13) return 'level-13-15';
+            if (level >= 10) return 'level-10-12';
+            if (level >= 8) return 'level-8-9';
+            if (level >= 4) return 'level-4-7';
+            return 'level-0-3';
+        }
+        
         // 숙련도 보너스 계산 (공격력 %)
         function getMasteryBonus() {
             const attackBonus = Math.min(20, Math.floor(state.mastery.attacks / 50)); // 50번당 1%, 최대 20%
@@ -1117,6 +1289,8 @@
 
         function saveState() {
             localStorage.setItem('enhance_game_v3', JSON.stringify(state));
+            // 클라우드 동기화 (비동기, 디바운싱됨)
+            saveToCloud();
         }
 
         // ===== MAIN SCREEN =====
@@ -1135,9 +1309,10 @@
                     <div class="gold-display">
                         <span class="gold-icon">💰</span>
                         <span class="gold-amount">${state.gold.toLocaleString()} G</span>
+                        ${cloudSyncEnabled ? '<span style="margin-left:8px;color:#4ecca3;font-size:0.8rem;">☁️ 동기화</span>' : ''}
                     </div>
 
-                    <div class="weapon-card ${weapon.grade}">
+                    <div class="weapon-card ${weapon.grade} ${getLevelClass(weapon.level)}">
                         <div class="weapon-header">
                             <div class="weapon-info">
                                 <div class="weapon-grade ${weapon.grade}">${gradeData.name}</div>
@@ -1252,7 +1427,7 @@
                         <span class="gold-amount">${state.gold.toLocaleString()} G</span>
                     </div>
 
-                    <div class="weapon-card ${weapon.grade}">
+                    <div class="weapon-card ${weapon.grade} ${getLevelClass(weapon.level)}">
                         <div class="weapon-header">
                             <div class="weapon-info">
                                 <div class="weapon-grade ${weapon.grade}">${gradeData.name}</div>
@@ -2049,9 +2224,14 @@
             // 숙련도 증가
             state.mastery.attacks++;
             
-            // 내구도 감소 (1~3)
-            const durabilityLoss = Math.floor(Math.random() * 3) + 1;
-            state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - durabilityLoss);
+            // 내구도 감소 (100타에 약 10% = 0.1/타, 누적 방식)
+            // 실제로는 10타마다 1% 감소하는 방식으로 처리
+            if (!state.weapon._durabilityCounter) state.weapon._durabilityCounter = 0;
+            state.weapon._durabilityCounter++;
+            if (state.weapon._durabilityCounter >= 10) {
+                state.weapon._durabilityCounter = 0;
+                state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - 1);
+            }
             
             // Player attacks first
             const playerDamage = Math.floor(Math.random() * (player.damageMax - player.damageMin + 1)) + player.damageMin;
@@ -2289,6 +2469,11 @@
         // ===== INIT =====
         loadState();
         showMain();
+        // 클라우드 동기화 체크 (비동기)
+        checkCloudSync().then(() => {
+            // 동기화 후 화면 갱신
+            showMain();
+        });
     </script>
 </body>
 </html>
