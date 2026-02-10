@@ -1140,21 +1140,21 @@
             }
         };
 
-        // 더 스릴있는 확률! 하락 없음, 파괴 일찍 시작
+        // 더 스릴있는 확률! +4부터 파괴 시작!
         const ENHANCE_RATES = {
             0: { success: 100, destroy: 0, cost: 100 },      // +0→+1: 100%
             1: { success: 95, destroy: 0, cost: 200 },       // +1→+2: 95%
             2: { success: 90, destroy: 0, cost: 400 },       // +2→+3: 90%
             3: { success: 80, destroy: 0, cost: 800 },       // +3→+4: 80%
-            4: { success: 70, destroy: 0, cost: 1500 },      // +4→+5: 70%
-            5: { success: 60, destroy: 0, cost: 3000 },      // +5→+6: 60%
-            6: { success: 50, destroy: 0, cost: 5000 },      // +6→+7: 50%
-            7: { success: 45, destroy: 10, cost: 8000 },     // +7→+8: 45% (파괴 시작!)
-            8: { success: 40, destroy: 15, cost: 12000 },    // +8→+9: 40%
-            9: { success: 35, destroy: 20, cost: 20000 },    // +9→+10: 35%
-            10: { success: 30, destroy: 30, cost: 35000 },   // +10→+11: 30% 🔥
-            11: { success: 25, destroy: 35, cost: 50000 },   // +11→+12: 25%
-            12: { success: 20, destroy: 40, cost: 80000 },   // +12→+13: 20%
+            4: { success: 70, destroy: 5, cost: 1500 },      // +4→+5: 70% ⚠️ 파괴 시작!
+            5: { success: 60, destroy: 8, cost: 3000 },      // +5→+6: 60%
+            6: { success: 50, destroy: 12, cost: 5000 },     // +6→+7: 50%
+            7: { success: 45, destroy: 18, cost: 8000 },     // +7→+8: 45%
+            8: { success: 40, destroy: 25, cost: 12000 },    // +8→+9: 40%
+            9: { success: 35, destroy: 30, cost: 20000 },    // +9→+10: 35%
+            10: { success: 30, destroy: 35, cost: 35000 },   // +10→+11: 30% 🔥
+            11: { success: 25, destroy: 40, cost: 50000 },   // +11→+12: 25%
+            12: { success: 20, destroy: 45, cost: 80000 },   // +12→+13: 20%
             13: { success: 15, destroy: 50, cost: 120000 },  // +13→+14: 15% ☠️
             14: { success: 10, destroy: 55, cost: 200000 },  // +14→+15: 10%
             15: { success: 7, destroy: 60, cost: 350000 },   // +15→+16: 7% 💀
@@ -1354,10 +1354,63 @@
                 grade,
                 name,
                 level: 0,
-                element,  // 속성!
+                element,
                 img: typeData.img,
-                durability: MAX_DURABILITY
+                durability: MAX_DURABILITY,
+                // 숙련도 시스템 (무기별)
+                weaponMastery: {
+                    attacks: 0,
+                    crits: 0,
+                    kills: 0,
+                    killsByType: {}  // { 'undead': 3, 'beast': 5, ... }
+                }
             };
+        }
+        
+        // 무기 획득 (상황별 등급 조절)
+        // dropSource: 'default', 'monster_death', 'enhance_destroy', 'durability_break'
+        function generateWeaponBySource(dropSource, monsterTier = 1) {
+            let gradeRoll = Math.random() * 100;
+            let grade;
+            
+            if (dropSource === 'durability_break') {
+                // 내구도 파괴: 최고 확률!
+                // unique 10%, legendary 25%, rare 35%, magic 25%, common 5%
+                if (gradeRoll < 10) grade = 'unique';
+                else if (gradeRoll < 35) grade = 'legendary';
+                else if (gradeRoll < 70) grade = 'rare';
+                else if (gradeRoll < 95) grade = 'magic';
+                else grade = 'common';
+            } else if (dropSource === 'monster_death') {
+                // 몬스터한테 죽음: 티어에 따라
+                const tierBonus = (monsterTier - 1) * 10; // 티어당 +10%
+                if (gradeRoll < 1 + tierBonus * 0.5) grade = 'unique';
+                else if (gradeRoll < 5 + tierBonus) grade = 'legendary';
+                else if (gradeRoll < 15 + tierBonus * 1.5) grade = 'rare';
+                else if (gradeRoll < 40 + tierBonus) grade = 'magic';
+                else grade = 'common';
+            } else if (dropSource === 'enhance_destroy') {
+                // 강화 파괴: 일반~레어만
+                if (gradeRoll < 20) grade = 'rare';
+                else if (gradeRoll < 50) grade = 'magic';
+                else grade = 'common';
+            } else {
+                // 기본 (판매 후 등)
+                return generateWeapon();
+            }
+            
+            return generateWeapon(grade);
+        }
+        
+        // 무기 숙련도 레벨 (100공격당 1레벨, 최대 50)
+        function getWeaponMasteryLevel(weapon) {
+            if (!weapon?.weaponMastery) return 0;
+            return Math.min(50, Math.floor(weapon.weaponMastery.attacks / 100));
+        }
+        
+        // 숙련도 보너스 (레벨당 1%, 최대 50%)
+        function getWeaponMasteryBonus(weapon) {
+            return getWeaponMasteryLevel(weapon);
         }
         
         // Get weapon image HTML with proper coloring
@@ -1371,27 +1424,29 @@
         }
 
         function getWeaponStats(weapon, includeMastery = true) {
-            if (!weapon) return { damageMin: 0, damageMax: 0, critChance: 0, critDamage: 150, hp: 100, masteryBonus: 0 };
+            if (!weapon) return { damageMin: 0, damageMax: 0, critChance: 0, critDamage: 150, hp: 100, masteryBonus: 0, weaponMasteryBonus: 0 };
 
             const typeData = WEAPON_TYPES[weapon.type];
             const gradeData = GRADES[weapon.grade];
             const mult = gradeData.multiplier;
             const level = weapon.level;
-            const masteryBonus = includeMastery ? getMasteryBonus() : 0;
+            const globalMasteryBonus = includeMastery ? getMasteryBonus() : 0;
+            const weaponMasteryBonus = includeMastery ? getWeaponMasteryBonus(weapon) : 0;
+            const totalMasteryBonus = globalMasteryBonus + weaponMasteryBonus;
 
             const baseDmgMin = 10;
             const baseDmgMax = 15;
             const dmgPerLevel = 5;
 
-            // 숙련도 보너스 적용 (공격력에만)
-            const masteryMult = 1 + (masteryBonus / 100);
+            // 숙련도 보너스 적용 (글로벌 + 무기별)
+            const masteryMult = 1 + (totalMasteryBonus / 100);
             const damageMin = Math.floor((baseDmgMin + level * dmgPerLevel) * mult * typeData.bonus.damage * masteryMult);
             const damageMax = Math.floor((baseDmgMax + level * dmgPerLevel) * mult * typeData.bonus.damage * masteryMult);
             const critChance = Math.min(60, Math.floor((5 + level * 2) * typeData.bonus.crit));
             const critDamage = 150 + level * 5;
             const hp = Math.floor((100 + level * 20) * mult);
 
-            return { damageMin, damageMax, critChance, critDamage, hp, masteryBonus };
+            return { damageMin, damageMax, critChance, critDamage, hp, masteryBonus: globalMasteryBonus, weaponMasteryBonus };
         }
 
         function getWeaponValue(weapon) {
@@ -1474,7 +1529,7 @@
                                 <span class="stat-icon">⚔️</span>
                                 <div class="stat-info">
                                     <div class="stat-value damage">${stats.damageMin}-${stats.damageMax}</div>
-                                    <div class="stat-label">공격력 ${stats.masteryBonus > 0 ? `<span style="color:var(--success)">+${stats.masteryBonus}%</span>` : ''}</div>
+                                    <div class="stat-label">공격력</div>
                                 </div>
                             </div>
                             <div class="stat-item">
@@ -1491,11 +1546,11 @@
                                     <div class="stat-label">내구도</div>
                                 </div>
                             </div>
-                            <div class="stat-item">
-                                <span class="stat-icon">⭐</span>
+                            <div class="stat-item" onclick="showMasteryDetail()" style="cursor:pointer;">
+                                <span class="stat-icon">📈</span>
                                 <div class="stat-info">
-                                    <div class="stat-value special">${state.mastery.kills}</div>
-                                    <div class="stat-label">처치</div>
+                                    <div class="stat-value special">Lv.${getWeaponMasteryLevel(weapon)}</div>
+                                    <div class="stat-label">숙련 <span style="color:var(--success);font-size:0.7rem;">+${getWeaponMasteryBonus(weapon)}%</span></div>
                                 </div>
                             </div>
                         </div>
@@ -1688,10 +1743,13 @@
                     state.useProtection = false;
                     toLevel = fromLevel;
                 } else {
-                    // Generate new weapon (different from current)
-                    newWeapon = generateWeapon();
-                    while (newWeapon.type === weapon.type && newWeapon.grade === weapon.grade) {
-                        newWeapon = generateWeapon();
+                    // Generate new weapon (강화 파괴 = 일반~레어)
+                    newWeapon = generateWeaponBySource('enhance_destroy');
+                    // 같은 무기 타입이면 다시 뽑기
+                    let retries = 0;
+                    while (newWeapon.type === weapon.type && newWeapon.grade === weapon.grade && retries < 3) {
+                        newWeapon = generateWeaponBySource('enhance_destroy');
+                        retries++;
                     }
                 }
                 
@@ -2342,6 +2400,60 @@
             setTimeout(() => crit.remove(), 800);
         }
         
+        function showMasteryDetail() {
+            const weapon = state.weapon;
+            const mastery = weapon.weaponMastery || { attacks: 0, crits: 0, kills: 0, killsByType: {} };
+            const level = getWeaponMasteryLevel(weapon);
+            const bonus = getWeaponMasteryBonus(weapon);
+            const nextLevelAt = (level + 1) * 100;
+            const progress = mastery.attacks % 100;
+            
+            // 처치 정보
+            let killsHtml = '';
+            if (Object.keys(mastery.killsByType).length > 0) {
+                killsHtml = '<div style="margin-top:12px;"><strong>처치 기록:</strong><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">';
+                for (const [type, count] of Object.entries(mastery.killsByType)) {
+                    const typeData = MONSTER_TYPES[type];
+                    if (typeData && count > 0) {
+                        killsHtml += `<span style="background:rgba(255,255,255,0.1);padding:4px 8px;border-radius:6px;">${typeData.icon} ${typeData.name}: ${count}</span>`;
+                    }
+                }
+                killsHtml += '</div></div>';
+            }
+            
+            const popup = document.getElementById('resultPopup');
+            const overlay = document.getElementById('overlay');
+            
+            popup.className = 'result-popup show';
+            popup.style.border = '2px solid var(--success)';
+            document.getElementById('resultIcon').textContent = '📈';
+            document.getElementById('resultText').textContent = `숙련도 Lv.${level}`;
+            document.getElementById('resultText').style.color = 'var(--success)';
+            document.getElementById('resultDetail').innerHTML = `
+                <div style="text-align:left;font-size:0.9rem;">
+                    <div style="margin-bottom:8px;">
+                        <strong>공격력 보너스:</strong> <span style="color:var(--success)">+${bonus}%</span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.1);border-radius:8px;height:12px;margin:8px 0;overflow:hidden;">
+                        <div style="width:${progress}%;height:100%;background:var(--success);transition:width 0.3s;"></div>
+                    </div>
+                    <div style="font-size:0.8rem;color:var(--muted);">다음 레벨까지: ${progress}/100 공격</div>
+                    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:12px 0;">
+                    <div><strong>총 공격:</strong> ${mastery.attacks.toLocaleString()}회</div>
+                    <div><strong>크리티컬:</strong> ${mastery.crits.toLocaleString()}회 (${mastery.attacks > 0 ? ((mastery.crits / mastery.attacks) * 100).toFixed(1) : 0}%)</div>
+                    <div><strong>총 처치:</strong> ${mastery.kills.toLocaleString()}마리</div>
+                    ${killsHtml}
+                </div>
+            `;
+            document.getElementById('newWeaponPreview').style.display = 'none';
+            document.getElementById('resultBtn').onclick = () => {
+                closeResult();
+                popup.style.border = '';
+            };
+            
+            overlay.classList.add('show');
+        }
+        
         function showLuckyDrawEffect(goldAmount) {
             // 황금빛 플래시
             const flash = document.createElement('div');
@@ -2403,10 +2515,11 @@
                     
                     huntState.log.push({ type: 'crit', text: `💥 무기가 전투 중 파괴되었습니다! 양쪽 ${breakDamage} 데미지!` });
                     
-                    // 새 무기 지급
-                    state.weapon = generateWeapon('common');
-                    player.damageMin = 10;
-                    player.damageMax = 15;
+                    // 새 무기 지급 (내구도 파괴 = 최고 확률!)
+                    state.weapon = generateWeaponBySource('durability_break');
+                    const newStats = getWeaponStats(state.weapon, false);
+                    player.damageMin = newStats.damageMin;
+                    player.damageMax = newStats.damageMax;
                     saveState();
                     
                     if (player.hp <= 0) {
@@ -2422,8 +2535,14 @@
                 }
             }
             
-            // 숙련도 증가
+            // 글로벌 숙련도 증가
             state.mastery.attacks++;
+            
+            // 무기별 숙련도 증가
+            if (!state.weapon.weaponMastery) {
+                state.weapon.weaponMastery = { attacks: 0, crits: 0, kills: 0, killsByType: {} };
+            }
+            state.weapon.weaponMastery.attacks++;
             
             // 내구도 감소 (100타에 약 10% = 0.1/타, 누적 방식)
             // 실제로는 10타마다 1% 감소하는 방식으로 처리
@@ -2453,6 +2572,9 @@
             const elementText = elementMult > 1 ? ` 🎯효과적!` : (elementMult < 1 ? ` 🛡️저항...` : '');
             
             if (playerCrit) {
+                // 크리 기록
+                state.weapon.weaponMastery.crits++;
+                
                 showCritEffect();
                 document.body.classList.add('screen-shake');
                 setTimeout(() => document.body.classList.remove('screen-shake'), 300);
@@ -2518,11 +2640,19 @@
             }
             
             state.gold += goldReward;
-            state.mastery.kills++; // 숙련도 증가!
+            state.mastery.kills++;
             huntState.monstersKilled++;
             huntState.totalGoldEarned += goldReward;
             huntState._lastKillWasLucky = isLuckyDraw;
             huntState._lastGoldReward = goldReward;
+            
+            // 무기별 처치 기록
+            if (!state.weapon.weaponMastery) {
+                state.weapon.weaponMastery = { attacks: 0, crits: 0, kills: 0, killsByType: {} };
+            }
+            state.weapon.weaponMastery.kills++;
+            const mType = monster.type || 'unknown';
+            state.weapon.weaponMastery.killsByType[mType] = (state.weapon.weaponMastery.killsByType[mType] || 0) + 1;
             
             playSound('success');
             vibrate(isLuckyDraw ? [100, 50, 100, 50, 100, 50, 200] : [50, 50, 100]);
@@ -2617,9 +2747,10 @@
             playSound('destroy');
             vibrate([200, 100, 200, 100, 300]);
             
-            // Lose weapon!
+            // Lose weapon! 몬스터 티어에 따라 좋은 무기 확률
             const lostWeapon = state.weapon;
-            state.weapon = generateWeapon('common'); // Reset to random common weapon
+            const monsterTier = huntState.monster?.tier || 1;
+            state.weapon = generateWeaponBySource('monster_death', monsterTier);
             state.stats.losses++;
             saveState();
             
