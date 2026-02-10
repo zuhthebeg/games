@@ -1367,39 +1367,95 @@
             };
         }
         
-        // 무기 획득 (상황별 등급 조절)
-        // dropSource: 'default', 'monster_death', 'enhance_destroy', 'durability_break'
-        function generateWeaponBySource(dropSource, monsterTier = 1) {
+        // 종족의 취약 속성 가져오기
+        function getWeaknessElement(monsterType) {
+            const typeData = MONSTER_TYPES[monsterType];
+            if (!typeData || !typeData.weakness || typeData.weakness.length === 0) return 'none';
+            return typeData.weakness[Math.floor(Math.random() * typeData.weakness.length)];
+        }
+        
+        // 숙련도 기반 속성 부여 (100마리 이상 처치한 종족의 취약 속성)
+        function getMasteryElement(weapon) {
+            if (!weapon?.weaponMastery?.killsByType) return null;
+            const kills = weapon.weaponMastery.killsByType;
+            
+            // 100마리 이상 처치한 종족 찾기
+            for (const [type, count] of Object.entries(kills)) {
+                if (count >= 100) {
+                    return getWeaknessElement(type);
+                }
+            }
+            return null;
+        }
+        
+        // 무기 획득 (상황별 등급 및 속성 조절)
+        // dropSource: 'sell', 'monster_death', 'pvp_death', 'enhance_destroy_high', 'enhance_destroy_low', 'durability_break'
+        // context: { monsterType, opponentElement, weaponLevel }
+        function generateWeaponBySource(dropSource, context = {}) {
             let gradeRoll = Math.random() * 100;
             let grade;
+            let element = 'none';
             
-            if (dropSource === 'durability_break') {
-                // 내구도 파괴: 최고 확률!
-                // unique 10%, legendary 25%, rare 35%, magic 25%, common 5%
-                if (gradeRoll < 10) grade = 'unique';
-                else if (gradeRoll < 35) grade = 'legendary';
-                else if (gradeRoll < 70) grade = 'rare';
-                else if (gradeRoll < 95) grade = 'magic';
+            if (dropSource === 'sell') {
+                // 판매: 일반~레어, 랜덤 속성
+                if (gradeRoll < 15) grade = 'rare';
+                else if (gradeRoll < 45) grade = 'magic';
                 else grade = 'common';
-            } else if (dropSource === 'monster_death') {
-                // 몬스터한테 죽음: 티어에 따라
-                const tierBonus = (monsterTier - 1) * 10; // 티어당 +10%
-                if (gradeRoll < 1 + tierBonus * 0.5) grade = 'unique';
-                else if (gradeRoll < 5 + tierBonus) grade = 'legendary';
-                else if (gradeRoll < 15 + tierBonus * 1.5) grade = 'rare';
-                else if (gradeRoll < 40 + tierBonus) grade = 'magic';
-                else grade = 'common';
-            } else if (dropSource === 'enhance_destroy') {
-                // 강화 파괴: 일반~레어만
-                if (gradeRoll < 20) grade = 'rare';
+                // 랜덤 속성 (generateWeapon에서 처리)
+                
+            } else if (dropSource === 'monster_death' || dropSource === 'pvp_death') {
+                // 사망: 레어~유니크, 취약 속성 부여
+                if (gradeRoll < 15) grade = 'unique';
+                else if (gradeRoll < 45) grade = 'legendary';
+                else grade = 'rare';
+                
+                // 속성: 몬스터 취약 or 상대 무기 속성
+                if (dropSource === 'monster_death' && context.monsterType) {
+                    element = getWeaknessElement(context.monsterType);
+                } else if (dropSource === 'pvp_death' && context.opponentElement) {
+                    element = context.opponentElement;
+                }
+                
+            } else if (dropSource === 'enhance_destroy_high') {
+                // +7 이상 강화 파괴: 유니크~전설, 속성 없음!
+                if (gradeRoll < 40) grade = 'unique';
+                else grade = 'legendary';
+                element = 'none'; // 속성 없음 고정
+                
+            } else if (dropSource === 'enhance_destroy_low') {
+                // +6 이하 강화 파괴: 랜덤 등급
+                if (gradeRoll < 5) grade = 'legendary';
+                else if (gradeRoll < 20) grade = 'rare';
                 else if (gradeRoll < 50) grade = 'magic';
                 else grade = 'common';
+                // 랜덤 속성
+                
+            } else if (dropSource === 'durability_break') {
+                // 내구도 파괴: 레어~유니크, 숙련도 기반 속성!
+                if (gradeRoll < 20) grade = 'unique';
+                else if (gradeRoll < 50) grade = 'legendary';
+                else grade = 'rare';
+                
+                // 숙련도 기반 속성 (100마리 이상 처치한 종족 취약)
+                const masteryEl = getMasteryElement(state.weapon);
+                if (masteryEl) {
+                    element = masteryEl;
+                }
+                
             } else {
-                // 기본 (판매 후 등)
+                // 기본
                 return generateWeapon();
             }
             
-            return generateWeapon(grade);
+            // 무기 생성
+            const weapon = generateWeapon(grade);
+            
+            // 속성 덮어쓰기 (특정 조건에서만)
+            if (element !== 'none' || dropSource === 'enhance_destroy_high') {
+                weapon.element = element;
+            }
+            
+            return weapon;
         }
         
         // 무기 숙련도 레벨 (100공격당 1레벨, 최대 50)
@@ -1743,12 +1799,13 @@
                     state.useProtection = false;
                     toLevel = fromLevel;
                 } else {
-                    // Generate new weapon (강화 파괴 = 일반~레어)
-                    newWeapon = generateWeaponBySource('enhance_destroy');
+                    // Generate new weapon (+7 이상: 유니크~전설 무속성, +6 이하: 랜덤)
+                    const destroySource = weapon.level >= 7 ? 'enhance_destroy_high' : 'enhance_destroy_low';
+                    newWeapon = generateWeaponBySource(destroySource, { weaponLevel: weapon.level });
                     // 같은 무기 타입이면 다시 뽑기
                     let retries = 0;
                     while (newWeapon.type === weapon.type && newWeapon.grade === weapon.grade && retries < 3) {
-                        newWeapon = generateWeaponBySource('enhance_destroy');
+                        newWeapon = generateWeaponBySource(destroySource, { weaponLevel: weapon.level });
                         retries++;
                     }
                 }
@@ -1857,9 +1914,9 @@
 
         function sellWeapon() {
             const value = getWeaponValue(state.weapon);
-            if (confirm(`${state.weapon.name}을(를) ${value.toLocaleString()}G에 판매하시겠습니까?\n\n새로운 무기를 받게 됩니다.`)) {
+            if (confirm(`${state.weapon.name}을(를) ${value.toLocaleString()}G에 판매하시겠습니까?\n\n새로운 무기를 받게 됩니다. (일반~레어)`)) {
                 state.gold += value;
-                state.weapon = generateWeapon();
+                state.weapon = generateWeaponBySource('sell', {});
                 saveState();
                 showEnhance();
             }
@@ -2515,8 +2572,8 @@
                     
                     huntState.log.push({ type: 'crit', text: `💥 무기가 전투 중 파괴되었습니다! 양쪽 ${breakDamage} 데미지!` });
                     
-                    // 새 무기 지급 (내구도 파괴 = 최고 확률!)
-                    state.weapon = generateWeaponBySource('durability_break');
+                    // 새 무기 지급 (내구도 파괴 = 숙련도 기반 속성!)
+                    state.weapon = generateWeaponBySource('durability_break', {});
                     const newStats = getWeaponStats(state.weapon, false);
                     player.damageMin = newStats.damageMin;
                     player.damageMax = newStats.damageMax;
@@ -2747,10 +2804,10 @@
             playSound('destroy');
             vibrate([200, 100, 200, 100, 300]);
             
-            // Lose weapon! 몬스터 티어에 따라 좋은 무기 확률
+            // Lose weapon! 몬스터 종족 기반 속성 부여
             const lostWeapon = state.weapon;
-            const monsterTier = huntState.monster?.tier || 1;
-            state.weapon = generateWeaponBySource('monster_death', monsterTier);
+            const monsterType = huntState.monster?.type || 'beast';
+            state.weapon = generateWeaponBySource('monster_death', { monsterType });
             state.stats.losses++;
             saveState();
             
