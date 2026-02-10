@@ -1629,22 +1629,38 @@
             const title = document.getElementById('resultTitle');
             const detail = document.getElementById('resultDetail');
             
+            // 칩 변동 계산 (골드 보상용)
+            const potWon = game.pot;
+            let goldChange = 0;
+            
             if (winner === 'me') {
                 game.myChips += game.pot;
+                goldChange = Math.floor(potWon * CHIP_VALUE);
                 title.textContent = '🎉 승리!';
                 title.className = 'result-title win';
-                detail.textContent = winningHand ? `${winningHand}으로 +${game.pot} 획득` : `+${game.pot} 획득`;
+                detail.innerHTML = winningHand 
+                    ? `${winningHand}으로 +${game.pot} 획득 <span style="color:#4ecca3">+${goldChange}G</span>` 
+                    : `+${game.pot} 획득 <span style="color:#4ecca3">+${goldChange}G</span>`;
             } else if (winner === 'opponent') {
                 game.opponentChips += game.pot;
+                goldChange = -Math.floor(potWon * CHIP_VALUE);
                 title.textContent = '😢 패배';
                 title.className = 'result-title lose';
-                detail.textContent = winningHand ? `상대: ${winningHand}` : '';
+                detail.innerHTML = winningHand 
+                    ? `상대: ${winningHand} <span style="color:#ef4444">${goldChange}G</span>` 
+                    : `<span style="color:#ef4444">${goldChange}G</span>`;
             } else {
                 game.myChips += game.pot / 2;
                 game.opponentChips += game.pot / 2;
                 title.textContent = '🤝 무승부';
                 title.className = 'result-title tie';
                 detail.textContent = '팟 분배';
+            }
+            
+            // 골드 변동 적용 (싱글플레이)
+            if (goldChange !== 0) {
+                sharedGold = Math.max(0, sharedGold + goldChange);
+                saveSharedGold();
             }
             
             game.pot = 0;
