@@ -2163,11 +2163,16 @@
                 }
             }
             
-            // 일반 몬스터: 현재 티어 위주 (80%), 한단계 아래 (20%)
+            // 일반 몬스터: 티어 분배
+            // 현재 티어 50%, 한단계 아래 30%, 두단계 아래 15%, 한단계 위 5%
             const roll = Math.random();
             let targetTier = recommendedTier;
-            if (roll < 0.2 && recommendedTier > 1) {
-                targetTier = recommendedTier - 1; // 가끔 약한 몬스터
+            if (roll < 0.30 && recommendedTier > 1) {
+                targetTier = recommendedTier - 1; // 30% 확률로 약한 몬스터
+            } else if (roll < 0.45 && recommendedTier > 2) {
+                targetTier = recommendedTier - 2; // 15% 확률로 더 약한 몬스터
+            } else if (roll < 0.50 && recommendedTier < 5) {
+                targetTier = recommendedTier + 1; // 5% 확률로 강한 몬스터
             }
             
             const eligibleMonsters = Object.entries(MONSTERS)
@@ -2464,9 +2469,10 @@
             
             // Check if monster is dead
             if (monster.currentHp <= 0) {
-                // 한방킬 체크: 몬스터 최대HP에서 한번에 죽였는지
-                const wasOneShot = (monster.maxHp - finalPlayerDamage <= 0);
-                huntMonsterKilled(wasOneShot);
+                // 럭키드로우 조건: 크리티컬 + 한방킬!
+                const wasOneShot = (monster.maxHp <= finalPlayerDamage);
+                const isLuckyEligible = playerCrit && wasOneShot;
+                huntMonsterKilled(isLuckyEligible);
                 return;
             }
             
