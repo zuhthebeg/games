@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>무기 강화 & 배틀</title>
     <link rel="icon" href="icon.svg">
-    <script src="/lib/multiplayer.js?v=20260210v7"></script>
-    <script src="/lib/multiplayer-ui.js?v=20260210v7"></script>
+    <script src="/lib/multiplayer.js?v=20260210v8"></script>
+    <script src="/lib/multiplayer-ui.js?v=20260210v8"></script>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -1556,9 +1556,32 @@
                                 🛡️ 방어
                             </button>
                         </div>
+                        <button class="btn btn-secondary" onclick="battleSurrender()" style="margin-top:10px;background:rgba(255,100,100,0.15);">
+                            🏳️ 항복하기
+                        </button>
                     </div>
                 </div>
             `;
+        }
+
+        function battleSurrender() {
+            if (!confirm('항복하면 패배 처리됩니다.\n정말 항복하시겠습니까?')) return;
+            
+            // Leave room (counts as loss)
+            if (mpUI && mpUI.getClient()) {
+                mpUI.getClient().leaveRoom().catch(() => {});
+                mpUI.getClient()._clearRoom();
+                MultiplayerClient.resetInstance();
+            }
+            
+            state.stats.losses++;
+            saveState();
+            
+            playSound('fail');
+            
+            mpUI = null;
+            battleState = null;
+            showMain();
         }
 
         async function battleAction(action) {
@@ -1722,9 +1745,63 @@
 
                     <div class="hunt-actions">
                         <button class="btn btn-enhance" onclick="huntAttack()">⚔️ 공격!</button>
+                        <button class="btn btn-secondary" onclick="huntRunAway()" style="background:rgba(255,100,100,0.2);border:1px solid var(--fail);">
+                            🏃 도망 (-${getRunPenaltyPercent(monster.tier)}%)
+                        </button>
                     </div>
                 </div>
             `;
+        }
+
+        function getRunPenaltyPercent(tier) {
+            // Boss: 10%, Tier 3: 7%, Tier 2: 4%, Tier 1: 2%
+            const penalties = { 1: 2, 2: 4, 3: 7, 4: 10 };
+            return penalties[tier] || 5;
+        }
+
+        function huntRunAway() {
+            if (!huntState) return;
+            
+            const monster = huntState.monster;
+            const penaltyPercent = getRunPenaltyPercent(monster.tier);
+            const goldLoss = Math.floor(state.gold * penaltyPercent / 100);
+            
+            const warningMsg = monster.isBoss 
+                ? `⚠️ 보스에게서 도망치면 골드의 ${penaltyPercent}%를 잃습니다!\n\n💰 예상 손실: ${goldLoss.toLocaleString()}G\n\n정말 도망치시겠습니까?`
+                : `도망치면 골드의 ${penaltyPercent}%를 잃습니다.\n\n💰 예상 손실: ${goldLoss.toLocaleString()}G\n\n정말 도망치시겠습니까?`;
+            
+            if (!confirm(warningMsg)) return;
+            
+            // Apply penalty
+            state.gold = Math.max(0, state.gold - goldLoss);
+            saveState();
+            
+            playSound('fail');
+            vibrate(100);
+            
+            // Show result and exit
+            const popup = document.getElementById('resultPopup');
+            const overlay = document.getElementById('overlay');
+            
+            popup.className = 'result-popup fail show';
+            document.getElementById('resultIcon').textContent = '🏃';
+            document.getElementById('resultText').textContent = '도망 성공!';
+            document.getElementById('resultText').style.color = 'var(--muted)';
+            document.getElementById('resultDetail').innerHTML = `
+                💸 -${goldLoss.toLocaleString()}G 손실<br>
+                <span style="color:var(--muted);font-size:0.9em">
+                    처치: ${huntState.monstersKilled}마리 | 총 획득: ${huntState.totalGoldEarned.toLocaleString()}G
+                </span>
+            `;
+            document.getElementById('newWeaponPreview').style.display = 'none';
+            document.getElementById('resultBtn').textContent = '메인으로';
+            document.getElementById('resultBtn').onclick = () => {
+                closeResult();
+                huntState = null;
+                showMain();
+            };
+            
+            overlay.classList.add('show');
         }
 
         function huntAttack() {
@@ -1863,13 +1940,13 @@
         }
 
         function exitHunt() {
-            if (huntState && huntState.monstersKilled > 0) {
-                if (!confirm(`정말 도망치시겠습니까?\n\n처치: ${huntState.monstersKilled}마리\n획득: ${huntState.totalGoldEarned.toLocaleString()}G`)) {
-                    return;
-                }
+            // Use the same run away logic
+            if (huntState && huntState.monster) {
+                huntRunAway();
+            } else {
+                huntState = null;
+                showMain();
             }
-            huntState = null;
-            showMain();
         }
 
         // ===== CONFETTI =====
