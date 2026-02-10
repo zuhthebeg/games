@@ -1597,9 +1597,10 @@
             const weaponMasteryBonus = includeMastery ? getWeaponMasteryBonus(weapon) : 0;
             const totalMasteryBonus = globalMasteryBonus + weaponMasteryBonus;
 
-            const baseDmgMin = 10;
-            const baseDmgMax = 15;
-            const dmgPerLevel = 5;
+            // 데미지 50% 너프
+            const baseDmgMin = 5;
+            const baseDmgMax = 8;
+            const dmgPerLevel = 2.5;
 
             // 숙련도 보너스 적용 (글로벌 + 무기별)
             const masteryMult = 1 + (totalMasteryBonus / 100);
@@ -2374,17 +2375,17 @@
             const stats = getWeaponStats(state.weapon);
             const avgDamage = (stats.damageMin + stats.damageMax) / 2;
             
-            // 평균 데미지 기준 (몬스터 HP의 1/3~1/5 정도로 맞춤)
-            // Tier 1: HP 30-55, 적정 데미지 10-20
-            // Tier 2: HP 70-120, 적정 데미지 20-40
-            // Tier 3: HP 150-250, 적정 데미지 40-80
-            // Tier 4: HP 280-450, 적정 데미지 80-150
-            // Tier 5: HP 600-800, 적정 데미지 150+
+            // 평균 데미지 기준 (50% 너프 반영)
+            // Tier 1: HP 30-55, 적정 데미지 5-10
+            // Tier 2: HP 70-120, 적정 데미지 10-20
+            // Tier 3: HP 150-250, 적정 데미지 20-40
+            // Tier 4: HP 280-450, 적정 데미지 40-80
+            // Tier 5: HP 600-800, 적정 데미지 80+
             
-            if (avgDamage < 20) return 1;
-            if (avgDamage < 45) return 2;
-            if (avgDamage < 90) return 3;
-            if (avgDamage < 160) return 4;
+            if (avgDamage < 10) return 1;
+            if (avgDamage < 22) return 2;
+            if (avgDamage < 45) return 3;
+            if (avgDamage < 80) return 4;
             return 5;
         }
 
