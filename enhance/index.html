@@ -301,6 +301,93 @@
             100% { transform: translateX(-50%) translateY(0); opacity: 1; }
         }
         
+        /* 무기 획득 이펙트 */
+        .weapon-acquire-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .weapon-acquire-title {
+            font-size: 1.5rem;
+            color: var(--muted);
+            margin-bottom: 20px;
+            animation: slideDown 0.5s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .weapon-acquire-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            animation: weaponReveal 0.8s ease-out;
+            max-width: 320px;
+        }
+        
+        .weapon-acquire-card.common { border: 3px solid var(--common); }
+        .weapon-acquire-card.magic { border: 3px solid var(--magic); box-shadow: 0 0 40px rgba(85,85,255,0.5); }
+        .weapon-acquire-card.rare { border: 3px solid var(--rare); box-shadow: 0 0 50px rgba(255,204,0,0.5); }
+        .weapon-acquire-card.legendary { border: 3px solid var(--legendary); box-shadow: 0 0 60px rgba(255,128,0,0.6); animation: weaponReveal 0.8s ease-out, legendaryGlow 1.5s ease-in-out infinite alternate; }
+        .weapon-acquire-card.unique { border: 3px solid var(--unique); box-shadow: 0 0 80px rgba(0,255,128,0.6); animation: weaponReveal 0.8s ease-out, uniqueGlow 1s ease-in-out infinite alternate; }
+        
+        @keyframes weaponReveal {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            60% { transform: scale(1.1) rotate(10deg); }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+        
+        @keyframes legendaryGlow {
+            from { box-shadow: 0 0 40px rgba(255,128,0,0.4); }
+            to { box-shadow: 0 0 80px rgba(255,128,0,0.8); }
+        }
+        
+        @keyframes uniqueGlow {
+            from { box-shadow: 0 0 50px rgba(0,255,128,0.4); }
+            to { box-shadow: 0 0 100px rgba(0,255,128,0.8); }
+        }
+        
+        .weapon-acquire-reason {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-top: 20px;
+            animation: slideUp 0.5s ease-out 0.5s both;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .weapon-acquire-btn {
+            margin-top: 25px;
+            padding: 12px 40px;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            animation: slideUp 0.5s ease-out 0.8s both;
+        }
+        
         @keyframes hitEffect {
             0% { transform: scale(1) rotate(0); }
             25% { transform: scale(1.2) rotate(-10deg); }
@@ -1057,44 +1144,45 @@
         }
         
         // ===== MONSTER DATABASE =====
+        // 아이콘: lorc, delapouite, caro-asercion 등 작가별 경로 구분
         const MONSTERS = {
-            // Tier 1 (쉬움) - +0~+3 추천
-            slime:    { name: '슬라임',     img: `${ICON_BASE}/lorc/infested-mass.svg`,   tier: 1, hp: 50,  damage: [5, 10],   crit: 5,  gold: [100, 200], type: 'elemental' },
-            bat:      { name: '박쥐',       img: `${ICON_BASE}/lorc/evil-bat.svg`,        tier: 1, hp: 40,  damage: [8, 12],   crit: 10, gold: [120, 180], type: 'beast' },
-            worm:     { name: '벌레',       img: `${ICON_BASE}/lorc/worm-mouth.svg`,      tier: 1, hp: 35,  damage: [6, 10],   crit: 8,  gold: [80, 150], type: 'insect' },
-            rat:      { name: '쥐떼',       img: `${ICON_BASE}/lorc/rat.svg`,             tier: 1, hp: 30,  damage: [4, 8],    crit: 12, gold: [60, 120], type: 'beast' },
-            spider:   { name: '거미',       img: `${ICON_BASE}/lorc/spider-face.svg`,     tier: 1, hp: 45,  damage: [7, 11],   crit: 8,  gold: [90, 160], type: 'insect' },
-            skeleton: { name: '해골병사',   img: `${ICON_BASE}/lorc/skull-crossed-bones.svg`, tier: 1, hp: 55, damage: [8, 14], crit: 5, gold: [110, 190], type: 'undead' },
+            // Tier 1 (쉬움)
+            slime:    { name: '슬라임',     img: `${ICON_BASE}/delapouite/slime.svg`,        tier: 1, hp: 50,  damage: [5, 10],   crit: 5,  gold: [100, 200], type: 'elemental' },
+            bat:      { name: '박쥐',       img: `${ICON_BASE}/lorc/evil-bat.svg`,           tier: 1, hp: 40,  damage: [8, 12],   crit: 10, gold: [120, 180], type: 'beast' },
+            worm:     { name: '벌레',       img: `${ICON_BASE}/lorc/fleshy-mass.svg`,        tier: 1, hp: 35,  damage: [6, 10],   crit: 8,  gold: [80, 150], type: 'insect' },
+            rat:      { name: '쥐떼',       img: `${ICON_BASE}/lorc/evil-minion.svg`,        tier: 1, hp: 30,  damage: [4, 8],    crit: 12, gold: [60, 120], type: 'beast' },
+            spider:   { name: '거미',       img: `${ICON_BASE}/delapouite/spider-eye.svg`,   tier: 1, hp: 45,  damage: [7, 11],   crit: 8,  gold: [90, 160], type: 'insect' },
+            skeleton: { name: '해골병사',   img: `${ICON_BASE}/lorc/diablo-skull.svg`,       tier: 1, hp: 55,  damage: [8, 14],   crit: 5,  gold: [110, 190], type: 'undead' },
             
-            // Tier 2 (중간) - +3~+6 추천
-            imp:      { name: '임프',       img: `${ICON_BASE}/lorc/imp.svg`,             tier: 2, hp: 80,  damage: [12, 20],  crit: 12, gold: [200, 400], type: 'demon' },
-            wolf:     { name: '늑대',       img: `${ICON_BASE}/lorc/wolf-howl.svg`,       tier: 2, hp: 100, damage: [15, 25],  crit: 15, gold: [250, 450], type: 'beast' },
-            spectre:  { name: '망령',       img: `${ICON_BASE}/lorc/spectre.svg`,         tier: 2, hp: 90,  damage: [18, 28],  crit: 10, gold: [300, 500], type: 'undead' },
-            goblin:   { name: '고블린',     img: `${ICON_BASE}/lorc/goblin-head.svg`,     tier: 2, hp: 70,  damage: [14, 22],  crit: 18, gold: [220, 380], type: 'humanoid' },
-            zombie:   { name: '좀비',       img: `${ICON_BASE}/lorc/shambling-zombie.svg`, tier: 2, hp: 120, damage: [10, 18], crit: 5,  gold: [180, 350], type: 'undead' },
-            harpy:    { name: '하피',       img: `${ICON_BASE}/lorc/harpy.svg`,           tier: 2, hp: 75,  damage: [16, 26],  crit: 20, gold: [280, 480], type: 'beast' },
-            elemental_fire: { name: '화염정령', img: `${ICON_BASE}/lorc/fire-silhouette.svg`, tier: 2, hp: 85, damage: [20, 30], crit: 8, gold: [320, 520], type: 'elemental' },
+            // Tier 2 (중간)
+            imp:      { name: '임프',       img: `${ICON_BASE}/lorc/imp.svg`,                tier: 2, hp: 80,  damage: [12, 20],  crit: 12, gold: [200, 400], type: 'demon' },
+            wolf:     { name: '늑대',       img: `${ICON_BASE}/lorc/werewolf.svg`,           tier: 2, hp: 100, damage: [15, 25],  crit: 15, gold: [250, 450], type: 'beast' },
+            spectre:  { name: '망령',       img: `${ICON_BASE}/lorc/spectre.svg`,            tier: 2, hp: 90,  damage: [18, 28],  crit: 10, gold: [300, 500], type: 'undead' },
+            goblin:   { name: '고블린',     img: `${ICON_BASE}/delapouite/goblin-head.svg`,  tier: 2, hp: 70,  damage: [14, 22],  crit: 18, gold: [220, 380], type: 'humanoid' },
+            zombie:   { name: '좀비',       img: `${ICON_BASE}/delapouite/shambling-zombie.svg`, tier: 2, hp: 120, damage: [10, 18], crit: 5, gold: [180, 350], type: 'undead' },
+            harpy:    { name: '하피',       img: `${ICON_BASE}/lorc/harpy.svg`,              tier: 2, hp: 75,  damage: [16, 26],  crit: 20, gold: [280, 480], type: 'beast' },
+            elemental_fire: { name: '화염정령', img: `${ICON_BASE}/lorc/ifrit.svg`,          tier: 2, hp: 85,  damage: [20, 30],  crit: 8,  gold: [320, 520], type: 'elemental' },
             
-            // Tier 3 (어려움) - +6~+10 추천
-            beast:    { name: '마수',       img: `${ICON_BASE}/lorc/beast-eye.svg`,       tier: 3, hp: 150, damage: [25, 40],  crit: 12, gold: [500, 800], type: 'beast' },
-            minotaur: { name: '미노타우로스', img: `${ICON_BASE}/lorc/minotaur.svg`,       tier: 3, hp: 200, damage: [30, 45],  crit: 8,  gold: [600, 1000], type: 'beast' },
-            ghoul:    { name: '구울',       img: `${ICON_BASE}/lorc/bone-gnawer.svg`,     tier: 3, hp: 180, damage: [35, 50],  crit: 10, gold: [700, 1100], type: 'undead' },
-            orc:      { name: '오크 전사',   img: `${ICON_BASE}/lorc/orc-head.svg`,        tier: 3, hp: 170, damage: [28, 42],  crit: 10, gold: [550, 900], type: 'humanoid' },
-            vampire:  { name: '뱀파이어',   img: `${ICON_BASE}/lorc/vampire-dracula.svg`, tier: 3, hp: 160, damage: [32, 48],  crit: 18, gold: [650, 1050], type: 'undead' },
-            golem:    { name: '골렘',       img: `${ICON_BASE}/lorc/rock-golem.svg`,      tier: 3, hp: 250, damage: [22, 35],  crit: 3,  gold: [580, 950], type: 'elemental' },
-            wyvern:   { name: '와이번',     img: `${ICON_BASE}/lorc/wyvern.svg`,          tier: 3, hp: 190, damage: [30, 50],  crit: 15, gold: [750, 1200], type: 'dragon' },
+            // Tier 3 (어려움)
+            beast:    { name: '마수',       img: `${ICON_BASE}/lorc/beast-eye.svg`,          tier: 3, hp: 150, damage: [25, 40],  crit: 12, gold: [500, 800], type: 'beast' },
+            minotaur: { name: '미노타우로스', img: `${ICON_BASE}/lorc/minotaur.svg`,          tier: 3, hp: 200, damage: [30, 45],  crit: 8,  gold: [600, 1000], type: 'beast' },
+            ghoul:    { name: '구울',       img: `${ICON_BASE}/lorc/gooey-daemon.svg`,       tier: 3, hp: 180, damage: [35, 50],  crit: 10, gold: [700, 1100], type: 'undead' },
+            orc:      { name: '오크 전사',   img: `${ICON_BASE}/delapouite/orc-head.svg`,     tier: 3, hp: 170, damage: [28, 42],  crit: 10, gold: [550, 900], type: 'humanoid' },
+            vampire:  { name: '뱀파이어',   img: `${ICON_BASE}/delapouite/vampire-dracula.svg`, tier: 3, hp: 160, damage: [32, 48], crit: 18, gold: [650, 1050], type: 'undead' },
+            golem:    { name: '골렘',       img: `${ICON_BASE}/delapouite/rock-golem.svg`,   tier: 3, hp: 250, damage: [22, 35],  crit: 3,  gold: [580, 950], type: 'elemental' },
+            wyvern:   { name: '와이번',     img: `${ICON_BASE}/lorc/wyvern.svg`,             tier: 3, hp: 190, damage: [30, 50],  crit: 15, gold: [750, 1200], type: 'dragon' },
             
-            // Tier 4 (보스) - +10~+15
-            dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/double-dragon.svg`,   tier: 4, hp: 400, damage: [50, 80],  crit: 20, gold: [3000, 5000], isBoss: true, type: 'dragon' },
-            demon:    { name: '👹 데몬',     img: `${ICON_BASE}/lorc/daemon-skull.svg`,    tier: 4, hp: 350, damage: [60, 90],  crit: 25, gold: [4000, 6000], isBoss: true, type: 'demon' },
-            reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/horned-skull.svg`,    tier: 4, hp: 300, damage: [70, 100], crit: 30, gold: [5000, 8000], isBoss: true, type: 'undead' },
-            lich:     { name: '👻 리치',     img: `${ICON_BASE}/lorc/crowned-skull.svg`,   tier: 4, hp: 280, damage: [55, 95],  crit: 22, gold: [4500, 7000], isBoss: true, type: 'undead' },
-            hydra:    { name: '🐍 히드라',   img: `${ICON_BASE}/lorc/hydra.svg`,           tier: 4, hp: 450, damage: [45, 75],  crit: 15, gold: [3500, 5500], isBoss: true, type: 'dragon' },
+            // Tier 4 (보스)
+            dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/double-dragon.svg`,      tier: 4, hp: 400, damage: [50, 80],  crit: 20, gold: [3000, 5000], isBoss: true, type: 'dragon' },
+            demon:    { name: '👹 데몬',     img: `${ICON_BASE}/lorc/daemon-skull.svg`,       tier: 4, hp: 350, damage: [60, 90],  crit: 25, gold: [4000, 6000], isBoss: true, type: 'demon' },
+            reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/horned-skull.svg`,       tier: 4, hp: 300, damage: [70, 100], crit: 30, gold: [5000, 8000], isBoss: true, type: 'undead' },
+            lich:     { name: '👻 리치',     img: `${ICON_BASE}/lorc/grim-reaper.svg`,        tier: 4, hp: 280, damage: [55, 95],  crit: 22, gold: [4500, 7000], isBoss: true, type: 'undead' },
+            hydra:    { name: '🐍 히드라',   img: `${ICON_BASE}/lorc/hydra.svg`,              tier: 4, hp: 450, damage: [45, 75],  crit: 15, gold: [3500, 5500], isBoss: true, type: 'dragon' },
             
-            // Tier 5 (전설) - +15~+20
-            ancient_dragon: { name: '🌟 고대용', img: `${ICON_BASE}/lorc/spiked-dragon-head.svg`, tier: 5, hp: 800, damage: [80, 130], crit: 25, gold: [10000, 20000], isBoss: true, type: 'dragon' },
-            demon_lord:     { name: '😈 마왕',   img: `${ICON_BASE}/lorc/demon-skull.svg`,        tier: 5, hp: 700, damage: [90, 140], crit: 30, gold: [12000, 22000], isBoss: true, type: 'demon' },
-            death_knight:   { name: '⚔️ 죽음의기사', img: `${ICON_BASE}/lorc/death-note.svg`,     tier: 5, hp: 600, damage: [100, 150], crit: 35, gold: [15000, 25000], isBoss: true, type: 'undead' }
+            // Tier 5 (전설)
+            ancient_dragon: { name: '🌟 고대용', img: `${ICON_BASE}/delapouite/spiked-dragon-head.svg`, tier: 5, hp: 800, damage: [80, 130], crit: 25, gold: [10000, 20000], isBoss: true, type: 'dragon' },
+            demon_lord:     { name: '😈 마왕',   img: `${ICON_BASE}/lorc/diablo-skull.svg`,     tier: 5, hp: 700, damage: [90, 140], crit: 30, gold: [12000, 22000], isBoss: true, type: 'demon' },
+            death_knight:   { name: '⚔️ 죽음의기사', img: `${ICON_BASE}/lorc/grim-reaper.svg`,  tier: 5, hp: 600, damage: [100, 150], crit: 35, gold: [15000, 25000], isBoss: true, type: 'undead' }
         };
 
         /*
@@ -1851,6 +1939,8 @@
                 setTimeout(() => weaponIcon.classList.remove('glow-fail'), 1300);
             }
 
+            const destroyedLevel = from; // 강화 파괴된 레벨 저장
+            
             if (newWeapon) {
                 state.weapon = newWeapon;
             } else {
@@ -1858,6 +1948,13 @@
             }
             
             saveState();
+            
+            // 강화 파괴 시 무기 획득 이펙트
+            if (newWeapon && result === 'destroy') {
+                setTimeout(() => {
+                    showWeaponAcquireEffect(newWeapon, 'enhance_destroy', { weaponLevel: destroyedLevel });
+                }, 1000);
+            }
 
             setTimeout(() => {
                 showEnhanceResult(result, fromLevel, state.weapon.level, newWeapon);
@@ -2496,6 +2593,70 @@
             setTimeout(() => crit.remove(), 800);
         }
         
+        // 무기 획득 이펙트
+        // reason: 'monster_death', 'durability_break', 'enhance_destroy'
+        // context: { monsterName, monsterType, weaponLevel }
+        function showWeaponAcquireEffect(newWeapon, reason, context = {}) {
+            const gradeData = GRADES[newWeapon.grade];
+            const elementData = ELEMENTS[newWeapon.element] || ELEMENTS.none;
+            
+            // 획득 이유 텍스트
+            let reasonText = '';
+            if (reason === 'monster_death') {
+                const typeData = MONSTER_TYPES[context.monsterType];
+                reasonText = `💀 ${context.monsterName || '몬스터'}에게 패배<br>`;
+                if (newWeapon.element && newWeapon.element !== 'none' && typeData) {
+                    reasonText += `${typeData.icon} ${typeData.name}의 취약 속성 ${elementData.icon} <span style="color:${elementData.color}">${elementData.name}</span> 부여!`;
+                }
+            } else if (reason === 'durability_break') {
+                reasonText = `🔧 내구도 파괴!<br>`;
+                if (newWeapon.element && newWeapon.element !== 'none') {
+                    reasonText += `숙련도 보상으로 ${elementData.icon} <span style="color:${elementData.color}">${elementData.name}</span> 속성!`;
+                } else {
+                    reasonText += `최고급 무기 보상!`;
+                }
+            } else if (reason === 'enhance_destroy') {
+                if (context.weaponLevel >= 7) {
+                    reasonText = `💥 +${context.weaponLevel} 강화 파괴!<br>고강화 보상으로 고급 무기 획득!`;
+                } else {
+                    reasonText = `💥 +${context.weaponLevel} 강화 파괴`;
+                }
+            }
+            
+            // 오버레이 생성
+            const overlay = document.createElement('div');
+            overlay.className = 'weapon-acquire-overlay';
+            overlay.innerHTML = `
+                <div class="weapon-acquire-title">${reason === 'enhance_destroy' ? '새로운 무기!' : '무기 획득!'}</div>
+                <div class="weapon-acquire-card ${newWeapon.grade}">
+                    <div style="font-size:0.8rem;color:${gradeData.color};text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">${gradeData.name}</div>
+                    <img src="${WEAPON_TYPES[newWeapon.type].img}" style="width:100px;height:100px;filter:drop-shadow(0 0 20px ${gradeData.color});">
+                    <div style="font-size:1.3rem;font-weight:700;margin-top:12px;">
+                        ${newWeapon.name}
+                        ${newWeapon.element && newWeapon.element !== 'none' ? `<span style="margin-left:6px;">${elementData.icon}</span>` : ''}
+                    </div>
+                    <div style="color:var(--muted);font-size:0.9rem;margin-top:4px;">${WEAPON_TYPES[newWeapon.type].name}</div>
+                    ${newWeapon.element && newWeapon.element !== 'none' ? `
+                        <div style="margin-top:12px;padding:8px 16px;background:rgba(255,255,255,0.1);border-radius:20px;display:inline-block;">
+                            ${elementData.icon} <span style="color:${elementData.color}">${elementData.name}</span> 속성
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="weapon-acquire-reason">${reasonText}</div>
+                <button class="weapon-acquire-btn" onclick="this.parentElement.remove()">확인</button>
+            `;
+            
+            document.body.appendChild(overlay);
+            
+            // 전설/유니크는 컨페티
+            if (newWeapon.grade === 'legendary' || newWeapon.grade === 'unique') {
+                setTimeout(() => fireConfetti(), 300);
+            }
+            
+            playSound('success');
+            vibrate([50, 50, 100]);
+        }
+        
         function showMasteryDetail() {
             const weapon = state.weapon;
             const mastery = weapon.weaponMastery || { attacks: 0, crits: 0, kills: 0, killsByType: {} };
@@ -2612,11 +2773,17 @@
                     huntState.log.push({ type: 'crit', text: `💥 무기가 전투 중 파괴되었습니다! 양쪽 ${breakDamage} 데미지!` });
                     
                     // 새 무기 지급 (내구도 파괴 = 숙련도 기반 속성!)
+                    const oldWeapon = state.weapon;
                     state.weapon = generateWeaponBySource('durability_break', {});
                     const newStats = getWeaponStats(state.weapon, false);
                     player.damageMin = newStats.damageMin;
                     player.damageMax = newStats.damageMax;
                     saveState();
+                    
+                    // 무기 획득 이펙트
+                    setTimeout(() => {
+                        showWeaponAcquireEffect(state.weapon, 'durability_break', {});
+                    }, 500);
                     
                     if (player.hp <= 0) {
                         huntPlayerDied();
@@ -2846,9 +3013,15 @@
             // Lose weapon! 몬스터 종족 기반 속성 부여
             const lostWeapon = state.weapon;
             const monsterType = huntState.monster?.type || 'beast';
+            const monsterName = huntState.monster?.name || '몬스터';
             state.weapon = generateWeaponBySource('monster_death', { monsterType });
             state.stats.losses++;
             saveState();
+            
+            // 무기 획득 이펙트
+            setTimeout(() => {
+                showWeaponAcquireEffect(state.weapon, 'monster_death', { monsterName, monsterType });
+            }, 500);
             
             const popup = document.getElementById('resultPopup');
             const overlay = document.getElementById('overlay');
