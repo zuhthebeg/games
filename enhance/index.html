@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>무기 강화 & 배틀</title>
     <link rel="icon" href="icon.svg">
-    <script src="/lib/multiplayer.js?v=20260210v8"></script>
-    <script src="/lib/multiplayer-ui.js?v=20260210v8"></script>
+    <script src="/lib/multiplayer.js?v=20260210v9"></script>
+    <script src="/lib/multiplayer-ui.js?v=20260210v9"></script>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -344,6 +344,65 @@
             font-weight: 700;
             color: var(--gold);
         }
+
+        /* Critical Hit Effect */
+        .crit-flash {
+            animation: critFlash 0.5s ease-out;
+        }
+        
+        @keyframes critFlash {
+            0% { filter: brightness(1); }
+            25% { filter: brightness(2) drop-shadow(0 0 30px #ffd700); }
+            50% { filter: brightness(1.5) drop-shadow(0 0 20px #ff6b6b); }
+            100% { filter: brightness(1); }
+        }
+        
+        .crit-text {
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3rem;
+            font-weight: 900;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ff6b6b, 0 0 40px #ff6b6b, 2px 2px 0 #000;
+            animation: critText 0.8s ease-out forwards;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        
+        @keyframes critText {
+            0% { transform: translateX(-50%) scale(0.5); opacity: 0; }
+            20% { transform: translateX(-50%) scale(1.3); opacity: 1; }
+            100% { transform: translateX(-50%) scale(1) translateY(-50px); opacity: 0; }
+        }
+        
+        /* Blacksmith */
+        .blacksmith-card {
+            background: var(--card);
+            border: 2px solid #8b4513;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .durability-bar {
+            height: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        
+        .durability-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--fail), var(--gold), var(--success));
+            transition: width 0.3s;
+        }
+        
+        .durability-fill.low { background: var(--fail); }
+        .durability-fill.mid { background: var(--gold); }
+        .durability-fill.high { background: var(--success); }
 
         .mode-btn.shop {
             background: linear-gradient(135deg, #f39c12, #e67e22);
@@ -811,32 +870,26 @@
         
         // ===== MONSTER DATABASE =====
         const MONSTERS = {
-            // 일반 몹 (쉬움)
-            slime:    { name: '슬라임',     img: `${ICON_BASE}/lorc/slime.svg`,           tier: 1, hp: 50,  damage: [5, 10],   crit: 5,  gold: [100, 200] },
-            bat:      { name: '박쥐',       img: `${ICON_BASE}/lorc/bat.svg`,             tier: 1, hp: 40,  damage: [8, 12],   crit: 10, gold: [120, 180] },
-            rat:      { name: '쥐',         img: `${ICON_BASE}/lorc/rat.svg`,             tier: 1, hp: 35,  damage: [6, 10],   crit: 8,  gold: [80, 150] },
+            // Tier 1 (쉬움) - +0~+3 추천
+            slime:    { name: '슬라임',     img: `${ICON_BASE}/lorc/infested-mass.svg`,   tier: 1, hp: 50,  damage: [5, 10],   crit: 5,  gold: [100, 200] },
+            bat:      { name: '박쥐',       img: `${ICON_BASE}/lorc/evil-bat.svg`,        tier: 1, hp: 40,  damage: [8, 12],   crit: 10, gold: [120, 180] },
+            worm:     { name: '벌레',       img: `${ICON_BASE}/lorc/worm-mouth.svg`,      tier: 1, hp: 35,  damage: [6, 10],   crit: 8,  gold: [80, 150] },
             
-            // 일반 몹 (중간)
-            goblin:   { name: '고블린',     img: `${ICON_BASE}/lorc/goblin-head.svg`,     tier: 2, hp: 80,  damage: [12, 20],  crit: 12, gold: [200, 400] },
-            wolf:     { name: '늑대',       img: `${ICON_BASE}/lorc/wolf-head.svg`,       tier: 2, hp: 100, damage: [15, 25],  crit: 15, gold: [250, 450] },
-            skeleton: { name: '스켈레톤',   img: `${ICON_BASE}/lorc/skeleton.svg`,        tier: 2, hp: 90,  damage: [18, 28],  crit: 10, gold: [300, 500] },
+            // Tier 2 (중간) - +3~+6 추천
+            imp:      { name: '임프',       img: `${ICON_BASE}/lorc/imp.svg`,             tier: 2, hp: 80,  damage: [12, 20],  crit: 12, gold: [200, 400] },
+            wolf:     { name: '늑대',       img: `${ICON_BASE}/lorc/wolf-howl.svg`,       tier: 2, hp: 100, damage: [15, 25],  crit: 15, gold: [250, 450] },
+            spectre:  { name: '망령',       img: `${ICON_BASE}/lorc/spectre.svg`,         tier: 2, hp: 90,  damage: [18, 28],  crit: 10, gold: [300, 500] },
             
-            // 일반 몹 (어려움)
-            orc:      { name: '오크',       img: `${ICON_BASE}/lorc/orc-head.svg`,        tier: 3, hp: 150, damage: [25, 40],  crit: 12, gold: [500, 800] },
-            troll:    { name: '트롤',       img: `${ICON_BASE}/lorc/troll.svg`,           tier: 3, hp: 200, damage: [30, 45],  crit: 8,  gold: [600, 1000] },
-            ogre:     { name: '오거',       img: `${ICON_BASE}/lorc/ogre.svg`,            tier: 3, hp: 180, damage: [35, 50],  crit: 10, gold: [700, 1100] },
+            // Tier 3 (어려움) - +6~+10 추천
+            beast:    { name: '마수',       img: `${ICON_BASE}/lorc/beast-eye.svg`,       tier: 3, hp: 150, damage: [25, 40],  crit: 12, gold: [500, 800] },
+            minotaur: { name: '미노타우로스', img: `${ICON_BASE}/lorc/minotaur.svg`,       tier: 3, hp: 200, damage: [30, 45],  crit: 8,  gold: [600, 1000] },
+            ghoul:    { name: '구울',       img: `${ICON_BASE}/lorc/bone-gnawer.svg`,     tier: 3, hp: 180, damage: [35, 50],  crit: 10, gold: [700, 1100] },
             
-            // 보스 몹
-            dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/dragon-head.svg`,     tier: 4, hp: 400, damage: [50, 80],  crit: 20, gold: [3000, 5000], isBoss: true },
+            // Tier 4 (보스) - +8~+15 (어렵게 이김)
+            dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/double-dragon.svg`,   tier: 4, hp: 400, damage: [50, 80],  crit: 20, gold: [3000, 5000], isBoss: true },
             demon:    { name: '👹 데몬',     img: `${ICON_BASE}/lorc/daemon-skull.svg`,    tier: 4, hp: 350, damage: [60, 90],  crit: 25, gold: [4000, 6000], isBoss: true },
-            reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/grim-reaper.svg`,     tier: 4, hp: 300, damage: [70, 100], crit: 30, gold: [5000, 8000], isBoss: true }
+            reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/horned-skull.svg`,    tier: 4, hp: 300, damage: [70, 100], crit: 30, gold: [5000, 8000], isBoss: true }
         };
-
-        // 몬스터 티어별 추천 레벨
-        // Tier 1: +0 ~ +3
-        // Tier 2: +3 ~ +6  
-        // Tier 3: +6 ~ +10
-        // Tier 4 (Boss): +8 ~ +15 (어렵게 이길 수 있음)
 
         /*
         ===== 무기 성능표 =====
@@ -931,8 +984,26 @@
             weapon: null,
             protectionScrolls: 3,
             useProtection: false,
-            stats: { attempts: 0, successes: 0, fails: 0, destroys: 0, wins: 0, losses: 0 }
+            stats: { attempts: 0, successes: 0, fails: 0, destroys: 0, wins: 0, losses: 0 },
+            mastery: { attacks: 0, kills: 0 }  // 숙련도 시스템
         };
+        
+        // 숙련도 보너스 계산 (공격력 %)
+        function getMasteryBonus() {
+            const attackBonus = Math.min(20, Math.floor(state.mastery.attacks / 50)); // 50번당 1%, 최대 20%
+            const killBonus = Math.min(30, Math.floor(state.mastery.kills / 10)); // 10킬당 1%, 최대 30%
+            return attackBonus + killBonus; // 최대 50%
+        }
+        
+        // 내구도 시스템
+        const MAX_DURABILITY = 100;
+        
+        function getRepairCost(weapon) {
+            if (!weapon) return 0;
+            const missingDurability = MAX_DURABILITY - (weapon.durability || MAX_DURABILITY);
+            const levelCost = ENHANCE_RATES[Math.min(weapon.level, 20)].cost;
+            return Math.floor((missingDurability / 100) * (levelCost / 10)); // 강화비의 1/10 비율
+        }
 
         let mpUI = null;
         let battleState = null;
@@ -975,7 +1046,8 @@
                 grade,
                 name,
                 level: 0,
-                img: typeData.img  // Image URL from game-icons.net
+                img: typeData.img,  // Image URL from game-icons.net
+                durability: MAX_DURABILITY  // 내구도 100%로 시작
             };
         }
         
@@ -989,25 +1061,28 @@
                          alt="${weapon.name}">`;
         }
 
-        function getWeaponStats(weapon) {
-            if (!weapon) return { damageMin: 0, damageMax: 0, critChance: 0, critDamage: 150, hp: 100 };
+        function getWeaponStats(weapon, includeMastery = true) {
+            if (!weapon) return { damageMin: 0, damageMax: 0, critChance: 0, critDamage: 150, hp: 100, masteryBonus: 0 };
 
             const typeData = WEAPON_TYPES[weapon.type];
             const gradeData = GRADES[weapon.grade];
             const mult = gradeData.multiplier;
             const level = weapon.level;
+            const masteryBonus = includeMastery ? getMasteryBonus() : 0;
 
             const baseDmgMin = 10;
             const baseDmgMax = 15;
             const dmgPerLevel = 5;
 
-            const damageMin = Math.floor((baseDmgMin + level * dmgPerLevel) * mult * typeData.bonus.damage);
-            const damageMax = Math.floor((baseDmgMax + level * dmgPerLevel) * mult * typeData.bonus.damage);
+            // 숙련도 보너스 적용 (공격력에만)
+            const masteryMult = 1 + (masteryBonus / 100);
+            const damageMin = Math.floor((baseDmgMin + level * dmgPerLevel) * mult * typeData.bonus.damage * masteryMult);
+            const damageMax = Math.floor((baseDmgMax + level * dmgPerLevel) * mult * typeData.bonus.damage * masteryMult);
             const critChance = Math.min(60, Math.floor((5 + level * 2) * typeData.bonus.crit));
             const critDamage = 150 + level * 5;
             const hp = Math.floor((100 + level * 20) * mult);
 
-            return { damageMin, damageMax, critChance, critDamage, hp };
+            return { damageMin, damageMax, critChance, critDamage, hp, masteryBonus };
         }
 
         function getWeaponValue(weapon) {
@@ -1030,6 +1105,13 @@
             }
             if (!state.weapon) {
                 state.weapon = generateWeapon('common');
+            }
+            // 기존 데이터 마이그레이션
+            if (!state.mastery) {
+                state.mastery = { attacks: 0, kills: 0 };
+            }
+            if (state.weapon && state.weapon.durability === undefined) {
+                state.weapon.durability = MAX_DURABILITY;
             }
         }
 
@@ -1080,7 +1162,7 @@
                                 <span class="stat-icon">⚔️</span>
                                 <div class="stat-info">
                                     <div class="stat-value damage">${stats.damageMin}-${stats.damageMax}</div>
-                                    <div class="stat-label">공격력</div>
+                                    <div class="stat-label">공격력 ${stats.masteryBonus > 0 ? `<span style="color:var(--success)">+${stats.masteryBonus}%</span>` : ''}</div>
                                 </div>
                             </div>
                             <div class="stat-item">
@@ -1091,26 +1173,30 @@
                                 </div>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-icon">❤️</span>
+                                <span class="stat-icon">🔧</span>
                                 <div class="stat-info">
-                                    <div class="stat-value hp">${stats.hp}</div>
-                                    <div class="stat-label">체력</div>
+                                    <div class="stat-value ${(weapon.durability || 100) < 30 ? 'danger' : ''}">${weapon.durability || 100}%</div>
+                                    <div class="stat-label">내구도</div>
                                 </div>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-icon">💎</span>
+                                <span class="stat-icon">⭐</span>
                                 <div class="stat-info">
-                                    <div class="stat-value special">${getWeaponValue(weapon).toLocaleString()}</div>
-                                    <div class="stat-label">가치</div>
+                                    <div class="stat-value special">${state.mastery.kills}</div>
+                                    <div class="stat-label">처치</div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mode-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="mode-grid" style="grid-template-columns: repeat(2, 1fr);">
                         <button class="mode-btn enhance" onclick="showEnhance()">
                             <span class="mode-icon">🔨</span>
                             <span class="mode-label">강화</span>
+                        </button>
+                        <button class="mode-btn" onclick="showBlacksmith()" style="background:linear-gradient(135deg,#555,#333);">
+                            <span class="mode-icon">🛠️</span>
+                            <span class="mode-label">대장간</span>
                         </button>
                         <button class="mode-btn hunt" onclick="showHunt()">
                             <span class="mode-icon">🐉</span>
@@ -1407,6 +1493,114 @@
                 saveState();
                 showEnhance();
             }
+        }
+
+        // ===== BLACKSMITH =====
+        function showBlacksmith() {
+            const weapon = state.weapon;
+            const durability = weapon.durability ?? MAX_DURABILITY;
+            const repairCost = getRepairCost(weapon);
+            const gradeData = GRADES[weapon.grade];
+            const canRepair = durability < MAX_DURABILITY && state.gold >= repairCost;
+            
+            document.getElementById('app').innerHTML = `
+                <div class="container">
+                    <button class="btn-back" onclick="showMain()">← 메인으로</button>
+                    
+                    <header>
+                        <h1>🛠️ 대장간</h1>
+                        <p class="subtitle">무기 수리 및 관리</p>
+                    </header>
+                    
+                    <div class="gold-display">
+                        <span class="gold-icon">💰</span>
+                        <span class="gold-amount">${state.gold.toLocaleString()} G</span>
+                    </div>
+                    
+                    <div class="blacksmith-card">
+                        <div class="weapon-header">
+                            <div class="weapon-info">
+                                <div class="weapon-grade ${weapon.grade}">${gradeData.name}</div>
+                                <div class="weapon-name">${weapon.name} +${weapon.level}</div>
+                            </div>
+                            <img src="${WEAPON_TYPES[weapon.type].img}" 
+                                 style="width:50px;height:50px;filter:drop-shadow(0 0 10px ${gradeData.color});">
+                        </div>
+                        
+                        <div style="margin-top:16px;">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                                <span>🔧 내구도</span>
+                                <span class="${durability < 30 ? 'danger' : ''}">${durability}%</span>
+                            </div>
+                            <div class="durability-bar">
+                                <div class="durability-fill ${durability < 30 ? 'low' : durability < 60 ? 'mid' : 'high'}" 
+                                     style="width:${durability}%"></div>
+                            </div>
+                        </div>
+                        
+                        ${durability < MAX_DURABILITY ? `
+                        <div class="enhance-panel" style="margin-top:16px;">
+                            <div class="enhance-row">
+                                <span>수리 비용</span>
+                                <span class="gold">${repairCost.toLocaleString()} G</span>
+                            </div>
+                            <div class="enhance-row">
+                                <span>수리 후 내구도</span>
+                                <span style="color:var(--success)">100%</span>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-enhance" onclick="repairWeapon()" ${!canRepair ? 'disabled' : ''} style="margin-top:16px;">
+                            ${state.gold < repairCost ? '💰 골드 부족' : '🔧 수리하기'}
+                        </button>
+                        ` : `
+                        <div style="text-align:center;padding:20px;color:var(--success);">
+                            ✅ 무기가 완벽한 상태입니다!
+                        </div>
+                        `}
+                    </div>
+                    
+                    <div class="enhance-panel">
+                        <h3 style="margin-bottom:12px;">⚠️ 내구도 안내</h3>
+                        <p style="color:var(--muted);font-size:0.9rem;line-height:1.5;">
+                            • 전투 시 내구도가 감소합니다<br>
+                            • 내구도 0에서 전투 시 <span style="color:var(--fail)">무기 파괴 위험!</span><br>
+                            • 파괴 시 양쪽에 큰 데미지<br>
+                            • 수리비는 강화비의 1/10 수준
+                        </p>
+                    </div>
+                    
+                    <div class="enhance-panel">
+                        <h3 style="margin-bottom:12px;">⭐ 숙련도</h3>
+                        <div class="enhance-row">
+                            <span>총 공격 횟수</span>
+                            <span>${state.mastery.attacks}회</span>
+                        </div>
+                        <div class="enhance-row">
+                            <span>총 처치 수</span>
+                            <span>${state.mastery.kills}마리</span>
+                        </div>
+                        <div class="enhance-row">
+                            <span>공격력 보너스</span>
+                            <span style="color:var(--success)">+${getMasteryBonus()}%</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function repairWeapon() {
+            const cost = getRepairCost(state.weapon);
+            if (state.gold < cost) return;
+            
+            state.gold -= cost;
+            state.weapon.durability = MAX_DURABILITY;
+            saveState();
+            
+            playSound('success');
+            vibrate([50, 50, 100]);
+            
+            showBlacksmith();
         }
 
         // ===== BATTLE MODE =====
@@ -1804,11 +1998,60 @@
             overlay.classList.add('show');
         }
 
+        function showCritEffect() {
+            const crit = document.createElement('div');
+            crit.className = 'crit-text';
+            crit.textContent = '💥 CRITICAL!';
+            document.body.appendChild(crit);
+            setTimeout(() => crit.remove(), 800);
+        }
+
         function huntAttack() {
             if (!huntState) return;
             
             const player = huntState.player;
             const monster = huntState.monster;
+            
+            // 내구도 체크 - 0이면 30% 확률로 무기 파괴
+            if ((state.weapon.durability || 100) <= 0) {
+                if (Math.random() < 0.3) {
+                    // 무기 파괴! 양쪽 데미지
+                    const breakDamage = Math.floor(player.maxHp * 0.3);
+                    player.hp = Math.max(0, player.hp - breakDamage);
+                    monster.currentHp = Math.max(0, monster.currentHp - breakDamage);
+                    
+                    playSound('destroy');
+                    vibrate([200, 100, 200, 100, 300]);
+                    document.body.classList.add('screen-shake');
+                    setTimeout(() => document.body.classList.remove('screen-shake'), 500);
+                    
+                    huntState.log.push({ type: 'crit', text: `💥 무기가 전투 중 파괴되었습니다! 양쪽 ${breakDamage} 데미지!` });
+                    
+                    // 새 무기 지급
+                    state.weapon = generateWeapon('common');
+                    player.damageMin = 10;
+                    player.damageMax = 15;
+                    saveState();
+                    
+                    if (player.hp <= 0) {
+                        huntPlayerDied();
+                        return;
+                    }
+                    if (monster.currentHp <= 0) {
+                        huntMonsterKilled();
+                        return;
+                    }
+                    renderHunt();
+                    return;
+                }
+            }
+            
+            // 숙련도 증가
+            state.mastery.attacks++;
+            
+            // 내구도 감소 (1~3)
+            const durabilityLoss = Math.floor(Math.random() * 3) + 1;
+            state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - durabilityLoss);
             
             // Player attacks first
             const playerDamage = Math.floor(Math.random() * (player.damageMax - player.damageMin + 1)) + player.damageMin;
@@ -1821,10 +2064,15 @@
             vibrate(playerCrit ? [50, 30, 100] : 50);
             
             if (playerCrit) {
+                showCritEffect();
+                document.body.classList.add('screen-shake');
+                setTimeout(() => document.body.classList.remove('screen-shake'), 300);
                 huntState.log.push({ type: 'crit', text: `💥 크리티컬! ${finalPlayerDamage} 데미지!` });
             } else {
                 huntState.log.push({ type: 'damage', text: `⚔️ ${finalPlayerDamage} 데미지!` });
             }
+            
+            saveState(); // 숙련도, 내구도 저장
             
             // Check if monster is dead
             if (monster.currentHp <= 0) {
@@ -1868,6 +2116,7 @@
             const goldReward = Math.floor(Math.random() * (monster.gold[1] - monster.gold[0] + 1)) + monster.gold[0];
             
             state.gold += goldReward;
+            state.mastery.kills++; // 숙련도 증가!
             huntState.monstersKilled++;
             huntState.totalGoldEarned += goldReward;
             
@@ -1885,19 +2134,63 @@
             document.getElementById('resultIcon').textContent = monster.isBoss ? '🏆' : '✨';
             document.getElementById('resultText').textContent = `${monster.name} 처치!`;
             document.getElementById('resultText').style.color = 'var(--success)';
-            document.getElementById('resultDetail').innerHTML = `💰 +${goldReward.toLocaleString()}G`;
+            document.getElementById('resultDetail').innerHTML = `
+                💰 +${goldReward.toLocaleString()}G<br>
+                <span style="color:var(--muted);font-size:0.85em">
+                    🔧 내구도: ${state.weapon.durability || 100}% | ⭐ 처치: ${huntState.monstersKilled}
+                </span>
+            `;
+            document.getElementById('newWeaponPreview').style.display = 'block';
+            document.getElementById('newWeaponPreview').innerHTML = `
+                <div style="display:flex;gap:10px;margin-top:10px;">
+                    <button class="btn btn-enhance" style="flex:1;" onclick="huntContinue()">🐉 다음 몬스터</button>
+                    <button class="btn btn-secondary" style="flex:1;" onclick="huntStop()">🏠 사냥 종료</button>
+                </div>
+            `;
+            document.getElementById('resultBtn').style.display = 'none';
+            
+            overlay.classList.add('show');
+        }
+        
+        function huntContinue() {
+            closeResult();
+            document.getElementById('resultBtn').style.display = '';
+            // Spawn next monster, heal a bit
+            huntState.monster = spawnMonster();
+            huntState.player.hp = Math.min(huntState.player.maxHp, huntState.player.hp + Math.floor(huntState.player.maxHp * 0.3));
+            huntState.log = [{ type: 'info', text: `❤️ HP 30% 회복!` }];
+            renderHunt();
+        }
+        
+        function huntStop() {
+            closeResult();
+            document.getElementById('resultBtn').style.display = '';
+            
+            // Show final results
+            const popup = document.getElementById('resultPopup');
+            const overlay = document.getElementById('overlay');
+            
+            popup.className = 'result-popup success show';
+            document.getElementById('resultIcon').textContent = '🏆';
+            document.getElementById('resultText').textContent = '사냥 완료!';
+            document.getElementById('resultText').style.color = 'var(--success)';
+            document.getElementById('resultDetail').innerHTML = `
+                <div style="font-size:1.2rem;color:var(--gold);margin-bottom:10px;">
+                    💰 총 ${huntState.totalGoldEarned.toLocaleString()}G 획득!
+                </div>
+                처치: ${huntState.monstersKilled}마리<br>
+                숙련도 보너스: +${getMasteryBonus()}%
+            `;
             document.getElementById('newWeaponPreview').style.display = 'none';
-            document.getElementById('resultBtn').textContent = '다음 몬스터';
+            document.getElementById('resultBtn').textContent = '메인으로';
             document.getElementById('resultBtn').onclick = () => {
                 closeResult();
-                // Spawn next monster, heal a bit
-                huntState.monster = spawnMonster();
-                huntState.player.hp = Math.min(huntState.player.maxHp, huntState.player.hp + Math.floor(huntState.player.maxHp * 0.3));
-                huntState.log = [{ type: 'info', text: `❤️ HP 30% 회복!` }];
-                renderHunt();
+                huntState = null;
+                showMain();
             };
             
             overlay.classList.add('show');
+            fireConfetti();
         }
 
         function huntPlayerDied() {
