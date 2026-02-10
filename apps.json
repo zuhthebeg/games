@@ -1,5 +1,19 @@
 [
     {
+        "title": "무기 강화",
+        "icon": "https://game.cocy.io/enhance/icon.svg",
+        "url": "https://game.cocy.io/enhance/",
+        "desc": "운명의 강화 시뮬레이터 - 성공? 파괴?",
+        "badge": "NEW",
+        "platforms": [
+            "WEB"
+        ],
+        "languages": [
+            "🌍"
+        ],
+        "category": "game"
+    },
+    {
         "title": "카탄",
         "icon": "https://game.cocy.io/catan/icon.svg",
         "url": "https://game.cocy.io/catan/",

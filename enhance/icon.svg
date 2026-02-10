@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="blade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e0e0e0"/>
+      <stop offset="50%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#a0a0a0"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e94560"/>
+      <stop offset="100%" style="stop-color:#ffd700"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Glow effect -->
+  <ellipse cx="50" cy="50" rx="35" ry="35" fill="url(#glow)" opacity="0.3"/>
+  
+  <!-- Sword blade -->
+  <polygon points="50,10 45,60 50,65 55,60" fill="url(#blade)" stroke="#666" stroke-width="1"/>
+  
+  <!-- Sword guard -->
+  <rect x="35" y="60" width="30" height="6" rx="2" fill="#8B4513"/>
+  
+  <!-- Sword handle -->
+  <rect x="45" y="66" width="10" height="20" rx="2" fill="#654321"/>
+  
+  <!-- Sword pommel -->
+  <circle cx="50" cy="90" r="6" fill="#ffd700"/>
+  
+  <!-- Sparkles -->
+  <text x="25" y="30" font-size="12">✨</text>
+  <text x="70" y="45" font-size="10">⚡</text>
+  <text x="20" y="70" font-size="8">✨</text>
+</svg>
