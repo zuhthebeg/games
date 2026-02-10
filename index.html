@@ -47,10 +47,11 @@
 
         .header {
             background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
-            padding: 3rem 1.5rem;
+            padding: 2rem 1.5rem;
             text-align: center;
             color: white;
             box-shadow: var(--shadow-lg);
+            position: relative;
         }
 
         .header h1 {
@@ -62,6 +63,63 @@
         .header p {
             font-size: 1.1rem;
             opacity: 0.95;
+        }
+        
+        .auth-area {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .auth-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .auth-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .user-info {
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .user-gold {
+            color: #ffd700;
+            font-weight: 600;
+        }
+        
+        .user-nickname {
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .auth-area {
+                position: relative;
+                top: 0;
+                right: 0;
+                justify-content: center;
+                margin-bottom: 1rem;
+            }
         }
 
         .container {
@@ -287,8 +345,27 @@
 </head>
 <body>
     <div class="header">
+        <div class="auth-area" id="authArea">
+            <button class="auth-btn" onclick="showLogin()">🔑 로그인</button>
+        </div>
         <h1>🎮 게임 포털</h1>
         <p>재미있는 게임을 즐겨보세요</p>
+    </div>
+    
+    <!-- 로그인 모달 -->
+    <div id="loginModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;justify-content:center;align-items:center;">
+        <div style="background:var(--card-bg);border-radius:20px;padding:30px;max-width:400px;width:90%;text-align:center;">
+            <h2 style="margin-bottom:20px;">🔑 로그인</h2>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <input type="email" id="loginEmail" placeholder="이메일" required style="width:100%;padding:12px;margin-bottom:10px;border:2px solid var(--border);border-radius:10px;font-size:1rem;background:var(--bg);color:var(--text);">
+                <input type="password" id="loginPassword" placeholder="비밀번호" required style="width:100%;padding:12px;margin-bottom:20px;border:2px solid var(--border);border-radius:10px;font-size:1rem;background:var(--bg);color:var(--text);">
+                <button type="submit" style="width:100%;padding:14px;background:linear-gradient(135deg,#ec4899,#8b5cf6);border:none;border-radius:10px;color:white;font-size:1rem;font-weight:600;cursor:pointer;">로그인</button>
+            </form>
+            <p style="margin-top:15px;color:var(--text-secondary);font-size:0.9rem;">
+                계정이 없으신가요? <a href="https://www.cocy.io/register" target="_blank" style="color:#ec4899;">회원가입</a>
+            </p>
+            <button onclick="closeLogin()" style="margin-top:15px;background:none;border:none;color:var(--text-secondary);cursor:pointer;">닫기</button>
+        </div>
     </div>
 
     <div class="container">
@@ -424,6 +501,143 @@
         });
 
         renderCategories();
+        
+        // ===== 인증 시스템 =====
+        const AUTH_API = 'https://relay.cocy.io/api/auth';
+        
+        async function checkAuth() {
+            const token = localStorage.getItem('cocy_auth_token');
+            if (!token) {
+                updateAuthUI(null);
+                return;
+            }
+            
+            try {
+                // 토큰 파싱해서 유효성 확인
+                const parts = token.split('.');
+                if (parts.length !== 3) throw new Error('Invalid token');
+                
+                const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                
+                // 만료 확인
+                if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+                    // 토큰 만료 - 리프레시 시도
+                    const refreshed = await refreshToken();
+                    if (!refreshed) {
+                        logout();
+                        return;
+                    }
+                }
+                
+                // 유저 정보 + 골드 가져오기
+                const [userRes, dataRes] = await Promise.all([
+                    fetch(`${AUTH_API}/me`, { headers: { Authorization: `Bearer ${token}` } }),
+                    fetch('https://relay.cocy.io/api/user/data', { headers: { Authorization: `Bearer ${token}` } })
+                ]);
+                
+                if (userRes.ok) {
+                    const user = await userRes.json();
+                    let gold = 0;
+                    if (dataRes.ok) {
+                        const data = await dataRes.json();
+                        gold = data.gold || 0;
+                    }
+                    updateAuthUI({ ...user, gold });
+                } else {
+                    logout();
+                }
+            } catch (e) {
+                console.log('Auth check failed:', e);
+                updateAuthUI(null);
+            }
+        }
+        
+        async function refreshToken() {
+            const refreshToken = localStorage.getItem('cocy_refresh_token');
+            if (!refreshToken) return false;
+            
+            try {
+                const res = await fetch(`${AUTH_API}/refresh`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refreshToken })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('cocy_auth_token', data.accessToken);
+                    if (data.refreshToken) {
+                        localStorage.setItem('cocy_refresh_token', data.refreshToken);
+                    }
+                    return true;
+                }
+            } catch (e) {
+                console.log('Token refresh failed:', e);
+            }
+            return false;
+        }
+        
+        function updateAuthUI(user) {
+            const authArea = document.getElementById('authArea');
+            if (user) {
+                authArea.innerHTML = `
+                    <div class="user-info">
+                        <span class="user-nickname">👤 ${user.nickname || user.email?.split('@')[0] || '유저'}</span>
+                        <span class="user-gold">💰 ${user.gold?.toLocaleString() || 0}G</span>
+                    </div>
+                    <button class="auth-btn" onclick="logout()">로그아웃</button>
+                `;
+            } else {
+                authArea.innerHTML = `
+                    <button class="auth-btn" onclick="showLogin()">🔑 로그인</button>
+                `;
+            }
+        }
+        
+        function showLogin() {
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+        
+        function closeLogin() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+        
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const res = await fetch(`${AUTH_API}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('cocy_auth_token', data.accessToken);
+                    localStorage.setItem('cocy_refresh_token', data.refreshToken);
+                    closeLogin();
+                    checkAuth();
+                    alert('로그인 성공! 🎉');
+                } else {
+                    const err = await res.json();
+                    alert(err.error || '로그인 실패');
+                }
+            } catch (e) {
+                alert('로그인 오류: ' + e.message);
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('cocy_auth_token');
+            localStorage.removeItem('cocy_refresh_token');
+            updateAuthUI(null);
+        }
+        
+        // 페이지 로드 시 인증 확인
+        checkAuth();
     </script>
 </body>
 </html>
