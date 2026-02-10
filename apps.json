@@ -243,13 +243,13 @@
         "category": "tool"
     },
     {
-        "title": "snake game",
+        "title": "🐍 스네이크",
         "icon": "https://game.cocy.io/snake/icon.svg",
         "url": "https://game.cocy.io/snake/",
-        "desc": "snake game",
-        "badge": "Dev",
+        "desc": "먹이 하나당 +100G! 로그인해서 골드 모으기",
+        "badge": "NEW",
         "platforms": [
-            "PWA"
+            "WEB"
         ],
         "languages": [
             "🌍"
@@ -257,13 +257,13 @@
         "category": "game"
     },
     {
-        "title": "mine sweeper",
-        "icon": "https://game.cocy.io/mine/icon.svg",
-        "url": "https://game.cocy.io/mine/",
-        "desc": "mine game",
-        "badge": "Dev",
+        "title": "💣 지뢰찾기",
+        "icon": "https://game.cocy.io/minesweeper/icon.svg",
+        "url": "https://game.cocy.io/minesweeper/",
+        "desc": "난이도별 골드 보상! 클리어 보너스 + 시간 보너스",
+        "badge": "NEW",
         "platforms": [
-            "PWA"
+            "WEB"
         ],
         "languages": [
             "🌍"

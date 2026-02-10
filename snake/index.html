@@ -2,88 +2,510 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Game - 스네이크 게임</title>
-    <meta name="description" content="클래식 스네이크 게임 - 뱀을 조종하여 먹이를 먹고 점수를 올리세요!">
-    <link rel="icon" href="icon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🐍 스네이크</title>
+    <link rel="icon" href="icon.svg">
+    <script src="/lib/shared-wallet.js?v=20260211"></script>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --card: #151515;
+            --border: #2a2a2a;
+            --snake: #4ecca3;
+            --snake-head: #00ff88;
+            --food: #ff6b6b;
+            --gold: #ffd700;
+            --text: #eee;
+            --muted: #777;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 60px 16px 16px;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-value {
+            font-weight: 700;
+        }
+
+        .score-value { color: var(--snake); }
+        .earned-value { color: var(--gold); }
+
+        #game-container {
+            position: relative;
+            border: 3px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--card);
+            touch-action: none;
+        }
+
+        #canvas {
+            display: block;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .overlay.hidden { display: none; }
+
+        .overlay h2 {
+            font-size: 2rem;
+            margin-bottom: 16px;
+        }
+
+        .overlay p {
+            font-size: 1.1rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .gold-earned {
+            font-size: 1.4rem;
+            color: var(--gold);
+            margin: 16px 0;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .btn {
+            padding: 14px 32px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--snake), #2ecc71);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(78, 204, 163, 0.5);
+        }
+
+        .controls-hint {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-top: 12px;
+        }
+
+        /* Gold popup animation */
+        .gold-popup {
+            position: absolute;
+            color: var(--gold);
+            font-weight: 700;
+            font-size: 1rem;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(1.3); }
+        }
+
+        /* Mobile controls */
+        .mobile-controls {
+            display: none;
+            margin-top: 16px;
+            gap: 8px;
+        }
+
+        .d-pad {
+            display: grid;
+            grid-template-areas: 
+                ". up ."
+                "left . right"
+                ". down .";
+            gap: 6px;
+        }
+
+        .d-btn {
+            width: 60px;
+            height: 60px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: all 0.1s;
+        }
+
+        .d-btn:active {
+            background: var(--snake);
+            border-color: var(--snake);
+            color: #000;
+        }
+
+        .d-btn.up { grid-area: up; }
+        .d-btn.down { grid-area: down; }
+        .d-btn.left { grid-area: left; }
+        .d-btn.right { grid-area: right; }
+
+        @media (max-width: 600px) {
+            .mobile-controls { display: flex; }
+            .controls-hint { display: none; }
+        }
+
+        @media (pointer: coarse) {
+            .mobile-controls { display: flex; }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🐍 Snake Game</h1>
-            <p class="subtitle">클래식 스네이크 게임</p>
-        </header>
-
-        <main>
-            <div class="game-wrapper">
-                <div class="score-board">
-                    <div class="score-item">
-                        <span class="label">점수</span>
-                        <span class="value" id="score">0</span>
-                    </div>
-                    <div class="score-item">
-                        <span class="label">최고점수</span>
-                        <span class="value" id="highScore">0</span>
-                    </div>
-                    <div class="score-item">
-                        <span class="label">레벨</span>
-                        <span class="value" id="level">1</span>
-                    </div>
-                </div>
-
-                <div class="game-container">
-                    <canvas id="gameCanvas" width="400" height="400"></canvas>
-
-                    <div class="game-overlay" id="gameOverlay">
-                        <div class="overlay-content">
-                            <h2 id="overlayTitle">스네이크 게임</h2>
-                            <p id="overlayMessage">화살표 키 또는 WASD로 조종하세요</p>
-                            <button class="btn btn-primary" id="startBtn">게임 시작</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="controls">
-                    <div class="control-group">
-                        <button class="btn btn-secondary" id="pauseBtn" disabled>일시정지</button>
-                        <button class="btn btn-secondary" id="restartBtn" disabled>재시작</button>
-                    </div>
-
-                    <div class="mobile-controls" id="mobileControls">
-                        <div class="dpad">
-                            <button class="dpad-btn dpad-up" data-direction="up" aria-label="위로">▲</button>
-                            <button class="dpad-btn dpad-left" data-direction="left" aria-label="왼쪽">◄</button>
-                            <button class="dpad-btn dpad-center"></button>
-                            <button class="dpad-btn dpad-right" data-direction="right" aria-label="오른쪽">►</button>
-                            <button class="dpad-btn dpad-down" data-direction="down" aria-label="아래로">▼</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="instructions">
-                    <h3>조작법</h3>
-                    <ul>
-                        <li><strong>화살표 키</strong> 또는 <strong>WASD</strong>: 뱀 조종</li>
-                        <li><strong>P</strong>: 일시정지</li>
-                        <li><strong>스페이스</strong>: 게임 시작/재시작</li>
-                    </ul>
-                    <h3>게임 규칙</h3>
-                    <ul>
-                        <li>🍎 빨간 먹이를 먹으면 뱀이 길어지고 점수가 올라갑니다</li>
-                        <li>💎 황금 먹이(5점마다)는 보너스 점수를 줍니다</li>
-                        <li>벽이나 자기 몸에 부딪히면 게임 오버!</li>
-                        <li>10점마다 레벨이 올라가고 속도가 빨라집니다</li>
-                    </ul>
-                </div>
-            </div>
-        </main>
-
-        <footer>
-            <p>Made with 💚 by <a href="https://cocy.io" target="_blank">cocy.io</a></p>
-        </footer>
+    <h1>🐍 스네이크</h1>
+    
+    <div class="stats">
+        <div class="stat">
+            <span>🍎 점수:</span>
+            <span class="stat-value score-value" id="score">0</span>
+        </div>
+        <div class="stat">
+            <span>💰 획득:</span>
+            <span class="stat-value earned-value" id="earned">0G</span>
+        </div>
     </div>
 
-    <script src="app.js"></script>
+    <div id="game-container">
+        <canvas id="canvas"></canvas>
+        
+        <div class="overlay" id="start-overlay">
+            <h2>🐍 스네이크</h2>
+            <p>먹이를 먹을 때마다 +100G!</p>
+            <button class="btn btn-primary" onclick="startGame()">게임 시작</button>
+            <p class="controls-hint">방향키 또는 WASD로 조작</p>
+        </div>
+        
+        <div class="overlay hidden" id="gameover-overlay">
+            <h2>💀 게임 오버</h2>
+            <p>점수: <span id="final-score">0</span></p>
+            <div class="gold-earned" id="gold-earned">+0G 획득!</div>
+            <button class="btn btn-primary" onclick="startGame()">다시 하기</button>
+        </div>
+    </div>
+
+    <div class="mobile-controls">
+        <div class="d-pad">
+            <button class="d-btn up" onclick="setDirection(0, -1)">▲</button>
+            <button class="d-btn left" onclick="setDirection(-1, 0)">◀</button>
+            <button class="d-btn right" onclick="setDirection(1, 0)">▶</button>
+            <button class="d-btn down" onclick="setDirection(0, 1)">▼</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('game-container');
+        
+        // Responsive sizing
+        const CELL_COUNT = 20;
+        let CELL_SIZE, WIDTH, HEIGHT;
+        
+        function resize() {
+            const maxSize = Math.min(window.innerWidth - 32, window.innerHeight - 280, 500);
+            CELL_SIZE = Math.floor(maxSize / CELL_COUNT);
+            WIDTH = CELL_COUNT * CELL_SIZE;
+            HEIGHT = CELL_COUNT * CELL_SIZE;
+            canvas.width = WIDTH;
+            canvas.height = HEIGHT;
+            container.style.width = WIDTH + 'px';
+            container.style.height = HEIGHT + 'px';
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // Game state
+        let snake = [];
+        let food = null;
+        let direction = { x: 1, y: 0 };
+        let nextDirection = { x: 1, y: 0 };
+        let score = 0;
+        let goldEarned = 0;
+        let gameLoop = null;
+        let gameRunning = false;
+        
+        function startGame() {
+            document.getElementById('start-overlay').classList.add('hidden');
+            document.getElementById('gameover-overlay').classList.add('hidden');
+            
+            // Reset state
+            snake = [
+                { x: 5, y: 10 },
+                { x: 4, y: 10 },
+                { x: 3, y: 10 }
+            ];
+            direction = { x: 1, y: 0 };
+            nextDirection = { x: 1, y: 0 };
+            score = 0;
+            goldEarned = 0;
+            updateStats();
+            
+            spawnFood();
+            gameRunning = true;
+            
+            if (gameLoop) clearInterval(gameLoop);
+            gameLoop = setInterval(update, 120);
+        }
+        
+        function spawnFood() {
+            const empty = [];
+            for (let x = 0; x < CELL_COUNT; x++) {
+                for (let y = 0; y < CELL_COUNT; y++) {
+                    if (!snake.some(s => s.x === x && s.y === y)) {
+                        empty.push({ x, y });
+                    }
+                }
+            }
+            food = empty[Math.floor(Math.random() * empty.length)];
+        }
+        
+        function update() {
+            if (!gameRunning) return;
+            
+            direction = { ...nextDirection };
+            
+            // Move snake
+            const head = { 
+                x: snake[0].x + direction.x,
+                y: snake[0].y + direction.y
+            };
+            
+            // Wall collision
+            if (head.x < 0 || head.x >= CELL_COUNT || head.y < 0 || head.y >= CELL_COUNT) {
+                gameOver();
+                return;
+            }
+            
+            // Self collision
+            if (snake.some(s => s.x === head.x && s.y === head.y)) {
+                gameOver();
+                return;
+            }
+            
+            snake.unshift(head);
+            
+            // Eat food
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                goldEarned += 100;
+                SharedWallet.addGold(100);
+                showGoldPopup(head.x * CELL_SIZE + CELL_SIZE/2, head.y * CELL_SIZE);
+                updateStats();
+                spawnFood();
+            } else {
+                snake.pop();
+            }
+            
+            draw();
+        }
+        
+        function draw() {
+            // Clear
+            ctx.fillStyle = '#151515';
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+            
+            // Grid lines (subtle)
+            ctx.strokeStyle = '#1f1f1f';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= CELL_COUNT; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * CELL_SIZE, 0);
+                ctx.lineTo(i * CELL_SIZE, HEIGHT);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i * CELL_SIZE);
+                ctx.lineTo(WIDTH, i * CELL_SIZE);
+                ctx.stroke();
+            }
+            
+            // Food
+            if (food) {
+                ctx.fillStyle = '#ff6b6b';
+                ctx.shadowColor = '#ff6b6b';
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(
+                    food.x * CELL_SIZE + CELL_SIZE / 2,
+                    food.y * CELL_SIZE + CELL_SIZE / 2,
+                    CELL_SIZE / 2 - 3,
+                    0, Math.PI * 2
+                );
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+            
+            // Snake
+            snake.forEach((segment, i) => {
+                const isHead = i === 0;
+                
+                // Gradient from head to tail
+                const ratio = i / snake.length;
+                const r = Math.floor(0 + (78 - 0) * ratio);
+                const g = Math.floor(255 + (204 - 255) * ratio);
+                const b = Math.floor(136 + (163 - 136) * ratio);
+                
+                ctx.fillStyle = isHead ? '#00ff88' : `rgb(${r}, ${g}, ${b})`;
+                
+                if (isHead) {
+                    ctx.shadowColor = '#00ff88';
+                    ctx.shadowBlur = 10;
+                }
+                
+                const padding = 2;
+                ctx.beginPath();
+                ctx.roundRect(
+                    segment.x * CELL_SIZE + padding,
+                    segment.y * CELL_SIZE + padding,
+                    CELL_SIZE - padding * 2,
+                    CELL_SIZE - padding * 2,
+                    isHead ? 6 : 4
+                );
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            clearInterval(gameLoop);
+            
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('gold-earned').textContent = `+${goldEarned.toLocaleString()}G 획득!`;
+            document.getElementById('gameover-overlay').classList.remove('hidden');
+        }
+        
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('earned').textContent = goldEarned.toLocaleString() + 'G';
+        }
+        
+        function showGoldPopup(x, y) {
+            const popup = document.createElement('div');
+            popup.className = 'gold-popup';
+            popup.textContent = '+100G';
+            popup.style.left = x + 'px';
+            popup.style.top = y + 'px';
+            container.appendChild(popup);
+            setTimeout(() => popup.remove(), 1000);
+        }
+        
+        function setDirection(dx, dy) {
+            // Prevent reversing
+            if (direction.x === -dx && direction.y === -dy) return;
+            if (direction.x === dx && direction.y === dy) return;
+            nextDirection = { x: dx, y: dy };
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'ArrowUp': case 'w': case 'W':
+                    setDirection(0, -1);
+                    e.preventDefault();
+                    break;
+                case 'ArrowDown': case 's': case 'S':
+                    setDirection(0, 1);
+                    e.preventDefault();
+                    break;
+                case 'ArrowLeft': case 'a': case 'A':
+                    setDirection(-1, 0);
+                    e.preventDefault();
+                    break;
+                case 'ArrowRight': case 'd': case 'D':
+                    setDirection(1, 0);
+                    e.preventDefault();
+                    break;
+                case ' ':
+                    if (!gameRunning) startGame();
+                    e.preventDefault();
+                    break;
+            }
+        });
+        
+        // Touch swipe controls
+        let touchStartX, touchStartY;
+        
+        container.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        
+        container.addEventListener('touchend', (e) => {
+            if (!touchStartX || !touchStartY) return;
+            
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            
+            if (Math.abs(dx) > Math.abs(dy)) {
+                setDirection(dx > 0 ? 1 : -1, 0);
+            } else {
+                setDirection(0, dy > 0 ? 1 : -1);
+            }
+            
+            touchStartX = null;
+            touchStartY = null;
+        }, { passive: true });
+        
+        // Initial draw
+        draw();
+    </script>
 </body>
 </html>
