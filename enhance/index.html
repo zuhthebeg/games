@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>무기 강화 & 배틀</title>
     <link rel="icon" href="icon.svg">
-    <script src="/lib/multiplayer.js?v=20260210v6"></script>
-    <script src="/lib/multiplayer-ui.js?v=20260210v6"></script>
+    <script src="/lib/multiplayer.js?v=20260210v7"></script>
+    <script src="/lib/multiplayer-ui.js?v=20260210v7"></script>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -247,6 +247,102 @@
         .mode-btn.battle {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
+        }
+
+        .mode-btn.hunt {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            color: white;
+        }
+
+        /* Hunt Mode Styles */
+        .hunt-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .monster-card {
+            background: var(--card);
+            border: 2px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .monster-card.boss {
+            border-color: #ff4444;
+            box-shadow: 0 0 30px rgba(255,68,68,0.3);
+            animation: bossGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes bossGlow {
+            from { box-shadow: 0 0 20px rgba(255,68,68,0.3); }
+            to { box-shadow: 0 0 40px rgba(255,68,68,0.5); }
+        }
+
+        .monster-img {
+            width: 100px;
+            height: 100px;
+            margin: 16px auto;
+            filter: drop-shadow(0 0 10px #ff6b6b);
+        }
+
+        .monster-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .monster-name.boss {
+            color: #ff4444;
+            text-shadow: 0 0 10px rgba(255,68,68,0.5);
+        }
+
+        .monster-tier {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+
+        .hunt-vs {
+            font-size: 2rem;
+            text-align: center;
+            margin: 12px 0;
+            color: var(--accent);
+        }
+
+        .player-mini {
+            background: var(--card);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .hunt-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .hunt-actions .btn {
+            flex: 1;
+        }
+
+        .reward-popup {
+            background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,215,0,0.05));
+            border: 2px solid var(--gold);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .reward-gold {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold);
         }
 
         .mode-btn.shop {
@@ -713,6 +809,35 @@
             scythe: { name: '낫',     img: `${ICON_BASE}/lorc/scythe.svg`,           bonus: { damage: 1.1, crit: 1.05 } }
         };
         
+        // ===== MONSTER DATABASE =====
+        const MONSTERS = {
+            // 일반 몹 (쉬움)
+            slime:    { name: '슬라임',     img: `${ICON_BASE}/lorc/slime.svg`,           tier: 1, hp: 50,  damage: [5, 10],   crit: 5,  gold: [100, 200] },
+            bat:      { name: '박쥐',       img: `${ICON_BASE}/lorc/bat.svg`,             tier: 1, hp: 40,  damage: [8, 12],   crit: 10, gold: [120, 180] },
+            rat:      { name: '쥐',         img: `${ICON_BASE}/lorc/rat.svg`,             tier: 1, hp: 35,  damage: [6, 10],   crit: 8,  gold: [80, 150] },
+            
+            // 일반 몹 (중간)
+            goblin:   { name: '고블린',     img: `${ICON_BASE}/lorc/goblin-head.svg`,     tier: 2, hp: 80,  damage: [12, 20],  crit: 12, gold: [200, 400] },
+            wolf:     { name: '늑대',       img: `${ICON_BASE}/lorc/wolf-head.svg`,       tier: 2, hp: 100, damage: [15, 25],  crit: 15, gold: [250, 450] },
+            skeleton: { name: '스켈레톤',   img: `${ICON_BASE}/lorc/skeleton.svg`,        tier: 2, hp: 90,  damage: [18, 28],  crit: 10, gold: [300, 500] },
+            
+            // 일반 몹 (어려움)
+            orc:      { name: '오크',       img: `${ICON_BASE}/lorc/orc-head.svg`,        tier: 3, hp: 150, damage: [25, 40],  crit: 12, gold: [500, 800] },
+            troll:    { name: '트롤',       img: `${ICON_BASE}/lorc/troll.svg`,           tier: 3, hp: 200, damage: [30, 45],  crit: 8,  gold: [600, 1000] },
+            ogre:     { name: '오거',       img: `${ICON_BASE}/lorc/ogre.svg`,            tier: 3, hp: 180, damage: [35, 50],  crit: 10, gold: [700, 1100] },
+            
+            // 보스 몹
+            dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/dragon-head.svg`,     tier: 4, hp: 400, damage: [50, 80],  crit: 20, gold: [3000, 5000], isBoss: true },
+            demon:    { name: '👹 데몬',     img: `${ICON_BASE}/lorc/daemon-skull.svg`,    tier: 4, hp: 350, damage: [60, 90],  crit: 25, gold: [4000, 6000], isBoss: true },
+            reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/grim-reaper.svg`,     tier: 4, hp: 300, damage: [70, 100], crit: 30, gold: [5000, 8000], isBoss: true }
+        };
+
+        // 몬스터 티어별 추천 레벨
+        // Tier 1: +0 ~ +3
+        // Tier 2: +3 ~ +6  
+        // Tier 3: +6 ~ +10
+        // Tier 4 (Boss): +8 ~ +15 (어렵게 이길 수 있음)
+
         /*
         ===== 무기 성능표 =====
         | 무기     | 데미지 | 크리티컬 | 특징                    |
@@ -982,14 +1107,18 @@
                         </div>
                     </div>
 
-                    <div class="mode-grid">
+                    <div class="mode-grid" style="grid-template-columns: repeat(3, 1fr);">
                         <button class="mode-btn enhance" onclick="showEnhance()">
                             <span class="mode-icon">🔨</span>
                             <span class="mode-label">강화</span>
                         </button>
+                        <button class="mode-btn hunt" onclick="showHunt()">
+                            <span class="mode-icon">🐉</span>
+                            <span class="mode-label">사냥</span>
+                        </button>
                         <button class="mode-btn battle" onclick="showBattleLobby()">
                             <span class="mode-icon">⚔️</span>
-                            <span class="mode-label">배틀</span>
+                            <span class="mode-label">PvP</span>
                         </button>
                     </div>
 
@@ -1466,6 +1595,281 @@
             });
 
             if (isWin) fireConfetti();
+        }
+
+        // ===== HUNT MODE (Single Player) =====
+        let huntState = null;
+
+        function getRecommendedTier(weaponLevel) {
+            if (weaponLevel <= 3) return 1;
+            if (weaponLevel <= 6) return 2;
+            if (weaponLevel <= 10) return 3;
+            return 4;
+        }
+
+        function spawnMonster(forceType = null) {
+            if (forceType && MONSTERS[forceType]) {
+                const m = MONSTERS[forceType];
+                return {
+                    type: forceType,
+                    ...m,
+                    currentHp: m.hp,
+                    maxHp: m.hp
+                };
+            }
+
+            const weaponLevel = state.weapon.level;
+            const recommendedTier = getRecommendedTier(weaponLevel);
+            
+            // 10% chance for boss if weapon level >= 8
+            if (weaponLevel >= 8 && Math.random() < 0.1) {
+                const bosses = Object.entries(MONSTERS).filter(([k, v]) => v.isBoss);
+                const [type, m] = bosses[Math.floor(Math.random() * bosses.length)];
+                return { type, ...m, currentHp: m.hp, maxHp: m.hp };
+            }
+            
+            // Otherwise spawn appropriate tier monster
+            // Allow ±1 tier for variety
+            const minTier = Math.max(1, recommendedTier - 1);
+            const maxTier = Math.min(3, recommendedTier + 1);
+            
+            const eligibleMonsters = Object.entries(MONSTERS)
+                .filter(([k, v]) => v.tier >= minTier && v.tier <= maxTier && !v.isBoss);
+            
+            const [type, m] = eligibleMonsters[Math.floor(Math.random() * eligibleMonsters.length)];
+            return { type, ...m, currentHp: m.hp, maxHp: m.hp };
+        }
+
+        function showHunt() {
+            // Initialize hunt state
+            const playerStats = getWeaponStats(state.weapon);
+            huntState = {
+                monster: spawnMonster(),
+                player: {
+                    hp: playerStats.hp,
+                    maxHp: playerStats.hp,
+                    ...playerStats
+                },
+                log: [],
+                monstersKilled: 0,
+                totalGoldEarned: 0
+            };
+            renderHunt();
+        }
+
+        function renderHunt() {
+            if (!huntState) return;
+            
+            const monster = huntState.monster;
+            const player = huntState.player;
+            const weapon = state.weapon;
+            const gradeData = GRADES[weapon.grade];
+
+            document.getElementById('app').innerHTML = `
+                <div class="container hunt-screen">
+                    <button class="btn-back" onclick="exitHunt()">← 도망치기</button>
+                    
+                    <div class="gold-display">
+                        <span class="gold-icon">💰</span>
+                        <span class="gold-amount">${state.gold.toLocaleString()} G</span>
+                        <span style="margin-left:10px;color:var(--muted)">| 처치: ${huntState.monstersKilled}</span>
+                    </div>
+
+                    <div class="monster-card ${monster.isBoss ? 'boss' : ''}">
+                        <div class="monster-tier">${monster.isBoss ? '⚠️ BOSS' : `Tier ${monster.tier}`}</div>
+                        <img src="${monster.img}" class="monster-img" alt="${monster.name}">
+                        <div class="monster-name ${monster.isBoss ? 'boss' : ''}">${monster.name}</div>
+                        
+                        <div class="hp-bar-container" style="margin-top:12px;">
+                            <div class="hp-bar ${monster.currentHp < monster.maxHp * 0.3 ? 'low' : ''}" 
+                                 style="width: ${(monster.currentHp / monster.maxHp) * 100}%">
+                                ${monster.currentHp} / ${monster.maxHp}
+                            </div>
+                        </div>
+                        <div class="fighter-stats" style="justify-content:center;margin-top:8px;">
+                            <span>⚔️ ${monster.damage[0]}-${monster.damage[1]}</span>
+                            <span>💥 ${monster.crit}%</span>
+                            <span>💰 ${monster.gold[0]}-${monster.gold[1]}</span>
+                        </div>
+                    </div>
+
+                    <div class="hunt-vs">⚔️ VS ⚔️</div>
+
+                    <div class="player-mini">
+                        <div class="fighter-header">
+                            <span class="fighter-name" style="color:${gradeData.color}">
+                                <img src="${WEAPON_TYPES[weapon.type].img}" style="width:24px;height:24px;vertical-align:middle;">
+                                ${weapon.name} +${weapon.level}
+                            </span>
+                        </div>
+                        <div class="hp-bar-container" style="margin-top:8px;">
+                            <div class="hp-bar ${player.hp < player.maxHp * 0.3 ? 'low' : ''}" 
+                                 style="width: ${(player.hp / player.maxHp) * 100}%">
+                                ${player.hp} / ${player.maxHp}
+                            </div>
+                        </div>
+                        <div class="fighter-stats" style="margin-top:8px;">
+                            <span>⚔️ ${player.damageMin}-${player.damageMax}</span>
+                            <span>💥 ${player.critChance}%</span>
+                        </div>
+                    </div>
+
+                    <div class="battle-log" id="huntLog" style="max-height:100px;">
+                        ${huntState.log.slice(-5).map(entry => `
+                            <div class="log-entry ${entry.type}">${entry.text}</div>
+                        `).join('')}
+                    </div>
+
+                    <div class="hunt-actions">
+                        <button class="btn btn-enhance" onclick="huntAttack()">⚔️ 공격!</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function huntAttack() {
+            if (!huntState) return;
+            
+            const player = huntState.player;
+            const monster = huntState.monster;
+            
+            // Player attacks first
+            const playerDamage = Math.floor(Math.random() * (player.damageMax - player.damageMin + 1)) + player.damageMin;
+            const playerCrit = Math.random() * 100 < player.critChance;
+            const finalPlayerDamage = playerCrit ? Math.floor(playerDamage * player.critDamage / 100) : playerDamage;
+            
+            monster.currentHp = Math.max(0, monster.currentHp - finalPlayerDamage);
+            
+            playSound(playerCrit ? 'crit' : 'attack');
+            vibrate(playerCrit ? [50, 30, 100] : 50);
+            
+            if (playerCrit) {
+                huntState.log.push({ type: 'crit', text: `💥 크리티컬! ${finalPlayerDamage} 데미지!` });
+            } else {
+                huntState.log.push({ type: 'damage', text: `⚔️ ${finalPlayerDamage} 데미지!` });
+            }
+            
+            // Check if monster is dead
+            if (monster.currentHp <= 0) {
+                huntMonsterKilled();
+                return;
+            }
+            
+            // Monster attacks back
+            setTimeout(() => {
+                const monsterDamage = Math.floor(Math.random() * (monster.damage[1] - monster.damage[0] + 1)) + monster.damage[0];
+                const monsterCrit = Math.random() * 100 < monster.crit;
+                const finalMonsterDamage = monsterCrit ? Math.floor(monsterDamage * 1.5) : monsterDamage;
+                
+                player.hp = Math.max(0, player.hp - finalMonsterDamage);
+                
+                playSound(monsterCrit ? 'crit' : 'attack');
+                vibrate(monsterCrit ? [100, 50, 100] : 100);
+                document.body.classList.add('screen-shake');
+                setTimeout(() => document.body.classList.remove('screen-shake'), 300);
+                
+                if (monsterCrit) {
+                    huntState.log.push({ type: 'crit', text: `💥 ${monster.name}의 크리티컬! ${finalMonsterDamage} 데미지!` });
+                } else {
+                    huntState.log.push({ type: 'damage', text: `🔥 ${monster.name}의 반격! ${finalMonsterDamage} 데미지!` });
+                }
+                
+                // Check if player is dead
+                if (player.hp <= 0) {
+                    huntPlayerDied();
+                    return;
+                }
+                
+                renderHunt();
+            }, 300);
+            
+            renderHunt();
+        }
+
+        function huntMonsterKilled() {
+            const monster = huntState.monster;
+            const goldReward = Math.floor(Math.random() * (monster.gold[1] - monster.gold[0] + 1)) + monster.gold[0];
+            
+            state.gold += goldReward;
+            huntState.monstersKilled++;
+            huntState.totalGoldEarned += goldReward;
+            
+            playSound('success');
+            vibrate([50, 50, 100]);
+            if (monster.isBoss) fireConfetti();
+            
+            saveState();
+            
+            // Show victory and spawn next monster
+            const popup = document.getElementById('resultPopup');
+            const overlay = document.getElementById('overlay');
+            
+            popup.className = 'result-popup success show';
+            document.getElementById('resultIcon').textContent = monster.isBoss ? '🏆' : '✨';
+            document.getElementById('resultText').textContent = `${monster.name} 처치!`;
+            document.getElementById('resultText').style.color = 'var(--success)';
+            document.getElementById('resultDetail').innerHTML = `💰 +${goldReward.toLocaleString()}G`;
+            document.getElementById('newWeaponPreview').style.display = 'none';
+            document.getElementById('resultBtn').textContent = '다음 몬스터';
+            document.getElementById('resultBtn').onclick = () => {
+                closeResult();
+                // Spawn next monster, heal a bit
+                huntState.monster = spawnMonster();
+                huntState.player.hp = Math.min(huntState.player.maxHp, huntState.player.hp + Math.floor(huntState.player.maxHp * 0.3));
+                huntState.log = [{ type: 'info', text: `❤️ HP 30% 회복!` }];
+                renderHunt();
+            };
+            
+            overlay.classList.add('show');
+        }
+
+        function huntPlayerDied() {
+            playSound('destroy');
+            vibrate([200, 100, 200, 100, 300]);
+            
+            // Lose weapon!
+            const lostWeapon = state.weapon;
+            state.weapon = generateWeapon('common'); // Reset to random common weapon
+            state.stats.losses++;
+            saveState();
+            
+            const popup = document.getElementById('resultPopup');
+            const overlay = document.getElementById('overlay');
+            
+            popup.className = 'result-popup fail show';
+            document.getElementById('resultIcon').textContent = '💀';
+            document.getElementById('resultText').textContent = '사망...';
+            document.getElementById('resultText').style.color = 'var(--fail)';
+            document.getElementById('resultDetail').innerHTML = `
+                무기를 잃었습니다!<br>
+                <span style="color:var(--muted);font-size:0.9em">
+                    처치: ${huntState.monstersKilled}마리 | 획득: ${huntState.totalGoldEarned.toLocaleString()}G
+                </span>
+            `;
+            
+            document.getElementById('newWeaponPreview').style.display = 'block';
+            const newGradeData = GRADES[state.weapon.grade];
+            document.getElementById('newWeaponName').innerHTML = 
+                `<span style="color:${newGradeData.color}">[${newGradeData.name}] ${state.weapon.name}</span>`;
+            
+            document.getElementById('resultBtn').textContent = '메인으로';
+            document.getElementById('resultBtn').onclick = () => {
+                closeResult();
+                huntState = null;
+                showMain();
+            };
+            
+            overlay.classList.add('show');
+        }
+
+        function exitHunt() {
+            if (huntState && huntState.monstersKilled > 0) {
+                if (!confirm(`정말 도망치시겠습니까?\n\n처치: ${huntState.monstersKilled}마리\n획득: ${huntState.totalGoldEarned.toLocaleString()}G`)) {
+                    return;
+                }
+            }
+            huntState = null;
+            showMain();
         }
 
         // ===== CONFETTI =====
