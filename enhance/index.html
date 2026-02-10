@@ -7,7 +7,7 @@
     <link rel="icon" href="icon.svg">
     <script src="/lib/multiplayer.js?v=20260210v9"></script>
     <script src="/lib/multiplayer-ui.js?v=20260210v9"></script>
-    <script src="/lib/shared-wallet.js?v=20260211"></script>
+    <script src="/lib/shared-wallet.js?v=20260211v2" data-no-ui="true"></script>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -3016,12 +3016,13 @@
                 huntState.log.push({ type: 'crit', text: `💥 크리티컬! ${finalPlayerDamage} 데미지!${elementText}` });
             } else {
                 showSlashEffect('single');  // 일반 슬래시
-            } else if (elementMult > 1) {
-                huntState.log.push({ type: 'crit', text: `${ELEMENTS[weaponElement]?.icon || '⚔️'} ${finalPlayerDamage} 데미지! 효과적!` });
-            } else if (elementMult < 1) {
-                huntState.log.push({ type: 'damage', text: `⚔️ ${finalPlayerDamage} 데미지... (저항)` });
-            } else {
-                huntState.log.push({ type: 'damage', text: `⚔️ ${finalPlayerDamage} 데미지!` });
+                if (elementMult > 1) {
+                    huntState.log.push({ type: 'crit', text: `${ELEMENTS[weaponElement]?.icon || '⚔️'} ${finalPlayerDamage} 데미지! 효과적!` });
+                } else if (elementMult < 1) {
+                    huntState.log.push({ type: 'damage', text: `⚔️ ${finalPlayerDamage} 데미지... (저항)` });
+                } else {
+                    huntState.log.push({ type: 'damage', text: `⚔️ ${finalPlayerDamage} 데미지!` });
+                }
             }
             
             saveState(); // 숙련도, 내구도 저장
