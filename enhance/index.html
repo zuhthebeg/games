@@ -223,6 +223,84 @@
             100% { background-position: 0% 50%; }
         }
         
+        /* 럭키드로우 효과 */
+        .lucky-flash {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(255,215,0,0.8) 0%, rgba(255,215,0,0) 70%);
+            animation: luckyFlash 0.5s ease-out forwards;
+            pointer-events: none;
+            z-index: 999;
+        }
+        @keyframes luckyFlash {
+            0% { opacity: 1; transform: scale(0); }
+            50% { opacity: 0.8; transform: scale(1.5); }
+            100% { opacity: 0; transform: scale(2); }
+        }
+        
+        .gold-shower {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1001;
+            overflow: hidden;
+        }
+        
+        .gold-coin {
+            position: absolute;
+            font-size: 2rem;
+            animation: coinFall 2s ease-out forwards;
+        }
+        
+        @keyframes coinFall {
+            0% { transform: translateY(-50px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        
+        .lucky-text-big {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 4rem;
+            font-weight: 900;
+            color: #ffd700;
+            text-shadow: 0 0 30px #ff6b00, 0 0 60px #ff6b00, 3px 3px 0 #000;
+            animation: luckyTextPop 1s ease-out forwards;
+            z-index: 1002;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        
+        @keyframes luckyTextPop {
+            0% { transform: translateX(-50%) scale(0) rotate(-10deg); opacity: 0; }
+            30% { transform: translateX(-50%) scale(1.3) rotate(5deg); opacity: 1; }
+            50% { transform: translateX(-50%) scale(0.9) rotate(-3deg); }
+            70% { transform: translateX(-50%) scale(1.1) rotate(2deg); }
+            100% { transform: translateX(-50%) scale(1) rotate(0deg); opacity: 1; }
+        }
+        
+        .lucky-gold-amount {
+            position: fixed;
+            top: 35%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 20px #ffd700, 0 0 40px #ffd700;
+            animation: goldAmountPop 1s ease-out 0.3s both;
+            z-index: 1002;
+            pointer-events: none;
+        }
+        
+        @keyframes goldAmountPop {
+            0% { transform: translateX(-50%) translateY(30px); opacity: 0; }
+            100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        
         @keyframes hitEffect {
             0% { transform: scale(1) rotate(0); }
             25% { transform: scale(1.2) rotate(-10deg); }
@@ -927,27 +1005,77 @@
             scythe: { name: '낫',     img: `${ICON_BASE}/lorc/scythe.svg`,           bonus: { damage: 1.1, crit: 1.05 } }
         };
         
+        // ===== 속성 시스템 =====
+        const ELEMENTS = {
+            none:      { name: '무속성', icon: '⚪', color: '#aaa' },
+            fire:      { name: '불', icon: '🔥', color: '#ff4500' },
+            ice:       { name: '얼음', icon: '❄️', color: '#00bfff' },
+            lightning: { name: '번개', icon: '⚡', color: '#ffd700' },
+            silver:    { name: '은', icon: '🌙', color: '#c0c0c0' },
+            poison:    { name: '독', icon: '☠️', color: '#9932cc' },
+            holy:      { name: '신성', icon: '✨', color: '#fff8dc' }
+        };
+        
+        const MONSTER_TYPES = {
+            beast:     { name: '야수', icon: '🐺', weakness: ['fire'], resist: ['poison'] },
+            undead:    { name: '언데드', icon: '💀', weakness: ['silver', 'holy', 'fire'], resist: ['poison', 'ice'] },
+            demon:     { name: '악마', icon: '👹', weakness: ['holy', 'lightning'], resist: ['fire', 'poison'] },
+            elemental: { name: '정령', icon: '🌀', weakness: ['lightning'], resist: [] },
+            humanoid:  { name: '인간형', icon: '👤', weakness: ['poison'], resist: [] },
+            dragon:    { name: '용족', icon: '🐉', weakness: ['ice'], resist: ['fire'] },
+            insect:    { name: '곤충', icon: '🦂', weakness: ['fire', 'ice'], resist: ['poison'] }
+        };
+        
+        // 속성 상성 배수 계산
+        function getElementMultiplier(weaponElement, monsterType) {
+            if (!weaponElement || weaponElement === 'none' || !monsterType) return 1.0;
+            const typeData = MONSTER_TYPES[monsterType];
+            if (!typeData) return 1.0;
+            
+            if (typeData.weakness.includes(weaponElement)) return 2.0;  // 약점 2배!
+            if (typeData.resist.includes(weaponElement)) return 0.5;   // 저항 0.5배
+            return 1.0;
+        }
+        
         // ===== MONSTER DATABASE =====
         const MONSTERS = {
             // Tier 1 (쉬움) - +0~+3 추천
-            slime:    { name: '슬라임',     img: `${ICON_BASE}/lorc/infested-mass.svg`,   tier: 1, hp: 50,  damage: [5, 10],   crit: 5,  gold: [100, 200] },
-            bat:      { name: '박쥐',       img: `${ICON_BASE}/lorc/evil-bat.svg`,        tier: 1, hp: 40,  damage: [8, 12],   crit: 10, gold: [120, 180] },
-            worm:     { name: '벌레',       img: `${ICON_BASE}/lorc/worm-mouth.svg`,      tier: 1, hp: 35,  damage: [6, 10],   crit: 8,  gold: [80, 150] },
+            slime:    { name: '슬라임',     img: `${ICON_BASE}/lorc/infested-mass.svg`,   tier: 1, hp: 50,  damage: [5, 10],   crit: 5,  gold: [100, 200], type: 'elemental' },
+            bat:      { name: '박쥐',       img: `${ICON_BASE}/lorc/evil-bat.svg`,        tier: 1, hp: 40,  damage: [8, 12],   crit: 10, gold: [120, 180], type: 'beast' },
+            worm:     { name: '벌레',       img: `${ICON_BASE}/lorc/worm-mouth.svg`,      tier: 1, hp: 35,  damage: [6, 10],   crit: 8,  gold: [80, 150], type: 'insect' },
+            rat:      { name: '쥐떼',       img: `${ICON_BASE}/lorc/rat.svg`,             tier: 1, hp: 30,  damage: [4, 8],    crit: 12, gold: [60, 120], type: 'beast' },
+            spider:   { name: '거미',       img: `${ICON_BASE}/lorc/spider-face.svg`,     tier: 1, hp: 45,  damage: [7, 11],   crit: 8,  gold: [90, 160], type: 'insect' },
+            skeleton: { name: '해골병사',   img: `${ICON_BASE}/lorc/skull-crossed-bones.svg`, tier: 1, hp: 55, damage: [8, 14], crit: 5, gold: [110, 190], type: 'undead' },
             
             // Tier 2 (중간) - +3~+6 추천
-            imp:      { name: '임프',       img: `${ICON_BASE}/lorc/imp.svg`,             tier: 2, hp: 80,  damage: [12, 20],  crit: 12, gold: [200, 400] },
-            wolf:     { name: '늑대',       img: `${ICON_BASE}/lorc/wolf-howl.svg`,       tier: 2, hp: 100, damage: [15, 25],  crit: 15, gold: [250, 450] },
-            spectre:  { name: '망령',       img: `${ICON_BASE}/lorc/spectre.svg`,         tier: 2, hp: 90,  damage: [18, 28],  crit: 10, gold: [300, 500] },
+            imp:      { name: '임프',       img: `${ICON_BASE}/lorc/imp.svg`,             tier: 2, hp: 80,  damage: [12, 20],  crit: 12, gold: [200, 400], type: 'demon' },
+            wolf:     { name: '늑대',       img: `${ICON_BASE}/lorc/wolf-howl.svg`,       tier: 2, hp: 100, damage: [15, 25],  crit: 15, gold: [250, 450], type: 'beast' },
+            spectre:  { name: '망령',       img: `${ICON_BASE}/lorc/spectre.svg`,         tier: 2, hp: 90,  damage: [18, 28],  crit: 10, gold: [300, 500], type: 'undead' },
+            goblin:   { name: '고블린',     img: `${ICON_BASE}/lorc/goblin-head.svg`,     tier: 2, hp: 70,  damage: [14, 22],  crit: 18, gold: [220, 380], type: 'humanoid' },
+            zombie:   { name: '좀비',       img: `${ICON_BASE}/lorc/shambling-zombie.svg`, tier: 2, hp: 120, damage: [10, 18], crit: 5,  gold: [180, 350], type: 'undead' },
+            harpy:    { name: '하피',       img: `${ICON_BASE}/lorc/harpy.svg`,           tier: 2, hp: 75,  damage: [16, 26],  crit: 20, gold: [280, 480], type: 'beast' },
+            elemental_fire: { name: '화염정령', img: `${ICON_BASE}/lorc/fire-silhouette.svg`, tier: 2, hp: 85, damage: [20, 30], crit: 8, gold: [320, 520], type: 'elemental' },
             
             // Tier 3 (어려움) - +6~+10 추천
-            beast:    { name: '마수',       img: `${ICON_BASE}/lorc/beast-eye.svg`,       tier: 3, hp: 150, damage: [25, 40],  crit: 12, gold: [500, 800] },
-            minotaur: { name: '미노타우로스', img: `${ICON_BASE}/lorc/minotaur.svg`,       tier: 3, hp: 200, damage: [30, 45],  crit: 8,  gold: [600, 1000] },
-            ghoul:    { name: '구울',       img: `${ICON_BASE}/lorc/bone-gnawer.svg`,     tier: 3, hp: 180, damage: [35, 50],  crit: 10, gold: [700, 1100] },
+            beast:    { name: '마수',       img: `${ICON_BASE}/lorc/beast-eye.svg`,       tier: 3, hp: 150, damage: [25, 40],  crit: 12, gold: [500, 800], type: 'beast' },
+            minotaur: { name: '미노타우로스', img: `${ICON_BASE}/lorc/minotaur.svg`,       tier: 3, hp: 200, damage: [30, 45],  crit: 8,  gold: [600, 1000], type: 'beast' },
+            ghoul:    { name: '구울',       img: `${ICON_BASE}/lorc/bone-gnawer.svg`,     tier: 3, hp: 180, damage: [35, 50],  crit: 10, gold: [700, 1100], type: 'undead' },
+            orc:      { name: '오크 전사',   img: `${ICON_BASE}/lorc/orc-head.svg`,        tier: 3, hp: 170, damage: [28, 42],  crit: 10, gold: [550, 900], type: 'humanoid' },
+            vampire:  { name: '뱀파이어',   img: `${ICON_BASE}/lorc/vampire-dracula.svg`, tier: 3, hp: 160, damage: [32, 48],  crit: 18, gold: [650, 1050], type: 'undead' },
+            golem:    { name: '골렘',       img: `${ICON_BASE}/lorc/rock-golem.svg`,      tier: 3, hp: 250, damage: [22, 35],  crit: 3,  gold: [580, 950], type: 'elemental' },
+            wyvern:   { name: '와이번',     img: `${ICON_BASE}/lorc/wyvern.svg`,          tier: 3, hp: 190, damage: [30, 50],  crit: 15, gold: [750, 1200], type: 'dragon' },
             
-            // Tier 4 (보스) - +8~+15 (어렵게 이김)
-            dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/double-dragon.svg`,   tier: 4, hp: 400, damage: [50, 80],  crit: 20, gold: [3000, 5000], isBoss: true },
-            demon:    { name: '👹 데몬',     img: `${ICON_BASE}/lorc/daemon-skull.svg`,    tier: 4, hp: 350, damage: [60, 90],  crit: 25, gold: [4000, 6000], isBoss: true },
-            reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/horned-skull.svg`,    tier: 4, hp: 300, damage: [70, 100], crit: 30, gold: [5000, 8000], isBoss: true }
+            // Tier 4 (보스) - +10~+15
+            dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/double-dragon.svg`,   tier: 4, hp: 400, damage: [50, 80],  crit: 20, gold: [3000, 5000], isBoss: true, type: 'dragon' },
+            demon:    { name: '👹 데몬',     img: `${ICON_BASE}/lorc/daemon-skull.svg`,    tier: 4, hp: 350, damage: [60, 90],  crit: 25, gold: [4000, 6000], isBoss: true, type: 'demon' },
+            reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/horned-skull.svg`,    tier: 4, hp: 300, damage: [70, 100], crit: 30, gold: [5000, 8000], isBoss: true, type: 'undead' },
+            lich:     { name: '👻 리치',     img: `${ICON_BASE}/lorc/crowned-skull.svg`,   tier: 4, hp: 280, damage: [55, 95],  crit: 22, gold: [4500, 7000], isBoss: true, type: 'undead' },
+            hydra:    { name: '🐍 히드라',   img: `${ICON_BASE}/lorc/hydra.svg`,           tier: 4, hp: 450, damage: [45, 75],  crit: 15, gold: [3500, 5500], isBoss: true, type: 'dragon' },
+            
+            // Tier 5 (전설) - +15~+20
+            ancient_dragon: { name: '🌟 고대용', img: `${ICON_BASE}/lorc/spiked-dragon-head.svg`, tier: 5, hp: 800, damage: [80, 130], crit: 25, gold: [10000, 20000], isBoss: true, type: 'dragon' },
+            demon_lord:     { name: '😈 마왕',   img: `${ICON_BASE}/lorc/demon-skull.svg`,        tier: 5, hp: 700, damage: [90, 140], crit: 30, gold: [12000, 22000], isBoss: true, type: 'demon' },
+            death_knight:   { name: '⚔️ 죽음의기사', img: `${ICON_BASE}/lorc/death-note.svg`,     tier: 5, hp: 600, damage: [100, 150], crit: 35, gold: [15000, 25000], isBoss: true, type: 'undead' }
         };
 
         /*
@@ -1213,13 +1341,22 @@
                 name = prefix ? `${prefix} ${typeData.name}` : typeData.name;
             }
 
+            // 랜덤 속성 부여 (등급에 따라 확률 증가)
+            const elementChance = { common: 0.1, magic: 0.3, rare: 0.5, legendary: 0.7, unique: 1.0 };
+            let element = 'none';
+            if (Math.random() < elementChance[grade]) {
+                const elements = ['fire', 'ice', 'lightning', 'silver', 'poison', 'holy'];
+                element = elements[Math.floor(Math.random() * elements.length)];
+            }
+            
             return {
                 type,
                 grade,
                 name,
                 level: 0,
-                img: typeData.img,  // Image URL from game-icons.net
-                durability: MAX_DURABILITY  // 내구도 100%로 시작
+                element,  // 속성!
+                img: typeData.img,
+                durability: MAX_DURABILITY
             };
         }
         
@@ -1316,8 +1453,8 @@
                         <div class="weapon-header">
                             <div class="weapon-info">
                                 <div class="weapon-grade ${weapon.grade}">${gradeData.name}</div>
-                                <div class="weapon-name">${weapon.name}</div>
-                                <div class="weapon-type">${WEAPON_TYPES[weapon.type].name}</div>
+                                <div class="weapon-name">${weapon.name} ${weapon.element && weapon.element !== 'none' ? ELEMENTS[weapon.element]?.icon || '' : ''}</div>
+                                <div class="weapon-type">${WEAPON_TYPES[weapon.type].name}${weapon.element && weapon.element !== 'none' ? ` | ${ELEMENTS[weapon.element]?.name}` : ''}</div>
                             </div>
                             <div class="weapon-level">
                                 <div class="weapon-level-number">+${weapon.level}</div>
@@ -1993,10 +2130,11 @@
         let huntState = null;
 
         function getRecommendedTier(weaponLevel) {
-            if (weaponLevel <= 3) return 1;
-            if (weaponLevel <= 6) return 2;
-            if (weaponLevel <= 10) return 3;
-            return 4;
+            if (weaponLevel <= 2) return 1;
+            if (weaponLevel <= 5) return 2;
+            if (weaponLevel <= 9) return 3;
+            if (weaponLevel <= 14) return 4;
+            return 5; // 전설급
         }
 
         function spawnMonster(forceType = null) {
@@ -2013,20 +2151,34 @@
             const weaponLevel = state.weapon.level;
             const recommendedTier = getRecommendedTier(weaponLevel);
             
-            // 10% chance for boss if weapon level >= 8
-            if (weaponLevel >= 8 && Math.random() < 0.1) {
-                const bosses = Object.entries(MONSTERS).filter(([k, v]) => v.isBoss);
-                const [type, m] = bosses[Math.floor(Math.random() * bosses.length)];
-                return { type, ...m, currentHp: m.hp, maxHp: m.hp };
+            // 보스 출현 확률 (레벨에 따라 증가)
+            const bossChance = weaponLevel >= 15 ? 0.15 : (weaponLevel >= 10 ? 0.1 : (weaponLevel >= 8 ? 0.05 : 0));
+            if (bossChance > 0 && Math.random() < bossChance) {
+                // 보스는 현재 티어 또는 한 단계 아래 티어에서
+                const bossTier = Math.max(4, recommendedTier);
+                const bosses = Object.entries(MONSTERS).filter(([k, v]) => v.isBoss && v.tier <= bossTier);
+                if (bosses.length > 0) {
+                    const [type, m] = bosses[Math.floor(Math.random() * bosses.length)];
+                    return { type, ...m, currentHp: m.hp, maxHp: m.hp };
+                }
             }
             
-            // Otherwise spawn appropriate tier monster
-            // Allow ±1 tier for variety
-            const minTier = Math.max(1, recommendedTier - 1);
-            const maxTier = Math.min(3, recommendedTier + 1);
+            // 일반 몬스터: 현재 티어 위주 (80%), 한단계 아래 (20%)
+            const roll = Math.random();
+            let targetTier = recommendedTier;
+            if (roll < 0.2 && recommendedTier > 1) {
+                targetTier = recommendedTier - 1; // 가끔 약한 몬스터
+            }
             
             const eligibleMonsters = Object.entries(MONSTERS)
-                .filter(([k, v]) => v.tier >= minTier && v.tier <= maxTier && !v.isBoss);
+                .filter(([k, v]) => v.tier === targetTier && !v.isBoss);
+            
+            if (eligibleMonsters.length === 0) {
+                // 해당 티어 몬스터 없으면 가장 가까운 티어
+                const allMonsters = Object.entries(MONSTERS).filter(([k, v]) => !v.isBoss);
+                const [type, m] = allMonsters[Math.floor(Math.random() * allMonsters.length)];
+                return { type, ...m, currentHp: m.hp, maxHp: m.hp };
+            }
             
             const [type, m] = eligibleMonsters[Math.floor(Math.random() * eligibleMonsters.length)];
             return { type, ...m, currentHp: m.hp, maxHp: m.hp };
@@ -2068,7 +2220,10 @@
                     </div>
 
                     <div class="monster-card ${monster.isBoss ? 'boss' : ''}">
-                        <div class="monster-tier">${monster.isBoss ? '⚠️ BOSS' : `Tier ${monster.tier}`}</div>
+                        <div class="monster-tier">
+                            ${monster.isBoss ? '⚠️ BOSS' : `Tier ${monster.tier}`}
+                            ${monster.type ? ` | ${MONSTER_TYPES[monster.type]?.icon || ''} ${MONSTER_TYPES[monster.type]?.name || ''}` : ''}
+                        </div>
                         <img src="${monster.img}" class="monster-img" alt="${monster.name}">
                         <div class="monster-name ${monster.isBoss ? 'boss' : ''}">${monster.name}</div>
                         
@@ -2092,6 +2247,7 @@
                             <span class="fighter-name" style="color:${gradeData.color}">
                                 <img src="${WEAPON_TYPES[weapon.type].img}" style="width:24px;height:24px;vertical-align:middle;">
                                 ${weapon.name} +${weapon.level}
+                                ${weapon.element && weapon.element !== 'none' ? `<span style="margin-left:4px;">${ELEMENTS[weapon.element]?.icon || ''}</span>` : ''}
                             </span>
                         </div>
                         <div class="hp-bar-container" style="margin-top:8px;">
@@ -2180,6 +2336,46 @@
             document.body.appendChild(crit);
             setTimeout(() => crit.remove(), 800);
         }
+        
+        function showLuckyDrawEffect(goldAmount) {
+            // 황금빛 플래시
+            const flash = document.createElement('div');
+            flash.className = 'lucky-flash';
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 500);
+            
+            // 럭키드로우 텍스트
+            const luckyText = document.createElement('div');
+            luckyText.className = 'lucky-text-big';
+            luckyText.innerHTML = '🎰 LUCKY DRAW! 🎰';
+            document.body.appendChild(luckyText);
+            
+            // 골드 표시
+            const goldText = document.createElement('div');
+            goldText.className = 'lucky-gold-amount';
+            goldText.innerHTML = `💰 +${goldAmount.toLocaleString()}G`;
+            document.body.appendChild(goldText);
+            
+            // 황금 코인 샤워
+            const shower = document.createElement('div');
+            shower.className = 'gold-shower';
+            for (let i = 0; i < 30; i++) {
+                const coin = document.createElement('div');
+                coin.className = 'gold-coin';
+                coin.style.left = Math.random() * 100 + '%';
+                coin.style.animationDelay = Math.random() * 0.5 + 's';
+                coin.textContent = Math.random() > 0.5 ? '💰' : '🪙';
+                shower.appendChild(coin);
+            }
+            document.body.appendChild(shower);
+            
+            // 정리
+            setTimeout(() => {
+                luckyText.remove();
+                goldText.remove();
+                shower.remove();
+            }, 2500);
+        }
 
         function huntAttack() {
             if (!huntState) return;
@@ -2236,18 +2432,30 @@
             // Player attacks first
             const playerDamage = Math.floor(Math.random() * (player.damageMax - player.damageMin + 1)) + player.damageMin;
             const playerCrit = Math.random() * 100 < player.critChance;
-            const finalPlayerDamage = playerCrit ? Math.floor(playerDamage * player.critDamage / 100) : playerDamage;
+            
+            // 속성 배율 계산
+            const weaponElement = state.weapon.element || 'none';
+            const elementMult = getElementMultiplier(weaponElement, monster.type);
+            const baseDamage = playerCrit ? Math.floor(playerDamage * player.critDamage / 100) : playerDamage;
+            const finalPlayerDamage = Math.floor(baseDamage * elementMult);
             
             monster.currentHp = Math.max(0, monster.currentHp - finalPlayerDamage);
             
             playSound(playerCrit ? 'crit' : 'attack');
             vibrate(playerCrit ? [50, 30, 100] : 50);
             
+            // 속성 효과 텍스트
+            const elementText = elementMult > 1 ? ` 🎯효과적!` : (elementMult < 1 ? ` 🛡️저항...` : '');
+            
             if (playerCrit) {
                 showCritEffect();
                 document.body.classList.add('screen-shake');
                 setTimeout(() => document.body.classList.remove('screen-shake'), 300);
-                huntState.log.push({ type: 'crit', text: `💥 크리티컬! ${finalPlayerDamage} 데미지!` });
+                huntState.log.push({ type: 'crit', text: `💥 크리티컬! ${finalPlayerDamage} 데미지!${elementText}` });
+            } else if (elementMult > 1) {
+                huntState.log.push({ type: 'crit', text: `${ELEMENTS[weaponElement]?.icon || '⚔️'} ${finalPlayerDamage} 데미지! 효과적!` });
+            } else if (elementMult < 1) {
+                huntState.log.push({ type: 'damage', text: `⚔️ ${finalPlayerDamage} 데미지... (저항)` });
             } else {
                 huntState.log.push({ type: 'damage', text: `⚔️ ${finalPlayerDamage} 데미지!` });
             }
@@ -2312,7 +2520,12 @@
             
             playSound('success');
             vibrate(isLuckyDraw ? [100, 50, 100, 50, 100, 50, 200] : [50, 50, 100]);
-            if (monster.isBoss || isLuckyDraw) fireConfetti();
+            if (isLuckyDraw) {
+                showLuckyDrawEffect(goldReward);
+                fireConfetti();
+            } else if (monster.isBoss) {
+                fireConfetti();
+            }
             
             saveState();
             
