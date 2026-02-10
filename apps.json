@@ -1,9 +1,9 @@
 [
     {
-        "title": "무기 강화",
+        "title": "무기 강화 & 배틀",
         "icon": "https://game.cocy.io/enhance/icon.svg",
         "url": "https://game.cocy.io/enhance/",
-        "desc": "운명의 강화 시뮬레이터 - 성공? 파괴?",
+        "desc": "디아블로 스타일 등급 시스템! 강화하고 배틀해서 돈을 벌어라",
         "badge": "NEW",
         "platforms": [
             "WEB"

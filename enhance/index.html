@@ -9,70 +9,213 @@
     <script src="/lib/multiplayer-ui.js?v=20260210v3"></script>
     <style>
         :root {
-            --bg: #1a1a2e;
-            --card: #16213e;
+            --bg: #0d0d0d;
+            --card: #1a1a1a;
+            --card-border: #2a2a2a;
             --accent: #e94560;
             --success: #4ecca3;
             --fail: #ff6b6b;
             --gold: #ffd700;
             --text: #eee;
-            --muted: #888;
-            --hp: #4ecca3;
-            --damage: #ff6b6b;
+            --muted: #777;
+            
+            /* Rarity colors */
+            --common: #9d9d9d;
+            --magic: #5555ff;
+            --rare: #ffcc00;
+            --legendary: #ff8000;
+            --unique: #00ff80;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
+            background-image: 
+                radial-gradient(ellipse at top, rgba(233,69,96,0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, rgba(78,204,163,0.05) 0%, transparent 50%);
         }
 
         #app { min-height: 100vh; }
 
         .container {
-            max-width: 420px;
+            max-width: 440px;
             width: 100%;
             margin: 0 auto;
-            padding: 20px;
+            padding: 16px;
         }
 
         header {
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
+            padding-top: 8px;
         }
 
         h1 {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             margin-bottom: 4px;
             background: linear-gradient(135deg, var(--accent), var(--gold));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .subtitle { color: var(--muted); font-size: 0.9rem; }
+        .subtitle { color: var(--muted); font-size: 0.85rem; }
+
+        /* Gold Display */
+        .gold-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,215,0,0.05));
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 20px;
+            padding: 8px 20px;
+            margin: 0 auto 16px;
+            width: fit-content;
+        }
+
+        .gold-icon { font-size: 1.2rem; }
+        .gold-amount { font-size: 1.1rem; font-weight: 700; color: var(--gold); }
+
+        /* Weapon Card */
+        .weapon-card {
+            background: var(--card);
+            border: 2px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .weapon-card.common { border-color: var(--common); }
+        .weapon-card.magic { border-color: var(--magic); box-shadow: 0 0 20px rgba(85,85,255,0.2); }
+        .weapon-card.rare { border-color: var(--rare); box-shadow: 0 0 25px rgba(255,204,0,0.2); }
+        .weapon-card.legendary { border-color: var(--legendary); box-shadow: 0 0 30px rgba(255,128,0,0.3); }
+        .weapon-card.unique { border-color: var(--unique); box-shadow: 0 0 35px rgba(0,255,128,0.3); }
+
+        .weapon-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .weapon-info { flex: 1; }
+
+        .weapon-grade {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .weapon-grade.common { color: var(--common); }
+        .weapon-grade.magic { color: var(--magic); }
+        .weapon-grade.rare { color: var(--rare); }
+        .weapon-grade.legendary { color: var(--legendary); }
+        .weapon-grade.unique { color: var(--unique); }
+
+        .weapon-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .weapon-type { color: var(--muted); font-size: 0.85rem; }
+
+        .weapon-level {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 8px 14px;
+            text-align: center;
+        }
+
+        .weapon-level-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .weapon-level-label { font-size: 0.7rem; color: var(--muted); }
+
+        .weapon-icon-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .weapon-icon {
+            font-size: 72px;
+            filter: drop-shadow(0 0 20px currentColor);
+            transition: all 0.3s;
+        }
+
+        .weapon-icon.shake { animation: shake 0.5s ease-in-out; }
+        .weapon-icon.glow-success { filter: drop-shadow(0 0 40px var(--success)); }
+        .weapon-icon.glow-fail { filter: drop-shadow(0 0 40px var(--fail)); }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0); }
+            20% { transform: translateX(-10px) rotate(-5deg); }
+            40% { transform: translateX(10px) rotate(5deg); }
+            60% { transform: translateX(-10px) rotate(-5deg); }
+            80% { transform: translateX(10px) rotate(5deg); }
+        }
+
+        /* Stats */
+        .weapon-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-icon { font-size: 1.3rem; }
+        .stat-info { flex: 1; }
+        .stat-value { font-size: 1rem; font-weight: 600; }
+        .stat-label { font-size: 0.7rem; color: var(--muted); }
+
+        .stat-value.damage { color: #ff6b6b; }
+        .stat-value.crit { color: var(--gold); }
+        .stat-value.hp { color: var(--success); }
+        .stat-value.special { color: var(--unique); }
 
         /* Mode Selection */
-        .mode-select {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-top: 40px;
+        .mode-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
         }
 
         .mode-btn {
-            padding: 24px;
+            padding: 20px 12px;
             border: none;
-            border-radius: 16px;
-            font-size: 1.2rem;
+            border-radius: 12px;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 8px;
         }
 
         .mode-btn:hover { transform: translateY(-2px); }
@@ -87,120 +230,51 @@
             color: white;
         }
 
-        .mode-icon { font-size: 2rem; }
-        .mode-info { text-align: left; }
-        .mode-title { font-size: 1.1rem; }
-        .mode-desc { font-size: 0.8rem; opacity: 0.8; font-weight: normal; }
+        .mode-btn.shop {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
 
-        /* Weapon Display */
-        .weapon-display {
+        .mode-btn.inventory {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .mode-icon { font-size: 1.8rem; }
+        .mode-label { font-size: 0.85rem; }
+
+        /* Enhance Panel */
+        .enhance-panel {
             background: var(--card);
-            border-radius: 20px;
-            padding: 24px;
-            text-align: center;
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .weapon-glow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
-            opacity: 0.3;
-            pointer-events: none;
-        }
-
-        .weapon-icon {
-            font-size: 64px;
-            margin-bottom: 12px;
-            position: relative;
-            z-index: 1;
-            filter: drop-shadow(0 0 20px var(--accent));
-            transition: all 0.3s;
-        }
-
-        .weapon-icon.shake { animation: shake 0.5s ease-in-out; }
-        .weapon-icon.glow-success { filter: drop-shadow(0 0 30px var(--success)) drop-shadow(0 0 60px var(--success)); }
-        .weapon-icon.glow-fail { filter: drop-shadow(0 0 30px var(--fail)) drop-shadow(0 0 60px var(--fail)); }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0) rotate(0); }
-            20% { transform: translateX(-8px) rotate(-5deg); }
-            40% { transform: translateX(8px) rotate(5deg); }
-            60% { transform: translateX(-8px) rotate(-5deg); }
-            80% { transform: translateX(8px) rotate(5deg); }
-        }
-
-        .weapon-level {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 4px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .weapon-level.legendary {
-            background: linear-gradient(135deg, #ff6b6b, #ffd700, #4ecca3);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .weapon-name { color: var(--muted); font-size: 0.95rem; }
-
-        /* Stats Display */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .stat-box {
-            background: var(--card);
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-        }
-
-        .stat-icon { font-size: 1.2rem; margin-bottom: 4px; }
-        .stat-value { font-size: 1.1rem; font-weight: 600; }
-        .stat-value.damage { color: var(--damage); }
-        .stat-value.crit { color: var(--gold); }
-        .stat-label { font-size: 0.7rem; color: var(--muted); }
-
-        /* Enhance Info */
-        .enhance-card {
-            background: var(--card);
+            border: 1px solid var(--card-border);
             border-radius: 12px;
             padding: 16px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
-        .info-row {
+        .enhance-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .info-row:last-child { margin-bottom: 0; }
-        .info-label { color: var(--muted); }
-        .info-value { font-weight: 600; }
-        .info-value.danger { color: var(--fail); }
-        .info-value.safe { color: var(--success); }
+
+        .enhance-row:last-child { border-bottom: none; }
+
+        .enhance-label { color: var(--muted); }
+        .enhance-value { font-weight: 600; }
+        .enhance-value.danger { color: var(--fail); }
+        .enhance-value.safe { color: var(--success); }
+        .enhance-value.gold { color: var(--gold); }
 
         /* Buttons */
-        .btn-group { display: flex; gap: 12px; }
+        .btn-row { display: flex; gap: 10px; }
 
         .btn {
             flex: 1;
             padding: 14px;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
@@ -220,14 +294,9 @@
         }
 
         .btn-secondary {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.08);
             color: var(--text);
-            flex: 0.3;
-        }
-
-        .btn-battle {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            flex: 0 0 50px;
         }
 
         .btn-back {
@@ -237,132 +306,41 @@
             cursor: pointer;
             font-size: 0.9rem;
             padding: 8px 0;
-            margin-bottom: 16px;
-        }
-
-        /* Battle Screen */
-        .battle-screen {
-            min-height: 100vh;
+            margin-bottom: 12px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            gap: 6px;
         }
 
-        .battle-header {
-            text-align: center;
-            padding: 16px;
-            background: var(--card);
-        }
-
-        .battle-title { font-size: 1.2rem; font-weight: 600; }
-        .battle-round { color: var(--muted); font-size: 0.9rem; }
-
-        .battle-arena {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            gap: 20px;
-        }
-
-        .fighter {
-            background: var(--card);
-            border-radius: 16px;
-            padding: 16px;
-        }
-
-        .fighter.me { border: 2px solid var(--accent); }
-        .fighter.enemy { border: 2px solid #667eea; }
-
-        .fighter-header {
+        /* Protection Toggle */
+        .protection-toggle {
+            background: rgba(255,215,0,0.1);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 10px;
+            padding: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
         }
 
-        .fighter-name { font-weight: 600; }
-        .fighter-weapon { color: var(--muted); font-size: 0.85rem; }
-
-        .hp-bar-container {
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            height: 24px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-
-        .hp-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--hp), #2ecc71);
-            border-radius: 10px;
-            transition: width 0.5s ease-out;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: 600;
-            min-width: 60px;
-        }
-
-        .hp-bar.low { background: linear-gradient(90deg, var(--fail), #ff8a80); }
-
-        .fighter-stats {
-            display: flex;
-            gap: 16px;
-            font-size: 0.85rem;
-            color: var(--muted);
-        }
-
-        .battle-log {
-            background: var(--card);
-            border-radius: 12px;
-            padding: 16px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .log-entry {
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.85rem;
-        }
-
-        .log-entry:last-child { border-bottom: none; }
-        .log-entry.crit { color: var(--gold); }
-        .log-entry.damage { color: var(--damage); }
-        .log-entry.heal { color: var(--success); }
-
-        .battle-actions {
-            padding: 16px 20px;
-            background: var(--card);
-        }
-
-        .action-btns {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .action-btn {
-            padding: 16px;
+        .toggle-btn {
+            padding: 6px 16px;
             border: none;
-            border-radius: 12px;
-            font-size: 1rem;
+            border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
         }
 
-        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .action-btn.attack {
-            background: var(--damage);
-            color: white;
+        .toggle-btn.on {
+            background: var(--gold);
+            color: #000;
         }
 
-        .action-btn.defend {
-            background: #3498db;
-            color: white;
+        .toggle-btn.off {
+            background: rgba(255,255,255,0.1);
+            color: var(--muted);
         }
 
         /* Result Popup */
@@ -370,7 +348,7 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             z-index: 99;
             opacity: 0;
             pointer-events: none;
@@ -385,20 +363,40 @@
             transform: translate(-50%, -50%) scale(0);
             background: var(--card);
             border-radius: 20px;
-            padding: 40px;
+            padding: 32px;
             text-align: center;
             z-index: 100;
             transition: transform 0.3s ease-out;
-            min-width: 280px;
+            min-width: 300px;
+            max-width: 90%;
         }
 
         .result-popup.show { transform: translate(-50%, -50%) scale(1); }
-        .result-popup.success { border: 3px solid var(--success); }
-        .result-popup.fail { border: 3px solid var(--fail); }
+        .result-popup.success { border: 2px solid var(--success); }
+        .result-popup.fail { border: 2px solid var(--fail); }
+        .result-popup.destroy { border: 2px solid var(--legendary); }
 
-        .result-icon { font-size: 4rem; margin-bottom: 16px; }
-        .result-text { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
-        .result-detail { color: var(--muted); margin-bottom: 20px; }
+        .result-icon { font-size: 4rem; margin-bottom: 12px; }
+        .result-text { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }
+        .result-detail { color: var(--muted); margin-bottom: 16px; font-size: 0.95rem; }
+
+        .new-weapon-preview {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .new-weapon-title {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .new-weapon-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
 
         .result-btn {
             padding: 12px 32px;
@@ -411,6 +409,145 @@
             color: white;
         }
 
+        /* Battle Screen */
+        .battle-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .battle-header {
+            text-align: center;
+            padding: 12px;
+            background: var(--card);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .battle-title { font-size: 1.1rem; font-weight: 600; }
+        .battle-round { color: var(--muted); font-size: 0.85rem; }
+
+        .battle-arena {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            gap: 16px;
+        }
+
+        .fighter {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 14px;
+            border: 2px solid var(--card-border);
+        }
+
+        .fighter.me { border-color: var(--accent); }
+        .fighter.enemy { border-color: #667eea; }
+
+        .fighter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .fighter-name { font-weight: 600; font-size: 0.95rem; }
+        .fighter-weapon { color: var(--muted); font-size: 0.8rem; }
+
+        .hp-bar-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            height: 22px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .hp-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), #2ecc71);
+            border-radius: 8px;
+            transition: width 0.5s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            min-width: 50px;
+        }
+
+        .hp-bar.low { background: linear-gradient(90deg, var(--fail), #ff8a80); }
+
+        .fighter-stats {
+            display: flex;
+            gap: 14px;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .battle-log {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 12px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.8rem;
+        }
+
+        .log-entry:last-child { border-bottom: none; }
+        .log-entry.crit { color: var(--gold); }
+        .log-entry.damage { color: var(--fail); }
+        .log-entry.heal { color: var(--success); }
+
+        .battle-actions {
+            padding: 14px 16px;
+            background: var(--card);
+            border-top: 1px solid var(--card-border);
+        }
+
+        .action-btns {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .action-btn.attack { background: var(--fail); color: white; }
+        .action-btn.defend { background: #3498db; color: white; }
+
+        /* Stats Panel in Main */
+        .stats-summary {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .summary-item span {
+            display: block;
+        }
+
+        .summary-value { font-size: 1.1rem; font-weight: 600; }
+        .summary-label { font-size: 0.7rem; color: var(--muted); }
+
         /* Confetti */
         .confetti {
             position: fixed;
@@ -422,12 +559,12 @@
 
         footer {
             text-align: center;
-            padding: 20px;
+            padding: 16px;
             color: var(--muted);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
 
-        footer a { color: var(--accent); }
+        footer a { color: var(--accent); text-decoration: none; }
     </style>
 </head>
 <body>
@@ -437,154 +574,296 @@
         <div class="result-icon" id="resultIcon">✨</div>
         <div class="result-text" id="resultText">강화 성공!</div>
         <div class="result-detail" id="resultDetail"></div>
+        <div class="new-weapon-preview" id="newWeaponPreview" style="display:none;">
+            <div class="new-weapon-title">새로운 무기 획득!</div>
+            <div class="new-weapon-name" id="newWeaponName"></div>
+        </div>
         <button class="result-btn" id="resultBtn" onclick="closeResult()">확인</button>
     </div>
     <canvas class="confetti" id="confetti"></canvas>
 
     <script>
-        // ===== Game State =====
+        // ===== WEAPON DATABASE =====
+        const WEAPON_TYPES = {
+            sword: { name: '검', icon: '🗡️', bonus: { damage: 1.0, crit: 1.0 } },
+            axe: { name: '도끼', icon: '🪓', bonus: { damage: 1.15, crit: 0.9 } },
+            spear: { name: '창', icon: '🔱', bonus: { damage: 0.95, crit: 1.1 } },
+            hammer: { name: '망치', icon: '🔨', bonus: { damage: 1.2, crit: 0.85 } },
+            dagger: { name: '단검', icon: '🔪', bonus: { damage: 0.85, crit: 1.25 } },
+            staff: { name: '지팡이', icon: '🪄', bonus: { damage: 0.9, crit: 1.0, special: true } },
+            katana: { name: '태도', icon: '⚔️', bonus: { damage: 1.05, crit: 1.15 } },
+            scythe: { name: '낫', icon: '⚰️', bonus: { damage: 1.1, crit: 1.05 } }
+        };
+
+        const GRADES = {
+            common: { 
+                name: '일반', 
+                color: '#9d9d9d', 
+                multiplier: 1.0,
+                dropRate: 50,
+                prefixes: ['낡은', '평범한', '기본', '단순한']
+            },
+            magic: { 
+                name: '고급', 
+                color: '#5555ff', 
+                multiplier: 1.3,
+                dropRate: 30,
+                prefixes: ['강화된', '마력의', '빛나는', '정교한']
+            },
+            rare: { 
+                name: '희귀', 
+                color: '#ffcc00', 
+                multiplier: 1.7,
+                dropRate: 14,
+                prefixes: ['정예', '명인의', '고대의', '축복받은']
+            },
+            legendary: { 
+                name: '전설', 
+                color: '#ff8000', 
+                multiplier: 2.2,
+                dropRate: 5,
+                prefixes: ['전설의', '영웅의', '신성한', '불멸의']
+            },
+            unique: { 
+                name: '유니크', 
+                color: '#00ff80', 
+                multiplier: 3.0,
+                dropRate: 1,
+                prefixes: [''],
+                names: {
+                    sword: '엑스칼리버',
+                    axe: '레비아탄',
+                    spear: '게이볼그',
+                    hammer: '묠니르',
+                    dagger: '암흑검 아즈라엘',
+                    staff: '현자의 지팡이',
+                    katana: '무라마사',
+                    scythe: '죽음의 낫'
+                }
+            }
+        };
+
+        const ENHANCE_RATES = {
+            0: { success: 95, destroy: 0, downgrade: 0, cost: 100 },
+            1: { success: 90, destroy: 0, downgrade: 0, cost: 200 },
+            2: { success: 85, destroy: 0, downgrade: 0, cost: 400 },
+            3: { success: 80, destroy: 0, downgrade: 0, cost: 600 },
+            4: { success: 75, destroy: 0, downgrade: 0, cost: 1000 },
+            5: { success: 70, destroy: 0, downgrade: 5, cost: 1500 },
+            6: { success: 65, destroy: 0, downgrade: 10, cost: 2000 },
+            7: { success: 60, destroy: 0, downgrade: 15, cost: 3000 },
+            8: { success: 55, destroy: 0, downgrade: 20, cost: 4000 },
+            9: { success: 50, destroy: 0, downgrade: 25, cost: 5000 },
+            10: { success: 45, destroy: 5, downgrade: 25, cost: 7000 },
+            11: { success: 40, destroy: 10, downgrade: 25, cost: 10000 },
+            12: { success: 35, destroy: 15, downgrade: 25, cost: 15000 },
+            13: { success: 30, destroy: 20, downgrade: 25, cost: 25000 },
+            14: { success: 25, destroy: 25, downgrade: 25, cost: 40000 },
+            15: { success: 20, destroy: 30, downgrade: 25, cost: 60000 },
+            16: { success: 15, destroy: 35, downgrade: 25, cost: 100000 },
+            17: { success: 10, destroy: 40, downgrade: 25, cost: 150000 },
+            18: { success: 7, destroy: 45, downgrade: 25, cost: 250000 },
+            19: { success: 5, destroy: 50, downgrade: 25, cost: 400000 },
+            20: { success: 3, destroy: 55, downgrade: 20, cost: 500000 }
+        };
+
+        // ===== GAME STATE =====
         let state = {
-            level: 0,
-            attempts: 0,
-            successes: 0,
-            fails: 0,
-            destroys: 0,
+            gold: 10000,
+            weapon: null,
             protectionScrolls: 3,
-            useProtection: false
+            useProtection: false,
+            stats: { attempts: 0, successes: 0, fails: 0, destroys: 0, wins: 0, losses: 0 }
         };
 
         let mpUI = null;
         let battleState = null;
 
-        // ===== Enhancement Rates =====
-        const RATES = {
-            0: { success: 95, destroy: 0, downgrade: 0 },
-            1: { success: 90, destroy: 0, downgrade: 0 },
-            2: { success: 85, destroy: 0, downgrade: 0 },
-            3: { success: 80, destroy: 0, downgrade: 0 },
-            4: { success: 75, destroy: 0, downgrade: 0 },
-            5: { success: 70, destroy: 0, downgrade: 0 },
-            6: { success: 65, destroy: 0, downgrade: 5 },
-            7: { success: 60, destroy: 0, downgrade: 10 },
-            8: { success: 55, destroy: 0, downgrade: 15 },
-            9: { success: 50, destroy: 0, downgrade: 20 },
-            10: { success: 45, destroy: 5, downgrade: 20 },
-            11: { success: 40, destroy: 10, downgrade: 20 },
-            12: { success: 35, destroy: 15, downgrade: 20 },
-            13: { success: 30, destroy: 20, downgrade: 20 },
-            14: { success: 25, destroy: 25, downgrade: 20 },
-            15: { success: 20, destroy: 30, downgrade: 20 },
-            16: { success: 15, destroy: 35, downgrade: 20 },
-            17: { success: 10, destroy: 40, downgrade: 20 },
-            18: { success: 7, destroy: 45, downgrade: 20 },
-            19: { success: 5, destroy: 50, downgrade: 20 },
-            20: { success: 3, destroy: 55, downgrade: 20 }
-        };
+        // ===== WEAPON GENERATION =====
+        function generateWeapon(forceGrade = null) {
+            // Pick grade
+            let grade;
+            if (forceGrade) {
+                grade = forceGrade;
+            } else {
+                const roll = Math.random() * 100;
+                let cumulative = 0;
+                for (const [g, data] of Object.entries(GRADES)) {
+                    cumulative += data.dropRate;
+                    if (roll < cumulative) {
+                        grade = g;
+                        break;
+                    }
+                }
+            }
 
-        const WEAPON_NAMES = {
-            0: '초보자의 검', 5: '숙련자의 검', 10: '전사의 검',
-            13: '영웅의 검', 15: '전설의 검', 18: '신화의 검', 20: '신의 검'
-        };
+            // Pick type
+            const types = Object.keys(WEAPON_TYPES);
+            const type = types[Math.floor(Math.random() * types.length)];
+            const typeData = WEAPON_TYPES[type];
+            const gradeData = GRADES[grade];
 
-        const WEAPON_ICONS = {
-            0: '🗡️', 10: '⚔️', 15: '🔱', 18: '✨', 20: '💎'
-        };
-
-        // ===== Weapon Stats =====
-        function getWeaponStats(level) {
-            const baseDamageMin = 10;
-            const baseDamageMax = 15;
-            const damagePerLevel = 5;
-            const baseCritChance = 5;
-            const critPerLevel = 2;
-            const baseCritDamage = 150;
-            const critDamagePerLevel = 5;
+            // Generate name
+            let name;
+            if (grade === 'unique' && gradeData.names[type]) {
+                name = gradeData.names[type];
+            } else {
+                const prefix = gradeData.prefixes[Math.floor(Math.random() * gradeData.prefixes.length)];
+                name = prefix ? `${prefix} ${typeData.name}` : typeData.name;
+            }
 
             return {
-                damageMin: baseDamageMin + (level * damagePerLevel),
-                damageMax: baseDamageMax + (level * damagePerLevel),
-                critChance: Math.min(50, baseCritChance + (level * critPerLevel)),
-                critDamage: baseCritDamage + (level * critDamagePerLevel),
-                hp: 100 + (level * 20)
+                type,
+                grade,
+                name,
+                level: 0,
+                icon: typeData.icon
             };
         }
 
-        function getWeaponName(level) {
-            let name = WEAPON_NAMES[0];
-            for (const [lvl, n] of Object.entries(WEAPON_NAMES)) {
-                if (level >= parseInt(lvl)) name = n;
-            }
-            return name;
+        function getWeaponStats(weapon) {
+            if (!weapon) return { damageMin: 0, damageMax: 0, critChance: 0, critDamage: 150, hp: 100 };
+
+            const typeData = WEAPON_TYPES[weapon.type];
+            const gradeData = GRADES[weapon.grade];
+            const mult = gradeData.multiplier;
+            const level = weapon.level;
+
+            const baseDmgMin = 10;
+            const baseDmgMax = 15;
+            const dmgPerLevel = 5;
+
+            const damageMin = Math.floor((baseDmgMin + level * dmgPerLevel) * mult * typeData.bonus.damage);
+            const damageMax = Math.floor((baseDmgMax + level * dmgPerLevel) * mult * typeData.bonus.damage);
+            const critChance = Math.min(60, Math.floor((5 + level * 2) * typeData.bonus.crit));
+            const critDamage = 150 + level * 5;
+            const hp = Math.floor((100 + level * 20) * mult);
+
+            return { damageMin, damageMax, critChance, critDamage, hp };
         }
 
-        function getWeaponIcon(level) {
-            let icon = WEAPON_ICONS[0];
-            for (const [lvl, i] of Object.entries(WEAPON_ICONS)) {
-                if (level >= parseInt(lvl)) icon = i;
+        function getWeaponValue(weapon) {
+            if (!weapon) return 0;
+            const gradeData = GRADES[weapon.grade];
+            const baseValue = gradeData.multiplier * 1000;
+            let levelBonus = 0;
+            for (let i = 0; i < weapon.level; i++) {
+                levelBonus += ENHANCE_RATES[i].cost;
             }
-            return icon;
+            return Math.floor(baseValue + levelBonus * 0.5);
         }
 
-        // ===== Local Storage =====
+        // ===== STORAGE =====
         function loadState() {
-            const saved = localStorage.getItem('enhance_state_v2');
-            if (saved) state = { ...state, ...JSON.parse(saved) };
+            const saved = localStorage.getItem('enhance_game_v3');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                state = { ...state, ...parsed };
+            }
+            if (!state.weapon) {
+                state.weapon = generateWeapon('common');
+            }
         }
 
         function saveState() {
-            localStorage.setItem('enhance_state_v2', JSON.stringify(state));
+            localStorage.setItem('enhance_game_v3', JSON.stringify(state));
         }
 
-        // ===== Mode Selection =====
-        function showModeSelect() {
-            const stats = getWeaponStats(state.level);
+        // ===== MAIN SCREEN =====
+        function showMain() {
+            const weapon = state.weapon;
+            const stats = getWeaponStats(weapon);
+            const gradeData = GRADES[weapon.grade];
+
             document.getElementById('app').innerHTML = `
                 <div class="container">
                     <header>
                         <h1>⚔️ 무기 강화 & 배틀</h1>
-                        <p class="subtitle">강화하고 싸워라!</p>
+                        <p class="subtitle">강화하고 싸워서 돈을 벌어라!</p>
                     </header>
 
-                    <div class="weapon-display">
-                        <div class="weapon-glow"></div>
-                        <div class="weapon-icon">${getWeaponIcon(state.level)}</div>
-                        <div class="weapon-level ${state.level >= 15 ? 'legendary' : ''}">+${state.level}</div>
-                        <div class="weapon-name">${getWeaponName(state.level)}</div>
+                    <div class="gold-display">
+                        <span class="gold-icon">💰</span>
+                        <span class="gold-amount">${state.gold.toLocaleString()} G</span>
                     </div>
 
-                    <div class="stats-grid">
-                        <div class="stat-box">
-                            <div class="stat-icon">⚔️</div>
-                            <div class="stat-value damage">${stats.damageMin}-${stats.damageMax}</div>
-                            <div class="stat-label">데미지</div>
+                    <div class="weapon-card ${weapon.grade}">
+                        <div class="weapon-header">
+                            <div class="weapon-info">
+                                <div class="weapon-grade ${weapon.grade}">${gradeData.name}</div>
+                                <div class="weapon-name">${weapon.name}</div>
+                                <div class="weapon-type">${WEAPON_TYPES[weapon.type].name}</div>
+                            </div>
+                            <div class="weapon-level">
+                                <div class="weapon-level-number">+${weapon.level}</div>
+                                <div class="weapon-level-label">강화</div>
+                            </div>
                         </div>
-                        <div class="stat-box">
-                            <div class="stat-icon">💥</div>
-                            <div class="stat-value crit">${stats.critChance}%</div>
-                            <div class="stat-label">크리티컬</div>
+
+                        <div class="weapon-icon-area">
+                            <div class="weapon-icon" style="color: ${gradeData.color}">${weapon.icon}</div>
                         </div>
-                        <div class="stat-box">
-                            <div class="stat-icon">❤️</div>
-                            <div class="stat-value">${stats.hp}</div>
-                            <div class="stat-label">HP</div>
+
+                        <div class="weapon-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">⚔️</span>
+                                <div class="stat-info">
+                                    <div class="stat-value damage">${stats.damageMin}-${stats.damageMax}</div>
+                                    <div class="stat-label">공격력</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💥</span>
+                                <div class="stat-info">
+                                    <div class="stat-value crit">${stats.critChance}%</div>
+                                    <div class="stat-label">크리티컬</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">❤️</span>
+                                <div class="stat-info">
+                                    <div class="stat-value hp">${stats.hp}</div>
+                                    <div class="stat-label">체력</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💎</span>
+                                <div class="stat-info">
+                                    <div class="stat-value special">${getWeaponValue(weapon).toLocaleString()}</div>
+                                    <div class="stat-label">가치</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="mode-select">
+                    <div class="mode-grid">
                         <button class="mode-btn enhance" onclick="showEnhance()">
                             <span class="mode-icon">🔨</span>
-                            <div class="mode-info">
-                                <div class="mode-title">강화하기</div>
-                                <div class="mode-desc">무기를 더 강하게!</div>
-                            </div>
+                            <span class="mode-label">강화</span>
                         </button>
                         <button class="mode-btn battle" onclick="showBattleLobby()">
                             <span class="mode-icon">⚔️</span>
-                            <div class="mode-info">
-                                <div class="mode-title">배틀</div>
-                                <div class="mode-desc">다른 플레이어와 대결!</div>
-                            </div>
+                            <span class="mode-label">배틀</span>
                         </button>
+                    </div>
+
+                    <div class="stats-summary">
+                        <div class="summary-item">
+                            <span class="summary-value">${state.stats.attempts}</span>
+                            <span class="summary-label">시도</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-value" style="color:var(--success)">${state.stats.successes}</span>
+                            <span class="summary-label">성공</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-value" style="color:var(--fail)">${state.stats.fails}</span>
+                            <span class="summary-label">실패</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-value">${state.stats.wins}승 ${state.stats.losses}패</span>
+                            <span class="summary-label">전적</span>
+                        </div>
                     </div>
 
                     <footer>
@@ -594,85 +873,91 @@
             `;
         }
 
-        // ===== Enhance Mode =====
+        // ===== ENHANCE SCREEN =====
         function showEnhance() {
-            const stats = getWeaponStats(state.level);
-            const rates = RATES[Math.min(state.level, 20)];
+            const weapon = state.weapon;
+            const stats = getWeaponStats(weapon);
+            const gradeData = GRADES[weapon.grade];
+            const rates = ENHANCE_RATES[Math.min(weapon.level, 20)];
+            const canEnhance = state.gold >= rates.cost && weapon.level < 21;
             const showProtection = rates.destroy > 0;
 
             document.getElementById('app').innerHTML = `
                 <div class="container">
-                    <button class="btn-back" onclick="showModeSelect()">← 뒤로</button>
+                    <button class="btn-back" onclick="showMain()">← 메인으로</button>
 
-                    <div class="weapon-display">
-                        <div class="weapon-glow"></div>
-                        <div class="weapon-icon" id="weaponIcon">${getWeaponIcon(state.level)}</div>
-                        <div class="weapon-level ${state.level >= 15 ? 'legendary' : ''}" id="weaponLevel">+${state.level}</div>
-                        <div class="weapon-name" id="weaponName">${getWeaponName(state.level)}</div>
+                    <div class="gold-display">
+                        <span class="gold-icon">💰</span>
+                        <span class="gold-amount">${state.gold.toLocaleString()} G</span>
                     </div>
 
-                    <div class="stats-grid">
-                        <div class="stat-box">
-                            <div class="stat-icon">⚔️</div>
-                            <div class="stat-value damage" id="statDamage">${stats.damageMin}-${stats.damageMax}</div>
-                            <div class="stat-label">데미지</div>
+                    <div class="weapon-card ${weapon.grade}">
+                        <div class="weapon-header">
+                            <div class="weapon-info">
+                                <div class="weapon-grade ${weapon.grade}">${gradeData.name}</div>
+                                <div class="weapon-name">${weapon.name}</div>
+                            </div>
+                            <div class="weapon-level">
+                                <div class="weapon-level-number">+${weapon.level}</div>
+                                <div class="weapon-level-label">강화</div>
+                            </div>
                         </div>
-                        <div class="stat-box">
-                            <div class="stat-icon">💥</div>
-                            <div class="stat-value crit" id="statCrit">${stats.critChance}%</div>
-                            <div class="stat-label">크리티컬</div>
+
+                        <div class="weapon-icon-area">
+                            <div class="weapon-icon" id="weaponIcon" style="color: ${gradeData.color}">${weapon.icon}</div>
                         </div>
-                        <div class="stat-box">
-                            <div class="stat-icon">❤️</div>
-                            <div class="stat-value" id="statHp">${stats.hp}</div>
-                            <div class="stat-label">HP</div>
+
+                        <div class="weapon-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">⚔️</span>
+                                <div class="stat-info">
+                                    <div class="stat-value damage">${stats.damageMin}-${stats.damageMax}</div>
+                                    <div class="stat-label">공격력</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💥</span>
+                                <div class="stat-info">
+                                    <div class="stat-value crit">${stats.critChance}%</div>
+                                    <div class="stat-label">크리티컬</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="enhance-card">
-                        <div class="info-row">
-                            <span class="info-label">성공 확률</span>
-                            <span class="info-value" id="successRate">${rates.success}%</span>
+                    <div class="enhance-panel">
+                        <div class="enhance-row">
+                            <span class="enhance-label">성공 확률</span>
+                            <span class="enhance-value safe">${rates.success}%</span>
                         </div>
-                        <div class="info-row">
-                            <span class="info-label">파괴 확률</span>
-                            <span class="info-value ${rates.destroy > 0 ? 'danger' : 'safe'}" id="destroyRate">${rates.destroy}%</span>
+                        <div class="enhance-row">
+                            <span class="enhance-label">파괴 확률</span>
+                            <span class="enhance-value ${rates.destroy > 0 ? 'danger' : ''}">${rates.destroy}%</span>
                         </div>
-                        <div class="info-row">
-                            <span class="info-label">하락 확률</span>
-                            <span class="info-value ${rates.downgrade > 0 ? 'danger' : ''}" id="downgradeRate">${rates.downgrade}%</span>
+                        <div class="enhance-row">
+                            <span class="enhance-label">하락 확률</span>
+                            <span class="enhance-value ${rates.downgrade > 0 ? 'danger' : ''}">${rates.downgrade}%</span>
+                        </div>
+                        <div class="enhance-row">
+                            <span class="enhance-label">강화 비용</span>
+                            <span class="enhance-value gold">${rates.cost.toLocaleString()} G</span>
                         </div>
                     </div>
 
                     ${showProtection ? `
-                    <div class="enhance-card" style="border: 1px solid var(--gold);">
-                        <div class="info-row">
-                            <span>🛡️ 파괴 방지 (${state.protectionScrolls}개)</span>
-                            <button class="btn-secondary" style="flex:0;padding:8px 16px;" onclick="toggleProtection()" id="protectionBtn">
-                                ${state.useProtection ? 'ON' : 'OFF'}
-                            </button>
-                        </div>
+                    <div class="protection-toggle">
+                        <span>🛡️ 파괴 방지 (${state.protectionScrolls}개)</span>
+                        <button class="toggle-btn ${state.useProtection ? 'on' : 'off'}" onclick="toggleProtection()" id="protectionBtn">
+                            ${state.useProtection ? 'ON' : 'OFF'}
+                        </button>
                     </div>
                     ` : ''}
 
-                    <div class="btn-group">
-                        <button class="btn btn-secondary" onclick="resetWeapon()">🔄</button>
-                        <button class="btn btn-enhance" id="enhanceBtn" onclick="enhance()" ${state.level >= 20 ? 'disabled' : ''}>
-                            ${state.level >= 20 ? '🏆 MAX' : '⚡ 강화하기'}
+                    <div class="btn-row">
+                        <button class="btn btn-secondary" onclick="sellWeapon()">💰 판매</button>
+                        <button class="btn btn-enhance" onclick="enhance()" ${!canEnhance ? 'disabled' : ''}>
+                            ${weapon.level >= 21 ? '🏆 MAX' : `⚡ 강화 (${rates.cost.toLocaleString()}G)`}
                         </button>
-                    </div>
-
-                    <div class="enhance-card" style="margin-top:16px;">
-                        <div class="info-row">
-                            <span class="info-label">시도</span>
-                            <span>${state.attempts}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">성공/실패/파괴</span>
-                            <span style="color:var(--success)">${state.successes}</span> / 
-                            <span style="color:var(--fail)">${state.fails}</span> / 
-                            <span>${state.destroys}</span>
-                        </div>
                     </div>
                 </div>
             `;
@@ -681,77 +966,146 @@
         function toggleProtection() {
             if (state.protectionScrolls > 0) {
                 state.useProtection = !state.useProtection;
-                document.getElementById('protectionBtn').textContent = state.useProtection ? 'ON' : 'OFF';
+                const btn = document.getElementById('protectionBtn');
+                btn.textContent = state.useProtection ? 'ON' : 'OFF';
+                btn.className = 'toggle-btn ' + (state.useProtection ? 'on' : 'off');
             }
         }
 
         function enhance() {
-            if (state.level >= 20) return;
+            const weapon = state.weapon;
+            if (weapon.level >= 21) return;
+
+            const rates = ENHANCE_RATES[weapon.level];
+            if (state.gold < rates.cost) return;
+
+            state.gold -= rates.cost;
+            state.stats.attempts++;
 
             const weaponIcon = document.getElementById('weaponIcon');
             weaponIcon.classList.add('shake');
             setTimeout(() => weaponIcon.classList.remove('shake'), 500);
 
-            const rates = RATES[state.level];
             const roll = Math.random() * 100;
-            const from = state.level;
-            let to = from;
+            const fromLevel = weapon.level;
+            let toLevel = fromLevel;
             let result = 'fail';
-
-            state.attempts++;
+            let newWeapon = null;
 
             if (roll < rates.success) {
-                to = from + 1;
+                // Success
+                toLevel = fromLevel + 1;
                 result = 'success';
-                state.successes++;
+                state.stats.successes++;
                 weaponIcon.classList.add('glow-success');
                 setTimeout(() => weaponIcon.classList.remove('glow-success'), 1000);
             } else if (roll < rates.success + rates.destroy) {
+                // Destroy
                 result = 'destroy';
-                state.destroys++;
+                state.stats.destroys++;
+                
                 if (state.useProtection && state.protectionScrolls > 0) {
                     state.protectionScrolls--;
                     state.useProtection = false;
-                    to = from;
+                    toLevel = fromLevel;
                 } else {
-                    to = 0;
+                    // Generate new weapon (different from current)
+                    newWeapon = generateWeapon();
+                    while (newWeapon.type === weapon.type && newWeapon.grade === weapon.grade) {
+                        newWeapon = generateWeapon();
+                    }
                 }
+                
                 weaponIcon.classList.add('glow-fail');
                 setTimeout(() => weaponIcon.classList.remove('glow-fail'), 1000);
             } else if (roll < rates.success + rates.destroy + rates.downgrade) {
-                to = Math.max(0, from - 1);
-                result = 'fail';
-                state.fails++;
+                // Downgrade
+                toLevel = Math.max(0, fromLevel - 1);
+                result = 'downgrade';
+                state.stats.fails++;
                 weaponIcon.classList.add('glow-fail');
                 setTimeout(() => weaponIcon.classList.remove('glow-fail'), 1000);
             } else {
-                to = from;
+                // Just fail (no change)
                 result = 'fail';
-                state.fails++;
+                state.stats.fails++;
             }
 
-            state.level = to;
+            if (newWeapon) {
+                state.weapon = newWeapon;
+            } else {
+                state.weapon.level = toLevel;
+            }
+            
             saveState();
 
             setTimeout(() => {
-                showEnhanceResult(result, from, to);
+                showEnhanceResult(result, fromLevel, state.weapon.level, newWeapon);
             }, 300);
         }
 
-        function showEnhanceResult(type, from, to) {
+        function showEnhanceResult(type, from, to, newWeapon) {
             const popup = document.getElementById('resultPopup');
             const overlay = document.getElementById('overlay');
+            const newWeaponPreview = document.getElementById('newWeaponPreview');
 
-            popup.className = 'result-popup ' + (type === 'success' ? 'success' : 'fail');
-            document.getElementById('resultIcon').textContent = type === 'success' ? '✨' : (type === 'destroy' ? '💥' : '💔');
-            document.getElementById('resultText').textContent = type === 'success' ? '강화 성공!' : (type === 'destroy' ? '무기 파괴!' : '강화 실패...');
-            document.getElementById('resultText').style.color = type === 'success' ? 'var(--success)' : 'var(--fail)';
-            document.getElementById('resultDetail').textContent = `+${from} → +${to}`;
-            document.getElementById('resultBtn').textContent = '확인';
+            let popupClass = 'result-popup';
+            let icon = '✨';
+            let text = '';
+            let detail = '';
+            let textColor = 'var(--text)';
+
+            if (type === 'success') {
+                popupClass += ' success';
+                icon = '✨';
+                text = '강화 성공!';
+                detail = `+${from} → +${to}`;
+                textColor = 'var(--success)';
+            } else if (type === 'destroy') {
+                if (newWeapon) {
+                    popupClass += ' destroy';
+                    icon = '💥';
+                    text = '무기 파괴!';
+                    detail = '새로운 무기를 획득했습니다';
+                    textColor = 'var(--legendary)';
+                    
+                    newWeaponPreview.style.display = 'block';
+                    const gradeData = GRADES[newWeapon.grade];
+                    document.getElementById('newWeaponName').innerHTML = 
+                        `<span style="color:${gradeData.color}">[${gradeData.name}] ${newWeapon.name}</span>`;
+                } else {
+                    popupClass += ' success';
+                    icon = '🛡️';
+                    text = '파괴 방지!';
+                    detail = '보호 주문서가 무기를 지켰습니다';
+                    textColor = 'var(--gold)';
+                }
+            } else if (type === 'downgrade') {
+                popupClass += ' fail';
+                icon = '💔';
+                text = '강화 실패';
+                detail = `+${from} → +${to}`;
+                textColor = 'var(--fail)';
+            } else {
+                popupClass += ' fail';
+                icon = '😢';
+                text = '강화 실패';
+                detail = '레벨 유지';
+                textColor = 'var(--fail)';
+            }
+
+            popup.className = popupClass + ' show';
+            document.getElementById('resultIcon').textContent = icon;
+            document.getElementById('resultText').textContent = text;
+            document.getElementById('resultText').style.color = textColor;
+            document.getElementById('resultDetail').textContent = detail;
             document.getElementById('resultBtn').onclick = () => { closeResult(); showEnhance(); };
 
+            if (!newWeapon) {
+                newWeaponPreview.style.display = 'none';
+            }
+
             overlay.classList.add('show');
-            popup.classList.add('show');
 
             if (type === 'success' && to >= 15) fireConfetti();
         }
@@ -761,16 +1115,17 @@
             document.getElementById('resultPopup').classList.remove('show');
         }
 
-        function resetWeapon() {
-            if (state.level === 0 || confirm('정말 무기를 초기화할까요?')) {
-                state.level = 0;
-                state.useProtection = false;
+        function sellWeapon() {
+            const value = getWeaponValue(state.weapon);
+            if (confirm(`${state.weapon.name}을(를) ${value.toLocaleString()}G에 판매하시겠습니까?\n\n새로운 무기를 받게 됩니다.`)) {
+                state.gold += value;
+                state.weapon = generateWeapon();
                 saveState();
                 showEnhance();
             }
         }
 
-        // ===== Battle Mode =====
+        // ===== BATTLE MODE =====
         function showBattleLobby() {
             mpUI = new MultiplayerUI({
                 gameType: 'enhance',
@@ -780,7 +1135,11 @@
                 supportsLocal: false,
                 onGameStart: handleBattleStart,
                 onGameEvent: handleBattleEvent,
-                onLeave: () => { battleState = null; showModeSelect(); }
+                onLeave: () => { battleState = null; showMain(); },
+                getPlayerData: () => ({
+                    weapon: state.weapon,
+                    gold: state.gold
+                })
             });
 
             const roomCode = MultiplayerUI.checkUrlRoom();
@@ -817,49 +1176,60 @@
             const enemy = gs.players.find(p => p.id !== myId);
             const isMyTurn = gs.currentTurn === myId;
 
+            const myGrade = me?.weaponGrade ? GRADES[me.weaponGrade] : GRADES.common;
+            const enemyGrade = enemy?.weaponGrade ? GRADES[enemy.weaponGrade] : GRADES.common;
+
             document.getElementById('app').innerHTML = `
                 <div class="battle-screen">
                     <div class="battle-header">
-                        <div class="battle-title">⚔️ 배틀!</div>
-                        <div class="battle-round">라운드 ${gs.round} | ${isMyTurn ? '내 턴' : '상대 턴'}</div>
+                        <div class="battle-title">⚔️ 무기 배틀!</div>
+                        <div class="battle-round">라운드 ${gs.round || 1} | ${isMyTurn ? '내 턴' : '상대 턴'}</div>
                     </div>
 
                     <div class="battle-arena">
                         <div class="fighter enemy">
                             <div class="fighter-header">
                                 <span class="fighter-name">👤 ${enemy?.nickname || '상대'}</span>
-                                <span class="fighter-weapon">+${enemy?.weaponLevel || 0} ${getWeaponIcon(enemy?.weaponLevel || 0)}</span>
+                                <span class="fighter-weapon" style="color:${enemyGrade.color}">
+                                    [${enemyGrade.name}] +${enemy?.weaponLevel || 0} ${enemy?.weaponIcon || '🗡️'}
+                                </span>
                             </div>
                             <div class="hp-bar-container">
-                                <div class="hp-bar ${enemy?.hp < 30 ? 'low' : ''}" style="width: ${(enemy?.hp / enemy?.maxHp) * 100}%">
-                                    ${enemy?.hp} / ${enemy?.maxHp}
+                                <div class="hp-bar ${(enemy?.hp || 0) < 30 ? 'low' : ''}" 
+                                     style="width: ${((enemy?.hp || 0) / (enemy?.maxHp || 100)) * 100}%">
+                                    ${enemy?.hp || 0} / ${enemy?.maxHp || 100}
                                 </div>
                             </div>
                             <div class="fighter-stats">
-                                <span>⚔️ ${enemy?.damageMin}-${enemy?.damageMax}</span>
-                                <span>💥 ${enemy?.critChance}%</span>
+                                <span>⚔️ ${enemy?.damageMin || 0}-${enemy?.damageMax || 0}</span>
+                                <span>💥 ${enemy?.critChance || 0}%</span>
+                                <span>💰 ${(enemy?.betGold || 0).toLocaleString()}G</span>
                             </div>
                         </div>
 
                         <div class="fighter me">
                             <div class="fighter-header">
                                 <span class="fighter-name">🎮 ${me?.nickname || '나'}</span>
-                                <span class="fighter-weapon">+${me?.weaponLevel || 0} ${getWeaponIcon(me?.weaponLevel || 0)}</span>
+                                <span class="fighter-weapon" style="color:${myGrade.color}">
+                                    [${myGrade.name}] +${me?.weaponLevel || 0} ${me?.weaponIcon || '🗡️'}
+                                </span>
                             </div>
                             <div class="hp-bar-container">
-                                <div class="hp-bar ${me?.hp < 30 ? 'low' : ''}" style="width: ${(me?.hp / me?.maxHp) * 100}%">
-                                    ${me?.hp} / ${me?.maxHp}
+                                <div class="hp-bar ${(me?.hp || 0) < 30 ? 'low' : ''}" 
+                                     style="width: ${((me?.hp || 0) / (me?.maxHp || 100)) * 100}%">
+                                    ${me?.hp || 0} / ${me?.maxHp || 100}
                                 </div>
                             </div>
                             <div class="fighter-stats">
-                                <span>⚔️ ${me?.damageMin}-${me?.damageMax}</span>
-                                <span>💥 ${me?.critChance}%</span>
+                                <span>⚔️ ${me?.damageMin || 0}-${me?.damageMax || 0}</span>
+                                <span>💥 ${me?.critChance || 0}%</span>
+                                <span>💰 ${(me?.betGold || 0).toLocaleString()}G</span>
                             </div>
                         </div>
 
                         <div class="battle-log" id="battleLog">
-                            ${(gs.log || []).slice(-5).map(entry => `
-                                <div class="log-entry ${entry.type}">${entry.text}</div>
+                            ${(gs.log || []).slice(-6).map(entry => `
+                                <div class="log-entry ${entry.type || ''}">${entry.text}</div>
                             `).join('')}
                         </div>
                     </div>
@@ -890,16 +1260,31 @@
         function showBattleResult(data) {
             const myId = mpUI.getClient().getMyUserId();
             const isWin = data.winnerId === myId;
+            const prizeGold = data.prizeGold || 0;
+
+            if (isWin) {
+                state.gold += prizeGold;
+                state.stats.wins++;
+            } else {
+                state.stats.losses++;
+            }
+            saveState();
+
+            const detail = isWin 
+                ? `💰 ${prizeGold.toLocaleString()}G 획득!`
+                : `상대에게 ${prizeGold.toLocaleString()}G를 빼앗겼습니다`;
 
             mpUI.showResult({
                 title: isWin ? '🏆 승리!' : '💀 패배...',
-                detail: `${data.winnerNickname}의 승리!`,
+                detail: detail,
                 isWin: isWin,
                 showRematch: true
             });
+
+            if (isWin) fireConfetti();
         }
 
-        // ===== Confetti =====
+        // ===== CONFETTI =====
         function fireConfetti() {
             const canvas = document.getElementById('confetti');
             const ctx = canvas.getContext('2d');
@@ -907,7 +1292,7 @@
             canvas.height = window.innerHeight;
 
             const pieces = [];
-            const colors = ['#e94560', '#ffd700', '#4ecca3', '#00d9ff', '#ff6b6b'];
+            const colors = ['#e94560', '#ffd700', '#4ecca3', '#00d9ff', '#ff6b6b', '#ff8000', '#00ff80'];
 
             for (let i = 0; i < 100; i++) {
                 pieces.push({
@@ -943,9 +1328,9 @@
             animate();
         }
 
-        // ===== Init =====
+        // ===== INIT =====
         loadState();
-        showModeSelect();
+        showMain();
     </script>
 </body>
 </html>
