@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>무기 강화 시뮬레이터</title>
+    <title>무기 강화 & 배틀</title>
     <link rel="icon" href="icon.svg">
+    <script src="/lib/multiplayer.js?v=20260210v3"></script>
+    <script src="/lib/multiplayer-ui.js?v=20260210v3"></script>
     <style>
         :root {
             --bg: #1a1a2e;
@@ -15,6 +17,8 @@
             --gold: #ffd700;
             --text: #eee;
             --muted: #888;
+            --hp: #4ecca3;
+            --damage: #ff6b6b;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,15 +28,15 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
         }
 
+        #app { min-height: 100vh; }
+
         .container {
-            max-width: 400px;
+            max-width: 420px;
             width: 100%;
+            margin: 0 auto;
+            padding: 20px;
         }
 
         header {
@@ -48,15 +52,51 @@
             -webkit-text-fill-color: transparent;
         }
 
-        .subtitle {
-            color: var(--muted);
-            font-size: 0.9rem;
+        .subtitle { color: var(--muted); font-size: 0.9rem; }
+
+        /* Mode Selection */
+        .mode-select {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 40px;
         }
 
+        .mode-btn {
+            padding: 24px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .mode-btn:hover { transform: translateY(-2px); }
+
+        .mode-btn.enhance {
+            background: linear-gradient(135deg, #e94560, #ff8a80);
+            color: white;
+        }
+
+        .mode-btn.battle {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .mode-icon { font-size: 2rem; }
+        .mode-info { text-align: left; }
+        .mode-title { font-size: 1.1rem; }
+        .mode-desc { font-size: 0.8rem; opacity: 0.8; font-weight: normal; }
+
+        /* Weapon Display */
         .weapon-display {
             background: var(--card);
             border-radius: 20px;
-            padding: 30px;
+            padding: 24px;
             text-align: center;
             margin-bottom: 20px;
             position: relative;
@@ -68,8 +108,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 200px;
-            height: 200px;
+            width: 180px;
+            height: 180px;
             border-radius: 50%;
             background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
             opacity: 0.3;
@@ -77,38 +117,30 @@
         }
 
         .weapon-icon {
-            font-size: 80px;
-            margin-bottom: 16px;
+            font-size: 64px;
+            margin-bottom: 12px;
             position: relative;
             z-index: 1;
             filter: drop-shadow(0 0 20px var(--accent));
             transition: all 0.3s;
         }
 
-        .weapon-icon.shake {
-            animation: shake 0.5s ease-in-out;
-        }
-
-        .weapon-icon.glow-success {
-            filter: drop-shadow(0 0 30px var(--success)) drop-shadow(0 0 60px var(--success));
-        }
-
-        .weapon-icon.glow-fail {
-            filter: drop-shadow(0 0 30px var(--fail)) drop-shadow(0 0 60px var(--fail));
-        }
+        .weapon-icon.shake { animation: shake 0.5s ease-in-out; }
+        .weapon-icon.glow-success { filter: drop-shadow(0 0 30px var(--success)) drop-shadow(0 0 60px var(--success)); }
+        .weapon-icon.glow-fail { filter: drop-shadow(0 0 30px var(--fail)) drop-shadow(0 0 60px var(--fail)); }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0) rotate(0); }
-            20% { transform: translateX(-10px) rotate(-5deg); }
-            40% { transform: translateX(10px) rotate(5deg); }
-            60% { transform: translateX(-10px) rotate(-5deg); }
-            80% { transform: translateX(10px) rotate(5deg); }
+            20% { transform: translateX(-8px) rotate(-5deg); }
+            40% { transform: translateX(8px) rotate(5deg); }
+            60% { transform: translateX(-8px) rotate(-5deg); }
+            80% { transform: translateX(8px) rotate(5deg); }
         }
 
         .weapon-level {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             position: relative;
             z-index: 1;
         }
@@ -117,50 +149,37 @@
             background: linear-gradient(135deg, #ff6b6b, #ffd700, #4ecca3);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            animation: rainbow 2s linear infinite;
         }
 
-        @keyframes rainbow {
-            0% { filter: hue-rotate(0deg); }
-            100% { filter: hue-rotate(360deg); }
-        }
+        .weapon-name { color: var(--muted); font-size: 0.95rem; }
 
-        .weapon-name {
-            color: var(--muted);
-            font-size: 1rem;
-        }
-
-        .stats-bar {
-            display: flex;
-            justify-content: space-around;
+        /* Stats Display */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
             margin-bottom: 20px;
+        }
+
+        .stat-box {
             background: var(--card);
             border-radius: 12px;
-            padding: 16px;
-        }
-
-        .stat {
+            padding: 12px;
             text-align: center;
         }
 
-        .stat-value {
-            font-size: 1.4rem;
-            font-weight: 600;
-        }
+        .stat-icon { font-size: 1.2rem; margin-bottom: 4px; }
+        .stat-value { font-size: 1.1rem; font-weight: 600; }
+        .stat-value.damage { color: var(--damage); }
+        .stat-value.crit { color: var(--gold); }
+        .stat-label { font-size: 0.7rem; color: var(--muted); }
 
-        .stat-value.success { color: var(--success); }
-        .stat-value.fail { color: var(--fail); }
-
-        .stat-label {
-            font-size: 0.75rem;
-            color: var(--muted);
-        }
-
-        .enhance-info {
+        /* Enhance Info */
+        .enhance-card {
             background: var(--card);
             border-radius: 12px;
             padding: 16px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .info-row {
@@ -168,83 +187,27 @@
             justify-content: space-between;
             margin-bottom: 8px;
         }
-
         .info-row:last-child { margin-bottom: 0; }
-
         .info-label { color: var(--muted); }
         .info-value { font-weight: 600; }
         .info-value.danger { color: var(--fail); }
         .info-value.safe { color: var(--success); }
 
-        .protection {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: rgba(255, 215, 0, 0.1);
-            border: 1px solid var(--gold);
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 20px;
-        }
-
-        .protection-icon { font-size: 1.5rem; }
-
-        .protection-info {
-            flex: 1;
-        }
-
-        .protection-name {
-            font-weight: 600;
-            color: var(--gold);
-        }
-
-        .protection-desc {
-            font-size: 0.8rem;
-            color: var(--muted);
-        }
-
-        .protection-toggle {
-            background: none;
-            border: 2px solid var(--gold);
-            color: var(--gold);
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .protection-toggle.active {
-            background: var(--gold);
-            color: #000;
-        }
-
-        .protection-count {
-            font-size: 0.9rem;
-            color: var(--muted);
-            margin-left: 8px;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 12px;
-        }
+        /* Buttons */
+        .btn-group { display: flex; gap: 12px; }
 
         .btn {
             flex: 1;
-            padding: 16px;
+            padding: 14px;
             border: none;
             border-radius: 12px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
         }
 
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .btn-enhance {
             background: linear-gradient(135deg, var(--accent), #ff8a80);
@@ -256,43 +219,157 @@
             box-shadow: 0 8px 20px rgba(233, 69, 96, 0.4);
         }
 
-        .btn-reset {
+        .btn-secondary {
             background: rgba(255,255,255,0.1);
             color: var(--text);
-            flex: 0.4;
+            flex: 0.3;
         }
 
-        .result-popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            background: var(--card);
-            border-radius: 20px;
-            padding: 40px;
+        .btn-battle {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-back {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 8px 0;
+            margin-bottom: 16px;
+        }
+
+        /* Battle Screen */
+        .battle-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .battle-header {
             text-align: center;
-            z-index: 100;
-            transition: transform 0.3s ease-out;
+            padding: 16px;
+            background: var(--card);
         }
 
-        .result-popup.show {
-            transform: translate(-50%, -50%) scale(1);
+        .battle-title { font-size: 1.2rem; font-weight: 600; }
+        .battle-round { color: var(--muted); font-size: 0.9rem; }
+
+        .battle-arena {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
         }
 
-        .result-popup.success { border: 3px solid var(--success); }
-        .result-popup.fail { border: 3px solid var(--fail); }
-        .result-popup.destroy { border: 3px solid #333; }
+        .fighter {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 16px;
+        }
 
-        .result-icon { font-size: 4rem; margin-bottom: 16px; }
-        .result-text { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
-        .result-detail { color: var(--muted); }
+        .fighter.me { border: 2px solid var(--accent); }
+        .fighter.enemy { border: 2px solid #667eea; }
 
+        .fighter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .fighter-name { font-weight: 600; }
+        .fighter-weapon { color: var(--muted); font-size: 0.85rem; }
+
+        .hp-bar-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            height: 24px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .hp-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--hp), #2ecc71);
+            border-radius: 10px;
+            transition: width 0.5s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            min-width: 60px;
+        }
+
+        .hp-bar.low { background: linear-gradient(90deg, var(--fail), #ff8a80); }
+
+        .fighter-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .battle-log {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.85rem;
+        }
+
+        .log-entry:last-child { border-bottom: none; }
+        .log-entry.crit { color: var(--gold); }
+        .log-entry.damage { color: var(--damage); }
+        .log-entry.heal { color: var(--success); }
+
+        .battle-actions {
+            padding: 16px 20px;
+            background: var(--card);
+        }
+
+        .action-btns {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .action-btn {
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .action-btn.attack {
+            background: var(--damage);
+            color: white;
+        }
+
+        .action-btn.defend {
+            background: #3498db;
+            color: white;
+        }
+
+        /* Result Popup */
         .overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0,0,0,0.7);
             z-index: 99;
             opacity: 0;
@@ -300,167 +377,72 @@
             transition: opacity 0.3s;
         }
 
-        .overlay.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
+        .overlay.show { opacity: 1; pointer-events: auto; }
 
-        .history {
+        .result-popup {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0);
             background: var(--card);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 20px;
-        }
-
-        .history-title {
-            font-size: 0.9rem;
-            color: var(--muted);
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .history-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            max-height: 100px;
-            overflow-y: auto;
-        }
-
-        .history-item {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
-        .history-item.success { background: var(--success); color: #000; }
-        .history-item.fail { background: var(--fail); color: #fff; }
-        .history-item.destroy { background: #333; color: #fff; }
-
-        .clear-btn {
-            background: none;
-            border: none;
-            color: var(--muted);
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        footer {
-            margin-top: auto;
-            padding-top: 30px;
+            border-radius: 20px;
+            padding: 40px;
             text-align: center;
-            color: var(--muted);
-            font-size: 0.8rem;
+            z-index: 100;
+            transition: transform 0.3s ease-out;
+            min-width: 280px;
+        }
+
+        .result-popup.show { transform: translate(-50%, -50%) scale(1); }
+        .result-popup.success { border: 3px solid var(--success); }
+        .result-popup.fail { border: 3px solid var(--fail); }
+
+        .result-icon { font-size: 4rem; margin-bottom: 16px; }
+        .result-text { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+        .result-detail { color: var(--muted); margin-bottom: 20px; }
+
+        .result-btn {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--accent);
+            color: white;
         }
 
         /* Confetti */
         .confetti {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             pointer-events: none;
             z-index: 1000;
         }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        footer a { color: var(--accent); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>⚔️ 무기 강화</h1>
-            <p class="subtitle">운명의 강화에 도전하세요!</p>
-        </header>
-
-        <div class="weapon-display">
-            <div class="weapon-glow"></div>
-            <div class="weapon-icon" id="weaponIcon">🗡️</div>
-            <div class="weapon-level" id="weaponLevel">+0</div>
-            <div class="weapon-name" id="weaponName">초보자의 검</div>
-        </div>
-
-        <div class="stats-bar">
-            <div class="stat">
-                <div class="stat-value" id="totalAttempts">0</div>
-                <div class="stat-label">시도</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value success" id="successCount">0</div>
-                <div class="stat-label">성공</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value fail" id="failCount">0</div>
-                <div class="stat-label">실패</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value" id="destroyCount">0</div>
-                <div class="stat-label">파괴</div>
-            </div>
-        </div>
-
-        <div class="enhance-info">
-            <div class="info-row">
-                <span class="info-label">성공 확률</span>
-                <span class="info-value" id="successRate">95%</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">파괴 확률</span>
-                <span class="info-value" id="destroyRate">0%</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">하락 확률</span>
-                <span class="info-value" id="downgradeRate">0%</span>
-            </div>
-        </div>
-
-        <div class="protection" id="protectionBox" style="display:none">
-            <span class="protection-icon">🛡️</span>
-            <div class="protection-info">
-                <div class="protection-name">파괴 방지 주문서</div>
-                <div class="protection-desc">파괴 시 레벨 유지 (1회)</div>
-            </div>
-            <button class="protection-toggle" id="protectionBtn" onclick="toggleProtection()">OFF</button>
-            <span class="protection-count" id="protectionCount">(3개)</span>
-        </div>
-
-        <div class="btn-group">
-            <button class="btn btn-reset" onclick="resetWeapon()">🔄</button>
-            <button class="btn btn-enhance" id="enhanceBtn" onclick="enhance()">
-                ⚡ 강화하기
-            </button>
-        </div>
-
-        <div class="history">
-            <div class="history-title">
-                <span>📜 강화 기록</span>
-                <button class="clear-btn" onclick="clearHistory()">초기화</button>
-            </div>
-            <div class="history-list" id="historyList"></div>
-        </div>
-    </div>
-
-    <footer>
-        © 2026 <a href="https://game.cocy.io" style="color:var(--accent)">game.cocy.io</a>
-    </footer>
-
+    <div id="app"></div>
     <div class="overlay" id="overlay"></div>
     <div class="result-popup" id="resultPopup">
         <div class="result-icon" id="resultIcon">✨</div>
         <div class="result-text" id="resultText">강화 성공!</div>
-        <div class="result-detail" id="resultDetail">+14 → +15</div>
+        <div class="result-detail" id="resultDetail"></div>
+        <button class="result-btn" id="resultBtn" onclick="closeResult()">확인</button>
     </div>
-
     <canvas class="confetti" id="confetti"></canvas>
 
     <script>
-        // Game State
+        // ===== Game State =====
         let state = {
             level: 0,
             attempts: 0,
@@ -468,11 +450,13 @@
             fails: 0,
             destroys: 0,
             protectionScrolls: 3,
-            useProtection: false,
-            history: []
+            useProtection: false
         };
 
-        // Enhancement rates by level
+        let mpUI = null;
+        let battleState = null;
+
+        // ===== Enhancement Rates =====
         const RATES = {
             0: { success: 95, destroy: 0, downgrade: 0 },
             1: { success: 90, destroy: 0, downgrade: 0 },
@@ -498,37 +482,33 @@
         };
 
         const WEAPON_NAMES = {
-            0: '초보자의 검',
-            5: '숙련자의 검',
-            10: '전사의 검',
-            13: '영웅의 검',
-            15: '전설의 검',
-            18: '신화의 검',
-            20: '신의 검'
+            0: '초보자의 검', 5: '숙련자의 검', 10: '전사의 검',
+            13: '영웅의 검', 15: '전설의 검', 18: '신화의 검', 20: '신의 검'
         };
 
         const WEAPON_ICONS = {
-            0: '🗡️',
-            10: '⚔️',
-            15: '🔱',
-            18: '✨',
-            20: '💎'
+            0: '🗡️', 10: '⚔️', 15: '🔱', 18: '✨', 20: '💎'
         };
 
-        // Load state
-        function loadState() {
-            const saved = localStorage.getItem('enhance_state');
-            if (saved) {
-                state = { ...state, ...JSON.parse(saved) };
-            }
+        // ===== Weapon Stats =====
+        function getWeaponStats(level) {
+            const baseDamageMin = 10;
+            const baseDamageMax = 15;
+            const damagePerLevel = 5;
+            const baseCritChance = 5;
+            const critPerLevel = 2;
+            const baseCritDamage = 150;
+            const critDamagePerLevel = 5;
+
+            return {
+                damageMin: baseDamageMin + (level * damagePerLevel),
+                damageMax: baseDamageMax + (level * damagePerLevel),
+                critChance: Math.min(50, baseCritChance + (level * critPerLevel)),
+                critDamage: baseCritDamage + (level * critDamagePerLevel),
+                hp: 100 + (level * 20)
+            };
         }
 
-        // Save state
-        function saveState() {
-            localStorage.setItem('enhance_state', JSON.stringify(state));
-        }
-
-        // Get weapon name
         function getWeaponName(level) {
             let name = WEAPON_NAMES[0];
             for (const [lvl, n] of Object.entries(WEAPON_NAMES)) {
@@ -537,7 +517,6 @@
             return name;
         }
 
-        // Get weapon icon
         function getWeaponIcon(level) {
             let icon = WEAPON_ICONS[0];
             for (const [lvl, i] of Object.entries(WEAPON_ICONS)) {
@@ -546,106 +525,166 @@
             return icon;
         }
 
-        // Update display
-        function updateDisplay() {
-            const levelEl = document.getElementById('weaponLevel');
-            levelEl.textContent = '+' + state.level;
-            levelEl.className = 'weapon-level' + (state.level >= 15 ? ' legendary' : '');
+        // ===== Local Storage =====
+        function loadState() {
+            const saved = localStorage.getItem('enhance_state_v2');
+            if (saved) state = { ...state, ...JSON.parse(saved) };
+        }
 
-            document.getElementById('weaponName').textContent = getWeaponName(state.level);
-            document.getElementById('weaponIcon').textContent = getWeaponIcon(state.level);
+        function saveState() {
+            localStorage.setItem('enhance_state_v2', JSON.stringify(state));
+        }
 
-            document.getElementById('totalAttempts').textContent = state.attempts;
-            document.getElementById('successCount').textContent = state.successes;
-            document.getElementById('failCount').textContent = state.fails;
-            document.getElementById('destroyCount').textContent = state.destroys;
+        // ===== Mode Selection =====
+        function showModeSelect() {
+            const stats = getWeaponStats(state.level);
+            document.getElementById('app').innerHTML = `
+                <div class="container">
+                    <header>
+                        <h1>⚔️ 무기 강화 & 배틀</h1>
+                        <p class="subtitle">강화하고 싸워라!</p>
+                    </header>
 
+                    <div class="weapon-display">
+                        <div class="weapon-glow"></div>
+                        <div class="weapon-icon">${getWeaponIcon(state.level)}</div>
+                        <div class="weapon-level ${state.level >= 15 ? 'legendary' : ''}">+${state.level}</div>
+                        <div class="weapon-name">${getWeaponName(state.level)}</div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-icon">⚔️</div>
+                            <div class="stat-value damage">${stats.damageMin}-${stats.damageMax}</div>
+                            <div class="stat-label">데미지</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon">💥</div>
+                            <div class="stat-value crit">${stats.critChance}%</div>
+                            <div class="stat-label">크리티컬</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon">❤️</div>
+                            <div class="stat-value">${stats.hp}</div>
+                            <div class="stat-label">HP</div>
+                        </div>
+                    </div>
+
+                    <div class="mode-select">
+                        <button class="mode-btn enhance" onclick="showEnhance()">
+                            <span class="mode-icon">🔨</span>
+                            <div class="mode-info">
+                                <div class="mode-title">강화하기</div>
+                                <div class="mode-desc">무기를 더 강하게!</div>
+                            </div>
+                        </button>
+                        <button class="mode-btn battle" onclick="showBattleLobby()">
+                            <span class="mode-icon">⚔️</span>
+                            <div class="mode-info">
+                                <div class="mode-title">배틀</div>
+                                <div class="mode-desc">다른 플레이어와 대결!</div>
+                            </div>
+                        </button>
+                    </div>
+
+                    <footer>
+                        © 2026 <a href="https://game.cocy.io">game.cocy.io</a>
+                    </footer>
+                </div>
+            `;
+        }
+
+        // ===== Enhance Mode =====
+        function showEnhance() {
+            const stats = getWeaponStats(state.level);
             const rates = RATES[Math.min(state.level, 20)];
-            document.getElementById('successRate').textContent = rates.success + '%';
-            
-            const destroyEl = document.getElementById('destroyRate');
-            destroyEl.textContent = rates.destroy + '%';
-            destroyEl.className = 'info-value' + (rates.destroy > 0 ? ' danger' : ' safe');
+            const showProtection = rates.destroy > 0;
 
-            const downgradeEl = document.getElementById('downgradeRate');
-            downgradeEl.textContent = rates.downgrade + '%';
-            downgradeEl.className = 'info-value' + (rates.downgrade > 0 ? ' danger' : '');
+            document.getElementById('app').innerHTML = `
+                <div class="container">
+                    <button class="btn-back" onclick="showModeSelect()">← 뒤로</button>
 
-            // Protection
-            const protectionBox = document.getElementById('protectionBox');
-            protectionBox.style.display = (RATES[Math.min(state.level, 20)].destroy > 0) ? 'flex' : 'none';
-            document.getElementById('protectionCount').textContent = `(${state.protectionScrolls}개)`;
-            document.getElementById('protectionBtn').className = 'protection-toggle' + (state.useProtection ? ' active' : '');
-            document.getElementById('protectionBtn').textContent = state.useProtection ? 'ON' : 'OFF';
+                    <div class="weapon-display">
+                        <div class="weapon-glow"></div>
+                        <div class="weapon-icon" id="weaponIcon">${getWeaponIcon(state.level)}</div>
+                        <div class="weapon-level ${state.level >= 15 ? 'legendary' : ''}" id="weaponLevel">+${state.level}</div>
+                        <div class="weapon-name" id="weaponName">${getWeaponName(state.level)}</div>
+                    </div>
 
-            // Max level
-            document.getElementById('enhanceBtn').disabled = state.level >= 20;
-            if (state.level >= 20) {
-                document.getElementById('enhanceBtn').textContent = '🏆 MAX';
-            } else {
-                document.getElementById('enhanceBtn').textContent = '⚡ 강화하기';
-            }
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-icon">⚔️</div>
+                            <div class="stat-value damage" id="statDamage">${stats.damageMin}-${stats.damageMax}</div>
+                            <div class="stat-label">데미지</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon">💥</div>
+                            <div class="stat-value crit" id="statCrit">${stats.critChance}%</div>
+                            <div class="stat-label">크리티컬</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon">❤️</div>
+                            <div class="stat-value" id="statHp">${stats.hp}</div>
+                            <div class="stat-label">HP</div>
+                        </div>
+                    </div>
 
-            // History
-            renderHistory();
+                    <div class="enhance-card">
+                        <div class="info-row">
+                            <span class="info-label">성공 확률</span>
+                            <span class="info-value" id="successRate">${rates.success}%</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">파괴 확률</span>
+                            <span class="info-value ${rates.destroy > 0 ? 'danger' : 'safe'}" id="destroyRate">${rates.destroy}%</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">하락 확률</span>
+                            <span class="info-value ${rates.downgrade > 0 ? 'danger' : ''}" id="downgradeRate">${rates.downgrade}%</span>
+                        </div>
+                    </div>
+
+                    ${showProtection ? `
+                    <div class="enhance-card" style="border: 1px solid var(--gold);">
+                        <div class="info-row">
+                            <span>🛡️ 파괴 방지 (${state.protectionScrolls}개)</span>
+                            <button class="btn-secondary" style="flex:0;padding:8px 16px;" onclick="toggleProtection()" id="protectionBtn">
+                                ${state.useProtection ? 'ON' : 'OFF'}
+                            </button>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="resetWeapon()">🔄</button>
+                        <button class="btn btn-enhance" id="enhanceBtn" onclick="enhance()" ${state.level >= 20 ? 'disabled' : ''}>
+                            ${state.level >= 20 ? '🏆 MAX' : '⚡ 강화하기'}
+                        </button>
+                    </div>
+
+                    <div class="enhance-card" style="margin-top:16px;">
+                        <div class="info-row">
+                            <span class="info-label">시도</span>
+                            <span>${state.attempts}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">성공/실패/파괴</span>
+                            <span style="color:var(--success)">${state.successes}</span> / 
+                            <span style="color:var(--fail)">${state.fails}</span> / 
+                            <span>${state.destroys}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
-        // Render history
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            list.innerHTML = state.history.slice(-50).map(h => {
-                const cls = h.result === 'success' ? 'success' : (h.result === 'destroy' ? 'destroy' : 'fail');
-                const text = h.result === 'success' ? `+${h.to}` : (h.result === 'destroy' ? '💥' : `−${h.from - h.to}`);
-                return `<div class="history-item ${cls}" title="${h.from}→${h.to}">${text}</div>`;
-            }).join('');
-        }
-
-        // Toggle protection
         function toggleProtection() {
             if (state.protectionScrolls > 0) {
                 state.useProtection = !state.useProtection;
-                updateDisplay();
+                document.getElementById('protectionBtn').textContent = state.useProtection ? 'ON' : 'OFF';
             }
         }
 
-        // Show result popup
-        function showResult(type, from, to) {
-            const popup = document.getElementById('resultPopup');
-            const overlay = document.getElementById('overlay');
-            const icon = document.getElementById('resultIcon');
-            const text = document.getElementById('resultText');
-            const detail = document.getElementById('resultDetail');
-
-            popup.className = 'result-popup ' + type;
-
-            if (type === 'success') {
-                icon.textContent = '✨';
-                text.textContent = '강화 성공!';
-                text.style.color = 'var(--success)';
-                detail.textContent = `+${from} → +${to}`;
-                if (to >= 15) fireConfetti();
-            } else if (type === 'fail') {
-                icon.textContent = '💔';
-                text.textContent = '강화 실패...';
-                text.style.color = 'var(--fail)';
-                detail.textContent = from === to ? '레벨 유지' : `+${from} → +${to}`;
-            } else {
-                icon.textContent = '💥';
-                text.textContent = '무기 파괴!';
-                text.style.color = '#888';
-                detail.textContent = state.useProtection ? '파괴 방지로 레벨 유지!' : '+0으로 초기화됨';
-            }
-
-            overlay.classList.add('show');
-            popup.classList.add('show');
-
-            setTimeout(() => {
-                overlay.classList.remove('show');
-                popup.classList.remove('show');
-            }, 1500);
-        }
-
-        // Enhance
         function enhance() {
             if (state.level >= 20) return;
 
@@ -662,14 +701,12 @@
             state.attempts++;
 
             if (roll < rates.success) {
-                // Success
                 to = from + 1;
                 result = 'success';
                 state.successes++;
                 weaponIcon.classList.add('glow-success');
                 setTimeout(() => weaponIcon.classList.remove('glow-success'), 1000);
             } else if (roll < rates.success + rates.destroy) {
-                // Destroy
                 result = 'destroy';
                 state.destroys++;
                 if (state.useProtection && state.protectionScrolls > 0) {
@@ -682,50 +719,187 @@
                 weaponIcon.classList.add('glow-fail');
                 setTimeout(() => weaponIcon.classList.remove('glow-fail'), 1000);
             } else if (roll < rates.success + rates.destroy + rates.downgrade) {
-                // Downgrade
                 to = Math.max(0, from - 1);
                 result = 'fail';
                 state.fails++;
                 weaponIcon.classList.add('glow-fail');
                 setTimeout(() => weaponIcon.classList.remove('glow-fail'), 1000);
             } else {
-                // Just fail (no change)
                 to = from;
                 result = 'fail';
                 state.fails++;
             }
 
             state.level = to;
-            state.history.push({ from, to, result });
-
             saveState();
-            updateDisplay();
 
-            setTimeout(() => showResult(result, from, to), 300);
+            setTimeout(() => {
+                showEnhanceResult(result, from, to);
+            }, 300);
         }
 
-        // Reset weapon
+        function showEnhanceResult(type, from, to) {
+            const popup = document.getElementById('resultPopup');
+            const overlay = document.getElementById('overlay');
+
+            popup.className = 'result-popup ' + (type === 'success' ? 'success' : 'fail');
+            document.getElementById('resultIcon').textContent = type === 'success' ? '✨' : (type === 'destroy' ? '💥' : '💔');
+            document.getElementById('resultText').textContent = type === 'success' ? '강화 성공!' : (type === 'destroy' ? '무기 파괴!' : '강화 실패...');
+            document.getElementById('resultText').style.color = type === 'success' ? 'var(--success)' : 'var(--fail)';
+            document.getElementById('resultDetail').textContent = `+${from} → +${to}`;
+            document.getElementById('resultBtn').textContent = '확인';
+            document.getElementById('resultBtn').onclick = () => { closeResult(); showEnhance(); };
+
+            overlay.classList.add('show');
+            popup.classList.add('show');
+
+            if (type === 'success' && to >= 15) fireConfetti();
+        }
+
+        function closeResult() {
+            document.getElementById('overlay').classList.remove('show');
+            document.getElementById('resultPopup').classList.remove('show');
+        }
+
         function resetWeapon() {
-            if (state.level === 0 || confirm('정말 무기를 초기화하시겠습니까?')) {
+            if (state.level === 0 || confirm('정말 무기를 초기화할까요?')) {
                 state.level = 0;
                 state.useProtection = false;
                 saveState();
-                updateDisplay();
+                showEnhance();
             }
         }
 
-        // Clear history
-        function clearHistory() {
-            state.history = [];
-            state.attempts = 0;
-            state.successes = 0;
-            state.fails = 0;
-            state.destroys = 0;
-            saveState();
-            updateDisplay();
+        // ===== Battle Mode =====
+        function showBattleLobby() {
+            mpUI = new MultiplayerUI({
+                gameType: 'enhance',
+                gameName: '⚔️ 무기 배틀',
+                container: document.getElementById('app'),
+                maxPlayers: 2,
+                supportsLocal: false,
+                onGameStart: handleBattleStart,
+                onGameEvent: handleBattleEvent,
+                onLeave: () => { battleState = null; showModeSelect(); }
+            });
+
+            const roomCode = MultiplayerUI.checkUrlRoom();
+            if (roomCode) {
+                mpUI._renderLobby();
+                setTimeout(() => {
+                    document.getElementById('mp-room-code').value = roomCode;
+                }, 100);
+            } else {
+                mpUI.show();
+            }
         }
 
-        // Confetti effect
+        function handleBattleStart(gameState) {
+            battleState = gameState;
+            renderBattle();
+        }
+
+        function handleBattleEvent(type, data) {
+            if (type === 'state_update') {
+                battleState = data;
+                renderBattle();
+            } else if (type === 'game_end') {
+                showBattleResult(data);
+            }
+        }
+
+        function renderBattle() {
+            if (!battleState || !battleState.gameState) return;
+
+            const gs = battleState.gameState;
+            const myId = mpUI.getClient().getMyUserId();
+            const me = gs.players.find(p => p.id === myId);
+            const enemy = gs.players.find(p => p.id !== myId);
+            const isMyTurn = gs.currentTurn === myId;
+
+            document.getElementById('app').innerHTML = `
+                <div class="battle-screen">
+                    <div class="battle-header">
+                        <div class="battle-title">⚔️ 배틀!</div>
+                        <div class="battle-round">라운드 ${gs.round} | ${isMyTurn ? '내 턴' : '상대 턴'}</div>
+                    </div>
+
+                    <div class="battle-arena">
+                        <div class="fighter enemy">
+                            <div class="fighter-header">
+                                <span class="fighter-name">👤 ${enemy?.nickname || '상대'}</span>
+                                <span class="fighter-weapon">+${enemy?.weaponLevel || 0} ${getWeaponIcon(enemy?.weaponLevel || 0)}</span>
+                            </div>
+                            <div class="hp-bar-container">
+                                <div class="hp-bar ${enemy?.hp < 30 ? 'low' : ''}" style="width: ${(enemy?.hp / enemy?.maxHp) * 100}%">
+                                    ${enemy?.hp} / ${enemy?.maxHp}
+                                </div>
+                            </div>
+                            <div class="fighter-stats">
+                                <span>⚔️ ${enemy?.damageMin}-${enemy?.damageMax}</span>
+                                <span>💥 ${enemy?.critChance}%</span>
+                            </div>
+                        </div>
+
+                        <div class="fighter me">
+                            <div class="fighter-header">
+                                <span class="fighter-name">🎮 ${me?.nickname || '나'}</span>
+                                <span class="fighter-weapon">+${me?.weaponLevel || 0} ${getWeaponIcon(me?.weaponLevel || 0)}</span>
+                            </div>
+                            <div class="hp-bar-container">
+                                <div class="hp-bar ${me?.hp < 30 ? 'low' : ''}" style="width: ${(me?.hp / me?.maxHp) * 100}%">
+                                    ${me?.hp} / ${me?.maxHp}
+                                </div>
+                            </div>
+                            <div class="fighter-stats">
+                                <span>⚔️ ${me?.damageMin}-${me?.damageMax}</span>
+                                <span>💥 ${me?.critChance}%</span>
+                            </div>
+                        </div>
+
+                        <div class="battle-log" id="battleLog">
+                            ${(gs.log || []).slice(-5).map(entry => `
+                                <div class="log-entry ${entry.type}">${entry.text}</div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="battle-actions">
+                        <div class="action-btns">
+                            <button class="action-btn attack" onclick="battleAction('attack')" ${!isMyTurn ? 'disabled' : ''}>
+                                ⚔️ 공격
+                            </button>
+                            <button class="action-btn defend" onclick="battleAction('defend')" ${!isMyTurn ? 'disabled' : ''}>
+                                🛡️ 방어
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function battleAction(action) {
+            if (!mpUI || !mpUI.getClient()) return;
+            try {
+                await mpUI.sendAction({ type: action });
+            } catch (e) {
+                console.error('Battle action error:', e);
+            }
+        }
+
+        function showBattleResult(data) {
+            const myId = mpUI.getClient().getMyUserId();
+            const isWin = data.winnerId === myId;
+
+            mpUI.showResult({
+                title: isWin ? '🏆 승리!' : '💀 패배...',
+                detail: `${data.winnerNickname}의 승리!`,
+                isWin: isWin,
+                showRematch: true
+            });
+        }
+
+        // ===== Confetti =====
         function fireConfetti() {
             const canvas = document.getElementById('confetti');
             const ctx = canvas.getContext('2d');
@@ -750,13 +924,11 @@
             let frame = 0;
             function animate() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
                 pieces.forEach(p => {
                     p.x += p.vx;
                     p.y += p.vy;
                     p.vy += 0.5;
                     p.rotation += 5;
-
                     ctx.save();
                     ctx.translate(p.x, p.y);
                     ctx.rotate(p.rotation * Math.PI / 180);
@@ -764,20 +936,16 @@
                     ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
                     ctx.restore();
                 });
-
                 frame++;
-                if (frame < 100) {
-                    requestAnimationFrame(animate);
-                } else {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                }
+                if (frame < 100) requestAnimationFrame(animate);
+                else ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
             animate();
         }
 
-        // Init
+        // ===== Init =====
         loadState();
-        updateDisplay();
+        showModeSelect();
     </script>
 </body>
 </html>
