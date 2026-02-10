@@ -196,6 +196,59 @@
     <script src="/lib/multiplayer.js?v=20260210v2"></script>
     <script src="/lib/multiplayer-ui.js?v=20260210v2"></script>
     <script>
+        // ===== 공용 재화 시스템 =====
+        let sharedGold = 0;
+        let cloudSyncEnabled = false;
+        const WIN_REWARD = 100;   // 승리 보상
+        const LOSE_PENALTY = 50;  // 패배 페널티
+        
+        async function loadSharedGold() {
+            const localData = localStorage.getItem('enhance_game_v3');
+            if (localData) {
+                const parsed = JSON.parse(localData);
+                sharedGold = parsed.gold || 0;
+            }
+            
+            const token = localStorage.getItem('cocy_auth_token');
+            if (!token) return;
+            
+            try {
+                const parts = token.split('.');
+                if (parts.length !== 3) return;
+                const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                
+                if (payload.sub) {
+                    cloudSyncEnabled = true;
+                    const res = await fetch('https://relay.cocy.io/api/user/data', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.gold !== undefined) sharedGold = data.gold;
+                    }
+                }
+            } catch (e) { console.log('Cloud sync failed:', e); }
+        }
+        
+        async function saveSharedGold() {
+            const localData = localStorage.getItem('enhance_game_v3');
+            const parsed = localData ? JSON.parse(localData) : { gold: 0 };
+            parsed.gold = sharedGold;
+            localStorage.setItem('enhance_game_v3', JSON.stringify(parsed));
+            
+            if (!cloudSyncEnabled) return;
+            const token = localStorage.getItem('cocy_auth_token');
+            if (!token) return;
+            
+            try {
+                await fetch('https://relay.cocy.io/api/user/data', {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ gold: sharedGold, ...parsed })
+                });
+            } catch (e) { console.log('Cloud save failed:', e); }
+        }
+        
         // ===== Game State =====
         const BOARD_SIZE = 15;
         const STAR_POINTS = [[3,3],[3,7],[3,11],[7,3],[7,7],[7,11],[11,3],[11,7],[11,11]];
@@ -209,6 +262,9 @@
 
         // ===== Initialize =====
         function init() {
+            // 공용 재화 로드
+            loadSharedGold();
+            
             mpUI = new MultiplayerUI({
                 gameType: 'gomoku',
                 gameName: '⚫⚪ 오목',
@@ -363,14 +419,27 @@
         }
 
         function showResult(winner) {
+            let goldChange = 0;
+            let goldText = '';
+            
             if (isMultiplayer) {
+                const isWin = winner === myColor;
+                goldChange = isWin ? WIN_REWARD : -LOSE_PENALTY;
+                sharedGold = Math.max(0, sharedGold + goldChange);
+                saveSharedGold();
+                
+                goldText = goldChange > 0 
+                    ? `<span style="color:#4ecca3">+${goldChange}G</span>` 
+                    : `<span style="color:#ff6b6b">${goldChange}G</span>`;
+                
                 mpUI.showResult({
-                    title: winner === myColor ? '🎉 승리!' : '😢 패배',
-                    detail: (winner === 'black' ? '흑' : '백') + ' 승리',
-                    isWin: winner === myColor,
+                    title: isWin ? '🎉 승리!' : '😢 패배',
+                    detail: `${(winner === 'black' ? '흑' : '백')} 승리 ${goldText}`,
+                    isWin: isWin,
                     showRematch: true
                 });
             } else {
+                // 싱글플레이 (로컬 2인)는 보상 없음
                 mpUI.showResult({
                     title: (winner === 'black' ? '⚫ 흑' : '⚪ 백') + ' 승리!',
                     isWin: null,
