@@ -195,6 +195,7 @@
 
     <script src="/lib/multiplayer.js?v=20260210v2"></script>
     <script src="/lib/multiplayer-ui.js?v=20260210v2"></script>
+    <script src="/lib/shared-wallet.js?v=20260211"></script>
     <script>
         // ===== 공용 재화 시스템 =====
         let sharedGold = 0;
@@ -231,22 +232,15 @@
         }
         
         async function saveSharedGold() {
-            const localData = localStorage.getItem('enhance_game_v3');
-            const parsed = localData ? JSON.parse(localData) : { gold: 0 };
-            parsed.gold = sharedGold;
-            localStorage.setItem('enhance_game_v3', JSON.stringify(parsed));
-            
-            if (!cloudSyncEnabled) return;
-            const token = localStorage.getItem('cocy_auth_token');
-            if (!token) return;
-            
-            try {
-                await fetch('https://relay.cocy.io/api/user/data', {
-                    method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ gold: sharedGold, ...parsed })
-                });
-            } catch (e) { console.log('Cloud save failed:', e); }
+            // SharedWallet 사용
+            if (typeof SharedWallet !== 'undefined') {
+                SharedWallet.setGold(sharedGold);
+            } else {
+                const localData = localStorage.getItem('enhance_game_v3');
+                const parsed = localData ? JSON.parse(localData) : { gold: 0 };
+                parsed.gold = sharedGold;
+                localStorage.setItem('enhance_game_v3', JSON.stringify(parsed));
+            }
         }
         
         // ===== Game State =====
@@ -262,8 +256,15 @@
 
         // ===== Initialize =====
         function init() {
-            // 공용 재화 로드
-            loadSharedGold();
+            // 공용 재화 로드 (SharedWallet에서)
+            if (typeof SharedWallet !== 'undefined') {
+                SharedWallet.init().then(() => {
+                    sharedGold = SharedWallet.gold;
+                    cloudSyncEnabled = SharedWallet.cloudSyncEnabled;
+                });
+            } else {
+                loadSharedGold();
+            }
             
             mpUI = new MultiplayerUI({
                 gameType: 'gomoku',
