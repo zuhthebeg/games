@@ -1616,13 +1616,42 @@
 
         function getWeaponValue(weapon) {
             if (!weapon) return 0;
-            const gradeData = GRADES[weapon.grade];
-            const baseValue = gradeData.multiplier * 1000;
-            let levelBonus = 0;
+            
+            // 투자한 강화 비용 계산
+            let totalCost = 0;
             for (let i = 0; i < weapon.level; i++) {
-                levelBonus += ENHANCE_RATES[i].cost;
+                totalCost += ENHANCE_RATES[i].cost;
             }
-            return Math.floor(baseValue + levelBonus * 0.5);
+            
+            // 등급별 기본 가치 (어뷰징 방지: 낮은 등급은 기본가 낮음)
+            const gradeBaseValue = {
+                common: 0,      // 일반: 기본가 0
+                magic: 100,     // 고급: 100
+                rare: 500,      // 희귀: 500
+                legendary: 2000, // 전설: 2000
+                unique: 5000    // 유니크: 5000
+            };
+            const baseValue = gradeBaseValue[weapon.grade] || 0;
+            
+            // 강화 레벨에 따른 판매가 비율
+            // +5 이하: 투자비용의 20% (손해)
+            // +6~10: 투자비용의 35%
+            // +11+: 투자비용의 50% + 보너스
+            let sellRatio;
+            if (weapon.level <= 5) {
+                sellRatio = 0.2;
+            } else if (weapon.level <= 10) {
+                sellRatio = 0.35;
+            } else {
+                sellRatio = 0.5;
+            }
+            
+            const levelValue = Math.floor(totalCost * sellRatio);
+            
+            // 고강화 보너스 (+10 이상부터)
+            const highEnhanceBonus = weapon.level >= 10 ? (weapon.level - 9) * 1000 : 0;
+            
+            return baseValue + levelValue + highEnhanceBonus;
         }
 
         // ===== STORAGE =====
@@ -2037,6 +2066,13 @@
 
         function sellWeapon() {
             const value = getWeaponValue(state.weapon);
+            
+            // 판매가 0이면 판매 불가
+            if (value <= 0) {
+                alert('이 무기는 판매할 수 없습니다.\n(강화하거나 더 좋은 등급의 무기를 획득하세요)');
+                return;
+            }
+            
             if (confirm(`${state.weapon.name}을(를) ${value.toLocaleString()}G에 판매하시겠습니까?\n\n새로운 무기를 받게 됩니다. (일반~레어)`)) {
                 state.gold += value;
                 state.weapon = generateWeaponBySource('sell', {});
