@@ -706,12 +706,26 @@
             sword:  { name: '검',     img: `${ICON_BASE}/lorc/broadsword.svg`,       bonus: { damage: 1.0, crit: 1.0 } },
             axe:    { name: '도끼',   img: `${ICON_BASE}/lorc/battle-axe.svg`,       bonus: { damage: 1.15, crit: 0.9 } },
             spear:  { name: '창',     img: `${ICON_BASE}/lorc/spear-hook.svg`,       bonus: { damage: 0.95, crit: 1.1 } },
-            hammer: { name: '망치',   img: `${ICON_BASE}/lorc/warhammer.svg`,        bonus: { damage: 1.2, crit: 0.85 } },
+            hammer: { name: '망치',   img: `${ICON_BASE}/lorc/claw-hammer.svg`,      bonus: { damage: 1.2, crit: 0.85 } },
             dagger: { name: '단검',   img: `${ICON_BASE}/lorc/plain-dagger.svg`,     bonus: { damage: 0.85, crit: 1.25 } },
             staff:  { name: '지팡이', img: `${ICON_BASE}/lorc/wizard-staff.svg`,     bonus: { damage: 0.9, crit: 1.0, special: true } },
-            katana: { name: '태도',   img: `${ICON_BASE}/lorc/katana.svg`,           bonus: { damage: 1.05, crit: 1.15 } },
+            katana: { name: '태도',   img: `${ICON_BASE}/lorc/crossed-swords.svg`,   bonus: { damage: 1.05, crit: 1.15 } },
             scythe: { name: '낫',     img: `${ICON_BASE}/lorc/scythe.svg`,           bonus: { damage: 1.1, crit: 1.05 } }
         };
+        
+        /*
+        ===== 무기 성능표 =====
+        | 무기     | 데미지 | 크리티컬 | 특징                    |
+        |----------|--------|----------|-------------------------|
+        | 검       | 1.0x   | 1.0x     | 균형잡힌 기본 무기      |
+        | 도끼     | 1.15x  | 0.9x     | 높은 데미지, 낮은 크리  |
+        | 창       | 0.95x  | 1.1x     | 약간 낮은 뎀, 높은 크리 |
+        | 망치     | 1.2x   | 0.85x    | 최고 데미지, 최저 크리  |
+        | 단검     | 0.85x  | 1.25x    | 낮은 뎀, 최고 크리티컬  |
+        | 지팡이   | 0.9x   | 1.0x     | 마법 특수효과           |
+        | 태도     | 1.05x  | 1.15x    | 높은 균형               |
+        | 낫       | 1.1x   | 1.05x    | 좋은 올라운더           |
+        */
 
         const GRADES = {
             common: { 
