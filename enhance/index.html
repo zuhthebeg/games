@@ -405,12 +405,31 @@
             padding: 20px;
             text-align: center;
             margin-bottom: 16px;
+            position: relative;
         }
 
         .monster-card.boss {
             border-color: #ff4444;
             box-shadow: 0 0 30px rgba(255,68,68,0.3);
             animation: bossGlow 2s ease-in-out infinite alternate;
+        }
+        
+        .monster-card.weak {
+            background: linear-gradient(135deg, rgba(78,204,163,0.2) 0%, rgba(78,204,163,0.05) 100%);
+            border-color: var(--success);
+        }
+        
+        .monster-card.weak::before {
+            content: '💫 약점!';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(78,204,163,0.8);
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
         }
 
         @keyframes bossGlow {
@@ -2245,11 +2264,31 @@
         let huntState = null;
 
         function getRecommendedTier(weaponLevel) {
+            // 기본 레벨 기반 (폴백)
             if (weaponLevel <= 2) return 1;
             if (weaponLevel <= 5) return 2;
             if (weaponLevel <= 9) return 3;
             if (weaponLevel <= 14) return 4;
-            return 5; // 전설급
+            return 5;
+        }
+        
+        // 데미지 기반 티어 추천
+        function getRecommendedTierByDamage() {
+            const stats = getWeaponStats(state.weapon);
+            const avgDamage = (stats.damageMin + stats.damageMax) / 2;
+            
+            // 평균 데미지 기준 (몬스터 HP의 1/3~1/5 정도로 맞춤)
+            // Tier 1: HP 30-55, 적정 데미지 10-20
+            // Tier 2: HP 70-120, 적정 데미지 20-40
+            // Tier 3: HP 150-250, 적정 데미지 40-80
+            // Tier 4: HP 280-450, 적정 데미지 80-150
+            // Tier 5: HP 600-800, 적정 데미지 150+
+            
+            if (avgDamage < 20) return 1;
+            if (avgDamage < 45) return 2;
+            if (avgDamage < 90) return 3;
+            if (avgDamage < 160) return 4;
+            return 5;
         }
 
         function spawnMonster(forceType = null) {
@@ -2263,13 +2302,13 @@
                 };
             }
 
-            const weaponLevel = state.weapon.level;
-            const recommendedTier = getRecommendedTier(weaponLevel);
+            // 데미지 기반 티어 (레벨보다 정확함)
+            const recommendedTier = getRecommendedTierByDamage();
             
-            // 보스 출현 확률 (레벨에 따라 증가)
-            const bossChance = weaponLevel >= 15 ? 0.15 : (weaponLevel >= 10 ? 0.1 : (weaponLevel >= 8 ? 0.05 : 0));
+            // 보스 출현 확률 (티어에 따라 증가)
+            const bossChance = recommendedTier >= 5 ? 0.15 : (recommendedTier >= 4 ? 0.1 : (recommendedTier >= 3 ? 0.05 : 0));
             if (bossChance > 0 && Math.random() < bossChance) {
-                // 보스는 현재 티어 또는 한 단계 아래 티어에서
+                // 보스는 현재 티어에 맞게
                 const bossTier = Math.max(4, recommendedTier);
                 const bosses = Object.entries(MONSTERS).filter(([k, v]) => v.isBoss && v.tier <= bossTier);
                 if (bosses.length > 0) {
@@ -2339,7 +2378,7 @@
                         <span style="margin-left:10px;color:var(--muted)">| 처치: ${huntState.monstersKilled}</span>
                     </div>
 
-                    <div class="monster-card ${monster.isBoss ? 'boss' : ''}">
+                    <div class="monster-card ${monster.isBoss ? 'boss' : ''} ${getElementMultiplier(weapon.element, monster.type) > 1 ? 'weak' : ''}">
                         <div class="monster-tier">
                             ${monster.isBoss ? '⚠️ BOSS' : `Tier ${monster.tier}`}
                             ${monster.type ? ` | ${MONSTER_TYPES[monster.type]?.icon || ''} ${MONSTER_TYPES[monster.type]?.name || ''}` : ''}
