@@ -2833,6 +2833,9 @@
             const baseDamage = playerCrit ? Math.floor(playerDamage * player.critDamage / 100) : playerDamage;
             const finalPlayerDamage = Math.floor(baseDamage * elementMult);
             
+            // 럭키드로우용: 공격 전 풀피였는지 저장
+            const wasAtFullHp = (monster.currentHp === monster.maxHp);
+            
             monster.currentHp = Math.max(0, monster.currentHp - finalPlayerDamage);
             
             playSound(playerCrit ? 'crit' : 'attack');
@@ -2861,9 +2864,8 @@
             
             // Check if monster is dead
             if (monster.currentHp <= 0) {
-                // 럭키드로우 조건: 크리티컬 + 한방킬!
-                const wasOneShot = (monster.maxHp <= finalPlayerDamage);
-                const isLuckyEligible = playerCrit && wasOneShot;
+                // 럭키드로우 조건: 풀피 상태에서 크리티컬 한방킬!
+                const isLuckyEligible = wasAtFullHp && playerCrit;
                 huntMonsterKilled(isLuckyEligible);
                 return;
             }
