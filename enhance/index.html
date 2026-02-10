@@ -2256,7 +2256,9 @@
             
             // Check if monster is dead
             if (monster.currentHp <= 0) {
-                huntMonsterKilled();
+                // 한방킬 체크: 몬스터 최대HP에서 한번에 죽였는지
+                const wasOneShot = (monster.maxHp - finalPlayerDamage <= 0);
+                huntMonsterKilled(wasOneShot);
                 return;
             }
             
@@ -2291,18 +2293,26 @@
             renderHunt();
         }
 
-        function huntMonsterKilled() {
+        function huntMonsterKilled(isOneShot = false) {
             const monster = huntState.monster;
-            const goldReward = Math.floor(Math.random() * (monster.gold[1] - monster.gold[0] + 1)) + monster.gold[0];
+            let goldReward = Math.floor(Math.random() * (monster.gold[1] - monster.gold[0] + 1)) + monster.gold[0];
+            
+            // 🎰 한방킬 럭키드로우! 10배 보상!
+            const isLuckyDraw = isOneShot && Math.random() < 1.0; // 한방킬이면 무조건 럭키드로우
+            if (isLuckyDraw) {
+                goldReward *= 10;
+            }
             
             state.gold += goldReward;
             state.mastery.kills++; // 숙련도 증가!
             huntState.monstersKilled++;
             huntState.totalGoldEarned += goldReward;
+            huntState._lastKillWasLucky = isLuckyDraw;
+            huntState._lastGoldReward = goldReward;
             
             playSound('success');
-            vibrate([50, 50, 100]);
-            if (monster.isBoss) fireConfetti();
+            vibrate(isLuckyDraw ? [100, 50, 100, 50, 100, 50, 200] : [50, 50, 100]);
+            if (monster.isBoss || isLuckyDraw) fireConfetti();
             
             saveState();
             
@@ -2310,12 +2320,23 @@
             const popup = document.getElementById('resultPopup');
             const overlay = document.getElementById('overlay');
             
+            const isLucky = huntState._lastKillWasLucky;
+            const finalGold = huntState._lastGoldReward;
+            
             popup.className = 'result-popup success show';
-            document.getElementById('resultIcon').textContent = monster.isBoss ? '🏆' : '✨';
-            document.getElementById('resultText').textContent = `${monster.name} 처치!`;
-            document.getElementById('resultText').style.color = 'var(--success)';
-            document.getElementById('resultDetail').innerHTML = `
-                💰 +${goldReward.toLocaleString()}G<br>
+            document.getElementById('resultIcon').textContent = isLucky ? '🎰' : (monster.isBoss ? '🏆' : '✨');
+            document.getElementById('resultText').textContent = isLucky ? '🎰 럭키드로우!' : `${monster.name} 처치!`;
+            document.getElementById('resultText').style.color = isLucky ? 'var(--gold)' : 'var(--success)';
+            document.getElementById('resultDetail').innerHTML = isLucky ? `
+                <div style="font-size:1.5rem;color:var(--gold);animation:pulse 0.5s infinite alternate;">
+                    💰 +${finalGold.toLocaleString()}G
+                </div>
+                <div style="color:var(--success);margin:8px 0;">⚡ 한방킬 10배 보너스!</div>
+                <span style="color:var(--muted);font-size:0.85em">
+                    🔧 내구도: ${state.weapon.durability || 100}% | ⭐ 처치: ${huntState.monstersKilled}
+                </span>
+            ` : `
+                💰 +${finalGold.toLocaleString()}G<br>
                 <span style="color:var(--muted);font-size:0.85em">
                     🔧 내구도: ${state.weapon.durability || 100}% | ⭐ 처치: ${huntState.monstersKilled}
                 </span>
