@@ -744,6 +744,7 @@
     <!-- Mode Selection -->
     <div class="mode-select" id="modeSelect">
         <h1>🃏 텍사스 홀덤</h1>
+        <div id="sharedGoldDisplay" style="background:rgba(255,215,0,0.15);border:1px solid rgba(255,215,0,0.3);border-radius:20px;padding:8px 20px;margin:10px auto;width:fit-content;font-weight:600;">💰 0 G</div>
         <p>게임 모드를 선택하세요</p>
         <div class="mode-buttons">
             <button class="mode-btn" onclick="startSinglePlayer()">
@@ -985,6 +986,86 @@
     </div>
 
     <script>
+        // ===== 공용 재화 시스템 =====
+        let sharedGold = 0;
+        let cloudSyncEnabled = false;
+        const BUY_IN_COST = 500;  // 바이인 비용 (골드)
+        const CHIP_VALUE = 0.5;    // 칩 1개 = 0.5 골드
+        
+        async function loadSharedGold() {
+            // 먼저 로컬 스토리지에서 로드
+            const localData = localStorage.getItem('enhance_game_v3');
+            if (localData) {
+                const parsed = JSON.parse(localData);
+                sharedGold = parsed.gold || 0;
+            }
+            
+            // 로그인 유저면 클라우드에서 로드
+            const token = localStorage.getItem('cocy_auth_token');
+            if (!token) return;
+            
+            try {
+                const parts = token.split('.');
+                if (parts.length !== 3) return;
+                const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                
+                if (payload.sub) {
+                    cloudSyncEnabled = true;
+                    const res = await fetch('https://relay.cocy.io/api/user/data', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.gold !== undefined) {
+                            sharedGold = data.gold;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log('Cloud sync failed:', e);
+            }
+            
+            updateGoldDisplay();
+        }
+        
+        async function saveSharedGold() {
+            // 로컬 저장 (enhance_game_v3와 동기화)
+            const localData = localStorage.getItem('enhance_game_v3');
+            const parsed = localData ? JSON.parse(localData) : { gold: 0, weapon: null, mastery: { attacks: 0, kills: 0 }, stats: {} };
+            parsed.gold = sharedGold;
+            localStorage.setItem('enhance_game_v3', JSON.stringify(parsed));
+            
+            // 클라우드 저장
+            if (!cloudSyncEnabled) return;
+            const token = localStorage.getItem('cocy_auth_token');
+            if (!token) return;
+            
+            try {
+                await fetch('https://relay.cocy.io/api/user/data', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        gold: sharedGold,
+                        ...parsed
+                    })
+                });
+            } catch (e) {
+                console.log('Cloud save failed:', e);
+            }
+            
+            updateGoldDisplay();
+        }
+        
+        function updateGoldDisplay() {
+            const el = document.getElementById('sharedGoldDisplay');
+            if (el) {
+                el.innerHTML = `💰 ${sharedGold.toLocaleString()} G ${cloudSyncEnabled ? '<span style="color:#4ecca3;font-size:0.8em;">☁️</span>' : ''}`;
+            }
+        }
+        
         // ===== 게임 상태 =====
         const SUITS = ['♠', '♥', '♦', '♣'];
         const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -2149,18 +2230,30 @@
             const opponent = gs.players.find(p => p.id !== myId);
             
             // Determine winner by chip count change
+            // 칩 차이를 골드로 변환 (1칩 = 0.5골드)
+            const chipDiff = me.chips - opponent.chips;
+            const goldChange = Math.floor(chipDiff * CHIP_VALUE);
+            
             if (me.chips > opponent.chips) {
                 title.textContent = '🎉 이번 핸드 승리!';
                 title.className = 'result-title win';
+                // 승리 시 골드 획득
+                sharedGold += goldChange;
+                saveSharedGold();
             } else if (me.chips < opponent.chips) {
                 title.textContent = '😢 이번 핸드 패배';
                 title.className = 'result-title lose';
+                // 패배 시 골드 손실 (최소 0)
+                sharedGold = Math.max(0, sharedGold + goldChange);
+                saveSharedGold();
             } else {
                 title.textContent = '🤝 무승부';
                 title.className = 'result-title tie';
             }
             
-            detail.textContent = `내 칩: ${me.chips} | 상대 칩: ${opponent.chips}`;
+            const goldText = goldChange > 0 ? `<span style="color:#4ecca3">+${goldChange}G</span>` : 
+                            goldChange < 0 ? `<span style="color:#ef4444">${goldChange}G</span>` : '';
+            detail.innerHTML = `내 칩: ${me.chips} | 상대 칩: ${opponent.chips}${goldText ? ` | ${goldText}` : ''}`;
             
             // Clear old buttons
             overlay.querySelectorAll('.mp-buttons').forEach(el => el.remove());
@@ -2331,6 +2424,9 @@
 
         // 초기화 - 모드 선택 화면 표시
         // updateDisplay(); // Skip - game container is hidden
+        
+        // 공용 재화 로드
+        loadSharedGold();
         
         // Check for room code in URL
         checkUrlRoom();
