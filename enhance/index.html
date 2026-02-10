@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>무기 강화 & 배틀</title>
     <link rel="icon" href="icon.svg">
-    <script src="/lib/multiplayer.js?v=20260210v3"></script>
-    <script src="/lib/multiplayer-ui.js?v=20260210v3"></script>
+    <script src="/lib/multiplayer.js?v=20260210v4"></script>
+    <script src="/lib/multiplayer-ui.js?v=20260210v4"></script>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -527,7 +527,19 @@
 
         .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .action-btn.attack { background: var(--fail); color: white; }
+        .action-btn.attack.counter { 
+            background: linear-gradient(135deg, #ff8000, #ffd700);
+            animation: pulse 0.5s infinite alternate;
+        }
         .action-btn.defend { background: #3498db; color: white; }
+
+        @keyframes pulse {
+            from { transform: scale(1); box-shadow: 0 0 10px rgba(255,128,0,0.5); }
+            to { transform: scale(1.02); box-shadow: 0 0 20px rgba(255,128,0,0.8); }
+        }
+
+        .fighter.defending { border-color: #3498db; background: rgba(52,152,219,0.1); }
+        .fighter.counter-ready { border-color: var(--legendary); background: rgba(255,128,0,0.1); }
 
         /* Stats Panel in Main */
         .stats-summary {
@@ -592,7 +604,7 @@
             dagger: { name: '단검', icon: '🔪', bonus: { damage: 0.85, crit: 1.25 } },
             staff: { name: '지팡이', icon: '🪄', bonus: { damage: 0.9, crit: 1.0, special: true } },
             katana: { name: '태도', icon: '⚔️', bonus: { damage: 1.05, crit: 1.15 } },
-            scythe: { name: '낫', icon: '⚰️', bonus: { damage: 1.1, crit: 1.05 } }
+            scythe: { name: '낫', icon: '🌙', bonus: { damage: 1.1, crit: 1.05 } }
         };
 
         const GRADES = {
@@ -1179,17 +1191,21 @@
             const myGrade = me?.weaponGrade ? GRADES[me.weaponGrade] : GRADES.common;
             const enemyGrade = enemy?.weaponGrade ? GRADES[enemy.weaponGrade] : GRADES.common;
 
+            // Status badges
+            const enemyStatus = enemy?.isDefending ? '🛡️ 방어중' : (enemy?.counterReady ? '⚡ 카운터 준비' : '');
+            const myStatus = me?.isDefending ? '🛡️ 방어중' : (me?.counterReady ? '⚡ 카운터 준비!' : '');
+
             document.getElementById('app').innerHTML = `
                 <div class="battle-screen">
                     <div class="battle-header">
                         <div class="battle-title">⚔️ 무기 배틀!</div>
-                        <div class="battle-round">라운드 ${gs.round || 1} | ${isMyTurn ? '내 턴' : '상대 턴'}</div>
+                        <div class="battle-round">라운드 ${gs.round || 1} | ${isMyTurn ? '내 턴' : '상대 턴'} | 💰 ${(gs.totalPrize || 0).toLocaleString()}G</div>
                     </div>
 
                     <div class="battle-arena">
-                        <div class="fighter enemy">
+                        <div class="fighter enemy ${enemy?.isDefending ? 'defending' : ''}">
                             <div class="fighter-header">
-                                <span class="fighter-name">👤 ${enemy?.nickname || '상대'}</span>
+                                <span class="fighter-name">👤 ${enemy?.nickname || '상대'} ${enemyStatus}</span>
                                 <span class="fighter-weapon" style="color:${enemyGrade.color}">
                                     [${enemyGrade.name}] +${enemy?.weaponLevel || 0} ${enemy?.weaponIcon || '🗡️'}
                                 </span>
@@ -1203,13 +1219,12 @@
                             <div class="fighter-stats">
                                 <span>⚔️ ${enemy?.damageMin || 0}-${enemy?.damageMax || 0}</span>
                                 <span>💥 ${enemy?.critChance || 0}%</span>
-                                <span>💰 ${(enemy?.betGold || 0).toLocaleString()}G</span>
                             </div>
                         </div>
 
-                        <div class="fighter me">
+                        <div class="fighter me ${me?.isDefending ? 'defending' : ''} ${me?.counterReady ? 'counter-ready' : ''}">
                             <div class="fighter-header">
-                                <span class="fighter-name">🎮 ${me?.nickname || '나'}</span>
+                                <span class="fighter-name">🎮 ${me?.nickname || '나'} ${myStatus}</span>
                                 <span class="fighter-weapon" style="color:${myGrade.color}">
                                     [${myGrade.name}] +${me?.weaponLevel || 0} ${me?.weaponIcon || '🗡️'}
                                 </span>
@@ -1223,7 +1238,6 @@
                             <div class="fighter-stats">
                                 <span>⚔️ ${me?.damageMin || 0}-${me?.damageMax || 0}</span>
                                 <span>💥 ${me?.critChance || 0}%</span>
-                                <span>💰 ${(me?.betGold || 0).toLocaleString()}G</span>
                             </div>
                         </div>
 
@@ -1236,8 +1250,8 @@
 
                     <div class="battle-actions">
                         <div class="action-btns">
-                            <button class="action-btn attack" onclick="battleAction('attack')" ${!isMyTurn ? 'disabled' : ''}>
-                                ⚔️ 공격
+                            <button class="action-btn attack ${me?.counterReady ? 'counter' : ''}" onclick="battleAction('attack')" ${!isMyTurn ? 'disabled' : ''}>
+                                ${me?.counterReady ? '⚡ 카운터!' : '⚔️ 공격'}
                             </button>
                             <button class="action-btn defend" onclick="battleAction('defend')" ${!isMyTurn ? 'disabled' : ''}>
                                 🛡️ 방어
