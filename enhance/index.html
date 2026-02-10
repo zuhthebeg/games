@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>무기 강화 & 배틀</title>
     <link rel="icon" href="icon.svg">
-    <script src="/lib/multiplayer.js?v=20260210v4"></script>
-    <script src="/lib/multiplayer-ui.js?v=20260210v4"></script>
+    <script src="/lib/multiplayer.js?v=20260210v5"></script>
+    <script src="/lib/multiplayer-ui.js?v=20260210v5"></script>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -263,7 +263,8 @@
 
         .enhance-label { color: var(--muted); }
         .enhance-value { font-weight: 600; }
-        .enhance-value.danger { color: var(--fail); }
+        .enhance-value.danger { color: var(--fail); font-weight: 700; }
+        .enhance-value.warning { color: #ff8800; }
         .enhance-value.safe { color: var(--success); }
         .enhance-value.gold { color: var(--gold); }
 
@@ -655,28 +656,29 @@
             }
         };
 
+        // 더 스릴있는 확률! 하락 없음, 파괴 일찍 시작
         const ENHANCE_RATES = {
-            0: { success: 95, destroy: 0, downgrade: 0, cost: 100 },
-            1: { success: 90, destroy: 0, downgrade: 0, cost: 200 },
-            2: { success: 85, destroy: 0, downgrade: 0, cost: 400 },
-            3: { success: 80, destroy: 0, downgrade: 0, cost: 600 },
-            4: { success: 75, destroy: 0, downgrade: 0, cost: 1000 },
-            5: { success: 70, destroy: 0, downgrade: 5, cost: 1500 },
-            6: { success: 65, destroy: 0, downgrade: 10, cost: 2000 },
-            7: { success: 60, destroy: 0, downgrade: 15, cost: 3000 },
-            8: { success: 55, destroy: 0, downgrade: 20, cost: 4000 },
-            9: { success: 50, destroy: 0, downgrade: 25, cost: 5000 },
-            10: { success: 45, destroy: 5, downgrade: 25, cost: 7000 },
-            11: { success: 40, destroy: 10, downgrade: 25, cost: 10000 },
-            12: { success: 35, destroy: 15, downgrade: 25, cost: 15000 },
-            13: { success: 30, destroy: 20, downgrade: 25, cost: 25000 },
-            14: { success: 25, destroy: 25, downgrade: 25, cost: 40000 },
-            15: { success: 20, destroy: 30, downgrade: 25, cost: 60000 },
-            16: { success: 15, destroy: 35, downgrade: 25, cost: 100000 },
-            17: { success: 10, destroy: 40, downgrade: 25, cost: 150000 },
-            18: { success: 7, destroy: 45, downgrade: 25, cost: 250000 },
-            19: { success: 5, destroy: 50, downgrade: 25, cost: 400000 },
-            20: { success: 3, destroy: 55, downgrade: 20, cost: 500000 }
+            0: { success: 100, destroy: 0, cost: 100 },      // +0→+1: 100%
+            1: { success: 95, destroy: 0, cost: 200 },       // +1→+2: 95%
+            2: { success: 90, destroy: 0, cost: 400 },       // +2→+3: 90%
+            3: { success: 80, destroy: 0, cost: 800 },       // +3→+4: 80%
+            4: { success: 70, destroy: 0, cost: 1500 },      // +4→+5: 70%
+            5: { success: 60, destroy: 0, cost: 3000 },      // +5→+6: 60%
+            6: { success: 50, destroy: 0, cost: 5000 },      // +6→+7: 50%
+            7: { success: 45, destroy: 10, cost: 8000 },     // +7→+8: 45% (파괴 시작!)
+            8: { success: 40, destroy: 15, cost: 12000 },    // +8→+9: 40%
+            9: { success: 35, destroy: 20, cost: 20000 },    // +9→+10: 35%
+            10: { success: 30, destroy: 30, cost: 35000 },   // +10→+11: 30% 🔥
+            11: { success: 25, destroy: 35, cost: 50000 },   // +11→+12: 25%
+            12: { success: 20, destroy: 40, cost: 80000 },   // +12→+13: 20%
+            13: { success: 15, destroy: 50, cost: 120000 },  // +13→+14: 15% ☠️
+            14: { success: 10, destroy: 55, cost: 200000 },  // +14→+15: 10%
+            15: { success: 7, destroy: 60, cost: 350000 },   // +15→+16: 7% 💀
+            16: { success: 5, destroy: 65, cost: 500000 },   // +16→+17: 5%
+            17: { success: 3, destroy: 70, cost: 750000 },   // +17→+18: 3%
+            18: { success: 2, destroy: 75, cost: 1000000 },  // +18→+19: 2%
+            19: { success: 1, destroy: 80, cost: 1500000 },  // +19→+20: 1% 🎰
+            20: { success: 1, destroy: 85, cost: 2000000 }   // MAX
         };
 
         // ===== GAME STATE =====
@@ -939,19 +941,15 @@
 
                     <div class="enhance-panel">
                         <div class="enhance-row">
-                            <span class="enhance-label">성공 확률</span>
-                            <span class="enhance-value safe">${rates.success}%</span>
+                            <span class="enhance-label">🎯 성공</span>
+                            <span class="enhance-value ${rates.success >= 50 ? 'safe' : rates.success >= 20 ? '' : 'danger'}">${rates.success}%</span>
                         </div>
                         <div class="enhance-row">
-                            <span class="enhance-label">파괴 확률</span>
-                            <span class="enhance-value ${rates.destroy > 0 ? 'danger' : ''}">${rates.destroy}%</span>
+                            <span class="enhance-label">${rates.destroy >= 50 ? '💀' : rates.destroy > 0 ? '⚠️' : '✅'} 파괴</span>
+                            <span class="enhance-value ${rates.destroy >= 50 ? 'danger' : rates.destroy > 0 ? 'warning' : 'safe'}">${rates.destroy > 0 ? rates.destroy + '%' : '없음'}</span>
                         </div>
                         <div class="enhance-row">
-                            <span class="enhance-label">하락 확률</span>
-                            <span class="enhance-value ${rates.downgrade > 0 ? 'danger' : ''}">${rates.downgrade}%</span>
-                        </div>
-                        <div class="enhance-row">
-                            <span class="enhance-label">강화 비용</span>
+                            <span class="enhance-label">💰 비용</span>
                             <span class="enhance-value gold">${rates.cost.toLocaleString()} G</span>
                         </div>
                     </div>
@@ -1005,14 +1003,14 @@
             let newWeapon = null;
 
             if (roll < rates.success) {
-                // Success
+                // Success! 🎉
                 toLevel = fromLevel + 1;
                 result = 'success';
                 state.stats.successes++;
                 weaponIcon.classList.add('glow-success');
                 setTimeout(() => weaponIcon.classList.remove('glow-success'), 1000);
-            } else if (roll < rates.success + rates.destroy) {
-                // Destroy
+            } else if (rates.destroy > 0 && roll < rates.success + rates.destroy) {
+                // Destroy! 💥
                 result = 'destroy';
                 state.stats.destroys++;
                 
@@ -1030,17 +1028,12 @@
                 
                 weaponIcon.classList.add('glow-fail');
                 setTimeout(() => weaponIcon.classList.remove('glow-fail'), 1000);
-            } else if (roll < rates.success + rates.destroy + rates.downgrade) {
-                // Downgrade
-                toLevel = Math.max(0, fromLevel - 1);
-                result = 'downgrade';
+            } else {
+                // Fail - just stays the same (no downgrade!)
+                result = 'fail';
                 state.stats.fails++;
                 weaponIcon.classList.add('glow-fail');
                 setTimeout(() => weaponIcon.classList.remove('glow-fail'), 1000);
-            } else {
-                // Just fail (no change)
-                result = 'fail';
-                state.stats.fails++;
             }
 
             if (newWeapon) {
@@ -1092,17 +1085,12 @@
                     detail = '보호 주문서가 무기를 지켰습니다';
                     textColor = 'var(--gold)';
                 }
-            } else if (type === 'downgrade') {
-                popupClass += ' fail';
-                icon = '💔';
-                text = '강화 실패';
-                detail = `+${from} → +${to}`;
-                textColor = 'var(--fail)';
             } else {
+                // Fail - level stays same
                 popupClass += ' fail';
                 icon = '😢';
-                text = '강화 실패';
-                detail = '레벨 유지';
+                text = '강화 실패...';
+                detail = '다음엔 성공할거야!';
                 textColor = 'var(--fail)';
             }
 
@@ -1119,7 +1107,8 @@
 
             overlay.classList.add('show');
 
-            if (type === 'success' && to >= 15) fireConfetti();
+            // Confetti for big milestones
+            if (type === 'success' && (to >= 10 || to === 7)) fireConfetti();
         }
 
         function closeResult() {
