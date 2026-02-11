@@ -155,6 +155,104 @@
             font-weight: 700;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             transition: transform 0.3s;
+            animation: cardDeal 0.3s ease-out;
+        }
+        
+        @keyframes cardDeal {
+            from {
+                transform: translateY(-100px) rotate(-20deg) scale(0.5);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) rotate(0) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes cardFlip {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(90deg); }
+            100% { transform: rotateY(0deg); }
+        }
+        
+        @keyframes cardReveal {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes chipBet {
+            from {
+                transform: translateY(-30px) scale(0.5);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes potCollect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); filter: brightness(1.5); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+        
+        @keyframes winGlow {
+            0%, 100% { box-shadow: 0 0 20px var(--gold); }
+            50% { box-shadow: 0 0 40px var(--gold), 0 0 60px var(--gold); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .card.flipping { animation: cardFlip 0.4s ease-in-out; }
+        .card.revealing { animation: cardReveal 0.5s ease-out; }
+        .chip-animate { animation: chipBet 0.3s ease-out; }
+        .pot-animate { animation: potCollect 0.5s ease-out; }
+        .win-animate { animation: winGlow 1s ease-in-out 3; }
+        .shake-animate { animation: shake 0.3s ease-in-out; }
+        
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        .sound-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .sound-toggle:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+        }
+        
+        .sound-toggle.muted {
+            opacity: 0.5;
         }
 
         .card.back {
@@ -988,6 +1086,9 @@
         </div>
     </div>
 
+    <!-- Sound Toggle Button -->
+    <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
+
     <script>
         // ===== 공용 재화 시스템 =====
         let sharedGold = 0;
@@ -1052,6 +1153,180 @@
             }
         }
         
+        // ===== 사운드 시스템 =====
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let soundEnabled = localStorage.getItem('poker_sound') !== 'false';
+        
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                const now = audioCtx.currentTime;
+                
+                switch (type) {
+                    case 'deal':
+                        // 카드 딜 - 짧은 슬라이드 소리
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(800, now);
+                        osc.frequency.exponentialRampToValueAtTime(400, now + 0.05);
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                        osc.start(now);
+                        osc.stop(now + 0.08);
+                        break;
+                        
+                    case 'flip':
+                        // 카드 뒤집기
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(600, now);
+                        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+                        gain.gain.setValueAtTime(0.12, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                        osc.start(now);
+                        osc.stop(now + 0.12);
+                        break;
+                        
+                    case 'chips':
+                        // 칩 베팅 - 칩 소리
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(2000, now);
+                        osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+                        gain.gain.setValueAtTime(0.08, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                        osc.start(now);
+                        osc.stop(now + 0.1);
+                        // 두 번째 칩
+                        setTimeout(() => {
+                            const osc2 = audioCtx.createOscillator();
+                            const gain2 = audioCtx.createGain();
+                            osc2.connect(gain2);
+                            gain2.connect(audioCtx.destination);
+                            osc2.type = 'square';
+                            osc2.frequency.setValueAtTime(1800, audioCtx.currentTime);
+                            osc2.frequency.exponentialRampToValueAtTime(700, audioCtx.currentTime + 0.05);
+                            gain2.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                            gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                            osc2.start();
+                            osc2.stop(audioCtx.currentTime + 0.08);
+                        }, 50);
+                        break;
+                        
+                    case 'check':
+                        // 체크 - 노크 소리
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(300, now);
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                        osc.start(now);
+                        osc.stop(now + 0.1);
+                        break;
+                        
+                    case 'fold':
+                        // 폴드 - 낮은 톤
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(200, now);
+                        osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                        gain.gain.setValueAtTime(0.12, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                        osc.start(now);
+                        osc.stop(now + 0.25);
+                        break;
+                        
+                    case 'allin':
+                        // 올인 - 드라마틱
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(200, now);
+                        osc.frequency.linearRampToValueAtTime(600, now + 0.3);
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.linearRampToValueAtTime(0.2, now + 0.15);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                        osc.start(now);
+                        osc.stop(now + 0.4);
+                        break;
+                        
+                    case 'win':
+                        // 승리 팡파레
+                        [523, 659, 784, 1047].forEach((freq, i) => {
+                            setTimeout(() => {
+                                const o = audioCtx.createOscillator();
+                                const g = audioCtx.createGain();
+                                o.connect(g);
+                                g.connect(audioCtx.destination);
+                                o.type = 'sine';
+                                o.frequency.value = freq;
+                                g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                                g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                                o.start();
+                                o.stop(audioCtx.currentTime + 0.3);
+                            }, i * 100);
+                        });
+                        return;
+                        
+                    case 'lose':
+                        // 패배 - 하강 톤
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(400, now);
+                        osc.frequency.exponentialRampToValueAtTime(150, now + 0.4);
+                        gain.gain.setValueAtTime(0.12, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                        osc.start(now);
+                        osc.stop(now + 0.5);
+                        break;
+                        
+                    case 'reveal':
+                        // 쇼다운 카드 공개
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(400, now);
+                        osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                        osc.start(now);
+                        osc.stop(now + 0.2);
+                        break;
+                        
+                    case 'turn':
+                        // 내 턴 알림
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(660, now);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                        osc.start(now);
+                        osc.stop(now + 0.15);
+                        break;
+                }
+            } catch (e) {
+                console.log('Sound error:', e);
+            }
+        }
+        
+        function vibrate(pattern) {
+            if (navigator.vibrate) navigator.vibrate(pattern);
+        }
+        
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('poker_sound', soundEnabled);
+            updateSoundButton();
+            showMessage(soundEnabled ? '🔊 사운드 ON' : '🔇 사운드 OFF');
+        }
+        
+        function updateSoundButton() {
+            const btn = document.getElementById('soundToggle');
+            if (btn) {
+                btn.textContent = soundEnabled ? '🔊' : '🔇';
+                btn.classList.toggle('muted', !soundEnabled);
+            }
+        }
+        
+        // 페이지 로드 시 사운드 버튼 초기화
+        document.addEventListener('DOMContentLoaded', updateSoundButton);
+
         // ===== 게임 상태 =====
         const SUITS = ['♠', '♥', '♦', '♣'];
         const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -1318,6 +1593,12 @@
             game.minRaise = game.bigBlind;
             game.lastRaise = game.bigBlind;
 
+            // 카드 딜 사운드 (순차적)
+            playSound('deal');
+            setTimeout(() => playSound('deal'), 100);
+            setTimeout(() => playSound('deal'), 200);
+            setTimeout(() => playSound('deal'), 300);
+
             // 블라인드 설정
             if (game.dealer === 'me') {
                 // 내가 딜러 = 내가 스몰블라인드
@@ -1336,6 +1617,7 @@
             if (game.currentPlayer === 'opponent') {
                 setTimeout(aiTurn, 1000);
             } else {
+                playSound('turn');
                 showBettingControls();
             }
         }
@@ -1405,25 +1687,37 @@
             
             switch (action) {
                 case 'fold':
+                    playSound('fold');
+                    vibrate(50);
                     endHand('opponent');
                     return;
                     
                 case 'check':
+                    playSound('check');
                     break;
                     
                 case 'call':
+                    playSound('chips');
+                    vibrate(30);
                     placeBet('me', toCall);
+                    animateBet('me');
                     break;
                     
                 case 'raise':
                     const raiseAmount = parseInt(document.getElementById('betSlider').value);
+                    playSound('chips');
+                    vibrate([30, 20, 30]);
                     placeBet('me', raiseAmount);
+                    animateBet('me');
                     game.lastRaise = raiseAmount - toCall;
                     game.minRaise = game.lastRaise;
                     break;
                     
                 case 'allin':
+                    playSound('allin');
+                    vibrate([50, 30, 100]);
                     placeBet('me', game.myChips);
+                    animateBet('me');
                     break;
             }
             
@@ -1509,26 +1803,40 @@
             return Math.min(strength, 1);
         }
 
+        function animateBet(player) {
+            const betEl = document.getElementById(player === 'me' ? 'myBet' : 'opponentBet');
+            if (betEl) {
+                betEl.classList.add('chip-animate');
+                setTimeout(() => betEl.classList.remove('chip-animate'), 300);
+            }
+        }
+        
         function executeAiAction(action) {
             const toCall = game.myBet - game.opponentBet;
             
             switch (action.type) {
                 case 'fold':
+                    playSound('fold');
                     showMessage('🤖 폴드');
                     setTimeout(() => endHand('me'), 500);
                     return;
                     
                 case 'check':
+                    playSound('check');
                     showMessage('🤖 체크');
                     break;
                     
                 case 'call':
+                    playSound('chips');
                     placeBet('opponent', toCall);
+                    animateBet('opponent');
                     showMessage(`🤖 콜 (${toCall})`);
                     break;
                     
                 case 'raise':
+                    playSound('chips');
                     placeBet('opponent', action.amount);
+                    animateBet('opponent');
                     showMessage(`🤖 레이즈 (${action.amount})`);
                     break;
             }
@@ -1551,18 +1859,24 @@
                 case 'preflop':
                     game.phase = 'flop';
                     game.communityCards = drawCards(3);
+                    // 플랍 카드 딜 사운드
+                    playSound('flip');
+                    setTimeout(() => playSound('flip'), 100);
+                    setTimeout(() => playSound('flip'), 200);
                     showMessage('플랍');
                     break;
                     
                 case 'flop':
                     game.phase = 'turn';
                     game.communityCards.push(...drawCards(1));
+                    playSound('flip');
                     showMessage('턴');
                     break;
                     
                 case 'turn':
                     game.phase = 'river';
                     game.communityCards.push(...drawCards(1));
+                    playSound('flip');
                     showMessage('리버');
                     break;
                     
@@ -1585,12 +1899,26 @@
             if (game.currentPlayer === 'opponent') {
                 setTimeout(aiTurn, 800);
             } else {
+                playSound('turn');
                 showBettingControls();
             }
         }
 
         function showdown() {
             game.phase = 'showdown';
+            
+            // 쇼다운 카드 공개 사운드
+            playSound('reveal');
+            vibrate([30, 20, 30]);
+            
+            // 상대 카드 공개 애니메이션
+            const oppCards = document.querySelectorAll('#opponentCards .card');
+            oppCards.forEach((card, i) => {
+                setTimeout(() => {
+                    card.classList.add('revealing');
+                }, i * 150);
+            });
+            
             updateDisplay();
             
             const myHand = evaluateHand([...game.myCards, ...game.communityCards]);
@@ -1598,13 +1926,16 @@
             
             const comparison = compareHands(myHand, oppHand);
             
-            if (comparison > 0) {
-                endHand('me', HAND_NAMES[myHand.rank]);
-            } else if (comparison < 0) {
-                endHand('opponent', HAND_NAMES[oppHand.rank]);
-            } else {
-                endHand('tie');
-            }
+            // 결과 표시를 약간 지연
+            setTimeout(() => {
+                if (comparison > 0) {
+                    endHand('me', HAND_NAMES[myHand.rank]);
+                } else if (comparison < 0) {
+                    endHand('opponent', HAND_NAMES[oppHand.rank]);
+                } else {
+                    endHand('tie');
+                }
+            }, 500);
         }
 
         function endHand(winner, winningHand = '') {
@@ -1627,6 +1958,18 @@
                 detail.innerHTML = winningHand 
                     ? `${winningHand}으로 +${game.pot} 획득 <span style="color:#4ecca3">+${goldChange}G</span>` 
                     : `+${game.pot} 획득 <span style="color:#4ecca3">+${goldChange}G</span>`;
+                
+                // 승리 사운드 & 애니메이션
+                playSound('win');
+                vibrate([100, 50, 100]);
+                
+                // 승리 이펙트
+                const potEl = document.getElementById('potAmount');
+                if (potEl) potEl.classList.add('pot-animate');
+                
+                // 컨페티 효과
+                createWinConfetti();
+                
             } else if (winner === 'opponent') {
                 game.opponentChips += game.pot;
                 goldChange = -Math.floor(potWon * CHIP_VALUE);
@@ -1635,12 +1978,18 @@
                 detail.innerHTML = winningHand 
                     ? `상대: ${winningHand} <span style="color:#ef4444">${goldChange}G</span>` 
                     : `<span style="color:#ef4444">${goldChange}G</span>`;
+                
+                // 패배 사운드
+                playSound('lose');
+                vibrate([200, 100, 200]);
+                
             } else {
                 game.myChips += game.pot / 2;
                 game.opponentChips += game.pot / 2;
                 title.textContent = '🤝 무승부';
                 title.className = 'result-title tie';
                 detail.textContent = '팟 분배';
+                playSound('chips');
             }
             
             // 골드 변동 적용 (싱글플레이)
@@ -1652,6 +2001,29 @@
             game.pot = 0;
             updateDisplay();
             overlay.classList.add('active');
+        }
+        
+        function createWinConfetti() {
+            const colors = ['#ffd700', '#ff6b6b', '#4ecca3', '#667eea', '#f093fb'];
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.style.cssText = `
+                        position: fixed;
+                        width: 10px;
+                        height: 10px;
+                        background: ${colors[Math.floor(Math.random() * colors.length)]};
+                        left: ${Math.random() * 100}vw;
+                        top: -10px;
+                        border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+                        pointer-events: none;
+                        z-index: 9999;
+                        animation: confettiFall ${2 + Math.random() * 2}s linear forwards;
+                    `;
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 50);
+            }
         }
 
         function showMessage(text) {
