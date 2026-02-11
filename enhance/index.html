@@ -1521,7 +1521,7 @@
             dark_knight: { name: '암흑기사', img: `${ICON_BASE}/lorc/brutal-helm.svg`,      tier: 3, hp: 320, damage: [45, 70],  crit: 15, gold: [950, 1500], type: 'humanoid' },
             succubus: { name: '서큐버스',   img: `${ICON_BASE}/lorc/angel-wings.svg`,        tier: 3, hp: 200, damage: [55, 80],  crit: 28, gold: [850, 1400], type: 'demon' },
             troll:    { name: '트롤',       img: `${ICON_BASE}/lorc/ogre.svg`,               tier: 3, hp: 400, damage: [35, 55],  crit: 8,  gold: [800, 1250], type: 'beast' },
-            gargoyle: { name: '가고일',     img: `${ICON_BASE}/lorc/stone-bust.svg`,         tier: 3, hp: 300, damage: [38, 60],  crit: 12, gold: [780, 1200], type: 'elemental' },
+            gargoyle: { name: '가고일',     img: `${ICON_BASE}/lorc/bat-wing.svg`,           tier: 3, hp: 300, damage: [38, 60],  crit: 12, gold: [780, 1200], type: 'elemental' },
             chimera:  { name: '키메라',     img: `${ICON_BASE}/lorc/double-face-mask.svg`,   tier: 3, hp: 340, damage: [45, 72],  crit: 18, gold: [1000, 1600], type: 'beast' },
             
             // Tier 4 (보스) - 강화된 스탯
@@ -1530,9 +1530,9 @@
             reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/horned-skull.svg`,       tier: 4, hp: 480, damage: [90, 135], crit: 35, gold: [6500, 10000], isBoss: true, type: 'undead' },
             lich:     { name: '👻 리치',     img: `${ICON_BASE}/lorc/grim-reaper.svg`,        tier: 4, hp: 450, damage: [75, 125],  crit: 25, gold: [5800, 9000], isBoss: true, type: 'undead' },
             hydra:    { name: '🐍 히드라',   img: `${ICON_BASE}/lorc/hydra.svg`,              tier: 4, hp: 700, damage: [60, 100],  crit: 18, gold: [4500, 7000], isBoss: true, type: 'dragon' },
-            frost_giant: { name: '❄️ 서리거인', img: `${ICON_BASE}/lorc/ice-golem.svg`, tier: 4, hp: 750, damage: [75, 115], crit: 15, gold: [5500, 8500], isBoss: true, type: 'elemental' },
+            frost_giant: { name: '❄️ 서리거인', img: `${ICON_BASE}/delapouite/giant.svg`, tier: 4, hp: 750, damage: [75, 115], crit: 15, gold: [5500, 8500], isBoss: true, type: 'elemental' },
             balrog:   { name: '🔥 발록',     img: `${ICON_BASE}/lorc/ifrit.svg`,              tier: 4, hp: 650, damage: [85, 130],  crit: 22, gold: [6200, 9500], isBoss: true, type: 'demon' },
-            phoenix:  { name: '🦅 불사조',   img: `${ICON_BASE}/lorc/phoenix-flare.svg`,      tier: 4, hp: 500, damage: [80, 130], crit: 32, gold: [6800, 11000], isBoss: true, type: 'elemental' },
+            phoenix:  { name: '🦅 불사조',   img: `${ICON_BASE}/lorc/raven.svg`,              tier: 4, hp: 500, damage: [80, 130], crit: 32, gold: [6800, 11000], isBoss: true, type: 'elemental' },
             
             // Tier 5 (전설) - 극강 스탯
             ancient_dragon: { name: '🌟 고대용', img: `${ICON_BASE}/delapouite/spiked-dragon-head.svg`, tier: 5, hp: 1200, damage: [110, 180], crit: 28, gold: [15000, 30000], isBoss: true, type: 'dragon' },
@@ -3742,9 +3742,108 @@
             overlay.classList.add('show');
         }
         
+        // ===== 보물상자 시스템 =====
+        function rollTreasureChest() {
+            // 5% 확률로 보물상자 발견
+            if (Math.random() > 0.05) return null;
+            
+            // 보상 티어 결정 (낮은 확률일수록 높은 보상)
+            const roll = Math.random();
+            let gold, tier;
+            
+            if (roll < 0.50) {
+                // 50%: 소형 상자 (1-100G)
+                gold = Math.floor(Math.random() * 100) + 1;
+                tier = 'small';
+            } else if (roll < 0.80) {
+                // 30%: 중형 상자 (100-1,000G)
+                gold = Math.floor(Math.random() * 900) + 100;
+                tier = 'medium';
+            } else if (roll < 0.95) {
+                // 15%: 대형 상자 (1,000-5,000G)
+                gold = Math.floor(Math.random() * 4000) + 1000;
+                tier = 'large';
+            } else if (roll < 0.99) {
+                // 4%: 희귀 상자 (5,000-20,000G)
+                gold = Math.floor(Math.random() * 15000) + 5000;
+                tier = 'rare';
+            } else {
+                // 1%: 전설 상자 (20,000-50,000G)
+                gold = Math.floor(Math.random() * 30000) + 20000;
+                tier = 'legendary';
+            }
+            
+            return { gold, tier };
+        }
+        
+        function showTreasureChest(treasure) {
+            const tierNames = {
+                small: { name: '나무 상자', icon: '📦', color: 'var(--common)' },
+                medium: { name: '철제 상자', icon: '🎁', color: 'var(--magic)' },
+                large: { name: '황금 상자', icon: '🧰', color: 'var(--rare)' },
+                rare: { name: '보석 상자', icon: '💎', color: 'var(--legendary)' },
+                legendary: { name: '용의 보물', icon: '👑', color: 'var(--unique)' }
+            };
+            
+            const tierInfo = tierNames[treasure.tier];
+            
+            playSound('win');
+            vibrate(treasure.tier === 'legendary' ? [100, 50, 100, 50, 200, 100, 300] : [50, 30, 100]);
+            if (treasure.tier === 'rare' || treasure.tier === 'legendary') {
+                fireConfetti();
+            }
+            
+            state.gold += treasure.gold;
+            huntState.totalGoldEarned += treasure.gold;
+            saveState();
+            
+            const popup = document.getElementById('resultPopup');
+            const overlay = document.getElementById('overlay');
+            
+            popup.className = 'result-popup success show';
+            document.getElementById('resultIcon').textContent = tierInfo.icon;
+            document.getElementById('resultText').textContent = `${tierInfo.name} 발견!`;
+            document.getElementById('resultText').style.color = tierInfo.color;
+            document.getElementById('resultDetail').innerHTML = `
+                <div style="font-size:1.5rem;color:var(--gold);animation:pulse 0.5s infinite alternate;">
+                    💰 +${treasure.gold.toLocaleString()}G
+                </div>
+                <div style="color:var(--muted);margin-top:8px;font-size:0.85em;">
+                    사냥 중 보물을 발견했습니다!
+                </div>
+            `;
+            document.getElementById('newWeaponPreview').style.display = 'block';
+            document.getElementById('newWeaponPreview').innerHTML = `
+                <div style="display:flex;gap:10px;margin-top:10px;">
+                    <button class="btn btn-enhance" style="flex:1;" onclick="huntContinueAfterTreasure()">🐉 계속 사냥</button>
+                    <button class="btn btn-secondary" style="flex:1;" onclick="huntStop()">🏠 사냥 종료</button>
+                </div>
+            `;
+            document.getElementById('resultBtn').style.display = 'none';
+            
+            overlay.classList.add('show');
+        }
+        
+        function huntContinueAfterTreasure() {
+            closeResult();
+            document.getElementById('resultBtn').style.display = '';
+            // 보물상자 후에는 HP 회복 없이 바로 몬스터 스폰
+            huntState.monster = spawnMonster();
+            huntState.log = [{ type: 'info', text: `👀 새로운 몬스터 발견!` }];
+            renderHunt();
+        }
+        
         function huntContinue() {
             closeResult();
             document.getElementById('resultBtn').style.display = '';
+            
+            // 보물상자 발견 체크 (다음 몬스터 스폰 전)
+            const treasure = rollTreasureChest();
+            if (treasure) {
+                showTreasureChest(treasure);
+                return;
+            }
+            
             // Spawn next monster, heal a bit
             huntState.monster = spawnMonster();
             huntState.player.hp = Math.min(huntState.player.maxHp, huntState.player.hp + Math.floor(huntState.player.maxHp * 0.3));
