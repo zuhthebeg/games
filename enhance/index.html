@@ -2058,9 +2058,10 @@
             const weaponMasteryBonus = includeMastery ? getWeaponMasteryBonus(weapon) : 0;
             const totalMasteryBonus = globalMasteryBonus + weaponMasteryBonus;
 
-            // 데미지 50% 너프
-            const baseDmgMin = 5;
-            const baseDmgMax = 8;
+            // 나무막대기: 기본 데미지 1 (성장은 동일)
+            const isStick = isWoodenStick(weapon);
+            const baseDmgMin = isStick ? 1 : 5;
+            const baseDmgMax = isStick ? 1 : 8;
             const dmgPerLevel = 2.5;
 
             // 숙련도 보너스 적용 (글로벌 + 무기별)
@@ -2269,7 +2270,7 @@
             const weapon = state.weapon;
             const stats = getWeaponStats(weapon);
             const gradeData = GRADES[weapon.grade];
-            const rates = ENHANCE_RATES[Math.min(weapon.level, 20)];
+            const rates = getEnhanceRates(weapon);
             const canEnhance = state.gold >= rates.cost && weapon.level < 21;
             const showProtection = rates.destroy > 0;
 
@@ -2383,11 +2384,25 @@
             showEnhance();
         }
 
+        // 나무막대기 특수 처리 (99% 성공률)
+        function isWoodenStick(weapon) {
+            return weapon && weapon.name === '나무막대기';
+        }
+        
+        function getEnhanceRates(weapon) {
+            const baseRates = ENHANCE_RATES[weapon.level];
+            if (isWoodenStick(weapon)) {
+                // 나무막대기: 99% 성공, 1% 실패, 파괴 없음!
+                return { success: 99, destroy: 0, cost: baseRates.cost };
+            }
+            return baseRates;
+        }
+        
         function enhance() {
             const weapon = state.weapon;
             if (weapon.level >= 21) return;
 
-            const rates = ENHANCE_RATES[weapon.level];
+            const rates = getEnhanceRates(weapon);
             if (state.gold < rates.cost) return;
 
             state.gold -= rates.cost;
