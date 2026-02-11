@@ -26,6 +26,7 @@
             --rare: #ffcc00;
             --legendary: #ff8000;
             --unique: #00ff80;
+            --mythic: #ff00ff;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -101,6 +102,15 @@
         .weapon-card.rare { border-color: var(--rare); box-shadow: 0 0 25px rgba(255,204,0,0.2); }
         .weapon-card.legendary { border-color: var(--legendary); box-shadow: 0 0 30px rgba(255,128,0,0.3); }
         .weapon-card.unique { border-color: var(--unique); box-shadow: 0 0 35px rgba(0,255,128,0.3); }
+        .weapon-card.mythic { 
+            border-color: var(--mythic); 
+            box-shadow: 0 0 40px rgba(255,0,255,0.4), 0 0 80px rgba(255,0,255,0.2);
+            animation: mythicGlow 2s ease-in-out infinite;
+        }
+        @keyframes mythicGlow {
+            0%, 100% { box-shadow: 0 0 40px rgba(255,0,255,0.4), 0 0 80px rgba(255,0,255,0.2); }
+            50% { box-shadow: 0 0 60px rgba(255,0,255,0.6), 0 0 100px rgba(255,0,255,0.3), 0 0 120px rgba(0,255,255,0.2); }
+        }
 
         .weapon-header {
             display: flex;
@@ -124,6 +134,15 @@
         .weapon-grade.rare { color: var(--rare); }
         .weapon-grade.legendary { color: var(--legendary); }
         .weapon-grade.unique { color: var(--unique); }
+        .weapon-grade.mythic { 
+            color: var(--mythic); 
+            text-shadow: 0 0 10px rgba(255,0,255,0.8);
+            animation: mythicText 1.5s ease-in-out infinite;
+        }
+        @keyframes mythicText {
+            0%, 100% { text-shadow: 0 0 10px rgba(255,0,255,0.8); }
+            50% { text-shadow: 0 0 20px rgba(255,0,255,1), 0 0 30px rgba(0,255,255,0.5); }
+        }
 
         .weapon-name {
             font-size: 1.2rem;
@@ -1560,13 +1579,25 @@
                 color: '#9d9d9d', 
                 multiplier: 1.0,
                 dropRate: 50,
-                prefixes: ['낡은', '평범한', '기본', '단순한']
+                durabilityMod: 2.0,  // 내구도 2배 빨리 소모
+                prefixes: ['낡은', '평범한', '기본', '단순한'],
+                names: {
+                    sword: '나무막대기',
+                    axe: '녹슨 도끼',
+                    spear: '뾰족한 막대',
+                    hammer: '돌망치',
+                    dagger: '부엌칼',
+                    staff: '나뭇가지',
+                    katana: '죽도',
+                    scythe: '농기구 낫'
+                }
             },
             magic: { 
                 name: '고급', 
                 color: '#5555ff', 
                 multiplier: 1.3,
                 dropRate: 30,
+                durabilityMod: 1.5,  // 내구도 1.5배 빨리 소모
                 prefixes: ['강화된', '마력의', '빛나는', '정교한']
             },
             rare: { 
@@ -1574,23 +1605,36 @@
                 color: '#ffcc00', 
                 multiplier: 1.7,
                 dropRate: 14,
+                durabilityMod: 1.0,  // 기준 내구도 소모
                 prefixes: ['정예', '명인의', '고대의', '축복받은']
             },
             legendary: { 
                 name: '전설', 
                 color: '#ff8000', 
                 multiplier: 2.2,
-                dropRate: 5,
-                prefixes: ['전설의', '영웅의', '신성한', '불멸의']
+                dropRate: 4.5,
+                durabilityMod: 0.7,  // 내구도 30% 덜 소모
+                prefixes: ['전설의', '영웅의', '신성한', '불멸의'],
+                names: {
+                    sword: '엑스칼리버',
+                    axe: '월광도끼',
+                    spear: '용살창',
+                    hammer: '천둥망치',
+                    dagger: '그림자 단검',
+                    staff: '대현자의 지팡이',
+                    katana: '천검',
+                    scythe: '저승사자의 낫'
+                }
             },
             unique: { 
                 name: '유니크', 
                 color: '#00ff80', 
                 multiplier: 3.0,
-                dropRate: 1,
+                dropRate: 0.4,
+                durabilityMod: 0.5,  // 내구도 50% 덜 소모
                 prefixes: [''],
                 names: {
-                    sword: '엑스칼리버',
+                    sword: '라그나로크',
                     axe: '레비아탄',
                     spear: '게이볼그',
                     hammer: '묠니르',
@@ -1598,6 +1642,24 @@
                     staff: '현자의 지팡이',
                     katana: '무라마사',
                     scythe: '죽음의 낫'
+                }
+            },
+            mythic: {
+                name: '신화',
+                color: '#ff00ff',
+                multiplier: 4.0,
+                dropRate: 0.1,  // 0.1% 확률
+                durabilityMod: 0.3,  // 내구도 70% 덜 소모
+                prefixes: [''],
+                names: {
+                    sword: '에고소드',
+                    axe: '세계수의 도끼',
+                    spear: '롱기누스',
+                    hammer: '창세의 망치',
+                    dagger: '카오스 블레이드',
+                    staff: '아카식 레코드',
+                    katana: '아마테라스',
+                    scythe: '종언의 낫'
                 }
             }
         };
@@ -1797,7 +1859,8 @@
 
             // Generate name
             let name;
-            if (grade === 'unique' && gradeData.names[type]) {
+            // 특별 이름이 있는 등급 (common, legendary, unique, mythic)
+            if (gradeData.names && gradeData.names[type]) {
                 name = gradeData.names[type];
             } else {
                 const prefix = gradeData.prefixes[Math.floor(Math.random() * gradeData.prefixes.length)];
@@ -1805,7 +1868,7 @@
             }
 
             // 랜덤 속성 부여 (등급에 따라 확률 증가)
-            const elementChance = { common: 0.1, magic: 0.3, rare: 0.5, legendary: 0.7, unique: 1.0 };
+            const elementChance = { common: 0.1, magic: 0.3, rare: 0.5, legendary: 0.7, unique: 1.0, mythic: 1.0 };
             let element = 'none';
             if (Math.random() < elementChance[grade]) {
                 const elements = ['fire', 'ice', 'lightning', 'silver', 'poison', 'holy'];
@@ -3567,10 +3630,15 @@
             }
             state.weapon.weaponMastery.attacks++;
             
-            // 내구도 감소 (200타에 약 10% = 20타당 1% 감소)
+            // 내구도 감소 (등급별 차등 적용)
+            // 기준: 희귀(rare) = 20타당 1% 감소
+            // 일반: 10타당 1%, 고급: 13타당 1%, 전설: 29타당 1%, 유니크: 40타당 1%, 신화: 67타당 1%
             if (!state.weapon._durabilityCounter) state.weapon._durabilityCounter = 0;
             state.weapon._durabilityCounter++;
-            if (state.weapon._durabilityCounter >= 20) {
+            const gradeData = GRADES[state.weapon.grade] || GRADES.rare;
+            const durabilityMod = gradeData.durabilityMod || 1.0;
+            const durabilityThreshold = Math.floor(20 / durabilityMod);  // 낮을수록 빨리 감소
+            if (state.weapon._durabilityCounter >= durabilityThreshold) {
                 state.weapon._durabilityCounter = 0;
                 state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - 1);
             }
