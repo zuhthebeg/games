@@ -1045,7 +1045,7 @@
             background: var(--card);
             border-radius: 10px;
             padding: 12px;
-            max-height: 140px;
+            max-height: 200px;
             overflow-y: auto;
         }
 
@@ -2380,8 +2380,11 @@
         }
 
         async function handleBattleEvent(type, data) {
+            // Normalize polled events: { seq, type, payload: {...} } → extract payload
+            const payload = data.payload || data;
+            
             if (type === 'state_update') {
-                const gs = data.gameState || data;
+                const gs = payload.gameState || payload;
                 const myId = mpUI.getClient().getMyUserId();
                 
                 // Play animations if present
@@ -2397,17 +2400,35 @@
                     }
                 }
                 
-                battleState = data;
+                battleState = payload;
                 renderBattle();
+            } else if (type === 'action') {
+                // Action event from polling - may contain nested game events
+                const actionData = payload;
+                if (actionData.events && Array.isArray(actionData.events)) {
+                    for (const evt of actionData.events) {
+                        await handleBattleEvent(evt.type, evt.payload || evt);
+                    }
+                }
             } else if (type === 'game_end' || type === 'game_ended') {
-                if (data.winnerId === mpUI.getClient().getMyUserId()) {
+                // Normalize winnerId from various structures:
+                // Direct: { winnerId, prizeGold }
+                // Polled game_ended: { result: { winnerId, reason } }
+                // Polled action event: { winnerId, prizeGold, ... }
+                const result = payload.result || payload;
+                const winnerId = result.winnerId;
+                const prizeGold = result.prizeGold || payload.prizeGold || 0;
+                
+                const normalizedData = { winnerId, prizeGold };
+                
+                if (winnerId === mpUI.getClient().getMyUserId()) {
                     playSound('success');
                     vibrate([100, 50, 100, 50, 200]);
                 } else {
                     playSound('destroy');
                     vibrate([200, 100, 200]);
                 }
-                showBattleResult(data);
+                showBattleResult(normalizedData);
             }
         }
 
@@ -2581,7 +2602,7 @@
                         </div>
 
                         <div class="battle-log" id="battleLog">
-                            ${(gs.log || []).slice(-6).map(entry => `
+                            ${(gs.log || []).slice(-8).reverse().map(entry => `
                                 <div class="log-entry ${entry.type || ''}">${entry.text}</div>
                             `).join('')}
                         </div>
