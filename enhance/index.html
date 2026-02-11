@@ -170,60 +170,231 @@
         /* Enhancement Level Backgrounds */
         .weapon-card.level-0-3 { background: linear-gradient(135deg, #1a1a1a 0%, #252525 100%); }
         .weapon-card.level-4-7 { background: linear-gradient(135deg, #1a1a2a 0%, #252540 100%); }
+        
+        /* +8~9: 파란 오라 + 흔들림 */
         .weapon-card.level-8-9 { 
-            background: linear-gradient(135deg, #1a2a3a 0%, #2a4050 100%); 
-            animation: glowPulse8 3s ease-in-out infinite;
+            background: linear-gradient(135deg, #0a1525 0%, #1a3050 100%);
+            animation: auraPulse8 2s ease-in-out infinite, auraShake 4s ease-in-out infinite;
+            position: relative;
         }
-        .weapon-card.level-10-12 { 
-            background: linear-gradient(135deg, #2a1a3a 0%, #4a2a5a 100%); 
-            animation: glowPulse10 2.5s ease-in-out infinite;
-        }
-        .weapon-card.level-13-15 { 
-            background: linear-gradient(135deg, #3a1a1a 0%, #5a2a2a 100%); 
-            animation: glowPulse13 2s ease-in-out infinite;
-        }
-        .weapon-card.level-16-18 { 
-            background: linear-gradient(135deg, #3a2a1a 0%, #6a4a1a 100%); 
-            animation: glowPulse16 1.5s ease-in-out infinite;
-            box-shadow: 0 0 30px rgba(255,150,0,0.3);
-        }
-        .weapon-card.level-19-20 { 
-            background: linear-gradient(45deg, #1a0a2a, #2a1a4a, #1a3a4a, #2a1a4a, #1a0a2a);
-            background-size: 400% 400%;
-            animation: rainbowBg 4s ease infinite, glowPulse20 1s ease-in-out infinite;
-            box-shadow: 0 0 50px rgba(255,100,255,0.5), 0 0 100px rgba(100,200,255,0.3);
-        }
-        .weapon-card.level-21 { 
-            background: linear-gradient(45deg, #ff0080, #ff8c00, #40e0d0, #ff0080);
-            background-size: 600% 600%;
-            animation: rainbowBg 2s ease infinite;
-            box-shadow: 0 0 60px rgba(255,0,128,0.6), 0 0 120px rgba(255,140,0,0.4);
+        .weapon-card.level-8-9::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            background: linear-gradient(45deg, #00f, #0ff, #00f);
+            border-radius: 14px;
+            z-index: -1;
+            animation: borderRotate 3s linear infinite;
+            filter: blur(8px);
+            opacity: 0.6;
         }
         
-        @keyframes glowPulse8 {
-            0%, 100% { box-shadow: 0 0 15px rgba(100,150,255,0.2); }
-            50% { box-shadow: 0 0 25px rgba(100,150,255,0.4); }
+        /* +10~12: 보라 오라 + 떠다니는 입자 */
+        .weapon-card.level-10-12 { 
+            background: linear-gradient(135deg, #150a25 0%, #351a55 100%);
+            animation: auraPulse10 1.8s ease-in-out infinite;
+            position: relative;
         }
-        @keyframes glowPulse10 {
-            0%, 100% { box-shadow: 0 0 20px rgba(150,100,255,0.3); }
-            50% { box-shadow: 0 0 35px rgba(150,100,255,0.5); }
+        .weapon-card.level-10-12::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            background: linear-gradient(45deg, #8000ff, #ff00ff, #8000ff, #00ffff);
+            background-size: 300% 300%;
+            border-radius: 14px;
+            z-index: -1;
+            animation: borderRotate 2s linear infinite, rainbowBg 3s ease infinite;
+            filter: blur(10px);
+            opacity: 0.7;
         }
-        @keyframes glowPulse13 {
-            0%, 100% { box-shadow: 0 0 25px rgba(255,100,100,0.3); }
-            50% { box-shadow: 0 0 45px rgba(255,100,100,0.6); }
+        .weapon-card.level-10-12::after {
+            content: '✨';
+            position: absolute;
+            font-size: 1.5rem;
+            animation: floatParticle 2s ease-in-out infinite;
+            top: 10px; right: 10px;
         }
-        @keyframes glowPulse16 {
-            0%, 100% { box-shadow: 0 0 30px rgba(255,150,0,0.3); }
-            50% { box-shadow: 0 0 60px rgba(255,200,0,0.6); }
+        
+        /* +13~15: 붉은 화염 오라 */
+        .weapon-card.level-13-15 { 
+            background: linear-gradient(135deg, #200a0a 0%, #401515 100%);
+            animation: auraPulse13 1.5s ease-in-out infinite, fireFlicker 0.1s linear infinite;
+            position: relative;
         }
-        @keyframes glowPulse20 {
-            0%, 100% { box-shadow: 0 0 50px rgba(255,100,255,0.5), 0 0 100px rgba(100,200,255,0.3); }
-            50% { box-shadow: 0 0 80px rgba(255,100,255,0.8), 0 0 150px rgba(100,200,255,0.5); }
+        .weapon-card.level-13-15::before {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            background: linear-gradient(45deg, #ff0000, #ff6600, #ff0000, #ffff00);
+            background-size: 400% 400%;
+            border-radius: 15px;
+            z-index: -1;
+            animation: borderRotate 1.5s linear infinite, rainbowBg 2s ease infinite;
+            filter: blur(12px);
+            opacity: 0.8;
+        }
+        .weapon-card.level-13-15::after {
+            content: '🔥';
+            position: absolute;
+            font-size: 1.2rem;
+            animation: floatParticle 1.5s ease-in-out infinite;
+            top: 5px; right: 15px;
+        }
+        
+        /* +16~18: 황금 전설 오라 */
+        .weapon-card.level-16-18 { 
+            background: linear-gradient(135deg, #1a1505 0%, #3a2a0a 100%);
+            animation: auraPulse16 1.2s ease-in-out infinite;
+            position: relative;
+        }
+        .weapon-card.level-16-18::before {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            background: linear-gradient(45deg, #ffd700, #ff8c00, #ffd700, #fff);
+            background-size: 400% 400%;
+            border-radius: 16px;
+            z-index: -1;
+            animation: borderRotate 1s linear infinite, rainbowBg 1.5s ease infinite;
+            filter: blur(15px);
+            opacity: 0.9;
+        }
+        .weapon-card.level-16-18::after {
+            content: '⭐💫';
+            position: absolute;
+            font-size: 1rem;
+            animation: floatParticle 1s ease-in-out infinite, sparkle 0.5s ease infinite;
+            top: 3px; right: 10px;
+        }
+        
+        /* +19~20: 우주 오라 */
+        .weapon-card.level-19-20 { 
+            background: linear-gradient(45deg, #0a0020, #200040, #002040, #100030);
+            background-size: 400% 400%;
+            animation: rainbowBg 4s ease infinite, auraPulse20 1s ease-in-out infinite;
+            position: relative;
+        }
+        .weapon-card.level-19-20::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            background: conic-gradient(from 0deg, #ff0080, #ff8c00, #40e0d0, #00ff00, #0080ff, #8000ff, #ff0080);
+            border-radius: 18px;
+            z-index: -1;
+            animation: borderRotate 2s linear infinite;
+            filter: blur(20px);
+            opacity: 1;
+        }
+        .weapon-card.level-19-20::after {
+            content: '🌟✨💎';
+            position: absolute;
+            font-size: 1rem;
+            animation: floatParticle 0.8s ease-in-out infinite;
+            top: 0; right: 5px;
+        }
+        
+        /* +21: 신급 무기 - 최고 효과 */
+        .weapon-card.level-21 { 
+            background: linear-gradient(45deg, #000, #100010, #001010, #101000, #000);
+            background-size: 600% 600%;
+            animation: rainbowBg 2s ease infinite;
+            position: relative;
+        }
+        .weapon-card.level-21::before {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            background: conic-gradient(from 0deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+            border-radius: 20px;
+            z-index: -1;
+            animation: borderRotate 1s linear infinite;
+            filter: blur(25px);
+            opacity: 1;
+        }
+        .weapon-card.level-21::after {
+            content: '👑🌈⚡💎✨';
+            position: absolute;
+            font-size: 0.9rem;
+            animation: floatParticle 0.5s ease-in-out infinite, sparkle 0.3s ease infinite;
+            top: -5px; right: 0;
+        }
+        
+        @keyframes auraPulse8 {
+            0%, 100% { box-shadow: 0 0 20px rgba(0,150,255,0.3), inset 0 0 20px rgba(0,150,255,0.1); }
+            50% { box-shadow: 0 0 40px rgba(0,150,255,0.5), inset 0 0 30px rgba(0,150,255,0.2); }
+        }
+        @keyframes auraPulse10 {
+            0%, 100% { box-shadow: 0 0 25px rgba(150,0,255,0.4), inset 0 0 25px rgba(150,0,255,0.15); }
+            50% { box-shadow: 0 0 50px rgba(150,0,255,0.7), inset 0 0 40px rgba(150,0,255,0.3); }
+        }
+        @keyframes auraPulse13 {
+            0%, 100% { box-shadow: 0 0 30px rgba(255,50,0,0.5), inset 0 0 30px rgba(255,50,0,0.2); }
+            50% { box-shadow: 0 0 60px rgba(255,100,0,0.8), inset 0 0 50px rgba(255,50,0,0.35); }
+        }
+        @keyframes auraPulse16 {
+            0%, 100% { box-shadow: 0 0 40px rgba(255,200,0,0.6), inset 0 0 35px rgba(255,200,0,0.25); }
+            50% { box-shadow: 0 0 80px rgba(255,220,0,1), inset 0 0 60px rgba(255,200,0,0.4); }
+        }
+        @keyframes auraPulse20 {
+            0%, 100% { box-shadow: 0 0 50px rgba(255,0,255,0.6), 0 0 100px rgba(0,255,255,0.4); }
+            50% { box-shadow: 0 0 100px rgba(255,0,255,1), 0 0 150px rgba(0,255,255,0.7); }
+        }
+        @keyframes borderRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
         @keyframes rainbowBg {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
+        }
+        @keyframes auraShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+        @keyframes floatParticle {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
+            50% { transform: translateY(-8px) scale(1.2); opacity: 0.7; }
+        }
+        @keyframes sparkle {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.5); }
+        }
+        @keyframes fireFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.95; }
+        }
+        
+        /* 고강화 성공 이펙트 */
+        @keyframes particleExplode {
+            0% { 
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% { 
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+        @keyframes waveExpand {
+            0% { 
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(10);
+                opacity: 0;
+            }
+        }
+        @keyframes flashEffect {
+            0% { opacity: 0.8; }
+            100% { opacity: 0; }
+        }
+        @keyframes screenShake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
         }
         
         /* 럭키드로우 효과 */
@@ -1328,34 +1499,34 @@
             harpy:    { name: '하피',       img: `${ICON_BASE}/lorc/harpy.svg`,              tier: 2, hp: 75,  damage: [16, 26],  crit: 20, gold: [280, 480], type: 'beast' },
             elemental_fire: { name: '화염정령', img: `${ICON_BASE}/lorc/ifrit.svg`,          tier: 2, hp: 85,  damage: [20, 30],  crit: 8,  gold: [320, 520], type: 'elemental' },
             
-            // Tier 3 (어려움)
-            beast:    { name: '마수',       img: `${ICON_BASE}/lorc/beast-eye.svg`,          tier: 3, hp: 150, damage: [25, 40],  crit: 12, gold: [500, 800], type: 'beast' },
-            minotaur: { name: '미노타우로스', img: `${ICON_BASE}/lorc/minotaur.svg`,          tier: 3, hp: 200, damage: [30, 45],  crit: 8,  gold: [600, 1000], type: 'beast' },
-            ghoul:    { name: '구울',       img: `${ICON_BASE}/lorc/gooey-daemon.svg`,       tier: 3, hp: 180, damage: [35, 50],  crit: 10, gold: [700, 1100], type: 'undead' },
-            orc:      { name: '오크 전사',   img: `${ICON_BASE}/delapouite/orc-head.svg`,     tier: 3, hp: 170, damage: [28, 42],  crit: 10, gold: [550, 900], type: 'humanoid' },
-            vampire:  { name: '뱀파이어',   img: `${ICON_BASE}/delapouite/vampire-dracula.svg`, tier: 3, hp: 160, damage: [32, 48], crit: 18, gold: [650, 1050], type: 'undead' },
-            golem:    { name: '골렘',       img: `${ICON_BASE}/delapouite/rock-golem.svg`,   tier: 3, hp: 250, damage: [22, 35],  crit: 3,  gold: [580, 950], type: 'elemental' },
-            wyvern:   { name: '와이번',     img: `${ICON_BASE}/lorc/wyvern.svg`,             tier: 3, hp: 190, damage: [30, 50],  crit: 15, gold: [750, 1200], type: 'dragon' },
-            dark_knight: { name: '암흑기사', img: `${ICON_BASE}/lorc/brutal-helm.svg`,      tier: 3, hp: 220, damage: [35, 55],  crit: 12, gold: [800, 1300], type: 'humanoid' },
-            succubus: { name: '서큐버스',   img: `${ICON_BASE}/lorc/angel-wings.svg`,        tier: 3, hp: 140, damage: [40, 60],  crit: 25, gold: [700, 1150], type: 'demon' },
-            troll:    { name: '트롤',       img: `${ICON_BASE}/lorc/ogre.svg`,               tier: 3, hp: 280, damage: [25, 40],  crit: 5,  gold: [650, 1000], type: 'beast' },
-            gargoyle: { name: '가고일',     img: `${ICON_BASE}/lorc/stone-bust.svg`,         tier: 3, hp: 200, damage: [28, 45],  crit: 10, gold: [620, 980], type: 'elemental' },
-            chimera:  { name: '키메라',     img: `${ICON_BASE}/lorc/double-face-mask.svg`,   tier: 3, hp: 230, damage: [32, 52],  crit: 15, gold: [850, 1400], type: 'beast' },
+            // Tier 3 (어려움) - 강화된 스탯
+            beast:    { name: '마수',       img: `${ICON_BASE}/lorc/beast-eye.svg`,          tier: 3, hp: 220, damage: [35, 55],  crit: 15, gold: [600, 1000], type: 'beast' },
+            minotaur: { name: '미노타우로스', img: `${ICON_BASE}/lorc/minotaur.svg`,          tier: 3, hp: 300, damage: [40, 60],  crit: 12, gold: [750, 1200], type: 'beast' },
+            ghoul:    { name: '구울',       img: `${ICON_BASE}/lorc/gooey-daemon.svg`,       tier: 3, hp: 260, damage: [45, 65],  crit: 15, gold: [850, 1350], type: 'undead' },
+            orc:      { name: '오크 전사',   img: `${ICON_BASE}/delapouite/orc-head.svg`,     tier: 3, hp: 250, damage: [38, 58],  crit: 12, gold: [700, 1100], type: 'humanoid' },
+            vampire:  { name: '뱀파이어',   img: `${ICON_BASE}/delapouite/vampire-dracula.svg`, tier: 3, hp: 230, damage: [42, 65], crit: 22, gold: [800, 1300], type: 'undead' },
+            golem:    { name: '골렘',       img: `${ICON_BASE}/delapouite/rock-golem.svg`,   tier: 3, hp: 380, damage: [30, 50],  crit: 5,  gold: [720, 1150], type: 'elemental' },
+            wyvern:   { name: '와이번',     img: `${ICON_BASE}/lorc/wyvern.svg`,             tier: 3, hp: 280, damage: [40, 65],  crit: 18, gold: [900, 1450], type: 'dragon' },
+            dark_knight: { name: '암흑기사', img: `${ICON_BASE}/lorc/brutal-helm.svg`,      tier: 3, hp: 320, damage: [45, 70],  crit: 15, gold: [950, 1500], type: 'humanoid' },
+            succubus: { name: '서큐버스',   img: `${ICON_BASE}/lorc/angel-wings.svg`,        tier: 3, hp: 200, damage: [55, 80],  crit: 28, gold: [850, 1400], type: 'demon' },
+            troll:    { name: '트롤',       img: `${ICON_BASE}/lorc/ogre.svg`,               tier: 3, hp: 400, damage: [35, 55],  crit: 8,  gold: [800, 1250], type: 'beast' },
+            gargoyle: { name: '가고일',     img: `${ICON_BASE}/lorc/stone-bust.svg`,         tier: 3, hp: 300, damage: [38, 60],  crit: 12, gold: [780, 1200], type: 'elemental' },
+            chimera:  { name: '키메라',     img: `${ICON_BASE}/lorc/double-face-mask.svg`,   tier: 3, hp: 340, damage: [45, 72],  crit: 18, gold: [1000, 1600], type: 'beast' },
             
-            // Tier 4 (보스)
-            dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/double-dragon.svg`,      tier: 4, hp: 400, damage: [50, 80],  crit: 20, gold: [3000, 5000], isBoss: true, type: 'dragon' },
-            demon:    { name: '👹 데몬',     img: `${ICON_BASE}/lorc/daemon-skull.svg`,       tier: 4, hp: 350, damage: [60, 90],  crit: 25, gold: [4000, 6000], isBoss: true, type: 'demon' },
-            reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/horned-skull.svg`,       tier: 4, hp: 300, damage: [70, 100], crit: 30, gold: [5000, 8000], isBoss: true, type: 'undead' },
-            lich:     { name: '👻 리치',     img: `${ICON_BASE}/lorc/grim-reaper.svg`,        tier: 4, hp: 280, damage: [55, 95],  crit: 22, gold: [4500, 7000], isBoss: true, type: 'undead' },
-            hydra:    { name: '🐍 히드라',   img: `${ICON_BASE}/lorc/hydra.svg`,              tier: 4, hp: 450, damage: [45, 75],  crit: 15, gold: [3500, 5500], isBoss: true, type: 'dragon' },
-            frost_giant: { name: '❄️ 서리거인', img: `${ICON_BASE}/lorc/ice-golem.svg`, tier: 4, hp: 500, damage: [55, 85], crit: 12, gold: [4200, 6500], isBoss: true, type: 'elemental' },
-            balrog:   { name: '🔥 발록',     img: `${ICON_BASE}/lorc/ifrit.svg`,              tier: 4, hp: 420, damage: [65, 95],  crit: 18, gold: [4800, 7200], isBoss: true, type: 'demon' },
-            phoenix:  { name: '🦅 불사조',   img: `${ICON_BASE}/lorc/phoenix-flare.svg`,      tier: 4, hp: 320, damage: [60, 100], crit: 28, gold: [5200, 8500], isBoss: true, type: 'elemental' },
+            // Tier 4 (보스) - 강화된 스탯
+            dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/double-dragon.svg`,      tier: 4, hp: 600, damage: [70, 110],  crit: 22, gold: [4000, 6500], isBoss: true, type: 'dragon' },
+            demon:    { name: '👹 데몬',     img: `${ICON_BASE}/lorc/daemon-skull.svg`,       tier: 4, hp: 550, damage: [80, 120],  crit: 28, gold: [5000, 7500], isBoss: true, type: 'demon' },
+            reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/horned-skull.svg`,       tier: 4, hp: 480, damage: [90, 135], crit: 35, gold: [6500, 10000], isBoss: true, type: 'undead' },
+            lich:     { name: '👻 리치',     img: `${ICON_BASE}/lorc/grim-reaper.svg`,        tier: 4, hp: 450, damage: [75, 125],  crit: 25, gold: [5800, 9000], isBoss: true, type: 'undead' },
+            hydra:    { name: '🐍 히드라',   img: `${ICON_BASE}/lorc/hydra.svg`,              tier: 4, hp: 700, damage: [60, 100],  crit: 18, gold: [4500, 7000], isBoss: true, type: 'dragon' },
+            frost_giant: { name: '❄️ 서리거인', img: `${ICON_BASE}/lorc/ice-golem.svg`, tier: 4, hp: 750, damage: [75, 115], crit: 15, gold: [5500, 8500], isBoss: true, type: 'elemental' },
+            balrog:   { name: '🔥 발록',     img: `${ICON_BASE}/lorc/ifrit.svg`,              tier: 4, hp: 650, damage: [85, 130],  crit: 22, gold: [6200, 9500], isBoss: true, type: 'demon' },
+            phoenix:  { name: '🦅 불사조',   img: `${ICON_BASE}/lorc/phoenix-flare.svg`,      tier: 4, hp: 500, damage: [80, 130], crit: 32, gold: [6800, 11000], isBoss: true, type: 'elemental' },
             
-            // Tier 5 (전설)
-            ancient_dragon: { name: '🌟 고대용', img: `${ICON_BASE}/delapouite/spiked-dragon-head.svg`, tier: 5, hp: 800, damage: [80, 130], crit: 25, gold: [10000, 20000], isBoss: true, type: 'dragon' },
-            demon_lord:     { name: '😈 마왕',   img: `${ICON_BASE}/lorc/diablo-skull.svg`,     tier: 5, hp: 700, damage: [90, 140], crit: 30, gold: [12000, 22000], isBoss: true, type: 'demon' },
-            death_knight:   { name: '⚔️ 죽음의기사', img: `${ICON_BASE}/lorc/grim-reaper.svg`,  tier: 5, hp: 600, damage: [100, 150], crit: 35, gold: [15000, 25000], isBoss: true, type: 'undead' }
+            // Tier 5 (전설) - 극강 스탯
+            ancient_dragon: { name: '🌟 고대용', img: `${ICON_BASE}/delapouite/spiked-dragon-head.svg`, tier: 5, hp: 1200, damage: [110, 180], crit: 28, gold: [15000, 30000], isBoss: true, type: 'dragon' },
+            demon_lord:     { name: '😈 마왕',   img: `${ICON_BASE}/lorc/diablo-skull.svg`,     tier: 5, hp: 1000, damage: [130, 200], crit: 35, gold: [18000, 35000], isBoss: true, type: 'demon' },
+            death_knight:   { name: '⚔️ 죽음의기사', img: `${ICON_BASE}/lorc/grim-reaper.svg`,  tier: 5, hp: 900, damage: [150, 220], crit: 40, gold: [22000, 40000], isBoss: true, type: 'undead' }
         };
 
         /*
@@ -2211,6 +2382,11 @@
                 text = '강화 성공!';
                 detail = `+${from} → +${to}`;
                 textColor = 'var(--success)';
+                
+                // 고강화 성공 시 특별 이펙트
+                if (to >= 8) {
+                    createEnhanceSuccessEffect(to);
+                }
             } else if (type === 'destroy') {
                 if (newWeapon) {
                     popupClass += ' destroy';
@@ -2254,6 +2430,102 @@
 
             // Confetti for big milestones
             if (type === 'success' && (to >= 10 || to === 7)) fireConfetti();
+        }
+        
+        function createEnhanceSuccessEffect(level) {
+            const colors = {
+                8: ['#00aaff', '#00ffff', '#0066ff'],
+                9: ['#00ccff', '#00ffff', '#6666ff'],
+                10: ['#aa00ff', '#ff00ff', '#6600ff'],
+                11: ['#cc00ff', '#ff66ff', '#9900ff'],
+                12: ['#ff00cc', '#ff66ff', '#cc00ff'],
+                13: ['#ff0000', '#ff6600', '#ffcc00'],
+                14: ['#ff3300', '#ff9900', '#ffff00'],
+                15: ['#ff0066', '#ff6600', '#ff0000'],
+                16: ['#ffd700', '#ffaa00', '#ffff00'],
+                17: ['#ffcc00', '#fff000', '#ffd700'],
+                18: ['#fff000', '#ffffff', '#ffd700'],
+                19: ['#ff00ff', '#00ffff', '#ffff00'],
+                20: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'],
+                21: ['#ff0000', '#ff8000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff']
+            };
+            
+            const effectColors = colors[level] || colors[8];
+            const particleCount = Math.min(level * 5, 80);
+            const duration = 1500 + (level * 100);
+            
+            // 화면 흔들림 (고강화일수록 강하게)
+            if (level >= 10) {
+                document.body.style.animation = `screenShake ${0.1 + (level - 10) * 0.02}s ease-in-out`;
+                setTimeout(() => document.body.style.animation = '', 500);
+            }
+            
+            // 폭발 파티클 생성
+            for (let i = 0; i < particleCount; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    const size = 5 + Math.random() * (level > 15 ? 20 : 10);
+                    const color = effectColors[Math.floor(Math.random() * effectColors.length)];
+                    const angle = (Math.random() * 360) * (Math.PI / 180);
+                    const velocity = 100 + Math.random() * (level * 15);
+                    const startX = window.innerWidth / 2;
+                    const startY = window.innerHeight / 2;
+                    
+                    particle.style.cssText = `
+                        position: fixed;
+                        width: ${size}px;
+                        height: ${size}px;
+                        background: ${color};
+                        border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+                        left: ${startX}px;
+                        top: ${startY}px;
+                        pointer-events: none;
+                        z-index: 10000;
+                        box-shadow: 0 0 ${size * 2}px ${color};
+                        animation: particleExplode ${duration}ms ease-out forwards;
+                        --tx: ${Math.cos(angle) * velocity}px;
+                        --ty: ${Math.sin(angle) * velocity}px;
+                    `;
+                    
+                    document.body.appendChild(particle);
+                    setTimeout(() => particle.remove(), duration);
+                }, i * 15);
+            }
+            
+            // +15 이상: 원형 파동 효과
+            if (level >= 15) {
+                const wave = document.createElement('div');
+                wave.style.cssText = `
+                    position: fixed;
+                    width: 100px;
+                    height: 100px;
+                    border: 3px solid ${effectColors[0]};
+                    border-radius: 50%;
+                    left: 50%;
+                    top: 50%;
+                    transform: translate(-50%, -50%);
+                    pointer-events: none;
+                    z-index: 9999;
+                    animation: waveExpand 1s ease-out forwards;
+                `;
+                document.body.appendChild(wave);
+                setTimeout(() => wave.remove(), 1000);
+            }
+            
+            // +18 이상: 플래시 효과
+            if (level >= 18) {
+                const flash = document.createElement('div');
+                flash.style.cssText = `
+                    position: fixed;
+                    inset: 0;
+                    background: white;
+                    pointer-events: none;
+                    z-index: 9998;
+                    animation: flashEffect 0.3s ease-out forwards;
+                `;
+                document.body.appendChild(flash);
+                setTimeout(() => flash.remove(), 300);
+            }
         }
 
         function closeResult() {
