@@ -523,9 +523,9 @@
             background: var(--card);
             border: 2px solid var(--card-border);
             border-radius: 16px;
-            padding: 20px;
+            padding: 12px;
             text-align: center;
-            margin-bottom: 16px;
+            margin-bottom: 10px;
             position: relative;
         }
 
@@ -559,9 +559,9 @@
         }
 
         .monster-img {
-            width: 100px;
-            height: 100px;
-            margin: 16px auto;
+            width: 70px;
+            height: 70px;
+            margin: 8px auto;
             filter: drop-shadow(0 0 10px #ff6b6b);
         }
 
@@ -1324,6 +1324,11 @@
             vampire:  { name: '뱀파이어',   img: `${ICON_BASE}/delapouite/vampire-dracula.svg`, tier: 3, hp: 160, damage: [32, 48], crit: 18, gold: [650, 1050], type: 'undead' },
             golem:    { name: '골렘',       img: `${ICON_BASE}/delapouite/rock-golem.svg`,   tier: 3, hp: 250, damage: [22, 35],  crit: 3,  gold: [580, 950], type: 'elemental' },
             wyvern:   { name: '와이번',     img: `${ICON_BASE}/lorc/wyvern.svg`,             tier: 3, hp: 190, damage: [30, 50],  crit: 15, gold: [750, 1200], type: 'dragon' },
+            dark_knight: { name: '암흑기사', img: `${ICON_BASE}/lorc/viking-head.svg`,       tier: 3, hp: 220, damage: [35, 55],  crit: 12, gold: [800, 1300], type: 'humanoid' },
+            succubus: { name: '서큐버스',   img: `${ICON_BASE}/lorc/fairy.svg`,              tier: 3, hp: 140, damage: [40, 60],  crit: 25, gold: [700, 1150], type: 'demon' },
+            troll:    { name: '트롤',       img: `${ICON_BASE}/delapouite/troll.svg`,        tier: 3, hp: 280, damage: [25, 40],  crit: 5,  gold: [650, 1000], type: 'beast' },
+            gargoyle: { name: '가고일',     img: `${ICON_BASE}/lorc/gargoyle.svg`,           tier: 3, hp: 200, damage: [28, 45],  crit: 10, gold: [620, 980], type: 'elemental' },
+            chimera:  { name: '키메라',     img: `${ICON_BASE}/lorc/lion.svg`,               tier: 3, hp: 230, damage: [32, 52],  crit: 15, gold: [850, 1400], type: 'beast' },
             
             // Tier 4 (보스)
             dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/double-dragon.svg`,      tier: 4, hp: 400, damage: [50, 80],  crit: 20, gold: [3000, 5000], isBoss: true, type: 'dragon' },
@@ -1331,6 +1336,9 @@
             reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/horned-skull.svg`,       tier: 4, hp: 300, damage: [70, 100], crit: 30, gold: [5000, 8000], isBoss: true, type: 'undead' },
             lich:     { name: '👻 리치',     img: `${ICON_BASE}/lorc/grim-reaper.svg`,        tier: 4, hp: 280, damage: [55, 95],  crit: 22, gold: [4500, 7000], isBoss: true, type: 'undead' },
             hydra:    { name: '🐍 히드라',   img: `${ICON_BASE}/lorc/hydra.svg`,              tier: 4, hp: 450, damage: [45, 75],  crit: 15, gold: [3500, 5500], isBoss: true, type: 'dragon' },
+            frost_giant: { name: '❄️ 프로스트자이언트', img: `${ICON_BASE}/lorc/frozen-orb.svg`, tier: 4, hp: 500, damage: [55, 85], crit: 12, gold: [4200, 6500], isBoss: true, type: 'elemental' },
+            balrog:   { name: '🔥 발록',     img: `${ICON_BASE}/lorc/daemon-skull.svg`,       tier: 4, hp: 420, damage: [65, 95],  crit: 18, gold: [4800, 7200], isBoss: true, type: 'demon' },
+            phoenix:  { name: '🦅 피닉스',   img: `${ICON_BASE}/lorc/bird-claw.svg`,          tier: 4, hp: 320, damage: [60, 100], crit: 28, gold: [5200, 8500], isBoss: true, type: 'elemental' },
             
             // Tier 5 (전설)
             ancient_dragon: { name: '🌟 고대용', img: `${ICON_BASE}/delapouite/spiked-dragon-head.svg`, tier: 5, hp: 800, damage: [80, 130], crit: 25, gold: [10000, 20000], isBoss: true, type: 'dragon' },
@@ -1689,11 +1697,12 @@
                 element = 'none'; // 속성 없음 고정
                 
             } else if (dropSource === 'enhance_destroy_low') {
-                // +6 이하 강화 파괴: 랜덤 등급
-                if (gradeRoll < 5) grade = 'legendary';
-                else if (gradeRoll < 20) grade = 'rare';
-                else if (gradeRoll < 50) grade = 'magic';
-                else grade = 'common';
+                // +6 이하 강화 파괴: 완전 랜덤 등급 (전설/유니크도 가능!)
+                if (gradeRoll < 2) grade = 'unique';       // 2%
+                else if (gradeRoll < 10) grade = 'legendary'; // 8%
+                else if (gradeRoll < 30) grade = 'rare';    // 20%
+                else if (gradeRoll < 60) grade = 'magic';   // 30%
+                else grade = 'common';                      // 40%
                 // 랜덤 속성
                 
             } else if (dropSource === 'durability_break') {
@@ -2919,8 +2928,8 @@
                         </div>
                     </div>
 
-                    <div class="battle-log" id="huntLog" style="max-height:100px;">
-                        ${huntState.log.slice(-5).map(entry => `
+                    <div class="battle-log" id="huntLog" style="height:72px;max-height:72px;overflow:hidden;">
+                        ${huntState.log.slice(-3).reverse().map(entry => `
                             <div class="log-entry ${entry.type}">${entry.text}</div>
                         `).join('')}
                     </div>
