@@ -1268,8 +1268,12 @@
             lightning: { name: '번개', icon: '⚡', color: '#ffd700' },
             silver:    { name: '은', icon: '🌙', color: '#c0c0c0' },
             poison:    { name: '독', icon: '☠️', color: '#9932cc' },
-            holy:      { name: '신성', icon: '✨', color: '#fff8dc' }
+            holy:      { name: '신성', icon: '✨', color: '#fff8dc' },
+            lifesteal: { name: '흡혈', icon: '🩸', color: '#8b0000' }
         };
+        
+        // 흡혈 몬스터 목록 (이 몬스터 처치 시 흡혈 무기 드랍 확률)
+        const LIFESTEAL_MONSTERS = ['vampire', 'ghoul', 'spectre', 'lich'];
         
         const MONSTER_TYPES = {
             beast:     { name: '야수', icon: '🐺', weakness: ['fire'], resist: ['poison'] },
@@ -1667,7 +1671,12 @@
                 
                 // 속성: 몬스터 취약 or 상대 무기 속성
                 if (dropSource === 'monster_death' && context.monsterType) {
-                    element = getWeaknessElement(context.monsterType);
+                    // 흡혈 몬스터에게 죽으면 흡혈 속성 무기!
+                    if (LIFESTEAL_MONSTERS.includes(context.monsterType)) {
+                        element = 'lifesteal';
+                    } else {
+                        element = getWeaknessElement(context.monsterType);
+                    }
                 } else if (dropSource === 'pvp_death' && context.opponentElement) {
                     element = context.opponentElement;
                 }
@@ -2980,7 +2989,9 @@
             if (reason === 'monster_death') {
                 const typeData = MONSTER_TYPES[context.monsterType];
                 reasonText = `💀 ${context.monsterName || '몬스터'}에게 패배<br>`;
-                if (newWeapon.element && newWeapon.element !== 'none' && typeData) {
+                if (newWeapon.element === 'lifesteal') {
+                    reasonText += `${elementData.icon} <span style="color:${elementData.color}">${elementData.name}</span> 속성 흡수!<br><span style="font-size:0.85rem;opacity:0.8;">공격 데미지의 15% HP 회복</span>`;
+                } else if (newWeapon.element && newWeapon.element !== 'none' && typeData) {
                     reasonText += `${typeData.icon} ${typeData.name}의 취약 속성 ${elementData.icon} <span style="color:${elementData.color}">${elementData.name}</span> 부여!`;
                 }
             } else if (reason === 'durability_break') {
@@ -3206,11 +3217,21 @@
             
             monster.currentHp = Math.max(0, monster.currentHp - finalPlayerDamage);
             
+            // 흡혈 속성 효과 - 데미지의 15% 회복
+            let lifestealHeal = 0;
+            if (weaponElement === 'lifesteal') {
+                lifestealHeal = Math.floor(finalPlayerDamage * 0.15);
+                const oldHp = player.hp;
+                player.hp = Math.min(player.maxHp, player.hp + lifestealHeal);
+                lifestealHeal = player.hp - oldHp;  // 실제 회복량
+            }
+            
             playSound(playerCrit ? 'crit' : 'attack');
             vibrate(playerCrit ? [50, 30, 100] : 50);
             
             // 속성 효과 텍스트
-            const elementText = elementMult > 1 ? ` 🎯효과적!` : (elementMult < 1 ? ` 🛡️저항...` : '');
+            const lifestealText = lifestealHeal > 0 ? ` 🩸+${lifestealHeal} 흡혈!` : '';
+            const elementText = (elementMult > 1 ? ` 🎯효과적!` : (elementMult < 1 ? ` 🛡️저항...` : '')) + lifestealText;
             
             if (playerCrit) {
                 // 크리 기록
