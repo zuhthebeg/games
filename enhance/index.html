@@ -2364,7 +2364,10 @@
             const myId = mpUI.getClient().getMyUserId();
             const me = gs.players.find(p => p.id === myId);
             const enemy = gs.players.find(p => p.id !== myId);
-            const isMyTurn = gs.currentTurn === myId;
+            
+            // Check if I've already selected an action
+            const hasSelected = me?.selectedAction && me.selectedAction !== null;
+            const enemyReady = enemy?.selectedAction === 'ready' || (enemy?.selectedAction && enemy.selectedAction !== null);
 
             const myGrade = me?.weaponGrade ? GRADES[me.weaponGrade] : GRADES.common;
             const enemyGrade = enemy?.weaponGrade ? GRADES[enemy.weaponGrade] : GRADES.common;
@@ -2373,21 +2376,37 @@
             const myWeaponImg = WEAPON_TYPES[me?.weaponType]?.img || WEAPON_TYPES.sword.img;
             const enemyWeaponImg = WEAPON_TYPES[enemy?.weaponType]?.img || WEAPON_TYPES.sword.img;
 
-            // Status badges
-            const enemyStatus = enemy?.isDefending ? '🛡️ 방어중' : (enemy?.counterReady ? '⚡ 카운터' : '');
-            const myStatus = me?.isDefending ? '🛡️ 방어중' : (me?.counterReady ? '⚡ 카운터!' : '');
+            // Element display
+            const elementEmoji = { fire: '🔥', water: '💧', earth: '🌍', wind: '💨' };
+            const myElement = me?.weaponElement ? elementEmoji[me.weaponElement] || '' : '';
+            const enemyElement = enemy?.weaponElement ? elementEmoji[enemy.weaponElement] || '' : '';
+
+            // Status badges - only show my own status (hidden from opponent)
+            const myStatus = me?.counterReady ? '⚡ 카운터!' : '';
+
+            // Phase display
+            const phaseText = gs.phase === 'select' 
+                ? (hasSelected ? '상대 선택 대기중...' : '행동을 선택하세요!')
+                : '결과 확인';
 
             document.getElementById('app').innerHTML = `
                 <div class="battle-screen">
                     <div class="battle-header">
                         <div class="battle-title">⚔️ 무기 배틀!</div>
-                        <div class="battle-round">라운드 ${gs.round || 1} | ${isMyTurn ? '내 턴' : '상대 턴'} | 💰 ${(gs.totalPrize || 0).toLocaleString()}G</div>
+                        <div class="battle-round">라운드 ${gs.round || 1} | ${phaseText}</div>
+                        <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">
+                            강타 > 빠른공격 > 정밀타격 > 강타 (유리 +30%)
+                        </div>
                     </div>
 
                     <div class="battle-arena">
-                        <div class="fighter enemy ${enemy?.isDefending ? 'defending' : ''}">
+                        <div class="fighter enemy">
                             <div class="fighter-header">
-                                <span class="fighter-name">👤 ${enemy?.nickname || '상대'} ${enemyStatus}</span>
+                                <span class="fighter-name">
+                                    👤 ${enemy?.nickname || '상대'} 
+                                    ${enemyElement}
+                                    ${enemyReady ? '✅' : '⏳'}
+                                </span>
                                 <span class="fighter-weapon" style="color:${enemyGrade.color}">
                                     <img src="${enemyWeaponImg}" style="width:20px;height:20px;vertical-align:middle;filter:drop-shadow(0 0 3px ${enemyGrade.color});">
                                     [${enemyGrade.name}] +${enemy?.weaponLevel || 0}
@@ -2401,13 +2420,18 @@
                             </div>
                             <div class="fighter-stats">
                                 <span>⚔️ ${enemy?.damageMin || 0}-${enemy?.damageMax || 0}</span>
-                                <span>💥 ${enemy?.critChance || 0}%</span>
+                                <span>💰 ${(enemy?.weaponSalePrice || 0).toLocaleString()}G</span>
                             </div>
                         </div>
 
-                        <div class="fighter me ${me?.isDefending ? 'defending' : ''} ${me?.counterReady ? 'counter-ready' : ''}">
+                        <div class="fighter me ${me?.counterReady ? 'counter-ready' : ''}">
                             <div class="fighter-header">
-                                <span class="fighter-name">🎮 ${me?.nickname || '나'} ${myStatus}</span>
+                                <span class="fighter-name">
+                                    🎮 ${me?.nickname || '나'} 
+                                    ${myElement}
+                                    ${myStatus}
+                                    ${hasSelected ? '✅' : ''}
+                                </span>
                                 <span class="fighter-weapon" style="color:${myGrade.color}">
                                     <img src="${myWeaponImg}" style="width:20px;height:20px;vertical-align:middle;filter:drop-shadow(0 0 3px ${myGrade.color});">
                                     [${myGrade.name}] +${me?.weaponLevel || 0}
@@ -2421,7 +2445,7 @@
                             </div>
                             <div class="fighter-stats">
                                 <span>⚔️ ${me?.damageMin || 0}-${me?.damageMax || 0}</span>
-                                <span>💥 ${me?.critChance || 0}%</span>
+                                <span>💰 ${(me?.weaponSalePrice || 0).toLocaleString()}G</span>
                             </div>
                         </div>
 
@@ -2433,14 +2457,30 @@
                     </div>
 
                     <div class="battle-actions">
-                        <div class="action-btns">
-                            <button class="action-btn attack ${me?.counterReady ? 'counter' : ''}" onclick="battleAction('attack')" ${!isMyTurn ? 'disabled' : ''}>
-                                ${me?.counterReady ? '⚡ 카운터!' : '⚔️ 공격'}
-                            </button>
-                            <button class="action-btn defend" onclick="battleAction('defend')" ${!isMyTurn ? 'disabled' : ''}>
-                                🛡️ 방어
-                            </button>
-                        </div>
+                        ${hasSelected ? `
+                            <div style="text-align:center;padding:20px;color:var(--muted);">
+                                ⏳ 상대방 선택 대기중...
+                            </div>
+                        ` : `
+                            <div class="action-btns" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <button class="action-btn attack" onclick="battleAction('strong')" style="background:linear-gradient(135deg,#e94560,#c73e54);">
+                                    💪 강타
+                                    <span style="font-size:0.7rem;display:block;opacity:0.8;">빠른공격에 유리</span>
+                                </button>
+                                <button class="action-btn attack" onclick="battleAction('quick')" style="background:linear-gradient(135deg,#4ecdc4,#3db9b1);">
+                                    ⚡ 빠른공격
+                                    <span style="font-size:0.7rem;display:block;opacity:0.8;">정밀타격에 유리</span>
+                                </button>
+                                <button class="action-btn attack" onclick="battleAction('precise')" style="background:linear-gradient(135deg,#667eea,#5a6fd6);">
+                                    🎯 정밀타격
+                                    <span style="font-size:0.7rem;display:block;opacity:0.8;">강타에 유리</span>
+                                </button>
+                                <button class="action-btn defend" onclick="battleAction('defend')" style="background:linear-gradient(135deg,#6c757d,#5a6268);">
+                                    🛡️ 방어
+                                    <span style="font-size:0.7rem;display:block;opacity:0.8;">피해 감소+카운터</span>
+                                </button>
+                            </div>
+                        `}
                         <button class="btn btn-secondary" onclick="battleSurrender()" style="margin-top:10px;background:rgba(255,100,100,0.15);">
                             🏳️ 항복하기
                         </button>
@@ -2484,25 +2524,42 @@
             const prizeGold = data.prizeGold || 0;
 
             if (isWin) {
+                // Winner gets loser's weapon sale price
                 state.gold += prizeGold;
                 state.stats.wins++;
+                saveState();
+                
+                const detail = `💰 상대 무기 판매가 ${prizeGold.toLocaleString()}G 획득!`;
+                
+                mpUI.showResult({
+                    title: '🏆 승리!',
+                    detail: detail,
+                    isWin: true,
+                    showRematch: true
+                });
+                
+                fireConfetti();
             } else {
+                // Loser loses their weapon - get new basic weapon
                 state.stats.losses++;
+                const oldWeaponName = state.weapon.name;
+                
+                // Generate new basic weapon
+                state.weapon = generateWeapon({ forceGrade: 'common' });
+                state.weapon.level = 0;
+                state.weapon.durability = state.weapon.maxDurability;
+                
+                saveState();
+                
+                const detail = `😢 ${oldWeaponName}을(를) 잃었습니다...\n새 기본 무기를 획득했습니다.`;
+                
+                mpUI.showResult({
+                    title: '💀 패배...',
+                    detail: detail,
+                    isWin: false,
+                    showRematch: true
+                });
             }
-            saveState();
-
-            const detail = isWin 
-                ? `💰 ${prizeGold.toLocaleString()}G 획득!`
-                : `상대에게 ${prizeGold.toLocaleString()}G를 빼앗겼습니다`;
-
-            mpUI.showResult({
-                title: isWin ? '🏆 승리!' : '💀 패배...',
-                detail: detail,
-                isWin: isWin,
-                showRematch: true
-            });
-
-            if (isWin) fireConfetti();
         }
 
         // ===== HUNT MODE (Single Player) =====
