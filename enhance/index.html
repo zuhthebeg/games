@@ -1567,6 +1567,7 @@
 
         let mpUI = null;
         let battleState = null;
+        let cachedMyId = null;  // Cache user ID for use after client is destroyed
 
         // ===== WEAPON GENERATION =====
         function generateWeapon(forceGrade = null) {
@@ -2376,10 +2377,15 @@
 
         function handleBattleStart(gameState) {
             battleState = gameState;
+            // Cache user ID for use even after client is destroyed
+            cachedMyId = mpUI?.getClient()?.getMyUserId() || null;
+            console.log('[handleBattleStart] cachedMyId:', cachedMyId);
             renderBattle();
         }
 
         async function handleBattleEvent(type, data) {
+            console.log('[BattleEvent]', type, JSON.stringify(data).slice(0, 500));
+            
             // Normalize polled events: { seq, type, payload: {...} } → extract payload
             const payload = data.payload || data;
             
@@ -2699,7 +2705,17 @@
         }
 
         function showBattleResult(data) {
-            const myId = mpUI.getClient().getMyUserId();
+            console.log('[showBattleResult] called with:', data);
+            
+            // Use cached ID if client is gone
+            const client = mpUI?.getClient();
+            const myId = client?.getMyUserId() || cachedMyId;
+            
+            if (!myId) {
+                console.error('[showBattleResult] No user ID available!');
+                return;
+            }
+            
             const isWin = data.winnerId === myId;
             const prizeGold = data.prizeGold || 0;
 
