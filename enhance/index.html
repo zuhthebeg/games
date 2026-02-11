@@ -46,13 +46,14 @@
             max-width: 440px;
             width: 100%;
             margin: 0 auto;
-            padding: 16px;
+            padding: 10px;
+            position: relative;
         }
 
         header {
             text-align: center;
-            margin-bottom: 20px;
-            padding-top: 8px;
+            margin-bottom: 10px;
+            padding-top: 4px;
         }
 
         h1 {
@@ -71,13 +72,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,215,0,0.05));
             border: 1px solid rgba(255,215,0,0.3);
-            border-radius: 20px;
-            padding: 8px 20px;
-            margin: 0 auto 16px;
+            border-radius: 16px;
+            padding: 6px 14px;
+            margin: 0 auto 10px;
             width: fit-content;
+            font-size: 0.9rem;
         }
 
         .gold-icon { font-size: 1.2rem; }
@@ -87,9 +89,9 @@
         .weapon-card {
             background: var(--card);
             border: 2px solid var(--card-border);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
             position: relative;
             overflow: hidden;
         }
@@ -514,9 +516,9 @@
 
         /* Hunt Mode Styles */
         .hunt-screen {
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
+            padding-top: 30px;
         }
 
         .monster-card {
@@ -583,24 +585,24 @@
         }
 
         .hunt-vs {
-            font-size: 2rem;
+            font-size: 1.2rem;
             text-align: center;
-            margin: 12px 0;
+            margin: 6px 0;
             color: var(--accent);
         }
 
         .player-mini {
             background: var(--card);
             border: 2px solid var(--accent);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 16px;
+            border-radius: 10px;
+            padding: 8px;
+            margin-bottom: 8px;
         }
 
         .hunt-actions {
             display: flex;
-            gap: 10px;
-            margin-top: 16px;
+            gap: 8px;
+            margin-top: 8px;
         }
 
         .hunt-actions .btn {
@@ -857,28 +859,38 @@
         }
 
         .btn-back {
-            background: none;
-            border: none;
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
             color: var(--muted);
             cursor: pointer;
-            font-size: 0.9rem;
-            padding: 8px 0;
-            margin-bottom: 12px;
+            font-size: 0.8rem;
+            padding: 6px 10px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
+            z-index: 10;
+        }
+        
+        .btn-back:hover {
+            background: rgba(0,0,0,0.7);
+            color: var(--text);
         }
 
         /* Protection Toggle */
         .protection-toggle {
             background: rgba(255,215,0,0.1);
             border: 1px solid rgba(255,215,0,0.3);
-            border-radius: 10px;
-            padding: 12px;
+            border-radius: 8px;
+            padding: 8px 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
         }
 
         .toggle-btn {
@@ -1324,11 +1336,11 @@
             vampire:  { name: '뱀파이어',   img: `${ICON_BASE}/delapouite/vampire-dracula.svg`, tier: 3, hp: 160, damage: [32, 48], crit: 18, gold: [650, 1050], type: 'undead' },
             golem:    { name: '골렘',       img: `${ICON_BASE}/delapouite/rock-golem.svg`,   tier: 3, hp: 250, damage: [22, 35],  crit: 3,  gold: [580, 950], type: 'elemental' },
             wyvern:   { name: '와이번',     img: `${ICON_BASE}/lorc/wyvern.svg`,             tier: 3, hp: 190, damage: [30, 50],  crit: 15, gold: [750, 1200], type: 'dragon' },
-            dark_knight: { name: '암흑기사', img: `${ICON_BASE}/lorc/viking-head.svg`,       tier: 3, hp: 220, damage: [35, 55],  crit: 12, gold: [800, 1300], type: 'humanoid' },
-            succubus: { name: '서큐버스',   img: `${ICON_BASE}/lorc/fairy.svg`,              tier: 3, hp: 140, damage: [40, 60],  crit: 25, gold: [700, 1150], type: 'demon' },
-            troll:    { name: '트롤',       img: `${ICON_BASE}/delapouite/troll.svg`,        tier: 3, hp: 280, damage: [25, 40],  crit: 5,  gold: [650, 1000], type: 'beast' },
-            gargoyle: { name: '가고일',     img: `${ICON_BASE}/lorc/gargoyle.svg`,           tier: 3, hp: 200, damage: [28, 45],  crit: 10, gold: [620, 980], type: 'elemental' },
-            chimera:  { name: '키메라',     img: `${ICON_BASE}/lorc/lion.svg`,               tier: 3, hp: 230, damage: [32, 52],  crit: 15, gold: [850, 1400], type: 'beast' },
+            dark_knight: { name: '암흑기사', img: `${ICON_BASE}/lorc/brutal-helm.svg`,      tier: 3, hp: 220, damage: [35, 55],  crit: 12, gold: [800, 1300], type: 'humanoid' },
+            succubus: { name: '서큐버스',   img: `${ICON_BASE}/lorc/angel-wings.svg`,        tier: 3, hp: 140, damage: [40, 60],  crit: 25, gold: [700, 1150], type: 'demon' },
+            troll:    { name: '트롤',       img: `${ICON_BASE}/lorc/ogre.svg`,               tier: 3, hp: 280, damage: [25, 40],  crit: 5,  gold: [650, 1000], type: 'beast' },
+            gargoyle: { name: '가고일',     img: `${ICON_BASE}/lorc/stone-bust.svg`,         tier: 3, hp: 200, damage: [28, 45],  crit: 10, gold: [620, 980], type: 'elemental' },
+            chimera:  { name: '키메라',     img: `${ICON_BASE}/lorc/double-face-mask.svg`,   tier: 3, hp: 230, damage: [32, 52],  crit: 15, gold: [850, 1400], type: 'beast' },
             
             // Tier 4 (보스)
             dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/double-dragon.svg`,      tier: 4, hp: 400, damage: [50, 80],  crit: 20, gold: [3000, 5000], isBoss: true, type: 'dragon' },
@@ -1336,9 +1348,9 @@
             reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/horned-skull.svg`,       tier: 4, hp: 300, damage: [70, 100], crit: 30, gold: [5000, 8000], isBoss: true, type: 'undead' },
             lich:     { name: '👻 리치',     img: `${ICON_BASE}/lorc/grim-reaper.svg`,        tier: 4, hp: 280, damage: [55, 95],  crit: 22, gold: [4500, 7000], isBoss: true, type: 'undead' },
             hydra:    { name: '🐍 히드라',   img: `${ICON_BASE}/lorc/hydra.svg`,              tier: 4, hp: 450, damage: [45, 75],  crit: 15, gold: [3500, 5500], isBoss: true, type: 'dragon' },
-            frost_giant: { name: '❄️ 프로스트자이언트', img: `${ICON_BASE}/lorc/frozen-orb.svg`, tier: 4, hp: 500, damage: [55, 85], crit: 12, gold: [4200, 6500], isBoss: true, type: 'elemental' },
-            balrog:   { name: '🔥 발록',     img: `${ICON_BASE}/lorc/daemon-skull.svg`,       tier: 4, hp: 420, damage: [65, 95],  crit: 18, gold: [4800, 7200], isBoss: true, type: 'demon' },
-            phoenix:  { name: '🦅 피닉스',   img: `${ICON_BASE}/lorc/bird-claw.svg`,          tier: 4, hp: 320, damage: [60, 100], crit: 28, gold: [5200, 8500], isBoss: true, type: 'elemental' },
+            frost_giant: { name: '❄️ 서리거인', img: `${ICON_BASE}/lorc/ice-golem.svg`, tier: 4, hp: 500, damage: [55, 85], crit: 12, gold: [4200, 6500], isBoss: true, type: 'elemental' },
+            balrog:   { name: '🔥 발록',     img: `${ICON_BASE}/lorc/ifrit.svg`,              tier: 4, hp: 420, damage: [65, 95],  crit: 18, gold: [4800, 7200], isBoss: true, type: 'demon' },
+            phoenix:  { name: '🦅 불사조',   img: `${ICON_BASE}/lorc/phoenix-flare.svg`,      tier: 4, hp: 320, damage: [60, 100], crit: 28, gold: [5200, 8500], isBoss: true, type: 'elemental' },
             
             // Tier 5 (전설)
             ancient_dragon: { name: '🌟 고대용', img: `${ICON_BASE}/delapouite/spiked-dragon-head.svg`, tier: 5, hp: 800, damage: [80, 130], crit: 25, gold: [10000, 20000], isBoss: true, type: 'dragon' },
@@ -2041,9 +2053,14 @@
                     ${showProtection ? `
                     <div class="protection-toggle">
                         <span>🛡️ 파괴 방지 (${state.protectionScrolls}개)</span>
-                        <button class="toggle-btn ${state.useProtection ? 'on' : 'off'}" onclick="toggleProtection()" id="protectionBtn">
-                            ${state.useProtection ? 'ON' : 'OFF'}
-                        </button>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <button class="toggle-btn ${state.useProtection ? 'on' : 'off'}" onclick="toggleProtection()" id="protectionBtn">
+                                ${state.useProtection ? 'ON' : 'OFF'}
+                            </button>
+                            <button onclick="buyProtection()" style="padding:4px 10px;background:linear-gradient(135deg,#ffd700,#ff8c00);border:none;border-radius:8px;color:#000;font-size:0.75rem;font-weight:600;cursor:pointer;">
+                                +구매 (10,000G)
+                            </button>
+                        </div>
                     </div>
                     ` : ''}
 
@@ -2064,6 +2081,19 @@
                 btn.textContent = state.useProtection ? 'ON' : 'OFF';
                 btn.className = 'toggle-btn ' + (state.useProtection ? 'on' : 'off');
             }
+        }
+        
+        function buyProtection() {
+            const cost = 10000;
+            if (state.gold < cost) {
+                alert('골드가 부족합니다! (10,000G 필요)');
+                return;
+            }
+            state.gold -= cost;
+            state.protectionScrolls++;
+            saveState();
+            playSound('success');
+            showEnhance();
         }
 
         function enhance() {
