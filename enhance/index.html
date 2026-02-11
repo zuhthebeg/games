@@ -2390,7 +2390,7 @@
                 
                 battleState = data;
                 renderBattle();
-            } else if (type === 'game_end') {
+            } else if (type === 'game_end' || type === 'game_ended') {
                 if (data.winnerId === mpUI.getClient().getMyUserId()) {
                     playSound('success');
                     vibrate([100, 50, 100, 50, 200]);
@@ -2634,7 +2634,35 @@
         async function battleAction(action) {
             if (!mpUI || !mpUI.getClient()) return;
             try {
-                await mpUI.sendAction({ type: action });
+                const response = await mpUI.sendAction({ type: action });
+                console.log('Action response:', response);
+                
+                // Check if game ended
+                if (response.isGameOver) {
+                    // Find winner and loser from game state
+                    const gs = response.gameState;
+                    const myId = mpUI.getClient().getMyUserId();
+                    const winner = gs.players.find(p => p.hp > 0) || gs.players[0];
+                    const loser = gs.players.find(p => p.hp <= 0) || gs.players[1];
+                    
+                    // First show final state with animations
+                    if (gs.animations && gs.animations.length > 0) {
+                        await handleBattleEvent('state_update', { gameState: gs });
+                        await sleep(500);  // Wait for animations
+                    }
+                    
+                    // Then show game end
+                    handleBattleEvent('game_end', {
+                        winnerId: winner?.id || response.result?.winnerId,
+                        prizeGold: loser?.weaponSalePrice || 0
+                    });
+                    return;
+                }
+                
+                // Update state from response (triggers animations)
+                if (response.gameState) {
+                    await handleBattleEvent('state_update', { gameState: response.gameState });
+                }
             } catch (e) {
                 console.error('Battle action error:', e);
             }
