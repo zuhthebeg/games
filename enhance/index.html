@@ -2811,6 +2811,7 @@
 
         function handleBattleStart(gameState) {
             battleState = gameState;
+            battleActionPending = false;  // 새 배틀 시작 시 리셋
             // Cache user ID for use even after client is destroyed
             cachedMyId = mpUI?.getClient()?.getMyUserId() || null;
             console.log('[handleBattleStart] cachedMyId:', cachedMyId);
@@ -3101,8 +3102,13 @@
             showMain();
         }
 
+        let battleActionPending = false;  // 중복 클릭 방지
+        
         async function battleAction(action) {
             if (!mpUI || !mpUI.getClient()) return;
+            if (battleActionPending) return;  // 이미 처리 중이면 무시
+            
+            battleActionPending = true;
             try {
                 const response = await mpUI.sendAction({ type: action });
                 console.log('Action response:', response);
@@ -3135,6 +3141,8 @@
                 }
             } catch (e) {
                 console.error('Battle action error:', e);
+            } finally {
+                battleActionPending = false;  // 완료 후 다시 액션 가능
             }
         }
 
@@ -3175,9 +3183,10 @@
                 const oldWeaponName = state.weapon.name;
                 
                 // Generate new basic weapon
-                state.weapon = generateWeapon({ forceGrade: 'common' });
+                state.weapon = generateWeapon('common');
+                resetMastery();  // 무기 변경 시 숙련도 초기화
                 state.weapon.level = 0;
-                state.weapon.durability = state.weapon.maxDurability;
+                state.weapon.durability = MAX_DURABILITY;
                 
                 saveState();
                 
