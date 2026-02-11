@@ -1849,6 +1849,11 @@
             return attackBonus + killBonus; // 최대 50%
         }
         
+        // 무기 변경 시 숙련도 초기화
+        function resetMastery() {
+            state.mastery = { attacks: 0, kills: 0 };
+        }
+        
         // 내구도 시스템
         const MAX_DURABILITY = 100;
         
@@ -2459,6 +2464,7 @@
             
             if (newWeapon) {
                 state.weapon = newWeapon;
+                resetMastery();  // 무기 변경 시 숙련도 초기화
             } else {
                 state.weapon.level = toLevel;
             }
@@ -2657,6 +2663,7 @@
             if (confirm(`${state.weapon.name}을(를) ${value.toLocaleString()}G에 판매하시겠습니까?\n\n새로운 무기를 받게 됩니다. (일반~레어)`)) {
                 state.gold += value;
                 state.weapon = generateWeaponBySource('sell', {});
+                resetMastery();  // 무기 변경 시 숙련도 초기화
                 saveState();
                 showEnhance();
             }
@@ -2732,8 +2739,7 @@
                         <p style="color:#ccc;font-size:0.9rem;line-height:1.5;">
                             • 전투 시 내구도가 감소합니다<br>
                             • 내구도 0에서 전투 시 <span style="color:var(--fail)">무기 파괴 위험!</span><br>
-                            • 파괴 시 양쪽에 큰 데미지<br>
-                            • 수리비는 강화비의 1/10 수준
+                            • 파괴 시 양쪽에 큰 데미지
                         </p>
                     </div>
                     
@@ -2759,6 +2765,11 @@
         function repairWeapon() {
             const cost = getRepairCost(state.weapon);
             if (state.gold < cost) return;
+            
+            // 수리비 확인
+            if (!confirm(`🔧 수리비: ${cost.toLocaleString()}G\n\n수리하시겠습니까?`)) {
+                return;
+            }
             
             state.gold -= cost;
             state.weapon.durability = MAX_DURABILITY;
@@ -3628,6 +3639,7 @@
                     // 새 무기 지급 (내구도 파괴 = 숙련도 기반 속성!)
                     const oldWeapon = state.weapon;
                     state.weapon = generateWeaponBySource('durability_break', {});
+                    resetMastery();  // 무기 변경 시 숙련도 초기화
                     const newStats = getWeaponStats(state.weapon, false);
                     player.damageMin = newStats.damageMin;
                     player.damageMax = newStats.damageMax;
@@ -3661,13 +3673,13 @@
             state.weapon.weaponMastery.attacks++;
             
             // 내구도 감소 (등급별 차등 적용)
-            // 기준: 희귀(rare) = 20타당 1% 감소
-            // 일반: 10타당 1%, 고급: 13타당 1%, 전설: 29타당 1%, 유니크: 40타당 1%, 신화: 67타당 1%
+            // 기준: 희귀(rare) = 10타당 1% 감소 (2배 빠르게 조정)
+            // 일반: 5타당 1%, 고급: 7타당 1%, 전설: 14타당 1%, 유니크: 20타당 1%, 신화: 33타당 1%
             if (!state.weapon._durabilityCounter) state.weapon._durabilityCounter = 0;
             state.weapon._durabilityCounter++;
             const gradeData = GRADES[state.weapon.grade] || GRADES.rare;
             const durabilityMod = gradeData.durabilityMod || 1.0;
-            const durabilityThreshold = Math.floor(20 / durabilityMod);  // 낮을수록 빨리 감소
+            const durabilityThreshold = Math.floor(10 / durabilityMod);  // 낮을수록 빨리 감소
             if (state.weapon._durabilityCounter >= durabilityThreshold) {
                 state.weapon._durabilityCounter = 0;
                 state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - 1);
@@ -4054,6 +4066,7 @@
             const monsterType = huntState.monster?.type || 'beast';
             const monsterName = huntState.monster?.name || '몬스터';
             state.weapon = generateWeaponBySource('monster_death', { monsterType });
+            resetMastery();  // 무기 변경 시 숙련도 초기화
             state.stats.losses++;
             saveState();
             
