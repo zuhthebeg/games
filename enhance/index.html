@@ -414,6 +414,39 @@
             80% { transform: translateX(10px) rotate(5deg); }
         }
 
+        /* Battle effect popup animation */
+        @keyframes effectPopup {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            40% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -70%) scale(0.8); opacity: 0; }
+        }
+
+        /* Hit flash effect */
+        .hit-flash {
+            animation: hitFlash 0.3s ease-out;
+        }
+        @keyframes hitFlash {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(2) sepia(1) saturate(3); }
+        }
+
+        /* Fighter defending state */
+        .fighter.defending::after {
+            content: '🛡️';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            animation: defendPulse 0.5s ease-out;
+        }
+        @keyframes defendPulse {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+        }
+
         /* Stats */
         .weapon-stats {
             display: grid;
@@ -1194,6 +1227,16 @@
                         gain.gain.setValueAtTime(0.3, ctx.currentTime);
                         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
                         osc.start(); osc.stop(ctx.currentTime + 0.2);
+                        break;
+                    case 'defend':
+                        // Shield sound - metallic clang
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(400, ctx.currentTime);
+                        osc.frequency.setValueAtTime(600, ctx.currentTime + 0.05);
+                        osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.2);
+                        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                        osc.start(); osc.stop(ctx.currentTime + 0.3);
                         break;
                 }
             } catch(e) { console.log('Audio error:', e); }
@@ -2327,22 +2370,24 @@
             renderBattle();
         }
 
-        function handleBattleEvent(type, data) {
+        async function handleBattleEvent(type, data) {
             if (type === 'state_update') {
-                // Check log for attack events to play sounds
                 const gs = data.gameState || data;
-                const lastLog = gs.log?.[gs.log.length - 1];
-                if (lastLog) {
-                    if (lastLog.type === 'crit') {
-                        playSound('crit');
-                        vibrate([50, 30, 100]);
-                        document.body.classList.add('screen-shake');
-                        setTimeout(() => document.body.classList.remove('screen-shake'), 300);
-                    } else if (lastLog.type === 'damage') {
-                        playSound('attack');
-                        vibrate(50);
+                const myId = mpUI.getClient().getMyUserId();
+                
+                // Play animations if present
+                if (gs.animations && gs.animations.length > 0) {
+                    // Sort animations: my attacks first, then enemy attacks
+                    const myAnims = gs.animations.filter(a => a.attackerId === myId);
+                    const enemyAnims = gs.animations.filter(a => a.attackerId !== myId);
+                    const sortedAnims = [...myAnims, ...enemyAnims];
+                    
+                    for (const anim of sortedAnims) {
+                        await playBattleAnimation(anim, myId);
+                        await sleep(400);  // Delay between animations
                     }
                 }
+                
                 battleState = data;
                 renderBattle();
             } else if (type === 'game_end') {
@@ -2355,6 +2400,83 @@
                 }
                 showBattleResult(data);
             }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function playBattleAnimation(anim, myId) {
+            const isMyAction = anim.attackerId === myId;
+            const targetClass = isMyAction ? '.fighter.enemy' : '.fighter.me';
+            const sourceClass = isMyAction ? '.fighter.me' : '.fighter.enemy';
+            
+            const attackNames = { strong: '강타', quick: '빠른공격', precise: '정밀타격', defend: '방어' };
+            const attackColors = { 
+                strong: '#e94560',   // 빨간색
+                quick: '#4ecdc4',     // 청록색
+                precise: '#667eea',   // 보라색
+                defend: '#6c757d'     // 회색
+            };
+            
+            // Create floating damage/effect text
+            const effectEl = document.createElement('div');
+            effectEl.className = 'battle-effect-popup';
+            effectEl.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 2rem;
+                font-weight: bold;
+                z-index: 9999;
+                pointer-events: none;
+                animation: effectPopup 0.8s ease-out forwards;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            `;
+            
+            if (anim.type === 'defend') {
+                effectEl.textContent = '🛡️ 방어!';
+                effectEl.style.color = attackColors.defend;
+                playSound('defend');
+            } else {
+                const dmgText = anim.damage || 0;
+                let prefix = '';
+                if (anim.isCounter) prefix = '⚡ 카운터 ';
+                if (anim.isCrit) prefix += '💥 ';
+                
+                const attackName = attackNames[anim.attackType] || '공격';
+                effectEl.innerHTML = `
+                    <div style="color:${isMyAction ? '#4ecca3' : '#ff6b6b'}">${isMyAction ? '나의' : '상대의'}</div>
+                    <div style="color:${attackColors[anim.attackType] || '#fff'}">${prefix}${attackName}!</div>
+                    <div style="font-size:2.5rem;color:${anim.isCrit ? '#ffd700' : '#fff'}">${dmgText}</div>
+                    ${anim.advantage ? `<div style="font-size:0.9rem;color:#4ecca3;">✨ ${anim.advantage === 'both' ? '타입+속성 유리!' : anim.advantage === 'type' ? '타입 유리!' : '속성 유리!'}</div>` : ''}
+                `;
+                
+                // Play sound
+                if (anim.isCrit) {
+                    playSound('crit');
+                    vibrate([50, 30, 100]);
+                } else {
+                    playSound('attack');
+                    vibrate(50);
+                }
+                
+                // Screen shake for damage
+                document.body.classList.add('screen-shake');
+                setTimeout(() => document.body.classList.remove('screen-shake'), 300);
+                
+                // Flash the target
+                const targetEl = document.querySelector(targetClass);
+                if (targetEl) {
+                    targetEl.classList.add('hit-flash');
+                    setTimeout(() => targetEl.classList.remove('hit-flash'), 300);
+                }
+            }
+            
+            document.body.appendChild(effectEl);
+            await sleep(800);
+            effectEl.remove();
         }
 
         function renderBattle() {
