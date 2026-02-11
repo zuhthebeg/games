@@ -3203,7 +3203,7 @@
                     title: '🏆 승리!',
                     detail: detail,
                     isWin: true,
-                    showRematch: true
+                    showRematch: false  // PvP는 리매치 없음 (무기 파괴됨)
                 });
                 
                 fireConfetti();
@@ -3226,7 +3226,7 @@
                     title: '💀 패배...',
                     detail: detail,
                     isWin: false,
-                    showRematch: true
+                    showRematch: false  // PvP는 리매치 없음 (무기 파괴됨)
                 });
             }
         }
