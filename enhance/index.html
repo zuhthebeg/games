@@ -939,6 +939,17 @@
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 16px;
+            color: #fff;
+        }
+        
+        .blacksmith-card .enhance-panel,
+        .blacksmith-card + .enhance-panel {
+            color: #fff;
+        }
+        
+        .blacksmith-card + .enhance-panel h3,
+        .blacksmith-card + .enhance-panel p {
+            color: #fff;
         }
         
         .durability-bar {
@@ -1809,6 +1820,7 @@
                 element,
                 img: typeData.img,
                 durability: MAX_DURABILITY,
+                protectionScrolls: 2,  // 무기별 파괴방지 2회 기본 제공
                 // 숙련도 시스템 (무기별)
                 weaponMastery: {
                     attacks: 0,
@@ -2021,6 +2033,10 @@
             if (state.weapon && state.weapon.durability === undefined) {
                 state.weapon.durability = MAX_DURABILITY;
             }
+            // 무기별 파괴방지 마이그레이션
+            if (state.weapon && state.weapon.protectionScrolls === undefined) {
+                state.weapon.protectionScrolls = 2;
+            }
         }
 
         function saveState() {
@@ -2223,7 +2239,7 @@
 
                     ${showProtection ? `
                     <div class="protection-toggle">
-                        <span>🛡️ 파괴 방지 (${state.protectionScrolls}개)</span>
+                        <span>🛡️ 파괴 방지 (${weapon.protectionScrolls || 0}개)</span>
                         <div style="display:flex;gap:8px;align-items:center;">
                             <button class="toggle-btn ${state.useProtection ? 'on' : 'off'}" onclick="toggleProtection()" id="protectionBtn">
                                 ${state.useProtection ? 'ON' : 'OFF'}
@@ -2246,7 +2262,8 @@
         }
 
         function toggleProtection() {
-            if (state.protectionScrolls > 0) {
+            const scrolls = state.weapon?.protectionScrolls || 0;
+            if (scrolls > 0) {
                 state.useProtection = !state.useProtection;
                 const btn = document.getElementById('protectionBtn');
                 btn.textContent = state.useProtection ? 'ON' : 'OFF';
@@ -2261,7 +2278,8 @@
                 return;
             }
             state.gold -= cost;
-            state.protectionScrolls++;
+            if (!state.weapon.protectionScrolls) state.weapon.protectionScrolls = 0;
+            state.weapon.protectionScrolls++;
             saveState();
             playSound('success');
             showEnhance();
@@ -2305,8 +2323,9 @@
                 result = 'destroy';
                 state.stats.destroys++;
                 
-                if (state.useProtection && state.protectionScrolls > 0) {
-                    state.protectionScrolls--;
+                const scrolls = state.weapon?.protectionScrolls || 0;
+                if (state.useProtection && scrolls > 0) {
+                    state.weapon.protectionScrolls--;
                     state.useProtection = false;
                     toLevel = fromLevel;
                 } else {
@@ -2615,9 +2634,9 @@
                         `}
                     </div>
                     
-                    <div class="enhance-panel">
-                        <h3 style="margin-bottom:12px;">⚠️ 내구도 안내</h3>
-                        <p style="color:var(--muted);font-size:0.9rem;line-height:1.5;">
+                    <div class="enhance-panel" style="color:#fff;">
+                        <h3 style="margin-bottom:12px;color:#fff;">⚠️ 내구도 안내</h3>
+                        <p style="color:#ccc;font-size:0.9rem;line-height:1.5;">
                             • 전투 시 내구도가 감소합니다<br>
                             • 내구도 0에서 전투 시 <span style="color:var(--fail)">무기 파괴 위험!</span><br>
                             • 파괴 시 양쪽에 큰 데미지<br>
@@ -2625,8 +2644,8 @@
                         </p>
                     </div>
                     
-                    <div class="enhance-panel">
-                        <h3 style="margin-bottom:12px;">⭐ 숙련도</h3>
+                    <div class="enhance-panel" style="color:#fff;">
+                        <h3 style="margin-bottom:12px;color:#fff;">⭐ 숙련도</h3>
                         <div class="enhance-row">
                             <span>총 공격 횟수</span>
                             <span>${state.mastery.attacks}회</span>
@@ -3305,10 +3324,17 @@
             setTimeout(() => crit.remove(), 800);
         }
         
-        // 슬래시 효과 표시
-        function showSlashEffect(type = 'single') {
+        // 슬래시 효과 표시 (target: 'monster' = 몬스터 영역, 'player' = 플레이어 영역)
+        function showSlashEffect(type = 'single', target = 'monster') {
             const container = document.createElement('div');
             container.className = 'slash-container';
+            
+            // 타겟에 따라 위치 조정
+            if (target === 'monster') {
+                container.style.top = '28%';  // 화면 상단 (몬스터 영역)
+            } else if (target === 'player') {
+                container.style.top = '68%';  // 화면 하단 (플레이어 영역)
+            }
             
             const slash = document.createElement('div');
             if (type === 'crit') {
@@ -3541,11 +3567,10 @@
             }
             state.weapon.weaponMastery.attacks++;
             
-            // 내구도 감소 (100타에 약 10% = 0.1/타, 누적 방식)
-            // 실제로는 10타마다 1% 감소하는 방식으로 처리
+            // 내구도 감소 (200타에 약 10% = 20타당 1% 감소)
             if (!state.weapon._durabilityCounter) state.weapon._durabilityCounter = 0;
             state.weapon._durabilityCounter++;
-            if (state.weapon._durabilityCounter >= 10) {
+            if (state.weapon._durabilityCounter >= 20) {
                 state.weapon._durabilityCounter = 0;
                 state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - 1);
             }
@@ -3585,13 +3610,13 @@
                 // 크리 기록
                 state.weapon.weaponMastery.crits++;
                 
-                showSlashEffect('crit');  // X 슬래시!
+                showSlashEffect('crit', 'monster');  // X 슬래시! 몬스터 영역에
                 showCritEffect();
                 document.body.classList.add('screen-shake');
                 setTimeout(() => document.body.classList.remove('screen-shake'), 300);
                 huntState.log.push({ type: 'crit', text: `💥 크리티컬! ${finalPlayerDamage} 데미지!${elementText}` });
             } else {
-                showSlashEffect('single');  // 일반 슬래시
+                showSlashEffect('single', 'monster');  // 일반 슬래시, 몬스터 영역에
                 if (elementMult > 1) {
                     huntState.log.push({ type: 'crit', text: `${ELEMENTS[weaponElement]?.icon || '⚔️'} ${finalPlayerDamage} 데미지! 효과적!` });
                 } else if (elementMult < 1) {
@@ -3619,7 +3644,7 @@
                 
                 player.hp = Math.max(0, player.hp - finalMonsterDamage);
                 
-                showSlashEffect('claw');  // 클로 공격!
+                showSlashEffect('claw', 'player');  // 클로 공격! 플레이어 영역에
                 playSound(monsterCrit ? 'crit' : 'attack');
                 vibrate(monsterCrit ? [100, 50, 100] : 100);
                 document.body.classList.add('screen-shake');
