@@ -1100,6 +1100,14 @@
             50% { opacity: 0.6; }
         }
         
+        /* 🧙 마법 공격 모션 */
+        @keyframes magicAttack {
+            0% { transform: scale(0.3) translateY(50px); opacity: 0; }
+            30% { transform: scale(1.5) translateY(-20px); opacity: 1; }
+            60% { transform: scale(1.2) translateY(-40px); opacity: 1; }
+            100% { transform: scale(0.8) translateY(-80px); opacity: 0; }
+        }
+        
         @keyframes critText {
             0% { transform: translateX(-50%) scale(0.5); opacity: 0; }
             20% { transform: translateX(-50%) scale(1.3); opacity: 1; }
@@ -1993,8 +2001,8 @@
             wand:   { name: '완드',   img: `${ICON_BASE}/lorc/crystal-wand.svg`,     bonus: { damage: 0.85, crit: 1.1 }, isMagic: true, baseMin: 4, baseMax: 10, critDmgBonus: 30 },
             katana: { name: '태도',   img: `${ICON_BASE}/lorc/crossed-swords.svg`,   bonus: { damage: 1.0, crit: 1.25 },  baseMin: 5, baseMax: 11, critDmgBonus: 50 },
             scythe: { name: '낫',     img: `${ICON_BASE}/lorc/scythe.svg`,           bonus: { damage: 1.1, crit: 1.1 },   baseMin: 4, baseMax: 15, critDmgBonus: 40 },
-            bow:    { name: '활',     img: `${ICON_BASE}/lorc/pocket-bow.svg`,       bonus: { damage: 0.9, crit: 1.2 },   baseMin: 0, baseMax: 14, critDmgBonus: 150 },
-            crossbow: { name: '석궁', img: `${ICON_BASE}/carl-olsen/crossbow.svg`,   bonus: { damage: 1.0, crit: 1.1 },   baseMin: 0, baseMax: 18, critDmgBonus: 150 },
+            bow:    { name: '활',     img: `${ICON_BASE}/lorc/pocket-bow.svg`,       bonus: { damage: 0.8, crit: 1.2 },   baseMin: 0, baseMax: 10, critDmgBonus: 150 },
+            crossbow: { name: '석궁', img: `${ICON_BASE}/carl-olsen/crossbow.svg`,   bonus: { damage: 0.85, crit: 1.1 },   baseMin: 0, baseMax: 12, critDmgBonus: 150 },
             knuckle: { name: '너클',  img: `${ICON_BASE}/lorc/punch.svg`,            bonus: { damage: 0.95, crit: 1.0 },  baseMin: 7, baseMax: 8, critDmgBonus: 0 }
         };
         
@@ -4958,6 +4966,12 @@
                 slash.className = 'slash-punch';
             } else if (type === 'arrow') {
                 slash.className = 'slash-arrow';
+            } else if (type === 'magic') {
+                // 🧙 마법 무기: 속성 이펙트
+                const elem = state.weapon?.element || 'none';
+                const elemData = ELEMENTS[elem] || ELEMENTS.none;
+                slash.innerHTML = `<span style="font-size:4rem;text-shadow:0 0 30px ${elemData.color};">${elemData.icon}</span>`;
+                slash.style.cssText = 'display:flex;justify-content:center;align-items:center;width:100%;height:100%;animation:magicAttack 0.5s ease-out forwards;';
             } else {
                 slash.className = 'slash-single';
             }
@@ -4966,7 +4980,7 @@
             document.body.appendChild(container);
             
             // 펀치는 두 번 치니까 더 오래
-            const duration = type === 'punch' ? 600 : 500;
+            const duration = (type === 'punch') ? 600 : (type === 'magic' ? 700 : 500);
             setTimeout(() => container.remove(), duration);
         }
         
@@ -5335,6 +5349,7 @@
             const getAttackEffect = (isCrit) => {
                 if (isKnuckle) return 'punch';  // 👊 더블펀치
                 if (weaponType === 'bow' || weaponType === 'crossbow') return 'arrow';  // 🏹 화살
+                if (weaponType === 'staff' || weaponType === 'wand') return 'magic';  // 🧙 마법
                 return isCrit ? 'crit' : 'single';
             };
             
