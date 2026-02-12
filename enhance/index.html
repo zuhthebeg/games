@@ -2541,6 +2541,39 @@
             return weapon;
         }
         
+        // PvP 패배 시 무기 지급 (상대 등급보다 좋은 무기 + 랜덤 속성)
+        function generateWeaponByPvPLoss(enemyGrade) {
+            // 등급 순서
+            const gradeOrder = ['common', 'magic', 'rare', 'legendary', 'unique', 'mythic'];
+            const enemyIndex = gradeOrder.indexOf(enemyGrade);
+            
+            // 상대보다 1~2 등급 위 (최소 rare, 최대 mythic)
+            const minGradeIndex = Math.max(2, enemyIndex + 1);  // 최소 rare
+            const maxGradeIndex = Math.min(5, enemyIndex + 2);  // 최대 mythic
+            
+            // 확률 분배 (높은 등급일수록 낮음)
+            let grade;
+            const roll = Math.random() * 100;
+            if (maxGradeIndex >= 5 && roll < 5) {
+                grade = 'mythic';  // 5%
+            } else if (maxGradeIndex >= 4 && roll < 20) {
+                grade = 'unique';  // 15%
+            } else if (maxGradeIndex >= 3 && roll < 50) {
+                grade = 'legendary';  // 30%
+            } else {
+                grade = gradeOrder[minGradeIndex];  // 나머지 (rare)
+            }
+            
+            // 무기 생성
+            const weapon = generateWeapon(grade);
+            
+            // 100% 속성 부여
+            const elements = ['fire', 'ice', 'lightning', 'silver', 'poison', 'holy'];
+            weapon.element = elements[Math.floor(Math.random() * elements.length)];
+            
+            return weapon;
+        }
+        
         // 무기 숙련도 레벨 (100공격당 1레벨, 최대 50)
         function getWeaponMasteryLevel(weapon) {
             if (!weapon?.weaponMastery) return 0;
@@ -4234,18 +4267,33 @@
                         // 무기 파괴 처리
                         const brokenWeaponName = state.weapon.name;
                         const brokenWeaponLevel = state.weapon.level;
-                        state.weapon = generateWeapon('common');  // 기본 무기로 리셋
+                        
+                        // 상대 무기 등급 확인해서 더 좋은 무기 지급
+                        const enemy = gs?.players?.find(p => p.id !== myId);
+                        const enemyGrade = enemy?.weaponGrade || 'common';
+                        const newWeapon = generateWeaponByPvPLoss(enemyGrade);
+                        state.weapon = newWeapon;
                         state.mastery = {};  // 숙련도 리셋
                         
                         playSound('destroy');
                         vibrate([200, 100, 200, 100, 300]);
                         
+                        // 결과창 먼저 표시
                         mpUI.showResult({
                             title: '💀 패배... 무기 파괴!',
-                            detail: `${brokenWeaponName} +${brokenWeaponLevel} 파괴됨!\n새 무기로 시작하세요.`,
+                            detail: `${brokenWeaponName} +${brokenWeaponLevel} 파괴됨!`,
                             isWin: false,
                             showRematch: false
                         });
+                        
+                        // 새 무기 획득 이펙트 표시
+                        setTimeout(() => {
+                            showWeaponAcquireEffect(newWeapon, 'pvp_loss', { 
+                                enemyGrade,
+                                brokenWeaponName,
+                                brokenWeaponLevel
+                            });
+                        }, 1000);
                     } else {
                         mpUI.showResult({
                             title: '💀 패배...',
@@ -4561,6 +4609,13 @@
                     reasonText = `💥 +${context.weaponLevel} 강화 파괴!<br>고강화 보상으로 고급 무기 획득!`;
                 } else {
                     reasonText = `💥 +${context.weaponLevel} 강화 파괴`;
+                }
+            } else if (reason === 'pvp_loss') {
+                const enemyGradeData = GRADES[context.enemyGrade] || GRADES.common;
+                reasonText = `⚔️ PvP 패배! 무기 파괴<br>`;
+                reasonText += `상대 [${enemyGradeData.name}] 등급보다 좋은 무기 보상!<br>`;
+                if (newWeapon.element && newWeapon.element !== 'none') {
+                    reasonText += `${elementData.icon} <span style="color:${elementData.color}">${elementData.name}</span> 속성 부여!`;
                 }
             }
             
