@@ -2646,6 +2646,8 @@
         
         function enhance() {
             const weapon = state.weapon;
+            console.log('[enhance] Starting with weapon:', weapon.name, '+' + weapon.level);
+            
             if (weapon.level >= 21) return;
 
             const rates = getEnhanceRates(weapon);
@@ -2750,6 +2752,9 @@
             const popup = document.getElementById('resultPopup');
             const overlay = document.getElementById('overlay');
             const newWeaponPreview = document.getElementById('newWeaponPreview');
+            
+            // 디버깅: 현재 상태 확인
+            console.log('[showEnhanceResult]', type, 'from:', from, 'to:', to, 'currentWeapon:', state.weapon?.name, '+' + state.weapon?.level);
 
             let popupClass = 'result-popup';
             let icon = '✨';
@@ -2801,7 +2806,17 @@
             document.getElementById('resultText').textContent = text;
             document.getElementById('resultText').style.color = textColor;
             document.getElementById('resultDetail').textContent = detail;
-            document.getElementById('resultBtn').onclick = () => { closeResult(); showEnhance(); };
+            
+            // 파괴 시 화면 완전 새로고침
+            if (type === 'destroy' && newWeapon) {
+                document.getElementById('resultBtn').onclick = () => { 
+                    closeResult(); 
+                    // 강제로 화면 새로고침
+                    setTimeout(() => showEnhance(), 50);
+                };
+            } else {
+                document.getElementById('resultBtn').onclick = () => { closeResult(); showEnhance(); };
+            }
 
             if (!newWeapon) {
                 newWeaponPreview.style.display = 'none';
@@ -3911,7 +3926,7 @@
                     ` : ''}
                 </div>
                 <div class="weapon-acquire-reason">${reasonText}</div>
-                <button class="weapon-acquire-btn" onclick="this.parentElement.remove()">확인</button>
+                <button class="weapon-acquire-btn" onclick="this.parentElement.remove(); showEnhance();">확인</button>
             `;
             
             document.body.appendChild(overlay);
