@@ -2132,7 +2132,41 @@
                     if (serverGold > 0 || serverData.weapon) {
                         // 서버에 데이터 있음 - 서버 우선
                         state.gold = serverGold;
-                        if (serverData.weapon) state.weapon = serverData.weapon;
+                        if (serverData.weapon) {
+                            // 무기 데이터 검증 및 복구
+                            const w = serverData.weapon;
+                            
+                            // 필수 필드 검증
+                            if (!w.type || !WEAPON_TYPES[w.type]) {
+                                console.warn('☁️ Invalid weapon type, fixing...', w.type);
+                                w.type = 'sword';
+                            }
+                            if (!w.grade || !GRADES[w.grade]) {
+                                console.warn('☁️ Invalid weapon grade, fixing...', w.grade);
+                                w.grade = 'common';
+                            }
+                            if (typeof w.level !== 'number') {
+                                w.level = 0;
+                            }
+                            if (!w.name) {
+                                w.name = WEAPON_TYPES[w.type].name;
+                            }
+                            if (!w.element) {
+                                w.element = 'none';
+                            }
+                            if (typeof w.durability !== 'number') {
+                                w.durability = 100;
+                            }
+                            if (!w.img) {
+                                w.img = WEAPON_TYPES[w.type].img;
+                            }
+                            if (!w.weaponMastery) {
+                                w.weaponMastery = { attacks: 0, crits: 0, kills: 0, killsByType: {} };
+                            }
+                            
+                            state.weapon = w;
+                            console.log('☁️ Weapon loaded:', w.name, '+' + w.level, w.type, w.grade);
+                        }
                         if (serverData.mastery) state.mastery = serverData.mastery;
                         if (serverData.stats) state.stats = serverData.stats;
                         if (serverData.protectionScrolls !== undefined) state.protectionScrolls = serverData.protectionScrolls;
