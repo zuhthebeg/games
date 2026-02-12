@@ -3487,10 +3487,19 @@
                 onGameStart: handleBattleStart,
                 onGameEvent: handleBattleEvent,
                 onLeave: () => { battleState = null; showMain(); },
-                getPlayerData: () => ({
-                    weapon: state.weapon,
-                    gold: state.gold
-                })
+                getPlayerData: () => {
+                    // 무기 스탯 계산해서 함께 전송
+                    const stats = getWeaponStats(state.weapon, true);
+                    return {
+                        weapon: {
+                            ...state.weapon,
+                            critChance: stats.critChance,
+                            critDamage: stats.critDamage,
+                            calculatedDamage: Math.floor((stats.damageMin + stats.damageMax) / 2)
+                        },
+                        gold: state.gold
+                    };
+                }
             });
 
             const roomCode = MultiplayerUI.checkUrlRoom();
@@ -3531,12 +3540,14 @@
                     const enemyAction = isP1Me ? tr.p2Action : tr.p1Action;
                     const myDamage = isP1Me ? tr.p1Damage : tr.p2Damage;
                     const enemyDamage = isP1Me ? tr.p2Damage : tr.p1Damage;
+                    const myCrit = isP1Me ? tr.p1Crit : tr.p2Crit;
+                    const enemyCrit = isP1Me ? tr.p2Crit : tr.p1Crit;
                     
                     let result = 'draw';
                     if (enemyDamage > myDamage) result = 'win';
                     else if (myDamage > enemyDamage) result = 'lose';
                     
-                    await showTurnResult(myAction, enemyAction, result, myDamage, enemyDamage);
+                    await showTurnResult(myAction, enemyAction, result, myDamage, enemyDamage, myCrit, enemyCrit);
                 }
                 
                 battleState = { gameState: gs };
@@ -3620,7 +3631,7 @@
         }
 
         // 턴 결과 표시 애니메이션 (사냥 스타일)
-        async function showTurnResult(myAction, enemyAction, result, myDamage, enemyDamage) {
+        async function showTurnResult(myAction, enemyAction, result, myDamage, enemyDamage, myCrit = false, enemyCrit = false) {
             const actionEmoji = { 
                 attack: '⚔️', defense: '🛡️', skill: '🔮',
                 ultimate_burst: '🔥', ultimate_lifedrain: '💚', ultimate_absolute: '🛡️'
@@ -3674,47 +3685,60 @@
             const resultText = overlay.querySelector('#turnResultText');
             
             if (result === 'win') {
-                // 승리 이펙트
-                playSound('crit');
-                vibrate([50, 30, 100, 30, 50]);
-                showBattleEffect(myAction, true, enemyDamage);
+                // 승리 이펙트 (내 크리티컬이면 더 강한 효과)
+                if (myCrit) {
+                    playSound('crit');
+                    vibrate([100, 50, 100, 50, 150, 50, 200]);
+                } else {
+                    playSound('crit');
+                    vibrate([50, 30, 100, 30, 50]);
+                }
+                showBattleEffect(myAction, true, enemyDamage, myCrit);
                 
                 resultText.innerHTML = `
                     <div style="animation: resultAppear 0.4s ease-out, winGlow 1s ease-in-out infinite;">
                         <span style="font-size:2rem;color:#4ecca3;">✨ 승리!</span>
+                        ${myCrit ? '<span style="font-size:1.5rem;color:#ffd700;animation:actionBounce 0.3s ease-out infinite;"> 💥크리티컬!</span>' : ''}
                     </div>
-                    <div style="font-size:2.5rem;font-weight:bold;margin-top:10px;color:#ffd700;animation: actionBounce 0.3s ease-out 0.2s both;">
+                    <div style="font-size:${myCrit ? '3.5rem' : '2.5rem'};font-weight:bold;margin-top:10px;color:${myCrit ? '#ff4500' : '#ffd700'};animation: actionBounce 0.3s ease-out 0.2s both;text-shadow:${myCrit ? '0 0 20px #ff4500' : 'none'};">
                         -${enemyDamage}
                     </div>
                     <div style="font-size:0.9rem;color:var(--muted);margin-top:5px;">상대에게 데미지!</div>
                 `;
                 
-                // 화면 번쩍
+                // 화면 번쩍 (크리티컬이면 더 강하게)
                 document.body.style.animation = 'none';
                 setTimeout(() => {
-                    document.body.style.background = 'radial-gradient(circle, rgba(78,204,163,0.3) 0%, transparent 70%)';
-                    setTimeout(() => { document.body.style.background = ''; }, 300);
+                    const flashColor = myCrit ? 'rgba(255,69,0,0.4)' : 'rgba(78,204,163,0.3)';
+                    document.body.style.background = `radial-gradient(circle, ${flashColor} 0%, transparent 70%)`;
+                    setTimeout(() => { document.body.style.background = ''; }, myCrit ? 500 : 300);
                 }, 100);
                 
             } else if (result === 'lose') {
-                // 패배 이펙트
-                playSound('fail');
-                vibrate([100, 50, 100, 50, 200]);
-                showBattleEffect(enemyAction, false, myDamage);
+                // 패배 이펙트 (상대 크리티컬이면 더 강한 효과)
+                if (enemyCrit) {
+                    playSound('destroy');
+                    vibrate([200, 100, 200, 100, 300]);
+                } else {
+                    playSound('fail');
+                    vibrate([100, 50, 100, 50, 200]);
+                }
+                showBattleEffect(enemyAction, false, myDamage, enemyCrit);
                 
                 resultText.innerHTML = `
                     <div style="animation: resultAppear 0.4s ease-out, loseGlow 1s ease-in-out infinite;">
                         <span style="font-size:2rem;color:#ff6b6b;">💔 패배!</span>
+                        ${enemyCrit ? '<span style="font-size:1.5rem;color:#ff4500;animation:actionBounce 0.3s ease-out infinite;"> 💥크리티컬!</span>' : ''}
                     </div>
-                    <div style="font-size:2.5rem;font-weight:bold;margin-top:10px;color:#ff6b6b;animation: damageShake 0.3s ease-in-out 3;">
+                    <div style="font-size:${enemyCrit ? '3.5rem' : '2.5rem'};font-weight:bold;margin-top:10px;color:${enemyCrit ? '#ff0000' : '#ff6b6b'};animation: damageShake 0.3s ease-in-out ${enemyCrit ? 5 : 3};text-shadow:${enemyCrit ? '0 0 20px #ff0000' : 'none'};">
                         -${myDamage}
                     </div>
                     <div style="font-size:0.9rem;color:var(--muted);margin-top:5px;">나에게 데미지!</div>
                 `;
                 
-                // 화면 흔들림
+                // 화면 흔들림 (크리티컬이면 더 오래)
                 document.body.classList.add('screen-shake');
-                setTimeout(() => document.body.classList.remove('screen-shake'), 500);
+                setTimeout(() => document.body.classList.remove('screen-shake'), enemyCrit ? 800 : 500);
                 
             } else {
                 // 무승부
@@ -3736,20 +3760,22 @@
         }
 
         // 배틀 이펙트 표시 (강화)
-        function showBattleEffect(action, isMyAttack, damage) {
+        function showBattleEffect(action, isMyAttack, damage, isCrit = false) {
             const effect = document.createElement('div');
             effect.className = 'battle-effect';
             
             // 여러 이펙트 동시에
             if (action === 'attack' || action.startsWith('ultimate_burst')) {
-                // 슬래시 + 타격 이펙트
+                // 슬래시 + 타격 이펙트 (크리티컬이면 더 크게)
                 effect.innerHTML = `
-                    <div class="slash-effect"></div>
-                    <div style="position:absolute;font-size:3rem;animation:actionBounce 0.4s ease-out;">💥</div>
+                    <div class="slash-effect" style="${isCrit ? 'transform:scale(1.5);' : ''}"></div>
+                    <div style="position:absolute;font-size:${isCrit ? '5rem' : '3rem'};animation:actionBounce 0.4s ease-out;">${isCrit ? '💥💥💥' : '💥'}</div>
                 `;
-                // 파티클 효과
-                for (let i = 0; i < 5; i++) {
-                    setTimeout(() => showParticle(isMyAttack ? '#4ecca3' : '#ff6b6b'), i * 50);
+                // 파티클 효과 (크리티컬이면 더 많이)
+                const particleCount = isCrit ? 15 : 5;
+                const particleColor = isCrit ? '#ff4500' : (isMyAttack ? '#4ecca3' : '#ff6b6b');
+                for (let i = 0; i < particleCount; i++) {
+                    setTimeout(() => showParticle(particleColor), i * 30);
                 }
             } else if (action === 'defense' || action.startsWith('ultimate_absolute')) {
                 effect.innerHTML = `
@@ -4063,13 +4089,15 @@
                         const enemyAction = isP1Me ? tr.p2Action : tr.p1Action;
                         const myDamage = isP1Me ? tr.p1Damage : tr.p2Damage;
                         const enemyDamage = isP1Me ? tr.p2Damage : tr.p1Damage;
+                        const myCrit = isP1Me ? tr.p1Crit : tr.p2Crit;
+                        const enemyCrit = isP1Me ? tr.p2Crit : tr.p1Crit;
                         
                         // 결과: 내가 이겼는지
                         let result = 'draw';
                         if (enemyDamage > myDamage) result = 'win';
                         else if (myDamage > enemyDamage) result = 'lose';
                         
-                        await showTurnResult(myAction, enemyAction, result, myDamage, enemyDamage);
+                        await showTurnResult(myAction, enemyAction, result, myDamage, enemyDamage, myCrit, enemyCrit);
                     }
                     
                     // 게임 종료 체크
