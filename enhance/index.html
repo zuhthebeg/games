@@ -3525,17 +3525,25 @@
                 onLeave: () => { battleState = null; showMain(); },
                 getPlayerData: () => {
                     // 무기 스탯 계산해서 함께 전송 (사냥과 동일한 공식)
-                    const weapon = state.weapon || { type: 'sword', grade: 'common', level: 0, name: '기본 무기' };
+                    const weapon = state.weapon || { type: 'sword', grade: 'common', level: 0, name: '기본 무기', element: 'none' };
                     const stats = getWeaponStats(weapon, true);
+                    
+                    // 디버그: NaN 체크
+                    console.log('[getPlayerData] weapon:', weapon);
+                    console.log('[getPlayerData] stats:', stats);
+                    if (isNaN(stats.damageMin) || isNaN(stats.damageMax) || isNaN(stats.hp)) {
+                        console.error('[getPlayerData] NaN detected! weapon:', JSON.stringify(weapon), 'stats:', JSON.stringify(stats));
+                    }
+                    
                     return {
                         weapon: {
                             ...weapon,
                             // 계산된 스탯 전송 (서버가 그대로 사용)
-                            damageMin: stats.damageMin || 5,
-                            damageMax: stats.damageMax || 8,
-                            critChance: stats.critChance || 5,
-                            critDamage: stats.critDamage || 150,
-                            hp: stats.hp || 100
+                            damageMin: isNaN(stats.damageMin) ? 5 : stats.damageMin,
+                            damageMax: isNaN(stats.damageMax) ? 8 : stats.damageMax,
+                            critChance: isNaN(stats.critChance) ? 5 : stats.critChance,
+                            critDamage: isNaN(stats.critDamage) ? 150 : stats.critDamage,
+                            hp: isNaN(stats.hp) ? 100 : stats.hp
                         },
                         gold: state.gold
                     };
@@ -4238,8 +4246,10 @@
             let canRematch = true;
 
             if (isWin) {
-                // 승리: 1만 골드 지급
-                const goldReward = 10000;
+                // 승리: 상대 무기 레벨 * 1000 골드 (저레벨이 고레벨 이기면 많이 받음)
+                const enemy = gs?.players?.find(p => p.id !== myId);
+                const enemyLevel = enemy?.weaponLevel || 0;
+                const goldReward = Math.max(1000, enemyLevel * 1000);  // 최소 1000골드
                 state.gold += goldReward;
                 state.stats.wins++;
                 saveState();
@@ -4247,7 +4257,7 @@
                 
                 mpUI.showResult({
                     title: '🏆 승리!',
-                    detail: `${rounds} 라운드 전투 승리!\n💰 +${goldReward.toLocaleString()} 골드`,
+                    detail: `${rounds} 라운드 전투 승리!\n💰 +${goldReward.toLocaleString()} 골드\n(상대 +${enemyLevel} 무기 격파 보상)`,
                     isWin: true,
                     showRematch: true
                 });
