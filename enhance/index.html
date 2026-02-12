@@ -2653,12 +2653,12 @@
             const weaponMasteryBonus = includeMastery ? getWeaponMasteryBonus(weapon) : 0;
             const totalMasteryBonus = globalMasteryBonus + weaponMasteryBonus;
 
-            // 이쑤시개: 데미지 1 고정, 크리티컬 10%, 크리티컬 데미지 1000!
+            // 이쑤시개: 데미지 1 고정, 크리티컬 50%+강화레벨, 크리티컬 데미지 1000! (크리티컬 시 내구도 -50)
             if (isToothpick(weapon)) {
                 return { 
                     damageMin: 1, 
                     damageMax: 1, 
-                    critChance: 10, 
+                    critChance: 50 + level,  // 강화할수록 크리티컬 증가
                     critDamage: 1000, 
                     hp: Math.floor((100 + level * 20) * mult),
                     masteryBonus: globalMasteryBonus, 
@@ -4927,6 +4927,12 @@
             if (playerCrit) {
                 // 크리 기록
                 state.weapon.weaponMastery.crits++;
+                
+                // 이쑤시개: 크리티컬 터지면 내구도 -50!
+                if (isToothpick(state.weapon)) {
+                    state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - 50);
+                    huntState.log.push({ type: 'warning', text: `🪥 이쑤시개가 부러질 것 같다! (내구도 -50)` });
+                }
                 
                 showSlashEffect('crit', 'monster');  // X 슬래시! 몬스터 영역에
                 showCritEffect();
