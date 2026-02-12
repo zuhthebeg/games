@@ -5356,6 +5356,33 @@
             animate();
         }
 
+        // ===== DEBUG MODE =====
+        const DEBUG_MODE = new URLSearchParams(window.location.search).get('debug') === '1';
+        
+        function renderDebugPanel() {
+            if (!DEBUG_MODE) return '';
+            const w = state.weapon;
+            const stats = getWeaponStats(w);
+            return `
+                <div style="position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:11px;padding:8px;z-index:9999;max-height:40vh;overflow:auto;">
+                    <div style="color:#ff0;font-weight:bold;">🔧 DEBUG MODE</div>
+                    <div style="margin-top:4px;"><b>weapon:</b> ${JSON.stringify(w, null, 1)}</div>
+                    <div style="margin-top:4px;"><b>stats:</b> ${JSON.stringify(stats)}</div>
+                    <div style="margin-top:4px;"><b>WEAPON_TYPES[${w?.type}]:</b> ${JSON.stringify(WEAPON_TYPES[w?.type])}</div>
+                    <div style="margin-top:4px;"><b>GRADES[${w?.grade}]:</b> multiplier=${GRADES[w?.grade]?.multiplier}</div>
+                </div>
+            `;
+        }
+        
+        // showMain 원본 저장 후 래핑
+        const _originalShowMain = showMain;
+        showMain = function() {
+            _originalShowMain();
+            if (DEBUG_MODE) {
+                document.body.insertAdjacentHTML('beforeend', renderDebugPanel());
+            }
+        };
+
         // ===== INIT =====
         loadState();
         showMain();
