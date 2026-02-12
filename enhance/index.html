@@ -5016,7 +5016,7 @@
                 goldReward *= 10;
             }
             
-            state.gold += goldReward;
+            // 골드는 사냥 완료 시 지급 (새로고침 방지)
             state.mastery.kills++;
             huntState.monstersKilled++;
             huntState.totalGoldEarned += goldReward;
@@ -5202,9 +5202,9 @@
                 fireConfetti();
             }
             
-            state.gold += treasure.gold;
+            // 골드는 사냥 완료 시 지급 (새로고침 방지)
             huntState.totalGoldEarned += treasure.gold;
-            saveState();
+            saveState();  // 무기 숙련도 등만 저장
             
             const popup = document.getElementById('resultPopup');
             const overlay = document.getElementById('overlay');
@@ -5267,6 +5267,12 @@
             // 🐉 사냥 종료 시 남은 킬 동기화
             if (pendingKills > 0) {
                 syncHuntingRanking();
+            }
+            
+            // 💰 사냥 완료 시 골드 지급! (새로고침하면 못 받음)
+            if (huntState && huntState.totalGoldEarned > 0) {
+                state.gold += huntState.totalGoldEarned;
+                saveState();
             }
             
             // Show final results
