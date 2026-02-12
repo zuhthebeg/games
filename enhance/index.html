@@ -2061,6 +2061,8 @@
             rat:      { name: '쥐떼',       img: `${ICON_BASE}/lorc/evil-minion.svg`,        tier: 1, hp: 30,  damage: [4, 8],    crit: 12, gold: [60, 120], type: 'beast' },
             spider:   { name: '거미',       img: `${ICON_BASE}/delapouite/spider-eye.svg`,   tier: 1, hp: 45,  damage: [7, 11],   crit: 8,  gold: [90, 160], type: 'insect' },
             skeleton: { name: '해골병사',   img: `${ICON_BASE}/lorc/diablo-skull.svg`,       tier: 1, hp: 55,  damage: [8, 14],   crit: 5,  gold: [110, 190], type: 'undead' },
+            mushroom: { name: '독버섯',     img: `${ICON_BASE}/lorc/mushroom-cloud.svg`,     tier: 1, hp: 38,  damage: [6, 12],   crit: 6,  gold: [85, 170], type: 'elemental' },
+            wisp:     { name: '도깨비불',   img: `${ICON_BASE}/lorc/burning-embers.svg`,     tier: 1, hp: 32,  damage: [9, 13],   crit: 15, gold: [95, 175], type: 'elemental' },
             
             // Tier 2 (중간)
             imp:      { name: '임프',       img: `${ICON_BASE}/lorc/imp.svg`,                tier: 2, hp: 80,  damage: [12, 20],  crit: 12, gold: [200, 400], type: 'demon' },
@@ -2070,6 +2072,9 @@
             zombie:   { name: '좀비',       img: `${ICON_BASE}/delapouite/shambling-zombie.svg`, tier: 2, hp: 120, damage: [10, 18], crit: 5, gold: [180, 350], type: 'undead' },
             harpy:    { name: '하피',       img: `${ICON_BASE}/lorc/harpy.svg`,              tier: 2, hp: 75,  damage: [16, 26],  crit: 20, gold: [280, 480], type: 'beast' },
             elemental_fire: { name: '화염정령', img: `${ICON_BASE}/lorc/ifrit.svg`,          tier: 2, hp: 85,  damage: [20, 30],  crit: 8,  gold: [320, 520], type: 'elemental' },
+            elemental_ice: { name: '얼음정령', img: `${ICON_BASE}/lorc/ice-cube.svg`,        tier: 2, hp: 80,  damage: [18, 28],  crit: 10, gold: [300, 500], type: 'elemental' },
+            bandit:   { name: '산적',       img: `${ICON_BASE}/lorc/hooded-assassin.svg`,    tier: 2, hp: 95,  damage: [16, 24],  crit: 22, gold: [280, 480], type: 'humanoid' },
+            lizardman: { name: '리자드맨',  img: `${ICON_BASE}/lorc/saber-toothed-cat-head.svg`, tier: 2, hp: 110, damage: [14, 22], crit: 12, gold: [260, 440], type: 'beast' },
             
             // Tier 3 (어려움) - 강화된 스탯
             beast:    { name: '마수',       img: `${ICON_BASE}/lorc/beast-eye.svg`,          tier: 3, hp: 220, damage: [35, 55],  crit: 15, gold: [600, 1000], type: 'beast' },
@@ -2084,6 +2089,11 @@
             troll:    { name: '트롤',       img: `${ICON_BASE}/lorc/muscle-up.svg`,          tier: 3, hp: 400, damage: [35, 55],  crit: 8,  gold: [800, 1250], type: 'beast' },
             gargoyle: { name: '가고일',     img: `${ICON_BASE}/lorc/bat-wing.svg`,           tier: 3, hp: 300, damage: [38, 60],  crit: 12, gold: [780, 1200], type: 'elemental' },
             chimera:  { name: '키메라',     img: `${ICON_BASE}/lorc/double-face-mask.svg`,   tier: 3, hp: 340, damage: [45, 72],  crit: 18, gold: [1000, 1600], type: 'beast' },
+            wraith:   { name: '레이스',     img: `${ICON_BASE}/lorc/spectre.svg`,            tier: 3, hp: 240, damage: [50, 75],  crit: 25, gold: [880, 1420], type: 'undead' },
+            ogre:     { name: '오우거',     img: `${ICON_BASE}/lorc/muscle-up.svg`,          tier: 3, hp: 450, damage: [32, 52],  crit: 6,  gold: [760, 1180], type: 'beast' },
+            cerberus: { name: '케르베로스', img: `${ICON_BASE}/lorc/werewolf.svg`,           tier: 3, hp: 310, damage: [48, 70],  crit: 20, gold: [920, 1480], type: 'beast' },
+            medusa:   { name: '메두사',     img: `${ICON_BASE}/lorc/spectre.svg`,            tier: 3, hp: 220, damage: [52, 78],  crit: 30, gold: [950, 1550], type: 'demon' },
+            giant_spider: { name: '대왕거미', img: `${ICON_BASE}/delapouite/spider-eye.svg`, tier: 3, hp: 280, damage: [40, 62],  crit: 15, gold: [820, 1280], type: 'insect' },
             
             // Tier 4 (보스) - 강화된 스탯
             dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/double-dragon.svg`,      tier: 4, hp: 600, damage: [70, 110],  crit: 22, gold: [4000, 6500], isBoss: true, type: 'dragon' },
@@ -2098,7 +2108,13 @@
             // Tier 5 (전설) - 극강 스탯
             ancient_dragon: { name: '🌟 고대용', img: `${ICON_BASE}/delapouite/spiked-dragon-head.svg`, tier: 5, hp: 1200, damage: [110, 180], crit: 28, gold: [15000, 30000], isBoss: true, type: 'dragon' },
             demon_lord:     { name: '😈 마왕',   img: `${ICON_BASE}/lorc/diablo-skull.svg`,     tier: 5, hp: 1000, damage: [130, 200], crit: 35, gold: [18000, 35000], isBoss: true, type: 'demon' },
-            death_knight:   { name: '⚔️ 죽음의기사', img: `${ICON_BASE}/lorc/grim-reaper.svg`,  tier: 5, hp: 900, damage: [150, 220], crit: 40, gold: [22000, 40000], isBoss: true, type: 'undead' }
+            death_knight:   { name: '⚔️ 죽음의기사', img: `${ICON_BASE}/lorc/grim-reaper.svg`,  tier: 5, hp: 900, damage: [150, 220], crit: 40, gold: [22000, 40000], isBoss: true, type: 'undead' },
+            
+            // Tier 6 (신화급 보스) - 4대 속성 드래곤
+            valakas:    { name: '🔥 화룡 발라카스', img: `${ICON_BASE}/lorc/double-dragon.svg`,      tier: 6, hp: 2000, damage: [180, 280], crit: 30, gold: [50000, 80000], isBoss: true, type: 'dragon' },
+            antharas:   { name: '🌍 지룡 안타라스', img: `${ICON_BASE}/delapouite/spiked-dragon-head.svg`, tier: 6, hp: 2500, damage: [150, 250], crit: 20, gold: [45000, 75000], isBoss: true, type: 'dragon' },
+            lindvior:   { name: '💨 풍룡 린드비오르', img: `${ICON_BASE}/lorc/wyvern.svg`,           tier: 6, hp: 1800, damage: [200, 300], crit: 40, gold: [55000, 90000], isBoss: true, type: 'dragon' },
+            fafurion:   { name: '💧 수룡 파푸리온', img: `${ICON_BASE}/lorc/hydra.svg`,              tier: 6, hp: 2200, damage: [160, 260], crit: 25, gold: [48000, 78000], isBoss: true, type: 'dragon' }
         };
 
         /*
