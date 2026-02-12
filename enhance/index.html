@@ -2393,8 +2393,11 @@
         
         // 숙련도 보너스 계산 (공격력 %)
         function getMasteryBonus() {
-            const attackBonus = Math.min(20, Math.floor(state.mastery.attacks / 50)); // 50번당 1%, 최대 20%
-            const killBonus = Math.min(30, Math.floor(state.mastery.kills / 10)); // 10킬당 1%, 최대 30%
+            // 방어 코드: mastery 객체 없거나 필드 없으면 0
+            const attacks = state.mastery?.attacks || 0;
+            const kills = state.mastery?.kills || 0;
+            const attackBonus = Math.min(20, Math.floor(attacks / 50)); // 50번당 1%, 최대 20%
+            const killBonus = Math.min(30, Math.floor(kills / 10)); // 10킬당 1%, 최대 30%
             return attackBonus + killBonus; // 최대 50%
         }
         
