@@ -3983,31 +3983,75 @@
             const isWin = data.winnerId === myId;
             const gs = battleState?.gameState;
             const rounds = gs?.round || 1;
+            
+            let weaponBroke = false;
+            let canRematch = true;
 
             if (isWin) {
+                // 승리: 1만 골드 지급
+                const goldReward = 10000;
+                state.gold += goldReward;
                 state.stats.wins++;
                 saveState();
                 syncPvPRanking(true);
                 
                 mpUI.showResult({
                     title: '🏆 승리!',
-                    detail: `${rounds} 라운드 전투 승리!\n(무기 유지)`,
+                    detail: `${rounds} 라운드 전투 승리!\n💰 +${goldReward.toLocaleString()} 골드`,
                     isWin: true,
                     showRematch: true
                 });
                 
                 fireConfetti();
             } else {
+                // 패배: 내구도 20% 하락
                 state.stats.losses++;
+                
+                // 나무막대기가 아니면 내구도 감소
+                if (!isWoodenStick()) {
+                    const durabilityLoss = Math.ceil(state.weapon.maxDurability * 0.2);
+                    state.weapon.durability = Math.max(0, state.weapon.durability - durabilityLoss);
+                    
+                    // 내구도 0이면 무기 파괴
+                    if (state.weapon.durability <= 0) {
+                        weaponBroke = true;
+                        canRematch = false;
+                        
+                        // 무기 파괴 처리
+                        const brokenWeaponName = state.weapon.name;
+                        const brokenWeaponLevel = state.weapon.level;
+                        state.weapon = generateWeapon('common');  // 기본 무기로 리셋
+                        state.mastery = {};  // 숙련도 리셋
+                        
+                        playSound('destroy');
+                        vibrate([200, 100, 200, 100, 300]);
+                        
+                        mpUI.showResult({
+                            title: '💀 패배... 무기 파괴!',
+                            detail: `${brokenWeaponName} +${brokenWeaponLevel} 파괴됨!\n새 무기로 시작하세요.`,
+                            isWin: false,
+                            showRematch: false
+                        });
+                    } else {
+                        mpUI.showResult({
+                            title: '💀 패배...',
+                            detail: `${rounds} 라운드 전투 패배.\n🔧 내구도 -${durabilityLoss} (${state.weapon.durability}/${state.weapon.maxDurability})`,
+                            isWin: false,
+                            showRematch: true
+                        });
+                    }
+                } else {
+                    // 나무막대기는 내구도 감소 없음
+                    mpUI.showResult({
+                        title: '💀 패배...',
+                        detail: `${rounds} 라운드 전투 패배.\n(나무막대기는 내구도 감소 없음)`,
+                        isWin: false,
+                        showRematch: true
+                    });
+                }
+                
                 saveState();
                 syncPvPRanking(false);
-                
-                mpUI.showResult({
-                    title: '💀 패배...',
-                    detail: `${rounds} 라운드 전투 패배.\n(무기 유지)`,
-                    isWin: false,
-                    showRematch: true
-                });
             }
         }
 
