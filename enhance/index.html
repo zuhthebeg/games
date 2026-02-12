@@ -3524,14 +3524,18 @@
                 onGameEvent: handleBattleEvent,
                 onLeave: () => { battleState = null; showMain(); },
                 getPlayerData: () => {
-                    // 무기 스탯 계산해서 함께 전송
-                    const stats = getWeaponStats(state.weapon, true);
+                    // 무기 스탯 계산해서 함께 전송 (사냥과 동일한 공식)
+                    const weapon = state.weapon || { type: 'sword', grade: 'common', level: 0, name: '기본 무기' };
+                    const stats = getWeaponStats(weapon, true);
                     return {
                         weapon: {
-                            ...state.weapon,
-                            critChance: stats.critChance,
-                            critDamage: stats.critDamage,
-                            calculatedDamage: Math.floor((stats.damageMin + stats.damageMax) / 2)
+                            ...weapon,
+                            // 계산된 스탯 전송 (서버가 그대로 사용)
+                            damageMin: stats.damageMin || 5,
+                            damageMax: stats.damageMax || 8,
+                            critChance: stats.critChance || 5,
+                            critDamage: stats.critDamage || 150,
+                            hp: stats.hp || 100
                         },
                         gold: state.gold
                     };
@@ -4012,7 +4016,7 @@
                                         <div class="rage-bar ${enemyRage >= 100 ? 'full' : ''}" style="width:${enemyRage}%"></div>
                                     </div>
                                     <div class="fighter-stats">
-                                        <span>⚔️ ${enemy?.weaponDamage || 10}</span>
+                                        <span>⚔️ ${enemy?.damageMin || 5}-${enemy?.damageMax || 8}</span>
                                         <span>💥 ${enemy?.weaponCritChance || 5}%</span>
                                         <span>🔥 ${enemyRage}%</span>
                                     </div>
@@ -4047,7 +4051,7 @@
                                         <div class="rage-bar ${myRage >= 100 ? 'full' : ''}" style="width:${myRage}%"></div>
                                     </div>
                                     <div class="fighter-stats">
-                                        <span>⚔️ ${me?.weaponDamage || 10}</span>
+                                        <span>⚔️ ${me?.damageMin || 5}-${me?.damageMax || 8}</span>
                                         <span>💥 ${me?.weaponCritChance || 5}%</span>
                                         <span>🔥 ${myRage}%</span>
                                     </div>
