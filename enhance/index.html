@@ -2726,6 +2726,11 @@
                 critDamage *= 2;
                 hp *= 2;
             }
+            
+            // 원거리 무기(활, 석궁): 최소 데미지 0 고정!
+            if (weapon.type === 'bow' || weapon.type === 'crossbow') {
+                damageMin = 0;
+            }
 
             return { damageMin, damageMax, critChance, critDamage, hp, masteryBonus: globalMasteryBonus, weaponMasteryBonus };
         }
