@@ -4864,9 +4864,9 @@
             const player = huntState.player;
             const monster = huntState.monster;
             
-            // 내구도 체크 - 0이면 30% 확률로 무기 파괴
+            // 내구도 체크 - 0이면 무기 파괴!
             if ((state.weapon.durability || 100) <= 0) {
-                if (Math.random() < 0.3) {
+                if (true) {  // 내구도 0 = 무조건 파괴
                     // 무기 파괴! 양쪽 데미지
                     const breakDamage = Math.floor(player.maxHp * 0.3);
                     player.hp = Math.max(0, player.hp - breakDamage);
@@ -5477,6 +5477,7 @@
         function debugSetDurability1() {
             if (state.weapon) {
                 state.weapon.durability = 1;
+                state.weapon._durabilityCounter = 9;  // 다음 공격에 바로 0으로
                 saveState();
                 showMain();
             }
