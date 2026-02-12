@@ -1033,6 +1033,73 @@
             100% { transform: translateY(-150px) scale(0.8); opacity: 0; }
         }
         
+        /* 🧙 마법 속성 이펙트 */
+        .magic-effect {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5rem;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .magic-effect.fire { animation: magicFire 0.6s ease-out forwards; }
+        .magic-effect.ice { animation: magicIce 0.8s ease-out forwards; }
+        .magic-effect.lightning { animation: magicLightning 0.5s ease-out forwards; }
+        .magic-effect.water { animation: magicWater 0.7s ease-out forwards; }
+        .magic-effect.poison { animation: magicPoison 0.6s ease-out forwards; }
+        .magic-effect.holy { animation: magicHoly 0.8s ease-out forwards; }
+        
+        @keyframes magicFire {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            30% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+            100% { transform: translate(-50%, -80%) scale(2); opacity: 0; }
+        }
+        @keyframes magicIce {
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; filter: blur(10px); }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; filter: blur(0); }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; filter: blur(5px); }
+        }
+        @keyframes magicLightning {
+            0%, 100% { opacity: 0; }
+            10%, 30%, 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+            20%, 40% { opacity: 0.5; transform: translate(-48%, -52%) scale(1.1); }
+            60% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+        @keyframes magicWater {
+            0% { transform: translate(-50%, -30%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -70%) scale(0.8); opacity: 0; }
+        }
+        @keyframes magicPoison {
+            0% { transform: translate(-50%, -50%) scale(0.5) rotate(0deg); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.3) rotate(180deg); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(360deg); opacity: 0; }
+        }
+        @keyframes magicHoly {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; filter: brightness(3); }
+            50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; filter: brightness(2); }
+            100% { transform: translate(-50%, -50%) scale(2); opacity: 0; filter: brightness(1); }
+        }
+        
+        /* 상태이상 표시 */
+        .status-effect {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 4px;
+            animation: statusPulse 1s ease-in-out infinite;
+        }
+        .status-effect.poison { background: rgba(153, 50, 204, 0.3); color: #9932cc; }
+        .status-effect.frozen { background: rgba(0, 191, 255, 0.3); color: #00bfff; }
+        .status-effect.shocked { background: rgba(255, 215, 0, 0.3); color: #ffd700; }
+        
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
         @keyframes critText {
             0% { transform: translateX(-50%) scale(0.5); opacity: 0; }
             20% { transform: translateX(-50%) scale(1.3); opacity: 1; }
@@ -1922,7 +1989,8 @@
             spear:  { name: '창',     img: `${ICON_BASE}/lorc/spear-hook.svg`,       bonus: { damage: 0.95, crit: 1.15 }, baseMin: 5, baseMax: 9, critDmgBonus: 30 },
             hammer: { name: '망치',   img: `${ICON_BASE}/lorc/claw-hammer.svg`,      bonus: { damage: 1.3, crit: 0.7 },   baseMin: 10, baseMax: 14, critDmgBonus: -40 },
             dagger: { name: '단검',   img: `${ICON_BASE}/lorc/plain-dagger.svg`,     bonus: { damage: 0.8, crit: 1.4 },   baseMin: 3, baseMax: 6, critDmgBonus: 80 },
-            staff:  { name: '지팡이', img: `${ICON_BASE}/lorc/wizard-staff.svg`,     bonus: { damage: 0.9, crit: 1.0, special: true }, baseMin: 5, baseMax: 8, critDmgBonus: 20 },
+            staff:  { name: '지팡이', img: `${ICON_BASE}/lorc/wizard-staff.svg`,     bonus: { damage: 0.9, crit: 1.0 }, isMagic: true, baseMin: 5, baseMax: 8, critDmgBonus: 20 },
+            wand:   { name: '완드',   img: `${ICON_BASE}/lorc/crystal-wand.svg`,     bonus: { damage: 0.85, crit: 1.1 }, isMagic: true, baseMin: 4, baseMax: 10, critDmgBonus: 30 },
             katana: { name: '태도',   img: `${ICON_BASE}/lorc/crossed-swords.svg`,   bonus: { damage: 1.0, crit: 1.25 },  baseMin: 5, baseMax: 11, critDmgBonus: 50 },
             scythe: { name: '낫',     img: `${ICON_BASE}/lorc/scythe.svg`,           bonus: { damage: 1.1, crit: 1.1 },   baseMin: 4, baseMax: 15, critDmgBonus: 40 },
             bow:    { name: '활',     img: `${ICON_BASE}/lorc/pocket-bow.svg`,       bonus: { damage: 0.9, crit: 1.2 },   baseMin: 0, baseMax: 14, critDmgBonus: 150 },
@@ -1930,17 +1998,26 @@
             knuckle: { name: '너클',  img: `${ICON_BASE}/lorc/punch.svg`,            bonus: { damage: 0.95, crit: 1.0 },  baseMin: 7, baseMax: 8, critDmgBonus: 0 }
         };
         
+        // 마법 무기 체크
+        function isMagicWeapon(weapon) {
+            return weapon && WEAPON_TYPES[weapon.type]?.isMagic === true;
+        }
+        
         // ===== 속성 시스템 =====
         const ELEMENTS = {
             none:      { name: '무속성', icon: '⚪', color: '#aaa' },
-            fire:      { name: '불', icon: '🔥', color: '#ff4500' },
-            ice:       { name: '얼음', icon: '❄️', color: '#00bfff' },
-            lightning: { name: '번개', icon: '⚡', color: '#ffd700' },
+            fire:      { name: '불', icon: '🔥', color: '#ff4500', magicEffect: 'explosion' },
+            ice:       { name: '얼음', icon: '❄️', color: '#00bfff', magicEffect: 'freeze' },
+            lightning: { name: '번개', icon: '⚡', color: '#ffd700', magicEffect: 'shock' },
+            water:     { name: '물', icon: '💧', color: '#1e90ff', magicEffect: 'heal' },
+            poison:    { name: '독', icon: '☠️', color: '#9932cc', magicEffect: 'dot' },
+            holy:      { name: '신성', icon: '✨', color: '#fff8dc', magicEffect: 'smite' },
             silver:    { name: '은', icon: '🌙', color: '#c0c0c0' },
-            poison:    { name: '독', icon: '☠️', color: '#9932cc' },
-            holy:      { name: '신성', icon: '✨', color: '#fff8dc' },
             lifesteal: { name: '흡혈', icon: '🩸', color: '#8b0000' }
         };
+        
+        // 마법 무기용 속성 (silver, lifesteal 제외)
+        const MAGIC_ELEMENTS = ['fire', 'ice', 'lightning', 'water', 'poison', 'holy'];
         
         // 흡혈 몬스터 목록 (이 몬스터 처치 시 흡혈 무기 드랍 확률)
         const LIFESTEAL_MONSTERS = ['vampire', 'ghoul', 'spectre', 'lich'];
@@ -2045,6 +2122,7 @@
                     hammer: '돌망치',
                     dagger: '이쑤시개',
                     staff: '나뭇가지',
+                    wand: '부러진 막대',
                     katana: '죽도',
                     scythe: '농기구 낫',
                     bow: '새총',  // 특수: 크리 100%, 데미지 0-30 고정!
@@ -2061,6 +2139,7 @@
                 prefixes: ['강화된', '마력의', '빛나는', '정교한'],
                 names: {
                     sword: '유리검',  // 특수: 능력치 2배, 파괴확률 30%!
+                    wand: '견습 완드',
                     bow: '마력의 활',
                     crossbow: '연발 석궁',
                     knuckle: '강철 너클'
@@ -2075,6 +2154,7 @@
                 prefixes: ['정예', '명인의', '고대의', '축복받은'],
                 names: {
                     staff: '피닉스 지팡이',  // 특수: 연속 사냥 시 HP 100% 회복!
+                    wand: '마력 완드',
                     bow: '명궁의 활',
                     crossbow: '철갑 석궁',
                     knuckle: '격투가의 주먹'
@@ -2094,6 +2174,7 @@
                     hammer: '천둥망치',
                     dagger: '그림자 단검',
                     staff: '대현자의 지팡이',
+                    wand: '대마법사의 완드',
                     katana: '천검',
                     scythe: '저승사자의 낫',
                     bow: '천상의 활',
@@ -2115,6 +2196,7 @@
                     hammer: '묠니르',
                     dagger: '암흑검 아즈라엘',
                     staff: '현자의 지팡이',
+                    wand: '엘더완드',
                     katana: '무라마사',
                     scythe: '죽음의 낫',
                     bow: '아폴론의 활',
@@ -2136,6 +2218,7 @@
                     hammer: '창세의 망치',
                     dagger: '카오스 블레이드',
                     staff: '아카식 레코드',
+                    wand: '세계수의 완드',
                     katana: '아마테라스',
                     scythe: '종언의 낫',
                     bow: '아르테미스',
@@ -2565,9 +2648,13 @@
             }
 
             // 랜덤 속성 부여 (등급에 따라 확률 증가)
+            // 🧙 마법 무기(지팡이, 완드)는 항상 마법 속성 보유!
             const elementChance = { common: 0.1, magic: 0.3, rare: 0.5, legendary: 0.7, unique: 1.0, mythic: 1.0 };
             let element = 'none';
-            if (Math.random() < elementChance[grade]) {
+            if (typeData.isMagic) {
+                // 마법 무기: 100% 마법 속성 부여
+                element = MAGIC_ELEMENTS[Math.floor(Math.random() * MAGIC_ELEMENTS.length)];
+            } else if (Math.random() < elementChance[grade]) {
                 const elements = ['fire', 'ice', 'lightning', 'silver', 'poison', 'holy'];
                 element = elements[Math.floor(Math.random() * elements.length)];
             }
@@ -4106,6 +4193,12 @@
             
             // 내 무기 타입 (호출 시 전달되지 않으면 state에서 가져옴)
             const myWeaponType = weaponType || state.weapon?.type;
+            const myWeaponElement = state.weapon?.element || 'none';
+            
+            // 🧙 마법 무기 크리티컬 이펙트
+            if (isMyAttack && isCrit && isMagicWeapon(state.weapon) && ELEMENTS[myWeaponElement]?.magicEffect) {
+                showMagicEffect(myWeaponElement);
+            }
             
             // 여러 이펙트 동시에
             if (action === 'attack' || action.startsWith('ultimate_burst')) {
@@ -4123,6 +4216,12 @@
                         <div class="slash-arrow" style="${isCrit ? 'transform:scale(1.3);' : ''}"></div>
                         <div style="position:absolute;font-size:${isCrit ? '4rem' : '2.5rem'};animation:actionBounce 0.4s ease-out;">${isCrit ? '🎯💥' : '🏹'}</div>
                     `;
+                } else if (isMyAttack && (myWeaponType === 'staff' || myWeaponType === 'wand')) {
+                    // 🧙 마법 무기: 속성 이모지
+                    const elemIcon = ELEMENTS[myWeaponElement]?.icon || '✨';
+                    effectHtml = `
+                        <div style="font-size:${isCrit ? '5rem' : '3.5rem'};animation:actionBounce 0.5s ease-out;text-shadow:0 0 30px ${ELEMENTS[myWeaponElement]?.color || '#fff'};">${elemIcon}</div>
+                    `;
                 } else {
                     // 기본: 슬래시
                     effectHtml = `
@@ -4132,9 +4231,12 @@
                 }
                 effect.innerHTML = effectHtml;
                 
-                // 파티클 효과 (크리티컬이면 더 많이)
+                // 파티클 효과 (크리티컬이면 더 많이, 마법 무기는 속성색)
                 const particleCount = isCrit ? 15 : 5;
-                const particleColor = isCrit ? '#ff4500' : (isMyAttack ? '#4ecca3' : '#ff6b6b');
+                let particleColor = isCrit ? '#ff4500' : (isMyAttack ? '#4ecca3' : '#ff6b6b');
+                if (isMyAttack && (myWeaponType === 'staff' || myWeaponType === 'wand')) {
+                    particleColor = ELEMENTS[myWeaponElement]?.color || particleColor;
+                }
                 for (let i = 0; i < particleCount; i++) {
                     setTimeout(() => showParticle(particleColor), i * 30);
                 }
@@ -4868,6 +4970,74 @@
             setTimeout(() => container.remove(), duration);
         }
         
+        // 🧙 마법 이펙트 표시
+        function showMagicEffect(element) {
+            const elementData = ELEMENTS[element];
+            if (!elementData) return;
+            
+            const effect = document.createElement('div');
+            effect.className = `magic-effect ${element}`;
+            effect.textContent = elementData.icon;
+            effect.style.textShadow = `0 0 30px ${elementData.color}, 0 0 60px ${elementData.color}`;
+            document.body.appendChild(effect);
+            
+            setTimeout(() => effect.remove(), 1000);
+        }
+        
+        // 🧙 마법 크리티컬 효과 처리 (사냥용)
+        // 반환: { extraDamage, healAmount, statusEffect, instantKill }
+        function applyMagicCritEffect(element, damage, monster, player) {
+            const result = { extraDamage: 0, healAmount: 0, statusEffect: null, instantKill: false, logText: '' };
+            
+            if (!isMagicWeapon(state.weapon)) return result;
+            
+            const elementData = ELEMENTS[element];
+            if (!elementData?.magicEffect) return result;
+            
+            showMagicEffect(element);
+            
+            switch (elementData.magicEffect) {
+                case 'explosion':  // 🔥 불: 폭발 데미지 (+50%)
+                    result.extraDamage = Math.floor(damage * 0.5);
+                    result.logText = `🔥 폭발! +${result.extraDamage} 추가 데미지!`;
+                    break;
+                    
+                case 'freeze':  // ❄️ 얼음: 빙결 (적 턴 스킵)
+                    result.statusEffect = 'frozen';
+                    huntState.monsterFrozen = true;  // 다음 턴 스킵
+                    result.logText = `❄️ 빙결! 적 공격 무효화!`;
+                    break;
+                    
+                case 'shock':  // ⚡ 번개: 감전 데미지 (+30%)
+                    result.extraDamage = Math.floor(damage * 0.3);
+                    result.logText = `⚡ 감전! +${result.extraDamage} 추가 데미지!`;
+                    break;
+                    
+                case 'heal':  // 💧 물: 회복 (20% HP)
+                    result.healAmount = Math.floor(player.maxHp * 0.2);
+                    result.logText = `💧 치유! +${result.healAmount} HP 회복!`;
+                    break;
+                    
+                case 'dot':  // ☠️ 독: 지속 데미지
+                    huntState.monsterPoisoned = 3;  // 3턴 지속
+                    huntState.poisonDamage = Math.floor(damage * 0.2);  // 턴당 20%
+                    result.logText = `☠️ 맹독! 3턴간 ${huntState.poisonDamage} 지속 데미지!`;
+                    break;
+                    
+                case 'smite':  // ✨ 신성: 언데드 즉사
+                    if (monster.type === 'undead') {
+                        result.instantKill = true;
+                        result.logText = `✨ 신성한 심판! 언데드 즉사!`;
+                    } else {
+                        result.extraDamage = Math.floor(damage * 0.25);
+                        result.logText = `✨ 신성 데미지! +${result.extraDamage}!`;
+                    }
+                    break;
+            }
+            
+            return result;
+        }
+        
         // 무기 획득 이펙트
         // reason: 'monster_death', 'durability_break', 'enhance_destroy'
         // context: { monsterName, monsterType, weaponLevel }
@@ -5193,6 +5363,21 @@
                     huntState.log.push({ type: 'warning', text: `🪥 이쑤시개가 부러질 것 같다! (내구도 -50)` });
                 }
                 
+                // 🧙 마법 무기 크리티컬 효과!
+                const magicEffect = applyMagicCritEffect(weaponElement, finalPlayerDamage, monster, player);
+                if (magicEffect.extraDamage > 0) {
+                    monster.currentHp = Math.max(0, monster.currentHp - magicEffect.extraDamage);
+                }
+                if (magicEffect.healAmount > 0) {
+                    player.hp = Math.min(player.maxHp, player.hp + magicEffect.healAmount);
+                }
+                if (magicEffect.instantKill) {
+                    monster.currentHp = 0;
+                }
+                if (magicEffect.logText) {
+                    huntState.log.push({ type: 'crit', text: magicEffect.logText });
+                }
+                
                 showSlashEffect(getAttackEffect(true), 'monster');
                 showCritEffect();
                 document.body.classList.add('screen-shake');
@@ -5221,6 +5406,28 @@
             
             // Monster attacks back
             setTimeout(() => {
+                // ☠️ 독 지속 데미지 처리
+                if (huntState.monsterPoisoned > 0) {
+                    const poisonDmg = huntState.poisonDamage || 0;
+                    monster.currentHp = Math.max(0, monster.currentHp - poisonDmg);
+                    huntState.monsterPoisoned--;
+                    huntState.log.push({ type: 'crit', text: `☠️ 독 데미지! ${poisonDmg} (남은 ${huntState.monsterPoisoned}턴)` });
+                    
+                    // 독으로 죽음
+                    if (monster.currentHp <= 0) {
+                        huntMonsterKilled(false);
+                        return;
+                    }
+                }
+                
+                // ❄️ 빙결 상태면 공격 스킵
+                if (huntState.monsterFrozen) {
+                    huntState.monsterFrozen = false;
+                    huntState.log.push({ type: 'info', text: `❄️ ${monster.name}이(가) 얼어붙어 공격하지 못했다!` });
+                    renderHunt();
+                    return;
+                }
+                
                 const monsterDamage = Math.floor(Math.random() * (monster.damage[1] - monster.damage[0] + 1)) + monster.damage[0];
                 const monsterCrit = Math.random() * 100 < monster.crit;
                 let finalMonsterDamage = monsterCrit ? Math.floor(monsterDamage * 1.5) : monsterDamage;
