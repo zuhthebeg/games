@@ -5140,9 +5140,9 @@
                 // 🛡️ 무적모드
                 if (window.debugGodMode) finalMonsterDamage = 0;
                 
-                // 🏹 활 종류: 공격 시 20% 회복
+                // 🏹 활 종류: 공격 시 10% 회복
                 if (state.weapon.type === 'bow' || state.weapon.type === 'crossbow') {
-                    const healAmount = Math.floor(player.maxHp * 0.2);
+                    const healAmount = Math.floor(player.maxHp * 0.1);
                     const oldHp = player.hp;
                     player.hp = Math.min(player.maxHp, player.hp + healAmount);
                     const actualHeal = player.hp - oldHp;
