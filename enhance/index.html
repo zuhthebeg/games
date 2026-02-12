@@ -1991,7 +1991,10 @@
                 multiplier: 1.3,
                 dropRate: 30,
                 durabilityMod: 1.5,  // 내구도 1.5배 빨리 소모
-                prefixes: ['강화된', '마력의', '빛나는', '정교한']
+                prefixes: ['강화된', '마력의', '빛나는', '정교한'],
+                names: {
+                    sword: '유리검'  // 특수: 능력치 2배, 파괴확률 30%!
+                }
             },
             rare: { 
                 name: '희귀', 
@@ -2688,13 +2691,22 @@
             const typeBonus = typeData.bonus?.damage || 1.0;
             const critBonus = typeData.bonus?.crit || 1.0;
             const critDmgBonus = typeData.critDmgBonus || 0;
-            const damageMin = Math.floor((baseDmgMin + level * dmgPerLevel) * mult * typeBonus * masteryMult);
-            const damageMax = Math.floor((baseDmgMax + level * dmgPerLevel) * mult * typeBonus * masteryMult);
+            let damageMin = Math.floor((baseDmgMin + level * dmgPerLevel) * mult * typeBonus * masteryMult);
+            let damageMax = Math.floor((baseDmgMax + level * dmgPerLevel) * mult * typeBonus * masteryMult);
             // 나뭇가지: 99% 크리티컬!
-            const critChance = isTreeBranch(weapon) ? 99 : Math.min(60, Math.floor((5 + level * 2) * critBonus));
+            let critChance = isTreeBranch(weapon) ? 99 : Math.min(60, Math.floor((5 + level * 2) * critBonus));
             // 무기 타입별 크리티컬 데미지 보너스 적용
-            const critDamage = 150 + level * 5 + critDmgBonus;
-            const hp = Math.floor((100 + level * 20) * mult);
+            let critDamage = 150 + level * 5 + critDmgBonus;
+            let hp = Math.floor((100 + level * 20) * mult);
+            
+            // 유리검: 모든 능력치 2배! (단, 파괴확률 30%)
+            if (isGlassSword(weapon)) {
+                damageMin *= 2;
+                damageMax *= 2;
+                critChance = Math.min(80, critChance * 2);
+                critDamage *= 2;
+                hp *= 2;
+            }
 
             return { damageMin, damageMax, critChance, critDamage, hp, masteryBonus: globalMasteryBonus, weaponMasteryBonus };
         }
@@ -3028,11 +3040,20 @@
             return weapon && weapon.name === '이쑤시개';
         }
         
+        // 유리검 특수 처리 (능력치 2배, 파괴확률 30% 시작!)
+        function isGlassSword(weapon) {
+            return weapon && weapon.name === '유리검';
+        }
+        
         function getEnhanceRates(weapon) {
             const baseRates = ENHANCE_RATES[weapon.level];
             if (isWoodenStick(weapon)) {
                 // 나무막대기: 99% 성공, 1% 실패, 파괴 없음!
                 return { success: 99, destroy: 0, cost: baseRates.cost };
+            }
+            if (isGlassSword(weapon)) {
+                // 유리검: +1부터 파괴확률 30%! (성공률은 유지)
+                return { success: baseRates.success, destroy: 30, cost: baseRates.cost };
             }
             return baseRates;
         }
@@ -3709,6 +3730,7 @@
             if (weaponName === '나무막대기') return '🪵';
             if (weaponName === '나뭇가지') return '🌿';
             if (weaponName === '이쑤시개') return '🪥';
+            if (weaponName === '유리검') return '🔮';
             
             // 무기 타입 기준 (우선)
             const typeEmojis = {
@@ -5410,15 +5432,82 @@
             if (!DEBUG_MODE) return '';
             const w = state.weapon;
             const stats = getWeaponStats(w);
+            
+            // 무기 리스트 생성
+            const weaponOptions = [];
+            for (const [grade, gData] of Object.entries(GRADES)) {
+                for (const [type, tData] of Object.entries(WEAPON_TYPES)) {
+                    let name;
+                    if (gData.names && gData.names[type]) {
+                        name = gData.names[type];
+                    } else {
+                        const prefix = gData.prefixes?.[0] || '';
+                        name = prefix ? `${prefix} ${tData.name}` : tData.name;
+                    }
+                    weaponOptions.push({ grade, type, name, display: `[${gData.name}] ${name}` });
+                }
+            }
+            
             return `
-                <div style="position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:11px;padding:8px;z-index:9999;max-height:40vh;overflow:auto;">
+                <div id="debugPanel" style="position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:11px;padding:8px;z-index:9999;max-height:50vh;overflow:auto;">
                     <div style="color:#ff0;font-weight:bold;">🔧 DEBUG MODE</div>
-                    <div style="margin-top:4px;"><b>weapon:</b> ${JSON.stringify(w, null, 1)}</div>
-                    <div style="margin-top:4px;"><b>stats:</b> ${JSON.stringify(stats)}</div>
-                    <div style="margin-top:4px;"><b>WEAPON_TYPES[${w?.type}]:</b> ${JSON.stringify(WEAPON_TYPES[w?.type])}</div>
-                    <div style="margin-top:4px;"><b>GRADES[${w?.grade}]:</b> multiplier=${GRADES[w?.grade]?.multiplier}</div>
+                    <div style="margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;">
+                        <button onclick="debugAddGold()" style="background:#ffd700;color:#000;border:none;padding:4px 8px;cursor:pointer;">💰 +10,000G</button>
+                        <button onclick="debugSetDurability1()" style="background:#ff6b6b;color:#fff;border:none;padding:4px 8px;cursor:pointer;">🔧 내구도 1</button>
+                        <button onclick="debugFullDurability()" style="background:#4ecca3;color:#000;border:none;padding:4px 8px;cursor:pointer;">🔧 내구도 100</button>
+                    </div>
+                    <div style="margin-top:8px;">
+                        <label style="color:#ff0;">무기 선택: </label>
+                        <select id="debugWeaponSelect" onchange="debugSelectWeapon()" style="background:#333;color:#0f0;border:1px solid #0f0;padding:2px;">
+                            ${weaponOptions.map(opt => `<option value="${opt.grade}|${opt.type}" ${w?.grade === opt.grade && w?.type === opt.type ? 'selected' : ''}>${opt.display}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div style="margin-top:4px;"><b>현재:</b> ${w?.name} +${w?.level} (${w?.grade}/${w?.type}) | 내구도: ${w?.durability}</div>
+                    <div style="margin-top:4px;"><b>stats:</b> dmg ${stats.damageMin}-${stats.damageMax} | crit ${stats.critChance}% | critDmg ${stats.critDamage}% | hp ${stats.hp}</div>
                 </div>
             `;
+        }
+        
+        function debugAddGold() {
+            state.gold += 10000;
+            saveState();
+            showMain();
+        }
+        
+        function debugSetDurability1() {
+            if (state.weapon) {
+                state.weapon.durability = 1;
+                saveState();
+                showMain();
+            }
+        }
+        
+        function debugFullDurability() {
+            if (state.weapon) {
+                state.weapon.durability = 100;
+                saveState();
+                showMain();
+            }
+        }
+        
+        function debugSelectWeapon() {
+            const select = document.getElementById('debugWeaponSelect');
+            if (!select) return;
+            const [grade, type] = select.value.split('|');
+            state.weapon = generateWeapon(grade);
+            state.weapon.type = type;
+            // 이름 재설정
+            const gData = GRADES[grade];
+            const tData = WEAPON_TYPES[type];
+            if (gData.names && gData.names[type]) {
+                state.weapon.name = gData.names[type];
+            } else {
+                const prefix = gData.prefixes?.[Math.floor(Math.random() * gData.prefixes.length)] || '';
+                state.weapon.name = prefix ? `${prefix} ${tData.name}` : tData.name;
+            }
+            state.weapon.img = tData.img;
+            saveState();
+            showMain();
         }
         
         // showMain 원본 저장 후 래핑
