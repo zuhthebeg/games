@@ -5470,8 +5470,8 @@
                 <div id="debugPanel" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:11px;padding:8px;z-index:9999;max-height:35vh;overflow:auto;">
                     <div style="color:#ff0;font-weight:bold;">🔧 DEBUG MODE</div>
                     <div style="margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;">
-                        <button onclick="debugAddGold()" style="background:#ffd700;color:#000;border:none;padding:4px 8px;cursor:pointer;">💰 +10,000G</button>
-                        <button onclick="debugSetDurability1()" style="background:#ff6b6b;color:#fff;border:none;padding:4px 8px;cursor:pointer;">🔧 내구도 1</button>
+                        <button onclick="debugAddGold()" style="background:#ffd700;color:#000;border:none;padding:4px 8px;cursor:pointer;">💰 +100,000G</button>
+                        <button onclick="debugSetDurability0()" style="background:#ff6b6b;color:#fff;border:none;padding:4px 8px;cursor:pointer;">🔧 내구도 0</button>
                         <button onclick="debugFullDurability()" style="background:#4ecca3;color:#000;border:none;padding:4px 8px;cursor:pointer;">🔧 내구도 100</button>
                     </div>
                     <div style="margin-top:8px;">
@@ -5487,15 +5487,14 @@
         }
         
         function debugAddGold() {
-            state.gold += 10000;
+            state.gold += 100000;
             saveState();
             showMain();
         }
         
-        function debugSetDurability1() {
+        function debugSetDurability0() {
             if (state.weapon) {
-                state.weapon.durability = 1;
-                state.weapon._durabilityCounter = 9;  // 다음 공격에 바로 0으로
+                state.weapon.durability = 0;
                 saveState();
                 showMain();
             }
