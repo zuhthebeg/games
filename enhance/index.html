@@ -1377,6 +1377,69 @@
         }
 
         footer a { color: var(--accent); text-decoration: none; }
+        
+        /* Ranking Styles */
+        .ranking-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .ranking-tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        .ranking-tab.active {
+            background: var(--accent);
+            color: white;
+        }
+        .ranking-list {
+            background: var(--card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .ranking-item:last-child { border-bottom: none; }
+        .ranking-item.me { background: rgba(233,69,96,0.15); }
+        .ranking-rank {
+            font-size: 1.2rem;
+            font-weight: 700;
+            min-width: 40px;
+            text-align: center;
+        }
+        .ranking-rank.gold { color: #ffd700; }
+        .ranking-rank.silver { color: #c0c0c0; }
+        .ranking-rank.bronze { color: #cd7f32; }
+        .ranking-info { flex: 1; margin-left: 12px; }
+        .ranking-name { font-weight: 600; }
+        .ranking-detail { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+        .ranking-value { font-weight: 700; text-align: right; }
+        .ranking-value.weapon { color: var(--accent); }
+        .ranking-value.kills { color: var(--gold); }
+        .ranking-value.pvp { color: var(--success); }
+        .ranking-empty { text-align: center; padding: 40px; color: var(--muted); }
+        .ranking-loading { text-align: center; padding: 40px; }
+        .my-ranking-box {
+            background: linear-gradient(135deg, rgba(233,69,96,0.2), rgba(233,69,96,0.05));
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .my-ranking-label { font-size: 0.8rem; color: var(--muted); }
+        .my-ranking-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
     </style>
 </head>
 <body>
@@ -1830,6 +1893,119 @@
             }
         }
         
+        // ===== RANKING SYSTEM =====
+        const RANKING_API = 'https://relay.cocy.io/api/rankings';
+        let pendingKills = 0;  // 배치로 보낼 킬 수
+        let pendingStreak = 0; // 현재 연속 킬
+        
+        function getUserId() {
+            return localStorage.getItem('cocy_user_id') || null;
+        }
+        
+        // 무기 랭킹 갱신 (신기록 시)
+        async function syncWeaponRanking() {
+            const userId = getUserId();
+            if (!userId || !state.weapon) return;
+            
+            try {
+                await fetch(`${RANKING_API}/weapon`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-user-id': userId
+                    },
+                    body: JSON.stringify({
+                        level: state.weapon.level,
+                        name: state.weapon.name,
+                        grade: state.weapon.grade,
+                        element: state.weapon.element || 'none'
+                    })
+                });
+                console.log('🏆 Weapon ranking synced:', state.weapon.level);
+            } catch (e) {
+                console.log('Weapon ranking sync failed:', e);
+            }
+        }
+        
+        // 사냥 랭킹 갱신 (배치)
+        async function syncHuntingRanking() {
+            const userId = getUserId();
+            if (!userId || pendingKills <= 0) return;
+            
+            const kills = pendingKills;
+            const streak = pendingStreak;
+            pendingKills = 0;  // 리셋
+            
+            try {
+                await fetch(`${RANKING_API}/hunting`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-user-id': userId
+                    },
+                    body: JSON.stringify({
+                        kills: kills,
+                        killStreak: streak
+                    })
+                });
+                console.log('🐉 Hunting ranking synced:', kills, 'kills');
+            } catch (e) {
+                console.log('Hunting ranking sync failed:', e);
+            }
+        }
+        
+        // PvP 랭킹 갱신
+        async function syncPvPRanking(isWin, opponentRating = 1000) {
+            const userId = getUserId();
+            if (!userId) return;
+            
+            try {
+                const res = await fetch(`${RANKING_API}/pvp`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-user-id': userId
+                    },
+                    body: JSON.stringify({
+                        isWin,
+                        opponentRating
+                    })
+                });
+                const data = await res.json();
+                console.log('⚔️ PvP ranking synced:', data);
+                return data;
+            } catch (e) {
+                console.log('PvP ranking sync failed:', e);
+                return null;
+            }
+        }
+        
+        // 랭킹 조회
+        async function fetchRankings(type = 'weapons') {
+            try {
+                const res = await fetch(`${RANKING_API}/${type}?limit=50`);
+                const data = await res.json();
+                return data.success ? data.rankings : [];
+            } catch (e) {
+                console.log('Fetch rankings failed:', e);
+                return [];
+            }
+        }
+        
+        // 페이지 종료 시 남은 킬 동기화
+        window.addEventListener('beforeunload', () => {
+            if (pendingKills > 0) {
+                // sendBeacon으로 비동기 전송
+                const userId = getUserId();
+                if (userId) {
+                    navigator.sendBeacon(`${RANKING_API}/hunting`, JSON.stringify({
+                        kills: pendingKills,
+                        killStreak: pendingStreak
+                    }));
+                }
+            }
+        });
+        
         // 강화 레벨에 따른 카드 클래스
         function getLevelClass(level) {
             if (level >= 21) return 'level-21';
@@ -2248,6 +2424,11 @@
                             <span class="mode-label">PvP</span>
                         </button>
                     </div>
+                    
+                    <button class="mode-btn" onclick="showRanking()" style="width:100%;margin-bottom:16px;background:linear-gradient(135deg,#ffd700,#ff8c00);">
+                        <span class="mode-icon">🏆</span>
+                        <span class="mode-label">랭킹</span>
+                    </button>
 
                     <div class="stats-summary">
                         <div class="summary-item">
@@ -2446,6 +2627,8 @@
                     weaponIcon.classList.add('glow-success');
                 }, 300);
                 setTimeout(() => weaponIcon.classList.remove('glow-success'), 1300);
+                // 🏆 무기 랭킹 동기화
+                setTimeout(() => syncWeaponRanking(), 500);
             } else if (rates.destroy > 0 && roll < rates.success + rates.destroy) {
                 // Destroy! 💥
                 result = 'destroy';
@@ -2809,6 +2992,134 @@
             vibrate([50, 50, 100]);
             
             showBlacksmith();
+        }
+        
+        // ===== RANKING UI =====
+        let currentRankingTab = 'weapons';
+        let rankingCache = { weapons: [], hunting: [], pvp: [] };
+        
+        async function showRanking() {
+            document.getElementById('app').innerHTML = `
+                <div class="container">
+                    <button class="btn-back" onclick="showMain()">← 메인으로</button>
+                    
+                    <header>
+                        <h1>🏆 랭킹</h1>
+                        <p class="subtitle">최고의 용사들</p>
+                    </header>
+                    
+                    <div class="ranking-tabs">
+                        <button class="ranking-tab ${currentRankingTab === 'weapons' ? 'active' : ''}" onclick="switchRankingTab('weapons')">
+                            ⚔️ 무기
+                        </button>
+                        <button class="ranking-tab ${currentRankingTab === 'hunting' ? 'active' : ''}" onclick="switchRankingTab('hunting')">
+                            🐉 사냥
+                        </button>
+                        <button class="ranking-tab ${currentRankingTab === 'pvp' ? 'active' : ''}" onclick="switchRankingTab('pvp')">
+                            ⚔️ PvP
+                        </button>
+                    </div>
+                    
+                    <div id="rankingContent" class="ranking-loading">
+                        ⏳ 로딩 중...
+                    </div>
+                </div>
+            `;
+            
+            await loadRankingTab(currentRankingTab);
+        }
+        
+        async function switchRankingTab(tab) {
+            currentRankingTab = tab;
+            await showRanking();
+        }
+        
+        async function loadRankingTab(tab) {
+            const contentEl = document.getElementById('rankingContent');
+            if (!contentEl) return;
+            
+            contentEl.innerHTML = '<div class="ranking-loading">⏳ 로딩 중...</div>';
+            
+            const rankings = await fetchRankings(tab);
+            rankingCache[tab] = rankings;
+            
+            renderRankings(tab, rankings);
+        }
+        
+        function renderRankings(tab, rankings) {
+            const contentEl = document.getElementById('rankingContent');
+            if (!contentEl) return;
+            
+            const myId = getUserId();
+            const myRankIdx = rankings.findIndex(r => r.user_id === myId);
+            
+            if (rankings.length === 0) {
+                contentEl.innerHTML = '<div class="ranking-empty">😢 아직 랭킹 데이터가 없습니다</div>';
+                return;
+            }
+            
+            let html = '';
+            
+            // 내 랭킹 표시
+            if (myRankIdx >= 0) {
+                const myRank = rankings[myRankIdx];
+                let myValue = '';
+                if (tab === 'weapons') {
+                    myValue = `+${myRank.best_weapon_level}`;
+                } else if (tab === 'hunting') {
+                    myValue = `${myRank.total_kills?.toLocaleString() || 0}킬`;
+                } else if (tab === 'pvp') {
+                    myValue = `${myRank.pvp_rating || 1000} ELO`;
+                }
+                html += `
+                    <div class="my-ranking-box">
+                        <div class="my-ranking-label">내 순위</div>
+                        <div class="my-ranking-value">#${myRankIdx + 1} | ${myValue}</div>
+                    </div>
+                `;
+            }
+            
+            html += '<div class="ranking-list">';
+            
+            rankings.forEach((rank, idx) => {
+                const isMe = rank.user_id === myId;
+                let rankClass = '';
+                if (idx === 0) rankClass = 'gold';
+                else if (idx === 1) rankClass = 'silver';
+                else if (idx === 2) rankClass = 'bronze';
+                
+                let valueHtml = '';
+                let detailHtml = '';
+                
+                if (tab === 'weapons') {
+                    const gradeData = GRADES[rank.best_weapon_grade] || GRADES.common;
+                    valueHtml = `<span style="color:${gradeData.color}">+${rank.best_weapon_level}</span>`;
+                    detailHtml = `${rank.best_weapon_name || '무기'} | ${gradeData.name}`;
+                } else if (tab === 'hunting') {
+                    valueHtml = `<span class="ranking-value kills">${rank.total_kills?.toLocaleString() || 0}</span>`;
+                    detailHtml = `최고 연속: ${rank.max_kill_streak || 0}킬`;
+                } else if (tab === 'pvp') {
+                    const winRate = (rank.pvp_wins + rank.pvp_losses) > 0 
+                        ? Math.round((rank.pvp_wins / (rank.pvp_wins + rank.pvp_losses)) * 100) 
+                        : 0;
+                    valueHtml = `<span class="ranking-value pvp">${rank.pvp_rating || 1000}</span>`;
+                    detailHtml = `${rank.pvp_wins || 0}승 ${rank.pvp_losses || 0}패 (${winRate}%)`;
+                }
+                
+                html += `
+                    <div class="ranking-item ${isMe ? 'me' : ''}">
+                        <div class="ranking-rank ${rankClass}">${idx < 3 ? ['🥇','🥈','🥉'][idx] : (idx + 1)}</div>
+                        <div class="ranking-info">
+                            <div class="ranking-name">${rank.nickname || '익명'}</div>
+                            <div class="ranking-detail">${detailHtml}</div>
+                        </div>
+                        <div class="ranking-value ${tab === 'weapons' ? 'weapon' : ''}">${valueHtml}</div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            contentEl.innerHTML = html;
         }
 
         // ===== BATTLE MODE =====
@@ -3196,6 +3507,8 @@
                 state.gold += prizeGold;
                 state.stats.wins++;
                 saveState();
+                // ⚔️ PvP 랭킹 동기화
+                syncPvPRanking(true);
                 
                 const detail = `💰 상대 무기 판매가 ${prizeGold.toLocaleString()}G 획득!`;
                 
@@ -3219,6 +3532,8 @@
                 state.weapon.durability = MAX_DURABILITY;
                 
                 saveState();
+                // ⚔️ PvP 랭킹 동기화
+                syncPvPRanking(false);
                 
                 const detail = `😢 ${oldWeaponName}을(를) 잃었습니다...\n새 기본 무기를 획득했습니다.`;
                 
@@ -3835,6 +4150,13 @@
             huntState._lastKillWasLucky = isLuckyDraw;
             huntState._lastGoldReward = goldReward;
             
+            // 🐉 사냥 랭킹 동기화 (배치)
+            pendingKills++;
+            pendingStreak = Math.max(pendingStreak, huntState.monstersKilled);
+            if (pendingKills >= 10) {
+                syncHuntingRanking();  // 10킬마다 동기화
+            }
+            
             // 무기별 처치 기록
             if (!state.weapon.weaponMastery) {
                 state.weapon.weaponMastery = { attacks: 0, crits: 0, kills: 0, killsByType: {} };
@@ -4068,6 +4390,11 @@
         function huntStop() {
             closeResult();
             document.getElementById('resultBtn').style.display = '';
+            
+            // 🐉 사냥 종료 시 남은 킬 동기화
+            if (pendingKills > 0) {
+                syncHuntingRanking();
+            }
             
             // Show final results
             const popup = document.getElementById('resultPopup');
