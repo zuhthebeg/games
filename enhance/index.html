@@ -5110,7 +5110,21 @@
             setTimeout(() => {
                 const monsterDamage = Math.floor(Math.random() * (monster.damage[1] - monster.damage[0] + 1)) + monster.damage[0];
                 const monsterCrit = Math.random() * 100 < monster.crit;
-                const finalMonsterDamage = monsterCrit ? Math.floor(monsterDamage * 1.5) : monsterDamage;
+                let finalMonsterDamage = monsterCrit ? Math.floor(monsterDamage * 1.5) : monsterDamage;
+                
+                // 🛡️ 무적모드
+                if (window.debugGodMode) finalMonsterDamage = 0;
+                
+                // 🏹 활 종류: 공격 시 20% 회복
+                if (state.weapon.type === 'bow' || state.weapon.type === 'crossbow') {
+                    const healAmount = Math.floor(player.maxHp * 0.2);
+                    const oldHp = player.hp;
+                    player.hp = Math.min(player.maxHp, player.hp + healAmount);
+                    const actualHeal = player.hp - oldHp;
+                    if (actualHeal > 0) {
+                        huntState.log.push({ type: 'heal', text: `🏹 원거리 회복! +${actualHeal} HP` });
+                    }
+                }
                 
                 player.hp = Math.max(0, player.hp - finalMonsterDamage);
                 
@@ -5577,6 +5591,7 @@
                         <button onclick="debugSetDurability0()" style="background:#ff6b6b;color:#fff;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">🔧 내구도 0</button>
                         <button onclick="debugFullDurability()" style="background:#4ecca3;color:#000;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">🔧 내구도 100</button>
                         <button onclick="debugAddMastery()" style="background:#9b59b6;color:#fff;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">⭐ 숙련도 +1</button>
+                        <button onclick="debugToggleGodMode()" style="background:${window.debugGodMode ? '#00ff00' : '#333'};color:${window.debugGodMode ? '#000' : '#fff'};border:1px solid #0f0;padding:4px 8px;cursor:pointer;border-radius:4px;">🛡️ 무적 ${window.debugGodMode ? 'ON' : 'OFF'}</button>
                     </div>
                     <div style="margin-bottom:8px;">
                         <label style="color:#ff0;">무기 선택: </label>
@@ -5619,6 +5634,13 @@
                 saveState();
                 showMain();
             }
+        }
+        
+        // 무적모드
+        window.debugGodMode = false;
+        function debugToggleGodMode() {
+            window.debugGodMode = !window.debugGodMode;
+            showMain();
         }
         
         function debugSelectWeapon() {
