@@ -5289,7 +5289,7 @@
             
             // Player attacks first
             const playerDamage = Math.floor(Math.random() * (player.damageMax - player.damageMin + 1)) + player.damageMin;
-            const playerCrit = Math.random() * 100 < player.critChance;
+            const playerCrit = window.debugCritMode || (Math.random() * 100 < player.critChance);  // 💯 디버그 크리 모드
             const superCrit = checkSuperCritical(state.weapon);  // 신화 무기 1% 즉사기
             
             // 속성 배율 계산
@@ -5914,6 +5914,9 @@
             }
             
             const masteryLevel = getWeaponMasteryLevel(w);
+            const elemData = ELEMENTS[w?.element] || ELEMENTS.none;
+            const elemDisplay = w?.element && w.element !== 'none' ? `${elemData.icon} ${elemData.name}` : '무속성';
+            
             return `
                 <div id="debugPanel" style="background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:11px;padding:12px;margin-top:20px;border-radius:8px;">
                     <div style="color:#ff0;font-weight:bold;margin-bottom:8px;">🔧 DEBUG MODE</div>
@@ -5923,6 +5926,7 @@
                         <button onclick="debugFullDurability()" style="background:#4ecca3;color:#000;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">🔧 내구도 100</button>
                         <button onclick="debugAddMastery()" style="background:#9b59b6;color:#fff;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">⭐ 숙련도 +1</button>
                         <button onclick="debugToggleGodMode()" style="background:${window.debugGodMode ? '#00ff00' : '#333'};color:${window.debugGodMode ? '#000' : '#fff'};border:1px solid #0f0;padding:4px 8px;cursor:pointer;border-radius:4px;">🛡️ 무적 ${window.debugGodMode ? 'ON' : 'OFF'}</button>
+                        <button onclick="debugToggleCritMode()" style="background:${window.debugCritMode ? '#ff4500' : '#333'};color:#fff;border:1px solid #f50;padding:4px 8px;cursor:pointer;border-radius:4px;">💯 크리100% ${window.debugCritMode ? 'ON' : 'OFF'}</button>
                     </div>
                     <div style="margin-bottom:8px;">
                         <label style="color:#ff0;">무기 선택: </label>
@@ -5930,7 +5934,7 @@
                             ${weaponOptions.map(opt => `<option value="${opt.grade}|${opt.type}" ${w?.grade === opt.grade && w?.type === opt.type ? 'selected' : ''}>${opt.display}</option>`).join('')}
                         </select>
                     </div>
-                    <div><b>현재:</b> ${w?.name} +${w?.level} (${w?.grade}/${w?.type}) | 내구도: ${w?.durability}% | 숙련도: Lv.${masteryLevel}</div>
+                    <div><b>현재:</b> ${w?.name} +${w?.level} (${w?.grade}/${w?.type}) | <span style="color:${elemData.color}">${elemDisplay}</span> | 내구도: ${w?.durability}%</div>
                     <div><b>stats:</b> dmg ${stats.damageMin}-${stats.damageMax} | crit ${stats.critChance}% | critDmg ${stats.critDamage}% | hp ${stats.hp}</div>
                 </div>
             `;
@@ -5990,13 +5994,19 @@
                 name = prefix ? `${prefix} ${tData.name}` : tData.name;
             }
             
+            // 🧙 마법 무기는 항상 마법 속성 부여!
+            let element = 'none';
+            if (tData.isMagic) {
+                element = MAGIC_ELEMENTS[Math.floor(Math.random() * MAGIC_ELEMENTS.length)];
+            }
+            
             // 새 무기 직접 생성
             state.weapon = {
                 type,
                 grade,
                 name,
                 level: 0,
-                element: 'none',
+                element,
                 img: tData.img,
                 durability: 100,
                 protectionScrolls: 2,
@@ -6006,6 +6016,12 @@
             saveState();
             // 강제 새로고침으로 확실히 반영
             location.reload();
+        }
+        
+        // 💯 크리티컬 100% 모드 토글
+        function debugToggleCritMode() {
+            window.debugCritMode = !window.debugCritMode;
+            showMain();
         }
         
         // showMain 원본 저장 후 래핑
