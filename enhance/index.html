@@ -3516,6 +3516,7 @@
         function handleBattleStart(gameState) {
             battleState = gameState;
             battleActionPending = false;  // 새 배틀 시작 시 리셋
+            battleResultShown = false;    // 결과 표시 플래그 리셋
             // Cache user ID for use even after client is destroyed
             cachedMyId = mpUI?.getClient()?.getMyUserId() || null;
             console.log('[handleBattleStart] cachedMyId:', cachedMyId);
@@ -3916,8 +3917,11 @@
                                         <span class="fighter-name">${enemy?.nickname || '상대'} ${enemyReady ? '✅' : '⏳'}</span>
                                     </div>
                                     <div class="fighter-weapon-name" style="color:${enemyGrade.color};">
-                                        ${enemyElem} ${enemy?.weaponName || '무기'} [${enemyGrade.name}]
+                                        ${enemy?.weaponName || '무기'} [${enemyGrade.name}]
                                         ${enemyAwakened ? '<span style="color:#ffd700;">⚡각성</span>' : ''}
+                                    </div>
+                                    <div style="font-size:0.7rem;margin-bottom:4px;">
+                                        ${enemyElem ? `<span style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;">${enemyElem} 속성</span>` : ''}
                                     </div>
                                     <div class="hp-bar-container">
                                         <div class="hp-bar ${enemyHpPercent <= 30 ? 'low' : ''}" style="width:${enemyHpPercent}%">
@@ -3929,8 +3933,8 @@
                                     </div>
                                     <div class="fighter-stats">
                                         <span>⚔️ ${enemy?.weaponDamage || 10}</span>
+                                        <span>💥 ${enemy?.weaponCritChance || 5}%</span>
                                         <span>🔥 ${enemyRage}%</span>
-                                        <span>${enemyHistory || '- - -'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -3948,8 +3952,11 @@
                                         <span class="fighter-name">${me?.nickname || '나'} ${hasSelected ? '✅' : ''}</span>
                                     </div>
                                     <div class="fighter-weapon-name" style="color:${myGrade.color};">
-                                        ${myElem} ${me?.weaponName || '무기'} [${myGrade.name}]
+                                        ${me?.weaponName || '무기'} [${myGrade.name}]
                                         ${myAwakened ? '<span style="color:#ffd700;">⚡각성</span>' : ''}
+                                    </div>
+                                    <div style="font-size:0.7rem;margin-bottom:4px;">
+                                        ${myElem ? `<span style="background:rgba(78,204,163,0.2);padding:2px 6px;border-radius:4px;">${myElem} 속성</span>` : ''}
                                     </div>
                                     <div class="hp-bar-container">
                                         <div class="hp-bar ${myHpPercent <= 30 ? 'low' : ''}" style="width:${myHpPercent}%">
@@ -3961,8 +3968,8 @@
                                     </div>
                                     <div class="fighter-stats">
                                         <span>⚔️ ${me?.weaponDamage || 10}</span>
+                                        <span>💥 ${me?.weaponCritChance || 5}%</span>
                                         <span>🔥 ${myRage}%</span>
-                                        <span>${myHistory || '- - -'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -4119,8 +4126,17 @@
             }
         }
 
+        let battleResultShown = false;  // 중복 호출 방지
+        
         function showBattleResult(data) {
             console.log('[showBattleResult] called with:', data);
+            
+            // 중복 호출 방지
+            if (battleResultShown) {
+                console.log('[showBattleResult] Already shown, skipping');
+                return;
+            }
+            battleResultShown = true;
             
             const client = mpUI?.getClient();
             const myId = client?.getMyUserId() || cachedMyId;
