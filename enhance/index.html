@@ -5449,7 +5449,7 @@
             }
             
             return `
-                <div id="debugPanel" style="position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:11px;padding:8px;z-index:9999;max-height:50vh;overflow:auto;">
+                <div id="debugPanel" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:11px;padding:8px;z-index:9999;max-height:35vh;overflow:auto;">
                     <div style="color:#ff0;font-weight:bold;">🔧 DEBUG MODE</div>
                     <div style="margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;">
                         <button onclick="debugAddGold()" style="background:#ffd700;color:#000;border:none;padding:4px 8px;cursor:pointer;">💰 +10,000G</button>
@@ -5494,18 +5494,31 @@
             const select = document.getElementById('debugWeaponSelect');
             if (!select) return;
             const [grade, type] = select.value.split('|');
-            state.weapon = generateWeapon(grade);
-            state.weapon.type = type;
-            // 이름 재설정
             const gData = GRADES[grade];
             const tData = WEAPON_TYPES[type];
+            
+            // 이름 생성
+            let name;
             if (gData.names && gData.names[type]) {
-                state.weapon.name = gData.names[type];
+                name = gData.names[type];
             } else {
                 const prefix = gData.prefixes?.[Math.floor(Math.random() * gData.prefixes.length)] || '';
-                state.weapon.name = prefix ? `${prefix} ${tData.name}` : tData.name;
+                name = prefix ? `${prefix} ${tData.name}` : tData.name;
             }
-            state.weapon.img = tData.img;
+            
+            // 새 무기 직접 생성
+            state.weapon = {
+                type,
+                grade,
+                name,
+                level: 0,
+                element: 'none',
+                img: tData.img,
+                durability: 100,
+                protectionScrolls: 2,
+                weaponMastery: { attacks: 0, crits: 0, kills: 0, killsByType: {} }
+            };
+            
             saveState();
             showMain();
         }
