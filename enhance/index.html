@@ -1987,7 +1987,7 @@
                     staff: '나뭇가지',
                     katana: '죽도',
                     scythe: '농기구 낫',
-                    bow: '나무활',
+                    bow: '새총',  // 특수: 크리 100%, 데미지 0-30 고정!
                     crossbow: '장난감 석궁'
                 }
             },
@@ -2698,6 +2698,19 @@
                     weaponMasteryBonus 
                 };
             }
+            
+            // 새총: 크리 100%, 데미지 0-30 고정!
+            if (isSlingshot(weapon)) {
+                return { 
+                    damageMin: 0, 
+                    damageMax: 30, 
+                    critChance: 100,  // 100% 크리티컬!
+                    critDamage: 300,  // 크리 데미지 300%
+                    hp: Math.floor((100 + level * 20) * mult),
+                    masteryBonus: globalMasteryBonus, 
+                    weaponMasteryBonus 
+                };
+            }
 
             // 무기 타입별 기본 데미지 범위 (나무막대기는 1 고정)
             const isStick = isWoodenStick(weapon);
@@ -3072,6 +3085,11 @@
         // 피닉스 지팡이 특수 처리 (연속 사냥 시 HP 100% 회복!)
         function isPhoenixStaff(weapon) {
             return weapon && weapon.name === '피닉스 지팡이';
+        }
+        
+        // 새총 특수 처리 (크리 100%, 데미지 0-30 고정!)
+        function isSlingshot(weapon) {
+            return weapon && weapon.name === '새총';
         }
         
         function getEnhanceRates(weapon) {
@@ -3764,6 +3782,7 @@
             if (weaponName === '피닉스 지팡이') return '🔥';
             
             // 원거리 무기
+            if (weaponName === '새총') return '🪨';
             if (weaponType === 'bow') return '🏹';
             if (weaponType === 'crossbow') return '🎯';
             
