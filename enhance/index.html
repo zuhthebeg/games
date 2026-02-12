@@ -1209,18 +1209,19 @@
             color: white;
         }
 
-        /* Battle Screen */
+        /* Battle Screen - Redesigned */
         .battle-screen {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
         }
 
         .battle-header {
             text-align: center;
             padding: 12px;
-            background: var(--card);
-            border-bottom: 1px solid var(--card-border);
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
         .battle-title { font-size: 1.1rem; font-weight: 600; }
@@ -1230,116 +1231,404 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 16px;
-            gap: 16px;
+            padding: 12px;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* VS 표시 */
+        .battle-vs {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: bold;
+            color: rgba(255,255,255,0.15);
+            z-index: 0;
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
         }
 
         .fighter {
             background: var(--card);
-            border-radius: 14px;
-            padding: 14px;
-            border: 2px solid var(--card-border);
+            border-radius: 16px;
+            padding: 12px;
+            border: 3px solid var(--card-border);
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s;
         }
 
-        .fighter.me { border-color: var(--accent); }
-        .fighter.enemy { border-color: #667eea; }
+        /* 나: 초록색 테두리, 아래쪽 */
+        .fighter.me { 
+            border-color: #4ecca3; 
+            background: linear-gradient(135deg, rgba(78,204,163,0.15), rgba(78,204,163,0.05));
+            box-shadow: 0 0 20px rgba(78,204,163,0.3);
+        }
+        .fighter.me::before {
+            content: '👤 나';
+            position: absolute;
+            top: -12px;
+            left: 12px;
+            background: #4ecca3;
+            color: #000;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 8px;
+        }
+
+        /* 상대: 빨간색 테두리, 위쪽 */
+        .fighter.enemy { 
+            border-color: #ff6b6b; 
+            background: linear-gradient(135deg, rgba(255,107,107,0.15), rgba(255,107,107,0.05));
+            box-shadow: 0 0 20px rgba(255,107,107,0.3);
+        }
+        .fighter.enemy::before {
+            content: '👾 상대';
+            position: absolute;
+            top: -12px;
+            left: 12px;
+            background: #ff6b6b;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 8px;
+        }
+
+        .fighter.awakened {
+            animation: awakenPulse 1s ease-in-out infinite;
+        }
+        @keyframes awakenPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.5); }
+            50% { box-shadow: 0 0 40px rgba(255,215,0,0.8); }
+        }
+
+        .fighter-content {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* 무기 이미지 영역 */
+        .fighter-weapon-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            flex-shrink: 0;
+            position: relative;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        .fighter-weapon-icon .weapon-level {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            background: var(--accent);
+            color: #000;
+            font-size: 0.6rem;
+            font-weight: bold;
+            padding: 1px 4px;
+            border-radius: 6px;
+        }
+
+        .fighter-info {
+            flex: 1;
+            min-width: 0;
+        }
 
         .fighter-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
+            padding: 0;
+            background: none;
+            border: none;
         }
 
-        .fighter-name { font-weight: 600; font-size: 0.95rem; }
-        .fighter-weapon { color: var(--muted); font-size: 0.8rem; }
+        .fighter-name { 
+            font-weight: 600; 
+            font-size: 0.9rem; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .fighter-weapon-name { 
+            color: var(--muted); 
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
         .hp-bar-container {
-            background: rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.4);
             border-radius: 8px;
-            height: 22px;
+            height: 20px;
             overflow: hidden;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .hp-bar {
             height: 100%;
-            background: linear-gradient(90deg, var(--success), #2ecc71);
-            border-radius: 8px;
+            background: linear-gradient(90deg, #4ecca3, #2ecc71);
+            border-radius: 7px;
             transition: width 0.5s ease-out;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
-            min-width: 50px;
+            min-width: 40px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
+        .hp-bar.low { background: linear-gradient(90deg, #ff6b6b, #ee5a5a); }
 
-        .hp-bar.low { background: linear-gradient(90deg, var(--fail), #ff8a80); }
+        /* 분노 게이지 */
+        .rage-bar-container {
+            height: 8px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .rage-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            transition: width 0.3s;
+        }
+        .rage-bar.full {
+            background: linear-gradient(90deg, #ffd700, #ff8c00);
+            animation: rageGlow 0.5s ease-in-out infinite alternate;
+        }
+        @keyframes rageGlow {
+            from { box-shadow: 0 0 5px #ffd700; }
+            to { box-shadow: 0 0 15px #ff8c00; }
+        }
 
         .fighter-stats {
             display: flex;
-            gap: 14px;
-            font-size: 0.8rem;
+            gap: 10px;
+            font-size: 0.7rem;
             color: var(--muted);
+            flex-wrap: wrap;
+        }
+        .fighter-stats span {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
         }
 
+        /* 배틀 로그 */
         .battle-log {
-            background: var(--card);
+            background: rgba(0,0,0,0.3);
             border-radius: 10px;
-            padding: 12px;
-            max-height: 200px;
+            padding: 10px;
+            max-height: 100px;
             overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .log-entry {
-            padding: 5px 0;
+            padding: 4px 0;
             border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
-
         .log-entry:last-child { border-bottom: none; }
         .log-entry.crit { color: var(--gold); }
-        .log-entry.damage { color: var(--fail); }
-        .log-entry.heal { color: var(--success); }
+        .log-entry.success { color: var(--success); }
+        .log-entry.info { color: var(--muted); }
 
+        /* 액션 버튼 영역 */
         .battle-actions {
-            padding: 14px 16px;
-            background: var(--card);
-            border-top: 1px solid var(--card-border);
+            padding: 12px;
+            background: rgba(0,0,0,0.4);
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
 
-        .action-btns {
+        .action-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
         }
 
         .action-btn {
-            padding: 14px;
+            padding: 16px 8px;
             border: none;
-            border-radius: 10px;
-            font-size: 0.95rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
         }
-
+        .action-btn:active { transform: scale(0.95); }
         .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .action-btn.attack { background: var(--fail); color: white; }
-        .action-btn.attack.counter { 
-            background: linear-gradient(135deg, #ff8000, #ffd700);
-            animation: pulse 0.5s infinite alternate;
-        }
-        .action-btn.defend { background: #3498db; color: white; }
 
-        @keyframes pulse {
-            from { transform: scale(1); box-shadow: 0 0 10px rgba(255,128,0,0.5); }
-            to { transform: scale(1.02); box-shadow: 0 0 20px rgba(255,128,0,0.8); }
+        .action-btn.attack { 
+            background: linear-gradient(135deg, #e94560, #c73e54);
+            color: white;
+        }
+        .action-btn.defense { 
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        .action-btn.skill { 
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+        }
+        .action-btn .action-icon { font-size: 1.5rem; }
+        .action-btn .action-hint { font-size: 0.6rem; opacity: 0.8; }
+
+        /* 궁극기 버튼 */
+        .ultimate-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,140,0,0.1));
+            border: 2px solid var(--gold);
+            border-radius: 12px;
+            animation: ultimateReady 1s ease-in-out infinite alternate;
+        }
+        @keyframes ultimateReady {
+            from { box-shadow: 0 0 10px rgba(255,215,0,0.3); }
+            to { box-shadow: 0 0 20px rgba(255,215,0,0.6); }
+        }
+        .ultimate-btn {
+            padding: 10px 6px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: white;
+        }
+        .ultimate-btn.burst { background: linear-gradient(135deg, #ff4500, #ff6347); }
+        .ultimate-btn.drain { background: linear-gradient(135deg, #32cd32, #228b22); }
+        .ultimate-btn.shield { background: linear-gradient(135deg, #4169e1, #1e90ff); }
+
+        /* 배틀 애니메이션 효과 */
+        .battle-effect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 공격 슬래시 이펙트 */
+        .slash-effect {
+            width: 200px;
+            height: 200px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M20 80 L80 20' stroke='%23ff6b6b' stroke-width='8' stroke-linecap='round' fill='none'/%3E%3Cpath d='M30 70 L70 30' stroke='%23ffaa00' stroke-width='4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E") center/contain no-repeat;
+            animation: slashAnim 0.4s ease-out forwards;
+        }
+        @keyframes slashAnim {
+            0% { transform: scale(0.5) rotate(-45deg); opacity: 0; }
+            50% { transform: scale(1.2) rotate(0deg); opacity: 1; }
+            100% { transform: scale(1.5) rotate(15deg); opacity: 0; }
         }
 
-        .fighter.defending { border-color: #3498db; background: rgba(52,152,219,0.1); }
-        .fighter.counter-ready { border-color: var(--legendary); background: rgba(255,128,0,0.1); }
+        /* 방어 쉴드 이펙트 */
+        .shield-effect {
+            width: 150px;
+            height: 150px;
+            border: 8px solid #3498db;
+            border-radius: 50%;
+            animation: shieldAnim 0.5s ease-out forwards;
+            box-shadow: 0 0 30px #3498db, inset 0 0 30px rgba(52,152,219,0.3);
+        }
+        @keyframes shieldAnim {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        /* 스킬 이펙트 */
+        .skill-effect {
+            font-size: 4rem;
+            animation: skillAnim 0.6s ease-out forwards;
+        }
+        @keyframes skillAnim {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            50% { transform: scale(1.3) rotate(0deg); opacity: 1; }
+            100% { transform: scale(1) rotate(20deg); opacity: 0; }
+        }
+
+        /* 데미지 숫자 팝업 */
+        .damage-popup {
+            position: fixed;
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            animation: damagePopup 1s ease-out forwards;
+            z-index: 10000;
+        }
+        @keyframes damagePopup {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            20% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-80px) scale(1); opacity: 0; }
+        }
+
+        /* 턴 결과 오버레이 */
+        .turn-result-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+            animation: fadeIn 0.3s;
+        }
+        .turn-result-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .turn-result-actions {
+            display: flex;
+            gap: 40px;
+            font-size: 3rem;
+        }
+        .turn-result-vs { 
+            color: var(--muted); 
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .fighter.hit-flash {
+            animation: hitFlash 0.3s;
+        }
+        @keyframes hitFlash {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(2) saturate(1.5); }
+        }
+
+        .fighter.defending { border-color: #3498db; background: rgba(52,152,219,0.2); }
+        .fighter.counter-ready { border-color: var(--legendary); background: rgba(255,128,0,0.2); }
 
         /* Stats Panel in Main */
         .stats-summary {
@@ -3232,22 +3521,25 @@
             
             if (type === 'state_update') {
                 const gs = payload.gameState || payload;
-                const myId = mpUI.getClient().getMyUserId();
+                const myId = cachedMyId || mpUI?.getClient()?.getMyUserId();
                 
-                // Play animations if present
-                if (gs.animations && gs.animations.length > 0) {
-                    // Sort animations: my attacks first, then enemy attacks
-                    const myAnims = gs.animations.filter(a => a.attackerId === myId);
-                    const enemyAnims = gs.animations.filter(a => a.attackerId !== myId);
-                    const sortedAnims = [...myAnims, ...enemyAnims];
+                // 턴 결과 애니메이션 (폴링으로 받은 경우)
+                if (gs.lastTurnResult && battleState?.gameState?.round !== gs.round) {
+                    const tr = gs.lastTurnResult;
+                    const isP1Me = gs.players[0]?.id === myId;
+                    const myAction = isP1Me ? tr.p1Action : tr.p2Action;
+                    const enemyAction = isP1Me ? tr.p2Action : tr.p1Action;
+                    const myDamage = isP1Me ? tr.p1Damage : tr.p2Damage;
+                    const enemyDamage = isP1Me ? tr.p2Damage : tr.p1Damage;
                     
-                    for (const anim of sortedAnims) {
-                        await playBattleAnimation(anim, myId);
-                        await sleep(400);  // Delay between animations
-                    }
+                    let result = 'draw';
+                    if (enemyDamage > myDamage) result = 'win';
+                    else if (myDamage > enemyDamage) result = 'lose';
+                    
+                    await showTurnResult(myAction, enemyAction, result, myDamage, enemyDamage);
                 }
                 
-                battleState = payload;
+                battleState = { gameState: gs };
                 renderBattle();
             } else if (type === 'action') {
                 // Action event from polling - may contain nested game events
@@ -3283,86 +3575,138 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
-        async function playBattleAnimation(anim, myId) {
-            const isMyAction = anim.attackerId === myId;
-            const targetClass = isMyAction ? '.fighter.enemy' : '.fighter.me';
-            const sourceClass = isMyAction ? '.fighter.me' : '.fighter.enemy';
-            
-            const attackNames = { strong: '강타', quick: '빠른공격', precise: '정밀타격', defend: '방어' };
-            const attackColors = { 
-                strong: '#e94560',   // 빨간색
-                quick: '#4ecdc4',     // 청록색
-                precise: '#667eea',   // 보라색
-                defend: '#6c757d'     // 회색
+        // 무기 이름에서 이모지 추출
+        function getWeaponEmoji(weaponName) {
+            const weaponEmojis = {
+                '나무막대기': '🪵', '단검': '🗡️', '롱소드': '⚔️', '도끼': '🪓', 
+                '창': '🔱', '활': '🏹', '지팡이': '🪄', '망치': '🔨',
+                '대검': '⚔️', '카타나': '🗡️', '레이피어': '🗡️', '할버드': '🔱',
+                '석궁': '🏹', '마법봉': '🪄', '전투도끼': '🪓', '철퇴': '🔨'
             };
+            for (const [name, emoji] of Object.entries(weaponEmojis)) {
+                if (weaponName && weaponName.includes(name)) return emoji;
+            }
+            return '⚔️';
+        }
+
+        // 스킬 이펙트 종류
+        const SKILL_EFFECTS = ['💥', '✨', '🌟', '⚡', '🔥', '❄️', '🌀', '💫'];
+        const SKILL_NAMES = ['스매시!', '찌르기!', '연속베기!', '회전참!', '강타!'];
+
+        async function playBattleAnimation(anim, myId) {
+            // This function is now handled by showTurnResult
+        }
+
+        // 턴 결과 표시 애니메이션
+        async function showTurnResult(myAction, enemyAction, result, myDamage, enemyDamage) {
+            const actionEmoji = { attack: '⚔️', defense: '🛡️', skill: '🔮' };
+            const actionName = { attack: '공격', defense: '방어', skill: '스킬' };
             
-            // Create floating damage/effect text
-            const effectEl = document.createElement('div');
-            effectEl.className = 'battle-effect-popup';
-            effectEl.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                font-size: 2rem;
-                font-weight: bold;
-                z-index: 9999;
-                pointer-events: none;
-                animation: effectPopup 0.8s ease-out forwards;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            // 오버레이 생성
+            const overlay = document.createElement('div');
+            overlay.className = 'turn-result-overlay';
+            overlay.innerHTML = `
+                <div class="turn-result-actions">
+                    <div style="text-align:center;">
+                        <div style="font-size:0.8rem;color:#4ecca3;margin-bottom:4px;">나</div>
+                        <div>${actionEmoji[myAction] || '❓'}</div>
+                        <div style="font-size:0.9rem;">${actionName[myAction] || myAction}</div>
+                    </div>
+                    <div class="turn-result-vs">VS</div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.8rem;color:#ff6b6b;margin-bottom:4px;">상대</div>
+                        <div>${actionEmoji[enemyAction] || '❓'}</div>
+                        <div style="font-size:0.9rem;">${actionName[enemyAction] || enemyAction}</div>
+                    </div>
+                </div>
+                <div class="turn-result-text" id="turnResultText"></div>
             `;
+            document.body.appendChild(overlay);
+
+            await sleep(600);
+
+            // 결과 텍스트 & 이펙트
+            const resultText = overlay.querySelector('#turnResultText');
             
-            if (anim.type === 'defend') {
-                effectEl.textContent = '🛡️ 방어!';
-                effectEl.style.color = attackColors.defend;
-                playSound('defend');
-            } else {
-                const dmgText = anim.damage || 0;
-                let prefix = '';
-                if (anim.isCounter) prefix = '⚡ 카운터 ';
-                if (anim.isCrit) prefix += '💥 ';
+            if (result === 'win') {
+                // 내가 이김 - 공격 이펙트
+                playSound('crit');
+                vibrate([50, 30, 100]);
+                showBattleEffect(myAction, true);
+                resultText.innerHTML = `<span style="color:#4ecca3;">✨ 승리!</span><br><span style="font-size:1.2rem;">상대에게 ${enemyDamage} 데미지</span>`;
                 
-                const attackName = attackNames[anim.attackType] || '공격';
-                effectEl.innerHTML = `
-                    <div style="color:${isMyAction ? '#4ecca3' : '#ff6b6b'}">${isMyAction ? '나의' : '상대의'}</div>
-                    <div style="color:${attackColors[anim.attackType] || '#fff'}">${prefix}${attackName}!</div>
-                    <div style="font-size:2.5rem;color:${anim.isCrit ? '#ffd700' : '#fff'}">${dmgText}</div>
-                    ${anim.advantage ? `<div style="font-size:0.9rem;color:#4ecca3;">✨ ${anim.advantage === 'both' ? '타입+속성 유리!' : anim.advantage === 'type' ? '타입 유리!' : '속성 유리!'}</div>` : ''}
-                `;
-                
-                // Play sound
-                if (anim.isCrit) {
-                    playSound('crit');
-                    vibrate([50, 30, 100]);
-                } else {
-                    playSound('attack');
-                    vibrate(50);
+                // 상대 캐릭터 흔들림
+                const enemyEl = document.querySelector('.fighter.enemy');
+                if (enemyEl) {
+                    enemyEl.classList.add('hit-flash');
+                    setTimeout(() => enemyEl.classList.remove('hit-flash'), 300);
                 }
+            } else if (result === 'lose') {
+                // 내가 짐 - 상대 공격 이펙트
+                playSound('fail');
+                vibrate([100, 50, 100]);
+                showBattleEffect(enemyAction, false);
+                resultText.innerHTML = `<span style="color:#ff6b6b;">💔 패배!</span><br><span style="font-size:1.2rem;">나에게 ${myDamage} 데미지</span>`;
                 
-                // Screen shake for damage
+                // 내 캐릭터 흔들림
                 document.body.classList.add('screen-shake');
                 setTimeout(() => document.body.classList.remove('screen-shake'), 300);
-                
-                // Flash the target
-                const targetEl = document.querySelector(targetClass);
-                if (targetEl) {
-                    targetEl.classList.add('hit-flash');
-                    setTimeout(() => targetEl.classList.remove('hit-flash'), 300);
-                }
+            } else {
+                // 무승부
+                playSound('click');
+                resultText.innerHTML = `<span style="color:var(--muted);">⚖️ 무승부!</span><br><span style="font-size:1.2rem;">양측 5 데미지</span>`;
+            }
+
+            await sleep(1200);
+            overlay.remove();
+        }
+
+        // 배틀 이펙트 표시
+        function showBattleEffect(action, isMyAttack) {
+            const effect = document.createElement('div');
+            effect.className = 'battle-effect';
+            
+            if (action === 'attack') {
+                effect.innerHTML = `<div class="slash-effect"></div>`;
+            } else if (action === 'defense') {
+                effect.innerHTML = `<div class="shield-effect"></div>`;
+            } else if (action === 'skill') {
+                const skillEmoji = SKILL_EFFECTS[Math.floor(Math.random() * SKILL_EFFECTS.length)];
+                const skillName = SKILL_NAMES[Math.floor(Math.random() * SKILL_NAMES.length)];
+                effect.innerHTML = `
+                    <div class="skill-effect">${skillEmoji}</div>
+                    <div style="position:absolute;font-size:1.2rem;font-weight:bold;color:#9b59b6;margin-top:80px;">${skillName}</div>
+                `;
             }
             
-            document.body.appendChild(effectEl);
-            await sleep(800);
-            effectEl.remove();
+            document.body.appendChild(effect);
+            setTimeout(() => effect.remove(), 800);
+        }
+
+        // 데미지 숫자 팝업
+        function showDamagePopup(damage, isEnemy, x, y) {
+            const popup = document.createElement('div');
+            popup.className = 'damage-popup';
+            popup.style.left = x + 'px';
+            popup.style.top = y + 'px';
+            popup.style.color = isEnemy ? '#ff6b6b' : '#4ecca3';
+            popup.textContent = `-${damage}`;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 1000);
         }
 
         function renderBattle() {
             if (!battleState || !battleState.gameState) return;
 
             const gs = battleState.gameState;
-            const myId = mpUI.getClient().getMyUserId();
+            const myId = cachedMyId || mpUI?.getClient()?.getMyUserId();
             const me = gs.players.find(p => p.id === myId);
             const enemy = gs.players.find(p => p.id !== myId);
+            
+            if (!me || !enemy) {
+                console.log('[renderBattle] Missing player data', { myId, players: gs.players });
+                return;
+            }
             
             const hasSelected = me?.hasSelected || me?.selectedAction;
             const enemyReady = enemy?.hasSelected;
@@ -3375,90 +3719,109 @@
             const myElem = elemEmoji[me?.weaponElement] || '';
             const enemyElem = elemEmoji[enemy?.weaponElement] || '';
 
-            // 행동 기록 이모지
+            // 행동 기록 이모지 (최근 3개)
             const actionEmoji = { attack: '⚔️', defense: '🛡️', skill: '🔮' };
-            const myHistory = (me?.actionHistory || []).map(a => actionEmoji[a] || '?').join(' ');
-            const enemyHistory = (enemy?.actionHistory || []).map(a => actionEmoji[a] || '?').join(' ');
+            const myHistory = (me?.actionHistory || []).slice(-3).map(a => actionEmoji[a] || '?').join(' ');
+            const enemyHistory = (enemy?.actionHistory || []).slice(-3).map(a => actionEmoji[a] || '?').join(' ');
 
             // 각성/분노 상태
             const myAwakened = me?.isAwakened;
             const enemyAwakened = enemy?.isAwakened;
             const myRage = me?.rage || 0;
+            const enemyRage = enemy?.rage || 0;
             const canUltimate = myRage >= 100;
 
+            // 무기 이모지
+            const myWeaponEmoji = getWeaponEmoji(me?.weaponName);
+            const enemyWeaponEmoji = getWeaponEmoji(enemy?.weaponName);
+
+            // HP 비율
+            const myHpPercent = Math.max(0, ((me?.hp || 0) / (me?.maxHp || 100)) * 100);
+            const enemyHpPercent = Math.max(0, ((enemy?.hp || 0) / (enemy?.maxHp || 100)) * 100);
+
             const phaseText = gs.phase === 'select' 
-                ? (hasSelected ? '상대 대기중...' : '행동 선택!')
+                ? (hasSelected ? '⏳ 상대 대기중' : '⚡ 행동 선택!')
                 : '결과';
 
             document.getElementById('app').innerHTML = `
                 <div class="battle-screen">
                     <div class="battle-header">
-                        <div class="battle-title">⚔️ 턴제 배틀</div>
+                        <div class="battle-title">⚔️ 무기 배틀</div>
                         <div class="battle-round">라운드 ${gs.round || 1} | ${phaseText}</div>
-                        <div style="font-size:0.7rem;color:var(--muted);margin-top:2px;">
-                            ⚔️공격 > 🔮스킬 > 🛡️방어 > ⚔️공격
+                        <div style="font-size:0.6rem;color:var(--muted);margin-top:4px;">
+                            ⚔️공격→🔮스킬 이김 | 🔮스킬→🛡️방어 이김 | 🛡️방어→⚔️공격 이김
                         </div>
                     </div>
 
                     <div class="battle-arena">
-                        <!-- 상대 -->
+                        <div class="battle-vs">VS</div>
+                        
+                        <!-- 상대 (위쪽, 빨간색) -->
                         <div class="fighter enemy ${enemyAwakened ? 'awakened' : ''}">
-                            <div class="fighter-header">
-                                <span class="fighter-name">
-                                    👤 ${enemy?.nickname || '상대'} ${enemyElem}
-                                    ${enemyAwakened ? '⚡각성' : ''} ${enemyReady ? '✅' : '⏳'}
-                                </span>
-                                <span style="color:${enemyGrade.color};font-size:0.8rem;">
-                                    [${enemyGrade.name}] +${enemy?.weaponLevel || 0}
-                                </span>
-                            </div>
-                            <div class="hp-bar-container">
-                                <div class="hp-bar ${(enemy?.hp || 0) <= (enemy?.maxHp || 100) * 0.3 ? 'low' : ''}" 
-                                     style="width: ${((enemy?.hp || 0) / (enemy?.maxHp || 100)) * 100}%">
-                                    ${enemy?.hp || 0} / ${enemy?.maxHp || 100}
+                            <div class="fighter-content">
+                                <div class="fighter-weapon-icon" style="border-color:${enemyGrade.color};">
+                                    ${enemyWeaponEmoji}
+                                    <span class="weapon-level" style="background:${enemyGrade.color};">+${enemy?.weaponLevel || 0}</span>
                                 </div>
-                            </div>
-                            <div class="fighter-stats">
-                                <span>⚔️ ${enemy?.weaponDamage || 10}</span>
-                                <span>🔥 ${enemy?.rage || 0}%</span>
-                                <span style="font-size:0.7rem;">${enemyHistory || '---'}</span>
+                                <div class="fighter-info">
+                                    <div class="fighter-header">
+                                        <span class="fighter-name">${enemy?.nickname || '상대'} ${enemyReady ? '✅' : '⏳'}</span>
+                                    </div>
+                                    <div class="fighter-weapon-name" style="color:${enemyGrade.color};">
+                                        ${enemyElem} ${enemy?.weaponName || '무기'} [${enemyGrade.name}]
+                                        ${enemyAwakened ? '<span style="color:#ffd700;">⚡각성</span>' : ''}
+                                    </div>
+                                    <div class="hp-bar-container">
+                                        <div class="hp-bar ${enemyHpPercent <= 30 ? 'low' : ''}" style="width:${enemyHpPercent}%">
+                                            ❤️ ${enemy?.hp || 0} / ${enemy?.maxHp || 100}
+                                        </div>
+                                    </div>
+                                    <div class="rage-bar-container">
+                                        <div class="rage-bar ${enemyRage >= 100 ? 'full' : ''}" style="width:${enemyRage}%"></div>
+                                    </div>
+                                    <div class="fighter-stats">
+                                        <span>⚔️ ${enemy?.weaponDamage || 10}</span>
+                                        <span>🔥 ${enemyRage}%</span>
+                                        <span>${enemyHistory || '- - -'}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- 나 -->
+                        <!-- 나 (아래쪽, 초록색) -->
                         <div class="fighter me ${myAwakened ? 'awakened' : ''}">
-                            <div class="fighter-header">
-                                <span class="fighter-name">
-                                    🎮 ${me?.nickname || '나'} ${myElem}
-                                    ${myAwakened ? '⚡각성' : ''} ${hasSelected ? '✅' : ''}
-                                </span>
-                                <span style="color:${myGrade.color};font-size:0.8rem;">
-                                    [${myGrade.name}] +${me?.weaponLevel || 0}
-                                </span>
-                            </div>
-                            <div class="hp-bar-container">
-                                <div class="hp-bar ${(me?.hp || 0) <= (me?.maxHp || 100) * 0.3 ? 'low' : ''}" 
-                                     style="width: ${((me?.hp || 0) / (me?.maxHp || 100)) * 100}%">
-                                    ${me?.hp || 0} / ${me?.maxHp || 100}
+                            <div class="fighter-content">
+                                <div class="fighter-weapon-icon" style="border-color:${myGrade.color};">
+                                    ${myWeaponEmoji}
+                                    <span class="weapon-level" style="background:${myGrade.color};">+${me?.weaponLevel || 0}</span>
                                 </div>
-                            </div>
-                            <!-- 분노 게이지 -->
-                            <div style="margin-top:4px;">
-                                <div style="font-size:0.7rem;color:var(--muted);display:flex;justify-content:space-between;">
-                                    <span>🔥 분노</span><span>${myRage}%</span>
+                                <div class="fighter-info">
+                                    <div class="fighter-header">
+                                        <span class="fighter-name">${me?.nickname || '나'} ${hasSelected ? '✅' : ''}</span>
+                                    </div>
+                                    <div class="fighter-weapon-name" style="color:${myGrade.color};">
+                                        ${myElem} ${me?.weaponName || '무기'} [${myGrade.name}]
+                                        ${myAwakened ? '<span style="color:#ffd700;">⚡각성</span>' : ''}
+                                    </div>
+                                    <div class="hp-bar-container">
+                                        <div class="hp-bar ${myHpPercent <= 30 ? 'low' : ''}" style="width:${myHpPercent}%">
+                                            ❤️ ${me?.hp || 0} / ${me?.maxHp || 100}
+                                        </div>
+                                    </div>
+                                    <div class="rage-bar-container">
+                                        <div class="rage-bar ${myRage >= 100 ? 'full' : ''}" style="width:${myRage}%"></div>
+                                    </div>
+                                    <div class="fighter-stats">
+                                        <span>⚔️ ${me?.weaponDamage || 10}</span>
+                                        <span>🔥 ${myRage}%</span>
+                                        <span>${myHistory || '- - -'}</span>
+                                    </div>
                                 </div>
-                                <div style="height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;">
-                                    <div style="width:${myRage}%;height:100%;background:${canUltimate ? 'linear-gradient(90deg,#ff0,#f80)' : '#e94560'};transition:width 0.3s;"></div>
-                                </div>
-                            </div>
-                            <div class="fighter-stats">
-                                <span>⚔️ ${me?.weaponDamage || 10}</span>
-                                <span style="font-size:0.7rem;">${myHistory || '---'}</span>
                             </div>
                         </div>
 
-                        <div class="battle-log" id="battleLog" style="max-height:100px;">
-                            ${(gs.log || []).slice(-6).reverse().map(entry => `
+                        <div class="battle-log" id="battleLog">
+                            ${(gs.log || []).slice(-5).reverse().map(entry => `
                                 <div class="log-entry ${entry.type || ''}">${entry.text}</div>
                             `).join('')}
                         </div>
@@ -3466,34 +3829,42 @@
 
                     <div class="battle-actions">
                         ${hasSelected ? `
-                            <div style="text-align:center;padding:16px;color:var(--muted);">⏳ 상대 대기중...</div>
+                            <div style="text-align:center;padding:20px;color:var(--muted);font-size:1.1rem;">
+                                ⏳ 상대 행동 대기중...
+                            </div>
                         ` : `
-                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
-                                <button class="action-btn" onclick="battleAction('attack')" style="padding:14px 8px;background:linear-gradient(135deg,#e94560,#c73e54);border:none;border-radius:10px;color:#fff;font-weight:600;">
-                                    ⚔️ 공격
-                                    <span style="font-size:0.65rem;display:block;opacity:0.8;">스킬에 유리</span>
+                            <div class="action-grid">
+                                <button class="action-btn attack" onclick="battleAction('attack')">
+                                    <span class="action-icon">⚔️</span>
+                                    공격
+                                    <span class="action-hint">스킬에 유리</span>
                                 </button>
-                                <button class="action-btn" onclick="battleAction('defense')" style="padding:14px 8px;background:linear-gradient(135deg,#3498db,#2980b9);border:none;border-radius:10px;color:#fff;font-weight:600;">
-                                    🛡️ 방어
-                                    <span style="font-size:0.65rem;display:block;opacity:0.8;">공격에 유리</span>
+                                <button class="action-btn defense" onclick="battleAction('defense')">
+                                    <span class="action-icon">🛡️</span>
+                                    방어
+                                    <span class="action-hint">공격에 유리</span>
                                 </button>
-                                <button class="action-btn" onclick="battleAction('skill')" style="padding:14px 8px;background:linear-gradient(135deg,#9b59b6,#8e44ad);border:none;border-radius:10px;color:#fff;font-weight:600;">
-                                    🔮 스킬
-                                    <span style="font-size:0.65rem;display:block;opacity:0.8;">방어 관통</span>
+                                <button class="action-btn skill" onclick="battleAction('skill')">
+                                    <span class="action-icon">🔮</span>
+                                    스킬
+                                    <span class="action-hint">방어 관통</span>
                                 </button>
                             </div>
                             ${canUltimate ? `
-                                <div style="margin-bottom:8px;padding:8px;background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,140,0,0.1));border:1px solid var(--gold);border-radius:10px;">
-                                    <div style="font-size:0.8rem;color:var(--gold);margin-bottom:6px;text-align:center;">⚡ 궁극기 사용 가능!</div>
-                                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
-                                        <button onclick="battleUltimate('burst')" style="padding:8px;background:#ff4500;border:none;border-radius:6px;color:#fff;font-size:0.75rem;">🔥 필살<br><span style="font-size:0.6rem;">2배 데미지</span></button>
-                                        <button onclick="battleUltimate('lifedrain')" style="padding:8px;background:#32cd32;border:none;border-radius:6px;color:#fff;font-size:0.75rem;">💚 흡수<br><span style="font-size:0.6rem;">데미지=회복</span></button>
-                                        <button onclick="battleUltimate('absolute')" style="padding:8px;background:#4169e1;border:none;border-radius:6px;color:#fff;font-size:0.75rem;">🛡️ 절대방어<br><span style="font-size:0.6rem;">무효+1.5배</span></button>
-                                    </div>
+                                <div class="ultimate-grid">
+                                    <button class="ultimate-btn burst" onclick="battleUltimate('burst')">
+                                        🔥 필살<br><span style="font-size:0.55rem;">2배 데미지</span>
+                                    </button>
+                                    <button class="ultimate-btn drain" onclick="battleUltimate('lifedrain')">
+                                        💚 흡수<br><span style="font-size:0.55rem;">데미지=회복</span>
+                                    </button>
+                                    <button class="ultimate-btn shield" onclick="battleUltimate('absolute')">
+                                        🛡️ 절대방어<br><span style="font-size:0.55rem;">무효+1.5배</span>
+                                    </button>
                                 </div>
                             ` : ''}
                         `}
-                        <button class="btn btn-secondary" onclick="battleSurrender()" style="width:100%;background:rgba(255,100,100,0.15);">
+                        <button class="btn btn-secondary" onclick="battleSurrender()" style="width:100%;background:rgba(255,100,100,0.15);margin-top:8px;">
                             🏳️ 항복
                         </button>
                     </div>
@@ -3553,13 +3924,36 @@
                 
                 // newState 구조로 변경됨
                 if (response.newState) {
-                    battleState = { gameState: response.newState };
+                    const prevState = battleState?.gameState;
+                    const newState = response.newState;
+                    battleState = { gameState: newState };
+                    
+                    // 턴 결과가 있으면 애니메이션 표시
+                    if (newState.lastTurnResult) {
+                        const tr = newState.lastTurnResult;
+                        const myId = cachedMyId || mpUI.getClient().getMyUserId();
+                        const me = newState.players.find(p => p.id === myId);
+                        const enemy = newState.players.find(p => p.id !== myId);
+                        
+                        // 플레이어 순서 확인 (p1이 나인지 상대인지)
+                        const isP1Me = newState.players[0]?.id === myId;
+                        const myAction = isP1Me ? tr.p1Action : tr.p2Action;
+                        const enemyAction = isP1Me ? tr.p2Action : tr.p1Action;
+                        const myDamage = isP1Me ? tr.p1Damage : tr.p2Damage;
+                        const enemyDamage = isP1Me ? tr.p2Damage : tr.p1Damage;
+                        
+                        // 결과: 내가 이겼는지
+                        let result = 'draw';
+                        if (enemyDamage > myDamage) result = 'win';
+                        else if (myDamage > enemyDamage) result = 'lose';
+                        
+                        await showTurnResult(myAction, enemyAction, result, myDamage, enemyDamage);
+                    }
                     
                     // 게임 종료 체크
-                    if (response.newState.winnerId || response.newState.phase === 'ended') {
+                    if (newState.winnerId || newState.phase === 'ended') {
                         const myId = mpUI.getClient().getMyUserId();
-                        const winnerId = response.newState.winnerId;
-                        handleBattleEvent('game_end', { winnerId });
+                        handleBattleEvent('game_end', { winnerId: newState.winnerId });
                         return;
                     }
                     
