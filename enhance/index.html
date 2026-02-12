@@ -1930,31 +1930,32 @@
         // 무기 랭킹 갱신 (신기록 시)
         async function syncWeaponRanking() {
             const userId = getUserId();
+            console.log('🏆 syncWeaponRanking called, userId:', userId, 'weapon:', state.weapon?.level);
             if (!userId || !state.weapon) return;
             
             try {
-                await fetch(`${RANKING_API}/weapon`, {
+                const res = await fetch(`${RANKING_API}/weapon`, {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'x-user-id': userId
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        userId: userId,
                         level: state.weapon.level,
                         name: state.weapon.name,
                         grade: state.weapon.grade,
                         element: state.weapon.element || 'none'
                     })
                 });
-                console.log('🏆 Weapon ranking synced:', state.weapon.level);
+                const data = await res.json();
+                console.log('🏆 Weapon ranking response:', data);
             } catch (e) {
-                console.log('Weapon ranking sync failed:', e);
+                console.error('🏆 Weapon ranking sync failed:', e);
             }
         }
         
         // 사냥 랭킹 갱신 (배치)
         async function syncHuntingRanking() {
             const userId = getUserId();
+            console.log('🐉 syncHuntingRanking called, userId:', userId, 'kills:', pendingKills);
             if (!userId || pendingKills <= 0) return;
             
             const kills = pendingKills;
@@ -1962,45 +1963,43 @@
             pendingKills = 0;  // 리셋
             
             try {
-                await fetch(`${RANKING_API}/hunting`, {
+                const res = await fetch(`${RANKING_API}/hunting`, {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'x-user-id': userId
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        userId: userId,
                         kills: kills,
                         killStreak: streak
                     })
                 });
-                console.log('🐉 Hunting ranking synced:', kills, 'kills');
+                const data = await res.json();
+                console.log('🐉 Hunting ranking response:', data);
             } catch (e) {
-                console.log('Hunting ranking sync failed:', e);
+                console.error('🐉 Hunting ranking sync failed:', e);
             }
         }
         
         // PvP 랭킹 갱신
         async function syncPvPRanking(isWin, opponentRating = 1000) {
             const userId = getUserId();
+            console.log('⚔️ syncPvPRanking called, userId:', userId, 'isWin:', isWin);
             if (!userId) return;
             
             try {
                 const res = await fetch(`${RANKING_API}/pvp`, {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'x-user-id': userId
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        userId: userId,
                         isWin,
                         opponentRating
                     })
                 });
                 const data = await res.json();
-                console.log('⚔️ PvP ranking synced:', data);
+                console.log('⚔️ PvP ranking response:', data);
                 return data;
             } catch (e) {
-                console.log('PvP ranking sync failed:', e);
+                console.error('⚔️ PvP ranking sync failed:', e);
                 return null;
             }
         }
