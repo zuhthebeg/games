@@ -3060,8 +3060,9 @@
                 return { success: 99, destroy: 0, cost: baseRates.cost };
             }
             if (isGlassSword(weapon)) {
-                // 유리검: +1부터 파괴확률 30%! (성공률은 유지)
-                return { success: baseRates.success, destroy: 30, cost: baseRates.cost };
+                // 유리검: 파괴확률 30% + 레벨*3% (최대 90%)
+                const destroyChance = Math.min(90, 30 + weapon.level * 3);
+                return { success: baseRates.success, destroy: destroyChance, cost: baseRates.cost };
             }
             return baseRates;
         }
@@ -4930,7 +4931,9 @@
             if (!state.weapon._durabilityCounter) state.weapon._durabilityCounter = 0;
             state.weapon._durabilityCounter++;
             const gradeData = GRADES[state.weapon.grade] || GRADES.rare;
-            const durabilityMod = gradeData.durabilityMod || 1.0;
+            let durabilityMod = gradeData.durabilityMod || 1.0;
+            // 유리검: 내구도 3배 빠르게 감소!
+            if (isGlassSword(state.weapon)) durabilityMod *= 3;
             const durabilityThreshold = Math.floor(10 / durabilityMod);  // 낮을수록 빨리 감소
             if (state.weapon._durabilityCounter >= durabilityThreshold) {
                 state.weapon._durabilityCounter = 0;
@@ -5466,22 +5469,24 @@
                 }
             }
             
+            const masteryLevel = getWeaponMasteryLevel(w);
             return `
-                <div id="debugPanel" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:11px;padding:8px;z-index:9999;max-height:35vh;overflow:auto;">
-                    <div style="color:#ff0;font-weight:bold;">🔧 DEBUG MODE</div>
-                    <div style="margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;">
-                        <button onclick="debugAddGold()" style="background:#ffd700;color:#000;border:none;padding:4px 8px;cursor:pointer;">💰 +100,000G</button>
-                        <button onclick="debugSetDurability0()" style="background:#ff6b6b;color:#fff;border:none;padding:4px 8px;cursor:pointer;">🔧 내구도 0</button>
-                        <button onclick="debugFullDurability()" style="background:#4ecca3;color:#000;border:none;padding:4px 8px;cursor:pointer;">🔧 내구도 100</button>
+                <div id="debugPanel" style="background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:11px;padding:12px;margin-top:20px;border-radius:8px;">
+                    <div style="color:#ff0;font-weight:bold;margin-bottom:8px;">🔧 DEBUG MODE</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                        <button onclick="debugAddGold()" style="background:#ffd700;color:#000;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">💰 +100,000G</button>
+                        <button onclick="debugSetDurability0()" style="background:#ff6b6b;color:#fff;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">🔧 내구도 0</button>
+                        <button onclick="debugFullDurability()" style="background:#4ecca3;color:#000;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">🔧 내구도 100</button>
+                        <button onclick="debugAddMastery()" style="background:#9b59b6;color:#fff;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">⭐ 숙련도 +1</button>
                     </div>
-                    <div style="margin-top:8px;">
+                    <div style="margin-bottom:8px;">
                         <label style="color:#ff0;">무기 선택: </label>
-                        <select id="debugWeaponSelect" onchange="debugSelectWeapon()" style="background:#333;color:#0f0;border:1px solid #0f0;padding:2px;">
+                        <select id="debugWeaponSelect" onchange="debugSelectWeapon()" style="background:#333;color:#0f0;border:1px solid #0f0;padding:4px;border-radius:4px;">
                             ${weaponOptions.map(opt => `<option value="${opt.grade}|${opt.type}" ${w?.grade === opt.grade && w?.type === opt.type ? 'selected' : ''}>${opt.display}</option>`).join('')}
                         </select>
                     </div>
-                    <div style="margin-top:4px;"><b>현재:</b> ${w?.name} +${w?.level} (${w?.grade}/${w?.type}) | 내구도: ${w?.durability}</div>
-                    <div style="margin-top:4px;"><b>stats:</b> dmg ${stats.damageMin}-${stats.damageMax} | crit ${stats.critChance}% | critDmg ${stats.critDamage}% | hp ${stats.hp}</div>
+                    <div><b>현재:</b> ${w?.name} +${w?.level} (${w?.grade}/${w?.type}) | 내구도: ${w?.durability}% | 숙련도: Lv.${masteryLevel}</div>
+                    <div><b>stats:</b> dmg ${stats.damageMin}-${stats.damageMax} | crit ${stats.critChance}% | critDmg ${stats.critDamage}% | hp ${stats.hp}</div>
                 </div>
             `;
         }
@@ -5503,6 +5508,15 @@
         function debugFullDurability() {
             if (state.weapon) {
                 state.weapon.durability = 100;
+                saveState();
+                showMain();
+            }
+        }
+        
+        function debugAddMastery() {
+            if (state.weapon && state.weapon.weaponMastery) {
+                // 숙련도 레벨 1 = 100 공격 → 100 추가
+                state.weapon.weaponMastery.attacks += 100;
                 saveState();
                 showMain();
             }
@@ -5547,10 +5561,13 @@
         showMain = function() {
             _originalShowMain();
             if (DEBUG_MODE) {
-                // 기존 디버그 패널 제거 후 추가
+                // 기존 디버그 패널 제거 후 앱 컨테이너 아래에 추가
                 const existing = document.getElementById('debugPanel');
                 if (existing) existing.remove();
-                document.body.insertAdjacentHTML('beforeend', renderDebugPanel());
+                const app = document.getElementById('app');
+                if (app) {
+                    app.insertAdjacentHTML('beforeend', renderDebugPanel());
+                }
             }
         };
 
