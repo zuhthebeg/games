@@ -2002,7 +2002,10 @@
                 multiplier: 1.7,
                 dropRate: 14,
                 durabilityMod: 1.0,  // 기준 내구도 소모
-                prefixes: ['정예', '명인의', '고대의', '축복받은']
+                prefixes: ['정예', '명인의', '고대의', '축복받은'],
+                names: {
+                    staff: '피닉스 지팡이'  // 특수: 연속 사냥 시 HP 100% 회복!
+                }
             },
             legendary: { 
                 name: '전설', 
@@ -3045,6 +3048,11 @@
             return weapon && weapon.name === '유리검';
         }
         
+        // 피닉스 지팡이 특수 처리 (연속 사냥 시 HP 100% 회복!)
+        function isPhoenixStaff(weapon) {
+            return weapon && weapon.name === '피닉스 지팡이';
+        }
+        
         function getEnhanceRates(weapon) {
             const baseRates = ENHANCE_RATES[weapon.level];
             if (isWoodenStick(weapon)) {
@@ -3731,6 +3739,7 @@
             if (weaponName === '나뭇가지') return '🌿';
             if (weaponName === '이쑤시개') return '🪥';
             if (weaponName === '유리검') return '🔮';
+            if (weaponName === '피닉스 지팡이') return '🔥';
             
             // 무기 타입 기준 (우선)
             const typeEmojis = {
@@ -5042,6 +5051,15 @@
             state.mastery.kills++;
             huntState.monstersKilled++;
             huntState.totalGoldEarned += goldReward;
+            
+            // 🔥 피닉스 지팡이: 연속 사냥 시 HP 100% 회복!
+            if (isPhoenixStaff(state.weapon)) {
+                const healAmount = huntState.player.maxHp - huntState.player.hp;
+                if (healAmount > 0) {
+                    huntState.player.hp = huntState.player.maxHp;
+                    huntState.log.push({ type: 'heal', text: `🔥 피닉스의 축복! HP 100% 회복! (+${healAmount})` });
+                }
+            }
             huntState._lastKillWasLucky = isLuckyDraw;
             huntState._lastGoldReward = goldReward;
             
@@ -5521,7 +5539,8 @@
             };
             
             saveState();
-            showMain();
+            // 강제 새로고침으로 확실히 반영
+            location.reload();
         }
         
         // showMain 원본 저장 후 래핑
@@ -5529,6 +5548,9 @@
         showMain = function() {
             _originalShowMain();
             if (DEBUG_MODE) {
+                // 기존 디버그 패널 제거 후 추가
+                const existing = document.getElementById('debugPanel');
+                if (existing) existing.remove();
                 document.body.insertAdjacentHTML('beforeend', renderDebugPanel());
             }
         };
