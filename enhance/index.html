@@ -4099,17 +4099,38 @@
         }
 
         // 배틀 이펙트 표시 (강화)
-        function showBattleEffect(action, isMyAttack, damage, isCrit = false) {
+        function showBattleEffect(action, isMyAttack, damage, isCrit = false, weaponType = null) {
             const effect = document.createElement('div');
             effect.className = 'battle-effect';
             
+            // 내 무기 타입 (호출 시 전달되지 않으면 state에서 가져옴)
+            const myWeaponType = weaponType || state.weapon?.type;
+            
             // 여러 이펙트 동시에
             if (action === 'attack' || action.startsWith('ultimate_burst')) {
-                // 슬래시 + 타격 이펙트 (크리티컬이면 더 크게)
-                effect.innerHTML = `
-                    <div class="slash-effect" style="${isCrit ? 'transform:scale(1.5);' : ''}"></div>
-                    <div style="position:absolute;font-size:${isCrit ? '5rem' : '3rem'};animation:actionBounce 0.4s ease-out;">${isCrit ? '💥💥💥' : '💥'}</div>
-                `;
+                // 무기 타입별 이펙트
+                let effectHtml = '';
+                if (isMyAttack && myWeaponType === 'knuckle') {
+                    // 👊 너클: 더블펀치
+                    effectHtml = `
+                        <div class="slash-punch" style="${isCrit ? 'transform:scale(1.3);' : ''}"></div>
+                        <div style="position:absolute;font-size:${isCrit ? '4rem' : '2.5rem'};animation:actionBounce 0.4s ease-out;">${isCrit ? '💥💥' : '💪'}</div>
+                    `;
+                } else if (isMyAttack && (myWeaponType === 'bow' || myWeaponType === 'crossbow')) {
+                    // 🏹 원거리: 화살
+                    effectHtml = `
+                        <div class="slash-arrow" style="${isCrit ? 'transform:scale(1.3);' : ''}"></div>
+                        <div style="position:absolute;font-size:${isCrit ? '4rem' : '2.5rem'};animation:actionBounce 0.4s ease-out;">${isCrit ? '🎯💥' : '🏹'}</div>
+                    `;
+                } else {
+                    // 기본: 슬래시
+                    effectHtml = `
+                        <div class="slash-effect" style="${isCrit ? 'transform:scale(1.5);' : ''}"></div>
+                        <div style="position:absolute;font-size:${isCrit ? '5rem' : '3rem'};animation:actionBounce 0.4s ease-out;">${isCrit ? '💥💥💥' : '💥'}</div>
+                    `;
+                }
+                effect.innerHTML = effectHtml;
+                
                 // 파티클 효과 (크리티컬이면 더 많이)
                 const particleCount = isCrit ? 15 : 5;
                 const particleColor = isCrit ? '#ff4500' : (isMyAttack ? '#4ecca3' : '#ff6b6b');
@@ -5067,14 +5088,15 @@
                 }
             }
             
-            // 글로벌 숙련도 증가
-            state.mastery.attacks++;
+            // 글로벌 숙련도 증가 (너클은 2회 공격이라 2배!)
+            const masteryGain = isKnuckle ? 2 : 1;
+            state.mastery.attacks += masteryGain;
             
             // 무기별 숙련도 증가
             if (!state.weapon.weaponMastery) {
                 state.weapon.weaponMastery = { attacks: 0, crits: 0, kills: 0, killsByType: {} };
             }
-            state.weapon.weaponMastery.attacks++;
+            state.weapon.weaponMastery.attacks += masteryGain;
             
             // 내구도 감소 (등급별 차등 적용)
             // 기준: 희귀(rare) = 10타당 1% 감소 (2배 빠르게 조정)
