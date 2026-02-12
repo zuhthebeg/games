@@ -2574,10 +2574,11 @@
         function getWeaponStats(weapon, includeMastery = true) {
             if (!weapon) return { damageMin: 0, damageMax: 0, critChance: 0, critDamage: 150, hp: 100, masteryBonus: 0, weaponMasteryBonus: 0 };
 
-            const typeData = WEAPON_TYPES[weapon.type];
-            const gradeData = GRADES[weapon.grade];
-            const mult = gradeData.multiplier;
-            const level = weapon.level;
+            // 방어 코드: type/grade 없으면 기본값
+            const typeData = WEAPON_TYPES[weapon.type] || WEAPON_TYPES.sword;
+            const gradeData = GRADES[weapon.grade] || GRADES.common;
+            const mult = gradeData.multiplier || 1.0;
+            const level = weapon.level || 0;
             const globalMasteryBonus = includeMastery ? getMasteryBonus() : 0;
             const weaponMasteryBonus = includeMastery ? getWeaponMasteryBonus(weapon) : 0;
             const totalMasteryBonus = globalMasteryBonus + weaponMasteryBonus;
@@ -2590,10 +2591,12 @@
 
             // 숙련도 보너스 적용 (글로벌 + 무기별)
             const masteryMult = 1 + (totalMasteryBonus / 100);
-            const damageMin = Math.floor((baseDmgMin + level * dmgPerLevel) * mult * typeData.bonus.damage * masteryMult);
-            const damageMax = Math.floor((baseDmgMax + level * dmgPerLevel) * mult * typeData.bonus.damage * masteryMult);
+            const typeBonus = typeData.bonus?.damage || 1.0;
+            const critBonus = typeData.bonus?.crit || 1.0;
+            const damageMin = Math.floor((baseDmgMin + level * dmgPerLevel) * mult * typeBonus * masteryMult);
+            const damageMax = Math.floor((baseDmgMax + level * dmgPerLevel) * mult * typeBonus * masteryMult);
             // 나뭇가지: 99% 크리티컬!
-            const critChance = isTreeBranch(weapon) ? 99 : Math.min(60, Math.floor((5 + level * 2) * typeData.bonus.crit));
+            const critChance = isTreeBranch(weapon) ? 99 : Math.min(60, Math.floor((5 + level * 2) * critBonus));
             const critDamage = 150 + level * 5;
             const hp = Math.floor((100 + level * 20) * mult);
 
@@ -3742,18 +3745,62 @@
                 setTimeout(() => document.body.classList.remove('screen-shake'), enemyCrit ? 800 : 500);
                 
             } else {
-                // 무승부
-                playSound('click');
-                vibrate([30, 30, 30]);
-                
-                resultText.innerHTML = `
-                    <div style="animation: resultAppear 0.4s ease-out;">
-                        <span style="font-size:2rem;color:var(--muted);">⚖️ 무승부!</span>
-                    </div>
-                    <div style="font-size:1.5rem;margin-top:10px;color:var(--muted);">
-                        양측 -5 데미지
-                    </div>
-                `;
+                // 무승부 - 행동에 따라 다른 결과
+                if (myCrit && enemyCrit && myDamage > 0 && enemyDamage > 0) {
+                    // 스킬 vs 스킬: 양쪽 크리티컬!
+                    playSound('crit');
+                    vibrate([100, 50, 100, 50, 100, 50, 150]);
+                    showBattleEffect('skill', true, myDamage, true);
+                    showBattleEffect('skill', false, enemyDamage, true);
+                    
+                    // 화면 번쩍
+                    document.body.style.background = 'radial-gradient(circle, rgba(155,89,182,0.5) 0%, transparent 70%)';
+                    setTimeout(() => { document.body.style.background = ''; }, 400);
+                    
+                    resultText.innerHTML = `
+                        <div style="animation: resultAppear 0.4s ease-out;">
+                            <span style="font-size:2rem;color:#9b59b6;">🔮💥 스킬 충돌! 💥🔮</span>
+                        </div>
+                        <div style="font-size:1.2rem;margin-top:8px;color:#ffd700;animation:actionBounce 0.3s ease-out infinite;">
+                            양쪽 크리티컬!
+                        </div>
+                        <div style="display:flex;justify-content:center;gap:30px;margin-top:10px;">
+                            <span style="font-size:2rem;color:#4ecca3;">-${enemyDamage}</span>
+                            <span style="font-size:2rem;color:#ff6b6b;">-${myDamage}</span>
+                        </div>
+                    `;
+                } else if (myDamage === 0 && enemyDamage === 0) {
+                    // 방어 vs 방어: 데미지 없음
+                    playSound('defense');
+                    vibrate([20, 20]);
+                    showBattleEffect('defense', true, 0, false);
+                    
+                    resultText.innerHTML = `
+                        <div style="animation: resultAppear 0.4s ease-out;">
+                            <span style="font-size:2rem;color:#3498db;">🛡️ 완벽한 교착! 🛡️</span>
+                        </div>
+                        <div style="font-size:1.2rem;margin-top:10px;color:var(--muted);">
+                            양쪽 방어! 데미지 없음
+                        </div>
+                    `;
+                } else {
+                    // 공격 vs 공격: 데미지 차이
+                    playSound('attack');
+                    vibrate([50, 30, 50]);
+                    showBattleEffect('attack', myDamage < enemyDamage, Math.abs(myDamage - enemyDamage), false);
+                    
+                    const winner = myDamage < enemyDamage ? '나' : '상대';
+                    const damageDiff = Math.abs(myDamage - enemyDamage);
+                    
+                    resultText.innerHTML = `
+                        <div style="animation: resultAppear 0.4s ease-out;">
+                            <span style="font-size:2rem;color:#e67e22;">⚔️ 공격 충돌! ⚔️</span>
+                        </div>
+                        <div style="font-size:1.2rem;margin-top:10px;color:${myDamage < enemyDamage ? '#4ecca3' : '#ff6b6b'};">
+                            ${damageDiff > 0 ? `${winner}의 무기가 더 강력! -${damageDiff}` : '완벽한 균형!'}
+                        </div>
+                    `;
+                }
             }
 
             await sleep(1500);
