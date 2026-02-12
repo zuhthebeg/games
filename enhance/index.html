@@ -2442,11 +2442,22 @@
         // 내구도 시스템
         const MAX_DURABILITY = 100;
         
+        // 등급별 수리비 배수 (신화가 비쌈)
+        const REPAIR_COST_MULT = {
+            common: 0.5,
+            magic: 0.8,
+            rare: 1.0,
+            legendary: 1.5,
+            unique: 2.0,
+            mythic: 3.0
+        };
+        
         function getRepairCost(weapon) {
             if (!weapon) return 0;
             const missingDurability = MAX_DURABILITY - (weapon.durability || MAX_DURABILITY);
             const levelCost = ENHANCE_RATES[Math.min(weapon.level, 20)].cost;
-            return Math.floor((missingDurability / 100) * (levelCost / 10)); // 강화비의 1/10 비율
+            const gradeMult = REPAIR_COST_MULT[weapon.grade] || 1.0;
+            return Math.floor((missingDurability / 100) * (levelCost / 10) * gradeMult);
         }
 
         let mpUI = null;
@@ -2644,10 +2655,21 @@
             return weapon;
         }
         
-        // 무기 숙련도 레벨 (100공격당 1레벨, 최대 50)
+        // 등급별 숙련도 상승 배수 (일반=10배 빠름, 신화=기본)
+        const MASTERY_MULTIPLIER = {
+            common: 10,     // 10공격당 1레벨
+            magic: 5,       // 20공격당 1레벨
+            rare: 2.5,      // 40공격당 1레벨
+            legendary: 1.5, // 67공격당 1레벨
+            unique: 1.2,    // 83공격당 1레벨
+            mythic: 1.0     // 100공격당 1레벨
+        };
+        
+        // 무기 숙련도 레벨 (등급별 차등, 최대 50)
         function getWeaponMasteryLevel(weapon) {
             if (!weapon?.weaponMastery) return 0;
-            return Math.min(50, Math.floor(weapon.weaponMastery.attacks / 100));
+            const mult = MASTERY_MULTIPLIER[weapon.grade] || 1.0;
+            return Math.min(50, Math.floor(weapon.weaponMastery.attacks * mult / 100));
         }
         
         // 숙련도 보너스 (레벨당 1%, 최대 50%)
@@ -3090,6 +3112,17 @@
         // 새총 특수 처리 (크리 100%, 데미지 0-30 고정!)
         function isSlingshot(weapon) {
             return weapon && weapon.name === '새총';
+        }
+        
+        // 신화 무기 체크
+        function isMythicWeapon(weapon) {
+            return weapon && weapon.grade === 'mythic';
+        }
+        
+        // 신화 슈퍼크리티컬 체크 (1% 확률)
+        function checkSuperCritical(weapon) {
+            if (!isMythicWeapon(weapon)) return false;
+            return Math.random() < 0.01;  // 1% 확률
         }
         
         function getEnhanceRates(weapon) {
@@ -4987,11 +5020,18 @@
             // Player attacks first
             const playerDamage = Math.floor(Math.random() * (player.damageMax - player.damageMin + 1)) + player.damageMin;
             const playerCrit = Math.random() * 100 < player.critChance;
+            const superCrit = checkSuperCritical(state.weapon);  // 신화 무기 1% 즉사기
             
             // 속성 배율 계산
             const weaponElement = state.weapon.element || 'none';
             const elementMult = getElementMultiplier(weaponElement, monster.type);
-            const baseDamage = playerCrit ? Math.floor(playerDamage * player.critDamage / 100) : playerDamage;
+            let baseDamage = playerCrit ? Math.floor(playerDamage * player.critDamage / 100) : playerDamage;
+            
+            // 슈퍼크리티컬: 즉사!
+            if (superCrit) {
+                baseDamage = monster.currentHp;  // 현재 HP만큼 데미지 = 즉사
+            }
+            
             const finalPlayerDamage = Math.floor(baseDamage * elementMult);
             
             // 럭키드로우용: 공격 전 풀피였는지 저장
@@ -5015,7 +5055,22 @@
             const lifestealText = lifestealHeal > 0 ? ` 🩸+${lifestealHeal} 흡혈!` : '';
             const elementText = (elementMult > 1 ? ` 🎯효과적!` : (elementMult < 1 ? ` 🛡️저항...` : '')) + lifestealText;
             
-            if (playerCrit) {
+            if (superCrit) {
+                // 🌟 슈퍼크리티컬! 신화 무기 즉사기!
+                state.weapon.weaponMastery.crits++;
+                state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - 50);
+                
+                playSound('crit');
+                vibrate([100, 50, 100, 50, 100, 50, 200]);
+                showSlashEffect('crit', 'monster');
+                showCritEffect();
+                fireConfetti();  // 축하 효과!
+                document.body.classList.add('screen-shake');
+                setTimeout(() => document.body.classList.remove('screen-shake'), 500);
+                
+                huntState.log.push({ type: 'crit', text: `🌟 슈퍼크리티컬!! ${monster.name} 즉사! (내구도 -50)` });
+                
+            } else if (playerCrit) {
                 // 크리 기록
                 state.weapon.weaponMastery.crits++;
                 
