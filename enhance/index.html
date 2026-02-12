@@ -5088,6 +5088,9 @@
                 }
             }
             
+            // 👊 너클 체크 (2회 공격, 숙련도 2배)
+            const isKnuckle = state.weapon.type === 'knuckle';
+            
             // 글로벌 숙련도 증가 (너클은 2회 공격이라 2배!)
             const masteryGain = isKnuckle ? 2 : 1;
             state.mastery.attacks += masteryGain;
@@ -5131,7 +5134,6 @@
             let finalPlayerDamage = Math.floor(baseDamage * elementMult);
             
             // 👊 너클: 2회 공격! + 5% 회복
-            const isKnuckle = state.weapon.type === 'knuckle';
             if (isKnuckle) {
                 finalPlayerDamage *= 2;  // 두 대 때림!
                 // 5% 회복
