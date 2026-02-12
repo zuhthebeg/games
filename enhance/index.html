@@ -5134,17 +5134,9 @@
             
             let finalPlayerDamage = Math.floor(baseDamage * elementMult);
             
-            // 👊 너클: 2회 공격! + 5% 회복
+            // 👊 너클: 2회 공격!
             if (isKnuckle) {
                 finalPlayerDamage *= 2;  // 두 대 때림!
-                // 5% 회복
-                const healAmount = Math.floor(player.maxHp * 0.05);
-                const oldHp = player.hp;
-                player.hp = Math.min(player.maxHp, player.hp + healAmount);
-                const actualHeal = player.hp - oldHp;
-                if (actualHeal > 0) {
-                    huntState.log.push({ type: 'heal', text: `👊 연타 회복! +${actualHeal} HP` });
-                }
             }
             
             // 럭키드로우용: 공격 전 풀피였는지 저장
@@ -5236,17 +5228,6 @@
                 // 🛡️ 무적모드
                 if (window.debugGodMode) finalMonsterDamage = 0;
                 
-                // 🏹 활 종류: 공격 시 10% 회복
-                if (state.weapon.type === 'bow' || state.weapon.type === 'crossbow') {
-                    const healAmount = Math.floor(player.maxHp * 0.1);
-                    const oldHp = player.hp;
-                    player.hp = Math.min(player.maxHp, player.hp + healAmount);
-                    const actualHeal = player.hp - oldHp;
-                    if (actualHeal > 0) {
-                        huntState.log.push({ type: 'heal', text: `🏹 원거리 회복! +${actualHeal} HP` });
-                    }
-                }
-                
                 player.hp = Math.max(0, player.hp - finalMonsterDamage);
                 
                 showSlashEffect('claw', 'player');  // 클로 공격! 플레이어 영역에
@@ -5295,6 +5276,28 @@
                 if (healAmount > 0) {
                     huntState.player.hp = huntState.player.maxHp;
                     huntState.log.push({ type: 'heal', text: `🔥 피닉스의 축복! HP 100% 회복! (+${healAmount})` });
+                }
+            }
+            
+            // 🏹 원거리 무기: 몬스터 처치 시 20% 회복
+            if (state.weapon.type === 'bow' || state.weapon.type === 'crossbow') {
+                const healAmount = Math.floor(huntState.player.maxHp * 0.2);
+                const oldHp = huntState.player.hp;
+                huntState.player.hp = Math.min(huntState.player.maxHp, huntState.player.hp + healAmount);
+                const actualHeal = huntState.player.hp - oldHp;
+                if (actualHeal > 0) {
+                    huntState.log.push({ type: 'heal', text: `🏹 사냥 완료 회복! +${actualHeal} HP` });
+                }
+            }
+            
+            // 👊 너클: 몬스터 처치 시 5% 회복
+            if (state.weapon.type === 'knuckle') {
+                const healAmount = Math.floor(huntState.player.maxHp * 0.05);
+                const oldHp = huntState.player.hp;
+                huntState.player.hp = Math.min(huntState.player.maxHp, huntState.player.hp + healAmount);
+                const actualHeal = huntState.player.hp - oldHp;
+                if (actualHeal > 0) {
+                    huntState.log.push({ type: 'heal', text: `👊 연타 회복! +${actualHeal} HP` });
                 }
             }
             huntState._lastKillWasLucky = isLuckyDraw;
