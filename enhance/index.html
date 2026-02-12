@@ -1904,7 +1904,7 @@
             if (userId) return userId;
             
             // 2. JWT 토큰에서 추출
-            const token = localStorage.getItem('cocy_auth_token');
+            const token = localStorage.getItem('cocy_auth_token') || localStorage.getItem('accessToken');
             if (token) {
                 try {
                     const parts = token.split('.');
@@ -1927,10 +1927,31 @@
             return userId;
         }
         
+        // 로그인 유저 닉네임 가져오기
+        function getUserNickname() {
+            // 1. relay에서 저장한 닉네임
+            const relayNick = localStorage.getItem('relay_nickname');
+            if (relayNick) return relayNick;
+            
+            // 2. JWT 토큰에서 추출
+            const token = localStorage.getItem('cocy_auth_token') || localStorage.getItem('accessToken');
+            if (token) {
+                try {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        return payload.nickname || null;
+                    }
+                } catch (e) {}
+            }
+            return null;
+        }
+        
         // 무기 랭킹 갱신 (신기록 시)
         async function syncWeaponRanking() {
             const userId = getUserId();
-            console.log('🏆 syncWeaponRanking called, userId:', userId, 'weapon:', state.weapon?.level);
+            const nickname = getUserNickname();
+            console.log('🏆 syncWeaponRanking called, userId:', userId, 'nickname:', nickname, 'weapon:', state.weapon?.level);
             if (!userId || !state.weapon) return;
             
             try {
@@ -1939,6 +1960,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         userId: userId,
+                        nickname: nickname,  // 로그인 유저면 닉네임 포함
                         level: state.weapon.level,
                         name: state.weapon.name,
                         grade: state.weapon.grade,
@@ -1955,7 +1977,8 @@
         // 사냥 랭킹 갱신 (배치)
         async function syncHuntingRanking() {
             const userId = getUserId();
-            console.log('🐉 syncHuntingRanking called, userId:', userId, 'kills:', pendingKills);
+            const nickname = getUserNickname();
+            console.log('🐉 syncHuntingRanking called, userId:', userId, 'nickname:', nickname, 'kills:', pendingKills);
             if (!userId || pendingKills <= 0) return;
             
             const kills = pendingKills;
@@ -1968,6 +1991,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         userId: userId,
+                        nickname: nickname,
                         kills: kills,
                         killStreak: streak
                     })
@@ -1982,7 +2006,8 @@
         // PvP 랭킹 갱신
         async function syncPvPRanking(isWin, opponentRating = 1000) {
             const userId = getUserId();
-            console.log('⚔️ syncPvPRanking called, userId:', userId, 'isWin:', isWin);
+            const nickname = getUserNickname();
+            console.log('⚔️ syncPvPRanking called, userId:', userId, 'nickname:', nickname, 'isWin:', isWin);
             if (!userId) return;
             
             try {
@@ -1991,6 +2016,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         userId: userId,
+                        nickname: nickname,
                         isWin,
                         opponentRating
                     })
