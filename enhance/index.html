@@ -1856,6 +1856,7 @@
          * - scythe(낫): 넓은 범위, 죽음의 일격
          * - bow(활): 원거리, 최소0 / 넓은범위 / 크리300%
          * - crossbow(석궁): 원거리, 최소0 / 더 넓은범위 / 크리300%
+         * - knuckle(너클): 2회 공격, 안정적 데미지, 5% 회복
          */
         const WEAPON_TYPES = {
             sword:  { name: '검',     img: `${ICON_BASE}/lorc/broadsword.svg`,       bonus: { damage: 1.0, crit: 1.0 },   baseMin: 6, baseMax: 10, critDmgBonus: 0 },
@@ -1867,7 +1868,8 @@
             katana: { name: '태도',   img: `${ICON_BASE}/lorc/crossed-swords.svg`,   bonus: { damage: 1.0, crit: 1.25 },  baseMin: 5, baseMax: 11, critDmgBonus: 50 },
             scythe: { name: '낫',     img: `${ICON_BASE}/lorc/scythe.svg`,           bonus: { damage: 1.1, crit: 1.1 },   baseMin: 4, baseMax: 15, critDmgBonus: 40 },
             bow:    { name: '활',     img: `${ICON_BASE}/lorc/pocket-bow.svg`,       bonus: { damage: 0.9, crit: 1.2 },   baseMin: 0, baseMax: 14, critDmgBonus: 150 },
-            crossbow: { name: '석궁', img: `${ICON_BASE}/carl-olsen/crossbow.svg`,   bonus: { damage: 1.0, crit: 1.1 },   baseMin: 0, baseMax: 18, critDmgBonus: 150 }
+            crossbow: { name: '석궁', img: `${ICON_BASE}/carl-olsen/crossbow.svg`,   bonus: { damage: 1.0, crit: 1.1 },   baseMin: 0, baseMax: 18, critDmgBonus: 150 },
+            knuckle: { name: '너클',  img: `${ICON_BASE}/lorc/punch.svg`,            bonus: { damage: 0.95, crit: 1.0 },  baseMin: 7, baseMax: 8, critDmgBonus: 0 }
         };
         
         // ===== 속성 시스템 =====
@@ -1988,7 +1990,8 @@
                     katana: '죽도',
                     scythe: '농기구 낫',
                     bow: '새총',  // 특수: 크리 100%, 데미지 0-30 고정!
-                    crossbow: '장난감 석궁'
+                    crossbow: '장난감 석궁',
+                    knuckle: '맨주먹'
                 }
             },
             magic: { 
@@ -2001,7 +2004,8 @@
                 names: {
                     sword: '유리검',  // 특수: 능력치 2배, 파괴확률 30%!
                     bow: '마력의 활',
-                    crossbow: '연발 석궁'
+                    crossbow: '연발 석궁',
+                    knuckle: '강철 너클'
                 }
             },
             rare: { 
@@ -2014,7 +2018,8 @@
                 names: {
                     staff: '피닉스 지팡이',  // 특수: 연속 사냥 시 HP 100% 회복!
                     bow: '명궁의 활',
-                    crossbow: '철갑 석궁'
+                    crossbow: '철갑 석궁',
+                    knuckle: '격투가의 주먹'
                 }
             },
             legendary: { 
@@ -2034,7 +2039,8 @@
                     katana: '천검',
                     scythe: '저승사자의 낫',
                     bow: '천상의 활',
-                    crossbow: '드래곤 킬러'
+                    crossbow: '드래곤 킬러',
+                    knuckle: '타이탄 피스트'
                 }
             },
             unique: { 
@@ -2054,7 +2060,8 @@
                     katana: '무라마사',
                     scythe: '죽음의 낫',
                     bow: '아폴론의 활',
-                    crossbow: '발리스타'
+                    crossbow: '발리스타',
+                    knuckle: '갓핸드'
                 }
             },
             mythic: {
@@ -2074,7 +2081,8 @@
                     katana: '아마테라스',
                     scythe: '종언의 낫',
                     bow: '아르테미스',
-                    crossbow: '신벌'
+                    crossbow: '신벌',
+                    knuckle: '원펀치'
                 }
             }
         };
@@ -3819,6 +3827,9 @@
             if (weaponType === 'bow') return '🏹';
             if (weaponType === 'crossbow') return '🎯';
             
+            // 너클
+            if (weaponType === 'knuckle') return '👊';
+            
             // 무기 타입 기준 (우선)
             const typeEmojis = {
                 sword: '⚔️',    // 검
@@ -5032,7 +5043,21 @@
                 baseDamage = monster.currentHp;  // 현재 HP만큼 데미지 = 즉사
             }
             
-            const finalPlayerDamage = Math.floor(baseDamage * elementMult);
+            let finalPlayerDamage = Math.floor(baseDamage * elementMult);
+            
+            // 👊 너클: 2회 공격! + 5% 회복
+            const isKnuckle = state.weapon.type === 'knuckle';
+            if (isKnuckle) {
+                finalPlayerDamage *= 2;  // 두 대 때림!
+                // 5% 회복
+                const healAmount = Math.floor(player.maxHp * 0.05);
+                const oldHp = player.hp;
+                player.hp = Math.min(player.maxHp, player.hp + healAmount);
+                const actualHeal = player.hp - oldHp;
+                if (actualHeal > 0) {
+                    huntState.log.push({ type: 'heal', text: `👊 연타 회복! +${actualHeal} HP` });
+                }
+            }
             
             // 럭키드로우용: 공격 전 풀피였는지 저장
             const wasAtFullHp = (monster.currentHp === monster.maxHp);
