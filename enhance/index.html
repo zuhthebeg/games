@@ -1968,7 +1968,7 @@
                     axe: '녹슨 도끼',
                     spear: '뾰족한 막대',
                     hammer: '돌망치',
-                    dagger: '부엌칼',
+                    dagger: '이쑤시개',
                     staff: '나뭇가지',
                     katana: '죽도',
                     scythe: '농기구 낫'
@@ -2653,6 +2653,19 @@
             const weaponMasteryBonus = includeMastery ? getWeaponMasteryBonus(weapon) : 0;
             const totalMasteryBonus = globalMasteryBonus + weaponMasteryBonus;
 
+            // 이쑤시개: 데미지 1 고정, 크리티컬 10%, 크리티컬 데미지 1000!
+            if (isToothpick(weapon)) {
+                return { 
+                    damageMin: 1, 
+                    damageMax: 1, 
+                    critChance: 10, 
+                    critDamage: 1000, 
+                    hp: Math.floor((100 + level * 20) * mult),
+                    masteryBonus: globalMasteryBonus, 
+                    weaponMasteryBonus 
+                };
+            }
+
             // 나무막대기: 기본 데미지 1 (성장은 동일)
             const isStick = isWoodenStick(weapon);
             const baseDmgMin = isStick ? 1 : 5;
@@ -2995,6 +3008,11 @@
         // 나뭇가지 특수 처리 (99% 크리티컬)
         function isTreeBranch(weapon) {
             return weapon && weapon.name === '나뭇가지';
+        }
+        
+        // 이쑤시개 특수 처리 (데미지 1, 크리티컬 10%, 크리티컬 데미지 1000!)
+        function isToothpick(weapon) {
+            return weapon && weapon.name === '이쑤시개';
         }
         
         function getEnhanceRates(weapon) {
@@ -3677,6 +3695,7 @@
             // 특수 무기
             if (weaponName === '나무막대기') return '🪵';
             if (weaponName === '나뭇가지') return '🌿';
+            if (weaponName === '이쑤시개') return '🪥';
             
             // 무기 타입 기준 (우선)
             const typeEmojis = {
