@@ -3187,11 +3187,11 @@
             contentEl.innerHTML = html;
         }
 
-        // ===== BATTLE MODE =====
+        // ===== BATTLE MODE (새 턴제 PvP) =====
         function showBattleLobby() {
             mpUI = new MultiplayerUI({
-                gameType: 'enhance',
-                gameName: '⚔️ 무기 배틀',
+                gameType: 'pvp-battle',
+                gameName: '⚔️ 턴제 배틀',
                 container: document.getElementById('app'),
                 maxPlayers: 2,
                 supportsLocal: false,
@@ -3364,92 +3364,101 @@
             const me = gs.players.find(p => p.id === myId);
             const enemy = gs.players.find(p => p.id !== myId);
             
-            // Check if I've already selected an action
-            const hasSelected = me?.selectedAction && me.selectedAction !== null;
-            const enemyReady = enemy?.selectedAction === 'ready' || (enemy?.selectedAction && enemy.selectedAction !== null);
+            const hasSelected = me?.hasSelected || me?.selectedAction;
+            const enemyReady = enemy?.hasSelected;
 
             const myGrade = me?.weaponGrade ? GRADES[me.weaponGrade] : GRADES.common;
             const enemyGrade = enemy?.weaponGrade ? GRADES[enemy.weaponGrade] : GRADES.common;
-            
-            // Get weapon images from type
-            const myWeaponImg = WEAPON_TYPES[me?.weaponType]?.img || WEAPON_TYPES.sword.img;
-            const enemyWeaponImg = WEAPON_TYPES[enemy?.weaponType]?.img || WEAPON_TYPES.sword.img;
 
-            // Element display
-            const elementEmoji = { fire: '🔥', water: '💧', earth: '🌍', wind: '💨' };
-            const myElement = me?.weaponElement ? elementEmoji[me.weaponElement] || '' : '';
-            const enemyElement = enemy?.weaponElement ? elementEmoji[enemy.weaponElement] || '' : '';
+            // 속성 이모지
+            const elemEmoji = { fire: '🔥', ice: '❄️', lightning: '⚡', holy: '✨', poison: '☠️', silver: '🌙', lifesteal: '🩸', none: '' };
+            const myElem = elemEmoji[me?.weaponElement] || '';
+            const enemyElem = elemEmoji[enemy?.weaponElement] || '';
 
-            // Status badges - only show my own status (hidden from opponent)
-            const myStatus = me?.counterReady ? '⚡ 카운터!' : '';
+            // 행동 기록 이모지
+            const actionEmoji = { attack: '⚔️', defense: '🛡️', skill: '🔮' };
+            const myHistory = (me?.actionHistory || []).map(a => actionEmoji[a] || '?').join(' ');
+            const enemyHistory = (enemy?.actionHistory || []).map(a => actionEmoji[a] || '?').join(' ');
 
-            // Phase display
+            // 각성/분노 상태
+            const myAwakened = me?.isAwakened;
+            const enemyAwakened = enemy?.isAwakened;
+            const myRage = me?.rage || 0;
+            const canUltimate = myRage >= 100;
+
             const phaseText = gs.phase === 'select' 
-                ? (hasSelected ? '상대 선택 대기중...' : '행동을 선택하세요!')
-                : '결과 확인';
+                ? (hasSelected ? '상대 대기중...' : '행동 선택!')
+                : '결과';
 
             document.getElementById('app').innerHTML = `
                 <div class="battle-screen">
                     <div class="battle-header">
-                        <div class="battle-title">⚔️ 무기 배틀!</div>
+                        <div class="battle-title">⚔️ 턴제 배틀</div>
                         <div class="battle-round">라운드 ${gs.round || 1} | ${phaseText}</div>
-                        <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">
-                            강타 > 빠른공격 > 정밀타격 > 강타 (유리 +30%)
+                        <div style="font-size:0.7rem;color:var(--muted);margin-top:2px;">
+                            ⚔️공격 > 🔮스킬 > 🛡️방어 > ⚔️공격
                         </div>
                     </div>
 
                     <div class="battle-arena">
-                        <div class="fighter enemy">
+                        <!-- 상대 -->
+                        <div class="fighter enemy ${enemyAwakened ? 'awakened' : ''}">
                             <div class="fighter-header">
                                 <span class="fighter-name">
-                                    👤 ${enemy?.nickname || '상대'} 
-                                    ${enemyElement}
-                                    ${enemyReady ? '✅' : '⏳'}
+                                    👤 ${enemy?.nickname || '상대'} ${enemyElem}
+                                    ${enemyAwakened ? '⚡각성' : ''} ${enemyReady ? '✅' : '⏳'}
                                 </span>
-                                <span class="fighter-weapon" style="color:${enemyGrade.color}">
-                                    <img src="${enemyWeaponImg}" style="width:20px;height:20px;vertical-align:middle;filter:drop-shadow(0 0 3px ${enemyGrade.color});">
+                                <span style="color:${enemyGrade.color};font-size:0.8rem;">
                                     [${enemyGrade.name}] +${enemy?.weaponLevel || 0}
                                 </span>
                             </div>
                             <div class="hp-bar-container">
-                                <div class="hp-bar ${(enemy?.hp || 0) < 30 ? 'low' : ''}" 
+                                <div class="hp-bar ${(enemy?.hp || 0) <= (enemy?.maxHp || 100) * 0.3 ? 'low' : ''}" 
                                      style="width: ${((enemy?.hp || 0) / (enemy?.maxHp || 100)) * 100}%">
                                     ${enemy?.hp || 0} / ${enemy?.maxHp || 100}
                                 </div>
                             </div>
                             <div class="fighter-stats">
-                                <span>⚔️ ${enemy?.damageMin || 0}-${enemy?.damageMax || 0}</span>
-                                <span>💰 ${(enemy?.weaponSalePrice || 0).toLocaleString()}G</span>
+                                <span>⚔️ ${enemy?.weaponDamage || 10}</span>
+                                <span>🔥 ${enemy?.rage || 0}%</span>
+                                <span style="font-size:0.7rem;">${enemyHistory || '---'}</span>
                             </div>
                         </div>
 
-                        <div class="fighter me ${me?.counterReady ? 'counter-ready' : ''}">
+                        <!-- 나 -->
+                        <div class="fighter me ${myAwakened ? 'awakened' : ''}">
                             <div class="fighter-header">
                                 <span class="fighter-name">
-                                    🎮 ${me?.nickname || '나'} 
-                                    ${myElement}
-                                    ${myStatus}
-                                    ${hasSelected ? '✅' : ''}
+                                    🎮 ${me?.nickname || '나'} ${myElem}
+                                    ${myAwakened ? '⚡각성' : ''} ${hasSelected ? '✅' : ''}
                                 </span>
-                                <span class="fighter-weapon" style="color:${myGrade.color}">
-                                    <img src="${myWeaponImg}" style="width:20px;height:20px;vertical-align:middle;filter:drop-shadow(0 0 3px ${myGrade.color});">
+                                <span style="color:${myGrade.color};font-size:0.8rem;">
                                     [${myGrade.name}] +${me?.weaponLevel || 0}
                                 </span>
                             </div>
                             <div class="hp-bar-container">
-                                <div class="hp-bar ${(me?.hp || 0) < 30 ? 'low' : ''}" 
+                                <div class="hp-bar ${(me?.hp || 0) <= (me?.maxHp || 100) * 0.3 ? 'low' : ''}" 
                                      style="width: ${((me?.hp || 0) / (me?.maxHp || 100)) * 100}%">
                                     ${me?.hp || 0} / ${me?.maxHp || 100}
                                 </div>
                             </div>
+                            <!-- 분노 게이지 -->
+                            <div style="margin-top:4px;">
+                                <div style="font-size:0.7rem;color:var(--muted);display:flex;justify-content:space-between;">
+                                    <span>🔥 분노</span><span>${myRage}%</span>
+                                </div>
+                                <div style="height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;">
+                                    <div style="width:${myRage}%;height:100%;background:${canUltimate ? 'linear-gradient(90deg,#ff0,#f80)' : '#e94560'};transition:width 0.3s;"></div>
+                                </div>
+                            </div>
                             <div class="fighter-stats">
-                                <span>⚔️ ${me?.damageMin || 0}-${me?.damageMax || 0}</span>
-                                <span>💰 ${(me?.weaponSalePrice || 0).toLocaleString()}G</span>
+                                <span>⚔️ ${me?.weaponDamage || 10}</span>
+                                <span style="font-size:0.7rem;">${myHistory || '---'}</span>
                             </div>
                         </div>
 
-                        <div class="battle-log" id="battleLog">
-                            ${(gs.log || []).slice(-8).reverse().map(entry => `
+                        <div class="battle-log" id="battleLog" style="max-height:100px;">
+                            ${(gs.log || []).slice(-6).reverse().map(entry => `
                                 <div class="log-entry ${entry.type || ''}">${entry.text}</div>
                             `).join('')}
                         </div>
@@ -3457,31 +3466,35 @@
 
                     <div class="battle-actions">
                         ${hasSelected ? `
-                            <div style="text-align:center;padding:20px;color:var(--muted);">
-                                ⏳ 상대방 선택 대기중...
-                            </div>
+                            <div style="text-align:center;padding:16px;color:var(--muted);">⏳ 상대 대기중...</div>
                         ` : `
-                            <div class="action-btns" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                                <button class="action-btn attack" onclick="battleAction('strong')" style="background:linear-gradient(135deg,#e94560,#c73e54);">
-                                    💪 강타
-                                    <span style="font-size:0.7rem;display:block;opacity:0.8;">빠른공격에 유리</span>
+                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+                                <button class="action-btn" onclick="battleAction('attack')" style="padding:14px 8px;background:linear-gradient(135deg,#e94560,#c73e54);border:none;border-radius:10px;color:#fff;font-weight:600;">
+                                    ⚔️ 공격
+                                    <span style="font-size:0.65rem;display:block;opacity:0.8;">스킬에 유리</span>
                                 </button>
-                                <button class="action-btn attack" onclick="battleAction('quick')" style="background:linear-gradient(135deg,#4ecdc4,#3db9b1);">
-                                    ⚡ 빠른공격
-                                    <span style="font-size:0.7rem;display:block;opacity:0.8;">정밀타격에 유리</span>
-                                </button>
-                                <button class="action-btn attack" onclick="battleAction('precise')" style="background:linear-gradient(135deg,#667eea,#5a6fd6);">
-                                    🎯 정밀타격
-                                    <span style="font-size:0.7rem;display:block;opacity:0.8;">강타에 유리</span>
-                                </button>
-                                <button class="action-btn defend" onclick="battleAction('defend')" style="background:linear-gradient(135deg,#6c757d,#5a6268);">
+                                <button class="action-btn" onclick="battleAction('defense')" style="padding:14px 8px;background:linear-gradient(135deg,#3498db,#2980b9);border:none;border-radius:10px;color:#fff;font-weight:600;">
                                     🛡️ 방어
-                                    <span style="font-size:0.7rem;display:block;opacity:0.8;">피해 감소+카운터</span>
+                                    <span style="font-size:0.65rem;display:block;opacity:0.8;">공격에 유리</span>
+                                </button>
+                                <button class="action-btn" onclick="battleAction('skill')" style="padding:14px 8px;background:linear-gradient(135deg,#9b59b6,#8e44ad);border:none;border-radius:10px;color:#fff;font-weight:600;">
+                                    🔮 스킬
+                                    <span style="font-size:0.65rem;display:block;opacity:0.8;">방어 관통</span>
                                 </button>
                             </div>
+                            ${canUltimate ? `
+                                <div style="margin-bottom:8px;padding:8px;background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,140,0,0.1));border:1px solid var(--gold);border-radius:10px;">
+                                    <div style="font-size:0.8rem;color:var(--gold);margin-bottom:6px;text-align:center;">⚡ 궁극기 사용 가능!</div>
+                                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+                                        <button onclick="battleUltimate('burst')" style="padding:8px;background:#ff4500;border:none;border-radius:6px;color:#fff;font-size:0.75rem;">🔥 필살<br><span style="font-size:0.6rem;">2배 데미지</span></button>
+                                        <button onclick="battleUltimate('lifedrain')" style="padding:8px;background:#32cd32;border:none;border-radius:6px;color:#fff;font-size:0.75rem;">💚 흡수<br><span style="font-size:0.6rem;">데미지=회복</span></button>
+                                        <button onclick="battleUltimate('absolute')" style="padding:8px;background:#4169e1;border:none;border-radius:6px;color:#fff;font-size:0.75rem;">🛡️ 절대방어<br><span style="font-size:0.6rem;">무효+1.5배</span></button>
+                                    </div>
+                                </div>
+                            ` : ''}
                         `}
-                        <button class="btn btn-secondary" onclick="battleSurrender()" style="margin-top:10px;background:rgba(255,100,100,0.15);">
-                            🏳️ 항복하기
+                        <button class="btn btn-secondary" onclick="battleSurrender()" style="width:100%;background:rgba(255,100,100,0.15);">
+                            🏳️ 항복
                         </button>
                     </div>
                 </div>
@@ -3510,40 +3523,50 @@
 
         let battleActionPending = false;  // 중복 클릭 방지
         
+        async function battleUltimate(ultType) {
+            if (!mpUI || !mpUI.getClient()) return;
+            if (battleActionPending) return;
+            
+            battleActionPending = true;
+            try {
+                const response = await mpUI.sendAction({ type: 'ultimate', payload: { ultimate: ultType } });
+                console.log('Ultimate response:', response);
+                if (response.newState) {
+                    battleState = { gameState: response.newState };
+                    renderBattle();
+                }
+            } catch (e) {
+                console.error('Ultimate error:', e);
+            } finally {
+                battleActionPending = false;
+            }
+        }
+        
         async function battleAction(action) {
             if (!mpUI || !mpUI.getClient()) return;
-            if (battleActionPending) return;  // 이미 처리 중이면 무시
+            if (battleActionPending) return;
             
             battleActionPending = true;
             try {
                 const response = await mpUI.sendAction({ type: action });
                 console.log('Action response:', response);
                 
-                // Check if game ended
-                if (response.isGameOver) {
-                    // Find winner and loser from game state
-                    const gs = response.gameState;
-                    const myId = mpUI.getClient().getMyUserId();
-                    const winner = gs.players.find(p => p.hp > 0) || gs.players[0];
-                    const loser = gs.players.find(p => p.hp <= 0) || gs.players[1];
+                // newState 구조로 변경됨
+                if (response.newState) {
+                    battleState = { gameState: response.newState };
                     
-                    // First show final state with animations
-                    if (gs.animations && gs.animations.length > 0) {
-                        await handleBattleEvent('state_update', { gameState: gs });
-                        await sleep(500);  // Wait for animations
+                    // 게임 종료 체크
+                    if (response.newState.winnerId || response.newState.phase === 'ended') {
+                        const myId = mpUI.getClient().getMyUserId();
+                        const winnerId = response.newState.winnerId;
+                        handleBattleEvent('game_end', { winnerId });
+                        return;
                     }
                     
-                    // Then show game end
-                    handleBattleEvent('game_end', {
-                        winnerId: winner?.id || response.result?.winnerId,
-                        prizeGold: loser?.weaponSalePrice || 0
-                    });
-                    return;
-                }
-                
-                // Update state from response (triggers animations)
-                if (response.gameState) {
-                    await handleBattleEvent('state_update', { gameState: response.gameState });
+                    renderBattle();
+                } else if (response.gameState) {
+                    battleState = { gameState: response.gameState };
+                    renderBattle();
                 }
             } catch (e) {
                 console.error('Battle action error:', e);
@@ -3555,7 +3578,6 @@
         function showBattleResult(data) {
             console.log('[showBattleResult] called with:', data);
             
-            // Use cached ID if client is gone
             const client = mpUI?.getClient();
             const myId = client?.getMyUserId() || cachedMyId;
             
@@ -3565,48 +3587,32 @@
             }
             
             const isWin = data.winnerId === myId;
-            const prizeGold = data.prizeGold || 0;
+            const gs = battleState?.gameState;
+            const rounds = gs?.round || 1;
 
             if (isWin) {
-                // Winner gets loser's weapon sale price
-                state.gold += prizeGold;
                 state.stats.wins++;
                 saveState();
-                // ⚔️ PvP 랭킹 동기화
                 syncPvPRanking(true);
-                
-                const detail = `💰 상대 무기 판매가 ${prizeGold.toLocaleString()}G 획득!`;
                 
                 mpUI.showResult({
                     title: '🏆 승리!',
-                    detail: detail,
+                    detail: `${rounds} 라운드 전투 승리!\n(무기 유지)`,
                     isWin: true,
-                    showRematch: false  // PvP는 리매치 없음 (무기 파괴됨)
+                    showRematch: true
                 });
                 
                 fireConfetti();
             } else {
-                // Loser loses their weapon - get new basic weapon
                 state.stats.losses++;
-                const oldWeaponName = state.weapon.name;
-                
-                // Generate new basic weapon
-                state.weapon = generateWeapon('common');
-                resetMastery();  // 무기 변경 시 숙련도 초기화
-                state.weapon.level = 0;
-                state.weapon.durability = MAX_DURABILITY;
-                
                 saveState();
-                // ⚔️ PvP 랭킹 동기화
                 syncPvPRanking(false);
-                
-                const detail = `😢 ${oldWeaponName}을(를) 잃었습니다...\n새 기본 무기를 획득했습니다.`;
                 
                 mpUI.showResult({
                     title: '💀 패배...',
-                    detail: detail,
+                    detail: `${rounds} 라운드 전투 패배.\n(무기 유지)`,
                     isWin: false,
-                    showRematch: false  // PvP는 리매치 없음 (무기 파괴됨)
+                    showRematch: true
                 });
             }
         }
