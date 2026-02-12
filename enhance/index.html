@@ -2699,11 +2699,11 @@
                 };
             }
             
-            // 새총: 크리 100%, 데미지 0-30 고정!
+            // 새총: 크리 100%, 데미지 0~(1+레벨*2, 최대30)
             if (isSlingshot(weapon)) {
                 return { 
                     damageMin: 0, 
-                    damageMax: 30, 
+                    damageMax: Math.min(30, 1 + level * 2),  // +0=1, +15=31→30, 이후 고정
                     critChance: 100,  // 100% 크리티컬!
                     critDamage: 300,  // 크리 데미지 300%
                     hp: Math.floor((100 + level * 20) * mult),
