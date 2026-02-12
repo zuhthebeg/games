@@ -3969,8 +3969,14 @@
             }, 2500);
         }
 
+        let huntAttackCooldown = false;
+        
         function huntAttack() {
             if (!huntState) return;
+            if (huntAttackCooldown) return;  // 따닥 방지
+            
+            huntAttackCooldown = true;
+            setTimeout(() => { huntAttackCooldown = false; }, 400);  // 0.4초 쿨다운
             
             const player = huntState.player;
             const monster = huntState.monster;
