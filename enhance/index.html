@@ -5548,15 +5548,11 @@
                 }
             }
             
-            // 👊 너클: 몬스터 처치 시 5% 회복
+            // 👊 너클: 몬스터 처치 시 5% 부상 (맨손 대미지)
             if (state.weapon.type === 'knuckle') {
-                const healAmount = Math.floor(huntState.player.maxHp * 0.05);
-                const oldHp = huntState.player.hp;
-                huntState.player.hp = Math.min(huntState.player.maxHp, huntState.player.hp + healAmount);
-                const actualHeal = huntState.player.hp - oldHp;
-                if (actualHeal > 0) {
-                    huntState.log.push({ type: 'heal', text: `👊 연타 회복! +${actualHeal} HP` });
-                }
+                const injuryAmount = Math.floor(huntState.player.maxHp * 0.05);
+                huntState.player.hp = Math.max(1, huntState.player.hp - injuryAmount);  // 최소 1 HP 유지
+                huntState.log.push({ type: 'damage', text: `👊 맨손 부상! -${injuryAmount} HP` });
             }
             huntState._lastKillWasLucky = isLuckyDraw;
             huntState._lastGoldReward = goldReward;
