@@ -3614,6 +3614,9 @@
         function closeResult() {
             document.getElementById('overlay').classList.remove('show');
             document.getElementById('resultPopup').classList.remove('show');
+            // 동적으로 추가된 사냥 종료 버튼 제거
+            const exitBtn = document.getElementById('huntExitBtn');
+            if (exitBtn) exitBtn.remove();
         }
 
         function sellWeapon() {
@@ -5883,6 +5886,7 @@
             
             // 사냥 종료 버튼 추가
             const exitBtn = document.createElement('button');
+            exitBtn.id = 'huntExitBtn';
             exitBtn.className = 'result-btn';
             exitBtn.textContent = '🏠 사냥 종료';
             exitBtn.style.cssText = 'margin-top:8px;background:rgba(255,100,100,0.2);border:1px solid var(--fail);';
