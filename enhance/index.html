@@ -2062,7 +2062,7 @@
             spider:   { name: '거미',       img: `${ICON_BASE}/delapouite/spider-eye.svg`,   tier: 1, hp: 45,  damage: [7, 11],   crit: 8,  gold: [90, 160], type: 'insect' },
             skeleton: { name: '해골병사',   img: `${ICON_BASE}/lorc/diablo-skull.svg`,       tier: 1, hp: 55,  damage: [8, 14],   crit: 5,  gold: [110, 190], type: 'undead' },
             mushroom: { name: '독버섯',     img: `${ICON_BASE}/lorc/spotted-mushroom.svg`,   tier: 1, hp: 38,  damage: [6, 12],   crit: 6,  gold: [85, 170], type: 'elemental' },
-            wisp:     { name: '도깨비불',   img: `${ICON_BASE}/lorc/fire-spell-cast.svg`,    tier: 1, hp: 32,  damage: [9, 13],   crit: 15, gold: [95, 175], type: 'elemental' },
+            wisp:     { name: '도깨비불',   img: `${ICON_BASE}/lorc/spark-spirit.svg`,       tier: 1, hp: 32,  damage: [9, 13],   crit: 15, gold: [95, 175], type: 'elemental' },
             
             // Tier 2 (중간)
             imp:      { name: '임프',       img: `${ICON_BASE}/lorc/imp.svg`,                tier: 2, hp: 80,  damage: [12, 20],  crit: 12, gold: [200, 400], type: 'demon' },
@@ -5779,6 +5779,22 @@
             renderHunt();
         }
         
+        // 사망 후 다시 사냥 (새 무기, 만피, 골드 0)
+        function huntRestart() {
+            closeResult();
+            document.getElementById('resultBtn').style.display = '';
+            huntState = null;
+            showHunt();
+        }
+        
+        // 사망 후 사냥 종료
+        function huntExitAfterDeath() {
+            closeResult();
+            document.getElementById('resultBtn').style.display = '';
+            huntState = null;
+            showMain();
+        }
+        
         function huntContinue() {
             closeResult();
             document.getElementById('resultBtn').style.display = '';
@@ -5871,31 +5887,20 @@
                 </span>
             `;
             
-            document.getElementById('newWeaponPreview').style.display = 'block';
+            // newWeaponPreview에 버튼 직접 삽입 (huntMonsterKilled와 동일한 패턴)
             const newGradeData = GRADES[state.weapon.grade];
-            document.getElementById('newWeaponName').innerHTML = 
-                `<span style="color:${newGradeData.color}">[${newGradeData.name}] ${state.weapon.name}</span>`;
-            
-            // 버튼 두 개: 다시 사냥 / 사냥 종료
-            document.getElementById('resultBtn').textContent = '🔄 다시 사냥';
-            document.getElementById('resultBtn').onclick = () => {
-                closeResult();
-                huntState = null;
-                showHunt();  // 새 무기로 다시 사냥 시작 (만피, 골드 0)
-            };
-            
-            // 사냥 종료 버튼 추가
-            const exitBtn = document.createElement('button');
-            exitBtn.id = 'huntExitBtn';
-            exitBtn.className = 'result-btn';
-            exitBtn.textContent = '🏠 사냥 종료';
-            exitBtn.style.cssText = 'margin-top:8px;background:rgba(255,100,100,0.2);border:1px solid var(--fail);';
-            exitBtn.onclick = () => {
-                closeResult();
-                huntState = null;
-                showMain();
-            };
-            document.getElementById('resultBtn').parentNode.appendChild(exitBtn);
+            document.getElementById('newWeaponPreview').style.display = 'block';
+            document.getElementById('newWeaponPreview').innerHTML = `
+                <div class="new-weapon-title">새로운 무기 획득!</div>
+                <div class="new-weapon-name">
+                    <span style="color:${newGradeData.color}">[${newGradeData.name}] ${state.weapon.name}</span>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:10px;">
+                    <button class="btn btn-enhance" style="flex:1;" onclick="huntRestart()">🔄 다시 사냥</button>
+                    <button class="btn btn-secondary" style="flex:1;" onclick="huntExitAfterDeath()">🏠 사냥 종료</button>
+                </div>
+            `;
+            document.getElementById('resultBtn').style.display = 'none';
             
             overlay.classList.add('show');
         }
