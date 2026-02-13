@@ -2003,7 +2003,7 @@
             scythe: { name: '낫',     img: `${ICON_BASE}/lorc/scythe.svg`,           bonus: { damage: 1.1, crit: 1.1 },   baseMin: 4, baseMax: 15, critDmgBonus: 40 },
             bow:    { name: '활',     img: `${ICON_BASE}/lorc/pocket-bow.svg`,       bonus: { damage: 0.8, crit: 1.2 },   baseMin: 0, baseMax: 10, critDmgBonus: 150 },
             crossbow: { name: '석궁', img: `${ICON_BASE}/carl-olsen/crossbow.svg`,   bonus: { damage: 0.85, crit: 1.1 },   baseMin: 0, baseMax: 12, critDmgBonus: 150 },
-            knuckle: { name: '너클',  img: `${ICON_BASE}/lorc/punch.svg`,            bonus: { damage: 0.75, crit: 1.0 },  baseMin: 7, baseMax: 8, critDmgBonus: 0 }
+            knuckle: { name: '너클',  img: `${ICON_BASE}/lorc/punch.svg`,            bonus: { damage: 0.75, crit: 1.0 },  baseMin: 0, baseMax: 5, critDmgBonus: 0 }
         };
         
         // 마법 무기 체크
@@ -2253,6 +2253,8 @@
         };
 
         // 더 스릴있는 확률! +4부터 파괴 시작!
+        const MAX_ENHANCE_LEVEL = 99;
+        
         const ENHANCE_RATES = {
             0: { success: 100, destroy: 0, cost: 100 },      // +0→+1: 100%
             1: { success: 95, destroy: 0, cost: 200 },       // +1→+2: 95%
@@ -2274,8 +2276,21 @@
             17: { success: 3, destroy: 70, cost: 750000 },   // +17→+18: 3%
             18: { success: 2, destroy: 75, cost: 1000000 },  // +18→+19: 2%
             19: { success: 1, destroy: 80, cost: 1500000 },  // +19→+20: 1% 🎰
-            20: { success: 1, destroy: 85, cost: 2000000 }   // MAX
+            20: { success: 1, destroy: 85, cost: 2000000 }   // +20→+21: 1%
         };
+        
+        // 21+ 레벨 강화 확률 동적 계산
+        function getBaseEnhanceRates(level) {
+            if (level <= 20) return ENHANCE_RATES[level];
+            // 21+: 성공률 0.5% 고정, 파괴 90% 고정, 비용 기하급수 증가
+            const baseCost = 2000000;
+            const costMultiplier = Math.pow(1.5, level - 20);
+            return {
+                success: 0.5,
+                destroy: 90,
+                cost: Math.floor(baseCost * costMultiplier)
+            };
+        }
 
         // ===== GAME STATE =====
         let state = {
@@ -2628,7 +2643,7 @@
         function getRepairCost(weapon) {
             if (!weapon) return 0;
             const missingDurability = MAX_DURABILITY - (weapon.durability || MAX_DURABILITY);
-            const levelCost = ENHANCE_RATES[Math.min(weapon.level, 20)].cost;
+            const levelCost = getBaseEnhanceRates(Math.min(weapon.level, 20)).cost;
             const gradeMult = REPAIR_COST_MULT[weapon.grade] || 1.0;
             return Math.floor((missingDurability / 100) * (levelCost / 10) * gradeMult);
         }
@@ -2953,7 +2968,7 @@
             // 투자한 강화 비용 계산
             let totalCost = 0;
             for (let i = 0; i < weapon.level; i++) {
-                totalCost += ENHANCE_RATES[i].cost;
+                totalCost += getBaseEnhanceRates(i).cost;
             }
             
             // 등급별 기본 가치 (어뷰징 방지: 낮은 등급은 기본가 낮음)
@@ -3148,7 +3163,7 @@
             const stats = getWeaponStats(weapon);
             const gradeData = GRADES[weapon.grade];
             const rates = getEnhanceRates(weapon);
-            const canEnhance = state.gold >= rates.cost && weapon.level < 21;
+            const canEnhance = state.gold >= rates.cost && weapon.level < MAX_ENHANCE_LEVEL;
             const showProtection = rates.destroy > 0;
 
             document.getElementById('app').innerHTML = `
@@ -3230,7 +3245,7 @@
                     <div class="btn-row">
                         <button class="btn btn-secondary" onclick="sellWeapon()">💰 판매</button>
                         <button class="btn btn-enhance" onclick="enhance()" ${!canEnhance ? 'disabled' : ''}>
-                            ${weapon.level >= 21 ? '🏆 MAX' : `⚡ 강화 (${rates.cost.toLocaleString()}G)`}
+                            ${weapon.level >= MAX_ENHANCE_LEVEL ? '🏆 MAX' : `⚡ 강화 (${rates.cost.toLocaleString()}G)`}
                         </button>
                     </div>
                 </div>
@@ -3303,7 +3318,7 @@
         }
         
         function getEnhanceRates(weapon) {
-            const baseRates = ENHANCE_RATES[weapon.level];
+            const baseRates = getBaseEnhanceRates(weapon.level);
             if (isWoodenStick(weapon)) {
                 // 나무막대기: 99% 성공, 1% 실패, 파괴 없음!
                 return { success: 99, destroy: 0, cost: baseRates.cost };
@@ -3320,7 +3335,7 @@
             const weapon = state.weapon;
             console.log('[enhance] Starting with weapon:', weapon.name, '+' + weapon.level);
             
-            if (weapon.level >= 21) return;
+            if (weapon.level >= MAX_ENHANCE_LEVEL) return;
 
             const rates = getEnhanceRates(weapon);
             if (state.gold < rates.cost) return;
