@@ -3077,16 +3077,16 @@
 
                         <div class="weapon-stats">
                             <div class="stat-item">
-                                <span class="stat-icon">⚔️</span>
+                                <span class="stat-icon">${weapon.type === 'knuckle' ? '👊' : '⚔️'}</span>
                                 <div class="stat-info">
-                                    <div class="stat-value damage">${stats.damageMin}-${stats.damageMax}</div>
+                                    <div class="stat-value damage">${stats.damageMin}-${stats.damageMax}${weapon.type === 'knuckle' ? ' <span style="color:#ff8c00;font-size:0.7em;">x2</span>' : ''}</div>
                                     <div class="stat-label">공격력</div>
                                 </div>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-icon">💥</span>
                                 <div class="stat-info">
-                                    <div class="stat-value crit">${stats.critChance}%</div>
+                                    <div class="stat-value crit">${stats.critChance}%${weapon.type === 'knuckle' ? ' <span style="color:#ff8c00;font-size:0.7em;">x2</span>' : ''}</div>
                                     <div class="stat-label">크리티컬</div>
                                 </div>
                             </div>
@@ -3197,16 +3197,16 @@
 
                         <div class="weapon-stats">
                             <div class="stat-item">
-                                <span class="stat-icon">⚔️</span>
+                                <span class="stat-icon">${weapon.type === 'knuckle' ? '👊' : '⚔️'}</span>
                                 <div class="stat-info">
-                                    <div class="stat-value damage">${stats.damageMin}-${stats.damageMax}</div>
+                                    <div class="stat-value damage">${stats.damageMin}-${stats.damageMax}${weapon.type === 'knuckle' ? ' <span style="color:#ff8c00;font-size:0.7em;">x2</span>' : ''}</div>
                                     <div class="stat-label">공격력</div>
                                 </div>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-icon">💥</span>
                                 <div class="stat-info">
-                                    <div class="stat-value crit">${stats.critChance}%</div>
+                                    <div class="stat-value crit">${stats.critChance}%${weapon.type === 'knuckle' ? ' <span style="color:#ff8c00;font-size:0.7em;">x2</span>' : ''}</div>
                                     <div class="stat-label">크리티컬</div>
                                 </div>
                             </div>
@@ -4899,8 +4899,8 @@
                             </div>
                         </div>
                         <div class="fighter-stats" style="margin-top:8px;">
-                            <span>⚔️ ${player.damageMin}-${player.damageMax}</span>
-                            <span>💥 ${player.critChance}%</span>
+                            <span>${weapon.type === 'knuckle' ? '👊' : '⚔️'} ${player.damageMin}-${player.damageMax}${weapon.type === 'knuckle' ? ' <span style="color:#ff8c00;">x2</span>' : ''}</span>
+                            <span>💥 ${player.critChance}%${weapon.type === 'knuckle' ? ' <span style="color:#ff8c00;">x2</span>' : ''}</span>
                         </div>
                     </div>
 
@@ -5340,26 +5340,42 @@
                 state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - 1);
             }
             
-            // Player attacks first
-            const playerDamage = Math.floor(Math.random() * (player.damageMax - player.damageMin + 1)) + player.damageMin;
-            const playerCrit = window.debugCritMode || (Math.random() * 100 < player.critChance);  // 💯 디버그 크리 모드
-            const superCrit = checkSuperCritical(state.weapon);  // 신화 무기 1% 즉사기
-            
             // 속성 배율 계산
             const weaponElement = state.weapon.element || 'none';
             const elementMult = getElementMultiplier(weaponElement, monster.type);
-            let baseDamage = playerCrit ? Math.floor(playerDamage * player.critDamage / 100) : playerDamage;
+            const superCrit = checkSuperCritical(state.weapon);  // 신화 무기 1% 즉사기
             
-            // 슈퍼크리티컬: 즉사!
-            if (superCrit) {
-                baseDamage = monster.currentHp;  // 현재 HP만큼 데미지 = 즉사
-            }
+            // 👊 너클: 2회 독립 공격 (각각 크리티컬 판정)
+            let finalPlayerDamage = 0;
+            let playerCrit = false;
+            let knuckleCrits = 0;  // 너클 크리 횟수
             
-            let finalPlayerDamage = Math.floor(baseDamage * elementMult);
-            
-            // 👊 너클: 2회 공격!
             if (isKnuckle) {
-                finalPlayerDamage *= 2;  // 두 대 때림!
+                // 2회 독립 공격
+                for (let hit = 0; hit < 2; hit++) {
+                    const hitDamage = Math.floor(Math.random() * (player.damageMax - player.damageMin + 1)) + player.damageMin;
+                    const hitCrit = window.debugCritMode || (Math.random() * 100 < player.critChance);
+                    let hitFinal = hitCrit ? Math.floor(hitDamage * player.critDamage / 100) : hitDamage;
+                    hitFinal = Math.floor(hitFinal * elementMult);
+                    finalPlayerDamage += hitFinal;
+                    if (hitCrit) {
+                        knuckleCrits++;
+                        playerCrit = true;  // 하나라도 크리면 크리 처리
+                        state.weapon.weaponMastery.crits++;
+                    }
+                }
+            } else {
+                // 일반 무기: 1회 공격
+                const playerDamage = Math.floor(Math.random() * (player.damageMax - player.damageMin + 1)) + player.damageMin;
+                playerCrit = window.debugCritMode || (Math.random() * 100 < player.critChance);
+                let baseDamage = playerCrit ? Math.floor(playerDamage * player.critDamage / 100) : playerDamage;
+                
+                // 슈퍼크리티컬: 즉사!
+                if (superCrit) {
+                    baseDamage = monster.currentHp;
+                }
+                
+                finalPlayerDamage = Math.floor(baseDamage * elementMult);
             }
             
             // 럭키드로우용: 공격 전 풀피였는지 저장
@@ -5408,8 +5424,10 @@
                 huntState.log.push({ type: 'crit', text: `🌟 슈퍼크리티컬!! ${monster.name} 즉사! (내구도 -50)` });
                 
             } else if (playerCrit) {
-                // 크리 기록
-                state.weapon.weaponMastery.crits++;
+                // 크리 기록 (너클은 이미 루프에서 기록함)
+                if (!isKnuckle) {
+                    state.weapon.weaponMastery.crits++;
+                }
                 
                 // 이쑤시개: 크리티컬 터지면 내구도 -50!
                 if (isToothpick(state.weapon)) {
@@ -5436,15 +5454,23 @@
                 showCritEffect();
                 document.body.classList.add('screen-shake');
                 setTimeout(() => document.body.classList.remove('screen-shake'), 300);
-                huntState.log.push({ type: 'crit', text: `💥 크리티컬! ${finalPlayerDamage} 데미지!${elementText}` });
+                
+                // 👊 너클: 더블/싱글 크리티컬 표시
+                if (isKnuckle) {
+                    const critText = knuckleCrits === 2 ? '💥💥 더블 크리티컬!' : '💥 크리티컬!';
+                    huntState.log.push({ type: 'crit', text: `${critText} ${finalPlayerDamage} 데미지! (2회 타격)${elementText}` });
+                } else {
+                    huntState.log.push({ type: 'crit', text: `💥 크리티컬! ${finalPlayerDamage} 데미지!${elementText}` });
+                }
             } else {
                 showSlashEffect(getAttackEffect(false), 'monster');
+                const hitSuffix = isKnuckle ? ' (2회 타격)' : '';
                 if (elementMult > 1) {
-                    huntState.log.push({ type: 'crit', text: `${ELEMENTS[weaponElement]?.icon || '⚔️'} ${finalPlayerDamage} 데미지! 효과적!` });
+                    huntState.log.push({ type: 'crit', text: `${ELEMENTS[weaponElement]?.icon || '⚔️'} ${finalPlayerDamage} 데미지! 효과적!${hitSuffix}` });
                 } else if (elementMult < 1) {
-                    huntState.log.push({ type: 'damage', text: `⚔️ ${finalPlayerDamage} 데미지... (저항)` });
+                    huntState.log.push({ type: 'damage', text: `⚔️ ${finalPlayerDamage} 데미지... (저항)${hitSuffix}` });
                 } else {
-                    huntState.log.push({ type: 'damage', text: `⚔️ ${finalPlayerDamage} 데미지!` });
+                    huntState.log.push({ type: 'damage', text: `${isKnuckle ? '👊' : '⚔️'} ${finalPlayerDamage} 데미지!${hitSuffix}` });
                 }
             }
             
