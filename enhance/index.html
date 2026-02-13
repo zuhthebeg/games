@@ -2003,7 +2003,7 @@
             scythe: { name: '낫',     img: `${ICON_BASE}/lorc/scythe.svg`,           bonus: { damage: 1.1, crit: 1.1 },   baseMin: 4, baseMax: 15, critDmgBonus: 40 },
             bow:    { name: '활',     img: `${ICON_BASE}/lorc/pocket-bow.svg`,       bonus: { damage: 0.8, crit: 1.2 },   baseMin: 0, baseMax: 10, critDmgBonus: 150 },
             crossbow: { name: '석궁', img: `${ICON_BASE}/carl-olsen/crossbow.svg`,   bonus: { damage: 0.85, crit: 1.1 },   baseMin: 0, baseMax: 12, critDmgBonus: 150 },
-            knuckle: { name: '너클',  img: `${ICON_BASE}/lorc/punch.svg`,            bonus: { damage: 0.75, crit: 1.0 },  baseMin: 0, baseMax: 5, critDmgBonus: 0 }
+            knuckle: { name: '너클',  img: `${ICON_BASE}/lorc/punch.svg`,            bonus: { damage: 0.75, crit: 1.0 },  baseMin: 5, baseMax: 6, critDmgBonus: 0 }
         };
         
         // 마법 무기 체크
@@ -5282,8 +5282,13 @@
                     state.weapon = generateWeaponBySource('durability_break', {});
                     resetMastery();  // 무기 변경 시 숙련도 초기화
                     const newStats = getWeaponStats(state.weapon, false);
+                    // 새 무기 스탯으로 전체 업데이트
                     player.damageMin = newStats.damageMin;
                     player.damageMax = newStats.damageMax;
+                    player.critChance = newStats.critChance;
+                    player.critDamage = newStats.critDamage;
+                    player.maxHp = newStats.hp;
+                    player.hp = Math.min(player.hp, player.maxHp);  // HP는 최대치 초과 방지
                     saveState();
                     
                     // 무기 획득 이펙트
@@ -5967,7 +5972,7 @@
                 <div id="debugPanel" style="background:rgba(0,0,0,0.95);color:#0f0;font-family:monospace;font-size:11px;padding:12px;margin-top:20px;border-radius:8px;">
                     <div style="color:#ff0;font-weight:bold;margin-bottom:8px;">🔧 DEBUG MODE</div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-                        <button onclick="debugAddGold()" style="background:#ffd700;color:#000;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">💰 +100,000G</button>
+                        <button onclick="debugAddGold()" style="background:#ffd700;color:#000;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">💰 무한 골드</button>
                         <button onclick="debugSetDurability0()" style="background:#ff6b6b;color:#fff;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">🔧 내구도 0</button>
                         <button onclick="debugFullDurability()" style="background:#4ecca3;color:#000;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">🔧 내구도 100</button>
                         <button onclick="debugAddMastery()" style="background:#9b59b6;color:#fff;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">⭐ 숙련도 +1</button>
@@ -5987,7 +5992,7 @@
         }
         
         function debugAddGold() {
-            state.gold += 100000;
+            state.gold = 999999999999;  // 무한 골드
             saveState();
             showMain();
         }
