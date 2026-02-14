@@ -653,13 +653,13 @@
         if (state.lastSetupVertex === null) return false;
         return e.a === state.lastSetupVertex || e.b === state.lastSetupVertex;
       }
-      const a = state.vertices[e.a];
-      const b = state.vertices[e.b];
-      const ownBuilding = a.owner === playerIdx || b.owner === playerIdx;
-      const ownRoadConnection =
-        a.edges.some(x => state.edges[x].owner === playerIdx) ||
-        b.edges.some(x => state.edges[x].owner === playerIdx);
-      return ownBuilding || ownRoadConnection;
+      function endpointConnects(vIdx) {
+        const v = state.vertices[vIdx];
+        if (v.owner === playerIdx) return true;
+        if (v.owner !== null && v.owner !== playerIdx) return false;
+        return v.edges.some(x => x !== eIdx && state.edges[x].owner === playerIdx);
+      }
+      return endpointConnects(e.a) || endpointConnects(e.b);
     }
 
     function canUpgradeCity(playerIdx, vIdx) {
@@ -853,23 +853,31 @@
       if (!roadEdges.length) return 0;
       const set = new Set(roadEdges);
       let best = 0;
-      function dfs(v, used) {
-        best = Math.max(best, used.size);
-        for (const eIdx of state.vertices[v].edges) {
+
+      function blockedByOpponent(vIdx) {
+        const owner = state.vertices[vIdx].owner;
+        return owner !== null && owner !== playerIdx;
+      }
+
+      function dfs(vIdx, used, length, fromEdge) {
+        best = Math.max(best, length);
+        if (fromEdge !== null && blockedByOpponent(vIdx)) return;
+        for (const eIdx of state.vertices[vIdx].edges) {
           if (!set.has(eIdx) || used.has(eIdx)) continue;
           used.add(eIdx);
           const e = state.edges[eIdx];
-          const nextV = e.a === v ? e.b : e.a;
-          dfs(nextV, used);
+          const nextV = e.a === vIdx ? e.b : e.a;
+          dfs(nextV, used, length + 1, eIdx);
           used.delete(eIdx);
         }
       }
+
       const touchedVertices = new Set();
       for (const eIdx of roadEdges) {
         touchedVertices.add(state.edges[eIdx].a);
         touchedVertices.add(state.edges[eIdx].b);
       }
-      for (const v of touchedVertices) dfs(v, new Set());
+      for (const v of touchedVertices) dfs(v, new Set(), 0, null);
       return best;
     }
 
@@ -1544,7 +1552,7 @@
       if (state.screen === "room-lobby") {
         const others = (room.players || []).filter(p => p.id !== mpState.myUserId);
         const allReady = others.length > 0 && others.every(p => p.isReady);
-        mpState.waitingMessage = allReady ? "모두 준비 완료. 게임 시작 가능." : "Waiting for player...";
+        mpState.waitingMessage = allReady ? "모두 준비 완료. 게임 시작 가능." : "플레이어를 기다리는 중...";
       }
       if (room.status === "playing" && state.screen === "room-lobby") {
         state.screen = "game";
