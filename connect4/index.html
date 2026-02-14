@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>삼인 사목 - Connect 4</title>
     <link rel="icon" href="icon.svg">
+    <script src="/lib/shared-wallet.js?v=20260214"></script>
     <style>
         :root {
             --bg: #1e1e2e;
@@ -24,6 +25,7 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
+            padding-top: calc(48px + env(safe-area-inset-top)); /* SharedWallet bar */
         }
 
         #app { min-height: 100vh; }
