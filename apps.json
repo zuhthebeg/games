@@ -1,5 +1,15 @@
 [
     {
+        "title": "레시피 노트",
+        "icon": "https://tool.cocy.io/recipe/icon.svg",
+        "url": "https://tool.cocy.io/recipe/",
+        "desc": "나만의 레시피 저장 & 검색",
+        "badge": "NEW",
+        "platforms": ["WEB"],
+        "languages": ["🌍"],
+        "category": "tool"
+    },
+    {
         "title": "무기 강화 & 배틀",
         "icon": "https://game.cocy.io/enhance/icon.svg",
         "url": "https://game.cocy.io/enhance/",
