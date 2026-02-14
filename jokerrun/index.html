@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -739,36 +739,36 @@
       </div>
       <div class="target-pill"><span class="target-icon" aria-hidden="true"></span><span id="targetLabel">0</span></div>
       <div style="display:flex;gap:6px;">
-        <button id="themeBtn" class="ctrl-btn" aria-label="?뚮쭏 ?꾪솚"></button>
-        <button id="restartBtn" class="ctrl-btn" aria-label="?????쒖옉"></button>
+        <button id="themeBtn" class="ctrl-btn" aria-label="테마 전환"></button>
+        <button id="restartBtn" class="ctrl-btn" aria-label="새 런 시작"></button>
       </div>
     </header>
 
-    <section class="joker-strip glass" id="jokerArea" aria-label="議곗빱 ?щ’"></section>
+    <section class="joker-strip glass" id="jokerArea" aria-label="조커 슬롯"></section>
 
     <section class="score-line glass">
       <div class="score-main">
-        <span>移?<b id="chipsLabel">0</b></span>
-        <span>諛곗닔 <b id="multLabel">x1</b></span>
+        <span>칩 <b id="chipsLabel">0</b></span>
+        <span>배수 <b id="multLabel">x1</b></span>
       </div>
       <div class="score-total" id="scoreLabel">0</div>
     </section>
 
     <section class="table glass">
-      <div class="info-line" id="handResult">?몃뱶瑜??좏깮???뚮젅?댄븯?몄슂.</div>
+      <div class="info-line" id="handResult">핸드를 선택해 플레이하세요.</div>
       <div class="cards-wrap" id="cardsWrap"></div>
-      <div class="info-line" id="handGuide">?먰뙣 8??以?理쒕? 5?μ쓣 ?좏깮</div>
+      <div class="info-line" id="handGuide">손패 8장 중 최대 5장을 선택</div>
     </section>
 
     <section class="status-bar glass">
-      <div>?⑥? ?몃뱶 <b id="handsLabel">0</b></div>
-      <div style="text-align:right;">?⑥? 踰꾨━湲?<b id="discardsLabel">0</b></div>
+      <div>남은 핸드 <b id="handsLabel">0</b></div>
+      <div style="text-align:right;">남은 버리기 <b id="discardsLabel">0</b></div>
     </section>
 
     <section class="actions">
-      <button class="btn-main" id="playBtn">?몃뱶 ?뚮젅??/button>
-      <button class="btn-warn" id="discardBtn">移대뱶 踰꾨━湲?/button>
-      <button id="clearBtn" aria-label="?좏깮 ?댁젣"></button>
+      <button class="btn-main" id="playBtn">핸드 플레이</button>
+      <button class="btn-warn" id="discardBtn">카드 버리기</button>
+      <button id="clearBtn" aria-label="선택 해제"></button>
     </section>
 
     <div class="log" id="log" aria-hidden="true"></div>
@@ -778,72 +778,72 @@
     <div class="shop">
       <div class="row">
         <div>
-          <div class="title">?곸젏</div>
-          <div class="subtitle">議곗빱瑜??ъ꽌 ?ㅼ쓬 釉붾씪?몃뱶瑜??鍮꾪븯?몄슂.</div>
+          <div class="title">상점</div>
+          <div class="subtitle">조커를 사서 다음 블라인드를 대비하세요.</div>
         </div>
-        <div class="tag" id="shopMoney">蹂댁쑀 ?먭툑: $0</div>
+        <div class="tag" id="shopMoney">보유 자금: $0</div>
       </div>
       <div class="shop-grid" id="shopGrid"></div>
       <div class="row" style="justify-content:flex-end;">
-        <button class="btn-main" id="nextRoundBtn" style="min-width:132px;">?ㅼ쓬 ?쇱슫??/button>
+        <button class="btn-main" id="nextRoundBtn" style="min-width:132px;">다음 라운드</button>
       </div>
     </div>
   </div>
 
   <script>
     const suits = ["heart", "diamond", "club", "spade"];
-    const suitSymbol = { heart: "??, diamond: "??, club: "??, spade: "?? };
+    const suitSymbol = { heart: "♥", diamond: "♦", club: "♣", spade: "♠" };
     const suitClass = { heart: "s-heart", diamond: "s-diamond", club: "s-club", spade: "s-spade" };
     const rankList = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
     const rankLabel = { 11: "J", 12: "Q", 13: "K", 14: "A" };
 
     const handBase = {
-      HIGH_CARD: { name: "?섏씠移대뱶", chips: 5, mult: 1 },
-      PAIR: { name: "?먰럹??, chips: 10, mult: 2 },
-      TWO_PAIR: { name: "?ы럹??, chips: 20, mult: 2 },
-      THREE: { name: "?몃━??, chips: 30, mult: 3 },
-      STRAIGHT: { name: "?ㅽ듃?덉씠??, chips: 30, mult: 4 },
-      FLUSH: { name: "?뚮윭??, chips: 35, mult: 4 },
-      FULL_HOUSE: { name: "??섏슦??, chips: 40, mult: 4 },
-      FOUR: { name: "?ъ뭅??, chips: 60, mult: 7 },
-      STRAIGHT_FLUSH: { name: "?ㅽ듃?덉씠???뚮윭??, chips: 100, mult: 8 }
+      HIGH_CARD: { name: "하이카드", chips: 5, mult: 1 },
+      PAIR: { name: "원페어", chips: 10, mult: 2 },
+      TWO_PAIR: { name: "투페어", chips: 20, mult: 2 },
+      THREE: { name: "트리플", chips: 30, mult: 3 },
+      STRAIGHT: { name: "스트레이트", chips: 30, mult: 4 },
+      FLUSH: { name: "플러시", chips: 35, mult: 4 },
+      FULL_HOUSE: { name: "풀하우스", chips: 40, mult: 4 },
+      FOUR: { name: "포카드", chips: 60, mult: 7 },
+      STRAIGHT_FLUSH: { name: "스트레이트 플러시", chips: 100, mult: 8 }
     };
 
     const roundDefs = [
-      { id: "small", label: "?ㅻぐ 釉붾씪?몃뱶", target: 300 },
-      { id: "big", label: "鍮?釉붾씪?몃뱶", target: 700 },
-      { id: "boss", label: "蹂댁뒪 釉붾씪?몃뱶", target: 1500 }
+      { id: "small", label: "스몰 블라인드", target: 300 },
+      { id: "big", label: "빅 블라인드", target: 700 },
+      { id: "boss", label: "보스 블라인드", target: 1500 }
     ];
 
     const jokerPool = [
       {
         id: "flat50",
-        name: "移???깂",
+        name: "칩 폭탄",
         cost: 6,
-        desc: "?몃뱶 ?먯닔 怨꾩궛 ??移?+50",
+        desc: "핸드 점수 계산 시 칩 +50",
         apply(ctx) { ctx.chips += 50; }
       },
       {
         id: "flushx2",
-        name: "臾쇨껐 議곗빱",
+        name: "물결 조커",
         cost: 7,
-        desc: "?뚮윭??怨꾩뿴?대㈃ 諛곗닔 x2",
+        desc: "플러시 계열이면 배수 x2",
         apply(ctx) {
           if (ctx.handType === "FLUSH" || ctx.handType === "STRAIGHT_FLUSH") ctx.mult *= 2;
         }
       },
       {
         id: "perCardMult",
-        name: "怨꾩궛湲?議곗빱",
+        name: "계산기 조커",
         cost: 5,
-        desc: "?뚮젅?댄븳 移대뱶 1?λ떦 諛곗닔 +1",
+        desc: "플레이한 카드 1장당 배수 +1",
         apply(ctx) { ctx.mult += ctx.cards.length; }
       },
       {
         id: "heartChip",
-        name: "遺됱? ?몄옣",
+        name: "붉은 인장",
         cost: 5,
-        desc: "?섑듃 移대뱶 1?λ떦 移?+15",
+        desc: "하트 카드 1장당 칩 +15",
         apply(ctx) {
           const hearts = ctx.cards.filter(c => c.suit === "heart").length;
           ctx.chips += hearts * 15;
@@ -851,9 +851,9 @@
       },
       {
         id: "pairBoost",
-        name: "???利앺룺湲?,
+        name: "듀오 증폭기",
         cost: 8,
-        desc: "?먰럹???댁긽?대㈃ 諛곗닔 +2",
+        desc: "원페어 이상이면 배수 +2",
         apply(ctx) {
           if (ctx.handType !== "HIGH_CARD") ctx.mult += 2;
         }
@@ -861,11 +861,11 @@
     ];
 
     const jokerIcons = {
-      flat50: "移?,
-      flushx2: "??,
-      perCardMult: "怨?,
-      heartChip: "??,
-      pairBoost: "?"
+      flat50: "칩",
+      flushx2: "파",
+      perCardMult: "계",
+      heartChip: "인",
+      pairBoost: "듀"
     };
 
     const state = {
@@ -933,7 +933,7 @@
           if (state.selected.has(card.id)) state.selected.delete(card.id);
           else {
             if (state.selected.size >= 5) {
-              setInfo("理쒕? 5?κ퉴吏留??좏깮 媛?ν빀?덈떎.");
+              setInfo("최대 5장까지만 선택 가능합니다.");
               return;
             }
             state.selected.add(card.id);
@@ -953,11 +953,11 @@
           box.className = "joker empty";
           box.type = "button";
           box.disabled = true;
-          box.setAttribute("aria-label", "鍮??щ’");
+          box.setAttribute("aria-label", "빈 슬롯");
         } else {
           box.className = `joker joker-${joker.id}`;
           box.type = "button";
-          box.dataset.icon = jokerIcons[joker.id] || "議?;
+          box.dataset.icon = jokerIcons[joker.id] || "조";
           box.innerHTML = `<span class="joker-tip"><span class="joker-name">${joker.name}</span>${joker.desc}</span>`;
           box.setAttribute("aria-label", joker.name);
           box.addEventListener("click", () => {
@@ -970,7 +970,7 @@
 
     function renderHUD(chips = 0, mult = 1) {
       const round = roundDefs[state.roundIndex] || roundDefs[roundDefs.length - 1];
-      $("#roundLabel").textContent = `?쇱슫??${state.roundIndex + 1}`;
+      $("#roundLabel").textContent = `라운드 ${state.roundIndex + 1}`;
       $("#targetLabel").textContent = round.target.toLocaleString();
       $("#scoreLabel").textContent = state.score.toLocaleString();
       $("#moneyLabel").textContent = `$${state.money}`;
@@ -1043,7 +1043,7 @@
     function animateScore(points, mult) {
       const fx = document.createElement("div");
       fx.className = "fx";
-      fx.textContent = `+${points.toLocaleString()} ??;
+      fx.textContent = `+${points.toLocaleString()} 점`;
       tablePanel.appendChild(fx);
       setTimeout(() => fx.remove(), 880);
       spawnChipParticles(points);
@@ -1079,7 +1079,7 @@
       if (state.gameEnded) return;
       const cards = selectedCards();
       if (!cards.length) {
-        setInfo("癒쇱? 移대뱶瑜?1???댁긽 ?좏깮?섏꽭??");
+        setInfo("먼저 카드를 1장 이상 선택하세요.");
         return;
       }
       const hand = scoreHand(cards);
@@ -1099,8 +1099,8 @@
       state.handsLeft -= 1;
 
       animateScore(points, mult);
-      setInfo(`<span class="hand-tag">${hand.name}</span> | ${chips}移?횞 ${mult}諛?= <b>${points.toLocaleString()}</b>??);
-      addLog(`${hand.name} ?뚮젅?? +${points}??(?⑥? ?몃뱶 ${state.handsLeft})`);
+      setInfo(`<span class="hand-tag">${hand.name}</span> | ${chips}칩 × ${mult}배 = <b>${points.toLocaleString()}</b>점`);
+      addLog(`${hand.name} 플레이: +${points}점 (남은 핸드 ${state.handsLeft})`);
 
       consumeSelectedCards();
       renderHUD(chips, mult);
@@ -1110,25 +1110,25 @@
     function discardSelected() {
       if (state.gameEnded) return;
       if (state.discardsLeft <= 0) {
-        setInfo("踰꾨━湲??잛닔瑜?紐⑤몢 ?ъ슜?덉뒿?덈떎.");
+        setInfo("버리기 횟수를 모두 사용했습니다.");
         return;
       }
       const cards = selectedCards();
       if (!cards.length) {
-        setInfo("踰꾨┫ 移대뱶瑜??좏깮?섏꽭??");
+        setInfo("버릴 카드를 선택하세요.");
         return;
       }
       state.discardsLeft -= 1;
       consumeSelectedCards();
-      setInfo(`${cards.length}??踰꾨┝ ?꾨즺. ?⑥? 踰꾨━湲?${state.discardsLeft}`);
-      addLog(`${cards.length}??踰꾨┝. (?⑥? 踰꾨━湲?${state.discardsLeft})`);
+      setInfo(`${cards.length}장 버림 완료. 남은 버리기 ${state.discardsLeft}`);
+      addLog(`${cards.length}장 버림. (남은 버리기 ${state.discardsLeft})`);
       renderHUD();
     }
 
     function openShop() {
       const grid = $("#shopGrid");
       grid.innerHTML = "";
-      $("#shopMoney").textContent = `蹂댁쑀 ?먭툑: $${state.money}`;
+      $("#shopMoney").textContent = `보유 자금: $${state.money}`;
 
       jokerPool.forEach(joker => {
         const owned = state.jokers.some(j => j.id === joker.id);
@@ -1144,12 +1144,12 @@
           <div class="price"><span class="coin" aria-hidden="true"></span>$${joker.cost}</div>
         `;
         const btn = document.createElement("button");
-        btn.textContent = owned ? "蹂댁쑀 以? : full ? "?щ’ 媛??李? : afford ? "援щℓ" : "?먭툑 遺議?;
+        btn.textContent = owned ? "보유 중" : full ? "슬롯 가득 참" : afford ? "구매" : "자금 부족";
         btn.disabled = disabled;
         btn.addEventListener("click", () => {
           state.money -= joker.cost;
           state.jokers.push(joker);
-          addLog(`議곗빱 援щℓ: ${joker.name} (-$${joker.cost})`);
+          addLog(`조커 구매: ${joker.name} (-$${joker.cost})`);
           renderHUD();
           openShop();
         });
@@ -1176,21 +1176,21 @@
       drawToEight();
       renderCards();
       renderHUD();
-      setInfo("?몃뱶瑜??좏깮???뚮젅?댄븯?몄슂.");
-      addLog(`${roundDefs[index].label} ?쒖옉. 紐⑺몴 ${roundDefs[index].target}??);
+      setInfo("핸드를 선택해 플레이하세요.");
+      addLog(`${roundDefs[index].label} 시작. 목표 ${roundDefs[index].target}점`);
     }
 
     function winRound() {
       const reward = 7 + state.handsLeft * 2 + state.discardsLeft;
       state.money += reward;
-      addLog(`?쇱슫???대━?? 蹂댁긽 +$${reward}`);
-      setInfo(`釉붾씪?몃뱶 ?뚰뙆 ?깃났! 蹂댁긽 +$${reward}`);
+      addLog(`라운드 클리어! 보상 +$${reward}`);
+      setInfo(`블라인드 돌파 성공! 보상 +$${reward}`);
       state.gameEnded = true;
       renderHUD();
 
       if (state.roundIndex >= roundDefs.length - 1) {
-        setInfo("蹂댁뒪 釉붾씪?몃뱶 寃⑺뙆! ???대━?? ???곗쓣 ?쒖옉?섏꽭??");
-        addLog("???대━???꾨즺.");
+        setInfo("보스 블라인드 격파! 런 클리어. 새 런을 시작하세요.");
+        addLog("런 클리어 완료.");
         return;
       }
       openShop();
@@ -1199,8 +1199,8 @@
     function loseRun() {
       state.gameEnded = true;
       renderHUD();
-      setInfo("?몃뱶瑜?紐⑤몢 ?ъ슜?덉뒿?덈떎. 寃뚯엫 ?ㅻ쾭! ???곗쓣 ?쒖옉?섏꽭??");
-      addLog("寃뚯엫 ?ㅻ쾭.");
+      setInfo("핸드를 모두 사용했습니다. 게임 오버! 새 런을 시작하세요.");
+      addLog("게임 오버.");
     }
 
     function newRun() {
@@ -1216,7 +1216,7 @@
     $("#clearBtn").addEventListener("click", () => {
       state.selected.clear();
       renderCards();
-      setInfo("?좏깮???댁젣?덉뒿?덈떎.");
+      setInfo("선택을 해제했습니다.");
     });
 
     $("#nextRoundBtn").addEventListener("click", () => {
