@@ -29,7 +29,6 @@
             min-height: 100vh;
         }
 
-        /* Header */
         .header {
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             padding: 1.5rem;
@@ -40,10 +39,6 @@
         .header h1 {
             font-size: 1.8rem;
             font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
         }
 
         .auth-area {
@@ -79,7 +74,6 @@
 
         .auth-btn:hover { background: rgba(255,255,255,0.3); }
 
-        /* Category Tabs */
         .tabs {
             display: flex;
             justify-content: center;
@@ -108,7 +102,6 @@
             color: white;
         }
 
-        /* Grid */
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -125,7 +118,6 @@
             .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
         }
 
-        /* Card */
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -172,7 +164,6 @@
 
         .badge-new { background: var(--primary); }
         .badge-hot { background: var(--accent); }
-        .badge-tool { background: var(--secondary); }
 
         .card-desc {
             font-size: 0.75rem;
@@ -183,7 +174,6 @@
             overflow: hidden;
         }
 
-        /* Footer */
         .footer {
             text-align: center;
             padding: 2rem;
@@ -193,24 +183,6 @@
 
         .footer a { color: var(--primary); text-decoration: none; }
 
-        /* Section Headers */
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 1.5rem 0 1rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .section-header::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-
-        /* Empty state */
         .empty { 
             text-align: center; 
             padding: 3rem; 
@@ -232,14 +204,16 @@
 
     <div class="tabs">
         <button class="tab active" data-filter="all">전체</button>
-        <button class="tab" data-filter="game">🎮 게임</button>
-        <button class="tab" data-filter="tool">🔧 도구</button>
         <button class="tab" data-filter="hot">🔥 인기</button>
+        <button class="tab" data-filter="multi">👥 멀티</button>
+        <button class="tab" data-filter="board">♟️ 보드</button>
+        <button class="tab" data-filter="puzzle">🧩 퍼즐</button>
+        <button class="tab" data-filter="arcade">🕹️ 아케이드</button>
     </div>
 
     <div class="container">
         <div class="grid" id="appGrid"></div>
-        <div class="empty" id="emptyState" style="display:none;">표시할 앱이 없습니다</div>
+        <div class="empty" id="emptyState" style="display:none;">표시할 게임이 없습니다</div>
     </div>
 
     <footer class="footer">
@@ -251,7 +225,26 @@
         let currentFilter = 'all';
         let currentUser = null;
 
-        // Load apps
+        // 카테고리 매핑 (URL 기반)
+        const categories = {
+            multi: ['poker', 'catan', 'connect4', 'gomoku', 'rps'],
+            board: ['catan', 'connect4', 'gomoku'],
+            puzzle: ['tileslider', 'blockpuzzle', 'minesweeper', 'number-guess'],
+            arcade: ['snake', 'breakout', 'billiards', 'enhance']
+        };
+
+        function getGameId(url) {
+            const match = url.match(/game\.cocy\.io\/([^\/]+)/);
+            return match ? match[1] : '';
+        }
+
+        function matchCategory(app, filter) {
+            if (filter === 'all') return true;
+            if (filter === 'hot') return app.badge === 'HOT';
+            const gameId = getGameId(app.url);
+            return categories[filter]?.includes(gameId) || false;
+        }
+
         fetch('apps.json?' + Date.now())
             .then(r => r.json())
             .then(data => {
@@ -259,7 +252,6 @@
                 renderApps();
             });
 
-        // Tab filtering
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -273,10 +265,7 @@
             const grid = document.getElementById('appGrid');
             const empty = document.getElementById('emptyState');
             
-            let filtered = apps;
-            if (currentFilter === 'game') filtered = apps.filter(a => a.category === 'game');
-            else if (currentFilter === 'tool') filtered = apps.filter(a => a.category === 'tool');
-            else if (currentFilter === 'hot') filtered = apps.filter(a => a.badge === 'HOT');
+            const filtered = apps.filter(app => matchCategory(app, currentFilter));
 
             if (filtered.length === 0) {
                 grid.innerHTML = '';
@@ -295,7 +284,6 @@
             `).join('');
         }
 
-        // Auth
         function checkAuth() {
             const token = localStorage.getItem('cocy_auth_token');
             const name = localStorage.getItem('cocy_user_name');
