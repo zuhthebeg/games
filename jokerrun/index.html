@@ -861,6 +861,33 @@
       padding: 0 4px;
     }
 
+    .hand-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 16px;
+      padding: 0 4px;
+    }
+
+    .hand-bottom .info-line {
+      flex: 1;
+      padding: 0;
+    }
+
+    .deck-btn {
+      min-height: 28px;
+      padding: 0 8px;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #062b22;
+      background: linear-gradient(120deg, #9af8ff, #c4ffd2 58%, #ffdd86);
+      border: 0;
+      box-shadow: 0 0 10px rgba(122, 245, 184, 0.28);
+      white-space: nowrap;
+    }
+
     .hand-tag {
       color: var(--gold);
       font-weight: 900;
@@ -1299,6 +1326,64 @@
       box-shadow: 0 0 6px rgba(255, 207, 109, 0.65);
     }
 
+    .deck-modal {
+      width: min(92vw, 460px);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(6, 26, 22, 0.9), rgba(5, 18, 15, 0.95));
+      box-shadow: var(--shadow);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      max-height: min(86dvh, 660px);
+      overflow: auto;
+    }
+
+    .deck-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .deck-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .deck-card {
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      min-height: 40px;
+      padding: 5px 4px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 0.84rem;
+      letter-spacing: 0.01em;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    }
+
+    .deck-card.heart,
+    .deck-card.diamond {
+      background: linear-gradient(150deg, var(--red-start), var(--red-end));
+      color: #ffe8ef;
+    }
+
+    .deck-card.club,
+    .deck-card.spade {
+      background: linear-gradient(150deg, var(--dark-start), var(--dark-end));
+      color: #f2f7ff;
+    }
+
+    .suit-counts {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
     @keyframes dealIn {
       from { opacity: 0; transform: translateY(10px) scale(0.96); }
       to { opacity: 1; transform: translateY(0) scale(1); }
@@ -1418,6 +1503,9 @@
       .actions {
         grid-template-columns: 1fr 1fr 52px;
       }
+      .deck-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
     }
 
     .mode-sheet {
@@ -1500,7 +1588,10 @@
     <section class="table glass">
       <div class="info-line" id="handResult">핸드를 선택해 플레이하세요.</div>
       <div class="cards-wrap" id="cardsWrap"></div>
-      <div class="info-line" id="handGuide">손패 8장 중 최대 5장을 선택</div>
+      <div class="hand-bottom">
+        <div class="info-line" id="handGuide">손패 8장 중 최대 5장을 선택</div>
+        <button id="deckBtn" class="deck-btn" type="button">🃏 덱 (0장)</button>
+      </div>
     </section>
 
     <section class="status-bar glass">
@@ -1535,6 +1626,29 @@
       <div class="row" style="justify-content:flex-end;">
         <button class="btn-main" id="nextRoundBtn" style="min-width:132px;">다음 라운드</button>
       </div>
+    </div>
+  </div>
+
+  <div class="modal" id="deckModal">
+    <div class="deck-modal">
+      <div class="deck-title">
+        <div class="title" id="deckModalTitle">남은 카드 (0장)</div>
+      </div>
+      <div class="deck-grid" id="deckGrid"></div>
+      <div class="suit-counts" id="deckSuitCounts">♥0 ♦0 ♣0 ♠0</div>
+      <div class="row" style="justify-content:flex-end;">
+        <button class="btn-main" id="closeDeckBtn">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="victoryModal">
+    <div class="mode-sheet">
+      <div>
+        <div class="title">런 클리어</div>
+        <div class="subtitle" id="victoryText">보스 블라인드를 돌파했습니다.</div>
+      </div>
+      <button class="btn-main" id="victoryConfirmBtn">새 런 시작</button>
     </div>
   </div>
 
@@ -1755,6 +1869,7 @@
     const jokerArea = $("#jokerArea");
     const tablePanel = $("#tablePanel");
     const jokerPopup = $("#jokerPopup");
+    const deckOrder = { heart: 0, diamond: 1, club: 2, spade: 3 };
 
     window.closeJokerPopup = function closeJokerPopup() {
       jokerPopup.classList.remove("show");
@@ -1936,9 +2051,48 @@
       $("#multLabel").textContent = `x${mult}`;
       $("#playBtn").disabled = state.gameEnded;
       $("#discardBtn").disabled = state.gameEnded;
+      $("#deckBtn").textContent = `🃏 덱 (${state.deck.length}장)`;
       $("#pvpPanel").classList.toggle("show", state.mode === "pvp");
       renderJokers();
       updateGoldLabel();
+    }
+
+    function renderDeckModal() {
+      const cards = [...state.deck].sort((a, b) => {
+        const suitDiff = deckOrder[a.suit] - deckOrder[b.suit];
+        if (suitDiff !== 0) return suitDiff;
+        return a.rank - b.rank;
+      });
+      const grid = $("#deckGrid");
+      grid.innerHTML = "";
+      cards.forEach(card => {
+        const el = document.createElement("div");
+        el.className = `deck-card ${card.suit}`;
+        el.textContent = `${suitSymbol[card.suit]}${formatRank(card.rank)}`;
+        grid.appendChild(el);
+      });
+      $("#deckModalTitle").textContent = `남은 카드 (${cards.length}장)`;
+      const counts = { heart: 0, diamond: 0, club: 0, spade: 0 };
+      cards.forEach(card => { counts[card.suit] += 1; });
+      $("#deckSuitCounts").textContent = `♥${counts.heart} ♦${counts.diamond} ♣${counts.club} ♠${counts.spade}`;
+    }
+
+    function openDeckModal() {
+      renderDeckModal();
+      $("#deckModal").classList.add("show");
+    }
+
+    function closeDeckModal() {
+      $("#deckModal").classList.remove("show");
+    }
+
+    function openVictoryModal() {
+      $("#victoryText").textContent = `보스 블라인드 격파! 최종 점수 ${state.score.toLocaleString()}점`;
+      $("#victoryModal").classList.add("show");
+    }
+
+    function closeVictoryModal() {
+      $("#victoryModal").classList.remove("show");
     }
 
     function selectedCards() {
@@ -2100,6 +2254,12 @@
 
     async function playSelected() {
       if (state.gameEnded) return;
+      if (state.handsLeft <= 0) {
+        state.handsLeft = 0;
+        renderHUD();
+        canContinue();
+        return;
+      }
       const cards = selectedCards();
       if (!cards.length) return setInfo("먼저 카드를 1장 이상 선택하세요.");
       AudioFX.play("play");
@@ -2120,7 +2280,7 @@
       pulseJokers(ctx.activated);
       const points = Math.floor(chips * mult);
       state.score += points;
-      state.handsLeft -= 1;
+      state.handsLeft = Math.max(0, state.handsLeft - 1);
       animateScore(chips, points, mult);
       setInfo(`<span class="hand-tag">${hand.name}</span> | ${chips}칩 × ${mult}배 = <b>${points.toLocaleString()}</b>점`);
       addLog(`${hand.name} 플레이: +${points}점 (남은 핸드 ${state.handsLeft})`);
@@ -2135,11 +2295,15 @@
 
     function discardSelected() {
       if (state.gameEnded) return;
-      if (state.discardsLeft <= 0) return setInfo("버리기 횟수를 모두 사용했습니다.");
+      if (state.discardsLeft <= 0) {
+        state.discardsLeft = 0;
+        renderHUD();
+        return setInfo("버리기 횟수를 모두 사용했습니다.");
+      }
       const cards = selectedCards();
       if (!cards.length) return setInfo("버릴 카드를 선택하세요.");
       AudioFX.play("select");
-      state.discardsLeft -= 1;
+      state.discardsLeft = Math.max(0, state.discardsLeft - 1);
       consumeSelectedCards();
       setInfo(`${cards.length}장 버림 완료. 남은 버리기 ${state.discardsLeft}`);
       addLog(`${cards.length}장 버림. (남은 버리기 ${state.discardsLeft})`);
@@ -2186,6 +2350,8 @@
       state.hand = [];
       state.selected.clear();
       state.gameEnded = false;
+      closeDeckModal();
+      closeVictoryModal();
       drawToEight();
       renderCards();
       renderHUD();
@@ -2203,8 +2369,9 @@
       spawnWinConfetti();
       renderHUD();
       if (state.roundIndex >= roundDefs.length - 1) {
-        setInfo("보스 블라인드 격파! 런 클리어. 새 런을 시작하세요.");
+        setInfo("보스 블라인드 격파! 런 클리어.");
         addLog("런 클리어 완료.");
+        openVictoryModal();
         return;
       }
       openShop();
@@ -2224,6 +2391,8 @@
       state.jokers = [];
       logEl.innerHTML = "";
       closeShop();
+      closeDeckModal();
+      closeVictoryModal();
       startRound(0);
       $("#modeModal").classList.remove("show");
       $("#pvpPanel").classList.remove("show");
@@ -2370,6 +2539,11 @@
 
     $("#playBtn").addEventListener("click", playSelected);
     $("#discardBtn").addEventListener("click", discardSelected);
+    $("#deckBtn").addEventListener("click", openDeckModal);
+    $("#closeDeckBtn").addEventListener("click", closeDeckModal);
+    $("#deckModal").addEventListener("click", (event) => {
+      if (event.target === $("#deckModal")) closeDeckModal();
+    });
     $("#clearBtn").addEventListener("click", () => {
       if (state.selected.size > 0) AudioFX.play("select");
       state.selected.clear();
@@ -2378,6 +2552,10 @@
     });
     $("#nextRoundBtn").addEventListener("click", () => {
       closeShop();
+      if (state.roundIndex >= roundDefs.length - 1) {
+        openVictoryModal();
+        return;
+      }
       startRound(state.roundIndex + 1);
     });
     $("#restartBtn").addEventListener("click", () => {
@@ -2389,6 +2567,7 @@
     $("#createRoomBtn").addEventListener("click", createPvpRoom);
     $("#joinRoomBtn").addEventListener("click", joinPvpRoom);
     $("#pvpConfirmBtn").addEventListener("click", resetFromPvp);
+    $("#victoryConfirmBtn").addEventListener("click", newRun);
 
     if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) document.documentElement.classList.add("light");
 
