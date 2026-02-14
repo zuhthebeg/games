@@ -1,5 +1,19 @@
 [
   {
+    "title": "조커런",
+    "icon": "https://game.cocy.io/jokerrun/icon.svg",
+    "url": "https://game.cocy.io/jokerrun/",
+    "desc": "포커 로그라이크! 핸드 조합하고 조커로 점수 폭발",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  },
+  {
     "title": "무기 강화 & 배틀",
     "icon": "https://game.cocy.io/enhance/icon.svg",
     "url": "https://game.cocy.io/enhance/",
