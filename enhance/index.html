@@ -74,9 +74,15 @@
             display: none !important;
         }
         
-        /* Back button - hidden, using global SharedWallet bar */
-        .btn-back {
-            display: none !important;
+        /* Back button - bottom action area */
+        .btn-home {
+            background: linear-gradient(135deg, #555, #333);
+            color: white;
+            flex: 0 0 50px;
+            font-size: 1.2rem;
+        }
+        .btn-home:hover:not(:disabled) {
+            background: linear-gradient(135deg, #666, #444);
         }
         
         .gold-display-legacy {
@@ -3257,6 +3263,7 @@
                         <button class="btn btn-enhance" onclick="enhance()" ${!canEnhance ? 'disabled' : ''}>
                             ${weapon.level >= MAX_ENHANCE_LEVEL ? '🏆 MAX' : `⚡ 강화 (${rates.cost.toLocaleString()}G)`}
                         </button>
+                        <button class="btn btn-home" onclick="showMain()">🏠</button>
                     </div>
                 </div>
             `;
@@ -3735,6 +3742,10 @@
                             <span>공격력 보너스</span>
                             <span style="color:var(--success)">+${getMasteryBonus()}%</span>
                         </div>
+                    </div>
+                    
+                    <div class="btn-row" style="margin-top:16px;">
+                        <button class="btn btn-secondary" style="flex:1;" onclick="showMain()">🏠 메인으로</button>
                     </div>
                 </div>
             `;
@@ -4925,6 +4936,7 @@
                         <button class="btn btn-secondary" onclick="huntRunAway()" style="background:rgba(255,100,100,0.2);border:1px solid var(--fail);">
                             🏃 도망 (-${getRunPenaltyPercent(monster.tier)}%)
                         </button>
+                        <button class="btn btn-home" onclick="exitHunt()">🏠</button>
                     </div>
                 </div>
             `;
