@@ -1,943 +1,1111 @@
-﻿<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>카탄 - Catan</title>
-    <link rel="icon" href="icon.svg">
-    <style>
-        :root {
-            --bg: #1a3d5c;
-            --ocean: #2c5f8a;
-            --sand: #e6c87a;
-            --text: #fff;
-            --brick: #b5651d;
-            --lumber: #228b22;
-            --wool: #90ee90;
-            --grain: #ffd700;
-            --ore: #708090;
-            --desert: #deb887;
-            --accent: #4ecca3;
-            --danger: #ff6b6b;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>카탄</title>
+  <link rel="icon" href="icon.svg" />
+  <script src="/lib/shared-wallet.js?v=20260214"></script>
+  <style>
+    :root {
+      --bg: #12324a;
+      --panel: #0e2434;
+      --panel-2: #152f43;
+      --line: #2a4f6d;
+      --text: #f4f7fb;
+      --muted: #a7bdcf;
+      --accent: #4fc27f;
+      --danger: #e95b5b;
+      --brick: #b46544;
+      --lumber: #2f8a4a;
+      --wool: #80be6a;
+      --grain: #dcbf4d;
+      --ore: #6d7382;
+      --desert: #cdb687;
+    }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--ocean);
-            color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+    * { box-sizing: border-box; }
 
-        #app { min-height: 100vh; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 20% 0%, #1c4d71 0%, var(--bg) 50%, #0b2232 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding-top: calc(48px + env(safe-area-inset-top));
+    }
 
-        /* ===== Game Screen Layout ===== */
-        .game-screen {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+    #app {
+      min-height: calc(100vh - 48px);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 8px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
 
-        /* Top bar - other players */
-        .top-bar {
-            display: flex;
-            gap: 8px;
-            padding: 8px;
-            background: rgba(0,0,0,0.2);
-            overflow-x: auto;
-            flex-shrink: 0;
-        }
+    .players-bar {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
 
-        .player-card {
-            flex-shrink: 0;
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
-            padding: 8px 12px;
-            min-width: 120px;
-            border-left: 4px solid #666;
-        }
+    .player-card {
+      background: rgba(7, 18, 27, 0.85);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 6px;
+      font-size: 12px;
+    }
 
-        .player-card.active {
-            background: rgba(255,255,255,0.1);
-            box-shadow: 0 0 10px rgba(255,255,255,0.3);
-        }
+    .player-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
 
-        .player-card .name {
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 4px;
-        }
+    .status {
+      border: 1px solid var(--line);
+      background: rgba(5, 16, 24, 0.7);
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 13px;
+      text-align: center;
+    }
 
-        .player-card .stats {
-            display: flex;
-            gap: 8px;
-            font-size: 0.75rem;
-            color: #aaa;
-        }
+    .map-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 430px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(7, 24, 37, 0.65), rgba(8, 20, 31, 0.9));
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-        /* Map container */
-        .map-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px;
-            overflow: auto;
-            touch-action: pan-x pan-y;
-        }
+    .board {
+      position: relative;
+      width: 900px;
+      height: 620px;
+      flex: 0 0 auto;
+    }
 
-        .map-wrapper {
-            position: relative;
-            transform-origin: center;
-        }
+    .hex {
+      position: absolute;
+      width: 76px;
+      height: 86px;
+      transform: translate(-50%, -50%);
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      user-select: none;
+    }
 
-        /* Hexagonal grid */
-        .hex-grid {
-            position: relative;
-        }
+    .hex.brick { background: var(--brick); }
+    .hex.lumber { background: var(--lumber); }
+    .hex.wool { background: var(--wool); color: #14240f; }
+    .hex.grain { background: var(--grain); color: #2c2408; }
+    .hex.ore { background: var(--ore); }
+    .hex.desert { background: var(--desert); color: #2a2417; }
 
-        .hex {
-            position: absolute;
-            width: 70px;
-            height: 80px;
-            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
+    .number {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: #f4e8c8;
+      color: #272727;
+      font-size: 14px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(0, 0, 0, 0.35);
+    }
 
-        .hex:hover {
-            transform: scale(1.05);
-            z-index: 10;
-        }
+    .number.hot { color: #b71616; }
 
-        .hex.brick { background: var(--brick); }
-        .hex.lumber { background: var(--lumber); }
-        .hex.wool { background: var(--wool); }
-        .hex.grain { background: var(--grain); }
-        .hex.ore { background: var(--ore); }
-        .hex.desert { background: var(--desert); }
+    .robber {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      font-size: 15px;
+    }
 
-        .hex .number {
-            background: var(--sand);
-            color: #333;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
+    .vertex {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      border: 2px solid rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      z-index: 4;
+    }
 
-        .hex .number.hot {
-            color: #c00;
-        }
+    .vertex.buildable {
+      box-shadow: 0 0 0 6px rgba(79, 194, 127, 0.22);
+      background: rgba(79, 194, 127, 0.4);
+    }
 
-        .hex .resource-icon {
-            font-size: 1.2rem;
-            margin-bottom: 4px;
-        }
+    .vertex.settlement,
+    .vertex.city {
+      border: none;
+      background: transparent;
+      width: 22px;
+      height: 22px;
+      text-align: center;
+      font-size: 18px;
+      line-height: 22px;
+      cursor: default;
+      transform: translate(-50%, -50%);
+    }
 
-        .hex .robber {
-            position: absolute;
-            font-size: 1.5rem;
-        }
+    .edge {
+      position: absolute;
+      height: 8px;
+      transform-origin: left center;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+      z-index: 3;
+    }
 
-        /* Vertices (settlements/cities) */
-        .vertex {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            transform: translate(-50%, -50%);
-            cursor: pointer;
-            z-index: 20;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            opacity: 0;
-            transition: opacity 0.2s, transform 0.2s;
-        }
+    .edge.buildable {
+      background: rgba(79, 194, 127, 0.42);
+      border-color: rgba(79, 194, 127, 0.8);
+    }
 
-        .vertex:hover, .vertex.buildable {
-            opacity: 1;
-        }
+    .edge.road {
+      height: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.35);
+    }
 
-        .vertex.buildable {
-            background: rgba(78, 204, 163, 0.5);
-            animation: pulse 1s infinite;
-        }
+    .my-panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px;
+      background: rgba(8, 20, 30, 0.86);
+      display: grid;
+      gap: 8px;
+    }
 
-        @keyframes pulse {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.2); }
-        }
+    .resources {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+      text-align: center;
+    }
 
-        .vertex.settlement, .vertex.city {
-            opacity: 1;
-            background: none;
-        }
+    .res {
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 6px 2px;
+      font-size: 12px;
+      font-weight: 700;
+    }
 
-        .vertex .building {
-            font-size: 1.2rem;
-        }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+    }
 
-        /* Edges (roads) */
-        .edge {
-            position: absolute;
-            width: 30px;
-            height: 8px;
-            transform-origin: center;
-            cursor: pointer;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.1);
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 9px;
+      padding: 8px 10px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
 
-        .edge:hover, .edge.buildable {
-            opacity: 1;
-        }
+    button.primary { background: #1d5c3d; border-color: #46a975; }
+    button.danger { background: #632b2b; border-color: #b24a4a; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
 
-        .edge.buildable {
-            background: rgba(78, 204, 163, 0.5);
-        }
+    .hint {
+      font-size: 12px;
+      text-align: center;
+      color: var(--muted);
+      min-height: 16px;
+    }
 
-        .edge.road {
-            opacity: 1;
-            height: 10px;
-        }
-
-        /* Bottom panel - my resources & actions */
-        .bottom-panel {
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(10px);
-            padding: 12px;
-            flex-shrink: 0;
-        }
-
-        .my-resources {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
-
-        .resource-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: rgba(255,255,255,0.1);
-            padding: 8px 12px;
-            border-radius: 8px;
-            min-width: 50px;
-        }
-
-        .resource-item .icon {
-            font-size: 1.5rem;
-            margin-bottom: 4px;
-        }
-
-        .resource-item .count {
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .action-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 10px 16px;
-            border-radius: 8px;
-            border: none;
-            font-size: 0.9rem;
-            cursor: pointer;
-            background: rgba(255,255,255,0.15);
-            color: var(--text);
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn:hover:not(:disabled) {
-            background: rgba(255,255,255,0.25);
-        }
-
-        .btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .btn.primary {
-            background: var(--accent);
-            color: #000;
-        }
-
-        .btn.danger {
-            background: var(--danger);
-        }
-
-        .btn.loading::after {
-            content: '';
-            width: 14px;
-            height: 14px;
-            border: 2px solid transparent;
-            border-top-color: currentColor;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-left: 6px;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Dice display */
-        .dice-display {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: flex;
-            gap: 20px;
-            z-index: 100;
-            animation: dice-in 0.5s ease-out;
-        }
-
-        @keyframes dice-in {
-            from { transform: translate(-50%, -50%) scale(0) rotate(180deg); }
-            to { transform: translate(-50%, -50%) scale(1) rotate(0); }
-        }
-
-        .dice {
-            width: 60px;
-            height: 60px;
-            background: #fff;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: #333;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        /* Status message */
-        .status-bar {
-            text-align: center;
-            padding: 8px;
-            font-size: 0.9rem;
-            background: rgba(0,0,0,0.2);
-        }
-
-        /* Build menu */
-        .build-menu {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.9);
-            border-radius: 12px;
-            padding: 16px;
-            display: none;
-            z-index: 50;
-        }
-
-        .build-menu.active {
-            display: block;
-        }
-
-        .build-menu h3 {
-            margin-bottom: 12px;
-            text-align: center;
-        }
-
-        .build-options {
-            display: flex;
-            gap: 12px;
-        }
-
-        .build-option {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 12px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .build-option:hover:not(.disabled) {
-            background: rgba(255,255,255,0.2);
-        }
-
-        .build-option.disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .build-option .icon {
-            font-size: 2rem;
-            margin-bottom: 8px;
-        }
-
-        .build-option .cost {
-            font-size: 0.75rem;
-            color: #aaa;
-        }
-
-        /* Trade modal */
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--bg);
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal h2 {
-            margin-bottom: 16px;
-            text-align: center;
-        }
-
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 150px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 8px;
-            z-index: 300;
-        }
-
-        /* Responsive */
-        @media (max-width: 600px) {
-            .hex {
-                width: 50px;
-                height: 58px;
-            }
-            
-            .hex .number {
-                width: 22px;
-                height: 22px;
-                font-size: 0.75rem;
-            }
-            
-            .resource-item {
-                padding: 6px 8px;
-                min-width: 40px;
-            }
-            
-            .resource-item .icon {
-                font-size: 1.2rem;
-            }
-            
-            .btn {
-                padding: 8px 12px;
-                font-size: 0.85rem;
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .game-screen {
-                flex-direction: row;
-                flex-wrap: wrap;
-            }
-            
-            .top-bar {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .map-container {
-                flex: 1;
-            }
-            
-            .bottom-panel {
-                width: 100%;
-            }
-        }
-    </style>
+    @media (max-width: 760px) {
+      .players-bar { grid-template-columns: 1fr; }
+      .map-wrap { min-height: 360px; }
+      .hex { width: 62px; height: 70px; }
+      .number { width: 24px; height: 24px; font-size: 12px; }
+      .resources { font-size: 11px; }
+    }
+  </style>
 </head>
 <body>
-    <div id="app"></div>
+  <div id="app"></div>
 
-    <script src="/lib/multiplayer.js?v=20260210v2"></script>
-    <script src="/lib/multiplayer-ui.js?v=20260210v2"></script>
-    <script>
-        // ===== Constants =====
-        const RESOURCE_ICONS = {
-            brick: '🧱',
-            lumber: '🌲',
-            wool: '🐑',
-            grain: '🌾',
-            ore: '�ite'
-        };
+  <script>
+    const RESOURCES = ["brick", "lumber", "wool", "grain", "ore"];
+    const RESOURCE_ICONS = { brick: "🧱", lumber: "🪵", wool: "🐑", grain: "🌾", ore: "⛏️", desert: "🏜️" };
+    const RESOURCE_KR = { brick: "벽돌", lumber: "나무", wool: "양모", grain: "밀", ore: "광석", desert: "사막" };
+    const COST = {
+      road: { brick: 1, lumber: 1 },
+      settlement: { brick: 1, lumber: 1, wool: 1, grain: 1 },
+      city: { grain: 2, ore: 3 },
+      dev: { wool: 1, grain: 1, ore: 1 }
+    };
 
-        const RESOURCE_NAMES = {
-            brick: '벽돌',
-            lumber: '나무',
-            wool: '양모',
-            grain: '밀',
-            ore: '광석'
-        };
+    const state = {
+      phase: "setup1",
+      currentPlayer: 0,
+      players: [
+        { id: "human", name: "나", color: "#e94560", resources: emptyResources(), buildings: [], roads: [], devCards: [], knights: 0, vp: 0 },
+        { id: "ai1", name: "AI 1", color: "#4ecca3", resources: emptyResources(), buildings: [], roads: [], devCards: [], knights: 0, vp: 0 },
+        { id: "ai2", name: "AI 2", color: "#ffd700", resources: emptyResources(), buildings: [], roads: [], devCards: [], knights: 0, vp: 0 },
+        { id: "ai3", name: "AI 3", color: "#9b59b6", resources: emptyResources(), buildings: [], roads: [], devCards: [], knights: 0, vp: 0 }
+      ],
+      hexes: [],
+      vertices: [],
+      edges: [],
+      robber: -1,
+      longestRoad: null,
+      largestArmy: null,
+      setupRound: 1,
+      setupOrderIndex: 0,
+      setupStep: "settlement",
+      lastSetupVertex: null,
+      rolledThisTurn: false,
+      canEndTurn: false,
+      winner: null,
+      buildMode: null,
+      hint: "",
+      geometry: { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 }
+    };
 
-        // ===== State =====
-        let mpUI = null;
-        let gameState = null;
-        let myView = null;
-        let buildMode = null; // 'settlement', 'road', 'city', null
-        let showingDice = false;
+    function emptyResources() {
+      return { brick: 0, lumber: 0, wool: 0, grain: 0, ore: 0 };
+    }
 
-        // ===== Initialize =====
-        function init() {
-            mpUI = new MultiplayerUI({
-                gameType: 'catan',
-                gameName: '🏝️ 카탄',
-                container: document.getElementById('app'),
-                maxPlayers: 4,
-                supportsLocal: false,  // 멀티플레이어 전용
-                onGameStart: handleGameStart,
-                onGameEvent: handleGameEvent,
-                onLeave: () => { gameState = null; myView = null; }
-            });
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = a[i];
+        a[i] = a[j];
+        a[j] = t;
+      }
+      return a;
+    }
 
-            const roomCode = MultiplayerUI.checkUrlRoom();
-            if (roomCode) {
-                mpUI._renderLobby();
-                setTimeout(() => {
-                    document.getElementById('mp-room-code').value = roomCode;
-                }, 100);
-            } else {
-                mpUI.show();
-            }
+    function init() {
+      generateBoard();
+      recalcAllVP();
+      state.hint = "초기 배치: 마을을 놓으세요";
+      render();
+      triggerAITurnIfNeeded();
+    }
+
+    function generateBoard() {
+      const resourcePool = shuffle([
+        "brick", "brick", "brick",
+        "lumber", "lumber", "lumber", "lumber",
+        "wool", "wool", "wool", "wool",
+        "grain", "grain", "grain", "grain",
+        "ore", "ore", "ore",
+        "desert"
+      ]);
+      const numberPool = shuffle([2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12]);
+
+      const axial = [];
+      for (let r = -2; r <= 2; r += 1) {
+        for (let q = -2; q <= 2; q += 1) {
+          const s = -q - r;
+          if (Math.max(Math.abs(q), Math.abs(r), Math.abs(s)) <= 2) axial.push({ q, r });
+        }
+      }
+      axial.sort((a, b) => (a.r - b.r) || (a.q - b.q));
+
+      state.hexes = [];
+      let numIdx = 0;
+      for (let i = 0; i < axial.length; i += 1) {
+        const type = resourcePool[i];
+        const number = type === "desert" ? null : numberPool[numIdx++];
+        state.hexes.push({ index: i, q: axial[i].q, r: axial[i].r, type, number, vertices: [], edges: [] });
+      }
+
+      const { vertices, edges, centers, bounds, size } = buildGraph(state.hexes);
+      state.vertices = vertices;
+      state.edges = edges;
+      state.geometry = { centers, minX: bounds.minX, minY: bounds.minY, maxX: bounds.maxX, maxY: bounds.maxY, size };
+
+      const desertIdx = state.hexes.findIndex(h => h.type === "desert");
+      state.robber = desertIdx;
+    }
+
+    function buildGraph(hexes) {
+      const size = 42;
+      const sqrt3 = Math.sqrt(3);
+      const centers = [];
+      const vertices = [];
+      const edges = [];
+      const vertexKeyMap = new Map();
+      const edgeKeyMap = new Map();
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+      function centerFor(q, r) {
+        return { x: size * sqrt3 * (q + r / 2), y: size * 1.5 * r };
+      }
+
+      function corner(center, i) {
+        const angle = (Math.PI / 180) * (60 * i - 30);
+        return { x: center.x + size * Math.cos(angle), y: center.y + size * Math.sin(angle) };
+      }
+
+      function addVertex(point) {
+        const key = `${Math.round(point.x * 1000)}_${Math.round(point.y * 1000)}`;
+        if (vertexKeyMap.has(key)) return vertexKeyMap.get(key);
+        const idx = vertices.length;
+        vertices.push({ index: idx, x: point.x, y: point.y, building: null, owner: null, hexes: [], edges: [] });
+        vertexKeyMap.set(key, idx);
+        return idx;
+      }
+
+      for (const hex of hexes) {
+        const c = centerFor(hex.q, hex.r);
+        centers.push(c);
+        minX = Math.min(minX, c.x - size);
+        minY = Math.min(minY, c.y - size);
+        maxX = Math.max(maxX, c.x + size);
+        maxY = Math.max(maxY, c.y + size);
+
+        const v = [];
+        for (let i = 0; i < 6; i += 1) {
+          const vi = addVertex(corner(c, i));
+          v.push(vi);
+          vertices[vi].hexes.push(hex.index);
+        }
+        hex.vertices = v;
+      }
+
+      for (const hex of hexes) {
+        for (let i = 0; i < 6; i += 1) {
+          const a = hex.vertices[i];
+          const b = hex.vertices[(i + 1) % 6];
+          const key = a < b ? `${a}_${b}` : `${b}_${a}`;
+          let ei = edgeKeyMap.get(key);
+          if (ei === undefined) {
+            ei = edges.length;
+            edges.push({ index: ei, a, b, owner: null, hexes: [] });
+            edgeKeyMap.set(key, ei);
+            vertices[a].edges.push(ei);
+            vertices[b].edges.push(ei);
+          }
+          edges[ei].hexes.push(hex.index);
+          hex.edges.push(ei);
+        }
+      }
+
+      return { vertices, edges, centers, bounds: { minX, minY, maxX, maxY }, size };
+    }
+
+    function isHumanTurn() {
+      return state.players[state.currentPlayer].id === "human";
+    }
+
+    function setupOrder() {
+      return state.phase === "setup1" ? [0, 1, 2, 3] : [3, 2, 1, 0];
+    }
+
+    function getCurrentPlayer() {
+      return state.players[state.currentPlayer];
+    }
+
+    function totalResourceCount(player) {
+      return RESOURCES.reduce((n, r) => n + player.resources[r], 0);
+    }
+
+    function canAfford(player, cost) {
+      for (const [k, v] of Object.entries(cost)) {
+        if ((player.resources[k] || 0) < v) return false;
+      }
+      return true;
+    }
+
+    function spend(player, cost) {
+      for (const [k, v] of Object.entries(cost)) player.resources[k] -= v;
+    }
+
+    function adjacentVertices(vIdx) {
+      const out = new Set();
+      for (const eIdx of state.vertices[vIdx].edges) {
+        const e = state.edges[eIdx];
+        out.add(e.a === vIdx ? e.b : e.a);
+      }
+      return [...out];
+    }
+
+    function canPlaceSettlement(playerIdx, vIdx, setup = false) {
+      const v = state.vertices[vIdx];
+      if (v.building) return false;
+
+      for (const n of adjacentVertices(vIdx)) {
+        if (state.vertices[n].building) return false;
+      }
+
+      if (setup) return true;
+
+      const connectedRoad = v.edges.some(eIdx => state.edges[eIdx].owner === playerIdx);
+      return connectedRoad;
+    }
+
+    function canPlaceRoad(playerIdx, eIdx, setup = false) {
+      const e = state.edges[eIdx];
+      if (e.owner !== null) return false;
+
+      if (setup) {
+        if (state.lastSetupVertex === null) return false;
+        return e.a === state.lastSetupVertex || e.b === state.lastSetupVertex;
+      }
+
+      const a = state.vertices[e.a];
+      const b = state.vertices[e.b];
+      const ownBuilding = (a.owner === playerIdx) || (b.owner === playerIdx);
+      const ownRoadConnection =
+        a.edges.some(x => state.edges[x].owner === playerIdx) ||
+        b.edges.some(x => state.edges[x].owner === playerIdx);
+      return ownBuilding || ownRoadConnection;
+    }
+
+    function canUpgradeCity(playerIdx, vIdx) {
+      const v = state.vertices[vIdx];
+      return v.building === "settlement" && v.owner === playerIdx;
+    }
+
+    function placeSettlement(playerIdx, vIdx, free = false) {
+      const player = state.players[playerIdx];
+      if (!free && !canAfford(player, COST.settlement)) return false;
+      if (!canPlaceSettlement(playerIdx, vIdx, free && (state.phase === "setup1" || state.phase === "setup2"))) return false;
+
+      if (!free) spend(player, COST.settlement);
+      state.vertices[vIdx].building = "settlement";
+      state.vertices[vIdx].owner = playerIdx;
+      player.buildings.push({ type: "settlement", vertex: vIdx });
+      recalcAllVP();
+      return true;
+    }
+
+    function placeRoad(playerIdx, eIdx, free = false) {
+      const player = state.players[playerIdx];
+      if (!free && !canAfford(player, COST.road)) return false;
+      if (!canPlaceRoad(playerIdx, eIdx, free && (state.phase === "setup1" || state.phase === "setup2"))) return false;
+
+      if (!free) spend(player, COST.road);
+      state.edges[eIdx].owner = playerIdx;
+      player.roads.push(eIdx);
+      recalcLongestRoad();
+      recalcAllVP();
+      return true;
+    }
+
+    function upgradeCity(playerIdx, vIdx) {
+      const player = state.players[playerIdx];
+      if (!canAfford(player, COST.city)) return false;
+      if (!canUpgradeCity(playerIdx, vIdx)) return false;
+
+      spend(player, COST.city);
+      state.vertices[vIdx].building = "city";
+      const target = player.buildings.find(b => b.vertex === vIdx);
+      if (target) target.type = "city";
+      recalcAllVP();
+      return true;
+    }
+
+    function grantSecondSetupResources(playerIdx, vIdx) {
+      for (const hIdx of state.vertices[vIdx].hexes) {
+        const hex = state.hexes[hIdx];
+        if (hex.type !== "desert") state.players[playerIdx].resources[hex.type] += 1;
+      }
+    }
+
+    function rollDice() {
+      if (state.winner || state.phase !== "roll") return;
+      const d1 = 1 + Math.floor(Math.random() * 6);
+      const d2 = 1 + Math.floor(Math.random() * 6);
+      const sum = d1 + d2;
+      state.hint = `${getCurrentPlayer().name}: 🎲 ${d1} + ${d2} = ${sum}`;
+
+      if (sum === 7) {
+        handleSeven();
+      } else {
+        distributeResources(sum);
+        state.phase = "main";
+        state.canEndTurn = true;
+      }
+      render();
+      triggerAITurnIfNeeded();
+    }
+
+    function distributeResources(number) {
+      for (const hex of state.hexes) {
+        if (hex.number !== number) continue;
+        if (hex.index === state.robber) continue;
+
+        for (const vIdx of hex.vertices) {
+          const v = state.vertices[vIdx];
+          if (!v.building || v.owner === null) continue;
+          const amount = v.building === "city" ? 2 : 1;
+          state.players[v.owner].resources[hex.type] += amount;
+        }
+      }
+    }
+
+    function handleSeven() {
+      for (let i = 0; i < state.players.length; i += 1) {
+        const p = state.players[i];
+        const total = totalResourceCount(p);
+        if (total > 7) {
+          const discard = Math.floor(total / 2);
+          discardRandom(p, discard);
+        }
+      }
+      state.phase = "robber";
+      state.canEndTurn = false;
+      state.hint = "7이 나왔습니다. 도둑을 이동하세요.";
+    }
+
+    function discardRandom(player, n) {
+      let count = n;
+      while (count > 0) {
+        const bag = RESOURCES.filter(r => player.resources[r] > 0);
+        if (!bag.length) break;
+        const pick = bag[Math.floor(Math.random() * bag.length)];
+        player.resources[pick] -= 1;
+        count -= 1;
+      }
+    }
+
+    function moveRobber(hexIndex) {
+      if (state.phase !== "robber") return false;
+      if (hexIndex < 0 || hexIndex >= state.hexes.length) return false;
+      if (hexIndex === state.robber) return false;
+
+      state.robber = hexIndex;
+      stealRandomFromAdjacent(hexIndex, state.currentPlayer);
+      state.phase = "main";
+      state.canEndTurn = true;
+      state.hint = "도둑 이동 완료. 건설하거나 턴을 종료하세요.";
+      return true;
+    }
+
+    function stealRandomFromAdjacent(hexIndex, thiefIdx) {
+      const victims = new Set();
+      const hex = state.hexes[hexIndex];
+      for (const vIdx of hex.vertices) {
+        const owner = state.vertices[vIdx].owner;
+        if (owner !== null && owner !== thiefIdx && totalResourceCount(state.players[owner]) > 0) victims.add(owner);
+      }
+      const list = [...victims];
+      if (!list.length) return;
+
+      const victimIdx = list[Math.floor(Math.random() * list.length)];
+      const victim = state.players[victimIdx];
+      const bag = RESOURCES.filter(r => victim.resources[r] > 0);
+      if (!bag.length) return;
+      const picked = bag[Math.floor(Math.random() * bag.length)];
+      victim.resources[picked] -= 1;
+      state.players[thiefIdx].resources[picked] += 1;
+      state.hint = `${state.players[thiefIdx].name}가 ${state.players[victimIdx].name}에게서 카드 1장을 훔쳤습니다.`;
+    }
+
+    function endTurn() {
+      if (state.winner || !state.canEndTurn) return;
+      state.buildMode = null;
+      state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
+      state.phase = "roll";
+      state.canEndTurn = false;
+      state.hint = `${getCurrentPlayer().name}의 차례: 주사위를 굴리세요.`;
+      render();
+      triggerAITurnIfNeeded();
+    }
+
+    function recalcLongestRoad() {
+      const lengths = state.players.map((_, i) => longestRoadLength(i));
+      const maxLen = Math.max(...lengths);
+      if (maxLen < 5) {
+        state.longestRoad = null;
+        return;
+      }
+      const leaders = lengths.map((v, i) => ({ v, i })).filter(x => x.v === maxLen);
+      if (leaders.length === 1) {
+        state.longestRoad = leaders[0].i;
+        return;
+      }
+      if (state.longestRoad !== null && leaders.some(x => x.i === state.longestRoad)) return;
+      state.longestRoad = null;
+    }
+
+    function longestRoadLength(playerIdx) {
+      const roadEdges = state.players[playerIdx].roads;
+      if (!roadEdges.length) return 0;
+      const set = new Set(roadEdges);
+      let best = 0;
+
+      function dfs(v, used) {
+        best = Math.max(best, used.size);
+        for (const eIdx of state.vertices[v].edges) {
+          if (!set.has(eIdx) || used.has(eIdx)) continue;
+          used.add(eIdx);
+          const e = state.edges[eIdx];
+          const nextV = e.a === v ? e.b : e.a;
+          dfs(nextV, used);
+          used.delete(eIdx);
+        }
+      }
+
+      const touchedVertices = new Set();
+      for (const eIdx of roadEdges) {
+        touchedVertices.add(state.edges[eIdx].a);
+        touchedVertices.add(state.edges[eIdx].b);
+      }
+      for (const v of touchedVertices) dfs(v, new Set());
+      return best;
+    }
+
+    function recalcAllVP() {
+      for (let i = 0; i < state.players.length; i += 1) {
+        const p = state.players[i];
+        let vp = 0;
+        for (const b of p.buildings) vp += b.type === "city" ? 2 : 1;
+        vp += p.devCards.filter(c => c === "vp").length;
+        if (state.longestRoad === i) vp += 2;
+        if (state.largestArmy === i) vp += 2;
+        p.vp = vp;
+      }
+      const winner = state.players.findIndex(p => p.vp >= 10);
+      if (winner !== -1) {
+        state.winner = winner;
+        state.phase = "end";
+        state.canEndTurn = false;
+        state.hint = `🎉 ${state.players[winner].name} 승리!`;
+      }
+    }
+
+    function validRoadsFor(playerIdx, setup = false) {
+      const out = [];
+      for (let i = 0; i < state.edges.length; i += 1) {
+        if (canPlaceRoad(playerIdx, i, setup)) out.push(i);
+      }
+      return out;
+    }
+
+    function validSettlementsFor(playerIdx, setup = false) {
+      const out = [];
+      for (let i = 0; i < state.vertices.length; i += 1) {
+        if (canPlaceSettlement(playerIdx, i, setup)) out.push(i);
+      }
+      return out;
+    }
+
+    function validCitiesFor(playerIdx) {
+      const out = [];
+      for (let i = 0; i < state.vertices.length; i += 1) {
+        if (canUpgradeCity(playerIdx, i)) out.push(i);
+      }
+      return out;
+    }
+
+    function handleSetupClickVertex(vIdx) {
+      if (state.winner) return;
+      const pIdx = state.currentPlayer;
+      if (state.setupStep !== "settlement") return;
+      if (!placeSettlement(pIdx, vIdx, true)) return;
+
+      if (state.phase === "setup2") grantSecondSetupResources(pIdx, vIdx);
+      state.lastSetupVertex = vIdx;
+      state.setupStep = "road";
+      state.hint = "이 마을에 연결된 도로를 하나 놓으세요.";
+      render();
+      triggerAITurnIfNeeded();
+    }
+
+    function handleSetupClickEdge(eIdx) {
+      if (state.winner) return;
+      const pIdx = state.currentPlayer;
+      if (state.setupStep !== "road") return;
+      if (!placeRoad(pIdx, eIdx, true)) return;
+
+      advanceSetupTurn();
+      render();
+      triggerAITurnIfNeeded();
+    }
+
+    function advanceSetupTurn() {
+      const order = setupOrder();
+      if (state.setupOrderIndex < order.length - 1) {
+        state.setupOrderIndex += 1;
+        state.currentPlayer = order[state.setupOrderIndex];
+        state.setupStep = "settlement";
+        state.lastSetupVertex = null;
+        state.hint = `${state.players[state.currentPlayer].name} 초기 배치: 마을을 놓으세요.`;
+        return;
+      }
+
+      if (state.phase === "setup1") {
+        state.phase = "setup2";
+        state.setupRound = 2;
+        state.setupOrderIndex = 0;
+        const order2 = setupOrder();
+        state.currentPlayer = order2[0];
+        state.setupStep = "settlement";
+        state.lastSetupVertex = null;
+        state.hint = "2라운드 초기 배치: 마지막 플레이어부터 역순으로 배치합니다.";
+        return;
+      }
+
+      state.phase = "roll";
+      state.currentPlayer = 0;
+      state.setupStep = "settlement";
+      state.lastSetupVertex = null;
+      state.hint = "메인 게임 시작: 주사위를 굴리세요.";
+    }
+
+    function humanBuildSettlement() {
+      state.buildMode = state.buildMode === "settlement" ? null : "settlement";
+      state.hint = state.buildMode ? "건설 가능한 정점을 선택하세요." : "";
+      render();
+    }
+
+    function humanBuildRoad() {
+      state.buildMode = state.buildMode === "road" ? null : "road";
+      state.hint = state.buildMode ? "건설 가능한 도로를 선택하세요." : "";
+      render();
+    }
+
+    function humanBuildCity() {
+      state.buildMode = state.buildMode === "city" ? null : "city";
+      state.hint = state.buildMode ? "업그레이드할 마을을 선택하세요." : "";
+      render();
+    }
+
+    function onVertexClick(vIdx) {
+      if (!isHumanTurn() || state.winner) return;
+      if (state.phase === "setup1" || state.phase === "setup2") {
+        handleSetupClickVertex(vIdx);
+        return;
+      }
+      if (state.phase !== "main") return;
+
+      if (state.buildMode === "settlement") {
+        if (placeSettlement(state.currentPlayer, vIdx, false)) {
+          state.buildMode = null;
+          state.hint = "마을 건설 완료.";
+          render();
+          triggerAITurnIfNeeded();
+        }
+      } else if (state.buildMode === "city") {
+        if (upgradeCity(state.currentPlayer, vIdx)) {
+          state.buildMode = null;
+          state.hint = "도시 업그레이드 완료.";
+          render();
+          triggerAITurnIfNeeded();
+        }
+      }
+    }
+
+    function onEdgeClick(eIdx) {
+      if (!isHumanTurn() || state.winner) return;
+      if (state.phase === "setup1" || state.phase === "setup2") {
+        handleSetupClickEdge(eIdx);
+        return;
+      }
+      if (state.phase !== "main") return;
+      if (state.buildMode === "road" && placeRoad(state.currentPlayer, eIdx, false)) {
+        state.buildMode = null;
+        state.hint = "도로 건설 완료.";
+        render();
+        triggerAITurnIfNeeded();
+      }
+    }
+
+    function onHexClick(hIdx) {
+      if (!isHumanTurn() || state.winner) return;
+      if (state.phase === "robber") {
+        if (moveRobber(hIdx)) {
+          render();
+          triggerAITurnIfNeeded();
+        }
+      }
+    }
+
+    function aiTakeSetupTurn() {
+      const pIdx = state.currentPlayer;
+      if (state.setupStep === "settlement") {
+        const choices = validSettlementsFor(pIdx, true);
+        if (choices.length) {
+          const pick = choices[Math.floor(Math.random() * choices.length)];
+          placeSettlement(pIdx, pick, true);
+          if (state.phase === "setup2") grantSecondSetupResources(pIdx, pick);
+          state.lastSetupVertex = pick;
+          state.setupStep = "road";
+          state.hint = `${state.players[pIdx].name}가 마을 배치.`;
+        }
+      }
+
+      if (state.setupStep === "road") {
+        const roads = validRoadsFor(pIdx, true);
+        if (roads.length) {
+          const pick = roads[Math.floor(Math.random() * roads.length)];
+          placeRoad(pIdx, pick, true);
+          state.hint = `${state.players[pIdx].name}가 도로 배치.`;
+          advanceSetupTurn();
+        }
+      }
+      render();
+      triggerAITurnIfNeeded();
+    }
+
+    function aiMainTurn() {
+      const pIdx = state.currentPlayer;
+      const p = state.players[pIdx];
+
+      if (state.phase === "roll") {
+        rollDice();
+        return;
+      }
+
+      if (state.phase === "robber") {
+        const choices = state.hexes.map((_, i) => i).filter(i => i !== state.robber);
+        const pick = choices[Math.floor(Math.random() * choices.length)];
+        moveRobber(pick);
+      }
+
+      if (state.phase !== "main" || state.winner) {
+        render();
+        triggerAITurnIfNeeded();
+        return;
+      }
+
+      let safety = 20;
+      while (safety-- > 0) {
+        const actions = [];
+
+        if (canAfford(p, COST.city) && validCitiesFor(pIdx).length) actions.push("city");
+        if (canAfford(p, COST.settlement) && validSettlementsFor(pIdx, false).length) actions.push("settlement");
+        if (canAfford(p, COST.road) && validRoadsFor(pIdx, false).length) actions.push("road");
+
+        if (!actions.length) break;
+        const act = actions[Math.floor(Math.random() * actions.length)];
+
+        if (act === "city") {
+          const spots = validCitiesFor(pIdx);
+          const pick = spots[Math.floor(Math.random() * spots.length)];
+          upgradeCity(pIdx, pick);
+        } else if (act === "settlement") {
+          const spots = validSettlementsFor(pIdx, false);
+          const pick = spots[Math.floor(Math.random() * spots.length)];
+          placeSettlement(pIdx, pick, false);
+        } else if (act === "road") {
+          const spots = validRoadsFor(pIdx, false);
+          const pick = spots[Math.floor(Math.random() * spots.length)];
+          placeRoad(pIdx, pick, false);
         }
 
-        // ===== Game Start =====
-        function handleGameStart(state) {
-            gameState = state;
-            myView = state.myView || {};
-            
-            mpUI.getClient().onStateChange = (newState) => {
-                if (newState.status === 'playing') {
-                    gameState = newState;
-                    myView = newState.myView || {};
-                    renderGame();
-                }
-            };
-            
-            renderGame();
-            showToast('게임 시작! 초기 마을을 배치하세요');
-        }
+        if (state.winner) break;
+        if (Math.random() < 0.5) break;
+      }
 
-        function handleGameEvent(type, data) {
-            console.log('Event:', type, data);
-            
-            if (type === 'roll') {
-                showDice(data.payload.dice);
-            }
-        }
+      state.hint = `${p.name} 턴 종료.`;
+      render();
+      setTimeout(endTurn, 350);
+    }
 
-        // ===== Render Game =====
-        function renderGame() {
-            if (!gameState || !gameState.gameState) return;
-            
-            const gs = gameState.gameState;
-            const myId = mpUI.getClient().getMyUserId();
-            const me = gs.players.find(p => p.id === myId);
-            const currentPlayer = gs.players[gs.currentPlayerIndex];
-            const isMyTurn = currentPlayer?.id === myId;
-            
-            document.getElementById('app').innerHTML = `
-                <div class="game-screen">
-                    <!-- Other players -->
-                    <div class="top-bar">
-                        ${gs.players.filter(p => p.id !== myId).map(p => `
-                            <div class="player-card ${gs.currentPlayerIndex === gs.players.indexOf(p) ? 'active' : ''}" 
-                                 style="border-color: ${p.color}">
-                                <div class="name" style="color: ${p.color}">${p.nickname}</div>
-                                <div class="stats">
-                                    <span>🃏 ${p.resourceCount || 0}</span>
-                                    <span>🏆 ${p.victoryPoints || 0}점</span>
-                                    ${p.usedKnights ? `<span>⚔️ ${p.usedKnights}</span>` : ''}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    <!-- Status -->
-                    <div class="status-bar">
-                        ${getStatusMessage(gs, isMyTurn, currentPlayer)}
-                    </div>
-                    
-                    <!-- Map -->
-                    <div class="map-container">
-                        <div class="map-wrapper">
-                            ${renderHexGrid(gs)}
-                        </div>
-                    </div>
-                    
-                    <!-- My panel -->
-                    <div class="bottom-panel">
-                        <div class="my-resources">
-                            ${Object.entries(myView.resources || {}).map(([res, count]) => `
-                                <div class="resource-item">
-                                    <span class="icon">${RESOURCE_ICONS[res]}</span>
-                                    <span class="count">${count}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                        
-                        <div class="action-buttons">
-                            ${renderActionButtons(gs, isMyTurn)}
-                        </div>
-                    </div>
-                    
-                    <!-- Build menu -->
-                    <div class="build-menu ${buildMode ? 'active' : ''}" id="buildMenu">
-                        <h3>건설하기</h3>
-                        <div class="build-options">
-                            ${renderBuildOptions()}
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Add event listeners for hex grid
-            setupMapListeners(gs);
-        }
+    function triggerAITurnIfNeeded() {
+      if (state.winner) return;
+      if (isHumanTurn()) return;
+      const delay = (state.phase === "setup1" || state.phase === "setup2") ? 300 : 450;
+      setTimeout(() => {
+        if (state.winner || isHumanTurn()) return;
+        if (state.phase === "setup1" || state.phase === "setup2") aiTakeSetupTurn();
+        else aiMainTurn();
+      }, delay);
+    }
 
-        function getStatusMessage(gs, isMyTurn, currentPlayer) {
-            if (gs.winner) {
-                const winner = gs.players.find(p => p.id === gs.winner);
-                return `🎉 ${winner?.nickname} 승리!`;
-            }
-            
-            if (gs.turnPhase === 'setup1' || gs.turnPhase === 'setup2') {
-                return isMyTurn ? '🏠 마을과 도로를 배치하세요' : `${currentPlayer?.nickname}의 배치 차례`;
-            }
-            
-            if (gs.turnPhase === 'roll') {
-                return isMyTurn ? '🎲 주사위를 굴리세요' : `${currentPlayer?.nickname}의 주사위 차례`;
-            }
-            
-            if (gs.turnPhase === 'robber') {
-                return isMyTurn ? '🏴‍☠️ 도둑을 이동하세요' : `${currentPlayer?.nickname}이 도둑을 이동 중`;
-            }
-            
-            if (gs.turnPhase === 'discard') {
-                return myView?.mustDiscard ? '❌ 카드를 버리세요' : '다른 플레이어가 카드를 버리는 중...';
-            }
-            
-            if (gs.turnPhase === 'main') {
-                if (gs.lastRoll) {
-                    return isMyTurn ? 
-                        `🎲 ${gs.lastRoll[0]}+${gs.lastRoll[1]}=${gs.lastRoll[0]+gs.lastRoll[1]} | 건설, 거래, 턴 종료` :
-                        `${currentPlayer?.nickname}의 차례`;
-                }
-            }
-            
-            return isMyTurn ? '내 차례' : `${currentPlayer?.nickname}의 차례`;
-        }
+    function statusText() {
+      if (state.winner !== null) return `승자: ${state.players[state.winner].name} (${state.players[state.winner].vp}점)`;
+      const cp = getCurrentPlayer();
+      const base = `${cp.name} 차례 | 단계: ${state.phase}`;
+      return state.hint ? `${base} | ${state.hint}` : base;
+    }
 
-        function renderActionButtons(gs, isMyTurn) {
-            const buttons = [];
-            
-            if (gs.turnPhase === 'roll' && isMyTurn) {
-                buttons.push(`<button class="btn primary" onclick="rollDice()">🎲 주사위</button>`);
-            }
-            
-            if (gs.turnPhase === 'main' && isMyTurn) {
-                buttons.push(`<button class="btn" onclick="toggleBuildMenu()">🏗️ 건설</button>`);
-                buttons.push(`<button class="btn" onclick="showTradeModal()">🤝 거래</button>`);
-                buttons.push(`<button class="btn" onclick="endTurn()">✅ 턴 종료</button>`);
-            }
-            
-            if ((gs.turnPhase === 'setup1' || gs.turnPhase === 'setup2') && isMyTurn) {
-                buttons.push(`<button class="btn primary" onclick="setBuildMode('settlement')">🏠 마을</button>`);
-                buttons.push(`<button class="btn primary" onclick="setBuildMode('road')">🛤️ 도로</button>`);
-            }
-            
-            if (!isMyTurn) {
-                buttons.push(`<button class="btn" disabled>대기 중...</button>`);
-            }
-            
-            buttons.push(`<button class="btn danger" onclick="exitGame()">나가기</button>`);
-            
-            return buttons.join('');
-        }
+    function resourceStrip(player) {
+      return RESOURCES.map(r => `<div class="res">${RESOURCE_ICONS[r]} ${player.resources[r]}</div>`).join("");
+    }
 
-        function renderBuildOptions() {
-            const res = myView?.resources || {};
-            
-            const canRoad = res.brick >= 1 && res.lumber >= 1;
-            const canSettlement = res.brick >= 1 && res.lumber >= 1 && res.wool >= 1 && res.grain >= 1;
-            const canCity = res.grain >= 2 && res.ore >= 3;
-            const canDevCard = res.wool >= 1 && res.grain >= 1 && res.ore >= 1;
-            
-            return `
-                <div class="build-option ${canRoad ? '' : 'disabled'}" onclick="setBuildMode('road')">
-                    <span class="icon">🛤️</span>
-                    <span>도로</span>
-                    <span class="cost">🧱1 🌲1</span>
-                </div>
-                <div class="build-option ${canSettlement ? '' : 'disabled'}" onclick="setBuildMode('settlement')">
-                    <span class="icon">🏠</span>
-                    <span>마을</span>
-                    <span class="cost">🧱1 🌲1 🐑1 🌾1</span>
-                </div>
-                <div class="build-option ${canCity ? '' : 'disabled'}" onclick="setBuildMode('city')">
-                    <span class="icon">🏰</span>
-                    <span>도시</span>
-                    <span class="cost">🌾2 ⛰️3</span>
-                </div>
-                <div class="build-option ${canDevCard ? '' : 'disabled'}" onclick="buyDevCard()">
-                    <span class="icon">🃏</span>
-                    <span>개발카드</span>
-                    <span class="cost">🐑1 🌾1 ⛰️1</span>
-                </div>
-                <div class="build-option" onclick="closeBuildMenu()">
-                    <span class="icon">❌</span>
-                    <span>취소</span>
-                </div>
-            `;
-        }
+    function buildableVertexSet() {
+      if (!isHumanTurn() || state.winner) return new Set();
+      const set = new Set();
+      if (state.phase === "setup1" || state.phase === "setup2") {
+        if (state.setupStep === "settlement") validSettlementsFor(state.currentPlayer, true).forEach(v => set.add(v));
+        return set;
+      }
+      if (state.phase !== "main") return set;
+      if (state.buildMode === "settlement") validSettlementsFor(state.currentPlayer, false).forEach(v => set.add(v));
+      if (state.buildMode === "city") validCitiesFor(state.currentPlayer).forEach(v => set.add(v));
+      return set;
+    }
 
-        // ===== Hex Grid Rendering =====
-        function renderHexGrid(gs) {
-            if (!gs.hexes) return '';
-            
-            // Hex positions (pre-calculated for 3-4-5-4-3 layout)
-            const hexPositions = calculateHexPositions();
-            
-            let html = '<div class="hex-grid">';
-            
-            // Render hexes
-            gs.hexes.forEach((hex, idx) => {
-                const pos = hexPositions[idx];
-                const isHot = hex.number === 6 || hex.number === 8;
-                
-                html += `
-                    <div class="hex ${hex.type}" style="left: ${pos.x}px; top: ${pos.y}px" data-hex="${idx}">
-                        <span class="resource-icon">${getHexIcon(hex.type)}</span>
-                        ${hex.number ? `<span class="number ${isHot ? 'hot' : ''}">${hex.number}</span>` : ''}
-                        ${hex.hasRobber ? '<span class="robber">🏴‍☠️</span>' : ''}
-                    </div>
-                `;
-            });
-            
-            // Render vertices (simplified - just corners of hexes)
-            // In a real implementation, we'd calculate exact vertex positions
-            
-            html += '</div>';
-            return html;
-        }
+    function buildableEdgeSet() {
+      if (!isHumanTurn() || state.winner) return new Set();
+      const set = new Set();
+      if (state.phase === "setup1" || state.phase === "setup2") {
+        if (state.setupStep === "road") validRoadsFor(state.currentPlayer, true).forEach(e => set.add(e));
+        return set;
+      }
+      if (state.phase === "main" && state.buildMode === "road") validRoadsFor(state.currentPlayer, false).forEach(e => set.add(e));
+      return set;
+    }
 
-        function calculateHexPositions() {
-            // Pre-calculated positions for 19 hexes in 3-4-5-4-3 pattern
-            const hexWidth = window.innerWidth < 600 ? 50 : 70;
-            const hexHeight = window.innerWidth < 600 ? 58 : 80;
-            const offsetX = hexWidth * 0.75;
-            const offsetY = hexHeight * 0.5;
-            
-            const rows = [3, 4, 5, 4, 3];
-            const positions = [];
-            let idx = 0;
-            
-            const totalWidth = 5 * offsetX;
-            const totalHeight = 5 * hexHeight * 0.75;
-            
-            rows.forEach((count, rowIdx) => {
-                const rowOffset = (5 - count) * offsetX / 2;
-                for (let col = 0; col < count; col++) {
-                    positions.push({
-                        x: rowOffset + col * offsetX,
-                        y: rowIdx * hexHeight * 0.75
-                    });
-                }
-            });
-            
-            return positions;
-        }
+    function mapPixel(vx, vy, mapW, mapH) {
+      const g = state.geometry;
+      const pad = 64;
+      const spanX = (g.maxX - g.minX) || 1;
+      const spanY = (g.maxY - g.minY) || 1;
+      const sx = (mapW - pad * 2) / spanX;
+      const sy = (mapH - pad * 2) / spanY;
+      const scale = Math.min(sx, sy);
+      return {
+        x: pad + (vx - g.minX) * scale,
+        y: pad + (vy - g.minY) * scale,
+        scale
+      };
+    }
 
-        function getHexIcon(type) {
-            const icons = {
-                brick: '🧱',
-                lumber: '🌲',
-                wool: '🐑',
-                grain: '🌾',
-                ore: '⛰️',
-                desert: '🏜️'
-            };
-            return icons[type] || '';
-        }
+    function renderMap() {
+      const mapW = 900;
+      const mapH = 620;
+      const vBuild = buildableVertexSet();
+      const eBuild = buildableEdgeSet();
 
-        function setupMapListeners(gs) {
-            // Add click handlers to hexes for robber movement
-            document.querySelectorAll('.hex').forEach(hex => {
-                hex.onclick = () => {
-                    if (gs.turnPhase === 'robber') {
-                        const hexIdx = parseInt(hex.dataset.hex);
-                        moveRobber(hexIdx);
-                    }
-                };
-            });
-        }
+      let html = `<div class="map-wrap" id="map-wrap"><div class="board">`;
 
-        // ===== Actions =====
-        async function rollDice() {
-            try {
-                await mpUI.sendAction({ type: 'roll_dice' });
-            } catch (e) {
-                showToast('실패: ' + e.message);
-            }
-        }
+      for (const hex of state.hexes) {
+        const c = state.geometry.centers[hex.index];
+        const p = mapPixel(c.x, c.y, mapW, mapH);
+        const hot = hex.number === 6 || hex.number === 8;
+        html += `<div class="hex ${hex.type}" style="left:${p.x}px; top:${p.y}px;" onclick="onHexClick(${hex.index})">`;
+        html += `<div>${RESOURCE_ICONS[hex.type]}</div>`;
+        if (hex.number) html += `<div class="number ${hot ? "hot" : ""}">${hex.number}</div>`;
+        if (state.robber === hex.index) html += `<div class="robber">🦹</div>`;
+        html += `</div>`;
+      }
 
-        function showDice(dice) {
-            showingDice = true;
-            
-            const display = document.createElement('div');
-            display.className = 'dice-display';
-            display.innerHTML = `
-                <div class="dice">${dice[0]}</div>
-                <div class="dice">${dice[1]}</div>
-            `;
-            document.body.appendChild(display);
-            
-            setTimeout(() => {
-                display.remove();
-                showingDice = false;
-            }, 2000);
-        }
+      for (const edge of state.edges) {
+        const a = state.vertices[edge.a];
+        const b = state.vertices[edge.b];
+        const pa = mapPixel(a.x, a.y, mapW, mapH);
+        const pb = mapPixel(b.x, b.y, mapW, mapH);
+        const dx = pb.x - pa.x;
+        const dy = pb.y - pa.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const ang = Math.atan2(dy, dx) * 180 / Math.PI;
+        const cls = ["edge", edge.owner !== null ? "road" : "", eBuild.has(edge.index) ? "buildable" : ""].filter(Boolean).join(" ");
+        const color = edge.owner !== null ? state.players[edge.owner].color : "";
+        html += `<div class="${cls}" style="left:${pa.x}px; top:${pa.y}px; width:${len}px; transform: rotate(${ang}deg); ${color ? `background:${color};` : ""}" onclick="onEdgeClick(${edge.index})"></div>`;
+      }
 
-        async function endTurn() {
-            try {
-                await mpUI.sendAction({ type: 'end_turn' });
-            } catch (e) {
-                showToast('실패: ' + e.message);
-            }
+      for (const v of state.vertices) {
+        const p = mapPixel(v.x, v.y, mapW, mapH);
+        if (v.building) {
+          const icon = v.building === "city" ? "🏰" : "🏠";
+          html += `<div class="vertex ${v.building}" style="left:${p.x}px; top:${p.y}px; color:${state.players[v.owner].color};">${icon}</div>`;
+        } else {
+          const cls = ["vertex", vBuild.has(v.index) ? "buildable" : ""].join(" ");
+          html += `<div class="${cls}" style="left:${p.x}px; top:${p.y}px;" onclick="onVertexClick(${v.index})"></div>`;
         }
+      }
 
-        function toggleBuildMenu() {
-            const menu = document.getElementById('buildMenu');
-            menu?.classList.toggle('active');
-        }
+      html += `</div></div>`;
+      return html;
+    }
 
-        function closeBuildMenu() {
-            const menu = document.getElementById('buildMenu');
-            menu?.classList.remove('active');
-            buildMode = null;
-        }
+    function render() {
+      const me = state.players[0];
+      const others = state.players.slice(1);
+      const myTurn = isHumanTurn();
+      const inSetup = state.phase === "setup1" || state.phase === "setup2";
+      const canRoll = myTurn && state.phase === "roll";
+      const canMain = myTurn && state.phase === "main";
+      const canRobber = myTurn && state.phase === "robber";
 
-        function setBuildMode(mode) {
-            buildMode = mode;
-            showToast(`${mode === 'settlement' ? '마을' : mode === 'road' ? '도로' : '도시'} 건설 위치를 선택하세요`);
-            closeBuildMenu();
-            renderGame();
-        }
+      document.getElementById("app").innerHTML = `
+        <div class="players-bar">
+          ${others.map(p => `
+            <div class="player-card">
+              <div class="player-top" style="color:${p.color}">${p.name}<span>${p.vp}점</span></div>
+              <div>자원 ${totalResourceCount(p)}장 | 도로 ${p.roads.length} | 건물 ${p.buildings.length}</div>
+            </div>
+          `).join("")}
+        </div>
 
-        async function buildSettlement(vertexIndex) {
-            try {
-                await mpUI.sendAction({ type: 'build_settlement', payload: { vertexIndex } });
-                buildMode = null;
-            } catch (e) {
-                showToast('실패: ' + e.message);
-            }
-        }
+        <div class="status">${statusText()}</div>
 
-        async function buildRoad(edgeIndex) {
-            try {
-                await mpUI.sendAction({ type: 'build_road', payload: { edgeIndex } });
-                buildMode = null;
-            } catch (e) {
-                showToast('실패: ' + e.message);
-            }
-        }
+        ${renderMap()}
 
-        async function buildCity(vertexIndex) {
-            try {
-                await mpUI.sendAction({ type: 'build_city', payload: { vertexIndex } });
-                buildMode = null;
-            } catch (e) {
-                showToast('실패: ' + e.message);
-            }
-        }
+        <div class="my-panel">
+          <div class="resources">${resourceStrip(me)}</div>
 
-        async function buyDevCard() {
-            try {
-                await mpUI.sendAction({ type: 'buy_dev_card' });
-                closeBuildMenu();
-                showToast('개발 카드를 구매했습니다!');
-            } catch (e) {
-                showToast('실패: ' + e.message);
-            }
-        }
+          <div class="actions">
+            <button class="primary" ${canRoll ? "" : "disabled"} onclick="rollDice()">주사위</button>
+            <button ${canMain ? "" : "disabled"} onclick="humanBuildRoad()">도로</button>
+            <button ${canMain ? "" : "disabled"} onclick="humanBuildSettlement()">마을</button>
+            <button ${canMain ? "" : "disabled"} onclick="humanBuildCity()">도시</button>
+            <button disabled>거래</button>
+            <button class="danger" ${(canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
+          </div>
 
-        async function moveRobber(hexIndex) {
-            // For simplicity, no steal target selection
-            try {
-                await mpUI.sendAction({ type: 'move_robber', payload: { hexIndex } });
-            } catch (e) {
-                showToast('실패: ' + e.message);
-            }
-        }
+          <div class="hint">
+            ${inSetup ? `초기 배치 ${state.setupRound}라운드 | 현재: ${state.setupStep === "settlement" ? "마을" : "도로"}` : ""}
+            ${canRobber ? "도둑 이동: 다른 헥스를 터치하세요." : ""}
+          </div>
+        </div>
+      `;
+    }
 
-        function showTradeModal() {
-            showToast('거래 기능 준비 중...');
-            // TODO: Implement trade modal
-        }
+    window.rollDice = rollDice;
+    window.endTurn = endTurn;
+    window.humanBuildRoad = humanBuildRoad;
+    window.humanBuildSettlement = humanBuildSettlement;
+    window.humanBuildCity = humanBuildCity;
+    window.onVertexClick = onVertexClick;
+    window.onEdgeClick = onEdgeClick;
+    window.onHexClick = onHexClick;
 
-        function exitGame() {
-            if (confirm('게임을 나가시겠습니까?')) {
-                if (mpUI.getClient()) {
-                    mpUI.getClient().leaveRoom().catch(() => {});
-                    MultiplayerClient.resetInstance();
-                }
-                mpUI.show();
-            }
-        }
-
-        function showToast(msg) {
-            const existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-            
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = msg;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2500);
-        }
-
-        init();
-    </script>
+    (async function boot() {
+      if (window.SharedWallet) {
+        try { await SharedWallet.init(); } catch (_) {}
+      }
+      init();
+      console.log("Catan initialized:", {
+        hexes: state.hexes.length,
+        vertices: state.vertices.length,
+        edges: state.edges.length,
+        robber: state.robber
+      });
+    })();
+  </script>
 </body>
 </html>
