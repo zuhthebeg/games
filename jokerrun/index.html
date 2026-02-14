@@ -192,6 +192,14 @@
       margin-right: 2px;
     }
 
+    .gold-badge {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #ffe5a8;
+      text-shadow: 0 0 10px rgba(255, 207, 109, 0.45);
+      margin-right: 2px;
+    }
+
     .target-icon::before,
     .target-icon::after {
       content: "";
@@ -1569,6 +1577,7 @@
         <span class="target-value" id="targetLabel">0</span>
       </div>
       <div class="header-right">
+        <span class="gold-badge" id="goldLabel">G 0</span>
         <span class="money-badge" id="moneyLabel">$0</span>
         <button id="themeBtn" class="ctrl-btn" aria-label="테마 전환"></button>
         <button id="restartBtn" class="ctrl-btn" aria-label="새 런 시작"></button>
@@ -1942,8 +1951,10 @@
     }
 
     function updateGoldLabel() {
+      const label = $("#goldLabel");
+      if (!label) return;
       const gold = window.SharedWallet ? Number(SharedWallet.gold || 0) : 0;
-      $("#goldLabel").textContent = `G ${gold.toLocaleString()}`;
+      label.textContent = `G ${gold.toLocaleString()}`;
     }
 
     function setOpponentStatus(text) {
@@ -2239,6 +2250,7 @@
     }
 
     function canContinue() {
+      if (state.gameEnded) return false;
       const target = activeTarget();
       console.log("[JokerRun][canContinue]", { score: state.score, target, handsLeft: state.handsLeft, mode: state.mode });
       if (state.score >= target) {
@@ -2363,6 +2375,7 @@
     }
 
     function winRound() {
+      if (state.gameEnded) return;
       const reward = 7 + state.handsLeft * 2 + state.discardsLeft;
       state.money += reward;
       addLog(`라운드 클리어! 보상 +$${reward}`);
@@ -2381,6 +2394,7 @@
     }
 
     function loseRun() {
+      if (state.gameEnded) return;
       state.gameEnded = true;
       AudioFX.play("lose");
       renderHUD();
