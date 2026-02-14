@@ -316,6 +316,14 @@
       filter: saturate(1.08);
     }
 
+    .joker.active {
+      animation: jokerPulse 620ms ease;
+      box-shadow:
+        0 0 28px rgba(255, 215, 0, 0.7),
+        0 0 12px rgba(69, 245, 255, 0.5),
+        inset 0 0 24px rgba(255, 255, 255, 0.14);
+    }
+
     .joker.reveal {
       width: 84px;
       box-shadow:
@@ -635,6 +643,145 @@
       box-shadow: 0 0 16px rgba(203, 97, 255, 0.52), inset 0 0 18px rgba(233, 177, 255, 0.1);
     }
 
+    .joker-goldDice { background: linear-gradient(150deg, #503503, #8b5e00 58%, #d79d28); }
+    .joker-spadeAce { background: linear-gradient(150deg, #111d33, #1d355f 55%, #2467a2); }
+    .joker-luckySeven { background: linear-gradient(150deg, #3c0f0f, #7c1818 55%, #b72f2f); }
+    .joker-doubleDown { background: linear-gradient(150deg, #26162f, #4f2678 55%, #8f3fc4); }
+    .joker-fullHouseFan { background: linear-gradient(150deg, #2b1911, #5b311d 55%, #a15d2d); }
+    .joker-straightRunner { background: linear-gradient(150deg, #132b16, #225e2a 55%, #3ca94e); }
+    .joker-diamondMiner { background: linear-gradient(150deg, #102b30, #1f5963 55%, #3db4b3); }
+    .joker-clubKing { background: linear-gradient(150deg, #1b1d25, #2d3546 55%, #485f7a); }
+    .joker-allInClown { background: linear-gradient(150deg, #3d112b, #7a2258 55%, #c93e81); }
+    .joker-fourMaster { background: linear-gradient(150deg, #291a0f, #553311 58%, #a46b21); }
+
+    .joker-dice,
+    .joker-spade,
+    .joker-seven,
+    .joker-double,
+    .joker-house,
+    .joker-runner,
+    .joker-diamond,
+    .joker-crown,
+    .joker-allin,
+    .joker-four {
+      width: 18px;
+      height: 18px;
+      top: 4px;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .joker-dice {
+      background: linear-gradient(145deg, #fff6cc, #ffc947);
+      box-shadow: 0 0 10px rgba(255, 201, 71, 0.72);
+    }
+
+    .joker-dice::before {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      background:
+        radial-gradient(circle, #8b5e00 0 1px, transparent 1px) 0 0/7px 7px,
+        radial-gradient(circle, #8b5e00 0 1px, transparent 1px) 4px 4px/7px 7px;
+    }
+
+    .joker-spade::before {
+      content: "♠";
+      position: absolute;
+      inset: 0;
+      text-align: center;
+      font-size: 18px;
+      color: #d9ecff;
+      text-shadow: 0 0 10px rgba(78, 170, 255, 0.8);
+    }
+
+    .joker-seven::before {
+      content: "7";
+      position: absolute;
+      inset: 0;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffd6d6;
+      text-shadow: 0 0 8px rgba(255, 87, 87, 0.8);
+    }
+
+    .joker-double::before {
+      content: "x2";
+      position: absolute;
+      inset: 0;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 900;
+      color: #f4ddff;
+      text-shadow: 0 0 8px rgba(203, 97, 255, 0.78);
+      line-height: 18px;
+    }
+
+    .joker-house::before {
+      content: "🏠";
+      position: absolute;
+      inset: 0;
+      text-align: center;
+      font-size: 14px;
+      line-height: 18px;
+      filter: drop-shadow(0 0 6px rgba(255, 173, 102, 0.7));
+    }
+
+    .joker-runner::before {
+      content: "➤";
+      position: absolute;
+      inset: 0;
+      text-align: center;
+      font-size: 15px;
+      color: #c8ffd0;
+      text-shadow: 0 0 8px rgba(90, 255, 120, 0.75);
+      animation: runnerDash 0.9s ease-in-out infinite;
+    }
+
+    .joker-diamond::before {
+      content: "♦";
+      position: absolute;
+      inset: 0;
+      text-align: center;
+      font-size: 17px;
+      color: #b7fff7;
+      text-shadow: 0 0 10px rgba(95, 255, 230, 0.72);
+    }
+
+    .joker-crown::before {
+      content: "♣";
+      position: absolute;
+      inset: 0;
+      text-align: center;
+      font-size: 17px;
+      color: #d9f0ff;
+      text-shadow: 0 0 10px rgba(141, 183, 255, 0.78);
+    }
+
+    .joker-allin::before {
+      content: "A!";
+      position: absolute;
+      inset: 0;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 900;
+      color: #ffd8ee;
+      line-height: 18px;
+      text-shadow: 0 0 9px rgba(255, 95, 168, 0.8);
+    }
+
+    .joker-four::before {
+      content: "4";
+      position: absolute;
+      inset: 0;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffe7b8;
+      text-shadow: 0 0 8px rgba(255, 184, 81, 0.8);
+    }
+
     .score-line {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -786,6 +933,10 @@
       transform: translateY(-8px);
       animation: selectedFloat 1.8s ease-in-out infinite;
       z-index: 2;
+    }
+
+    .card.pick-fx {
+      animation: pickFlash 260ms ease;
     }
 
     .rank {
@@ -974,6 +1125,86 @@
       display: flex;
     }
 
+    .joker-popup {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 52;
+      background: rgba(2, 12, 10, 0.75);
+      backdrop-filter: blur(10px);
+      padding: 14px;
+    }
+
+    .joker-popup.show {
+      display: flex;
+    }
+
+    .joker-popup-content {
+      width: min(92vw, 360px);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(6, 26, 22, 0.9), rgba(5, 18, 15, 0.96));
+      box-shadow: var(--shadow);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      animation: popupOpen 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .joker-popup-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 14px;
+      margin: 0 auto;
+      position: relative;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 0 20px rgba(255, 215, 0, 0.32);
+    }
+
+    .joker-popup-icon .joker-glyph {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      transform: scale(2.3);
+    }
+
+    .joker-popup h3 {
+      font-size: 1.2rem;
+      font-weight: 900;
+      text-align: center;
+      color: var(--gold);
+    }
+
+    .joker-popup p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .joker-popup-cost {
+      display: block;
+      text-align: center;
+      font-size: 0.84rem;
+      color: #ffe5a8;
+      font-weight: 800;
+    }
+
+    .confetti {
+      position: fixed;
+      width: 8px;
+      height: 12px;
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 50;
+      transform: translate3d(0, 0, 0);
+      animation: confettiFall 900ms linear forwards;
+    }
+
     .shop {
       width: min(92vw, 460px);
       border-radius: 16px;
@@ -1080,10 +1311,10 @@
     }
 
     @keyframes scoreCombine {
-      0% { opacity: 0; transform: translateY(8px) scale(0.92); }
-      18% { opacity: 1; }
-      72% { opacity: 1; transform: translateY(-10px) scale(1); }
-      100% { opacity: 0; transform: translate(150px, -68px) scale(0.78); }
+      0% { opacity: 0; transform: translateY(10px) scale(0.72); }
+      24% { opacity: 1; transform: translateY(-4px) scale(1.18); }
+      64% { opacity: 1; transform: translateY(-10px) scale(1.02); }
+      100% { opacity: 0; transform: translate(150px, -68px) scale(0.68); }
     }
 
     @keyframes chipFly {
@@ -1136,6 +1367,34 @@
       0% { transform: translateY(0); opacity: 0.3; }
       50% { transform: translateY(-2px); opacity: 0.72; }
       100% { transform: translateY(-4px); opacity: 0.2; }
+    }
+
+    @keyframes pickFlash {
+      0% { filter: brightness(1); transform: translateY(0) scale(1); }
+      45% { filter: brightness(1.28); transform: translateY(-4px) scale(1.03); }
+      100% { filter: brightness(1); transform: translateY(0) scale(1); }
+    }
+
+    @keyframes jokerPulse {
+      0% { transform: translateY(-2px) scale(1); }
+      40% { transform: translateY(-6px) scale(1.08); }
+      100% { transform: translateY(-2px) scale(1); }
+    }
+
+    @keyframes popupOpen {
+      0% { opacity: 0; transform: scale(0.92); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes confettiFall {
+      0% { opacity: 0; transform: translate3d(0, -10px, 0) rotate(0deg) scale(0.9); }
+      15% { opacity: 1; }
+      100% { opacity: 0; transform: translate3d(var(--dx), var(--dy), 0) rotate(var(--rot)) scale(0.6); }
+    }
+
+    @keyframes runnerDash {
+      0%, 100% { transform: translateX(-1px); }
+      50% { transform: translateX(1px); }
     }
 
     @media (min-width: 700px) {
@@ -1311,6 +1570,16 @@
     </div>
   </div>
 
+  <div class="joker-popup" id="jokerPopup">
+    <div class="joker-popup-content">
+      <div class="joker-popup-icon" id="jokerPopupIcon"></div>
+      <h3 id="jokerPopupName"></h3>
+      <p id="jokerPopupDesc"></p>
+      <span class="joker-popup-cost" id="jokerPopupCost"></span>
+      <button onclick="closeJokerPopup()">닫기</button>
+    </div>
+  </div>
+
   <script src="/lib/multiplayer.js"></script>
   <script src="/lib/shared-wallet.js?v=20260211"></script>
   <script>
@@ -1339,11 +1608,21 @@
     ];
 
     const jokerPool = [
-      { id: "flat50", name: "칩 폭탄", cost: 6, desc: "핸드 점수 계산 시 칩 +50", apply(ctx) { ctx.chips += 50; } },
-      { id: "flushx2", name: "물결 조커", cost: 7, desc: "플러시 계열이면 배수 x2", apply(ctx) { if (ctx.handType === "FLUSH" || ctx.handType === "STRAIGHT_FLUSH") ctx.mult *= 2; } },
-      { id: "perCardMult", name: "계산기 조커", cost: 5, desc: "플레이한 카드 1장당 배수 +1", apply(ctx) { ctx.mult += ctx.cards.length; } },
-      { id: "heartChip", name: "붉은 인장", cost: 5, desc: "하트 카드 1장당 칩 +15", apply(ctx) { ctx.chips += ctx.cards.filter(c => c.suit === "heart").length * 15; } },
-      { id: "pairBoost", name: "듀오 증폭기", cost: 8, desc: "원페어 이상이면 배수 +2", apply(ctx) { if (ctx.handType !== "HIGH_CARD") ctx.mult += 2; } }
+      { id: "flat50", name: "칩 폭탄", cost: 6, desc: "칩 +50", detail: "핸드 점수 계산 시 고정으로 칩 +50.", apply(ctx) { ctx.chips += 50; ctx.activate("flat50"); } },
+      { id: "flushx2", name: "물결 조커", cost: 7, desc: "플러시면 배수 x2", detail: "플러시 또는 스트레이트 플러시를 만들면 배수를 두 배로 만듭니다.", apply(ctx) { if (ctx.handType === "FLUSH" || ctx.handType === "STRAIGHT_FLUSH") { ctx.mult *= 2; ctx.activate("flushx2"); } } },
+      { id: "perCardMult", name: "계산기 조커", cost: 5, desc: "카드당 배수 +1", detail: "플레이한 카드 1장마다 배수 +1이 추가됩니다.", apply(ctx) { const add = ctx.cards.length; if (add > 0) { ctx.mult += add; ctx.activate("perCardMult"); } } },
+      { id: "heartChip", name: "붉은 인장", cost: 5, desc: "하트당 칩 +15", detail: "선택한 카드 중 하트 1장당 칩 +15.", apply(ctx) { const hearts = ctx.cards.filter(c => c.suit === "heart").length; if (hearts > 0) { ctx.chips += hearts * 15; ctx.activate("heartChip"); } } },
+      { id: "pairBoost", name: "듀오 증폭기", cost: 8, desc: "원페어 이상 배수 +2", detail: "원페어 이상 족보에서 배수 +2.", apply(ctx) { if (ctx.handType !== "HIGH_CARD") { ctx.mult += 2; ctx.activate("pairBoost"); } } },
+      { id: "goldDice", name: "황금 주사위", cost: 6, desc: "핸드마다 칩 +1~50", detail: "매 핸드 점수 계산 시 칩에 +1~50 랜덤 추가.", apply(ctx) { ctx.chips += Math.floor(Math.random() * 50) + 1; ctx.activate("goldDice"); } },
+      { id: "spadeAce", name: "스페이드 에이스", cost: 7, desc: "스페이드당 배수 +0.5", detail: "선택한 카드의 스페이드 1장마다 배수 +0.5.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "spade").length; if (count > 0) { ctx.mult += count * 0.5; ctx.activate("spadeAce"); } } },
+      { id: "luckySeven", name: "럭키 세븐", cost: 8, desc: "7 카드당 칩 +77", detail: "선택한 카드 중 숫자 7이 포함될 때마다 칩 +77.", apply(ctx) { const count = ctx.cards.filter(c => c.rank === 7).length; if (count > 0) { ctx.chips += count * 77; ctx.activate("luckySeven"); } } },
+      { id: "doubleDown", name: "더블 다운", cost: 10, desc: "투페어면 배수 x2", detail: "족보가 투페어(TWO_PAIR)일 때 배수 x2.", apply(ctx) { if (ctx.handType === "TWO_PAIR") { ctx.mult *= 2; ctx.activate("doubleDown"); } } },
+      { id: "fullHouseFan", name: "풀하우스 팬", cost: 9, desc: "풀하우스면 칩 +100", detail: "족보가 풀하우스(FULL_HOUSE)면 칩 +100.", apply(ctx) { if (ctx.handType === "FULL_HOUSE") { ctx.chips += 100; ctx.activate("fullHouseFan"); } } },
+      { id: "straightRunner", name: "스트레이트 러너", cost: 8, desc: "스트레이트면 배수 +3", detail: "족보가 스트레이트(STRAIGHT)일 때 배수 +3.", apply(ctx) { if (ctx.handType === "STRAIGHT") { ctx.mult += 3; ctx.activate("straightRunner"); } } },
+      { id: "diamondMiner", name: "다이아몬드 광부", cost: 6, desc: "다이아당 칩 +12", detail: "선택한 카드 중 다이아몬드 1장당 칩 +12.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "diamond").length; if (count > 0) { ctx.chips += count * 12; ctx.activate("diamondMiner"); } } },
+      { id: "clubKing", name: "클럽 킹", cost: 7, desc: "클럽 페이스당 배수 +1", detail: "클럽 문양의 J/Q/K 1장마다 배수 +1.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "club" && c.rank >= 11 && c.rank <= 13).length; if (count > 0) { ctx.mult += count; ctx.activate("clubKing"); } } },
+      { id: "allInClown", name: "올인 광대", cost: 12, desc: "5장 플레이 시 배수 x1.5", detail: "정확히 5장을 선택해 플레이하면 배수 x1.5.", apply(ctx) { if (ctx.cards.length === 5) { ctx.mult *= 1.5; ctx.activate("allInClown"); } } },
+      { id: "fourMaster", name: "포카드 마스터", cost: 15, desc: "포카드면 배수 x3", detail: "족보가 포카드(FOUR)면 배수 x3.", apply(ctx) { if (ctx.handType === "FOUR") { ctx.mult *= 3; ctx.activate("fourMaster"); } } }
     ];
 
     const jokerGlyphClass = {
@@ -1351,7 +1630,17 @@
       flushx2: "joker-wave",
       perCardMult: "joker-calc",
       heartChip: "joker-heart",
-      pairBoost: "joker-duo"
+      pairBoost: "joker-duo",
+      goldDice: "joker-dice",
+      spadeAce: "joker-spade",
+      luckySeven: "joker-seven",
+      doubleDown: "joker-double",
+      fullHouseFan: "joker-house",
+      straightRunner: "joker-runner",
+      diamondMiner: "joker-diamond",
+      clubKing: "joker-crown",
+      allInClown: "joker-allin",
+      fourMaster: "joker-four"
     };
 
     const state = {
@@ -1365,7 +1654,8 @@
       hand: [],
       selected: new Set(),
       jokers: [],
-      gameEnded: false
+      gameEnded: false,
+      lastToggledCardId: null
     };
 
     const pvp = {
@@ -1388,12 +1678,80 @@
       initialized: false
     };
 
+    const AudioFX = {
+      ctx: null,
+      init() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      },
+      play(type) {
+        if (!this.ctx) this.init();
+        if (this.ctx.state === "suspended") this.ctx.resume();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        switch (type) {
+          case "select":
+            osc.frequency.value = 600;
+            gain.gain.value = 0.1;
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.05);
+            break;
+          case "play":
+            osc.frequency.value = 800;
+            gain.gain.value = 0.15;
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.1);
+            break;
+          case "score":
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.2);
+            gain.gain.value = 0.12;
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.2);
+            break;
+          case "win":
+            [523, 659, 784, 1047].forEach((f, i) => {
+              const o = this.ctx.createOscillator();
+              const g = this.ctx.createGain();
+              o.connect(g);
+              g.connect(this.ctx.destination);
+              o.frequency.value = f;
+              g.gain.value = 0.1;
+              o.start(this.ctx.currentTime + i * 0.1);
+              o.stop(this.ctx.currentTime + i * 0.1 + 0.15);
+            });
+            break;
+          case "lose":
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.3);
+            gain.gain.value = 0.1;
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.3);
+            break;
+          default:
+            break;
+        }
+      }
+    };
+
     const $ = sel => document.querySelector(sel);
     const cardsWrap = $("#cardsWrap");
     const handResult = $("#handResult");
     const logEl = $("#log");
     const jokerArea = $("#jokerArea");
     const tablePanel = $("#tablePanel");
+    const jokerPopup = $("#jokerPopup");
+
+    window.closeJokerPopup = function closeJokerPopup() {
+      jokerPopup.classList.remove("show");
+    };
+
+    jokerPopup.addEventListener("click", (event) => {
+      if (event.target === jokerPopup) closeJokerPopup();
+    });
 
     function hashSeed(seedText) {
       let h = 2166136261;
@@ -1471,6 +1829,7 @@
       state.hand.forEach(card => {
         const d = document.createElement("div");
         d.className = `card ${suitClass[card.suit]} ${state.selected.has(card.id) ? "selected" : ""}`;
+        d.dataset.id = String(card.id);
         d.innerHTML = `<div class="rank">${formatRank(card.rank)}</div><div class="suit">${suitSymbol[card.suit]}</div>`;
         d.addEventListener("click", () => {
           if (state.gameEnded) return;
@@ -1479,10 +1838,55 @@
             if (state.selected.size >= 5) return setInfo("최대 5장까지만 선택 가능합니다.");
             state.selected.add(card.id);
           }
+          AudioFX.play("select");
+          state.lastToggledCardId = card.id;
           renderCards();
         });
+        if (state.lastToggledCardId === card.id) {
+          d.classList.add("pick-fx");
+          setTimeout(() => d.classList.remove("pick-fx"), 280);
+        }
         cardsWrap.appendChild(d);
       });
+      state.lastToggledCardId = null;
+    }
+
+    function openJokerPopup(joker) {
+      const glyph = jokerGlyphClass[joker.id] || "joker-duo";
+      $("#jokerPopupIcon").innerHTML = `<span class="joker-glyph ${glyph}"></span>`;
+      $("#jokerPopupName").textContent = joker.name;
+      $("#jokerPopupDesc").textContent = joker.detail || joker.desc;
+      $("#jokerPopupCost").textContent = `획득 비용: $${joker.cost}`;
+      jokerPopup.classList.add("show");
+      AudioFX.play("select");
+    }
+
+    function pulseJokers(ids) {
+      ids.forEach(id => {
+        const el = jokerArea.querySelector(`.joker[data-joker-id="${id}"]`);
+        if (!el) return;
+        el.classList.remove("active");
+        void el.offsetWidth;
+        el.classList.add("active");
+        setTimeout(() => el.classList.remove("active"), 700);
+      });
+    }
+
+    function spawnWinConfetti() {
+      const palette = ["#45f5ff", "#ffcf6d", "#ff69ce", "#7af5b8", "#ff8a66"];
+      for (let i = 0; i < 36; i++) {
+        const bit = document.createElement("div");
+        bit.className = "confetti";
+        bit.style.left = `${Math.random() * window.innerWidth}px`;
+        bit.style.top = `${Math.max(0, window.innerHeight * 0.15)}px`;
+        bit.style.background = palette[i % palette.length];
+        bit.style.setProperty("--dx", `${Math.random() * 120 - 60}px`);
+        bit.style.setProperty("--dy", `${Math.random() * 260 + 220}px`);
+        bit.style.setProperty("--rot", `${Math.random() * 560 - 280}deg`);
+        bit.style.animationDelay = `${i * 8}ms`;
+        document.body.appendChild(bit);
+        setTimeout(() => bit.remove(), 1300);
+      }
     }
 
     function renderJokers() {
@@ -1498,12 +1902,13 @@
         } else {
           box.className = `joker joker-${joker.id}`;
           box.type = "button";
+          box.dataset.jokerId = joker.id;
           box.innerHTML = `
             <span class="joker-icon" aria-hidden="true"><span class="joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}"></span></span>
             <span class="joker-name-mini">${joker.name}</span>
             <span class="joker-desc-mini">${joker.desc}</span>
           `;
-          box.addEventListener("click", () => box.classList.toggle("reveal"));
+          box.addEventListener("click", () => openJokerPopup(joker));
         }
         jokerArea.appendChild(box);
       }
@@ -1592,6 +1997,7 @@
         setTimeout(() => fx.remove(), 980 + piece.delay);
       });
       spawnChipParticles(points);
+      AudioFX.play("score");
       const total = $("#scoreLabel");
       total.classList.remove("pulse");
       void total.offsetWidth;
@@ -1630,6 +2036,11 @@
       let result = "draw";
       if (pvp.myRoundsWon > pvp.oppRoundsWon) result = "win";
       if (pvp.myRoundsWon < pvp.oppRoundsWon) result = "lose";
+      if (result === "win") {
+        AudioFX.play("win");
+        spawnWinConfetti();
+      }
+      if (result === "lose") AudioFX.play("lose");
       await settlePvpGold(result);
       await sendPvpAction({ type: "GAME_OVER", finalScore: state.score, result });
       const gainText = result === "win" ? `승리! +${pvp.bet * 2}G` : result === "draw" ? `무승부! +${pvp.bet}G 환불` : "패배...";
@@ -1680,13 +2091,22 @@
       if (state.gameEnded) return;
       const cards = selectedCards();
       if (!cards.length) return setInfo("먼저 카드를 1장 이상 선택하세요.");
+      AudioFX.play("play");
       const hand = scoreHand(cards);
       let chips = hand.chips;
       let mult = hand.mult;
-      const ctx = { cards, handType: hand.handType, chips, mult };
+      const ctx = {
+        cards,
+        handType: hand.handType,
+        chips,
+        mult,
+        activated: [],
+        activate(id) { this.activated.push(id); }
+      };
       for (const joker of state.jokers) joker.apply(ctx);
       chips = Math.max(0, Math.floor(ctx.chips));
       mult = Math.max(1, Math.floor(ctx.mult * 100) / 100);
+      pulseJokers(ctx.activated);
       const points = Math.floor(chips * mult);
       state.score += points;
       state.handsLeft -= 1;
@@ -1707,6 +2127,7 @@
       if (state.discardsLeft <= 0) return setInfo("버리기 횟수를 모두 사용했습니다.");
       const cards = selectedCards();
       if (!cards.length) return setInfo("버릴 카드를 선택하세요.");
+      AudioFX.play("select");
       state.discardsLeft -= 1;
       consumeSelectedCards();
       setInfo(`${cards.length}장 버림 완료. 남은 버리기 ${state.discardsLeft}`);
@@ -1767,6 +2188,8 @@
       addLog(`라운드 클리어! 보상 +$${reward}`);
       setInfo(`블라인드 돌파 성공! 보상 +$${reward}`);
       state.gameEnded = true;
+      AudioFX.play("win");
+      spawnWinConfetti();
       renderHUD();
       if (state.roundIndex >= roundDefs.length - 1) {
         setInfo("보스 블라인드 격파! 런 클리어. 새 런을 시작하세요.");
@@ -1778,6 +2201,7 @@
 
     function loseRun() {
       state.gameEnded = true;
+      AudioFX.play("lose");
       renderHUD();
       setInfo("핸드를 모두 사용했습니다. 게임 오버! 새 런을 시작하세요.");
       addLog("게임 오버.");
@@ -1936,6 +2360,7 @@
     $("#playBtn").addEventListener("click", playSelected);
     $("#discardBtn").addEventListener("click", discardSelected);
     $("#clearBtn").addEventListener("click", () => {
+      if (state.selected.size > 0) AudioFX.play("select");
       state.selected.clear();
       renderCards();
       setInfo("선택을 해제했습니다.");
