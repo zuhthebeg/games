@@ -27,7 +27,7 @@
       --danger: #ff7f91;
       --shadow: 0 14px 36px rgba(0, 0, 0, 0.48);
       --blur: blur(12px);
-      --ease: 200ms ease;
+      --ease: 260ms cubic-bezier(0.22, 1, 0.36, 1);
       --phone-w: min(100vw, 460px);
       --header-h: 44px;
       --joker-h: 72px;
@@ -89,6 +89,22 @@
       display: grid;
       place-items: center;
       padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.045), transparent 22%),
+        radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.03), transparent 20%),
+        repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.06) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0 1px, transparent 1px 4px);
+      mix-blend-mode: soft-light;
+      opacity: 0.75;
+      z-index: 0;
     }
 
     .app {
@@ -106,6 +122,7 @@
       padding: 10px;
       position: relative;
       overflow: hidden;
+      z-index: 1;
     }
 
     .glass {
@@ -203,6 +220,10 @@
       box-shadow: 0 0 16px rgba(69, 245, 255, 0.28);
     }
 
+    button:active:enabled {
+      transform: translateY(0) scale(0.97);
+    }
+
     button:disabled {
       opacity: 0.46;
       cursor: not-allowed;
@@ -267,30 +288,250 @@
     .joker {
       width: 50px;
       height: 70px;
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 12px;
+      border: 2px solid;
+      border-image: linear-gradient(135deg, var(--gold), #ff6b6b, var(--gold)) 1;
       flex: 0 0 auto;
       display: grid;
-      place-items: center;
+      grid-template-rows: 24px auto auto;
+      align-content: start;
+      gap: 2px;
       position: relative;
-      overflow: visible;
-      transition: transform var(--ease), box-shadow var(--ease);
+      overflow: hidden;
+      transition: transform var(--ease), box-shadow var(--ease), filter var(--ease);
       cursor: pointer;
-      padding: 4px;
+      padding: 6px 4px 5px;
       text-align: center;
+      color: #f5f8ff;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      box-shadow:
+        0 0 20px rgba(255, 215, 0, 0.3),
+        inset 0 0 30px rgba(255, 255, 255, 0.05);
     }
 
     .joker:hover,
     .joker.reveal {
-      transform: translateY(-2px);
+      transform: translateY(-4px) scale(1.06);
+      z-index: 6;
+      filter: saturate(1.08);
+    }
+
+    .joker.reveal {
+      width: 84px;
+      box-shadow:
+        0 0 24px rgba(255, 215, 0, 0.42),
+        0 10px 22px rgba(0, 0, 0, 0.44),
+        inset 0 0 30px rgba(255, 255, 255, 0.08);
+    }
+
+    .joker.reveal .joker-desc-mini {
+      -webkit-line-clamp: unset;
+    }
+
+    .joker:active {
+      transform: translateY(-2px) scale(1.01);
     }
 
     .joker::before {
-      content: attr(data-icon);
-      font-size: 1rem;
-      font-weight: 900;
-      color: #fff;
-      text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        105deg,
+        transparent 40%,
+        rgba(255, 255, 255, 0.2) 45%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0.2) 55%,
+        transparent 60%
+      );
+      transform: translateX(-100%);
+      animation: shimmer 3s infinite;
+      pointer-events: none;
+    }
+
+    .joker::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.22), transparent 62%);
+      pointer-events: none;
+    }
+
+    .joker-name-mini {
+      display: block;
+      font-weight: 800;
+      font-size: 10px;
+      line-height: 1.15;
+      text-shadow: 0 0 8px rgba(0, 0, 0, 0.55);
+    }
+
+    .joker-desc-mini {
+      display: block;
+      font-size: 8px;
+      line-height: 1.2;
+      color: rgba(239, 245, 255, 0.82);
+      opacity: 0.88;
+      white-space: normal;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .joker-icon {
+      width: 24px;
+      height: 24px;
+      margin: 0 auto;
+      position: relative;
+      display: block;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.32));
+    }
+
+    .joker-glyph {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+    }
+
+    .joker-bomb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fff4d8 0 18%, #ffab3a 20% 58%, #c63711 60% 100%);
+      bottom: 1px;
+      box-shadow: 0 0 10px rgba(255, 126, 35, 0.8);
+    }
+
+    .joker-bomb::before {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border: 2px solid #f5d799;
+      border-left: 0;
+      border-bottom: 0;
+      border-radius: 0 8px 0 0;
+      top: -6px;
+      right: -4px;
+      transform: rotate(10deg);
+    }
+
+    .joker-bomb::after {
+      content: "";
+      position: absolute;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      top: -8px;
+      right: -8px;
+      background: #ffd26e;
+      box-shadow: 0 0 8px #ff7429, 0 0 14px #ff7429;
+      animation: bombSpark 1s ease-in-out infinite;
+    }
+
+    .joker-wave {
+      width: 20px;
+      height: 12px;
+      top: 6px;
+      background: linear-gradient(180deg, #b6f8ff, #37b8ff 65%, #0064c7);
+      clip-path: polygon(0% 60%, 12% 42%, 24% 58%, 36% 40%, 48% 55%, 60% 35%, 72% 56%, 84% 44%, 100% 60%, 100% 100%, 0 100%);
+      animation: waveMotion 2.2s ease-in-out infinite;
+      box-shadow: 0 0 8px rgba(0, 206, 255, 0.7);
+    }
+
+    .joker-wave::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 2px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+      opacity: 0.7;
+    }
+
+    .joker-calc {
+      width: 18px;
+      height: 18px;
+      top: 3px;
+      border-radius: 3px;
+      background:
+        repeating-linear-gradient(90deg, rgba(0, 255, 115, 0.32) 0 2px, transparent 2px 6px),
+        repeating-linear-gradient(0deg, rgba(0, 255, 115, 0.32) 0 2px, transparent 2px 6px),
+        #052e18;
+      border: 1px solid rgba(120, 255, 163, 0.65);
+      box-shadow: 0 0 10px rgba(0, 255, 110, 0.68), inset 0 0 8px rgba(0, 255, 115, 0.3);
+    }
+
+    .joker-calc::after {
+      content: "10110";
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      top: -8px;
+      font-size: 6px;
+      letter-spacing: 1px;
+      color: #69ff97;
+      animation: matrixDrift 1.8s linear infinite;
+      text-shadow: 0 0 6px rgba(0, 255, 98, 0.75);
+    }
+
+    .joker-heart {
+      width: 14px;
+      height: 12px;
+      top: 6px;
+      background: #ff476d;
+      transform: rotate(-45deg);
+      box-shadow: 0 0 8px rgba(255, 66, 92, 0.85);
+      animation: heartBeat 1.2s ease-in-out infinite;
+    }
+
+    .joker-heart::before,
+    .joker-heart::after {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ff476d;
+    }
+
+    .joker-heart::before {
+      top: -7px;
+      left: 0;
+    }
+
+    .joker-heart::after {
+      top: 0;
+      left: 7px;
+    }
+
+    .joker-duo {
+      width: 20px;
+      height: 16px;
+      top: 4px;
+    }
+
+    .joker-duo::before,
+    .joker-duo::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 14px;
+      top: 1px;
+      border-radius: 10px 10px 3px 3px;
+      background: linear-gradient(180deg, #f8cdff, #cf65ff 60%, #7e2df5);
+      box-shadow: 0 0 10px rgba(207, 101, 255, 0.75);
+    }
+
+    .joker-duo::before {
+      left: 2px;
+      transform: skewY(-6deg);
+    }
+
+    .joker-duo::after {
+      right: 2px;
+      transform: scaleX(-1) skewY(-6deg);
+      opacity: 0.82;
+      animation: mirrorShift 1.9s ease-in-out infinite;
     }
 
     .joker.empty {
@@ -298,10 +539,17 @@
       border-style: dashed;
       border-color: rgba(255, 255, 255, 0.25);
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+      box-shadow: none;
+      display: grid;
+      place-items: center;
+      padding: 0;
     }
 
     .joker.empty::before {
       content: "+";
+      animation: none;
+      transform: none;
+      background: none;
       color: rgba(255, 255, 255, 0.5);
       font-size: 1.25rem;
     }
@@ -341,16 +589,51 @@
       font-size: 0.7rem;
     }
 
-    .joker-flat50 { background: linear-gradient(155deg, #ff8a00, #ff5f1f); box-shadow: 0 0 14px rgba(255, 138, 0, 0.75); }
-    .joker-flushx2 { background: linear-gradient(160deg, #00a3ff, #42e8ff 65%, #0076c0); box-shadow: 0 0 14px rgba(66, 232, 255, 0.72); }
-    .joker-perCardMult { background: repeating-linear-gradient(0deg, #032f1f 0 6px, #07442c 6px 12px); box-shadow: 0 0 14px rgba(106, 255, 164, 0.62); }
-    .joker-heartChip { background:
-      radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.22), transparent 44%),
-      radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.16), transparent 46%),
-      linear-gradient(160deg, #92192f, #ff345e);
-      box-shadow: 0 0 14px rgba(255, 58, 92, 0.72);
+    .joker-flat50 {
+      background:
+        radial-gradient(circle at 50% 28%, rgba(255, 178, 62, 0.42), transparent 55%),
+        linear-gradient(140deg, #2f1a12, #441b14 45%, #7f2a15 100%);
+      box-shadow: 0 0 16px rgba(255, 132, 33, 0.56), inset 0 0 20px rgba(255, 194, 122, 0.1);
     }
-    .joker-pairBoost { background: linear-gradient(165deg, #7f3dff, #c24cff); box-shadow: 0 0 14px rgba(194, 76, 255, 0.72); }
+
+    .joker-flat50 .joker-icon::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle, rgba(255, 174, 66, 0.9) 0 1px, transparent 2px) 1px 4px/8px 8px,
+        radial-gradient(circle, rgba(255, 110, 44, 0.75) 0 1px, transparent 2px) 4px 2px/7px 7px;
+      animation: emberFloat 2.2s linear infinite;
+      opacity: 0.65;
+    }
+
+    .joker-flushx2 {
+      background:
+        radial-gradient(circle at 50% 10%, rgba(137, 240, 255, 0.35), transparent 50%),
+        linear-gradient(155deg, #10273f, #0f3f66 45%, #0a608b);
+      box-shadow: 0 0 16px rgba(41, 206, 255, 0.58), inset 0 0 20px rgba(178, 246, 255, 0.08);
+    }
+
+    .joker-perCardMult {
+      background:
+        linear-gradient(180deg, rgba(0, 255, 128, 0.08), transparent 32%),
+        linear-gradient(155deg, #071f13, #06311e 45%, #09522f);
+      box-shadow: 0 0 16px rgba(0, 255, 110, 0.48), inset 0 0 18px rgba(90, 255, 155, 0.1);
+    }
+
+    .joker-heartChip {
+      background:
+        radial-gradient(circle at 52% 24%, rgba(255, 148, 168, 0.3), transparent 48%),
+        linear-gradient(155deg, #3e101d, #66182e 55%, #9f1c3f);
+      box-shadow: 0 0 16px rgba(255, 73, 110, 0.52), inset 0 0 20px rgba(255, 172, 190, 0.1);
+    }
+
+    .joker-pairBoost {
+      background:
+        radial-gradient(circle at 40% 20%, rgba(232, 153, 255, 0.28), transparent 48%),
+        linear-gradient(150deg, #28154f, #41208f 52%, #6f28d9);
+      box-shadow: 0 0 16px rgba(203, 97, 255, 0.52), inset 0 0 18px rgba(233, 177, 255, 0.1);
+    }
 
     .score-line {
       display: grid;
@@ -371,20 +654,32 @@
       flex-wrap: wrap;
     }
 
+    .chips-readout b {
+      color: #ffd86d;
+      text-shadow: 0 0 12px rgba(255, 207, 109, 0.7);
+    }
+
+    .mult-readout b {
+      color: #ff69ce;
+      text-shadow: 0 0 12px rgba(255, 79, 197, 0.72);
+    }
+
     .score-main b {
       color: var(--text);
-      font-size: 0.95rem;
+      font-size: 1.02rem;
       text-shadow: 0 0 10px rgba(69, 245, 255, 0.34);
       min-width: 44px;
+      transition: transform var(--ease), text-shadow var(--ease);
     }
 
     .score-total {
-      font-size: 0.86rem;
-      color: var(--ok);
+      font-size: 1.2rem;
+      color: #c6ffe8;
       font-weight: 800;
       white-space: nowrap;
-      text-shadow: 0 0 10px rgba(122, 245, 184, 0.45);
-      transition: transform var(--ease), color var(--ease);
+      letter-spacing: 0.03em;
+      text-shadow: 0 0 12px rgba(122, 245, 184, 0.55), 0 0 24px rgba(69, 245, 255, 0.28);
+      transition: transform var(--ease), color var(--ease), text-shadow var(--ease);
     }
 
     .score-total.pulse {
@@ -438,9 +733,22 @@
       user-select: none;
       cursor: pointer;
       transition: transform var(--ease), box-shadow var(--ease), border-color var(--ease), filter var(--ease);
-      animation: dealIn 240ms ease;
+      animation: cardFlipIn 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
       position: relative;
       overflow: hidden;
+      transform-style: preserve-3d;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.06) 0 2px, rgba(255, 255, 255, 0.01) 2px 5px),
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.18), transparent 38%);
+      mix-blend-mode: overlay;
+      opacity: 0.44;
+      pointer-events: none;
     }
 
     .card::after {
@@ -468,10 +776,15 @@
       filter: brightness(1.04);
     }
 
+    .card:active {
+      transform: scale(0.98);
+    }
+
     .card.selected {
       border-color: #ffd76a;
-      box-shadow: 0 0 0 1px rgba(255, 215, 106, 0.75), 0 14px 24px rgba(0, 0, 0, 0.46), 0 0 20px rgba(255, 207, 109, 0.48);
+      box-shadow: 0 0 0 1px rgba(255, 215, 106, 0.75), 0 14px 24px rgba(0, 0, 0, 0.46), 0 0 26px rgba(255, 207, 109, 0.72);
       transform: translateY(-8px);
+      animation: selectedFloat 1.8s ease-in-out infinite;
       z-index: 2;
     }
 
@@ -488,6 +801,19 @@
       font-weight: 900;
       line-height: 1;
       text-shadow: 0 3px 8px rgba(0, 0, 0, 0.42);
+      color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .card.s-heart .suit,
+    .card.s-diamond .suit {
+      background-image: linear-gradient(180deg, #ffe7ed, #ff7997 45%, #cc2247);
+    }
+
+    .card.s-club .suit,
+    .card.s-spade .suit {
+      background-image: linear-gradient(180deg, #ffffff, #c4ced5 48%, #747d85);
     }
 
     .status-bar {
@@ -599,7 +925,22 @@
       pointer-events: none;
       z-index: 7;
       text-shadow: 0 0 10px rgba(255, 207, 109, 0.48);
-      animation: floatUp 900ms ease forwards;
+      animation: scoreCombine 900ms ease forwards;
+    }
+
+    .fx.chips-readout {
+      color: #ffd86d;
+      text-shadow: 0 0 10px rgba(255, 207, 109, 0.7);
+    }
+
+    .fx.mult-readout {
+      color: #ff69ce;
+      text-shadow: 0 0 10px rgba(255, 79, 197, 0.7);
+    }
+
+    .fx.score-total {
+      color: #c6ffe8;
+      text-shadow: 0 0 10px rgba(122, 245, 184, 0.68);
     }
 
     .chip {
@@ -722,6 +1063,10 @@
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
+    @keyframes shimmer {
+      100% { transform: translateX(100%); }
+    }
+
     @keyframes neonPulse {
       0% { transform: scale(1); }
       40% { transform: scale(1.1); color: #90ffe4; text-shadow: 0 0 16px rgba(69, 245, 255, 0.9); }
@@ -734,6 +1079,13 @@
       100% { opacity: 0; transform: translateY(-30px) scale(1.03); }
     }
 
+    @keyframes scoreCombine {
+      0% { opacity: 0; transform: translateY(8px) scale(0.92); }
+      18% { opacity: 1; }
+      72% { opacity: 1; transform: translateY(-10px) scale(1); }
+      100% { opacity: 0; transform: translate(150px, -68px) scale(0.78); }
+    }
+
     @keyframes chipFly {
       0% { transform: translate(0, 0) scale(0.7); opacity: 0; }
       18% { opacity: 1; }
@@ -741,6 +1093,49 @@
         transform: translate(var(--dx), var(--dy)) scale(0.25);
         opacity: 0;
       }
+    }
+
+    @keyframes cardFlipIn {
+      0% { opacity: 0; transform: perspective(460px) rotateY(-82deg) translateY(8px); }
+      100% { opacity: 1; transform: perspective(460px) rotateY(0) translateY(0); }
+    }
+
+    @keyframes selectedFloat {
+      0% { transform: translateY(-8px); }
+      50% { transform: translateY(-11px); }
+      100% { transform: translateY(-8px); }
+    }
+
+    @keyframes bombSpark {
+      0%, 100% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.3); opacity: 1; }
+    }
+
+    @keyframes waveMotion {
+      0%, 100% { transform: translateX(0) translateY(0); }
+      50% { transform: translateX(1px) translateY(-2px); }
+    }
+
+    @keyframes matrixDrift {
+      0% { transform: translateY(0); opacity: 0; }
+      25% { opacity: 1; }
+      100% { transform: translateY(12px); opacity: 0; }
+    }
+
+    @keyframes heartBeat {
+      0%, 40%, 80%, 100% { transform: rotate(-45deg) scale(1); }
+      20%, 60% { transform: rotate(-45deg) scale(1.16); }
+    }
+
+    @keyframes mirrorShift {
+      0%, 100% { transform: scaleX(-1) skewY(-6deg) translateX(0); opacity: 0.82; }
+      50% { transform: scaleX(-1) skewY(-6deg) translateX(-1px); opacity: 1; }
+    }
+
+    @keyframes emberFloat {
+      0% { transform: translateY(0); opacity: 0.3; }
+      50% { transform: translateY(-2px); opacity: 0.72; }
+      100% { transform: translateY(-4px); opacity: 0.2; }
     }
 
     @media (min-width: 700px) {
@@ -826,8 +1221,8 @@
 
     <section class="score-line glass">
       <div class="score-main">
-        <span>칩 <b id="chipsLabel">0</b></span>
-        <span>배수 <b id="multLabel">x1</b></span>
+        <span class="chips-readout">칩 <b id="chipsLabel">0</b></span>
+        <span class="mult-readout">배수 <b id="multLabel">x1</b></span>
       </div>
       <div class="score-total" id="scoreLabel">0</div>
     </section>
@@ -951,7 +1346,13 @@
       { id: "pairBoost", name: "듀오 증폭기", cost: 8, desc: "원페어 이상이면 배수 +2", apply(ctx) { if (ctx.handType !== "HIGH_CARD") ctx.mult += 2; } }
     ];
 
-    const jokerIcons = { flat50: "칩", flushx2: "파", perCardMult: "계", heartChip: "인", pairBoost: "듀" };
+    const jokerGlyphClass = {
+      flat50: "joker-bomb",
+      flushx2: "joker-wave",
+      perCardMult: "joker-calc",
+      heartChip: "joker-heart",
+      pairBoost: "joker-duo"
+    };
 
     const state = {
       mode: "single",
@@ -1097,8 +1498,11 @@
         } else {
           box.className = `joker joker-${joker.id}`;
           box.type = "button";
-          box.dataset.icon = jokerIcons[joker.id] || "조";
-          box.innerHTML = `<span class="joker-tip"><span class="joker-name">${joker.name}</span>${joker.desc}</span>`;
+          box.innerHTML = `
+            <span class="joker-icon" aria-hidden="true"><span class="joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}"></span></span>
+            <span class="joker-name-mini">${joker.name}</span>
+            <span class="joker-desc-mini">${joker.desc}</span>
+          `;
           box.addEventListener("click", () => box.classList.toggle("reveal"));
         }
         jokerArea.appendChild(box);
@@ -1171,12 +1575,22 @@
       }
     }
 
-    function animateScore(points, mult) {
-      const fx = document.createElement("div");
-      fx.className = "fx";
-      fx.textContent = `+${points.toLocaleString()} 점`;
-      tablePanel.appendChild(fx);
-      setTimeout(() => fx.remove(), 880);
+    function animateScore(chips, points, mult) {
+      const pieces = [
+        { text: `+${chips}칩`, className: "chips-readout", x: 14, y: 56, delay: 0 },
+        { text: `x${mult}배`, className: "mult-readout", x: 56, y: 80, delay: 120 },
+        { text: `+${points.toLocaleString()} 점`, className: "score-total", x: 30, y: 68, delay: 280 }
+      ];
+      pieces.forEach(piece => {
+        const fx = document.createElement("div");
+        fx.className = `fx ${piece.className}`;
+        fx.textContent = piece.text;
+        fx.style.left = `${piece.x}px`;
+        fx.style.top = `${piece.y}px`;
+        fx.style.animationDelay = `${piece.delay}ms`;
+        tablePanel.appendChild(fx);
+        setTimeout(() => fx.remove(), 980 + piece.delay);
+      });
       spawnChipParticles(points);
       const total = $("#scoreLabel");
       total.classList.remove("pulse");
@@ -1276,7 +1690,7 @@
       const points = Math.floor(chips * mult);
       state.score += points;
       state.handsLeft -= 1;
-      animateScore(points, mult);
+      animateScore(chips, points, mult);
       setInfo(`<span class="hand-tag">${hand.name}</span> | ${chips}칩 × ${mult}배 = <b>${points.toLocaleString()}</b>점`);
       addLog(`${hand.name} 플레이: +${points}점 (남은 핸드 ${state.handsLeft})`);
       consumeSelectedCards();
