@@ -88,7 +88,7 @@
         linear-gradient(165deg, var(--felt-3), var(--felt-1) 45%, var(--felt-2));
       display: grid;
       place-items: center;
-      padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+      padding: calc(50px + max(8px, env(safe-area-inset-top))) 8px max(8px, env(safe-area-inset-bottom)); /* 50px for SharedWallet bar */
       position: relative;
     }
 
@@ -109,7 +109,7 @@
 
     .app {
       width: var(--phone-w);
-      height: calc(100dvh - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)) - 8px);
+      height: calc(100dvh - 50px - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)) - 8px); /* 50px for SharedWallet bar */
       max-height: 100dvh;
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 20px;
