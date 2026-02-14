@@ -144,21 +144,19 @@
     .header-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
     }
-    .game-title {
-      font-size: 1rem;
-      font-weight: 900;
-      color: var(--gold);
-      text-shadow: 0 0 12px rgba(255, 207, 109, 0.5);
+    .round-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.05em;
     }
     .round-num {
-      font-size: 0.85rem;
-      font-weight: 700;
+      font-size: 0.95rem;
+      font-weight: 800;
       color: var(--cyan);
-      background: rgba(69, 245, 255, 0.12);
-      padding: 2px 8px;
-      border-radius: 6px;
+      text-shadow: 0 0 10px rgba(69, 245, 255, 0.4);
     }
 
     .target-display {
@@ -1475,7 +1473,7 @@
   <div class="app" id="tablePanel">
     <header class="topbar glass">
       <div class="header-left">
-        <span class="game-title">조커런</span>
+        <span class="round-label">ROUND</span>
         <span class="round-num" id="roundLabel">1/3</span>
       </div>
       <div class="target-display">
@@ -1594,7 +1592,7 @@
   </div>
 
   <script src="/lib/multiplayer.js"></script>
-  <script src="/lib/shared-wallet.js?v=20260211"></script>
+  <script src="/lib/shared-wallet.js?v=20260214"></script>
   <script>
     const suits = ["heart", "diamond", "club", "spade"];
     const suitSymbol = { heart: "♥", diamond: "♦", club: "♣", spade: "♠" };
