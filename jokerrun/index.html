@@ -88,7 +88,7 @@
         linear-gradient(165deg, var(--felt-3), var(--felt-1) 45%, var(--felt-2));
       display: grid;
       place-items: center;
-      padding: calc(50px + max(8px, env(safe-area-inset-top))) 8px max(8px, env(safe-area-inset-bottom)); /* 50px for SharedWallet bar */
+      padding: calc(58px + max(8px, env(safe-area-inset-top))) 8px max(8px, env(safe-area-inset-bottom)); /* 58px for SharedWallet bar + extra */
       position: relative;
     }
 
@@ -109,7 +109,7 @@
 
     .app {
       width: var(--phone-w);
-      height: calc(100dvh - 50px - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)) - 8px); /* 50px for SharedWallet bar */
+      height: calc(100dvh - 58px - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)) - 8px); /* 58px for SharedWallet bar + extra */
       max-height: 100dvh;
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 20px;
@@ -1134,7 +1134,7 @@
       z-index: 52;
       background: rgba(2, 12, 10, 0.75);
       backdrop-filter: blur(10px);
-      padding: 14px;
+      padding: calc(60px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
     }
 
     .joker-popup.show {
@@ -1143,13 +1143,15 @@
 
     .joker-popup-content {
       width: min(92vw, 360px);
+      max-height: calc(100dvh - 120px);
+      overflow-y: auto;
       border-radius: 16px;
       border: 1px solid var(--border);
       background: linear-gradient(180deg, rgba(6, 26, 22, 0.9), rgba(5, 18, 15, 0.96));
       box-shadow: var(--shadow);
-      padding: 14px;
+      padding: 18px;
       display: grid;
-      gap: 10px;
+      gap: 12px;
       animation: popupOpen 220ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
