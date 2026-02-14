@@ -1,632 +1,696 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>💣 지뢰찾기</title>
-    <link rel="icon" href="icon.svg">
-    <script src="/lib/shared-wallet.js?v=20260211"></script>
-    <style>
-        :root {
-            --bg: #0a0a0a;
-            --card: #1a1a1a;
-            --border: #333;
-            --cell: #2a2a2a;
-            --cell-revealed: #151515;
-            --mine: #ff4757;
-            --flag: #ffd700;
-            --gold: #ffd700;
-            --text: #eee;
-            --muted: #777;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>지뢰찾기</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --panel: #ffffff;
+      --text: #10203a;
+      --muted: #5d6b84;
+      --border: #ccd5e4;
+      --accent: #0f6cff;
+      --accent-soft: #e8f0ff;
+      --danger: #e53935;
+      --cell: #d8dfeb;
+      --cell-open: #f7f9fd;
+      --cell-border: #bcc7da;
+      --shadow: 0 12px 32px rgba(16, 32, 58, 0.12);
+      --cols: 9;
+      --cell-size: clamp(10px, calc((100vw - 28px) / var(--cols)), 34px);
+    }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1524;
+        --panel: #182235;
+        --text: #e9f0ff;
+        --muted: #a9b9d8;
+        --border: #31415f;
+        --accent: #66a3ff;
+        --accent-soft: #213453;
+        --danger: #ff6a66;
+        --cell: #2d3e5e;
+        --cell-open: #1f2c45;
+        --cell-border: #41557d;
+        --shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+      }
+    }
 
-        body {
-            font-family: 'Segoe UI', -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 60px 12px 20px;
-        }
+    [data-theme="light"] {
+      --bg: #f4f6fb;
+      --panel: #ffffff;
+      --text: #10203a;
+      --muted: #5d6b84;
+      --border: #ccd5e4;
+      --accent: #0f6cff;
+      --accent-soft: #e8f0ff;
+      --danger: #e53935;
+      --cell: #d8dfeb;
+      --cell-open: #f7f9fd;
+      --cell-border: #bcc7da;
+      --shadow: 0 12px 32px rgba(16, 32, 58, 0.12);
+    }
 
-        h1 {
-            font-size: 1.6rem;
-            margin-bottom: 12px;
-        }
+    [data-theme="dark"] {
+      --bg: #0f1524;
+      --panel: #182235;
+      --text: #e9f0ff;
+      --muted: #a9b9d8;
+      --border: #31415f;
+      --accent: #66a3ff;
+      --accent-soft: #213453;
+      --danger: #ff6a66;
+      --cell: #2d3e5e;
+      --cell-open: #1f2c45;
+      --cell-border: #41557d;
+      --shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+    }
 
-        .info-bar {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        .info {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--card);
-            padding: 8px 14px;
-            border-radius: 10px;
-            font-size: 0.95rem;
-        }
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 14% 12%, rgba(15, 108, 255, 0.14), transparent 34%),
+        radial-gradient(circle at 86% 88%, rgba(229, 57, 53, 0.11), transparent 32%),
+        var(--bg);
+      min-height: 100vh;
+      padding: 14px;
+      display: grid;
+      place-items: center;
+    }
 
-        .info-value {
-            font-weight: 700;
-        }
+    .app {
+      width: min(1120px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
 
-        .mine-count { color: var(--mine); }
-        .time-value { color: #5dade2; }
-        .gold-value { color: var(--gold); }
+    .top {
+      display: grid;
+      gap: 10px;
+      align-items: center;
+    }
 
-        .difficulty {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 14px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 
-        .diff-btn {
-            padding: 8px 16px;
-            background: var(--card);
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            color: var(--text);
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.1rem, 2.8vw, 1.7rem);
+      letter-spacing: -0.02em;
+    }
 
-        .diff-btn.active {
-            border-color: #4ecca3;
-            background: rgba(78, 204, 163, 0.1);
-        }
+    .theme-btn,
+    .restart,
+    .modal button {
+      border: 1px solid var(--border);
+      background: var(--accent-soft);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 0.92rem;
+      cursor: pointer;
+      font-weight: 700;
+    }
 
-        .diff-btn:hover {
-            border-color: #4ecca3;
-        }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
 
-        #board-container {
-            position: relative;
-            background: var(--card);
-            padding: 10px;
-            border-radius: 14px;
-            border: 2px solid var(--border);
-        }
+    .difficulty {
+      width: 100%;
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
 
-        #board {
-            display: grid;
-            gap: 2px;
-        }
+    .status {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
 
-        .cell {
-            width: 32px;
-            height: 32px;
-            background: var(--cell);
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.95rem;
-            font-weight: 700;
-            transition: all 0.1s;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 9px 10px;
+      background: color-mix(in srgb, var(--panel), var(--bg) 24%);
+    }
 
-        .cell:hover:not(.revealed):not(.flagged) {
-            background: #3a3a3a;
-        }
+    .label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
 
-        .cell.revealed {
-            background: var(--cell-revealed);
-            cursor: default;
-        }
+    .value {
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
 
-        .cell.flagged {
-            background: rgba(255, 215, 0, 0.15);
-        }
+    .board-wrap {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px;
+      background: color-mix(in srgb, var(--panel), var(--bg) 18%);
+      overflow: auto;
+      max-width: 100%;
+    }
 
-        .cell.mine {
-            background: rgba(255, 71, 87, 0.3);
-        }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(var(--cols), var(--cell-size));
+      grid-auto-rows: var(--cell-size);
+      width: max-content;
+      gap: 2px;
+      margin: 0 auto;
+      touch-action: manipulation;
+      user-select: none;
+    }
 
-        .cell.exploded {
-            background: var(--mine);
-            animation: explode 0.3s ease-out;
-        }
+    .cell {
+      border: 1px solid var(--cell-border);
+      background: var(--cell);
+      border-radius: 5px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: calc(var(--cell-size) * 0.58);
+      color: var(--text);
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      transition: transform 0.06s ease, background 0.12s ease;
+    }
 
-        @keyframes explode {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
+    .cell:active { transform: scale(0.96); }
 
-        .cell[data-num="1"] { color: #5dade2; }
-        .cell[data-num="2"] { color: #4ecca3; }
-        .cell[data-num="3"] { color: #ff6b6b; }
-        .cell[data-num="4"] { color: #9b59b6; }
-        .cell[data-num="5"] { color: #e67e22; }
-        .cell[data-num="6"] { color: #1abc9c; }
-        .cell[data-num="7"] { color: #34495e; }
-        .cell[data-num="8"] { color: #7f8c8d; }
+    .cell.revealed {
+      background: var(--cell-open);
+      cursor: default;
+    }
 
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border-radius: 12px;
-            z-index: 10;
-        }
+    .cell.mine {
+      background: color-mix(in srgb, var(--danger), transparent 72%);
+      color: var(--danger);
+    }
 
-        .overlay.hidden { display: none; }
+    .n1 { color: #2473ff; }
+    .n2 { color: #2e9f4a; }
+    .n3 { color: #db2f2f; }
+    .n4 { color: #5b38d9; }
+    .n5 { color: #9d2a2a; }
+    .n6 { color: #1c8ca5; }
+    .n7 { color: #18222f; }
+    .n8 { color: #59667f; }
 
-        .overlay h2 {
-            font-size: 1.8rem;
-            margin-bottom: 12px;
-        }
+    .hint {
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin: 0;
+      text-align: center;
+    }
 
-        .overlay p {
-            color: var(--muted);
-            margin-bottom: 6px;
-        }
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 9, 17, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
 
-        .gold-earned {
-            font-size: 1.3rem;
-            color: var(--gold);
-            margin: 12px 0;
-            animation: pulse 1s ease-in-out infinite;
-        }
+    .modal {
+      width: min(420px, 100%);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      text-align: center;
+    }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
+    .modal h2 {
+      margin: 0 0 8px;
+      font-size: 1.26rem;
+    }
 
-        .btn {
-            padding: 12px 28px;
-            font-size: 1rem;
-            font-weight: 600;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-top: 12px;
-            transition: all 0.2s;
-        }
+    .modal p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #4ecca3, #2ecc71);
-            color: #000;
-        }
+    @media (min-width: 768px) {
+      body { padding: 18px; }
+      .app { padding: 18px; gap: 14px; }
+      .top { grid-template-columns: 1fr auto; }
+      .status { min-width: 420px; }
+    }
 
-        .btn-primary:hover {
-            transform: scale(1.05);
-        }
-
-        .controls-hint {
-            color: var(--muted);
-            font-size: 0.8rem;
-            margin-top: 12px;
-            text-align: center;
-        }
-
-        .gold-popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--gold);
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
-            animation: bigPulse 1.5s ease-out forwards;
-            pointer-events: none;
-            z-index: 1000;
-        }
-
-        @keyframes bigPulse {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-            100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
-        }
-
-        /* Reward breakdown */
-        .reward-breakdown {
-            background: rgba(255, 215, 0, 0.1);
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            border-radius: 10px;
-            padding: 12px 20px;
-            margin: 12px 0;
-            text-align: left;
-            font-size: 0.9rem;
-        }
-
-        .reward-line {
-            display: flex;
-            justify-content: space-between;
-            margin: 4px 0;
-        }
-
-        .reward-label { color: var(--muted); }
-        .reward-value { color: var(--gold); font-weight: 600; }
-
-        @media (max-width: 400px) {
-            .cell {
-                width: 26px;
-                height: 26px;
-                font-size: 0.8rem;
-            }
-        }
-    </style>
+    @media (min-width: 1100px) {
+      .app { padding: 22px; }
+      .controls { max-width: 420px; }
+    }
+  </style>
 </head>
 <body>
-    <h1>💣 지뢰찾기</h1>
-    
-    <div class="info-bar">
-        <div class="info">
-            <span>💣</span>
-            <span class="info-value mine-count" id="mine-count">10</span>
+  <main class="app">
+    <section class="top">
+      <div>
+        <div class="title-row">
+          <h1>지뢰찾기</h1>
+          <button class="theme-btn" id="themeBtn" type="button">테마: 자동</button>
         </div>
-        <div class="info">
-            <span>⏱️</span>
-            <span class="info-value time-value" id="timer">0</span>
+        <div class="controls">
+          <select class="difficulty" id="difficulty" aria-label="난이도 선택">
+            <option value="easy">쉬움 (9x9, 지뢰 10)</option>
+            <option value="medium">보통 (16x16, 지뢰 40)</option>
+            <option value="hard">어려움 (30x16, 지뢰 99)</option>
+          </select>
+          <button class="restart" id="restart" type="button">새 게임</button>
         </div>
-        <div class="info">
-            <span>💰 획득:</span>
-            <span class="info-value gold-value" id="earned-gold">0G</span>
+      </div>
+      <div class="status">
+        <div class="card">
+          <div class="label">남은 지뢰</div>
+          <div class="value" id="mineCounter">0</div>
         </div>
+        <div class="card">
+          <div class="label">시간</div>
+          <div class="value" id="timer">0초</div>
+        </div>
+        <div class="card">
+          <div class="label">최고 기록</div>
+          <div class="value" id="bestTime">-</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="board-wrap">
+      <div class="board" id="board" aria-label="지뢰찾기 보드" role="grid"></div>
+    </section>
+
+    <p class="hint">탭/클릭: 열기 · 길게 누르기/우클릭: 깃발</p>
+  </main>
+
+  <div class="modal-bg" id="modalBg" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2 id="modalTitle"></h2>
+      <p id="modalText"></p>
+      <button id="modalBtn" type="button">다시 하기</button>
     </div>
+  </div>
 
-    <div class="difficulty">
-        <button class="diff-btn active" data-diff="easy">쉬움 (9×9)</button>
-        <button class="diff-btn" data-diff="medium">보통 (12×12)</button>
-        <button class="diff-btn" data-diff="hard">어려움 (16×16)</button>
-    </div>
+  <script>
+    const DIFFICULTIES = {
+      easy: { key: "easy", rows: 9, cols: 9, mines: 10, label: "쉬움" },
+      medium: { key: "medium", rows: 16, cols: 16, mines: 40, label: "보통" },
+      hard: { key: "hard", rows: 16, cols: 30, mines: 99, label: "어려움" }
+    };
 
-    <div id="board-container">
-        <div id="board"></div>
-        
-        <div class="overlay hidden" id="win-overlay">
-            <h2>🎉 클리어!</h2>
-            <p>시간: <span id="win-time">0</span>초</p>
-            <div class="reward-breakdown" id="reward-breakdown"></div>
-            <div class="gold-earned" id="win-gold">+0G</div>
-            <button class="btn btn-primary" onclick="newGame()">다시 하기</button>
-        </div>
+    const LONG_PRESS_MS = 360;
+    const BEST_KEY = "minesweeper-best-times-v1";
+    const THEME_KEY = "minesweeper-theme";
 
-        <div class="overlay hidden" id="lose-overlay">
-            <h2>💥 펑!</h2>
-            <p>아쉽게도 지뢰를 밟았습니다</p>
-            <button class="btn btn-primary" onclick="newGame()">다시 하기</button>
-        </div>
-    </div>
+    const boardEl = document.getElementById("board");
+    const timerEl = document.getElementById("timer");
+    const mineCounterEl = document.getElementById("mineCounter");
+    const bestTimeEl = document.getElementById("bestTime");
+    const difficultyEl = document.getElementById("difficulty");
+    const modalBg = document.getElementById("modalBg");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalText = document.getElementById("modalText");
+    const modalBtn = document.getElementById("modalBtn");
+    const restartBtn = document.getElementById("restart");
+    const themeBtn = document.getElementById("themeBtn");
 
-    <p class="controls-hint">💡 좌클릭: 열기 | 우클릭/길게누르기: 깃발</p>
+    let grid = [];
+    let config = DIFFICULTIES.easy;
+    let gameOver = false;
+    let firstRevealDone = false;
+    let revealedCount = 0;
+    let flaggedCount = 0;
+    let timer = 0;
+    let timerId = null;
+    let pointerState = null;
 
-    <script>
-        const DIFFICULTIES = {
-            easy: { rows: 9, cols: 9, mines: 10, baseGold: 500, perCell: 10, timeBonus: 5 },
-            medium: { rows: 12, cols: 12, mines: 25, baseGold: 1500, perCell: 15, timeBonus: 10 },
-            hard: { rows: 16, cols: 16, mines: 50, baseGold: 5000, perCell: 25, timeBonus: 20 }
-        };
+    function loadBestTimes() {
+      try {
+        return JSON.parse(localStorage.getItem(BEST_KEY) || "{}");
+      } catch {
+        return {};
+      }
+    }
 
-        let difficulty = 'easy';
-        let board = [];
-        let revealed = [];
-        let flagged = [];
-        let mines = [];
-        let gameOver = false;
-        let gameStarted = false;
-        let timer = null;
-        let seconds = 0;
-        let totalGoldEarned = 0;
+    function saveBestTime(key, seconds) {
+      const current = loadBestTimes();
+      if (!current[key] || seconds < current[key]) {
+        current[key] = seconds;
+        localStorage.setItem(BEST_KEY, JSON.stringify(current));
+      }
+    }
 
-        const boardEl = document.getElementById('board');
-        const mineCountEl = document.getElementById('mine-count');
-        const timerEl = document.getElementById('timer');
-        const earnedGoldEl = document.getElementById('earned-gold');
+    function updateBestTimeText() {
+      const current = loadBestTimes();
+      const value = current[config.key];
+      bestTimeEl.textContent = Number.isInteger(value) ? `${value}초` : "-";
+    }
 
-        // Difficulty buttons
-        document.querySelectorAll('.diff-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                difficulty = btn.dataset.diff;
-                newGame();
-            });
+    function applyTheme(theme) {
+      if (theme === "light" || theme === "dark") {
+        document.documentElement.setAttribute("data-theme", theme);
+      } else {
+        document.documentElement.removeAttribute("data-theme");
+      }
+      localStorage.setItem(THEME_KEY, theme);
+      themeBtn.textContent = `테마: ${theme === "light" ? "밝게" : theme === "dark" ? "어둡게" : "자동"}`;
+    }
+
+    function rotateTheme() {
+      const current = localStorage.getItem(THEME_KEY) || "auto";
+      const next = current === "auto" ? "light" : current === "light" ? "dark" : "auto";
+      applyTheme(next);
+    }
+
+    function createEmptyGrid() {
+      return Array.from({ length: config.rows }, (_, r) =>
+        Array.from({ length: config.cols }, (_, c) => ({
+          r,
+          c,
+          mine: false,
+          revealed: false,
+          flagged: false,
+          adjacent: 0,
+          el: null
+        }))
+      );
+    }
+
+    function neighbors(r, c) {
+      const result = [];
+      for (let dr = -1; dr <= 1; dr += 1) {
+        for (let dc = -1; dc <= 1; dc += 1) {
+          if (!dr && !dc) continue;
+          const nr = r + dr;
+          const nc = c + dc;
+          if (nr < 0 || nc < 0 || nr >= config.rows || nc >= config.cols) continue;
+          result.push(grid[nr][nc]);
+        }
+      }
+      return result;
+    }
+
+    function placeMines() {
+      let placed = 0;
+      const total = config.rows * config.cols;
+      while (placed < config.mines) {
+        const idx = Math.floor(Math.random() * total);
+        const r = Math.floor(idx / config.cols);
+        const c = idx % config.cols;
+        const cell = grid[r][c];
+        if (cell.mine) continue;
+        cell.mine = true;
+        placed += 1;
+      }
+    }
+
+    function computeAdjacency() {
+      for (let r = 0; r < config.rows; r += 1) {
+        for (let c = 0; c < config.cols; c += 1) {
+          const cell = grid[r][c];
+          if (cell.mine) {
+            cell.adjacent = 0;
+            continue;
+          }
+          cell.adjacent = neighbors(r, c).filter((n) => n.mine).length;
+        }
+      }
+    }
+
+    function relocateMine(r, c) {
+      const source = grid[r][c];
+      if (!source.mine) return;
+      for (let rr = 0; rr < config.rows; rr += 1) {
+        for (let cc = 0; cc < config.cols; cc += 1) {
+          if (rr === r && cc === c) continue;
+          const target = grid[rr][cc];
+          if (!target.mine) {
+            target.mine = true;
+            source.mine = false;
+            computeAdjacency();
+            return;
+          }
+        }
+      }
+    }
+
+    function cellText(cell) {
+      if (cell.flagged && !cell.revealed) return "🚩";
+      if (!cell.revealed) return "";
+      if (cell.mine) return "💣";
+      return cell.adjacent ? String(cell.adjacent) : "";
+    }
+
+    function renderCell(cell) {
+      const el = cell.el;
+      el.textContent = cellText(cell);
+      el.className = "cell";
+      if (cell.revealed) el.classList.add("revealed");
+      if (cell.revealed && cell.mine) el.classList.add("mine");
+      if (cell.revealed && !cell.mine && cell.adjacent) el.classList.add(`n${cell.adjacent}`);
+      el.setAttribute("aria-label", `행 ${cell.r + 1}, 열 ${cell.c + 1}`);
+    }
+
+    function renderAll() {
+      for (let r = 0; r < config.rows; r += 1) {
+        for (let c = 0; c < config.cols; c += 1) {
+          renderCell(grid[r][c]);
+        }
+      }
+    }
+
+    function updateCounters() {
+      mineCounterEl.textContent = String(config.mines - flaggedCount);
+      timerEl.textContent = `${timer}초`;
+    }
+
+    function startTimerIfNeeded() {
+      if (timerId || gameOver) return;
+      timerId = setInterval(() => {
+        timer += 1;
+        updateCounters();
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+    }
+
+    function showModal(title, text) {
+      modalTitle.textContent = title;
+      modalText.textContent = text;
+      modalBg.style.display = "flex";
+    }
+
+    function hideModal() {
+      modalBg.style.display = "none";
+    }
+
+    function revealAllMines() {
+      for (let r = 0; r < config.rows; r += 1) {
+        for (let c = 0; c < config.cols; c += 1) {
+          if (grid[r][c].mine) {
+            grid[r][c].revealed = true;
+          }
+        }
+      }
+      renderAll();
+    }
+
+    function checkWin() {
+      const safeCells = config.rows * config.cols - config.mines;
+      if (revealedCount !== safeCells) return;
+      gameOver = true;
+      stopTimer();
+      saveBestTime(config.key, timer);
+      updateBestTimeText();
+      showModal("승리!", `${config.label} 난이도 클리어: ${timer}초`);
+    }
+
+    function floodReveal(r, c) {
+      const stack = [grid[r][c]];
+      while (stack.length) {
+        const cell = stack.pop();
+        if (cell.revealed || cell.flagged) continue;
+        cell.revealed = true;
+        revealedCount += 1;
+        renderCell(cell);
+        if (cell.adjacent !== 0) continue;
+        neighbors(cell.r, cell.c).forEach((n) => {
+          if (!n.revealed && !n.mine && !n.flagged) stack.push(n);
         });
+      }
+    }
 
-        function newGame() {
-            const diff = DIFFICULTIES[difficulty];
-            
-            // Reset state
-            gameOver = false;
-            gameStarted = false;
-            seconds = 0;
-            totalGoldEarned = 0;
-            clearInterval(timer);
-            
-            // Initialize arrays
-            board = Array(diff.rows).fill(null).map(() => Array(diff.cols).fill(0));
-            revealed = Array(diff.rows).fill(null).map(() => Array(diff.cols).fill(false));
-            flagged = Array(diff.rows).fill(null).map(() => Array(diff.cols).fill(false));
-            mines = [];
-            
-            // Update UI
-            mineCountEl.textContent = diff.mines;
-            timerEl.textContent = '0';
-            earnedGoldEl.textContent = '0G';
-            document.getElementById('win-overlay').classList.add('hidden');
-            document.getElementById('lose-overlay').classList.add('hidden');
-            
-            // Render board
-            renderBoard();
+    function reveal(r, c) {
+      if (gameOver) return;
+      const cell = grid[r][c];
+      if (cell.revealed || cell.flagged) return;
+
+      if (!firstRevealDone) {
+        firstRevealDone = true;
+        relocateMine(r, c);
+      }
+
+      startTimerIfNeeded();
+
+      if (cell.mine) {
+        cell.revealed = true;
+        renderCell(cell);
+        gameOver = true;
+        stopTimer();
+        revealAllMines();
+        showModal("게임 오버", "지뢰를 밟았습니다. 다시 도전해 보세요.");
+        return;
+      }
+
+      floodReveal(r, c);
+      checkWin();
+    }
+
+    function toggleFlag(r, c) {
+      if (gameOver) return;
+      const cell = grid[r][c];
+      if (cell.revealed) return;
+      cell.flagged = !cell.flagged;
+      flaggedCount += cell.flagged ? 1 : -1;
+      renderCell(cell);
+      updateCounters();
+    }
+
+    function onPointerDown(event, r, c) {
+      if (event.button !== undefined && event.button !== 0) return;
+      if (pointerState && pointerState.timer) {
+        clearTimeout(pointerState.timer);
+      }
+      pointerState = { longPressed: false, timer: null };
+      pointerState.timer = setTimeout(() => {
+        pointerState.longPressed = true;
+        toggleFlag(r, c);
+      }, LONG_PRESS_MS);
+    }
+
+    function onPointerUp(event, r, c) {
+      if (!pointerState) return;
+      clearTimeout(pointerState.timer);
+      const longPressed = pointerState.longPressed;
+      pointerState = null;
+      if (longPressed) {
+        event.preventDefault();
+        return;
+      }
+      reveal(r, c);
+      updateCounters();
+    }
+
+    function buildBoard() {
+      document.documentElement.style.setProperty("--cols", String(config.cols));
+      boardEl.innerHTML = "";
+      grid = createEmptyGrid();
+      placeMines();
+      computeAdjacency();
+
+      for (let r = 0; r < config.rows; r += 1) {
+        for (let c = 0; c < config.cols; c += 1) {
+          const cell = grid[r][c];
+          const button = document.createElement("button");
+          button.className = "cell";
+          button.type = "button";
+          button.setAttribute("role", "gridcell");
+
+          button.addEventListener("pointerdown", (e) => onPointerDown(e, r, c));
+          button.addEventListener("pointerup", (e) => onPointerUp(e, r, c));
+          button.addEventListener("pointerleave", () => {
+            if (pointerState?.timer) clearTimeout(pointerState.timer);
+          });
+
+          button.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            toggleFlag(r, c);
+          });
+
+          cell.el = button;
+          boardEl.appendChild(button);
+          renderCell(cell);
         }
+      }
+    }
 
-        function placeMines(excludeRow, excludeCol) {
-            const diff = DIFFICULTIES[difficulty];
-            const excluded = new Set();
-            
-            // Exclude clicked cell and neighbors
-            for (let dr = -1; dr <= 1; dr++) {
-                for (let dc = -1; dc <= 1; dc++) {
-                    const r = excludeRow + dr;
-                    const c = excludeCol + dc;
-                    if (r >= 0 && r < diff.rows && c >= 0 && c < diff.cols) {
-                        excluded.add(`${r},${c}`);
-                    }
-                }
-            }
-            
-            while (mines.length < diff.mines) {
-                const r = Math.floor(Math.random() * diff.rows);
-                const c = Math.floor(Math.random() * diff.cols);
-                const key = `${r},${c}`;
-                
-                if (!excluded.has(key) && !mines.some(m => m.r === r && m.c === c)) {
-                    mines.push({ r, c });
-                    board[r][c] = -1;
-                }
-            }
-            
-            // Calculate numbers
-            for (let r = 0; r < diff.rows; r++) {
-                for (let c = 0; c < diff.cols; c++) {
-                    if (board[r][c] === -1) continue;
-                    let count = 0;
-                    for (let dr = -1; dr <= 1; dr++) {
-                        for (let dc = -1; dc <= 1; dc++) {
-                            const nr = r + dr, nc = c + dc;
-                            if (nr >= 0 && nr < diff.rows && nc >= 0 && nc < diff.cols) {
-                                if (board[nr][nc] === -1) count++;
-                            }
-                        }
-                    }
-                    board[r][c] = count;
-                }
-            }
-        }
+    function newGame() {
+      hideModal();
+      stopTimer();
+      gameOver = false;
+      firstRevealDone = false;
+      revealedCount = 0;
+      flaggedCount = 0;
+      timer = 0;
+      pointerState = null;
+      buildBoard();
+      updateBestTimeText();
+      updateCounters();
+    }
 
-        function renderBoard() {
-            const diff = DIFFICULTIES[difficulty];
-            boardEl.innerHTML = '';
-            boardEl.style.gridTemplateColumns = `repeat(${diff.cols}, 1fr)`;
-            
-            for (let r = 0; r < diff.rows; r++) {
-                for (let c = 0; c < diff.cols; c++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    cell.dataset.row = r;
-                    cell.dataset.col = c;
-                    
-                    cell.addEventListener('click', () => handleClick(r, c));
-                    cell.addEventListener('contextmenu', (e) => {
-                        e.preventDefault();
-                        handleFlag(r, c);
-                    });
-                    
-                    // Long press for mobile
-                    let pressTimer;
-                    cell.addEventListener('touchstart', (e) => {
-                        pressTimer = setTimeout(() => {
-                            handleFlag(r, c);
-                            e.preventDefault();
-                        }, 500);
-                    }, { passive: false });
-                    
-                    cell.addEventListener('touchend', () => clearTimeout(pressTimer));
-                    cell.addEventListener('touchmove', () => clearTimeout(pressTimer));
-                    
-                    boardEl.appendChild(cell);
-                }
-            }
-        }
+    difficultyEl.addEventListener("change", () => {
+      config = DIFFICULTIES[difficultyEl.value];
+      newGame();
+    });
 
-        function handleClick(row, col) {
-            if (gameOver || flagged[row][col]) return;
-            
-            // First click - place mines
-            if (!gameStarted) {
-                gameStarted = true;
-                placeMines(row, col);
-                timer = setInterval(() => {
-                    seconds++;
-                    timerEl.textContent = seconds;
-                }, 1000);
-            }
-            
-            reveal(row, col);
-            checkWin();
-        }
+    restartBtn.addEventListener("click", newGame);
+    modalBtn.addEventListener("click", newGame);
+    modalBg.addEventListener("click", (e) => {
+      if (e.target === modalBg) hideModal();
+    });
+    themeBtn.addEventListener("click", rotateTheme);
 
-        function reveal(row, col) {
-            const diff = DIFFICULTIES[difficulty];
-            if (row < 0 || row >= diff.rows || col < 0 || col >= diff.cols) return;
-            if (revealed[row][col] || flagged[row][col]) return;
-            
-            revealed[row][col] = true;
-            updateCell(row, col);
-            
-            if (board[row][col] === -1) {
-                // Hit mine
-                lose(row, col);
-                return;
-            }
-            
-            // Award gold for each revealed cell
-            totalGoldEarned += diff.perCell;
-            earnedGoldEl.textContent = totalGoldEarned.toLocaleString() + 'G';
-            
-            // Flood fill for empty cells
-            if (board[row][col] === 0) {
-                for (let dr = -1; dr <= 1; dr++) {
-                    for (let dc = -1; dc <= 1; dc++) {
-                        reveal(row + dr, col + dc);
-                    }
-                }
-            }
-        }
+    window.addEventListener("blur", () => {
+      if (pointerState?.timer) clearTimeout(pointerState.timer);
+    });
 
-        function handleFlag(row, col) {
-            if (gameOver || revealed[row][col]) return;
-            
-            flagged[row][col] = !flagged[row][col];
-            updateCell(row, col);
-            
-            // Update mine count display
-            const flagCount = flagged.flat().filter(f => f).length;
-            const diff = DIFFICULTIES[difficulty];
-            mineCountEl.textContent = diff.mines - flagCount;
-        }
-
-        function updateCell(row, col) {
-            const diff = DIFFICULTIES[difficulty];
-            const index = row * diff.cols + col;
-            const cell = boardEl.children[index];
-            
-            cell.className = 'cell';
-            cell.textContent = '';
-            cell.removeAttribute('data-num');
-            
-            if (revealed[row][col]) {
-                cell.classList.add('revealed');
-                const val = board[row][col];
-                if (val === -1) {
-                    cell.classList.add('mine');
-                    cell.textContent = '💣';
-                } else if (val > 0) {
-                    cell.textContent = val;
-                    cell.dataset.num = val;
-                }
-            } else if (flagged[row][col]) {
-                cell.classList.add('flagged');
-                cell.textContent = '🚩';
-            }
-        }
-
-        function lose(row, col) {
-            gameOver = true;
-            clearInterval(timer);
-            
-            // Mark exploded mine
-            const diff = DIFFICULTIES[difficulty];
-            const index = row * diff.cols + col;
-            boardEl.children[index].classList.add('exploded');
-            
-            // Reveal all mines
-            mines.forEach(m => {
-                revealed[m.r][m.c] = true;
-                updateCell(m.r, m.c);
-            });
-            
-            // No gold on loss - show overlay after short delay
-            setTimeout(() => {
-                document.getElementById('lose-overlay').classList.remove('hidden');
-            }, 500);
-        }
-
-        function checkWin() {
-            const diff = DIFFICULTIES[difficulty];
-            let hiddenCount = 0;
-            
-            for (let r = 0; r < diff.rows; r++) {
-                for (let c = 0; c < diff.cols; c++) {
-                    if (!revealed[r][c]) hiddenCount++;
-                }
-            }
-            
-            if (hiddenCount === diff.mines) {
-                win();
-            }
-        }
-
-        function win() {
-            gameOver = true;
-            clearInterval(timer);
-            
-            const diff = DIFFICULTIES[difficulty];
-            
-            // Calculate rewards
-            const baseGold = diff.baseGold;
-            const timeBonus = Math.max(0, (300 - seconds) * diff.timeBonus); // Bonus for finishing under 5 min
-            const totalReward = totalGoldEarned + baseGold + timeBonus;
-            
-            // Add gold
-            SharedWallet.addGold(totalReward);
-            
-            // Show breakdown
-            document.getElementById('win-time').textContent = seconds;
-            document.getElementById('reward-breakdown').innerHTML = `
-                <div class="reward-line">
-                    <span class="reward-label">셀 보상</span>
-                    <span class="reward-value">+${totalGoldEarned.toLocaleString()}G</span>
-                </div>
-                <div class="reward-line">
-                    <span class="reward-label">클리어 보너스</span>
-                    <span class="reward-value">+${baseGold.toLocaleString()}G</span>
-                </div>
-                ${timeBonus > 0 ? `
-                <div class="reward-line">
-                    <span class="reward-label">시간 보너스</span>
-                    <span class="reward-value">+${timeBonus.toLocaleString()}G</span>
-                </div>
-                ` : ''}
-            `;
-            document.getElementById('win-gold').textContent = `총 +${totalReward.toLocaleString()}G`;
-            
-            // Show gold popup
-            showGoldPopup(totalReward);
-            
-            setTimeout(() => {
-                document.getElementById('win-overlay').classList.remove('hidden');
-            }, 300);
-        }
-
-        function showGoldPopup(amount) {
-            const popup = document.createElement('div');
-            popup.className = 'gold-popup';
-            popup.textContent = `+${amount.toLocaleString()}G`;
-            document.body.appendChild(popup);
-            setTimeout(() => popup.remove(), 1500);
-        }
-
-        // Initialize
-        newGame();
-    </script>
+    applyTheme(localStorage.getItem(THEME_KEY) || "auto");
+    config = DIFFICULTIES[difficultyEl.value];
+    newGame();
+  </script>
 </body>
 </html>
