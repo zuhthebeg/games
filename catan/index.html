@@ -6,6 +6,7 @@
   <title>카탄</title>
   <link rel="icon" href="icon.svg" />
   <script src="/lib/shared-wallet.js?v=20260214"></script>
+  <script src="/lib/multiplayer.js"></script>
   <style>
     :root {
       --bg: #12324a;
@@ -245,12 +246,85 @@
       min-height: 16px;
     }
 
+    .lobby-screen {
+      min-height: calc(100vh - 56px);
+      display: grid;
+      place-items: center;
+      padding: 24px 12px;
+    }
+
+    .lobby-card {
+      width: min(520px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      background: rgba(8, 20, 30, 0.9);
+      display: grid;
+      gap: 10px;
+    }
+
+    .lobby-title {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: 34px;
+      letter-spacing: 2px;
+    }
+
+    .multi-options,
+    .room-lobby {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      display: grid;
+      gap: 8px;
+    }
+
+    .multi-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    input, select {
+      border: 1px solid var(--line);
+      background: #0a1c2b;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    #playerList {
+      display: grid;
+      gap: 6px;
+    }
+
+    .lobby-player {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .lobby-note {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
     @media (max-width: 760px) {
       .players-bar { grid-template-columns: 1fr; }
       .map-wrap { min-height: 360px; }
       .hex { width: 62px; height: 70px; }
       .number { width: 24px; height: 24px; font-size: 12px; }
       .resources { font-size: 11px; }
+      .lobby-title { font-size: 28px; }
     }
   </style>
 </head>
@@ -260,23 +334,29 @@
   <script>
     const RESOURCES = ["brick", "lumber", "wool", "grain", "ore"];
     const RESOURCE_ICONS = { brick: "🧱", lumber: "🪵", wool: "🐑", grain: "🌾", ore: "⛏️", desert: "🏜️" };
-    const RESOURCE_KR = { brick: "벽돌", lumber: "나무", wool: "양모", grain: "밀", ore: "광석", desert: "사막" };
     const COST = {
       road: { brick: 1, lumber: 1 },
       settlement: { brick: 1, lumber: 1, wool: 1, grain: 1 },
-      city: { grain: 2, ore: 3 },
-      dev: { wool: 1, grain: 1, ore: 1 }
+      city: { grain: 2, ore: 3 }
+    };
+    const PLAYER_COLORS = ["#e94560", "#4ecca3", "#ffd700", "#9b59b6"];
+    const ACTION = {
+      GAME_INIT: "GAME_INIT",
+      PLACE_SETTLEMENT: "PLACE_SETTLEMENT",
+      PLACE_ROAD: "PLACE_ROAD",
+      PLACE_CITY: "PLACE_CITY",
+      ROLL_DICE: "ROLL_DICE",
+      MOVE_ROBBER: "MOVE_ROBBER",
+      DISCARD_RESOURCES: "DISCARD_RESOURCES",
+      END_TURN: "END_TURN"
     };
 
     const state = {
+      screen: "mode",
+      mode: null,
       phase: "setup1",
       currentPlayer: 0,
-      players: [
-        { id: "human", name: "나", color: "#e94560", resources: emptyResources(), buildings: [], roads: [], devCards: [], knights: 0, vp: 0 },
-        { id: "ai1", name: "AI 1", color: "#4ecca3", resources: emptyResources(), buildings: [], roads: [], devCards: [], knights: 0, vp: 0 },
-        { id: "ai2", name: "AI 2", color: "#ffd700", resources: emptyResources(), buildings: [], roads: [], devCards: [], knights: 0, vp: 0 },
-        { id: "ai3", name: "AI 3", color: "#9b59b6", resources: emptyResources(), buildings: [], roads: [], devCards: [], knights: 0, vp: 0 }
-      ],
+      players: [],
       hexes: [],
       vertices: [],
       edges: [],
@@ -287,16 +367,84 @@
       setupOrderIndex: 0,
       setupStep: "settlement",
       lastSetupVertex: null,
-      rolledThisTurn: false,
       canEndTurn: false,
       winner: null,
       buildMode: null,
       hint: "",
-      geometry: { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 }
+      geometry: { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 },
+      roomCodeInput: "",
+      maxPlayers: 4
+    };
+
+    const mpState = {
+      client: null,
+      room: null,
+      roomCode: "",
+      ready: false,
+      isHost: false,
+      myUserId: null,
+      waitingMessage: "",
+      startRequested: false,
+      initSent: false,
+      actionSeq: 0,
+      processedActionIds: new Set()
     };
 
     function emptyResources() {
       return { brick: 0, lumber: 0, wool: 0, grain: 0, ore: 0 };
+    }
+
+    function makePlayer(base) {
+      return {
+        id: base.id,
+        userId: base.userId || null,
+        name: base.name,
+        color: base.color,
+        resources: emptyResources(),
+        buildings: [],
+        roads: [],
+        devCards: [],
+        knights: 0,
+        vp: 0
+      };
+    }
+
+    function resetCoreState() {
+      state.phase = "setup1";
+      state.currentPlayer = 0;
+      state.hexes = [];
+      state.vertices = [];
+      state.edges = [];
+      state.robber = -1;
+      state.longestRoad = null;
+      state.largestArmy = null;
+      state.setupRound = 1;
+      state.setupOrderIndex = 0;
+      state.setupStep = "settlement";
+      state.lastSetupVertex = null;
+      state.canEndTurn = false;
+      state.winner = null;
+      state.buildMode = null;
+      state.hint = "";
+      state.geometry = { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 };
+    }
+
+    function setSinglePlayers() {
+      state.players = [
+        makePlayer({ id: "human", name: "나", color: PLAYER_COLORS[0] }),
+        makePlayer({ id: "ai1", name: "AI 1", color: PLAYER_COLORS[1] }),
+        makePlayer({ id: "ai2", name: "AI 2", color: PLAYER_COLORS[2] }),
+        makePlayer({ id: "ai3", name: "AI 3", color: PLAYER_COLORS[3] })
+      ];
+    }
+
+    function setMultiplayerPlayers(roomPlayers) {
+      state.players = roomPlayers.slice(0, 4).map((p, i) => makePlayer({
+        id: p.id,
+        userId: p.id,
+        name: p.nickname || `Player ${i + 1}`,
+        color: PLAYER_COLORS[i]
+      }));
     }
 
     function shuffle(arr) {
@@ -310,49 +458,86 @@
       return a;
     }
 
-    function init() {
+    function clone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function isMultiMode() {
+      return state.mode === "multi";
+    }
+
+    function localPlayerIndex() {
+      if (!isMultiMode()) return 0;
+      return state.players.findIndex(p => p.userId === mpState.myUserId);
+    }
+
+    function isHumanTurn() {
+      const myIdx = localPlayerIndex();
+      return myIdx !== -1 && myIdx === state.currentPlayer;
+    }
+
+    function currentPlayerUserId() {
+      return state.players[state.currentPlayer]?.userId || null;
+    }
+
+    function playerIndexFromAnyId(playerId) {
+      if (typeof playerId === "number") return playerId;
+      if (playerId === null || playerId === undefined) return -1;
+      return state.players.findIndex(p => p.userId === playerId || p.id === playerId);
+    }
+
+    function initSingleGame() {
+      resetCoreState();
+      setSinglePlayers();
       generateBoard();
       recalcAllVP();
+      state.mode = "single";
+      state.screen = "game";
       state.hint = "초기 배치: 마을을 놓으세요";
       render();
       triggerAITurnIfNeeded();
     }
 
-    function generateBoard() {
-      const resourcePool = shuffle([
-        "brick", "brick", "brick",
-        "lumber", "lumber", "lumber", "lumber",
-        "wool", "wool", "wool", "wool",
-        "grain", "grain", "grain", "grain",
-        "ore", "ore", "ore",
-        "desert"
-      ]);
-      const numberPool = shuffle([2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12]);
+    function setupOrder() {
+      const arr = Array.from({ length: state.players.length }, (_, i) => i);
+      return state.phase === "setup1" ? arr : arr.slice().reverse();
+    }
 
-      const axial = [];
-      for (let r = -2; r <= 2; r += 1) {
-        for (let q = -2; q <= 2; q += 1) {
-          const s = -q - r;
-          if (Math.max(Math.abs(q), Math.abs(r), Math.abs(s)) <= 2) axial.push({ q, r });
+    function generateBoard(forcedHexes = null) {
+      if (forcedHexes) {
+        state.hexes = forcedHexes.map(h => ({ ...h, vertices: [], edges: [] }));
+      } else {
+        const resourcePool = shuffle([
+          "brick", "brick", "brick",
+          "lumber", "lumber", "lumber", "lumber",
+          "wool", "wool", "wool", "wool",
+          "grain", "grain", "grain", "grain",
+          "ore", "ore", "ore",
+          "desert"
+        ]);
+        const numberPool = shuffle([2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12]);
+        const axial = [];
+        for (let r = -2; r <= 2; r += 1) {
+          for (let q = -2; q <= 2; q += 1) {
+            const s = -q - r;
+            if (Math.max(Math.abs(q), Math.abs(r), Math.abs(s)) <= 2) axial.push({ q, r });
+          }
         }
-      }
-      axial.sort((a, b) => (a.r - b.r) || (a.q - b.q));
-
-      state.hexes = [];
-      let numIdx = 0;
-      for (let i = 0; i < axial.length; i += 1) {
-        const type = resourcePool[i];
-        const number = type === "desert" ? null : numberPool[numIdx++];
-        state.hexes.push({ index: i, q: axial[i].q, r: axial[i].r, type, number, vertices: [], edges: [] });
+        axial.sort((a, b) => (a.r - b.r) || (a.q - b.q));
+        state.hexes = [];
+        let numIdx = 0;
+        for (let i = 0; i < axial.length; i += 1) {
+          const type = resourcePool[i];
+          const number = type === "desert" ? null : numberPool[numIdx++];
+          state.hexes.push({ index: i, q: axial[i].q, r: axial[i].r, type, number, vertices: [], edges: [] });
+        }
       }
 
       const { vertices, edges, centers, bounds, size } = buildGraph(state.hexes);
       state.vertices = vertices;
       state.edges = edges;
       state.geometry = { centers, minX: bounds.minX, minY: bounds.minY, maxX: bounds.maxX, maxY: bounds.maxY, size };
-
-      const desertIdx = state.hexes.findIndex(h => h.type === "desert");
-      state.robber = desertIdx;
+      state.robber = state.hexes.findIndex(h => h.type === "desert");
     }
 
     function buildGraph(hexes) {
@@ -364,7 +549,10 @@
       const vertexKeyMap = new Map();
       const edgeKeyMap = new Map();
 
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
 
       function centerFor(q, r) {
         return { x: size * sqrt3 * (q + r / 2), y: size * 1.5 * r };
@@ -391,7 +579,6 @@
         minY = Math.min(minY, c.y - size);
         maxX = Math.max(maxX, c.x + size);
         maxY = Math.max(maxY, c.y + size);
-
         const v = [];
         for (let i = 0; i < 6; i += 1) {
           const vi = addVertex(corner(c, i));
@@ -418,16 +605,7 @@
           hex.edges.push(ei);
         }
       }
-
       return { vertices, edges, centers, bounds: { minX, minY, maxX, maxY }, size };
-    }
-
-    function isHumanTurn() {
-      return state.players[state.currentPlayer].id === "human";
-    }
-
-    function setupOrder() {
-      return state.phase === "setup1" ? [0, 1, 2, 3] : [3, 2, 1, 0];
     }
 
     function getCurrentPlayer() {
@@ -461,29 +639,23 @@
     function canPlaceSettlement(playerIdx, vIdx, setup = false) {
       const v = state.vertices[vIdx];
       if (v.building) return false;
-
       for (const n of adjacentVertices(vIdx)) {
         if (state.vertices[n].building) return false;
       }
-
       if (setup) return true;
-
-      const connectedRoad = v.edges.some(eIdx => state.edges[eIdx].owner === playerIdx);
-      return connectedRoad;
+      return v.edges.some(eIdx => state.edges[eIdx].owner === playerIdx);
     }
 
     function canPlaceRoad(playerIdx, eIdx, setup = false) {
       const e = state.edges[eIdx];
       if (e.owner !== null) return false;
-
       if (setup) {
         if (state.lastSetupVertex === null) return false;
         return e.a === state.lastSetupVertex || e.b === state.lastSetupVertex;
       }
-
       const a = state.vertices[e.a];
       const b = state.vertices[e.b];
-      const ownBuilding = (a.owner === playerIdx) || (b.owner === playerIdx);
+      const ownBuilding = a.owner === playerIdx || b.owner === playerIdx;
       const ownRoadConnection =
         a.edges.some(x => state.edges[x].owner === playerIdx) ||
         b.edges.some(x => state.edges[x].owner === playerIdx);
@@ -499,7 +671,6 @@
       const player = state.players[playerIdx];
       if (!free && !canAfford(player, COST.settlement)) return false;
       if (!canPlaceSettlement(playerIdx, vIdx, free && (state.phase === "setup1" || state.phase === "setup2"))) return false;
-
       if (!free) spend(player, COST.settlement);
       state.vertices[vIdx].building = "settlement";
       state.vertices[vIdx].owner = playerIdx;
@@ -512,7 +683,6 @@
       const player = state.players[playerIdx];
       if (!free && !canAfford(player, COST.road)) return false;
       if (!canPlaceRoad(playerIdx, eIdx, free && (state.phase === "setup1" || state.phase === "setup2"))) return false;
-
       if (!free) spend(player, COST.road);
       state.edges[eIdx].owner = playerIdx;
       player.roads.push(eIdx);
@@ -525,7 +695,6 @@
       const player = state.players[playerIdx];
       if (!canAfford(player, COST.city)) return false;
       if (!canUpgradeCity(playerIdx, vIdx)) return false;
-
       spend(player, COST.city);
       state.vertices[vIdx].building = "city";
       const target = player.buildings.find(b => b.vertex === vIdx);
@@ -541,29 +710,9 @@
       }
     }
 
-    function rollDice() {
-      if (state.winner || state.phase !== "roll") return;
-      const d1 = 1 + Math.floor(Math.random() * 6);
-      const d2 = 1 + Math.floor(Math.random() * 6);
-      const sum = d1 + d2;
-      state.hint = `${getCurrentPlayer().name}: 🎲 ${d1} + ${d2} = ${sum}`;
-
-      if (sum === 7) {
-        handleSeven();
-      } else {
-        distributeResources(sum);
-        state.phase = "main";
-        state.canEndTurn = true;
-      }
-      render();
-      triggerAITurnIfNeeded();
-    }
-
     function distributeResources(number) {
       for (const hex of state.hexes) {
-        if (hex.number !== number) continue;
-        if (hex.index === state.robber) continue;
-
+        if (hex.number !== number || hex.index === state.robber) continue;
         for (const vIdx of hex.vertices) {
           const v = state.vertices[vIdx];
           if (!v.building || v.owner === null) continue;
@@ -573,13 +722,16 @@
       }
     }
 
-    function handleSeven() {
-      for (let i = 0; i < state.players.length; i += 1) {
-        const p = state.players[i];
-        const total = totalResourceCount(p);
-        if (total > 7) {
-          const discard = Math.floor(total / 2);
-          discardRandom(p, discard);
+    function handleSeven(skipDiscard = false) {
+      if (!skipDiscard) {
+        for (let i = 0; i < state.players.length; i += 1) {
+          const p = state.players[i];
+          const total = totalResourceCount(p);
+          if (total > 7) {
+            const discard = Math.floor(total / 2);
+            const removed = pickRandomDiscards(i, discard);
+            applyDiscardResources(i, removed);
+          }
         }
       }
       state.phase = "robber";
@@ -587,62 +739,100 @@
       state.hint = "7이 나왔습니다. 도둑을 이동하세요.";
     }
 
-    function discardRandom(player, n) {
-      let count = n;
-      while (count > 0) {
-        const bag = RESOURCES.filter(r => player.resources[r] > 0);
+    function pickRandomDiscards(playerIdx, count) {
+      const removed = emptyResources();
+      const p = state.players[playerIdx];
+      let n = count;
+      while (n > 0) {
+        const bag = RESOURCES.filter(r => p.resources[r] > 0);
         if (!bag.length) break;
-        const pick = bag[Math.floor(Math.random() * bag.length)];
-        player.resources[pick] -= 1;
-        count -= 1;
+        const picked = bag[Math.floor(Math.random() * bag.length)];
+        p.resources[picked] -= 1;
+        removed[picked] += 1;
+        n -= 1;
+      }
+      return removed;
+    }
+
+    function applyDiscardResources(playerIdx, resources) {
+      const p = state.players[playerIdx];
+      for (const r of RESOURCES) {
+        const amount = Math.max(0, Number(resources?.[r] || 0));
+        p.resources[r] = Math.max(0, p.resources[r] - amount);
       }
     }
 
-    function moveRobber(hexIndex) {
-      if (state.phase !== "robber") return false;
-      if (hexIndex < 0 || hexIndex >= state.hexes.length) return false;
-      if (hexIndex === state.robber) return false;
+    function stealFromVictim(thiefIdx, victimIdx, forcedResource = null) {
+      if (victimIdx === null || victimIdx === undefined || victimIdx < 0) return null;
+      const victim = state.players[victimIdx];
+      if (!victim || totalResourceCount(victim) <= 0) return null;
+      let picked = forcedResource;
+      if (!picked) {
+        const bag = RESOURCES.filter(r => victim.resources[r] > 0);
+        if (!bag.length) return null;
+        picked = bag[Math.floor(Math.random() * bag.length)];
+      }
+      if (!RESOURCES.includes(picked) || victim.resources[picked] <= 0) return null;
+      victim.resources[picked] -= 1;
+      state.players[thiefIdx].resources[picked] += 1;
+      return picked;
+    }
 
+    function moveRobber(hexIndex, forcedVictim = null, forcedResource = null) {
+      if (state.phase !== "robber") return { ok: false };
+      if (hexIndex < 0 || hexIndex >= state.hexes.length || hexIndex === state.robber) return { ok: false };
       state.robber = hexIndex;
-      stealRandomFromAdjacent(hexIndex, state.currentPlayer);
+      let victimIdx = playerIndexFromAnyId(forcedVictim);
+      if (victimIdx === -1) {
+        const victims = new Set();
+        for (const vIdx of state.hexes[hexIndex].vertices) {
+          const owner = state.vertices[vIdx].owner;
+          if (owner !== null && owner !== state.currentPlayer && totalResourceCount(state.players[owner]) > 0) victims.add(owner);
+        }
+        const list = [...victims];
+        victimIdx = list.length ? list[Math.floor(Math.random() * list.length)] : -1;
+      }
+      const picked = stealFromVictim(state.currentPlayer, victimIdx, forcedResource);
       state.phase = "main";
       state.canEndTurn = true;
-      state.hint = "도둑 이동 완료. 건설하거나 턴을 종료하세요.";
+      state.hint = picked && victimIdx !== -1
+        ? `${state.players[state.currentPlayer].name}가 ${state.players[victimIdx].name}에게서 1장을 훔쳤습니다.`
+        : "도둑 이동 완료. 건설하거나 턴을 종료하세요.";
+      return {
+        ok: true,
+        victimId: victimIdx === -1 ? null : (state.players[victimIdx].userId || state.players[victimIdx].id),
+        stolenResource: picked || null
+      };
+    }
+
+    function applyRollDice(playerIdx, values, skipDiscard = false) {
+      if (state.winner || state.phase !== "roll" || playerIdx !== state.currentPlayer) return false;
+      const d1 = Number(values?.[0]);
+      const d2 = Number(values?.[1]);
+      if (!d1 || !d2) return false;
+      const sum = d1 + d2;
+      state.hint = `${getCurrentPlayer().name}: 🎲 ${d1} + ${d2} = ${sum}`;
+      if (sum === 7) handleSeven(skipDiscard);
+      else {
+        distributeResources(sum);
+        state.phase = "main";
+        state.canEndTurn = true;
+      }
       return true;
     }
 
-    function stealRandomFromAdjacent(hexIndex, thiefIdx) {
-      const victims = new Set();
-      const hex = state.hexes[hexIndex];
-      for (const vIdx of hex.vertices) {
-        const owner = state.vertices[vIdx].owner;
-        if (owner !== null && owner !== thiefIdx && totalResourceCount(state.players[owner]) > 0) victims.add(owner);
-      }
-      const list = [...victims];
-      if (!list.length) return;
-
-      const victimIdx = list[Math.floor(Math.random() * list.length)];
-      const victim = state.players[victimIdx];
-      const bag = RESOURCES.filter(r => victim.resources[r] > 0);
-      if (!bag.length) return;
-      const picked = bag[Math.floor(Math.random() * bag.length)];
-      victim.resources[picked] -= 1;
-      state.players[thiefIdx].resources[picked] += 1;
-      state.hint = `${state.players[thiefIdx].name}가 ${state.players[victimIdx].name}에게서 카드 1장을 훔쳤습니다.`;
-    }
-
-    function endTurn() {
-      if (state.winner || !state.canEndTurn) return;
+    function endTurnInternal() {
+      if (state.winner || !state.canEndTurn) return false;
       state.buildMode = null;
       state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
       state.phase = "roll";
       state.canEndTurn = false;
       state.hint = `${getCurrentPlayer().name}의 차례: 주사위를 굴리세요.`;
-      render();
-      triggerAITurnIfNeeded();
+      return true;
     }
 
     function recalcLongestRoad() {
+      if (!state.players.length) return;
       const lengths = state.players.map((_, i) => longestRoadLength(i));
       const maxLen = Math.max(...lengths);
       if (maxLen < 5) {
@@ -663,7 +853,6 @@
       if (!roadEdges.length) return 0;
       const set = new Set(roadEdges);
       let best = 0;
-
       function dfs(v, used) {
         best = Math.max(best, used.size);
         for (const eIdx of state.vertices[v].edges) {
@@ -675,7 +864,6 @@
           used.delete(eIdx);
         }
       }
-
       const touchedVertices = new Set();
       for (const eIdx of roadEdges) {
         touchedVertices.add(state.edges[eIdx].a);
@@ -690,7 +878,6 @@
         const p = state.players[i];
         let vp = 0;
         for (const b of p.buildings) vp += b.type === "city" ? 2 : 1;
-        vp += p.devCards.filter(c => c === "vp").length;
         if (state.longestRoad === i) vp += 2;
         if (state.largestArmy === i) vp += 2;
         p.vp = vp;
@@ -706,51 +893,20 @@
 
     function validRoadsFor(playerIdx, setup = false) {
       const out = [];
-      for (let i = 0; i < state.edges.length; i += 1) {
-        if (canPlaceRoad(playerIdx, i, setup)) out.push(i);
-      }
+      for (let i = 0; i < state.edges.length; i += 1) if (canPlaceRoad(playerIdx, i, setup)) out.push(i);
       return out;
     }
 
     function validSettlementsFor(playerIdx, setup = false) {
       const out = [];
-      for (let i = 0; i < state.vertices.length; i += 1) {
-        if (canPlaceSettlement(playerIdx, i, setup)) out.push(i);
-      }
+      for (let i = 0; i < state.vertices.length; i += 1) if (canPlaceSettlement(playerIdx, i, setup)) out.push(i);
       return out;
     }
 
     function validCitiesFor(playerIdx) {
       const out = [];
-      for (let i = 0; i < state.vertices.length; i += 1) {
-        if (canUpgradeCity(playerIdx, i)) out.push(i);
-      }
+      for (let i = 0; i < state.vertices.length; i += 1) if (canUpgradeCity(playerIdx, i)) out.push(i);
       return out;
-    }
-
-    function handleSetupClickVertex(vIdx) {
-      if (state.winner) return;
-      const pIdx = state.currentPlayer;
-      if (state.setupStep !== "settlement") return;
-      if (!placeSettlement(pIdx, vIdx, true)) return;
-
-      if (state.phase === "setup2") grantSecondSetupResources(pIdx, vIdx);
-      state.lastSetupVertex = vIdx;
-      state.setupStep = "road";
-      state.hint = "이 마을에 연결된 도로를 하나 놓으세요.";
-      render();
-      triggerAITurnIfNeeded();
-    }
-
-    function handleSetupClickEdge(eIdx) {
-      if (state.winner) return;
-      const pIdx = state.currentPlayer;
-      if (state.setupStep !== "road") return;
-      if (!placeRoad(pIdx, eIdx, true)) return;
-
-      advanceSetupTurn();
-      render();
-      triggerAITurnIfNeeded();
     }
 
     function advanceSetupTurn() {
@@ -763,7 +919,6 @@
         state.hint = `${state.players[state.currentPlayer].name} 초기 배치: 마을을 놓으세요.`;
         return;
       }
-
       if (state.phase === "setup1") {
         state.phase = "setup2";
         state.setupRound = 2;
@@ -775,7 +930,6 @@
         state.hint = "2라운드 초기 배치: 마지막 플레이어부터 역순으로 배치합니다.";
         return;
       }
-
       state.phase = "roll";
       state.currentPlayer = 0;
       state.setupStep = "settlement";
@@ -783,32 +937,223 @@
       state.hint = "메인 게임 시작: 주사위를 굴리세요.";
     }
 
+    function applyGameAction(action) {
+      const type = action.type;
+      const playerId = action.playerId ?? action.data?.playerId;
+      const pIdx = playerIndexFromAnyId(playerId);
+
+      if (type === ACTION.GAME_INIT) {
+        resetCoreState();
+        state.mode = "multi";
+        state.screen = "game";
+        if (Array.isArray(action.players) && action.players.length) {
+          state.players = action.players.map((p, i) => makePlayer({
+            id: p.id,
+            userId: p.id,
+            name: p.name || p.nickname || `Player ${i + 1}`,
+            color: p.color || PLAYER_COLORS[i]
+          }));
+        } else if (Array.isArray(action.playerOrder)) {
+          state.players = action.playerOrder.map((id, i) => makePlayer({
+            id,
+            userId: id,
+            name: `Player ${i + 1}`,
+            color: PLAYER_COLORS[i]
+          }));
+        }
+        generateBoard(clone(action.hexes || []));
+        if (typeof action.robber === "number") state.robber = action.robber;
+        state.hint = "멀티플레이 시작: 초기 배치";
+        recalcAllVP();
+        return true;
+      }
+
+      if (pIdx === -1) return false;
+      if (type === ACTION.PLACE_SETTLEMENT) {
+        if (state.phase === "setup1" || state.phase === "setup2") {
+          if (pIdx !== state.currentPlayer || state.setupStep !== "settlement") return false;
+          if (!placeSettlement(pIdx, action.vertexId, true)) return false;
+          if (state.phase === "setup2") grantSecondSetupResources(pIdx, action.vertexId);
+          state.lastSetupVertex = action.vertexId;
+          state.setupStep = "road";
+          state.hint = "이 마을에 연결된 도로를 하나 놓으세요.";
+          return true;
+        }
+        if (pIdx !== state.currentPlayer || state.phase !== "main") return false;
+        if (!placeSettlement(pIdx, action.vertexId, false)) return false;
+        state.buildMode = null;
+        state.hint = "마을 건설 완료.";
+        return true;
+      }
+      if (type === ACTION.PLACE_ROAD) {
+        if (state.phase === "setup1" || state.phase === "setup2") {
+          if (pIdx !== state.currentPlayer || state.setupStep !== "road") return false;
+          if (!placeRoad(pIdx, action.edgeId, true)) return false;
+          advanceSetupTurn();
+          return true;
+        }
+        if (pIdx !== state.currentPlayer || state.phase !== "main") return false;
+        if (!placeRoad(pIdx, action.edgeId, false)) return false;
+        state.buildMode = null;
+        state.hint = "도로 건설 완료.";
+        return true;
+      }
+      if (type === ACTION.PLACE_CITY) {
+        if (pIdx !== state.currentPlayer || state.phase !== "main") return false;
+        if (!upgradeCity(pIdx, action.vertexId)) return false;
+        state.buildMode = null;
+        state.hint = "도시 업그레이드 완료.";
+        return true;
+      }
+      if (type === ACTION.ROLL_DICE) {
+        return applyRollDice(pIdx, action.values, true);
+      }
+      if (type === ACTION.DISCARD_RESOURCES) {
+        applyDiscardResources(pIdx, action.resources);
+        return true;
+      }
+      if (type === ACTION.MOVE_ROBBER) {
+        if (pIdx !== state.currentPlayer) return false;
+        return moveRobber(action.hexId, action.stealFrom, action.stolenResource).ok;
+      }
+      if (type === ACTION.END_TURN) {
+        if (pIdx !== state.currentPlayer) return false;
+        return endTurnInternal();
+      }
+      return false;
+    }
+
+    function nextActionId() {
+      mpState.actionSeq += 1;
+      return `${Date.now()}_${mpState.actionSeq}_${mpState.myUserId || "local"}`;
+    }
+
+    function markActionProcessed(actionId) {
+      if (!actionId) return;
+      mpState.processedActionIds.add(actionId);
+      if (mpState.processedActionIds.size > 600) {
+        const arr = [...mpState.processedActionIds];
+        mpState.processedActionIds = new Set(arr.slice(arr.length - 300));
+      }
+    }
+
+    async function sendGameAction(type, payload) {
+      const action = { type, ...payload, actionId: nextActionId() };
+      const applied = applyGameAction(action);
+      if (!applied) return false;
+      markActionProcessed(action.actionId);
+      render();
+      triggerAITurnIfNeeded();
+      if (!isMultiMode()) return true;
+      try {
+        await mpState.client.sendAction(action);
+      } catch (e) {
+        state.hint = `동기화 실패: ${e.message || e}`;
+        render();
+      }
+      return true;
+    }
+
+    async function rollDice() {
+      if (isMultiMode()) {
+        if (!isHumanTurn() || state.phase !== "roll") return;
+        const d1 = 1 + Math.floor(Math.random() * 6);
+        const d2 = 1 + Math.floor(Math.random() * 6);
+        await sendGameAction(ACTION.ROLL_DICE, { playerId: currentPlayerUserId(), values: [d1, d2] });
+        if (d1 + d2 === 7) {
+          for (let i = 0; i < state.players.length; i += 1) {
+            const total = totalResourceCount(state.players[i]);
+            if (total <= 7) continue;
+            const discardCount = Math.floor(total / 2);
+            const removed = emptyResources();
+            let n = discardCount;
+            while (n > 0) {
+              const bag = RESOURCES.filter(r => state.players[i].resources[r] > 0);
+              if (!bag.length) break;
+              const pick = bag[Math.floor(Math.random() * bag.length)];
+              state.players[i].resources[pick] -= 1;
+              removed[pick] += 1;
+              n -= 1;
+            }
+            for (const r of RESOURCES) state.players[i].resources[r] += removed[r];
+            await sendGameAction(ACTION.DISCARD_RESOURCES, {
+              playerId: state.players[i].userId,
+              resources: removed
+            });
+          }
+        }
+        return;
+      }
+      if (state.winner || state.phase !== "roll") return;
+      const d1 = 1 + Math.floor(Math.random() * 6);
+      const d2 = 1 + Math.floor(Math.random() * 6);
+      if (!applyRollDice(state.currentPlayer, [d1, d2], false)) return;
+      render();
+      triggerAITurnIfNeeded();
+    }
+
+    async function endTurn() {
+      if (isMultiMode()) {
+        if (!isHumanTurn() || !state.canEndTurn) return;
+        await sendGameAction(ACTION.END_TURN, { playerId: currentPlayerUserId() });
+        return;
+      }
+      if (!endTurnInternal()) return;
+      render();
+      triggerAITurnIfNeeded();
+    }
+
     function humanBuildSettlement() {
+      if (!isHumanTurn()) return;
       state.buildMode = state.buildMode === "settlement" ? null : "settlement";
       state.hint = state.buildMode ? "건설 가능한 정점을 선택하세요." : "";
       render();
     }
 
     function humanBuildRoad() {
+      if (!isHumanTurn()) return;
       state.buildMode = state.buildMode === "road" ? null : "road";
       state.hint = state.buildMode ? "건설 가능한 도로를 선택하세요." : "";
       render();
     }
 
     function humanBuildCity() {
+      if (!isHumanTurn()) return;
       state.buildMode = state.buildMode === "city" ? null : "city";
       state.hint = state.buildMode ? "업그레이드할 마을을 선택하세요." : "";
       render();
     }
 
-    function onVertexClick(vIdx) {
+    async function onVertexClick(vIdx) {
       if (!isHumanTurn() || state.winner) return;
+      if (isMultiMode()) {
+        if (state.phase === "setup1" || state.phase === "setup2") {
+          if (state.setupStep !== "settlement") return;
+          await sendGameAction(ACTION.PLACE_SETTLEMENT, { playerId: currentPlayerUserId(), vertexId: vIdx });
+          return;
+        }
+        if (state.phase !== "main") return;
+        if (state.buildMode === "settlement") {
+          await sendGameAction(ACTION.PLACE_SETTLEMENT, { playerId: currentPlayerUserId(), vertexId: vIdx });
+        } else if (state.buildMode === "city") {
+          await sendGameAction(ACTION.PLACE_CITY, { playerId: currentPlayerUserId(), vertexId: vIdx });
+        }
+        return;
+      }
+
       if (state.phase === "setup1" || state.phase === "setup2") {
-        handleSetupClickVertex(vIdx);
+        const pIdx = state.currentPlayer;
+        if (state.setupStep !== "settlement") return;
+        if (!placeSettlement(pIdx, vIdx, true)) return;
+        if (state.phase === "setup2") grantSecondSetupResources(pIdx, vIdx);
+        state.lastSetupVertex = vIdx;
+        state.setupStep = "road";
+        state.hint = "이 마을에 연결된 도로를 하나 놓으세요.";
+        render();
+        triggerAITurnIfNeeded();
         return;
       }
       if (state.phase !== "main") return;
-
       if (state.buildMode === "settlement") {
         if (placeSettlement(state.currentPlayer, vIdx, false)) {
           state.buildMode = null;
@@ -826,10 +1171,26 @@
       }
     }
 
-    function onEdgeClick(eIdx) {
+    async function onEdgeClick(eIdx) {
       if (!isHumanTurn() || state.winner) return;
+      if (isMultiMode()) {
+        if (state.phase === "setup1" || state.phase === "setup2") {
+          if (state.setupStep !== "road") return;
+          await sendGameAction(ACTION.PLACE_ROAD, { playerId: currentPlayerUserId(), edgeId: eIdx });
+          return;
+        }
+        if (state.phase === "main" && state.buildMode === "road") {
+          await sendGameAction(ACTION.PLACE_ROAD, { playerId: currentPlayerUserId(), edgeId: eIdx });
+        }
+        return;
+      }
       if (state.phase === "setup1" || state.phase === "setup2") {
-        handleSetupClickEdge(eIdx);
+        const pIdx = state.currentPlayer;
+        if (state.setupStep !== "road") return;
+        if (!placeRoad(pIdx, eIdx, true)) return;
+        advanceSetupTurn();
+        render();
+        triggerAITurnIfNeeded();
         return;
       }
       if (state.phase !== "main") return;
@@ -841,13 +1202,24 @@
       }
     }
 
-    function onHexClick(hIdx) {
-      if (!isHumanTurn() || state.winner) return;
-      if (state.phase === "robber") {
-        if (moveRobber(hIdx)) {
-          render();
-          triggerAITurnIfNeeded();
-        }
+    async function onHexClick(hIdx) {
+      if (!isHumanTurn() || state.winner || state.phase !== "robber") return;
+      if (isMultiMode()) {
+        const snapshot = clone(state);
+        const moveResult = moveRobber(hIdx);
+        Object.assign(state, snapshot);
+        if (!moveResult.ok) return;
+        await sendGameAction(ACTION.MOVE_ROBBER, {
+          playerId: currentPlayerUserId(),
+          hexId: hIdx,
+          stealFrom: moveResult.victimId,
+          stolenResource: moveResult.stolenResource
+        });
+        return;
+      }
+      if (moveRobber(hIdx).ok) {
+        render();
+        triggerAITurnIfNeeded();
       }
     }
 
@@ -864,7 +1236,6 @@
           state.hint = `${state.players[pIdx].name}가 마을 배치.`;
         }
       }
-
       if (state.setupStep === "road") {
         const roads = validRoadsFor(pIdx, true);
         if (roads.length) {
@@ -881,64 +1252,50 @@
     function aiMainTurn() {
       const pIdx = state.currentPlayer;
       const p = state.players[pIdx];
-
       if (state.phase === "roll") {
         rollDice();
         return;
       }
-
       if (state.phase === "robber") {
         const choices = state.hexes.map((_, i) => i).filter(i => i !== state.robber);
         const pick = choices[Math.floor(Math.random() * choices.length)];
         moveRobber(pick);
       }
-
       if (state.phase !== "main" || state.winner) {
         render();
         triggerAITurnIfNeeded();
         return;
       }
-
       let safety = 20;
       while (safety-- > 0) {
         const actions = [];
-
         if (canAfford(p, COST.city) && validCitiesFor(pIdx).length) actions.push("city");
-        if (canAfford(p, COST.settlement) && validSettlementsFor(pIdx, false).length) actions.push("settlement");
-        if (canAfford(p, COST.road) && validRoadsFor(pIdx, false).length) actions.push("road");
-
+        if (canAfford(p, COST.settlement) && validSettlementsFor(pIdx).length) actions.push("settlement");
+        if (canAfford(p, COST.road) && validRoadsFor(pIdx).length) actions.push("road");
         if (!actions.length) break;
         const act = actions[Math.floor(Math.random() * actions.length)];
-
         if (act === "city") {
           const spots = validCitiesFor(pIdx);
-          const pick = spots[Math.floor(Math.random() * spots.length)];
-          upgradeCity(pIdx, pick);
+          upgradeCity(pIdx, spots[Math.floor(Math.random() * spots.length)]);
         } else if (act === "settlement") {
-          const spots = validSettlementsFor(pIdx, false);
-          const pick = spots[Math.floor(Math.random() * spots.length)];
-          placeSettlement(pIdx, pick, false);
-        } else if (act === "road") {
-          const spots = validRoadsFor(pIdx, false);
-          const pick = spots[Math.floor(Math.random() * spots.length)];
-          placeRoad(pIdx, pick, false);
+          const spots = validSettlementsFor(pIdx);
+          placeSettlement(pIdx, spots[Math.floor(Math.random() * spots.length)], false);
+        } else {
+          const spots = validRoadsFor(pIdx);
+          placeRoad(pIdx, spots[Math.floor(Math.random() * spots.length)], false);
         }
-
-        if (state.winner) break;
-        if (Math.random() < 0.5) break;
+        if (state.winner || Math.random() < 0.5) break;
       }
-
       state.hint = `${p.name} 턴 종료.`;
       render();
       setTimeout(endTurn, 350);
     }
 
     function triggerAITurnIfNeeded() {
-      if (state.winner) return;
-      if (isHumanTurn()) return;
+      if (state.winner || isMultiMode() || isHumanTurn()) return;
       const delay = (state.phase === "setup1" || state.phase === "setup2") ? 300 : 450;
       setTimeout(() => {
-        if (state.winner || isHumanTurn()) return;
+        if (state.winner || isHumanTurn() || isMultiMode()) return;
         if (state.phase === "setup1" || state.phase === "setup2") aiTakeSetupTurn();
         else aiMainTurn();
       }, delay);
@@ -947,11 +1304,13 @@
     function statusText() {
       if (state.winner !== null) return `승자: ${state.players[state.winner].name} (${state.players[state.winner].vp}점)`;
       const cp = getCurrentPlayer();
-      const base = `${cp.name} 차례 | 단계: ${state.phase}`;
+      const waiting = isMultiMode() && !isHumanTurn() ? " | 다른 플레이어를 기다리는 중..." : "";
+      const base = `${cp.name} 차례 | 단계: ${state.phase}${waiting}`;
       return state.hint ? `${base} | ${state.hint}` : base;
     }
 
     function resourceStrip(player) {
+      if (!player) return "";
       return RESOURCES.map(r => `<div class="res">${RESOURCE_ICONS[r]} ${player.resources[r]}</div>`).join("");
     }
 
@@ -963,7 +1322,7 @@
         return set;
       }
       if (state.phase !== "main") return set;
-      if (state.buildMode === "settlement") validSettlementsFor(state.currentPlayer, false).forEach(v => set.add(v));
+      if (state.buildMode === "settlement") validSettlementsFor(state.currentPlayer).forEach(v => set.add(v));
       if (state.buildMode === "city") validCitiesFor(state.currentPlayer).forEach(v => set.add(v));
       return set;
     }
@@ -975,7 +1334,7 @@
         if (state.setupStep === "road") validRoadsFor(state.currentPlayer, true).forEach(e => set.add(e));
         return set;
       }
-      if (state.phase === "main" && state.buildMode === "road") validRoadsFor(state.currentPlayer, false).forEach(e => set.add(e));
+      if (state.phase === "main" && state.buildMode === "road") validRoadsFor(state.currentPlayer).forEach(e => set.add(e));
       return set;
     }
 
@@ -987,11 +1346,7 @@
       const sx = (mapW - pad * 2) / spanX;
       const sy = (mapH - pad * 2) / spanY;
       const scale = Math.min(sx, sy);
-      return {
-        x: pad + (vx - g.minX) * scale,
-        y: pad + (vy - g.minY) * scale,
-        scale
-      };
+      return { x: pad + (vx - g.minX) * scale, y: pad + (vy - g.minY) * scale, scale };
     }
 
     function renderMap() {
@@ -999,9 +1354,7 @@
       const mapH = 620;
       const vBuild = buildableVertexSet();
       const eBuild = buildableEdgeSet();
-
-      let html = `<div class="map-wrap" id="map-wrap"><div class="board">`;
-
+      let html = `<div class="map-wrap"><div class="board">`;
       for (const hex of state.hexes) {
         const c = state.geometry.centers[hex.index];
         const p = mapPixel(c.x, c.y, mapW, mapH);
@@ -1012,7 +1365,6 @@
         if (state.robber === hex.index) html += `<div class="robber">🦹</div>`;
         html += `</div>`;
       }
-
       for (const edge of state.edges) {
         const a = state.vertices[edge.a];
         const b = state.vertices[edge.b];
@@ -1026,7 +1378,6 @@
         const color = edge.owner !== null ? state.players[edge.owner].color : "";
         html += `<div class="${cls}" style="left:${pa.x}px; top:${pa.y}px; width:${len}px; transform: rotate(${ang}deg); ${color ? `background:${color};` : ""}" onclick="onEdgeClick(${edge.index})"></div>`;
       }
-
       for (const v of state.vertices) {
         const p = mapPixel(v.x, v.y, mapW, mapH);
         if (v.building) {
@@ -1037,21 +1388,94 @@
           html += `<div class="${cls}" style="left:${p.x}px; top:${p.y}px;" onclick="onVertexClick(${v.index})"></div>`;
         }
       }
-
       html += `</div></div>`;
       return html;
     }
 
-    function render() {
-      const me = state.players[0];
-      const others = state.players.slice(1);
+    function renderModeScreen() {
+      return `
+        <div class="lobby-screen">
+          <div class="lobby-card">
+            <h1 class="lobby-title">카탄</h1>
+            <button onclick="startSingle()">싱글플레이</button>
+            <button onclick="showMultiOptions()">멀티플레이</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMultiOptions() {
+      return `
+        <div class="lobby-screen">
+          <div class="lobby-card">
+            <h1 class="lobby-title">카탄</h1>
+            <div class="multi-options">
+              <div class="multi-row">
+                <label for="maxPlayers">최대 인원</label>
+                <select id="maxPlayers" onchange="onMaxPlayersChange(this.value)">
+                  <option value="2" ${state.maxPlayers === 2 ? "selected" : ""}>2</option>
+                  <option value="3" ${state.maxPlayers === 3 ? "selected" : ""}>3</option>
+                  <option value="4" ${state.maxPlayers === 4 ? "selected" : ""}>4</option>
+                </select>
+                <button onclick="createRoom()">방 만들기</button>
+              </div>
+              <div class="multi-row">
+                <input id="roomCodeInput" value="${state.roomCodeInput}" placeholder="방 코드" oninput="onRoomCodeInput(this.value)">
+                <button onclick="joinRoom()">참가하기</button>
+              </div>
+            </div>
+            <div class="lobby-note">${mpState.waitingMessage || "relay.cocy.io 연결 후 플레이 가능합니다."}</div>
+            <button onclick="backToMode()">뒤로</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function lobbyPlayersHtml() {
+      const players = mpState.room?.players || [];
+      return players.map((p, i) => `
+        <div class="lobby-player">
+          <div style="color:${PLAYER_COLORS[i] || "#fff"}">${p.isHost ? "👑 " : ""}${p.nickname || "Player"}${p.id === mpState.myUserId ? " (나)" : ""}</div>
+          <div>${p.isHost ? "방장" : (p.isReady ? "준비완료" : "대기중")}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderRoomLobby() {
+      const players = mpState.room?.players || [];
+      const others = players.filter(p => p.id !== mpState.myUserId);
+      const allReady = others.length > 0 && others.every(p => p.isReady);
+      const canStart = mpState.isHost && players.length >= 2 && allReady;
+      const waitMsg = mpState.waitingMessage || (canStart ? "게임 시작 가능" : "플레이어를 기다리는 중...");
+      return `
+        <div class="lobby-screen">
+          <div class="lobby-card">
+            <h1 class="lobby-title">카탄</h1>
+            <div class="room-lobby">
+              <p>방 코드: <strong id="roomCodeDisplay">${mpState.roomCode || "-"}</strong></p>
+              <div id="playerList">${lobbyPlayersHtml()}</div>
+              <div class="multi-row">
+                <button onclick="setReady()">${mpState.ready ? "준비 취소" : "준비 완료"}</button>
+                <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"}>게임 시작</button>
+                <button onclick="leaveRoom()" class="danger">나가기</button>
+              </div>
+              <div class="lobby-note">${waitMsg}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderGameScreen() {
+      const myIdx = localPlayerIndex();
+      const me = state.players[myIdx >= 0 ? myIdx : 0];
+      const others = state.players.filter((_, i) => i !== (myIdx >= 0 ? myIdx : 0));
       const myTurn = isHumanTurn();
       const inSetup = state.phase === "setup1" || state.phase === "setup2";
       const canRoll = myTurn && state.phase === "roll";
       const canMain = myTurn && state.phase === "main";
       const canRobber = myTurn && state.phase === "robber";
-
-      document.getElementById("app").innerHTML = `
+      return `
         <div class="players-bar">
           ${others.map(p => `
             <div class="player-card">
@@ -1060,14 +1484,10 @@
             </div>
           `).join("")}
         </div>
-
         <div class="status">${statusText()}</div>
-
         ${renderMap()}
-
         <div class="my-panel">
           <div class="resources">${resourceStrip(me)}</div>
-
           <div class="actions">
             <button class="primary" ${canRoll ? "" : "disabled"} onclick="rollDice()">주사위</button>
             <button ${canMain ? "" : "disabled"} onclick="humanBuildRoad()">도로</button>
@@ -1075,8 +1495,8 @@
             <button ${canMain ? "" : "disabled"} onclick="humanBuildCity()">도시</button>
             <button disabled>거래</button>
             <button class="danger" ${(canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
+            ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">방 나가기</button>` : ""}
           </div>
-
           <div class="hint">
             ${inSetup ? `초기 배치 ${state.setupRound}라운드 | 현재: ${state.setupStep === "settlement" ? "마을" : "도로"}` : ""}
             ${canRobber ? "도둑 이동: 다른 헥스를 터치하세요." : ""}
@@ -1085,6 +1505,252 @@
       `;
     }
 
+    function render() {
+      const app = document.getElementById("app");
+      if (state.screen === "mode") app.innerHTML = renderModeScreen();
+      else if (state.screen === "multi-options") app.innerHTML = renderMultiOptions();
+      else if (state.screen === "room-lobby") app.innerHTML = renderRoomLobby();
+      else app.innerHTML = renderGameScreen();
+    }
+
+    function normalizeEvent(a, b) {
+      if (typeof a === "string") return { type: a, ...(b || {}) };
+      return a || {};
+    }
+
+    async function ensureMp() {
+      if (!window.MultiplayerClient) throw new Error("multiplayer.js 로드 실패");
+      if (!mpState.client) {
+        mpState.client = MultiplayerClient.getInstance();
+        await mpState.client.ensureAuth();
+        mpState.myUserId = mpState.client.getMyUserId();
+        mpState.client.onStateChange = onRoomStateChange;
+        mpState.client.onEvent = onMpEvent;
+        mpState.client.onRoomDestroyed = () => {
+          mpState.waitingMessage = "방이 종료되었습니다.";
+          leaveRoom(false);
+        };
+      }
+      return mpState.client;
+    }
+
+    function onRoomStateChange(room) {
+      if (!room) return;
+      mpState.room = room;
+      mpState.roomCode = room.id || room.roomId || mpState.roomCode;
+      const me = room.players?.find(p => p.id === mpState.myUserId);
+      mpState.isHost = !!me?.isHost;
+      mpState.ready = !!me?.isReady;
+      if (state.screen === "room-lobby") {
+        const others = (room.players || []).filter(p => p.id !== mpState.myUserId);
+        const allReady = others.length > 0 && others.every(p => p.isReady);
+        mpState.waitingMessage = allReady ? "모두 준비 완료. 게임 시작 가능." : "Waiting for player...";
+      }
+      if (room.status === "playing" && state.screen === "room-lobby") {
+        state.screen = "game";
+        state.mode = "multi";
+        state.hint = "게임 초기화 대기 중...";
+      }
+      autoStartIfReady();
+      render();
+    }
+
+    async function autoStartIfReady() {
+      if (!mpState.client || !mpState.room || !mpState.isHost) return;
+      if (mpState.room.status === "playing" || mpState.startRequested) return;
+      const players = mpState.room.players || [];
+      const others = players.filter(p => p.id !== mpState.myUserId);
+      const allReady = others.length > 0 && others.every(p => p.isReady);
+      if (!allReady || players.length < 2) return;
+      mpState.startRequested = true;
+      try {
+        await mpState.client.startGame();
+      } catch (e) {
+        mpState.waitingMessage = `자동 시작 실패: ${e.message || e}`;
+        mpState.startRequested = false;
+        render();
+      }
+    }
+
+    async function maybeHostInitGame() {
+      if (!isMultiMode() && state.mode !== "multi") return;
+      if (!mpState.isHost || mpState.initSent || !mpState.room) return;
+      if (mpState.room.status !== "playing") return;
+      const players = mpState.room.players || [];
+      const others = players.filter(p => p.id !== mpState.myUserId);
+      const allReady = others.length > 0 && others.every(p => p.isReady);
+      if (players.length < 2 || !allReady) return;
+      setMultiplayerPlayers(players);
+      resetCoreState();
+      generateBoard();
+      recalcAllVP();
+      mpState.initSent = true;
+      await sendGameAction(ACTION.GAME_INIT, {
+        playerId: mpState.myUserId,
+        hexes: clone(state.hexes),
+        vertices: clone(state.vertices),
+        edges: clone(state.edges),
+        robber: state.robber,
+        playerOrder: state.players.map(p => p.userId || p.id),
+        players: state.players.map(p => ({ id: p.userId || p.id, name: p.name, color: p.color }))
+      });
+    }
+
+    async function onMpEvent(a, b) {
+      const event = normalizeEvent(a, b);
+      if (!event.type) return;
+      if (event.type === "game_started") {
+        state.screen = "game";
+        state.mode = "multi";
+        state.hint = "호스트가 맵을 생성하는 중...";
+        render();
+        await maybeHostInitGame();
+        return;
+      }
+      if (event.type === "player_joined" || event.type === "player_left" || event.type === "player_ready") {
+        await refreshRoomState();
+        return;
+      }
+      if (event.type === "action") {
+        const data = event.data || event.action || event.payload || {};
+        if (!data.type) return;
+        if (data.actionId && mpState.processedActionIds.has(data.actionId)) return;
+        const ok = applyGameAction(data);
+        if (ok) {
+          markActionProcessed(data.actionId);
+          render();
+          triggerAITurnIfNeeded();
+        }
+      }
+    }
+
+    async function refreshRoomState() {
+      if (!mpState.client || !mpState.client.isInRoom()) return;
+      try {
+        const room = await mpState.client.getRoomState();
+        onRoomStateChange(room);
+      } catch (_) {}
+    }
+
+    async function createRoom() {
+      try {
+        const client = await ensureMp();
+        const room = await client.createRoom("catan", { maxPlayers: Number(state.maxPlayers) || 4 });
+        mpState.roomCode = room.roomId || room.id || room.code || room.roomCode || "";
+        state.mode = "multi";
+        state.screen = "room-lobby";
+        mpState.waitingMessage = `방 생성 완료. 코드: ${mpState.roomCode}`;
+        client.startListening();
+        await refreshRoomState();
+      } catch (e) {
+        mpState.waitingMessage = `방 생성 실패: ${e.message || e}`;
+        render();
+      }
+    }
+
+    async function joinRoom() {
+      const code = (state.roomCodeInput || "").trim();
+      if (!code) {
+        mpState.waitingMessage = "방 코드를 입력하세요.";
+        render();
+        return;
+      }
+      try {
+        const client = await ensureMp();
+        await client.joinRoom(code, "catan");
+        mpState.roomCode = code;
+        state.mode = "multi";
+        state.screen = "room-lobby";
+        mpState.waitingMessage = `방 참가 완료: ${code}`;
+        client.startListening();
+        await refreshRoomState();
+      } catch (e) {
+        mpState.waitingMessage = `방 참가 실패: ${e.message || e}`;
+        render();
+      }
+    }
+
+    async function leaveRoom(shouldRender = true) {
+      if (mpState.client) {
+        try { await mpState.client.leaveRoom(); } catch (_) {}
+        try { MultiplayerClient.resetInstance(); } catch (_) {}
+      }
+      mpState.client = null;
+      mpState.room = null;
+      mpState.roomCode = "";
+      mpState.ready = false;
+      mpState.isHost = false;
+      mpState.startRequested = false;
+      mpState.initSent = false;
+      mpState.myUserId = null;
+      mpState.processedActionIds = new Set();
+      resetCoreState();
+      state.mode = null;
+      state.screen = "mode";
+      if (shouldRender) render();
+    }
+
+    async function setReady() {
+      if (!mpState.client) return;
+      try {
+        await mpState.client.setReady(!mpState.ready);
+        await refreshRoomState();
+      } catch (e) {
+        mpState.waitingMessage = `준비 상태 변경 실패: ${e.message || e}`;
+        render();
+      }
+    }
+
+    async function startGame() {
+      if (!mpState.client || !mpState.isHost) return;
+      try {
+        await mpState.client.startGame();
+        mpState.startRequested = true;
+        state.screen = "game";
+        state.mode = "multi";
+        state.hint = "게임 초기화 중...";
+        render();
+        await maybeHostInitGame();
+      } catch (e) {
+        mpState.waitingMessage = `게임 시작 실패: ${e.message || e}`;
+        render();
+      }
+    }
+
+    function backToMode() {
+      state.screen = "mode";
+      state.mode = null;
+      render();
+    }
+
+    function showMultiOptions() {
+      state.screen = "multi-options";
+      state.mode = null;
+      render();
+    }
+
+    function startSingle() {
+      initSingleGame();
+    }
+
+    function onRoomCodeInput(value) {
+      state.roomCodeInput = value;
+    }
+
+    function onMaxPlayersChange(value) {
+      const n = Math.max(2, Math.min(4, Number(value) || 4));
+      state.maxPlayers = n;
+      render();
+    }
+
+    window.startSingle = startSingle;
+    window.showMultiOptions = showMultiOptions;
+    window.backToMode = backToMode;
+    window.createRoom = createRoom;
+    window.joinRoom = joinRoom;
+    window.leaveRoom = leaveRoom;
+    window.setReady = setReady;
+    window.startGame = startGame;
     window.rollDice = rollDice;
     window.endTurn = endTurn;
     window.humanBuildRoad = humanBuildRoad;
@@ -1093,19 +1759,17 @@
     window.onVertexClick = onVertexClick;
     window.onEdgeClick = onEdgeClick;
     window.onHexClick = onHexClick;
+    window.onRoomCodeInput = onRoomCodeInput;
+    window.onMaxPlayersChange = onMaxPlayersChange;
 
     (async function boot() {
       if (window.SharedWallet) {
         try { await SharedWallet.init(); } catch (_) {}
       }
-      init();
-      console.log("Catan initialized:", {
-        hexes: state.hexes.length,
-        vertices: state.vertices.length,
-        edges: state.edges.length,
-        robber: state.robber
-      });
+      setSinglePlayers();
+      render();
     })();
   </script>
+
 </body>
 </html>
