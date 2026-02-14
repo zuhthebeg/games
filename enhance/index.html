@@ -69,8 +69,17 @@
 
         .subtitle { color: var(--muted); font-size: 0.85rem; }
 
-        /* Gold Display */
+        /* Gold Display - hidden, using global SharedWallet bar */
         .gold-display {
+            display: none !important;
+        }
+        
+        /* Back button - hidden, using global SharedWallet bar */
+        .btn-back {
+            display: none !important;
+        }
+        
+        .gold-display-legacy {
             display: flex;
             align-items: center;
             justify-content: center;
