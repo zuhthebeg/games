@@ -2239,7 +2239,9 @@
     }
 
     function canContinue() {
-      if (state.score >= activeTarget()) {
+      const target = activeTarget();
+      console.log("[JokerRun][canContinue]", { score: state.score, target, handsLeft: state.handsLeft, mode: state.mode });
+      if (state.score >= target) {
         if (state.mode === "pvp") endLocalPvpRound();
         else winRound();
         return false;
@@ -2286,11 +2288,12 @@
       addLog(`${hand.name} 플레이: +${points}점 (남은 핸드 ${state.handsLeft})`);
       consumeSelectedCards();
       renderHUD(chips, mult);
+      const shouldContinue = canContinue();
+      if (!shouldContinue) return;
       if (state.mode === "pvp") {
         await sendPvpAction({ type: "HAND_PLAYED", handType: hand.handType, chips, mult, totalScore: state.score });
         setOpponentStatus("상대방 플레이 중...");
       }
-      canContinue();
     }
 
     function discardSelected() {
