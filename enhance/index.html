@@ -74,12 +74,14 @@
             display: none !important;
         }
         
-        /* Back button - bottom action area */
+        /* Home button - bottom action area (smaller than enhance) */
         .btn-home {
             background: linear-gradient(135deg, #555, #333);
             color: white;
-            flex: 0 0 50px;
-            font-size: 1.2rem;
+            flex: 0 0 44px;
+            font-size: 1rem;
+            padding: 10px;
+            min-height: auto;
         }
         .btn-home:hover:not(:disabled) {
             background: linear-gradient(135deg, #666, #444);
@@ -3184,8 +3186,6 @@
 
             document.getElementById('app').innerHTML = `
                 <div class="container">
-                    <button class="btn-back" onclick="showMain()">← 메인으로</button>
-
                     <div class="gold-display">
                         <span class="gold-icon">💰</span>
                         <span class="gold-amount">${state.gold.toLocaleString()} G</span>
