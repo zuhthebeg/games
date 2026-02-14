@@ -101,7 +101,7 @@
       box-shadow: var(--shadow);
       backdrop-filter: var(--blur);
       display: grid;
-      grid-template-rows: var(--header-h) var(--joker-h) var(--score-h) minmax(180px, 1fr) var(--status-h) var(--actions-h);
+      grid-template-rows: var(--header-h) var(--joker-h) var(--score-h) minmax(160px, 1fr) var(--status-h) auto var(--actions-h);
       gap: var(--gap);
       padding: 10px;
       position: relative;
@@ -133,6 +133,14 @@
       min-width: 0;
       font-size: 0.92rem;
       text-shadow: 0 0 14px rgba(69, 245, 255, 0.25);
+    }
+
+    .gold-badge {
+      color: #ffe5a8;
+      font-size: 0.78rem;
+      font-weight: 800;
+      white-space: nowrap;
+      text-shadow: 0 0 8px rgba(255, 207, 109, 0.45);
     }
 
     .meta .sep {
@@ -500,6 +508,26 @@
       text-shadow: 0 0 10px rgba(255, 79, 197, 0.3);
     }
 
+    .pvp-panel {
+      display: none;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 10px;
+      font-size: 0.77rem;
+      color: var(--muted);
+    }
+
+    .pvp-panel.show {
+      display: grid;
+    }
+
+    .pvp-score {
+      color: var(--gold);
+      font-weight: 800;
+      text-shadow: 0 0 8px rgba(255, 207, 109, 0.4);
+    }
+
     .actions {
       display: grid;
       grid-template-columns: 1fr 1fr 44px;
@@ -727,6 +755,54 @@
         grid-template-columns: 1fr 1fr 52px;
       }
     }
+
+    .mode-sheet {
+      width: min(92vw, 420px);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(6, 26, 22, 0.9), rgba(5, 18, 15, 0.95));
+      box-shadow: var(--shadow);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .mode-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .mode-card {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    }
+
+    .mode-card h4 {
+      font-size: 0.9rem;
+      color: var(--gold);
+    }
+
+    .mode-card p {
+      font-size: 0.74rem;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    .input {
+      width: 100%;
+      min-height: 40px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      padding: 0 10px;
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -736,6 +812,8 @@
         <span id="roundLabel">-</span>
         <span class="sep">|</span>
         <span id="moneyLabel">$0</span>
+        <span class="sep">|</span>
+        <span class="gold-badge" id="goldLabel">G 0</span>
       </div>
       <div class="target-pill"><span class="target-icon" aria-hidden="true"></span><span id="targetLabel">0</span></div>
       <div style="display:flex;gap:6px;">
@@ -765,6 +843,11 @@
       <div style="text-align:right;">남은 버리기 <b id="discardsLabel">0</b></div>
     </section>
 
+    <section class="pvp-panel glass" id="pvpPanel">
+      <div id="opponentStatus">상대 정보 없음</div>
+      <div class="pvp-score" id="opponentScore">상대 점수 0</div>
+    </section>
+
     <section class="actions">
       <button class="btn-main" id="playBtn">핸드 플레이</button>
       <button class="btn-warn" id="discardBtn">카드 버리기</button>
@@ -790,6 +873,51 @@
     </div>
   </div>
 
+  <div class="modal show" id="modeModal">
+    <div class="mode-sheet">
+      <div>
+        <div class="title">모드 선택</div>
+        <div class="subtitle">싱글 플레이 또는 대전 모드를 선택하세요.</div>
+      </div>
+      <div class="mode-grid">
+        <div class="mode-card">
+          <h4>싱글 플레이</h4>
+          <p>현재 모드 그대로 라운드와 상점을 진행합니다.</p>
+          <button class="btn-main" id="singleModeBtn">싱글 플레이 시작</button>
+        </div>
+        <div class="mode-card">
+          <h4>대전 모드 (PvP)</h4>
+          <p>배팅 금액을 걸고 2인 대전을 진행합니다.</p>
+          <div class="row">
+            <select id="betSelect" class="input" style="max-width:130px;">
+              <option value="100">100G</option>
+              <option value="500">500G</option>
+              <option value="1000">1000G</option>
+            </select>
+            <button class="btn-main" id="createRoomBtn">방 만들기</button>
+          </div>
+          <div class="row">
+            <input id="roomCodeInput" class="input" placeholder="방 코드 입력">
+            <button class="btn-warn" id="joinRoomBtn">방 참가</button>
+          </div>
+          <div class="subtitle" id="roomHint">멀티플레이 연결 대기 중...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="pvpResultModal">
+    <div class="mode-sheet">
+      <div>
+        <div class="title">대전 결과</div>
+        <div class="subtitle" id="pvpFinalText">결과 정산 중...</div>
+      </div>
+      <button class="btn-main" id="pvpConfirmBtn">확인</button>
+    </div>
+  </div>
+
+  <script src="/lib/multiplayer.js"></script>
+  <script src="/lib/shared-wallet.js?v=20260211"></script>
   <script>
     const suits = ["heart", "diamond", "club", "spade"];
     const suitSymbol = { heart: "♥", diamond: "♦", club: "♣", spade: "♠" };
@@ -816,59 +944,17 @@
     ];
 
     const jokerPool = [
-      {
-        id: "flat50",
-        name: "칩 폭탄",
-        cost: 6,
-        desc: "핸드 점수 계산 시 칩 +50",
-        apply(ctx) { ctx.chips += 50; }
-      },
-      {
-        id: "flushx2",
-        name: "물결 조커",
-        cost: 7,
-        desc: "플러시 계열이면 배수 x2",
-        apply(ctx) {
-          if (ctx.handType === "FLUSH" || ctx.handType === "STRAIGHT_FLUSH") ctx.mult *= 2;
-        }
-      },
-      {
-        id: "perCardMult",
-        name: "계산기 조커",
-        cost: 5,
-        desc: "플레이한 카드 1장당 배수 +1",
-        apply(ctx) { ctx.mult += ctx.cards.length; }
-      },
-      {
-        id: "heartChip",
-        name: "붉은 인장",
-        cost: 5,
-        desc: "하트 카드 1장당 칩 +15",
-        apply(ctx) {
-          const hearts = ctx.cards.filter(c => c.suit === "heart").length;
-          ctx.chips += hearts * 15;
-        }
-      },
-      {
-        id: "pairBoost",
-        name: "듀오 증폭기",
-        cost: 8,
-        desc: "원페어 이상이면 배수 +2",
-        apply(ctx) {
-          if (ctx.handType !== "HIGH_CARD") ctx.mult += 2;
-        }
-      }
+      { id: "flat50", name: "칩 폭탄", cost: 6, desc: "핸드 점수 계산 시 칩 +50", apply(ctx) { ctx.chips += 50; } },
+      { id: "flushx2", name: "물결 조커", cost: 7, desc: "플러시 계열이면 배수 x2", apply(ctx) { if (ctx.handType === "FLUSH" || ctx.handType === "STRAIGHT_FLUSH") ctx.mult *= 2; } },
+      { id: "perCardMult", name: "계산기 조커", cost: 5, desc: "플레이한 카드 1장당 배수 +1", apply(ctx) { ctx.mult += ctx.cards.length; } },
+      { id: "heartChip", name: "붉은 인장", cost: 5, desc: "하트 카드 1장당 칩 +15", apply(ctx) { ctx.chips += ctx.cards.filter(c => c.suit === "heart").length * 15; } },
+      { id: "pairBoost", name: "듀오 증폭기", cost: 8, desc: "원페어 이상이면 배수 +2", apply(ctx) { if (ctx.handType !== "HIGH_CARD") ctx.mult += 2; } }
     ];
 
-    const jokerIcons = {
-      flat50: "칩",
-      flushx2: "파",
-      perCardMult: "계",
-      heartChip: "인",
-      pairBoost: "듀"
-    };
+    const jokerIcons = { flat50: "칩", flushx2: "파", perCardMult: "계", heartChip: "인", pairBoost: "듀" };
 
     const state = {
+      mode: "single",
       roundIndex: 0,
       score: 0,
       money: 10,
@@ -881,6 +967,26 @@
       gameEnded: false
     };
 
+    const pvp = {
+      active: false,
+      mp: null,
+      isHost: false,
+      roomId: "",
+      bet: 100,
+      roundTarget: 700,
+      currentRound: 0,
+      maxRounds: 3,
+      myRoundsWon: 0,
+      oppRoundsWon: 0,
+      myRoundEnded: false,
+      oppRoundEnded: false,
+      oppRoundScore: 0,
+      stakePaid: false,
+      opponentNickname: "",
+      finalized: false,
+      initialized: false
+    };
+
     const $ = sel => document.querySelector(sel);
     const cardsWrap = $("#cardsWrap");
     const handResult = $("#handResult");
@@ -888,14 +994,33 @@
     const jokerArea = $("#jokerArea");
     const tablePanel = $("#tablePanel");
 
-    function buildDeck() {
+    function hashSeed(seedText) {
+      let h = 2166136261;
+      for (let i = 0; i < seedText.length; i++) {
+        h ^= seedText.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    }
+
+    function mulberry32(seed) {
+      return function () {
+        let t = (seed += 0x6D2B79F5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function buildDeck(seedText = "") {
       let id = 0;
       const deck = [];
       for (const suit of suits) {
         for (const rank of rankList) deck.push({ id: id++, suit, rank });
       }
+      const rng = seedText ? mulberry32(hashSeed(seedText)) : Math.random;
       for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(rng() * (i + 1));
         [deck[i], deck[j]] = [deck[j], deck[i]];
       }
       return deck;
@@ -905,10 +1030,19 @@
       return rankLabel[rank] || String(rank);
     }
 
+    function activeRoundLabel() {
+      if (state.mode === "pvp") return `대전 ${pvp.currentRound}/${pvp.maxRounds}`;
+      return `라운드 ${state.roundIndex + 1}`;
+    }
+
+    function activeTarget() {
+      if (state.mode === "pvp") return pvp.roundTarget;
+      const round = roundDefs[state.roundIndex] || roundDefs[roundDefs.length - 1];
+      return round.target;
+    }
+
     function drawToEight() {
-      while (state.hand.length < 8 && state.deck.length > 0) {
-        state.hand.push(state.deck.pop());
-      }
+      while (state.hand.length < 8 && state.deck.length > 0) state.hand.push(state.deck.pop());
     }
 
     function setInfo(msg) {
@@ -922,6 +1056,15 @@
       while (logEl.children.length > 40) logEl.removeChild(logEl.lastChild);
     }
 
+    function updateGoldLabel() {
+      const gold = window.SharedWallet ? Number(SharedWallet.gold || 0) : 0;
+      $("#goldLabel").textContent = `G ${gold.toLocaleString()}`;
+    }
+
+    function setOpponentStatus(text) {
+      $("#opponentStatus").textContent = text;
+    }
+
     function renderCards() {
       cardsWrap.innerHTML = "";
       state.hand.forEach(card => {
@@ -932,10 +1075,7 @@
           if (state.gameEnded) return;
           if (state.selected.has(card.id)) state.selected.delete(card.id);
           else {
-            if (state.selected.size >= 5) {
-              setInfo("최대 5장까지만 선택 가능합니다.");
-              return;
-            }
+            if (state.selected.size >= 5) return setInfo("최대 5장까지만 선택 가능합니다.");
             state.selected.add(card.id);
           }
           renderCards();
@@ -959,19 +1099,15 @@
           box.type = "button";
           box.dataset.icon = jokerIcons[joker.id] || "조";
           box.innerHTML = `<span class="joker-tip"><span class="joker-name">${joker.name}</span>${joker.desc}</span>`;
-          box.setAttribute("aria-label", joker.name);
-          box.addEventListener("click", () => {
-            box.classList.toggle("reveal");
-          });
+          box.addEventListener("click", () => box.classList.toggle("reveal"));
         }
         jokerArea.appendChild(box);
       }
     }
 
     function renderHUD(chips = 0, mult = 1) {
-      const round = roundDefs[state.roundIndex] || roundDefs[roundDefs.length - 1];
-      $("#roundLabel").textContent = `라운드 ${state.roundIndex + 1}`;
-      $("#targetLabel").textContent = round.target.toLocaleString();
+      $("#roundLabel").textContent = activeRoundLabel();
+      $("#targetLabel").textContent = activeTarget().toLocaleString();
       $("#scoreLabel").textContent = state.score.toLocaleString();
       $("#moneyLabel").textContent = `$${state.money}`;
       $("#handsLabel").textContent = String(state.handsLeft);
@@ -980,7 +1116,9 @@
       $("#multLabel").textContent = `x${mult}`;
       $("#playBtn").disabled = state.gameEnded;
       $("#discardBtn").disabled = state.gameEnded;
+      $("#pvpPanel").classList.toggle("show", state.mode === "pvp");
       renderJokers();
+      updateGoldLabel();
     }
 
     function selectedCards() {
@@ -992,19 +1130,13 @@
       const ranks = cards.map(c => c.rank).sort((a, b) => a - b);
       const suitsOnly = cards.map(c => c.suit);
       const counts = Object.values(ranks.reduce((m, r) => ((m[r] = (m[r] || 0) + 1), m), {})).sort((a, b) => b - a);
-
       const isFive = cards.length === 5;
       const isFlush = isFive && new Set(suitsOnly).size === 1;
       let isStraight = false;
       if (isFive) {
         const uniq = [...new Set(ranks)];
-        if (uniq.length === 5) {
-          const normal = uniq[4] - uniq[0] === 4;
-          const wheel = uniq.join(",") === "2,3,4,5,14";
-          isStraight = normal || wheel;
-        }
+        if (uniq.length === 5) isStraight = uniq[4] - uniq[0] === 4 || uniq.join(",") === "2,3,4,5,14";
       }
-
       if (isStraight && isFlush) return { handType: "STRAIGHT_FLUSH", ...handBase.STRAIGHT_FLUSH };
       if (counts[0] === 4) return { handType: "FOUR", ...handBase.FOUR };
       if (counts[0] === 3 && counts[1] === 2) return { handType: "FULL_HOUSE", ...handBase.FULL_HOUSE };
@@ -1025,7 +1157,6 @@
       const endX = target.left + target.width * 0.5;
       const endY = target.top + target.height * 0.5;
       const count = Math.min(16, Math.max(8, Math.floor(points / 60)));
-
       for (let i = 0; i < count; i++) {
         const chip = document.createElement("div");
         chip.className = "chip";
@@ -1047,7 +1178,6 @@
       tablePanel.appendChild(fx);
       setTimeout(() => fx.remove(), 880);
       spawnChipParticles(points);
-
       const total = $("#scoreLabel");
       total.classList.remove("pulse");
       void total.offsetWidth;
@@ -1062,62 +1192,107 @@
       renderCards();
     }
 
+    async function sendPvpAction(data) {
+      if (state.mode !== "pvp" || !pvp.mp) return;
+      try { await pvp.mp.sendAction(data); } catch (e) { addLog(`동기화 실패: ${e.message || e}`); }
+    }
+
+    function openPvpResult(text) {
+      $("#pvpFinalText").textContent = text;
+      $("#pvpResultModal").classList.add("show");
+    }
+
+    async function settlePvpGold(result) {
+      if (!window.SharedWallet || !pvp.stakePaid) return;
+      if (result === "win") SharedWallet.addGold(pvp.bet * 2);
+      if (result === "draw") SharedWallet.addGold(pvp.bet);
+      pvp.stakePaid = false;
+      updateGoldLabel();
+    }
+
+    async function finalizePvpMatch() {
+      if (pvp.finalized) return;
+      pvp.finalized = true;
+      let result = "draw";
+      if (pvp.myRoundsWon > pvp.oppRoundsWon) result = "win";
+      if (pvp.myRoundsWon < pvp.oppRoundsWon) result = "lose";
+      await settlePvpGold(result);
+      await sendPvpAction({ type: "GAME_OVER", finalScore: state.score, result });
+      const gainText = result === "win" ? `승리! +${pvp.bet * 2}G` : result === "draw" ? `무승부! +${pvp.bet}G 환불` : "패배...";
+      openPvpResult(`${gainText} (라운드 ${pvp.myRoundsWon}:${pvp.oppRoundsWon})`);
+      addLog(`대전 종료: ${gainText}`);
+    }
+
+    async function resolvePvpRound() {
+      if (!pvp.myRoundEnded || !pvp.oppRoundEnded) return;
+      if (state.score > pvp.oppRoundScore) {
+        pvp.myRoundsWon += 1;
+        setInfo(`라운드 승리! (${state.score} vs ${pvp.oppRoundScore})`);
+      } else if (state.score < pvp.oppRoundScore) {
+        pvp.oppRoundsWon += 1;
+        setInfo(`라운드 패배... (${state.score} vs ${pvp.oppRoundScore})`);
+      } else {
+        setInfo(`라운드 무승부 (${state.score})`);
+      }
+      if (pvp.myRoundsWon >= 2 || pvp.oppRoundsWon >= 2 || pvp.currentRound >= pvp.maxRounds) return finalizePvpMatch();
+      if (pvp.isHost) setTimeout(() => sendRoundStart(pvp.currentRound + 1), 900);
+    }
+
+    async function endLocalPvpRound() {
+      if (pvp.myRoundEnded) return;
+      state.gameEnded = true;
+      pvp.myRoundEnded = true;
+      renderHUD();
+      setOpponentStatus("상대방 대기 중...");
+      await sendPvpAction({ type: "ROUND_ENDED", roundScore: state.score, roundsWon: pvp.myRoundsWon });
+      resolvePvpRound();
+    }
+
     function canContinue() {
-      const target = roundDefs[state.roundIndex].target;
-      if (state.score >= target) {
-        winRound();
+      if (state.score >= activeTarget()) {
+        if (state.mode === "pvp") endLocalPvpRound();
+        else winRound();
         return false;
       }
       if (state.handsLeft <= 0) {
-        loseRun();
+        if (state.mode === "pvp") endLocalPvpRound();
+        else loseRun();
         return false;
       }
       return true;
     }
 
-    function playSelected() {
+    async function playSelected() {
       if (state.gameEnded) return;
       const cards = selectedCards();
-      if (!cards.length) {
-        setInfo("먼저 카드를 1장 이상 선택하세요.");
-        return;
-      }
+      if (!cards.length) return setInfo("먼저 카드를 1장 이상 선택하세요.");
       const hand = scoreHand(cards);
       let chips = hand.chips;
       let mult = hand.mult;
       const ctx = { cards, handType: hand.handType, chips, mult };
-
-      for (const joker of state.jokers) {
-        joker.apply(ctx);
-      }
-
+      for (const joker of state.jokers) joker.apply(ctx);
       chips = Math.max(0, Math.floor(ctx.chips));
       mult = Math.max(1, Math.floor(ctx.mult * 100) / 100);
       const points = Math.floor(chips * mult);
-
       state.score += points;
       state.handsLeft -= 1;
-
       animateScore(points, mult);
       setInfo(`<span class="hand-tag">${hand.name}</span> | ${chips}칩 × ${mult}배 = <b>${points.toLocaleString()}</b>점`);
       addLog(`${hand.name} 플레이: +${points}점 (남은 핸드 ${state.handsLeft})`);
-
       consumeSelectedCards();
       renderHUD(chips, mult);
+      if (state.mode === "pvp") {
+        await sendPvpAction({ type: "HAND_PLAYED", handType: hand.handType, chips, mult, totalScore: state.score });
+        setOpponentStatus("상대방 플레이 중...");
+      }
       canContinue();
     }
 
     function discardSelected() {
       if (state.gameEnded) return;
-      if (state.discardsLeft <= 0) {
-        setInfo("버리기 횟수를 모두 사용했습니다.");
-        return;
-      }
+      if (state.discardsLeft <= 0) return setInfo("버리기 횟수를 모두 사용했습니다.");
       const cards = selectedCards();
-      if (!cards.length) {
-        setInfo("버릴 카드를 선택하세요.");
-        return;
-      }
+      if (!cards.length) return setInfo("버릴 카드를 선택하세요.");
       state.discardsLeft -= 1;
       consumeSelectedCards();
       setInfo(`${cards.length}장 버림 완료. 남은 버리기 ${state.discardsLeft}`);
@@ -1129,23 +1304,16 @@
       const grid = $("#shopGrid");
       grid.innerHTML = "";
       $("#shopMoney").textContent = `보유 자금: $${state.money}`;
-
       jokerPool.forEach(joker => {
         const owned = state.jokers.some(j => j.id === joker.id);
         const full = state.jokers.length >= 5;
         const afford = state.money >= joker.cost;
-        const disabled = owned || full || !afford;
-
         const card = document.createElement("div");
         card.className = "shop-item";
-        card.innerHTML = `
-          <div class="name">${joker.name}</div>
-          <div class="desc">${joker.desc}</div>
-          <div class="price"><span class="coin" aria-hidden="true"></span>$${joker.cost}</div>
-        `;
+        card.innerHTML = `<div class="name">${joker.name}</div><div class="desc">${joker.desc}</div><div class="price"><span class="coin" aria-hidden="true"></span>$${joker.cost}</div>`;
         const btn = document.createElement("button");
         btn.textContent = owned ? "보유 중" : full ? "슬롯 가득 참" : afford ? "구매" : "자금 부족";
-        btn.disabled = disabled;
+        btn.disabled = owned || full || !afford;
         btn.addEventListener("click", () => {
           state.money -= joker.cost;
           state.jokers.push(joker);
@@ -1156,7 +1324,6 @@
         card.appendChild(btn);
         grid.appendChild(card);
       });
-
       $("#shopModal").classList.add("show");
     }
 
@@ -1164,12 +1331,12 @@
       $("#shopModal").classList.remove("show");
     }
 
-    function startRound(index) {
+    function startRound(index, seedText = "") {
       state.roundIndex = index;
       state.score = 0;
       state.handsLeft = 4;
       state.discardsLeft = 3;
-      state.deck = buildDeck();
+      state.deck = buildDeck(seedText);
       state.hand = [];
       state.selected.clear();
       state.gameEnded = false;
@@ -1177,7 +1344,7 @@
       renderCards();
       renderHUD();
       setInfo("핸드를 선택해 플레이하세요.");
-      addLog(`${roundDefs[index].label} 시작. 목표 ${roundDefs[index].target}점`);
+      addLog(`${activeRoundLabel()} 시작. 목표 ${activeTarget()}점`);
     }
 
     function winRound() {
@@ -1187,7 +1354,6 @@
       setInfo(`블라인드 돌파 성공! 보상 +$${reward}`);
       state.gameEnded = true;
       renderHUD();
-
       if (state.roundIndex >= roundDefs.length - 1) {
         setInfo("보스 블라인드 격파! 런 클리어. 새 런을 시작하세요.");
         addLog("런 클리어 완료.");
@@ -1204,10 +1370,152 @@
     }
 
     function newRun() {
+      state.mode = "single";
       state.money = 10;
       state.jokers = [];
       logEl.innerHTML = "";
       closeShop();
+      startRound(0);
+      $("#modeModal").classList.remove("show");
+      $("#pvpPanel").classList.remove("show");
+    }
+
+    function startSingleMode() {
+      $("#modeModal").classList.remove("show");
+      state.mode = "single";
+      pvp.active = false;
+      startRound(0);
+    }
+
+    function applyRemoteAction(event) {
+      if (!event || !event.data) return;
+      const data = event.data;
+      if (data.type === "ROUND_START") {
+        pvp.currentRound = data.round;
+        pvp.roundTarget = data.target || 700;
+        pvp.myRoundEnded = false;
+        pvp.oppRoundEnded = false;
+        pvp.oppRoundScore = 0;
+        pvp.finalized = false;
+        state.mode = "pvp";
+        state.jokers = [];
+        $("#opponentScore").textContent = "상대 점수 0";
+        setOpponentStatus("상대방 플레이 중...");
+        startRound(pvp.currentRound - 1, data.seed || "");
+      }
+      if (data.type === "HAND_PLAYED") {
+        $("#opponentScore").textContent = `상대 점수 ${Number(data.totalScore || 0).toLocaleString()}`;
+        setOpponentStatus("상대방 플레이 중...");
+      }
+      if (data.type === "ROUND_ENDED") {
+        pvp.oppRoundEnded = true;
+        pvp.oppRoundScore = Number(data.roundScore || 0);
+        pvp.oppRoundsWon = Number(data.roundsWon || pvp.oppRoundsWon);
+        setOpponentStatus("상대방 대기 중...");
+        resolvePvpRound();
+      }
+      if (data.type === "GAME_OVER" && !pvp.finalized) {
+        pvp.finalized = true;
+        const text = data.result === "win" ? "패배..." : data.result === "lose" ? `승리! +${pvp.bet * 2}G` : `무승부! +${pvp.bet}G 환불`;
+        openPvpResult(`${text} (상대 전송 결과)`);
+      }
+    }
+
+    function sendRoundStart(roundNo) {
+      if (!pvp.isHost || !pvp.mp) return;
+      const seed = `${Date.now()}-${Math.random().toString(16).slice(2)}-${roundNo}`;
+      const data = { type: "ROUND_START", round: roundNo, seed, target: pvp.roundTarget };
+      applyRemoteAction({ data });
+      sendPvpAction(data);
+    }
+
+    async function ensureStakePaid() {
+      if (!window.SharedWallet || pvp.stakePaid) return true;
+      const ok = SharedWallet.removeGold(pvp.bet);
+      if (!ok) {
+        setInfo(`골드 부족: ${pvp.bet}G 필요`);
+        updateGoldLabel();
+        return false;
+      }
+      pvp.stakePaid = true;
+      updateGoldLabel();
+      return true;
+    }
+
+    async function initMultiplayer() {
+      if (pvp.initialized) return true;
+      if (!window.MultiplayerClient) return false;
+      pvp.mp = MultiplayerClient.getInstance();
+      await pvp.mp.ensureAuth();
+      pvp.mp.onEvent = async (event) => {
+        if (event.type === "player_joined") {
+          pvp.opponentNickname = event.nickname || "상대";
+          setOpponentStatus(`${pvp.opponentNickname} 접속`);
+        }
+        if (event.type === "game_started") {
+          const roomBet = Number(event.betting || (event.room && event.room.betting) || 0);
+          if (roomBet > 0) pvp.bet = roomBet;
+          const paid = await ensureStakePaid();
+          if (!paid) return;
+          $("#modeModal").classList.remove("show");
+          state.mode = "pvp";
+          pvp.active = true;
+          pvp.myRoundsWon = 0;
+          pvp.oppRoundsWon = 0;
+          pvp.finalized = false;
+          $("#opponentScore").textContent = "상대 점수 0";
+          setOpponentStatus("상대방 플레이 중...");
+          addLog(`대전 시작! 배팅 ${pvp.bet}G`);
+          if (pvp.isHost) sendRoundStart(1);
+        }
+        if (event.type === "action") applyRemoteAction(event);
+      };
+      pvp.mp.startListening();
+      pvp.initialized = true;
+      $("#roomHint").textContent = `로그인 완료: ${pvp.mp.nickname || "익명"}`;
+      return true;
+    }
+
+    async function createPvpRoom() {
+      const ok = await initMultiplayer();
+      if (!ok) return setInfo("멀티플레이 클라이언트를 불러오지 못했습니다.");
+      pvp.bet = Number($("#betSelect").value || 100);
+      pvp.isHost = true;
+      const room = await pvp.mp.createRoom("jokerrun", { maxPlayers: 2, betting: pvp.bet });
+      pvp.roomId = room.id || room.roomId || room.code || room.roomCode || "";
+      await pvp.mp.setReady(true);
+      $("#roomHint").textContent = `방 생성 완료. 코드: ${pvp.roomId || "(자동 매칭)"}`;
+      setOpponentStatus("상대방 접속 대기 중...");
+      addLog(`방 생성: 배팅 ${pvp.bet}G`);
+    }
+
+    async function joinPvpRoom() {
+      const ok = await initMultiplayer();
+      if (!ok) return setInfo("멀티플레이 클라이언트를 불러오지 못했습니다.");
+      const code = $("#roomCodeInput").value.trim();
+      if (!code) return setInfo("참가할 방 코드를 입력하세요.");
+      pvp.bet = Number($("#betSelect").value || 100);
+      pvp.isHost = false;
+      await pvp.mp.joinRoom(code);
+      pvp.roomId = code;
+      await pvp.mp.setReady(true);
+      $("#roomHint").textContent = `방 참가 완료: ${code}`;
+      setOpponentStatus("상대방 준비 중...");
+      addLog(`방 참가: ${code}`);
+    }
+
+    async function resetFromPvp() {
+      if (pvp.mp) {
+        try { await pvp.mp.leaveRoom(); } catch (_) {}
+      }
+      pvp.active = false;
+      pvp.stakePaid = false;
+      pvp.finalized = false;
+      $("#pvpResultModal").classList.remove("show");
+      $("#modeModal").classList.add("show");
+      setOpponentStatus("상대 정보 없음");
+      $("#opponentScore").textContent = "상대 점수 0";
+      state.mode = "single";
       startRound(0);
     }
 
@@ -1218,23 +1526,30 @@
       renderCards();
       setInfo("선택을 해제했습니다.");
     });
-
     $("#nextRoundBtn").addEventListener("click", () => {
       closeShop();
       startRound(state.roundIndex + 1);
     });
-
-    $("#restartBtn").addEventListener("click", newRun);
-
-    $("#themeBtn").addEventListener("click", () => {
-      document.documentElement.classList.toggle("light");
+    $("#restartBtn").addEventListener("click", () => {
+      if (state.mode === "pvp") resetFromPvp();
+      else newRun();
     });
+    $("#themeBtn").addEventListener("click", () => document.documentElement.classList.toggle("light"));
+    $("#singleModeBtn").addEventListener("click", startSingleMode);
+    $("#createRoomBtn").addEventListener("click", createPvpRoom);
+    $("#joinRoomBtn").addEventListener("click", joinPvpRoom);
+    $("#pvpConfirmBtn").addEventListener("click", resetFromPvp);
 
-    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
-      document.documentElement.classList.add("light");
-    }
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) document.documentElement.classList.add("light");
 
-    newRun();
+    (async () => {
+      if (window.SharedWallet) {
+        try { await SharedWallet.init(); } catch (_) {}
+      }
+      updateGoldLabel();
+      startRound(0);
+      $("#modeModal").classList.add("show");
+    })();
   </script>
 </body>
 </html>
