@@ -364,8 +364,15 @@ function gameOver() {
 
 function gameWin() {
     gameRunning = false;
+    
+    // 골드 보상: 기본 500 + 점수 보너스
+    const goldReward = 500 + Math.floor(score / 10);
+    if (typeof SharedWallet !== 'undefined') {
+        SharedWallet.addGold(goldReward);
+    }
+    
     overlayTitle.textContent = '축하합니다!';
-    overlayMessage.textContent = `모든 벽돌을 깼습니다! 점수: ${score}점`;
+    overlayMessage.textContent = `모든 벽돌을 깼습니다! 점수: ${score}점\n+${goldReward}G 획득!`;
     startBtn.textContent = '다시 시작';
     overlay.classList.remove('hidden');
 }
