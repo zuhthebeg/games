@@ -84,35 +84,6 @@
             max-width: 420px;
         }
 
-        .column-buttons {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-            margin-bottom: 8px;
-        }
-
-        .col-btn {
-            padding: 8px;
-            border: none;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.1);
-            color: var(--text);
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .col-btn:hover:not(:disabled) {
-            background: var(--accent);
-            color: #000;
-            transform: translateY(-2px);
-        }
-
-        .col-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
         .board {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -131,16 +102,26 @@
             box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
         }
 
+        .cell.clickable {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .cell.clickable:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
         .cell .piece {
             position: absolute;
             inset: 8%;
             border-radius: 50%;
-            animation: drop 0.3s ease-out;
+
+            animation: pop 0.2s ease-out;
         }
 
-        @keyframes drop {
-            from { transform: translateY(-300%); }
-            to { transform: translateY(0); }
+        @keyframes pop {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
         }
 
         .piece.red { 
@@ -304,7 +285,7 @@
             renderGame(gs);
             
             mpUI.getClient().onStateChange = (newState) => {
-                if (newState.status === 'playing') {
+                if (newState.status === 'playing' || newState.status === 'finished') {
                     updateFromState(newState);
                 }
             };
@@ -325,9 +306,9 @@
             winLine = null;
         }
 
-        function handleDrop(col) {
+        function handlePlace(row, col) {
             if (gameOver) return;
-            if (board[0][col] !== null) return; // Column full
+            if (board[row][col] !== null) return;
             
             const currentPlayer = players[currentPlayerIndex];
             
@@ -337,9 +318,9 @@
                     showToast('당신의 차례가 아닙니다');
                     return;
                 }
-                sendDrop(col);
+                sendPlace(row, col);
             } else {
-                dropPiece(col, currentPlayer.color);
+                board[row][col] = currentPlayer.color;
                 checkGameEnd();
                 if (!gameOver) {
                     currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
@@ -348,19 +329,9 @@
             }
         }
 
-        function dropPiece(col, color) {
-            for (let row = ROWS - 1; row >= 0; row--) {
-                if (board[row][col] === null) {
-                    board[row][col] = color;
-                    return { row, col };
-                }
-            }
-            return null;
-        }
-
-        async function sendDrop(col) {
+        async function sendPlace(row, col) {
             try {
-                await mpUI.sendAction({ type: 'drop', payload: { col } });
+                await mpUI.sendAction({ type: 'place', payload: { row, col } });
             } catch (e) {
                 showToast('실패: ' + e.message);
             }
@@ -460,7 +431,7 @@
 
         // ===== Events =====
         function handleGameEvent(type, data) {
-            if (type === 'drop' && isMultiplayer) {
+            if (type === 'place' && isMultiplayer) {
                 // State will be updated via onStateChange
             }
         }
@@ -492,18 +463,8 @@
                     </div>
                     
                     <div class="board-container">
-                        <div class="column-buttons">
-                            ${Array(COLS).fill(0).map((_, col) => `
-                                <button class="col-btn" 
-                                        onclick="handleDrop(${col})"
-                                        ${gameOver || board[0][col] !== null || (isMultiplayer && !isMyTurn) ? 'disabled' : ''}>
-                                    ▼
-                                </button>
-                            `).join('')}
-                        </div>
-                        
                         <div class="board">
-                            ${renderBoard()}
+                            ${renderBoard(isMyTurn)}
                         </div>
                     </div>
                     
@@ -515,15 +476,17 @@
             `;
         }
 
-        function renderBoard() {
+        function renderBoard(canClick = true) {
             let html = '';
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     const color = board[row][col];
                     const isWinCell = winLine?.some(p => p.row === row && p.col === col);
+                    const isEmpty = !color && !gameOver && canClick;
                     
                     html += `
-                        <div class="cell">
+                        <div class="cell ${isEmpty ? 'clickable' : ''}" 
+                             ${isEmpty ? `onclick="handlePlace(${row},${col})"` : ''}>
                             ${color ? `<div class="piece ${color} ${isWinCell ? 'win' : ''}"></div>` : ''}
                         </div>
                     `;
