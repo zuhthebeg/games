@@ -81,12 +81,12 @@
         .board-container {
             position: relative;
             width: 100%;
-            max-width: 420px;
+            max-width: 520px;
         }
 
         .board {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(10, 1fr);
             gap: 4px;
             background: linear-gradient(145deg, var(--board), var(--board-dark));
             padding: 12px;
@@ -201,15 +201,44 @@
     <script src="/lib/multiplayer-ui.js?v=20260210v2"></script>
     <script>
         // ===== Constants =====
-        const COLS = 7;
-        const ROWS = 6;
+        const COLS = 10;
+        const ROWS = 9;
         const COLORS = ['red', 'yellow', 'blue'];
+
+        // ===== Sound Effects =====
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+            return audioCtx;
+        }
+        function playSound(freq, duration = 0.1, type = 'sine') {
+            try {
+                const ctx = getAudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch(e) {}
+        }
+        function sfxPlace() { playSound(600, 0.08, 'triangle'); }
+        function sfxWin() {
+            [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playSound(f, 0.2, 'sine'), i * 120));
+        }
+        function sfxLose() { playSound(200, 0.4, 'sawtooth'); }
 
         // ===== State =====
         let board = [];
         let players = [];
         let currentPlayerIndex = 0;
         let gameOver = false;
+        let resultShown = false;
         let winner = null;
         let winLine = null;
         let myColor = null;
@@ -302,6 +331,7 @@
             board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
             currentPlayerIndex = 0;
             gameOver = false;
+            resultShown = false;
             winner = null;
             winLine = null;
         }
@@ -321,6 +351,7 @@
                 sendPlace(row, col);
             } else {
                 board[row][col] = currentPlayer.color;
+                sfxPlace();
                 checkGameEnd();
                 if (!gameOver) {
                     currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
@@ -341,7 +372,7 @@
             const gs = state.gameState;
             
             players = gs.players;
-            currentPlayerIndex = gs.currentPlayerIndex;
+            currentPlayerIndex = gs.currentPlayerIndex ?? 0;
             
             board = gs.board.map(row => row.map(cell => {
                 if (!cell) return null;
@@ -349,15 +380,22 @@
                 return p?.color || null;
             }));
             
+            const wasOver = gameOver;
             gameOver = !!gs.winner;
             winner = gs.winner;
             winLine = gs.winLine;
             
+            if (!wasOver && gs.lastMove) sfxPlace();
+            
             renderGame(gs);
             
-            if (gameOver && winner && winner !== 'draw') {
-                const winnerPlayer = players.find(p => p.id === winner);
-                setTimeout(() => showResult(winnerPlayer), 300);
+            if (gameOver && !resultShown) {
+                if (winner && winner !== 'draw') {
+                    const winnerPlayer = players.find(p => p.id === winner);
+                    setTimeout(() => showResult(winnerPlayer, gs.stoneCounts), 300);
+                } else if (winner === 'draw') {
+                    setTimeout(() => showResult(null, null), 300);
+                }
             }
         }
 
@@ -371,7 +409,7 @@
                             gameOver = true;
                             winLine = result;
                             const winnerPlayer = players.find(p => p.color === board[row][col]);
-                            setTimeout(() => showResult(winnerPlayer), 300);
+                            setTimeout(() => showResult(winnerPlayer, null), 300);
                             return;
                         }
                     }
@@ -379,9 +417,11 @@
             }
             
             // Check draw
-            if (board[0].every(cell => cell !== null)) {
+            const allFull = board.every(row => row.every(cell => cell !== null));
+            if (allFull) {
                 gameOver = true;
                 winner = 'draw';
+                setTimeout(() => showResult(null, null), 300);
             }
         }
 
@@ -410,17 +450,47 @@
             return null;
         }
 
-        function showResult(winnerPlayer) {
+        function showResult(winnerPlayer, stoneCounts) {
+            if (resultShown) return;
+            resultShown = true;
+            
             if (isMultiplayer) {
                 const myId = mpUI.getClient().getMyUserId();
                 const isWin = winnerPlayer?.id === myId;
+                
+                // Gold: winner gets stones × 100, losers lose 100
+                let goldChange = 0;
+                let goldText = '';
+                if (winnerPlayer) {
+                    if (isWin) {
+                        const myStones = stoneCounts?.[myId] ?? 0;
+                        goldChange = myStones * 100;
+                        sfxWin();
+                    } else {
+                        goldChange = -100;
+                        sfxLose();
+                    }
+                    if (typeof SharedWallet !== 'undefined') {
+                        SharedWallet.addGold(goldChange);
+                    }
+                    goldText = goldChange > 0 
+                        ? `<span style="color:#4ecca3">+${goldChange}G</span>` 
+                        : `<span style="color:#ff6b6b">${goldChange}G</span>`;
+                }
+                
+                const stoneInfo = winnerPlayer && stoneCounts?.[winnerPlayer.id] 
+                    ? ` (돌 ${stoneCounts[winnerPlayer.id]}개)` : '';
+                
                 mpUI.showResult({
                     title: isWin ? '🎉 승리!' : '😢 패배',
-                    detail: winnerPlayer ? `${getColorName(winnerPlayer.color)} ${winnerPlayer.nickname} 승리` : '무승부',
+                    detail: winnerPlayer 
+                        ? `${getColorName(winnerPlayer.color)} ${winnerPlayer.nickname} 승리${stoneInfo} ${goldText}` 
+                        : '무승부',
                     isWin,
                     showRematch: true
                 });
             } else {
+                if (winnerPlayer) sfxWin();
                 mpUI.showResult({
                     title: winnerPlayer ? `${getColorName(winnerPlayer.color)} 승리!` : '무승부',
                     isWin: null,
