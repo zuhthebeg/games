@@ -102,28 +102,32 @@
             background: var(--board-line);
         }
 
+        /* Horizontal line */
         .cell::before {
-            left: 50%; right: -50%;
+            left: 0; right: 0;
             top: 50%; height: 1px;
         }
+        .cell[data-col="0"]::before { left: 50%; }
+        .cell[data-col="14"]::before { right: 50%; }
 
+        /* Vertical line */
         .cell::after {
-            top: 50%; bottom: -50%;
+            top: 0; bottom: 0;
             left: 50%; width: 1px;
         }
-
-        .cell[data-col="14"]::before { right: 50%; }
+        .cell[data-row="0"]::after { top: 50%; }
         .cell[data-row="14"]::after { bottom: 50%; }
 
-        /* Star points */
-        .cell.star::before {
+        /* Star points - separate element, not ::before */
+        .star-dot {
+            position: absolute;
             width: 8px; height: 8px;
             background: var(--board-line);
             border-radius: 50%;
             left: 50%; top: 50%;
-            right: auto; bottom: auto;
             transform: translate(-50%, -50%);
             z-index: 1;
+            pointer-events: none;
         }
 
         .cell .placed-stone {
@@ -385,14 +389,22 @@
                 return p?.color || null;
             }));
             
-            currentPlayer = gs.players.find(p => p.id === gs.currentPlayer)?.color || 'black';
+            if (gs.currentPlayer) {
+                const cp = gs.players.find(p => p.id === gs.currentPlayer);
+                currentPlayer = cp?.color || 'black';
+            }
+            
+            const wasGameOver = gameOver;
             gameOver = !!gs.winner;
             
             renderGame(gs);
             
-            if (gameOver && gs.winner && gs.winner !== 'draw') {
+            // 새로 게임이 끝났을 때만 결과 표시 (중복 방지)
+            if (gameOver && !wasGameOver && gs.winner && gs.winner !== 'draw') {
                 const winnerColor = gs.players.find(p => p.id === gs.winner)?.color;
                 showResult(winnerColor);
+            } else if (gameOver && !wasGameOver && gs.winner === 'draw') {
+                showResult(null);
             }
         }
 
@@ -516,8 +528,10 @@
                     cell.dataset.row = row;
                     cell.dataset.col = col;
                     
-                    if (STAR_POINTS.some(([r,c]) => r === row && c === col)) {
-                        cell.classList.add('star');
+                    if (STAR_POINTS.some(([r,c]) => r === row && c === col) && !board[row][col]) {
+                        const dot = document.createElement('div');
+                        dot.className = 'star-dot';
+                        cell.appendChild(dot);
                     }
                     
                     if (board[row][col]) {
