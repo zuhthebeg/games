@@ -328,7 +328,7 @@
             
             // Setup realtime updates
             mpUI.getClient().onStateChange = (newState) => {
-                if (newState.status === 'playing') {
+                if (newState.status === 'playing' || newState.status === 'finished') {
                     updateFromState(newState);
                 }
             };
