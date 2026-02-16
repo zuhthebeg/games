@@ -1,9 +1,14 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ì˜¤ëª© - Gomoku</title>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<!-- End Google Tag Manager -->
+
+    <title>¿À¸ñ - Gomoku</title>
     <link rel="icon" href="icon.svg">
     <style>
         :root {
@@ -34,7 +39,7 @@
             flex-direction: column;
             align-items: center;
             padding: 16px;
-            padding-top: 60px; /* SharedWallet ë°” ê³µê°„ */
+            padding-top: 60px; /* SharedWallet ¹Ù °ø°£ */
             min-height: 100vh;
         }
 
@@ -304,17 +309,21 @@
     </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
     <div id="app"></div>
 
     <script src="/lib/multiplayer.js?v=20260210v2"></script>
     <script src="/lib/multiplayer-ui.js?v=20260210v2"></script>
     <script src="/lib/shared-wallet.js?v=20260211"></script>
     <script>
-        // ===== ê³µìš© ì¬í™” ì‹œìŠ¤í…œ =====
+        // ===== °ø¿ë ÀçÈ­ ½Ã½ºÅÛ =====
         let sharedGold = 0;
         let cloudSyncEnabled = false;
-        const WIN_REWARD = 1000;  // ìŠ¹ë¦¬ ë³´ìƒ
-        const LOSE_PENALTY = 100; // íŒ¨ë°° í˜ë„í‹°
+        const WIN_REWARD = 1000;  // ½Â¸® º¸»ó
+        const LOSE_PENALTY = 100; // ÆĞ¹è Æä³ÎÆ¼
         
         // ===== Sound Effects =====
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -373,7 +382,7 @@
         }
         
         async function saveSharedGold() {
-            // SharedWallet ì‚¬ìš©
+            // SharedWallet »ç¿ë
             if (typeof SharedWallet !== 'undefined') {
                 SharedWallet.setGold(sharedGold);
             } else {
@@ -432,7 +441,7 @@
                 bar.style.background = timeLeft <= 5 ? '#ff6b6b' : timeLeft <= 10 ? '#eab308' : 'var(--accent)';
             }
             if (text) {
-                text.textContent = timeLeft + 'ì´ˆ';
+                text.textContent = timeLeft + 'ÃÊ';
                 text.style.color = timeLeft <= 5 ? '#ff6b6b' : 'var(--text)';
             }
         }
@@ -442,20 +451,20 @@
             if (isMultiplayer) {
                 const isMyTurn = myColor === currentPlayer;
                 if (isMyTurn) {
-                    // ë‚´ í„´ì— ì‹œê°„ ì´ˆê³¼ â†’ ëœë¤ ìœ„ì¹˜ì— ë†“ê¸°
+                    // ³» ÅÏ¿¡ ½Ã°£ ÃÊ°ú ¡æ ·£´ı À§Ä¡¿¡ ³õ±â
                     const empty = [];
                     for (let r = 0; r < BOARD_SIZE; r++)
                         for (let c = 0; c < BOARD_SIZE; c++)
                             if (!board[r][c]) empty.push([r, c]);
                     if (empty.length > 0) {
                         const [r, c] = empty[Math.floor(Math.random() * empty.length)];
-                        showToast('ì‹œê°„ ì´ˆê³¼! ìë™ ì°©ìˆ˜');
+                        showToast('½Ã°£ ÃÊ°ú! ÀÚµ¿ Âø¼ö');
                         sendMove(r, c);
                     }
                 }
             } else {
-                // ë¡œì»¬: í„´ ë„˜ê¸°ê¸°
-                showToast('ì‹œê°„ ì´ˆê³¼! í„´ ë„˜ê¹€');
+                // ·ÎÄÃ: ÅÏ ³Ñ±â±â
+                showToast('½Ã°£ ÃÊ°ú! ÅÏ ³Ñ±è');
                 currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
                 startTimer();
                 renderGame();
@@ -464,7 +473,7 @@
 
         // ===== Initialize =====
         function init() {
-            // ê³µìš© ì¬í™” ë¡œë“œ (SharedWalletì—ì„œ)
+            // °ø¿ë ÀçÈ­ ·Îµå (SharedWallet¿¡¼­)
             if (typeof SharedWallet !== 'undefined') {
                 SharedWallet.init().then(() => {
                     sharedGold = SharedWallet.gold;
@@ -476,7 +485,7 @@
             
             mpUI = new MultiplayerUI({
                 gameType: 'gomoku',
-                gameName: 'âš«âšª ì˜¤ëª©',
+                gameName: '?? ¿À¸ñ',
                 container: document.getElementById('app'),
                 maxPlayers: 2,
                 onGameStart: handleGameStart,
@@ -541,7 +550,7 @@
             };
             
             if (!gameOver) startTimer();
-            showToast(`ê²Œì„ ì‹œì‘! ë‹¹ì‹ ì€ ${myColor === 'black' ? 'í‘' : 'ë°±'}ì…ë‹ˆë‹¤`);
+            showToast(`°ÔÀÓ ½ÃÀÛ! ´ç½ÅÀº ${myColor === 'black' ? 'Èæ' : '¹é'}ÀÔ´Ï´Ù`);
         }
 
         // ===== Board Logic =====
@@ -556,7 +565,7 @@
             if (gameOver || board[row][col]) return;
             
             if (isMultiplayer && myColor !== currentPlayer) {
-                showToast('ìƒëŒ€ ì°¨ë¡€ì…ë‹ˆë‹¤');
+                showToast('»ó´ë Â÷·ÊÀÔ´Ï´Ù');
                 return;
             }
             
@@ -604,10 +613,10 @@
             overlay.id = 'confirmOverlay';
             overlay.innerHTML = `
                 <div class="confirm-box">
-                    <p>ì´ ìœ„ì¹˜ì— ë‘ì‹œê² ìŠµë‹ˆê¹Œ?<br><small style="color:#888">(${row+1}, ${col+1})</small></p>
+                    <p>ÀÌ À§Ä¡¿¡ µÎ½Ã°Ú½À´Ï±î?<br><small style="color:#888">(${row+1}, ${col+1})</small></p>
                     <div class="btns">
-                        <button class="btn" onclick="cancelMove()">ì·¨ì†Œ</button>
-                        <button class="btn primary" onclick="executeMove(${row},${col})">í™•ì¸</button>
+                        <button class="btn" onclick="cancelMove()">Ãë¼Ò</button>
+                        <button class="btn primary" onclick="executeMove(${row},${col})">È®ÀÎ</button>
                     </div>
                 </div>
             `;
@@ -655,7 +664,7 @@
                 startTimer();
                 renderGame({ lastMove: { row, col } });
             } catch (e) {
-                showToast('ì‹¤íŒ¨: ' + e.message);
+                showToast('½ÇÆĞ: ' + e.message);
             }
         }
 
@@ -681,7 +690,7 @@
             
             renderGame(gs);
             
-            // ìƒˆë¡œ ê²Œì„ì´ ëë‚¬ì„ ë•Œë§Œ ê²°ê³¼ í‘œì‹œ (ì¤‘ë³µ ë°©ì§€)
+            // »õ·Î °ÔÀÓÀÌ ³¡³µÀ» ¶§¸¸ °á°ú Ç¥½Ã (Áßº¹ ¹æÁö)
             if (gameOver && !wasGameOver && gs.winner && gs.winner !== 'draw') {
                 const winnerColor = gs.players.find(p => p.id === gs.winner)?.color;
                 showResult(winnerColor);
@@ -730,15 +739,15 @@
                     : `<span style="color:#ff6b6b">${goldChange}G</span>`;
                 
                 mpUI.showResult({
-                    title: isWin ? 'ğŸ‰ ìŠ¹ë¦¬!' : 'ğŸ˜¢ íŒ¨ë°°',
-                    detail: `${(winner === 'black' ? 'í‘' : 'ë°±')} ìŠ¹ë¦¬ ${goldText}`,
+                    title: isWin ? '?? ½Â¸®!' : '?? ÆĞ¹è',
+                    detail: `${(winner === 'black' ? 'Èæ' : '¹é')} ½Â¸® ${goldText}`,
                     isWin: isWin,
                     showRematch: true
                 });
             } else {
-                // ì‹±ê¸€í”Œë ˆì´ (ë¡œì»¬ 2ì¸)ëŠ” ë³´ìƒ ì—†ìŒ
+                // ½Ì±ÛÇÃ·¹ÀÌ (·ÎÄÃ 2ÀÎ)´Â º¸»ó ¾øÀ½
                 mpUI.showResult({
-                    title: (winner === 'black' ? 'âš« í‘' : 'âšª ë°±') + ' ìŠ¹ë¦¬!',
+                    title: (winner === 'black' ? '? Èæ' : '? ¹é') + ' ½Â¸®!',
                     isWin: null,
                     showRematch: false
                 });
@@ -771,29 +780,29 @@
                     <div class="game-header">
                         <div class="player-info ${currentPlayer === 'black' && !gameOver ? 'active' : ''}">
                             <div class="stone black"></div>
-                            <span>${isMultiplayer ? blackName : 'í‘'}${gs.players?.find(p => p.color === 'black')?.id === myId ? ' (ë‚˜)' : ''}</span>
+                            <span>${isMultiplayer ? blackName : 'Èæ'}${gs.players?.find(p => p.color === 'black')?.id === myId ? ' (³ª)' : ''}</span>
                         </div>
                         <div class="player-info ${currentPlayer === 'white' && !gameOver ? 'active' : ''}">
                             <div class="stone white"></div>
-                            <span>${isMultiplayer ? whiteName : 'ë°±'}${gs.players?.find(p => p.color === 'white')?.id === myId ? ' (ë‚˜)' : ''}</span>
+                            <span>${isMultiplayer ? whiteName : '¹é'}${gs.players?.find(p => p.color === 'white')?.id === myId ? ' (³ª)' : ''}</span>
                         </div>
                     </div>
                     
                     ${(() => {
-                        if (gameOver) return '<div class="turn-banner game-over-banner">ê²Œì„ ì¢…ë£Œ</div>';
+                        if (gameOver) return '<div class="turn-banner game-over-banner">°ÔÀÓ Á¾·á</div>';
                         const isMyTurn = isMultiplayer ? myColor === currentPlayer : true;
-                        const turnColor = currentPlayer === 'black' ? 'âš«' : 'âšª';
+                        const turnColor = currentPlayer === 'black' ? '?' : '?';
                         if (isMultiplayer) {
                             return isMyTurn
-                                ? `<div class="turn-banner my-turn">${turnColor} ë‚´ ì°¨ë¡€! ëŒì„ ë†“ìœ¼ì„¸ìš”</div>`
-                                : `<div class="turn-banner opp-turn">${turnColor} ìƒëŒ€ ì°¨ë¡€... ê¸°ë‹¤ë¦¬ì„¸ìš”</div>`;
+                                ? `<div class="turn-banner my-turn">${turnColor} ³» Â÷·Ê! µ¹À» ³õÀ¸¼¼¿ä</div>`
+                                : `<div class="turn-banner opp-turn">${turnColor} »ó´ë Â÷·Ê... ±â´Ù¸®¼¼¿ä</div>`;
                         }
-                        return `<div class="turn-banner my-turn">${turnColor} ${currentPlayer === 'black' ? 'í‘' : 'ë°±'}ì˜ ì°¨ë¡€</div>`;
+                        return `<div class="turn-banner my-turn">${turnColor} ${currentPlayer === 'black' ? 'Èæ' : '¹é'}ÀÇ Â÷·Ê</div>`;
                     })()}
                     
                     ${!gameOver ? `
                     <div style="display:flex;align-items:center;gap:8px;width:100%;max-width:400px">
-                        <span class="timer-text" id="timerText">${timeLeft}ì´ˆ</span>
+                        <span class="timer-text" id="timerText">${timeLeft}ÃÊ</span>
                         <div class="timer-bar"><div class="fill" id="timerFill" style="width:${(timeLeft/TURN_TIME)*100}%;background:var(--accent)"></div></div>
                     </div>` : ''}
                     
@@ -805,19 +814,19 @@
                     
                     <div style="display:flex;align-items:center;justify-content:space-between;width:100%;max-width:400px;margin-top:8px">
                         <div class="zoom-controls">
-                            <button class="zoom-btn" onclick="zoomOut()">âˆ’</button>
+                            <button class="zoom-btn" onclick="zoomOut()">?</button>
                             <button class="zoom-btn" onclick="zoomReset()">1:1</button>
                             <button class="zoom-btn" onclick="zoomIn()">+</button>
                         </div>
                         <div class="settings-row">
                             <input type="checkbox" id="confirmToggle" ${confirmBeforePlace ? 'checked' : ''} onchange="toggleConfirm(this)">
-                            <label for="confirmToggle">ì°©ìˆ˜ í™•ì¸</label>
+                            <label for="confirmToggle">Âø¼ö È®ÀÎ</label>
                         </div>
                     </div>
                     
                     <div class="game-actions">
-                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">ìƒˆ ê²Œì„</button>' : ''}
-                        <button class="btn" onclick="exitGame()">ë‚˜ê°€ê¸°</button>
+                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">»õ °ÔÀÓ</button>' : ''}
+                        <button class="btn" onclick="exitGame()">³ª°¡±â</button>
                     </div>
                 </div>
             `;
@@ -871,7 +880,7 @@
         function exitGame() {
             clearTimer();
             if (isMultiplayer && mpUI.getClient()) {
-                if (confirm('ê²Œì„ì„ ë‚˜ê°€ì‹œê² ìŠµë‹ˆê¹Œ?')) {
+                if (confirm('°ÔÀÓÀ» ³ª°¡½Ã°Ú½À´Ï±î?')) {
                     mpUI.getClient().leaveRoom().catch(() => {});
                     MultiplayerClient.resetInstance();
                     isMultiplayer = false;

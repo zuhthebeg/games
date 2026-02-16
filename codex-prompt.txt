@@ -1,0 +1,11 @@
+jokerrun/index.html 조커런 라운드 시스템 수정:
+
+1) 첫 라운드(스몰 블라인드) 300점 달성해도 다음 단계로 안 넘어가는 버그 수정
+2) canContinue() 함수에 console.log 추가해서 점수/목표값 확인
+3) playSelected() 에서 점수 추가 후 canContinue() 호출 순서 확인
+4) 테스트: 300점 넘으면 winRound() 호출되어 상점 열리는지 확인
+
+완료 후:
+git add jokerrun/
+git commit -m "fix: jokerrun round progression - 300점 달성 시 정상 진행"
+git push

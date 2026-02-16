@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>3쿠션 당구 시뮬레이터 v5.3</title>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<!-- End Google Tag Manager -->
+
+  <title>3쿠션 ?�구 ?��??�이??v5.3</title>
   <style>
     * {
       margin: 0;
@@ -119,7 +124,7 @@
       border-color: #4fc3f7;
     }
 
-    /* 파워/각도 슬라이더 */
+    /* ?�워/각도 ?�라?�더 */
     #sliderControls {
       display: flex;
       flex-direction: column;
@@ -175,7 +180,7 @@
       font-weight: bold;
     }
 
-    /* 원형 스핀 컨트롤 */
+    /* ?�형 ?��? 컨트�?*/
     #spinControl {
       display: flex;
       flex-direction: column;
@@ -373,7 +378,7 @@
       padding: 8px 15px;
       border-radius: 15px;
     }
-    /* 컨트롤 숨기기 */
+    /* 컨트�??�기�?*/
     body.hide-controls #header,
     body.hide-controls #controls {
       display: none !important;
@@ -461,11 +466,15 @@
   </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
   <div id="gameContainer">
     <div id="header">
       <div id="scoreBoard">
-        <span>점수: <span class="score-value" id="scoreDisplay">0</span></span>
-        <span>이닝: <span class="score-value" id="inningDisplay">1</span></span>
+        <span>?�수: <span class="score-value" id="scoreDisplay">0</span></span>
+        <span>?�닝: <span class="score-value" id="inningDisplay">1</span></span>
         <span>최고: <span class="score-value" id="highScoreDisplay">0</span></span>
         <span style="opacity:0.4;font-size:10px;margin-left:10px">v6.3</span>
       </div>
@@ -473,48 +482,48 @@
 
     <div id="canvasWrapper">
       <canvas id="gameCanvas"></canvas>
-      <div id="powerIndicator">파워: <span id="powerValue">0</span>%</div>
+      <div id="powerIndicator">?�워: <span id="powerValue">0</span>%</div>
     </div>
 
     <div id="controls">
-      <!-- 파워/각도 슬라이더 -->
+      <!-- ?�워/각도 ?�라?�더 -->
       <div id="sliderControls">
         <div class="slider-group">
-          <label>🎯 각도: <span id="angleValue">0</span>°</label>
+          <label>?�� 각도: <span id="angleValue">0</span>°</label>
           <input type="range" id="angleSlider" min="0" max="359" value="0">
         </div>
         <div class="slider-group">
-          <label>💪 파워: <span id="powerSliderValue">50</span></label>
+          <label>?�� ?�워: <span id="powerSliderValue">50</span></label>
           <input type="range" id="powerSlider" min="10" max="200" value="50" step="5">
         </div>
-        <button class="btn" id="btnShootSlider">🎱 샷</button>
+        <button class="btn" id="btnShootSlider">?�� ??/button>
       </div>
       <div id="spinControl">
         <canvas id="spinCanvas" width="80" height="80"></canvas>
-        <div id="spinLabel">당점: 중앙</div>
+        <div id="spinLabel">?�점: 중앙</div>
       </div>
-      <button class="btn" id="btnFullscreen">⛶ 전체화면</button>
-      <button class="btn" id="btnTrajectory">📍 궤적</button>
-      <button class="btn" id="btnSolution">💡 해법 찾기</button>
-      <button class="btn" id="btnPresets">📚 예시</button>
-      <button class="btn" id="btnReset">🔄 리셋</button>
+      <button class="btn" id="btnFullscreen">???�체?�면</button>
+      <button class="btn" id="btnTrajectory">?�� 궤적</button>
+      <button class="btn" id="btnSolution">?�� ?�법 찾기</button>
+      <button class="btn" id="btnPresets">?�� ?�시</button>
+      <button class="btn" id="btnReset">?�� 리셋</button>
     </div>
   </div>
 
-  <button id="toggleControlsBtn" title="메뉴 숨기기/보이기">👁️</button>
+  <button id="toggleControlsBtn" title="메뉴 ?�기�?보이�?>?���?/button>
 
   <div id="presetsPanel">
     <h3>
-      <span>📚 예시 샷</span>
-      <button class="btn" id="btnClosePresets">✕</button>
+      <span>?�� ?�시 ??/span>
+      <button class="btn" id="btnClosePresets">??/button>
     </h3>
     <div class="preset-list" id="presetList"></div>
   </div>
 
   <div id="solutionsPanel">
     <h3>
-      <span>💡 해법</span>
-      <button class="btn" id="btnCloseSolutions">✕</button>
+      <span>?�� ?�법</span>
+      <button class="btn" id="btnCloseSolutions">??/button>
     </h3>
     <div class="solution-list" id="solutionList"></div>
   </div>
@@ -522,7 +531,7 @@
   <div id="statusMessage"></div>
 
   <script>
-    // ===== 게임 상태 =====
+    // ===== 게임 ?�태 =====
     const state = {
       score: 0,
       inning: 1,
@@ -542,100 +551,100 @@
       isFullscreen: false
     };
 
-    // ===== 테이블 설정 =====
+    // ===== ?�이�??�정 =====
     const TABLE = {
       ratio: 2,
       railWidth: 30,
-      // 공 직경 61.5mm / 테이블폭 2840mm = 0.0217 (직경비율)
-      // 반지름은 절반 = 0.01085
+      // �?직경 61.5mm / ?�이블폭 2840mm = 0.0217 (직경비율)
+      // 반�?름�? ?�반 = 0.01085
       ballRadiusRatio: 0.01085
     };
 
-    // ===== 공 정의 =====
+    // ===== �??�의 =====
     let balls = [
       { id: 'cue', x: 0, y: 0, vx: 0, vy: 0, color: '#ffffff', spinX: 0, spinY: 0 },
       { id: 'red', x: 0, y: 0, vx: 0, vy: 0, color: '#dc3545', spinX: 0, spinY: 0 },
       { id: 'yellow', x: 0, y: 0, vx: 0, vy: 0, color: '#ffd700', spinX: 0, spinY: 0 }
     ];
 
-    // ===== 프리셋 정의 (v6.2 - 각도 자동계산) =====
-    // 두께: 1/2=반반, 얇게=1/4, 두껍게=3/4
-    // 스핀: [좌우회전, 상하회전] -3~+3 범위
-    // angle: -1이면 자동으로 1적구 방향 계산
+    // ===== ?�리???�의 (v6.2 - 각도 ?�동계산) =====
+    // ?�께: 1/2=반반, ?�게=1/4, ?�껍�?3/4
+    // ?��?: [좌우?�전, ?�하?�전] -3~+3 범위
+    // angle: -1?�면 ?�동?�로 1?�구 방향 계산
     const PRESETS = [
       {
-        name: '옆돌리기 반반',
-        icon: '↪️',
-        desc: '1/2두께 무회전 기본샷',
+        name: '?�돌리기 반반',
+        icon: '?�️',
+        desc: '1/2?�께 무회??기본??,
         balls: { cue: [0.2, 0.7], red: [0.35, 0.45], yellow: [0.7, 0.15] },
         angle: -1, power: 70, spin: [0, 0]
       },
       {
-        name: '옆돌리기 끌어',
+        name: '?�돌리기 ?�어',
         icon: '⬇️',
-        desc: '하단당점 끌어치기',
+        desc: '?�단?�점 ?�어치기',
         balls: { cue: [0.2, 0.65], red: [0.35, 0.5], yellow: [0.5, 0.2] },
         angle: -1, power: 75, spin: [0, -2]
       },
       {
-        name: '뒤돌리기',
-        icon: '↩️',
-        desc: '1적구 맞고 뒤로 돌아옴',
+        name: '?�돌리기',
+        icon: '?�️',
+        desc: '1?�구 맞고 ?�로 ?�아??,
         balls: { cue: [0.75, 0.7], red: [0.6, 0.5], yellow: [0.2, 0.3] },
         angle: -1, power: 65, spin: [1, 0]
       },
       {
-        name: '앞돌리기',
-        icon: '➡️',
-        desc: '장쿠션 타고 앞으로',
+        name: '?�돌리기',
+        icon: '?�️',
+        desc: '?�쿠???��??�으�?,
         balls: { cue: [0.15, 0.5], red: [0.4, 0.3], yellow: [0.85, 0.5] },
         angle: -1, power: 80, spin: [2, 0]
       },
       {
-        name: '대회전',
-        icon: '🔄',
-        desc: '테이블 한바퀴 돌기',
+        name: '?�?�전',
+        icon: '?��',
+        desc: '?�이�??�바???�기',
         balls: { cue: [0.2, 0.85], red: [0.15, 0.3], yellow: [0.8, 0.15] },
         angle: -1, power: 120, spin: [1, 1]
       },
       {
-        name: '더블레일',
-        icon: '💫',
-        desc: '같은 장쿠션 2번',
+        name: '?�블?�일',
+        icon: '?��',
+        desc: '같�? ?�쿠??2�?,
         balls: { cue: [0.3, 0.5], red: [0.55, 0.25], yellow: [0.75, 0.7] },
         angle: -1, power: 85, spin: [0, 1]
       },
       {
-        name: '짧은 옆돌리기',
-        icon: '📏',
+        name: '짧�? ?�돌리기',
+        icon: '?��',
         desc: '가까운 거리 3쿠션',
         balls: { cue: [0.25, 0.75], red: [0.4, 0.55], yellow: [0.6, 0.35] },
         angle: -1, power: 55, spin: [0, 0]
       },
       {
-        name: '긴 옆돌리기',
-        icon: '📐',
-        desc: '먼 거리 3팁 회전',
+        name: '�??�돌리기',
+        icon: '?��',
+        desc: '�?거리 3???�전',
         balls: { cue: [0.15, 0.7], red: [0.35, 0.35], yellow: [0.85, 0.2] },
         angle: -1, power: 90, spin: [3, 0]
       },
       {
         name: '비껴치기',
-        icon: '🎯',
-        desc: '얇은 두께로 비껴맞힘',
+        icon: '?��',
+        desc: '?��? ?�께�?비껴맞힘',
         balls: { cue: [0.5, 0.8], red: [0.5, 0.55], yellow: [0.2, 0.2] },
         angle: -1, power: 60, spin: [-2, 0]
       },
       {
-        name: '제각돌리기',
-        icon: '⭐',
-        desc: '1적구 제자리, 수구만 이동',
+        name: '?�각?�리�?,
+        icon: '�?,
+        desc: '1?�구 ?�자�? ?�구�??�동',
         balls: { cue: [0.3, 0.6], red: [0.45, 0.45], yellow: [0.7, 0.2] },
         angle: -1, power: 50, spin: [0, -1]
       }
     ];
 
-    // ===== 캔버스 초기화 =====
+    // ===== 캔버??초기??=====
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     let tableWidth, tableHeight, playWidth, playHeight;
@@ -646,7 +655,7 @@
       
       let maxWidth, maxHeight;
       if (isFullscreen) {
-        // v5.2: 전체화면 시 테이블 최대화 (98% x 95%)
+        // v5.2: ?�체?�면 ???�이�?최�???(98% x 95%)
         maxWidth = window.innerWidth * 0.98;
         maxHeight = window.innerHeight * 0.95;
       } else {
@@ -679,19 +688,19 @@
 
     function resetBallPositions() {
       const margin = TABLE.railWidth;
-      // 초구 배치: 노란공 좌측, 흰공+빨간공 우측 세로 정렬
-      balls[0].x = margin + playWidth * 0.75;  // 흰공 (수구) - 우측 아래
+      // 초구 배치: ?��?�?좌측, ?�공+빨간�??�측 ?�로 ?�렬
+      balls[0].x = margin + playWidth * 0.75;  // ?�공 (?�구) - ?�측 ?�래
       balls[0].y = margin + playHeight * 0.65;
-      balls[1].x = margin + playWidth * 0.75;  // 빨간공 - 우측 위 (흰공 위)
+      balls[1].x = margin + playWidth * 0.75;  // 빨간�?- ?�측 ??(?�공 ??
       balls[1].y = margin + playHeight * 0.35;
-      balls[2].x = margin + playWidth * 0.25;  // 노란공 - 좌측 중앙
+      balls[2].x = margin + playWidth * 0.25;  // ?��?�?- 좌측 중앙
       balls[2].y = margin + playHeight * 0.5;
       
-      // 노란공 방향으로 조준
+      // ?��?�?방향?�로 조�?
       setTimeout(aimTowardsYellow, 50);
     }
 
-    // ===== 그리기 함수들 =====
+    // ===== 그리�??�수??=====
     function draw() {
       ctx.clearRect(0, 0, tableWidth, tableHeight);
       drawTable();
@@ -711,7 +720,7 @@
       if (state.isDragging && !state.isDraggingBall) {
         drawAimLine();
       } else if (!state.isPlaying) {
-        // 슬라이더 기반 가이드라인 표시
+        // ?�라?�더 기반 가?�드?�인 ?�시
         drawSliderAimLine();
       }
     }
@@ -725,7 +734,7 @@
       const angle = parseInt(angleSlider.value) * Math.PI / 180;
       const power = parseInt(powerSlider.value);
       
-      // 가이드라인
+      // 가?�드?�인
       ctx.strokeStyle = 'rgba(100, 200, 255, 0.4)';
       ctx.lineWidth = 2;
       ctx.setLineDash([8, 6]);
@@ -736,14 +745,14 @@
       ctx.stroke();
       ctx.setLineDash([]);
       
-      // 고스트볼 (적구와 접촉 위치 표시) + 두께 미리보기
+      // 고스?�볼 (?�구?� ?�촉 ?�치 ?�시) + ?�께 미리보기
       let firstContact = null;
       [balls[1], balls[2]].forEach(targetBall => {
         const contact = findContactPoint(cueBall, targetBall, angle);
         if (contact) {
           if (!firstContact) firstContact = { contact, targetBall };
           
-          // 고스트볼 (반투명 수구 위치)
+          // 고스?�볼 (반투�??�구 ?�치)
           ctx.beginPath();
           ctx.arc(contact.ghostX, contact.ghostY, TABLE.ballRadius, 0, Math.PI * 2);
           ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
@@ -752,7 +761,7 @@
           ctx.stroke();
           ctx.setLineDash([]);
           
-          // 접촉점 (노란 점)
+          // ?�촉??(?��? ??
           ctx.beginPath();
           ctx.arc(contact.contactX, contact.contactY, 4, 0, Math.PI * 2);
           ctx.fillStyle = 'rgba(255, 200, 0, 0.9)';
@@ -760,20 +769,20 @@
         }
       });
       
-      // 두께 미리보기 (우측 상단에 확대 표시)
+      // ?�께 미리보기 (?�측 ?�단???��? ?�시)
       if (firstContact) {
         drawThicknessPreview(firstContact.contact, firstContact.targetBall);
       }
     }
     
-    // 두께 미리보기 - 공 접촉 확대 이미지
+    // ?�께 미리보기 - �??�촉 ?��? ?��?지
     function drawThicknessPreview(contact, targetBall) {
       const previewSize = Math.min(120, tableWidth * 0.15);
       const previewX = tableWidth - previewSize - 10;
       const previewY = 10;
       const previewRadius = previewSize * 0.35;
       
-      // 반투명 배경 (둥근 모서리)
+      // 반투�?배경 (?�근 모서�?
       ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
       const rx = previewX - 5, ry = previewY - 5;
       const rw = previewSize + 10, rh = previewSize + 30, rr = 10;
@@ -790,27 +799,27 @@
       ctx.closePath();
       ctx.fill();
       
-      // 중앙 좌표 (적구 중심 기준)
+      // 중앙 좌표 (?�구 중심 기�?)
       const centerX = previewX + previewSize / 2;
       const centerY = previewY + previewSize / 2;
       
-      // 두께 % 계산 (정면=100%, 얇게=0%)
+      // ?�께 % 계산 (?�면=100%, ?�게=0%)
       const thickness = Math.round(contact.thicknessRatio * 100);
       
-      // 수구 위치: 두께에 따라 겹침 표현
-      // 두께 100% = 정중앙 통과 (완전 겹침)
-      // 두께 50% = 반만 겹침
-      // 두께 0% = 가장자리 (거의 안 겹침)
+      // ?�구 ?�치: ?�께???�라 겹침 ?�현
+      // ?�께 100% = ?�중???�과 (?�전 겹침)
+      // ?�께 50% = 반만 겹침
+      // ?�께 0% = 가?�자�?(거의 ??겹침)
       const overlapDist = previewRadius * 2 * (1 - contact.thicknessRatio);
       
-      // 고스트볼 방향 (적구→고스트볼 방향)
+      // 고스?�볼 방향 (?�구?�고?�트�?방향)
       const gx = contact.ghostX - targetBall.x;
       const gy = contact.ghostY - targetBall.y;
       const gDist = Math.sqrt(gx * gx + gy * gy);
       const gnx = gDist > 0 ? gx / gDist : 1;
       const gny = gDist > 0 ? gy / gDist : 0;
       
-      // 적구 그리기 (중앙)
+      // ?�구 그리�?(중앙)
       ctx.beginPath();
       ctx.arc(centerX, centerY, previewRadius, 0, Math.PI * 2);
       ctx.fillStyle = targetBall.color;
@@ -819,7 +828,7 @@
       ctx.lineWidth = 1;
       ctx.stroke();
       
-      // 수구 (고스트볼) 그리기 - 겹침 표현
+      // ?�구 (고스?�볼) 그리�?- 겹침 ?�현
       const cueX = centerX + gnx * overlapDist;
       const cueY = centerY + gny * overlapDist;
       ctx.beginPath();
@@ -830,7 +839,7 @@
       ctx.lineWidth = 2;
       ctx.stroke();
       
-      // 접촉점 표시 (두 공 겹치는 부분)
+      // ?�촉???�시 (??�?겹치??부�?
       const contactPtX = (centerX + cueX) / 2;
       const contactPtY = (centerY + cueY) / 2;
       ctx.beginPath();
@@ -838,46 +847,44 @@
       ctx.fillStyle = '#ffeb3b';
       ctx.fill();
       
-      // 두께 텍스트
-      ctx.fillStyle = '#fff';
+      // ?�께 ?�스??      ctx.fillStyle = '#fff';
       ctx.font = 'bold 12px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`두께: ${thickness}%`, centerX, previewY + previewSize + 18);
+      ctx.fillText(`?�께: ${thickness}%`, centerX, previewY + previewSize + 18);
     }
     
-    // 수구가 적구와 접촉하는 지점 계산
+    // ?�구가 ?�구?� ?�촉?�는 지??계산
     function findContactPoint(cueBall, targetBall, angle) {
       const dx = Math.cos(angle);
       const dy = Math.sin(angle);
       
-      // 수구→적구 벡터
+      // ?�구?�적�?벡터
       const px = targetBall.x - cueBall.x;
       const py = targetBall.y - cueBall.y;
       
-      // 발사 방향으로 투영
+      // 발사 방향?�로 ?�영
       const proj = px * dx + py * dy;
-      if (proj <= 0) return null; // 뒤에 있음
+      if (proj <= 0) return null; // ?�에 ?�음
       
-      // 발사선 위 최근접점
+      // 발사????최근?�점
       const closestX = cueBall.x + dx * proj;
       const closestY = cueBall.y + dy * proj;
       
-      // 발사선과 적구 중심 사이 거리
+      // 발사?�과 ?�구 중심 ?�이 거리
       const distToLine = Math.sqrt((closestX - targetBall.x) ** 2 + (closestY - targetBall.y) ** 2);
       
       const minDist = TABLE.ballRadius * 2;
-      if (distToLine >= minDist) return null; // 접촉 안 함
-      
-      // 접촉 시 고스트볼 위치 계산
+      if (distToLine >= minDist) return null; // ?�촉 ????      
+      // ?�촉 ??고스?�볼 ?�치 계산
       const backDist = Math.sqrt(minDist * minDist - distToLine * distToLine);
       const ghostX = closestX - dx * backDist;
       const ghostY = closestY - dy * backDist;
       
-      // 실제 접촉점 (두 공 사이 중간)
+      // ?�제 ?�촉??(??�??�이 중간)
       const contactX = (ghostX + targetBall.x) / 2;
       const contactY = (ghostY + targetBall.y) / 2;
       
-      // 두께 계산용: 발사선과 적구 중심 사이 거리 비율
+      // ?�께 계산?? 발사?�과 ?�구 중심 ?�이 거리 비율
       const thicknessRatio = 1 - (distToLine / minDist);
       
       return { ghostX, ghostY, contactX, contactY, distToLine, thicknessRatio };
@@ -993,14 +1000,14 @@
       ctx.stroke();
       ctx.setLineDash([]);
       
-      // 두께 미리보기 (드래그 조준 시)
+      // ?�께 미리보기 (?�래�?조�? ??
       let firstContact = null;
       [balls[1], balls[2]].forEach(targetBall => {
         const contact = findContactPoint(cueBall, targetBall, angle);
         if (contact) {
           if (!firstContact) firstContact = { contact, targetBall };
           
-          // 고스트볼
+          // 고스?�볼
           ctx.beginPath();
           ctx.arc(contact.ghostX, contact.ghostY, TABLE.ballRadius, 0, Math.PI * 2);
           ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
@@ -1009,8 +1016,7 @@
           ctx.stroke();
           ctx.setLineDash([]);
           
-          // 접촉점
-          ctx.beginPath();
+          // ?�촉??          ctx.beginPath();
           ctx.arc(contact.contactX, contact.contactY, 4, 0, Math.PI * 2);
           ctx.fillStyle = 'rgba(255, 200, 0, 0.9)';
           ctx.fill();
@@ -1034,8 +1040,8 @@
       const maxDist = power * 3;
       let traveled = 0;
       
-      // v5.2: 스핀 효과 적용 (반사각 변화)
-      const spinAngleEffect = state.spin.x * 5 * Math.PI / 180; // 최대 ±15°
+      // v5.2: ?��? ?�과 ?�용 (반사�?변??
+      const spinAngleEffect = state.spin.x * 5 * Math.PI / 180; // 최�? ±15°
       
       for (let i = 0; i < 5 && traveled < maxDist; i++) {
         const toLeft = (margin - x) / dx;
@@ -1064,7 +1070,7 @@
         
         if (hitWall === 'left' || hitWall === 'right') {
           dx = -dx;
-          // 사이드스핀 효과
+          // ?�이?�스?� ?�과
           const currentAngle = Math.atan2(dy, dx);
           const newAngle = currentAngle + spinAngleEffect;
           const speed = Math.sqrt(dx * dx + dy * dy);
@@ -1119,7 +1125,7 @@
       });
     }
 
-    // ===== 물리 엔진 (v5.2: 스핀 효과 강화) =====
+    // ===== 물리 ?�진 (v5.2: ?��? ?�과 강화) =====
     function update() {
       if (!state.isPlaying) return;
       
@@ -1141,21 +1147,20 @@
 
     function updatePhysics() {
       const margin = TABLE.railWidth + TABLE.ballRadius;
-      const friction = 0.996; // 더 낮은 마찰 (공이 더 오래 굴러감)
-      const cushionRestitution = 0.88; // 쿠션 반발력
-      
+      const friction = 0.996; // ????? 마찰 (공이 ???�래 굴러�?
+      const cushionRestitution = 0.88; // 쿠션 반발??      
       balls.forEach(ball => {
         ball.vx *= friction;
         ball.vy *= friction;
         
-        // v5.6: 스핀 효과 - 미세한 커브만 (속도 영향 제거)
+        // v5.6: ?��? ?�과 - 미세??커브�?(?�도 ?�향 ?�거)
         if (ball.id === 'cue') {
-          // 사이드스핀: 아주 미세한 커브
+          // ?�이?�스?�: ?�주 미세??커브
           const curveEffect = 0.003;
           ball.vx += ball.spinX * curveEffect;
           ball.vy += ball.spinY * curveEffect;
           
-          // 스핀 감쇠
+          // ?��? 감쇠
           ball.spinX *= 0.995;
           ball.spinY *= 0.995;
         }
@@ -1173,8 +1178,8 @@
           }
         }
         
-        // 쿠션 충돌 - 스핀 효과 완화
-        const spinAngleFactor = 0.15; // 쿠션에서 스핀이 반사각에 미치는 영향
+        // 쿠션 충돌 - ?��? ?�과 ?�화
+        const spinAngleFactor = 0.15; // 쿠션?�서 ?��???반사각에 미치???�향
         
         if (ball.x <= margin) {
           ball.x = margin;
@@ -1279,16 +1284,16 @@
       
       if (scored) {
         state.score++;
-        showMessage('🎉 득점! +1');
+        showMessage('?�� ?�점! +1');
         if (state.score > state.highScore) {
           state.highScore = state.score;
           localStorage.setItem('billiards_highscore', state.highScore);
         }
       } else {
         if (state.hitBalls.size < 2) {
-          showMessage('❌ 두 적구를 맞히세요');
+          showMessage('?????�구�?맞히?�요');
         } else {
-          showMessage(`❌ 쿠션 ${state.cushionCount}회 (3회 이상 필요)`);
+          showMessage(`??쿠션 ${state.cushionCount}??(3???�상 ?�요)`);
         }
       }
       
@@ -1299,7 +1304,7 @@
       state.hitBalls.clear();
       document.getElementById('powerIndicator').style.display = 'none';
       
-      // 노란공 방향으로 각도 설정
+      // ?��?�?방향?�로 각도 ?�정
       aimTowardsYellow();
     }
     
@@ -1335,15 +1340,15 @@
       document.getElementById('highScoreDisplay').textContent = state.highScore;
     }
 
-    // ===== 솔루션 파인더 (v5.7 - 넓은 파워 범위) =====
+    // ===== ?�루???�인??(v5.7 - ?��? ?�워 범위) =====
     function findSolutions() {
       const solutions = [];
       const originalBalls = balls.map(b => ({ x: b.x, y: b.y, vx: b.vx, vy: b.vy }));
       
-      // 각도 0~359° (2° 간격), 파워 20~150 (15 간격) - 슬라이더 범위와 일치
+      // 각도 0~359° (2° 간격), ?�워 20~150 (15 간격) - ?�라?�더 범위?� ?�치
       for (let angle = 0; angle < 360; angle += 2) {
         for (let power = 20; power <= 150; power += 15) {
-          // 공 위치 복원
+          // �??�치 복원
           balls.forEach((b, i) => {
             b.x = originalBalls[i].x;
             b.y = originalBalls[i].y;
@@ -1351,11 +1356,10 @@
             b.vy = 0;
           });
           
-          // 발사 시뮬레이션
-          const result = simulateShot(angle, power);
+          // 발사 ?��??�이??          const result = simulateShot(angle, power);
           
           if (result.success) {
-            // 중복 체크 (비슷한 각도의 해법은 제외)
+            // 중복 체크 (비슷??각도???�법?� ?�외)
             const isDuplicate = solutions.some(s => 
               Math.abs(s.angle - angle) < 3 && Math.abs(s.power - power) < 15
             );
@@ -1371,7 +1375,7 @@
         }
       }
       
-      // 공 위치 복원
+      // �??�치 복원
       balls.forEach((b, i) => {
         b.x = originalBalls[i].x;
         b.y = originalBalls[i].y;
@@ -1379,16 +1383,15 @@
         b.vy = 0;
       });
       
-      // 쿠션 적은 순으로 정렬, 최대 5개
-      solutions.sort((a, b) => a.cushions - b.cushions);
+      // 쿠션 ?��? ?�으�??�렬, 최�? 5�?      solutions.sort((a, b) => a.cushions - b.cushions);
       return solutions.slice(0, 5);
     }
 
     function simulateShot(angleDeg, power) {
       const angle = angleDeg * Math.PI / 180;
-      const speed = power * 0.08; // 실제 발사와 동일
+      const speed = power * 0.08; // ?�제 발사?� ?�일
       
-      // 시뮬레이션용 임시 위치/속도
+      // ?��??�이?�용 ?�시 ?�치/?�도
       let cueX = balls[0].x;
       let cueY = balls[0].y;
       let vx = Math.cos(angle) * speed;
@@ -1399,29 +1402,29 @@
       const path = [{ x: cueX, y: cueY }];
       
       const br = TABLE.ballRadius;
-      const margin = TABLE.railWidth + br; // 실제 물리와 동일하게!
+      const margin = TABLE.railWidth + br; // ?�제 물리?� ?�일?�게!
       const restitution = 0.88;
       const friction = 0.996;
       
-      // 적구 위치 저장 (시뮬레이션 중 적구는 움직이지 않음)
+      // ?�구 ?�치 ?�??(?��??�이??�??�구???�직이지 ?�음)
       const ball1 = { x: balls[1].x, y: balls[1].y };
       const ball2 = { x: balls[2].x, y: balls[2].y };
       
-      // 최대 800 프레임 시뮬레이션 (충분한 시간)
+      // 최�? 800 ?�레???��??�이??(충분???�간)
       for (let frame = 0; frame < 800; frame++) {
-        // 속도가 거의 0이면 종료
+        // ?�도가 거의 0?�면 종료
         const totalSpeed = Math.sqrt(vx * vx + vy * vy);
         if (totalSpeed < 0.05) break;
         
-        // 마찰 먼저 (실제 물리와 동일한 순서)
+        // 마찰 먼�? (?�제 물리?� ?�일???�서)
         vx *= friction;
         vy *= friction;
         
-        // 이동
+        // ?�동
         cueX += vx;
         cueY += vy;
         
-        // 쿠션 충돌 (실제 물리와 동일)
+        // 쿠션 충돌 (?�제 물리?� ?�일)
         if (cueX <= margin) {
           cueX = margin;
           vx = -vx * restitution;
@@ -1443,7 +1446,7 @@
           cushions++;
         }
         
-        // 적구1 충돌 체크
+        // ?�구1 충돌 체크
         let dx = ball1.x - cueX;
         let dy = ball1.y - cueY;
         let dist = Math.sqrt(dx * dx + dy * dy);
@@ -1456,7 +1459,7 @@
           const ny = dy / dist;
           cueX -= nx * overlap;
           cueY -= ny * overlap;
-          // 반사 (탄성 충돌)
+          // 반사 (?�성 충돌)
           const dot = vx * nx + vy * ny;
           if (dot > 0) {
             vx -= nx * dot * 1.8;
@@ -1464,7 +1467,7 @@
           }
         }
         
-        // 적구2 충돌 체크
+        // ?�구2 충돌 체크
         dx = ball2.x - cueX;
         dy = ball2.y - cueY;
         dist = Math.sqrt(dx * dx + dy * dy);
@@ -1476,7 +1479,7 @@
           const ny = dy / dist;
           cueX -= nx * overlap;
           cueY -= ny * overlap;
-          // 반사 (탄성 충돌)
+          // 반사 (?�성 충돌)
           const dot = vx * nx + vy * ny;
           if (dot > 0) {
             vx -= nx * dot * 1.8;
@@ -1484,12 +1487,12 @@
           }
         }
         
-        // 경로 기록 (10프레임마다)
+        // 경로 기록 (10?�레?�마??
         if (frame % 10 === 0) {
           path.push({ x: cueX, y: cueY });
         }
         
-        // 득점 조건: 쿠션 3회 이상 + 적구 2개 모두 맞힘
+        // ?�점 조건: 쿠션 3???�상 + ?�구 2�?모두 맞힘
         if (cushions >= 3 && hitBalls.size >= 2) {
           path.push({ x: cueX, y: cueY });
           return { success: true, cushions, path };
@@ -1507,17 +1510,17 @@
       list.innerHTML = '';
       
       if (solutions.length === 0) {
-        list.innerHTML = '<div class="no-solution">😢 이 배치에서 단순 경로로는 해법을 찾기 어렵습니다<br><small style="color:#666">공 위치를 조정하거나 스핀을 활용해보세요</small></div>';
+        list.innerHTML = '<div class="no-solution">?�� ??배치?�서 ?�순 경로로는 ?�법??찾기 ?�렵?�니??br><small style="color:#666">�??�치�?조정?�거???��????�용?�보?�요</small></div>';
       } else {
         solutions.forEach((sol, i) => {
           const item = document.createElement('div');
           item.className = 'solution-item';
           item.innerHTML = `
-            <span>해법 ${i + 1}</span>
+            <span>?�법 ${i + 1}</span>
             <div class="solution-info">
-              <span>📐 ${sol.angle}°</span>
-              <span>💪 ${sol.power}%</span>
-              <span>🎯 쿠션 ${sol.cushions}회</span>
+              <span>?�� ${sol.angle}°</span>
+              <span>?�� ${sol.power}%</span>
+              <span>?�� 쿠션 ${sol.cushions}??/span>
             </div>
           `;
           item.addEventListener('click', () => selectSolution(i));
@@ -1537,13 +1540,13 @@
       
       draw();
       
-      // 해법 클릭 시 실제로 발사
+      // ?�법 ?�릭 ???�제�?발사
       const solution = state.solutions[index];
       if (solution && !state.isPlaying) {
-        // 패널 닫기
+        // ?�널 ?�기
         document.getElementById('solutionsPanel').classList.remove('open');
         
-        // 1초 후 발사
+        // 1�???발사
         setTimeout(() => {
           const angle = solution.angle * Math.PI / 180;
           shoot(angle, solution.power);
@@ -1551,7 +1554,7 @@
       }
     }
 
-    // ===== 이벤트 핸들러 =====
+    // ===== ?�벤???�들??=====
     function getEventPos(e) {
       const rect = canvas.getBoundingClientRect();
       const touch = e.touches ? e.touches[0] : e;
@@ -1624,20 +1627,20 @@
       state.selectedSolution = null;
       state.solutions = [];
       
-      const speed = power * 0.08; // 적절한 속도 (100파워 = 8 픽셀/프레임)
+      const speed = power * 0.08; // ?�절???�도 (100?�워 = 8 ?��?/?�레??
       balls[0].vx = Math.cos(angle) * speed;
       balls[0].vy = Math.sin(angle) * speed;
-      balls[0].spinX = state.spin.x * 0.5; // 스핀은 고정값 (-3~+3 → -1.5~+1.5)
+      balls[0].spinX = state.spin.x * 0.5; // ?��??� 고정�?(-3~+3 ??-1.5~+1.5)
       balls[0].spinY = state.spin.y * 0.5;
       
       state.trajectoryPoints = [{ x: balls[0].x, y: balls[0].y }];
     }
 
-    // ===== 프리셋 =====
+    // ===== ?�리??=====
     function loadPreset(preset) {
       const margin = TABLE.railWidth;
       
-      // 공 배치
+      // �?배치
       balls[0].x = margin + playWidth * preset.balls.cue[0];
       balls[0].y = margin + playHeight * preset.balls.cue[1];
       balls[1].x = margin + playWidth * preset.balls.red[0];
@@ -1645,15 +1648,14 @@
       balls[2].x = margin + playWidth * preset.balls.yellow[0];
       balls[2].y = margin + playHeight * preset.balls.yellow[1];
       
-      // 속도 초기화
-      balls.forEach(b => { b.vx = 0; b.vy = 0; b.spinX = 0; b.spinY = 0; });
+      // ?�도 초기??      balls.forEach(b => { b.vx = 0; b.vy = 0; b.spinX = 0; b.spinY = 0; });
       
       state.spin.x = preset.spin[0];
       state.spin.y = preset.spin[1];
       state.isPlaying = false;
       updateSpinUI();
       
-      // 각도 계산 (preset.angle이 -1이면 1적구 방향으로 자동계산)
+      // 각도 계산 (preset.angle??-1?�면 1?�구 방향?�로 ?�동계산)
       let angle = preset.angle;
       if (angle < 0) {
         const dx = balls[1].x - balls[0].x;
@@ -1663,7 +1665,7 @@
         angle = Math.round(angle);
       }
       
-      // 슬라이더에 각도/파워 설정
+      // ?�라?�더??각도/?�워 ?�정
       document.getElementById('angleSlider').value = angle;
       document.getElementById('angleValue').textContent = angle;
       document.getElementById('powerSlider').value = preset.power;
@@ -1677,35 +1679,32 @@
       
       draw();
       
-      // 해법 탐색 (자동 발사 제거 - 사용자가 직접 샷)
+      // ?�법 ?�색 (?�동 발사 ?�거 - ?�용?��? 직접 ??
       setTimeout(() => {
         const solutions = findSolutions();
         if (solutions.length > 0) {
           displaySolutions(solutions);
-          showStatus('💡 해법 ' + solutions.length + '개 발견');
+          showStatus('?�� ?�법 ' + solutions.length + '�?발견');
         } else {
-          showStatus('📐 각도 조정 후 샷!');
+          showStatus('?�� 각도 조정 ????');
         }
       }, 300);
     }
 
     function updateSpinUI() {
-      // 원형 스핀 캔버스 다시 그리기
-      createSpinGrid();
+      // ?�형 ?��? 캔버???�시 그리�?      createSpinGrid();
     }
 
-    // v5.2: 5x5 스핀 그리드 생성
+    // v5.2: 5x5 ?��? 그리???�성
     function createSpinGrid() {
-      // 원형 스핀 캔버스 초기화
-      const spinCanvas = document.getElementById('spinCanvas');
+      // ?�형 ?��? 캔버??초기??      const spinCanvas = document.getElementById('spinCanvas');
       const spinCtx = spinCanvas.getContext('2d');
       const centerX = 40, centerY = 40;
       
       function drawSpinBall() {
         spinCtx.clearRect(0, 0, 80, 80);
         
-        // 공 그라데이션
-        const gradient = spinCtx.createRadialGradient(30, 30, 0, 40, 40, 40);
+        // �?그라?�이??        const gradient = spinCtx.createRadialGradient(30, 30, 0, 40, 40, 40);
         gradient.addColorStop(0, '#ffffff');
         gradient.addColorStop(1, '#aaaaaa');
         spinCtx.fillStyle = gradient;
@@ -1713,16 +1712,15 @@
         spinCtx.arc(40, 40, 38, 0, Math.PI * 2);
         spinCtx.fill();
         
-        // 테두리
-        spinCtx.strokeStyle = '#666';
+        // ?�두�?        spinCtx.strokeStyle = '#666';
         spinCtx.lineWidth = 2;
         spinCtx.stroke();
         
-        // 당점 위치 (큐 팁)
+        // ?�점 ?�치 (????
         const tipX = centerX + state.spin.x * 10;
         const tipY = centerY + state.spin.y * 10;
         
-        // 큐 스틱 라인
+        // ???�틱 ?�인
         if (state.spin.x !== 0 || state.spin.y !== 0) {
           const cueAngle = Math.atan2(state.spin.y, state.spin.x);
           spinCtx.strokeStyle = '#8B4513';
@@ -1734,7 +1732,7 @@
           spinCtx.stroke();
         }
         
-        // 큐 팁 (파란 점)
+        // ????(?��? ??
         spinCtx.fillStyle = '#4fc3f7';
         spinCtx.beginPath();
         spinCtx.arc(tipX, tipY, 6, 0, Math.PI * 2);
@@ -1743,14 +1741,14 @@
         spinCtx.lineWidth = 1;
         spinCtx.stroke();
         
-        // 라벨 업데이트
+        // ?�벨 ?�데?�트
         const label = document.getElementById('spinLabel');
         if (state.spin.x === 0 && state.spin.y === 0) {
-          label.textContent = '당점: 중앙';
+          label.textContent = '?�점: 중앙';
         } else {
-          const xText = state.spin.x > 0 ? '우' : state.spin.x < 0 ? '좌' : '';
-          const yText = state.spin.y > 0 ? '하' : state.spin.y < 0 ? '상' : '';
-          label.textContent = '당점: ' + yText + xText;
+          const xText = state.spin.x > 0 ? '?? : state.spin.x < 0 ? '�? : '';
+          const yText = state.spin.y > 0 ? '?? : state.spin.y < 0 ? '?? : '';
+          label.textContent = '?�점: ' + yText + xText;
         }
       }
       
@@ -1765,8 +1763,7 @@
         drawSpinBall();
       }
       
-      // 마우스 이벤트
-      let isSpinDragging = false;
+      // 마우???�벤??      let isSpinDragging = false;
       spinCanvas.addEventListener('mousedown', (e) => {
         isSpinDragging = true;
         handleSpinInput(e.clientX, e.clientY);
@@ -1777,8 +1774,7 @@
       spinCanvas.addEventListener('mouseup', () => isSpinDragging = false);
       spinCanvas.addEventListener('mouseleave', () => isSpinDragging = false);
       
-      // 터치 이벤트
-      spinCanvas.addEventListener('touchstart', (e) => {
+      // ?�치 ?�벤??      spinCanvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
         const touch = e.touches[0];
         handleSpinInput(touch.clientX, touch.clientY);
@@ -1810,13 +1806,13 @@
       });
     }
 
-    // ===== 전체화면 (v5.2: 가로 자동 전환) =====
+    // ===== ?�체?�면 (v5.2: 가�??�동 ?�환) =====
     async function enterFullscreen() {
       try {
         await document.documentElement.requestFullscreen();
         document.body.classList.add('fullscreen');
         
-        // 가로 모드 잠금 시도
+        // 가�?모드 ?�금 ?�도
         if (screen.orientation && screen.orientation.lock) {
           try {
             await screen.orientation.lock('landscape');
@@ -1825,11 +1821,11 @@
           }
         }
         
-        document.getElementById('btnFullscreen').textContent = '⛶ 창모드';
+        document.getElementById('btnFullscreen').textContent = '??창모??;
       } catch (e) {
-        // 전체화면 API 미지원 시 CSS만으로 처리
+        // ?�체?�면 API 미�?????CSS만으�?처리
         document.body.classList.add('fullscreen');
-        document.getElementById('btnFullscreen').textContent = '⛶ 창모드';
+        document.getElementById('btnFullscreen').textContent = '??창모??;
       }
       
       setTimeout(() => {
@@ -1843,9 +1839,9 @@
         await document.exitFullscreen();
       }
       document.body.classList.remove('fullscreen');
-      document.getElementById('btnFullscreen').textContent = '⛶ 전체화면';
+      document.getElementById('btnFullscreen').textContent = '???�체?�면';
       
-      // 가로 모드 잠금 해제
+      // 가�?모드 ?�금 ?�제
       if (screen.orientation && screen.orientation.unlock) {
         try {
           screen.orientation.unlock();
@@ -1860,7 +1856,7 @@
       }, 100);
     }
 
-    // ===== 유틸리티 =====
+    // ===== ?�틸리티 =====
     function lightenColor(color, percent) {
       const num = parseInt(color.replace('#', ''), 16);
       const amt = Math.round(2.55 * percent);
@@ -1879,7 +1875,7 @@
       return `rgb(${R},${G},${B})`;
     }
 
-    // ===== 초기화 =====
+    // ===== 초기??=====
     function init() {
       resizeCanvas();
       createSpinGrid();
@@ -1900,8 +1896,7 @@
         draw();
       });
       
-      // 극단 스핀 버튼 이벤트
-      document.getElementById('btnTrajectory').addEventListener('click', () => {
+      // 극단 ?��? 버튼 ?�벤??      document.getElementById('btnTrajectory').addEventListener('click', () => {
         state.showTrajectory = !state.showTrajectory;
         document.getElementById('btnTrajectory').classList.toggle('active', state.showTrajectory);
         draw();
@@ -1948,7 +1943,7 @@
         draw();
       });
       
-      // 파워/각도 슬라이더
+      // ?�워/각도 ?�라?�더
       const angleSlider = document.getElementById('angleSlider');
       const powerSlider = document.getElementById('powerSlider');
       const angleValue = document.getElementById('angleValue');
@@ -1956,14 +1951,14 @@
       
       angleSlider.addEventListener('input', () => {
         angleValue.textContent = angleSlider.value;
-        draw(); // 가이드라인 업데이트
+        draw(); // 가?�드?�인 ?�데?�트
       });
       
       powerSlider.addEventListener('input', () => {
         powerSliderValue.textContent = powerSlider.value;
       });
       
-      // 슬라이더로 발사 버튼
+      // ?�라?�더�?발사 버튼
       document.getElementById('btnShootSlider').addEventListener('click', () => {
         if (state.isPlaying) return;
         const angle = parseInt(angleSlider.value) * Math.PI / 180;
@@ -1971,14 +1966,14 @@
         shoot(angle, power);
       });
       
-      // 컨트롤 숨기기/보이기 토글
+      // 컨트�??�기�?보이�??��?
       document.getElementById('toggleControlsBtn').addEventListener('click', () => {
         document.body.classList.toggle('hide-controls');
         const btn = document.getElementById('toggleControlsBtn');
-        btn.textContent = document.body.classList.contains('hide-controls') ? '👁️‍🗨️' : '👁️';
+        btn.textContent = document.body.classList.contains('hide-controls') ? '?��️‍🗨️' : '?���?;
       });
       
-      // v5.2: 전체화면 버튼
+      // v5.2: ?�체?�면 버튼
       document.getElementById('btnFullscreen').addEventListener('click', () => {
         if (document.fullscreenElement || document.body.classList.contains('fullscreen')) {
           exitFullscreen();
@@ -1987,11 +1982,11 @@
         }
       });
       
-      // 전체화면 변경 감지
+      // ?�체?�면 변�?감�?
       document.addEventListener('fullscreenchange', () => {
         if (!document.fullscreenElement) {
           document.body.classList.remove('fullscreen');
-          document.getElementById('btnFullscreen').textContent = '⛶ 전체화면';
+          document.getElementById('btnFullscreen').textContent = '???�체?�면';
           
           // orientation unlock
           if (screen.orientation && screen.orientation.unlock) {

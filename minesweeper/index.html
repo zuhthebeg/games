@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>지뢰찾기</title>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<!-- End Google Tag Manager -->
+
+  <title>지뢰찾�?/title>
   <style>
     :root {
       --bg: #f4f6fb;
@@ -283,30 +288,34 @@
   </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
   <main class="app">
     <section class="top">
       <div>
         <div class="title-row">
-          <h1>지뢰찾기</h1>
-          <button class="theme-btn" id="themeBtn" type="button">테마: 자동</button>
+          <h1>지뢰찾�?/h1>
+          <button class="theme-btn" id="themeBtn" type="button">?�마: ?�동</button>
         </div>
         <div class="controls">
-          <select class="difficulty" id="difficulty" aria-label="난이도 선택">
-            <option value="easy">쉬움 (9x9, 지뢰 10)</option>
-            <option value="medium">보통 (16x16, 지뢰 40)</option>
-            <option value="hard">어려움 (30x16, 지뢰 99)</option>
+          <select class="difficulty" id="difficulty" aria-label="?�이???�택">
+            <option value="easy">?��? (9x9, 지�?10)</option>
+            <option value="medium">보통 (16x16, 지�?40)</option>
+            <option value="hard">?�려?� (30x16, 지�?99)</option>
           </select>
-          <button class="restart" id="restart" type="button">새 게임</button>
+          <button class="restart" id="restart" type="button">??게임</button>
         </div>
       </div>
       <div class="status">
         <div class="card">
-          <div class="label">남은 지뢰</div>
+          <div class="label">?��? 지�?/div>
           <div class="value" id="mineCounter">0</div>
         </div>
         <div class="card">
-          <div class="label">시간</div>
-          <div class="value" id="timer">0초</div>
+          <div class="label">?�간</div>
+          <div class="value" id="timer">0�?/div>
         </div>
         <div class="card">
           <div class="label">최고 기록</div>
@@ -316,25 +325,25 @@
     </section>
 
     <section class="board-wrap">
-      <div class="board" id="board" aria-label="지뢰찾기 보드" role="grid"></div>
+      <div class="board" id="board" aria-label="지뢰찾�?보드" role="grid"></div>
     </section>
 
-    <p class="hint">탭/클릭: 열기 · 길게 누르기/우클릭: 깃발</p>
+    <p class="hint">???�릭: ?�기 · 길게 ?�르�??�클�? 깃발</p>
   </main>
 
   <div class="modal-bg" id="modalBg" role="dialog" aria-modal="true">
     <div class="modal">
       <h2 id="modalTitle"></h2>
       <p id="modalText"></p>
-      <button id="modalBtn" type="button">다시 하기</button>
+      <button id="modalBtn" type="button">?�시 ?�기</button>
     </div>
   </div>
 
   <script>
     const DIFFICULTIES = {
-      easy: { key: "easy", rows: 9, cols: 9, mines: 10, label: "쉬움" },
+      easy: { key: "easy", rows: 9, cols: 9, mines: 10, label: "?��?" },
       medium: { key: "medium", rows: 16, cols: 16, mines: 40, label: "보통" },
-      hard: { key: "hard", rows: 16, cols: 30, mines: 99, label: "어려움" }
+      hard: { key: "hard", rows: 16, cols: 30, mines: 99, label: "?�려?�" }
     };
 
     const LONG_PRESS_MS = 360;
@@ -382,7 +391,7 @@
     function updateBestTimeText() {
       const current = loadBestTimes();
       const value = current[config.key];
-      bestTimeEl.textContent = Number.isInteger(value) ? `${value}초` : "-";
+      bestTimeEl.textContent = Number.isInteger(value) ? `${value}�? : "-";
     }
 
     function applyTheme(theme) {
@@ -392,7 +401,7 @@
         document.documentElement.removeAttribute("data-theme");
       }
       localStorage.setItem(THEME_KEY, theme);
-      themeBtn.textContent = `테마: ${theme === "light" ? "밝게" : theme === "dark" ? "어둡게" : "자동"}`;
+      themeBtn.textContent = `?�마: ${theme === "light" ? "밝게" : theme === "dark" ? "?�둡�? : "?�동"}`;
     }
 
     function rotateTheme() {
@@ -474,9 +483,9 @@
     }
 
     function cellText(cell) {
-      if (cell.flagged && !cell.revealed) return "🚩";
+      if (cell.flagged && !cell.revealed) return "?��";
       if (!cell.revealed) return "";
-      if (cell.mine) return "💣";
+      if (cell.mine) return "?��";
       return cell.adjacent ? String(cell.adjacent) : "";
     }
 
@@ -487,7 +496,7 @@
       if (cell.revealed) el.classList.add("revealed");
       if (cell.revealed && cell.mine) el.classList.add("mine");
       if (cell.revealed && !cell.mine && cell.adjacent) el.classList.add(`n${cell.adjacent}`);
-      el.setAttribute("aria-label", `행 ${cell.r + 1}, 열 ${cell.c + 1}`);
+      el.setAttribute("aria-label", `??${cell.r + 1}, ??${cell.c + 1}`);
     }
 
     function renderAll() {
@@ -500,7 +509,7 @@
 
     function updateCounters() {
       mineCounterEl.textContent = String(config.mines - flaggedCount);
-      timerEl.textContent = `${timer}초`;
+      timerEl.textContent = `${timer}�?;
     }
 
     function startTimerIfNeeded() {
@@ -546,7 +555,7 @@
       stopTimer();
       saveBestTime(config.key, timer);
       updateBestTimeText();
-      showModal("승리!", `${config.label} 난이도 클리어: ${timer}초`);
+      showModal("?�리!", `${config.label} ?�이???�리?? ${timer}�?);
     }
 
     function floodReveal(r, c) {
@@ -582,7 +591,7 @@
         gameOver = true;
         stopTimer();
         revealAllMines();
-        showModal("게임 오버", "지뢰를 밟았습니다. 다시 도전해 보세요.");
+        showModal("게임 ?�버", "지뢰�? 밟았?�니?? ?�시 ?�전??보세??");
         return;
       }
 

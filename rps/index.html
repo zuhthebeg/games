@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>가위바위보 게임</title>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<!-- End Google Tag Manager -->
+
+    <title>가?�바?�보 게임</title>
     <link rel="icon" href="https://cocy.io/favicon.ico" type="image/x-icon">
 
     <!-- Google Analytics -->
@@ -228,15 +233,19 @@
     </style>
 </head>
 <body>
-    <a href="https://game.cocy.io" class="home-btn">← 홈으로</a>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+    <a href="https://game.cocy.io" class="home-btn">???�으�?/a>
 
     <div class="container">
-        <h1>✊✋✌️ 가위바위보</h1>
-        <p class="subtitle">컴퓨터와 대결해보세요!</p>
+        <h1>?�✋?�️ 가?�바?�보</h1>
+        <p class="subtitle">컴퓨?��? ?�결해보세??</p>
 
         <div class="score-board">
             <div>
-                <div class="score-label">플레이어</div>
+                <div class="score-label">?�레?�어</div>
                 <div class="score" id="playerScore">0</div>
             </div>
             <div>
@@ -244,20 +253,20 @@
                 <div class="score" id="drawScore">0</div>
             </div>
             <div>
-                <div class="score-label">컴퓨터</div>
+                <div class="score-label">컴퓨??/div>
                 <div class="score" id="computerScore">0</div>
             </div>
         </div>
 
         <div class="game-area">
             <div class="choices">
-                <div class="choice" data-choice="rock" title="바위">✊</div>
-                <div class="choice" data-choice="paper" title="보">✋</div>
-                <div class="choice" data-choice="scissors" title="가위">✌️</div>
+                <div class="choice" data-choice="rock" title="바위">??/div>
+                <div class="choice" data-choice="paper" title="�?>??/div>
+                <div class="choice" data-choice="scissors" title="가??>?�️</div>
             </div>
 
             <div class="result-area" id="resultArea">
-                <p style="color: #999;">위에서 선택하세요</p>
+                <p style="color: #999;">?�에???�택?�세??/p>
             </div>
         </div>
 
@@ -267,14 +276,14 @@
     <script>
         const choices = ['rock', 'paper', 'scissors'];
         const emojis = {
-            rock: '✊',
-            paper: '✋',
-            scissors: '✌️'
+            rock: '??,
+            paper: '??,
+            scissors: '?�️'
         };
         const names = {
             rock: '바위',
-            paper: '보',
-            scissors: '가위'
+            paper: '�?,
+            scissors: '가??
         };
 
         let scores = {
@@ -283,7 +292,7 @@
             draw: 0
         };
 
-        // 로컬 스토리지에서 점수 불러오기
+        // 로컬 ?�토리�??�서 ?�수 불러?�기
         const loadScores = () => {
             const saved = localStorage.getItem('rpsScores');
             if (saved) {
@@ -292,19 +301,19 @@
             }
         };
 
-        // 점수 저장
+        // ?�수 ?�??
         const saveScores = () => {
             localStorage.setItem('rpsScores', JSON.stringify(scores));
         };
 
-        // 점수 표시 업데이트
+        // ?�수 ?�시 ?�데?�트
         const updateScoreDisplay = () => {
             document.getElementById('playerScore').textContent = scores.player;
             document.getElementById('computerScore').textContent = scores.computer;
             document.getElementById('drawScore').textContent = scores.draw;
         };
 
-        // 승자 판정
+        // ?�자 ?�정
         const getWinner = (player, computer) => {
             if (player === computer) return 'draw';
 
@@ -319,12 +328,12 @@
             return 'computer';
         };
 
-        // 게임 플레이
+        // 게임 ?�레??
         const play = (playerChoice) => {
             const computerChoice = choices[Math.floor(Math.random() * 3)];
             const winner = getWinner(playerChoice, computerChoice);
 
-            // 점수 업데이트
+            // ?�수 ?�데?�트
             if (winner === 'player') {
                 scores.player++;
             } else if (winner === 'computer') {
@@ -336,44 +345,44 @@
             updateScoreDisplay();
             saveScores();
 
-            // 결과 표시
+            // 결과 ?�시
             const resultArea = document.getElementById('resultArea');
 
             let message = '';
             let messageClass = '';
 
             if (winner === 'player') {
-                message = '🎉 승리!';
+                message = '?�� ?�리!';
                 messageClass = 'win';
             } else if (winner === 'computer') {
-                message = '😢 패배!';
+                message = '?�� ?�배!';
                 messageClass = 'lose';
             } else {
-                message = '🤝 무승부!';
+                message = '?�� 무승부!';
                 messageClass = 'draw';
             }
 
             resultArea.innerHTML = `
                 <div class="result-message ${messageClass}">${message}</div>
                 <div class="result-choices">
-                    <div title="당신: ${names[playerChoice]}">${emojis[playerChoice]}</div>
+                    <div title="?�신: ${names[playerChoice]}">${emojis[playerChoice]}</div>
                     <div class="vs">VS</div>
-                    <div title="컴퓨터: ${names[computerChoice]}">${emojis[computerChoice]}</div>
+                    <div title="컴퓨?? ${names[computerChoice]}">${emojis[computerChoice]}</div>
                 </div>
             `;
         };
 
         // 게임 리셋
         const resetGame = () => {
-            if (confirm('정말로 점수를 초기화하시겠습니까?')) {
+            if (confirm('?�말�??�수�?초기?�하?�겠?�니�?')) {
                 scores = { player: 0, computer: 0, draw: 0 };
                 updateScoreDisplay();
                 saveScores();
-                document.getElementById('resultArea').innerHTML = '<p style="color: #999;">위에서 선택하세요</p>';
+                document.getElementById('resultArea').innerHTML = '<p style="color: #999;">?�에???�택?�세??/p>';
             }
         };
 
-        // 이벤트 리스너
+        // ?�벤??리스??
         document.querySelectorAll('.choice').forEach(choice => {
             choice.addEventListener('click', (e) => {
                 const playerChoice = e.currentTarget.dataset.choice;
@@ -381,7 +390,7 @@
             });
         });
 
-        // 키보드 지원 (R=바위, P=보, S=가위)
+        // ?�보??지??(R=바위, P=�? S=가??
         document.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
             if (key === 'r') play('rock');
@@ -389,7 +398,7 @@
             else if (key === 's') play('scissors');
         });
 
-        // 초기화
+        // 초기??
         loadScores();
     </script>
 </body>

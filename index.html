@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<!-- End Google Tag Manager -->
+
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>🎮 Game Portal - game.cocy.io</title>
+    <title>?�� Game Portal - game.cocy.io</title>
     <link rel="icon" href="https://cocy.io/favicon.ico">
     <style>
         :root {
@@ -191,33 +196,37 @@
     </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
     <header class="header">
-        <h1>🎮 Game Portal</h1>
+        <h1>?�� Game Portal</h1>
         <div class="auth-area">
             <div class="gold-display" id="goldDisplay" style="display:none;">
-                <span>💰</span>
+                <span>?��</span>
                 <span id="goldAmount">0</span>
             </div>
-            <button class="auth-btn" id="authBtn" onclick="handleAuth()">로그인</button>
+            <button class="auth-btn" id="authBtn" onclick="handleAuth()">로그??/button>
         </div>
     </header>
 
     <div class="tabs">
-        <button class="tab active" data-filter="all">전체</button>
-        <button class="tab" data-filter="hot">🔥 인기</button>
-        <button class="tab" data-filter="multi">👥 멀티</button>
-        <button class="tab" data-filter="board">♟️ 보드</button>
-        <button class="tab" data-filter="puzzle">🧩 퍼즐</button>
-        <button class="tab" data-filter="arcade">🕹️ 아케이드</button>
+        <button class="tab active" data-filter="all">?�체</button>
+        <button class="tab" data-filter="hot">?�� ?�기</button>
+        <button class="tab" data-filter="multi">?�� 멀??/button>
+        <button class="tab" data-filter="board">?�️ 보드</button>
+        <button class="tab" data-filter="puzzle">?�� ?�즐</button>
+        <button class="tab" data-filter="arcade">?���??��??�드</button>
     </div>
 
     <div class="container">
         <div class="grid" id="appGrid"></div>
-        <div class="empty" id="emptyState" style="display:none;">표시할 게임이 없습니다</div>
+        <div class="empty" id="emptyState" style="display:none;">?�시??게임???�습?�다</div>
     </div>
 
     <footer class="footer">
-        <p>© 2025 <a href="https://cocy.io">COCY.IO</a> | <a href="https://tool.cocy.io">🔧 Tools</a></p>
+        <p>© 2025 <a href="https://cocy.io">COCY.IO</a> | <a href="https://tool.cocy.io">?�� Tools</a></p>
     </footer>
 
     <script>
@@ -277,7 +286,7 @@
             grid.innerHTML = filtered.map(app => `
                 <a href="${app.url}" class="card">
                     ${app.badge ? `<span class="card-badge badge-${app.badge.toLowerCase()}">${app.badge}</span>` : ''}
-                    <img class="card-icon" src="${app.icon}" alt="" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🎮</text></svg>'">
+                    <img class="card-icon" src="${app.icon}" alt="" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>?��</text></svg>'">
                     <div class="card-title">${app.title}</div>
                     <div class="card-desc">${app.desc}</div>
                 </a>
@@ -299,13 +308,13 @@
 
         function handleAuth() {
             if (currentUser) {
-                if (confirm('로그아웃 하시겠습니까?')) {
+                if (confirm('로그?�웃 ?�시겠습?�까?')) {
                     localStorage.removeItem('cocy_auth_token');
                     localStorage.removeItem('cocy_user_name');
                     location.reload();
                 }
             } else {
-                const name = prompt('닉네임을 입력하세요:');
+                const name = prompt('?�네?�을 ?�력?�세??');
                 if (name && name.trim()) {
                     localStorage.setItem('cocy_auth_token', 'user_' + Date.now());
                     localStorage.setItem('cocy_user_name', name.trim());

@@ -3,17 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>숫자 맞추기 게임</title>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<!-- End Google Tag Manager -->
+
+    <title>?�자 맞추�?게임</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
     <div class="container">
-        <h1>🎲 숫자 맞추기 게임</h1>
-        <p class="description">1부터 100 사이의 숫자를 맞춰보세요!</p>
+        <h1>?�� ?�자 맞추�?게임</h1>
+        <p class="description">1부??100 ?�이???�자�?맞춰보세??</p>
 
         <div class="game-info">
             <div class="info-item">
-                <span class="label">시도 횟수:</span>
+                <span class="label">?�도 ?�수:</span>
                 <span class="value" id="attempts">0</span>
             </div>
             <div class="info-item">
@@ -22,19 +31,19 @@
             </div>
         </div>
 
-        <div class="message" id="message">숫자를 입력하고 추측 버튼을 누르세요!</div>
+        <div class="message" id="message">?�자�??�력?�고 추측 버튼???�르?�요!</div>
 
         <div class="input-group">
-            <input type="number" id="guessInput" min="1" max="100" placeholder="1-100 사이의 숫자" autofocus>
+            <input type="number" id="guessInput" min="1" max="100" placeholder="1-100 ?�이???�자" autofocus>
             <button id="guessBtn" class="btn-primary">추측</button>
         </div>
 
         <div class="history">
-            <h3>시도 기록</h3>
+            <h3>?�도 기록</h3>
             <div id="historyList" class="history-list"></div>
         </div>
 
-        <button id="resetBtn" class="btn-secondary">새 게임</button>
+        <button id="resetBtn" class="btn-secondary">??게임</button>
     </div>
 
     <script src="app.js"></script>
