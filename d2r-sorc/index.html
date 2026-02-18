@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>D2R 소서리스 공략</title>
+  <style>
+    :root{
+      --bg:#0f0c0b;--panel:#1a1311;--panel2:#231915;--text:#efe5d0;--muted:#b4a58d;
+      --gold:#d4af37;--red:#a93226;--line:#3a2a22;--ok:#4caf50;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:radial-gradient(circle at top,#21140f,#0f0c0b 45%);color:var(--text)}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    h1,h2,h3{margin:0 0 10px;font-weight:800;letter-spacing:.2px}
+    h1{font-size:1.5rem;color:var(--gold)}
+    h2{font-size:1.18rem;color:#f2d78a;margin-top:24px}
+    .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+    .muted{color:var(--muted);font-size:.92rem}
+    .top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    .pill{padding:6px 10px;border:1px solid #5d452f;border-radius:999px;background:#221912;color:#f8eac5;font-size:.9rem}
+    .tabs{display:flex;gap:8px;margin:12px 0}
+    .tab{flex:1;border:1px solid #694f36;background:#1f1712;color:#ebd7ad;padding:10px;border-radius:10px;font-weight:700}
+    .tab.active{background:linear-gradient(180deg,#4a2a19,#2e1a12);border-color:#a1774d;color:#ffd98f}
+    .skill-grid{display:grid;grid-template-columns:1fr;gap:8px}
+    .skill{display:flex;justify-content:space-between;align-items:center;padding:10px;border:1px solid #4a3528;border-radius:10px;background:#1a1310;touch-action:manipulation;user-select:none}
+    .skill .left{display:flex;flex-direction:column}
+    .skill small{color:#b29f83}
+    .skill .pt{font-weight:800;color:#ffd98f}
+    .skill.locked{opacity:.45;filter:grayscale(0.4)}
+    .skill.maxed{outline:1px solid var(--ok)}
+    .btn{border:1px solid #715031;background:#2a1b13;color:#f3dfb6;padding:8px 12px;border-radius:8px;font-weight:700}
+    .row{display:grid;gap:10px;grid-template-columns:1fr}
+    .preset-grid,.rw-grid{display:grid;gap:10px;grid-template-columns:1fr}
+    .preset,.rw{border:1px solid #4f3828;padding:10px;border-radius:10px;background:#1a1310;cursor:pointer}
+    .preset:hover,.rw:hover{border-color:#9a7346}
+    table{width:100%;border-collapse:collapse;font-size:.93rem}
+    th,td{border:1px solid #4a3528;padding:8px;text-align:left;vertical-align:top}
+    th{background:#261a13;color:#f4d48b}
+    .timeline{display:grid;gap:8px}
+    .step{padding:9px;border-left:4px solid #7d2a1f;background:#1b1411;border-radius:8px}
+    .fcr-note{color:#f5c77c;font-weight:700}
+    @media(min-width:860px){
+      .row{grid-template-columns:1.25fr .85fr}
+      .skill-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .preset-grid,.rw-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>D2R 소서리스 공략 / Skill Simulator</h1>
+    <p class="muted">좌클릭 +1 / 우클릭 -1 · 총 포인트 110 · URL Hash 공유 지원</p>
+
+    <section class="card" id="sim">
+      <div class="top">
+        <div class="pill" id="totalPoint">총 스킬포인트: 0 / 110</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="resetBtn">빌드 초기화</button>
+          <button class="btn" id="copyBtn">URL 복사</button>
+        </div>
+      </div>
+      <div class="tabs" id="tabs"></div>
+      <div class="row">
+        <div class="skill-grid" id="skillGrid"></div>
+        <div>
+          <div class="card" style="margin-top:0">
+            <h3>시너지 요약</h3>
+            <div id="synergyView" class="muted"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>인기 빌드 프리셋</h2>
+      <div class="preset-grid" id="presetGrid"></div>
+    </section>
+
+    <section class="card">
+      <h2>추천 장비 (공통)</h2>
+      <table>
+        <thead><tr><th>슬롯</th><th>BIS</th><th>대안</th></tr></thead>
+        <tbody>
+          <tr><td>무기</td><td>Hoto (Heart of the Oak)</td><td>Oculus, Death's Fathom (Cold), Eschuta's (Light)</td></tr>
+          <tr><td>방패</td><td>Spirit Monarch</td><td>Lidless Wall</td></tr>
+          <tr><td>투구</td><td>Griffon's Eye (Light), Shako</td><td>Tal Rasha's</td></tr>
+          <tr><td>갑옷</td><td>Enigma, Chains of Honor</td><td>Tal Rasha's, Vipermagi</td></tr>
+          <tr><td>장갑</td><td>Magefist, Chance Guards (MF)</td><td>Trang-Oul's</td></tr>
+          <tr><td>벨트</td><td>Arachnid Mesh</td><td>Tal Rasha's, Goldwrap (MF)</td></tr>
+          <tr><td>부츠</td><td>War Traveler</td><td>Sandstorm Trek</td></tr>
+          <tr><td>아뮬렛</td><td>Mara's Kaleidoscope</td><td>Tal Rasha's</td></tr>
+          <tr><td>반지</td><td>SoJ x2</td><td>BK Ring, Nagelring (MF)</td></tr>
+          <tr><td>용병</td><td>Act2 Might (인피니티), Holy Freeze (인사이트)</td><td>-</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>핵심 룬워드</h2>
+      <div class="rw-grid" id="rwGrid"></div>
+    </section>
+
+    <section class="card">
+      <h2>레벨링 가이드</h2>
+      <div class="timeline">
+        <div class="step"><b>1-15:</b> Fire Bolt → Tristram런</div>
+        <div class="step"><b>15-24:</b> Fire Ball → Tomb런</div>
+        <div class="step"><b>24-40:</b> Blizzard/FO → 트래빈컬</div>
+        <div class="step"><b>40-60:</b> 나이트메어 앤시런</div>
+        <div class="step"><b>60-80:</b> 헬 앤시런/메피런</div>
+        <div class="step"><b>80-99:</b> 바알런/카오스/CS런</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>FCR 브레이크포인트</h2>
+      <table>
+        <thead><tr><th>FCR</th><th>프레임(일반 캐스팅 기준)</th></tr></thead>
+        <tbody>
+          <tr><td>0%</td><td>13</td></tr>
+          <tr><td>9%</td><td>12</td></tr>
+          <tr><td>20%</td><td>11</td></tr>
+          <tr><td>37%</td><td>10</td></tr>
+          <tr><td>63%</td><td>9</td></tr>
+          <tr><td>105%</td><td>8</td></tr>
+          <tr><td>200%</td><td>7</td></tr>
+        </tbody>
+      </table>
+      <p class="fcr-note">일반 캐스팅 권장: 63% 또는 105% · 라이트닝 계열 목표: 117%</p>
+    </section>
+  </div>
+
+  <script>
+    const trees = {
+      fire: [
+        {id:'fire_bolt', name:'Fire Bolt', reqLv:1, prereq:[]},
+        {id:'warmth', name:'Warmth', reqLv:1, prereq:['fire_bolt']},
+        {id:'inferno', name:'Inferno', reqLv:12, prereq:['warmth']},
+        {id:'blaze', name:'Blaze', reqLv:12, prereq:['inferno']},
+        {id:'fire_wall', name:'Fire Wall', reqLv:18, prereq:['blaze']},
+        {id:'meteor', name:'Meteor', reqLv:24, prereq:['fire_wall','fire_ball']},
+        {id:'fire_mastery', name:'Fire Mastery', reqLv:30, prereq:['meteor']},
+        {id:'fire_ball', name:'Fire Ball', reqLv:12, prereq:['fire_bolt']},
+        {id:'enchant', name:'Enchant', reqLv:18, prereq:['warmth','fire_bolt']},
+        {id:'hydra', name:'Hydra', reqLv:30, prereq:['enchant','fire_ball']},
+      ],
+      lightning: [
+        {id:'charged_bolt', name:'Charged Bolt', reqLv:1, prereq:[]},
+        {id:'static_field', name:'Static Field', reqLv:6, prereq:['charged_bolt']},
+        {id:'telekinesis', name:'Telekinesis', reqLv:6, prereq:['static_field']},
+        {id:'nova', name:'Nova', reqLv:12, prereq:['telekinesis']},
+        {id:'lightning', name:'Lightning', reqLv:12, prereq:['nova']},
+        {id:'chain_lightning', name:'Chain Lightning', reqLv:18, prereq:['lightning']},
+        {id:'thunder_storm', name:'Thunder Storm', reqLv:24, prereq:['chain_lightning']},
+        {id:'energy_shield', name:'Energy Shield', reqLv:24, prereq:['thunder_storm']},
+        {id:'lightning_mastery', name:'Lightning Mastery', reqLv:30, prereq:['energy_shield']},
+        {id:'teleport', name:'Teleport', reqLv:18, prereq:['telekinesis']},
+      ],
+      cold: [
+        {id:'ice_bolt', name:'Ice Bolt', reqLv:1, prereq:[]},
+        {id:'frozen_armor', name:'Frozen Armor', reqLv:1, prereq:['ice_bolt']},
+        {id:'ice_blast', name:'Ice Blast', reqLv:6, prereq:['frozen_armor']},
+        {id:'frost_nova', name:'Frost Nova', reqLv:6, prereq:['ice_blast']},
+        {id:'shiver_armor', name:'Shiver Armor', reqLv:12, prereq:['frost_nova']},
+        {id:'glacial_spike', name:'Glacial Spike', reqLv:18, prereq:['shiver_armor']},
+        {id:'chilling_armor', name:'Chilling Armor', reqLv:24, prereq:['glacial_spike']},
+        {id:'blizzard', name:'Blizzard', reqLv:24, prereq:['chilling_armor']},
+        {id:'frozen_orb', name:'Frozen Orb', reqLv:30, prereq:['blizzard']},
+        {id:'cold_mastery', name:'Cold Mastery', reqLv:30, prereq:['frozen_orb']},
+      ]
+    };
+
+    const synergies = [
+      { skill:'meteor', label:'Meteor', lines:[['fire_bolt',14],['fire_ball',14],['inferno',5]] },
+      { skill:'fire_ball', label:'Fire Ball', lines:[['fire_bolt',14],['meteor',14]] },
+      { skill:'blizzard', label:'Blizzard', lines:[['ice_blast',5],['glacial_spike',5],['ice_bolt',5]] },
+      { skill:'frozen_orb', label:'Frozen Orb', lines:[['ice_bolt',2]] },
+      { skill:'lightning', label:'Lightning', lines:[['charged_bolt',8],['nova',8],['chain_lightning',8]] },
+      { skill:'chain_lightning', label:'Chain Lightning', lines:[['charged_bolt',4],['nova',4],['lightning',4]] },
+      { skill:'nova', label:'Nova', lines:[['static_field',5],['lightning',5],['chain_lightning',5]] },
+    ];
+
+    const runewords = [
+      ['Spirit','Tal+Thul+Ort+Amn','검/방패','+2스킬, FCR/FHR, 마나'],
+      ['Insight','Ral+Tir+Tal+Sol','폴암(용병)','Meditation 오라'],
+      ['Infinity','Ber+Mal+Ber+Ist','폴암(용병)','Conviction 오라, 라이트닝 소서 핵심'],
+      ['Heart of the Oak','Ko+Vex+Pul+Thul','둔기','+3스킬, FCR, 레지'],
+      ['Enigma','Jah+Ith+Ber','갑옷','텔레포트, +2스킬, MF'],
+      ['Chains of Honor','Dol+Um+Ber+Ist','갑옷','+2스킬, 레지, 데미지 감소'],
+      ['Call to Arms','Amn+Ral+Mal+Ist+Ohm','스왑 무기','Battle Orders']
+    ];
+
+    const presets = [
+      {name:'블리자드 소서 (MF)', desc:'Blizzard 20, Ice Blast 20, Glacial Spike 20, Cold Mastery 15+, Ice Bolt 나머지', set:{blizzard:20,ice_blast:20,glacial_spike:20,cold_mastery:15}, fill:'ice_bolt'},
+      {name:'라이트닝 소서 (엔드게임)', desc:'Lightning 20, Chain Lightning 20, Charged Bolt 20, Lightning Mastery 20, Static Field 1, Teleport 1', set:{lightning:20,chain_lightning:20,charged_bolt:20,lightning_mastery:20,static_field:1,teleport:1}},
+      {name:'파이어볼/볼텍스 하이브리드', desc:'Fire Ball 20, Meteor 20, Fire Bolt 20, Frozen Orb 20, Cold Mastery 15', set:{fire_ball:20,meteor:20,fire_bolt:20,frozen_orb:20,cold_mastery:15}},
+      {name:'프로즌 오브 소서 (입문)', desc:'Frozen Orb 20, Cold Mastery 15, Fire Ball 20, Meteor 20, Fire Bolt 나머지', set:{frozen_orb:20,cold_mastery:15,fire_ball:20,meteor:20}, fill:'fire_bolt'},
+      {name:'노바 소서 (PvP/파밍)', desc:'Nova 20, Lightning 20, Lightning Mastery 20, Static Field 20, Charged Bolt 나머지', set:{nova:20,lightning:20,lightning_mastery:20,static_field:20}, fill:'charged_bolt'},
+    ];
+
+    const allSkills = [...trees.fire,...trees.lightning,...trees.cold];
+    const byId = Object.fromEntries(allSkills.map(s=>[s.id,s]));
+    let points = Object.fromEntries(allSkills.map(s=>[s.id,0]));
+    let activeTree = 'fire';
+    const MAX_POINTS = 110;
+
+    const tabsEl = document.getElementById('tabs');
+    const gridEl = document.getElementById('skillGrid');
+    const totalEl = document.getElementById('totalPoint');
+
+    function totalPoints(){ return Object.values(points).reduce((a,b)=>a+b,0); }
+    function canUse(skill){ return skill.prereq.every(id=>points[id]>0); }
+    function updateHash(){
+      const toList = t => trees[t].map(s=>points[s.id]).join(',');
+      const hash = `fire=${toList('fire')}&lightning=${toList('lightning')}&cold=${toList('cold')}`;
+      history.replaceState(null,'','#'+hash);
+    }
+    function parseHash(){
+      const h = location.hash.slice(1); if(!h) return;
+      const p = new URLSearchParams(h);
+      ['fire','lightning','cold'].forEach(t=>{
+        const val = p.get(t); if(!val) return;
+        const arr = val.split(',').map(v=>Math.max(0,Math.min(20,parseInt(v)||0)));
+        trees[t].forEach((s,i)=>{ points[s.id] = arr[i] ?? 0; });
+      });
+    }
+
+    function addPoint(skill){
+      if(!canUse(skill) || points[skill.id] >= 20 || totalPoints() >= MAX_POINTS) return;
+      points[skill.id]++;
+      render();
+    }
+    function removePoint(skill){
+      if(points[skill.id] <= 0) return;
+      points[skill.id]--;
+      render();
+    }
+
+    function renderTabs(){
+      tabsEl.innerHTML = '';
+      [['fire','Fire'],['lightning','Lightning'],['cold','Cold']].forEach(([id,label])=>{
+        const b = document.createElement('button'); b.className = 'tab' + (activeTree===id?' active':''); b.textContent = label;
+        b.onclick = ()=>{activeTree=id; renderTabs(); renderSkills();};
+        tabsEl.appendChild(b);
+      });
+    }
+
+    function reqText(skill){
+      if(!skill.prereq.length) return '선행 없음';
+      const missing = skill.prereq.filter(id=>points[id]===0).map(id=>byId[id].name);
+      return missing.length ? '필요: '+missing.join(', ') : '선행 충족';
+    }
+
+    function renderSkills(){
+      gridEl.innerHTML='';
+      trees[activeTree].forEach(skill=>{
+        const ok = canUse(skill);
+        const d = document.createElement('div');
+        d.className = 'skill' + (ok?'':' locked') + (points[skill.id]===20?' maxed':'');
+        d.innerHTML = `<div class="left"><b>${skill.name}</b><small>요구Lv ${skill.reqLv} · ${reqText(skill)}</small></div><div class="pt">${points[skill.id]}</div>`;
+        d.onclick = ()=>addPoint(skill);
+        d.oncontextmenu = (e)=>{ e.preventDefault(); removePoint(skill); };
+        d.addEventListener('touchstart', ()=>{}, {passive:true});
+        gridEl.appendChild(d);
+      });
+    }
+
+    function renderSynergy(){
+      const el = document.getElementById('synergyView');
+      el.innerHTML = synergies.map(s=>{
+        const rows = s.lines.map(([id,p])=>`${byId[id].name} ${points[id]}pt → +${points[id]*p}%`).join('<br>');
+        const total = s.lines.reduce((a,[id,p])=>a + points[id]*p,0);
+        return `<div style="margin-bottom:10px"><b>${s.label}</b><br>${rows}<br><span style="color:#f0c16a">총 시너지: +${total}%</span></div>`;
+      }).join('');
+    }
+
+    function render(){
+      totalEl.textContent = `총 스킬포인트: ${totalPoints()} / ${MAX_POINTS}`;
+      renderTabs(); renderSkills(); renderSynergy(); updateHash();
+    }
+
+    function ensure(skillId, amount){
+      const s = byId[skillId];
+      s.prereq.forEach(p=> ensure(p, Math.max(points[p],1)));
+      while(points[skillId] < amount && totalPoints() < MAX_POINTS){ addPoint(byId[skillId]); }
+    }
+
+    function applyPreset(p){
+      points = Object.fromEntries(allSkills.map(s=>[s.id,0]));
+      Object.entries(p.set).forEach(([id,val])=>ensure(id,val));
+      if(p.fill){ while(totalPoints()<MAX_POINTS){ if(points[p.fill] >= 20) break; addPoint(byId[p.fill]); } }
+      render();
+    }
+
+    function renderPresets(){
+      const el = document.getElementById('presetGrid');
+      el.innerHTML = '';
+      presets.forEach(p=>{
+        const d=document.createElement('div'); d.className='preset';
+        d.innerHTML=`<h3 style="margin:0 0 6px;color:#f4cf82">${p.name}</h3><div class="muted">${p.desc}</div>`;
+        d.onclick=()=>applyPreset(p);
+        el.appendChild(d);
+      });
+    }
+
+    function renderRunewords(){
+      const el = document.getElementById('rwGrid');
+      el.innerHTML = runewords.map(r=>`<div class="rw"><b style="color:#f4cf82">${r[0]}</b><div class="muted">룬: ${r[1]}</div><div class="muted">베이스: ${r[2]}</div><div>${r[3]}</div></div>`).join('');
+    }
+
+    document.getElementById('resetBtn').onclick = ()=>{ points = Object.fromEntries(allSkills.map(s=>[s.id,0])); render(); };
+    document.getElementById('copyBtn').onclick = async ()=>{
+      try{ await navigator.clipboard.writeText(location.href); alert('빌드 URL이 복사되었습니다.'); }
+      catch{ alert('복사 실패: 주소창 URL을 수동 복사해주세요.'); }
+    };
+
+    parseHash(); renderPresets(); renderRunewords(); render();
+    window.addEventListener('hashchange', ()=>{ parseHash(); render(); });
+  </script>
+</body>
+</html>
