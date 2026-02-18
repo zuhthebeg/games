@@ -327,7 +327,17 @@
       <div class="board" id="board" aria-label="지뢰찾기 보드" role="grid"></div>
     </section>
 
-    <p class="hint">탭/클릭: 열기 · 길게 누르기/우클릭: 깃발</p>
+    <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap">
+      <button id="flagToggle" type="button" style="
+        border:2px solid var(--accent);background:var(--accent-soft);color:var(--text);
+        border-radius:12px;padding:10px 20px;font-size:1rem;font-weight:800;cursor:pointer;
+        display:flex;align-items:center;gap:6px;transition:all .15s ease;min-width:140px;justify-content:center;
+      ">
+        <span id="flagIcon" style="font-size:1.2rem">⛏️</span>
+        <span id="flagLabel">열기 모드</span>
+      </button>
+      <span id="modeHint" style="color:var(--muted);font-size:0.82rem">탭하면 칸을 엽니다</span>
+    </div>
   </main>
 
   <div class="modal-bg" id="modalBg" role="dialog" aria-modal="true">
@@ -370,6 +380,32 @@
     let timer = 0;
     let timerId = null;
     let pointerState = null;
+    let flagMode = false;
+    const flagToggleBtn = document.getElementById("flagToggle");
+    const flagIcon = document.getElementById("flagIcon");
+    const flagLabel = document.getElementById("flagLabel");
+    const modeHint = document.getElementById("modeHint");
+
+    function updateFlagToggle() {
+      if (flagMode) {
+        flagToggleBtn.style.background = "color-mix(in srgb, var(--danger), transparent 78%)";
+        flagToggleBtn.style.borderColor = "var(--danger)";
+        flagIcon.textContent = "🚩";
+        flagLabel.textContent = "깃발 모드";
+        modeHint.textContent = "탭하면 깃발을 꽂습니다";
+      } else {
+        flagToggleBtn.style.background = "var(--accent-soft)";
+        flagToggleBtn.style.borderColor = "var(--accent)";
+        flagIcon.textContent = "⛏️";
+        flagLabel.textContent = "열기 모드";
+        modeHint.textContent = "탭하면 칸을 엽니다";
+      }
+    }
+
+    flagToggleBtn.addEventListener("click", () => {
+      flagMode = !flagMode;
+      updateFlagToggle();
+    });
 
     function loadBestTimes() {
       try {
@@ -629,7 +665,11 @@
         event.preventDefault();
         return;
       }
-      reveal(r, c);
+      if (flagMode) {
+        toggleFlag(r, c);
+      } else {
+        reveal(r, c);
+      }
       updateCounters();
     }
 
@@ -675,6 +715,8 @@
       flaggedCount = 0;
       timer = 0;
       pointerState = null;
+      flagMode = false;
+      updateFlagToggle();
       buildBoard();
       updateBestTimeText();
       updateCounters();
