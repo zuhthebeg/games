@@ -6,6 +6,7 @@
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
 <!-- End Google Tag Manager -->
 
     <title>���� - Gomoku</title>
@@ -308,23 +309,23 @@
         }
     </style>
 
-<meta name="description" content="실시간 1:1 오목 대결">
+<meta name="description" content="?�시�?1:1 ?�목 ?��?>
 <link rel="canonical" href="https://game.cocy.io/gomoku/">
-<meta property="og:title" content="오목 | game.cocy.io">
-<meta property="og:description" content="실시간 1:1 오목 대결">
+<meta property="og:title" content="?�목 | game.cocy.io">
+<meta property="og:description" content="?�시�?1:1 ?�목 ?��?>
 <meta property="og:url" content="https://game.cocy.io/gomoku/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="오목 | game.cocy.io">
-<meta name="twitter:description" content="실시간 1:1 오목 대결">
+<meta name="twitter:title" content="?�목 | game.cocy.io">
+<meta name="twitter:description" content="?�시�?1:1 ?�목 ?��?>
 <!-- SEO-AUTO:GAME START -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "VideoGame",
-  "name": "오목",
-  "description": "실시간 1:1 오목 대결",
+  "name": "?�목",
+  "description": "?�시�?1:1 ?�목 ?��?,
   "url": "https://game.cocy.io/gomoku/",
   "inLanguage": "ko-KR",
   "applicationCategory": "Game",
@@ -348,7 +349,7 @@
         let sharedGold = 0;
         let cloudSyncEnabled = false;
         const WIN_REWARD = 1000;  // �¸� ����
-        const LOSE_PENALTY = 100; // �й� ���Ƽ
+        const LOSE_PENALTY = 100; // �й� ����?
         
         // ===== Sound Effects =====
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -407,7 +408,7 @@
         }
         
         async function saveSharedGold() {
-            // SharedWallet ���
+            // SharedWallet ���?
             if (typeof SharedWallet !== 'undefined') {
                 SharedWallet.setGold(sharedGold);
             } else {
@@ -488,7 +489,7 @@
                     }
                 }
             } else {
-                // ����: �� �ѱ��
+                // ����: �� �ѱ��?
                 showToast('�ð� �ʰ�! �� �ѱ�');
                 currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
                 startTimer();
@@ -575,7 +576,7 @@
             };
             
             if (!gameOver) startTimer();
-            showToast(`���� ����! ����� ${myColor === 'black' ? '��' : '��'}�Դϴ�`);
+            showToast(`���� ����! �����?${myColor === 'black' ? '��' : '��'}�Դϴ�`);
         }
 
         // ===== Board Logic =====
@@ -590,7 +591,7 @@
             if (gameOver || board[row][col]) return;
             
             if (isMultiplayer && myColor !== currentPlayer) {
-                showToast('��� �����Դϴ�');
+                showToast('���?�����Դϴ�');
                 return;
             }
             
@@ -640,7 +641,7 @@
                 <div class="confirm-box">
                     <p>�� ��ġ�� �νðڽ��ϱ�?<br><small style="color:#888">(${row+1}, ${col+1})</small></p>
                     <div class="btns">
-                        <button class="btn" onclick="cancelMove()">���</button>
+                        <button class="btn" onclick="cancelMove()">���?/button>
                         <button class="btn primary" onclick="executeMove(${row},${col})">Ȯ��</button>
                     </div>
                 </div>
@@ -715,7 +716,7 @@
             
             renderGame(gs);
             
-            // ���� ������ ������ ���� ��� ǥ�� (�ߺ� ����)
+            // ���� ������ ������ ���� ���?ǥ�� (�ߺ� ����)
             if (gameOver && !wasGameOver && gs.winner && gs.winner !== 'draw') {
                 const winnerColor = gs.players.find(p => p.id === gs.winner)?.color;
                 showResult(winnerColor);
@@ -820,7 +821,7 @@
                         if (isMultiplayer) {
                             return isMyTurn
                                 ? `<div class="turn-banner my-turn">${turnColor} �� ����! ���� ��������</div>`
-                                : `<div class="turn-banner opp-turn">${turnColor} ��� ����... ��ٸ�����</div>`;
+                                : `<div class="turn-banner opp-turn">${turnColor} ���?����... ��ٸ�����?/div>`;
                         }
                         return `<div class="turn-banner my-turn">${turnColor} ${currentPlayer === 'black' ? '��' : '��'}�� ����</div>`;
                     })()}

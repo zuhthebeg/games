@@ -6,6 +6,7 @@
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
 <!-- End Google Tag Manager -->
 
   <title>카탄</title>
@@ -333,23 +334,23 @@
     }
   </style>
 
-<meta name="description" content="3-4인 전략 보드게임 - 자원, 건설, 거래">
+<meta name="description" content="3-4???�략 보드게임 - ?�원, 건설, 거래">
 <link rel="canonical" href="https://game.cocy.io/catan/">
 <meta property="og:title" content="카탄 | game.cocy.io">
-<meta property="og:description" content="3-4인 전략 보드게임 - 자원, 건설, 거래">
+<meta property="og:description" content="3-4???�략 보드게임 - ?�원, 건설, 거래">
 <meta property="og:url" content="https://game.cocy.io/catan/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="카탄 | game.cocy.io">
-<meta name="twitter:description" content="3-4인 전략 보드게임 - 자원, 건설, 거래">
+<meta name="twitter:description" content="3-4???�략 보드게임 - ?�원, 건설, 거래">
 <!-- SEO-AUTO:GAME START -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "VideoGame",
   "name": "카탄",
-  "description": "3-4인 전략 보드게임 - 자원, 건설, 거래",
+  "description": "3-4???�략 보드게임 - ?�원, 건설, 거래",
   "url": "https://game.cocy.io/catan/",
   "inLanguage": "ko-KR",
   "applicationCategory": "Game",
@@ -367,7 +368,7 @@
 
   <script>
     const RESOURCES = ["brick", "lumber", "wool", "grain", "ore"];
-    const RESOURCE_ICONS = { brick: "?��", lumber: "?��", wool: "?��", grain: "?��", ore: "?�️", desert: "?���? };
+    const RESOURCE_ICONS = { brick: "?��", lumber: "?��", wool: "?��", grain: "?��", ore: "?�️", desert: "?���? };
     const COST = {
       road: { brick: 1, lumber: 1 },
       settlement: { brick: 1, lumber: 1, wool: 1, grain: 1 },
@@ -969,7 +970,7 @@
         state.currentPlayer = order2[0];
         state.setupStep = "settlement";
         state.lastSetupVertex = null;
-        state.hint = "2?�운??초기 배치: 마�?�??�레?�어부????��?�로 배치?�니??";
+        state.hint = "2?�운??초기 배치: 마�?�??�레?�어부????��?�로 배치?�니??";
         return;
       }
       state.phase = "roll";
@@ -1018,7 +1019,7 @@
           if (state.phase === "setup2") grantSecondSetupResources(pIdx, action.vertexId);
           state.lastSetupVertex = action.vertexId;
           state.setupStep = "road";
-          state.hint = "??마을???�결???�로�??�나 ?�으?�요.";
+          state.hint = "??마을???�결???�로�??�나 ?�으?�요.";
           return true;
         }
         if (pIdx !== state.currentPlayer || state.phase !== "main") return false;
@@ -1155,7 +1156,7 @@
     function humanBuildRoad() {
       if (!isHumanTurn()) return;
       state.buildMode = state.buildMode === "road" ? null : "road";
-      state.hint = state.buildMode ? "건설 가?�한 ?�로�??�택?�세??" : "";
+      state.hint = state.buildMode ? "건설 가?�한 ?�로�??�택?�세??" : "";
       render();
     }
 
@@ -1190,7 +1191,7 @@
         if (state.phase === "setup2") grantSecondSetupResources(pIdx, vIdx);
         state.lastSetupVertex = vIdx;
         state.setupStep = "road";
-        state.hint = "??마을???�결???�로�??�나 ?�으?�요.";
+        state.hint = "??마을???�결???�로�??�나 ?�으?�요.";
         render();
         triggerAITurnIfNeeded();
         return;
@@ -1346,7 +1347,7 @@
     function statusText() {
       if (state.winner !== null) return `?�자: ${state.players[state.winner].name} (${state.players[state.winner].vp}??`;
       const cp = getCurrentPlayer();
-      const waiting = isMultiMode() && !isHumanTurn() ? " | ?�른 ?�레?�어�?기다리는 �?.." : "";
+      const waiting = isMultiMode() && !isHumanTurn() ? " | ?�른 ?�레?�어�?기다리는 �?.." : "";
       const base = `${cp.name} 차�? | ?�계: ${state.phase}${waiting}`;
       return state.hint ? `${base} | ${state.hint}` : base;
     }
@@ -1459,10 +1460,10 @@
                   <option value="3" ${state.maxPlayers === 3 ? "selected" : ""}>3</option>
                   <option value="4" ${state.maxPlayers === 4 ? "selected" : ""}>4</option>
                 </select>
-                <button onclick="createRoom()">�?만들�?/button>
+                <button onclick="createRoom()">�?만들�?/button>
               </div>
               <div class="multi-row">
-                <input id="roomCodeInput" value="${state.roomCodeInput}" placeholder="�?코드" oninput="onRoomCodeInput(this.value)">
+                <input id="roomCodeInput" value="${state.roomCodeInput}" placeholder="�?코드" oninput="onRoomCodeInput(this.value)">
                 <button onclick="joinRoom()">참�??�기</button>
               </div>
             </div>
@@ -1478,7 +1479,7 @@
       return players.map((p, i) => `
         <div class="lobby-player">
           <div style="color:${PLAYER_COLORS[i] || "#fff"}">${p.isHost ? "?�� " : ""}${p.nickname || "Player"}${p.id === mpState.myUserId ? " (??" : ""}</div>
-          <div>${p.isHost ? "방장" : (p.isReady ? "준비완�? : "?�기중")}</div>
+          <div>${p.isHost ? "방장" : (p.isReady ? "준비완�? : "?�기�?)}</div>
         </div>
       `).join("");
     }
@@ -1488,18 +1489,18 @@
       const others = players.filter(p => p.id !== mpState.myUserId);
       const allReady = others.length > 0 && others.every(p => p.isReady);
       const canStart = mpState.isHost && players.length >= 2 && allReady;
-      const waitMsg = mpState.waitingMessage || (canStart ? "게임 ?�작 가?? : "?�레?�어�?기다리는 �?..");
+      const waitMsg = mpState.waitingMessage || (canStart ? "게임 ?�작 가?? : "?�레?�어�?기다리는 �?..");
       return `
         <div class="lobby-screen">
           <div class="lobby-card">
             <h1 class="lobby-title">카탄</h1>
             <div class="room-lobby">
-              <p>�?코드: <strong id="roomCodeDisplay">${mpState.roomCode || "-"}</strong></p>
+              <p>�?코드: <strong id="roomCodeDisplay">${mpState.roomCode || "-"}</strong></p>
               <div id="playerList">${lobbyPlayersHtml()}</div>
               <div class="multi-row">
-                <button onclick="setReady()">${mpState.ready ? "준�?취소" : "준�??�료"}</button>
+                <button onclick="setReady()">${mpState.ready ? "준�?취소" : "준�??�료"}</button>
                 <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"}>게임 ?�작</button>
-                <button onclick="leaveRoom()" class="danger">?��?�?/button>
+                <button onclick="leaveRoom()" class="danger">?��?�?/button>
               </div>
               <div class="lobby-note">${waitMsg}</div>
             </div>
@@ -1537,11 +1538,11 @@
             <button ${canMain ? "" : "disabled"} onclick="humanBuildCity()">?�시</button>
             <button disabled>거래</button>
             <button class="danger" ${(canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">??종료</button>
-            ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">�??��?�?/button>` : ""}
+            ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">�??��?�?/button>` : ""}
           </div>
           <div class="hint">
             ${inSetup ? `초기 배치 ${state.setupRound}?�운??| ?�재: ${state.setupStep === "settlement" ? "마을" : "?�로"}` : ""}
-            ${canRobber ? "?�둑 ?�동: ?�른 ?�스�??�치?�세??" : ""}
+            ${canRobber ? "?�둑 ?�동: ?�른 ?�스�??�치?�세??" : ""}
           </div>
         </div>
       `;
@@ -1586,12 +1587,12 @@
       if (state.screen === "room-lobby") {
         const others = (room.players || []).filter(p => p.id !== mpState.myUserId);
         const allReady = others.length > 0 && others.every(p => p.isReady);
-        mpState.waitingMessage = allReady ? "모두 준�??�료. 게임 ?�작 가??" : "?�레?�어�?기다리는 �?..";
+        mpState.waitingMessage = allReady ? "모두 준�??�료. 게임 ?�작 가??" : "?�레?�어�?기다리는 �?..";
       }
       if (room.status === "playing" && state.screen === "room-lobby") {
         state.screen = "game";
         state.mode = "multi";
-        state.hint = "게임 초기???��?�?..";
+        state.hint = "게임 초기???��?�?..";
       }
       autoStartIfReady();
       render();
@@ -1644,7 +1645,7 @@
       if (event.type === "game_started") {
         state.screen = "game";
         state.mode = "multi";
-        state.hint = "?�스?��? 맵을 ?�성?�는 �?..";
+        state.hint = "?�스?��? 맵을 ?�성?�는 �?..";
         render();
         await maybeHostInitGame();
         return;
@@ -1681,11 +1682,11 @@
         mpState.roomCode = room.roomId || room.id || room.code || room.roomCode || "";
         state.mode = "multi";
         state.screen = "room-lobby";
-        mpState.waitingMessage = `�??�성 ?�료. 코드: ${mpState.roomCode}`;
+        mpState.waitingMessage = `�??�성 ?�료. 코드: ${mpState.roomCode}`;
         client.startListening();
         await refreshRoomState();
       } catch (e) {
-        mpState.waitingMessage = `�??�성 ?�패: ${e.message || e}`;
+        mpState.waitingMessage = `�??�성 ?�패: ${e.message || e}`;
         render();
       }
     }
@@ -1693,7 +1694,7 @@
     async function joinRoom() {
       const code = (state.roomCodeInput || "").trim();
       if (!code) {
-        mpState.waitingMessage = "�?코드�??�력?�세??";
+        mpState.waitingMessage = "�?코드�??�력?�세??";
         render();
         return;
       }
@@ -1703,11 +1704,11 @@
         mpState.roomCode = code;
         state.mode = "multi";
         state.screen = "room-lobby";
-        mpState.waitingMessage = `�?참�? ?�료: ${code}`;
+        mpState.waitingMessage = `�?참�? ?�료: ${code}`;
         client.startListening();
         await refreshRoomState();
       } catch (e) {
-        mpState.waitingMessage = `�?참�? ?�패: ${e.message || e}`;
+        mpState.waitingMessage = `�?참�? ?�패: ${e.message || e}`;
         render();
       }
     }
@@ -1738,7 +1739,7 @@
         await mpState.client.setReady(!mpState.ready);
         await refreshRoomState();
       } catch (e) {
-        mpState.waitingMessage = `준�??�태 변�??�패: ${e.message || e}`;
+        mpState.waitingMessage = `준�??�태 변�??�패: ${e.message || e}`;
         render();
       }
     }
@@ -1750,7 +1751,7 @@
         mpState.startRequested = true;
         state.screen = "game";
         state.mode = "multi";
-        state.hint = "게임 초기??�?..";
+        state.hint = "게임 초기??�?..";
         render();
         await maybeHostInitGame();
       } catch (e) {

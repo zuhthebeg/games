@@ -7,6 +7,7 @@ new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
 <!-- End Google Tag Manager -->
 
     <meta charset="UTF-8">
@@ -17,9 +18,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <meta name="theme-color" content="#2c3e50">
     <link rel="stylesheet" href="style.css?v=1.0.9">
     <meta name="description" content="Free online sliding puzzle game! Challenge yourself with number puzzles and custom image puzzles. Supports 3x3 to 9x9 difficulty levels">
-    <meta name="keywords" content="number puzzle, sliding puzzle, tile game, online puzzle, brain game, free game, 숫자 퍼즐, 슬라이딩 퍼즐, 타일 게임, 두뇌 게임, 무료 퍼즐 게임, 이미지 퍼즐">
-    <meta property="og:title" content="타일 슬라이더 | game.cocy.io">
-    <meta property="og:description" content="슬라이딩 숫자/이미지 퍼즐">
+    <meta name="keywords" content="number puzzle, sliding puzzle, tile game, online puzzle, brain game, free game, ?�자 ?�즐, ?�라?�딩 ?�즐, ?�??게임, ?�뇌 게임, 무료 ?�즐 게임, ?��?지 ?�즐">
+    <meta property="og:title" content="?�???�라?�더 | game.cocy.io">
+    <meta property="og:description" content="?�라?�딩 ?�자/?��?지 ?�즐">
 
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -27,6 +28,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
     })(window,document,'script','dataLayer','GTM-MJPN92FN');</script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
     <!-- End Google Tag Manager -->
 
 <link rel="canonical" href="https://game.cocy.io/tileslider/">
@@ -34,15 +36,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="타일 슬라이더 | game.cocy.io">
-<meta name="twitter:description" content="슬라이딩 숫자/이미지 퍼즐">
+<meta name="twitter:title" content="?�???�라?�더 | game.cocy.io">
+<meta name="twitter:description" content="?�라?�딩 ?�자/?��?지 ?�즐">
 <!-- SEO-AUTO:GAME START -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "VideoGame",
-  "name": "타일 슬라이더",
-  "description": "슬라이딩 숫자/이미지 퍼즐",
+  "name": "?�???�라?�더",
+  "description": "?�라?�딩 ?�자/?��?지 ?�즐",
   "url": "https://game.cocy.io/tileslider/",
   "inLanguage": "ko-KR",
   "applicationCategory": "Game",
@@ -70,7 +72,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <div id="game-container">
         <div id="controls">
             <select id="level-select">
-                <option value="3" selected>3⨉3</option>
+                <option value="3" selected>3�?</option>
                 <option value="4">4x4</option>
                 <option value="5">5x5</option>
                 <option value="6">6x6</option>
@@ -78,42 +80,42 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 <option value="8">8x8</option>
                 <option value="9">9x9</option>
             </select>
-            <button id="random-image-btn" title="랜덤 이미지">🎲</button>
-            <button id="image-upload-btn" title="이미지 업로드">🖼️</button>
-            <button onclick="startNewGameWithBlank()">♻️</button>
+            <button id="random-image-btn" title="?�덤 ?��?지">?��</button>
+            <button id="image-upload-btn" title="?��?지 ?�로??>?���?/button>
+            <button onclick="startNewGameWithBlank()">?�️</button>
         </div>
         <div id="stats">
-            <div>⏳ <span id="timer">0</span></div>
-            <div>🏃‍‍ <span id="moves">0</span></div>
+            <div>??<span id="timer">0</span></div>
+            <div>?��?��?<span id="moves">0</span></div>
             <div id="hint-container">
-                💡<span id="hint-count">0</span>
+                ?��<span id="hint-count">0</span>
             </div>
         </div>
         <div id="puzzle-board"></div>
     </div>
 
-    <!-- 승리 팝업 추가 -->
+    <!-- ?�리 ?�업 추�? -->
     <div class="overlay" id="overlay"></div>
     <div class="win-popup" id="win-popup" style="display: none;">
         <div id="win-stats"></div>
         <div class="win-popup-buttons">
-            <button onclick="startNewGameWithBlank()">🔄</button>
+            <button onclick="startNewGameWithBlank()">?��</button>
             <button onclick="closeWinPopup()">⬅️</button>
         </div>
     </div>
 
-    <!-- 기존 승리 팝업 아래에 추가 -->
+    <!-- 기존 ?�리 ?�업 ?�래??추�? -->
     <div class="ad-popup" style="display: none;">
-        🎲 Loading Random Image... 
+        ?�� Loading Random Image... 
     </div>
 
     <div id="score-board">
-        <h3 data-i18n="high-scores">🏆</h3>
+        <h3 data-i18n="high-scores">?��</h3>
         <ul id="high-scores"></ul>
     </div>
 
     <script src="script.js?v=1.0.9"></script>
-        <!-- 푸터 위치 수정 -->
+        <!-- ?�터 ?�치 ?�정 -->
         <footer style="
         position: fixed;
         bottom: 0;

@@ -6,9 +6,10 @@
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
 <!-- End Google Tag Manager -->
 
-  <title>지뢰찾�?/title>
+  <title>지뢰찾�?/title>
   <style>
     :root {
       --bg: #f4f6fb;
@@ -287,23 +288,23 @@
     }
   </style>
 
-<meta name="description" content="난이도별 골드 보상! 클리어 보너스 + 시간 보너스">
+<meta name="description" content="?�이?�별 골드 보상! ?�리??보너??+ ?�간 보너??>
 <link rel="canonical" href="https://game.cocy.io/minesweeper/">
-<meta property="og:title" content="💣 지뢰찾기 | game.cocy.io">
-<meta property="og:description" content="난이도별 골드 보상! 클리어 보너스 + 시간 보너스">
+<meta property="og:title" content="?�� 지뢰찾�?| game.cocy.io">
+<meta property="og:description" content="?�이?�별 골드 보상! ?�리??보너??+ ?�간 보너??>
 <meta property="og:url" content="https://game.cocy.io/minesweeper/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="💣 지뢰찾기 | game.cocy.io">
-<meta name="twitter:description" content="난이도별 골드 보상! 클리어 보너스 + 시간 보너스">
+<meta name="twitter:title" content="?�� 지뢰찾�?| game.cocy.io">
+<meta name="twitter:description" content="?�이?�별 골드 보상! ?�리??보너??+ ?�간 보너??>
 <!-- SEO-AUTO:GAME START -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "VideoGame",
-  "name": "💣 지뢰찾기",
-  "description": "난이도별 골드 보상! 클리어 보너스 + 시간 보너스",
+  "name": "?�� 지뢰찾�?,
+  "description": "?�이?�별 골드 보상! ?�리??보너??+ ?�간 보너??,
   "url": "https://game.cocy.io/minesweeper/",
   "inLanguage": "ko-KR",
   "applicationCategory": "Game",
@@ -321,26 +322,26 @@
     <section class="top">
       <div>
         <div class="title-row">
-          <h1>지뢰찾�?/h1>
+          <h1>지뢰찾�?/h1>
           <button class="theme-btn" id="themeBtn" type="button">?�마: ?�동</button>
         </div>
         <div class="controls">
           <select class="difficulty" id="difficulty" aria-label="?�이???�택">
-            <option value="easy">?��? (9x9, 지�?10)</option>
-            <option value="medium">보통 (16x16, 지�?40)</option>
-            <option value="hard">?�려?� (30x16, 지�?99)</option>
+            <option value="easy">?��? (9x9, 지�?10)</option>
+            <option value="medium">보통 (16x16, 지�?40)</option>
+            <option value="hard">?�려?�?(30x16, 지�?99)</option>
           </select>
           <button class="restart" id="restart" type="button">??게임</button>
         </div>
       </div>
       <div class="status">
         <div class="card">
-          <div class="label">?��? 지�?/div>
+          <div class="label">?��? 지�?/div>
           <div class="value" id="mineCounter">0</div>
         </div>
         <div class="card">
           <div class="label">?�간</div>
-          <div class="value" id="timer">0�?/div>
+          <div class="value" id="timer">0�?/div>
         </div>
         <div class="card">
           <div class="label">최고 기록</div>
@@ -350,10 +351,10 @@
     </section>
 
     <section class="board-wrap">
-      <div class="board" id="board" aria-label="지뢰찾�?보드" role="grid"></div>
+      <div class="board" id="board" aria-label="지뢰찾�?보드" role="grid"></div>
     </section>
 
-    <p class="hint">???�릭: ?�기 · 길게 ?�르�??�클�? 깃발</p>
+    <p class="hint">???�릭: ?�기 · 길게 ?�르�??�클�? 깃발</p>
   </main>
 
   <div class="modal-bg" id="modalBg" role="dialog" aria-modal="true">
@@ -368,7 +369,7 @@
     const DIFFICULTIES = {
       easy: { key: "easy", rows: 9, cols: 9, mines: 10, label: "?��?" },
       medium: { key: "medium", rows: 16, cols: 16, mines: 40, label: "보통" },
-      hard: { key: "hard", rows: 16, cols: 30, mines: 99, label: "?�려?�" }
+      hard: { key: "hard", rows: 16, cols: 30, mines: 99, label: "?�려?�? }
     };
 
     const LONG_PRESS_MS = 360;
@@ -416,7 +417,7 @@
     function updateBestTimeText() {
       const current = loadBestTimes();
       const value = current[config.key];
-      bestTimeEl.textContent = Number.isInteger(value) ? `${value}�? : "-";
+      bestTimeEl.textContent = Number.isInteger(value) ? `${value}�? : "-";
     }
 
     function applyTheme(theme) {
@@ -426,7 +427,7 @@
         document.documentElement.removeAttribute("data-theme");
       }
       localStorage.setItem(THEME_KEY, theme);
-      themeBtn.textContent = `?�마: ${theme === "light" ? "밝게" : theme === "dark" ? "?�둡�? : "?�동"}`;
+      themeBtn.textContent = `?�마: ${theme === "light" ? "밝게" : theme === "dark" ? "?�둡�? : "?�동"}`;
     }
 
     function rotateTheme() {
@@ -534,7 +535,7 @@
 
     function updateCounters() {
       mineCounterEl.textContent = String(config.mines - flaggedCount);
-      timerEl.textContent = `${timer}�?;
+      timerEl.textContent = `${timer}�?;
     }
 
     function startTimerIfNeeded() {
@@ -580,7 +581,7 @@
       stopTimer();
       saveBestTime(config.key, timer);
       updateBestTimeText();
-      showModal("?�리!", `${config.label} ?�이???�리?? ${timer}�?);
+      showModal("?�리!", `${config.label} ?�이???�리?? ${timer}�?);
     }
 
     function floodReveal(r, c) {

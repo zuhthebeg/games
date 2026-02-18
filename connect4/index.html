@@ -6,9 +6,10 @@
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
 <!-- End Google Tag Manager -->
 
-    <title>���� ��� - Connect 4</title>
+    <title>���� ���?- Connect 4</title>
     <link rel="icon" href="icon.svg">
     <script src="/lib/shared-wallet.js?v=20260214"></script>
     <style>
@@ -199,23 +200,23 @@
         }
     </style>
 
-<meta name="description" content="3인 실시간 사목 대결">
+<meta name="description" content="3???�시�??�목 ?��?>
 <link rel="canonical" href="https://game.cocy.io/connect4/">
-<meta property="og:title" content="삼인 사목 | game.cocy.io">
-<meta property="og:description" content="3인 실시간 사목 대결">
+<meta property="og:title" content="?�인 ?�목 | game.cocy.io">
+<meta property="og:description" content="3???�시�??�목 ?��?>
 <meta property="og:url" content="https://game.cocy.io/connect4/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="삼인 사목 | game.cocy.io">
-<meta name="twitter:description" content="3인 실시간 사목 대결">
+<meta name="twitter:title" content="?�인 ?�목 | game.cocy.io">
+<meta name="twitter:description" content="3???�시�??�목 ?��?>
 <!-- SEO-AUTO:GAME START -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "VideoGame",
-  "name": "삼인 사목",
-  "description": "3인 실시간 사목 대결",
+  "name": "?�인 ?�목",
+  "description": "3???�시�??�목 ?��?,
   "url": "https://game.cocy.io/connect4/",
   "inLanguage": "ko-KR",
   "applicationCategory": "Game",
@@ -283,7 +284,7 @@
         function init() {
             mpUI = new MultiplayerUI({
                 gameType: 'connect4',
-                gameName: '?????? ���� ���',
+                gameName: '?????? ���� ���?,
                 container: document.getElementById('app'),
                 maxPlayers: 3,
                 supportsLocal: false,  // ��Ƽ�÷��̾� ����
@@ -353,11 +354,11 @@
                 }
             };
             
-            showToast(`���� ����! ����� ${getColorName(myColor)}�Դϴ�`);
+            showToast(`���� ����! �����?${getColorName(myColor)}�Դϴ�`);
         }
 
         function getColorName(color) {
-            return { red: '����??', yellow: '���??', blue: '�Ķ�??' }[color] || color;
+            return { red: '����??', yellow: '���??', blue: '�Ķ�??' }[color] || color;
         }
 
         // ===== Board Logic =====
@@ -379,7 +380,7 @@
             if (isMultiplayer) {
                 const myId = mpUI.getClient().getMyUserId();
                 if (currentPlayer.id !== myId) {
-                    showToast('����� ���ʰ� �ƴմϴ�');
+                    showToast('�����?���ʰ� �ƴմϴ�');
                     return;
                 }
                 sendPlace(row, col);
