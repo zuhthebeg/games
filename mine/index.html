@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" >
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8,8 +8,8 @@
 })(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
 <!-- End Google Tag Manager -->
 
-    <meta name="description" content="지뢰찾�?- ?�래??게임">
-    <title>지뢰찾�?| cocy.io</title>
+    <meta name="description" content="지뢰찾�?- ?�래??게임">
+    <title>지뢰찾�?| cocy.io</title>
     <style>
         * {
             margin: 0;
@@ -180,7 +180,7 @@
         }
 
         .cell.flagged::before {
-            content: '?��';
+            content: '?��';
             font-size: 1em;
         }
 
@@ -192,7 +192,7 @@
             color: #2ecc71;
         }
 
-        /* ?�자�??�상 */
+        /* ?�자�??�상 */
         .cell[data-mines="1"] { color: #3498db; }
         .cell[data-mines="2"] { color: #2ecc71; }
         .cell[data-mines="3"] { color: #e74c3c; }
@@ -443,7 +443,7 @@
             }
         }
 
-        /* ?�니메이??*/
+        /* ?�니메이??*/
         @keyframes pop {
             0% { transform: scale(0.8); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
@@ -470,23 +470,47 @@
             padding: 20px;
         }
     </style>
+
+<link rel="canonical" href="https://game.cocy.io/mine/">
+<meta property="og:title" content="???? ??? | game.cocy.io">
+<meta property="og:description" content="??? ???? ? ??. ??? ?? ?? ??? ?? ??? ?????.">
+<meta property="og:url" content="https://game.cocy.io/mine/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="???? ??? | game.cocy.io">
+<meta name="twitter:description" content="??? ???? ? ??. ??? ?? ?? ??? ?? ??? ?????.">
+<!-- SEO-AUTO:GAME START -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "???? ???",
+  "description": "??? ???? ? ??. ??? ?? ?? ??? ?? ??? ?????.",
+  "url": "https://game.cocy.io/mine/",
+  "inLanguage": "ko-KR",
+  "applicationCategory": "Game",
+  "operatingSystem": "Web Browser"
+}
+</script>
+<!-- SEO-AUTO:GAME END -->
 </head>
 <body>
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 
-    <button class="theme-btn" onclick="toggleTheme()">?��</button>
+    <button class="theme-btn" onclick="toggleTheme()">?��</button>
 
     <div class="container">
         <div class="header">
-            <h1>?�� 지뢰찾�?/h1>
+            <h1>?�� 지뢰찾�?/h1>
         </div>
 
         <div class="status-bar">
-            <div class="status-item">?�� <span id="mine-count">10</span></div>
+            <div class="status-item">?�� <span id="mine-count">10</span></div>
             <div class="timer" id="timer">00:00</div>
-            <div class="status-item">?�� <span id="cell-count">0</span></div>
+            <div class="status-item">?�� <span id="cell-count">0</span></div>
         </div>
 
         <div class="difficulty">
@@ -500,7 +524,7 @@
         <div class="items" id="items"></div>
 
         <div class="controls">
-            <button class="btn btn-primary" onclick="initGame()">?�� ??게임</button>
+            <button class="btn btn-primary" onclick="initGame()">?�� ??게임</button>
         </div>
     </div>
 
@@ -508,9 +532,9 @@
 
     <div class="modal" id="modal">
         <div class="modal-content">
-            <h2 id="modal-title">게임 ?�버</h2>
+            <h2 id="modal-title">게임 ?�버</h2>
             <p id="modal-message"></p>
-            <button class="modal-btn" onclick="initGame()">?�시 ?�작</button>
+            <button class="modal-btn" onclick="initGame()">?�시 ?�작</button>
         </div>
     </div>
 
@@ -540,7 +564,7 @@
         };
 
         function initGame() {
-            // 게임 ?�태 초기??
+            // 게임 ?�태 초기??
             game.board = [];
             game.mineSet.clear();
             game.revealed.clear();
@@ -559,7 +583,7 @@
                 }
             }
 
-            // 지�?배치
+            // 지�?배치
             let placed = 0;
             while(placed < game.mines) {
                 const x = Math.floor(Math.random() * game.size);
@@ -571,7 +595,7 @@
                 }
             }
 
-            // ?�자 계산
+            // ?�자 계산
             for(let x = 0; x < game.size; x++) {
                 for(let y = 0; y < game.size; y++) {
                     if(game.board[x][y] === -1) continue;
@@ -615,7 +639,7 @@
                             cell.dataset.mines = game.board[x][y];
                         } else if(game.board[x][y] === -1) {
                             cell.classList.add('mine');
-                            cell.textContent = '?��';
+                            cell.textContent = '?��';
                         } else {
                             cell.classList.add('empty');
                         }
@@ -641,7 +665,7 @@
             if(game.revealed.has(key) || game.flagged.has(key)) return;
 
             if(game.board[x][y] === -1) {
-                // 지뢰�? 밟음
+                // 지뢰�? 밟음
                 endGame(false);
                 return;
             }
@@ -674,7 +698,7 @@
             game.revealed.add(key);
 
             if(game.board[x][y] === 0) {
-                // �?칸이�?주�? 모두 공개
+                // �?칸이�?주�? 모두 공개
                 for(let dx = -1; dx <= 1; dx++) {
                     for(let dy = -1; dy <= 1; dy++) {
                         const nx = x + dx, ny = y + dy;
@@ -702,7 +726,7 @@
             game.won = won;
 
             if(!won) {
-                // 모든 지�?공개
+                // 모든 지�?공개
                 game.mineSet.forEach(key => {
                     game.revealed.add(key);
                 });
@@ -714,11 +738,11 @@
             const message = document.getElementById('modal-message');
 
             if(won) {
-                title.textContent = '?�� ?�리!';
-                message.textContent = `${game.time}�?만에 ?�료?�습?�다!`;
+                title.textContent = '?�� ?�리!';
+                message.textContent = `${game.time}�?만에 ?�료?�습?�다!`;
             } else {
-                title.textContent = '?�� 게임 ?�버';
-                message.textContent = '지뢰�? 밟았?�니??';
+                title.textContent = '?�� 게임 ?�버';
+                message.textContent = '지뢰�? 밟았?�니??';
             }
 
             modal.classList.add('show');
@@ -745,7 +769,7 @@
             document.body.classList.toggle('dark-mode');
         }
 
-        // ?�이???�택
+        // ?�이???�택
         document.querySelectorAll('.difficulty-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
@@ -760,7 +784,7 @@
             });
         });
 
-        // 초기 ?�작
+        // 초기 ?�작
         initGame();
     </script>
 </body>

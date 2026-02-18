@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" >
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -8,7 +8,7 @@
 })(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
 <!-- End Google Tag Manager -->
 
-    <title>¿À¸ñ - Gomoku</title>
+    <title>ï¿½ï¿½ï¿½ï¿½ - Gomoku</title>
     <link rel="icon" href="icon.svg">
     <style>
         :root {
@@ -39,7 +39,7 @@
             flex-direction: column;
             align-items: center;
             padding: 16px;
-            padding-top: 60px; /* SharedWallet ¹Ù °ø°£ */
+            padding-top: 60px; /* SharedWallet ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ */
             min-height: 100vh;
         }
 
@@ -307,6 +307,31 @@
             width: 18px; height: 18px; accent-color: var(--accent);
         }
     </style>
+
+<meta name="description" content="ì‹¤ì‹œê°„ 1:1 ì˜¤ëª© ëŒ€ê²°">
+<link rel="canonical" href="https://game.cocy.io/gomoku/">
+<meta property="og:title" content="ì˜¤ëª© | game.cocy.io">
+<meta property="og:description" content="ì‹¤ì‹œê°„ 1:1 ì˜¤ëª© ëŒ€ê²°">
+<meta property="og:url" content="https://game.cocy.io/gomoku/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ì˜¤ëª© | game.cocy.io">
+<meta name="twitter:description" content="ì‹¤ì‹œê°„ 1:1 ì˜¤ëª© ëŒ€ê²°">
+<!-- SEO-AUTO:GAME START -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "ì˜¤ëª©",
+  "description": "ì‹¤ì‹œê°„ 1:1 ì˜¤ëª© ëŒ€ê²°",
+  "url": "https://game.cocy.io/gomoku/",
+  "inLanguage": "ko-KR",
+  "applicationCategory": "Game",
+  "operatingSystem": "Web Browser"
+}
+</script>
+<!-- SEO-AUTO:GAME END -->
 </head>
 <body>
 <!-- Google Tag Manager (noscript) -->
@@ -319,11 +344,11 @@
     <script src="/lib/multiplayer-ui.js?v=20260210v2"></script>
     <script src="/lib/shared-wallet.js?v=20260211"></script>
     <script>
-        // ===== °ø¿ë ÀçÈ­ ½Ã½ºÅÛ =====
+        // ===== ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È­ ï¿½Ã½ï¿½ï¿½ï¿½ =====
         let sharedGold = 0;
         let cloudSyncEnabled = false;
-        const WIN_REWARD = 1000;  // ½Â¸® º¸»ó
-        const LOSE_PENALTY = 100; // ÆÐ¹è Æä³ÎÆ¼
+        const WIN_REWARD = 1000;  // ï¿½Â¸ï¿½ ï¿½ï¿½ï¿½ï¿½
+        const LOSE_PENALTY = 100; // ï¿½Ð¹ï¿½ ï¿½ï¿½ï¿½Æ¼
         
         // ===== Sound Effects =====
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -382,7 +407,7 @@
         }
         
         async function saveSharedGold() {
-            // SharedWallet »ç¿ë
+            // SharedWallet ï¿½ï¿½ï¿½
             if (typeof SharedWallet !== 'undefined') {
                 SharedWallet.setGold(sharedGold);
             } else {
@@ -441,7 +466,7 @@
                 bar.style.background = timeLeft <= 5 ? '#ff6b6b' : timeLeft <= 10 ? '#eab308' : 'var(--accent)';
             }
             if (text) {
-                text.textContent = timeLeft + 'ÃÊ';
+                text.textContent = timeLeft + 'ï¿½ï¿½';
                 text.style.color = timeLeft <= 5 ? '#ff6b6b' : 'var(--text)';
             }
         }
@@ -451,20 +476,20 @@
             if (isMultiplayer) {
                 const isMyTurn = myColor === currentPlayer;
                 if (isMyTurn) {
-                    // ³» ÅÏ¿¡ ½Ã°£ ÃÊ°ú ¡æ ·£´ý À§Ä¡¿¡ ³õ±â
+                    // ï¿½ï¿½ ï¿½Ï¿ï¿½ ï¿½Ã°ï¿½ ï¿½Ê°ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                     const empty = [];
                     for (let r = 0; r < BOARD_SIZE; r++)
                         for (let c = 0; c < BOARD_SIZE; c++)
                             if (!board[r][c]) empty.push([r, c]);
                     if (empty.length > 0) {
                         const [r, c] = empty[Math.floor(Math.random() * empty.length)];
-                        showToast('½Ã°£ ÃÊ°ú! ÀÚµ¿ Âø¼ö');
+                        showToast('ï¿½Ã°ï¿½ ï¿½Ê°ï¿½! ï¿½Úµï¿½ ï¿½ï¿½ï¿½ï¿½');
                         sendMove(r, c);
                     }
                 }
             } else {
-                // ·ÎÄÃ: ÅÏ ³Ñ±â±â
-                showToast('½Ã°£ ÃÊ°ú! ÅÏ ³Ñ±è');
+                // ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ ï¿½Ñ±ï¿½ï¿½
+                showToast('ï¿½Ã°ï¿½ ï¿½Ê°ï¿½! ï¿½ï¿½ ï¿½Ñ±ï¿½');
                 currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
                 startTimer();
                 renderGame();
@@ -473,7 +498,7 @@
 
         // ===== Initialize =====
         function init() {
-            // °ø¿ë ÀçÈ­ ·Îµå (SharedWallet¿¡¼­)
+            // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È­ ï¿½Îµï¿½ (SharedWalletï¿½ï¿½ï¿½ï¿½)
             if (typeof SharedWallet !== 'undefined') {
                 SharedWallet.init().then(() => {
                     sharedGold = SharedWallet.gold;
@@ -485,7 +510,7 @@
             
             mpUI = new MultiplayerUI({
                 gameType: 'gomoku',
-                gameName: '?? ¿À¸ñ',
+                gameName: '?? ï¿½ï¿½ï¿½ï¿½',
                 container: document.getElementById('app'),
                 maxPlayers: 2,
                 onGameStart: handleGameStart,
@@ -550,7 +575,7 @@
             };
             
             if (!gameOver) startTimer();
-            showToast(`°ÔÀÓ ½ÃÀÛ! ´ç½ÅÀº ${myColor === 'black' ? 'Èæ' : '¹é'}ÀÔ´Ï´Ù`);
+            showToast(`ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½! ï¿½ï¿½ï¿½ï¿½ï¿½ ${myColor === 'black' ? 'ï¿½ï¿½' : 'ï¿½ï¿½'}ï¿½Ô´Ï´ï¿½`);
         }
 
         // ===== Board Logic =====
@@ -565,7 +590,7 @@
             if (gameOver || board[row][col]) return;
             
             if (isMultiplayer && myColor !== currentPlayer) {
-                showToast('»ó´ë Â÷·ÊÀÔ´Ï´Ù');
+                showToast('ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ô´Ï´ï¿½');
                 return;
             }
             
@@ -613,10 +638,10 @@
             overlay.id = 'confirmOverlay';
             overlay.innerHTML = `
                 <div class="confirm-box">
-                    <p>ÀÌ À§Ä¡¿¡ µÎ½Ã°Ú½À´Ï±î?<br><small style="color:#888">(${row+1}, ${col+1})</small></p>
+                    <p>ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½Î½Ã°Ú½ï¿½ï¿½Ï±ï¿½?<br><small style="color:#888">(${row+1}, ${col+1})</small></p>
                     <div class="btns">
-                        <button class="btn" onclick="cancelMove()">Ãë¼Ò</button>
-                        <button class="btn primary" onclick="executeMove(${row},${col})">È®ÀÎ</button>
+                        <button class="btn" onclick="cancelMove()">ï¿½ï¿½ï¿½</button>
+                        <button class="btn primary" onclick="executeMove(${row},${col})">È®ï¿½ï¿½</button>
                     </div>
                 </div>
             `;
@@ -664,7 +689,7 @@
                 startTimer();
                 renderGame({ lastMove: { row, col } });
             } catch (e) {
-                showToast('½ÇÆÐ: ' + e.message);
+                showToast('ï¿½ï¿½ï¿½ï¿½: ' + e.message);
             }
         }
 
@@ -690,7 +715,7 @@
             
             renderGame(gs);
             
-            // »õ·Î °ÔÀÓÀÌ ³¡³µÀ» ¶§¸¸ °á°ú Ç¥½Ã (Áßº¹ ¹æÁö)
+            // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ Ç¥ï¿½ï¿½ (ï¿½ßºï¿½ ï¿½ï¿½ï¿½ï¿½)
             if (gameOver && !wasGameOver && gs.winner && gs.winner !== 'draw') {
                 const winnerColor = gs.players.find(p => p.id === gs.winner)?.color;
                 showResult(winnerColor);
@@ -739,15 +764,15 @@
                     : `<span style="color:#ff6b6b">${goldChange}G</span>`;
                 
                 mpUI.showResult({
-                    title: isWin ? '?? ½Â¸®!' : '?? ÆÐ¹è',
-                    detail: `${(winner === 'black' ? 'Èæ' : '¹é')} ½Â¸® ${goldText}`,
+                    title: isWin ? '?? ï¿½Â¸ï¿½!' : '?? ï¿½Ð¹ï¿½',
+                    detail: `${(winner === 'black' ? 'ï¿½ï¿½' : 'ï¿½ï¿½')} ï¿½Â¸ï¿½ ${goldText}`,
                     isWin: isWin,
                     showRematch: true
                 });
             } else {
-                // ½Ì±ÛÇÃ·¹ÀÌ (·ÎÄÃ 2ÀÎ)´Â º¸»ó ¾øÀ½
+                // ï¿½Ì±ï¿½ï¿½Ã·ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ 2ï¿½ï¿½)ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                 mpUI.showResult({
-                    title: (winner === 'black' ? '? Èæ' : '? ¹é') + ' ½Â¸®!',
+                    title: (winner === 'black' ? '? ï¿½ï¿½' : '? ï¿½ï¿½') + ' ï¿½Â¸ï¿½!',
                     isWin: null,
                     showRematch: false
                 });
@@ -780,29 +805,29 @@
                     <div class="game-header">
                         <div class="player-info ${currentPlayer === 'black' && !gameOver ? 'active' : ''}">
                             <div class="stone black"></div>
-                            <span>${isMultiplayer ? blackName : 'Èæ'}${gs.players?.find(p => p.color === 'black')?.id === myId ? ' (³ª)' : ''}</span>
+                            <span>${isMultiplayer ? blackName : 'ï¿½ï¿½'}${gs.players?.find(p => p.color === 'black')?.id === myId ? ' (ï¿½ï¿½)' : ''}</span>
                         </div>
                         <div class="player-info ${currentPlayer === 'white' && !gameOver ? 'active' : ''}">
                             <div class="stone white"></div>
-                            <span>${isMultiplayer ? whiteName : '¹é'}${gs.players?.find(p => p.color === 'white')?.id === myId ? ' (³ª)' : ''}</span>
+                            <span>${isMultiplayer ? whiteName : 'ï¿½ï¿½'}${gs.players?.find(p => p.color === 'white')?.id === myId ? ' (ï¿½ï¿½)' : ''}</span>
                         </div>
                     </div>
                     
                     ${(() => {
-                        if (gameOver) return '<div class="turn-banner game-over-banner">°ÔÀÓ Á¾·á</div>';
+                        if (gameOver) return '<div class="turn-banner game-over-banner">ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½</div>';
                         const isMyTurn = isMultiplayer ? myColor === currentPlayer : true;
                         const turnColor = currentPlayer === 'black' ? '?' : '?';
                         if (isMultiplayer) {
                             return isMyTurn
-                                ? `<div class="turn-banner my-turn">${turnColor} ³» Â÷·Ê! µ¹À» ³õÀ¸¼¼¿ä</div>`
-                                : `<div class="turn-banner opp-turn">${turnColor} »ó´ë Â÷·Ê... ±â´Ù¸®¼¼¿ä</div>`;
+                                ? `<div class="turn-banner my-turn">${turnColor} ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½! ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</div>`
+                                : `<div class="turn-banner opp-turn">${turnColor} ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½... ï¿½ï¿½Ù¸ï¿½ï¿½ï¿½ï¿½ï¿½</div>`;
                         }
-                        return `<div class="turn-banner my-turn">${turnColor} ${currentPlayer === 'black' ? 'Èæ' : '¹é'}ÀÇ Â÷·Ê</div>`;
+                        return `<div class="turn-banner my-turn">${turnColor} ${currentPlayer === 'black' ? 'ï¿½ï¿½' : 'ï¿½ï¿½'}ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½</div>`;
                     })()}
                     
                     ${!gameOver ? `
                     <div style="display:flex;align-items:center;gap:8px;width:100%;max-width:400px">
-                        <span class="timer-text" id="timerText">${timeLeft}ÃÊ</span>
+                        <span class="timer-text" id="timerText">${timeLeft}ï¿½ï¿½</span>
                         <div class="timer-bar"><div class="fill" id="timerFill" style="width:${(timeLeft/TURN_TIME)*100}%;background:var(--accent)"></div></div>
                     </div>` : ''}
                     
@@ -820,13 +845,13 @@
                         </div>
                         <div class="settings-row">
                             <input type="checkbox" id="confirmToggle" ${confirmBeforePlace ? 'checked' : ''} onchange="toggleConfirm(this)">
-                            <label for="confirmToggle">Âø¼ö È®ÀÎ</label>
+                            <label for="confirmToggle">ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½</label>
                         </div>
                     </div>
                     
                     <div class="game-actions">
-                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">»õ °ÔÀÓ</button>' : ''}
-                        <button class="btn" onclick="exitGame()">³ª°¡±â</button>
+                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½</button>' : ''}
+                        <button class="btn" onclick="exitGame()">ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</button>
                     </div>
                 </div>
             `;
@@ -880,7 +905,7 @@
         function exitGame() {
             clearTimer();
             if (isMultiplayer && mpUI.getClient()) {
-                if (confirm('°ÔÀÓÀ» ³ª°¡½Ã°Ú½À´Ï±î?')) {
+                if (confirm('ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ã°Ú½ï¿½ï¿½Ï±ï¿½?')) {
                     mpUI.getClient().leaveRoom().catch(() => {});
                     MultiplayerClient.resetInstance();
                     isMultiplayer = false;

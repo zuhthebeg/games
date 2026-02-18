@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" >
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -8,7 +8,7 @@
 })(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
 <!-- End Google Tag Manager -->
 
-    <title>?�� ?�네?�크</title>
+    <title>?�� ?�네?�크</title>
     <link rel="icon" href="icon.svg">
     <script src="/lib/shared-wallet.js?v=20260211"></script>
     <style>
@@ -213,21 +213,46 @@
             .mobile-controls { display: flex; }
         }
     </style>
+
+<meta name="description" content="먹이 하나당 +100G! 로그인해서 골드 모으기">
+<link rel="canonical" href="https://game.cocy.io/snake/">
+<meta property="og:title" content="🐍 스네이크 | game.cocy.io">
+<meta property="og:description" content="먹이 하나당 +100G! 로그인해서 골드 모으기">
+<meta property="og:url" content="https://game.cocy.io/snake/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="🐍 스네이크 | game.cocy.io">
+<meta name="twitter:description" content="먹이 하나당 +100G! 로그인해서 골드 모으기">
+<!-- SEO-AUTO:GAME START -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "🐍 스네이크",
+  "description": "먹이 하나당 +100G! 로그인해서 골드 모으기",
+  "url": "https://game.cocy.io/snake/",
+  "inLanguage": "ko-KR",
+  "applicationCategory": "Game",
+  "operatingSystem": "Web Browser"
+}
+</script>
+<!-- SEO-AUTO:GAME END -->
 </head>
 <body>
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 
-    <h1>?�� ?�네?�크</h1>
+    <h1>?�� ?�네?�크</h1>
     
     <div class="stats">
         <div class="stat">
-            <span>?�� ?�수:</span>
+            <span>?�� ?�수:</span>
             <span class="stat-value score-value" id="score">0</span>
         </div>
         <div class="stat">
-            <span>?�� ?�득:</span>
+            <span>?�� ?�득:</span>
             <span class="stat-value earned-value" id="earned">0G</span>
         </div>
     </div>
@@ -236,24 +261,24 @@
         <canvas id="canvas"></canvas>
         
         <div class="overlay" id="start-overlay">
-            <h2>?�� ?�네?�크</h2>
-            <p>먹이�?먹을 ?�마??+100G!</p>
-            <button class="btn btn-primary" onclick="startGame()">게임 ?�작</button>
-            <p class="controls-hint">방향???�는 WASD�?조작</p>
+            <h2>?�� ?�네?�크</h2>
+            <p>먹이�?먹을 ?�마??+100G!</p>
+            <button class="btn btn-primary" onclick="startGame()">게임 ?�작</button>
+            <p class="controls-hint">방향???�는 WASD�?조작</p>
         </div>
         
         <div class="overlay hidden" id="gameover-overlay">
-            <h2>?? 게임 ?�버</h2>
-            <p>?�수: <span id="final-score">0</span></p>
-            <div class="gold-earned" id="gold-earned">+0G ?�득!</div>
-            <button class="btn btn-primary" onclick="startGame()">?�시 ?�기</button>
+            <h2>?? 게임 ?�버</h2>
+            <p>?�수: <span id="final-score">0</span></p>
+            <div class="gold-earned" id="gold-earned">+0G ?�득!</div>
+            <button class="btn btn-primary" onclick="startGame()">?�시 ?�기</button>
         </div>
     </div>
 
     <div class="mobile-controls">
         <div class="d-pad">
             <button class="d-btn up" onclick="setDirection(0, -1)">??/button>
-            <button class="d-btn left" onclick="setDirection(-1, 0)">?�</button>
+            <button class="d-btn left" onclick="setDirection(-1, 0)">?�</button>
             <button class="d-btn right" onclick="setDirection(1, 0)">??/button>
             <button class="d-btn down" onclick="setDirection(0, 1)">??/button>
         </div>
@@ -437,7 +462,7 @@
             clearInterval(gameLoop);
             
             document.getElementById('final-score').textContent = score;
-            document.getElementById('gold-earned').textContent = `+${goldEarned.toLocaleString()}G ?�득!`;
+            document.getElementById('gold-earned').textContent = `+${goldEarned.toLocaleString()}G ?�득!`;
             document.getElementById('gameover-overlay').classList.remove('hidden');
         }
         

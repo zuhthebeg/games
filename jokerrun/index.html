@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" >
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -740,7 +740,7 @@
     }
 
     .joker-house::before {
-      content: "?��";
+      content: "?��";
       position: absolute;
       inset: 0;
       text-align: center;
@@ -1569,6 +1569,31 @@
       font-weight: 700;
     }
   </style>
+
+<meta name="description" content="포커 로그라이크! 핸드 조합하고 조커로 점수 폭발">
+<link rel="canonical" href="https://game.cocy.io/jokerrun/">
+<meta property="og:title" content="조커런 | game.cocy.io">
+<meta property="og:description" content="포커 로그라이크! 핸드 조합하고 조커로 점수 폭발">
+<meta property="og:url" content="https://game.cocy.io/jokerrun/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="조커런 | game.cocy.io">
+<meta name="twitter:description" content="포커 로그라이크! 핸드 조합하고 조커로 점수 폭발">
+<!-- SEO-AUTO:GAME START -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "조커런",
+  "description": "포커 로그라이크! 핸드 조합하고 조커로 점수 폭발",
+  "url": "https://game.cocy.io/jokerrun/",
+  "inLanguage": "ko-KR",
+  "applicationCategory": "Game",
+  "operatingSystem": "Web Browser"
+}
+</script>
+<!-- SEO-AUTO:GAME END -->
 </head>
 <body>
 <!-- Google Tag Manager (noscript) -->
@@ -1588,44 +1613,44 @@
       <div class="header-right">
         <span class="gold-badge" id="goldLabel">G 0</span>
         <span class="money-badge" id="moneyLabel">$0</span>
-        <button id="themeBtn" class="ctrl-btn" aria-label="?�마 ?�환"></button>
-        <button id="restartBtn" class="ctrl-btn" aria-label="?????�작"></button>
+        <button id="themeBtn" class="ctrl-btn" aria-label="?�마 ?�환"></button>
+        <button id="restartBtn" class="ctrl-btn" aria-label="?????�작"></button>
       </div>
     </header>
 
-    <section class="joker-strip glass" id="jokerArea" aria-label="조커 ?�롯"></section>
+    <section class="joker-strip glass" id="jokerArea" aria-label="조커 ?�롯"></section>
 
     <section class="score-line glass">
       <div class="score-main">
-        <span class="chips-readout">�?<b id="chipsLabel">0</b></span>
+        <span class="chips-readout">�?<b id="chipsLabel">0</b></span>
         <span class="mult-readout">배수 <b id="multLabel">x1</b></span>
       </div>
       <div class="score-total" id="scoreLabel">0</div>
     </section>
 
     <section class="table glass">
-      <div class="info-line" id="handResult">?�드�??�택???�레?�하?�요.</div>
+      <div class="info-line" id="handResult">?�드�??�택???�레?�하?�요.</div>
       <div class="cards-wrap" id="cardsWrap"></div>
       <div class="hand-bottom">
-        <div class="info-line" id="handGuide">?�패 8??�?최�? 5?�을 ?�택</div>
-        <button id="deckBtn" class="deck-btn" type="button">?�� ??(0??</button>
+        <div class="info-line" id="handGuide">?�패 8??�?최�? 5?�을 ?�택</div>
+        <button id="deckBtn" class="deck-btn" type="button">?�� ??(0??</button>
       </div>
     </section>
 
     <section class="status-bar glass">
-      <div>?��? ?�드 <b id="handsLabel">0</b></div>
-      <div style="text-align:right;">?��? 버리�?<b id="discardsLabel">0</b></div>
+      <div>?��? ?�드 <b id="handsLabel">0</b></div>
+      <div style="text-align:right;">?��? 버리�?<b id="discardsLabel">0</b></div>
     </section>
 
     <section class="pvp-panel glass" id="pvpPanel">
-      <div id="opponentStatus">?��? ?�보 ?�음</div>
-      <div class="pvp-score" id="opponentScore">?��? ?�수 0</div>
+      <div id="opponentStatus">?��? ?�보 ?�음</div>
+      <div class="pvp-score" id="opponentScore">?��? ?�수 0</div>
     </section>
 
     <section class="actions">
-      <button class="btn-main" id="playBtn">?�드 ?�레??/button>
-      <button class="btn-warn" id="discardBtn">카드 버리�?/button>
-      <button id="clearBtn" aria-label="?�택 ?�제"></button>
+      <button class="btn-main" id="playBtn">?�드 ?�레??/button>
+      <button class="btn-warn" id="discardBtn">카드 버리�?/button>
+      <button id="clearBtn" aria-label="?�택 ?�제"></button>
     </section>
 
     <div class="log" id="log" aria-hidden="true"></div>
@@ -1635,14 +1660,14 @@
     <div class="shop">
       <div class="row">
         <div>
-          <div class="title">?�점</div>
-          <div class="subtitle">조커�??�서 ?�음 블라?�드�??�비하?�요.</div>
+          <div class="title">?�점</div>
+          <div class="subtitle">조커�??�서 ?�음 블라?�드�??�비하?�요.</div>
         </div>
-        <div class="tag" id="shopMoney">보유 ?�금: $0</div>
+        <div class="tag" id="shopMoney">보유 ?�금: $0</div>
       </div>
       <div class="shop-grid" id="shopGrid"></div>
       <div class="row" style="justify-content:flex-end;">
-        <button class="btn-main" id="nextRoundBtn" style="min-width:132px;">?�음 ?�운??/button>
+        <button class="btn-main" id="nextRoundBtn" style="min-width:132px;">?�음 ?�운??/button>
       </div>
     </div>
   </div>
@@ -1650,12 +1675,12 @@
   <div class="modal" id="deckModal">
     <div class="deck-modal">
       <div class="deck-title">
-        <div class="title" id="deckModalTitle">?��? 카드 (0??</div>
+        <div class="title" id="deckModalTitle">?��? 카드 (0??</div>
       </div>
       <div class="deck-grid" id="deckGrid"></div>
       <div class="suit-counts" id="deckSuitCounts">?? ?? ?? ??</div>
       <div class="row" style="justify-content:flex-end;">
-        <button class="btn-main" id="closeDeckBtn">?�기</button>
+        <button class="btn-main" id="closeDeckBtn">?�기</button>
       </div>
     </div>
   </div>
@@ -1663,41 +1688,41 @@
   <div class="modal" id="victoryModal">
     <div class="mode-sheet">
       <div>
-        <div class="title">???�리??/div>
-        <div class="subtitle" id="victoryText">보스 블라?�드�??�파?�습?�다.</div>
+        <div class="title">???�리??/div>
+        <div class="subtitle" id="victoryText">보스 블라?�드�??�파?�습?�다.</div>
       </div>
-      <button class="btn-main" id="victoryConfirmBtn">?????�작</button>
+      <button class="btn-main" id="victoryConfirmBtn">?????�작</button>
     </div>
   </div>
 
   <div class="modal show" id="modeModal">
     <div class="mode-sheet">
       <div>
-        <div class="title">모드 ?�택</div>
-        <div class="subtitle">?��? ?�레???�는 ?�??모드�??�택?�세??</div>
+        <div class="title">모드 ?�택</div>
+        <div class="subtitle">?��? ?�레???�는 ?�??모드�??�택?�세??</div>
       </div>
       <div class="mode-grid">
         <div class="mode-card">
-          <h4>?��? ?�레??/h4>
-          <p>?�재 모드 그�?�??�운?��? ?�점??진행?�니??</p>
-          <button class="btn-main" id="singleModeBtn">?��? ?�레???�작</button>
+          <h4>?��? ?�레??/h4>
+          <p>?�재 모드 그�?�??�운?��? ?�점??진행?�니??</p>
+          <button class="btn-main" id="singleModeBtn">?��? ?�레???�작</button>
         </div>
         <div class="mode-card">
-          <h4>?�??모드 (PvP)</h4>
-          <p>배팅 금액??걸고 2???�?�을 진행?�니??</p>
+          <h4>?�??모드 (PvP)</h4>
+          <p>배팅 금액??걸고 2???�?�을 진행?�니??</p>
           <div class="row">
             <select id="betSelect" class="input" style="max-width:130px;">
               <option value="100">100G</option>
               <option value="500">500G</option>
               <option value="1000">1000G</option>
             </select>
-            <button class="btn-main" id="createRoomBtn">�?만들�?/button>
+            <button class="btn-main" id="createRoomBtn">�?만들�?/button>
           </div>
           <div class="row">
-            <input id="roomCodeInput" class="input" placeholder="�?코드 ?�력">
-            <button class="btn-warn" id="joinRoomBtn">�?참�?</button>
+            <input id="roomCodeInput" class="input" placeholder="�?코드 ?�력">
+            <button class="btn-warn" id="joinRoomBtn">�?참�?</button>
           </div>
-          <div class="subtitle" id="roomHint">멀?�플?�이 ?�결 ?��?�?..</div>
+          <div class="subtitle" id="roomHint">멀?�플?�이 ?�결 ?��?�?..</div>
         </div>
       </div>
     </div>
@@ -1706,10 +1731,10 @@
   <div class="modal" id="pvpResultModal">
     <div class="mode-sheet">
       <div>
-        <div class="title">?�??결과</div>
-        <div class="subtitle" id="pvpFinalText">결과 ?�산 �?..</div>
+        <div class="title">?�??결과</div>
+        <div class="subtitle" id="pvpFinalText">결과 ?�산 �?..</div>
       </div>
-      <button class="btn-main" id="pvpConfirmBtn">?�인</button>
+      <button class="btn-main" id="pvpConfirmBtn">?�인</button>
     </div>
   </div>
 
@@ -1719,7 +1744,7 @@
       <h3 id="jokerPopupName"></h3>
       <p id="jokerPopupDesc"></p>
       <span class="joker-popup-cost" id="jokerPopupCost"></span>
-      <button onclick="closeJokerPopup()">?�기</button>
+      <button onclick="closeJokerPopup()">?�기</button>
     </div>
   </div>
 
@@ -1733,39 +1758,39 @@
     const rankLabel = { 11: "J", 12: "Q", 13: "K", 14: "A" };
 
     const handBase = {
-      HIGH_CARD: { name: "?�이카드", chips: 5, mult: 1 },
-      PAIR: { name: "?�페??, chips: 10, mult: 2 },
-      TWO_PAIR: { name: "?�페??, chips: 20, mult: 2 },
-      THREE: { name: "?�리??, chips: 30, mult: 3 },
-      STRAIGHT: { name: "?�트?�이??, chips: 30, mult: 4 },
-      FLUSH: { name: "?�러??, chips: 35, mult: 4 },
-      FULL_HOUSE: { name: "?�?�우??, chips: 40, mult: 4 },
-      FOUR: { name: "?�카??, chips: 60, mult: 7 },
-      STRAIGHT_FLUSH: { name: "?�트?�이???�러??, chips: 100, mult: 8 }
+      HIGH_CARD: { name: "?�이카드", chips: 5, mult: 1 },
+      PAIR: { name: "?�페??, chips: 10, mult: 2 },
+      TWO_PAIR: { name: "?�페??, chips: 20, mult: 2 },
+      THREE: { name: "?�리??, chips: 30, mult: 3 },
+      STRAIGHT: { name: "?�트?�이??, chips: 30, mult: 4 },
+      FLUSH: { name: "?�러??, chips: 35, mult: 4 },
+      FULL_HOUSE: { name: "?�?�우??, chips: 40, mult: 4 },
+      FOUR: { name: "?�카??, chips: 60, mult: 7 },
+      STRAIGHT_FLUSH: { name: "?�트?�이???�러??, chips: 100, mult: 8 }
     };
 
     const roundDefs = [
-      { id: "small", label: "?�몰 블라?�드", target: 300 },
-      { id: "big", label: "�?블라?�드", target: 700 },
-      { id: "boss", label: "보스 블라?�드", target: 1500 }
+      { id: "small", label: "?�몰 블라?�드", target: 300 },
+      { id: "big", label: "�?블라?�드", target: 700 },
+      { id: "boss", label: "보스 블라?�드", target: 1500 }
     ];
 
     const jokerPool = [
-      { id: "flat50", name: "�???��", cost: 6, desc: "�?+50", detail: "?�드 ?�수 계산 ??고정?�로 �?+50.", apply(ctx) { ctx.chips += 50; ctx.activate("flat50"); } },
-      { id: "flushx2", name: "물결 조커", cost: 7, desc: "?�러?�면 배수 x2", detail: "?�러???�는 ?�트?�이???�러?��? 만들�?배수�???배로 만듭?�다.", apply(ctx) { if (ctx.handType === "FLUSH" || ctx.handType === "STRAIGHT_FLUSH") { ctx.mult *= 2; ctx.activate("flushx2"); } } },
-      { id: "perCardMult", name: "계산�?조커", cost: 5, desc: "카드??배수 +1", detail: "?�레?�한 카드 1?�마??배수 +1??추�??�니??", apply(ctx) { const add = ctx.cards.length; if (add > 0) { ctx.mult += add; ctx.activate("perCardMult"); } } },
-      { id: "heartChip", name: "붉�? ?�장", cost: 5, desc: "?�트??�?+15", detail: "?�택??카드 �??�트 1?�당 �?+15.", apply(ctx) { const hearts = ctx.cards.filter(c => c.suit === "heart").length; if (hearts > 0) { ctx.chips += hearts * 15; ctx.activate("heartChip"); } } },
-      { id: "pairBoost", name: "?�??증폭�?, cost: 8, desc: "?�페???�상 배수 +2", detail: "?�페???�상 족보?�서 배수 +2.", apply(ctx) { if (ctx.handType !== "HIGH_CARD") { ctx.mult += 2; ctx.activate("pairBoost"); } } },
-      { id: "goldDice", name: "?�금 주사??, cost: 6, desc: "?�드마다 �?+1~50", detail: "�??�드 ?�수 계산 ??칩에 +1~50 ?�덤 추�?.", apply(ctx) { ctx.chips += Math.floor(Math.random() * 50) + 1; ctx.activate("goldDice"); } },
-      { id: "spadeAce", name: "?�페?�드 ?�이??, cost: 7, desc: "?�페?�드??배수 +0.5", detail: "?�택??카드???�페?�드 1?�마??배수 +0.5.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "spade").length; if (count > 0) { ctx.mult += count * 0.5; ctx.activate("spadeAce"); } } },
-      { id: "luckySeven", name: "??�� ?�븐", cost: 8, desc: "7 카드??�?+77", detail: "?�택??카드 �??�자 7???�함???�마??�?+77.", apply(ctx) { const count = ctx.cards.filter(c => c.rank === 7).length; if (count > 0) { ctx.chips += count * 77; ctx.activate("luckySeven"); } } },
-      { id: "doubleDown", name: "?�블 ?�운", cost: 10, desc: "?�페?�면 배수 x2", detail: "족보가 ?�페??TWO_PAIR)????배수 x2.", apply(ctx) { if (ctx.handType === "TWO_PAIR") { ctx.mult *= 2; ctx.activate("doubleDown"); } } },
-      { id: "fullHouseFan", name: "?�?�우????, cost: 9, desc: "?�?�우?�면 �?+100", detail: "족보가 ?�?�우??FULL_HOUSE)�?�?+100.", apply(ctx) { if (ctx.handType === "FULL_HOUSE") { ctx.chips += 100; ctx.activate("fullHouseFan"); } } },
-      { id: "straightRunner", name: "?�트?�이???�너", cost: 8, desc: "?�트?�이?�면 배수 +3", detail: "족보가 ?�트?�이??STRAIGHT)????배수 +3.", apply(ctx) { if (ctx.handType === "STRAIGHT") { ctx.mult += 3; ctx.activate("straightRunner"); } } },
-      { id: "diamondMiner", name: "?�이?�몬??광�?", cost: 6, desc: "?�이?�당 �?+12", detail: "?�택??카드 �??�이?�몬??1?�당 �?+12.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "diamond").length; if (count > 0) { ctx.chips += count * 12; ctx.activate("diamondMiner"); } } },
-      { id: "clubKing", name: "?�럽 ??, cost: 7, desc: "?�럽 ?�이?�당 배수 +1", detail: "?�럽 문양??J/Q/K 1?�마??배수 +1.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "club" && c.rank >= 11 && c.rank <= 13).length; if (count > 0) { ctx.mult += count; ctx.activate("clubKing"); } } },
-      { id: "allInClown", name: "?�인 광�?", cost: 12, desc: "5???�레????배수 x1.5", detail: "?�확??5?�을 ?�택???�레?�하�?배수 x1.5.", apply(ctx) { if (ctx.cards.length === 5) { ctx.mult *= 1.5; ctx.activate("allInClown"); } } },
-      { id: "fourMaster", name: "?�카??마스??, cost: 15, desc: "?�카?�면 배수 x3", detail: "족보가 ?�카??FOUR)�?배수 x3.", apply(ctx) { if (ctx.handType === "FOUR") { ctx.mult *= 3; ctx.activate("fourMaster"); } } }
+      { id: "flat50", name: "�???��", cost: 6, desc: "�?+50", detail: "?�드 ?�수 계산 ??고정?�로 �?+50.", apply(ctx) { ctx.chips += 50; ctx.activate("flat50"); } },
+      { id: "flushx2", name: "물결 조커", cost: 7, desc: "?�러?�면 배수 x2", detail: "?�러???�는 ?�트?�이???�러?��? 만들�?배수�???배로 만듭?�다.", apply(ctx) { if (ctx.handType === "FLUSH" || ctx.handType === "STRAIGHT_FLUSH") { ctx.mult *= 2; ctx.activate("flushx2"); } } },
+      { id: "perCardMult", name: "계산�?조커", cost: 5, desc: "카드??배수 +1", detail: "?�레?�한 카드 1?�마??배수 +1??추�??�니??", apply(ctx) { const add = ctx.cards.length; if (add > 0) { ctx.mult += add; ctx.activate("perCardMult"); } } },
+      { id: "heartChip", name: "붉�? ?�장", cost: 5, desc: "?�트??�?+15", detail: "?�택??카드 �??�트 1?�당 �?+15.", apply(ctx) { const hearts = ctx.cards.filter(c => c.suit === "heart").length; if (hearts > 0) { ctx.chips += hearts * 15; ctx.activate("heartChip"); } } },
+      { id: "pairBoost", name: "?�??증폭�?, cost: 8, desc: "?�페???�상 배수 +2", detail: "?�페???�상 족보?�서 배수 +2.", apply(ctx) { if (ctx.handType !== "HIGH_CARD") { ctx.mult += 2; ctx.activate("pairBoost"); } } },
+      { id: "goldDice", name: "?�금 주사??, cost: 6, desc: "?�드마다 �?+1~50", detail: "�??�드 ?�수 계산 ??칩에 +1~50 ?�덤 추�?.", apply(ctx) { ctx.chips += Math.floor(Math.random() * 50) + 1; ctx.activate("goldDice"); } },
+      { id: "spadeAce", name: "?�페?�드 ?�이??, cost: 7, desc: "?�페?�드??배수 +0.5", detail: "?�택??카드???�페?�드 1?�마??배수 +0.5.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "spade").length; if (count > 0) { ctx.mult += count * 0.5; ctx.activate("spadeAce"); } } },
+      { id: "luckySeven", name: "??�� ?�븐", cost: 8, desc: "7 카드??�?+77", detail: "?�택??카드 �??�자 7???�함???�마??�?+77.", apply(ctx) { const count = ctx.cards.filter(c => c.rank === 7).length; if (count > 0) { ctx.chips += count * 77; ctx.activate("luckySeven"); } } },
+      { id: "doubleDown", name: "?�블 ?�운", cost: 10, desc: "?�페?�면 배수 x2", detail: "족보가 ?�페??TWO_PAIR)????배수 x2.", apply(ctx) { if (ctx.handType === "TWO_PAIR") { ctx.mult *= 2; ctx.activate("doubleDown"); } } },
+      { id: "fullHouseFan", name: "?�?�우????, cost: 9, desc: "?�?�우?�면 �?+100", detail: "족보가 ?�?�우??FULL_HOUSE)�?�?+100.", apply(ctx) { if (ctx.handType === "FULL_HOUSE") { ctx.chips += 100; ctx.activate("fullHouseFan"); } } },
+      { id: "straightRunner", name: "?�트?�이???�너", cost: 8, desc: "?�트?�이?�면 배수 +3", detail: "족보가 ?�트?�이??STRAIGHT)????배수 +3.", apply(ctx) { if (ctx.handType === "STRAIGHT") { ctx.mult += 3; ctx.activate("straightRunner"); } } },
+      { id: "diamondMiner", name: "?�이?�몬??광�?", cost: 6, desc: "?�이?�당 �?+12", detail: "?�택??카드 �??�이?�몬??1?�당 �?+12.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "diamond").length; if (count > 0) { ctx.chips += count * 12; ctx.activate("diamondMiner"); } } },
+      { id: "clubKing", name: "?�럽 ??, cost: 7, desc: "?�럽 ?�이?�당 배수 +1", detail: "?�럽 문양??J/Q/K 1?�마??배수 +1.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "club" && c.rank >= 11 && c.rank <= 13).length; if (count > 0) { ctx.mult += count; ctx.activate("clubKing"); } } },
+      { id: "allInClown", name: "?�인 광�?", cost: 12, desc: "5???�레????배수 x1.5", detail: "?�확??5?�을 ?�택???�레?�하�?배수 x1.5.", apply(ctx) { if (ctx.cards.length === 5) { ctx.mult *= 1.5; ctx.activate("allInClown"); } } },
+      { id: "fourMaster", name: "?�카??마스??, cost: 15, desc: "?�카?�면 배수 x3", detail: "족보가 ?�카??FOUR)�?배수 x3.", apply(ctx) { if (ctx.handType === "FOUR") { ctx.mult *= 3; ctx.activate("fourMaster"); } } }
     ];
 
     const jokerGlyphClass = {
@@ -1981,7 +2006,7 @@
           if (state.gameEnded) return;
           if (state.selected.has(card.id)) state.selected.delete(card.id);
           else {
-            if (state.selected.size >= 5) return setInfo("최�? 5?�까지�??�택 가?�합?�다.");
+            if (state.selected.size >= 5) return setInfo("최�? 5?�까지�??�택 가?�합?�다.");
             state.selected.add(card.id);
           }
           AudioFX.play("select");
@@ -2002,7 +2027,7 @@
       $("#jokerPopupIcon").innerHTML = `<span class="joker-glyph ${glyph}"></span>`;
       $("#jokerPopupName").textContent = joker.name;
       $("#jokerPopupDesc").textContent = joker.detail || joker.desc;
-      $("#jokerPopupCost").textContent = `?�득 비용: $${joker.cost}`;
+      $("#jokerPopupCost").textContent = `?�득 비용: $${joker.cost}`;
       jokerPopup.classList.add("show");
       AudioFX.play("select");
     }
@@ -2044,7 +2069,7 @@
           box.className = "joker empty";
           box.type = "button";
           box.disabled = true;
-          box.setAttribute("aria-label", "�??�롯");
+          box.setAttribute("aria-label", "�??�롯");
         } else {
           box.className = `joker joker-${joker.id}`;
           box.type = "button";
@@ -2071,7 +2096,7 @@
       $("#multLabel").textContent = `x${mult}`;
       $("#playBtn").disabled = state.gameEnded;
       $("#discardBtn").disabled = state.gameEnded;
-      $("#deckBtn").textContent = `?�� ??(${state.deck.length}??`;
+      $("#deckBtn").textContent = `?�� ??(${state.deck.length}??`;
       $("#pvpPanel").classList.toggle("show", state.mode === "pvp");
       renderJokers();
       updateGoldLabel();
@@ -2091,7 +2116,7 @@
         el.textContent = `${suitSymbol[card.suit]}${formatRank(card.rank)}`;
         grid.appendChild(el);
       });
-      $("#deckModalTitle").textContent = `?��? 카드 (${cards.length}??`;
+      $("#deckModalTitle").textContent = `?��? 카드 (${cards.length}??`;
       const counts = { heart: 0, diamond: 0, club: 0, spade: 0 };
       cards.forEach(card => { counts[card.suit] += 1; });
       $("#deckSuitCounts").textContent = `??{counts.heart} ??{counts.diamond} ??{counts.club} ??{counts.spade}`;
@@ -2107,7 +2132,7 @@
     }
 
     function openVictoryModal() {
-      $("#victoryText").textContent = `보스 블라?�드 격파! 최종 ?�수 ${state.score.toLocaleString()}??;
+      $("#victoryText").textContent = `보스 블라?�드 격파! 최종 ?�수 ${state.score.toLocaleString()}??;
       $("#victoryModal").classList.add("show");
     }
 
@@ -2167,8 +2192,8 @@
 
     function animateScore(chips, points, mult) {
       const pieces = [
-        { text: `+${chips}�?, className: "chips-readout", x: 14, y: 56, delay: 0 },
-        { text: `x${mult}�?, className: "mult-readout", x: 56, y: 80, delay: 120 },
+        { text: `+${chips}�?, className: "chips-readout", x: 14, y: 56, delay: 0 },
+        { text: `x${mult}�?, className: "mult-readout", x: 56, y: 80, delay: 120 },
         { text: `+${points.toLocaleString()} ??, className: "score-total", x: 30, y: 68, delay: 280 }
       ];
       pieces.forEach(piece => {
@@ -2199,7 +2224,7 @@
 
     async function sendPvpAction(data) {
       if (state.mode !== "pvp" || !pvp.mp) return;
-      try { await pvp.mp.sendAction(data); } catch (e) { addLog(`?�기???�패: ${e.message || e}`); }
+      try { await pvp.mp.sendAction(data); } catch (e) { addLog(`?�기???�패: ${e.message || e}`); }
     }
 
     function openPvpResult(text) {
@@ -2228,21 +2253,21 @@
       if (result === "lose") AudioFX.play("lose");
       await settlePvpGold(result);
       await sendPvpAction({ type: "GAME_OVER", finalScore: state.score, result });
-      const gainText = result === "win" ? `?�리! +${pvp.bet * 2}G` : result === "draw" ? `무승부! +${pvp.bet}G ?�불` : "?�배...";
-      openPvpResult(`${gainText} (?�운??${pvp.myRoundsWon}:${pvp.oppRoundsWon})`);
-      addLog(`?�??종료: ${gainText}`);
+      const gainText = result === "win" ? `?�리! +${pvp.bet * 2}G` : result === "draw" ? `무승부! +${pvp.bet}G ?�불` : "?�배...";
+      openPvpResult(`${gainText} (?�운??${pvp.myRoundsWon}:${pvp.oppRoundsWon})`);
+      addLog(`?�??종료: ${gainText}`);
     }
 
     async function resolvePvpRound() {
       if (!pvp.myRoundEnded || !pvp.oppRoundEnded) return;
       if (state.score > pvp.oppRoundScore) {
         pvp.myRoundsWon += 1;
-        setInfo(`?�운???�리! (${state.score} vs ${pvp.oppRoundScore})`);
+        setInfo(`?�운???�리! (${state.score} vs ${pvp.oppRoundScore})`);
       } else if (state.score < pvp.oppRoundScore) {
         pvp.oppRoundsWon += 1;
-        setInfo(`?�운???�배... (${state.score} vs ${pvp.oppRoundScore})`);
+        setInfo(`?�운???�배... (${state.score} vs ${pvp.oppRoundScore})`);
       } else {
-        setInfo(`?�운??무승부 (${state.score})`);
+        setInfo(`?�운??무승부 (${state.score})`);
       }
       if (pvp.myRoundsWon >= 2 || pvp.oppRoundsWon >= 2 || pvp.currentRound >= pvp.maxRounds) return finalizePvpMatch();
       if (pvp.isHost) setTimeout(() => sendRoundStart(pvp.currentRound + 1), 900);
@@ -2253,7 +2278,7 @@
       state.gameEnded = true;
       pvp.myRoundEnded = true;
       renderHUD();
-      setOpponentStatus("?��?�??��?�?..");
+      setOpponentStatus("?��?�??��?�?..");
       await sendPvpAction({ type: "ROUND_ENDED", roundScore: state.score, roundsWon: pvp.myRoundsWon });
       resolvePvpRound();
     }
@@ -2284,7 +2309,7 @@
         return;
       }
       const cards = selectedCards();
-      if (!cards.length) return setInfo("먼�? 카드�?1???�상 ?�택?�세??");
+      if (!cards.length) return setInfo("먼�? 카드�?1???�상 ?�택?�세??");
       AudioFX.play("play");
       const hand = scoreHand(cards);
       let chips = hand.chips;
@@ -2305,15 +2330,15 @@
       state.score += points;
       state.handsLeft = Math.max(0, state.handsLeft - 1);
       animateScore(chips, points, mult);
-      setInfo(`<span class="hand-tag">${hand.name}</span> | ${chips}�?× ${mult}�?= <b>${points.toLocaleString()}</b>??);
-      addLog(`${hand.name} ?�레?? +${points}??(?��? ?�드 ${state.handsLeft})`);
+      setInfo(`<span class="hand-tag">${hand.name}</span> | ${chips}�?× ${mult}�?= <b>${points.toLocaleString()}</b>??);
+      addLog(`${hand.name} ?�레?? +${points}??(?��? ?�드 ${state.handsLeft})`);
       consumeSelectedCards();
       renderHUD(chips, mult);
       const shouldContinue = canContinue();
       if (!shouldContinue) return;
       if (state.mode === "pvp") {
         await sendPvpAction({ type: "HAND_PLAYED", handType: hand.handType, chips, mult, totalScore: state.score });
-        setOpponentStatus("?��?�??�레??�?..");
+        setOpponentStatus("?��?�??�레??�?..");
       }
     }
 
@@ -2322,22 +2347,22 @@
       if (state.discardsLeft <= 0) {
         state.discardsLeft = 0;
         renderHUD();
-        return setInfo("버리�??�수�?모두 ?�용?�습?�다.");
+        return setInfo("버리�??�수�?모두 ?�용?�습?�다.");
       }
       const cards = selectedCards();
-      if (!cards.length) return setInfo("버릴 카드�??�택?�세??");
+      if (!cards.length) return setInfo("버릴 카드�??�택?�세??");
       AudioFX.play("select");
       state.discardsLeft = Math.max(0, state.discardsLeft - 1);
       consumeSelectedCards();
-      setInfo(`${cards.length}??버림 ?�료. ?��? 버리�?${state.discardsLeft}`);
-      addLog(`${cards.length}??버림. (?��? 버리�?${state.discardsLeft})`);
+      setInfo(`${cards.length}??버림 ?�료. ?��? 버리�?${state.discardsLeft}`);
+      addLog(`${cards.length}??버림. (?��? 버리�?${state.discardsLeft})`);
       renderHUD();
     }
 
     function openShop() {
       const grid = $("#shopGrid");
       grid.innerHTML = "";
-      $("#shopMoney").textContent = `보유 ?�금: $${state.money}`;
+      $("#shopMoney").textContent = `보유 ?�금: $${state.money}`;
       jokerPool.forEach(joker => {
         const owned = state.jokers.some(j => j.id === joker.id);
         const full = state.jokers.length >= 5;
@@ -2346,7 +2371,7 @@
         card.className = "shop-item";
         card.innerHTML = `<div class="name">${joker.name}</div><div class="desc">${joker.desc}</div><div class="price"><span class="coin" aria-hidden="true"></span>$${joker.cost}</div>`;
         const btn = document.createElement("button");
-        btn.textContent = owned ? "보유 �? : full ? "?�롯 가??�? : afford ? "구매" : "?�금 부�?;
+        btn.textContent = owned ? "보유 �? : full ? "?�롯 가??�? : afford ? "구매" : "?�금 부�?;
         btn.disabled = owned || full || !afford;
         btn.addEventListener("click", () => {
           state.money -= joker.cost;
@@ -2379,23 +2404,23 @@
       drawToEight();
       renderCards();
       renderHUD();
-      setInfo("?�드�??�택???�레?�하?�요.");
-      addLog(`${activeRoundLabel()} ?�작. 목표 ${activeTarget()}??);
+      setInfo("?�드�??�택???�레?�하?�요.");
+      addLog(`${activeRoundLabel()} ?�작. 목표 ${activeTarget()}??);
     }
 
     function winRound() {
       if (state.gameEnded) return;
       const reward = 7 + state.handsLeft * 2 + state.discardsLeft;
       state.money += reward;
-      addLog(`?�운???�리?? 보상 +$${reward}`);
-      setInfo(`블라?�드 ?�파 ?�공! 보상 +$${reward}`);
+      addLog(`?�운???�리?? 보상 +$${reward}`);
+      setInfo(`블라?�드 ?�파 ?�공! 보상 +$${reward}`);
       state.gameEnded = true;
       AudioFX.play("win");
       spawnWinConfetti();
       renderHUD();
       if (state.roundIndex >= roundDefs.length - 1) {
-        setInfo("보스 블라?�드 격파! ???�리??");
-        addLog("???�리???�료.");
+        setInfo("보스 블라?�드 격파! ???�리??");
+        addLog("???�리???�료.");
         openVictoryModal();
         return;
       }
@@ -2407,8 +2432,8 @@
       state.gameEnded = true;
       AudioFX.play("lose");
       renderHUD();
-      setInfo("?�드�?모두 ?�용?�습?�다. 게임 ?�버! ???�을 ?�작?�세??");
-      addLog("게임 ?�버.");
+      setInfo("?�드�?모두 ?�용?�습?�다. 게임 ?�버! ???�을 ?�작?�세??");
+      addLog("게임 ?�버.");
     }
 
     function newRun() {
@@ -2443,25 +2468,25 @@
         pvp.finalized = false;
         state.mode = "pvp";
         state.jokers = [];
-        $("#opponentScore").textContent = "?��? ?�수 0";
-        setOpponentStatus("?��?�??�레??�?..");
+        $("#opponentScore").textContent = "?��? ?�수 0";
+        setOpponentStatus("?��?�??�레??�?..");
         startRound(pvp.currentRound - 1, data.seed || "");
       }
       if (data.type === "HAND_PLAYED") {
-        $("#opponentScore").textContent = `?��? ?�수 ${Number(data.totalScore || 0).toLocaleString()}`;
-        setOpponentStatus("?��?�??�레??�?..");
+        $("#opponentScore").textContent = `?��? ?�수 ${Number(data.totalScore || 0).toLocaleString()}`;
+        setOpponentStatus("?��?�??�레??�?..");
       }
       if (data.type === "ROUND_ENDED") {
         pvp.oppRoundEnded = true;
         pvp.oppRoundScore = Number(data.roundScore || 0);
         pvp.oppRoundsWon = Number(data.roundsWon || pvp.oppRoundsWon);
-        setOpponentStatus("?��?�??��?�?..");
+        setOpponentStatus("?��?�??��?�?..");
         resolvePvpRound();
       }
       if (data.type === "GAME_OVER" && !pvp.finalized) {
         pvp.finalized = true;
-        const text = data.result === "win" ? "?�배..." : data.result === "lose" ? `?�리! +${pvp.bet * 2}G` : `무승부! +${pvp.bet}G ?�불`;
-        openPvpResult(`${text} (?��? ?�송 결과)`);
+        const text = data.result === "win" ? "?�배..." : data.result === "lose" ? `?�리! +${pvp.bet * 2}G` : `무승부! +${pvp.bet}G ?�불`;
+        openPvpResult(`${text} (?��? ?�송 결과)`);
       }
     }
 
@@ -2477,7 +2502,7 @@
       if (!window.SharedWallet || pvp.stakePaid) return true;
       const ok = SharedWallet.removeGold(pvp.bet);
       if (!ok) {
-        setInfo(`골드 부�? ${pvp.bet}G ?�요`);
+        setInfo(`골드 부�? ${pvp.bet}G ?�요`);
         updateGoldLabel();
         return false;
       }
@@ -2493,8 +2518,8 @@
       await pvp.mp.ensureAuth();
       pvp.mp.onEvent = async (event) => {
         if (event.type === "player_joined") {
-          pvp.opponentNickname = event.nickname || "?��?";
-          setOpponentStatus(`${pvp.opponentNickname} ?�속`);
+          pvp.opponentNickname = event.nickname || "?��?";
+          setOpponentStatus(`${pvp.opponentNickname} ?�속`);
         }
         if (event.type === "game_started") {
           const roomBet = Number(event.betting || (event.room && event.room.betting) || 0);
@@ -2507,45 +2532,45 @@
           pvp.myRoundsWon = 0;
           pvp.oppRoundsWon = 0;
           pvp.finalized = false;
-          $("#opponentScore").textContent = "?��? ?�수 0";
-          setOpponentStatus("?��?�??�레??�?..");
-          addLog(`?�???�작! 배팅 ${pvp.bet}G`);
+          $("#opponentScore").textContent = "?��? ?�수 0";
+          setOpponentStatus("?��?�??�레??�?..");
+          addLog(`?�???�작! 배팅 ${pvp.bet}G`);
           if (pvp.isHost) sendRoundStart(1);
         }
         if (event.type === "action") applyRemoteAction(event);
       };
       pvp.mp.startListening();
       pvp.initialized = true;
-      $("#roomHint").textContent = `로그???�료: ${pvp.mp.nickname || "?�명"}`;
+      $("#roomHint").textContent = `로그???�료: ${pvp.mp.nickname || "?�명"}`;
       return true;
     }
 
     async function createPvpRoom() {
       const ok = await initMultiplayer();
-      if (!ok) return setInfo("멀?�플?�이 ?�라?�언?��? 불러?��? 못했?�니??");
+      if (!ok) return setInfo("멀?�플?�이 ?�라?�언?��? 불러?��? 못했?�니??");
       pvp.bet = Number($("#betSelect").value || 100);
       pvp.isHost = true;
       const room = await pvp.mp.createRoom("jokerrun", { maxPlayers: 2, betting: pvp.bet });
       pvp.roomId = room.id || room.roomId || room.code || room.roomCode || "";
       await pvp.mp.setReady(true);
-      $("#roomHint").textContent = `�??�성 ?�료. 코드: ${pvp.roomId || "(?�동 매칭)"}`;
-      setOpponentStatus("?��?�??�속 ?��?�?..");
-      addLog(`�??�성: 배팅 ${pvp.bet}G`);
+      $("#roomHint").textContent = `�??�성 ?�료. 코드: ${pvp.roomId || "(?�동 매칭)"}`;
+      setOpponentStatus("?��?�??�속 ?��?�?..");
+      addLog(`�??�성: 배팅 ${pvp.bet}G`);
     }
 
     async function joinPvpRoom() {
       const ok = await initMultiplayer();
-      if (!ok) return setInfo("멀?�플?�이 ?�라?�언?��? 불러?��? 못했?�니??");
+      if (!ok) return setInfo("멀?�플?�이 ?�라?�언?��? 불러?��? 못했?�니??");
       const code = $("#roomCodeInput").value.trim();
-      if (!code) return setInfo("참�???�?코드�??�력?�세??");
+      if (!code) return setInfo("참�???�?코드�??�력?�세??");
       pvp.bet = Number($("#betSelect").value || 100);
       pvp.isHost = false;
       await pvp.mp.joinRoom(code);
       pvp.roomId = code;
       await pvp.mp.setReady(true);
-      $("#roomHint").textContent = `�?참�? ?�료: ${code}`;
-      setOpponentStatus("?��?�?준�?�?..");
-      addLog(`�?참�?: ${code}`);
+      $("#roomHint").textContent = `�?참�? ?�료: ${code}`;
+      setOpponentStatus("?��?�?준�?�?..");
+      addLog(`�?참�?: ${code}`);
     }
 
     async function resetFromPvp() {
@@ -2557,8 +2582,8 @@
       pvp.finalized = false;
       $("#pvpResultModal").classList.remove("show");
       $("#modeModal").classList.add("show");
-      setOpponentStatus("?��? ?�보 ?�음");
-      $("#opponentScore").textContent = "?��? ?�수 0";
+      setOpponentStatus("?��? ?�보 ?�음");
+      $("#opponentScore").textContent = "?��? ?�수 0";
       state.mode = "single";
       startRound(0);
     }
@@ -2574,7 +2599,7 @@
       if (state.selected.size > 0) AudioFX.play("select");
       state.selected.clear();
       renderCards();
-      setInfo("?�택???�제?�습?�다.");
+      setInfo("?�택???�제?�습?�다.");
     });
     $("#nextRoundBtn").addEventListener("click", () => {
       closeShop();

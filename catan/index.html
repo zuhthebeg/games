@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" >
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -332,6 +332,31 @@
       .lobby-title { font-size: 28px; }
     }
   </style>
+
+<meta name="description" content="3-4인 전략 보드게임 - 자원, 건설, 거래">
+<link rel="canonical" href="https://game.cocy.io/catan/">
+<meta property="og:title" content="카탄 | game.cocy.io">
+<meta property="og:description" content="3-4인 전략 보드게임 - 자원, 건설, 거래">
+<meta property="og:url" content="https://game.cocy.io/catan/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="카탄 | game.cocy.io">
+<meta name="twitter:description" content="3-4인 전략 보드게임 - 자원, 건설, 거래">
+<!-- SEO-AUTO:GAME START -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "카탄",
+  "description": "3-4인 전략 보드게임 - 자원, 건설, 거래",
+  "url": "https://game.cocy.io/catan/",
+  "inLanguage": "ko-KR",
+  "applicationCategory": "Game",
+  "operatingSystem": "Web Browser"
+}
+</script>
+<!-- SEO-AUTO:GAME END -->
 </head>
 <body>
 <!-- Google Tag Manager (noscript) -->
@@ -342,7 +367,7 @@
 
   <script>
     const RESOURCES = ["brick", "lumber", "wool", "grain", "ore"];
-    const RESOURCE_ICONS = { brick: "?��", lumber: "?��", wool: "?��", grain: "?��", ore: "?�️", desert: "?���? };
+    const RESOURCE_ICONS = { brick: "?��", lumber: "?��", wool: "?��", grain: "?��", ore: "?�️", desert: "?���? };
     const COST = {
       road: { brick: 1, lumber: 1 },
       settlement: { brick: 1, lumber: 1, wool: 1, grain: 1 },
@@ -502,7 +527,7 @@
       recalcAllVP();
       state.mode = "single";
       state.screen = "game";
-      state.hint = "초기 배치: 마을???�으?�요";
+      state.hint = "초기 배치: 마을???�으?�요";
       render();
       triggerAITurnIfNeeded();
     }
@@ -745,7 +770,7 @@
       }
       state.phase = "robber";
       state.canEndTurn = false;
-      state.hint = "7???�왔?�니?? ?�둑???�동?�세??";
+      state.hint = "7???�왔?�니?? ?�둑???�동?�세??";
     }
 
     function pickRandomDiscards(playerIdx, count) {
@@ -805,8 +830,8 @@
       state.phase = "main";
       state.canEndTurn = true;
       state.hint = picked && victimIdx !== -1
-        ? `${state.players[state.currentPlayer].name}가 ${state.players[victimIdx].name}?�게??1?�을 ?�쳤?�니??`
-        : "?�둑 ?�동 ?�료. 건설?�거???�을 종료?�세??";
+        ? `${state.players[state.currentPlayer].name}가 ${state.players[victimIdx].name}?�게??1?�을 ?�쳤?�니??`
+        : "?�둑 ?�동 ?�료. 건설?�거???�을 종료?�세??";
       return {
         ok: true,
         victimId: victimIdx === -1 ? null : (state.players[victimIdx].userId || state.players[victimIdx].id),
@@ -820,7 +845,7 @@
       const d2 = Number(values?.[1]);
       if (!d1 || !d2) return false;
       const sum = d1 + d2;
-      state.hint = `${getCurrentPlayer().name}: ?�� ${d1} + ${d2} = ${sum}`;
+      state.hint = `${getCurrentPlayer().name}: ?�� ${d1} + ${d2} = ${sum}`;
       if (sum === 7) handleSeven(skipDiscard);
       else {
         distributeResources(sum);
@@ -836,7 +861,7 @@
       state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
       state.phase = "roll";
       state.canEndTurn = false;
-      state.hint = `${getCurrentPlayer().name}??차�?: 주사?��? 굴리?�요.`;
+      state.hint = `${getCurrentPlayer().name}??차�?: 주사?��? 굴리?�요.`;
       return true;
     }
 
@@ -904,7 +929,7 @@
         state.winner = winner;
         state.phase = "end";
         state.canEndTurn = false;
-        state.hint = `?�� ${state.players[winner].name} ?�리!`;
+        state.hint = `?�� ${state.players[winner].name} ?�리!`;
       }
     }
 
@@ -933,7 +958,7 @@
         state.currentPlayer = order[state.setupOrderIndex];
         state.setupStep = "settlement";
         state.lastSetupVertex = null;
-        state.hint = `${state.players[state.currentPlayer].name} 초기 배치: 마을???�으?�요.`;
+        state.hint = `${state.players[state.currentPlayer].name} 초기 배치: 마을???�으?�요.`;
         return;
       }
       if (state.phase === "setup1") {
@@ -944,14 +969,14 @@
         state.currentPlayer = order2[0];
         state.setupStep = "settlement";
         state.lastSetupVertex = null;
-        state.hint = "2?�운??초기 배치: 마�?�??�레?�어부????��?�로 배치?�니??";
+        state.hint = "2?�운??초기 배치: 마�?�??�레?�어부????��?�로 배치?�니??";
         return;
       }
       state.phase = "roll";
       state.currentPlayer = 0;
       state.setupStep = "settlement";
       state.lastSetupVertex = null;
-      state.hint = "메인 게임 ?�작: 주사?��? 굴리?�요.";
+      state.hint = "메인 게임 ?�작: 주사?��? 굴리?�요.";
     }
 
     function applyGameAction(action) {
@@ -980,7 +1005,7 @@
         }
         generateBoard(clone(action.hexes || []));
         if (typeof action.robber === "number") state.robber = action.robber;
-        state.hint = "멀?�플?�이 ?�작: 초기 배치";
+        state.hint = "멀?�플?�이 ?�작: 초기 배치";
         recalcAllVP();
         return true;
       }
@@ -993,13 +1018,13 @@
           if (state.phase === "setup2") grantSecondSetupResources(pIdx, action.vertexId);
           state.lastSetupVertex = action.vertexId;
           state.setupStep = "road";
-          state.hint = "??마을???�결???�로�??�나 ?�으?�요.";
+          state.hint = "??마을???�결???�로�??�나 ?�으?�요.";
           return true;
         }
         if (pIdx !== state.currentPlayer || state.phase !== "main") return false;
         if (!placeSettlement(pIdx, action.vertexId, false)) return false;
         state.buildMode = null;
-        state.hint = "마을 건설 ?�료.";
+        state.hint = "마을 건설 ?�료.";
         return true;
       }
       if (type === ACTION.PLACE_ROAD) {
@@ -1012,14 +1037,14 @@
         if (pIdx !== state.currentPlayer || state.phase !== "main") return false;
         if (!placeRoad(pIdx, action.edgeId, false)) return false;
         state.buildMode = null;
-        state.hint = "?�로 건설 ?�료.";
+        state.hint = "?�로 건설 ?�료.";
         return true;
       }
       if (type === ACTION.PLACE_CITY) {
         if (pIdx !== state.currentPlayer || state.phase !== "main") return false;
         if (!upgradeCity(pIdx, action.vertexId)) return false;
         state.buildMode = null;
-        state.hint = "?�시 ?�그?�이???�료.";
+        state.hint = "?�시 ?�그?�이???�료.";
         return true;
       }
       if (type === ACTION.ROLL_DICE) {
@@ -1065,7 +1090,7 @@
       try {
         await mpState.client.sendAction(action);
       } catch (e) {
-        state.hint = `?�기???�패: ${e.message || e}`;
+        state.hint = `?�기???�패: ${e.message || e}`;
         render();
       }
       return true;
@@ -1123,21 +1148,21 @@
     function humanBuildSettlement() {
       if (!isHumanTurn()) return;
       state.buildMode = state.buildMode === "settlement" ? null : "settlement";
-      state.hint = state.buildMode ? "건설 가?�한 ?�점???�택?�세??" : "";
+      state.hint = state.buildMode ? "건설 가?�한 ?�점???�택?�세??" : "";
       render();
     }
 
     function humanBuildRoad() {
       if (!isHumanTurn()) return;
       state.buildMode = state.buildMode === "road" ? null : "road";
-      state.hint = state.buildMode ? "건설 가?�한 ?�로�??�택?�세??" : "";
+      state.hint = state.buildMode ? "건설 가?�한 ?�로�??�택?�세??" : "";
       render();
     }
 
     function humanBuildCity() {
       if (!isHumanTurn()) return;
       state.buildMode = state.buildMode === "city" ? null : "city";
-      state.hint = state.buildMode ? "?�그?�이?�할 마을???�택?�세??" : "";
+      state.hint = state.buildMode ? "?�그?�이?�할 마을???�택?�세??" : "";
       render();
     }
 
@@ -1165,7 +1190,7 @@
         if (state.phase === "setup2") grantSecondSetupResources(pIdx, vIdx);
         state.lastSetupVertex = vIdx;
         state.setupStep = "road";
-        state.hint = "??마을???�결???�로�??�나 ?�으?�요.";
+        state.hint = "??마을???�결???�로�??�나 ?�으?�요.";
         render();
         triggerAITurnIfNeeded();
         return;
@@ -1174,14 +1199,14 @@
       if (state.buildMode === "settlement") {
         if (placeSettlement(state.currentPlayer, vIdx, false)) {
           state.buildMode = null;
-          state.hint = "마을 건설 ?�료.";
+          state.hint = "마을 건설 ?�료.";
           render();
           triggerAITurnIfNeeded();
         }
       } else if (state.buildMode === "city") {
         if (upgradeCity(state.currentPlayer, vIdx)) {
           state.buildMode = null;
-          state.hint = "?�시 ?�그?�이???�료.";
+          state.hint = "?�시 ?�그?�이???�료.";
           render();
           triggerAITurnIfNeeded();
         }
@@ -1213,7 +1238,7 @@
       if (state.phase !== "main") return;
       if (state.buildMode === "road" && placeRoad(state.currentPlayer, eIdx, false)) {
         state.buildMode = null;
-        state.hint = "?�로 건설 ?�료.";
+        state.hint = "?�로 건설 ?�료.";
         render();
         triggerAITurnIfNeeded();
       }
@@ -1258,7 +1283,7 @@
         if (roads.length) {
           const pick = roads[Math.floor(Math.random() * roads.length)];
           placeRoad(pIdx, pick, true);
-          state.hint = `${state.players[pIdx].name}가 ?�로 배치.`;
+          state.hint = `${state.players[pIdx].name}가 ?�로 배치.`;
           advanceSetupTurn();
         }
       }
@@ -1319,10 +1344,10 @@
     }
 
     function statusText() {
-      if (state.winner !== null) return `?�자: ${state.players[state.winner].name} (${state.players[state.winner].vp}??`;
+      if (state.winner !== null) return `?�자: ${state.players[state.winner].name} (${state.players[state.winner].vp}??`;
       const cp = getCurrentPlayer();
-      const waiting = isMultiMode() && !isHumanTurn() ? " | ?�른 ?�레?�어�?기다리는 �?.." : "";
-      const base = `${cp.name} 차�? | ?�계: ${state.phase}${waiting}`;
+      const waiting = isMultiMode() && !isHumanTurn() ? " | ?�른 ?�레?�어�?기다리는 �?.." : "";
+      const base = `${cp.name} 차�? | ?�계: ${state.phase}${waiting}`;
       return state.hint ? `${base} | ${state.hint}` : base;
     }
 
@@ -1379,7 +1404,7 @@
         html += `<div class="hex ${hex.type}" style="left:${p.x}px; top:${p.y}px;" onclick="onHexClick(${hex.index})">`;
         html += `<div>${RESOURCE_ICONS[hex.type]}</div>`;
         if (hex.number) html += `<div class="number ${hot ? "hot" : ""}">${hex.number}</div>`;
-        if (state.robber === hex.index) html += `<div class="robber">?��</div>`;
+        if (state.robber === hex.index) html += `<div class="robber">?��</div>`;
         html += `</div>`;
       }
       for (const edge of state.edges) {
@@ -1398,7 +1423,7 @@
       for (const v of state.vertices) {
         const p = mapPixel(v.x, v.y, mapW, mapH);
         if (v.building) {
-          const icon = v.building === "city" ? "?��" : "?��";
+          const icon = v.building === "city" ? "?��" : "?��";
           html += `<div class="vertex ${v.building}" style="left:${p.x}px; top:${p.y}px; color:${state.players[v.owner].color};">${icon}</div>`;
         } else {
           const cls = ["vertex", vBuild.has(v.index) ? "buildable" : ""].join(" ");
@@ -1414,8 +1439,8 @@
         <div class="lobby-screen">
           <div class="lobby-card">
             <h1 class="lobby-title">카탄</h1>
-            <button onclick="startSingle()">?��??�레??/button>
-            <button onclick="showMultiOptions()">멀?�플?�이</button>
+            <button onclick="startSingle()">?��??�레??/button>
+            <button onclick="showMultiOptions()">멀?�플?�이</button>
           </div>
         </div>
       `;
@@ -1428,21 +1453,21 @@
             <h1 class="lobby-title">카탄</h1>
             <div class="multi-options">
               <div class="multi-row">
-                <label for="maxPlayers">최�? ?�원</label>
+                <label for="maxPlayers">최�? ?�원</label>
                 <select id="maxPlayers" onchange="onMaxPlayersChange(this.value)">
                   <option value="2" ${state.maxPlayers === 2 ? "selected" : ""}>2</option>
                   <option value="3" ${state.maxPlayers === 3 ? "selected" : ""}>3</option>
                   <option value="4" ${state.maxPlayers === 4 ? "selected" : ""}>4</option>
                 </select>
-                <button onclick="createRoom()">�?만들�?/button>
+                <button onclick="createRoom()">�?만들�?/button>
               </div>
               <div class="multi-row">
-                <input id="roomCodeInput" value="${state.roomCodeInput}" placeholder="�?코드" oninput="onRoomCodeInput(this.value)">
-                <button onclick="joinRoom()">참�??�기</button>
+                <input id="roomCodeInput" value="${state.roomCodeInput}" placeholder="�?코드" oninput="onRoomCodeInput(this.value)">
+                <button onclick="joinRoom()">참�??�기</button>
               </div>
             </div>
-            <div class="lobby-note">${mpState.waitingMessage || "relay.cocy.io ?�결 ???�레??가?�합?�다."}</div>
-            <button onclick="backToMode()">?�로</button>
+            <div class="lobby-note">${mpState.waitingMessage || "relay.cocy.io ?�결 ???�레??가?�합?�다."}</div>
+            <button onclick="backToMode()">?�로</button>
           </div>
         </div>
       `;
@@ -1452,8 +1477,8 @@
       const players = mpState.room?.players || [];
       return players.map((p, i) => `
         <div class="lobby-player">
-          <div style="color:${PLAYER_COLORS[i] || "#fff"}">${p.isHost ? "?�� " : ""}${p.nickname || "Player"}${p.id === mpState.myUserId ? " (??" : ""}</div>
-          <div>${p.isHost ? "방장" : (p.isReady ? "준비완�? : "?�기중")}</div>
+          <div style="color:${PLAYER_COLORS[i] || "#fff"}">${p.isHost ? "?�� " : ""}${p.nickname || "Player"}${p.id === mpState.myUserId ? " (??" : ""}</div>
+          <div>${p.isHost ? "방장" : (p.isReady ? "준비완�? : "?�기중")}</div>
         </div>
       `).join("");
     }
@@ -1463,18 +1488,18 @@
       const others = players.filter(p => p.id !== mpState.myUserId);
       const allReady = others.length > 0 && others.every(p => p.isReady);
       const canStart = mpState.isHost && players.length >= 2 && allReady;
-      const waitMsg = mpState.waitingMessage || (canStart ? "게임 ?�작 가?? : "?�레?�어�?기다리는 �?..");
+      const waitMsg = mpState.waitingMessage || (canStart ? "게임 ?�작 가?? : "?�레?�어�?기다리는 �?..");
       return `
         <div class="lobby-screen">
           <div class="lobby-card">
             <h1 class="lobby-title">카탄</h1>
             <div class="room-lobby">
-              <p>�?코드: <strong id="roomCodeDisplay">${mpState.roomCode || "-"}</strong></p>
+              <p>�?코드: <strong id="roomCodeDisplay">${mpState.roomCode || "-"}</strong></p>
               <div id="playerList">${lobbyPlayersHtml()}</div>
               <div class="multi-row">
-                <button onclick="setReady()">${mpState.ready ? "준�?취소" : "준�??�료"}</button>
-                <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"}>게임 ?�작</button>
-                <button onclick="leaveRoom()" class="danger">?��?�?/button>
+                <button onclick="setReady()">${mpState.ready ? "준�?취소" : "준�??�료"}</button>
+                <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"}>게임 ?�작</button>
+                <button onclick="leaveRoom()" class="danger">?��?�?/button>
               </div>
               <div class="lobby-note">${waitMsg}</div>
             </div>
@@ -1497,7 +1522,7 @@
           ${others.map(p => `
             <div class="player-card">
               <div class="player-top" style="color:${p.color}">${p.name}<span>${p.vp}??/span></div>
-              <div>?�원 ${totalResourceCount(p)}??| ?�로 ${p.roads.length} | 건물 ${p.buildings.length}</div>
+              <div>?�원 ${totalResourceCount(p)}??| ?�로 ${p.roads.length} | 건물 ${p.buildings.length}</div>
             </div>
           `).join("")}
         </div>
@@ -1507,16 +1532,16 @@
           <div class="resources">${resourceStrip(me)}</div>
           <div class="actions">
             <button class="primary" ${canRoll ? "" : "disabled"} onclick="rollDice()">주사??/button>
-            <button ${canMain ? "" : "disabled"} onclick="humanBuildRoad()">?�로</button>
+            <button ${canMain ? "" : "disabled"} onclick="humanBuildRoad()">?�로</button>
             <button ${canMain ? "" : "disabled"} onclick="humanBuildSettlement()">마을</button>
-            <button ${canMain ? "" : "disabled"} onclick="humanBuildCity()">?�시</button>
+            <button ${canMain ? "" : "disabled"} onclick="humanBuildCity()">?�시</button>
             <button disabled>거래</button>
             <button class="danger" ${(canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">??종료</button>
-            ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">�??��?�?/button>` : ""}
+            ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">�??��?�?/button>` : ""}
           </div>
           <div class="hint">
-            ${inSetup ? `초기 배치 ${state.setupRound}?�운??| ?�재: ${state.setupStep === "settlement" ? "마을" : "?�로"}` : ""}
-            ${canRobber ? "?�둑 ?�동: ?�른 ?�스�??�치?�세??" : ""}
+            ${inSetup ? `초기 배치 ${state.setupRound}?�운??| ?�재: ${state.setupStep === "settlement" ? "마을" : "?�로"}` : ""}
+            ${canRobber ? "?�둑 ?�동: ?�른 ?�스�??�치?�세??" : ""}
           </div>
         </div>
       `;
@@ -1536,7 +1561,7 @@
     }
 
     async function ensureMp() {
-      if (!window.MultiplayerClient) throw new Error("multiplayer.js 로드 ?�패");
+      if (!window.MultiplayerClient) throw new Error("multiplayer.js 로드 ?�패");
       if (!mpState.client) {
         mpState.client = MultiplayerClient.getInstance();
         await mpState.client.ensureAuth();
@@ -1544,7 +1569,7 @@
         mpState.client.onStateChange = onRoomStateChange;
         mpState.client.onEvent = onMpEvent;
         mpState.client.onRoomDestroyed = () => {
-          mpState.waitingMessage = "방이 종료?�었?�니??";
+          mpState.waitingMessage = "방이 종료?�었?�니??";
           leaveRoom(false);
         };
       }
@@ -1561,12 +1586,12 @@
       if (state.screen === "room-lobby") {
         const others = (room.players || []).filter(p => p.id !== mpState.myUserId);
         const allReady = others.length > 0 && others.every(p => p.isReady);
-        mpState.waitingMessage = allReady ? "모두 준�??�료. 게임 ?�작 가??" : "?�레?�어�?기다리는 �?..";
+        mpState.waitingMessage = allReady ? "모두 준�??�료. 게임 ?�작 가??" : "?�레?�어�?기다리는 �?..";
       }
       if (room.status === "playing" && state.screen === "room-lobby") {
         state.screen = "game";
         state.mode = "multi";
-        state.hint = "게임 초기???��?�?..";
+        state.hint = "게임 초기???��?�?..";
       }
       autoStartIfReady();
       render();
@@ -1583,7 +1608,7 @@
       try {
         await mpState.client.startGame();
       } catch (e) {
-        mpState.waitingMessage = `?�동 ?�작 ?�패: ${e.message || e}`;
+        mpState.waitingMessage = `?�동 ?�작 ?�패: ${e.message || e}`;
         mpState.startRequested = false;
         render();
       }
@@ -1619,7 +1644,7 @@
       if (event.type === "game_started") {
         state.screen = "game";
         state.mode = "multi";
-        state.hint = "?�스?��? 맵을 ?�성?�는 �?..";
+        state.hint = "?�스?��? 맵을 ?�성?�는 �?..";
         render();
         await maybeHostInitGame();
         return;
@@ -1656,11 +1681,11 @@
         mpState.roomCode = room.roomId || room.id || room.code || room.roomCode || "";
         state.mode = "multi";
         state.screen = "room-lobby";
-        mpState.waitingMessage = `�??�성 ?�료. 코드: ${mpState.roomCode}`;
+        mpState.waitingMessage = `�??�성 ?�료. 코드: ${mpState.roomCode}`;
         client.startListening();
         await refreshRoomState();
       } catch (e) {
-        mpState.waitingMessage = `�??�성 ?�패: ${e.message || e}`;
+        mpState.waitingMessage = `�??�성 ?�패: ${e.message || e}`;
         render();
       }
     }
@@ -1668,7 +1693,7 @@
     async function joinRoom() {
       const code = (state.roomCodeInput || "").trim();
       if (!code) {
-        mpState.waitingMessage = "�?코드�??�력?�세??";
+        mpState.waitingMessage = "�?코드�??�력?�세??";
         render();
         return;
       }
@@ -1678,11 +1703,11 @@
         mpState.roomCode = code;
         state.mode = "multi";
         state.screen = "room-lobby";
-        mpState.waitingMessage = `�?참�? ?�료: ${code}`;
+        mpState.waitingMessage = `�?참�? ?�료: ${code}`;
         client.startListening();
         await refreshRoomState();
       } catch (e) {
-        mpState.waitingMessage = `�?참�? ?�패: ${e.message || e}`;
+        mpState.waitingMessage = `�?참�? ?�패: ${e.message || e}`;
         render();
       }
     }
@@ -1713,7 +1738,7 @@
         await mpState.client.setReady(!mpState.ready);
         await refreshRoomState();
       } catch (e) {
-        mpState.waitingMessage = `준�??�태 변�??�패: ${e.message || e}`;
+        mpState.waitingMessage = `준�??�태 변�??�패: ${e.message || e}`;
         render();
       }
     }
@@ -1725,11 +1750,11 @@
         mpState.startRequested = true;
         state.screen = "game";
         state.mode = "multi";
-        state.hint = "게임 초기??�?..";
+        state.hint = "게임 초기??�?..";
         render();
         await maybeHostInitGame();
       } catch (e) {
-        mpState.waitingMessage = `게임 ?�작 ?�패: ${e.message || e}`;
+        mpState.waitingMessage = `게임 ?�작 ?�패: ${e.message || e}`;
         render();
       }
     }
