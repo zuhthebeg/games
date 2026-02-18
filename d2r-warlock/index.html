@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>D2R 워록 공략 / Warlock Guide</title>
+  <meta name="description" content="디아블로2 레저렉션 워록 스킬트리 시뮬레이터 & 빌드 가이드" />
+  <style>
+    :root{
+      --bg:#090706;--bg2:#170f0c;--panel:#1a120f;--panel2:#241913;--line:#4a3228;
+      --text:#f2e8d2;--muted:#bcae92;--gold:#d4af37;--red:#c0392b;--purple:#7d3c98;--ok:#43a047;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background:radial-gradient(circle at 50% -10%, #2a180f 0%, var(--bg2) 35%, var(--bg) 70%);}
+    .wrap{max-width:1160px;margin:0 auto;padding:14px}
+    h1,h2,h3{margin:0 0 10px;font-weight:800}
+    h1{font-size:1.45rem;color:var(--gold)} h2{font-size:1.15rem;color:#f5d78f;margin-top:24px}
+    .muted{color:var(--muted)}
+    .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px;box-shadow:0 8px 26px rgba(0,0,0,.35)}
+    .top{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+    .pill{padding:6px 10px;border-radius:999px;border:1px solid #6a4a34;background:#221610;font-weight:700}
+    .btn{border:1px solid #7a553a;background:#2a1c15;color:#f8e9be;padding:8px 12px;border-radius:8px;font-weight:700;touch-action:manipulation;cursor:pointer}
+    .tabs{display:flex;gap:8px;margin-top:12px}
+    .tab{flex:1;padding:10px;border-radius:10px;border:1px solid #6a4a34;background:#1b1310;color:#ead6ad;font-weight:800;touch-action:manipulation;cursor:pointer}
+    .tab.active{background:linear-gradient(180deg,#4a2c1f,#2d1a13);border-color:#a6784f;color:#ffd98f}
+    .layout{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+    .skill-grid{display:grid;grid-template-columns:1fr;gap:8px}
+    .skill{display:flex;justify-content:space-between;align-items:center;padding:10px;border:1px solid #4e3629;border-radius:10px;background:#17100d;touch-action:manipulation;user-select:none;cursor:pointer}
+    .skill.locked{opacity:.45;filter:grayscale(.35)} .skill.maxed{outline:1px solid var(--ok)}
+    .skill b{display:block} .skill small{color:#b7a688}
+    .pt{font-weight:900;color:#ffd98f;font-size:1.05rem}
+    .preset-grid,.rw-grid{display:grid;grid-template-columns:1fr;gap:10px}
+    .preset,.rw{border:1px solid #51392b;border-radius:10px;padding:10px;background:#17100d}
+    .preset{cursor:pointer;touch-action:manipulation}
+    .preset:hover{border-color:#9b7347}
+    table{width:100%;border-collapse:collapse;font-size:.93rem}
+    th,td{border:1px solid #4a3528;padding:8px;vertical-align:top;text-align:left}
+    th{background:#271b14;color:#f3d38b}
+    .timeline{display:grid;gap:8px}
+    .step{padding:9px;border-left:4px solid var(--red);background:#1a120f;border-radius:8px}
+    .sub{font-size:.9rem;color:#d0c1a2}
+    .tag{display:inline-block;padding:2px 7px;border-radius:999px;border:1px solid #624430;font-size:.75rem;margin-left:6px}
+    .magic{color:#8dd1ff}.fire{color:#ff9f7f}.summon{color:#f5ce75}.weapon{color:#caa8ff}
+    @media(min-width:900px){
+      .layout{grid-template-columns:1.2fr .9fr}.skill-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .preset-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rw-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>D2R 워록 공략 / Warlock Guide</h1>
+    <p class="muted">좌클릭 +1 / 우클릭 -1 · 총 포인트 110(Lv99) · 선행스킬 잠금 · URL hash 공유</p>
+
+    <section class="card">
+      <div class="top">
+        <div class="pill" id="totalPoint">총 스킬포인트: 0 / 110</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="resetBtn">초기화</button>
+          <button class="btn" id="copyBtn">URL 복사</button>
+        </div>
+      </div>
+      <div class="tabs" id="tabs"></div>
+      <div class="layout">
+        <div class="skill-grid" id="skillGrid"></div>
+        <div>
+          <div class="card" style="margin-top:0">
+            <h3>시너지 보너스 요약</h3>
+            <div id="synergyView" class="muted"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>빌드 프리셋 (커뮤니티 기반)</h2>
+      <div class="preset-grid" id="presetGrid"></div>
+    </section>
+
+    <section class="card">
+      <h2>추천 장비</h2>
+      <table>
+        <thead><tr><th>슬롯</th><th>캐스터 빌드</th><th>근접 빌드</th></tr></thead>
+        <tbody>
+          <tr><td>무기</td><td>Void RW (Dagger), HotO</td><td>Ritual RW (Dagger), Insight (Polearm 용병용)</td></tr>
+          <tr><td>오프핸드</td><td>Ars Al'Diabolos, Vigilance RW (Grimoire)</td><td>Spirit (Shield)</td></tr>
+          <tr><td>투구</td><td>Coven RW, Shako</td><td>Coven RW, Guillaume's Face</td></tr>
+          <tr><td>갑옷</td><td>Authority RW, Enigma</td><td>Authority RW, Hysteria RW (래더)</td></tr>
+          <tr><td>장갑</td><td>Magefist, Trang-Oul's</td><td>Laying of Hands</td></tr>
+          <tr><td>벨트</td><td>Arachnid Mesh</td><td>String of Ears</td></tr>
+          <tr><td>부츠</td><td>War Traveler</td><td>Gore Rider</td></tr>
+          <tr><td>아뮬렛</td><td>Mara's</td><td>Highlord's</td></tr>
+          <tr><td>반지</td><td>SoJ, BK Ring</td><td>Raven Frost, BK Ring</td></tr>
+          <tr><td>용병</td><td>Act2 (Insight/Infinity)</td><td>Act1 (유니크 활)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>신규 룬워드 (Patch 3.0)</h2>
+      <div class="rw-grid" id="rwGrid"></div>
+    </section>
+
+    <section class="card">
+      <h2>레벨링 가이드</h2>
+      <div class="timeline">
+        <div class="step"><b>1-12:</b> Miasma Bolt / Ring of Fire 스팸 → Tristram</div>
+        <div class="step"><b>12-18:</b> Ring of Fire 맥스 → Tomb Run</div>
+        <div class="step"><b>18-24:</b> Flame Wave 추가 → Act3-5</div>
+        <div class="step"><b>24-30:</b> Sigil Death/Enhanced Entropy → NM 진입</div>
+        <div class="step"><b>30-60:</b> Apocalypse/Abyss 찍기 → NM 파밍</div>
+        <div class="step"><b>60-80:</b> Hell 진입 → 앤시/메피 런</div>
+        <div class="step"><b>80-99:</b> CS런/바알런/테러존</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>그리무아르 베이스 가이드</h2>
+      <table>
+        <thead><tr><th>등급</th><th>이름</th><th>방어</th><th>소켓</th><th>필요레벨</th></tr></thead>
+        <tbody>
+          <tr><td>Normal</td><td>Old Book</td><td>2-5</td><td>2</td><td>3</td></tr>
+          <tr><td>Exceptional</td><td>Dark Codex</td><td>44-55</td><td>2</td><td>33</td></tr>
+          <tr><td>Exceptional</td><td>Possessed Grimoire</td><td>95-139</td><td>2</td><td>40</td></tr>
+          <tr><td>Elite</td><td>Forgotten Volume</td><td>95-139</td><td>2</td><td>44</td></tr>
+          <tr><td>Elite</td><td>Occult Tome</td><td>96-141</td><td>2</td><td>49</td></tr>
+          <tr><td>Elite</td><td>Occult Codex</td><td>98-142</td><td>2</td><td>50</td></tr>
+          <tr><td>Elite</td><td>Blasphemous Compendium</td><td>100-146</td><td>2</td><td>60</td></tr>
+          <tr><td>Elite</td><td>Blasphemous Grimoire</td><td>103-148</td><td>2</td><td>65</td></tr>
+        </tbody>
+      </table>
+      <p class="sub" style="margin-top:10px"><b>유니크:</b> Measured Wrath / Ars Al'Diabolos</p>
+    </section>
+  </div>
+
+  <script>
+    const trees = {
+      chaos: [
+        {id:'miasma_bolt',name:'Miasma Bolt',reqLv:1,pre:[],desc:'어둠의 볼트, 엔트로피 구름'},
+        {id:'ring_of_fire',name:'Ring of Fire',reqLv:6,pre:[],desc:'사방으로 확장하는 헬파이어'},
+        {id:'sigil_lethargy',name:'Sigil Lethargy',reqLv:6,pre:[],desc:'바닥 감속/약화 시길'},
+        {id:'miasma_chain',name:'Miasma Chain',reqLv:12,pre:['miasma_bolt'],desc:'그림자 사슬 장판'},
+        {id:'sigil_rancor',name:'Sigil Rancor',reqLv:12,pre:['sigil_lethargy'],desc:'동족공격 유도'},
+        {id:'flame_wave',name:'Flame Wave',reqLv:18,pre:['ring_of_fire'],desc:'불의 벽 굴림'},
+        {id:'enhanced_entropy',name:'Enhanced Entropy',reqLv:24,pre:['miasma_chain'],desc:'패시브 - 어둠 마법 마스터리'},
+        {id:'sigil_death',name:'Sigil Death',reqLv:24,pre:['sigil_rancor'],desc:'처형 폭발 시길'},
+        {id:'apocalypse',name:'Apocalypse',reqLv:30,pre:['flame_wave','sigil_death'],desc:'펜타그램 화염'},
+        {id:'abyss',name:'Abyss',reqLv:30,pre:['enhanced_entropy'],desc:'균열 흡인 후 붕괴'}
+      ],
+      binding: [
+        {id:'summon_goatman',name:'Summon Goatman',reqLv:1,pre:[],desc:'고트맨 소환'},
+        {id:'demonic_mastery',name:'Demonic Mastery',reqLv:1,pre:['summon_goatman'],desc:'패시브 - 악마 강화'},
+        {id:'death_mark',name:'Death Mark',reqLv:6,pre:['summon_goatman'],desc:'텔레포트+공격 명령'},
+        {id:'blood_oath',name:'Blood Oath',reqLv:6,pre:['demonic_mastery'],desc:'패시브 - 생명력 연결'},
+        {id:'summon_tainted',name:'Summon Tainted',reqLv:12,pre:['summon_goatman'],desc:'테인티드 소환'},
+        {id:'blood_boil',name:'Blood Boil',reqLv:18,pre:['death_mark'],desc:'악마 피 폭발'},
+        {id:'summon_defiler',name:'Summon Defiler',reqLv:18,pre:['summon_tainted'],desc:'디파일러 소환'},
+        {id:'engorge',name:'Engorge',reqLv:24,pre:['blood_boil'],desc:'시체로 회복+강화'},
+        {id:'consume',name:'Consume',reqLv:30,pre:['blood_oath'],desc:'악마 희생 파워 획득'},
+        {id:'bind_demon',name:'Bind Demon',reqLv:30,pre:['engorge','summon_defiler'],desc:'부상 악마 지배'}
+      ],
+      weapons: [
+        {id:'levitation_mastery',name:'Levitation Mastery',reqLv:1,pre:[],desc:'패시브 - 무기 공중부양'},
+        {id:'hex_bane',name:'Hex Bane',reqLv:1,pre:[],desc:'무기 저주 + 매직 데미지'},
+        {id:'cleave',name:'Cleave',reqLv:6,pre:['levitation_mastery'],desc:'확장 호형 공격'},
+        {id:'echoing_strike',name:'Echoing Strike',reqLv:12,pre:['levitation_mastery'],desc:'에코 무기 관통'},
+        {id:'hex_purge',name:'Hex Purge',reqLv:12,pre:['hex_bane'],desc:'저주 적 폭발 확률'},
+        {id:'blade_warp',name:'Blade Warp',reqLv:18,pre:['echoing_strike'],desc:'무기 투척+텔레포트'},
+        {id:'psychic_ward',name:'Psychic Ward',reqLv:18,pre:['cleave'],desc:'데미지 흡수+스턴'},
+        {id:'eldritch_blast',name:'Eldritch Blast',reqLv:24,pre:['psychic_ward'],desc:'저주 적 매직 폭발'},
+        {id:'hex_siphon',name:'Hex Siphon',reqLv:24,pre:['hex_purge'],desc:'처치 시 생명력 흡수'},
+        {id:'mirrored_blades',name:'Mirrored Blades',reqLv:30,pre:['blade_warp','eldritch_blast'],desc:'무기 복제 공격'}
+      ]
+    };
+
+    const synergy = {
+      miasma_bolt:[['miasma_chain','+10% Magic Dmg/lv'],['miasma_chain','+20% Avg Magic DPS/lv'],['abyss','+10% Magic Dmg/lv'],['abyss','+20% Avg Magic DPS/lv']],
+      ring_of_fire:[['flame_wave','+10% Fire Dmg/lv'],['apocalypse','+10% Fire Dmg/lv']],
+      miasma_chain:[['miasma_bolt','+10% Magic Dmg/lv'],['miasma_bolt','+20% Avg Magic DPS/lv'],['abyss','+10% Magic Dmg/lv'],['abyss','+20% Avg Magic DPS/lv']],
+      flame_wave:[['ring_of_fire','+15% Fire Dmg/lv'],['ring_of_fire','+10% Avg Fire DPS/lv'],['apocalypse','+15% Fire Dmg/lv'],['apocalypse','+10% Avg Fire DPS/lv']],
+      apocalypse:[['ring_of_fire','+10% Fire Dmg/lv'],['flame_wave','+10% Fire Dmg/lv']],
+      abyss:[['miasma_bolt','+10% Magic Dmg/lv'],['miasma_bolt','+10% Avg Magic DPS/lv'],['miasma_chain','+10% Magic Dmg/lv'],['miasma_chain','+10% Avg Magic DPS/lv']],
+      summon_goatman:[['death_mark','+1% Crushing Blow/lv']],
+      summon_tainted:[['blood_oath','+20% Fire Dmg/lv']],
+      blood_boil:[['blood_oath','+20% Fire Dmg/lv'],['engorge','+20% Dmg/lv']],
+      engorge:[['blood_oath','+25 Def/lv'],['blood_oath','+5 Replenish Life/lv']],
+      bind_demon:[['death_mark','+1% Bind Chance/lv']],
+      hex_bane:[['mirrored_blades','+35% Magic Dmg/lv'],['hex_purge','+35% Magic Dmg/lv'],['consume','+35% Magic Dmg/lv'],['eldritch_blast','Hex Duration +5s/lv']],
+      cleave:[['mirrored_blades','+10% Dmg/lv'],['hex_purge','+10% Dmg/lv'],['eldritch_blast','+10% Dmg/lv']],
+      echoing_strike:[['mirrored_blades','+5% Dmg/lv'],['mirrored_blades','5레벨마다 추가 에코'],['blade_warp','+5% Dmg/lv']],
+      hex_purge:[['hex_bane','+10% Magic Dmg/lv'],['eldritch_blast','+10% Magic Dmg/lv'],['sigil_death','+1% Erupt/lv'],['eldritch_blast','Hex Duration +5s/lv']],
+      blade_warp:[['mirrored_blades','+24% Magic Dmg/lv'],['echoing_strike','+24% Magic Dmg/lv']],
+      psychic_ward:[['cleave','+15 Absorbed/lv'],['levitation_mastery','+15 Absorbed/lv']],
+      eldritch_blast:[['hex_purge','+50% Magic Dmg/lv'],['blade_warp','+50% Magic Dmg/lv'],['psychic_ward','+50s/lv']],
+      hex_siphon:[['engorge','+1 Life/Mana after Kill/lv'],['eldritch_blast','Hex Duration +5s/lv']]
+    };
+
+    const runewords = [
+      ['Ritual','Amn+Shael+Ohm','3소켓 Dagger','13% Sigil Death when struck / +40% IAS / +250-320% ED / +150-250% Demons / +200-260% AR / +3-5 Life Kill / 7% LL / RIP'],
+      ['Void','Thul+Zod+Ist','3소켓 Dagger','+2 All Skills / +40% FCR / +10-15% Magic Skill Dmg / +1 Abyss(Lv3) / +8-12 All Attr / Decrepify Charges / Indestructible / 30% MF'],
+      ['Coven','Ist+Ral+Io','3소켓 Helm','+1 All Skills / +20% FCR / +30-50% ED / +1-5 Life Kill / 26-40% MF / Fire Res +30 / +10 Vit / 5% Sigil Lethargy when struck'],
+      ['Authority','Hel+Shael+Ral','3소켓 Body Armor','+2 Warlock Skills / +40-60% ED / 10% Miasma Chain on striking / 2% Psychic Ward when struck / -15% Req / +20% FHR / Fire Res +30'],
+      ['Vigilance','Dol+Gul','2소켓 Grimoire/Shield','5% Ring of Fire when struck / +10% FRW / +30% FBR / +20-40 Life/Mana / All Res +25-35 / +75-100% ED / Replenish Life +7 / +5% Max Poison Res'],
+      ['Hysteria','Shael+Ko+Eld','3소켓 Body Armor (래더)','+65% FRW / +40% IAS / +20% FHR / +6 Evade / +10 Dex / +All Res +10'],
+      ['Mania','Shael+Ko+Eld','3소켓 Weapon (래더)','Lv1 Fanaticism Aura / 5% Burst of Speed on striking / +30% IAS / +180-200% ED / +75% Dmg to Undead']
+    ];
+
+    const presets = [
+      {name:'🔥 Fire Warlock (레벨링/파밍)',desc:'Ring of Fire 20 / Flame Wave 20 / Apocalypse 20 + 시길 유틸',set:{ring_of_fire:20,flame_wave:20,apocalypse:20,sigil_death:1,sigil_rancor:1,sigil_lethargy:1,miasma_bolt:1}},
+      {name:'🌑 Miasma/Abyss (엔드게임)',desc:'Miasma Bolt/Chain/Abyss/Enhanced Entropy 20',set:{miasma_bolt:20,miasma_chain:20,abyss:20,enhanced_entropy:20,ring_of_fire:1}},
+      {name:'⚔️ Echoing Strike (근접)',desc:'Echoing 20 / Mirrored 20 / Warp 20 / Levitation 20',set:{echoing_strike:20,mirrored_blades:20,blade_warp:20,levitation_mastery:20,hex_bane:1,hex_purge:1,psychic_ward:1}},
+      {name:'👹 Summoner',desc:'Goatman/Tainted/Defiler/Mastery 20 + 필수 유틸',set:{summon_goatman:20,summon_tainted:20,summon_defiler:20,demonic_mastery:20,blood_oath:1,death_mark:1,blood_boil:1,bind_demon:1}},
+      {name:'🔥👹 Fire + Summon',desc:'Ring/Flame 20 + Goatman/Mastery 12 하이브리드',set:{ring_of_fire:20,flame_wave:20,summon_goatman:12,demonic_mastery:12,blood_oath:1,death_mark:1,apocalypse:10,blood_boil:10}}
+    ];
+
+    const treeNames = {chaos:'Arts of Chaos (혼돈의 기술)',binding:'Demonic Binding (악마 지배)',weapons:'Eldritch Weapons (엘드리치 무기)'};
+    const all = [...trees.chaos,...trees.binding,...trees.weapons];
+    const byId = Object.fromEntries(all.map(s=>[s.id,s]));
+    const MAX = 110;
+    let pts = Object.fromEntries(all.map(s=>[s.id,0]));
+    let active = 'chaos';
+
+    const tabsEl = document.getElementById('tabs');
+    const gridEl = document.getElementById('skillGrid');
+
+    function spent(){ return Object.values(pts).reduce((a,b)=>a+b,0); }
+    function canUse(s){ return s.pre.every(id=>pts[id]>0); }
+    function reqText(s){ const miss=s.pre.filter(id=>pts[id]===0).map(id=>byId[id].name); return miss.length?`필요: ${miss.join(', ')}`:'선행 충족'; }
+
+    function updateHash(){
+      const make = key => trees[key].map(s=>pts[s.id]).join(',');
+      history.replaceState(null,'',`#chaos=${make('chaos')}&binding=${make('binding')}&weapons=${make('weapons')}`);
+    }
+    function loadHash(){
+      const h = location.hash.slice(1); if(!h) return;
+      const p = new URLSearchParams(h);
+      ['chaos','binding','weapons'].forEach(t=>{
+        const raw = p.get(t); if(!raw) return;
+        const arr = raw.split(',').map(v=>Math.max(0,Math.min(20,parseInt(v)||0)));
+        trees[t].forEach((s,i)=>pts[s.id]=arr[i]??0);
+      });
+    }
+
+    function add(s){ if(!canUse(s)||pts[s.id]>=20||spent()>=MAX) return; pts[s.id]++; render(); }
+    function sub(s){ if(pts[s.id]<=0) return; pts[s.id]--; render(); }
+
+    function renderTabs(){
+      tabsEl.innerHTML='';
+      ['chaos','binding','weapons'].forEach(id=>{
+        const b=document.createElement('button'); b.className='tab'+(id===active?' active':''); b.textContent=treeNames[id];
+        b.onclick=()=>{active=id; renderTabs(); renderSkills();}; tabsEl.appendChild(b);
+      });
+    }
+
+    function colorClass(id){
+      if(['miasma_bolt','miasma_chain','abyss','hex_bane','hex_purge','eldritch_blast'].includes(id)) return 'magic';
+      if(['ring_of_fire','flame_wave','apocalypse','blood_boil'].includes(id)) return 'fire';
+      if(['summon_goatman','summon_tainted','summon_defiler','bind_demon'].includes(id)) return 'summon';
+      return 'weapon';
+    }
+
+    function renderSkills(){
+      gridEl.innerHTML='';
+      trees[active].forEach(s=>{
+        const d=document.createElement('div');
+        d.className='skill'+(canUse(s)?'':' locked')+(pts[s.id]===20?' maxed':'');
+        d.innerHTML=`<div><b>${s.name}<span class="tag ${colorClass(s.id)}">Lv ${s.reqLv}</span></b><small>${s.desc} · ${reqText(s)}</small></div><div class="pt">${pts[s.id]}</div>`;
+        d.onclick=()=>add(s);
+        d.oncontextmenu=e=>{e.preventDefault(); sub(s);};
+        d.addEventListener('touchstart',()=>{}, {passive:true});
+        gridEl.appendChild(d);
+      });
+    }
+
+    function renderSynergy(){
+      const el=document.getElementById('synergyView');
+      const rows = all.filter(s=>synergy[s.id]).map(s=>{
+        const lines = synergy[s.id].map(([src,txt])=>`- ${byId[src]?.name || src} ${pts[src]}pt → ${txt.replace('/lv',` × ${pts[src]}lv`)}`).join('<br>');
+        return `<div style="margin-bottom:10px"><b>${s.name}</b><br>${lines}</div>`;
+      });
+      el.innerHTML = rows.length?rows.join(''):'시너지 없음';
+    }
+
+    function renderPresets(){
+      const el=document.getElementById('presetGrid'); el.innerHTML='';
+      presets.forEach(p=>{
+        const d=document.createElement('div'); d.className='preset';
+        d.innerHTML=`<h3 style="margin:0 0 6px;color:#f2cb7d">${p.name}</h3><div class="muted">${p.desc}</div>`;
+        d.onclick=()=>applyPreset(p);
+        el.appendChild(d);
+      });
+    }
+
+    function ensure(id, amount){
+      const s=byId[id]; if(!s) return;
+      s.pre.forEach(pre=>ensure(pre, Math.max(1,pts[pre])));
+      while(pts[id]<amount && spent()<MAX) add(s);
+    }
+
+    function applyPreset(p){
+      pts = Object.fromEntries(all.map(s=>[s.id,0]));
+      Object.entries(p.set).forEach(([id,val])=>ensure(id,val));
+      render();
+    }
+
+    function renderRW(){
+      const el=document.getElementById('rwGrid');
+      el.innerHTML = runewords.map(r=>`<div class="rw"><h3 style="color:#f1ca7c;margin:0 0 4px">${r[0]}</h3><div class="sub">룬: ${r[1]}</div><div class="sub">베이스: ${r[2]}</div><div style="margin-top:6px">${r[3]}</div></div>`).join('');
+    }
+
+    function render(){
+      document.getElementById('totalPoint').textContent=`총 스킬포인트: ${spent()} / ${MAX}`;
+      renderTabs(); renderSkills(); renderSynergy(); updateHash();
+    }
+
+    document.getElementById('resetBtn').onclick=()=>{pts=Object.fromEntries(all.map(s=>[s.id,0])); render();};
+    document.getElementById('copyBtn').onclick=async()=>{
+      try{await navigator.clipboard.writeText(location.href); alert('URL이 복사되었습니다.');}
+      catch{alert('복사 실패: 주소창 URL을 수동 복사해주세요.');}
+    };
+
+    loadHash(); renderPresets(); renderRW(); render();
+    window.addEventListener('hashchange',()=>{loadHash(); render();});
+  </script>
+</body>
+</html>

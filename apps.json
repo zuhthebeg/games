@@ -215,10 +215,10 @@
     "category": "game"
   },
   {
-    "title": "D2R 소서리스 공략 / Sorceress Guide",
-    "icon": "https://game.cocy.io/d2r-sorc/icon.svg",
-    "url": "https://game.cocy.io/d2r-sorc/",
-    "desc": "디아블로2 레저렉션 소서리스 스킬트리 시뮬레이터 & 빌드 가이드",
+    "title": "D2R 워록 공략 / Warlock Guide",
+    "icon": "https://game.cocy.io/d2r-warlock/icon.svg",
+    "url": "https://game.cocy.io/d2r-warlock/",
+    "desc": "디아블로2 레저렉션 워록 스킬트리 시뮬레이터 & 빌드 가이드",
     "badge": "NEW",
     "platforms": [
       "WEB"
