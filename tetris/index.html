@@ -1,71 +1,44 @@
 <!DOCTYPE html>
-<html lang="ko" >
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
-<!-- End Google Tag Manager -->
-
-    <title>?�트리스</title>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f)})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
+    <link rel="canonical" href="https://game.cocy.io/tetris/">
+    <meta property="og:url" content="https://game.cocy.io/tetris/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ko_KR">
+    <title>테트리스</title>
     <link rel="stylesheet" href="style.css">
-
-<meta name="description" content="??? ???? ???? ??. ??? ?? ??? ??? ?? ??? ?????.">
-<link rel="canonical" href="https://game.cocy.io/tetris/">
-<meta property="og:title" content="???? | game.cocy.io">
-<meta property="og:description" content="??? ???? ???? ??. ??? ?? ??? ??? ?? ??? ?????.">
-<meta property="og:url" content="https://game.cocy.io/tetris/">
-<meta property="og:type" content="website">
-<meta property="og:locale" content="ko_KR">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="???? | game.cocy.io">
-<meta name="twitter:description" content="??? ???? ???? ??. ??? ?? ??? ??? ?? ??? ?????.">
-<!-- SEO-AUTO:GAME START -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "VideoGame",
-  "name": "????",
-  "description": "??? ???? ???? ??. ??? ?? ??? ??? ?? ??? ?????.",
-  "url": "https://game.cocy.io/tetris/",
-  "inLanguage": "ko-KR",
-  "applicationCategory": "Game",
-  "operatingSystem": "Web Browser"
-}
-</script>
-<!-- SEO-AUTO:GAME END -->
 </head>
 <body>
-<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
-
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="game-container">
         <div class="game-header">
-            <h1>?�� ?�트리스</h1>
+            <h1>🎮 테트리스</h1>
         </div>
 
         <div class="game-content">
             <div class="side-panel">
                 <div class="info-box">
-                    <h3>?�수</h3>
+                    <h3>점수</h3>
                     <div class="score" id="score">0</div>
                 </div>
 
                 <div class="info-box">
-                    <h3>?�벨</h3>
+                    <h3>레벨</h3>
                     <div class="level" id="level">1</div>
                 </div>
 
                 <div class="info-box">
-                    <h3>?�인</h3>
+                    <h3>라인</h3>
                     <div class="lines" id="lines">0</div>
                 </div>
 
                 <div class="info-box next-box">
-                    <h3>?�음 블럭</h3>
+                    <h3>다음 블럭</h3>
                     <canvas id="nextCanvas" width="120" height="120"></canvas>
                 </div>
             </div>
@@ -73,41 +46,41 @@
             <div class="main-game">
                 <canvas id="gameCanvas" width="300" height="600"></canvas>
                 <div class="game-over" id="gameOver">
-                    <h2>게임 ?�버!</h2>
-                    <p>최종 ?�수: <span id="finalScore">0</span></p>
-                    <button class="btn" id="restartBtn">?�시 ?�작</button>
+                    <h2>게임 오버!</h2>
+                    <p>최종 점수: <span id="finalScore">0</span></p>
+                    <button class="btn" id="restartBtn">다시 시작</button>
                 </div>
             </div>
 
             <div class="controls">
-                <h3>조작�?/h3>
+                <h3>조작법</h3>
                 <div class="control-item">
-                    <span class="key">??/span>
-                    <span class="desc">?�쪽 ?�동</span>
+                    <span class="key">←</span>
+                    <span class="desc">왼쪽 이동</span>
                 </div>
                 <div class="control-item">
-                    <span class="key">??/span>
-                    <span class="desc">?�른�??�동</span>
+                    <span class="key">→</span>
+                    <span class="desc">오른쪽 이동</span>
                 </div>
                 <div class="control-item">
-                    <span class="key">??/span>
-                    <span class="desc">빠른 ?�하</span>
+                    <span class="key">↓</span>
+                    <span class="desc">빠른 낙하</span>
                 </div>
                 <div class="control-item">
-                    <span class="key">??/ Z</span>
-                    <span class="desc">?�전</span>
+                    <span class="key">↑ / Z</span>
+                    <span class="desc">회전</span>
                 </div>
                 <div class="control-item">
                     <span class="key">Space</span>
-                    <span class="desc">?�드 ?�롭</span>
+                    <span class="desc">하드 드롭</span>
                 </div>
                 <div class="control-item">
                     <span class="key">P</span>
-                    <span class="desc">?�시?��?</span>
+                    <span class="desc">일시정지</span>
                 </div>
 
-                <button class="btn btn-start" id="startBtn">?�작</button>
-                <button class="btn btn-pause" id="pauseBtn">?�시?��?</button>
+                <button class="btn btn-start" id="startBtn">시작</button>
+                <button class="btn btn-pause" id="pauseBtn">일시정지</button>
             </div>
         </div>
     </div>

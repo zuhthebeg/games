@@ -1,15 +1,16 @@
-<!DOCTYPE html>
-<html lang="ko" >
+﻿<!DOCTYPE html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
-<!-- End Google Tag Manager -->
-
-    <title>���� ���?- Connect 4</title>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f)})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
+    <link rel="canonical" href="https://game.cocy.io/connect4/">
+    <meta property="og:url" content="https://game.cocy.io/connect4/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ko_KR">
+    <title>삼인 사목 - Connect 4</title>
     <link rel="icon" href="icon.svg">
     <script src="/lib/shared-wallet.js?v=20260214"></script>
     <style>
@@ -199,37 +200,9 @@
             to { transform: translateY(-4px); }
         }
     </style>
-
-<meta name="description" content="3???�시�??�목 ?��?>
-<link rel="canonical" href="https://game.cocy.io/connect4/">
-<meta property="og:title" content="?�인 ?�목 | game.cocy.io">
-<meta property="og:description" content="3???�시�??�목 ?��?>
-<meta property="og:url" content="https://game.cocy.io/connect4/">
-<meta property="og:type" content="website">
-<meta property="og:locale" content="ko_KR">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="?�인 ?�목 | game.cocy.io">
-<meta name="twitter:description" content="3???�시�??�목 ?��?>
-<!-- SEO-AUTO:GAME START -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "VideoGame",
-  "name": "?�인 ?�목",
-  "description": "3???�시�??�목 ?��?,
-  "url": "https://game.cocy.io/connect4/",
-  "inLanguage": "ko-KR",
-  "applicationCategory": "Game",
-  "operatingSystem": "Web Browser"
-}
-</script>
-<!-- SEO-AUTO:GAME END -->
 </head>
 <body>
-<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
-
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div id="app"></div>
 
     <script src="/lib/multiplayer.js?v=20260210v2"></script>
@@ -284,10 +257,10 @@
         function init() {
             mpUI = new MultiplayerUI({
                 gameType: 'connect4',
-                gameName: '?????? ���� ���?,
+                gameName: '🔴🟡🔵 삼인 사목',
                 container: document.getElementById('app'),
                 maxPlayers: 3,
-                supportsLocal: false,  // ��Ƽ�÷��̾� ����
+                supportsLocal: false,  // 멀티플레이어 전용
                 onGameStart: handleGameStart,
                 onGameEvent: handleGameEvent,
                 onLeave: () => { isMultiplayer = false; }
@@ -354,11 +327,11 @@
                 }
             };
             
-            showToast(`���� ����! �����?${getColorName(myColor)}�Դϴ�`);
+            showToast(`게임 시작! 당신은 ${getColorName(myColor)}입니다`);
         }
 
         function getColorName(color) {
-            return { red: '����??', yellow: '���??', blue: '�Ķ�??' }[color] || color;
+            return { red: '빨강🔴', yellow: '노랑🟡', blue: '파랑🔵' }[color] || color;
         }
 
         // ===== Board Logic =====
@@ -380,7 +353,7 @@
             if (isMultiplayer) {
                 const myId = mpUI.getClient().getMyUserId();
                 if (currentPlayer.id !== myId) {
-                    showToast('�����?���ʰ� �ƴմϴ�');
+                    showToast('당신의 차례가 아닙니다');
                     return;
                 }
                 sendPlace(row, col);
@@ -399,7 +372,7 @@
             try {
                 await mpUI.sendAction({ type: 'place', payload: { row, col } });
             } catch (e) {
-                showToast('����: ' + e.message);
+                showToast('실패: ' + e.message);
             }
         }
 
@@ -493,7 +466,7 @@
                 const myId = mpUI.getClient().getMyUserId();
                 const isWin = winnerPlayer?.id === myId;
                 
-                // Gold: winner gets stones �� 100, losers lose 100
+                // Gold: winner gets stones × 100, losers lose 100
                 let goldChange = 0;
                 let goldText = '';
                 if (winnerPlayer) {
@@ -514,20 +487,20 @@
                 }
                 
                 const stoneInfo = winnerPlayer && stoneCounts?.[winnerPlayer.id] 
-                    ? ` (�� ${stoneCounts[winnerPlayer.id]}��)` : '';
+                    ? ` (돌 ${stoneCounts[winnerPlayer.id]}개)` : '';
                 
                 mpUI.showResult({
-                    title: isWin ? '?? �¸�!' : '?? �й�',
+                    title: isWin ? '🎉 승리!' : '😢 패배',
                     detail: winnerPlayer 
-                        ? `${getColorName(winnerPlayer.color)} ${winnerPlayer.nickname} �¸�${stoneInfo} ${goldText}` 
-                        : '���º�',
+                        ? `${getColorName(winnerPlayer.color)} ${winnerPlayer.nickname} 승리${stoneInfo} ${goldText}` 
+                        : '무승부',
                     isWin,
                     showRematch: true
                 });
             } else {
                 if (winnerPlayer) sfxWin();
                 mpUI.showResult({
-                    title: winnerPlayer ? `${getColorName(winnerPlayer.color)} �¸�!` : '���º�',
+                    title: winnerPlayer ? `${getColorName(winnerPlayer.color)} 승리!` : '무승부',
                     isWin: null,
                     showRematch: false
                 });
@@ -553,17 +526,17 @@
                         ${players.map((p, i) => `
                             <div class="player-tag ${p.color} ${i === currentPlayerIndex && !gameOver ? 'active' : ''}">
                                 <div class="disc ${p.color}"></div>
-                                <span>${p.nickname}${p.id === myId ? ' (��)' : ''}</span>
+                                <span>${p.nickname}${p.id === myId ? ' (나)' : ''}</span>
                             </div>
                         `).join('')}
                     </div>
                     
                     <div class="turn-indicator">
-                        ${gameOver ? '���� ����' : `
+                        ${gameOver ? '게임 종료' : `
                             <div class="disc ${currentPlayer?.color}"></div>
                             <span>${isMultiplayer ? 
-                                (isMyTurn ? '�� ����!' : `${currentPlayer?.nickname}�� ����`) : 
-                                `${currentPlayer?.nickname}�� ����`}</span>
+                                (isMyTurn ? '내 차례!' : `${currentPlayer?.nickname}의 차례`) : 
+                                `${currentPlayer?.nickname}의 차례`}</span>
                         `}
                     </div>
                     
@@ -574,8 +547,8 @@
                     </div>
                     
                     <div class="game-actions">
-                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">�� ����</button>' : ''}
-                        <button class="btn" onclick="exitGame()">������</button>
+                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">새 게임</button>' : ''}
+                        <button class="btn" onclick="exitGame()">나가기</button>
                     </div>
                 </div>
             `;
@@ -607,7 +580,7 @@
 
         function exitGame() {
             if (isMultiplayer && mpUI.getClient()) {
-                if (confirm('������ �����ðڽ��ϱ�?')) {
+                if (confirm('게임을 나가시겠습니까?')) {
                     mpUI.getClient().leaveRoom().catch(() => {});
                     MultiplayerClient.resetInstance();
                     isMultiplayer = false;

@@ -1,15 +1,16 @@
-<!DOCTYPE html>
-<html lang="ko" >
+﻿<!DOCTYPE html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
-<!-- End Google Tag Manager -->
-
-    <title>���� - Gomoku</title>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f)})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
+    <link rel="canonical" href="https://game.cocy.io/gomoku/">
+    <meta property="og:url" content="https://game.cocy.io/gomoku/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ko_KR">
+    <title>오목 - Gomoku</title>
     <link rel="icon" href="icon.svg">
     <style>
         :root {
@@ -40,7 +41,7 @@
             flex-direction: column;
             align-items: center;
             padding: 16px;
-            padding-top: 60px; /* SharedWallet �� ���� */
+            padding-top: 60px; /* SharedWallet 바 공간 */
             min-height: 100vh;
         }
 
@@ -308,48 +309,20 @@
             width: 18px; height: 18px; accent-color: var(--accent);
         }
     </style>
-
-<meta name="description" content="?�시�?1:1 ?�목 ?��?>
-<link rel="canonical" href="https://game.cocy.io/gomoku/">
-<meta property="og:title" content="?�목 | game.cocy.io">
-<meta property="og:description" content="?�시�?1:1 ?�목 ?��?>
-<meta property="og:url" content="https://game.cocy.io/gomoku/">
-<meta property="og:type" content="website">
-<meta property="og:locale" content="ko_KR">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="?�목 | game.cocy.io">
-<meta name="twitter:description" content="?�시�?1:1 ?�목 ?��?>
-<!-- SEO-AUTO:GAME START -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "VideoGame",
-  "name": "?�목",
-  "description": "?�시�?1:1 ?�목 ?��?,
-  "url": "https://game.cocy.io/gomoku/",
-  "inLanguage": "ko-KR",
-  "applicationCategory": "Game",
-  "operatingSystem": "Web Browser"
-}
-</script>
-<!-- SEO-AUTO:GAME END -->
 </head>
 <body>
-<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
-
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div id="app"></div>
 
     <script src="/lib/multiplayer.js?v=20260210v2"></script>
     <script src="/lib/multiplayer-ui.js?v=20260210v2"></script>
     <script src="/lib/shared-wallet.js?v=20260211"></script>
     <script>
-        // ===== ���� ��ȭ �ý��� =====
+        // ===== 공용 재화 시스템 =====
         let sharedGold = 0;
         let cloudSyncEnabled = false;
-        const WIN_REWARD = 1000;  // �¸� ����
-        const LOSE_PENALTY = 100; // �й� ����?
+        const WIN_REWARD = 1000;  // 승리 보상
+        const LOSE_PENALTY = 100; // 패배 페널티
         
         // ===== Sound Effects =====
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -408,7 +381,7 @@
         }
         
         async function saveSharedGold() {
-            // SharedWallet ���?
+            // SharedWallet 사용
             if (typeof SharedWallet !== 'undefined') {
                 SharedWallet.setGold(sharedGold);
             } else {
@@ -467,7 +440,7 @@
                 bar.style.background = timeLeft <= 5 ? '#ff6b6b' : timeLeft <= 10 ? '#eab308' : 'var(--accent)';
             }
             if (text) {
-                text.textContent = timeLeft + '��';
+                text.textContent = timeLeft + '초';
                 text.style.color = timeLeft <= 5 ? '#ff6b6b' : 'var(--text)';
             }
         }
@@ -477,20 +450,20 @@
             if (isMultiplayer) {
                 const isMyTurn = myColor === currentPlayer;
                 if (isMyTurn) {
-                    // �� �Ͽ� �ð� �ʰ� �� ���� ��ġ�� ����
+                    // 내 턴에 시간 초과 → 랜덤 위치에 놓기
                     const empty = [];
                     for (let r = 0; r < BOARD_SIZE; r++)
                         for (let c = 0; c < BOARD_SIZE; c++)
                             if (!board[r][c]) empty.push([r, c]);
                     if (empty.length > 0) {
                         const [r, c] = empty[Math.floor(Math.random() * empty.length)];
-                        showToast('�ð� �ʰ�! �ڵ� ����');
+                        showToast('시간 초과! 자동 착수');
                         sendMove(r, c);
                     }
                 }
             } else {
-                // ����: �� �ѱ��?
-                showToast('�ð� �ʰ�! �� �ѱ�');
+                // 로컬: 턴 넘기기
+                showToast('시간 초과! 턴 넘김');
                 currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
                 startTimer();
                 renderGame();
@@ -499,7 +472,7 @@
 
         // ===== Initialize =====
         function init() {
-            // ���� ��ȭ �ε� (SharedWallet����)
+            // 공용 재화 로드 (SharedWallet에서)
             if (typeof SharedWallet !== 'undefined') {
                 SharedWallet.init().then(() => {
                     sharedGold = SharedWallet.gold;
@@ -511,7 +484,7 @@
             
             mpUI = new MultiplayerUI({
                 gameType: 'gomoku',
-                gameName: '?? ����',
+                gameName: '⚫⚪ 오목',
                 container: document.getElementById('app'),
                 maxPlayers: 2,
                 onGameStart: handleGameStart,
@@ -576,7 +549,7 @@
             };
             
             if (!gameOver) startTimer();
-            showToast(`���� ����! �����?${myColor === 'black' ? '��' : '��'}�Դϴ�`);
+            showToast(`게임 시작! 당신은 ${myColor === 'black' ? '흑' : '백'}입니다`);
         }
 
         // ===== Board Logic =====
@@ -591,7 +564,7 @@
             if (gameOver || board[row][col]) return;
             
             if (isMultiplayer && myColor !== currentPlayer) {
-                showToast('���?�����Դϴ�');
+                showToast('상대 차례입니다');
                 return;
             }
             
@@ -639,10 +612,10 @@
             overlay.id = 'confirmOverlay';
             overlay.innerHTML = `
                 <div class="confirm-box">
-                    <p>�� ��ġ�� �νðڽ��ϱ�?<br><small style="color:#888">(${row+1}, ${col+1})</small></p>
+                    <p>이 위치에 두시겠습니까?<br><small style="color:#888">(${row+1}, ${col+1})</small></p>
                     <div class="btns">
-                        <button class="btn" onclick="cancelMove()">���?/button>
-                        <button class="btn primary" onclick="executeMove(${row},${col})">Ȯ��</button>
+                        <button class="btn" onclick="cancelMove()">취소</button>
+                        <button class="btn primary" onclick="executeMove(${row},${col})">확인</button>
                     </div>
                 </div>
             `;
@@ -690,7 +663,7 @@
                 startTimer();
                 renderGame({ lastMove: { row, col } });
             } catch (e) {
-                showToast('����: ' + e.message);
+                showToast('실패: ' + e.message);
             }
         }
 
@@ -716,7 +689,7 @@
             
             renderGame(gs);
             
-            // ���� ������ ������ ���� ���?ǥ�� (�ߺ� ����)
+            // 새로 게임이 끝났을 때만 결과 표시 (중복 방지)
             if (gameOver && !wasGameOver && gs.winner && gs.winner !== 'draw') {
                 const winnerColor = gs.players.find(p => p.id === gs.winner)?.color;
                 showResult(winnerColor);
@@ -765,15 +738,15 @@
                     : `<span style="color:#ff6b6b">${goldChange}G</span>`;
                 
                 mpUI.showResult({
-                    title: isWin ? '?? �¸�!' : '?? �й�',
-                    detail: `${(winner === 'black' ? '��' : '��')} �¸� ${goldText}`,
+                    title: isWin ? '🎉 승리!' : '😢 패배',
+                    detail: `${(winner === 'black' ? '흑' : '백')} 승리 ${goldText}`,
                     isWin: isWin,
                     showRematch: true
                 });
             } else {
-                // �̱��÷��� (���� 2��)�� ���� ����
+                // 싱글플레이 (로컬 2인)는 보상 없음
                 mpUI.showResult({
-                    title: (winner === 'black' ? '? ��' : '? ��') + ' �¸�!',
+                    title: (winner === 'black' ? '⚫ 흑' : '⚪ 백') + ' 승리!',
                     isWin: null,
                     showRematch: false
                 });
@@ -806,29 +779,29 @@
                     <div class="game-header">
                         <div class="player-info ${currentPlayer === 'black' && !gameOver ? 'active' : ''}">
                             <div class="stone black"></div>
-                            <span>${isMultiplayer ? blackName : '��'}${gs.players?.find(p => p.color === 'black')?.id === myId ? ' (��)' : ''}</span>
+                            <span>${isMultiplayer ? blackName : '흑'}${gs.players?.find(p => p.color === 'black')?.id === myId ? ' (나)' : ''}</span>
                         </div>
                         <div class="player-info ${currentPlayer === 'white' && !gameOver ? 'active' : ''}">
                             <div class="stone white"></div>
-                            <span>${isMultiplayer ? whiteName : '��'}${gs.players?.find(p => p.color === 'white')?.id === myId ? ' (��)' : ''}</span>
+                            <span>${isMultiplayer ? whiteName : '백'}${gs.players?.find(p => p.color === 'white')?.id === myId ? ' (나)' : ''}</span>
                         </div>
                     </div>
                     
                     ${(() => {
-                        if (gameOver) return '<div class="turn-banner game-over-banner">���� ����</div>';
+                        if (gameOver) return '<div class="turn-banner game-over-banner">게임 종료</div>';
                         const isMyTurn = isMultiplayer ? myColor === currentPlayer : true;
-                        const turnColor = currentPlayer === 'black' ? '?' : '?';
+                        const turnColor = currentPlayer === 'black' ? '⚫' : '⚪';
                         if (isMultiplayer) {
                             return isMyTurn
-                                ? `<div class="turn-banner my-turn">${turnColor} �� ����! ���� ��������</div>`
-                                : `<div class="turn-banner opp-turn">${turnColor} ���?����... ��ٸ�����?/div>`;
+                                ? `<div class="turn-banner my-turn">${turnColor} 내 차례! 돌을 놓으세요</div>`
+                                : `<div class="turn-banner opp-turn">${turnColor} 상대 차례... 기다리세요</div>`;
                         }
-                        return `<div class="turn-banner my-turn">${turnColor} ${currentPlayer === 'black' ? '��' : '��'}�� ����</div>`;
+                        return `<div class="turn-banner my-turn">${turnColor} ${currentPlayer === 'black' ? '흑' : '백'}의 차례</div>`;
                     })()}
                     
                     ${!gameOver ? `
                     <div style="display:flex;align-items:center;gap:8px;width:100%;max-width:400px">
-                        <span class="timer-text" id="timerText">${timeLeft}��</span>
+                        <span class="timer-text" id="timerText">${timeLeft}초</span>
                         <div class="timer-bar"><div class="fill" id="timerFill" style="width:${(timeLeft/TURN_TIME)*100}%;background:var(--accent)"></div></div>
                     </div>` : ''}
                     
@@ -840,19 +813,19 @@
                     
                     <div style="display:flex;align-items:center;justify-content:space-between;width:100%;max-width:400px;margin-top:8px">
                         <div class="zoom-controls">
-                            <button class="zoom-btn" onclick="zoomOut()">?</button>
+                            <button class="zoom-btn" onclick="zoomOut()">−</button>
                             <button class="zoom-btn" onclick="zoomReset()">1:1</button>
                             <button class="zoom-btn" onclick="zoomIn()">+</button>
                         </div>
                         <div class="settings-row">
                             <input type="checkbox" id="confirmToggle" ${confirmBeforePlace ? 'checked' : ''} onchange="toggleConfirm(this)">
-                            <label for="confirmToggle">���� Ȯ��</label>
+                            <label for="confirmToggle">착수 확인</label>
                         </div>
                     </div>
                     
                     <div class="game-actions">
-                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">�� ����</button>' : ''}
-                        <button class="btn" onclick="exitGame()">������</button>
+                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">새 게임</button>' : ''}
+                        <button class="btn" onclick="exitGame()">나가기</button>
                     </div>
                 </div>
             `;
@@ -906,7 +879,7 @@
         function exitGame() {
             clearTimer();
             if (isMultiplayer && mpUI.getClient()) {
-                if (confirm('������ �����ðڽ��ϱ�?')) {
+                if (confirm('게임을 나가시겠습니까?')) {
                     mpUI.getClient().leaveRoom().catch(() => {});
                     MultiplayerClient.resetInstance();
                     isMultiplayer = false;
