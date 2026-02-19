@@ -3271,7 +3271,7 @@
                         <button class="btn btn-enhance" onclick="enhance()" ${!canEnhance ? 'disabled' : ''}>
                             ${weapon.level >= MAX_ENHANCE_LEVEL ? '🏆 MAX' : `⚡ 강화 (${rates.cost.toLocaleString()}G)`}
                         </button>
-                        <button class="btn btn-home" onclick="showMain()">🏠</button>
+                        <button class="btn btn-home" onclick="showMain()">홈으로</button>
                     </div>
                 </div>
             `;
@@ -6174,6 +6174,51 @@
                 }
             }
         };
+
+        // ===== HISTORY NAVIGATION =====
+        let currentScreen = 'main';
+        
+        function navigateTo(screen, showFn) {
+            if (currentScreen !== screen) {
+                history.pushState({ screen }, '', `#${screen}`);
+            }
+            currentScreen = screen;
+            showFn();
+        }
+        
+        // Wrap show functions for history
+        const _showMain = showMain;
+        const _showEnhance = showEnhance;
+        const _showBlacksmith = showBlacksmith;
+        const _showRanking = showRanking;
+        const _showBattleLobby = showBattleLobby;
+        const _showHunt = showHunt;
+        const _showMasteryDetail = showMasteryDetail;
+        
+        showMain = function() { currentScreen = 'main'; _showMain(); };
+        showEnhance = function() { navigateTo('enhance', _showEnhance); };
+        showBlacksmith = function() { navigateTo('blacksmith', _showBlacksmith); };
+        showRanking = function() { navigateTo('ranking', _showRanking); };
+        showBattleLobby = function() { navigateTo('battle', _showBattleLobby); };
+        showHunt = function() { navigateTo('hunt', _showHunt); };
+        showMasteryDetail = function() { navigateTo('mastery', _showMasteryDetail); };
+        
+        window.addEventListener('popstate', (e) => {
+            const screen = e.state?.screen || 'main';
+            currentScreen = screen;
+            switch (screen) {
+                case 'enhance': _showEnhance(); break;
+                case 'blacksmith': _showBlacksmith(); break;
+                case 'ranking': _showRanking(); break;
+                case 'battle': _showBattleLobby(); break;
+                case 'hunt': _showHunt(); break;
+                case 'mastery': _showMasteryDetail(); break;
+                default: _showMain(); break;
+            }
+        });
+        
+        // Set initial state
+        history.replaceState({ screen: 'main' }, '', '#main');
 
         // ===== INIT =====
         loadState();
