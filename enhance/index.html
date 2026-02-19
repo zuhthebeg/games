@@ -436,6 +436,44 @@
             0% { opacity: 0.8; }
             100% { opacity: 0; }
         }
+        @keyframes emojiExplode {
+            0% { transform: translate(0,0) scale(0.3) rotate(0deg); opacity: 1; }
+            20% { transform: translate(calc(var(--tx)*0.3), calc(var(--ty)*0.3)) scale(1.2) rotate(90deg); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0.5) rotate(360deg); opacity: 0; }
+        }
+        @keyframes glowPulse {
+            0% { opacity: 0; transform: scale(0.5); }
+            30% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.5); }
+        }
+        @keyframes ringExpand {
+            0% { transform: translate(-50%,-50%) scale(1); opacity: 0.9; }
+            100% { transform: translate(-50%,-50%) scale(8); opacity: 0; }
+        }
+        @keyframes enhanceShake {
+            0%,100% { transform: translate(0,0); }
+            10% { transform: translate(calc(var(--shake-str)*-1), calc(var(--shake-str)*0.5)); }
+            20% { transform: translate(var(--shake-str), calc(var(--shake-str)*-0.8)); }
+            30% { transform: translate(calc(var(--shake-str)*-0.8), var(--shake-str)); }
+            40% { transform: translate(calc(var(--shake-str)*0.6), calc(var(--shake-str)*-0.4)); }
+            50% { transform: translate(calc(var(--shake-str)*-0.4), calc(var(--shake-str)*0.6)); }
+            60% { transform: translate(calc(var(--shake-str)*0.3), calc(var(--shake-str)*-0.3)); }
+            80% { transform: translate(calc(var(--shake-str)*-0.1), calc(var(--shake-str)*0.1)); }
+        }
+        @keyframes rainbowBorder {
+            0% { opacity: 1; border-width: 4px; }
+            50% { opacity: 0.8; border-width: 6px; }
+            100% { opacity: 0; border-width: 2px; }
+        }
+        @keyframes lightningFlash {
+            0% { opacity: 0.9; transform: scaleX(1); }
+            50% { opacity: 1; transform: scaleX(2); }
+            100% { opacity: 0; transform: scaleX(0.5); }
+        }
+        @keyframes sparkFall {
+            0% { transform: translateY(0) scaleY(1); opacity: 0.9; }
+            100% { transform: translateY(100vh) scaleY(0.3); opacity: 0; }
+        }
         @keyframes screenShake {
             0%, 100% { transform: translateX(0); }
             10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
@@ -3504,10 +3542,8 @@
                 detail = `+${from} → +${to}`;
                 textColor = 'var(--success)';
                 
-                // 고강화 성공 시 특별 이펙트
-                if (to >= 8) {
-                    createEnhanceSuccessEffect(to);
-                }
+                // 강화 성공 이펙트 (레벨별 스케일)
+                createEnhanceSuccessEffect(to);
             } else if (type === 'destroy') {
                 if (newWeapon) {
                     popupClass += ' destroy';
@@ -3564,98 +3600,126 @@
         }
         
         function createEnhanceSuccessEffect(level) {
-            const colors = {
-                8: ['#00aaff', '#00ffff', '#0066ff'],
-                9: ['#00ccff', '#00ffff', '#6666ff'],
-                10: ['#aa00ff', '#ff00ff', '#6600ff'],
-                11: ['#cc00ff', '#ff66ff', '#9900ff'],
-                12: ['#ff00cc', '#ff66ff', '#cc00ff'],
-                13: ['#ff0000', '#ff6600', '#ffcc00'],
-                14: ['#ff3300', '#ff9900', '#ffff00'],
-                15: ['#ff0066', '#ff6600', '#ff0000'],
-                16: ['#ffd700', '#ffaa00', '#ffff00'],
-                17: ['#ffcc00', '#fff000', '#ffd700'],
-                18: ['#fff000', '#ffffff', '#ffd700'],
-                19: ['#ff00ff', '#00ffff', '#ffff00'],
-                20: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'],
-                21: ['#ff0000', '#ff8000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff']
+            const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+
+            // 티어별 컬러/이모지 세팅
+            const tiers = {
+                low:  { colors: ['#00aaff','#00ffff','#4488ff'], emojis: ['✨','💎'], glow: '#00aaff' },
+                mid:  { colors: ['#aa00ff','#ff00ff','#cc66ff'], emojis: ['🔮','💜','⚡'], glow: '#aa00ff' },
+                high: { colors: ['#ff3300','#ff6600','#ffcc00'], emojis: ['🔥','💥','☄️'], glow: '#ff4400' },
+                epic: { colors: ['#ffd700','#ffaa00','#fff000'], emojis: ['👑','🌟','💫','⭐'], glow: '#ffd700' },
+                myth: { colors: ['#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff'], emojis: ['🌈','💎','👑','🔥','⚡','🌟'], glow: '#ffffff' }
             };
-            
-            const effectColors = colors[level] || colors[8];
-            const particleCount = Math.min(level * 5, 80);
-            const duration = 1500 + (level * 100);
-            
-            // 화면 흔들림 (고강화일수록 강하게)
+            const t = level >= 20 ? 'myth' : level >= 16 ? 'epic' : level >= 13 ? 'high' : level >= 10 ? 'mid' : 'low';
+            const tier = tiers[t];
+            const dur = 1200 + level * 80;
+
+            // ① 배경 글로우 플래시
             if (level >= 10) {
-                document.body.style.animation = `screenShake ${0.1 + (level - 10) * 0.02}s ease-in-out`;
-                setTimeout(() => document.body.style.animation = '', 500);
+                const glow = document.createElement('div');
+                const intensity = Math.min(0.6, 0.15 + (level - 10) * 0.04);
+                glow.style.cssText = `position:fixed;inset:0;pointer-events:none;z-index:9990;
+                    background:radial-gradient(circle at 50% 45%, ${tier.glow}${Math.round(intensity*255).toString(16).padStart(2,'0')}, transparent 70%);
+                    animation: glowPulse ${level >= 15 ? '0.6' : '0.8'}s ease-out forwards;`;
+                document.body.appendChild(glow);
+                setTimeout(() => glow.remove(), 1000);
             }
-            
-            // 폭발 파티클 생성
-            for (let i = 0; i < particleCount; i++) {
+
+            // ② 이모지 파티클 (10+ 부터 화려한 이모지, 이하는 스파크)
+            const count = level >= 20 ? 60 : level >= 15 ? 45 : level >= 10 ? 30 : Math.min(level * 4, 25);
+            for (let i = 0; i < count; i++) {
                 setTimeout(() => {
-                    const particle = document.createElement('div');
-                    const size = 5 + Math.random() * (level > 15 ? 20 : 10);
-                    const color = effectColors[Math.floor(Math.random() * effectColors.length)];
-                    const angle = (Math.random() * 360) * (Math.PI / 180);
-                    const velocity = 100 + Math.random() * (level * 15);
-                    const startX = window.innerWidth / 2;
-                    const startY = window.innerHeight / 2;
-                    
-                    particle.style.cssText = `
-                        position: fixed;
-                        width: ${size}px;
-                        height: ${size}px;
-                        background: ${color};
-                        border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
-                        left: ${startX}px;
-                        top: ${startY}px;
-                        pointer-events: none;
-                        z-index: 10000;
-                        box-shadow: 0 0 ${size * 2}px ${color};
-                        animation: particleExplode ${duration}ms ease-out forwards;
-                        --tx: ${Math.cos(angle) * velocity}px;
-                        --ty: ${Math.sin(angle) * velocity}px;
-                    `;
-                    
-                    document.body.appendChild(particle);
-                    setTimeout(() => particle.remove(), duration);
-                }, i * 15);
+                    const el = document.createElement('div');
+                    const angle = (Math.random() * 360) * Math.PI / 180;
+                    const vel = 80 + Math.random() * level * 12;
+                    const useEmoji = level >= 10 && Math.random() < 0.5;
+                    const size = useEmoji ? (18 + Math.random() * 14) : (4 + Math.random() * 8);
+                    const color = tier.colors[Math.floor(Math.random() * tier.colors.length)];
+
+                    if (useEmoji) {
+                        const emoji = tier.emojis[Math.floor(Math.random() * tier.emojis.length)];
+                        el.textContent = emoji;
+                        el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;font-size:${size}px;
+                            pointer-events:none;z-index:10001;
+                            animation: emojiExplode ${dur}ms cubic-bezier(0.25,0.46,0.45,0.94) forwards;
+                            --tx:${Math.cos(angle)*vel}px;--ty:${Math.sin(angle)*vel - 60}px;`;
+                    } else {
+                        const shapes = ['50%', '2px', '0'];
+                        el.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;
+                            width:${size}px;height:${size}px;background:${color};
+                            border-radius:${shapes[Math.floor(Math.random()*shapes.length)]};
+                            pointer-events:none;z-index:10000;box-shadow:0 0 ${size*3}px ${color};
+                            animation: particleExplode ${dur}ms ease-out forwards;
+                            --tx:${Math.cos(angle)*vel}px;--ty:${Math.sin(angle)*vel}px;`;
+                    }
+                    document.body.appendChild(el);
+                    setTimeout(() => el.remove(), dur + 100);
+                }, i * (level >= 15 ? 8 : 12));
             }
-            
-            // +15 이상: 원형 파동 효과
+
+            // ③ 링 파동 (10+: 1개, 15+: 2개, 20+: 3개)
+            const rings = level >= 20 ? 3 : level >= 15 ? 2 : level >= 10 ? 1 : 0;
+            for (let r = 0; r < rings; r++) {
+                setTimeout(() => {
+                    const ring = document.createElement('div');
+                    ring.style.cssText = `position:fixed;width:60px;height:60px;
+                        border:${2 + r}px solid ${tier.colors[r % tier.colors.length]};border-radius:50%;
+                        left:50%;top:45%;transform:translate(-50%,-50%);
+                        pointer-events:none;z-index:9995;
+                        box-shadow:0 0 20px ${tier.colors[r % tier.colors.length]}40;
+                        animation: ringExpand ${0.8 + r * 0.15}s ease-out forwards;`;
+                    document.body.appendChild(ring);
+                    setTimeout(() => ring.remove(), 1200);
+                }, r * 150);
+            }
+
+            // ④ 화면 흔들림 (10+)
+            if (level >= 10) {
+                const str = Math.min(8, 2 + (level - 10) * 0.5);
+                document.body.style.animation = `enhanceShake ${0.3 + (level-10)*0.02}s ease-out`;
+                document.body.style.setProperty('--shake-str', str + 'px');
+                setTimeout(() => document.body.style.animation = '', 600);
+            }
+
+            // ⑤ 20+: 전체 화면 무지개 보더 + 번개
+            if (level >= 20) {
+                const border = document.createElement('div');
+                border.style.cssText = `position:fixed;inset:0;pointer-events:none;z-index:9992;
+                    border:4px solid transparent;border-image:linear-gradient(45deg,red,orange,yellow,green,cyan,blue,violet) 1;
+                    animation: rainbowBorder 1.5s linear forwards;`;
+                document.body.appendChild(border);
+                setTimeout(() => border.remove(), 1500);
+                // 번개
+                for (let l = 0; l < 3; l++) {
+                    setTimeout(() => {
+                        const lightning = document.createElement('div');
+                        const lx = Math.random() * window.innerWidth;
+                        lightning.style.cssText = `position:fixed;left:${lx}px;top:0;width:3px;height:100vh;
+                            background:linear-gradient(to bottom,transparent,#fff,${tier.colors[0]},transparent);
+                            pointer-events:none;z-index:10002;opacity:0.8;
+                            animation: lightningFlash 0.2s ease-out forwards;`;
+                        document.body.appendChild(lightning);
+                        setTimeout(() => lightning.remove(), 250);
+                    }, l * 100 + 200);
+                }
+            }
+
+            // ⑥ 15+: 화면 상단에서 내려오는 스파크 샤워
             if (level >= 15) {
-                const wave = document.createElement('div');
-                wave.style.cssText = `
-                    position: fixed;
-                    width: 100px;
-                    height: 100px;
-                    border: 3px solid ${effectColors[0]};
-                    border-radius: 50%;
-                    left: 50%;
-                    top: 50%;
-                    transform: translate(-50%, -50%);
-                    pointer-events: none;
-                    z-index: 9999;
-                    animation: waveExpand 1s ease-out forwards;
-                `;
-                document.body.appendChild(wave);
-                setTimeout(() => wave.remove(), 1000);
-            }
-            
-            // +18 이상: 플래시 효과
-            if (level >= 18) {
-                const flash = document.createElement('div');
-                flash.style.cssText = `
-                    position: fixed;
-                    inset: 0;
-                    background: white;
-                    pointer-events: none;
-                    z-index: 9998;
-                    animation: flashEffect 0.3s ease-out forwards;
-                `;
-                document.body.appendChild(flash);
-                setTimeout(() => flash.remove(), 300);
+                for (let s = 0; s < 20; s++) {
+                    setTimeout(() => {
+                        const spark = document.createElement('div');
+                        const sx = Math.random() * window.innerWidth;
+                        const color = tier.colors[Math.floor(Math.random() * tier.colors.length)];
+                        spark.style.cssText = `position:fixed;left:${sx}px;top:-10px;
+                            width:3px;height:${15 + Math.random()*20}px;
+                            background:linear-gradient(to bottom,${color},transparent);
+                            pointer-events:none;z-index:10001;border-radius:2px;
+                            animation: sparkFall ${0.6 + Math.random()*0.8}s ease-in forwards;`;
+                        document.body.appendChild(spark);
+                        setTimeout(() => spark.remove(), 1500);
+                    }, s * 40);
+                }
             }
         }
 
