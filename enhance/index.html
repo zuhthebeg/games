@@ -4859,6 +4859,87 @@
             return { type, ...m, currentHp: m.hp, maxHp: m.hp };
         }
 
+        const RELAY_URL = 'https://relay.cocy.io';
+
+        function getPlayerId() {
+            let id = localStorage.getItem('enhance_player_id');
+            if (!id) { id = 'p_' + Math.random().toString(36).substr(2, 9); localStorage.setItem('enhance_player_id', id); }
+            return id;
+        }
+
+        async function fetchBossDialogue(monster) {
+            try {
+                const res = await fetch(`${RELAY_URL}/api/llm/boss`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        playerId: getPlayerId(),
+                        bossId: monster.type,
+                        bossName: monster.name.replace(/[🔥👹💀👻🐍❄️🦅🌟😈⚔️💧🌍💨]/g, '').trim(),
+                        bossTier: monster.tier,
+                        playerWeapon: state.weapon.name,
+                        playerLevel: state.weapon.level,
+                        playerGrade: state.weapon.grade,
+                        playerGold: state.gold,
+                        playerElement: state.weapon.element || 'none',
+                        gameId: 'enhance'
+                    })
+                });
+                if (!res.ok) throw new Error('API error');
+                return await res.json();
+            } catch (e) {
+                console.error('Boss dialogue fetch failed:', e);
+                return null;
+            }
+        }
+
+        function showBossDialogue(bossData) {
+            if (!bossData || !bossData.dialogue) return;
+            const bubble = document.getElementById('bossBubble');
+            if (!bubble) return;
+
+            const emotionEmoji = { angry: '😤', amused: '😏', scared: '😨', bored: '🥱', excited: '🤩' };
+            const emoji = emotionEmoji[bossData.emotion] || '💬';
+
+            bubble.style.display = 'block';
+            bubble.innerHTML = '';
+
+            // 타이핑 효과
+            const text = `${emoji} ${bossData.dialogue}`;
+            let i = 0;
+            const typing = setInterval(() => {
+                if (i < text.length) {
+                    bubble.textContent += text[i];
+                    i++;
+                } else {
+                    clearInterval(typing);
+                    // 특수 스킬 표시
+                    if (bossData.action === 'special_skill' && bossData.skillName) {
+                        setTimeout(() => {
+                            bubble.innerHTML += `<br><span style="color:#ff6600;font-weight:bold;">⚡ ${bossData.skillName}!</span>`;
+                            if (bossData.skillEffect) bubble.innerHTML += `<br><span style="color:#999;font-size:11px;">${bossData.skillEffect}</span>`;
+                        }, 500);
+                    }
+                    // 골드 선물
+                    if (bossData.action === 'gift' && bossData.goldGift) {
+                        setTimeout(() => {
+                            state.gold += bossData.goldGift;
+                            saveState();
+                            bubble.innerHTML += `<br><span style="color:#ffd700;font-weight:bold;">💰 +${bossData.goldGift.toLocaleString()} G 획득!</span>`;
+                            // 골드 표시 업데이트
+                            const goldEl = document.querySelector('.gold-amount');
+                            if (goldEl) goldEl.textContent = state.gold.toLocaleString() + ' G';
+                        }, 800);
+                    }
+                }
+            }, 40);
+
+            // 보스 특수 스킬이면 huntState에 기록
+            if (bossData.action === 'special_skill') {
+                huntState.bossSpecialSkill = { name: bossData.skillName, effect: bossData.skillEffect };
+            }
+        }
+
         function showHunt() {
             // Initialize hunt state
             const playerStats = getWeaponStats(state.weapon);
@@ -4874,6 +4955,13 @@
                 totalGoldEarned: 0
             };
             renderHunt();
+
+            // 보스 등장 시 AI 대사 호출
+            if (huntState.monster.isBoss) {
+                fetchBossDialogue(huntState.monster).then(data => {
+                    if (data) showBossDialogue(data);
+                });
+            }
         }
 
         function renderHunt() {
@@ -4914,6 +5002,8 @@
                             <span>💰 ${monster.gold[0]}-${monster.gold[1]}</span>
                         </div>
                     </div>
+
+                    ${monster.isBoss ? `<div id="bossBubble" style="display:none;background:rgba(255,50,50,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:12px;padding:10px 14px;margin:-4px 0 4px;font-size:13px;line-height:1.5;color:#ff9999;text-align:center;min-height:20px;"></div>` : ''}
 
                     <div class="hunt-vs">⚔️ VS ⚔️</div>
 
@@ -5553,6 +5643,13 @@
                 const monsterCrit = Math.random() * 100 < monster.crit;
                 let finalMonsterDamage = monsterCrit ? Math.floor(monsterDamage * 1.5) : monsterDamage;
                 
+                // 보스 특수 스킬 추가 데미지 (30% 증가)
+                if (huntState.bossSpecialSkill && monster.isBoss) {
+                    finalMonsterDamage = Math.floor(finalMonsterDamage * 1.3);
+                    huntState.log.push({ type: 'crit', text: `⚡ ${huntState.bossSpecialSkill.name}! (+30% 데미지)` });
+                    huntState.bossSpecialSkill = null; // 1회성
+                }
+
                 // 🛡️ 무적모드
                 if (window.debugGodMode) finalMonsterDamage = 0;
                 
@@ -5844,6 +5941,7 @@
             huntState.monster = spawnMonster();
             huntState.log = [{ type: 'info', text: `👀 새로운 몬스터 발견!` }];
             renderHunt();
+            if (huntState.monster.isBoss) fetchBossDialogue(huntState.monster).then(d => d && showBossDialogue(d));
         }
         
         // 사망 후 다시 사냥 (새 무기, 만피, 골드 0)
@@ -5878,6 +5976,7 @@
             huntState.player.hp = Math.min(huntState.player.maxHp, huntState.player.hp + Math.floor(huntState.player.maxHp * 0.1));
             huntState.log = [{ type: 'info', text: `❤️ HP 10% 회복!` }];
             renderHunt();
+            if (huntState.monster.isBoss) fetchBossDialogue(huntState.monster).then(d => d && showBossDialogue(d));
         }
         
         function huntStop() {
