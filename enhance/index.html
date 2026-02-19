@@ -4894,15 +4894,28 @@
             return 5;
         }
 
+        function applyBossScaling(monster) {
+            const kills = state.bossKills || 0;
+            if (kills <= 0) return monster;
+            const scale = 1 + kills * 0.05; // 보스킬당 +5%
+            return {
+                ...monster,
+                hp: Math.floor(monster.hp * scale),
+                currentHp: Math.floor(monster.currentHp * scale),
+                maxHp: Math.floor(monster.maxHp * scale),
+                damage: [Math.floor(monster.damage[0] * scale), Math.floor(monster.damage[1] * scale)]
+            };
+        }
+
         function spawnMonster(forceType = null) {
             if (forceType && MONSTERS[forceType]) {
                 const m = MONSTERS[forceType];
-                return {
+                return applyBossScaling({
                     type: forceType,
                     ...m,
                     currentHp: m.hp,
                     maxHp: m.hp
-                };
+                });
             }
 
             // 데미지 기반 티어 (레벨보다 정확함)
@@ -4919,7 +4932,7 @@
                 const bosses = Object.entries(MONSTERS).filter(([k, v]) => v.isBoss && v.tier <= bossTier);
                 if (bosses.length > 0) {
                     const [type, m] = bosses[Math.floor(Math.random() * bosses.length)];
-                    return { type, ...m, currentHp: m.hp, maxHp: m.hp };
+                    return applyBossScaling({ type, ...m, currentHp: m.hp, maxHp: m.hp });
                 }
             }
             
@@ -4942,11 +4955,11 @@
                 // 해당 티어 몬스터 없으면 가장 가까운 티어
                 const allMonsters = Object.entries(MONSTERS).filter(([k, v]) => !v.isBoss);
                 const [type, m] = allMonsters[Math.floor(Math.random() * allMonsters.length)];
-                return { type, ...m, currentHp: m.hp, maxHp: m.hp };
+                return applyBossScaling({ type, ...m, currentHp: m.hp, maxHp: m.hp });
             }
             
             const [type, m] = eligibleMonsters[Math.floor(Math.random() * eligibleMonsters.length)];
-            return { type, ...m, currentHp: m.hp, maxHp: m.hp };
+            return applyBossScaling({ type, ...m, currentHp: m.hp, maxHp: m.hp });
         }
 
         // RELAY_URL is already declared in /lib/multiplayer.js
