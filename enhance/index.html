@@ -12,6 +12,7 @@
     <meta property="og:locale" content="ko_KR">
     <title>무기 강화 & 배틀</title>
     <link rel="icon" href="icon.svg">
+    <script>if(location.search.includes('debug=1')){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';s.onload=function(){eruda.init()};document.head.appendChild(s)}</script>
     <script src="/lib/multiplayer.js?v=20260213v1"></script>
     <script src="/lib/multiplayer-ui.js?v=20260210v9"></script>
     <script src="/lib/shared-wallet.js?v=20260214"></script>
@@ -6327,8 +6328,13 @@
         history.replaceState({ screen: 'main' }, '', '#main');
 
         // ===== INIT =====
-        loadState();
-        showMain();
+        try {
+            loadState();
+            showMain();
+        } catch(e) {
+            console.error('INIT ERROR:', e);
+            document.getElementById('app').innerHTML = '<div style="padding:20px;color:red;">초기화 에러: ' + e.message + '</div>';
+        }
         // 클라우드 동기화 체크 (비동기)
         checkCloudSync().then(() => {
             // 동기화 후 화면 갱신
