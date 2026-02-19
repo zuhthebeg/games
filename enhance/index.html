@@ -2326,7 +2326,8 @@
             protectionScrolls: 3,
             useProtection: false,
             stats: { attempts: 0, successes: 0, fails: 0, destroys: 0, wins: 0, losses: 0 },
-            mastery: { attacks: 0, kills: 0 }  // 숙련도 시스템
+            mastery: { attacks: 0, kills: 0 },  // 숙련도 시스템
+            bossKills: 0  // 보스 처치 횟수 (강화확률 +1% per kill)
         };
         
         // ===== CLOUD SYNC =====
@@ -3241,7 +3242,7 @@
                     <div class="enhance-panel">
                         <div class="enhance-row">
                             <span class="enhance-label">🎯 성공</span>
-                            <span class="enhance-value ${rates.success >= 50 ? 'safe' : rates.success >= 20 ? '' : 'danger'}">${rates.success}%</span>
+                            <span class="enhance-value ${rates.success >= 50 ? 'safe' : rates.success >= 20 ? '' : 'danger'}">${rates.success}%${(state.bossKills || 0) > 0 ? ` <span style="color:#ff8c00;font-size:0.7em;">🐉+${state.bossKills}%</span>` : ''}</span>
                         </div>
                         <div class="enhance-row">
                             <span class="enhance-label">${rates.destroy >= 50 ? '💀' : rates.destroy > 0 ? '⚠️' : '✅'} 파괴</span>
@@ -3353,6 +3354,11 @@
                 // 유리검: 파괴확률 30% + 레벨*3% (최대 90%)
                 const destroyChance = Math.min(90, 30 + weapon.level * 3);
                 return { success: baseRates.success, destroy: destroyChance, cost: baseRates.cost };
+            }
+            // 🐉 보스킬 보너스: 보스 처치당 강화확률 +1%
+            const bossBonus = (state.bossKills || 0) * 1;
+            if (bossBonus > 0) {
+                return { ...baseRates, success: Math.min(99, baseRates.success + bossBonus) };
             }
             return baseRates;
         }
@@ -5701,7 +5707,10 @@
             huntState.monstersKilled++;
             huntState.totalGoldEarned += goldReward;
             // 보스 처치 시 카운터 기록 (다음 보스까지 최소 5킬 필요)
-            if (monster.isBoss) huntState.lastBossKill = huntState.monstersKilled;
+            if (monster.isBoss) {
+                huntState.lastBossKill = huntState.monstersKilled;
+                state.bossKills = (state.bossKills || 0) + 1;
+            }
             
             // 🔥 피닉스 지팡이: 연속 사냥 시 HP 100% 회복!
             if (isPhoenixStaff(state.weapon)) {
@@ -5769,16 +5778,19 @@
             document.getElementById('resultIcon').textContent = isLucky ? '🎰' : (monster.isBoss ? '🏆' : '✨');
             document.getElementById('resultText').textContent = isLucky ? '🎰 럭키드로우!' : `${monster.name} 처치!`;
             document.getElementById('resultText').style.color = isLucky ? 'var(--gold)' : 'var(--success)';
+            const bossBonusHtml = monster.isBoss ? `<div style="color:#ff8c00;margin:4px 0;">🐉 강화확률 +1% (누적 ${state.bossKills}%)</div>` : '';
             document.getElementById('resultDetail').innerHTML = isLucky ? `
                 <div style="font-size:1.5rem;color:var(--gold);animation:pulse 0.5s infinite alternate;">
                     💰 +${finalGold.toLocaleString()}G
                 </div>
                 <div style="color:var(--success);margin:8px 0;">⚡ 한방킬 10배 보너스!</div>
+                ${bossBonusHtml}
                 <span style="color:var(--muted);font-size:0.85em">
                     🔧 내구도: ${state.weapon.durability || 100}% | ⭐ 처치: ${huntState.monstersKilled}
                 </span>
             ` : `
                 💰 +${finalGold.toLocaleString()}G<br>
+                ${bossBonusHtml}
                 <span style="color:var(--muted);font-size:0.85em">
                     🔧 내구도: ${state.weapon.durability || 100}% | ⭐ 처치: ${huntState.monstersKilled}
                 </span>
