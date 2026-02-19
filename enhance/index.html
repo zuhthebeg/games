@@ -2983,9 +2983,27 @@
             hammer: 'icons/hammer-legendary.png'
         };
 
+        const MYTHIC_ICONS = {
+            sword: 'icons/sword-mythic.png',
+            axe: 'icons/axe-mythic.png',
+            bow: 'icons/bow-mythic.png',
+            spear: 'icons/spear-mythic.png',
+            dagger: 'icons/dagger-mythic.png',
+            staff: 'icons/staff-mythic.png',
+            katana: 'icons/katana-mythic.png',
+            scythe: 'icons/scythe-mythic.png',
+            knuckle: 'icons/knuckle-mythic.png',
+            crossbow: 'icons/crossbow-mythic.png',
+            hammer: 'icons/hammer-mythic.png'
+        };
+
         function getWeaponIcon(weapon) {
             if (weapon.name === '나무막대기') {
                 return WEAPON_TYPES.staff.img;
+            }
+            // 신화 등급: 커스텀 컬러 이미지
+            if (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) {
+                return MYTHIC_ICONS[weapon.type];
             }
             // 전설 등급: 커스텀 컬러 이미지
             if (weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) {
@@ -2998,11 +3016,11 @@
         function getWeaponImgHtml(weapon, size = 80) {
             const gradeData = GRADES[weapon.grade];
             const iconUrl = getWeaponIcon(weapon);
-            const isLegendaryImg = weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type];
-            const filterStyle = isLegendaryImg
+            const isCustomImg = (weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]);
+            const filterStyle = isCustomImg
                 ? `drop-shadow(0 0 15px ${gradeData.color})`
                 : `drop-shadow(0 0 15px ${gradeData.color}) brightness(0) invert(1)`;
-            const extraClass = isLegendaryImg ? ' legendary-img' : '';
+            const extraClass = isCustomImg ? ' legendary-img' : '';
             return `<img src="${iconUrl}" 
                          class="weapon-icon${extraClass}" 
                          style="width:${size}px;height:${size}px;filter:${filterStyle};object-fit:contain;" 
@@ -3197,7 +3215,7 @@
 
                         <div class="weapon-icon-area">
                             <img src="${getWeaponIcon(weapon)}" 
-                                 class="weapon-icon${weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type] ? ' legendary-img' : ''}" 
+                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) ? ' legendary-img' : ''}" 
                                  style="width:100px;height:100px;filter:drop-shadow(0 0 20px ${gradeData.color});"
                                  alt="${weapon.name}">
                         </div>
@@ -3314,7 +3332,7 @@
 
                         <div class="weapon-icon-area">
                             <img src="${getWeaponIcon(weapon)}" 
-                                 class="weapon-icon${weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type] ? ' legendary-img' : ''}" 
+                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) ? ' legendary-img' : ''}" 
                                  id="weaponIcon"
                                  style="width:120px;height:120px;filter:drop-shadow(0 0 20px ${gradeData.color});"
                                  alt="${weapon.name}">
