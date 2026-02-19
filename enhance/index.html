@@ -62,20 +62,20 @@
 
         header {
             text-align: center;
-            margin-bottom: 10px;
-            padding-top: 4px;
+            margin-bottom: 4px;
+            padding-top: 2px;
         }
 
         h1 {
-            font-size: 1.6rem;
-            margin-bottom: 4px;
+            font-size: 1.2rem;
+            margin-bottom: 2px;
             background: linear-gradient(135deg, var(--accent), var(--gold));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
-        .subtitle { color: var(--muted); font-size: 0.85rem; }
+        .subtitle { color: var(--muted); font-size: 0.75rem; }
 
         /* Gold Display - hidden, using global SharedWallet bar */
         .gold-display {
@@ -117,8 +117,8 @@
             background: var(--card);
             border: 2px solid var(--card-border);
             border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 10px;
+            padding: 10px;
+            margin-bottom: 6px;
             position: relative;
             overflow: hidden;
         }
@@ -142,7 +142,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
         }
 
         .weapon-info { flex: 1; }
@@ -196,7 +196,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 12px;
             position: relative;
         }
 
@@ -205,6 +205,13 @@
             height: 80px;
             filter: drop-shadow(0 0 15px currentColor);
             transition: all 0.3s;
+        }
+
+        /* 전설 JPG 이미지: 흰 배경을 투명하게 */
+        .weapon-icon.legendary-img {
+            mix-blend-mode: screen;
+            border-radius: 8px;
+            background: transparent !important;
         }
 
         .weapon-icon.shake { animation: shake 0.5s ease-in-out; }
@@ -745,22 +752,22 @@
         .weapon-stats {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            gap: 6px;
         }
 
         .stat-item {
             background: rgba(255,255,255,0.03);
             border-radius: 8px;
-            padding: 10px;
+            padding: 6px 8px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
-        .stat-icon { font-size: 1.3rem; }
+        .stat-icon { font-size: 1.1rem; }
         .stat-info { flex: 1; }
-        .stat-value { font-size: 1rem; font-weight: 600; }
-        .stat-label { font-size: 0.7rem; color: var(--muted); }
+        .stat-value { font-size: 0.9rem; font-weight: 600; }
+        .stat-label { font-size: 0.65rem; color: var(--muted); }
 
         .stat-value.damage { color: #ff6b6b; }
         .stat-value.crit { color: var(--gold); }
@@ -771,12 +778,12 @@
         .mode-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 8px;
+            margin-bottom: 8px;
         }
 
         .mode-btn {
-            padding: 20px 12px;
+            padding: 14px 10px;
             border: none;
             border-radius: 12px;
             font-size: 1rem;
@@ -1234,8 +1241,8 @@
             color: white;
         }
 
-        .mode-icon { font-size: 1.8rem; }
-        .mode-label { font-size: 0.85rem; }
+        .mode-icon { font-size: 1.5rem; }
+        .mode-label { font-size: 0.8rem; }
 
         /* Enhance Panel */
         .enhance-panel {
@@ -1840,8 +1847,8 @@
             background: var(--card);
             border: 1px solid var(--card-border);
             border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 16px;
+            padding: 8px;
+            margin-bottom: 8px;
             display: flex;
             justify-content: space-around;
             text-align: center;
@@ -1851,8 +1858,8 @@
             display: block;
         }
 
-        .summary-value { font-size: 1.1rem; font-weight: 600; }
-        .summary-label { font-size: 0.7rem; color: var(--muted); }
+        .summary-value { font-size: 0.95rem; font-weight: 600; }
+        .summary-label { font-size: 0.65rem; color: var(--muted); }
 
         /* Confetti */
         .confetti {
@@ -1865,9 +1872,9 @@
 
         footer {
             text-align: center;
-            padding: 16px;
+            padding: 6px;
             color: var(--muted);
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
 
         footer a { color: var(--accent); text-decoration: none; }
@@ -2997,10 +3004,10 @@
             const filterStyle = isLegendaryImg
                 ? `drop-shadow(0 0 15px ${gradeData.color})`
                 : `drop-shadow(0 0 15px ${gradeData.color}) brightness(0) invert(1)`;
-            const bgStyle = isLegendaryImg ? 'border-radius:12px;background:rgba(0,0,0,0.3);' : '';
+            const extraClass = isLegendaryImg ? ' legendary-img' : '';
             return `<img src="${iconUrl}" 
-                         class="weapon-icon" 
-                         style="width:${size}px;height:${size}px;filter:${filterStyle};object-fit:contain;${bgStyle}" 
+                         class="weapon-icon${extraClass}" 
+                         style="width:${size}px;height:${size}px;filter:${filterStyle};object-fit:contain;" 
                          alt="${weapon.name}">`;
         }
 
@@ -3192,8 +3199,8 @@
 
                         <div class="weapon-icon-area">
                             <img src="${getWeaponIcon(weapon)}" 
-                                 class="weapon-icon" 
-                                 style="filter:drop-shadow(0 0 20px ${gradeData.color});"
+                                 class="weapon-icon${weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type] ? ' legendary-img' : ''}" 
+                                 style="width:100px;height:100px;filter:drop-shadow(0 0 20px ${gradeData.color});"
                                  alt="${weapon.name}">
                         </div>
 
@@ -3248,7 +3255,7 @@
                         </button>
                     </div>
                     
-                    <button class="mode-btn" onclick="showRanking()" style="width:100%;margin-bottom:16px;background:linear-gradient(135deg,#ffd700,#ff8c00);">
+                    <button class="mode-btn" onclick="showRanking()" style="width:100%;margin-bottom:8px;background:linear-gradient(135deg,#ffd700,#ff8c00);padding:10px;">
                         <span class="mode-icon">🏆</span>
                         <span class="mode-label">랭킹</span>
                     </button>
@@ -3309,9 +3316,9 @@
 
                         <div class="weapon-icon-area">
                             <img src="${getWeaponIcon(weapon)}" 
-                                 class="weapon-icon" 
+                                 class="weapon-icon${weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type] ? ' legendary-img' : ''}" 
                                  id="weaponIcon"
-                                 style="filter:drop-shadow(0 0 20px ${gradeData.color});"
+                                 style="width:120px;height:120px;filter:drop-shadow(0 0 20px ${gradeData.color});"
                                  alt="${weapon.name}">
                         </div>
 
