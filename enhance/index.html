@@ -2762,11 +2762,13 @@
             }
 
             // 랜덤 속성 부여 (등급에 따라 확률 증가)
+            // 🏆 전설 무기: 고정 속성 (이미지와 매칭)
             // 🧙 마법 무기(지팡이, 완드)는 항상 마법 속성 보유!
             const elementChance = { common: 0.1, magic: 0.3, rare: 0.5, legendary: 0.7, unique: 1.0, mythic: 1.0 };
             let element = 'none';
-            if (typeData.isMagic) {
-                // 마법 무기: 100% 마법 속성 부여
+            if (grade === 'legendary' && LEGENDARY_ELEMENTS[type]) {
+                element = LEGENDARY_ELEMENTS[type];
+            } else if (typeData.isMagic) {
                 element = MAGIC_ELEMENTS[Math.floor(Math.random() * MAGIC_ELEMENTS.length)];
             } else if (Math.random() < elementChance[grade]) {
                 const elements = ['fire', 'ice', 'lightning', 'silver', 'poison', 'holy'];
@@ -2881,8 +2883,10 @@
             // 무기 생성
             const weapon = generateWeapon(grade);
             
-            // 속성 덮어쓰기 (특정 조건에서만)
-            if (element !== 'none' || dropSource === 'enhance_destroy_high') {
+            // 속성 덮어쓰기 (전설 무기는 고정 속성 유지)
+            if (weapon.grade === 'legendary' && LEGENDARY_ELEMENTS[weapon.type]) {
+                weapon.element = LEGENDARY_ELEMENTS[weapon.type];
+            } else if (element !== 'none' || dropSource === 'enhance_destroy_high') {
                 weapon.element = element;
             }
             
@@ -2945,9 +2949,42 @@
         }
         
         // 특수 무기 아이콘 (나무막대기 = 나뭇가지 아이콘)
+        // 전설 무기 고정 속성 (이미지 비주얼 기반)
+        const LEGENDARY_ELEMENTS = {
+            sword: 'holy',       // 금빛 성검
+            axe: 'fire',         // 화염 도끼
+            bow: 'holy',         // 금빛 활
+            spear: 'lightning',  // 번개 창
+            dagger: 'poison',    // 독 단검
+            staff: 'ice',        // 아케인 지팡이 → 얼음
+            katana: 'fire',      // 벚꽃 태도 → 불
+            scythe: 'poison',    // 영혼 낫 → 독
+            knuckle: 'lightning', // 번개 너클
+            crossbow: 'fire',    // 폭발 석궁
+            hammer: 'lightning'  // 천둥 해머
+        };
+
+        const LEGENDARY_ICONS = {
+            sword: 'icons/sword-legendary.jpg',
+            axe: 'icons/axe-legendary.jpg',
+            bow: 'icons/bow-legendary.jpg',
+            spear: 'icons/spear-legendary.jpg',
+            dagger: 'icons/dagger-legendary.jpg',
+            staff: 'icons/staff-legendary.jpg',
+            katana: 'icons/katana-legendary.jpg',
+            scythe: 'icons/scythe-legendary.jpg',
+            knuckle: 'icons/knuckle-legendary.jpg',
+            crossbow: 'icons/crossbow-legendary.jpg',
+            hammer: 'icons/hammer-legendary.jpg'
+        };
+
         function getWeaponIcon(weapon) {
             if (weapon.name === '나무막대기') {
-                return WEAPON_TYPES.staff.img;  // 지팡이 아이콘 사용
+                return WEAPON_TYPES.staff.img;
+            }
+            // 전설 등급: 커스텀 컬러 이미지
+            if (weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) {
+                return LEGENDARY_ICONS[weapon.type];
             }
             return WEAPON_TYPES[weapon.type].img;
         }
@@ -2956,10 +2993,14 @@
         function getWeaponImgHtml(weapon, size = 80) {
             const gradeData = GRADES[weapon.grade];
             const iconUrl = getWeaponIcon(weapon);
-            // Use CSS filter to colorize the white SVG icon
+            const isLegendaryImg = weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type];
+            const filterStyle = isLegendaryImg
+                ? `drop-shadow(0 0 15px ${gradeData.color})`
+                : `drop-shadow(0 0 15px ${gradeData.color}) brightness(0) invert(1)`;
+            const bgStyle = isLegendaryImg ? 'border-radius:12px;background:rgba(0,0,0,0.3);' : '';
             return `<img src="${iconUrl}" 
                          class="weapon-icon" 
-                         style="width:${size}px;height:${size}px;filter:drop-shadow(0 0 15px ${gradeData.color}) brightness(0) invert(1);" 
+                         style="width:${size}px;height:${size}px;filter:${filterStyle};object-fit:contain;${bgStyle}" 
                          alt="${weapon.name}">`;
         }
 
