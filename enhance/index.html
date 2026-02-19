@@ -5002,8 +5002,6 @@
 
             document.getElementById('app').innerHTML = `
                 <div class="container hunt-screen">
-                    <button class="btn-back" onclick="exitHunt()">← 도망치기</button>
-                    
                     <div class="gold-display">
                         <span class="gold-icon">💰</span>
                         <span class="gold-amount">${state.gold.toLocaleString()} G</span>
@@ -5055,7 +5053,7 @@
                         </div>
                     </div>
 
-                    <div class="battle-log" id="huntLog" style="height:72px;max-height:72px;overflow:hidden;">
+                    <div class="battle-log" id="huntLog" style="height:120px;max-height:120px;overflow:hidden;">
                         ${huntState.log.slice(-3).reverse().map(entry => `
                             <div class="log-entry ${entry.type}">${entry.text}</div>
                         `).join('')}
