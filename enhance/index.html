@@ -2327,7 +2327,8 @@
             useProtection: false,
             stats: { attempts: 0, successes: 0, fails: 0, destroys: 0, wins: 0, losses: 0 },
             mastery: { attacks: 0, kills: 0 },  // 숙련도 시스템
-            bossKills: 0  // 보스 처치 횟수 (강화확률 +1% per kill)
+            bossKills: 0,  // 보스 처치 횟수 (강화확률 +1% per kill)
+            bossTypeKills: { dragon: 0, demon: 0, undead: 0, elemental: 0 }  // 속성별 보스킬
         };
         
         // ===== CLOUD SYNC =====
@@ -2987,6 +2988,12 @@
                 damageMin = 0;
             }
 
+            // 🐉 보스 속성별 보너스
+            const btk = state?.bossTypeKills || {};
+            if (btk.dragon) { damageMin = Math.floor(damageMin * (1 + btk.dragon * 0.02)); damageMax = Math.floor(damageMax * (1 + btk.dragon * 0.02)); }
+            if (btk.demon) { critChance = Math.min(80, critChance + btk.demon * 1); }
+            if (btk.elemental) { hp = Math.floor(hp * (1 + btk.elemental * 0.03)); }
+
             return { damageMin, damageMax, critChance, critDamage, hp, masteryBonus: globalMasteryBonus, weaponMasteryBonus };
         }
 
@@ -3253,6 +3260,15 @@
                             <span class="enhance-value gold">${rates.cost.toLocaleString()} G</span>
                         </div>
                     </div>
+
+                    ${(() => { const btk = state.bossTypeKills || {}; const any = (btk.dragon||0)+(btk.demon||0)+(btk.undead||0)+(btk.elemental||0); return any > 0 ? `
+                    <div style="background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.3);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:0.8rem;">
+                        <div style="color:#ff8c00;font-weight:600;margin-bottom:4px;">🏆 보스킬 보너스</div>
+                        ${btk.dragon ? `<div>🐉 드래곤 x${btk.dragon} → 공격력 +${btk.dragon*2}%</div>` : ''}
+                        ${btk.demon ? `<div>😈 악마 x${btk.demon} → 크리티컬 +${btk.demon}%</div>` : ''}
+                        ${btk.undead ? `<div>💀 언데드 x${btk.undead} → 골드 +${btk.undead*5}%</div>` : ''}
+                        ${btk.elemental ? `<div>⚡ 정령 x${btk.elemental} → 체력 +${btk.elemental*3}%</div>` : ''}
+                    </div>` : ''; })()}
 
                     ${showProtection ? `
                     <div class="protection-toggle">
@@ -5696,6 +5712,10 @@
             const monster = huntState.monster;
             let goldReward = Math.floor(Math.random() * (monster.gold[1] - monster.gold[0] + 1)) + monster.gold[0];
             
+            // 💀 언데드 보스킬 보너스: 골드 +5% per kill
+            const undeadKills = (state.bossTypeKills || {}).undead || 0;
+            if (undeadKills > 0) goldReward = Math.floor(goldReward * (1 + undeadKills * 0.05));
+            
             // 🎰 한방킬 럭키드로우! 10배 보상!
             const isLuckyDraw = isOneShot && Math.random() < 1.0; // 한방킬이면 무조건 럭키드로우
             if (isLuckyDraw) {
@@ -5710,6 +5730,9 @@
             if (monster.isBoss) {
                 huntState.lastBossKill = huntState.monstersKilled;
                 state.bossKills = (state.bossKills || 0) + 1;
+                if (!state.bossTypeKills) state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
+                const bType = monster.type || 'dragon';
+                if (state.bossTypeKills[bType] !== undefined) state.bossTypeKills[bType]++;
             }
             
             // 🔥 피닉스 지팡이: 연속 사냥 시 HP 100% 회복!
@@ -5778,7 +5801,8 @@
             document.getElementById('resultIcon').textContent = isLucky ? '🎰' : (monster.isBoss ? '🏆' : '✨');
             document.getElementById('resultText').textContent = isLucky ? '🎰 럭키드로우!' : `${monster.name} 처치!`;
             document.getElementById('resultText').style.color = isLucky ? 'var(--gold)' : 'var(--success)';
-            const bossBonusHtml = monster.isBoss ? `<div style="color:#ff8c00;margin:4px 0;">🐉 강화확률 +1% (누적 ${state.bossKills}%)</div>` : '';
+            const bossTypeBonusMap = { dragon: '🐉 공격력 +2%', demon: '😈 크리티컬 +1%', undead: '💀 골드 +5%', elemental: '⚡ 체력 +3%' };
+            const bossBonusHtml = monster.isBoss ? `<div style="color:#ff8c00;margin:4px 0;">🏆 강화확률 +1% (누적 ${state.bossKills}%)</div><div style="color:#aaf;margin:2px 0;font-size:0.85em;">${bossTypeBonusMap[monster.type] || ''} (누적 ${(state.bossTypeKills || {})[monster.type] || 0}회)</div>` : '';
             document.getElementById('resultDetail').innerHTML = isLucky ? `
                 <div style="font-size:1.5rem;color:var(--gold);animation:pulse 0.5s infinite alternate;">
                     💰 +${finalGold.toLocaleString()}G
