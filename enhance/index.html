@@ -4964,16 +4964,19 @@
             
             const monster = huntState.monster;
             const penaltyPercent = getRunPenaltyPercent(monster.tier);
-            const goldLoss = Math.floor(state.gold * penaltyPercent / 100);
+            // 사냥 획득분 포함 후 기준으로 페널티 계산
+            const totalGoldAfterEarned = state.gold + huntState.totalGoldEarned;
+            const goldLoss = Math.floor(totalGoldAfterEarned * penaltyPercent / 100);
+            const netResult = huntState.totalGoldEarned - goldLoss;
             
             const warningMsg = monster.isBoss 
-                ? `⚠️ 보스에게서 도망치면 골드의 ${penaltyPercent}%를 잃습니다!\n\n💰 예상 손실: ${goldLoss.toLocaleString()}G\n\n정말 도망치시겠습니까?`
-                : `도망치면 골드의 ${penaltyPercent}%를 잃습니다.\n\n💰 예상 손실: ${goldLoss.toLocaleString()}G\n\n정말 도망치시겠습니까?`;
+                ? `⚠️ 보스에게서 도망치면 골드의 ${penaltyPercent}%를 잃습니다!\n\n💰 사냥 획득: +${huntState.totalGoldEarned.toLocaleString()}G\n💸 도망 패널티: -${goldLoss.toLocaleString()}G\n${netResult >= 0 ? '📈' : '📉'} 최종: ${netResult >= 0 ? '+' : ''}${netResult.toLocaleString()}G\n\n정말 도망치시겠습니까?`
+                : `도망치면 골드의 ${penaltyPercent}%를 잃습니다.\n\n💰 사냥 획득: +${huntState.totalGoldEarned.toLocaleString()}G\n💸 도망 패널티: -${goldLoss.toLocaleString()}G\n${netResult >= 0 ? '📈' : ''}최종: ${netResult >= 0 ? '+' : ''}${netResult.toLocaleString()}G\n\n정말 도망치시겠습니까?`;
             
             if (!confirm(warningMsg)) return;
             
-            // Apply penalty
-            state.gold = Math.max(0, state.gold - goldLoss);
+            // 사냥 골드 정산 후 페널티 적용
+            state.gold = Math.max(0, totalGoldAfterEarned - goldLoss);
             saveState();
             
             playSound('fail');
@@ -4987,10 +4990,15 @@
             document.getElementById('resultIcon').textContent = '🏃';
             document.getElementById('resultText').textContent = '도망 성공!';
             document.getElementById('resultText').style.color = 'var(--muted)';
+            const netGold = huntState.totalGoldEarned - goldLoss;
             document.getElementById('resultDetail').innerHTML = `
-                💸 -${goldLoss.toLocaleString()}G 손실<br>
+                ${huntState.totalGoldEarned > 0 ? `💰 사냥 획득: +${huntState.totalGoldEarned.toLocaleString()}G<br>` : ''}
+                💸 도망 패널티: -${goldLoss.toLocaleString()}G<br>
+                <span style="color:${netGold >= 0 ? 'var(--success)' : 'var(--fail)'};font-weight:bold;">
+                    ${netGold >= 0 ? '📈' : '📉'} 최종: ${netGold >= 0 ? '+' : ''}${netGold.toLocaleString()}G
+                </span><br>
                 <span style="color:var(--muted);font-size:0.9em">
-                    처치: ${huntState.monstersKilled}마리 | 총 획득: ${huntState.totalGoldEarned.toLocaleString()}G
+                    처치: ${huntState.monstersKilled}마리
                 </span>
             `;
             document.getElementById('newWeaponPreview').style.display = 'none';
