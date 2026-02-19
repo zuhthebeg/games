@@ -4821,8 +4821,11 @@
             // 데미지 기반 티어 (레벨보다 정확함)
             const recommendedTier = getRecommendedTierByDamage();
             
-            // 보스 출현 확률 (티어에 따라 증가)
-            const bossChance = recommendedTier >= 5 ? 0.15 : (recommendedTier >= 4 ? 0.1 : (recommendedTier >= 3 ? 0.05 : 0));
+            // 보스 출현 확률 (일반 몹 5마리 이상 처치 후부터, 티어에 따라 증가)
+            const killsSinceLastBoss = huntState ? huntState.monstersKilled - (huntState.lastBossKill || 0) : 0;
+            const bossChance = killsSinceLastBoss >= 5
+                ? (recommendedTier >= 5 ? 0.15 : (recommendedTier >= 4 ? 0.1 : (recommendedTier >= 3 ? 0.05 : 0)))
+                : 0;
             if (bossChance > 0 && Math.random() < bossChance) {
                 // 보스는 현재 티어에 맞게
                 const bossTier = Math.max(4, recommendedTier);
@@ -5694,6 +5697,8 @@
             state.mastery.kills++;
             huntState.monstersKilled++;
             huntState.totalGoldEarned += goldReward;
+            // 보스 처치 시 카운터 기록 (다음 보스까지 최소 5킬 필요)
+            if (monster.isBoss) huntState.lastBossKill = huntState.monstersKilled;
             
             // 🔥 피닉스 지팡이: 연속 사냥 시 HP 100% 회복!
             if (isPhoenixStaff(state.weapon)) {
