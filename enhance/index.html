@@ -474,6 +474,14 @@
             0% { transform: translateY(0) scaleY(1); opacity: 0.9; }
             100% { transform: translateY(100vh) scaleY(0.3); opacity: 0; }
         }
+        @keyframes bossDialogueIn {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-20px) scale(0.9); }
+            100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+        }
+        @keyframes bossDialogueOut {
+            0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-15px); }
+        }
         @keyframes screenShake {
             0%, 100% { transform: translateX(0); }
             10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
@@ -5000,17 +5008,35 @@
 
         function showBossDialogue(bossData) {
             if (!bossData || !bossData.dialogue) return;
-            const bubble = document.getElementById('bossBubble');
-            if (!bubble) return;
+
+            // "dialogue:" 접두사 제거
+            let dialogue = bossData.dialogue.replace(/^dialogue:\s*/i, '').trim();
+            if (!dialogue) return;
 
             const emotionEmoji = { angry: '😤', amused: '😏', scared: '😨', bored: '🥱', excited: '🤩' };
             const emoji = emotionEmoji[bossData.emotion] || '💬';
 
-            bubble.style.display = 'block';
-            bubble.innerHTML = '';
+            // 기존 오버레이 제거
+            const old = document.getElementById('bossDialogueOverlay');
+            if (old) old.remove();
+
+            // 오버레이 레이어 생성
+            const overlay = document.createElement('div');
+            overlay.id = 'bossDialogueOverlay';
+            overlay.style.cssText = `position:fixed;top:60px;left:50%;transform:translateX(-50%);
+                width:90%;max-width:360px;z-index:9000;pointer-events:none;
+                animation:bossDialogueIn 0.4s ease-out;`;
+            const bubble = document.createElement('div');
+            bubble.style.cssText = `background:rgba(20,0,0,0.9);border:2px solid rgba(255,60,60,0.6);
+                border-radius:14px;padding:12px 16px;font-size:14px;line-height:1.6;
+                color:#ffaaaa;text-align:center;pointer-events:auto;
+                box-shadow:0 4px 20px rgba(255,0,0,0.3),inset 0 0 20px rgba(255,0,0,0.05);
+                backdrop-filter:blur(8px);`;
+            overlay.appendChild(bubble);
+            document.body.appendChild(overlay);
 
             // 타이핑 효과
-            const text = `${emoji} ${bossData.dialogue}`;
+            const text = `${emoji} ${dialogue}`;
             let i = 0;
             const typing = setInterval(() => {
                 if (i < text.length) {
@@ -5031,13 +5057,17 @@
                             state.gold += bossData.goldGift;
                             saveState();
                             bubble.innerHTML += `<br><span style="color:#ffd700;font-weight:bold;">💰 +${bossData.goldGift.toLocaleString()} G 획득!</span>`;
-                            // 골드 표시 업데이트
                             const goldEl = document.querySelector('.gold-amount');
                             if (goldEl) goldEl.textContent = state.gold.toLocaleString() + ' G';
                         }, 800);
                     }
+                    // 5초 후 페이드아웃
+                    setTimeout(() => {
+                        overlay.style.animation = 'bossDialogueOut 0.5s ease-in forwards';
+                        setTimeout(() => overlay.remove(), 500);
+                    }, 5000);
                 }
-            }, 40);
+            }, 30);
 
             // 보스 특수 스킬이면 huntState에 기록
             if (bossData.action === 'special_skill') {
@@ -5106,7 +5136,7 @@
                         </div>
                     </div>
 
-                    ${monster.isBoss ? `<div id="bossBubble" style="display:none;background:rgba(255,50,50,0.15);border:1px solid rgba(255,100,100,0.4);border-radius:12px;padding:10px 14px;margin:-4px 0 4px;font-size:13px;line-height:1.5;color:#ff9999;text-align:center;min-height:20px;"></div>` : ''}
+<!-- boss dialogue is now overlay -->
 
                     <div class="hunt-vs">⚔️ VS ⚔️</div>
 
