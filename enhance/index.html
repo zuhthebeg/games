@@ -3511,6 +3511,8 @@
             if (newWeapon) {
                 state.weapon = newWeapon;
                 resetMastery();  // 무기 변경 시 숙련도 초기화
+                state.bossKills = 0;  // 보스킬 보너스 리셋
+                state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
             } else {
                 state.weapon.level = toLevel;
             }
@@ -3752,6 +3754,8 @@
                 state.gold += value;
                 state.weapon = generateWeaponBySource('sell', {});
                 resetMastery();  // 무기 변경 시 숙련도 초기화
+                state.bossKills = 0;
+                state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
                 saveState();
                 showEnhance();
             }
@@ -4828,6 +4832,8 @@
                         const newWeapon = generateWeaponByPvPLoss(enemyGrade);
                         state.weapon = newWeapon;
                         state.mastery = {};  // 숙련도 리셋
+                        state.bossKills = 0;
+                        state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
                         
                         playSound('destroy');
                         vibrate([200, 100, 200, 100, 300]);
@@ -5548,6 +5554,8 @@
                     const oldWeapon = state.weapon;
                     state.weapon = generateWeaponBySource('durability_break', {});
                     resetMastery();  // 무기 변경 시 숙련도 초기화
+                    state.bossKills = 0;
+                    state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
                     const newStats = getWeaponStats(state.weapon, false);
                     // 새 무기 스탯으로 전체 업데이트
                     player.damageMin = newStats.damageMin;
@@ -6180,6 +6188,8 @@
             const monsterName = huntState.monster?.name || '몬스터';
             state.weapon = generateWeaponBySource('monster_death', { monsterType });
             resetMastery();  // 무기 변경 시 숙련도 초기화
+            state.bossKills = 0;
+            state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
             state.stats.losses++;
             saveState();
             
