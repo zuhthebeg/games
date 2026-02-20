@@ -215,10 +215,10 @@
     "category": "game"
   },
   {
-    "title": "D2R 워록 공략 / Warlock Guide",
-    "icon": "https://game.cocy.io/d2r-warlock/icon.svg",
-    "url": "https://game.cocy.io/d2r-warlock/",
-    "desc": "디아블로2 레저렉션 워록 스킬트리 시뮬레이터 & 빌드 가이드",
+    "title": "D2R 공략집 - 디아블로2 레저렉션",
+    "icon": "https://game.cocy.io/d2r/icon.svg",
+    "url": "https://game.cocy.io/d2r/",
+    "desc": "룬워드, 큐빙 레시피, 파밍 가이드, 악마술사 공략",
     "badge": "NEW",
     "platforms": [
       "WEB"

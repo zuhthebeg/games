@@ -10,8 +10,8 @@
 <meta property="og:url" content="https://game.cocy.io/d2r-warlock/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ko_KR">
-<title>D2R 워록 공략 / Warlock Guide</title>
-<meta name="description" content="디아블로2 레저렉션 워록 스킬트리 시뮬레이터 & 빌드 가이드" />
+<title>D2R 악마술사(Warlock) 공략 - 스킬 시뮬레이터 & 빌드 가이드 | game.cocy.io</title>
+<meta name="description" content="디아블로2 레저렉션 악마술사(Warlock) 종합 공략. 스킬 트리 시뮬레이터, 빌드 가이드, 장비/룬워드, 레벨링 가이드." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
@@ -50,7 +50,8 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.08;ba
 <body>
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <div class="wrap">
-<header class="hero"><svg class="sigil" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" stroke="#f8cf72" fill="none" stroke-width="1.5"/><polygon points="50,12 60,42 92,42 66,60 76,90 50,72 24,90 34,60 8,42 40,42" stroke="#ffb25d" fill="none" stroke-width="1.4"/><circle cx="50" cy="50" r="18" stroke="#7d3c98" fill="none" stroke-width="1"/></svg><h1>D2R 워록 공략</h1><p>다크 고딕 테마 · 탭 기반 컴팩트 UI · 스킬 시뮬레이터 / 빌드 / 장비 / 레벨링 통합</p></header>
+<a href="/d2r/" style="color:#8a7e5a;font-size:0.85rem;padding:8px 0;display:inline-block">← D2R 공략집</a>
+<header class="hero"><svg class="sigil" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" stroke="#f8cf72" fill="none" stroke-width="1.5"/><polygon points="50,12 60,42 92,42 66,60 76,90 50,72 24,90 34,60 8,42 40,42" stroke="#ffb25d" fill="none" stroke-width="1.4"/><circle cx="50" cy="50" r="18" stroke="#7d3c98" fill="none" stroke-width="1"/></svg><h1>D2R 악마술사(Warlock) 공략</h1><p>다크 고딕 테마 · 탭 기반 컴팩트 UI · 스킬 시뮬레이터 / 빌드 / 장비 / 레벨링 통합</p></header>
 <nav class="main-tabs" id="mainTabs"></nav>
 <section class="panel active" data-panel="sim"><div class="card"><div class="controls"><div class="pill" id="totalPoint">총 스킬포인트: 0 / 110</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="resetBtn">초기화</button><button class="btn" id="copyBtn">URL 복사</button></div></div><div class="muted" id="progressLabel" style="margin:10px 0 4px">진행률 0%</div><div class="progress"><i id="progressBar"></i></div><div class="subtabs" id="subTabs"></div><div class="sim-layout"><div class="tree-box"><svg class="tree-svg" id="treeSvg"></svg><div class="tree-grid" id="treeGrid"></div></div><div class="card" style="margin-top:0;max-height:520px;overflow:auto"><h3 style="margin:0 0 10px">시너지 보너스 요약</h3><div id="synergyView" class="muted"></div></div></div></div></section>
 <section class="panel" data-panel="builds"><div class="card"><h2 style="margin:0 0 10px;color:#f5d78f">빌드 가이드</h2><div class="build-grid" id="buildGrid"></div></div></section>
