@@ -13,6 +13,8 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>🎮 Game Portal - game.cocy.io</title>
     <link rel="icon" href="https://cocy.io/favicon.ico">
+    <script src="/lib/multiplayer.js?v=20260213v1"></script>
+    <script src="/lib/shared-wallet.js?v=20260220"></script>
     <style>
         :root {
             --primary: #ec4899;
@@ -202,10 +204,6 @@
     <header class="header">
         <h1>🎮 Game Portal</h1>
         <div class="auth-area">
-            <div class="gold-display" id="goldDisplay" style="display:none;">
-                <span>💰</span>
-                <span id="goldAmount">0</span>
-            </div>
             <button class="auth-btn" id="authBtn" onclick="handleAuth()">로그인</button>
         </div>
     </header>
@@ -292,38 +290,36 @@
             `).join('');
         }
 
-        function checkAuth() {
-            const token = localStorage.getItem('cocy_auth_token');
-            const name = localStorage.getItem('cocy_user_name');
-            const gold = localStorage.getItem('cocy_gold') || '0';
-            
-            if (token && name) {
-                currentUser = { name, gold: parseInt(gold) };
-                document.getElementById('authBtn').textContent = name;
-                document.getElementById('goldDisplay').style.display = 'flex';
-                document.getElementById('goldAmount').textContent = parseInt(gold).toLocaleString();
+        // SharedWallet 연동 인증
+        async function initAuth() {
+            await SharedWallet.init({ showUI: false });
+            updateAuthUI();
+            SharedWallet._listeners.push(() => updateAuthUI());
+        }
+        
+        function updateAuthUI() {
+            const btn = document.getElementById('authBtn');
+            if (SharedWallet.isLoggedIn && SharedWallet.user) {
+                currentUser = { name: SharedWallet.user.nickname };
+                btn.textContent = SharedWallet.user.nickname;
+            } else {
+                currentUser = null;
+                btn.textContent = '로그인';
             }
         }
 
         function handleAuth() {
-            if (currentUser) {
+            if (SharedWallet.isLoggedIn) {
                 if (confirm('로그아웃 하시겠습니까?')) {
-                    localStorage.removeItem('cocy_auth_token');
-                    localStorage.removeItem('cocy_user_name');
+                    SharedWallet.logout();
                     location.reload();
                 }
             } else {
-                const name = prompt('닉네임을 입력하세요:');
-                if (name && name.trim()) {
-                    localStorage.setItem('cocy_auth_token', 'user_' + Date.now());
-                    localStorage.setItem('cocy_user_name', name.trim());
-                    localStorage.setItem('cocy_gold', '0');
-                    location.reload();
-                }
+                SharedWallet.showLogin();
             }
         }
 
-        checkAuth();
+        initAuth();
     </script>
 </body>
 </html>
