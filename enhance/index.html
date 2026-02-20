@@ -3536,8 +3536,13 @@
             document.getElementById('resultBtn').textContent = '확인';
             document.getElementById('resultBtn').style.display = 'block';
             document.getElementById('resultBtn').onclick = () => {
-                popup.classList.remove('show');
-                overlay.classList.remove('show');
+                closeResult();
+                // 현재 화면 갱신
+                if (huntState) {
+                    renderHunt();
+                } else {
+                    showMain();
+                }
             };
             overlay.classList.add('show');
             
@@ -5471,9 +5476,11 @@
             document.getElementById('resultBtn').onclick = () => {
                 closeResult();
                 huntState = null;
-                // 👿 도망 후 저주 체크
-                if (checkCurseTrigger('flee')) return;
-                showMain();
+                // 👿 도망 후 저주 체크 (팝업 전환 딜레이)
+                setTimeout(() => {
+                    if (checkCurseTrigger('flee')) return;
+                    showMain();
+                }, 350);
             };
             
             overlay.classList.add('show');
@@ -6088,13 +6095,16 @@
                 
                 // Check if player is dead
                 if (player.hp <= 0) {
-                    // 👿 만피에서 한방 사망 = 즉시 저주
-                    if (wasFullHp) {
-                        checkCurseTrigger('oneshot');
+                    // 👿 사망 시 저주 체크 (팝업은 사망 후 딜레이로)
+                    let cursed = false;
+                    if (wasFullHp) cursed = checkCurseTrigger('oneshot');
+                    if (!cursed) cursed = checkCurseTrigger('crit_taken');
+                    if (cursed) {
+                        // 저주 팝업 확인 후 사망 처리
+                        setTimeout(() => huntPlayerDied(), 2000);
+                    } else {
+                        huntPlayerDied();
                     }
-                    // 크리 연속 3회 피격 시 저주
-                    checkCurseTrigger('crit_taken');
-                    huntPlayerDied();
                     return;
                 }
                 
@@ -6613,6 +6623,8 @@
                         <button onclick="debugAddMastery()" style="background:#9b59b6;color:#fff;border:none;padding:4px 8px;cursor:pointer;border-radius:4px;">⭐ 숙련도 +1</button>
                         <button onclick="debugToggleGodMode()" style="background:${window.debugGodMode ? '#00ff00' : '#333'};color:${window.debugGodMode ? '#000' : '#fff'};border:1px solid #0f0;padding:4px 8px;cursor:pointer;border-radius:4px;">🛡️ 무적 ${window.debugGodMode ? 'ON' : 'OFF'}</button>
                         <button onclick="debugToggleCritMode()" style="background:${window.debugCritMode ? '#ff4500' : '#333'};color:#fff;border:1px solid #f50;padding:4px 8px;cursor:pointer;border-radius:4px;">💯 크리100% ${window.debugCritMode ? 'ON' : 'OFF'}</button>
+                        <button onclick="debugApplyCurse()" style="background:${isCursed(state.weapon) ? '#8b00ff' : '#333'};color:#fff;border:1px solid #8b00ff;padding:4px 8px;cursor:pointer;border-radius:4px;">👿 저주 ${isCursed(state.weapon) ? 'ON' : 'OFF'}</button>
+                        <button onclick="debugRemoveCurse()" style="background:#333;color:#fff;border:1px solid #4ecca3;padding:4px 8px;cursor:pointer;border-radius:4px;">✨ 저주해제</button>
                     </div>
                     <div style="margin-bottom:8px;">
                         <label style="color:#ff0;">무기 선택: </label>
@@ -6620,8 +6632,9 @@
                             ${weaponOptions.map(opt => `<option value="${opt.grade}|${opt.type}" ${w?.grade === opt.grade && w?.type === opt.type ? 'selected' : ''}>${opt.display}</option>`).join('')}
                         </select>
                     </div>
-                    <div><b>현재:</b> ${w?.name} +${w?.level} (${w?.grade}/${w?.type}) | <span style="color:${elemData.color}">${elemDisplay}</span> | 내구도: ${w?.durability}%</div>
+                    <div><b>현재:</b> ${w?.name} +${w?.level} (${w?.grade}/${w?.type}) | <span style="color:${elemData.color}">${elemDisplay}</span> | 내구도: ${w?.durability}%${isCursed(w) ? ' <span style="color:#8b00ff;">👿저주</span>' : ''}</div>
                     <div><b>stats:</b> dmg ${stats.damageMin}-${stats.damageMax} | crit ${stats.critChance}% | critDmg ${stats.critDamage}% | hp ${stats.hp}</div>
+                    <div><b>저주카운터:</b> 강화실패:${state.consecutiveEnhanceFails||0}/3 | 도망:${state.consecutiveFlees||0}/5 | PVP패:${state.consecutivePvpLosses||0}/3 | 크리피격:${state.consecutiveCritsTaken||0}/3</div>
                 </div>
             `;
         }
@@ -6642,6 +6655,21 @@
         
         function debugFullDurability() {
             if (state.weapon) {
+                state.weapon.durability = 100;
+                saveState();
+                showMain();
+            }
+        }
+        
+        function debugApplyCurse() {
+            if (state.weapon && !isCursed(state.weapon)) {
+                applyCurse(state.weapon, 'enhance_fail');
+            }
+        }
+        
+        function debugRemoveCurse() {
+            if (state.weapon && isCursed(state.weapon)) {
+                state.weapon.cursed = false;
                 state.weapon.durability = 100;
                 saveState();
                 showMain();
