@@ -2883,10 +2883,10 @@
                 // 랜덤 속성
                 
             } else if (dropSource === 'durability_break') {
-                // 내구도 파괴: 레어~유니크, 숙련도 기반 속성!
-                if (gradeRoll < 20) grade = 'unique';
-                else if (gradeRoll < 50) grade = 'legendary';
-                else grade = 'rare';
+                // 내구도 파괴: 전설 이상! 신화 5%, 유니크 25%, 전설 70%
+                if (gradeRoll < 5) grade = 'mythic';
+                else if (gradeRoll < 30) grade = 'unique';
+                else grade = 'legendary';
                 
                 // 숙련도 기반 속성 (100마리 이상 처치한 종족 취약)
                 const masteryEl = getMasteryElement(state.weapon);
