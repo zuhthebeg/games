@@ -3493,7 +3493,7 @@
             if (isWoodenStick(weapon)) return false;  // 나무막대기는 저주 면역
             
             weapon.cursed = true;
-            weapon.durability = 1;  // 내구도 1로 고정
+            // 내구도 유지 (수리 불가, 1 깎일 때마다 적 즉사)
             
             // 저주 카운터 리셋
             state.consecutiveEnhanceFails = 0;
@@ -3528,8 +3528,8 @@
                 <div style="color:#bb77ff;margin-bottom:8px;">${reasonText}</div>
                 <div style="font-size:0.85rem;color:#aaa;line-height:1.6;">
                     ⚡ 강화 확률 <span style="color:var(--success)">2배</span><br>
-                    💀 내구도 <span style="color:var(--fail)">1 (수리 불가)</span><br>
-                    💥 내구도 파괴 시 <span style="color:#ff00ff">적 즉사</span>
+                    🔧 <span style="color:var(--fail)">수리 불가</span><br>
+                    💀 내구도 1 감소마다 <span style="color:#ff00ff">적 즉사</span>
                 </div>
             `;
             document.getElementById('newWeaponPreview').style.display = 'none';
@@ -5884,6 +5884,18 @@
             if (state.weapon._durabilityCounter >= durabilityThreshold) {
                 state.weapon._durabilityCounter = 0;
                 state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - 1);
+                
+                // 👿 저주받은 무기: 내구도 1 감소마다 적 즉사!
+                if (isCursed(state.weapon) && monster.currentHp > 0) {
+                    monster.currentHp = 0;
+                    playSound('crit');
+                    vibrate([100, 50, 100]);
+                    showCritEffect();
+                    huntState.log.push({ type: 'crit', text: `👿 저주의 힘! 내구도 소모 → ${monster.name} 즉사!` });
+                    saveState();
+                    huntMonsterKilled(false);
+                    return;
+                }
             }
             
             // 속성 배율 계산
@@ -6670,7 +6682,6 @@
         function debugRemoveCurse() {
             if (state.weapon && isCursed(state.weapon)) {
                 state.weapon.cursed = false;
-                state.weapon.durability = 100;
                 saveState();
                 showMain();
             }
