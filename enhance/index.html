@@ -211,6 +211,15 @@
         .weapon-icon.legendary-img {
             border-radius: 0;
         }
+        
+        /* 👿 저주받은 무기 */
+        .weapon-icon.cursed-weapon {
+            animation: cursedPulse 2s ease-in-out infinite;
+        }
+        @keyframes cursedPulse {
+            0%, 100% { filter: drop-shadow(0 0 15px #8b00ff) drop-shadow(0 0 30px #5500aa) hue-rotate(270deg) saturate(2); }
+            50% { filter: drop-shadow(0 0 25px #bb00ff) drop-shadow(0 0 50px #8800dd) hue-rotate(270deg) saturate(3); }
+        }
 
         .weapon-icon.shake { animation: shake 0.5s ease-in-out; }
         .weapon-icon.glow-success { filter: drop-shadow(0 0 30px var(--success)) drop-shadow(0 0 60px var(--success)) brightness(1.3); }
@@ -2379,7 +2388,12 @@
             stats: { attempts: 0, successes: 0, fails: 0, destroys: 0, wins: 0, losses: 0 },
             mastery: { attacks: 0, kills: 0 },  // 숙련도 시스템
             bossKills: 0,  // 보스 처치 횟수 (강화확률 +1% per kill)
-            bossTypeKills: { dragon: 0, demon: 0, undead: 0, elemental: 0 }  // 속성별 보스킬
+            bossTypeKills: { dragon: 0, demon: 0, undead: 0, elemental: 0 },  // 속성별 보스킬
+            // 저주 트리거 카운터
+            consecutiveEnhanceFails: 0,  // +0에서 연속 강화 실패
+            consecutiveFlees: 0,         // 연속 도망
+            consecutivePvpLosses: 0,     // 연속 PVP 패배
+            consecutiveCritsTaken: 0     // 연속 크리티컬 피격
         };
         
         // ===== CLOUD SYNC =====
@@ -2983,18 +2997,19 @@
             hammer: 'icons/hammer-legendary.png'
         };
 
+        // 신화: 황금빛 (전설 이미지 사용)
         const MYTHIC_ICONS = {
-            sword: 'icons/sword-mythic.png',
-            axe: 'icons/axe-mythic.png',
-            bow: 'icons/bow-mythic.png',
-            spear: 'icons/spear-mythic.png',
-            dagger: 'icons/dagger-mythic.png',
-            staff: 'icons/staff-mythic.png',
-            katana: 'icons/katana-mythic.png',
-            scythe: 'icons/scythe-mythic.png',
-            knuckle: 'icons/knuckle-mythic.png',
-            crossbow: 'icons/crossbow-mythic.png',
-            hammer: 'icons/hammer-mythic.png'
+            sword: 'icons/sword-legendary.png',
+            axe: 'icons/axe-legendary.png',
+            bow: 'icons/bow-legendary.png',
+            spear: 'icons/spear-legendary.png',
+            dagger: 'icons/dagger-legendary.png',
+            staff: 'icons/staff-legendary.png',
+            katana: 'icons/katana-legendary.png',
+            scythe: 'icons/scythe-legendary.png',
+            knuckle: 'icons/knuckle-legendary.png',
+            crossbow: 'icons/crossbow-legendary.png',
+            hammer: 'icons/hammer-legendary.png'
         };
 
         function getWeaponIcon(weapon) {
@@ -3017,9 +3032,19 @@
             const gradeData = GRADES[weapon.grade];
             const iconUrl = getWeaponIcon(weapon);
             const isCustomImg = (weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]);
-            const filterStyle = isCustomImg
+            let filterStyle = isCustomImg
                 ? `drop-shadow(0 0 15px ${gradeData.color})`
                 : `drop-shadow(0 0 15px ${gradeData.color}) brightness(0) invert(1)`;
+            // 👿 저주받은 무기: 보라색 틴트 + 어두운 글로우
+            if (isCursed(weapon)) {
+                filterStyle = isCustomImg
+                    ? `drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa) hue-rotate(270deg) saturate(2)`
+                    : `drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa) brightness(0) invert(1) hue-rotate(270deg) saturate(2)`;
+            }
+            // 전설: 회색빛 톤
+            else if (weapon.grade === 'legendary' && isCustomImg) {
+                filterStyle = `drop-shadow(0 0 15px #aaa) grayscale(0.6) brightness(1.2)`;
+            }
             const extraClass = isCustomImg ? ' legendary-img' : '';
             return `<img src="${iconUrl}" 
                          class="weapon-icon${extraClass}" 
@@ -3203,7 +3228,7 @@
                     <div class="weapon-card ${weapon.grade} ${getLevelClass(weapon.level)}">
                         <div class="weapon-header">
                             <div class="weapon-info">
-                                <div class="weapon-grade ${weapon.grade}">${gradeData.name}</div>
+                                <div class="weapon-grade ${weapon.grade}">${gradeData.name}${isCursed(weapon) ? ' <span style="color:#8b00ff;">👿저주</span>' : ''}</div>
                                 <div class="weapon-name">${weapon.name} ${weapon.element && weapon.element !== 'none' ? ELEMENTS[weapon.element]?.icon || '' : ''}</div>
                                 <div class="weapon-type">${WEAPON_TYPES[weapon.type].name}${weapon.element && weapon.element !== 'none' ? ` | ${ELEMENTS[weapon.element]?.name}` : ''}</div>
                             </div>
@@ -3214,10 +3239,7 @@
                         </div>
 
                         <div class="weapon-icon-area">
-                            <img src="${getWeaponIcon(weapon)}" 
-                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) ? ' legendary-img' : ''}" 
-                                 style="width:100px;height:100px;filter:drop-shadow(0 0 20px ${gradeData.color});"
-                                 alt="${weapon.name}">
+                            ${getWeaponImgHtml(weapon, 100)}
                         </div>
 
                         <div class="weapon-stats">
@@ -3238,7 +3260,7 @@
                             <div class="stat-item">
                                 <span class="stat-icon">🔧</span>
                                 <div class="stat-info">
-                                    <div class="stat-value ${(weapon.durability || 100) < 30 ? 'danger' : ''}">${weapon.durability || 100}%</div>
+                                    <div class="stat-value ${isCursed(weapon) ? 'danger' : (weapon.durability || 100) < 30 ? 'danger' : ''}">${weapon.durability || 100}%${isCursed(weapon) ? ' <span style="color:#8b00ff;font-size:0.7em;">👿</span>' : ''}</div>
                                     <div class="stat-label">내구도</div>
                                 </div>
                             </div>
@@ -3321,7 +3343,7 @@
                     <div class="weapon-card ${weapon.grade} ${getLevelClass(weapon.level)}">
                         <div class="weapon-header">
                             <div class="weapon-info">
-                                <div class="weapon-grade ${weapon.grade}">${gradeData.name}</div>
+                                <div class="weapon-grade ${weapon.grade}">${gradeData.name}${isCursed(weapon) ? ' <span style="color:#8b00ff;">👿저주</span>' : ''}</div>
                                 <div class="weapon-name">${weapon.name}</div>
                             </div>
                             <div class="weapon-level">
@@ -3332,9 +3354,9 @@
 
                         <div class="weapon-icon-area">
                             <img src="${getWeaponIcon(weapon)}" 
-                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) ? ' legendary-img' : ''}" 
+                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) ? ' legendary-img' : ''}${isCursed(weapon) ? ' cursed-weapon' : ''}" 
                                  id="weaponIcon"
-                                 style="width:120px;height:120px;filter:drop-shadow(0 0 20px ${gradeData.color});"
+                                 style="width:120px;height:120px;filter:${isCursed(weapon) ? 'drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa)' : `drop-shadow(0 0 20px ${gradeData.color})`}${isCursed(weapon) ? ' hue-rotate(270deg) saturate(2)' : ''};"
                                  alt="${weapon.name}">
                         </div>
 
@@ -3359,7 +3381,7 @@
                     <div class="enhance-panel">
                         <div class="enhance-row">
                             <span class="enhance-label">🎯 성공</span>
-                            <span class="enhance-value ${rates.success >= 50 ? 'safe' : rates.success >= 20 ? '' : 'danger'}">${rates.success}%${(state.bossKills || 0) > 0 ? ` <span style="color:#ff8c00;font-size:0.7em;">🐉+${state.bossKills}%</span>` : ''}</span>
+                            <span class="enhance-value ${rates.success >= 50 ? 'safe' : rates.success >= 20 ? '' : 'danger'}">${rates.success}%${isCursed(weapon) ? ' <span style="color:#8b00ff;font-size:0.7em;">👿x2</span>' : ''}${(state.bossKills || 0) > 0 ? ` <span style="color:#ff8c00;font-size:0.7em;">🐉+${state.bossKills}%</span>` : ''}</span>
                         </div>
                         <div class="enhance-row">
                             <span class="enhance-label">${rates.destroy >= 50 ? '💀' : rates.destroy > 0 ? '⚠️' : '✅'} 파괴</span>
@@ -3459,6 +3481,98 @@
             return weapon && weapon.name === '새총';
         }
         
+        // 저주받은 무기 체크
+        function isCursed(weapon) {
+            return weapon && weapon.cursed === true;
+        }
+        
+        // 저주 적용! 무기에 저주 옵션 추가
+        function applyCurse(weapon, reason) {
+            if (!weapon || isCursed(weapon)) return false;
+            if (isWoodenStick(weapon)) return false;  // 나무막대기는 저주 면역
+            
+            weapon.cursed = true;
+            weapon.durability = 1;  // 내구도 1로 고정
+            
+            // 저주 카운터 리셋
+            state.consecutiveEnhanceFails = 0;
+            state.consecutiveFlees = 0;
+            state.consecutivePvpLosses = 0;
+            state.consecutiveCritsTaken = 0;
+            
+            saveState();
+            
+            // 저주 이펙트!
+            playSound('destroy');
+            vibrate([200, 100, 200, 100, 200, 100, 300]);
+            document.body.classList.add('screen-shake');
+            setTimeout(() => document.body.classList.remove('screen-shake'), 800);
+            
+            const reasonText = {
+                'enhance_fail': '연속 강화 실패의 분노가 무기에 스며들었다!',
+                'flee': '비겁한 도주가 무기를 저주했다!',
+                'pvp_loss': '연이은 패배의 굴욕이 무기를 물들였다!',
+                'crit_taken': '처절한 고통이 무기에 원한을 새겼다!',
+                'oneshot': '일격의 충격이 무기에 사념을 깃들게 했다!'
+            }[reason] || '어둠의 기운이 무기를 감싸고 있다...';
+            
+            // 저주 팝업
+            const popup = document.getElementById('resultPopup');
+            const overlay = document.getElementById('overlay');
+            popup.className = 'result-popup destroy show';
+            document.getElementById('resultIcon').textContent = '👿';
+            document.getElementById('resultText').textContent = '저주받은 무기!';
+            document.getElementById('resultText').style.color = '#8b00ff';
+            document.getElementById('resultDetail').innerHTML = `
+                <div style="color:#bb77ff;margin-bottom:8px;">${reasonText}</div>
+                <div style="font-size:0.85rem;color:#aaa;line-height:1.6;">
+                    ⚡ 강화 확률 <span style="color:var(--success)">2배</span><br>
+                    💀 내구도 <span style="color:var(--fail)">1 (수리 불가)</span><br>
+                    💥 내구도 파괴 시 <span style="color:#ff00ff">적 즉사</span>
+                </div>
+            `;
+            document.getElementById('newWeaponPreview').style.display = 'none';
+            document.getElementById('resultBtn').textContent = '확인';
+            document.getElementById('resultBtn').style.display = 'block';
+            document.getElementById('resultBtn').onclick = () => {
+                popup.classList.remove('show');
+                overlay.classList.remove('show');
+            };
+            overlay.classList.add('show');
+            
+            return true;
+        }
+        
+        // 저주 트리거 체크 (각 이벤트 후 호출)
+        function checkCurseTrigger(reason) {
+            if (!state.weapon || isCursed(state.weapon)) return false;
+            if (isWoodenStick(state.weapon)) return false;
+            
+            let triggered = false;
+            switch(reason) {
+                case 'enhance_fail':
+                    if (state.weapon.level === 0 && state.consecutiveEnhanceFails >= 3) triggered = true;
+                    break;
+                case 'flee':
+                    if (state.consecutiveFlees >= 5) triggered = true;
+                    break;
+                case 'pvp_loss':
+                    if (state.consecutivePvpLosses >= 3) triggered = true;
+                    break;
+                case 'crit_taken':
+                    if (state.consecutiveCritsTaken >= 3) triggered = true;
+                    break;
+                case 'oneshot':
+                    triggered = true;  // 만피에서 한방에 죽으면 즉시 저주
+                    break;
+            }
+            
+            if (triggered) {
+                return applyCurse(state.weapon, reason);
+            }
+            return false;
+        }
+        
         // 신화 무기 체크
         function isMythicWeapon(weapon) {
             return weapon && weapon.grade === 'mythic';
@@ -3481,10 +3595,18 @@
                 const destroyChance = Math.min(90, 30 + weapon.level * 3);
                 return { success: baseRates.success, destroy: destroyChance, cost: baseRates.cost };
             }
+            let successRate = baseRates.success;
+            // 👿 저주받은 무기: 강화확률 2배!
+            if (isCursed(weapon)) {
+                successRate = Math.min(99, successRate * 2);
+            }
             // 🐉 보스킬 보너스: 보스 처치당 강화확률 +1%
             const bossBonus = (state.bossKills || 0) * 1;
             if (bossBonus > 0) {
-                return { ...baseRates, success: Math.min(99, baseRates.success + bossBonus) };
+                successRate = Math.min(99, successRate + bossBonus);
+            }
+            if (successRate !== baseRates.success) {
+                return { ...baseRates, success: successRate };
             }
             return baseRates;
         }
@@ -3562,6 +3684,12 @@
                 // Fail - just stays the same (no downgrade!)
                 result = 'fail';
                 state.stats.fails++;
+                // 저주 트리거: +0에서 연속 3회 실패
+                if (weapon.level === 0) {
+                    state.consecutiveEnhanceFails = (state.consecutiveEnhanceFails || 0) + 1;
+                } else {
+                    state.consecutiveEnhanceFails = 0;
+                }
                 setTimeout(() => {
                     playSound('fail');
                     vibrate(100);
@@ -3577,11 +3705,25 @@
                 resetMastery();  // 무기 변경 시 숙련도 초기화
                 state.bossKills = 0;  // 보스킬 보너스 리셋
                 state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
+                state.consecutiveEnhanceFails = 0;  // 무기 변경 시 리셋
             } else {
                 state.weapon.level = toLevel;
+                // 성공 시 연속 실패 카운터 리셋
+                if (result === 'success') {
+                    state.consecutiveEnhanceFails = 0;
+                }
             }
             
             saveState();
+            
+            // 👿 저주 트리거 체크 (강화 실패 시)
+            if (result === 'fail' && !newWeapon) {
+                setTimeout(() => {
+                    if (checkCurseTrigger('enhance_fail')) return;  // 저주 팝업이 뜨면 강화결과 스킵
+                    showEnhanceResult(result, fromLevel, state.weapon.level, newWeapon);
+                }, 300);
+                return;
+            }
             
             // 강화 파괴 시 무기 획득 이펙트
             if (newWeapon && result === 'destroy') {
@@ -3831,7 +3973,7 @@
             const durability = weapon.durability ?? MAX_DURABILITY;
             const repairCost = getRepairCost(weapon);
             const gradeData = GRADES[weapon.grade];
-            const canRepair = durability < MAX_DURABILITY && state.gold >= repairCost;
+            const canRepair = !isCursed(weapon) && durability < MAX_DURABILITY && state.gold >= repairCost;
             
             document.getElementById('app').innerHTML = `
                 <div class="container">
@@ -3868,7 +4010,14 @@
                             </div>
                         </div>
                         
-                        ${durability < MAX_DURABILITY ? `
+                        ${isCursed(weapon) ? `
+                        <div style="text-align:center;padding:20px;color:#8b00ff;">
+                            👿 저주받은 무기는 수리할 수 없습니다!<br>
+                            <span style="font-size:0.85rem;color:#aaa;margin-top:8px;display:block;">
+                                내구도 파괴 시 적 즉사 효과 발동
+                            </span>
+                        </div>
+                        ` : durability < MAX_DURABILITY ? `
                         <div class="enhance-panel" style="margin-top:16px;">
                             <div class="enhance-row">
                                 <span>수리 비용</span>
@@ -4860,6 +5009,7 @@
                 const goldReward = Math.max(1000, enemyLevel * 1000);  // 최소 1000골드
                 state.gold += goldReward;
                 state.stats.wins++;
+                state.consecutivePvpLosses = 0;  // PVP 승리 시 연패 카운터 리셋
                 saveState();
                 syncPvPRanking(true);
                 
@@ -4874,6 +5024,8 @@
             } else {
                 // 패배: 내구도 20% 하락
                 state.stats.losses++;
+                // 저주 트리거: PVP 연속 3회 패배
+                state.consecutivePvpLosses = (state.consecutivePvpLosses || 0) + 1;
                 
                 // 나무막대기가 아니면 내구도 감소
                 if (!isWoodenStick()) {
@@ -4885,6 +5037,9 @@
                     if (state.weapon.durability <= 0) {
                         weaponBroke = true;
                         canRematch = false;
+                        
+                        // 👿 저주받은 무기: PVP에서 내구도 파괴 = 상대도 즉사! (무승부)
+                        const wasCursed = isCursed(state.weapon);
                         
                         // 무기 파괴 처리
                         const brokenWeaponName = state.weapon.name;
@@ -4902,13 +5057,24 @@
                         playSound('destroy');
                         vibrate([200, 100, 200, 100, 300]);
                         
-                        // 결과창 먼저 표시
-                        mpUI.showResult({
-                            title: '💀 패배... 무기 파괴!',
-                            detail: `${brokenWeaponName} +${brokenWeaponLevel} 파괴됨!`,
-                            isWin: false,
-                            showRematch: false
-                        });
+                        if (wasCursed) {
+                            fireConfetti();
+                            // 저주 폭발: 패배를 무승부로
+                            mpUI.showResult({
+                                title: '👿💥 저주 폭발!',
+                                detail: `${brokenWeaponName} +${brokenWeaponLevel}의 저주가 폭발!\n상대방도 함께 쓰러졌다!`,
+                                isWin: false,
+                                showRematch: false
+                            });
+                        } else {
+                            // 결과창 먼저 표시
+                            mpUI.showResult({
+                                title: '💀 패배... 무기 파괴!',
+                                detail: `${brokenWeaponName} +${brokenWeaponLevel} 파괴됨!`,
+                                isWin: false,
+                                showRematch: false
+                            });
+                        }
                         
                         // 새 무기 획득 이펙트 표시
                         setTimeout(() => {
@@ -4938,6 +5104,9 @@
                 
                 saveState();
                 syncPvPRanking(false);
+                
+                // 👿 PVP 패배 후 저주 체크
+                setTimeout(() => checkCurseTrigger('pvp_loss'), 1500);
             }
         }
 
@@ -5270,6 +5439,8 @@
             
             // 사냥 골드 정산 후 페널티 적용
             state.gold = Math.max(0, totalGoldAfterEarned - goldLoss);
+            // 저주 트리거: 연속 도망 5회
+            state.consecutiveFlees = (state.consecutiveFlees || 0) + 1;
             saveState();
             
             playSound('fail');
@@ -5299,6 +5470,8 @@
             document.getElementById('resultBtn').onclick = () => {
                 closeResult();
                 huntState = null;
+                // 👿 도망 후 저주 체크
+                if (checkCurseTrigger('flee')) return;
                 showMain();
             };
             
@@ -5602,6 +5775,35 @@
             // 내구도 체크 - 0이면 무기 파괴!
             if ((state.weapon.durability ?? 100) <= 0) {
                 if (true) {  // 내구도 0 = 무조건 파괴
+                    // 👿 저주받은 무기: 적 즉사!
+                    if (isCursed(state.weapon)) {
+                        monster.currentHp = 0;
+                        
+                        playSound('crit');
+                        vibrate([100, 50, 100, 50, 100, 50, 200]);
+                        document.body.classList.add('screen-shake');
+                        setTimeout(() => document.body.classList.remove('screen-shake'), 800);
+                        showCritEffect();
+                        fireConfetti();
+                        
+                        huntState.log.push({ type: 'crit', text: `👿💥 저주의 폭발!! ${monster.name} 즉사!!` });
+                        
+                        // 저주 해제 + 새 무기
+                        const oldWeapon = state.weapon;
+                        state.weapon = generateWeaponBySource('durability_break', {});
+                        resetMastery();
+                        state.bossKills = 0;
+                        state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
+                        saveState();
+                        
+                        setTimeout(() => {
+                            showWeaponAcquireEffect(state.weapon, 'durability_break', {});
+                        }, 500);
+                        
+                        huntMonsterKilled(false);
+                        return;
+                    }
+                    
                     // 무기 파괴! 양쪽 데미지
                     const breakDamage = Math.floor(player.maxHp * 0.3);
                     player.hp = Math.max(0, player.hp - breakDamage);
@@ -5858,7 +6060,17 @@
                 // 🛡️ 무적모드
                 if (window.debugGodMode) finalMonsterDamage = 0;
                 
+                // 👿 저주 트리거: 만피에서 한방 사망 or 크리 연속 3회
+                const wasFullHp = player.hp === player.maxHp;
+                
                 player.hp = Math.max(0, player.hp - finalMonsterDamage);
+                
+                // 크리티컬 연속 피격 카운터
+                if (monsterCrit) {
+                    state.consecutiveCritsTaken = (state.consecutiveCritsTaken || 0) + 1;
+                } else {
+                    state.consecutiveCritsTaken = 0;
+                }
                 
                 showSlashEffect('claw', 'player');  // 클로 공격! 플레이어 영역에
                 playSound(monsterCrit ? 'crit' : 'attack');
@@ -5875,7 +6087,19 @@
                 
                 // Check if player is dead
                 if (player.hp <= 0) {
+                    // 👿 만피에서 한방 사망 = 즉시 저주
+                    if (wasFullHp) {
+                        checkCurseTrigger('oneshot');
+                    }
+                    // 크리 연속 3회 피격 시 저주
+                    checkCurseTrigger('crit_taken');
                     huntPlayerDied();
+                    return;
+                }
+                
+                // 크리 연속 3회 피격 (살아있어도 저주)
+                if (checkCurseTrigger('crit_taken')) {
+                    renderHunt();
                     return;
                 }
                 
@@ -5888,6 +6112,9 @@
         function huntMonsterKilled(isOneShot = false) {
             const monster = huntState.monster;
             let goldReward = Math.floor(Math.random() * (monster.gold[1] - monster.gold[0] + 1)) + monster.gold[0];
+            
+            // 사냥 성공 시 연속 도망 카운터 리셋
+            state.consecutiveFlees = 0;
             
             // 💀 언데드 보스킬 보너스: 골드 +5% per kill
             const undeadKills = (state.bossTypeKills || {}).undead || 0;
