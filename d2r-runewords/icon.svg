@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<rect width="100" height="100" rx="16" fill="#1a1a2e"/>
+<text x="50" y="38" text-anchor="middle" font-size="20" fill="#d4a44a" font-family="serif" font-weight="bold">룬</text>
+<rect x="15" y="48" width="20" height="28" rx="4" fill="#2a2a4a" stroke="#d4a44a" stroke-width="1.5"/>
+<text x="25" y="67" text-anchor="middle" font-size="12" fill="#d4a44a" font-weight="bold">1</text>
+<rect x="40" y="48" width="20" height="28" rx="4" fill="#2a2a4a" stroke="#d4a44a" stroke-width="1.5"/>
+<text x="50" y="67" text-anchor="middle" font-size="12" fill="#d4a44a" font-weight="bold">2</text>
+<rect x="65" y="48" width="20" height="28" rx="4" fill="#2a2a4a" stroke="#d4a44a" stroke-width="1.5"/>
+<text x="75" y="67" text-anchor="middle" font-size="12" fill="#d4a44a" font-weight="bold">3</text>
+<text x="50" y="90" text-anchor="middle" font-size="9" fill="#888" font-family="sans-serif">RUNEWORD</text>
+</svg>

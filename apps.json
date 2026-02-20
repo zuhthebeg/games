@@ -1,5 +1,15 @@
 [
   {
+    "title": "D2R 룬워드 조합기",
+    "icon": "https://game.cocy.io/d2r-runewords/icon.svg",
+    "url": "https://game.cocy.io/d2r-runewords/",
+    "desc": "룬 순서 선택 → 룬워드 검색. 장비/직업/레벨 필터",
+    "badge": "NEW",
+    "platforms": ["WEB"],
+    "languages": ["🇰🇷"],
+    "category": "game"
+  },
+  {
     "title": "조커런",
     "icon": "https://game.cocy.io/jokerrun/icon.svg",
     "url": "https://game.cocy.io/jokerrun/",

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D2R 룬워드 조합기 | game.cocy.io</title>
+<meta name="description" content="디아블로 2 레저렉션 룬워드 조합기. 룬 순서대로 선택하고, 장비/직업/레벨로 필터링하세요.">
+<link rel="canonical" href="https://game.cocy.io/d2r-runewords/">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d0d12;--card:#16161e;--card2:#1e1e2a;--border:#2a2a3a;--text:#e0e0e0;--dim:#888;--accent:#d4a44a;--accent2:#a07030;--blue:#4a8ed4;--green:#4ad46a;--red:#d44a4a;--purple:#a04ad4}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+.container{max-width:960px;margin:0 auto;padding:12px}
+header{text-align:center;padding:16px 0 8px}
+header h1{font-size:1.4rem;color:var(--accent)}
+header p{font-size:.85rem;color:var(--dim);margin-top:4px}
+
+/* Filters */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;padding:12px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
+.filter-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px}
+.filter-group label{font-size:.75rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.filter-group select,.filter-group input{background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:.85rem;outline:none}
+.filter-group select:focus,.filter-group input:focus{border-color:var(--accent)}
+.level-range{display:flex;align-items:center;gap:6px}
+.level-range input{width:60px;text-align:center}
+.level-range span{color:var(--dim);font-size:.85rem}
+
+/* Rune selector */
+.rune-section{margin:12px 0}
+.rune-section h3{font-size:.9rem;color:var(--accent);margin-bottom:8px}
+.rune-grid{display:flex;flex-wrap:wrap;gap:4px}
+.rune-btn{width:52px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;font-size:.65rem;color:var(--dim)}
+.rune-btn:hover{border-color:var(--accent);background:var(--card2)}
+.rune-btn.selected{border-color:var(--accent);background:var(--accent2);color:#fff}
+.rune-btn .rune-num{font-size:1.1rem;font-weight:700;color:var(--text);line-height:1}
+.rune-btn.selected .rune-num{color:#fff}
+.selected-runes{display:flex;gap:6px;align-items:center;margin:10px 0;min-height:36px;flex-wrap:wrap}
+.selected-rune-tag{display:flex;align-items:center;gap:4px;background:var(--accent2);color:#fff;padding:4px 10px;border-radius:16px;font-size:.8rem;font-weight:600}
+.selected-rune-tag .remove{cursor:pointer;opacity:.7;font-size:.9rem}
+.selected-rune-tag .remove:hover{opacity:1}
+.clear-btn{font-size:.75rem;color:var(--dim);cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:12px;background:transparent}
+.clear-btn:hover{color:var(--red);border-color:var(--red)}
+
+/* Results */
+.results-header{display:flex;justify-content:space-between;align-items:center;margin:12px 0 8px}
+.results-header h3{font-size:.9rem;color:var(--dim)}
+.results-count{font-size:.8rem;color:var(--accent)}
+.rw-list{display:flex;flex-direction:column;gap:8px;padding-bottom:40px}
+.rw-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .15s}
+.rw-card:hover{border-color:var(--accent)}
+.rw-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;gap:8px}
+.rw-name{font-size:1rem;font-weight:700;color:var(--accent)}
+.rw-name-en{font-size:.8rem;color:var(--dim);margin-left:6px;font-weight:400}
+.rw-meta{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.rw-lvl{font-size:.75rem;color:var(--blue);background:rgba(74,142,212,.15);padding:2px 8px;border-radius:10px}
+.rw-type{font-size:.75rem;color:var(--green);background:rgba(74,212,106,.12);padding:2px 8px;border-radius:10px}
+.rw-body{display:none;padding:0 14px 12px;border-top:1px solid var(--border)}
+.rw-card.open .rw-body{display:block}
+.rw-runes{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}
+.rw-rune{display:flex;flex-direction:column;align-items:center;background:var(--card2);padding:6px 10px;border-radius:8px;border:1px solid var(--border);min-width:48px}
+.rw-rune .num{font-size:1rem;font-weight:700;color:var(--accent)}
+.rw-rune .name{font-size:.7rem;color:var(--dim)}
+.rw-rune .order{font-size:.6rem;color:var(--accent);margin-bottom:2px}
+.rw-props{margin-top:8px}
+.rw-props li{font-size:.82rem;color:var(--text);padding:2px 0;list-style:none}
+.rw-props li::before{content:'• ';color:var(--accent)}
+.rw-classes{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.rw-class-tag{font-size:.7rem;padding:2px 8px;border-radius:10px;background:rgba(160,74,212,.15);color:var(--purple)}
+.rw-sockets{font-size:.75rem;color:var(--dim);margin-left:4px}
+.no-results{text-align:center;padding:40px;color:var(--dim);font-size:.9rem}
+.arrow{transition:transform .2s;color:var(--dim);font-size:.8rem}
+.rw-card.open .arrow{transform:rotate(90deg)}
+
+/* Back link */
+.back-link{display:inline-block;margin-bottom:8px;font-size:.85rem;color:var(--dim)}
+.back-link:hover{color:var(--accent)}
+
+@media(max-width:600px){
+  .rune-btn{width:44px;height:44px}
+  .rune-btn .rune-num{font-size:.95rem}
+  .rune-btn{font-size:.6rem}
+  .filter-group{min-width:100px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="/d2r-warlock/" class="back-link">← D2R 가이드</a>
+<header>
+<h1>🔮 D2R 룬워드 조합기</h1>
+<p>룬을 순서대로 선택하거나 필터로 검색하세요</p>
+</header>
+
+<div class="filters">
+<div class="filter-group">
+<label>장비 유형</label>
+<select id="filterType"><option value="">전체</option></select>
+</div>
+<div class="filter-group">
+<label>직업</label>
+<select id="filterClass"><option value="">전체</option></select>
+</div>
+<div class="filter-group">
+<label>레벨 범위</label>
+<div class="level-range">
+<input type="number" id="lvlMin" placeholder="1" min="1" max="99">
+<span>~</span>
+<input type="number" id="lvlMax" placeholder="99" min="1" max="99">
+</div>
+</div>
+<div class="filter-group">
+<label>소켓 수</label>
+<select id="filterSockets"><option value="">전체</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
+</div>
+</div>
+
+<div class="rune-section">
+<h3>🪨 룬 선택 (순서대로)</h3>
+<div class="rune-grid" id="runeGrid"></div>
+<div class="selected-runes" id="selectedRunes">
+<span style="color:var(--dim);font-size:.8rem">룬을 클릭하면 여기에 추가됩니다</span>
+</div>
+</div>
+
+<div class="results-header">
+<h3>룬워드 목록</h3>
+<span class="results-count" id="resultsCount"></span>
+</div>
+<div class="rw-list" id="rwList"></div>
+</div>
+
+<script>
+// === RUNE DATA ===
+const RUNES=[
+{id:1,name:'El',kr:'엘',lvl:11},{id:2,name:'Eld',kr:'엘드',lvl:11},{id:3,name:'Tir',kr:'티르',lvl:13},
+{id:4,name:'Nef',kr:'네프',lvl:13},{id:5,name:'Eth',kr:'에스',lvl:15},{id:6,name:'Ith',kr:'이스',lvl:15},
+{id:7,name:'Tal',kr:'탈',lvl:17},{id:8,name:'Ral',kr:'랄',lvl:19},{id:9,name:'Ort',kr:'오르트',lvl:21},
+{id:10,name:'Thul',kr:'슬',lvl:23},{id:11,name:'Amn',kr:'암',lvl:25},{id:12,name:'Sol',kr:'솔',lvl:27},
+{id:13,name:'Shael',kr:'샤엘',lvl:29},{id:14,name:'Dol',kr:'돌',lvl:31},{id:15,name:'Hel',kr:'헬',lvl:0},
+{id:16,name:'Io',kr:'이오',lvl:35},{id:17,name:'Lum',kr:'룸',lvl:37},{id:18,name:'Ko',kr:'코',lvl:39},
+{id:19,name:'Fal',kr:'팔',lvl:41},{id:20,name:'Lem',kr:'렘',lvl:43},{id:21,name:'Pul',kr:'풀',lvl:45},
+{id:22,name:'Um',kr:'움',lvl:47},{id:23,name:'Mal',kr:'말',lvl:49},{id:24,name:'Ist',kr:'이스트',lvl:51},
+{id:25,name:'Gul',kr:'굴',lvl:53},{id:26,name:'Vex',kr:'벡스',lvl:55},{id:27,name:'Ohm',kr:'옴',lvl:57},
+{id:28,name:'Lo',kr:'로',lvl:59},{id:29,name:'Sur',kr:'서르',lvl:61},{id:30,name:'Ber',kr:'베르',lvl:63},
+{id:31,name:'Jah',kr:'자',lvl:65},{id:32,name:'Cham',kr:'참',lvl:67},{id:33,name:'Zod',kr:'조드',lvl:69}
+];
+
+// === RUNEWORD DATABASE ===
+const RUNEWORDS=[
+// 2-socket
+{name:'Steel',kr:'강철',runes:['Tir','El'],lvl:13,sockets:2,types:['검','도끼','철퇴'],classes:['전체'],props:['+25% 증가된 데미지','+20% 공격 속도','적 명중 시 오픈 상처','+3 최소 데미지','+3 최대 데미지','적 처치 시 마나 +50% 확률']},
+{name:'Nadir',kr:'나디르',runes:['Nef','Tir'],lvl:13,sockets:2,types:['투구'],classes:['전체'],props:['+50% 방어력','+10 방어력','+30 스태미나','적 넉백','-33% 골드 손실','빛 반경 -3','Lv 13 은폐 (9 충전)']},
+{name:'Zephyr',kr:'제퍼',runes:['Ort','Eth'],lvl:21,sockets:2,types:['활'],classes:['아마존'],props:['+33% 공격 속도','+66% AR','1-50 번개 데미지','-25% 타겟 방어','적 처치 시 체력 +7','+25% 방어력']},
+{name:'Pattern',kr:'패턴',runes:['Tal','Ort','Thul'],lvl:23,sockets:3,types:['발톱'],classes:['어쌔신'],props:['+30% 빠른 블록','+40-80% AR','17-62 화염 데미지','1-50 번개 데미지','3-14 냉기 데미지','+75 독 데미지 (5초)','+6 힘','+6 민첩','모든 저항 +15']},
+{name:'Malice',kr:'악의',runes:['Ith','El','Eth'],lvl:15,sockets:3,types:['근접무기'],classes:['전체'],props:['+33% AR','+9 최대 데미지','-25% 타겟 방어','100% 오픈 상처','-100 몬스터 방어력 (타격당)','몬스터 도주 확률','데미지의 -5 체력 드레인']},
+{name:'Stealth',kr:'은신',runes:['Tal','Eth'],lvl:17,sockets:2,types:['갑옷'],classes:['전체'],props:['+25% 빠른 캐스팅','+25% 빠른 히트 리커버리','+25% 이동 속도','+6 민첩','마나 재생 +15%','독 저항 +30','마법 데미지 감소 3']},
+{name:'Leaf',kr:'나뭇잎',runes:['Tir','Ral'],lvl:19,sockets:2,types:['지팡이'],classes:['소서리스'],props:['화염 스킬 +3','화염볼 +3','인페르노 +3','웜스 +3','1-100 화염 데미지','+2 마나/레벨','냉기 저항 +33']},
+{name:'Strength',kr:'힘',runes:['Amn','Tir'],lvl:25,sockets:2,types:['근접무기'],classes:['전체'],props:['+35% AR','+25% 크러싱 블로우','+7% 라이프 스틸','+2 마나/킬','+20 힘','+10 생명력']},
+{name:'Lore',kr:'지식',runes:['Ort','Sol'],lvl:27,sockets:2,types:['투구'],classes:['전체'],props:['+1 전체 스킬','+10 에너지','+2 마나/킬','번개 저항 +30','데미지 감소 7','빛 반경 +2']},
+{name:'Rhyme',kr:'라임',runes:['Shael','Eth'],lvl:29,sockets:2,types:['방패'],classes:['전체'],props:['+40% 빠른 블록','+20% 블록 확률','마법아이템 발견 +25%','골드 획득 +50%','모든 저항 +25','동결 불가']},
+{name:'White',kr:'화이트',runes:['Dol','Io'],lvl:35,sockets:2,types:['완드'],classes:['네크로맨서'],props:['+3 독/뼈 스킬','본스피어 +3','본아머 +2','본월 +4','+20% 빠른 캐스팅','+13 마나','마법 데미지 감소 4']},
+{name:'Plague',kr:'역병',runes:['Cham','Shael','Um'],lvl:67,sockets:3,types:['검'],classes:['전체'],props:['적 처치 시 Lv 12 로워 레지스트','+1-2 전체 스킬','+20% 캐스팅 속도','+260-320% AR','데미지의 1-2% 마나 스틸','-23% 적 독 저항','독 저항 +28%']},
+
+// 3-socket
+{name:'Ancient\'s Pledge',kr:'고대의 서약',runes:['Ral','Ort','Tal'],lvl:21,sockets:3,types:['방패'],classes:['전체'],props:['+50% 방어력','화염 저항 +43%','냉기 저항 +48%','번개 저항 +48%','독 저항 +48%','데미지 감소 10%']},
+{name:'Holy Thunder',kr:'홀리 썬더',runes:['Eth','Ral','Ort','Tal'],lvl:23,sockets:4,types:['셉터'],classes:['팔라딘'],props:['+60% AR','홀리쇼크 +3','1-160 번개 데미지','+10 최대 데미지','-25% 적 방어','독 저항 +5%','최대 데미지 +3 (0.375/레벨)']},
+{name:'Fury',kr:'퓨리',runes:['Jah','Gul','Eth'],lvl:65,sockets:3,types:['근접무기'],classes:['전체'],props:['+209% AR','+40% 공격 속도','33% 오픈 상처','66% 치명타 확률','-25% 적 방어','+20% 보너스 AR','6% 라이프 스틸','+5 Frenzy (바바리안)','방지 몬스터 치유']},
+{name:'Myth',kr:'신화',runes:['Hel','Amn','Nef'],lvl:25,sockets:3,types:['갑옷'],classes:['바바리안'],props:['+2 바바리안 스킬','+30 방어 vs 미사일','넉백','+10 힘','체력 회복 +3','데미지 감소 10']},
+{name:'Peace',kr:'평화',runes:['Shael','Thul','Amn'],lvl:29,sockets:3,types:['갑옷'],classes:['아마존'],props:['+2 아마존 스킬','+20% 빠른 히트 리커버리','슬로 미사일 +2','발키리 +2','크리티컬 스트라이크 +15%','냉기 저항 +30%']},
+{name:'Treachery',kr:'배신',runes:['Shael','Thul','Lem'],lvl:43,sockets:3,types:['갑옷'],classes:['전체'],props:['+45% 공격 속도','+20% 빠른 히트 리커버리','피격 시 Lv 15 페이드 (5%)','피격 시 Lv 15 베놈 (5%)','+2 어쌔신 스킬','+30% 골드 획득']},
+{name:'Enigma',kr:'이니그마',runes:['Jah','Ith','Ber'],lvl:65,sockets:3,types:['갑옷'],classes:['전체'],props:['+2 전체 스킬','+45% 이동 속도','+1 텔레포트','+775 방어력','+0.75 힘/레벨','최대 라이프 +5%','데미지 감소 8%','+14 생명력/레벨','마법아이템 발견 +1%/레벨']},
+{name:'Infinity',kr:'인피니티',runes:['Ber','Mal','Ber','Ist'],lvl:63,sockets:4,types:['폴암'],classes:['전체'],props:['+50% 캐스팅','+255-325% AR','Lv 12 컨빅션 오라','+35-40% 번개 데미지','-45-55% 적 번개 저항','40% 크러싱 블로우','킬당 골드 +125-175%']},
+{name:'Insight',kr:'인사이트',runes:['Ral','Tir','Tal','Sol'],lvl:27,sockets:4,types:['폴암','지팡이'],classes:['전체'],props:['Lv 12-17 명상 오라','+35% 빠른 캐스팅','+200-260% AR','1-150 추가 번개 데미지','+5 속성당','독 저항 +75%','+1-6 크리티컬 스트라이크','마법 데미지 감소 7']},
+{name:'Spirit',kr:'스피릿',runes:['Tal','Thul','Ort','Amn'],lvl:25,sockets:4,types:['검','방패'],classes:['전체'],props:['+2 전체 스킬','+25-35% 빠른 캐스팅','+55% 빠른 히트 리커버리','+250 방어 vs 미사일','+22 생명력','+89-112 마나','+3-8 흡수 마법','모든 저항 +35']},
+{name:'Heart of the Oak',kr:'오크의 심장',runes:['Ko','Vex','Pul','Thul'],lvl:55,sockets:4,types:['철퇴','지팡이'],classes:['전체'],props:['+3 전체 스킬','+40% 빠른 캐스팅','모든 저항 +30-40','7% 마나 스틸','+10 민첩','+75% 최대 마나','Lv 4 오크세이지 (25 충전)','Lv 14 레이븐 (60 충전)']},
+{name:'Chains of Honor',kr:'명예의 사슬',runes:['Dol','Um','Ber','Ist'],lvl:63,sockets:4,types:['갑옷'],classes:['전체'],props:['+2 전체 스킬','+200% 악마/언데드 데미지','8% 라이프 스틸','+70% AR','+20 힘','모든 저항 +65','데미지 감소 8%','마법아이템 발견 +25%']},
+{name:'Call to Arms',kr:'전쟁의 함성',runes:['Amn','Ral','Mal','Ist','Ohm'],lvl:57,sockets:5,types:['무기'],classes:['전체'],props:['+1 전체 스킬','+40% 공격 속도','배틀 커맨드 +2-6','배틀 오더 +1-6','배틀 크라이 +1-4','+5-30 화염 데미지','방지 몬스터 치유']},
+{name:'Grief',kr:'비탄',runes:['Eth','Tir','Lo','Mal','Ral'],lvl:59,sockets:5,types:['검','도끼'],classes:['전체'],props:['+30-40% 공격 속도','+340-400 데미지','-25% 적 방어','20-25% 치명타','적 처치 시 마나 +15','방지 몬스터 치유','+1.875 라이프/레벨']},
+{name:'Last Wish',kr:'마지막 소원',runes:['Jah','Mal','Jah','Sur','Jah','Ber'],lvl:65,sockets:6,types:['검','도끼','철퇴','창'],classes:['전체'],props:['Lv 17 마이트 오라','적 처치 시 Lv 6 페이드','70% 크러싱 블로우','60-70% 치명타 확률','적 처치 시 Lv 11 라이프 탭 (20%)','+330-375% AR','마법아이템 발견 +50%']},
+{name:'Breath of the Dying',kr:'죽음의 숨결',runes:['Vex','Hel','El','Eld','Zod','Eth'],lvl:69,sockets:6,types:['무기'],classes:['전체'],props:['50% 적 사망 시 풀회복','+60% 공격 속도','+350-400% AR','-25% 적 방어','+200% 악마/언데드','7% 마나 스틸','12-15% 라이프 스틸','방지 몬스터 치유','+30 속성','비파괴']},
+{name:'Exile',kr:'추방',runes:['Vex','Ohm','Ist','Dol'],lvl:57,sockets:4,types:['팔라딘 방패'],classes:['팔라딘'],props:['+2 팔라딘 방어 오라','Lv 13-16 디파이언스 오라','+220-260% 방어력','블록 확률 +30%','라이프 탭 +7%','동결 불가','소켓 수리 내구성 +25','마법 데미지 감소 7']},
+{name:'Dream',kr:'드림',runes:['Io','Jah','Pul'],lvl:65,sockets:3,types:['투구','방패'],classes:['전체'],props:['Lv 15 홀리쇼크 오라','+20-30% 빠른 히트 리커버리','+30% 방어력','+150-220 방어','모든 저항 +5-20','마나 +0.625/레벨','+20-30 생명력']},
+{name:'Delirium',kr:'착란',runes:['Lem','Ist','Io'],lvl:51,sockets:3,types:['투구'],classes:['전체'],props:['피격 시 1% 확률 Lv 50 딜리리엄 변신','6% 확률 마인드블래스트','14% 확률 테러','커스 +11%','+261 방어','골드 획득 +10%','Lv 17 어트랙트 (60 충전)']},
+{name:'Duress',kr:'강박',runes:['Shael','Um','Thul'],lvl:47,sockets:3,types:['갑옷'],classes:['전체'],props:['+40% 빠른 히트 리커버리','+10-20% AR','15% 크러싱 블로우','33% 오픈 상처','+150-200% 방어력','냉기 저항 +45%','냉기 지속 +1초']},
+{name:'Prudence',kr:'신중',runes:['Mal','Tir'],lvl:49,sockets:2,types:['갑옷'],classes:['전체'],props:['+25% 빠른 히트 리커버리','+140-170% 방어력','모든 저항 +25-35','데미지 감소 3','마법 데미지 감소 17','+2 마나/킬','+1 빛 반경','수리 내구성']},
+{name:'Rain',kr:'비',runes:['Ort','Mal','Ith'],lvl:49,sockets:3,types:['갑옷'],classes:['드루이드'],props:['+2 드루이드 스킬','사이클론 아머 +3','트위스터 +3','+100-150 마나','번개 저항 +30%','마법 데미지 감소 7']},
+{name:'Bone',kr:'뼈',runes:['Sol','Um','Um'],lvl:47,sockets:3,types:['갑옷'],classes:['네크로맨서'],props:['+2 네크로맨서 스킬','본아머 +2','본스피어 +3','본월 +3','+10 에너지','마나 +1.5/레벨','데미지 감소 7','화염 저항 +30%']},
+{name:'Smoke',kr:'연기',runes:['Nef','Lum'],lvl:37,sockets:2,types:['갑옷'],classes:['전체'],props:['+75% 방어력','모든 저항 +50','+20% 빠른 히트 리커버리','Lv 6 위큰 (18 충전)','-1 빛 반경','+10 에너지']},
+{name:'Lionheart',kr:'사자의 심장',runes:['Hel','Lum','Fal'],lvl:41,sockets:3,types:['갑옷'],classes:['전체'],props:['+20% AR','+25 힘','+15 민첩','+20 생명력','+10 에너지','+50 라이프','모든 저항 +30']},
+{name:'Wealth',kr:'부',runes:['Lem','Ko','Tir'],lvl:43,sockets:3,types:['갑옷'],classes:['전체'],props:['골드 획득 +300%','마법아이템 발견 +100%','+2 마나/킬','+10 민첩']},
+{name:'Gloom',kr:'어둠',runes:['Fal','Um','Pul'],lvl:47,sockets:3,types:['갑옷'],classes:['전체'],props:['+200-260% 방어력','+10 힘','모든 저항 +45','-3 빛 반경','5% 데미지를 마나로','Lv 3 딤 비전 (15 충전)']},
+{name:'Fortitude',kr:'불굴',runes:['El','Sol','Dol','Lo'],lvl:59,sockets:4,types:['무기','갑옷'],classes:['전체'],props:['+200% AR','+300% AR (갑옷)','Lv 15 칠링아머','25-30 화염,냉기,번개 데미지','+200% 방어력(갑옷)','데미지 감소 7','라이프 +1-1.5/레벨','모든 저항 +25-30']},
+{name:'Bramble',kr:'가시덤불',runes:['Ral','Ohm','Sur','Eth'],lvl:61,sockets:4,types:['갑옷'],classes:['전체'],props:['Lv 15-21 쏜즈 오라','+50% 빠른 히트 리커버리','+300 방어','독 저항 +100%','+5 최대 독 저항','+13 라이프/레벨','냉기 저항 +30%']},
+{name:'Stone',kr:'돌',runes:['Shael','Um','Pul','Lum'],lvl:47,sockets:4,types:['갑옷'],classes:['전체'],props:['+60% 빠른 히트 리커버리','+250-290% 방어력','+300 방어 vs 미사일','+16 힘','+16 생명력','모든 저항 +15','+5 최대 냉기 저항','클레이골렘 Lv 16 (80 충전)']},
+
+// Weapons
+{name:'Kingslayer',kr:'킹슬레이어',runes:['Mal','Um','Gul','Fal'],lvl:53,sockets:4,types:['검','도끼'],classes:['전체'],props:['+30% 공격 속도','+230-270% AR','25% 오픈 상처','+9-11 최대/타격','20% 크러싱 블로우','+33% AR vs 디바인','+25 힘','기타 수리 내구성']},
+{name:'Oath',kr:'맹세',runes:['Shael','Pul','Mal','Lum'],lvl:49,sockets:4,types:['검','도끼','철퇴'],classes:['전체'],props:['+50% 공격 속도','+210-340% AR','+30% 치명타','방지 몬스터 치유','+75% 데미지 vs 악마','+100 AR vs 악마','+10 에너지','비파괴']},
+{name:'Passion',kr:'열정',runes:['Dol','Ort','Eld','Lem'],lvl:43,sockets:4,types:['무기'],classes:['전체'],props:['+25% 공격 속도','+160-210% AR','50-80% 보너스 AR','1-50 번개 데미지','+1 버서크','+1 제스트','적 도주','적 처치 시 골드 +75%']},
+{name:'Silence',kr:'침묵',runes:['Dol','Eld','Hel','Ist','Tir','Vex'],lvl:55,sockets:6,types:['무기'],classes:['전체'],props:['+2 전체 스킬','+20% 공격 속도','+200% AR','+75% 데미지 vs 언데드','+11% 마나 스틸','적 블라인드 확률 33%','모든 저항 +75%','적 처치 시 마나']},
+{name:'Death',kr:'죽음',runes:['Hel','El','Vex','Ort','Gul'],lvl:55,sockets:5,types:['검','도끼'],classes:['전체'],props:['100% 크러싱 블로우','50% 치명타','+1 전체 스킬','+300-385% AR','20% 보너스 AR','7% 마나 스틸','블러드골렘 Lv 22 (15 충전)']},
+{name:'Destruction',kr:'파괴',runes:['Vex','Lo','Ber','Jah','Ko'],lvl:65,sockets:5,types:['폴암','검'],classes:['전체'],props:['+23% 치명타','5% 확률 Lv 23 볼케이노','5% 확률 Lv 22 몰튼볼더','100% 크러싱 블로우','+350-380% AR','+40% 공격 속도','방지 몬스터 치유']},
+{name:'Ice',kr:'얼음',runes:['Amn','Shael','Jah','Lo'],lvl:65,sockets:4,types:['활'],classes:['전체'],props:['+20% 공격 속도','+140-210% AR','냉기 데미지 +25-30%','-20% 적 냉기 저항','3.125% 치명타/레벨','마법 데미지 감소 7','Lv 18 홀리프리즈 오라']},
+{name:'Phoenix',kr:'피닉스',runes:['Vex','Vex','Lo','Jah'],lvl:65,sockets:4,types:['무기','방패'],classes:['전체'],props:['Lv 10-15 리뎀션 오라','+350-400% AR','-28% 적 화염 저항','피격 시 Lv 40 파이어스톰','15-21% 화염 흡수','+50 라이프','최대 번개 저항 +5%','최대 화염 저항 +10%']},
+{name:'Brand',kr:'브랜드',runes:['Jah','Lo','Mal','Gul'],lvl:65,sockets:4,types:['활','석궁'],classes:['전체'],props:['35% 크러싱 블로우','100% 화염 화살 확률','-15% 적 화염 저항','+260-340% AR','+280-330% 악마에게','20% 치명타','넉백','방지 몬스터 치유']},
+{name:'Faith',kr:'신앙',runes:['Ohm','Jah','Lem','Eld'],lvl:65,sockets:4,types:['활','석궁'],classes:['전체'],props:['Lv 12-15 패너티시즘 오라','+1-2 전체 스킬','+330% AR','300% 보너스 AR','+75% 데미지 vs 언데드','+120 화염 데미지','모든 저항 +15%']},
+{name:'Wrath',kr:'분노',runes:['Pul','Lum','Ber','Mal'],lvl:63,sockets:4,types:['활','석궁'],classes:['전체'],props:['30% 확률 Lv 1 디크레피파이','5% 확률 Lv 10 라이프탭','+375% 악마에게','+100 AR vs 악마','방지 몬스터 치유','+10 에너지','동결 불가']},
+{name:'Wind',kr:'바람',runes:['Sur','El'],lvl:61,sockets:2,types:['근접무기'],classes:['전체'],props:['+40% 공격 속도','+10% AR/레벨','+3 민첩/레벨','넉백 확률 44%','Lv 13 트위스터 피격 시','+15 방어/레벨','적 처치 시 마나']},
+{name:'Rift',kr:'균열',runes:['Hel','Ko','Lem','Gul'],lvl:53,sockets:4,types:['폴암','셉터'],classes:['전체'],props:['20% 확률 Lv 16 토네이도','+20% 공격 속도','+200-270% AR','60-180 화염 데미지,마법 데미지','데미지의 5-10% 마나 스틸','+10 민첩','모든 저항 +15%']},
+{name:'Doom',kr:'파멸',runes:['Hel','Ohm','Um','Lo','Cham'],lvl:67,sockets:5,types:['도끼','폴암','철퇴'],classes:['전체'],props:['Lv 12 홀리프리즈 오라','+45% 공격 속도','+330-370% AR','-40-60% 적 냉기 저항','20% 크러싱 블로우','25% 오픈 상처','방지 몬스터 치유','동결 불가']},
+{name:'Eternity',kr:'영원',runes:['Amn','Ber','Ist','Sol','Sur'],lvl:63,sockets:5,types:['근접무기'],classes:['전체'],props:['+260-310% AR','9% 라이프 스틸','+200 AR','데미지의 33% 슬로우','+1-2 전체 스킬','비파괴','방지 몬스터 치유','데미지 감소 8%']},
+
+// Helms
+{name:'Radiance',kr:'광휘',runes:['Nef','Sol','Ith'],lvl:27,sockets:3,types:['투구'],classes:['전체'],props:['+75% 방어력','+30 방어 vs 미사일','+10 에너지','+10 생명력','데미지 감소 3','마법 데미지 감소 3','+33 마나','+5 빛 반경','체력 +20']},
+
+// Hand of Justice
+{name:'Hand of Justice',kr:'정의의 손',runes:['Sur','Cham','Amn','Lo'],lvl:67,sockets:4,types:['무기'],classes:['전체'],props:['Lv 16 홀리파이어 오라','+33% 공격 속도','-20% 적 화염 저항','7% 라이프 스틸','20% 치명타','적 사망시 Lv 36 블레이즈','Lv 48 메테오 레벨업 시']},
+
+// Shields
+{name:'Sanctuary',kr:'성역',runes:['Ko','Ko','Mal'],lvl:49,sockets:3,types:['방패'],classes:['전체'],props:['+20% 빠른 히트 리커버리','+20% 빠른 블록','+130-160% 방어력','+250 방어 vs 미사일','모든 저항 +50-70','마법 데미지 감소 7','Lv 12 슬로우미사일 (60 충전)']},
+{name:'Dragon',kr:'드래곤',runes:['Sur','Lo','Sol'],lvl:61,sockets:3,types:['갑옷','방패'],classes:['전체'],props:['Lv 14 홀리파이어 오라','+3-5 속성','+3-5 민첩','+15 힘','+100-150 방어','모든 저항 +15-20','피격 시 Lv 18 베놈 (12%)','피격 시 Lv 15 하이드라 (5%)']},
+
+// More weapons
+{name:'Crescent Moon',kr:'초승달',runes:['Shael','Um','Tir'],lvl:47,sockets:3,types:['도끼','검','폴암'],classes:['전체'],props:['+20% 공격 속도','+180-220% AR','-35% 적 번개 저항','25% 오픈 상처','+2 마나/킬','마법 흡수 9-11','Lv 18 체인라이트닝 (30 충전)']},
+{name:'Lawbringer',kr:'법 집행자',runes:['Amn','Lem','Ko'],lvl:43,sockets:3,types:['검','도끼','철퇴'],classes:['전체'],props:['Lv 15 생츄어리 오라','적 처치 시 시체 소멸','-50% 적 화염 저항','+200-250 화염 데미지','7% 라이프 스틸','+150 방어 vs 미사일','슬로우 타겟 50%']},
+{name:'Obsession',kr:'집착',runes:['Zod','Ist','Lem','Lum','Io','Nef'],lvl:69,sockets:6,types:['지팡이'],classes:['소서리스'],props:['+4 전체 스킬','+65% 빠른 캐스팅','+60% 빠른 히트 리커버리','모든 저항 +60-70','+10-20 모든 속성','마나 +15-25/레벨','비파괴']},
+{name:'Unbending Will',kr:'불굴의 의지',runes:['Fal','Io','Ith','Eld','El','Hel'],lvl:41,sockets:6,types:['검'],classes:['전체'],props:['+330% AR','+20-30% 공격 속도','-25% 적 방어','+10 힘','+10 생명력','+8 최대 데미지/레벨','라이프 스틸 8%','모든 저항 +10-15']},
+
+// Missing common ones
+{name:'Venom',kr:'독액',runes:['Tal','Dol','Mal'],lvl:49,sockets:3,types:['무기'],classes:['전체'],props:['독 폭발 Lv 13 (11 충전)','독 새벽 Lv 15 (27 충전)','+273-368 독 데미지 (5초)','방지 몬스터 치유','적 처치 시 마나']},
+{name:'Melody',kr:'멜로디',runes:['Shael','Ko','Nef'],lvl:39,sockets:3,types:['활'],classes:['아마존'],props:['+3 활/석궁 스킬','+50% AR','+20% 공격 속도','넉백','+3 민첩','슬로우 미사일 +3','다중화살 +3']},
+{name:'Edge',kr:'칼날',runes:['Tir','Tal','Amn'],lvl:25,sockets:3,types:['활','석궁'],classes:['전체'],props:['Lv 15 쏜즈 오라','+35% 공격 속도','+320-380% 악마에게','+5-10 최대 데미지 속성','방지 몬스터 치유','상인 할인 15%','적 처치 시 마나']},
+{name:'Harmony',kr:'조화',runes:['Tir','Ith','Sol','Ko'],lvl:39,sockets:4,types:['활'],classes:['전체'],props:['Lv 10 비거 오라','+200-275% AR','+275-300% 악마에게','발키리 +2-6','독 저항 +75%','+10 민첩','+20% 이동속도 (궁수가 달릴 수 있음!)']},
+{name:'Honor',kr:'명예',runes:['Amn','El','Ith','Tir','Sol'],lvl:27,sockets:5,types:['근접무기'],classes:['전체'],props:['+160% AR','+1 전체 스킬','+9-9 최대 데미지','25% 치명타','7% 라이프 스틸','+200 AR','+10 힘','체력 +10/킬','데미지 감소 3']},
+{name:'Black',kr:'블랙',runes:['Thul','Io','Nef'],lvl:35,sockets:3,types:['클럽','철퇴','해머'],classes:['전체'],props:['+15% 공격 속도','+120% AR','40% 크러싱 블로우','넉백','+200 AR','+10 생명력','마법 데미지 감소 2','Lv 4 코퍼스 익스플로전 (12 충전)']},
+{name:'Splendor',kr:'화려함',runes:['Eth','Lum'],lvl:37,sockets:2,types:['방패'],classes:['전체'],props:['+1 전체 스킬','+10% 빠른 캐스팅','+20% 빠른 블록','+60-100% 방어력','+10 에너지','마법아이템 발견 +20%','골드 획득 +3/레벨','+1 빛 반경']},
+{name:'Memory',kr:'기억',runes:['Lum','Io','Sol','Eth'],lvl:37,sockets:4,types:['지팡이'],classes:['소서리스'],props:['+3 소서리스 스킬','+33% 빠른 캐스팅','+9 최소 데미지','+20% AR','+3 에너지 쉴드','+10 에너지','+60 마나','마법 데미지 감소 7']},
+{name:'Obedience',kr:'복종',runes:['Hel','Ko','Thul','Eth','Fal'],lvl:41,sockets:5,types:['폴암'],classes:['전체'],props:['+40% 빠른 히트 리커버리','+370% AR','-25% 적 방어','+3-14 냉기 데미지','-25% 적 화염 저항','40% 크러싱 블로우','+21 힘','모든 저항 +20-30']},
+{name:'Flickering Flame',kr:'깜빡이는 불꽃',runes:['Nef','Pul','Vex'],lvl:55,sockets:3,types:['투구'],classes:['전체'],props:['+4-8 화염 스킬','Lv 4-8 레지스트 파이어 오라','-10-15% 적 화염 저항','+30 방어/레벨','+30 방어','모든 저항 +10']},
+{name:'Mist',kr:'안개',runes:['Cham','Shael','Gul','Thul','Ith'],lvl:67,sockets:5,types:['활'],classes:['전체'],props:['Lv 8-12 컨센트레이션 오라','+3 전체 스킬','+20% 공격 속도','+100% 관통','모든 저항 +40','동결 불가']},
+{name:'Wisdom',kr:'지혜',runes:['Pul','Ith','Eld'],lvl:45,sockets:3,types:['투구'],classes:['전체'],props:['관통 +33%','+15-25% 보너스 AR','+4-8 속성/레벨','마법 데미지 감소 4-8','+30 마나','슬로우 타겟 10%','동결 불가']},
+];
+
+// State
+let selectedRunes=[];
+let openCards=new Set();
+
+// Init
+function init(){
+  renderRuneGrid();
+  populateFilters();
+  document.getElementById('filterType').addEventListener('change',renderResults);
+  document.getElementById('filterClass').addEventListener('change',renderResults);
+  document.getElementById('filterSockets').addEventListener('change',renderResults);
+  document.getElementById('lvlMin').addEventListener('input',renderResults);
+  document.getElementById('lvlMax').addEventListener('input',renderResults);
+  renderResults();
+}
+
+function renderRuneGrid(){
+  const grid=document.getElementById('runeGrid');
+  grid.innerHTML=RUNES.map(r=>`<div class="rune-btn" data-id="${r.id}" onclick="toggleRune(${r.id})"><span class="rune-num">${r.id}</span>${r.name}<br><span style="font-size:.55rem">${r.kr}</span></div>`).join('');
+}
+
+function populateFilters(){
+  const types=new Set();
+  const classes=new Set();
+  RUNEWORDS.forEach(rw=>{rw.types.forEach(t=>types.add(t));rw.classes.forEach(c=>classes.add(c))});
+  const typeEl=document.getElementById('filterType');
+  [...types].sort().forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;typeEl.appendChild(o)});
+  const classEl=document.getElementById('filterClass');
+  [...classes].sort().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;classEl.appendChild(o)});
+}
+
+function toggleRune(id){
+  const idx=selectedRunes.indexOf(id);
+  if(idx>=0) selectedRunes.splice(idx,1);
+  else selectedRunes.push(id);
+  updateRuneUI();
+  renderResults();
+}
+
+function removeRune(idx){
+  selectedRunes.splice(idx,1);
+  updateRuneUI();
+  renderResults();
+}
+
+function clearRunes(){
+  selectedRunes=[];
+  updateRuneUI();
+  renderResults();
+}
+
+function updateRuneUI(){
+  document.querySelectorAll('.rune-btn').forEach(el=>{
+    const id=parseInt(el.dataset.id);
+    el.classList.toggle('selected',selectedRunes.includes(id));
+  });
+  const container=document.getElementById('selectedRunes');
+  if(selectedRunes.length===0){
+    container.innerHTML='<span style="color:var(--dim);font-size:.8rem">룬을 클릭하면 여기에 추가됩니다</span>';
+  } else {
+    container.innerHTML=selectedRunes.map((id,i)=>{
+      const r=RUNES.find(x=>x.id===id);
+      return `<span class="selected-rune-tag">${r.name} <span class="remove" onclick="removeRune(${i})">✕</span></span>`;
+    }).join('')+` <span class="clear-btn" onclick="clearRunes()">초기화</span>`;
+  }
+}
+
+function renderResults(){
+  const filterType=document.getElementById('filterType').value;
+  const filterClass=document.getElementById('filterClass').value;
+  const filterSockets=document.getElementById('filterSockets').value;
+  const lvlMin=parseInt(document.getElementById('lvlMin').value)||1;
+  const lvlMax=parseInt(document.getElementById('lvlMax').value)||99;
+
+  let results=RUNEWORDS.filter(rw=>{
+    // Type filter
+    if(filterType && !rw.types.includes(filterType)) return false;
+    // Class filter
+    if(filterClass && !rw.classes.includes(filterClass) && !rw.classes.includes('전체')) return false;
+    // Socket filter
+    if(filterSockets && rw.sockets!==parseInt(filterSockets)) return false;
+    // Level filter
+    if(rw.lvl<lvlMin || rw.lvl>lvlMax) return false;
+    // Rune sequence filter
+    if(selectedRunes.length>0){
+      const rwRuneIds=rw.runes.map(name=>RUNES.find(r=>r.name===name)?.id);
+      // Check if selected runes match the start of the runeword sequence
+      // Or if the runeword contains all selected runes in order
+      if(selectedRunes.length<=rwRuneIds.length){
+        // Check subsequence match
+        let ri=0;
+        for(let wi=0;wi<rwRuneIds.length&&ri<selectedRunes.length;wi++){
+          if(rwRuneIds[wi]===selectedRunes[ri]) ri++;
+        }
+        if(ri<selectedRunes.length) return false;
+      } else return false;
+    }
+    return true;
+  });
+
+  // Sort by level
+  results.sort((a,b)=>a.lvl-b.lvl);
+
+  const list=document.getElementById('rwList');
+  document.getElementById('resultsCount').textContent=`${results.length}개`;
+
+  if(results.length===0){
+    list.innerHTML='<div class="no-results">조건에 맞는 룬워드가 없습니다</div>';
+    return;
+  }
+
+  list.innerHTML=results.map(rw=>{
+    const id=rw.name.replace(/[^a-zA-Z]/g,'');
+    const isOpen=openCards.has(id);
+    return `<div class="rw-card ${isOpen?'open':''}" id="card-${id}">
+      <div class="rw-head" onclick="toggleCard('${id}')">
+        <div><span class="rw-name">${rw.kr}</span><span class="rw-name-en">${rw.name}</span><span class="rw-sockets">(${rw.sockets}소켓)</span></div>
+        <div class="rw-meta">
+          <span class="rw-lvl">Lv ${rw.lvl}</span>
+          <span class="rw-type">${rw.types.join('/')}</span>
+          <span class="arrow">▶</span>
+        </div>
+      </div>
+      <div class="rw-body">
+        <div class="rw-runes">${rw.runes.map((name,i)=>{
+          const r=RUNES.find(x=>x.name===name);
+          return `<div class="rw-rune"><span class="order">${i+1}</span><span class="num">${r?r.id:'?'}</span><span class="name">${name} (${r?r.kr:'?'})</span></div>`;
+        }).join('')}</div>
+        <div class="rw-classes">${rw.classes.map(c=>`<span class="rw-class-tag">${c}</span>`).join('')}</div>
+        <ul class="rw-props">${rw.props.map(p=>`<li>${p}</li>`).join('')}</ul>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCard(id){
+  if(openCards.has(id)) openCards.delete(id);
+  else openCards.add(id);
+  const card=document.getElementById('card-'+id);
+  if(card) card.classList.toggle('open');
+}
+
+init();
+</script>
+</body>
+</html>
