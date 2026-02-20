@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -10,9 +10,9 @@
     <meta property="og:url" content="https://game.cocy.io/connect4/">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="ko_KR">
-    <title>ì‚¼ì¸ ì‚¬ëª© - Connect 4</title>
+    <title>»ïÀÎ »ç¸ñ - Connect 4</title>
     <link rel="icon" href="icon.svg">
-    <script src="/lib/shared-wallet.js?v=20260214"></script>
+    <script src="/lib/shared-wallet.js?v=20260220"></script>
     <style>
         :root {
             --bg: #1e1e2e;
@@ -257,10 +257,10 @@
         function init() {
             mpUI = new MultiplayerUI({
                 gameType: 'connect4',
-                gameName: 'ğŸ”´ğŸŸ¡ğŸ”µ ì‚¼ì¸ ì‚¬ëª©',
+                gameName: '?????? »ïÀÎ »ç¸ñ',
                 container: document.getElementById('app'),
                 maxPlayers: 3,
-                supportsLocal: false,  // ë©€í‹°í”Œë ˆì´ì–´ ì „ìš©
+                supportsLocal: false,  // ¸ÖÆ¼ÇÃ·¹ÀÌ¾î Àü¿ë
                 onGameStart: handleGameStart,
                 onGameEvent: handleGameEvent,
                 onLeave: () => { isMultiplayer = false; }
@@ -327,11 +327,11 @@
                 }
             };
             
-            showToast(`ê²Œì„ ì‹œì‘! ë‹¹ì‹ ì€ ${getColorName(myColor)}ì…ë‹ˆë‹¤`);
+            showToast(`°ÔÀÓ ½ÃÀÛ! ´ç½ÅÀº ${getColorName(myColor)}ÀÔ´Ï´Ù`);
         }
 
         function getColorName(color) {
-            return { red: 'ë¹¨ê°•ğŸ”´', yellow: 'ë…¸ë‘ğŸŸ¡', blue: 'íŒŒë‘ğŸ”µ' }[color] || color;
+            return { red: '»¡°­??', yellow: '³ë¶û??', blue: 'ÆÄ¶û??' }[color] || color;
         }
 
         // ===== Board Logic =====
@@ -353,7 +353,7 @@
             if (isMultiplayer) {
                 const myId = mpUI.getClient().getMyUserId();
                 if (currentPlayer.id !== myId) {
-                    showToast('ë‹¹ì‹ ì˜ ì°¨ë¡€ê°€ ì•„ë‹™ë‹ˆë‹¤');
+                    showToast('´ç½ÅÀÇ Â÷·Ê°¡ ¾Æ´Õ´Ï´Ù');
                     return;
                 }
                 sendPlace(row, col);
@@ -372,7 +372,7 @@
             try {
                 await mpUI.sendAction({ type: 'place', payload: { row, col } });
             } catch (e) {
-                showToast('ì‹¤íŒ¨: ' + e.message);
+                showToast('½ÇÆĞ: ' + e.message);
             }
         }
 
@@ -466,7 +466,7 @@
                 const myId = mpUI.getClient().getMyUserId();
                 const isWin = winnerPlayer?.id === myId;
                 
-                // Gold: winner gets stones Ã— 100, losers lose 100
+                // Gold: winner gets stones ¡¿ 100, losers lose 100
                 let goldChange = 0;
                 let goldText = '';
                 if (winnerPlayer) {
@@ -487,20 +487,20 @@
                 }
                 
                 const stoneInfo = winnerPlayer && stoneCounts?.[winnerPlayer.id] 
-                    ? ` (ëŒ ${stoneCounts[winnerPlayer.id]}ê°œ)` : '';
+                    ? ` (µ¹ ${stoneCounts[winnerPlayer.id]}°³)` : '';
                 
                 mpUI.showResult({
-                    title: isWin ? 'ğŸ‰ ìŠ¹ë¦¬!' : 'ğŸ˜¢ íŒ¨ë°°',
+                    title: isWin ? '?? ½Â¸®!' : '?? ÆĞ¹è',
                     detail: winnerPlayer 
-                        ? `${getColorName(winnerPlayer.color)} ${winnerPlayer.nickname} ìŠ¹ë¦¬${stoneInfo} ${goldText}` 
-                        : 'ë¬´ìŠ¹ë¶€',
+                        ? `${getColorName(winnerPlayer.color)} ${winnerPlayer.nickname} ½Â¸®${stoneInfo} ${goldText}` 
+                        : '¹«½ÂºÎ',
                     isWin,
                     showRematch: true
                 });
             } else {
                 if (winnerPlayer) sfxWin();
                 mpUI.showResult({
-                    title: winnerPlayer ? `${getColorName(winnerPlayer.color)} ìŠ¹ë¦¬!` : 'ë¬´ìŠ¹ë¶€',
+                    title: winnerPlayer ? `${getColorName(winnerPlayer.color)} ½Â¸®!` : '¹«½ÂºÎ',
                     isWin: null,
                     showRematch: false
                 });
@@ -526,17 +526,17 @@
                         ${players.map((p, i) => `
                             <div class="player-tag ${p.color} ${i === currentPlayerIndex && !gameOver ? 'active' : ''}">
                                 <div class="disc ${p.color}"></div>
-                                <span>${p.nickname}${p.id === myId ? ' (ë‚˜)' : ''}</span>
+                                <span>${p.nickname}${p.id === myId ? ' (³ª)' : ''}</span>
                             </div>
                         `).join('')}
                     </div>
                     
                     <div class="turn-indicator">
-                        ${gameOver ? 'ê²Œì„ ì¢…ë£Œ' : `
+                        ${gameOver ? '°ÔÀÓ Á¾·á' : `
                             <div class="disc ${currentPlayer?.color}"></div>
                             <span>${isMultiplayer ? 
-                                (isMyTurn ? 'ë‚´ ì°¨ë¡€!' : `${currentPlayer?.nickname}ì˜ ì°¨ë¡€`) : 
-                                `${currentPlayer?.nickname}ì˜ ì°¨ë¡€`}</span>
+                                (isMyTurn ? '³» Â÷·Ê!' : `${currentPlayer?.nickname}ÀÇ Â÷·Ê`) : 
+                                `${currentPlayer?.nickname}ÀÇ Â÷·Ê`}</span>
                         `}
                     </div>
                     
@@ -547,8 +547,8 @@
                     </div>
                     
                     <div class="game-actions">
-                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">ìƒˆ ê²Œì„</button>' : ''}
-                        <button class="btn" onclick="exitGame()">ë‚˜ê°€ê¸°</button>
+                        ${!isMultiplayer ? '<button class="btn" onclick="restartGame()">»õ °ÔÀÓ</button>' : ''}
+                        <button class="btn" onclick="exitGame()">³ª°¡±â</button>
                     </div>
                 </div>
             `;
@@ -580,7 +580,7 @@
 
         function exitGame() {
             if (isMultiplayer && mpUI.getClient()) {
-                if (confirm('ê²Œì„ì„ ë‚˜ê°€ì‹œê² ìŠµë‹ˆê¹Œ?')) {
+                if (confirm('°ÔÀÓÀ» ³ª°¡½Ã°Ú½À´Ï±î?')) {
                     mpUI.getClient().leaveRoom().catch(() => {});
                     MultiplayerClient.resetInstance();
                     isMultiplayer = false;
