@@ -3032,14 +3032,12 @@
             const gradeData = GRADES[weapon.grade];
             const iconUrl = getWeaponIcon(weapon);
             const isCustomImg = (weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]);
-            let filterStyle = isCustomImg
-                ? `drop-shadow(0 0 15px ${gradeData.color})`
-                : `drop-shadow(0 0 15px ${gradeData.color}) brightness(0) invert(1)`;
+            let filterStyle = `drop-shadow(0 0 15px ${gradeData.color})`;
             // 👿 저주받은 무기: 보라색 틴트 + 어두운 글로우
             if (isCursed(weapon)) {
                 filterStyle = isCustomImg
                     ? `drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa) hue-rotate(270deg) saturate(2)`
-                    : `drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa) brightness(0) invert(1) hue-rotate(270deg) saturate(2)`;
+                    : `drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa)`;
             }
             // 전설: 회색빛 톤
             else if (weapon.grade === 'legendary' && isCustomImg) {
@@ -3239,7 +3237,10 @@
                         </div>
 
                         <div class="weapon-icon-area">
-                            ${getWeaponImgHtml(weapon, 100)}
+                            <img src="${getWeaponIcon(weapon)}" 
+                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) ? ' legendary-img' : ''}${isCursed(weapon) ? ' cursed-weapon' : ''}" 
+                                 style="width:100px;height:100px;filter:${isCursed(weapon) ? 'drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa)' : `drop-shadow(0 0 20px ${gradeData.color})`}${weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type] && !isCursed(weapon) ? ' grayscale(0.6) brightness(1.2)' : ''};"
+                                 alt="${weapon.name}">
                         </div>
 
                         <div class="weapon-stats">
