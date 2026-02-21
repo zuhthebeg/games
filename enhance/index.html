@@ -2223,7 +2223,7 @@
                 name: '일반', 
                 color: '#9d9d9d', 
                 multiplier: 1.0,
-                dropRate: 50,
+                dropRate: 49.2,
                 durabilityMod: 2.0,  // 내구도 2배 빨리 소모
                 prefixes: ['낡은', '평범한', '기본', '단순한'],
                 names: {
@@ -2245,7 +2245,7 @@
                 name: '고급', 
                 color: '#5555ff', 
                 multiplier: 1.3,
-                dropRate: 30,
+                dropRate: 29.5,
                 durabilityMod: 1.5,  // 내구도 1.5배 빨리 소모
                 prefixes: ['강화된', '마력의', '빛나는', '정교한'],
                 names: {
@@ -2260,7 +2260,7 @@
                 name: '희귀', 
                 color: '#ffcc00', 
                 multiplier: 1.7,
-                dropRate: 14,
+                dropRate: 13.5,
                 durabilityMod: 1.0,  // 기준 내구도 소모
                 prefixes: ['정예', '명인의', '고대의', '축복받은'],
                 names: {
@@ -2275,7 +2275,7 @@
                 name: '전설', 
                 color: '#ff8000', 
                 multiplier: 2.2,
-                dropRate: 4.5,
+                dropRate: 5.5,
                 durabilityMod: 0.7,  // 내구도 30% 덜 소모
                 prefixes: ['전설의', '영웅의', '신성한', '불멸의'],
                 names: {
@@ -2297,7 +2297,7 @@
                 name: '유니크', 
                 color: '#00ff80', 
                 multiplier: 3.0,
-                dropRate: 0.4,
+                dropRate: 1,
                 durabilityMod: 0.5,  // 내구도 50% 덜 소모
                 prefixes: [''],
                 names: {
@@ -2319,7 +2319,7 @@
                 name: '신화',
                 color: '#ff00ff',
                 multiplier: 4.0,
-                dropRate: 0.1,  // 0.1% 확률
+                dropRate: 0.3,  // 0.3% 확률
                 durabilityMod: 0.3,  // 내구도 70% 덜 소모
                 prefixes: [''],
                 names: {
@@ -2353,17 +2353,17 @@
             7: { success: 45, destroy: 18, cost: 8000 },     // +7→+8: 45%
             8: { success: 40, destroy: 25, cost: 12000 },    // +8→+9: 40%
             9: { success: 35, destroy: 30, cost: 20000 },    // +9→+10: 35%
-            10: { success: 30, destroy: 35, cost: 35000 },   // +10→+11: 30% 🔥
-            11: { success: 25, destroy: 40, cost: 50000 },   // +11→+12: 25%
-            12: { success: 20, destroy: 45, cost: 80000 },   // +12→+13: 20%
-            13: { success: 15, destroy: 50, cost: 120000 },  // +13→+14: 15% ☠️
-            14: { success: 10, destroy: 55, cost: 200000 },  // +14→+15: 10%
-            15: { success: 7, destroy: 60, cost: 350000 },   // +15→+16: 7% 💀
-            16: { success: 5, destroy: 65, cost: 500000 },   // +16→+17: 5%
-            17: { success: 3, destroy: 70, cost: 750000 },   // +17→+18: 3%
-            18: { success: 2, destroy: 75, cost: 1000000 },  // +18→+19: 2%
-            19: { success: 1, destroy: 80, cost: 1500000 },  // +19→+20: 1% 🎰
-            20: { success: 1, destroy: 85, cost: 2000000 }   // +20→+21: 1%
+            10: { success: 33, destroy: 30, cost: 35000 },   // +10→+11: 33% 🔥
+            11: { success: 28, destroy: 35, cost: 50000 },   // +11→+12: 28%
+            12: { success: 23, destroy: 40, cost: 80000 },   // +12→+13: 23%
+            13: { success: 18, destroy: 45, cost: 120000 },  // +13→+14: 18% ☠️
+            14: { success: 13, destroy: 50, cost: 200000 },  // +14→+15: 13%
+            15: { success: 10, destroy: 55, cost: 350000 },  // +15→+16: 10% 💀
+            16: { success: 7, destroy: 60, cost: 500000 },   // +16→+17: 7%
+            17: { success: 5, destroy: 65, cost: 750000 },   // +17→+18: 5%
+            18: { success: 3, destroy: 70, cost: 1000000 },  // +18→+19: 3%
+            19: { success: 2, destroy: 75, cost: 1500000 },  // +19→+20: 2% 🎰
+            20: { success: 1.5, destroy: 80, cost: 2000000 } // +20→+21: 1.5%
         };
         
         // 21+ 레벨 강화 확률 동적 계산
