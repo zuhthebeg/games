@@ -2360,34 +2360,34 @@
             1: { success: 95, destroy: 0, cost: 200 },       // +1→+2: 95%
             2: { success: 90, destroy: 0, cost: 400 },       // +2→+3: 90%
             3: { success: 80, destroy: 0, cost: 800 },       // +3→+4: 80%
-            4: { success: 70, destroy: 5, cost: 1500 },      // +4→+5: 70% ⚠️ 파괴 시작!
-            5: { success: 60, destroy: 8, cost: 3000 },      // +5→+6: 60%
-            6: { success: 50, destroy: 12, cost: 5000 },     // +6→+7: 50%
-            7: { success: 45, destroy: 18, cost: 8000 },     // +7→+8: 45%
-            8: { success: 40, destroy: 25, cost: 12000 },    // +8→+9: 40%
-            9: { success: 35, destroy: 30, cost: 20000 },    // +9→+10: 35%
-            10: { success: 33, destroy: 30, cost: 35000 },   // +10→+11: 33% 🔥
-            11: { success: 28, destroy: 35, cost: 50000 },   // +11→+12: 28%
-            12: { success: 23, destroy: 40, cost: 80000 },   // +12→+13: 23%
-            13: { success: 18, destroy: 45, cost: 120000 },  // +13→+14: 18% ☠️
-            14: { success: 13, destroy: 50, cost: 200000 },  // +14→+15: 13%
-            15: { success: 10, destroy: 55, cost: 350000 },  // +15→+16: 10% 💀
-            16: { success: 7, destroy: 60, cost: 500000 },   // +16→+17: 7%
-            17: { success: 5, destroy: 65, cost: 750000 },   // +17→+18: 5%
-            18: { success: 3, destroy: 70, cost: 1000000 },  // +18→+19: 3%
-            19: { success: 2, destroy: 75, cost: 1500000 },  // +19→+20: 2% 🎰
-            20: { success: 1.5, destroy: 80, cost: 2000000 } // +20→+21: 1.5%
+            4: { success: 72, destroy: 4, cost: 1500 },      // +4→+5: 72% ⚠️ 파괴 시작!
+            5: { success: 64, destroy: 6, cost: 3000 },      // +5→+6: 64%
+            6: { success: 56, destroy: 9, cost: 5000 },      // +6→+7: 56%
+            7: { success: 50, destroy: 13, cost: 8000 },     // +7→+8: 50%
+            8: { success: 45, destroy: 18, cost: 12000 },    // +8→+9: 45%
+            9: { success: 40, destroy: 22, cost: 20000 },    // +9→+10: 40%
+            10: { success: 38, destroy: 22, cost: 35000 },   // +10→+11: 38% 🔥
+            11: { success: 34, destroy: 26, cost: 50000 },   // +11→+12: 34%
+            12: { success: 30, destroy: 30, cost: 80000 },   // +12→+13: 30%
+            13: { success: 26, destroy: 34, cost: 120000 },  // +13→+14: 26% ☠️
+            14: { success: 22, destroy: 38, cost: 200000 },  // +14→+15: 22%
+            15: { success: 18, destroy: 42, cost: 350000 },  // +15→+16: 18% 💀
+            16: { success: 14, destroy: 46, cost: 500000 },  // +16→+17: 14%
+            17: { success: 11, destroy: 50, cost: 750000 },  // +17→+18: 11%
+            18: { success: 8, destroy: 54, cost: 1000000 },  // +18→+19: 8%
+            19: { success: 6, destroy: 58, cost: 1500000 },  // +19→+20: 6% 🎰
+            20: { success: 4, destroy: 62, cost: 2000000 }   // +20→+21: 4%
         };
         
         // 21+ 레벨 강화 확률 동적 계산
         function getBaseEnhanceRates(level) {
             if (level <= 20) return ENHANCE_RATES[level];
-            // 21+: 성공률 0.5% 고정, 파괴 90% 고정, 비용 기하급수 증가
+            // 21+: 후반 완화 (성공률 상향, 파괴율 하향)
             const baseCost = 2000000;
             const costMultiplier = Math.pow(1.5, level - 20);
             return {
-                success: 0.5,
-                destroy: 90,
+                success: 1.5,
+                destroy: 75,
                 cost: Math.floor(baseCost * costMultiplier)
             };
         }
