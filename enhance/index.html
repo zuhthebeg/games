@@ -5442,6 +5442,7 @@
 
         function showHunt() {
             // Initialize hunt state
+            state.consecutiveCritsTaken = 0;  // 사냥 시작 시 크리 카운터 리셋
             const playerStats = getWeaponStats(state.weapon);
             huntState = {
                 monster: spawnMonster(),
@@ -6258,8 +6259,9 @@
             const monster = huntState.monster;
             let goldReward = Math.floor(Math.random() * (monster.gold[1] - monster.gold[0] + 1)) + monster.gold[0];
             
-            // 사냥 성공 시 연속 도망 카운터 리셋
+            // 사냥 성공 시 카운터 리셋
             state.consecutiveFlees = 0;
+            state.consecutiveCritsTaken = 0;
             
             // 💀 언데드 보스킬 보너스: 골드 +5% per kill
             const undeadKills = (state.bossTypeKills || {}).undead || 0;
@@ -6618,6 +6620,7 @@
         function huntPlayerDied() {
             playSound('destroy');
             vibrate([200, 100, 200, 100, 300]);
+            state.consecutiveCritsTaken = 0;  // 사망 후 카운터 리셋
             
             // Lose weapon! 몬스터 종족 기반 속성 부여
             const lostWeapon = state.weapon;
