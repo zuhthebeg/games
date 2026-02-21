@@ -4269,7 +4269,7 @@
                 `;
             }
             
-            if (tab === 'hunting' && Array.isArray(state.destroyedWeapons) && state.destroyedWeapons.length > 0) {
+            if (tab === 'weapons' && Array.isArray(state.destroyedWeapons) && state.destroyedWeapons.length > 0) {
                 const items = state.destroyedWeapons.slice(0, 5).map((w) => `
                     <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
                         <img src="${w.image}" alt="${w.name}" style="width:34px;height:34px;object-fit:contain;border-radius:6px;background:rgba(255,255,255,0.04);">
