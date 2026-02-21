@@ -2563,8 +2563,9 @@
         
         // ===== RANKING SYSTEM =====
         const RANKING_API = 'https://relay.cocy.io/api/rankings';
-        let pendingKills = 0;  // 배치로 보낼 킬 수
-        let pendingStreak = 0; // 현재 연속 킬
+        let pendingKills = 0;      // 배치로 보낼 킬 수
+        let pendingStreak = 0;     // 현재 연속 킬
+        let pendingBossKills = 0;  // 배치로 보낼 보스 처치 수
         
         function getUserId() {
             // 1. 먼저 저장된 user_id 확인
@@ -2646,12 +2647,14 @@
         async function syncHuntingRanking() {
             const userId = getUserId();
             const nickname = getUserNickname();
-            console.log('🐉 syncHuntingRanking called, userId:', userId, 'nickname:', nickname, 'kills:', pendingKills);
-            if (!userId || pendingKills <= 0) return;
+            console.log('🐉 syncHuntingRanking called, userId:', userId, 'nickname:', nickname, 'kills:', pendingKills, 'bossKills:', pendingBossKills);
+            if (!userId || (pendingKills <= 0 && pendingBossKills <= 0)) return;
             
             const kills = pendingKills;
             const streak = pendingStreak;
-            pendingKills = 0;  // 리셋
+            const bossKills = pendingBossKills;
+            pendingKills = 0;      // 리셋
+            pendingBossKills = 0;  // 리셋
             
             try {
                 const res = await fetch(`${RANKING_API}/hunting`, {
@@ -2661,7 +2664,8 @@
                         userId: userId,
                         nickname: nickname,
                         kills: kills,
-                        killStreak: streak
+                        killStreak: streak,
+                        bossKills: bossKills
                     })
                 });
                 const data = await res.json();
@@ -2701,7 +2705,8 @@
         // 랭킹 조회
         async function fetchRankings(type = 'weapons') {
             try {
-                const res = await fetch(`${RANKING_API}/${type}?limit=50`);
+                const qs = type === 'hunting' ? '?limit=50&type=boss' : '?limit=50';
+                const res = await fetch(`${RANKING_API}/${type}${qs}`);
                 const data = await res.json();
                 return data.success ? data.rankings : [];
             } catch (e) {
@@ -2712,13 +2717,16 @@
         
         // 페이지 종료 시 남은 킬 동기화
         window.addEventListener('beforeunload', () => {
-            if (pendingKills > 0) {
+            if (pendingKills > 0 || pendingBossKills > 0) {
                 // sendBeacon으로 비동기 전송
                 const userId = getUserId();
                 if (userId) {
                     navigator.sendBeacon(`${RANKING_API}/hunting`, JSON.stringify({
+                        userId,
+                        nickname: getUserNickname(),
                         kills: pendingKills,
-                        killStreak: pendingStreak
+                        killStreak: pendingStreak,
+                        bossKills: pendingBossKills
                     }));
                 }
             }
@@ -4256,8 +4264,7 @@
                 if (tab === 'weapons') {
                     myValue = `+${myRank.best_weapon_level}`;
                 } else if (tab === 'hunting') {
-                    const masteryPercent = Math.min(30, Math.floor((myRank.total_kills || 0) / 10));
-                    myValue = `숙련 +${masteryPercent}%`;
+                    myValue = `${myRank.boss_kills || 0} 보스킬`;
                 } else if (tab === 'pvp') {
                     myValue = `${myRank.pvp_rating || 1000} ELO`;
                 }
@@ -4308,9 +4315,8 @@
                     valueHtml = `<span style="color:${gradeData.color}">+${rank.best_weapon_level}</span>`;
                     detailHtml = `${weaponName} | ${gradeData.name}${cursed ? ' <span style="color:#bb77ff;">👿저주</span>' : ''}`;
                 } else if (tab === 'hunting') {
-                    const masteryPercent = Math.min(30, Math.floor((rank.total_kills || 0) / 10));
-                    valueHtml = `<span class="ranking-value kills">+${masteryPercent}%</span>`;
-                    detailHtml = `처치: ${rank.total_kills?.toLocaleString() || 0} | 최고 연속: ${rank.max_kill_streak || 0}킬`;
+                    valueHtml = `<span class="ranking-value kills">${rank.boss_kills || 0}</span>`;
+                    detailHtml = `총 처치: ${rank.total_kills?.toLocaleString() || 0} | 최고 연속: ${rank.max_kill_streak || 0}킬`;
                 } else if (tab === 'pvp') {
                     const winRate = (rank.pvp_wins + rank.pvp_losses) > 0 
                         ? Math.round((rank.pvp_wins / (rank.pvp_wins + rank.pvp_losses)) * 100) 
@@ -6267,6 +6273,7 @@
             if (monster.isBoss) {
                 huntState.lastBossKill = huntState.monstersKilled;
                 state.bossKills = (state.bossKills || 0) + 1;
+                pendingBossKills++;
                 if (!state.bossTypeKills) state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
                 const bType = monster.type || 'dragon';
                 if (state.bossTypeKills[bType] !== undefined) state.bossTypeKills[bType]++;
