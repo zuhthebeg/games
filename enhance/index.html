@@ -6827,6 +6827,31 @@
                 SharedWallet._updateUI();
             }
         });
+
+        // 빈 화면 자동 복구 (손상된 로컬 상태 대응)
+        setTimeout(() => {
+            const appEl = document.getElementById('app');
+            if (appEl && appEl.innerHTML.trim() === '') {
+                console.warn('Empty app detected. Resetting local state...');
+                localStorage.removeItem('enhance_game_v3');
+                state = {
+                    gold: 10000,
+                    weapon: null,
+                    protectionScrolls: 3,
+                    useProtection: false,
+                    stats: { attempts: 0, successes: 0, fails: 0, destroys: 0, wins: 0, losses: 0 },
+                    mastery: { attacks: 0, kills: 0 },
+                    bossKills: 0,
+                    bossTypeKills: { dragon: 0, demon: 0, undead: 0, elemental: 0 },
+                    consecutiveEnhanceFails: 0,
+                    consecutiveFlees: 0,
+                    consecutivePvpLosses: 0,
+                    consecutiveCritsTaken: 0
+                };
+                loadState();
+                showMain();
+            }
+        }, 300);
     </script>
 </body>
 </html>
