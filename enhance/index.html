@@ -2629,7 +2629,7 @@
                         userId: userId,
                         nickname: nickname,  // 로그인 유저면 닉네임 포함
                         level: state.weapon.level,
-                        name: state.weapon.name,
+                        name: `${state.weapon.name}${isCursed(state.weapon) ? ' 👿저주' : ''}`,
                         grade: state.weapon.grade,
                         element: state.weapon.element || 'none'
                     })
@@ -4249,8 +4249,11 @@
                 
                 if (tab === 'weapons') {
                     const gradeData = GRADES[rank.best_weapon_grade] || GRADES.common;
+                    const weaponNameRaw = rank.best_weapon_name || '무기';
+                    const cursed = weaponNameRaw.includes('👿저주');
+                    const weaponName = weaponNameRaw.replace(' 👿저주', '');
                     valueHtml = `<span style="color:${gradeData.color}">+${rank.best_weapon_level}</span>`;
-                    detailHtml = `${rank.best_weapon_name || '무기'} | ${gradeData.name}`;
+                    detailHtml = `${weaponName} | ${gradeData.name}${cursed ? ' <span style="color:#bb77ff;">👿저주</span>' : ''}`;
                 } else if (tab === 'hunting') {
                     valueHtml = `<span class="ranking-value kills">${rank.total_kills?.toLocaleString() || 0}</span>`;
                     detailHtml = `최고 연속: ${rank.max_kill_streak || 0}킬`;
