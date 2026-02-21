@@ -6544,7 +6544,11 @@
             const lostWeapon = state.weapon;
             const monsterType = huntState.monster?.type || 'beast';
             const monsterName = huntState.monster?.name || '몬스터';
+            const inheritCurse = isCursed(lostWeapon); // 저주 상태면 다음 무기에 승계
             state.weapon = generateWeaponBySource('monster_death', { monsterType });
+            if (inheritCurse) {
+                state.weapon.cursed = true;
+            }
             resetMastery();  // 무기 변경 시 숙련도 초기화
             state.bossKills = 0;
             state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
@@ -6564,7 +6568,7 @@
             document.getElementById('resultText').textContent = '사망...';
             document.getElementById('resultText').style.color = 'var(--fail)';
             document.getElementById('resultDetail').innerHTML = `
-                무기를 잃었습니다!<br>
+                무기를 잃었습니다!${inheritCurse ? '<br><span style="color:#bb77ff;">👿 저주가 새 무기로 승계됨</span>' : ''}<br>
                 <span style="color:var(--muted);font-size:0.9em">
                     처치: ${huntState.monstersKilled}마리 | 획득: ${huntState.totalGoldEarned.toLocaleString()}G
                 </span>
