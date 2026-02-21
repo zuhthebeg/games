@@ -4223,7 +4223,8 @@
                 if (tab === 'weapons') {
                     myValue = `+${myRank.best_weapon_level}`;
                 } else if (tab === 'hunting') {
-                    myValue = `${myRank.total_kills?.toLocaleString() || 0}킬`;
+                    const masteryPercent = Math.min(30, Math.floor((myRank.total_kills || 0) / 10));
+                    myValue = `숙련 +${masteryPercent}%`;
                 } else if (tab === 'pvp') {
                     myValue = `${myRank.pvp_rating || 1000} ELO`;
                 }
@@ -4255,8 +4256,9 @@
                     valueHtml = `<span style="color:${gradeData.color}">+${rank.best_weapon_level}</span>`;
                     detailHtml = `${weaponName} | ${gradeData.name}${cursed ? ' <span style="color:#bb77ff;">👿저주</span>' : ''}`;
                 } else if (tab === 'hunting') {
-                    valueHtml = `<span class="ranking-value kills">${rank.total_kills?.toLocaleString() || 0}</span>`;
-                    detailHtml = `최고 연속: ${rank.max_kill_streak || 0}킬`;
+                    const masteryPercent = Math.min(30, Math.floor((rank.total_kills || 0) / 10));
+                    valueHtml = `<span class="ranking-value kills">+${masteryPercent}%</span>`;
+                    detailHtml = `처치: ${rank.total_kills?.toLocaleString() || 0} | 최고 연속: ${rank.max_kill_streak || 0}킬`;
                 } else if (tab === 'pvp') {
                     const winRate = (rank.pvp_wins + rank.pvp_losses) > 0 
                         ? Math.round((rank.pvp_wins / (rank.pvp_wins + rank.pvp_losses)) * 100) 
