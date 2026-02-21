@@ -870,7 +870,21 @@
             width: 70px;
             height: 70px;
             margin: 8px auto;
+            object-fit: contain;
             filter: drop-shadow(0 0 10px #ff6b6b);
+        }
+
+        .monster-card.boss .monster-img {
+            width: 120px;
+            height: 120px;
+            margin: 10px auto;
+            filter: drop-shadow(0 0 14px rgba(255, 107, 107, 0.9));
+        }
+
+        .monster-card.boss.tier-5 .monster-img,
+        .monster-card.boss.tier-6 .monster-img {
+            width: 140px;
+            height: 140px;
         }
 
         .monster-name {
@@ -2183,25 +2197,30 @@
             giant_spider: { name: '대왕거미', img: `${ICON_BASE}/delapouite/spider-eye.svg`, tier: 3, hp: 280, damage: [40, 62],  crit: 15, gold: [820, 1280], type: 'insect' },
             
             // Tier 4 (보스) - 강화된 스탯
-            dragon:   { name: '🔥 드래곤',   img: `${ICON_BASE}/lorc/double-dragon.svg`,      tier: 4, hp: 600, damage: [70, 110],  crit: 22, gold: [4000, 6500], isBoss: true, type: 'dragon' },
-            demon:    { name: '👹 데몬',     img: `${ICON_BASE}/lorc/daemon-skull.svg`,       tier: 4, hp: 550, damage: [80, 120],  crit: 28, gold: [5000, 7500], isBoss: true, type: 'demon' },
-            reaper:   { name: '💀 사신',     img: `${ICON_BASE}/lorc/horned-skull.svg`,       tier: 4, hp: 480, damage: [90, 135], crit: 35, gold: [6500, 10000], isBoss: true, type: 'undead' },
-            lich:     { name: '👻 리치',     img: `${ICON_BASE}/lorc/grim-reaper.svg`,        tier: 4, hp: 450, damage: [75, 125],  crit: 25, gold: [5800, 9000], isBoss: true, type: 'undead' },
-            hydra:    { name: '🐍 히드라',   img: `${ICON_BASE}/lorc/hydra.svg`,              tier: 4, hp: 700, damage: [60, 100],  crit: 18, gold: [4500, 7000], isBoss: true, type: 'dragon' },
-            frost_giant: { name: '❄️ 서리거인', img: `${ICON_BASE}/delapouite/giant.svg`, tier: 4, hp: 750, damage: [75, 115], crit: 15, gold: [5500, 8500], isBoss: true, type: 'elemental' },
-            balrog:   { name: '🔥 발록',     img: `${ICON_BASE}/lorc/ifrit.svg`,              tier: 4, hp: 650, damage: [85, 130],  crit: 22, gold: [6200, 9500], isBoss: true, type: 'demon' },
-            phoenix:  { name: '🦅 불사조',   img: `${ICON_BASE}/lorc/raven.svg`,              tier: 4, hp: 500, damage: [80, 130], crit: 32, gold: [6800, 11000], isBoss: true, type: 'elemental' },
+            dragon:   { name: '🔥 드래곤',   img: './img/monsters/dragon.jpg',      tier: 4, hp: 600, damage: [70, 110],  crit: 22, gold: [4000, 6500], isBoss: true, type: 'dragon' },
+            demon:    { name: '👹 데몬',     img: './img/monsters/demon.jpg',       tier: 4, hp: 550, damage: [80, 120],  crit: 28, gold: [5000, 7500], isBoss: true, type: 'demon' },
+            reaper:   { name: '💀 사신',     img: './img/monsters/reaper.jpg',       tier: 4, hp: 480, damage: [90, 135], crit: 35, gold: [6500, 10000], isBoss: true, type: 'undead' },
+            lich:     { name: '👻 리치',     img: './img/monsters/lich.jpg',        tier: 4, hp: 450, damage: [75, 125],  crit: 25, gold: [5800, 9000], isBoss: true, type: 'undead' },
+            hydra:    { name: '🐍 히드라',   img: './img/monsters/hydra.jpg',              tier: 4, hp: 700, damage: [60, 100],  crit: 18, gold: [4500, 7000], isBoss: true, type: 'dragon' },
+            frost_giant: { name: '❄️ 서리거인', img: './img/monsters/frost_giant.jpg', tier: 4, hp: 750, damage: [75, 115], crit: 15, gold: [5500, 8500], isBoss: true, type: 'elemental' },
+            balrog:   { name: '🔥 발록',     img: './img/monsters/balrog.jpg',              tier: 4, hp: 650, damage: [85, 130],  crit: 22, gold: [6200, 9500], isBoss: true, type: 'demon' },
+            phoenix:  { name: '🦅 불사조',   img: './img/monsters/phoenix.jpg',              tier: 4, hp: 500, damage: [80, 130], crit: 32, gold: [6800, 11000], isBoss: true, type: 'elemental' },
+            succubus_boss: { name: '💋 서큐버스', img: './img/monsters/succubus_boss.jpg', tier: 4, hp: 520, damage: [78, 118], crit: 30, gold: [6000, 9800], isBoss: true, type: 'demon' },
             
             // Tier 5 (전설) - 극강 스탯
-            ancient_dragon: { name: '🌟 고대용', img: `${ICON_BASE}/delapouite/spiked-dragon-head.svg`, tier: 5, hp: 1200, damage: [110, 180], crit: 28, gold: [15000, 30000], isBoss: true, type: 'dragon' },
-            demon_lord:     { name: '😈 마왕',   img: `${ICON_BASE}/lorc/diablo-skull.svg`,     tier: 5, hp: 1000, damage: [130, 200], crit: 35, gold: [18000, 35000], isBoss: true, type: 'demon' },
-            death_knight:   { name: '⚔️ 죽음의기사', img: `${ICON_BASE}/lorc/grim-reaper.svg`,  tier: 5, hp: 900, damage: [150, 220], crit: 40, gold: [22000, 40000], isBoss: true, type: 'undead' },
+            ancient_dragon: { name: '🌟 고대용', img: './img/monsters/ancient_dragon.jpg', tier: 5, hp: 1200, damage: [110, 180], crit: 28, gold: [15000, 30000], isBoss: true, type: 'dragon' },
+            primordial_dragon: { name: '🐉 태초의 용', img: './img/monsters/primordial_dragon.jpg', tier: 5, hp: 1150, damage: [120, 190], crit: 30, gold: [16000, 32000], isBoss: true, type: 'dragon' },
+            demon_lord:     { name: '😈 마왕',   img: './img/monsters/demon_lord.jpg',     tier: 5, hp: 1000, damage: [130, 200], crit: 35, gold: [18000, 35000], isBoss: true, type: 'demon' },
+            demon_queen:    { name: '👸 여마왕', img: './img/monsters/demon_queen.jpg', tier: 5, hp: 980, damage: [125, 195], crit: 38, gold: [18500, 36000], isBoss: true, type: 'demon' },
+            incubus:        { name: '🖤 인큐버스', img: './img/monsters/incubus.jpg', tier: 5, hp: 920, damage: [140, 210], crit: 42, gold: [20000, 37000], isBoss: true, type: 'demon' },
+            death_knight:   { name: '⚔️ 죽음의기사', img: './img/monsters/death_knight.jpg',  tier: 5, hp: 900, damage: [150, 220], crit: 40, gold: [22000, 40000], isBoss: true, type: 'undead' },
             
-            // Tier 6 (신화급 보스) - 4대 속성 드래곤
-            valakas:    { name: '🔥 화룡 발라카스', img: `${ICON_BASE}/lorc/double-dragon.svg`,      tier: 6, hp: 2000, damage: [180, 280], crit: 30, gold: [50000, 80000], isBoss: true, type: 'dragon' },
-            antharas:   { name: '🌍 지룡 안타라스', img: `${ICON_BASE}/delapouite/spiked-dragon-head.svg`, tier: 6, hp: 2500, damage: [150, 250], crit: 20, gold: [45000, 75000], isBoss: true, type: 'dragon' },
-            lindvior:   { name: '💨 풍룡 린드비오르', img: `${ICON_BASE}/lorc/wyvern.svg`,           tier: 6, hp: 1800, damage: [200, 300], crit: 40, gold: [55000, 90000], isBoss: true, type: 'dragon' },
-            fafurion:   { name: '💧 수룡 파푸리온', img: `${ICON_BASE}/lorc/hydra.svg`,              tier: 6, hp: 2200, damage: [160, 260], crit: 25, gold: [48000, 78000], isBoss: true, type: 'dragon' }
+            // Tier 6 (신화급 보스)
+            valakas:    { name: '🔥 화룡 발라카스', img: './img/monsters/valakas.jpg',      tier: 6, hp: 2000, damage: [180, 280], crit: 30, gold: [50000, 80000], isBoss: true, type: 'dragon' },
+            antharas:   { name: '🌍 지룡 안타라스', img: './img/monsters/antharas.jpg', tier: 6, hp: 2500, damage: [150, 250], crit: 20, gold: [45000, 75000], isBoss: true, type: 'dragon' },
+            lindvior:   { name: '💨 풍룡 린드비오르', img: './img/monsters/lindvior.jpg',           tier: 6, hp: 1800, damage: [200, 300], crit: 40, gold: [55000, 90000], isBoss: true, type: 'dragon' },
+            fafurion:   { name: '💧 수룡 파푸리온', img: './img/monsters/fafurion.jpg',              tier: 6, hp: 2200, damage: [160, 260], crit: 25, gold: [48000, 78000], isBoss: true, type: 'dragon' },
+            succubus_queen: { name: '👑 서큐버스 퀸', img: './img/monsters/succubus_queen.jpg', tier: 6, hp: 1700, damage: [210, 290], crit: 45, gold: [52000, 88000], isBoss: true, type: 'demon' }
         };
 
         /*
@@ -2389,6 +2408,7 @@
             mastery: { attacks: 0, kills: 0 },  // 숙련도 시스템
             bossKills: 0,  // 보스 처치 횟수 (강화확률 +1% per kill)
             bossTypeKills: { dragon: 0, demon: 0, undead: 0, elemental: 0 },  // 속성별 보스킬
+            bossTierKills: { 4: 0, 5: 0 },  // 상위 티어 보스 확정 등장용
             // 저주 트리거 카운터
             consecutiveEnhanceFails: 0,  // +0에서 연속 강화 실패
             consecutiveFlees: 0,         // 연속 도망
@@ -3191,6 +3211,9 @@
             if (state.weapon && state.weapon.protectionScrolls === undefined) {
                 state.weapon.protectionScrolls = 2;
             }
+            if (!state.bossTierKills) {
+                state.bossTierKills = { 4: 0, 5: 0 };
+            }
         }
 
         function saveState() {
@@ -3711,6 +3734,7 @@
                 resetMastery();  // 무기 변경 시 숙련도 초기화
                 state.bossKills = 0;  // 보스킬 보너스 리셋
                 state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
+                state.bossTierKills = { 4: 0, 5: 0 };
                 state.consecutiveEnhanceFails = 0;  // 무기 변경 시 리셋
             } else {
                 state.weapon.level = toLevel;
@@ -3968,6 +3992,7 @@
                 resetMastery();  // 무기 변경 시 숙련도 초기화
                 state.bossKills = 0;
                 state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
+                state.bossTierKills = { 4: 0, 5: 0 };
                 saveState();
                 showEnhance();
             }
@@ -5059,6 +5084,7 @@
                         state.mastery = {};  // 숙련도 리셋
                         state.bossKills = 0;
                         state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
+                        state.bossTierKills = { 4: 0, 5: 0 };
                         
                         playSound('destroy');
                         vibrate([200, 100, 200, 100, 300]);
@@ -5174,15 +5200,33 @@
             // 데미지 기반 티어 (레벨보다 정확함)
             const recommendedTier = getRecommendedTierByDamage();
             
-            // 보스 출현 확률 (일반 몹 5마리 이상 처치 후부터, 티어에 따라 증가)
+            // 보스 출현 확률 (일반 몹 5마리 이상 처치 후부터)
             const killsSinceLastBoss = huntState ? huntState.monstersKilled - (huntState.lastBossKill || 0) : 0;
-            const bossChance = killsSinceLastBoss >= 5
-                ? (recommendedTier >= 5 ? 0.15 : (recommendedTier >= 4 ? 0.1 : (recommendedTier >= 3 ? 0.05 : 0)))
-                : 0;
+            const tier4BossKills = Number((state.bossTierKills || {})[4] || 0);
+            const tier5BossKills = Number((state.bossTierKills || {})[5] || 0);
+
+            // 하위 티어 보스를 5마리 이상 잡으면 상위 보스 확정 등장
+            // - Tier4 보스 5킬 이상: 다음 보스 등장은 Tier5 이상 확정
+            // - Tier5 보스 5킬 이상: 다음 보스 등장은 Tier6 확정
+            let forcedMinBossTier = null;
+            if (killsSinceLastBoss >= 5) {
+                if (tier5BossKills >= 5) forcedMinBossTier = 6;
+                else if (tier4BossKills >= 5) forcedMinBossTier = 5;
+            }
+
+            const bossChance = forcedMinBossTier
+                ? 1
+                : (killsSinceLastBoss >= 5
+                    ? (recommendedTier >= 5 ? 0.15 : (recommendedTier >= 4 ? 0.1 : (recommendedTier >= 3 ? 0.05 : 0)))
+                    : 0);
+
             if (bossChance > 0 && Math.random() < bossChance) {
-                // 보스는 현재 티어에 맞게
-                const bossTier = Math.max(4, recommendedTier);
-                const bosses = Object.entries(MONSTERS).filter(([k, v]) => v.isBoss && v.tier <= bossTier);
+                const maxBossTier = Math.max(4, Math.min(6, recommendedTier));
+                const bosses = Object.entries(MONSTERS).filter(([k, v]) => {
+                    if (!v.isBoss) return false;
+                    if (forcedMinBossTier) return v.tier >= forcedMinBossTier;
+                    return v.tier <= maxBossTier;
+                });
                 if (bosses.length > 0) {
                     const [type, m] = bosses[Math.floor(Math.random() * bosses.length)];
                     return applyBossScaling({ type, ...m, currentHp: m.hp, maxHp: m.hp });
@@ -5231,7 +5275,7 @@
                     body: JSON.stringify({
                         playerId: getPlayerId(),
                         bossId: monster.type,
-                        bossName: monster.name.replace(/[🔥👹💀👻🐍❄️🦅🌟😈⚔️💧🌍💨]/g, '').trim(),
+                        bossName: monster.name.replace(/[🔥👹💀👻🐍❄️🦅🌟😈⚔️💧🌍💨💋👑👸🖤🐉]/g, '').trim(),
                         bossTier: monster.tier,
                         playerWeapon: state.weapon.name,
                         playerLevel: state.weapon.level,
@@ -5360,7 +5404,7 @@
                         <span style="margin-left:10px;color:var(--muted)">| 처치: ${huntState.monstersKilled}</span>
                     </div>
 
-                    <div class="monster-card ${monster.isBoss ? 'boss' : ''} ${getElementMultiplier(weapon.element, monster.type) > 1 ? 'weak' : ''}">
+                    <div class="monster-card ${monster.isBoss ? `boss tier-${monster.tier}` : ''} ${getElementMultiplier(weapon.element, monster.type) > 1 ? 'weak' : ''}">
                         <div class="monster-tier">
                             ${monster.isBoss ? '⚠️ BOSS' : `Tier ${monster.tier}`}
                             ${monster.type ? ` | ${MONSTER_TYPES[monster.type]?.icon || ''} ${MONSTER_TYPES[monster.type]?.name || ''}` : ''}
@@ -5802,6 +5846,7 @@
                         resetMastery();
                         state.bossKills = 0;
                         state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
+                        state.bossTierKills = { 4: 0, 5: 0 };
                         saveState();
                         
                         setTimeout(() => {
@@ -5830,6 +5875,7 @@
                     resetMastery();  // 무기 변경 시 숙련도 초기화
                     state.bossKills = 0;
                     state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
+                    state.bossTierKills = { 4: 0, 5: 0 };
                     const newStats = getWeaponStats(state.weapon, false);
                     // 새 무기 스탯으로 전체 업데이트
                     player.damageMin = newStats.damageMin;
@@ -6158,8 +6204,12 @@
                 huntState.lastBossKill = huntState.monstersKilled;
                 state.bossKills = (state.bossKills || 0) + 1;
                 if (!state.bossTypeKills) state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
+                if (!state.bossTierKills) state.bossTierKills = { 4: 0, 5: 0 };
                 const bType = monster.type || 'dragon';
                 if (state.bossTypeKills[bType] !== undefined) state.bossTypeKills[bType]++;
+                if (monster.tier === 4 || monster.tier === 5) {
+                    state.bossTierKills[monster.tier] = (state.bossTierKills[monster.tier] || 0) + 1;
+                }
             }
             
             // 🔥 피닉스 지팡이: 연속 사냥 시 HP 100% 회복!
@@ -6504,6 +6554,7 @@
             resetMastery();  // 무기 변경 시 숙련도 초기화
             state.bossKills = 0;
             state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
+            state.bossTierKills = { 4: 0, 5: 0 };
             state.stats.losses++;
             saveState();
             
