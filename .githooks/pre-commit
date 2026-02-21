@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged_files" ] && exit 0
+
+echo "[pre-commit] running encoding/syntax checks..."
+
+text_ext='\.(html|js|mjs|cjs|ts|tsx|jsx|json|css|md|yml|yaml)$'
+
+while IFS= read -r file; do
+  [ -f "$file" ] || continue
+
+  if [[ "$file" =~ $text_ext ]]; then
+    # UTF-8 깨짐에서 자주 보이는 replacement char(U+FFFD) 탐지
+    if grep -n $'\uFFFD' "$file" >/dev/null 2>&1; then
+      echo "❌ Encoding issue detected (U+FFFD): $file"
+      grep -n $'\uFFFD' "$file" | head -5 || true
+      exit 1
+    fi
+  fi
+
+  if [[ "$file" =~ \.(js|mjs|cjs)$ ]]; then
+    node --check "$file" >/dev/null
+  fi
+done <<< "$staged_files"
+
+# 단일 HTML+inline script 검증 (enhance)
+if echo "$staged_files" | grep -q '^enhance/index.html$'; then
+  node <<'NODE'
+const fs = require('fs');
+const html = fs.readFileSync('enhance/index.html', 'utf8');
+const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)];
+for (let i = 0; i < scripts.length; i++) {
+  try {
+    new Function(scripts[i][1]);
+  } catch (e) {
+    console.error(`❌ enhance/index.html inline script syntax error [#${i + 1}]: ${e.message}`);
+    process.exit(1);
+  }
+}
+NODE
+fi
+
+echo "✅ pre-commit checks passed"
