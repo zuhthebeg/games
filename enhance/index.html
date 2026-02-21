@@ -1426,6 +1426,8 @@
         }
 
         .result-btn {
+            display: block;
+            margin: 0 auto;
             padding: 12px 32px;
             border: none;
             border-radius: 10px;
@@ -1434,6 +1436,13 @@
             cursor: pointer;
             background: var(--accent);
             color: white;
+            text-align: center;
+        }
+
+        #newWeaponPreview > div {
+            width: 100%;
+            justify-content: center;
+            align-items: center;
         }
 
         /* Battle Screen - Redesigned */
@@ -2397,7 +2406,8 @@
             gold: 10000,
             weapon: null,
             protectionScrolls: 3,
-            useProtection: false,
+            useProtection: true,
+            protectionManuallyOff: false,
             stats: { attempts: 0, successes: 0, fails: 0, destroys: 0, wins: 0, losses: 0 },
             mastery: { attacks: 0, kills: 0 },  // 숙련도 시스템
             bossKills: 0,  // 보스 처치 횟수 (강화확률 +1% per kill)
@@ -3204,6 +3214,9 @@
             if (state.weapon && state.weapon.protectionScrolls === undefined) {
                 state.weapon.protectionScrolls = 2;
             }
+            if (state.protectionManuallyOff === undefined) {
+                state.protectionManuallyOff = false;
+            }
         }
 
         function saveState() {
@@ -3346,6 +3359,14 @@
             const rates = getEnhanceRates(weapon);
             const canEnhance = state.gold >= rates.cost && weapon.level < MAX_ENHANCE_LEVEL;
             const showProtection = rates.destroy > 0;
+            const scrolls = weapon.protectionScrolls || 0;
+
+            if (scrolls <= 0) {
+                state.useProtection = false;
+                state.protectionManuallyOff = false; // 0개였다가 구매하면 다시 기본 ON
+            } else if (showProtection && !state.protectionManuallyOff) {
+                state.useProtection = true; // 수동 OFF 전까지 기본 ON
+            }
 
             document.getElementById('app').innerHTML = `
                 <div class="container">
@@ -3445,9 +3466,11 @@
             const scrolls = state.weapon?.protectionScrolls || 0;
             if (scrolls > 0) {
                 state.useProtection = !state.useProtection;
+                state.protectionManuallyOff = !state.useProtection;
                 const btn = document.getElementById('protectionBtn');
                 btn.textContent = state.useProtection ? 'ON' : 'OFF';
                 btn.className = 'toggle-btn ' + (state.useProtection ? 'on' : 'off');
+                saveState();
             }
         }
         
@@ -3457,9 +3480,17 @@
                 alert('골드가 부족합니다! (10,000G 필요)');
                 return;
             }
+            const before = state.weapon.protectionScrolls || 0;
             state.gold -= cost;
             if (!state.weapon.protectionScrolls) state.weapon.protectionScrolls = 0;
             state.weapon.protectionScrolls++;
+
+            // 0개에서 구매한 경우 자동 ON
+            if (before === 0) {
+                state.useProtection = true;
+                state.protectionManuallyOff = false;
+            }
+
             saveState();
             playSound('success');
             showEnhance();
