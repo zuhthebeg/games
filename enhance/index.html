@@ -2633,7 +2633,8 @@
                         level: state.weapon.level,
                         name: `${state.weapon.name}${isCursed(state.weapon) ? ' 👿저주' : ''}`,
                         grade: state.weapon.grade,
-                        element: state.weapon.element || 'none'
+                        element: state.weapon.element || 'none',
+                        image: getWeaponIcon(state.weapon)
                     })
                 });
                 const data = await res.json();
@@ -4325,9 +4326,14 @@
                     detailHtml = `${rank.pvp_wins || 0}승 ${rank.pvp_losses || 0}패 (${winRate}%)`;
                 }
                 
+                const weaponThumb = (tab === 'weapons' && rank.best_weapon_image)
+                    ? `<img src="${rank.best_weapon_image}" alt="weapon" style="width:30px;height:30px;object-fit:contain;border-radius:6px;background:rgba(255,255,255,0.06);margin-right:8px;">`
+                    : '';
+
                 html += `
                     <div class="ranking-item ${isMe ? 'me' : ''}">
                         <div class="ranking-rank ${rankClass}">${idx < 3 ? ['🥇','🥈','🥉'][idx] : (idx + 1)}</div>
+                        ${weaponThumb}
                         <div class="ranking-info">
                             <div class="ranking-name">${rank.nickname || '익명'}</div>
                             <div class="ranking-detail">${detailHtml}</div>
