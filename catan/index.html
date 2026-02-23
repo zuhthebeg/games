@@ -331,6 +331,7 @@
 <body>
   <div id="app"></div>
 
+  <script src="./ai.js"></script>
   <script>
     const RESOURCES = ["brick", "lumber", "wool", "grain", "ore"];
     const RESOURCE_ICONS = { brick: "🧱", lumber: "🪵", wool: "🐑", grain: "🌾", ore: "⛏️", desert: "🏜️" };
@@ -433,8 +434,7 @@
       state.players = [
         makePlayer({ id: "human", name: "나", color: PLAYER_COLORS[0] }),
         makePlayer({ id: "ai1", name: "AI 1", color: PLAYER_COLORS[1] }),
-        makePlayer({ id: "ai2", name: "AI 2", color: PLAYER_COLORS[2] }),
-        makePlayer({ id: "ai3", name: "AI 3", color: PLAYER_COLORS[3] })
+        makePlayer({ id: "ai2", name: "AI 2", color: PLAYER_COLORS[2] })
       ];
     }
 
@@ -1233,10 +1233,11 @@
 
     function aiTakeSetupTurn() {
       const pIdx = state.currentPlayer;
+      const ai = window.CatanAI;
       if (state.setupStep === "settlement") {
         const choices = validSettlementsFor(pIdx, true);
         if (choices.length) {
-          const pick = choices[Math.floor(Math.random() * choices.length)];
+          const pick = ai ? ai.pickBestVertex(state, choices) : choices[Math.floor(Math.random() * choices.length)];
           placeSettlement(pIdx, pick, true);
           if (state.phase === "setup2") grantSecondSetupResources(pIdx, pick);
           state.lastSetupVertex = pick;
@@ -1247,7 +1248,9 @@
       if (state.setupStep === "road") {
         const roads = validRoadsFor(pIdx, true);
         if (roads.length) {
-          const pick = roads[Math.floor(Math.random() * roads.length)];
+          const pick = ai
+            ? ai.pickBestRoadFromVertex(state, roads, state.lastSetupVertex)
+            : roads[Math.floor(Math.random() * roads.length)];
           placeRoad(pIdx, pick, true);
           state.hint = `${state.players[pIdx].name}가 도로 배치.`;
           advanceSetupTurn();
@@ -1260,14 +1263,20 @@
     function aiMainTurn() {
       const pIdx = state.currentPlayer;
       const p = state.players[pIdx];
+      const ai = window.CatanAI;
       if (state.phase === "roll") {
         rollDice();
         return;
       }
       if (state.phase === "robber") {
-        const choices = state.hexes.map((_, i) => i).filter(i => i !== state.robber);
-        const pick = choices[Math.floor(Math.random() * choices.length)];
-        moveRobber(pick);
+        if (ai) {
+          const target = ai.pickRobberTarget(state, pIdx);
+          moveRobber(target.hexIndex, target.victimIdx);
+        } else {
+          const choices = state.hexes.map((_, i) => i).filter(i => i !== state.robber);
+          const pick = choices[Math.floor(Math.random() * choices.length)];
+          moveRobber(pick);
+        }
       }
       if (state.phase !== "main" || state.winner) {
         render();
@@ -1276,23 +1285,38 @@
       }
       let safety = 20;
       while (safety-- > 0) {
-        const actions = [];
-        if (canAfford(p, COST.city) && validCitiesFor(pIdx).length) actions.push("city");
-        if (canAfford(p, COST.settlement) && validSettlementsFor(pIdx).length) actions.push("settlement");
-        if (canAfford(p, COST.road) && validRoadsFor(pIdx).length) actions.push("road");
-        if (!actions.length) break;
-        const act = actions[Math.floor(Math.random() * actions.length)];
-        if (act === "city") {
-          const spots = validCitiesFor(pIdx);
-          upgradeCity(pIdx, spots[Math.floor(Math.random() * spots.length)]);
-        } else if (act === "settlement") {
-          const spots = validSettlementsFor(pIdx);
-          placeSettlement(pIdx, spots[Math.floor(Math.random() * spots.length)], false);
+        const citySpots = validCitiesFor(pIdx);
+        const settlementSpots = validSettlementsFor(pIdx);
+        const roadSpots = validRoadsFor(pIdx);
+        const act = ai
+          ? ai.chooseBuildAction(state, pIdx, {
+              cityCount: citySpots.length,
+              settlementCount: settlementSpots.length,
+              roadCount: roadSpots.length,
+              costs: COST
+            })
+          : null;
+        const pickedAction = act || (
+          canAfford(p, COST.city) && citySpots.length ? "city"
+            : canAfford(p, COST.settlement) && settlementSpots.length ? "settlement"
+            : canAfford(p, COST.road) && roadSpots.length ? "road"
+            : null
+        );
+
+        if (!pickedAction) break;
+        if (pickedAction === "city") {
+          const spot = ai ? ai.pickBestVertex(state, citySpots) : citySpots[Math.floor(Math.random() * citySpots.length)];
+          upgradeCity(pIdx, spot);
+        } else if (pickedAction === "settlement") {
+          const spot = ai ? ai.pickBestVertex(state, settlementSpots) : settlementSpots[Math.floor(Math.random() * settlementSpots.length)];
+          placeSettlement(pIdx, spot, false);
         } else {
-          const spots = validRoadsFor(pIdx);
-          placeRoad(pIdx, spots[Math.floor(Math.random() * spots.length)], false);
+          const spot = ai ? ai.pickBestRoadGeneral(state, roadSpots, pIdx) : roadSpots[Math.floor(Math.random() * roadSpots.length)];
+          placeRoad(pIdx, spot, false);
         }
-        if (state.winner || Math.random() < 0.5) break;
+
+        const after = totalResourceCount(p);
+        if (state.winner || after < 2) break;
       }
       state.hint = `${p.name} 턴 종료.`;
       render();
