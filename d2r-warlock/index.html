@@ -162,5 +162,13 @@ function render(){renderHUD();renderMainTabs();renderSubTabs();renderTree();rend
 $('#resetBtn').onclick=()=>{pts=Object.fromEntries(all.map(s=>[s.id,0]));render()};$('#copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText(location.href);alert('URL이 복사되었습니다.')}catch{alert('복사 실패: 주소창 URL을 수동 복사해주세요.')}};$('#equipSwitch').onclick=e=>{const b=e.target.closest('.switch');if(!b)return;equipMode=b.dataset.mode;renderEquip()};
 loadHash();render();window.addEventListener('hashchange',()=>{loadHash();render()});window.addEventListener('resize',()=>drawLinks(trees[activeTree],new Map([...document.querySelectorAll('.skill-node')].map(n=>[n.dataset.id,n]))));
 </script>
+<script src="/lib/site-meta.js"></script>
+<script>
+  SiteMeta.init({
+    title: 'Warlock Planner - game.cocy.io',
+    description: '워락 스킬 트리 플래너',
+    url: 'https://game.cocy.io/d2r-warlock/'
+  });
+</script>
 </body>
 </html>
