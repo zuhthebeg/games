@@ -3,9 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f)})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
+    <link rel="canonical" href="https://game.cocy.io/">
+    <meta property="og:url" content="https://game.cocy.io/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ko_KR">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>🎮 Game Portal - game.cocy.io</title>
     <link rel="icon" href="https://cocy.io/favicon.ico">
+    <script src="/lib/multiplayer.js?v=20260213v1"></script>
+    <script src="/lib/shared-wallet.js?v=20260220"></script>
     <style>
         :root {
             --primary: #ec4899;
@@ -191,13 +200,10 @@
     </style>
 </head>
 <body>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <header class="header">
         <h1>🎮 Game Portal</h1>
         <div class="auth-area">
-            <div class="gold-display" id="goldDisplay" style="display:none;">
-                <span>💰</span>
-                <span id="goldAmount">0</span>
-            </div>
             <button class="auth-btn" id="authBtn" onclick="handleAuth()">로그인</button>
         </div>
     </header>
@@ -284,38 +290,36 @@
             `).join('');
         }
 
-        function checkAuth() {
-            const token = localStorage.getItem('cocy_auth_token');
-            const name = localStorage.getItem('cocy_user_name');
-            const gold = localStorage.getItem('cocy_gold') || '0';
-            
-            if (token && name) {
-                currentUser = { name, gold: parseInt(gold) };
-                document.getElementById('authBtn').textContent = name;
-                document.getElementById('goldDisplay').style.display = 'flex';
-                document.getElementById('goldAmount').textContent = parseInt(gold).toLocaleString();
+        // SharedWallet 연동 인증
+        async function initAuth() {
+            await SharedWallet.init({ showUI: false });
+            updateAuthUI();
+            SharedWallet._listeners.push(() => updateAuthUI());
+        }
+        
+        function updateAuthUI() {
+            const btn = document.getElementById('authBtn');
+            if (SharedWallet.isLoggedIn && SharedWallet.user) {
+                currentUser = { name: SharedWallet.user.nickname };
+                btn.textContent = SharedWallet.user.nickname;
+            } else {
+                currentUser = null;
+                btn.textContent = '로그인';
             }
         }
 
         function handleAuth() {
-            if (currentUser) {
+            if (SharedWallet.isLoggedIn) {
                 if (confirm('로그아웃 하시겠습니까?')) {
-                    localStorage.removeItem('cocy_auth_token');
-                    localStorage.removeItem('cocy_user_name');
+                    SharedWallet.logout();
                     location.reload();
                 }
             } else {
-                const name = prompt('닉네임을 입력하세요:');
-                if (name && name.trim()) {
-                    localStorage.setItem('cocy_auth_token', 'user_' + Date.now());
-                    localStorage.setItem('cocy_user_name', name.trim());
-                    localStorage.setItem('cocy_gold', '0');
-                    location.reload();
-                }
+                SharedWallet.showLogin();
             }
         }
 
-        checkAuth();
+        initAuth();
     </script>
 </body>
 </html>
