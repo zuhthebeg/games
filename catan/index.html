@@ -374,7 +374,8 @@
       hint: "",
       geometry: { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 },
       roomCodeInput: "",
-      maxPlayers: 4
+      maxPlayers: 4,
+      aiDifficulty: "normal"
     };
 
     const mpState = {
@@ -1284,7 +1285,9 @@
         return;
       }
       let safety = 20;
-      while (safety-- > 0) {
+      let buildsDone = 0;
+      const budget = ai ? ai.getTurnBudget(state.aiDifficulty, totalResourceCount(p)) : 2;
+      while (safety-- > 0 && buildsDone < budget) {
         const citySpots = validCitiesFor(pIdx);
         const settlementSpots = validSettlementsFor(pIdx);
         const roadSpots = validRoadsFor(pIdx);
@@ -1315,8 +1318,10 @@
           placeRoad(pIdx, spot, false);
         }
 
+        buildsDone += 1;
         const after = totalResourceCount(p);
-        if (state.winner || after < 2) break;
+        const stop = ai ? ai.shouldStopBuilding(state.aiDifficulty, buildsDone - 1, after) : (after < 2);
+        if (state.winner || stop) break;
       }
       state.hint = `${p.name} 턴 종료.`;
       render();
@@ -1429,6 +1434,14 @@
         <div class="lobby-screen">
           <div class="lobby-card">
             <h1 class="lobby-title">카탄</h1>
+            <div class="multi-row" style="margin-bottom:8px;">
+              <label for="aiDifficulty">AI 난이도</label>
+              <select id="aiDifficulty" onchange="onAiDifficultyChange(this.value)">
+                <option value="easy" ${state.aiDifficulty === "easy" ? "selected" : ""}>쉬움</option>
+                <option value="normal" ${state.aiDifficulty === "normal" ? "selected" : ""}>보통</option>
+                <option value="hard" ${state.aiDifficulty === "hard" ? "selected" : ""}>어려움</option>
+              </select>
+            </div>
             <button onclick="startSingle()">싱글플레이</button>
             <button onclick="showMultiOptions()">멀티플레이</button>
           </div>
@@ -1775,6 +1788,13 @@
       render();
     }
 
+    function onAiDifficultyChange(value) {
+      if (["easy", "normal", "hard"].includes(value)) {
+        state.aiDifficulty = value;
+      }
+      render();
+    }
+
     window.startSingle = startSingle;
     window.showMultiOptions = showMultiOptions;
     window.backToMode = backToMode;
@@ -1793,6 +1813,7 @@
     window.onHexClick = onHexClick;
     window.onRoomCodeInput = onRoomCodeInput;
     window.onMaxPlayersChange = onMaxPlayersChange;
+    window.onAiDifficultyChange = onAiDifficultyChange;
 
     (async function boot() {
       if (window.SharedWallet) {

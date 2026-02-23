@@ -85,3 +85,15 @@ test('chooseBuildAction follows city > settlement > road priority', () => {
   });
   assert.equal(act, 'settlement');
 });
+
+test('getTurnBudget scales by difficulty', () => {
+  assert.equal(AI.getTurnBudget('easy', 6), 1);
+  assert.equal(AI.getTurnBudget('normal', 6), 2);
+  assert.equal(AI.getTurnBudget('hard', 9), 4);
+});
+
+test('shouldStopBuilding is more conservative on easy', () => {
+  assert.equal(AI.shouldStopBuilding('easy', 0, 5), true);
+  assert.equal(AI.shouldStopBuilding('normal', 0, 5), false);
+  assert.equal(AI.shouldStopBuilding('hard', 1, 2), true);
+});

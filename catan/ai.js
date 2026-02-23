@@ -151,12 +151,27 @@
     return null;
   }
 
+  function getTurnBudget(difficulty, totalResources) {
+    if (difficulty === 'easy') return 1;
+    if (difficulty === 'hard') return totalResources >= 8 ? 4 : 3;
+    return totalResources >= 8 ? 3 : 2;
+  }
+
+  function shouldStopBuilding(difficulty, buildsDone, remainingResources) {
+    if (remainingResources <= 2) return true;
+    if (difficulty === 'easy') return buildsDone >= 0;
+    if (difficulty === 'hard') return buildsDone >= 2;
+    return buildsDone >= 1;
+  }
+
   return {
     scoreVertex,
     pickBestVertex,
     pickBestRoadFromVertex,
     pickBestRoadGeneral,
     pickRobberTarget,
-    chooseBuildAction
+    chooseBuildAction,
+    getTurnBudget,
+    shouldStopBuilding
   };
 });
