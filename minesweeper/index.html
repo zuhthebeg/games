@@ -3,13 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f)})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
-  <link rel="canonical" href="https://game.cocy.io/minesweeper/">
-  <meta property="og:url" content="https://game.cocy.io/minesweeper/">
-  <meta property="og:type" content="website">
-  <meta property="og:locale" content="ko_KR">
   <title>지뢰찾기</title>
   <style>
     :root {
@@ -290,7 +283,6 @@
   </style>
 </head>
 <body>
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <main class="app">
     <section class="top">
       <div>
@@ -327,17 +319,7 @@
       <div class="board" id="board" aria-label="지뢰찾기 보드" role="grid"></div>
     </section>
 
-    <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap">
-      <button id="flagToggle" type="button" style="
-        border:2px solid var(--accent);background:var(--accent-soft);color:var(--text);
-        border-radius:12px;padding:10px 20px;font-size:1rem;font-weight:800;cursor:pointer;
-        display:flex;align-items:center;gap:6px;transition:all .15s ease;min-width:140px;justify-content:center;
-      ">
-        <span id="flagIcon" style="font-size:1.2rem">⛏️</span>
-        <span id="flagLabel">열기 모드</span>
-      </button>
-      <span id="modeHint" style="color:var(--muted);font-size:0.82rem">탭하면 칸을 엽니다</span>
-    </div>
+    <p class="hint">탭/클릭: 열기 · 길게 누르기/우클릭: 깃발</p>
   </main>
 
   <div class="modal-bg" id="modalBg" role="dialog" aria-modal="true">
@@ -380,32 +362,6 @@
     let timer = 0;
     let timerId = null;
     let pointerState = null;
-    let flagMode = false;
-    const flagToggleBtn = document.getElementById("flagToggle");
-    const flagIcon = document.getElementById("flagIcon");
-    const flagLabel = document.getElementById("flagLabel");
-    const modeHint = document.getElementById("modeHint");
-
-    function updateFlagToggle() {
-      if (flagMode) {
-        flagToggleBtn.style.background = "color-mix(in srgb, var(--danger), transparent 78%)";
-        flagToggleBtn.style.borderColor = "var(--danger)";
-        flagIcon.textContent = "🚩";
-        flagLabel.textContent = "깃발 모드";
-        modeHint.textContent = "탭하면 깃발을 꽂습니다";
-      } else {
-        flagToggleBtn.style.background = "var(--accent-soft)";
-        flagToggleBtn.style.borderColor = "var(--accent)";
-        flagIcon.textContent = "⛏️";
-        flagLabel.textContent = "열기 모드";
-        modeHint.textContent = "탭하면 칸을 엽니다";
-      }
-    }
-
-    flagToggleBtn.addEventListener("click", () => {
-      flagMode = !flagMode;
-      updateFlagToggle();
-    });
 
     function loadBestTimes() {
       try {
@@ -665,11 +621,7 @@
         event.preventDefault();
         return;
       }
-      if (flagMode) {
-        toggleFlag(r, c);
-      } else {
-        reveal(r, c);
-      }
+      reveal(r, c);
       updateCounters();
     }
 
@@ -715,8 +667,6 @@
       flaggedCount = 0;
       timer = 0;
       pointerState = null;
-      flagMode = false;
-      updateFlagToggle();
       buildBoard();
       updateBestTimeText();
       updateCounters();
