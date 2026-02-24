@@ -210,6 +210,11 @@
       animation: robber-pulse 1.2s ease-in-out infinite;
     }
 
+    @keyframes confetti-fall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+
     .robber {
       position: absolute;
       top: 6px;
@@ -1183,6 +1188,7 @@
         state.hint = `🎉 ${state.players[winner].name} 승리!`;
         if (prevWinner !== winner) {
           SFX.win();
+          if (winner === localPlayerIndex()) launchConfetti();
           showToast("🎉 승리!", 6000);
         }
       }
@@ -2429,6 +2435,17 @@
       el.style.opacity = "1";
       clearTimeout(el._t);
       el._t = setTimeout(() => { el.style.opacity = "0"; }, duration);
+    }
+
+    function launchConfetti() {
+      const colors = ["#e94560", "#4ecca3", "#ffd700", "#9b59b6", "#fff", "#ff6b6b"];
+      for (let i = 0; i < 60; i += 1) {
+        const el = document.createElement("div");
+        const size = 6 + Math.random() * 8;
+        el.style.cssText = `position:fixed;top:-10px;left:${Math.random() * 100}vw;width:${size}px;height:${size}px;background:${colors[i % colors.length]};border-radius:${Math.random() > 0.5 ? "50%" : "2px"};z-index:9998;pointer-events:none;animation:confetti-fall ${1.5 + Math.random() * 2}s ease-in forwards;animation-delay:${Math.random() * 0.5}s;`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+      }
     }
 
     function zoomInMap() {
