@@ -177,6 +177,18 @@
 
     .number.hot { color: #b71616; }
 
+    @keyframes dice-roll {
+      0% { transform: scale(1.2) rotate(-5deg); }
+      25% { transform: scale(0.9) rotate(5deg); }
+      50% { transform: scale(1.15) rotate(-3deg); }
+      75% { transform: scale(0.95) rotate(3deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .dice-animate {
+      animation: dice-roll 0.4s ease-out;
+    }
+
     .robber {
       position: absolute;
       top: 6px;
@@ -1309,6 +1321,12 @@
         SFX.dice();
         const d1 = 1 + Math.floor(Math.random() * 6);
         const d2 = 1 + Math.floor(Math.random() * 6);
+        const el = document.getElementById("diceDisplay");
+        if (el) {
+          el.classList.remove("dice-animate");
+          void el.offsetWidth;
+          el.classList.add("dice-animate");
+        }
         await sendGameAction(ACTION.ROLL_DICE, { playerId: currentPlayerUserId(), values: [d1, d2] });
         if (d1 + d2 === 7) {
           for (let i = 0; i < state.players.length; i += 1) {
@@ -1338,6 +1356,12 @@
       SFX.dice();
       const d1 = 1 + Math.floor(Math.random() * 6);
       const d2 = 1 + Math.floor(Math.random() * 6);
+      const el = document.getElementById("diceDisplay");
+      if (el) {
+        el.classList.remove("dice-animate");
+        void el.offsetWidth;
+        el.classList.add("dice-animate");
+      }
       if (!applyRollDice(state.currentPlayer, [d1, d2], false)) return;
       render();
       triggerAITurnIfNeeded();
@@ -2000,7 +2024,7 @@
           <div class="resources">${resourceStrip(me)}</div>
           ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':'⭐VP').join(' ')}</div>` : ""}
           <div class="actions">
-            <button class="primary" ${canRoll ? "" : "disabled"} onclick="rollDice()">주사위</button>
+            <button id="diceDisplay" class="primary" ${canRoll ? "" : "disabled"} onclick="rollDice()">주사위</button>
             <button ${actionState.canRoad ? "" : "disabled"} onclick="humanBuildRoad()">도로</button>
             <button ${actionState.canSettlement ? "" : "disabled"} onclick="humanBuildSettlement()">마을</button>
             <button ${actionState.canCity ? "" : "disabled"} onclick="humanBuildCity()">도시</button>
