@@ -3,19 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Gals Panic</title>
+  <title>Line Rush</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; font-family: 'Trebuchet MS', sans-serif; }
-    canvas { display: block; }
+    body { background: #000; display: flex; justify-content: center; align-items: center; min-height: 100dvh; overflow: hidden; font-family: 'Trebuchet MS', sans-serif; }
+    #game { width: 100vw; height: 100dvh; display: flex; justify-content: center; align-items: center; }
+    canvas { display: block; touch-action: none; }
   </style>
 </head>
 <body>
 <div id="game"></div>
 <script>
-const COLS = 32;
-const ROWS = 24;
+const STAGE_COUNT = 10;
+const COLS = 26;
+const ROWS = 38;
 const CELL = 16;
 const W = COLS * CELL;
 const H = ROWS * CELL;
@@ -25,7 +27,7 @@ class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
 
   preload() {
-    for (let s = 1; s <= 3; s++) {
+    for (let s = 1; s <= STAGE_COUNT; s++) {
       this.load.image(`stage${s}_real`, `/galspanic/img/stage${s}.jpg`);
     }
   }
@@ -43,7 +45,7 @@ class BootScene extends Phaser.Scene {
       [0xf39c12, 0xffd700]
     ];
 
-    for (let s = 1; s <= 3; s++) {
+    for (let s = 1; s <= STAGE_COUNT; s++) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
       const [c1, c2] = palettes[s - 1];
       g.fillGradientStyle(c1, c1, c2, c2, 1);
@@ -75,15 +77,15 @@ class MenuScene extends Phaser.Scene {
     bg.fillGradientStyle(0x120320, 0x120320, 0x220833, 0x220833, 1);
     bg.fillRect(0, 0, W, H);
 
-    this.add.text(W / 2, 54, 'GALS PANIC', {
+    this.add.text(W / 2, 48, 'LINE RUSH', {
       fontFamily: 'Verdana',
-      fontSize: '56px',
+      fontSize: '42px',
       color: '#ff79c6',
       stroke: '#ff2ea6',
       strokeThickness: 8
     }).setOrigin(0.5).setShadow(0, 0, '#ff2ea6', 24, true, true);
 
-    this.add.text(W / 2, 116, 'STAGE SELECT', {
+    this.add.text(W / 2, 96, 'STAGE SELECT', {
       fontFamily: 'Verdana',
       fontSize: '20px',
       color: '#99e9ff',
@@ -91,23 +93,26 @@ class MenuScene extends Phaser.Scene {
       strokeThickness: 5
     }).setOrigin(0.5);
 
-    for (let s = 1; s <= 3; s++) {
-      const x = 96 + (s - 1) * 160;
-      const y = 224;
+    for (let s = 1; s <= STAGE_COUNT; s++) {
+      const cols = 2;
+      const row = Math.floor((s - 1) / cols);
+      const col = (s - 1) % cols;
+      const x = 104 + col * 208;
+      const y = 178 + row * 82;
       const key = this.textures.exists(`stage${s}_real`) ? `stage${s}_real` : `stage${s}_placeholder`;
 
-      const frame = this.add.rectangle(x, y, 126, 164, 0x03030a, 0.7).setStrokeStyle(2, 0x59e3ff, 0.9);
-      const preview = this.add.image(x, y - 8, key).setDisplaySize(116, 150).setAlpha(0.9);
-      const pixelMask = this.add.rectangle(x, y - 8, 116, 150, 0x000000, 0.18);
-      const label = this.add.text(x, y + 84, `STAGE ${s}`, {
+      const frame = this.add.rectangle(x, y, 188, 72, 0x03030a, 0.7).setStrokeStyle(2, 0x59e3ff, 0.9);
+      const preview = this.add.image(x - 52, y, key).setDisplaySize(58, 66).setAlpha(0.92);
+      const pixelMask = this.add.rectangle(x - 52, y, 58, 66, 0x000000, 0.12);
+      const label = this.add.text(x + 20, y, `STAGE ${s}`, {
         fontFamily: 'Verdana',
-        fontSize: '16px',
+        fontSize: '18px',
         color: '#ffffff',
         stroke: '#000000',
         strokeThickness: 4
       }).setOrigin(0.5);
 
-      const hit = this.add.zone(x, y, 126, 164).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      const hit = this.add.zone(x, y, 188, 72).setOrigin(0.5).setInteractive({ useHandCursor: true });
       hit.on('pointerover', () => {
         frame.setFillStyle(0x081235, 0.85);
         label.setScale(1.05);
@@ -425,7 +430,7 @@ class GameScene extends Phaser.Scene {
 
   redrawOverlay() {
     this.overlayGfx.clear();
-    this.overlayGfx.fillStyle(0x0a0a1a, 0.92);
+    this.overlayGfx.fillStyle(0x090913, 0.78);
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         if (this.grid[r][c] === 0 || this.grid[r][c] === 2) {
@@ -649,7 +654,7 @@ class ClearScene extends Phaser.Scene {
       blendMode: 'ADD'
     });
 
-    const nextLabel = (stage < 3) ? 'NEXT STAGE' : 'BACK TO MENU';
+    const nextLabel = (stage < STAGE_COUNT) ? 'NEXT STAGE' : 'BACK TO MENU';
     const btn = this.add.rectangle(W / 2, 300, 200, 44, 0x123966, 0.92)
       .setStrokeStyle(2, 0x7ce8ff, 1)
       .setInteractive({ useHandCursor: true });
@@ -663,7 +668,7 @@ class ClearScene extends Phaser.Scene {
     btn.on('pointerout', () => btn.setFillStyle(0x123966, 0.92));
     btn.on('pointerdown', () => {
       p.destroy();
-      if (stage < 3) {
+      if (stage < STAGE_COUNT) {
         this.scene.start('Game', { stage: stage + 1, score: totalScore, lives });
       } else {
         this.scene.start('Menu');
@@ -727,6 +732,10 @@ const config = {
   height: H,
   parent: 'game',
   backgroundColor: '#1a0a2e',
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH
+  },
   scene: [BootScene, MenuScene, GameScene, ClearScene, GameOverScene]
 };
 

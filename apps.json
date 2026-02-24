@@ -5,8 +5,12 @@
     "url": "https://game.cocy.io/d2r-runewords/",
     "desc": "룬 순서 선택 → 룬워드 검색. 장비/직업/레벨 필터",
     "badge": "NEW",
-    "platforms": ["WEB"],
-    "languages": ["🇰🇷"],
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🇰🇷"
+    ],
     "category": "game"
   },
   {
@@ -239,10 +243,10 @@
     "category": "game"
   },
   {
-    "title": "갈스패닉 / Gals Panic",
+    "title": "라인러시 / Line Rush",
     "icon": "https://game.cocy.io/galspanic/icon.svg",
     "url": "https://game.cocy.io/galspanic/",
-    "desc": "영역을 확보해 숨겨진 그림을 공개하는 아케이드 게임",
+    "desc": "라인을 그어 영역을 확보하고 배경을 해방하는 터치 아케이드",
     "badge": "NEW",
     "platforms": [
       "WEB"
