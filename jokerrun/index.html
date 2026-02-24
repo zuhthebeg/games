@@ -912,104 +912,123 @@
     }
 
     .card {
-      border-radius: 8px;
-      min-height: clamp(74px, 18vw, 112px);
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 7px 16px rgba(0, 0, 0, 0.35);
-      color: #ffffff;
+      border-radius: 10px;
+      min-height: clamp(78px, 19vw, 116px);
+      background: #fefefe;
+      border: 1.5px solid #c8c8c8;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.9);
       display: flex;
-      justify-content: space-between;
       flex-direction: column;
-      padding: 8px;
+      justify-content: space-between;
+      padding: 5px 6px;
       user-select: none;
       cursor: pointer;
-      transition: transform var(--ease), box-shadow var(--ease), border-color var(--ease), filter var(--ease);
-      animation: cardFlipIn 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      transition: transform 0.18s cubic-bezier(0.22,1,0.36,1), box-shadow 0.18s;
+      animation: cardDeal 0.38s cubic-bezier(0.2,0.8,0.2,1) both;
       position: relative;
       overflow: hidden;
       transform-style: preserve-3d;
-    }
-
-    .card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.06) 0 2px, rgba(255, 255, 255, 0.01) 2px 5px),
-        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.18), transparent 38%);
-      mix-blend-mode: overlay;
-      opacity: 0.44;
-      pointer-events: none;
+      will-change: transform;
     }
 
     .card::after {
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(165deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
-      mix-blend-mode: screen;
+      background: linear-gradient(135deg, rgba(255,255,255,0.55) 0%, transparent 50%);
       pointer-events: none;
+      border-radius: 10px;
     }
 
-    .card.s-heart,
-    .card.s-diamond {
-      background: linear-gradient(150deg, var(--red-start), var(--red-end));
+    .card-corner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1;
+      gap: 1px;
     }
 
-    .card.s-club,
-    .card.s-spade {
-      background: linear-gradient(150deg, var(--dark-start), var(--dark-end));
+    .card-tl { align-self: flex-start; }
+
+    .card-br {
+      align-self: flex-end;
+      transform: rotate(180deg);
     }
 
-    .card:hover,
-    .card:active {
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.48);
-      filter: brightness(1.04);
+    .ci-rank {
+      font-size: clamp(13px, 3.6vw, 18px);
+      font-weight: 900;
+      line-height: 1;
+      font-family: "Georgia", serif;
     }
 
-    .card:active {
-      transform: scale(0.98);
+    .ci-suit {
+      font-size: clamp(9px, 2.4vw, 13px);
+      line-height: 1;
+    }
+
+    .card-center-sym {
+      font-size: clamp(26px, 7.5vw, 40px);
+      text-align: center;
+      line-height: 1;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+    }
+
+    /* Red suits */
+    .card.s-heart .ci-rank,
+    .card.s-heart .ci-suit,
+    .card.s-heart .card-center-sym,
+    .card.s-diamond .ci-rank,
+    .card.s-diamond .ci-suit,
+    .card.s-diamond .card-center-sym {
+      color: #d32f2f;
+    }
+
+    /* Black suits */
+    .card.s-club .ci-rank,
+    .card.s-club .ci-suit,
+    .card.s-club .card-center-sym,
+    .card.s-spade .ci-rank,
+    .card.s-spade .ci-suit,
+    .card.s-spade .card-center-sym {
+      color: #1a1a2e;
+    }
+
+    .card:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
     }
 
     .card.selected {
-      border-color: #ffd76a;
-      box-shadow: 0 0 0 1px rgba(255, 215, 106, 0.75), 0 14px 24px rgba(0, 0, 0, 0.46), 0 0 26px rgba(255, 207, 109, 0.72);
-      transform: translateY(-8px);
-      animation: selectedFloat 1.8s ease-in-out infinite;
+      border-color: #ffd700;
+      box-shadow:
+        0 0 0 2px #ffd700,
+        0 0 18px rgba(255,215,0,0.6),
+        0 16px 32px rgba(0,0,0,0.5);
+      transform: translateY(-12px) scale(1.04) !important;
+      animation: selectedFloat 2s ease-in-out infinite !important;
       z-index: 2;
     }
 
     .card.pick-fx {
-      animation: pickFlash 260ms ease;
+      animation: pickFlash 260ms ease !important;
     }
 
-    .rank {
-      font-size: clamp(1rem, 4vw, 1.2rem);
-      font-weight: 900;
-      line-height: 1;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    /* Play-out animation */
+    .card.playing-out {
+      animation: cardPlayOut 320ms cubic-bezier(0.4,0,0.2,1) both !important;
     }
 
-    .suit {
-      align-self: flex-end;
-      font-size: clamp(1.2rem, 5vw, 1.42rem);
-      font-weight: 900;
-      line-height: 1;
-      text-shadow: 0 3px 8px rgba(0, 0, 0, 0.42);
-      color: transparent;
-      -webkit-background-clip: text;
-      background-clip: text;
+    /* Discard-out animation */
+    .card.discarding-out {
+      animation: cardDiscardOut 280ms cubic-bezier(0.4,0,0.2,1) both !important;
     }
 
-    .card.s-heart .suit,
-    .card.s-diamond .suit {
-      background-image: linear-gradient(180deg, #ffe7ed, #ff7997 45%, #cc2247);
-    }
-
-    .card.s-club .suit,
-    .card.s-spade .suit {
-      background-image: linear-gradient(180deg, #ffffff, #c4ced5 48%, #747d85);
-    }
+    .rank { display: none; }
+    .suit { display: none; }
 
     .status-bar {
       display: grid;
@@ -1433,6 +1452,28 @@
     @keyframes cardFlipIn {
       0% { opacity: 0; transform: perspective(460px) rotateY(-82deg) translateY(8px); }
       100% { opacity: 1; transform: perspective(460px) rotateY(0) translateY(0); }
+    }
+
+    @keyframes cardDeal {
+      from {
+        opacity: 0;
+        transform: translateX(60px) translateY(-20px) rotate(8deg) scale(0.82);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0) translateY(0) rotate(0deg) scale(1);
+      }
+    }
+
+    @keyframes cardPlayOut {
+      0%   { transform: translateY(0) scale(1); opacity: 1; }
+      40%  { transform: translateY(-40px) scale(1.12) rotate(3deg); opacity: 0.9; }
+      100% { transform: translateY(-120px) scale(0.6) rotate(-8deg); opacity: 0; }
+    }
+
+    @keyframes cardDiscardOut {
+      0%   { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(80px) scale(0.7) rotate(12deg); opacity: 0; }
     }
 
     @keyframes selectedFloat {
@@ -2000,7 +2041,16 @@
         const d = document.createElement("div");
         d.className = `card ${suitClass[card.suit]} ${state.selected.has(card.id) ? "selected" : ""}`;
         d.dataset.id = String(card.id);
-        d.innerHTML = `<div class="rank">${formatRank(card.rank)}</div><div class="suit">${suitSymbol[card.suit]}</div>`;
+        d.innerHTML = `
+  <div class="card-corner card-tl">
+    <span class="ci-rank">${formatRank(card.rank)}</span>
+    <span class="ci-suit">${suitSymbol[card.suit]}</span>
+  </div>
+  <div class="card-center-sym">${suitSymbol[card.suit]}</div>
+  <div class="card-corner card-br">
+    <span class="ci-rank">${formatRank(card.rank)}</span>
+    <span class="ci-suit">${suitSymbol[card.suit]}</span>
+  </div>`;
         d.addEventListener("click", () => {
           if (state.gameEnded) return;
           if (state.selected.has(card.id)) state.selected.delete(card.id);
@@ -2013,10 +2063,25 @@
           state.lastToggledCardId = card.id;
           renderCards();
         });
+        d.addEventListener('mousemove', (e) => {
+          if (state.selected.has(card.id)) return;
+          const r = d.getBoundingClientRect();
+          const x = ((e.clientX - r.left) / r.width - 0.5) * 18;
+          const y = ((e.clientY - r.top) / r.height - 0.5) * -18;
+          d.style.transform = `perspective(500px) rotateY(${x}deg) rotateX(${y}deg) translateY(-6px)`;
+          d.style.boxShadow = `${-x * 0.5}px ${Math.abs(y)}px 28px rgba(0,0,0,0.45)`;
+        });
+        d.addEventListener('mouseleave', () => {
+          if (!state.selected.has(card.id)) {
+            d.style.transform = '';
+            d.style.boxShadow = '';
+          }
+        });
         if (state.lastToggledCardId === card.id) {
           d.classList.add("pick-fx");
           setTimeout(() => d.classList.remove("pick-fx"), 280);
         }
+        d.style.animationDelay = `${Array.from(cardsWrap.children).length * 35}ms`;
         cardsWrap.appendChild(d);
       });
       state.lastToggledCardId = null;
@@ -2323,6 +2388,10 @@
       if (!cards.length) return setInfo("먼저 카드를 1장 이상 선택하세요.");
       if (state.bossModifier?.id === "max3cards" && cards.length > 3) return setInfo("이번 블라인드는 최대 3장까지만 선택 가능합니다.");
       if (state.bossModifier?.id === "min4cards" && cards.length < 4) return setInfo("이번 블라인드는 최소 4장을 선택해야 합니다.");
+      // Animate selected cards flying out
+      const selectedEls = Array.from(cardsWrap.querySelectorAll('.card.selected'));
+      selectedEls.forEach(el => el.classList.add('playing-out'));
+      await new Promise(r => setTimeout(r, 300));
       AudioFX.play("play");
       const hand = scoreHand(cards);
       let chips = hand.chips;
@@ -2369,7 +2438,9 @@
       if (!cards.length) return setInfo("버릴 카드를 선택하세요.");
       AudioFX.play("select");
       state.discardsLeft = Math.max(0, state.discardsLeft - 1);
-      consumeSelectedCards();
+      const discardEls = Array.from(cardsWrap.querySelectorAll('.card.selected'));
+      discardEls.forEach(el => el.classList.add('discarding-out'));
+      setTimeout(() => consumeSelectedCards(), 280);
       setInfo(`${cards.length}장 버림 완료. 남은 버리기 ${state.discardsLeft}`);
       addLog(`${cards.length}장 버림. (남은 버리기 ${state.discardsLeft})`);
       renderHUD();
