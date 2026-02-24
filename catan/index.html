@@ -845,6 +845,8 @@
     }
 
     function distributeResources(number) {
+      const humanIdx = localPlayerIndex();
+      let humanGain = 0;
       for (const hex of state.hexes) {
         if (hex.number !== number || hex.index === state.robber) continue;
         for (const vIdx of hex.vertices) {
@@ -852,11 +854,14 @@
           if (!v.building || v.owner === null) continue;
           const amount = v.building === "city" ? 2 : 1;
           state.players[v.owner].resources[hex.type] += amount;
+          if (v.owner === humanIdx) humanGain += amount;
         }
       }
+      if (humanGain > 0) SFX.resource();
     }
 
     function handleSeven(skipDiscard = false) {
+      SFX.robber();
       if (!skipDiscard) {
         for (let i = 0; i < state.players.length; i += 1) {
           const p = state.players[i];
@@ -1115,6 +1120,7 @@
     }
 
     function recalcAllVP() {
+      const prevWinner = state.winner;
       for (let i = 0; i < state.players.length; i += 1) {
         const p = state.players[i];
         let vp = 0;
@@ -1130,6 +1136,7 @@
         state.phase = "end";
         state.canEndTurn = false;
         state.hint = `🎉 ${state.players[winner].name} 승리!`;
+        if (prevWinner !== winner) SFX.win();
       }
     }
 
@@ -1299,6 +1306,7 @@
     async function rollDice() {
       if (isMultiMode()) {
         if (!isHumanTurn() || state.phase !== "roll") return;
+        SFX.dice();
         const d1 = 1 + Math.floor(Math.random() * 6);
         const d2 = 1 + Math.floor(Math.random() * 6);
         await sendGameAction(ACTION.ROLL_DICE, { playerId: currentPlayerUserId(), values: [d1, d2] });
@@ -1327,6 +1335,7 @@
         return;
       }
       if (state.winner || state.phase !== "roll") return;
+      SFX.dice();
       const d1 = 1 + Math.floor(Math.random() * 6);
       const d2 = 1 + Math.floor(Math.random() * 6);
       if (!applyRollDice(state.currentPlayer, [d1, d2], false)) return;
@@ -1351,6 +1360,7 @@
       const me = state.players[localPlayerIndex()];
       if (!canAfford(me, COST.devCard)) { state.hint = "자원 부족: 양1 곡물1 광석1 필요."; render(); return; }
       buyDevCard(localPlayerIndex());
+      SFX.card();
       state.canEndTurn = true;
       state.hint = "발전카드 구매 완료.";
       render();
@@ -1406,6 +1416,7 @@
         const pIdx = state.currentPlayer;
         if (state.setupStep !== "settlement") return;
         if (!placeSettlement(pIdx, vIdx, true)) return;
+        SFX.build();
         if (state.phase === "setup2") grantSecondSetupResources(pIdx, vIdx);
         state.lastSetupVertex = vIdx;
         state.setupStep = "road";
@@ -1417,6 +1428,7 @@
       if (state.phase !== "main") return;
       if (state.buildMode === "settlement") {
         if (placeSettlement(state.currentPlayer, vIdx, false)) {
+          SFX.build();
           state.buildMode = null;
           state.hint = "마을 건설 완료.";
           render();
@@ -1424,6 +1436,7 @@
         }
       } else if (state.buildMode === "city") {
         if (upgradeCity(state.currentPlayer, vIdx)) {
+          SFX.build();
           state.buildMode = null;
           state.hint = "도시 업그레이드 완료.";
           render();
@@ -1449,6 +1462,7 @@
         const pIdx = state.currentPlayer;
         if (state.setupStep !== "road") return;
         if (!placeRoad(pIdx, eIdx, true)) return;
+        SFX.road();
         advanceSetupTurn();
         render();
         triggerAITurnIfNeeded();
@@ -1456,6 +1470,7 @@
       }
       if (state.phase !== "main") return;
       if (state.buildMode === "road" && placeRoad(state.currentPlayer, eIdx, false)) {
+        SFX.road();
         state.buildMode = null;
         state.hint = "도로 건설 완료.";
         render();
@@ -1469,6 +1484,7 @@
         const pIdx = localPlayerIndex();
         const result = playKnight(pIdx, hIdx, null);
         if (result && result.ok) {
+          SFX.robber();
           state.phase = "main";
           state.canEndTurn = true;
           state.hint = "기사 발동 완료.";
@@ -2251,6 +2267,85 @@
       }
       render();
     }
+
+    // ─── Sound System ───────────────────────────────────────────────────────────
+    const SFX = (() => {
+      let ctx = null;
+      const getCtx = () => {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        return ctx;
+      };
+
+      function tone(freq, type, duration, vol = 0.3, startTime = 0) {
+        const c = getCtx();
+        const t = c.currentTime + startTime;
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(vol, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+        osc.start(t);
+        osc.stop(t + duration);
+      }
+
+      function noise(duration, vol = 0.15) {
+        const c = getCtx();
+        const bufSize = c.sampleRate * duration;
+        const buf = c.createBuffer(1, bufSize, c.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i += 1) data[i] = Math.random() * 2 - 1;
+        const src = c.createBufferSource();
+        const gain = c.createGain();
+        src.buffer = buf;
+        src.connect(gain);
+        gain.connect(c.destination);
+        gain.gain.setValueAtTime(vol, c.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
+        src.start();
+      }
+
+      return {
+        dice() {
+          noise(0.06, 0.2);
+          setTimeout(() => noise(0.05, 0.18), 80);
+          setTimeout(() => {
+            noise(0.04, 0.15);
+            tone(120, "sine", 0.15, 0.25);
+          }, 160);
+        },
+        build() {
+          tone(440, "square", 0.05, 0.2);
+          tone(660, "square", 0.08, 0.15, 0.05);
+        },
+        road() {
+          tone(300, "sawtooth", 0.08, 0.15);
+          tone(250, "sawtooth", 0.06, 0.1, 0.07);
+        },
+        card() {
+          tone(800, "sine", 0.04, 0.12);
+          tone(1000, "sine", 0.04, 0.1, 0.04);
+          tone(1200, "sine", 0.06, 0.15, 0.08);
+        },
+        robber() {
+          tone(200, "sawtooth", 0.12, 0.3);
+          tone(150, "sawtooth", 0.15, 0.25, 0.1);
+        },
+        resource() {
+          tone(880, "sine", 0.08, 0.18);
+          tone(1100, "sine", 0.06, 0.12, 0.07);
+        },
+        error() {
+          tone(180, "square", 0.1, 0.2);
+        },
+        win() {
+          const notes = [523, 659, 784, 1047];
+          notes.forEach((f, i) => tone(f, "triangle", 0.3, 0.4, i * 0.12));
+        }
+      };
+    })();
 
     function zoomInMap() {
       setMapZoom((state.mapView.zoom || 1) + 0.1);
