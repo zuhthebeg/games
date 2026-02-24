@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@4.3.6/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/party-js@2.2.0/bundle/party.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/countup.js@2.9.0/dist/countUp.umd.js"></script>
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({"gtm.start":new Date().getTime(),event:"gtm.js"});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!="dataLayer"?"&l="+l:"";j.async=true;j.src="https://www.googletagmanager.com/gtm.js?id="+i+dl;f.parentNode.insertBefore(j,f)})(window,document,"script","dataLayer","GTM-MV8KQGJF");</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -324,6 +327,33 @@
       box-shadow:
         0 0 20px rgba(255, 215, 0, 0.3),
         inset 0 0 30px rgba(255, 255, 255, 0.05);
+    }
+
+    .joker.has-sell {
+      padding-bottom: 18px;
+    }
+
+    .joker-sell {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      bottom: 4px;
+      min-height: 16px;
+      border-radius: 8px;
+      border: 0;
+      font-size: 9px;
+      font-weight: 800;
+      color: #2c1205;
+      background: linear-gradient(150deg, #ffd596, #ff9f6a);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      padding: 0 2px;
+      z-index: 2;
+    }
+
+    .joker-sell:hover:enabled,
+    .joker-sell:active:enabled {
+      transform: none;
+      box-shadow: 0 2px 10px rgba(255, 173, 93, 0.55);
     }
 
     .joker:hover,
@@ -670,6 +700,17 @@
     .joker-clubKing { background: linear-gradient(150deg, #1b1d25, #2d3546 55%, #485f7a); }
     .joker-allInClown { background: linear-gradient(150deg, #3d112b, #7a2258 55%, #c93e81); }
     .joker-fourMaster { background: linear-gradient(150deg, #291a0f, #553311 58%, #a46b21); }
+    .joker-acePower { background: linear-gradient(150deg, #0f1d2f, #203d69 55%, #2d6fb0); }
+    .joker-faceCard { background: linear-gradient(150deg, #2c1931, #5d2e63 55%, #aa4fa1); }
+    .joker-evenSteven { background: linear-gradient(150deg, #10291d, #1f5a3f 55%, #37a866); }
+    .joker-oddOne { background: linear-gradient(150deg, #2b1b18, #5e2d24 55%, #b3553f); }
+    .joker-fourFlush { background: linear-gradient(150deg, #13303b, #1f5d79 55%, #3cb8de); }
+    .joker-streakBonus { background: linear-gradient(150deg, #1b2d14, #2f6231 55%, #56b85e); }
+    .joker-chipRain { background: linear-gradient(150deg, #2f2210, #60421f 55%, #be8331); }
+    .joker-royalFlush { background: linear-gradient(150deg, #2f1a35, #5e2f75 55%, #a259d4); }
+    .joker-lowCard { background: linear-gradient(150deg, #1f2c3e, #2e4d75 55%, #4b8ccc); }
+    .joker-highCard { background: linear-gradient(150deg, #3b161e, #7a2938 55%, #d0536c); }
+    .joker-trioMult { background: linear-gradient(150deg, #2a1a40, #4e2d7c 55%, #8554cb); }
 
     .joker-dice,
     .joker-spade,
@@ -848,6 +889,30 @@
 
     .score-total.pulse {
       animation: neonPulse 500ms ease;
+    }
+
+    .hand-preview {
+      min-height: 28px;
+      padding: 7px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(69, 245, 255, 0.25);
+      background: rgba(7, 18, 16, 0.58);
+      color: rgba(230, 247, 241, 0.78);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 220ms ease, transform 220ms ease, color 220ms ease;
+      pointer-events: none;
+    }
+
+    .hand-preview.show {
+      opacity: 1;
+      transform: translateY(0);
+      color: var(--cyan);
+      text-shadow: 0 0 10px rgba(69, 245, 255, 0.35);
     }
 
     .table {
@@ -1309,6 +1374,102 @@
       gap: 8px;
     }
 
+    .shop-owned {
+      display: grid;
+      gap: 7px;
+    }
+
+    .shop-owned-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+    }
+
+    .shop-owned-item {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 8px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .shop-owned-name {
+      color: var(--gold);
+      font-weight: 800;
+      font-size: 0.77rem;
+    }
+
+    .shop-owned-refund {
+      color: var(--muted);
+      font-size: 0.69rem;
+    }
+
+    .shop-owned-empty {
+      color: var(--muted);
+      font-size: 0.72rem;
+      padding: 2px 1px 0;
+    }
+
+    .sell-popup {
+      position: fixed;
+      z-index: 70;
+      pointer-events: none;
+      font-weight: 900;
+      font-size: 0.86rem;
+      color: #bfffd8;
+      text-shadow: 0 0 12px rgba(122, 245, 184, 0.82);
+      transform: translate(-50%, -50%);
+    }
+
+    .dramatic-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      pointer-events: none;
+      display: grid;
+      place-items: center;
+    }
+
+    .dramatic-card {
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(6, 16, 14, 0.84);
+      backdrop-filter: blur(6px);
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      color: #eafdf8;
+    }
+
+    .dramatic-hand {
+      font-size: clamp(28px, 9vw, 48px);
+      font-weight: 900;
+      color: #ffd86d;
+      text-shadow: 0 0 14px rgba(255, 207, 109, 0.9);
+    }
+
+    .dramatic-chip {
+      font-size: clamp(20px, 6.2vw, 34px);
+      font-weight: 900;
+      color: #9fffe5;
+      text-shadow: 0 0 12px rgba(90, 255, 220, 0.8);
+    }
+
+    .dramatic-mult {
+      font-size: clamp(32px, 9.6vw, 56px);
+      font-weight: 900;
+      color: #ff8ad8;
+      text-shadow: 0 0 16px rgba(255, 105, 206, 0.95);
+    }
+
+    .dramatic-final {
+      font-size: clamp(28px, 8.5vw, 48px);
+      font-weight: 900;
+      color: #c9ffe9;
+      text-shadow: 0 0 14px rgba(122, 245, 184, 0.86);
+    }
+
     .shop-item {
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 12px;
@@ -1638,6 +1799,7 @@
     </section>
 
     <section class="table glass">
+      <div class="hand-preview" id="handPreview">족보명 | 예상: 0점</div>
       <div class="info-line" id="handResult">핸드를 선택해 플레이하세요.</div>
       <div class="cards-wrap" id="cardsWrap"></div>
       <div class="hand-bottom">
@@ -1674,6 +1836,7 @@
         </div>
         <div class="tag" id="shopMoney">보유 자금: $0</div>
       </div>
+      <div class="shop-owned" id="shopOwnedJokers"></div>
       <div class="shop-grid" id="shopGrid"></div>
       <button id="shopContinueBtn" class="btn-main" style="width:100%;margin-top:12px;padding:12px;font-size:15px;font-weight:700;border-radius:12px;background:linear-gradient(150deg,var(--ok),#3af5a0);color:#062f27;border:none;cursor:pointer;">다음 블라인드로 →</button>
     </div>
@@ -1774,6 +1937,7 @@
     const suitClass = { heart: "s-heart", diamond: "s-diamond", club: "s-club", spade: "s-spade" };
     const rankList = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
     const rankLabel = { 11: "J", 12: "Q", 13: "K", 14: "A" };
+    const RANK_CHIPS = { 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10, 11: 10, 12: 10, 13: 10, 14: 11 };
 
     const handBase = {
       HIGH_CARD: { name: "하이카드", chips: 5, mult: 1 },
@@ -1828,7 +1992,18 @@
       { id: "diamondMiner", name: "다이아몬드 광부", cost: 6, desc: "다이아당 칩 +12", detail: "선택한 카드 중 다이아몬드 1장당 칩 +12.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "diamond").length; if (count > 0) { ctx.chips += count * 12; ctx.activate("diamondMiner"); } } },
       { id: "clubKing", name: "클럽 킹", cost: 7, desc: "클럽 페이스당 배수 +1", detail: "클럽 문양의 J/Q/K 1장마다 배수 +1.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "club" && c.rank >= 11 && c.rank <= 13).length; if (count > 0) { ctx.mult += count; ctx.activate("clubKing"); } } },
       { id: "allInClown", name: "올인 광대", cost: 12, desc: "5장 플레이 시 배수 x1.5", detail: "정확히 5장을 선택해 플레이하면 배수 x1.5.", apply(ctx) { if (ctx.cards.length === 5) { ctx.mult *= 1.5; ctx.activate("allInClown"); } } },
-      { id: "fourMaster", name: "포카드 마스터", cost: 15, desc: "포카드면 배수 x3", detail: "족보가 포카드(FOUR)면 배수 x3.", apply(ctx) { if (ctx.handType === "FOUR") { ctx.mult *= 3; ctx.activate("fourMaster"); } } }
+      { id: "fourMaster", name: "포카드 마스터", cost: 15, desc: "포카드면 배수 x3", detail: "족보가 포카드(FOUR)면 배수 x3.", apply(ctx) { if (ctx.handType === "FOUR") { ctx.mult *= 3; ctx.activate("fourMaster"); } } },
+      { id: "acePower", name: "에이스 파워", cost: 9, desc: "에이스당 칩 +30", detail: "선택한 카드의 에이스(14) 1장당 칩 +30.", apply(ctx) { ctx.chips += ctx.cards.filter(c => c.rank === 14).length * 30; ctx.activate("acePower"); } },
+      { id: "faceCard", name: "페이스 카드", cost: 7, desc: "J/Q/K당 배수 +0.75", detail: "J/Q/K 1장당 배수 +0.75.", apply(ctx) { const n = ctx.cards.filter(c => c.rank >= 11 && c.rank <= 13).length; ctx.mult += n * 0.75; ctx.activate("faceCard"); } },
+      { id: "evenSteven", name: "짝수 마법사", cost: 6, desc: "짝수 카드당 칩 +8", detail: "2~10 짝수 카드 1장당 칩 +8.", apply(ctx) { const n = ctx.cards.filter(c => c.rank % 2 === 0 && c.rank <= 10).length; ctx.chips += n * 8; ctx.activate("evenSteven"); } },
+      { id: "oddOne", name: "홀수 악당", cost: 6, desc: "홀수 카드당 배수 +0.5", detail: "3~9 홀수 카드 1장당 배수 +0.5.", apply(ctx) { const n = ctx.cards.filter(c => c.rank % 2 === 1 && c.rank <= 9).length; ctx.mult += n * 0.5; ctx.activate("oddOne"); } },
+      { id: "fourFlush", name: "4색 조커", cost: 8, desc: "4가지 무늬 사용 시 배수 x2", detail: "선택한 카드의 무늬가 4종 이상이면 배수 x2.", apply(ctx) { if (new Set(ctx.cards.map(c => c.suit)).size >= 4) { ctx.mult *= 2; ctx.activate("fourFlush"); } } },
+      { id: "streakBonus", name: "연속 보너스", cost: 10, desc: "스트레이트면 칩+배수 모두 +5", detail: "스트레이트/스트레이트 플러시일 때 칩+5, 배수+5.", apply(ctx) { if (ctx.handType === "STRAIGHT" || ctx.handType === "STRAIGHT_FLUSH") { ctx.chips += 5; ctx.mult += 5; ctx.activate("streakBonus"); } } },
+      { id: "chipRain", name: "칩 비", cost: 11, desc: "핸드당 랜덤 칩 +10~100", detail: "매 핸드 점수 계산 시 칩 +10~100 랜덤 추가.", apply(ctx) { ctx.chips += Math.floor(Math.random() * 91) + 10; ctx.activate("chipRain"); } },
+      { id: "royalFlush", name: "로열 조커", cost: 14, desc: "스트레이트 플러시면 배수 x3", detail: "족보가 스트레이트 플러시이면 배수 x3.", apply(ctx) { if (ctx.handType === "STRAIGHT_FLUSH") { ctx.mult *= 3; ctx.activate("royalFlush"); } } },
+      { id: "lowCard", name: "로우 카드", cost: 5, desc: "2~5 카드당 칩 +10", detail: "2~5 카드 1장당 칩 +10.", apply(ctx) { const n = ctx.cards.filter(c => c.rank <= 5).length; ctx.chips += n * 10; ctx.activate("lowCard"); } },
+      { id: "highCard", name: "하이 카드", cost: 5, desc: "10 이상 카드당 배수 +0.5", detail: "10 이상 카드 1장당 배수 +0.5.", apply(ctx) { const n = ctx.cards.filter(c => c.rank >= 10).length; ctx.mult += n * 0.5; ctx.activate("highCard"); } },
+      { id: "trioMult", name: "트리오 증폭", cost: 9, desc: "트리플 이상이면 배수 x1.5", detail: "트리플/풀하우스/포카드면 배수 x1.5.", apply(ctx) { if (["THREE", "FULL_HOUSE", "FOUR"].includes(ctx.handType)) { ctx.mult *= 1.5; ctx.activate("trioMult"); } } }
     ];
 
     const jokerGlyphClass = {
@@ -1846,7 +2021,18 @@
       diamondMiner: "joker-diamond",
       clubKing: "joker-crown",
       allInClown: "joker-allin",
-      fourMaster: "joker-four"
+      fourMaster: "joker-four",
+      acePower: "joker-spade",
+      faceCard: "joker-crown",
+      evenSteven: "joker-calc",
+      oddOne: "joker-duo",
+      fourFlush: "joker-wave",
+      streakBonus: "joker-runner",
+      chipRain: "joker-bomb",
+      royalFlush: "joker-house",
+      lowCard: "joker-diamond",
+      highCard: "joker-seven",
+      trioMult: "joker-double"
     };
 
     const state = {
@@ -1947,6 +2133,7 @@
 
     const $ = sel => document.querySelector(sel);
     const cardsWrap = $("#cardsWrap");
+    const handPreview = $("#handPreview");
     const handResult = $("#handResult");
     const logEl = $("#log");
     const jokerArea = $("#jokerArea");
@@ -2063,6 +2250,7 @@
           AudioFX.play("select");
           state.lastToggledCardId = card.id;
           renderCards();
+          updateHandPreview();
         });
         d.addEventListener('mousemove', (e) => {
           if (state.selected.has(card.id)) return;
@@ -2086,6 +2274,115 @@
         cardsWrap.appendChild(d);
       });
       state.lastToggledCardId = null;
+    }
+
+    function wait(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function getCountUpCtor() {
+      if (window.countUp && window.countUp.CountUp) return window.countUp.CountUp;
+      if (window.CountUp) return window.CountUp;
+      return null;
+    }
+
+    async function runCountUp(target, endVal, options = {}) {
+      const CountCtor = getCountUpCtor();
+      if (!target) return;
+      if (!CountCtor) {
+        target.textContent = Number(endVal).toLocaleString();
+        return;
+      }
+      const instance = new CountCtor(target, endVal, { duration: 0.6, separator: ",", ...options });
+      if (!instance.error) instance.start();
+      await wait((options.duration || 0.6) * 1000 + 40);
+    }
+
+    function updateHandPreview() {
+      if (!handPreview) return;
+      const cards = selectedCards();
+      if (!cards.length) {
+        handPreview.classList.remove("show");
+        handPreview.textContent = "족보명 | 예상: 0점";
+        return;
+      }
+      const hand = scoreHand(cards);
+      const cardChips = cards.reduce((sum, c) => sum + (RANK_CHIPS[c.rank] || 0), 0);
+      const estimated = Math.floor((hand.chips + cardChips) * hand.mult);
+      handPreview.textContent = `${hand.name} | 예상: ${estimated.toLocaleString()}점`;
+      handPreview.classList.add("show");
+    }
+
+    function showSellPopup(amount, anchorEl) {
+      const rect = anchorEl.getBoundingClientRect();
+      const popup = document.createElement("div");
+      popup.className = "sell-popup";
+      popup.textContent = `+${amount}골드`;
+      popup.style.left = `${rect.left + rect.width * 0.5}px`;
+      popup.style.top = `${rect.top - 6}px`;
+      document.body.appendChild(popup);
+      if (window.anime) {
+        anime({
+          targets: popup,
+          translateY: [-2, -40],
+          opacity: [0, 1, 1, 0],
+          scale: [0.82, 1.06, 0.96],
+          easing: "easeOutExpo",
+          duration: 700,
+          complete: () => popup.remove()
+        });
+      } else {
+        popup.style.animation = "floatUp 700ms ease forwards";
+        setTimeout(() => popup.remove(), 720);
+      }
+    }
+
+    function sellJoker(index, anchorEl) {
+      const joker = state.jokers[index];
+      if (!joker) return;
+      const refund = Math.floor(joker.cost / 2);
+      state.jokers.splice(index, 1);
+      state.money += refund;
+      addLog(`조커 판매: ${joker.name} (+${refund}골드)`);
+      if (anchorEl) showSellPopup(refund, anchorEl);
+      renderHUD();
+      if ($("#shopModal").classList.contains("show")) openShop(_shopIsAnteClear);
+    }
+
+    function renderOwnedJokersInShop() {
+      const box = $("#shopOwnedJokers");
+      if (!box) return;
+      box.innerHTML = "";
+      const title = document.createElement("div");
+      title.className = "subtitle";
+      title.textContent = "보유 조커 (판매: 반값)";
+      box.appendChild(title);
+      if (!state.jokers.length) {
+        const empty = document.createElement("div");
+        empty.className = "shop-owned-empty";
+        empty.textContent = "보유 중인 조커가 없습니다.";
+        box.appendChild(empty);
+        return;
+      }
+      const list = document.createElement("div");
+      list.className = "shop-owned-list";
+      state.jokers.forEach((joker, index) => {
+        const item = document.createElement("div");
+        item.className = "shop-owned-item";
+        item.innerHTML = `
+          <div class="shop-owned-name">${joker.name}</div>
+          <div class="shop-owned-refund">환급 ${Math.floor(joker.cost / 2)}골드</div>
+        `;
+        const btn = document.createElement("button");
+        btn.textContent = "팔기 [반값]";
+        btn.addEventListener("click", (event) => {
+          event.stopPropagation();
+          sellJoker(index, btn);
+        });
+        item.appendChild(btn);
+        list.appendChild(item);
+      });
+      box.appendChild(list);
     }
 
     function openJokerPopup(joker) {
@@ -2130,22 +2427,25 @@
       jokerArea.innerHTML = "";
       for (let i = 0; i < 5; i++) {
         const joker = state.jokers[i];
-        const box = document.createElement("button");
+        const box = document.createElement("div");
         if (!joker) {
           box.className = "joker empty";
-          box.type = "button";
-          box.disabled = true;
           box.setAttribute("aria-label", "빈 슬롯");
         } else {
-          box.className = `joker joker-${joker.id}`;
-          box.type = "button";
+          box.className = `joker joker-${joker.id} has-sell`;
           box.dataset.jokerId = joker.id;
           box.innerHTML = `
             <span class="joker-icon" aria-hidden="true"><span class="joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}"></span></span>
             <span class="joker-name-mini">${joker.name}</span>
             <span class="joker-desc-mini">${joker.desc}</span>
+            <button class="joker-sell" type="button">팔기</button>
           `;
           box.addEventListener("click", () => openJokerPopup(joker));
+          const sellBtn = box.querySelector(".joker-sell");
+          sellBtn.addEventListener("click", (event) => {
+            event.stopPropagation();
+            sellJoker(i, sellBtn);
+          });
         }
         jokerArea.appendChild(box);
       }
@@ -2170,6 +2470,7 @@
         : "손패 8장 중 최대 5장을 선택";
       $("#pvpPanel").classList.toggle("show", state.mode === "pvp");
       renderJokers();
+      updateHandPreview();
       updateGoldLabel();
     }
 
@@ -2267,29 +2568,87 @@
       }
     }
 
-    function animateScore(chips, points, mult) {
-      const pieces = [
-        { text: `+${chips}칩`, className: "chips-readout", x: 14, y: 56, delay: 0 },
-        { text: `x${mult}배`, className: "mult-readout", x: 56, y: 80, delay: 120 },
-        { text: `+${points.toLocaleString()} 점`, className: "score-total", x: 30, y: 68, delay: 280 }
-      ];
-      pieces.forEach(piece => {
-        const fx = document.createElement("div");
-        fx.className = `fx ${piece.className}`;
-        fx.textContent = piece.text;
-        fx.style.left = `${piece.x}px`;
-        fx.style.top = `${piece.y}px`;
-        fx.style.animationDelay = `${piece.delay}ms`;
-        tablePanel.appendChild(fx);
-        setTimeout(() => fx.remove(), 980 + piece.delay);
+    async function animateScore(handName, chips, points, mult, prevScore, nextScore) {
+      const scoreEl = $("#scoreLabel");
+      const chipsLabel = $("#chipsLabel");
+      const multLabel = $("#multLabel");
+      const layer = document.createElement("div");
+      layer.className = "dramatic-layer";
+      document.body.appendChild(layer);
+
+      const runAnime = params => new Promise(resolve => {
+        if (!window.anime) {
+          setTimeout(resolve, params.duration || 280);
+          return;
+        }
+        anime({ ...params, complete: resolve });
       });
+
+      const burst = document.createElement("div");
+      burst.className = "dramatic-hand";
+      burst.textContent = handName;
+      layer.appendChild(burst);
+      await runAnime({
+        targets: burst,
+        scale: [0.4, 1.08, 1],
+        opacity: [0, 1, 0],
+        duration: 300,
+        easing: "easeOutCubic"
+      });
+      burst.remove();
+
+      const chipCard = document.createElement("div");
+      chipCard.className = "dramatic-card dramatic-chip";
+      chipCard.innerHTML = `칩: <span id="dramaticChipNum">0</span>`;
+      layer.appendChild(chipCard);
+      await runAnime({
+        targets: chipCard,
+        translateY: [10, 0],
+        opacity: [0, 1],
+        scale: [0.86, 1],
+        duration: 180,
+        easing: "easeOutQuad"
+      });
+      await runCountUp(chipCard.querySelector("#dramaticChipNum"), chips, { duration: 0.6 });
+      chipsLabel.textContent = Number(chips).toLocaleString();
+      await runAnime({ targets: chipCard, opacity: [1, 0], translateY: [0, -10], duration: 150, easing: "easeInQuad" });
+      chipCard.remove();
+
+      const multFx = document.createElement("div");
+      multFx.className = "dramatic-mult";
+      multFx.textContent = `× ${mult}배`;
+      layer.appendChild(multFx);
+      await runAnime({
+        targets: multFx,
+        scale: [0.3, 1.2, 1],
+        opacity: [0, 1, 0.95],
+        duration: 360,
+        easing: "easeOutBounce"
+      });
+      multLabel.textContent = `x${mult}`;
+
+      const finalFx = document.createElement("div");
+      finalFx.className = "dramatic-final";
+      finalFx.innerHTML = `+<span id="dramaticScoreNum">0</span>점`;
+      layer.appendChild(finalFx);
+      if (window.party && typeof window.party.confetti === "function") {
+        try {
+          window.party.confetti(scoreEl, { count: 90, spread: 60 });
+        } catch (_) {}
+      }
       spawnChipParticles(points);
+      await runAnime({ targets: finalFx, opacity: [0, 1], scale: [0.82, 1], duration: 140, easing: "easeOutQuad" });
+      await runCountUp(finalFx.querySelector("#dramaticScoreNum"), points, { duration: 0.6 });
       AudioFX.play("score");
+      await runAnime({ targets: finalFx, opacity: [1, 0], translateY: [0, -14], duration: 180, easing: "easeInQuad" });
+
+      await runCountUp(scoreEl, nextScore, { duration: 0.55, startVal: prevScore });
       const total = $("#scoreLabel");
       total.classList.remove("pulse");
       void total.offsetWidth;
       total.classList.add("pulse");
-      $("#multLabel").textContent = `x${mult}`;
+
+      layer.remove();
     }
 
     function consumeSelectedCards() {
@@ -2297,6 +2656,7 @@
       state.selected.clear();
       drawToEight();
       renderCards();
+      updateHandPreview();
     }
 
     async function sendPvpAction(data) {
@@ -2395,8 +2755,6 @@
       await new Promise(r => setTimeout(r, 300));
       AudioFX.play("play");
       const hand = scoreHand(cards);
-      // 발라트로 방식: 핸드 기본 칩 + 선택 카드 값 합산
-      const RANK_CHIPS = { 2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,11:10,12:10,13:10,14:11 };
       const cardChips = cards.reduce((sum, c) => sum + (RANK_CHIPS[c.rank] || 0), 0);
       let chips = hand.chips + cardChips;
       let mult = hand.mult;
@@ -2416,9 +2774,10 @@
       mult = Math.max(1, Math.floor(ctx.mult * 100) / 100);
       pulseJokers(ctx.activated);
       const points = Math.floor(chips * mult);
+      const prevScore = state.score;
       state.score += points;
       state.handsLeft = Math.max(0, state.handsLeft - 1);
-      animateScore(chips, points, mult);
+      await animateScore(hand.name, chips, points, mult, prevScore, state.score);
       setInfo(`<span class="hand-tag">${hand.name}</span> | ${chips}칩 × ${mult}배 = <b>${points.toLocaleString()}</b>점`);
       addLog(`${hand.name} 플레이: +${points}점 (남은 핸드 ${state.handsLeft})`);
       consumeSelectedCards();
@@ -2448,6 +2807,7 @@
       setInfo(`${cards.length}장 버림 완료. 남은 버리기 ${state.discardsLeft}`);
       addLog(`${cards.length}장 버림. (남은 버리기 ${state.discardsLeft})`);
       renderHUD();
+      updateHandPreview();
     }
 
     let _shopIsAnteClear = false;
@@ -2457,6 +2817,7 @@
       const grid = $("#shopGrid");
       grid.innerHTML = "";
       $("#shopMoney").textContent = `보유 자금: $${state.money}`;
+      renderOwnedJokersInShop();
       jokerPool.forEach(joker => {
         const owned = state.jokers.some(j => j.id === joker.id);
         const full = state.jokers.length >= 5;
@@ -2465,9 +2826,14 @@
         card.className = "shop-item";
         card.innerHTML = `<div class="name">${joker.name}</div><div class="desc">${joker.desc}</div><div class="price"><span class="coin" aria-hidden="true"></span>$${joker.cost}</div>`;
         const btn = document.createElement("button");
-        btn.textContent = owned ? "보유 중" : full ? "슬롯 가득 참" : afford ? "구매" : "자금 부족";
-        btn.disabled = owned || full || !afford;
+        btn.textContent = owned ? "팔기 [반값]" : full ? "슬롯 가득 참" : afford ? "구매" : "자금 부족";
+        btn.disabled = (!owned && (full || !afford));
         btn.addEventListener("click", () => {
+          if (owned) {
+            const index = state.jokers.findIndex(j => j.id === joker.id);
+            if (index >= 0) sellJoker(index, btn);
+            return;
+          }
           state.money -= joker.cost;
           state.jokers.push(joker);
           addLog(`조커 구매: ${joker.name} (-$${joker.cost})`);
@@ -2510,6 +2876,7 @@
       drawToEight();
       renderCards();
       renderHUD();
+      updateHandPreview();
       setInfo("핸드를 선택해 플레이하세요.");
       if (state.bossModifier) {
         setInfo(`<span style="color:var(--danger)">⚠️ ${state.bossModifier.label}</span> — ${state.bossModifier.desc}`);
@@ -2745,6 +3112,7 @@
       if (state.selected.size > 0) AudioFX.play("select");
       state.selected.clear();
       renderCards();
+      updateHandPreview();
       setInfo("선택을 해제했습니다.");
     });
     $("#shopContinueBtn").addEventListener("click", window.continueFromShop);
