@@ -2049,7 +2049,9 @@
       jokers: [],
       bossModifier: null,
       gameEnded: false,
-      lastToggledCardId: null
+      lastToggledCardId: null,
+      shopJokers: [],
+      rerollCost: 5
     };
 
     const pvp = {
@@ -2241,15 +2243,18 @@
   </div>`;
         d.addEventListener("click", () => {
           if (state.gameEnded) return;
-          if (state.selected.has(card.id)) state.selected.delete(card.id);
-          else {
+          if (state.selected.has(card.id)) {
+            state.selected.delete(card.id);
+          } else {
             const maxSelectable = state.bossModifier?.id === "max3cards" ? 3 : 5;
             if (state.selected.size >= maxSelectable) return setInfo(`최대 ${maxSelectable}장까지만 선택 가능합니다.`);
             state.selected.add(card.id);
           }
+          // 전체 재렌더 없이 해당 카드만 업데이트
+          d.classList.toggle("selected", state.selected.has(card.id));
+          d.classList.add("pick-fx");
+          setTimeout(() => d.classList.remove("pick-fx"), 280);
           AudioFX.play("select");
-          state.lastToggledCardId = card.id;
-          renderCards();
           updateHandPreview();
         });
         d.addEventListener('mousemove', (e) => {
@@ -2812,30 +2817,49 @@
 
     let _shopIsAnteClear = false;
 
+    function generateShopJokers() {
+      const owned = new Set(state.jokers.map(j => j.id));
+      const available = jokerPool.filter(j => !owned.has(j.id));
+      const shuffled = available.sort(() => Math.random() - 0.5);
+      state.shopJokers = shuffled.slice(0, 3);
+    }
+
     function openShop(anteClear = false) {
       _shopIsAnteClear = anteClear;
+      if (state.shopJokers.length === 0) generateShopJokers();
       const grid = $("#shopGrid");
       grid.innerHTML = "";
       $("#shopMoney").textContent = `보유 자금: $${state.money}`;
       renderOwnedJokersInShop();
-      jokerPool.forEach(joker => {
-        const owned = state.jokers.some(j => j.id === joker.id);
+
+      // 갱신 버튼
+      const rerollBtn = document.createElement("button");
+      rerollBtn.className = "reroll-btn";
+      rerollBtn.textContent = `🎲 갱신 $${state.rerollCost}`;
+      rerollBtn.disabled = state.money < state.rerollCost;
+      rerollBtn.style.cssText = "width:100%;padding:8px;margin-bottom:10px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;color:var(--text);cursor:pointer;font-size:13px;";
+      rerollBtn.addEventListener("click", () => {
+        if (state.money < state.rerollCost) return;
+        state.money -= state.rerollCost;
+        state.rerollCost += 1;
+        generateShopJokers();
+        openShop(_shopIsAnteClear);
+      });
+      grid.appendChild(rerollBtn);
+
+      state.shopJokers.forEach(joker => {
         const full = state.jokers.length >= 5;
         const afford = state.money >= joker.cost;
         const card = document.createElement("div");
         card.className = "shop-item";
         card.innerHTML = `<div class="name">${joker.name}</div><div class="desc">${joker.desc}</div><div class="price"><span class="coin" aria-hidden="true"></span>$${joker.cost}</div>`;
         const btn = document.createElement("button");
-        btn.textContent = owned ? "팔기 [반값]" : full ? "슬롯 가득 참" : afford ? "구매" : "자금 부족";
-        btn.disabled = (!owned && (full || !afford));
+        btn.textContent = full ? "슬롯 가득 참" : afford ? "구매" : "자금 부족";
+        btn.disabled = full || !afford;
         btn.addEventListener("click", () => {
-          if (owned) {
-            const index = state.jokers.findIndex(j => j.id === joker.id);
-            if (index >= 0) sellJoker(index, btn);
-            return;
-          }
           state.money -= joker.cost;
           state.jokers.push(joker);
+          state.shopJokers = state.shopJokers.filter(j => j.id !== joker.id);
           addLog(`조커 구매: ${joker.name} (-$${joker.cost})`);
           renderHUD();
           openShop(_shopIsAnteClear);
@@ -2859,6 +2883,8 @@
       state.handsLeft = 4;
       state.discardsLeft = 3;
       state.bossModifier = null;
+      state.shopJokers = [];   // 새 라운드마다 상점 갱신
+      state.rerollCost = 5;    // 갱신 비용 초기화
       state.deck = buildDeck(seedText);
       state.hand = [];
       state.selected.clear();
