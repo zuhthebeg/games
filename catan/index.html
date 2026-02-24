@@ -410,7 +410,7 @@
       roomCodeInput: "",
       maxPlayers: 4,
       aiDifficulty: "normal",
-      mapView: { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0, zoom: 1, pinchDist: 0 }
+      mapView: { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0, zoom: 1, pinchDist: 0, zoomTouched: false }
     };
 
     const mpState = {
@@ -464,7 +464,7 @@
       state.buildMode = null;
       state.hint = "";
       state.geometry = { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 };
-      state.mapView = { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0, zoom: 1, pinchDist: 0 };
+      state.mapView = { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0, zoom: 1, pinchDist: 0, zoomTouched: false };
     }
 
     function setSinglePlayers() {
@@ -525,6 +525,7 @@
 
     function initSingleGame() {
       resetCoreState();
+      applyResponsiveDefaults(true);
       setSinglePlayers();
       generateBoard();
       recalcAllVP();
@@ -1456,10 +1457,18 @@
       return Math.max(0.65, Math.min(1.35, v));
     }
 
-    function setMapZoom(nextZoom) {
+    function applyResponsiveDefaults(force = false) {
+      if (!force && state.mapView.zoomTouched) return;
+      const mobile = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
+      state.mapView.zoom = mobile ? 0.86 : 1;
+      state.mapView.initialized = false;
+    }
+
+    function setMapZoom(nextZoom, userInitiated = true) {
       const z = clampZoom(nextZoom);
       if (Math.abs(z - state.mapView.zoom) < 0.001) return;
       state.mapView.zoom = z;
+      if (userInitiated) state.mapView.zoomTouched = true;
       state.mapView.initialized = false;
       render();
     }
@@ -1694,6 +1703,22 @@
       `;
     }
 
+    function getHumanActionAvailability(me, myTurn) {
+      const canMain = myTurn && state.phase === "main";
+      if (!canMain || !me) {
+        return { canMain, canRoad: false, canSettlement: false, canCity: false, possible: [] };
+      }
+      const idx = state.currentPlayer;
+      const canRoad = canAfford(me, COST.road) && validRoadsFor(idx).length > 0;
+      const canSettlement = canAfford(me, COST.settlement) && validSettlementsFor(idx).length > 0;
+      const canCity = canAfford(me, COST.city) && validCitiesFor(idx).length > 0;
+      const possible = [];
+      if (canRoad) possible.push("도로");
+      if (canSettlement) possible.push("마을");
+      if (canCity) possible.push("도시");
+      return { canMain, canRoad, canSettlement, canCity, possible };
+    }
+
     function renderGameScreen() {
       const myIdx = localPlayerIndex();
       const me = state.players[myIdx >= 0 ? myIdx : 0];
@@ -1701,8 +1726,8 @@
       const myTurn = isHumanTurn();
       const inSetup = state.phase === "setup1" || state.phase === "setup2";
       const canRoll = myTurn && state.phase === "roll";
-      const canMain = myTurn && state.phase === "main";
       const canRobber = myTurn && state.phase === "robber";
+      const actionState = getHumanActionAvailability(me, myTurn);
       return `
         <div class="players-bar">
           ${others.map(p => `
@@ -1718,16 +1743,17 @@
           <div class="resources">${resourceStrip(me)}</div>
           <div class="actions">
             <button class="primary" ${canRoll ? "" : "disabled"} onclick="rollDice()">주사위</button>
-            <button ${canMain ? "" : "disabled"} onclick="humanBuildRoad()">도로</button>
-            <button ${canMain ? "" : "disabled"} onclick="humanBuildSettlement()">마을</button>
-            <button ${canMain ? "" : "disabled"} onclick="humanBuildCity()">도시</button>
+            <button ${actionState.canRoad ? "" : "disabled"} onclick="humanBuildRoad()">도로</button>
+            <button ${actionState.canSettlement ? "" : "disabled"} onclick="humanBuildSettlement()">마을</button>
+            <button ${actionState.canCity ? "" : "disabled"} onclick="humanBuildCity()">도시</button>
             <button disabled>거래</button>
-            <button class="danger" ${(canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
+            <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
             ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">방 나가기</button>` : ""}
           </div>
           <div class="hint">
             ${inSetup ? `초기 배치 ${state.setupRound}라운드 | 현재: ${state.setupStep === "settlement" ? "마을" : "도로"}` : ""}
             ${canRobber ? "도둑 이동: 다른 헥스를 터치하세요." : ""}
+            ${(actionState.canMain && actionState.possible.length) ? `가능 행동: ${actionState.possible.join(', ')}` : ""}
           </div>
         </div>
       `;
@@ -2014,6 +2040,7 @@
 
     window.addEventListener('resize', () => {
       if (!state.mapView.userMoved) {
+        applyResponsiveDefaults(false);
         state.mapView.initialized = false;
         centerMapViewport(true);
       }
@@ -2023,6 +2050,7 @@
       if (window.SharedWallet) {
         try { await SharedWallet.init(); } catch (_) {}
       }
+      applyResponsiveDefaults(true);
       setSinglePlayers();
       render();
     })();
