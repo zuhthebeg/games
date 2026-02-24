@@ -204,14 +204,39 @@
     .vertex.settlement,
     .vertex.city {
       border: none;
-      background: transparent;
-      width: 22px;
-      height: 22px;
-      text-align: center;
-      font-size: 18px;
-      line-height: 22px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
       cursor: default;
       transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.85), 0 2px 6px rgba(0,0,0,0.4);
+      z-index: 5;
+    }
+
+    .vertex.city {
+      width: 26px;
+      height: 26px;
+      border-radius: 4px;
+      font-size: 13px;
+      box-shadow: 0 0 0 2.5px rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .vertex.settlement.player-0,
+    .vertex.city.player-0 {
+      box-shadow: 0 0 0 2.5px #fff, 0 0 10px 3px currentColor, 0 2px 8px rgba(0,0,0,0.4);
+      animation: pulse-building 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-building {
+      0%, 100% { box-shadow: 0 0 0 2.5px #fff, 0 0 10px 3px currentColor, 0 2px 8px rgba(0,0,0,0.4); }
+      50% { box-shadow: 0 0 0 2.5px #fff, 0 0 16px 5px currentColor, 0 2px 8px rgba(0,0,0,0.4); }
     }
 
     .edge {
@@ -1812,8 +1837,10 @@
       for (const v of state.vertices) {
         const p = mapPixel(v.x, v.y, mapW, mapH);
         if (v.building) {
-          const icon = v.building === "city" ? "🏰" : "🏠";
-          html += `<div class="vertex ${v.building}" style="left:${p.x}px; top:${p.y}px; color:${state.players[v.owner].color};">${icon}</div>`;
+          const label = v.building === "city" ? "도시" : "마을";
+          const ownerIdx = v.owner;
+          const isHuman = ownerIdx === 0 && !isMultiMode();
+          html += `<div class="vertex ${v.building} player-${ownerIdx}${isHuman ? " human-player" : ""}" style="left:${p.x}px;top:${p.y}px;background:${state.players[ownerIdx].color};color:#fff;" title="${state.players[ownerIdx].name} ${label}"></div>`;
         } else {
           const cls = ["vertex", vBuild.has(v.index) ? "buildable" : ""].join(" ");
           html += `<div class="${cls}" style="left:${p.x}px; top:${p.y}px;" onclick="onVertexClick(${v.index})"></div>`;
