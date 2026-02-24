@@ -335,14 +335,20 @@
       text-shadow: 0 1px 2px rgba(0,0,0,0.5);
       box-shadow: 0 0 0 2px rgba(255,255,255,0.85), 0 2px 6px rgba(0,0,0,0.4);
       z-index: 5;
+      position: absolute;
     }
 
     .vertex.city {
-      width: 26px;
-      height: 26px;
-      border-radius: 4px;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
       font-size: 13px;
-      box-shadow: 0 0 0 2.5px rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.5);
+      border: 2px solid rgba(255, 255, 255, 0.95);
+      box-shadow:
+        0 0 0 2px rgba(255,255,255,0.95),
+        0 0 0 5px rgba(9, 18, 28, 0.8),
+        0 0 14px 3px var(--owner-color, rgba(255,255,255,0.4)),
+        0 3px 10px rgba(0,0,0,0.55);
     }
 
     .vertex.settlement.player-0,
@@ -354,6 +360,22 @@
     @keyframes pulse-building {
       0%, 100% { box-shadow: 0 0 0 2.5px #fff, 0 0 10px 3px currentColor, 0 2px 8px rgba(0,0,0,0.4); }
       50% { box-shadow: 0 0 0 2.5px #fff, 0 0 16px 5px currentColor, 0 2px 8px rgba(0,0,0,0.4); }
+    }
+
+    .vertex.settlement.city-target::after {
+      content: "";
+      position: absolute;
+      inset: -7px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: city-target-ring 1.05s ease-in-out infinite;
+    }
+
+    @keyframes city-target-ring {
+      0% { opacity: 0.9; transform: scale(0.86); }
+      65% { opacity: 0.15; transform: scale(1.14); }
+      100% { opacity: 0.8; transform: scale(0.94); }
     }
 
     .edge {
@@ -430,6 +452,164 @@
       text-align: center;
       color: var(--muted);
       min-height: 16px;
+    }
+
+    .vp-panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      display: grid;
+      gap: 6px;
+    }
+
+    .vp-label {
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .vp-progress {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .vp-progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), #7de1a5);
+      transition: width 0.2s ease;
+    }
+
+    .turn-timer {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 6px 8px;
+      background: rgba(255,255,255,0.035);
+      display: grid;
+      gap: 5px;
+    }
+
+    .turn-timer-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .turn-timer-bar {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      overflow: hidden;
+    }
+
+    .turn-timer-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ffca66 0%, #ff8f57 50%, #e95b5b 100%);
+      transition: width 0.18s linear;
+    }
+
+    .trade-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 14, 22, 0.7);
+      backdrop-filter: blur(3px);
+      z-index: 1200;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+    }
+
+    .trade-modal {
+      width: min(460px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(13, 33, 48, 0.98), rgba(10, 24, 36, 0.98));
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.44);
+    }
+
+    .trade-modal h3 {
+      margin: 0;
+      font-size: 16px;
+      text-align: center;
+      color: var(--accent);
+    }
+
+    .trade-section {
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.03);
+      display: grid;
+      gap: 8px;
+    }
+
+    .trade-section-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .trade-options {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .trade-option {
+      padding: 6px 9px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .trade-option.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent) inset;
+      color: var(--accent);
+    }
+
+    .trade-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .turn-toast {
+      position: fixed;
+      top: calc(52px + env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(13, 30, 45, 0.95);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      z-index: 1300;
+      pointer-events: none;
+      animation: turn-toast-fade 2s ease forwards;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.35);
+    }
+
+    @keyframes turn-toast-fade {
+      0% { opacity: 0; transform: translate(-50%, -8px); }
+      12%, 78% { opacity: 1; transform: translate(-50%, 0); }
+      100% { opacity: 0; transform: translate(-50%, -6px); }
     }
 
     .lobby-screen {
@@ -578,7 +758,9 @@
       aiDifficulty: "normal",
       mapView: { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0, zoom: 1, pinchDist: 0, zoomTouched: false },
       lastPlacedVertex: null,
-      phaseBeforeKnight: null
+      phaseBeforeKnight: null,
+      tradeDialog: { open: false, give: null, get: null },
+      turnTimeLeft: 60
     };
 
     const mpState = {
@@ -638,7 +820,18 @@
       state.mapView = { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0, zoom: 1, pinchDist: 0, zoomTouched: false };
       state.lastPlacedVertex = null;
       state.phaseBeforeKnight = null;
+      state.tradeDialog = { open: false, give: null, get: null };
+      state.turnTimeLeft = 60;
     }
+
+    const RESOURCE_NAMES = {
+      brick: "벽돌",
+      lumber: "목재",
+      wool: "양털",
+      grain: "곡물",
+      ore: "광석"
+    };
+    let turnTimerInterval = null;
 
     function setSinglePlayers() {
       state.players = [
@@ -1053,36 +1246,67 @@
       return RESOURCES.some(r => (p.resources[r] || 0) >= getBestTradeRatio(playerIdx, r));
     }
 
+    function closeTradeDialog() {
+      state.tradeDialog = { open: false, give: null, get: null };
+    }
+
+    function openTradeDialog(playerIdx) {
+      const p = state.players[playerIdx];
+      if (!p) return false;
+      const giveOptions = RESOURCES.filter(r => (p.resources[r] || 0) >= getBestTradeRatio(playerIdx, r));
+      if (!giveOptions.length) return false;
+      const give = giveOptions[0];
+      const get = RESOURCES.find(r => r !== give) || RESOURCES[0];
+      state.tradeDialog = { open: true, give, get };
+      return true;
+    }
+
+    function selectTradeGive(resource) {
+      if (!state.tradeDialog.open) return;
+      const idx = localPlayerIndex();
+      const p = state.players[idx];
+      if (!p) return;
+      const canGive = (p.resources[resource] || 0) >= getBestTradeRatio(idx, resource);
+      if (!canGive) return;
+      state.tradeDialog.give = resource;
+      if (state.tradeDialog.get === resource) {
+        state.tradeDialog.get = RESOURCES.find(r => r !== resource) || resource;
+      }
+      render();
+    }
+
+    function selectTradeGet(resource) {
+      if (!state.tradeDialog.open) return;
+      if (!RESOURCES.includes(resource) || resource === state.tradeDialog.give) return;
+      state.tradeDialog.get = resource;
+      render();
+    }
+
+    function confirmTradeDialog() {
+      if (!state.tradeDialog.open) return;
+      const pIdx = localPlayerIndex();
+      const give = state.tradeDialog.give;
+      const get = state.tradeDialog.get;
+      if (!give || !get || give === get) return;
+      if (applyPortTrade(pIdx, give, get)) {
+        state.canEndTurn = true;
+        const ratio = getBestTradeRatio(pIdx, give);
+        state.hint = `거래: ${RESOURCE_ICONS[give]}×${ratio} → ${RESOURCE_ICONS[get]}×1`;
+      } else {
+        state.hint = "거래 가능한 조합이 없습니다.";
+      }
+      closeTradeDialog();
+      render();
+    }
+
     function humanTrade() {
       const me = state.players[localPlayerIndex()];
       if (!me) return;
       if (!isHumanTurn() || state.phase !== "main" || state.winner) return;
       const pIdx = localPlayerIndex();
-      const p = state.players[pIdx];
-      if (!p) return;
-      // Open simple trade picker: best trade available toward nearest build goal
-      const goals = [COST.city, COST.settlement, COST.road, COST.devCard];
-      for (const cost of goals) {
-        const missing = Object.entries(cost).find(([r, need]) => (p.resources[r] || 0) < need);
-        if (!missing) continue;
-        const [need] = missing;
-        for (const give of [...RESOURCES].sort((a, b) => {
-          const rA = getBestTradeRatio(pIdx, a);
-          const rB = getBestTradeRatio(pIdx, b);
-          return ((p.resources[b] || 0) / rB) - ((p.resources[a] || 0) / rA);
-        })) {
-          if (give !== need && (p.resources[give] || 0) >= getBestTradeRatio(pIdx, give)) {
-            if (applyPortTrade(pIdx, give, need)) {
-              state.canEndTurn = true;
-              const ratio = getBestTradeRatio(pIdx, give);
-              state.hint = `거래: ${RESOURCE_ICONS[give]}×${ratio} → ${RESOURCE_ICONS[need]}×1`;
-              render();
-              return;
-            }
-          }
-        }
+      if (!openTradeDialog(pIdx)) {
+        state.hint = "거래 가능한 자원이 없습니다.";
       }
-      state.hint = "거래 가능한 조합이 없습니다.";
       render();
     }
 
@@ -1195,11 +1419,13 @@
     function endTurnInternal() {
       if (state.winner || !state.canEndTurn) return false;
       state.buildMode = null;
+      closeTradeDialog();
       state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
       state.phase = "roll";
       state.canEndTurn = false;
       state.turnNumber += 1;
       state.hint = `${getCurrentPlayer().name}의 차례: 주사위를 굴리세요.`;
+      onTurnStart();
       return true;
     }
 
@@ -1304,6 +1530,7 @@
         state.setupStep = "settlement";
         state.lastSetupVertex = null;
         state.hint = `${state.players[state.currentPlayer].name} 초기 배치: 마을을 놓으세요.`;
+        onTurnStart();
         return;
       }
       if (state.phase === "setup1") {
@@ -1315,6 +1542,7 @@
         state.setupStep = "settlement";
         state.lastSetupVertex = null;
         state.hint = "2라운드 초기 배치: 마지막 플레이어부터 역순으로 배치합니다.";
+        onTurnStart();
         return;
       }
       state.phase = "roll";
@@ -1322,6 +1550,38 @@
       state.setupStep = "settlement";
       state.lastSetupVertex = null;
       state.hint = "메인 게임 시작: 주사위를 굴리세요.";
+      onTurnStart();
+    }
+
+    function showTurnToast(msg, duration = 2000) {
+      if (state.screen !== "game") return;
+      const el = document.createElement("div");
+      el.className = "turn-toast";
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), duration);
+    }
+
+    function onTurnStart(announce = true) {
+      state.turnTimeLeft = 60;
+      closeTradeDialog();
+      if (announce && state.players[state.currentPlayer]) {
+        showTurnToast(`${state.players[state.currentPlayer].name}의 차례!`, 2000);
+      }
+    }
+
+    function ensureTurnTimer() {
+      if (turnTimerInterval) return;
+      turnTimerInterval = setInterval(() => {
+        if (state.screen !== "game" || state.winner !== null) return;
+        if (!isHumanTurn()) return;
+        if (state.turnTimeLeft > 0) state.turnTimeLeft -= 1;
+        if (state.turnTimeLeft <= 0) {
+          state.turnTimeLeft = 0;
+          endTurn();
+        }
+        render();
+      }, 1000);
     }
 
     function applyGameAction(action) {
@@ -1355,6 +1615,7 @@
           if (state.robber >= 0 && state.hexes[state.robber]) state.hexes[state.robber].robber = true;
         }
         state.hint = "멀티플레이 시작: 초기 배치";
+        onTurnStart(false);
         recalcAllVP();
         return true;
       }
@@ -2055,7 +2316,8 @@
           const ownerIdx = v.owner;
           const isHuman = ownerIdx === 0 && !isMultiMode();
           const isJustPlaced = v.index === state.lastPlacedVertex;
-          html += `<div class="vertex ${v.building} player-${ownerIdx}${isHuman ? " human-player" : ""}${isJustPlaced ? " just-placed" : ""}" style="left:${p.x}px;top:${p.y}px;background:${state.players[ownerIdx].color};color:#fff;" title="${state.players[ownerIdx].name} ${label}"></div>`;
+          const cityTarget = state.buildMode === "city" && vBuild.has(v.index) && v.building === "settlement";
+          html += `<div class="vertex ${v.building} player-${ownerIdx}${isHuman ? " human-player" : ""}${isJustPlaced ? " just-placed" : ""}${cityTarget ? " city-target" : ""}" style="left:${p.x}px;top:${p.y}px;--owner-color:${state.players[ownerIdx].color};background:${state.players[ownerIdx].color};color:#fff;" title="${state.players[ownerIdx].name} ${label}"></div>`;
         } else {
           const cls = ["vertex", vBuild.has(v.index) ? "buildable" : ""].join(" ");
           html += `<div class="${cls}" style="left:${p.x}px; top:${p.y}px;" onclick="onVertexClick(${v.index})"></div>`;
@@ -2185,6 +2447,9 @@
       const canRoll = myTurn && state.phase === "roll";
       const canRobber = myTurn && state.phase === "robber";
       const actionState = getHumanActionAvailability(me, myTurn);
+      const vp = me?.vp || 0;
+      const vpPct = Math.min(100, Math.max(0, vp * 10));
+      const turnPct = Math.min(100, Math.max(0, (state.turnTimeLeft / 60) * 100));
       return `
         <div class="players-bar">
           ${others.map(p => `
@@ -2198,6 +2463,11 @@
         ${renderMap()}
         <div class="my-panel">
           <div class="resources">${resourceStrip(me)}</div>
+          <div class="vp-panel">
+            <div class="vp-label">내 VP: ${vp} / 10</div>
+            <div class="vp-progress"><div class="vp-progress-fill" style="width:${vpPct}%;"></div></div>
+          </div>
+          ${myTurn ? `<div class="turn-timer"><div class="turn-timer-label">턴 타이머: ${state.turnTimeLeft}s</div><div class="turn-timer-bar"><div class="turn-timer-fill" style="width:${turnPct}%;"></div></div></div>` : ""}
           ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':'⭐VP').join(' ')}</div>` : ""}
           <div class="actions">
             <button id="diceDisplay" class="primary" ${canRoll ? "" : "disabled"} onclick="rollDice()">주사위</button>
@@ -2216,7 +2486,57 @@
             ${(actionState.canMain && actionState.possible.length) ? `가능 행동: ${actionState.possible.join(', ')}` : ""}
           </div>
         </div>
+        ${renderTradeModal()}
       `;
+    }
+
+    function renderTradeModal() {
+      if (!state.tradeDialog.open) return "";
+      const pIdx = localPlayerIndex();
+      const p = state.players[pIdx];
+      if (!p) return "";
+      const giveOptions = RESOURCES.filter(r => (p.resources[r] || 0) >= getBestTradeRatio(pIdx, r));
+      if (!giveOptions.length) return "";
+      const give = giveOptions.includes(state.tradeDialog.give) ? state.tradeDialog.give : giveOptions[0];
+      const get = (RESOURCES.includes(state.tradeDialog.get) && state.tradeDialog.get !== give) ? state.tradeDialog.get : (RESOURCES.find(r => r !== give) || give);
+      state.tradeDialog.give = give;
+      state.tradeDialog.get = get;
+      return `
+        <div class="trade-modal-overlay" onclick="cancelTradeDialog()">
+          <div class="trade-modal" onclick="event.stopPropagation()">
+            <h3>항구 거래</h3>
+            <div class="trade-section">
+              <div class="trade-section-title">줄 자원</div>
+              <div class="trade-options">
+                ${giveOptions.map(r => `
+                  <button class="trade-option ${give === r ? "active" : ""}" onclick="selectTradeGive('${r}')">
+                    ${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]} x${getBestTradeRatio(pIdx, r)}
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+            <div class="trade-section">
+              <div class="trade-section-title">받을 자원</div>
+              <div class="trade-options">
+                ${RESOURCES.filter(r => r !== give).map(r => `
+                  <button class="trade-option ${get === r ? "active" : ""}" onclick="selectTradeGet('${r}')">
+                    ${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]}
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+            <div class="trade-actions">
+              <button onclick="cancelTradeDialog()">취소</button>
+              <button class="primary" onclick="confirmTradeDialog()">확인</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function cancelTradeDialog() {
+      closeTradeDialog();
+      render();
     }
 
     function render() {
@@ -2608,6 +2928,10 @@
     window.humanBuyDevCard = humanBuyDevCard;
     window.humanUseKnight = humanUseKnight;
     window.humanTrade = humanTrade;
+    window.selectTradeGive = selectTradeGive;
+    window.selectTradeGet = selectTradeGet;
+    window.confirmTradeDialog = confirmTradeDialog;
+    window.cancelTradeDialog = cancelTradeDialog;
     window.onVertexClick = onVertexClick;
     window.onEdgeClick = onEdgeClick;
     window.onHexClick = onHexClick;
@@ -2695,6 +3019,7 @@
       }
       applyResponsiveDefaults(true);
       setSinglePlayers();
+      ensureTurnTimer();
       render();
     })();
   </script>
