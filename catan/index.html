@@ -1414,7 +1414,15 @@
       const sx = (mapW - pad * 2) / spanX;
       const sy = (mapH - pad * 2) / spanY;
       const scale = Math.min(sx, sy);
-      return { x: pad + (vx - g.minX) * scale, y: pad + (vy - g.minY) * scale, scale };
+      const contentW = spanX * scale;
+      const contentH = spanY * scale;
+      const offsetX = (mapW - contentW) / 2;
+      const offsetY = (mapH - contentH) / 2;
+      return {
+        x: offsetX + (vx - g.minX) * scale,
+        y: offsetY + (vy - g.minY) * scale,
+        scale
+      };
     }
 
     function centerMapViewport(force = false) {
@@ -1472,6 +1480,29 @@
       wrap.addEventListener('pointerup', onPointerUp, { passive: true });
       wrap.addEventListener('pointercancel', onPointerUp, { passive: true });
       wrap.addEventListener('lostpointercapture', onPointerUp, { passive: true });
+
+      // Fallback for browsers/devices where pointer events are unreliable in nested tap targets.
+      let touchLastX = 0;
+      let touchLastY = 0;
+      wrap.addEventListener('touchstart', (e) => {
+        if (!e.touches || !e.touches.length) return;
+        touchLastX = e.touches[0].clientX;
+        touchLastY = e.touches[0].clientY;
+      }, { passive: true });
+      wrap.addEventListener('touchmove', (e) => {
+        if (!e.touches || !e.touches.length) return;
+        const t = e.touches[0];
+        const dx = t.clientX - touchLastX;
+        const dy = t.clientY - touchLastY;
+        if (dx !== 0 || dy !== 0) {
+          wrap.scrollLeft -= dx;
+          wrap.scrollTop -= dy;
+          state.mapView.userMoved = true;
+        }
+        touchLastX = t.clientX;
+        touchLastY = t.clientY;
+        e.preventDefault();
+      }, { passive: false });
     }
 
     function renderMap() {
