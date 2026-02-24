@@ -2914,13 +2914,58 @@
                 else                        key = 'enhance-success-4';
                 this.play(key);
             },
-            // 무기 타입별 공격음
-            playAttack(weaponType) {
+            playFireCast() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+
+                const noiseBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.25, this.ctx.sampleRate);
+                const data = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.6;
+
+                const noise = this.ctx.createBufferSource();
+                const band = this.ctx.createBiquadFilter();
+                band.type = 'bandpass';
+                band.frequency.setValueAtTime(850, now);
+                band.Q.setValueAtTime(0.8, now);
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.0001, now);
+                gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+
+                noise.buffer = noiseBuffer;
+                noise.connect(band);
+                band.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start(now);
+                noise.stop(now + 0.24);
+            },
+            // 무기 타입 + 속성 기반 공격음
+            playAttack(weaponType, weaponElement = 'none') {
                 if (soundMode === 'off') return;
                 if (soundMode === 'default') { playSound('attack'); return; }
-                const validTypes = ['sword','axe','spear','hammer','dagger','staff','katana','bow','crossbow'];
-                const key = validTypes.includes(weaponType) ? `attack-${weaponType}` : 'attack-sword';
-                this.play(key, 0.8);
+
+                // 불 속성 완드/지팡이 = 화염 캐스팅음
+                if ((weaponType === 'wand' || weaponType === 'staff') && weaponElement === 'fire') {
+                    this.playFireCast();
+                    return;
+                }
+
+                const typeToKey = {
+                    sword: 'attack-sword',
+                    axe: 'attack-axe',
+                    spear: 'attack-spear',
+                    hammer: 'attack-hammer',
+                    dagger: 'attack-dagger',
+                    staff: 'attack-staff',
+                    wand: 'attack-staff',
+                    katana: 'attack-katana',
+                    bow: 'attack-bow',
+                    crossbow: 'attack-crossbow',
+                    scythe: 'attack-katana',
+                    knuckle: 'attack-dagger'
+                };
+                this.play(typeToKey[weaponType] || 'attack-sword', 0.8);
             }
         };
 
@@ -3200,7 +3245,7 @@
         };
 
         const LEGENDARY_ICONS = {
-            sword: 'icons/sword-legendary.png',
+            sword: 'icons/sword-legendary.jpg',
             axe: 'icons/axe-legendary.png',
             bow: 'icons/bow-legendary.png',
             spear: 'icons/spear-legendary.png',
@@ -3215,7 +3260,7 @@
 
         // 신화: 황금빛 (전설 이미지 사용)
         const MYTHIC_ICONS = {
-            sword: 'icons/sword-legendary.png',
+            sword: 'icons/sword-legendary.jpg',
             axe: 'icons/axe-legendary.png',
             bow: 'icons/bow-legendary.png',
             spear: 'icons/spear-legendary.png',
@@ -6104,7 +6149,7 @@
                     if (isCursed(state.weapon)) {
                         monster.currentHp = 0;
                         
-                        SFX.playAttack(state.weapon?.type || 'sword'); SFX.play('levelup', 0.4);
+                        SFX.playAttack(state.weapon?.type || 'sword', state.weapon?.element || 'none'); SFX.play('levelup', 0.4);
                         vibrate([100, 50, 100, 50, 100, 50, 200]);
                         document.body.classList.add('screen-shake');
                         setTimeout(() => document.body.classList.remove('screen-shake'), 800);
@@ -6207,7 +6252,7 @@
                 // 👿 저주받은 무기: 내구도 1 감소마다 적 즉사!
                 if (isCursed(state.weapon) && monster.currentHp > 0) {
                     monster.currentHp = 0;
-                    SFX.playAttack(state.weapon?.type || 'sword'); SFX.play('levelup', 0.4);
+                    SFX.playAttack(state.weapon?.type || 'sword', state.weapon?.element || 'none'); SFX.play('levelup', 0.4);
                     vibrate([100, 50, 100]);
                     showCritEffect();
                     huntState.log.push({ type: 'crit', text: `👿 저주의 힘! 내구도 소모 → ${monster.name} 즉사!` });
@@ -6270,9 +6315,9 @@
             }
             
             if (playerCrit) {
-                SFX.playAttack(state.weapon?.type || 'sword'); SFX.play('levelup', 0.4);
+                SFX.playAttack(state.weapon?.type || 'sword', state.weapon?.element || 'none'); SFX.play('levelup', 0.4);
             } else {
-                SFX.playAttack(state.weapon?.type || 'sword');
+                SFX.playAttack(state.weapon?.type || 'sword', state.weapon?.element || 'none');
             }
             vibrate(playerCrit ? [50, 30, 100] : 50);
             
@@ -6294,7 +6339,7 @@
                 state.weapon.weaponMastery.crits++;
                 state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - 50);
                 
-                SFX.playAttack(state.weapon?.type || 'sword'); SFX.play('levelup', 0.4);
+                SFX.playAttack(state.weapon?.type || 'sword', state.weapon?.element || 'none'); SFX.play('levelup', 0.4);
                 vibrate([100, 50, 100, 50, 100, 50, 200]);
                 showSlashEffect(getAttackEffect(true), 'monster');
                 showCritEffect();
