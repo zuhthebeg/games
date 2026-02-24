@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Gals Panic</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; font-family: 'Trebuchet MS', sans-serif; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<div id="game"></div>
+<script>
+const COLS = 32;
+const ROWS = 24;
+const CELL = 16;
+const W = COLS * CELL;
+const H = ROWS * CELL;
+const TARGET_PERCENT = 80;
+
+class BootScene extends Phaser.Scene {
+  constructor() { super('Boot'); }
+
+  preload() {
+    for (let s = 1; s <= 3; s++) {
+      this.load.image(`stage${s}_real`, `/galspanic/img/stage${s}.jpg`);
+    }
+  }
+
+  create() {
+    const white = this.make.graphics({ x: 0, y: 0, add: false });
+    white.fillStyle(0xffffff, 1);
+    white.fillRect(0, 0, 2, 2);
+    white.generateTexture('pixel', 2, 2);
+    white.destroy();
+
+    const palettes = [
+      [0xff6b9d, 0xffa8c4],
+      [0x7e57c2, 0x5dade2],
+      [0xf39c12, 0xffd700]
+    ];
+
+    for (let s = 1; s <= 3; s++) {
+      const g = this.make.graphics({ x: 0, y: 0, add: false });
+      const [c1, c2] = palettes[s - 1];
+      g.fillGradientStyle(c1, c1, c2, c2, 1);
+      g.fillRect(0, 0, W, H);
+
+      g.fillStyle(0x000000, 0.24);
+      g.fillCircle(W * 0.5, H * 0.24, 38);
+      g.fillRoundedRect(W * 0.5 - 42, H * 0.32, 84, 140, 32);
+      g.fillEllipse(W * 0.44, H * 0.77, 42, 84);
+      g.fillEllipse(W * 0.56, H * 0.77, 42, 84);
+
+      g.fillStyle(0xffffff, 0.08);
+      g.fillCircle(W * 0.66, H * 0.21, 54);
+      g.fillCircle(W * 0.31, H * 0.68, 72);
+
+      g.generateTexture(`stage${s}_placeholder`, W, H);
+      g.destroy();
+    }
+
+    this.scene.start('Menu');
+  }
+}
+
+class MenuScene extends Phaser.Scene {
+  constructor() { super('Menu'); }
+
+  create() {
+    const bg = this.add.graphics();
+    bg.fillGradientStyle(0x120320, 0x120320, 0x220833, 0x220833, 1);
+    bg.fillRect(0, 0, W, H);
+
+    this.add.text(W / 2, 54, 'GALS PANIC', {
+      fontFamily: 'Verdana',
+      fontSize: '56px',
+      color: '#ff79c6',
+      stroke: '#ff2ea6',
+      strokeThickness: 8
+    }).setOrigin(0.5).setShadow(0, 0, '#ff2ea6', 24, true, true);
+
+    this.add.text(W / 2, 116, 'STAGE SELECT', {
+      fontFamily: 'Verdana',
+      fontSize: '20px',
+      color: '#99e9ff',
+      stroke: '#133052',
+      strokeThickness: 5
+    }).setOrigin(0.5);
+
+    for (let s = 1; s <= 3; s++) {
+      const x = 96 + (s - 1) * 160;
+      const y = 224;
+      const key = this.textures.exists(`stage${s}_real`) ? `stage${s}_real` : `stage${s}_placeholder`;
+
+      const frame = this.add.rectangle(x, y, 126, 164, 0x03030a, 0.7).setStrokeStyle(2, 0x59e3ff, 0.9);
+      const preview = this.add.image(x, y - 8, key).setDisplaySize(116, 150).setAlpha(0.9);
+      const pixelMask = this.add.rectangle(x, y - 8, 116, 150, 0x000000, 0.18);
+      const label = this.add.text(x, y + 84, `STAGE ${s}`, {
+        fontFamily: 'Verdana',
+        fontSize: '16px',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      }).setOrigin(0.5);
+
+      const hit = this.add.zone(x, y, 126, 164).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      hit.on('pointerover', () => {
+        frame.setFillStyle(0x081235, 0.85);
+        label.setScale(1.05);
+      });
+      hit.on('pointerout', () => {
+        frame.setFillStyle(0x03030a, 0.7);
+        label.setScale(1);
+      });
+      hit.on('pointerdown', () => {
+        this.scene.start('Game', { stage: s, score: 0, lives: 3 });
+      });
+
+      preview.setMask(pixelMask.createGeometryMask());
+    }
+
+    this.add.text(W / 2, H - 24, 'Capture 80% to clear the stage', {
+      fontFamily: 'Verdana',
+      fontSize: '14px',
+      color: '#aacfff'
+    }).setOrigin(0.5);
+  }
+}
+
+class GameScene extends Phaser.Scene {
+  constructor() {
+    super('Game');
+  }
+
+  create(data) {
+    this.stage = data.stage || 1;
+    this.score = data.score || 0;
+    this.lives = (typeof data.lives === 'number') ? data.lives : 3;
+    this.claimedCells = 0;
+    this.total = (COLS - 2) * (ROWS - 2);
+    this.percent = 0;
+
+    this.grid = [];
+    for (let r = 0; r < ROWS; r++) {
+      this.grid[r] = [];
+      for (let c = 0; c < COLS; c++) {
+        this.grid[r][c] = (r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1) ? 1 : 0;
+      }
+    }
+
+    const key = this.textures.exists(`stage${this.stage}_real`) ? `stage${this.stage}_real` : `stage${this.stage}_placeholder`;
+    this.bgImage = this.add.image(W / 2, H / 2, key).setDepth(0);
+
+    this.overlayGfx = this.add.graphics().setDepth(1);
+    this.claimedGfx = this.add.graphics().setDepth(2);
+    this.trailGfx = this.add.graphics().setDepth(3).setBlendMode(Phaser.BlendModes.ADD);
+    this.actorGfx = this.add.graphics().setDepth(4);
+
+    this.playerRow = 0;
+    this.playerCol = Math.floor(COLS / 2);
+    this.trail = [];
+    this.isDrawing = false;
+    this.moveTimer = 0;
+    this.moveDelay = 120;
+    this.invuln = 0;
+
+    const enemyCount = this.stage + 1;
+    this.enemies = [];
+    for (let i = 0; i < enemyCount; i++) {
+      this.enemies.push({
+        x: Phaser.Math.FloatBetween(CELL * 2, W - CELL * 2),
+        y: Phaser.Math.FloatBetween(CELL * 2, H - CELL * 2),
+        vx: (Math.random() > 0.5 ? 1 : -1) * CELL * (0.9 + this.stage * 0.35),
+        vy: (Math.random() > 0.5 ? 1 : -1) * CELL * (0.9 + this.stage * 0.35),
+        radius: 6,
+        pulse: Math.random() * Math.PI * 2
+      });
+    }
+
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.wasd = this.input.keyboard.addKeys('W,A,S,D');
+
+    this.createHUD();
+    this.updateClaimStats();
+    this.redrawOverlay();
+    this.drawGrid();
+  }
+
+  createHUD() {
+    this.hudBg = this.add.rectangle(W / 2, 16, W, 32, 0x000000, 0.45).setDepth(10);
+    this.hudLives = this.add.text(12, 8, '', {
+      fontFamily: 'Verdana',
+      fontSize: '18px',
+      color: '#ffffff'
+    }).setDepth(11);
+    this.hudStage = this.add.text(W / 2 - 68, 9, '', {
+      fontFamily: 'Verdana',
+      fontSize: '16px',
+      color: '#7de5ff'
+    }).setDepth(11);
+    this.hudPercent = this.add.text(W / 2 + 14, 9, '', {
+      fontFamily: 'Verdana',
+      fontSize: '16px',
+      color: '#fff176'
+    }).setDepth(11);
+    this.hudScore = this.add.text(W - 12, 9, '', {
+      fontFamily: 'Verdana',
+      fontSize: '16px',
+      color: '#ffb4d8'
+    }).setOrigin(1, 0).setDepth(11);
+
+    this.refreshHUD();
+  }
+
+  refreshHUD() {
+    this.hudLives.setText('❤️'.repeat(this.lives));
+    this.hudStage.setText(`STAGE ${this.stage}`);
+    this.hudPercent.setText(`${this.percent}%`);
+    this.hudScore.setText(`SCORE: ${this.score}`);
+  }
+
+  update(time, delta) {
+    this.moveTimer += delta;
+    if (this.moveTimer >= this.moveDelay) {
+      this.handleInput();
+      this.moveTimer = 0;
+    }
+
+    if (this.invuln > 0) {
+      this.invuln -= delta;
+    }
+
+    this.updateEnemies(delta);
+    if (this.invuln <= 0) {
+      this.checkCollisions();
+    }
+
+    this.drawGrid();
+  }
+
+  handleInput() {
+    let dr = 0;
+    let dc = 0;
+
+    if (this.cursors.left.isDown || this.wasd.A.isDown) dc = -1;
+    else if (this.cursors.right.isDown || this.wasd.D.isDown) dc = 1;
+    else if (this.cursors.up.isDown || this.wasd.W.isDown) dr = -1;
+    else if (this.cursors.down.isDown || this.wasd.S.isDown) dr = 1;
+
+    if (dr === 0 && dc === 0) return;
+
+    const nr = this.playerRow + dr;
+    const nc = this.playerCol + dc;
+
+    if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+
+    const next = this.grid[nr][nc];
+    if (next === 2) {
+      this.playerDie();
+      return;
+    }
+
+    if (next === 0) {
+      if (!this.isDrawing) {
+        this.isDrawing = true;
+        this.trail = [];
+      }
+
+      if (this.grid[this.playerRow][this.playerCol] === 0) {
+        this.grid[this.playerRow][this.playerCol] = 2;
+        this.trail.push({ row: this.playerRow, col: this.playerCol });
+      }
+
+      this.playerRow = nr;
+      this.playerCol = nc;
+
+      if (this.grid[this.playerRow][this.playerCol] === 0) {
+        this.grid[this.playerRow][this.playerCol] = 2;
+        this.trail.push({ row: this.playerRow, col: this.playerCol });
+      }
+      return;
+    }
+
+    if (next === 1) {
+      this.playerRow = nr;
+      this.playerCol = nc;
+      if (this.isDrawing) {
+        this.captureTerritory();
+      }
+    }
+  }
+
+  captureTerritory() {
+    for (const cell of this.trail) {
+      this.grid[cell.row][cell.col] = 1;
+    }
+
+    const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+    const regions = [];
+
+    for (let r = 1; r < ROWS - 1; r++) {
+      for (let c = 1; c < COLS - 1; c++) {
+        if (this.grid[r][c] !== 0 || visited[r][c]) continue;
+
+        const queue = [{ r, c }];
+        visited[r][c] = true;
+        const cells = [];
+        let hasEnemy = false;
+
+        while (queue.length) {
+          const cur = queue.shift();
+          cells.push(cur);
+
+          for (const e of this.enemies) {
+            const er = Phaser.Math.Clamp(Math.floor(e.y / CELL), 0, ROWS - 1);
+            const ec = Phaser.Math.Clamp(Math.floor(e.x / CELL), 0, COLS - 1);
+            if (er === cur.r && ec === cur.c) {
+              hasEnemy = true;
+              break;
+            }
+          }
+
+          const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+          for (const [dr, dc] of dirs) {
+            const nr = cur.r + dr;
+            const nc = cur.c + dc;
+            if (nr < 1 || nr >= ROWS - 1 || nc < 1 || nc >= COLS - 1) continue;
+            if (visited[nr][nc]) continue;
+            if (this.grid[nr][nc] !== 0) continue;
+            visited[nr][nc] = true;
+            queue.push({ r: nr, c: nc });
+          }
+        }
+
+        regions.push({ cells, hasEnemy });
+      }
+    }
+
+    let claimRegions = regions.filter((r) => !r.hasEnemy);
+    if (claimRegions.length === 0 && regions.length > 0) {
+      let smallest = regions[0];
+      for (const region of regions) {
+        if (region.cells.length < smallest.cells.length) smallest = region;
+      }
+      claimRegions = [smallest];
+    }
+
+    let gained = 0;
+    for (const region of claimRegions) {
+      for (const cell of region.cells) {
+        if (this.grid[cell.r][cell.c] === 0) {
+          this.grid[cell.r][cell.c] = 1;
+          gained++;
+        }
+      }
+    }
+
+    this.isDrawing = false;
+    this.trail = [];
+
+    if (gained > 0) {
+      this.score += gained * 50 * this.stage;
+      this.cameras.main.flash(300, 255, 255, 200);
+      this.captureBurst();
+    }
+
+    this.updateClaimStats();
+    this.redrawOverlay();
+
+    if (this.percent >= TARGET_PERCENT) {
+      this.time.delayedCall(450, () => {
+        this.scene.start('Clear', {
+          stage: this.stage,
+          score: this.score,
+          lives: this.lives,
+          percent: this.percent
+        });
+      });
+    }
+  }
+
+  updateClaimStats() {
+    let claimed = 0;
+    for (let r = 1; r < ROWS - 1; r++) {
+      for (let c = 1; c < COLS - 1; c++) {
+        if (this.grid[r][c] === 1) claimed++;
+      }
+    }
+    this.claimedCells = claimed;
+    this.percent = Math.floor((claimed / this.total) * 100);
+    this.refreshHUD();
+  }
+
+  redrawOverlay() {
+    this.overlayGfx.clear();
+    this.overlayGfx.fillStyle(0x0a0a1a, 0.92);
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (this.grid[r][c] === 0 || this.grid[r][c] === 2) {
+          this.overlayGfx.fillRect(c * CELL, r * CELL, CELL, CELL);
+        }
+      }
+    }
+  }
+
+  updateEnemies(delta) {
+    const dt = delta / 1000;
+    for (const e of this.enemies) {
+      e.pulse += dt * 6;
+      let nx = e.x + e.vx * dt;
+      let ny = e.y + e.vy * dt;
+
+      if (nx < CELL || nx > W - CELL) {
+        e.vx *= -1;
+        nx = Phaser.Math.Clamp(nx, CELL, W - CELL);
+      }
+      if (ny < CELL || ny > H - CELL) {
+        e.vy *= -1;
+        ny = Phaser.Math.Clamp(ny, CELL, H - CELL);
+      }
+
+      const testCell = (x, y) => {
+        const rr = Phaser.Math.Clamp(Math.floor(y / CELL), 0, ROWS - 1);
+        const cc = Phaser.Math.Clamp(Math.floor(x / CELL), 0, COLS - 1);
+        return this.grid[rr][cc];
+      };
+
+      const hitX = testCell(nx + Math.sign(e.vx) * e.radius, e.y) === 1;
+      const hitY = testCell(e.x, ny + Math.sign(e.vy) * e.radius) === 1;
+
+      if (hitX) e.vx *= -1;
+      if (hitY) e.vy *= -1;
+
+      e.x += e.vx * dt;
+      e.y += e.vy * dt;
+    }
+  }
+
+  checkCollisions() {
+    const px = this.playerCol * CELL + CELL / 2;
+    const py = this.playerRow * CELL + CELL / 2;
+
+    for (const e of this.enemies) {
+      const dist = Phaser.Math.Distance.Between(px, py, e.x, e.y);
+      if (dist < e.radius + 5) {
+        this.playerDie();
+        return;
+      }
+
+      if (this.isDrawing) {
+        const er = Phaser.Math.Clamp(Math.floor(e.y / CELL), 0, ROWS - 1);
+        const ec = Phaser.Math.Clamp(Math.floor(e.x / CELL), 0, COLS - 1);
+        for (let rr = er - 1; rr <= er + 1; rr++) {
+          for (let cc = ec - 1; cc <= ec + 1; cc++) {
+            if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
+            if (this.grid[rr][cc] === 2) {
+              this.playerDie();
+              return;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  findNearestClaimed(row, col) {
+    let best = { row: 0, col: 0, d: Infinity };
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (this.grid[r][c] !== 1) continue;
+        const d = Math.abs(r - row) + Math.abs(c - col);
+        if (d < best.d) best = { row: r, col: c, d };
+      }
+    }
+    return { row: best.row, col: best.col };
+  }
+
+  playerDie() {
+    if (this.invuln > 0) return;
+
+    this.lives--;
+    this.cameras.main.shake(500, 0.02);
+    this.cameras.main.flash(300, 255, 0, 0);
+
+    for (const cell of this.trail) {
+      if (this.grid[cell.row][cell.col] === 2) this.grid[cell.row][cell.col] = 0;
+    }
+
+    this.isDrawing = false;
+    this.trail = [];
+    this.redrawOverlay();
+
+    if (this.lives <= 0) {
+      this.scene.start('GameOver', { score: this.score, stage: this.stage });
+      return;
+    }
+
+    const respawn = this.findNearestClaimed(this.playerRow, this.playerCol);
+    this.playerRow = respawn.row;
+    this.playerCol = respawn.col;
+    this.invuln = 900;
+    this.refreshHUD();
+  }
+
+  captureBurst() {
+    if (!this.trail.length) return;
+    let sr = 0;
+    let sc = 0;
+    for (const t of this.trail) {
+      sr += t.row;
+      sc += t.col;
+    }
+    const cx = (sc / this.trail.length) * CELL + CELL / 2;
+    const cy = (sr / this.trail.length) * CELL + CELL / 2;
+
+    const p = this.add.particles(cx, cy, 'pixel', {
+      speed: { min: 40, max: 180 },
+      lifespan: 380,
+      quantity: 24,
+      scale: { start: 1.5, end: 0 },
+      tint: [0x9cfbff, 0xfff799, 0xff9fd6],
+      blendMode: 'ADD'
+    }).setDepth(9);
+
+    this.time.delayedCall(420, () => p.destroy());
+  }
+
+  drawGrid() {
+    this.claimedGfx.clear();
+    this.trailGfx.clear();
+    this.actorGfx.clear();
+
+    this.claimedGfx.lineStyle(1, 0x3e9eff, 0.65);
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (this.grid[r][c] === 1 && (r === 0 || c === 0 || r === ROWS - 1 || c === COLS - 1)) {
+          this.claimedGfx.strokeRect(c * CELL + 0.5, r * CELL + 0.5, CELL - 1, CELL - 1);
+        }
+      }
+    }
+
+    this.trailGfx.fillStyle(0x00ffff, 0.35);
+    this.trailGfx.lineStyle(2, 0x00ffff, 1);
+    for (const t of this.trail) {
+      this.trailGfx.fillRect(t.col * CELL + 2, t.row * CELL + 2, CELL - 4, CELL - 4);
+      this.trailGfx.strokeRect(t.col * CELL + 2, t.row * CELL + 2, CELL - 4, CELL - 4);
+    }
+
+    for (const e of this.enemies) {
+      const glow = 10 + Math.sin(e.pulse) * 3;
+      this.actorGfx.fillStyle(0xff4f32, 0.18);
+      this.actorGfx.fillCircle(e.x, e.y, glow);
+      this.actorGfx.fillStyle(0xff7848, 0.85);
+      this.actorGfx.fillCircle(e.x, e.y, e.radius);
+      this.actorGfx.fillStyle(0xffd4a6, 0.65);
+      this.actorGfx.fillCircle(e.x - 1.5, e.y - 1.5, 2);
+    }
+
+    const px = this.playerCol * CELL + CELL / 2;
+    const py = this.playerRow * CELL + CELL / 2;
+    const blink = this.invuln > 0 ? (Math.floor(this.time.now / 80) % 2 === 0 ? 0.45 : 1) : 1;
+
+    this.actorGfx.fillStyle(0x00ffff, 0.4 * blink);
+    this.actorGfx.fillCircle(px, py, 6);
+    this.actorGfx.fillStyle(0xffffff, 0.95 * blink);
+    this.actorGfx.fillCircle(px, py, 4);
+    this.actorGfx.fillStyle(0x66ffff, 0.95 * blink);
+    this.actorGfx.fillCircle(px, py, 2.2);
+  }
+}
+
+class ClearScene extends Phaser.Scene {
+  constructor() { super('Clear'); }
+
+  create(data) {
+    const { stage = 1, score = 0, lives = 3, percent = 0 } = data;
+    this.cameras.main.flash(500, 255, 200, 0);
+
+    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.72);
+    this.add.text(W / 2, 104, 'STAGE CLEAR!', {
+      fontFamily: 'Verdana',
+      fontSize: '52px',
+      color: '#ffd56b',
+      stroke: '#9c4d00',
+      strokeThickness: 8
+    }).setOrigin(0.5);
+
+    this.add.text(W / 2, 180, `STAGE ${stage}  |  CAPTURE ${percent}%`, {
+      fontFamily: 'Verdana',
+      fontSize: '20px',
+      color: '#ffffff'
+    }).setOrigin(0.5);
+
+    this.add.text(W / 2, 214, `SCORE: ${score}`, {
+      fontFamily: 'Verdana',
+      fontSize: '20px',
+      color: '#ffb4d8'
+    }).setOrigin(0.5);
+
+    const clearBonus = 2000 * stage;
+    this.add.text(W / 2, 244, `CLEAR BONUS: +${clearBonus}`, {
+      fontFamily: 'Verdana',
+      fontSize: '18px',
+      color: '#9cfbff'
+    }).setOrigin(0.5);
+
+    const totalScore = score + clearBonus;
+
+    const p = this.add.particles(W / 2, 82, 'pixel', {
+      speed: { min: 40, max: 190 },
+      angle: { min: 200, max: 340 },
+      gravityY: 180,
+      lifespan: 1100,
+      quantity: 3,
+      scale: { start: 1.4, end: 0.1 },
+      tint: [0xffd56b, 0xff7aa2, 0x7ce8ff],
+      blendMode: 'ADD'
+    });
+
+    const nextLabel = (stage < 3) ? 'NEXT STAGE' : 'BACK TO MENU';
+    const btn = this.add.rectangle(W / 2, 300, 200, 44, 0x123966, 0.92)
+      .setStrokeStyle(2, 0x7ce8ff, 1)
+      .setInteractive({ useHandCursor: true });
+    const txt = this.add.text(W / 2, 300, nextLabel, {
+      fontFamily: 'Verdana',
+      fontSize: '20px',
+      color: '#ffffff'
+    }).setOrigin(0.5);
+
+    btn.on('pointerover', () => btn.setFillStyle(0x1d588f, 0.95));
+    btn.on('pointerout', () => btn.setFillStyle(0x123966, 0.92));
+    btn.on('pointerdown', () => {
+      p.destroy();
+      if (stage < 3) {
+        this.scene.start('Game', { stage: stage + 1, score: totalScore, lives });
+      } else {
+        this.scene.start('Menu');
+      }
+    });
+
+    this.time.delayedCall(3000, () => {
+      if (p.active) p.stop();
+    });
+  }
+}
+
+class GameOverScene extends Phaser.Scene {
+  constructor() { super('GameOver'); }
+
+  create(data) {
+    const score = data.score || 0;
+
+    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.86);
+    this.add.text(W / 2, 122, 'GAME OVER', {
+      fontFamily: 'Verdana',
+      fontSize: '56px',
+      color: '#ff6666',
+      stroke: '#5c0000',
+      strokeThickness: 8
+    }).setOrigin(0.5);
+
+    this.add.text(W / 2, 190, `FINAL SCORE: ${score}`, {
+      fontFamily: 'Verdana',
+      fontSize: '22px',
+      color: '#ffffff'
+    }).setOrigin(0.5);
+
+    const makeButton = (x, y, label, onClick) => {
+      const b = this.add.rectangle(x, y, 150, 42, 0x2a1e48, 0.95)
+        .setStrokeStyle(2, 0xff7ab6, 1)
+        .setInteractive({ useHandCursor: true });
+      this.add.text(x, y, label, {
+        fontFamily: 'Verdana',
+        fontSize: '20px',
+        color: '#ffffff'
+      }).setOrigin(0.5);
+      b.on('pointerover', () => b.setFillStyle(0x3b2b66, 0.95));
+      b.on('pointerout', () => b.setFillStyle(0x2a1e48, 0.95));
+      b.on('pointerdown', onClick);
+    };
+
+    makeButton(W / 2 - 84, 266, 'RETRY', () => {
+      this.scene.start('Game', { stage: 1, score: 0, lives: 3 });
+    });
+
+    makeButton(W / 2 + 84, 266, 'MENU', () => {
+      this.scene.start('Menu');
+    });
+  }
+}
+
+const config = {
+  type: Phaser.AUTO,
+  width: W,
+  height: H,
+  parent: 'game',
+  backgroundColor: '#1a0a2e',
+  scene: [BootScene, MenuScene, GameScene, ClearScene, GameOverScene]
+};
+
+new Phaser.Game(config);
+</script>
+</body>
+</html>

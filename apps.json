@@ -237,5 +237,19 @@
       "🇰🇷"
     ],
     "category": "game"
+  },
+  {
+    "title": "갈스패닉 / Gals Panic",
+    "icon": "https://game.cocy.io/galspanic/icon.svg",
+    "url": "https://game.cocy.io/galspanic/",
+    "desc": "영역을 확보해 숨겨진 그림을 공개하는 아케이드 게임",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
   }
 ]
