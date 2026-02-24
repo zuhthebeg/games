@@ -1064,7 +1064,7 @@
     }
 
     function moveRobber(hexIndex, forcedVictim = null, forcedResource = null) {
-      if (state.phase !== "robber") return { ok: false };
+      if (state.phase !== "robber" && state.phase !== "knight-robber") return { ok: false };
       if (hexIndex < 0 || hexIndex >= state.hexes.length || hexIndex === state.robber) return { ok: false };
       if (state.robber >= 0 && state.hexes[state.robber]) state.hexes[state.robber].robber = false;
       state.robber = hexIndex;
@@ -1631,7 +1631,12 @@
       if (state.phase === "robber") {
         if (ai) {
           const target = ai.pickRobberTarget(state, pIdx);
-          moveRobber(target.hexIndex, target.victimIdx);
+          const result = moveRobber(target.hexIndex, target.victimIdx);
+          if (!result || !result.ok) {
+            // fallback: first available hex that isn't current robber
+            const fallback = state.hexes.findIndex((h, i) => i !== state.robber);
+            if (fallback !== -1) moveRobber(fallback);
+          }
         } else {
           const choices = state.hexes.map((_, i) => i).filter(i => i !== state.robber);
           const pick = choices[Math.floor(Math.random() * choices.length)];
@@ -1640,6 +1645,11 @@
       }
       if (state.phase !== "main" || state.winner) {
         render();
+        if (state.phase === "robber") {
+          // guard: phase stuck — force advance to avoid infinite loop
+          state.phase = "main";
+          state.canEndTurn = true;
+        }
         triggerAITurnIfNeeded();
         return;
       }
@@ -1670,6 +1680,7 @@
             // Try buying dev card (hard difficulty or when robber-heavy board)
             if (state.devDeck.length > 0 && canAfford(p, COST.devCard) && state.aiDifficulty !== 'easy') {
               buyDevCard(pIdx);
+              buildsDone += 1;
               continue;
             }
             const targetCost = canAfford(p, COST.city)
