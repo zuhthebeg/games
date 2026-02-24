@@ -201,6 +201,15 @@
       animation: place-building 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
 
+    @keyframes robber-pulse {
+      0%, 100% { box-shadow: inset 0 0 0 3px rgba(220,50,50,0); }
+      50% { box-shadow: inset 0 0 0 3px rgba(220,50,50,0.9), 0 0 20px rgba(220,50,50,0.6); }
+    }
+
+    .hex.has-robber {
+      animation: robber-pulse 1.2s ease-in-out infinite;
+    }
+
     .robber {
       position: absolute;
       top: 6px;
@@ -620,7 +629,7 @@
 
     function generateBoard(forcedHexes = null) {
       if (forcedHexes) {
-        state.hexes = forcedHexes.map(h => ({ ...h, vertices: [], edges: [] }));
+        state.hexes = forcedHexes.map(h => ({ ...h, robber: !!h.robber, vertices: [], edges: [] }));
       } else {
         const resourcePool = shuffle([
           "brick", "brick", "brick",
@@ -644,7 +653,7 @@
         for (let i = 0; i < axial.length; i += 1) {
           const type = resourcePool[i];
           const number = type === "desert" ? null : numberPool[numIdx++];
-          state.hexes.push({ index: i, q: axial[i].q, r: axial[i].r, type, number, vertices: [], edges: [] });
+          state.hexes.push({ index: i, q: axial[i].q, r: axial[i].r, type, number, robber: false, vertices: [], edges: [] });
         }
       }
 
@@ -653,6 +662,8 @@
       state.edges = edges;
       state.geometry = { centers, minX: bounds.minX, minY: bounds.minY, maxX: bounds.maxX, maxY: bounds.maxY, size };
       state.robber = state.hexes.findIndex(h => h.type === "desert");
+      state.hexes.forEach(h => { h.robber = false; });
+      if (state.robber >= 0 && state.hexes[state.robber]) state.hexes[state.robber].robber = true;
       state.ports = generatePorts();
     }
 
@@ -885,11 +896,15 @@
           if (v.owner === humanIdx) humanGain += amount;
         }
       }
-      if (humanGain > 0) SFX.resource();
+      if (humanGain > 0) {
+        SFX.resource();
+        showToast(`자원 +${humanGain} 획득!`);
+      }
     }
 
     function handleSeven(skipDiscard = false) {
       SFX.robber();
+      showToast("🗡️ 강도가 나타났어요!");
       if (!skipDiscard) {
         for (let i = 0; i < state.players.length; i += 1) {
           const p = state.players[i];
@@ -1046,7 +1061,9 @@
     function moveRobber(hexIndex, forcedVictim = null, forcedResource = null) {
       if (state.phase !== "robber") return { ok: false };
       if (hexIndex < 0 || hexIndex >= state.hexes.length || hexIndex === state.robber) return { ok: false };
+      if (state.robber >= 0 && state.hexes[state.robber]) state.hexes[state.robber].robber = false;
       state.robber = hexIndex;
+      if (state.hexes[state.robber]) state.hexes[state.robber].robber = true;
       let victimIdx = playerIndexFromAnyId(forcedVictim);
       if (victimIdx === -1) {
         const victims = new Set();
@@ -1164,7 +1181,10 @@
         state.phase = "end";
         state.canEndTurn = false;
         state.hint = `🎉 ${state.players[winner].name} 승리!`;
-        if (prevWinner !== winner) SFX.win();
+        if (prevWinner !== winner) {
+          SFX.win();
+          showToast("🎉 승리!", 6000);
+        }
       }
     }
 
@@ -1239,7 +1259,11 @@
           }));
         }
         generateBoard(clone(action.hexes || []));
-        if (typeof action.robber === "number") state.robber = action.robber;
+        if (typeof action.robber === "number") {
+          state.robber = action.robber;
+          state.hexes.forEach(h => { h.robber = false; });
+          if (state.robber >= 0 && state.hexes[state.robber]) state.hexes[state.robber].robber = true;
+        }
         state.hint = "멀티플레이 시작: 초기 배치";
         recalcAllVP();
         return true;
@@ -1401,6 +1425,7 @@
       if (!canAfford(me, COST.devCard)) { state.hint = "자원 부족: 양1 곡물1 광석1 필요."; render(); return; }
       buyDevCard(localPlayerIndex());
       SFX.card();
+      showToast("🃏 발전카드 획득!");
       state.canEndTurn = true;
       state.hint = "발전카드 구매 완료.";
       render();
@@ -1525,6 +1550,7 @@
         const result = playKnight(pIdx, hIdx, null);
         if (result && result.ok) {
           SFX.robber();
+          showToast("⚔️ 기사 카드 사용!");
           state.phase = "main";
           state.canEndTurn = true;
           state.hint = "기사 발동 완료.";
@@ -1560,6 +1586,7 @@
         if (choices.length) {
           const pick = ai ? ai.pickBestVertex(state, choices) : choices[Math.floor(Math.random() * choices.length)];
           placeSettlement(pIdx, pick, true);
+          showToast(`${state.players[pIdx].name}이 마을을 건설했어요`);
           if (state.phase === "setup2") grantSecondSetupResources(pIdx, pick);
           state.lastSetupVertex = pick;
           state.setupStep = "road";
@@ -1655,6 +1682,7 @@
         } else if (pickedAction === "settlement") {
           const spot = ai ? ai.pickBestVertex(state, settlementSpots) : settlementSpots[Math.floor(Math.random() * settlementSpots.length)];
           placeSettlement(pIdx, spot, false);
+          showToast(`${p.name}이 마을을 건설했어요`);
         } else {
           const spot = ai ? ai.pickBestRoadGeneral(state, roadSpots, pIdx) : roadSpots[Math.floor(Math.random() * roadSpots.length)];
           placeRoad(pIdx, spot, false);
@@ -1871,7 +1899,7 @@
         const c = state.geometry.centers[hex.index];
         const p = mapPixel(c.x, c.y, mapW, mapH);
         const hot = hex.number === 6 || hex.number === 8;
-        html += `<div class="hex ${hex.type}" style="left:${p.x}px; top:${p.y}px;" onclick="onHexClick(${hex.index})">`;
+        html += `<div class="hex ${hex.type}${hex.robber === true ? " has-robber" : ""}" style="left:${p.x}px; top:${p.y}px;" onclick="onHexClick(${hex.index})">`;
         html += `<div>${RESOURCE_ICONS[hex.type]}</div>`;
         if (hex.number) html += `<div class="number ${hot ? "hot" : ""}">${hex.number}</div>`;
         if (state.robber === hex.index) html += `<div class="robber">🦹</div>`;
@@ -2388,6 +2416,20 @@
         }
       };
     })();
+
+    function showToast(msg, duration = 2500) {
+      let el = document.getElementById("catan-toast");
+      if (!el) {
+        el = document.createElement("div");
+        el.id = "catan-toast";
+        el.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(30,30,40,0.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:14px;z-index:9999;pointer-events:none;transition:opacity 0.3s;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);";
+        document.body.appendChild(el);
+      }
+      el.textContent = msg;
+      el.style.opacity = "1";
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.style.opacity = "0"; }, duration);
+    }
 
     function zoomInMap() {
       setMapZoom((state.mapView.zoom || 1) + 0.1);
