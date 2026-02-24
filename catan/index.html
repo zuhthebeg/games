@@ -1050,6 +1050,8 @@
     }
 
     function humanTrade() {
+      const me = state.players[localPlayerIndex()];
+      if (!me) return;
       if (!isHumanTurn() || state.phase !== "main" || state.winner) return;
       const pIdx = localPlayerIndex();
       const p = state.players[pIdx];
@@ -2191,9 +2193,9 @@
           ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':'⭐VP').join(' ')}</div>` : ""}
           <div class="actions">
             <button id="diceDisplay" class="primary" ${canRoll ? "" : "disabled"} onclick="rollDice()">주사위</button>
-            <button ${actionState.canRoad ? "" : "disabled"} onclick="humanBuildRoad()">도로${costLabel(COST.road, idx)}</button>
-            <button ${actionState.canSettlement ? "" : "disabled"} onclick="humanBuildSettlement()">마을${costLabel(COST.settlement, idx)}</button>
-            <button ${actionState.canCity ? "" : "disabled"} onclick="humanBuildCity()">도시${costLabel(COST.city, idx)}</button>
+            <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${costLabel(COST.road, idx)}</button>
+            <button ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을${costLabel(COST.settlement, idx)}</button>
+            <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시${costLabel(COST.city, idx)}</button>
             <button ${(actionState.canMain && canHumanTrade(localPlayerIndex())) ? "" : "disabled"} onclick="humanTrade()">거래</button>
             <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
             <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사</button>
@@ -2652,6 +2654,22 @@
       });
       return `<span class="cost-hint">${parts.join(" ")}</span>`;
     }
+
+    function humanTryBuild(type) {
+      const idx = localPlayerIndex();
+      const p = state.players[idx];
+      if (!p) return;
+      if (!isHumanTurn() || state.phase !== "main" || state.winner) return;
+      const ICONS = { brick: "🧱", lumber: "🪵", wool: "🐑", grain: "🌾", ore: "⛏️" };
+      const cost = COST[type];
+      const missing = Object.entries(cost)
+        .filter(([r, n]) => (p.resources[r] || 0) < n)
+        .map(([r, n]) => `${ICONS[r]}×${n - (p.resources[r] || 0)}`);
+      if (missing.length) {
+        showToast(`${type === "road" ? "도로" : type === "settlement" ? "마을" : type === "city" ? "도시" : "발전카드"} 부족: ${missing.join(" ")} 더 필요`);
+      }
+    }
+    window.humanTryBuild = humanTryBuild;
 
     (async function boot() {
       if (window.SharedWallet) {
