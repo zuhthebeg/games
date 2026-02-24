@@ -2812,6 +2812,54 @@
         let mpUI = null;
         let battleState = null;
         let cachedMyId = null;  // Cache user ID for use after client is destroyed
+        
+        // ========== SOUND SYSTEM ==========
+        const SFX = {
+            ctx: null,
+            buffers: {},
+            muted: localStorage.getItem('enhance_mute') === '1',
+            files: {
+                'enhance-success': '/enhance/sfx/enhance-success.ogg',
+                'enhance-fail':    '/enhance/sfx/enhance-fail.ogg',
+                'enhance-destroy': '/enhance/sfx/enhance-destroy.ogg',
+                'battle-start':    '/enhance/sfx/battle-start.ogg',
+                'battle-win':      '/enhance/sfx/battle-win.ogg',
+                'battle-lose':     '/enhance/sfx/battle-lose.ogg',
+                'purchase':        '/enhance/sfx/purchase.ogg',
+                'levelup':         '/enhance/sfx/levelup.ogg',
+            },
+            init() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                // preload all
+                Object.entries(this.files).forEach(([key, url]) => {
+                    fetch(url).then(r => r.arrayBuffer())
+                        .then(buf => this.ctx.decodeAudioData(buf))
+                        .then(decoded => { this.buffers[key] = decoded; })
+                        .catch(() => {}); // 파일 없으면 무시
+                });
+            },
+            play(name, volume = 1.0) {
+                if (this.muted || !this.ctx || !this.buffers[name]) return;
+                const src = this.ctx.createBufferSource();
+                const gain = this.ctx.createGain();
+                src.buffer = this.buffers[name];
+                gain.gain.value = volume;
+                src.connect(gain);
+                gain.connect(this.ctx.destination);
+                src.start(0);
+            },
+            toggle() {
+                this.muted = !this.muted;
+                localStorage.setItem('enhance_mute', this.muted ? '1' : '0');
+                return this.muted;
+            }
+        };
+
+        // Init on first user interaction
+        document.addEventListener('click', () => {
+            if (!SFX.ctx) SFX.init();
+        }, { once: true });
+        // ========== END SOUND SYSTEM ==========
 
         // ===== WEAPON GENERATION =====
         function generateWeapon(forceGrade = null) {
@@ -3285,8 +3333,10 @@
 
             document.getElementById('app').innerHTML = `
                 <div class="container">
-                    <header>
+                    <header style="position:relative;">
                         <h1>⚔️ 무기 강화 & 배틀</h1>
+                        <button id="muteBtn" onclick="const m=SFX.toggle();this.textContent=m?'🔇':'🔊'" 
+                          style="position:absolute;right:10px;top:10px;background:none;border:none;font-size:1.3rem;cursor:pointer;opacity:0.7">🔊</button>
                         <p class="subtitle">강화하고 싸워서 돈을 벌어라!</p>
                     </header>
 
@@ -3540,6 +3590,7 @@
 
             saveState();
             playSound('success');
+            SFX.play('purchase', 0.6);
             showEnhance();
         }
 
@@ -3908,6 +3959,14 @@
             }
 
             overlay.classList.add('show');
+            
+            if (type === 'success') {
+                SFX.play('enhance-success');
+            } else if (type === 'fail') {
+                SFX.play('enhance-fail', 0.7);
+            } else if (type === 'destroy') {
+                SFX.play('enhance-destroy');
+            }
 
             // Confetti for big milestones
             if (type === 'success' && (to >= 10 || to === 7)) fireConfetti();
@@ -4403,6 +4462,7 @@
             // Cache user ID for use even after client is destroyed
             cachedMyId = mpUI?.getClient()?.getMyUserId() || null;
             console.log('[handleBattleStart] cachedMyId:', cachedMyId);
+            SFX.play('battle-start');
             renderBattle();
         }
 
@@ -5144,6 +5204,7 @@
                     isWin: true,
                     showRematch: true
                 });
+                SFX.play('battle-win');
                 
                 fireConfetti();
             } else {
@@ -5192,6 +5253,7 @@
                                 isWin: false,
                                 showRematch: false
                             });
+                            SFX.play('battle-lose');
                         } else {
                             // 결과창 먼저 표시
                             mpUI.showResult({
@@ -5200,6 +5262,7 @@
                                 isWin: false,
                                 showRematch: false
                             });
+                            SFX.play('battle-lose');
                         }
                         
                         // 새 무기 획득 이펙트 표시
@@ -5217,6 +5280,7 @@
                             isWin: false,
                             showRematch: true
                         });
+                        SFX.play('battle-lose');
                     }
                 } else {
                     // 나무막대기는 내구도 감소 없음
@@ -5226,6 +5290,7 @@
                         isWin: false,
                         showRematch: true
                     });
+                    SFX.play('battle-lose');
                 }
                 
                 saveState();
