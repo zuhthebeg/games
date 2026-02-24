@@ -1571,8 +1571,8 @@
   <div class="app" id="tablePanel">
     <header class="topbar glass">
       <div class="header-left">
-        <span class="round-label">ROUND</span>
-        <span class="round-num" id="roundLabel">1/3</span>
+        <span class="round-label" id="anteBlindLabel">Ante 1 | Blind 1/3</span>
+        <span class="round-num" id="roundLabel">1-1</span>
       </div>
       <div class="target-display">
         <span class="target-label">목표</span>
@@ -1634,9 +1634,7 @@
         <div class="tag" id="shopMoney">보유 자금: $0</div>
       </div>
       <div class="shop-grid" id="shopGrid"></div>
-      <div class="row" style="justify-content:flex-end;">
-        <button class="btn-main" id="nextRoundBtn" style="min-width:132px;">다음 라운드</button>
-      </div>
+      <button id="shopContinueBtn" class="btn-main" style="width:100%;margin-top:12px;padding:12px;font-size:15px;font-weight:700;border-radius:12px;background:linear-gradient(150deg,var(--ok),#3af5a0);color:#062f27;border:none;cursor:pointer;">다음 블라인드로 →</button>
     </div>
   </div>
 
@@ -1658,8 +1656,19 @@
       <div>
         <div class="title">런 클리어</div>
         <div class="subtitle" id="victoryText">보스 블라인드를 돌파했습니다.</div>
+        <div class="subtitle" id="victoryHighScore" style="margin-top:8px;color:var(--gold);">최고 기록: 0점</div>
       </div>
       <button class="btn-main" id="victoryConfirmBtn">새 런 시작</button>
+    </div>
+  </div>
+
+  <div id="gameOverModal" class="modal">
+    <div style="background:linear-gradient(150deg,#1a0a0a,#2d1010);border:1px solid rgba(255,100,100,0.3);border-radius:20px;padding:28px 24px;max-width:320px;width:90%;text-align:center;">
+      <div style="font-size:48px;margin-bottom:8px;">💀</div>
+      <h2 style="color:#ff7f91;font-size:22px;margin-bottom:4px;">게임 오버</h2>
+      <p id="gameOverAnteText" style="color:var(--muted);font-size:13px;margin-bottom:16px;"></p>
+      <p id="gameOverHighScore" style="color:var(--gold);font-size:13px;margin-bottom:20px;"></p>
+      <button onclick="newRun()" style="width:100%;padding:12px;background:linear-gradient(150deg,var(--red-start),var(--red-end));color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">다시 시작</button>
     </div>
   </div>
 
@@ -1737,11 +1746,30 @@
       STRAIGHT_FLUSH: { name: "스트레이트 플러시", chips: 100, mult: 8 }
     };
 
-    const roundDefs = [
-      { id: "small", label: "스몰 블라인드", target: 300 },
-      { id: "big", label: "빅 블라인드", target: 700 },
-      { id: "boss", label: "보스 블라인드", target: 1500 }
+    const bossModifiers = [
+      null,
+      { id: "no_discard", label: "버리기 불가", desc: "이번 블라인드는 버리기를 사용할 수 없습니다." },
+      { id: "min4cards", label: "최소 4장 플레이", desc: "매 핸드마다 최소 4장을 선택해야 합니다." },
+      { id: "no_hearts", label: "하트 봉인", desc: "하트 카드는 이번 블라인드에서 점수에 기여하지 않습니다." },
+      { id: "only2hands", label: "핸드 제한", desc: "이번 블라인드는 핸드 2번만 사용 가능합니다." },
+      { id: "no_discard", label: "버리기 불가", desc: "이번 블라인드는 버리기를 사용할 수 없습니다." },
+      { id: "max3cards", label: "최대 3장 선택", desc: "이번 블라인드는 3장 이하로만 플레이할 수 있습니다." },
+      { id: "min4cards", label: "최소 4장 + 버리기 불가", desc: "최소 4장 필수, 버리기 불가. 최후의 블라인드!" }
     ];
+
+    function getBossModifier(ante) {
+      return bossModifiers[ante - 1] || null;
+    }
+
+    function getBlindTargets(ante) {
+      const base = [300, 700, 1500];
+      const scale = Math.pow(2, ante - 1);
+      return [
+        { id: "small", label: "스몰 블라인드", target: Math.round(base[0] * scale) },
+        { id: "big", label: "빅 블라인드", target: Math.round(base[1] * scale) },
+        { id: "boss", label: "보스 블라인드", target: Math.round(base[2] * scale), modifier: getBossModifier(ante) }
+      ];
+    }
 
     const jokerPool = [
       { id: "flat50", name: "칩 폭탄", cost: 6, desc: "칩 +50", detail: "핸드 점수 계산 시 고정으로 칩 +50.", apply(ctx) { ctx.chips += 50; ctx.activate("flat50"); } },
@@ -1782,6 +1810,7 @@
     const state = {
       mode: "single",
       roundIndex: 0,
+      ante: 1,
       score: 0,
       money: 10,
       handsLeft: 4,
@@ -1790,6 +1819,7 @@
       hand: [],
       selected: new Set(),
       jokers: [],
+      bossModifier: null,
       gameEnded: false,
       lastToggledCardId: null
     };
@@ -1928,12 +1958,13 @@
 
     function activeRoundLabel() {
       if (state.mode === "pvp") return `${pvp.currentRound}/${pvp.maxRounds}`;
-      return `${state.roundIndex + 1}/3`;
+      return `${state.ante}-${state.roundIndex + 1}`;
     }
 
     function activeTarget() {
       if (state.mode === "pvp") return pvp.roundTarget;
-      const round = roundDefs[state.roundIndex] || roundDefs[roundDefs.length - 1];
+      const blindDefs = getBlindTargets(state.ante);
+      const round = blindDefs[state.roundIndex] || blindDefs[blindDefs.length - 1];
       return round.target;
     }
 
@@ -1974,7 +2005,8 @@
           if (state.gameEnded) return;
           if (state.selected.has(card.id)) state.selected.delete(card.id);
           else {
-            if (state.selected.size >= 5) return setInfo("최대 5장까지만 선택 가능합니다.");
+            const maxSelectable = state.bossModifier?.id === "max3cards" ? 3 : 5;
+            if (state.selected.size >= maxSelectable) return setInfo(`최대 ${maxSelectable}장까지만 선택 가능합니다.`);
             state.selected.add(card.id);
           }
           AudioFX.play("select");
@@ -2055,6 +2087,8 @@
 
     function renderHUD(chips = 0, mult = 1) {
       $("#roundLabel").textContent = activeRoundLabel();
+      if (state.mode === "pvp") $("#anteBlindLabel").textContent = `ROUND ${pvp.currentRound}/${pvp.maxRounds}`;
+      else $("#anteBlindLabel").textContent = `Ante ${state.ante} | Blind ${state.roundIndex + 1}/3`;
       $("#targetLabel").textContent = activeTarget().toLocaleString();
       $("#scoreLabel").textContent = state.score.toLocaleString();
       $("#moneyLabel").textContent = `$${state.money}`;
@@ -2065,6 +2099,9 @@
       $("#playBtn").disabled = state.gameEnded;
       $("#discardBtn").disabled = state.gameEnded;
       $("#deckBtn").textContent = `🃏 덱 (${state.deck.length}장)`;
+      $("#handGuide").textContent = state.bossModifier?.id === "max3cards"
+        ? "손패 8장 중 최대 3장을 선택"
+        : "손패 8장 중 최대 5장을 선택";
       $("#pvpPanel").classList.toggle("show", state.mode === "pvp");
       renderJokers();
       updateGoldLabel();
@@ -2099,8 +2136,14 @@
       $("#deckModal").classList.remove("show");
     }
 
-    function openVictoryModal() {
-      $("#victoryText").textContent = `보스 블라인드 격파! 최종 점수 ${state.score.toLocaleString()}점`;
+    function openVictoryModal(message = "") {
+      const totalScore = state.score;
+      const prev = parseInt(localStorage.getItem("jokerrun_hs") || "0", 10);
+      const isNew = totalScore > prev;
+      if (isNew) localStorage.setItem("jokerrun_hs", String(totalScore));
+      const best = Math.max(prev, totalScore);
+      $("#victoryText").textContent = message || `보스 블라인드 격파! 최종 점수 ${totalScore.toLocaleString()}점`;
+      $("#victoryHighScore").textContent = isNew ? `🏆 신기록: ${totalScore.toLocaleString()}점` : `최고 기록: ${best.toLocaleString()}점`;
       $("#victoryModal").classList.add("show");
     }
 
@@ -2278,6 +2321,8 @@
       }
       const cards = selectedCards();
       if (!cards.length) return setInfo("먼저 카드를 1장 이상 선택하세요.");
+      if (state.bossModifier?.id === "max3cards" && cards.length > 3) return setInfo("이번 블라인드는 최대 3장까지만 선택 가능합니다.");
+      if (state.bossModifier?.id === "min4cards" && cards.length < 4) return setInfo("이번 블라인드는 최소 4장을 선택해야 합니다.");
       AudioFX.play("play");
       const hand = scoreHand(cards);
       let chips = hand.chips;
@@ -2290,6 +2335,9 @@
         activated: [],
         activate(id) { this.activated.push(id); }
       };
+      if (state.bossModifier?.id === "no_hearts") {
+        ctx.chips = Math.max(5, ctx.chips - cards.filter(c => c.suit === "heart").length * 5);
+      }
       for (const joker of state.jokers) joker.apply(ctx);
       chips = Math.max(0, Math.floor(ctx.chips));
       mult = Math.max(1, Math.floor(ctx.mult * 100) / 100);
@@ -2327,7 +2375,10 @@
       renderHUD();
     }
 
-    function openShop() {
+    let _shopIsAnteClear = false;
+
+    function openShop(anteClear = false) {
+      _shopIsAnteClear = anteClear;
       const grid = $("#shopGrid");
       grid.innerHTML = "";
       $("#shopMoney").textContent = `보유 자금: $${state.money}`;
@@ -2346,11 +2397,14 @@
           state.jokers.push(joker);
           addLog(`조커 구매: ${joker.name} (-$${joker.cost})`);
           renderHUD();
-          openShop();
+          openShop(_shopIsAnteClear);
         });
         card.appendChild(btn);
         grid.appendChild(card);
       });
+      $("#shopContinueBtn").textContent = anteClear
+        ? `Ante ${state.ante + 1} 시작 →`
+        : `블라인드 ${Math.min(3, state.roundIndex + 2)}/3 시작 →`;
       $("#shopModal").classList.add("show");
     }
 
@@ -2363,36 +2417,53 @@
       state.score = 0;
       state.handsLeft = 4;
       state.discardsLeft = 3;
+      state.bossModifier = null;
       state.deck = buildDeck(seedText);
       state.hand = [];
       state.selected.clear();
       state.gameEnded = false;
+      const blindDefs = getBlindTargets(state.ante);
+      const blind = blindDefs[index];
+      state.bossModifier = (index === 2 && blind && blind.modifier) ? blind.modifier : null;
+      if (state.bossModifier) {
+        if (state.bossModifier.id === "no_discard") state.discardsLeft = 0;
+        if (state.bossModifier.id === "only2hands") state.handsLeft = 2;
+        if (state.ante === 8 && index === 2) state.discardsLeft = 0;
+      }
       closeDeckModal();
       closeVictoryModal();
       drawToEight();
       renderCards();
       renderHUD();
       setInfo("핸드를 선택해 플레이하세요.");
+      if (state.bossModifier) {
+        setInfo(`<span style="color:var(--danger)">⚠️ ${state.bossModifier.label}</span> — ${state.bossModifier.desc}`);
+      }
       addLog(`${activeRoundLabel()} 시작. 목표 ${activeTarget()}점`);
     }
 
     function winRound() {
       if (state.gameEnded) return;
-      const reward = 7 + state.handsLeft * 2 + state.discardsLeft;
+      const reward = 7 + state.handsLeft * 2 + state.discardsLeft + state.ante * 2;
       state.money += reward;
-      addLog(`라운드 클리어! 보상 +$${reward}`);
-      setInfo(`블라인드 돌파 성공! 보상 +$${reward}`);
+      addLog(`블라인드 클리어! 보상 +$${reward}`);
       state.gameEnded = true;
       AudioFX.play("win");
       spawnWinConfetti();
       renderHUD();
-      if (state.roundIndex >= roundDefs.length - 1) {
-        setInfo("보스 블라인드 격파! 런 클리어.");
-        addLog("런 클리어 완료.");
-        openVictoryModal();
+      const isLastBlind = state.roundIndex >= 2;
+      const isLastAnte = state.ante >= 8;
+      if (isLastBlind && isLastAnte) {
+        showRunClearModal();
         return;
       }
-      openShop();
+      if (isLastBlind) {
+        setInfo(`Ante ${state.ante} 클리어! 다음 앤티로...`);
+        openShop(true);
+      } else {
+        setInfo(`블라인드 돌파! 보상 +$${reward}`);
+        openShop(false);
+      }
     }
 
     function loseRun() {
@@ -2400,22 +2471,54 @@
       state.gameEnded = true;
       AudioFX.play("lose");
       renderHUD();
-      setInfo("핸드를 모두 사용했습니다. 게임 오버! 새 런을 시작하세요.");
+      const anteText = `Ante ${state.ante} - ${["스몰", "빅", "보스"][state.roundIndex]} 블라인드에서 탈락`;
+      const totalScore = state.score;
+      const prev = parseInt(localStorage.getItem("jokerrun_hs") || "0", 10);
+      const isNew = totalScore > prev;
+      if (isNew) localStorage.setItem("jokerrun_hs", String(totalScore));
+      const hsText = isNew ? `🏆 신기록! ${totalScore.toLocaleString()}점` : `최고 기록: ${prev.toLocaleString()}점`;
+      document.getElementById("gameOverAnteText").textContent = anteText;
+      document.getElementById("gameOverHighScore").textContent = hsText;
+      document.getElementById("gameOverModal").classList.add("show");
       addLog("게임 오버.");
     }
 
     function newRun() {
       state.mode = "single";
+      state.ante = 1;
       state.money = 10;
       state.jokers = [];
+      state.bossModifier = null;
       logEl.innerHTML = "";
       closeShop();
       closeDeckModal();
       closeVictoryModal();
+      document.getElementById("gameOverModal").classList.remove("show");
       startRound(0);
       $("#modeModal").classList.remove("show");
       $("#pvpPanel").classList.remove("show");
     }
+
+    function showRunClearModal() {
+      const totalScore = state.score;
+      const prev = parseInt(localStorage.getItem("jokerrun_hs") || "0", 10);
+      const isNew = totalScore > prev;
+      if (isNew) localStorage.setItem("jokerrun_hs", String(totalScore));
+      const message = `🏆 런 클리어! 8앤티 완주!\n최종 점수 ${totalScore.toLocaleString()}점${isNew ? " — 신기록!" : ""}`;
+      openVictoryModal(message);
+      spawnWinConfetti();
+      AudioFX.play("win");
+    }
+
+    window.continueFromShop = function continueFromShop() {
+      if (_shopIsAnteClear) {
+        state.ante = Math.min(8, state.ante + 1);
+        startRound(0);
+      } else {
+        startRound(state.roundIndex + 1);
+      }
+      closeShop();
+    };
 
     function startSingleMode() {
       $("#modeModal").classList.remove("show");
@@ -2569,14 +2672,7 @@
       renderCards();
       setInfo("선택을 해제했습니다.");
     });
-    $("#nextRoundBtn").addEventListener("click", () => {
-      closeShop();
-      if (state.roundIndex >= roundDefs.length - 1) {
-        openVictoryModal();
-        return;
-      }
-      startRound(state.roundIndex + 1);
-    });
+    $("#shopContinueBtn").addEventListener("click", window.continueFromShop);
     $("#restartBtn").addEventListener("click", () => {
       if (state.mode === "pvp") resetFromPvp();
       else newRun();
