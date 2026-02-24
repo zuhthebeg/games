@@ -176,6 +176,70 @@
     }
 
     .number.hot { color: #b71616; }
+    /* ── Active Player Banner ── */
+    #turn-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      z-index: 200;
+      background: rgba(10, 22, 35, 0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 13px;
+      gap: 8px;
+      transition: background 0.3s;
+    }
+    #turn-banner .player-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 6px currentColor;
+    }
+    #turn-banner .banner-name {
+      font-weight: 700;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    #turn-banner .banner-action {
+      color: var(--muted);
+      font-size: 12px;
+      flex: 1;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #turn-banner .banner-vps {
+      display: flex;
+      gap: 6px;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    #turn-banner .vp-chip {
+      padding: 2px 6px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      white-space: nowrap;
+    }
+    #turn-banner .vp-chip.active {
+      background: rgba(255,255,255,0.18);
+      font-weight: 700;
+    }
+    /* AI thinking pulse */
+    @keyframes ai-think {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    #turn-banner.ai-thinking .banner-action {
+      animation: ai-think 0.8s ease-in-out infinite;
+    }
+    /* Adjust body so banner doesn't overlap content */
+    body { padding-top: 44px; }
+    #app { min-height: calc(100dvh - 44px); }
 
     @keyframes dice-roll {
       0% { transform: scale(1.2) rotate(-5deg); }
@@ -2140,6 +2204,7 @@
         bindMapPanHandlers();
         centerMapViewport();
       }
+      updateTurnBanner();
       state.lastPlacedVertex = null;
     }
 
@@ -2524,6 +2589,43 @@
         centerMapViewport(true);
       }
     });
+
+    function updateTurnBanner() {
+      let banner = document.getElementById("turn-banner");
+      if (!banner) {
+        banner = document.createElement("div");
+        banner.id = "turn-banner";
+        document.body.prepend(banner);
+      }
+      if (state.screen !== "game" && state.screen !== undefined) {
+        banner.style.display = "none";
+        return;
+      }
+      banner.style.display = "flex";
+      const cp = state.players[state.currentPlayer] || {};
+      const color = cp.color || "#fff";
+      const isAI = state.currentPlayer !== localPlayerIndex() || isMultiMode();
+      // Action text
+      let action = state.hint || "";
+      if (state.phase === "roll") action = "🎲 주사위를 굴리세요";
+      else if (state.phase === "robber" || state.phase === "knight-robber") action = "🦹 강도를 이동하세요";
+      else if (state.phase === "main") action = state.buildMode ? `🏗️ ${state.buildMode} 위치를 선택하세요` : "🔨 건설하거나 턴 종료";
+      else if (state.phase === "setup1" || state.phase === "setup2") action = state.setupStep === "settlement" ? "🏠 마을을 놓으세요" : "🛤️ 도로를 놓으세요";
+      if (isAI && !state.winner) action = `🤔 AI 생각 중...`;
+      banner.classList.toggle("ai-thinking", isAI && !state.winner);
+
+      const vpChips = state.players.map((p, i) => {
+        const active = i === state.currentPlayer;
+        return `<span class="vp-chip${active ? " active" : ""}" style="${active ? `color:${p.color}` : ""}">${p.name.slice(0,1)} ${p.vp}점</span>`;
+      }).join("");
+
+      banner.innerHTML = `
+        <div class="player-dot" style="background:${color};color:${color};"></div>
+        <span class="banner-name" style="color:${color}">${cp.name || ""}</span>
+        <span class="banner-action">${action}</span>
+        <div class="banner-vps">${vpChips}</div>
+      `;
+    }
 
     (async function boot() {
       if (window.SharedWallet) {
