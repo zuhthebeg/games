@@ -1803,8 +1803,9 @@
     }
 
     function getBlindTargets(ante) {
-      const base = [300, 700, 1500];
-      const scale = Math.pow(2, ante - 1);
+      // 카드 칩값 반영으로 스케일 완화: ×1.6/ante, 시작 타겟 낮춤 (원작 Balatro 참고)
+      const base = [300, 450, 600];
+      const scale = Math.pow(1.6, ante - 1);
       return [
         { id: "small", label: "스몰 블라인드", target: Math.round(base[0] * scale) },
         { id: "big", label: "빅 블라인드", target: Math.round(base[1] * scale) },
@@ -2394,7 +2395,10 @@
       await new Promise(r => setTimeout(r, 300));
       AudioFX.play("play");
       const hand = scoreHand(cards);
-      let chips = hand.chips;
+      // 발라트로 방식: 핸드 기본 칩 + 선택 카드 값 합산
+      const RANK_CHIPS = { 2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,11:10,12:10,13:10,14:11 };
+      const cardChips = cards.reduce((sum, c) => sum + (RANK_CHIPS[c.rank] || 0), 0);
+      let chips = hand.chips + cardChips;
       let mult = hand.mult;
       const ctx = {
         cards,
