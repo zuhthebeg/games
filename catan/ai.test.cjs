@@ -98,6 +98,19 @@ test('shouldStopBuilding is more conservative on easy', () => {
   assert.equal(AI.shouldStopBuilding('hard', 1, 2), true);
 });
 
+test('shouldUseKnight: use knight when opponent has 5+ resources and is ahead on VP', () => {
+  const s = baseState();
+  s.players[0].knights = 0;
+  s.players[0].vp = 2;
+  s.players[1].vp = 5;
+  Object.assign(s.players[1].resources, { brick: 3, lumber: 2, wool: 0, grain: 0, ore: 0 });
+  assert.equal(AI.shouldUseKnight(s, 0), true);
+
+  s.players[1].vp = 1;
+  s.players[1].resources = { brick: 1, lumber: 0, wool: 0, grain: 0, ore: 0 };
+  assert.equal(AI.shouldUseKnight(s, 0), false);
+});
+
 test('chooseBankTrade picks 4:1 trade toward missing build resources', () => {
   const resources = { brick: 5, lumber: 0, wool: 0, grain: 1, ore: 0 };
   const t1 = AI.chooseBankTrade(resources, { brick: 1, lumber: 1 });

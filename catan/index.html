@@ -372,8 +372,14 @@
     const COST = {
       road: { brick: 1, lumber: 1 },
       settlement: { brick: 1, lumber: 1, wool: 1, grain: 1 },
-      city: { grain: 2, ore: 3 }
+      city: { grain: 2, ore: 3 },
+      devCard: { wool: 1, grain: 1, ore: 1 }
     };
+
+    const DEV_CARD_DECK = [
+      ...Array(14).fill("knight"),
+      ...Array(5).fill("vp")
+    ];
     const PLAYER_COLORS = ["#e94560", "#4ecca3", "#ffd700", "#9b59b6"];
     const ACTION = {
       GAME_INIT: "GAME_INIT",
@@ -398,6 +404,8 @@
       robber: -1,
       longestRoad: null,
       largestArmy: null,
+      devDeck: [],
+      turnNumber: 0,
       setupRound: 1,
       setupOrderIndex: 0,
       setupStep: "settlement",
@@ -455,6 +463,8 @@
       state.robber = -1;
       state.longestRoad = null;
       state.largestArmy = null;
+      state.devDeck = shuffle(DEV_CARD_DECK.slice());
+      state.turnNumber = 0;
       state.setupRound = 1;
       state.setupOrderIndex = 0;
       state.setupStep = "settlement";
@@ -803,6 +813,43 @@
       return removed;
     }
 
+    function buyDevCard(playerIdx, free = false) {
+      const p = state.players[playerIdx];
+      if (!p || !state.devDeck.length) return false;
+      if (!free && !canAfford(p, COST.devCard)) return false;
+      if (!free) spend(p, COST.devCard);
+      const cardType = state.devDeck.pop();
+      p.devCards.push({ type: cardType, turnBought: state.turnNumber });
+      recalcAllVP();
+      return true;
+    }
+
+    function hasPlayableKnight(playerIdx) {
+      const p = state.players[playerIdx];
+      if (!p) return false;
+      return (p.devCards || []).some(c => c.type === "knight" && c.turnBought < state.turnNumber && !c.played);
+    }
+
+    function playKnight(playerIdx, hexIndex, victimIdx) {
+      const p = state.players[playerIdx];
+      const card = (p.devCards || []).find(c => c.type === "knight" && c.turnBought < state.turnNumber && !c.played);
+      if (!card) return false;
+      card.played = true;
+      p.knights += 1;
+      // Largest army: 3+ knights, most knights
+      const knights = state.players.map(pl => pl.knights);
+      const maxKnights = Math.max(...knights);
+      if (maxKnights >= 3) {
+        const newHolder = knights.findIndex(k => k === maxKnights);
+        if (state.largestArmy !== newHolder) {
+          state.largestArmy = newHolder;
+        }
+      }
+      const result = moveRobber(hexIndex, victimIdx);
+      recalcAllVP();
+      return result;
+    }
+
     function applyDiscardResources(playerIdx, resources) {
       const p = state.players[playerIdx];
       for (const r of RESOURCES) {
@@ -876,6 +923,7 @@
       state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
       state.phase = "roll";
       state.canEndTurn = false;
+      state.turnNumber += 1;
       state.hint = `${getCurrentPlayer().name}의 차례: 주사위를 굴리세요.`;
       return true;
     }
@@ -937,6 +985,7 @@
         for (const b of p.buildings) vp += b.type === "city" ? 2 : 1;
         if (state.longestRoad === i) vp += 2;
         if (state.largestArmy === i) vp += 2;
+        vp += (p.devCards || []).filter(c => c.type === "vp").length;
         p.vp = vp;
       }
       const winner = state.players.findIndex(p => p.vp >= 10);
@@ -1160,6 +1209,25 @@
       triggerAITurnIfNeeded();
     }
 
+    function humanBuyDevCard() {
+      if (!isHumanTurn() || state.phase !== "main" || state.winner) return;
+      if (!state.devDeck.length) { state.hint = "발전카드 덱이 비었습니다."; render(); return; }
+      const me = state.players[localPlayerIndex()];
+      if (!canAfford(me, COST.devCard)) { state.hint = "자원 부족: 양1 곡물1 광석1 필요."; render(); return; }
+      buyDevCard(localPlayerIndex());
+      state.canEndTurn = true;
+      state.hint = "발전카드 구매 완료.";
+      render();
+    }
+
+    function humanUseKnight() {
+      if (!isHumanTurn() || state.winner) return;
+      if (!hasPlayableKnight(localPlayerIndex())) { state.hint = "사용 가능한 기사 카드가 없습니다."; render(); return; }
+      state.phase = "knight-robber";
+      state.hint = "기사 카드 사용: 도둑 이동할 헥스를 선택하세요.";
+      render();
+    }
+
     function humanBuildSettlement() {
       if (!isHumanTurn()) return;
       state.buildMode = state.buildMode === "settlement" ? null : "settlement";
@@ -1260,7 +1328,19 @@
     }
 
     async function onHexClick(hIdx) {
-      if (!isHumanTurn() || state.winner || state.phase !== "robber") return;
+      if (!isHumanTurn() || state.winner) return;
+      if (state.phase === "knight-robber") {
+        const pIdx = localPlayerIndex();
+        const result = playKnight(pIdx, hIdx, null);
+        if (result && result.ok) {
+          state.phase = "main";
+          state.canEndTurn = true;
+          state.hint = "기사 발동 완료.";
+          render();
+        }
+        return;
+      }
+      if (state.phase !== "robber") return;
       if (isMultiMode()) {
         const snapshot = clone(state);
         const moveResult = moveRobber(hIdx);
@@ -1314,6 +1394,12 @@
       const p = state.players[pIdx];
       const ai = window.CatanAI;
       if (state.phase === "roll") {
+        // Use knight before rolling if strategic
+        if (ai && hasPlayableKnight(pIdx) && ai.shouldUseKnight(state, pIdx)) {
+          const target = ai.pickRobberTarget(state, pIdx);
+          playKnight(pIdx, target.hexIndex, target.victimIdx);
+          state.hint = `${p.name} 기사 카드 사용.`;
+        }
         rollDice();
         return;
       }
@@ -1356,6 +1442,11 @@
 
         if (!pickedAction) {
           if (ai) {
+            // Try buying dev card (hard difficulty or when robber-heavy board)
+            if (state.devDeck.length > 0 && canAfford(p, COST.devCard) && state.aiDifficulty !== 'easy') {
+              buyDevCard(pIdx);
+              continue;
+            }
             const targetCost = canAfford(p, COST.city)
               ? (canAfford(p, COST.settlement) ? COST.road : COST.settlement)
               : COST.city;
@@ -1733,7 +1824,7 @@
           ${others.map(p => `
             <div class="player-card">
               <div class="player-top" style="color:${p.color}">${p.name}<span>${p.vp}점</span></div>
-              <div>자원 ${totalResourceCount(p)}장 | 도로 ${p.roads.length} | 건물 ${p.buildings.length}</div>
+              <div>자원 ${totalResourceCount(p)}장 | 도로 ${p.roads.length} | 건물 ${p.buildings.length}${p.knights ? ` | 🐴${p.knights}` : ""}</div>
             </div>
           `).join("")}
         </div>
@@ -1741,18 +1832,20 @@
         ${renderMap()}
         <div class="my-panel">
           <div class="resources">${resourceStrip(me)}</div>
+          ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':'⭐VP').join(' ')}</div>` : ""}
           <div class="actions">
             <button class="primary" ${canRoll ? "" : "disabled"} onclick="rollDice()">주사위</button>
             <button ${actionState.canRoad ? "" : "disabled"} onclick="humanBuildRoad()">도로</button>
             <button ${actionState.canSettlement ? "" : "disabled"} onclick="humanBuildSettlement()">마을</button>
             <button ${actionState.canCity ? "" : "disabled"} onclick="humanBuildCity()">도시</button>
-            <button disabled>거래</button>
+            <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드</button>
+            <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사</button>
             <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
             ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">방 나가기</button>` : ""}
           </div>
           <div class="hint">
             ${inSetup ? `초기 배치 ${state.setupRound}라운드 | 현재: ${state.setupStep === "settlement" ? "마을" : "도로"}` : ""}
-            ${canRobber ? "도둑 이동: 다른 헥스를 터치하세요." : ""}
+            ${(canRobber || state.phase === "knight-robber") ? "🦹 도둑 이동: 헥스를 선택하세요." : ""}
             ${(actionState.canMain && actionState.possible.length) ? `가능 행동: ${actionState.possible.join(', ')}` : ""}
           </div>
         </div>
@@ -2029,6 +2122,8 @@
     window.humanBuildRoad = humanBuildRoad;
     window.humanBuildSettlement = humanBuildSettlement;
     window.humanBuildCity = humanBuildCity;
+    window.humanBuyDevCard = humanBuyDevCard;
+    window.humanUseKnight = humanUseKnight;
     window.onVertexClick = onVertexClick;
     window.onEdgeClick = onEdgeClick;
     window.onHexClick = onHexClick;

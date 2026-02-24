@@ -164,6 +164,24 @@
     return buildsDone >= 1;
   }
 
+  // Returns true if playing a knight card is strategically good right now.
+  // Does NOT check whether the player actually holds a knight — callers do that.
+  function shouldUseKnight(state, playerIdx) {
+    const p = state.players[playerIdx];
+    if (!p) return false;
+    const myVP = p.vp || 0;
+    const myRes = Object.values(p.resources || {}).reduce((a, b) => a + b, 0);
+    for (let i = 0; i < state.players.length; i++) {
+      if (i === playerIdx) continue;
+      const opp = state.players[i];
+      const oppRes = Object.values(opp.resources || {}).reduce((a, b) => a + b, 0);
+      const oppVP = opp.vp || 0;
+      if (oppRes >= 5 || oppVP > myVP) return true;
+    }
+    if (myRes < 3) return true;
+    return false;
+  }
+
   function chooseBankTrade(resources, targetCost) {
     const entries = Object.entries(resources || {});
     const givers = entries
@@ -193,6 +211,7 @@
     chooseBuildAction,
     getTurnBudget,
     shouldStopBuilding,
-    chooseBankTrade
+    chooseBankTrade,
+    shouldUseKnight
   };
 });
