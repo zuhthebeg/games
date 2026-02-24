@@ -34,15 +34,17 @@
       color: var(--text);
       min-height: 100vh;
       padding-top: calc(48px + env(safe-area-inset-top));
+      overflow: hidden;
     }
 
     #app {
-      min-height: calc(100vh - 48px);
+      height: calc(100dvh - 48px - env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      padding: 8px;
-      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+      gap: 6px;
+      padding: 6px;
+      padding-bottom: calc(6px + env(safe-area-inset-bottom));
+      overflow: hidden;
     }
 
     .players-bar {
@@ -71,15 +73,15 @@
       border: 1px solid var(--line);
       background: rgba(5, 16, 24, 0.7);
       border-radius: 10px;
-      padding: 8px;
-      font-size: 13px;
+      padding: 6px;
+      font-size: 12px;
       text-align: center;
     }
 
     .map-wrap {
       position: relative;
       flex: 1;
-      min-height: 430px;
+      min-height: 0;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: linear-gradient(180deg, rgba(7, 24, 37, 0.65), rgba(8, 20, 31, 0.9));
@@ -101,6 +103,26 @@
       width: 900px;
       height: 620px;
       flex: 0 0 auto;
+    }
+
+    .map-zoom-controls {
+      position: sticky;
+      top: 8px;
+      right: 8px;
+      margin-left: auto;
+      z-index: 20;
+      display: flex;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    .map-zoom-controls button {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      font-size: 18px;
+      line-height: 1;
+      background: rgba(7, 18, 27, 0.92);
     }
 
     .hex {
@@ -202,10 +224,11 @@
     .my-panel {
       border: 1px solid var(--line);
       border-radius: 10px;
-      padding: 8px;
+      padding: 6px;
       background: rgba(8, 20, 30, 0.86);
       display: grid;
-      gap: 8px;
+      gap: 6px;
+      flex: 0 0 auto;
     }
 
     .resources {
@@ -326,11 +349,15 @@
     }
 
     @media (max-width: 760px) {
-      .players-bar { grid-template-columns: 1fr; }
-      .map-wrap { min-height: 360px; }
-      .hex { width: 62px; height: 70px; }
-      .number { width: 24px; height: 24px; font-size: 12px; }
-      .resources { font-size: 11px; }
+      .players-bar { grid-template-columns: 1fr; gap: 4px; }
+      .player-card { padding: 4px; font-size: 11px; }
+      .status { padding: 5px; font-size: 11px; }
+      .hex { width: 56px; height: 64px; }
+      .number { width: 22px; height: 22px; font-size: 11px; }
+      .resources { font-size: 10px; gap: 4px; }
+      .res { padding: 4px 1px; }
+      .actions { gap: 4px; }
+      .actions button { padding: 6px 8px; font-size: 12px; }
       .lobby-title { font-size: 28px; }
     }
   </style>
@@ -383,7 +410,7 @@
       roomCodeInput: "",
       maxPlayers: 4,
       aiDifficulty: "normal",
-      mapView: { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0 }
+      mapView: { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0, zoom: 1, pinchDist: 0 }
     };
 
     const mpState = {
@@ -437,7 +464,7 @@
       state.buildMode = null;
       state.hint = "";
       state.geometry = { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 };
-      state.mapView = { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0 };
+      state.mapView = { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0, zoom: 1, pinchDist: 0 };
     }
 
     function setSinglePlayers() {
@@ -1425,6 +1452,18 @@
       };
     }
 
+    function clampZoom(v) {
+      return Math.max(0.65, Math.min(1.35, v));
+    }
+
+    function setMapZoom(nextZoom) {
+      const z = clampZoom(nextZoom);
+      if (Math.abs(z - state.mapView.zoom) < 0.001) return;
+      state.mapView.zoom = z;
+      state.mapView.initialized = false;
+      render();
+    }
+
     function centerMapViewport(force = false) {
       const wrap = document.querySelector('.map-wrap');
       const board = document.querySelector('.board');
@@ -1443,6 +1482,7 @@
       wrap.dataset.panBound = '1';
 
       const onPointerDown = (e) => {
+        if (e.target && e.target.closest && e.target.closest('.map-zoom-controls')) return;
         state.mapView.dragActive = true;
         state.mapView.pointerId = e.pointerId;
         state.mapView.lastX = e.clientX;
@@ -1486,11 +1526,29 @@
       let touchLastY = 0;
       wrap.addEventListener('touchstart', (e) => {
         if (!e.touches || !e.touches.length) return;
+        if (e.touches.length >= 2) {
+          const a = e.touches[0];
+          const b = e.touches[1];
+          state.mapView.pinchDist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+          return;
+        }
         touchLastX = e.touches[0].clientX;
         touchLastY = e.touches[0].clientY;
       }, { passive: true });
       wrap.addEventListener('touchmove', (e) => {
         if (!e.touches || !e.touches.length) return;
+        if (e.touches.length >= 2) {
+          const a = e.touches[0];
+          const b = e.touches[1];
+          const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+          if (state.mapView.pinchDist > 0) {
+            const ratio = dist / state.mapView.pinchDist;
+            setMapZoom(state.mapView.zoom * ratio);
+          }
+          state.mapView.pinchDist = dist;
+          e.preventDefault();
+          return;
+        }
         const t = e.touches[0];
         const dx = t.clientX - touchLastX;
         const dy = t.clientY - touchLastY;
@@ -1503,14 +1561,20 @@
         touchLastY = t.clientY;
         e.preventDefault();
       }, { passive: false });
+      wrap.addEventListener('touchend', () => {
+        state.mapView.pinchDist = 0;
+      }, { passive: true });
     }
 
     function renderMap() {
-      const mapW = 900;
-      const mapH = 620;
+      const zoom = state.mapView.zoom || 1;
+      const mapW = Math.round(900 * zoom);
+      const mapH = Math.round(620 * zoom);
       const vBuild = buildableVertexSet();
       const eBuild = buildableEdgeSet();
-      let html = `<div class="map-wrap"><div class="board">`;
+      let html = `<div class="map-wrap">`;
+      html += `<div class="map-zoom-controls"><button onclick="zoomOutMap()">−</button><button onclick="zoomInMap()">+</button></div>`;
+      html += `<div class="board" style="width:${mapW}px;height:${mapH}px;">`;
       for (const hex of state.hexes) {
         const c = state.geometry.centers[hex.index];
         const p = mapPixel(c.x, c.y, mapW, mapH);
@@ -1918,6 +1982,14 @@
       render();
     }
 
+    function zoomInMap() {
+      setMapZoom((state.mapView.zoom || 1) + 0.1);
+    }
+
+    function zoomOutMap() {
+      setMapZoom((state.mapView.zoom || 1) - 0.1);
+    }
+
     window.startSingle = startSingle;
     window.showMultiOptions = showMultiOptions;
     window.backToMode = backToMode;
@@ -1937,6 +2009,8 @@
     window.onRoomCodeInput = onRoomCodeInput;
     window.onMaxPlayersChange = onMaxPlayersChange;
     window.onAiDifficultyChange = onAiDifficultyChange;
+    window.zoomInMap = zoomInMap;
+    window.zoomOutMap = zoomOutMap;
 
     window.addEventListener('resize', () => {
       if (!state.mapView.userMoved) {
