@@ -305,6 +305,70 @@
       border-radius: 999px;
     }
 
+    .consumable-strip {
+      padding: 8px;
+      display: grid;
+      gap: 6px;
+      min-height: 56px;
+    }
+
+    .consumable-title {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #b4d3ff;
+      text-shadow: 0 0 8px rgba(116, 165, 255, 0.45);
+    }
+
+    .consumable-list {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: thin;
+    }
+
+    .consumable-empty {
+      color: var(--muted);
+      font-size: 0.7rem;
+      min-height: 22px;
+      display: flex;
+      align-items: center;
+    }
+
+    .planet-card-mini {
+      flex: 0 0 auto;
+      min-width: 84px;
+      border-radius: 10px;
+      border: 1px solid rgba(136, 179, 255, 0.5);
+      background: linear-gradient(150deg, rgba(13, 31, 69, 0.92), rgba(26, 53, 115, 0.92) 55%, rgba(30, 72, 146, 0.9));
+      color: #eaf1ff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 6px;
+      display: grid;
+      gap: 3px;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(98, 143, 255, 0.35);
+    }
+
+    .planet-card-mini:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 16px rgba(98, 143, 255, 0.5);
+    }
+
+    .planet-card-mini .planet-glyph {
+      font-size: 0.92rem;
+      line-height: 1;
+      color: #cfe0ff;
+    }
+
+    .planet-card-mini .planet-target {
+      color: #aac6ff;
+      font-size: 0.62rem;
+      font-weight: 700;
+    }
+
     .joker {
       width: 50px;
       height: 70px;
@@ -1422,6 +1486,17 @@
       transform: translate(-50%, -50%);
     }
 
+    .levelup-popup {
+      position: fixed;
+      z-index: 72;
+      pointer-events: none;
+      font-weight: 900;
+      font-size: 0.92rem;
+      color: #d2e2ff;
+      text-shadow: 0 0 12px rgba(115, 159, 255, 0.9);
+      transform: translate(-50%, -50%);
+    }
+
     .dramatic-layer {
       position: fixed;
       inset: 0;
@@ -1496,6 +1571,34 @@
       font-size: 0.72rem;
       line-height: 1.24;
       min-height: 44px;
+    }
+
+    .shop-separator {
+      grid-column: 1 / -1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(122, 164, 255, 0.45), transparent);
+      margin: 2px 0;
+    }
+
+    .shop-subtitle {
+      grid-column: 1 / -1;
+      color: #afcfff;
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    .shop-item-planet {
+      border-color: rgba(136, 179, 255, 0.5);
+      background: linear-gradient(155deg, rgba(8, 27, 60, 0.94), rgba(24, 48, 98, 0.92) 55%, rgba(30, 74, 146, 0.9));
+      box-shadow: 0 0 14px rgba(74, 132, 255, 0.26);
+    }
+
+    .shop-item-planet .name {
+      color: #d9e7ff;
+    }
+
+    .shop-item-planet .desc {
+      color: #b9cff7;
     }
 
     .price {
@@ -1789,6 +1892,7 @@
     </header>
 
     <section class="joker-strip glass" id="jokerArea" aria-label="조커 슬롯"></section>
+    <section class="consumable-strip glass" id="consumableArea" aria-label="소모품"></section>
 
     <section class="score-line glass">
       <div class="score-main">
@@ -2006,6 +2110,18 @@
       { id: "trioMult", name: "트리오 증폭", cost: 9, desc: "트리플 이상이면 배수 x1.5", detail: "트리플/풀하우스/포카드면 배수 x1.5.", apply(ctx) { if (["THREE", "FULL_HOUSE", "FOUR"].includes(ctx.handType)) { ctx.mult *= 1.5; ctx.activate("trioMult"); } } }
     ];
 
+    const planetPool = [
+      { id:"mercury",  name:"수성",  planet:"☿", hand:"PAIR",          chipsBonus:15, multBonus:1 },
+      { id:"venus",    name:"금성",  planet:"♀", hand:"TWO_PAIR",      chipsBonus:20, multBonus:1 },
+      { id:"earth",    name:"지구",  planet:"🌍", hand:"THREE",         chipsBonus:20, multBonus:2 },
+      { id:"mars",     name:"화성",  planet:"♂", hand:"STRAIGHT",      chipsBonus:30, multBonus:3 },
+      { id:"jupiter",  name:"목성",  planet:"♃", hand:"FLUSH",         chipsBonus:15, multBonus:2 },
+      { id:"saturn",   name:"토성",  planet:"♄", hand:"FULL_HOUSE",    chipsBonus:25, multBonus:2 },
+      { id:"uranus",   name:"천왕성",planet:"⛢", hand:"FOUR",          chipsBonus:30, multBonus:3 },
+      { id:"neptune",  name:"해왕성",planet:"♆", hand:"STRAIGHT_FLUSH",chipsBonus:40, multBonus:4 },
+      { id:"pluto",    name:"명왕성",planet:"⯓", hand:"HIGH_CARD",     chipsBonus:15, multBonus:1 },
+    ];
+
     const jokerGlyphClass = {
       flat50: "joker-bomb",
       flushx2: "joker-wave",
@@ -2051,6 +2167,9 @@
       gameEnded: false,
       lastToggledCardId: null,
       shopJokers: [],
+      handLevels: { HIGH_CARD:1, PAIR:1, TWO_PAIR:1, THREE:1, STRAIGHT:1, FLUSH:1, FULL_HOUSE:1, FOUR:1, STRAIGHT_FLUSH:1 },
+      planetCards: [],
+      shopPlanets: [],
       rerollCost: 5
     };
 
@@ -2139,6 +2258,7 @@
     const handResult = $("#handResult");
     const logEl = $("#log");
     const jokerArea = $("#jokerArea");
+    const consumableArea = $("#consumableArea");
     const tablePanel = $("#tablePanel");
     const jokerPopup = $("#jokerPopup");
     const deckOrder = { heart: 0, diamond: 1, club: 2, spade: 3 };
@@ -2313,8 +2433,16 @@
       }
       const hand = scoreHand(cards);
       const cardChips = cards.reduce((sum, c) => sum + (RANK_CHIPS[c.rank] || 0), 0);
-      const estimated = Math.floor((hand.chips + cardChips) * hand.mult);
-      handPreview.textContent = `${hand.name} | 예상: ${estimated.toLocaleString()}점`;
+      let chips = hand.chips + cardChips;
+      let mult = hand.mult;
+      const lvl = (state.handLevels?.[hand.handType] || 1) - 1;
+      if (lvl > 0) {
+        const planet = planetPool.find(p => p.hand === hand.handType);
+        if (planet) { chips += planet.chipsBonus * lvl; mult += planet.multBonus * lvl; }
+      }
+      const estimated = Math.floor(chips * mult);
+      const nowLevel = state.handLevels?.[hand.handType] || 1;
+      handPreview.textContent = `${hand.name} Lv.${nowLevel} | 예상: ${estimated.toLocaleString()}점`;
       handPreview.classList.add("show");
     }
 
@@ -2340,6 +2468,70 @@
         popup.style.animation = "floatUp 700ms ease forwards";
         setTimeout(() => popup.remove(), 720);
       }
+    }
+
+    function showLevelUpPopup(anchorEl) {
+      if (!anchorEl) return;
+      const rect = anchorEl.getBoundingClientRect();
+      const popup = document.createElement("div");
+      popup.className = "levelup-popup";
+      popup.textContent = "+레벨업!";
+      popup.style.left = `${rect.left + rect.width * 0.5}px`;
+      popup.style.top = `${rect.top - 8}px`;
+      document.body.appendChild(popup);
+      if (window.anime) {
+        anime({
+          targets: popup,
+          translateY: [-4, -44],
+          opacity: [0, 1, 1, 0],
+          scale: [0.5, 1.25, 1.0],
+          easing: "easeOutBack",
+          duration: 760,
+          complete: () => popup.remove()
+        });
+      } else {
+        popup.style.animation = "floatUp 760ms ease forwards";
+        setTimeout(() => popup.remove(), 780);
+      }
+    }
+
+    function renderPlanetCards() {
+      if (!consumableArea) return;
+      consumableArea.innerHTML = "";
+      const title = document.createElement("div");
+      title.className = "consumable-title";
+      title.textContent = "소모품";
+      consumableArea.appendChild(title);
+      if (!state.planetCards.length) {
+        const empty = document.createElement("div");
+        empty.className = "consumable-empty";
+        empty.textContent = "보유 중인 플래닛 카드가 없습니다.";
+        consumableArea.appendChild(empty);
+        return;
+      }
+      const list = document.createElement("div");
+      list.className = "consumable-list";
+      state.planetCards.forEach((planet, index) => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "planet-card-mini";
+        const handName = handBase[planet.hand]?.name || planet.hand;
+        card.innerHTML = `
+          <span class="planet-glyph">${planet.planet} ${planet.name}</span>
+          <span class="planet-target">${handName} Lv.${state.handLevels?.[planet.hand] || 1}</span>
+        `;
+        card.addEventListener("click", () => {
+          const current = state.handLevels?.[planet.hand] || 1;
+          const newLevel = current + 1;
+          state.handLevels[planet.hand] = newLevel;
+          state.planetCards.splice(index, 1);
+          addLog(`${planet.name} 사용: ${handName} Lv.${newLevel}`);
+          showLevelUpPopup(card);
+          renderHUD();
+        });
+        list.appendChild(card);
+      });
+      consumableArea.appendChild(list);
     }
 
     function sellJoker(index, anchorEl) {
@@ -2475,6 +2667,7 @@
         : "손패 8장 중 최대 5장을 선택";
       $("#pvpPanel").classList.toggle("show", state.mode === "pvp");
       renderJokers();
+      renderPlanetCards();
       updateHandPreview();
       updateGoldLabel();
     }
@@ -2763,6 +2956,12 @@
       const cardChips = cards.reduce((sum, c) => sum + (RANK_CHIPS[c.rank] || 0), 0);
       let chips = hand.chips + cardChips;
       let mult = hand.mult;
+      // 플래닛 레벨 적용
+      const lvl = (state.handLevels?.[hand.handType] || 1) - 1;
+      if (lvl > 0) {
+        const planet = planetPool.find(p => p.hand === hand.handType);
+        if (planet) { chips += planet.chipsBonus * lvl; mult += planet.multBonus * lvl; }
+      }
       const ctx = {
         cards,
         handType: hand.handType,
@@ -2824,9 +3023,15 @@
       state.shopJokers = shuffled.slice(0, 3);
     }
 
+    function generateShopPlanets() {
+      const shuffled = [...planetPool].sort(() => Math.random() - 0.5);
+      state.shopPlanets = shuffled.slice(0, 2);
+    }
+
     function openShop(anteClear = false) {
       _shopIsAnteClear = anteClear;
       if (state.shopJokers.length === 0) generateShopJokers();
+      if (state.shopPlanets.length === 0) generateShopPlanets();
       const grid = $("#shopGrid");
       grid.innerHTML = "";
       $("#shopMoney").textContent = `보유 자금: $${state.money}`;
@@ -2843,6 +3048,7 @@
         state.money -= state.rerollCost;
         state.rerollCost += 1;
         generateShopJokers();
+        generateShopPlanets();
         openShop(_shopIsAnteClear);
       });
       grid.appendChild(rerollBtn);
@@ -2867,6 +3073,36 @@
         card.appendChild(btn);
         grid.appendChild(card);
       });
+
+      const separator = document.createElement("div");
+      separator.className = "shop-separator";
+      grid.appendChild(separator);
+
+      const sectionTitle = document.createElement("div");
+      sectionTitle.className = "shop-subtitle";
+      sectionTitle.textContent = "플래닛 카드";
+      grid.appendChild(sectionTitle);
+
+      state.shopPlanets.forEach((planet, idx) => {
+        const afford = state.money >= 3;
+        const handName = handBase[planet.hand]?.name || planet.hand;
+        const card = document.createElement("div");
+        card.className = "shop-item shop-item-planet";
+        card.innerHTML = `<div class="name">${planet.planet} ${planet.name}</div><div class="desc">${handName} 영구 강화<br>+${planet.chipsBonus}칩 / +${planet.multBonus}배수</div><div class="price"><span class="coin" aria-hidden="true"></span>$3</div>`;
+        const btn = document.createElement("button");
+        btn.textContent = afford ? "구매" : "자금 부족";
+        btn.disabled = !afford;
+        btn.addEventListener("click", () => {
+          state.money -= 3;
+          state.planetCards.push({ ...planet });
+          state.shopPlanets.splice(idx, 1);
+          addLog(`플래닛 구매: ${planet.name} (-$3)`);
+          renderHUD();
+          openShop(_shopIsAnteClear);
+        });
+        card.appendChild(btn);
+        grid.appendChild(card);
+      });
       $("#shopContinueBtn").textContent = anteClear
         ? `Ante ${state.ante + 1} 시작 →`
         : `블라인드 ${Math.min(3, state.roundIndex + 2)}/3 시작 →`;
@@ -2884,6 +3120,7 @@
       state.discardsLeft = 3;
       state.bossModifier = null;
       state.shopJokers = [];   // 새 라운드마다 상점 갱신
+      state.shopPlanets = [];
       state.rerollCost = 5;    // 갱신 비용 초기화
       state.deck = buildDeck(seedText);
       state.hand = [];
@@ -2956,6 +3193,9 @@
       state.ante = 1;
       state.money = 10;
       state.jokers = [];
+      state.handLevels = { HIGH_CARD:1, PAIR:1, TWO_PAIR:1, THREE:1, STRAIGHT:1, FLUSH:1, FULL_HOUSE:1, FOUR:1, STRAIGHT_FLUSH:1 };
+      state.planetCards = [];
+      state.shopPlanets = [];
       state.bossModifier = null;
       logEl.innerHTML = "";
       closeShop();
