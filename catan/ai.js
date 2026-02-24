@@ -164,6 +164,26 @@
     return buildsDone >= 1;
   }
 
+  function chooseBankTrade(resources, targetCost) {
+    const entries = Object.entries(resources || {});
+    const givers = entries
+      .filter(([, count]) => count >= 4)
+      .sort((a, b) => b[1] - a[1]);
+    if (!givers.length) return null;
+
+    const deficits = Object.entries(targetCost || {})
+      .map(([res, need]) => [res, need - (resources[res] || 0)])
+      .filter(([, deficit]) => deficit > 0)
+      .sort((a, b) => b[1] - a[1]);
+
+    if (!deficits.length) return null;
+
+    const [give] = givers[0];
+    const [get] = deficits[0];
+    if (give === get) return null;
+    return { give, get };
+  }
+
   return {
     scoreVertex,
     pickBestVertex,
@@ -172,6 +192,7 @@
     pickRobberTarget,
     chooseBuildAction,
     getTurnBudget,
-    shouldStopBuilding
+    shouldStopBuilding,
+    chooseBankTrade
   };
 });

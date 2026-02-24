@@ -97,3 +97,15 @@ test('shouldStopBuilding is more conservative on easy', () => {
   assert.equal(AI.shouldStopBuilding('normal', 0, 5), false);
   assert.equal(AI.shouldStopBuilding('hard', 1, 2), true);
 });
+
+test('chooseBankTrade picks 4:1 trade toward missing build resources', () => {
+  const resources = { brick: 5, lumber: 0, wool: 0, grain: 1, ore: 0 };
+  const t1 = AI.chooseBankTrade(resources, { brick: 1, lumber: 1 });
+  assert.deepEqual(t1, { give: 'brick', get: 'lumber' });
+
+  const t2 = AI.chooseBankTrade({ brick: 0, lumber: 0, wool: 0, grain: 5, ore: 0 }, { grain: 2, ore: 3 });
+  assert.deepEqual(t2, { give: 'grain', get: 'ore' });
+
+  const t3 = AI.chooseBankTrade({ brick: 1, lumber: 1, wool: 1, grain: 1, ore: 1 }, { brick: 1, lumber: 1 });
+  assert.equal(t3, null);
+});

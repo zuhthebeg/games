@@ -628,6 +628,17 @@
       for (const [k, v] of Object.entries(cost)) player.resources[k] -= v;
     }
 
+    function applyBankTrade(playerIdx, give, get) {
+      const p = state.players[playerIdx];
+      if (!p) return false;
+      if (!RESOURCES.includes(give) || !RESOURCES.includes(get)) return false;
+      if (give === get) return false;
+      if ((p.resources[give] || 0) < 4) return false;
+      p.resources[give] -= 4;
+      p.resources[get] += 1;
+      return true;
+    }
+
     function adjacentVertices(vIdx) {
       const out = new Set();
       for (const eIdx of state.vertices[vIdx].edges) {
@@ -1306,7 +1317,18 @@
             : null
         );
 
-        if (!pickedAction) break;
+        if (!pickedAction) {
+          if (ai) {
+            const targetCost = canAfford(p, COST.city)
+              ? (canAfford(p, COST.settlement) ? COST.road : COST.settlement)
+              : COST.city;
+            const trade = ai.chooseBankTrade(p.resources, targetCost);
+            if (trade && applyBankTrade(pIdx, trade.give, trade.get)) {
+              continue;
+            }
+          }
+          break;
+        }
         if (pickedAction === "city") {
           const spot = ai ? ai.pickBestVertex(state, citySpots) : citySpots[Math.floor(Math.random() * citySpots.length)];
           upgradeCity(pIdx, spot);
