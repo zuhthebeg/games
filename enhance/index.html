@@ -3760,6 +3760,10 @@
         }
         
         function enhance() {
+            if (enhanceCooldown) return;
+            enhanceCooldown = true;
+            setTimeout(() => { enhanceCooldown = false; }, 600);
+
             const weapon = state.weapon;
             console.log('[enhance] Starting with weapon:', weapon.name, '+' + weapon.level);
             
@@ -4229,6 +4233,10 @@
         }
         
         function repairWeapon() {
+            if (repairCooldown) return;
+            repairCooldown = true;
+            setTimeout(() => { repairCooldown = false; }, 600);
+
             const cost = getRepairCost(state.weapon);
             if (state.gold < cost) return;
             
@@ -5537,6 +5545,7 @@
             const player = huntState.player;
             const weapon = state.weapon;
             const gradeData = GRADES[weapon.grade];
+            const typeIcon = {dragon:'🐉',demon:'😈',undead:'💀',elemental:'🔥',beast:'🐺',humanoid:'⚔️'};
 
             document.getElementById('app').innerHTML = `
                 <div class="container hunt-screen">
@@ -5551,7 +5560,10 @@
                             ${monster.isBoss ? '⚠️ BOSS' : `Tier ${monster.tier}`}
                             ${monster.type ? ` | ${MONSTER_TYPES[monster.type]?.icon || ''} ${MONSTER_TYPES[monster.type]?.name || ''}` : ''}
                         </div>
-                        <img src="${monster.img}" class="monster-img" alt="${monster.name}">
+                        <img src="${monster.img}" class="monster-img" alt="${monster.name}" 
+                          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" 
+                        >
+                        <div style="display:none;width:80px;height:80px;font-size:3rem;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,0.05)">${typeIcon[monster.type] || '👾'}</div>
                         <div class="monster-name ${monster.isBoss ? 'boss' : ''}">${monster.name}</div>
                         
                         <div class="hp-bar-container" style="margin-top:12px;">
@@ -5954,6 +5966,8 @@
             }, 2500);
         }
 
+        let enhanceCooldown = false;
+        let repairCooldown = false;
         let huntAttackCooldown = false;
         
         function huntAttack() {
