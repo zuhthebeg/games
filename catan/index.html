@@ -84,9 +84,16 @@
       border-radius: 12px;
       background: linear-gradient(180deg, rgba(7, 24, 37, 0.65), rgba(8, 20, 31, 0.9));
       overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: none;
       display: flex;
       align-items: center;
       justify-content: center;
+      cursor: grab;
+    }
+
+    .map-wrap.dragging {
+      cursor: grabbing;
     }
 
     .board {
@@ -375,7 +382,8 @@
       geometry: { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 },
       roomCodeInput: "",
       maxPlayers: 4,
-      aiDifficulty: "normal"
+      aiDifficulty: "normal",
+      mapView: { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0 }
     };
 
     const mpState = {
@@ -429,6 +437,7 @@
       state.buildMode = null;
       state.hint = "";
       state.geometry = { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 };
+      state.mapView = { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0 };
     }
 
     function setSinglePlayers() {
@@ -1408,6 +1417,63 @@
       return { x: pad + (vx - g.minX) * scale, y: pad + (vy - g.minY) * scale, scale };
     }
 
+    function centerMapViewport(force = false) {
+      const wrap = document.querySelector('.map-wrap');
+      const board = document.querySelector('.board');
+      if (!wrap || !board) return;
+      if (!force && (state.mapView.initialized || state.mapView.userMoved)) return;
+      const targetLeft = Math.max(0, Math.floor((board.scrollWidth - wrap.clientWidth) / 2));
+      const targetTop = Math.max(0, Math.floor((board.scrollHeight - wrap.clientHeight) / 2));
+      wrap.scrollLeft = targetLeft;
+      wrap.scrollTop = targetTop;
+      state.mapView.initialized = true;
+    }
+
+    function bindMapPanHandlers() {
+      const wrap = document.querySelector('.map-wrap');
+      if (!wrap || wrap.dataset.panBound === '1') return;
+      wrap.dataset.panBound = '1';
+
+      const onPointerDown = (e) => {
+        state.mapView.dragActive = true;
+        state.mapView.pointerId = e.pointerId;
+        state.mapView.lastX = e.clientX;
+        state.mapView.lastY = e.clientY;
+        wrap.classList.add('dragging');
+        if (wrap.setPointerCapture) {
+          try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
+        }
+      };
+
+      const onPointerMove = (e) => {
+        if (!state.mapView.dragActive) return;
+        if (state.mapView.pointerId !== null && e.pointerId !== state.mapView.pointerId) return;
+        const dx = e.clientX - state.mapView.lastX;
+        const dy = e.clientY - state.mapView.lastY;
+        if (dx !== 0 || dy !== 0) {
+          wrap.scrollLeft -= dx;
+          wrap.scrollTop -= dy;
+          state.mapView.userMoved = true;
+        }
+        state.mapView.lastX = e.clientX;
+        state.mapView.lastY = e.clientY;
+        e.preventDefault();
+      };
+
+      const onPointerUp = (e) => {
+        if (state.mapView.pointerId !== null && e.pointerId !== state.mapView.pointerId) return;
+        state.mapView.dragActive = false;
+        state.mapView.pointerId = null;
+        wrap.classList.remove('dragging');
+      };
+
+      wrap.addEventListener('pointerdown', onPointerDown, { passive: true });
+      wrap.addEventListener('pointermove', onPointerMove, { passive: false });
+      wrap.addEventListener('pointerup', onPointerUp, { passive: true });
+      wrap.addEventListener('pointercancel', onPointerUp, { passive: true });
+      wrap.addEventListener('lostpointercapture', onPointerUp, { passive: true });
+    }
+
     function renderMap() {
       const mapW = 900;
       const mapH = 620;
@@ -1577,7 +1643,11 @@
       if (state.screen === "mode") app.innerHTML = renderModeScreen();
       else if (state.screen === "multi-options") app.innerHTML = renderMultiOptions();
       else if (state.screen === "room-lobby") app.innerHTML = renderRoomLobby();
-      else app.innerHTML = renderGameScreen();
+      else {
+        app.innerHTML = renderGameScreen();
+        bindMapPanHandlers();
+        centerMapViewport();
+      }
     }
 
     function normalizeEvent(a, b) {
@@ -1836,6 +1906,13 @@
     window.onRoomCodeInput = onRoomCodeInput;
     window.onMaxPlayersChange = onMaxPlayersChange;
     window.onAiDifficultyChange = onAiDifficultyChange;
+
+    window.addEventListener('resize', () => {
+      if (!state.mapView.userMoved) {
+        state.mapView.initialized = false;
+        centerMapViewport(true);
+      }
+    });
 
     (async function boot() {
       if (window.SharedWallet) {
