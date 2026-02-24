@@ -40,11 +40,12 @@
     }
 
     #app {
-      height: calc(100dvh - 48px - env(safe-area-inset-bottom));
+      height: calc(100dvh - 48px - 44px - env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
       gap: 6px;
       padding: 6px;
+      padding-top: calc(6px + 44px);
       padding-bottom: calc(6px + env(safe-area-inset-bottom));
       overflow: hidden;
     }
@@ -159,8 +160,8 @@
 
     .hex {
       position: absolute;
-      width: 76px;
-      height: 86px;
+      width: calc(76px * var(--zoom, 1));
+      height: calc(86px * var(--zoom, 1));
       transform: translate(-50%, -50%);
       clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
       border: 1px solid rgba(255, 255, 255, 0.2);
@@ -168,7 +169,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      gap: calc(4px * var(--zoom, 1));
       user-select: none;
     }
 
@@ -180,12 +181,12 @@
     .hex.desert { background: var(--desert); color: #2a2417; }
 
     .number {
-      width: 28px;
-      height: 28px;
+      width: calc(28px * var(--zoom, 1));
+      height: calc(28px * var(--zoom, 1));
       border-radius: 999px;
       background: #f4e8c8;
       color: #272727;
-      font-size: 14px;
+      font-size: calc(14px * var(--zoom, 1));
       font-weight: 800;
       display: flex;
       align-items: center;
@@ -197,7 +198,7 @@
     /* ── Active Player Banner ── */
     #turn-banner {
       position: fixed;
-      top: 0; left: 0; right: 0;
+      top: calc(48px + env(safe-area-inset-top)); left: 0; right: 0;
       height: 44px;
       display: flex;
       align-items: center;
@@ -255,9 +256,7 @@
     #turn-banner.ai-thinking .banner-action {
       animation: ai-think 0.8s ease-in-out infinite;
     }
-    /* Adjust body so banner doesn't overlap content */
-    body { padding-top: 44px; }
-    #app { min-height: calc(100dvh - 44px); }
+    /* banner offset handled with shared-wallet safe area */
 
     @keyframes dice-roll {
       0% { transform: scale(1.2) rotate(-5deg); }
@@ -306,8 +305,8 @@
 
     .vertex {
       position: absolute;
-      width: 16px;
-      height: 16px;
+      width: calc(16px * var(--zoom, 1));
+      height: calc(16px * var(--zoom, 1));
       border-radius: 999px;
       transform: translate(-50%, -50%);
       border: 2px solid rgba(255, 255, 255, 0.7);
@@ -324,15 +323,15 @@
     .vertex.settlement,
     .vertex.city {
       border: none;
-      width: 20px;
-      height: 20px;
+      width: calc(20px * var(--zoom, 1));
+      height: calc(20px * var(--zoom, 1));
       border-radius: 50%;
       cursor: default;
       transform: translate(-50%, -50%);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
+      font-size: calc(11px * var(--zoom, 1));
       font-weight: 800;
       color: #fff;
       text-shadow: 0 1px 2px rgba(0,0,0,0.5);
@@ -342,10 +341,10 @@
     }
 
     .vertex.city {
-      width: 30px;
-      height: 30px;
+      width: calc(30px * var(--zoom, 1));
+      height: calc(30px * var(--zoom, 1));
       border-radius: 6px;
-      font-size: 13px;
+      font-size: calc(13px * var(--zoom, 1));
       border: 2px solid rgba(255, 255, 255, 0.95);
       box-shadow:
         0 0 0 2px rgba(255,255,255,0.95),
@@ -383,7 +382,7 @@
 
     .edge {
       position: absolute;
-      height: 8px;
+      height: calc(8px * var(--zoom, 1));
       transform-origin: left center;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.16);
@@ -398,7 +397,7 @@
     }
 
     .edge.road {
-      height: 10px;
+      height: calc(10px * var(--zoom, 1));
       border: 1px solid rgba(0, 0, 0, 0.35);
     }
 
@@ -718,7 +717,10 @@
 
     const DEV_CARD_DECK = [
       ...Array(14).fill("knight"),
-      ...Array(5).fill("vp")
+      ...Array(5).fill("vp"),
+      ...Array(2).fill("road_building"),
+      ...Array(2).fill("year_of_plenty"),
+      ...Array(2).fill("monopoly")
     ];
     const PLAYER_COLORS = ["#e94560", "#4ecca3", "#ffd700", "#9b59b6"];
     const ACTION = {
@@ -1330,19 +1332,49 @@
       return (p.devCards || []).some(c => c.type === "knight" && c.turnBought < state.turnNumber && !c.played);
     }
 
+    function hasPlayableMonopoly(playerIdx) {
+      const p = state.players[playerIdx];
+      if (!p) return false;
+      return (p.devCards || []).some(c => c.type === "monopoly" && c.turnBought < state.turnNumber && !c.played);
+    }
+
+    function playMonopoly(playerIdx, resource) {
+      const p = state.players[playerIdx];
+      if (!p || !RESOURCES.includes(resource)) return { ok: false, gained: 0 };
+      const card = (p.devCards || []).find(c => c.type === "monopoly" && c.turnBought < state.turnNumber && !c.played);
+      if (!card) return { ok: false, gained: 0 };
+      card.played = true;
+      let gained = 0;
+      for (let i = 0; i < state.players.length; i += 1) {
+        if (i === playerIdx) continue;
+        const amount = state.players[i].resources[resource] || 0;
+        if (amount > 0) {
+          state.players[i].resources[resource] = 0;
+          p.resources[resource] += amount;
+          gained += amount;
+        }
+      }
+      recalcAllVP();
+      return { ok: true, gained };
+    }
+
     function playKnight(playerIdx, hexIndex, victimIdx) {
       const p = state.players[playerIdx];
       const card = (p.devCards || []).find(c => c.type === "knight" && c.turnBought < state.turnNumber && !c.played);
       if (!card) return false;
       card.played = true;
       p.knights += 1;
-      // Largest army: 3+ knights, most knights
+      // Largest army: 3+ knights, most knights (tie keeps current holder)
       const knights = state.players.map(pl => pl.knights);
       const maxKnights = Math.max(...knights);
-      if (maxKnights >= 3) {
-        const newHolder = knights.findIndex(k => k === maxKnights);
-        if (state.largestArmy !== newHolder) {
-          state.largestArmy = newHolder;
+      if (maxKnights < 3) {
+        state.largestArmy = null;
+      } else {
+        const leaders = knights.map((v, i) => ({ v, i })).filter(x => x.v === maxKnights);
+        if (leaders.length === 1) {
+          state.largestArmy = leaders[0].i;
+        } else if (!(state.largestArmy !== null && leaders.some(x => x.i === state.largestArmy))) {
+          state.largestArmy = null;
         }
       }
       const result = moveRobber(hexIndex, victimIdx);
@@ -1822,6 +1854,23 @@
       render();
     }
 
+    function humanUseMonopoly() {
+      if (!isHumanTurn() || state.phase !== "main" || state.winner) return;
+      const me = localPlayerIndex();
+      if (!hasPlayableMonopoly(me)) { state.hint = "사용 가능한 모노폴리 카드가 없습니다."; render(); return; }
+      const pick = RESOURCES.map(r => `${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]}`).join("\n");
+      const answer = window.prompt(`모노폴리 카드: 가져올 자원 선택\n${pick}\n\n입력: brick / lumber / wool / grain / ore`, "grain");
+      if (!answer) return;
+      const resource = String(answer).trim().toLowerCase();
+      const result = playMonopoly(me, resource);
+      if (!result.ok) { state.hint = "모노폴리 사용 실패"; render(); return; }
+      SFX.card();
+      state.canEndTurn = true;
+      state.hint = `모노폴리 사용: ${RESOURCE_ICONS[resource]} ${result.gained}개 획득`;
+      showToast(`💰 모노폴리! ${RESOURCE_NAMES[resource]} ${result.gained}개`);
+      render();
+    }
+
     function humanBuildSettlement() {
       if (!isHumanTurn()) return;
       state.buildMode = state.buildMode === "settlement" ? null : "settlement";
@@ -2059,6 +2108,19 @@
           state.phase = "main"; state.canEndTurn = true;
         }
         if (state.winner) { render(); return; }
+
+        // Optional dev-card timing: monopoly when clearly profitable
+        if (hasPlayableMonopoly(pIdx)) {
+          const best = RESOURCES.map(r => ({ r, total: state.players.reduce((sum, pl, i) => sum + (i === pIdx ? 0 : (pl.resources[r] || 0)), 0) }))
+            .sort((a, b) => b.total - a.total)[0];
+          if (best && best.total >= 3) {
+            const m = playMonopoly(pIdx, best.r);
+            if (m.ok) {
+              state.hint = `${p.name} 모노폴리 사용: ${RESOURCE_NAMES[best.r]} ${m.gained}개`; 
+              render();
+            }
+          }
+        }
 
         // ── Build loop ────────────────────────────────────────────────────
         let safety = 15, buildsDone = 0;
@@ -2314,9 +2376,9 @@
       const mapH = Math.round(620 * zoom);
       const vBuild = buildableVertexSet();
       const eBuild = buildableEdgeSet();
-      let html = `<div class="map-wrap">`;
+      let html = `<div class="map-wrap" id="map-wrap">`;
       html += `<div class="map-zoom-controls"><button onclick="zoomOutMap()">−</button><button onclick="zoomInMap()">+</button></div>`;
-      html += `<div class="board" style="width:${mapW}px;height:${mapH}px;">`;
+      html += `<div class="board" style="width:${mapW}px;height:${mapH}px;--zoom:${zoom};">`;
       for (const hex of state.hexes) {
         const c = state.geometry.centers[hex.index];
         const p = mapPixel(c.x, c.y, mapW, mapH);
@@ -2348,7 +2410,8 @@
           const isHuman = ownerIdx === 0 && !isMultiMode();
           const isJustPlaced = v.index === state.lastPlacedVertex;
           const cityTarget = state.buildMode === "city" && vBuild.has(v.index) && v.building === "settlement";
-          html += `<div class="vertex ${v.building} player-${ownerIdx}${isHuman ? " human-player" : ""}${isJustPlaced ? " just-placed" : ""}${cityTarget ? " city-target" : ""}" style="left:${p.x}px;top:${p.y}px;--owner-color:${state.players[ownerIdx].color};background:${state.players[ownerIdx].color};color:#fff;" title="${state.players[ownerIdx].name} ${label}"></div>`;
+          const cityClick = cityTarget ? ` onclick="onVertexClick(${v.index})"` : "";
+          html += `<div class="vertex ${v.building} player-${ownerIdx}${isHuman ? " human-player" : ""}${isJustPlaced ? " just-placed" : ""}${cityTarget ? " city-target" : ""}" style="left:${p.x}px;top:${p.y}px;--owner-color:${state.players[ownerIdx].color};background:${state.players[ownerIdx].color};color:#fff;" title="${state.players[ownerIdx].name} ${label}"${cityClick}></div>`;
         } else {
           const cls = ["vertex", vBuild.has(v.index) ? "buildable" : ""].join(" ");
           html += `<div class="${cls}" style="left:${p.x}px; top:${p.y}px;" onclick="onVertexClick(${v.index})"></div>`;
@@ -2498,7 +2561,7 @@
             <div class="vp-progress"><div class="vp-progress-fill" style="width:${vpPct}%;"></div></div>
           </div>
           ${myTurn ? `<div class="turn-timer"><div class="turn-timer-label">턴 타이머: ${state.turnTimeLeft}s</div><div class="turn-timer-bar"><div class="turn-timer-fill" style="width:${turnPct}%;"></div></div></div>` : ""}
-          ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':'⭐VP').join(' ')}</div>` : ""}
+          ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':c.type==='vp'?'⭐VP':c.type==='monopoly'?'💰모노폴리':c.type==='road_building'?'🛣️도로':c.type==='year_of_plenty'?'🌾풍년':'🃏').join(' ')}</div>` : ""}
           <div class="actions">
             <button id="diceDisplay" class="primary" ${canRoll ? "" : "disabled"} onclick="rollDice()">주사위</button>
             <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${costLabel(COST.road, idx)}</button>
@@ -2507,6 +2570,7 @@
             <button ${(actionState.canMain && canHumanTrade(localPlayerIndex())) ? "" : "disabled"} onclick="humanTrade()">거래</button>
             <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
             <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사</button>
+            <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
             <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
             ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">방 나가기</button>` : ""}
           </div>
@@ -2961,6 +3025,7 @@
     window.humanBuildCity = humanBuildCity;
     window.humanBuyDevCard = humanBuyDevCard;
     window.humanUseKnight = humanUseKnight;
+    window.humanUseMonopoly = humanUseMonopoly;
     window.humanTrade = humanTrade;
     window.selectTradeGive = selectTradeGive;
     window.selectTradeGet = selectTradeGet;
