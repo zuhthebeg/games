@@ -105,6 +105,20 @@
       flex: 0 0 auto;
     }
 
+    .port-label {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      background: rgba(7, 18, 27, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 6px;
+      padding: 2px 5px;
+      font-size: 9px;
+      pointer-events: none;
+      z-index: 5;
+      white-space: nowrap;
+      color: var(--text);
+    }
+
     .map-zoom-controls {
       position: sticky;
       top: 8px;
@@ -405,6 +419,7 @@
       longestRoad: null,
       largestArmy: null,
       devDeck: [],
+      ports: [],
       turnNumber: 0,
       setupRound: 1,
       setupOrderIndex: 0,
@@ -464,6 +479,7 @@
       state.longestRoad = null;
       state.largestArmy = null;
       state.devDeck = shuffle(DEV_CARD_DECK.slice());
+      state.ports = [];
       state.turnNumber = 0;
       state.setupRound = 1;
       state.setupOrderIndex = 0;
@@ -586,6 +602,40 @@
       state.edges = edges;
       state.geometry = { centers, minX: bounds.minX, minY: bounds.minY, maxX: bounds.maxX, maxY: bounds.maxY, size };
       state.robber = state.hexes.findIndex(h => h.type === "desert");
+      state.ports = generatePorts();
+    }
+
+    function generatePorts() {
+      // Find perimeter vertices (touching ≤ 2 hexes) sorted by angle from center
+      const perim = state.vertices
+        .filter(v => v.hexes.length <= 2)
+        .map(v => ({ idx: v.index, angle: Math.atan2(v.y, v.x) }))
+        .sort((a, b) => a.angle - b.angle);
+
+      // Pick 18 evenly-spaced perimeter vertices → 9 pairs
+      const step = Math.floor(perim.length / 18);
+      const selected = [];
+      for (let i = 0; i < 18; i++) {
+        const vi = perim[(i * step) % perim.length];
+        selected.push(vi.idx);
+      }
+
+      const portTypes = shuffle([
+        { type: "generic", ratio: 3 },
+        { type: "generic", ratio: 3 },
+        { type: "generic", ratio: 3 },
+        { type: "generic", ratio: 3 },
+        { type: "brick", ratio: 2 },
+        { type: "lumber", ratio: 2 },
+        { type: "wool", ratio: 2 },
+        { type: "grain", ratio: 2 },
+        { type: "ore", ratio: 2 }
+      ]);
+
+      return portTypes.map((pt, i) => ({
+        ...pt,
+        vertices: [selected[i * 2], selected[i * 2 + 1]]
+      }));
     }
 
     function buildGraph(hexes) {
@@ -811,6 +861,67 @@
         n -= 1;
       }
       return removed;
+    }
+
+    function getBestTradeRatio(playerIdx, resourceType) {
+      let best = 4;
+      for (const port of (state.ports || [])) {
+        const hasPort = port.vertices.some(vIdx => {
+          const v = state.vertices[vIdx];
+          return v && v.owner === playerIdx;
+        });
+        if (!hasPort) continue;
+        if (port.type === "generic" && port.ratio < best) best = port.ratio;
+        if (port.type === resourceType && port.ratio < best) best = port.ratio;
+      }
+      return best;
+    }
+
+    function applyPortTrade(playerIdx, give, get) {
+      const p = state.players[playerIdx];
+      if (!p || give === get || !RESOURCES.includes(give) || !RESOURCES.includes(get)) return false;
+      const ratio = getBestTradeRatio(playerIdx, give);
+      if ((p.resources[give] || 0) < ratio) return false;
+      p.resources[give] -= ratio;
+      p.resources[get] += 1;
+      return true;
+    }
+
+    function canHumanTrade(playerIdx) {
+      const p = state.players[playerIdx];
+      if (!p) return false;
+      return RESOURCES.some(r => (p.resources[r] || 0) >= getBestTradeRatio(playerIdx, r));
+    }
+
+    function humanTrade() {
+      if (!isHumanTurn() || state.phase !== "main" || state.winner) return;
+      const pIdx = localPlayerIndex();
+      const p = state.players[pIdx];
+      if (!p) return;
+      // Open simple trade picker: best trade available toward nearest build goal
+      const goals = [COST.city, COST.settlement, COST.road, COST.devCard];
+      for (const cost of goals) {
+        const missing = Object.entries(cost).find(([r, need]) => (p.resources[r] || 0) < need);
+        if (!missing) continue;
+        const [need] = missing;
+        for (const give of [...RESOURCES].sort((a, b) => {
+          const rA = getBestTradeRatio(pIdx, a);
+          const rB = getBestTradeRatio(pIdx, b);
+          return ((p.resources[b] || 0) / rB) - ((p.resources[a] || 0) / rA);
+        })) {
+          if (give !== need && (p.resources[give] || 0) >= getBestTradeRatio(pIdx, give)) {
+            if (applyPortTrade(pIdx, give, need)) {
+              state.canEndTurn = true;
+              const ratio = getBestTradeRatio(pIdx, give);
+              state.hint = `거래: ${RESOURCE_ICONS[give]}×${ratio} → ${RESOURCE_ICONS[need]}×1`;
+              render();
+              return;
+            }
+          }
+        }
+      }
+      state.hint = "거래 가능한 조합이 없습니다.";
+      render();
     }
 
     function buyDevCard(playerIdx, free = false) {
@@ -1450,8 +1561,8 @@
             const targetCost = canAfford(p, COST.city)
               ? (canAfford(p, COST.settlement) ? COST.road : COST.settlement)
               : COST.city;
-            const trade = ai.chooseBankTrade(p.resources, targetCost);
-            if (trade && applyBankTrade(pIdx, trade.give, trade.get)) {
+            const trade = ai.chooseBankTrade(p.resources, targetCost, (r) => getBestTradeRatio(pIdx, r));
+            if (trade && applyPortTrade(pIdx, trade.give, trade.get)) {
               continue;
             }
           }
@@ -1708,6 +1819,18 @@
           html += `<div class="${cls}" style="left:${p.x}px; top:${p.y}px;" onclick="onVertexClick(${v.index})"></div>`;
         }
       }
+      // Render ports
+      const portIcons = { brick:"🧱", lumber:"🪵", wool:"🐑", grain:"🌾", ore:"⛏️", generic:"⚓" };
+      for (const port of (state.ports || [])) {
+        const va = state.vertices[port.vertices[0]];
+        const vb = state.vertices[port.vertices[1]];
+        if (!va || !vb) continue;
+        const pa = mapPixel(va.x, va.y, mapW, mapH);
+        const pb = mapPixel(vb.x, vb.y, mapW, mapH);
+        const mx = (pa.x + pb.x) / 2;
+        const my = (pa.y + pb.y) / 2;
+        html += `<div class="port-label" style="left:${mx}px;top:${my}px;">${portIcons[port.type] || "⚓"} ${port.ratio}:1</div>`;
+      }
       html += `</div></div>`;
       return html;
     }
@@ -1838,6 +1961,7 @@
             <button ${actionState.canRoad ? "" : "disabled"} onclick="humanBuildRoad()">도로</button>
             <button ${actionState.canSettlement ? "" : "disabled"} onclick="humanBuildSettlement()">마을</button>
             <button ${actionState.canCity ? "" : "disabled"} onclick="humanBuildCity()">도시</button>
+            <button ${(actionState.canMain && canHumanTrade(localPlayerIndex())) ? "" : "disabled"} onclick="humanTrade()">거래</button>
             <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드</button>
             <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사</button>
             <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
@@ -2124,6 +2248,7 @@
     window.humanBuildCity = humanBuildCity;
     window.humanBuyDevCard = humanBuyDevCard;
     window.humanUseKnight = humanUseKnight;
+    window.humanTrade = humanTrade;
     window.onVertexClick = onVertexClick;
     window.onEdgeClick = onEdgeClick;
     window.onHexClick = onHexClick;

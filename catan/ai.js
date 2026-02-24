@@ -182,11 +182,12 @@
     return false;
   }
 
-  function chooseBankTrade(resources, targetCost) {
+  function chooseBankTrade(resources, targetCost, getRatio) {
+    const ratio = getRatio || (() => 4);
     const entries = Object.entries(resources || {});
     const givers = entries
-      .filter(([, count]) => count >= 4)
-      .sort((a, b) => b[1] - a[1]);
+      .filter(([res, count]) => count >= ratio(res))
+      .sort((a, b) => (b[1] / ratio(b[0])) - (a[1] / ratio(a[0])));
     if (!givers.length) return null;
 
     const deficits = Object.entries(targetCost || {})

@@ -122,3 +122,14 @@ test('chooseBankTrade picks 4:1 trade toward missing build resources', () => {
   const t3 = AI.chooseBankTrade({ brick: 1, lumber: 1, wool: 1, grain: 1, ore: 1 }, { brick: 1, lumber: 1 });
   assert.equal(t3, null);
 });
+
+test('chooseBankTrade uses custom ratio function (harbor 2:1)', () => {
+  const resources = { brick: 2, lumber: 0, wool: 0, grain: 0, ore: 0 };
+  const getRatio = (r) => r === 'brick' ? 2 : 4;
+  const t = AI.chooseBankTrade(resources, { brick: 1, lumber: 1 }, getRatio);
+  assert.deepEqual(t, { give: 'brick', get: 'lumber' });
+
+  // Without harbor, 2 brick not enough (needs 4)
+  const t2 = AI.chooseBankTrade(resources, { brick: 1, lumber: 1 });
+  assert.equal(t2, null);
+});
