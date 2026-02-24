@@ -138,6 +138,20 @@
       line-height: 1;
       background: rgba(7, 18, 27, 0.92);
     }
+    .cost-hint {
+      font-size: 9px;
+      opacity: 0.7;
+      display: block;
+      line-height: 1.2;
+      margin-top: 1px;
+    }
+    .missing-res {
+      color: #e95b5b;
+      font-size: 9px;
+      display: block;
+      margin-top: 1px;
+    }
+    button:disabled .cost-hint { opacity: 0.45; }
 
     .hex {
       position: absolute;
@@ -2153,6 +2167,7 @@
 
     function renderGameScreen() {
       const myIdx = localPlayerIndex();
+      const idx = myIdx >= 0 ? myIdx : 0;
       const me = state.players[myIdx >= 0 ? myIdx : 0];
       const others = state.players.filter((_, i) => i !== (myIdx >= 0 ? myIdx : 0));
       const myTurn = isHumanTurn();
@@ -2176,11 +2191,11 @@
           ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':'⭐VP').join(' ')}</div>` : ""}
           <div class="actions">
             <button id="diceDisplay" class="primary" ${canRoll ? "" : "disabled"} onclick="rollDice()">주사위</button>
-            <button ${actionState.canRoad ? "" : "disabled"} onclick="humanBuildRoad()">도로</button>
-            <button ${actionState.canSettlement ? "" : "disabled"} onclick="humanBuildSettlement()">마을</button>
-            <button ${actionState.canCity ? "" : "disabled"} onclick="humanBuildCity()">도시</button>
+            <button ${actionState.canRoad ? "" : "disabled"} onclick="humanBuildRoad()">도로${costLabel(COST.road, idx)}</button>
+            <button ${actionState.canSettlement ? "" : "disabled"} onclick="humanBuildSettlement()">마을${costLabel(COST.settlement, idx)}</button>
+            <button ${actionState.canCity ? "" : "disabled"} onclick="humanBuildCity()">도시${costLabel(COST.city, idx)}</button>
             <button ${(actionState.canMain && canHumanTrade(localPlayerIndex())) ? "" : "disabled"} onclick="humanTrade()">거래</button>
-            <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드</button>
+            <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
             <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사</button>
             <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
             ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">방 나가기</button>` : ""}
@@ -2625,6 +2640,17 @@
         <span class="banner-action">${action}</span>
         <div class="banner-vps">${vpChips}</div>
       `;
+    }
+
+    function costLabel(cost, playerIdx) {
+      const p = state.players[playerIdx];
+      if (!p) return "";
+      const ICONS = { brick: "🧱", lumber: "🪵", wool: "🐑", grain: "🌾", ore: "⛏️" };
+      const parts = Object.entries(cost).map(([r, n]) => {
+        const have = p.resources[r] || 0;
+        return have >= n ? `${ICONS[r]}${n}` : `<span style="color:#e95b5b">${ICONS[r]}${n}</span>`;
+      });
+      return `<span class="cost-hint">${parts.join(" ")}</span>`;
     }
 
     (async function boot() {
