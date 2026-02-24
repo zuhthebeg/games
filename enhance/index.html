@@ -1971,6 +1971,23 @@
         }
         .my-ranking-label { font-size: 0.8rem; color: var(--muted); }
         .my-ranking-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+
+        #soundModal {
+          display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8);
+          z-index:9999; align-items:center; justify-content:center;
+        }
+        #soundModal.open { display:flex; }
+        .sound-modal-box {
+          background:#1a1a2e; border:1px solid #333; border-radius:16px;
+          padding:24px; width:300px; max-width:90vw;
+        }
+        .sound-modal-box h3 { color:#eee; margin-bottom:16px; font-size:1rem; }
+        .sound-option-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid #222; }
+        .sound-option-row:last-child { border-bottom:none; }
+        .sound-option-label { color:#aaa; font-size:0.9rem; }
+        .sound-btn-group { display:flex; gap:6px; }
+        .sound-btn { padding:5px 10px; border-radius:8px; border:1px solid #444; background:#0d0d0d; color:#aaa; font-size:0.8rem; cursor:pointer; }
+        .sound-btn.active { background:#e94560; color:#fff; border-color:#e94560; }
     </style>
 </head>
 <body>
@@ -1988,6 +2005,27 @@
         <button class="result-btn" id="resultBtn" onclick="closeResult()">확인</button>
     </div>
     <canvas class="confetti" id="confetti"></canvas>
+    <div id="soundModal">
+      <div class="sound-modal-box">
+        <h3>🔊 사운드 설정</h3>
+        <div class="sound-option-row">
+          <span class="sound-option-label">효과음</span>
+          <div class="sound-btn-group">
+            <button class="sound-btn" id="snd-off" onclick="setSoundMode('off')">🔇 끄기</button>
+            <button class="sound-btn" id="snd-default" onclick="setSoundMode('default')">기본음</button>
+            <button class="sound-btn" id="snd-new" onclick="setSoundMode('new')">새 사운드</button>
+          </div>
+        </div>
+        <div class="sound-option-row">
+          <span class="sound-option-label">몬스터 대사<br><small style="color:#666">AI 대사 + 음성 읽기</small></span>
+          <div class="sound-btn-group">
+            <button class="sound-btn" id="dlg-on" onclick="setDialogue(true)">켜기</button>
+            <button class="sound-btn" id="dlg-off" onclick="setDialogue(false)">끄기</button>
+          </div>
+        </div>
+        <button onclick="closeSoundSettings()" style="margin-top:16px;width:100%;padding:10px;background:#333;border:none;border-radius:8px;color:#eee;cursor:pointer;">닫기</button>
+      </div>
+    </div>
 
     <script>
         // ===== SOUND EFFECTS (Web Audio API) =====
@@ -2813,33 +2851,50 @@
         let battleState = null;
         let cachedMyId = null;  // Cache user ID for use after client is destroyed
         
-        // ========== SOUND SYSTEM ==========
+        // ========== NEW SFX SYSTEM ==========
         const SFX = {
             ctx: null,
             buffers: {},
-            muted: localStorage.getItem('enhance_mute') === '1',
             files: {
-                'enhance-success': '/enhance/sfx/enhance-success.ogg',
-                'enhance-fail':    '/enhance/sfx/enhance-fail.ogg',
-                'enhance-destroy': '/enhance/sfx/enhance-destroy.ogg',
-                'battle-start':    '/enhance/sfx/battle-start.ogg',
-                'battle-win':      '/enhance/sfx/battle-win.ogg',
-                'battle-lose':     '/enhance/sfx/battle-lose.ogg',
-                'purchase':        '/enhance/sfx/purchase.ogg',
-                'levelup':         '/enhance/sfx/levelup.ogg',
+                // 기존 효과음
+                'enhance-success':   '/enhance/sfx/enhance-success.ogg',
+                'enhance-fail':      '/enhance/sfx/enhance-fail.ogg',
+                'enhance-destroy':   '/enhance/sfx/enhance-destroy.ogg',
+                'battle-start':      '/enhance/sfx/battle-start.ogg',
+                'battle-win':        '/enhance/sfx/battle-win.ogg',
+                'battle-lose':       '/enhance/sfx/battle-lose.ogg',
+                'purchase':          '/enhance/sfx/purchase.ogg',
+                'levelup':           '/enhance/sfx/levelup.ogg',
+                // 강화 성공 레벨별
+                'enhance-success-1': '/enhance/sfx/enhance-success-1.ogg',
+                'enhance-success-2': '/enhance/sfx/enhance-success-2.ogg',
+                'enhance-success-3': '/enhance/sfx/enhance-success-3.ogg',
+                'enhance-success-4': '/enhance/sfx/enhance-success-4.ogg',
+                // 무기 타입별 공격음
+                'attack-sword':      '/enhance/sfx/attack-sword.ogg',
+                'attack-axe':        '/enhance/sfx/attack-axe.ogg',
+                'attack-spear':      '/enhance/sfx/attack-spear.ogg',
+                'attack-hammer':     '/enhance/sfx/attack-hammer.ogg',
+                'attack-dagger':     '/enhance/sfx/attack-dagger.ogg',
+                'attack-staff':      '/enhance/sfx/attack-staff.ogg',
+                'attack-katana':     '/enhance/sfx/attack-katana.ogg',
+                'attack-bow':        '/enhance/sfx/attack-bow.ogg',
+                'attack-crossbow':   '/enhance/sfx/attack-crossbow.ogg',
             },
             init() {
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                // preload all
                 Object.entries(this.files).forEach(([key, url]) => {
-                    fetch(url).then(r => r.arrayBuffer())
-                        .then(buf => this.ctx.decodeAudioData(buf))
-                        .then(decoded => { this.buffers[key] = decoded; })
-                        .catch(() => {}); // 파일 없으면 무시
+                    fetch(url).then(r => r.ok ? r.arrayBuffer() : null)
+                        .then(buf => buf ? this.ctx.decodeAudioData(buf) : null)
+                        .then(decoded => { if (decoded) this.buffers[key] = decoded; })
+                        .catch(() => {});
                 });
             },
             play(name, volume = 1.0) {
-                if (this.muted || !this.ctx || !this.buffers[name]) return;
+                if (soundMode === 'off') return;
+                if (soundMode === 'default') { playSound(name); return; }
+                // 'new' mode
+                if (!this.ctx || !this.buffers[name]) return;
                 const src = this.ctx.createBufferSource();
                 const gain = this.ctx.createGain();
                 src.buffer = this.buffers[name];
@@ -2848,18 +2903,64 @@
                 gain.connect(this.ctx.destination);
                 src.start(0);
             },
-            toggle() {
-                this.muted = !this.muted;
-                localStorage.setItem('enhance_mute', this.muted ? '1' : '0');
-                return this.muted;
+            // 강화 성공: 레벨에 따라 다른 사운드
+            playEnhanceSuccess(weaponLevel) {
+                if (soundMode === 'off') return;
+                if (soundMode === 'default') { playSound('success'); return; }
+                let key;
+                if (weaponLevel <= 5)       key = 'enhance-success-1';
+                else if (weaponLevel <= 10) key = 'enhance-success-2';
+                else if (weaponLevel <= 15) key = 'enhance-success-3';
+                else                        key = 'enhance-success-4';
+                this.play(key);
+            },
+            // 무기 타입별 공격음
+            playAttack(weaponType) {
+                if (soundMode === 'off') return;
+                if (soundMode === 'default') { playSound('attack'); return; }
+                const validTypes = ['sword','axe','spear','hammer','dagger','staff','katana','bow','crossbow'];
+                const key = validTypes.includes(weaponType) ? `attack-${weaponType}` : 'attack-sword';
+                this.play(key, 0.8);
             }
         };
 
-        // Init on first user interaction
-        document.addEventListener('click', () => {
-            if (!SFX.ctx) SFX.init();
-        }, { once: true });
-        // ========== END SOUND SYSTEM ==========
+        document.addEventListener('click', () => { if (!SFX.ctx) SFX.init(); }, { once: true });
+        // ========== END SFX SYSTEM ==========
+
+        function openSoundSettings() {
+            document.getElementById('soundModal').classList.add('open');
+            updateSoundUI();
+        }
+        function closeSoundSettings() {
+            document.getElementById('soundModal').classList.remove('open');
+        }
+        function updateSoundUI() {
+            ['off','default','new'].forEach(m => {
+                const el = document.getElementById(`snd-${m}`);
+                if (el) el.classList.toggle('active', soundMode === m);
+            });
+            document.getElementById('dlg-on')?.classList.toggle('active', dialogueEnabled);
+            document.getElementById('dlg-off')?.classList.toggle('active', !dialogueEnabled);
+            // Update button icon
+            const btn = document.getElementById('soundSettingsBtn');
+            if (btn) btn.textContent = soundMode === 'off' ? '🔇' : '🔊';
+        }
+        function setSoundMode(mode) {
+            soundMode = mode;
+            localStorage.setItem('enhance_sound_mode', mode);
+            if (mode !== 'off' && !SFX.ctx) SFX.init();
+            updateSoundUI();
+        }
+        function setDialogue(enabled) {
+            dialogueEnabled = enabled;
+            localStorage.setItem('enhance_dialogue', enabled ? '1' : '0');
+            if (!enabled) window.speechSynthesis?.cancel();
+            updateSoundUI();
+        }
+        // Close modal on backdrop click
+        document.getElementById('soundModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeSoundSettings();
+        });
 
         // ===== WEAPON GENERATION =====
         function generateWeapon(forceGrade = null) {
@@ -3335,8 +3436,9 @@
                 <div class="container">
                     <header style="position:relative;">
                         <h1>⚔️ 무기 강화 & 배틀</h1>
-                        <button id="muteBtn" onclick="const m=SFX.toggle();this.textContent=m?'🔇':'🔊'" 
-                          style="position:absolute;right:10px;top:10px;background:none;border:none;font-size:1.3rem;cursor:pointer;opacity:0.7">🔊</button>
+                        <button id="soundSettingsBtn" onclick="openSoundSettings()" 
+                          style="position:absolute;right:10px;top:10px;background:none;border:none;font-size:1.3rem;cursor:pointer;opacity:0.7;z-index:100"
+                          title="사운드 설정">🔊</button>
                         <p class="subtitle">강화하고 싸워서 돈을 벌어라!</p>
                     </header>
 
@@ -3777,7 +3879,7 @@
 
             const weaponIcon = document.getElementById('weaponIcon');
             weaponIcon.classList.add('shake');
-            playSound('enhance');
+            SFX.play('enhance-success-1', 0.3);
             vibrate(50);
             setTimeout(() => weaponIcon.classList.remove('shake'), 500);
 
@@ -3793,7 +3895,7 @@
                 result = 'success';
                 state.stats.successes++;
                 setTimeout(() => {
-                    playSound('success');
+                    SFX.playEnhanceSuccess(toLevel);
                     vibrate([50, 50, 100]);
                     weaponIcon.classList.add('glow-success');
                 }, 300);
@@ -3824,7 +3926,7 @@
                 }
                 
                 setTimeout(() => {
-                    playSound('destroy');
+                    SFX.play('enhance-destroy');
                     vibrate([100, 50, 100, 50, 200]);
                     weaponIcon.classList.add('glow-fail');
                     document.body.classList.add('screen-shake');
@@ -3844,7 +3946,7 @@
                     state.consecutiveEnhanceFails = 0;
                 }
                 setTimeout(() => {
-                    playSound('fail');
+                    SFX.play('enhance-fail');
                     vibrate(100);
                     weaponIcon.classList.add('glow-fail');
                 }, 300);
@@ -5445,6 +5547,7 @@
         }
 
         function showBossDialogue(bossData) {
+            if (!dialogueEnabled) return;
             if (!bossData || !bossData.dialogue) return;
 
             // "dialogue:" 접두사 제거
@@ -5482,6 +5585,16 @@
                     i++;
                 } else {
                     clearInterval(typing);
+                    // TTS: 몬스터 대사 읽기
+                    if (dialogueEnabled && 'speechSynthesis' in window) {
+                      window.speechSynthesis.cancel(); // 이전 읽기 중단
+                      const utter = new SpeechSynthesisUtterance(dialogue.replace(/[^\w\s가-힣]/g, ''));
+                      utter.lang = /[가-힣]/.test(dialogue) ? 'ko-KR' : 'en-US';
+                      utter.rate = 0.9;
+                      utter.pitch = bossData.emotion === 'angry' ? 0.7 : 1.1;
+                      utter.volume = 0.8;
+                      window.speechSynthesis.speak(utter);
+                    }
                     // 특수 스킬 표시
                     if (bossData.action === 'special_skill' && bossData.skillName) {
                         setTimeout(() => {
@@ -5966,6 +6079,10 @@
             }, 2500);
         }
 
+        // 사운드 모드: 'off' | 'default' | 'new'
+        let soundMode = localStorage.getItem('enhance_sound_mode') || 'new';
+        // 몬스터 대사 표시+TTS 여부
+        let dialogueEnabled = localStorage.getItem('enhance_dialogue') !== '0';
         let enhanceCooldown = false;
         let repairCooldown = false;
         let huntAttackCooldown = false;
@@ -5987,7 +6104,7 @@
                     if (isCursed(state.weapon)) {
                         monster.currentHp = 0;
                         
-                        playSound('crit');
+                        SFX.playAttack(state.weapon?.type || 'sword'); SFX.play('levelup', 0.4);
                         vibrate([100, 50, 100, 50, 100, 50, 200]);
                         document.body.classList.add('screen-shake');
                         setTimeout(() => document.body.classList.remove('screen-shake'), 800);
@@ -6018,7 +6135,7 @@
                     player.hp = Math.max(0, player.hp - breakDamage);
                     monster.currentHp = Math.max(0, monster.currentHp - breakDamage);
                     
-                    playSound('destroy');
+                    SFX.play('enhance-destroy');
                     vibrate([200, 100, 200, 100, 300]);
                     document.body.classList.add('screen-shake');
                     setTimeout(() => document.body.classList.remove('screen-shake'), 500);
@@ -6090,7 +6207,7 @@
                 // 👿 저주받은 무기: 내구도 1 감소마다 적 즉사!
                 if (isCursed(state.weapon) && monster.currentHp > 0) {
                     monster.currentHp = 0;
-                    playSound('crit');
+                    SFX.playAttack(state.weapon?.type || 'sword'); SFX.play('levelup', 0.4);
                     vibrate([100, 50, 100]);
                     showCritEffect();
                     huntState.log.push({ type: 'crit', text: `👿 저주의 힘! 내구도 소모 → ${monster.name} 즉사!` });
@@ -6152,7 +6269,11 @@
                 lifestealHeal = player.hp - oldHp;  // 실제 회복량
             }
             
-            playSound(playerCrit ? 'crit' : 'attack');
+            if (playerCrit) {
+                SFX.playAttack(state.weapon?.type || 'sword'); SFX.play('levelup', 0.4);
+            } else {
+                SFX.playAttack(state.weapon?.type || 'sword');
+            }
             vibrate(playerCrit ? [50, 30, 100] : 50);
             
             // 속성 효과 텍스트
@@ -6173,7 +6294,7 @@
                 state.weapon.weaponMastery.crits++;
                 state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - 50);
                 
-                playSound('crit');
+                SFX.playAttack(state.weapon?.type || 'sword'); SFX.play('levelup', 0.4);
                 vibrate([100, 50, 100, 50, 100, 50, 200]);
                 showSlashEffect(getAttackEffect(true), 'monster');
                 showCritEffect();
