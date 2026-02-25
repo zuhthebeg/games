@@ -35,6 +35,13 @@ const STORAGE_BEST_KEY   = 'linerush_best_stage';
 const STORAGE_PLAYER_KEY = 'linerush_player_id';
 // (legacy) unlock key - kept for migration
 const STORAGE_UNLOCK_KEY = 'linerush_unlocked_stage';
+const ITEM_TYPES = ['freeze','speed','shield','slow'];
+const ITEM_EMOJI = { freeze:'✋',speed:'🏃',shield:'🛡',slow:'⌛' };
+const ITEM_DUR   = { freeze:5000, speed:4000, shield:7000, slow:6000 };
+const ITEM_LIFE  = 14000;
+const ITEM_BLINK = 5000;
+const ITEM_SPAWN = 20000;
+const MAX_ITEMS  = 3;
 
 function getLRPlayerId() {
   let id = localStorage.getItem(STORAGE_PLAYER_KEY);
@@ -271,6 +278,7 @@ class GameScene extends Phaser.Scene {
     this.claimedGfx = this.add.graphics().setDepth(2);
     this.trailGfx = this.add.graphics().setDepth(3).setBlendMode(Phaser.BlendModes.ADD);
     this.actorGfx = this.add.graphics().setDepth(4);
+    this.itemGfx  = this.add.graphics().setDepth(5);
 
     this.playerRow = 0;
     this.playerCol = Math.floor(COLS / 2);
@@ -282,6 +290,10 @@ class GameScene extends Phaser.Scene {
     this.moveDelay = 120;
     this.retractSpeedMul = 1.5;
     this.invuln = 0;
+
+    this.fx = { freeze: 0, speed: 0, slow: 0, shield: 0 };
+    this.items = [];
+    this.itemSpawnTimer = ITEM_SPAWN * 0.5; // first item at 10s
 
     const enemyCount = Math.min(8, this.stage + 1);
     this.enemies = [];
@@ -396,32 +408,64 @@ class GameScene extends Phaser.Scene {
       fontSize: '16px',
       color: '#ffb4d8'
     }).setOrigin(1, 0).setDepth(11);
+    this.hudFx = this.add.text(W / 2, H - 18, '', {
+      fontSize: '18px'
+    }).setOrigin(0.5, 1).setDepth(11);
 
     this.refreshHUD();
   }
 
   refreshHUD() {
-    this.hudLives.setText('❤️'.repeat(this.lives));
+    this.hudLives.setText('❤️'.repeat(Math.max(0, this.lives)));
     this.hudStage.setText(`STAGE ${this.stage}`);
     this.hudPercent.setText(`${this.percent}%`);
     this.hudScore.setText(`SCORE: ${this.score}`);
+    if (this.hudFx) {
+      const active = [];
+      if (this.fx?.freeze > 0) active.push('✋');
+      if (this.fx?.speed  > 0) active.push('🏃');
+      if (this.fx?.slow   > 0) active.push('⌛');
+      if (this.fx?.shield > 0) active.push('🛡');
+      this.hudFx.setText(active.join(' '));
+    }
   }
 
   update(time, delta) {
     this.moveTimer += delta;
 
-    const stepDelay = this.retracting ? this.moveDelay / this.retractSpeedMul : this.moveDelay;
+    const baseDelay = this.fx.speed > 0 ? this.moveDelay / 5 : this.moveDelay;
+    const stepDelay = this.retracting ? baseDelay / this.retractSpeedMul : baseDelay;
     if (this.moveTimer >= stepDelay) {
       if (this.retracting) {
         this.stepRetreat();
       } else {
         this.handleInput();
+        this.checkItemPickup();
       }
       this.moveTimer = 0;
     }
 
-    if (this.invuln > 0) {
-      this.invuln -= delta;
+    if (this.invuln > 0) this.invuln -= delta;
+
+    // fx timers
+    if (this.fx.freeze > 0) this.fx.freeze -= delta;
+    if (this.fx.speed  > 0) this.fx.speed  -= delta;
+    if (this.fx.slow   > 0) this.fx.slow   -= delta;
+    if (this.fx.shield > 0) this.fx.shield -= delta;
+
+    // item spawn + lifetime
+    this.itemSpawnTimer -= delta;
+    if (this.itemSpawnTimer <= 0 && this.items.length < MAX_ITEMS) {
+      this.spawnItem();
+      this.itemSpawnTimer = ITEM_SPAWN;
+    }
+    for (let i = this.items.length - 1; i >= 0; i--) {
+      const it = this.items[i];
+      it.timeLeft -= delta;
+      if (it.timeLeft <= 0) { it.label.destroy(); this.items.splice(i, 1); continue; }
+      if (it.timeLeft <= ITEM_BLINK) {
+        it.label.setAlpha(Math.floor(this.time.now / 250) % 2 === 0 ? 1 : 0.15);
+      }
     }
 
     this.updateEnemies(delta);
@@ -429,7 +473,7 @@ class GameScene extends Phaser.Scene {
     if (this.invuln <= 0) {
       this.checkCollisions();
     }
-
+    this.refreshHUD();
     this.drawGrid();
   }
 
@@ -493,8 +537,7 @@ class GameScene extends Phaser.Scene {
     }
 
     if (next === 1) {
-      // When safe (not drawing), only allow moving to frontier cells
-      if (!this.isDrawing && !this.isFrontier(nr, nc)) return;
+      // Allow movement to any claimed cell (frontier restriction removed — caused corner bug)
       this.playerRow = nr;
       this.playerCol = nc;
       if (this.isDrawing) {
@@ -623,17 +666,25 @@ class GameScene extends Phaser.Scene {
     const claimRegions = [regions[0]];
     const safeRegion   = regions[regions.length - 1];
 
-    if (regions.length > 1 && safeRegion.cells.length > 0) {
-      for (const e of this.enemies) {
-        const er = Phaser.Math.Clamp(Math.floor(e.y / CELL), 0, ROWS - 1);
-        const ec = Phaser.Math.Clamp(Math.floor(e.x / CELL), 0, COLS - 1);
-        if (claimRegions[0].cells.some(c => c.r === er && c.c === ec)) {
-          const target = safeRegion.cells[Phaser.Math.Between(0, safeRegion.cells.length - 1)];
-          e.x = target.c * CELL + CELL / 2;
-          e.y = target.r * CELL + CELL / 2;
-        }
+    // 포위된 몬스터 제거 (순간이동 대신 소멸)
+    const toKill = [];
+    for (const e of this.enemies) {
+      const er = Phaser.Math.Clamp(Math.floor(e.y / CELL), 0, ROWS - 1);
+      const ec = Phaser.Math.Clamp(Math.floor(e.x / CELL), 0, COLS - 1);
+      if (claimRegions.some(region => region.cells.some(c => c.r === er && c.c === ec))) {
+        toKill.push(e);
       }
     }
+    toKill.forEach(e => {
+      const burst = this.add.particles(e.x, e.y, 'pixel', {
+        speed: { min: 50, max: 200 }, lifespan: 400, quantity: 22,
+        scale: { start: 1.5, end: 0 }, tint: [0xff7848, 0xffd4a6, 0xffff66],
+        blendMode: 'ADD'
+      }).setDepth(9);
+      this.time.delayedCall(450, () => burst.destroy());
+    });
+    this.enemies = this.enemies.filter(e => !toKill.includes(e));
+    if (toKill.length > 0) this.score += toKill.length * 500 * this.stage;
 
     let gained = 0;
     for (const region of claimRegions) {
@@ -654,6 +705,11 @@ class GameScene extends Phaser.Scene {
       this.score += gained * 50 * this.stage;
       this.cameras.main.flash(300, 255, 255, 200);
       this.captureBurst();
+      // 10% 이상 한번에 획득 → 쉴드 발동
+      if (gained >= Math.ceil(this.total * 0.10)) {
+        this.activateShieldArc();
+        this.showItemMsg('10%↑ 방어막 발동!', 0x44ff88);
+      }
     }
 
     this.updateClaimStats();
@@ -745,7 +801,9 @@ class GameScene extends Phaser.Scene {
   }
 
   updateEnemies(delta) {
-    const dt = delta / 1000;
+    if (this.fx.freeze > 0) return; // frozen
+    const slowMul = this.fx.slow > 0 ? 0.5 : 1;
+    const dt = (delta / 1000) * slowMul;
     const px = this.playerCol * CELL + CELL / 2;
     const py = this.playerRow * CELL + CELL / 2;
 
@@ -822,7 +880,9 @@ class GameScene extends Phaser.Scene {
   }
 
   updateBullets(delta) {
-    const dt = delta / 1000;
+    if (this.fx.freeze > 0) return; // frozen
+    const slowMul = this.fx.slow > 0 ? 0.5 : 1;
+    const dt = (delta / 1000) * slowMul;
     for (let i = this.enemyBullets.length - 1; i >= 0; i--) {
       const b = this.enemyBullets[i];
       b.x += b.vx * dt;
@@ -933,8 +993,16 @@ class GameScene extends Phaser.Scene {
     this.enemyBullets = [];
     this.redrawOverlay();
 
+    // 죽을 때 랜덤 아이템 2개 드롭
+    this.spawnItem(); this.spawnItem();
+
     if (this.lives <= 0) {
-      this.scene.start('GameOver', { score: this.score, stage: this.stage });
+      const gold = window.SharedWallet?.gold || 0;
+      if (gold >= 100) {
+        this.showContinuePrompt();
+      } else {
+        this.scene.start('GameOver', { score: this.score, stage: this.stage });
+      }
       return;
     }
 
@@ -943,6 +1011,112 @@ class GameScene extends Phaser.Scene {
     this.playerCol = respawn.col;
     this.invuln = 900;
     this.refreshHUD();
+  }
+
+  spawnItem(forcedType = null) {
+    const free = [];
+    for (let r = 2; r < ROWS - 2; r++)
+      for (let c = 2; c < COLS - 2; c++)
+        if (this.grid[r][c] === 0) free.push({ r, c });
+    if (!free.length) return;
+    const cell = free[Phaser.Math.Between(0, free.length - 1)];
+    const type = forcedType || ITEM_TYPES[Phaser.Math.Between(0, ITEM_TYPES.length - 1)];
+    const cx = cell.c * CELL + CELL / 2;
+    const cy = cell.r * CELL + CELL / 2;
+    const label = this.add.text(cx, cy, ITEM_EMOJI[type], {
+      fontSize: '16px', stroke: '#000', strokeThickness: 2
+    }).setOrigin(0.5).setDepth(6);
+    this.items.push({ type, row: cell.r, col: cell.c, timeLeft: ITEM_LIFE, label });
+  }
+
+  checkItemPickup() {
+    for (let i = this.items.length - 1; i >= 0; i--) {
+      const it = this.items[i];
+      if (it.row === this.playerRow && it.col === this.playerCol) {
+        this.collectItem(it.type);
+        it.label.destroy();
+        this.items.splice(i, 1);
+      }
+    }
+  }
+
+  collectItem(type) {
+    const dur = ITEM_DUR[type];
+    const colors = { freeze: '#88ddff', speed: '#ffff88', shield: '#88ff88', slow: '#ffbb88' };
+    const msgs   = { freeze: '✋ 몬스터 정지!', speed: '🏃 5배 스피드!', shield: '🛡 방어막!', slow: '⌛ 감속!' };
+    this.showItemMsg(msgs[type], colors[type]);
+    if (type === 'shield') {
+      this.activateShieldArc();
+      this.fx.shield = dur;
+    } else {
+      this.fx[type] = Math.max(this.fx[type], dur);
+    }
+  }
+
+  showItemMsg(msg, color) {
+    const px = this.playerCol * CELL + CELL / 2;
+    const py = this.playerRow * CELL + CELL / 2;
+    const t = this.add.text(px, py - 18, msg, {
+      fontSize: '13px', color, stroke: '#000', strokeThickness: 3
+    }).setOrigin(0.5).setDepth(15);
+    this.tweens.add({ targets: t, y: py - 56, alpha: 0, duration: 1600,
+      onComplete: () => t.destroy() });
+  }
+
+  activateShieldArc() {
+    this.enemyBullets = [];
+    const px = this.playerCol * CELL + CELL / 2;
+    const py = this.playerRow * CELL + CELL / 2;
+    const g = this.add.graphics().setDepth(12);
+    let step = 0;
+    const ev = this.time.addEvent({ delay: 18, repeat: 35, callback: () => {
+      g.clear();
+      const r = 14 + step * 6;
+      g.lineStyle(3, 0x44ff88, Math.max(0, 0.9 - step * 0.025));
+      g.strokeCircle(px, py, r);
+      g.lineStyle(1.5, 0xaaffcc, Math.max(0, 0.5 - step * 0.012));
+      g.strokeCircle(px, py, r + 5);
+      if (step % 5 === 0) this.enemyBullets = [];
+      step++;
+    }});
+    this.time.delayedCall(700, () => { g.destroy(); ev.remove(); });
+    this.invuln = Math.max(this.invuln, 2000);
+  }
+
+  showContinuePrompt() {
+    const gold = window.SharedWallet?.gold || 0;
+    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.78).setDepth(20);
+    const box = this.add.rectangle(W / 2, H / 2, W * 0.84, 200, 0x0a0a1a, 0.96)
+      .setStrokeStyle(2, 0xffd700).setDepth(21);
+    this.add.text(W / 2, H / 2 - 72, '💀 게임 오버', {
+      fontSize: '22px', color: '#ff6666', fontStyle: 'bold', stroke: '#000', strokeThickness: 3
+    }).setOrigin(0.5).setDepth(22);
+    this.add.text(W / 2, H / 2 - 28, `100G로 이어가시겠습니까?\n현재 보유: ${gold.toLocaleString()}G`, {
+      fontSize: '13px', color: '#ffffff', align: 'center'
+    }).setOrigin(0.5).setDepth(22);
+    const contBtn = this.add.text(W / 2 - 54, H / 2 + 42, '계속 (100G)', {
+      fontSize: '14px', color: '#000', backgroundColor: '#ffd700',
+      padding: { x: 10, y: 8 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(22);
+    const quitBtn = this.add.text(W / 2 + 60, H / 2 + 42, '포기', {
+      fontSize: '14px', color: '#fff', backgroundColor: '#cc3333',
+      padding: { x: 18, y: 8 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(22);
+    contBtn.on('pointerdown', () => {
+      if (window.SharedWallet) SharedWallet.spendGold(100);
+      overlay.destroy(); box.destroy();
+      [contBtn, quitBtn].forEach(b => b.destroy());
+      this.children.list.filter(c => c.depth === 22).forEach(c => c.destroy());
+      this.lives = 1;
+      this.fx = { freeze: 0, speed: 0, slow: 0, shield: 0 };
+      const respawn = this.findNearestFrontier(this.playerRow, this.playerCol);
+      this.playerRow = respawn.row; this.playerCol = respawn.col;
+      this.invuln = 2500;
+      this.refreshHUD();
+    });
+    quitBtn.on('pointerdown', () => {
+      this.scene.start('GameOver', { score: this.score, stage: this.stage });
+    });
   }
 
   captureBurst() {
@@ -1023,6 +1197,20 @@ class GameScene extends Phaser.Scene {
     this.actorGfx.fillStyle(0xfff47c, 0.95);
     for (const b of this.enemyBullets) {
       this.actorGfx.fillCircle(b.x, b.y, b.r);
+    }
+
+    // items glow
+    this.itemGfx.clear();
+    const glowColors = { freeze: 0x88ddff, speed: 0xffff88, shield: 0x88ff88, slow: 0xffbb88 };
+    for (const it of this.items) {
+      const cx = it.col * CELL + CELL / 2;
+      const cy = it.row * CELL + CELL / 2;
+      const pulse = 0.5 + 0.35 * Math.sin(this.time.now * 0.005 + it.col);
+      const alpha = it.timeLeft <= ITEM_BLINK ? (Math.floor(this.time.now / 250) % 2 === 0 ? pulse : 0.1) : pulse;
+      this.itemGfx.fillStyle(glowColors[it.type], alpha * 0.5);
+      this.itemGfx.fillCircle(cx, cy, CELL * 0.72);
+      this.itemGfx.lineStyle(1.5, glowColors[it.type], alpha * 0.8);
+      this.itemGfx.strokeCircle(cx, cy, CELL * 0.72);
     }
 
     const px = this.playerCol * CELL + CELL / 2;
