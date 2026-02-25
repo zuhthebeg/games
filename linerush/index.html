@@ -353,8 +353,13 @@ class GameScene extends Phaser.Scene {
   update(time, delta) {
     this.moveTimer += delta;
 
-    if (this.moveTimer >= this.moveDelay) {
-      this.handleInput();
+    const stepDelay = this.retracting ? this.moveDelay / this.retractSpeedMul : this.moveDelay;
+    if (this.moveTimer >= stepDelay) {
+      if (this.retracting) {
+        this.stepRetreat();
+      } else {
+        this.handleInput();
+      }
       this.moveTimer = 0;
     }
 
@@ -387,7 +392,15 @@ class GameScene extends Phaser.Scene {
       else if (Math.abs(axisY) > 0.25) dr = axisY < 0 ? -1 : 1;
     }
 
-    if (dr === 0 && dc === 0) return;
+    if (dr === 0 && dc === 0) {
+      // No input while drawing → retract trail at 1.5x speed
+      if (this.isDrawing && !this.retracting && this.trail.length > 0) {
+        this.retracting = true;
+      }
+      return;
+    }
+    // Directional input: cancel retraction
+    this.retracting = false;
 
     const nr = this.playerRow + dr;
     const nc = this.playerCol + dc;
@@ -403,6 +416,7 @@ class GameScene extends Phaser.Scene {
     if (next === 0) {
       if (!this.isDrawing) {
         this.isDrawing = true;
+        this.drawStart = { row: this.playerRow, col: this.playerCol };
         this.trail = [];
       }
 
@@ -451,9 +465,11 @@ class GameScene extends Phaser.Scene {
       const back = this.trail[this.trail.length - 1];
       this.playerRow = back.row;
       this.playerCol = back.col;
-    } else if (this.drawStart) {
-      this.playerRow = this.drawStart.row;
-      this.playerCol = this.drawStart.col;
+    } else {
+      if (this.drawStart) {
+        this.playerRow = this.drawStart.row;
+        this.playerCol = this.drawStart.col;
+      }
       this.retracting = false;
       this.isDrawing = false;
       this.drawStart = null;
@@ -690,7 +706,7 @@ class GameScene extends Phaser.Scene {
       vx: (dx / d) * speed,
       vy: (dy / d) * speed,
       r: Math.min(4.5, 2.2 + this.stage * 0.14),
-      life: 2600
+      life: 99999
     });
   }
 
@@ -715,8 +731,12 @@ class GameScene extends Phaser.Scene {
     for (const e of this.enemies) {
       const dist = Phaser.Math.Distance.Between(px, py, e.x, e.y);
       if (dist < e.radius + 5) {
-        this.playerDie();
-        return;
+        if (this.isDrawing) {
+          this.playerDie();
+          return;
+        }
+        // Shield: safe when not rushing
+        continue;
       }
 
       if (this.isDrawing) {
@@ -739,8 +759,12 @@ class GameScene extends Phaser.Scene {
       const dist = Phaser.Math.Distance.Between(px, py, b.x, b.y);
       if (dist < b.r + 6) {
         this.enemyBullets.splice(i, 1);
-        this.playerDie();
-        return;
+        if (this.isDrawing) {
+          this.playerDie();
+          return;
+        }
+        // Shield: bullet absorbed, no death
+        continue;
       }
       if (this.isDrawing) {
         const br = Phaser.Math.Clamp(Math.floor(b.y / CELL), 0, ROWS - 1);
@@ -889,6 +913,16 @@ class GameScene extends Phaser.Scene {
     this.actorGfx.fillCircle(px, py, 5.2);
     this.actorGfx.fillStyle(0x0a0f1a, 0.95 * blink);
     this.actorGfx.fillCircle(px, py, 2.2);
+
+    // Shield ring: visible when safe (not rushing)
+    if (!this.isDrawing && this.invuln <= 0) {
+      const sp = Math.sin(this.time.now * 0.006);
+      const shieldR = 13 + sp * 2;
+      this.actorGfx.lineStyle(2.4, 0x44ffdd, (0.55 + sp * 0.2) * blink);
+      this.actorGfx.strokeCircle(px, py, shieldR);
+      this.actorGfx.lineStyle(1, 0x88ffee, (0.2 + sp * 0.1) * blink);
+      this.actorGfx.strokeCircle(px, py, shieldR + 4.5);
+    }
   }
 }
 
