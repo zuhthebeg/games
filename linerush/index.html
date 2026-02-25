@@ -48,12 +48,19 @@ class BootScene extends Phaser.Scene {
     const palettes = [
       [0xff6b9d, 0xffa8c4],
       [0x7e57c2, 0x5dade2],
-      [0xf39c12, 0xffd700]
+      [0xf39c12, 0xffd700],
+      [0x2ecc71, 0x27ae60],
+      [0x00c2ff, 0x3f5efb],
+      [0xff4d6d, 0xff9e00],
+      [0x8e44ad, 0xe056fd],
+      [0x16a085, 0x48dbfb],
+      [0xe67e22, 0xf1c40f],
+      [0x34495e, 0x6c5ce7]
     ];
 
     for (let s = 1; s <= STAGE_COUNT; s++) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
-      const [c1, c2] = palettes[s - 1];
+      const [c1, c2] = palettes[(s - 1) % palettes.length];
       g.fillGradientStyle(c1, c1, c2, c2, 1);
       g.fillRect(0, 0, W, H);
 
