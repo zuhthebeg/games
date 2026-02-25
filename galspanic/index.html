@@ -169,8 +169,13 @@ class GameScene extends Phaser.Scene {
     this.playerCol = Math.floor(COLS / 2);
     this.trail = [];
     this.isDrawing = false;
+    this.drawStart = null;
+    this.retracting = false;
     this.moveTimer = 0;
     this.moveDelay = 120;
+    this.retractSpeedMul = 1.5;
+    this.touchRush = false;
+    this.rushHeld = false;
     this.invuln = 0;
 
     const enemyCount = this.stage + 1;
@@ -187,8 +192,8 @@ class GameScene extends Phaser.Scene {
     }
 
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.wasd = this.input.keyboard.addKeys('W,A,S,D');
-    this.touchHold = { up: false, down: false, left: false, right: false };
+    this.wasd = this.input.keyboard.addKeys('W,A,S,D,SHIFT');
+    this.touchAxis = { x: 0, y: 0 };
     this.createTouchControls();
 
     this.createHUD();
@@ -201,26 +206,60 @@ class GameScene extends Phaser.Scene {
     const isTouch = this.sys.game.device.input.touch;
     if (!isTouch) return;
 
-    const makeBtn = (x, y, label, key) => {
-      const btn = this.add.circle(x, y, 17, 0x001a2e, 0.72).setStrokeStyle(2, 0x63d9ff, 0.9).setDepth(20).setScrollFactor(0).setInteractive();
-      this.add.text(x, y, label, {
-        fontFamily: 'Verdana',
-        fontSize: '16px',
-        color: '#e8faff'
-      }).setOrigin(0.5).setDepth(21).setScrollFactor(0);
+    const joyCenter = { x: 64, y: H - 64 };
+    const joyRadius = 42;
+    const knobRadius = 18;
 
-      const setState = (v) => { this.touchHold[key] = v; };
-      btn.on('pointerdown', () => setState(true));
-      btn.on('pointerup', () => setState(false));
-      btn.on('pointerout', () => setState(false));
-      btn.on('pointerupoutside', () => setState(false));
+    this.joyBase = this.add.circle(joyCenter.x, joyCenter.y, joyRadius, 0x001a2e, 0.42)
+      .setStrokeStyle(2, 0x63d9ff, 0.9).setDepth(20).setScrollFactor(0);
+    this.joyKnob = this.add.circle(joyCenter.x, joyCenter.y, knobRadius, 0x39c6ff, 0.75)
+      .setStrokeStyle(2, 0xb8f1ff, 0.95).setDepth(21).setScrollFactor(0);
+
+    const joyZone = this.add.zone(joyCenter.x, joyCenter.y, joyRadius * 2.3, joyRadius * 2.3)
+      .setOrigin(0.5).setDepth(22).setScrollFactor(0).setInteractive();
+
+    const resetStick = () => {
+      this.touchAxis.x = 0;
+      this.touchAxis.y = 0;
+      this.joyKnob.setPosition(joyCenter.x, joyCenter.y);
     };
 
-    // bottom-left d-pad
-    makeBtn(44, H - 44, '◀', 'left');
-    makeBtn(92, H - 44, '▶', 'right');
-    makeBtn(68, H - 68, '▲', 'up');
-    makeBtn(68, H - 20, '▼', 'down');
+    const updateStick = (pointer) => {
+      const dx = pointer.x - joyCenter.x;
+      const dy = pointer.y - joyCenter.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const clamped = Math.min(joyRadius, dist);
+      const nx = dx / dist;
+      const ny = dy / dist;
+      this.joyKnob.setPosition(joyCenter.x + nx * clamped, joyCenter.y + ny * clamped);
+      this.touchAxis.x = nx * (clamped / joyRadius);
+      this.touchAxis.y = ny * (clamped / joyRadius);
+    };
+
+    joyZone.on('pointerdown', (p) => updateStick(p));
+    joyZone.on('pointermove', (p) => { if (p.isDown) updateStick(p); });
+    joyZone.on('pointerup', resetStick);
+    joyZone.on('pointerout', resetStick);
+    joyZone.on('pointerupoutside', resetStick);
+
+    const rushBtn = this.add.circle(W - 64, H - 64, 34, 0xff5f7a, 0.82)
+      .setStrokeStyle(3, 0xffd2db, 0.95).setDepth(20).setScrollFactor(0).setInteractive();
+    this.add.text(W - 64, H - 64, 'RUSH', {
+      fontFamily: 'Verdana',
+      fontSize: '12px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(21).setScrollFactor(0);
+
+    const setRush = (v) => {
+      this.touchRush = v;
+      this.rushHeld = v;
+      rushBtn.setScale(v ? 0.94 : 1);
+    };
+    rushBtn.on('pointerdown', () => setRush(true));
+    rushBtn.on('pointerup', () => setRush(false));
+    rushBtn.on('pointerout', () => setRush(false));
+    rushBtn.on('pointerupoutside', () => setRush(false));
   }
 
   createHUD() {
@@ -258,9 +297,21 @@ class GameScene extends Phaser.Scene {
 
   update(time, delta) {
     this.moveTimer += delta;
-    if (this.moveTimer >= this.moveDelay) {
-      this.handleInput();
+
+    const stepDelay = this.retracting ? (this.moveDelay / this.retractSpeedMul) : this.moveDelay;
+    if (this.moveTimer >= stepDelay) {
+      if (this.retracting && this.rushHeld) {
+        this.retracting = false;
+        this.isDrawing = true;
+      }
+
+      if (this.retracting) this.stepRetreat();
+      else this.handleInput();
       this.moveTimer = 0;
+    }
+
+    if (!this.rushHeld && this.isDrawing && !this.retracting) {
+      this.retracting = true;
     }
 
     if (this.invuln > 0) {
@@ -279,10 +330,20 @@ class GameScene extends Phaser.Scene {
     let dr = 0;
     let dc = 0;
 
-    if (this.cursors.left.isDown || this.wasd.A.isDown || this.touchHold.left) dc = -1;
-    else if (this.cursors.right.isDown || this.wasd.D.isDown || this.touchHold.right) dc = 1;
-    else if (this.cursors.up.isDown || this.wasd.W.isDown || this.touchHold.up) dr = -1;
-    else if (this.cursors.down.isDown || this.wasd.S.isDown || this.touchHold.down) dr = 1;
+    const keyboardRush = this.wasd.SHIFT && this.wasd.SHIFT.isDown;
+    this.rushHeld = !!(this.touchRush || keyboardRush);
+
+    const axisX = this.touchAxis?.x || 0;
+    const axisY = this.touchAxis?.y || 0;
+
+    if (this.cursors.left.isDown || this.wasd.A.isDown) dc = -1;
+    else if (this.cursors.right.isDown || this.wasd.D.isDown) dc = 1;
+    else if (this.cursors.up.isDown || this.wasd.W.isDown) dr = -1;
+    else if (this.cursors.down.isDown || this.wasd.S.isDown) dr = 1;
+    else {
+      if (Math.abs(axisX) > Math.abs(axisY) && Math.abs(axisX) > 0.25) dc = axisX < 0 ? -1 : 1;
+      else if (Math.abs(axisY) > 0.25) dr = axisY < 0 ? -1 : 1;
+    }
 
     if (dr === 0 && dc === 0) return;
 
@@ -298,9 +359,14 @@ class GameScene extends Phaser.Scene {
     }
 
     if (next === 0) {
+      // unprotected drawing only while rush is held
+      if (!this.rushHeld) return;
+
       if (!this.isDrawing) {
         this.isDrawing = true;
+        this.retracting = false;
         this.trail = [];
+        this.drawStart = { row: this.playerRow, col: this.playerCol };
       }
 
       if (this.grid[this.playerRow][this.playerCol] === 0) {
@@ -325,6 +391,38 @@ class GameScene extends Phaser.Scene {
         this.captureTerritory();
       }
     }
+  }
+
+  stepRetreat() {
+    if (!this.trail.length) {
+      this.retracting = false;
+      this.isDrawing = false;
+      if (this.drawStart) {
+        this.playerRow = this.drawStart.row;
+        this.playerCol = this.drawStart.col;
+      }
+      this.drawStart = null;
+      return;
+    }
+
+    const removed = this.trail.pop();
+    if (this.grid[removed.row][removed.col] === 2) {
+      this.grid[removed.row][removed.col] = 0;
+    }
+
+    if (this.trail.length) {
+      const back = this.trail[this.trail.length - 1];
+      this.playerRow = back.row;
+      this.playerCol = back.col;
+    } else if (this.drawStart) {
+      this.playerRow = this.drawStart.row;
+      this.playerCol = this.drawStart.col;
+      this.retracting = false;
+      this.isDrawing = false;
+      this.drawStart = null;
+    }
+
+    this.redrawOverlay();
   }
 
   captureTerritory() {
@@ -393,6 +491,8 @@ class GameScene extends Phaser.Scene {
     }
 
     this.isDrawing = false;
+    this.retracting = false;
+    this.drawStart = null;
     this.trail = [];
 
     if (gained > 0) {
@@ -524,6 +624,8 @@ class GameScene extends Phaser.Scene {
     }
 
     this.isDrawing = false;
+    this.retracting = false;
+    this.drawStart = null;
     this.trail = [];
     this.redrawOverlay();
 
