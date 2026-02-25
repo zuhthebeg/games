@@ -233,10 +233,13 @@ class GameScene extends Phaser.Scene {
     const joyZone = this.add.zone(joyCenter.x, joyCenter.y, joyRadius * 2.3, joyRadius * 2.3)
       .setOrigin(0.5).setDepth(22).setScrollFactor(0).setInteractive();
 
+    let joyPointerId = null;
+
     const resetStick = () => {
       this.touchAxis.x = 0;
       this.touchAxis.y = 0;
       this.joyKnob.setPosition(joyCenter.x, joyCenter.y);
+      joyPointerId = null;
     };
 
     const updateStick = (pointer) => {
@@ -251,11 +254,27 @@ class GameScene extends Phaser.Scene {
       this.touchAxis.y = ny * (clamped / joyRadius);
     };
 
-    joyZone.on('pointerdown', (p) => updateStick(p));
-    joyZone.on('pointermove', (p) => { if (p.isDown) updateStick(p); });
-    joyZone.on('pointerup', resetStick);
-    joyZone.on('pointerout', resetStick);
-    joyZone.on('pointerupoutside', resetStick);
+    joyZone.on('pointerdown', (p) => {
+      joyPointerId = p.id;
+      updateStick(p);
+    });
+
+    this.input.on('pointermove', (p) => {
+      if (joyPointerId === null || p.id !== joyPointerId || !p.isDown) return;
+      updateStick(p);
+    });
+
+    this.input.on('pointerup', (p) => {
+      if (joyPointerId !== null && p.id === joyPointerId) resetStick();
+    });
+
+    joyZone.on('pointerout', (p) => {
+      // keep moving even if finger leaves circle; release on pointerup only
+      if (joyPointerId === null || p.id !== joyPointerId) return;
+    });
+    joyZone.on('pointerupoutside', (p) => {
+      if (joyPointerId !== null && p.id === joyPointerId) resetStick();
+    });
   }
 
   createHUD() {
@@ -508,8 +527,8 @@ class GameScene extends Phaser.Scene {
   redrawOverlay() {
     this.overlayGfx.clear();
 
-    // 1) dark mask for unrevealed area
-    this.overlayGfx.fillStyle(0x090913, 0.76);
+    // 1) dark mask for unrevealed area (almost hidden before capture)
+    this.overlayGfx.fillStyle(0x05060b, 0.9);
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         if (this.grid[r][c] === 0 || this.grid[r][c] === 2) {
