@@ -7,8 +7,11 @@
   <script src="./phaser.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #000; display: flex; justify-content: center; align-items: center; min-height: 100dvh; overflow: hidden; font-family: 'Trebuchet MS', sans-serif; }
-    #game { width: 100vw; height: 100dvh; display: flex; justify-content: center; align-items: center; }
+    body { background: #000; display: flex; justify-content: center; align-items: flex-start;
+           min-height: 100dvh; overflow: hidden; font-family: 'Trebuchet MS', sans-serif;
+           padding-top: calc(48px + env(safe-area-inset-top)); }
+    #game { width: 100vw; height: calc(100dvh - 48px - env(safe-area-inset-top));
+            display: flex; justify-content: center; align-items: center; }
     canvas { display: block; touch-action: none; }
   </style>
 </head>
@@ -21,13 +24,36 @@ window.addEventListener('error', (e) => {
   msg.textContent = 'Line Rush 로딩 오류: ' + (e.message || 'unknown');
   document.body.appendChild(msg);
 });
-const STAGE_COUNT = 10;
+const STAGE_COUNT        = 10;  // 이미지 승인 후 15로 업데이트
 const BG_ORIG_START      = 1;   // bg1-10: stage 4-10 random backgrounds
 const BG_ORIG_END        = 10;
 // stage 1→char1, 2→char2, 3→char4 (luminarqmix-v7 portrait crops)
 const STAGE_CHAR_MAP     = { 1: 'char1', 2: 'char2', 3: 'char4' };
-// bg41-50 were removed (low quality) — to be regenerated later
+const STAGE_REWARD       = 1000;  // 스테이지당 골드 보상 (stage × STAGE_REWARD)
+const RELAY_URL          = 'https://relay.cocy.io';
+const STORAGE_BEST_KEY   = 'linerush_best_stage';
+const STORAGE_PLAYER_KEY = 'linerush_player_id';
+// (legacy) unlock key - kept for migration
 const STORAGE_UNLOCK_KEY = 'linerush_unlocked_stage';
+
+function getLRPlayerId() {
+  let id = localStorage.getItem(STORAGE_PLAYER_KEY);
+  if (!id) { id = 'lr_' + Math.random().toString(36).slice(2, 11); localStorage.setItem(STORAGE_PLAYER_KEY, id); }
+  return id;
+}
+function getLRBestStage() { return parseInt(localStorage.getItem(STORAGE_BEST_KEY) || '0'); }
+function setLRBestStage(s) {
+  if (s > getLRBestStage()) {
+    localStorage.setItem(STORAGE_BEST_KEY, String(s));
+    // 비동기로 서버에 기록
+    const nickname = window.SharedWallet?.user?.nickname || window.SharedWallet?.user?.username || null;
+    fetch(`${RELAY_URL}/api/rankings/linerush`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: getLRPlayerId(), nickname, stage: s })
+    }).catch(() => {});
+  }
+}
 const COLS = 26;
 const ROWS = 38;
 const CELL = 16;
@@ -113,74 +139,88 @@ class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
 
   create() {
+    // 배경
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x120320, 0x120320, 0x220833, 0x220833, 1);
     bg.fillRect(0, 0, W, H);
 
-    this.add.text(W / 2, 48, 'LINE RUSH', {
-      fontFamily: 'Verdana',
-      fontSize: '42px',
-      color: '#ff79c6',
-      stroke: '#ff2ea6',
-      strokeThickness: 8
+    // 타이틀
+    this.add.text(W / 2, 60, 'LINE RUSH', {
+      fontFamily: 'Verdana', fontSize: '40px',
+      color: '#ff79c6', stroke: '#ff2ea6', strokeThickness: 8
     }).setOrigin(0.5).setShadow(0, 0, '#ff2ea6', 24, true, true);
 
-    this.add.text(W / 2, 96, 'STAGE SELECT', {
-      fontFamily: 'Verdana',
-      fontSize: '20px',
-      color: '#99e9ff',
-      stroke: '#133052',
-      strokeThickness: 5
+    this.add.text(W / 2, 104, '영역을 점령하고 80% 돌파!', {
+      fontFamily: 'Verdana', fontSize: '13px', color: '#aacfff'
     }).setOrigin(0.5);
 
-    const unlockedStage = getUnlockedStage();
-    for (let s = 1; s <= STAGE_COUNT; s++) {
-      const cols = 2;
-      const row = Math.floor((s - 1) / cols);
-      const col = (s - 1) % cols;
-      const x = 104 + col * 208;
-      const y = 178 + row * 82;
-      const isLocked = s > unlockedStage;
-      const frame = this.add.rectangle(x, y, 188, 72, 0x03030a, isLocked ? 0.45 : 0.7).setStrokeStyle(2, isLocked ? 0x4a4f65 : 0x59e3ff, 0.9);
-      const hiddenThumb = this.add.rectangle(x - 52, y, 58, 66, isLocked ? 0x0d0f19 : 0x111425, 0.95)
-        .setStrokeStyle(2, isLocked ? 0x3a3f58 : 0x59648a, 0.9);
-      this.add.text(x - 52, y, isLocked ? '🔒' : '?', {
-        fontFamily: 'Verdana',
-        fontSize: '30px',
-        color: isLocked ? '#9299bd' : '#cfd6ff',
-        stroke: '#000000',
-        strokeThickness: 4
-      }).setOrigin(0.5);
-      const label = this.add.text(x + 20, y, `STAGE ${s}`, {
-        fontFamily: 'Verdana',
-        fontSize: '18px',
-        color: isLocked ? '#8a90aa' : '#ffffff',
-        stroke: '#000000',
-        strokeThickness: 4
-      }).setOrigin(0.5);
+    // 내 기록
+    const best = getLRBestStage();
+    const bestTxt = best > 0
+      ? `🏆 내 최고: STAGE ${best} | 최대보상: ${(best * STAGE_REWARD).toLocaleString()}G`
+      : '기록 없음';
+    this.add.text(W / 2, 140, bestTxt, {
+      fontFamily: 'Verdana', fontSize: '13px', color: '#ffd700'
+    }).setOrigin(0.5);
 
-      const hit = this.add.zone(x, y, 188, 72).setOrigin(0.5).setInteractive({ useHandCursor: !isLocked });
-      hit.on('pointerover', () => {
-        if (isLocked) return;
-        frame.setFillStyle(0x081235, 0.85);
-        label.setScale(1.05);
-      });
-      hit.on('pointerout', () => {
-        frame.setFillStyle(0x03030a, isLocked ? 0.45 : 0.7);
-        label.setScale(1);
-      });
-      hit.on('pointerdown', () => {
-        if (isLocked) return;
-        this.scene.start('Game', { stage: s, score: 0, lives: 3 });
+    // PLAY 버튼
+    const playBtn = this.add.rectangle(W / 2, 210, 220, 58, 0x7020d0, 0.92)
+      .setStrokeStyle(2, 0xff79c6, 1).setInteractive({ useHandCursor: true });
+    this.add.text(W / 2, 210, '▶  STAGE 1 START', {
+      fontFamily: 'Verdana', fontSize: '18px', color: '#ffffff', stroke: '#000', strokeThickness: 3
+    }).setOrigin(0.5);
+    playBtn.on('pointerover', () => playBtn.setFillStyle(0x9030e8, 0.95));
+    playBtn.on('pointerout', () => playBtn.setFillStyle(0x7020d0, 0.92));
+    playBtn.on('pointerdown', () => this.scene.start('Game', { stage: 1, score: 0, lives: 3 }));
+
+    // 보상 안내
+    this.add.text(W / 2, 254, `각 스테이지 클리어 시 stage×${STAGE_REWARD.toLocaleString()}G 보상!`, {
+      fontFamily: 'Verdana', fontSize: '11px', color: '#80d0ff'
+    }).setOrigin(0.5);
+
+    // 랭킹 영역
+    const rankTitle = this.add.text(W / 2, 284, '🏆 최고 스테이지 랭킹', {
+      fontFamily: 'Verdana', fontSize: '14px', color: '#ffd700'
+    }).setOrigin(0.5);
+
+    const rankBg = this.add.rectangle(W / 2, 430, W - 20, 290, 0x050514, 0.7)
+      .setStrokeStyle(1, 0x334466, 0.8);
+
+    const loadingTxt = this.add.text(W / 2, 430, '랭킹 로딩 중...', {
+      fontFamily: 'Verdana', fontSize: '13px', color: '#6677aa'
+    }).setOrigin(0.5);
+
+    // 비동기 랭킹 fetch
+    fetch(`${RELAY_URL}/api/rankings/linerush?limit=10`)
+      .then(r => r.json())
+      .then(data => {
+        loadingTxt.destroy();
+        const rows = data.rankings || [];
+        if (rows.length === 0) {
+          this.add.text(W / 2, 430, '아직 기록이 없습니다\n먼저 플레이해보세요!', {
+            fontFamily: 'Verdana', fontSize: '13px', color: '#6677aa', align: 'center'
+          }).setOrigin(0.5);
+          return;
+        }
+        rows.slice(0, 9).forEach((r, i) => {
+          const y = 300 + i * 30;
+          const medal = ['🥇','🥈','🥉'][i] || `${i+1}.`;
+          const nick = (r.nickname || '익명').slice(0, 10);
+          const color = i === 0 ? '#ffd700' : i === 1 ? '#e0e0e0' : i === 2 ? '#cc8844' : '#99b4cc';
+          this.add.text(16, y, `${medal} ${nick}`, {
+            fontFamily: 'Verdana', fontSize: '13px', color, stroke: '#000', strokeThickness: 2
+          });
+          this.add.text(W - 16, y, `STAGE ${r.best_stage}`, {
+            fontFamily: 'Verdana', fontSize: '13px', color: '#5ddcff', stroke: '#000', strokeThickness: 2
+          }).setOrigin(1, 0);
+        });
+      })
+      .catch(() => {
+        loadingTxt.setText('랭킹을 불러올 수 없습니다');
       });
 
-      hiddenThumb.setAlpha(0.95);
-    }
-
-    this.add.text(W / 2, H - 24, 'Capture 80% to clear the stage', {
-      fontFamily: 'Verdana',
-      fontSize: '14px',
-      color: '#aacfff'
+    this.add.text(W / 2, H - 18, 'game.cocy.io', {
+      fontFamily: 'Verdana', fontSize: '11px', color: '#445566'
     }).setOrigin(0.5);
   }
 }
@@ -454,12 +494,23 @@ class GameScene extends Phaser.Scene {
 
     if (next === 1) {
       // When safe (not drawing), only allow moving to frontier cells
-      // (claimed cells adjacent to at least one unclaimed cell)
       if (!this.isDrawing && !this.isFrontier(nr, nc)) return;
       this.playerRow = nr;
       this.playerCol = nc;
       if (this.isDrawing) {
-        this.captureTerritory();
+        // 트레일이 너무 짧으면 (≤2칸) 캡처 대신 강제 취소 (외곽선 실수 방지)
+        if (this.trail.length <= 2) {
+          for (const cell of this.trail) {
+            if (this.grid[cell.row][cell.col] === 2) this.grid[cell.row][cell.col] = 0;
+          }
+          this.trail = [];
+          this.isDrawing = false;
+          this.retracting = false;
+          this.drawStart = null;
+          this.redrawOverlay();
+        } else {
+          this.captureTerritory();
+        }
       }
     }
   }
@@ -554,10 +605,22 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    // Always capture only the SMALLEST region (Qix rule).
-    // Enemies inside the captured region are relocated to the largest remaining region.
+    // 1개 이하 region = dead-end trail (enclosed area 없음) → 캡처 취소, 트레일 복원
+    if (regions.length <= 1) {
+      for (const cell of this.trail) {
+        if (this.grid[cell.row][cell.col] === 1) this.grid[cell.row][cell.col] = 0;
+      }
+      this.isDrawing = false;
+      this.retracting = false;
+      this.drawStart = null;
+      this.trail = [];
+      this.redrawOverlay();
+      return;
+    }
+
+    // 2개 이상 region → 가장 작은 region 캡처 (Qix 룰)
     regions.sort((a, b) => a.cells.length - b.cells.length);
-    const claimRegions = regions.length > 1 ? [regions[0]] : regions;
+    const claimRegions = [regions[0]];
     const safeRegion   = regions[regions.length - 1];
 
     if (regions.length > 1 && safeRegion.cells.length > 0) {
@@ -995,6 +1058,11 @@ class ClearScene extends Phaser.Scene {
     const { stage = 1, score = 0, lives = 3, percent = 0, bgKey = null } = data;
     setUnlockedStage(stage + 1);
 
+    // 골드 보상 지급 + 최고 기록 갱신
+    const goldReward = stage * STAGE_REWARD;
+    if (window.SharedWallet) SharedWallet.addGold(goldReward);
+    setLRBestStage(stage);
+
     const clearBonus = 2000 * stage;
     const totalScore = score + clearBonus;
 
@@ -1159,15 +1227,23 @@ class ClearScene extends Phaser.Scene {
       strokeThickness: 5
     }).setOrigin(0.5).setAlpha(0).setDepth(2);
 
-    this.tweens.add({ targets: [scoreTxt, bonusTxt, totalTxt], alpha: 1, duration: 360, delay: 2100 });
+    const goldTxt = this.add.text(W / 2, 516, `💰 +${goldReward.toLocaleString()} G 획득!`, {
+      fontFamily: 'Verdana',
+      fontSize: '17px',
+      color: '#ffd700',
+      stroke: '#332200',
+      strokeThickness: 4
+    }).setOrigin(0.5).setAlpha(0).setDepth(2);
+
+    this.tweens.add({ targets: [scoreTxt, bonusTxt, totalTxt, goldTxt], alpha: 1, duration: 360, delay: 2100 });
 
     // ── Next button ──
-    const nextLabel = (stage < STAGE_COUNT) ? 'NEXT STAGE' : 'BACK TO MENU';
-    const btn = this.add.rectangle(W / 2, 548, 210, 48, 0x123966, 0.92)
+    const nextLabel = (stage < STAGE_COUNT) ? 'NEXT STAGE →' : '🏠 BACK TO MENU';
+    const btn = this.add.rectangle(W / 2, 568, 210, 48, 0x123966, 0.92)
       .setStrokeStyle(2, 0x7ce8ff, 1)
       .setInteractive({ useHandCursor: true })
       .setAlpha(0).setDepth(2);
-    const btnTxt = this.add.text(W / 2, 548, nextLabel, {
+    const btnTxt = this.add.text(W / 2, 568, nextLabel, {
       fontFamily: 'Verdana',
       fontSize: '20px',
       color: '#ffffff'
@@ -1245,9 +1321,15 @@ const config = {
   scene: [BootScene, MenuScene, GameScene, ClearScene, GameOverScene]
 };
 
-new Phaser.Game(config);
-
+// SharedWallet 초기화 후 Phaser 시작
+(async function() {
+  if (window.SharedWallet) {
+    try { await SharedWallet.init(); } catch (_) {}
+  }
+  new Phaser.Game(config);
+})();
 
 </script>
+<script src="/lib/shared-wallet.js?v=20260214"></script>
 </body>
 </html>
