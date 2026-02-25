@@ -112,11 +112,16 @@ class MenuScene extends Phaser.Scene {
       const col = (s - 1) % cols;
       const x = 104 + col * 208;
       const y = 178 + row * 82;
-      const key = this.textures.exists(`stage${s}_real`) ? `stage${s}_real` : `stage${s}_placeholder`;
-
       const frame = this.add.rectangle(x, y, 188, 72, 0x03030a, 0.7).setStrokeStyle(2, 0x59e3ff, 0.9);
-      const preview = this.add.image(x - 52, y, key).setDisplaySize(58, 66).setAlpha(0.92);
-      const pixelMask = this.add.rectangle(x - 52, y, 58, 66, 0x000000, 0.12);
+      const hiddenThumb = this.add.rectangle(x - 52, y, 58, 66, 0x111425, 0.95)
+        .setStrokeStyle(2, 0x59648a, 0.9);
+      this.add.text(x - 52, y, '?', {
+        fontFamily: 'Verdana',
+        fontSize: '34px',
+        color: '#cfd6ff',
+        stroke: '#000000',
+        strokeThickness: 4
+      }).setOrigin(0.5);
       const label = this.add.text(x + 20, y, `STAGE ${s}`, {
         fontFamily: 'Verdana',
         fontSize: '18px',
@@ -138,7 +143,7 @@ class MenuScene extends Phaser.Scene {
         this.scene.start('Game', { stage: s, score: 0, lives: 3 });
       });
 
-      preview.setMask(pixelMask.createGeometryMask());
+      hiddenThumb.setAlpha(0.95);
     }
 
     this.add.text(W / 2, H - 24, 'Capture 80% to clear the stage', {
