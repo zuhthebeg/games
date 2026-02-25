@@ -22,12 +22,29 @@ window.addEventListener('error', (e) => {
   document.body.appendChild(msg);
 });
 const STAGE_COUNT = 10;
+const STORAGE_UNLOCK_KEY = 'linerush_unlocked_stage';
 const COLS = 26;
 const ROWS = 38;
 const CELL = 16;
 const W = COLS * CELL;
 const H = ROWS * CELL;
 const TARGET_PERCENT = 80;
+
+function getUnlockedStage() {
+  try {
+    const v = Number(localStorage.getItem(STORAGE_UNLOCK_KEY) || '1');
+    return Math.min(STAGE_COUNT, Math.max(1, Number.isFinite(v) ? v : 1));
+  } catch (_) {
+    return 1;
+  }
+}
+
+function setUnlockedStage(stage) {
+  try {
+    const next = Math.min(STAGE_COUNT, Math.max(getUnlockedStage(), stage));
+    localStorage.setItem(STORAGE_UNLOCK_KEY, String(next));
+  } catch (_) {}
+}
 
 class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -106,40 +123,44 @@ class MenuScene extends Phaser.Scene {
       strokeThickness: 5
     }).setOrigin(0.5);
 
+    const unlockedStage = getUnlockedStage();
     for (let s = 1; s <= STAGE_COUNT; s++) {
       const cols = 2;
       const row = Math.floor((s - 1) / cols);
       const col = (s - 1) % cols;
       const x = 104 + col * 208;
       const y = 178 + row * 82;
-      const frame = this.add.rectangle(x, y, 188, 72, 0x03030a, 0.7).setStrokeStyle(2, 0x59e3ff, 0.9);
-      const hiddenThumb = this.add.rectangle(x - 52, y, 58, 66, 0x111425, 0.95)
-        .setStrokeStyle(2, 0x59648a, 0.9);
-      this.add.text(x - 52, y, '?', {
+      const isLocked = s > unlockedStage;
+      const frame = this.add.rectangle(x, y, 188, 72, 0x03030a, isLocked ? 0.45 : 0.7).setStrokeStyle(2, isLocked ? 0x4a4f65 : 0x59e3ff, 0.9);
+      const hiddenThumb = this.add.rectangle(x - 52, y, 58, 66, isLocked ? 0x0d0f19 : 0x111425, 0.95)
+        .setStrokeStyle(2, isLocked ? 0x3a3f58 : 0x59648a, 0.9);
+      this.add.text(x - 52, y, isLocked ? '🔒' : '?', {
         fontFamily: 'Verdana',
-        fontSize: '34px',
-        color: '#cfd6ff',
+        fontSize: '30px',
+        color: isLocked ? '#9299bd' : '#cfd6ff',
         stroke: '#000000',
         strokeThickness: 4
       }).setOrigin(0.5);
       const label = this.add.text(x + 20, y, `STAGE ${s}`, {
         fontFamily: 'Verdana',
         fontSize: '18px',
-        color: '#ffffff',
+        color: isLocked ? '#8a90aa' : '#ffffff',
         stroke: '#000000',
         strokeThickness: 4
       }).setOrigin(0.5);
 
-      const hit = this.add.zone(x, y, 188, 72).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      const hit = this.add.zone(x, y, 188, 72).setOrigin(0.5).setInteractive({ useHandCursor: !isLocked });
       hit.on('pointerover', () => {
+        if (isLocked) return;
         frame.setFillStyle(0x081235, 0.85);
         label.setScale(1.05);
       });
       hit.on('pointerout', () => {
-        frame.setFillStyle(0x03030a, 0.7);
+        frame.setFillStyle(0x03030a, isLocked ? 0.45 : 0.7);
         label.setScale(1);
       });
       hit.on('pointerdown', () => {
+        if (isLocked) return;
         this.scene.start('Game', { stage: s, score: 0, lives: 3 });
       });
 
@@ -472,14 +493,7 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    let claimRegions = regions.filter((r) => !r.hasEnemy);
-    if (claimRegions.length === 0 && regions.length > 0) {
-      let smallest = regions[0];
-      for (const region of regions) {
-        if (region.cells.length < smallest.cells.length) smallest = region;
-      }
-      claimRegions = [smallest];
-    }
+    const claimRegions = regions.filter((r) => !r.hasEnemy);
 
     let gained = 0;
     for (const region of claimRegions) {
@@ -750,6 +764,7 @@ class ClearScene extends Phaser.Scene {
 
   create(data) {
     const { stage = 1, score = 0, lives = 3, percent = 0 } = data;
+    setUnlockedStage(stage + 1);
     this.cameras.main.flash(500, 255, 200, 0);
 
     this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.72);
