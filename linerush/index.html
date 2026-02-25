@@ -22,10 +22,10 @@ window.addEventListener('error', (e) => {
   document.body.appendChild(msg);
 });
 const STAGE_COUNT = 10;
-const BG_LANDSCAPE_START = 11; // bg11-40: AI landscapes (all stages)
-const BG_LANDSCAPE_END   = 40;
-const BG_ORIG_START      = 1;  // bg1-10: original images
+const BG_ORIG_START      = 1;   // bg1-10: stage 4-10 random backgrounds
 const BG_ORIG_END        = 10;
+// stage 1→char1, 2→char2, 3→char4 (luminarqmix-v7 portrait crops)
+const STAGE_CHAR_MAP     = { 1: 'char1', 2: 'char2', 3: 'char4' };
 // bg41-50 were removed (low quality) — to be regenerated later
 const STORAGE_UNLOCK_KEY = 'linerush_unlocked_stage';
 const COLS = 26;
@@ -55,8 +55,12 @@ class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
 
   preload() {
-    // Load all bg images: originals (1-10) + landscapes (11-40)
-    for (let i = BG_ORIG_START; i <= BG_LANDSCAPE_END; i++) {
+    // Stage 1-3 character backgrounds (luminarqmix-v7 portrait)
+    ['char1', 'char2', 'char4'].forEach(k =>
+      this.load.image(k, `/linerush/img/${k}.jpg`)
+    );
+    // Stage 4-10 original backgrounds
+    for (let i = BG_ORIG_START; i <= BG_ORIG_END; i++) {
       this.load.image(`bg${i}`, `/linerush/img/bg${i}.jpg`);
     }
   }
@@ -202,22 +206,28 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    // Bg pool: all 30 landscapes (bg11-40) shuffled across all 10 stages
-    if (!window._lrBgMap || this.stage === 1) {
-      function shuffle(arr) {
-        for (let i = arr.length - 1; i > 0; i--) {
+    // Bg selection: stages 1-3 → char portraits, stages 4-10 → random from bg1-10
+    let bgKey;
+    if (STAGE_CHAR_MAP[this.stage]) {
+      bgKey = STAGE_CHAR_MAP[this.stage];
+    } else {
+      if (!window._lrBgMap || this.stage === 4) {
+        const origPool = Array.from({ length: BG_ORIG_END - BG_ORIG_START + 1 }, (_, i) => i + BG_ORIG_START);
+        for (let i = origPool.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
-          [arr[i], arr[j]] = [arr[j], arr[i]];
+          [origPool[i], origPool[j]] = [origPool[j], origPool[i]];
         }
-        return arr;
+        window._lrBgMap = origPool; // 10 shuffled picks for stages 4-10
       }
-      const all = shuffle(Array.from({ length: BG_LANDSCAPE_END - BG_LANDSCAPE_START + 1 }, (_, i) => BG_LANDSCAPE_START + i));
-      window._lrBgMap = all.slice(0, STAGE_COUNT); // 10 random picks, no repeats
+      const mapIdx = Math.min(this.stage - 4, window._lrBgMap.length - 1);
+      bgKey = `bg${window._lrBgMap[mapIdx]}`;
     }
-    const bgIdx = window._lrBgMap[Math.min(this.stage - 1, window._lrBgMap.length - 1)];
-    this.bgIdx = bgIdx;
-    const key = this.textures.exists(`bg${bgIdx}`) ? `bg${bgIdx}` : `stage${this.stage}_placeholder`;
+    this.bgKey = bgKey;
+    const key = this.textures.exists(bgKey) ? bgKey : `bg1`;
     this.bgImage = this.add.image(W / 2, H / 2, key).setDepth(0).setDisplaySize(W, H);
+
+    // 스테이지별 마스코트 포트레이트 업데이트
+    if (window.lrSetCharPortrait) window.lrSetCharPortrait(this.stage);
 
     this.overlayGfx = this.add.graphics().setDepth(1);
     this.claimedGfx = this.add.graphics().setDepth(2);
@@ -601,7 +611,7 @@ class GameScene extends Phaser.Scene {
           score: this.score,
           lives: this.lives,
           percent: this.percent,
-          bgKey: `bg${this.bgIdx}`
+          bgKey: this.bgKey
         });
       });
       return;
@@ -630,7 +640,7 @@ class GameScene extends Phaser.Scene {
         score: this.score,
         lives: this.lives,
         percent: this.percent,
-        bgKey: `bg${this.bgIdx}`
+        bgKey: this.bgKey
       });
     });
   }
@@ -1239,11 +1249,11 @@ const config = {
 
 new Phaser.Game(config);
 
-// ── 캐릭터 마스코트 오버레이 ──────────────────────────────────────
-// 세션마다 랜덤 동물 캐릭터 1장 선택, 좌측 하단 초상화로 표시
+// ── 캐릭터 마스코트 오버레이 (스테이지별) ────────────────────────
+// stage 1→토끼(char1), 2→여우(char2), 3→곰(char4), 4-10→랜덤
 (function () {
-  const CHAR_COUNT = 10;
-  const idx = Math.floor(Math.random() * CHAR_COUNT) + 1;
+  const STAGE_CHAR = { 1: 'char1', 2: 'char2', 3: 'char4' };
+  const ALL_CHARS  = [1,2,3,4,5,6,7,8,9,10];
 
   const wrap = document.createElement('div');
   wrap.id = 'lr-char';
@@ -1254,17 +1264,27 @@ new Phaser.Game(config);
   ].join(';');
 
   const img = document.createElement('img');
-  img.src = `img/char${idx}.jpg`;
   img.style.cssText = [
     'width:68px', 'height:68px', 'border-radius:50%',
     'border:3px solid rgba(100,230,255,0.75)',
     'display:block', 'object-fit:cover',
   ].join(';');
-  img.onload  = () => { wrap.style.opacity = '1'; };
-  img.onerror = () => { wrap.style.display = 'none'; };
 
   wrap.appendChild(img);
   document.body.appendChild(wrap);
+
+  // 스테이지별 캐릭터 변경 (GameScene.create()에서 호출)
+  window.lrSetCharPortrait = function (stage) {
+    const charKey = STAGE_CHAR[stage] ||
+      'char' + ALL_CHARS[Math.floor(Math.random() * ALL_CHARS.length)];
+    wrap.style.opacity = '0';
+    img.onload  = () => { wrap.style.opacity = '1'; };
+    img.onerror = () => { wrap.style.display = 'none'; };
+    img.src = `img/${charKey}.jpg`;
+  };
+
+  // 초기 표시 (stage 1 기본)
+  window.lrSetCharPortrait(1);
 })();
 </script>
 </body>
