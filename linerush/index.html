@@ -228,9 +228,12 @@ class GameScene extends Phaser.Scene {
         baseSpeed,
         kind,
         radius: kind === 'hunter' ? 6.6 : 6,
-        pulse: Math.random() * Math.PI * 2
+        pulse: Math.random() * Math.PI * 2,
+        shootCd: Phaser.Math.Between(500, 1200)
       });
     }
+
+    this.enemyBullets = [];
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.wasd = this.input.keyboard.addKeys('W,A,S,D');
@@ -349,6 +352,7 @@ class GameScene extends Phaser.Scene {
     }
 
     this.updateEnemies(delta);
+    this.updateBullets(delta);
     if (this.invuln <= 0) {
       this.checkCollisions();
     }
@@ -520,7 +524,13 @@ class GameScene extends Phaser.Scene {
     this.redrawOverlay();
 
     if (this.percent >= TARGET_PERCENT) {
-      this.time.delayedCall(450, () => {
+      this.explodeEnemiesAndClear();
+    }
+  }
+
+  explodeEnemiesAndClear() {
+    if (!this.enemies.length) {
+      this.time.delayedCall(380, () => {
         this.scene.start('Clear', {
           stage: this.stage,
           score: this.score,
@@ -528,7 +538,34 @@ class GameScene extends Phaser.Scene {
           percent: this.percent
         });
       });
+      return;
     }
+
+    const enemyCount = this.enemies.length;
+    this.enemies.forEach((e, idx) => {
+      this.time.delayedCall(idx * 85, () => {
+        const burst = this.add.particles(e.x, e.y, 'pixel', {
+          speed: { min: 70, max: 240 },
+          lifespan: 420,
+          quantity: 26,
+          scale: { start: 1.4, end: 0 },
+          tint: [0xffd36e, 0xff7f6e, 0xffffff],
+          blendMode: 'ADD'
+        }).setDepth(9);
+        this.time.delayedCall(430, () => burst.destroy());
+      });
+    });
+    this.enemies = [];
+    this.enemyBullets = [];
+
+    this.time.delayedCall(enemyCount * 85 + 460, () => {
+      this.scene.start('Clear', {
+        stage: this.stage,
+        score: this.score,
+        lives: this.lives,
+        percent: this.percent
+      });
+    });
   }
 
   updateClaimStats() {
@@ -546,8 +583,8 @@ class GameScene extends Phaser.Scene {
   redrawOverlay() {
     this.overlayGfx.clear();
 
-    // 1) dark mask for unrevealed area (almost hidden before capture)
-    this.overlayGfx.fillStyle(0x05060b, 0.9);
+    // 1) dark mask for unrevealed area (very hidden before capture)
+    this.overlayGfx.fillStyle(0x02030a, 0.965);
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         if (this.grid[r][c] === 0 || this.grid[r][c] === 2) {
@@ -578,7 +615,7 @@ class GameScene extends Phaser.Scene {
       e.pulse += dt * 6;
 
       // behavior patterns
-      if (e.kind === 'hunter' && (this.isDrawing || this.retracting)) {
+      if (e.kind === 'hunter' && this.isDrawing) {
         const dx = px - e.x;
         const dy = py - e.y;
         const d = Math.hypot(dx, dy) || 1;
@@ -618,6 +655,45 @@ class GameScene extends Phaser.Scene {
 
       e.x += e.vx * dt;
       e.y += e.vy * dt;
+
+      // stage-scaled shooting
+      e.shootCd -= delta;
+      if (e.shootCd <= 0) {
+        const intervalBase = Math.max(320, 1600 - this.stage * 105);
+        const bulletSpeed = CELL * (2.1 + this.stage * 0.22);
+        this.fireEnemyBullet(e, bulletSpeed);
+        e.shootCd = intervalBase + Phaser.Math.Between(-180, 180);
+      }
+    }
+  }
+
+  fireEnemyBullet(enemy, speed) {
+    const px = this.playerCol * CELL + CELL / 2;
+    const py = this.playerRow * CELL + CELL / 2;
+    const dx = px - enemy.x;
+    const dy = py - enemy.y;
+    const d = Math.hypot(dx, dy) || 1;
+    this.enemyBullets.push({
+      x: enemy.x,
+      y: enemy.y,
+      vx: (dx / d) * speed,
+      vy: (dy / d) * speed,
+      r: Math.min(4.5, 2.2 + this.stage * 0.14),
+      life: 2600
+    });
+  }
+
+  updateBullets(delta) {
+    const dt = delta / 1000;
+    for (let i = this.enemyBullets.length - 1; i >= 0; i--) {
+      const b = this.enemyBullets[i];
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.life -= delta;
+
+      if (b.life <= 0 || b.x < -12 || b.x > W + 12 || b.y < -12 || b.y > H + 12) {
+        this.enemyBullets.splice(i, 1);
+      }
     }
   }
 
@@ -643,6 +719,25 @@ class GameScene extends Phaser.Scene {
               return;
             }
           }
+        }
+      }
+    }
+
+    for (let i = this.enemyBullets.length - 1; i >= 0; i--) {
+      const b = this.enemyBullets[i];
+      const dist = Phaser.Math.Distance.Between(px, py, b.x, b.y);
+      if (dist < b.r + 6) {
+        this.enemyBullets.splice(i, 1);
+        this.playerDie();
+        return;
+      }
+      if (this.isDrawing) {
+        const br = Phaser.Math.Clamp(Math.floor(b.y / CELL), 0, ROWS - 1);
+        const bc = Phaser.Math.Clamp(Math.floor(b.x / CELL), 0, COLS - 1);
+        if (this.grid[br][bc] === 2) {
+          this.enemyBullets.splice(i, 1);
+          this.playerDie();
+          return;
         }
       }
     }
@@ -675,6 +770,7 @@ class GameScene extends Phaser.Scene {
     this.retracting = false;
     this.drawStart = null;
     this.trail = [];
+    this.enemyBullets = [];
     this.redrawOverlay();
 
     if (this.lives <= 0) {
@@ -726,11 +822,21 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    this.trailGfx.fillStyle(0x00ffff, 0.35);
-    this.trailGfx.lineStyle(2, 0x00ffff, 1);
+    // visually smoothed trail (curve-like feel over grid movement)
+    this.trailGfx.lineStyle(4, 0x00ffff, 0.92);
+    this.trailGfx.fillStyle(0x8affff, 0.38);
+    let prev = null;
     for (const t of this.trail) {
-      this.trailGfx.fillRect(t.col * CELL + 2, t.row * CELL + 2, CELL - 4, CELL - 4);
-      this.trailGfx.strokeRect(t.col * CELL + 2, t.row * CELL + 2, CELL - 4, CELL - 4);
+      const cx = t.col * CELL + CELL / 2;
+      const cy = t.row * CELL + CELL / 2;
+      this.trailGfx.fillCircle(cx, cy, 4.5);
+      if (prev) {
+        this.trailGfx.beginPath();
+        this.trailGfx.moveTo(prev.x, prev.y);
+        this.trailGfx.lineTo(cx, cy);
+        this.trailGfx.strokePath();
+      }
+      prev = { x: cx, y: cy };
     }
 
     for (const e of this.enemies) {
@@ -741,6 +847,22 @@ class GameScene extends Phaser.Scene {
       this.actorGfx.fillCircle(e.x, e.y, e.radius);
       this.actorGfx.fillStyle(0xffd4a6, 0.65);
       this.actorGfx.fillCircle(e.x - 1.5, e.y - 1.5, 2);
+      if (e.kind === 'hunter') {
+        this.actorGfx.lineStyle(1.6, 0xffd7d7, 0.9);
+        this.actorGfx.strokeCircle(e.x, e.y, e.radius + 2.5);
+      } else if (e.kind === 'zigzag') {
+        this.actorGfx.lineStyle(1.2, 0xffe4a8, 0.85);
+        this.actorGfx.strokeTriangle(e.x, e.y - (e.radius + 2), e.x - (e.radius + 2), e.y + (e.radius + 2), e.x + (e.radius + 2), e.y + (e.radius + 2));
+      } else {
+        this.actorGfx.lineStyle(1.2, 0xffc9a2, 0.85);
+        this.actorGfx.strokeRect(e.x - (e.radius + 2), e.y - (e.radius + 2), (e.radius + 2) * 2, (e.radius + 2) * 2);
+      }
+    }
+
+    // enemy bullets
+    this.actorGfx.fillStyle(0xfff47c, 0.95);
+    for (const b of this.enemyBullets) {
+      this.actorGfx.fillCircle(b.x, b.y, b.r);
     }
 
     const px = this.playerCol * CELL + CELL / 2;
