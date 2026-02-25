@@ -207,6 +207,7 @@ class GameScene extends Phaser.Scene {
       window._lrBgMap = indices;
     }
     const bgIdx = window._lrBgMap[(this.stage - 1) % BG_COUNT];
+    this.bgIdx = bgIdx;
     const key = this.textures.exists(`bg${bgIdx}`) ? `bg${bgIdx}` : `stage${this.stage}_placeholder`;
     this.bgImage = this.add.image(W / 2, H / 2, key).setDepth(0).setDisplaySize(W, H);
 
@@ -524,7 +525,31 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    const claimRegions = regions.filter((r) => !r.hasEnemy);
+    // Always capture the smallest region(s) — classic Qix rule
+    let claimRegions;
+    if (regions.length > 1) {
+      regions.sort((a, b) => a.cells.length - b.cells.length);
+      // Capture everything except the largest region (enemy territory)
+      claimRegions = regions.slice(0, -1);
+      // Relocate enemies that ended up in captured regions → move to largest region
+      const safeRegion = regions[regions.length - 1];
+      if (safeRegion.cells.length > 0) {
+        for (const region of claimRegions) {
+          if (!region.hasEnemy) continue;
+          for (const e of this.enemies) {
+            const er = Phaser.Math.Clamp(Math.floor(e.y / CELL), 0, ROWS - 1);
+            const ec = Phaser.Math.Clamp(Math.floor(e.x / CELL), 0, COLS - 1);
+            if (region.cells.some(c => c.r === er && c.c === ec)) {
+              const target = safeRegion.cells[Math.floor(Math.random() * safeRegion.cells.length)];
+              e.x = target.c * CELL + CELL / 2;
+              e.y = target.r * CELL + CELL / 2;
+            }
+          }
+        }
+      }
+    } else {
+      claimRegions = regions;
+    }
 
     let gained = 0;
     for (const region of claimRegions) {
@@ -562,7 +587,8 @@ class GameScene extends Phaser.Scene {
           stage: this.stage,
           score: this.score,
           lives: this.lives,
-          percent: this.percent
+          percent: this.percent,
+          bgKey: `bg${this.bgIdx}`
         });
       });
       return;
@@ -590,7 +616,8 @@ class GameScene extends Phaser.Scene {
         stage: this.stage,
         score: this.score,
         lives: this.lives,
-        percent: this.percent
+        percent: this.percent,
+        bgKey: `bg${this.bgIdx}`
       });
     });
   }
@@ -930,74 +957,197 @@ class ClearScene extends Phaser.Scene {
   constructor() { super('Clear'); }
 
   create(data) {
-    const { stage = 1, score = 0, lives = 3, percent = 0 } = data;
+    const { stage = 1, score = 0, lives = 3, percent = 0, bgKey = null } = data;
     setUnlockedStage(stage + 1);
-    this.cameras.main.flash(500, 255, 200, 0);
-
-    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.72);
-    this.add.text(W / 2, 104, 'STAGE CLEAR!', {
-      fontFamily: 'Verdana',
-      fontSize: '52px',
-      color: '#ffd56b',
-      stroke: '#9c4d00',
-      strokeThickness: 8
-    }).setOrigin(0.5);
-
-    this.add.text(W / 2, 180, `STAGE ${stage}  |  CAPTURE ${percent}%`, {
-      fontFamily: 'Verdana',
-      fontSize: '20px',
-      color: '#ffffff'
-    }).setOrigin(0.5);
-
-    this.add.text(W / 2, 214, `SCORE: ${score}`, {
-      fontFamily: 'Verdana',
-      fontSize: '20px',
-      color: '#ffb4d8'
-    }).setOrigin(0.5);
 
     const clearBonus = 2000 * stage;
-    this.add.text(W / 2, 244, `CLEAR BONUS: +${clearBonus}`, {
-      fontFamily: 'Verdana',
-      fontSize: '18px',
-      color: '#9cfbff'
-    }).setOrigin(0.5);
-
     const totalScore = score + clearBonus;
 
-    const p = this.add.particles(W / 2, 82, 'pixel', {
-      speed: { min: 40, max: 190 },
-      angle: { min: 200, max: 340 },
-      gravityY: 180,
-      lifespan: 1100,
-      quantity: 3,
-      scale: { start: 1.4, end: 0.1 },
-      tint: [0xffd56b, 0xff7aa2, 0x7ce8ff],
-      blendMode: 'ADD'
+    // ── Background: show the stage image in full glory ──
+    if (bgKey && this.textures.exists(bgKey)) {
+      this.add.image(W / 2, H / 2, bgKey).setDisplaySize(W, H).setDepth(0);
+    } else {
+      this.add.rectangle(W / 2, H / 2, W, H, 0x0a0f1a).setDepth(0);
+    }
+    // subtle dark overlay so text is readable but bg still visible
+    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.48).setDepth(1);
+
+    // ── Camera flash ──
+    this.cameras.main.flash(600, 255, 220, 80);
+
+    // ── STAGE CLEAR! title ──
+    const titleTxt = this.add.text(W / 2, 110, 'STAGE CLEAR!', {
+      fontFamily: 'Verdana',
+      fontSize: '46px',
+      color: '#ffd56b',
+      stroke: '#7a3800',
+      strokeThickness: 7
+    }).setOrigin(0.5).setAlpha(0).setScale(0.4).setDepth(2);
+
+    this.tweens.add({
+      targets: titleTxt,
+      alpha: 1,
+      scale: 1,
+      duration: 420,
+      ease: 'Back.Out',
+      delay: 150
     });
 
+    // ── Confetti burst ──
+    this.time.delayedCall(180, () => {
+      const conf = this.add.particles(W / 2, 80, 'pixel', {
+        speed: { min: 60, max: 240 },
+        angle: { min: 190, max: 350 },
+        gravityY: 260,
+        lifespan: 1400,
+        quantity: 5,
+        scale: { start: 1.8, end: 0.1 },
+        tint: [0xffd56b, 0xff7aa2, 0x7ce8ff, 0xa8ff78],
+        blendMode: 'ADD'
+      }).setDepth(10);
+      this.time.delayedCall(2200, () => { if (conf.active) conf.stop(); });
+    });
+
+    // ── CAPTURE % — big bounce animation ──
+    const pctTxt = this.add.text(W / 2, 230, `${percent}%`, {
+      fontFamily: 'Verdana',
+      fontSize: '82px',
+      color: '#ffffff',
+      stroke: '#003366',
+      strokeThickness: 10
+    }).setOrigin(0.5).setAlpha(0).setScale(2.4).setDepth(2);
+
+    this.tweens.add({
+      targets: pctTxt,
+      alpha: 1,
+      scale: 1,
+      duration: 500,
+      ease: 'Back.Out',
+      delay: 520,
+      onComplete: () => {
+        // pulse: big → normal × 2
+        this.tweens.add({
+          targets: pctTxt,
+          scale: { from: 1, to: 1.22 },
+          duration: 200,
+          ease: 'Quad.InOut',
+          yoyo: true,
+          repeat: 1,
+          delay: 100
+        });
+      }
+    });
+
+    const capLabel = this.add.text(W / 2, 285, 'CAPTURED', {
+      fontFamily: 'Verdana',
+      fontSize: '16px',
+      color: '#c8e8ff',
+      stroke: '#001a33',
+      strokeThickness: 4
+    }).setOrigin(0.5).setAlpha(0).setDepth(2);
+    this.tweens.add({ targets: capLabel, alpha: 1, duration: 300, delay: 700 });
+
+    // ── Star rating ──
+    const stars = percent >= 95 ? 3 : percent >= 90 ? 2 : 1;
+    const starSpacing = 58;
+    const starY = 360;
+    const starObjs = [];
+
+    for (let i = 0; i < 3; i++) {
+      const sx = W / 2 + (i - 1) * starSpacing;
+      const starTxt = this.add.text(sx, starY, '★', {
+        fontFamily: 'Verdana',
+        fontSize: '48px',
+        color: i < stars ? '#ffd700' : '#444466',
+        stroke: i < stars ? '#a06000' : '#222233',
+        strokeThickness: 5
+      }).setOrigin(0.5).setAlpha(0).setScale(0).setDepth(2);
+      starObjs.push(starTxt);
+    }
+
+    for (let i = 0; i < stars; i++) {
+      const delay = 1100 + i * 340;
+      ((idx, d) => {
+        this.time.delayedCall(d, () => {
+          // pop in with overshoot
+          this.tweens.add({
+            targets: starObjs[idx],
+            alpha: 1,
+            scale: { from: 0, to: 1 },
+            duration: 320,
+            ease: 'Back.Out'
+          });
+          // burst particles at star position
+          const sx = W / 2 + (idx - 1) * starSpacing;
+          const burst = this.add.particles(sx, starY, 'pixel', {
+            speed: { min: 50, max: 160 },
+            lifespan: 500,
+            quantity: 16,
+            scale: { start: 1.4, end: 0 },
+            tint: [0xffd700, 0xfff0a0, 0xffaa00],
+            blendMode: 'ADD'
+          }).setDepth(9);
+          this.time.delayedCall(520, () => { if (burst.active) burst.destroy(); });
+        });
+      })(i, delay);
+    }
+
+    // unearned stars fade in dim
+    for (let i = stars; i < 3; i++) {
+      this.time.delayedCall(1100 + i * 340, () => {
+        this.tweens.add({ targets: starObjs[i], alpha: 0.55, scale: 1, duration: 280, ease: 'Back.Out' });
+      });
+    }
+
+    // ── Score row ──
+    const scoreTxt = this.add.text(W / 2, 435, `SCORE: ${score}`, {
+      fontFamily: 'Verdana',
+      fontSize: '18px',
+      color: '#ffb4d8',
+      stroke: '#330011',
+      strokeThickness: 4
+    }).setOrigin(0.5).setAlpha(0).setDepth(2);
+
+    const bonusTxt = this.add.text(W / 2, 462, `CLEAR BONUS: +${clearBonus}`, {
+      fontFamily: 'Verdana',
+      fontSize: '17px',
+      color: '#9cfbff',
+      stroke: '#001133',
+      strokeThickness: 4
+    }).setOrigin(0.5).setAlpha(0).setDepth(2);
+
+    const totalTxt = this.add.text(W / 2, 491, `TOTAL: ${totalScore}`, {
+      fontFamily: 'Verdana',
+      fontSize: '20px',
+      color: '#ffffff',
+      stroke: '#002244',
+      strokeThickness: 5
+    }).setOrigin(0.5).setAlpha(0).setDepth(2);
+
+    this.tweens.add({ targets: [scoreTxt, bonusTxt, totalTxt], alpha: 1, duration: 360, delay: 2100 });
+
+    // ── Next button ──
     const nextLabel = (stage < STAGE_COUNT) ? 'NEXT STAGE' : 'BACK TO MENU';
-    const btn = this.add.rectangle(W / 2, 300, 200, 44, 0x123966, 0.92)
+    const btn = this.add.rectangle(W / 2, 548, 210, 48, 0x123966, 0.92)
       .setStrokeStyle(2, 0x7ce8ff, 1)
-      .setInteractive({ useHandCursor: true });
-    const txt = this.add.text(W / 2, 300, nextLabel, {
+      .setInteractive({ useHandCursor: true })
+      .setAlpha(0).setDepth(2);
+    const btnTxt = this.add.text(W / 2, 548, nextLabel, {
       fontFamily: 'Verdana',
       fontSize: '20px',
       color: '#ffffff'
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setAlpha(0).setDepth(2);
+
+    this.tweens.add({ targets: [btn, btnTxt], alpha: 1, duration: 360, delay: 2500 });
 
     btn.on('pointerover', () => btn.setFillStyle(0x1d588f, 0.95));
     btn.on('pointerout', () => btn.setFillStyle(0x123966, 0.92));
     btn.on('pointerdown', () => {
-      p.destroy();
       if (stage < STAGE_COUNT) {
         this.scene.start('Game', { stage: stage + 1, score: totalScore, lives });
       } else {
         this.scene.start('Menu');
       }
-    });
-
-    this.time.delayedCall(3000, () => {
-      if (p.active) p.stop();
     });
   }
 }
