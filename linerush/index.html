@@ -226,8 +226,6 @@ class GameScene extends Phaser.Scene {
     const key = this.textures.exists(bgKey) ? bgKey : `bg1`;
     this.bgImage = this.add.image(W / 2, H / 2, key).setDepth(0).setDisplaySize(W, H);
 
-    // 스테이지별 마스코트 포트레이트 업데이트
-    if (window.lrSetCharPortrait) window.lrSetCharPortrait(this.stage);
 
     this.overlayGfx = this.add.graphics().setDepth(1);
     this.claimedGfx = this.add.graphics().setDepth(2);
@@ -280,7 +278,7 @@ class GameScene extends Phaser.Scene {
     const isTouch = this.sys.game.device.input.touch;
     if (!isTouch) return;
 
-    const joyCenter = { x: 72, y: H - 80 };
+    const joyCenter = { x: W - 72, y: H - 80 };
     const joyRadius = 42;
     const knobRadius = 18;
 
@@ -428,7 +426,7 @@ class GameScene extends Phaser.Scene {
 
     const next = this.grid[nr][nc];
     if (next === 2) {
-      this.playerDie();
+      // 자기 트레일에 막힘 — 죽지 않고 이동만 무시
       return;
     }
 
@@ -1249,43 +1247,7 @@ const config = {
 
 new Phaser.Game(config);
 
-// ── 캐릭터 마스코트 오버레이 (스테이지별) ────────────────────────
-// stage 1→토끼(char1), 2→여우(char2), 3→곰(char4), 4-10→랜덤
-(function () {
-  const STAGE_CHAR = { 1: 'char1', 2: 'char2', 3: 'char4' };
-  const ALL_CHARS  = [1,2,3,4,5,6,7,8,9,10];
 
-  const wrap = document.createElement('div');
-  wrap.id = 'lr-char';
-  wrap.style.cssText = [
-    'position:fixed', 'bottom:18px', 'right:14px', 'z-index:200',
-    'pointer-events:none', 'filter:drop-shadow(0 0 8px rgba(80,220,255,0.7))',
-    'transition:opacity .4s', 'opacity:0',
-  ].join(';');
-
-  const img = document.createElement('img');
-  img.style.cssText = [
-    'width:68px', 'height:68px', 'border-radius:50%',
-    'border:3px solid rgba(100,230,255,0.75)',
-    'display:block', 'object-fit:cover',
-  ].join(';');
-
-  wrap.appendChild(img);
-  document.body.appendChild(wrap);
-
-  // 스테이지별 캐릭터 변경 (GameScene.create()에서 호출)
-  window.lrSetCharPortrait = function (stage) {
-    const charKey = STAGE_CHAR[stage] ||
-      'char' + ALL_CHARS[Math.floor(Math.random() * ALL_CHARS.length)];
-    wrap.style.opacity = '0';
-    img.onload  = () => { wrap.style.opacity = '1'; };
-    img.onerror = () => { wrap.style.display = 'none'; };
-    img.src = `img/${charKey}.jpg`;
-  };
-
-  // 초기 표시 (stage 1 기본)
-  window.lrSetCharPortrait(1);
-})();
 </script>
 </body>
 </html>
