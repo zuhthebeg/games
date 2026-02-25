@@ -197,8 +197,8 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    // Random bg selection — shuffled pool per session, consistent per stage
-    if (!window._lrBgMap) {
+    // Random bg selection — new shuffle each time stage 1 starts (no repeats per run)
+    if (!window._lrBgMap || this.stage === 1) {
       const indices = Array.from({ length: BG_COUNT }, (_, i) => i + 1);
       for (let i = indices.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -262,7 +262,7 @@ class GameScene extends Phaser.Scene {
     const isTouch = this.sys.game.device.input.touch;
     if (!isTouch) return;
 
-    const joyCenter = { x: W - 64, y: H - 64 };
+    const joyCenter = { x: 72, y: H - 80 };
     const joyRadius = 42;
     const knobRadius = 18;
 
@@ -437,12 +437,25 @@ class GameScene extends Phaser.Scene {
     }
 
     if (next === 1) {
+      // When safe (not drawing), only allow moving to frontier cells
+      // (claimed cells adjacent to at least one unclaimed cell)
+      if (!this.isDrawing && !this.isFrontier(nr, nc)) return;
       this.playerRow = nr;
       this.playerCol = nc;
       if (this.isDrawing) {
         this.captureTerritory();
       }
     }
+  }
+
+  isFrontier(r, c) {
+    if (this.grid[r][c] !== 1) return false;
+    const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+    for (const [dr, dc] of dirs) {
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && this.grid[nr][nc] === 0) return true;
+    }
+    return false;
   }
 
   stepRetreat() {
@@ -817,6 +830,20 @@ class GameScene extends Phaser.Scene {
     return { row: best.row, col: best.col };
   }
 
+  findNearestFrontier(row, col) {
+    // Find nearest frontier cell (claimed + adjacent to unclaimed)
+    let best = null;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (!this.isFrontier(r, c)) continue;
+        const d = Math.abs(r - row) + Math.abs(c - col);
+        if (!best || d < best.d) best = { row: r, col: c, d };
+      }
+    }
+    // Fallback to any claimed cell if no frontier found
+    return best || this.findNearestClaimed(row, col);
+  }
+
   playerDie() {
     if (this.invuln > 0) return;
 
@@ -840,7 +867,7 @@ class GameScene extends Phaser.Scene {
       return;
     }
 
-    const respawn = this.findNearestClaimed(this.playerRow, this.playerCol);
+    const respawn = this.findNearestFrontier(this.playerRow, this.playerCol);
     this.playerRow = respawn.row;
     this.playerCol = respawn.col;
     this.invuln = 900;
