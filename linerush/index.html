@@ -22,6 +22,7 @@ window.addEventListener('error', (e) => {
   document.body.appendChild(msg);
 });
 const STAGE_COUNT = 10;
+const BG_COUNT = 40;
 const STORAGE_UNLOCK_KEY = 'linerush_unlocked_stage';
 const COLS = 26;
 const ROWS = 38;
@@ -50,8 +51,8 @@ class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
 
   preload() {
-    for (let s = 1; s <= STAGE_COUNT; s++) {
-      this.load.image(`stage${s}_real`, `/linerush/img/stage${s}.jpg`);
+    for (let i = 1; i <= BG_COUNT; i++) {
+      this.load.image(`bg${i}`, `/linerush/img/bg${i}.jpg`);
     }
   }
 
@@ -196,7 +197,17 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    const key = this.textures.exists(`stage${this.stage}_real`) ? `stage${this.stage}_real` : `stage${this.stage}_placeholder`;
+    // Random bg selection — shuffled pool per session, consistent per stage
+    if (!window._lrBgMap) {
+      const indices = Array.from({ length: BG_COUNT }, (_, i) => i + 1);
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      window._lrBgMap = indices;
+    }
+    const bgIdx = window._lrBgMap[(this.stage - 1) % BG_COUNT];
+    const key = this.textures.exists(`bg${bgIdx}`) ? `bg${bgIdx}` : `stage${this.stage}_placeholder`;
     this.bgImage = this.add.image(W / 2, H / 2, key).setDepth(0).setDisplaySize(W, H);
 
     this.overlayGfx = this.add.graphics().setDepth(1);
