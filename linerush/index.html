@@ -557,30 +557,22 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    // Capture enemy-free regions; if all have enemies, capture only the smallest
+    // Always capture only the SMALLEST region (Qix rule).
+    // Enemies inside the captured region are relocated to the largest remaining region.
     regions.sort((a, b) => a.cells.length - b.cells.length);
-    const noEnemyRegions = regions.filter(r => !r.hasEnemy);
-    let claimRegions;
-    if (noEnemyRegions.length > 0) {
-      // Standard: capture all enemy-free enclosed regions
-      claimRegions = noEnemyRegions;
-    } else if (regions.length > 1) {
-      // All regions have enemies — force-capture ONLY the smallest, relocate its enemy
-      claimRegions = [regions[0]];
-      const safeRegion = regions[regions.length - 1];
-      if (safeRegion && safeRegion.cells.length > 0) {
-        for (const e of this.enemies) {
-          const er = Phaser.Math.Clamp(Math.floor(e.y / CELL), 0, ROWS - 1);
-          const ec = Phaser.Math.Clamp(Math.floor(e.x / CELL), 0, COLS - 1);
-          if (claimRegions[0].cells.some(c => c.r === er && c.c === ec)) {
-            const target = safeRegion.cells[Phaser.Math.Between(0, safeRegion.cells.length - 1)];
-            e.x = target.c * CELL + CELL / 2;
-            e.y = target.r * CELL + CELL / 2;
-          }
+    const claimRegions = regions.length > 1 ? [regions[0]] : regions;
+    const safeRegion   = regions[regions.length - 1];
+
+    if (regions.length > 1 && safeRegion.cells.length > 0) {
+      for (const e of this.enemies) {
+        const er = Phaser.Math.Clamp(Math.floor(e.y / CELL), 0, ROWS - 1);
+        const ec = Phaser.Math.Clamp(Math.floor(e.x / CELL), 0, COLS - 1);
+        if (claimRegions[0].cells.some(c => c.r === er && c.c === ec)) {
+          const target = safeRegion.cells[Phaser.Math.Between(0, safeRegion.cells.length - 1)];
+          e.x = target.c * CELL + CELL / 2;
+          e.y = target.r * CELL + CELL / 2;
         }
       }
-    } else {
-      claimRegions = regions;
     }
 
     let gained = 0;
@@ -1267,7 +1259,7 @@ new Phaser.Game(config);
   const wrap = document.createElement('div');
   wrap.id = 'lr-char';
   wrap.style.cssText = [
-    'position:fixed', 'bottom:18px', 'left:14px', 'z-index:200',
+    'position:fixed', 'bottom:18px', 'right:14px', 'z-index:200',
     'pointer-events:none', 'filter:drop-shadow(0 0 8px rgba(80,220,255,0.7))',
     'transition:opacity .4s', 'opacity:0',
   ].join(';');
