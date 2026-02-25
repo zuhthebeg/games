@@ -1257,6 +1257,34 @@ const config = {
 };
 
 new Phaser.Game(config);
+
+// ── 캐릭터 마스코트 오버레이 ──────────────────────────────────────
+// 세션마다 랜덤 동물 캐릭터 1장 선택, 좌측 하단 초상화로 표시
+(function () {
+  const CHAR_COUNT = 10;
+  const idx = Math.floor(Math.random() * CHAR_COUNT) + 1;
+
+  const wrap = document.createElement('div');
+  wrap.id = 'lr-char';
+  wrap.style.cssText = [
+    'position:fixed', 'bottom:18px', 'left:14px', 'z-index:200',
+    'pointer-events:none', 'filter:drop-shadow(0 0 8px rgba(80,220,255,0.7))',
+    'transition:opacity .4s', 'opacity:0',
+  ].join(';');
+
+  const img = document.createElement('img');
+  img.src = `img/char${idx}.jpg`;
+  img.style.cssText = [
+    'width:68px', 'height:68px', 'border-radius:50%',
+    'border:3px solid rgba(100,230,255,0.75)',
+    'display:block', 'object-fit:cover',
+  ].join(';');
+  img.onload  = () => { wrap.style.opacity = '1'; };
+  img.onerror = () => { wrap.style.display = 'none'; };
+
+  wrap.appendChild(img);
+  document.body.appendChild(wrap);
+})();
 </script>
 </body>
 </html>

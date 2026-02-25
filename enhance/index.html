@@ -825,7 +825,20 @@
             display: flex;
             flex-direction: column;
             padding-top: 30px;
+            background-size: cover;
+            background-position: center top;
+            min-height: 100vh;
+            position: relative;
         }
+        .hunt-screen::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(8, 8, 18, 0.62);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hunt-screen > * { position: relative; z-index: 1; }
 
         .monster-card {
             background: var(--card);
@@ -1451,7 +1464,19 @@
             display: flex;
             flex-direction: column;
             background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+            background-size: cover;
+            background-position: center;
+            position: relative;
         }
+        .battle-screen::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 5, 18, 0.60);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .battle-screen > * { position: relative; z-index: 1; }
 
         .battle-header {
             text-align: center;
@@ -2845,6 +2870,18 @@
             const levelCost = getBaseEnhanceRates(Math.min(weapon.level, 20)).cost;
             const gradeMult = REPAIR_COST_MULT[weapon.grade] || 1.0;
             return Math.floor((missingDurability / 100) * (levelCost / 10) * gradeMult);
+        }
+
+        // ===== FANTASY BACKGROUNDS (from Line Rush ai-generated pool) =====
+        const FANTASY_BG_POOL = Array.from({ length: 30 }, (_, i) => 11 + i); // bg11~bg40
+        let _huntBg = null;   // persists across renderHunt() calls for same hunt session
+        let _battleBg = null; // persists across renderBattle() calls for same battle session
+        function pickFantasyBg() {
+            return FANTASY_BG_POOL[Math.floor(Math.random() * FANTASY_BG_POOL.length)];
+        }
+        function applyBg(selector, bgIdx) {
+            const el = document.querySelector(selector);
+            if (el && bgIdx) el.style.backgroundImage = `url('/linerush/img/bg${bgIdx}.jpg')`;
         }
 
         let mpUI = null;
@@ -4563,6 +4600,7 @@
 
         // ===== BATTLE MODE (새 턴제 PvP) =====
         function showBattleLobby() {
+            _battleBg = pickFantasyBg(); // 배틀 배경 랜덤 선택
             mpUI = new MultiplayerUI({
                 gameType: 'pvp-battle',
                 gameName: '⚔️ 턴제 배틀',
@@ -5214,6 +5252,7 @@
                     </div>
                 </div>
             `;
+            applyBg('.battle-screen', _battleBg);
         }
 
         function battleSurrender() {
@@ -5674,6 +5713,7 @@
         function showHunt() {
             // Initialize hunt state
             state.consecutiveCritsTaken = 0;  // 사냥 시작 시 크리 카운터 리셋
+            _huntBg = pickFantasyBg(); // 판타지 배경 랜덤 선택 (이 사냥 세션 내내 유지)
             const playerStats = getWeaponStats(state.weapon);
             huntState = {
                 monster: spawnMonster(),
@@ -5775,6 +5815,7 @@
                     </div>
                 </div>
             `;
+            applyBg('.hunt-screen', _huntBg);
         }
 
         function getRunPenaltyPercent(tier) {
