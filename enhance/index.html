@@ -834,11 +834,19 @@
             content: '';
             position: fixed;
             inset: 0;
-            background: rgba(8, 8, 18, 0.62);
+            background: rgba(8, 8, 18, 0.50);
             pointer-events: none;
             z-index: 0;
         }
         .hunt-screen > * { position: relative; z-index: 1; }
+        /* 배경 실루엣이 보이도록 사냥 화면 카드 반투명 */
+        .hunt-screen .monster-card,
+        .hunt-screen .weapon-card,
+        .hunt-screen .log-area,
+        .hunt-screen .stats-bar {
+            background: rgba(26, 26, 26, 0.78) !important;
+            backdrop-filter: blur(2px);
+        }
 
         /* 강화 / 대장간 배경 */
         .enhance-screen {
@@ -848,7 +856,7 @@
         }
         .enhance-screen::before {
             content: ''; position: fixed; inset: 0;
-            background: rgba(5, 8, 22, 0.74);
+            background: rgba(5, 8, 22, 0.52);
             pointer-events: none; z-index: 0;
         }
         .enhance-screen > * { position: relative; z-index: 1; }
@@ -860,10 +868,18 @@
         }
         .blacksmith-screen::before {
             content: ''; position: fixed; inset: 0;
-            background: rgba(10, 5, 2, 0.68);
+            background: rgba(10, 5, 2, 0.48);
             pointer-events: none; z-index: 0;
         }
         .blacksmith-screen > * { position: relative; z-index: 1; }
+        /* 강화/대장간 카드 반투명 */
+        .enhance-screen .weapon-card,
+        .enhance-screen .enhance-panel,
+        .blacksmith-screen .blacksmith-card,
+        .blacksmith-screen .enhance-panel {
+            background: rgba(26, 26, 26, 0.72) !important;
+            backdrop-filter: blur(3px);
+        }
 
         .monster-card {
             background: var(--card);
@@ -2897,16 +2913,16 @@
             return Math.floor((missingDurability / 100) * (levelCost / 10) * gradeMult);
         }
 
-        // ===== FANTASY BACKGROUNDS (from Line Rush ai-generated pool) =====
-        const FANTASY_BG_POOL = Array.from({ length: 30 }, (_, i) => 11 + i); // bg11~bg40
+        // ===== FANTASY BACKGROUNDS (boss-themed: volcano, snow peak, dragon lair, etc.) =====
+        const HUNT_BG_COUNT = 8; // hunt_bg1~8.jpg — luminarqmix-v7 generated
         let _huntBg = null;   // persists across renderHunt() calls for same hunt session
         let _battleBg = null; // persists across renderBattle() calls for same battle session
         function pickFantasyBg() {
-            return FANTASY_BG_POOL[Math.floor(Math.random() * FANTASY_BG_POOL.length)];
+            return Math.floor(Math.random() * HUNT_BG_COUNT) + 1;
         }
         function applyBg(selector, bgIdx) {
             const el = document.querySelector(selector);
-            if (el && bgIdx) el.style.backgroundImage = `url('/linerush/img/bg${bgIdx}.jpg')`;
+            if (el && bgIdx) el.style.backgroundImage = `url('./img/hunt_bg${bgIdx}.jpg')`;
         }
 
         let mpUI = null;
