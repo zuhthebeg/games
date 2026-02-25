@@ -178,15 +178,19 @@ class GameScene extends Phaser.Scene {
     this.rushHeld = false;
     this.invuln = 0;
 
-    const enemyCount = this.stage + 1;
+    const enemyCount = Math.min(8, this.stage + 1);
     this.enemies = [];
     for (let i = 0; i < enemyCount; i++) {
+      const baseSpeed = CELL * (0.9 + this.stage * 0.32 + i * 0.03);
+      const kind = (i % 3 === 0) ? 'hunter' : (i % 3 === 1 ? 'zigzag' : 'bouncer');
       this.enemies.push({
         x: Phaser.Math.FloatBetween(CELL * 2, W - CELL * 2),
         y: Phaser.Math.FloatBetween(CELL * 2, H - CELL * 2),
-        vx: (Math.random() > 0.5 ? 1 : -1) * CELL * (0.9 + this.stage * 0.35),
-        vy: (Math.random() > 0.5 ? 1 : -1) * CELL * (0.9 + this.stage * 0.35),
-        radius: 6,
+        vx: (Math.random() > 0.5 ? 1 : -1) * baseSpeed,
+        vy: (Math.random() > 0.5 ? 1 : -1) * baseSpeed,
+        baseSpeed,
+        kind,
+        radius: kind === 'hunter' ? 6.6 : 6,
         pulse: Math.random() * Math.PI * 2
       });
     }
@@ -530,7 +534,9 @@ class GameScene extends Phaser.Scene {
 
   redrawOverlay() {
     this.overlayGfx.clear();
-    this.overlayGfx.fillStyle(0x090913, 0.78);
+
+    // 1) dark mask for unrevealed area
+    this.overlayGfx.fillStyle(0x090913, 0.76);
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         if (this.grid[r][c] === 0 || this.grid[r][c] === 2) {
@@ -538,12 +544,43 @@ class GameScene extends Phaser.Scene {
         }
       }
     }
+
+    // 2) silhouette-like contour glow on unrevealed area boundary
+    this.overlayGfx.lineStyle(1.2, 0xbec6ff, 0.22);
+    for (let r = 1; r < ROWS - 1; r++) {
+      for (let c = 1; c < COLS - 1; c++) {
+        if (this.grid[r][c] !== 0) continue;
+        const nearClaimed = this.grid[r-1][c] === 1 || this.grid[r+1][c] === 1 || this.grid[r][c-1] === 1 || this.grid[r][c+1] === 1;
+        if (nearClaimed) {
+          this.overlayGfx.strokeRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
+        }
+      }
+    }
   }
 
   updateEnemies(delta) {
     const dt = delta / 1000;
+    const px = this.playerCol * CELL + CELL / 2;
+    const py = this.playerRow * CELL + CELL / 2;
+
     for (const e of this.enemies) {
       e.pulse += dt * 6;
+
+      // behavior patterns
+      if (e.kind === 'hunter' && (this.isDrawing || this.retracting)) {
+        const dx = px - e.x;
+        const dy = py - e.y;
+        const d = Math.hypot(dx, dy) || 1;
+        const aim = e.baseSpeed * 1.06;
+        e.vx = (e.vx * 0.9) + (dx / d) * aim * 0.1;
+        e.vy = (e.vy * 0.9) + (dy / d) * aim * 0.1;
+      } else if (e.kind === 'zigzag') {
+        const w = Math.sin(this.time.now * 0.006 + e.pulse) * 0.22;
+        const vx = e.vx;
+        e.vx = vx * Math.cos(w) - e.vy * Math.sin(w);
+        e.vy = vx * Math.sin(w) + e.vy * Math.cos(w);
+      }
+
       let nx = e.x + e.vx * dt;
       let ny = e.y + e.vy * dt;
 
@@ -562,8 +599,8 @@ class GameScene extends Phaser.Scene {
         return this.grid[rr][cc];
       };
 
-      const hitX = testCell(nx + Math.sign(e.vx) * e.radius, e.y) === 1;
-      const hitY = testCell(e.x, ny + Math.sign(e.vy) * e.radius) === 1;
+      const hitX = testCell(nx + Math.sign(e.vx || 1) * e.radius, e.y) === 1;
+      const hitY = testCell(e.x, ny + Math.sign(e.vy || 1) * e.radius) === 1;
 
       if (hitX) e.vx *= -1;
       if (hitY) e.vy *= -1;
