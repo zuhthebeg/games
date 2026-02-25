@@ -840,6 +840,31 @@
         }
         .hunt-screen > * { position: relative; z-index: 1; }
 
+        /* 강화 / 대장간 배경 */
+        .enhance-screen {
+            min-height: 100vh;
+            background: url('./img/enhance_bg.jpg') center/cover fixed;
+            position: relative;
+        }
+        .enhance-screen::before {
+            content: ''; position: fixed; inset: 0;
+            background: rgba(5, 8, 22, 0.74);
+            pointer-events: none; z-index: 0;
+        }
+        .enhance-screen > * { position: relative; z-index: 1; }
+
+        .blacksmith-screen {
+            min-height: 100vh;
+            background: url('./img/forge_bg.jpg') center/cover fixed;
+            position: relative;
+        }
+        .blacksmith-screen::before {
+            content: ''; position: fixed; inset: 0;
+            background: rgba(10, 5, 2, 0.68);
+            pointer-events: none; z-index: 0;
+        }
+        .blacksmith-screen > * { position: relative; z-index: 1; }
+
         .monster-card {
             background: var(--card);
             border: 2px solid var(--card-border);
@@ -3650,7 +3675,7 @@
             }
 
             document.getElementById('app').innerHTML = `
-                <div class="container">
+                <div class="container enhance-screen">
                     <div class="gold-display">
                         <span class="gold-icon">💰</span>
                         <span class="gold-amount">${state.gold.toLocaleString()} G</span>
@@ -4321,7 +4346,7 @@
             const canRepair = !isCursed(weapon) && durability < MAX_DURABILITY && state.gold >= repairCost;
             
             document.getElementById('app').innerHTML = `
-                <div class="container">
+                <div class="container blacksmith-screen">
                     <button class="btn-back" onclick="showMain()">← 메인으로</button>
                     
                     <header>
@@ -5553,13 +5578,9 @@
             // 데미지 기반 티어 (레벨보다 정확함)
             const recommendedTier = getRecommendedTierByDamage();
             
-            // 보스 출현 확률 (일반 몹 5마리 이상 처치 후부터, 티어에 따라 증가)
+            // 10킬마다 무조건 보스 등장
             const killsSinceLastBoss = huntState ? huntState.monstersKilled - (huntState.lastBossKill || 0) : 0;
-            const bossChance = killsSinceLastBoss >= 5
-                ? (recommendedTier >= 5 ? 0.15 : (recommendedTier >= 4 ? 0.1 : (recommendedTier >= 3 ? 0.05 : 0)))
-                : 0;
-            if (bossChance > 0 && Math.random() < bossChance) {
-                // 보스는 현재 티어에 맞게
+            if (killsSinceLastBoss >= 10) {
                 const bossTier = Math.max(4, recommendedTier);
                 const bosses = Object.entries(MONSTERS).filter(([k, v]) => v.isBoss && v.tier <= bossTier);
                 if (bosses.length > 0) {
@@ -5724,7 +5745,10 @@
                 },
                 log: [],
                 monstersKilled: 0,
-                totalGoldEarned: 0
+                totalGoldEarned: 0,
+                bossesKilledInSession: 0,   // 이번 세션 보스 처치 수 (보상 계산용)
+                pendingBoss: null,           // 9킬 시점에 미리 선택한 다음 보스
+                pendingBossDialoguePromise: null // 미리 fetch한 보스 대사 Promise
             };
             renderHunt();
 
@@ -6563,14 +6587,34 @@
             state.mastery.kills++;
             huntState.monstersKilled++;
             huntState.totalGoldEarned += goldReward;
-            // 보스 처치 시 카운터 기록 (다음 보스까지 최소 5킬 필요)
+            // 보스 처치 시 카운터 기록
             if (monster.isBoss) {
                 huntState.lastBossKill = huntState.monstersKilled;
+                huntState.bossesKilledInSession = (huntState.bossesKilledInSession || 0) + 1;
                 state.bossKills = (state.bossKills || 0) + 1;
                 pendingBossKills++;
                 if (!state.bossTypeKills) state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
                 const bType = monster.type || 'dragon';
                 if (state.bossTypeKills[bType] !== undefined) state.bossTypeKills[bType]++;
+
+                // 보스 처치 보상: 이번 세션 n번째 보스 → 파괴방지 주문서 n개
+                const scrollBonus = huntState.bossesKilledInSession;
+                if (!state.weapon.protectionScrolls) state.weapon.protectionScrolls = 0;
+                state.weapon.protectionScrolls += scrollBonus;
+                huntState.log.push({ type: 'boss_reward', text: `🛡️ 보스 처치 보상! 파괴방지 주문서 +${scrollBonus}개 (세션 ${scrollBonus}번째 보스)` });
+            }
+
+            // 9번째 킬 시점: 다음이 보스 → 미리 선택 + 대사 fetch
+            const sinceLastBoss = huntState.monstersKilled - (huntState.lastBossKill || 0);
+            if (sinceLastBoss === 9 && !huntState.pendingBoss) {
+                const recTier = getRecommendedTierByDamage();
+                const bTier = Math.max(4, recTier);
+                const bossList = Object.entries(MONSTERS).filter(([k, v]) => v.isBoss && v.tier <= bTier);
+                if (bossList.length > 0) {
+                    const [bType, bM] = bossList[Math.floor(Math.random() * bossList.length)];
+                    huntState.pendingBoss = applyBossScaling({ type: bType, ...bM, currentHp: bM.hp, maxHp: bM.hp });
+                    huntState.pendingBossDialoguePromise = fetchBossDialogue(huntState.pendingBoss);
+                }
             }
             
             // 🔥 피닉스 지팡이: 연속 사냥 시 HP 100% 회복!
@@ -6819,11 +6863,20 @@
         function huntContinueAfterTreasure() {
             closeResult();
             document.getElementById('resultBtn').style.display = '';
-            // 보물상자 후에는 HP 회복 없이 바로 몬스터 스폰
-            huntState.monster = spawnMonster();
+            // 보물상자 후에는 HP 회복 없이 바로 몬스터 스폰 (pendingBoss 우선)
+            if (huntState.pendingBoss) {
+                huntState.monster = huntState.pendingBoss;
+                huntState.pendingBoss = null;
+            } else {
+                huntState.monster = spawnMonster();
+            }
             huntState.log = [{ type: 'info', text: `👀 새로운 몬스터 발견!` }];
             renderHunt();
-            if (huntState.monster.isBoss) fetchBossDialogue(huntState.monster).then(d => d && showBossDialogue(d));
+            if (huntState.monster.isBoss) {
+                const cached = huntState.pendingBossDialoguePromise;
+                huntState.pendingBossDialoguePromise = null;
+                (cached || fetchBossDialogue(huntState.monster)).then(d => d && showBossDialogue(d));
+            }
         }
         
         // 사망 후 다시 사냥 (새 무기, 만피, 골드 0)
@@ -6853,12 +6906,21 @@
                 return;
             }
             
-            // Spawn next monster, heal a bit (10% 회복)
-            huntState.monster = spawnMonster();
+            // Spawn next monster (보스 미리 선택됐으면 사용), heal a bit (10% 회복)
+            if (huntState.pendingBoss) {
+                huntState.monster = huntState.pendingBoss;
+                huntState.pendingBoss = null;
+            } else {
+                huntState.monster = spawnMonster();
+            }
             huntState.player.hp = Math.min(huntState.player.maxHp, huntState.player.hp + Math.floor(huntState.player.maxHp * 0.1));
             huntState.log = [{ type: 'info', text: `❤️ HP 10% 회복!` }];
             renderHunt();
-            if (huntState.monster.isBoss) fetchBossDialogue(huntState.monster).then(d => d && showBossDialogue(d));
+            if (huntState.monster.isBoss) {
+                const cached = huntState.pendingBossDialoguePromise;
+                huntState.pendingBossDialoguePromise = null;
+                (cached || fetchBossDialogue(huntState.monster)).then(d => d && showBossDialogue(d));
+            }
         }
         
         function huntStop() {
