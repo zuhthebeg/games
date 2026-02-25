@@ -5802,9 +5802,6 @@
             let dialogue = bossData.dialogue.replace(/^dialogue:\s*/i, '').trim();
             if (!dialogue) return;
 
-            const emotionEmoji = { angry: '😤', amused: '😏', scared: '😨', bored: '🥱', excited: '🤩' };
-            const emoji = emotionEmoji[bossData.emotion] || '💬';
-
             // 기존 오버레이 제거
             const old = document.getElementById('bossDialogueOverlay');
             if (old) old.remove();
@@ -5825,7 +5822,7 @@
             document.body.appendChild(overlay);
 
             // 타이핑 효과
-            const text = `${emoji} ${dialogue}`;
+            const text = dialogue;
             let i = 0;
             const typing = setInterval(() => {
                 if (i < text.length) {
@@ -6749,7 +6746,7 @@
 
             // 9번째 킬 시점: 다음이 보스 → 미리 선택 + 대사 fetch
             const sinceLastBoss = huntState.monstersKilled - (huntState.lastBossKill || 0);
-            if (sinceLastBoss === 9 && !huntState.pendingBoss) {
+            if (sinceLastBoss === 8 && !huntState.pendingBoss) {
                 const recTier = getRecommendedTierByDamage();
                 const bTier = Math.max(4, recTier);
                 const bossList = Object.entries(MONSTERS).filter(([k, v]) => v.isBoss && v.tier <= bTier);
