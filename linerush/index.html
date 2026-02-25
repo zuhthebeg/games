@@ -22,12 +22,11 @@ window.addEventListener('error', (e) => {
   document.body.appendChild(msg);
 });
 const STAGE_COUNT = 10;
-const BG_LANDSCAPE_START = 11; // bg11-40: AI landscapes (stages 1-4)
+const BG_LANDSCAPE_START = 11; // bg11-40: AI landscapes (all stages)
 const BG_LANDSCAPE_END   = 40;
-const BG_CHAR_START      = 41; // bg41-50: character images (stages 5-10)
-const BG_CHAR_END        = 50;
-const BG_ORIG_START      = 1;  // bg1-10: original images (stages 5-10)
+const BG_ORIG_START      = 1;  // bg1-10: original images
 const BG_ORIG_END        = 10;
+// bg41-50 were removed (low quality) — to be regenerated later
 const STORAGE_UNLOCK_KEY = 'linerush_unlocked_stage';
 const COLS = 26;
 const ROWS = 38;
@@ -56,8 +55,8 @@ class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
 
   preload() {
-    // Load all bg images: originals (1-10), landscapes (11-40), characters (41-50)
-    for (let i = BG_ORIG_START; i <= BG_CHAR_END; i++) {
+    // Load all bg images: originals (1-10) + landscapes (11-40)
+    for (let i = BG_ORIG_START; i <= BG_LANDSCAPE_END; i++) {
       this.load.image(`bg${i}`, `/linerush/img/bg${i}.jpg`);
     }
   }
@@ -203,7 +202,7 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    // Bg pools: stages 1-4 = landscapes (bg11-40), stages 5-10 = originals+chars (bg1-10, bg41-50)
+    // Bg pool: all 30 landscapes (bg11-40) shuffled across all 10 stages
     if (!window._lrBgMap || this.stage === 1) {
       function shuffle(arr) {
         for (let i = arr.length - 1; i > 0; i--) {
@@ -212,18 +211,8 @@ class GameScene extends Phaser.Scene {
         }
         return arr;
       }
-      // Landscape pool for stages 1-4
-      const landscapes = shuffle(Array.from({ length: BG_LANDSCAPE_END - BG_LANDSCAPE_START + 1 }, (_, i) => BG_LANDSCAPE_START + i));
-      // Character/original pool for stages 5-10
-      const charOrig = shuffle([
-        ...Array.from({ length: BG_ORIG_END - BG_ORIG_START + 1 }, (_, i) => BG_ORIG_START + i),
-        ...Array.from({ length: BG_CHAR_END - BG_CHAR_START + 1 }, (_, i) => BG_CHAR_START + i),
-      ]);
-      // Build map: [stage1, stage2, ..., stage10]
-      window._lrBgMap = [
-        landscapes[0], landscapes[1], landscapes[2], landscapes[3], // stages 1-4
-        charOrig[0], charOrig[1], charOrig[2], charOrig[3], charOrig[4], charOrig[5], // stages 5-10
-      ];
+      const all = shuffle(Array.from({ length: BG_LANDSCAPE_END - BG_LANDSCAPE_START + 1 }, (_, i) => BG_LANDSCAPE_START + i));
+      window._lrBgMap = all.slice(0, STAGE_COUNT); // 10 random picks, no repeats
     }
     const bgIdx = window._lrBgMap[Math.min(this.stage - 1, window._lrBgMap.length - 1)];
     this.bgIdx = bgIdx;
