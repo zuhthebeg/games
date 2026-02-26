@@ -24,7 +24,7 @@ window.addEventListener('error', (e) => {
   msg.textContent = 'Line Rush 로딩 오류: ' + (e.message || 'unknown');
   document.body.appendChild(msg);
 });
-const STAGE_COUNT        = 10;  // 이미지 승인 후 15로 업데이트
+const STAGE_COUNT        = 15;
 const BG_ORIG_START      = 1;   // bg1-10: stage 4-10 random backgrounds
 const BG_ORIG_END        = 10;
 // stage 1→char1, 2→char2, 3→char4 (luminarqmix-v7 portrait crops)
@@ -47,6 +47,12 @@ const MAIN_MONSTERS = [
   { name:'다크',     color:0xaa44ff, ring:0x660099, radius:13, spdMul:1.65,img:'boss8' },
   { name:'카오스',   color:0xff44aa, ring:0xcc0077, radius:13, spdMul:1.7, img:'boss9' },
   { name:'보이드',   color:0xff0000, ring:0x880000, radius:14, spdMul:1.75,img:'boss10'},
+  // Stages 11-15: harder variants of stages 1-5 (reuse boss1-5 images)
+  { name:'슬라임EX', color:0x44ff44, ring:0x00cc00, radius:11, spdMul:1.95,img:'boss1' },
+  { name:'스핀EX',   color:0xffaa22, ring:0xff6600, radius:12, spdMul:2.0, img:'boss2' },
+  { name:'촉수EX',   color:0xcc44ff, ring:0x8800cc, radius:12, spdMul:1.98,img:'boss3' },
+  { name:'아이볼EX', color:0xff2244, ring:0xcc0022, radius:13, spdMul:2.05,img:'boss4' },
+  { name:'아이스EX', color:0x88ddff, ring:0x0088cc, radius:13, spdMul:2.1, img:'boss5' },
 ];
 
 const ITEM_TYPES = ['freeze','speed','shield','slow'];
@@ -270,11 +276,13 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    // Bg selection: stages 1-3 → char portraits, stages 4-10 → random from bg1-10
+    // Bg selection: stages 1-3 → char portraits, stages 4+ → random from bg1-10 (cycles for 11-15)
     let bgKey;
     if (STAGE_CHAR_MAP[this.stage]) {
       bgKey = STAGE_CHAR_MAP[this.stage];
     } else {
+      // For stages 11-15, map to stage 1-5 bg cycle
+      const effectiveStage = this.stage <= 10 ? this.stage : ((this.stage - 11) % 5) + 1;
       if (!window._lrBgMap || this.stage === 4) {
         const origPool = Array.from({ length: BG_ORIG_END - BG_ORIG_START + 1 }, (_, i) => i + BG_ORIG_START);
         for (let i = origPool.length - 1; i > 0; i--) {
@@ -283,8 +291,8 @@ class GameScene extends Phaser.Scene {
         }
         window._lrBgMap = origPool; // 10 shuffled picks for stages 4-10
       }
-      const mapIdx = Math.min(this.stage - 4, window._lrBgMap.length - 1);
-      bgKey = `bg${window._lrBgMap[mapIdx]}`;
+      const mapIdx = Math.min(effectiveStage - 4, window._lrBgMap.length - 1);
+      bgKey = `bg${window._lrBgMap[Math.max(0, mapIdx)]}`;
     }
     this.bgKey = bgKey;
     const key = this.textures.exists(bgKey) ? bgKey : `bg1`;
@@ -331,6 +339,8 @@ class GameScene extends Phaser.Scene {
     }
 
     this.enemyBullets = [];
+    this.bossAttackTimer = 30000;
+    this.bossCharging = false;
 
     // 스테이지별 메인 보스 몬스터
     const mmDef = MAIN_MONSTERS[Math.min(this.stage - 1, MAIN_MONSTERS.length - 1)];
@@ -504,6 +514,15 @@ class GameScene extends Phaser.Scene {
       if (it.timeLeft <= 0) { it.label.destroy(); this.items.splice(i, 1); continue; }
       if (it.timeLeft <= ITEM_BLINK) {
         it.label.setAlpha(Math.floor(this.time.now / 250) % 2 === 0 ? 1 : 0.15);
+      }
+    }
+
+    // Boss mega-attack timer
+    if (this.mainMonster && !this.bossCharging) {
+      this.bossAttackTimer -= delta;
+      if (this.bossAttackTimer <= 0) {
+        this.triggerBossMegaAttack();
+        this.bossAttackTimer = 30000;
       }
     }
 
@@ -714,6 +733,16 @@ class GameScene extends Phaser.Scene {
     for (const region of claimRegions) {
       for (const cell of region.cells) {
         if (this.grid[cell.r][cell.c] === 0) { this.grid[cell.r][cell.c] = 1; gained++; }
+      }
+    }
+
+    // Auto-collect items inside captured territory
+    for (let i = this.items.length - 1; i >= 0; i--) {
+      const it = this.items[i];
+      if (this.grid[it.row][it.col] === 1) {
+        this.collectItem(it.type);
+        it.label.destroy();
+        this.items.splice(i, 1);
       }
     }
 
@@ -994,11 +1023,25 @@ class GameScene extends Phaser.Scene {
 
       if (b.life <= 0 || b.x < -12 || b.x > W + 12 || b.y < -12 || b.y > H + 12) {
         this.enemyBullets.splice(i, 1);
+        continue;
+      }
+
+      // Mega bullet: check if it hit owned territory
+      if (b.isMega) {
+        const br = Phaser.Math.Clamp(Math.floor(b.y / CELL), 0, ROWS - 1);
+        const bc = Phaser.Math.Clamp(Math.floor(b.x / CELL), 0, COLS - 1);
+        if (this.grid[br][bc] === 1) {
+          this.megaBulletImpact(b.x, b.y);
+          this.enemyBullets.splice(i, 1);
+        }
       }
     }
   }
 
   checkCollisions() {
+    // Shield: full invincibility while active
+    if (this.fx.shield > 0) return;
+
     const px = this.playerCol * CELL + CELL / 2;
     const py = this.playerRow * CELL + CELL / 2;
 
@@ -1195,6 +1238,93 @@ class GameScene extends Phaser.Scene {
     this.invuln = Math.max(this.invuln, 2000);
   }
 
+  triggerBossMegaAttack() {
+    if (!this.mainMonster || this.bossCharging) return;
+    // Find random owned territory cells
+    const owned = [];
+    for (let r = 2; r < ROWS - 2; r++)
+      for (let c = 2; c < COLS - 2; c++)
+        if (this.grid[r][c] === 1) owned.push({ r, c });
+    if (owned.length < 10) { return; } // not enough territory to bomb
+    const target = owned[Phaser.Math.Between(0, owned.length - 1)];
+    const tx = target.c * CELL + CELL / 2;
+    const ty = target.r * CELL + CELL / 2;
+    const mm = this.mainMonster;
+    this.bossCharging = true;
+    mm.charging = true;
+
+    // Warning flash on target area
+    const warnGfx = this.add.graphics().setDepth(13);
+    let warnPhase = 0;
+    const warnEv = this.time.addEvent({ delay: 120, repeat: 12, callback: () => {
+      warnGfx.clear();
+      if (warnPhase % 2 === 0) {
+        warnGfx.fillStyle(0xff4400, 0.35);
+        warnGfx.fillCircle(tx, ty, CELL * 7);
+        warnGfx.lineStyle(3, 0xff8800, 0.9);
+        warnGfx.strokeCircle(tx, ty, CELL * 7);
+      }
+      warnPhase++;
+    }});
+
+    // Show warning text
+    const warnTxt = this.add.text(W / 2, H / 2 - 60, '⚠️ 보스 폭격 준비!', {
+      fontSize: '18px', color: '#ff4400', stroke: '#000', strokeThickness: 4
+    }).setOrigin(0.5).setDepth(16);
+
+    this.time.delayedCall(1500, () => {
+      warnGfx.destroy(); warnEv.remove(); warnTxt.destroy();
+      if (!this.mainMonster) { this.bossCharging = false; return; }
+      mm.charging = false;
+      const dx = tx - mm.x, dy = ty - mm.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const speed = CELL * 2.8;
+      this.enemyBullets.push({
+        x: mm.x, y: mm.y,
+        vx: (dx / d) * speed, vy: (dy / d) * speed,
+        r: 22, life: 7000, isMega: true
+      });
+      this.bossCharging = false;
+    });
+  }
+
+  megaBulletImpact(x, y) {
+    const radius = 7; // cells
+    const impactR = Math.floor(y / CELL);
+    const impactC = Math.floor(x / CELL);
+    for (let r = impactR - radius; r <= impactR + radius; r++) {
+      for (let c = impactC - radius; c <= impactC + radius; c++) {
+        if (r < 1 || r >= ROWS - 1 || c < 1 || c >= COLS - 1) continue;
+        const dr = r - impactR, dc = c - impactC;
+        if (Math.hypot(dr, dc) <= radius && this.grid[r][c] === 1) {
+          this.grid[r][c] = 0;
+        }
+      }
+    }
+    // Visual explosion
+    const burst = this.add.particles(x, y, 'pixel', {
+      speed: { min: 80, max: 360 }, lifespan: 700, quantity: 60,
+      scale: { start: 2.8, end: 0 },
+      tint: [0xff4400, 0xff8800, 0xffdd00, 0xff0000, 0xffffff], blendMode: 'ADD'
+    }).setDepth(13);
+    this.time.delayedCall(750, () => { if (burst.active) burst.destroy(); });
+    // Secondary ring
+    const ring = this.add.graphics().setDepth(13);
+    let ringFrame = 0;
+    const ringEv = this.time.addEvent({ delay: 30, repeat: 10, callback: () => {
+      ring.clear();
+      ring.lineStyle(4, 0xff6600, Math.max(0, 0.9 - ringFrame * 0.09));
+      ring.strokeCircle(x, y, CELL * 7 * (ringFrame / 10 + 0.1));
+      ringFrame++;
+    }});
+    this.time.delayedCall(350, () => { ring.destroy(); ringEv.remove(); });
+    this.cameras.main.shake(700, 0.03);
+    this.cameras.main.flash(400, 255, 60, 0);
+    this.updateClaimStats();
+    this.redrawOverlay();
+    this.showItemMsg('💥 영역 폭격!', '#ff4400');
+  }
+
   showContinuePrompt() {
     const gold = window.SharedWallet?.gold || 0;
     const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.78).setDepth(20);
@@ -1326,9 +1456,32 @@ class GameScene extends Phaser.Scene {
     }
 
     // enemy bullets
-    this.actorGfx.fillStyle(0xfff47c, 0.95);
     for (const b of this.enemyBullets) {
-      this.actorGfx.fillCircle(b.x, b.y, b.r);
+      if (b.isMega) {
+        // Mega bullet: pulsing large red-orange orb
+        const pulse = 0.7 + 0.3 * Math.sin(this.time.now * 0.01);
+        this.actorGfx.fillStyle(0xff2200, 0.3 * pulse);
+        this.actorGfx.fillCircle(b.x, b.y, b.r + 8);
+        this.actorGfx.fillStyle(0xff6600, 0.9);
+        this.actorGfx.fillCircle(b.x, b.y, b.r);
+        this.actorGfx.fillStyle(0xffd700, 0.85);
+        this.actorGfx.fillCircle(b.x, b.y, b.r * 0.5);
+        this.actorGfx.lineStyle(3, 0xff4400, 0.9 * pulse);
+        this.actorGfx.strokeCircle(b.x, b.y, b.r + 4);
+      } else {
+        this.actorGfx.fillStyle(0xfff47c, 0.95);
+        this.actorGfx.fillCircle(b.x, b.y, b.r);
+      }
+    }
+
+    // Charging boss flash
+    if (this.mainMonster && this.mainMonster.charging) {
+      const mm = this.mainMonster;
+      const flashAlpha = 0.5 + 0.5 * Math.sin(this.time.now * 0.025);
+      this.actorGfx.fillStyle(0xff4400, 0.55 * flashAlpha);
+      this.actorGfx.fillCircle(mm.x, mm.y, mm.radius * 2.2);
+      this.actorGfx.lineStyle(4, 0xff8800, flashAlpha);
+      this.actorGfx.strokeCircle(mm.x, mm.y, mm.radius * 2.5);
     }
 
     // items glow
