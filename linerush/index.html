@@ -37,16 +37,16 @@ const STORAGE_PLAYER_KEY = 'linerush_player_id';
 const STORAGE_UNLOCK_KEY = 'linerush_unlocked_stage';
 // Main boss per stage (Galspanic-style colorful round enemies)
 const MAIN_MONSTERS = [
-  { name:'슬라임',   color:0x44ff44, ring:0x00cc00, radius:13, spdMul:1.4, img:'boss1' },
-  { name:'스핀',     color:0xffaa22, ring:0xff6600, radius:14, spdMul:1.5, img:'boss2' },
-  { name:'촉수',     color:0xcc44ff, ring:0x8800cc, radius:14, spdMul:1.48,img:'boss3' },
-  { name:'아이볼',   color:0xff2244, ring:0xcc0022, radius:15, spdMul:1.55,img:'boss4' },
-  { name:'아이스',   color:0x88ddff, ring:0x0088cc, radius:15, spdMul:1.52,img:'boss5' },
-  { name:'플레임',   color:0xff6600, ring:0xff2200, radius:16, spdMul:1.6, img:'boss6' },
-  { name:'썬더',     color:0xffff22, ring:0xcc9900, radius:16, spdMul:1.58,img:'boss7' },
-  { name:'다크',     color:0xaa44ff, ring:0x660099, radius:17, spdMul:1.65,img:'boss8' },
-  { name:'카오스',   color:0xff44aa, ring:0xcc0077, radius:17, spdMul:1.7, img:'boss9' },
-  { name:'보이드',   color:0xff0000, ring:0x880000, radius:18, spdMul:1.75,img:'boss10'},
+  { name:'슬라임',   color:0x44ff44, ring:0x00cc00, radius:9,  spdMul:1.4, img:'boss1' },
+  { name:'스핀',     color:0xffaa22, ring:0xff6600, radius:10, spdMul:1.5, img:'boss2' },
+  { name:'촉수',     color:0xcc44ff, ring:0x8800cc, radius:10, spdMul:1.48,img:'boss3' },
+  { name:'아이볼',   color:0xff2244, ring:0xcc0022, radius:11, spdMul:1.55,img:'boss4' },
+  { name:'아이스',   color:0x88ddff, ring:0x0088cc, radius:11, spdMul:1.52,img:'boss5' },
+  { name:'플레임',   color:0xff6600, ring:0xff2200, radius:12, spdMul:1.6, img:'boss6' },
+  { name:'썬더',     color:0xffff22, ring:0xcc9900, radius:12, spdMul:1.58,img:'boss7' },
+  { name:'다크',     color:0xaa44ff, ring:0x660099, radius:13, spdMul:1.65,img:'boss8' },
+  { name:'카오스',   color:0xff44aa, ring:0xcc0077, radius:13, spdMul:1.7, img:'boss9' },
+  { name:'보이드',   color:0xff0000, ring:0x880000, radius:14, spdMul:1.75,img:'boss10'},
 ];
 
 const ITEM_TYPES = ['freeze','speed','shield','slow'];
@@ -75,9 +75,9 @@ function setLRBestStage(s) {
     }).catch(() => {});
   }
 }
-const COLS = 26;
-const ROWS = 38;
-const CELL = 16;
+const COLS = 52;
+const ROWS = 76;
+const CELL = 8;
 const W = COLS * CELL;
 const H = ROWS * CELL;
 const TARGET_PERCENT = 80;
@@ -304,7 +304,7 @@ class GameScene extends Phaser.Scene {
     this.drawStart = null;
     this.retracting = false;
     this.moveTimer = 0;
-    this.moveDelay = 120;
+    this.moveDelay = 60;
     this.retractSpeedMul = 1.5;
     this.invuln = 0;
 
@@ -315,7 +315,7 @@ class GameScene extends Phaser.Scene {
     const enemyCount = Math.min(8, this.stage + 1);
     this.enemies = [];
     for (let i = 0; i < enemyCount; i++) {
-      const baseSpeed = CELL * (0.9 + this.stage * 0.32 + i * 0.03);
+      const baseSpeed = CELL * (1.8 + this.stage * 0.64 + i * 0.06);
       const kind = (i % 3 === 0) ? 'hunter' : (i % 3 === 1 ? 'zigzag' : 'bouncer');
       this.enemies.push({
         x: Phaser.Math.FloatBetween(CELL * 2, W - CELL * 2),
@@ -324,7 +324,7 @@ class GameScene extends Phaser.Scene {
         vy: (Math.random() > 0.5 ? 1 : -1) * baseSpeed,
         baseSpeed,
         kind,
-        radius: kind === 'hunter' ? 6.6 : 6,
+        radius: kind === 'hunter' ? 5 : 4.5,
         pulse: Math.random() * Math.PI * 2,
         shootCd: Phaser.Math.Between(500, 1200)
       });
@@ -334,7 +334,7 @@ class GameScene extends Phaser.Scene {
 
     // 스테이지별 메인 보스 몬스터
     const mmDef = MAIN_MONSTERS[Math.min(this.stage - 1, MAIN_MONSTERS.length - 1)];
-    const mmSpeed = CELL * (0.9 + this.stage * 0.32) * mmDef.spdMul;
+    const mmSpeed = CELL * (1.8 + this.stage * 0.64) * mmDef.spdMul;
     this.mainMonster = {
       x: Phaser.Math.FloatBetween(CELL * 5, W - CELL * 5),
       y: Phaser.Math.FloatBetween(CELL * 5, H - CELL * 5),
@@ -880,7 +880,7 @@ class GameScene extends Phaser.Scene {
       mm.x += mm.vx * dt; mm.y += mm.vy * dt;
       mm.shootCd -= delta;
       if (mm.shootCd <= 0) {
-        const speed = CELL * (2.5 + this.stage * 0.25);
+        const speed = CELL * (5.0 + this.stage * 0.5);
         this.enemyBullets.push({ x: mm.x, y: mm.y,
           vx: (dx / d) * speed, vy: (dy / d) * speed, r: 5, life: 99999 });
         mm.shootCd = Math.max(280, 900 - this.stage * 50) + Phaser.Math.Between(-100, 100);
@@ -943,7 +943,7 @@ class GameScene extends Phaser.Scene {
       e.shootCd -= delta;
       if (e.shootCd <= 0) {
         const intervalBase = Math.max(320, 1600 - this.stage * 105);
-        const bulletSpeed = CELL * (2.1 + this.stage * 0.22);
+        const bulletSpeed = CELL * (4.2 + this.stage * 0.44);
         this.fireEnemyBullet(e, bulletSpeed);
         e.shootCd = intervalBase + Phaser.Math.Between(-180, 180);
       }
@@ -961,7 +961,7 @@ class GameScene extends Phaser.Scene {
       y: enemy.y,
       vx: (dx / d) * speed,
       vy: (dy / d) * speed,
-      r: Math.min(4.5, 2.2 + this.stage * 0.14),
+      r: Math.min(3.5, 1.8 + this.stage * 0.1),
       life: 99999
     });
   }
@@ -1253,13 +1253,13 @@ class GameScene extends Phaser.Scene {
     }
 
     // visually smoothed trail (curve-like feel over grid movement)
-    this.trailGfx.lineStyle(4, 0x00ffff, 0.92);
+    this.trailGfx.lineStyle(2.5, 0x00ffff, 0.92);
     this.trailGfx.fillStyle(0x8affff, 0.38);
     let prev = null;
     for (const t of this.trail) {
       const cx = t.col * CELL + CELL / 2;
       const cy = t.row * CELL + CELL / 2;
-      this.trailGfx.fillCircle(cx, cy, 4.5);
+      this.trailGfx.fillCircle(cx, cy, 3);
       if (prev) {
         this.trailGfx.beginPath();
         this.trailGfx.moveTo(prev.x, prev.y);
@@ -1334,23 +1334,23 @@ class GameScene extends Phaser.Scene {
     const blink = this.invuln > 0 ? (Math.floor(this.time.now / 80) % 2 === 0 ? 0.45 : 1) : 1;
 
     // high-contrast player marker
-    this.actorGfx.lineStyle(2, 0x000000, 0.9 * blink);
-    this.actorGfx.strokeCircle(px, py, 9);
+    this.actorGfx.lineStyle(1.5, 0x000000, 0.9 * blink);
+    this.actorGfx.strokeCircle(px, py, 6);
     this.actorGfx.fillStyle(0x00ffff, 0.35 * blink);
-    this.actorGfx.fillCircle(px, py, 9);
+    this.actorGfx.fillCircle(px, py, 6);
     this.actorGfx.fillStyle(0xffffff, 1 * blink);
-    this.actorGfx.fillCircle(px, py, 5.2);
+    this.actorGfx.fillCircle(px, py, 3.5);
     this.actorGfx.fillStyle(0x0a0f1a, 0.95 * blink);
-    this.actorGfx.fillCircle(px, py, 2.2);
+    this.actorGfx.fillCircle(px, py, 1.5);
 
     // Shield ring: visible when safe (not rushing)
     if (!this.isDrawing && this.invuln <= 0) {
       const sp = Math.sin(this.time.now * 0.006);
-      const shieldR = 13 + sp * 2;
-      this.actorGfx.lineStyle(2.4, 0x44ffdd, (0.55 + sp * 0.2) * blink);
+      const shieldR = 9 + sp * 1.5;
+      this.actorGfx.lineStyle(1.8, 0x44ffdd, (0.55 + sp * 0.2) * blink);
       this.actorGfx.strokeCircle(px, py, shieldR);
-      this.actorGfx.lineStyle(1, 0x88ffee, (0.2 + sp * 0.1) * blink);
-      this.actorGfx.strokeCircle(px, py, shieldR + 4.5);
+      this.actorGfx.lineStyle(0.8, 0x88ffee, (0.2 + sp * 0.1) * blink);
+      this.actorGfx.strokeCircle(px, py, shieldR + 3);
     }
   }
 }
