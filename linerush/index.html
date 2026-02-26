@@ -35,6 +35,20 @@ const STORAGE_BEST_KEY   = 'linerush_best_stage';
 const STORAGE_PLAYER_KEY = 'linerush_player_id';
 // (legacy) unlock key - kept for migration
 const STORAGE_UNLOCK_KEY = 'linerush_unlocked_stage';
+// Main boss per stage (Galspanic-style colorful round enemies)
+const MAIN_MONSTERS = [
+  { name:'슬라임',   color:0x44ff44, ring:0x00cc00, radius:13, spdMul:1.4, img:'boss1' },
+  { name:'스핀',     color:0xffaa22, ring:0xff6600, radius:14, spdMul:1.5, img:'boss2' },
+  { name:'촉수',     color:0xcc44ff, ring:0x8800cc, radius:14, spdMul:1.48,img:'boss3' },
+  { name:'아이볼',   color:0xff2244, ring:0xcc0022, radius:15, spdMul:1.55,img:'boss4' },
+  { name:'아이스',   color:0x88ddff, ring:0x0088cc, radius:15, spdMul:1.52,img:'boss5' },
+  { name:'플레임',   color:0xff6600, ring:0xff2200, radius:16, spdMul:1.6, img:'boss6' },
+  { name:'썬더',     color:0xffff22, ring:0xcc9900, radius:16, spdMul:1.58,img:'boss7' },
+  { name:'다크',     color:0xaa44ff, ring:0x660099, radius:17, spdMul:1.65,img:'boss8' },
+  { name:'카오스',   color:0xff44aa, ring:0xcc0077, radius:17, spdMul:1.7, img:'boss9' },
+  { name:'보이드',   color:0xff0000, ring:0x880000, radius:18, spdMul:1.75,img:'boss10'},
+];
+
 const ITEM_TYPES = ['freeze','speed','shield','slow'];
 const ITEM_EMOJI = { freeze:'✋',speed:'🏃',shield:'🛡',slow:'⌛' };
 const ITEM_DUR   = { freeze:5000, speed:4000, shield:7000, slow:6000 };
@@ -95,6 +109,9 @@ class BootScene extends Phaser.Scene {
     // Stage 4-10 original backgrounds
     for (let i = BG_ORIG_START; i <= BG_ORIG_END; i++) {
       this.load.image(`bg${i}`, `/linerush/img/bg${i}.jpg`);
+    }
+    for (let i = 1; i <= 10; i++) {
+      this.load.image(`boss${i}`, `/linerush/img/boss${i}.png`);
     }
   }
 
@@ -314,6 +331,28 @@ class GameScene extends Phaser.Scene {
     }
 
     this.enemyBullets = [];
+
+    // 스테이지별 메인 보스 몬스터
+    const mmDef = MAIN_MONSTERS[Math.min(this.stage - 1, MAIN_MONSTERS.length - 1)];
+    const mmSpeed = CELL * (0.9 + this.stage * 0.32) * mmDef.spdMul;
+    this.mainMonster = {
+      x: Phaser.Math.FloatBetween(CELL * 5, W - CELL * 5),
+      y: Phaser.Math.FloatBetween(CELL * 5, H - CELL * 5),
+      vx: (Math.random() > 0.5 ? 1 : -1) * mmSpeed,
+      vy: (Math.random() > 0.5 ? 1 : -1) * mmSpeed,
+      baseSpeed: mmSpeed, kind: 'boss', pulse: 0, shootCd: 600,
+      radius: mmDef.radius, color: mmDef.color, ring: mmDef.ring,
+      name: mmDef.name, img: mmDef.img,
+    };
+    const bossKey = mmDef.img;
+    this.mainMonsterSprite = this.textures.exists(bossKey)
+      ? this.add.image(this.mainMonster.x, this.mainMonster.y, bossKey)
+          .setDisplaySize(mmDef.radius * 2.4, mmDef.radius * 2.4).setDepth(7)
+      : null;
+    this.mainMonsterLabel = this.add.text(
+      this.mainMonster.x, this.mainMonster.y - mmDef.radius - 8,
+      `★ ${mmDef.name}`, { fontSize: '11px', color: '#ffdd44', stroke: '#000', strokeThickness: 2 }
+    ).setOrigin(0.5, 1).setDepth(8);
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.wasd = this.input.keyboard.addKeys('W,A,S,D');
@@ -609,79 +648,63 @@ class GameScene extends Phaser.Scene {
 
     const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
     const regions = [];
-
     for (let r = 1; r < ROWS - 1; r++) {
       for (let c = 1; c < COLS - 1; c++) {
         if (this.grid[r][c] !== 0 || visited[r][c]) continue;
-
         const queue = [{ r, c }];
         visited[r][c] = true;
         const cells = [];
-        let hasEnemy = false;
-
         while (queue.length) {
           const cur = queue.shift();
           cells.push(cur);
-
-          for (const e of this.enemies) {
-            const er = Phaser.Math.Clamp(Math.floor(e.y / CELL), 0, ROWS - 1);
-            const ec = Phaser.Math.Clamp(Math.floor(e.x / CELL), 0, COLS - 1);
-            if (er === cur.r && ec === cur.c) {
-              hasEnemy = true;
-              break;
-            }
-          }
-
-          const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
-          for (const [dr, dc] of dirs) {
-            const nr = cur.r + dr;
-            const nc = cur.c + dc;
-            if (nr < 1 || nr >= ROWS - 1 || nc < 1 || nc >= COLS - 1) continue;
-            if (visited[nr][nc]) continue;
-            if (this.grid[nr][nc] !== 0) continue;
-            visited[nr][nc] = true;
-            queue.push({ r: nr, c: nc });
+          for (const [dr2, dc2] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+            const nr2 = cur.r + dr2, nc2 = cur.c + dc2;
+            if (nr2 < 1 || nr2 >= ROWS-1 || nc2 < 1 || nc2 >= COLS-1) continue;
+            if (visited[nr2][nc2] || this.grid[nr2][nc2] !== 0) continue;
+            visited[nr2][nc2] = true;
+            queue.push({ r: nr2, c: nc2 });
           }
         }
-
-        regions.push({ cells, hasEnemy });
+        regions.push({ cells });
       }
     }
 
-    // 1개 이하 region = dead-end trail (enclosed area 없음) → 캡처 취소, 트레일 복원
+    // dead-end → 취소
     if (regions.length <= 1) {
       for (const cell of this.trail) {
         if (this.grid[cell.row][cell.col] === 1) this.grid[cell.row][cell.col] = 0;
       }
-      this.isDrawing = false;
-      this.retracting = false;
-      this.drawStart = null;
-      this.trail = [];
-      this.redrawOverlay();
-      return;
+      this.isDrawing = false; this.retracting = false;
+      this.drawStart = null; this.trail = [];
+      this.redrawOverlay(); return;
     }
 
-    // 2개 이상 region → 가장 작은 region 캡처 (Qix 룰)
+    // 가장 큰 region 제외, 나머지 전부 캡처
     regions.sort((a, b) => a.cells.length - b.cells.length);
-    const claimRegions = [regions[0]];
-    const safeRegion   = regions[regions.length - 1];
+    const claimRegions = regions.slice(0, regions.length - 1);
 
-    // 포위된 몬스터 제거 (순간이동 대신 소멸)
+    // 메인 몬스터 포획 체크
+    const mm = this.mainMonster;
+    let mainCaptured = false;
+    if (mm) {
+      const mmR = Phaser.Math.Clamp(Math.floor(mm.y / CELL), 0, ROWS-1);
+      const mmC = Phaser.Math.Clamp(Math.floor(mm.x / CELL), 0, COLS-1);
+      mainCaptured = claimRegions.some(reg => reg.cells.some(c => c.r === mmR && c.c === mmC));
+    }
+
+    // 일반 몬스터 포획 → 소멸
     const toKill = [];
     for (const e of this.enemies) {
-      const er = Phaser.Math.Clamp(Math.floor(e.y / CELL), 0, ROWS - 1);
-      const ec = Phaser.Math.Clamp(Math.floor(e.x / CELL), 0, COLS - 1);
-      if (claimRegions.some(region => region.cells.some(c => c.r === er && c.c === ec))) {
-        toKill.push(e);
-      }
+      const er = Phaser.Math.Clamp(Math.floor(e.y / CELL), 0, ROWS-1);
+      const ec = Phaser.Math.Clamp(Math.floor(e.x / CELL), 0, COLS-1);
+      if (claimRegions.some(reg => reg.cells.some(c => c.r === er && c.c === ec))) toKill.push(e);
     }
     toKill.forEach(e => {
-      const burst = this.add.particles(e.x, e.y, 'pixel', {
-        speed: { min: 50, max: 200 }, lifespan: 400, quantity: 22,
-        scale: { start: 1.5, end: 0 }, tint: [0xff7848, 0xffd4a6, 0xffff66],
-        blendMode: 'ADD'
+      const b2 = this.add.particles(e.x, e.y, 'pixel', {
+        speed:{min:50,max:180}, lifespan:380, quantity:18,
+        scale:{start:1.3,end:0}, tint:[0xff7848,0xffd4a6,0xffff66], blendMode:'ADD'
       }).setDepth(9);
-      this.time.delayedCall(450, () => burst.destroy());
+      this.time.delayedCall(420, () => b2.destroy());
     });
     this.enemies = this.enemies.filter(e => !toKill.includes(e));
     if (toKill.length > 0) this.score += toKill.length * 500 * this.stage;
@@ -689,10 +712,7 @@ class GameScene extends Phaser.Scene {
     let gained = 0;
     for (const region of claimRegions) {
       for (const cell of region.cells) {
-        if (this.grid[cell.r][cell.c] === 0) {
-          this.grid[cell.r][cell.c] = 1;
-          gained++;
-        }
+        if (this.grid[cell.r][cell.c] === 0) { this.grid[cell.r][cell.c] = 1; gained++; }
       }
     }
 
@@ -712,6 +732,29 @@ class GameScene extends Phaser.Scene {
       }
     }
 
+    // 메인 몬스터 포획 → 스테이지 클리어!
+    if (mainCaptured && mm) {
+      const b3 = this.add.particles(mm.x, mm.y, 'pixel', {
+        speed:{min:80,max:280}, lifespan:550, quantity:40,
+        scale:{start:2,end:0}, tint:[mm.color, 0xffffff, 0xffd700], blendMode:'ADD'
+      }).setDepth(12);
+      this.time.delayedCall(600, () => b3.destroy());
+      if (this.mainMonsterSprite) this.mainMonsterSprite.destroy();
+      if (this.mainMonsterLabel) this.mainMonsterLabel.destroy();
+      this.mainMonster = null; this.mainMonsterSprite = null; this.mainMonsterLabel = null;
+      this.score += 3000 * this.stage;
+      const t2 = this.add.text(W/2, H/2-30, `★ ${mm.name} 포획!\n+${(3000*this.stage).toLocaleString()}점`, {
+        fontSize:'20px', color:'#ffd700', stroke:'#000', strokeThickness:4, align:'center'
+      }).setOrigin(0.5).setDepth(20);
+      this.cameras.main.flash(600, 255, 200, 0);
+      this.time.delayedCall(1200, () => {
+        t2.destroy();
+        this.updateClaimStats();
+        this.explodeEnemiesAndClear();
+      });
+      this.updateClaimStats(); this.redrawOverlay(); return;
+    }
+
     this.updateClaimStats();
     this.redrawOverlay();
 
@@ -721,6 +764,18 @@ class GameScene extends Phaser.Scene {
   }
 
   explodeEnemiesAndClear() {
+    // 80% 클리어 시 메인 몬스터도 제거
+    if (this.mainMonster) {
+      const mm = this.mainMonster;
+      const bm = this.add.particles(mm.x, mm.y, 'pixel', {
+        speed:{min:80,max:260}, lifespan:500, quantity:35,
+        scale:{start:1.8,end:0}, tint:[mm.color,0xffffff,0xffd700], blendMode:'ADD'
+      }).setDepth(12);
+      this.time.delayedCall(550, () => bm.destroy());
+      if (this.mainMonsterSprite) { this.mainMonsterSprite.destroy(); this.mainMonsterSprite = null; }
+      if (this.mainMonsterLabel) { this.mainMonsterLabel.destroy(); this.mainMonsterLabel = null; }
+      this.mainMonster = null;
+    }
     if (!this.enemies.length) {
       this.time.delayedCall(380, () => {
         this.scene.start('Clear', {
@@ -806,6 +861,38 @@ class GameScene extends Phaser.Scene {
     const dt = (delta / 1000) * slowMul;
     const px = this.playerCol * CELL + CELL / 2;
     const py = this.playerRow * CELL + CELL / 2;
+
+    // 메인 몬스터 업데이트 (항상 플레이어 추적)
+    if (this.mainMonster) {
+      const mm = this.mainMonster;
+      mm.pulse += dt * 5;
+      const dx = px - mm.x, dy = py - mm.y;
+      const d = Math.hypot(dx, dy) || 1;
+      mm.vx = mm.vx * 0.88 + (dx / d) * mm.baseSpeed * (this.isDrawing ? 0.18 : 0.06);
+      mm.vy = mm.vy * 0.88 + (dy / d) * mm.baseSpeed * (this.isDrawing ? 0.18 : 0.06);
+      let nx = mm.x + mm.vx * dt, ny = mm.y + mm.vy * dt;
+      if (nx < CELL || nx > W - CELL) { mm.vx *= -1; nx = Phaser.Math.Clamp(nx, CELL, W - CELL); }
+      if (ny < CELL || ny > H - CELL) { mm.vy *= -1; ny = Phaser.Math.Clamp(ny, CELL, H - CELL); }
+      // 점령지 경계 반사
+      const gr = r => Phaser.Math.Clamp(Math.floor(r / CELL), 0, ROWS - 1);
+      if (this.grid[gr(ny)][gr(nx + Math.sign(mm.vx) * mm.radius)] === 1) { mm.vx *= -1; }
+      if (this.grid[gr(ny + Math.sign(mm.vy) * mm.radius)][gr(nx)] === 1) { mm.vy *= -1; }
+      mm.x += mm.vx * dt; mm.y += mm.vy * dt;
+      mm.shootCd -= delta;
+      if (mm.shootCd <= 0) {
+        const speed = CELL * (2.5 + this.stage * 0.25);
+        this.enemyBullets.push({ x: mm.x, y: mm.y,
+          vx: (dx / d) * speed, vy: (dy / d) * speed, r: 5, life: 99999 });
+        mm.shootCd = Math.max(280, 900 - this.stage * 50) + Phaser.Math.Between(-100, 100);
+      }
+      // 스프라이트 위치 업데이트
+      if (this.mainMonsterSprite) {
+        this.mainMonsterSprite.setPosition(mm.x, mm.y);
+      }
+      if (this.mainMonsterLabel) {
+        this.mainMonsterLabel.setPosition(mm.x, mm.y - mm.radius - 8);
+      }
+    }
 
     for (const e of this.enemies) {
       e.pulse += dt * 6;
@@ -898,6 +985,15 @@ class GameScene extends Phaser.Scene {
   checkCollisions() {
     const px = this.playerCol * CELL + CELL / 2;
     const py = this.playerRow * CELL + CELL / 2;
+
+    // 메인 몬스터 충돌
+    if (this.mainMonster) {
+      const mm = this.mainMonster;
+      const dist = Phaser.Math.Distance.Between(px, py, mm.x, mm.y);
+      if (dist < mm.radius + 5 && this.isDrawing) {
+        this.playerDie(); return;
+      }
+    }
 
     for (const e of this.enemies) {
       const dist = Phaser.Math.Distance.Between(px, py, e.x, e.y);
@@ -1190,6 +1286,26 @@ class GameScene extends Phaser.Scene {
       } else {
         this.actorGfx.lineStyle(1.2, 0xffc9a2, 0.85);
         this.actorGfx.strokeRect(e.x - (e.radius + 2), e.y - (e.radius + 2), (e.radius + 2) * 2, (e.radius + 2) * 2);
+      }
+    }
+
+    // 메인 몬스터 렌더링 (이미지 없으면 절차적 그리기)
+    if (this.mainMonster) {
+      const mm = this.mainMonster;
+      const pulse = 0.6 + 0.3 * Math.sin(mm.pulse);
+      const glowR = mm.radius + 6 + 3 * Math.sin(mm.pulse * 1.3);
+      this.actorGfx.lineStyle(2.5, mm.ring, 0.9);
+      this.actorGfx.strokeCircle(mm.x, mm.y, glowR);
+      this.actorGfx.lineStyle(1.2, 0xffffff, 0.4);
+      this.actorGfx.strokeCircle(mm.x, mm.y, glowR + 5);
+      if (!this.mainMonsterSprite) {
+        // 이미지 없으면 컬러 원
+        this.actorGfx.fillStyle(mm.color, 0.2);
+        this.actorGfx.fillCircle(mm.x, mm.y, mm.radius + 4);
+        this.actorGfx.fillStyle(mm.color, 0.9);
+        this.actorGfx.fillCircle(mm.x, mm.y, mm.radius);
+        this.actorGfx.fillStyle(0xffffff, 0.7 * pulse);
+        this.actorGfx.fillCircle(mm.x - mm.radius*0.3, mm.y - mm.radius*0.3, mm.radius * 0.32);
       }
     }
 
@@ -1487,7 +1603,7 @@ class GameOverScene extends Phaser.Scene {
     };
 
     makeButton(W / 2 - 84, 266, 'RETRY', () => {
-      this.scene.start('Game', { stage: 1, score: 0, lives: 3 });
+      this.scene.start('Game', { stage: data.stage || 1, score: 0, lives: 3 });
     });
 
     makeButton(W / 2 + 84, 266, 'MENU', () => {
