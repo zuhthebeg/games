@@ -312,10 +312,10 @@ class GameScene extends Phaser.Scene {
     this.items = [];
     this.itemSpawnTimer = ITEM_SPAWN * 0.5; // first item at 10s
 
-    const enemyCount = Math.min(8, this.stage + 1);
+    const enemyCount = Math.min(5, this.stage);   // max 5 enemies (was 8)
     this.enemies = [];
     for (let i = 0; i < enemyCount; i++) {
-      const baseSpeed = CELL * (1.8 + this.stage * 0.64 + i * 0.06);
+      const baseSpeed = CELL * (1.2 + this.stage * 0.38 + i * 0.04); // slower base speed
       const kind = (i % 3 === 0) ? 'hunter' : (i % 3 === 1 ? 'zigzag' : 'bouncer');
       this.enemies.push({
         x: Phaser.Math.FloatBetween(CELL * 2, W - CELL * 2),
@@ -326,7 +326,7 @@ class GameScene extends Phaser.Scene {
         kind,
         radius: kind === 'hunter' ? 5 : 4.5,
         pulse: Math.random() * Math.PI * 2,
-        shootCd: Phaser.Math.Between(500, 1200)
+        shootCd: Phaser.Math.Between(2000, 4000) // delayed first shot
       });
     }
 
@@ -334,7 +334,7 @@ class GameScene extends Phaser.Scene {
 
     // 스테이지별 메인 보스 몬스터
     const mmDef = MAIN_MONSTERS[Math.min(this.stage - 1, MAIN_MONSTERS.length - 1)];
-    const mmSpeed = CELL * (1.8 + this.stage * 0.64) * mmDef.spdMul;
+    const mmSpeed = CELL * (1.2 + this.stage * 0.38) * mmDef.spdMul; // balanced with enemy speed
     this.mainMonster = {
       x: Phaser.Math.FloatBetween(CELL * 5, W - CELL * 5),
       y: Phaser.Math.FloatBetween(CELL * 5, H - CELL * 5),
@@ -669,14 +669,13 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    // dead-end → 취소
+    // dead-end (트레일이 영역을 나누지 못함) →
+    // 예전엔 취소했지만, 길고 얇은 경로도 유효하므로 트레일을 영토로 유지
     if (regions.length <= 1) {
-      for (const cell of this.trail) {
-        if (this.grid[cell.row][cell.col] === 1) this.grid[cell.row][cell.col] = 0;
-      }
+      // 트레일 셀은 이미 grid=1 처리됨 → 그대로 두고 마무리
       this.isDrawing = false; this.retracting = false;
       this.drawStart = null; this.trail = [];
-      this.redrawOverlay(); return;
+      this.updateClaimStats(); this.redrawOverlay(); return;
     }
 
     // 가장 큰 region 제외, 나머지 전부 캡처
@@ -870,14 +869,18 @@ class GameScene extends Phaser.Scene {
     const px = this.playerCol * CELL + CELL / 2;
     const py = this.playerRow * CELL + CELL / 2;
 
-    // 메인 몬스터 업데이트 (항상 플레이어 추적)
+    // 메인 몬스터 업데이트 — 러쉬 중일 때만 추적, 아닐 땐 랜덤 바운스
     if (this.mainMonster) {
       const mm = this.mainMonster;
       mm.pulse += dt * 5;
       const dx = px - mm.x, dy = py - mm.y;
       const d = Math.hypot(dx, dy) || 1;
-      mm.vx = mm.vx * 0.88 + (dx / d) * mm.baseSpeed * (this.isDrawing ? 0.18 : 0.06);
-      mm.vy = mm.vy * 0.88 + (dy / d) * mm.baseSpeed * (this.isDrawing ? 0.18 : 0.06);
+      if (this.isDrawing) {
+        // 러쉬 중: 적극적으로 플레이어 추적
+        mm.vx = mm.vx * 0.82 + (dx / d) * mm.baseSpeed * 0.24;
+        mm.vy = mm.vy * 0.82 + (dy / d) * mm.baseSpeed * 0.24;
+      }
+      // 러쉬 안 할 때: 속도 유지하며 벽/경계만 반사 (추적 없음)
       let nx = mm.x + mm.vx * dt, ny = mm.y + mm.vy * dt;
       if (nx < CELL || nx > W - CELL) { mm.vx *= -1; nx = Phaser.Math.Clamp(nx, CELL, W - CELL); }
       if (ny < CELL || ny > H - CELL) { mm.vy *= -1; ny = Phaser.Math.Clamp(ny, CELL, H - CELL); }
@@ -888,10 +891,10 @@ class GameScene extends Phaser.Scene {
       mm.x += mm.vx * dt; mm.y += mm.vy * dt;
       mm.shootCd -= delta;
       if (mm.shootCd <= 0) {
-        const speed = CELL * (5.0 + this.stage * 0.5);
+        const speed = CELL * (3.2 + this.stage * 0.28); // slower bullets
         this.enemyBullets.push({ x: mm.x, y: mm.y,
-          vx: (dx / d) * speed, vy: (dy / d) * speed, r: 5, life: 99999 });
-        mm.shootCd = Math.max(280, 900 - this.stage * 50) + Phaser.Math.Between(-100, 100);
+          vx: (dx / d) * speed, vy: (dy / d) * speed, r: 4, life: 99999 });
+        mm.shootCd = Math.max(800, 2000 - this.stage * 80) + Phaser.Math.Between(-150, 150); // much longer interval
       }
       // 스프라이트 위치 업데이트
       if (this.mainMonsterSprite) {
@@ -947,13 +950,18 @@ class GameScene extends Phaser.Scene {
       e.x += e.vx * dt;
       e.y += e.vy * dt;
 
-      // stage-scaled shooting
+      // stage-scaled shooting — 러쉬 중에만 발사 or 큰 인터벌
       e.shootCd -= delta;
       if (e.shootCd <= 0) {
-        const intervalBase = Math.max(320, 1600 - this.stage * 105);
-        const bulletSpeed = CELL * (4.2 + this.stage * 0.44);
-        this.fireEnemyBullet(e, bulletSpeed);
-        e.shootCd = intervalBase + Phaser.Math.Between(-180, 180);
+        // Hunter: 러쉬 중에만 발사; zigzag/bouncer: 긴 간격으로만 발사
+        const intervalBase = e.kind === 'hunter'
+          ? Math.max(1200, 3600 - this.stage * 180)
+          : Math.max(2000, 5000 - this.stage * 200);
+        if (e.kind !== 'hunter' || this.isDrawing) {
+          const bulletSpeed = CELL * (2.6 + this.stage * 0.20); // slower bullets
+          this.fireEnemyBullet(e, bulletSpeed);
+        }
+        e.shootCd = intervalBase + Phaser.Math.Between(-300, 300);
       }
     }
   }
