@@ -112,11 +112,15 @@ class BootScene extends Phaser.Scene {
     ['char1', 'char2', 'char4'].forEach(k =>
       this.load.image(k, `/linerush/img/${k}.jpg`)
     );
-    // Stage 4-10 original backgrounds
-    for (let i = BG_ORIG_START; i <= BG_ORIG_END; i++) {
+    // Stage backgrounds (bg1-15)
+    for (let i = 1; i <= STAGE_COUNT; i++) {
       this.load.image(`bg${i}`, `/linerush/img/bg${i}.jpg`);
     }
-    for (let i = 1; i <= 10; i++) {
+    // Stage 11-15 character images
+    for (let i = 11; i <= STAGE_COUNT; i++) {
+      this.load.image(`char${i}`, `/linerush/img/char${i}.jpg`);
+    }
+    for (let i = 1; i <= STAGE_COUNT; i++) {
       this.load.image(`boss${i}`, `/linerush/img/boss${i}.png`);
     }
   }
@@ -280,9 +284,11 @@ class GameScene extends Phaser.Scene {
     let bgKey;
     if (STAGE_CHAR_MAP[this.stage]) {
       bgKey = STAGE_CHAR_MAP[this.stage];
+    } else if (this.stage >= 11) {
+      // Stages 11-15: use dedicated bg images
+      bgKey = `bg${this.stage}`;
     } else {
-      // For stages 11-15, map to stage 1-5 bg cycle
-      const effectiveStage = this.stage <= 10 ? this.stage : ((this.stage - 11) % 5) + 1;
+      const effectiveStage = this.stage;
       if (!window._lrBgMap || this.stage === 4) {
         const origPool = Array.from({ length: BG_ORIG_END - BG_ORIG_START + 1 }, (_, i) => i + BG_ORIG_START);
         for (let i = origPool.length - 1; i > 0; i--) {
