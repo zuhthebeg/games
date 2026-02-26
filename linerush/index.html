@@ -202,15 +202,15 @@ class MenuScene extends Phaser.Scene {
       fontFamily: 'Verdana', fontSize: '11px', color: '#80d0ff'
     }).setOrigin(0.5);
 
-    // 랭킹 영역
+    // 랭킹 영역 — rankBg 먼저 그려야 타이틀이 위에 렌더됨
+    const rankBg = this.add.rectangle(W / 2, 415, W - 20, 240, 0x050514, 0.7)
+      .setStrokeStyle(1, 0x334466, 0.8);
+
     const rankTitle = this.add.text(W / 2, 284, '🏆 최고 스테이지 랭킹', {
       fontFamily: 'Verdana', fontSize: '14px', color: '#ffd700'
     }).setOrigin(0.5);
 
-    const rankBg = this.add.rectangle(W / 2, 430, W - 20, 290, 0x050514, 0.7)
-      .setStrokeStyle(1, 0x334466, 0.8);
-
-    const loadingTxt = this.add.text(W / 2, 430, '랭킹 로딩 중...', {
+    const loadingTxt = this.add.text(W / 2, 415, '랭킹 로딩 중...', {
       fontFamily: 'Verdana', fontSize: '13px', color: '#6677aa'
     }).setOrigin(0.5);
 
@@ -221,13 +221,13 @@ class MenuScene extends Phaser.Scene {
         loadingTxt.destroy();
         const rows = data.rankings || [];
         if (rows.length === 0) {
-          this.add.text(W / 2, 430, '아직 기록이 없습니다\n먼저 플레이해보세요!', {
+          this.add.text(W / 2, 415, '아직 기록이 없습니다\n먼저 플레이해보세요!', {
             fontFamily: 'Verdana', fontSize: '13px', color: '#6677aa', align: 'center'
           }).setOrigin(0.5);
           return;
         }
         rows.slice(0, 9).forEach((r, i) => {
-          const y = 300 + i * 30;
+          const y = 300 + i * 26;
           const medal = ['🥇','🥈','🥉'][i] || `${i+1}.`;
           const nick = (r.nickname || '익명').slice(0, 10);
           const color = i === 0 ? '#ffd700' : i === 1 ? '#e0e0e0' : i === 2 ? '#cc8844' : '#99b4cc';
@@ -686,10 +686,12 @@ class GameScene extends Phaser.Scene {
     // 메인 몬스터 포획 체크
     const mm = this.mainMonster;
     let mainCaptured = false;
+    let bossRegion = null;
     if (mm) {
       const mmR = Phaser.Math.Clamp(Math.floor(mm.y / CELL), 0, ROWS-1);
       const mmC = Phaser.Math.Clamp(Math.floor(mm.x / CELL), 0, COLS-1);
-      mainCaptured = claimRegions.some(reg => reg.cells.some(c => c.r === mmR && c.c === mmC));
+      bossRegion = claimRegions.find(reg => reg.cells.some(c => c.r === mmR && c.c === mmC)) || null;
+      mainCaptured = bossRegion !== null;
     }
 
     // 일반 몬스터 포획 → 소멸
@@ -734,6 +736,11 @@ class GameScene extends Phaser.Scene {
 
     // 메인 몬스터 포획 → 스테이지 클리어!
     if (mainCaptured && mm) {
+      // 보스 포획 시 퍼센트 = 100% - 보스를 잡은 영역 크기
+      const bossRegionCells = bossRegion ? bossRegion.cells.length : 0;
+      const bossRegionPct = Math.floor(bossRegionCells / this.total * 100);
+      const finalPercent = Math.max(0, 100 - bossRegionPct);
+
       const b3 = this.add.particles(mm.x, mm.y, 'pixel', {
         speed:{min:80,max:280}, lifespan:550, quantity:40,
         scale:{start:2,end:0}, tint:[mm.color, 0xffffff, 0xffd700], blendMode:'ADD'
@@ -750,6 +757,7 @@ class GameScene extends Phaser.Scene {
       this.time.delayedCall(1200, () => {
         t2.destroy();
         this.updateClaimStats();
+        this.percent = finalPercent; // 보스 트랩 영역 제외 퍼센트
         this.explodeEnemiesAndClear();
       });
       this.updateClaimStats(); this.redrawOverlay(); return;
