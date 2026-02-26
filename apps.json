@@ -255,5 +255,19 @@
       "🌍"
     ],
     "category": "game"
+  },
+  {
+    "title": "총알 피하기",
+    "icon": "https://game.cocy.io/bulletdodge/icon.svg",
+    "url": "https://game.cocy.io/bulletdodge/",
+    "desc": "쏟아지는 총알을 피하며 최대한 오래 생존하라! 조이스틱 지원",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "classic"
   }
 ]

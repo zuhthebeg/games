@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({"gtm.start":new Date().getTime(),event:"gtm.js"});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!="dataLayer"?"&l="+l:"";j.async=true;j.src="https://www.googletagmanager.com/gtm.js?id="+i+dl;f.parentNode.insertBefore(j,f)})(window,document,"script","dataLayer","GTM-MV8KQGJF");</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>💥 총알 피하기</title>
+    <link rel="icon" href="icon.svg">
+    <script src="/lib/shared-wallet.js?v=20260211"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #080818;
+            overflow: hidden;
+            padding-top: calc(48px + env(safe-area-inset-top));
+            height: 100dvh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        canvas { display: block; touch-action: none; }
+
+        /* ── Virtual Joystick ── */
+        #joyWrap {
+            position: fixed;
+            bottom: 28px;
+            right: 20px;
+            width: 120px;
+            height: 120px;
+            z-index: 50;
+            display: none;
+            touch-action: none;
+            user-select: none;
+        }
+        #joyBase {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.07);
+            border: 2px solid rgba(255,255,255,0.18);
+        }
+        #joyKnob {
+            position: absolute;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: rgba(0,210,255,0.50);
+            border: 2px solid rgba(0,230,255,0.85);
+            top: 34px; left: 34px;
+            will-change: transform;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<div id="joyWrap">
+    <div id="joyBase"></div>
+    <div id="joyKnob"></div>
+</div>
+
+<script src="https://unpkg.com/kaplay@3001.0.19/dist/kaplay.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  Virtual Joystick (pure DOM/touch)
+// ═══════════════════════════════════════════════════════════════════
+const joyWrap  = document.getElementById("joyWrap");
+const joyKnob  = document.getElementById("joyKnob");
+const JOY_MAX  = 48;          // max knob displacement (px)
+let joyX = 0, joyY = 0;      // -1..1
+let joyTouchId = null;
+let joyCX = 0, joyCY = 0;
+
+function joyShow() { joyWrap.style.display = "block"; }
+function joyHide() { joyWrap.style.display = "none";  }
+
+function joyCenter() {
+    const r = joyWrap.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+function joyApply(dx, dy) {
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const nx  = len > JOY_MAX ? dx / len * JOY_MAX : dx;
+    const ny  = len > JOY_MAX ? dy / len * JOY_MAX : dy;
+    joyKnob.style.transform = `translate(${nx}px,${ny}px)`;
+    joyX = nx / JOY_MAX;
+    joyY = ny / JOY_MAX;
+}
+function joyReset() {
+    joyKnob.style.transform = "translate(0,0)";
+    joyX = 0; joyY = 0; joyTouchId = null;
+}
+
+document.addEventListener("touchstart", e => {
+    if (joyWrap.style.display === "none") return;
+    for (const t of e.changedTouches) {
+        if (joyTouchId !== null) continue;
+        const c  = joyCenter();
+        const dx = t.clientX - c.x, dy = t.clientY - c.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 90) {
+            joyTouchId = t.identifier;
+            joyCX = c.x; joyCY = c.y;
+            joyApply(dx, dy);
+            e.preventDefault();
+        }
+    }
+}, { passive: false });
+
+document.addEventListener("touchmove", e => {
+    for (const t of e.changedTouches) {
+        if (t.identifier === joyTouchId) {
+            joyApply(t.clientX - joyCX, t.clientY - joyCY);
+            e.preventDefault();
+        }
+    }
+}, { passive: false });
+
+document.addEventListener("touchend",    e => { for (const t of e.changedTouches) if (t.identifier === joyTouchId) joyReset(); });
+document.addEventListener("touchcancel", e => { for (const t of e.changedTouches) if (t.identifier === joyTouchId) joyReset(); });
+
+
+// ═══════════════════════════════════════════════════════════════════
+//  KaplayJS Setup
+// ═══════════════════════════════════════════════════════════════════
+const GAME_W       = 360;
+const GAME_H       = 640;
+const PLAYER_R     = 13;
+const PLAYER_SPD   = 240;
+const MAX_LIVES    = 3;
+const INVINC_DUR   = 1.5;
+const GOLD_SEC     = 10;   // gold every N seconds
+const BEST_KEY     = "bulletdodge_best";
+
+const k = kaplay({
+    width:      GAME_W,
+    height:     GAME_H,
+    letterbox:  true,
+    background: [8, 8, 24],
+    debug:      false,
+});
+
+// ─── Helpers ────────────────────────────────────────────────────────
+function dist2(a, b) {
+    const dx = a.x - b.x, dy = a.y - b.y;
+    return dx * dx + dy * dy;
+}
+function getBest()      { return parseFloat(localStorage.getItem(BEST_KEY) || "0"); }
+function saveBest(t)    { localStorage.setItem(BEST_KEY, t.toFixed(1)); }
+
+
+// ═══════════════════════════════════════════════════════════════════
+//  TITLE SCENE
+// ═══════════════════════════════════════════════════════════════════
+k.scene("title", () => {
+    joyHide();
+
+    // Drifting decoration bullets
+    for (let i = 0; i < 14; i++) {
+        const obj = k.add([
+            k.circle(k.rand(3, 7)),
+            k.pos(k.rand(0, GAME_W), k.rand(0, GAME_H)),
+            k.anchor("center"),
+            k.color(180, 40, 40),
+            k.opacity(0.3),
+        ]);
+        const vx = k.rand(-40, 40);
+        const vy = k.rand(25, 80);
+        obj.onUpdate(() => {
+            obj.pos.x += vx * k.dt();
+            obj.pos.y += vy * k.dt();
+            if (obj.pos.y > GAME_H + 20) obj.pos.y = -20;
+            if (obj.pos.x < -20) obj.pos.x = GAME_W + 20;
+            if (obj.pos.x > GAME_W + 20) obj.pos.x = -20;
+        });
+    }
+
+    // Title
+    k.add([
+        k.pos(GAME_W / 2, GAME_H * 0.18),
+        k.anchor("center"),
+        k.text("💥 총알 피하기", { size: 26, font: "monospace" }),
+        k.color(255, 220, 50),
+    ]);
+    k.add([
+        k.pos(GAME_W / 2, GAME_H * 0.27),
+        k.anchor("center"),
+        k.text("BULLET  DODGE", { size: 14, font: "monospace" }),
+        k.color(80, 170, 255),
+    ]);
+
+    const best = getBest();
+    if (best > 0) {
+        k.add([
+            k.pos(GAME_W / 2, GAME_H * 0.38),
+            k.anchor("center"),
+            k.text(`🏆  최고: ${best.toFixed(1)}초`, { size: 16, font: "monospace" }),
+            k.color(255, 190, 60),
+        ]);
+    }
+
+    // How-to
+    k.add([
+        k.pos(GAME_W / 2, GAME_H * 0.52),
+        k.anchor("center"),
+        k.text("조이스틱 / 방향키로 이동\n쏟아지는 총알을 피하세요!", {
+            size: 13, font: "monospace", align: "center",
+        }),
+        k.color(150, 180, 210),
+    ]);
+
+    // Difficulty legend
+    k.add([
+        k.pos(GAME_W / 2, GAME_H * 0.62),
+        k.anchor("center"),
+        k.text("🔴 일반  🟠 조준  🟣 산탄", { size: 12, font: "monospace" }),
+        k.color(180, 180, 200),
+    ]);
+
+    // START button
+    const btn = k.add([
+        k.rect(210, 56),
+        k.pos(GAME_W / 2, GAME_H * 0.75),
+        k.anchor("center"),
+        k.color(20, 150, 200),
+        k.area(),
+        "startBtn",
+    ]);
+    k.add([
+        k.pos(GAME_W / 2, GAME_H * 0.75),
+        k.anchor("center"),
+        k.text("▶  게임 시작", { size: 20, font: "monospace" }),
+        k.color(255, 255, 255),
+    ]);
+
+    btn.onClick(() => k.go("game"));
+    k.onKeyDown("space", () => k.go("game"));
+    k.onKeyDown("enter", () => k.go("game"));
+});
+
+
+// ═══════════════════════════════════════════════════════════════════
+//  GAME SCENE
+// ═══════════════════════════════════════════════════════════════════
+k.scene("game", () => {
+    joyShow();
+
+    let lives       = MAX_LIVES;
+    let survTime    = 0;
+    let invinc      = 0;
+    let goldTimer   = 0;
+    let goldEarned  = 0;
+    let flashT      = 0;
+    let flashVis    = true;
+    let active      = true;
+
+    const bullets   = [];   // { obj, vx, vy, r }
+
+    // ── Stars background ──────────────────────────────────────────
+    for (let i = 0; i < 40; i++) {
+        k.add([
+            k.circle(k.rand(0.5, 1.5)),
+            k.pos(k.rand(0, GAME_W), k.rand(40, GAME_H)),
+            k.anchor("center"),
+            k.color(200, 220, 255),
+            k.opacity(k.rand(0.1, 0.5)),
+        ]);
+    }
+
+    // ── Player glow (decorative) ──────────────────────────────────
+    const glow = k.add([
+        k.circle(PLAYER_R + 9),
+        k.pos(GAME_W / 2, GAME_H - 90),
+        k.anchor("center"),
+        k.color(0, 180, 255),
+        k.opacity(0.18),
+    ]);
+
+    // ── Player ───────────────────────────────────────────────────
+    const player = k.add([
+        k.circle(PLAYER_R),
+        k.pos(GAME_W / 2, GAME_H - 90),
+        k.anchor("center"),
+        k.color(0, 220, 255),
+    ]);
+
+    // ── HUD ──────────────────────────────────────────────────────
+    k.add([
+        k.rect(GAME_W, 38),
+        k.pos(0, 0),
+        k.color(0, 0, 0),
+        k.opacity(0.65),
+        k.fixed(),
+    ]);
+
+    const timeTxt = k.add([
+        k.pos(GAME_W / 2, 19),
+        k.anchor("center"),
+        k.text("0.0s", { size: 20, font: "monospace" }),
+        k.color(255, 255, 200),
+        k.fixed(),
+    ]);
+    const livesTxt = k.add([
+        k.pos(8, 19),
+        k.anchor("left"),
+        k.text("❤️❤️❤️", { size: 17, font: "monospace" }),
+        k.color(255, 70, 70),
+        k.fixed(),
+    ]);
+    const lvTxt = k.add([
+        k.pos(GAME_W - 8, 19),
+        k.anchor("right"),
+        k.text("LV 1", { size: 13, font: "monospace" }),
+        k.color(100, 170, 255),
+        k.fixed(),
+    ]);
+
+    function updateHUD() {
+        timeTxt.text = survTime.toFixed(1) + "s";
+        livesTxt.text = "❤️".repeat(Math.max(0, lives));
+        const lv = getLevel();
+        lvTxt.text = `LV ${lv}`;
+        const lvColors = [
+            [100, 170, 255],
+            [255, 200, 50],
+            [255, 130, 50],
+            [255, 50,  50],
+        ];
+        const c = lvColors[lv - 1] || lvColors[3];
+        lvTxt.color.r = c[0];
+        lvTxt.color.g = c[1];
+        lvTxt.color.b = c[2];
+    }
+
+    // ── Difficulty ────────────────────────────────────────────────
+    function getLevel() {
+        if (survTime < 15) return 1;
+        if (survTime < 40) return 2;
+        if (survTime < 80) return 3;
+        return 4;
+    }
+    function getSpawnInterval() {
+        return Math.max(0.32, 1.6 - survTime * 0.016);
+    }
+    function getBulletSpeed() {
+        return 140 + survTime * 2.0 + getLevel() * 30;
+    }
+
+    // ── Bullet Factory ────────────────────────────────────────────
+    let spawnTimer = 0;
+
+    function addBullet(x, y, vx, vy, col, r) {
+        const obj = k.add([
+            k.circle(r),
+            k.pos(x, y),
+            k.anchor("center"),
+            k.color(col[0], col[1], col[2]),
+        ]);
+        bullets.push({ obj, vx, vy, r });
+    }
+
+    function edgePos() {
+        const edge = Math.floor(Math.random() * 4);
+        if (edge === 0) return { x: k.rand(20, GAME_W - 20), y: -14 };
+        if (edge === 1) return { x: GAME_W + 14,  y: k.rand(40, GAME_H - 20) };
+        if (edge === 2) return { x: k.rand(20, GAME_W - 20), y: GAME_H + 14 };
+                        return { x: -14, y: k.rand(40, GAME_H - 20) };
+    }
+
+    function spawnNormal() {
+        const { x, y } = edgePos();
+        const spd = getBulletSpeed();
+        const tx  = GAME_W / 2 + k.rand(-70, 70);
+        const ty  = GAME_H / 2 + k.rand(-90, 90);
+        const dx  = tx - x, dy = ty - y;
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+        addBullet(x, y, dx / len * spd, dy / len * spd, [255, 55, 55], 5);
+    }
+
+    function spawnAim() {
+        const { x, y } = edgePos();
+        const spd = getBulletSpeed();
+        const dx  = player.pos.x - x;
+        const dy  = player.pos.y - y;
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+        addBullet(x, y, dx / len * spd, dy / len * spd, [255, 160, 30], 5);
+    }
+
+    function spawnSpread() {
+        const { x, y } = edgePos();
+        const spd   = getBulletSpeed();
+        const base  = Math.atan2(GAME_H / 2 - y, GAME_W / 2 - x);
+        const count = getLevel() >= 4 ? 7 : 5;
+        const gap   = 0.21;
+        for (let i = 0; i < count; i++) {
+            const a = base + (i - Math.floor(count / 2)) * gap;
+            addBullet(x, y, Math.cos(a) * spd, Math.sin(a) * spd, [210, 50, 220], 4);
+        }
+    }
+
+    function pickAndSpawn() {
+        const lv = getLevel();
+        const r  = Math.random();
+        if      (lv === 1) spawnNormal();
+        else if (lv === 2) { r < 0.35 ? spawnAim()    : spawnNormal(); }
+        else if (lv === 3) { r < 0.28 ? spawnSpread() : r < 0.55 ? spawnAim() : spawnNormal(); }
+        else               { r < 0.32 ? spawnSpread() : r < 0.62 ? spawnAim() : spawnNormal(); }
+    }
+
+    // ── Player Hit ────────────────────────────────────────────────
+    function playerHit() {
+        if (invinc > 0 || !active) return;
+        lives = Math.max(0, lives - 1);
+        invinc = INVINC_DUR;
+        flashT = 0; flashVis = true;
+        k.shake(9);
+        updateHUD();
+        if (lives <= 0) {
+            active = false;
+            k.wait(0.9, () => {
+                joyHide();
+                k.go("gameover", { survTime, goldEarned });
+            });
+        }
+    }
+
+    // ── Main Loop ─────────────────────────────────────────────────
+    k.onUpdate(() => {
+        if (!active) return;
+        survTime  += k.dt();
+        goldTimer += k.dt();
+
+        // Gold reward
+        while (goldTimer >= GOLD_SEC) {
+            goldTimer -= GOLD_SEC;
+            goldEarned += 10;
+            if (typeof SharedWallet !== "undefined") SharedWallet.addGold(10);
+        }
+
+        // Invincibility flash
+        if (invinc > 0) {
+            invinc -= k.dt();
+            flashT  += k.dt();
+            if (flashT >= 0.09) {
+                flashT = 0;
+                flashVis = !flashVis;
+                player.opacity = flashVis ? 1 : 0.12;
+                glow.opacity   = flashVis ? 0.18 : 0;
+            }
+            if (invinc <= 0) { player.opacity = 1; glow.opacity = 0.18; }
+        }
+
+        // Player movement (keyboard + joystick)
+        let mx = 0, my = 0;
+        if (k.isKeyDown("left")  || k.isKeyDown("a")) mx -= 1;
+        if (k.isKeyDown("right") || k.isKeyDown("d")) mx += 1;
+        if (k.isKeyDown("up")    || k.isKeyDown("w")) my -= 1;
+        if (k.isKeyDown("down")  || k.isKeyDown("s")) my += 1;
+        if (Math.abs(joyX) > 0.08) mx += joyX;
+        if (Math.abs(joyY) > 0.08) my += joyY;
+
+        const mlen = Math.sqrt(mx * mx + my * my);
+        if (mlen > 1) { mx /= mlen; my /= mlen; }
+
+        player.pos.x = Math.max(PLAYER_R,          Math.min(GAME_W - PLAYER_R, player.pos.x + mx * PLAYER_SPD * k.dt()));
+        player.pos.y = Math.max(40 + PLAYER_R + 4, Math.min(GAME_H - PLAYER_R, player.pos.y + my * PLAYER_SPD * k.dt()));
+
+        glow.pos = k.vec2(player.pos.x, player.pos.y);
+
+        // Bullet movement + off-screen cleanup + collision
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            const b = bullets[i];
+            b.obj.pos.x += b.vx * k.dt();
+            b.obj.pos.y += b.vy * k.dt();
+
+            if (b.obj.pos.x < -70 || b.obj.pos.x > GAME_W + 70 ||
+                b.obj.pos.y < -70 || b.obj.pos.y > GAME_H + 70) {
+                k.destroy(b.obj);
+                bullets.splice(i, 1);
+                continue;
+            }
+
+            // Manual distance-based collision
+            const hitDist = (PLAYER_R - 2) + (b.r - 1);
+            if (invinc <= 0 && dist2(player.pos, b.obj.pos) < hitDist * hitDist) {
+                k.destroy(b.obj);
+                bullets.splice(i, 1);
+                playerHit();
+                continue;
+            }
+        }
+
+        // Bullet spawning
+        spawnTimer += k.dt();
+        if (spawnTimer >= getSpawnInterval()) {
+            spawnTimer = 0;
+            pickAndSpawn();
+            // Extra bursts at high levels
+            const lv = getLevel();
+            if (lv >= 3 && Math.random() < 0.28) spawnAim();
+            if (lv >= 4 && Math.random() < 0.22) spawnSpread();
+        }
+
+        updateHUD();
+    });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════
+//  GAME OVER SCENE
+// ═══════════════════════════════════════════════════════════════════
+k.scene("gameover", data => {
+    joyHide();
+    const { survTime = 0, goldEarned = 0 } = data;
+    const best  = getBest();
+    const isNew = survTime > best;
+    if (isNew) saveBest(survTime);
+    const shownBest = isNew ? survTime : best;
+
+    k.add([
+        k.pos(GAME_W / 2, GAME_H * 0.13),
+        k.anchor("center"),
+        k.text("GAME  OVER", { size: 34, font: "monospace" }),
+        k.color(255, 55, 55),
+    ]);
+
+    k.add([
+        k.pos(GAME_W / 2, GAME_H * 0.27),
+        k.anchor("center"),
+        k.text("생존 시간", { size: 14, font: "monospace" }),
+        k.color(150, 180, 220),
+    ]);
+    k.add([
+        k.pos(GAME_W / 2, GAME_H * 0.36),
+        k.anchor("center"),
+        k.text(survTime.toFixed(1) + "초", { size: 42, font: "monospace" }),
+        k.color(255, 220, 50),
+    ]);
+
+    if (isNew) {
+        k.add([
+            k.pos(GAME_W / 2, GAME_H * 0.47),
+            k.anchor("center"),
+            k.text("🎉  신기록!", { size: 19, font: "monospace" }),
+            k.color(50, 230, 140),
+        ]);
+    } else {
+        k.add([
+            k.pos(GAME_W / 2, GAME_H * 0.47),
+            k.anchor("center"),
+            k.text(`🏆  최고: ${shownBest.toFixed(1)}초`, { size: 16, font: "monospace" }),
+            k.color(200, 165, 90),
+        ]);
+    }
+
+    if (goldEarned > 0) {
+        k.add([
+            k.pos(GAME_W / 2, GAME_H * 0.57),
+            k.anchor("center"),
+            k.text(`💰  획득: ${goldEarned}G`, { size: 16, font: "monospace" }),
+            k.color(255, 195, 40),
+        ]);
+    }
+
+    // Retry
+    const retryBtn = k.add([
+        k.rect(210, 54),
+        k.pos(GAME_W / 2, GAME_H * 0.70),
+        k.anchor("center"),
+        k.color(25, 145, 75),
+        k.area(),
+        "retryBtn",
+    ]);
+    k.add([
+        k.pos(GAME_W / 2, GAME_H * 0.70),
+        k.anchor("center"),
+        k.text("🔄  다시하기", { size: 19, font: "monospace" }),
+        k.color(255, 255, 255),
+    ]);
+
+    // Title
+    const titleBtn = k.add([
+        k.rect(180, 44),
+        k.pos(GAME_W / 2, GAME_H * 0.81),
+        k.anchor("center"),
+        k.color(45, 65, 110),
+        k.area(),
+        "titleBtn",
+    ]);
+    k.add([
+        k.pos(GAME_W / 2, GAME_H * 0.81),
+        k.anchor("center"),
+        k.text("🏠  타이틀로", { size: 16, font: "monospace" }),
+        k.color(170, 200, 255),
+    ]);
+
+    retryBtn.onClick(() => k.go("game"));
+    titleBtn.onClick(() => k.go("title"));
+    k.onKeyDown("space", () => k.go("game"));
+    k.onKeyDown("enter", () => k.go("game"));
+});
+
+
+// ═══════════════════════════════════════════════════════════════════
+//  START
+// ═══════════════════════════════════════════════════════════════════
+k.go("title");
+</script>
+</body>
+</html>
