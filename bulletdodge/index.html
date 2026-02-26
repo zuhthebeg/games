@@ -504,7 +504,7 @@ k.scene("game", (data) => {
     const glow = k.add([k.circle(PLAYER_R+9), k.pos(GAME_W/2, GAME_H-90),
         k.anchor("center"), k.color(0,180,255), k.opacity(0.18)]);
     const player = k.add([k.circle(PLAYER_R), k.pos(GAME_W/2, GAME_H-90),
-        k.anchor("center"), k.color(0,220,255)]);
+        k.anchor("center"), k.color(0,220,255), k.opacity(1)]);
 
     // ── Ghost players (multi) ─────────────────────────────────────
     const ghosts = {};
