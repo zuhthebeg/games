@@ -10,16 +10,17 @@
     <script src="/lib/multiplayer.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #080818;
+        body { background: #080818; overflow: hidden; }
+
+        /* kaplay 캔버스 컨테이너 — letterbox가 position:absolute를 사용하므로 relative 필수 */
+        #game-wrap {
+            position: fixed;
+            top: calc(48px + env(safe-area-inset-top));
+            left: 0; right: 0; bottom: 0;
+            display: flex; align-items: center; justify-content: center;
             overflow: hidden;
-            padding-top: calc(48px + env(safe-area-inset-top));
-            height: 100dvh;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
         }
-        canvas { display: block; touch-action: none; }
+        canvas { display: block; touch-action: none; max-width: 100%; }
 
         /* ── Joystick ── */
         #joyWrap {
@@ -100,6 +101,7 @@
 </head>
 <body>
 
+<div id="game-wrap"></div>
 <div id="joyWrap"><div id="joyBase"></div><div id="joyKnob"></div></div>
 <div id="overlay"><div id="overlayContent"></div></div>
 
@@ -370,9 +372,25 @@ async function submitRanking(survTime) {
 // ═══════════════════════════════════════════════════════════════════
 //  KaplayJS Init
 // ═══════════════════════════════════════════════════════════════════
+// canvas 생성 → game-wrap에 삽입, CSS로 크기 맞춤
+const gameWrap   = document.getElementById("game-wrap");
+const gameCanvas = document.createElement("canvas");
+gameWrap.appendChild(gameCanvas);
+
+// SharedWallet 헤더(48px) 제외한 가용 영역에 맞춰 canvas CSS 크기 결정
+function resizeCanvas() {
+    const aw = window.innerWidth;
+    const ah = window.innerHeight - 48 - (window.screen?.availTop || 0);
+    const scale = Math.min(aw / GAME_W, ah / GAME_H, 1.8);
+    gameCanvas.style.width  = Math.round(GAME_W * scale) + "px";
+    gameCanvas.style.height = Math.round(GAME_H * scale) + "px";
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
 const k = kaplay({
+    canvas: gameCanvas,
     width: GAME_W, height: GAME_H,
-    letterbox: true,
     background: [8, 8, 24],
     debug: false,
 });
