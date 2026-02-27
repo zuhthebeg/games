@@ -2194,7 +2194,14 @@ ${triggerType === 'desperate' ? 'JSON으로 응답: {"dialogue":"대사","attack
     setUnlockedStage(stage + 1);
 
     const goldReward = stage * STAGE_REWARD;
-    if (window.SharedWallet) window.SharedWallet.addGold(goldReward);
+    try {
+      if (window.SharedWallet) {
+        window.SharedWallet.addGold(goldReward);
+        console.log('[LR] addGold', goldReward, 'total:', window.SharedWallet.gold);
+      } else {
+        console.warn('[LR] SharedWallet not found!');
+      }
+    } catch (e) { console.error('[LR] addGold error', e); }
     setLRBestStage(stage);
 
     const clearBonus = 2000 * stage;
