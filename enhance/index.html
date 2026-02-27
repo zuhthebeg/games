@@ -5711,8 +5711,8 @@
             if (forceType && MONSTERS[forceType]) {
                 const m = MONSTERS[forceType];
                 return applyBossScaling({
-                    type: forceType,
                     ...m,
+                    key: forceType,
                     currentHp: m.hp,
                     maxHp: m.hp
                 });
@@ -5728,7 +5728,7 @@
                 const bosses = Object.entries(MONSTERS).filter(([k, v]) => v.isBoss && v.tier <= bossTier);
                 if (bosses.length > 0) {
                     const [type, m] = bosses[Math.floor(Math.random() * bosses.length)];
-                    return applyBossScaling({ type, ...m, currentHp: m.hp, maxHp: m.hp });
+                    return applyBossScaling({ ...m, key: type, currentHp: m.hp, maxHp: m.hp });
                 }
             }
             
@@ -5751,11 +5751,11 @@
                 // 해당 티어 몬스터 없으면 가장 가까운 티어
                 const allMonsters = Object.entries(MONSTERS).filter(([k, v]) => !v.isBoss);
                 const [type, m] = allMonsters[Math.floor(Math.random() * allMonsters.length)];
-                return applyBossScaling({ type, ...m, currentHp: m.hp, maxHp: m.hp });
+                return applyBossScaling({ ...m, key: type, currentHp: m.hp, maxHp: m.hp });
             }
             
             const [type, m] = eligibleMonsters[Math.floor(Math.random() * eligibleMonsters.length)];
-            return applyBossScaling({ type, ...m, currentHp: m.hp, maxHp: m.hp });
+            return applyBossScaling({ ...m, key: type, currentHp: m.hp, maxHp: m.hp });
         }
 
         // RELAY_URL is already declared in /lib/multiplayer.js
@@ -5773,7 +5773,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         playerId: getPlayerId(),
-                        bossId: monster.type,
+                        bossId: monster.key || monster.id || monster.monsterKey || monster.type,
                         bossName: monster.name.replace(/[🔥👹💀👻🐍❄️🦅🌟😈⚔️💧🌍💨]/g, '').trim(),
                         bossTier: monster.tier,
                         playerWeapon: state.weapon.name,
