@@ -644,6 +644,9 @@
       charging: false,
       burstTimer: 0,
       burstCooldown: 0,
+      hitFlash: 0,
+      rageTimer: 0,
+      rageSpeedMul: 1,
     };
 
     const bossSpriteScale = 0.32 * mmRadiusScale;
@@ -1400,6 +1403,15 @@
         if (gained >= Math.ceil(S.total * 0.10)) {
           activateShieldArc();
           showItemMsg('10%↑ 방어막 발동!');
+          // Boss hit reaction: flash + rage speed boost
+          if (S.mainMonster) {
+            const mm = S.mainMonster;
+            mm.hitFlash = 0.5; // 0.5s white flash
+            mm.rageTimer = 3000; // 3s speed boost
+            mm.rageSpeedMul = 1.8;
+            addParticles(mm.x, mm.y, 16, [0xffffff, 0xff4444, mm.color], { minS: 60, maxS: 200, life: 0.35, size: [1.5, 3] });
+            showItemMsg('💢 보스 분노!');
+          }
         }
       }
 
@@ -1630,6 +1642,8 @@
         mm.pulse += dt * 5;
         mm.burstTimer = Math.max(0, mm.burstTimer - deltaMs);
         mm.burstCooldown = Math.max(0, mm.burstCooldown - deltaMs);
+        if (mm.rageTimer > 0) mm.rageTimer = Math.max(0, mm.rageTimer - deltaMs);
+        if (mm.hitFlash > 0) mm.hitFlash = Math.max(0, mm.hitFlash - dt);
 
         const dx = px - mm.x;
         const dy = py - mm.y;
@@ -1701,7 +1715,8 @@
           showItemMsg('⚠️ 보스 가속!');
         }
 
-        const speedMul = mm.burstTimer > 0 ? 1.5 : 1;
+        const rageMul = mm.rageTimer > 0 ? (mm.rageSpeedMul || 1.8) : 1;
+        const speedMul = (mm.burstTimer > 0 ? 1.5 : 1) * rageMul;
         const desiredSpeed = mm.baseSpeed * speedMul;
         const velLen = Math.hypot(mm.vx, mm.vy) || 1;
         mm.vx = (mm.vx / velLen) * desiredSpeed;
@@ -2097,6 +2112,19 @@
           k.drawCircle({ pos: k.vec2(mm.x, mm.y), radius: mm.radius * 2.2, color: k.rgb(255, 68, 0), opacity: 0.55 * flashAlpha });
           k.drawCircle({ pos: k.vec2(mm.x, mm.y), radius: mm.radius * 2.5, color: k.rgb(255, 136, 0), opacity: 0.42 * flashAlpha });
         }
+
+        // Hit flash (white strobe when damaged)
+        if (mm.hitFlash > 0) {
+          const fa = Math.abs(Math.sin(mm.hitFlash * 20)) * 0.8;
+          k.drawCircle({ pos: k.vec2(mm.x, mm.y), radius: mm.radius + 6, color: k.rgb(255, 255, 255), opacity: fa });
+        }
+
+        // Rage aura (red pulsing ring)
+        if (mm.rageTimer > 0) {
+          const ra = 0.4 + 0.3 * Math.sin(performance.now() * 0.015);
+          k.drawCircle({ pos: k.vec2(mm.x, mm.y), radius: mm.radius + 12, color: k.rgb(255, 0, 0), opacity: ra * 0.5 });
+          k.drawCircle({ pos: k.vec2(mm.x, mm.y), radius: mm.radius + 18, color: k.rgb(255, 50, 0), opacity: ra * 0.25 });
+        }
       }
 
       // Bullets
@@ -2188,10 +2216,18 @@
     const goldReward = stage * STAGE_REWARD;
     try {
       if (window.SharedWallet) {
+        const before = window.SharedWallet.gold;
         window.SharedWallet.addGold(goldReward);
-        console.log('[LR] addGold', goldReward, 'total:', window.SharedWallet.gold);
+        window.SharedWallet._updateUI?.();
+        console.log('[LR] addGold', goldReward, 'before:', before, 'after:', window.SharedWallet.gold);
       } else {
-        console.warn('[LR] SharedWallet not found!');
+        // Fallback: direct localStorage
+        try {
+          const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
+          d.gold = (d.gold || 0) + goldReward;
+          localStorage.setItem('enhance_game_v3', JSON.stringify(d));
+          console.log('[LR] fallback addGold to localStorage', goldReward);
+        } catch (_) {}
       }
     } catch (e) { console.error('[LR] addGold error', e); }
     setLRBestStage(stage);
