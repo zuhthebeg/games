@@ -802,7 +802,7 @@
           k.go('gameover', { score: S.score, stage: S.stage });
           return;
         }
-        try { await window.SharedWallet?.spendGold?.(100); } catch (_) {}
+        try { await window.SharedWallet?.removeGold?.(100); } catch (_) {}
         hidePanel();
         S.paused = false;
         joyShow();
