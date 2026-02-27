@@ -2225,7 +2225,8 @@
         window.SharedWallet.gold = goldAfter;
         window.SharedWallet._updateUI?.();
       }
-    } catch (e) { console.error('[LR] addGold error', e); }
+    } catch (e) { alert('[LR] addGold error: ' + e); }
+    alert(`[DEBUG] Gold: ${goldBefore} → ${goldAfter} (+${goldReward})`);
     setLRBestStage(stage);
 
     const clearBonus = 2000 * stage;
