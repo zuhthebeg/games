@@ -271,12 +271,12 @@ ${triggerType === 'desperate' ? 'JSON으로 응답: {"dialogue":"대사","attack
         const content = resp?.choices?.[0]?.message?.content || '';
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) return JSON.parse(jsonMatch[0]);
-        return { dialogue: String(content || bossData.boss.catchphrase || '덤벼라!') };
+        return { dialogue: String(content || '') };
       } catch (_) {
-        return { dialogue: bossData.boss.catchphrase || '덤벼라!' };
+        return null;
       }
     } catch (_) {
-      return { dialogue: bossData?.boss?.catchphrase || '덤벼라!' };
+      return null;
     }
   }
 
@@ -952,15 +952,16 @@ ${triggerType === 'desperate' ? 'JSON으로 응답: {"dialogue":"대사","attack
       fetchBossDialogue(currentBossId, playerId, S.stage, S.percent, S.lives, triggerType)
         .then((result) => {
           if (!result) return;
-          const dialogue = String(result.dialogue || result.message || mmDef.name || '').trim();
-          showBossDialogueBanner(dialogue || '덤벼라!');
+          const dialogue = String(result.dialogue || result.message || '').trim();
+          if (!dialogue) return; // LLM 실패 시 대사 없음
+          showBossDialogueBanner(dialogue);
           if (triggerType === 'desperate') {
             const attack = String(result.attack || '').trim().toLowerCase();
-            triggerBossSpecialAttack(attack);
+            if (attack) triggerBossSpecialAttack(attack);
           }
         })
         .catch(() => {
-          showBossDialogueBanner('...끝까지 버텨봐라.');
+          // LLM 실패 — 조용히 넘어감, 룰베이스 대사 없음
           if (triggerType === 'desperate') triggerBossSpecialAttack('spiral');
         });
     }
