@@ -299,11 +299,8 @@ ${triggerType === 'desperate' ? 'JSON으로 응답: {"dialogue":"대사","attack
   const uiRoot = document.getElementById('scene-ui');
 
   function setWrapBackground(key) {
-    if (!key) {
-      gameWrap.style.backgroundImage = '';
-      return;
-    }
-    gameWrap.style.backgroundImage = `url('/linerush/img/${key}.jpg')`;
+    // Background is now rendered inside canvas only — no CSS bg leak
+    gameWrap.style.backgroundImage = '';
   }
 
   function showPanel(html) {
@@ -574,6 +571,7 @@ ${triggerType === 'desperate' ? 'JSON으로 응답: {"dialogue":"대사","attack
       shieldRings: [],
 
       fogOpacityMul: 1,
+      fogRevealProgress: 0,
       blackoutTimer: 0,
       playerFreezeTimer: 0,
 
@@ -1264,15 +1262,25 @@ ${triggerType === 'desperate' ? 'JSON으로 응답: {"dialogue":"대사","attack
       recordBossEncounter(true);
       joyHide();
       hidePanel();
-      k.wait(0.45, () => {
-        if (finalPercent !== null) S.percent = finalPercent;
-        k.go('clear', {
-          stage: S.stage,
-          score: S.score,
-          lives: S.lives,
-          percent: S.percent,
-          bgKey: S.bgKey,
-        });
+      if (finalPercent !== null) S.percent = finalPercent;
+      // Fog reveal animation: slide fog up/down to expose full background
+      S.fogRevealProgress = 0;
+      const REVEAL_DURATION = 1.6; // seconds
+      const revealLoop = k.onUpdate(() => {
+        S.fogRevealProgress = Math.min(1, S.fogRevealProgress + k.dt() / REVEAL_DURATION);
+        S.overlayDirty = true;
+        if (S.fogRevealProgress >= 1) {
+          revealLoop.cancel();
+          k.wait(0.6, () => {
+            k.go('clear', {
+              stage: S.stage,
+              score: S.score,
+              lives: S.lives,
+              percent: S.percent,
+              bgKey: S.bgKey,
+            });
+          });
+        }
       });
     }
 
@@ -2020,12 +2028,26 @@ ${triggerType === 'desperate' ? 'JSON으로 응답: {"dialogue":"대사","attack
       } catch (_) {}
 
       // Overlay cache
-      const fogOpacity = Math.min(1, 0.965 * S.fogOpacityMul);
-      for (const rect of S.overlayRects) {
-        k.drawRect({ pos: k.vec2(rect.x, rect.y), width: CELL, height: CELL, color: k.rgb(2, 3, 10), opacity: fogOpacity });
-      }
-      for (const b of S.boundaryRects) {
-        k.drawRect({ pos: k.vec2(b.x, b.y), width: CELL - 2, height: CELL - 2, color: k.rgb(190, 198, 255), opacity: 0.15 });
+      // Fog with reveal animation support
+      const revealP = S.fogRevealProgress || 0;
+      if (revealP < 1) {
+        const fogOpacity = Math.min(1, 0.965 * S.fogOpacityMul) * (1 - revealP);
+        const midY = H / 2;
+        const slideOff = revealP * midY; // fog slides away from center
+        for (const rect of S.overlayRects) {
+          const ry = rect.y;
+          // Top half slides up, bottom half slides down
+          const drawY = ry < midY ? ry - slideOff : ry + slideOff;
+          if (drawY + CELL < 0 || drawY > H) continue;
+          k.drawRect({ pos: k.vec2(rect.x, drawY), width: CELL, height: CELL, color: k.rgb(2, 3, 10), opacity: fogOpacity });
+        }
+        const bdrOpacity = 0.15 * (1 - revealP);
+        for (const b of S.boundaryRects) {
+          const by = b.y;
+          const drawY = by < midY ? by - slideOff : by + slideOff;
+          if (drawY + CELL < 0 || drawY > H) continue;
+          k.drawRect({ pos: k.vec2(b.x, drawY), width: CELL - 2, height: CELL - 2, color: k.rgb(190, 198, 255), opacity: bdrOpacity });
+        }
       }
 
       // Frontier border
