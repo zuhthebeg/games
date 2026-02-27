@@ -167,6 +167,13 @@
     { name:'아이스EX', color:0x88ddff, ring:0x0088cc, radius:13, spdMul:2.1, img:'boss5' },
   ];
 
+  const STAGE_BOSS_IDS = [
+    'slime', 'spin', 'tentacle', 'eyeball', 'ice',
+    'flame', 'thunder', 'dark', 'chaos', 'void',
+    'slime', 'spin', 'tentacle', 'eyeball', 'ice',
+  ];
+  const DESPERATE_ATTACKS = ['spiral', 'earthquake', 'blackout', 'split', 'laser', 'teleport', 'magnet', 'freeze_reverse'];
+
   const ITEM_TYPES = ['freeze','speed','shield','slow'];
   const ITEM_EMOJI = { freeze:'✋',speed:'🏃',shield:'🛡',slow:'⌛' };
   const ITEM_DUR   = { freeze:5000, speed:4000, shield:7000, slow:6000 };
@@ -217,6 +224,71 @@
     try {
       const next = Math.min(STAGE_COUNT, Math.max(getUnlockedStage(), stage));
       localStorage.setItem(STORAGE_UNLOCK_KEY, String(next));
+    } catch (_) {}
+  }
+
+  function getBossIdForStage(stage) {
+    const idx = Math.max(0, Math.min(STAGE_BOSS_IDS.length - 1, Math.floor(stage) - 1));
+    return STAGE_BOSS_IDS[idx] || 'slime';
+  }
+
+  async function fetchBossDialogue(bossId, playerId, stage, percent, lives, triggerType) {
+    const RELAY = 'https://relay.cocy.io';
+
+    let bossData = {
+      boss: {
+        name: bossId,
+        personality: '공격적이고 도발적',
+        catchphrase: '여기서 끝이다!',
+      },
+      encounterCount: 0,
+      history: [],
+    };
+
+    try {
+      const data = await fetch(`${RELAY}/api/bosses?boss_id=${encodeURIComponent(bossId)}&player_id=${encodeURIComponent(playerId)}`).then((r) => r.json());
+      if (data?.boss) bossData = data;
+    } catch (_) {}
+
+    try {
+      const resp = await fetch('https://llm.cocy.io/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{
+            role: 'system',
+            content: `너는 게임 보스 "${bossData.boss.name}". 성격: ${bossData.boss.personality}. 대표대사: "${bossData.boss.catchphrase}".
+${bossData.encounterCount > 0 ? `이 플레이어와 ${bossData.encounterCount}번 만남. 최근: ${JSON.stringify((bossData.history || []).slice(0,3))}` : '처음 만남.'}
+현재 상황: 스테이지 ${stage}, 영역 ${percent}% 점령됨, 플레이어 목숨 ${lives}.
+${triggerType === 'greeting' ? '가볍게 인사/겁주기. 1~2문장.' : '분노/절박한 대사 + 필살기 선택. 1~2문장.'}
+${triggerType === 'desperate' ? 'JSON으로 응답: {"dialogue":"대사","attack":"spiral|earthquake|blackout|split|laser|teleport|magnet|freeze_reverse"}' : 'JSON으로 응답: {"dialogue":"대사"}'}
+짧고 임팩트있게. 이모지 금지.`,
+          }],
+        }),
+      }).then((r) => r.json());
+
+      try {
+        const content = resp?.choices?.[0]?.message?.content || '';
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) return JSON.parse(jsonMatch[0]);
+        return { dialogue: String(content || bossData.boss.catchphrase || '덤벼라!') };
+      } catch (_) {
+        return { dialogue: bossData.boss.catchphrase || '덤벼라!' };
+      }
+    } catch (_) {
+      return { dialogue: bossData?.boss?.catchphrase || '덤벼라!' };
+    }
+  }
+
+  function speakBossLine(text, bossId) {
+    if (!window.speechSynthesis || !text) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(String(text));
+      u.lang = 'ko-KR';
+      u.rate = 0.85;
+      u.pitch = 0.6;
+      speechSynthesis.speak(u);
     } catch (_) {}
   }
 
@@ -496,9 +568,14 @@
 
       bossAttackTimer: 30000,
       bossCharging: false,
+      laserTelegraph: null,
 
       particles: [],
       shieldRings: [],
+
+      fogOpacityMul: 1,
+      blackoutTimer: 0,
+      playerFreezeTimer: 0,
 
       overlayDirty: true,
       overlayRects: [],
@@ -511,6 +588,30 @@
     };
 
     setWrapBackground(S.bgKey);
+
+    const currentBossId = getBossIdForStage(S.stage);
+    const playerId = getLRPlayerId();
+    let encounterRecorded = false;
+    let activeBossBanner = null;
+    let greetingFired = false;
+    let desperateFired = false;
+
+    function recordBossEncounter(cleared) {
+      if (encounterRecorded || !currentBossId) return;
+      encounterRecorded = true;
+      fetch('https://relay.cocy.io/api/bosses/encounter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: playerId,
+          boss_id: currentBossId,
+          game_id: 'linerush',
+          result: cleared ? 'killed' : 'lost',
+          stage: S.stage,
+          score: S.score,
+        }),
+      }).catch(() => {});
+    }
 
     let renderX = S.playerCol * CELL + CELL / 2;
     let renderY = S.playerRow * CELL + CELL / 2;
@@ -534,7 +635,7 @@
     }
 
     const mmDef = MAIN_MONSTERS[Math.min(S.stage - 1, MAIN_MONSTERS.length - 1)];
-    const mmRadiusScale = 1 + S.stage * 0.05;
+    const mmRadiusScale = 1 + S.stage * 0.02;
     const mmSpeed = CELL * (1.2 + S.stage * 0.38) * mmDef.spdMul;
     S.mainMonster = {
       x: k.rand(CELL * 5, W - CELL * 5),
@@ -555,8 +656,8 @@
       burstCooldown: 0,
     };
 
-    const bossSpriteScale = 0.55 * mmRadiusScale;
-    const bossDisplaySize = mmDef.radius * 2.2 * mmRadiusScale;
+    const bossSpriteScale = 0.32 * mmRadiusScale;
+    const bossDisplaySize = mmDef.radius * 1.6 * mmRadiusScale;
     let bossSprite = null;
     if (k.getSprite(mmDef.img)) {
       bossSprite = k.add([
@@ -575,6 +676,296 @@
       k.color(255, 221, 68),
       k.z(96),
     ]);
+
+    function clearBossBanner() {
+      if (!activeBossBanner) return;
+      for (const obj of activeBossBanner) {
+        if (obj) k.destroy(obj);
+      }
+      activeBossBanner = null;
+    }
+
+    function showBossDialogueBanner(dialogue) {
+      if (!dialogue) return;
+      clearBossBanner();
+
+      const text = String(dialogue).replace(/^dialogue\s*:\s*/i, '').trim().slice(0, 120);
+      if (!text) return;
+
+      const [nr, ng, nb] = hex2rgb(mmDef.ring);
+      const bannerW = Math.min(W - 18, 390);
+      const bannerH = 58;
+      const x = W / 2;
+      const y = 58;
+
+      const bg = k.add([
+        k.rect(bannerW, bannerH, { radius: 8 }),
+        k.pos(x, y),
+        k.anchor('center'),
+        k.color(16, 18, 30),
+        k.opacity(0.84),
+        k.z(200),
+      ]);
+      const border = k.add([
+        k.rect(bannerW + 2, bannerH + 2, { radius: 9 }),
+        k.pos(x, y),
+        k.anchor('center'),
+        k.color(nr, ng, nb),
+        k.opacity(0.28),
+        k.z(199),
+      ]);
+      const name = k.add([
+        k.pos(x - bannerW / 2 + 10, y - 22),
+        k.anchor('topleft'),
+        k.text(`★ ${mmDef.name}`, { size: 12, font: 'monospace' }),
+        k.color(nr, ng, nb),
+        k.z(201),
+      ]);
+      const line = k.add([
+        k.pos(x - bannerW / 2 + 10, y - 4),
+        k.anchor('topleft'),
+        k.text(text, { size: 12, font: 'monospace', width: bannerW - 20 }),
+        k.color(255, 255, 255),
+        k.z(201),
+      ]);
+
+      let life = 3;
+      const ticker = k.add([
+        {
+          update() {
+            life -= k.dt();
+            const alpha = life < 0.65 ? Math.max(0, life / 0.65) : 1;
+            bg.opacity = 0.84 * alpha;
+            border.opacity = 0.28 * alpha;
+            name.opacity = alpha;
+            line.opacity = alpha;
+            if (life <= 0) clearBossBanner();
+          },
+        },
+      ]);
+
+      activeBossBanner = [border, bg, name, line, ticker];
+      speakBossLine(text, currentBossId);
+    }
+
+    function pointSegDist(px, py, x1, y1, x2, y2) {
+      const vx = x2 - x1;
+      const vy = y2 - y1;
+      const wx = px - x1;
+      const wy = py - y1;
+      const c1 = vx * wx + vy * wy;
+      if (c1 <= 0) return Math.hypot(px - x1, py - y1);
+      const c2 = vx * vx + vy * vy;
+      if (c2 <= c1) return Math.hypot(px - x2, py - y2);
+      const b = c1 / c2;
+      const bx = x1 + b * vx;
+      const by = y1 + b * vy;
+      return Math.hypot(px - bx, py - by);
+    }
+
+    function bossAttackSpiral() {
+      if (!S.mainMonster) return;
+      const mm = S.mainMonster;
+      showItemMsg('🌀 나선탄!');
+      for (let wave = 0; wave < 3; wave++) {
+        k.wait(wave * 0.14, () => {
+          if (!S.mainMonster) return;
+          const base = performance.now() * 0.004 + wave * 0.45;
+          for (let i = 0; i < 12; i++) {
+            const a = base + (Math.PI * 2 * i) / 12;
+            const speed = CELL * (2.2 + wave * 0.45 + i * 0.04 + S.stage * 0.05);
+            S.enemyBullets.push({ x: mm.x, y: mm.y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, r: 3.5, life: 5200 });
+          }
+        });
+      }
+    }
+
+    function bossAttackEarthquake() {
+      const claimed = [];
+      for (let r = 1; r < ROWS - 1; r++) {
+        for (let c = 1; c < COLS - 1; c++) {
+          if (S.grid[r][c] === 1) claimed.push({ r, c });
+        }
+      }
+      if (!claimed.length) return;
+      const target = Math.max(1, Math.floor(claimed.length * 0.2));
+      for (let i = 0; i < target && claimed.length > 0; i++) {
+        const pick = randInt(0, claimed.length - 1);
+        const cell = claimed[pick];
+        S.grid[cell.r][cell.c] = 0;
+        claimed[pick] = claimed[claimed.length - 1];
+        claimed.pop();
+      }
+      S.overlayDirty = true;
+      updateClaimStats();
+      showItemMsg('🌋 지진! 점령지 붕괴');
+    }
+
+    function bossAttackBlackout() {
+      S.blackoutTimer = Math.max(S.blackoutTimer, 5000);
+      S.fogOpacityMul = 2;
+      showItemMsg('🌑 암흑 장막!');
+    }
+
+    function bossAttackSplit() {
+      if (!S.mainMonster) return;
+      const mm = S.mainMonster;
+      for (let i = 0; i < 2; i++) {
+        const ang = (Math.PI * 2 * i) / 2 + Math.PI / 5;
+        const spd = mm.baseSpeed * 0.92;
+        S.enemies.push({
+          x: clamp(mm.x + Math.cos(ang) * CELL * 3, CELL * 2, W - CELL * 2),
+          y: clamp(mm.y + Math.sin(ang) * CELL * 3, CELL * 2, H - CELL * 2),
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          baseSpeed: spd,
+          kind: 'hunter',
+          radius: Math.max(4.5, mm.radius * 0.52),
+          pulse: Math.random() * Math.PI * 2,
+          shootCd: randInt(800, 1400),
+          cloneLife: 8000,
+          isClone: true,
+        });
+      }
+      showItemMsg('👥 분열체 소환!');
+    }
+
+    function applyLaserDamage(x1, y1, x2, y2) {
+      let removed = 0;
+      let cutTrail = false;
+      const hitRadius = CELL * 0.7;
+      for (let r = 1; r < ROWS - 1; r++) {
+        for (let c = 1; c < COLS - 1; c++) {
+          if (S.grid[r][c] !== 1 && S.grid[r][c] !== 2) continue;
+          const cx = c * CELL + CELL / 2;
+          const cy = r * CELL + CELL / 2;
+          if (pointSegDist(cx, cy, x1, y1, x2, y2) <= hitRadius) {
+            if (S.grid[r][c] === 2) cutTrail = true;
+            S.grid[r][c] = 0;
+            removed++;
+          }
+        }
+      }
+
+      if (cutTrail) {
+        S.trail = S.trail.filter((cell) => S.grid[cell.row][cell.col] === 2);
+        breakPlayerLineByBoss();
+      }
+
+      const px = S.playerCol * CELL + CELL / 2;
+      const py = S.playerRow * CELL + CELL / 2;
+      if (pointSegDist(px, py, x1, y1, x2, y2) <= hitRadius * 1.15 && S.invuln <= 0) playerDie();
+
+      if (removed > 0) {
+        S.overlayDirty = true;
+        updateClaimStats();
+        showItemMsg('🔻 레이저로 영역 손상!');
+      }
+
+      addParticles((x1 + x2) * 0.5, (y1 + y2) * 0.5, 30, [0xff0000, 0xff7744, 0xffffff], { minS: 90, maxS: 260, life: 0.42 });
+    }
+
+    function bossAttackLaser() {
+      if (!S.mainMonster) return;
+      const mm = S.mainMonster;
+      const px = S.playerCol * CELL + CELL / 2;
+      const py = S.playerRow * CELL + CELL / 2;
+      S.laserTelegraph = { x1: mm.x, y1: mm.y, x2: px, y2: py, phase: 'aim', timeLeft: 1000 };
+      showItemMsg('🔴 레이저 조준!');
+    }
+
+    function bossAttackTeleport() {
+      if (!S.mainMonster) return;
+      const mm = S.mainMonster;
+      const free = [];
+      for (let r = 2; r < ROWS - 2; r++) {
+        for (let c = 2; c < COLS - 2; c++) {
+          if (S.grid[r][c] === 0) free.push({ r, c });
+        }
+      }
+      addParticles(mm.x, mm.y, 24, [0xaa88ff, 0xffffff, 0x331155], { minS: 70, maxS: 220, life: 0.35 });
+      if (free.length > 0) {
+        const cell = free[randInt(0, free.length - 1)];
+        mm.x = cell.c * CELL + CELL / 2;
+        mm.y = cell.r * CELL + CELL / 2;
+      }
+      addParticles(mm.x, mm.y, 28, [0xaa88ff, 0xffffff, 0x330055], { minS: 80, maxS: 250, life: 0.45 });
+      for (let i = 0; i < 16; i++) {
+        const a = (Math.PI * 2 * i) / 16;
+        const speed = CELL * (2.5 + (i % 3) * 0.25 + S.stage * 0.06);
+        S.enemyBullets.push({ x: mm.x, y: mm.y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, r: 3.8, life: 4200 });
+      }
+      showItemMsg('⚡ 공간 도약!');
+    }
+
+    function bossAttackMagnet() {
+      if (!S.trail.length || !S.mainMonster) {
+        showItemMsg('🧲 자력장!');
+        return;
+      }
+      const mmR = clamp(Math.floor(S.mainMonster.y / CELL), 1, ROWS - 2);
+      const mmC = clamp(Math.floor(S.mainMonster.x / CELL), 1, COLS - 2);
+      const movedMap = new Map();
+
+      for (const cell of S.trail) {
+        if (S.grid[cell.row][cell.col] === 2) S.grid[cell.row][cell.col] = 0;
+      }
+
+      for (const cell of S.trail) {
+        const dr = Math.sign(mmR - cell.row) * 2;
+        const dc = Math.sign(mmC - cell.col) * 2;
+        let nr = clamp(cell.row + dr, 1, ROWS - 2);
+        let nc = clamp(cell.col + dc, 1, COLS - 2);
+        if (S.grid[nr][nc] === 1) {
+          nr = cell.row;
+          nc = cell.col;
+        }
+        movedMap.set(`${nr},${nc}`, { row: nr, col: nc });
+      }
+
+      S.trail = Array.from(movedMap.values());
+      for (const cell of S.trail) {
+        if (S.grid[cell.row][cell.col] !== 1) S.grid[cell.row][cell.col] = 2;
+      }
+      S.overlayDirty = true;
+      showItemMsg('🧲 라인 흡인!');
+    }
+
+    function bossAttackFreezeReverse() {
+      S.playerFreezeTimer = Math.max(S.playerFreezeTimer, 2000);
+      showItemMsg('🧊 움직임 봉인!');
+    }
+
+    function triggerBossSpecialAttack(rawAttack) {
+      const attack = DESPERATE_ATTACKS.includes(rawAttack) ? rawAttack : DESPERATE_ATTACKS[randInt(0, DESPERATE_ATTACKS.length - 1)];
+      switch (attack) {
+        case 'spiral': bossAttackSpiral(); break;
+        case 'earthquake': bossAttackEarthquake(); break;
+        case 'blackout': bossAttackBlackout(); break;
+        case 'split': bossAttackSplit(); break;
+        case 'laser': bossAttackLaser(); break;
+        case 'teleport': bossAttackTeleport(); break;
+        case 'magnet': bossAttackMagnet(); break;
+        case 'freeze_reverse': bossAttackFreezeReverse(); break;
+      }
+    }
+
+    function triggerBossDialogue(triggerType) {
+      fetchBossDialogue(currentBossId, playerId, S.stage, S.percent, S.lives, triggerType)
+        .then((result) => {
+          if (!result) return;
+          const dialogue = String(result.dialogue || result.message || mmDef.name || '').trim();
+          showBossDialogueBanner(dialogue || '덤벼라!');
+          if (triggerType === 'desperate') {
+            const attack = String(result.attack || '').trim().toLowerCase();
+            triggerBossSpecialAttack(attack);
+          }
+        })
+        .catch(() => {
+          showBossDialogueBanner('...끝까지 버텨봐라.');
+          if (triggerType === 'desperate') triggerBossSpecialAttack('spiral');
+        });
+    }
 
     const hudLives = k.add([k.pos(12, 8), k.text('', { size: 18, font: 'monospace' }), k.z(120)]);
     const hudStage = k.add([k.pos(W / 2 - 74, 10), k.text('', { size: 15, font: 'monospace' }), k.color(125, 229, 255), k.z(120)]);
@@ -604,6 +995,8 @@
       }
       S.claimedCells = claimed;
       S.percent = Math.floor((claimed / S.total) * 100);
+
+
       refreshHUD();
     }
 
@@ -681,7 +1074,7 @@
     }
 
     function collectItem(type) {
-      const msgs = { freeze: '✋ 몬스터 정지!', speed: '🏃 5배 스피드!', shield: '🛡 방어막!', slow: '⌛ 감속!' };
+      const msgs = { freeze: '✋ 몬스터 정지!', speed: '🏃 2배 스피드!', shield: '🛡 방어막!', slow: '⌛ 감속!' };
       showItemMsg(msgs[type]);
       if (type === 'shield') {
         activateShieldArc();
@@ -799,6 +1192,8 @@
       document.getElementById('contBtn').onclick = async () => {
         if ((window.SharedWallet?.gold || 0) < 100) {
           hidePanel();
+          clearBossBanner();
+          recordBossEncounter(false);
           k.go('gameover', { score: S.score, stage: S.stage });
           return;
         }
@@ -818,6 +1213,8 @@
 
       document.getElementById('quitBtn').onclick = () => {
         hidePanel();
+        clearBossBanner();
+        recordBossEncounter(false);
         k.go('gameover', { score: S.score, stage: S.stage });
       };
     }
@@ -844,7 +1241,11 @@
       if (S.lives <= 0) {
         const gold = window.SharedWallet?.gold || 0;
         if (gold >= 100) showContinuePrompt();
-        else k.go('gameover', { score: S.score, stage: S.stage });
+        else {
+          clearBossBanner();
+          recordBossEncounter(false);
+          k.go('gameover', { score: S.score, stage: S.stage });
+        }
         return;
       }
 
@@ -859,6 +1260,8 @@
     function goClear(finalPercent = null) {
       if (S.stageClearing) return;
       S.stageClearing = true;
+      clearBossBanner();
+      recordBossEncounter(true);
       joyHide();
       hidePanel();
       k.wait(0.45, () => {
@@ -1058,6 +1461,8 @@
     }
 
     function handleInput() {
+      if (S.playerFreezeTimer > 0) return;
+
       let dr = 0;
       let dc = 0;
 
@@ -1208,6 +1613,16 @@
       const dt = (deltaMs / 1000) * slowMul;
       const px = S.playerCol * CELL + CELL / 2;
       const py = S.playerRow * CELL + CELL / 2;
+
+      for (let i = S.enemies.length - 1; i >= 0; i--) {
+        const e = S.enemies[i];
+        if (!e.isClone) continue;
+        e.cloneLife -= deltaMs;
+        if (e.cloneLife <= 0) {
+          addParticles(e.x, e.y, 18, [0xaa88ff, 0xffaadd, 0xffffff], { minS: 50, maxS: 190, life: 0.35 });
+          S.enemies.splice(i, 1);
+        }
+      }
 
       if (S.mainMonster) {
         const mm = S.mainMonster;
@@ -1422,7 +1837,7 @@
       if (S.mainMonster) {
         const mm = S.mainMonster;
         const dist = Math.hypot(px - mm.x, py - mm.y);
-        if (dist < mm.radius + 5 && S.isDrawing) {
+        if (dist < mm.radius * 1.8 + 5 && S.isDrawing) {
           playerDie();
           return;
         }
@@ -1485,7 +1900,7 @@
       if (S.paused || S.dead || S.stageClearing) return;
 
       S.moveTimer += deltaMs;
-      const baseDelay = S.fx.speed > 0 ? S.moveDelay / 5 : S.moveDelay;
+      const baseDelay = S.fx.speed > 0 ? S.moveDelay / 2 : S.moveDelay;
       const stepDelay = S.retracting ? baseDelay / S.retractSpeedMul : baseDelay;
       if (S.moveTimer >= stepDelay) {
         if (S.retracting) stepRetreat();
@@ -1506,6 +1921,23 @@
       if (S.fx.speed > 0) S.fx.speed -= deltaMs;
       if (S.fx.slow > 0) S.fx.slow -= deltaMs;
       if (S.fx.shield > 0) S.fx.shield -= deltaMs;
+      if (S.playerFreezeTimer > 0) S.playerFreezeTimer -= deltaMs;
+
+      if (S.blackoutTimer > 0) {
+        S.blackoutTimer -= deltaMs;
+        if (S.blackoutTimer <= 0) S.fogOpacityMul = 1;
+      }
+
+      if (S.laserTelegraph) {
+        S.laserTelegraph.timeLeft -= deltaMs;
+        if (S.laserTelegraph.phase === 'aim' && S.laserTelegraph.timeLeft <= 0) {
+          applyLaserDamage(S.laserTelegraph.x1, S.laserTelegraph.y1, S.laserTelegraph.x2, S.laserTelegraph.y2);
+          S.laserTelegraph.phase = 'fire';
+          S.laserTelegraph.timeLeft = 280;
+        } else if (S.laserTelegraph.phase === 'fire' && S.laserTelegraph.timeLeft <= 0) {
+          S.laserTelegraph = null;
+        }
+      }
 
       S.itemSpawnTimer -= deltaMs;
       if (S.itemSpawnTimer <= 0 && S.items.length < MAX_ITEMS) {
@@ -1523,6 +1955,17 @@
         }
         if (it.timeLeft <= ITEM_BLINK) {
           if (it.label) it.label.opacity = (Math.floor(performance.now() / 250) % 2 === 0 ? 1 : 0.15);
+        }
+      }
+
+      if (S.mainMonster) {
+        if (!greetingFired && S.percent < 30) {
+          greetingFired = true;
+          triggerBossDialogue('greeting');
+        }
+        if (!desperateFired && S.percent >= 70) {
+          desperateFired = true;
+          triggerBossDialogue('desperate');
         }
       }
 
@@ -1558,12 +2001,28 @@
     });
 
     k.onDraw(() => {
-      // Canvas backdrop tint (actual stage image comes from #game-wrap bg)
-      k.drawRect({ pos: k.vec2(0, 0), width: W, height: H, color: k.rgb(7, 8, 20), opacity: 0.33 });
+      // Draw stage background directly on canvas so captured cells reveal the image
+      try {
+        if (S.bgKey && k.getSprite(S.bgKey)) {
+          try {
+            k.drawSprite({ sprite: S.bgKey, pos: k.vec2(0, 0), width: W, height: H });
+          } catch (_) {
+            const bg = k.getSprite(S.bgKey);
+            const sw = bg?.data?.width || bg?.width || W;
+            const sh = bg?.data?.height || bg?.height || H;
+            k.drawSprite({
+              sprite: S.bgKey,
+              pos: k.vec2(0, 0),
+              scale: k.vec2(W / Math.max(1, sw), H / Math.max(1, sh)),
+            });
+          }
+        }
+      } catch (_) {}
 
       // Overlay cache
+      const fogOpacity = Math.min(1, 0.965 * S.fogOpacityMul);
       for (const rect of S.overlayRects) {
-        k.drawRect({ pos: k.vec2(rect.x, rect.y), width: CELL, height: CELL, color: k.rgb(2, 3, 10), opacity: 0.965 });
+        k.drawRect({ pos: k.vec2(rect.x, rect.y), width: CELL, height: CELL, color: k.rgb(2, 3, 10), opacity: fogOpacity });
       }
       for (const b of S.boundaryRects) {
         k.drawRect({ pos: k.vec2(b.x, b.y), width: CELL - 2, height: CELL - 2, color: k.rgb(190, 198, 255), opacity: 0.15 });
@@ -1634,6 +2093,17 @@
           k.drawCircle({ pos: k.vec2(b.x, b.y), radius: b.r * 0.5, color: k.rgb(255, 215, 0), opacity: 0.85 });
         } else {
           k.drawCircle({ pos: k.vec2(b.x, b.y), radius: b.r, color: k.rgb(255, 244, 124), opacity: 0.95 });
+        }
+      }
+
+      if (S.laserTelegraph) {
+        const l = S.laserTelegraph;
+        if (l.phase === 'aim') {
+          const blink = Math.floor(performance.now() / 90) % 2 === 0 ? 0.95 : 0.35;
+          k.drawLine({ p1: k.vec2(l.x1, l.y1), p2: k.vec2(l.x2, l.y2), width: 2.5, color: k.rgb(255, 40, 40), opacity: blink });
+        } else {
+          k.drawLine({ p1: k.vec2(l.x1, l.y1), p2: k.vec2(l.x2, l.y2), width: 5.5, color: k.rgb(255, 120, 50), opacity: 0.95 });
+          k.drawLine({ p1: k.vec2(l.x1, l.y1), p2: k.vec2(l.x2, l.y2), width: 2.5, color: k.rgb(255, 255, 255), opacity: 0.7 });
         }
       }
 
