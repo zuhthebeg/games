@@ -105,7 +105,7 @@
 <div id="joyWrap"><div id="joyBase"></div><div id="joyKnob"></div></div>
 <div id="overlay"><div id="overlayContent"></div></div>
 
-<script src="https://unpkg.com/kaplay@3001.0.19/dist/kaplay.js"></script>
+<script src="https://unpkg.com/kaplay@4000.0.0-alpha.26/dist/kaplay.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════
 //  Joystick
@@ -377,22 +377,24 @@ const gameWrap   = document.getElementById("game-wrap");
 const gameCanvas = document.createElement("canvas");
 gameWrap.appendChild(gameCanvas);
 
-// SharedWallet 헤더(48px) 제외한 가용 영역에 맞춰 canvas CSS 크기 결정
+// game-wrap 가용 영역에 맞춰 canvas CSS 크기 결정 (모바일 주소창 변화 대응)
 function resizeCanvas() {
-    const aw = window.innerWidth;
-    const ah = window.innerHeight - 48 - (window.screen?.availTop || 0);
+    const aw = gameWrap.clientWidth  || window.innerWidth;
+    const ah = gameWrap.clientHeight || Math.max(320, window.innerHeight - 48);
     const scale = Math.min(aw / GAME_W, ah / GAME_H, 1.8);
     gameCanvas.style.width  = Math.round(GAME_W * scale) + "px";
     gameCanvas.style.height = Math.round(GAME_H * scale) + "px";
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
+window.visualViewport?.addEventListener("resize", resizeCanvas);
 
 const k = kaplay({
     canvas: gameCanvas,
     width: GAME_W, height: GAME_H,
     background: [8, 8, 24],
     debug: false,
+    pixelDensity: Math.min(window.devicePixelRatio || 1, 2),
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -407,10 +409,12 @@ k.scene("title", () => {
             k.anchor("center"), k.color(180,40,40), k.opacity(0.28)]);
         const vx = k.rand(-40,40), vy = k.rand(25,80);
         obj.onUpdate(() => {
-            obj.pos.x += vx*k.dt(); obj.pos.y += vy*k.dt();
-            if (obj.pos.y>GAME_H+20) obj.pos.y=-20;
-            if (obj.pos.x<-20) obj.pos.x=GAME_W+20;
-            if (obj.pos.x>GAME_W+20) obj.pos.x=-20;
+            let nx = obj.pos.x + vx * k.dt();
+            let ny = obj.pos.y + vy * k.dt();
+            if (ny > GAME_H + 20) ny = -20;
+            if (nx < -20) nx = GAME_W + 20;
+            if (nx > GAME_W + 20) nx = -20;
+            obj.pos = k.vec2(nx, ny);
         });
     }
 
@@ -453,16 +457,23 @@ k.scene("title", () => {
             });
         }).catch(() => {});
 
+    const btnW = Math.round(GAME_W * 0.56);
+    const btn1H = 50;
+    const btn2H = 46;
+    const btnGap = Math.round(GAME_H * 0.022);
+    const btn2Y = GAME_H - Math.round(GAME_H * 0.11);
+    const btn1Y = btn2Y - (btn1H / 2 + btn2H / 2 + btnGap);
+
     // 1P button
-    const btn1p = k.add([k.rect(200,50), k.pos(GAME_W/2, GAME_H*0.76),
+    const btn1p = k.add([k.rect(btnW, btn1H), k.pos(GAME_W / 2, btn1Y),
         k.anchor("center"), k.color(20,150,200), k.area(), "btn1p"]);
-    k.add([k.pos(GAME_W/2, GAME_H*0.76), k.anchor("center"),
+    k.add([k.pos(GAME_W / 2, btn1Y), k.anchor("center"),
         k.text("▶  1인 플레이", {size:19,font:"monospace"}), k.color(255,255,255)]);
 
     // Multi button
-    const btnMp = k.add([k.rect(200,46), k.pos(GAME_W/2, GAME_H*0.87),
+    const btnMp = k.add([k.rect(btnW, btn2H), k.pos(GAME_W / 2, btn2Y),
         k.anchor("center"), k.color(80,40,150), k.area(), "btnMp"]);
-    k.add([k.pos(GAME_W/2, GAME_H*0.87), k.anchor("center"),
+    k.add([k.pos(GAME_W / 2, btn2Y), k.anchor("center"),
         k.text("👥  멀티플레이", {size:17,font:"monospace"}), k.color(220,200,255)]);
 
     btn1p.onClick(() => k.go("game", { mode:"1p", seed: Math.floor(Math.random()*0xFFFFFF) }));
@@ -661,9 +672,10 @@ k.scene("game", (data) => {
         if (Math.abs(joyX)>0.08) mx+=joyX;
         if (Math.abs(joyY)>0.08) my+=joyY;
         const mlen=Math.sqrt(mx*mx+my*my); if (mlen>1){mx/=mlen;my/=mlen;}
-        player.pos.x = Math.max(PLAYER_R,          Math.min(GAME_W-PLAYER_R, player.pos.x+mx*PLAYER_SPD*k.dt()));
-        player.pos.y = Math.max(40+PLAYER_R+4,     Math.min(GAME_H-PLAYER_R, player.pos.y+my*PLAYER_SPD*k.dt()));
-        glow.pos = k.vec2(player.pos.x, player.pos.y);
+        const nx = Math.max(PLAYER_R, Math.min(GAME_W - PLAYER_R, player.pos.x + mx * PLAYER_SPD * k.dt()));
+        const ny = Math.max(40 + PLAYER_R + 4, Math.min(GAME_H - PLAYER_R, player.pos.y + my * PLAYER_SPD * k.dt()));
+        player.pos = k.vec2(nx, ny);
+        glow.pos = k.vec2(nx, ny);
 
         // Multi: broadcast position
         if (isMulti && mp) {
@@ -702,9 +714,11 @@ k.scene("game", (data) => {
 
         // Bullets
         for (let i=bullets.length-1; i>=0; i--) {
-            const b=bullets[i];
-            b.obj.pos.x+=b.vx*k.dt(); b.obj.pos.y+=b.vy*k.dt();
-            if (b.obj.pos.x<-70||b.obj.pos.x>GAME_W+70||b.obj.pos.y<-70||b.obj.pos.y>GAME_H+70) {
+            const b = bullets[i];
+            const bx = b.obj.pos.x + b.vx * k.dt();
+            const by = b.obj.pos.y + b.vy * k.dt();
+            b.obj.pos = k.vec2(bx, by);
+            if (bx < -70 || bx > GAME_W + 70 || by < -70 || by > GAME_H + 70) {
                 k.destroy(b.obj); bullets.splice(i,1); continue;
             }
             const hitDist=(PLAYER_R-2)+(b.r-1);
