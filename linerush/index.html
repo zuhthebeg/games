@@ -126,1798 +126,6 @@
 <div id="game-wrap"></div>
 <div id="joyWrap"><div id="joyBase"></div><div id="joyKnob"></div></div>
 <div id="scene-ui"></div>
-<script type="text/plain" id="legacy-phaser-script">
-window.addEventListener('error', (e) => {
-  const msg = document.createElement('div');
-  msg.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;z-index:99999;background:#300;color:#fff;padding:10px 12px;border-radius:8px;font:12px/1.4 sans-serif';
-  msg.textContent = 'Line Rush 로딩 오류: ' + (e.message || 'unknown');
-  document.body.appendChild(msg);
-});
-const STAGE_COUNT        = 15;
-const BG_ORIG_START      = 1;   // bg1-10: stage 4-10 random backgrounds
-const BG_ORIG_END        = 10;
-// stage 1→char1, 2→char2, 3→char4 (luminarqmix-v7 portrait crops)
-const STAGE_CHAR_MAP     = { 1: 'char1', 2: 'char2', 3: 'char4' };
-const STAGE_REWARD       = 1000;  // 스테이지당 골드 보상 (stage × STAGE_REWARD)
-const RELAY_URL          = 'https://relay.cocy.io';
-const STORAGE_BEST_KEY   = 'linerush_best_stage';
-const STORAGE_PLAYER_KEY = 'linerush_player_id';
-// (legacy) unlock key - kept for migration
-const STORAGE_UNLOCK_KEY = 'linerush_unlocked_stage';
-// Main boss per stage (Galspanic-style colorful round enemies)
-const MAIN_MONSTERS = [
-  { name:'슬라임',   color:0x44ff44, ring:0x00cc00, radius:9,  spdMul:1.4, img:'boss1' },
-  { name:'스핀',     color:0xffaa22, ring:0xff6600, radius:10, spdMul:1.5, img:'boss2' },
-  { name:'촉수',     color:0xcc44ff, ring:0x8800cc, radius:10, spdMul:1.48,img:'boss3' },
-  { name:'아이볼',   color:0xff2244, ring:0xcc0022, radius:11, spdMul:1.55,img:'boss4' },
-  { name:'아이스',   color:0x88ddff, ring:0x0088cc, radius:11, spdMul:1.52,img:'boss5' },
-  { name:'플레임',   color:0xff6600, ring:0xff2200, radius:12, spdMul:1.6, img:'boss6' },
-  { name:'썬더',     color:0xffff22, ring:0xcc9900, radius:12, spdMul:1.58,img:'boss7' },
-  { name:'다크',     color:0xaa44ff, ring:0x660099, radius:13, spdMul:1.65,img:'boss8' },
-  { name:'카오스',   color:0xff44aa, ring:0xcc0077, radius:13, spdMul:1.7, img:'boss9' },
-  { name:'보이드',   color:0xff0000, ring:0x880000, radius:14, spdMul:1.75,img:'boss10'},
-  // Stages 11-15: harder variants of stages 1-5 (reuse boss1-5 images)
-  { name:'슬라임EX', color:0x44ff44, ring:0x00cc00, radius:11, spdMul:1.95,img:'boss1' },
-  { name:'스핀EX',   color:0xffaa22, ring:0xff6600, radius:12, spdMul:2.0, img:'boss2' },
-  { name:'촉수EX',   color:0xcc44ff, ring:0x8800cc, radius:12, spdMul:1.98,img:'boss3' },
-  { name:'아이볼EX', color:0xff2244, ring:0xcc0022, radius:13, spdMul:2.05,img:'boss4' },
-  { name:'아이스EX', color:0x88ddff, ring:0x0088cc, radius:13, spdMul:2.1, img:'boss5' },
-];
-
-const ITEM_TYPES = ['freeze','speed','shield','slow'];
-const ITEM_EMOJI = { freeze:'✋',speed:'🏃',shield:'🛡',slow:'⌛' };
-const ITEM_DUR   = { freeze:5000, speed:4000, shield:7000, slow:6000 };
-const ITEM_LIFE  = 14000;
-const ITEM_BLINK = 5000;
-const ITEM_SPAWN = 20000;
-const MAX_ITEMS  = 3;
-
-function getLRPlayerId() {
-  let id = localStorage.getItem(STORAGE_PLAYER_KEY);
-  if (!id) { id = 'lr_' + Math.random().toString(36).slice(2, 11); localStorage.setItem(STORAGE_PLAYER_KEY, id); }
-  return id;
-}
-function getLRBestStage() { return parseInt(localStorage.getItem(STORAGE_BEST_KEY) || '0'); }
-function setLRBestStage(s) {
-  if (s > getLRBestStage()) {
-    localStorage.setItem(STORAGE_BEST_KEY, String(s));
-    // 비동기로 서버에 기록
-    const nickname = window.SharedWallet?.user?.nickname || window.SharedWallet?.user?.username || null;
-    fetch(`${RELAY_URL}/api/rankings/linerush`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: getLRPlayerId(), nickname, stage: s })
-    }).catch(() => {});
-  }
-}
-const COLS = 52;
-const ROWS = 76;
-const CELL = 8;
-const W = COLS * CELL;
-const H = ROWS * CELL;
-const TARGET_PERCENT = 80;
-
-function getUnlockedStage() {
-  try {
-    const v = Number(localStorage.getItem(STORAGE_UNLOCK_KEY) || '1');
-    return Math.min(STAGE_COUNT, Math.max(1, Number.isFinite(v) ? v : 1));
-  } catch (_) {
-    return 1;
-  }
-}
-
-function setUnlockedStage(stage) {
-  try {
-    const next = Math.min(STAGE_COUNT, Math.max(getUnlockedStage(), stage));
-    localStorage.setItem(STORAGE_UNLOCK_KEY, String(next));
-  } catch (_) {}
-}
-
-class BootScene extends Phaser.Scene {
-  constructor() { super('Boot'); }
-
-  preload() {
-    // Stage 1-3 character backgrounds (luminarqmix-v7 portrait)
-    ['char1', 'char2', 'char4'].forEach(k =>
-      this.load.image(k, `/linerush/img/${k}.jpg`)
-    );
-    // Stage backgrounds (bg1-15)
-    for (let i = 1; i <= STAGE_COUNT; i++) {
-      this.load.image(`bg${i}`, `/linerush/img/bg${i}.jpg`);
-    }
-    // Stage 11-15 character images
-    for (let i = 11; i <= STAGE_COUNT; i++) {
-      this.load.image(`char${i}`, `/linerush/img/char${i}.jpg`);
-    }
-    for (let i = 1; i <= STAGE_COUNT; i++) {
-      this.load.image(`boss${i}`, `/linerush/img/boss${i}.png`);
-    }
-  }
-
-  create() {
-    const white = this.make.graphics({ x: 0, y: 0, add: false });
-    white.fillStyle(0xffffff, 1);
-    white.fillRect(0, 0, 2, 2);
-    white.generateTexture('pixel', 2, 2);
-    white.destroy();
-
-    const palettes = [
-      [0xff6b9d, 0xffa8c4],
-      [0x7e57c2, 0x5dade2],
-      [0xf39c12, 0xffd700],
-      [0x2ecc71, 0x27ae60],
-      [0x00c2ff, 0x3f5efb],
-      [0xff4d6d, 0xff9e00],
-      [0x8e44ad, 0xe056fd],
-      [0x16a085, 0x48dbfb],
-      [0xe67e22, 0xf1c40f],
-      [0x34495e, 0x6c5ce7]
-    ];
-
-    for (let s = 1; s <= STAGE_COUNT; s++) {
-      const g = this.make.graphics({ x: 0, y: 0, add: false });
-      const [c1, c2] = palettes[(s - 1) % palettes.length];
-      g.fillGradientStyle(c1, c1, c2, c2, 1);
-      g.fillRect(0, 0, W, H);
-
-      g.fillStyle(0x000000, 0.24);
-      g.fillCircle(W * 0.5, H * 0.24, 38);
-      g.fillRoundedRect(W * 0.5 - 42, H * 0.32, 84, 140, 32);
-      g.fillEllipse(W * 0.44, H * 0.77, 42, 84);
-      g.fillEllipse(W * 0.56, H * 0.77, 42, 84);
-
-      g.fillStyle(0xffffff, 0.08);
-      g.fillCircle(W * 0.66, H * 0.21, 54);
-      g.fillCircle(W * 0.31, H * 0.68, 72);
-
-      g.generateTexture(`stage${s}_placeholder`, W, H);
-      g.destroy();
-    }
-
-    this.scene.start('Menu');
-  }
-}
-
-class MenuScene extends Phaser.Scene {
-  constructor() { super('Menu'); }
-
-  create() {
-    // 배경
-    const bg = this.add.graphics();
-    bg.fillGradientStyle(0x120320, 0x120320, 0x220833, 0x220833, 1);
-    bg.fillRect(0, 0, W, H);
-
-    // 타이틀
-    this.add.text(W / 2, 60, 'LINE RUSH', {
-      fontFamily: 'Verdana', fontSize: '40px',
-      color: '#ff79c6', stroke: '#ff2ea6', strokeThickness: 8
-    }).setOrigin(0.5).setShadow(0, 0, '#ff2ea6', 24, true, true);
-
-    this.add.text(W / 2, 104, '영역을 점령하고 80% 돌파!', {
-      fontFamily: 'Verdana', fontSize: '13px', color: '#aacfff'
-    }).setOrigin(0.5);
-
-    // 내 기록
-    const best = getLRBestStage();
-    const bestTxt = best > 0
-      ? `🏆 내 최고: STAGE ${best} | 최대보상: ${(best * STAGE_REWARD).toLocaleString()}G`
-      : '기록 없음';
-    this.add.text(W / 2, 140, bestTxt, {
-      fontFamily: 'Verdana', fontSize: '13px', color: '#ffd700'
-    }).setOrigin(0.5);
-
-    // PLAY 버튼
-    const playBtn = this.add.rectangle(W / 2, 210, 220, 58, 0x7020d0, 0.92)
-      .setStrokeStyle(2, 0xff79c6, 1).setInteractive({ useHandCursor: true });
-    this.add.text(W / 2, 210, '▶  STAGE 1 START', {
-      fontFamily: 'Verdana', fontSize: '18px', color: '#ffffff', stroke: '#000', strokeThickness: 3
-    }).setOrigin(0.5);
-    playBtn.on('pointerover', () => playBtn.setFillStyle(0x9030e8, 0.95));
-    playBtn.on('pointerout', () => playBtn.setFillStyle(0x7020d0, 0.92));
-    playBtn.on('pointerdown', () => this.scene.start('Game', { stage: 1, score: 0, lives: 3 }));
-
-    // 보상 안내
-    this.add.text(W / 2, 254, `각 스테이지 클리어 시 stage×${STAGE_REWARD.toLocaleString()}G 보상!`, {
-      fontFamily: 'Verdana', fontSize: '11px', color: '#80d0ff'
-    }).setOrigin(0.5);
-
-    // 랭킹 영역 — rankBg 먼저 그려야 타이틀이 위에 렌더됨
-    const rankBg = this.add.rectangle(W / 2, 415, W - 20, 240, 0x050514, 0.7)
-      .setStrokeStyle(1, 0x334466, 0.8);
-
-    const rankTitle = this.add.text(W / 2, 284, '🏆 최고 스테이지 랭킹', {
-      fontFamily: 'Verdana', fontSize: '14px', color: '#ffd700'
-    }).setOrigin(0.5);
-
-    const loadingTxt = this.add.text(W / 2, 415, '랭킹 로딩 중...', {
-      fontFamily: 'Verdana', fontSize: '13px', color: '#6677aa'
-    }).setOrigin(0.5);
-
-    // 비동기 랭킹 fetch
-    fetch(`${RELAY_URL}/api/rankings/linerush?limit=10`)
-      .then(r => r.json())
-      .then(data => {
-        loadingTxt.destroy();
-        const rows = data.rankings || [];
-        if (rows.length === 0) {
-          this.add.text(W / 2, 415, '아직 기록이 없습니다\n먼저 플레이해보세요!', {
-            fontFamily: 'Verdana', fontSize: '13px', color: '#6677aa', align: 'center'
-          }).setOrigin(0.5);
-          return;
-        }
-        rows.slice(0, 9).forEach((r, i) => {
-          const y = 300 + i * 26;
-          const medal = ['🥇','🥈','🥉'][i] || `${i+1}.`;
-          const nick = (r.nickname || '익명').slice(0, 10);
-          const color = i === 0 ? '#ffd700' : i === 1 ? '#e0e0e0' : i === 2 ? '#cc8844' : '#99b4cc';
-          this.add.text(16, y, `${medal} ${nick}`, {
-            fontFamily: 'Verdana', fontSize: '13px', color, stroke: '#000', strokeThickness: 2
-          });
-          this.add.text(W - 16, y, `STAGE ${r.best_stage}`, {
-            fontFamily: 'Verdana', fontSize: '13px', color: '#5ddcff', stroke: '#000', strokeThickness: 2
-          }).setOrigin(1, 0);
-        });
-      })
-      .catch(() => {
-        loadingTxt.setText('랭킹을 불러올 수 없습니다');
-      });
-
-    this.add.text(W / 2, H - 18, 'game.cocy.io', {
-      fontFamily: 'Verdana', fontSize: '11px', color: '#445566'
-    }).setOrigin(0.5);
-  }
-}
-
-class GameScene extends Phaser.Scene {
-  constructor() {
-    super('Game');
-  }
-
-  create(data) {
-    this.stage = data.stage || 1;
-    this.score = data.score || 0;
-    this.lives = (typeof data.lives === 'number') ? data.lives : 3;
-    this.claimedCells = 0;
-    this.total = (COLS - 2) * (ROWS - 2);
-    this.percent = 0;
-
-    this.grid = [];
-    for (let r = 0; r < ROWS; r++) {
-      this.grid[r] = [];
-      for (let c = 0; c < COLS; c++) {
-        this.grid[r][c] = (r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1) ? 1 : 0;
-      }
-    }
-
-    // Bg selection: stages 1-3 → char portraits, stages 4+ → random from bg1-10 (cycles for 11-15)
-    let bgKey;
-    if (STAGE_CHAR_MAP[this.stage]) {
-      bgKey = STAGE_CHAR_MAP[this.stage];
-    } else if (this.stage >= 11) {
-      // Stages 11-15: use dedicated bg images
-      bgKey = `bg${this.stage}`;
-    } else {
-      const effectiveStage = this.stage;
-      if (!window._lrBgMap || this.stage === 4) {
-        const origPool = Array.from({ length: BG_ORIG_END - BG_ORIG_START + 1 }, (_, i) => i + BG_ORIG_START);
-        for (let i = origPool.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [origPool[i], origPool[j]] = [origPool[j], origPool[i]];
-        }
-        window._lrBgMap = origPool; // 10 shuffled picks for stages 4-10
-      }
-      const mapIdx = Math.min(effectiveStage - 4, window._lrBgMap.length - 1);
-      bgKey = `bg${window._lrBgMap[Math.max(0, mapIdx)]}`;
-    }
-    this.bgKey = bgKey;
-    const key = this.textures.exists(bgKey) ? bgKey : `bg1`;
-    this.bgImage = this.add.image(W / 2, H / 2, key).setDepth(0).setDisplaySize(W, H);
-
-
-    this.overlayGfx = this.add.graphics().setDepth(1);
-    this.claimedGfx = this.add.graphics().setDepth(2);
-    this.trailGfx = this.add.graphics().setDepth(3).setBlendMode(Phaser.BlendModes.ADD);
-    this.actorGfx = this.add.graphics().setDepth(4);
-    this.itemGfx  = this.add.graphics().setDepth(5);
-
-    this.playerRow = 0;
-    this.playerCol = Math.floor(COLS / 2);
-    this.trail = [];
-    this.isDrawing = false;
-    this.drawStart = null;
-    this.retracting = false;
-    this.moveTimer = 0;
-    this.moveDelay = 60;
-    this.retractSpeedMul = 1.5;
-    this.invuln = 0;
-
-    this.fx = { freeze: 0, speed: 0, slow: 0, shield: 0 };
-    this.items = [];
-    this.itemSpawnTimer = ITEM_SPAWN * 0.5; // first item at 10s
-
-    const enemyCount = Math.min(5, this.stage);   // max 5 enemies (was 8)
-    this.enemies = [];
-    for (let i = 0; i < enemyCount; i++) {
-      const baseSpeed = CELL * (1.2 + this.stage * 0.38 + i * 0.04); // slower base speed
-      const kind = (i % 3 === 0) ? 'hunter' : (i % 3 === 1 ? 'zigzag' : 'bouncer');
-      this.enemies.push({
-        x: Phaser.Math.FloatBetween(CELL * 2, W - CELL * 2),
-        y: Phaser.Math.FloatBetween(CELL * 2, H - CELL * 2),
-        vx: (Math.random() > 0.5 ? 1 : -1) * baseSpeed,
-        vy: (Math.random() > 0.5 ? 1 : -1) * baseSpeed,
-        baseSpeed,
-        kind,
-        radius: kind === 'hunter' ? 5 : 4.5,
-        pulse: Math.random() * Math.PI * 2,
-        shootCd: Phaser.Math.Between(2000, 4000) // delayed first shot
-      });
-    }
-
-    this.enemyBullets = [];
-    this.bossAttackTimer = 30000;
-    this.bossCharging = false;
-
-    // 스테이지별 메인 보스 몬스터
-    const mmDef = MAIN_MONSTERS[Math.min(this.stage - 1, MAIN_MONSTERS.length - 1)];
-    const mmSpeed = CELL * (1.2 + this.stage * 0.38) * mmDef.spdMul; // balanced with enemy speed
-    this.mainMonster = {
-      x: Phaser.Math.FloatBetween(CELL * 5, W - CELL * 5),
-      y: Phaser.Math.FloatBetween(CELL * 5, H - CELL * 5),
-      vx: (Math.random() > 0.5 ? 1 : -1) * mmSpeed,
-      vy: (Math.random() > 0.5 ? 1 : -1) * mmSpeed,
-      baseSpeed: mmSpeed, kind: 'boss', pulse: 0, shootCd: 600,
-      radius: mmDef.radius, color: mmDef.color, ring: mmDef.ring,
-      name: mmDef.name, img: mmDef.img,
-    };
-    const bossKey = mmDef.img;
-    this.mainMonsterSprite = this.textures.exists(bossKey)
-      ? this.add.image(this.mainMonster.x, this.mainMonster.y, bossKey)
-          .setDisplaySize(mmDef.radius * 2.4, mmDef.radius * 2.4).setDepth(7)
-      : null;
-    this.mainMonsterLabel = this.add.text(
-      this.mainMonster.x, this.mainMonster.y - mmDef.radius - 8,
-      `★ ${mmDef.name}`, { fontSize: '11px', color: '#ffdd44', stroke: '#000', strokeThickness: 2 }
-    ).setOrigin(0.5, 1).setDepth(8);
-
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.wasd = this.input.keyboard.addKeys('W,A,S,D');
-    this.touchAxis = { x: 0, y: 0 };
-    this.createTouchControls();
-
-    this.createHUD();
-    this.updateClaimStats();
-    this.redrawOverlay();
-    this.drawGrid();
-  }
-
-  createTouchControls() {
-    const isTouch = this.sys.game.device.input.touch;
-    if (!isTouch) return;
-
-    const joyCenter = { x: W - 72, y: H - 80 };
-    const joyRadius = 42;
-    const knobRadius = 18;
-
-    this.joyBase = this.add.circle(joyCenter.x, joyCenter.y, joyRadius, 0x001a2e, 0.42)
-      .setStrokeStyle(2, 0x63d9ff, 0.9).setDepth(20).setScrollFactor(0);
-    this.joyKnob = this.add.circle(joyCenter.x, joyCenter.y, knobRadius, 0x39c6ff, 0.75)
-      .setStrokeStyle(2, 0xb8f1ff, 0.95).setDepth(21).setScrollFactor(0);
-
-    const joyZone = this.add.zone(joyCenter.x, joyCenter.y, joyRadius * 2.3, joyRadius * 2.3)
-      .setOrigin(0.5).setDepth(22).setScrollFactor(0).setInteractive();
-
-    let joyPointerId = null;
-
-    const resetStick = () => {
-      this.touchAxis.x = 0;
-      this.touchAxis.y = 0;
-      this.joyKnob.setPosition(joyCenter.x, joyCenter.y);
-      joyPointerId = null;
-    };
-
-    const updateStick = (pointer) => {
-      const dx = pointer.x - joyCenter.x;
-      const dy = pointer.y - joyCenter.y;
-      const dist = Math.hypot(dx, dy) || 1;
-      const clamped = Math.min(joyRadius, dist);
-      const nx = dx / dist;
-      const ny = dy / dist;
-      this.joyKnob.setPosition(joyCenter.x + nx * clamped, joyCenter.y + ny * clamped);
-      this.touchAxis.x = nx * (clamped / joyRadius);
-      this.touchAxis.y = ny * (clamped / joyRadius);
-    };
-
-    joyZone.on('pointerdown', (p) => {
-      joyPointerId = p.id;
-      updateStick(p);
-    });
-
-    this.input.on('pointermove', (p) => {
-      if (joyPointerId === null || p.id !== joyPointerId || !p.isDown) return;
-      updateStick(p);
-    });
-
-    this.input.on('pointerup', (p) => {
-      if (joyPointerId !== null && p.id === joyPointerId) resetStick();
-    });
-
-    joyZone.on('pointerout', (p) => {
-      // keep moving even if finger leaves circle; release on pointerup only
-      if (joyPointerId === null || p.id !== joyPointerId) return;
-    });
-    joyZone.on('pointerupoutside', (p) => {
-      if (joyPointerId !== null && p.id === joyPointerId) resetStick();
-    });
-  }
-
-  createHUD() {
-    this.hudBg = this.add.rectangle(W / 2, 16, W, 32, 0x000000, 0.45).setDepth(10);
-    this.hudLives = this.add.text(12, 8, '', {
-      fontFamily: 'Verdana',
-      fontSize: '18px',
-      color: '#ffffff'
-    }).setDepth(11);
-    this.hudStage = this.add.text(W / 2 - 68, 9, '', {
-      fontFamily: 'Verdana',
-      fontSize: '16px',
-      color: '#7de5ff'
-    }).setDepth(11);
-    this.hudPercent = this.add.text(W / 2 + 14, 9, '', {
-      fontFamily: 'Verdana',
-      fontSize: '16px',
-      color: '#fff176'
-    }).setDepth(11);
-    this.hudScore = this.add.text(W - 12, 9, '', {
-      fontFamily: 'Verdana',
-      fontSize: '16px',
-      color: '#ffb4d8'
-    }).setOrigin(1, 0).setDepth(11);
-    this.hudFx = this.add.text(W / 2, H - 18, '', {
-      fontSize: '18px'
-    }).setOrigin(0.5, 1).setDepth(11);
-
-    this.refreshHUD();
-  }
-
-  refreshHUD() {
-    this.hudLives.setText('❤️'.repeat(Math.max(0, this.lives)));
-    this.hudStage.setText(`STAGE ${this.stage}`);
-    this.hudPercent.setText(`${this.percent}%`);
-    this.hudScore.setText(`SCORE: ${this.score}`);
-    if (this.hudFx) {
-      const active = [];
-      if (this.fx?.freeze > 0) active.push('✋');
-      if (this.fx?.speed  > 0) active.push('🏃');
-      if (this.fx?.slow   > 0) active.push('⌛');
-      if (this.fx?.shield > 0) active.push('🛡');
-      this.hudFx.setText(active.join(' '));
-    }
-  }
-
-  update(time, delta) {
-    this.moveTimer += delta;
-
-    const baseDelay = this.fx.speed > 0 ? this.moveDelay / 5 : this.moveDelay;
-    const stepDelay = this.retracting ? baseDelay / this.retractSpeedMul : baseDelay;
-    if (this.moveTimer >= stepDelay) {
-      if (this.retracting) {
-        this.stepRetreat();
-      } else {
-        this.handleInput();
-        this.checkItemPickup();
-      }
-      this.moveTimer = 0;
-    }
-
-    if (this.invuln > 0) this.invuln -= delta;
-
-    // fx timers
-    if (this.fx.freeze > 0) this.fx.freeze -= delta;
-    if (this.fx.speed  > 0) this.fx.speed  -= delta;
-    if (this.fx.slow   > 0) this.fx.slow   -= delta;
-    if (this.fx.shield > 0) this.fx.shield -= delta;
-
-    // item spawn + lifetime
-    this.itemSpawnTimer -= delta;
-    if (this.itemSpawnTimer <= 0 && this.items.length < MAX_ITEMS) {
-      this.spawnItem();
-      this.itemSpawnTimer = ITEM_SPAWN;
-    }
-    for (let i = this.items.length - 1; i >= 0; i--) {
-      const it = this.items[i];
-      it.timeLeft -= delta;
-      if (it.timeLeft <= 0) { it.label.destroy(); this.items.splice(i, 1); continue; }
-      if (it.timeLeft <= ITEM_BLINK) {
-        it.label.setAlpha(Math.floor(this.time.now / 250) % 2 === 0 ? 1 : 0.15);
-      }
-    }
-
-    // Boss mega-attack timer
-    if (this.mainMonster && !this.bossCharging) {
-      this.bossAttackTimer -= delta;
-      if (this.bossAttackTimer <= 0) {
-        this.triggerBossMegaAttack();
-        this.bossAttackTimer = 30000;
-      }
-    }
-
-    this.updateEnemies(delta);
-    this.updateBullets(delta);
-    if (this.invuln <= 0) {
-      this.checkCollisions();
-    }
-    this.refreshHUD();
-    this.drawGrid();
-  }
-
-  handleInput() {
-    let dr = 0;
-    let dc = 0;
-
-    const axisX = this.touchAxis?.x || 0;
-    const axisY = this.touchAxis?.y || 0;
-
-    if (this.cursors.left.isDown || this.wasd.A.isDown) dc = -1;
-    else if (this.cursors.right.isDown || this.wasd.D.isDown) dc = 1;
-    else if (this.cursors.up.isDown || this.wasd.W.isDown) dr = -1;
-    else if (this.cursors.down.isDown || this.wasd.S.isDown) dr = 1;
-    else {
-      if (Math.abs(axisX) > Math.abs(axisY) && Math.abs(axisX) > 0.25) dc = axisX < 0 ? -1 : 1;
-      else if (Math.abs(axisY) > 0.25) dr = axisY < 0 ? -1 : 1;
-    }
-
-    if (dr === 0 && dc === 0) {
-      // No input while drawing → retract trail at 1.5x speed
-      if (this.isDrawing && !this.retracting && this.trail.length > 0) {
-        this.retracting = true;
-      }
-      return;
-    }
-    // Directional input: cancel retraction
-    this.retracting = false;
-
-    const nr = this.playerRow + dr;
-    const nc = this.playerCol + dc;
-
-    if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
-
-    const next = this.grid[nr][nc];
-    if (next === 2) {
-      // 자기 트레일에 막힘 — 죽지 않고 이동만 무시
-      return;
-    }
-
-    if (next === 0) {
-      if (!this.isDrawing) {
-        this.isDrawing = true;
-        this.drawStart = { row: this.playerRow, col: this.playerCol };
-        this.trail = [];
-      }
-
-      if (this.grid[this.playerRow][this.playerCol] === 0) {
-        this.grid[this.playerRow][this.playerCol] = 2;
-        this.trail.push({ row: this.playerRow, col: this.playerCol });
-      }
-
-      this.playerRow = nr;
-      this.playerCol = nc;
-
-      if (this.grid[this.playerRow][this.playerCol] === 0) {
-        this.grid[this.playerRow][this.playerCol] = 2;
-        this.trail.push({ row: this.playerRow, col: this.playerCol });
-      }
-      return;
-    }
-
-    if (next === 1) {
-      // Allow movement to any claimed cell (frontier restriction removed — caused corner bug)
-      this.playerRow = nr;
-      this.playerCol = nc;
-      if (this.isDrawing) {
-        // 트레일이 너무 짧으면 (≤2칸) 캡처 대신 강제 취소 (외곽선 실수 방지)
-        if (this.trail.length <= 2) {
-          for (const cell of this.trail) {
-            if (this.grid[cell.row][cell.col] === 2) this.grid[cell.row][cell.col] = 0;
-          }
-          this.trail = [];
-          this.isDrawing = false;
-          this.retracting = false;
-          this.drawStart = null;
-          this.redrawOverlay();
-        } else {
-          this.captureTerritory();
-        }
-      }
-    }
-  }
-
-  isFrontier(r, c) {
-    if (this.grid[r][c] !== 1) return false;
-    const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
-    for (const [dr, dc] of dirs) {
-      const nr = r + dr, nc = c + dc;
-      if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && this.grid[nr][nc] === 0) return true;
-    }
-    return false;
-  }
-
-  stepRetreat() {
-    if (!this.trail.length) {
-      this.retracting = false;
-      this.isDrawing = false;
-      if (this.drawStart) {
-        this.playerRow = this.drawStart.row;
-        this.playerCol = this.drawStart.col;
-      }
-      this.drawStart = null;
-      return;
-    }
-
-    const removed = this.trail.pop();
-    if (this.grid[removed.row][removed.col] === 2) {
-      this.grid[removed.row][removed.col] = 0;
-    }
-
-    if (this.trail.length) {
-      const back = this.trail[this.trail.length - 1];
-      this.playerRow = back.row;
-      this.playerCol = back.col;
-    } else {
-      if (this.drawStart) {
-        this.playerRow = this.drawStart.row;
-        this.playerCol = this.drawStart.col;
-      }
-      this.retracting = false;
-      this.isDrawing = false;
-      this.drawStart = null;
-    }
-
-    this.redrawOverlay();
-  }
-
-  captureTerritory() {
-    for (const cell of this.trail) {
-      this.grid[cell.row][cell.col] = 1;
-    }
-
-    const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
-    const regions = [];
-    for (let r = 1; r < ROWS - 1; r++) {
-      for (let c = 1; c < COLS - 1; c++) {
-        if (this.grid[r][c] !== 0 || visited[r][c]) continue;
-        const queue = [{ r, c }];
-        visited[r][c] = true;
-        const cells = [];
-        while (queue.length) {
-          const cur = queue.shift();
-          cells.push(cur);
-          for (const [dr2, dc2] of [[1,0],[-1,0],[0,1],[0,-1]]) {
-            const nr2 = cur.r + dr2, nc2 = cur.c + dc2;
-            if (nr2 < 1 || nr2 >= ROWS-1 || nc2 < 1 || nc2 >= COLS-1) continue;
-            if (visited[nr2][nc2] || this.grid[nr2][nc2] !== 0) continue;
-            visited[nr2][nc2] = true;
-            queue.push({ r: nr2, c: nc2 });
-          }
-        }
-        regions.push({ cells });
-      }
-    }
-
-    // dead-end (트레일이 영역을 나누지 못함) →
-    // 예전엔 취소했지만, 길고 얇은 경로도 유효하므로 트레일을 영토로 유지
-    if (regions.length <= 1) {
-      // 트레일 셀은 이미 grid=1 처리됨 → 그대로 두고 마무리
-      this.isDrawing = false; this.retracting = false;
-      this.drawStart = null; this.trail = [];
-      this.updateClaimStats(); this.redrawOverlay(); return;
-    }
-
-    // 가장 큰 region 제외, 나머지 전부 캡처
-    regions.sort((a, b) => a.cells.length - b.cells.length);
-    const claimRegions = regions.slice(0, regions.length - 1);
-
-    // 메인 몬스터 포획 체크
-    const mm = this.mainMonster;
-    let mainCaptured = false;
-    let bossRegion = null;
-    if (mm) {
-      const mmR = Phaser.Math.Clamp(Math.floor(mm.y / CELL), 0, ROWS-1);
-      const mmC = Phaser.Math.Clamp(Math.floor(mm.x / CELL), 0, COLS-1);
-      bossRegion = claimRegions.find(reg => reg.cells.some(c => c.r === mmR && c.c === mmC)) || null;
-      mainCaptured = bossRegion !== null;
-    }
-
-    // 일반 몬스터 포획 → 소멸
-    const toKill = [];
-    for (const e of this.enemies) {
-      const er = Phaser.Math.Clamp(Math.floor(e.y / CELL), 0, ROWS-1);
-      const ec = Phaser.Math.Clamp(Math.floor(e.x / CELL), 0, COLS-1);
-      if (claimRegions.some(reg => reg.cells.some(c => c.r === er && c.c === ec))) toKill.push(e);
-    }
-    toKill.forEach(e => {
-      const b2 = this.add.particles(e.x, e.y, 'pixel', {
-        speed:{min:50,max:180}, lifespan:380, quantity:18,
-        scale:{start:1.3,end:0}, tint:[0xff7848,0xffd4a6,0xffff66], blendMode:'ADD'
-      }).setDepth(9);
-      this.time.delayedCall(420, () => b2.destroy());
-    });
-    this.enemies = this.enemies.filter(e => !toKill.includes(e));
-    if (toKill.length > 0) this.score += toKill.length * 500 * this.stage;
-
-    let gained = 0;
-    for (const region of claimRegions) {
-      for (const cell of region.cells) {
-        if (this.grid[cell.r][cell.c] === 0) { this.grid[cell.r][cell.c] = 1; gained++; }
-      }
-    }
-
-    // Auto-collect items inside captured territory
-    for (let i = this.items.length - 1; i >= 0; i--) {
-      const it = this.items[i];
-      if (this.grid[it.row][it.col] === 1) {
-        this.collectItem(it.type);
-        it.label.destroy();
-        this.items.splice(i, 1);
-      }
-    }
-
-    this.isDrawing = false;
-    this.retracting = false;
-    this.drawStart = null;
-    this.trail = [];
-
-    if (gained > 0) {
-      this.score += gained * 50 * this.stage;
-      this.cameras.main.flash(300, 255, 255, 200);
-      this.captureBurst();
-      // 10% 이상 한번에 획득 → 쉴드 발동
-      if (gained >= Math.ceil(this.total * 0.10)) {
-        this.activateShieldArc();
-        this.showItemMsg('10%↑ 방어막 발동!', 0x44ff88);
-      }
-    }
-
-    // 메인 몬스터 포획 → 스테이지 클리어!
-    if (mainCaptured && mm) {
-      // 보스 포획 시 퍼센트 = 100% - 보스를 잡은 영역 크기
-      const bossRegionCells = bossRegion ? bossRegion.cells.length : 0;
-      const bossRegionPct = Math.floor(bossRegionCells / this.total * 100);
-      const finalPercent = Math.max(0, 100 - bossRegionPct);
-
-      const b3 = this.add.particles(mm.x, mm.y, 'pixel', {
-        speed:{min:80,max:280}, lifespan:550, quantity:40,
-        scale:{start:2,end:0}, tint:[mm.color, 0xffffff, 0xffd700], blendMode:'ADD'
-      }).setDepth(12);
-      this.time.delayedCall(600, () => b3.destroy());
-      if (this.mainMonsterSprite) this.mainMonsterSprite.destroy();
-      if (this.mainMonsterLabel) this.mainMonsterLabel.destroy();
-      this.mainMonster = null; this.mainMonsterSprite = null; this.mainMonsterLabel = null;
-      this.score += 3000 * this.stage;
-      const t2 = this.add.text(W/2, H/2-30, `★ ${mm.name} 포획!\n+${(3000*this.stage).toLocaleString()}점`, {
-        fontSize:'20px', color:'#ffd700', stroke:'#000', strokeThickness:4, align:'center'
-      }).setOrigin(0.5).setDepth(20);
-      this.cameras.main.flash(600, 255, 200, 0);
-      this.time.delayedCall(1200, () => {
-        t2.destroy();
-        this.updateClaimStats();
-        this.percent = finalPercent; // 보스 트랩 영역 제외 퍼센트
-        this.explodeEnemiesAndClear();
-      });
-      this.updateClaimStats(); this.redrawOverlay(); return;
-    }
-
-    this.updateClaimStats();
-    this.redrawOverlay();
-
-    if (this.percent >= TARGET_PERCENT) {
-      this.explodeEnemiesAndClear();
-    }
-  }
-
-  explodeEnemiesAndClear() {
-    // 80% 클리어 시 메인 몬스터도 제거
-    if (this.mainMonster) {
-      const mm = this.mainMonster;
-      const bm = this.add.particles(mm.x, mm.y, 'pixel', {
-        speed:{min:80,max:260}, lifespan:500, quantity:35,
-        scale:{start:1.8,end:0}, tint:[mm.color,0xffffff,0xffd700], blendMode:'ADD'
-      }).setDepth(12);
-      this.time.delayedCall(550, () => bm.destroy());
-      if (this.mainMonsterSprite) { this.mainMonsterSprite.destroy(); this.mainMonsterSprite = null; }
-      if (this.mainMonsterLabel) { this.mainMonsterLabel.destroy(); this.mainMonsterLabel = null; }
-      this.mainMonster = null;
-    }
-    if (!this.enemies.length) {
-      this.time.delayedCall(380, () => {
-        this.scene.start('Clear', {
-          stage: this.stage,
-          score: this.score,
-          lives: this.lives,
-          percent: this.percent,
-          bgKey: this.bgKey
-        });
-      });
-      return;
-    }
-
-    const enemyCount = this.enemies.length;
-    this.enemies.forEach((e, idx) => {
-      this.time.delayedCall(idx * 85, () => {
-        const burst = this.add.particles(e.x, e.y, 'pixel', {
-          speed: { min: 70, max: 240 },
-          lifespan: 420,
-          quantity: 26,
-          scale: { start: 1.4, end: 0 },
-          tint: [0xffd36e, 0xff7f6e, 0xffffff],
-          blendMode: 'ADD'
-        }).setDepth(9);
-        this.time.delayedCall(430, () => burst.destroy());
-      });
-    });
-    this.enemies = [];
-    this.enemyBullets = [];
-
-    this.time.delayedCall(enemyCount * 85 + 460, () => {
-      this.scene.start('Clear', {
-        stage: this.stage,
-        score: this.score,
-        lives: this.lives,
-        percent: this.percent,
-        bgKey: this.bgKey
-      });
-    });
-  }
-
-  updateClaimStats() {
-    let claimed = 0;
-    for (let r = 1; r < ROWS - 1; r++) {
-      for (let c = 1; c < COLS - 1; c++) {
-        if (this.grid[r][c] === 1) claimed++;
-      }
-    }
-    this.claimedCells = claimed;
-    this.percent = Math.floor((claimed / this.total) * 100);
-    this.refreshHUD();
-  }
-
-  redrawOverlay() {
-    this.overlayGfx.clear();
-
-    // 1) dark mask for unrevealed area (very hidden before capture)
-    this.overlayGfx.fillStyle(0x02030a, 0.965);
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (this.grid[r][c] === 0 || this.grid[r][c] === 2) {
-          this.overlayGfx.fillRect(c * CELL, r * CELL, CELL, CELL);
-        }
-      }
-    }
-
-    // 2) silhouette-like contour glow on unrevealed area boundary
-    this.overlayGfx.lineStyle(1.2, 0xbec6ff, 0.22);
-    for (let r = 1; r < ROWS - 1; r++) {
-      for (let c = 1; c < COLS - 1; c++) {
-        if (this.grid[r][c] !== 0) continue;
-        const nearClaimed = this.grid[r-1][c] === 1 || this.grid[r+1][c] === 1 || this.grid[r][c-1] === 1 || this.grid[r][c+1] === 1;
-        if (nearClaimed) {
-          this.overlayGfx.strokeRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
-        }
-      }
-    }
-  }
-
-  updateEnemies(delta) {
-    if (this.fx.freeze > 0) return; // frozen
-    const slowMul = this.fx.slow > 0 ? 0.5 : 1;
-    const dt = (delta / 1000) * slowMul;
-    const px = this.playerCol * CELL + CELL / 2;
-    const py = this.playerRow * CELL + CELL / 2;
-
-    // 메인 몬스터 업데이트 — 러쉬 중일 때만 추적, 아닐 땐 랜덤 바운스
-    if (this.mainMonster) {
-      const mm = this.mainMonster;
-      mm.pulse += dt * 5;
-      const dx = px - mm.x, dy = py - mm.y;
-      const d = Math.hypot(dx, dy) || 1;
-      if (this.isDrawing) {
-        // 러쉬 중: 적극적으로 플레이어 추적
-        mm.vx = mm.vx * 0.82 + (dx / d) * mm.baseSpeed * 0.24;
-        mm.vy = mm.vy * 0.82 + (dy / d) * mm.baseSpeed * 0.24;
-      }
-      // 러쉬 안 할 때: 속도 유지하며 벽/경계만 반사 (추적 없음)
-      let nx = mm.x + mm.vx * dt, ny = mm.y + mm.vy * dt;
-      if (nx < CELL || nx > W - CELL) { mm.vx *= -1; nx = Phaser.Math.Clamp(nx, CELL, W - CELL); }
-      if (ny < CELL || ny > H - CELL) { mm.vy *= -1; ny = Phaser.Math.Clamp(ny, CELL, H - CELL); }
-      // 점령지 경계 반사
-      const gr = r => Phaser.Math.Clamp(Math.floor(r / CELL), 0, ROWS - 1);
-      if (this.grid[gr(ny)][gr(nx + Math.sign(mm.vx) * mm.radius)] === 1) { mm.vx *= -1; }
-      if (this.grid[gr(ny + Math.sign(mm.vy) * mm.radius)][gr(nx)] === 1) { mm.vy *= -1; }
-      mm.x += mm.vx * dt; mm.y += mm.vy * dt;
-      mm.shootCd -= delta;
-      if (mm.shootCd <= 0) {
-        const speed = CELL * (3.2 + this.stage * 0.28); // slower bullets
-        this.enemyBullets.push({ x: mm.x, y: mm.y,
-          vx: (dx / d) * speed, vy: (dy / d) * speed, r: 4, life: 99999 });
-        mm.shootCd = Math.max(800, 2000 - this.stage * 80) + Phaser.Math.Between(-150, 150); // much longer interval
-      }
-      // 스프라이트 위치 업데이트
-      if (this.mainMonsterSprite) {
-        this.mainMonsterSprite.setPosition(mm.x, mm.y);
-      }
-      if (this.mainMonsterLabel) {
-        this.mainMonsterLabel.setPosition(mm.x, mm.y - mm.radius - 8);
-      }
-    }
-
-    for (const e of this.enemies) {
-      e.pulse += dt * 6;
-
-      // behavior patterns
-      if (e.kind === 'hunter' && this.isDrawing) {
-        const dx = px - e.x;
-        const dy = py - e.y;
-        const d = Math.hypot(dx, dy) || 1;
-        const aim = e.baseSpeed * 1.06;
-        e.vx = (e.vx * 0.9) + (dx / d) * aim * 0.1;
-        e.vy = (e.vy * 0.9) + (dy / d) * aim * 0.1;
-      } else if (e.kind === 'zigzag') {
-        const w = Math.sin(this.time.now * 0.006 + e.pulse) * 0.22;
-        const vx = e.vx;
-        e.vx = vx * Math.cos(w) - e.vy * Math.sin(w);
-        e.vy = vx * Math.sin(w) + e.vy * Math.cos(w);
-      }
-
-      let nx = e.x + e.vx * dt;
-      let ny = e.y + e.vy * dt;
-
-      if (nx < CELL || nx > W - CELL) {
-        e.vx *= -1;
-        nx = Phaser.Math.Clamp(nx, CELL, W - CELL);
-      }
-      if (ny < CELL || ny > H - CELL) {
-        e.vy *= -1;
-        ny = Phaser.Math.Clamp(ny, CELL, H - CELL);
-      }
-
-      const testCell = (x, y) => {
-        const rr = Phaser.Math.Clamp(Math.floor(y / CELL), 0, ROWS - 1);
-        const cc = Phaser.Math.Clamp(Math.floor(x / CELL), 0, COLS - 1);
-        return this.grid[rr][cc];
-      };
-
-      const hitX = testCell(nx + Math.sign(e.vx || 1) * e.radius, e.y) === 1;
-      const hitY = testCell(e.x, ny + Math.sign(e.vy || 1) * e.radius) === 1;
-
-      if (hitX) e.vx *= -1;
-      if (hitY) e.vy *= -1;
-
-      e.x += e.vx * dt;
-      e.y += e.vy * dt;
-
-      // stage-scaled shooting — 러쉬 중에만 발사 or 큰 인터벌
-      e.shootCd -= delta;
-      if (e.shootCd <= 0) {
-        // Hunter: 러쉬 중에만 발사; zigzag/bouncer: 긴 간격으로만 발사
-        const intervalBase = e.kind === 'hunter'
-          ? Math.max(1200, 3600 - this.stage * 180)
-          : Math.max(2000, 5000 - this.stage * 200);
-        if (e.kind !== 'hunter' || this.isDrawing) {
-          const bulletSpeed = CELL * (2.6 + this.stage * 0.20); // slower bullets
-          this.fireEnemyBullet(e, bulletSpeed);
-        }
-        e.shootCd = intervalBase + Phaser.Math.Between(-300, 300);
-      }
-    }
-  }
-
-  fireEnemyBullet(enemy, speed) {
-    const px = this.playerCol * CELL + CELL / 2;
-    const py = this.playerRow * CELL + CELL / 2;
-    const dx = px - enemy.x;
-    const dy = py - enemy.y;
-    const d = Math.hypot(dx, dy) || 1;
-    this.enemyBullets.push({
-      x: enemy.x,
-      y: enemy.y,
-      vx: (dx / d) * speed,
-      vy: (dy / d) * speed,
-      r: Math.min(3.5, 1.8 + this.stage * 0.1),
-      life: 99999
-    });
-  }
-
-  updateBullets(delta) {
-    if (this.fx.freeze > 0) return; // frozen
-    const slowMul = this.fx.slow > 0 ? 0.5 : 1;
-    const dt = (delta / 1000) * slowMul;
-    for (let i = this.enemyBullets.length - 1; i >= 0; i--) {
-      const b = this.enemyBullets[i];
-      b.x += b.vx * dt;
-      b.y += b.vy * dt;
-      b.life -= delta;
-
-      if (b.life <= 0 || b.x < -12 || b.x > W + 12 || b.y < -12 || b.y > H + 12) {
-        this.enemyBullets.splice(i, 1);
-        continue;
-      }
-
-      // Mega bullet: check if it hit owned territory
-      if (b.isMega) {
-        const br = Phaser.Math.Clamp(Math.floor(b.y / CELL), 0, ROWS - 1);
-        const bc = Phaser.Math.Clamp(Math.floor(b.x / CELL), 0, COLS - 1);
-        if (this.grid[br][bc] === 1) {
-          this.megaBulletImpact(b.x, b.y);
-          this.enemyBullets.splice(i, 1);
-        }
-      }
-    }
-  }
-
-  checkCollisions() {
-    // Shield: full invincibility while active
-    if (this.fx.shield > 0) return;
-
-    const px = this.playerCol * CELL + CELL / 2;
-    const py = this.playerRow * CELL + CELL / 2;
-
-    // 메인 몬스터 충돌
-    if (this.mainMonster) {
-      const mm = this.mainMonster;
-      const dist = Phaser.Math.Distance.Between(px, py, mm.x, mm.y);
-      if (dist < mm.radius + 5 && this.isDrawing) {
-        this.playerDie(); return;
-      }
-    }
-
-    for (const e of this.enemies) {
-      const dist = Phaser.Math.Distance.Between(px, py, e.x, e.y);
-      if (dist < e.radius + 5) {
-        if (this.isDrawing) {
-          this.playerDie();
-          return;
-        }
-        // Shield: safe when not rushing
-        continue;
-      }
-
-      if (this.isDrawing) {
-        const er = Phaser.Math.Clamp(Math.floor(e.y / CELL), 0, ROWS - 1);
-        const ec = Phaser.Math.Clamp(Math.floor(e.x / CELL), 0, COLS - 1);
-        for (let rr = er - 1; rr <= er + 1; rr++) {
-          for (let cc = ec - 1; cc <= ec + 1; cc++) {
-            if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
-            if (this.grid[rr][cc] === 2) {
-              this.playerDie();
-              return;
-            }
-          }
-        }
-      }
-    }
-
-    for (let i = this.enemyBullets.length - 1; i >= 0; i--) {
-      const b = this.enemyBullets[i];
-      const dist = Phaser.Math.Distance.Between(px, py, b.x, b.y);
-      if (dist < b.r + 6) {
-        this.enemyBullets.splice(i, 1);
-        if (this.isDrawing) {
-          this.playerDie();
-          return;
-        }
-        // Shield: bullet absorbed, no death
-        continue;
-      }
-      if (this.isDrawing) {
-        const br = Phaser.Math.Clamp(Math.floor(b.y / CELL), 0, ROWS - 1);
-        const bc = Phaser.Math.Clamp(Math.floor(b.x / CELL), 0, COLS - 1);
-        if (this.grid[br][bc] === 2) {
-          this.enemyBullets.splice(i, 1);
-          this.playerDie();
-          return;
-        }
-      }
-    }
-  }
-
-  findNearestClaimed(row, col) {
-    let best = { row: 0, col: 0, d: Infinity };
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (this.grid[r][c] !== 1) continue;
-        const d = Math.abs(r - row) + Math.abs(c - col);
-        if (d < best.d) best = { row: r, col: c, d };
-      }
-    }
-    return { row: best.row, col: best.col };
-  }
-
-  findNearestFrontier(row, col) {
-    // Find nearest frontier cell (claimed + adjacent to unclaimed)
-    let best = null;
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (!this.isFrontier(r, c)) continue;
-        const d = Math.abs(r - row) + Math.abs(c - col);
-        if (!best || d < best.d) best = { row: r, col: c, d };
-      }
-    }
-    // Fallback to any claimed cell if no frontier found
-    return best || this.findNearestClaimed(row, col);
-  }
-
-  playerDie() {
-    if (this.invuln > 0) return;
-
-    this.lives--;
-    this.cameras.main.shake(500, 0.02);
-    this.cameras.main.flash(300, 255, 0, 0);
-
-    for (const cell of this.trail) {
-      if (this.grid[cell.row][cell.col] === 2) this.grid[cell.row][cell.col] = 0;
-    }
-
-    this.isDrawing = false;
-    this.retracting = false;
-    this.drawStart = null;
-    this.trail = [];
-    this.enemyBullets = [];
-    this.redrawOverlay();
-
-    // 죽을 때 랜덤 아이템 2개 드롭
-    this.spawnItem(); this.spawnItem();
-
-    if (this.lives <= 0) {
-      const gold = window.SharedWallet?.gold || 0;
-      if (gold >= 100) {
-        this.showContinuePrompt();
-      } else {
-        this.scene.start('GameOver', { score: this.score, stage: this.stage });
-      }
-      return;
-    }
-
-    const respawn = this.findNearestFrontier(this.playerRow, this.playerCol);
-    this.playerRow = respawn.row;
-    this.playerCol = respawn.col;
-    this.invuln = 900;
-    this.refreshHUD();
-  }
-
-  spawnItem(forcedType = null) {
-    const free = [];
-    for (let r = 2; r < ROWS - 2; r++)
-      for (let c = 2; c < COLS - 2; c++)
-        if (this.grid[r][c] === 0) free.push({ r, c });
-    if (!free.length) return;
-    const cell = free[Phaser.Math.Between(0, free.length - 1)];
-    const type = forcedType || ITEM_TYPES[Phaser.Math.Between(0, ITEM_TYPES.length - 1)];
-    const cx = cell.c * CELL + CELL / 2;
-    const cy = cell.r * CELL + CELL / 2;
-    const label = this.add.text(cx, cy, ITEM_EMOJI[type], {
-      fontSize: '16px', stroke: '#000', strokeThickness: 2
-    }).setOrigin(0.5).setDepth(6);
-    this.items.push({ type, row: cell.r, col: cell.c, timeLeft: ITEM_LIFE, label });
-  }
-
-  checkItemPickup() {
-    for (let i = this.items.length - 1; i >= 0; i--) {
-      const it = this.items[i];
-      if (it.row === this.playerRow && it.col === this.playerCol) {
-        this.collectItem(it.type);
-        it.label.destroy();
-        this.items.splice(i, 1);
-      }
-    }
-  }
-
-  collectItem(type) {
-    const dur = ITEM_DUR[type];
-    const colors = { freeze: '#88ddff', speed: '#ffff88', shield: '#88ff88', slow: '#ffbb88' };
-    const msgs   = { freeze: '✋ 몬스터 정지!', speed: '🏃 5배 스피드!', shield: '🛡 방어막!', slow: '⌛ 감속!' };
-    this.showItemMsg(msgs[type], colors[type]);
-    if (type === 'shield') {
-      this.activateShieldArc();
-      this.fx.shield = dur;
-    } else {
-      this.fx[type] = Math.max(this.fx[type], dur);
-    }
-  }
-
-  showItemMsg(msg, color) {
-    const px = this.playerCol * CELL + CELL / 2;
-    const py = this.playerRow * CELL + CELL / 2;
-    const t = this.add.text(px, py - 18, msg, {
-      fontSize: '13px', color, stroke: '#000', strokeThickness: 3
-    }).setOrigin(0.5).setDepth(15);
-    this.tweens.add({ targets: t, y: py - 56, alpha: 0, duration: 1600,
-      onComplete: () => t.destroy() });
-  }
-
-  activateShieldArc() {
-    this.enemyBullets = [];
-    const px = this.playerCol * CELL + CELL / 2;
-    const py = this.playerRow * CELL + CELL / 2;
-    const g = this.add.graphics().setDepth(12);
-    let step = 0;
-    const ev = this.time.addEvent({ delay: 18, repeat: 35, callback: () => {
-      g.clear();
-      const r = 14 + step * 6;
-      g.lineStyle(3, 0x44ff88, Math.max(0, 0.9 - step * 0.025));
-      g.strokeCircle(px, py, r);
-      g.lineStyle(1.5, 0xaaffcc, Math.max(0, 0.5 - step * 0.012));
-      g.strokeCircle(px, py, r + 5);
-      if (step % 5 === 0) this.enemyBullets = [];
-      step++;
-    }});
-    this.time.delayedCall(700, () => { g.destroy(); ev.remove(); });
-    this.invuln = Math.max(this.invuln, 2000);
-  }
-
-  triggerBossMegaAttack() {
-    if (!this.mainMonster || this.bossCharging) return;
-    // Find random owned territory cells
-    const owned = [];
-    for (let r = 2; r < ROWS - 2; r++)
-      for (let c = 2; c < COLS - 2; c++)
-        if (this.grid[r][c] === 1) owned.push({ r, c });
-    if (owned.length < 10) { return; } // not enough territory to bomb
-    const target = owned[Phaser.Math.Between(0, owned.length - 1)];
-    const tx = target.c * CELL + CELL / 2;
-    const ty = target.r * CELL + CELL / 2;
-    const mm = this.mainMonster;
-    this.bossCharging = true;
-    mm.charging = true;
-
-    // Warning flash on target area
-    const warnGfx = this.add.graphics().setDepth(13);
-    let warnPhase = 0;
-    const warnEv = this.time.addEvent({ delay: 120, repeat: 12, callback: () => {
-      warnGfx.clear();
-      if (warnPhase % 2 === 0) {
-        warnGfx.fillStyle(0xff4400, 0.35);
-        warnGfx.fillCircle(tx, ty, CELL * 7);
-        warnGfx.lineStyle(3, 0xff8800, 0.9);
-        warnGfx.strokeCircle(tx, ty, CELL * 7);
-      }
-      warnPhase++;
-    }});
-
-    // Show warning text
-    const warnTxt = this.add.text(W / 2, H / 2 - 60, '⚠️ 보스 폭격 준비!', {
-      fontSize: '18px', color: '#ff4400', stroke: '#000', strokeThickness: 4
-    }).setOrigin(0.5).setDepth(16);
-
-    this.time.delayedCall(1500, () => {
-      warnGfx.destroy(); warnEv.remove(); warnTxt.destroy();
-      if (!this.mainMonster) { this.bossCharging = false; return; }
-      mm.charging = false;
-      const dx = tx - mm.x, dy = ty - mm.y;
-      const d = Math.hypot(dx, dy) || 1;
-      const speed = CELL * 2.8;
-      this.enemyBullets.push({
-        x: mm.x, y: mm.y,
-        vx: (dx / d) * speed, vy: (dy / d) * speed,
-        r: 22, life: 7000, isMega: true
-      });
-      this.bossCharging = false;
-    });
-  }
-
-  megaBulletImpact(x, y) {
-    const radius = 7; // cells
-    const impactR = Math.floor(y / CELL);
-    const impactC = Math.floor(x / CELL);
-    for (let r = impactR - radius; r <= impactR + radius; r++) {
-      for (let c = impactC - radius; c <= impactC + radius; c++) {
-        if (r < 1 || r >= ROWS - 1 || c < 1 || c >= COLS - 1) continue;
-        const dr = r - impactR, dc = c - impactC;
-        if (Math.hypot(dr, dc) <= radius && this.grid[r][c] === 1) {
-          this.grid[r][c] = 0;
-        }
-      }
-    }
-    // Visual explosion
-    const burst = this.add.particles(x, y, 'pixel', {
-      speed: { min: 80, max: 360 }, lifespan: 700, quantity: 60,
-      scale: { start: 2.8, end: 0 },
-      tint: [0xff4400, 0xff8800, 0xffdd00, 0xff0000, 0xffffff], blendMode: 'ADD'
-    }).setDepth(13);
-    this.time.delayedCall(750, () => { if (burst.active) burst.destroy(); });
-    // Secondary ring
-    const ring = this.add.graphics().setDepth(13);
-    let ringFrame = 0;
-    const ringEv = this.time.addEvent({ delay: 30, repeat: 10, callback: () => {
-      ring.clear();
-      ring.lineStyle(4, 0xff6600, Math.max(0, 0.9 - ringFrame * 0.09));
-      ring.strokeCircle(x, y, CELL * 7 * (ringFrame / 10 + 0.1));
-      ringFrame++;
-    }});
-    this.time.delayedCall(350, () => { ring.destroy(); ringEv.remove(); });
-    this.cameras.main.shake(700, 0.03);
-    this.cameras.main.flash(400, 255, 60, 0);
-    this.updateClaimStats();
-    this.redrawOverlay();
-    this.showItemMsg('💥 영역 폭격!', '#ff4400');
-  }
-
-  showContinuePrompt() {
-    const gold = window.SharedWallet?.gold || 0;
-    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.78).setDepth(20);
-    const box = this.add.rectangle(W / 2, H / 2, W * 0.84, 200, 0x0a0a1a, 0.96)
-      .setStrokeStyle(2, 0xffd700).setDepth(21);
-    this.add.text(W / 2, H / 2 - 72, '💀 게임 오버', {
-      fontSize: '22px', color: '#ff6666', fontStyle: 'bold', stroke: '#000', strokeThickness: 3
-    }).setOrigin(0.5).setDepth(22);
-    this.add.text(W / 2, H / 2 - 28, `100G로 이어가시겠습니까?\n현재 보유: ${gold.toLocaleString()}G`, {
-      fontSize: '13px', color: '#ffffff', align: 'center'
-    }).setOrigin(0.5).setDepth(22);
-    const contBtn = this.add.text(W / 2 - 54, H / 2 + 42, '계속 (100G)', {
-      fontSize: '14px', color: '#000', backgroundColor: '#ffd700',
-      padding: { x: 10, y: 8 }
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(22);
-    const quitBtn = this.add.text(W / 2 + 60, H / 2 + 42, '포기', {
-      fontSize: '14px', color: '#fff', backgroundColor: '#cc3333',
-      padding: { x: 18, y: 8 }
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(22);
-    contBtn.on('pointerdown', () => {
-      if (window.SharedWallet) SharedWallet.spendGold(100);
-      overlay.destroy(); box.destroy();
-      [contBtn, quitBtn].forEach(b => b.destroy());
-      this.children.list.filter(c => c.depth === 22).forEach(c => c.destroy());
-      this.lives = 1;
-      this.fx = { freeze: 0, speed: 0, slow: 0, shield: 0 };
-      const respawn = this.findNearestFrontier(this.playerRow, this.playerCol);
-      this.playerRow = respawn.row; this.playerCol = respawn.col;
-      this.invuln = 2500;
-      this.refreshHUD();
-    });
-    quitBtn.on('pointerdown', () => {
-      this.scene.start('GameOver', { score: this.score, stage: this.stage });
-    });
-  }
-
-  captureBurst() {
-    if (!this.trail.length) return;
-    let sr = 0;
-    let sc = 0;
-    for (const t of this.trail) {
-      sr += t.row;
-      sc += t.col;
-    }
-    const cx = (sc / this.trail.length) * CELL + CELL / 2;
-    const cy = (sr / this.trail.length) * CELL + CELL / 2;
-
-    const p = this.add.particles(cx, cy, 'pixel', {
-      speed: { min: 40, max: 180 },
-      lifespan: 380,
-      quantity: 24,
-      scale: { start: 1.5, end: 0 },
-      tint: [0x9cfbff, 0xfff799, 0xff9fd6],
-      blendMode: 'ADD'
-    }).setDepth(9);
-
-    this.time.delayedCall(420, () => p.destroy());
-  }
-
-  drawGrid() {
-    this.claimedGfx.clear();
-    this.trailGfx.clear();
-    this.actorGfx.clear();
-
-    this.claimedGfx.lineStyle(1, 0x3e9eff, 0.65);
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (this.grid[r][c] === 1 && (r === 0 || c === 0 || r === ROWS - 1 || c === COLS - 1)) {
-          this.claimedGfx.strokeRect(c * CELL + 0.5, r * CELL + 0.5, CELL - 1, CELL - 1);
-        }
-      }
-    }
-
-    // visually smoothed trail (curve-like feel over grid movement)
-    this.trailGfx.lineStyle(2.5, 0x00ffff, 0.92);
-    this.trailGfx.fillStyle(0x8affff, 0.38);
-    let prev = null;
-    for (const t of this.trail) {
-      const cx = t.col * CELL + CELL / 2;
-      const cy = t.row * CELL + CELL / 2;
-      this.trailGfx.fillCircle(cx, cy, 3);
-      if (prev) {
-        this.trailGfx.beginPath();
-        this.trailGfx.moveTo(prev.x, prev.y);
-        this.trailGfx.lineTo(cx, cy);
-        this.trailGfx.strokePath();
-      }
-      prev = { x: cx, y: cy };
-    }
-
-    for (const e of this.enemies) {
-      const glow = 10 + Math.sin(e.pulse) * 3;
-      this.actorGfx.fillStyle(0xff4f32, 0.18);
-      this.actorGfx.fillCircle(e.x, e.y, glow);
-      this.actorGfx.fillStyle(0xff7848, 0.85);
-      this.actorGfx.fillCircle(e.x, e.y, e.radius);
-      this.actorGfx.fillStyle(0xffd4a6, 0.65);
-      this.actorGfx.fillCircle(e.x - 1.5, e.y - 1.5, 2);
-      if (e.kind === 'hunter') {
-        this.actorGfx.lineStyle(1.6, 0xffd7d7, 0.9);
-        this.actorGfx.strokeCircle(e.x, e.y, e.radius + 2.5);
-      } else if (e.kind === 'zigzag') {
-        this.actorGfx.lineStyle(1.2, 0xffe4a8, 0.85);
-        this.actorGfx.strokeTriangle(e.x, e.y - (e.radius + 2), e.x - (e.radius + 2), e.y + (e.radius + 2), e.x + (e.radius + 2), e.y + (e.radius + 2));
-      } else {
-        this.actorGfx.lineStyle(1.2, 0xffc9a2, 0.85);
-        this.actorGfx.strokeRect(e.x - (e.radius + 2), e.y - (e.radius + 2), (e.radius + 2) * 2, (e.radius + 2) * 2);
-      }
-    }
-
-    // 메인 몬스터 렌더링 (이미지 없으면 절차적 그리기)
-    if (this.mainMonster) {
-      const mm = this.mainMonster;
-      const pulse = 0.6 + 0.3 * Math.sin(mm.pulse);
-      const glowR = mm.radius + 6 + 3 * Math.sin(mm.pulse * 1.3);
-      this.actorGfx.lineStyle(2.5, mm.ring, 0.9);
-      this.actorGfx.strokeCircle(mm.x, mm.y, glowR);
-      this.actorGfx.lineStyle(1.2, 0xffffff, 0.4);
-      this.actorGfx.strokeCircle(mm.x, mm.y, glowR + 5);
-      if (!this.mainMonsterSprite) {
-        // 이미지 없으면 컬러 원
-        this.actorGfx.fillStyle(mm.color, 0.2);
-        this.actorGfx.fillCircle(mm.x, mm.y, mm.radius + 4);
-        this.actorGfx.fillStyle(mm.color, 0.9);
-        this.actorGfx.fillCircle(mm.x, mm.y, mm.radius);
-        this.actorGfx.fillStyle(0xffffff, 0.7 * pulse);
-        this.actorGfx.fillCircle(mm.x - mm.radius*0.3, mm.y - mm.radius*0.3, mm.radius * 0.32);
-      }
-    }
-
-    // enemy bullets
-    for (const b of this.enemyBullets) {
-      if (b.isMega) {
-        // Mega bullet: pulsing large red-orange orb
-        const pulse = 0.7 + 0.3 * Math.sin(this.time.now * 0.01);
-        this.actorGfx.fillStyle(0xff2200, 0.3 * pulse);
-        this.actorGfx.fillCircle(b.x, b.y, b.r + 8);
-        this.actorGfx.fillStyle(0xff6600, 0.9);
-        this.actorGfx.fillCircle(b.x, b.y, b.r);
-        this.actorGfx.fillStyle(0xffd700, 0.85);
-        this.actorGfx.fillCircle(b.x, b.y, b.r * 0.5);
-        this.actorGfx.lineStyle(3, 0xff4400, 0.9 * pulse);
-        this.actorGfx.strokeCircle(b.x, b.y, b.r + 4);
-      } else {
-        this.actorGfx.fillStyle(0xfff47c, 0.95);
-        this.actorGfx.fillCircle(b.x, b.y, b.r);
-      }
-    }
-
-    // Charging boss flash
-    if (this.mainMonster && this.mainMonster.charging) {
-      const mm = this.mainMonster;
-      const flashAlpha = 0.5 + 0.5 * Math.sin(this.time.now * 0.025);
-      this.actorGfx.fillStyle(0xff4400, 0.55 * flashAlpha);
-      this.actorGfx.fillCircle(mm.x, mm.y, mm.radius * 2.2);
-      this.actorGfx.lineStyle(4, 0xff8800, flashAlpha);
-      this.actorGfx.strokeCircle(mm.x, mm.y, mm.radius * 2.5);
-    }
-
-    // items glow
-    this.itemGfx.clear();
-    const glowColors = { freeze: 0x88ddff, speed: 0xffff88, shield: 0x88ff88, slow: 0xffbb88 };
-    for (const it of this.items) {
-      const cx = it.col * CELL + CELL / 2;
-      const cy = it.row * CELL + CELL / 2;
-      const pulse = 0.5 + 0.35 * Math.sin(this.time.now * 0.005 + it.col);
-      const alpha = it.timeLeft <= ITEM_BLINK ? (Math.floor(this.time.now / 250) % 2 === 0 ? pulse : 0.1) : pulse;
-      this.itemGfx.fillStyle(glowColors[it.type], alpha * 0.5);
-      this.itemGfx.fillCircle(cx, cy, CELL * 0.72);
-      this.itemGfx.lineStyle(1.5, glowColors[it.type], alpha * 0.8);
-      this.itemGfx.strokeCircle(cx, cy, CELL * 0.72);
-    }
-
-    const px = this.playerCol * CELL + CELL / 2;
-    const py = this.playerRow * CELL + CELL / 2;
-    const blink = this.invuln > 0 ? (Math.floor(this.time.now / 80) % 2 === 0 ? 0.45 : 1) : 1;
-
-    // high-contrast player marker
-    this.actorGfx.lineStyle(1.5, 0x000000, 0.9 * blink);
-    this.actorGfx.strokeCircle(px, py, 6);
-    this.actorGfx.fillStyle(0x00ffff, 0.35 * blink);
-    this.actorGfx.fillCircle(px, py, 6);
-    this.actorGfx.fillStyle(0xffffff, 1 * blink);
-    this.actorGfx.fillCircle(px, py, 3.5);
-    this.actorGfx.fillStyle(0x0a0f1a, 0.95 * blink);
-    this.actorGfx.fillCircle(px, py, 1.5);
-
-    // Shield ring: visible when safe (not rushing)
-    if (!this.isDrawing && this.invuln <= 0) {
-      const sp = Math.sin(this.time.now * 0.006);
-      const shieldR = 9 + sp * 1.5;
-      this.actorGfx.lineStyle(1.8, 0x44ffdd, (0.55 + sp * 0.2) * blink);
-      this.actorGfx.strokeCircle(px, py, shieldR);
-      this.actorGfx.lineStyle(0.8, 0x88ffee, (0.2 + sp * 0.1) * blink);
-      this.actorGfx.strokeCircle(px, py, shieldR + 3);
-    }
-  }
-}
-
-class ClearScene extends Phaser.Scene {
-  constructor() { super('Clear'); }
-
-  create(data) {
-    const { stage = 1, score = 0, lives = 3, percent = 0, bgKey = null } = data;
-    setUnlockedStage(stage + 1);
-
-    // 골드 보상 지급 + 최고 기록 갱신
-    const goldReward = stage * STAGE_REWARD;
-    if (window.SharedWallet) SharedWallet.addGold(goldReward);
-    setLRBestStage(stage);
-
-    const clearBonus = 2000 * stage;
-    const totalScore = score + clearBonus;
-
-    // ── Background: show the stage image in full glory ──
-    if (bgKey && this.textures.exists(bgKey)) {
-      this.add.image(W / 2, H / 2, bgKey).setDisplaySize(W, H).setDepth(0);
-    } else {
-      this.add.rectangle(W / 2, H / 2, W, H, 0x0a0f1a).setDepth(0);
-    }
-    // subtle dark overlay so text is readable but bg still visible
-    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.48).setDepth(1);
-
-    // ── Camera flash ──
-    this.cameras.main.flash(600, 255, 220, 80);
-
-    // ── STAGE CLEAR! title ──
-    const titleTxt = this.add.text(W / 2, 110, 'STAGE CLEAR!', {
-      fontFamily: 'Verdana',
-      fontSize: '46px',
-      color: '#ffd56b',
-      stroke: '#7a3800',
-      strokeThickness: 7
-    }).setOrigin(0.5).setAlpha(0).setScale(0.4).setDepth(2);
-
-    this.tweens.add({
-      targets: titleTxt,
-      alpha: 1,
-      scale: 1,
-      duration: 420,
-      ease: 'Back.Out',
-      delay: 150
-    });
-
-    // ── Confetti burst ──
-    this.time.delayedCall(180, () => {
-      const conf = this.add.particles(W / 2, 80, 'pixel', {
-        speed: { min: 60, max: 240 },
-        angle: { min: 190, max: 350 },
-        gravityY: 260,
-        lifespan: 1400,
-        quantity: 5,
-        scale: { start: 1.8, end: 0.1 },
-        tint: [0xffd56b, 0xff7aa2, 0x7ce8ff, 0xa8ff78],
-        blendMode: 'ADD'
-      }).setDepth(10);
-      this.time.delayedCall(2200, () => { if (conf.active) conf.stop(); });
-    });
-
-    // ── CAPTURE % — big bounce animation ──
-    const pctTxt = this.add.text(W / 2, 230, `${percent}%`, {
-      fontFamily: 'Verdana',
-      fontSize: '82px',
-      color: '#ffffff',
-      stroke: '#003366',
-      strokeThickness: 10
-    }).setOrigin(0.5).setAlpha(0).setScale(2.4).setDepth(2);
-
-    this.tweens.add({
-      targets: pctTxt,
-      alpha: 1,
-      scale: 1,
-      duration: 500,
-      ease: 'Back.Out',
-      delay: 520,
-      onComplete: () => {
-        // pulse: big → normal × 2
-        this.tweens.add({
-          targets: pctTxt,
-          scale: { from: 1, to: 1.22 },
-          duration: 200,
-          ease: 'Quad.InOut',
-          yoyo: true,
-          repeat: 1,
-          delay: 100
-        });
-      }
-    });
-
-    const capLabel = this.add.text(W / 2, 285, 'CAPTURED', {
-      fontFamily: 'Verdana',
-      fontSize: '16px',
-      color: '#c8e8ff',
-      stroke: '#001a33',
-      strokeThickness: 4
-    }).setOrigin(0.5).setAlpha(0).setDepth(2);
-    this.tweens.add({ targets: capLabel, alpha: 1, duration: 300, delay: 700 });
-
-    // ── Star rating ──
-    const stars = percent >= 95 ? 3 : percent >= 90 ? 2 : 1;
-    const starSpacing = 58;
-    const starY = 360;
-    const starObjs = [];
-
-    for (let i = 0; i < 3; i++) {
-      const sx = W / 2 + (i - 1) * starSpacing;
-      const starTxt = this.add.text(sx, starY, '★', {
-        fontFamily: 'Verdana',
-        fontSize: '48px',
-        color: i < stars ? '#ffd700' : '#444466',
-        stroke: i < stars ? '#a06000' : '#222233',
-        strokeThickness: 5
-      }).setOrigin(0.5).setAlpha(0).setScale(0).setDepth(2);
-      starObjs.push(starTxt);
-    }
-
-    for (let i = 0; i < stars; i++) {
-      const delay = 1100 + i * 340;
-      ((idx, d) => {
-        this.time.delayedCall(d, () => {
-          // pop in with overshoot
-          this.tweens.add({
-            targets: starObjs[idx],
-            alpha: 1,
-            scale: { from: 0, to: 1 },
-            duration: 320,
-            ease: 'Back.Out'
-          });
-          // burst particles at star position
-          const sx = W / 2 + (idx - 1) * starSpacing;
-          const burst = this.add.particles(sx, starY, 'pixel', {
-            speed: { min: 50, max: 160 },
-            lifespan: 500,
-            quantity: 16,
-            scale: { start: 1.4, end: 0 },
-            tint: [0xffd700, 0xfff0a0, 0xffaa00],
-            blendMode: 'ADD'
-          }).setDepth(9);
-          this.time.delayedCall(520, () => { if (burst.active) burst.destroy(); });
-        });
-      })(i, delay);
-    }
-
-    // unearned stars fade in dim
-    for (let i = stars; i < 3; i++) {
-      this.time.delayedCall(1100 + i * 340, () => {
-        this.tweens.add({ targets: starObjs[i], alpha: 0.55, scale: 1, duration: 280, ease: 'Back.Out' });
-      });
-    }
-
-    // ── Score row ──
-    const scoreTxt = this.add.text(W / 2, 435, `SCORE: ${score}`, {
-      fontFamily: 'Verdana',
-      fontSize: '18px',
-      color: '#ffb4d8',
-      stroke: '#330011',
-      strokeThickness: 4
-    }).setOrigin(0.5).setAlpha(0).setDepth(2);
-
-    const bonusTxt = this.add.text(W / 2, 462, `CLEAR BONUS: +${clearBonus}`, {
-      fontFamily: 'Verdana',
-      fontSize: '17px',
-      color: '#9cfbff',
-      stroke: '#001133',
-      strokeThickness: 4
-    }).setOrigin(0.5).setAlpha(0).setDepth(2);
-
-    const totalTxt = this.add.text(W / 2, 491, `TOTAL: ${totalScore}`, {
-      fontFamily: 'Verdana',
-      fontSize: '20px',
-      color: '#ffffff',
-      stroke: '#002244',
-      strokeThickness: 5
-    }).setOrigin(0.5).setAlpha(0).setDepth(2);
-
-    const goldTxt = this.add.text(W / 2, 516, `💰 +${goldReward.toLocaleString()} G 획득!`, {
-      fontFamily: 'Verdana',
-      fontSize: '17px',
-      color: '#ffd700',
-      stroke: '#332200',
-      strokeThickness: 4
-    }).setOrigin(0.5).setAlpha(0).setDepth(2);
-
-    this.tweens.add({ targets: [scoreTxt, bonusTxt, totalTxt, goldTxt], alpha: 1, duration: 360, delay: 2100 });
-
-    // ── Next button ──
-    const nextLabel = (stage < STAGE_COUNT) ? 'NEXT STAGE →' : '🏠 BACK TO MENU';
-    const btn = this.add.rectangle(W / 2, 568, 210, 48, 0x123966, 0.92)
-      .setStrokeStyle(2, 0x7ce8ff, 1)
-      .setInteractive({ useHandCursor: true })
-      .setAlpha(0).setDepth(2);
-    const btnTxt = this.add.text(W / 2, 568, nextLabel, {
-      fontFamily: 'Verdana',
-      fontSize: '20px',
-      color: '#ffffff'
-    }).setOrigin(0.5).setAlpha(0).setDepth(2);
-
-    this.tweens.add({ targets: [btn, btnTxt], alpha: 1, duration: 360, delay: 2500 });
-
-    btn.on('pointerover', () => btn.setFillStyle(0x1d588f, 0.95));
-    btn.on('pointerout', () => btn.setFillStyle(0x123966, 0.92));
-    btn.on('pointerdown', () => {
-      if (stage < STAGE_COUNT) {
-        this.scene.start('Game', { stage: stage + 1, score: totalScore, lives });
-      } else {
-        this.scene.start('Menu');
-      }
-    });
-  }
-}
-
-class GameOverScene extends Phaser.Scene {
-  constructor() { super('GameOver'); }
-
-  create(data) {
-    const score = data.score || 0;
-
-    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.86);
-    this.add.text(W / 2, 122, 'GAME OVER', {
-      fontFamily: 'Verdana',
-      fontSize: '56px',
-      color: '#ff6666',
-      stroke: '#5c0000',
-      strokeThickness: 8
-    }).setOrigin(0.5);
-
-    this.add.text(W / 2, 190, `FINAL SCORE: ${score}`, {
-      fontFamily: 'Verdana',
-      fontSize: '22px',
-      color: '#ffffff'
-    }).setOrigin(0.5);
-
-    const makeButton = (x, y, label, onClick) => {
-      const b = this.add.rectangle(x, y, 150, 42, 0x2a1e48, 0.95)
-        .setStrokeStyle(2, 0xff7ab6, 1)
-        .setInteractive({ useHandCursor: true });
-      this.add.text(x, y, label, {
-        fontFamily: 'Verdana',
-        fontSize: '20px',
-        color: '#ffffff'
-      }).setOrigin(0.5);
-      b.on('pointerover', () => b.setFillStyle(0x3b2b66, 0.95));
-      b.on('pointerout', () => b.setFillStyle(0x2a1e48, 0.95));
-      b.on('pointerdown', onClick);
-    };
-
-    makeButton(W / 2 - 84, 266, 'RETRY', () => {
-      this.scene.start('Game', { stage: data.stage || 1, score: 0, lives: 3 });
-    });
-
-    makeButton(W / 2 + 84, 266, 'MENU', () => {
-      this.scene.start('Menu');
-    });
-  }
-}
-
-const config = {
-  type: Phaser.AUTO,
-  width: W,
-  height: H,
-  parent: 'game',
-  backgroundColor: '#1a0a2e',
-  scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH
-  },
-  scene: [BootScene, MenuScene, GameScene, ClearScene, GameOverScene]
-};
-
-// SharedWallet 초기화 후 Phaser 시작
-(async function() {
-  if (window.SharedWallet) {
-    try { await SharedWallet.init(); } catch (_) {}
-  }
-  new Phaser.Game(config);
-})();
-
-</script>
 <script src="https://unpkg.com/kaplay@4000.0.0-alpha.26/dist/kaplay.js"></script>
 <script>
 (() => {
@@ -2270,6 +478,8 @@ const config = {
 
       playerRow: 0,
       playerCol: Math.floor(COLS / 2),
+      renderX: Math.floor(COLS / 2) * CELL + CELL / 2,
+      renderY: CELL / 2,
       trail: [],
       isDrawing: false,
       drawStart: null,
@@ -2305,6 +515,7 @@ const config = {
     setWrapBackground(S.bgKey);
 
     const enemyCount = Math.min(5, S.stage);
+    const enemyRadius = Math.min(10, 4.5 + S.stage * 0.3);
     for (let i = 0; i < enemyCount; i++) {
       const baseSpeed = CELL * (1.2 + S.stage * 0.38 + i * 0.04);
       const kind = (i % 3 === 0) ? 'hunter' : (i % 3 === 1 ? 'zigzag' : 'bouncer');
@@ -2315,13 +526,14 @@ const config = {
         vy: (Math.random() > 0.5 ? 1 : -1) * baseSpeed,
         baseSpeed,
         kind,
-        radius: kind === 'hunter' ? 5 : 4.5,
+        radius: enemyRadius,
         pulse: Math.random() * Math.PI * 2,
         shootCd: randInt(2000, 4000),
       });
     }
 
     const mmDef = MAIN_MONSTERS[Math.min(S.stage - 1, MAIN_MONSTERS.length - 1)];
+    const mmRadiusScale = 1 + S.stage * 0.06;
     const mmSpeed = CELL * (1.2 + S.stage * 0.38) * mmDef.spdMul;
     S.mainMonster = {
       x: k.rand(CELL * 5, W - CELL * 5),
@@ -2332,26 +544,29 @@ const config = {
       kind: 'boss',
       pulse: 0,
       shootCd: 600,
-      radius: mmDef.radius,
+      radius: mmDef.radius * mmRadiusScale,
       color: mmDef.color,
       ring: mmDef.ring,
       name: mmDef.name,
       img: mmDef.img,
       charging: false,
+      burstTimer: 0,
+      burstCooldown: 0,
     };
 
+    const bossSpriteScale = 0.55 * mmRadiusScale;
     let bossSprite = null;
     if (k.getSprite(mmDef.img)) {
       bossSprite = k.add([
         k.sprite(mmDef.img),
         k.pos(S.mainMonster.x, S.mainMonster.y),
         k.anchor('center'),
-        k.scale(0.55),
+        k.scale(bossSpriteScale),
         k.z(95),
       ]);
     }
     let bossLabel = k.add([
-      k.pos(S.mainMonster.x, S.mainMonster.y - mmDef.radius - 8),
+      k.pos(S.mainMonster.x, S.mainMonster.y - S.mainMonster.radius - 8),
       k.anchor('center'),
       k.text(`★ ${mmDef.name}`, { size: 11, font: 'monospace' }),
       k.color(255, 221, 68),
@@ -2541,6 +756,44 @@ const config = {
       return best || findNearestClaimed(row, col);
     }
 
+    function playerTargetX() {
+      return S.playerCol * CELL + CELL / 2;
+    }
+
+    function playerTargetY() {
+      return S.playerRow * CELL + CELL / 2;
+    }
+
+    function snapPlayerRender() {
+      S.renderX = playerTargetX();
+      S.renderY = playerTargetY();
+    }
+
+    function breakPlayerLineByBoss() {
+      if (!S.isDrawing) return;
+
+      for (const cell of S.trail) {
+        if (S.grid[cell.row][cell.col] === 2) S.grid[cell.row][cell.col] = 0;
+      }
+
+      S.trail = [];
+      S.isDrawing = false;
+      S.retracting = false;
+      if (S.drawStart) {
+        S.playerRow = S.drawStart.row;
+        S.playerCol = S.drawStart.col;
+      } else {
+        const respawn = findNearestFrontier(S.playerRow, S.playerCol);
+        S.playerRow = respawn.row;
+        S.playerCol = respawn.col;
+      }
+      S.drawStart = null;
+      S.overlayDirty = true;
+      S.invuln = Math.max(S.invuln, 450);
+      snapPlayerRender();
+      showItemMsg('⚠️ 보스가 라인을 파괴!');
+    }
+
     function showContinuePrompt() {
       S.paused = true;
       joyHide();
@@ -2572,6 +825,7 @@ const config = {
         const respawn = findNearestFrontier(S.playerRow, S.playerCol);
         S.playerRow = respawn.row;
         S.playerCol = respawn.col;
+        snapPlayerRender();
         S.invuln = 2500;
         refreshHUD();
       };
@@ -2611,6 +865,7 @@ const config = {
       const respawn = findNearestFrontier(S.playerRow, S.playerCol);
       S.playerRow = respawn.row;
       S.playerCol = respawn.col;
+      snapPlayerRender();
       S.invuln = 900;
       refreshHUD();
     }
@@ -2790,6 +1045,7 @@ const config = {
         if (S.drawStart) {
           S.playerRow = S.drawStart.row;
           S.playerCol = S.drawStart.col;
+          snapPlayerRender();
         }
         S.drawStart = null;
         return;
@@ -2807,6 +1063,7 @@ const config = {
         if (S.drawStart) {
           S.playerRow = S.drawStart.row;
           S.playerCol = S.drawStart.col;
+          snapPlayerRender();
         }
         S.retracting = false;
         S.isDrawing = false;
@@ -2969,14 +1226,84 @@ const config = {
       if (S.mainMonster) {
         const mm = S.mainMonster;
         mm.pulse += dt * 5;
+        mm.burstTimer = Math.max(0, mm.burstTimer - deltaMs);
+        mm.burstCooldown = Math.max(0, mm.burstCooldown - deltaMs);
+
         const dx = px - mm.x;
         const dy = py - mm.y;
         const d = Math.hypot(dx, dy) || 1;
 
         if (S.isDrawing) {
-          mm.vx = mm.vx * 0.82 + (dx / d) * mm.baseSpeed * 0.24;
-          mm.vy = mm.vy * 0.82 + (dy / d) * mm.baseSpeed * 0.24;
+          const mmR = clamp(Math.floor(mm.y / CELL), 0, ROWS - 1);
+          const mmC = clamp(Math.floor(mm.x / CELL), 0, COLS - 1);
+          const senseRadius = 5;
+          let fleeX = 0;
+          let fleeY = 0;
+          let sideL = false;
+          let sideR = false;
+          let sideU = false;
+          let sideD = false;
+
+          for (let rr = mmR - senseRadius; rr <= mmR + senseRadius; rr++) {
+            for (let cc = mmC - senseRadius; cc <= mmC + senseRadius; cc++) {
+              if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
+              if (S.grid[rr][cc] !== 2) continue;
+              const dr = rr - mmR;
+              const dc = cc - mmC;
+              const cd = Math.hypot(dr, dc);
+              if (cd <= 0 || cd > senseRadius) continue;
+
+              const weight = 1 / Math.max(0.35, cd);
+              fleeX += (-dc / cd) * weight;
+              fleeY += (-dr / cd) * weight;
+
+              if (dc < 0) sideL = true;
+              if (dc > 0) sideR = true;
+              if (dr < 0) sideU = true;
+              if (dr > 0) sideD = true;
+            }
+          }
+
+          const sideCount = (sideL ? 1 : 0) + (sideR ? 1 : 0) + (sideU ? 1 : 0) + (sideD ? 1 : 0);
+          const fleeLen = Math.hypot(fleeX, fleeY) || 1;
+
+          if (sideCount >= 2 && (Math.abs(fleeX) > 0.001 || Math.abs(fleeY) > 0.001)) {
+            mm.vx = mm.vx * 0.78 + (fleeX / fleeLen) * mm.baseSpeed * 0.58;
+            mm.vy = mm.vy * 0.78 + (fleeY / fleeLen) * mm.baseSpeed * 0.58;
+          } else {
+            mm.vx = mm.vx * 0.82 + (dx / d) * mm.baseSpeed * 0.24;
+            mm.vy = mm.vy * 0.82 + (dy / d) * mm.baseSpeed * 0.24;
+          }
         }
+
+        const enclosureRadius = 8;
+        const mmR = clamp(Math.floor(mm.y / CELL), 0, ROWS - 1);
+        const mmC = clamp(Math.floor(mm.x / CELL), 0, COLS - 1);
+        let enclosed = 0;
+        let enclosedTotal = 0;
+        for (let rr = mmR - enclosureRadius; rr <= mmR + enclosureRadius; rr++) {
+          for (let cc = mmC - enclosureRadius; cc <= mmC + enclosureRadius; cc++) {
+            if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
+            const dr = rr - mmR;
+            const dc = cc - mmC;
+            if (Math.hypot(dr, dc) > enclosureRadius) continue;
+            enclosedTotal++;
+            const gv = S.grid[rr][cc];
+            if (gv === 1 || gv === 2) enclosed++;
+          }
+        }
+        const enclosedRatio = enclosedTotal > 0 ? (enclosed / enclosedTotal) : 0;
+        if (enclosedRatio > 0.4 && mm.burstTimer <= 0 && mm.burstCooldown <= 0) {
+          mm.burstTimer = 3000;
+          mm.burstCooldown = 4500;
+          showItemMsg('⚠️ 보스 가속!');
+        }
+
+        const speedMul = mm.burstTimer > 0 ? 1.5 : 1;
+        const desiredSpeed = mm.baseSpeed * speedMul;
+        const velLen = Math.hypot(mm.vx, mm.vy) || 1;
+        mm.vx = (mm.vx / velLen) * desiredSpeed;
+        mm.vy = (mm.vy / velLen) * desiredSpeed;
 
         let nx = mm.x + mm.vx * dt;
         let ny = mm.y + mm.vy * dt;
@@ -2989,6 +1316,28 @@ const config = {
 
         mm.x += mm.vx * dt;
         mm.y += mm.vy * dt;
+
+        const centerR = clamp(Math.floor(mm.y / CELL), 0, ROWS - 1);
+        const centerC = clamp(Math.floor(mm.x / CELL), 0, COLS - 1);
+        const radiusCells = Math.max(1, Math.ceil(mm.radius / CELL));
+        let destroyedTrail = false;
+        for (let rr = centerR - radiusCells; rr <= centerR + radiusCells; rr++) {
+          for (let cc = centerC - radiusCells; cc <= centerC + radiusCells; cc++) {
+            if (rr < 1 || rr >= ROWS - 1 || cc < 1 || cc >= COLS - 1) continue;
+            if (S.grid[rr][cc] !== 2) continue;
+            const cx = cc * CELL + CELL / 2;
+            const cy = rr * CELL + CELL / 2;
+            if (Math.hypot(cx - mm.x, cy - mm.y) <= mm.radius + CELL * 0.15) {
+              S.grid[rr][cc] = 0;
+              destroyedTrail = true;
+            }
+          }
+        }
+        if (destroyedTrail) {
+          S.overlayDirty = true;
+          breakPlayerLineByBoss();
+        }
+
         mm.shootCd -= deltaMs;
 
         if (mm.shootCd <= 0) {
@@ -3174,6 +1523,11 @@ const config = {
         S.moveTimer = 0;
       }
 
+      const targetX = playerTargetX();
+      const targetY = playerTargetY();
+      S.renderX += (targetX - S.renderX) * 0.35;
+      S.renderY += (targetY - S.renderY) * 0.35;
+
       if (S.invuln > 0) S.invuln -= deltaMs;
       if (S.fx.freeze > 0) S.fx.freeze -= deltaMs;
       if (S.fx.speed > 0) S.fx.speed -= deltaMs;
@@ -3318,9 +1672,9 @@ const config = {
         k.drawCircle({ pos: k.vec2(cx, cy), radius: CELL * 0.72, color: k.rgb(r, g, b), opacity: alpha * 0.5 });
       }
 
-      // Player
-      const px = S.playerCol * CELL + CELL / 2;
-      const py = S.playerRow * CELL + CELL / 2;
+      // Player (grid logic + smooth render interpolation)
+      const px = S.renderX;
+      const py = S.renderY;
       const blink = S.invuln > 0 ? (Math.floor(performance.now() / 80) % 2 === 0 ? 0.45 : 1) : 1;
 
       k.drawCircle({ pos: k.vec2(px, py), radius: 6, color: k.rgb(0, 0, 0), opacity: 0.9 * blink });
