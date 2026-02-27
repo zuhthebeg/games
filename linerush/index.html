@@ -478,8 +478,6 @@
 
       playerRow: 0,
       playerCol: Math.floor(COLS / 2),
-      renderX: Math.floor(COLS / 2) * CELL + CELL / 2,
-      renderY: CELL / 2,
       trail: [],
       isDrawing: false,
       drawStart: null,
@@ -514,6 +512,9 @@
 
     setWrapBackground(S.bgKey);
 
+    let renderX = S.playerCol * CELL + CELL / 2;
+    let renderY = S.playerRow * CELL + CELL / 2;
+
     const enemyCount = Math.min(5, S.stage);
     const enemyRadius = Math.min(10, 4.5 + S.stage * 0.3);
     for (let i = 0; i < enemyCount; i++) {
@@ -533,7 +534,7 @@
     }
 
     const mmDef = MAIN_MONSTERS[Math.min(S.stage - 1, MAIN_MONSTERS.length - 1)];
-    const mmRadiusScale = 1 + S.stage * 0.06;
+    const mmRadiusScale = 1 + S.stage * 0.05;
     const mmSpeed = CELL * (1.2 + S.stage * 0.38) * mmDef.spdMul;
     S.mainMonster = {
       x: k.rand(CELL * 5, W - CELL * 5),
@@ -555,6 +556,7 @@
     };
 
     const bossSpriteScale = 0.55 * mmRadiusScale;
+    const bossDisplaySize = mmDef.radius * 2.2 * mmRadiusScale;
     let bossSprite = null;
     if (k.getSprite(mmDef.img)) {
       bossSprite = k.add([
@@ -564,6 +566,7 @@
         k.scale(bossSpriteScale),
         k.z(95),
       ]);
+      bossSprite.displaySize = k.vec2(bossDisplaySize, bossDisplaySize);
     }
     let bossLabel = k.add([
       k.pos(S.mainMonster.x, S.mainMonster.y - S.mainMonster.radius - 8),
@@ -765,32 +768,15 @@
     }
 
     function snapPlayerRender() {
-      S.renderX = playerTargetX();
-      S.renderY = playerTargetY();
+      renderX = playerTargetX();
+      renderY = playerTargetY();
     }
 
     function breakPlayerLineByBoss() {
       if (!S.isDrawing) return;
-
-      for (const cell of S.trail) {
-        if (S.grid[cell.row][cell.col] === 2) S.grid[cell.row][cell.col] = 0;
-      }
-
-      S.trail = [];
-      S.isDrawing = false;
-      S.retracting = false;
-      if (S.drawStart) {
-        S.playerRow = S.drawStart.row;
-        S.playerCol = S.drawStart.col;
-      } else {
-        const respawn = findNearestFrontier(S.playerRow, S.playerCol);
-        S.playerRow = respawn.row;
-        S.playerCol = respawn.col;
-      }
-      S.drawStart = null;
       S.overlayDirty = true;
-      S.invuln = Math.max(S.invuln, 450);
-      snapPlayerRender();
+      S.invuln = 0;
+      playerDie();
       showItemMsg('⚠️ 보스가 라인을 파괴!');
     }
 
@@ -1236,7 +1222,7 @@
         if (S.isDrawing) {
           const mmR = clamp(Math.floor(mm.y / CELL), 0, ROWS - 1);
           const mmC = clamp(Math.floor(mm.x / CELL), 0, COLS - 1);
-          const senseRadius = 5;
+          const senseRadius = 6;
           let fleeX = 0;
           let fleeY = 0;
           let sideL = false;
@@ -1319,21 +1305,8 @@
 
         const centerR = clamp(Math.floor(mm.y / CELL), 0, ROWS - 1);
         const centerC = clamp(Math.floor(mm.x / CELL), 0, COLS - 1);
-        const radiusCells = Math.max(1, Math.ceil(mm.radius / CELL));
-        let destroyedTrail = false;
-        for (let rr = centerR - radiusCells; rr <= centerR + radiusCells; rr++) {
-          for (let cc = centerC - radiusCells; cc <= centerC + radiusCells; cc++) {
-            if (rr < 1 || rr >= ROWS - 1 || cc < 1 || cc >= COLS - 1) continue;
-            if (S.grid[rr][cc] !== 2) continue;
-            const cx = cc * CELL + CELL / 2;
-            const cy = rr * CELL + CELL / 2;
-            if (Math.hypot(cx - mm.x, cy - mm.y) <= mm.radius + CELL * 0.15) {
-              S.grid[rr][cc] = 0;
-              destroyedTrail = true;
-            }
-          }
-        }
-        if (destroyedTrail) {
+        if (centerR > 0 && centerR < ROWS - 1 && centerC > 0 && centerC < COLS - 1 && S.grid[centerR][centerC] === 2) {
+          S.grid[centerR][centerC] = 0;
           S.overlayDirty = true;
           breakPlayerLineByBoss();
         }
@@ -1525,8 +1498,8 @@
 
       const targetX = playerTargetX();
       const targetY = playerTargetY();
-      S.renderX += (targetX - S.renderX) * 0.35;
-      S.renderY += (targetY - S.renderY) * 0.35;
+      renderX += (targetX - renderX) * 0.35;
+      renderY += (targetY - renderY) * 0.35;
 
       if (S.invuln > 0) S.invuln -= deltaMs;
       if (S.fx.freeze > 0) S.fx.freeze -= deltaMs;
@@ -1616,6 +1589,9 @@
         }
         prev = { x: cx, y: cy };
       }
+      if (S.isDrawing && prev) {
+        k.drawLine({ p1: k.vec2(prev.x, prev.y), p2: k.vec2(renderX, renderY), width: 2.5, color: k.rgb(0, 255, 255), opacity: 0.92 });
+      }
 
       // Enemies
       for (const e of S.enemies) {
@@ -1673,8 +1649,8 @@
       }
 
       // Player (grid logic + smooth render interpolation)
-      const px = S.renderX;
-      const py = S.renderY;
+      const px = renderX;
+      const py = renderY;
       const blink = S.invuln > 0 ? (Math.floor(performance.now() / 80) % 2 === 0 ? 0.45 : 1) : 1;
 
       k.drawCircle({ pos: k.vec2(px, py), radius: 6, color: k.rgb(0, 0, 0), opacity: 0.9 * blink });
