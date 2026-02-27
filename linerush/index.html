@@ -1,23 +1,132 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Line Rush</title>
-  <script src="./phaser.min.js"></script>
+  <script src="/lib/shared-wallet.js?v=20260214"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #000; display: flex; justify-content: center; align-items: flex-start;
-           min-height: 100dvh; overflow: hidden; font-family: 'Trebuchet MS', sans-serif;
-           padding-top: calc(48px + env(safe-area-inset-top)); }
-    #game { width: 100vw; height: calc(100dvh - 48px - env(safe-area-inset-top));
-            display: flex; justify-content: center; align-items: center; }
-    canvas { display: block; touch-action: none; }
+    body {
+      background: #080612;
+      overflow: hidden;
+      font-family: 'Trebuchet MS', sans-serif;
+      min-height: 100dvh;
+    }
+    #game-wrap {
+      position: fixed;
+      top: calc(48px + env(safe-area-inset-top));
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    canvas { display: block; touch-action: none; max-width: 100%; }
+
+    #joyWrap {
+      position: fixed;
+      bottom: 28px;
+      right: 20px;
+      width: 120px;
+      height: 120px;
+      z-index: 50;
+      display: none;
+      touch-action: none;
+    }
+    #joyBase {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.07);
+      border: 2px solid rgba(255, 255, 255, 0.18);
+    }
+    #joyKnob {
+      position: absolute;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(0, 210, 255, 0.50);
+      border: 2px solid rgba(0, 230, 255, 0.85);
+      top: 34px;
+      left: 34px;
+      will-change: transform;
+      pointer-events: none;
+    }
+
+    #scene-ui {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      padding: calc(52px + env(safe-area-inset-top)) 16px 20px;
+    }
+    .ui-panel {
+      width: min(360px, calc(100vw - 24px));
+      max-height: min(84vh, 720px);
+      overflow: auto;
+      background: rgba(10, 12, 26, 0.88);
+      border: 1px solid rgba(130, 175, 255, 0.52);
+      border-radius: 14px;
+      color: #e9f0ff;
+      padding: 18px 16px;
+      pointer-events: auto;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+    }
+    .ui-title {
+      text-align: center;
+      font-size: 30px;
+      color: #ff89cb;
+      margin-bottom: 8px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .ui-sub {
+      text-align: center;
+      color: #9dc9ff;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .ui-btn {
+      width: 100%;
+      border: none;
+      border-radius: 9px;
+      padding: 12px 10px;
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+    .ui-btn:active { transform: translateY(1px); }
+    .ui-btn.primary { background: #6f2fd1; color: #fff; }
+    .ui-btn.next { background: #1d4f83; color: #fff; }
+    .ui-btn.warn { background: #ffd700; color: #222; }
+    .ui-btn.danger { background: #a52e4d; color: #fff; }
+    .ui-row { display: flex; gap: 8px; }
+    .rank-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 2px;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(120, 140, 190, 0.12);
+    }
+    .score-line { text-align: center; margin-top: 8px; font-size: 17px; }
   </style>
 </head>
 <body>
-<div id="game"></div>
-<script>
+<div id="game-wrap"></div>
+<div id="joyWrap"><div id="joyBase"></div><div id="joyKnob"></div></div>
+<div id="scene-ui"></div>
+<script type="text/plain" id="legacy-phaser-script">
 window.addEventListener('error', (e) => {
   const msg = document.createElement('div');
   msg.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;z-index:99999;background:#300;color:#fff;padding:10px 12px;border-radius:8px;font:12px/1.4 sans-serif';
@@ -1809,6 +1918,1526 @@ const config = {
 })();
 
 </script>
-<script src="/lib/shared-wallet.js?v=20260214"></script>
+<script src="https://unpkg.com/kaplay@4000.0.0-alpha.26/dist/kaplay.js"></script>
+<script>
+(() => {
+  window.addEventListener('error', (e) => {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;z-index:99999;background:#300;color:#fff;padding:10px 12px;border-radius:8px;font:12px/1.4 sans-serif';
+    msg.textContent = 'Line Rush 로딩 오류: ' + (e.message || 'unknown');
+    document.body.appendChild(msg);
+  });
+
+  // ──────────────────────────────────────────────────────────────
+  // Constants / Storage / Network
+  // ──────────────────────────────────────────────────────────────
+  const STAGE_COUNT        = 15;
+  const BG_ORIG_START      = 1;
+  const BG_ORIG_END        = 10;
+  const STAGE_CHAR_MAP     = { 1: 'char1', 2: 'char2', 3: 'char4' };
+  const STAGE_REWARD       = 1000;
+  const RELAY_URL          = 'https://relay.cocy.io';
+  const STORAGE_BEST_KEY   = 'linerush_best_stage';
+  const STORAGE_PLAYER_KEY = 'linerush_player_id';
+  const STORAGE_UNLOCK_KEY = 'linerush_unlocked_stage';
+
+  const MAIN_MONSTERS = [
+    { name:'슬라임',   color:0x44ff44, ring:0x00cc00, radius:9,  spdMul:1.4, img:'boss1' },
+    { name:'스핀',     color:0xffaa22, ring:0xff6600, radius:10, spdMul:1.5, img:'boss2' },
+    { name:'촉수',     color:0xcc44ff, ring:0x8800cc, radius:10, spdMul:1.48,img:'boss3' },
+    { name:'아이볼',   color:0xff2244, ring:0xcc0022, radius:11, spdMul:1.55,img:'boss4' },
+    { name:'아이스',   color:0x88ddff, ring:0x0088cc, radius:11, spdMul:1.52,img:'boss5' },
+    { name:'플레임',   color:0xff6600, ring:0xff2200, radius:12, spdMul:1.6, img:'boss6' },
+    { name:'썬더',     color:0xffff22, ring:0xcc9900, radius:12, spdMul:1.58,img:'boss7' },
+    { name:'다크',     color:0xaa44ff, ring:0x660099, radius:13, spdMul:1.65,img:'boss8' },
+    { name:'카오스',   color:0xff44aa, ring:0xcc0077, radius:13, spdMul:1.7, img:'boss9' },
+    { name:'보이드',   color:0xff0000, ring:0x880000, radius:14, spdMul:1.75,img:'boss10'},
+    { name:'슬라임EX', color:0x44ff44, ring:0x00cc00, radius:11, spdMul:1.95,img:'boss1' },
+    { name:'스핀EX',   color:0xffaa22, ring:0xff6600, radius:12, spdMul:2.0, img:'boss2' },
+    { name:'촉수EX',   color:0xcc44ff, ring:0x8800cc, radius:12, spdMul:1.98,img:'boss3' },
+    { name:'아이볼EX', color:0xff2244, ring:0xcc0022, radius:13, spdMul:2.05,img:'boss4' },
+    { name:'아이스EX', color:0x88ddff, ring:0x0088cc, radius:13, spdMul:2.1, img:'boss5' },
+  ];
+
+  const ITEM_TYPES = ['freeze','speed','shield','slow'];
+  const ITEM_EMOJI = { freeze:'✋',speed:'🏃',shield:'🛡',slow:'⌛' };
+  const ITEM_DUR   = { freeze:5000, speed:4000, shield:7000, slow:6000 };
+  const ITEM_LIFE  = 14000;
+  const ITEM_BLINK = 5000;
+  const ITEM_SPAWN = 20000;
+  const MAX_ITEMS  = 3;
+  const ITEMS      = ITEM_TYPES;
+
+  const COLS = 52;
+  const ROWS = 76;
+  const CELL = 8;
+  const W = COLS * CELL;
+  const H = ROWS * CELL;
+  const TARGET_PERCENT = 80;
+
+  function getLRPlayerId() {
+    let id = localStorage.getItem(STORAGE_PLAYER_KEY);
+    if (!id) {
+      id = 'lr_' + Math.random().toString(36).slice(2, 11);
+      localStorage.setItem(STORAGE_PLAYER_KEY, id);
+    }
+    return id;
+  }
+  function getLRBestStage() {
+    return parseInt(localStorage.getItem(STORAGE_BEST_KEY) || '0');
+  }
+  function setLRBestStage(s) {
+    if (s > getLRBestStage()) {
+      localStorage.setItem(STORAGE_BEST_KEY, String(s));
+      const nickname = window.SharedWallet?.user?.nickname || window.SharedWallet?.user?.username || null;
+      fetch(`${RELAY_URL}/api/rankings/linerush`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: getLRPlayerId(), nickname, stage: s }),
+      }).catch(() => {});
+    }
+  }
+  function getUnlockedStage() {
+    try {
+      const v = Number(localStorage.getItem(STORAGE_UNLOCK_KEY) || '1');
+      return Math.min(STAGE_COUNT, Math.max(1, Number.isFinite(v) ? v : 1));
+    } catch (_) {
+      return 1;
+    }
+  }
+  function setUnlockedStage(stage) {
+    try {
+      const next = Math.min(STAGE_COUNT, Math.max(getUnlockedStage(), stage));
+      localStorage.setItem(STORAGE_UNLOCK_KEY, String(next));
+    } catch (_) {}
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // DOM helpers / UI / joystick
+  // ──────────────────────────────────────────────────────────────
+  const gameWrap = document.getElementById('game-wrap');
+  const uiRoot = document.getElementById('scene-ui');
+
+  function setWrapBackground(key) {
+    if (!key) {
+      gameWrap.style.backgroundImage = '';
+      return;
+    }
+    gameWrap.style.backgroundImage = `url('/linerush/img/${key}.jpg')`;
+  }
+
+  function showPanel(html) {
+    uiRoot.innerHTML = `<div class="ui-panel">${html}</div>`;
+    uiRoot.style.display = 'flex';
+  }
+  function hidePanel() {
+    uiRoot.style.display = 'none';
+    uiRoot.innerHTML = '';
+  }
+
+  const joyWrap = document.getElementById('joyWrap');
+  const joyKnob = document.getElementById('joyKnob');
+  const JOY_MAX = 48;
+  let joyX = 0, joyY = 0, joyTouchId = null, joyCX = 0, joyCY = 0;
+
+  function joyShow() { joyWrap.style.display = 'block'; }
+  function joyHide() { joyWrap.style.display = 'none'; }
+  function joyCenter() {
+    const r = joyWrap.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+  function joyApply(dx, dy) {
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const nx = len > JOY_MAX ? dx / len * JOY_MAX : dx;
+    const ny = len > JOY_MAX ? dy / len * JOY_MAX : dy;
+    joyKnob.style.transform = `translate(${nx}px,${ny}px)`;
+    joyX = nx / JOY_MAX;
+    joyY = ny / JOY_MAX;
+  }
+  function joyReset() {
+    joyKnob.style.transform = 'translate(0,0)';
+    joyX = 0;
+    joyY = 0;
+    joyTouchId = null;
+  }
+
+  document.addEventListener('touchstart', (e) => {
+    if (joyWrap.style.display === 'none') return;
+    for (const t of e.changedTouches) {
+      if (joyTouchId !== null) continue;
+      const c = joyCenter();
+      const dx = t.clientX - c.x;
+      const dy = t.clientY - c.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 90) {
+        joyTouchId = t.identifier;
+        joyCX = c.x;
+        joyCY = c.y;
+        joyApply(dx, dy);
+        e.preventDefault();
+      }
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchmove', (e) => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === joyTouchId) {
+        joyApply(t.clientX - joyCX, t.clientY - joyCY);
+        e.preventDefault();
+      }
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', (e) => {
+    for (const t of e.changedTouches) if (t.identifier === joyTouchId) joyReset();
+  });
+  document.addEventListener('touchcancel', (e) => {
+    for (const t of e.changedTouches) if (t.identifier === joyTouchId) joyReset();
+  });
+
+  // ──────────────────────────────────────────────────────────────
+  // Kaplay setup
+  // ──────────────────────────────────────────────────────────────
+  const gameCanvas = document.createElement('canvas');
+  gameWrap.appendChild(gameCanvas);
+
+  function resizeCanvas() {
+    const aw = gameWrap.clientWidth || window.innerWidth;
+    const ah = gameWrap.clientHeight || Math.max(320, window.innerHeight - 48);
+    const scale = Math.min(aw / W, ah / H, 2.1);
+    gameCanvas.style.width = Math.round(W * scale) + 'px';
+    gameCanvas.style.height = Math.round(H * scale) + 'px';
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  window.visualViewport?.addEventListener('resize', resizeCanvas);
+
+  const k = kaplay({
+    canvas: gameCanvas,
+    width: W,
+    height: H,
+    background: [26, 10, 46],
+    letterbox: true,
+    pixelDensity: window.devicePixelRatio || 1,
+    global: false,
+    debug: false,
+  });
+
+  const hex2rgb = (hex) => [ (hex >> 16) & 255, (hex >> 8) & 255, hex & 255 ];
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const randInt = (lo, hi) => Math.floor(lo + Math.random() * (hi - lo + 1));
+
+  let bgShuffle = null;
+  function getStageBgKey(stage) {
+    if (STAGE_CHAR_MAP[stage]) return STAGE_CHAR_MAP[stage];
+    if (stage >= 11) return `bg${stage}`;
+
+    if (!bgShuffle || stage === 4) {
+      bgShuffle = Array.from({ length: BG_ORIG_END - BG_ORIG_START + 1 }, (_, i) => i + BG_ORIG_START);
+      for (let i = bgShuffle.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bgShuffle[i], bgShuffle[j]] = [bgShuffle[j], bgShuffle[i]];
+      }
+    }
+    const idx = Math.min(stage - 4, bgShuffle.length - 1);
+    return `bg${bgShuffle[Math.max(0, idx)]}`;
+  }
+
+  let assetsReady = false;
+  let walletReady = false;
+
+  function queueAssets() {
+    ['char1', 'char2', 'char4'].forEach((n) => k.loadSprite(n, `/linerush/img/${n}.jpg`));
+    for (let i = 1; i <= STAGE_COUNT; i++) k.loadSprite(`bg${i}`, `/linerush/img/bg${i}.jpg`);
+    for (let i = 11; i <= STAGE_COUNT; i++) k.loadSprite(`char${i}`, `/linerush/img/char${i}.jpg`);
+    for (let i = 1; i <= STAGE_COUNT; i++) k.loadSprite(`boss${i}`, `/linerush/img/boss${i}.png`);
+  }
+
+  k.onLoad(() => { assetsReady = true; });
+  queueAssets();
+  (async () => {
+    if (window.SharedWallet) {
+      try { await SharedWallet.init(); } catch (_) {}
+    }
+    walletReady = true;
+  })();
+
+  // ──────────────────────────────────────────────────────────────
+  // Scene: boot
+  // ──────────────────────────────────────────────────────────────
+  k.scene('boot', () => {
+    hidePanel();
+    joyHide();
+    setWrapBackground('');
+
+    const t = k.add([
+      k.pos(W / 2, H / 2),
+      k.anchor('center'),
+      k.text('LOADING...', { size: 24, font: 'monospace' }),
+      k.color(180, 210, 255),
+    ]);
+
+    let blink = 0;
+    let timeout = 0;
+
+    k.onUpdate(() => {
+      blink += k.dt();
+      timeout += k.dt();
+      t.opacity = 0.5 + Math.sin(blink * 6) * 0.5;
+      if ((assetsReady && walletReady) || timeout > 3.2) {
+        k.go('menu');
+      }
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────
+  // Scene: menu
+  // ──────────────────────────────────────────────────────────────
+  k.scene('menu', () => {
+    joyHide();
+    setWrapBackground('');
+
+    showPanel(`
+      <div class="ui-title">LINE RUSH</div>
+      <div class="ui-sub">영역을 점령하고 80% 돌파!</div>
+      <div style="text-align:center;color:#ffd36e;font-size:13px;margin-bottom:10px" id="bestRow"></div>
+      <button class="ui-btn primary" id="playBtn">▶ STAGE 1 START</button>
+      <div style="text-align:center;color:#86d7ff;font-size:12px;margin:8px 0 10px">
+        각 스테이지 클리어 시 stage×${STAGE_REWARD.toLocaleString()}G 보상!
+      </div>
+      <div style="margin-top:8px;padding:10px;border-radius:10px;background:rgba(5,8,20,0.72);border:1px solid rgba(90,120,190,.35)">
+        <div style="text-align:center;color:#ffd700;font-size:14px;margin-bottom:6px">🏆 최고 스테이지 랭킹</div>
+        <div id="rankBox" style="font-size:13px;color:#8aa3c8;text-align:center">랭킹 로딩 중...</div>
+      </div>
+      <div style="text-align:center;color:#4d6488;font-size:11px;margin-top:10px">game.cocy.io</div>
+    `);
+
+    const best = getLRBestStage();
+    const bestRow = document.getElementById('bestRow');
+    bestRow.textContent = best > 0
+      ? `🏆 내 최고: STAGE ${best} | 최대보상: ${(best * STAGE_REWARD).toLocaleString()}G`
+      : '기록 없음';
+
+    document.getElementById('playBtn').onclick = () => {
+      hidePanel();
+      k.go('game', { stage: 1, score: 0, lives: 3 });
+    };
+
+    fetch(`${RELAY_URL}/api/rankings/linerush?limit=10`)
+      .then((r) => r.json())
+      .then((data) => {
+        const box = document.getElementById('rankBox');
+        if (!box) return;
+        const rows = data.rankings || [];
+        if (!rows.length) {
+          box.innerHTML = '아직 기록이 없습니다<br>먼저 플레이해보세요!';
+          return;
+        }
+        box.innerHTML = rows.slice(0, 9).map((r, i) => {
+          const medal = ['🥇', '🥈', '🥉'][i] || `${i + 1}.`;
+          const nick = (r.nickname || '익명').slice(0, 10);
+          return `<div class="rank-row"><span>${medal} ${nick}</span><span style="color:#79d5ff">STAGE ${r.best_stage}</span></div>`;
+        }).join('');
+      })
+      .catch(() => {
+        const box = document.getElementById('rankBox');
+        if (box) box.textContent = '랭킹을 불러올 수 없습니다';
+      });
+
+    k.onDraw(() => {
+      k.drawRect({ pos: k.vec2(0, 0), width: W, height: H, color: k.rgb(16, 4, 34) });
+      k.drawRect({ pos: k.vec2(0, 0), width: W, height: H, color: k.rgb(30, 8, 52), opacity: 0.38 });
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────
+  // Scene: game
+  // ──────────────────────────────────────────────────────────────
+  k.scene('game', (data) => {
+    hidePanel();
+    joyShow();
+
+    const S = {
+      stage: data?.stage || 1,
+      score: data?.score || 0,
+      lives: typeof data?.lives === 'number' ? data.lives : 3,
+      claimedCells: 0,
+      total: (COLS - 2) * (ROWS - 2),
+      percent: 0,
+
+      grid: Array.from({ length: ROWS }, (_, r) =>
+        Array.from({ length: COLS }, (_, c) => (r === 0 || c === 0 || r === ROWS - 1 || c === COLS - 1) ? 1 : 0)
+      ),
+
+      playerRow: 0,
+      playerCol: Math.floor(COLS / 2),
+      trail: [],
+      isDrawing: false,
+      drawStart: null,
+      retracting: false,
+      moveTimer: 0,
+      moveDelay: 60,
+      retractSpeedMul: 1.5,
+      invuln: 0,
+
+      fx: { freeze: 0, speed: 0, slow: 0, shield: 0 },
+      items: [],
+      itemSpawnTimer: ITEM_SPAWN * 0.5,
+
+      enemies: [],
+      enemyBullets: [],
+
+      bossAttackTimer: 30000,
+      bossCharging: false,
+
+      particles: [],
+      shieldRings: [],
+
+      overlayDirty: true,
+      overlayRects: [],
+      boundaryRects: [],
+
+      paused: false,
+      dead: false,
+      stageClearing: false,
+      bgKey: getStageBgKey(data?.stage || 1),
+    };
+
+    setWrapBackground(S.bgKey);
+
+    const enemyCount = Math.min(5, S.stage);
+    for (let i = 0; i < enemyCount; i++) {
+      const baseSpeed = CELL * (1.2 + S.stage * 0.38 + i * 0.04);
+      const kind = (i % 3 === 0) ? 'hunter' : (i % 3 === 1 ? 'zigzag' : 'bouncer');
+      S.enemies.push({
+        x: k.rand(CELL * 2, W - CELL * 2),
+        y: k.rand(CELL * 2, H - CELL * 2),
+        vx: (Math.random() > 0.5 ? 1 : -1) * baseSpeed,
+        vy: (Math.random() > 0.5 ? 1 : -1) * baseSpeed,
+        baseSpeed,
+        kind,
+        radius: kind === 'hunter' ? 5 : 4.5,
+        pulse: Math.random() * Math.PI * 2,
+        shootCd: randInt(2000, 4000),
+      });
+    }
+
+    const mmDef = MAIN_MONSTERS[Math.min(S.stage - 1, MAIN_MONSTERS.length - 1)];
+    const mmSpeed = CELL * (1.2 + S.stage * 0.38) * mmDef.spdMul;
+    S.mainMonster = {
+      x: k.rand(CELL * 5, W - CELL * 5),
+      y: k.rand(CELL * 5, H - CELL * 5),
+      vx: (Math.random() > 0.5 ? 1 : -1) * mmSpeed,
+      vy: (Math.random() > 0.5 ? 1 : -1) * mmSpeed,
+      baseSpeed: mmSpeed,
+      kind: 'boss',
+      pulse: 0,
+      shootCd: 600,
+      radius: mmDef.radius,
+      color: mmDef.color,
+      ring: mmDef.ring,
+      name: mmDef.name,
+      img: mmDef.img,
+      charging: false,
+    };
+
+    let bossSprite = null;
+    if (k.getSprite(mmDef.img)) {
+      bossSprite = k.add([
+        k.sprite(mmDef.img),
+        k.pos(S.mainMonster.x, S.mainMonster.y),
+        k.anchor('center'),
+        k.scale(0.55),
+        k.z(95),
+      ]);
+    }
+    let bossLabel = k.add([
+      k.pos(S.mainMonster.x, S.mainMonster.y - mmDef.radius - 8),
+      k.anchor('center'),
+      k.text(`★ ${mmDef.name}`, { size: 11, font: 'monospace' }),
+      k.color(255, 221, 68),
+      k.z(96),
+    ]);
+
+    const hudLives = k.add([k.pos(12, 8), k.text('', { size: 18, font: 'monospace' }), k.z(120)]);
+    const hudStage = k.add([k.pos(W / 2 - 74, 10), k.text('', { size: 15, font: 'monospace' }), k.color(125, 229, 255), k.z(120)]);
+    const hudPercent = k.add([k.pos(W / 2 + 14, 10), k.text('', { size: 15, font: 'monospace' }), k.color(255, 241, 118), k.z(120)]);
+    const hudScore = k.add([k.pos(W - 10, 10), k.anchor('topright'), k.text('', { size: 15, font: 'monospace' }), k.color(255, 180, 216), k.z(120)]);
+    const hudFx = k.add([k.pos(W / 2, H - 10), k.anchor('bot'), k.text('', { size: 16, font: 'monospace' }), k.z(120)]);
+
+    function refreshHUD() {
+      hudLives.text = '❤️'.repeat(Math.max(0, S.lives));
+      hudStage.text = `STAGE ${S.stage}`;
+      hudPercent.text = `${S.percent}%`;
+      hudScore.text = `SCORE: ${S.score}`;
+      const active = [];
+      if (S.fx.freeze > 0) active.push('✋');
+      if (S.fx.speed > 0) active.push('🏃');
+      if (S.fx.slow > 0) active.push('⌛');
+      if (S.fx.shield > 0) active.push('🛡');
+      hudFx.text = active.join(' ');
+    }
+
+    function updateClaimStats() {
+      let claimed = 0;
+      for (let r = 1; r < ROWS - 1; r++) {
+        for (let c = 1; c < COLS - 1; c++) {
+          if (S.grid[r][c] === 1) claimed++;
+        }
+      }
+      S.claimedCells = claimed;
+      S.percent = Math.floor((claimed / S.total) * 100);
+      refreshHUD();
+    }
+
+    function redrawOverlayCache() {
+      S.overlayRects.length = 0;
+      S.boundaryRects.length = 0;
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (S.grid[r][c] === 0 || S.grid[r][c] === 2) {
+            S.overlayRects.push({ x: c * CELL, y: r * CELL });
+          }
+        }
+      }
+
+      for (let r = 1; r < ROWS - 1; r++) {
+        for (let c = 1; c < COLS - 1; c++) {
+          if (S.grid[r][c] !== 0) continue;
+          const nearClaimed = S.grid[r - 1][c] === 1 || S.grid[r + 1][c] === 1 || S.grid[r][c - 1] === 1 || S.grid[r][c + 1] === 1;
+          if (nearClaimed) S.boundaryRects.push({ x: c * CELL + 1, y: r * CELL + 1 });
+        }
+      }
+
+      S.overlayDirty = false;
+    }
+
+    function addParticles(x, y, count, colors, cfg = {}) {
+      const minS = cfg.minS || 40;
+      const maxS = cfg.maxS || 180;
+      const life = cfg.life || 0.42;
+      const size = cfg.size || [1, 3];
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const spd = k.rand(minS, maxS);
+        const col = colors[randInt(0, colors.length - 1)];
+        S.particles.push({
+          x, y,
+          vx: Math.cos(a) * spd,
+          vy: Math.sin(a) * spd,
+          life,
+          maxLife: life,
+          size: k.rand(size[0], size[1]),
+          color: col,
+        });
+      }
+    }
+
+    function showItemMsg(msg) {
+      const px = S.playerCol * CELL + CELL / 2;
+      const py = S.playerRow * CELL + CELL / 2;
+      const t = k.add([
+        k.pos(px, py - 18),
+        k.anchor('center'),
+        k.text(msg, { size: 13, font: 'monospace' }),
+        k.color(240, 252, 255),
+        k.z(130),
+      ]);
+      let life = 1.6;
+      t.onUpdate(() => {
+        life -= k.dt();
+        t.pos = k.vec2(t.pos.x, t.pos.y - 20 * k.dt());
+        t.opacity = Math.max(0, life / 1.6);
+        if (life <= 0) k.destroy(t);
+      });
+    }
+
+    function activateShieldArc() {
+      S.enemyBullets = [];
+      const px = S.playerCol * CELL + CELL / 2;
+      const py = S.playerRow * CELL + CELL / 2;
+      for (let i = 0; i < 3; i++) {
+        S.shieldRings.push({ x: px, y: py, radius: 12, life: 0.7 + i * 0.12, speed: 240 + i * 65 });
+      }
+      S.invuln = Math.max(S.invuln, 2000);
+    }
+
+    function collectItem(type) {
+      const msgs = { freeze: '✋ 몬스터 정지!', speed: '🏃 5배 스피드!', shield: '🛡 방어막!', slow: '⌛ 감속!' };
+      showItemMsg(msgs[type]);
+      if (type === 'shield') {
+        activateShieldArc();
+        S.fx.shield = ITEM_DUR[type];
+      } else {
+        S.fx[type] = Math.max(S.fx[type], ITEM_DUR[type]);
+      }
+      refreshHUD();
+    }
+
+    function spawnItem(forcedType = null) {
+      const free = [];
+      for (let r = 2; r < ROWS - 2; r++) {
+        for (let c = 2; c < COLS - 2; c++) {
+          if (S.grid[r][c] === 0) free.push({ r, c });
+        }
+      }
+      if (!free.length) return;
+      const cell = free[randInt(0, free.length - 1)];
+      const type = forcedType || ITEM_TYPES[randInt(0, ITEM_TYPES.length - 1)];
+      const cx = cell.c * CELL + CELL / 2;
+      const cy = cell.r * CELL + CELL / 2;
+      const label = k.add([
+        k.pos(cx, cy),
+        k.anchor('center'),
+        k.text(ITEM_EMOJI[type], { size: 16, font: 'monospace' }),
+        k.z(98),
+      ]);
+      S.items.push({ type, row: cell.r, col: cell.c, timeLeft: ITEM_LIFE, label });
+    }
+
+    function checkItemPickup() {
+      for (let i = S.items.length - 1; i >= 0; i--) {
+        const it = S.items[i];
+        if (it.row === S.playerRow && it.col === S.playerCol) {
+          collectItem(it.type);
+          if (it.label) k.destroy(it.label);
+          S.items.splice(i, 1);
+        }
+      }
+    }
+
+    function findNearestClaimed(row, col) {
+      let best = { row: 0, col: 0, d: Infinity };
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (S.grid[r][c] !== 1) continue;
+          const d = Math.abs(r - row) + Math.abs(c - col);
+          if (d < best.d) best = { row: r, col: c, d };
+        }
+      }
+      return { row: best.row, col: best.col };
+    }
+
+    function isFrontier(r, c) {
+      if (S.grid[r][c] !== 1) return false;
+      const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && S.grid[nr][nc] === 0) return true;
+      }
+      return false;
+    }
+
+    function findNearestFrontier(row, col) {
+      let best = null;
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (!isFrontier(r, c)) continue;
+          const d = Math.abs(r - row) + Math.abs(c - col);
+          if (!best || d < best.d) best = { row: r, col: c, d };
+        }
+      }
+      return best || findNearestClaimed(row, col);
+    }
+
+    function showContinuePrompt() {
+      S.paused = true;
+      joyHide();
+      const gold = window.SharedWallet?.gold || 0;
+
+      showPanel(`
+        <div style="text-align:center;font-size:28px;color:#ff6b6b;font-weight:700;margin-bottom:8px">💀 GAME OVER</div>
+        <div style="text-align:center;font-size:14px;color:#fff;line-height:1.45;margin-bottom:14px">
+          100G로 이어가시겠습니까?<br>현재 보유: ${gold.toLocaleString()}G
+        </div>
+        <div class="ui-row">
+          <button class="ui-btn warn" id="contBtn">계속 (100G)</button>
+          <button class="ui-btn danger" id="quitBtn">포기</button>
+        </div>
+      `);
+
+      document.getElementById('contBtn').onclick = async () => {
+        if ((window.SharedWallet?.gold || 0) < 100) {
+          hidePanel();
+          k.go('gameover', { score: S.score, stage: S.stage });
+          return;
+        }
+        try { await window.SharedWallet?.spendGold?.(100); } catch (_) {}
+        hidePanel();
+        S.paused = false;
+        joyShow();
+        S.lives = 1;
+        S.fx = { freeze: 0, speed: 0, slow: 0, shield: 0 };
+        const respawn = findNearestFrontier(S.playerRow, S.playerCol);
+        S.playerRow = respawn.row;
+        S.playerCol = respawn.col;
+        S.invuln = 2500;
+        refreshHUD();
+      };
+
+      document.getElementById('quitBtn').onclick = () => {
+        hidePanel();
+        k.go('gameover', { score: S.score, stage: S.stage });
+      };
+    }
+
+    function playerDie() {
+      if (S.invuln > 0 || S.dead || S.stageClearing) return;
+
+      S.lives--;
+
+      for (const cell of S.trail) {
+        if (S.grid[cell.row][cell.col] === 2) S.grid[cell.row][cell.col] = 0;
+      }
+      S.overlayDirty = true;
+
+      S.isDrawing = false;
+      S.retracting = false;
+      S.drawStart = null;
+      S.trail = [];
+      S.enemyBullets = [];
+
+      spawnItem();
+      spawnItem();
+
+      if (S.lives <= 0) {
+        const gold = window.SharedWallet?.gold || 0;
+        if (gold >= 100) showContinuePrompt();
+        else k.go('gameover', { score: S.score, stage: S.stage });
+        return;
+      }
+
+      const respawn = findNearestFrontier(S.playerRow, S.playerCol);
+      S.playerRow = respawn.row;
+      S.playerCol = respawn.col;
+      S.invuln = 900;
+      refreshHUD();
+    }
+
+    function goClear(finalPercent = null) {
+      if (S.stageClearing) return;
+      S.stageClearing = true;
+      joyHide();
+      hidePanel();
+      k.wait(0.45, () => {
+        if (finalPercent !== null) S.percent = finalPercent;
+        k.go('clear', {
+          stage: S.stage,
+          score: S.score,
+          lives: S.lives,
+          percent: S.percent,
+          bgKey: S.bgKey,
+        });
+      });
+    }
+
+    function explodeEnemiesAndClear(finalPercent = null) {
+      if (S.mainMonster) {
+        addParticles(S.mainMonster.x, S.mainMonster.y, 36, [0xffd700, 0xffffff, S.mainMonster.color], { minS: 80, maxS: 260, life: 0.55, size: [2, 4] });
+        if (bossSprite) k.destroy(bossSprite);
+        if (bossLabel) k.destroy(bossLabel);
+        bossSprite = null;
+        bossLabel = null;
+        S.mainMonster = null;
+      }
+
+      if (!S.enemies.length) {
+        goClear(finalPercent);
+        return;
+      }
+
+      S.enemies.forEach((e, idx) => {
+        k.wait(idx * 0.085, () => {
+          addParticles(e.x, e.y, 24, [0xffd36e, 0xff7f6e, 0xffffff], { minS: 70, maxS: 230, life: 0.44, size: [1.4, 2.6] });
+        });
+      });
+      S.enemies = [];
+      S.enemyBullets = [];
+
+      k.wait(S.enemies.length * 0.085 + 0.46, () => goClear(finalPercent));
+    }
+
+    function captureTerritory() {
+      for (const cell of S.trail) S.grid[cell.row][cell.col] = 1;
+
+      const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+      const regions = [];
+
+      for (let r = 1; r < ROWS - 1; r++) {
+        for (let c = 1; c < COLS - 1; c++) {
+          if (S.grid[r][c] !== 0 || visited[r][c]) continue;
+          const queue = [{ r, c }];
+          visited[r][c] = true;
+          const cells = [];
+          for (let qi = 0; qi < queue.length; qi++) {
+            const cur = queue[qi];
+            cells.push(cur);
+            for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+              const nr = cur.r + dr;
+              const nc = cur.c + dc;
+              if (nr < 1 || nr >= ROWS - 1 || nc < 1 || nc >= COLS - 1) continue;
+              if (visited[nr][nc] || S.grid[nr][nc] !== 0) continue;
+              visited[nr][nc] = true;
+              queue.push({ r: nr, c: nc });
+            }
+          }
+          regions.push({ cells });
+        }
+      }
+
+      if (regions.length <= 1) {
+        S.isDrawing = false;
+        S.retracting = false;
+        S.drawStart = null;
+        S.trail = [];
+        S.overlayDirty = true;
+        updateClaimStats();
+        return;
+      }
+
+      regions.sort((a, b) => a.cells.length - b.cells.length);
+      const claimRegions = regions.slice(0, regions.length - 1);
+      const captureMask = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+      for (const reg of claimRegions) {
+        for (const cell of reg.cells) captureMask[cell.r][cell.c] = true;
+      }
+
+      let mainCaptured = false;
+      let bossRegionCells = 0;
+      if (S.mainMonster) {
+        const mmR = clamp(Math.floor(S.mainMonster.y / CELL), 0, ROWS - 1);
+        const mmC = clamp(Math.floor(S.mainMonster.x / CELL), 0, COLS - 1);
+        mainCaptured = captureMask[mmR][mmC];
+        if (mainCaptured) {
+          const found = claimRegions.find((reg) => reg.cells.some((cc) => cc.r === mmR && cc.c === mmC));
+          bossRegionCells = found ? found.cells.length : 0;
+        }
+      }
+
+      const toKill = [];
+      for (const e of S.enemies) {
+        const er = clamp(Math.floor(e.y / CELL), 0, ROWS - 1);
+        const ec = clamp(Math.floor(e.x / CELL), 0, COLS - 1);
+        if (captureMask[er][ec]) toKill.push(e);
+      }
+      toKill.forEach((e) => addParticles(e.x, e.y, 18, [0xff7848, 0xffd4a6, 0xffff66], { minS: 50, maxS: 180, life: 0.38 }));
+      S.enemies = S.enemies.filter((e) => !toKill.includes(e));
+      if (toKill.length > 0) S.score += toKill.length * 500 * S.stage;
+
+      let gained = 0;
+      for (const reg of claimRegions) {
+        for (const cell of reg.cells) {
+          if (S.grid[cell.r][cell.c] === 0) {
+            S.grid[cell.r][cell.c] = 1;
+            gained++;
+          }
+        }
+      }
+
+      for (let i = S.items.length - 1; i >= 0; i--) {
+        const it = S.items[i];
+        if (S.grid[it.row][it.col] === 1) {
+          collectItem(it.type);
+          if (it.label) k.destroy(it.label);
+          S.items.splice(i, 1);
+        }
+      }
+
+      S.isDrawing = false;
+      S.retracting = false;
+      S.drawStart = null;
+      S.trail = [];
+
+      if (gained > 0) {
+        S.score += gained * 50 * S.stage;
+        addParticles(S.playerCol * CELL + CELL / 2, S.playerRow * CELL + CELL / 2, 26, [0x9cfbff, 0xfff799, 0xff9fd6], { minS: 40, maxS: 180, life: 0.42, size: [1.5, 3.2] });
+        if (gained >= Math.ceil(S.total * 0.10)) {
+          activateShieldArc();
+          showItemMsg('10%↑ 방어막 발동!');
+        }
+      }
+
+      S.overlayDirty = true;
+      updateClaimStats();
+
+      if (mainCaptured && S.mainMonster) {
+        const mm = S.mainMonster;
+        addParticles(mm.x, mm.y, 44, [mm.color, 0xffffff, 0xffd700], { minS: 80, maxS: 280, life: 0.55, size: [2, 4.2] });
+        if (bossSprite) k.destroy(bossSprite);
+        if (bossLabel) k.destroy(bossLabel);
+        S.mainMonster = null;
+        bossSprite = null;
+        bossLabel = null;
+        S.score += 3000 * S.stage;
+        showItemMsg(`★ ${mm.name} 포획! +${(3000 * S.stage).toLocaleString()}점`);
+
+        const bossRegionPct = Math.floor((bossRegionCells / S.total) * 100);
+        const finalPercent = Math.max(0, 100 - bossRegionPct);
+        explodeEnemiesAndClear(finalPercent);
+        return;
+      }
+
+      if (S.percent >= TARGET_PERCENT) {
+        explodeEnemiesAndClear();
+      }
+    }
+
+    function stepRetreat() {
+      if (!S.trail.length) {
+        S.retracting = false;
+        S.isDrawing = false;
+        if (S.drawStart) {
+          S.playerRow = S.drawStart.row;
+          S.playerCol = S.drawStart.col;
+        }
+        S.drawStart = null;
+        return;
+      }
+
+      const removed = S.trail.pop();
+      if (S.grid[removed.row][removed.col] === 2) S.grid[removed.row][removed.col] = 0;
+      S.overlayDirty = true;
+
+      if (S.trail.length) {
+        const back = S.trail[S.trail.length - 1];
+        S.playerRow = back.row;
+        S.playerCol = back.col;
+      } else {
+        if (S.drawStart) {
+          S.playerRow = S.drawStart.row;
+          S.playerCol = S.drawStart.col;
+        }
+        S.retracting = false;
+        S.isDrawing = false;
+        S.drawStart = null;
+      }
+    }
+
+    function handleInput() {
+      let dr = 0;
+      let dc = 0;
+
+      const axisX = joyX || 0;
+      const axisY = joyY || 0;
+
+      if (k.isKeyDown('left') || k.isKeyDown('a')) dc = -1;
+      else if (k.isKeyDown('right') || k.isKeyDown('d')) dc = 1;
+      else if (k.isKeyDown('up') || k.isKeyDown('w')) dr = -1;
+      else if (k.isKeyDown('down') || k.isKeyDown('s')) dr = 1;
+      else {
+        if (Math.abs(axisX) > Math.abs(axisY) && Math.abs(axisX) > 0.25) dc = axisX < 0 ? -1 : 1;
+        else if (Math.abs(axisY) > 0.25) dr = axisY < 0 ? -1 : 1;
+      }
+
+      if (dr === 0 && dc === 0) {
+        if (S.isDrawing && !S.retracting && S.trail.length > 0) S.retracting = true;
+        return;
+      }
+      S.retracting = false;
+
+      const nr = S.playerRow + dr;
+      const nc = S.playerCol + dc;
+      if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+
+      const next = S.grid[nr][nc];
+      if (next === 2) return;
+
+      if (next === 0) {
+        if (!S.isDrawing) {
+          S.isDrawing = true;
+          S.drawStart = { row: S.playerRow, col: S.playerCol };
+          S.trail = [];
+        }
+
+        if (S.grid[S.playerRow][S.playerCol] === 0) {
+          S.grid[S.playerRow][S.playerCol] = 2;
+          S.trail.push({ row: S.playerRow, col: S.playerCol });
+        }
+
+        S.playerRow = nr;
+        S.playerCol = nc;
+
+        if (S.grid[S.playerRow][S.playerCol] === 0) {
+          S.grid[S.playerRow][S.playerCol] = 2;
+          S.trail.push({ row: S.playerRow, col: S.playerCol });
+        }
+        S.overlayDirty = true;
+        return;
+      }
+
+      if (next === 1) {
+        S.playerRow = nr;
+        S.playerCol = nc;
+        if (S.isDrawing) {
+          if (S.trail.length <= 2) {
+            for (const cell of S.trail) if (S.grid[cell.row][cell.col] === 2) S.grid[cell.row][cell.col] = 0;
+            S.trail = [];
+            S.isDrawing = false;
+            S.retracting = false;
+            S.drawStart = null;
+            S.overlayDirty = true;
+          } else {
+            captureTerritory();
+          }
+        }
+      }
+    }
+
+    function fireEnemyBullet(enemy, speed) {
+      const px = S.playerCol * CELL + CELL / 2;
+      const py = S.playerRow * CELL + CELL / 2;
+      const dx = px - enemy.x;
+      const dy = py - enemy.y;
+      const d = Math.hypot(dx, dy) || 1;
+      S.enemyBullets.push({
+        x: enemy.x,
+        y: enemy.y,
+        vx: (dx / d) * speed,
+        vy: (dy / d) * speed,
+        r: Math.min(3.5, 1.8 + S.stage * 0.1),
+        life: 99999,
+      });
+    }
+
+    function triggerBossMegaAttack() {
+      if (!S.mainMonster || S.bossCharging) return;
+      const owned = [];
+      for (let r = 2; r < ROWS - 2; r++) {
+        for (let c = 2; c < COLS - 2; c++) {
+          if (S.grid[r][c] === 1) owned.push({ r, c });
+        }
+      }
+      if (owned.length < 10) return;
+
+      const target = owned[randInt(0, owned.length - 1)];
+      const tx = target.c * CELL + CELL / 2;
+      const ty = target.r * CELL + CELL / 2;
+      const mm = S.mainMonster;
+      S.bossCharging = true;
+      mm.charging = true;
+
+      showItemMsg('⚠️ 보스 폭격 준비!');
+      S.shieldRings.push({ x: tx, y: ty, radius: CELL * 2, life: 1.2, speed: 90, warn: true });
+
+      k.wait(1.5, () => {
+        if (!S.mainMonster) { S.bossCharging = false; return; }
+        mm.charging = false;
+        const dx = tx - mm.x;
+        const dy = ty - mm.y;
+        const d = Math.hypot(dx, dy) || 1;
+        const speed = CELL * 2.8;
+        S.enemyBullets.push({
+          x: mm.x,
+          y: mm.y,
+          vx: (dx / d) * speed,
+          vy: (dy / d) * speed,
+          r: 22,
+          life: 7000,
+          isMega: true,
+        });
+        S.bossCharging = false;
+      });
+    }
+
+    function megaBulletImpact(x, y) {
+      const radius = 7;
+      const impactR = Math.floor(y / CELL);
+      const impactC = Math.floor(x / CELL);
+      for (let r = impactR - radius; r <= impactR + radius; r++) {
+        for (let c = impactC - radius; c <= impactC + radius; c++) {
+          if (r < 1 || r >= ROWS - 1 || c < 1 || c >= COLS - 1) continue;
+          const dr = r - impactR;
+          const dc = c - impactC;
+          if (Math.hypot(dr, dc) <= radius && S.grid[r][c] === 1) S.grid[r][c] = 0;
+        }
+      }
+      S.overlayDirty = true;
+      addParticles(x, y, 64, [0xff4400, 0xff8800, 0xffdd00, 0xff0000, 0xffffff], { minS: 80, maxS: 360, life: 0.7, size: [2.4, 4.1] });
+      S.shieldRings.push({ x, y, radius: CELL * 4, life: 0.36, speed: 420, warn: true });
+      updateClaimStats();
+      showItemMsg('💥 영역 폭격!');
+    }
+
+    function updateEnemies(deltaMs) {
+      if (S.fx.freeze > 0) return;
+      const slowMul = S.fx.slow > 0 ? 0.5 : 1;
+      const dt = (deltaMs / 1000) * slowMul;
+      const px = S.playerCol * CELL + CELL / 2;
+      const py = S.playerRow * CELL + CELL / 2;
+
+      if (S.mainMonster) {
+        const mm = S.mainMonster;
+        mm.pulse += dt * 5;
+        const dx = px - mm.x;
+        const dy = py - mm.y;
+        const d = Math.hypot(dx, dy) || 1;
+
+        if (S.isDrawing) {
+          mm.vx = mm.vx * 0.82 + (dx / d) * mm.baseSpeed * 0.24;
+          mm.vy = mm.vy * 0.82 + (dy / d) * mm.baseSpeed * 0.24;
+        }
+
+        let nx = mm.x + mm.vx * dt;
+        let ny = mm.y + mm.vy * dt;
+        if (nx < CELL || nx > W - CELL) { mm.vx *= -1; nx = clamp(nx, CELL, W - CELL); }
+        if (ny < CELL || ny > H - CELL) { mm.vy *= -1; ny = clamp(ny, CELL, H - CELL); }
+
+        const gr = (v) => clamp(Math.floor(v / CELL), 0, ROWS - 1);
+        if (S.grid[gr(ny)][gr(nx + Math.sign(mm.vx || 1) * mm.radius)] === 1) mm.vx *= -1;
+        if (S.grid[gr(ny + Math.sign(mm.vy || 1) * mm.radius)][gr(nx)] === 1) mm.vy *= -1;
+
+        mm.x += mm.vx * dt;
+        mm.y += mm.vy * dt;
+        mm.shootCd -= deltaMs;
+
+        if (mm.shootCd <= 0) {
+          const speed = CELL * (3.2 + S.stage * 0.28);
+          S.enemyBullets.push({
+            x: mm.x,
+            y: mm.y,
+            vx: (dx / d) * speed,
+            vy: (dy / d) * speed,
+            r: 4,
+            life: 99999,
+          });
+          mm.shootCd = Math.max(800, 2000 - S.stage * 80) + randInt(-150, 150);
+        }
+
+        if (bossSprite) bossSprite.pos = k.vec2(mm.x, mm.y);
+        if (bossLabel) bossLabel.pos = k.vec2(mm.x, mm.y - mm.radius - 8);
+      }
+
+      for (const e of S.enemies) {
+        e.pulse += dt * 6;
+
+        if (e.kind === 'hunter' && S.isDrawing) {
+          const dx = px - e.x;
+          const dy = py - e.y;
+          const d = Math.hypot(dx, dy) || 1;
+          const aim = e.baseSpeed * 1.06;
+          e.vx = (e.vx * 0.9) + (dx / d) * aim * 0.1;
+          e.vy = (e.vy * 0.9) + (dy / d) * aim * 0.1;
+        } else if (e.kind === 'zigzag') {
+          const w = Math.sin(performance.now() * 0.006 + e.pulse) * 0.22;
+          const vx = e.vx;
+          e.vx = vx * Math.cos(w) - e.vy * Math.sin(w);
+          e.vy = vx * Math.sin(w) + e.vy * Math.cos(w);
+        }
+
+        let nx = e.x + e.vx * dt;
+        let ny = e.y + e.vy * dt;
+
+        if (nx < CELL || nx > W - CELL) {
+          e.vx *= -1;
+          nx = clamp(nx, CELL, W - CELL);
+        }
+        if (ny < CELL || ny > H - CELL) {
+          e.vy *= -1;
+          ny = clamp(ny, CELL, H - CELL);
+        }
+
+        const testCell = (x, y) => {
+          const rr = clamp(Math.floor(y / CELL), 0, ROWS - 1);
+          const cc = clamp(Math.floor(x / CELL), 0, COLS - 1);
+          return S.grid[rr][cc];
+        };
+
+        const hitX = testCell(nx + Math.sign(e.vx || 1) * e.radius, e.y) === 1;
+        const hitY = testCell(e.x, ny + Math.sign(e.vy || 1) * e.radius) === 1;
+        if (hitX) e.vx *= -1;
+        if (hitY) e.vy *= -1;
+
+        e.x += e.vx * dt;
+        e.y += e.vy * dt;
+
+        e.shootCd -= deltaMs;
+        if (e.shootCd <= 0) {
+          const intervalBase = e.kind === 'hunter'
+            ? Math.max(1200, 3600 - S.stage * 180)
+            : Math.max(2000, 5000 - S.stage * 200);
+          if (e.kind !== 'hunter' || S.isDrawing) {
+            const bulletSpeed = CELL * (2.6 + S.stage * 0.20);
+            fireEnemyBullet(e, bulletSpeed);
+          }
+          e.shootCd = intervalBase + randInt(-300, 300);
+        }
+      }
+    }
+
+    function updateBullets(deltaMs) {
+      if (S.fx.freeze > 0) return;
+      const slowMul = S.fx.slow > 0 ? 0.5 : 1;
+      const dt = (deltaMs / 1000) * slowMul;
+      for (let i = S.enemyBullets.length - 1; i >= 0; i--) {
+        const b = S.enemyBullets[i];
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        b.life -= deltaMs;
+
+        if (b.life <= 0 || b.x < -12 || b.x > W + 12 || b.y < -12 || b.y > H + 12) {
+          S.enemyBullets.splice(i, 1);
+          continue;
+        }
+
+        if (b.isMega) {
+          const br = clamp(Math.floor(b.y / CELL), 0, ROWS - 1);
+          const bc = clamp(Math.floor(b.x / CELL), 0, COLS - 1);
+          if (S.grid[br][bc] === 1) {
+            megaBulletImpact(b.x, b.y);
+            S.enemyBullets.splice(i, 1);
+          }
+        }
+      }
+    }
+
+    function checkCollisions() {
+      if (S.fx.shield > 0) return;
+
+      const px = S.playerCol * CELL + CELL / 2;
+      const py = S.playerRow * CELL + CELL / 2;
+
+      if (S.mainMonster) {
+        const mm = S.mainMonster;
+        const dist = Math.hypot(px - mm.x, py - mm.y);
+        if (dist < mm.radius + 5 && S.isDrawing) {
+          playerDie();
+          return;
+        }
+      }
+
+      for (const e of S.enemies) {
+        const dist = Math.hypot(px - e.x, py - e.y);
+        if (dist < e.radius + 5) {
+          if (S.isDrawing) {
+            playerDie();
+            return;
+          }
+          continue;
+        }
+
+        if (S.isDrawing) {
+          const er = clamp(Math.floor(e.y / CELL), 0, ROWS - 1);
+          const ec = clamp(Math.floor(e.x / CELL), 0, COLS - 1);
+          for (let rr = er - 1; rr <= er + 1; rr++) {
+            for (let cc = ec - 1; cc <= ec + 1; cc++) {
+              if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
+              if (S.grid[rr][cc] === 2) {
+                playerDie();
+                return;
+              }
+            }
+          }
+        }
+      }
+
+      for (let i = S.enemyBullets.length - 1; i >= 0; i--) {
+        const b = S.enemyBullets[i];
+        const dist = Math.hypot(px - b.x, py - b.y);
+        if (dist < b.r + 6) {
+          S.enemyBullets.splice(i, 1);
+          if (S.isDrawing) {
+            playerDie();
+            return;
+          }
+          continue;
+        }
+
+        if (S.isDrawing) {
+          const br = clamp(Math.floor(b.y / CELL), 0, ROWS - 1);
+          const bc = clamp(Math.floor(b.x / CELL), 0, COLS - 1);
+          if (S.grid[br][bc] === 2) {
+            S.enemyBullets.splice(i, 1);
+            playerDie();
+            return;
+          }
+        }
+      }
+    }
+
+    updateClaimStats();
+    redrawOverlayCache();
+
+    k.onUpdate(() => {
+      const deltaMs = k.dt() * 1000;
+      if (S.paused || S.dead || S.stageClearing) return;
+
+      S.moveTimer += deltaMs;
+      const baseDelay = S.fx.speed > 0 ? S.moveDelay / 5 : S.moveDelay;
+      const stepDelay = S.retracting ? baseDelay / S.retractSpeedMul : baseDelay;
+      if (S.moveTimer >= stepDelay) {
+        if (S.retracting) stepRetreat();
+        else {
+          handleInput();
+          checkItemPickup();
+        }
+        S.moveTimer = 0;
+      }
+
+      if (S.invuln > 0) S.invuln -= deltaMs;
+      if (S.fx.freeze > 0) S.fx.freeze -= deltaMs;
+      if (S.fx.speed > 0) S.fx.speed -= deltaMs;
+      if (S.fx.slow > 0) S.fx.slow -= deltaMs;
+      if (S.fx.shield > 0) S.fx.shield -= deltaMs;
+
+      S.itemSpawnTimer -= deltaMs;
+      if (S.itemSpawnTimer <= 0 && S.items.length < MAX_ITEMS) {
+        spawnItem();
+        S.itemSpawnTimer = ITEM_SPAWN;
+      }
+
+      for (let i = S.items.length - 1; i >= 0; i--) {
+        const it = S.items[i];
+        it.timeLeft -= deltaMs;
+        if (it.timeLeft <= 0) {
+          if (it.label) k.destroy(it.label);
+          S.items.splice(i, 1);
+          continue;
+        }
+        if (it.timeLeft <= ITEM_BLINK) {
+          if (it.label) it.label.opacity = (Math.floor(performance.now() / 250) % 2 === 0 ? 1 : 0.15);
+        }
+      }
+
+      if (S.mainMonster && !S.bossCharging) {
+        S.bossAttackTimer -= deltaMs;
+        if (S.bossAttackTimer <= 0) {
+          triggerBossMegaAttack();
+          S.bossAttackTimer = 30000;
+        }
+      }
+
+      updateEnemies(deltaMs);
+      updateBullets(deltaMs);
+      if (S.invuln <= 0) checkCollisions();
+
+      for (let i = S.particles.length - 1; i >= 0; i--) {
+        const p = S.particles[i];
+        p.life -= k.dt();
+        p.x += p.vx * k.dt();
+        p.y += p.vy * k.dt();
+        if (p.life <= 0) S.particles.splice(i, 1);
+      }
+
+      for (let i = S.shieldRings.length - 1; i >= 0; i--) {
+        const r = S.shieldRings[i];
+        r.life -= k.dt();
+        r.radius += r.speed * k.dt();
+        if (r.life <= 0) S.shieldRings.splice(i, 1);
+      }
+
+      if (S.overlayDirty) redrawOverlayCache();
+      refreshHUD();
+    });
+
+    k.onDraw(() => {
+      // Canvas backdrop tint (actual stage image comes from #game-wrap bg)
+      k.drawRect({ pos: k.vec2(0, 0), width: W, height: H, color: k.rgb(7, 8, 20), opacity: 0.33 });
+
+      // Overlay cache
+      for (const rect of S.overlayRects) {
+        k.drawRect({ pos: k.vec2(rect.x, rect.y), width: CELL, height: CELL, color: k.rgb(2, 3, 10), opacity: 0.965 });
+      }
+      for (const b of S.boundaryRects) {
+        k.drawRect({ pos: k.vec2(b.x, b.y), width: CELL - 2, height: CELL - 2, color: k.rgb(190, 198, 255), opacity: 0.15 });
+      }
+
+      // Frontier border
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (S.grid[r][c] === 1 && (r === 0 || c === 0 || r === ROWS - 1 || c === COLS - 1)) {
+            k.drawRect({ pos: k.vec2(c * CELL + 0.5, r * CELL + 0.5), width: CELL - 1, height: CELL - 1, color: k.rgb(62, 158, 255), opacity: 0.48 });
+          }
+        }
+      }
+
+      // Trail
+      let prev = null;
+      for (const t of S.trail) {
+        const cx = t.col * CELL + CELL / 2;
+        const cy = t.row * CELL + CELL / 2;
+        k.drawCircle({ pos: k.vec2(cx, cy), radius: 3, color: k.rgb(138, 255, 255), opacity: 0.38 });
+        if (prev) {
+          k.drawLine({ p1: k.vec2(prev.x, prev.y), p2: k.vec2(cx, cy), width: 2.5, color: k.rgb(0, 255, 255), opacity: 0.92 });
+        }
+        prev = { x: cx, y: cy };
+      }
+
+      // Enemies
+      for (const e of S.enemies) {
+        const glow = 10 + Math.sin(e.pulse) * 3;
+        k.drawCircle({ pos: k.vec2(e.x, e.y), radius: glow, color: k.rgb(255, 79, 50), opacity: 0.18 });
+        k.drawCircle({ pos: k.vec2(e.x, e.y), radius: e.radius, color: k.rgb(255, 120, 72), opacity: 0.85 });
+        k.drawCircle({ pos: k.vec2(e.x - 1.5, e.y - 1.5), radius: 2, color: k.rgb(255, 212, 166), opacity: 0.65 });
+      }
+
+      // Boss fallback / effects
+      if (S.mainMonster) {
+        const mm = S.mainMonster;
+        const pulse = 0.6 + 0.3 * Math.sin(mm.pulse);
+        const glowR = mm.radius + 6 + 3 * Math.sin(mm.pulse * 1.3);
+        const [rr, rg, rb] = hex2rgb(mm.ring);
+        const [cr, cg, cb] = hex2rgb(mm.color);
+
+        k.drawCircle({ pos: k.vec2(mm.x, mm.y), radius: glowR, color: k.rgb(rr, rg, rb), opacity: 0.44 });
+        k.drawCircle({ pos: k.vec2(mm.x, mm.y), radius: glowR + 5, color: k.rgb(255, 255, 255), opacity: 0.22 });
+
+        if (!bossSprite) {
+          k.drawCircle({ pos: k.vec2(mm.x, mm.y), radius: mm.radius + 4, color: k.rgb(cr, cg, cb), opacity: 0.2 });
+          k.drawCircle({ pos: k.vec2(mm.x, mm.y), radius: mm.radius, color: k.rgb(cr, cg, cb), opacity: 0.9 });
+          k.drawCircle({ pos: k.vec2(mm.x - mm.radius * 0.3, mm.y - mm.radius * 0.3), radius: mm.radius * 0.32, color: k.rgb(255, 255, 255), opacity: 0.7 * pulse });
+        }
+
+        if (mm.charging) {
+          const flashAlpha = 0.5 + 0.5 * Math.sin(performance.now() * 0.025);
+          k.drawCircle({ pos: k.vec2(mm.x, mm.y), radius: mm.radius * 2.2, color: k.rgb(255, 68, 0), opacity: 0.55 * flashAlpha });
+          k.drawCircle({ pos: k.vec2(mm.x, mm.y), radius: mm.radius * 2.5, color: k.rgb(255, 136, 0), opacity: 0.42 * flashAlpha });
+        }
+      }
+
+      // Bullets
+      for (const b of S.enemyBullets) {
+        if (b.isMega) {
+          const pulse = 0.7 + 0.3 * Math.sin(performance.now() * 0.01);
+          k.drawCircle({ pos: k.vec2(b.x, b.y), radius: b.r + 8, color: k.rgb(255, 34, 0), opacity: 0.3 * pulse });
+          k.drawCircle({ pos: k.vec2(b.x, b.y), radius: b.r, color: k.rgb(255, 102, 0), opacity: 0.9 });
+          k.drawCircle({ pos: k.vec2(b.x, b.y), radius: b.r * 0.5, color: k.rgb(255, 215, 0), opacity: 0.85 });
+        } else {
+          k.drawCircle({ pos: k.vec2(b.x, b.y), radius: b.r, color: k.rgb(255, 244, 124), opacity: 0.95 });
+        }
+      }
+
+      // Items glow
+      const glowColors = { freeze: [136,221,255], speed: [255,255,136], shield: [136,255,136], slow: [255,187,136] };
+      for (const it of S.items) {
+        const cx = it.col * CELL + CELL / 2;
+        const cy = it.row * CELL + CELL / 2;
+        const pulse = 0.5 + 0.35 * Math.sin(performance.now() * 0.005 + it.col);
+        const alpha = it.timeLeft <= ITEM_BLINK ? (Math.floor(performance.now() / 250) % 2 === 0 ? pulse : 0.1) : pulse;
+        const [r, g, b] = glowColors[it.type];
+        k.drawCircle({ pos: k.vec2(cx, cy), radius: CELL * 0.72, color: k.rgb(r, g, b), opacity: alpha * 0.5 });
+      }
+
+      // Player
+      const px = S.playerCol * CELL + CELL / 2;
+      const py = S.playerRow * CELL + CELL / 2;
+      const blink = S.invuln > 0 ? (Math.floor(performance.now() / 80) % 2 === 0 ? 0.45 : 1) : 1;
+
+      k.drawCircle({ pos: k.vec2(px, py), radius: 6, color: k.rgb(0, 0, 0), opacity: 0.9 * blink });
+      k.drawCircle({ pos: k.vec2(px, py), radius: 6, color: k.rgb(0, 255, 255), opacity: 0.35 * blink });
+      k.drawCircle({ pos: k.vec2(px, py), radius: 3.5, color: k.rgb(255, 255, 255), opacity: 1 * blink });
+      k.drawCircle({ pos: k.vec2(px, py), radius: 1.5, color: k.rgb(10, 15, 26), opacity: 0.95 * blink });
+
+      if (!S.isDrawing && S.invuln <= 0) {
+        const sp = Math.sin(performance.now() * 0.006);
+        const shieldR = 9 + sp * 1.5;
+        k.drawCircle({ pos: k.vec2(px, py), radius: shieldR, color: k.rgb(68, 255, 221), opacity: (0.55 + sp * 0.2) * blink });
+        k.drawCircle({ pos: k.vec2(px, py), radius: shieldR + 3, color: k.rgb(136, 255, 238), opacity: (0.2 + sp * 0.1) * blink });
+      }
+
+      // Custom rings / particles
+      for (const ring of S.shieldRings) {
+        const alpha = Math.max(0, ring.life / (ring.warn ? 1.2 : 0.82));
+        if (ring.warn) {
+          k.drawCircle({ pos: k.vec2(ring.x, ring.y), radius: ring.radius, color: k.rgb(255, 102, 0), opacity: alpha * 0.4 });
+        } else {
+          k.drawCircle({ pos: k.vec2(ring.x, ring.y), radius: ring.radius, color: k.rgb(68, 255, 136), opacity: alpha * 0.44 });
+          k.drawCircle({ pos: k.vec2(ring.x, ring.y), radius: ring.radius + 5, color: k.rgb(170, 255, 204), opacity: alpha * 0.22 });
+        }
+      }
+
+      for (const p of S.particles) {
+        const [r, g, b] = hex2rgb(p.color);
+        k.drawCircle({ pos: k.vec2(p.x, p.y), radius: p.size, color: k.rgb(r, g, b), opacity: Math.max(0, p.life / p.maxLife) });
+      }
+
+      // HUD top bar
+      k.drawRect({ pos: k.vec2(0, 0), width: W, height: 32, color: k.rgb(0, 0, 0), opacity: 0.45 });
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────
+  // Scene: clear
+  // ──────────────────────────────────────────────────────────────
+  k.scene('clear', (data) => {
+    joyHide();
+    const stage = data?.stage || 1;
+    const score = data?.score || 0;
+    const lives = typeof data?.lives === 'number' ? data.lives : 3;
+    const percent = data?.percent || 0;
+    const bgKey = data?.bgKey || getStageBgKey(stage);
+
+    setWrapBackground(bgKey);
+    setUnlockedStage(stage + 1);
+
+    const goldReward = stage * STAGE_REWARD;
+    if (window.SharedWallet) window.SharedWallet.addGold(goldReward);
+    setLRBestStage(stage);
+
+    const clearBonus = 2000 * stage;
+    const totalScore = score + clearBonus;
+    const stars = percent >= 95 ? 3 : percent >= 90 ? 2 : 1;
+
+    showPanel(`
+      <div style="text-align:center;font-size:44px;color:#ffd56b;font-weight:800;text-shadow:0 2px 0 #6b3400">STAGE CLEAR!</div>
+      <div style="text-align:center;font-size:70px;color:#fff;margin-top:10px">${percent}%</div>
+      <div style="text-align:center;color:#c8e8ff;font-size:15px;letter-spacing:1px">CAPTURED</div>
+      <div style="text-align:center;font-size:46px;margin-top:6px">${'★'.repeat(stars)}<span style="color:#444466">${'★'.repeat(3 - stars)}</span></div>
+
+      <div class="score-line" style="color:#ffb4d8">SCORE: ${score}</div>
+      <div class="score-line" style="color:#9cfbff">CLEAR BONUS: +${clearBonus}</div>
+      <div class="score-line" style="color:#fff;font-size:19px">TOTAL: ${totalScore}</div>
+      <div class="score-line" style="color:#ffd700">💰 +${goldReward.toLocaleString()} G 획득!</div>
+
+      <button class="ui-btn next" id="nextBtn" style="margin-top:14px">${stage < STAGE_COUNT ? 'NEXT STAGE →' : '🏠 BACK TO MENU'}</button>
+    `);
+
+    document.getElementById('nextBtn').onclick = () => {
+      hidePanel();
+      if (stage < STAGE_COUNT) k.go('game', { stage: stage + 1, score: totalScore, lives });
+      else k.go('menu');
+    };
+
+    k.onDraw(() => {
+      k.drawRect({ pos: k.vec2(0, 0), width: W, height: H, color: k.rgb(0, 0, 0), opacity: 0.48 });
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────
+  // Scene: gameover
+  // ──────────────────────────────────────────────────────────────
+  k.scene('gameover', (data) => {
+    joyHide();
+    setWrapBackground('');
+
+    const score = data?.score || 0;
+    const stage = data?.stage || 1;
+
+    showPanel(`
+      <div style="text-align:center;font-size:52px;color:#ff6666;font-weight:800;margin-bottom:10px">GAME OVER</div>
+      <div style="text-align:center;font-size:22px;color:#fff;margin-bottom:16px">FINAL SCORE: ${score}</div>
+      <div class="ui-row">
+        <button class="ui-btn primary" id="retryBtn">RETRY</button>
+        <button class="ui-btn danger" id="menuBtn">MENU</button>
+      </div>
+    `);
+
+    document.getElementById('retryBtn').onclick = () => {
+      hidePanel();
+      k.go('game', { stage, score: 0, lives: 3 });
+    };
+    document.getElementById('menuBtn').onclick = () => {
+      hidePanel();
+      k.go('menu');
+    };
+
+    k.onDraw(() => {
+      k.drawRect({ pos: k.vec2(0, 0), width: W, height: H, color: k.rgb(0, 0, 0), opacity: 0.86 });
+    });
+  });
+
+  k.go('boot');
+})();
+</script>
 </body>
 </html>
