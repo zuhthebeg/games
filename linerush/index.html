@@ -251,30 +251,21 @@
     } catch (_) {}
 
     try {
-      const resp = await fetch('https://llm.cocy.io/v1/chat/completions', {
+      const resp = await fetch(`${RELAY}/api/llm/boss`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [{
-            role: 'system',
-            content: `너는 게임 보스 "${bossData.boss.name}". 성격: ${bossData.boss.personality}. 대표대사: "${bossData.boss.catchphrase}".
-${bossData.encounterCount > 0 ? `이 플레이어와 ${bossData.encounterCount}번 만남. 최근: ${JSON.stringify((bossData.history || []).slice(0,3))}` : '처음 만남.'}
-현재 상황: 스테이지 ${stage}, 영역 ${percent}% 점령됨, 플레이어 목숨 ${lives}.
-${triggerType === 'greeting' ? '가볍게 인사/겁주기. 1~2문장.' : '분노/절박한 대사 + 필살기 선택. 1~2문장.'}
-${triggerType === 'desperate' ? 'JSON으로 응답: {"dialogue":"대사","attack":"spiral|earthquake|blackout|split|laser|teleport|magnet|freeze_reverse"}' : 'JSON으로 응답: {"dialogue":"대사"}'}
-짧고 임팩트있게. 이모지 금지.`,
-          }],
+          bossId,
+          playerId,
+          stage,
+          percent,
+          lives,
+          triggerType,
+          gameId: 'linerush',
         }),
       }).then((r) => r.json());
 
-      try {
-        const content = resp?.choices?.[0]?.message?.content || '';
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) return JSON.parse(jsonMatch[0]);
-        return { dialogue: String(content || '') };
-      } catch (_) {
-        return null;
-      }
+      return resp || null;
     } catch (_) {
       return null;
     }
@@ -604,6 +595,7 @@ ${triggerType === 'desperate' ? 'JSON으로 응답: {"dialogue":"대사","attack
           player_id: playerId,
           boss_id: currentBossId,
           game_id: 'linerush',
+          gameId: 'linerush',
           result: cleared ? 'killed' : 'lost',
           stage: S.stage,
           score: S.score,
