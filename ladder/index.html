@@ -148,7 +148,7 @@ const COLORS = [
   '#ff8844','#88ff44','#ff4488','#44ccaa','#ffff44','#cc88ff','#ff6688',
   '#88ddff','#ffcc44','#66ffaa','#dd66ff','#ff8866','#66aaff'
 ];
-const DEFAULT_RESULTS = ['당첨!','꽝','벌칙!','꽝','당첨!','꽝','벌칙!','꽝','당첨!','꽝','벌칙!','꽝','당첨!','꽝'];
+const DEFAULT_RESULTS = DEFAULT_NAMES.map((_, i) => String(i + 1));
 
 let names = [...DEFAULT_NAMES];
 let results = [...DEFAULT_RESULTS];
@@ -177,7 +177,7 @@ function buildInputs() {
     `<input class="name-input" value="${n}" data-i="${i}" onchange="names[${i}]=this.value">`
   ).join('');
   // Ensure results array matches names length
-  while (results.length < names.length) results.push('꽝');
+  while (results.length < names.length) results.push(String(results.length + 1));
   while (results.length > names.length) results.pop();
   rr.innerHTML = results.map((r, i) =>
     `<input class="result-input" value="${r}" data-i="${i}" onchange="results[${i}]=this.value">`
@@ -422,7 +422,7 @@ function revealAll() {
 
 function addPerson() {
   names.push('참가자');
-  results.push('꽝');
+  results.push(String(names.length));
   buildInputs();
   shuffle();
 }
