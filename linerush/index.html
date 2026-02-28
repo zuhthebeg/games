@@ -2214,19 +2214,21 @@
     setUnlockedStage(stage + 1);
 
     const goldReward = stage * STAGE_REWARD;
-    let goldBefore = 0, goldAfter = 0;
     try {
+      // Sync SharedWallet from localStorage first, then add
       const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
-      goldBefore = d.gold || 0;
-      d.gold = goldBefore + goldReward;
-      goldAfter = d.gold;
+      const currentGold = d.gold || 0;
+      d.gold = currentGold + goldReward;
       localStorage.setItem('enhance_game_v3', JSON.stringify(d));
       if (window.SharedWallet) {
-        window.SharedWallet.gold = goldAfter;
+        window.SharedWallet.gold = d.gold;
+        // Force re-inject UI bar if missing
+        if (!document.getElementById('sw-bar') && window.SharedWallet._injectUI) {
+          window.SharedWallet._injectUI();
+        }
         window.SharedWallet._updateUI?.();
       }
-    } catch (e) { alert('[LR] addGold error: ' + e); }
-    alert(`[DEBUG] Gold: ${goldBefore} → ${goldAfter} (+${goldReward})`);
+    } catch (_) {}
     setLRBestStage(stage);
 
     const clearBonus = 2000 * stage;
