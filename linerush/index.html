@@ -227,6 +227,20 @@
     } catch (_) {}
   }
 
+  function getLocalGold() {
+    try {
+      return JSON.parse(localStorage.getItem('enhance_game_v3') || '{}').gold || 0;
+    } catch (_) { return 0; }
+  }
+  function setLocalGold(g) {
+    try {
+      const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
+      d.gold = Math.max(0, g);
+      localStorage.setItem('enhance_game_v3', JSON.stringify(d));
+      if (window.SharedWallet) { window.SharedWallet.gold = d.gold; window.SharedWallet._updateUI?.(); }
+    } catch (_) {}
+  }
+
   function getBossIdForStage(stage) {
     const idx = Math.max(0, Math.min(STAGE_BOSS_IDS.length - 1, Math.floor(stage) - 1));
     return STAGE_BOSS_IDS[idx] || 'slime';
@@ -1166,19 +1180,7 @@
       showItemMsg('⚠️ 보스가 라인을 파괴!');
     }
 
-    function getLocalGold() {
-      try {
-        return JSON.parse(localStorage.getItem('enhance_game_v3') || '{}').gold || 0;
-      } catch (_) { return 0; }
-    }
-    function setLocalGold(g) {
-      try {
-        const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
-        d.gold = Math.max(0, g);
-        localStorage.setItem('enhance_game_v3', JSON.stringify(d));
-        if (window.SharedWallet) { window.SharedWallet.gold = d.gold; window.SharedWallet._updateUI?.(); }
-      } catch (_) {}
-    }
+    // gold helpers moved to global scope
 
     function showContinuePrompt() {
       S.paused = true;
