@@ -13,69 +13,86 @@ body {
   font-family: 'Trebuchet MS', sans-serif;
   min-height: 100dvh;
   padding-top: calc(48px + env(safe-area-inset-top));
-  overflow-x: hidden;
 }
-.wrap { max-width: 600px; margin: 0 auto; padding: 12px 8px 20px; }
-h1 { text-align: center; font-size: 22px; color: #ffd700; margin-bottom: 4px; }
-.sub { text-align: center; font-size: 12px; color: #8888bb; margin-bottom: 10px; }
+.wrap { max-width: 100%; margin: 0 auto; padding: 10px 4px 20px; }
+h1 { text-align: center; font-size: 20px; color: #ffd700; margin-bottom: 2px; }
+.sub { text-align: center; font-size: 11px; color: #8888bb; margin-bottom: 8px; }
 .toolbar {
-  display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap;
+  display: flex; gap: 5px; justify-content: center; margin-bottom: 8px; flex-wrap: wrap;
 }
 .btn {
-  padding: 7px 14px; border: none; border-radius: 8px;
-  font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  padding: 6px 12px; border: none; border-radius: 8px;
+  font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
 }
 .btn:active { transform: scale(0.95); }
 .btn-primary { background: #6f2fd1; color: #fff; }
 .btn-warn { background: #ffd700; color: #222; }
 .btn-secondary { background: rgba(255,255,255,0.12); color: #ccc; }
+.btn-danger { background: #c0392b; color: #fff; }
 
-.names-row {
-  display: flex; gap: 3px; overflow-x: auto; padding: 4px 0;
+.scroll-container {
+  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+.ladder-area {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.names-row, .bottom-row {
+  display: flex; gap: 0; white-space: nowrap;
 }
 .name-cell {
-  min-width: 44px; text-align: center; cursor: pointer;
-  padding: 6px 2px; border-radius: 6px;
+  flex: 0 0 auto;
+  text-align: center; cursor: pointer;
+  padding: 5px 1px; border-radius: 5px;
   background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
   font-size: 11px; font-weight: 700; color: #fff; transition: all 0.2s;
-  user-select: none;
+  user-select: none; margin: 0 1px;
 }
-.name-cell:hover { background: rgba(255,255,255,0.15); }
+.name-cell:hover { background: rgba(255,255,255,0.18); }
 .name-cell.done { opacity: 0.5; cursor: default; }
-.name-cell.active { border-color: #ffd700; background: rgba(255,215,0,0.15); }
 
 canvas {
-  display: block; width: 100%; border-radius: 8px;
-  background: rgba(0,0,0,0.3); touch-action: none; margin: 6px 0;
+  display: block; touch-action: pan-x; background: rgba(0,0,0,0.25);
 }
 
-.bottom-row {
-  display: flex; gap: 3px; overflow-x: auto; padding: 4px 0;
-}
 .order-cell {
-  min-width: 44px; text-align: center; padding: 6px 2px;
-  border-radius: 6px; font-size: 13px; font-weight: 800;
+  flex: 0 0 auto;
+  text-align: center; padding: 5px 1px;
+  border-radius: 5px; font-size: 12px; font-weight: 800;
   background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.2);
-  color: #ffd700; transition: all 0.3s;
+  color: #ffd700; transition: all 0.3s; margin: 0 1px;
 }
-.order-cell.hidden { color: transparent; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
-.order-cell.hidden::after { content: '?'; color: #555; }
+.order-cell.hidden { color: transparent; background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+.order-cell.hidden::after { content: '?'; color: #444; }
 
+.scoreboard {
+  margin-top: 12px; background: rgba(255,255,255,0.04);
+  border-radius: 10px; padding: 10px 12px; display: none;
+  max-width: 400px; margin-left: auto; margin-right: auto;
+}
+.scoreboard.show { display: block; }
+.scoreboard h3 { font-size: 13px; color: #ffd700; margin-bottom: 6px; text-align: center; }
+.sb-row { display: flex; justify-content: space-between; padding: 2px 4px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.sb-row .sbn { color: #ccc; }
+.sb-row .sbo { color: #ffd700; font-weight: 700; min-width: 36px; }
+
+.edit-section {
+  margin-top: 10px; text-align: center;
+}
 .edit-row {
-  display: flex; gap: 3px; overflow-x: auto; padding: 4px 0; margin-top: 8px;
+  display: flex; gap: 3px; overflow-x: auto; padding: 6px 0;
+  -webkit-overflow-scrolling: touch;
 }
 .edit-input {
-  width: 44px; min-width: 44px; padding: 5px 2px; text-align: center;
+  width: 50px; min-width: 50px; padding: 5px 2px; text-align: center;
   background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 6px; color: #aaa; font-size: 10px;
+  border-radius: 6px; color: #ccc; font-size: 11px;
 }
 .edit-input:focus { border-color: #ffd700; outline: none; color: #fff; }
-.edit-bar {
-  display: flex; gap: 6px; align-items: center; justify-content: center;
-  margin-top: 6px; font-size: 11px; color: #666;
-}
-.edit-bar button { font-size: 11px; padding: 4px 10px; }
 
 .result-banner {
   position: fixed; top: 50%; left: 50%;
@@ -83,24 +100,13 @@ canvas {
   background: rgba(10,11,30,0.96); border: 2px solid #ffd700;
   border-radius: 16px; padding: 20px 28px; text-align: center;
   z-index: 999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-  pointer-events: none; min-width: 180px;
+  pointer-events: none; min-width: 160px;
 }
 .result-banner.show { transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
-.result-banner .rname { font-size: 24px; font-weight: 800; color: #fff; }
-.result-banner .rarrow { font-size: 20px; color: #ffd700; margin: 6px 0; }
-.result-banner .rorder { font-size: 48px; font-weight: 900; color: #ffd700; }
-.result-banner .rlabel { font-size: 13px; color: #aaa; margin-top: 2px; }
-
-.scoreboard {
-  margin-top: 14px; background: rgba(255,255,255,0.04);
-  border-radius: 10px; padding: 10px 12px;
-  display: none;
-}
-.scoreboard.show { display: block; }
-.scoreboard h3 { font-size: 14px; color: #ffd700; margin-bottom: 6px; text-align: center; }
-.sb-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.sb-row .sbn { color: #ccc; }
-.sb-row .sbo { color: #ffd700; font-weight: 700; }
+.result-banner .rname { font-size: 22px; font-weight: 800; color: #fff; }
+.result-banner .rarrow { font-size: 18px; color: #ffd700; margin: 4px 0; }
+.result-banner .rorder { font-size: 44px; font-weight: 900; color: #ffd700; }
+.result-banner .rlabel { font-size: 12px; color: #aaa; }
 </style>
 </head>
 <body>
@@ -108,20 +114,23 @@ canvas {
   <h1>🪜 사다리 게임</h1>
   <div class="sub">이름을 터치하면 순서가 정해집니다</div>
   <div class="toolbar">
-    <button class="btn btn-primary" onclick="shuffle()">🔀 다시 섞기</button>
-    <button class="btn btn-warn" onclick="revealAll()">👀 전체 공개</button>
-  </div>
-  <div class="names-row" id="namesRow"></div>
-  <canvas id="cv"></canvas>
-  <div class="bottom-row" id="bottomRow"></div>
-  <div class="scoreboard" id="scoreboard"><h3>📋 순서 결과</h3><div id="sbBody"></div></div>
-  <div class="edit-bar">
-    <span>이름 편집:</span>
+    <button class="btn btn-primary" onclick="shuffle()">🔀 섞기</button>
+    <button class="btn btn-warn" onclick="revealAll()">👀 전체공개</button>
+    <button class="btn btn-secondary" onclick="addPerson()">➕ 추가</button>
+    <button class="btn btn-danger" onclick="removeLast()">➖ 삭제</button>
     <button class="btn btn-secondary" onclick="toggleEdit()">✏️ 수정</button>
-    <button class="btn btn-secondary" onclick="addPerson()">+</button>
-    <button class="btn btn-secondary" onclick="removeLast()">−</button>
   </div>
-  <div class="edit-row" id="editRow" style="display:none"></div>
+  <div class="scroll-container" id="scrollWrap">
+    <div class="ladder-area" id="ladderArea">
+      <div class="names-row" id="namesRow"></div>
+      <canvas id="cv"></canvas>
+      <div class="bottom-row" id="bottomRow"></div>
+    </div>
+  </div>
+  <div class="scoreboard" id="scoreboard"><h3>📋 순서 결과</h3><div id="sbBody"></div></div>
+  <div class="edit-section">
+    <div class="edit-row" id="editRow" style="display:none"></div>
+  </div>
 </div>
 <div class="result-banner" id="banner">
   <div class="rname" id="bName"></div>
@@ -139,10 +148,10 @@ const COLORS = [
 ];
 
 let names = [...DEFAULT_NAMES];
-let orders = []; // shuffled 1~N at bottom
+let orders = [];
 let rungs = [];
-let revealed = new Set(); // which top columns have been clicked
-let revealedResults = {}; // topCol -> { endCol, order }
+let revealed = new Set();
+let revealedResults = {};
 let animating = false;
 let editMode = false;
 
@@ -150,38 +159,53 @@ const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
 const banner = document.getElementById('banner');
 
-function resize() {
-  const w = cv.parentElement.clientWidth;
-  const h = Math.max(350, Math.min(550, window.innerHeight * 0.45));
-  cv.width = w * 2; cv.height = h * 2;
-  cv.style.height = h + 'px';
-  ctx.scale(2, 2);
-  draw();
-  // redraw revealed paths
-  for (const col of revealed) drawFullPath(col);
+const COL_W = 48; // px per column
+const PAD = 20;
+const CANVAS_H = 420;
+
+function calcWidth() {
+  return Math.max(PAD * 2 + (names.length - 1) * COL_W + 20, window.innerWidth - 8);
+}
+
+function setupCanvas() {
+  const w = calcWidth();
+  cv.width = w * 2;
+  cv.height = CANVAS_H * 2;
+  cv.style.width = w + 'px';
+  cv.style.height = CANVAS_H + 'px';
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+}
+
+function getX(col) {
+  return PAD + col * COL_W;
+}
+function getY(frac) {
+  return 8 + frac * (CANVAS_H - 16);
 }
 
 function buildUI() {
+  const cellW = COL_W + 'px';
   const nr = document.getElementById('namesRow');
   nr.innerHTML = names.map((n, i) => {
-    const cls = revealed.has(i) ? 'name-cell done' : 'name-cell';
-    const color = revealed.has(i) ? COLORS[i % COLORS.length] : '';
-    const style = color ? `border-color:${color};color:${color}` : '';
-    return `<div class="${cls}" style="${style}" onclick="pickName(${i})">${n}</div>`;
+    const done = revealed.has(i);
+    const color = done ? COLORS[i % COLORS.length] : '';
+    const style = `width:${cellW};` + (color ? `border-color:${color};color:${color}` : '');
+    return `<div class="name-cell${done ? ' done' : ''}" style="${style}" onclick="pickName(${i})">${n}</div>`;
   }).join('');
 
   const br = document.getElementById('bottomRow');
   br.innerHTML = orders.map((o, i) => {
-    // Check if this bottom column has been revealed
     const revCol = Object.entries(revealedResults).find(([_, v]) => v.endCol === i);
     if (revCol) {
       const topCol = parseInt(revCol[0]);
       const color = COLORS[topCol % COLORS.length];
-      return `<div class="order-cell" style="border-color:${color};color:${color}">${o}</div>`;
+      return `<div class="order-cell" style="width:${cellW};border-color:${color};color:${color}">${o}</div>`;
     }
-    return `<div class="order-cell hidden"></div>`;
+    return `<div class="order-cell hidden" style="width:${cellW}"></div>`;
   }).join('');
 
+  // Set ladder area width
+  document.getElementById('ladderArea').style.width = calcWidth() + 'px';
   updateScoreboard();
 }
 
@@ -203,7 +227,7 @@ function shuffleArray(arr) {
 function generateRungs() {
   const n = names.length;
   rungs = [];
-  const rows = 14 + Math.floor(Math.random() * 6);
+  const rows = 14 + Math.floor(Math.random() * 8);
   for (let r = 0; r < rows; r++) {
     const y = (r + 1) / (rows + 1);
     const used = new Set();
@@ -214,27 +238,16 @@ function generateRungs() {
   }
 }
 
-function getX(col) {
-  const n = names.length;
-  const w = cv.width / 2;
-  const pad = 24;
-  return pad + col * ((w - pad * 2) / Math.max(1, n - 1));
-}
-function getY(frac) {
-  const h = cv.height / 2;
-  return 10 + frac * (h - 20);
-}
-
 function draw() {
-  const w = cv.width / 2, h = cv.height / 2, n = names.length;
+  const w = cv.width / 2, h = CANVAS_H, n = names.length;
   ctx.clearRect(0, 0, w, h);
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
   ctx.lineWidth = 1.5;
   for (let i = 0; i < n; i++) {
     const x = getX(i);
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
   }
-  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
   ctx.lineWidth = 1.5;
   for (const rung of rungs) {
     const x1 = getX(rung.col), x2 = getX(rung.col + 1), y = getY(rung.y);
@@ -256,7 +269,7 @@ function tracePath(startCol) {
       path.push({ x: getX(col), y });
     }
   }
-  path.push({ x: getX(col), y: cv.height / 2 });
+  path.push({ x: getX(col), y: CANVAS_H });
   return { path, endCol: col };
 }
 
@@ -277,13 +290,13 @@ function animatePath(startCol, color, cb) {
     const len = Math.hypot(path[i].x - path[i-1].x, path[i].y - path[i-1].y);
     segs.push({ from: path[i-1], to: path[i], len }); totalLen += len;
   }
-  const duration = 1000;
+  const duration = 900;
   const start = performance.now();
   function step(now) {
     const t = Math.min(1, (now - start) / duration);
     const dist = t * totalLen;
     draw();
-    for (const idx of revealed) drawFullPath(idx);
+    for (const idx of revealed) if (idx !== startCol) drawFullPath(idx);
     ctx.strokeStyle = color; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
     ctx.beginPath();
     let rem = dist, started = false;
@@ -298,7 +311,7 @@ function animatePath(startCol, color, cb) {
     }
     ctx.stroke();
     if (t < 1) requestAnimationFrame(step);
-    else cb(endCol);
+    else { drawFullPath(startCol); cb(endCol); }
   }
   requestAnimationFrame(step);
 }
@@ -325,14 +338,13 @@ function showBanner(name, order) {
 
 function revealAll() {
   if (animating) return;
-  const n = names.length;
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < names.length; i++) {
     revealed.add(i);
     const { endCol } = tracePath(i);
     revealedResults[i] = { endCol, order: orders[endCol] };
   }
   draw();
-  for (let i = 0; i < n; i++) drawFullPath(i);
+  for (let i = 0; i < names.length; i++) drawFullPath(i);
   buildUI();
 }
 
@@ -341,6 +353,7 @@ function shuffle() {
   revealed.clear();
   revealedResults = {};
   generateRungs();
+  setupCanvas();
   buildUI();
   draw();
   document.getElementById('scoreboard').classList.remove('show');
@@ -357,17 +370,40 @@ function updateScoreboard() {
   ).join('');
 }
 
-function addPerson() { names.push('참가자'); shuffle(); buildEditRow(); }
-function removeLast() { if (names.length <= 2) return; names.pop(); shuffle(); buildEditRow(); }
+function addPerson() {
+  const n = prompt('추가할 이름:');
+  if (!n || !n.trim()) return;
+  names.push(n.trim());
+  shuffle();
+  if (editMode) buildEditRow();
+}
+function removeLast() {
+  if (names.length <= 2) return;
+  const removed = names.pop();
+  shuffle();
+  if (editMode) buildEditRow();
+}
 function toggleEdit() {
   editMode = !editMode;
-  document.getElementById('editRow').style.display = editMode ? 'flex' : 'none';
+  const er = document.getElementById('editRow');
+  er.style.display = editMode ? 'flex' : 'none';
   if (editMode) buildEditRow();
 }
 
+cv.addEventListener('click', (e) => {
+  if (animating) return;
+  const rect = cv.getBoundingClientRect();
+  const scaleX = (cv.width / 2) / rect.width;
+  const x = (e.clientX - rect.left) * scaleX;
+  let best = -1, bestD = Infinity;
+  for (let i = 0; i < names.length; i++) {
+    const d = Math.abs(x - getX(i));
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  if (best >= 0 && bestD < COL_W * 0.6 && !revealed.has(best)) pickName(best);
+});
+
 shuffle();
-window.addEventListener('resize', resize);
-resize();
 </script>
 </body>
 </html>
