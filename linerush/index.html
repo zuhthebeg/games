@@ -957,10 +957,7 @@
             if (attack) triggerBossSpecialAttack(attack);
           }
         })
-        .catch(() => {
-          // LLM 실패 — 조용히 넘어감, 룰베이스 대사 없음
-          if (triggerType === 'desperate') triggerBossSpecialAttack('spiral');
-        });
+        .catch(() => {});
     }
 
     const hudLives = k.add([k.pos(12, 8), k.text('', { size: 18, font: 'monospace' }), k.z(120)]);
@@ -1191,24 +1188,24 @@
       showPanel(`
         <div style="text-align:center;font-size:28px;color:#ff6b6b;font-weight:700;margin-bottom:8px">💀 GAME OVER</div>
         <div style="text-align:center;font-size:14px;color:#fff;line-height:1.45;margin-bottom:14px">
-          500G로 이어가시겠습니까?<br>현재 보유: ${gold.toLocaleString()}G
+          100G로 이어가시겠습니까?<br>현재 보유: ${gold.toLocaleString()}G
         </div>
         <div class="ui-row">
-          <button class="ui-btn warn" id="contBtn">계속 (500G)</button>
+          <button class="ui-btn warn" id="contBtn">계속 (100G)</button>
           <button class="ui-btn danger" id="quitBtn">포기</button>
         </div>
       `);
 
       document.getElementById('contBtn').onclick = async () => {
         const curGold = getLocalGold();
-        if (curGold < 500) {
+        if (curGold < 100) {
           hidePanel();
           clearBossBanner();
           recordBossEncounter(false);
           k.go('gameover', { score: S.score, stage: S.stage });
           return;
         }
-        setLocalGold(curGold - 500);
+        setLocalGold(curGold - 100);
         hidePanel();
         S.paused = false;
         joyShow();
@@ -2281,7 +2278,7 @@
       <div style="text-align:center;font-size:22px;color:#fff;margin-bottom:8px">FINAL SCORE: ${score}</div>
       <div style="text-align:center;font-size:14px;color:#ffd700;margin-bottom:16px">💰 보유: ${goGold.toLocaleString()}G</div>
       <div class="ui-row">
-        <button class="ui-btn primary" id="retryBtn">RETRY (500G)</button>
+        <button class="ui-btn primary" id="retryBtn">RETRY (100G)</button>
         <button class="ui-btn danger" id="menuBtn">MENU</button>
       </div>
       <button class="ui-btn next" id="refreshBtn" style="margin-top:8px;font-size:12px">🔄 새로고침 (골드 동기화)</button>
@@ -2289,11 +2286,11 @@
 
     document.getElementById('retryBtn').onclick = () => {
       const cur = getLocalGold();
-      if (cur < 500) {
+      if (cur < 100) {
         alert('골드가 부족합니다! (' + cur + 'G)');
         return;
       }
-      setLocalGold(cur - 500);
+      setLocalGold(cur - 100);
       hidePanel();
       k.go('game', { stage, score: 0, lives: 3 });
     };
