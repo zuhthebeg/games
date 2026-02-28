@@ -256,10 +256,12 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bossId,
+          bossName: bossId,
           playerId,
           stage,
           percent,
           lives,
+          playerLevel: lives,
           triggerType,
           gameId: 'linerush',
         }),
@@ -1167,31 +1169,46 @@
       showItemMsg('⚠️ 보스가 라인을 파괴!');
     }
 
+    function getLocalGold() {
+      try {
+        return JSON.parse(localStorage.getItem('enhance_game_v3') || '{}').gold || 0;
+      } catch (_) { return 0; }
+    }
+    function setLocalGold(g) {
+      try {
+        const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
+        d.gold = Math.max(0, g);
+        localStorage.setItem('enhance_game_v3', JSON.stringify(d));
+        if (window.SharedWallet) { window.SharedWallet.gold = d.gold; window.SharedWallet._updateUI?.(); }
+      } catch (_) {}
+    }
+
     function showContinuePrompt() {
       S.paused = true;
       joyHide();
-      const gold = window.SharedWallet?.gold || 0;
+      const gold = getLocalGold();
 
       showPanel(`
         <div style="text-align:center;font-size:28px;color:#ff6b6b;font-weight:700;margin-bottom:8px">💀 GAME OVER</div>
         <div style="text-align:center;font-size:14px;color:#fff;line-height:1.45;margin-bottom:14px">
-          100G로 이어가시겠습니까?<br>현재 보유: ${gold.toLocaleString()}G
+          500G로 이어가시겠습니까?<br>현재 보유: ${gold.toLocaleString()}G
         </div>
         <div class="ui-row">
-          <button class="ui-btn warn" id="contBtn">계속 (100G)</button>
+          <button class="ui-btn warn" id="contBtn">계속 (500G)</button>
           <button class="ui-btn danger" id="quitBtn">포기</button>
         </div>
       `);
 
       document.getElementById('contBtn').onclick = async () => {
-        if ((window.SharedWallet?.gold || 0) < 100) {
+        const curGold = getLocalGold();
+        if (curGold < 500) {
           hidePanel();
           clearBossBanner();
           recordBossEncounter(false);
           k.go('gameover', { score: S.score, stage: S.stage });
           return;
         }
-        try { await window.SharedWallet?.removeGold?.(100); } catch (_) {}
+        setLocalGold(curGold - 500);
         hidePanel();
         S.paused = false;
         joyShow();
@@ -2214,21 +2231,9 @@
     setUnlockedStage(stage + 1);
 
     const goldReward = stage * STAGE_REWARD;
-    try {
-      // Sync SharedWallet from localStorage first, then add
-      const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
-      const currentGold = d.gold || 0;
-      d.gold = currentGold + goldReward;
-      localStorage.setItem('enhance_game_v3', JSON.stringify(d));
-      if (window.SharedWallet) {
-        window.SharedWallet.gold = d.gold;
-        // Force re-inject UI bar if missing
-        if (!document.getElementById('sw-bar') && window.SharedWallet._injectUI) {
-          window.SharedWallet._injectUI();
-        }
-        window.SharedWallet._updateUI?.();
-      }
-    } catch (_) {}
+    const goldBefore = getLocalGold();
+    setLocalGold(goldBefore + goldReward);
+    const goldAfter = getLocalGold();
     setLRBestStage(stage);
 
     const clearBonus = 2000 * stage;
@@ -2244,7 +2249,7 @@
       <div class="score-line" style="color:#ffb4d8">SCORE: ${score}</div>
       <div class="score-line" style="color:#9cfbff">CLEAR BONUS: +${clearBonus}</div>
       <div class="score-line" style="color:#fff;font-size:19px">TOTAL: ${totalScore}</div>
-      <div class="score-line" style="color:#ffd700">💰 +${goldReward.toLocaleString()} G 획득!</div>
+      <div class="score-line" style="color:#ffd700">💰 +${goldReward.toLocaleString()} G 획득! (보유: ${goldAfter.toLocaleString()}G)</div>
 
       <button class="ui-btn next" id="nextBtn" style="margin-top:14px">${stage < STAGE_COUNT ? 'NEXT STAGE →' : '🏠 BACK TO MENU'}</button>
     `);
@@ -2270,22 +2275,34 @@
     const score = data?.score || 0;
     const stage = data?.stage || 1;
 
+    const goGold = getLocalGold();
     showPanel(`
       <div style="text-align:center;font-size:52px;color:#ff6666;font-weight:800;margin-bottom:10px">GAME OVER</div>
-      <div style="text-align:center;font-size:22px;color:#fff;margin-bottom:16px">FINAL SCORE: ${score}</div>
+      <div style="text-align:center;font-size:22px;color:#fff;margin-bottom:8px">FINAL SCORE: ${score}</div>
+      <div style="text-align:center;font-size:14px;color:#ffd700;margin-bottom:16px">💰 보유: ${goGold.toLocaleString()}G</div>
       <div class="ui-row">
-        <button class="ui-btn primary" id="retryBtn">RETRY</button>
+        <button class="ui-btn primary" id="retryBtn">RETRY (500G)</button>
         <button class="ui-btn danger" id="menuBtn">MENU</button>
       </div>
+      <button class="ui-btn next" id="refreshBtn" style="margin-top:8px;font-size:12px">🔄 새로고침 (골드 동기화)</button>
     `);
 
     document.getElementById('retryBtn').onclick = () => {
+      const cur = getLocalGold();
+      if (cur < 500) {
+        alert('골드가 부족합니다! (' + cur + 'G)');
+        return;
+      }
+      setLocalGold(cur - 500);
       hidePanel();
       k.go('game', { stage, score: 0, lives: 3 });
     };
     document.getElementById('menuBtn').onclick = () => {
       hidePanel();
       k.go('menu');
+    };
+    document.getElementById('refreshBtn').onclick = () => {
+      location.reload();
     };
 
     k.onDraw(() => {
