@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>사다리 게임</title>
+<script src="/lib/shared-wallet.js?v=20260214"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: #0a0b1e;
+  color: #e8e8ff;
+  font-family: 'Trebuchet MS', sans-serif;
+  min-height: 100dvh;
+  padding-top: calc(48px + env(safe-area-inset-top));
+  overflow-x: hidden;
+}
+.wrap {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 12px 8px 20px;
+}
+h1 {
+  text-align: center;
+  font-size: 22px;
+  color: #ffd700;
+  margin-bottom: 10px;
+}
+.toolbar {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn:active { transform: scale(0.95); }
+.btn-primary { background: #6f2fd1; color: #fff; }
+.btn-warn { background: #ffd700; color: #222; }
+.btn-danger { background: #e74c3c; color: #fff; }
+.btn-secondary { background: rgba(255,255,255,0.12); color: #ccc; }
+
+.names-row {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px 0;
+  -webkit-overflow-scrolling: touch;
+}
+.name-input {
+  width: 52px;
+  min-width: 52px;
+  padding: 6px 2px;
+  text-align: center;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.name-input:focus { border-color: #ffd700; outline: none; }
+
+canvas {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.3);
+  touch-action: none;
+  margin: 8px 0;
+}
+
+.results-row {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px 0;
+  -webkit-overflow-scrolling: touch;
+}
+.result-input {
+  width: 52px;
+  min-width: 52px;
+  padding: 6px 2px;
+  text-align: center;
+  background: rgba(255,215,0,0.1);
+  border: 1px solid rgba(255,215,0,0.25);
+  border-radius: 6px;
+  color: #ffd700;
+  font-size: 11px;
+  font-weight: 600;
+}
+.result-input:focus { border-color: #ffd700; outline: none; }
+
+.result-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: rgba(10,11,30,0.95);
+  border: 2px solid #ffd700;
+  border-radius: 16px;
+  padding: 24px 32px;
+  text-align: center;
+  z-index: 999;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none;
+}
+.result-banner.show {
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+.result-banner .name { font-size: 28px; font-weight: 800; color: #fff; }
+.result-banner .arrow { font-size: 24px; color: #ffd700; margin: 8px 0; }
+.result-banner .prize { font-size: 32px; font-weight: 800; color: #ffd700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🪜 사다리 게임</h1>
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="shuffle()">🔀 다시 섞기</button>
+    <button class="btn btn-warn" onclick="revealAll()">👀 전체 공개</button>
+    <button class="btn btn-secondary" onclick="addPerson()">+ 추가</button>
+    <button class="btn btn-danger" onclick="removeLast()">- 삭제</button>
+  </div>
+  <div class="names-row" id="namesRow"></div>
+  <canvas id="cv"></canvas>
+  <div class="results-row" id="resultsRow"></div>
+</div>
+<div class="result-banner" id="banner">
+  <div class="name" id="bannerName"></div>
+  <div class="arrow">▼</div>
+  <div class="prize" id="bannerPrize"></div>
+</div>
+
+<script>
+const DEFAULT_NAMES = ['명훈','지윤','용훈','주희','미나','윤우','윤아','장미','성민','익완','미경','형찬','규식','희숙'];
+const COLORS = [
+  '#ff4444','#44aaff','#44ff88','#ffaa00','#ff44cc','#44ffff','#aa88ff',
+  '#ff8844','#88ff44','#ff4488','#44ccaa','#ffff44','#cc88ff','#ff6688',
+  '#88ddff','#ffcc44','#66ffaa','#dd66ff','#ff8866','#66aaff'
+];
+const DEFAULT_RESULTS = ['당첨!','꽝','벌칙!','꽝','당첨!','꽝','벌칙!','꽝','당첨!','꽝','벌칙!','꽝','당첨!','꽝'];
+
+let names = [...DEFAULT_NAMES];
+let results = [...DEFAULT_RESULTS];
+let rungs = [];
+let revealed = new Set();
+let animating = false;
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const banner = document.getElementById('banner');
+
+function resize() {
+  const w = cv.parentElement.clientWidth;
+  const h = Math.max(400, Math.min(600, window.innerHeight * 0.5));
+  cv.width = w * 2;
+  cv.height = h * 2;
+  cv.style.height = h + 'px';
+  ctx.scale(2, 2);
+  draw();
+}
+
+function buildInputs() {
+  const nr = document.getElementById('namesRow');
+  const rr = document.getElementById('resultsRow');
+  nr.innerHTML = names.map((n, i) =>
+    `<input class="name-input" value="${n}" data-i="${i}" onchange="names[${i}]=this.value">`
+  ).join('');
+  // Ensure results array matches names length
+  while (results.length < names.length) results.push('꽝');
+  while (results.length > names.length) results.pop();
+  rr.innerHTML = results.map((r, i) =>
+    `<input class="result-input" value="${r}" data-i="${i}" onchange="results[${i}]=this.value">`
+  ).join('');
+}
+
+function generateRungs() {
+  const n = names.length;
+  rungs = [];
+  const rows = 12 + Math.floor(Math.random() * 6);
+  for (let r = 0; r < rows; r++) {
+    const y = (r + 1) / (rows + 1);
+    // Pick random adjacent pairs for rungs
+    const used = new Set();
+    for (let c = 0; c < n - 1; c++) {
+      if (used.has(c) || used.has(c - 1)) continue;
+      if (Math.random() < 0.45) {
+        rungs.push({ col: c, y });
+        used.add(c);
+      }
+    }
+  }
+}
+
+function getX(col) {
+  const n = names.length;
+  const w = cv.width / 2;
+  const pad = 28;
+  return pad + col * ((w - pad * 2) / (n - 1));
+}
+
+function getY(frac) {
+  const h = cv.height / 2;
+  const padTop = 20;
+  const padBot = 20;
+  return padTop + frac * (h - padTop - padBot);
+}
+
+function draw() {
+  const w = cv.width / 2;
+  const h = cv.height / 2;
+  const n = names.length;
+  ctx.clearRect(0, 0, w, h);
+
+  // Vertical lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < n; i++) {
+    const x = getX(i);
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+  }
+
+  // Rungs
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 2;
+  for (const rung of rungs) {
+    const x1 = getX(rung.col);
+    const x2 = getX(rung.col + 1);
+    const y = getY(rung.y);
+    ctx.beginPath();
+    ctx.moveTo(x1, y);
+    ctx.lineTo(x2, y);
+    ctx.stroke();
+  }
+
+  // Column numbers at top
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'center';
+  for (let i = 0; i < n; i++) {
+    ctx.fillText(i + 1, getX(i), 14);
+  }
+}
+
+function tracePath(startCol) {
+  let col = startCol;
+  const path = [{ x: getX(col), y: 0 }];
+
+  // Sort rungs by y
+  const sorted = [...rungs].sort((a, b) => a.y - b.y);
+
+  for (const rung of sorted) {
+    const y = getY(rung.y);
+    if (rung.col === col) {
+      path.push({ x: getX(col), y });
+      col++;
+      path.push({ x: getX(col), y });
+    } else if (rung.col + 1 === col) {
+      path.push({ x: getX(col), y });
+      col--;
+      path.push({ x: getX(col), y });
+    }
+  }
+  path.push({ x: getX(col), y: cv.height / 2 });
+  return { path, endCol: col };
+}
+
+function animatePath(startCol, color, cb) {
+  const { path, endCol } = tracePath(startCol);
+  let totalLen = 0;
+  const segs = [];
+  for (let i = 1; i < path.length; i++) {
+    const dx = path[i].x - path[i-1].x;
+    const dy = path[i].y - path[i-1].y;
+    const len = Math.hypot(dx, dy);
+    segs.push({ from: path[i-1], to: path[i], len });
+    totalLen += len;
+  }
+
+  const duration = 1200;
+  const start = performance.now();
+
+  function step(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const dist = t * totalLen;
+    draw();
+    // Redraw previously revealed paths
+    for (const idx of revealed) {
+      if (idx === startCol) continue;
+      drawFullPath(idx);
+    }
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    let remaining = dist;
+    let started = false;
+    for (const seg of segs) {
+      if (remaining <= 0) break;
+      const frac = Math.min(1, remaining / seg.len);
+      const ex = seg.from.x + (seg.to.x - seg.from.x) * frac;
+      const ey = seg.from.y + (seg.to.y - seg.from.y) * frac;
+      if (!started) { ctx.moveTo(seg.from.x, seg.from.y); started = true; }
+      else ctx.lineTo(seg.from.x, seg.from.y);
+      ctx.lineTo(ex, ey);
+      remaining -= seg.len;
+    }
+    ctx.stroke();
+
+    // Draw dot at current position
+    if (started) {
+      let dotRemaining = dist;
+      for (const seg of segs) {
+        if (dotRemaining <= seg.len) {
+          const frac = dotRemaining / seg.len;
+          const dx = seg.from.x + (seg.to.x - seg.from.x) * frac;
+          const dy = seg.from.y + (seg.to.y - seg.from.y) * frac;
+          ctx.beginPath();
+          ctx.arc(dx, dy, 5, 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.fill();
+          break;
+        }
+        dotRemaining -= seg.len;
+      }
+    }
+
+    if (t < 1) requestAnimationFrame(step);
+    else cb(endCol);
+  }
+  requestAnimationFrame(step);
+}
+
+function drawFullPath(startCol) {
+  const { path } = tracePath(startCol);
+  const color = COLORS[startCol % COLORS.length];
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(path[0].x, path[0].y);
+  for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+  ctx.stroke();
+}
+
+function showBanner(name, prize) {
+  document.getElementById('bannerName').textContent = name;
+  document.getElementById('bannerPrize').textContent = prize;
+  banner.classList.add('show');
+  setTimeout(() => banner.classList.remove('show'), 2500);
+}
+
+cv.addEventListener('click', (e) => {
+  if (animating) return;
+  const rect = cv.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width * (cv.width / 2);
+  const n = names.length;
+  // Find closest column in top area
+  let best = -1, bestD = Infinity;
+  for (let i = 0; i < n; i++) {
+    const d = Math.abs(x - getX(i));
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  if (best < 0 || bestD > 30 || revealed.has(best)) return;
+
+  animating = true;
+  revealed.add(best);
+  const color = COLORS[best % COLORS.length];
+  animatePath(best, color, (endCol) => {
+    animating = false;
+    showBanner(names[best], results[endCol]);
+    // Highlight name input
+    const inp = document.querySelector(`.name-input[data-i="${best}"]`);
+    if (inp) { inp.style.borderColor = color; inp.style.color = color; }
+    // Highlight result input
+    const rinp = document.querySelector(`.result-input[data-i="${endCol}"]`);
+    if (rinp) { rinp.style.borderColor = color; rinp.style.color = color; }
+  });
+});
+
+function shuffle() {
+  revealed.clear();
+  // Reset input colors
+  document.querySelectorAll('.name-input,.result-input').forEach(el => {
+    el.style.borderColor = '';
+    el.style.color = '';
+  });
+  generateRungs();
+  draw();
+}
+
+function revealAll() {
+  if (animating) return;
+  const n = names.length;
+  revealed.clear();
+  for (let i = 0; i < n; i++) revealed.add(i);
+  draw();
+  for (let i = 0; i < n; i++) {
+    drawFullPath(i);
+    const { endCol } = tracePath(i);
+    const color = COLORS[i % COLORS.length];
+    const inp = document.querySelector(`.name-input[data-i="${i}"]`);
+    if (inp) { inp.style.borderColor = color; inp.style.color = color; }
+    const rinp = document.querySelector(`.result-input[data-i="${endCol}"]`);
+    if (rinp) { rinp.style.borderColor = color; rinp.style.color = color; }
+  }
+}
+
+function addPerson() {
+  names.push('참가자');
+  results.push('꽝');
+  buildInputs();
+  shuffle();
+}
+
+function removeLast() {
+  if (names.length <= 2) return;
+  names.pop();
+  results.pop();
+  buildInputs();
+  shuffle();
+}
+
+// Init
+buildInputs();
+generateRungs();
+window.addEventListener('resize', resize);
+resize();
+</script>
+</body>
+</html>

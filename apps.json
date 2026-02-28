@@ -269,5 +269,15 @@
       "🌍"
     ],
     "category": "classic"
+  },
+  {
+    "title": "사다리 게임 Ladder",
+    "icon": "https://game.cocy.io/ladder/icon.svg",
+    "url": "https://game.cocy.io/ladder/",
+    "desc": "사다리 타기 게임",
+    "badge": "NEW",
+    "platforms": ["WEB"],
+    "languages": ["🇰🇷"],
+    "category": "game"
   }
 ]
