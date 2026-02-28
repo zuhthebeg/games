@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>사다리 게임</title>
+<title>사다리 게임 - 순서 정하기</title>
 <script src="/lib/shared-wallet.js?v=20260214"></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -15,130 +15,119 @@ body {
   padding-top: calc(48px + env(safe-area-inset-top));
   overflow-x: hidden;
 }
-.wrap {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 12px 8px 20px;
-}
-h1 {
-  text-align: center;
-  font-size: 22px;
-  color: #ffd700;
-  margin-bottom: 10px;
-}
+.wrap { max-width: 600px; margin: 0 auto; padding: 12px 8px 20px; }
+h1 { text-align: center; font-size: 22px; color: #ffd700; margin-bottom: 4px; }
+.sub { text-align: center; font-size: 12px; color: #8888bb; margin-bottom: 10px; }
 .toolbar {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
+  display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap;
 }
 .btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
+  padding: 7px 14px; border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
 }
 .btn:active { transform: scale(0.95); }
 .btn-primary { background: #6f2fd1; color: #fff; }
 .btn-warn { background: #ffd700; color: #222; }
-.btn-danger { background: #e74c3c; color: #fff; }
 .btn-secondary { background: rgba(255,255,255,0.12); color: #ccc; }
 
 .names-row {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  padding: 4px 0;
+  display: flex; gap: 3px; overflow-x: auto; padding: 4px 0;
   -webkit-overflow-scrolling: touch;
 }
-.name-input {
-  width: 52px;
-  min-width: 52px;
-  padding: 6px 2px;
-  text-align: center;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 6px;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
+.name-cell {
+  min-width: 44px; text-align: center; cursor: pointer;
+  padding: 6px 2px; border-radius: 6px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+  font-size: 11px; font-weight: 700; color: #fff; transition: all 0.2s;
+  user-select: none;
 }
-.name-input:focus { border-color: #ffd700; outline: none; }
+.name-cell:hover { background: rgba(255,255,255,0.15); }
+.name-cell.done { opacity: 0.5; cursor: default; }
+.name-cell.active { border-color: #ffd700; background: rgba(255,215,0,0.15); }
 
 canvas {
-  display: block;
-  width: 100%;
-  border-radius: 8px;
-  background: rgba(0,0,0,0.3);
-  touch-action: none;
-  margin: 8px 0;
+  display: block; width: 100%; border-radius: 8px;
+  background: rgba(0,0,0,0.3); touch-action: none; margin: 6px 0;
 }
 
-.results-row {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  padding: 4px 0;
-  -webkit-overflow-scrolling: touch;
+.bottom-row {
+  display: flex; gap: 3px; overflow-x: auto; padding: 4px 0;
 }
-.result-input {
-  width: 52px;
-  min-width: 52px;
-  padding: 6px 2px;
-  text-align: center;
-  background: rgba(255,215,0,0.1);
-  border: 1px solid rgba(255,215,0,0.25);
-  border-radius: 6px;
-  color: #ffd700;
-  font-size: 11px;
-  font-weight: 600;
+.order-cell {
+  min-width: 44px; text-align: center; padding: 6px 2px;
+  border-radius: 6px; font-size: 13px; font-weight: 800;
+  background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.2);
+  color: #ffd700; transition: all 0.3s;
 }
-.result-input:focus { border-color: #ffd700; outline: none; }
+.order-cell.hidden { color: transparent; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+.order-cell.hidden::after { content: '?'; color: #555; }
+
+.edit-row {
+  display: flex; gap: 3px; overflow-x: auto; padding: 4px 0; margin-top: 8px;
+}
+.edit-input {
+  width: 44px; min-width: 44px; padding: 5px 2px; text-align: center;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px; color: #aaa; font-size: 10px;
+}
+.edit-input:focus { border-color: #ffd700; outline: none; color: #fff; }
+.edit-bar {
+  display: flex; gap: 6px; align-items: center; justify-content: center;
+  margin-top: 6px; font-size: 11px; color: #666;
+}
+.edit-bar button { font-size: 11px; padding: 4px 10px; }
 
 .result-banner {
-  position: fixed;
-  top: 50%;
-  left: 50%;
+  position: fixed; top: 50%; left: 50%;
   transform: translate(-50%, -50%) scale(0);
-  background: rgba(10,11,30,0.95);
-  border: 2px solid #ffd700;
-  border-radius: 16px;
-  padding: 24px 32px;
-  text-align: center;
-  z-index: 999;
-  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-  pointer-events: none;
+  background: rgba(10,11,30,0.96); border: 2px solid #ffd700;
+  border-radius: 16px; padding: 20px 28px; text-align: center;
+  z-index: 999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none; min-width: 180px;
 }
-.result-banner.show {
-  transform: translate(-50%, -50%) scale(1);
-  pointer-events: auto;
+.result-banner.show { transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+.result-banner .rname { font-size: 24px; font-weight: 800; color: #fff; }
+.result-banner .rarrow { font-size: 20px; color: #ffd700; margin: 6px 0; }
+.result-banner .rorder { font-size: 48px; font-weight: 900; color: #ffd700; }
+.result-banner .rlabel { font-size: 13px; color: #aaa; margin-top: 2px; }
+
+.scoreboard {
+  margin-top: 14px; background: rgba(255,255,255,0.04);
+  border-radius: 10px; padding: 10px 12px;
+  display: none;
 }
-.result-banner .name { font-size: 28px; font-weight: 800; color: #fff; }
-.result-banner .arrow { font-size: 24px; color: #ffd700; margin: 8px 0; }
-.result-banner .prize { font-size: 32px; font-weight: 800; color: #ffd700; }
+.scoreboard.show { display: block; }
+.scoreboard h3 { font-size: 14px; color: #ffd700; margin-bottom: 6px; text-align: center; }
+.sb-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.sb-row .sbn { color: #ccc; }
+.sb-row .sbo { color: #ffd700; font-weight: 700; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>🪜 사다리 게임</h1>
+  <div class="sub">이름을 터치하면 순서가 정해집니다</div>
   <div class="toolbar">
     <button class="btn btn-primary" onclick="shuffle()">🔀 다시 섞기</button>
     <button class="btn btn-warn" onclick="revealAll()">👀 전체 공개</button>
-    <button class="btn btn-secondary" onclick="addPerson()">+ 추가</button>
-    <button class="btn btn-danger" onclick="removeLast()">- 삭제</button>
   </div>
   <div class="names-row" id="namesRow"></div>
   <canvas id="cv"></canvas>
-  <div class="results-row" id="resultsRow"></div>
+  <div class="bottom-row" id="bottomRow"></div>
+  <div class="scoreboard" id="scoreboard"><h3>📋 순서 결과</h3><div id="sbBody"></div></div>
+  <div class="edit-bar">
+    <span>이름 편집:</span>
+    <button class="btn btn-secondary" onclick="toggleEdit()">✏️ 수정</button>
+    <button class="btn btn-secondary" onclick="addPerson()">+</button>
+    <button class="btn btn-secondary" onclick="removeLast()">−</button>
+  </div>
+  <div class="edit-row" id="editRow" style="display:none"></div>
 </div>
 <div class="result-banner" id="banner">
-  <div class="name" id="bannerName"></div>
-  <div class="arrow">▼</div>
-  <div class="prize" id="bannerPrize"></div>
+  <div class="rname" id="bName"></div>
+  <div class="rarrow">▼</div>
+  <div class="rorder" id="bOrder"></div>
+  <div class="rlabel">번째 순서</div>
 </div>
 
 <script>
@@ -148,13 +137,14 @@ const COLORS = [
   '#ff8844','#88ff44','#ff4488','#44ccaa','#ffff44','#cc88ff','#ff6688',
   '#88ddff','#ffcc44','#66ffaa','#dd66ff','#ff8866','#66aaff'
 ];
-const DEFAULT_RESULTS = DEFAULT_NAMES.map((_, i) => String(i + 1));
 
 let names = [...DEFAULT_NAMES];
-let results = [...DEFAULT_RESULTS];
+let orders = []; // shuffled 1~N at bottom
 let rungs = [];
-let revealed = new Set();
+let revealed = new Set(); // which top columns have been clicked
+let revealedResults = {}; // topCol -> { endCol, order }
 let animating = false;
+let editMode = false;
 
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
@@ -162,42 +152,64 @@ const banner = document.getElementById('banner');
 
 function resize() {
   const w = cv.parentElement.clientWidth;
-  const h = Math.max(400, Math.min(600, window.innerHeight * 0.5));
-  cv.width = w * 2;
-  cv.height = h * 2;
+  const h = Math.max(350, Math.min(550, window.innerHeight * 0.45));
+  cv.width = w * 2; cv.height = h * 2;
   cv.style.height = h + 'px';
   ctx.scale(2, 2);
   draw();
+  // redraw revealed paths
+  for (const col of revealed) drawFullPath(col);
 }
 
-function buildInputs() {
+function buildUI() {
   const nr = document.getElementById('namesRow');
-  const rr = document.getElementById('resultsRow');
-  nr.innerHTML = names.map((n, i) =>
-    `<input class="name-input" value="${n}" data-i="${i}" onchange="names[${i}]=this.value">`
+  nr.innerHTML = names.map((n, i) => {
+    const cls = revealed.has(i) ? 'name-cell done' : 'name-cell';
+    const color = revealed.has(i) ? COLORS[i % COLORS.length] : '';
+    const style = color ? `border-color:${color};color:${color}` : '';
+    return `<div class="${cls}" style="${style}" onclick="pickName(${i})">${n}</div>`;
+  }).join('');
+
+  const br = document.getElementById('bottomRow');
+  br.innerHTML = orders.map((o, i) => {
+    // Check if this bottom column has been revealed
+    const revCol = Object.entries(revealedResults).find(([_, v]) => v.endCol === i);
+    if (revCol) {
+      const topCol = parseInt(revCol[0]);
+      const color = COLORS[topCol % COLORS.length];
+      return `<div class="order-cell" style="border-color:${color};color:${color}">${o}</div>`;
+    }
+    return `<div class="order-cell hidden"></div>`;
+  }).join('');
+
+  updateScoreboard();
+}
+
+function buildEditRow() {
+  const er = document.getElementById('editRow');
+  er.innerHTML = names.map((n, i) =>
+    `<input class="edit-input" value="${n}" onchange="names[${i}]=this.value;buildUI()">`
   ).join('');
-  // Ensure results array matches names length
-  while (results.length < names.length) results.push(String(results.length + 1));
-  while (results.length > names.length) results.pop();
-  rr.innerHTML = results.map((r, i) =>
-    `<input class="result-input" value="${r}" data-i="${i}" onchange="results[${i}]=this.value">`
-  ).join('');
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 function generateRungs() {
   const n = names.length;
   rungs = [];
-  const rows = 12 + Math.floor(Math.random() * 6);
+  const rows = 14 + Math.floor(Math.random() * 6);
   for (let r = 0; r < rows; r++) {
     const y = (r + 1) / (rows + 1);
-    // Pick random adjacent pairs for rungs
     const used = new Set();
     for (let c = 0; c < n - 1; c++) {
       if (used.has(c) || used.has(c - 1)) continue;
-      if (Math.random() < 0.45) {
-        rungs.push({ col: c, y });
-        used.add(c);
-      }
+      if (Math.random() < 0.45) { rungs.push({ col: c, y }); used.add(c); }
     }
   }
 }
@@ -205,72 +217,42 @@ function generateRungs() {
 function getX(col) {
   const n = names.length;
   const w = cv.width / 2;
-  const pad = 28;
-  return pad + col * ((w - pad * 2) / (n - 1));
+  const pad = 24;
+  return pad + col * ((w - pad * 2) / Math.max(1, n - 1));
 }
-
 function getY(frac) {
   const h = cv.height / 2;
-  const padTop = 20;
-  const padBot = 20;
-  return padTop + frac * (h - padTop - padBot);
+  return 10 + frac * (h - 20);
 }
 
 function draw() {
-  const w = cv.width / 2;
-  const h = cv.height / 2;
-  const n = names.length;
+  const w = cv.width / 2, h = cv.height / 2, n = names.length;
   ctx.clearRect(0, 0, w, h);
-
-  // Vertical lines
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1.5;
   for (let i = 0; i < n; i++) {
     const x = getX(i);
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, h);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
   }
-
-  // Rungs
-  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1.5;
   for (const rung of rungs) {
-    const x1 = getX(rung.col);
-    const x2 = getX(rung.col + 1);
-    const y = getY(rung.y);
-    ctx.beginPath();
-    ctx.moveTo(x1, y);
-    ctx.lineTo(x2, y);
-    ctx.stroke();
-  }
-
-  // Column numbers at top
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.font = '11px sans-serif';
-  ctx.textAlign = 'center';
-  for (let i = 0; i < n; i++) {
-    ctx.fillText(i + 1, getX(i), 14);
+    const x1 = getX(rung.col), x2 = getX(rung.col + 1), y = getY(rung.y);
+    ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
   }
 }
 
 function tracePath(startCol) {
   let col = startCol;
   const path = [{ x: getX(col), y: 0 }];
-
-  // Sort rungs by y
   const sorted = [...rungs].sort((a, b) => a.y - b.y);
-
   for (const rung of sorted) {
     const y = getY(rung.y);
     if (rung.col === col) {
-      path.push({ x: getX(col), y });
-      col++;
+      path.push({ x: getX(col), y }); col++;
       path.push({ x: getX(col), y });
     } else if (rung.col + 1 === col) {
-      path.push({ x: getX(col), y });
-      col--;
+      path.push({ x: getX(col), y }); col--;
       path.push({ x: getX(col), y });
     }
   }
@@ -278,166 +260,112 @@ function tracePath(startCol) {
   return { path, endCol: col };
 }
 
+function drawFullPath(startCol) {
+  const { path } = tracePath(startCol);
+  const color = COLORS[startCol % COLORS.length];
+  ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(path[0].x, path[0].y);
+  for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+  ctx.stroke();
+}
+
 function animatePath(startCol, color, cb) {
   const { path, endCol } = tracePath(startCol);
   let totalLen = 0;
   const segs = [];
   for (let i = 1; i < path.length; i++) {
-    const dx = path[i].x - path[i-1].x;
-    const dy = path[i].y - path[i-1].y;
-    const len = Math.hypot(dx, dy);
-    segs.push({ from: path[i-1], to: path[i], len });
-    totalLen += len;
+    const len = Math.hypot(path[i].x - path[i-1].x, path[i].y - path[i-1].y);
+    segs.push({ from: path[i-1], to: path[i], len }); totalLen += len;
   }
-
-  const duration = 1200;
+  const duration = 1000;
   const start = performance.now();
-
   function step(now) {
     const t = Math.min(1, (now - start) / duration);
     const dist = t * totalLen;
     draw();
-    // Redraw previously revealed paths
-    for (const idx of revealed) {
-      if (idx === startCol) continue;
-      drawFullPath(idx);
-    }
-
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3.5;
-    ctx.lineCap = 'round';
+    for (const idx of revealed) drawFullPath(idx);
+    ctx.strokeStyle = color; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
     ctx.beginPath();
-    let remaining = dist;
-    let started = false;
+    let rem = dist, started = false;
     for (const seg of segs) {
-      if (remaining <= 0) break;
-      const frac = Math.min(1, remaining / seg.len);
+      if (rem <= 0) break;
+      const frac = Math.min(1, rem / seg.len);
       const ex = seg.from.x + (seg.to.x - seg.from.x) * frac;
       const ey = seg.from.y + (seg.to.y - seg.from.y) * frac;
       if (!started) { ctx.moveTo(seg.from.x, seg.from.y); started = true; }
       else ctx.lineTo(seg.from.x, seg.from.y);
-      ctx.lineTo(ex, ey);
-      remaining -= seg.len;
+      ctx.lineTo(ex, ey); rem -= seg.len;
     }
     ctx.stroke();
-
-    // Draw dot at current position
-    if (started) {
-      let dotRemaining = dist;
-      for (const seg of segs) {
-        if (dotRemaining <= seg.len) {
-          const frac = dotRemaining / seg.len;
-          const dx = seg.from.x + (seg.to.x - seg.from.x) * frac;
-          const dy = seg.from.y + (seg.to.y - seg.from.y) * frac;
-          ctx.beginPath();
-          ctx.arc(dx, dy, 5, 0, Math.PI * 2);
-          ctx.fillStyle = color;
-          ctx.fill();
-          break;
-        }
-        dotRemaining -= seg.len;
-      }
-    }
-
     if (t < 1) requestAnimationFrame(step);
     else cb(endCol);
   }
   requestAnimationFrame(step);
 }
 
-function drawFullPath(startCol) {
-  const { path } = tracePath(startCol);
-  const color = COLORS[startCol % COLORS.length];
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(path[0].x, path[0].y);
-  for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
-  ctx.stroke();
-}
-
-function showBanner(name, prize) {
-  document.getElementById('bannerName').textContent = name;
-  document.getElementById('bannerPrize').textContent = prize;
-  banner.classList.add('show');
-  setTimeout(() => banner.classList.remove('show'), 2500);
-}
-
-cv.addEventListener('click', (e) => {
-  if (animating) return;
-  const rect = cv.getBoundingClientRect();
-  const x = (e.clientX - rect.left) / rect.width * (cv.width / 2);
-  const n = names.length;
-  // Find closest column in top area
-  let best = -1, bestD = Infinity;
-  for (let i = 0; i < n; i++) {
-    const d = Math.abs(x - getX(i));
-    if (d < bestD) { bestD = d; best = i; }
-  }
-  if (best < 0 || bestD > 30 || revealed.has(best)) return;
-
+function pickName(i) {
+  if (animating || revealed.has(i)) return;
   animating = true;
-  revealed.add(best);
-  const color = COLORS[best % COLORS.length];
-  animatePath(best, color, (endCol) => {
+  revealed.add(i);
+  const color = COLORS[i % COLORS.length];
+  animatePath(i, color, (endCol) => {
+    revealedResults[i] = { endCol, order: orders[endCol] };
     animating = false;
-    showBanner(names[best], results[endCol]);
-    // Highlight name input
-    const inp = document.querySelector(`.name-input[data-i="${best}"]`);
-    if (inp) { inp.style.borderColor = color; inp.style.color = color; }
-    // Highlight result input
-    const rinp = document.querySelector(`.result-input[data-i="${endCol}"]`);
-    if (rinp) { rinp.style.borderColor = color; rinp.style.color = color; }
+    buildUI();
+    showBanner(names[i], orders[endCol]);
   });
-});
+}
 
-function shuffle() {
-  revealed.clear();
-  // Reset input colors
-  document.querySelectorAll('.name-input,.result-input').forEach(el => {
-    el.style.borderColor = '';
-    el.style.color = '';
-  });
-  generateRungs();
-  draw();
+function showBanner(name, order) {
+  document.getElementById('bName').textContent = name;
+  document.getElementById('bOrder').textContent = order;
+  banner.classList.add('show');
+  setTimeout(() => banner.classList.remove('show'), 2000);
 }
 
 function revealAll() {
   if (animating) return;
   const n = names.length;
-  revealed.clear();
-  for (let i = 0; i < n; i++) revealed.add(i);
-  draw();
   for (let i = 0; i < n; i++) {
-    drawFullPath(i);
+    revealed.add(i);
     const { endCol } = tracePath(i);
-    const color = COLORS[i % COLORS.length];
-    const inp = document.querySelector(`.name-input[data-i="${i}"]`);
-    if (inp) { inp.style.borderColor = color; inp.style.color = color; }
-    const rinp = document.querySelector(`.result-input[data-i="${endCol}"]`);
-    if (rinp) { rinp.style.borderColor = color; rinp.style.color = color; }
+    revealedResults[i] = { endCol, order: orders[endCol] };
   }
+  draw();
+  for (let i = 0; i < n; i++) drawFullPath(i);
+  buildUI();
 }
 
-function addPerson() {
-  names.push('참가자');
-  results.push(String(names.length));
-  buildInputs();
-  shuffle();
+function shuffle() {
+  orders = shuffleArray(names.map((_, i) => i + 1));
+  revealed.clear();
+  revealedResults = {};
+  generateRungs();
+  buildUI();
+  draw();
+  document.getElementById('scoreboard').classList.remove('show');
 }
 
-function removeLast() {
-  if (names.length <= 2) return;
-  names.pop();
-  results.pop();
-  buildInputs();
-  shuffle();
+function updateScoreboard() {
+  const sb = document.getElementById('scoreboard');
+  const body = document.getElementById('sbBody');
+  if (Object.keys(revealedResults).length === 0) { sb.classList.remove('show'); return; }
+  sb.classList.add('show');
+  const sorted = Object.entries(revealedResults).sort((a, b) => a[1].order - b[1].order);
+  body.innerHTML = sorted.map(([col, v]) =>
+    `<div class="sb-row"><span class="sbo">${v.order}번</span><span class="sbn">${names[col]}</span></div>`
+  ).join('');
 }
 
-// Init
-buildInputs();
-generateRungs();
+function addPerson() { names.push('참가자'); shuffle(); buildEditRow(); }
+function removeLast() { if (names.length <= 2) return; names.pop(); shuffle(); buildEditRow(); }
+function toggleEdit() {
+  editMode = !editMode;
+  document.getElementById('editRow').style.display = editMode ? 'flex' : 'none';
+  if (editMode) buildEditRow();
+}
+
+shuffle();
 window.addEventListener('resize', resize);
 resize();
 </script>
