@@ -81,10 +81,31 @@
     const canAnyTrayFit=()=>state.tray.some(Boolean)&&state.tray.some(p=>p&&anyFit(p));
     function generateTray(){state.tray=[];for(let i=0;i<3;i++){const cand=BLOCKS.filter(s=>anyFit({shape:s}));state.tray.push(makePiece((cand.length?pick(cand):[[1]]),pick(COLORS)))}renderTray();if(!canAnyTrayFit())endGame()}
     function drawPieceDOM(p){const el=document.createElement('div');el.className='piece';el.style.gridTemplateColumns=`repeat(${p.shape[0].length},18px)`;for(let r=0;r<p.shape.length;r++)for(let c=0;c<p.shape[0].length;c++){const d=document.createElement('div');d.className='cell';if(p.shape[r][c])d.style.background=p.color;else d.style.visibility='hidden';el.appendChild(d)}return el}
-    function renderTray(){trayEl.innerHTML='';state.tray.forEach((p,idx)=>{const slot=document.createElement('div');slot.className='slot';if(p){const piece=drawPieceDOM(p);slot.appendChild(piece);bindDrag(piece,p,idx)}trayEl.appendChild(slot)})}
-    function bindDrag(el,piece,idx){const start=(x,y)=>{if(Date.now()<state.freezeUntil||state.gameOver)return;const g=drawPieceDOM(piece);g.classList.add('ghost');document.body.appendChild(g);state.drag={piece,idx,ghost:g};move(x,y);el.classList.add('dragging')},move=(x,y)=>{if(!state.drag)return;state.drag.ghost.style.left=`${x-state.drag.ghost.offsetWidth/2}px`;state.drag.ghost.style.top=`${y-state.drag.ghost.offsetHeight/2}px`;const p=ptr(x,y,piece);state.preview=p?{...p,ok:canPlace(piece.shape,p.r,p.c),piece}:null;draw()},end=()=>{if(!state.drag)return;state.drag.ghost.remove();el.classList.remove('dragging');if(state.preview&&state.preview.ok){place(piece,state.preview.r,state.preview.c);state.tray[idx]=null;state.piecesPlacedInRound++;renderTray();if(state.piecesPlacedInRound>=3||state.tray.every(v=>!v)){state.piecesPlacedInRound=0;generateTray()}if(!canAnyTrayFit())endGame()}state.drag=null;state.preview=null;draw()};
-      el.addEventListener('mousedown',e=>{e.preventDefault();start(e.clientX,e.clientY)});window.addEventListener('mousemove',e=>move(e.clientX,e.clientY));window.addEventListener('mouseup',end);
-      el.addEventListener('touchstart',e=>{const t=e.touches[0];start(t.clientX,t.clientY)},{passive:true});window.addEventListener('touchmove',e=>{if(!state.drag)return;e.preventDefault();const t=e.touches[0];move(t.clientX,t.clientY)},{passive:false});window.addEventListener('touchend',end)}
+    function renderTray(){trayEl.innerHTML='';state.tray.forEach((p,idx)=>{const slot=document.createElement('div');slot.className='slot';if(p){const piece=drawPieceDOM(p);slot.appendChild(piece);bindDragStart(piece,p,idx)}trayEl.appendChild(slot)})}
+    function bindDragStart(el,piece,idx){
+      el.addEventListener('mousedown',e=>{e.preventDefault();dragStart(piece,idx,el,e.clientX,e.clientY)});
+      el.addEventListener('touchstart',e=>{const t=e.touches[0];dragStart(piece,idx,el,t.clientX,t.clientY)},{passive:true});
+    }
+    function dragStart(piece,idx,el,x,y){
+      if(Date.now()<state.freezeUntil||state.gameOver||state.drag)return;
+      const g=drawPieceDOM(piece);g.classList.add('ghost');document.body.appendChild(g);
+      state.drag={piece,idx,ghost:g,srcEl:el};el.classList.add('dragging');dragMove(x,y);
+    }
+    function dragMove(x,y){
+      if(!state.drag)return;const d=state.drag;
+      d.ghost.style.left=x-d.ghost.offsetWidth/2+'px';d.ghost.style.top=y-d.ghost.offsetHeight/2+'px';
+      const p=ptr(x,y,d.piece);state.preview=p?{...p,ok:canPlace(d.piece.shape,p.r,p.c),piece:d.piece}:null;draw();
+    }
+    function dragEnd(){
+      if(!state.drag)return;const d=state.drag;d.ghost.remove();d.srcEl.classList.remove('dragging');
+      if(state.preview&&state.preview.ok){place(d.piece,state.preview.r,state.preview.c);state.tray[d.idx]=null;state.piecesPlacedInRound++;renderTray();if(state.piecesPlacedInRound>=3||state.tray.every(v=>!v)){state.piecesPlacedInRound=0;generateTray()}if(!canAnyTrayFit())endGame()}
+      state.drag=null;state.preview=null;draw();
+    }
+    window.addEventListener('mousemove',e=>dragMove(e.clientX,e.clientY));
+    window.addEventListener('mouseup',()=>dragEnd());
+    window.addEventListener('touchmove',e=>{if(!state.drag)return;e.preventDefault();const t=e.touches[0];dragMove(t.clientX,t.clientY)},{passive:false});
+    window.addEventListener('touchend',()=>dragEnd());
+    window.addEventListener('touchcancel',()=>dragEnd());
     function ptr(x,y,piece){const rect=bc.getBoundingClientRect();if(x<rect.left||x>rect.right||y<rect.top||y>rect.bottom)return null;const gx=(x-rect.left)/rect.width*SIZE,gy=(y-rect.top)/rect.height*SIZE;return{r:Math.floor(gy-piece.shape.length/2+0.5),c:Math.floor(gx-piece.shape[0].length/2+0.5)}}
     function place(piece,r,c){let cells=0;for(let y=0;y<piece.shape.length;y++)for(let x=0;x<piece.shape[0].length;x++)if(piece.shape[y][x]){state.board[r+y][c+x]={color:piece.color};cells++}addScore(cells);bounce();const clear=getClear();if(clear.rows.length||clear.cols.length)clearLines(clear);else state.combo=1;if(state.combo>=2){comboEl.classList.remove('pulse');void comboEl.offsetWidth;comboEl.classList.add('pulse');app.classList.add('flash');setTimeout(()=>app.classList.remove('flash'),260)}if(state.combo>=5){app.classList.add('rainbow');setTimeout(()=>app.classList.remove('rainbow'),500);confetti({particleCount:60,spread:65,origin:{y:.5}})}maybeBoss();draw()}
     function getClear(){const rows=[],cols=[];for(let r=0;r<SIZE;r++)if(state.board[r].every(Boolean))rows.push(r);for(let c=0;c<SIZE;c++){let ok=true;for(let r=0;r<SIZE;r++)if(!state.board[r][c])ok=false;if(ok)cols.push(c)}return{rows,cols}}
