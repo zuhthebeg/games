@@ -163,7 +163,7 @@ function rngRange(rng, lo, hi) { return lo + rng() * (hi - lo); }
 const GAME_W      = 360;
 const GAME_H      = 640;
 const PLAYER_R    = 13;
-const PLAYER_SPD  = 240;
+const PLAYER_SPD  = 400;
 const MAX_LIVES   = 3;
 const INVINC_DUR  = 1.5;
 const GOLD_SEC    = 10;
@@ -394,7 +394,7 @@ const k = kaplay({
     width: GAME_W, height: GAME_H,
     background: [8, 8, 24],
     debug: false,
-    pixelDensity: Math.min(window.devicePixelRatio || 1, 2),
+    pixelDensity: 1,
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -669,8 +669,8 @@ k.scene("game", (data) => {
         if (k.isKeyDown("right")||k.isKeyDown("d")) mx+=1;
         if (k.isKeyDown("up")||k.isKeyDown("w"))    my-=1;
         if (k.isKeyDown("down")||k.isKeyDown("s"))  my+=1;
-        if (Math.abs(joyX)>0.08) mx+=joyX;
-        if (Math.abs(joyY)>0.08) my+=joyY;
+        if (Math.abs(joyX)>0.03) mx+=joyX;
+        if (Math.abs(joyY)>0.03) my+=joyY;
         const mlen=Math.sqrt(mx*mx+my*my); if (mlen>1){mx/=mlen;my/=mlen;}
         const nx = Math.max(PLAYER_R, Math.min(GAME_W - PLAYER_R, player.pos.x + mx * PLAYER_SPD * k.dt()));
         const ny = Math.max(40 + PLAYER_R + 4, Math.min(GAME_H - PLAYER_R, player.pos.y + my * PLAYER_SPD * k.dt()));
