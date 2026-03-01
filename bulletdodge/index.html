@@ -12,15 +12,12 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #080818; overflow: hidden; }
 
-        /* kaplay 캔버스 컨테이너 — letterbox가 position:absolute를 사용하므로 relative 필수 */
         #game-wrap {
             position: fixed;
-            top: calc(48px + env(safe-area-inset-top));
-            left: 0; right: 0; bottom: 0;
-            display: flex; align-items: center; justify-content: center;
+            top: 0; left: 0; right: 0; bottom: 0;
             overflow: hidden;
         }
-        canvas { display: block; touch-action: none; max-width: 100%; }
+        canvas { display: block; touch-action: none; }
 
         /* ── Joystick ── */
         #joyWrap {
@@ -372,30 +369,17 @@ async function submitRanking(survTime) {
 // ═══════════════════════════════════════════════════════════════════
 //  KaplayJS Init
 // ═══════════════════════════════════════════════════════════════════
-// canvas 생성 → game-wrap에 삽입, CSS로 크기 맞춤
-const gameWrap   = document.getElementById("game-wrap");
-const gameCanvas = document.createElement("canvas");
-gameWrap.appendChild(gameCanvas);
-
-// game-wrap 가용 영역에 맞춰 canvas CSS 크기 결정 (모바일 주소창 변화 대응)
-function resizeCanvas() {
-    const aw = gameWrap.clientWidth  || window.innerWidth;
-    const ah = gameWrap.clientHeight || Math.max(320, window.innerHeight - 48);
-    const scale = Math.min(aw / GAME_W, ah / GAME_H, 1.8);
-    gameCanvas.style.width  = Math.round(GAME_W * scale) + "px";
-    gameCanvas.style.height = Math.round(GAME_H * scale) + "px";
-}
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
-window.visualViewport?.addEventListener("resize", resizeCanvas);
-
 const k = kaplay({
-    canvas: gameCanvas,
     width: GAME_W, height: GAME_H,
     background: [8, 8, 24],
     debug: false,
+    letterbox: true,
     pixelDensity: 1,
 });
+// KAPLAY이 자동 생성한 canvas를 game-wrap에 이동
+const gameWrap = document.getElementById("game-wrap");
+const gameCanvas = k.canvas;
+gameWrap.appendChild(gameCanvas);
 
 // ═══════════════════════════════════════════════════════════════════
 //  TITLE SCENE
