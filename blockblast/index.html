@@ -78,7 +78,8 @@
     function sfxBoss(){playTone(180,.35,'sawtooth',.12);setTimeout(()=>playTone(120,.5,'triangle',.1),200)}
     function sfxDanger(){playTone(300,.1,'square',.08);setTimeout(()=>playTone(250,.1,'square',.06),100)}
     const SIZE=8;
-    const BLOCKS=[[[1]],[[1,1]],[[1],[1]],[[1,1,1]],[[1],[1],[1]],[[1,1,1,1]],[[1],[1],[1],[1]],[[1,1],[1,1]],[[1,1],[1,0]],[[1,0],[1,1]],[[1,1],[0,1]],[[0,1],[1,1]]]
+    const BLOCKS=[[[1]],[[1,1]],[[1],[1]],[[1,1,1]],[[1],[1],[1]],[[1,1,1,1]],[[1],[1],[1],[1]],[[1,1],[1,1]],[[1,1],[1,0]],[[1,0],[1,1]],[[1,1],[0,1]],[[0,1],[1,1]]];
+    const COLORS=['#5b7cfa','#f76f8e','#5dd39e','#f2bc5b','#9b7af9','#5ccbe8','#f08f47','#ff6b9d','#c084fc','#34d399']
     const state={board:Array.from({length:SIZE},()=>Array(SIZE).fill(null)),tray:[],score:0,best:+localStorage.getItem('blockblast_best')||0,combo:0,comboMax:0,gold:+((window.SharedWallet&&SharedWallet.getGold&&SharedWallet.getGold())||0),awardedHundreds:0,drag:null,preview:null,freezeUntil:0,gameOver:false,bossShownBins:{},playerId:localStorage.getItem('blockblast_player_id')||crypto.randomUUID(),level:1,linesCleared:0,totalPieces:0,roundCleared:false};
     localStorage.setItem('blockblast_player_id',state.playerId);
     const q=s=>document.querySelector(s),app=q('#app'),boardWrap=q('#boardWrap'),bc=q('#boardCanvas'),fx=q('#fxCanvas'),bctx=bc.getContext('2d'),fctx=fx.getContext('2d');
