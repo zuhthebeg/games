@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+  <!-- End Google Tag Manager -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>블록 블라스트 Block Blast</title>
+  <meta name="description" content="8x8 블록 퍼즐! 드래그로 블록을 배치하고 줄을 터트리며 무한 콤보를 노려보세요. 점수 랭킹, 보스 이벤트, 골드 보상까지 한 번에 즐기는 블록 블라스트." />
+  <meta name="keywords" content="블록 블라스트,Block Blast,8x8 퍼즐,블록 퍼즐,콤보 퍼즐,라인 클리어,캔버스 게임,모바일 웹게임" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="블록 블라스트 Block Blast" />
+  <meta property="og:description" content="8x8 블록 퍼즐! 콤보로 팡팡 터트려라" />
+  <meta property="og:url" content="https://game.cocy.io/blockblast/" />
+  <meta property="og:image" content="https://game.cocy.io/blockblast/icon.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="블록 블라스트 Block Blast" />
+  <meta name="twitter:description" content="8x8 블록 퍼즐! 콤보로 팡팡 터트려라" />
+  <meta name="twitter:image" content="https://game.cocy.io/blockblast/icon.svg" />
+  <link rel="canonical" href="https://game.cocy.io/blockblast/" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"블록 블라스트 Block Blast","applicationCategory":"GameApplication","operatingSystem":"Any","url":"https://game.cocy.io/blockblast/","image":"https://game.cocy.io/blockblast/icon.svg","description":"8x8 블록 퍼즐! 드래그로 블록을 배치하고 줄을 지우는 중독성 퍼즐 게임.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+  <!-- AdSense: managed via GTM auto-ads (ca-pub-6634731722045607) -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1/dist/confetti.browser.min.js"></script>
+  <script src="/lib/shared-wallet.js?v=20260214"></script>
+  <style>
+    :root{--bg:#0a0b1e;--panel:#14172c;--text:#ecf2ff;--muted:#9ca7d1}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{margin:0;background:radial-gradient(circle at top,#171f4a 0,#0a0b1e 45%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;display:flex;justify-content:center;min-height:100vh;overflow:hidden}
+    .app{width:min(420px,100vw);height:100vh;max-height:860px;padding:12px 12px 16px;display:flex;flex-direction:column;gap:10px;position:relative}
+    h1{margin:4px 0 0;text-align:center;font-size:28px;letter-spacing:.04em}
+    .top{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.05);padding:10px 12px;border-radius:12px}
+    .score{font-size:22px;font-weight:800}.combo{font-weight:800;color:#ffb347;transition:.2s}.combo.pulse{filter:drop-shadow(0 0 8px #ffcf66);transform:scale(1.09)}
+    .best{color:var(--muted);font-size:13px}
+    #boardWrap{position:relative;flex:1;background:var(--panel);border-radius:16px;padding:10px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);transition:transform .06s linear,filter .3s}
+    #boardCanvas,#fxCanvas{position:absolute;inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);border-radius:12px}
+    #tray{background:var(--panel);border-radius:14px;padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;min-height:112px}
+    .slot{background:rgba(255,255,255,.04);border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;min-height:84px}
+    .piece{display:grid;gap:3px;cursor:grab;touch-action:none}.piece.dragging{opacity:.45}
+    .cell{width:18px;height:18px;border-radius:5px;box-shadow:inset 0 -2px 4px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.25)}
+    .bottom{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-weight:700}.gold{font-size:20px;color:#ffd36b}
+    .flash{animation:bgflash .3s ease}.rainbow{animation:rainbow .5s ease}
+    @keyframes bgflash{from{background:#33284f}to{background:transparent}} @keyframes rainbow{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(180deg)}}
+    .ghost{position:fixed;z-index:20;pointer-events:none;opacity:.95;filter:drop-shadow(0 10px 15px rgba(0,0,0,.45))}
+    .overlay{position:absolute;inset:0;background:rgba(0,0,0,.64);display:none;align-items:flex-start;justify-content:center;padding-top:62px;z-index:30}
+    .boss{background:#101427;border:1px solid rgba(255,255,255,.15);width:92%;max-width:360px;border-radius:14px;padding:14px;transform:translateY(-180%);transition:transform .35s ease}
+    .overlay.show{display:flex}.overlay.show .boss{transform:translateY(0)}
+    .bossname{font-weight:900;color:#f4a6ff}.rank{background:rgba(255,255,255,.05);border-radius:12px;padding:10px}.rank h3{margin:0 0 6px}
+    #titleScreen{position:absolute;inset:0;z-index:40;background:linear-gradient(180deg,rgba(8,8,20,.96),rgba(8,8,20,.9));display:flex;flex-direction:column;justify-content:center;padding:18px;gap:12px}
+    .btn{border:none;background:#5563ff;color:white;padding:12px;border-radius:12px;font-size:17px;font-weight:800}
+    .frozen{pointer-events:none;filter:grayscale(.4)} .gameover{filter:grayscale(.9) brightness(.7)}
+  </style>
+</head>
+<body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+  <div class="app" id="app">
+    <div id="titleScreen"><h1>BLOCK BLAST</h1><div class="rank"><h3>TOP 5</h3><div id="rankList">불러오는 중...</div></div><button class="btn" id="startBtn">게임 시작</button></div>
+    <h1>BLOCK BLAST</h1>
+    <div class="top"><div><div class="score" id="score">0</div><div class="best">BEST <span id="best">0</span></div></div><div class="combo" id="combo">🔥x1</div></div>
+    <div id="boardWrap"><canvas id="boardCanvas"></canvas><canvas id="fxCanvas"></canvas></div>
+    <div id="tray"></div>
+    <div class="bottom"><span id="status">드래그해서 배치!</span><span class="gold">💰 <span id="gold">0</span>G</span></div>
+    <div class="overlay" id="bossOverlay"><div class="boss"><div class="bossname">✨ 블록 마스터</div><div id="bossTalk" style="margin-top:8px;line-height:1.45">...</div></div></div>
+  </div>
+  <script>
+    const SIZE=8,BLOCKS=[[[1]],[[1,1]],[[1],[1]],[[1,1,1]],[[1,1],[1,0]],[[1,0],[1,1]],[[1,1],[0,1]],[[0,1],[1,1]],[[1,1],[1,1]],[[1,1,1],[0,1,0]],[[1,1,1,1]],[[1,1,1],[1,0,0]],[[1,1,1],[0,0,1]]],COLORS=['#5b7cfa','#f76f8e','#5dd39e','#f2bc5b','#9b7af9','#5ccbe8','#f08f47'];
+    const state={board:Array.from({length:SIZE},()=>Array(SIZE).fill(null)),tray:[],score:0,best:+localStorage.getItem('blockblast_best')||0,combo:1,comboMax:1,gold:+((window.SharedWallet&&SharedWallet.getGold&&SharedWallet.getGold())||0),awardedHundreds:0,drag:null,preview:null,piecesPlacedInRound:0,freezeUntil:0,gameOver:false,bossShownBins:{},playerId:localStorage.getItem('blockblast_player_id')||crypto.randomUUID()};
+    localStorage.setItem('blockblast_player_id',state.playerId);
+    const q=s=>document.querySelector(s),app=q('#app'),boardWrap=q('#boardWrap'),bc=q('#boardCanvas'),fx=q('#fxCanvas'),bctx=bc.getContext('2d'),fctx=fx.getContext('2d');
+    const scoreEl=q('#score'),bestEl=q('#best'),comboEl=q('#combo'),trayEl=q('#tray'),goldEl=q('#gold'),statusEl=q('#status'),bossOverlay=q('#bossOverlay'),bossTalk=q('#bossTalk');
+    let cell,particles=[],popups=[],clearFlash=[],animReq;
+    const pick=a=>a[Math.floor(Math.random()*a.length)],rand=(n=1)=>Math.random()*n,copy=p=>p.map(r=>r.slice());
+    function resize(){const dpr=window.devicePixelRatio||1,rect=boardWrap.getBoundingClientRect();[bc,fx].forEach(c=>{c.width=(rect.width-20)*dpr;c.height=(rect.height-20)*dpr;c.getContext('2d').setTransform(dpr,0,0,dpr,0,0)});cell=(rect.width-20)/SIZE;draw()}
+    const makePiece=(shape=pick(BLOCKS),color=pick(COLORS))=>({shape:copy(shape),color,id:Math.random().toString(36).slice(2)});
+    function canPlace(shape,rr,cc){for(let r=0;r<shape.length;r++)for(let c=0;c<shape[0].length;c++)if(shape[r][c]){const y=rr+r,x=cc+c;if(y<0||x<0||y>=SIZE||x>=SIZE||state.board[y][x])return false}return true}
+    function anyFit(piece){for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(canPlace(piece.shape,r,c))return true;return false}
+    const canAnyTrayFit=()=>state.tray.some(Boolean)&&state.tray.some(p=>p&&anyFit(p));
+    function generateTray(){state.tray=[];for(let i=0;i<3;i++){const cand=BLOCKS.filter(s=>anyFit({shape:s}));state.tray.push(makePiece((cand.length?pick(cand):[[1]]),pick(COLORS)))}renderTray();if(!canAnyTrayFit())endGame()}
+    function drawPieceDOM(p){const el=document.createElement('div');el.className='piece';el.style.gridTemplateColumns=`repeat(${p.shape[0].length},18px)`;for(let r=0;r<p.shape.length;r++)for(let c=0;c<p.shape[0].length;c++){const d=document.createElement('div');d.className='cell';if(p.shape[r][c])d.style.background=p.color;else d.style.visibility='hidden';el.appendChild(d)}return el}
+    function renderTray(){trayEl.innerHTML='';state.tray.forEach((p,idx)=>{const slot=document.createElement('div');slot.className='slot';if(p){const piece=drawPieceDOM(p);slot.appendChild(piece);bindDrag(piece,p,idx)}trayEl.appendChild(slot)})}
+    function bindDrag(el,piece,idx){const start=(x,y)=>{if(Date.now()<state.freezeUntil||state.gameOver)return;const g=drawPieceDOM(piece);g.classList.add('ghost');document.body.appendChild(g);state.drag={piece,idx,ghost:g};move(x,y);el.classList.add('dragging')},move=(x,y)=>{if(!state.drag)return;state.drag.ghost.style.left=`${x-state.drag.ghost.offsetWidth/2}px`;state.drag.ghost.style.top=`${y-state.drag.ghost.offsetHeight/2}px`;const p=ptr(x,y,piece);state.preview=p?{...p,ok:canPlace(piece.shape,p.r,p.c),piece}:null;draw()},end=()=>{if(!state.drag)return;state.drag.ghost.remove();el.classList.remove('dragging');if(state.preview&&state.preview.ok){place(piece,state.preview.r,state.preview.c);state.tray[idx]=null;state.piecesPlacedInRound++;renderTray();if(state.piecesPlacedInRound>=3||state.tray.every(v=>!v)){state.piecesPlacedInRound=0;generateTray()}if(!canAnyTrayFit())endGame()}state.drag=null;state.preview=null;draw()};
+      el.addEventListener('mousedown',e=>{e.preventDefault();start(e.clientX,e.clientY)});window.addEventListener('mousemove',e=>move(e.clientX,e.clientY));window.addEventListener('mouseup',end);
+      el.addEventListener('touchstart',e=>{const t=e.touches[0];start(t.clientX,t.clientY)},{passive:true});window.addEventListener('touchmove',e=>{if(!state.drag)return;e.preventDefault();const t=e.touches[0];move(t.clientX,t.clientY)},{passive:false});window.addEventListener('touchend',end)}
+    function ptr(x,y,piece){const rect=bc.getBoundingClientRect();if(x<rect.left||x>rect.right||y<rect.top||y>rect.bottom)return null;const gx=(x-rect.left)/rect.width*SIZE,gy=(y-rect.top)/rect.height*SIZE;return{r:Math.floor(gy-piece.shape.length/2+0.5),c:Math.floor(gx-piece.shape[0].length/2+0.5)}}
+    function place(piece,r,c){let cells=0;for(let y=0;y<piece.shape.length;y++)for(let x=0;x<piece.shape[0].length;x++)if(piece.shape[y][x]){state.board[r+y][c+x]={color:piece.color};cells++}addScore(cells);bounce();const clear=getClear();if(clear.rows.length||clear.cols.length)clearLines(clear);else state.combo=1;if(state.combo>=2){comboEl.classList.remove('pulse');void comboEl.offsetWidth;comboEl.classList.add('pulse');app.classList.add('flash');setTimeout(()=>app.classList.remove('flash'),260)}if(state.combo>=5){app.classList.add('rainbow');setTimeout(()=>app.classList.remove('rainbow'),500);confetti({particleCount:60,spread:65,origin:{y:.5}})}maybeBoss();draw()}
+    function getClear(){const rows=[],cols=[];for(let r=0;r<SIZE;r++)if(state.board[r].every(Boolean))rows.push(r);for(let c=0;c<SIZE;c++){let ok=true;for(let r=0;r<SIZE;r++)if(!state.board[r][c])ok=false;if(ok)cols.push(c)}return{rows,cols}}
+    function clearLines({rows,cols}){const s=new Set();rows.forEach(r=>{for(let c=0;c<SIZE;c++)s.add(r+','+c)});cols.forEach(c=>{for(let r=0;r<SIZE;r++)s.add(r+','+c)});s.forEach(k=>{const [r,c]=k.split(',').map(Number);clearFlash.push({r,c,t:140})});setTimeout(()=>{let cx=0,cy=0,n=0;s.forEach(k=>{const [r,c]=k.split(',').map(Number),d=state.board[r][c];if(d){spawn(c,r,d.color,6+Math.floor(rand(3)));cx+=c;cy+=r;n++}state.board[r][c]=null});const lines=rows.length+cols.length,base=lines===1?10:lines===2?30:lines===3?60:100+(lines-4)*30;state.combo++;state.comboMax=Math.max(state.comboMax,state.combo);const gain=base*state.combo;addScore(gain);pop(`+${gain}`,(cx/n+.5)*cell,(cy/n+.5)*cell,lines>=3?'#ffd36b':'#9fe6ff',lines>=3?34:24);if(lines===1)shake(2,150);if(lines===2){shake(4,200);confetti({particleCount:40,spread:52,origin:{y:.6}})}if(lines>=3){shake(6,300);confetti({particleCount:140,spread:90,startVelocity:35,origin:{y:.55}})}draw()},120)}
+    function addScore(v){state.score+=v;scoreEl.textContent=state.score.toLocaleString();if(state.score>state.best){state.best=state.score;localStorage.setItem('blockblast_best',state.best)}bestEl.textContent=state.best.toLocaleString();comboEl.textContent=`🔥x${state.combo}`;awardGold()}
+    function awardGold(){const h=Math.floor(state.score/100);if(h>state.awardedHundreds){const g=(h-state.awardedHundreds)*10;state.awardedHundreds=h;try{window.SharedWallet&&SharedWallet.addGold&&SharedWallet.addGold(g)}catch(_){ }state.gold+=g;goldEl.textContent=state.gold.toLocaleString()}}
+    class Particle{constructor(x,y,color){this.x=x;this.y=y;this.vx=(Math.random()-.5)*220;this.vy=-80-Math.random()*170;this.g=420;this.life=.52;this.t=this.life;this.size=2+Math.random()*3;this.color=color}u(dt){this.vy+=this.g*dt;this.x+=this.vx*dt;this.y+=this.vy*dt;this.t-=dt}d(ctx){if(this.t<=0)return;ctx.globalAlpha=Math.max(this.t/this.life,0);ctx.fillStyle=this.color;ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}}
+    const spawn=(c,r,color,n)=>{const x=(c+.5)*cell,y=(r+.5)*cell;for(let i=0;i<n;i++)particles.push(new Particle(x,y,color))},pop=(text,x,y,color='#fff',size=24)=>popups.push({text,x,y,color,size,t:.9});
+    function tick(dt){particles=particles.filter(p=>(p.u(dt),p.t>0));popups=popups.filter(p=>(p.t-=dt)>0);clearFlash=clearFlash.filter(f=>(f.t-=dt*1000)>0)}
+    function loop(ts){if(!loop.last)loop.last=ts;const dt=Math.min((ts-loop.last)/1000,.033);loop.last=ts;tick(dt);drawFx();animReq=requestAnimationFrame(loop)}
+    function rr(ctx,x,y,w,h,r,m='fill',style='#fff'){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);if(style)ctx[m+'Style']=style;ctx[m]();}
+    function shade(c,p){const n=parseInt(c.slice(1),16),t=p<0?0:255,q=Math.abs(p)/100,R=n>>16,G=n>>8&255,B=n&255;return `#${(0x1000000+(Math.round((t-R)*q)+R)*0x10000+(Math.round((t-G)*q)+G)*0x100+(Math.round((t-B)*q)+B)).toString(16).slice(1)}`}
+    function draw(){bctx.clearRect(0,0,bc.width,bc.height);const w=bc.clientWidth;for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){rr(bctx,c*cell+1,r*cell+1,cell-2,cell-2,7,'fill','#1a2145');const d=state.board[r][c];if(d){const g=bctx.createLinearGradient(0,r*cell,0,(r+1)*cell);g.addColorStop(0,shade(d.color,18));g.addColorStop(1,shade(d.color,-12));rr(bctx,c*cell+2,r*cell+2,cell-4,cell-4,7,'fill',g)}}clearFlash.forEach(f=>rr(bctx,f.c*cell+2,f.r*cell+2,cell-4,cell-4,7,'fill','rgba(255,255,255,.65)'));if(state.preview){const{piece,r,c,ok}=state.preview;for(let y=0;y<piece.shape.length;y++)for(let x=0;x<piece.shape[0].length;x++)if(piece.shape[y][x]){const rr0=r+y,cc0=c+x;if(rr0<0||cc0<0||rr0>=SIZE||cc0>=SIZE)continue;rr(bctx,cc0*cell+3,rr0*cell+3,cell-6,cell-6,6,'fill',ok?'rgba(58,208,122,.55)':'rgba(255,101,101,.5)')}}bctx.strokeStyle='rgba(255,255,255,.08)';for(let i=0;i<=SIZE;i++){bctx.beginPath();bctx.moveTo(0,i*cell);bctx.lineTo(w,i*cell);bctx.stroke();bctx.beginPath();bctx.moveTo(i*cell,0);bctx.lineTo(i*cell,w);bctx.stroke()}}
+    function drawFx(){fctx.clearRect(0,0,fx.width,fx.height);particles.forEach(p=>p.d(fctx));popups.forEach(p=>{fctx.globalAlpha=Math.min(1,p.t*2);fctx.fillStyle=p.color;fctx.font=`900 ${p.size}px system-ui`;fctx.textAlign='center';fctx.fillText(p.text,p.x,p.y-(1-p.t)*60);fctx.globalAlpha=1})}
+    function shake(px,ms){const t=Date.now()+ms;(function s(){if(Date.now()>t){boardWrap.style.transform='translate(0,0)';return}boardWrap.style.transform=`translate(${(Math.random()-.5)*px*2}px,${(Math.random()-.5)*px*2}px)`;requestAnimationFrame(s)})()}function bounce(){boardWrap.animate([{transform:'scale(1.04)'},{transform:'scale(1)'}],{duration:150,easing:'cubic-bezier(.2,.7,.2,1)'})}
+    async function maybeBoss(){const milestones=[500,1500,3000,5000,8000,11000],passed=milestones.filter(m=>state.score>=m&&!state.bossShownBins[m]);if(!passed.length)return;const m=passed[0],bin=Math.floor(m/1000),cnt=Object.keys(state.bossShownBins).filter(k=>Math.floor(+k/1000)===bin).length;if(cnt>=2)return;state.bossShownBins[m]=1;try{const res=await fetch('https://relay.cocy.io/api/llm/boss',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bossId:'blockblast_boss',bossName:'블록 마스터',playerId:state.playerId,stage:Math.floor(state.score/500),percent:0,lives:0,playerLevel:state.comboMax,triggerType:state.score<1500?'greeting':'desperate',gameId:'blockblast'})});if(!res.ok)return;const{dialogue,action}=await res.json();bossTalk.textContent=dialogue||'흥, 잘하네.';bossOverlay.classList.add('show');setTimeout(()=>bossOverlay.classList.remove('show'),4000);if(action==='scramble'){const a=Math.floor(Math.random()*SIZE),b=Math.floor(Math.random()*SIZE);[state.board[a],state.board[b]]=[state.board[b],state.board[a]];draw()}if(action==='freeze'){state.freezeUntil=Date.now()+2000;trayEl.classList.add('frozen');setTimeout(()=>trayEl.classList.remove('frozen'),2100}}catch(_){}}
+    async function loadRanking(){try{const r=await fetch('https://relay.cocy.io/api/rankings/blockblast');if(!r.ok)throw 0;const d=await r.json(),list=(d.top||d.rankings||d||[]).slice(0,5);q('#rankList').innerHTML=list.length?list.map((x,i)=>`<div>${i+1}. ${x.nickname||'anon'} - ${(+x.score||0).toLocaleString()}</div>`).join(''):'기록 없음'}catch(_){q('#rankList').textContent='랭킹 불러오기 실패'}}
+    async function submitRanking(){try{await fetch('https://relay.cocy.io/api/rankings/blockblast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:state.playerId,nickname:'Player',score:state.best})})}catch(_){}}
+    function endGame(){if(state.gameOver)return;state.gameOver=true;statusEl.textContent='게임 오버';boardWrap.classList.add('gameover');for(let i=0;i<80;i++){const p=new Particle(rand(bc.clientWidth),bc.clientHeight-rand(20),'#a7b2d8');p.vy=-140-rand(80);p.g=-30;particles.push(p)}submitRanking()}
+    function init(){bestEl.textContent=state.best.toLocaleString();goldEl.textContent=state.gold.toLocaleString();scoreEl.textContent='0';comboEl.textContent='🔥x1';generateTray();resize();window.addEventListener('resize',resize);cancelAnimationFrame(animReq);animReq=requestAnimationFrame(loop)}
+    q('#startBtn').onclick=()=>{q('#titleScreen').style.display='none';init()};loadRanking();
+  </script>
+</body>
+</html>

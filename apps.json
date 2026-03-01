@@ -279,5 +279,15 @@
     "platforms": ["WEB"],
     "languages": ["🇰🇷"],
     "category": "game"
+  },
+  {
+    "title": "블록 블라스트 Block Blast",
+    "icon": "https://game.cocy.io/blockblast/icon.svg",
+    "url": "https://game.cocy.io/blockblast/",
+    "desc": "8x8 블록 퍼즐! 콤보로 팡팡 터트려라",
+    "badge": "NEW",
+    "platforms": ["WEB"],
+    "languages": ["🌍"],
+    "category": "game"
   }
 ]
