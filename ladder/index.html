@@ -20,6 +20,59 @@ h1 { text-align: center; font-size: 20px; color: #ffd700; margin-bottom: 2px; }
 .toolbar {
   display: flex; gap: 5px; justify-content: center; margin-bottom: 8px; flex-wrap: wrap;
 }
+.mode-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin: -2px 0 8px;
+  flex-wrap: wrap;
+}
+.mode-toggle {
+  display: inline-flex;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.04);
+}
+.mode-btn {
+  border: none;
+  background: transparent;
+  color: #bdbde8;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.mode-btn.active {
+  background: rgba(111,47,209,0.45);
+  color: #fff;
+}
+.winner-count {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  color: #ccc;
+  font-size: 11px;
+}
+.winner-count.show { display: inline-flex; }
+.wc-btn {
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.wc-value {
+  min-width: 18px;
+  text-align: center;
+  color: #ffd700;
+  font-weight: 800;
+}
 .ai-bar {
   display: flex;
   gap: 4px;
@@ -126,6 +179,16 @@ canvas {
 }
 .order-cell.hidden { color: transparent; background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
 .order-cell.hidden::after { content: '?'; color: #444; }
+.order-cell.winner {
+  background: rgba(255,215,0,0.18);
+  border-color: rgba(255,215,0,0.7);
+  color: #ffd700;
+}
+.order-cell.loser {
+  background: rgba(180,180,180,0.1);
+  border-color: rgba(170,170,170,0.35);
+  color: #b6b6c8;
+}
 
 .scoreboard {
   margin-top: 12px; background: rgba(255,255,255,0.04);
@@ -137,6 +200,7 @@ canvas {
 .sb-row { display: flex; justify-content: space-between; padding: 2px 4px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .sb-row .sbn { color: #ccc; }
 .sb-row .sbo { color: #ffd700; font-weight: 700; min-width: 36px; }
+.sb-row .sbo.muted { color: #a9a9ba; }
 
 .edit-section {
   margin-top: 10px; text-align: center;
@@ -165,18 +229,40 @@ canvas {
 .result-banner .rarrow { font-size: 18px; color: #ffd700; margin: 4px 0; }
 .result-banner .rorder { font-size: 44px; font-weight: 900; color: #ffd700; }
 .result-banner .rlabel { font-size: 12px; color: #aaa; }
+.result-banner.win {
+  border-color: #ffd700;
+  box-shadow: 0 0 24px rgba(255,215,0,0.28);
+}
+.result-banner.lose {
+  border-color: #7f8495;
+  box-shadow: 0 0 20px rgba(127,132,149,0.2);
+}
+.result-banner.lose .rorder { color: #b7bbca; }
+.result-banner.lose .rarrow { color: #9ca1b0; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>🪜 사다리 게임</h1>
-  <div class="sub">이름을 터치하면 순서가 정해집니다</div>
+  <div class="sub" id="subText">이름을 터치하면 순서가 정해집니다</div>
   <div class="toolbar">
     <button class="btn btn-primary" onclick="shuffle()">🔀 섞기</button>
     <button class="btn btn-warn" onclick="revealAll()">👀 전체공개</button>
     <button class="btn btn-secondary" onclick="addPerson()">➕ 추가</button>
     <button class="btn btn-danger" onclick="removeLast()">➖ 삭제</button>
     <button class="btn btn-secondary" onclick="toggleEdit()">✏️ 수정</button>
+  </div>
+  <div class="mode-wrap">
+    <div class="mode-toggle">
+      <button id="modeOrderBtn" class="mode-btn active" onclick="setGameMode('order')">순서</button>
+      <button id="modeWinnerBtn" class="mode-btn" onclick="setGameMode('winner')">당첨</button>
+    </div>
+    <div id="winnerCountWrap" class="winner-count">
+      <span>당첨수:</span>
+      <button class="wc-btn" onclick="changeWinnerCount(-1)">-</button>
+      <span id="winnerCountValue" class="wc-value">1</span>
+      <button class="wc-btn" onclick="changeWinnerCount(1)">+</button>
+    </div>
   </div>
   <div class="ai-bar">
     <input id="aiInput" class="ai-input" type="text" placeholder="✨ 예: 5명 / 철수 영희 민수" />
@@ -191,7 +277,7 @@ canvas {
       <div class="bottom-row" id="bottomRow"></div>
     </div>
   </div>
-  <div class="scoreboard" id="scoreboard"><h3>📋 순서 결과</h3><div id="sbBody"></div></div>
+  <div class="scoreboard" id="scoreboard"><h3 id="scoreTitle">📋 순서 결과</h3><div id="sbBody"></div></div>
   <div class="edit-section">
     <div class="edit-row" id="editRow" style="display:none"></div>
   </div>
@@ -200,7 +286,7 @@ canvas {
   <div class="rname" id="bName"></div>
   <div class="rarrow">▼</div>
   <div class="rorder" id="bOrder"></div>
-  <div class="rlabel">번째 순서</div>
+  <div class="rlabel" id="bLabel">번째 순서</div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -215,7 +301,10 @@ const COLORS = [
 ];
 
 let names = loadNames();
+let gameMode = 'order';
+let winnerCount = 1;
 let orders = [];
+let winnerSlots = [];
 let rungs = [];
 let revealed = new Set();
 let revealedResults = {};
@@ -230,6 +319,38 @@ const banner = document.getElementById('banner');
 const COL_W = 48;
 const PAD = 20;
 const CANVAS_H = 420;
+
+function clampWinnerCount(value) {
+  const max = Math.max(1, names.length - 1);
+  return Math.max(1, Math.min(max, Number(value) || 1));
+}
+
+function renderModeUI() {
+  const isWinner = gameMode === 'winner';
+  document.getElementById('modeOrderBtn').classList.toggle('active', !isWinner);
+  document.getElementById('modeWinnerBtn').classList.toggle('active', isWinner);
+  document.getElementById('winnerCountWrap').classList.toggle('show', isWinner);
+  document.getElementById('winnerCountValue').textContent = String(winnerCount);
+  document.getElementById('subText').textContent = isWinner
+    ? '이름을 터치하면 당첨 여부가 정해집니다'
+    : '이름을 터치하면 순서가 정해집니다';
+  document.getElementById('scoreTitle').textContent = isWinner ? '📋 당첨 결과' : '📋 순서 결과';
+}
+
+function setGameMode(mode) {
+  if (mode !== 'order' && mode !== 'winner') return;
+  if (gameMode === mode) return;
+  gameMode = mode;
+  shuffle();
+}
+
+function changeWinnerCount(delta) {
+  const next = clampWinnerCount(winnerCount + delta);
+  if (next === winnerCount) return;
+  winnerCount = next;
+  if (gameMode === 'winner') shuffle();
+  else renderModeUI();
+}
 
 function genericNames(count = 4) {
   const n = Math.max(2, Math.min(20, Number(count) || 4));
@@ -268,6 +389,7 @@ function setNames(nextNames) {
     return;
   }
   names = cleaned;
+  winnerCount = clampWinnerCount(winnerCount);
   saveNames();
   shuffle();
   if (editMode) buildEditRow();
@@ -300,15 +422,24 @@ function buildUI() {
   }).join('');
 
   const br = document.getElementById('bottomRow');
-  br.innerHTML = orders.map((o, i) => {
+  const bottomValues = gameMode === 'winner'
+    ? winnerSlots.map((v) => v ? '🎉 당첨' : '꽝')
+    : orders;
+  br.innerHTML = bottomValues.map((value, i) => {
     const revCol = Object.entries(revealedResults).find(([_, v]) => v.endCol === i);
     if (revCol) {
       const topCol = parseInt(revCol[0], 10);
+      if (gameMode === 'winner') {
+        const isWinner = winnerSlots[i] === true;
+        return `<div class="order-cell ${isWinner ? 'winner' : 'loser'}" style="width:${cellW}">${isWinner ? '🎉 당첨' : '꽝'}</div>`;
+      }
       const color = COLORS[topCol % COLORS.length];
-      return `<div class="order-cell" style="width:${cellW};border-color:${color};color:${color}">${o}</div>`;
+      return `<div class="order-cell" style="width:${cellW};border-color:${color};color:${color}">${value}</div>`;
     }
     return `<div class="order-cell hidden" style="width:${cellW}"></div>`;
   }).join('');
+
+  renderModeUI();
 
   document.getElementById('ladderArea').style.width = calcWidth() + 'px';
   updateScoreboard();
@@ -439,18 +570,39 @@ function pickName(i) {
   revealed.add(i);
   const color = COLORS[i % COLORS.length];
   animatePath(i, color, (endCol) => {
-    revealedResults[i] = { endCol, order: orders[endCol] };
+    const isWinner = gameMode === 'winner' ? winnerSlots[endCol] === true : false;
+    revealedResults[i] = {
+      endCol,
+      order: gameMode === 'order' ? orders[endCol] : null,
+      resultText: gameMode === 'winner' ? (isWinner ? '🎉 당첨' : '꽝') : null,
+      isWinner
+    };
     animating = false;
     buildUI();
-    showBanner(names[i], orders[endCol]);
+    showBanner(names[i], revealedResults[i]);
   });
 }
 
-function showBanner(name, order) {
+function showBanner(name, result) {
+  const valueEl = document.getElementById('bOrder');
+  const labelEl = document.getElementById('bLabel');
   document.getElementById('bName').textContent = name;
-  document.getElementById('bOrder').textContent = order;
+  banner.classList.remove('win', 'lose');
+
+  if (gameMode === 'winner') {
+    const isWinner = result?.isWinner === true;
+    valueEl.textContent = isWinner ? '🎉 당첨!' : '💨 꽝!';
+    labelEl.textContent = isWinner ? '축하합니다!' : '다음 기회에!';
+    banner.classList.add(isWinner ? 'win' : 'lose');
+  } else {
+    valueEl.textContent = result?.order ?? '';
+    labelEl.textContent = '번째 순서';
+  }
+
   banner.classList.add('show');
-  setTimeout(() => banner.classList.remove('show'), 2000);
+  setTimeout(() => {
+    banner.classList.remove('show', 'win', 'lose');
+  }, 2000);
 }
 
 function showToast(message) {
@@ -588,7 +740,7 @@ async function applyAiImage(event) {
     const content = await callLlm('sonnet', [{
       role: 'user',
       content: [
-        { type: 'text', text: '이미지에서 사람 이름을 모두 추출해라. 반드시 JSON만 반환: {"names": string[]}. 이름이 없으면 {"names": []}.' },
+        { type: 'text', text: '이미지를 분석해라.\n1. 이름표, 명찰, 텍스트로 된 이름이 보이면 이름을 추출: {"names": ["이름1", "이름2"]}\n2. 이름은 안 보이지만 사람들이 보이면, 각 사람을 간단히 묘사해서 구분 가능한 별명으로: {"names": ["안경 쓴 남자", "빨간 모자 여자", "긴머리 여자"]}\n3. 사람도 이름도 없으면: {"names": []}\n반드시 JSON만 반환.' },
         { type: 'image_url', image_url: { url: dataUrl } }
       ]
     }], 300);
@@ -616,7 +768,13 @@ function revealAll() {
   for (let i = 0; i < names.length; i++) {
     revealed.add(i);
     const { endCol } = tracePath(i);
-    revealedResults[i] = { endCol, order: orders[endCol] };
+    const isWinner = gameMode === 'winner' ? winnerSlots[endCol] === true : false;
+    revealedResults[i] = {
+      endCol,
+      order: gameMode === 'order' ? orders[endCol] : null,
+      resultText: gameMode === 'winner' ? (isWinner ? '🎉 당첨' : '꽝') : null,
+      isWinner
+    };
   }
   draw();
   for (let i = 0; i < names.length; i++) drawFullPath(i);
@@ -624,7 +782,13 @@ function revealAll() {
 }
 
 function shuffle() {
+  winnerCount = clampWinnerCount(winnerCount);
   orders = shuffleArray(names.map((_, i) => i + 1));
+  winnerSlots = Array(names.length).fill(false);
+  if (gameMode === 'winner') {
+    const picked = shuffleArray(names.map((_, i) => i)).slice(0, winnerCount);
+    for (const idx of picked) winnerSlots[idx] = true;
+  }
   revealed.clear();
   revealedResults = {};
   generateRungs();
@@ -639,6 +803,20 @@ function updateScoreboard() {
   const body = document.getElementById('sbBody');
   if (Object.keys(revealedResults).length === 0) { sb.classList.remove('show'); return; }
   sb.classList.add('show');
+
+  if (gameMode === 'winner') {
+    const sorted = Object.entries(revealedResults).sort((a, b) => {
+      const av = a[1].isWinner ? 0 : 1;
+      const bv = b[1].isWinner ? 0 : 1;
+      if (av !== bv) return av - bv;
+      return Number(a[0]) - Number(b[0]);
+    });
+    body.innerHTML = sorted.map(([col, v]) =>
+      `<div class="sb-row"><span class="sbo ${v.isWinner ? '' : 'muted'}">${v.resultText}</span><span class="sbn">${names[col]}</span></div>`
+    ).join('');
+    return;
+  }
+
   const sorted = Object.entries(revealedResults).sort((a, b) => a[1].order - b[1].order);
   body.innerHTML = sorted.map(([col, v]) =>
     `<div class="sb-row"><span class="sbo">${v.order}번</span><span class="sbn">${names[col]}</span></div>`
@@ -649,6 +827,7 @@ function addPerson() {
   const n = prompt('추가할 이름:');
   if (!n || !n.trim()) return;
   names.push(n.trim());
+  winnerCount = clampWinnerCount(winnerCount);
   saveNames();
   shuffle();
   if (editMode) buildEditRow();
@@ -657,6 +836,7 @@ function addPerson() {
 function removeLast() {
   if (names.length <= 2) return;
   names.pop();
+  winnerCount = clampWinnerCount(winnerCount);
   saveNames();
   shuffle();
   if (editMode) buildEditRow();
