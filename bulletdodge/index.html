@@ -449,19 +449,32 @@ k.scene("title", () => {
     const btn1Y = btn2Y - (btn1H / 2 + btn2H / 2 + btnGap);
 
     // 1P button
-    const btn1p = k.add([k.rect(btnW, btn1H), k.pos(GAME_W / 2, btn1Y),
-        k.anchor("center"), k.color(20,150,200), k.area(), "btn1p"]);
+    k.add([k.rect(btnW, btn1H), k.pos(GAME_W / 2, btn1Y),
+        k.anchor("center"), k.color(20,150,200)]);
     k.add([k.pos(GAME_W / 2, btn1Y), k.anchor("center"),
         k.text("▶  1인 플레이", {size:19,font:"monospace"}), k.color(255,255,255)]);
 
     // Multi button
-    const btnMp = k.add([k.rect(btnW, btn2H), k.pos(GAME_W / 2, btn2Y),
-        k.anchor("center"), k.color(80,40,150), k.area(), "btnMp"]);
+    k.add([k.rect(btnW, btn2H), k.pos(GAME_W / 2, btn2Y),
+        k.anchor("center"), k.color(80,40,150)]);
     k.add([k.pos(GAME_W / 2, btn2Y), k.anchor("center"),
         k.text("👥  멀티플레이", {size:17,font:"monospace"}), k.color(220,200,255)]);
 
-    btn1p.onClick(() => k.go("game", { mode:"1p", seed: Math.floor(Math.random()*0xFFFFFF) }));
-    btnMp.onClick(() => showLobby());
+    // Manual hit-test (bypass KAPLAY area() coordinate bug)
+    function hitRect(mx, my, cx, cy, w, h) {
+        return mx >= cx - w/2 && mx <= cx + w/2 && my >= cy - h/2 && my <= cy + h/2;
+    }
+    function onClickCanvas(fn) {
+        k.onTouchStart((pos) => fn(pos));
+        k.onMousePress("left", (pos) => fn(pos));
+    }
+    onClickCanvas((pos) => {
+        if (hitRect(pos.x, pos.y, GAME_W/2, btn1Y, btnW, btn1H)) {
+            k.go("game", { mode:"1p", seed: Math.floor(Math.random()*0xFFFFFF) });
+        } else if (hitRect(pos.x, pos.y, GAME_W/2, btn2Y, btnW, btn2H)) {
+            showLobby();
+        }
+    });
     k.onKeyDown("space", () => k.go("game", { mode:"1p", seed: Math.floor(Math.random()*0xFFFFFF) }));
 });
 
@@ -768,35 +781,45 @@ k.scene("gameover", (data) => {
     }
 
     // Buttons
-    const retryBtn = k.add([k.rect(200,52), k.pos(GAME_W/2,GAME_H*0.74),
-        k.anchor("center"), k.color(25,145,75), k.area(), "retryBtn"]);
-    k.add([k.pos(GAME_W/2,GAME_H*0.74), k.anchor("center"),
+    const retryBtnY = GAME_H*0.74, retryBtnW = 200, retryBtnH = 52;
+    const titleBtnY = GAME_H*0.85, titleBtnW = 180, titleBtnH = 44;
+
+    k.add([k.rect(retryBtnW, retryBtnH), k.pos(GAME_W/2, retryBtnY),
+        k.anchor("center"), k.color(25,145,75)]);
+    k.add([k.pos(GAME_W/2, retryBtnY), k.anchor("center"),
         k.text("🔄 다시하기",{size:18,font:"monospace"}), k.color(255,255,255)]);
 
-    const titleBtn = k.add([k.rect(180,44), k.pos(GAME_W/2,GAME_H*0.85),
-        k.anchor("center"), k.color(45,65,110), k.area(), "titleBtn"]);
-    k.add([k.pos(GAME_W/2,GAME_H*0.85), k.anchor("center"),
+    k.add([k.rect(titleBtnW, titleBtnH), k.pos(GAME_W/2, titleBtnY),
+        k.anchor("center"), k.color(45,65,110)]);
+    k.add([k.pos(GAME_W/2, titleBtnY), k.anchor("center"),
         k.text("🏠 타이틀로",{size:15,font:"monospace"}), k.color(170,200,255)]);
 
-    retryBtn.onClick(() => {
-        if (isMulti) {
-            // 멀티 재도전: 로비로
-            mp?.stopListening();
-            MultiplayerClient.resetInstance();
-            mp=null; mpRoomId=null; mpIsHost=false; mpContext=null; mpEventQueue.length=0;
+    function hitRect(mx, my, cx, cy, w, h) {
+        return mx >= cx - w/2 && mx <= cx + w/2 && my >= cy - h/2 && my <= cy + h/2;
+    }
+    function onClickCanvas(fn) {
+        k.onTouchStart((pos) => fn(pos));
+        k.onMousePress("left", (pos) => fn(pos));
+    }
+    onClickCanvas((pos) => {
+        if (hitRect(pos.x, pos.y, GAME_W/2, retryBtnY, retryBtnW, retryBtnH)) {
+            if (isMulti) {
+                mp?.stopListening();
+                MultiplayerClient.resetInstance();
+                mp=null; mpRoomId=null; mpIsHost=false; mpContext=null; mpEventQueue.length=0;
+                k.go("title");
+                showLobby();
+            } else {
+                k.go("game", { mode:"1p", seed: Math.floor(Math.random()*0xFFFFFF) });
+            }
+        } else if (hitRect(pos.x, pos.y, GAME_W/2, titleBtnY, titleBtnW, titleBtnH)) {
+            if (mp) {
+                mp.stopListening();
+                MultiplayerClient.resetInstance();
+                mp=null; mpRoomId=null; mpIsHost=false; mpContext=null; mpEventQueue.length=0;
+            }
             k.go("title");
-            showLobby();
-        } else {
-            k.go("game", { mode:"1p", seed: Math.floor(Math.random()*0xFFFFFF) });
         }
-    });
-    titleBtn.onClick(() => {
-        if (mp) {
-            mp.stopListening();
-            MultiplayerClient.resetInstance();
-            mp=null; mpRoomId=null; mpIsHost=false; mpContext=null; mpEventQueue.length=0;
-        }
-        k.go("title");
     });
     k.onKeyDown("space", () => k.go("game", { mode:"1p", seed: Math.floor(Math.random()*0xFFFFFF) }));
 });
