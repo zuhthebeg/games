@@ -94,7 +94,7 @@
     function tick(dt){particles=particles.filter(p=>(p.u(dt),p.t>0));popups=popups.filter(p=>(p.t-=dt)>0);clearFlash=clearFlash.filter(f=>(f.t-=dt*1000)>0)}
     function loop(ts){if(!loop.last)loop.last=ts;const dt=Math.min((ts-loop.last)/1000,.033);loop.last=ts;tick(dt);drawFx();animReq=requestAnimationFrame(loop)}
     function rr(ctx,x,y,w,h,r,m='fill',style='#fff'){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);if(style)ctx[m+'Style']=style;ctx[m]();}
-    function shade(c,p){const n=parseInt(c.slice(1),16),t=p<0?0:255,q=Math.abs(p)/100,R=n>>16,G=n>>8&255,B=n&255;return `#${(0x1000000+(Math.round((t-R)*q)+R)*0x10000+(Math.round((t-G)*q)+G)*0x100+(Math.round((t-B)*q)+B)).toString(16).slice(1)}`}
+    function shade(c,p){const n=parseInt(c.slice(1),16),t=p<0?0:255,amt=Math.abs(p)/100,R=n>>16,G=n>>8&255,B=n&255;return `#${(0x1000000+(Math.round((t-R)*amt)+R)*0x10000+(Math.round((t-G)*amt)+G)*0x100+(Math.round((t-B)*amt)+B)).toString(16).slice(1)}`}
     function draw(){bctx.clearRect(0,0,bc.width,bc.height);const w=bc.clientWidth;for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){rr(bctx,c*cell+1,r*cell+1,cell-2,cell-2,7,'fill','#1a2145');const d=state.board[r][c];if(d){const g=bctx.createLinearGradient(0,r*cell,0,(r+1)*cell);g.addColorStop(0,shade(d.color,18));g.addColorStop(1,shade(d.color,-12));rr(bctx,c*cell+2,r*cell+2,cell-4,cell-4,7,'fill',g)}}clearFlash.forEach(f=>rr(bctx,f.c*cell+2,f.r*cell+2,cell-4,cell-4,7,'fill','rgba(255,255,255,.65)'));if(state.preview){const{piece,r,c,ok}=state.preview;for(let y=0;y<piece.shape.length;y++)for(let x=0;x<piece.shape[0].length;x++)if(piece.shape[y][x]){const rr0=r+y,cc0=c+x;if(rr0<0||cc0<0||rr0>=SIZE||cc0>=SIZE)continue;rr(bctx,cc0*cell+3,rr0*cell+3,cell-6,cell-6,6,'fill',ok?'rgba(58,208,122,.55)':'rgba(255,101,101,.5)')}}bctx.strokeStyle='rgba(255,255,255,.08)';for(let i=0;i<=SIZE;i++){bctx.beginPath();bctx.moveTo(0,i*cell);bctx.lineTo(w,i*cell);bctx.stroke();bctx.beginPath();bctx.moveTo(i*cell,0);bctx.lineTo(i*cell,w);bctx.stroke()}}
     function drawFx(){fctx.clearRect(0,0,fx.width,fx.height);particles.forEach(p=>p.d(fctx));popups.forEach(p=>{fctx.globalAlpha=Math.min(1,p.t*2);fctx.fillStyle=p.color;fctx.font=`900 ${p.size}px system-ui`;fctx.textAlign='center';fctx.fillText(p.text,p.x,p.y-(1-p.t)*60);fctx.globalAlpha=1})}
     function shake(px,ms){const t=Date.now()+ms;(function s(){if(Date.now()>t){boardWrap.style.transform='translate(0,0)';return}boardWrap.style.transform=`translate(${(Math.random()-.5)*px*2}px,${(Math.random()-.5)*px*2}px)`;requestAnimationFrame(s)})()}function bounce(){boardWrap.animate([{transform:'scale(1.04)'},{transform:'scale(1)'}],{duration:150,easing:'cubic-bezier(.2,.7,.2,1)'})}
@@ -102,11 +102,14 @@
     async function loadRanking(){try{const r=await fetch('https://relay.cocy.io/api/rankings/blockblast?limit=5');if(!r.ok)throw 0;const d=await r.json(),list=(d.rankings||[]).slice(0,5);q('#rankList').innerHTML=list.length?list.map((x,i)=>{const medal=['🥇','🥈','🥉'][i]||`${i+1}.`;return`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:14px"><span>${medal} ${x.nickname||'익명'}</span><span style="color:#ffd36b;font-weight:800">${(+x.best_score||0).toLocaleString()}</span></div>`}).join(''):'<div style="text-align:center;color:#9ca7d1">아직 기록이 없어요</div>'}catch(_){q('#rankList').innerHTML='<div style="text-align:center;color:#9ca7d1">랭킹 준비 중...</div>'}}
     async function submitRanking(){try{const nick=window.SharedWallet?.user?.nickname||window.SharedWallet?.user?.username||'Player';await fetch('https://relay.cocy.io/api/rankings/blockblast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:state.playerId,nickname:nick,score:state.score})})}catch(_){}}
     function endGame(){if(state.gameOver)return;state.gameOver=true;statusEl.textContent='게임 오버';boardWrap.classList.add('gameover');for(let i=0;i<80;i++){const p=new Particle(rand(bc.clientWidth),bc.clientHeight-rand(20),'#a7b2d8');p.vy=-140-rand(80);p.g=-30;particles.push(p)}submitRanking()}
-    function init(){bestEl.textContent=state.best.toLocaleString();goldEl.textContent=state.gold.toLocaleString();scoreEl.textContent='0';comboEl.textContent='🔥x1';generateTray();resize();window.addEventListener('resize',resize);cancelAnimationFrame(animReq);animReq=requestAnimationFrame(loop)}
-    const startBtn=q('#startBtn');
-    function startGame(){q('#titleScreen').style.display='none';init()}
-    startBtn.onclick=startGame;
-    startBtn.addEventListener('touchend',e=>{e.preventDefault();startGame()},{passive:false});
+    function init(){bestEl.textContent=state.best.toLocaleString();goldEl.textContent=state.gold.toLocaleString();scoreEl.textContent='0';comboEl.textContent='🔥x1';state.board=Array.from({length:SIZE},()=>Array(SIZE).fill(null));state.score=0;state.combo=1;state.comboMax=1;state.awardedHundreds=0;state.piecesPlacedInRound=0;state.gameOver=false;state.bossShownBins={};state.drag=null;state.preview=null;boardWrap.classList.remove('gameover');requestAnimationFrame(()=>{resize();generateTray();cancelAnimationFrame(animReq);animReq=requestAnimationFrame(loop)});window.addEventListener('resize',resize)}
+    const startBtn=document.getElementById('startBtn');
+    const titleScreen=document.getElementById('titleScreen');
+    function startGame(){
+      try{titleScreen.style.display='none';init()}catch(e){alert('init error: '+e.message)}
+    }
+    startBtn.addEventListener('click',startGame);
+    startBtn.addEventListener('touchend',function(e){e.preventDefault();startGame()},{passive:false});
     loadRanking();
   </script>
 </body>
