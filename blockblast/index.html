@@ -66,20 +66,65 @@
     <div class="overlay" id="bossOverlay"><div class="boss"><div class="bossname">✨ 블록 마스터</div><div id="bossTalk" style="margin-top:8px;line-height:1.45">...</div></div></div>
   </div>
   <script>
-    if(typeof confetti==="undefined"){window.confetti=function(){}};
-    const SIZE=8,BLOCKS=[[[1]],[[1,1]],[[1],[1]],[[1,1,1]],[[1,1],[1,0]],[[1,0],[1,1]],[[1,1],[0,1]],[[0,1],[1,1]],[[1,1],[1,1]],[[1,1,1],[0,1,0]],[[1,1,1,1]],[[1,1,1],[1,0,0]],[[1,1,1],[0,0,1]]],COLORS=['#5b7cfa','#f76f8e','#5dd39e','#f2bc5b','#9b7af9','#5ccbe8','#f08f47'];
-    const state={board:Array.from({length:SIZE},()=>Array(SIZE).fill(null)),tray:[],score:0,best:+localStorage.getItem('blockblast_best')||0,combo:1,comboMax:1,gold:+((window.SharedWallet&&SharedWallet.getGold&&SharedWallet.getGold())||0),awardedHundreds:0,drag:null,preview:null,piecesPlacedInRound:0,freezeUntil:0,gameOver:false,bossShownBins:{},playerId:localStorage.getItem('blockblast_player_id')||crypto.randomUUID()};
+    if(typeof confetti==="undefined"){window.confetti=function(){}}
+    const SIZE=8;
+    // More block shapes for variety (21 shapes)
+    const BLOCKS=[
+      [[1]],[[1,1]],[[1],[1]],[[1,1,1]],[[1,1],[1,0]],[[1,0],[1,1]],
+      [[1,1],[0,1]],[[0,1],[1,1]],[[1,1],[1,1]],[[1,1,1],[0,1,0]],
+      [[1,1,1,1]],[[1,1,1],[1,0,0]],[[1,1,1],[0,0,1]],
+      [[1,0],[1,0],[1,1]],[[0,1],[0,1],[1,1]],[[1,1,1],[1,0,1]],
+      [[1,0,1],[1,1,1]],[[1],[1],[1]],[[1,1,0],[0,1,1]],
+      [[0,1,1],[1,1,0]],[[1,1,1,1,1]]
+    ];
+    const COLORS=['#5b7cfa','#f76f8e','#5dd39e','#f2bc5b','#9b7af9','#5ccbe8','#f08f47','#ff6b9d','#c084fc','#34d399'];
+    const state={board:Array.from({length:SIZE},()=>Array(SIZE).fill(null)),tray:[],score:0,best:+localStorage.getItem('blockblast_best')||0,combo:1,comboMax:1,gold:+((window.SharedWallet&&SharedWallet.getGold&&SharedWallet.getGold())||0),awardedHundreds:0,drag:null,preview:null,piecesPlacedInRound:0,freezeUntil:0,gameOver:false,bossShownBins:{},playerId:localStorage.getItem('blockblast_player_id')||crypto.randomUUID(),level:1,linesCleared:0,totalPieces:0};
     localStorage.setItem('blockblast_player_id',state.playerId);
     const q=s=>document.querySelector(s),app=q('#app'),boardWrap=q('#boardWrap'),bc=q('#boardCanvas'),fx=q('#fxCanvas'),bctx=bc.getContext('2d'),fctx=fx.getContext('2d');
     const scoreEl=q('#score'),bestEl=q('#best'),comboEl=q('#combo'),trayEl=q('#tray'),goldEl=q('#gold'),statusEl=q('#status'),bossOverlay=q('#bossOverlay'),bossTalk=q('#bossTalk');
     let cell,particles=[],popups=[],clearFlash=[],animReq;
     const pick=a=>a[Math.floor(Math.random()*a.length)],rand=(n=1)=>Math.random()*n,copy=p=>p.map(r=>r.slice());
+
+    // Difficulty: higher level = bigger/harder blocks, fewer guaranteed fits
+    function getBlockPool(){
+      const lv=state.level;
+      // lv1: small blocks only (1-3 cells), lv2+: medium, lv4+: large, lv6+: XL
+      const small=BLOCKS.filter(b=>b.flat().filter(Boolean).length<=2);
+      const med=BLOCKS.filter(b=>{const n=b.flat().filter(Boolean).length;return n>=2&&n<=3});
+      const big=BLOCKS.filter(b=>{const n=b.flat().filter(Boolean).length;return n>=3&&n<=4});
+      const xl=BLOCKS.filter(b=>b.flat().filter(Boolean).length>=4);
+      if(lv<=1)return[...small,...small,...med];
+      if(lv<=3)return[...small,...med,...med,...big];
+      if(lv<=5)return[...med,...big,...big,...xl];
+      return[...big,...xl,...xl];
+    }
+
     function resize(){const dpr=window.devicePixelRatio||1,rect=boardWrap.getBoundingClientRect();[bc,fx].forEach(c=>{c.width=(rect.width-20)*dpr;c.height=(rect.height-20)*dpr;c.getContext('2d').setTransform(dpr,0,0,dpr,0,0)});cell=(rect.width-20)/SIZE;draw()}
     const makePiece=(shape=pick(BLOCKS),color=pick(COLORS))=>({shape:copy(shape),color,id:Math.random().toString(36).slice(2)});
     function canPlace(shape,rr,cc){for(let r=0;r<shape.length;r++)for(let c=0;c<shape[0].length;c++)if(shape[r][c]){const y=rr+r,x=cc+c;if(y<0||x<0||y>=SIZE||x>=SIZE||state.board[y][x])return false}return true}
     function anyFit(piece){for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(canPlace(piece.shape,r,c))return true;return false}
     const canAnyTrayFit=()=>state.tray.some(Boolean)&&state.tray.some(p=>p&&anyFit(p));
-    function generateTray(){state.tray=[];for(let i=0;i<3;i++){const cand=BLOCKS.filter(s=>anyFit({shape:s}));state.tray.push(makePiece((cand.length?pick(cand):[[1]]),pick(COLORS)))}renderTray();if(!canAnyTrayFit())endGame()}
+
+    function generateTray(){
+      state.tray=[];
+      const pool=getBlockPool();
+      // At least 1 piece must fit; others can be random (creates tension)
+      let hasOne=false;
+      for(let i=0;i<3;i++){
+        if(i===2&&!hasOne){
+          // Force last piece to fit
+          const cand=pool.filter(s=>anyFit({shape:s}));
+          if(cand.length){state.tray.push(makePiece(pick(cand),pick(COLORS)));hasOne=true;continue}
+        }
+        const shape=pick(pool);
+        const p=makePiece(shape,pick(COLORS));
+        if(anyFit(p))hasOne=true;
+        state.tray.push(p);
+      }
+      renderTray();
+      if(!canAnyTrayFit())endGame();
+    }
+
     function drawPieceDOM(p){const el=document.createElement('div');el.className='piece';el.style.gridTemplateColumns=`repeat(${p.shape[0].length},18px)`;for(let r=0;r<p.shape.length;r++)for(let c=0;c<p.shape[0].length;c++){const d=document.createElement('div');d.className='cell';if(p.shape[r][c])d.style.background=p.color;else d.style.visibility='hidden';el.appendChild(d)}return el}
     function renderTray(){trayEl.innerHTML='';state.tray.forEach((p,idx)=>{const slot=document.createElement('div');slot.className='slot';if(p){const piece=drawPieceDOM(p);slot.appendChild(piece);bindDragStart(piece,p,idx)}trayEl.appendChild(slot)})}
     function bindDragStart(el,piece,idx){
@@ -98,7 +143,13 @@
     }
     function dragEnd(){
       if(!state.drag)return;const d=state.drag;d.ghost.remove();d.srcEl.classList.remove('dragging');
-      if(state.preview&&state.preview.ok){place(d.piece,state.preview.r,state.preview.c);state.tray[d.idx]=null;state.piecesPlacedInRound++;renderTray();if(state.piecesPlacedInRound>=3||state.tray.every(v=>!v)){state.piecesPlacedInRound=0;generateTray()}if(!canAnyTrayFit())endGame()}
+      if(state.preview&&state.preview.ok){
+        place(d.piece,state.preview.r,state.preview.c);
+        state.tray[d.idx]=null;state.piecesPlacedInRound++;state.totalPieces++;
+        renderTray();
+        if(state.piecesPlacedInRound>=3||state.tray.every(v=>!v)){state.piecesPlacedInRound=0;generateTray()}
+        if(!canAnyTrayFit())endGame();
+      }
       state.drag=null;state.preview=null;draw();
     }
     window.addEventListener('mousemove',e=>dragMove(e.clientX,e.clientY));
@@ -107,30 +158,157 @@
     window.addEventListener('touchend',()=>dragEnd());
     window.addEventListener('touchcancel',()=>dragEnd());
     function ptr(x,y,piece){const rect=bc.getBoundingClientRect();if(x<rect.left||x>rect.right||y<rect.top||y>rect.bottom)return null;const gx=(x-rect.left)/rect.width*SIZE,gy=(y-rect.top)/rect.height*SIZE;return{r:Math.floor(gy-piece.shape.length/2+0.5),c:Math.floor(gx-piece.shape[0].length/2+0.5)}}
-    function place(piece,r,c){let cells=0;for(let y=0;y<piece.shape.length;y++)for(let x=0;x<piece.shape[0].length;x++)if(piece.shape[y][x]){state.board[r+y][c+x]={color:piece.color};cells++}addScore(cells);bounce();const clear=getClear();if(clear.rows.length||clear.cols.length)clearLines(clear);else state.combo=1;if(state.combo>=2){comboEl.classList.remove('pulse');void comboEl.offsetWidth;comboEl.classList.add('pulse');app.classList.add('flash');setTimeout(()=>app.classList.remove('flash'),260)}if(state.combo>=5){app.classList.add('rainbow');setTimeout(()=>app.classList.remove('rainbow'),500);confetti({particleCount:60,spread:65,origin:{y:.5}})}maybeBoss();draw()}
+
+    function place(piece,r,c){
+      let cells=0;
+      for(let y=0;y<piece.shape.length;y++)for(let x=0;x<piece.shape[0].length;x++)if(piece.shape[y][x]){state.board[r+y][c+x]={color:piece.color};cells++}
+      addScore(cells);bounce();
+      const clear=getClear();
+      if(clear.rows.length||clear.cols.length)clearLines(clear);
+      else{state.combo=1;comboEl.textContent='🔥x1'}
+      maybeBoss();draw();
+    }
+
     function getClear(){const rows=[],cols=[];for(let r=0;r<SIZE;r++)if(state.board[r].every(Boolean))rows.push(r);for(let c=0;c<SIZE;c++){let ok=true;for(let r=0;r<SIZE;r++)if(!state.board[r][c])ok=false;if(ok)cols.push(c)}return{rows,cols}}
-    function clearLines({rows,cols}){const s=new Set();rows.forEach(r=>{for(let c=0;c<SIZE;c++)s.add(r+','+c)});cols.forEach(c=>{for(let r=0;r<SIZE;r++)s.add(r+','+c)});s.forEach(k=>{const [r,c]=k.split(',').map(Number);clearFlash.push({r,c,t:140})});setTimeout(()=>{let cx=0,cy=0,n=0;s.forEach(k=>{const [r,c]=k.split(',').map(Number),d=state.board[r][c];if(d){spawn(c,r,d.color,6+Math.floor(rand(3)));cx+=c;cy+=r;n++}state.board[r][c]=null});const lines=rows.length+cols.length,base=lines===1?10:lines===2?30:lines===3?60:100+(lines-4)*30;state.combo++;state.comboMax=Math.max(state.comboMax,state.combo);const gain=base*state.combo;addScore(gain);pop(`+${gain}`,(cx/n+.5)*cell,(cy/n+.5)*cell,lines>=3?'#ffd36b':'#9fe6ff',lines>=3?34:24);if(lines===1)shake(2,150);if(lines===2){shake(4,200);confetti({particleCount:40,spread:52,origin:{y:.6}})}if(lines>=3){shake(6,300);confetti({particleCount:140,spread:90,startVelocity:35,origin:{y:.55}})}draw()},120)}
-    function addScore(v){state.score+=v;scoreEl.textContent=state.score.toLocaleString();if(state.score>state.best){state.best=state.score;localStorage.setItem('blockblast_best',state.best)}bestEl.textContent=state.best.toLocaleString();comboEl.textContent=`🔥x${state.combo}`;awardGold()}
+
+    function clearLines({rows,cols}){
+      const s=new Set();
+      rows.forEach(r=>{for(let c=0;c<SIZE;c++)s.add(r+','+c)});
+      cols.forEach(c=>{for(let r=0;r<SIZE;r++)s.add(r+','+c)});
+      s.forEach(k=>{const [r,c]=k.split(',').map(Number);clearFlash.push({r,c,t:140})});
+      setTimeout(()=>{
+        let cx=0,cy=0,n=0;
+        s.forEach(k=>{const [r,c]=k.split(',').map(Number),d=state.board[r][c];if(d){spawn(c,r,d.color,6+Math.floor(rand(3)));cx+=c;cy+=r;n++}state.board[r][c]=null});
+        const lines=rows.length+cols.length;
+        state.linesCleared+=lines;
+        // Level up every 5 lines
+        const newLv=Math.min(Math.floor(state.linesCleared/5)+1,10);
+        if(newLv>state.level){state.level=newLv;levelUp()}
+        // Scoring: exponential combo reward
+        const base=lines===1?10:lines===2?30:lines===3?60:100+(lines-4)*50;
+        state.combo++;state.comboMax=Math.max(state.comboMax,state.combo);
+        const gain=Math.floor(base*state.combo*(1+state.level*0.1));
+        addScore(gain);
+        pop(`+${gain}`,(cx/n+.5)*cell,(cy/n+.5)*cell,lines>=3?'#ffd36b':'#9fe6ff',lines>=3?34:24);
+        if(state.combo>=2){
+          comboEl.classList.remove('pulse');void comboEl.offsetWidth;comboEl.classList.add('pulse');
+          comboEl.textContent='🔥x'+state.combo;
+          app.classList.add('flash');setTimeout(()=>app.classList.remove('flash'),260);
+        }
+        if(state.combo>=3)pop('COMBO x'+state.combo+'!',cell*4,cell*4,'#ffb347',28);
+        if(state.combo>=5){app.classList.add('rainbow');setTimeout(()=>app.classList.remove('rainbow'),500);confetti({particleCount:60,spread:65,origin:{y:.5}})}
+        if(lines>=3){shake(6,300);confetti({particleCount:140,spread:90,startVelocity:35,origin:{y:.55}})}
+        else if(lines===2){shake(4,200);confetti({particleCount:40,spread:52,origin:{y:.6}})}
+        else shake(2,150);
+        draw();
+      },120);
+    }
+
+    function levelUp(){
+      pop('LV.'+state.level+'!',cell*4,cell*2,'#c084fc',36);
+      statusEl.textContent='Lv.'+state.level;
+      confetti({particleCount:100,spread:70,origin:{y:.4},colors:['#c084fc','#5b7cfa','#f76f8e']});
+      shake(5,250);
+    }
+
+    function addScore(v){state.score+=v;scoreEl.textContent=state.score.toLocaleString();if(state.score>state.best){state.best=state.score;localStorage.setItem('blockblast_best',state.best)}bestEl.textContent=state.best.toLocaleString();awardGold()}
     function awardGold(){const h=Math.floor(state.score/100);if(h>state.awardedHundreds){const g=(h-state.awardedHundreds)*10;state.awardedHundreds=h;try{window.SharedWallet&&SharedWallet.addGold&&SharedWallet.addGold(g)}catch(_){ }state.gold+=g;goldEl.textContent=state.gold.toLocaleString()}}
+
     class Particle{constructor(x,y,color){this.x=x;this.y=y;this.vx=(Math.random()-.5)*220;this.vy=-80-Math.random()*170;this.g=420;this.life=.52;this.t=this.life;this.size=2+Math.random()*3;this.color=color}u(dt){this.vy+=this.g*dt;this.x+=this.vx*dt;this.y+=this.vy*dt;this.t-=dt}d(ctx){if(this.t<=0)return;ctx.globalAlpha=Math.max(this.t/this.life,0);ctx.fillStyle=this.color;ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}}
-    const spawn=(c,r,color,n)=>{const x=(c+.5)*cell,y=(r+.5)*cell;for(let i=0;i<n;i++)particles.push(new Particle(x,y,color))},pop=(text,x,y,color='#fff',size=24)=>popups.push({text,x,y,color,size,t:.9});
+    const spawn=(c,r,color,n)=>{const x=(c+.5)*cell,y=(r+.5)*cell;for(let i=0;i<n;i++)particles.push(new Particle(x,y,color))};
+    const pop=(text,x,y,color='#fff',size=24)=>popups.push({text,x,y,color,size,t:.9});
     function tick(dt){particles=particles.filter(p=>(p.u(dt),p.t>0));popups=popups.filter(p=>(p.t-=dt)>0);clearFlash=clearFlash.filter(f=>(f.t-=dt*1000)>0)}
     function loop(ts){if(!loop.last)loop.last=ts;const dt=Math.min((ts-loop.last)/1000,.033);loop.last=ts;tick(dt);drawFx();animReq=requestAnimationFrame(loop)}
-    function rr(ctx,x,y,w,h,r,m='fill',style='#fff'){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);if(style)ctx[m+'Style']=style;ctx[m]();}
-    function shade(c,p){const n=parseInt(c.slice(1),16),t=p<0?0:255,amt=Math.abs(p)/100,R=n>>16,G=n>>8&255,B=n&255;return `#${(0x1000000+(Math.round((t-R)*amt)+R)*0x10000+(Math.round((t-G)*amt)+G)*0x100+(Math.round((t-B)*amt)+B)).toString(16).slice(1)}`}
-    function draw(){bctx.clearRect(0,0,bc.width,bc.height);const w=bc.clientWidth;for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){rr(bctx,c*cell+1,r*cell+1,cell-2,cell-2,7,'fill','#1a2145');const d=state.board[r][c];if(d){const g=bctx.createLinearGradient(0,r*cell,0,(r+1)*cell);g.addColorStop(0,shade(d.color,18));g.addColorStop(1,shade(d.color,-12));rr(bctx,c*cell+2,r*cell+2,cell-4,cell-4,7,'fill',g)}}clearFlash.forEach(f=>rr(bctx,f.c*cell+2,f.r*cell+2,cell-4,cell-4,7,'fill','rgba(255,255,255,.65)'));if(state.preview){const{piece,r,c,ok}=state.preview;for(let y=0;y<piece.shape.length;y++)for(let x=0;x<piece.shape[0].length;x++)if(piece.shape[y][x]){const rr0=r+y,cc0=c+x;if(rr0<0||cc0<0||rr0>=SIZE||cc0>=SIZE)continue;rr(bctx,cc0*cell+3,rr0*cell+3,cell-6,cell-6,6,'fill',ok?'rgba(58,208,122,.55)':'rgba(255,101,101,.5)')}}bctx.strokeStyle='rgba(255,255,255,.08)';for(let i=0;i<=SIZE;i++){bctx.beginPath();bctx.moveTo(0,i*cell);bctx.lineTo(w,i*cell);bctx.stroke();bctx.beginPath();bctx.moveTo(i*cell,0);bctx.lineTo(i*cell,w);bctx.stroke()}}
+    function rr(ctx,x,y,w,h,r,m='fill',style='#fff'){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);if(style)ctx[m+'Style']=style;ctx[m]()}
+    function shade(c,p){const n=parseInt(c.slice(1),16),t=p<0?0:255,amt=Math.abs(p)/100,R=n>>16,G=n>>8&255,B=n&255;return '#'+(0x1000000+(Math.round((t-R)*amt)+R)*0x10000+(Math.round((t-G)*amt)+G)*0x100+(Math.round((t-B)*amt)+B)).toString(16).slice(1)}
+
+    // Board cell fill percentage for status display
+    function boardFill(){let n=0;for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(state.board[r][c])n++;return Math.round(n/(SIZE*SIZE)*100)}
+
+    function draw(){
+      bctx.clearRect(0,0,bc.width,bc.height);const w=bc.clientWidth;
+      for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+        rr(bctx,c*cell+1,r*cell+1,cell-2,cell-2,7,'fill','#1a2145');
+        const d=state.board[r][c];
+        if(d){const g=bctx.createLinearGradient(0,r*cell,0,(r+1)*cell);g.addColorStop(0,shade(d.color,18));g.addColorStop(1,shade(d.color,-12));rr(bctx,c*cell+2,r*cell+2,cell-4,cell-4,7,'fill',g)}
+      }
+      clearFlash.forEach(f=>rr(bctx,f.c*cell+2,f.r*cell+2,cell-4,cell-4,7,'fill','rgba(255,255,255,.65)'));
+      if(state.preview){
+        const{piece,r,c,ok}=state.preview;
+        for(let y=0;y<piece.shape.length;y++)for(let x=0;x<piece.shape[0].length;x++)if(piece.shape[y][x]){
+          const rr0=r+y,cc0=c+x;if(rr0<0||cc0<0||rr0>=SIZE||cc0>=SIZE)continue;
+          rr(bctx,cc0*cell+3,rr0*cell+3,cell-6,cell-6,6,'fill',ok?'rgba(58,208,122,.55)':'rgba(255,101,101,.5)');
+        }
+      }
+      bctx.strokeStyle='rgba(255,255,255,.08)';
+      for(let i=0;i<=SIZE;i++){bctx.beginPath();bctx.moveTo(0,i*cell);bctx.lineTo(w,i*cell);bctx.stroke();bctx.beginPath();bctx.moveTo(i*cell,0);bctx.lineTo(i*cell,w);bctx.stroke()}
+    }
     function drawFx(){fctx.clearRect(0,0,fx.width,fx.height);particles.forEach(p=>p.d(fctx));popups.forEach(p=>{fctx.globalAlpha=Math.min(1,p.t*2);fctx.fillStyle=p.color;fctx.font=`900 ${p.size}px system-ui`;fctx.textAlign='center';fctx.fillText(p.text,p.x,p.y-(1-p.t)*60);fctx.globalAlpha=1})}
-    function shake(px,ms){const t=Date.now()+ms;(function s(){if(Date.now()>t){boardWrap.style.transform='translate(0,0)';return}boardWrap.style.transform=`translate(${(Math.random()-.5)*px*2}px,${(Math.random()-.5)*px*2}px)`;requestAnimationFrame(s)})()}function bounce(){boardWrap.animate([{transform:'scale(1.04)'},{transform:'scale(1)'}],{duration:150,easing:'cubic-bezier(.2,.7,.2,1)'})}
-    async function maybeBoss(){const milestones=[500,1500,3000,5000,8000,11000],passed=milestones.filter(m=>state.score>=m&&!state.bossShownBins[m]);if(!passed.length)return;const m=passed[0],bin=Math.floor(m/1000),cnt=Object.keys(state.bossShownBins).filter(k=>Math.floor(+k/1000)===bin).length;if(cnt>=2)return;state.bossShownBins[m]=1;try{const res=await fetch('https://relay.cocy.io/api/llm/boss',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bossId:'blockblast_boss',bossName:'블록 마스터',playerId:state.playerId,stage:Math.floor(state.score/500),percent:0,lives:0,playerLevel:state.comboMax,triggerType:state.score<1500?'greeting':'desperate',gameId:'blockblast'})});if(!res.ok)return;const{dialogue,action}=await res.json();bossTalk.textContent=dialogue||'흥, 잘하네.';bossOverlay.classList.add('show');setTimeout(()=>bossOverlay.classList.remove('show'),4000);if(action==='scramble'){const a=Math.floor(Math.random()*SIZE),b=Math.floor(Math.random()*SIZE);[state.board[a],state.board[b]]=[state.board[b],state.board[a]];draw()}if(action==='freeze'){state.freezeUntil=Date.now()+2000;trayEl.classList.add('frozen');setTimeout(()=>trayEl.classList.remove('frozen'),2100)}}catch(_){}}
+    function shake(px,ms){const t=Date.now()+ms;(function s(){if(Date.now()>t){boardWrap.style.transform='translate(0,0)';return}boardWrap.style.transform=`translate(${(Math.random()-.5)*px*2}px,${(Math.random()-.5)*px*2}px)`;requestAnimationFrame(s)})()}
+    function bounce(){boardWrap.animate([{transform:'scale(1.04)'},{transform:'scale(1)'}],{duration:150,easing:'cubic-bezier(.2,.7,.2,1)'})}
+
+    async function maybeBoss(){
+      const milestones=[500,1500,3000,5000,8000,12000,16000,20000];
+      const passed=milestones.filter(m=>state.score>=m&&!state.bossShownBins[m]);
+      if(!passed.length)return;const m=passed[0];
+      state.bossShownBins[m]=1;
+      try{
+        const res=await fetch('https://relay.cocy.io/api/llm/boss',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bossId:'blockblast_boss',bossName:'블록 마스터',playerId:state.playerId,stage:state.level,percent:boardFill(),lives:0,playerLevel:state.comboMax,triggerType:state.score<1500?'greeting':'desperate',gameId:'blockblast'})});
+        if(!res.ok)return;
+        const{dialogue,action}=await res.json();
+        bossTalk.textContent=dialogue||'흥, 잘하네.';bossOverlay.classList.add('show');
+        setTimeout(()=>bossOverlay.classList.remove('show'),4000);
+        if(action==='scramble'){
+          // Shuffle 2 random rows
+          for(let i=0;i<2;i++){const a=Math.floor(Math.random()*SIZE),b=Math.floor(Math.random()*SIZE);[state.board[a],state.board[b]]=[state.board[b],state.board[a]]}
+          shake(4,300);draw();
+        }
+        if(action==='freeze'){state.freezeUntil=Date.now()+2500;trayEl.classList.add('frozen');setTimeout(()=>trayEl.classList.remove('frozen'),2600)}
+        if(action==='bomb'){
+          // Destroy random 4x4 area
+          const br=Math.floor(Math.random()*(SIZE-3)),bcc=Math.floor(Math.random()*(SIZE-3));
+          for(let r=br;r<br+4;r++)for(let c=bcc;c<bcc+4;c++){if(state.board[r][c])spawn(c,r,state.board[r][c].color,4);state.board[r][c]=null}
+          shake(6,400);draw();
+        }
+      }catch(_){}
+    }
+
     async function loadRanking(){try{const r=await fetch('https://relay.cocy.io/api/rankings/blockblast?limit=5');if(!r.ok)throw 0;const d=await r.json(),list=(d.rankings||[]).slice(0,5);q('#rankList').innerHTML=list.length?list.map((x,i)=>{const medal=['🥇','🥈','🥉'][i]||`${i+1}.`;return`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:14px"><span>${medal} ${x.nickname||'익명'}</span><span style="color:#ffd36b;font-weight:800">${(+x.best_score||0).toLocaleString()}</span></div>`}).join(''):'<div style="text-align:center;color:#9ca7d1">아직 기록이 없어요</div>'}catch(_){q('#rankList').innerHTML='<div style="text-align:center;color:#9ca7d1">랭킹 준비 중...</div>'}}
     async function submitRanking(){try{const nick=window.SharedWallet?.user?.nickname||window.SharedWallet?.user?.username||'Player';await fetch('https://relay.cocy.io/api/rankings/blockblast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:state.playerId,nickname:nick,score:state.score})})}catch(_){}}
-    function endGame(){if(state.gameOver)return;state.gameOver=true;statusEl.textContent='게임 오버';boardWrap.classList.add('gameover');for(let i=0;i<80;i++){const p=new Particle(rand(bc.clientWidth),bc.clientHeight-rand(20),'#a7b2d8');p.vy=-140-rand(80);p.g=-30;particles.push(p)}submitRanking()}
-    function init(){bestEl.textContent=state.best.toLocaleString();goldEl.textContent=state.gold.toLocaleString();scoreEl.textContent='0';comboEl.textContent='🔥x1';state.board=Array.from({length:SIZE},()=>Array(SIZE).fill(null));state.score=0;state.combo=1;state.comboMax=1;state.awardedHundreds=0;state.piecesPlacedInRound=0;state.gameOver=false;state.bossShownBins={};state.drag=null;state.preview=null;boardWrap.classList.remove('gameover');requestAnimationFrame(()=>{resize();generateTray();cancelAnimationFrame(animReq);animReq=requestAnimationFrame(loop)});window.addEventListener('resize',resize)}
+
+    function endGame(){
+      if(state.gameOver)return;state.gameOver=true;
+      statusEl.textContent='게임 오버 · Lv.'+state.level;
+      boardWrap.classList.add('gameover');
+      for(let i=0;i<80;i++){const p=new Particle(rand(bc.clientWidth),bc.clientHeight-rand(20),'#a7b2d8');p.vy=-140-rand(80);p.g=-30;particles.push(p)}
+      submitRanking();
+      // Show game over overlay with retry
+      setTimeout(()=>{
+        const ov=document.createElement('div');
+        ov.style.cssText='position:absolute;inset:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:35;gap:12px;border-radius:16px';
+        ov.innerHTML='<div style="font-size:28px;font-weight:900">GAME OVER</div>'
+          +'<div style="font-size:20px;color:#ffd36b;font-weight:800">'+state.score.toLocaleString()+' pts · Lv.'+state.level+'</div>'
+          +'<div style="color:#9ca7d1;font-size:14px">콤보 최고 x'+state.comboMax+' · 라인 '+state.linesCleared+'줄</div>'
+          +'<button class="btn" style="margin-top:8px" onclick="location.reload()">🔄 다시하기</button>';
+        boardWrap.appendChild(ov);
+      },600);
+    }
+
+    function init(){
+      bestEl.textContent=state.best.toLocaleString();goldEl.textContent=state.gold.toLocaleString();
+      scoreEl.textContent='0';comboEl.textContent='🔥x1';
+      state.board=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
+      state.score=0;state.combo=1;state.comboMax=1;state.awardedHundreds=0;
+      state.piecesPlacedInRound=0;state.gameOver=false;state.bossShownBins={};
+      state.drag=null;state.preview=null;state.level=1;state.linesCleared=0;state.totalPieces=0;
+      statusEl.textContent='Lv.1';
+      boardWrap.classList.remove('gameover');
+      requestAnimationFrame(()=>{resize();generateTray();cancelAnimationFrame(animReq);animReq=requestAnimationFrame(loop)});
+      window.addEventListener('resize',resize);
+    }
     const startBtn=document.getElementById('startBtn');
     const titleScreen=document.getElementById('titleScreen');
-    function startGame(){
-      try{titleScreen.style.display='none';init()}catch(e){alert('init error: '+e.message)}
-    }
+    function startGame(){try{titleScreen.style.display='none';init()}catch(e){alert('init error: '+e.message)}}
     startBtn.addEventListener('click',startGame);
     startBtn.addEventListener('touchend',function(e){e.preventDefault();startGame()},{passive:false});
     loadRanking();
