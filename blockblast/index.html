@@ -46,8 +46,8 @@
     .boss{background:#101427;border:1px solid rgba(255,255,255,.15);width:92%;max-width:360px;border-radius:14px;padding:14px;transform:translateY(-180%);transition:transform .35s ease}
     .overlay.show{display:flex}.overlay.show .boss{transform:translateY(0)}
     .bossname{font-weight:900;color:#f4a6ff}.rank{background:rgba(255,255,255,.05);border-radius:12px;padding:10px}.rank h3{margin:0 0 6px}
-    #titleScreen{position:absolute;inset:0;z-index:40;background:linear-gradient(180deg,rgba(8,8,20,.96),rgba(8,8,20,.9));display:flex;flex-direction:column;justify-content:center;padding:18px;gap:12px}
-    .btn{border:none;background:#5563ff;color:white;padding:12px;border-radius:12px;font-size:17px;font-weight:800}
+    #titleScreen{position:fixed;inset:0;z-index:40;background:linear-gradient(180deg,rgba(8,8,20,.98),rgba(8,8,20,.95));display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;gap:12px}
+    .btn{border:none;background:#5563ff;color:white;padding:14px 32px;border-radius:12px;font-size:18px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;min-width:200px}
     .frozen{pointer-events:none;filter:grayscale(.4)} .gameover{filter:grayscale(.9) brightness(.7)}
   </style>
 </head>
@@ -56,7 +56,7 @@
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
   <div class="app" id="app">
-    <div id="titleScreen"><h1>BLOCK BLAST</h1><div class="rank"><h3>TOP 5</h3><div id="rankList">불러오는 중...</div></div><button class="btn" id="startBtn">게임 시작</button></div>
+    <div id="titleScreen"><h1 style="font-size:36px;margin-bottom:8px">BLOCK BLAST</h1><div class="rank" style="width:min(320px,90vw)"><h3 style="text-align:center">🏆 TOP 5</h3><div id="rankList">불러오는 중...</div></div><button class="btn" id="startBtn">▶ 게임 시작</button></div>
     <h1>BLOCK BLAST</h1>
     <div class="top"><div><div class="score" id="score">0</div><div class="best">BEST <span id="best">0</span></div></div><div class="combo" id="combo">🔥x1</div></div>
     <div id="boardWrap"><canvas id="boardCanvas"></canvas><canvas id="fxCanvas"></canvas></div>
@@ -99,11 +99,15 @@
     function drawFx(){fctx.clearRect(0,0,fx.width,fx.height);particles.forEach(p=>p.d(fctx));popups.forEach(p=>{fctx.globalAlpha=Math.min(1,p.t*2);fctx.fillStyle=p.color;fctx.font=`900 ${p.size}px system-ui`;fctx.textAlign='center';fctx.fillText(p.text,p.x,p.y-(1-p.t)*60);fctx.globalAlpha=1})}
     function shake(px,ms){const t=Date.now()+ms;(function s(){if(Date.now()>t){boardWrap.style.transform='translate(0,0)';return}boardWrap.style.transform=`translate(${(Math.random()-.5)*px*2}px,${(Math.random()-.5)*px*2}px)`;requestAnimationFrame(s)})()}function bounce(){boardWrap.animate([{transform:'scale(1.04)'},{transform:'scale(1)'}],{duration:150,easing:'cubic-bezier(.2,.7,.2,1)'})}
     async function maybeBoss(){const milestones=[500,1500,3000,5000,8000,11000],passed=milestones.filter(m=>state.score>=m&&!state.bossShownBins[m]);if(!passed.length)return;const m=passed[0],bin=Math.floor(m/1000),cnt=Object.keys(state.bossShownBins).filter(k=>Math.floor(+k/1000)===bin).length;if(cnt>=2)return;state.bossShownBins[m]=1;try{const res=await fetch('https://relay.cocy.io/api/llm/boss',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bossId:'blockblast_boss',bossName:'블록 마스터',playerId:state.playerId,stage:Math.floor(state.score/500),percent:0,lives:0,playerLevel:state.comboMax,triggerType:state.score<1500?'greeting':'desperate',gameId:'blockblast'})});if(!res.ok)return;const{dialogue,action}=await res.json();bossTalk.textContent=dialogue||'흥, 잘하네.';bossOverlay.classList.add('show');setTimeout(()=>bossOverlay.classList.remove('show'),4000);if(action==='scramble'){const a=Math.floor(Math.random()*SIZE),b=Math.floor(Math.random()*SIZE);[state.board[a],state.board[b]]=[state.board[b],state.board[a]];draw()}if(action==='freeze'){state.freezeUntil=Date.now()+2000;trayEl.classList.add('frozen');setTimeout(()=>trayEl.classList.remove('frozen'),2100}}catch(_){}}
-    async function loadRanking(){try{const r=await fetch('https://relay.cocy.io/api/rankings/blockblast');if(!r.ok)throw 0;const d=await r.json(),list=(d.top||d.rankings||d||[]).slice(0,5);q('#rankList').innerHTML=list.length?list.map((x,i)=>`<div>${i+1}. ${x.nickname||'anon'} - ${(+x.score||0).toLocaleString()}</div>`).join(''):'기록 없음'}catch(_){q('#rankList').textContent='랭킹 불러오기 실패'}}
-    async function submitRanking(){try{await fetch('https://relay.cocy.io/api/rankings/blockblast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:state.playerId,nickname:'Player',score:state.best})})}catch(_){}}
+    async function loadRanking(){try{const r=await fetch('https://relay.cocy.io/api/rankings/blockblast?limit=5');if(!r.ok)throw 0;const d=await r.json(),list=(d.rankings||[]).slice(0,5);q('#rankList').innerHTML=list.length?list.map((x,i)=>{const medal=['🥇','🥈','🥉'][i]||`${i+1}.`;return`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:14px"><span>${medal} ${x.nickname||'익명'}</span><span style="color:#ffd36b;font-weight:800">${(+x.best_score||0).toLocaleString()}</span></div>`}).join(''):'<div style="text-align:center;color:#9ca7d1">아직 기록이 없어요</div>'}catch(_){q('#rankList').innerHTML='<div style="text-align:center;color:#9ca7d1">랭킹 준비 중...</div>'}}
+    async function submitRanking(){try{const nick=window.SharedWallet?.user?.nickname||window.SharedWallet?.user?.username||'Player';await fetch('https://relay.cocy.io/api/rankings/blockblast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:state.playerId,nickname:nick,score:state.score})})}catch(_){}}
     function endGame(){if(state.gameOver)return;state.gameOver=true;statusEl.textContent='게임 오버';boardWrap.classList.add('gameover');for(let i=0;i<80;i++){const p=new Particle(rand(bc.clientWidth),bc.clientHeight-rand(20),'#a7b2d8');p.vy=-140-rand(80);p.g=-30;particles.push(p)}submitRanking()}
     function init(){bestEl.textContent=state.best.toLocaleString();goldEl.textContent=state.gold.toLocaleString();scoreEl.textContent='0';comboEl.textContent='🔥x1';generateTray();resize();window.addEventListener('resize',resize);cancelAnimationFrame(animReq);animReq=requestAnimationFrame(loop)}
-    q('#startBtn').onclick=()=>{q('#titleScreen').style.display='none';init()};loadRanking();
+    const startBtn=q('#startBtn');
+    function startGame(){q('#titleScreen').style.display='none';init()}
+    startBtn.onclick=startGame;
+    startBtn.addEventListener('touchend',e=>{e.preventDefault();startGame()},{passive:false});
+    loadRanking();
   </script>
 </body>
 </html>
