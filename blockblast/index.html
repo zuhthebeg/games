@@ -67,6 +67,16 @@
   </div>
   <script>
     if(typeof confetti==="undefined"){window.confetti=function(){}}
+    // === Web Audio Sound System ===
+    const AudioCtx=window.AudioContext||window.webkitAudioContext;
+    let actx;function ensureAudio(){if(!actx)actx=new AudioCtx();if(actx.state==='suspended')actx.resume()}
+    function playTone(freq,dur,type,vol){try{ensureAudio();const o=actx.createOscillator(),g=actx.createGain();o.type=type||'square';o.frequency.value=freq;g.gain.value=vol||.12;g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+dur);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+dur)}catch(_){}}
+    function sfxPlace(){playTone(520,.08,'sine',.15);setTimeout(()=>playTone(680,.06,'sine',.1),40)}
+    function sfxClear(lines){const base=440;for(let i=0;i<lines;i++)setTimeout(()=>playTone(base+i*120,.12,'square',.13),i*60);setTimeout(()=>playTone(880,.15,'sine',.18),lines*60)}
+    function sfxCombo(n){playTone(600+n*50,.1,'sawtooth',.1);setTimeout(()=>playTone(800+n*50,.15,'sine',.12),50)}
+    function sfxLevelUp(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,.15,'sine',.15),i*80))}
+    function sfxGameOver(){[400,350,300,200].forEach((f,i)=>setTimeout(()=>playTone(f,.2,'triangle',.12),i*120))}
+    function sfxBoss(){playTone(200,.3,'sawtooth',.1);setTimeout(()=>playTone(150,.4,'triangle',.08),150)}
     const SIZE=8;
     // More block shapes for variety (21 shapes)
     const BLOCKS=[
@@ -162,7 +172,7 @@
     function place(piece,r,c){
       let cells=0;
       for(let y=0;y<piece.shape.length;y++)for(let x=0;x<piece.shape[0].length;x++)if(piece.shape[y][x]){state.board[r+y][c+x]={color:piece.color};cells++}
-      addScore(cells);bounce();
+      sfxPlace();addScore(cells);bounce();
       const clear=getClear();
       if(clear.rows.length||clear.cols.length)clearLines(clear);
       else{state.combo=1;comboEl.textContent='🔥x1'}
@@ -175,8 +185,9 @@
       const s=new Set();
       rows.forEach(r=>{for(let c=0;c<SIZE;c++)s.add(r+','+c)});
       cols.forEach(c=>{for(let r=0;r<SIZE;r++)s.add(r+','+c)});
-      s.forEach(k=>{const [r,c]=k.split(',').map(Number);clearFlash.push({r,c,t:140})});
+      s.forEach(k=>{const [r,c]=k.split(',').map(Number);clearFlash.push({r,c,t:200})});
       setTimeout(()=>{
+        ensureAudio();
         let cx=0,cy=0,n=0;
         s.forEach(k=>{const [r,c]=k.split(',').map(Number),d=state.board[r][c];if(d){spawn(c,r,d.color,6+Math.floor(rand(3)));cx+=c;cy+=r;n++}state.board[r][c]=null});
         const lines=rows.length+cols.length;
@@ -187,6 +198,7 @@
         // Scoring: exponential combo reward
         const base=lines===1?10:lines===2?30:lines===3?60:100+(lines-4)*50;
         state.combo++;state.comboMax=Math.max(state.comboMax,state.combo);
+        sfxClear(lines);
         const gain=Math.floor(base*state.combo*(1+state.level*0.1));
         addScore(gain);
         pop(`+${gain}`,(cx/n+.5)*cell,(cy/n+.5)*cell,lines>=3?'#ffd36b':'#9fe6ff',lines>=3?34:24);
@@ -195,7 +207,7 @@
           comboEl.textContent='🔥x'+state.combo;
           app.classList.add('flash');setTimeout(()=>app.classList.remove('flash'),260);
         }
-        if(state.combo>=3)pop('COMBO x'+state.combo+'!',cell*4,cell*4,'#ffb347',28);
+        if(state.combo>=3){sfxCombo(state.combo);pop('COMBO x'+state.combo+'!',cell*4,cell*4,'#ffb347',28)};
         if(state.combo>=5){app.classList.add('rainbow');setTimeout(()=>app.classList.remove('rainbow'),500);confetti({particleCount:60,spread:65,origin:{y:.5}})}
         if(lines>=3){shake(6,300);confetti({particleCount:140,spread:90,startVelocity:35,origin:{y:.55}})}
         else if(lines===2){shake(4,200);confetti({particleCount:40,spread:52,origin:{y:.6}})}
@@ -205,7 +217,7 @@
     }
 
     function levelUp(){
-      pop('LV.'+state.level+'!',cell*4,cell*2,'#c084fc',36);
+      sfxLevelUp();pop('LV.'+state.level+'!',cell*4,cell*2,'#c084fc',36);
       statusEl.textContent='Lv.'+state.level;
       confetti({particleCount:100,spread:70,origin:{y:.4},colors:['#c084fc','#5b7cfa','#f76f8e']});
       shake(5,250);
@@ -256,7 +268,7 @@
         const res=await fetch('https://relay.cocy.io/api/llm/boss',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bossId:'blockblast_boss',bossName:'블록 마스터',playerId:state.playerId,stage:state.level,percent:boardFill(),lives:0,playerLevel:state.comboMax,triggerType:state.score<1500?'greeting':'desperate',gameId:'blockblast'})});
         if(!res.ok)return;
         const{dialogue,action}=await res.json();
-        bossTalk.textContent=dialogue||'흥, 잘하네.';bossOverlay.classList.add('show');
+        sfxBoss();bossTalk.textContent=dialogue||'흥, 잘하네.';bossOverlay.classList.add('show');
         setTimeout(()=>bossOverlay.classList.remove('show'),4000);
         if(action==='scramble'){
           // Shuffle 2 random rows
@@ -278,7 +290,7 @@
 
     function endGame(){
       if(state.gameOver)return;state.gameOver=true;
-      statusEl.textContent='게임 오버 · Lv.'+state.level;
+      sfxGameOver();statusEl.textContent='게임 오버 · Lv.'+state.level;
       boardWrap.classList.add('gameover');
       for(let i=0;i<80;i++){const p=new Particle(rand(bc.clientWidth),bc.clientHeight-rand(20),'#a7b2d8');p.vy=-140-rand(80);p.g=-30;particles.push(p)}
       submitRanking();
