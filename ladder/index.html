@@ -20,15 +20,73 @@ h1 { text-align: center; font-size: 20px; color: #ffd700; margin-bottom: 2px; }
 .toolbar {
   display: flex; gap: 5px; justify-content: center; margin-bottom: 8px; flex-wrap: wrap;
 }
+.ai-bar {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  width: min(520px, 100%);
+  margin: -2px auto 10px;
+}
+.ai-input {
+  flex: 1;
+  min-width: 120px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  font-size: 12px;
+}
+.ai-input:focus {
+  outline: none;
+  border-color: #6f2fd1;
+  box-shadow: 0 0 0 2px rgba(111,47,209,0.2);
+}
 .btn {
   padding: 6px 12px; border: none; border-radius: 8px;
   font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
 }
+.btn-icon { min-width: 36px; padding: 6px 8px; }
 .btn:active { transform: scale(0.95); }
 .btn-primary { background: #6f2fd1; color: #fff; }
 .btn-warn { background: #ffd700; color: #222; }
 .btn-secondary { background: rgba(255,255,255,0.12); color: #ccc; }
 .btn-danger { background: #c0392b; color: #fff; }
+.btn.loading { opacity: 0.75; pointer-events: none; }
+.spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(15,16,38,0.95);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+  z-index: 1001;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 
 .scroll-container {
   overflow-x: auto;
@@ -120,6 +178,12 @@ canvas {
     <button class="btn btn-danger" onclick="removeLast()">➖ 삭제</button>
     <button class="btn btn-secondary" onclick="toggleEdit()">✏️ 수정</button>
   </div>
+  <div class="ai-bar">
+    <input id="aiInput" class="ai-input" type="text" placeholder="✨ 예: 5명 / 철수 영희 민수" />
+    <button id="aiSetupBtn" class="btn btn-primary" onclick="applyAiText()">✨ AI 설정</button>
+    <button id="aiImageBtn" class="btn btn-secondary btn-icon" onclick="pickAiImage()" title="이미지에서 이름 추출">📷</button>
+    <input id="aiImageInput" type="file" accept="image/*" style="display:none" onchange="applyAiImage(event)" />
+  </div>
   <div class="scroll-container" id="scrollWrap">
     <div class="ladder-area" id="ladderArea">
       <div class="names-row" id="namesRow"></div>
@@ -138,30 +202,76 @@ canvas {
   <div class="rorder" id="bOrder"></div>
   <div class="rlabel">번째 순서</div>
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
-const DEFAULT_NAMES = ['명훈','지윤','용훈','주희','미나','윤우','윤아','장미','성민','익완','미경','형찬','규식','희숙'];
+const LLM_ENDPOINT = 'https://llm.cocy.io/v2/chat/completions';
+const LLM_AUTH = 'Bearer choon150622';
+const NAMES_STORAGE_KEY = 'ladder_names';
 const COLORS = [
   '#ff4444','#44aaff','#44ff88','#ffaa00','#ff44cc','#44ffff','#aa88ff',
   '#ff8844','#88ff44','#ff4488','#44ccaa','#ffff44','#cc88ff','#ff6688',
   '#88ddff','#ffcc44','#66ffaa','#dd66ff','#ff8866','#66aaff'
 ];
 
-let names = [...DEFAULT_NAMES];
+let names = loadNames();
 let orders = [];
 let rungs = [];
 let revealed = new Set();
 let revealedResults = {};
 let animating = false;
 let editMode = false;
+let toastTimer = null;
 
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
 const banner = document.getElementById('banner');
 
-const COL_W = 48; // px per column
+const COL_W = 48;
 const PAD = 20;
 const CANVAS_H = 420;
+
+function genericNames(count = 4) {
+  const n = Math.max(2, Math.min(20, Number(count) || 4));
+  return Array.from({ length: n }, (_, i) => `참가자${i + 1}`);
+}
+
+function sanitizeNames(list) {
+  if (!Array.isArray(list)) return [];
+  const clean = list
+    .map((v) => String(v ?? '').trim())
+    .filter(Boolean)
+    .slice(0, 20);
+  return clean.length >= 2 ? clean : [];
+}
+
+function loadNames() {
+  try {
+    const raw = localStorage.getItem(NAMES_STORAGE_KEY);
+    if (!raw) return genericNames(4);
+    const parsed = JSON.parse(raw);
+    const cleaned = sanitizeNames(parsed);
+    return cleaned.length ? cleaned : genericNames(4);
+  } catch {
+    return genericNames(4);
+  }
+}
+
+function saveNames() {
+  localStorage.setItem(NAMES_STORAGE_KEY, JSON.stringify(names));
+}
+
+function setNames(nextNames) {
+  const cleaned = sanitizeNames(nextNames);
+  if (!cleaned.length) {
+    showToast('이름은 최소 2명 이상 필요해요');
+    return;
+  }
+  names = cleaned;
+  saveNames();
+  shuffle();
+  if (editMode) buildEditRow();
+}
 
 function calcWidth() {
   return Math.max(PAD * 2 + (names.length - 1) * COL_W + 20, window.innerWidth - 8);
@@ -176,12 +286,8 @@ function setupCanvas() {
   ctx.setTransform(2, 0, 0, 2, 0, 0);
 }
 
-function getX(col) {
-  return PAD + col * COL_W;
-}
-function getY(frac) {
-  return 8 + frac * (CANVAS_H - 16);
-}
+function getX(col) { return PAD + col * COL_W; }
+function getY(frac) { return 8 + frac * (CANVAS_H - 16); }
 
 function buildUI() {
   const cellW = COL_W + 'px';
@@ -197,14 +303,13 @@ function buildUI() {
   br.innerHTML = orders.map((o, i) => {
     const revCol = Object.entries(revealedResults).find(([_, v]) => v.endCol === i);
     if (revCol) {
-      const topCol = parseInt(revCol[0]);
+      const topCol = parseInt(revCol[0], 10);
       const color = COLORS[topCol % COLORS.length];
       return `<div class="order-cell" style="width:${cellW};border-color:${color};color:${color}">${o}</div>`;
     }
     return `<div class="order-cell hidden" style="width:${cellW}"></div>`;
   }).join('');
 
-  // Set ladder area width
   document.getElementById('ladderArea').style.width = calcWidth() + 'px';
   updateScoreboard();
 }
@@ -212,8 +317,20 @@ function buildUI() {
 function buildEditRow() {
   const er = document.getElementById('editRow');
   er.innerHTML = names.map((n, i) =>
-    `<input class="edit-input" value="${n}" onchange="names[${i}]=this.value;buildUI()">`
+    `<input class="edit-input" value="${n}" onchange="updateNameAt(${i}, this.value)">`
   ).join('');
+}
+
+function updateNameAt(index, value) {
+  const v = String(value || '').trim();
+  if (!v) {
+    showToast('빈 이름은 저장할 수 없어요');
+    buildEditRow();
+    return;
+  }
+  names[index] = v;
+  saveNames();
+  buildUI();
 }
 
 function shuffleArray(arr) {
@@ -287,8 +404,8 @@ function animatePath(startCol, color, cb) {
   let totalLen = 0;
   const segs = [];
   for (let i = 1; i < path.length; i++) {
-    const len = Math.hypot(path[i].x - path[i-1].x, path[i].y - path[i-1].y);
-    segs.push({ from: path[i-1], to: path[i], len }); totalLen += len;
+    const len = Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+    segs.push({ from: path[i - 1], to: path[i], len }); totalLen += len;
   }
   const duration = 900;
   const start = performance.now();
@@ -336,6 +453,164 @@ function showBanner(name, order) {
   setTimeout(() => banner.classList.remove('show'), 2000);
 }
 
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+function setAiLoading(isLoading) {
+  const aiBtn = document.getElementById('aiSetupBtn');
+  const imgBtn = document.getElementById('aiImageBtn');
+  aiBtn.classList.toggle('loading', isLoading);
+  imgBtn.classList.toggle('loading', isLoading);
+  aiBtn.disabled = isLoading;
+  imgBtn.disabled = isLoading;
+  aiBtn.innerHTML = isLoading ? '<span class="spinner"></span>분석중' : '✨ AI 설정';
+}
+
+function tryExtractJson(content) {
+  if (!content) return null;
+  const trimmed = String(content).trim();
+  try { return JSON.parse(trimmed); } catch {}
+  const blockMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (blockMatch) {
+    try { return JSON.parse(blockMatch[1]); } catch {}
+  }
+  const objMatch = trimmed.match(/\{[\s\S]*\}/);
+  if (objMatch) {
+    try { return JSON.parse(objMatch[0]); } catch {}
+  }
+  const arrMatch = trimmed.match(/\[[\s\S]*\]/);
+  if (arrMatch) {
+    try { return JSON.parse(arrMatch[0]); } catch {}
+  }
+  return null;
+}
+
+function parseNamePayload(payload) {
+  if (Array.isArray(payload)) return sanitizeNames(payload);
+  if (!payload || typeof payload !== 'object') return [];
+  const fromNames = sanitizeNames(payload.names);
+  if (fromNames.length) return fromNames;
+  const c = Number(payload.count);
+  if (Number.isFinite(c) && c >= 2) return genericNames(c);
+  return [];
+}
+
+function extractCountFromText(text) {
+  const match = String(text).match(/(\d+)\s*명/);
+  if (!match) return null;
+  const count = Number(match[1]);
+  return Number.isFinite(count) ? count : null;
+}
+
+async function callLlm(model, messages, maxTokens = 220) {
+  const res = await fetch(LLM_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': LLM_AUTH
+    },
+    body: JSON.stringify({ model, messages, max_tokens: maxTokens })
+  });
+  if (!res.ok) {
+    throw new Error(`API 오류(${res.status})`);
+  }
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content ?? '';
+}
+
+async function applyAiText() {
+  const input = document.getElementById('aiInput');
+  const userText = input.value.trim();
+  if (!userText) {
+    showToast('먼저 문장을 입력해줘');
+    return;
+  }
+
+  setAiLoading(true);
+  try {
+    const content = await callLlm('spark', [
+      {
+        role: 'system',
+        content: '사다리 게임 참가자 추출기다. 사용자 문장에서 이름 목록 또는 인원수를 추출하라. 반드시 JSON만 반환: {"names": string[], "count": number|null}. 이름이 있으면 names 우선, 없고 인원수만 있으면 count 사용.'
+      },
+      { role: 'user', content: userText }
+    ]);
+
+    const parsed = tryExtractJson(content);
+    let nextNames = parseNamePayload(parsed);
+
+    if (!nextNames.length) {
+      const fallbackCount = extractCountFromText(userText);
+      if (fallbackCount && fallbackCount >= 2) nextNames = genericNames(fallbackCount);
+    }
+
+    if (!nextNames.length) {
+      showToast('이름/인원수를 이해하지 못했어');
+      return;
+    }
+
+    setNames(nextNames);
+    showToast('✨ AI 설정 완료');
+  } catch (err) {
+    console.error(err);
+    showToast('AI 설정 실패. 잠시 후 다시 시도해줘');
+  } finally {
+    setAiLoading(false);
+  }
+}
+
+function pickAiImage() {
+  document.getElementById('aiImageInput').click();
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function applyAiImage(event) {
+  const file = event?.target?.files?.[0];
+  event.target.value = '';
+  if (!file) return;
+
+  setAiLoading(true);
+  try {
+    const dataUrl = await fileToDataUrl(file);
+    const content = await callLlm('sonnet', [{
+      role: 'user',
+      content: [
+        { type: 'text', text: '이미지에서 사람 이름을 모두 추출해라. 반드시 JSON만 반환: {"names": string[]}. 이름이 없으면 {"names": []}.' },
+        { type: 'image_url', image_url: { url: dataUrl } }
+      ]
+    }], 300);
+
+    const parsed = tryExtractJson(content);
+    const nextNames = parseNamePayload(parsed);
+
+    if (!nextNames.length) {
+      showToast('이미지에서 이름을 찾지 못했어');
+      return;
+    }
+
+    setNames(nextNames);
+    showToast('✨ 이미지에서 이름 추출 완료');
+  } catch (err) {
+    console.error(err);
+    showToast('이미지 분석 실패. 다른 사진으로 시도해줘');
+  } finally {
+    setAiLoading(false);
+  }
+}
+
 function revealAll() {
   if (animating) return;
   for (let i = 0; i < names.length; i++) {
@@ -374,15 +649,19 @@ function addPerson() {
   const n = prompt('추가할 이름:');
   if (!n || !n.trim()) return;
   names.push(n.trim());
+  saveNames();
   shuffle();
   if (editMode) buildEditRow();
 }
+
 function removeLast() {
   if (names.length <= 2) return;
-  const removed = names.pop();
+  names.pop();
+  saveNames();
   shuffle();
   if (editMode) buildEditRow();
 }
+
 function toggleEdit() {
   editMode = !editMode;
   const er = document.getElementById('editRow');
@@ -401,6 +680,12 @@ cv.addEventListener('click', (e) => {
     if (d < bestD) { bestD = d; best = i; }
   }
   if (best >= 0 && bestD < COL_W * 0.6 && !revealed.has(best)) pickName(best);
+});
+
+window.addEventListener('resize', () => {
+  setupCanvas();
+  draw();
+  for (const idx of revealed) drawFullPath(idx);
 });
 
 shuffle();
