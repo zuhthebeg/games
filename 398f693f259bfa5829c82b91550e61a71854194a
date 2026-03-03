@@ -1,0 +1,15 @@
+# AI Work Summary
+
+- Agent: openclaw (codex)
+- Session: setup requested from user to track AI work per commit in games repo
+- Scope: Added repo-level git-notes workflow scripts/docs
+- Why: keep AI context auditable for active game development without noisy commit messages
+- Key changes:
+  - tools/ai-note.sh (init/attach/push)
+  - docs/WORKFLOW_AI_NOTES.md
+  - templates/ai-summary.md
+- Verification:
+  - script init executed successfully
+  - commit pushed to origin
+- Risks/notes:
+  - this is memento-lite (not full git-memento binary)
