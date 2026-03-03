@@ -2649,6 +2649,8 @@
                         if (serverData.mastery) state.mastery = serverData.mastery;
                         if (serverData.stats) state.stats = serverData.stats;
                         if (serverData.protectionScrolls !== undefined) state.protectionScrolls = serverData.protectionScrolls;
+                        if (serverData.bossKills !== undefined) state.bossKills = serverData.bossKills;
+                        if (serverData.bossTypeKills) state.bossTypeKills = serverData.bossTypeKills;
                         
                         // 로컬에도 저장
                         localStorage.setItem('enhance_game_v3', JSON.stringify(state));
@@ -2686,7 +2688,9 @@
                         weapon: state.weapon,
                         mastery: state.mastery,
                         stats: state.stats,
-                        protectionScrolls: state.protectionScrolls
+                        protectionScrolls: state.protectionScrolls,
+                        bossKills: state.bossKills || 0,
+                        bossTypeKills: state.bossTypeKills || {}
                     })
                 });
                 console.log('☁️ Saved to cloud');
@@ -3576,6 +3580,12 @@
             // SharedWallet 동기화
             if (typeof SharedWallet !== 'undefined') {
                 SharedWallet.setGold(state.gold);
+                SharedWallet.setGameData({
+                    bossKills: state.bossKills || 0,
+                    bossTypeKills: state.bossTypeKills || {},
+                    protectionScrolls: state.weapon?.protectionScrolls || 0,
+                    mastery: state.mastery || {}
+                });
             }
         }
 
@@ -7449,6 +7459,12 @@
             // SharedWallet 동기화
             if (typeof SharedWallet !== 'undefined') {
                 SharedWallet.setGold(state.gold);
+                SharedWallet.setGameData({
+                    bossKills: state.bossKills || 0,
+                    bossTypeKills: state.bossTypeKills || {},
+                    protectionScrolls: state.weapon?.protectionScrolls || 0,
+                    mastery: state.mastery || {}
+                });
             }
         });
 
