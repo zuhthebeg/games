@@ -1,0 +1,19 @@
+{
+  "name": "Line Rush",
+  "short_name": "LineRush",
+  "description": "Capture territory, defeat bosses, and clear stages.",
+  "start_url": "/linerush/",
+  "scope": "/linerush/",
+  "display": "standalone",
+  "background_color": "#080612",
+  "theme_color": "#080612",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/linerush/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

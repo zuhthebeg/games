@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Line Rush</title>
+  <meta name="theme-color" content="#080612">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/linerush/manifest.webmanifest">
   <script src="/lib/shared-wallet.js?v=20260214"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -120,19 +124,39 @@
       border-bottom: 1px solid rgba(120, 140, 190, 0.12);
     }
     .score-line { text-align: center; margin-top: 8px; font-size: 17px; }
+
+    #langSwitch {
+      position: fixed;
+      top: calc(56px + env(safe-area-inset-top));
+      right: 10px;
+      z-index: 180;
+      display: flex;
+      gap: 6px;
+    }
+    .lang-btn {
+      border: 1px solid rgba(130,175,255,.45);
+      background: rgba(10,12,26,.78);
+      color: #cde2ff;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .lang-btn.active { background:#6f2fd1; color:#fff; border-color:#9a6ef5; }
   </style>
 </head>
 <body>
 <div id="game-wrap"></div>
 <div id="joyWrap"><div id="joyBase"></div><div id="joyKnob"></div></div>
 <div id="scene-ui"></div>
+<div id="langSwitch"><button class="lang-btn" data-lang="ko">KR</button><button class="lang-btn" data-lang="en">EN</button></div>
 <script src="https://unpkg.com/kaplay@4000.0.0-alpha.26/dist/kaplay.js"></script>
 <script>
 (() => {
   window.addEventListener('error', (e) => {
     const msg = document.createElement('div');
     msg.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;z-index:99999;background:#300;color:#fff;padding:10px 12px;border-radius:8px;font:12px/1.4 sans-serif';
-    msg.textContent = 'Line Rush 로딩 오류: ' + (e.message || 'unknown');
+    msg.textContent = t('loadingError') + ': ' + (e.message || 'unknown');
     document.body.appendChild(msg);
   });
 
@@ -148,6 +172,38 @@
   const STORAGE_BEST_KEY   = 'linerush_best_stage';
   const STORAGE_PLAYER_KEY = 'linerush_player_id';
   const STORAGE_UNLOCK_KEY = 'linerush_unlocked_stage';
+
+
+  const LANG_KEY = 'linerush_lang';
+  const I18N = {
+    ko: {
+      loadingError:'Line Rush 로딩 오류', subtitle:'영역을 점령하고 80% 돌파!', rewardHint:'각 스테이지 클리어 시 stage×{reward}G 보상!',
+      rankingTitle:'🏆 최고 스테이지 랭킹', rankingLoading:'랭킹 로딩 중...', bestRow:'🏆 내 최고: STAGE {stage} | 최대보상: {gold}G', noRecord:'기록 없음',
+      noRanking:'아직 기록이 없습니다<br>먼저 플레이해보세요!', anonymous:'익명', rankLoadFail:'랭킹을 불러올 수 없습니다',
+      gameOver:'💀 GAME OVER', continueAsk:'100G로 이어가시겠습니까?<br>현재 보유: {gold}G', contBtn:'계속 (100G)', giveup:'포기',
+      stageClear:'STAGE CLEAR!', captured:'CAPTURED', gained:'💰 +{gold} G 획득! (보유: {total}G)', next:'NEXT STAGE →', backMenu:'🏠 BACK TO MENU',
+      finalScore:'FINAL SCORE: {score}', holdingGold:'💰 보유: {gold}G', retry:'RETRY (100G)', menu:'MENU', refresh:'🔄 새로고침 (골드 동기화)',
+      noGold:'골드가 부족합니다! ({gold}G)'
+    },
+    en: {
+      loadingError:'Line Rush loading error', subtitle:'Capture territory and reach 80%!', rewardHint:'Clear each stage to earn stage×{reward}G!',
+      rankingTitle:'🏆 Top Stage Ranking', rankingLoading:'Loading ranking...', bestRow:'🏆 Best: STAGE {stage} | Max reward: {gold}G', noRecord:'No record yet',
+      noRanking:'No records yet<br>Play your first run!', anonymous:'Anon', rankLoadFail:'Failed to load ranking',
+      gameOver:'💀 GAME OVER', continueAsk:'Continue for 100G?<br>Current gold: {gold}G', contBtn:'Continue (100G)', giveup:'Give Up',
+      stageClear:'STAGE CLEAR!', captured:'CAPTURED', gained:'💰 +{gold} G earned! (Now: {total}G)', next:'NEXT STAGE →', backMenu:'🏠 BACK TO MENU',
+      finalScore:'FINAL SCORE: {score}', holdingGold:'💰 Gold: {gold}G', retry:'RETRY (100G)', menu:'MENU', refresh:'🔄 Refresh (sync gold)',
+      noGold:'Not enough gold! ({gold}G)'
+    }
+  };
+
+  let LANG = localStorage.getItem(LANG_KEY) || ((navigator.language||'').toLowerCase().startsWith('ko') ? 'ko' : 'en');
+  if (!I18N[LANG]) LANG = 'ko';
+  const t = (k, vars={}) => {
+    let txt = (I18N[LANG] && I18N[LANG][k]) || I18N.ko[k] || k;
+    for (const [kk,v] of Object.entries(vars)) txt = txt.replace(new RegExp('\\{'+kk+'\\}','g'), String(v));
+    return txt;
+  };
+
 
   const MAIN_MONSTERS = [
     { name:'슬라임',   color:0x44ff44, ring:0x00cc00, radius:9,  spdMul:1.4, img:'boss1' },
@@ -482,15 +538,15 @@
 
     showPanel(`
       <div class="ui-title">LINE RUSH</div>
-      <div class="ui-sub">영역을 점령하고 80% 돌파!</div>
+      <div class="ui-sub">${t('subtitle')}</div>
       <div style="text-align:center;color:#ffd36e;font-size:13px;margin-bottom:10px" id="bestRow"></div>
       <button class="ui-btn primary" id="playBtn">▶ STAGE 1 START</button>
       <div style="text-align:center;color:#86d7ff;font-size:12px;margin:8px 0 10px">
-        각 스테이지 클리어 시 stage×${STAGE_REWARD.toLocaleString()}G 보상!
+        ${t('rewardHint',{reward:STAGE_REWARD.toLocaleString()})}
       </div>
       <div style="margin-top:8px;padding:10px;border-radius:10px;background:rgba(5,8,20,0.72);border:1px solid rgba(90,120,190,.35)">
-        <div style="text-align:center;color:#ffd700;font-size:14px;margin-bottom:6px">🏆 최고 스테이지 랭킹</div>
-        <div id="rankBox" style="font-size:13px;color:#8aa3c8;text-align:center">랭킹 로딩 중...</div>
+        <div style="text-align:center;color:#ffd700;font-size:14px;margin-bottom:6px">${t('rankingTitle')}</div>
+        <div id="rankBox" style="font-size:13px;color:#8aa3c8;text-align:center">${t('rankingLoading')}</div>
       </div>
       <div style="text-align:center;color:#4d6488;font-size:11px;margin-top:10px">game.cocy.io</div>
     `);
@@ -498,8 +554,8 @@
     const best = getLRBestStage();
     const bestRow = document.getElementById('bestRow');
     bestRow.textContent = best > 0
-      ? `🏆 내 최고: STAGE ${best} | 최대보상: ${(best * STAGE_REWARD).toLocaleString()}G`
-      : '기록 없음';
+      ? t('bestRow',{stage:best,gold:(best * STAGE_REWARD).toLocaleString()})
+      : t('noRecord');
 
     document.getElementById('playBtn').onclick = () => {
       hidePanel();
@@ -513,18 +569,18 @@
         if (!box) return;
         const rows = data.rankings || [];
         if (!rows.length) {
-          box.innerHTML = '아직 기록이 없습니다<br>먼저 플레이해보세요!';
+          box.innerHTML = t('noRanking');
           return;
         }
         box.innerHTML = rows.slice(0, 9).map((r, i) => {
           const medal = ['🥇', '🥈', '🥉'][i] || `${i + 1}.`;
-          const nick = (r.nickname || '익명').slice(0, 10);
+          const nick = (r.nickname || t('anonymous')).slice(0, 10);
           return `<div class="rank-row"><span>${medal} ${nick}</span><span style="color:#79d5ff">STAGE ${r.best_stage}</span></div>`;
         }).join('');
       })
       .catch(() => {
         const box = document.getElementById('rankBox');
-        if (box) box.textContent = '랭킹을 불러올 수 없습니다';
+        if (box) box.textContent = t('rankLoadFail');
       });
 
     k.onDraw(() => {
@@ -1188,13 +1244,13 @@
       const gold = getLocalGold();
 
       showPanel(`
-        <div style="text-align:center;font-size:28px;color:#ff6b6b;font-weight:700;margin-bottom:8px">💀 GAME OVER</div>
+        <div style="text-align:center;font-size:28px;color:#ff6b6b;font-weight:700;margin-bottom:8px">${t('gameOver')}</div>
         <div style="text-align:center;font-size:14px;color:#fff;line-height:1.45;margin-bottom:14px">
-          100G로 이어가시겠습니까?<br>현재 보유: ${gold.toLocaleString()}G
+          ${t('continueAsk',{gold:gold.toLocaleString()})}
         </div>
         <div class="ui-row">
-          <button class="ui-btn warn" id="contBtn">계속 (100G)</button>
-          <button class="ui-btn danger" id="quitBtn">포기</button>
+          <button class="ui-btn warn" id="contBtn">${t('contBtn')}</button>
+          <button class="ui-btn danger" id="quitBtn">${t('giveup')}</button>
         </div>
       `);
 
@@ -2240,17 +2296,17 @@
     const stars = percent >= 95 ? 3 : percent >= 90 ? 2 : 1;
 
     showPanel(`
-      <div style="text-align:center;font-size:44px;color:#ffd56b;font-weight:800;text-shadow:0 2px 0 #6b3400">STAGE CLEAR!</div>
+      <div style="text-align:center;font-size:44px;color:#ffd56b;font-weight:800;text-shadow:0 2px 0 #6b3400">${t('stageClear')}</div>
       <div style="text-align:center;font-size:70px;color:#fff;margin-top:10px">${percent}%</div>
-      <div style="text-align:center;color:#c8e8ff;font-size:15px;letter-spacing:1px">CAPTURED</div>
+      <div style="text-align:center;color:#c8e8ff;font-size:15px;letter-spacing:1px">${t('captured')}</div>
       <div style="text-align:center;font-size:46px;margin-top:6px">${'★'.repeat(stars)}<span style="color:#444466">${'★'.repeat(3 - stars)}</span></div>
 
       <div class="score-line" style="color:#ffb4d8">SCORE: ${score}</div>
       <div class="score-line" style="color:#9cfbff">CLEAR BONUS: +${clearBonus}</div>
       <div class="score-line" style="color:#fff;font-size:19px">TOTAL: ${totalScore}</div>
-      <div class="score-line" style="color:#ffd700">💰 +${goldReward.toLocaleString()} G 획득! (보유: ${goldAfter.toLocaleString()}G)</div>
+      <div class="score-line" style="color:#ffd700">${t('gained',{gold:goldReward.toLocaleString(), total:goldAfter.toLocaleString()})}</div>
 
-      <button class="ui-btn next" id="nextBtn" style="margin-top:14px">${stage < STAGE_COUNT ? 'NEXT STAGE →' : '🏠 BACK TO MENU'}</button>
+      <button class="ui-btn next" id="nextBtn" style="margin-top:14px">${stage < STAGE_COUNT ? t('next') : t('backMenu')}</button>
     `);
 
     document.getElementById('nextBtn').onclick = () => {
@@ -2276,20 +2332,20 @@
 
     const goGold = getLocalGold();
     showPanel(`
-      <div style="text-align:center;font-size:52px;color:#ff6666;font-weight:800;margin-bottom:10px">GAME OVER</div>
-      <div style="text-align:center;font-size:22px;color:#fff;margin-bottom:8px">FINAL SCORE: ${score}</div>
-      <div style="text-align:center;font-size:14px;color:#ffd700;margin-bottom:16px">💰 보유: ${goGold.toLocaleString()}G</div>
+      <div style="text-align:center;font-size:52px;color:#ff6666;font-weight:800;margin-bottom:10px">${t('gameOver')}</div>
+      <div style="text-align:center;font-size:22px;color:#fff;margin-bottom:8px">${t('finalScore',{score})}</div>
+      <div style="text-align:center;font-size:14px;color:#ffd700;margin-bottom:16px">${t('holdingGold',{gold:goGold.toLocaleString()})}</div>
       <div class="ui-row">
-        <button class="ui-btn primary" id="retryBtn">RETRY (100G)</button>
-        <button class="ui-btn danger" id="menuBtn">MENU</button>
+        <button class="ui-btn primary" id="retryBtn">${t('retry')}</button>
+        <button class="ui-btn danger" id="menuBtn">${t('menu')}</button>
       </div>
-      <button class="ui-btn next" id="refreshBtn" style="margin-top:8px;font-size:12px">🔄 새로고침 (골드 동기화)</button>
+      <button class="ui-btn next" id="refreshBtn" style="margin-top:8px;font-size:12px">${t('refresh')}</button>
     `);
 
     document.getElementById('retryBtn').onclick = () => {
       const cur = getLocalGold();
       if (cur < 100) {
-        alert('골드가 부족합니다! (' + cur + 'G)');
+        alert(t('noGold',{gold:cur}));
         return;
       }
       setLocalGold(cur - 100);
@@ -2309,8 +2365,31 @@
     });
   });
 
+  const langRoot = document.getElementById('langSwitch');
+  if (langRoot) {
+    const syncLangUI = () => {
+      langRoot.querySelectorAll('.lang-btn').forEach((b) => b.classList.toggle('active', b.dataset.lang === LANG));
+    };
+    langRoot.querySelectorAll('.lang-btn').forEach((b) => {
+      b.onclick = () => {
+        const next = b.dataset.lang;
+        if (!I18N[next] || next === LANG) return;
+        LANG = next;
+        localStorage.setItem(LANG_KEY, LANG);
+        location.reload();
+      };
+    });
+    syncLangUI();
+  }
+
   k.go('boot');
 })();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/linerush/sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
