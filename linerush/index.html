@@ -244,7 +244,7 @@
   const CELL = 8;
   const W = COLS * CELL;
   const H = ROWS * CELL;
-  const TARGET_PERCENT = 80;
+  const TARGET_PERCENT = 85;
 
   function getLRPlayerId() {
     let id = localStorage.getItem(STORAGE_PLAYER_KEY);
@@ -615,7 +615,7 @@
       drawStart: null,
       retracting: false,
       moveTimer: 0,
-      moveDelay: 60,
+      moveDelay: 55,
       retractSpeedMul: 1.5,
       invuln: 0,
 
@@ -698,7 +698,7 @@
 
     const mmDef = MAIN_MONSTERS[Math.min(S.stage - 1, MAIN_MONSTERS.length - 1)];
     const mmRadiusScale = 1 + S.stage * 0.02;
-    const mmSpeed = CELL * (1.2 + S.stage * 0.38) * mmDef.spdMul;
+    const mmSpeed = CELL * (1.25 + S.stage * 0.42) * mmDef.spdMul;
     S.mainMonster = {
       x: k.rand(CELL * 5, W - CELL * 5),
       y: k.rand(CELL * 5, H - CELL * 5),
