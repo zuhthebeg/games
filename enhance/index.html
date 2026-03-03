@@ -3575,8 +3575,7 @@
             saveToCloud();
             // SharedWallet 동기화
             if (typeof SharedWallet !== 'undefined') {
-                SharedWallet.gold = state.gold;
-                SharedWallet._updateUI();
+                SharedWallet.setGold(state.gold);
             }
         }
 
@@ -7449,8 +7448,7 @@
             showMain();
             // SharedWallet 동기화
             if (typeof SharedWallet !== 'undefined') {
-                SharedWallet.gold = state.gold;
-                SharedWallet._updateUI();
+                SharedWallet.setGold(state.gold);
             }
         });
 
