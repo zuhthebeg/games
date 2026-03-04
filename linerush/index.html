@@ -297,15 +297,25 @@
 
   function getLocalGold() {
     try {
+      if (window.SharedWallet && Number.isFinite(window.SharedWallet.gold)) {
+        return Math.max(0, Number(window.SharedWallet.gold) || 0);
+      }
       return JSON.parse(localStorage.getItem('enhance_game_v3') || '{}').gold || 0;
     } catch (_) { return 0; }
   }
   function setLocalGold(g) {
+    const next = Math.max(0, Number(g) || 0);
     try {
+      // 로그인 유저는 SharedWallet 경유로 저장 (로컬 + 클라우드 동기화)
+      if (window.SharedWallet && typeof window.SharedWallet.setGold === 'function') {
+        window.SharedWallet.setGold(next);
+        return;
+      }
+
+      // SharedWallet 미초기화 환경 fallback
       const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
-      d.gold = Math.max(0, g);
+      d.gold = next;
       localStorage.setItem('enhance_game_v3', JSON.stringify(d));
-      if (window.SharedWallet) { window.SharedWallet.gold = d.gold; window.SharedWallet._updateUI?.(); }
     } catch (_) {}
   }
 
