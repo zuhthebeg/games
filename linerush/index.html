@@ -163,7 +163,7 @@
   // ──────────────────────────────────────────────────────────────
   // Constants / Storage / Network
   // ──────────────────────────────────────────────────────────────
-  const STAGE_COUNT        = 20;
+  const STAGE_COUNT        = 30;
   const BG_ORIG_START      = 1;
   const BG_ORIG_END        = 10;
   const STAGE_CHAR_MAP     = { 1: 'char1', 2: 'char2', 3: 'char4' };
@@ -221,12 +221,28 @@
     { name:'촉수EX',   color:0xcc44ff, ring:0x8800cc, radius:12, spdMul:1.98,img:'boss3' },
     { name:'아이볼EX', color:0xff2244, ring:0xcc0022, radius:13, spdMul:2.05,img:'boss4' },
     { name:'아이스EX', color:0x88ddff, ring:0x0088cc, radius:13, spdMul:2.1, img:'boss5' },
+    { name:'플레임EX', color:0xff6600, ring:0xff2200, radius:13, spdMul:2.15,img:'boss6' },
+    { name:'썬더EX',   color:0xffff22, ring:0xcc9900, radius:14, spdMul:2.2, img:'boss7' },
+    { name:'다크EX',   color:0xaa44ff, ring:0x660099, radius:14, spdMul:2.25,img:'boss8' },
+    { name:'카오스EX', color:0xff44aa, ring:0xcc0077, radius:14, spdMul:2.3, img:'boss9' },
+    { name:'보이드EX', color:0xff0000, ring:0x880000, radius:15, spdMul:2.4, img:'boss10'},
+    { name:'슬라임Ω',  color:0x00ff88, ring:0x00aa44, radius:13, spdMul:2.5, img:'boss1' },
+    { name:'스핀Ω',    color:0xffcc00, ring:0xff8800, radius:14, spdMul:2.55,img:'boss2' },
+    { name:'촉수Ω',    color:0xdd66ff, ring:0x9900ee, radius:14, spdMul:2.58,img:'boss3' },
+    { name:'아이볼Ω',  color:0xff4466, ring:0xee0033, radius:15, spdMul:2.62,img:'boss4' },
+    { name:'아이스Ω',  color:0xaaeeff, ring:0x0099dd, radius:15, spdMul:2.65,img:'boss5' },
+    { name:'플레임Ω',  color:0xff8800, ring:0xff4400, radius:15, spdMul:2.7, img:'boss6' },
+    { name:'다크Ω',    color:0xcc66ff, ring:0x7700cc, radius:15, spdMul:2.75,img:'boss8' },
+    { name:'보이드Ω',  color:0xff2200, ring:0xaa0000, radius:16, spdMul:2.9, img:'boss10'},
   ];
 
   const STAGE_BOSS_IDS = [
     'slime', 'spin', 'tentacle', 'eyeball', 'ice',
     'flame', 'thunder', 'dark', 'chaos', 'void',
     'slime', 'spin', 'tentacle', 'eyeball', 'ice',
+    'flame', 'thunder', 'dark', 'chaos', 'void',
+    'slime', 'spin', 'tentacle', 'eyeball', 'ice',
+    'flame', 'thunder', 'dark', 'chaos', 'void',
   ];
   const DESPERATE_ATTACKS = ['spiral', 'earthquake', 'blackout', 'split', 'laser', 'teleport', 'magnet', 'freeze_reverse'];
 
