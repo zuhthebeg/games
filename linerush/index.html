@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="/linerush/manifest.webmanifest">
-  <script src="/lib/shared-wallet.js?v=20260305g"></script>
+  <script src="/lib/shared-wallet.js?v=20260305h"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -247,16 +247,32 @@
   const TARGET_PERCENT = 85;
 
   function getLRPlayerId() {
-    // 로그인 유저면 계정 id를 우선 사용 (랭킹 닉네임 연동)
-    const authId = window.SharedWallet?.user?.id;
-    if (authId) return authId;
-
-    let id = localStorage.getItem(STORAGE_PLAYER_KEY);
-    if (!id) {
-      id = 'lr_' + Math.random().toString(36).slice(2, 11);
-      localStorage.setItem(STORAGE_PLAYER_KEY, id);
+    let localId = localStorage.getItem(STORAGE_PLAYER_KEY);
+    if (!localId) {
+      localId = 'lr_' + Math.random().toString(36).slice(2, 11);
+      localStorage.setItem(STORAGE_PLAYER_KEY, localId);
     }
-    return id;
+    // 로그인 유저면 계정 id 반환 + 기존 익명 기록 마이그레이션
+    const authUser = window.SharedWallet?.user;
+    if (authUser?.id) {
+      // 이전에 익명으로 저장된 기록이 있으면 서버에 마이그레이션 요청
+      if (localId && localId !== authUser.id && localId.startsWith('lr_')) {
+        const prevId = localId;
+        localStorage.setItem(STORAGE_PLAYER_KEY, authUser.id); // 이후엔 계정 ID 사용
+        fetch(`${RELAY_URL}/api/rankings/linerush`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: authUser.id,
+            nickname: getLRNickname(),
+            stage: getLRBestStage(),
+            migrateFrom: prevId,
+          }),
+        }).catch(() => {});
+      }
+      return authUser.id;
+    }
+    return localId;
   }
 
   function getLRNickname() {
