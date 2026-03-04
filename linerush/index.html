@@ -163,7 +163,7 @@
   // ──────────────────────────────────────────────────────────────
   // Constants / Storage / Network
   // ──────────────────────────────────────────────────────────────
-  const STAGE_COUNT        = 15;
+  const STAGE_COUNT        = 20;
   const BG_ORIG_START      = 1;
   const BG_ORIG_END        = 10;
   const STAGE_CHAR_MAP     = { 1: 'char1', 2: 'char2', 3: 'char4' };
@@ -2323,7 +2323,9 @@
     setWrapBackground(bgKey);
     setUnlockedStage(stage + 1);
 
-    const goldReward = stage * STAGE_REWARD;
+    const stars = percent >= 95 ? 3 : percent >= 90 ? 2 : 1;
+    const starMul = stars === 3 ? 2.0 : stars === 2 ? 1.4 : 1.0;
+    const goldReward = Math.round(stage * STAGE_REWARD * starMul);
     const goldBefore = getLocalGold();
     setLocalGold(goldBefore + goldReward);
     const goldAfter = getLocalGold();
@@ -2331,7 +2333,6 @@
 
     const clearBonus = 2000 * stage;
     const totalScore = score + clearBonus;
-    const stars = percent >= 95 ? 3 : percent >= 90 ? 2 : 1;
 
     showPanel(`
       <div style="text-align:center;font-size:44px;color:#ffd56b;font-weight:800;text-shadow:0 2px 0 #6b3400">${t('stageClear')}</div>
@@ -2380,6 +2381,16 @@
       <button class="ui-btn next" id="refreshBtn" style="margin-top:8px;font-size:12px">${t('refresh')}</button>
     `);
 
+    // 게임오버 시 랭킹에 최고 스테이지 제출 (이전 스테이지 기준)
+    const bestSoFar = getLRBestStage();
+    if (bestSoFar > 0) {
+      fetch(`${RELAY_URL}/api/rankings/linerush`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: getLRPlayerId(), nickname: getLRNickname(), stage: bestSoFar }),
+      }).catch(() => {});
+    }
+
     document.getElementById('retryBtn').onclick = () => {
       const cur = getLocalGold();
       if (cur < 100) {
@@ -2394,8 +2405,20 @@
       hidePanel();
       k.go('menu');
     };
-    document.getElementById('refreshBtn').onclick = () => {
-      location.reload();
+    document.getElementById('refreshBtn').onclick = async () => {
+      const btn = document.getElementById('refreshBtn');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ 동기화 중...'; }
+      try {
+        if (window.SharedWallet?.isLoggedIn) {
+          // 로그인 상태: 클라우드에서 최신 골드 가져와서 UI만 갱신
+          SharedWallet._initialized = false;
+          await SharedWallet._checkAuth();
+          SharedWallet._initialized = true;
+          SharedWallet._updateUI?.();
+        }
+      } catch(e) {}
+      const cur = getLocalGold();
+      if (btn) { btn.disabled = false; btn.textContent = `💰 ${cur.toLocaleString()}G (동기화 완료)`; }
     };
 
     k.onDraw(() => {
