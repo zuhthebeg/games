@@ -23,6 +23,12 @@
 <!-- AdSense: managed via GTM auto-ads (ca-pub-6634731722045607) -->
 <title>사다리 게임 - 순서 정하기</title>
 <script src="/lib/shared-wallet.js?v=20260214"></script>
+<script>
+(function(){
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isStandalone) document.documentElement.classList.add('standalone');
+})();
+</script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -31,8 +37,9 @@ body {
   font-family: 'Trebuchet MS', sans-serif;
   min-height: 100dvh;
   padding-top: calc(48px + env(safe-area-inset-top));
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
-.wrap { max-width: 100%; margin: 0 auto; padding: 10px 4px 20px; }
+.wrap { max-width: 100%; margin: 0 auto; padding: 10px 4px calc(96px + env(safe-area-inset-bottom)); }
 h1 { text-align: center; font-size: 20px; color: #ffd700; margin-bottom: 2px; }
 .sub { text-align: center; font-size: 11px; color: #8888bb; margin-bottom: 8px; }
 .toolbar {
@@ -257,6 +264,15 @@ canvas {
 }
 .result-banner.lose .rorder { color: #b7bbca; }
 .result-banner.lose .rarrow { color: #9ca1b0; }
+
+/* PWA standalone/TWA: 외부 이동 링크/푸터 숨김 */
+@media (display-mode: standalone) {
+  .external-link, footer, .global-footer, .home-link { display: none !important; }
+}
+.standalone .external-link,
+.standalone footer,
+.standalone .global-footer,
+.standalone .home-link { display: none !important; }
 </style>
 </head>
 <body>
