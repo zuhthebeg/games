@@ -1,0 +1,20 @@
+{
+  "name": "무기 강화 & 배틀",
+  "short_name": "무기강화",
+  "description": "디아블로 스타일 등급 시스템! 강화하고 배틀해서 돈을 벌어라",
+  "start_url": "/enhance/?utm_source=twa",
+  "scope": "/enhance/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "lang": "ko",
+  "icons": [
+    { "src": "/enhance/icon-48.png",  "sizes": "48x48",   "type": "image/png" },
+    { "src": "/enhance/icon-72.png",  "sizes": "72x72",   "type": "image/png" },
+    { "src": "/enhance/icon-96.png",  "sizes": "96x96",   "type": "image/png" },
+    { "src": "/enhance/icon-144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "/enhance/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/enhance/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

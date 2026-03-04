@@ -1,10 +1,22 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "io.cocy.linerush",
-    "sha256_cert_fingerprints": [
-      "29:A6:7C:58:4C:AC:DE:76:9A:95:C8:70:F1:5B:2C:4B:D9:F5:32:87:EC:D7:FA:D3:BF:2E:DB:EB:B5:5E:09:FD"
-    ]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.cocy.linerush",
+      "sha256_cert_fingerprints": [
+        "29:A6:7C:58:4C:AC:DE:76:9A:95:C8:70:F1:5B:2C:4B:D9:F5:32:87:EC:D7:FA:D3:BF:2E:DB:EB:B5:5E:09:FD"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.cocy.enhance",
+      "sha256_cert_fingerprints": [
+        "29:A6:7C:58:4C:AC:DE:76:9A:95:C8:70:F1:5B:2C:4B:D9:F5:32:87:EC:D7:FA:D3:BF:2E:DB:EB:B5:5E:09:FD"
+      ]
+    }
   }
-}]
+]
