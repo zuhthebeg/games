@@ -2411,7 +2411,7 @@
                 // 토큰이 익명인지 확인 (sub 필드가 있으면 로그인 유저)
                 const parts = token.split('.');
                 if (parts.length !== 3) return;
-                const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                const payload = JSON.parse(decodeURIComponent(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")).split("").map(c=>"%"+("00"+c.charCodeAt(0).toString(16)).slice(-2)).join("")));
                 
                 if (payload.sub) {
                     // 로그인 유저! 클라우드 동기화 활성화
@@ -2547,7 +2547,7 @@
                 try {
                     const parts = token.split('.');
                     if (parts.length === 3) {
-                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        const payload = JSON.parse(decodeURIComponent(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")).split("").map(c=>"%"+("00"+c.charCodeAt(0).toString(16)).slice(-2)).join("")));
                         userId = payload.sub || payload.userId || payload.user_id;
                         if (userId) {
                             localStorage.setItem('cocy_user_id', userId);  // 캐시
@@ -2577,7 +2577,7 @@
                 try {
                     const parts = token.split('.');
                     if (parts.length === 3) {
-                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        const payload = JSON.parse(decodeURIComponent(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")).split("").map(c=>"%"+("00"+c.charCodeAt(0).toString(16)).slice(-2)).join("")));
                         return payload.nickname || null;
                     }
                 } catch (e) {}
