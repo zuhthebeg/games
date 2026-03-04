@@ -20,7 +20,7 @@
     <script>if(location.search.includes('debug=1')){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';s.onload=function(){eruda.init()};document.head.appendChild(s)}</script>
     <script src="/lib/multiplayer.js?v=20260213v1"></script>
     <script src="/lib/multiplayer-ui.js?v=20260210v9"></script>
-    <script src="/lib/shared-wallet.js?v=20260305a"></script>
+    <script src="/lib/shared-wallet.js?v=20260305c"></script>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -2741,18 +2741,25 @@
         
         // 로그인 유저 닉네임 가져오기
         function getUserNickname() {
-            // 1. relay에서 저장한 닉네임
+            const isMojibake = (v) => typeof v === 'string' && /[ìëêãåæ]/.test(v);
+
+            // 1) SharedWallet 현재 유저 정보 우선
+            const swNick = window.SharedWallet?.user?.nickname;
+            if (swNick && !isMojibake(swNick)) return swNick;
+
+            // 2) relay 저장 닉네임 (깨진 값이면 버림)
             const relayNick = localStorage.getItem('relay_nickname');
-            if (relayNick) return relayNick;
-            
-            // 2. JWT 토큰에서 추출
+            if (relayNick && !isMojibake(relayNick)) return relayNick;
+
+            // 3) JWT 토큰에서 추출
             const token = localStorage.getItem('cocy_auth_token') || localStorage.getItem('accessToken');
             if (token) {
                 try {
                     const parts = token.split('.');
                     if (parts.length === 3) {
                         const payload = JSON.parse(decodeURIComponent(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")).split("").map(c=>"%"+("00"+c.charCodeAt(0).toString(16)).slice(-2)).join("")));
-                        return payload.nickname || null;
+                        const nick = payload.nickname || null;
+                        if (nick && !isMojibake(nick)) return nick;
                     }
                 } catch (e) {}
             }
