@@ -247,6 +247,10 @@
   const TARGET_PERCENT = 85;
 
   function getLRPlayerId() {
+    // 로그인 유저면 계정 id를 우선 사용 (랭킹 닉네임 연동)
+    const authId = window.SharedWallet?.user?.id;
+    if (authId) return authId;
+
     let id = localStorage.getItem(STORAGE_PLAYER_KEY);
     if (!id) {
       id = 'lr_' + Math.random().toString(36).slice(2, 11);
@@ -254,13 +258,21 @@
     }
     return id;
   }
+
+  function getLRNickname() {
+    const n1 = window.SharedWallet?.user?.nickname;
+    if (n1 && !/[ìëêãåæ]/.test(n1)) return n1;
+    const n2 = localStorage.getItem('relay_nickname');
+    if (n2 && !/[ìëêãåæ]/.test(n2)) return n2;
+    return null;
+  }
   function getLRBestStage() {
     return parseInt(localStorage.getItem(STORAGE_BEST_KEY) || '0');
   }
   function setLRBestStage(s) {
     if (s > getLRBestStage()) {
       localStorage.setItem(STORAGE_BEST_KEY, String(s));
-      const nickname = window.SharedWallet?.user?.nickname || window.SharedWallet?.user?.username || null;
+      const nickname = getLRNickname();
       fetch(`${RELAY_URL}/api/rankings/linerush`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
