@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "io.cocy.linerush",
+    "sha256_cert_fingerprints": [
+      "14:29:D8:E9:0D:24:AB:94:C9:5F:B6:26:AA:6D:43:64:78:EB:6C:A8:10:5B:1C:40:08:2F:71:D5:BF:90:7C:4C"
+    ]
+  }
+}]
