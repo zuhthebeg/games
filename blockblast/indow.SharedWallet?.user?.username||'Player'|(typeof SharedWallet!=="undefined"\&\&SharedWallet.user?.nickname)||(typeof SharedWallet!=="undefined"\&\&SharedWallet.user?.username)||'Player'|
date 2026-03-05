@@ -1,0 +1,1 @@
+    async function submitRanking(){try{const nick=||window.SharedWallet?.user?.username||'Player';await fetch('https://relay.cocy.io/api/rankings/blockblast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:state.playerId,nickname:nick,score:state.score})})}catch(_){}}
