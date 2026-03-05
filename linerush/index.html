@@ -228,12 +228,12 @@
     { name:'보이드EX', color:0xff0000, ring:0x880000, radius:15, spdMul:2.4, img:'boss20'},
     { name:'슬라임Ω',  color:0x00ff88, ring:0x00aa44, radius:13, spdMul:2.5, img:'boss21'},
     { name:'스핀Ω',    color:0xffcc00, ring:0xff8800, radius:14, spdMul:2.55,img:'boss22'},
-    { name:'촉수Ω',    color:0xdd66ff, ring:0x9900ee, radius:14, spdMul:2.58,img:'boss3' },
-    { name:'아이볼Ω',  color:0xff4466, ring:0xee0033, radius:15, spdMul:2.62,img:'boss4' },
-    { name:'아이스Ω',  color:0xaaeeff, ring:0x0099dd, radius:15, spdMul:2.65,img:'boss5' },
-    { name:'플레임Ω',  color:0xff8800, ring:0xff4400, radius:15, spdMul:2.7, img:'boss6' },
-    { name:'다크Ω',    color:0xcc66ff, ring:0x7700cc, radius:15, spdMul:2.75,img:'boss8' },
-    { name:'보이드Ω',  color:0xff2200, ring:0xaa0000, radius:16, spdMul:2.9, img:'boss10'},
+    { name:'촉수Ω',    color:0xdd66ff, ring:0x9900ee, radius:14, spdMul:2.58,img:'boss23'},
+    { name:'아이볼Ω',  color:0xff4466, ring:0xee0033, radius:15, spdMul:2.62,img:'boss23'},
+    { name:'아이스Ω',  color:0xaaeeff, ring:0x0099dd, radius:15, spdMul:2.65,img:'boss24'},
+    { name:'플레임Ω',  color:0xff8800, ring:0xff4400, radius:15, spdMul:2.7, img:'boss25'},
+    { name:'다크Ω',    color:0xcc66ff, ring:0x7700cc, radius:15, spdMul:2.75,img:'boss26'},
+    { name:'보이드Ω',  color:0xff2200, ring:0xaa0000, radius:16, spdMul:2.9, img:'boss27'},
   ];
 
   const STAGE_BOSS_IDS = [
@@ -543,7 +543,7 @@
     ['char1', 'char2', 'char4'].forEach((n) => k.loadSprite(n, `/linerush/img/${n}.jpg`));
     for (let i = 1; i <= STAGE_COUNT; i++) k.loadSprite(`bg${i}`, `/linerush/img/bg${i}.jpg`);
     for (let i = 11; i <= STAGE_COUNT; i++) k.loadSprite(`char${i}`, `/linerush/img/char${i}.jpg`);
-    for (let i = 1; i <= 22; i++) k.loadSprite(`boss${i}`, `/lib/monsters/boss${i}.png`);
+    for (let i = 1; i <= 27; i++) k.loadSprite(`boss${i}`, `/lib/monsters/boss${i}.png`);
   }
 
   k.onLoad(() => { assetsReady = true; });
