@@ -2008,6 +2008,7 @@
         }
 
         footer a { color: var(--accent); text-decoration: none; }
+        @media (display-mode: standalone) { footer { display: none !important; } }
         
         /* Ranking Styles */
         .ranking-tabs {
@@ -2089,6 +2090,19 @@
         .sound-btn { padding:5px 10px; border-radius:8px; border:1px solid #444; background:#0d0d0d; color:#aaa; font-size:0.8rem; cursor:pointer; }
         .sound-btn.active { background:#e94560; color:#fff; border-color:#e94560; }
     </style>
+<script>
+(function(){
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || navigator.standalone === true
+    || document.referrer.startsWith('android-app://');
+  if (isStandalone) {
+    document.addEventListener('DOMContentLoaded', function() {
+      var footer = document.querySelector('footer');
+      if (footer) footer.style.display = 'none';
+    });
+  }
+})();
+</script>
 </head>
 <body>
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
