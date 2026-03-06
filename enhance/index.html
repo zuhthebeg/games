@@ -5748,8 +5748,10 @@
 
         function applyBossScaling(monster) {
             const kills = state.bossKills || 0;
-            if (kills <= 0) return monster;
-            const scale = 1 + kills * 0.05; // 보스킬당 +5%
+            const baseScale = monster.isBoss ? 0.85 : 1.0; // 보스 기본 난이도 15% 감소
+            const killScale = 1 + kills * 0.05; // 보스킬당 +5%
+            const scale = baseScale * killScale;
+            if (scale === 1.0) return monster;
             return {
                 ...monster,
                 hp: Math.floor(monster.hp * scale),
@@ -5779,7 +5781,13 @@
                 const bossTier = Math.max(4, recommendedTier);
                 const bosses = Object.entries(MONSTERS).filter(([k, v]) => v.isBoss && v.tier <= bossTier);
                 if (bosses.length > 0) {
-                    const [type, m] = bosses[Math.floor(Math.random() * bosses.length)];
+                    // 정령 타입 보스 가중치 3배
+                    const weightedBosses = [];
+                    bosses.forEach(([k, v]) => {
+                        const w = v.type === 'elemental' ? 3 : 1;
+                        for (let i = 0; i < w; i++) weightedBosses.push([k, v]);
+                    });
+                    const [type, m] = weightedBosses[Math.floor(Math.random() * weightedBosses.length)];
                     return applyBossScaling({ ...m, key: type, currentHp: m.hp, maxHp: m.hp });
                 }
             }
@@ -6047,7 +6055,7 @@
             const penaltyPercent = getRunPenaltyPercent(monster.tier);
             // 사냥 획득분 포함 후 기준으로 페널티 계산
             const totalGoldAfterEarned = state.gold + huntState.totalGoldEarned;
-            const goldLoss = Math.floor(totalGoldAfterEarned * penaltyPercent / 100);
+            const goldLoss = Math.min(totalGoldAfterEarned, Math.floor(totalGoldAfterEarned * penaltyPercent / 100));
             const netResult = huntState.totalGoldEarned - goldLoss;
             
             const warningMsg = monster.isBoss 
