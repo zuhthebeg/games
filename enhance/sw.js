@@ -1,10 +1,7 @@
-const CACHE = 'enhance-v11';
+const CACHE = 'enhance-v12';
 const OFFLINE = [
   '/enhance/',
   '/enhance/index.html',
-  '/lib/shared-wallet.js',
-  '/lib/multiplayer.js',
-  '/lib/multiplayer-ui.js',
 ];
 
 self.addEventListener('install', e => {
@@ -19,6 +16,12 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  // /lib/ 파일은 항상 네트워크 (캐시버스터 쿼리로 관리)
+  if (url.pathname.startsWith('/lib/')) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
   e.respondWith(
     fetch(e.request).catch(() => caches.match(e.request))
   );
