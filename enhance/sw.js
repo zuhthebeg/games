@@ -1,4 +1,4 @@
-const CACHE = 'enhance-v1';
+const CACHE = 'enhance-v3';
 const OFFLINE = ['/enhance/', '/enhance/index.html'];
 
 self.addEventListener('install', e => {
