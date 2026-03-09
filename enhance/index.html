@@ -4629,7 +4629,6 @@
 
         async function checkRankReward(tab) {
             if (isRankChecked(tab)) return;  // 오늘 이미 체크함
-            markRankChecked(tab);
 
             const userId = state.userId;
             if (!userId) return;
@@ -4640,11 +4639,12 @@
             if (!rankType) return;
 
             try {
-                const res = await fetch(`${RANKING_API}/checkin`, {
+                const res = await fetch(`${RANKING_API}/checkin?type=${rankType}`, {
                     headers: { 'Authorization': `Bearer ${userId}` }
                 });
                 if (!res.ok) return;
                 const data = await res.json();
+                markRankChecked(tab); // 호출 성공했을 때만 체크 완료
                 if (!data.rewards?.length) return;
 
                 // 이 탭에 해당하는 보상만
