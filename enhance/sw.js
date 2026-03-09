@@ -1,5 +1,11 @@
-const CACHE = 'enhance-v3';
-const OFFLINE = ['/enhance/', '/enhance/index.html'];
+const CACHE = 'enhance-v4';
+const OFFLINE = [
+  '/enhance/',
+  '/enhance/index.html',
+  '/lib/shared-wallet.js',
+  '/lib/multiplayer.js',
+  '/lib/multiplayer-ui.js',
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(OFFLINE)));

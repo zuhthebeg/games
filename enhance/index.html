@@ -20,7 +20,8 @@
     <script>if(location.search.includes('debug=1')){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';s.onload=function(){eruda.init()};document.head.appendChild(s)}</script>
     <script src="/lib/multiplayer.js?v=20260213v1"></script>
     <script src="/lib/multiplayer-ui.js?v=20260210v9"></script>
-    <script src="/lib/shared-wallet.js?v=20260309"></script>
+    <script>window.SharedWalletConfig = { autoGuest: true };</script>
+    <script src="/lib/shared-wallet.js?v=20260309b"></script>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -2655,21 +2656,15 @@
         const SYNC_DEBOUNCE_MS = 3000; // 3초마다 최대 1회 동기화
         
         async function checkCloudSync() {
-            // multiplayer.js의 ensureAuth 통해 토큰 확인
-            if (typeof MultiplayerClient === 'undefined') return;
+            // SharedWallet이 autoGuest로 항상 토큰을 확보하므로 토큰 있으면 바로 동기화
             const token = localStorage.getItem('cocy_auth_token');
             if (!token) return;
-            
             try {
-                // 토큰이 익명인지 확인 (sub 필드가 있으면 로그인 유저)
                 const parts = token.split('.');
                 if (parts.length !== 3) return;
                 const payload = JSON.parse(decodeURIComponent(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")).split("").map(c=>"%"+("00"+c.charCodeAt(0).toString(16)).slice(-2)).join("")));
-                
                 if (payload.sub) {
-                    // 로그인 유저! 클라우드 동기화 활성화
                     cloudSyncEnabled = true;
-                    console.log('☁️ Cloud sync enabled for logged-in user');
                     await loadFromCloud();
                 }
             } catch (e) {
@@ -7679,6 +7674,15 @@
                     bossTypeKills: state.bossTypeKills || {},
                     protectionScrolls: state.weapon?.protectionScrolls || 0,
                     mastery: state.mastery || {}
+                });
+
+                // 로그아웃 즉시 반영: 게스트 계정으로 전환 시 게임 상태 리셋
+                SharedWallet.onChange(({ isLoggedIn }) => {
+                    if (!isLoggedIn) {
+                        // 게스트 전환 → 서버에서 새 상태 로드
+                        cloudSyncEnabled = true;
+                        loadFromCloud().then(() => showMain());
+                    }
                 });
             }
         });
