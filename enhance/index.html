@@ -1225,43 +1225,96 @@
             z-index: 9999;
             pointer-events: none;
         }
-        .magic-effect.fire { animation: magicFire 0.6s ease-out forwards; }
-        .magic-effect.ice { animation: magicIce 0.8s ease-out forwards; }
+        .magic-effect.fire { animation: magicFire 0.7s ease-out forwards; }
+        .magic-effect.ice { animation: magicIce 0.9s ease-out forwards; }
         .magic-effect.lightning { animation: magicLightning 0.5s ease-out forwards; }
         .magic-effect.water { animation: magicWater 0.7s ease-out forwards; }
         .magic-effect.poison { animation: magicPoison 0.6s ease-out forwards; }
         .magic-effect.holy { animation: magicHoly 0.8s ease-out forwards; }
-        
+
+        /* 속성별 화면 플래시 오버레이 */
+        .element-flash {
+            position: fixed; inset: 0; z-index: 9998;
+            pointer-events: none; opacity: 0;
+        }
+        .element-flash.fire    { background: radial-gradient(circle, rgba(255,69,0,0.45) 0%, transparent 70%); animation: flashPop 0.6s ease-out forwards; }
+        .element-flash.ice     { background: radial-gradient(circle, rgba(0,191,255,0.4) 0%, transparent 70%); animation: flashPop 0.8s ease-out forwards; }
+        .element-flash.lightning { background: radial-gradient(circle, rgba(255,215,0,0.5) 0%, transparent 60%); animation: flashPop 0.3s ease-out forwards; }
+        .element-flash.water   { background: radial-gradient(circle, rgba(30,144,255,0.35) 0%, transparent 70%); animation: flashPop 0.7s ease-out forwards; }
+        .element-flash.poison  { background: radial-gradient(circle, rgba(153,50,204,0.4) 0%, transparent 65%); animation: flashPop 0.6s ease-out forwards; }
+        .element-flash.holy    { background: radial-gradient(circle, rgba(255,255,220,0.55) 0%, transparent 60%); animation: flashPop 0.8s ease-out forwards; }
+        @keyframes flashPop {
+            0%   { opacity: 0; }
+            20%  { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* 빙결 오버레이 - 발동 시 화면 결빙 */
+        .freeze-overlay {
+            position: fixed; inset: 0; z-index: 9997;
+            background: linear-gradient(135deg, rgba(0,191,255,0.15) 0%, rgba(135,206,250,0.1) 100%);
+            border: 2px solid rgba(0,191,255,0.3);
+            pointer-events: none;
+            animation: freezeScreen 1.2s ease-out forwards;
+        }
+        @keyframes freezeScreen {
+            0%   { opacity: 0; }
+            15%  { opacity: 1; }
+            70%  { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* 아이콘 파티클 */
+        .elem-particle {
+            position: fixed;
+            font-size: 1.8rem;
+            z-index: 9998;
+            pointer-events: none;
+            animation: particleFly 0.9s ease-out forwards;
+        }
+        @keyframes particleFly {
+            0%   { opacity: 1; transform: translate(0,0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.3); }
+        }
+
         @keyframes magicFire {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-            30% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
-            100% { transform: translate(-50%, -80%) scale(2); opacity: 0; }
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; filter: blur(4px); }
+            25% { transform: translate(-50%, -60%) scale(1.8); opacity: 1; filter: blur(0); }
+            60% { transform: translate(-50%, -70%) scale(2.2); opacity: 0.8; }
+            100% { transform: translate(-50%, -90%) scale(1.5); opacity: 0; filter: blur(6px); }
         }
         @keyframes magicIce {
-            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; filter: blur(10px); }
-            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; filter: blur(0); }
-            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; filter: blur(5px); }
+            0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0; filter: blur(12px); }
+            40%  { transform: translate(-50%, -50%) scale(1.4); opacity: 1; filter: blur(0); }
+            70%  { transform: translate(-50%, -50%) scale(1.6); opacity: 0.9; filter: blur(0) brightness(1.5); }
+            100% { transform: translate(-50%, -50%) scale(2); opacity: 0; filter: blur(8px); }
         }
         @keyframes magicLightning {
             0%, 100% { opacity: 0; }
-            10%, 30%, 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
-            20%, 40% { opacity: 0.5; transform: translate(-48%, -52%) scale(1.1); }
-            60% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+            5%  { opacity: 1; transform: translate(-50%,-50%) scale(2) skew(-15deg); filter: brightness(3); }
+            15% { opacity: 0.3; transform: translate(-52%,-48%) scale(1.5) skew(10deg); }
+            25% { opacity: 1; transform: translate(-50%,-50%) scale(1.8) skew(-5deg); filter: brightness(2.5); }
+            40% { opacity: 0.5; transform: translate(-49%,-51%) scale(1.3); }
+            55% { opacity: 1; transform: translate(-50%,-50%) scale(2.2); filter: brightness(3); }
+            70% { opacity: 0; transform: translate(-50%,-50%) scale(2.5); }
         }
         @keyframes magicWater {
-            0% { transform: translate(-50%, -30%) scale(0.5); opacity: 0; }
-            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-            100% { transform: translate(-50%, -70%) scale(0.8); opacity: 0; }
+            0%   { transform: translate(-50%, -20%) scale(0.4); opacity: 0; }
+            40%  { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+            70%  { transform: translate(-50%, -55%) scale(1.1); opacity: 0.8; filter: brightness(1.3); }
+            100% { transform: translate(-50%, -75%) scale(0.6); opacity: 0; }
         }
         @keyframes magicPoison {
-            0% { transform: translate(-50%, -50%) scale(0.5) rotate(0deg); opacity: 0; }
-            50% { transform: translate(-50%, -50%) scale(1.3) rotate(180deg); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1) rotate(360deg); opacity: 0; }
+            0%   { transform: translate(-50%,-50%) scale(0.4) rotate(0deg); opacity: 0; filter: blur(4px); }
+            30%  { transform: translate(-50%,-50%) scale(1.4) rotate(120deg); opacity: 1; filter: blur(0); }
+            65%  { transform: translate(-50%,-50%) scale(1.2) rotate(270deg); opacity: 0.9; }
+            100% { transform: translate(-50%,-50%) scale(0.8) rotate(400deg); opacity: 0; filter: blur(6px); }
         }
         @keyframes magicHoly {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; filter: brightness(3); }
-            50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; filter: brightness(2); }
-            100% { transform: translate(-50%, -50%) scale(2); opacity: 0; filter: brightness(1); }
+            0%   { transform: translate(-50%,-50%) scale(0); opacity: 0; filter: brightness(5) blur(8px); }
+            30%  { transform: translate(-50%,-50%) scale(1.6); opacity: 1; filter: brightness(3); }
+            60%  { transform: translate(-50%,-50%) scale(2); opacity: 1; filter: brightness(2); }
+            100% { transform: translate(-50%,-50%) scale(2.5); opacity: 0; filter: brightness(1); }
         }
         
         /* 상태이상 표시 */
@@ -4554,6 +4607,80 @@
         let currentRankingTab = 'weapons';
         let rankingCache = { weapons: [], hunting: [], pvp: [] };
 
+        // ===== 랭킹 보상 팝업 =====
+        // 오늘 이미 체크한 탭 기록 (localStorage)
+        function getRankCheckedKey() {
+            const today = new Date(Date.now() + 9*3600000).toISOString().slice(0,10);
+            return `rankChecked_${today}`;
+        }
+        function markRankChecked(tab) {
+            const key = getRankCheckedKey();
+            const checked = JSON.parse(localStorage.getItem(key) || '[]');
+            if (!checked.includes(tab)) {
+                checked.push(tab);
+                localStorage.setItem(key, JSON.stringify(checked));
+            }
+        }
+        function isRankChecked(tab) {
+            const key = getRankCheckedKey();
+            const checked = JSON.parse(localStorage.getItem(key) || '[]');
+            return checked.includes(tab);
+        }
+
+        async function checkRankReward(tab) {
+            if (isRankChecked(tab)) return;  // 오늘 이미 체크함
+            markRankChecked(tab);
+
+            const userId = state.userId;
+            if (!userId) return;
+
+            // rank_type 매핑
+            const typeMap = { weapons: 'weapon', hunting: 'hunt', pvp: 'pvp' };
+            const rankType = typeMap[tab];
+            if (!rankType) return;
+
+            try {
+                const res = await fetch(`${RANKING_API}/checkin`, {
+                    headers: { 'Authorization': `Bearer ${userId}` }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.rewards?.length) return;
+
+                // 이 탭에 해당하는 보상만
+                const myReward = data.rewards.find(r => r.rank_type === rankType);
+                if (!myReward) return;
+
+                showRankRewardPopup(myReward, data.gold);
+            } catch { /* 무시 */ }
+        }
+
+        function showRankRewardPopup(reward, totalGold) {
+            const rankLabels = { weapon: '⚔️ 무기강화', hunt: '🗡️ 사냥', pvp: '🏆 PvP' };
+            const rankSuffix = ['', '🥇', '🥈', '🥉'];
+            const medal = rankSuffix[reward.rank] || `${reward.rank}위`;
+            const gold = reward.gold?.toLocaleString() ?? '100,000';
+
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;`;
+            overlay.innerHTML = `
+                <div style="background:linear-gradient(145deg,#1a1a2e,#16213e);border:2px solid #ffd700;border-radius:20px;padding:32px 24px;max-width:320px;width:100%;text-align:center;box-shadow:0 0 40px rgba(255,215,0,0.3);">
+                    <div style="font-size:3.5rem;margin-bottom:8px;">🏆</div>
+                    <div style="font-size:1.1rem;font-weight:bold;color:#ffd700;margin-bottom:4px;">시즌 보상 도착!</div>
+                    <div style="font-size:0.85rem;color:#aaa;margin-bottom:20px;">${rankLabels[reward.rank_type] ?? reward.rank_type} 랭킹</div>
+                    <div style="background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:12px;padding:16px;margin-bottom:20px;">
+                        <div style="font-size:2rem;margin-bottom:4px;">${medal}</div>
+                        <div style="color:#fff;font-size:0.9rem;">순위 달성</div>
+                        <div style="color:#ffd700;font-size:1.6rem;font-weight:bold;margin-top:8px;">+${gold} 💰</div>
+                        <div style="color:#888;font-size:0.75rem;margin-top:4px;">현재 보유: ${(totalGold||0).toLocaleString()} G</div>
+                    </div>
+                    <button onclick="this.closest('div[style]').remove()" style="background:#ffd700;color:#000;border:none;border-radius:10px;padding:12px 32px;font-size:1rem;font-weight:bold;cursor:pointer;width:100%;">확인!</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+        }
+
         // ===== COLLECTION =====
         function showCollection(tab = 'weapons') {
             const seen = state.seenMonsters || {};
@@ -4696,11 +4823,13 @@
             `;
             
             await loadRankingTab(currentRankingTab);
+            checkRankReward(currentRankingTab);  // 랭킹 첫 진입 시 현재 탭 체크
         }
         
         async function switchRankingTab(tab) {
             currentRankingTab = tab;
             await showRanking();
+            checkRankReward(tab);  // 탭 첫 접근 시 보상 체크
         }
         
         async function loadRankingTab(tab) {
@@ -6155,17 +6284,49 @@
         }
         
         // 🧙 마법 이펙트 표시
-        function showMagicEffect(element) {
+        function showMagicEffect(element, isFreezeActivated = false) {
             const elementData = ELEMENTS[element];
             if (!elementData) return;
-            
+
+            // 메인 아이콘
             const effect = document.createElement('div');
             effect.className = `magic-effect ${element}`;
             effect.textContent = elementData.icon;
-            effect.style.textShadow = `0 0 30px ${elementData.color}, 0 0 60px ${elementData.color}`;
+            effect.style.textShadow = `0 0 40px ${elementData.color}, 0 0 80px ${elementData.color}`;
             document.body.appendChild(effect);
-            
-            setTimeout(() => effect.remove(), 1000);
+            setTimeout(() => effect.remove(), 1200);
+
+            // 화면 플래시 오버레이
+            const flash = document.createElement('div');
+            flash.className = `element-flash ${element}`;
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 900);
+
+            // 빙결 발동 시 결빙 오버레이
+            if (element === 'ice' && isFreezeActivated) {
+                const overlay = document.createElement('div');
+                overlay.className = 'freeze-overlay';
+                document.body.appendChild(overlay);
+                setTimeout(() => overlay.remove(), 1400);
+            }
+
+            // 파티클 (속성 아이콘 4~6개 방사)
+            const count = (element === 'lightning') ? 6 : 4;
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'elem-particle';
+                p.textContent = elementData.icon;
+                const angle = (360 / count) * i + Math.random() * 30;
+                const dist = 80 + Math.random() * 60;
+                const rad = angle * Math.PI / 180;
+                p.style.setProperty('--dx', `${Math.cos(rad) * dist}px`);
+                p.style.setProperty('--dy', `${Math.sin(rad) * dist}px`);
+                p.style.left = '50%';
+                p.style.top = '45%';
+                p.style.animationDelay = `${i * 40}ms`;
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 1100);
+            }
         }
         
         // 🧙 마법 크리티컬 효과 처리 (사냥용)
@@ -6178,34 +6339,44 @@
             const elementData = ELEMENTS[element];
             if (!elementData?.magicEffect) return result;
             
-            showMagicEffect(element);
-            
             switch (elementData.magicEffect) {
                 case 'explosion':  // 🔥 불: 폭발 데미지 (+50%)
                     result.extraDamage = Math.floor(damage * 0.5);
                     result.logText = `🔥 폭발! +${result.extraDamage} 추가 데미지!`;
+                    showMagicEffect(element);
                     break;
                     
-                case 'freeze':  // ❄️ 얼음: 빙결 (적 턴 스킵)
-                    result.statusEffect = 'frozen';
-                    huntState.monsterFrozen = true;  // 다음 턴 스킵
-                    result.logText = `❄️ 빙결! 적 공격 무효화!`;
+                case 'freeze':  // ❄️ 얼음: 크리티컬 시 30% 확률 빙결 (밸런스 조정)
+                    if (Math.random() < 0.3) {
+                        result.statusEffect = 'frozen';
+                        huntState.monsterFrozen = true;  // 다음 턴 스킵
+                        result.logText = `❄️ 빙결! 적 공격 무효화!`;
+                        showMagicEffect(element, true);  // 결빙 오버레이 포함
+                    } else {
+                        // 빙결 미발동 시 +20% 데미지로 대체
+                        result.extraDamage = Math.floor(damage * 0.2);
+                        result.logText = `❄️ 냉기! +${result.extraDamage} 추가 데미지!`;
+                        showMagicEffect(element, false);
+                    }
                     break;
                     
                 case 'shock':  // ⚡ 번개: 감전 데미지 (+30%)
                     result.extraDamage = Math.floor(damage * 0.3);
                     result.logText = `⚡ 감전! +${result.extraDamage} 추가 데미지!`;
+                    showMagicEffect(element);
                     break;
                     
                 case 'heal':  // 💧 물: 회복 (20% HP)
                     result.healAmount = Math.floor(player.maxHp * 0.2);
                     result.logText = `💧 치유! +${result.healAmount} HP 회복!`;
+                    showMagicEffect(element);
                     break;
                     
                 case 'dot':  // ☠️ 독: 지속 데미지
                     huntState.monsterPoisoned = 3;  // 3턴 지속
                     huntState.poisonDamage = Math.floor(damage * 0.2);  // 턴당 20%
                     result.logText = `☠️ 맹독! 3턴간 ${huntState.poisonDamage} 지속 데미지!`;
+                    showMagicEffect(element);
                     break;
                     
                 case 'smite':  // ✨ 신성: 언데드 즉사
@@ -6216,6 +6387,7 @@
                         result.extraDamage = Math.floor(damage * 0.25);
                         result.logText = `✨ 신성 데미지! +${result.extraDamage}!`;
                     }
+                    showMagicEffect(element);
                     break;
             }
             
