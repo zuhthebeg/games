@@ -2273,7 +2273,6 @@
                         osc.start(); osc.stop(ctx.currentTime + 0.2);
                         break;
                     case 'defend':
-                        // Shield sound - metallic clang
                         osc.type = 'triangle';
                         osc.frequency.setValueAtTime(400, ctx.currentTime);
                         osc.frequency.setValueAtTime(600, ctx.currentTime + 0.05);
@@ -2282,6 +2281,85 @@
                         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
                         osc.start(); osc.stop(ctx.currentTime + 0.3);
                         break;
+                    // === PvP 전용 사운드 ===
+                    case 'pvp-clash': {
+                        // 공격 vs 방어: 금속 부딪히는 소리
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(800, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.15);
+                        gain.gain.setValueAtTime(0.35, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                        osc.start(); osc.stop(ctx.currentTime + 0.25);
+                        // 금속 반향
+                        const clang = ctx.createOscillator();
+                        const clangG = ctx.createGain();
+                        clang.type = 'triangle';
+                        clang.frequency.setValueAtTime(1200, ctx.currentTime + 0.05);
+                        clang.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.3);
+                        clangG.gain.setValueAtTime(0.2, ctx.currentTime + 0.05);
+                        clangG.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                        clang.connect(clangG); clangG.connect(ctx.destination);
+                        clang.start(ctx.currentTime + 0.05); clang.stop(ctx.currentTime + 0.35);
+                        break;
+                    }
+                    case 'pvp-hit': {
+                        // 공격 vs 스킬: 묵직한 타격음
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(120, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.2);
+                        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                        osc.start(); osc.stop(ctx.currentTime + 0.3);
+                        // 임팩트 노이즈
+                        const nBuf = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
+                        const nData = nBuf.getChannelData(0);
+                        for (let i = 0; i < nData.length; i++) nData[i] = (Math.random() * 2 - 1) * Math.exp(-i / 1500);
+                        const nSrc = ctx.createBufferSource(); nSrc.buffer = nBuf;
+                        const nG = ctx.createGain(); nG.gain.setValueAtTime(0.35, ctx.currentTime);
+                        nG.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                        nSrc.connect(nG); nG.connect(ctx.destination); nSrc.start();
+                        break;
+                    }
+                    case 'pvp-skill': {
+                        // 스킬 vs 방어: 마법 차단음
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(600, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(1500, ctx.currentTime + 0.15);
+                        osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.4);
+                        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                        osc.start(); osc.stop(ctx.currentTime + 0.5);
+                        // 마법 잔향
+                        const mOsc = ctx.createOscillator();
+                        const mG = ctx.createGain();
+                        mOsc.type = 'sine';
+                        mOsc.frequency.setValueAtTime(900, ctx.currentTime + 0.1);
+                        mOsc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.5);
+                        mG.gain.setValueAtTime(0.15, ctx.currentTime + 0.1);
+                        mG.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+                        mOsc.connect(mG); mG.connect(ctx.destination);
+                        mOsc.start(ctx.currentTime + 0.1); mOsc.stop(ctx.currentTime + 0.6);
+                        break;
+                    }
+                    case 'pvp-crit': {
+                        // 크리티컬: 강한 임팩트 + 고음 피크
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(200, ctx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(1600, ctx.currentTime + 0.08);
+                        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
+                        gain.gain.setValueAtTime(0.45, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                        osc.start(); osc.stop(ctx.currentTime + 0.4);
+                        // 폭발 노이즈
+                        const cBuf = ctx.createBuffer(1, ctx.sampleRate * 0.25, ctx.sampleRate);
+                        const cData = cBuf.getChannelData(0);
+                        for (let i = 0; i < cData.length; i++) cData[i] = (Math.random() * 2 - 1) * Math.exp(-i / 2000);
+                        const cSrc = ctx.createBufferSource(); cSrc.buffer = cBuf;
+                        const cG = ctx.createGain(); cG.gain.setValueAtTime(0.4, ctx.currentTime);
+                        cG.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                        cSrc.connect(cG); cG.connect(ctx.destination); cSrc.start();
+                        break;
+                    }
                 }
             } catch(e) { console.log('Audio error:', e); }
         }
@@ -5168,13 +5246,30 @@
             // 결과 표시
             const resultText = overlay.querySelector('#turnResultText');
             
+            // 상황별 사운드 결정
+            const pvpSoundForMatchup = (atk, def) => {
+                if ((atk === 'attack' && def === 'defense') || (atk === 'defense' && def === 'attack')) return 'pvp-clash';
+                if ((atk === 'attack' && def === 'skill') || (atk === 'skill' && def === 'attack')) return 'pvp-hit';
+                if ((atk === 'skill' && def === 'defense') || (atk === 'defense' && def === 'skill')) return 'pvp-skill';
+                return 'pvp-hit';
+            };
+
+            // 속성 이펙트 발동 (크리티컬 시)
+            const triggerElementEffect = (isMine) => {
+                const wep = isMine ? state.weapon : null;
+                const elem = wep?.element || 'none';
+                if (elem !== 'none' && ELEMENTS[elem]) {
+                    showMagicEffect(elem);
+                }
+            };
+
             if (result === 'win') {
-                // 승리 이펙트 (내 크리티컬이면 더 강한 효과)
                 if (myCrit) {
-                    playSound('crit');
+                    playSound('pvp-crit');
                     vibrate([100, 50, 100, 50, 150, 50, 200]);
+                    triggerElementEffect(true);
                 } else {
-                    playSound('crit');
+                    playSound(pvpSoundForMatchup(myAction, enemyAction));
                     vibrate([50, 30, 100, 30, 50]);
                 }
                 showBattleEffect(myAction, true, enemyDamage, myCrit);
@@ -5190,7 +5285,6 @@
                     <div style="font-size:0.9rem;color:var(--muted);margin-top:5px;">상대에게 데미지!</div>
                 `;
                 
-                // 화면 번쩍 (크리티컬이면 더 강하게)
                 document.body.style.animation = 'none';
                 setTimeout(() => {
                     const flashColor = myCrit ? 'rgba(255,69,0,0.4)' : 'rgba(78,204,163,0.3)';
@@ -5199,12 +5293,12 @@
                 }, 100);
                 
             } else if (result === 'lose') {
-                // 패배 이펙트 (상대 크리티컬이면 더 강한 효과)
                 if (enemyCrit) {
-                    playSound('destroy');
+                    playSound('pvp-crit');
                     vibrate([200, 100, 200, 100, 300]);
+                    triggerElementEffect(false);
                 } else {
-                    playSound('fail');
+                    playSound(pvpSoundForMatchup(enemyAction, myAction));
                     vibrate([100, 50, 100, 50, 200]);
                 }
                 showBattleEffect(enemyAction, false, myDamage, enemyCrit);
@@ -5220,20 +5314,17 @@
                     <div style="font-size:0.9rem;color:var(--muted);margin-top:5px;">나에게 데미지!</div>
                 `;
                 
-                // 화면 흔들림 (크리티컬이면 더 오래)
                 document.body.classList.add('screen-shake');
                 setTimeout(() => document.body.classList.remove('screen-shake'), enemyCrit ? 800 : 500);
                 
             } else {
-                // 무승부 - 행동에 따라 다른 결과
                 if (myCrit && enemyCrit && myDamage > 0 && enemyDamage > 0) {
-                    // 스킬 vs 스킬: 양쪽 크리티컬!
-                    playSound('crit');
+                    playSound('pvp-crit');
                     vibrate([100, 50, 100, 50, 100, 50, 150]);
                     showBattleEffect('skill', true, myDamage, true);
                     showBattleEffect('skill', false, enemyDamage, true);
+                    triggerElementEffect(true);
                     
-                    // 화면 번쩍
                     document.body.style.background = 'radial-gradient(circle, rgba(155,89,182,0.5) 0%, transparent 70%)';
                     setTimeout(() => { document.body.style.background = ''; }, 400);
                     
@@ -5250,9 +5341,8 @@
                         </div>
                     `;
                 } else if (myDamage === 0 && enemyDamage === 0) {
-                    // 방어 vs 방어: 데미지 없음
-                    playSound('defense');
-                    vibrate([20, 20]);
+                    playSound('pvp-clash');
+                    vibrate([30, 20, 30]);
                     showBattleEffect('defense', true, 0, false);
                     
                     resultText.innerHTML = `
@@ -5264,8 +5354,7 @@
                         </div>
                     `;
                 } else {
-                    // 공격 vs 공격: 데미지 차이
-                    playSound('attack');
+                    playSound(pvpSoundForMatchup(myAction, enemyAction));
                     vibrate([50, 30, 50]);
                     showBattleEffect('attack', myDamage < enemyDamage, Math.abs(myDamage - enemyDamage), false);
                     
