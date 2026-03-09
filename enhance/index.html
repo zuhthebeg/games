@@ -2663,7 +2663,7 @@
                 const parts = token.split('.');
                 if (parts.length !== 3) return;
                 const payload = JSON.parse(decodeURIComponent(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")).split("").map(c=>"%"+("00"+c.charCodeAt(0).toString(16)).slice(-2)).join("")));
-                if (payload.sub) {
+                if (payload.sub || payload.userId) {
                     cloudSyncEnabled = true;
                     await loadFromCloud();
                 }
