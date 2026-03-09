@@ -2795,29 +2795,29 @@
         let pendingBossKills = 0;  // 배치로 보낼 보스 처치 수
         
         function getUserId() {
-            // 1. 먼저 저장된 user_id 확인
-            let userId = localStorage.getItem('cocy_user_id');
-            if (userId) return userId;
-            
-            // 2. JWT 토큰에서 추출
+            // 1) JWT 토큰 우선 (로그인 회원 ID)
             const token = localStorage.getItem('cocy_auth_token') || localStorage.getItem('accessToken');
             if (token) {
                 try {
                     const parts = token.split('.');
                     if (parts.length === 3) {
                         const payload = JSON.parse(decodeURIComponent(atob(parts[1].replace(/-/g,"+").replace(/_/g,"/")).split("").map(c=>"%"+("00"+c.charCodeAt(0).toString(16)).slice(-2)).join("")));
-                        userId = payload.sub || payload.userId || payload.user_id;
-                        if (userId) {
-                            localStorage.setItem('cocy_user_id', userId);  // 캐시
-                            return userId;
+                        const tokenUserId = payload.sub || payload.userId || payload.user_id;
+                        if (tokenUserId) {
+                            localStorage.setItem('cocy_user_id', tokenUserId); // anon 캐시 덮어쓰기
+                            return tokenUserId;
                         }
                     }
                 } catch (e) {
                     console.log('Token parse error:', e);
                 }
             }
-            
-            // 3. 익명 ID 생성 (없으면)
+
+            // 2) 캐시된 user_id (로그인 안 했을 때 fallback)
+            let userId = localStorage.getItem('cocy_user_id');
+            if (userId) return userId;
+
+            // 3) 익명 ID 생성
             userId = 'anon_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('cocy_user_id', userId);
             return userId;
@@ -4630,7 +4630,7 @@
         async function checkRankReward(tab) {
             if (isRankChecked(tab)) return;  // 오늘 이미 체크함
 
-            const userId = state.userId;
+            const userId = getUserId();
             if (!userId) return;
 
             // rank_type 매핑
