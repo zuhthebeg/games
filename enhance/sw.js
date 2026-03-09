@@ -1,4 +1,4 @@
-const CACHE = 'enhance-v9';
+const CACHE = 'enhance-v10';
 const OFFLINE = [
   '/enhance/',
   '/enhance/index.html',
