@@ -4608,32 +4608,15 @@
         let rankingCache = { weapons: [], hunting: [], pvp: [] };
 
         // ===== 랭킹 보상 팝업 =====
-        // 오늘 이미 체크한 탭 기록 (localStorage)
-        function getRankCheckedKey() {
-            const today = new Date(Date.now() + 9*3600000).toISOString().slice(0,10);
-            return `rankChecked_${today}`;
-        }
-        function markRankChecked(tab) {
-            const key = getRankCheckedKey();
-            const checked = JSON.parse(localStorage.getItem(key) || '[]');
-            if (!checked.includes(tab)) {
-                checked.push(tab);
-                localStorage.setItem(key, JSON.stringify(checked));
-            }
-        }
-        function isRankChecked(tab) {
-            const key = getRankCheckedKey();
-            const checked = JSON.parse(localStorage.getItem(key) || '[]');
-            return checked.includes(tab);
-        }
+        // 마지막으로 팝업을 표시한 period_date 저장 (localStorage)
+        function getLastSeenKey(rankType) { return `lastSeenReward_${rankType}`; }
+        function getLastSeen(rankType) { return localStorage.getItem(getLastSeenKey(rankType)) || ''; }
+        function markSeen(rankType, periodDate) { localStorage.setItem(getLastSeenKey(rankType), periodDate); }
 
         async function checkRankReward(tab) {
-            if (isRankChecked(tab)) return;  // 오늘 이미 체크함
-
             const userId = getUserId();
             if (!userId) return;
 
-            // rank_type 매핑
             const typeMap = { weapons: 'weapon', hunting: 'hunt', pvp: 'pvp' };
             const rankType = typeMap[tab];
             if (!rankType) return;
@@ -4644,14 +4627,16 @@
                 });
                 if (!res.ok) return;
                 const data = await res.json();
-                markRankChecked(tab); // 호출 성공했을 때만 체크 완료
-                if (!data.rewards?.length) return;
 
-                // 이 탭에 해당하는 보상만
-                const myReward = data.rewards.find(r => r.rank_type === rankType);
-                if (!myReward) return;
+                const reward = data.reward;
+                if (!reward) return;  // 받은 보상 없음
 
-                showRankRewardPopup(myReward, data.gold);
+                // 이미 이 period_date 팝업 표시했으면 스킵
+                if (getLastSeen(rankType) === reward.period_date) return;
+
+                // 새 보상 → 팝업 표시
+                showRankRewardPopup(reward, data.gold);
+                markSeen(rankType, reward.period_date);
             } catch { /* 무시 */ }
         }
 
