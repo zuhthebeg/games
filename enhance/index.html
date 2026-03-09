@@ -7662,9 +7662,13 @@
             console.error('INIT ERROR:', e);
             document.getElementById('app').innerHTML = '<div style="padding:20px;color:red;">초기화 에러: ' + e.message + '</div>';
         }
-        // 클라우드 동기화 체크 (비동기)
-        checkCloudSync().then(() => {
-            // 동기화 후 화면 갱신
+        // SharedWallet 초기화 대기 → 클라우드 동기화 → 게임 시작
+        (async () => {
+            // SharedWallet init 완료 대기 (게스트 토큰 확보)
+            if (typeof SharedWallet !== 'undefined' && SharedWallet._initPromise) {
+                await SharedWallet._initPromise;
+            }
+            await checkCloudSync();
             showMain();
             // SharedWallet 동기화
             if (typeof SharedWallet !== 'undefined') {
@@ -7675,17 +7679,8 @@
                     protectionScrolls: state.weapon?.protectionScrolls || 0,
                     mastery: state.mastery || {}
                 });
-
-                // 로그아웃 즉시 반영: 게스트 계정으로 전환 시 게임 상태 리셋
-                SharedWallet.onChange(({ isLoggedIn }) => {
-                    if (!isLoggedIn) {
-                        // 게스트 전환 → 서버에서 새 상태 로드
-                        cloudSyncEnabled = true;
-                        loadFromCloud().then(() => showMain());
-                    }
-                });
             }
-        });
+        })();
 
         // 빈 화면 자동 복구 (손상된 로컬 상태 대응)
         setTimeout(() => {
