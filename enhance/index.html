@@ -2738,8 +2738,12 @@
                         if (serverData.mastery) state.mastery = serverData.mastery;
                         if (serverData.stats) state.stats = serverData.stats;
                         if (serverData.protectionScrolls !== undefined) state.protectionScrolls = serverData.protectionScrolls;
-                        if (serverData.bossKills !== undefined) state.bossKills = serverData.bossKills;
-                        if (serverData.bossTypeKills) state.bossTypeKills = serverData.bossTypeKills;
+                        // bossKills는 weapon 안에 저장 (무기 교체 시 자동 초기화)
+                        // 하위호환: 구버전 serverData에 bossKills가 있으면 weapon이 같을 때만 복원
+                        const savedBossKills = w._bossKills;
+                        const savedBossTypeKills = w._bossTypeKills;
+                        state.bossKills = savedBossKills !== undefined ? savedBossKills : (serverData.bossKills || 0);
+                        state.bossTypeKills = savedBossTypeKills || serverData.bossTypeKills || { dragon:0, demon:0, undead:0, elemental:0 };
                         
                         // 로컬에도 저장
                         localStorage.setItem('enhance_game_v3', JSON.stringify(state));
@@ -2774,12 +2778,14 @@
                     },
                     body: JSON.stringify({
                         gold: state.gold,
-                        weapon: state.weapon,
+                        weapon: {
+                            ...state.weapon,
+                            _bossKills: state.bossKills || 0,
+                            _bossTypeKills: state.bossTypeKills || {}
+                        },
                         mastery: state.mastery,
                         stats: state.stats,
-                        protectionScrolls: state.protectionScrolls,
-                        bossKills: state.bossKills || 0,
-                        bossTypeKills: state.bossTypeKills || {}
+                        protectionScrolls: state.protectionScrolls
                     })
                 });
                 console.log('☁️ Saved to cloud');
