@@ -408,16 +408,42 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
   }
 
+  // TTS 오디오 엘리먼트 (재사용)
+  const _ttsAudio = new Audio();
+  let _ttsBlobUrl = null;
+
   function speakBossLine(text, bossId) {
-    if (!window.speechSynthesis || !text) return;
-    try {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(String(text));
-      u.lang = 'ko-KR';
-      u.rate = 0.85;
-      u.pitch = 0.6;
-      speechSynthesis.speak(u);
-    } catch (_) {}
+    if (!text) return;
+    const clean = String(text).slice(0, 100);
+
+    // llm.cocy.io Edge-TTS (ko-male 보이스)
+    fetch('https://llm.cocy.io/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer choon150622'
+      },
+      body: JSON.stringify({ model: 'kokoro-v1', input: clean, voice: 'ko-male', response_format: 'mp3' })
+    }).then(res => {
+      if (!res.ok) throw new Error('TTS error');
+      return res.blob();
+    }).then(blob => {
+      if (_ttsBlobUrl) URL.revokeObjectURL(_ttsBlobUrl);
+      _ttsBlobUrl = URL.createObjectURL(blob);
+      _ttsAudio.src = _ttsBlobUrl;
+      _ttsAudio.play().catch(() => {});
+    }).catch(() => {
+      // fallback: 브라우저 TTS
+      if (!window.speechSynthesis) return;
+      try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(clean);
+        u.lang = 'ko-KR';
+        u.rate = 0.85;
+        u.pitch = 0.6;
+        speechSynthesis.speak(u);
+      } catch (_) {}
+    });
   }
 
   // ──────────────────────────────────────────────────────────────
