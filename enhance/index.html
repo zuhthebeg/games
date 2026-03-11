@@ -6143,6 +6143,9 @@
             overlay.appendChild(skipHint);
             document.body.appendChild(overlay);
 
+            // TTS 즉시 시작 (타이핑과 동시에)
+            speakBossDialogue(dialogue, huntState?.monster?.type, bossData.emotion);
+
             // 타이핑 효과
             const text = dialogue;
             let i = 0;
@@ -6153,8 +6156,6 @@
                     i++;
                 } else {
                     clearInterval(typing);
-                    // Edge-TTS로 대사 읽기
-                    speakBossDialogue(dialogue, huntState?.monster?.type, bossData.emotion);
                     // 특수 스킬 표시
                     if (bossData.action === 'special_skill' && bossData.skillName) {
                         setTimeout(() => {
