@@ -193,7 +193,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       noRanking:'아직 기록이 없습니다<br>먼저 플레이해보세요!', anonymous:'익명', rankLoadFail:'랭킹을 불러올 수 없습니다',
       gameOver:'💀 GAME OVER', continueAsk:'100G로 이어가시겠습니까?<br>현재 보유: {gold}G', contBtn:'계속 (100G)', giveup:'포기',
       stageClear:'STAGE CLEAR!', captured:'CAPTURED', gained:'💰 +{gold} G 획득! (보유: {total}G)', next:'NEXT STAGE →', backMenu:'🏠 BACK TO MENU',
-      finalScore:'FINAL SCORE: {score}', holdingGold:'💰 보유: {gold}G', retry:'RETRY (100G)', menu:'MENU', refresh:'🔄 새로고침 (골드 동기화)',
+      finalScore:'FINAL SCORE: {score}', holdingGold:'💰 보유: {gold}G', retry:'RETRY (100G)', menu:'MENU', 
       noGold:'골드가 부족합니다! ({gold}G)'
     },
     en: {
@@ -202,7 +202,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       noRanking:'No records yet<br>Play your first run!', anonymous:'Anon', rankLoadFail:'Failed to load ranking',
       gameOver:'💀 GAME OVER', continueAsk:'Continue for 100G?<br>Current gold: {gold}G', contBtn:'Continue (100G)', giveup:'Give Up',
       stageClear:'STAGE CLEAR!', captured:'CAPTURED', gained:'💰 +{gold} G earned! (Now: {total}G)', next:'NEXT STAGE →', backMenu:'🏠 BACK TO MENU',
-      finalScore:'FINAL SCORE: {score}', holdingGold:'💰 Gold: {gold}G', retry:'RETRY (100G)', menu:'MENU', refresh:'🔄 Refresh (sync gold)',
+      finalScore:'FINAL SCORE: {score}', holdingGold:'💰 Gold: {gold}G', retry:'RETRY (100G)', menu:'MENU', 
       noGold:'Not enough gold! ({gold}G)'
     }
   };
@@ -2471,7 +2471,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <button class="ui-btn primary" id="retryBtn">${t('retry')}</button>
         <button class="ui-btn danger" id="menuBtn">${t('menu')}</button>
       </div>
-      <button class="ui-btn next" id="refreshBtn" style="margin-top:8px;font-size:12px">${t('refresh')}</button>
     `);
 
     // 게임오버 시 랭킹에 최고 스테이지 제출 (이전 스테이지 기준)
@@ -2498,21 +2497,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       hidePanel();
       k.go('menu');
     };
-    document.getElementById('refreshBtn').onclick = async () => {
-      const btn = document.getElementById('refreshBtn');
-      if (btn) { btn.disabled = true; btn.textContent = '⏳ 동기화 중...'; }
-      try {
-        if (window.SharedWallet?.isLoggedIn) {
-          // 로그인 상태: 클라우드에서 최신 골드 가져와서 UI만 갱신
-          SharedWallet._initialized = false;
-          await SharedWallet._checkAuth();
-          SharedWallet._initialized = true;
-          SharedWallet._updateUI?.();
-        }
-      } catch(e) {}
-      const cur = getLocalGold();
-      if (btn) { btn.disabled = false; btn.textContent = `💰 ${cur.toLocaleString()}G (동기화 완료)`; }
-    };
+
 
     k.onDraw(() => {
       k.drawRect({ pos: k.vec2(0, 0), width: W, height: H, color: k.rgb(0, 0, 0), opacity: 0.86 });
