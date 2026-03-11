@@ -2546,10 +2546,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   k.go('boot');
 })();
 
+// SW 제거 (캐시 문제 해결) — 기존 SW가 있으면 해제
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/linerush/sw.js').catch(() => {});
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
   });
+  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
 }
 </script>
 </body>
