@@ -230,7 +230,7 @@
         
         <div class="overlay" id="start-overlay">
             <h2>🐍 스네이크</h2>
-            <p>먹이를 먹을 때마다 +100G!</p>
+            <p>먹이를 먹을 때마다 골드 2배! (100→200→400...)</p>
             <button class="btn btn-primary" onclick="startGame()">게임 시작</button>
             <p class="controls-hint">방향키 또는 WASD로 조작</p>
         </div>
@@ -281,8 +281,34 @@
         let nextDirection = { x: 1, y: 0 };
         let score = 0;
         let goldEarned = 0;
+        let goldPerFood = 100;  // 2배씩 증가: 100, 200, 400, 800...
         let gameLoop = null;
         let gameRunning = false;
+
+        // 사운드
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playEatSound(combo) {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            // 콤보가 올라갈수록 피치 높아짐
+            o.frequency.value = 440 + Math.min(combo, 12) * 80;
+            o.type = 'sine';
+            g.gain.value = 0.15;
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+            o.start(); o.stop(audioCtx.currentTime + 0.15);
+        }
+        function playDeathSound() {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.value = 200;
+            o.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.4);
+            o.type = 'sawtooth';
+            g.gain.value = 0.12;
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+            o.start(); o.stop(audioCtx.currentTime + 0.4);
+        }
         
         function startGame() {
             document.getElementById('start-overlay').classList.add('hidden');
@@ -298,6 +324,7 @@
             nextDirection = { x: 1, y: 0 };
             score = 0;
             goldEarned = 0;
+            goldPerFood = 100;
             updateStats();
             
             spawnFood();
@@ -347,9 +374,11 @@
             // Eat food
             if (head.x === food.x && head.y === food.y) {
                 score++;
-                goldEarned += 100;
-                SharedWallet.addGold(100);
-                showGoldPopup(head.x * CELL_SIZE + CELL_SIZE/2, head.y * CELL_SIZE);
+                goldEarned += goldPerFood;
+                SharedWallet.addGold(goldPerFood);
+                showGoldPopup(head.x * CELL_SIZE + CELL_SIZE/2, head.y * CELL_SIZE, goldPerFood);
+                playEatSound(score);
+                goldPerFood *= 2;  // 다음 먹이는 2배
                 updateStats();
                 spawnFood();
             } else {
@@ -428,6 +457,7 @@
         function gameOver() {
             gameRunning = false;
             clearInterval(gameLoop);
+            playDeathSound();
             
             document.getElementById('final-score').textContent = score;
             document.getElementById('gold-earned').textContent = `+${goldEarned.toLocaleString()}G 획득!`;
@@ -439,10 +469,13 @@
             document.getElementById('earned').textContent = goldEarned.toLocaleString() + 'G';
         }
         
-        function showGoldPopup(x, y) {
+        function showGoldPopup(x, y, amount) {
             const popup = document.createElement('div');
             popup.className = 'gold-popup';
-            popup.textContent = '+100G';
+            popup.textContent = `+${(amount||100).toLocaleString()}G`;
+            // 금액 클수록 글자 커짐
+            const scale = Math.min(2, 1 + Math.log2(Math.max(1, (amount||100) / 100)) * 0.15);
+            popup.style.fontSize = scale + 'rem';
             popup.style.left = x + 'px';
             popup.style.top = y + 'px';
             container.appendChild(popup);
