@@ -453,18 +453,40 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   const _ttsAudio = new Audio();
   let _ttsBlobUrl = null;
 
+  // 보스별 TTS 음성 프로필 — 캐릭터에 맞는 음색/속도
+  const BOSS_VOICE = {
+    slime:    { voice:'ko-female', rate:'+10%',  pitch:'+30Hz'  },  // 찍찍거리는 높은 톤
+    spin:     { voice:'ko-male',   rate:'+20%',  pitch:'+10Hz'  },  // 빠르고 경쾌
+    tentacle: { voice:'ko-male',   rate:'-20%',  pitch:'-30Hz'  },  // 느리고 끈적
+    eyeball:  { voice:'ko-female', rate:'+5%',   pitch:'+20Hz'  },  // 기묘한 여성음
+    ice:      { voice:'ko-female', rate:'-10%',  pitch:'+15Hz'  },  // 차갑고 나긋
+    flame:    { voice:'ko-male',   rate:'+15%',  pitch:'-10Hz'  },  // 거칠고 빠름
+    thunder:  { voice:'ko-male',   rate:'+5%',   pitch:'-20Hz'  },  // 묵직한 울림
+    dark:     { voice:'ko-male',   rate:'-25%',  pitch:'-40Hz'  },  // 낮고 느린 어둠
+    chaos:    { voice:'ko-male',   rate:'+25%',  pitch:'+5Hz'   },  // 미친듯이 빠름
+    void:     { voice:'ko-male',   rate:'-30%',  pitch:'-50Hz'  },  // 공허하고 극저음
+  };
+  const DEFAULT_VOICE = { voice:'ko-male', rate:'-5%', pitch:'-10Hz' };
+
   function speakBossLine(text, bossId) {
     if (!text) return;
     const clean = String(text).slice(0, 100);
+    const vp = BOSS_VOICE[bossId] || DEFAULT_VOICE;
 
-    // llm.cocy.io Edge-TTS (ko-male 보이스)
     fetch('https://llm.cocy.io/v1/audio/speech', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer choon150622'
       },
-      body: JSON.stringify({ model: 'kokoro-v1', input: clean, voice: 'ko-male', response_format: 'mp3' })
+      body: JSON.stringify({
+        model: 'kokoro-v1',
+        input: clean,
+        voice: vp.voice,
+        rate: vp.rate,
+        pitch: vp.pitch,
+        response_format: 'mp3'
+      })
     }).then(res => {
       if (!res.ok) throw new Error('TTS error');
       return res.blob();
@@ -481,7 +503,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         const u = new SpeechSynthesisUtterance(clean);
         u.lang = 'ko-KR';
         u.rate = 0.85;
-        u.pitch = 0.6;
+        u.pitch = bossId === 'dark' || bossId === 'void' ? 0.3 : bossId === 'slime' ? 1.4 : 0.6;
         speechSynthesis.speak(u);
       } catch (_) {}
     });
