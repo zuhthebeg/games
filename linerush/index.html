@@ -352,15 +352,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const n = Math.max(0, Math.round(Number(amount) || 0));
     if (n === 0) return getGold();
     try {
-      if (window.SharedWallet && typeof window.SharedWallet.addGold === 'function') {
-        return Math.max(0, window.SharedWallet.addGold(n));
+      const sw = window.SharedWallet;
+      if (sw && typeof sw.addGold === 'function') {
+        const result = sw.addGold(n);
+        console.log(`[addGold] SharedWallet path: +${n} → ${result} (bar gold: ${sw.gold})`);
+        return Math.max(0, result);
       }
-      // fallback (로컬 only)
+      // fallback (로컬 only) — SharedWallet 없을 때만
+      console.warn(`[addGold] FALLBACK path (no SharedWallet): +${n}`);
       const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
       d.gold = Math.max(0, (d.gold || 0) + n);
       localStorage.setItem('enhance_game_v3', JSON.stringify(d));
       return d.gold;
-    } catch (_) { return 0; }
+    } catch (e) { console.error('[addGold] ERROR:', e); return 0; }
   }
   // spendGold: 잔액 확인 후 차감 → 성공 true / 잔액 부족 false
   function spendGold(amount) {
