@@ -15,7 +15,7 @@ j=d.createElement(s),dl=l!="dataLayer"?"&l="+l:"";j.async=true;j.src=
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="/linerush/manifest.webmanifest">
-  <script src="/lib/shared-wallet.js?v=20260305h"></script>
+  <script src="/lib/shared-wallet.js?v=20260311a"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -368,8 +368,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const cur = getGold();
     if (cur < n) return false;
     try {
-      if (window.SharedWallet && typeof window.SharedWallet.spendGold === 'function') {
-        window.SharedWallet.spendGold(n);
+      const sw = window.SharedWallet;
+      if (sw) {
+        if (typeof sw.spendGold === 'function') {
+          sw.spendGold(n);
+        } else if (typeof sw.removeGold === 'function') {
+          sw.removeGold(n);
+        } else {
+          sw.gold = Math.max(0, sw.gold - n);
+          sw._save?.();
+          sw._updateUI?.();
+        }
       } else {
         const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
         d.gold = Math.max(0, (d.gold || 0) - n);
