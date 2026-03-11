@@ -338,27 +338,59 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     } catch (_) {}
   }
 
-  function getLocalGold() {
+  // ── 골드 유틸 (SharedWallet 직접 연동, get+set 패턴 금지) ──
+  function getGold() {
     try {
       if (window.SharedWallet && Number.isFinite(window.SharedWallet.gold)) {
-        return Math.max(0, Number(window.SharedWallet.gold) || 0);
+        return Math.max(0, window.SharedWallet.gold);
       }
-      return JSON.parse(localStorage.getItem('enhance_game_v3') || '{}').gold || 0;
+      return Math.max(0, JSON.parse(localStorage.getItem('enhance_game_v3') || '{}').gold || 0);
     } catch (_) { return 0; }
   }
-  function setLocalGold(g) {
-    const next = Math.max(0, Number(g) || 0);
+  // addGold: 원자적 증가 → SharedWallet.addGold 직접 호출
+  function addGold(amount) {
+    const n = Math.max(0, Math.round(Number(amount) || 0));
+    if (n === 0) return getGold();
     try {
-      // 로그인 유저는 SharedWallet 경유로 저장 (로컬 + 클라우드 동기화)
+      if (window.SharedWallet && typeof window.SharedWallet.addGold === 'function') {
+        return Math.max(0, window.SharedWallet.addGold(n));
+      }
+      // fallback (로컬 only)
+      const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
+      d.gold = Math.max(0, (d.gold || 0) + n);
+      localStorage.setItem('enhance_game_v3', JSON.stringify(d));
+      return d.gold;
+    } catch (_) { return 0; }
+  }
+  // spendGold: 잔액 확인 후 차감 → 성공 true / 잔액 부족 false
+  function spendGold(amount) {
+    const n = Math.max(0, Math.round(Number(amount) || 0));
+    const cur = getGold();
+    if (cur < n) return false;
+    try {
+      if (window.SharedWallet && typeof window.SharedWallet.spendGold === 'function') {
+        window.SharedWallet.spendGold(n);
+      } else {
+        const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
+        d.gold = Math.max(0, (d.gold || 0) - n);
+        localStorage.setItem('enhance_game_v3', JSON.stringify(d));
+      }
+      return true;
+    } catch (_) { return false; }
+  }
+  // 구버전 호환 shim (외부 코드가 setLocalGold/getLocalGold 쓰면 동작하도록)
+  function getLocalGold() { return getGold(); }
+  function setLocalGold(g) {
+    // 절대 get+set 패턴으로 부르지 말 것 — 직접 setGold는 SharedWallet에서만 허용
+    try {
+      const next = Math.max(0, Number(g) || 0);
       if (window.SharedWallet && typeof window.SharedWallet.setGold === 'function') {
         window.SharedWallet.setGold(next);
-        return;
+      } else {
+        const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
+        d.gold = next;
+        localStorage.setItem('enhance_game_v3', JSON.stringify(d));
       }
-
-      // SharedWallet 미초기화 환경 fallback
-      const d = JSON.parse(localStorage.getItem('enhance_game_v3') || '{}');
-      d.gold = next;
-      localStorage.setItem('enhance_game_v3', JSON.stringify(d));
     } catch (_) {}
   }
 
@@ -1354,7 +1386,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           k.go('gameover', { score: S.score, stage: S.stage });
           return;
         }
-        setLocalGold(curGold - 100);
+        // spendGold: 원자적 차감 (이미 curGold >= 100 확인 완료)
+        spendGold(100);
         hidePanel();
         S.paused = false;
         joyShow();
@@ -2379,9 +2412,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const stars = percent >= 95 ? 3 : percent >= 90 ? 2 : 1;
     const starMul = stars === 3 ? 2.0 : stars === 2 ? 1.4 : 1.0;
     const goldReward = Math.round(stage * STAGE_REWARD * starMul);
-    const goldBefore = getLocalGold();
-    setLocalGold(goldBefore + goldReward);
-    const goldAfter = getLocalGold();
+    const goldAfter = addGold(goldReward);  // 원자적 추가
     setLRBestStage(stage);
 
     const clearBonus = 2000 * stage;
@@ -2450,7 +2481,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         alert(t('noGold',{gold:cur}));
         return;
       }
-      setLocalGold(cur - 100);
+      spendGold(100);
       hidePanel();
       k.go('game', { stage, score: 0, lives: 3 });
     };
