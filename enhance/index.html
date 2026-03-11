@@ -6059,55 +6059,106 @@
             }
         }
 
+        // TTS 오디오 (재사용)
+        const _enhanceTtsAudio = new Audio();
+        let _enhanceTtsBlobUrl = null;
+
+        // 보스 타입별 TTS 음성 프로필
+        const BOSS_TTS_VOICE = {
+            dragon:   { voice:'ko-male',   rate:'-20%', pitch:'-30Hz' },  // 묵직
+            demon:    { voice:'ko-male',   rate:'+10%', pitch:'-20Hz' },  // 거칠고 빠름
+            undead:   { voice:'ko-male',   rate:'-25%', pitch:'-40Hz' },  // 공허
+            elemental:{ voice:'ko-female', rate:'-10%', pitch:'+15Hz' },  // 차갑고 나긋
+            default:  { voice:'ko-male',   rate:'-5%',  pitch:'-10Hz' },
+        };
+
+        function speakBossDialogue(text, bossType, emotion) {
+            if (!text || !dialogueEnabled) return;
+            const clean = String(text).replace(/[^\w\s가-힣.,!?]/g, '').slice(0, 120);
+            const vp = BOSS_TTS_VOICE[bossType] || BOSS_TTS_VOICE.default;
+            // 분노 시 피치 더 낮고 빠르게
+            const pitch = emotion === 'angry' ? (parseInt(vp.pitch) - 10) + 'Hz' : vp.pitch;
+            const rate = emotion === 'angry' ? (parseInt(vp.rate) + 10) + '%' : vp.rate;
+
+            fetch('https://llm.cocy.io/v1/audio/speech', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer choon150622' },
+                body: JSON.stringify({ model:'kokoro-v1', input:clean, voice:vp.voice, rate, pitch, response_format:'mp3' })
+            }).then(res => {
+                if (!res.ok) throw new Error('TTS error');
+                return res.blob();
+            }).then(blob => {
+                // 대사 오버레이가 이미 사라졌으면 스킵
+                if (!document.getElementById('bossDialogueOverlay')) return;
+                if (_enhanceTtsBlobUrl) URL.revokeObjectURL(_enhanceTtsBlobUrl);
+                _enhanceTtsBlobUrl = URL.createObjectURL(blob);
+                _enhanceTtsAudio.src = _enhanceTtsBlobUrl;
+                _enhanceTtsAudio.play().catch(() => {});
+            }).catch(() => {});
+        }
+
+        function dismissBossDialogue() {
+            const overlay = document.getElementById('bossDialogueOverlay');
+            if (overlay) {
+                overlay.style.animation = 'bossDialogueOut 0.3s ease-in forwards';
+                setTimeout(() => overlay.remove(), 300);
+            }
+            _enhanceTtsAudio.pause();
+            _enhanceTtsAudio.currentTime = 0;
+            window.speechSynthesis?.cancel();
+        }
+
         function showBossDialogue(bossData) {
             if (!dialogueEnabled) return;
             if (!bossData || !bossData.dialogue) return;
+
+            // 보스가 이미 죽었으면 대사 스킵
+            if (huntState && huntState.monster && huntState.monster.currentHp <= 0) return;
 
             // "dialogue:" 접두사 제거
             let dialogue = bossData.dialogue.replace(/^dialogue:\s*/i, '').trim();
             if (!dialogue) return;
 
             // 기존 오버레이 제거
-            const old = document.getElementById('bossDialogueOverlay');
-            if (old) old.remove();
+            dismissBossDialogue();
 
             // 오버레이 레이어 생성
             const overlay = document.createElement('div');
             overlay.id = 'bossDialogueOverlay';
             overlay.style.cssText = `position:fixed;top:60px;left:50%;transform:translateX(-50%);
-                width:90%;max-width:360px;z-index:9000;pointer-events:none;
+                width:90%;max-width:360px;z-index:9000;cursor:pointer;
                 animation:bossDialogueIn 0.4s ease-out;`;
+            // 탭하면 스킵
+            overlay.onclick = () => dismissBossDialogue();
             const bubble = document.createElement('div');
             bubble.style.cssText = `background:rgba(20,0,0,0.9);border:2px solid rgba(255,60,60,0.6);
                 border-radius:14px;padding:12px 16px;font-size:14px;line-height:1.6;
-                color:#ffaaaa;text-align:center;pointer-events:auto;
+                color:#ffaaaa;text-align:center;
                 box-shadow:0 4px 20px rgba(255,0,0,0.3),inset 0 0 20px rgba(255,0,0,0.05);
                 backdrop-filter:blur(8px);`;
+            const skipHint = document.createElement('div');
+            skipHint.style.cssText = 'font-size:10px;color:rgba(255,255,255,0.3);margin-top:6px;';
+            skipHint.textContent = '탭하면 스킵';
             overlay.appendChild(bubble);
+            overlay.appendChild(skipHint);
             document.body.appendChild(overlay);
 
             // 타이핑 효과
             const text = dialogue;
             let i = 0;
             const typing = setInterval(() => {
+                if (!document.getElementById('bossDialogueOverlay')) { clearInterval(typing); return; }
                 if (i < text.length) {
                     bubble.textContent += text[i];
                     i++;
                 } else {
                     clearInterval(typing);
-                    // TTS: 몬스터 대사 읽기
-                    if (dialogueEnabled && 'speechSynthesis' in window) {
-                      window.speechSynthesis.cancel(); // 이전 읽기 중단
-                      const utter = new SpeechSynthesisUtterance(dialogue.replace(/[^\w\s가-힣]/g, ''));
-                      utter.lang = /[가-힣]/.test(dialogue) ? 'ko-KR' : 'en-US';
-                      utter.rate = 0.9;
-                      utter.pitch = bossData.emotion === 'angry' ? 0.7 : 1.1;
-                      utter.volume = 0.8;
-                      window.speechSynthesis.speak(utter);
-                    }
+                    // Edge-TTS로 대사 읽기
+                    speakBossDialogue(dialogue, huntState?.monster?.type, bossData.emotion);
                     // 특수 스킬 표시
                     if (bossData.action === 'special_skill' && bossData.skillName) {
                         setTimeout(() => {
+                            if (!document.getElementById('bossDialogueOverlay')) return;
                             bubble.innerHTML += `<br><span style="color:#ff6600;font-weight:bold;">⚡ ${bossData.skillName}!</span>`;
                             if (bossData.skillEffect) bubble.innerHTML += `<br><span style="color:#999;font-size:11px;">${bossData.skillEffect}</span>`;
                         }, 500);
@@ -6115,6 +6166,7 @@
                     // 골드 선물
                     if (bossData.action === 'gift' && bossData.goldGift) {
                         setTimeout(() => {
+                            if (!document.getElementById('bossDialogueOverlay')) return;
                             state.gold += bossData.goldGift;
                             saveState();
                             bubble.innerHTML += `<br><span style="color:#ffd700;font-weight:bold;">💰 +${bossData.goldGift.toLocaleString()} G 획득!</span>`;
@@ -6123,10 +6175,7 @@
                         }, 800);
                     }
                     // 5초 후 페이드아웃
-                    setTimeout(() => {
-                        overlay.style.animation = 'bossDialogueOut 0.5s ease-in forwards';
-                        setTimeout(() => overlay.remove(), 500);
-                    }, 5000);
+                    setTimeout(() => dismissBossDialogue(), 5000);
                 }
             }, 30);
 

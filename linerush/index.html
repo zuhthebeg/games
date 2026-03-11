@@ -906,6 +906,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         if (obj) k.destroy(obj);
       }
       activeBossBanner = null;
+      // TTS 중단
+      _ttsAudio.pause();
+      _ttsAudio.currentTime = 0;
     }
 
     function showBossDialogueBanner(dialogue) {
@@ -1174,11 +1177,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
 
     function triggerBossDialogue(triggerType) {
+      const stageAtRequest = S.stage;
       fetchBossDialogue(currentBossId, playerId, S.stage, S.percent, S.lives, triggerType)
         .then((result) => {
           if (!result) return;
+          // 씬이 바뀌었으면 (클리어/게임오버) 대사 스킵
+          if (!S || S.stage !== stageAtRequest || !S.mainMonster) return;
           const dialogue = String(result.dialogue || result.message || '').trim();
-          if (!dialogue) return; // LLM 실패 시 대사 없음
+          if (!dialogue) return;
           showBossDialogueBanner(dialogue);
           if (triggerType === 'desperate') {
             const attack = String(result.attack || '').trim().toLowerCase();
