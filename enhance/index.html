@@ -3391,17 +3391,20 @@
             let element = 'none';
             
             if (dropSource === 'sell') {
-                // 판매: 일반~레어, 랜덤 속성
-                if (gradeRoll < 15) grade = 'rare';
-                else if (gradeRoll < 45) grade = 'magic';
-                else grade = 'common';
-                // 랜덤 속성 (generateWeapon에서 처리)
+                // 판매: 폭넓은 등급 (신화도 극소 확률)
+                if (gradeRoll < 0.1) grade = 'mythic';        // 0.1%
+                else if (gradeRoll < 0.5) grade = 'unique';   // 0.4%
+                else if (gradeRoll < 3) grade = 'legendary';  // 2.5%
+                else if (gradeRoll < 18) grade = 'rare';      // 15%
+                else if (gradeRoll < 50) grade = 'magic';     // 32%
+                else grade = 'common';                        // 50%
                 
             } else if (dropSource === 'monster_death' || dropSource === 'pvp_death') {
-                // 사망: 레어~유니크, 취약 속성 부여
-                if (gradeRoll < 15) grade = 'unique';
-                else if (gradeRoll < 45) grade = 'legendary';
-                else grade = 'rare';
+                // 사망: 레어~신화, 취약 속성 부여
+                if (gradeRoll < 1) grade = 'mythic';           // 1%
+                else if (gradeRoll < 16) grade = 'unique';     // 15%
+                else if (gradeRoll < 46) grade = 'legendary';  // 30%
+                else grade = 'rare';                           // 54%
                 
                 // 속성: 몬스터 취약 or 상대 무기 속성
                 if (dropSource === 'monster_death' && context.monsterType) {
@@ -3416,18 +3419,20 @@
                 }
                 
             } else if (dropSource === 'enhance_destroy_high') {
-                // +7 이상 강화 파괴: 유니크~전설, 속성 없음!
-                if (gradeRoll < 40) grade = 'unique';
-                else grade = 'legendary';
+                // +7 이상 강화 파괴: 신화~전설, 속성 없음!
+                if (gradeRoll < 3) grade = 'mythic';        // 3%
+                else if (gradeRoll < 43) grade = 'unique';  // 40%
+                else grade = 'legendary';                   // 57%
                 element = 'none'; // 속성 없음 고정
                 
             } else if (dropSource === 'enhance_destroy_low') {
-                // +6 이하 강화 파괴: 완전 랜덤 등급 (전설/유니크도 가능!)
-                if (gradeRoll < 2) grade = 'unique';       // 2%
-                else if (gradeRoll < 10) grade = 'legendary'; // 8%
-                else if (gradeRoll < 30) grade = 'rare';    // 20%
-                else if (gradeRoll < 60) grade = 'magic';   // 30%
-                else grade = 'common';                      // 40%
+                // +6 이하 강화 파괴: 완전 랜덤 등급 (신화도 극소!)
+                if (gradeRoll < 0.5) grade = 'mythic';       // 0.5%
+                else if (gradeRoll < 3) grade = 'unique';    // 2.5%
+                else if (gradeRoll < 11) grade = 'legendary'; // 8%
+                else if (gradeRoll < 31) grade = 'rare';     // 20%
+                else if (gradeRoll < 61) grade = 'magic';    // 30%
+                else grade = 'common';                       // 39%
                 // 랜덤 속성
                 
             } else if (dropSource === 'durability_break') {
