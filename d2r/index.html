@@ -55,12 +55,28 @@
       border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-top: 14px;
       box-shadow: 0 8px 24px rgba(0,0,0,.28);
     }
-    .table-wrap { overflow-x: auto; border: 1px solid #4a2e21; border-radius: 12px; }
-    table { width: 100%; min-width: 1280px; border-collapse: collapse; font-size: .82rem; }
-    th, td { border: 1px solid #433126; padding: 6px 8px; text-align: center; white-space: nowrap; }
-    thead th { position: sticky; top: 0; z-index: 2; }
-    th.level { background: #352013; color: #ffdfa4; position: sticky; left: 0; z-index: 3; }
-    td.level { background: #1c1410; color: #f0d9a1; position: sticky; left: 0; z-index: 1; font-weight: 700; }
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid #4a2e21;
+      border-radius: 12px;
+      max-height: 70vh;
+      position: relative;
+    }
+    table { width: 100%; min-width: 1100px; border-collapse: separate; border-spacing: 0; font-size: .82rem; }
+    th, td { border: 1px solid #433126; padding: 5px 7px; text-align: center; white-space: nowrap; }
+    thead th {
+      position: sticky; top: 0; z-index: 4;
+      background: #1a1010;
+    }
+    th.level {
+      background: #352013; color: #ffdfa4;
+      position: sticky; left: 0; z-index: 5;
+    }
+    td.level {
+      background: #1c1410; color: #f0d9a1;
+      position: sticky; left: 0; z-index: 2;
+      font-weight: 700;
+    }
     .group-normal { background: var(--normal); color: #dbe7ff; }
     .group-nightmare { background: var(--nightmare); color: #fff5c9; }
     .group-hell { background: var(--hell); color: #ffdede; }
@@ -207,13 +223,26 @@
   </div>
 
   <script>
+    // 올바른 D2R 지역별 평균 몬스터 레벨
     const areas = {
-      "노멀": { cls: "group-normal", acts: [78, 219, 391, 647, 2740] },
-      "나이트메어": { cls: "group-nightmare", acts: [3463, 7009, 8471, 11653, 14748] },
-      "헬": { cls: "group-hell", acts: [34384, 53949, 54147, 55251, 56660] },
+      "노멀": { cls: "group-normal", acts: [6, 17, 23, 27, 30] },
+      "나이트메어": { cls: "group-nightmare", acts: [40, 46, 51, 55, 59] },
+      "헬": { cls: "group-hell", acts: [70, 75, 80, 83, 85] },
     };
 
-    const highDiffPenalty = (diff) => {
+    // Under-25 양방향 패널티 테이블 (mlvl - clvl 차이)
+    // 인덱스: diff+10 → [<-10, -10, -9, ..., -1, 0, +1, ..., +9, +10, >+10]
+    const under25Table = [5, 5, 24, 43, 62, 81, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 88, 68, 36, 15, 5, 5];
+    const getUnder25 = (diff) => {
+      // diff = mlvl - clvl
+      if (diff < -10) return 5;
+      if (diff > 10) return 5;
+      return under25Table[diff + 10];
+    };
+
+    // 25+ 레벨: 몬스터가 캐릭터보다 낮을 때 패널티
+    const lowMonsterPenalty = (diff) => {
+      // diff = clvl - mlvl (양수)
       if (diff <= 5) return 100;
       if (diff === 6) return 81;
       if (diff === 7) return 62;
@@ -222,47 +251,45 @@
       return 5;
     };
 
-    const latePenaltyTable = [
-      [70, 95.31], [75, 71.88], [80, 48.44], [85, 25.0], [90, 5.96], [95, 1.46], [99, 0.29]
-    ];
-
+    // 70+ 레벨 후반 경험치 페널티 (전 레벨 보간)
+    const latePenaltyData = {
+      70: 95.31, 71: 90.63, 72: 85.94, 73: 81.25, 74: 76.56,
+      75: 71.88, 76: 67.19, 77: 62.50, 78: 57.81, 79: 53.13,
+      80: 48.44, 81: 43.75, 82: 39.06, 83: 34.38, 84: 29.69,
+      85: 25.00, 86: 18.75, 87: 14.06, 88: 10.55, 89: 7.81,
+      90: 5.96, 91: 4.49, 92: 3.42, 93: 2.54, 94: 1.95,
+      95: 1.46, 96: 1.07, 97: 0.78, 98: 0.49, 99: 0.29
+    };
     const latePenalty = (clvl) => {
       if (clvl < 70) return 100;
-      for (let i = 0; i < latePenaltyTable.length - 1; i++) {
-        const [l1, p1] = latePenaltyTable[i];
-        const [l2, p2] = latePenaltyTable[i + 1];
-        if (clvl >= l1 && clvl <= l2) {
-          if (clvl === l1) return p1;
-          const t = (clvl - l1) / (l2 - l1);
-          return p1 + (p2 - p1) * t;
-        }
-      }
-      return 0.29;
+      return latePenaltyData[clvl] ?? 0.29;
     };
 
     const baseExpPercent = (clvl, mlvl) => {
-      const diff = mlvl - clvl;
-      const absDiff = Math.abs(diff);
+      const diff = mlvl - clvl; // 양수 = 몬스터가 높음
 
+      // 25 미만: 양방향 테이블
       if (clvl < 25) {
-        return highDiffPenalty(absDiff);
+        return getUnder25(diff);
       }
 
+      // 25~69: ±5 이내 100%, 몬스터 높으면 clvl/mlvl, 낮으면 패널티 테이블
       if (clvl <= 69) {
-        if (absDiff <= 5) return 100;
-        if (mlvl > clvl) return Math.min(100, (clvl / mlvl) * 100);
-        return highDiffPenalty(clvl - mlvl);
+        if (Math.abs(diff) <= 5) return 100;
+        if (diff > 5) return Math.min(100, Math.round((clvl / mlvl) * 100));
+        return lowMonsterPenalty(-diff); // clvl - mlvl
       }
 
-      if (absDiff <= 5) return 100;
-      if (mlvl > clvl) return Math.min(100, (clvl / mlvl) * 100);
-      return highDiffPenalty(clvl - mlvl);
+      // 70+: 동일 규칙 + 후반 페널티
+      if (Math.abs(diff) <= 5) return 100;
+      if (diff > 5) return Math.min(100, Math.round((clvl / mlvl) * 100));
+      return lowMonsterPenalty(-diff);
     };
 
     const finalExpPercent = (clvl, mlvl) => {
       let value = baseExpPercent(clvl, mlvl);
-      if (clvl >= 70) value *= latePenalty(clvl) / 100;
-      return Math.max(5, value);
+      if (clvl >= 70) value = value * latePenalty(clvl) / 100;
+      return Math.max(5, Math.round(value * 100) / 100);
     };
 
     const classForValue = (v) => {
