@@ -124,7 +124,7 @@
     <!-- ===== 레벨 가이드 ===== -->
     <section id="leveling" class="card">
       <h2 id="lvTitle">레벨별 경험치 효율 테이블 (clvl 1~99)</h2>
-      <p class="source" id="lvSrc">D2R v1.10+ 경험치 규칙 기반 · diablo2.diablowiki.net Area Level 데이터</p>
+      <p class="source" id="lvSrc">출처: forums.diabolii.net (Denis) · 난이도/액트별 평균 경험치 기준</p>
       <div class="table-wrap">
         <table id="xpTable"><thead id="xpHead"></thead><tbody id="xpBody"></tbody></table>
       </div>
@@ -482,67 +482,141 @@ else if (bl.startsWith('ja')) setLang('ja');
 else if (bl.startsWith('zh')) setLang('zh');
 else renderRunewords(); // default ko
 
-// ============ XP TABLE ============
-// Area levels from diablo2.diablowiki.net (representative main progression areas per act)
-// Normal: Act1 mid=8(Tamoe), Act2=16(Oasis), Act3=23(Upper Kurast), Act4=27(City/River), Act5=40(WSK2)
-// Nightmare: Act1=40(Outer/Barracks), Act2=47(Palace), Act3=53(Travincal), Act4=57(River), Act5=65(WSK)
-// Hell: Act1=70(Barracks/Jail), Act2=77(Lost City), Act3=82(Travincal), Act4=85(Chaos/River), Act5=85(WSK/Throne)
-const areas = {
-  "Normal":    { cls:"group-normal",    acts:[8, 16, 23, 27, 40] },
-  "Nightmare": { cls:"group-nightmare", acts:[40, 47, 53, 57, 65] },
-  "Hell":      { cls:"group-hell",      acts:[70, 77, 82, 85, 85] },
-};
+// ============ XP TABLE (hardcoded from Denis's image, forums.diabolii.net) ============
+// 평균 경험치: Normal[78,219,301,647,2760] NM[3600,7009,9417,11053,14796] Hell[34308,63060,54147,92251,56600]
+const avgXP = [78,219,301,647,2760,3600,7009,9417,11053,14796,34308,63060,54147,92251,56600];
+const D=[
+[100,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[100,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[100,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[100,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[100,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[100,25,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[100,38,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[100,50,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[100,60,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[100,69,31,5,5,5,5,5,5,5,5,5,5,5,5],
+[74,67,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[56,100,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[43,100,63,5,5,5,5,5,5,5,5,5,5,5,5],
+[33,98,80,5,5,5,5,5,5,5,5,5,5,5,5],
+[25,90,98,5,5,5,5,5,5,5,5,5,5,5,5],
+[20,83,100,5,5,5,5,5,5,5,5,5,5,5,5],
+[5,70,100,5,5,5,5,5,5,5,5,5,5,5,5],
+[5,59,100,61,5,5,5,5,5,5,5,5,5,5,5],
+[5,50,97,76,5,5,5,5,5,5,5,5,5,5,5],
+[5,42,88,97,64,58,5,5,5,5,5,5,5,5,5],
+[5,35,79,100,67,56,46,5,5,5,5,5,5,5,5],
+[5,29,71,100,70,56,50,5,5,5,5,5,5,5,5],
+[5,25,63,100,78,60,51,47,5,5,5,5,5,5,5],
+[5,14,57,100,76,61,51,50,43,5,5,5,5,5,37],
+[5,5,47,97,76,67,51,51,50,43,5,5,5,5,37],
+[5,5,40,85,77,59,65,55,50,43,5,5,5,5,5],
+[5,5,34,75,85,65,61,55,50,43,5,5,5,5,5],
+[5,5,5,65,85,71,65,55,55,42,43,5,5,5,5],
+[5,5,5,55,85,78,67,65,55,45,43,5,5,5,41],
+[5,5,5,46,83,80,73,65,62,47,46,40,45,5,41],
+[5,5,5,5,5,85,71,65,55,44,43,41,41,41,41],
+[5,5,5,5,5,83,70,64,53,43,42,41,41,41,41],
+[5,5,5,5,5,81,68,62,52,42,42,41,41,41,41],
+[5,5,5,5,5,80,67,61,51,41,41,41,41,41,41],
+[5,5,5,5,5,78,65,60,50,41,41,41,41,41,41],
+[5,5,5,5,5,76,64,58,49,40,40,40,40,40,40],
+[5,5,5,5,5,75,63,57,48,39,39,39,39,39,39],
+[5,5,5,23,34,80,73,65,62,47,46,44,44,44,44],
+[5,5,5,19,30,78,70,65,59,47,46,43,43,43,43],
+[5,5,5,5,5,88,79,71,67,52,51,46,45,45,45],
+[5,5,5,5,5,86,78,70,65,51,50,45,44,44,44],
+[5,5,5,5,5,85,76,68,64,50,49,44,44,44,44],
+[5,5,5,5,5,65,65,74,55,44,43,54,52,52,52],
+[5,5,5,5,5,56,64,73,55,43,42,53,54,54,54],
+[5,5,5,5,5,50,61,77,55,57,46,54,54,54,54],
+[5,5,5,5,5,34,43,93,81,77,65,57,46,45,61],
+[5,5,5,5,5,30,39,87,77,73,63,55,45,44,59],
+[5,5,5,5,5,27,36,83,73,69,60,53,44,43,57],
+[5,5,5,5,5,24,33,80,71,64,58,51,43,42,55],
+[5,5,5,5,5,21,30,80,67,71,64,52,60,45,61],
+[5,5,5,5,5,19,27,77,64,68,62,50,58,44,59],
+[5,5,5,5,5,17,25,74,62,65,60,49,56,43,57],
+[5,5,5,5,5,15,23,71,59,63,58,47,55,42,55],
+[5,5,5,5,5,14,21,68,57,60,56,46,53,41,54],
+[5,5,5,5,5,13,19,66,55,58,55,45,52,40,52],
+[5,5,5,5,5,5,17,63,53,56,53,44,50,39,51],
+[5,5,5,5,5,5,16,61,51,54,52,43,49,38,50],
+[5,5,5,5,5,5,14,58,49,52,50,42,48,37,48],
+[5,5,5,5,5,5,13,56,47,50,49,41,47,37,47],
+[5,5,5,5,5,5,5,54,45,48,47,40,46,36,46],
+[5,5,5,5,5,5,5,5,5,5,56,64,70,73,65],
+[5,5,5,5,5,5,5,5,5,5,50,58,63,77,55],
+[5,5,5,5,5,5,5,5,5,5,45,52,57,71,49],
+[5,5,5,5,5,5,5,5,5,5,40,47,51,65,44],
+[5,5,5,5,5,5,5,5,5,5,36,42,46,60,39],
+[5,5,5,5,5,5,5,5,5,5,32,37,41,55,35],
+[5,5,5,5,5,5,5,5,5,5,28,33,37,50,31],
+[5,5,5,5,5,5,5,5,5,5,25,30,33,45,28],
+[5,5,5,5,5,5,5,5,5,5,22,27,30,41,25],
+[5,5,5,5,5,5,5,5,5,5,20,24,27,37,22],
+[5,5,5,5,5,5,5,5,5,5,17,21,24,34,20],
+[5,5,5,5,5,5,5,5,5,5,15,19,22,31,18],
+[5,5,5,5,5,5,5,5,5,5,14,17,20,28,16],
+[5,5,5,5,5,5,5,5,5,5,12,15,18,25,14],
+[5,5,5,5,5,5,5,5,5,5,11,14,16,23,13],
+[5,5,5,5,5,5,5,5,5,5,10,12,14,21,12],
+[5,5,5,5,5,5,5,5,5,5,9,11,13,19,10],
+[5,5,5,5,5,5,5,5,5,5,8,10,12,17,9],
+[5,5,5,5,5,5,5,5,5,5,7,9,11,16,8],
+[5,5,5,5,5,5,5,5,5,5,6,8,10,14,7],
+[5,5,5,5,5,5,5,5,5,5,6,7,9,13,7],
+[5,5,5,5,5,5,5,5,5,5,5,7,8,12,6],
+[5,5,5,5,5,5,5,5,5,5,5,6,7,11,6],
+[5,5,5,5,5,5,5,5,5,5,5,5,7,10,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,6,9,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,8,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,8,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,7,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,6,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,6,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5],
+];
 
-// Under-25: penalty table from diablowiki. Index = (mlvl-clvl)+10
-// diff: -10, -9, -8, -7, -6, -5..-1, 0, +1..+5, +6, +7, +8, +9, +10
-const u25 = [5, 24, 43, 62, 81, 100,100,100,100,100,100,100,100,100,100,100, 88, 68, 36, 15, 5];
-const getU25 = d => d<-10||d>10 ? 5 : u25[d+10];
-
-// 25+: monster lower penalty (clvl - mlvl)
-const lowPen = d => d<=5?100:d===6?81:d===7?62:d===8?43:d===9?24:5;
-
-// 70+: late-game penalty per level (diablowiki v1.10+)
-const lateP={70:95.31,71:90.63,72:85.94,73:81.25,74:76.56,75:71.88,76:67.19,77:62.50,78:57.81,79:53.13,80:48.44,81:43.75,82:39.06,83:34.38,84:29.69,85:25,86:18.75,87:14.06,88:10.55,89:7.91,90:5.96,91:4.49,92:3.42,93:2.54,94:1.95,95:1.46,96:1.07,97:.78,98:.59};
-
-const baseExp = (c,m) => {
-  const d = m - c; // positive = monster higher
-  if (c < 25) return getU25(d);
-  // 25+: within ±5 = 100%
-  if (Math.abs(d) <= 5) return 100;
-  // monster higher: clvl/mlvl ratio
-  if (d > 5) return Math.min(100, c/m * 100);
-  // monster lower: penalty table
-  return lowPen(-d);
-};
-
-const finalExp = (c, m) => {
-  let v = baseExp(c, m);
-  if (c >= 70) {
-    const lp = lateP[c];
-    if (lp !== undefined) v = v * lp / 100;
-    else v = 0; // level 99 = no gain
-  }
-  return Math.max(5, Math.round(v * 100) / 100);
-};
-
-const cls4v = v => v>=99.5?'eff-100':v>=80?'eff-80':v>=50?'eff-50':v>=20?'eff-20':'eff-5';
+const diffNames = ["Normal","Nightmare","Hell"];
+const diffCls = ["group-normal","group-nightmare","group-hell"];
+const cls4v = v => v>=95?'eff-100':v>=80?'eff-80':v>=50?'eff-50':v>=20?'eff-20':'eff-5';
 
 const hd=document.getElementById('xpHead'), bd=document.getElementById('xpBody');
-const r1=document.createElement('tr');
-const lvh=document.createElement('th'); lvh.rowSpan=2; lvh.textContent='Lv'; lvh.className='level'; r1.appendChild(lvh);
-Object.entries(areas).forEach(([n,d])=>{const th=document.createElement('th');th.colSpan=5;th.textContent=`${n} (Act 1~5)`;th.className=d.cls;r1.appendChild(th);});
-const r2=document.createElement('tr');
-Object.values(areas).forEach(d=>{for(let i=1;i<=5;i++){const th=document.createElement('th');th.textContent=`A${i}`;th.className=d.cls;r2.appendChild(th);}});
-hd.appendChild(r1); hd.appendChild(r2);
 
-for(let c=1;c<=99;c++){
+// Header row 1: difficulty groups
+const r0=document.createElement('tr');
+const corner=document.createElement('th'); corner.rowSpan=3; corner.textContent='Lv'; corner.className='level'; r0.appendChild(corner);
+diffNames.forEach((n,i)=>{const th=document.createElement('th');th.colSpan=5;th.textContent=`${n} (Act 1~5)`;th.className=diffCls[i];r0.appendChild(th);});
+hd.appendChild(r0);
+
+// Header row 2: act labels
+const r1=document.createElement('tr');
+diffCls.forEach(cls=>{for(let i=1;i<=5;i++){const th=document.createElement('th');th.textContent=`A${i}`;th.className=cls;r1.appendChild(th);}});
+hd.appendChild(r1);
+
+// Header row 3: 평균 경험치
+const r2=document.createElement('tr');
+avgXP.forEach((xp,i)=>{const th=document.createElement('th');th.textContent=xp.toLocaleString();th.className=diffCls[Math.floor(i/5)];th.style.fontSize='.72rem';th.style.fontWeight='400';r2.appendChild(th);});
+hd.appendChild(r2);
+
+// Data rows
+for(let c=0;c<99;c++){
   const tr=document.createElement('tr');
-  const lv=document.createElement('td'); lv.className='level'; lv.textContent=c; tr.appendChild(lv);
-  Object.values(areas).forEach(({acts})=>acts.forEach(m=>{
-    const p=finalExp(c,m);
-    const td=document.createElement('td'); td.className=cls4v(p); td.textContent=p>=10?Math.round(p)+'%':p.toFixed(1)+'%';
+  const lv=document.createElement('td'); lv.className='level'; lv.textContent=c+1; tr.appendChild(lv);
+  D[c].forEach(v=>{
+    const td=document.createElement('td'); td.className=cls4v(v); td.textContent=v+'%';
     tr.appendChild(td);
-  }));
+  });
   bd.appendChild(tr);
 }
 </script>
