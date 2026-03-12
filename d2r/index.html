@@ -24,73 +24,47 @@
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
   <!-- AdSense: managed via GTM auto-ads (ca-pub-6634731722045607) -->
   <style>
-    :root {
-      --bg: #090909; --panel: #131010; --panel-2: #1a1414;
-      --text: #f3e6c0; --muted: #b9ab88; --line: #3d2b20;
-      --gold: #cda55a; --normal: #294d8f; --nightmare: #8f7a29; --hell: #8f2929;
-    }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family:"Noto Sans KR","Pretendard",system-ui,sans-serif; background:radial-gradient(circle at 20% 0%,#220e0e 0%,var(--bg) 45%),var(--bg); color:var(--text); line-height:1.55; }
-    .wrap { max-width:1300px; margin:0 auto; padding:24px 16px 56px; }
-    h1,h2,h3 { margin:0 0 10px; }
-    h1 { font-size:clamp(1.5rem,2.8vw,2.3rem); color:#f7d88f; }
-    h2 { font-size:clamp(1.2rem,2.2vw,1.7rem); color:#f4ca74; margin-top:28px; }
-    h3 { color:#f1d6a1; }
-    p,li { color:var(--text); }
-    .sub { color:var(--muted); margin-bottom:12px; }
-    .lang-bar { display:flex; gap:6px; margin-bottom:14px; }
-    .lang-bar button { background:#2a1a1a; color:#fee8b3; border:1px solid #5f3a20; padding:6px 12px; border-radius:999px; cursor:pointer; font-size:.85rem; }
-    .lang-bar button.active { background:#6b3a1a; border-color:#d4883a; font-weight:700; }
-    .toc { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0 24px; background:linear-gradient(180deg,#1b1313,#110c0c); border:1px solid #4d3223; border-radius:14px; padding:12px; box-shadow:inset 0 0 0 1px #281b14; position:sticky; top:8px; z-index:5; }
-    .toc a { text-decoration:none; color:#fee8b3; background:#2a1a1a; border:1px solid #5f3a20; padding:8px 12px; border-radius:999px; font-size:.92rem; }
-    .toc a:hover { background:#3a2222; }
-    .card { background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line); border-radius:14px; padding:16px; margin-top:14px; box-shadow:0 8px 24px rgba(0,0,0,.28); }
-    .table-wrap { overflow:auto; border:1px solid #4a2e21; border-radius:12px; max-height:70vh; }
-    table { width:100%; min-width:1100px; border-collapse:separate; border-spacing:0; font-size:.82rem; }
-    th,td { border:1px solid #433126; padding:5px 7px; text-align:center; white-space:nowrap; }
-    thead th { position:sticky; top:0; z-index:4; background:#1a1010; }
-    th.level { background:#352013; color:#ffdfa4; position:sticky; left:0; z-index:5; }
-    td.level { background:#1c1410; color:#f0d9a1; position:sticky; left:0; z-index:2; font-weight:700; }
-    .group-normal { background:var(--normal); color:#dbe7ff; }
-    .group-nightmare { background:var(--nightmare); color:#fff5c9; }
-    .group-hell { background:var(--hell); color:#ffdede; }
-    .eff-100 { background:rgba(31,138,71,.8); color:#fff; font-weight:700; }
-    .eff-80 { background:rgba(102,180,71,.85); color:#102008; font-weight:700; }
-    .eff-50 { background:rgba(212,175,55,.82); color:#2a1f00; font-weight:700; }
-    .eff-20 { background:rgba(217,125,47,.85); color:#2a1400; font-weight:700; }
-    .eff-5 { background:rgba(164,50,50,.88); color:#fff; font-weight:700; }
-    .legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-    .chip { padding:4px 8px; border-radius:8px; font-size:.8rem; font-weight:700; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; }
-    .build { border:1px solid #4d3223; border-radius:12px; padding:14px; background:#120f0f; }
-    .build ul { margin:8px 0 0; padding-left:18px; }
-    .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; color:#ffd99b; }
-    .source { font-size:.85rem; color:var(--muted); }
-    .rw-card { background:#120f0f; border:1px solid #4d3223; border-radius:12px; padding:14px; margin-bottom:10px; }
-    .rw-card h4 { margin:0 0 6px; color:#f7d88f; font-size:1rem; }
-    .rw-card .rw-runes { color:#ffd99b; font-family:monospace; margin-bottom:6px; }
-    .rw-card .rw-type { font-size:.8rem; color:#b9ab88; margin-bottom:8px; }
-    .rw-card ul { margin:4px 0 0; padding-left:16px; font-size:.9rem; }
-    .rw-card .new-badge { background:#8f2929; color:#fff; padding:2px 8px; border-radius:6px; font-size:.75rem; font-weight:700; margin-left:8px; }
-    .cat-label { display:inline-block; background:#3a2010; color:#f4ca74; padding:4px 10px; border-radius:8px; font-size:.8rem; font-weight:700; margin:16px 0 8px; }
+    :root{--bg:#090909;--panel:#131010;--panel-2:#1a1414;--text:#f3e6c0;--muted:#b9ab88;--line:#3d2b20;--gold:#cda55a;--normal:#294d8f;--nightmare:#8f7a29;--hell:#8f2929}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Noto Sans KR","Pretendard",system-ui,sans-serif;background:radial-gradient(circle at 20% 0%,#220e0e 0%,var(--bg) 45%),var(--bg);color:var(--text);line-height:1.55}
+    .wrap{max-width:1300px;margin:0 auto;padding:24px 16px 56px}
+    h1,h2,h3{margin:0 0 10px}h1{font-size:clamp(1.5rem,2.8vw,2.3rem);color:#f7d88f}h2{font-size:clamp(1.2rem,2.2vw,1.7rem);color:#f4ca74;margin-top:28px}h3{color:#f1d6a1}
+    p,li{color:var(--text)}.sub{color:var(--muted);margin-bottom:12px}
+    .lang-bar{display:flex;gap:6px;margin-bottom:14px}.lang-bar button{background:#2a1a1a;color:#fee8b3;border:1px solid #5f3a20;padding:6px 12px;border-radius:999px;cursor:pointer;font-size:.85rem}.lang-bar button.active{background:#6b3a1a;border-color:#d4883a;font-weight:700}
+    .toc{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 24px;background:linear-gradient(180deg,#1b1313,#110c0c);border:1px solid #4d3223;border-radius:14px;padding:12px;box-shadow:inset 0 0 0 1px #281b14;position:sticky;top:8px;z-index:5}
+    .toc a{text-decoration:none;color:#fee8b3;background:#2a1a1a;border:1px solid #5f3a20;padding:8px 12px;border-radius:999px;font-size:.92rem}.toc a:hover{background:#3a2222}
+    .card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px;box-shadow:0 8px 24px rgba(0,0,0,.28)}
+    .table-wrap{overflow:auto;border:1px solid #4a2e21;border-radius:12px;max-height:70vh}
+    table{width:100%;min-width:1100px;border-collapse:separate;border-spacing:0;font-size:.82rem}
+    th,td{border:1px solid #433126;padding:5px 7px;text-align:center;white-space:nowrap}
+    thead th{position:sticky;top:0;z-index:4;background:#1a1010}
+    th.level{background:#352013;color:#ffdfa4;position:sticky;left:0;z-index:5}
+    td.level{background:#1c1410;color:#f0d9a1;position:sticky;left:0;z-index:2;font-weight:700}
+    .group-normal{background:var(--normal);color:#dbe7ff}.group-nightmare{background:var(--nightmare);color:#fff5c9}.group-hell{background:var(--hell);color:#ffdede}
+    .eff-100{background:rgba(31,138,71,.8);color:#fff;font-weight:700}.eff-80{background:rgba(102,180,71,.85);color:#102008;font-weight:700}.eff-50{background:rgba(212,175,55,.82);color:#2a1f00;font-weight:700}.eff-20{background:rgba(217,125,47,.85);color:#2a1400;font-weight:700}.eff-5{background:rgba(164,50,50,.88);color:#fff;font-weight:700}
+    .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.chip{padding:4px 8px;border-radius:8px;font-size:.8rem;font-weight:700}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+    .build{border:1px solid #4d3223;border-radius:12px;padding:14px;background:#120f0f}.build ul{margin:8px 0 0;padding-left:18px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;color:#ffd99b}.source{font-size:.85rem;color:var(--muted)}
+    .rw-card{background:#120f0f;border:1px solid #4d3223;border-radius:12px;padding:14px;margin-bottom:10px}
+    .rw-card h4{margin:0 0 6px;color:#f7d88f;font-size:1rem}.rw-card .rw-runes{color:#ffd99b;font-family:monospace;margin-bottom:6px}.rw-card .rw-type{font-size:.8rem;color:#b9ab88;margin-bottom:8px}.rw-card ul{margin:4px 0 0;padding-left:16px;font-size:.9rem}
+    .rw-card .new-badge{background:#8f2929;color:#fff;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700;margin-left:8px}
+    .cat-label{display:inline-block;background:#3a2010;color:#f4ca74;padding:4px 10px;border-radius:8px;font-size:.8rem;font-weight:700;margin:16px 0 8px}
   </style>
 </head>
 <body>
   <!-- GTM noscript -->
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-
   <div class="wrap">
     <h1 id="title">디아블로2 레저렉션 D2R 가이드</h1>
     <p class="sub" id="subtitle">악마술사(Warlock) 빌드 · 신규 룬워드 · 레벨업 경험치 효율표 (1~99)</p>
-
     <div class="lang-bar" id="langBar">
-      <button class="active" onclick="setLang('ko')">한국어</button>
-      <button onclick="setLang('en')">English</button>
-      <button onclick="setLang('ja')">日本語</button>
-      <button onclick="setLang('zh')">繁體中文</button>
+      <button class="active" data-lang="ko">한국어</button>
+      <button data-lang="en">English</button>
+      <button data-lang="ja">日本語</button>
+      <button data-lang="zh">繁體中文</button>
     </div>
-
-    <nav class="toc" id="tocNav">
+    <nav class="toc">
       <a href="#warlock" id="toc1">악마술사 빌드</a>
       <a href="#runewords" id="toc2">룬워드</a>
       <a href="#leveling" id="toc3">레벨 가이드</a>
@@ -100,54 +74,33 @@
     <section id="warlock" class="card">
       <h2 id="warlockTitle">악마술사 (Warlock) 빌드 가이드 — Reign of the Warlock DLC</h2>
       <p class="source" id="warlockSrc">블리자드 공식 설명 기반</p>
-
       <span class="cat-label" id="catSkill">스킬 트리</span>
       <div class="grid">
-        <div class="build">
-          <h3>🔥 <span id="st1">악마 (Demon)</span></h3>
-          <ul><li id="st1d">지옥 종자를 지배하여 악마를 소환하고 전투를 통제하는 소환 계열. 소환수 유지력·화력·전장 점유가 핵심.</li></ul>
-        </div>
-        <div class="build">
-          <h3>⚔️ <span id="st2">기괴 (Grotesque)</span></h3>
-          <ul><li id="st2d">마법으로 무기를 강화하여 파괴적인 근접 전투를 수행. 강화 유지 시간·순간 폭딜·생존 보강이 핵심.</li></ul>
-        </div>
-        <div class="build">
-          <h3>🌀 <span id="st3">혼돈 (Chaos)</span></h3>
-          <ul><li id="st3d">지옥의 불과 어둠을 원거리로 방출하는 캐스터 계열. 광역 타격·폭발 타이밍·자원 순환이 핵심.</li></ul>
-        </div>
+        <div class="build"><h3>🔥 <span id="st1">악마 (Demon)</span></h3><ul><li id="st1d">지옥 종자를 지배하여 악마를 소환하고 전투를 통제하는 소환 계열. 소환수 유지력·화력·전장 점유가 핵심.</li></ul></div>
+        <div class="build"><h3>⚔️ <span id="st2">기괴 (Grotesque)</span></h3><ul><li id="st2d">마법으로 무기를 강화하여 파괴적인 근접 전투를 수행. 강화 유지 시간·순간 폭딜·생존 보강이 핵심.</li></ul></div>
+        <div class="build"><h3>🌀 <span id="st3">혼돈 (Chaos)</span></h3><ul><li id="st3d">지옥의 불과 어둠을 원거리로 방출하는 캐스터 계열. 광역 타격·폭발 타이밍·자원 순환이 핵심.</li></ul></div>
       </div>
-
       <span class="cat-label" id="catBuild">인기 빌드 3종</span>
       <div class="grid">
-        <article class="build">
-          <h3 id="b1t">악마 소환사 (Demonologist)</h3>
-          <ul>
-            <li id="b1a">핵심: 악마 트리 최우선, 소환수 수·유지력·공격력 강화</li>
-            <li id="b1b">운용: 선소환 후 안전 위치 유지, 디버프로 화력 증폭</li>
-            <li id="b1c">장점: 안정적·초보 친화·하드코어 적합</li>
-            <li id="b1d">용병: Act2 NM 공격형 (마이트 오라)</li>
-          </ul>
-        </article>
-        <article class="build">
-          <h3 id="b2t">기괴 근접 (Grotesque Melee)</h3>
-          <ul>
-            <li id="b2a">핵심: 무기 강화 효율과 근접 연계 극대화</li>
-            <li id="b2b">운용: 버프 유지 → 돌진 타격 → 생존 스킬로 공백 최소화</li>
-            <li id="b2c">장점: 손맛 강함, 단일 대상 높은 순간 화력</li>
-            <li id="b2d">용병: Act2 NM 공격형 (전선 유지)</li>
-          </ul>
-        </article>
-        <article class="build">
-          <h3 id="b3t">혼돈 마법사 (Chaos Caster)</h3>
-          <ul>
-            <li id="b3a">핵심: 광역 클리어 + 보스 폭딜 균형</li>
-            <li id="b3b">운용: 원거리 견제 → 광역 누적 → 보조 스킬 딜 압축</li>
-            <li id="b3c">장점: 파밍 속도 우수, 선제 타격 안정적</li>
-            <li id="b3d">용병: Act2 NM 공격형 + Infinity 추천</li>
-          </ul>
-        </article>
+        <article class="build"><h3 id="b1t">악마 소환사 (Demonologist)</h3><ul>
+          <li id="b1a">핵심: 악마 트리 최우선, 소환수 수·유지력·공격력 강화</li>
+          <li id="b1b">운용: 선소환 후 안전 위치 유지, 디버프로 화력 증폭</li>
+          <li id="b1c">장점: 안정적·초보 친화·하드코어 적합</li>
+          <li id="b1d">용병: Act2 NM 공격형 (마이트 오라)</li>
+        </ul></article>
+        <article class="build"><h3 id="b2t">기괴 근접 (Grotesque Melee)</h3><ul>
+          <li id="b2a">핵심: 무기 강화 효율과 근접 연계 극대화</li>
+          <li id="b2b">운용: 버프 유지 → 돌진 타격 → 생존 스킬로 공백 최소화</li>
+          <li id="b2c">장점: 손맛 강함, 단일 대상 높은 순간 화력</li>
+          <li id="b2d">용병: Act2 NM 공격형 (전선 유지)</li>
+        </ul></article>
+        <article class="build"><h3 id="b3t">혼돈 마법사 (Chaos Caster)</h3><ul>
+          <li id="b3a">핵심: 광역 클리어 + 보스 폭딜 균형</li>
+          <li id="b3b">운용: 원거리 견제 → 광역 누적 → 보조 스킬 딜 압축</li>
+          <li id="b3c">장점: 파밍 속도 우수, 선제 타격 안정적</li>
+          <li id="b3d">용병: Act2 NM 공격형 + Infinity 추천</li>
+        </ul></article>
       </div>
-
       <span class="cat-label" id="catRoute">레벨링 루트</span>
       <ul>
         <li id="lr1"><b>1~15:</b> 노멀 Act1~2, 트리 입문 스킬</li>
@@ -162,114 +115,18 @@
     <!-- ===== 룬워드 ===== -->
     <section id="runewords" class="card">
       <h2 id="rwTitle">악마술사 중심 룬워드 가이드</h2>
-
-      <span class="cat-label">🆕 신규 ROTW 룬워드</span>
-
-      <div class="rw-card">
-        <h4>Authority <span class="new-badge">ROTW</span></h4>
-        <div class="rw-runes">Hel + Shael + Ral</div>
-        <div class="rw-type">갑옷 (Body Armor) · 3소켓 · Req Lv 29</div>
-        <ul>
-          <li>2% Chance to cast Lv10 Psychic Ward when struck</li>
-          <li>10% Chance to cast Lv15 Miasma Chain on striking</li>
-          <li><b>+2 to Warlock Skill Levels</b></li>
-          <li>+40-60% Enhanced Damage</li>
-          <li>Requirements -15%</li>
-          <li>+20% Faster Hit Recovery</li>
-          <li>Fire Resist +30%</li>
-        </ul>
-      </div>
-
-      <div class="rw-card">
-        <h4>Void <span class="new-badge">ROTW</span></h4>
-        <div class="rw-runes">Thul + Zod + Ist</div>
-        <div class="rw-type">단검 (Daggers) · 3소켓 · Req Lv 69</div>
-        <ul>
-          <li><b>+2 to All Skills</b></li>
-          <li>+40% Faster Cast Rate</li>
-          <li>+10-15% to Magic Skill Damage</li>
-          <li>+1-3 to Abyss</li>
-          <li>+8-12 to All Attributes</li>
-          <li>Level 4 Decrepify (35/35 Charges)</li>
-          <li>Adds 3-14 Cold Damage</li>
-          <li><b>Indestructible</b></li>
-          <li>30% Better Chance of Getting Magic Items</li>
-        </ul>
-      </div>
-
-      <div class="rw-card">
-        <h4>Vigilance <span class="new-badge">ROTW</span></h4>
-        <div class="rw-runes">Dol + Gul</div>
-        <div class="rw-type">그리모어/방패/축소머리/타지 · 2소켓 · Req Lv 53</div>
-        <ul>
-          <li>5% Chance to cast Lv10 Ring of Fire when struck</li>
-          <li>+10% Faster Run/Walk</li>
-          <li>+30% Faster Block Rate</li>
-          <li>+20-40 to Life</li>
-          <li>+20-40 to Mana</li>
-          <li><b>All Resistances +25-35</b></li>
-          <li>+75-100% Enhanced Defense</li>
-          <li>Replenish Life +7</li>
-          <li>+5% to Maximum Poison Resist</li>
-        </ul>
-      </div>
-
-      <div class="rw-card">
-        <h4>Ritual <span class="new-badge">ROTW</span></h4>
-        <div class="rw-runes">Amn + Shael + Ohm</div>
-        <div class="rw-type">단검 (Daggers) · 3소켓 · Req Lv 57</div>
-        <ul>
-          <li>13% Chance to cast Lv1 Sigil Death when struck</li>
-          <li>+40% Increased Attack Speed</li>
-          <li>+250-320% Enhanced Damage</li>
-          <li>+150-250% Damage to Demons</li>
-          <li>+200-260% Bonus to Attack Rating</li>
-          <li>+3-5 Life after each Kill</li>
-          <li>Slain Monsters Rest in Peace</li>
-          <li>7% Life stolen per hit</li>
-        </ul>
-      </div>
-
-      <span class="cat-label">클래식 룬워드 (악마술사 유용)</span>
-
-      <div class="rw-card">
-        <h4>Spirit</h4>
-        <div class="rw-runes">Tal + Thul + Ort + Amn</div>
-        <div class="rw-type">방패/검 · 4소켓 · Req Lv 25</div>
-        <ul><li>+2 All Skills, +25-35% FCR, +55% FHR, +250 Def vs Missile, +22 Vit, +89-112 Mana, +3-8 Magic Absorb</li></ul>
-      </div>
-
-      <div class="rw-card">
-        <h4>Enigma</h4>
-        <div class="rw-runes">Jah + Ith + Ber</div>
-        <div class="rw-type">갑옷 · 3소켓 · Req Lv 65</div>
-        <ul><li>+2 All Skills, +45% FRW, +1 Teleport, +750-775 Def, +Str/MF per level, DR 8%</li></ul>
-      </div>
-
-      <div class="rw-card">
-        <h4>Insight</h4>
-        <div class="rw-runes">Ral + Tir + Tal + Sol</div>
-        <div class="rw-type">폴암/지팡이/미사일 · 4소켓 · Req Lv 27</div>
-        <ul><li>Lv12-17 Meditation Aura, +35% FCR, +200-260% ED, +5-30 Fire Dmg, +23 Vit</li></ul>
-      </div>
-
-      <div class="rw-card">
-        <h4>Infinity</h4>
-        <div class="rw-runes">Ber + Mal + Ber + Ist</div>
-        <div class="rw-type">폴암 · 4소켓 · Req Lv 63</div>
-        <ul><li>Lv12 Conviction Aura, +255-325% ED, -45-55% Enemy Lightning Res, 40% CB, Prevent Monster Heal</li></ul>
-      </div>
+      <span class="cat-label">🆕 <span id="catNewRw">신규 ROTW 룬워드</span></span>
+      <div id="rwNewCards"></div>
+      <span class="cat-label"><span id="catClassicRw">클래식 룬워드 (악마술사 유용)</span></span>
+      <div id="rwClassicCards"></div>
     </section>
 
     <!-- ===== 레벨 가이드 ===== -->
     <section id="leveling" class="card">
       <h2 id="lvTitle">레벨별 경험치 효율 테이블 (clvl 1~99)</h2>
-      <p class="source">D2R 1.10+ 경험치 규칙 기반. 지역별 평균 몬스터 레벨로 계산.</p>
+      <p class="source" id="lvSrc">D2R v1.10+ 경험치 규칙 기반 · diablo2.diablowiki.net Area Level 데이터</p>
       <div class="table-wrap">
-        <table id="xpTable">
-          <thead id="xpHead"></thead>
-          <tbody id="xpBody"></tbody>
-        </table>
+        <table id="xpTable"><thead id="xpHead"></thead><tbody id="xpBody"></tbody></table>
       </div>
       <div class="legend">
         <span class="chip eff-100">100%</span>
@@ -281,123 +138,413 @@
     </section>
   </div>
 
-  <script>
-    // ===== i18n =====
-    const i18n = {
-      ko: {
-        title: '디아블로2 레저렉션 D2R 가이드',
-        subtitle: '악마술사(Warlock) 빌드 · 신규 룬워드 · 레벨업 경험치 효율표 (1~99)',
-        toc1: '악마술사 빌드', toc2: '룬워드', toc3: '레벨 가이드',
-        warlockTitle: '악마술사 (Warlock) 빌드 가이드 — Reign of the Warlock DLC',
-        warlockSrc: '블리자드 공식 설명 기반',
-        catSkill: '스킬 트리', catBuild: '인기 빌드 3종', catRoute: '레벨링 루트',
-        st1: '악마 (Demon)', st1d: '지옥 종자를 지배하여 악마를 소환하고 전투를 통제하는 소환 계열. 소환수 유지력·화력·전장 점유가 핵심.',
-        st2: '기괴 (Grotesque)', st2d: '마법으로 무기를 강화하여 파괴적인 근접 전투를 수행. 강화 유지 시간·순간 폭딜·생존 보강이 핵심.',
-        st3: '혼돈 (Chaos)', st3d: '지옥의 불과 어둠을 원거리로 방출하는 캐스터 계열. 광역 타격·폭발 타이밍·자원 순환이 핵심.',
-        b1t: '악마 소환사 (Demonologist)', b1a: '핵심: 악마 트리 최우선, 소환수 수·유지력·공격력 강화', b1b: '운용: 선소환 후 안전 위치 유지, 디버프로 화력 증폭', b1c: '장점: 안정적·초보 친화·하드코어 적합', b1d: '용병: Act2 NM 공격형 (마이트 오라)',
-        b2t: '기괴 근접 (Grotesque Melee)', b2a: '핵심: 무기 강화 효율과 근접 연계 극대화', b2b: '운용: 버프 유지 → 돌진 타격 → 생존 스킬로 공백 최소화', b2c: '장점: 손맛 강함, 단일 대상 높은 순간 화력', b2d: '용병: Act2 NM 공격형 (전선 유지)',
-        b3t: '혼돈 마법사 (Chaos Caster)', b3a: '핵심: 광역 클리어 + 보스 폭딜 균형', b3b: '운용: 원거리 견제 → 광역 누적 → 보조 스킬 딜 압축', b3c: '장점: 파밍 속도 우수, 선제 타격 안정적', b3d: '용병: Act2 NM 공격형 + Infinity 추천',
-        lr1: '1~15: 노멀 Act1~2, 트리 입문 스킬', lr2: '15~24: 노멀 Act3~5, 핵심 스킬 1차 완성', lr3: '24~40: 나이트메어, 톰브런/카우런', lr4: '40~60: NM 카오스 런, 코어 빌드 완성', lr5: '60~80: 헬 바알런 + 카오스런', lr6: '80~99: 헬 바알/니힐라탁/카오스 런 반복',
-        rwTitle: '악마술사 중심 룬워드 가이드', lvTitle: '레벨별 경험치 효율 테이블 (clvl 1~99)',
-      },
-      en: {
-        title: 'Diablo 2 Resurrected D2R Guide',
-        subtitle: 'Warlock Builds · New Runewords · Level 1~99 XP Efficiency Table',
-        toc1: 'Warlock Builds', toc2: 'Runewords', toc3: 'Leveling Guide',
-        warlockTitle: 'Warlock Build Guide — Reign of the Warlock DLC',
-        warlockSrc: 'Based on official Blizzard descriptions',
-        catSkill: 'Skill Trees', catBuild: 'Popular Builds', catRoute: 'Leveling Route',
-        st1: 'Demon', st1d: 'Summon hellspawn to dominate the battlefield. Focus on minion uptime, damage, and map control.',
-        st2: 'Grotesque', st2d: 'Enhance weapons with forbidden magic for devastating melee combat. Focus on buff uptime and burst damage.',
-        st3: 'Chaos', st3d: 'Unleash hellfire and darkness at range. Focus on AoE, timing, and resource management.',
-        b1t: 'Demonologist (Summoner)', b1a: 'Core: Max demon tree, boost minion count/power', b1b: 'Playstyle: Summon then stay safe, debuff to amplify', b1c: 'Pros: Stable, beginner-friendly, HC viable', b1d: 'Merc: Act2 NM Offensive (Might Aura)',
-        b2t: 'Grotesque Melee', b2a: 'Core: Maximize weapon enhancement and melee combos', b2b: 'Playstyle: Buff → charge → survive cooldowns', b2c: 'Pros: Satisfying gameplay, high single-target burst', b2d: 'Merc: Act2 NM Offensive',
-        b3t: 'Chaos Caster', b3a: 'Core: Balance AoE clear with boss DPS', b3b: 'Playstyle: Ranged control → AoE stacking → burst rotation', b3c: 'Pros: Fast farming, safe pre-emptive strikes', b3d: 'Merc: Act2 NM Offensive + Infinity recommended',
-        lr1: '1~15: Normal Act1~2, intro skills', lr2: '15~24: Normal Act3~5, core skill foundation', lr3: '24~40: Nightmare, Tomb/Cow runs', lr4: '40~60: NM Chaos runs, complete build', lr5: '60~80: Hell Baal + Chaos runs', lr6: '80~99: Hell Baal/Nihlathak/Chaos grind',
-        rwTitle: 'Warlock Runeword Guide', lvTitle: 'XP Efficiency Table (clvl 1~99)',
-      },
-      ja: {
-        title: 'ディアブロ2 リザレクテッド D2R ガイド',
-        subtitle: 'ウォーロック ビルド · 新ルーンワード · レベル1~99 経験値効率表',
-        toc1: 'ウォーロック ビルド', toc2: 'ルーンワード', toc3: 'レベリングガイド',
-        warlockTitle: 'ウォーロック ビルドガイド — Reign of the Warlock DLC',
-        warlockSrc: 'ブリザード公式説明に基づく',
-        catSkill: 'スキルツリー', catBuild: '人気ビルド3種', catRoute: 'レベリングルート',
-        st1: 'デーモン (Demon)', st1d: '地獄の種子を支配し、悪魔を召喚して戦場を制圧する召喚系統。召喚獣の維持力・火力・占有力が重要。',
-        st2: 'グロテスク (Grotesque)', st2d: '魔法で武器を強化し、破壊的な近接戦闘を行う強化系統。バフ維持・瞬間火力・生存補強が重要。',
-        st3: 'カオス (Chaos)', st3d: '地獄の炎と闇を遠距離に放つキャスター系統。範囲攻撃・爆発タイミング・リソース管理が重要。',
-        b1t: 'デモノロジスト (召喚型)', b1a: 'コア: デーモンツリー最優先、召喚数・維持力・攻撃力強化', b1b: '運用: 先に召喚後、安全な位置からデバフで火力増幅', b1c: '長所: 安定的、初心者向け、ハードコア適合', b1d: '傭兵: Act2 NM 攻撃型 (マイトオーラ)',
-        b2t: 'グロテスク近接', b2a: 'コア: 武器強化効率と近接コンボ極大化', b2b: '運用: バフ維持→突進攻撃→生存スキルで隙を最小化', b2c: '長所: 操作感が良い、単体高い瞬間火力', b2d: '傭兵: Act2 NM 攻撃型',
-        b3t: 'カオスキャスター', b3a: 'コア: 範囲クリア＋ボスDPSのバランス', b3b: '運用: 遠距離牽制→範囲蓄積→補助スキルでダメージ圧縮', b3c: '長所: ファーミング速度優秀、先制攻撃で安定', b3d: '傭兵: Act2 NM 攻撃型 + Infinity推奨',
-        lr1: '1~15: ノーマル Act1~2、入門スキル', lr2: '15~24: ノーマル Act3~5、コアスキル基礎', lr3: '24~40: ナイトメア、トゥームラン/カウラン', lr4: '40~60: NM カオスラン、ビルド完成', lr5: '60~80: ヘル バールラン＋カオスラン', lr6: '80~99: ヘル バール/ニーラサック/カオスラン反復',
-        rwTitle: 'ウォーロック ルーンワードガイド', lvTitle: '経験値効率テーブル (clvl 1~99)',
-      },
-      zh: {
-        title: '暗黑破壞神2 重製版 D2R 攻略',
-        subtitle: '術士(Warlock) 配裝 · 新符文之語 · 1~99等級經驗效率表',
-        toc1: '術士配裝', toc2: '符文之語', toc3: '練等攻略',
-        warlockTitle: '術士 (Warlock) 配裝攻略 — Reign of the Warlock DLC',
-        warlockSrc: '基於暴雪官方說明',
-        catSkill: '技能樹', catBuild: '熱門配裝3種', catRoute: '練等路線',
-        st1: '惡魔 (Demon)', st1d: '支配地獄種子召喚惡魔控制戰場的召喚系。召喚獸維持力·火力·佔據為核心。',
-        st2: '畸變 (Grotesque)', st2d: '以魔法強化武器進行毀滅性近戰的強化系。增益維持·爆發傷害·生存補強為核心。',
-        st3: '混沌 (Chaos)', st3d: '遠程釋放地獄之火與黑暗的施法系。範圍打擊·爆發時機·資源管理為核心。',
-        b1t: '惡魔召喚師 (Demonologist)', b1a: '核心: 惡魔樹最優先，強化召喚數量·維持力·攻擊力', b1b: '玩法: 先召喚後安全站位，減益增幅火力', b1c: '優點: 穩定、新手友好、硬核適合', b1d: '傭兵: Act2 NM 攻擊型 (力量光環)',
-        b2t: '畸變近戰', b2a: '核心: 武器強化效率與近戰連攜極大化', b2b: '玩法: 維持增益→突進打擊→生存技能補空檔', b2c: '優點: 手感好，單體高爆發', b2d: '傭兵: Act2 NM 攻擊型',
-        b3t: '混沌法師 (Chaos Caster)', b3a: '核心: 範圍清怪＋Boss爆發平衡', b3b: '玩法: 遠程牽制→範圍累積→輔助技能壓縮傷害', b3c: '優點: 刷圖速度快，先手打擊穩定', b3d: '傭兵: Act2 NM 攻擊型 + Infinity推薦',
-        lr1: '1~15: 普通 Act1~2，入門技能', lr2: '15~24: 普通 Act3~5，核心技能基礎', lr3: '24~40: 惡夢，墓地跑/牛場跑', lr4: '40~60: NM 混沌跑，完成配裝', lr5: '60~80: 地獄 巴爾跑＋混沌跑', lr6: '80~99: 地獄 巴爾/尼拉塞克/混沌跑反覆',
-        rwTitle: '術士符文之語攻略', lvTitle: '經驗值效率表 (clvl 1~99)',
+<script>
+// ============ RUNEWORD DATA (multilingual) ============
+const runewords = {
+  newRw: [
+    {
+      name: "Authority",
+      runes: "Hel + Shael + Ral",
+      type: { ko:"갑옷 (Body Armor) · 3소켓 · Req Lv 29", en:"Body Armor · 3 Sockets · Req Lv 29", ja:"鎧 (ボディアーマー) · 3ソケット · Req Lv 29", zh:"盔甲 · 3孔 · 需求等級 29" },
+      stats: {
+        ko: [
+          "피격 시 2% 확률로 Lv10 사이킥 워드 시전",
+          "공격 시 10% 확률로 Lv15 미아즈마 체인 시전",
+          "<b>+2 악마술사 스킬 레벨</b>",
+          "+40-60% 강화 데미지",
+          "장비 요구치 -15%",
+          "+20% 빠른 피격 회복",
+          "화염 저항 +30%"
+        ],
+        en: [
+          "2% Chance to cast Lv10 Psychic Ward when struck",
+          "10% Chance to cast Lv15 Miasma Chain on striking",
+          "<b>+2 to Warlock Skill Levels</b>",
+          "+40-60% Enhanced Damage",
+          "Requirements -15%",
+          "+20% Faster Hit Recovery",
+          "Fire Resist +30%"
+        ],
+        ja: [
+          "被弾時2%の確率でLv10サイキックワード発動",
+          "攻撃時10%の確率でLv15ミアズマチェーン発動",
+          "<b>+2 ウォーロックスキルレベル</b>",
+          "+40-60% 強化ダメージ",
+          "装備条件 -15%",
+          "+20% ヒットリカバリー高速化",
+          "火炎耐性 +30%"
+        ],
+        zh: [
+          "被擊中時2%機率施放Lv10靈能守護",
+          "攻擊時10%機率施放Lv15瘴氣鎖鏈",
+          "<b>+2 術士技能等級</b>",
+          "+40-60% 強化傷害",
+          "裝備需求 -15%",
+          "+20% 快速打擊恢復",
+          "火焰抗性 +30%"
+        ]
       }
-    };
-    function setLang(lang) {
-      const d = i18n[lang] || i18n.ko;
-      document.querySelectorAll('.lang-bar button').forEach(b => b.classList.remove('active'));
-      document.querySelector(`.lang-bar button[onclick="setLang('${lang}')"]`).classList.add('active');
-      Object.keys(d).forEach(k => { const el = document.getElementById(k); if (el) el.textContent = d[k]; });
-      document.documentElement.lang = lang === 'zh' ? 'zh-TW' : lang;
+    },
+    {
+      name: "Void",
+      runes: "Thul + Zod + Ist",
+      type: { ko:"단검 (Daggers) · 3소켓 · Req Lv 69", en:"Daggers · 3 Sockets · Req Lv 69", ja:"ダガー · 3ソケット · Req Lv 69", zh:"匕首 · 3孔 · 需求等級 69" },
+      stats: {
+        ko: [
+          "<b>+2 전체 스킬</b>",
+          "+40% 빠른 시전 속도",
+          "+10-15% 마법 스킬 데미지",
+          "+1-3 어비스(Abyss)",
+          "+8-12 전체 능력치",
+          "Lv4 디크리피파이 (35/35 충전)",
+          "냉기 데미지 3-14 추가",
+          "<b>파괴 불가</b>",
+          "매직 아이템 발견 확률 +30%"
+        ],
+        en: [
+          "<b>+2 to All Skills</b>",
+          "+40% Faster Cast Rate",
+          "+10-15% to Magic Skill Damage",
+          "+1-3 to Abyss",
+          "+8-12 to All Attributes",
+          "Level 4 Decrepify (35/35 Charges)",
+          "Adds 3-14 Cold Damage",
+          "<b>Indestructible</b>",
+          "30% Better Chance of Getting Magic Items"
+        ],
+        ja: [
+          "<b>+2 全スキル</b>",
+          "+40% キャスト速度上昇",
+          "+10-15% 魔法スキルダメージ",
+          "+1-3 アビス(Abyss)",
+          "+8-12 全能力値",
+          "Lv4 ディクリピファイ (35/35チャージ)",
+          "冷気ダメージ 3-14 追加",
+          "<b>破壊不可</b>",
+          "マジックアイテム発見率 +30%"
+        ],
+        zh: [
+          "<b>+2 所有技能</b>",
+          "+40% 快速施法速度",
+          "+10-15% 魔法技能傷害",
+          "+1-3 深淵(Abyss)",
+          "+8-12 所有屬性",
+          "Lv4 衰老 (35/35充能)",
+          "增加冷傷害 3-14",
+          "<b>堅不可摧</b>",
+          "魔法物品發現率 +30%"
+        ]
+      }
+    },
+    {
+      name: "Vigilance",
+      runes: "Dol + Gul",
+      type: { ko:"그리모어/방패/축소머리/타지 · 2소켓 · Req Lv 53", en:"Grimoires/Shields/Shrunken Heads/Targes · 2 Sockets · Req Lv 53", ja:"グリモア/盾/シュランクンヘッド/タージ · 2ソケット · Req Lv 53", zh:"魔法書/盾牌/縮小頭顱/小圓盾 · 2孔 · 需求等級 53" },
+      stats: {
+        ko: [
+          "피격 시 5% 확률로 Lv10 링 오브 파이어 시전",
+          "+10% 빠른 이동 속도",
+          "+30% 빠른 블록 속도",
+          "+20-40 생명력",
+          "+20-40 마나",
+          "<b>전체 저항 +25-35</b>",
+          "+75-100% 강화 방어력",
+          "생명력 재생 +7",
+          "최대 독 저항 +5%"
+        ],
+        en: [
+          "5% Chance to cast Lv10 Ring of Fire when struck",
+          "+10% Faster Run/Walk",
+          "+30% Faster Block Rate",
+          "+20-40 to Life",
+          "+20-40 to Mana",
+          "<b>All Resistances +25-35</b>",
+          "+75-100% Enhanced Defense",
+          "Replenish Life +7",
+          "+5% to Maximum Poison Resist"
+        ],
+        ja: [
+          "被弾時5%の確率でLv10リングオブファイア発動",
+          "+10% 移動速度上昇",
+          "+30% ブロック速度上昇",
+          "+20-40 ライフ",
+          "+20-40 マナ",
+          "<b>全耐性 +25-35</b>",
+          "+75-100% 強化防御",
+          "ライフ再生 +7",
+          "最大毒耐性 +5%"
+        ],
+        zh: [
+          "被擊中時5%機率施放Lv10烈焰之環",
+          "+10% 快速跑步/行走",
+          "+30% 快速格擋速度",
+          "+20-40 生命值",
+          "+20-40 法力值",
+          "<b>全抗性 +25-35</b>",
+          "+75-100% 強化防禦",
+          "生命回復 +7",
+          "最大毒素抗性 +5%"
+        ]
+      }
+    },
+    {
+      name: "Ritual",
+      runes: "Amn + Shael + Ohm",
+      type: { ko:"단검 (Daggers) · 3소켓 · Req Lv 57", en:"Daggers · 3 Sockets · Req Lv 57", ja:"ダガー · 3ソケット · Req Lv 57", zh:"匕首 · 3孔 · 需求等級 57" },
+      stats: {
+        ko: [
+          "피격 시 13% 확률로 Lv1 시길 데스 시전",
+          "+40% 공격 속도 증가",
+          "+250-320% 강화 데미지",
+          "+150-250% 악마 추가 데미지",
+          "+200-260% 공격 등급 보너스",
+          "킬당 +3-5 생명력 회복",
+          "처치한 몬스터 부활 불가",
+          "타격 시 7% 생명력 흡수"
+        ],
+        en: [
+          "13% Chance to cast Lv1 Sigil Death when struck",
+          "+40% Increased Attack Speed",
+          "+250-320% Enhanced Damage",
+          "+150-250% Damage to Demons",
+          "+200-260% Bonus to Attack Rating",
+          "+3-5 Life after each Kill",
+          "Slain Monsters Rest in Peace",
+          "7% Life stolen per hit"
+        ],
+        ja: [
+          "被弾時13%の確率でLv1シギルデス発動",
+          "+40% 攻撃速度上昇",
+          "+250-320% 強化ダメージ",
+          "+150-250% デーモン追加ダメージ",
+          "+200-260% 攻撃値ボーナス",
+          "キルごとに+3-5 ライフ回復",
+          "倒したモンスターは復活しない",
+          "ヒットごとに7% ライフ吸収"
+        ],
+        zh: [
+          "被擊中時13%機率施放Lv1符印之死",
+          "+40% 攻擊速度增加",
+          "+250-320% 強化傷害",
+          "+150-250% 對惡魔傷害",
+          "+200-260% 攻擊準確率加成",
+          "每次擊殺+3-5 生命值恢復",
+          "被殺怪物不再復活",
+          "每次命中竊取7%生命值"
+        ]
+      }
     }
-    // auto-detect
-    const bl = (navigator.language || '').toLowerCase();
-    if (bl.startsWith('en')) setLang('en');
-    else if (bl.startsWith('ja')) setLang('ja');
-    else if (bl.startsWith('zh')) setLang('zh');
+  ],
+  classicRw: [
+    {
+      name: "Spirit",
+      runes: "Tal + Thul + Ort + Amn",
+      type: { ko:"방패/검 · 4소켓 · Req Lv 25", en:"Shields/Swords · 4 Sockets · Req Lv 25", ja:"盾/剣 · 4ソケット · Req Lv 25", zh:"盾牌/劍 · 4孔 · 需求等級 25" },
+      stats: {
+        ko: ["+2 전체 스킬, +25-35% 시전 속도, +55% 피격 회복, +250 미사일 방어, +22 활력, +89-112 마나"],
+        en: ["+2 All Skills, +25-35% FCR, +55% FHR, +250 Def vs Missile, +22 Vit, +89-112 Mana"],
+        ja: ["+2 全スキル, +25-35% キャスト速度, +55% ヒットリカバリー, +250 ミサイル防御, +22 体力, +89-112 マナ"],
+        zh: ["+2 所有技能, +25-35% 施法速度, +55% 打擊恢復, +250 飛射防禦, +22 體力, +89-112 法力"]
+      }
+    },
+    {
+      name: "Enigma",
+      runes: "Jah + Ith + Ber",
+      type: { ko:"갑옷 · 3소켓 · Req Lv 65", en:"Body Armor · 3 Sockets · Req Lv 65", ja:"鎧 · 3ソケット · Req Lv 65", zh:"盔甲 · 3孔 · 需求等級 65" },
+      stats: {
+        ko: ["+2 전체 스킬, +45% 이동 속도, +1 텔레포트, +750-775 방어, 레벨당 힘/MF 증가, 데미지 감소 8%"],
+        en: ["+2 All Skills, +45% FRW, +1 Teleport, +750-775 Def, +Str/MF per level, DR 8%"],
+        ja: ["+2 全スキル, +45% 移動速度, +1 テレポート, +750-775 防御, レベルごとに筋力/MF増加, ダメージ軽減 8%"],
+        zh: ["+2 所有技能, +45% 跑步速度, +1 傳送, +750-775 防禦, 每級+力量/MF, 傷害減少 8%"]
+      }
+    },
+    {
+      name: "Insight",
+      runes: "Ral + Tir + Tal + Sol",
+      type: { ko:"폴암/지팡이/미사일 · 4소켓 · Req Lv 27", en:"Polearms/Staves/Missiles · 4 Sockets · Req Lv 27", ja:"ポールアーム/杖/飛び道具 · 4ソケット · Req Lv 27", zh:"長柄武器/法杖/飛射武器 · 4孔 · 需求等級 27" },
+      stats: {
+        ko: ["Lv12-17 명상 오라, +35% 시전 속도, +200-260% 강화 데미지, 화염 데미지 5-30 추가, +23 활력"],
+        en: ["Lv12-17 Meditation Aura, +35% FCR, +200-260% ED, Adds 5-30 Fire Dmg, +23 Vit"],
+        ja: ["Lv12-17 メディテーションオーラ, +35% キャスト速度, +200-260% 強化ダメージ, 火炎ダメージ 5-30追加, +23 体力"],
+        zh: ["Lv12-17 冥想光環, +35% 施法速度, +200-260% 強化傷害, 增加火傷害 5-30, +23 體力"]
+      }
+    },
+    {
+      name: "Infinity",
+      runes: "Ber + Mal + Ber + Ist",
+      type: { ko:"폴암 · 4소켓 · Req Lv 63", en:"Polearms · 4 Sockets · Req Lv 63", ja:"ポールアーム · 4ソケット · Req Lv 63", zh:"長柄武器 · 4孔 · 需求等級 63" },
+      stats: {
+        ko: ["Lv12 확신 오라, +255-325% 강화 데미지, 적 번개 저항 -45~55%, 40% 분쇄 타격, 몬스터 회복 방지"],
+        en: ["Lv12 Conviction Aura, +255-325% ED, -45-55% Enemy Lightning Res, 40% Crushing Blow, Prevent Monster Heal"],
+        ja: ["Lv12 コンビクションオーラ, +255-325% 強化ダメージ, 敵の雷耐性 -45~55%, 40% 粉砕打撃, モンスター回復阻止"],
+        zh: ["Lv12 信念光環, +255-325% 強化傷害, 敵人閃電抗性 -45~55%, 40% 粉碎打擊, 阻止怪物恢復"]
+      }
+    }
+  ]
+};
 
-    // ===== XP TABLE =====
-    const areas = {
-      "Normal": { cls: "group-normal", acts: [6, 17, 23, 27, 30] },
-      "Nightmare": { cls: "group-nightmare", acts: [40, 46, 51, 55, 59] },
-      "Hell": { cls: "group-hell", acts: [70, 75, 80, 83, 85] },
-    };
-    const under25Table = [5,5,24,43,62,81,100,100,100,100,100,100,100,100,100,100,88,68,36,15,5,5];
-    const getUnder25 = d => d < -10 || d > 10 ? 5 : under25Table[d+10];
-    const lowPen = d => d<=5?100:d===6?81:d===7?62:d===8?43:d===9?24:5;
-    const lateP = {70:95.31,71:90.63,72:85.94,73:81.25,74:76.56,75:71.88,76:67.19,77:62.50,78:57.81,79:53.13,80:48.44,81:43.75,82:39.06,83:34.38,84:29.69,85:25,86:18.75,87:14.06,88:10.55,89:7.81,90:5.96,91:4.49,92:3.42,93:2.54,94:1.95,95:1.46,96:1.07,97:.78,98:.49,99:.29};
-    const baseExp = (c,m) => {
-      const d=m-c;
-      if(c<25) return getUnder25(d);
-      if(Math.abs(d)<=5) return 100;
-      if(d>5) return Math.min(100,Math.round(c/m*100));
-      return lowPen(-d);
-    };
-    const finalExp = (c,m) => {
-      let v=baseExp(c,m);
-      if(c>=70) v=v*(lateP[c]??0.29)/100;
-      return Math.max(5,Math.round(v*100)/100);
-    };
-    const cls4v = v => v>=99.999?'eff-100':v>=80?'eff-80':v>=50?'eff-50':v>=20?'eff-20':'eff-5';
-    const hd=document.getElementById('xpHead'), bd=document.getElementById('xpBody');
-    const r1=document.createElement('tr'), lvh=document.createElement('th');
-    lvh.rowSpan=2; lvh.textContent='Lv'; lvh.className='level'; r1.appendChild(lvh);
-    Object.entries(areas).forEach(([n,d])=>{const th=document.createElement('th');th.colSpan=5;th.textContent=`${n} (Act 1~5)`;th.className=d.cls;r1.appendChild(th);});
-    const r2=document.createElement('tr');
-    Object.values(areas).forEach(d=>{for(let i=1;i<=5;i++){const th=document.createElement('th');th.textContent=`A${i}`;th.className=d.cls;r2.appendChild(th);}});
-    hd.appendChild(r1); hd.appendChild(r2);
-    for(let c=1;c<=99;c++){
-      const tr=document.createElement('tr'), lv=document.createElement('td');
-      lv.className='level'; lv.textContent=c; tr.appendChild(lv);
-      Object.values(areas).forEach(({acts})=>acts.forEach(m=>{const p=finalExp(c,m),td=document.createElement('td');td.className=cls4v(p);td.textContent=p.toFixed(1)+'%';tr.appendChild(td);}));
-      bd.appendChild(tr);
-    }
-  </script>
+// ============ i18n ============
+const i18n = {
+  ko: {
+    title:'디아블로2 레저렉션 D2R 가이드', subtitle:'악마술사(Warlock) 빌드 · 신규 룬워드 · 레벨업 경험치 효율표 (1~99)',
+    toc1:'악마술사 빌드', toc2:'룬워드', toc3:'레벨 가이드',
+    warlockTitle:'악마술사 (Warlock) 빌드 가이드 — Reign of the Warlock DLC', warlockSrc:'블리자드 공식 설명 기반',
+    catSkill:'스킬 트리', catBuild:'인기 빌드 3종', catRoute:'레벨링 루트',
+    st1:'악마 (Demon)', st1d:'지옥 종자를 지배하여 악마를 소환하고 전투를 통제하는 소환 계열. 소환수 유지력·화력·전장 점유가 핵심.',
+    st2:'기괴 (Grotesque)', st2d:'마법으로 무기를 강화하여 파괴적인 근접 전투를 수행. 강화 유지 시간·순간 폭딜·생존 보강이 핵심.',
+    st3:'혼돈 (Chaos)', st3d:'지옥의 불과 어둠을 원거리로 방출하는 캐스터 계열. 광역 타격·폭발 타이밍·자원 순환이 핵심.',
+    b1t:'악마 소환사 (Demonologist)', b1a:'핵심: 악마 트리 최우선, 소환수 수·유지력·공격력 강화', b1b:'운용: 선소환 후 안전 위치 유지, 디버프로 화력 증폭', b1c:'장점: 안정적·초보 친화·하드코어 적합', b1d:'용병: Act2 NM 공격형 (마이트 오라)',
+    b2t:'기괴 근접 (Grotesque Melee)', b2a:'핵심: 무기 강화 효율과 근접 연계 극대화', b2b:'운용: 버프 유지 → 돌진 타격 → 생존 스킬로 공백 최소화', b2c:'장점: 손맛 강함, 단일 대상 높은 순간 화력', b2d:'용병: Act2 NM 공격형 (전선 유지)',
+    b3t:'혼돈 마법사 (Chaos Caster)', b3a:'핵심: 광역 클리어 + 보스 폭딜 균형', b3b:'운용: 원거리 견제 → 광역 누적 → 보조 스킬 딜 압축', b3c:'장점: 파밍 속도 우수, 선제 타격 안정적', b3d:'용병: Act2 NM 공격형 + Infinity 추천',
+    lr1:'1~15: 노멀 Act1~2, 트리 입문 스킬', lr2:'15~24: 노멀 Act3~5, 핵심 스킬 1차 완성', lr3:'24~40: 나이트메어, 톰브런/카우런', lr4:'40~60: NM 카오스 런, 코어 빌드 완성', lr5:'60~80: 헬 바알런 + 카오스런', lr6:'80~99: 헬 바알/니힐라탁/카오스 런 반복',
+    rwTitle:'악마술사 중심 룬워드 가이드', catNewRw:'신규 ROTW 룬워드', catClassicRw:'클래식 룬워드 (악마술사 유용)',
+    lvTitle:'레벨별 경험치 효율 테이블 (clvl 1~99)', lvSrc:'D2R v1.10+ 경험치 규칙 기반 · diablo2.diablowiki.net Area Level 데이터',
+  },
+  en: {
+    title:'Diablo 2 Resurrected D2R Guide', subtitle:'Warlock Builds · New Runewords · Level 1~99 XP Efficiency Table',
+    toc1:'Warlock Builds', toc2:'Runewords', toc3:'Leveling Guide',
+    warlockTitle:'Warlock Build Guide — Reign of the Warlock DLC', warlockSrc:'Based on official Blizzard descriptions',
+    catSkill:'Skill Trees', catBuild:'Popular Builds', catRoute:'Leveling Route',
+    st1:'Demon', st1d:'Summon hellspawn to dominate the battlefield. Focus on minion uptime, damage, and map control.',
+    st2:'Grotesque', st2d:'Enhance weapons with forbidden magic for devastating melee combat. Focus on buff uptime and burst damage.',
+    st3:'Chaos', st3d:'Unleash hellfire and darkness at range. Focus on AoE, timing, and resource management.',
+    b1t:'Demonologist (Summoner)', b1a:'Core: Max demon tree, boost minion count/power', b1b:'Playstyle: Summon then stay safe, debuff to amplify', b1c:'Pros: Stable, beginner-friendly, HC viable', b1d:'Merc: Act2 NM Offensive (Might Aura)',
+    b2t:'Grotesque Melee', b2a:'Core: Maximize weapon enhancement and melee combos', b2b:'Playstyle: Buff → charge → survive cooldowns', b2c:'Pros: Satisfying gameplay, high single-target burst', b2d:'Merc: Act2 NM Offensive',
+    b3t:'Chaos Caster', b3a:'Core: Balance AoE clear with boss DPS', b3b:'Playstyle: Ranged control → AoE stacking → burst rotation', b3c:'Pros: Fast farming, safe pre-emptive strikes', b3d:'Merc: Act2 NM Offensive + Infinity recommended',
+    lr1:'1~15: Normal Act1~2, intro skills', lr2:'15~24: Normal Act3~5, core skill foundation', lr3:'24~40: Nightmare, Tomb/Cow runs', lr4:'40~60: NM Chaos runs, complete build', lr5:'60~80: Hell Baal + Chaos runs', lr6:'80~99: Hell Baal/Nihlathak/Chaos grind',
+    rwTitle:'Warlock Runeword Guide', catNewRw:'New ROTW Runewords', catClassicRw:'Classic Runewords (Warlock-useful)',
+    lvTitle:'XP Efficiency Table (clvl 1~99)', lvSrc:'Based on D2R v1.10+ XP rules · diablo2.diablowiki.net Area Level data',
+  },
+  ja: {
+    title:'ディアブロ2 リザレクテッド D2R ガイド', subtitle:'ウォーロック ビルド · 新ルーンワード · Lv1~99 経験値効率表',
+    toc1:'ウォーロック ビルド', toc2:'ルーンワード', toc3:'レベリングガイド',
+    warlockTitle:'ウォーロック ビルドガイド — Reign of the Warlock DLC', warlockSrc:'ブリザード公式説明に基づく',
+    catSkill:'スキルツリー', catBuild:'人気ビルド3種', catRoute:'レベリングルート',
+    st1:'デーモン (Demon)', st1d:'地獄の種子を支配し、悪魔を召喚して戦場を制圧する召喚系統。維持力・火力・占有力が重要。',
+    st2:'グロテスク (Grotesque)', st2d:'魔法で武器を強化し破壊的な近接戦闘を行う強化系統。バフ維持・瞬間火力・生存補強が重要。',
+    st3:'カオス (Chaos)', st3d:'地獄の炎と闇を遠距離に放つキャスター系統。範囲攻撃・爆発タイミング・リソース管理が重要。',
+    b1t:'デモノロジスト (召喚型)', b1a:'コア: デーモンツリー最優先、召喚数・維持力・攻撃力強化', b1b:'運用: 先に召喚後、安全な位置からデバフで増幅', b1c:'長所: 安定、初心者向け、HC適合', b1d:'傭兵: Act2 NM 攻撃型 (マイトオーラ)',
+    b2t:'グロテスク近接', b2a:'コア: 武器強化効率と近接コンボ極大化', b2b:'運用: バフ維持→突進攻撃→生存スキルで隙最小化', b2c:'長所: 操作感良好、高い瞬間火力', b2d:'傭兵: Act2 NM 攻撃型',
+    b3t:'カオスキャスター', b3a:'コア: 範囲クリア＋ボスDPSのバランス', b3b:'運用: 遠距離牽制→範囲蓄積→補助スキルで圧縮', b3c:'長所: ファーミング速度優秀、先制攻撃安定', b3d:'傭兵: Act2 NM 攻撃型 + Infinity推奨',
+    lr1:'1~15: ノーマル Act1~2、入門スキル', lr2:'15~24: ノーマル Act3~5、コアスキル基礎', lr3:'24~40: ナイトメア、トゥーム/カウラン', lr4:'40~60: NM カオスラン、ビルド完成', lr5:'60~80: ヘル バール+カオスラン', lr6:'80~99: ヘル バール/ニーラサック/カオス反復',
+    rwTitle:'ウォーロック ルーンワードガイド', catNewRw:'新 ROTW ルーンワード', catClassicRw:'クラシック ルーンワード（ウォーロック向け）',
+    lvTitle:'経験値効率テーブル (clvl 1~99)', lvSrc:'D2R v1.10+ 経験値ルール基準 · diablo2.diablowiki.net エリアレベルデータ',
+  },
+  zh: {
+    title:'暗黑破壞神2 重製版 D2R 攻略', subtitle:'術士(Warlock) 配裝 · 新符文之語 · 1~99等級經驗效率表',
+    toc1:'術士配裝', toc2:'符文之語', toc3:'練等攻略',
+    warlockTitle:'術士 (Warlock) 配裝攻略 — Reign of the Warlock DLC', warlockSrc:'基於暴雪官方說明',
+    catSkill:'技能樹', catBuild:'熱門配裝3種', catRoute:'練等路線',
+    st1:'惡魔 (Demon)', st1d:'支配地獄種子召喚惡魔控制戰場的召喚系。維持力·火力·佔據為核心。',
+    st2:'畸變 (Grotesque)', st2d:'以魔法強化武器進行毀滅性近戰的強化系。增益維持·爆發傷害·生存補強為核心。',
+    st3:'混沌 (Chaos)', st3d:'遠程釋放地獄之火與黑暗的施法系。範圍打擊·爆發時機·資源管理為核心。',
+    b1t:'惡魔召喚師 (Demonologist)', b1a:'核心: 惡魔樹最優先，強化召喚數量·維持力·攻擊力', b1b:'玩法: 先召喚後安全站位，減益增幅火力', b1c:'優點: 穩定、新手友好、HC適合', b1d:'傭兵: Act2 NM 攻擊型 (力量光環)',
+    b2t:'畸變近戰', b2a:'核心: 武器強化效率與近戰連攜極大化', b2b:'玩法: 增益維持→突進打擊→生存技能補空檔', b2c:'優點: 手感好，單體高爆發', b2d:'傭兵: Act2 NM 攻擊型',
+    b3t:'混沌法師 (Chaos Caster)', b3a:'核心: 範圍清怪＋Boss爆發平衡', b3b:'玩法: 遠程牽制→範圍累積→輔助壓縮傷害', b3c:'優點: 刷圖速度快，先手打擊穩定', b3d:'傭兵: Act2 NM 攻擊型 + Infinity推薦',
+    lr1:'1~15: 普通 Act1~2，入門技能', lr2:'15~24: 普通 Act3~5，核心技能基礎', lr3:'24~40: 惡夢，墓地/牛場跑', lr4:'40~60: NM 混沌跑，完成配裝', lr5:'60~80: 地獄 巴爾+混沌跑', lr6:'80~99: 地獄 巴爾/尼拉塞克/混沌反覆',
+    rwTitle:'術士符文之語攻略', catNewRw:'新 ROTW 符文之語', catClassicRw:'經典符文之語（術士實用）',
+    lvTitle:'經驗值效率表 (clvl 1~99)', lvSrc:'基於 D2R v1.10+ 經驗規則 · diablo2.diablowiki.net 區域等級資料',
+  }
+};
+
+let curLang = 'ko';
+function setLang(lang) {
+  curLang = lang;
+  const d = i18n[lang] || i18n.ko;
+  document.querySelectorAll('.lang-bar button').forEach(b => { b.classList.toggle('active', b.dataset.lang === lang); });
+  Object.keys(d).forEach(k => { const el = document.getElementById(k); if (el) el.textContent = d[k]; });
+  document.documentElement.lang = lang === 'zh' ? 'zh-TW' : lang;
+  renderRunewords();
+}
+document.querySelectorAll('.lang-bar button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+
+// ============ Render runewords ============
+function renderRunewords() {
+  const lang = curLang;
+  ['newRw','classicRw'].forEach(cat => {
+    const container = document.getElementById(cat === 'newRw' ? 'rwNewCards' : 'rwClassicCards');
+    container.innerHTML = '';
+    runewords[cat].forEach(rw => {
+      const div = document.createElement('div'); div.className = 'rw-card';
+      const badge = cat === 'newRw' ? '<span class="new-badge">ROTW</span>' : '';
+      const typeStr = typeof rw.type === 'string' ? rw.type : (rw.type[lang] || rw.type.en);
+      const stats = rw.stats[lang] || rw.stats.en;
+      div.innerHTML = `<h4>${rw.name} ${badge}</h4><div class="rw-runes">${rw.runes}</div><div class="rw-type">${typeStr}</div><ul>${stats.map(s=>`<li>${s}</li>`).join('')}</ul>`;
+      container.appendChild(div);
+    });
+  });
+}
+
+// auto-detect language
+const bl = (navigator.language || '').toLowerCase();
+if (bl.startsWith('en')) setLang('en');
+else if (bl.startsWith('ja')) setLang('ja');
+else if (bl.startsWith('zh')) setLang('zh');
+else renderRunewords(); // default ko
+
+// ============ XP TABLE ============
+// Area levels from diablo2.diablowiki.net (representative main progression areas per act)
+// Normal: Act1 mid=8(Tamoe), Act2=16(Oasis), Act3=23(Upper Kurast), Act4=27(City/River), Act5=40(WSK2)
+// Nightmare: Act1=40(Outer/Barracks), Act2=47(Palace), Act3=53(Travincal), Act4=57(River), Act5=65(WSK)
+// Hell: Act1=70(Barracks/Jail), Act2=77(Lost City), Act3=82(Travincal), Act4=85(Chaos/River), Act5=85(WSK/Throne)
+const areas = {
+  "Normal":    { cls:"group-normal",    acts:[8, 16, 23, 27, 40] },
+  "Nightmare": { cls:"group-nightmare", acts:[40, 47, 53, 57, 65] },
+  "Hell":      { cls:"group-hell",      acts:[70, 77, 82, 85, 85] },
+};
+
+// Under-25: penalty table from diablowiki. Index = (mlvl-clvl)+10
+// diff: -10, -9, -8, -7, -6, -5..-1, 0, +1..+5, +6, +7, +8, +9, +10
+const u25 = [5, 24, 43, 62, 81, 100,100,100,100,100,100,100,100,100,100,100, 88, 68, 36, 15, 5];
+const getU25 = d => d<-10||d>10 ? 5 : u25[d+10];
+
+// 25+: monster lower penalty (clvl - mlvl)
+const lowPen = d => d<=5?100:d===6?81:d===7?62:d===8?43:d===9?24:5;
+
+// 70+: late-game penalty per level (diablowiki v1.10+)
+const lateP={70:95.31,71:90.63,72:85.94,73:81.25,74:76.56,75:71.88,76:67.19,77:62.50,78:57.81,79:53.13,80:48.44,81:43.75,82:39.06,83:34.38,84:29.69,85:25,86:18.75,87:14.06,88:10.55,89:7.91,90:5.96,91:4.49,92:3.42,93:2.54,94:1.95,95:1.46,96:1.07,97:.78,98:.59};
+
+const baseExp = (c,m) => {
+  const d = m - c; // positive = monster higher
+  if (c < 25) return getU25(d);
+  // 25+: within ±5 = 100%
+  if (Math.abs(d) <= 5) return 100;
+  // monster higher: clvl/mlvl ratio
+  if (d > 5) return Math.min(100, c/m * 100);
+  // monster lower: penalty table
+  return lowPen(-d);
+};
+
+const finalExp = (c, m) => {
+  let v = baseExp(c, m);
+  if (c >= 70) {
+    const lp = lateP[c];
+    if (lp !== undefined) v = v * lp / 100;
+    else v = 0; // level 99 = no gain
+  }
+  return Math.max(5, Math.round(v * 100) / 100);
+};
+
+const cls4v = v => v>=99.5?'eff-100':v>=80?'eff-80':v>=50?'eff-50':v>=20?'eff-20':'eff-5';
+
+const hd=document.getElementById('xpHead'), bd=document.getElementById('xpBody');
+const r1=document.createElement('tr');
+const lvh=document.createElement('th'); lvh.rowSpan=2; lvh.textContent='Lv'; lvh.className='level'; r1.appendChild(lvh);
+Object.entries(areas).forEach(([n,d])=>{const th=document.createElement('th');th.colSpan=5;th.textContent=`${n} (Act 1~5)`;th.className=d.cls;r1.appendChild(th);});
+const r2=document.createElement('tr');
+Object.values(areas).forEach(d=>{for(let i=1;i<=5;i++){const th=document.createElement('th');th.textContent=`A${i}`;th.className=d.cls;r2.appendChild(th);}});
+hd.appendChild(r1); hd.appendChild(r2);
+
+for(let c=1;c<=99;c++){
+  const tr=document.createElement('tr');
+  const lv=document.createElement('td'); lv.className='level'; lv.textContent=c; tr.appendChild(lv);
+  Object.values(areas).forEach(({acts})=>acts.forEach(m=>{
+    const p=finalExp(c,m);
+    const td=document.createElement('td'); td.className=cls4v(p); td.textContent=p>=10?Math.round(p)+'%':p.toFixed(1)+'%';
+    tr.appendChild(td);
+  }));
+  bd.appendChild(tr);
+}
+</script>
 </body>
 </html>
