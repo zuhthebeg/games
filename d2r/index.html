@@ -1,399 +1,315 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f)})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
-<link rel="canonical" href="https://game.cocy.io/d2r/">
-<title>디아블로2 레저렉션(D2R) 공략집 - 룬워드, 큐빙, 팁 | game.cocy.io</title>
-<meta name="description" content="디아블로2 레저렉션(D2R) 종합 공략집. 룬워드 목록, 호라드릭 큐브 레시피, 파밍 가이드, 클래스별 공략, 초보 팁 총정리.">
-<meta property="og:title" content="디아블로2 레저렉션(D2R) 공략집">
-<meta property="og:description" content="룬워드, 큐빙 레시피, 파밍 가이드, 클래스별 공략 총정리">
-<meta property="og:url" content="https://game.cocy.io/d2r/">
-<meta property="og:type" content="website">
-<meta property="og:locale" content="ko_KR">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',-apple-system,sans-serif;background:#0a0a0f;color:#d4c8a0;min-height:100vh}
-a{color:#f5d78f;text-decoration:none}
-a:hover{text-decoration:underline;color:#ffeab5}
-.wrap{max-width:800px;margin:0 auto;padding:12px}
-.hero{text-align:center;padding:24px 12px 16px;background:linear-gradient(180deg,rgba(120,50,0,0.3),transparent)}
-.hero h1{font-size:1.6rem;color:#f5d78f;margin-bottom:4px}
-.hero p{color:#8a7e5a;font-size:0.85rem}
-.tabs{display:flex;gap:4px;overflow-x:auto;padding:8px 0;border-bottom:1px solid #2a2520}
-.tab{background:none;border:none;color:#8a7e5a;padding:8px 14px;cursor:pointer;font-size:0.85rem;border-radius:8px 8px 0 0;white-space:nowrap}
-.tab.active{color:#f5d78f;background:#1a1510;border-bottom:2px solid #f5d78f}
-.panel{display:none;padding:12px 0}
-.panel.active{display:block}
-.card{background:#13100a;border:1px solid #2a2520;border-radius:12px;padding:16px;margin-bottom:12px}
-h2{color:#f5d78f;font-size:1.1rem;margin-bottom:12px}
-h3{color:#ffd88b;font-size:0.95rem;margin:12px 0 8px}
-table{width:100%;border-collapse:collapse;font-size:0.85rem}
-th{background:#1a1510;color:#f5d78f;padding:8px;text-align:left;border-bottom:1px solid #2a2520}
-td{padding:8px;border-bottom:1px solid #1a1510;vertical-align:top}
-tr:hover{background:rgba(245,215,143,0.03)}
-ul{padding-left:18px;line-height:1.7;font-size:0.9rem}
-li{margin-bottom:4px}
-.tip{background:rgba(245,215,143,0.05);border-left:3px solid #f5d78f;padding:10px 14px;margin:8px 0;border-radius:0 8px 8px 0;font-size:0.88rem;line-height:1.6}
-.class-card{display:block;background:linear-gradient(135deg,#1a1510,#201a10);border:2px solid #3a3020;border-radius:16px;padding:24px;text-align:center;transition:all 0.2s;cursor:pointer}
-.class-card:hover{border-color:#f5d78f;transform:translateY(-2px);text-decoration:none;box-shadow:0 4px 20px rgba(245,215,143,0.15)}
-.class-card .icon{font-size:3rem;margin-bottom:8px}
-.class-card .name{font-size:1.3rem;color:#f5d78f;font-weight:700}
-.class-card .desc{color:#8a7e5a;font-size:0.85rem;margin-top:6px}
-.class-card .badge{display:inline-block;background:#7d3c98;color:#fff;font-size:0.7rem;padding:2px 8px;border-radius:10px;margin-top:8px}
-.rw-card{background:#1a1510;border:1px solid #2a2520;border-radius:8px;padding:12px;margin-bottom:8px}
-.rw-name{color:#f5d78f;font-weight:700;font-size:1rem}
-.rw-runes{color:#ff9944;font-size:0.85rem;margin:2px 0}
-.rw-base{color:#8a7e5a;font-size:0.8rem}
-.rw-stats{font-size:0.82rem;color:#c4b880;margin-top:6px;line-height:1.5}
-.muted{color:#8a7e5a}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-@media(max-width:500px){.grid2{grid-template-columns:1fr}}
-.back-btn{display:inline-block;color:#8a7e5a;font-size:0.85rem;padding:8px 0;margin-bottom:8px}
-.back-btn:hover{color:#f5d78f}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>D2R 가이드 | 레벨업 효율 & 강령술사 빌드</title>
+  <style>
+    :root {
+      --bg: #090909;
+      --panel: #131010;
+      --panel-2: #1a1414;
+      --text: #f3e6c0;
+      --muted: #b9ab88;
+      --line: #3d2b20;
+      --gold: #cda55a;
+      --red: #b52222;
+      --green: #1f8a47;
+      --lime: #66b447;
+      --yellow: #d4af37;
+      --orange: #d97d2f;
+      --danger: #a43232;
+      --normal: #294d8f;
+      --nightmare: #8f7a29;
+      --hell: #8f2929;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans KR", "Pretendard", system-ui, sans-serif;
+      background: radial-gradient(circle at 20% 0%, #220e0e 0%, var(--bg) 45%), var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 1300px; margin: 0 auto; padding: 24px 16px 56px; }
+    h1, h2, h3 { margin: 0 0 10px; }
+    h1 { font-size: clamp(1.5rem, 2.8vw, 2.3rem); color: #f7d88f; letter-spacing: .2px; }
+    h2 { font-size: clamp(1.2rem, 2.2vw, 1.7rem); color: #f4ca74; margin-top: 28px; }
+    h3 { color: #f1d6a1; }
+    p, li { color: var(--text); }
+    .sub { color: var(--muted); margin-bottom: 12px; }
+    .toc {
+      display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 24px;
+      background: linear-gradient(180deg, #1b1313, #110c0c);
+      border: 1px solid #4d3223; border-radius: 14px; padding: 12px;
+      box-shadow: inset 0 0 0 1px #281b14;
+      position: sticky; top: 8px; z-index: 5;
+    }
+    .toc a {
+      text-decoration: none; color: #fee8b3; background: #2a1a1a; border: 1px solid #5f3a20;
+      padding: 8px 12px; border-radius: 999px; font-size: .92rem;
+    }
+    .toc a:hover { background: #3a2222; }
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-top: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.28);
+    }
+    .table-wrap { overflow-x: auto; border: 1px solid #4a2e21; border-radius: 12px; }
+    table { width: 100%; min-width: 1280px; border-collapse: collapse; font-size: .82rem; }
+    th, td { border: 1px solid #433126; padding: 6px 8px; text-align: center; white-space: nowrap; }
+    thead th { position: sticky; top: 0; z-index: 2; }
+    th.level { background: #352013; color: #ffdfa4; position: sticky; left: 0; z-index: 3; }
+    td.level { background: #1c1410; color: #f0d9a1; position: sticky; left: 0; z-index: 1; font-weight: 700; }
+    .group-normal { background: var(--normal); color: #dbe7ff; }
+    .group-nightmare { background: var(--nightmare); color: #fff5c9; }
+    .group-hell { background: var(--hell); color: #ffdede; }
+    .eff-100 { background: rgba(31,138,71,.8); color: #fff; font-weight: 700; }
+    .eff-80 { background: rgba(102,180,71,.85); color: #102008; font-weight: 700; }
+    .eff-50 { background: rgba(212,175,55,.82); color: #2a1f00; font-weight: 700; }
+    .eff-20 { background: rgba(217,125,47,.85); color: #2a1400; font-weight: 700; }
+    .eff-5 { background: rgba(164,50,50,.88); color: #fff; font-weight: 700; }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .chip { padding: 4px 8px; border-radius: 8px; font-size: .8rem; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+    .build { border: 1px solid #4d3223; border-radius: 12px; padding: 14px; background: #120f0f; }
+    .build ul { margin: 8px 0 0; padding-left: 18px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: #ffd99b; }
+    .source { font-size: .85rem; color: var(--muted); }
+  </style>
 </head>
 <body>
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<div class="wrap">
-<a class="back-btn" href="/">← 게임 포탈</a>
-<header class="hero">
-  <h1>⚔️ 디아블로2 레저렉션 공략집</h1>
-  <p>D2R 룬워드 · 큐빙 레시피 · 파밍 가이드 · 클래스 공략</p>
-</header>
+  <div class="wrap">
+    <h1>디아블로2 레저렉션 D2R 가이드</h1>
+    <p class="sub">레벨업 경험치 효율표 (1~99) + 강령술사(Necromancer) 3대 빌드 + 추천 룬워드</p>
 
-<nav class="tabs" id="tabs">
-  <button class="tab active" data-tab="home">🏠 홈</button>
-  <button class="tab" data-tab="cubing">🧪 큐빙</button>
-  <button class="tab" data-tab="runeword">💎 룬워드</button>
-  <button class="tab" data-tab="farming">🗺️ 파밍</button>
-  <button class="tab" data-tab="tips">💡 팁</button>
-  <button class="tab" data-tab="class">📖 클래스</button>
-</nav>
+    <nav class="toc">
+      <a href="#leveling">레벨 가이드 (Leveling)</a>
+      <a href="#necromancer">강령술사 빌드 (Necromancer Builds)</a>
+      <a href="#runewords">룬워드 (Runewords)</a>
+    </nav>
 
-<!-- ===== 홈 ===== -->
-<div class="panel active" data-panel="home">
-  <div class="card" style="text-align:center;padding:28px">
-    <a class="class-card" href="/d2r-warlock/" style="max-width:400px;margin:0 auto">
-      <div class="icon">🔮</div>
-      <div class="name">악마술사(Warlock) 공략</div>
-      <div class="desc">스킬 시뮬레이터 · 빌드 가이드 · 장비/룬워드 · 레벨링</div>
-      <div class="badge">신규 클래스 · Rune of the Warden</div>
-    </a>
-  </div>
-
-  <div class="card">
-    <h2>📌 빠른 참조</h2>
-    <div class="grid2">
-      <div class="tip">💰 <b>골드 파밍</b><br>트라빈칼(Trav) 반복 — 하이 룬 + 골드</div>
-      <div class="tip">🔮 <b>MF(매직파인드)</b><br>250~350% 추천, 너무 높으면 킬속 저하</div>
-      <div class="tip">🗝️ <b>열쇠 파밍</b><br>카운테스(T), 서먼(H), 니시(D)</div>
-      <div class="tip">⚡ <b>면역 돌파</b><br>Infinity(확신) 또는 Lower Resist</div>
-    </div>
-  </div>
-</div>
-
-<!-- ===== 큐빙 레시피 ===== -->
-<div class="panel" data-panel="cubing">
-  <div class="card">
-    <h2>🧪 호라드릭 큐브 레시피</h2>
-    
-    <h3>⚒️ 소켓 추가 (노말 아이템만)</h3>
-    <table>
-      <thead><tr><th>장비</th><th>재료</th></tr></thead>
-      <tbody>
-        <tr><td>⚔️ 무기</td><td>랄(Ral) + 앰(Amn) + 최상급 자수정(P.Amethyst) + 노말 무기</td></tr>
-        <tr><td>🛡️ 갑옷</td><td>탈(Tal) + 주울(Thul) + 최상급 토파즈(P.Topaz) + 노말 갑옷</td></tr>
-        <tr><td>🪖 헬멧</td><td>랄(Ral) + 주울(Thul) + 최상급 사파이어(P.Sapphire) + 노말 헬멧</td></tr>
-        <tr><td>🔰 방패</td><td>탈(Tal) + 앰(Amn) + 최상급 루비(P.Ruby) + 노말 방패</td></tr>
-      </tbody>
-    </table>
-    <div class="tip">💡 노말(흰색/회색) 아이템만 가능! 매직/레어/유니크/세트 불가<br>
-    소켓 수는 아이템의 최대 소켓 범위 내 랜덤 결정</div>
-    
-    <h3>🔄 룬 업그레이드</h3>
-    <table>
-      <thead><tr><th>조합</th><th>결과</th></tr></thead>
-      <tbody>
-        <tr><td>엘(El) x3</td><td>엘드(Eld)</td></tr>
-        <tr><td>엘드(Eld) x3</td><td>티르(Tir)</td></tr>
-        <tr><td>티르(Tir) x3</td><td>네프(Nef)</td></tr>
-        <tr><td colspan="2" class="muted">... 주울(Thul)까지 같은 룬 3개 합성</td></tr>
-        <tr><td>주울(Thul) x3 + 으스러진 보석</td><td>앰(Amn)</td></tr>
-        <tr><td>앰(Amn) x3 + 으스러진 보석</td><td>솔(Sol)</td></tr>
-        <tr><td>솔(Sol) x3 + 으스러진 보석</td><td>샤엘(Shael)</td></tr>
-        <tr><td>샤엘(Shael) x3 + 으스러진 보석</td><td>돌(Dol)</td></tr>
-        <tr><td colspan="2" class="muted">... 이스트(Ist)까지 같은 룬 3개 + 보석</td></tr>
-        <tr><td>말(Mal) x2 + 최상급 토파즈</td><td>이스트(Ist)</td></tr>
-        <tr><td>이스트(Ist) x2 + 최상급 자수정</td><td>굴(Gul)</td></tr>
-        <tr><td>굴(Gul) x2 + 최상급 루비</td><td>벡스(Vex)</td></tr>
-        <tr><td>벡스(Vex) x2 + 최상급 에메랄드</td><td>오옴(Ohm)</td></tr>
-        <tr><td>오옴(Ohm) x2 + 최상급 다이아</td><td>로(Lo)</td></tr>
-        <tr><td>로(Lo) x2 + 최상급 토파즈</td><td>수르(Sur)</td></tr>
-        <tr><td>수르(Sur) x2 + 최상급 자수정</td><td>버(Ber)</td></tr>
-        <tr><td>버(Ber) x2 + 최상급 사파이어</td><td>자(Jah)</td></tr>
-        <tr><td>자(Jah) x2 + 최상급 루비</td><td>참(Cham)</td></tr>
-        <tr><td>참(Cham) x2 + 최상급 에메랄드</td><td>조드(Zod)</td></tr>
-      </tbody>
-    </table>
-
-    <h3>🔧 기타 유용한 레시피</h3>
-    <table>
-      <thead><tr><th>레시피</th><th>결과</th></tr></thead>
-      <tbody>
-        <tr><td>보석 3개 (같은 종류/등급)</td><td>한 단계 상위 보석</td></tr>
-        <tr><td>랄(Ral) + 솔(Sol) + 최상급 에메랄드 + 노말 무기</td><td>에테리얼 무기에 소켓 추가</td></tr>
-        <tr><td>오르트(Ort) + 무기</td><td>무기 수리 (에테 무기에 사용!)</td></tr>
-        <tr><td>랄(Ral) + 갑옷</td><td>갑옷 수리</td></tr>
-        <tr><td>워트의 다리 + 마을 귀환서</td><td>비밀의 소 레벨 (카우 레벨)</td></tr>
-        <tr><td>열쇠 T + 열쇠 H + 열쇠 D</td><td>미니 우버 포탈 (래더)</td></tr>
-        <tr><td>마팜의 눈 + 디아블로의 뿔 + 바알의 뇌</td><td>우버 트리스트램 포탈</td></tr>
-        <tr><td>노말 유니크 + 엘드 + 으스러진 보석</td><td>익셉셔널 유니크로 업그레이드</td></tr>
-        <tr><td>익셉 유니크 + 코(Ko) + 렘(Lem) + 최상급 다이아</td><td>엘리트 유니크로 업그레이드</td></tr>
-        <tr><td>헬(Hel) + TP스크롤 + 소켓 아이템</td><td>소켓 비우기 (룬/보석 제거, 삽입물 파괴)</td></tr>
-      </tbody>
-    </table>
-    <div class="tip">💡 <b>소켓 비우기</b>는 삽입된 룬/보석이 파괴됨! 룬워드 실수 시 사용</div>
-  </div>
-</div>
-
-<!-- ===== 룬워드 ===== -->
-<div class="panel" data-panel="runeword">
-  <div class="card">
-    <h2>💎 필수 룬워드</h2>
-    
-    <h3>🔰 초반~중반 (노말~나이트메어)</h3>
-    <div class="rw-card">
-      <div class="rw-name">Spirit (정신)</div>
-      <div class="rw-runes">탈(Tal) + 주울(Thul) + 오르트(Ort) + 앰(Amn)</div>
-      <div class="rw-base">4소켓 검 / 4소켓 방패 (모나크)</div>
-      <div class="rw-stats">+2 모든 스킬 / FCR +25-35% / 생마 +55 / 전체 저항 +22-55 (방패)</div>
-    </div>
-    <div class="rw-card">
-      <div class="rw-name">Lore (지식)</div>
-      <div class="rw-runes">오르트(Ort) + 솔(Sol)</div>
-      <div class="rw-base">2소켓 헬멧</div>
-      <div class="rw-stats">+1 모든 스킬 / 에너지 +10 / 번개 저항 +30 / 피해 감소 7</div>
-    </div>
-    <div class="rw-card">
-      <div class="rw-name">Insight (통찰)</div>
-      <div class="rw-runes">랄(Ral) + 티르(Tir) + 탈(Tal) + 솔(Sol)</div>
-      <div class="rw-base">4소켓 폴암/스태프 (용병 장착)</div>
-      <div class="rw-stats">명상 오라 Lv12-17 / 크리티컬 +35% / 매직 데미지 +5-30</div>
-    </div>
-    <div class="rw-card">
-      <div class="rw-name">Stealth (은신)</div>
-      <div class="rw-runes">탈(Tal) + 에스(Eth)</div>
-      <div class="rw-base">2소켓 갑옷</div>
-      <div class="rw-stats">FCR +25% / 달리기 +25% / 타격 회복 +25% / 독 저항 +25</div>
-    </div>
-    <div class="rw-card">
-      <div class="rw-name">Ancients' Pledge (선조의 맹세)</div>
-      <div class="rw-runes">랄(Ral) + 오르트(Ort) + 탈(Tal)</div>
-      <div class="rw-base">3소켓 방패</div>
-      <div class="rw-stats">전체 저항 +43-48% / 피해 감소 10%</div>
-    </div>
-
-    <h3>⚡ 엔드게임</h3>
-    <div class="rw-card">
-      <div class="rw-name">Enigma (수수께끼)</div>
-      <div class="rw-runes">자(Jah) + 이스(Ith) + 버(Ber)</div>
-      <div class="rw-base">3소켓 갑옷</div>
-      <div class="rw-stats">텔레포트 +1 / +2 모든 스킬 / 달리기 +45% / MF +1/레벨</div>
-    </div>
-    <div class="rw-card">
-      <div class="rw-name">Infinity (무한)</div>
-      <div class="rw-runes">버(Ber) + 말(Mal) + 버(Ber) + 이스트(Ist)</div>
-      <div class="rw-base">4소켓 폴암 (용병)</div>
-      <div class="rw-stats">확신 오라 Lv12 (면역 돌파!) / 증뎀 +260-340%</div>
-    </div>
-    <div class="rw-card">
-      <div class="rw-name">Heart of the Oak (참나무의 심장, 호토)</div>
-      <div class="rw-runes">코(Ko) + 벡스(Vex) + 풀(Pul) + 주울(Thul)</div>
-      <div class="rw-base">4소켓 도리깨/철퇴</div>
-      <div class="rw-stats">+3 모든 스킬 / FCR +40% / 전체 저항 +30-40</div>
-    </div>
-    <div class="rw-card">
-      <div class="rw-name">Call to Arms (전투 함성, CTA)</div>
-      <div class="rw-runes">앰(Amn) + 랄(Ral) + 말(Mal) + 이스트(Ist) + 오옴(Ohm)</div>
-      <div class="rw-base">5소켓 무기 (스왑용)</div>
-      <div class="rw-stats">Battle Orders +1-6 / Battle Command +1-6 (생명력 대폭 증가)</div>
-    </div>
-    <div class="rw-card">
-      <div class="rw-name">Grief (비탄)</div>
-      <div class="rw-runes">에스(Eth) + 티르(Tir) + 로(Lo) + 말(Mal) + 랄(Ral)</div>
-      <div class="rw-base">5소켓 검/도끼</div>
-      <div class="rw-stats">+340-400 데미지 / IAS +30-40% / 근접 최강 룬워드</div>
-    </div>
-
-    <div class="tip">💡 <b>Spirit 검</b>: 노말 크리스탈 소드를 Act5 소 방에서 라자루크 퀘스트로 4소켓 가능<br>
-    💡 <b>Spirit 방패</b>: 모나크(Monarch)가 4소켓 가능한 최저 힘 방패 (힘 156)</div>
-  </div>
-</div>
-
-<!-- ===== 파밍 ===== -->
-<div class="panel" data-panel="farming">
-  <div class="card">
-    <h2>🗺️ 파밍 가이드</h2>
-    
-    <h3>🔑 핵심 파밍 루트</h3>
-    <table>
-      <thead><tr><th>장소</th><th>목적</th><th>난이도</th></tr></thead>
-      <tbody>
-        <tr><td><b>앤디 (Andariel)</b></td><td>SoJ, 유니크 링/아뮬 드롭</td><td>쉬움</td></tr>
-        <tr><td><b>메피스토 (Mephisto)</b></td><td>유니크 장비 전반, Shako/War Traveler</td><td>쉬움</td></tr>
-        <tr><td><b>카운테스 (Countess)</b></td><td>룬 파밍 (이스트까지)</td><td>쉬움</td></tr>
-        <tr><td><b>트라빈칼 (Travincal)</b></td><td>하이 룬 + 골드</td><td>보통</td></tr>
-        <tr><td><b>카오스 성소 (CS)</b></td><td>경험치 + 유니크 + 하이 룬</td><td>어려움</td></tr>
-        <tr><td><b>바알 런</b></td><td>경험치 (90+ 레벨링)</td><td>어려움</td></tr>
-        <tr><td><b>소 방 (Cow Level)</b></td><td>룬 + 베이스 아이템</td><td>보통</td></tr>
-        <tr><td><b>고대의 통로 (AT)</b></td><td>면역 없음(냉기 제외), 안전 파밍</td><td>쉬움</td></tr>
-        <tr><td><b>피트 (The Pit)</b></td><td>Alvl 85, 모든 유니크 드롭 가능</td><td>쉬움</td></tr>
-        <tr><td><b>테러존 (Terror Zone)</b></td><td>경험치 + 드롭률 보너스</td><td>변동</td></tr>
-      </tbody>
-    </table>
-
-    <h3>💰 MF (매직 파인드) 가이드</h3>
-    <div class="tip">
-      <b>MF 구간별 효율:</b><br>
-      • 0~100%: 효율 최고 (1% 당 효과 큼)<br>
-      • 100~250%: 여전히 좋음<br>
-      • 250~350%: 유니크 파밍 적정선<br>
-      • 350%+: 수확 체감, 킬속이 더 중요<br><br>
-      <b>공식:</b> 유니크 보정 MF = MF × 250 / (MF + 250)
-    </div>
-
-    <h3>🏃 효율적인 파밍 순서 (캐스터)</h3>
-    <ul>
-      <li>1단계: 카운테스 → 앤디 → 메피 반복 (장비 확보)</li>
-      <li>2단계: 트라빈칼 + 카오스 성소 (하이 룬)</li>
-      <li>3단계: 열쇠 파밍 → 우버 → 토치 (최종 장비)</li>
-    </ul>
-  </div>
-</div>
-
-<!-- ===== 팁 ===== -->
-<div class="panel" data-panel="tips">
-  <div class="card">
-    <h2>💡 초보자 필수 팁</h2>
-    
-    <h3>🎮 기본</h3>
-    <ul>
-      <li><b>스탯:</b> 힘은 장비 착용 최소치만, 나머지 전부 체력(Vit). 에너지 투자 금지!</li>
-      <li><b>달리기:</b> 항상 달리기(R키). 걷기는 블록률 높지만 느림</li>
-      <li><b>/players 8:</b> 싱글플레이에서 경험치/드롭 8인 파티 효과</li>
-      <li><b>에테리얼(Eth):</b> 방어력 +50%, 용병 장비로 최적 (용병은 내구도 안 닳음)</li>
-      <li><b>리스펙:</b> 아카라 퀘스트 보상으로 난이도당 1회 무료. 토큰으로 추가 리스펙</li>
-    </ul>
-
-    <h3>🛡️ 생존</h3>
-    <ul>
-      <li><b>저항:</b> 헬 기준 전체 저항 75% 필수! (페널티 -100이므로 실제 +175 필요)</li>
-      <li><b>Cannot Be Frozen:</b> 라벤프로스트(Ravenfrost) 링 필수</li>
-      <li><b>FHR(타격 회복):</b> 브레이크포인트 확인. 소서리스 86% 등</li>
-      <li><b>흡혈(Life Leech):</b> 근접 빌드 필수 옵션</li>
-    </ul>
-
-    <h3>💎 아이템</h3>
-    <ul>
-      <li><b>참(Charm) 정리:</b> 인벤에 스킬러 + 저항 참 + FHR 참 배치</li>
-      <li><b>토치(Torch):</b> 클래스별 +3스킬, 전체 저항 +10-20, 스탯 +10-20</li>
-      <li><b>애니힐러스(Annihilus):</b> +1스킬, 전체 저항 +10-20, 경험치 +5-10%</li>
-      <li><b>소켓 보석:</b> 헬멧에 최상급 토파즈(MF+24%), 갑옷에 최상급 토파즈</li>
-      <li><b>용병:</b> Act2 용병 + Insight(마나 해결) 또는 Infinity(면역 돌파)</li>
-    </ul>
-
-    <h3>⚡ 브레이크포인트 (FCR)</h3>
-    <table>
-      <thead><tr><th>클래스</th><th>주요 브레이크포인트</th></tr></thead>
-      <tbody>
-        <tr><td>소서리스</td><td>63% / 105% / 200%</td></tr>
-        <tr><td>팔라딘</td><td>48% / 75% / 125%</td></tr>
-        <tr><td>네크로맨서</td><td>48% / 75% / 125%</td></tr>
-        <tr><td>드루이드</td><td>46% / 68% / 99%</td></tr>
-        <tr><td>아마존/바바리안</td><td>근접 위주, FCR 중요도 낮음</td></tr>
-        <tr><td>악마술사(워록)</td><td>확인 중 (RotW 신규)</td></tr>
-      </tbody>
-    </table>
-
-    <h3>🔥 면역 대처</h3>
-    <div class="tip">
-      <b>헬 난이도 면역 몬스터 대처법:</b><br>
-      • <b>Infinity 용병</b> — 확신(Conviction) 오라로 면역 돌파 (일부)<br>
-      • <b>Lower Resist</b> — 네크로/워록 저주로 저항 감소<br>
-      • <b>듀얼 원소</b> — 두 가지 속성 스킬 운용<br>
-      • <b>스킵</b> — 면역 몹은 무시하고 다음으로<br>
-      • 💡 물리 면역은 Decrepify/Amplify로 돌파
-    </div>
-  </div>
-</div>
-
-<!-- ===== 클래스 공략 ===== -->
-<div class="panel" data-panel="class">
-  <div class="card">
-    <h2>📖 클래스별 공략</h2>
-    <div class="grid2">
-      <a class="class-card" href="/d2r-warlock/">
-        <div class="icon">🔮</div>
-        <div class="name">악마술사</div>
-        <div class="desc">Warlock · RotW 신규 클래스</div>
-        <div class="badge">공략 완성</div>
-      </a>
-      <div class="class-card" style="opacity:0.4;cursor:default">
-        <div class="icon">❄️</div>
-        <div class="name">소서리스</div>
-        <div class="desc">Sorceress</div>
-        <div class="badge" style="background:#555">준비 중</div>
+    <section id="leveling" class="card">
+      <h2>레벨별 경험치 효율 테이블 (clvl 1~99)</h2>
+      <p class="source">출처: forums.diabolii.net (Denis), D2R 1.10+ 경험치 규칙 반영</p>
+      <div class="table-wrap">
+        <table id="xpTable">
+          <thead id="xpHead"></thead>
+          <tbody id="xpBody"></tbody>
+        </table>
       </div>
-      <div class="class-card" style="opacity:0.4;cursor:default">
-        <div class="icon">⚡</div>
-        <div class="name">팔라딘</div>
-        <div class="desc">Paladin</div>
-        <div class="badge" style="background:#555">준비 중</div>
+      <div class="legend">
+        <span class="chip eff-100">100% (최적)</span>
+        <span class="chip eff-80">80%+</span>
+        <span class="chip eff-50">50%+</span>
+        <span class="chip eff-20">20%+</span>
+        <span class="chip eff-5">5% (최저)</span>
       </div>
-      <div class="class-card" style="opacity:0.4;cursor:default">
-        <div class="icon">💀</div>
-        <div class="name">네크로맨서</div>
-        <div class="desc">Necromancer</div>
-        <div class="badge" style="background:#555">준비 중</div>
+    </section>
+
+    <section id="necromancer" class="card">
+      <h2>강령술사 (Necromancer) 빌드 가이드</h2>
+
+      <h3>스킬 트리 (Skill Trees)</h3>
+      <div class="grid">
+        <div class="build">
+          <h3>소환술 (Summoning Spells)</h3>
+          <ul>
+            <li>해골 소환 (Raise Skeleton), 해골 마법사 소환 (Raise Skeletal Mage), 부활 (Revive)</li>
+            <li>점토 골렘 (Clay Golem), 블러드 골렘 (Blood Golem), 아이언 골렘 (Iron Golem), 파이어 골렘 (Fire Golem)</li>
+            <li>해골 지배 (Skeleton Mastery), 골렘 지배 (Golem Mastery), 소환 저항 (Summon Resist)</li>
+          </ul>
+        </div>
+        <div class="build">
+          <h3>독과 뼈 (Poison and Bone)</h3>
+          <ul>
+            <li>이빨 (Teeth), 뼈 창 (Bone Spear), 뼈 정령 (Bone Spirit)</li>
+            <li>독 단검 (Poison Dagger), 독 폭발 (Poison Explosion), 독성운 (Poison Nova)</li>
+            <li>뼈 갑옷 (Bone Armor), 뼈 벽 (Bone Wall), 뼈 감옥 (Bone Prison)</li>
+          </ul>
+        </div>
+        <div class="build">
+          <h3>저주 (Curses)</h3>
+          <ul>
+            <li>증폭 피해 (Amplify Damage), 공포 (Terror), 쇠약 (Weaken), 철의 처녀 (Iron Maiden)</li>
+            <li>생명력 흡수 (Life Tap), 저급 (Decrepify), 하급 끌어당김 (Attract), 혼란 (Confuse)</li>
+            <li>하급 부활 (Dim Vision), 저급 소환 (Lower Resist)</li>
+          </ul>
+        </div>
       </div>
-      <div class="class-card" style="opacity:0.4;cursor:default">
-        <div class="icon">🐺</div>
-        <div class="name">드루이드</div>
-        <div class="desc">Druid</div>
-        <div class="badge" style="background:#555">준비 중</div>
+
+      <h3 style="margin-top:20px;">인기 빌드 3종 상세</h3>
+      <div class="grid">
+        <article class="build">
+          <h3>소환술사 (Summonmancer) — 안전/초보 추천</h3>
+          <ul>
+            <li><b>핵심:</b> 해골 소환 20, 해골 지배 20, 해골 마법사 소환 1+, 부활 1+, 점토 골렘 1, 골렘 지배 1+, 소환 저항 1+</li>
+            <li><b>저주:</b> 증폭 피해 1, 저급(Decrepify) 1</li>
+            <li><b>여유 포인트:</b> 뼈 갑옷 1 + 뼈 벽/뼈 감옥 시너지</li>
+            <li><b>장비:</b> Enigma, Beast(용병), Homunculus</li>
+            <li><b>용병:</b> Act2 나이트메어 공격형 (마이트 오라)</li>
+          </ul>
+        </article>
+        <article class="build">
+          <h3>뼈 강령술사 (Bonemancer) — PvP 강자</h3>
+          <ul>
+            <li><b>핵심:</b> 뼈 창 20, 뼈 정령 20, 뼈 벽 20, 뼈 감옥 20, 이빨 1</li>
+            <li><b>저주:</b> 증폭 피해 1</li>
+            <li><b>장비:</b> White 완드, Spirit 방패, Enigma 갑옷</li>
+            <li><b>용병:</b> Act2 나이트메어 공격형</li>
+          </ul>
+        </article>
+        <article class="build">
+          <h3>독 강령술사 (Poison Necromancer) — 파밍 특화</h3>
+          <ul>
+            <li><b>핵심:</b> 독성운 20, 독 폭발 20, 독 단검 20, 뼈 벽/감옥 시너지</li>
+            <li><b>저주:</b> 하급 저항 (Lower Resist) 1</li>
+            <li><b>장비:</b> Death's Web(핵심), Trang-Oul's 세트, Enigma</li>
+            <li><b>용병:</b> Act2 나이트메어 공격형 + Infinity</li>
+          </ul>
+        </article>
       </div>
-      <div class="class-card" style="opacity:0.4;cursor:default">
-        <div class="icon">🏹</div>
-        <div class="name">아마존</div>
-        <div class="desc">Amazon</div>
-        <div class="badge" style="background:#555">준비 중</div>
-      </div>
-    </div>
+
+      <h3 style="margin-top:20px;">레벨링 루트 (1~99)</h3>
+      <ul>
+        <li><b>1~15:</b> 노멀 Act1~2, 이빨(Teeth) 사용</li>
+        <li><b>15~24:</b> 노멀 Act3~5, 해골 소환 투자 시작</li>
+        <li><b>24~40:</b> 나이트메어 진입, 톰브런 / 카우런</li>
+        <li><b>40~60:</b> 나이트메어 카오스 런</li>
+        <li><b>60~80:</b> 헬 바알런, 카오스런</li>
+        <li><b>80~99:</b> 헬 바알런, 니힐라탁, 카오스 런</li>
+      </ul>
+    </section>
+
+    <section id="runewords" class="card">
+      <h2>강령술사 추천 룬워드</h2>
+      <ul>
+        <li><b>White</b> <span class="mono">(Dol + Io)</span> — 완드: +3 독성운/뼈 창</li>
+        <li><b>Spirit</b> <span class="mono">(Tal + Thul + Ort + Amn)</span> — 방패: +2 스킬, 35% FCR</li>
+        <li><b>Enigma</b> <span class="mono">(Jah + Ith + Ber)</span> — 갑옷: 텔레포트</li>
+        <li><b>Insight</b> <span class="mono">(Ral + Tir + Tal + Sol)</span> — 용병 무기: 명상 오라</li>
+        <li><b>Infinity</b> <span class="mono">(Ber + Mal + Ber + Ist)</span> — 용병 무기: 확신 오라 (면역 돌파)</li>
+      </ul>
+    </section>
   </div>
-</div>
 
-</div>
+  <script>
+    const areas = {
+      "노멀": { cls: "group-normal", acts: [78, 219, 391, 647, 2740] },
+      "나이트메어": { cls: "group-nightmare", acts: [3463, 7009, 8471, 11653, 14748] },
+      "헬": { cls: "group-hell", acts: [34384, 53949, 54147, 55251, 56660] },
+    };
 
-<script>
-document.querySelectorAll('.tab').forEach(t=>{
-  t.onclick=()=>{
-    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-    t.classList.add('active');
-    document.querySelector(`[data-panel="${t.dataset.tab}"]`).classList.add('active');
-  }
-});
-</script>
-<script src="/lib/site-meta.js"></script>
-<script>
-  SiteMeta.init({
-    title: 'D2R Planner - game.cocy.io',
-    description: '디아블로2 레저렉션 빌드/플래너 도구',
-    url: 'https://game.cocy.io/d2r/'
-  });
-</script>
+    const highDiffPenalty = (diff) => {
+      if (diff <= 5) return 100;
+      if (diff === 6) return 81;
+      if (diff === 7) return 62;
+      if (diff === 8) return 43;
+      if (diff === 9) return 24;
+      return 5;
+    };
+
+    const latePenaltyTable = [
+      [70, 95.31], [75, 71.88], [80, 48.44], [85, 25.0], [90, 5.96], [95, 1.46], [99, 0.29]
+    ];
+
+    const latePenalty = (clvl) => {
+      if (clvl < 70) return 100;
+      for (let i = 0; i < latePenaltyTable.length - 1; i++) {
+        const [l1, p1] = latePenaltyTable[i];
+        const [l2, p2] = latePenaltyTable[i + 1];
+        if (clvl >= l1 && clvl <= l2) {
+          if (clvl === l1) return p1;
+          const t = (clvl - l1) / (l2 - l1);
+          return p1 + (p2 - p1) * t;
+        }
+      }
+      return 0.29;
+    };
+
+    const baseExpPercent = (clvl, mlvl) => {
+      const diff = mlvl - clvl;
+      const absDiff = Math.abs(diff);
+
+      if (clvl < 25) {
+        return highDiffPenalty(absDiff);
+      }
+
+      if (clvl <= 69) {
+        if (absDiff <= 5) return 100;
+        if (mlvl > clvl) return Math.min(100, (clvl / mlvl) * 100);
+        return highDiffPenalty(clvl - mlvl);
+      }
+
+      if (absDiff <= 5) return 100;
+      if (mlvl > clvl) return Math.min(100, (clvl / mlvl) * 100);
+      return highDiffPenalty(clvl - mlvl);
+    };
+
+    const finalExpPercent = (clvl, mlvl) => {
+      let value = baseExpPercent(clvl, mlvl);
+      if (clvl >= 70) value *= latePenalty(clvl) / 100;
+      return Math.max(5, value);
+    };
+
+    const classForValue = (v) => {
+      if (v >= 99.999) return "eff-100";
+      if (v >= 80) return "eff-80";
+      if (v >= 50) return "eff-50";
+      if (v >= 20) return "eff-20";
+      return "eff-5";
+    };
+
+    const head = document.getElementById("xpHead");
+    const body = document.getElementById("xpBody");
+
+    const r1 = document.createElement("tr");
+    const lvh = document.createElement("th");
+    lvh.rowSpan = 2;
+    lvh.textContent = "Lv";
+    lvh.className = "level";
+    r1.appendChild(lvh);
+
+    Object.entries(areas).forEach(([name, data]) => {
+      const th = document.createElement("th");
+      th.colSpan = 5;
+      th.textContent = `${name} (Act 1~5)`;
+      th.className = data.cls;
+      r1.appendChild(th);
+    });
+
+    const r2 = document.createElement("tr");
+    Object.values(areas).forEach((data) => {
+      for (let i = 1; i <= 5; i++) {
+        const th = document.createElement("th");
+        th.textContent = `Act ${i}`;
+        th.className = data.cls;
+        r2.appendChild(th);
+      }
+    });
+
+    head.appendChild(r1);
+    head.appendChild(r2);
+
+    for (let clvl = 1; clvl <= 99; clvl++) {
+      const tr = document.createElement("tr");
+      const lv = document.createElement("td");
+      lv.className = "level";
+      lv.textContent = clvl;
+      tr.appendChild(lv);
+
+      Object.values(areas).forEach(({ acts }) => {
+        acts.forEach((mlvl) => {
+          const pct = finalExpPercent(clvl, mlvl);
+          const td = document.createElement("td");
+          td.className = classForValue(pct);
+          td.textContent = `${pct.toFixed(2)}%`;
+          tr.appendChild(td);
+        });
+      });
+
+      body.appendChild(tr);
+    }
+  </script>
 </body>
 </html>
