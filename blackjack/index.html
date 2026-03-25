@@ -1331,6 +1331,21 @@
       return `<div class="card ${cls}"><div class="rank">${card.rank}</div><div class="suit">${card.suit}</div><div class="card-bottom"><div class="rank">${card.rank}</div><div class="suit">${card.suit}</div></div></div>`;
     }
 
+    // Server cards have {suit, rank} only (no .value), so separate handValue for multi
+    function mpHandValue(cards) {
+      if (!cards || !cards.length) return 0;
+      let sum = 0, aces = 0;
+      for (const c of cards) {
+        if (!c) continue;
+        const r = c.rank;
+        const v = r === "A" ? 11 : (r === "J" || r === "Q" || r === "K" ? 10 : Number(r));
+        sum += v;
+        if (r === "A") aces++;
+      }
+      while (sum > 21 && aces > 0) { sum -= 10; aces--; }
+      return sum;
+    }
+
     // ── Multi: Render State ──
     // Server returns: { players (lobby), gameState (public), myView (per-player) }
     // gameState has: { players[], dealer, phase, currentPlayerIndex, currentHandIndex, config }
@@ -1382,10 +1397,10 @@
         dealerEl.innerHTML = dealer.cards.map(c => mpCardHTML(c)).join("");
         if (dealer.revealed) {
           const validCards = dealer.cards.filter(c => c);
-          dealerScoreEl.textContent = validCards.length ? handValue(validCards) : "-";
+          dealerScoreEl.textContent = validCards.length ? mpHandValue(validCards) : "-";
         } else {
           const first = dealer.cards[0];
-          dealerScoreEl.textContent = first ? handValue([first]) : "-";
+          dealerScoreEl.textContent = first ? mpHandValue([first]) : "-";
         }
       } else {
         dealerEl.innerHTML = "";
@@ -1404,7 +1419,7 @@
         const handsHTML = (p.hands || []).map((h, hi) => {
           const isCurrentHand = isTurn && hi === currentHandIndex;
           const cardsStr = (h.cards || []).map(c => mpCardHTML(c)).join("");
-          const val = h.cards?.length ? handValue(h.cards) : 0;
+          const val = h.cards?.length ? mpHandValue(h.cards) : 0;
           let statusStr = "";
           if (h.blackjack) statusStr = "BJ!";
           else if (h.busted) statusStr = "BUST";
@@ -1478,8 +1493,8 @@
           nextRoundPanel.classList.remove("hidden");
           const lastHand = mePlayer.hands?.[0];
           const lastBet = lastHand?.bet || 0;
-          const handVal = lastHand?.cards?.length ? handValue(lastHand.cards) : 0;
-          const dealerVal = dealer.cards?.length ? handValue(dealer.cards.filter(c=>c)) : 0;
+          const handVal = lastHand?.cards?.length ? mpHandValue(lastHand.cards) : 0;
+          const dealerVal = dealer.cards?.length ? mpHandValue(dealer.cards.filter(c=>c)) : 0;
           let resultText = "PUSH";
           let resultClass = "";
           if (lastHand?.busted) { resultText = "BUST"; resultClass = "lose"; }
