@@ -341,6 +341,10 @@
       cardFlip() { this._noise(0.08, 2200, "square", 0.06); setTimeout(() => this._noise(0.05, 3400, "square", 0.04), 30); },
       chip() { this._noise(0.06, 4800, "triangle", 0.08); setTimeout(() => this._noise(0.04, 6200, "triangle", 0.05), 25); },
       win() { [0,80,160].forEach((d,i) => setTimeout(() => this._noise(0.12, 600+i*200, "sine", 0.1), d)); },
+      fanfare() {
+        const notes = [523,659,784,1047,784,1047]; // C E G C' G C'
+        notes.forEach((f,i) => setTimeout(() => this._noise(0.18, f, "sine", 0.12), i * 100));
+      },
       lose() { this._noise(0.3, 200, "sawtooth", 0.08); },
       async voice(name) {
         try {
@@ -568,8 +572,24 @@
       state.animQueue = [];
     }
 
-    function startRound(betAmount) {
-      if (state.phase !== "betting") return;
+    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function dealCardTo(target, card) {
+      target.push(card);
+      SFX.cardFlip();
+      render();
+      // animate the newest card
+      await wait(50);
+      const allCards = document.querySelectorAll(`[data-card-id="${card.id}"]`);
+      allCards.forEach(el => {
+        el.style.opacity = "0"; el.style.transform = "translateY(-40px) rotate(-8deg)";
+        anime({ targets: el, opacity: [0,1], translateY: [-40,0], rotate: [-8,0], duration: 320, easing: "easeOutCubic" });
+      });
+      await wait(380);
+    }
+
+    async function startRound(betAmount) {
+      if (state.phase !== "betting" || state.phase === "dealing") return;
       if (betAmount <= 0) {
         setStatus(t("betInsufficient"), "lose");
         render();
@@ -583,20 +603,33 @@
 
       state.bet = betAmount;
       resetRound();
+      state.phase = "dealing";
       SFX.chip();
-      state.hands = [{ cards: [draw(), draw()], bet: betAmount, stood: false, busted: false, blackjack: false, doubled: false }];
-      state.dealer = [draw(), draw()];
-      state.phase = "player";
+      state.hands = [{ cards: [], bet: betAmount, stood: false, busted: false, blackjack: false, doubled: false }];
+      state.dealer = [];
+      render();
+
       SFX.voice(voiceKey("deal"));
-      setTimeout(() => SFX.cardFlip(), 200);
-      setTimeout(() => SFX.cardFlip(), 500);
+      await wait(600);
+
+      // Deal 4 cards alternating: player, dealer, player, dealer
+      const c1 = draw(), c2 = draw(), c3 = draw(), c4 = draw();
+      await dealCardTo(state.hands[0].cards, c1);
+      await dealCardTo(state.dealer, c2);
+      await dealCardTo(state.hands[0].cards, c3);
+      await dealCardTo(state.dealer, c4);
+
+      state.phase = "player";
 
       const p = state.hands[0];
       p.blackjack = isBlackjack(p.cards);
       const dealerBJ = isBlackjack(state.dealer);
 
       if (p.blackjack || dealerBJ) {
+        await wait(500);
         state.revealDealer = true;
+        render();
+        await wait(300);
         settleNaturals(p.blackjack, dealerBJ);
       } else {
         setStatus(t("playerTurn"), "");
@@ -717,17 +750,24 @@
         state.activeHand = next;
         return;
       }
-      dealerTurn();
+      dealerTurnAsync();
     }
 
-    function dealerTurn() {
+    async function dealerTurnAsync() {
       state.phase = "dealer";
       state.revealDealer = true;
+      render();
+      await wait(600);
       while (handValue(state.dealer) < 17) {
-        state.dealer.push(draw());
+        const c = draw();
+        await dealCardTo(state.dealer, c);
       }
+      await wait(400);
       settleRound();
     }
+
+    // keep sync alias for any remaining refs
+    function dealerTurn() { dealerTurnAsync(); }
 
     function summarizeRound(resultClass, profit, bonusGold, payout) {
       const parts = [`${resultClass}`];
@@ -765,7 +805,12 @@
       setStatus(summarizeRound(label, finalProfit, bonusGold, finalPayout), statusType);
 
       if (finalProfit > 0) {
-        SFX.win(); SFX.voice(voiceKey(label === "BLACKJACK" ? "blackjack" : "player-win"));
+        if (label === t("blackjack") || label === "BLACKJACK") {
+          SFX.fanfare(); SFX.voice(voiceKey("blackjack"));
+          party.confetti(el.table, { count: 50, spread: 60, speed: 400, color: ["#ffd166", "#ff6b6b", "#76f5ae", "#ffffff"] });
+        } else {
+          SFX.win(); SFX.voice(voiceKey("player-win"));
+        }
         party.sparkles(el.table, { count: 28, spread: 42, speed: 260, color: ["#ffd166", "#76f5ae", "#ffffff"] });
       } else if (finalProfit < 0) {
         SFX.lose(); SFX.voice(voiceKey("dealer-win"));
