@@ -200,12 +200,202 @@
     .actions .stand { border-color: rgba(211,226,255,0.45); }
     .actions .double { border-color: rgba(255,209,102,0.6); }
     .actions .split { border-color: rgba(255,170,236,0.58); }
+    .hidden { display: none !important; }
+
+    .mode-screen, #mpLobbyContainer, .multi-game {
+      width: min(100%, 460px);
+    }
+    .mode-screen {
+      margin-top: 14vh;
+      padding: 20px;
+      text-align: center;
+    }
+    .mode-screen h1 {
+      font-size: 1.25rem;
+      margin-bottom: 6px;
+    }
+    .mode-screen p {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 14px;
+    }
+    .mode-buttons {
+      display: grid;
+      gap: 10px;
+    }
+    .mode-btn {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.04));
+      padding: 14px;
+      min-height: 52px;
+      font-size: 0.95rem;
+      font-weight: 900;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .mode-btn span { display: block; font-size: 0.75rem; color: var(--muted); margin-top: 4px; font-weight: 600; }
+
+    #mpLobbyContainer {
+      min-height: calc(100dvh - 56px - env(safe-area-inset-top));
+    }
+
+    .multi-game {
+      max-height: calc(100dvh - 56px - env(safe-area-inset-top));
+      display: grid;
+      grid-template-rows: auto 1fr auto auto;
+      gap: 6px;
+    }
+    .multi-head {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel-strong);
+    }
+    .multi-head .phase { text-align: center; font-size: 0.8rem; font-weight: 900; letter-spacing: 0.02em; }
+    .multi-head .timer { font-size: 0.8rem; font-weight: 900; color: var(--gold); min-width: 44px; text-align: right; }
+    .multi-head .back-btn {
+      min-width: 64px;
+      min-height: 30px;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .multi-table {
+      padding: 8px;
+      overflow-y: auto;
+      min-height: 0;
+      display: grid;
+      align-content: start;
+      gap: 8px;
+    }
+    .multi-players {
+      display: grid;
+      gap: 7px;
+    }
+    .mp-player-seat {
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.24);
+      border-radius: 12px;
+      padding: 7px;
+    }
+    .mp-player-seat.me {
+      border-color: rgba(255, 209, 102, 0.6);
+      box-shadow: 0 0 0 1px rgba(255, 209, 102, 0.35) inset;
+    }
+    .mp-player-seat.current-turn {
+      border-color: rgba(118,245,174,0.75);
+      box-shadow: 0 0 0 1px rgba(118,245,174,0.4) inset;
+    }
+    .mp-player-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .mp-player-seat .card {
+      width: 38px;
+      height: 55px;
+      padding: 4px;
+      border-radius: 7px;
+    }
+    .mp-player-seat .rank { font-size: 0.68rem; }
+    .mp-player-seat .suit { font-size: 0.9rem; }
+    .mp-player-seat .card-bottom .rank { font-size: 0.62rem; }
+    .mp-player-seat .card-bottom .suit { font-size: 0.55rem; }
+    .mp-player-seat.me .card {
+      width: 50px;
+      height: 72px;
+      padding: 5px;
+      border-radius: 8px;
+    }
+    .mp-player-seat.me .rank { font-size: 0.78rem; }
+    .mp-player-seat.me .suit { font-size: 1.15rem; }
+    .mp-player-seat.me .card-bottom .rank { font-size: 0.72rem; }
+    .mp-player-seat.me .card-bottom .suit { font-size: 0.6rem; }
+    .mp-hand-row {
+      margin-top: 4px;
+      padding: 5px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 9px;
+    }
+    .mp-hand-row.current-hand {
+      border-color: rgba(255, 209, 102, 0.62);
+      box-shadow: 0 0 0 1px rgba(255, 209, 102, 0.32) inset;
+    }
+    .mp-hand-meta {
+      font-size: 0.66rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
   </style>
 </head>
 <body>
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
-  <main class="app">
+  <section id="modeSelectScreen" class="panel mode-screen">
+    <h1 id="modeTitle">블랙잭 카지노</h1>
+    <p id="modeDesc">게임 모드를 선택하세요</p>
+    <div class="mode-buttons">
+      <button class="mode-btn" id="modeSoloBtn">🎮 솔로<span id="modeSoloDesc">기존 싱글 플레이</span></button>
+      <button class="mode-btn" id="modeMultiBtn">👥 멀티<span id="modeMultiDesc">방 생성/참여 후 실시간 플레이</span></button>
+    </div>
+  </section>
+
+  <div id="mpLobbyContainer" class="hidden"></div>
+
+  <section id="multiGameScreen" class="multi-game hidden">
+    <div class="multi-head">
+      <button class="back-btn" id="multiLeaveBtn">← 나가기</button>
+      <div class="phase" id="multiPhaseText">-</div>
+      <div class="timer" id="multiTimerText">15s</div>
+    </div>
+    <section class="table multi-table">
+      <div class="seat">
+        <div class="seat-head">
+          <div class="seat-title" id="mpDealerLabel">DEALER</div>
+          <div class="score" id="mpDealerScore">-</div>
+        </div>
+        <div class="cards" id="mpDealerCards"></div>
+      </div>
+      <div class="multi-players" id="mpPlayers"></div>
+    </section>
+    <section class="status" id="mpTurnStatus">-</section>
+    <section class="panel bet hidden" id="mpBetPanel">
+      <div class="row" style="flex-wrap:wrap;gap:4px;">
+        <button data-mp-bet="10" style="min-width:0;padding:6px 8px;font-size:0.7rem;">10</button>
+        <button data-mp-bet="50" style="min-width:0;padding:6px 8px;font-size:0.7rem;">50</button>
+        <button data-mp-bet="100" style="min-width:0;padding:6px 8px;font-size:0.7rem;">100</button>
+        <button data-mp-bet="500" style="min-width:0;padding:6px 8px;font-size:0.7rem;">500</button>
+        <button data-mp-bet="1000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">1K</button>
+        <button data-mp-bet="custom" style="min-width:0;padding:6px 8px;font-size:0.7rem;">✏️</button>
+        <button data-mp-bet="all" style="min-width:0;padding:6px 8px;font-size:0.7rem;">ALL</button>
+      </div>
+    </section>
+    <section class="panel actions hidden" id="mpActionPanel">
+      <div class="row" style="gap:4px;">
+        <button class="hit" id="mpHitBtn" style="font-size:0.78rem;padding:8px 0;">Hit</button>
+        <button class="stand" id="mpStandBtn" style="font-size:0.78rem;padding:8px 0;">Stand</button>
+        <button class="double" id="mpDoubleBtn" style="font-size:0.78rem;padding:8px 0;">Double</button>
+        <button class="split" id="mpSplitBtn" style="font-size:0.78rem;padding:8px 0;">Split</button>
+      </div>
+    </section>
+  </section>
+
+  <main class="app hidden" id="soloApp">
     <div style="display:none;" id="goldText"></div>
     <div style="display:none;" id="gameTitle"></div>
     <div style="display:none;" id="gameSub"></div>
@@ -277,6 +467,8 @@
     </div>
   </main>
 
+  <script src="/lib/multiplayer.js"></script>
+  <script src="/lib/multiplayer-ui.js"></script>
   <script>
     const SUITS = ["♠", "♥", "♦", "♣"];
     const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
@@ -309,6 +501,27 @@
         streakBonus: (g) => `연승보너스 +${g}`,
         settle: (p) => `정산 +${p}`,
         profit: (p) => `순익 ${p >= 0 ? "+" : ""}${p}`,
+        modeSelect: "게임 모드를 선택하세요",
+        modeSolo: "솔로",
+        modeSoloDesc: "기존 싱글 플레이",
+        modeMulti: "멀티",
+        modeMultiDesc: "방 생성/참여 후 실시간 플레이",
+        leave: "나가기",
+        waitingRoom: "대기실",
+        multiplayer: "멀티플레이",
+        yourTurn: "당신의 턴",
+        turnOf: (name) => `현재 턴: ${name}`,
+        phaseBetting: "베팅 페이즈",
+        phaseDealing: "카드 배분 중",
+        phasePlaying: "플레이 중",
+        phaseDealerTurn: "딜러 턴",
+        phaseSettling: "정산 중",
+        phaseFinished: "라운드 종료",
+        totalWinnings: "총 승리금",
+        timerLeft: (s) => `${s}s`,
+        betPrompt: "베팅 금액을 입력하세요:",
+        actionFailed: (m) => `액션 실패: ${m}`,
+        noMultiClient: "멀티 연결이 준비되지 않았습니다.",
         voiceSuffix: "",
       },
       en: {
@@ -337,6 +550,27 @@
         streakBonus: (g) => `Streak bonus +${g}`,
         settle: (p) => `Payout +${p}`,
         profit: (p) => `Net ${p >= 0 ? "+" : ""}${p}`,
+        modeSelect: "Select game mode",
+        modeSolo: "Solo",
+        modeSoloDesc: "Classic single-player mode",
+        modeMulti: "Multi",
+        modeMultiDesc: "Create/join room and play live",
+        leave: "Leave",
+        waitingRoom: "Waiting Room",
+        multiplayer: "Multiplayer",
+        yourTurn: "Your turn",
+        turnOf: (name) => `Current turn: ${name}`,
+        phaseBetting: "Betting",
+        phaseDealing: "Dealing",
+        phasePlaying: "Playing",
+        phaseDealerTurn: "Dealer Turn",
+        phaseSettling: "Settling",
+        phaseFinished: "Finished",
+        totalWinnings: "Total winnings",
+        timerLeft: (s) => `${s}s`,
+        betPrompt: "Enter bet amount:",
+        actionFailed: (m) => `Action failed: ${m}`,
+        noMultiClient: "Multiplayer client is not ready.",
         voiceSuffix: "-en",
       }
     };
@@ -1003,7 +1237,309 @@
 
     updateLangUI();
     updateSettingsUI();
-    init();
+
+    // ══════════════════════════════════════════════════════════════
+    // ██  MULTIPLAYER MODE
+    // ══════════════════════════════════════════════════════════════
+
+    let mpUI = null;
+    let mpTimerInterval = null;
+
+    function showScreen(id) {
+      ["modeSelectScreen", "mpLobbyContainer", "multiGameScreen", "soloApp"].forEach(s => {
+        document.getElementById(s).classList.add("hidden");
+      });
+      document.getElementById(id).classList.remove("hidden");
+    }
+
+    function showModeSelect() {
+      showScreen("modeSelectScreen");
+      document.getElementById("modeTitle").textContent = t("title");
+      document.getElementById("modeDesc").textContent = t("modeSelect");
+      document.getElementById("modeSoloBtn").innerHTML = `🎮 ${t("modeSolo")}<span>${t("modeSoloDesc")}</span>`;
+      document.getElementById("modeMultiBtn").innerHTML = `👥 ${t("modeMulti")}<span>${t("modeMultiDesc")}</span>`;
+    }
+
+    // Solo mode
+    document.getElementById("modeSoloBtn").addEventListener("click", () => {
+      showScreen("soloApp");
+      init();
+    });
+
+    // Multi mode
+    document.getElementById("modeMultiBtn").addEventListener("click", () => {
+      showScreen("mpLobbyContainer");
+      initMultiplayer();
+    });
+
+    function initMultiplayer() {
+      if (mpUI) { mpUI.show(); return; }
+      mpUI = new MultiplayerUI({
+        gameType: "blackjack",
+        gameName: "🃏 " + t("title"),
+        container: document.getElementById("mpLobbyContainer"),
+        maxPlayers: 6,
+        supportsLocal: false,
+        onGameStart: handleMultiGameStart,
+        onGameEvent: handleMultiGameEvent,
+        onLeave: () => { mpUI = null; showModeSelect(); },
+      });
+
+      const urlRoom = MultiplayerUI.checkUrlRoom();
+      if (urlRoom) {
+        mpUI._renderLobby();
+        setTimeout(() => {
+          const inp = document.getElementById("mp-room-code");
+          if (inp) inp.value = urlRoom;
+        }, 100);
+      } else {
+        mpUI.show();
+      }
+    }
+
+    // ── Multi: Game Start ──
+    function handleMultiGameStart(gameState) {
+      showScreen("multiGameScreen");
+      renderMultiState(gameState);
+    }
+
+    // ── Multi: Event Handler ──
+    async function handleMultiGameEvent(type, data) {
+      try {
+        const state = await mpUI.getState();
+        renderMultiState(state);
+      } catch (e) {
+        console.error("[MP] getState error:", e);
+      }
+    }
+
+    // ── Multi: Card HTML (no animation id dependency) ──
+    function mpCardHTML(card) {
+      if (!card) return '<div class="card back"></div>';
+      const cls = (card.suit === "♥" || card.suit === "♦") ? "red" : "black";
+      return `<div class="card ${cls}"><div class="rank">${card.rank}</div><div class="suit">${card.suit}</div><div class="card-bottom"><div class="rank">${card.rank}</div><div class="suit">${card.suit}</div></div></div>`;
+    }
+
+    // ── Multi: Render State ──
+    function renderMultiState(gs) {
+      if (!gs) return;
+      const myId = mpUI.getClient()?.getMyUserId();
+      const view = gs.me ? gs : gs; // getPlayerView already returns me/isMyTurn
+
+      // Phase text
+      const phaseMap = { betting: "phaseBetting", dealing: "phaseDealing", playing: "phasePlaying", dealer_turn: "phaseDealerTurn", settling: "phaseSettling", finished: "phaseFinished" };
+      document.getElementById("multiPhaseText").textContent = t(phaseMap[gs.phase] || "phasePlaying");
+
+      // Dealer cards
+      const dealerEl = document.getElementById("mpDealerCards");
+      const dealerScoreEl = document.getElementById("mpDealerScore");
+      if (gs.dealer && gs.dealer.cards) {
+        dealerEl.innerHTML = gs.dealer.cards.map(c => mpCardHTML(c)).join("");
+        if (gs.dealer.revealed) {
+          const validCards = gs.dealer.cards.filter(c => c);
+          dealerScoreEl.textContent = validCards.length ? handValue(validCards) : "-";
+        } else {
+          const first = gs.dealer.cards[0];
+          dealerScoreEl.textContent = first ? handValue([first]) : "-";
+        }
+      } else {
+        dealerEl.innerHTML = "";
+        dealerScoreEl.textContent = "-";
+      }
+
+      // Players
+      const playersEl = document.getElementById("mpPlayers");
+      const players = gs.players || [];
+      playersEl.innerHTML = players.map(p => {
+        const isMe = p.id === myId;
+        const isTurn = gs.phase === "playing" && gs.currentPlayerIndex !== undefined &&
+                       players[gs.currentPlayerIndex]?.id === p.id;
+        const classes = ["mp-player-seat"];
+        if (isMe) classes.push("me");
+        if (isTurn) classes.push("current-turn");
+
+        const handsHTML = (p.hands || []).map((h, hi) => {
+          const isCurrentHand = isTurn && hi === gs.currentHandIndex;
+          const cardsStr = (h.cards || []).map(c => mpCardHTML(c)).join("");
+          const val = h.cards?.length ? handValue(h.cards) : 0;
+          let statusStr = "";
+          if (h.blackjack) statusStr = "BJ!";
+          else if (h.busted) statusStr = "BUST";
+          else if (h.stood) statusStr = "STAND";
+          return `<div class="mp-hand-row${isCurrentHand ? " current-hand" : ""}">
+            <div class="mp-hand-meta">
+              <span>Bet: ${(h.bet || 0).toLocaleString()}</span>
+              <span>${val > 0 ? val : "-"} ${statusStr}</span>
+            </div>
+            <div class="cards">${cardsStr}</div>
+          </div>`;
+        }).join("");
+
+        const nameDisplay = isMe ? `${p.nickname || "Me"} (나)` : (p.nickname || "Player");
+        const winDisplay = p.totalWinnings !== undefined ? ` | ${t("totalWinnings")}: ${p.totalWinnings >= 0 ? "+" : ""}${p.totalWinnings}` : "";
+        const readyBadge = gs.phase === "betting" ? (p.ready ? " ✅" : " ⏳") : "";
+
+        return `<div class="${classes.join(" ")}">
+          <div class="mp-player-head">
+            <span>${nameDisplay}${readyBadge}</span>
+            <span>${winDisplay}</span>
+          </div>
+          ${handsHTML || '<div style="color:var(--muted);font-size:0.7rem;padding:4px;">대기 중</div>'}
+        </div>`;
+      }).join("");
+
+      // Turn status
+      const statusEl = document.getElementById("mpTurnStatus");
+      if (gs.phase === "betting") {
+        const me = players.find(p => p.id === myId);
+        statusEl.textContent = me?.ready ? "다른 플레이어 베팅 대기..." : t("phaseBetting") + " - 베팅하세요!";
+      } else if (gs.phase === "playing") {
+        const currentPlayer = players[gs.currentPlayerIndex];
+        if (currentPlayer?.id === myId) {
+          statusEl.textContent = t("yourTurn");
+        } else {
+          statusEl.textContent = t("turnOf", currentPlayer?.nickname || "?");
+        }
+      } else if (gs.phase === "finished") {
+        statusEl.textContent = t("phaseFinished");
+      } else {
+        statusEl.textContent = t(phaseMap[gs.phase] || "phasePlaying");
+      }
+
+      // Bet panel visibility
+      const betPanel = document.getElementById("mpBetPanel");
+      const me = players.find(p => p.id === myId);
+      if (gs.phase === "betting" && me && !me.ready) {
+        betPanel.classList.remove("hidden");
+      } else {
+        betPanel.classList.add("hidden");
+      }
+
+      // Action panel visibility
+      const actionPanel = document.getElementById("mpActionPanel");
+      if (gs.phase === "playing" && gs.isMyTurn) {
+        actionPanel.classList.remove("hidden");
+        // Double/Split availability
+        const myHand = me?.hands?.[gs.currentHandIndex];
+        document.getElementById("mpDoubleBtn").disabled = !(myHand?.cards?.length === 2 && !myHand.doubled);
+        document.getElementById("mpSplitBtn").disabled = !(myHand?.cards?.length === 2 && me.hands.length <= 1 &&
+          myHand.cards[0]?.rank === myHand.cards[1]?.rank);
+      } else {
+        actionPanel.classList.add("hidden");
+      }
+
+      // Round finished → show result
+      if (gs.phase === "finished" && me) {
+        const win = me.totalWinnings;
+        const isWin = win > 0;
+        const title = isWin ? "🎉 WIN!" : (win < 0 ? "💀 LOSE" : "🤝 PUSH");
+        setTimeout(() => {
+          mpUI.showResult({
+            title,
+            detail: `${t("totalWinnings")}: ${win >= 0 ? "+" : ""}${win.toLocaleString()}`,
+            isWin: win > 0 ? true : (win < 0 ? false : null),
+            showRematch: true,
+          });
+        }, 1200);
+      }
+    }
+
+    // ── Multi: Bet Buttons ──
+    document.querySelectorAll("[data-mp-bet]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!mpUI?.getClient()) return;
+        syncGold();
+        const raw = btn.dataset.mpBet;
+        let amount;
+        if (raw === "all") {
+          amount = Math.floor(state.gold);
+          if (amount <= 0) return;
+          const msg = currentLang === "ko"
+            ? `${amount.toLocaleString()} 골드 전부 베팅합니다. 진행할까요?`
+            : `Bet all ${amount.toLocaleString()} gold?`;
+          if (!confirm(msg)) return;
+        } else if (raw === "custom") {
+          const input = prompt(t("betPrompt"));
+          if (!input) return;
+          amount = Math.floor(Number(input));
+          if (!amount || amount <= 0) return;
+        } else {
+          amount = Number(raw);
+        }
+        if (state.gold < amount) {
+          alert(t("goldInsufficient"));
+          return;
+        }
+        try {
+          await mpUI.sendAction({ type: "bet", payload: { amount } });
+          walletRemove(amount);
+        } catch (e) {
+          alert(t("actionFailed", e.message));
+        }
+      });
+    });
+
+    // ── Multi: Action Buttons ──
+    document.getElementById("mpHitBtn").addEventListener("click", async () => {
+      if (!mpUI?.getClient()) return;
+      try { await mpUI.sendAction({ type: "hit" }); } catch (e) { alert(t("actionFailed", e.message)); }
+    });
+    document.getElementById("mpStandBtn").addEventListener("click", async () => {
+      if (!mpUI?.getClient()) return;
+      try { await mpUI.sendAction({ type: "stand" }); } catch (e) { alert(t("actionFailed", e.message)); }
+    });
+    document.getElementById("mpDoubleBtn").addEventListener("click", async () => {
+      if (!mpUI?.getClient()) return;
+      try {
+        // Double needs extra bet
+        const gs = await mpUI.getState();
+        const me = gs.players?.find(p => p.id === mpUI.getClient().getMyUserId());
+        const hand = me?.hands?.[gs.currentHandIndex];
+        if (hand && state.gold >= hand.bet) {
+          walletRemove(hand.bet);
+        }
+        await mpUI.sendAction({ type: "double" });
+      } catch (e) { alert(t("actionFailed", e.message)); }
+    });
+    document.getElementById("mpSplitBtn").addEventListener("click", async () => {
+      if (!mpUI?.getClient()) return;
+      try {
+        const gs = await mpUI.getState();
+        const me = gs.players?.find(p => p.id === mpUI.getClient().getMyUserId());
+        const hand = me?.hands?.[gs.currentHandIndex];
+        if (hand && state.gold >= hand.bet) {
+          walletRemove(hand.bet);
+        }
+        await mpUI.sendAction({ type: "split" });
+      } catch (e) { alert(t("actionFailed", e.message)); }
+    });
+
+    // ── Multi: Leave Button ──
+    document.getElementById("multiLeaveBtn").addEventListener("click", async () => {
+      if (mpUI?.getClient()) {
+        try { await mpUI.getClient().leaveRoom(); } catch(e) {}
+        MultiplayerClient.resetInstance();
+      }
+      mpUI = null;
+      showModeSelect();
+    });
+
+    // ── URL room parameter check on load ──
+    (function checkUrlRoom() {
+      const params = new URLSearchParams(window.location.search);
+      const roomCode = params.get("room");
+      if (roomCode) {
+        window.history.replaceState({}, "", window.location.pathname);
+        showScreen("mpLobbyContainer");
+        initMultiplayer();
+        setTimeout(() => {
+          const inp = document.getElementById("mp-room-code");
+          if (inp) inp.value = roomCode;
+        }, 300);
+      } else {
+        showModeSelect();
+      }
+    })();
   </script>
 </body>
 </html>
