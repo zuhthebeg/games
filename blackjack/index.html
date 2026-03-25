@@ -191,6 +191,7 @@
     button:active:enabled { transform: scale(0.97); }
     button:disabled { opacity: 0.45; cursor: not-allowed; }
     .bet button { background: linear-gradient(180deg, rgba(255, 209, 102, 0.34), rgba(255, 209, 102, 0.12)); color: #fff5de; }
+    .bet .custom-bet { background: linear-gradient(180deg, rgba(118,200,255,0.35), rgba(118,200,255,0.12)); min-width: 44px; }
     .bet .allin { background: linear-gradient(180deg, rgba(255, 107, 107, 0.45), rgba(255, 107, 107, 0.16)); }
     .actions .hit { border-color: rgba(118,245,174,0.45); }
     .actions .stand { border-color: rgba(211,226,255,0.45); }
@@ -245,6 +246,9 @@
         <button data-bet="50">50</button>
         <button data-bet="100">100</button>
         <button data-bet="500">500</button>
+        <button data-bet="1000">1K</button>
+        <button data-bet="5000">5K</button>
+        <button data-bet="custom" class="custom-bet">✏️</button>
         <button class="allin" data-bet="all">ALL IN</button>
       </div>
     </section>
@@ -545,12 +549,15 @@
 
     function walletRemove(amount) {
       if (amount <= 0) return true;
+      syncGold();
+      if (state.gold < amount) return false;
       if (typeof SharedWallet === "undefined" || !SharedWallet.removeGold) {
-        if (state.gold >= amount) { state.gold -= amount; return true; }
-        return false;
+        state.gold -= amount;
+        return true;
       }
       const ok = SharedWallet.removeGold(amount);
       syncGold();
+      if (state.gold < 0) { SharedWallet.addGold(amount); syncGold(); return false; }
       return !!ok;
     }
 
@@ -865,8 +872,24 @@
 
     document.querySelectorAll("[data-bet]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const v = btn.dataset.bet === "all" ? Math.floor(state.gold) : Number(btn.dataset.bet);
-        startRound(v);
+        const raw = btn.dataset.bet;
+        if (raw === "all") {
+          const gold = Math.floor(state.gold);
+          if (gold <= 0) return;
+          const msg = currentLang === "ko"
+            ? `${gold.toLocaleString()} 골드 전부 베팅합니다. 진행할까요?`
+            : `Bet all ${gold.toLocaleString()} gold. Are you sure?`;
+          if (!confirm(msg)) return;
+          startRound(gold);
+        } else if (raw === "custom") {
+          const msg = currentLang === "ko" ? "베팅 금액을 입력하세요:" : "Enter bet amount:";
+          const input = prompt(msg);
+          if (!input) return;
+          const v = Math.floor(Number(input));
+          if (v > 0) startRound(v);
+        } else {
+          startRound(Number(raw));
+        }
       });
     });
 
