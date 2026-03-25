@@ -204,16 +204,19 @@
   <main class="app">
     <section class="panel top">
       <div>
-        <div class="title">블랙잭 카지노</div>
-        <div class="sub">딜러는 17 이상에서 Stand</div>
+        <div class="title" id="gameTitle">블랙잭 카지노</div>
+        <div class="sub" id="gameSub">딜러는 17 이상에서 Stand</div>
       </div>
-      <div class="gold" id="goldText">Gold 0</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button id="langBtn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:8px;padding:4px 10px;font-size:0.72rem;cursor:pointer;">🇰🇷/🇺🇸</button>
+        <div class="gold" id="goldText">Gold 0</div>
+      </div>
     </section>
 
     <section class="panel meta">
-      <div class="item"><div class="k">현재 베팅</div><div class="v" id="betText">0</div></div>
-      <div class="item"><div class="k">연승</div><div class="v" id="streakText">0</div></div>
-      <div class="item"><div class="k">보너스</div><div class="v" id="bonusText">없음</div></div>
+      <div class="item"><div class="k" id="betLabel">현재 베팅</div><div class="v" id="betText">0</div></div>
+      <div class="item"><div class="k" id="streakLabel">연승</div><div class="v" id="streakText">0</div></div>
+      <div class="item"><div class="k" id="bonusLabel">보너스</div><div class="v" id="bonusText">없음</div></div>
     </section>
 
     <section class="table" id="table">
@@ -259,6 +262,70 @@
   <script>
     const SUITS = ["♠", "♥", "♦", "♣"];
     const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+
+    // ── i18n ──
+    const I18N = {
+      ko: {
+        title: "블랙잭 카지노",
+        gold: "골드",
+        bet: "베팅",
+        streak: "연승",
+        bonus: "보너스",
+        none: "없음",
+        dealer: "딜러",
+        player: "플레이어",
+        hit: "히트",
+        stand: "스탠드",
+        double: "더블",
+        split: "스플릿",
+        allin: "ALL IN",
+        betInsufficient: "베팅 금액이 부족합니다.",
+        goldInsufficient: "골드가 부족합니다.",
+        playerTurn: "플레이어 턴: Hit / Stand / Double / Split",
+        handBust: (n) => `핸드 ${n} BUST`,
+        handDoubleBust: (n) => `핸드 ${n} DOUBLE BUST`,
+        blackjack: "BLACKJACK",
+        win: "WIN",
+        lose: "LOSE",
+        push: "PUSH",
+        streakBonus: (g) => `연승보너스 +${g}`,
+        settle: (p) => `정산 +${p}`,
+        profit: (p) => `순익 ${p >= 0 ? "+" : ""}${p}`,
+        voiceSuffix: "",
+      },
+      en: {
+        title: "Blackjack Casino",
+        gold: "Gold",
+        bet: "Bet",
+        streak: "Streak",
+        bonus: "Bonus",
+        none: "None",
+        dealer: "Dealer",
+        player: "Player",
+        hit: "Hit",
+        stand: "Stand",
+        double: "Double",
+        split: "Split",
+        allin: "ALL IN",
+        betInsufficient: "Insufficient bet amount.",
+        goldInsufficient: "Not enough gold.",
+        playerTurn: "Player turn: Hit / Stand / Double / Split",
+        handBust: (n) => `Hand ${n} BUST`,
+        handDoubleBust: (n) => `Hand ${n} DOUBLE BUST`,
+        blackjack: "BLACKJACK",
+        win: "WIN",
+        lose: "LOSE",
+        push: "PUSH",
+        streakBonus: (g) => `Streak bonus +${g}`,
+        settle: (p) => `Payout +${p}`,
+        profit: (p) => `Net ${p >= 0 ? "+" : ""}${p}`,
+        voiceSuffix: "-en",
+      }
+    };
+
+    let currentLang = localStorage.getItem("bj-lang") || (navigator.language.startsWith("ko") ? "ko" : "en");
+    function t(key, ...args) { const v = I18N[currentLang][key]; return typeof v === "function" ? v(...args) : v; }
+    function voiceKey(name) { return name + (I18N[currentLang].voiceSuffix || ""); }
 
     // ── Sound System ──
     const SFX = {
@@ -382,10 +449,23 @@
       el.status.className = "status" + (state.statusType ? ` ${state.statusType}` : "");
     }
 
+    function updateLangUI() {
+      document.getElementById("gameTitle").textContent = t("title");
+      document.getElementById("gameSub").textContent = currentLang === "ko" ? "딜러는 17 이상에서 Stand" : "Dealer stands on 17+";
+      document.getElementById("betLabel").textContent = currentLang === "ko" ? "현재 베팅" : "Current Bet";
+      document.getElementById("streakLabel").textContent = t("streak");
+      document.getElementById("bonusLabel").textContent = t("bonus");
+      document.getElementById("langBtn").textContent = currentLang === "ko" ? "🇺🇸 EN" : "🇰🇷 한국어";
+      el.hitBtn.textContent = t("hit");
+      el.standBtn.textContent = t("stand");
+      el.doubleBtn.textContent = t("double") + (currentLang === "ko" ? " 다운" : " Down");
+      el.splitBtn.textContent = t("split");
+    }
+
     function render() {
-      el.goldText.textContent = `Gold ${Math.floor(state.gold).toLocaleString()}`;
+      el.goldText.textContent = `${t("gold")} ${Math.floor(state.gold).toLocaleString()}`;
       el.betText.textContent = Math.floor(state.bet).toLocaleString();
-      el.streakText.textContent = `${state.streak}연승`;
+      el.streakText.textContent = currentLang === "ko" ? `${state.streak}연승` : `${state.streak} wins`;
       el.bonusText.textContent = bonusLabel();
 
       const dealerCards = state.dealer.map((c, i) => cardHTML(c, !state.revealDealer && i === 1)).join("");
@@ -397,13 +477,15 @@
         const active = state.phase === "player" && idx === state.activeHand ? " active" : "";
         const score = handValue(h.cards);
         const tag = h.busted ? "BUST" : (h.blackjack ? "BLACKJACK" : (h.stood ? "STAND" : ""));
+        const handLabel = currentLang === "ko" ? "핸드" : "Hand";
+        const betLabel = currentLang === "ko" ? "베팅" : "Bet";
         return `<div class="hand${active}">
-          <div class="hand-top"><span>핸드 ${idx + 1} · 베팅 ${Math.floor(h.bet).toLocaleString()}</span><span>${tag || score}</span></div>
+          <div class="hand-top"><span>${handLabel} ${idx + 1} · ${betLabel} ${Math.floor(h.bet).toLocaleString()}</span><span>${tag || score}</span></div>
           <div class="cards">${h.cards.map((c) => cardHTML(c, false)).join("")}</div>
         </div>`;
       }).join("");
 
-      if (!state.hands.length) el.playerHands.innerHTML = '<div class="hand"><div class="hand-top"><span>핸드 없음</span><span>-</span></div><div class="cards"></div></div>';
+      if (!state.hands.length) el.playerHands.innerHTML = `<div class="hand"><div class="hand-top"><span>${currentLang === "ko" ? "핸드 없음" : "No hand"}</span><span>-</span></div><div class="cards"></div></div>`;
       const active = state.hands[state.activeHand];
       el.playerScore.textContent = active ? handValue(active.cards) : "-";
 
@@ -452,7 +534,7 @@
         try { await SharedWallet.init(); } catch (_) {}
       }
       state.gold = typeof SharedWallet !== "undefined" ? Number(SharedWallet.gold || 0) : 1000;
-      setStatus("베팅 버튼을 눌러 시작하세요.");
+      setStatus(currentLang === "ko" ? "베팅 버튼을 눌러 시작하세요." : "Press a bet button to start.");
       render();
     }
 
@@ -489,12 +571,12 @@
     function startRound(betAmount) {
       if (state.phase !== "betting") return;
       if (betAmount <= 0) {
-        setStatus("베팅 금액이 부족합니다.", "lose");
+        setStatus(t("betInsufficient"), "lose");
         render();
         return;
       }
       if (!walletRemove(betAmount)) {
-        setStatus("골드가 부족합니다.", "lose");
+        setStatus(t("goldInsufficient"), "lose");
         render();
         return;
       }
@@ -505,7 +587,7 @@
       state.hands = [{ cards: [draw(), draw()], bet: betAmount, stood: false, busted: false, blackjack: false, doubled: false }];
       state.dealer = [draw(), draw()];
       state.phase = "player";
-      SFX.voice("deal");
+      SFX.voice(voiceKey("deal"));
       setTimeout(() => SFX.cardFlip(), 200);
       setTimeout(() => SFX.cardFlip(), 500);
 
@@ -517,7 +599,7 @@
         state.revealDealer = true;
         settleNaturals(p.blackjack, dealerBJ);
       } else {
-        setStatus("플레이어 턴: Hit / Stand / Double / Split", "");
+        setStatus(t("playerTurn"), "");
       }
       render();
     }
@@ -527,7 +609,7 @@
       let payout = 0;
       if (playerBJ && dealerBJ) {
         payout = bet;
-        setStatus("PUSH", "push");
+        setStatus(t("push"), "push");
       } else if (playerBJ) {
         payout = Math.floor(bet * 2.5);
         applyStreakAndFinish(payout, bet, "BLACKJACK", "win", true);
@@ -535,7 +617,7 @@
       } else {
         payout = 0;
         state.streak = 0;
-        setStatus("LOSE", "lose");
+        setStatus(t("lose"), "lose");
       }
       if (payout > 0) walletAdd(payout);
       state.phase = "betting";
@@ -568,12 +650,12 @@
       if (v > 21) {
         h.busted = true;
         h.stood = true;
-        setStatus(`핸드 ${state.activeHand + 1} BUST`, "lose");
-        SFX.voice("bust");
+        setStatus(t("handBust", state.activeHand + 1), "lose");
+        SFX.voice(voiceKey("bust"));
         nextHand();
       } else if (v === 21) {
         h.stood = true;
-        setStatus(`핸드 ${state.activeHand + 1} 21`, "");
+        setStatus(`${currentLang === "ko" ? "핸드" : "Hand"} ${state.activeHand + 1} 21`, "");
         nextHand();
       }
       render();
@@ -583,7 +665,7 @@
       if (state.phase !== "player") return;
       const h = currentHand();
       h.stood = true;
-      setStatus(`핸드 ${state.activeHand + 1} STAND`, "");
+      setStatus(`${currentLang === "ko" ? "핸드" : "Hand"} ${state.activeHand + 1} STAND`, "");
       nextHand();
       render();
     }
@@ -592,7 +674,7 @@
       if (state.phase !== "player" || !canDoubleCurrent()) return;
       const h = currentHand();
       if (!walletRemove(h.bet)) {
-        setStatus("더블다운 골드 부족", "lose");
+        setStatus(t("goldInsufficient"), "lose");
         render();
         return;
       }
@@ -602,9 +684,9 @@
       const v = handValue(h.cards);
       if (v > 21) {
         h.busted = true;
-        setStatus(`핸드 ${state.activeHand + 1} DOUBLE BUST`, "lose");
+        setStatus(t("handDoubleBust", state.activeHand + 1), "lose");
       } else {
-        setStatus(`핸드 ${state.activeHand + 1} DOUBLE STAND`, "");
+        setStatus(`${currentLang === "ko" ? "핸드" : "Hand"} ${state.activeHand + 1} DOUBLE STAND`, "");
       }
       h.stood = true;
       nextHand();
@@ -615,7 +697,7 @@
       if (state.phase !== "player" || !canSplitCurrent()) return;
       const h = currentHand();
       if (!walletRemove(h.bet)) {
-        setStatus("스플릿 골드 부족", "lose");
+        setStatus(t("goldInsufficient"), "lose");
         render();
         return;
       }
@@ -625,7 +707,7 @@
       const h2 = { cards: [c2, draw()], bet: h.bet, stood: false, busted: false, blackjack: false, doubled: false };
       state.hands = [h1, h2];
       state.activeHand = 0;
-      setStatus("SPLIT 완료: 핸드 1부터 진행", "");
+      setStatus(currentLang === "ko" ? "SPLIT 완료: 핸드 1부터 진행" : "SPLIT done: starting Hand 1", "");
       render();
     }
 
@@ -649,9 +731,9 @@
 
     function summarizeRound(resultClass, profit, bonusGold, payout) {
       const parts = [`${resultClass}`];
-      if (bonusGold > 0) parts.push(`연승보너스 +${Math.floor(bonusGold)}`);
-      parts.push(`정산 +${Math.floor(payout)}`);
-      parts.push(`순익 ${profit >= 0 ? "+" : ""}${Math.floor(profit)}`);
+      if (bonusGold > 0) parts.push(t("streakBonus", Math.floor(bonusGold)));
+      parts.push(t("settle", Math.floor(payout)));
+      parts.push(t("profit", Math.floor(profit)));
       return parts.join(" · ");
     }
 
@@ -683,12 +765,12 @@
       setStatus(summarizeRound(label, finalProfit, bonusGold, finalPayout), statusType);
 
       if (finalProfit > 0) {
-        SFX.win(); SFX.voice(label === "BLACKJACK" ? "blackjack" : "player-win");
+        SFX.win(); SFX.voice(voiceKey(label === "BLACKJACK" ? "blackjack" : "player-win"));
         party.sparkles(el.table, { count: 28, spread: 42, speed: 260, color: ["#ffd166", "#76f5ae", "#ffffff"] });
       } else if (finalProfit < 0) {
-        SFX.lose(); SFX.voice("dealer-win");
+        SFX.lose(); SFX.voice(voiceKey("dealer-win"));
       } else {
-        SFX.voice("push");
+        SFX.voice(voiceKey("push"));
       }
       render();
     }
@@ -713,10 +795,10 @@
       }
 
       const profit = payout - totalBet;
-      let label = "PUSH";
+      let label = t("push");
       let type = "push";
-      if (profit > 0) { label = "WIN"; type = "win"; }
-      if (profit < 0) { label = "LOSE"; type = "lose"; }
+      if (profit > 0) { label = t("win"); type = "win"; }
+      if (profit < 0) { label = t("lose"); type = "lose"; }
 
       applyStreakAndFinish(payout, totalBet, label, type);
     }
@@ -733,6 +815,14 @@
     el.doubleBtn.addEventListener("click", doubleDown);
     el.splitBtn.addEventListener("click", split);
 
+    document.getElementById("langBtn").addEventListener("click", () => {
+      currentLang = currentLang === "ko" ? "en" : "ko";
+      localStorage.setItem("bj-lang", currentLang);
+      updateLangUI();
+      render();
+    });
+
+    updateLangUI();
     init();
   </script>
 </body>
