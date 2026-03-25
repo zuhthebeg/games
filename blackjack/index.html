@@ -575,17 +575,18 @@
     function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
     async function dealCardTo(target, card) {
-      target.push(card);
-      SFX.cardFlip();
-      render();
-      // animate the newest card
-      await wait(50);
-      const allCards = document.querySelectorAll(`[data-card-id="${card.id}"]`);
-      allCards.forEach(el => {
-        el.style.opacity = "0"; el.style.transform = "translateY(-40px) rotate(-8deg)";
-        anime({ targets: el, opacity: [0,1], translateY: [-40,0], rotate: [-8,0], duration: 320, easing: "easeOutCubic" });
-      });
-      await wait(380);
+      try {
+        target.push(card);
+        SFX.cardFlip();
+        render();
+        await wait(50);
+        const allCards = document.querySelectorAll(`[data-card-id="${card.id}"]`);
+        allCards.forEach(node => {
+          node.style.opacity = "0"; node.style.transform = "translateY(-40px) rotate(-8deg)";
+          anime({ targets: node, opacity: [0,1], translateY: [-40,0], rotate: [-8,0], duration: 320, easing: "easeOutCubic" });
+        });
+        await wait(380);
+      } catch(e) { console.warn("dealCardTo error:", e); render(); }
     }
 
     async function startRound(betAmount) {
@@ -609,19 +610,24 @@
       state.dealer = [];
       render();
 
-      SFX.voice(voiceKey("deal"));
-      await wait(600);
+      try {
+        SFX.voice(voiceKey("deal"));
+        await wait(600);
 
-      // Deal 4 cards alternating: player, dealer, player, dealer
-      const c1 = draw(), c2 = draw(), c3 = draw(), c4 = draw();
-      await dealCardTo(state.hands[0].cards, c1);
-      await dealCardTo(state.dealer, c2);
-      await dealCardTo(state.hands[0].cards, c3);
-      await dealCardTo(state.dealer, c4);
+        const c1 = draw(), c2 = draw(), c3 = draw(), c4 = draw();
+        await dealCardTo(state.hands[0].cards, c1);
+        await dealCardTo(state.dealer, c2);
+        await dealCardTo(state.hands[0].cards, c3);
+        await dealCardTo(state.dealer, c4);
+      } catch(e) { console.warn("deal error:", e); }
 
       state.phase = "player";
 
       const p = state.hands[0];
+      // fallback: if cards didn't get dealt properly, force them in
+      while (p.cards.length < 2) p.cards.push(draw());
+      while (state.dealer.length < 2) state.dealer.push(draw());
+
       p.blackjack = isBlackjack(p.cards);
       const dealerBJ = isBlackjack(state.dealer);
 
