@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({"gtm.start":new Date().getTime(),event:"gtm.js"});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!="dataLayer"?"&l="+l:"";j.async=true;j.src="https://www.googletagmanager.com/gtm.js?id="+i+dl;f.parentNode.insertBefore(j,f)})(window,document,"script","dataLayer","GTM-MV8KQGJF");</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>블랙잭 카지노</title>
+  <meta name="description" content="SharedWallet 골드로 베팅하는 모바일 블랙잭. Hit, Stand, Double Down, Split, 연승 보너스를 지원하는 다크 카지노 스타일 게임.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="블랙잭 카지노">
+  <meta property="og:description" content="딜러와 1:1 블랙잭. 골드 베팅, 블랙잭 3:2 배당, 연승 보너스까지.">
+  <meta property="og:image" content="icon.svg">
+  <meta property="og:locale" content="ko_KR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="블랙잭 카지노">
+  <meta name="twitter:description" content="모바일 우선 다크모드 블랙잭 게임">
+  <meta name="twitter:image" content="icon.svg">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <!-- AdSense: managed via GTM auto-ads (ca-pub-6634731722045607) -->
+  <script src="https://cdn.jsdelivr.net/npm/animejs@4.3.6/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/party-js@2.2.0/bundle/party.min.js"></script>
+  <script>window.SharedWalletConfig = { autoGuest: true };</script>
+  <script src="/lib/shared-wallet.js?v=20260312a"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg1: #031a14;
+      --bg2: #06241c;
+      --felt1: #0a3d2f;
+      --felt2: #0f4f3b;
+      --panel: rgba(7, 21, 18, 0.72);
+      --panel-strong: rgba(5, 16, 13, 0.85);
+      --text: #e9fff8;
+      --muted: #9bc6b9;
+      --gold: #ffd166;
+      --ok: #76f5ae;
+      --danger: #ff7b7b;
+      --line: rgba(183, 255, 227, 0.24);
+      --win: #ffe8a2;
+      --lose: #ff9e9e;
+      --push: #d3e2ff;
+      --cardW: 62px;
+      --cardH: 90px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; min-height: 100%; }
+    body {
+      font-family: "Pretendard", "SUIT", "Noto Sans KR", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(120% 95% at 0% 0%, rgba(255, 209, 102, 0.14), transparent 42%),
+        radial-gradient(130% 100% at 100% 100%, rgba(83, 255, 186, 0.13), transparent 50%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 9px),
+        linear-gradient(160deg, var(--bg2), var(--bg1));
+      padding-top: calc(48px + env(safe-area-inset-top));
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      padding-left: 10px;
+      padding-right: 10px;
+      display: flex;
+      justify-content: center;
+    }
+    .app {
+      width: min(100%, 460px);
+      min-height: calc(100dvh - 48px - env(safe-area-inset-top));
+      display: grid;
+      grid-template-rows: auto auto auto 1fr auto auto;
+      gap: 10px;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+      backdrop-filter: blur(8px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 10px 30px rgba(0,0,0,0.35);
+    }
+    .top {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 10px;
+      align-items: center;
+    }
+    .title { font-size: 1rem; font-weight: 900; letter-spacing: 0.02em; }
+    .sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .gold {
+      font-size: 0.9rem;
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 0 12px rgba(255, 209, 102, 0.45);
+    }
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 10px;
+    }
+    .meta .item { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
+    .meta .k { font-size: 0.64rem; color: var(--muted); }
+    .meta .v { font-size: 0.93rem; font-weight: 800; margin-top: 2px; }
+    .table {
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,0.08), transparent 50%),
+        linear-gradient(180deg, var(--felt2), var(--felt1));
+      border: 2px solid rgba(255, 232, 162, 0.22);
+      border-radius: 22px;
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      position: relative;
+      overflow: hidden;
+    }
+    .table::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      pointer-events: none;
+    }
+    .seat { background: var(--panel-strong); border: 1px solid var(--line); border-radius: 14px; padding: 10px; }
+    .seat-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .seat-title { font-size: 0.78rem; font-weight: 800; color: var(--muted); }
+    .score { font-size: 0.9rem; font-weight: 900; }
+    .cards { display: flex; gap: 7px; min-height: calc(var(--cardH) + 4px); flex-wrap: wrap; }
+    .card {
+      width: var(--cardW);
+      height: var(--cardH);
+      border-radius: 10px;
+      padding: 6px;
+      background: #f6faf8;
+      color: #111;
+      border: 1px solid rgba(0,0,0,0.2);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      font-weight: 900;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+      transform-origin: center bottom;
+    }
+    .card.red { color: #c9303e; }
+    .card.back {
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255,255,255,0.18), transparent 26%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 6px, rgba(0,0,0,0.06) 6px 12px),
+        linear-gradient(135deg, #163f6b, #1f5a97);
+      color: transparent;
+      border-color: rgba(255,255,255,0.28);
+    }
+    .rank { font-size: 0.92rem; line-height: 1; }
+    .suit { font-size: 1.38rem; line-height: 1; text-align: center; align-self: center; }
+    .rank.bottom { transform: rotate(180deg); text-align: right; }
+    .hand-wrap { display: grid; gap: 8px; }
+    .hand {
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 8px;
+      background: rgba(0,0,0,0.22);
+    }
+    .hand.active { border-color: rgba(255, 209, 102, 0.64); box-shadow: 0 0 0 1px rgba(255, 209, 102, 0.45) inset; }
+    .hand-top { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.72rem; color: var(--muted); }
+    .status {
+      text-align: center;
+      padding: 10px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      min-height: 44px;
+      display: grid;
+      align-items: center;
+    }
+    .status.win { color: var(--win); }
+    .status.lose { color: var(--lose); }
+    .status.push { color: var(--push); }
+    .bet, .actions { padding: 10px; }
+    .row { display: flex; gap: 7px; flex-wrap: wrap; }
+    button {
+      flex: 1;
+      min-width: 62px;
+      min-height: 42px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: var(--text);
+      font-weight: 800;
+      background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07));
+      cursor: pointer;
+    }
+    button:active:enabled { transform: scale(0.97); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .bet button { background: linear-gradient(180deg, rgba(255, 209, 102, 0.34), rgba(255, 209, 102, 0.12)); color: #fff5de; }
+    .bet .allin { background: linear-gradient(180deg, rgba(255, 107, 107, 0.45), rgba(255, 107, 107, 0.16)); }
+    .actions .hit { border-color: rgba(118,245,174,0.45); }
+    .actions .stand { border-color: rgba(211,226,255,0.45); }
+    .actions .double { border-color: rgba(255,209,102,0.6); }
+    .actions .split { border-color: rgba(255,170,236,0.58); }
+  </style>
+</head>
+<body>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+  <main class="app">
+    <section class="panel top">
+      <div>
+        <div class="title">블랙잭 카지노</div>
+        <div class="sub">딜러는 17 이상에서 Stand</div>
+      </div>
+      <div class="gold" id="goldText">Gold 0</div>
+    </section>
+
+    <section class="panel meta">
+      <div class="item"><div class="k">현재 베팅</div><div class="v" id="betText">0</div></div>
+      <div class="item"><div class="k">연승</div><div class="v" id="streakText">0</div></div>
+      <div class="item"><div class="k">보너스</div><div class="v" id="bonusText">없음</div></div>
+    </section>
+
+    <section class="table" id="table">
+      <div class="seat">
+        <div class="seat-head">
+          <div class="seat-title">DEALER</div>
+          <div class="score" id="dealerScore">-</div>
+        </div>
+        <div class="cards" id="dealerCards"></div>
+      </div>
+
+      <div class="seat">
+        <div class="seat-head">
+          <div class="seat-title">PLAYER</div>
+          <div class="score" id="playerScore">-</div>
+        </div>
+        <div class="hand-wrap" id="playerHands"></div>
+      </div>
+    </section>
+
+    <section class="status" id="status">베팅 버튼을 눌러 시작하세요.</section>
+
+    <section class="panel bet">
+      <div class="row">
+        <button data-bet="10">10</button>
+        <button data-bet="50">50</button>
+        <button data-bet="100">100</button>
+        <button data-bet="500">500</button>
+        <button class="allin" data-bet="all">ALL IN</button>
+      </div>
+    </section>
+
+    <section class="panel actions">
+      <div class="row">
+        <button class="hit" id="hitBtn">Hit</button>
+        <button class="stand" id="standBtn">Stand</button>
+        <button class="double" id="doubleBtn">Double Down</button>
+        <button class="split" id="splitBtn">Split</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const SUITS = ["♠", "♥", "♦", "♣"];
+    const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+
+    const state = {
+      gold: 0,
+      deck: [],
+      dealer: [],
+      hands: [],
+      activeHand: 0,
+      phase: "betting",
+      bet: 0,
+      streak: 0,
+      status: "",
+      statusType: "",
+      revealDealer: false,
+      nextCardId: 1,
+      animQueue: []
+    };
+
+    const el = {
+      goldText: document.getElementById("goldText"),
+      betText: document.getElementById("betText"),
+      streakText: document.getElementById("streakText"),
+      bonusText: document.getElementById("bonusText"),
+      dealerCards: document.getElementById("dealerCards"),
+      dealerScore: document.getElementById("dealerScore"),
+      playerScore: document.getElementById("playerScore"),
+      playerHands: document.getElementById("playerHands"),
+      status: document.getElementById("status"),
+      table: document.getElementById("table"),
+      hitBtn: document.getElementById("hitBtn"),
+      standBtn: document.getElementById("standBtn"),
+      doubleBtn: document.getElementById("doubleBtn"),
+      splitBtn: document.getElementById("splitBtn")
+    };
+
+    function makeDeck() {
+      const cards = [];
+      for (const suit of SUITS) {
+        for (const rank of RANKS) {
+          const value = rank === "A" ? 11 : (rank === "J" || rank === "Q" || rank === "K" ? 10 : Number(rank));
+          cards.push({ suit, rank, value, id: state.nextCardId++ });
+        }
+      }
+      for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+      }
+      return cards;
+    }
+
+    function handValue(cards) {
+      let sum = 0;
+      let aces = 0;
+      for (const c of cards) {
+        sum += c.value;
+        if (c.rank === "A") aces += 1;
+      }
+      while (sum > 21 && aces > 0) {
+        sum -= 10;
+        aces -= 1;
+      }
+      return sum;
+    }
+
+    function isBlackjack(cards) {
+      return cards.length === 2 && handValue(cards) === 21;
+    }
+
+    function draw() {
+      const c = state.deck.pop();
+      state.animQueue.push(c.id);
+      return c;
+    }
+
+    function cardClass(card) {
+      return card.suit === "♥" || card.suit === "♦" ? "red" : "black";
+    }
+
+    function cardHTML(card, hidden) {
+      if (hidden) return '<div class="card back"></div>';
+      const dealing = state.animQueue.includes(card.id) ? " dealing" : "";
+      return `<div class="card ${cardClass(card)}${dealing}" data-card-id="${card.id}"><div class="rank">${card.rank}</div><div class="suit">${card.suit}</div><div class="rank bottom">${card.rank}</div></div>`;
+    }
+
+    function bonusLabel(streak = state.streak) {
+      if (streak >= 5) return "+100%";
+      if (streak >= 3) return "+50%";
+      return "없음";
+    }
+
+    function setStatus(text, type = "") {
+      state.status = text;
+      state.statusType = type;
+      renderStatus();
+    }
+
+    function renderStatus() {
+      el.status.textContent = state.status;
+      el.status.className = "status" + (state.statusType ? ` ${state.statusType}` : "");
+    }
+
+    function render() {
+      el.goldText.textContent = `Gold ${Math.floor(state.gold).toLocaleString()}`;
+      el.betText.textContent = Math.floor(state.bet).toLocaleString();
+      el.streakText.textContent = `${state.streak}연승`;
+      el.bonusText.textContent = bonusLabel();
+
+      const dealerCards = state.dealer.map((c, i) => cardHTML(c, !state.revealDealer && i === 1)).join("");
+      el.dealerCards.innerHTML = dealerCards;
+      const dealerShown = state.revealDealer ? handValue(state.dealer) : handValue([state.dealer[0]].filter(Boolean));
+      el.dealerScore.textContent = state.dealer.length ? dealerShown : "-";
+
+      el.playerHands.innerHTML = state.hands.map((h, idx) => {
+        const active = state.phase === "player" && idx === state.activeHand ? " active" : "";
+        const score = handValue(h.cards);
+        const tag = h.busted ? "BUST" : (h.blackjack ? "BLACKJACK" : (h.stood ? "STAND" : ""));
+        return `<div class="hand${active}">
+          <div class="hand-top"><span>핸드 ${idx + 1} · 베팅 ${Math.floor(h.bet).toLocaleString()}</span><span>${tag || score}</span></div>
+          <div class="cards">${h.cards.map((c) => cardHTML(c, false)).join("")}</div>
+        </div>`;
+      }).join("");
+
+      if (!state.hands.length) el.playerHands.innerHTML = '<div class="hand"><div class="hand-top"><span>핸드 없음</span><span>-</span></div><div class="cards"></div></div>';
+      const active = state.hands[state.activeHand];
+      el.playerScore.textContent = active ? handValue(active.cards) : "-";
+
+      const playerPhase = state.phase === "player";
+      const bettingPhase = state.phase === "betting";
+      const canSplit = playerPhase && canSplitCurrent();
+      const canDouble = playerPhase && canDoubleCurrent();
+
+      document.querySelectorAll("[data-bet]").forEach((b) => { b.disabled = !bettingPhase; });
+      el.hitBtn.disabled = !playerPhase;
+      el.standBtn.disabled = !playerPhase;
+      el.doubleBtn.disabled = !canDouble;
+      el.splitBtn.disabled = !canSplit;
+
+      animateNewCards();
+      renderStatus();
+    }
+
+    function animateNewCards() {
+      const nodes = Array.from(document.querySelectorAll(".card.dealing"));
+      if (!nodes.length) return;
+      anime({
+        targets: nodes,
+        translateY: [-110, 0],
+        rotate: ["-8deg", "0deg"],
+        opacity: [0, 1],
+        scale: [0.88, 1],
+        delay: anime.stagger(70),
+        duration: 360,
+        easing: "easeOutCubic",
+        complete: () => {
+          nodes.forEach((n) => n.classList.remove("dealing"));
+        }
+      });
+      state.animQueue = [];
+    }
+
+    function syncGold() {
+      if (typeof SharedWallet !== "undefined") {
+        state.gold = Number(SharedWallet.gold || 0);
+      }
+    }
+
+    async function init() {
+      if (typeof SharedWallet !== "undefined" && SharedWallet.init) {
+        try { await SharedWallet.init(); } catch (_) {}
+      }
+      state.gold = typeof SharedWallet !== "undefined" ? Number(SharedWallet.gold || 0) : 1000;
+      setStatus("베팅 버튼을 눌러 시작하세요.");
+      render();
+    }
+
+    function walletRemove(amount) {
+      if (amount <= 0) return true;
+      if (typeof SharedWallet === "undefined" || !SharedWallet.removeGold) {
+        if (state.gold >= amount) { state.gold -= amount; return true; }
+        return false;
+      }
+      const ok = SharedWallet.removeGold(amount);
+      syncGold();
+      return !!ok;
+    }
+
+    function walletAdd(amount) {
+      if (amount <= 0) return;
+      if (typeof SharedWallet === "undefined" || !SharedWallet.addGold) {
+        state.gold += amount;
+        return;
+      }
+      SharedWallet.addGold(amount);
+      syncGold();
+    }
+
+    function resetRound() {
+      state.deck = makeDeck();
+      state.dealer = [];
+      state.hands = [];
+      state.activeHand = 0;
+      state.revealDealer = false;
+      state.animQueue = [];
+    }
+
+    function startRound(betAmount) {
+      if (state.phase !== "betting") return;
+      if (betAmount <= 0) {
+        setStatus("베팅 금액이 부족합니다.", "lose");
+        render();
+        return;
+      }
+      if (!walletRemove(betAmount)) {
+        setStatus("골드가 부족합니다.", "lose");
+        render();
+        return;
+      }
+
+      state.bet = betAmount;
+      resetRound();
+      state.hands = [{ cards: [draw(), draw()], bet: betAmount, stood: false, busted: false, blackjack: false, doubled: false }];
+      state.dealer = [draw(), draw()];
+      state.phase = "player";
+
+      const p = state.hands[0];
+      p.blackjack = isBlackjack(p.cards);
+      const dealerBJ = isBlackjack(state.dealer);
+
+      if (p.blackjack || dealerBJ) {
+        state.revealDealer = true;
+        settleNaturals(p.blackjack, dealerBJ);
+      } else {
+        setStatus("플레이어 턴: Hit / Stand / Double / Split", "");
+      }
+      render();
+    }
+
+    function settleNaturals(playerBJ, dealerBJ) {
+      const bet = state.hands[0].bet;
+      let payout = 0;
+      if (playerBJ && dealerBJ) {
+        payout = bet;
+        setStatus("PUSH", "push");
+      } else if (playerBJ) {
+        payout = Math.floor(bet * 2.5);
+        applyStreakAndFinish(payout, bet, "BLACKJACK", "win", true);
+        return;
+      } else {
+        payout = 0;
+        state.streak = 0;
+        setStatus("LOSE", "lose");
+      }
+      if (payout > 0) walletAdd(payout);
+      state.phase = "betting";
+      render();
+    }
+
+    function canSplitCurrent() {
+      const h = state.hands[state.activeHand];
+      if (!h || h.cards.length !== 2 || state.hands.length > 1) return false;
+      if (h.cards[0].rank !== h.cards[1].rank) return false;
+      return state.gold >= h.bet;
+    }
+
+    function canDoubleCurrent() {
+      const h = state.hands[state.activeHand];
+      if (!h || h.cards.length !== 2 || h.doubled) return false;
+      return state.gold >= h.bet;
+    }
+
+    function currentHand() {
+      return state.hands[state.activeHand];
+    }
+
+    function hit() {
+      if (state.phase !== "player") return;
+      const h = currentHand();
+      h.cards.push(draw());
+      const v = handValue(h.cards);
+      if (v > 21) {
+        h.busted = true;
+        h.stood = true;
+        setStatus(`핸드 ${state.activeHand + 1} BUST`, "lose");
+        nextHand();
+      } else if (v === 21) {
+        h.stood = true;
+        setStatus(`핸드 ${state.activeHand + 1} 21`, "");
+        nextHand();
+      }
+      render();
+    }
+
+    function stand() {
+      if (state.phase !== "player") return;
+      const h = currentHand();
+      h.stood = true;
+      setStatus(`핸드 ${state.activeHand + 1} STAND`, "");
+      nextHand();
+      render();
+    }
+
+    function doubleDown() {
+      if (state.phase !== "player" || !canDoubleCurrent()) return;
+      const h = currentHand();
+      if (!walletRemove(h.bet)) {
+        setStatus("더블다운 골드 부족", "lose");
+        render();
+        return;
+      }
+      h.bet *= 2;
+      h.doubled = true;
+      h.cards.push(draw());
+      const v = handValue(h.cards);
+      if (v > 21) {
+        h.busted = true;
+        setStatus(`핸드 ${state.activeHand + 1} DOUBLE BUST`, "lose");
+      } else {
+        setStatus(`핸드 ${state.activeHand + 1} DOUBLE STAND`, "");
+      }
+      h.stood = true;
+      nextHand();
+      render();
+    }
+
+    function split() {
+      if (state.phase !== "player" || !canSplitCurrent()) return;
+      const h = currentHand();
+      if (!walletRemove(h.bet)) {
+        setStatus("스플릿 골드 부족", "lose");
+        render();
+        return;
+      }
+      const c1 = h.cards[0];
+      const c2 = h.cards[1];
+      const h1 = { cards: [c1, draw()], bet: h.bet, stood: false, busted: false, blackjack: false, doubled: false };
+      const h2 = { cards: [c2, draw()], bet: h.bet, stood: false, busted: false, blackjack: false, doubled: false };
+      state.hands = [h1, h2];
+      state.activeHand = 0;
+      setStatus("SPLIT 완료: 핸드 1부터 진행", "");
+      render();
+    }
+
+    function nextHand() {
+      const next = state.hands.findIndex((h, idx) => idx > state.activeHand && !h.stood && !h.busted);
+      if (next >= 0) {
+        state.activeHand = next;
+        return;
+      }
+      dealerTurn();
+    }
+
+    function dealerTurn() {
+      state.phase = "dealer";
+      state.revealDealer = true;
+      while (handValue(state.dealer) < 17) {
+        state.dealer.push(draw());
+      }
+      settleRound();
+    }
+
+    function summarizeRound(resultClass, profit, bonusGold, payout) {
+      const parts = [`${resultClass}`];
+      if (bonusGold > 0) parts.push(`연승보너스 +${Math.floor(bonusGold)}`);
+      parts.push(`정산 +${Math.floor(payout)}`);
+      parts.push(`순익 ${profit >= 0 ? "+" : ""}${Math.floor(profit)}`);
+      return parts.join(" · ");
+    }
+
+    function applyStreakAndFinish(basePayout, totalBet, label, type, forceWin = false) {
+      const baseProfit = basePayout - totalBet;
+      const winRound = forceWin || baseProfit > 0;
+      let nextStreak = state.streak;
+      if (winRound) nextStreak += 1;
+      else if (baseProfit < 0) nextStreak = 0;
+
+      let bonusRate = 0;
+      if (winRound && baseProfit > 0) {
+        if (nextStreak >= 5) bonusRate = 1;
+        else if (nextStreak >= 3) bonusRate = 0.5;
+      }
+      const bonusGold = Math.floor(baseProfit * bonusRate);
+      const finalPayout = basePayout + bonusGold;
+      if (finalPayout > 0) walletAdd(finalPayout);
+
+      state.streak = nextStreak;
+      state.phase = "betting";
+
+      const finalProfit = finalPayout - totalBet;
+      let statusType = type;
+      if (finalProfit > 0) statusType = "win";
+      if (finalProfit === 0) statusType = "push";
+      if (finalProfit < 0) statusType = "lose";
+
+      setStatus(summarizeRound(label, finalProfit, bonusGold, finalPayout), statusType);
+
+      if (finalProfit > 0) {
+        party.sparkles(el.table, { count: 28, spread: 42, speed: 260, color: ["#ffd166", "#76f5ae", "#ffffff"] });
+      }
+      render();
+    }
+
+    function settleRound() {
+      const dealerV = handValue(state.dealer);
+      let totalBet = 0;
+      let payout = 0;
+
+      for (const h of state.hands) {
+        const pv = handValue(h.cards);
+        totalBet += h.bet;
+
+        if (h.busted) {
+          continue;
+        }
+        if (dealerV > 21 || pv > dealerV) {
+          payout += h.bet * 2;
+        } else if (pv === dealerV) {
+          payout += h.bet;
+        }
+      }
+
+      const profit = payout - totalBet;
+      let label = "PUSH";
+      let type = "push";
+      if (profit > 0) { label = "WIN"; type = "win"; }
+      if (profit < 0) { label = "LOSE"; type = "lose"; }
+
+      applyStreakAndFinish(payout, totalBet, label, type);
+    }
+
+    document.querySelectorAll("[data-bet]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const v = btn.dataset.bet === "all" ? Math.floor(state.gold) : Number(btn.dataset.bet);
+        startRound(v);
+      });
+    });
+
+    el.hitBtn.addEventListener("click", hit);
+    el.standBtn.addEventListener("click", stand);
+    el.doubleBtn.addEventListener("click", doubleDown);
+    el.splitBtn.addEventListener("click", split);
+
+    init();
+  </script>
+</body>
+</html>

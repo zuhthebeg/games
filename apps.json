@@ -1,5 +1,19 @@
 [
   {
+    "title": "블랙잭",
+    "icon": "https://game.cocy.io/blackjack/icon.svg",
+    "url": "https://game.cocy.io/blackjack/",
+    "desc": "딜러와 1:1 블랙잭! 골드 베팅, 3:2 배당, 연승 보너스",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🇰🇷"
+    ],
+    "category": "game"
+  },
+  {
     "title": "D2R 룬워드 조합기",
     "icon": "https://game.cocy.io/d2r-runewords/icon.svg",
     "url": "https://game.cocy.io/d2r-runewords/",
