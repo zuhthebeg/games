@@ -583,10 +583,10 @@
         state.gold -= amount;
         return true;
       }
-      const ok = SharedWallet.removeGold(amount);
+      SharedWallet.removeGold(amount);
       syncGold();
       if (state.gold < 0) { SharedWallet.addGold(amount); syncGold(); return false; }
-      return !!ok;
+      return true;
     }
 
     function walletAdd(amount) {
