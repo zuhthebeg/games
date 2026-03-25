@@ -1554,11 +1554,13 @@
       showModeSelect();
     });
 
-    // ── URL room parameter check on load ──
-    (function checkUrlRoom() {
+    // ── Auto-reconnect / URL room / mode select on load ──
+    (function startupRoute() {
       const params = new URLSearchParams(window.location.search);
       const roomCode = params.get("room");
+
       if (roomCode) {
+        // URL로 방 코드 전달됨 → 바로 멀티 로비
         window.history.replaceState({}, "", window.location.pathname);
         showScreen("mpLobbyContainer");
         initMultiplayer();
@@ -1566,6 +1568,10 @@
           const inp = document.getElementById("mp-room-code");
           if (inp) inp.value = roomCode;
         }, 300);
+      } else if (localStorage.getItem("relay_roomId") && localStorage.getItem("relay_gameType") === "blackjack") {
+        // 이전 방 세션 남아있음 → 자동 재연결 시도
+        showScreen("mpLobbyContainer");
+        initMultiplayer(); // MultiplayerUI.show() 내부에서 _tryReconnect() 호출
       } else {
         showModeSelect();
       }
