@@ -364,7 +364,7 @@
       lose() { this._noise(0.3, 200, "sawtooth", 0.08); },
       async voice(name) {
         try {
-          if (!this._voices[name]) { const r = await fetch(`sounds/${name}.ogg`); const buf = await r.arrayBuffer(); this._voices[name] = await this._getCtx().decodeAudioData(buf); }
+          if (!this._voices[name]) { const r = await fetch(`sounds/${name}.ogg?v=2`); const buf = await r.arrayBuffer(); this._voices[name] = await this._getCtx().decodeAudioData(buf); }
           const ctx = this._getCtx(); const src = ctx.createBufferSource(); src.buffer = this._voices[name]; src.connect(ctx.destination); src.start();
         } catch {}
       }
