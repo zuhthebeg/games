@@ -1311,14 +1311,76 @@
     // ── Multi: Game Start ──
     function handleMultiGameStart(gameState) {
       showScreen("multiGameScreen");
+      mpLastPhase = null;
+      const gd = gameState.myView || gameState.gameState || gameState;
+      if (gd.phase === "playing" || gd.phase === "betting") {
+        SFX.voice(voiceKey("deal"));
+      }
       renderMultiState(gameState);
     }
 
     // ── Multi: Event Handler ──
+    let mpLastPhase = null;
     async function handleMultiGameEvent(type, data) {
       try {
-        const state = await mpUI.getState();
-        renderMultiState(state);
+        const gs = await mpUI.getState();
+        const gd = gs.myView || gs.gameState || gs;
+        const phase = gd.phase;
+        const myId = mpUI.getClient()?.getMyUserId();
+
+        // SFX based on events
+        if (data?.events) {
+          for (const ev of data.events) {
+            if (ev.type === "bet_placed") SFX.chip();
+            if (ev.type === "dealing_started") {
+              SFX.voice(voiceKey("deal"));
+              // Card flip sounds with delay
+              setTimeout(() => SFX.cardFlip(), 200);
+              setTimeout(() => SFX.cardFlip(), 500);
+              setTimeout(() => SFX.cardFlip(), 800);
+              setTimeout(() => SFX.cardFlip(), 1100);
+            }
+            if (ev.type === "hit") SFX.cardFlip();
+            if (ev.type === "stand") { /* quiet */ }
+            if (ev.type === "double") { SFX.chip(); setTimeout(() => SFX.cardFlip(), 200); }
+            if (ev.type === "split") { SFX.chip(); SFX.cardFlip(); }
+            if (ev.type === "dealer_turn_completed") {
+              SFX.voice(voiceKey("dealer-win"));
+            }
+            if (ev.type === "settled") {
+              const me = gd.players?.find(p => p.id === myId);
+              if (me) {
+                const win = me.totalWinnings;
+                if (win > 0) {
+                  // Check for blackjack
+                  const hadBJ = me.hands?.some(h => h.blackjack);
+                  if (hadBJ) {
+                    SFX.fanfare();
+                    try { party.confetti(document.getElementById("multiGameScreen")); } catch(e) {}
+                  } else {
+                    SFX.win();
+                  }
+                  SFX.voice(voiceKey("player-win"));
+                } else if (win < 0) {
+                  SFX.lose();
+                  SFX.voice(voiceKey("dealer-win"));
+                } else {
+                  SFX.voice(voiceKey("push"));
+                }
+              }
+            }
+          }
+        }
+
+        // Phase transition SFX
+        if (phase !== mpLastPhase) {
+          if (phase === "betting" && mpLastPhase === "finished") {
+            SFX.chip(); // new round start
+          }
+          mpLastPhase = phase;
+        }
+
+        renderMultiState(gs);
       } catch (e) {
         console.error("[MP] getState error:", e);
       }
