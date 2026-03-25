@@ -1321,25 +1321,59 @@
     }
 
     // ── Multi: Render State ──
+    // Server returns: { players (lobby), gameState (public), myView (per-player) }
+    // gameState has: { players[], dealer, phase, currentPlayerIndex, currentHandIndex, config }
+    // myView has: { ...gameState, me, isMyTurn }
     function renderMultiState(gs) {
       if (!gs) return;
       const myId = mpUI.getClient()?.getMyUserId();
-      const view = gs.me ? gs : gs; // getPlayerView already returns me/isMyTurn
+
+      // Extract game data from server response structure
+      const gd = gs.myView || gs.gameState || gs;
+      const phase = gd.phase || gs.status || "waiting";
+      const gamePlayers = gd.players || [];
+      const dealer = gd.dealer || {};
+      const isMyTurn = gd.isMyTurn || false;
+      const currentPlayerIndex = gd.currentPlayerIndex ?? -1;
+      const currentHandIndex = gd.currentHandIndex ?? 0;
+
+      // If game hasn't started yet (waiting room), use lobby players
+      if (phase === "waiting" || (!gd.phase && gs.status === "waiting")) {
+        const lobbyPlayers = gs.players || [];
+        const playersEl = document.getElementById("mpPlayers");
+        playersEl.innerHTML = lobbyPlayers.map(p => {
+          const isMe = p.id === myId;
+          return `<div class="mp-player-seat${isMe ? " me" : ""}">
+            <div class="mp-player-head">
+              <span>${isMe ? p.nickname + " (나)" : (p.nickname || "Player")}</span>
+              <span>${p.isReady ? "✅" : "⏳"}</span>
+            </div>
+            <div style="color:var(--muted);font-size:0.7rem;padding:4px;">대기 중</div>
+          </div>`;
+        }).join("");
+        document.getElementById("multiPhaseText").textContent = "대기 중";
+        document.getElementById("mpDealerCards").innerHTML = "";
+        document.getElementById("mpDealerScore").textContent = "-";
+        document.getElementById("mpTurnStatus").textContent = "플레이 중";
+        document.getElementById("mpBetPanel").classList.add("hidden");
+        document.getElementById("mpActionPanel").classList.add("hidden");
+        return;
+      }
 
       // Phase text
       const phaseMap = { betting: "phaseBetting", dealing: "phaseDealing", playing: "phasePlaying", dealer_turn: "phaseDealerTurn", settling: "phaseSettling", finished: "phaseFinished" };
-      document.getElementById("multiPhaseText").textContent = t(phaseMap[gs.phase] || "phasePlaying");
+      document.getElementById("multiPhaseText").textContent = t(phaseMap[phase] || "phasePlaying");
 
       // Dealer cards
       const dealerEl = document.getElementById("mpDealerCards");
       const dealerScoreEl = document.getElementById("mpDealerScore");
-      if (gs.dealer && gs.dealer.cards) {
-        dealerEl.innerHTML = gs.dealer.cards.map(c => mpCardHTML(c)).join("");
-        if (gs.dealer.revealed) {
-          const validCards = gs.dealer.cards.filter(c => c);
+      if (dealer.cards && dealer.cards.length > 0) {
+        dealerEl.innerHTML = dealer.cards.map(c => mpCardHTML(c)).join("");
+        if (dealer.revealed) {
+          const validCards = dealer.cards.filter(c => c);
           dealerScoreEl.textContent = validCards.length ? handValue(validCards) : "-";
         } else {
-          const first = gs.dealer.cards[0];
+          const first = dealer.cards[0];
           dealerScoreEl.textContent = first ? handValue([first]) : "-";
         }
       } else {
@@ -1347,19 +1381,17 @@
         dealerScoreEl.textContent = "-";
       }
 
-      // Players
+      // Players (from gameState, which has hands/cards/bet info)
       const playersEl = document.getElementById("mpPlayers");
-      const players = gs.players || [];
-      playersEl.innerHTML = players.map(p => {
+      playersEl.innerHTML = gamePlayers.map((p, pi) => {
         const isMe = p.id === myId;
-        const isTurn = gs.phase === "playing" && gs.currentPlayerIndex !== undefined &&
-                       players[gs.currentPlayerIndex]?.id === p.id;
+        const isTurn = phase === "playing" && pi === currentPlayerIndex;
         const classes = ["mp-player-seat"];
         if (isMe) classes.push("me");
         if (isTurn) classes.push("current-turn");
 
         const handsHTML = (p.hands || []).map((h, hi) => {
-          const isCurrentHand = isTurn && hi === gs.currentHandIndex;
+          const isCurrentHand = isTurn && hi === currentHandIndex;
           const cardsStr = (h.cards || []).map(c => mpCardHTML(c)).join("");
           const val = h.cards?.length ? handValue(h.cards) : 0;
           let statusStr = "";
@@ -1377,7 +1409,7 @@
 
         const nameDisplay = isMe ? `${p.nickname || "Me"} (나)` : (p.nickname || "Player");
         const winDisplay = p.totalWinnings !== undefined ? ` | ${t("totalWinnings")}: ${p.totalWinnings >= 0 ? "+" : ""}${p.totalWinnings}` : "";
-        const readyBadge = gs.phase === "betting" ? (p.ready ? " ✅" : " ⏳") : "";
+        const readyBadge = phase === "betting" ? (p.ready ? " ✅" : " ⏳") : "";
 
         return `<div class="${classes.join(" ")}">
           <div class="mp-player-head">
@@ -1390,26 +1422,26 @@
 
       // Turn status
       const statusEl = document.getElementById("mpTurnStatus");
-      if (gs.phase === "betting") {
-        const me = players.find(p => p.id === myId);
-        statusEl.textContent = me?.ready ? "다른 플레이어 베팅 대기..." : t("phaseBetting") + " - 베팅하세요!";
-      } else if (gs.phase === "playing") {
-        const currentPlayer = players[gs.currentPlayerIndex];
+      if (phase === "betting") {
+        const mePlayer = gamePlayers.find(p => p.id === myId);
+        statusEl.textContent = mePlayer?.ready ? "다른 플레이어 베팅 대기..." : t("phaseBetting") + " - 베팅하세요!";
+      } else if (phase === "playing") {
+        const currentPlayer = gamePlayers[currentPlayerIndex];
         if (currentPlayer?.id === myId) {
           statusEl.textContent = t("yourTurn");
         } else {
           statusEl.textContent = t("turnOf", currentPlayer?.nickname || "?");
         }
-      } else if (gs.phase === "finished") {
+      } else if (phase === "finished") {
         statusEl.textContent = t("phaseFinished");
       } else {
-        statusEl.textContent = t(phaseMap[gs.phase] || "phasePlaying");
+        statusEl.textContent = t(phaseMap[phase] || "phasePlaying");
       }
 
       // Bet panel visibility
       const betPanel = document.getElementById("mpBetPanel");
-      const me = players.find(p => p.id === myId);
-      if (gs.phase === "betting" && me && !me.ready) {
+      const mePlayer = gamePlayers.find(p => p.id === myId);
+      if (phase === "betting" && mePlayer && !mePlayer.ready) {
         betPanel.classList.remove("hidden");
       } else {
         betPanel.classList.add("hidden");
@@ -1417,22 +1449,20 @@
 
       // Action panel visibility
       const actionPanel = document.getElementById("mpActionPanel");
-      if (gs.phase === "playing" && gs.isMyTurn) {
+      if (phase === "playing" && isMyTurn) {
         actionPanel.classList.remove("hidden");
-        // Double/Split availability
-        const myHand = me?.hands?.[gs.currentHandIndex];
+        const myHand = mePlayer?.hands?.[currentHandIndex];
         document.getElementById("mpDoubleBtn").disabled = !(myHand?.cards?.length === 2 && !myHand.doubled);
-        document.getElementById("mpSplitBtn").disabled = !(myHand?.cards?.length === 2 && me.hands.length <= 1 &&
+        document.getElementById("mpSplitBtn").disabled = !(myHand?.cards?.length === 2 && (mePlayer.hands || []).length <= 1 &&
           myHand.cards[0]?.rank === myHand.cards[1]?.rank);
       } else {
         actionPanel.classList.add("hidden");
       }
 
       // Round finished → show result
-      if (gs.phase === "finished" && me) {
-        const win = me.totalWinnings;
-        const isWin = win > 0;
-        const title = isWin ? "🎉 WIN!" : (win < 0 ? "💀 LOSE" : "🤝 PUSH");
+      if (phase === "finished" && mePlayer) {
+        const win = mePlayer.totalWinnings;
+        const title = win > 0 ? "🎉 WIN!" : (win < 0 ? "💀 LOSE" : "🤝 PUSH");
         setTimeout(() => {
           mpUI.showResult({
             title,
