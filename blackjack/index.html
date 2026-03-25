@@ -203,12 +203,9 @@
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   <main class="app">
-    <section class="panel top" style="padding:6px 12px;gap:4px;">
-      <div class="sub" id="gameSub" style="font-size:0.68rem;margin:0;">딜러는 17 이상에서 Stand</div>
-      <button id="langBtn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:6px;padding:2px 8px;font-size:0.65rem;cursor:pointer;">🇰🇷/🇺🇸</button>
-      <div class="gold" id="goldText" style="display:none;">Gold 0</div>
-      <div class="title" id="gameTitle" style="display:none;">블랙잭</div>
-    </section>
+    <div style="display:none;" id="goldText"></div>
+    <div style="display:none;" id="gameTitle"></div>
+    <div style="display:none;" id="gameSub"></div>
 
     <section class="panel meta">
       <div class="item"><div class="k" id="betLabel">현재 베팅</div><div class="v" id="betText">0</div></div>
@@ -237,26 +234,42 @@
     <section class="status" id="status">베팅 버튼을 눌러 시작하세요.</section>
 
     <section class="panel bet">
-      <div class="row">
-        <button data-bet="10">10</button>
-        <button data-bet="50">50</button>
-        <button data-bet="100">100</button>
-        <button data-bet="500">500</button>
-        <button data-bet="1000">1K</button>
-        <button data-bet="5000">5K</button>
-        <button data-bet="custom" class="custom-bet">✏️</button>
-        <button class="allin" data-bet="all">ALL IN</button>
+      <div class="row" style="flex-wrap:wrap;gap:4px;">
+        <button data-bet="10" style="min-width:0;padding:6px 8px;font-size:0.7rem;">10</button>
+        <button data-bet="50" style="min-width:0;padding:6px 8px;font-size:0.7rem;">50</button>
+        <button data-bet="100" style="min-width:0;padding:6px 8px;font-size:0.7rem;">100</button>
+        <button data-bet="500" style="min-width:0;padding:6px 8px;font-size:0.7rem;">500</button>
+        <button data-bet="1000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">1K</button>
+        <button data-bet="5000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">5K</button>
+        <button data-bet="custom" class="custom-bet" style="min-width:0;padding:6px 8px;font-size:0.7rem;">✏️</button>
+        <button class="allin" data-bet="all" style="min-width:0;padding:6px 8px;font-size:0.7rem;">ALL</button>
       </div>
     </section>
 
     <section class="panel actions">
-      <div class="row">
-        <button class="hit" id="hitBtn">Hit</button>
-        <button class="stand" id="standBtn">Stand</button>
-        <button class="double" id="doubleBtn">Double Down</button>
-        <button class="split" id="splitBtn">Split</button>
+      <div class="row" style="gap:4px;">
+        <button class="hit" id="hitBtn" style="font-size:0.78rem;padding:8px 0;">Hit</button>
+        <button class="stand" id="standBtn" style="font-size:0.78rem;padding:8px 0;">Stand</button>
+        <button class="double" id="doubleBtn" style="font-size:0.78rem;padding:8px 0;">Double</button>
+        <button class="split" id="splitBtn" style="font-size:0.78rem;padding:8px 0;">Split</button>
       </div>
     </section>
+
+    <section style="display:flex;justify-content:center;gap:6px;padding:2px 12px 6px;">
+      <button id="langBtn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);border-radius:6px;padding:3px 10px;font-size:0.6rem;cursor:pointer;">🌐</button>
+      <button id="rulesBtn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);border-radius:6px;padding:3px 10px;font-size:0.6rem;cursor:pointer;">📖</button>
+    </section>
+
+    <!-- Rules Modal -->
+    <div id="rulesModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);justify-content:center;align-items:center;padding:16px;">
+      <div style="background:#0a2e22;border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:20px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;color:#e6f7f1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h2 id="rulesTitle" style="font-size:1rem;margin:0;">📖 게임 규칙</h2>
+          <button id="rulesClose" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">✕</button>
+        </div>
+        <div id="rulesContent" style="font-size:0.78rem;line-height:1.6;color:#9cc7bb;"></div>
+      </div>
+    </div>
   </main>
 
   <script>
@@ -459,7 +472,7 @@
       document.getElementById("betLabel").textContent = currentLang === "ko" ? "현재 베팅" : "Current Bet";
       document.getElementById("streakLabel").textContent = t("streak");
       document.getElementById("bonusLabel").textContent = t("bonus");
-      document.getElementById("langBtn").textContent = currentLang === "ko" ? "🇺🇸 EN" : "🇰🇷 한국어";
+      document.getElementById("langBtn").textContent = currentLang === "ko" ? "🌐 EN" : "🌐 한국어";
       el.hitBtn.textContent = t("hit");
       el.standBtn.textContent = t("stand");
       el.doubleBtn.textContent = t("double") + (currentLang === "ko" ? " 다운" : " Down");
@@ -900,6 +913,54 @@
       updateLangUI();
       render();
     });
+
+    // Rules modal
+    const RULES = {
+      ko: `<b>목표</b>: 카드 합을 21에 가깝게 만들되, 초과하면 Bust!<br><br>
+<b>카드 값</b><br>
+• 2~10: 숫자 그대로<br>
+• J/Q/K: 10<br>
+• A: 1 또는 11 (유리한 쪽 자동)<br><br>
+<b>진행</b><br>
+• 베팅 후 플레이어·딜러 각 2장 받음<br>
+• Hit: 카드 1장 추가<br>
+• Stand: 현재 합으로 멈춤<br>
+• Double: 베팅 2배 + 카드 1장 후 자동 Stand<br>
+• Split: 같은 카드 2장일 때 핸드 분리<br><br>
+<b>딜러 규칙</b>: 17 이상이면 Stand<br><br>
+<b>배당</b><br>
+• 일반 승리: 1:1<br>
+• 블랙잭(첫 2장 21): 3:2<br><br>
+<b>연승 보너스</b><br>
+• 3연승: +50%<br>
+• 5연승: +100%`,
+      en: `<b>Goal</b>: Get as close to 21 as possible without going over (Bust).<br><br>
+<b>Card Values</b><br>
+• 2-10: Face value<br>
+• J/Q/K: 10<br>
+• A: 1 or 11 (auto-optimized)<br><br>
+<b>Actions</b><br>
+• Hit: Draw one more card<br>
+• Stand: Keep your current hand<br>
+• Double: Double bet + draw one card, auto-stand<br>
+• Split: Split matching cards into two hands<br><br>
+<b>Dealer rule</b>: Stands on 17+<br><br>
+<b>Payouts</b><br>
+• Normal win: 1:1<br>
+• Blackjack (first 2 cards = 21): 3:2<br><br>
+<b>Streak Bonus</b><br>
+• 3 wins: +50%<br>
+• 5 wins: +100%`
+    };
+
+    const rulesModal = document.getElementById("rulesModal");
+    document.getElementById("rulesBtn").addEventListener("click", () => {
+      document.getElementById("rulesTitle").textContent = currentLang === "ko" ? "📖 게임 규칙" : "📖 Game Rules";
+      document.getElementById("rulesContent").innerHTML = RULES[currentLang];
+      rulesModal.style.display = "flex";
+    });
+    document.getElementById("rulesClose").addEventListener("click", () => { rulesModal.style.display = "none"; });
+    rulesModal.addEventListener("click", (e) => { if (e.target === rulesModal) rulesModal.style.display = "none"; });
 
     updateLangUI();
     init();
