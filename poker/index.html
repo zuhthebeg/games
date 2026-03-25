@@ -863,60 +863,8 @@
         </div>
     </div>
 
-    <!-- Multiplayer Lobby -->
-    <div class="lobby hidden" id="lobby">
-        <div class="lobby-header">
-            <button class="btn" onclick="backToModeSelect()">← 뒤로</button>
-            <h2>👥 멀티플레이</h2>
-        </div>
-        <div class="lobby-content">
-            <div class="lobby-section">
-                <h3>🎮 새 게임 만들기</h3>
-                <div class="input-group" style="margin-bottom:10px;">
-                    <input type="text" id="nicknameInput" placeholder="닉네임 입력" maxlength="20">
-                </div>
-                <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;">
-                    <input type="checkbox" id="publicRoomCheck" checked style="width:18px;height:18px;">
-                    <span>🌐 랜덤 참가 허용 (공개 방)</span>
-                </label>
-                <button class="btn primary" onclick="createMultiplayerRoom()" style="width:100%;">방 만들기</button>
-            </div>
-            <div class="lobby-section">
-                <h3>🎲 빠른 참가</h3>
-                <button class="btn primary" onclick="joinRandomRoom()" style="width:100%;margin-bottom:12px;">🎲 랜덤 매칭</button>
-                <div style="text-align:center;color:#666;margin:8px 0;">또는</div>
-                <div class="input-group">
-                    <input type="text" id="roomCodeInput" placeholder="방 코드 (6자리)" maxlength="6" style="text-transform: uppercase;">
-                    <button class="btn" onclick="joinMultiplayerRoom()">참가</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Waiting Room -->
-    <div class="waiting-room hidden" id="waitingRoom">
-        <button class="btn" onclick="leaveWaitingRoom()" style="position:absolute;top:20px;left:20px;">← 나가기</button>
-        <h2>대기실</h2>
-        <div class="room-code-label">방 코드</div>
-        <div class="room-code" id="displayRoomCode">------</div>
-        <div id="qrCode" style="margin:15px 0;"></div>
-        <div class="share-buttons">
-            <button class="share-btn" onclick="copyRoomCode()">📋 코드 복사</button>
-            <button class="share-btn primary" onclick="shareRoomLink()">🔗 링크 공유</button>
-        </div>
-        
-        <div class="player-list" id="playerList">
-            <!-- Players will be listed here -->
-        </div>
-        
-        <div class="waiting-actions" id="waitingActions">
-            <button class="btn" id="readyBtn" onclick="toggleReady()">준비</button>
-            <button class="btn primary" id="startBtn" onclick="startMultiplayerGame()">게임 시작</button>
-            <button class="btn" id="leaveBtn" onclick="leaveWaitingRoom()">나가기</button>
-            <button class="btn" id="destroyBtn" onclick="destroyRoom()" style="background:#ef4444;border-color:#ef4444;display:none;">🗑️ 방 폭파</button>
-        </div>
-        <p id="waitingMessage" style="color:#9ca3af;margin-top:15px;">다른 플레이어를 기다리는 중...</p>
-    </div>
+    <!-- Multiplayer Lobby (powered by multiplayer-ui.js) -->
+    <div id="mpLobbyContainer" class="hidden" style="min-height:100vh;"></div>
 
     <div class="game-container" id="gameContainer" style="display:none;">
         <header>
@@ -2058,313 +2006,54 @@
             updateDisplay();
         }
 
+        let pokerMpUI = null;
+
         function showLobby() {
             document.getElementById('modeSelect').classList.add('hidden');
-            document.getElementById('lobby').classList.remove('hidden');
+            document.getElementById('mpLobbyContainer').classList.remove('hidden');
             
-            // Clean up any previous multiplayer state
-            if (multiplayerClient) {
-                multiplayerClient.cleanup();
-            }
+            if (pokerMpUI) { pokerMpUI.show(); return; }
             
-            // Restore nickname if saved
-            const savedNickname = localStorage.getItem('poker_nickname');
-            if (savedNickname) {
-                document.getElementById('nicknameInput').value = savedNickname;
+            pokerMpUI = new MultiplayerUI({
+                gameType: 'poker',
+                gameName: '🃏 텍사스 홀덤',
+                container: document.getElementById('mpLobbyContainer'),
+                maxPlayers: 2,
+                supportsLocal: false,
+                onGameStart: (state) => {
+                    // Bridge: connect MultiplayerUI's client to existing game code
+                    multiplayerClient = pokerMpUI.getClient();
+                    startMultiplayerGameFromState(state);
+                },
+                onGameEvent: (type, data) => {
+                    if (type === 'room_destroyed') {
+                        multiplayerClient = null;
+                        isHost = false;
+                        myReady = false;
+                    }
+                },
+                onLeave: () => {
+                    multiplayerClient = null;
+                    pokerMpUI = null;
+                    backToModeSelect();
+                },
+            });
+            
+            const roomCode = MultiplayerUI.checkUrlRoom();
+            if (roomCode) {
+                pokerMpUI._renderLobby();
+                setTimeout(() => {
+                    const inp = document.getElementById('mp-room-code');
+                    if (inp) inp.value = roomCode;
+                }, 100);
+            } else {
+                pokerMpUI.show();
             }
         }
 
         function backToModeSelect() {
-            document.getElementById('lobby').classList.add('hidden');
+            document.getElementById('mpLobbyContainer').classList.add('hidden');
             document.getElementById('modeSelect').classList.remove('hidden');
-        }
-
-        async function createMultiplayerRoom() {
-            const btn = event.target;
-            if (btn.classList.contains('loading')) return;
-            
-            const nickname = document.getElementById('nicknameInput').value.trim();
-            if (!nickname || nickname.length < 2) {
-                alert('닉네임을 2자 이상 입력하세요');
-                return;
-            }
-            
-            localStorage.setItem('poker_nickname', nickname);
-            btn.classList.add('loading');
-            
-            try {
-                const isPublic = document.getElementById('publicRoomCheck').checked;
-                
-                multiplayerClient = MultiplayerClient.getInstance();
-                await multiplayerClient.ensureAuth();
-                await multiplayerClient.setNickname(nickname);
-                
-                const room = await multiplayerClient.createRoom('poker', { 
-                    gameConfig: { startingChips: 1000, bigBlind: 20 },
-                    maxPlayers: 2,
-                    isPublic 
-                });
-                isHost = true;
-                showWaitingRoom(room.roomId);
-            } catch (e) {
-                alert('방 생성 실패: ' + e.message);
-            } finally {
-                btn.classList.remove('loading');
-            }
-        }
-
-        async function joinRandomRoom() {
-            const btn = event.target;
-            if (btn.classList.contains('loading')) return;
-            
-            let nickname = document.getElementById('nicknameInput').value.trim();
-            if (!nickname || nickname.length < 2) {
-                nickname = 'Player_' + Math.random().toString(36).substr(2, 4);
-            }
-            localStorage.setItem('poker_nickname', nickname);
-            btn.classList.add('loading');
-            
-            try {
-                multiplayerClient = MultiplayerClient.getInstance();
-                await multiplayerClient.ensureAuth();
-                await multiplayerClient.setNickname(nickname);
-                
-                const result = await multiplayerClient.joinRandom('poker');
-                isHost = false;
-                showWaitingRoom(result.roomId);
-                
-                if (result.alreadyJoined) {
-                    showToast('이미 참가한 방입니다');
-                }
-            } catch (e) {
-                if (e.message.includes('공개 방이 없')) {
-                    alert('현재 참가 가능한 공개 방이 없습니다.\n새 방을 만들어보세요!');
-                } else {
-                    alert('랜덤 매칭 실패: ' + e.message);
-                }
-            } finally {
-                btn.classList.remove('loading');
-            }
-        }
-
-        async function joinMultiplayerRoom() {
-            const btn = event.target;
-            if (btn.classList.contains('loading')) return;
-            
-            const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-            if (!roomCode || roomCode.length !== 6) {
-                alert('6자리 방 코드를 입력하세요');
-                return;
-            }
-            
-            let nickname = document.getElementById('nicknameInput').value.trim();
-            if (!nickname || nickname.length < 2) {
-                nickname = 'Player_' + Math.random().toString(36).substr(2, 4);
-            }
-            localStorage.setItem('poker_nickname', nickname);
-            btn.classList.add('loading');
-            
-            try {
-                multiplayerClient = MultiplayerClient.getInstance();
-                await multiplayerClient.ensureAuth();
-                await multiplayerClient.setNickname(nickname);
-                
-                await multiplayerClient.joinRoom(roomCode);
-                isHost = false;
-                showWaitingRoom(roomCode);
-            } catch (e) {
-                alert('입장 실패: ' + e.message);
-            } finally {
-                btn.classList.remove('loading');
-            }
-        }
-
-        function showWaitingRoom(roomCode) {
-            document.getElementById('lobby').classList.add('hidden');
-            document.getElementById('waitingRoom').classList.remove('hidden');
-            document.getElementById('displayRoomCode').textContent = roomCode;
-            
-            // Reset button states
-            const startBtn = document.getElementById('startBtn');
-            const readyBtn = document.getElementById('readyBtn');
-            startBtn.classList.remove('loading');
-            readyBtn.classList.remove('loading');
-            
-            // Host: show start button & destroy button, hide ready button
-            // Non-host: show ready button, hide start & destroy buttons
-            startBtn.style.display = isHost ? 'inline-block' : 'none';
-            readyBtn.style.display = isHost ? 'none' : 'inline-block';
-            document.getElementById('destroyBtn').style.display = isHost ? 'inline-block' : 'none';
-            
-            // Generate QR code with room code
-            const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '');
-            const joinUrl = `${baseUrl}/?room=${roomCode}`;
-            console.log('QR URL:', joinUrl); // debug
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(joinUrl)}`;
-            document.getElementById('qrCode').innerHTML = `
-                <img src="${qrUrl}" alt="QR Code" style="border-radius:8px;background:#fff;padding:8px;">
-                <div style="font-size:0.7rem;color:#666;margin-top:4px;">${joinUrl}</div>
-            `;
-            
-            // Start listening for updates
-            multiplayerClient.onStateChange = updateWaitingRoom;
-            multiplayerClient.onEvent = handleMultiplayerEvent;
-            multiplayerClient.startListening();
-            
-            // Initial state load
-            refreshWaitingRoom();
-        }
-
-        async function refreshWaitingRoom() {
-            try {
-                const state = await multiplayerClient.getRoomState();
-                updateWaitingRoom(state);
-            } catch (e) {
-                console.error('Failed to refresh:', e);
-            }
-        }
-
-        function updateWaitingRoom(state) {
-            if (!state || !state.players) return;
-            
-            const playerList = document.getElementById('playerList');
-            const myId = multiplayerClient.getMyUserId();
-            
-            // Update isHost and myReady based on server state
-            const me = state.players.find(p => p.id === myId);
-            if (me) {
-                isHost = me.isHost;
-                myReady = me.isReady;
-            }
-            
-            // Update button visibility based on host status
-            const startBtn = document.getElementById('startBtn');
-            const readyBtn = document.getElementById('readyBtn');
-            const destroyBtn = document.getElementById('destroyBtn');
-            startBtn.style.display = isHost ? 'inline-block' : 'none';
-            readyBtn.style.display = isHost ? 'none' : 'inline-block';
-            destroyBtn.style.display = isHost ? 'inline-block' : 'none';
-            
-            // Sync ready button text with server state
-            readyBtn.textContent = myReady ? '준비취소' : '준비';
-            readyBtn.classList.toggle('primary', myReady);
-            
-            playerList.innerHTML = state.players.map(p => `
-                <div class="player-item">
-                    <span class="name">${p.isHost ? '👑 ' : ''}${p.nickname || 'Player'} ${p.id === myId ? '(나)' : ''}</span>
-                    <span class="status ${p.isReady ? 'ready' : ''} ${p.isHost ? 'host' : ''}">${p.isHost ? '방장' : (p.isReady ? '준비완료' : '대기중')}</span>
-                </div>
-            `).join('');
-            
-            // Update start button for host
-            if (isHost) {
-                const others = state.players.filter(p => !p.isHost);
-                const allReady = others.length > 0 && others.every(p => p.isReady);
-                const canStart = state.players.length >= 2 && allReady;
-                startBtn.disabled = !canStart;
-                startBtn.classList.remove('loading'); // Clear loading state
-                document.getElementById('waitingMessage').textContent = canStart ? '게임을 시작할 수 있습니다!' : '다른 플레이어를 기다리는 중...';
-            } else {
-                document.getElementById('waitingMessage').textContent = myReady ? '방장이 시작하기를 기다리는 중...' : '준비 버튼을 눌러주세요';
-            }
-            
-            // Check if game started
-            if (state.status === 'playing') {
-                startMultiplayerGameFromState(state);
-            }
-        }
-
-        function handleMultiplayerEvent(type, data) {
-            console.log('MP Event:', type, data);
-            
-            if (type === 'game_started') {
-                refreshWaitingRoom();
-            } else if (type === 'room_destroyed') {
-                // Room was destroyed by host
-                MultiplayerClient.resetInstance();
-                multiplayerClient = null;
-                isHost = false;
-                myReady = false;
-                document.getElementById('waitingRoom').classList.add('hidden');
-                document.getElementById('lobby').classList.remove('hidden');
-                alert('방이 폭파되었습니다.');
-            }
-        }
-
-        async function toggleReady() {
-            const btn = document.getElementById('readyBtn');
-            if (btn.classList.contains('loading')) return;
-            btn.classList.add('loading');
-            
-            try {
-                const newReady = !myReady;
-                await multiplayerClient.setReady(newReady);
-                // Server confirmed, now update local state
-                myReady = newReady;
-                btn.textContent = myReady ? '준비취소' : '준비';
-                btn.classList.toggle('primary', myReady);
-            } catch (e) {
-                alert('준비 상태 변경 실패: ' + e.message);
-            } finally {
-                btn.classList.remove('loading');
-            }
-        }
-
-        async function leaveWaitingRoom() {
-            const btn = document.getElementById('leaveBtn');
-            if (btn.classList.contains('loading')) return;
-            btn.classList.add('loading');
-            
-            try {
-                await multiplayerClient.leaveRoom();
-                MultiplayerClient.resetInstance();
-                multiplayerClient = null;
-                isHost = false;
-                myReady = false;
-                document.getElementById('waitingRoom').classList.add('hidden');
-                document.getElementById('lobby').classList.remove('hidden');
-            } catch (e) {
-                console.error('Leave error:', e);
-            } finally {
-                btn.classList.remove('loading');
-            }
-        }
-
-        async function destroyRoom() {
-            if (!confirm('정말 방을 폭파하시겠습니까?\n모든 플레이어가 퇴장됩니다.')) return;
-            
-            const btn = document.getElementById('destroyBtn');
-            if (btn.classList.contains('loading')) return;
-            btn.classList.add('loading');
-            
-            try {
-                await multiplayerClient.destroyRoom();
-                MultiplayerClient.resetInstance();
-                multiplayerClient = null;
-                isHost = false;
-                myReady = false;
-                document.getElementById('waitingRoom').classList.add('hidden');
-                document.getElementById('lobby').classList.remove('hidden');
-                showToast('방이 폭파되었습니다');
-            } catch (e) {
-                alert('방 폭파 실패: ' + e.message);
-            } finally {
-                btn.classList.remove('loading');
-            }
-        }
-
-        async function startMultiplayerGame() {
-            const btn = document.getElementById('startBtn');
-            if (btn.classList.contains('loading') || btn.disabled) return;
-            btn.classList.add('loading');
-            
-            try {
-                await multiplayerClient.startGame();
-                // Game will start via event
-            } catch (e) {
-                alert('게임 시작 실패: ' + e.message);
-                btn.classList.remove('loading');
-            }
         }
 
         let mpState = null; // Multiplayer game state
@@ -2373,7 +2062,7 @@
             isMultiplayer = true;
             mpState = state;
             
-            document.getElementById('waitingRoom').classList.add('hidden');
+            document.getElementById('mpLobbyContainer').classList.add('hidden');
             document.getElementById('gameContainer').style.display = 'block';
             
             // Update header for multiplayer
@@ -2726,8 +2415,9 @@
                 myReady = false;
                 isMultiplayer = false;
                 document.getElementById('gameContainer').style.display = 'none';
-                document.getElementById('waitingRoom').classList.add('hidden');
-                document.getElementById('lobby').classList.remove('hidden');
+                document.getElementById('mpLobbyContainer').classList.add('hidden');
+                document.getElementById('modeSelect').classList.remove('hidden');
+                pokerMpUI = null;
                 
                 // Reset header
                 const header = document.querySelector('.header-buttons');
@@ -2780,11 +2470,8 @@
             const params = new URLSearchParams(window.location.search);
             const roomCode = params.get('room');
             if (roomCode) {
-                // Clear URL params
                 window.history.replaceState({}, '', window.location.pathname);
-                // Show lobby with room code filled
-                showLobby();
-                document.getElementById('roomCodeInput').value = roomCode;
+                showLobby(); // MultiplayerUI.checkUrlRoom() handles the rest
             }
         }
 
@@ -2808,6 +2495,7 @@
         checkUrlRoom();
     </script>
     <script src="/lib/multiplayer.js?v=20260210v2"></script>
+    <script src="/lib/multiplayer-ui.js?v=20260326"></script>
     <script src="/lib/shared-wallet.js?v=20260312a"></script>
     <script>
         // SharedWallet과 동기화
