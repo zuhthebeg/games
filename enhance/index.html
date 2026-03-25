@@ -5826,7 +5826,10 @@
                     title: '🏆 승리!',
                     detail: `${rounds} 라운드 전투 승리!\n💰 +${goldReward.toLocaleString()} 골드\n(상대 +${enemyLevel} 무기 격파 보상)`,
                     isWin: true,
-                    showRematch: true
+                    actions: [
+                        { label: '🔄 다시 대전', primary: true, handler: async () => { try { const pd = mpUI.getPlayerData ? mpUI.getPlayerData() : null; await mpUI.getClient().rematch(pd); mpUI.goToWaitingRoom(); } catch(e) { alert('리매치 실패: ' + e.message); } }},
+                        { label: '나가기', primary: false, handler: () => { if (mpUI.getClient()) { mpUI.getClient().leaveRoom().catch(()=>{}); MultiplayerClient.resetInstance(); } battleState = null; showMain(); }}
+                    ]
                 });
                 SFX.play('battle-win');
                 
@@ -5902,7 +5905,10 @@
                             title: '💀 패배...',
                             detail: `${rounds} 라운드 전투 패배.\n🔧 내구도 -${durabilityLoss} (${state.weapon.durability}/${MAX_DURABILITY})`,
                             isWin: false,
-                            showRematch: true
+                            actions: [
+                        { label: '🔄 다시 대전', primary: true, handler: async () => { try { const pd = mpUI.getPlayerData ? mpUI.getPlayerData() : null; await mpUI.getClient().rematch(pd); mpUI.goToWaitingRoom(); } catch(e) { alert('리매치 실패: ' + e.message); } }},
+                        { label: '나가기', primary: false, handler: () => { if (mpUI.getClient()) { mpUI.getClient().leaveRoom().catch(()=>{}); MultiplayerClient.resetInstance(); } battleState = null; showMain(); }}
+                    ]
                         });
                         SFX.play('battle-lose');
                     }
@@ -5912,7 +5918,10 @@
                         title: '💀 패배...',
                         detail: `${rounds} 라운드 전투 패배.\n(나무막대기는 내구도 감소 없음)`,
                         isWin: false,
-                        showRematch: true
+                        actions: [
+                        { label: '🔄 다시 대전', primary: true, handler: async () => { try { const pd = mpUI.getPlayerData ? mpUI.getPlayerData() : null; await mpUI.getClient().rematch(pd); mpUI.goToWaitingRoom(); } catch(e) { alert('리매치 실패: ' + e.message); } }},
+                        { label: '나가기', primary: false, handler: () => { if (mpUI.getClient()) { mpUI.getClient().leaveRoom().catch(()=>{}); MultiplayerClient.resetInstance(); } battleState = null; showMain(); }}
+                    ]
                     });
                     SFX.play('battle-lose');
                 }

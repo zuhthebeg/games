@@ -735,7 +735,19 @@
                     title: isWin ? '🎉 승리!' : '😢 패배',
                     detail: `${(winner === 'black' ? '흑' : '백')} 승리 ${goldText}`,
                     isWin: isWin,
-                    showRematch: true
+                    actions: [
+                        { label: '🔄 다시 한 판', primary: true, handler: async () => {
+                            try {
+                                const pd = mpUI.getPlayerData ? mpUI.getPlayerData() : null;
+                                await mpUI.getClient().rematch(pd);
+                                mpUI.goToWaitingRoom();
+                            } catch(e) { alert('리매치 실패: ' + e.message); }
+                        }},
+                        { label: '나가기', primary: false, handler: () => {
+                            if (mpUI.getClient()) { mpUI.getClient().leaveRoom().catch(()=>{}); MultiplayerClient.resetInstance(); }
+                            location.reload();
+                        }}
+                    ]
                 });
             } else {
                 // 싱글플레이 (로컬 2인)는 보상 없음

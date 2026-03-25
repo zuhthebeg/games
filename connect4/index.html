@@ -489,7 +489,19 @@
                         ? `${getColorName(winnerPlayer.color)} ${winnerPlayer.nickname} 승리${stoneInfo} ${goldText}` 
                         : '무승부',
                     isWin,
-                    showRematch: true
+                    actions: [
+                        { label: '🔄 다시 한 판', primary: true, handler: async () => {
+                            try {
+                                const pd = mpUI.getPlayerData ? mpUI.getPlayerData() : null;
+                                await mpUI.getClient().rematch(pd);
+                                mpUI.goToWaitingRoom();
+                            } catch(e) { alert('리매치 실패: ' + e.message); }
+                        }},
+                        { label: '나가기', primary: false, handler: () => {
+                            if (mpUI.getClient()) { mpUI.getClient().leaveRoom().catch(()=>{}); MultiplayerClient.resetInstance(); }
+                            location.reload();
+                        }}
+                    ]
                 });
             } else {
                 if (winnerPlayer) sfxWin();
