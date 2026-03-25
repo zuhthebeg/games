@@ -148,7 +148,9 @@
     }
     .rank { font-size: 0.92rem; line-height: 1; }
     .suit { font-size: 1.38rem; line-height: 1; text-align: center; align-self: center; }
-    .rank.bottom { transform: rotate(180deg); text-align: right; }
+    .card-bottom { display: flex; flex-direction: column; align-items: flex-end; transform: rotate(180deg); }
+    .card-bottom .rank { font-size: 0.92rem; line-height: 1; }
+    .card-bottom .suit { font-size: 0.7rem; line-height: 1; }
     .hand-wrap { display: grid; gap: 8px; }
     .hand {
       border: 1px solid rgba(255,255,255,0.12);
@@ -258,6 +260,29 @@
     const SUITS = ["♠", "♥", "♦", "♣"];
     const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
+    // ── Sound System ──
+    const SFX = {
+      _ctx: null,
+      _voices: {},
+      _getCtx() { if (!this._ctx) this._ctx = new (window.AudioContext || window.webkitAudioContext)(); return this._ctx; },
+      _noise(duration, freq, type = "sine", vol = 0.15) {
+        const ctx = this._getCtx(); const osc = ctx.createOscillator(); const gain = ctx.createGain();
+        osc.type = type; osc.frequency.value = freq; gain.gain.setValueAtTime(vol, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + duration);
+      },
+      cardFlip() { this._noise(0.08, 2200, "square", 0.06); setTimeout(() => this._noise(0.05, 3400, "square", 0.04), 30); },
+      chip() { this._noise(0.06, 4800, "triangle", 0.08); setTimeout(() => this._noise(0.04, 6200, "triangle", 0.05), 25); },
+      win() { [0,80,160].forEach((d,i) => setTimeout(() => this._noise(0.12, 600+i*200, "sine", 0.1), d)); },
+      lose() { this._noise(0.3, 200, "sawtooth", 0.08); },
+      async voice(name) {
+        try {
+          if (!this._voices[name]) { const r = await fetch(`sounds/${name}.ogg`); const buf = await r.arrayBuffer(); this._voices[name] = await this._getCtx().decodeAudioData(buf); }
+          const ctx = this._getCtx(); const src = ctx.createBufferSource(); src.buffer = this._voices[name]; src.connect(ctx.destination); src.start();
+        } catch {}
+      }
+    };
+
     const state = {
       gold: 0,
       deck: [],
@@ -337,7 +362,7 @@
     function cardHTML(card, hidden) {
       if (hidden) return '<div class="card back"></div>';
       const dealing = state.animQueue.includes(card.id) ? " dealing" : "";
-      return `<div class="card ${cardClass(card)}${dealing}" data-card-id="${card.id}"><div class="rank">${card.rank}</div><div class="suit">${card.suit}</div><div class="rank bottom">${card.rank}</div></div>`;
+      return `<div class="card ${cardClass(card)}${dealing}" data-card-id="${card.id}"><div class="rank">${card.rank}</div><div class="suit">${card.suit}</div><div class="card-bottom"><div class="rank">${card.rank}</div><div class="suit">${card.suit}</div></div></div>`;
     }
 
     function bonusLabel(streak = state.streak) {
@@ -476,9 +501,13 @@
 
       state.bet = betAmount;
       resetRound();
+      SFX.chip();
       state.hands = [{ cards: [draw(), draw()], bet: betAmount, stood: false, busted: false, blackjack: false, doubled: false }];
       state.dealer = [draw(), draw()];
       state.phase = "player";
+      SFX.voice("deal");
+      setTimeout(() => SFX.cardFlip(), 200);
+      setTimeout(() => SFX.cardFlip(), 500);
 
       const p = state.hands[0];
       p.blackjack = isBlackjack(p.cards);
@@ -534,11 +563,13 @@
       if (state.phase !== "player") return;
       const h = currentHand();
       h.cards.push(draw());
+      SFX.cardFlip();
       const v = handValue(h.cards);
       if (v > 21) {
         h.busted = true;
         h.stood = true;
         setStatus(`핸드 ${state.activeHand + 1} BUST`, "lose");
+        SFX.voice("bust");
         nextHand();
       } else if (v === 21) {
         h.stood = true;
@@ -652,7 +683,12 @@
       setStatus(summarizeRound(label, finalProfit, bonusGold, finalPayout), statusType);
 
       if (finalProfit > 0) {
+        SFX.win(); SFX.voice(label === "BLACKJACK" ? "blackjack" : "player-win");
         party.sparkles(el.table, { count: 28, spread: 42, speed: 260, color: ["#ffd166", "#76f5ae", "#ffffff"] });
+      } else if (finalProfit < 0) {
+        SFX.lose(); SFX.voice("dealer-win");
+      } else {
+        SFX.voice("push");
       }
       render();
     }
