@@ -17,7 +17,7 @@
   <meta name="twitter:image" content="icon.svg">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <!-- AdSense: managed via GTM auto-ads (ca-pub-6634731722045607) -->
-  <script src="https://cdn.jsdelivr.net/npm/animejs@4.3.6/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/party-js@2.2.0/bundle/party.min.js"></script>
   <script>window.SharedWalletConfig = { autoGuest: true };</script>
   <script src="/lib/shared-wallet.js?v=20260312a"></script>
@@ -511,6 +511,7 @@
     function animateNewCards() {
       const nodes = Array.from(document.querySelectorAll(".card.dealing"));
       if (!nodes.length) return;
+      if (typeof anime !== "function") { nodes.forEach(n => n.classList.remove("dealing")); return; }
       anime({
         targets: nodes,
         translateY: [-110, 0],
@@ -582,8 +583,10 @@
         await wait(50);
         const allCards = document.querySelectorAll(`[data-card-id="${card.id}"]`);
         allCards.forEach(node => {
-          node.style.opacity = "0"; node.style.transform = "translateY(-40px) rotate(-8deg)";
-          anime({ targets: node, opacity: [0,1], translateY: [-40,0], rotate: [-8,0], duration: 320, easing: "easeOutCubic" });
+          if (typeof anime === "function") {
+            node.style.opacity = "0"; node.style.transform = "translateY(-40px) rotate(-8deg)";
+            anime({ targets: node, opacity: [0,1], translateY: [-40,0], rotate: [-8,0], duration: 320, easing: "easeOutCubic" });
+          }
         });
         await wait(380);
       } catch(e) { console.warn("dealCardTo error:", e); render(); }
@@ -760,15 +763,21 @@
     }
 
     async function dealerTurnAsync() {
-      state.phase = "dealer";
-      state.revealDealer = true;
-      render();
-      await wait(600);
-      while (handValue(state.dealer) < 17) {
-        const c = draw();
-        await dealCardTo(state.dealer, c);
+      try {
+        state.phase = "dealer";
+        state.revealDealer = true;
+        render();
+        await wait(600);
+        while (handValue(state.dealer) < 17) {
+          const c = draw();
+          await dealCardTo(state.dealer, c);
+        }
+        await wait(400);
+      } catch(e) {
+        console.warn("dealerTurn error:", e);
+        // force dealer to draw synchronously as fallback
+        while (handValue(state.dealer) < 17) state.dealer.push(draw());
       }
-      await wait(400);
       settleRound();
     }
 
