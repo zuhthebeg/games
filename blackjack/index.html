@@ -258,9 +258,11 @@
       </div>
     </section>
 
-    <section style="display:flex;justify-content:center;gap:6px;padding:2px 12px 6px;">
-      <button id="langBtn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);border-radius:6px;padding:3px 10px;font-size:0.6rem;cursor:pointer;">🌐</button>
-      <button id="rulesBtn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);border-radius:6px;padding:3px 10px;font-size:0.6rem;cursor:pointer;">📖</button>
+    <section style="display:flex;justify-content:center;gap:5px;padding:2px 12px 4px;">
+      <button id="langBtn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);border-radius:6px;padding:2px 8px;font-size:0.58rem;cursor:pointer;">🌐</button>
+      <button id="soundBtn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);border-radius:6px;padding:2px 8px;font-size:0.58rem;cursor:pointer;">🔊</button>
+      <button id="voiceBtn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);border-radius:6px;padding:2px 8px;font-size:0.58rem;cursor:pointer;">🎙️♂</button>
+      <button id="rulesBtn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);border-radius:6px;padding:2px 8px;font-size:0.58rem;cursor:pointer;">📖</button>
     </section>
 
     <!-- Rules Modal -->
@@ -340,15 +342,28 @@
     };
 
     let currentLang = localStorage.getItem("bj-lang") || (navigator.language.startsWith("ko") ? "ko" : "en");
+    // voice: "male" | "female", sound: true | false
+    let voiceGender = localStorage.getItem("bj-voice") || "male";
+    let soundEnabled = localStorage.getItem("bj-sound") !== "off";
     function t(key, ...args) { const v = I18N[currentLang][key]; return typeof v === "function" ? v(...args) : v; }
-    function voiceKey(name) { return name + (I18N[currentLang].voiceSuffix || ""); }
+    function voiceKey(name) {
+      const langSuffix = I18N[currentLang].voiceSuffix || "";
+      const genderSuffix = voiceGender === "female" ? "-f" : "";
+      // male ko: "deal", male en: "deal-en", female ko: "deal-ko-f", female en: "deal-en-f"
+      if (voiceGender === "female") {
+        return currentLang === "ko" ? `${name}-ko-f` : `${name}-en-f`;
+      }
+      return name + langSuffix;
+    }
 
     // ── Sound System ──
     const SFX = {
       _ctx: null,
       _voices: {},
       _getCtx() { if (!this._ctx) this._ctx = new (window.AudioContext || window.webkitAudioContext)(); return this._ctx; },
+      _muted() { return !soundEnabled; },
       _noise(duration, freq, type = "sine", vol = 0.15) {
+        if (this._muted()) return;
         const ctx = this._getCtx(); const osc = ctx.createOscillator(); const gain = ctx.createGain();
         osc.type = type; osc.frequency.value = freq; gain.gain.setValueAtTime(vol, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
@@ -363,8 +378,9 @@
       },
       lose() { this._noise(0.3, 200, "sawtooth", 0.08); },
       async voice(name) {
+        if (this._muted()) return;
         try {
-          if (!this._voices[name]) { const r = await fetch(`sounds/${name}.ogg?v=2`); const buf = await r.arrayBuffer(); this._voices[name] = await this._getCtx().decodeAudioData(buf); }
+          if (!this._voices[name]) { const r = await fetch(`sounds/${name}.ogg?v=3`); const buf = await r.arrayBuffer(); this._voices[name] = await this._getCtx().decodeAudioData(buf); }
           const ctx = this._getCtx(); const src = ctx.createBufferSource(); src.buffer = this._voices[name]; src.connect(ctx.destination); src.start();
         } catch {}
       }
@@ -913,9 +929,29 @@
     document.getElementById("langBtn").addEventListener("click", () => {
       currentLang = currentLang === "ko" ? "en" : "ko";
       localStorage.setItem("bj-lang", currentLang);
+      SFX._voices = {}; // clear voice cache for new lang
       updateLangUI();
+      updateSettingsUI();
       render();
     });
+
+    document.getElementById("soundBtn").addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem("bj-sound", soundEnabled ? "on" : "off");
+      updateSettingsUI();
+    });
+
+    document.getElementById("voiceBtn").addEventListener("click", () => {
+      voiceGender = voiceGender === "male" ? "female" : "male";
+      localStorage.setItem("bj-voice", voiceGender);
+      SFX._voices = {}; // clear voice cache for new gender
+      updateSettingsUI();
+    });
+
+    function updateSettingsUI() {
+      document.getElementById("soundBtn").textContent = soundEnabled ? "🔊" : "🔇";
+      document.getElementById("voiceBtn").textContent = voiceGender === "male" ? "🎙️♂" : "🎙️♀";
+    }
 
     // Rules modal
     const RULES = {
@@ -966,6 +1002,7 @@
     rulesModal.addEventListener("click", (e) => { if (e.target === rulesModal) rulesModal.style.display = "none"; });
 
     updateLangUI();
+    updateSettingsUI();
     init();
   </script>
 </body>
