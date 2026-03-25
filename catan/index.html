@@ -703,7 +703,9 @@
 <body>
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div id="app"></div>
+  <div id="mpLobbyContainer" class="hidden" style="min-height:100vh;"></div>
 
+  <script src="/lib/multiplayer-ui.js?v=20260326"></script>
   <script src="./ai.js"></script>
   <script>
     const RESOURCES = ["brick", "lumber", "wool", "grain", "ore"];
@@ -2635,9 +2637,19 @@
 
     function render() {
       const app = document.getElementById("app");
+      const mpLobby = document.getElementById("mpLobbyContainer");
+      // Hide mpLobby when not in multi lobby
+      if (state.screen !== "multi-lobby") {
+        mpLobby.classList.add("hidden");
+        app.classList.remove("hidden");
+      }
       if (state.screen === "mode") app.innerHTML = renderModeScreen();
-      else if (state.screen === "multi-options") app.innerHTML = renderMultiOptions();
-      else if (state.screen === "room-lobby") app.innerHTML = renderRoomLobby();
+      else if (state.screen === "multi-lobby") {
+        // MultiplayerUI handles this screen
+        app.classList.add("hidden");
+        mpLobby.classList.remove("hidden");
+        return;
+      }
       else {
         // Save scroll position before DOM replacement
         const _prev = document.getElementById("map-wrap");
@@ -2831,6 +2843,7 @@
       resetCoreState();
       state.mode = null;
       state.screen = "mode";
+      catanMpUI = null;
       if (shouldRender) render();
     }
 
@@ -2867,10 +2880,65 @@
       render();
     }
 
+    let catanMpUI = null;
     function showMultiOptions() {
-      state.screen = "multi-options";
+      state.screen = "multi-lobby";
       state.mode = null;
-      render();
+      
+      const mpLobby = document.getElementById("mpLobbyContainer");
+      document.getElementById("app").classList.add("hidden");
+      mpLobby.classList.remove("hidden");
+      
+      if (catanMpUI) { catanMpUI.show(); return; }
+      
+      catanMpUI = new MultiplayerUI({
+        gameType: "catan",
+        gameName: "🏝️ 카탄",
+        container: mpLobby,
+        maxPlayers: 4,
+        supportsLocal: false,
+        onGameStart: (roomState) => {
+          // Bridge: connect to existing game code
+          mpState.client = catanMpUI.getClient();
+          mpState.myUserId = mpState.client.getMyUserId();
+          mpState.room = roomState;
+          mpState.roomCode = mpState.client.getRoomCode();
+          mpState.isHost = roomState.players?.find(p => p.id === mpState.myUserId)?.isHost;
+          mpState.ready = true;
+          mpState.startRequested = true;
+          
+          // Setup event listeners for game phase
+          mpState.client.onStateChange = onRoomStateChange;
+          mpState.client.onEvent = onMpEvent;
+          
+          state.mode = "multi";
+          state.screen = "game";
+          state.hint = "게임 초기화 대기 중...";
+          render();
+          maybeHostInitGame();
+        },
+        onGameEvent: (type, data) => {
+          // handled by onMpEvent via client
+        },
+        onLeave: () => {
+          mpState.client = null;
+          catanMpUI = null;
+          state.screen = "mode";
+          state.mode = null;
+          render();
+        },
+      });
+      
+      const roomCode = MultiplayerUI.checkUrlRoom();
+      if (roomCode) {
+        catanMpUI._renderLobby();
+        setTimeout(() => {
+          const inp = document.getElementById("mp-room-code");
+          if (inp) inp.value = roomCode;
+        }, 100);
+      } else {
+        catanMpUI.show();
+      }
     }
 
     function startSingle() {
