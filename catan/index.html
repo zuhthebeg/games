@@ -758,6 +758,7 @@
       canEndTurn: false,
       winner: null,
       buildMode: null,
+      roadBuildingRemaining: 0,
       hint: "",
       geometry: { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 },
       roomCodeInput: "",
@@ -1873,6 +1874,46 @@
       render();
     }
 
+    function humanUseRoadBuilding() {
+      if (!isHumanTurn() || state.phase !== "main" || state.winner) return;
+      const me = localPlayerIndex();
+      const p = state.players[me];
+      const card = (p.devCards || []).find(c => c.type === "road_building" && c.turnBought < state.turnNumber && !c.played);
+      if (!card) { state.hint = "사용 가능한 도로 건설 카드가 없습니다."; render(); return; }
+      card.played = true;
+      state.roadBuildingRemaining = 2;
+      state.buildMode = "road";
+      state.canEndTurn = true;
+      SFX.card();
+      state.hint = "도로 건설 카드: 무료 도로 2개를 배치하세요. (남은: 2)";
+      showToast("🛣️ 도로 건설 카드 사용!");
+      render();
+    }
+
+    function humanUseYearOfPlenty() {
+      if (!isHumanTurn() || state.phase !== "main" || state.winner) return;
+      const me = localPlayerIndex();
+      const p = state.players[me];
+      const card = (p.devCards || []).find(c => c.type === "year_of_plenty" && c.turnBought < state.turnNumber && !c.played);
+      if (!card) { state.hint = "사용 가능한 풍년 카드가 없습니다."; render(); return; }
+      const pick1 = window.prompt("풍년 카드: 첫 번째 자원 선택\nbrick / lumber / wool / grain / ore", "grain");
+      if (!pick1) return;
+      const pick2 = window.prompt("풍년 카드: 두 번째 자원 선택\nbrick / lumber / wool / grain / ore", "ore");
+      if (!pick2) return;
+      const r1 = String(pick1).trim().toLowerCase();
+      const r2 = String(pick2).trim().toLowerCase();
+      if (!RESOURCES.includes(r1) || !RESOURCES.includes(r2)) { state.hint = "잘못된 자원입니다."; render(); return; }
+      card.played = true;
+      p.resources[r1] += 1;
+      p.resources[r2] += 1;
+      SFX.card();
+      state.canEndTurn = true;
+      state.hint = `풍년 카드: ${RESOURCE_ICONS[r1]} + ${RESOURCE_ICONS[r2]} 획득!`;
+      showToast(`🌾 풍년! ${RESOURCE_ICONS[r1]}+${RESOURCE_ICONS[r2]}`);
+      recalcAllVP();
+      render();
+    }
+
     function humanBuildSettlement() {
       if (!isHumanTurn()) return;
       state.buildMode = state.buildMode === "settlement" ? null : "settlement";
@@ -1968,12 +2009,26 @@
         return;
       }
       if (state.phase !== "main") return;
-      if (state.buildMode === "road" && placeRoad(state.currentPlayer, eIdx, false)) {
-        SFX.road();
-        state.buildMode = null;
-        state.hint = "도로 건설 완료.";
-        render();
-        triggerAITurnIfNeeded();
+      if (state.buildMode === "road") {
+        const isFreeRoad = state.roadBuildingRemaining > 0;
+        if (placeRoad(state.currentPlayer, eIdx, isFreeRoad)) {
+          SFX.road();
+          if (isFreeRoad) {
+            state.roadBuildingRemaining -= 1;
+            if (state.roadBuildingRemaining > 0) {
+              state.hint = `도로 건설 카드: 남은 무료 도로 ${state.roadBuildingRemaining}개`;
+            } else {
+              state.buildMode = null;
+              state.roadBuildingRemaining = 0;
+              state.hint = "도로 건설 카드 사용 완료.";
+            }
+          } else {
+            state.buildMode = null;
+            state.hint = "도로 건설 완료.";
+          }
+          render();
+          triggerAITurnIfNeeded();
+        }
       }
     }
 
@@ -2573,6 +2628,8 @@
             <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
             <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사</button>
             <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
+            <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️도로건설</button>
+            <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
             <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
             ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">방 나가기</button>` : ""}
           </div>
@@ -3094,6 +3151,8 @@
     window.humanBuyDevCard = humanBuyDevCard;
     window.humanUseKnight = humanUseKnight;
     window.humanUseMonopoly = humanUseMonopoly;
+    window.humanUseRoadBuilding = humanUseRoadBuilding;
+    window.humanUseYearOfPlenty = humanUseYearOfPlenty;
     window.humanTrade = humanTrade;
     window.selectTradeGive = selectTradeGive;
     window.selectTradeGet = selectTradeGet;
