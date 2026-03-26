@@ -3464,7 +3464,21 @@
         const parsed = JSON.parse(jsonMatch[0]);
         
         if (parsed.trade && parsed.give && parsed.want) {
-          // Show trade proposal to human
+          // Normalize resource keys from LLM (might return Korean/capitalized)
+          const RES_MAP = { "벽돌":"brick","나무":"lumber","양모":"wool","양":"wool","밀":"grain","곡물":"grain","광석":"ore",
+            "Brick":"brick","Lumber":"lumber","Wool":"wool","Grain":"grain","Ore":"ore",
+            "brick":"brick","lumber":"lumber","wool":"wool","grain":"grain","ore":"ore" };
+          const normalizeRes = (obj) => {
+            const out = {};
+            for (const [k, v] of Object.entries(obj)) {
+              const nk = RES_MAP[k] || k.toLowerCase();
+              if (RESOURCES.includes(nk)) out[nk] = (out[nk] || 0) + Number(v);
+            }
+            return out;
+          };
+          parsed.give = normalizeRes(parsed.give);
+          parsed.want = normalizeRes(parsed.want);
+          
           const giveStr = Object.entries(parsed.give).map(([r,n]) => `${RESOURCE_ICONS[r]||r}×${n}`).join(" ");
           const wantStr = Object.entries(parsed.want).map(([r,n]) => `${RESOURCE_ICONS[r]||r}×${n}`).join(" ");
           
