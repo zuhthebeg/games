@@ -2958,9 +2958,9 @@
           ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':c.type==='vp'?'⭐VP':c.type==='monopoly'?'💰모노폴리':c.type==='road_building'?'🛣️도로':c.type==='year_of_plenty'?'🌾풍년':'🃏').join(' ')}</div>` : ""}
           <div class="actions">
             <button id="diceDisplay" class="primary" style="font-size:16px;min-width:70px;" ${canRoll ? "" : "disabled"} onclick="rollDice()">🎲 주사위</button>
-            <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${state.longestRoad === myIdx ? "👑" : ""}${costLabel(COST.road, idx)}</button>
-            <button ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을${costLabel(COST.settlement, idx)}</button>
-            <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시${costLabel(COST.city, idx)}</button>
+            <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${state.longestRoad === myIdx ? "👑" : ""}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
+            <button ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
+            <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
             <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
             <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
             <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "⚔️" : ""}</button>
@@ -3907,7 +3907,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
         el = document.createElement("div");
         el.id = "catan-toast";
         el.className = "toast";
-        el.style.cssText = "position:fixed;bottom:80px;left:0;right:0;width:max-content;max-width:calc(100vw - 24px);margin:0 auto;background:rgba(30,30,40,0.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:14px;z-index:9999;pointer-events:none;transition:opacity 0.3s;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);";
+        el.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:max-content;max-width:calc(100vw - 32px);background:rgba(0,0,0,0.95);color:#ffd700;padding:12px 24px;border-radius:14px;font-size:16px;font-weight:700;z-index:9999;pointer-events:none;transition:opacity 0.3s;border:2px solid rgba(255,215,0,0.4);text-shadow:0 1px 4px rgba(0,0,0,0.8);";
         document.body.appendChild(el);
       }
       el.textContent = msg;
