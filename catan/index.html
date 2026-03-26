@@ -3289,60 +3289,58 @@
       const wantStr = RESOURCES.filter(r => want[r] > 0).map(r => `${RESOURCE_ICONS[r]}${RESOURCE_NAMES[r]}×${want[r]}`).join(" ");
       showToast(`거래 제안: ${offerStr} → ${wantStr}`, 2000);
 
-      // Ask each AI player
+      // Ask all AI players in parallel
       const aiPlayers = state.players.map((p, i) => ({ p, i })).filter(x => x.i !== humanIdx && totalResourceCount(x.p) > 0);
+      const eligible = aiPlayers.filter(x => RESOURCES.every(r => (x.p.resources[r] || 0) >= (want[r] || 0)));
       
-      let traded = false;
-      for (const target of aiPlayers) {
-        if (traded) break;
+      if (!eligible.length) {
+        showToast("거래 가능한 AI가 없습니다 (자원 부족)", 2000);
+        render();
+        return;
+      }
+
+      showToast(`🤔 ${eligible.map(x => x.p.name).join(", ")}에게 제안 중...`, 2000);
+
+      // Parallel LLM requests
+      const results = await Promise.allSettled(eligible.map(async (target) => {
         const tp = target.p;
-        
-        // Check if AI has the wanted resources
-        const canFulfill = RESOURCES.every(r => (tp.resources[r] || 0) >= (want[r] || 0));
-        if (!canFulfill) {
-          showToast(`${tp.name}: 자원이 부족해서 거래 불가`, 1500);
-          await new Promise(r => setTimeout(r, 800));
-          continue;
-        }
-
-        showToast(`🤔 ${tp.name}이 검토 중...`, 2000);
-
         const stateStr = `카탄 게임. 당신은 "${tp.name}".
 당신 자원: 벽돌${tp.resources.brick} 나무${tp.resources.lumber} 양${tp.resources.wool} 밀${tp.resources.grain} 광석${tp.resources.ore} (VP:${tp.vp})
 상대 "${human.name}"(VP:${human.vp})의 거래 제안:
 줄 것: ${offerStr} / 받을 것: ${wantStr}
 수락? JSON: {"accept":true/false,"dialogue":"한마디(한국어20자)"}`;
+        const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
+          body: JSON.stringify({ model: "gpt-5.4-mini", messages: [{ role: "user", content: stateStr }], max_tokens: 100 })
+        });
+        if (!res.ok) return { target, accept: false, dialogue: "..." };
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content || "";
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { accept: false, dialogue: "패스" };
+        return { target, accept: !!parsed.accept, dialogue: parsed.dialogue || "" };
+      }));
 
-        try {
-          const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
-            body: JSON.stringify({ model: "gpt-5.4-mini", messages: [{ role: "user", content: stateStr }], max_tokens: 100 })
-          });
-          if (!res.ok) continue;
-          const data = await res.json();
-          const text = data.choices?.[0]?.message?.content || "";
-          const jsonMatch = text.match(/\{[\s\S]*\}/);
-          const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { accept: false, dialogue: "패스" };
-
-          if (parsed.accept) {
-            // Execute N:N trade
-            for (const r of RESOURCES) {
-              if (offer[r] > 0) { human.resources[r] -= offer[r]; tp.resources[r] += offer[r]; }
-              if (want[r] > 0) { tp.resources[r] -= want[r]; human.resources[r] += want[r]; }
-            }
-            SFX.build();
-            showToast(`🤝 ${tp.name}: "${parsed.dialogue || "거래!"}"`, 3000);
-            Voice.ai("trade-accept", target.i);
-            state.canEndTurn = true;
-            traded = true;
-          } else {
-            showToast(`❌ ${tp.name}: "${parsed.dialogue || "거절"}"`, 2000);
-            Voice.ai("trade-reject", target.i);
-            await new Promise(r => setTimeout(r, 1000));
+      // Process results — first acceptor wins
+      let traded = false;
+      const responses = results.filter(r => r.status === "fulfilled").map(r => r.value);
+      
+      for (const resp of responses) {
+        const tp = resp.target.p;
+        if (resp.accept && !traded) {
+          for (const r of RESOURCES) {
+            if (offer[r] > 0) { human.resources[r] -= offer[r]; tp.resources[r] += offer[r]; }
+            if (want[r] > 0) { tp.resources[r] -= want[r]; human.resources[r] += want[r]; }
           }
-        } catch(e) {
-          console.error("proposeTradeToAI error:", e);
+          SFX.build();
+          showToast(`🤝 ${tp.name}: "${resp.dialogue || "거래!"}"`, 3000);
+          Voice.ai("trade-accept", resp.target.i);
+          state.canEndTurn = true;
+          traded = true;
+        } else {
+          showToast(`❌ ${tp.name}: "${resp.dialogue || "거절"}"`, traded ? 1000 : 2000);
+          if (!traded) Voice.ai("trade-reject", resp.target.i);
         }
       }
       if (!traded) showToast("아무도 거래에 응하지 않았습니다", 2000);
