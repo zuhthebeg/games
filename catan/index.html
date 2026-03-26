@@ -792,7 +792,7 @@
       winner: null,
       buildMode: null,
       roadBuildingRemaining: 0,
-      aiMode: "classic",  // "classic" | "llm"
+      aiMode: "llm",  // "llm" always (AI trade via LLM)
       hint: "",
       geometry: { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 },
       roomCodeInput: "",
@@ -2233,7 +2233,7 @@
         }
 
         // ── LLM AI: trade proposal + dialogue ──────────────────────────────
-        if (state.aiMode === "llm" && !state.winner) {
+        if (!state.winner) {
           try {
             const tradeResult = await aiLLMTrade(pIdx);
             if (tradeResult?.dialogue) {
@@ -2573,12 +2573,6 @@
                 <option value="hard" ${state.aiDifficulty === "hard" ? "selected" : ""}>어려움</option>
               </select>
             </div>
-            <div class="multi-row" style="margin-bottom:8px;">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;">
-                <input type="checkbox" id="llmAiCheck" onchange="toggleLLMAI(this.checked)" style="width:16px;height:16px;">
-                🤖 AI 거래 대사 (LLM)
-              </label>
-            </div>
             <button onclick="startSingle()">싱글플레이</button>
             <button onclick="showMultiOptions()">멀티플레이</button>
           </div>
@@ -2756,7 +2750,8 @@
             </div>
             <div class="trade-actions">
               <button onclick="cancelTradeDialog()">취소</button>
-              <button class="primary" onclick="confirmTradeDialog()">확인</button>
+              <button class="primary" onclick="confirmTradeDialog()">🏦 은행 거래</button>
+              <button style="background:#6366f1;border-color:#6366f1;" onclick="proposeTradeToAI()">🤖 AI에게 제안</button>
             </div>
           </div>
         </div>
@@ -3203,6 +3198,69 @@
       }
     };
 
+    // ── Human → AI Trade Proposal ──────────────────────────────────
+    async function proposeTradeToAI() {
+      if (!state.tradeDialog.open) return;
+      const humanIdx = localPlayerIndex();
+      const human = state.players[humanIdx];
+      const give = state.tradeDialog.give;
+      const want = state.tradeDialog.get;
+      if (!give || !want || give === want) return;
+
+      closeTradeDialog();
+      render();
+      showToast("🤖 AI가 거래를 검토 중...", 3000);
+
+      // Find richest AI player
+      const aiPlayers = state.players.map((p, i) => ({ p, i })).filter(x => x.i !== humanIdx);
+      const target = aiPlayers.sort((a, b) => totalResourceCount(b.p) - totalResourceCount(a.p))[0];
+      if (!target) return;
+
+      const tp = target.p;
+      const stateStr = `당신은 카탄 게임의 "${tp.name}" 플레이어입니다.
+당신의 자원: 벽돌${tp.resources.brick} 나무${tp.resources.lumber} 양${tp.resources.wool} 밀${tp.resources.grain} 광석${tp.resources.ore}
+당신 VP: ${tp.vp}/10
+
+상대 "${human.name}"이 거래를 제안합니다:
+"내가 ${RESOURCE_ICONS[give]}${RESOURCE_NAMES[give]} 1개 줄게, ${RESOURCE_ICONS[want]}${RESOURCE_NAMES[want]} 1개 줘"
+
+이 거래를 수락할지 판단하세요. JSON으로 응답:
+{"accept": true/false, "dialogue": "한마디(한국어,20자이내)"}`;
+
+      try {
+        const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
+          body: JSON.stringify({
+            model: "gpt-5.4-mini",
+            messages: [{ role: "user", content: stateStr }],
+            max_tokens: 100,
+          })
+        });
+        if (!res.ok) { showToast("거래 실패: 서버 오류"); return; }
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content || "";
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { accept: false, dialogue: "..." };
+
+        if (parsed.accept && tp.resources[want] >= 1) {
+          // Execute trade
+          human.resources[give] -= 1;
+          tp.resources[give] += 1;
+          tp.resources[want] -= 1;
+          human.resources[want] += 1;
+          SFX.build();
+          showToast(`🤝 ${tp.name}: "${parsed.dialogue || "좋아, 거래하자!"}"`, 3000);
+        } else {
+          showToast(`❌ ${tp.name}: "${parsed.dialogue || "싫어!"}"`, 3000);
+        }
+        render();
+      } catch(e) {
+        console.error("proposeTradeToAI error:", e);
+        showToast("거래 실패", 2000);
+      }
+    }
+
     // ── LLM AI Trade ────────────────────────────────────────────────
     async function aiLLMTrade(pIdx) {
       const p = state.players[pIdx];
@@ -3312,7 +3370,6 @@
     }
 
     window.startSingle = startSingle;
-    window.toggleLLMAI = function(checked) { state.aiMode = checked ? "llm" : "classic"; };
     window.showMultiOptions = showMultiOptions;
     window.backToMode = backToMode;
     window.createRoom = createRoom;
@@ -3334,6 +3391,7 @@
     window.selectTradeGive = selectTradeGive;
     window.selectTradeGet = selectTradeGet;
     window.confirmTradeDialog = confirmTradeDialog;
+    window.proposeTradeToAI = proposeTradeToAI;
     window.cancelTradeDialog = cancelTradeDialog;
     window.onVertexClick = onVertexClick;
     window.onEdgeClick = onEdgeClick;
