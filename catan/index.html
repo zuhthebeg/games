@@ -1708,8 +1708,13 @@
         state.hint = `🎉 ${state.players[winner].name} 승리!`;
         if (prevWinner !== winner) {
           SFX.win();
-          if (winner === localPlayerIndex()) launchConfetti();
-          showToast("🎉 승리!", 6000);
+          if (winner === localPlayerIndex()) {
+            launchConfetti();
+            showToast("🎉 승리! +10,000G", 6000);
+            if (typeof SharedWallet !== "undefined" && SharedWallet.addGold) SharedWallet.addGold(10000);
+          } else {
+            showToast(`😢 ${state.players[winner].name} 승리...`, 6000);
+          }
           Voice.play("victory", winner % 2 === 0 ? "m" : "f");
         }
       }
@@ -4015,7 +4020,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
         const rl = longestRoadLength(i);
         const lr = state.longestRoad === i ? "👑" : "";
         const la = state.largestArmy === i ? "⚔" : "";
-        const label = i === myIdx ? "나" : p.name.slice(0,3);
+        const label = i === myIdx ? "나" : p.name;
         return `<span class="vp-chip${active ? " active" : ""}" style="color:${p.color};"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${p.color};"></span>${label} ${p.vp}${lr}${la}</span>`;
       }).join("");
 
