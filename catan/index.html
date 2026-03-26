@@ -1298,7 +1298,9 @@
         for (const vIdx of hex.vertices) {
           const v = state.vertices[vIdx];
           if (!v.building || v.owner === null) continue;
-          const amount = v.building === "city" ? 2 : 1;
+          const rawAmount = v.building === "city" ? 2 : 1;
+          const amount = Math.min(rawAmount, bankRemaining(hex.type));
+          if (amount <= 0) continue;
           state.players[v.owner].resources[hex.type] += amount;
           if (!gains[v.owner]) gains[v.owner] = {};
           gains[v.owner][hex.type] = (gains[v.owner][hex.type] || 0) + amount;
@@ -2532,9 +2534,21 @@
       return state.hint ? `${base} | ${state.hint}` : base;
     }
 
+    const BANK_MAX = 19; // 각 자원 19장
+
+    function bankRemaining(resource) {
+      const used = state.players.reduce((s, p) => s + (p.resources[resource] || 0), 0);
+      return Math.max(0, BANK_MAX - used);
+    }
+
     function resourceStrip(player) {
       if (!player) return "";
-      return RESOURCES.map(r => `<div class="res" onclick="onResourceTap('${r}')" style="cursor:pointer;">${RESOURCE_ICONS[r]} ${player.resources[r]}</div>`).join("");
+      return RESOURCES.map(r => {
+        const bank = bankRemaining(r);
+        return `<div class="res" onclick="onResourceTap('${r}')" style="cursor:pointer;" title="은행: ${bank}장 남음">
+          ${RESOURCE_ICONS[r]} ${player.resources[r]}<span style="font-size:8px;color:#666;"> /${bank}</span>
+        </div>`;
+      }).join("");
     }
 
     function onResourceTap(resource) {
