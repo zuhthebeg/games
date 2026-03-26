@@ -42,13 +42,13 @@
     .hidden { display: none !important; }
 
     #app {
-      height: calc(100dvh - 48px - 44px - env(safe-area-inset-bottom));
+      height: calc(100dvh - 48px - 34px - env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
-      gap: 3px;
-      padding: 3px;
-      padding-top: calc(3px + 44px);
-      padding-bottom: calc(3px + env(safe-area-inset-bottom));
+      gap: 2px;
+      padding: 2px;
+      padding-top: calc(2px + 34px);
+      padding-bottom: calc(2px + env(safe-area-inset-bottom));
       overflow: hidden;
     }
 
@@ -2252,7 +2252,7 @@
             if (el) { el.classList.remove("dice-animate"); void el.offsetWidth; el.classList.add("dice-animate"); el.textContent = `${d1} + ${d2}`; }
             const DICE_FACES = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
             showBigOverlay(`${DICE_FACES[d1]} ${DICE_FACES[d2]}`, `${p.name}: ${d1}+${d2}=${d1+d2}${d1+d2===7?" 🦹 도둑!":""}`, d1+d2===7?"seven":"", 1200);
-            Voice.ai("dice-roll", pIdx);
+            // SFX.dice() already plays dice sound
             render();
             await new Promise(r => setTimeout(r, 1000));
             if (!applyRollDice(pIdx, [d1, d2], false)) {
@@ -2777,6 +2777,7 @@
             <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
             <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
             ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">방 나가기</button>` : ""}
+            <button onclick="toggleSoundPanel()" style="min-width:36px;">🔊</button>
           </div>
           <div class="hint">
             ${inSetup ? `초기 배치 ${state.setupRound}라운드 | 현재: ${state.setupStep === "settlement" ? "마을" : "도로"}` : ""}
@@ -3155,6 +3156,7 @@
 
     function startSingle() {
       initSingleGame();
+      BGM.start();
     }
 
     function onRoomCodeInput(value) {
@@ -3175,6 +3177,63 @@
     }
 
     // ─── Sound System ───────────────────────────────────────────────────────────
+    // ── Sound Settings ──
+    const soundSettings = {
+      sfx: localStorage.getItem("catan-sfx") !== "off",
+      voice: localStorage.getItem("catan-voice") !== "off",
+      bgm: localStorage.getItem("catan-bgm") !== "off",
+      sfxVol: parseFloat(localStorage.getItem("catan-sfx-vol") || "0.5"),
+      voiceVol: parseFloat(localStorage.getItem("catan-voice-vol") || "0.7"),
+      bgmVol: parseFloat(localStorage.getItem("catan-bgm-vol") || "0.3"),
+      save() {
+        localStorage.setItem("catan-sfx", this.sfx ? "on" : "off");
+        localStorage.setItem("catan-voice", this.voice ? "on" : "off");
+        localStorage.setItem("catan-bgm", this.bgm ? "on" : "off");
+        localStorage.setItem("catan-sfx-vol", this.sfxVol);
+        localStorage.setItem("catan-voice-vol", this.voiceVol);
+        localStorage.setItem("catan-bgm-vol", this.bgmVol);
+      }
+    };
+
+    // ── BGM ──
+    const BGM = {
+      _ctx: null, _playing: false, _osc: null, _gainNode: null,
+      start() {
+        if (this._playing || !soundSettings.bgm) return;
+        this._ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const c = this._ctx;
+        this._gainNode = c.createGain();
+        this._gainNode.gain.value = soundSettings.bgmVol * 0.15;
+        this._gainNode.connect(c.destination);
+        // Ambient medieval loop using oscillators
+        const playNote = (freq, start, dur) => {
+          const o = c.createOscillator(); const g = c.createGain();
+          o.type = "sine"; o.frequency.value = freq;
+          g.gain.setValueAtTime(0, c.currentTime + start);
+          g.gain.linearRampToValueAtTime(0.08, c.currentTime + start + 0.3);
+          g.gain.linearRampToValueAtTime(0, c.currentTime + start + dur);
+          o.connect(g); g.connect(this._gainNode);
+          o.start(c.currentTime + start); o.stop(c.currentTime + start + dur);
+        };
+        const melody = [262,294,330,349,392,349,330,294,262,247,220,247,262,294,330,392];
+        const loop = () => {
+          if (!this._playing) return;
+          melody.forEach((f, i) => playNote(f, i * 1.2, 1.4));
+          this._timer = setTimeout(loop, melody.length * 1200);
+        };
+        this._playing = true;
+        loop();
+      },
+      stop() {
+        this._playing = false;
+        clearTimeout(this._timer);
+        if (this._ctx) { this._ctx.close().catch(()=>{}); this._ctx = null; }
+      },
+      setVolume(v) {
+        if (this._gainNode) this._gainNode.gain.value = v * 0.15;
+      }
+    };
+
     const SFX = (() => {
       let ctx = null;
       const getCtx = () => {
@@ -3183,6 +3242,8 @@
       };
 
       function tone(freq, type, duration, vol = 0.3, startTime = 0) {
+        if (!soundSettings.sfx) return;
+        const v = vol * soundSettings.sfxVol;
         const c = getCtx();
         const t = c.currentTime + startTime;
         const osc = c.createOscillator();
@@ -3191,13 +3252,15 @@
         gain.connect(c.destination);
         osc.type = type;
         osc.frequency.setValueAtTime(freq, t);
-        gain.gain.setValueAtTime(vol, t);
+        gain.gain.setValueAtTime(v, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
         osc.start(t);
         osc.stop(t + duration);
       }
 
       function noise(duration, vol = 0.15) {
+        if (!soundSettings.sfx) return;
+        const v = vol * soundSettings.sfxVol;
         const c = getCtx();
         const bufSize = c.sampleRate * duration;
         const buf = c.createBuffer(1, bufSize, c.sampleRate);
@@ -3208,7 +3271,7 @@
         src.buffer = buf;
         src.connect(gain);
         gain.connect(c.destination);
-        gain.gain.setValueAtTime(vol, c.currentTime);
+        gain.gain.setValueAtTime(v, c.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
         src.start();
       }
@@ -3258,19 +3321,19 @@
       _cache: {},
       _ctx: null,
       play(name, gender = "m") {
+        if (!soundSettings.voice) return;
         const key = `${name}-${gender}`;
         const url = `sounds/${key}.wav`;
-        if (this._cache[key]) {
-          const audio = new Audio();
-          audio.src = URL.createObjectURL(this._cache[key]);
-          audio.play().catch(() => {});
-          return;
-        }
-        fetch(url).then(r => r.blob()).then(blob => {
-          this._cache[key] = blob;
+        const playBlob = (blob) => {
           const audio = new Audio();
           audio.src = URL.createObjectURL(blob);
+          audio.volume = soundSettings.voiceVol;
           audio.play().catch(() => {});
+        };
+        if (this._cache[key]) { playBlob(this._cache[key]); return; }
+        fetch(url).then(r => r.blob()).then(blob => {
+          this._cache[key] = blob;
+          playBlob(blob);
         }).catch(() => {});
       },
       // Shortcut: play for current AI player (alternating gender)
@@ -3464,6 +3527,32 @@
       });
     }
 
+    function toggleSoundPanel() {
+      let panel = document.getElementById("soundPanel");
+      if (panel) { panel.remove(); return; }
+      panel = document.createElement("div");
+      panel.id = "soundPanel";
+      panel.style.cssText = "position:fixed;bottom:60px;right:8px;background:#16213e;border:1px solid #334155;border-radius:12px;padding:12px;z-index:9990;width:200px;font-size:12px;";
+      panel.innerHTML = `
+        <div style="font-weight:700;margin-bottom:8px;">🔊 사운드 설정</div>
+        <label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer;">
+          <input type="checkbox" ${soundSettings.sfx?"checked":""} onchange="soundSettings.sfx=this.checked;soundSettings.save()"> 효과음
+          <input type="range" min="0" max="1" step="0.1" value="${soundSettings.sfxVol}" style="flex:1;height:4px;" oninput="soundSettings.sfxVol=+this.value;soundSettings.save()">
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer;">
+          <input type="checkbox" ${soundSettings.voice?"checked":""} onchange="soundSettings.voice=this.checked;soundSettings.save()"> 보이스
+          <input type="range" min="0" max="1" step="0.1" value="${soundSettings.voiceVol}" style="flex:1;height:4px;" oninput="soundSettings.voiceVol=+this.value;soundSettings.save()">
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" ${soundSettings.bgm?"checked":""} onchange="soundSettings.bgm=this.checked;soundSettings.save();if(this.checked)BGM.start();else BGM.stop();"> BGM
+          <input type="range" min="0" max="1" step="0.1" value="${soundSettings.bgmVol}" style="flex:1;height:4px;" oninput="soundSettings.bgmVol=+this.value;soundSettings.save();BGM.setVolume(+this.value)">
+        </label>
+      `;
+      document.body.appendChild(panel);
+      panel.addEventListener("click", e => e.stopPropagation());
+      document.addEventListener("click", function close() { panel.remove(); document.removeEventListener("click", close); }, { once: true });
+    }
+
     function showBigOverlay(main, sub, extraClass = "", duration = 1200) {
       const el = document.createElement("div");
       el.className = `big-overlay ${extraClass}`;
@@ -3513,6 +3602,7 @@
     }
 
     window.startSingle = startSingle;
+    window.toggleSoundPanel = toggleSoundPanel;
     window.showMultiOptions = showMultiOptions;
     window.backToMode = backToMode;
     window.createRoom = createRoom;
