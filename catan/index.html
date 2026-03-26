@@ -2554,13 +2554,23 @@
     function onResourceTap(resource) {
       if (!isHumanTurn() || state.phase !== "main" || state.winner) return;
       const me = state.players[localPlayerIndex()];
-      if (!me || (me.resources[resource] || 0) < 1) return;
-      // Open trade dialog with this resource pre-selected as offer
-      state.tradeDialog = {
-        open: true,
-        offer: Object.fromEntries(RESOURCES.map(r => [r, r === resource ? 1 : 0])),
-        want: Object.fromEntries(RESOURCES.map(r => [r, 0]))
-      };
+      if (!me) return;
+      const have = (me.resources[resource] || 0);
+      if (have >= 1) {
+        // 가진 자원 → 줄 자원으로
+        state.tradeDialog = {
+          open: true,
+          offer: Object.fromEntries(RESOURCES.map(r => [r, r === resource ? 1 : 0])),
+          want: Object.fromEntries(RESOURCES.map(r => [r, 0]))
+        };
+      } else {
+        // 없는 자원 → 받을 자원으로
+        state.tradeDialog = {
+          open: true,
+          offer: Object.fromEntries(RESOURCES.map(r => [r, 0])),
+          want: Object.fromEntries(RESOURCES.map(r => [r, r === resource ? 1 : 0]))
+        };
+      }
       render();
     }
 
