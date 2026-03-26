@@ -371,6 +371,17 @@
       animation: robber-pulse 2s ease-in-out infinite;
     }
 
+    .hex-hit {
+      box-shadow: 0 0 0 3px rgba(255,215,0,0.9), 0 0 16px rgba(255,215,0,0.5) !important;
+      z-index: 3 !important;
+      animation: hex-hit-glow 1.5s ease-in-out;
+    }
+    @keyframes hex-hit-glow {
+      0% { box-shadow: 0 0 0 3px rgba(255,215,0,0.9), 0 0 20px rgba(255,215,0,0.7); }
+      50% { box-shadow: 0 0 0 5px rgba(255,215,0,1), 0 0 30px rgba(255,215,0,0.9); }
+      100% { box-shadow: 0 0 0 3px rgba(255,215,0,0.9), 0 0 16px rgba(255,215,0,0.5); }
+    }
+
     .vertex {
       position: absolute;
       width: calc(16px * var(--zoom, 1));
@@ -828,6 +839,7 @@
       buildMode: null,
       roadBuildingRemaining: 0,
       aiMode: "llm",  // "llm" always (AI trade via LLM)
+      lastDiceSum: 0,
       hint: "",
       geometry: { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 },
       roomCodeInput: "",
@@ -1521,6 +1533,7 @@
       state.hint = `${getCurrentPlayer().name}: 🎲 ${d1} + ${d2} = ${sum}`;
       if (sum === 7) handleSeven(skipDiscard);
       else {
+        state.lastDiceSum = sum;
         distributeResources(sum);
         state.phase = "main";
         state.canEndTurn = true;
@@ -1531,6 +1544,7 @@
     function endTurnInternal() {
       if (state.winner || !state.canEndTurn) return false;
       state.buildMode = null;
+      state.lastDiceSum = 0;
       closeTradeDialog();
       state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
       state.phase = "roll";
@@ -2554,7 +2568,8 @@
         const c = state.geometry.centers[hex.index];
         const p = mapPixel(c.x, c.y, mapW, mapH);
         const hot = hex.number === 6 || hex.number === 8;
-        html += `<div class="hex ${hex.type}${hex.robber === true ? " has-robber" : ""}" style="left:${p.x}px; top:${p.y}px;" onclick="onHexClick(${hex.index})">`;
+        const isHighlit = state.lastDiceSum && hex.number === state.lastDiceSum && hex.index !== state.robber;
+        html += `<div class="hex ${hex.type}${hex.robber === true ? " has-robber" : ""}${isHighlit ? " hex-hit" : ""}" data-hex-num="${hex.number || 0}" style="left:${p.x}px; top:${p.y}px;" onclick="onHexClick(${hex.index})">`;
         html += `<div>${RESOURCE_ICONS[hex.type]}</div>`;
         if (hex.number) html += `<div class="number ${hot ? "hot" : ""}">${hex.number}</div>`;
         if (state.robber === hex.index) html += `<div class="robber">🦹</div>`;
