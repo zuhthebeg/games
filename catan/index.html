@@ -2968,6 +2968,7 @@
 
     async function onMpEvent(a, b) {
       const event = normalizeEvent(a, b);
+      dbg(`[MP-EVT] ${event.type || "?"}`);
       if (!event.type) return;
       if (event.type === "game_started") {
         state.screen = "game";
@@ -2985,8 +2986,9 @@
         const raw = event.data || event.action || event.payload || {};
         // relay sends { action: {...}, events: [...] } or direct action
         const data = raw.action || raw;
-        if (!data.type) { console.warn("[onMpEvent] no action type in:", raw); return; }
+        if (!data.type) { dbg(`[MP] no type in: ${JSON.stringify(raw).slice(0,100)}`); return; }
         if (data.actionId && mpState.processedActionIds.has(data.actionId)) return;
+        dbg(`[MP] action: ${data.type} id:${data.actionId||"?"}`);
         console.log("[onMpEvent] applying:", data.type, data);
         const ok = applyGameAction(data);
         if (ok) {
@@ -3115,7 +3117,7 @@
         maxPlayers: 4,
         supportsLocal: false,
         onGameStart: (roomState) => {
-          // Bridge: connect to existing game code
+          dbg(`[GAME-START] isHost:${roomState.players?.find(p=>p.id===catanMpUI?.getClient()?.getMyUserId())?.isHost} players:${roomState.players?.length}`);
           mpState.client = catanMpUI.getClient();
           mpState.myUserId = mpState.client.getMyUserId();
           mpState.room = roomState;
@@ -3577,6 +3579,24 @@
         el.style.animation = "big-overlay-out 0.3s ease-in forwards";
         setTimeout(() => el.remove(), 300);
       }, duration);
+    }
+
+    // ── Mobile Debug Panel ──
+    const debugLog = [];
+    function dbg(msg) {
+      debugLog.push(`${new Date().toLocaleTimeString().slice(0,8)} ${msg}`);
+      if (debugLog.length > 30) debugLog.shift();
+      const el = document.getElementById("debugPanel");
+      if (el) el.textContent = debugLog.join("\n");
+      console.log("[DBG]", msg);
+    }
+    // URL에 ?debug 있으면 패널 표시
+    if (location.search.includes("debug")) {
+      const dp = document.createElement("div");
+      dp.id = "debugPanel";
+      dp.style.cssText = "position:fixed;bottom:0;left:0;right:0;max-height:120px;overflow-y:auto;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:10px;padding:4px;z-index:99999;white-space:pre;pointer-events:auto;";
+      dp.onclick = () => dp.style.display = dp.style.display === "none" ? "" : "none";
+      document.body.appendChild(dp);
     }
 
     function showToast(msg, duration = 2500) {
