@@ -1814,6 +1814,69 @@
         if (pIdx !== state.currentPlayer) return false;
         return endTurnInternal();
       }
+
+      // Multiplayer trade proposal received from other player
+      if (type === "TRADE_PROPOSE") {
+        const myIdx = localPlayerIndex();
+        if (pIdx === myIdx) return true; // own proposal, skip
+        const proposer = state.players[pIdx];
+        if (!proposer) return true;
+        const offer = action.offer || {};
+        const want = action.want || {};
+        const offerStr = action.offerStr || "";
+        const wantStr = action.wantStr || "";
+        const me = state.players[myIdx];
+        let canAccept = true;
+        for (const [r, n] of Object.entries(want)) {
+          if ((me.resources[r] || 0) < n) canAccept = false;
+        }
+        const myResStr = RESOURCES.map(r => `${RESOURCE_ICONS[r]}${me.resources[r]}`).join(" ");
+        (async () => {
+          const accepted = await showTradeProposal(proposer.name, offerStr, wantStr, "거래 하실래요?", myResStr, canAccept);
+          if (accepted) {
+            // Execute trade locally
+            for (const r of RESOURCES) {
+              if (offer[r] > 0) { me.resources[r] += offer[r]; proposer.resources[r] -= offer[r]; }
+              if (want[r] > 0) { me.resources[r] -= want[r]; proposer.resources[r] += want[r]; }
+            }
+            SFX.build();
+            showToast("🤝 거래 성사!", 2000);
+            // Notify proposer
+            mpState.client.sendAction({ type: "TRADE_ACCEPT", playerId: me.userId || me.id, offer, want, actionId: `ta_${Date.now()}` }).catch(()=>{});
+          } else {
+            mpState.client.sendAction({ type: "TRADE_REJECT", playerId: me.userId || me.id, actionId: `tr_${Date.now()}` }).catch(()=>{});
+          }
+          render();
+        })();
+        return true;
+      }
+
+      if (type === "TRADE_ACCEPT") {
+        const myIdx = localPlayerIndex();
+        if (pIdx === myIdx) return true;
+        const accepter = state.players[pIdx];
+        const me = state.players[myIdx];
+        if (!accepter || !me) return true;
+        const offer = action.offer || {};
+        const want = action.want || {};
+        for (const r of RESOURCES) {
+          if (offer[r] > 0) { me.resources[r] -= offer[r]; accepter.resources[r] += offer[r]; }
+          if (want[r] > 0) { accepter.resources[r] -= want[r]; me.resources[r] += want[r]; }
+        }
+        SFX.build();
+        showToast(`🤝 ${accepter.name}이 거래를 수락!`, 2000);
+        state.canEndTurn = true;
+        return true;
+      }
+
+      if (type === "TRADE_REJECT") {
+        const myIdx = localPlayerIndex();
+        if (pIdx === myIdx) return true;
+        const rejecter = state.players[pIdx];
+        showToast(`❌ ${rejecter?.name || "상대"}이 거래를 거절`, 2000);
+        return true;
+      }
+
       return false;
     }
 
@@ -2837,7 +2900,7 @@
             <div class="trade-actions" style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
               <button onclick="cancelTradeDialog()" style="flex:1;">취소</button>
               <button class="primary" ${canBank ? "" : "disabled"} onclick="confirmBankTrade()" style="flex:1;">🏦 은행</button>
-              <button style="background:#6366f1;border-color:#6366f1;color:#fff;flex:1;" ${(totalOffer > 0 && totalWant > 0) ? "" : "disabled"} onclick="proposeTradeToAI()">🤖 AI 제안</button>
+              <button style="background:#6366f1;border-color:#6366f1;color:#fff;flex:1;" ${(totalOffer > 0 && totalWant > 0) ? "" : "disabled"} onclick="proposeTrade()">🤝 제안</button>
             </div>
           </div>
         </div>
@@ -3352,6 +3415,43 @@
     };
 
     // ── Human → AI Trade Proposal ──────────────────────────────────
+    async function proposeTrade() {
+      if (isMultiMode()) return proposeTradeMulti();
+      return proposeTradeToAI();
+    }
+
+    async function proposeTradeMulti() {
+      if (!state.tradeDialog.open) return;
+      const humanIdx = localPlayerIndex();
+      const human = state.players[humanIdx];
+      const td = state.tradeDialog;
+      const offer = td.offer || {};
+      const want = td.want || {};
+      const totalOffer = RESOURCES.reduce((s, r) => s + (offer[r] || 0), 0);
+      const totalWant = RESOURCES.reduce((s, r) => s + (want[r] || 0), 0);
+      if (totalOffer <= 0 || totalWant <= 0) return;
+
+      closeTradeDialog();
+      render();
+
+      const offerStr = RESOURCES.filter(r => offer[r] > 0).map(r => `${RESOURCE_ICONS[r]}×${offer[r]}`).join(" ");
+      const wantStr = RESOURCES.filter(r => want[r] > 0).map(r => `${RESOURCE_ICONS[r]}×${want[r]}`).join(" ");
+
+      // Send trade proposal via relay to all players
+      try {
+        await mpState.client.sendAction({
+          type: "TRADE_PROPOSE",
+          playerId: human.userId || human.id,
+          offer, want,
+          offerStr, wantStr,
+          actionId: `trade_${Date.now()}`
+        });
+        showToast(`📢 거래 제안: ${offerStr} ↔ ${wantStr}`, 3000);
+      } catch(e) {
+        showToast("거래 제안 전송 실패", 2000);
+      }
+    }
+
     async function proposeTradeToAI() {
       if (!state.tradeDialog.open) return;
       const humanIdx = localPlayerIndex();
@@ -3671,7 +3771,7 @@
     window.humanTrade = humanTrade;
     window.tradeAdjust = tradeAdjust;
     window.confirmBankTrade = confirmBankTrade;
-    window.proposeTradeToAI = proposeTradeToAI;
+    window.proposeTrade = proposeTrade;
     window.cancelTradeDialog = cancelTradeDialog;
     window.onVertexClick = onVertexClick;
     window.onEdgeClick = onEdgeClick;
