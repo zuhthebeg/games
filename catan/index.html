@@ -162,8 +162,8 @@
 
     .hex {
       position: absolute;
-      width: calc(76px * var(--zoom, 1));
-      height: calc(86px * var(--zoom, 1));
+      width: calc(78px * var(--zoom, 1));
+      height: calc(88px * var(--zoom, 1));
       transform: translate(-50%, -50%);
       clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
       border: 1px solid rgba(255, 255, 255, 0.2);
@@ -1527,6 +1527,7 @@
         victimIdx = list.length ? list[Math.floor(Math.random() * list.length)] : -1;
       }
       const picked = stealFromVictim(state.currentPlayer, victimIdx, forcedResource);
+      if (picked) showToast(`도둑이 ${RESOURCE_ICONS[picked]} 을 훔쳤습니다!`, 2000);
       state.phase = "main";
       state.canEndTurn = true;
       state.hint = picked && victimIdx !== -1
@@ -1546,9 +1547,9 @@
       if (!d1 || !d2) return false;
       const sum = d1 + d2;
       state.hint = `${getCurrentPlayer().name}: 🎲 ${d1} + ${d2} = ${sum}`;
+      state.lastDiceSum = sum;
       if (sum === 7) handleSeven(skipDiscard);
       else {
-        state.lastDiceSum = sum;
         distributeResources(sum);
         state.phase = "main";
         state.canEndTurn = true;
@@ -2810,13 +2811,16 @@
       const vpPct = Math.min(100, Math.max(0, vp * 10));
       const turnPct = Math.min(100, Math.max(0, (state.turnTimeLeft / 60) * 100));
       return `
-        <div class="players-bar">
-          ${state.players.map((p, pIdx) => `
-            <div class="player-card">
-              <div class="player-top" style="color:${p.color}">${p.name}${pIdx === myIdx ? " (나)" : ""}<span>${p.vp}점</span></div>
-              <div>자원 ${totalResourceCount(p)} | 도로 ${p.roads.length} | 건물 ${p.buildings.length}${p.knights ? ` | 🐴${p.knights}` : ""}</div>
-            </div>
-          `).join("")}
+        <div style="display:flex;gap:3px;font-size:10px;overflow-x:auto;">
+          ${state.players.map((p, pIdx) => {
+            const rl = longestRoadLength(pIdx);
+            const lr = state.longestRoad === pIdx ? "👑" : "";
+            const la = state.largestArmy === pIdx ? "⚔️" : "";
+            return `<div style="flex:1;min-width:0;padding:2px 4px;border-radius:4px;border:1px solid ${pIdx===myIdx?p.color:'rgba(255,255,255,0.1)'};background:rgba(0,0,0,0.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              <span style="color:${p.color};font-weight:700;">${p.name.slice(0,4)}</span> ${p.vp}점 R${rl}${lr} K${p.knights||0}${la}
+            </div>`;
+          }).join("")}
+          <button onclick="toggleSoundPanel()" style="min-width:24px;padding:0 4px;border:1px solid rgba(255,255,255,0.1);border-radius:4px;background:rgba(0,0,0,0.4);color:#fff;font-size:12px;cursor:pointer;">⚙️</button>
         </div>
         <div class="status">${statusText()}</div>
         ${renderMap()}
@@ -2835,13 +2839,11 @@
             <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시${costLabel(COST.city, idx)}</button>
             <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
             <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
-            <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사</button>
+            <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})</button>
             <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
             <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️도로건설</button>
             <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
             <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
-            ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">방 나가기</button>` : ""}
-            <button onclick="toggleSoundPanel()" style="min-width:36px;">🔊</button>
           </div>
           <div class="hint">
             ${inSetup ? `초기 배치 ${state.setupRound}라운드 | 현재: ${state.setupStep === "settlement" ? "마을" : "도로"}` : ""}
@@ -3661,7 +3663,7 @@
       if (panel) { panel.remove(); return; }
       panel = document.createElement("div");
       panel.id = "soundPanel";
-      panel.style.cssText = "position:fixed;bottom:60px;right:8px;background:#16213e;border:1px solid #334155;border-radius:12px;padding:12px;z-index:9990;width:200px;font-size:12px;";
+      panel.style.cssText = "position:fixed;bottom:60px;right:8px;background:#16213e;border:1px solid #334155;border-radius:12px;padding:12px;z-index:9990;width:220px;font-size:12px;";
       panel.innerHTML = `
         <div style="font-weight:700;margin-bottom:8px;">🔊 사운드 설정</div>
         <label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer;">
@@ -3676,6 +3678,8 @@
           <input type="checkbox" ${soundSettings.bgm?"checked":""} onchange="soundSettings.bgm=this.checked;soundSettings.save();if(this.checked)BGM.start();else BGM.stop();"> BGM
           <input type="range" min="0" max="1" step="0.1" value="${soundSettings.bgmVol}" style="flex:1;height:4px;" oninput="soundSettings.bgmVol=+this.value;soundSettings.save();BGM.setVolume(+this.value)">
         </label>
+        <hr style="border:none;border-top:1px solid #334155;margin:8px 0;">
+        <button onclick="if(confirm('게임을 나가시겠습니까?')){leaveRoom();document.getElementById('soundPanel')?.remove();}" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ef4444;background:rgba(239,68,68,0.15);color:#ef4444;cursor:pointer;font-size:11px;">🚪 게임 나가기</button>
       `;
       document.body.appendChild(panel);
       panel.addEventListener("click", e => e.stopPropagation());
