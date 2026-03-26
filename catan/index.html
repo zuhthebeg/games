@@ -2904,12 +2904,12 @@
           ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':c.type==='vp'?'⭐VP':c.type==='monopoly'?'💰모노폴리':c.type==='road_building'?'🛣️도로':c.type==='year_of_plenty'?'🌾풍년':'🃏').join(' ')}</div>` : ""}
           <div class="actions">
             <button id="diceDisplay" class="primary" style="font-size:16px;min-width:70px;" ${canRoll ? "" : "disabled"} onclick="rollDice()">🎲 주사위</button>
-            <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${costLabel(COST.road, idx)}</button>
+            <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${state.longestRoad === myIdx ? "👑" : ""}${costLabel(COST.road, idx)}</button>
             <button ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을${costLabel(COST.settlement, idx)}</button>
             <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시${costLabel(COST.city, idx)}</button>
             <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
             <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
-            <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})</button>
+            <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "⚔️" : ""}</button>
             <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
             <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️도로건설</button>
             <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
@@ -3750,6 +3750,7 @@
           <input type="range" min="0" max="1" step="0.1" value="${soundSettings.bgmVol}" style="flex:1;height:4px;" oninput="soundSettings.bgmVol=+this.value;soundSettings.save();BGM.setVolume(+this.value)">
         </label>
         <hr style="border:none;border-top:1px solid #334155;margin:8px 0;">
+        <button onclick="showManual();document.getElementById('soundPanel')?.remove();" style="width:100%;padding:6px;border-radius:6px;border:1px solid #4ecca3;background:rgba(78,204,163,0.1);color:#4ecca3;cursor:pointer;font-size:11px;margin-bottom:6px;">📖 게임 설명서</button>
         <button onclick="if(confirm('게임을 나가시겠습니까?')){leaveRoom();document.getElementById('soundPanel')?.remove();}" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ef4444;background:rgba(239,68,68,0.15);color:#ef4444;cursor:pointer;font-size:11px;">🚪 게임 나가기</button>
       `;
       document.body.appendChild(panel);
@@ -3757,6 +3758,49 @@
       setTimeout(() => {
         document.addEventListener("click", function close() { panel.remove(); document.removeEventListener("click", close); }, { once: true });
       }, 100);
+    }
+
+    function showManual() {
+      const overlay = document.createElement("div");
+      overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);padding:16px;";
+      overlay.innerHTML = `
+        <div style="background:#16213e;border-radius:16px;padding:16px;max-width:360px;width:100%;max-height:80vh;overflow-y:auto;font-size:12px;line-height:1.6;color:#ccc;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-size:16px;font-weight:700;">📖 카탄 가이드</span>
+            <button onclick="this.closest('div[style]').parentElement.remove()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>
+          </div>
+          <b>🎯 목표</b>: 10점 먼저 달성!<br><br>
+          <b>📦 자원</b><br>
+          🧱벽돌 🪵나무 🐑양 🌾밀 ⛏️광석<br><br>
+          <b>🏗️ 건설 비용</b><br>
+          • 도로: 🧱+🪵<br>
+          • 마을(1점): 🧱+🪵+🐑+🌾<br>
+          • 도시(2점): 🌾🌾+⛏️⛏️⛏️<br>
+          • 발전카드: 🐑+🌾+⛏️<br><br>
+          <b>🎲 진행</b><br>
+          1. 주사위 굴리기 → 해당 숫자 타일에서 자원 획득<br>
+          2. 거래/건설/카드 사용<br>
+          3. 턴 종료<br><br>
+          <b>🦹 도둑 (7)</b><br>
+          • 8장 초과 보유 → 절반 버림<br>
+          • 도둑을 다른 타일로 이동<br>
+          • 인접 플레이어 카드 1장 훔치기<br><br>
+          <b>🃏 발전카드</b><br>
+          • 🐴기사: 도둑 이동 (3명↑ 사용 → ⚔️최대기사단 +2점)<br>
+          • 🛣️도로건설: 무료 도로 2개<br>
+          • 🌾풍년: 아무 자원 2개 획득<br>
+          • 💰독점: 자원 1종 모두 가져오기<br>
+          • ⭐VP: +1점<br><br>
+          <b>💱 거래</b><br>
+          • 자원 터치 → 거래 모달<br>
+          • 🏦은행: 4:1 (항구 3:1 또는 2:1)<br>
+          • 🤝제안: AI/플레이어에게 N:N 거래<br><br>
+          <b>🏆 특수 점수</b><br>
+          • 👑최장도로 (5개↑): +2점<br>
+          • ⚔️최대기사단 (3명↑): +2점
+        </div>`;
+      document.body.appendChild(overlay);
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
     }
 
     function showBigOverlay(main, sub, extraClass = "", duration = 1200) {
@@ -3845,6 +3889,7 @@
     window.humanUseYearOfPlenty = humanUseYearOfPlenty;
     window.humanTrade = humanTrade;
     window.onResourceTap = onResourceTap;
+    window.showManual = showManual;
     window.tradeAdjust = tradeAdjust;
     window.confirmBankTrade = confirmBankTrade;
     window.proposeTrade = proposeTrade;
