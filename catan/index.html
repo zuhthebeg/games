@@ -1352,37 +1352,41 @@
       return true;
     }
 
-    function selectTradeGive(resource) {
+    function tradeAdjust(type, resource, delta) {
       if (!state.tradeDialog.open) return;
-      const idx = localPlayerIndex();
-      const p = state.players[idx];
-      if (!p || (p.resources[resource] || 0) < 1) return;
-      state.tradeDialog.give = resource;
-      if (state.tradeDialog.get === resource) {
-        state.tradeDialog.get = RESOURCES.find(r => r !== resource) || resource;
+      const td = state.tradeDialog;
+      if (!td.offer) td.offer = Object.fromEntries(RESOURCES.map(r => [r, 0]));
+      if (!td.want) td.want = Object.fromEntries(RESOURCES.map(r => [r, 0]));
+      const counts = type === "offer" ? td.offer : td.want;
+      const newVal = (counts[resource] || 0) + delta;
+      if (type === "offer") {
+        const max = state.players[localPlayerIndex()]?.resources[resource] || 0;
+        counts[resource] = Math.max(0, Math.min(max, newVal));
+      } else {
+        counts[resource] = Math.max(0, newVal);
       }
       render();
     }
 
-    function selectTradeGet(resource) {
-      if (!state.tradeDialog.open) return;
-      if (!RESOURCES.includes(resource) || resource === state.tradeDialog.give) return;
-      state.tradeDialog.get = resource;
-      render();
-    }
-
-    function confirmTradeDialog() {
+    function confirmBankTrade() {
       if (!state.tradeDialog.open) return;
       const pIdx = localPlayerIndex();
-      const give = state.tradeDialog.give;
-      const get = state.tradeDialog.get;
-      if (!give || !get || give === get) return;
-      if (applyPortTrade(pIdx, give, get)) {
+      const td = state.tradeDialog;
+      // Find a give resource with enough for bank ratio
+      const giveRes = RESOURCES.find(r => (td.offer[r] || 0) >= getBestTradeRatio(pIdx, r));
+      const getRes = RESOURCES.find(r => (td.want[r] || 0) > 0);
+      if (!giveRes || !getRes || giveRes === getRes) {
+        state.hint = "은행 거래 불가: 비율에 맞는 자원을 선택하세요.";
+        render();
+        return;
+      }
+      if (applyPortTrade(pIdx, giveRes, getRes)) {
         state.canEndTurn = true;
-        const ratio = getBestTradeRatio(pIdx, give);
-        state.hint = `거래: ${RESOURCE_ICONS[give]}×${ratio} → ${RESOURCE_ICONS[get]}×1`;
+        const ratio = getBestTradeRatio(pIdx, giveRes);
+        state.hint = `은행 거래: ${RESOURCE_ICONS[giveRes]}×${ratio} → ${RESOURCE_ICONS[getRes]}×1`;
+        Voice.human("trade-bank");
       } else {
-        state.hint = "거래 가능한 조합이 없습니다.";
+        state.hint = "은행 거래 실패.";
       }
       closeTradeDialog();
       render();
@@ -2777,43 +2781,49 @@
       const pIdx = localPlayerIndex();
       const p = state.players[pIdx];
       if (!p) return "";
-      const giveOptions = RESOURCES.filter(r => (p.resources[r] || 0) >= getBestTradeRatio(pIdx, r));
-      const aiGiveOptions = RESOURCES.filter(r => (p.resources[r] || 0) >= 1);
-      if (!giveOptions.length && !aiGiveOptions.length) return "";
-      const allGiveOptions = RESOURCES.filter(r => (p.resources[r] || 0) >= 1);
-      const give = allGiveOptions.includes(state.tradeDialog.give) ? state.tradeDialog.give : (allGiveOptions[0] || RESOURCES[0]);
-      const get = (RESOURCES.includes(state.tradeDialog.get) && state.tradeDialog.get !== give) ? state.tradeDialog.get : (RESOURCES.find(r => r !== give) || give);
-      state.tradeDialog.give = give;
-      state.tradeDialog.get = get;
-      const canBankTrade = giveOptions.length > 0;
+      const td = state.tradeDialog;
+      if (!td.offer) td.offer = Object.fromEntries(RESOURCES.map(r => [r, 0]));
+      if (!td.want) td.want = Object.fromEntries(RESOURCES.map(r => [r, 0]));
+      
+      const totalOffer = RESOURCES.reduce((s, r) => s + (td.offer[r] || 0), 0);
+      const totalWant = RESOURCES.reduce((s, r) => s + (td.want[r] || 0), 0);
+
+      function resRow(r, counts, type) {
+        const max = type === "offer" ? (p.resources[r] || 0) : 99;
+        const val = counts[r] || 0;
+        return `<div style="display:flex;align-items:center;gap:4px;justify-content:space-between;padding:2px 0;">
+          <span style="font-size:13px;">${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]} ${type === "offer" ? "("+p.resources[r]+")" : ""}</span>
+          <span style="display:flex;gap:2px;align-items:center;">
+            <button class="trade-option" style="padding:2px 8px;min-width:28px;" onclick="tradeAdjust('${type}','${r}',-1)" ${val <= 0 ? "disabled" : ""}>−</button>
+            <span style="min-width:20px;text-align:center;font-weight:700;">${val}</span>
+            <button class="trade-option" style="padding:2px 8px;min-width:28px;" onclick="tradeAdjust('${type}','${r}',1)" ${val >= max ? "disabled" : ""}>+</button>
+          </span>
+        </div>`;
+      }
+
+      // 은행 거래 가능 여부 (선택한 자원 하나에 대해)
+      const bankGive = RESOURCES.find(r => td.offer[r] >= getBestTradeRatio(pIdx, r));
+      const bankGet = RESOURCES.find(r => td.want[r] > 0);
+      const canBank = bankGive && bankGet && bankGive !== bankGet;
+
       return `
         <div class="trade-modal-overlay" onclick="cancelTradeDialog()">
-          <div class="trade-modal" onclick="event.stopPropagation()">
-            <h3>거래</h3>
-            <div class="trade-section">
-              <div class="trade-section-title">줄 자원</div>
-              <div class="trade-options">
-                ${allGiveOptions.map(r => `
-                  <button class="trade-option ${give === r ? "active" : ""}" onclick="selectTradeGive('${r}')">
-                    ${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]} (${p.resources[r]})
-                  </button>
-                `).join("")}
+          <div class="trade-modal" onclick="event.stopPropagation()" style="max-width:360px;">
+            <h3>💱 거래</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div class="trade-section">
+                <div class="trade-section-title">📤 줄 자원 (${totalOffer})</div>
+                ${RESOURCES.map(r => resRow(r, td.offer, "offer")).join("")}
+              </div>
+              <div class="trade-section">
+                <div class="trade-section-title">📥 받을 자원 (${totalWant})</div>
+                ${RESOURCES.map(r => resRow(r, td.want, "want")).join("")}
               </div>
             </div>
-            <div class="trade-section">
-              <div class="trade-section-title">받을 자원</div>
-              <div class="trade-options">
-                ${RESOURCES.filter(r => r !== give).map(r => `
-                  <button class="trade-option ${get === r ? "active" : ""}" onclick="selectTradeGet('${r}')">
-                    ${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]}
-                  </button>
-                `).join("")}
-              </div>
-            </div>
-            <div class="trade-actions">
-              <button onclick="cancelTradeDialog()">취소</button>
-              <button class="primary" ${canBankTrade ? "" : "disabled"} onclick="confirmTradeDialog()">🏦 은행${canBankTrade ? " ("+getBestTradeRatio(pIdx,give)+":1)" : ""}</button>
-              <button style="background:#6366f1;border-color:#6366f1;" onclick="proposeTradeToAI()">🤖 AI (1:1)</button>
+            <div class="trade-actions" style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
+              <button onclick="cancelTradeDialog()" style="flex:1;">취소</button>
+              <button class="primary" ${canBank ? "" : "disabled"} onclick="confirmBankTrade()" style="flex:1;">🏦 은행</button>
+              <button style="background:#6366f1;border-color:#6366f1;color:#fff;flex:1;" ${(totalOffer > 0 && totalWant > 0) ? "" : "disabled"} onclick="proposeTradeToAI()">🤖 AI 제안</button>
             </div>
           </div>
         </div>
@@ -3265,64 +3275,78 @@
       if (!state.tradeDialog.open) return;
       const humanIdx = localPlayerIndex();
       const human = state.players[humanIdx];
-      const give = state.tradeDialog.give;
-      const want = state.tradeDialog.get;
-      if (!give || !want || give === want) return;
+      const td = state.tradeDialog;
+      const offer = td.offer || {};
+      const want = td.want || {};
+      const totalOffer = RESOURCES.reduce((s, r) => s + (offer[r] || 0), 0);
+      const totalWant = RESOURCES.reduce((s, r) => s + (want[r] || 0), 0);
+      if (totalOffer <= 0 || totalWant <= 0) return;
 
       closeTradeDialog();
       render();
-      showToast("🤖 AI가 거래를 검토 중...", 3000);
 
-      // Find richest AI player
-      const aiPlayers = state.players.map((p, i) => ({ p, i })).filter(x => x.i !== humanIdx);
-      const target = aiPlayers.sort((a, b) => totalResourceCount(b.p) - totalResourceCount(a.p))[0];
-      if (!target) return;
+      const offerStr = RESOURCES.filter(r => offer[r] > 0).map(r => `${RESOURCE_ICONS[r]}${RESOURCE_NAMES[r]}×${offer[r]}`).join(" ");
+      const wantStr = RESOURCES.filter(r => want[r] > 0).map(r => `${RESOURCE_ICONS[r]}${RESOURCE_NAMES[r]}×${want[r]}`).join(" ");
+      showToast(`거래 제안: ${offerStr} → ${wantStr}`, 2000);
 
-      const tp = target.p;
-      const stateStr = `당신은 카탄 게임의 "${tp.name}" 플레이어입니다.
-당신의 자원: 벽돌${tp.resources.brick} 나무${tp.resources.lumber} 양${tp.resources.wool} 밀${tp.resources.grain} 광석${tp.resources.ore}
-당신 VP: ${tp.vp}/10
-
-상대 "${human.name}"이 거래를 제안합니다:
-"내가 ${RESOURCE_ICONS[give]}${RESOURCE_NAMES[give]} 1개 줄게, ${RESOURCE_ICONS[want]}${RESOURCE_NAMES[want]} 1개 줘"
-
-이 거래를 수락할지 판단하세요. JSON으로 응답:
-{"accept": true/false, "dialogue": "한마디(한국어,20자이내)"}`;
-
-      try {
-        const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
-          body: JSON.stringify({
-            model: "gpt-5.4-mini",
-            messages: [{ role: "user", content: stateStr }],
-            max_tokens: 100,
-          })
-        });
-        if (!res.ok) { showToast("거래 실패: 서버 오류"); return; }
-        const data = await res.json();
-        const text = data.choices?.[0]?.message?.content || "";
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { accept: false, dialogue: "..." };
-
-        if (parsed.accept && tp.resources[want] >= 1) {
-          // Execute trade
-          human.resources[give] -= 1;
-          tp.resources[give] += 1;
-          tp.resources[want] -= 1;
-          human.resources[want] += 1;
-          SFX.build();
-          showToast(`🤝 ${tp.name}: "${parsed.dialogue || "좋아, 거래하자!"}"`, 3000);
-          Voice.ai("trade-accept", target.i);
-        } else {
-          showToast(`❌ ${tp.name}: "${parsed.dialogue || "싫어!"}"`, 3000);
-          Voice.ai("trade-reject", target.i);
+      // Ask each AI player
+      const aiPlayers = state.players.map((p, i) => ({ p, i })).filter(x => x.i !== humanIdx && totalResourceCount(x.p) > 0);
+      
+      let traded = false;
+      for (const target of aiPlayers) {
+        if (traded) break;
+        const tp = target.p;
+        
+        // Check if AI has the wanted resources
+        const canFulfill = RESOURCES.every(r => (tp.resources[r] || 0) >= (want[r] || 0));
+        if (!canFulfill) {
+          showToast(`${tp.name}: 자원이 부족해서 거래 불가`, 1500);
+          await new Promise(r => setTimeout(r, 800));
+          continue;
         }
-        render();
-      } catch(e) {
-        console.error("proposeTradeToAI error:", e);
-        showToast("거래 실패", 2000);
+
+        showToast(`🤔 ${tp.name}이 검토 중...`, 2000);
+
+        const stateStr = `카탄 게임. 당신은 "${tp.name}".
+당신 자원: 벽돌${tp.resources.brick} 나무${tp.resources.lumber} 양${tp.resources.wool} 밀${tp.resources.grain} 광석${tp.resources.ore} (VP:${tp.vp})
+상대 "${human.name}"(VP:${human.vp})의 거래 제안:
+줄 것: ${offerStr} / 받을 것: ${wantStr}
+수락? JSON: {"accept":true/false,"dialogue":"한마디(한국어20자)"}`;
+
+        try {
+          const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
+            body: JSON.stringify({ model: "gpt-5.4-mini", messages: [{ role: "user", content: stateStr }], max_tokens: 100 })
+          });
+          if (!res.ok) continue;
+          const data = await res.json();
+          const text = data.choices?.[0]?.message?.content || "";
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { accept: false, dialogue: "패스" };
+
+          if (parsed.accept) {
+            // Execute N:N trade
+            for (const r of RESOURCES) {
+              if (offer[r] > 0) { human.resources[r] -= offer[r]; tp.resources[r] += offer[r]; }
+              if (want[r] > 0) { tp.resources[r] -= want[r]; human.resources[r] += want[r]; }
+            }
+            SFX.build();
+            showToast(`🤝 ${tp.name}: "${parsed.dialogue || "거래!"}"`, 3000);
+            Voice.ai("trade-accept", target.i);
+            state.canEndTurn = true;
+            traded = true;
+          } else {
+            showToast(`❌ ${tp.name}: "${parsed.dialogue || "거절"}"`, 2000);
+            Voice.ai("trade-reject", target.i);
+            await new Promise(r => setTimeout(r, 1000));
+          }
+        } catch(e) {
+          console.error("proposeTradeToAI error:", e);
+        }
       }
+      if (!traded) showToast("아무도 거래에 응하지 않았습니다", 2000);
+      render();
     }
 
     // ── LLM AI Trade ────────────────────────────────────────────────
@@ -3465,9 +3489,8 @@
     window.humanUseRoadBuilding = humanUseRoadBuilding;
     window.humanUseYearOfPlenty = humanUseYearOfPlenty;
     window.humanTrade = humanTrade;
-    window.selectTradeGive = selectTradeGive;
-    window.selectTradeGet = selectTradeGet;
-    window.confirmTradeDialog = confirmTradeDialog;
+    window.tradeAdjust = tradeAdjust;
+    window.confirmBankTrade = confirmBankTrade;
     window.proposeTradeToAI = proposeTradeToAI;
     window.cancelTradeDialog = cancelTradeDialog;
     window.onVertexClick = onVertexClick;
