@@ -3668,19 +3668,23 @@
       banner.style.display = "flex";
       const cp = state.players[state.currentPlayer] || {};
       const color = cp.color || "#fff";
-      const isAI = state.currentPlayer !== localPlayerIndex() || isMultiMode();
+      const isMyTurn = state.currentPlayer === localPlayerIndex();
+      const isWaiting = !isMyTurn;
       // Action text
       let action = state.hint || "";
-      if (state.phase === "roll") action = "🎲 주사위를 굴리세요";
-      else if (state.phase === "robber" || state.phase === "knight-robber") action = "🦹 강도를 이동하세요";
-      else if (state.phase === "main") action = state.buildMode ? `🏗️ ${state.buildMode} 위치를 선택하세요` : "🔨 건설하거나 턴 종료";
-      else if (state.phase === "setup1" || state.phase === "setup2") action = state.setupStep === "settlement" ? "🏠 마을을 놓으세요" : "🛤️ 도로를 놓으세요";
-      if (isAI && !state.winner) action = `🤔 AI 생각 중...`;
-      banner.classList.toggle("ai-thinking", isAI && !state.winner);
+      if (isMyTurn) {
+        if (state.phase === "roll") action = "🎲 주사위를 굴리세요";
+        else if (state.phase === "robber" || state.phase === "knight-robber") action = "🦹 강도를 이동하세요";
+        else if (state.phase === "main") action = state.buildMode ? `🏗️ ${state.buildMode} 위치를 선택하세요` : "🔨 건설하거나 턴 종료";
+        else if (state.phase === "setup1" || state.phase === "setup2") action = state.setupStep === "settlement" ? "🏠 마을을 놓으세요" : "🛤️ 도로를 놓으세요";
+      } else {
+        action = isMultiMode() ? `⏳ ${cp.name}의 차례...` : `🤔 AI 생각 중...`;
+      }
+      banner.classList.toggle("ai-thinking", isWaiting && !state.winner);
 
       const vpChips = state.players.map((p, i) => {
         const active = i === state.currentPlayer;
-        return `<span class="vp-chip${active ? " active" : ""}" style="${active ? `color:${p.color}` : ""}">${p.name.slice(0,1)} ${p.vp}점</span>`;
+        return `<span class="vp-chip${active ? " active" : ""}" style="${active ? `color:${p.color}` : ""}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:3px;vertical-align:middle;"></span>${p.vp}점</span>`;
       }).join("");
 
       banner.innerHTML = `
