@@ -1930,7 +1930,7 @@
           }
         }
       }
-      if (sum === 7) Voice.human("seven");
+      // seven sound handled in handleSeven()
       if (!applyRollDice(state.currentPlayer, [d1, d2], false)) return;
       render();
       triggerAITurnIfNeeded();
@@ -3157,7 +3157,7 @@
 
     function startSingle() {
       initSingleGame();
-      BGM.start();
+      if (soundSettings.bgm) BGM.start();
     }
 
     function onRoomCodeInput(value) {
@@ -3463,8 +3463,14 @@
           const giveStr = Object.entries(parsed.give).map(([r,n]) => `${RESOURCE_ICONS[r]||r}×${n}`).join(" ");
           const wantStr = Object.entries(parsed.want).map(([r,n]) => `${RESOURCE_ICONS[r]||r}×${n}`).join(" ");
           
+          // Check if human can fulfill the trade
+          let canAccept = true;
+          for (const [r, n] of Object.entries(parsed.want)) {
+            if (!RESOURCES.includes(r) || (human.resources[r] || 0) < n) canAccept = false;
+          }
+          const myResStr = RESOURCES.map(r => `${RESOURCE_ICONS[r]}${human.resources[r]}`).join(" ");
           Voice.ai("trade-propose", pIdx);
-          const accepted = await showTradeProposal(p.name, giveStr, wantStr, parsed.dialogue || "거래하자!");
+          const accepted = await showTradeProposal(p.name, giveStr, wantStr, parsed.dialogue || "거래하자!", myResStr, canAccept);
           
           if (accepted) {
             // Execute trade
@@ -3497,7 +3503,7 @@
       }
     }
 
-    function showTradeProposal(playerName, giveStr, wantStr, dialogue) {
+    function showTradeProposal(playerName, giveStr, wantStr, dialogue, myResStr = "", canAccept = true) {
       return new Promise(resolve => {
         const overlay = document.createElement("div");
         overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);animation:big-overlay-in 0.3s ease-out;";
@@ -3516,14 +3522,17 @@
                 <div style="font-size:16px;font-weight:600;">${wantStr}</div>
               </div>
             </div>
-            ${dialogue ? `<div style="font-size:13px;color:#ffd700;margin-bottom:14px;font-style:italic;">"${dialogue}"</div>` : ""}
+            ${dialogue ? `<div style="font-size:13px;color:#ffd700;margin-bottom:8px;font-style:italic;">"${dialogue}"</div>` : ""}
+            ${myResStr ? `<div style="font-size:11px;color:#9ca3af;margin-bottom:10px;padding:4px 8px;background:rgba(255,255,255,0.05);border-radius:6px;">내 자원: ${myResStr}</div>` : ""}
+            ${!canAccept ? `<div style="font-size:11px;color:#ef4444;margin-bottom:8px;">⚠️ 자원이 부족합니다</div>` : ""}
             <div style="display:flex;gap:8px;">
               <button id="tradeRejectBtn" style="flex:1;padding:10px;border-radius:10px;border:1px solid #ef4444;background:rgba(239,68,68,0.15);color:#ef4444;font-weight:700;cursor:pointer;font-size:14px;">❌ 거절</button>
-              <button id="tradeAcceptBtn" style="flex:1;padding:10px;border-radius:10px;border:none;background:#4ecca3;color:#000;font-weight:700;cursor:pointer;font-size:14px;">✅ 수락</button>
+              ${canAccept ? `<button id="tradeAcceptBtn" style="flex:1;padding:10px;border-radius:10px;border:none;background:#4ecca3;color:#000;font-weight:700;cursor:pointer;font-size:14px;">✅ 수락</button>` : ""}
             </div>
           </div>`;
         document.body.appendChild(overlay);
-        overlay.querySelector("#tradeAcceptBtn").onclick = () => { overlay.remove(); resolve(true); };
+        const acceptBtn = overlay.querySelector("#tradeAcceptBtn");
+        if (acceptBtn) acceptBtn.onclick = () => { overlay.remove(); resolve(true); };
         overlay.querySelector("#tradeRejectBtn").onclick = () => { overlay.remove(); resolve(false); };
       });
     }
@@ -3551,7 +3560,9 @@
       `;
       document.body.appendChild(panel);
       panel.addEventListener("click", e => e.stopPropagation());
-      document.addEventListener("click", function close() { panel.remove(); document.removeEventListener("click", close); }, { once: true });
+      setTimeout(() => {
+        document.addEventListener("click", function close() { panel.remove(); document.removeEventListener("click", close); }, { once: true });
+      }, 100);
     }
 
     function showBigOverlay(main, sub, extraClass = "", duration = 1200) {
