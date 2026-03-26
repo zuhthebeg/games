@@ -2982,9 +2982,12 @@
         return;
       }
       if (event.type === "action") {
-        const data = event.data || event.action || event.payload || {};
-        if (!data.type) return;
+        const raw = event.data || event.action || event.payload || {};
+        // relay sends { action: {...}, events: [...] } or direct action
+        const data = raw.action || raw;
+        if (!data.type) { console.warn("[onMpEvent] no action type in:", raw); return; }
         if (data.actionId && mpState.processedActionIds.has(data.actionId)) return;
+        console.log("[onMpEvent] applying:", data.type, data);
         const ok = applyGameAction(data);
         if (ok) {
           markActionProcessed(data.actionId);
@@ -3127,9 +3130,9 @@
           
           state.mode = "multi";
           state.screen = "game";
-          state.hint = "게임 초기화 대기 중...";
+          state.hint = mpState.isHost ? "맵 생성 중..." : "호스트가 맵을 생성하는 중...";
           render();
-          maybeHostInitGame();
+          if (mpState.isHost) maybeHostInitGame();
         },
         onGameEvent: (type, data) => {
           // handled by onMpEvent via client
