@@ -1420,23 +1420,53 @@
     function confirmBankTrade() {
       if (!state.tradeDialog.open) return;
       const pIdx = localPlayerIndex();
+      const p = state.players[pIdx];
       const td = state.tradeDialog;
-      // Find a give resource with enough for bank ratio
-      const giveRes = RESOURCES.find(r => (td.offer[r] || 0) >= getBestTradeRatio(pIdx, r));
-      const getRes = RESOURCES.find(r => (td.want[r] || 0) > 0);
-      if (!giveRes || !getRes || giveRes === getRes) {
-        state.hint = "은행 거래 불가: 비율에 맞는 자원을 선택하세요.";
+      const offer = td.offer || {};
+      const want = td.want || {};
+      
+      // Calculate how many trades we can do
+      const totalWant = RESOURCES.reduce((s, r) => s + (want[r] || 0), 0);
+      if (totalWant <= 0) { state.hint = "받을 자원을 선택하세요."; render(); return; }
+      
+      // Try to fulfill each wanted resource
+      let traded = 0;
+      const tempRes = { ...p.resources };
+      const giveLog = [];
+      const getLog = [];
+      
+      for (const getRes of RESOURCES) {
+        let needed = want[getRes] || 0;
+        while (needed > 0) {
+          // Find a give resource with enough remaining
+          const giveRes = RESOURCES.find(r => {
+            if (r === getRes) return false;
+            const ratio = getBestTradeRatio(pIdx, r);
+            return tempRes[r] >= ratio;
+          });
+          if (!giveRes) break;
+          const ratio = getBestTradeRatio(pIdx, giveRes);
+          tempRes[giveRes] -= ratio;
+          tempRes[getRes] += 1;
+          giveLog.push(`${RESOURCE_ICONS[giveRes]}×${ratio}`);
+          getLog.push(`${RESOURCE_ICONS[getRes]}`);
+          needed--;
+          traded++;
+        }
+      }
+      
+      if (traded === 0) {
+        state.hint = "은행 거래 불가: 자원이 부족합니다.";
         render();
         return;
       }
-      if (applyPortTrade(pIdx, giveRes, getRes)) {
-        state.canEndTurn = true;
-        const ratio = getBestTradeRatio(pIdx, giveRes);
-        state.hint = `은행 거래: ${RESOURCE_ICONS[giveRes]}×${ratio} → ${RESOURCE_ICONS[getRes]}×1`;
-        Voice.human("trade-bank");
-      } else {
-        state.hint = "은행 거래 실패.";
-      }
+      
+      // Apply
+      for (const r of RESOURCES) p.resources[r] = tempRes[r];
+      state.canEndTurn = true;
+      state.hint = `은행 거래: ${giveLog.join("+")} → ${getLog.join("+")}`;
+      Voice.human("trade-bank");
+      SFX.build();
       closeTradeDialog();
       render();
     }
