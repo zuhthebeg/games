@@ -259,15 +259,34 @@
     /* banner offset handled with shared-wallet safe area */
 
     @keyframes dice-roll {
-      0% { transform: scale(1.2) rotate(-5deg); }
-      25% { transform: scale(0.9) rotate(5deg); }
-      50% { transform: scale(1.15) rotate(-3deg); }
-      75% { transform: scale(0.95) rotate(3deg); }
-      100% { transform: scale(1) rotate(0deg); }
+      0% { transform: scale(0.5) rotate(0deg); opacity: 0.3; }
+      15% { transform: scale(1.4) rotate(90deg); opacity: 1; }
+      30% { transform: scale(0.8) rotate(200deg); }
+      45% { transform: scale(1.3) rotate(300deg); }
+      60% { transform: scale(0.9) rotate(380deg); }
+      75% { transform: scale(1.15) rotate(350deg); }
+      100% { transform: scale(1) rotate(360deg); opacity: 1; }
     }
 
     .dice-animate {
-      animation: dice-roll 0.4s ease-out;
+      animation: dice-roll 0.7s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    @keyframes dice-bounce {
+      0%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-12px); }
+      60% { transform: translateY(-5px); }
+    }
+
+    @keyframes robber-appear {
+      0% { transform: translate(-50%, -50%) scale(0) rotate(-180deg); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.5) rotate(10deg); opacity: 1; }
+      70% { transform: translate(-50%, -50%) scale(0.9) rotate(-5deg); }
+      100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .robber-animate {
+      animation: robber-appear 0.6s cubic-bezier(0.2, 0.8, 0.3, 1);
     }
 
     @keyframes place-building {
@@ -298,9 +317,23 @@
 
     .robber {
       position: absolute;
-      top: 6px;
-      right: 6px;
-      font-size: 15px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 22px;
+      filter: drop-shadow(0 0 6px rgba(255,0,0,0.7));
+      z-index: 5;
+      pointer-events: none;
+    }
+    .robber.entering {
+      animation: robber-appear 0.6s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    @keyframes robber-pulse {
+      0%, 100% { filter: drop-shadow(0 0 4px rgba(255,0,0,0.5)); transform: translate(-50%, -50%) scale(1); }
+      50% { filter: drop-shadow(0 0 10px rgba(255,0,0,0.9)); transform: translate(-50%, -50%) scale(1.1); }
+    }
+    .has-robber .robber {
+      animation: robber-pulse 2s ease-in-out infinite;
     }
 
     .vertex {
@@ -759,6 +792,7 @@
       winner: null,
       buildMode: null,
       roadBuildingRemaining: 0,
+      aiMode: "classic",  // "classic" | "llm"
       hint: "",
       geometry: { centers: [], minX: 0, minY: 0, maxX: 0, maxY: 0, size: 0 },
       roomCodeInput: "",
@@ -1806,12 +1840,18 @@
       const d1 = 1 + Math.floor(Math.random() * 6);
       const d2 = 1 + Math.floor(Math.random() * 6);
       const sum = d1 + d2;
+      const DICE_FACES = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
       const el = document.getElementById("diceDisplay");
       if (el) {
         el.classList.remove("dice-animate");
         void el.offsetWidth;
+        el.textContent = "🎲🎲";
         el.classList.add("dice-animate");
-        el.textContent = `${d1} + ${d2}`;
+        setTimeout(() => {
+          el.textContent = `${DICE_FACES[d1]} ${DICE_FACES[d2]} = ${sum}`;
+          el.style.animation = "dice-bounce 0.4s ease";
+          setTimeout(() => el.style.animation = "", 400);
+        }, 500);
         if (window.anime) {
           anime({ targets: "#diceDisplay", scale: [1, 1.3, 1], duration: 300, easing: "easeOutBack" });
           if (sum === 7) {
@@ -2192,6 +2232,17 @@
           }
         }
 
+        // ── LLM AI: trade proposal + dialogue ──────────────────────────────
+        if (state.aiMode === "llm" && !state.winner) {
+          try {
+            const tradeResult = await aiLLMTrade(pIdx);
+            if (tradeResult?.dialogue) {
+              showToast(`💬 ${p.name}: "${tradeResult.dialogue}"`, 3000);
+              await new Promise(r => setTimeout(r, 1500));
+            }
+          } catch(e) { console.error("LLM trade error:", e); }
+        }
+
         // ── Build loop ────────────────────────────────────────────────────
         let safety = 15, buildsDone = 0;
         const budget = ai ? ai.getTurnBudget(state.aiDifficulty, totalResourceCount(p)) : 2;
@@ -2522,6 +2573,12 @@
                 <option value="hard" ${state.aiDifficulty === "hard" ? "selected" : ""}>어려움</option>
               </select>
             </div>
+            <div class="multi-row" style="margin-bottom:8px;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;">
+                <input type="checkbox" id="llmAiCheck" onchange="toggleLLMAI(this.checked)" style="width:16px;height:16px;">
+                🤖 AI 거래 대사 (LLM)
+              </label>
+            </div>
             <button onclick="startSingle()">싱글플레이</button>
             <button onclick="showMultiOptions()">멀티플레이</button>
           </div>
@@ -2639,7 +2696,7 @@
           ${myTurn ? `<div class="turn-timer"><div class="turn-timer-label">턴 타이머: ${state.turnTimeLeft}s</div><div class="turn-timer-bar"><div class="turn-timer-fill" style="width:${turnPct}%;"></div></div></div>` : ""}
           ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':c.type==='vp'?'⭐VP':c.type==='monopoly'?'💰모노폴리':c.type==='road_building'?'🛣️도로':c.type==='year_of_plenty'?'🌾풍년':'🃏').join(' ')}</div>` : ""}
           <div class="actions">
-            <button id="diceDisplay" class="primary" ${canRoll ? "" : "disabled"} onclick="rollDice()">주사위</button>
+            <button id="diceDisplay" class="primary" style="font-size:16px;min-width:70px;" ${canRoll ? "" : "disabled"} onclick="rollDice()">🎲 주사위</button>
             <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${costLabel(COST.road, idx)}</button>
             <button ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을${costLabel(COST.settlement, idx)}</button>
             <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시${costLabel(COST.city, idx)}</button>
@@ -3146,6 +3203,77 @@
       }
     };
 
+    // ── LLM AI Trade ────────────────────────────────────────────────
+    async function aiLLMTrade(pIdx) {
+      const p = state.players[pIdx];
+      const humanIdx = localPlayerIndex();
+      const human = state.players[humanIdx];
+      if (!p || !human || totalResourceCount(p) < 2) return null;
+
+      const stateStr = `당신은 카탄 게임의 "${p.name}" 플레이어입니다.
+당신의 자원: 벽돌${p.resources.brick} 나무${p.resources.lumber} 양${p.resources.wool} 밀${p.resources.grain} 광석${p.resources.ore}
+상대(${human.name}) 자원 총: ${totalResourceCount(human)}장
+당신 VP: ${p.vp}/10, 상대 VP: ${human.vp}/10
+건물비용 - 도로:벽돌1나무1, 마을:벽돌1나무1양1밀1, 도시:밀2광석3, 발전카드:양1밀1광석1
+
+상대에게 거래를 제안하세요. JSON으로 응답:
+{"trade": true, "give": {"자원": 수량}, "want": {"자원": 수량}, "dialogue": "거래 제안 대사(한국어,15자이내)"}
+거래가 불필요하면: {"trade": false, "dialogue": "한마디(한국어,15자이내)"}`;
+
+      try {
+        const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
+          body: JSON.stringify({
+            model: "gpt-5.4-mini",
+            messages: [{ role: "user", content: stateStr }],
+            max_tokens: 150,
+          })
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content || "";
+        // Extract JSON from response
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) return { dialogue: text.slice(0, 30) };
+        const parsed = JSON.parse(jsonMatch[0]);
+        
+        if (parsed.trade && parsed.give && parsed.want) {
+          // Show trade proposal to human
+          const giveStr = Object.entries(parsed.give).map(([r,n]) => `${RESOURCE_ICONS[r]||r}×${n}`).join(" ");
+          const wantStr = Object.entries(parsed.want).map(([r,n]) => `${RESOURCE_ICONS[r]||r}×${n}`).join(" ");
+          
+          const accepted = confirm(`${p.name}의 거래 제안!\n\n줄게: ${giveStr}\n받을래: ${wantStr}\n\n"${parsed.dialogue || "거래하자!"}"\n\n수락하시겠습니까?`);
+          
+          if (accepted) {
+            // Execute trade
+            let valid = true;
+            for (const [r, n] of Object.entries(parsed.want)) {
+              if (!RESOURCES.includes(r) || (human.resources[r] || 0) < n) valid = false;
+            }
+            for (const [r, n] of Object.entries(parsed.give)) {
+              if (!RESOURCES.includes(r) || (p.resources[r] || 0) < n) valid = false;
+            }
+            if (valid) {
+              for (const [r, n] of Object.entries(parsed.give)) { p.resources[r] -= n; human.resources[r] += n; }
+              for (const [r, n] of Object.entries(parsed.want)) { human.resources[r] -= n; p.resources[r] += n; }
+              SFX.build();
+              showToast("🤝 거래 성사!", 2000);
+              render();
+            } else {
+              showToast("거래 실패: 자원 부족", 2000);
+            }
+          } else {
+            showToast(`${p.name}: 거절당했다...`, 1500);
+          }
+        }
+        return parsed;
+      } catch(e) {
+        console.error("LLM trade error:", e);
+        return null;
+      }
+    }
+
     function showToast(msg, duration = 2500) {
       let el = document.getElementById("catan-toast");
       if (!el) {
@@ -3184,6 +3312,7 @@
     }
 
     window.startSingle = startSingle;
+    window.toggleLLMAI = function(checked) { state.aiMode = checked ? "llm" : "classic"; };
     window.showMultiOptions = showMultiOptions;
     window.backToMode = backToMode;
     window.createRoom = createRoom;
