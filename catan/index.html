@@ -2483,11 +2483,7 @@
         if (!state.winner && totalResourceCount(p) >= 3 && totalResourceCount(state.players[localPlayerIndex()]) >= 2) {
           try {
             const tradeResult = await aiLLMTrade(pIdx);
-            if (tradeResult?.dialogue && !tradeResult?.trade) {
-              // 거래 제안 없이 대사만 (거래 시에는 aiLLMTrade 내에서 처리)
-              showToast(`💬 ${p.name}: "${tradeResult.dialogue}"`, 2000);
-              await new Promise(r => setTimeout(r, 1000));
-            }
+            // 거래 안 하는 경우엔 의미없는 멘트 표시하지 않음
           } catch(e) { console.error("LLM trade error:", e); }
         }
 
