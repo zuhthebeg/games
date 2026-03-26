@@ -376,14 +376,22 @@
     }
 
     .hex-hit {
-      box-shadow: 0 0 0 3px rgba(255,215,0,0.9), 0 0 16px rgba(255,215,0,0.5) !important;
+      filter: drop-shadow(0 0 6px rgba(255,215,0,0.9)) drop-shadow(0 0 12px rgba(255,215,0,0.5)) brightness(1.3);
       z-index: 3 !important;
-      animation: hex-hit-glow 1.5s ease-in-out;
+      animation: hex-hit-glow 1.5s ease-in-out infinite;
     }
     @keyframes hex-hit-glow {
-      0% { box-shadow: 0 0 0 3px rgba(255,215,0,0.9), 0 0 20px rgba(255,215,0,0.7); }
-      50% { box-shadow: 0 0 0 5px rgba(255,215,0,1), 0 0 30px rgba(255,215,0,0.9); }
-      100% { box-shadow: 0 0 0 3px rgba(255,215,0,0.9), 0 0 16px rgba(255,215,0,0.5); }
+      0%, 100% { filter: drop-shadow(0 0 6px rgba(255,215,0,0.9)) brightness(1.3); }
+      50% { filter: drop-shadow(0 0 14px rgba(255,215,0,1)) brightness(1.5); }
+    }
+    .hex-blocked {
+      filter: drop-shadow(0 0 6px rgba(255,50,50,0.8)) brightness(0.7);
+      z-index: 3 !important;
+      animation: hex-blocked-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes hex-blocked-pulse {
+      0%, 100% { filter: drop-shadow(0 0 4px rgba(255,50,50,0.6)) brightness(0.7); }
+      50% { filter: drop-shadow(0 0 10px rgba(255,50,50,0.9)) brightness(0.6); }
     }
 
     .vertex {
@@ -1316,7 +1324,7 @@
       }
       if (parts.length > 0) {
         SFX.resource();
-        showToast(`🎁 ${parts.join(" | ")}`, 2500);
+        showToast(`🎁\n${parts.join("\n")}`, 2500);
       }
     }
 
@@ -2788,7 +2796,8 @@
         const p = mapPixel(c.x, c.y, mapW, mapH);
         const hot = hex.number === 6 || hex.number === 8;
         const isHighlit = state.lastDiceSum && hex.number === state.lastDiceSum && hex.index !== state.robber;
-        html += `<div class="hex ${hex.type}${hex.robber === true ? " has-robber" : ""}${isHighlit ? " hex-hit" : ""}" data-hex-num="${hex.number || 0}" style="left:${p.x}px; top:${p.y}px;" onclick="onHexClick(${hex.index})">`;
+        const isBlocked = state.lastDiceSum && hex.number === state.lastDiceSum && hex.index === state.robber;
+        html += `<div class="hex ${hex.type}${hex.robber === true ? " has-robber" : ""}${isHighlit ? " hex-hit" : ""}${isBlocked ? " hex-blocked" : ""}" data-hex-num="${hex.number || 0}" style="left:${p.x}px; top:${p.y}px;" onclick="onHexClick(${hex.index})">`;
         html += `<div>${RESOURCE_ICONS[hex.type]}</div>`;
         if (hex.number) html += `<div class="number ${hot ? "hot" : ""}">${hex.number}</div>`;
         if (state.robber === hex.index) html += `<div class="robber">🦹</div>`;
@@ -3912,7 +3921,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
         el = document.createElement("div");
         el.id = "catan-toast";
         el.className = "toast";
-        el.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:max-content;max-width:calc(100vw - 32px);background:rgba(0,0,0,0.95);color:#ffd700;padding:12px 24px;border-radius:14px;font-size:16px;font-weight:700;z-index:9999;pointer-events:none;transition:opacity 0.3s;border:2px solid rgba(255,215,0,0.4);text-shadow:0 1px 4px rgba(0,0,0,0.8);";
+        el.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:max-content;max-width:calc(100vw - 32px);background:rgba(0,0,0,0.95);color:#ffd700;padding:12px 24px;border-radius:14px;font-size:16px;font-weight:700;z-index:9999;pointer-events:none;transition:opacity 0.3s;border:2px solid rgba(255,215,0,0.4);text-shadow:0 1px 4px rgba(0,0,0,0.8);white-space:pre-line;text-align:center;";
         document.body.appendChild(el);
       }
       el.textContent = msg;
