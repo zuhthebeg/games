@@ -2078,33 +2078,37 @@
       const ai = window.CatanAI;
       if (state.setupStep === "settlement") {
         const choices = validSettlementsFor(pIdx, true);
-        if (choices.length) {
-          const pick = ai ? ai.pickBestVertex(state, choices) : choices[Math.floor(Math.random() * choices.length)];
-          placeSettlement(pIdx, pick, true);
-          showToast(`${state.players[pIdx].name}이 마을을 건설했어요`);
-          if (state.phase === "setup2") grantSecondSetupResources(pIdx, pick);
-          state.lastSetupVertex = pick;
-          state.setupStep = "road";
-          state.hint = `${state.players[pIdx].name}가 마을 배치.`;
-        }
+        if (!choices.length) { advanceSetupTurn(); render(); triggerAITurnIfNeeded(); return; }
+        const pick = ai ? ai.pickBestVertex(state, choices) : choices[Math.floor(Math.random() * choices.length)];
+        placeSettlement(pIdx, pick, true);
+        SFX.build();
+        showToast(`${state.players[pIdx].name}이 마을을 건설했어요`);
+        if (state.phase === "setup2") grantSecondSetupResources(pIdx, pick);
+        state.lastSetupVertex = pick;
+        state.setupStep = "road";
+        state.hint = `${state.players[pIdx].name}가 마을 배치.`;
+        render();
+        // 도로 배치를 딜레이 후 실행
+        setTimeout(() => {
+          if (state.winner || isHumanTurn()) return;
+          aiTakeSetupTurn(); // re-enter for road step
+        }, 800);
+        return;
       }
-      else if (state.setupStep === "road") {
+      if (state.setupStep === "road") {
         const roads = validRoadsFor(pIdx, true);
-        if (roads.length) {
-          const pick = ai
-            ? ai.pickBestRoadFromVertex(state, roads, state.lastSetupVertex)
-            : roads[Math.floor(Math.random() * roads.length)];
-          placeRoad(pIdx, pick, true);
-          state.hint = `${state.players[pIdx].name}가 도로 배치.`;
-          advanceSetupTurn();
-        }
-      }
-      render();
-      // guard: if no valid spots, advance anyway to prevent infinite loop
-      if (state.setupStep === "settlement") {
+        if (!roads.length) { advanceSetupTurn(); render(); triggerAITurnIfNeeded(); return; }
+        const pick = ai
+          ? ai.pickBestRoadFromVertex(state, roads, state.lastSetupVertex)
+          : roads[Math.floor(Math.random() * roads.length)];
+        placeRoad(pIdx, pick, true);
+        SFX.road();
+        state.hint = `${state.players[pIdx].name}가 도로 배치.`;
         advanceSetupTurn();
+        render();
+        setTimeout(() => triggerAITurnIfNeeded(), 600);
+        return;
       }
-      triggerAITurnIfNeeded();
     }
 
     async function aiMainTurn() {
@@ -2136,7 +2140,10 @@
             const d1 = 1 + Math.floor(Math.random() * 6);
             const d2 = 1 + Math.floor(Math.random() * 6);
             const el = document.getElementById("diceDisplay");
-            if (el) { el.classList.remove("dice-animate"); void el.offsetWidth; el.classList.add("dice-animate"); }
+            if (el) { el.classList.remove("dice-animate"); void el.offsetWidth; el.classList.add("dice-animate"); el.textContent = `${d1} + ${d2}`; }
+            showToast(`${p.name} 주사위: ${d1}+${d2}=${d1+d2}`);
+            render();
+            await new Promise(r => setTimeout(r, 1000));
             if (!applyRollDice(pIdx, [d1, d2], false)) {
               state.phase = "main"; state.canEndTurn = true;
             }
@@ -2157,10 +2164,13 @@
           }
           if (hexIdx !== -1) {
             moveRobber(hexIdx, victimIdx);
+            SFX.robber();
+            showToast(`${p.name}이 도둑을 이동!`);
           } else {
-            state.phase = "main"; state.canEndTurn = true; // no valid hex (edge case)
+            state.phase = "main"; state.canEndTurn = true;
           }
           render();
+          await new Promise(r => setTimeout(r, 1000));
         }
 
         // ── Guard: unexpected phase ────────────────────────────────────────
@@ -2215,21 +2225,27 @@
           if (pickedAction === "city") {
             const spot = ai ? ai.pickBestVertex(state, citySpots) : citySpots[Math.floor(Math.random() * citySpots.length)];
             upgradeCity(pIdx, spot);
+            SFX.build();
+            showToast(`${p.name}이 도시를 건설!`);
           } else if (pickedAction === "settlement") {
             const spot = ai ? ai.pickBestVertex(state, settlementSpots) : settlementSpots[Math.floor(Math.random() * settlementSpots.length)];
             placeSettlement(pIdx, spot, false);
-            showToast(`${p.name}이 마을을 건설했어요`);
+            SFX.build();
+            showToast(`${p.name}이 마을을 건설!`);
           } else {
             const spot = ai ? ai.pickBestRoadGeneral(state, roadSpots, pIdx) : roadSpots[Math.floor(Math.random() * roadSpots.length)];
             placeRoad(pIdx, spot, false);
+            SFX.road();
           }
           buildsDone += 1;
+          render();
+          await new Promise(r => setTimeout(r, 1000));
           if (state.winner || (ai && ai.shouldStopBuilding(state.aiDifficulty, buildsDone - 1, totalResourceCount(p)))) break;
         }
 
         state.hint = `${p.name} 턴 종료.`;
         render();
-        await new Promise(r => setTimeout(r, 350));
+        await new Promise(r => setTimeout(r, 800));
         if (!state.winner) {
           endTurnInternal();
           render();
@@ -2244,7 +2260,7 @@
 
     function triggerAITurnIfNeeded() {
       if (state.winner || isMultiMode() || isHumanTurn()) return;
-      const delay = (state.phase === "setup1" || state.phase === "setup2") ? 300 : 450;
+      const delay = (state.phase === "setup1" || state.phase === "setup2") ? 800 : 1000;
       setTimeout(() => {
         if (state.winner || isHumanTurn() || isMultiMode()) return;
         if (state.phase === "setup1" || state.phase === "setup2") aiTakeSetupTurn();
@@ -2616,9 +2632,9 @@
         ${renderMap()}
         <div class="my-panel">
           <div class="resources">${resourceStrip(me)}</div>
-          <div class="vp-panel">
-            <div class="vp-label">내 VP: ${vp} / 10</div>
-            <div class="vp-progress"><div class="vp-progress-fill" style="width:${vpPct}%;"></div></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#aaa;padding:2px 8px;">
+            <span>VP: ${vp}/10</span>
+            <div style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;"><div style="height:100%;width:${vpPct}%;background:linear-gradient(90deg,#4ecca3,#ffd700);border-radius:2px;"></div></div>
           </div>
           ${myTurn ? `<div class="turn-timer"><div class="turn-timer-label">턴 타이머: ${state.turnTimeLeft}s</div><div class="turn-timer-bar"><div class="turn-timer-fill" style="width:${turnPct}%;"></div></div></div>` : ""}
           ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':c.type==='vp'?'⭐VP':c.type==='monopoly'?'💰모노폴리':c.type==='road_building'?'🛣️도로':c.type==='year_of_plenty'?'🌾풍년':'🃏').join(' ')}</div>` : ""}
