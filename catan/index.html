@@ -1256,7 +1256,7 @@
 
     function distributeResources(number) {
       const humanIdx = localPlayerIndex();
-      let humanGain = 0;
+      const gains = {}; // { playerIdx: { resource: amount } }
       for (const hex of state.hexes) {
         if (hex.number !== number || hex.index === state.robber) continue;
         for (const vIdx of hex.vertices) {
@@ -1264,12 +1264,21 @@
           if (!v.building || v.owner === null) continue;
           const amount = v.building === "city" ? 2 : 1;
           state.players[v.owner].resources[hex.type] += amount;
-          if (v.owner === humanIdx) humanGain += amount;
+          if (!gains[v.owner]) gains[v.owner] = {};
+          gains[v.owner][hex.type] = (gains[v.owner][hex.type] || 0) + amount;
         }
       }
-      if (humanGain > 0) {
+      // Show detailed gains
+      const parts = [];
+      for (const [pidx, res] of Object.entries(gains)) {
+        const pi = Number(pidx);
+        const name = pi === humanIdx ? "나" : state.players[pi].name;
+        const detail = Object.entries(res).map(([r, n]) => `${RESOURCE_ICONS[r]}×${n}`).join(" ");
+        parts.push(`${name}: ${detail}`);
+      }
+      if (parts.length > 0) {
         SFX.resource();
-        showToast(`자원 +${humanGain} 획득!`);
+        showToast(`🎁 ${parts.join(" | ")}`, 2500);
       }
     }
 
@@ -2241,7 +2250,8 @@
             const d2 = 1 + Math.floor(Math.random() * 6);
             const el = document.getElementById("diceDisplay");
             if (el) { el.classList.remove("dice-animate"); void el.offsetWidth; el.classList.add("dice-animate"); el.textContent = `${d1} + ${d2}`; }
-            showToast(`${p.name} 주사위: ${d1}+${d2}=${d1+d2}`);
+            const DICE_FACES = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+            showBigOverlay(`${DICE_FACES[d1]} ${DICE_FACES[d2]}`, `${p.name}: ${d1}+${d2}=${d1+d2}${d1+d2===7?" 🦹 도둑!":""}`, d1+d2===7?"seven":"", 1200);
             Voice.ai("dice-roll", pIdx);
             render();
             await new Promise(r => setTimeout(r, 1000));
@@ -2297,10 +2307,10 @@
         if (!state.winner && totalResourceCount(p) >= 3 && totalResourceCount(state.players[localPlayerIndex()]) >= 2) {
           try {
             const tradeResult = await aiLLMTrade(pIdx);
-            if (tradeResult?.dialogue) {
-              showToast(`💬 ${p.name}: "${tradeResult.dialogue}"`, 3000);
-              Voice.ai("trade-propose", pIdx);
-              await new Promise(r => setTimeout(r, 1500));
+            if (tradeResult?.dialogue && !tradeResult?.trade) {
+              // 거래 제안 없이 대사만 (거래 시에는 aiLLMTrade 내에서 처리)
+              showToast(`💬 ${p.name}: "${tradeResult.dialogue}"`, 2000);
+              await new Promise(r => setTimeout(r, 1000));
             }
           } catch(e) { console.error("LLM trade error:", e); }
         }
