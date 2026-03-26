@@ -1263,7 +1263,7 @@
       SFX.robber();
       showToast("🗡️ 강도가 나타났어요!");
       showBigOverlay("🦹", "도둑 출현!", "robber-alert", 1200);
-      TTS.speak("도둑 출현!");
+      Voice.human("seven");
       if (!skipDiscard) {
         for (let i = 0; i < state.players.length; i += 1) {
           const p = state.players[i];
@@ -1612,7 +1612,7 @@
           SFX.win();
           if (winner === localPlayerIndex()) launchConfetti();
           showToast("🎉 승리!", 6000);
-          TTS.speak(`축하합니다! ${state.players[winner].name} 승리!`);
+          Voice.play("victory", winner % 2 === 0 ? "m" : "f");
         }
       }
     }
@@ -1901,7 +1901,7 @@
           }
         }
       }
-      if (sum === 7) TTS.speak("주사위 7! 도둑이 나타납니다!");
+      if (sum === 7) Voice.human("seven");
       if (!applyRollDice(state.currentPlayer, [d1, d2], false)) return;
       render();
       triggerAITurnIfNeeded();
@@ -2222,6 +2222,7 @@
             const el = document.getElementById("diceDisplay");
             if (el) { el.classList.remove("dice-animate"); void el.offsetWidth; el.classList.add("dice-animate"); el.textContent = `${d1} + ${d2}`; }
             showToast(`${p.name} 주사위: ${d1}+${d2}=${d1+d2}`);
+            Voice.ai("dice-roll", pIdx);
             render();
             await new Promise(r => setTimeout(r, 1000));
             if (!applyRollDice(pIdx, [d1, d2], false)) {
@@ -2272,12 +2273,13 @@
           }
         }
 
-        // ── LLM AI: trade proposal + dialogue ──────────────────────────────
-        if (!state.winner) {
+        // ── LLM AI: trade proposal (skip if low resources) ──────────────
+        if (!state.winner && totalResourceCount(p) >= 3 && totalResourceCount(state.players[localPlayerIndex()]) >= 2) {
           try {
             const tradeResult = await aiLLMTrade(pIdx);
             if (tradeResult?.dialogue) {
               showToast(`💬 ${p.name}: "${tradeResult.dialogue}"`, 3000);
+              Voice.ai("trade-propose", pIdx);
               await new Promise(r => setTimeout(r, 1500));
             }
           } catch(e) { console.error("LLM trade error:", e); }
@@ -2318,11 +2320,13 @@
             upgradeCity(pIdx, spot);
             SFX.build();
             showToast(`${p.name}이 도시를 건설!`);
+            Voice.ai("build-city", pIdx);
           } else if (pickedAction === "settlement") {
             const spot = ai ? ai.pickBestVertex(state, settlementSpots) : settlementSpots[Math.floor(Math.random() * settlementSpots.length)];
             placeSettlement(pIdx, spot, false);
             SFX.build();
             showToast(`${p.name}이 마을을 건설!`);
+            Voice.ai("build-settlement", pIdx);
           } else {
             const spot = ai ? ai.pickBestRoadGeneral(state, roadSpots, pIdx) : roadSpots[Math.floor(Math.random() * roadSpots.length)];
             placeRoad(pIdx, spot, false);
@@ -3212,32 +3216,32 @@
       };
     })();
 
-    // TTS for key events
-    const TTS = {
-      _queue: [],
-      _playing: false,
-      speak(text) {
-        this._queue.push(text);
-        if (!this._playing) this._next();
+    // Voice lines (pre-recorded)
+    const Voice = {
+      _cache: {},
+      _ctx: null,
+      play(name, gender = "m") {
+        const key = `${name}-${gender}`;
+        const url = `sounds/${key}.wav`;
+        if (this._cache[key]) {
+          const audio = new Audio();
+          audio.src = URL.createObjectURL(this._cache[key]);
+          audio.play().catch(() => {});
+          return;
+        }
+        fetch(url).then(r => r.blob()).then(blob => {
+          this._cache[key] = blob;
+          const audio = new Audio();
+          audio.src = URL.createObjectURL(blob);
+          audio.play().catch(() => {});
+        }).catch(() => {});
       },
-      async _next() {
-        if (!this._queue.length) { this._playing = false; return; }
-        this._playing = true;
-        const text = this._queue.shift();
-        try {
-          const res = await fetch("https://llm.cocy.io/v1/audio/speech", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
-            body: JSON.stringify({ input: text, voice: "alloy" })
-          });
-          if (!res.ok) throw new Error("TTS failed");
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-          const audio = new Audio(url);
-          audio.onended = () => { URL.revokeObjectURL(url); this._next(); };
-          audio.onerror = () => { URL.revokeObjectURL(url); this._next(); };
-          audio.play().catch(() => this._next());
-        } catch { this._next(); }
+      // Shortcut: play for current AI player (alternating gender)
+      ai(name, playerIdx) {
+        this.play(name, playerIdx % 2 === 0 ? "m" : "f");
+      },
+      human(name) {
+        this.play(name, "m");
       }
     };
 
@@ -3294,8 +3298,10 @@
           human.resources[want] += 1;
           SFX.build();
           showToast(`🤝 ${tp.name}: "${parsed.dialogue || "좋아, 거래하자!"}"`, 3000);
+          Voice.ai("trade-accept", target.i);
         } else {
           showToast(`❌ ${tp.name}: "${parsed.dialogue || "싫어!"}"`, 3000);
+          Voice.ai("trade-reject", target.i);
         }
         render();
       } catch(e) {
@@ -3360,12 +3366,14 @@
               for (const [r, n] of Object.entries(parsed.want)) { human.resources[r] -= n; p.resources[r] += n; }
               SFX.build();
               showToast("🤝 거래 성사!", 2000);
+              Voice.ai("trade-accept", pIdx);
               render();
             } else {
               showToast("거래 실패: 자원 부족", 2000);
             }
           } else {
             showToast(`${p.name}: 거절당했다...`, 1500);
+            Voice.ai("trade-reject", pIdx);
           }
         }
         return parsed;
