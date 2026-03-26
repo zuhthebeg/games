@@ -3615,21 +3615,35 @@
     }
 
     // ── LLM AI Trade ────────────────────────────────────────────────
+    // Track AI trade rejections per player
+    if (!state.tradeRejectCount) state.tradeRejectCount = {};
+
     async function aiLLMTrade(pIdx) {
       const p = state.players[pIdx];
       const humanIdx = localPlayerIndex();
       const human = state.players[humanIdx];
       if (!p || !human || totalResourceCount(p) < 2) return null;
 
-      const stateStr = `당신은 카탄 게임의 "${p.name}" 플레이어입니다.
-당신의 자원: 벽돌${p.resources.brick} 나무${p.resources.lumber} 양${p.resources.wool} 밀${p.resources.grain} 광석${p.resources.ore}
-상대(${human.name}) 자원 총: ${totalResourceCount(human)}장
-당신 VP: ${p.vp}/10, 상대 VP: ${human.vp}/10
-건물비용 - 도로:벽돌1나무1, 마을:벽돌1나무1양1밀1, 도시:밀2광석3, 발전카드:양1밀1광석1
+      const rejectKey = `${pIdx}`;
+      const rejects = state.tradeRejectCount[rejectKey] || 0;
+      
+      // 3번 이상 거절당했으면 거래 제안 빈도 낮추기
+      if (rejects >= 3 && Math.random() > 0.3) return { trade: false, dialogue: "" };
+      // 5번 이상이면 거의 안 함
+      if (rejects >= 5 && Math.random() > 0.1) return { trade: false, dialogue: "" };
 
-상대에게 거래를 제안하세요. JSON으로 응답:
-{"trade": true, "give": {"자원": 수량}, "want": {"자원": 수량}, "dialogue": "거래 제안 대사(한국어,15자이내)"}
-거래가 불필요하면: {"trade": false, "dialogue": "한마디(한국어,15자이내)"}`;
+      const rejectHistory = rejects > 0 ? `\n주의: 이전에 ${rejects}번 거절당했습니다. 같은 제안 반복하지 마세요. 더 매력적인 조건을 제시하거나(2:1 등), 아예 거래 안 하고 건설에 집중하세요.` : "";
+      const strategyHint = rejects >= 2 ? "\n전략: 거절이 많았으니 이번엔 거래 안 하는 것도 좋습니다. 은행 거래나 건설에 집중하세요." : "";
+
+      const stateStr = `카탄 게임. 당신은 "${p.name}".
+자원: 벽돌${p.resources.brick} 나무${p.resources.lumber} 양${p.resources.wool} 밀${p.resources.grain} 광석${p.resources.ore}
+상대(${human.name}) 자원 총: ${totalResourceCount(human)}장
+VP: 나${p.vp} vs 상대${human.vp} (목표10)
+비용 - 도로:벽돌1나무1, 마을:벽돌1나무1양1밀1, 도시:밀2광석3${rejectHistory}${strategyHint}
+
+거래 제안하려면: {"trade":true,"give":{"자원명":수},"want":{"자원명":수},"dialogue":"한마디(한국어15자)"}
+자원명은 brick/lumber/wool/grain/ore만 사용.
+거래 안 하려면: {"trade":false,"dialogue":"한마디(한국어15자)"}`;
 
       try {
         const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
@@ -3692,6 +3706,7 @@
               SFX.build();
               showToast("🤝 거래 성사!", 2000);
               Voice.ai("trade-accept", pIdx);
+              state.tradeRejectCount[`${pIdx}`] = 0;
               render();
             } else {
               showToast("거래 실패: 자원 부족", 2000);
@@ -3699,6 +3714,7 @@
           } else {
             showToast(`${p.name}: 거절당했다...`, 1500);
             Voice.ai("trade-reject", pIdx);
+            state.tradeRejectCount[`${pIdx}`] = (state.tradeRejectCount[`${pIdx}`] || 0) + 1;
           }
         }
         return parsed;
