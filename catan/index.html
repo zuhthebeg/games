@@ -3594,8 +3594,7 @@
     if (location.search.includes("debug")) {
       const dp = document.createElement("div");
       dp.id = "debugPanel";
-      dp.style.cssText = "position:fixed;bottom:0;left:0;right:0;max-height:120px;overflow-y:auto;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:10px;padding:4px;z-index:99999;white-space:pre;pointer-events:auto;";
-      dp.onclick = () => dp.style.display = dp.style.display === "none" ? "" : "none";
+      dp.style.cssText = "position:fixed;top:50px;right:4px;width:180px;max-height:200px;overflow-y:auto;background:rgba(0,0,0,0.9);color:#0f0;font-family:monospace;font-size:9px;padding:4px;z-index:99999;white-space:pre;border-radius:8px;border:1px solid #0f0;pointer-events:none;";
       document.body.appendChild(dp);
     }
 
