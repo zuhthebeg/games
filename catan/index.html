@@ -167,6 +167,7 @@
       transform: translate(-50%, -50%);
       clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
       border: 1px solid rgba(255, 255, 255, 0.2);
+      margin: -1px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -236,20 +237,42 @@
     }
     #turn-banner .banner-vps {
       display: flex;
-      gap: 6px;
-      font-size: 11px;
+      gap: 4px;
+      font-size: 10px;
       flex-shrink: 0;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      max-width: 55%;
     }
     #turn-banner .vp-chip {
       padding: 2px 6px;
       border-radius: 8px;
       background: rgba(255,255,255,0.08);
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
     }
     #turn-banner .vp-chip.active {
       background: rgba(255,255,255,0.18);
       font-weight: 700;
     }
+    #turn-banner .banner-icon-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    #turn-banner .banner-icon-btn:hover { background: rgba(255,255,255,0.16); }
     /* AI thinking pulse */
     @keyframes ai-think {
       0%, 100% { opacity: 1; }
@@ -1527,6 +1550,7 @@
         victimIdx = list.length ? list[Math.floor(Math.random() * list.length)] : -1;
       }
       const picked = stealFromVictim(state.currentPlayer, victimIdx, forcedResource);
+      if (picked) showToast(`도둑이 ${RESOURCE_ICONS[picked]} 을 훔쳤습니다!`, 2000);
       state.phase = "main";
       state.canEndTurn = true;
       state.hint = picked && victimIdx !== -1
@@ -1546,9 +1570,9 @@
       if (!d1 || !d2) return false;
       const sum = d1 + d2;
       state.hint = `${getCurrentPlayer().name}: 🎲 ${d1} + ${d2} = ${sum}`;
+      state.lastDiceSum = sum;
       if (sum === 7) handleSeven(skipDiscard);
       else {
-        state.lastDiceSum = sum;
         distributeResources(sum);
         state.phase = "main";
         state.canEndTurn = true;
@@ -2810,14 +2834,6 @@
       const vpPct = Math.min(100, Math.max(0, vp * 10));
       const turnPct = Math.min(100, Math.max(0, (state.turnTimeLeft / 60) * 100));
       return `
-        <div class="players-bar">
-          ${state.players.map((p, pIdx) => `
-            <div class="player-card">
-              <div class="player-top" style="color:${p.color}">${p.name}${pIdx === myIdx ? " (나)" : ""}<span>${p.vp}점</span></div>
-              <div>자원 ${totalResourceCount(p)} | 도로 ${p.roads.length} | 건물 ${p.buildings.length}${p.knights ? ` | 🐴${p.knights}` : ""}</div>
-            </div>
-          `).join("")}
-        </div>
         <div class="status">${statusText()}</div>
         ${renderMap()}
         <div class="my-panel">
@@ -2835,13 +2851,11 @@
             <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시${costLabel(COST.city, idx)}</button>
             <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
             <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
-            <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사</button>
+            <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights || 0})</button>
             <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
             <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️도로건설</button>
             <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
             <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
-            ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger">방 나가기</button>` : ""}
-            <button onclick="toggleSoundPanel()" style="min-width:36px;">🔊</button>
           </div>
           <div class="hint">
             ${inSetup ? `초기 배치 ${state.setupRound}라운드 | 현재: ${state.setupStep === "settlement" ? "마을" : "도로"}` : ""}
@@ -3676,6 +3690,7 @@
           <input type="checkbox" ${soundSettings.bgm?"checked":""} onchange="soundSettings.bgm=this.checked;soundSettings.save();if(this.checked)BGM.start();else BGM.stop();"> BGM
           <input type="range" min="0" max="1" step="0.1" value="${soundSettings.bgmVol}" style="flex:1;height:4px;" oninput="soundSettings.bgmVol=+this.value;soundSettings.save();BGM.setVolume(+this.value)">
         </label>
+        ${isMultiMode() ? `<button onclick="leaveRoom()" class="danger" style="width:100%;margin-top:10px;">방 나가기</button>` : ""}
       `;
       document.body.appendChild(panel);
       panel.addEventListener("click", e => e.stopPropagation());
@@ -3804,7 +3819,8 @@
       banner.style.display = "flex";
       const cp = state.players[state.currentPlayer] || {};
       const color = cp.color || "#fff";
-      const isMyTurn = state.currentPlayer === localPlayerIndex();
+      const myIdx = localPlayerIndex();
+      const isMyTurn = state.currentPlayer === myIdx;
       const isWaiting = !isMyTurn;
       // Action text
       let action = state.hint || "";
@@ -3820,14 +3836,18 @@
 
       const vpChips = state.players.map((p, i) => {
         const active = i === state.currentPlayer;
-        return `<span class="vp-chip${active ? " active" : ""}" style="${active ? `color:${p.color}` : ""}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:3px;vertical-align:middle;"></span>${p.vp}점</span>`;
+        const roadText = `도로 ${longestRoadLength(i)}${state.longestRoad === i ? " 👑" : ""}`;
+        return `<span class="vp-chip${active ? " active" : ""}" style="${active ? `color:${p.color}` : ""}" title="자원 ${totalResourceCount(p)} | 기사 ${p.knights || 0} | ${roadText}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};vertical-align:middle;"></span><strong>${p.name}${i === myIdx ? "(나)" : ""}</strong> ${p.vp}점 · 자원 ${totalResourceCount(p)} · 🐴${p.knights || 0} · ${roadText}</span>`;
       }).join("");
 
       banner.innerHTML = `
         <div class="player-dot" style="background:${color};color:${color};"></div>
         <span class="banner-name" style="color:${color}">${cp.name || ""}</span>
         <span class="banner-action">${action}</span>
-        <div class="banner-vps">${vpChips}</div>
+        <div class="banner-vps">
+          <button class="banner-icon-btn" onclick="toggleSoundPanel()" aria-label="사운드 설정">🔊</button>
+          ${vpChips}
+        </div>
       `;
     }
 
