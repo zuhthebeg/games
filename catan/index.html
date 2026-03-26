@@ -289,6 +289,41 @@
       animation: robber-appear 0.6s cubic-bezier(0.2, 0.8, 0.3, 1);
     }
 
+    .big-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9998;
+      pointer-events: none;
+      animation: big-overlay-in 0.3s ease-out;
+    }
+    @keyframes big-overlay-in {
+      from { opacity: 0; transform: scale(0.5); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes big-overlay-out {
+      from { opacity: 1; transform: scale(1); }
+      to { opacity: 0; transform: scale(1.5); }
+    }
+    .big-overlay-content {
+      text-align: center;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    }
+    .big-overlay .big-number {
+      font-size: 72px;
+      font-weight: 900;
+      color: #fff;
+    }
+    .big-overlay .big-sub {
+      font-size: 18px;
+      color: rgba(255,255,255,0.8);
+      margin-top: 4px;
+    }
+    .big-overlay.seven .big-number { color: #ef4444; }
+    .big-overlay.robber-alert .big-number { font-size: 56px; }
+
     @keyframes place-building {
       0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
       60% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
@@ -1227,6 +1262,7 @@
     function handleSeven(skipDiscard = false) {
       SFX.robber();
       showToast("🗡️ 강도가 나타났어요!");
+      showBigOverlay("🦹", "도둑 출현!", "robber-alert", 1200);
       TTS.speak("도둑 출현!");
       if (!skipDiscard) {
         for (let i = 0; i < state.players.length; i += 1) {
@@ -1308,9 +1344,7 @@
       if (!state.tradeDialog.open) return;
       const idx = localPlayerIndex();
       const p = state.players[idx];
-      if (!p) return;
-      const canGive = (p.resources[resource] || 0) >= getBestTradeRatio(idx, resource);
-      if (!canGive) return;
+      if (!p || (p.resources[resource] || 0) < 1) return;
       state.tradeDialog.give = resource;
       if (state.tradeDialog.get === resource) {
         state.tradeDialog.get = RESOURCES.find(r => r !== resource) || resource;
@@ -1347,8 +1381,13 @@
       if (!me) return;
       if (!isHumanTurn() || state.phase !== "main" || state.winner) return;
       const pIdx = localPlayerIndex();
+      // 은행 거래 가능하면 거래 모달, 아니면 AI 거래용 간단 모달
       if (!openTradeDialog(pIdx)) {
-        state.hint = "거래 가능한 자원이 없습니다.";
+        // 은행 거래 불가해도 AI 거래용으로 모달 열기
+        const give = RESOURCES.find(r => (me.resources[r] || 0) >= 1);
+        if (!give) { state.hint = "자원이 없습니다."; render(); return; }
+        const get = RESOURCES.find(r => r !== give) || give;
+        state.tradeDialog = { open: true, give, get, aiOnly: true };
       }
       render();
     }
@@ -1851,6 +1890,7 @@
           el.textContent = `${DICE_FACES[d1]} ${DICE_FACES[d2]} = ${sum}`;
           el.style.animation = "dice-bounce 0.4s ease";
           setTimeout(() => el.style.animation = "", 400);
+          showBigOverlay(`${DICE_FACES[d1]} ${DICE_FACES[d2]}`, `= ${sum}${sum === 7 ? " 🦹 도둑!" : ""}`, sum === 7 ? "seven" : "", sum === 7 ? 1500 : 1000);
         }, 500);
         if (window.anime) {
           anime({ targets: "#diceDisplay", scale: [1, 1.3, 1], duration: 300, easing: "easeOutBack" });
@@ -2694,7 +2734,7 @@
             <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${costLabel(COST.road, idx)}</button>
             <button ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을${costLabel(COST.settlement, idx)}</button>
             <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시${costLabel(COST.city, idx)}</button>
-            <button ${(actionState.canMain && canHumanTrade(localPlayerIndex())) ? "" : "disabled"} onclick="humanTrade()">거래</button>
+            <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
             <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
             <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사</button>
             <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
@@ -2719,21 +2759,24 @@
       const p = state.players[pIdx];
       if (!p) return "";
       const giveOptions = RESOURCES.filter(r => (p.resources[r] || 0) >= getBestTradeRatio(pIdx, r));
-      if (!giveOptions.length) return "";
-      const give = giveOptions.includes(state.tradeDialog.give) ? state.tradeDialog.give : giveOptions[0];
+      const aiGiveOptions = RESOURCES.filter(r => (p.resources[r] || 0) >= 1);
+      if (!giveOptions.length && !aiGiveOptions.length) return "";
+      const allGiveOptions = RESOURCES.filter(r => (p.resources[r] || 0) >= 1);
+      const give = allGiveOptions.includes(state.tradeDialog.give) ? state.tradeDialog.give : (allGiveOptions[0] || RESOURCES[0]);
       const get = (RESOURCES.includes(state.tradeDialog.get) && state.tradeDialog.get !== give) ? state.tradeDialog.get : (RESOURCES.find(r => r !== give) || give);
       state.tradeDialog.give = give;
       state.tradeDialog.get = get;
+      const canBankTrade = giveOptions.length > 0;
       return `
         <div class="trade-modal-overlay" onclick="cancelTradeDialog()">
           <div class="trade-modal" onclick="event.stopPropagation()">
-            <h3>항구 거래</h3>
+            <h3>거래</h3>
             <div class="trade-section">
               <div class="trade-section-title">줄 자원</div>
               <div class="trade-options">
-                ${giveOptions.map(r => `
+                ${allGiveOptions.map(r => `
                   <button class="trade-option ${give === r ? "active" : ""}" onclick="selectTradeGive('${r}')">
-                    ${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]} x${getBestTradeRatio(pIdx, r)}
+                    ${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]} (${p.resources[r]})
                   </button>
                 `).join("")}
               </div>
@@ -2750,8 +2793,8 @@
             </div>
             <div class="trade-actions">
               <button onclick="cancelTradeDialog()">취소</button>
-              <button class="primary" onclick="confirmTradeDialog()">🏦 은행 거래</button>
-              <button style="background:#6366f1;border-color:#6366f1;" onclick="proposeTradeToAI()">🤖 AI에게 제안</button>
+              <button class="primary" ${canBankTrade ? "" : "disabled"} onclick="confirmTradeDialog()">🏦 은행${canBankTrade ? " ("+getBestTradeRatio(pIdx,give)+":1)" : ""}</button>
+              <button style="background:#6366f1;border-color:#6366f1;" onclick="proposeTradeToAI()">🤖 AI (1:1)</button>
             </div>
           </div>
         </div>
@@ -3330,6 +3373,17 @@
         console.error("LLM trade error:", e);
         return null;
       }
+    }
+
+    function showBigOverlay(main, sub, extraClass = "", duration = 1200) {
+      const el = document.createElement("div");
+      el.className = `big-overlay ${extraClass}`;
+      el.innerHTML = `<div class="big-overlay-content"><div class="big-number">${main}</div>${sub ? `<div class="big-sub">${sub}</div>` : ""}</div>`;
+      document.body.appendChild(el);
+      setTimeout(() => {
+        el.style.animation = "big-overlay-out 0.3s ease-in forwards";
+        setTimeout(() => el.remove(), 300);
+      }, duration);
     }
 
     function showToast(msg, duration = 2500) {
