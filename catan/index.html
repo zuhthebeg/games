@@ -2613,7 +2613,8 @@
           const isJustPlaced = v.index === state.lastPlacedVertex;
           const cityTarget = state.buildMode === "city" && vBuild.has(v.index) && v.building === "settlement";
           const cityClick = cityTarget ? ` onclick="onVertexClick(${v.index})"` : "";
-          html += `<div class="vertex ${v.building} player-${ownerIdx}${isHuman ? " human-player" : ""}${isJustPlaced ? " just-placed" : ""}${cityTarget ? " city-target" : ""}" style="left:${p.x}px;top:${p.y}px;--owner-color:${state.players[ownerIdx].color};background:${state.players[ownerIdx].color};color:#fff;" title="${state.players[ownerIdx].name} ${label}"${cityClick}></div>`;
+          const bIcon = v.building === "city" ? "🏰" : "🏠";
+          html += `<div class="vertex ${v.building} player-${ownerIdx}${isHuman ? " human-player" : ""}${isJustPlaced ? " just-placed" : ""}${cityTarget ? " city-target" : ""}" style="left:${p.x}px;top:${p.y}px;--owner-color:${state.players[ownerIdx].color};background:${state.players[ownerIdx].color};color:#fff;" title="${state.players[ownerIdx].name} ${label}"${cityClick}>${bIcon}</div>`;
         } else {
           const cls = ["vertex", vBuild.has(v.index) ? "buildable" : ""].join(" ");
           html += `<div class="${cls}" style="left:${p.x}px; top:${p.y}px;" onclick="onVertexClick(${v.index})"></div>`;
@@ -3374,7 +3375,7 @@
         return;
       }
 
-      showToast(`🤔 ${eligible.map(x => x.p.name).join(", ")}에게 제안 중...`, 2000);
+      showToast("🤔 거래 제안 중...", 2000);
 
       // Parallel LLM requests
       const results = await Promise.allSettled(eligible.map(async (target) => {
@@ -3409,12 +3410,12 @@
             if (want[r] > 0) { tp.resources[r] -= want[r]; human.resources[r] += want[r]; }
           }
           SFX.build();
-          showToast(`🤝 ${tp.name}: "${resp.dialogue || "거래!"}"`, 3000);
+          showToast(`🤝 거래 성사! "${resp.dialogue || "거래!"}"`, 3000);
           Voice.ai("trade-accept", resp.target.i);
           state.canEndTurn = true;
           traded = true;
         } else {
-          showToast(`❌ ${tp.name}: "${resp.dialogue || "거절"}"`, traded ? 1000 : 2000);
+          showToast(`❌ 거절: "${resp.dialogue || "안 돼"}"`, traded ? 1000 : 2000);
           if (!traded) Voice.ai("trade-reject", resp.target.i);
         }
       }
