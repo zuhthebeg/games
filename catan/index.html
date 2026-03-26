@@ -3389,7 +3389,8 @@
           const giveStr = Object.entries(parsed.give).map(([r,n]) => `${RESOURCE_ICONS[r]||r}×${n}`).join(" ");
           const wantStr = Object.entries(parsed.want).map(([r,n]) => `${RESOURCE_ICONS[r]||r}×${n}`).join(" ");
           
-          const accepted = confirm(`${p.name}의 거래 제안!\n\n줄게: ${giveStr}\n받을래: ${wantStr}\n\n"${parsed.dialogue || "거래하자!"}"\n\n수락하시겠습니까?`);
+          Voice.ai("trade-propose", pIdx);
+          const accepted = await showTradeProposal(p.name, giveStr, wantStr, parsed.dialogue || "거래하자!");
           
           if (accepted) {
             // Execute trade
@@ -3420,6 +3421,37 @@
         console.error("LLM trade error:", e);
         return null;
       }
+    }
+
+    function showTradeProposal(playerName, giveStr, wantStr, dialogue) {
+      return new Promise(resolve => {
+        const overlay = document.createElement("div");
+        overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);animation:big-overlay-in 0.3s ease-out;";
+        overlay.innerHTML = `
+          <div style="background:#16213e;border:2px solid #4ecca3;border-radius:16px;padding:20px;max-width:320px;width:90%;text-align:center;">
+            <div style="font-size:14px;color:#9ca3af;margin-bottom:6px;">💱 거래 제안</div>
+            <div style="font-size:18px;font-weight:700;margin-bottom:12px;">${playerName}</div>
+            <div style="display:flex;justify-content:center;gap:16px;margin-bottom:12px;">
+              <div style="text-align:center;">
+                <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">줄게</div>
+                <div style="font-size:16px;font-weight:600;">${giveStr}</div>
+              </div>
+              <div style="font-size:24px;color:#4ecca3;">⇄</div>
+              <div style="text-align:center;">
+                <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">받을래</div>
+                <div style="font-size:16px;font-weight:600;">${wantStr}</div>
+              </div>
+            </div>
+            ${dialogue ? `<div style="font-size:13px;color:#ffd700;margin-bottom:14px;font-style:italic;">"${dialogue}"</div>` : ""}
+            <div style="display:flex;gap:8px;">
+              <button id="tradeRejectBtn" style="flex:1;padding:10px;border-radius:10px;border:1px solid #ef4444;background:rgba(239,68,68,0.15);color:#ef4444;font-weight:700;cursor:pointer;font-size:14px;">❌ 거절</button>
+              <button id="tradeAcceptBtn" style="flex:1;padding:10px;border-radius:10px;border:none;background:#4ecca3;color:#000;font-weight:700;cursor:pointer;font-size:14px;">✅ 수락</button>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+        overlay.querySelector("#tradeAcceptBtn").onclick = () => { overlay.remove(); resolve(true); };
+        overlay.querySelector("#tradeRejectBtn").onclick = () => { overlay.remove(); resolve(false); };
+      });
     }
 
     function showBigOverlay(main, sub, extraClass = "", duration = 1200) {
