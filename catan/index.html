@@ -1193,6 +1193,7 @@
     function handleSeven(skipDiscard = false) {
       SFX.robber();
       showToast("🗡️ 강도가 나타났어요!");
+      TTS.speak("도둑 출현!");
       if (!skipDiscard) {
         for (let i = 0; i < state.players.length; i += 1) {
           const p = state.players[i];
@@ -1538,6 +1539,7 @@
           SFX.win();
           if (winner === localPlayerIndex()) launchConfetti();
           showToast("🎉 승리!", 6000);
+          TTS.speak(`축하합니다! ${state.players[winner].name} 승리!`);
         }
       }
     }
@@ -1819,6 +1821,7 @@
           }
         }
       }
+      if (sum === 7) TTS.speak("주사위 7! 도둑이 나타납니다!");
       if (!applyRollDice(state.currentPlayer, [d1, d2], false)) return;
       render();
       triggerAITurnIfNeeded();
@@ -3097,6 +3100,35 @@
         }
       };
     })();
+
+    // TTS for key events
+    const TTS = {
+      _queue: [],
+      _playing: false,
+      speak(text) {
+        this._queue.push(text);
+        if (!this._playing) this._next();
+      },
+      async _next() {
+        if (!this._queue.length) { this._playing = false; return; }
+        this._playing = true;
+        const text = this._queue.shift();
+        try {
+          const res = await fetch("https://llm.cocy.io/v1/audio/speech", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
+            body: JSON.stringify({ input: text, voice: "alloy" })
+          });
+          if (!res.ok) throw new Error("TTS failed");
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          audio.onended = () => { URL.revokeObjectURL(url); this._next(); };
+          audio.onerror = () => { URL.revokeObjectURL(url); this._next(); };
+          audio.play().catch(() => this._next());
+        } catch { this._next(); }
+      }
+    };
 
     function showToast(msg, duration = 2500) {
       let el = document.getElementById("catan-toast");
