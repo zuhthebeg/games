@@ -1012,7 +1012,6 @@
           "ore", "ore", "ore",
           "desert"
         ]);
-        const numberPool = shuffle([2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12]);
         const axial = [];
         for (let r = -2; r <= 2; r += 1) {
           for (let q = -2; q <= 2; q += 1) {
@@ -1021,12 +1020,47 @@
           }
         }
         axial.sort((a, b) => (a.r - b.r) || (a.q - b.q));
+
+        // Balanced number placement: 6/8 not adjacent, same numbers not adjacent
+        function hexNeighbors(idx) {
+          const h = axial[idx];
+          const dirs = [[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]];
+          return dirs.map(([dq,dr]) => axial.findIndex(a => a.q === h.q+dq && a.r === h.r+dr)).filter(i => i !== -1);
+        }
+
+        function assignBalancedNumbers(hexTypes) {
+          const numbers = [2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12];
+          const nonDesert = hexTypes.map((t,i) => ({t,i})).filter(x => x.t !== "desert").map(x => x.i);
+          
+          for (let attempt = 0; attempt < 50; attempt++) {
+            const pool = shuffle([...numbers]);
+            const assigned = new Array(hexTypes.length).fill(null);
+            for (let j = 0; j < nonDesert.length; j++) assigned[nonDesert[j]] = pool[j];
+            
+            // Check: 6/8 not adjacent, same number not adjacent
+            let valid = true;
+            for (let i = 0; i < axial.length && valid; i++) {
+              if (assigned[i] === null) continue;
+              for (const ni of hexNeighbors(i)) {
+                if (assigned[ni] === null) continue;
+                if (assigned[i] === assigned[ni]) { valid = false; break; }
+                if ((assigned[i] === 6 || assigned[i] === 8) && (assigned[ni] === 6 || assigned[ni] === 8)) { valid = false; break; }
+              }
+            }
+            if (valid) return assigned;
+          }
+          // Fallback: just shuffled
+          const pool = shuffle([...numbers]);
+          const assigned = new Array(hexTypes.length).fill(null);
+          for (let j = 0; j < nonDesert.length; j++) assigned[nonDesert[j]] = pool[j];
+          return assigned;
+        }
+
+        const balancedNumbers = assignBalancedNumbers(resourcePool);
         state.hexes = [];
-        let numIdx = 0;
         for (let i = 0; i < axial.length; i += 1) {
           const type = resourcePool[i];
-          const number = type === "desert" ? null : numberPool[numIdx++];
-          state.hexes.push({ index: i, q: axial[i].q, r: axial[i].r, type, number, robber: false, vertices: [], edges: [] });
+          state.hexes.push({ index: i, q: axial[i].q, r: axial[i].r, type, number: balancedNumbers[i], robber: false, vertices: [], edges: [] });
         }
       }
 
