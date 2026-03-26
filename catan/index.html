@@ -3665,7 +3665,8 @@
       panel.id = "soundPanel";
       panel.style.cssText = "position:fixed;bottom:60px;right:8px;background:#16213e;border:1px solid #334155;border-radius:12px;padding:12px;z-index:9990;width:220px;font-size:12px;";
       panel.innerHTML = `
-        <div style="font-weight:700;margin-bottom:8px;">🔊 사운드 설정</div>
+        <div style="font-weight:700;margin-bottom:8px;">⚙️ 설정</div>
+        <div style="font-size:10px;color:#9ca3af;margin-bottom:4px;">🔊 사운드</div>
         <label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer;">
           <input type="checkbox" ${soundSettings.sfx?"checked":""} onchange="soundSettings.sfx=this.checked;soundSettings.save()"> 효과음
           <input type="range" min="0" max="1" step="0.1" value="${soundSettings.sfxVol}" style="flex:1;height:4px;" oninput="soundSettings.sfxVol=+this.value;soundSettings.save()">
