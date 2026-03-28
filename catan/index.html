@@ -875,7 +875,8 @@
       startRequested: false,
       initSent: false,
       actionSeq: 0,
-      processedActionIds: new Set()
+      processedActionIds: new Set(),
+      aiPlayers: []
     };
 
     function emptyResources() {
@@ -888,6 +889,7 @@
         userId: base.userId || null,
         name: base.name,
         color: base.color,
+        isAI: !!base.isAI,
         resources: emptyResources(),
         buildings: [],
         roads: [],
@@ -947,8 +949,54 @@
         id: p.id,
         userId: p.id,
         name: p.nickname || `Player ${i + 1}`,
-        color: PLAYER_COLORS[i]
+        color: PLAYER_COLORS[i],
+        isAI: !!p.isAI
       }));
+    }
+
+    function getLobbyAiPlayers() {
+      return (mpState.aiPlayers || []).slice(0, 4);
+    }
+
+    function getLobbyDisplayPlayers() {
+      const humans = (mpState.room?.players || []).map(p => ({ ...p, isAI: false }));
+      return humans.concat(getLobbyAiPlayers());
+    }
+
+    function buildAiPlayers(existingPlayers = []) {
+      const aiCount = Math.max(0, 4 - existingPlayers.length);
+      return Array.from({ length: aiCount }, (_, i) => ({
+        id: `ai-${i + 1}`,
+        userId: `ai-${i + 1}`,
+        name: `AI 봇 ${i + 1}`,
+        nickname: `AI 봇 ${i + 1}`,
+        isAI: true,
+        color: PLAYER_COLORS[(existingPlayers.length + i) % PLAYER_COLORS.length]
+      }));
+    }
+
+    async function syncLobbyAIPlayers() {
+      if (!mpState.client || !mpState.isHost) return;
+      try {
+        await mpState.client.sendAction({
+          type: "LOBBY_AI_STATE",
+          aiPlayers: getLobbyAiPlayers().map(p => ({ id: p.id, name: p.name, nickname: p.nickname, isAI: true, color: p.color })),
+          actionId: `lobby_ai_${Date.now()}_${Math.floor(Math.random() * 1e6)}`
+        });
+      } catch (e) {
+        console.warn("syncLobbyAIPlayers failed:", e);
+      }
+    }
+
+    async function fillAIPlayers() {
+      if (!mpState.isHost) return;
+      const humans = mpState.room?.players || [];
+      mpState.aiPlayers = buildAiPlayers(humans);
+      mpState.waitingMessage = mpState.aiPlayers.length
+        ? `AI ${mpState.aiPlayers.length}명으로 빈 자리를 채웠습니다.`
+        : "이미 4명입니다.";
+      render();
+      await syncLobbyAIPlayers();
     }
 
     function shuffle(arr) {
@@ -976,6 +1024,8 @@
     }
 
     function isHumanTurn() {
+      const cp = state.players[state.currentPlayer];
+      if (cp && cp.isAI) return false;
       const myIdx = localPlayerIndex();
       return myIdx !== -1 && myIdx === state.currentPlayer;
     }
@@ -1826,16 +1876,18 @@
         if (Array.isArray(action.players) && action.players.length) {
           state.players = action.players.map((p, i) => makePlayer({
             id: p.id,
-            userId: p.id,
+            userId: p.userId || p.id,
             name: p.name || p.nickname || `Player ${i + 1}`,
-            color: p.color || PLAYER_COLORS[i]
+            color: p.color || PLAYER_COLORS[i],
+            isAI: !!p.isAI
           }));
         } else if (Array.isArray(action.playerOrder)) {
           state.players = action.playerOrder.map((id, i) => makePlayer({
             id,
             userId: id,
             name: `Player ${i + 1}`,
-            color: PLAYER_COLORS[i]
+            color: PLAYER_COLORS[i],
+            isAI: String(id).startsWith("ai-")
           }));
         }
         generateBoard(clone(action.hexes || []));
@@ -2561,13 +2613,172 @@
       }
     }
 
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function aiMultiSetupTurn() {
+      if (!mpState.isHost || !isMultiMode()) return;
+      const pIdx = state.currentPlayer;
+      const p = state.players[pIdx];
+      if (!p || !p.isAI) return;
+      const ai = window.CatanAI;
+
+      if (state.setupStep === "settlement") {
+        const choices = validSettlementsFor(pIdx, true);
+        if (!choices.length) {
+          state.hint = `${p.name} 초기 마을 위치를 찾지 못했습니다.`;
+          render();
+          return;
+        }
+        const pick = ai ? ai.pickBestVertex(state, choices) : choices[0];
+        await sendGameAction(ACTION.PLACE_SETTLEMENT, { playerId: p.userId || p.id, vertexId: pick });
+        return;
+      }
+
+      if (state.setupStep === "road") {
+        const roads = validRoadsFor(pIdx, true);
+        if (!roads.length) {
+          state.hint = `${p.name} 초기 도로 위치를 찾지 못했습니다.`;
+          render();
+          return;
+        }
+        const pick = ai ? ai.pickBestRoadFromVertex(state, roads, state.lastSetupVertex) : roads[0];
+        await sendGameAction(ACTION.PLACE_ROAD, { playerId: p.userId || p.id, edgeId: pick });
+      }
+    }
+
+    async function aiMultiMainTurn() {
+      if (!mpState.isHost || !isMultiMode()) return;
+      const pIdx = state.currentPlayer;
+      const p = state.players[pIdx];
+      if (!p || !p.isAI || state.winner) return;
+      const ai = window.CatanAI;
+
+      try {
+        if (state.phase === "roll") {
+          const d1 = 1 + Math.floor(Math.random() * 6);
+          const d2 = 1 + Math.floor(Math.random() * 6);
+          await sendGameAction(ACTION.ROLL_DICE, { playerId: p.userId || p.id, values: [d1, d2] });
+          await sleep(1200);
+        }
+
+        if (state.phase === "robber") {
+          let hexIdx = -1;
+          let victimIdx = null;
+          if (ai) {
+            const t = ai.pickRobberTarget(state, pIdx);
+            hexIdx = t.hexIndex !== state.robber ? t.hexIndex : state.hexes.findIndex((_, i) => i !== state.robber);
+            victimIdx = t.victimIdx;
+          } else {
+            hexIdx = state.hexes.findIndex((_, i) => i !== state.robber);
+          }
+          if (hexIdx !== -1) {
+            const victim = victimIdx !== null && victimIdx !== undefined ? state.players[victimIdx] : null;
+            await sendGameAction(ACTION.MOVE_ROBBER, {
+              playerId: p.userId || p.id,
+              hexId: hexIdx,
+              stealFrom: victim ? (victim.userId || victim.id) : null
+            });
+            await sleep(1200);
+          }
+        }
+
+        if (state.phase !== "main") {
+          state.phase = "main";
+          state.canEndTurn = true;
+        }
+        if (state.winner) return;
+
+        let safety = 15;
+        let buildsDone = 0;
+        const budget = ai ? ai.getTurnBudget(state.aiDifficulty, totalResourceCount(p)) : 2;
+        while (safety-- > 0 && buildsDone < budget && !state.winner && state.phase === "main") {
+          const citySpots = validCitiesFor(pIdx);
+          const settlementSpots = validSettlementsFor(pIdx);
+          const roadSpots = validRoadsFor(pIdx);
+          const act = ai ? ai.chooseBuildAction(state, pIdx, {
+            cityCount: citySpots.length,
+            settlementCount: settlementSpots.length,
+            roadCount: roadSpots.length,
+            costs: COST
+          }) : null;
+          const pickedAction = act || (
+            canAfford(p, COST.city) && citySpots.length ? "city"
+              : canAfford(p, COST.settlement) && settlementSpots.length ? "settlement"
+              : canAfford(p, COST.road) && roadSpots.length ? "road"
+              : null
+          );
+
+          if (!pickedAction) {
+            const targetCost = canAfford(p, COST.city)
+              ? (canAfford(p, COST.settlement) ? COST.road : COST.settlement)
+              : COST.city;
+            const trade = ai ? ai.chooseBankTrade(p.resources, targetCost, (r) => getBestTradeRatio(pIdx, r)) : null;
+            if (trade && applyPortTrade(pIdx, trade.give, trade.get)) {
+              await sleep(1000);
+              continue;
+            }
+            break;
+          }
+
+          if (pickedAction === "city") {
+            const spot = ai ? ai.pickBestVertex(state, citySpots) : citySpots[0];
+            const ok = await sendGameAction(ACTION.PLACE_CITY, { playerId: p.userId || p.id, vertexId: spot });
+            if (!ok) break;
+          } else if (pickedAction === "settlement") {
+            const spot = ai ? ai.pickBestVertex(state, settlementSpots) : settlementSpots[0];
+            const ok = await sendGameAction(ACTION.PLACE_SETTLEMENT, { playerId: p.userId || p.id, vertexId: spot });
+            if (!ok) break;
+          } else {
+            const spot = ai ? ai.pickBestRoadGeneral(state, roadSpots, pIdx) : roadSpots[0];
+            const ok = await sendGameAction(ACTION.PLACE_ROAD, { playerId: p.userId || p.id, edgeId: spot });
+            if (!ok) break;
+          }
+
+          buildsDone += 1;
+          await sleep(1200 + Math.floor(Math.random() * 600));
+          if (state.winner || (ai && ai.shouldStopBuilding(state.aiDifficulty, buildsDone - 1, totalResourceCount(p)))) break;
+        }
+
+        if (!state.winner && state.currentPlayer === pIdx) {
+          await sleep(1000);
+          await sendGameAction(ACTION.END_TURN, { playerId: p.userId || p.id });
+        }
+      } catch (err) {
+        console.error("aiMultiMainTurn error:", err);
+        try {
+          state.phase = "main";
+          state.canEndTurn = true;
+          await sendGameAction(ACTION.END_TURN, { playerId: p.userId || p.id });
+        } catch (_) {}
+      }
+    }
+
     function triggerAITurnIfNeeded() {
-      if (state.winner || isMultiMode() || isHumanTurn()) return;
-      const delay = (state.phase === "setup1" || state.phase === "setup2") ? 800 : 1000;
+      if (state.winner) return;
+
+      if (!isMultiMode()) {
+        if (isHumanTurn()) return;
+        const delay = (state.phase === "setup1" || state.phase === "setup2") ? 800 : 1000;
+        setTimeout(() => {
+          if (state.winner || isHumanTurn()) return;
+          if (state.phase === "setup1" || state.phase === "setup2") aiTakeSetupTurn();
+          else aiMainTurn();
+        }, delay);
+        return;
+      }
+
+      if (!mpState.isHost) return;
+      const cp = state.players[state.currentPlayer];
+      if (!cp || !cp.isAI) return;
+      const delay = (state.phase === "setup1" || state.phase === "setup2") ? 1200 : 1500;
       setTimeout(() => {
-        if (state.winner || isHumanTurn() || isMultiMode()) return;
-        if (state.phase === "setup1" || state.phase === "setup2") aiTakeSetupTurn();
-        else aiMainTurn();
+        if (state.winner) return;
+        const cp2 = state.players[state.currentPlayer];
+        if (!cp2 || !cp2.isAI) return;
+        if (state.phase === "setup1" || state.phase === "setup2") aiMultiSetupTurn();
+        else aiMultiMainTurn();
       }, delay);
     }
 
@@ -2898,20 +3109,21 @@
     }
 
     function lobbyPlayersHtml() {
-      const players = mpState.room?.players || [];
+      const players = getLobbyDisplayPlayers();
       return players.map((p, i) => `
         <div class="lobby-player">
-          <div style="color:${PLAYER_COLORS[i] || "#fff"}">${p.isHost ? "👑 " : ""}${p.nickname || "Player"}${p.id === mpState.myUserId ? " (나)" : ""}</div>
-          <div>${p.isHost ? "방장" : (p.isReady ? "준비완료" : "대기중")}</div>
+          <div style="color:${p.color || PLAYER_COLORS[i] || "#fff"}">${p.isHost ? "👑 " : ""}${p.nickname || p.name || "Player"}${p.isAI ? " 🤖" : ""}${p.id === mpState.myUserId ? " (나)" : ""}</div>
+          <div>${p.isAI ? "AI 대기" : (p.isHost ? "방장" : (p.isReady ? "준비완료" : "대기중"))}</div>
         </div>
       `).join("");
     }
 
     function renderRoomLobby() {
       const players = mpState.room?.players || [];
+      const displayPlayers = getLobbyDisplayPlayers();
       const others = players.filter(p => p.id !== mpState.myUserId);
       const allReady = others.length > 0 && others.every(p => p.isReady);
-      const canStart = mpState.isHost && players.length >= 2 && allReady;
+      const canStart = mpState.isHost && displayPlayers.length >= 2 && (allReady || getLobbyAiPlayers().length > 0);
       const waitMsg = mpState.waitingMessage || (canStart ? "게임 시작 가능" : "플레이어를 기다리는 중...");
       return `
         <div class="lobby-screen">
@@ -2922,6 +3134,7 @@
               <div id="playerList">${lobbyPlayersHtml()}</div>
               <div class="multi-row">
                 <button onclick="setReady()">${mpState.ready ? "준비 취소" : "준비 완료"}</button>
+                <button onclick="fillAIPlayers()" ${mpState.isHost ? "" : "hidden"}>AI 채우기</button>
                 <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"}>게임 시작</button>
                 <button onclick="leaveRoom()" class="danger">나가기</button>
               </div>
@@ -3116,6 +3329,10 @@
       const me = room.players?.find(p => p.id === mpState.myUserId);
       mpState.isHost = !!me?.isHost;
       mpState.ready = !!me?.isReady;
+      if (mpState.isHost) {
+        const maxAi = Math.max(0, 4 - (room.players?.length || 0));
+        mpState.aiPlayers = getLobbyAiPlayers().slice(0, maxAi);
+      }
       if (state.screen === "room-lobby") {
         const others = (room.players || []).filter(p => p.id !== mpState.myUserId);
         const allReady = others.length > 0 && others.every(p => p.isReady);
@@ -3136,7 +3353,8 @@
       const players = mpState.room.players || [];
       const others = players.filter(p => p.id !== mpState.myUserId);
       const allReady = others.length > 0 && others.every(p => p.isReady);
-      if (!allReady || players.length < 2) return;
+      const displayCount = players.length + getLobbyAiPlayers().length;
+      if ((!allReady && !getLobbyAiPlayers().length) || displayCount < 2) return;
       mpState.startRequested = true;
       try {
         await mpState.client.startGame();
@@ -3152,10 +3370,15 @@
       if (!mpState.isHost || mpState.initSent || !mpState.room) return;
       if (mpState.room.status !== "playing") return;
       const players = mpState.room.players || [];
+      if (!getLobbyAiPlayers().length && players.length < 4) {
+        mpState.aiPlayers = buildAiPlayers(players);
+      }
+      const aiPlayers = getLobbyAiPlayers();
       const others = players.filter(p => p.id !== mpState.myUserId);
       const allReady = others.length > 0 && others.every(p => p.isReady);
-      if (players.length < 2 || !allReady) return;
-      setMultiplayerPlayers(players);
+      const fullPlayers = players.concat(aiPlayers).slice(0, 4);
+      if (fullPlayers.length < 2 || (!allReady && !aiPlayers.length)) return;
+      setMultiplayerPlayers(fullPlayers);
       resetCoreState();
       generateBoard();
       recalcAllVP();
@@ -3167,7 +3390,7 @@
         edges: clone(state.edges),
         robber: state.robber,
         playerOrder: state.players.map(p => p.userId || p.id),
-        players: state.players.map(p => ({ id: p.userId || p.id, name: p.name, color: p.color }))
+        players: state.players.map(p => ({ id: p.userId || p.id, userId: p.userId || p.id, name: p.name, color: p.color, isAI: !!p.isAI }))
       });
     }
 
@@ -3193,6 +3416,19 @@
         const data = raw.action || raw;
         if (!data.type) { dbg(`[MP] no type in: ${JSON.stringify(raw).slice(0,100)}`); return; }
         if (data.actionId && mpState.processedActionIds.has(data.actionId)) return;
+        if (data.type === "LOBBY_AI_STATE") {
+          mpState.aiPlayers = Array.isArray(data.aiPlayers) ? data.aiPlayers.map((p, i) => ({
+            id: p.id || `ai-${i + 1}`,
+            userId: p.userId || p.id || `ai-${i + 1}`,
+            name: p.name || p.nickname || `AI 봇 ${i + 1}`,
+            nickname: p.nickname || p.name || `AI 봇 ${i + 1}`,
+            isAI: true,
+            color: p.color || PLAYER_COLORS[i]
+          })) : [];
+          markActionProcessed(data.actionId);
+          render();
+          return;
+        }
         dbg(`[MP] action: ${data.type} id:${data.actionId||"?"}`);
         console.log("[onMpEvent] applying:", data.type, data);
         const ok = applyGameAction(data);
@@ -3264,6 +3500,7 @@
       mpState.initSent = false;
       mpState.myUserId = null;
       mpState.processedActionIds = new Set();
+      mpState.aiPlayers = [];
       resetCoreState();
       state.mode = null;
       state.screen = "mode";
@@ -3962,6 +4199,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.joinRoom = joinRoom;
     window.leaveRoom = leaveRoom;
     window.setReady = setReady;
+    window.fillAIPlayers = fillAIPlayers;
     window.startGame = startGame;
     window.rollDice = rollDice;
     window.endTurn = endTurn;
