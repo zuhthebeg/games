@@ -2711,14 +2711,8 @@
           );
 
           if (!pickedAction) {
-            const targetCost = canAfford(p, COST.city)
-              ? (canAfford(p, COST.settlement) ? COST.road : COST.settlement)
-              : COST.city;
-            const trade = ai ? ai.chooseBankTrade(p.resources, targetCost, (r) => getBestTradeRatio(pIdx, r)) : null;
-            if (trade && applyPortTrade(pIdx, trade.give, trade.get)) {
-              await sleep(1000);
-              continue;
-            }
+            // 멀티에서는 은행/항구 거래 동기화 액션이 아직 없어서
+            // 로컬 상태만 바꾸면 클라이언트간 desync가 발생할 수 있다.
             break;
           }
 
