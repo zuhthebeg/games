@@ -1635,6 +1635,12 @@
 
     function endTurnInternal() {
       if (state.winner || !state.canEndTurn) return false;
+      // 도로 건설 카드 사용 중이면 턴 종료 차단
+      if (state.roadBuildingRemaining > 0) {
+        state.hint = `도로 건설 카드: 남은 무료 도로 ${state.roadBuildingRemaining}개를 먼저 배치하세요.`;
+        render();
+        return false;
+      }
       state.buildMode = null;
       state.lastDiceSum = 0;
       closeTradeDialog();
