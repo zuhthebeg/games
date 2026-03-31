@@ -1157,23 +1157,24 @@
       applyStreakAndFinish(payout, totalBet, label, type);
     }
 
-    document.querySelectorAll("[data-bet]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const raw = btn.dataset.bet;
-        if (raw === "all") {
-          const gold = Math.floor(state.gold);
-          if (gold <= 0) return;
-          const msg = currentLang === "ko"
-            ? `${gold.toLocaleString()} 골드 전부 베팅합니다. 진행할까요?`
-            : `Bet all ${gold.toLocaleString()} gold. Are you sure?`;
-          if (!confirm(msg)) return;
-          startRound(gold);
-        } else if (raw === "custom") {
-          openNumpad("single");
-        } else {
-          startRound(Number(raw));
-        }
-      });
+    // 이벤트 위임 — 동적 버튼도 처리
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-bet]");
+      if (!btn) return;
+      const raw = btn.dataset.bet;
+      if (raw === "all") {
+        const gold = Math.floor(state.gold);
+        if (gold <= 0) return;
+        const msg = currentLang === "ko"
+          ? `${gold.toLocaleString()} 골드 전부 베팅합니다. 진행할까요?`
+          : `Bet all ${gold.toLocaleString()} gold. Are you sure?`;
+        if (!confirm(msg)) return;
+        startRound(gold);
+      } else if (raw === "custom") {
+        openNumpad("single");
+      } else {
+        startRound(Number(raw));
+      }
     });
 
     el.hitBtn.addEventListener("click", hit);
@@ -1741,8 +1742,10 @@
     }
 
     // 초기 + 골드 변경 시 업데이트
-    const _origUpdateBetButtons = updateBetButtons;
-    setInterval(updateBetButtons, 3000); // 3초마다 갱신 (골드 변동 반영)
+    // SharedWallet init 후에도 업데이트 필요 — 1초 후 한 번 더
+    setTimeout(updateBetButtons, 1000);
+    setTimeout(updateBetButtons, 3000);
+    setInterval(updateBetButtons, 5000);
     updateBetButtons();
 
     // ─── Numpad popup ───
