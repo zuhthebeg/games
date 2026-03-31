@@ -196,6 +196,8 @@
     .bet button { background: linear-gradient(180deg, rgba(255, 209, 102, 0.34), rgba(255, 209, 102, 0.12)); color: #fff5de; }
     .bet .custom-bet { background: linear-gradient(180deg, rgba(118,200,255,0.35), rgba(118,200,255,0.12)); min-width: 44px; }
     .bet .allin { background: linear-gradient(180deg, rgba(255, 107, 107, 0.45), rgba(255, 107, 107, 0.16)); }
+    .npad { background: #22222f; border: 1px solid #3a3a50; color: #e8e8ed; padding: 12px; border-radius: 10px; font-size: 1.2rem; font-weight: 600; cursor: pointer; transition: background 0.1s; font-family: monospace; }
+    .npad:active { background: #3a3a50; transform: scale(0.95); }
     .actions .hit { border-color: rgba(118,245,174,0.45); }
     .actions .stand { border-color: rgba(211,226,255,0.45); }
     .actions .double { border-color: rgba(255,209,102,0.6); }
@@ -377,11 +379,12 @@
     <section class="status" id="mpTurnStatus">-</section>
     <section class="panel bet hidden" id="mpBetPanel">
       <div class="row" style="flex-wrap:wrap;gap:4px;">
-        <button data-mp-bet="10" style="min-width:0;padding:6px 8px;font-size:0.7rem;">10</button>
-        <button data-mp-bet="50" style="min-width:0;padding:6px 8px;font-size:0.7rem;">50</button>
         <button data-mp-bet="100" style="min-width:0;padding:6px 8px;font-size:0.7rem;">100</button>
-        <button data-mp-bet="500" style="min-width:0;padding:6px 8px;font-size:0.7rem;">500</button>
         <button data-mp-bet="1000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">1K</button>
+        <button data-mp-bet="5000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">5K</button>
+        <button data-mp-bet="10000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">10K</button>
+        <button data-mp-bet="50000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">50K</button>
+        <button data-mp-bet="1000000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">1M</button>
         <button data-mp-bet="custom" style="min-width:0;padding:6px 8px;font-size:0.7rem;">✏️</button>
         <button data-mp-bet="all" style="min-width:0;padding:6px 8px;font-size:0.7rem;">ALL</button>
       </div>
@@ -430,16 +433,46 @@
 
     <section class="panel bet">
       <div class="row" style="flex-wrap:wrap;gap:4px;">
-        <button data-bet="10" style="min-width:0;padding:6px 8px;font-size:0.7rem;">10</button>
-        <button data-bet="50" style="min-width:0;padding:6px 8px;font-size:0.7rem;">50</button>
         <button data-bet="100" style="min-width:0;padding:6px 8px;font-size:0.7rem;">100</button>
-        <button data-bet="500" style="min-width:0;padding:6px 8px;font-size:0.7rem;">500</button>
         <button data-bet="1000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">1K</button>
         <button data-bet="5000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">5K</button>
+        <button data-bet="10000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">10K</button>
+        <button data-bet="50000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">50K</button>
+        <button data-bet="1000000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">1M</button>
         <button data-bet="custom" class="custom-bet" style="min-width:0;padding:6px 8px;font-size:0.7rem;">✏️</button>
         <button class="allin" data-bet="all" style="min-width:0;padding:6px 8px;font-size:0.7rem;">ALL</button>
       </div>
     </section>
+
+    <!-- 숫자패드 팝업 -->
+    <div id="numpadOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;">
+      <div style="background:#1a1a28;border:2px solid #3a3a50;border-radius:16px;padding:16px;width:90%;max-width:320px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:0.85rem;color:#8888a0;">베팅 금액 입력</span>
+          <button onclick="closeNumpad()" style="background:none;border:none;color:#888;font-size:1.2rem;cursor:pointer;">✕</button>
+        </div>
+        <div id="numpadDisplay" style="background:#0f0f14;border:1px solid #2e2e40;border-radius:10px;padding:12px;text-align:right;font-size:1.6rem;font-family:monospace;color:#4ecdc4;margin-bottom:10px;min-height:2.5rem;">0</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+          <button class="npad" onclick="numpadInput('1')">1</button>
+          <button class="npad" onclick="numpadInput('2')">2</button>
+          <button class="npad" onclick="numpadInput('3')">3</button>
+          <button class="npad" onclick="numpadInput('4')">4</button>
+          <button class="npad" onclick="numpadInput('5')">5</button>
+          <button class="npad" onclick="numpadInput('6')">6</button>
+          <button class="npad" onclick="numpadInput('7')">7</button>
+          <button class="npad" onclick="numpadInput('8')">8</button>
+          <button class="npad" onclick="numpadInput('9')">9</button>
+          <button class="npad" onclick="numpadClear()" style="color:#e74c3c;">C</button>
+          <button class="npad" onclick="numpadInput('0')">0</button>
+          <button class="npad" onclick="numpadBackspace()">⌫</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="npad" onclick="numpadInput('000')" style="flex:1;font-size:0.75rem;">000</button>
+          <button class="npad" onclick="numpadInput('0000')" style="flex:1;font-size:0.75rem;">0000</button>
+        </div>
+        <button onclick="numpadConfirm()" style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;background:#4ecdc4;color:#000;font-size:1rem;font-weight:700;cursor:pointer;">확인</button>
+      </div>
+    </div>
 
     <section class="panel actions">
       <div class="row" style="gap:4px;">
@@ -1146,11 +1179,7 @@
           if (!confirm(msg)) return;
           startRound(gold);
         } else if (raw === "custom") {
-          const msg = currentLang === "ko" ? "베팅 금액을 입력하세요:" : "Enter bet amount:";
-          const input = prompt(msg);
-          if (!input) return;
-          const v = Math.floor(Number(input));
-          if (v > 0) startRound(v);
+          openNumpad("single");
         } else {
           startRound(Number(raw));
         }
@@ -1596,10 +1625,8 @@
             : `Bet all ${amount.toLocaleString()} gold?`;
           if (!confirm(msg)) return;
         } else if (raw === "custom") {
-          const input = prompt(t("betPrompt"));
-          if (!input) return;
-          amount = Math.floor(Number(input));
-          if (!amount || amount <= 0) return;
+          openNumpad("multi");
+          return;
         } else {
           amount = Number(raw);
         }
@@ -1683,6 +1710,56 @@
         showModeSelect();
       }
     })();
+
+    // ─── Numpad popup ───
+    let numpadValue = "";
+    let numpadMode = "single"; // "single" or "multi"
+    const numpadOverlay = document.getElementById("numpadOverlay");
+    const numpadDisplay = document.getElementById("numpadDisplay");
+
+    function openNumpad(mode) {
+      numpadMode = mode;
+      numpadValue = "";
+      numpadDisplay.textContent = "0";
+      numpadOverlay.style.display = "flex";
+    }
+    function closeNumpad() {
+      numpadOverlay.style.display = "none";
+    }
+    function numpadInput(s) {
+      if (numpadValue.length >= 12) return;
+      numpadValue += s;
+      numpadDisplay.textContent = Number(numpadValue).toLocaleString();
+    }
+    function numpadClear() {
+      numpadValue = "";
+      numpadDisplay.textContent = "0";
+    }
+    function numpadBackspace() {
+      numpadValue = numpadValue.slice(0, -1);
+      numpadDisplay.textContent = numpadValue ? Number(numpadValue).toLocaleString() : "0";
+    }
+    function numpadConfirm() {
+      const v = Math.floor(Number(numpadValue));
+      closeNumpad();
+      if (!v || v <= 0) return;
+      if (numpadMode === "single") {
+        startRound(v);
+      } else {
+        // multi: mpBet 핸들러 재실행
+        const state = window._mpState;
+        if (state && state.gold >= v) {
+          const client = mpUI?.getClient();
+          if (client) {
+            client.sendAction({ type: "BET", amount: v }).catch(() => {});
+          }
+        }
+      }
+    }
+    // 오버레이 바깥 클릭 시 닫기
+    numpadOverlay.addEventListener("click", (e) => {
+      if (e.target === numpadOverlay) closeNumpad();
+    });
   </script>
 </body>
 </html>
