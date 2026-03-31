@@ -379,12 +379,7 @@
     <section class="status" id="mpTurnStatus">-</section>
     <section class="panel bet hidden" id="mpBetPanel">
       <div class="row" style="flex-wrap:wrap;gap:4px;">
-        <button data-mp-bet="100" style="min-width:0;padding:6px 8px;font-size:0.7rem;">100</button>
-        <button data-mp-bet="1000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">1K</button>
-        <button data-mp-bet="5000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">5K</button>
-        <button data-mp-bet="10000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">10K</button>
-        <button data-mp-bet="50000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">50K</button>
-        <button data-mp-bet="1000000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">1M</button>
+        <span id="dynamicMpBetButtons"></span>
         <button data-mp-bet="custom" style="min-width:0;padding:6px 8px;font-size:0.7rem;">✏️</button>
         <button data-mp-bet="all" style="min-width:0;padding:6px 8px;font-size:0.7rem;">ALL</button>
       </div>
@@ -433,12 +428,7 @@
 
     <section class="panel bet">
       <div class="row" style="flex-wrap:wrap;gap:4px;">
-        <button data-bet="100" style="min-width:0;padding:6px 8px;font-size:0.7rem;">100</button>
-        <button data-bet="1000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">1K</button>
-        <button data-bet="5000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">5K</button>
-        <button data-bet="10000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">10K</button>
-        <button data-bet="50000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">50K</button>
-        <button data-bet="1000000" style="min-width:0;padding:6px 8px;font-size:0.7rem;">1M</button>
+        <span id="dynamicBetButtons"></span>
         <button data-bet="custom" class="custom-bet" style="min-width:0;padding:6px 8px;font-size:0.7rem;">✏️</button>
         <button class="allin" data-bet="all" style="min-width:0;padding:6px 8px;font-size:0.7rem;">ALL</button>
       </div>
@@ -1710,6 +1700,50 @@
         showModeSelect();
       }
     })();
+
+    // ─── Dynamic bet buttons ───
+    function formatBetLabel(n) {
+      if (n >= 1000000) return (n / 1000000) + 'M';
+      if (n >= 1000) return (n / 1000) + 'K';
+      return String(n);
+    }
+
+    function generateBetAmounts(gold) {
+      if (gold <= 0) return [1];
+      const ratios = [0.02, 0.05, 0.1, 0.25, 0.5];
+      const amounts = ratios.map(r => {
+        let v = Math.floor(gold * r);
+        // 깔끔한 숫자로 반올림
+        if (v >= 1000000) v = Math.round(v / 100000) * 100000;
+        else if (v >= 100000) v = Math.round(v / 10000) * 10000;
+        else if (v >= 10000) v = Math.round(v / 1000) * 1000;
+        else if (v >= 1000) v = Math.round(v / 100) * 100;
+        else if (v >= 100) v = Math.round(v / 10) * 10;
+        return Math.max(1, v);
+      });
+      // 중복 제거
+      return [...new Set(amounts)];
+    }
+
+    function renderBetButtons(gold, containerId, dataAttr) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const amounts = generateBetAmounts(gold);
+      container.innerHTML = amounts.map(a =>
+        `<button ${dataAttr}="${a}" style="min-width:0;padding:6px 8px;font-size:0.7rem;">${formatBetLabel(a)}</button>`
+      ).join('');
+    }
+
+    function updateBetButtons() {
+      const gold = typeof SharedWallet !== 'undefined' ? SharedWallet.gold : 0;
+      renderBetButtons(gold, 'dynamicBetButtons', 'data-bet');
+      renderBetButtons(gold, 'dynamicMpBetButtons', 'data-mp-bet');
+    }
+
+    // 초기 + 골드 변경 시 업데이트
+    const _origUpdateBetButtons = updateBetButtons;
+    setInterval(updateBetButtons, 3000); // 3초마다 갱신 (골드 변동 반영)
+    updateBetButtons();
 
     // ─── Numpad popup ───
     let numpadValue = "";
