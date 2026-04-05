@@ -1,5 +1,19 @@
 [
   {
+    "title": "Pocket Sort",
+    "icon": "https://game.cocy.io/pocket-sort/icon.svg",
+    "url": "https://game.cocy.io/pocket-sort/",
+    "desc": "작은 물건을 포켓별로 정리하는 모바일 정렬 퍼즐",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🇰🇷"
+    ],
+    "category": "puzzle"
+  },
+  {
     "title": "블랙잭",
     "icon": "https://game.cocy.io/blackjack/icon.svg",
     "url": "https://game.cocy.io/blackjack/",

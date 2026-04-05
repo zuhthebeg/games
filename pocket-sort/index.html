@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f)})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pocket Sort</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <main class="app-shell" data-qa="pocket-sort-app">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Pocket Objects Puzzle</p>
+        <h1>Pocket Sort</h1>
+      </div>
+      <button id="restartBtn" class="ghost-btn" type="button">다시</button>
+    </header>
+
+    <section class="status-card">
+      <div>
+        <span class="label">레벨</span>
+        <strong id="levelLabel">1 / 20</strong>
+      </div>
+      <div>
+        <span class="label">이동</span>
+        <strong id="moveLabel">0</strong>
+      </div>
+      <div>
+        <span class="label">정리 완료</span>
+        <strong id="lockLabel">0</strong>
+      </div>
+    </section>
+
+    <section class="hint-card">
+      <p id="messageLine">같은 물건끼리 한 포켓에 모아 정리해.</p>
+    </section>
+
+    <section class="board-wrap">
+      <div id="board" class="board" aria-label="Pocket board"></div>
+    </section>
+
+    <section class="actions">
+      <button id="nextBtn" class="primary-btn" type="button">다음 레벨</button>
+    </section>
+
+    <section class="legend" id="legend"></section>
+
+    <details class="debug-panel" open>
+      <summary>QA Debug State</summary>
+      <pre id="debugState" data-qa="debug-json"></pre>
+    </details>
+
+    <div id="clearBanner" class="clear-banner hidden" role="dialog" aria-live="polite">
+      <p>포켓 정리 완료.</p>
+      <button id="bannerNextBtn" class="primary-btn" type="button">다음 레벨</button>
+    </div>
+  </main>
+
+  <script src="./levels.js"></script>
+  <script src="./engine.js"></script>
+  <script src="./game.js"></script>
+  <script src="/lib/site-meta.js"></script>
+  <script>
+    SiteMeta.init({
+      title: 'Pocket Sort - game.cocy.io',
+      description: '작은 물건을 포켓별로 정리하는 모바일 퍼즐 게임',
+      url: 'https://game.cocy.io/pocket-sort/'
+    });
+  </script>
+</body>
+</html>
