@@ -1,5 +1,19 @@
 [
   {
+    "title": "Merge Drop",
+    "icon": "https://game.cocy.io/merge-drop/icon.svg",
+    "url": "https://game.cocy.io/merge-drop/",
+    "desc": "컬럼에 조각을 떨어뜨려 3개 이상 합치는 모바일 머지 퍼즐",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "puzzle"
+  },
+  {
     "title": "Pocket Sort",
     "icon": "https://game.cocy.io/pocket-sort/icon.svg",
     "url": "https://game.cocy.io/pocket-sort/",

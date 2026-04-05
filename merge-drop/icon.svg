@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Merge Drop icon</title>
+  <desc id="desc">Stacked glowing merge orbs with a warm sunrise background.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff1bf"/>
+      <stop offset="48%" stop-color="#ff9f68"/>
+      <stop offset="100%" stop-color="#14324d"/>
+    </linearGradient>
+    <radialGradient id="orbA" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#74d99f"/>
+      <stop offset="100%" stop-color="#1e5f51"/>
+    </radialGradient>
+    <radialGradient id="orbB" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#ffd166"/>
+      <stop offset="100%" stop-color="#8a5a17"/>
+    </radialGradient>
+    <radialGradient id="orbC" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#5ad1e8"/>
+      <stop offset="100%" stop-color="#1e5570"/>
+    </radialGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <circle cx="38" cy="82" r="22" fill="url(#orbA)"/>
+  <circle cx="64" cy="52" r="24" fill="url(#orbB)"/>
+  <circle cx="90" cy="82" r="22" fill="url(#orbC)"/>
+  <g fill="#0d2436" font-family="Trebuchet MS, sans-serif" font-size="18" font-weight="700" text-anchor="middle">
+    <text x="38" y="88">1</text>
+    <text x="64" y="58">2</text>
+    <text x="90" y="88">3</text>
+  </g>
+</svg>

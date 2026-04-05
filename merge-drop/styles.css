@@ -1,0 +1,560 @@
+:root {
+  --bg-top: #fff6df;
+  --bg-bottom: #14324d;
+  --panel: rgba(10, 28, 47, 0.82);
+  --panel-soft: rgba(14, 42, 66, 0.72);
+  --stroke: rgba(255, 255, 255, 0.12);
+  --text: #eff8ff;
+  --muted: #b6d4e8;
+  --warm: #ffd166;
+  --accent: #ff8c61;
+  --teal: #58c6d9;
+  --lime: #87dc86;
+  --shadow: 0 24px 60px rgba(3, 12, 22, 0.32);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(255, 209, 102, 0.42), transparent 24%),
+    radial-gradient(circle at top right, rgba(88, 198, 217, 0.28), transparent 22%),
+    linear-gradient(180deg, var(--bg-top) 0%, #274f66 22%, var(--bg-bottom) 100%);
+}
+
+button {
+  font: inherit;
+}
+
+.app-shell {
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  padding: 16px 14px 36px;
+}
+
+.glass {
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.hero,
+.tutorial-card,
+.panel,
+.board-panel,
+.debug-panel,
+.end-card {
+  border-radius: 28px;
+}
+
+.hero {
+  padding: 18px;
+  display: grid;
+  gap: 16px;
+}
+
+.hero-copy h1,
+.board-head h2,
+.panel-head h2,
+.end-card h2 {
+  margin: 0;
+}
+
+.hero-copy h1 {
+  font-size: clamp(2rem, 9vw, 3.4rem);
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--warm);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.hero-summary {
+  margin: 12px 0 0;
+  max-width: 38rem;
+  color: #e7f5ff;
+  line-height: 1.55;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.metric-card,
+.mini-stat {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 14px 12px;
+}
+
+.metric-card strong,
+.mini-stat strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.25rem;
+}
+
+.metric-label,
+.mini-stat span,
+.board-tip,
+.progress-text,
+.status-line,
+.goal-label,
+.chip,
+.queue-seed {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.tutorial-card {
+  margin-top: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tutorial-card.hidden,
+.end-sheet.hidden {
+  display: none;
+}
+
+.tutorial-title {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.tutorial-text {
+  margin: 0;
+  line-height: 1.55;
+  color: #eff8ff;
+}
+
+.play-layout {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.sidebar {
+  display: grid;
+  gap: 14px;
+}
+
+.panel,
+.board-panel {
+  padding: 16px;
+}
+
+.panel-head,
+.board-head,
+.queue-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.chip.muted {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.current-piece {
+  margin-top: 14px;
+}
+
+.piece-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.piece-badge {
+  width: 68px;
+  aspect-ratio: 1;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.9), var(--piece-color));
+  box-shadow: inset 0 0 24px rgba(255, 255, 255, 0.24), 0 0 32px var(--piece-glow);
+}
+
+.piece-badge strong {
+  color: #0a1d2d;
+  font-size: 1.4rem;
+}
+
+.piece-meta p {
+  margin: 0;
+}
+
+.piece-meta .piece-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.piece-meta .piece-help {
+  margin-top: 4px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.queue-block {
+  margin-top: 16px;
+}
+
+.queue-list {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.queue-item {
+  border-radius: 18px;
+  padding: 12px 8px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.queue-item .queue-badge {
+  width: 42px;
+  aspect-ratio: 1;
+  margin: 0 auto 8px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.9), var(--piece-color));
+  box-shadow: 0 0 22px var(--piece-glow);
+  color: #0a1d2d;
+  font-weight: 800;
+}
+
+.queue-item strong {
+  display: block;
+  font-size: 0.88rem;
+}
+
+.queue-item span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.progress-rail {
+  margin-top: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--lime), var(--warm), var(--accent));
+  transition: width 220ms ease;
+}
+
+.progress-text,
+.status-line {
+  margin: 12px 0 0;
+  line-height: 1.5;
+}
+
+.stats-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.board-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.drop-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.drop-btn,
+.primary-btn,
+.ghost-btn {
+  border: none;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+
+.drop-btn {
+  border-radius: 18px;
+  padding: 12px 8px;
+  color: var(--text);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.drop-btn strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.drop-btn span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.drop-btn:hover,
+.drop-btn:focus-visible,
+.drop-btn.active {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.24);
+}
+
+.drop-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.board-frame {
+  position: relative;
+  padding: 14px;
+  border-radius: 26px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(6, 22, 38, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.board-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 18%, rgba(255, 209, 102, 0.14), transparent 20%),
+    radial-gradient(circle at 84% 12%, rgba(88, 198, 217, 0.16), transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 40%);
+  pointer-events: none;
+}
+
+.board-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.board-cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.board-cell.active-column {
+  background: rgba(255, 209, 102, 0.12);
+  border-color: rgba(255, 209, 102, 0.26);
+}
+
+.board-cell::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent);
+  opacity: 0.65;
+}
+
+.orb {
+  position: absolute;
+  inset: 8px;
+  z-index: 1;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.88), var(--piece-color) 58%, rgba(5, 16, 28, 0.76));
+  box-shadow: 0 0 28px var(--piece-glow), inset 0 0 18px rgba(255, 255, 255, 0.24);
+  color: #0b1d2d;
+}
+
+.orb-number {
+  position: relative;
+  z-index: 2;
+  font-size: clamp(1rem, 4vw, 1.32rem);
+  font-weight: 900;
+}
+
+.orb-tag {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 2;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: rgba(10, 29, 45, 0.78);
+  color: white;
+  font-size: 0.56rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.orb.is-drop {
+  animation: dropPulse 280ms ease;
+}
+
+.orb.is-merge {
+  animation: mergePulse 420ms ease;
+}
+
+.debug-panel {
+  margin-top: 14px;
+  padding: 14px 16px;
+}
+
+.debug-panel summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.debug-panel pre {
+  margin: 12px 0 0;
+  max-height: 320px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.24);
+  color: #dff5ff;
+  font-size: 0.76rem;
+}
+
+.primary-btn,
+.ghost-btn {
+  border-radius: 18px;
+  padding: 14px 16px;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, var(--warm), var(--accent));
+  color: #1b2230;
+  font-weight: 900;
+}
+
+.ghost-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.primary-btn:hover,
+.ghost-btn:hover {
+  transform: translateY(-1px);
+}
+
+.end-sheet {
+  position: fixed;
+  inset: 0;
+  padding: 18px;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 14, 24, 0.54);
+}
+
+.end-card {
+  width: min(100%, 360px);
+  padding: 22px;
+}
+
+.end-summary {
+  margin: 10px 0 18px;
+  line-height: 1.6;
+  color: #ebf7ff;
+}
+
+@keyframes dropPulse {
+  0% { transform: scale(0.88); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes mergePulse {
+  0% { transform: scale(0.76); }
+  50% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+@media (min-width: 900px) {
+  .hero {
+    grid-template-columns: 1.5fr auto;
+    align-items: start;
+  }
+
+  .hero-actions {
+    align-self: start;
+  }
+
+  .metrics {
+    grid-column: 1 / -1;
+  }
+
+  .play-layout {
+    grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .board-panel {
+    min-height: 100%;
+  }
+}
