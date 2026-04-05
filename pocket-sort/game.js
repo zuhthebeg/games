@@ -115,7 +115,7 @@
     ui.remainingLabel.textContent = String(state.tray.length);
     ui.messageLine.textContent = state.isCleared ? '정리 완료. 다음 레벨로 넘어가세요.' : (reasonText[state.lastAction.reason] || '정리해보세요.');
     const selected = selectedItemMeta();
-    ui.selectionHint.textContent = selected ? `${selected.emoji} ${selected.label} 선택됨` : '선택된 물건 없음';
+    ui.selectionHint.textContent = selected ? `${selected.emoji} ${selected.label} 선택됨 → 같은 그림 포켓을 누르세요` : '선택된 물건 없음';
     ui.nextBtn.disabled = !state.isCleared;
     ui.clearBanner.classList.toggle('hidden', !state.showClear);
     ui.debugState.textContent = Engine.serializeForDebug(state);

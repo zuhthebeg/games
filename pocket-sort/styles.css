@@ -132,12 +132,13 @@ h2 { font-size: 1rem; }
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 .bin.valid-target {
-  border-color: rgba(52, 211, 153, 0.8);
-  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.16);
-  transform: translateY(-2px);
+  border-color: rgba(52, 211, 153, 0.92);
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18), 0 0 24px rgba(52, 211, 153, 0.22);
+  transform: translateY(-2px) scale(1.01);
 }
 .bin.invalid-target {
-  border-color: rgba(251, 113, 133, 0.75);
+  border-color: rgba(251, 113, 133, 0.45);
+  opacity: 0.52;
 }
 .bin.completed {
   border-color: rgba(52, 211, 153, 0.86);
