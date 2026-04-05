@@ -35,10 +35,18 @@
     </section>
 
     <section class="hint-card">
-      <p id="messageLine">같은 물건끼리 한 포켓에 모아 정리해.</p>
+      <p class="howto-title">플레이 방법</p>
+      <ol class="howto-list">
+        <li>옮길 포켓을 먼저 누른다.</li>
+        <li>파랗게 선택되면 목적지 포켓을 누른다.</li>
+        <li>빈 포켓이나 같은 물건 위에만 이동할 수 있다.</li>
+        <li>같은 물건으로 꽉 차면 그 포켓은 잠긴다.</li>
+      </ol>
+      <p id="messageLine">먼저 옮길 포켓을 누르세요.</p>
     </section>
 
     <section class="board-wrap">
+      <div class="move-hint" id="moveHint" data-qa="move-hint">선택 가능한 포켓을 먼저 누르세요.</div>
       <div id="board" class="board" aria-label="Pocket board"></div>
     </section>
 
