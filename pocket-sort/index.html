@@ -11,60 +11,71 @@
 <body>
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <main class="app-shell" data-qa="pocket-sort-app">
-    <header class="topbar">
+    <header class="topbar glass">
       <div>
-        <p class="eyebrow">Pocket Objects Puzzle</p>
+        <p class="eyebrow">Pocket Objects Organizer</p>
         <h1>Pocket Sort</h1>
       </div>
-      <button id="restartBtn" class="ghost-btn" type="button">다시</button>
+      <button id="restartBtn" class="ghost-btn" type="button">다시 시작</button>
     </header>
 
-    <section class="status-card">
+    <section class="hero glass">
       <div>
-        <span class="label">레벨</span>
+        <p class="eyebrow">LEVEL</p>
         <strong id="levelLabel">1 / 20</strong>
       </div>
       <div>
-        <span class="label">이동</span>
+        <p class="eyebrow">MOVES</p>
         <strong id="moveLabel">0</strong>
       </div>
       <div>
-        <span class="label">정리 완료</span>
-        <strong id="lockLabel">0</strong>
+        <p class="eyebrow">LEFT</p>
+        <strong id="remainingLabel">0</strong>
       </div>
     </section>
 
-    <section class="hint-card">
+    <section class="howto glass">
       <p class="howto-title">플레이 방법</p>
-      <ol class="howto-list">
-        <li>옮길 포켓을 먼저 누른다.</li>
-        <li>파랗게 선택되면 목적지 포켓을 누른다.</li>
-        <li>빈 포켓이나 같은 물건 위에만 이동할 수 있다.</li>
-        <li>같은 물건으로 꽉 차면 그 포켓은 잠긴다.</li>
+      <ol>
+        <li>아래 트레이에서 물건 하나를 누른다.</li>
+        <li>위쪽에서 같은 그림이 있는 포켓을 누른다.</li>
+        <li>모든 물건을 제자리 포켓에 넣으면 클리어.</li>
       </ol>
-      <p id="messageLine">먼저 옮길 포켓을 누르세요.</p>
+      <p id="messageLine" class="message-line">아래에서 물건 하나를 선택하세요.</p>
     </section>
 
-    <section class="board-wrap">
-      <div class="move-hint" id="moveHint" data-qa="move-hint">선택 가능한 포켓을 먼저 누르세요.</div>
-      <div id="board" class="board" aria-label="Pocket board"></div>
+    <section class="bins-section">
+      <div class="section-head">
+        <h2>목표 포켓</h2>
+        <span id="selectionHint" class="selection-hint">선택된 물건 없음</span>
+      </div>
+      <div id="binGrid" class="bin-grid" aria-label="target pockets"></div>
+    </section>
+
+    <section class="tray-section glass">
+      <div class="section-head">
+        <h2>정리할 물건</h2>
+        <span class="tray-caption">같은 그림 포켓으로 보내면 된다</span>
+      </div>
+      <div id="trayGrid" class="tray-grid" aria-label="items tray"></div>
     </section>
 
     <section class="actions">
-      <button id="nextBtn" class="primary-btn" type="button">다음 레벨</button>
+      <button id="nextBtn" class="primary-btn" type="button" disabled>다음 레벨</button>
     </section>
 
-    <section class="legend" id="legend"></section>
+    <div id="clearBanner" class="clear-banner hidden" role="dialog" aria-live="polite">
+      <div>
+        <p class="clear-title">정리 완료</p>
+        <p class="clear-sub">이번 포켓은 끝났다. 다음 레벨로 넘어간다.</p>
+      </div>
+      <button id="bannerNextBtn" class="primary-btn" type="button">다음 레벨</button>
+    </div>
 
-    <details class="debug-panel" open>
+    <details class="debug-panel glass">
       <summary>QA Debug State</summary>
       <pre id="debugState" data-qa="debug-json"></pre>
     </details>
-
-    <div id="clearBanner" class="clear-banner hidden" role="dialog" aria-live="polite">
-      <p>포켓 정리 완료.</p>
-      <button id="bannerNextBtn" class="primary-btn" type="button">다음 레벨</button>
-    </div>
   </main>
 
   <script src="./levels.js"></script>
@@ -74,7 +85,7 @@
   <script>
     SiteMeta.init({
       title: 'Pocket Sort - game.cocy.io',
-      description: '작은 물건을 포켓별로 정리하는 모바일 퍼즐 게임',
+      description: '물건을 맞는 포켓으로 보내는 모바일 정리 퍼즐',
       url: 'https://game.cocy.io/pocket-sort/'
     });
   </script>

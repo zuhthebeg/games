@@ -6,26 +6,26 @@
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   const LEVELS = [
-    { id: 1, name: 'Pocket Warmup', pockets: [['lip', 'usb'], ['battery'], ['usb', 'battery'], ['ring', 'card'], ['card', 'ring', 'lip'], []] },
-    { id: 2, name: 'Key Pair', pockets: [['key', 'lip'], ['usb', 'key'], ['battery', 'usb'], ['lip', 'battery'], ['ring', 'ring'], []] },
-    { id: 3, name: 'Card Stack', pockets: [['card', 'ring'], ['battery', 'card'], ['ring', 'usb'], ['usb', 'battery'], ['lip', 'lip'], []] },
-    { id: 4, name: 'Triple Pocket', pockets: [['lip', 'usb', 'battery'], ['battery', 'lip', 'usb'], ['ring', 'card', 'ring'], ['card', 'key', 'key'], [], []] },
-    { id: 5, name: 'Mix and Match', pockets: [['key', 'battery', 'lip'], ['usb', 'key', 'card'], ['battery', 'card', 'usb'], ['ring', 'lip', 'ring'], [], []] },
-    { id: 6, name: 'Cable Nest', pockets: [['usb', 'ring', 'battery'], ['battery', 'lip', 'card'], ['card', 'usb', 'key'], ['key', 'ring', 'lip'], [], []] },
-    { id: 7, name: 'Four Item Sort', pockets: [['lip', 'usb', 'battery', 'ring'], ['ring', 'battery', 'usb', 'lip'], ['card', 'key', 'card', 'key'], [], [], []] },
-    { id: 8, name: 'Battery Drawer', pockets: [['battery', 'key', 'ring', 'card'], ['card', 'ring', 'key', 'battery'], ['lip', 'usb', 'lip', 'usb'], [], [], []] },
-    { id: 9, name: 'Travel Kit', pockets: [['usb', 'lip', 'card', 'ring'], ['key', 'battery', 'usb', 'card'], ['ring', 'lip', 'battery', 'key'], [], [], []] },
-    { id: 10, name: 'Pocket Grid', pockets: [['lip', 'card', 'usb', 'battery'], ['battery', 'usb', 'ring', 'lip'], ['card', 'ring', 'key', 'key'], [], [], []] },
-    { id: 11, name: 'Six Things', pockets: [['lip', 'usb', 'battery', 'ring'], ['card', 'key', 'lip', 'usb'], ['battery', 'ring', 'card', 'key'], [], [], []] },
-    { id: 12, name: 'Mirror Toss', pockets: [['ring', 'card', 'usb', 'lip'], ['lip', 'usb', 'card', 'ring'], ['key', 'battery', 'key', 'battery'], [], [], []] },
-    { id: 13, name: 'Tight Drawer', pockets: [['usb', 'battery', 'card', 'key'], ['ring', 'lip', 'usb', 'battery'], ['key', 'card', 'lip', 'ring'], [], [], []] },
-    { id: 14, name: 'Double Pocket', pockets: [['lip', 'battery', 'ring', 'key'], ['card', 'usb', 'lip', 'battery'], ['key', 'ring', 'card', 'usb'], [], [], []] },
-    { id: 15, name: 'Rush Hour', pockets: [['card', 'lip', 'battery', 'usb'], ['ring', 'key', 'card', 'lip'], ['usb', 'battery', 'ring', 'key'], [], [], []] },
-    { id: 16, name: 'Seven Objects', pockets: [['lip', 'usb', 'battery', 'ring'], ['card', 'key', 'earbud', 'lip'], ['usb', 'battery', 'ring', 'card'], ['key', 'earbud'], [], []] },
-    { id: 17, name: 'Earbud Tangle', pockets: [['earbud', 'key', 'card', 'usb'], ['battery', 'lip', 'ring', 'earbud'], ['usb', 'card', 'battery', 'key'], ['ring', 'lip'], [], []] },
-    { id: 18, name: 'Pocket Overflow', pockets: [['lip', 'card', 'earbud', 'ring'], ['usb', 'battery', 'key', 'lip'], ['ring', 'earbud', 'card', 'usb'], ['key', 'battery'], [], []] },
-    { id: 19, name: 'Collector Case', pockets: [['battery', 'earbud', 'lip', 'card'], ['ring', 'usb', 'battery', 'key'], ['card', 'lip', 'ring', 'earbud'], ['key', 'usb'], [], []] },
-    { id: 20, name: 'Final Pocket', pockets: [['key', 'ring', 'earbud', 'battery'], ['card', 'lip', 'usb', 'key'], ['battery', 'earbud', 'ring', 'card'], ['usb', 'lip'], [], []] }
+    { id: 1, name: 'Warmup', bins: ['lip', 'usb'], tray: ['usb', 'lip', 'usb', 'lip'] },
+    { id: 2, name: 'Daily Kit', bins: ['key', 'battery'], tray: ['battery', 'key', 'key', 'battery'] },
+    { id: 3, name: 'Desk Reset', bins: ['card', 'ring'], tray: ['ring', 'card', 'card', 'ring'] },
+    { id: 4, name: 'Pocket Trio', bins: ['lip', 'usb', 'battery'], tray: ['battery', 'usb', 'lip', 'lip', 'usb', 'battery'] },
+    { id: 5, name: 'Beauty Tray', bins: ['lip', 'ring', 'card'], tray: ['ring', 'lip', 'card', 'lip', 'ring', 'card'] },
+    { id: 6, name: 'Tech Bag', bins: ['usb', 'battery', 'key'], tray: ['key', 'usb', 'battery', 'battery', 'usb', 'key'] },
+    { id: 7, name: 'Four Fit', bins: ['lip', 'usb', 'battery', 'ring'], tray: ['ring', 'lip', 'battery', 'usb', 'battery', 'ring', 'usb', 'lip'] },
+    { id: 8, name: 'Travel Case', bins: ['card', 'key', 'battery', 'usb'], tray: ['key', 'usb', 'card', 'battery', 'usb', 'battery', 'key', 'card'] },
+    { id: 9, name: 'Accessorize', bins: ['ring', 'lip', 'card', 'earbud'], tray: ['earbud', 'card', 'lip', 'ring', 'card', 'earbud', 'ring', 'lip'] },
+    { id: 10, name: 'Pocket Grid', bins: ['lip', 'usb', 'battery', 'card'], tray: ['battery', 'lip', 'card', 'usb', 'usb', 'card', 'lip', 'battery'] },
+    { id: 11, name: 'Five Labels', bins: ['lip', 'usb', 'battery', 'ring', 'card'], tray: ['card', 'ring', 'battery', 'usb', 'lip', 'lip', 'usb', 'battery', 'ring', 'card'] },
+    { id: 12, name: 'Office Loadout', bins: ['card', 'key', 'usb', 'earbud', 'battery'], tray: ['battery', 'earbud', 'usb', 'key', 'card', 'card', 'key', 'usb', 'earbud', 'battery'] },
+    { id: 13, name: 'Color Pass', bins: ['lip', 'ring', 'earbud', 'key', 'battery'], tray: ['earbud', 'lip', 'battery', 'key', 'ring', 'ring', 'key', 'lip', 'earbud', 'battery'] },
+    { id: 14, name: 'Weekend Bag', bins: ['card', 'ring', 'usb', 'key', 'lip'], tray: ['lip', 'key', 'usb', 'ring', 'card', 'ring', 'card', 'usb', 'lip', 'key'] },
+    { id: 15, name: 'Rush Order', bins: ['battery', 'card', 'earbud', 'ring', 'usb'], tray: ['usb', 'ring', 'earbud', 'card', 'battery', 'battery', 'card', 'usb', 'ring', 'earbud'] },
+    { id: 16, name: 'Six Pocket', bins: ['lip', 'usb', 'battery', 'ring', 'card', 'key'], tray: ['key', 'card', 'ring', 'battery', 'usb', 'lip', 'lip', 'usb', 'battery', 'ring', 'card', 'key'] },
+    { id: 17, name: 'Audio Pack', bins: ['earbud', 'usb', 'battery', 'card', 'ring', 'lip'], tray: ['lip', 'ring', 'card', 'battery', 'usb', 'earbud', 'earbud', 'usb', 'battery', 'card', 'ring', 'lip'] },
+    { id: 18, name: 'Collector', bins: ['key', 'card', 'earbud', 'lip', 'battery', 'usb'], tray: ['usb', 'battery', 'lip', 'earbud', 'card', 'key', 'key', 'card', 'earbud', 'lip', 'battery', 'usb'] },
+    { id: 19, name: 'Last Call', bins: ['ring', 'key', 'card', 'battery', 'earbud', 'lip'], tray: ['lip', 'earbud', 'battery', 'card', 'key', 'ring', 'ring', 'key', 'card', 'battery', 'earbud', 'lip'] },
+    { id: 20, name: 'Final Pocket', bins: ['lip', 'usb', 'battery', 'ring', 'card', 'earbud'], tray: ['earbud', 'card', 'ring', 'battery', 'usb', 'lip', 'lip', 'usb', 'battery', 'ring', 'card', 'earbud'] }
   ];
 
   return { LEVELS };

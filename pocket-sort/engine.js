@@ -7,126 +7,103 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (levelsModule) {
   const LEVELS = levelsModule.LEVELS;
 
-  function clonePockets(pockets) {
-    return pockets.map((pocket) => pocket.slice());
+  function buildBins(level) {
+    return level.bins.map((type) => ({
+      type,
+      items: [],
+      targetCount: level.tray.filter((item) => item === type).length,
+    }));
   }
 
-  function getCapacity(level) {
-    return level.capacity || Math.max(2, ...level.pockets.map((pocket) => pocket.length));
+  function isCleared(bins, tray) {
+    return tray.length === 0 && bins.every((bin) => bin.items.length === bin.targetCount);
   }
 
-  function isUniform(pocket) {
-    return pocket.length > 0 && pocket.every((item) => item === pocket[0]);
-  }
-
-  function getLockedSet(pockets, capacity) {
-    const locked = new Set();
-    pockets.forEach((pocket, index) => {
-      if (pocket.length === capacity && isUniform(pocket)) {
-        locked.add(index);
-      }
-    });
-    return locked;
-  }
-
-  function isCleared(pockets, capacity) {
-    return pockets.every((pocket) => pocket.length === 0 || (pocket.length === capacity && isUniform(pocket)));
+  function cloneStateShape(state) {
+    return {
+      ...state,
+      tray: state.tray.slice(),
+      bins: state.bins.map((bin) => ({ ...bin, items: bin.items.slice() })),
+    };
   }
 
   function createGameState(levelList = LEVELS, levelIndex = 0) {
     const level = levelList[levelIndex];
-    const capacity = getCapacity(level);
-    const pockets = clonePockets(level.pockets);
-    const locked = getLockedSet(pockets, capacity);
+    const bins = buildBins(level);
+    const tray = level.tray.slice();
     return {
       levels: levelList,
       levelIndex,
       level,
-      capacity,
-      pockets,
-      locked,
-      selectedPocket: null,
+      bins,
+      tray,
+      selectedItemIndex: null,
+      selectedItem: null,
       moveCount: 0,
-      lastMove: { valid: true, reason: 'ready', from: null, to: null, item: null },
-      isCleared: isCleared(pockets, capacity),
-      showClear: isCleared(pockets, capacity),
-      lockedCount: locked.size,
+      lastAction: { valid: true, reason: 'ready', item: null, bin: null },
+      isCleared: isCleared(bins, tray),
+      showClear: isCleared(bins, tray),
     };
   }
 
-  function withDerived(state, patch) {
+  function withState(state, patch) {
     const next = { ...state, ...patch };
-    next.locked = getLockedSet(next.pockets, next.capacity);
-    next.lockedCount = next.locked.size;
-    next.isCleared = isCleared(next.pockets, next.capacity);
+    next.isCleared = isCleared(next.bins, next.tray);
     next.showClear = next.isCleared;
     return next;
   }
 
-  function invalidMove(state, reason, from, to) {
-    return withDerived(state, {
-      lastMove: { valid: false, reason, from, to, item: null },
-      selectedPocket: from,
+  function invalid(state, reason, item = null, bin = null) {
+    return withState(state, {
+      lastAction: { valid: false, reason, item, bin },
     });
   }
 
-  function selectPocket(state, pocketIndex) {
-    const pockets = clonePockets(state.pockets);
-    const pocket = pockets[pocketIndex];
-    if (!pocket) {
-      return invalidMove(state, 'missing-pocket', state.selectedPocket, pocketIndex);
+  function selectItem(state, itemIndex) {
+    if (itemIndex < 0 || itemIndex >= state.tray.length) {
+      return invalid(state, 'missing-item');
     }
-
-    if (state.selectedPocket === null) {
-      if (pocket.length === 0) {
-        return invalidMove(state, 'empty-pocket', null, pocketIndex);
-      }
-      if (state.locked.has(pocketIndex)) {
-        return invalidMove(state, 'locked-pocket', null, pocketIndex);
-      }
-      return withDerived(state, {
-        selectedPocket: pocketIndex,
-        lastMove: { valid: true, reason: 'selected', from: pocketIndex, to: null, item: pocket[pocket.length - 1] },
+    if (state.selectedItemIndex === itemIndex) {
+      return withState(state, {
+        selectedItemIndex: null,
+        selectedItem: null,
+        lastAction: { valid: true, reason: 'deselected', item: null, bin: null },
       });
     }
+    return withState(state, {
+      selectedItemIndex: itemIndex,
+      selectedItem: state.tray[itemIndex],
+      lastAction: { valid: true, reason: 'selected', item: state.tray[itemIndex], bin: null },
+    });
+  }
 
-    const fromIndex = state.selectedPocket;
-    if (fromIndex === pocketIndex) {
-      return withDerived(state, {
-        selectedPocket: null,
-        lastMove: { valid: true, reason: 'deselected', from: fromIndex, to: pocketIndex, item: null },
-      });
+  function placeSelectedIntoBin(state, binIndex) {
+    if (state.selectedItemIndex === null || state.selectedItem === null) {
+      return invalid(state, 'no-item-selected');
+    }
+    if (binIndex < 0 || binIndex >= state.bins.length) {
+      return invalid(state, 'missing-bin', state.selectedItem, null);
     }
 
-    if (state.locked.has(fromIndex)) {
-      return invalidMove(state, 'locked-pocket', fromIndex, pocketIndex);
+    const next = cloneStateShape(state);
+    const bin = next.bins[binIndex];
+    const item = next.selectedItem;
+
+    if (bin.type !== item) {
+      return invalid(state, 'wrong-bin', item, binIndex);
+    }
+    if (bin.items.length >= bin.targetCount) {
+      return invalid(state, 'bin-full', item, binIndex);
     }
 
-    const fromPocket = pockets[fromIndex];
-    const toPocket = pockets[pocketIndex];
-    const item = fromPocket[fromPocket.length - 1];
+    next.tray.splice(next.selectedItemIndex, 1);
+    bin.items.push(item);
 
-    if (!item) {
-      return invalidMove(state, 'empty-pocket', fromIndex, pocketIndex);
-    }
-    if (state.locked.has(pocketIndex)) {
-      return invalidMove(state, 'locked-pocket', fromIndex, pocketIndex);
-    }
-    if (toPocket.length >= state.capacity) {
-      return invalidMove(state, 'pocket-full', fromIndex, pocketIndex);
-    }
-    if (toPocket.length > 0 && toPocket[toPocket.length - 1] !== item) {
-      return invalidMove(state, 'color-mismatch', fromIndex, pocketIndex);
-    }
-
-    fromPocket.pop();
-    toPocket.push(item);
-
-    return withDerived(state, {
-      pockets,
-      selectedPocket: null,
-      moveCount: state.moveCount + 1,
-      lastMove: { valid: true, reason: 'moved', from: fromIndex, to: pocketIndex, item },
+    return withState(next, {
+      selectedItemIndex: null,
+      selectedItem: null,
+      moveCount: next.moveCount + 1,
+      lastAction: { valid: true, reason: 'placed', item, bin: binIndex },
     });
   }
 
@@ -142,21 +119,25 @@
   function serializeForDebug(state) {
     return JSON.stringify({
       level: state.levelIndex + 1,
-      capacity: state.capacity,
-      board: state.pockets,
-      selectedPocket: state.selectedPocket,
+      tray: state.tray,
+      bins: state.bins.map((bin) => ({
+        type: bin.type,
+        items: bin.items,
+        targetCount: bin.targetCount,
+      })),
+      selectedItemIndex: state.selectedItemIndex,
+      selectedItem: state.selectedItem,
       moveCount: state.moveCount,
-      lockedPockets: Array.from(state.locked),
-      lockedCount: state.lockedCount,
       isCleared: state.isCleared,
-      lastMove: state.lastMove,
+      lastAction: state.lastAction,
     }, null, 2);
   }
 
   return {
     LEVELS,
     createGameState,
-    selectPocket,
+    selectItem,
+    placeSelectedIntoBin,
     restartLevel,
     nextLevel,
     serializeForDebug,
