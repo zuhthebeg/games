@@ -9,6 +9,7 @@
     chainValue: document.getElementById('chainValue'),
     tutorialCard: document.getElementById('tutorialCard'),
     tutorialBtn: document.getElementById('tutorialBtn'),
+    reopenTutorialBtn: document.getElementById('reopenTutorialBtn'),
     restartBtn: document.getElementById('restartBtn'),
     openingCount: document.getElementById('openingCount'),
     currentPiece: document.getElementById('currentPiece'),
@@ -124,6 +125,11 @@
   function dismissTutorial() {
     tutorialVisible = false;
     localStorage.setItem(TUTORIAL_KEY, '1');
+    render();
+  }
+
+  function reopenTutorial() {
+    tutorialVisible = true;
     render();
   }
 
@@ -320,6 +326,7 @@
   }
 
   ui.tutorialBtn.addEventListener('click', dismissTutorial);
+  ui.reopenTutorialBtn.addEventListener('click', reopenTutorial);
   ui.restartBtn.addEventListener('click', restart);
   ui.endRestartBtn.addEventListener('click', restart);
 

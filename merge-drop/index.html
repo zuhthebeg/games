@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0">
   <title>Merge Drop</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=20250406a">
+  <link rel="stylesheet" href="./styles.css?v=20250407a">
 </head>
 <body>
   <main class="app-shell" data-qa="merge-drop-app">
@@ -19,6 +19,8 @@
         <p class="hero-summary">컬럼을 눌러 조각을 떨어뜨리고, 같은 단계 3개 이상을 붙여 상위 블룸으로 진화시키세요.</p>
       </div>
       <div class="hero-actions">
+        <span id="buildTag" class="build-tag" aria-label="현재 빌드">빌드 20250407a</span>
+        <button id="reopenTutorialBtn" class="ghost-btn" type="button">튜토리얼 다시 보기</button>
         <button id="restartBtn" class="ghost-btn" type="button">다시 시작</button>
       </div>
       <div class="metrics">
@@ -125,8 +127,8 @@
     </div>
   </main>
 
-  <script src="./engine.js?v=20250406a"></script>
-  <script src="./game.js?v=20250406a"></script>
+  <script src="./engine.js?v=20250407a"></script>
+  <script src="./game.js?v=20250407a"></script>
   <script src="/lib/site-meta.js?v=20260405e"></script>
   <script>
     SiteMeta.init({
