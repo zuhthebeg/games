@@ -1783,14 +1783,15 @@
       if (numpadMode === "single") {
         startRound(v);
       } else {
-        // multi: mpBet 핸들러 재실행
-        const state = window._mpState;
-        if (state && state.gold >= v) {
-          const client = mpUI?.getClient();
-          if (client) {
-            client.sendAction({ type: "BET", amount: v }).catch(() => {});
-          }
+        // multi custom bet: same payload shape as normal mp bet buttons
+        syncGold();
+        if (state.gold < v) {
+          alert(t("goldInsufficient"));
+          return;
         }
+        mpUI?.sendAction({ type: "bet", payload: { amount: v } })
+          .then(() => walletRemove(v))
+          .catch((e) => alert(t("actionFailed", e?.message || "")));
       }
     }
     // 오버레이 바깥 클릭 시 닫기
