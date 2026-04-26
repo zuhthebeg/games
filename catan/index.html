@@ -1044,7 +1044,7 @@
       resetCoreState();
       applyResponsiveDefaults(true);
       setSinglePlayers();
-      generateBoard();
+      generateBoard(null, "standard");
       recalcAllVP();
       state.mode = "single";
       state.screen = "game";
@@ -1058,68 +1058,113 @@
       return state.phase === "setup1" ? arr : arr.slice().reverse();
     }
 
-    function generateBoard(forcedHexes = null) {
+    const MAP_PRESETS = {
+      standard: {
+        id: "standard",
+        name: "기본 맵",
+        minPlayers: 3,
+        maxPlayers: 4,
+        vpGoal: 10,
+        layout: {
+          axial: [
+            { q: -2, r: 0 }, { q: -2, r: 1 }, { q: -2, r: 2 },
+            { q: -1, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: -1, r: 2 },
+            { q: 0, r: -2 }, { q: 0, r: -1 }, { q: 0, r: 0 }, { q: 0, r: 1 }, { q: 0, r: 2 },
+            { q: 1, r: -2 }, { q: 1, r: -1 }, { q: 1, r: 0 }, { q: 1, r: 1 },
+            { q: 2, r: -2 }, { q: 2, r: -1 }, { q: 2, r: 0 }
+          ]
+        },
+        resources: {
+          pool: [
+            "brick", "brick", "brick",
+            "lumber", "lumber", "lumber", "lumber",
+            "wool", "wool", "wool", "wool",
+            "grain", "grain", "grain", "grain",
+            "ore", "ore", "ore",
+            "desert"
+          ]
+        },
+        numbers: {
+          pool: [2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12],
+          noAdjacentSame: true,
+          noAdjacentHot: [6, 8]
+        },
+        ports: {
+          pool: [
+            { type: "generic", ratio: 3 },
+            { type: "generic", ratio: 3 },
+            { type: "generic", ratio: 3 },
+            { type: "generic", ratio: 3 },
+            { type: "brick", ratio: 2 },
+            { type: "lumber", ratio: 2 },
+            { type: "wool", ratio: 2 },
+            { type: "grain", ratio: 2 },
+            { type: "ore", ratio: 2 }
+          ]
+        }
+      }
+    };
+
+    function resolveMapPreset(mapId = "standard") {
+      return MAP_PRESETS[mapId] || MAP_PRESETS.standard;
+    }
+
+    function assignBalancedNumbers(axial, hexTypes, numberConfig) {
+      const numbers = numberConfig.pool || [];
+      const noAdjacentHot = new Set(numberConfig.noAdjacentHot || []);
+      const nonDesert = hexTypes.map((t,i) => ({t,i})).filter(x => x.t !== "desert").map(x => x.i);
+
+      function hexNeighbors(idx) {
+        const h = axial[idx];
+        const dirs = [[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]];
+        return dirs.map(([dq,dr]) => axial.findIndex(a => a.q === h.q + dq && a.r === h.r + dr)).filter(i => i !== -1);
+      }
+
+      for (let attempt = 0; attempt < 50; attempt++) {
+        const pool = shuffle([...numbers]);
+        const assigned = new Array(hexTypes.length).fill(null);
+        for (let j = 0; j < nonDesert.length; j++) assigned[nonDesert[j]] = pool[j];
+
+        let valid = true;
+        for (let i = 0; i < axial.length && valid; i++) {
+          if (assigned[i] === null) continue;
+          for (const ni of hexNeighbors(i)) {
+            if (assigned[ni] === null) continue;
+            if (numberConfig.noAdjacentSame && assigned[i] === assigned[ni]) { valid = false; break; }
+            if (noAdjacentHot.has(assigned[i]) && noAdjacentHot.has(assigned[ni])) { valid = false; break; }
+          }
+        }
+        if (valid) return assigned;
+      }
+
+      const pool = shuffle([...numbers]);
+      const assigned = new Array(hexTypes.length).fill(null);
+      for (let j = 0; j < nonDesert.length; j++) assigned[nonDesert[j]] = pool[j];
+      return assigned;
+    }
+
+    function buildHexesFromPreset(mapId = "standard") {
+      const preset = resolveMapPreset(mapId);
+      const axial = preset.layout.axial.slice().sort((a, b) => (a.r - b.r) || (a.q - b.q));
+      const resourcePool = shuffle(preset.resources.pool);
+      const balancedNumbers = assignBalancedNumbers(axial, resourcePool, preset.numbers);
+      return axial.map((coord, i) => ({
+        index: i,
+        q: coord.q,
+        r: coord.r,
+        type: resourcePool[i],
+        number: balancedNumbers[i],
+        robber: false,
+        vertices: [],
+        edges: []
+      }));
+    }
+
+    function generateBoard(forcedHexes = null, mapId = "standard") {
       if (forcedHexes) {
         state.hexes = forcedHexes.map(h => ({ ...h, robber: !!h.robber, vertices: [], edges: [] }));
       } else {
-        const resourcePool = shuffle([
-          "brick", "brick", "brick",
-          "lumber", "lumber", "lumber", "lumber",
-          "wool", "wool", "wool", "wool",
-          "grain", "grain", "grain", "grain",
-          "ore", "ore", "ore",
-          "desert"
-        ]);
-        const axial = [];
-        for (let r = -2; r <= 2; r += 1) {
-          for (let q = -2; q <= 2; q += 1) {
-            const s = -q - r;
-            if (Math.max(Math.abs(q), Math.abs(r), Math.abs(s)) <= 2) axial.push({ q, r });
-          }
-        }
-        axial.sort((a, b) => (a.r - b.r) || (a.q - b.q));
-
-        // Balanced number placement: 6/8 not adjacent, same numbers not adjacent
-        function hexNeighbors(idx) {
-          const h = axial[idx];
-          const dirs = [[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]];
-          return dirs.map(([dq,dr]) => axial.findIndex(a => a.q === h.q+dq && a.r === h.r+dr)).filter(i => i !== -1);
-        }
-
-        function assignBalancedNumbers(hexTypes) {
-          const numbers = [2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12];
-          const nonDesert = hexTypes.map((t,i) => ({t,i})).filter(x => x.t !== "desert").map(x => x.i);
-          
-          for (let attempt = 0; attempt < 50; attempt++) {
-            const pool = shuffle([...numbers]);
-            const assigned = new Array(hexTypes.length).fill(null);
-            for (let j = 0; j < nonDesert.length; j++) assigned[nonDesert[j]] = pool[j];
-            
-            // Check: 6/8 not adjacent, same number not adjacent
-            let valid = true;
-            for (let i = 0; i < axial.length && valid; i++) {
-              if (assigned[i] === null) continue;
-              for (const ni of hexNeighbors(i)) {
-                if (assigned[ni] === null) continue;
-                if (assigned[i] === assigned[ni]) { valid = false; break; }
-                if ((assigned[i] === 6 || assigned[i] === 8) && (assigned[ni] === 6 || assigned[ni] === 8)) { valid = false; break; }
-              }
-            }
-            if (valid) return assigned;
-          }
-          // Fallback: just shuffled
-          const pool = shuffle([...numbers]);
-          const assigned = new Array(hexTypes.length).fill(null);
-          for (let j = 0; j < nonDesert.length; j++) assigned[nonDesert[j]] = pool[j];
-          return assigned;
-        }
-
-        const balancedNumbers = assignBalancedNumbers(resourcePool);
-        state.hexes = [];
-        for (let i = 0; i < axial.length; i += 1) {
-          const type = resourcePool[i];
-          state.hexes.push({ index: i, q: axial[i].q, r: axial[i].r, type, number: balancedNumbers[i], robber: false, vertices: [], edges: [] });
-        }
+        state.hexes = buildHexesFromPreset(mapId);
       }
 
       const { vertices, edges, centers, bounds, size } = buildGraph(state.hexes);
@@ -1129,35 +1174,27 @@
       state.robber = state.hexes.findIndex(h => h.type === "desert");
       state.hexes.forEach(h => { h.robber = false; });
       if (state.robber >= 0 && state.hexes[state.robber]) state.hexes[state.robber].robber = true;
-      state.ports = generatePorts();
+      state.ports = generatePorts(mapId);
     }
 
-    function generatePorts() {
+    function generatePorts(mapId = "standard") {
+      const preset = resolveMapPreset(mapId);
       // Find perimeter vertices (touching ≤ 2 hexes) sorted by angle from center
       const perim = state.vertices
         .filter(v => v.hexes.length <= 2)
         .map(v => ({ idx: v.index, angle: Math.atan2(v.y, v.x) }))
         .sort((a, b) => a.angle - b.angle);
 
-      // Pick 18 evenly-spaced perimeter vertices → 9 pairs
-      const step = Math.floor(perim.length / 18);
+      const portCount = preset.ports.pool.length;
+      const selectedVertexCount = portCount * 2;
+      const step = Math.floor(perim.length / selectedVertexCount);
       const selected = [];
-      for (let i = 0; i < 18; i++) {
+      for (let i = 0; i < selectedVertexCount; i++) {
         const vi = perim[(i * step) % perim.length];
         selected.push(vi.idx);
       }
 
-      const portTypes = shuffle([
-        { type: "generic", ratio: 3 },
-        { type: "generic", ratio: 3 },
-        { type: "generic", ratio: 3 },
-        { type: "generic", ratio: 3 },
-        { type: "brick", ratio: 2 },
-        { type: "lumber", ratio: 2 },
-        { type: "wool", ratio: 2 },
-        { type: "grain", ratio: 2 },
-        { type: "ore", ratio: 2 }
-      ]);
+      const portTypes = shuffle(preset.ports.pool);
 
       return portTypes.map((pt, i) => ({
         ...pt,
@@ -3562,7 +3599,7 @@
       if (fullPlayers.length < 2 || (!allReady && !aiPlayers.length)) return;
       setMultiplayerPlayers(fullPlayers);
       resetCoreState();
-      generateBoard();
+      generateBoard(null, "standard");
       recalcAllVP();
       mpState.initSent = true;
       await sendGameAction(ACTION.GAME_INIT, {
