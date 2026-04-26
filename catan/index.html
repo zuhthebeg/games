@@ -1971,8 +1971,31 @@
           if ((me.resources[r] || 0) < n) canAccept = false;
         }
         const myResStr = RESOURCES.map(r => `${RESOURCE_ICONS[r]}${me.resources[r]}`).join(" ");
+        const proposalId = action.actionId;
+        const proposerId = proposer.userId || proposer.id;
+        if (!mpState.activeTradeProposals) mpState.activeTradeProposals = new Map();
+        if (mpState.activeTradeProposals.has(proposalId)) return true; // duplicate
+        const dismissBox = { dismiss: null };
+        mpState.activeTradeProposals.set(proposalId, dismissBox);
         (async () => {
-          const accepted = await showTradeProposal(proposer.name, offerStr, wantStr, "거래 하실래요?", myResStr, canAccept);
+          const accepted = await showTradeProposal(proposer.name, offerStr, wantStr, "거래 하실래요?", myResStr, canAccept, dismissBox);
+          // Proposal was consumed by another player accepting first → bail without sending reject
+          if (!mpState.activeTradeProposals.has(proposalId)) {
+            render();
+            return;
+          }
+          if (accepted) {
+            // Re-check resources at click time (state may have changed since dialog opened)
+            for (const [r, n] of Object.entries(want)) {
+              if ((me.resources[r] || 0) < (n || 0)) {
+                mpState.activeTradeProposals.delete(proposalId);
+                showToast("자원이 부족해 거래할 수 없습니다.", 2000);
+                render();
+                return;
+              }
+            }
+          }
+          mpState.activeTradeProposals.delete(proposalId);
           if (accepted) {
             // Execute trade locally
             for (const r of RESOURCES) {
@@ -1981,10 +2004,10 @@
             }
             SFX.build();
             showToast("🤝 거래 성사!", 2000);
-            // Notify proposer
-            mpState.client.sendAction({ type: "TRADE_ACCEPT", playerId: me.userId || me.id, offer, want, actionId: `ta_${Date.now()}` }).catch(()=>{});
+            // Notify proposer + bystanders (proposerId/proposalId let receivers identify the swap)
+            mpState.client.sendAction({ type: "TRADE_ACCEPT", playerId: me.userId || me.id, proposerId, proposalId, offer, want, actionId: `ta_${Date.now()}` }).catch(()=>{});
           } else {
-            mpState.client.sendAction({ type: "TRADE_REJECT", playerId: me.userId || me.id, actionId: `tr_${Date.now()}` }).catch(()=>{});
+            mpState.client.sendAction({ type: "TRADE_REJECT", playerId: me.userId || me.id, proposalId, actionId: `tr_${Date.now()}` }).catch(()=>{});
           }
           render();
         })();
@@ -1993,19 +2016,41 @@
 
       if (type === "TRADE_ACCEPT") {
         const myIdx = localPlayerIndex();
-        if (pIdx === myIdx) return true;
         const accepter = state.players[pIdx];
-        const me = state.players[myIdx];
-        if (!accepter || !me) return true;
+        // proposerId is required; fall back to current player only as a safety net for legacy clients
+        const proposerIdx = action.proposerId
+          ? playerIndexFromAnyId(action.proposerId)
+          : state.currentPlayer;
+        const proposer = proposerIdx >= 0 ? state.players[proposerIdx] : null;
+
+        // Dismiss any open trade-proposal dialog for this proposalId on bystanders
+        const proposalId = action.proposalId;
+        if (proposalId && mpState.activeTradeProposals?.has(proposalId)) {
+          const box = mpState.activeTradeProposals.get(proposalId);
+          mpState.activeTradeProposals.delete(proposalId);
+          if (box?.dismiss) box.dismiss();
+        }
+
+        if (!accepter || !proposer) return true;
+        // Accepter already mutated their own state in TRADE_PROPOSE when clicking accept — skip duplicate
+        if (pIdx === myIdx) return true;
+
         const offer = action.offer || {};
         const want = action.want || {};
+        // Apply swap explicitly to proposer + accepter (NOT to "me" — that was the bug
+        // where bystanders had their own resources deducted into negatives)
         for (const r of RESOURCES) {
-          if (offer[r] > 0) { me.resources[r] -= offer[r]; accepter.resources[r] += offer[r]; }
-          if (want[r] > 0) { accepter.resources[r] -= want[r]; me.resources[r] += want[r]; }
+          if (offer[r] > 0) { proposer.resources[r] -= offer[r]; accepter.resources[r] += offer[r]; }
+          if (want[r] > 0) { accepter.resources[r] -= want[r]; proposer.resources[r] += want[r]; }
         }
         SFX.build();
-        showToast(`🤝 ${accepter.name}이 거래를 수락!`, 2000);
-        state.canEndTurn = true;
+        if (myIdx === proposerIdx) {
+          showToast(`🤝 ${accepter.name}이 거래를 수락!`, 2000);
+          state.canEndTurn = true;
+        } else {
+          showToast(`🤝 ${proposer.name} ↔ ${accepter.name} 거래 성사`, 2000);
+        }
+        render();
         return true;
       }
 
@@ -4011,7 +4056,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       }
     }
 
-    function showTradeProposal(playerName, giveStr, wantStr, dialogue, myResStr = "", canAccept = true) {
+    function showTradeProposal(playerName, giveStr, wantStr, dialogue, myResStr = "", canAccept = true, dismissBox = null) {
       return new Promise(resolve => {
         const overlay = document.createElement("div");
         overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);animation:big-overlay-in 0.3s ease-out;";
@@ -4039,9 +4084,19 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
             </div>
           </div>`;
         document.body.appendChild(overlay);
+        let settled = false;
+        const finish = (val) => {
+          if (settled) return;
+          settled = true;
+          if (overlay.parentNode) overlay.remove();
+          resolve(val);
+        };
         const acceptBtn = overlay.querySelector("#tradeAcceptBtn");
-        if (acceptBtn) acceptBtn.onclick = () => { overlay.remove(); resolve(true); };
-        overlay.querySelector("#tradeRejectBtn").onclick = () => { overlay.remove(); resolve(false); };
+        if (acceptBtn) acceptBtn.onclick = () => finish(true);
+        overlay.querySelector("#tradeRejectBtn").onclick = () => finish(false);
+        if (dismissBox) {
+          dismissBox.dismiss = () => finish(false);
+        }
       });
     }
 
