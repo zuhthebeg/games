@@ -51,6 +51,8 @@ function makeEnv() {
   global.t = (key, msg) => `${key}${msg ? ':' + msg : ''}`;
   global.alert = () => {};
   global.startRound = () => { throw new Error('should not call startRound in multi mode'); };
+  global.MULTI_BET_MAX = 10000;
+  global.currentLang = 'ko';
   return sent;
 }
 
@@ -58,6 +60,15 @@ function makeEnv() {
   const sent = makeEnv();
   numpadConfirm();
   assert.deepStrictEqual(sent[0], { type: 'bet', payload: { amount: 1500 } });
+}
+
+{
+  const sent = makeEnv();
+  global.numpadValue = '50000';
+  global.window._mpState.gold = 100000;
+  global.state.gold = 100000;
+  numpadConfirm();
+  assert.deepStrictEqual(sent[0], { type: 'bet', payload: { amount: 10000 } }, 'multi bet should be capped at MULTI_BET_MAX');
 }
 
 console.log('PASS numpad custom multiplayer bet payload');

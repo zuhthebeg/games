@@ -1609,17 +1609,17 @@
         const raw = btn.dataset.mpBet;
         let amount;
         if (raw === "all") {
-          amount = Math.floor(state.gold);
+          amount = Math.min(Math.floor(state.gold), MULTI_BET_MAX);
           if (amount <= 0) return;
           const msg = currentLang === "ko"
-            ? `${amount.toLocaleString()} 골드 전부 베팅합니다. 진행할까요?`
-            : `Bet all ${amount.toLocaleString()} gold?`;
+            ? `${amount.toLocaleString()} 골드 베팅합니다. 진행할까요? (멀티 최대 ${MULTI_BET_MAX.toLocaleString()})`
+            : `Bet ${amount.toLocaleString()} gold? (multi cap ${MULTI_BET_MAX.toLocaleString()})`;
           if (!confirm(msg)) return;
         } else if (raw === "custom") {
           openNumpad("multi");
           return;
         } else {
-          amount = Number(raw);
+          amount = Math.min(Number(raw), MULTI_BET_MAX);
         }
         if (state.gold < amount) {
           alert(t("goldInsufficient"));
@@ -1735,10 +1735,23 @@
       ).join('');
     }
 
+    // Multi bet is capped at 10K with fixed tiers to avoid server-side
+    // validation mismatches between players' relative wagers.
+    const MULTI_BET_MAX = 10000;
+    const MULTI_BET_TIERS = [100, 500, 1000, 5000, 10000];
+
+    function renderFixedBetButtons(containerId, dataAttr, tiers) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = tiers.map(a =>
+        `<button ${dataAttr}="${a}" style="min-width:0;padding:6px 8px;font-size:0.7rem;">${formatBetLabel(a)}</button>`
+      ).join('');
+    }
+
     function updateBetButtons() {
       const gold = typeof SharedWallet !== 'undefined' ? SharedWallet.gold : 0;
       renderBetButtons(gold, 'dynamicBetButtons', 'data-bet');
-      renderBetButtons(gold, 'dynamicMpBetButtons', 'data-mp-bet');
+      renderFixedBetButtons('dynamicMpBetButtons', 'data-mp-bet', MULTI_BET_TIERS);
     }
 
     // 초기 + 골드 변경 시 업데이트
@@ -1785,12 +1798,18 @@
       } else {
         // multi custom bet: same payload shape as normal mp bet buttons
         syncGold();
-        if (state.gold < v) {
+        const amount = Math.min(v, MULTI_BET_MAX);
+        if (amount < v) {
+          alert(currentLang === "ko"
+            ? `멀티는 ${MULTI_BET_MAX.toLocaleString()} 골드까지만 베팅할 수 있어요.`
+            : `Multi bets are capped at ${MULTI_BET_MAX.toLocaleString()} gold.`);
+        }
+        if (state.gold < amount) {
           alert(t("goldInsufficient"));
           return;
         }
-        mpUI?.sendAction({ type: "bet", payload: { amount: v } })
-          .then(() => walletRemove(v))
+        mpUI?.sendAction({ type: "bet", payload: { amount } })
+          .then(() => walletRemove(amount))
           .catch((e) => alert(t("actionFailed", e?.message || "")));
       }
     }
