@@ -1627,7 +1627,6 @@
         }
         try {
           await mpUI.sendAction({ type: "bet", payload: { amount } });
-          walletRemove(amount);
         } catch (e) {
           alert(t("actionFailed", e.message));
         }
@@ -1809,7 +1808,6 @@
           return;
         }
         mpUI?.sendAction({ type: "bet", payload: { amount } })
-          .then(() => walletRemove(amount))
           .catch((e) => alert(t("actionFailed", e?.message || "")));
       }
     }
