@@ -974,7 +974,9 @@
       lumber: "목재",
       wool: "양털",
       grain: "곡물",
-      ore: "광석"
+      ore: "광석",
+      gold: "금광",
+      strait: "해협"
     };
     let turnTimerInterval = null;
 
@@ -1387,6 +1389,84 @@
       }
     };
 
+    MAP_PRESETS["gold-rush"] = {
+      id: "gold-rush", name: "황금 개척지", stars: 2,
+      description: "금광 타일이 경제를 유연하게 만들어 교역과 도시화가 빨라진다.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 10,
+      specialRules: { gold: true },
+      layout: {
+        axial: [
+          { q: 0, r: -2 }, { q: 1, r: -2 }, { q: 2, r: -2 },
+          { q: -1, r: -1 }, { q: 0, r: -1 }, { q: 1, r: -1 }, { q: 2, r: -1 },
+          { q: -2, r: 0 }, { q: -1, r: 0 }, { q: 0, r: 0 }, { q: 1, r: 0 }, { q: 2, r: 0 },
+          { q: -2, r: 1 }, { q: -1, r: 1 }, { q: 0, r: 1 }, { q: 1, r: 1 },
+          { q: -2, r: 2 }, { q: -1, r: 2 }, { q: 0, r: 2 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","gold","grain",
+          "lumber","ore","wool","brick",
+          "grain","lumber","desert","ore","gold",
+          "wool","grain","lumber","ore",
+          "brick","wool","gold"
+        ],
+        fixed: true
+      },
+      numbers: {
+        pool: [5,2,6,3,8,10,9,12,11,4,8,10,9,4,5,6,3,11],
+        noAdjacentSame: false, noAdjacentHot: []
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},{type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    MAP_PRESETS["twin-continents"] = {
+      id: "twin-continents", name: "쌍둥이 대륙", stars: 2,
+      description: "좁은 해협으로 연결된 두 육괴가 다른 자원 성향을 갖는다.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 11,
+      layout: {
+        axial: [
+          { q: -3, r: 1 }, { q: -3, r: 2 },
+          { q: -2, r: 0 }, { q: -2, r: 1 }, { q: -2, r: 2 },
+          { q: -1, r: 0 }, { q: -1, r: 1 },
+          { q: 0, r: 0, type: "strait" },
+          { q: 1, r: -1 }, { q: 1, r: 0 },
+          { q: 2, r: -2 }, { q: 2, r: -1 }, { q: 2, r: 0 },
+          { q: 3, r: -2 }, { q: 3, r: -1 },
+          { q: 4, r: -3 }, { q: 4, r: -2 }, { q: 4, r: -1 },
+          { q: 5, r: -3 }, { q: 5, r: -2 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","wool",
+          "grain","lumber","brick",
+          "ore","wool",
+          "grain","lumber",
+          "ore","brick","wool",
+          "grain","lumber",
+          "ore","brick","desert",
+          "grain","lumber"
+        ],
+        fixed: true
+      },
+      numbers: {
+        pool: [5,9,10,6,3,8,11,4,12,8,10,5,2,9,4,6,3,11],
+        noAdjacentSame: false, noAdjacentHot: []
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},{type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
     // ────────────────────────────────────────────────────────────────────
 
     function resolveMapPreset(mapId = "standard") {
@@ -1396,7 +1476,7 @@
     function assignBalancedNumbers(axial, hexTypes, numberConfig) {
       const numbers = numberConfig.pool || [];
       const noAdjacentHot = new Set(numberConfig.noAdjacentHot || []);
-      const NON_PROD = new Set(["desert","sea","lake","volcano"]);
+      const NON_PROD = new Set(["desert","sea","lake","volcano","strait"]);
       const nonDesert = hexTypes.map((t,i) => ({t,i})).filter(x => !NON_PROD.has(x.t)).map(x => x.i);
 
       function hexNeighbors(idx) {
@@ -1428,17 +1508,25 @@
       return assigned;
     }
 
+    function resolveProducedResources(tileType, amount, preferredResource = null) {
+      if (tileType !== "gold") return { [tileType]: amount };
+      const chosen = RESOURCES.includes(preferredResource) ? preferredResource : "brick";
+      return { [chosen]: amount };
+    }
+
     function buildHexesFromPreset(mapId = "standard") {
       const preset = resolveMapPreset(mapId);
       const axial = preset.layout.axial.slice().sort((a, b) => (a.r - b.r) || (a.q - b.q));
 
       // coord.type이 설정된 칸은 고정 타일, 나머지만 pool에서 셔플 배치
       const fixedMap = new Map(axial.filter(c => c.type).map(c => [`${c.q},${c.r}`, c.type]));
-      const resourcePool = shuffle(preset.resources.pool.slice());
+      const resourcePool = preset.resources.fixed ? preset.resources.pool.slice() : shuffle(preset.resources.pool.slice());
       let pi = 0;
       const types = axial.map(c => { const ft = fixedMap.get(`${c.q},${c.r}`); return ft !== undefined ? ft : resourcePool[pi++]; });
 
-      const balancedNumbers = assignBalancedNumbers(axial, types, preset.numbers);
+      const balancedNumbers = preset.numbers?.pool?.length === types.filter(t => !["desert","sea","lake","volcano","strait"].includes(t)).length
+        ? preset.numbers.pool.slice()
+        : assignBalancedNumbers(axial, types, preset.numbers);
       return axial.map((coord, i) => ({
         index: i,
         q: coord.q,
@@ -1686,11 +1774,16 @@
           const v = state.vertices[vIdx];
           if (!v.building || v.owner === null) continue;
           const rawAmount = v.building === "city" ? 2 : 1;
-          const amount = Math.min(rawAmount, bankRemaining(hex.type));
-          if (amount <= 0) continue;
-          state.players[v.owner].resources[hex.type] += amount;
-          if (!gains[v.owner]) gains[v.owner] = {};
-          gains[v.owner][hex.type] = (gains[v.owner][hex.type] || 0) + amount;
+          const owner = state.players[v.owner];
+          const preferred = owner?.isAI ? "grain" : "brick";
+          const produced = resolveProducedResources(hex.type, rawAmount, preferred);
+          for (const [resource, requested] of Object.entries(produced)) {
+            const amount = Math.min(requested, bankRemaining(resource));
+            if (amount <= 0) continue;
+            owner.resources[resource] += amount;
+            if (!gains[v.owner]) gains[v.owner] = {};
+            gains[v.owner][resource] = (gains[v.owner][resource] || 0) + amount;
+          }
         }
       }
       // Show detailed gains
