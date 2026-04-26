@@ -99,8 +99,8 @@
       -webkit-overflow-scrolling: touch;
       touch-action: none;
       display: flex;
-      align-items: center;
-      justify-content: center;
+      align-items: flex-start;
+      justify-content: flex-start;
       cursor: grab;
     }
 
@@ -113,6 +113,7 @@
       width: 900px;
       height: 620px;
       flex: 0 0 auto;
+      margin: auto;
     }
 
     .port-label {
@@ -3081,7 +3082,7 @@
         }
 
         // ── LLM AI: trade proposal (skip if low resources) ──────────────
-        if (!state.winner && totalResourceCount(p) >= 3 && totalResourceCount(state.players[localPlayerIndex()]) >= 2) {
+        if (!state.winner && totalResourceCount(p) >= 2 && totalResourceCount(state.players[localPlayerIndex()]) >= 1) {
           try {
             const tradeResult = await aiLLMTrade(pIdx);
             // 거래 안 하는 경우엔 의미없는 멘트 표시하지 않음
@@ -4536,14 +4537,13 @@
 
       const rejectKey = `${pIdx}`;
       const rejects = state.tradeRejectCount[rejectKey] || 0;
-      
-      // 3번 이상 거절당했으면 거래 제안 빈도 낮추기
-      if (rejects >= 3 && Math.random() > 0.3) return { trade: false, dialogue: "" };
-      // 5번 이상이면 거의 안 함
-      if (rejects >= 5 && Math.random() > 0.1) return { trade: false, dialogue: "" };
 
-      const rejectHistory = rejects > 0 ? `\n주의: 이전에 ${rejects}번 거절당했습니다. 같은 제안 반복하지 마세요. 더 매력적인 조건을 제시하거나(2:1 등), 아예 거래 안 하고 건설에 집중하세요.` : "";
-      const strategyHint = rejects >= 2 ? "\n전략: 거절이 많았으니 이번엔 거래 안 하는 것도 좋습니다. 은행 거래나 건설에 집중하세요." : "";
+      // 많이 거절당해도 여전히 적극적으로 제안 — 조건만 개선
+      if (rejects >= 6 && Math.random() > 0.5) return { trade: false, dialogue: "" };
+      if (rejects >= 10 && Math.random() > 0.25) return { trade: false, dialogue: "" };
+
+      const rejectHistory = rejects > 0 ? `\n주의: 이전에 ${rejects}번 거절당했습니다. 같은 제안 반복하지 말고 더 좋은 조건(2:1 등)을 제시하세요.` : "";
+      const strategyHint = "";
 
       const stateStr = `카탄 게임. 당신은 "${p.name}".
 자원: 벽돌${p.resources.brick} 나무${p.resources.lumber} 양${p.resources.wool} 밀${p.resources.grain} 광석${p.resources.ore}
