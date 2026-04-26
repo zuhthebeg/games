@@ -1939,10 +1939,67 @@
 
     function onTurnStart(announce = true) {
       state.turnTimeLeft = 60;
+      state.tradeRejectedThisTurn = false;
+      cancelAutoEndTimer();
       closeTradeDialog();
       if (announce && state.players[state.currentPlayer]) {
         showTurnToast(`${state.players[state.currentPlayer].name}의 차례!`, 2000);
       }
+    }
+
+    let autoEndTimer = null;
+    function cancelAutoEndTimer() {
+      if (autoEndTimer) {
+        clearTimeout(autoEndTimer);
+        autoEndTimer = null;
+      }
+    }
+
+    // Any user click on a button/hex during the auto-end countdown cancels it
+    // so the player can still trade or build if they intend to.
+    document.addEventListener("click", (e) => {
+      if (!autoEndTimer) return;
+      if (e.target.closest("button, .hex, [data-trade], [data-build]")) {
+        cancelAutoEndTimer();
+      }
+    }, true);
+
+    function maybeAutoEndTurn() {
+      if (autoEndTimer) return;
+      if (state.winner) return;
+      if (state.phase !== "main") return;
+      if (!state.canEndTurn) return;
+      if (state.roadBuildingRemaining > 0) return;
+      if (!isHumanTurn()) return;
+      const myIdx = localPlayerIndex();
+      if (myIdx < 0) return;
+      const me = state.players[myIdx];
+      if (!me) return;
+
+      // Has a playable dev card → action available
+      if (hasPlayableKnight(myIdx) || hasPlayableMonopoly(myIdx)) return;
+      if ((me.devCards || []).some(c =>
+        (c.type === "road_building" || c.type === "year_of_plenty")
+        && c.turnBought < state.turnNumber && !c.played)) return;
+
+      // Can build something → action available
+      const canRoad = canAfford(me, COST.road) && validRoadsFor(myIdx).length > 0;
+      const canSettlement = canAfford(me, COST.settlement) && validSettlementsFor(myIdx).length > 0;
+      const canCity = canAfford(me, COST.city) && validCitiesFor(myIdx).length > 0;
+      const canBuyDev = canAfford(me, COST.devCard) && state.devDeck.length > 0;
+      if (canRoad || canSettlement || canCity || canBuyDev) return;
+
+      // No build, no playable. Trade is the only remaining option — only auto-end
+      // if there are no resources to trade with, OR a trade was already rejected this turn.
+      const hasResources = totalResourceCount(me) > 0;
+      const tradeRejected = state.tradeRejectedThisTurn === true;
+      if (hasResources && !tradeRejected) return;
+
+      showToast("💤 할 수 있는 행동이 없어 턴을 자동 종료합니다.", 1800);
+      autoEndTimer = setTimeout(() => {
+        autoEndTimer = null;
+        if (isHumanTurn() && state.canEndTurn && !state.winner) endTurn();
+      }, 1800);
     }
 
     function ensureTurnTimer() {
@@ -2073,7 +2130,8 @@
         const dismissBox = { dismiss: null };
         mpState.activeTradeProposals.set(proposalId, dismissBox);
         (async () => {
-          const accepted = await showTradeProposal(proposer.name, offerStr, wantStr, "거래 하실래요?", myResStr, canAccept, dismissBox);
+          const tradeMeta = { resources: { ...me.resources }, offer, want };
+          const accepted = await showTradeProposal(proposer.name, offerStr, wantStr, "거래 하실래요?", myResStr, canAccept, dismissBox, tradeMeta);
           // Proposal was consumed by another player accepting first → bail without sending reject
           if (!mpState.activeTradeProposals.has(proposalId)) {
             render();
@@ -2154,6 +2212,12 @@
         if (pIdx === myIdx) return true;
         const rejecter = state.players[pIdx];
         showToast(`❌ ${rejecter?.name || "상대"}이 거래를 거절`, 2000);
+        // If I'm the current player (proposer), mark rejection so auto-end can trigger
+        // when paired with no-buildable + no-playable.
+        if (myIdx === state.currentPlayer) {
+          state.tradeRejectedThisTurn = true;
+          maybeAutoEndTurn();
+        }
         return true;
       }
 
@@ -2223,6 +2287,7 @@
         }
         await sendGameAction(ACTION.ROLL_DICE, { playerId: currentPlayerUserId(), values: [d1, d2] });
         await postDicePromptDiscards(d1 + d2);
+        maybeAutoEndTurn();
         return;
       }
       if (state.winner || state.phase !== "roll") return;
@@ -2256,6 +2321,7 @@
       if (!applyRollDice(state.currentPlayer, [d1, d2], false)) return;
       render();
       await postDicePromptDiscards(sum);
+      maybeAutoEndTurn();
       triggerAITurnIfNeeded();
     }
 
@@ -3975,7 +4041,9 @@
       
       if (!eligible.length) {
         showToast("거래 가능한 AI가 없습니다 (자원 부족)", 2000);
+        state.tradeRejectedThisTurn = true;
         render();
+        maybeAutoEndTurn();
         return;
       }
 
@@ -4023,8 +4091,12 @@
           if (!traded) Voice.ai("trade-reject", resp.target.i);
         }
       }
-      if (!traded) showToast("아무도 거래에 응하지 않았습니다", 2000);
+      if (!traded) {
+        showToast("아무도 거래에 응하지 않았습니다", 2000);
+        state.tradeRejectedThisTurn = true;
+      }
       render();
+      maybeAutoEndTurn();
     }
 
     // ── LLM AI Trade ────────────────────────────────────────────────
@@ -4102,7 +4174,8 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
           }
           const myResStr = RESOURCES.map(r => `${RESOURCE_ICONS[r]}${human.resources[r]}`).join(" ");
           Voice.ai("trade-propose", pIdx);
-          const accepted = await showTradeProposal(p.name, giveStr, wantStr, parsed.dialogue || "거래하자!", myResStr, canAccept);
+          const tradeMeta = { resources: { ...human.resources }, offer: parsed.give, want: parsed.want };
+          const accepted = await showTradeProposal(p.name, giveStr, wantStr, parsed.dialogue || "거래하자!", myResStr, canAccept, null, tradeMeta);
           
           if (accepted) {
             // Execute trade
@@ -4137,12 +4210,49 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       }
     }
 
-    function showTradeProposal(playerName, giveStr, wantStr, dialogue, myResStr = "", canAccept = true, dismissBox = null) {
+    function showTradeProposal(playerName, giveStr, wantStr, dialogue, myResStr = "", canAccept = true, dismissBox = null, tradeMeta = null) {
       return new Promise(resolve => {
         const overlay = document.createElement("div");
         overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);animation:big-overlay-in 0.3s ease-out;";
+
+        let resourceBlock = "";
+        if (tradeMeta && tradeMeta.resources) {
+          const want = tradeMeta.want || {};
+          const offer = tradeMeta.offer || {};
+          const cells = RESOURCES.map(r => {
+            const have = Number(tradeMeta.resources[r] || 0);
+            const give = Number(want[r] || 0);
+            const get = Number(offer[r] || 0);
+            const after = have - give + get;
+            const insufficient = give > have;
+            const cellBg = insufficient
+              ? "rgba(239,68,68,0.18)"
+              : (give > 0 ? "rgba(239,68,68,0.08)" : (get > 0 ? "rgba(78,204,163,0.12)" : "rgba(255,255,255,0.04)"));
+            const haveColor = insufficient ? "#ef4444" : "#fff";
+            let deltaLine = "";
+            if (give > 0) deltaLine = `<div style="font-size:10px;color:#ef4444;font-weight:700;">−${give}</div>`;
+            else if (get > 0) deltaLine = `<div style="font-size:10px;color:#4ecca3;font-weight:700;">+${get}</div>`;
+            const afterLine = (give > 0 || get > 0)
+              ? `<div style="font-size:10px;color:${insufficient ? "#ef4444" : "#9ca3af"};">→ ${after}</div>`
+              : `<div style="font-size:10px;color:transparent;">→</div>`;
+            return `<div style="flex:1;background:${cellBg};border-radius:6px;padding:6px 2px;text-align:center;min-width:0;">
+              <div style="font-size:16px;line-height:1;">${RESOURCE_ICONS[r]}</div>
+              <div style="font-size:10px;color:#9ca3af;margin-top:2px;">${RESOURCE_NAMES[r]}</div>
+              <div style="font-size:16px;font-weight:800;color:${haveColor};margin-top:2px;">${have}</div>
+              ${deltaLine || `<div style="font-size:10px;color:transparent;">·</div>`}
+              ${afterLine}
+            </div>`;
+          }).join("");
+          resourceBlock = `<div style="margin-bottom:10px;">
+            <div style="font-size:10px;color:#9ca3af;margin-bottom:4px;text-align:left;">내 자원 (수락 시 증감)</div>
+            <div style="display:flex;gap:3px;">${cells}</div>
+          </div>`;
+        } else if (myResStr) {
+          resourceBlock = `<div style="font-size:11px;color:#9ca3af;margin-bottom:10px;padding:4px 8px;background:rgba(255,255,255,0.05);border-radius:6px;">내 자원: ${myResStr}</div>`;
+        }
+
         overlay.innerHTML = `
-          <div style="background:#16213e;border:2px solid #4ecca3;border-radius:16px;padding:20px;max-width:320px;width:90%;text-align:center;">
+          <div style="background:#16213e;border:2px solid #4ecca3;border-radius:16px;padding:20px;max-width:380px;width:92%;text-align:center;">
             <div style="font-size:14px;color:#9ca3af;margin-bottom:6px;">💱 거래 제안</div>
             <div style="font-size:18px;font-weight:700;margin-bottom:12px;">${playerName}</div>
             <div style="display:flex;justify-content:center;gap:16px;margin-bottom:12px;">
@@ -4157,7 +4267,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
               </div>
             </div>
             ${dialogue ? `<div style="font-size:13px;color:#ffd700;margin-bottom:8px;font-style:italic;">"${dialogue}"</div>` : ""}
-            ${myResStr ? `<div style="font-size:11px;color:#9ca3af;margin-bottom:10px;padding:4px 8px;background:rgba(255,255,255,0.05);border-radius:6px;">내 자원: ${myResStr}</div>` : ""}
+            ${resourceBlock}
             ${!canAccept ? `<div style="font-size:11px;color:#ef4444;margin-bottom:8px;">⚠️ 자원이 부족합니다</div>` : ""}
             <div style="display:flex;gap:8px;">
               <button id="tradeRejectBtn" style="flex:1;padding:10px;border-radius:10px;border:1px solid #ef4444;background:rgba(239,68,68,0.15);color:#ef4444;font-weight:700;cursor:pointer;font-size:14px;">❌ 거절</button>
