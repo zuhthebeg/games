@@ -25,9 +25,10 @@ function extractFunction(name) {
 const fnCode = extractFunction('numpadConfirm');
 const numpadConfirm = eval(`(${fnCode.replace('function numpadConfirm', 'function')})`);
 
-const clickHandlerMatch = html.match(/document\.querySelectorAll\("\[data-mp-bet\]"\)\.forEach\(btn => \{\s*btn\.addEventListener\("click", async \(\) => \{([\s\S]*?)\n\s*\}\);\s*\}\);/);
+// Event-delegation handler: extract the body of the click listener
+const clickHandlerMatch = html.match(/document\.addEventListener\("click", async \(e\) => \{\s*const btn = e\.target\.closest\("\[data-mp-bet\]"\);([\s\S]*?)\n\s*\}\);/);
 if (!clickHandlerMatch) throw new Error('mp bet click handler not found');
-const mpBetClick = eval(`(async function(){${clickHandlerMatch[1]}})`);
+const mpBetClick = eval(`(async function(e){const btn = e.target.closest("[data-mp-bet]");${clickHandlerMatch[1]}})`);
 
 async function flush() {
   await Promise.resolve();
@@ -91,11 +92,21 @@ function makeEnv() {
 
   {
     const { sent, walletRemovals } = makeEnv();
-    global.btn = { dataset: { mpBet: '1000' } };
-    await mpBetClick();
+    const fakeBtn = { dataset: { mpBet: '1000' } };
+    const fakeEvent = { target: { closest: (sel) => sel === '[data-mp-bet]' ? fakeBtn : null } };
+    await mpBetClick(fakeEvent);
     await flush();
     assert.deepStrictEqual(sent[0], { type: 'bet', payload: { amount: 1000 } }, 'quick multiplayer bet should send bet action');
     assert.deepStrictEqual(walletRemovals, [], 'quick multiplayer bet should not deduct wallet locally after server action');
+  }
+
+  // Delegation guard: clicks outside any data-mp-bet button must be no-ops
+  {
+    const { sent } = makeEnv();
+    const fakeEvent = { target: { closest: () => null } };
+    await mpBetClick(fakeEvent);
+    await flush();
+    assert.deepStrictEqual(sent, [], 'non-bet clicks should not send anything');
   }
 
   console.log('PASS multiplayer bet payload and wallet sync behavior');

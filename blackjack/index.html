@@ -1601,36 +1601,36 @@
       }
     }
 
-    // ── Multi: Bet Buttons ──
-    document.querySelectorAll("[data-mp-bet]").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        if (!mpUI?.getClient()) return;
-        syncGold();
-        const raw = btn.dataset.mpBet;
-        let amount;
-        if (raw === "all") {
-          amount = Math.min(Math.floor(state.gold), MULTI_BET_MAX);
-          if (amount <= 0) return;
-          const msg = currentLang === "ko"
-            ? `${amount.toLocaleString()} 골드 베팅합니다. 진행할까요? (멀티 최대 ${MULTI_BET_MAX.toLocaleString()})`
-            : `Bet ${amount.toLocaleString()} gold? (multi cap ${MULTI_BET_MAX.toLocaleString()})`;
-          if (!confirm(msg)) return;
-        } else if (raw === "custom") {
-          openNumpad("multi");
-          return;
-        } else {
-          amount = Math.min(Number(raw), MULTI_BET_MAX);
-        }
-        if (state.gold < amount) {
-          alert(t("goldInsufficient"));
-          return;
-        }
-        try {
-          await mpUI.sendAction({ type: "bet", payload: { amount } });
-        } catch (e) {
-          alert(t("actionFailed", e.message));
-        }
-      });
+    // ── Multi: Bet Buttons (event delegation — tier buttons are re-rendered every 5s) ──
+    document.addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-mp-bet]");
+      if (!btn) return;
+      if (!mpUI?.getClient()) return;
+      syncGold();
+      const raw = btn.dataset.mpBet;
+      let amount;
+      if (raw === "all") {
+        amount = Math.min(Math.floor(state.gold), MULTI_BET_MAX);
+        if (amount <= 0) return;
+        const msg = currentLang === "ko"
+          ? `${amount.toLocaleString()} 골드 베팅합니다. 진행할까요? (멀티 최대 ${MULTI_BET_MAX.toLocaleString()})`
+          : `Bet ${amount.toLocaleString()} gold? (multi cap ${MULTI_BET_MAX.toLocaleString()})`;
+        if (!confirm(msg)) return;
+      } else if (raw === "custom") {
+        openNumpad("multi");
+        return;
+      } else {
+        amount = Math.min(Number(raw), MULTI_BET_MAX);
+      }
+      if (state.gold < amount) {
+        alert(t("goldInsufficient"));
+        return;
+      }
+      try {
+        await mpUI.sendAction({ type: "bet", payload: { amount } });
+      } catch (err) {
+        alert(t("actionFailed", err.message));
+      }
     });
 
     // ── Multi: Action Buttons ──
