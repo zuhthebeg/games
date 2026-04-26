@@ -103,7 +103,9 @@
     return best;
   }
 
-  function pickRobberTarget(state, thiefIdx) {
+  function pickRobberTarget(state, thiefIdx, humanIdx) {
+    // humanIdx: index of the human player. AI prefers to target other AI players.
+    const humanPenalty = 3.5;
     let bestHex = null;
     let bestVictim = null;
     let bestScore = -Infinity;
@@ -123,7 +125,9 @@
       const pressureBonus = touched.size * 0.7;
       for (const [victim, pips] of touched.entries()) {
         const victimRes = Object.values(state.players[victim].resources || {}).reduce((a, b) => a + b, 0);
-        const score = weight * 1.7 + pips * 2.2 + Math.min(victimRes, 12) * 0.12 + pressureBonus;
+        const isHuman = humanIdx != null && victim === humanIdx;
+        const score = weight * 1.7 + pips * 2.2 + Math.min(victimRes, 12) * 0.12 + pressureBonus
+          - (isHuman ? humanPenalty : 0);
         if (score > bestScore) {
           bestScore = score;
           bestHex = hex.index;

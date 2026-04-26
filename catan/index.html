@@ -1703,7 +1703,7 @@
       }
       if (parts.length > 0) {
         SFX.resource();
-        showToast(`🎁\n${parts.join("\n")}`, 2500, { bottom: 150 });
+        showToast(`🎁\n${parts.join("\n")}`, 4000, { bottom: 150 });
       }
     }
 
@@ -3009,7 +3009,7 @@
         if (state.phase === "roll") {
           // Knight before roll
           if (ai && hasPlayableKnight(pIdx) && ai.shouldUseKnight(state, pIdx)) {
-            const kTarget = ai.pickRobberTarget(state, pIdx);
+            const kTarget = ai.pickRobberTarget(state, pIdx, localPlayerIndex());
             let kHex = kTarget.hexIndex !== state.robber
               ? kTarget.hexIndex
               : state.hexes.findIndex((_, i) => i !== state.robber);
@@ -3044,7 +3044,7 @@
         if (state.phase === "robber") {
           let hexIdx = -1, victimIdx = null;
           if (ai) {
-            const t = ai.pickRobberTarget(state, pIdx);
+            const t = ai.pickRobberTarget(state, pIdx, localPlayerIndex());
             hexIdx = t.hexIndex !== state.robber ? t.hexIndex
               : state.hexes.findIndex((_, i) => i !== state.robber);
             victimIdx = t.victimIdx;
@@ -3212,7 +3212,7 @@
           let hexIdx = -1;
           let victimIdx = null;
           if (ai) {
-            const t = ai.pickRobberTarget(state, pIdx);
+            const t = ai.pickRobberTarget(state, pIdx, localPlayerIndex());
             hexIdx = t.hexIndex !== state.robber ? t.hexIndex : state.hexes.findIndex((_, i) => i !== state.robber);
             victimIdx = t.victimIdx;
           } else {
