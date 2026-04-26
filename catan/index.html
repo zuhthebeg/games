@@ -25,6 +25,9 @@
       --grain: #dcbf4d;
       --ore: #6d7382;
       --desert: #cdb687;
+      --lake: #1a6b9e;
+      --sea: #0d4a72;
+      --volcano: #7a2020;
     }
 
     * { box-sizing: border-box; }
@@ -181,6 +184,9 @@
     .hex.grain { background: var(--grain); color: #2c2408; }
     .hex.ore { background: var(--ore); }
     .hex.desert { background: var(--desert); color: #2a2417; }
+    .hex.lake    { background: var(--lake); }
+    .hex.sea     { background: var(--sea); }
+    .hex.volcano { background: var(--volcano); }
 
     .number {
       width: calc(28px * var(--zoom, 1));
@@ -789,6 +795,39 @@
       .actions button { padding: 6px 8px; font-size: 12px; }
       .lobby-title { font-size: 28px; }
     }
+
+    /* ── 맵 선택 카드 그리드 ── */
+    .map-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+      gap: 10px;
+    }
+    .map-card {
+      border: 2px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 10px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.03);
+      transition: border-color 0.15s, background 0.15s;
+      display: grid;
+      gap: 3px;
+    }
+    .map-card:hover { border-color: #5a8fa8; background: rgba(255,255,255,0.06); }
+    .map-card.selected { border-color: var(--accent); background: rgba(79,194,127,0.08); }
+    .map-card-name { font-weight: 600; font-size: 13px; }
+    .map-card-stars { color: var(--grain); font-size: 12px; letter-spacing: 2px; }
+    .map-card-meta { font-size: 11px; color: var(--muted); }
+    .map-card-desc {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 5px;
+      padding-top: 5px;
+      border-top: 1px solid var(--line);
+      line-height: 1.45;
+    }
+    @media (max-width: 520px) {
+      .map-grid { grid-template-columns: repeat(2, 1fr); }
+    }
   </style>
 </head>
 <body>
@@ -861,7 +900,9 @@
       lastPlacedVertex: null,
       phaseBeforeKnight: null,
       tradeDialog: { open: false, give: null, get: null },
-      turnTimeLeft: 60
+      turnTimeLeft: 60,
+      selectedMapId: "standard",
+      mapSelectSource: "single"
     };
 
     const mpState = {
@@ -1040,11 +1081,11 @@
       return state.players.findIndex(p => p.userId === playerId || p.id === playerId);
     }
 
-    function initSingleGame() {
+    function initSingleGame(mapId = "standard") {
       resetCoreState();
       applyResponsiveDefaults(true);
       setSinglePlayers();
-      generateBoard(null, "standard");
+      generateBoard(null, mapId);
       recalcAllVP();
       state.mode = "single";
       state.screen = "game";
@@ -1105,6 +1146,248 @@
       }
     };
 
+    // ── Phase B: 별 1개 맵 6종 ──────────────────────────────────────────
+
+    MAP_PRESETS["central-lake"] = {
+      id: "central-lake", name: "중앙 호수", stars: 1,
+      description: "섬 한가운데 호수. 자원이 외곽에 집중되어 내륙 경쟁이 줄어든다.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 10,
+      layout: {
+        axial: [
+          { q: 0, r: 0, type: "lake" },
+          { q: 1, r: 0 }, { q: 0, r: 1 }, { q: -1, r: 1 },
+          { q: -1, r: 0 }, { q: 0, r: -1 }, { q: 1, r: -1 },
+          { q: 2, r: 0 }, { q: 1, r: 1 }, { q: 0, r: 2 }, { q: -1, r: 2 },
+          { q: -2, r: 2 }, { q: -2, r: 1 }, { q: -2, r: 0 }, { q: -1, r: -1 },
+          { q: 0, r: -2 }, { q: 1, r: -2 }, { q: 2, r: -2 }, { q: 2, r: -1 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick",
+          "lumber","lumber","lumber","lumber",
+          "wool","wool","wool",
+          "grain","grain","grain","grain",
+          "ore","ore","ore",
+          "desert"
+        ]
+      },
+      numbers: {
+        pool: [3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},
+          {type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    MAP_PRESETS["four-islands"] = {
+      id: "four-islands", name: "네 섬", stars: 1,
+      description: "두 해협이 보드를 4개 영역으로 나눈다. 초기 정착지 선택이 핵심.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 10,
+      layout: {
+        axial: [
+          { q: 0, r: 0 },
+          { q: 1, r: 0 }, { q: 0, r: 1 },
+          { q: -1, r: 1, type: "sea" },
+          { q: -1, r: 0 }, { q: 0, r: -1 },
+          { q: 1, r: -1, type: "sea" },
+          { q: 2, r: 0 }, { q: 1, r: 1 }, { q: 0, r: 2 }, { q: -1, r: 2 },
+          { q: -2, r: 2 }, { q: -2, r: 1 }, { q: -2, r: 0 }, { q: -1, r: -1 },
+          { q: 0, r: -2 }, { q: 1, r: -2 }, { q: 2, r: -2 }, { q: 2, r: -1 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick",
+          "lumber","lumber","lumber",
+          "wool","wool","wool","wool",
+          "grain","grain","grain",
+          "ore","ore","ore",
+          "desert"
+        ]
+      },
+      numbers: {
+        pool: [3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},
+          {type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    MAP_PRESETS["volcanic-ring"] = {
+      id: "volcanic-ring", name: "화산링", stars: 1,
+      description: "내륙 화산대 3개가 생산 공백을 만든다. 외곽 자원 선점이 중요.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 10,
+      layout: {
+        axial: [
+          { q: 0, r: 0 },
+          { q: 1, r: 0, type: "volcano" },
+          { q: 0, r: 1 },
+          { q: -1, r: 1, type: "volcano" },
+          { q: -1, r: 0 },
+          { q: 0, r: -1, type: "volcano" },
+          { q: 1, r: -1 },
+          { q: 2, r: 0 }, { q: 1, r: 1 }, { q: 0, r: 2 }, { q: -1, r: 2 },
+          { q: -2, r: 2 }, { q: -2, r: 1 }, { q: -2, r: 0 }, { q: -1, r: -1 },
+          { q: 0, r: -2 }, { q: 1, r: -2 }, { q: 2, r: -2 }, { q: 2, r: -1 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick",
+          "lumber","lumber","lumber","lumber",
+          "wool","wool","wool","wool",
+          "grain","grain","grain",
+          "ore","ore",
+          "desert"
+        ]
+      },
+      numbers: {
+        pool: [3,3,4,4,5,5,6,6,8,8,9,9,10,10,11],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},
+          {type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    MAP_PRESETS["greater-catan"] = {
+      id: "greater-catan", name: "대 카탄", stars: 1,
+      description: "NE-SW로 확장된 28칸 맵. 5-6인에 적합하고 더 넓은 경쟁 공간을 제공한다.",
+      minPlayers: 3, maxPlayers: 6, vpGoal: 10,
+      layout: {
+        axial: [
+          { q: 0, r: 0 },
+          { q: 1, r: 0 }, { q: 0, r: 1 }, { q: -1, r: 1 },
+          { q: -1, r: 0 }, { q: 0, r: -1 }, { q: 1, r: -1 },
+          { q: 2, r: 0 }, { q: 1, r: 1 }, { q: 0, r: 2 }, { q: -1, r: 2 },
+          { q: -2, r: 2 }, { q: -2, r: 1 }, { q: -2, r: 0 }, { q: -1, r: -1 },
+          { q: 0, r: -2 }, { q: 1, r: -2 }, { q: 2, r: -2 }, { q: 2, r: -1 },
+          { q: 2, r: 1 }, { q: 1, r: 2 }, { q: 0, r: 3 }, { q: -1, r: 3 }, { q: -2, r: 3 },
+          { q: -2, r: -1 }, { q: -1, r: -2 }, { q: 0, r: -3 }, { q: 1, r: -3 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick","brick","brick",
+          "lumber","lumber","lumber","lumber","lumber","lumber",
+          "wool","wool","wool","wool","wool",
+          "grain","grain","grain","grain","grain","grain",
+          "ore","ore","ore","ore","ore",
+          "desert"
+        ]
+      },
+      numbers: {
+        pool: [2,2,3,3,3,4,4,4,5,5,5,6,6,6,8,8,8,9,9,9,10,10,10,11,11,11,12],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},{type:"wool",ratio:2},
+          {type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    MAP_PRESETS["crescent-archipelago"] = {
+      id: "crescent-archipelago", name: "초승달 군도", stars: 1,
+      description: "동쪽이 바다로 열린 초승달형 맵. 비대칭 지형이 전략적 다양성을 만든다.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 10,
+      layout: {
+        axial: [
+          { q: 0, r: 0 },
+          { q: 1, r: 0 }, { q: 0, r: 1 }, { q: -1, r: 1 },
+          { q: -1, r: 0 }, { q: 0, r: -1 }, { q: 1, r: -1 },
+          { q: 2, r: 0, type: "sea" }, { q: 1, r: 1, type: "sea" },
+          { q: 0, r: 2 }, { q: -1, r: 2 },
+          { q: -2, r: 2 }, { q: -2, r: 1 }, { q: -2, r: 0 }, { q: -1, r: -1 },
+          { q: 0, r: -2 }, { q: 1, r: -2 },
+          { q: 2, r: -2, type: "sea" }, { q: 2, r: -1, type: "sea" }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick",
+          "lumber","lumber","lumber",
+          "wool","wool","wool",
+          "grain","grain","grain",
+          "ore","ore",
+          "desert"
+        ]
+      },
+      numbers: {
+        pool: [3,3,4,4,5,5,6,6,8,8,9,9,10,11],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},
+          {type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    MAP_PRESETS["frontier-outback"] = {
+      id: "frontier-outback", name: "개척지", stars: 1,
+      description: "광물 풍부, 목재 희귀한 황야. 도시 개발을 서두르되 도로 자원을 아껴야 한다.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 10,
+      layout: {
+        axial: [
+          { q: 0, r: 0 },
+          { q: 1, r: 0 }, { q: 0, r: 1 }, { q: -1, r: 1 },
+          { q: -1, r: 0 }, { q: 0, r: -1 }, { q: 1, r: -1 },
+          { q: 2, r: 0 }, { q: 1, r: 1 }, { q: 0, r: 2 }, { q: -1, r: 2 },
+          { q: -2, r: 2 }, { q: -2, r: 1 }, { q: -2, r: 0 }, { q: -1, r: -1 },
+          { q: 0, r: -2 }, { q: 1, r: -2 }, { q: 2, r: -2 }, { q: 2, r: -1 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick","brick",
+          "lumber","lumber",
+          "wool","wool","wool",
+          "grain","grain","grain","grain","grain",
+          "ore","ore","ore","ore",
+          "desert"
+        ]
+      },
+      numbers: {
+        pool: [2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},
+          {type:"lumber",ratio:2},{type:"lumber",ratio:2},
+          {type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    // ────────────────────────────────────────────────────────────────────
+
     function resolveMapPreset(mapId = "standard") {
       return MAP_PRESETS[mapId] || MAP_PRESETS.standard;
     }
@@ -1112,7 +1395,8 @@
     function assignBalancedNumbers(axial, hexTypes, numberConfig) {
       const numbers = numberConfig.pool || [];
       const noAdjacentHot = new Set(numberConfig.noAdjacentHot || []);
-      const nonDesert = hexTypes.map((t,i) => ({t,i})).filter(x => x.t !== "desert").map(x => x.i);
+      const NON_PROD = new Set(["desert","sea","lake","volcano"]);
+      const nonDesert = hexTypes.map((t,i) => ({t,i})).filter(x => !NON_PROD.has(x.t)).map(x => x.i);
 
       function hexNeighbors(idx) {
         const h = axial[idx];
@@ -1146,13 +1430,19 @@
     function buildHexesFromPreset(mapId = "standard") {
       const preset = resolveMapPreset(mapId);
       const axial = preset.layout.axial.slice().sort((a, b) => (a.r - b.r) || (a.q - b.q));
-      const resourcePool = shuffle(preset.resources.pool);
-      const balancedNumbers = assignBalancedNumbers(axial, resourcePool, preset.numbers);
+
+      // coord.type이 설정된 칸은 고정 타일, 나머지만 pool에서 셔플 배치
+      const fixedMap = new Map(axial.filter(c => c.type).map(c => [`${c.q},${c.r}`, c.type]));
+      const resourcePool = shuffle(preset.resources.pool.slice());
+      let pi = 0;
+      const types = axial.map(c => fixedMap.get(`${c.q},${c.r}`) ?? resourcePool[pi++]);
+
+      const balancedNumbers = assignBalancedNumbers(axial, types, preset.numbers);
       return axial.map((coord, i) => ({
         index: i,
         q: coord.q,
         r: coord.r,
-        type: resourcePool[i],
+        type: types[i],
         number: balancedNumbers[i],
         robber: false,
         vertices: [],
@@ -3321,8 +3611,63 @@
                 <option value="hard" ${state.aiDifficulty === "hard" ? "selected" : ""}>어려움</option>
               </select>
             </div>
-            <button onclick="startSingle()">싱글플레이</button>
+            <button onclick="showMapSelect('single')">싱글플레이</button>
             <button onclick="showMultiOptions()">멀티플레이</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function showMapSelect(source) {
+      state.mapSelectSource = source || "single";
+      state.selectedMapId = state.selectedMapId || "standard";
+      state.screen = "map-select";
+      render();
+    }
+
+    function onMapCardClick(mapId) {
+      state.selectedMapId = mapId;
+      render();
+    }
+
+    function confirmMapSelect() {
+      const mapId = state.selectedMapId || "standard";
+      if (state.mapSelectSource === "single") {
+        startSingle(mapId);
+      } else {
+        state.screen = "multi-lobby";
+        render();
+      }
+    }
+
+    function renderMapSelect() {
+      const maps = Object.values(MAP_PRESETS);
+      const selected = state.selectedMapId || "standard";
+      const preset = MAP_PRESETS[selected] || MAP_PRESETS.standard;
+      const starsHtml = n => "★".repeat(n || 0) + "☆".repeat(Math.max(0, 3 - (n || 0)));
+      const isMulti = state.mapSelectSource === "multi";
+
+      return `
+        <div class="lobby-screen">
+          <div class="lobby-card" style="width:min(620px,100%)">
+            <h1 class="lobby-title" style="font-size:24px;margin-bottom:4px;">맵 선택</h1>
+            <div class="map-grid">
+              ${maps.map(m => `
+                <div class="map-card${selected === m.id ? " selected" : ""}" onclick="onMapCardClick('${m.id}')">
+                  <div class="map-card-name">${m.name}</div>
+                  <div class="map-card-stars">${starsHtml(m.stars)}</div>
+                  <div class="map-card-meta">${m.minPlayers}–${m.maxPlayers}인 · ${m.vpGoal}점</div>
+                  ${m.description ? `<div class="map-card-desc">${m.description}</div>` : ""}
+                </div>
+              `).join("")}
+            </div>
+            <div class="lobby-note" style="margin-top:2px;">
+              선택: <strong>${preset.name}</strong> — ${preset.minPlayers}~${preset.maxPlayers}인 · VP ${preset.vpGoal}
+            </div>
+            <div class="multi-row" style="justify-content:space-between;">
+              <button onclick="state.screen='mode';render()" style="background:var(--panel-2);border:1px solid var(--line);">← 뒤로</button>
+              <button onclick="confirmMapSelect()">${isMulti ? "다음 →" : "게임 시작"}</button>
+            </div>
           </div>
         </div>
       `;
@@ -3379,6 +3724,15 @@
             <div class="room-lobby">
               <p>방 코드: <strong id="roomCodeDisplay">${mpState.roomCode || "-"}</strong></p>
               <div id="playerList">${lobbyPlayersHtml()}</div>
+              ${mpState.isHost ? `
+              <div class="multi-row" style="align-items:center;">
+                <label style="font-size:12px;color:var(--muted);white-space:nowrap;">맵</label>
+                <select onchange="mpState.mapId=this.value;state.selectedMapId=this.value;" style="flex:1;">
+                  ${Object.values(MAP_PRESETS).map(m =>
+                    `<option value="${m.id}" ${(mpState.mapId||"standard")===m.id?"selected":""}>${m.name}${"★".repeat(m.stars||0)} (${m.minPlayers}-${m.maxPlayers}인)</option>`
+                  ).join("")}
+                </select>
+              </div>` : `<div class="lobby-note">맵: ${MAP_PRESETS[mpState.mapId||"standard"]?.name || "기본 맵"}</div>`}
               <div class="multi-row">
                 <button onclick="setReady()">${mpState.ready ? "준비 취소" : "준비 완료"}</button>
                 <button onclick="fillAIPlayers()" ${mpState.isHost ? "" : "hidden"}>AI 채우기</button>
@@ -3523,6 +3877,7 @@
         app.classList.remove("hidden");
       }
       if (state.screen === "mode") app.innerHTML = renderModeScreen();
+      else if (state.screen === "map-select") app.innerHTML = renderMapSelect();
       else if (state.screen === "multi-lobby") {
         // MultiplayerUI handles this screen
         app.classList.add("hidden");
@@ -3627,11 +3982,13 @@
       if (fullPlayers.length < 2 || (!allReady && !aiPlayers.length)) return;
       setMultiplayerPlayers(fullPlayers);
       resetCoreState();
-      generateBoard(null, "standard");
+      const mapId = mpState.mapId || mpState.room?.meta?.mapId || "standard";
+      generateBoard(null, mapId);
       recalcAllVP();
       mpState.initSent = true;
       await sendGameAction(ACTION.GAME_INIT, {
         playerId: mpState.myUserId,
+        mapId,
         hexes: clone(state.hexes),
         vertices: clone(state.vertices),
         edges: clone(state.edges),
@@ -3701,8 +4058,10 @@
 
     async function createRoom() {
       try {
+        const mapId = state.selectedMapId || "standard";
         const client = await ensureMp();
-        const room = await client.createRoom("catan", { maxPlayers: Number(state.maxPlayers) || 4 });
+        const room = await client.createRoom("catan", { maxPlayers: Number(state.maxPlayers) || 4, mapId });
+        mpState.mapId = mapId;
         mpState.roomCode = room.roomId || room.id || room.code || room.roomCode || "";
         state.mode = "multi";
         state.screen = "room-lobby";
@@ -3853,8 +4212,8 @@
       }
     }
 
-    function startSingle() {
-      initSingleGame();
+    function startSingle(mapId) {
+      initSingleGame(mapId || state.selectedMapId || "standard");
       if (soundSettings.bgm) BGM.start();
     }
 
