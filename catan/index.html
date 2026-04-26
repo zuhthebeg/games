@@ -839,7 +839,7 @@
   <script src="./ai.js"></script>
   <script>
     const RESOURCES = ["brick", "lumber", "wool", "grain", "ore"];
-    const RESOURCE_ICONS = { brick: "🧱", lumber: "🪵", wool: "🐑", grain: "🌾", ore: "⛏️", desert: "🏜️" };
+    const RESOURCE_ICONS = { brick: "🧱", lumber: "🪵", wool: "🐑", grain: "🌾", ore: "⛏️", desert: "🏜️", lake: "🏞️", sea: "🌊", volcano: "🌋" };
     const COST = {
       road: { brick: 1, lumber: 1 },
       settlement: { brick: 1, lumber: 1, wool: 1, grain: 1 },
@@ -1435,7 +1435,7 @@
       const fixedMap = new Map(axial.filter(c => c.type).map(c => [`${c.q},${c.r}`, c.type]));
       const resourcePool = shuffle(preset.resources.pool.slice());
       let pi = 0;
-      const types = axial.map(c => fixedMap.get(`${c.q},${c.r}`) ?? resourcePool[pi++]);
+      const types = axial.map(c => { const ft = fixedMap.get(`${c.q},${c.r}`); return ft !== undefined ? ft : resourcePool[pi++]; });
 
       const balancedNumbers = assignBalancedNumbers(axial, types, preset.numbers);
       return axial.map((coord, i) => ({
@@ -1671,7 +1671,8 @@
     function grantSecondSetupResources(playerIdx, vIdx) {
       for (const hIdx of state.vertices[vIdx].hexes) {
         const hex = state.hexes[hIdx];
-        if (hex.type !== "desert") state.players[playerIdx].resources[hex.type] += 1;
+        const PROD_TYPES = new Set(["brick","lumber","wool","grain","ore"]);
+        if (PROD_TYPES.has(hex.type)) state.players[playerIdx].resources[hex.type] += 1;
       }
     }
 
@@ -3548,7 +3549,7 @@
         const isHighlit = state.lastDiceSum && hex.number === state.lastDiceSum && hex.index !== state.robber;
         const isBlocked = state.lastDiceSum && hex.number === state.lastDiceSum && hex.index === state.robber;
         html += `<div class="hex ${hex.type}${hex.robber === true ? " has-robber" : ""}${isHighlit ? " hex-hit" : ""}${isBlocked ? " hex-blocked" : ""}" data-hex-num="${hex.number || 0}" style="left:${p.x}px; top:${p.y}px;" onclick="onHexClick(${hex.index})">`;
-        html += `<div>${RESOURCE_ICONS[hex.type]}</div>`;
+        html += `<div>${RESOURCE_ICONS[hex.type] || ""}</div>`;
         if (hex.number) html += `<div class="number ${hot ? "hot" : ""}">${hex.number}</div>`;
         if (state.robber === hex.index) html += `<div class="robber">🦹</div>`;
         html += `</div>`;
