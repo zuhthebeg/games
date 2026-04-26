@@ -1378,25 +1378,14 @@
       }
     }
 
-    function handleSeven(skipDiscard = false) {
+    function handleSeven() {
       SFX.robber();
       showToast("🗡️ 강도가 나타났어요!");
       showBigOverlay("🦹", "도둑 출현!", "robber-alert", 1200);
       Voice.human("seven");
-      if (!skipDiscard) {
-        for (let i = 0; i < state.players.length; i += 1) {
-          const p = state.players[i];
-          const total = totalResourceCount(p);
-          if (total > 7) {
-            const discard = Math.floor(total / 2);
-            const removed = pickRandomDiscards(i, discard);
-            applyDiscardResources(i, removed);
-          }
-        }
-      }
       state.phase = "robber";
       state.canEndTurn = false;
-      state.hint = "7이 나왔습니다. 도둑을 이동하세요.";
+      state.hint = "7이 나왔습니다. 자원 폐기 후 도둑을 이동하세요.";
     }
 
     function pickRandomDiscards(playerIdx, count) {
@@ -1412,6 +1401,112 @@
         n -= 1;
       }
       return removed;
+    }
+
+    function pickDiscardSelection(playerIdx, count) {
+      return new Promise(resolve => {
+        const p = state.players[playerIdx];
+        const picked = emptyResources();
+        const initialTotal = totalResourceCount(p);
+        const overlay = document.createElement("div");
+        overlay.style.cssText = "position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);";
+        const draw = () => {
+          const pickedCount = RESOURCES.reduce((s, r) => s + picked[r], 0);
+          const remaining = count - pickedCount;
+          const canConfirm = pickedCount === count;
+          overlay.innerHTML = `
+            <div style="background:#16213e;border:2px solid #b33838;border-radius:16px;padding:20px;max-width:380px;width:92%;text-align:center;color:#fff;">
+              <div style="font-size:18px;font-weight:700;margin-bottom:6px;">🦹 도둑 출현!</div>
+              <div style="font-size:13px;color:#fbbf24;margin-bottom:4px;">버릴 카드를 ${count}장 선택하세요</div>
+              <div style="font-size:11px;color:#9ca3af;margin-bottom:14px;">남은 선택: ${remaining}장 / 보유 ${initialTotal}장</div>
+              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+                ${RESOURCES.map(r => {
+                  const have = p.resources[r];
+                  const sel = picked[r];
+                  const left = have - sel;
+                  const decDis = sel <= 0;
+                  const incDis = left <= 0 || pickedCount >= count;
+                  return `
+                    <div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;">
+                      <div style="font-size:18px;width:30px;">${RESOURCE_ICONS[r]}</div>
+                      <div style="flex:1;text-align:left;font-size:12px;">${RESOURCE_NAMES[r]}<div style="font-size:10px;color:#9ca3af;">남음 ${left} / ${have}</div></div>
+                      <button data-act="dec" data-res="${r}" ${decDis ? "disabled" : ""} style="width:32px;height:32px;border-radius:8px;border:1px solid #444;background:${decDis ? "#222" : "#3a1212"};color:#fff;font-size:16px;cursor:${decDis ? "not-allowed" : "pointer"};">−</button>
+                      <div style="min-width:24px;font-size:14px;font-weight:700;color:#fca5a5;">${sel}</div>
+                      <button data-act="inc" data-res="${r}" ${incDis ? "disabled" : ""} style="width:32px;height:32px;border-radius:8px;border:1px solid #444;background:${incDis ? "#222" : "#3a1212"};color:#fff;font-size:16px;cursor:${incDis ? "not-allowed" : "pointer"};">+</button>
+                    </div>`;
+                }).join("")}
+              </div>
+              <button data-act="confirm" ${canConfirm ? "" : "disabled"} style="padding:10px 20px;border-radius:10px;border:1px solid ${canConfirm ? "#ffd700" : "#444"};background:${canConfirm ? "#b33838" : "#222"};color:#fff;font-weight:700;cursor:${canConfirm ? "pointer" : "not-allowed"};font-size:14px;">${canConfirm ? "🗑 확정" : `${remaining}장 더 필요`}</button>
+            </div>`;
+        };
+        overlay.addEventListener("click", e => {
+          const btn = e.target.closest("button[data-act]");
+          if (!btn || btn.disabled) return;
+          const act = btn.dataset.act;
+          if (act === "confirm") {
+            const total = RESOURCES.reduce((s, r) => s + picked[r], 0);
+            if (total !== count) return;
+            overlay.remove();
+            resolve(picked);
+            return;
+          }
+          const r = btn.dataset.res;
+          if (!r) return;
+          const totalPicked = RESOURCES.reduce((s, x) => s + picked[x], 0);
+          if (act === "inc") {
+            const left = p.resources[r] - picked[r];
+            if (left <= 0 || totalPicked >= count) return;
+            picked[r] += 1;
+          } else if (act === "dec") {
+            if (picked[r] <= 0) return;
+            picked[r] -= 1;
+          }
+          draw();
+        });
+        draw();
+        document.body.appendChild(overlay);
+      });
+    }
+
+    async function postDicePromptDiscards(diceSum) {
+      if (diceSum !== 7) return;
+      const handlesAI = !isMultiMode() || mpState.isHost;
+      if (handlesAI) {
+        for (let i = 0; i < state.players.length; i += 1) {
+          const pl = state.players[i];
+          if (!pl || !pl.isAI) continue;
+          const total = totalResourceCount(pl);
+          if (total <= 7) continue;
+          const discardCount = Math.floor(total / 2);
+          const removed = pickRandomDiscards(i, discardCount);
+          for (const r of RESOURCES) pl.resources[r] += removed[r];
+          if (isMultiMode()) {
+            await sendGameAction(ACTION.DISCARD_RESOURCES, {
+              playerId: pl.userId || pl.id,
+              resources: removed
+            });
+          } else {
+            applyDiscardResources(i, removed);
+          }
+        }
+      }
+      const myIdx = localPlayerIndex();
+      if (myIdx < 0) return;
+      const me = state.players[myIdx];
+      if (!me || me.isAI) return;
+      const total = totalResourceCount(me);
+      if (total <= 7) return;
+      const discard = Math.floor(total / 2);
+      const removed = await pickDiscardSelection(myIdx, discard);
+      if (isMultiMode()) {
+        await sendGameAction(ACTION.DISCARD_RESOURCES, {
+          playerId: me.userId || me.id,
+          resources: removed
+        });
+      } else {
+        applyDiscardResources(myIdx, removed);
+      }
+      render();
     }
 
     function getBestTradeRatio(playerIdx, resourceType) {
@@ -2127,28 +2222,7 @@
           }
         }
         await sendGameAction(ACTION.ROLL_DICE, { playerId: currentPlayerUserId(), values: [d1, d2] });
-        if (d1 + d2 === 7) {
-          for (let i = 0; i < state.players.length; i += 1) {
-            const total = totalResourceCount(state.players[i]);
-            if (total <= 7) continue;
-            const discardCount = Math.floor(total / 2);
-            const removed = emptyResources();
-            let n = discardCount;
-            while (n > 0) {
-              const bag = RESOURCES.filter(r => state.players[i].resources[r] > 0);
-              if (!bag.length) break;
-              const pick = bag[Math.floor(Math.random() * bag.length)];
-              state.players[i].resources[pick] -= 1;
-              removed[pick] += 1;
-              n -= 1;
-            }
-            for (const r of RESOURCES) state.players[i].resources[r] += removed[r];
-            await sendGameAction(ACTION.DISCARD_RESOURCES, {
-              playerId: state.players[i].userId,
-              resources: removed
-            });
-          }
-        }
+        await postDicePromptDiscards(d1 + d2);
         return;
       }
       if (state.winner || state.phase !== "roll") return;
@@ -2181,6 +2255,7 @@
       // seven sound handled in handleSeven()
       if (!applyRollDice(state.currentPlayer, [d1, d2], false)) return;
       render();
+      await postDicePromptDiscards(sum);
       triggerAITurnIfNeeded();
     }
 
@@ -2538,6 +2613,7 @@
               state.phase = "main"; state.canEndTurn = true;
             }
             render();
+            await postDicePromptDiscards(d1 + d2);
           }
         }
 
@@ -2705,6 +2781,7 @@
           const d1 = 1 + Math.floor(Math.random() * 6);
           const d2 = 1 + Math.floor(Math.random() * 6);
           await sendGameAction(ACTION.ROLL_DICE, { playerId: p.userId || p.id, values: [d1, d2] });
+          await postDicePromptDiscards(d1 + d2);
           await sleep(1200);
         }
 
@@ -3474,6 +3551,10 @@
         if (ok) {
           markActionProcessed(data.actionId);
           render();
+          if (data.type === ACTION.ROLL_DICE) {
+            const sum = (Number(data.values?.[0]) || 0) + (Number(data.values?.[1]) || 0);
+            await postDicePromptDiscards(sum);
+          }
           triggerAITurnIfNeeded();
         }
       }
