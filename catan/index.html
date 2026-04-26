@@ -1411,13 +1411,36 @@
       }
       if (parts.length > 0) {
         SFX.resource();
-        showToast(`🎁\n${parts.join("\n")}`, 2500);
+        showToast(`🎁\n${parts.join("\n")}`, 2500, { bottom: 150 });
       }
+    }
+
+    function getDiceRevealDelayMs() {
+      return 1000;
+    }
+
+    function getHexLabel(hexIndex) {
+      const hex = state.hexes?.[hexIndex];
+      if (!hex) return "알 수 없는 타일";
+      const number = hex.number ? `${hex.number}번 ` : "";
+      return `${number}${RESOURCE_NAMES[hex.type] || hex.type}`;
+    }
+
+    function formatRobberMoveMessage({ actorName, source, hexLabel, victimName, stolenResource }) {
+      const sourceParticle = source === "도둑" ? "으로" : "로";
+      if (victimName && stolenResource) {
+        return `${actorName}가 ${source}${sourceParticle} ${hexLabel}에 도둑을 옮기고 ${victimName}에게서 ${RESOURCE_ICONS[stolenResource]} 1장을 가져갔습니다.`;
+      }
+      return `${actorName}가 ${source}${sourceParticle} ${hexLabel}에 도둑을 옮겼지만 훔칠 대상은 없었습니다.`;
+    }
+
+    function getLongestRoadBadge(isOwner) {
+      return isOwner ? "🛣️" : "";
     }
 
     function handleSeven() {
       SFX.robber();
-      showToast("🗡️ 강도가 나타났어요!");
+      showToast("🗡️ 강도가 나타났어요!", 1600, { bottom: 150 });
       showBigOverlay("🦹", "도둑 출현!", "robber-alert", 1200);
       Voice.human("seven");
       state.phase = "robber";
@@ -1785,12 +1808,15 @@
         victimIdx = list.length ? list[Math.floor(Math.random() * list.length)] : -1;
       }
       const picked = stealFromVictim(state.currentPlayer, victimIdx, forcedResource);
-      if (picked) showToast(`도둑이 ${RESOURCE_ICONS[picked]} 을 훔쳤습니다!`, 2000);
+      const actorName = state.players[state.currentPlayer]?.name || "플레이어";
+      const victimName = victimIdx !== -1 ? state.players[victimIdx]?.name || "상대" : "";
+      const source = state.phase === "knight-robber" ? "기사" : "도둑";
+      const hexLabel = getHexLabel(hexIndex);
+      const detailMessage = formatRobberMoveMessage({ actorName, source, hexLabel, victimName, stolenResource: picked });
+      showToast(`🦹 ${detailMessage}`, 2600, { bottom: 150 });
       state.phase = "main";
       state.canEndTurn = true;
-      state.hint = picked && victimIdx !== -1
-        ? `${state.players[state.currentPlayer].name}가 ${state.players[victimIdx].name}에게서 1장을 훔쳤습니다.`
-        : "도둑 이동 완료. 건설하거나 턴을 종료하세요.";
+      state.hint = detailMessage;
       return {
         ok: true,
         victimId: victimIdx === -1 ? null : (state.players[victimIdx].userId || state.players[victimIdx].id),
@@ -2312,7 +2338,7 @@
           el.classList.remove("dice-animate");
           void el.offsetWidth;
           el.classList.add("dice-animate");
-          el.textContent = `${d1} + ${d2}`;
+          el.textContent = "🎲🎲";
           if (window.anime) {
             anime({ targets: "#diceDisplay", scale: [1, 1.3, 1], duration: 300, easing: "easeOutBack" });
             if (sum === 7) {
@@ -2322,6 +2348,8 @@
             }
           }
         }
+        await new Promise(r => setTimeout(r, getDiceRevealDelayMs()));
+        if (el) el.textContent = `${d1} + ${d2}`;
         await sendGameAction(ACTION.ROLL_DICE, { playerId: currentPlayerUserId(), values: [d1, d2] });
         await postDicePromptDiscards(d1 + d2);
         maybeAutoEndTurn();
@@ -2344,7 +2372,7 @@
           el.style.animation = "dice-bounce 0.4s ease";
           setTimeout(() => el.style.animation = "", 400);
           showBigOverlay(`${DICE_FACES[d1]} ${DICE_FACES[d2]}`, `= ${sum}${sum === 7 ? " 🦹 도둑!" : ""}`, sum === 7 ? "seven" : "", sum === 7 ? 1500 : 1000);
-        }, 500);
+        }, getDiceRevealDelayMs());
         if (window.anime) {
           anime({ targets: "#diceDisplay", scale: [1, 1.3, 1], duration: 300, easing: "easeOutBack" });
           if (sum === 7) {
@@ -3406,7 +3434,7 @@
           ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':c.type==='vp'?'⭐VP':c.type==='monopoly'?'💰모노폴리':c.type==='road_building'?'🛣️도로':c.type==='year_of_plenty'?'🌾풍년':'🃏').join(' ')}</div>` : ""}
           <div class="actions">
             <button id="diceDisplay" class="primary" style="font-size:16px;min-width:70px;" ${canRoll ? "" : "disabled"} onclick="rollDice()">🎲 주사위</button>
-            <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${state.longestRoad === myIdx ? "👑" : ""}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
+            <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${getLongestRoadBadge(state.longestRoad === myIdx)}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
             <button ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
             <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
             <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
@@ -4431,19 +4459,20 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       document.body.appendChild(dp);
     }
 
-    function showToast(msg, duration = 2500) {
+    function showToast(msg, duration = 2500, options = {}) {
       let el = document.getElementById("catan-toast");
       if (!el) {
         el = document.createElement("div");
         el.id = "catan-toast";
         el.className = "toast";
-        el.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:max-content;max-width:calc(100vw - 32px);background:rgba(0,0,0,0.95);color:#ffd700;padding:12px 24px;border-radius:14px;font-size:16px;font-weight:700;z-index:9999;pointer-events:none;transition:opacity 0.3s;border:2px solid rgba(255,215,0,0.4);text-shadow:0 1px 4px rgba(0,0,0,0.8);white-space:pre-line;text-align:center;";
         document.body.appendChild(el);
       }
+      const bottom = Number(options.bottom || 0);
+      el.style.cssText = `position:fixed;left:50%;transform:translateX(-50%);${bottom > 0 ? `bottom:${bottom}px;` : 'top:50%;transform:translate(-50%,-50%);'}width:max-content;max-width:calc(100vw - 32px);background:rgba(0,0,0,0.95);color:#ffd700;padding:12px 24px;border-radius:14px;font-size:16px;font-weight:700;z-index:9999;pointer-events:none;transition:opacity 0.3s;border:2px solid rgba(255,215,0,0.4);text-shadow:0 1px 4px rgba(0,0,0,0.8);white-space:pre-line;text-align:center;`;
       el.textContent = msg;
       el.style.opacity = "1";
       if (window.anime) {
-        anime({ targets: ".toast", translateY: [-40, 0], opacity: [0, 1], duration: 300 });
+        anime({ targets: ".toast", translateY: [bottom > 0 ? 24 : -40, 0], opacity: [0, 1], duration: 300 });
       }
       clearTimeout(el._t);
       el._t = setTimeout(() => { el.style.opacity = "0"; }, duration);
@@ -4544,7 +4573,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       const vpChips = state.players.map((p, i) => {
         const active = i === state.currentPlayer;
         const rl = longestRoadLength(i);
-        const lr = state.longestRoad === i ? "👑" : "";
+        const lr = getLongestRoadBadge(state.longestRoad === i);
         const la = state.largestArmy === i ? "⚔" : "";
         const label = i === myIdx ? "나" : p.name;
         return `<span class="vp-chip${active ? " active" : ""}" style="color:${p.color};"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${p.color};"></span>${label} ${p.vp}${lr}${la}</span>`;
