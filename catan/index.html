@@ -862,6 +862,9 @@
     }
     .hint-bar:empty { display: none; }
     .panel-hint { display: none; font-size: 10px; color: var(--muted); margin-bottom: 2px; text-align: center; }
+    .score-compact { display: none; }
+    .score-compact-row { display: flex; justify-content: space-between; font-size: 10px; padding: 1px 2px; color: var(--muted); }
+    .score-compact-row.active { color: #4ecca3; font-weight: 700; }
 
     /* ── 가로모드 레이아웃 ── */
     @media (orientation: landscape) and (max-height: 560px) {
@@ -880,12 +883,16 @@
         align-items: stretch;
         gap: 2px;
       }
+      .score-compact { display: block; margin-bottom: 4px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+      .panel-hint { display: block; }
       .panel-info {
         order: 0;
         width: 130px;
         min-width: 110px;
-        flex-shrink: 0;
+        flex: 0 0 130px;
+        min-height: 0;
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         border-radius: 8px;
         padding: 6px 5px;
       }
@@ -904,9 +911,10 @@
       .panel-action {
         order: 2;
         width: 145px;
-        min-width: 120px;
-        flex-shrink: 0;
+        flex: 0 0 145px;
+        min-height: 0;
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         border-radius: 8px;
         padding: 6px 5px;
       }
@@ -4007,7 +4015,8 @@
       const vBuild = buildableVertexSet();
       const eBuild = buildableEdgeSet();
       let html = `<div class="map-wrap" id="map-wrap">`;
-      html += `<div class="map-zoom-controls"><button onclick="zoomOutMap()">−</button><button onclick="zoomInMap()">+</button></div>`;
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      html += `<div class="map-zoom-controls"><button onclick="zoomOutMap()">−</button><button onclick="zoomInMap()">+</button><button onclick="toggleFullscreen()" title="전체화면" style="font-size:14px;">${isFs ? "⊡" : "⛶"}</button></div>`;
       html += `<div class="board" style="width:${mapW}px;height:${mapH}px;--zoom:${zoom};">`;
       for (const hex of state.hexes) {
         const c = state.geometry.centers[hex.index];
@@ -4280,6 +4289,9 @@
           ${renderMap()}
           <div class="hint-bar">${hintText}</div>
           <div class="panel-info">
+            <div class="score-compact">
+              ${state.players.map((p, i) => `<div class="score-compact-row${i === state.currentPlayer ? ' active' : ''}"><span style="color:${PLAYER_COLORS[i]};max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name||'P'+(i+1)}</span><span>${p.vp}VP</span></div>`).join('')}
+            </div>
             <div class="resources">${resourceStrip(me)}</div>
             ${vpBarHtml}
             ${timerHtml}
@@ -5393,6 +5405,19 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       } catch (e) {}
     }
 
+    function toggleFullscreen() {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        exitGameFullscreen();
+      } else {
+        enterGameFullscreen();
+      }
+      setTimeout(() => render(), 150);
+    }
+    window.toggleFullscreen = toggleFullscreen;
+
+    document.addEventListener('fullscreenchange', () => render());
+    document.addEventListener('webkitfullscreenchange', () => render());
+
     window.addEventListener('resize', () => {
       const isLandscape = window.innerWidth > window.innerHeight;
       if (isLandscape !== state.mapView._wasLandscape) {
@@ -5401,11 +5426,6 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
         state.mapView.userMoved = false;
         applyResponsiveDefaults(true);
         state.mapView.initialized = false;
-        if (isLandscape && state.screen !== "mode" && state.screen !== "map-select") {
-          enterGameFullscreen();
-        } else {
-          exitGameFullscreen();
-        }
         render();
         requestAnimationFrame(() => centerMapViewport(true));
       } else if (!state.mapView.userMoved) {
