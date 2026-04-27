@@ -706,7 +706,7 @@
       let lastTapAt = 0, tapCount = 0;
       let activePointerId = null;
 
-      target.style.touchAction = "pan-y";
+      target.style.touchAction = "none";
 
       target.addEventListener("pointerdown", (ev) => {
         if (activePointerId !== null) return;
