@@ -4,7 +4,7 @@ const assert = require('assert');
 const html = fs.readFileSync(__dirname + '/index.html', 'utf8');
 const start = html.indexOf('catanMpUI._renderWaitingRoom = function(roomCode)');
 if (start === -1) throw new Error('waiting room override not found');
-const chunk = html.slice(start, start + 2600);
+const chunk = html.slice(start, start + 4200);
 
 assert(
   chunk.includes('startBtn.onclick = () => { startGame(); };'),

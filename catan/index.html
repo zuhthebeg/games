@@ -4795,6 +4795,13 @@
       const _origRenderWaiting = catanMpUI._renderWaitingRoom.bind(catanMpUI);
       catanMpUI._renderWaitingRoom = function(roomCode) {
         _origRenderWaiting(roomCode);
+        const scrollHost = this.container.querySelector(".mp-screen, .mp-card, .mp-waiting-room, .lobby-screen") || this.container.firstElementChild || this.container;
+        if (scrollHost && scrollHost.style) {
+          scrollHost.style.overflowY = 'auto';
+          scrollHost.style.webkitOverflowScrolling = 'touch';
+          scrollHost.style.maxHeight = 'calc(100vh - 56px)';
+          scrollHost.style.boxSizing = 'border-box';
+        }
         if (!this.isHost) return;
         const playerListEl = this.container.querySelector("#mp-player-list");
         if (!playerListEl) return;
