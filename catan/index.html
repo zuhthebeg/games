@@ -4293,11 +4293,15 @@
                     `<option value="${m.id}" ${(mpState.mapId||"standard")===m.id?"selected":""}>${m.name}${"★".repeat(m.stars||0)} (${m.minPlayers}-${m.maxPlayers}인)</option>`
                   ).join("")}
                 </select>
-                <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"} style="white-space:nowrap;">게임 시작</button>
-              </div>` : `<div class="lobby-note">맵: ${MAP_PRESETS[mpState.mapId||"standard"]?.name || "기본 맵"}</div>`}
+              </div>
+              <div class="multi-row">
+                <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"}>게임 시작</button>
+                <button onclick="fillAIPlayers()">AI 채우기</button>
+                <button onclick="leaveRoom()" class="danger">나가기</button>
+              </div>
+              <div class="lobby-note">참가자는 준비 완료를 누르면 시작 가능 상태가 된다.</div>` : `<div class="lobby-note">맵: ${MAP_PRESETS[mpState.mapId||"standard"]?.name || "기본 맵"}</div>`}
               <div class="multi-row">
                 <button onclick="setReady()">${mpState.ready ? "준비 취소" : "준비 완료"}</button>
-                <button onclick="fillAIPlayers()" ${mpState.isHost ? "" : "hidden"}>AI 채우기</button>
                 <button onclick="leaveRoom()" class="danger">나가기</button>
               </div>
               <div id="playerList">${lobbyPlayersHtml()}</div>
