@@ -2563,8 +2563,10 @@
           SFX.win();
           if (winner === localPlayerIndex()) {
             launchConfetti();
-            showToast("🎉 승리! +10,000G", 6000);
-            if (typeof SharedWallet !== "undefined" && SharedWallet.addGold) SharedWallet.addGold(10000);
+            const _mapStars = (MAP_PRESETS[state.selectedMapId] || MAP_PRESETS.standard).stars || 1;
+            const _prize = _mapStars * 1000000;
+            showToast(`🎉 승리! +${_prize.toLocaleString()}원`, 6000);
+            if (typeof SharedWallet !== "undefined" && SharedWallet.addGold) SharedWallet.addGold(_prize);
           } else {
             showToast(`😢 ${state.players[winner].name} 승리...`, 6000);
           }
@@ -4000,7 +4002,7 @@
                 <div class="map-card${selected === m.id ? " selected" : ""}" onclick="onMapCardClick('${m.id}')">
                   <div class="map-card-name">${m.name}</div>
                   <div class="map-card-stars">${starsHtml(m.stars)}</div>
-                  <div class="map-card-meta">${m.minPlayers}–${m.maxPlayers}인 · ${m.vpGoal}점</div>
+                  <div class="map-card-meta">${m.minPlayers}–${m.maxPlayers}인 · ${m.vpGoal}점 · 🏆${((m.stars||1)*100).toLocaleString()}만원</div>
                   ${m.description ? `<div class="map-card-desc">${m.description}</div>` : ""}
                 </div>
               `).join("")}
