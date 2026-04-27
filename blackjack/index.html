@@ -681,6 +681,7 @@
 
     function interpretBlackjackGesture({ durationMs = 0, moveX = 0, moveY = 0, tapCount = 1 }) {
       if (tapCount >= 2 && durationMs <= 260 && Math.abs(moveX) < 18 && Math.abs(moveY) < 18) return "hit";
+      if (tapCount === 1 && moveY <= -56 && Math.abs(moveY) > Math.abs(moveX) * 1.2) return "split";
       if (tapCount === 1 && Math.abs(moveX) >= 56 && Math.abs(moveX) > Math.abs(moveY) * 1.5) return "stand";
       return null;
     }
@@ -719,6 +720,7 @@
         });
         if (gesture === "hit") actions.hit?.();
         if (gesture === "stand") actions.stand?.();
+        if (gesture === "split") actions.split?.();
       });
 
       target.addEventListener("pointercancel", () => {
@@ -1229,7 +1231,7 @@
     el.standBtn.addEventListener("click", stand);
     el.doubleBtn.addEventListener("click", doubleDown);
     el.splitBtn.addEventListener("click", split);
-    attachBlackjackGestureControls(el.actionPanel, { hit, stand });
+    attachBlackjackGestureControls(el.actionPanel, { hit, stand, split });
 
     document.getElementById("langBtn").addEventListener("click", () => {
       currentLang = currentLang === "ko" ? "en" : "ko";
@@ -1276,7 +1278,8 @@
 • 일반 승리: 1:1<br>
 • 블랙잭(첫 2장 21): 3:2<br>
 • 게임패 영역 더블탭: 히트<br>
-• 게임패 영역 좌우 드래그: 스탠드<br><br>
+• 게임패 영역 좌우 드래그: 스탠드<br>
+• 게임패 영역 위로 스와이프: 스플릿(가능할 때)<br><br>
 <b>연승 보너스</b><br>
 • 3연승: +50%<br>
 • 5연승: +100%`,
@@ -1291,7 +1294,8 @@
 • Double: Double bet + draw one card, auto-stand<br>
 • Split: Split matching cards into two hands<br>
 • Double tap on the action panel: Hit<br>
-• Drag left or right on the action panel: Stand<br><br>
+• Drag left or right on the action panel: Stand<br>
+• Swipe up on the action panel: Split (when available)<br><br>
 <b>Dealer rule</b>: Stands on 17+<br><br>
 <b>Payouts</b><br>
 • Normal win: 1:1<br>
@@ -1719,6 +1723,14 @@
         }
         await mpUI.sendAction({ type: "split" });
       } catch (e) { alert(t("actionFailed", e.message)); }
+    });
+    attachBlackjackGestureControls(document.getElementById("mpActionPanel"), {
+      hit: () => document.getElementById("mpHitBtn").click(),
+      stand: () => document.getElementById("mpStandBtn").click(),
+      split: () => {
+        const btn = document.getElementById("mpSplitBtn");
+        if (btn && !btn.disabled) btn.click();
+      }
     });
 
     // ── Multi: Leave Button (header) ──
