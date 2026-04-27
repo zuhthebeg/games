@@ -42,14 +42,14 @@
       background: radial-gradient(circle at 20% 0%, #1c4d71 0%, var(--bg) 50%, #0b2232 100%);
       color: var(--text);
       min-height: 100dvh;
-      padding-top: calc(53px + env(safe-area-inset-top));
+      padding-top: calc(46px + env(safe-area-inset-top));
       overflow: hidden;
     }
 
     .hidden { display: none !important; }
 
     #app {
-      height: calc(100dvh - 53px - 44px - env(safe-area-inset-bottom));
+      height: calc(100dvh - 46px - 44px - env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -194,7 +194,7 @@
     /* ── Active Player Banner ── */
     #turn-banner {
       position: fixed;
-      top: calc(53px + env(safe-area-inset-top)); left: 0; right: 0;
+      top: calc(46px + env(safe-area-inset-top)); left: 0; right: 0;
       height: 44px;
       display: flex;
       align-items: center;
@@ -852,10 +852,9 @@
 
     /* ── 가로모드 레이아웃 ── */
     @media (orientation: landscape) and (max-height: 560px) {
-      body { padding-top: env(safe-area-inset-top) !important; overflow: hidden !important; }
-      #turn-banner { top: calc(2px + env(safe-area-inset-top)) !important; }
+      #turn-banner { top: calc(46px + env(safe-area-inset-top)) !important; }
       #app {
-        height: calc(100dvh - env(safe-area-inset-bottom)) !important;
+        height: calc(100dvh - 46px - 44px - env(safe-area-inset-bottom)) !important;
         padding-top: calc(48px + env(safe-area-inset-top)) !important;
         padding-bottom: calc(2px + env(safe-area-inset-bottom)) !important;
         gap: 1px !important;
