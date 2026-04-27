@@ -34,14 +34,14 @@
 
     * { box-sizing: border-box; }
 
-    html { height: 100%; overflow: hidden; }
+    html { overflow: hidden; }
 
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: radial-gradient(circle at 20% 0%, #1c4d71 0%, var(--bg) 50%, #0b2232 100%);
       color: var(--text);
-      height: 100%;
+      min-height: 100dvh;
       padding-top: calc(48px + env(safe-area-inset-top));
       overflow: hidden;
     }
@@ -134,24 +134,34 @@
       color: var(--text);
     }
 
-    .map-zoom-controls {
-      position: sticky;
-      top: 8px;
+    #map-zoom-fixed {
+      position: fixed;
+      top: calc(96px + env(safe-area-inset-top));
       right: 8px;
-      margin-left: auto;
-      z-index: 20;
+      z-index: 150;
       display: flex;
-      gap: 6px;
+      flex-direction: column;
+      gap: 4px;
       pointer-events: auto;
     }
-
-    .map-zoom-controls button {
+    #map-zoom-fixed button {
       width: 32px;
       height: 32px;
       padding: 0;
       font-size: 18px;
       line-height: 1;
       background: rgba(7, 18, 27, 0.92);
+      border-radius: 8px;
+    }
+    @media (orientation: landscape) and (max-height: 560px) {
+      #map-zoom-fixed {
+        top: calc(50px + env(safe-area-inset-top));
+        right: calc(153px);
+      }
+    }
+    :fullscreen #map-zoom-fixed, :-webkit-full-screen #map-zoom-fixed {
+      top: calc(52px + env(safe-area-inset-top));
+      right: 8px;
     }
     .cost-hint {
       font-size: 9px;
@@ -864,6 +874,7 @@
     }
     .hint-bar:empty { display: none; }
     .panel-hint { display: none; font-size: 10px; color: var(--muted); margin-bottom: 2px; text-align: center; }
+    .panel-hint-landscape { display: none; font-size: 10px; color: var(--accent); margin-top: 2px; padding: 3px 4px; background: rgba(79,194,127,0.08); border-radius: 6px; }
     .score-compact { display: none; }
     .score-compact-row { display: flex; justify-content: space-between; font-size: 10px; padding: 1px 2px; color: var(--muted); }
     .score-compact-row.active { color: #4ecca3; font-weight: 700; }
@@ -880,7 +891,8 @@
       }
       .status { display: none; }
       .hint-bar { display: none; }
-      .panel-hint { display: block; }
+      .panel-hint { display: none !important; }
+      .panel-hint-landscape { display: block; }
       .game-body {
         flex-direction: row;
         align-items: stretch;
@@ -4022,8 +4034,6 @@
       const vBuild = buildableVertexSet();
       const eBuild = buildableEdgeSet();
       let html = `<div class="map-wrap" id="map-wrap">`;
-      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-      html += `<div class="map-zoom-controls"><button onclick="zoomOutMap()">−</button><button onclick="zoomInMap()">+</button><button onclick="toggleFullscreen()" title="전체화면" style="font-size:14px;">${isFs ? "⊡" : "⛶"}</button></div>`;
       html += `<div class="board" style="width:${mapW}px;height:${mapH}px;--zoom:${zoom};">`;
       for (const hex of state.hexes) {
         const c = state.geometry.centers[hex.index];
@@ -4290,6 +4300,7 @@
           <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
           <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
         </div>`;
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
       return `
         <div class="status">${statusText()}</div>
         <div class="game-body">
@@ -4302,13 +4313,14 @@
             <div class="resources">${resourceStrip(me)}</div>
             ${vpBarHtml}
             ${timerHtml}
+            ${hintText ? `<div class="panel-hint-landscape">${hintText}</div>` : ""}
             ${devCardText ? `<div style="font-size:11px;color:var(--muted);">${devCardText}</div>` : ""}
           </div>
-          <div class="panel-action">
-            ${hintText ? `<div class="panel-hint">${hintText}</div>` : ""}
+          <div class="panel-action" id="panel-action">
             ${actionsHtml}
           </div>
         </div>
+        <div id="map-zoom-fixed"><button onclick="zoomOutMap()">−</button><button onclick="zoomInMap()">+</button><button onclick="toggleFullscreen()" title="전체화면" style="font-size:14px;">${isFs ? "⊡" : "⛶"}</button></div>
         ${renderTradeModal()}
       `;
     }
@@ -4389,10 +4401,12 @@
         return;
       }
       else {
-        // Save scroll position before DOM replacement
+        // Save scroll positions before DOM replacement
         const _prev = document.getElementById("map-wrap");
         const _sl = _prev ? _prev.scrollLeft : 0;
         const _st = _prev ? _prev.scrollTop : 0;
+        const _prevAction = document.getElementById("panel-action");
+        const _actionST = _prevAction ? _prevAction.scrollTop : 0;
         app.innerHTML = renderGameScreen();
         bindMapPanHandlers();
         const _wrap = document.getElementById("map-wrap");
@@ -4401,6 +4415,10 @@
           _wrap.scrollTop = _st;
         } else {
           centerMapViewport();
+        }
+        if (_actionST > 0) {
+          const _actionEl = document.getElementById("panel-action");
+          if (_actionEl) _actionEl.scrollTop = _actionST;
         }
       }
       updateTurnBanner();
