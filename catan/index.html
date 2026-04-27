@@ -42,14 +42,14 @@
       background: radial-gradient(circle at 20% 0%, #1c4d71 0%, var(--bg) 50%, #0b2232 100%);
       color: var(--text);
       min-height: 100dvh;
-      padding-top: calc(48px + env(safe-area-inset-top));
+      padding-top: calc(53px + env(safe-area-inset-top));
       overflow: hidden;
     }
 
     .hidden { display: none !important; }
 
     #app {
-      height: calc(100dvh - 48px - 44px - env(safe-area-inset-bottom));
+      height: calc(100dvh - 53px - 44px - env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -136,8 +136,8 @@
 
     #map-zoom-fixed {
       position: fixed;
-      top: calc(96px + env(safe-area-inset-top));
-      right: 8px;
+      top: calc(101px + env(safe-area-inset-top));
+      left: 8px;
       z-index: 150;
       display: flex;
       flex-direction: column;
@@ -156,12 +156,12 @@
     @media (orientation: landscape) and (max-height: 560px) {
       #map-zoom-fixed {
         top: calc(50px + env(safe-area-inset-top));
-        right: calc(153px);
+        left: 138px;
       }
     }
     :fullscreen #map-zoom-fixed, :-webkit-full-screen #map-zoom-fixed {
       top: calc(52px + env(safe-area-inset-top));
-      right: 8px;
+      left: 8px;
     }
     .cost-hint {
       font-size: 9px;
@@ -223,7 +223,7 @@
     /* ── Active Player Banner ── */
     #turn-banner {
       position: fixed;
-      top: calc(48px + env(safe-area-inset-top)); left: 0; right: 0;
+      top: calc(53px + env(safe-area-inset-top)); left: 0; right: 0;
       height: 44px;
       display: flex;
       align-items: center;
