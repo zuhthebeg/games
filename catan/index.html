@@ -4801,17 +4801,32 @@
         const maps = Object.values(MAP_PRESETS);
         const sel = document.createElement("div");
         sel.id = "catan-map-selector";
-        sel.style.cssText = "margin:12px 0;padding:10px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.1);";
+        sel.style.cssText = "margin:12px 0;padding:10px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.1);display:grid;gap:8px;";
         const redrawSel = () => {
           const cur = state.selectedMapId || "standard";
-          sel.innerHTML = `<div style="font-size:12px;color:#9ca3af;margin-bottom:6px;">🗺️ 맵 선택 (호스트)</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              ${maps.map(m => `<button data-map-id="${m.id}" style="padding:5px 10px;border-radius:8px;border:2px solid ${cur===m.id?"#ffd700":"#444"};background:${cur===m.id?"#2d2d00":"#1a1a2e"};color:${cur===m.id?"#ffd700":"#aaa"};font-size:11px;cursor:pointer;">${m.name}</button>`).join("")}
+          sel.innerHTML = `<div style="font-size:12px;color:#9ca3af;">🗺️ 맵 선택 (호스트)</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;">
+              <select data-map-select style="flex:1;min-width:0;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:#0a1c2b;color:#fff;">
+                ${maps.map(m => `<option value="${m.id}" ${cur===m.id?"selected":""}>${m.name}${"★".repeat(m.stars||0)} (${m.minPlayers}-${m.maxPlayers}인)</option>`).join("")}
+              </select>
+              <button data-start-game style="white-space:nowrap;padding:8px 12px;border-radius:8px;border:none;background:#2f9e84;color:#fff;font-weight:700;cursor:pointer;">게임 시작</button>
             </div>
-            <div style="font-size:11px;color:#6b7280;margin-top:4px;">${MAP_PRESETS[cur]?.description || ""}</div>`;
-          sel.querySelectorAll("[data-map-id]").forEach(btn => {
-            btn.onclick = () => { state.selectedMapId = btn.dataset.mapId; redrawSel(); };
-          });
+            <div style="font-size:11px;color:#6b7280;">${MAP_PRESETS[cur]?.description || ""}</div>`;
+          const selectEl = sel.querySelector("[data-map-select]");
+          const startBtn = sel.querySelector("[data-start-game]");
+          if (selectEl) {
+            selectEl.onchange = () => {
+              state.selectedMapId = selectEl.value;
+              mpState.mapId = selectEl.value;
+              redrawSel();
+            };
+          }
+          if (startBtn) {
+            startBtn.onclick = () => {
+              const nativeStart = this.container.querySelector("#mp-start-game-btn, [data-action='start-game'], button[onclick*='startGame']");
+              if (nativeStart && !nativeStart.hidden && nativeStart.style.display !== 'none') nativeStart.click();
+            };
+          }
         };
         redrawSel();
         playerListEl.insertAdjacentElement("afterend", sel);
