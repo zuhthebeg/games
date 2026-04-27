@@ -42,14 +42,14 @@
       background: radial-gradient(circle at 20% 0%, #1c4d71 0%, var(--bg) 50%, #0b2232 100%);
       color: var(--text);
       min-height: 100dvh;
-      padding-top: calc(46px + env(safe-area-inset-top));
+      padding-top: calc(52px + env(safe-area-inset-top));
       overflow: hidden;
     }
 
     .hidden { display: none !important; }
 
     #app {
-      height: calc(100dvh - 46px - 44px - env(safe-area-inset-bottom));
+      height: calc(100dvh - 52px - 44px - env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -194,7 +194,7 @@
     /* ── Active Player Banner ── */
     #turn-banner {
       position: fixed;
-      top: calc(46px + env(safe-area-inset-top)); left: 0; right: 0;
+      top: calc(52px + env(safe-area-inset-top)); left: 0; right: 0;
       height: 44px;
       display: flex;
       align-items: center;
@@ -627,11 +627,22 @@
       display: grid;
       gap: 5px;
     }
+    .turn-timer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .end-turn-timer-btn {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 7px;
+      flex-shrink: 0;
+    }
 
     .turn-timer-label {
       font-size: 12px;
       color: var(--muted);
-      text-align: center;
       font-weight: 700;
     }
 
@@ -852,9 +863,9 @@
 
     /* ── 가로모드 레이아웃 ── */
     @media (orientation: landscape) and (max-height: 560px) {
-      #turn-banner { top: calc(46px + env(safe-area-inset-top)) !important; }
+      #turn-banner { top: calc(52px + env(safe-area-inset-top)) !important; }
       #app {
-        height: calc(100dvh - 46px - 44px - env(safe-area-inset-bottom)) !important;
+        height: calc(100dvh - 52px - 44px - env(safe-area-inset-bottom)) !important;
         padding-top: calc(48px + env(safe-area-inset-top)) !important;
         padding-bottom: calc(2px + env(safe-area-inset-bottom)) !important;
         gap: 1px !important;
@@ -881,6 +892,8 @@
         border-radius: 8px;
         padding: 6px 5px;
       }
+      .turn-timer-row { flex-direction: column; align-items: stretch; }
+      .end-turn-timer-btn { width: 100%; margin-top: 1px; font-size: 10px; }
       .panel-info .resources {
         grid-template-columns: 1fr 1fr;
         gap: 3px;
@@ -4249,7 +4262,8 @@
       const devCardText = (me.devCards && me.devCards.length)
         ? `카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':c.type==='vp'?'⭐VP':c.type==='monopoly'?'💰모노폴리':c.type==='road_building'?'🛣️도로':c.type==='year_of_plenty'?'🌾풍년':'🃏').join(' ')}`
         : "";
-      const timerHtml = myTurn ? `<div class="turn-timer"><div class="turn-timer-label">턴 타이머: ${state.turnTimeLeft}s</div><div class="turn-timer-bar"><div class="turn-timer-fill" style="width:${turnPct}%;"></div></div></div>` : "";
+      const canEndTurnNow = actionState.canMain && state.canEndTurn;
+      const timerHtml = myTurn ? `<div class="turn-timer"><div class="turn-timer-row"><div class="turn-timer-label">턴 타이머: ${state.turnTimeLeft}s</div><button class="danger end-turn-timer-btn" ${canEndTurnNow ? "" : "disabled"} onclick="endTurn()">턴 종료</button></div><div class="turn-timer-bar"><div class="turn-timer-fill" style="width:${turnPct}%;"></div></div></div>` : "";
       const vpBarHtml = `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#aaa;padding:2px 4px;"><span>VP: ${vp}/${vpGoal}</span><div style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;"><div style="height:100%;width:${vpPctFull}%;background:linear-gradient(90deg,#4ecca3,#ffd700);border-radius:2px;"></div></div></div>`;
       const hintText = [
         inSetup ? `초기 배치 ${state.setupRound}라운드 | ${state.setupStep === "settlement" ? "마을을 놓으세요" : "도로를 놓으세요"}` : "",
@@ -4268,7 +4282,6 @@
           <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
           <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️도로건설</button>
           <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
-          <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
         </div>`;
       return `
         <div class="status">${statusText()}</div>
