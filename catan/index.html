@@ -134,35 +134,6 @@
       color: var(--text);
     }
 
-    #map-zoom-fixed {
-      position: fixed;
-      top: calc(101px + env(safe-area-inset-top));
-      left: 8px;
-      z-index: 150;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      pointer-events: auto;
-    }
-    #map-zoom-fixed button {
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      font-size: 18px;
-      line-height: 1;
-      background: rgba(7, 18, 27, 0.92);
-      border-radius: 8px;
-    }
-    @media (orientation: landscape) and (max-height: 560px) {
-      #map-zoom-fixed {
-        top: calc(50px + env(safe-area-inset-top));
-        left: 138px;
-      }
-    }
-    :fullscreen #map-zoom-fixed, :-webkit-full-screen #map-zoom-fixed {
-      top: calc(52px + env(safe-area-inset-top));
-      left: 8px;
-    }
     .cost-hint {
       font-size: 9px;
       opacity: 0.7;
@@ -4300,7 +4271,6 @@
           <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
           <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
         </div>`;
-      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
       return `
         <div class="status">${statusText()}</div>
         <div class="game-body">
@@ -4320,7 +4290,6 @@
             ${actionsHtml}
           </div>
         </div>
-        <div id="map-zoom-fixed"><button onclick="zoomOutMap()">−</button><button onclick="zoomInMap()">+</button><button onclick="toggleFullscreen()" title="전체화면" style="font-size:14px;">${isFs ? "⊡" : "⛶"}</button></div>
         ${renderTradeModal()}
       `;
     }
@@ -5504,7 +5473,13 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
         return `<span class="vp-chip${active ? " active" : ""}" style="color:${p.color};"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${p.color};"></span>${label} ${p.vp}${lr}${la}</span>`;
       }).join("");
 
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
       banner.innerHTML = `
+        <div style="display:flex;gap:3px;flex-shrink:0;">
+          <button onclick="zoomOutMap()" style="width:28px;height:28px;padding:0;font-size:16px;line-height:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;cursor:pointer;">−</button>
+          <button onclick="zoomInMap()" style="width:28px;height:28px;padding:0;font-size:16px;line-height:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;cursor:pointer;">+</button>
+          <button onclick="toggleFullscreen()" style="width:28px;height:28px;padding:0;font-size:14px;line-height:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;cursor:pointer;">${isFs ? "⊡" : "⛶"}</button>
+        </div>
         <span class="banner-action">${action}</span>
         <div class="banner-vps">${vpChips}<span class="vp-chip" onclick="toggleSoundPanel()" style="cursor:pointer;">⚙️</span></div>
       `;
