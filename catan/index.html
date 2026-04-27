@@ -4506,6 +4506,9 @@
       if (!room) return;
       mpState.room = room;
       mpState.roomCode = room.id || room.roomId || mpState.roomCode;
+      const roomMapId = room.meta?.mapId || room.mapId || "standard";
+      mpState.mapId = roomMapId;
+      state.selectedMapId = roomMapId;
       const me = room.players?.find(p => p.id === mpState.myUserId);
       mpState.isHost = !!me?.isHost;
       mpState.ready = !!me?.isReady;

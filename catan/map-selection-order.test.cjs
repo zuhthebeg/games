@@ -81,7 +81,8 @@ assert.equal(twinHexes[17].type, 'desert', 'twin-continents desert should remain
 
 const selectionScript = [
   extractFunction('confirmMapSelect', 'renderMapSelect'),
-  extractFunction('createRoom', 'joinRoom', true)
+  extractFunction('createRoom', 'joinRoom', true),
+  extractFunction('onRoomStateChange', 'autoStartIfReady')
 ].join('\n');
 
 const singleCtx = {
@@ -116,6 +117,27 @@ const multiCtx = {
 };
 vm.createContext(multiCtx);
 vm.runInContext(selectionScript, multiCtx);
+
+const joinerCtx = {
+  state: { selectedMapId: 'frontier-outback', screen: 'room-lobby', mode: 'multi', hint: '' },
+  mpState: { myUserId: 'guest-1', mapId: 'frontier-outback', waitingMessage: '', aiPlayers: [] },
+  getLobbyAiPlayers: () => [],
+  autoStartIfReady() {},
+  render() {}
+};
+vm.createContext(joinerCtx);
+vm.runInContext(selectionScript, joinerCtx);
+joinerCtx.onRoomStateChange({
+  id: 'ROOM1',
+  status: 'waiting',
+  meta: { mapId: 'gold-rush' },
+  players: [
+    { id: 'host-1', isHost: true, isReady: true },
+    { id: 'guest-1', isHost: false, isReady: false }
+  ]
+});
+assert.equal(joinerCtx.state.selectedMapId, 'gold-rush', 'joiner lobby should adopt host room mapId');
+assert.equal(joinerCtx.mpState.mapId, 'gold-rush', 'joiner multiplayer state should sync room mapId');
 
 (async () => {
   await multiCtx.createRoom();
