@@ -759,9 +759,13 @@
 
     .lobby-screen {
       min-height: calc(100vh - 56px);
-      display: grid;
-      place-items: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      overflow-y: auto;
       padding: 24px 12px;
+      box-sizing: border-box;
     }
 
     .lobby-card {
@@ -4277,7 +4281,7 @@
       const waitMsg = mpState.waitingMessage || (canStart ? "게임 시작 가능" : "플레이어를 기다리는 중...");
       return `
         <div class="lobby-screen">
-          <div class="lobby-card">
+          <div class="lobby-card" style="max-height:calc(100vh - 96px);overflow-y:auto;flex:0 0 auto;">
             <h1 class="lobby-title">카탄</h1>
             <div class="room-lobby">
               <p>방 코드: <strong id="roomCodeDisplay">${mpState.roomCode || "-"}</strong></p>
