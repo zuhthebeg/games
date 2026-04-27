@@ -4089,7 +4089,7 @@
               </select>
             </div>
             <button onclick="showMapSelect('single')">싱글플레이</button>
-            <button onclick="showMultiOptions()">멀티플레이</button>
+            <button onclick="showMapSelect('multi')">멀티플레이</button>
           </div>
         </div>
       `;
@@ -4118,8 +4118,7 @@
       if (state.mapSelectSource === "single") {
         startSingle(mapId);
       } else {
-        state.screen = "multi-lobby";
-        render();
+        showMultiOptions();
       }
     }
 
