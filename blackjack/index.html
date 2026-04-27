@@ -464,8 +464,15 @@
       </div>
     </div>
 
-    <section class="panel actions">
-      <div class="row" style="gap:4px;">
+    <section class="panel actions" id="soloActionPanel">
+      <div id="insuranceRow" style="display:none;padding:6px 8px 0;text-align:center;">
+        <div style="font-size:0.72rem;color:#ffd166;margin-bottom:4px;">🛡️ 딜러 Ace — 인셔런스?</div>
+        <div class="row" style="gap:4px;">
+          <button id="insYesBtn" style="flex:1;background:rgba(255,209,102,0.18);border:1px solid rgba(255,209,102,0.5);color:#ffd166;border-radius:8px;padding:7px 0;font-size:0.78rem;font-weight:700;cursor:pointer;">✅ 예</button>
+          <button id="insNoBtn" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);color:#aaa;border-radius:8px;padding:7px 0;font-size:0.78rem;font-weight:700;cursor:pointer;">❌ 아니오</button>
+        </div>
+      </div>
+      <div class="row" style="gap:4px;" id="mainActionRow">
         <button class="hit" id="hitBtn" style="font-size:0.78rem;padding:8px 0;">Hit</button>
         <button class="stand" id="standBtn" style="font-size:0.78rem;padding:8px 0;">Stand</button>
         <button class="double" id="doubleBtn" style="font-size:0.78rem;padding:8px 0;">Double</button>
@@ -658,7 +665,8 @@
       statusType: "",
       revealDealer: false,
       nextCardId: 1,
-      animQueue: []
+      animQueue: [],
+      insuranceBet: 0
     };
 
     const el = {
@@ -676,12 +684,17 @@
       standBtn: document.getElementById("standBtn"),
       doubleBtn: document.getElementById("doubleBtn"),
       splitBtn: document.getElementById("splitBtn"),
-      actionPanel: document.querySelector("#soloApp .panel.actions")
+      actionPanel: document.getElementById("soloActionPanel"),
+      insuranceRow: document.getElementById("insuranceRow"),
+      insYesBtn: document.getElementById("insYesBtn"),
+      insNoBtn: document.getElementById("insNoBtn")
     };
 
-    function interpretBlackjackGesture({ durationMs = 0, moveX = 0, moveY = 0, tapCount = 1 }) {
+    function interpretBlackjackGesture({ durationMs = 0, moveX = 0, moveY = 0, tapCount = 1, twoFinger = false }) {
+      if (twoFinger && durationMs <= 320) return "insurance";
       if (tapCount >= 2 && durationMs <= 260 && Math.abs(moveX) < 18 && Math.abs(moveY) < 18) return "hit";
       if (tapCount === 1 && moveY <= -56 && Math.abs(moveY) > Math.abs(moveX) * 1.2) return "split";
+      if (tapCount === 1 && moveY >= 56 && Math.abs(moveY) > Math.abs(moveX) * 1.2) return "double";
       if (tapCount === 1 && Math.abs(moveX) >= 56 && Math.abs(moveX) > Math.abs(moveY) * 1.5) return "stand";
       return null;
     }
@@ -690,26 +703,35 @@
       if (!target || target.dataset.gestureBound === "1") return;
       target.dataset.gestureBound = "1";
 
-      let startX = 0;
-      let startY = 0;
-      let startAt = 0;
-      let lastTapAt = 0;
-      let tapCount = 0;
-      let activePointerId = null;
+      let startX = 0, startY = 0, startAt = 0;
+      let lastTapAt = 0, tapCount = 0;
+      let activeTouches = new Map();
+      let twoFingerAt = 0, twoFingerActive = false;
 
-      target.style.touchAction = "pan-y";
+      target.style.touchAction = "none";
 
       target.addEventListener("pointerdown", (ev) => {
-        activePointerId = ev.pointerId;
-        startX = ev.clientX;
-        startY = ev.clientY;
-        startAt = Date.now();
+        activeTouches.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+        if (activeTouches.size === 1) {
+          startX = ev.clientX; startY = ev.clientY; startAt = Date.now();
+        }
+        if (activeTouches.size === 2) {
+          twoFingerActive = true; twoFingerAt = Date.now();
+        }
       });
 
       target.addEventListener("pointerup", (ev) => {
-        if (activePointerId !== ev.pointerId) return;
-        activePointerId = null;
+        if (!activeTouches.has(ev.pointerId)) return;
+        activeTouches.delete(ev.pointerId);
+        if (activeTouches.size > 0) return;
         const now = Date.now();
+        if (twoFingerActive) {
+          twoFingerActive = false;
+          const gesture = interpretBlackjackGesture({ durationMs: now - twoFingerAt, twoFinger: true });
+          if (gesture === "insurance") actions.insurance?.();
+          tapCount = 0;
+          return;
+        }
         tapCount = now - lastTapAt <= 320 ? tapCount + 1 : 1;
         lastTapAt = now;
         const gesture = interpretBlackjackGesture({
@@ -721,10 +743,13 @@
         if (gesture === "hit") actions.hit?.();
         if (gesture === "stand") actions.stand?.();
         if (gesture === "split") actions.split?.();
+        if (gesture === "double") actions.double?.();
+        if (gesture === "insurance") actions.insurance?.();
       });
 
-      target.addEventListener("pointercancel", () => {
-        activePointerId = null;
+      target.addEventListener("pointercancel", (ev) => {
+        activeTouches.delete(ev.pointerId);
+        if (activeTouches.size === 0) twoFingerActive = false;
       });
     }
 
@@ -836,6 +861,7 @@
 
       const playerPhase = state.phase === "player";
       const bettingPhase = state.phase === "betting";
+      const insurancePhase = state.phase === "insurance";
       const canSplit = playerPhase && canSplitCurrent();
       const canDouble = playerPhase && canDoubleCurrent();
 
@@ -844,6 +870,7 @@
       el.standBtn.disabled = !playerPhase;
       el.doubleBtn.disabled = !canDouble;
       el.splitBtn.disabled = !canSplit;
+      el.insuranceRow.style.display = insurancePhase ? "block" : "none";
 
       animateNewCards();
       renderStatus();
@@ -977,6 +1004,7 @@
 
       p.blackjack = isBlackjack(p.cards);
       const dealerBJ = isBlackjack(state.dealer);
+      const dealerUpAce = state.dealer[0]?.rank === "A";
 
       if (p.blackjack || dealerBJ) {
         await wait(500);
@@ -984,6 +1012,10 @@
         render();
         await wait(300);
         settleNaturals(p.blackjack, dealerBJ);
+      } else if (dealerUpAce) {
+        state.phase = "insurance";
+        state.insuranceBet = 0;
+        setStatus(currentLang === "ko" ? "🛡️ 딜러 Ace! 인셔런스 하시겠어요?" : "🛡️ Dealer Ace! Take insurance?", "");
       } else {
         setStatus(t("playerTurn"), "");
       }
@@ -1007,6 +1039,36 @@
       }
       if (payout > 0) walletAdd(payout);
       state.phase = "betting";
+      render();
+    }
+
+    function takeInsurance() {
+      if (state.phase !== "insurance") return;
+      const insBet = Math.floor(state.hands[0].bet / 2);
+      if (!walletRemove(insBet)) {
+        setStatus(currentLang === "ko" ? "골드 부족!" : "Not enough gold!", "lose");
+        render(); return;
+      }
+      state.insuranceBet = insBet;
+      const dealerBJ = isBlackjack(state.dealer);
+      state.revealDealer = true;
+      if (dealerBJ) {
+        walletAdd(insBet * 3);
+        setStatus(currentLang === "ko" ? `🛡️ 인셔런스 성공! +${(insBet * 2).toLocaleString()}G` : `🛡️ Insurance wins! +${(insBet * 2).toLocaleString()}G`, "win");
+        state.phase = "betting";
+        state.streak = 0;
+      } else {
+        setStatus(currentLang === "ko" ? "🛡️ 인셔런스 실패. 계속 진행." : "🛡️ Insurance lost. Game continues.", "");
+        state.phase = "player";
+      }
+      render();
+    }
+
+    function skipInsurance() {
+      if (state.phase !== "insurance") return;
+      state.insuranceBet = 0;
+      state.phase = "player";
+      setStatus(t("playerTurn"), "");
       render();
     }
 
@@ -1231,7 +1293,15 @@
     el.standBtn.addEventListener("click", stand);
     el.doubleBtn.addEventListener("click", doubleDown);
     el.splitBtn.addEventListener("click", split);
-    attachBlackjackGestureControls(el.actionPanel, { hit, stand, split });
+    el.insYesBtn.addEventListener("click", takeInsurance);
+    el.insNoBtn.addEventListener("click", skipInsurance);
+    attachBlackjackGestureControls(el.actionPanel, {
+      hit,
+      stand,
+      split,
+      double: () => { if (!el.doubleBtn.disabled) doubleDown(); },
+      insurance: () => { if (state.phase === "insurance") takeInsurance(); }
+    });
 
     document.getElementById("langBtn").addEventListener("click", () => {
       currentLang = currentLang === "ko" ? "en" : "ko";
@@ -1272,14 +1342,19 @@
 • Hit: 카드 1장 추가<br>
 • Stand: 현재 합으로 멈춤<br>
 • Double: 베팅 2배 + 카드 1장 후 자동 Stand<br>
-• Split: 같은 카드 2장일 때 핸드 분리<br><br>
+• Split: 같은 카드 2장일 때 핸드 분리<br>
+• 인셔런스: 딜러 Ace 시 — 베팅의 절반 사이드배팅, 딜러 블랙잭 시 2:1 지급<br><br>
+<b>제스처 (게임패 영역)</b><br>
+• 더블탭 → Hit<br>
+• 좌우 드래그 → Stand<br>
+• 위로 스와이프 → Split<br>
+• 아래로 스와이프 → Double Down<br>
+• 두 손가락 탭 → 인셔런스 (제공될 때)<br><br>
 <b>딜러 규칙</b>: 17 이상이면 Stand<br><br>
 <b>배당</b><br>
 • 일반 승리: 1:1<br>
 • 블랙잭(첫 2장 21): 3:2<br>
-• 게임패 영역 더블탭: 히트<br>
-• 게임패 영역 좌우 드래그: 스탠드<br>
-• 게임패 영역 위로 스와이프: 스플릿(가능할 때)<br><br>
+• 인셔런스 승리: 2:1<br><br>
 <b>연승 보너스</b><br>
 • 3연승: +50%<br>
 • 5연승: +100%`,
@@ -1293,13 +1368,18 @@
 • Stand: Keep your current hand<br>
 • Double: Double bet + draw one card, auto-stand<br>
 • Split: Split matching cards into two hands<br>
-• Double tap on the action panel: Hit<br>
-• Drag left or right on the action panel: Stand<br>
-• Swipe up on the action panel: Split (when available)<br><br>
+• Insurance: When dealer shows Ace — side bet (half your bet); pays 2:1 if dealer has blackjack<br><br>
+<b>Gestures (action panel)</b><br>
+• Double tap → Hit<br>
+• Swipe left/right → Stand<br>
+• Swipe up → Split<br>
+• Swipe down → Double Down<br>
+• Two-finger tap → Insurance (when offered)<br><br>
 <b>Dealer rule</b>: Stands on 17+<br><br>
 <b>Payouts</b><br>
 • Normal win: 1:1<br>
-• Blackjack (first 2 cards = 21): 3:2<br><br>
+• Blackjack (first 2 cards = 21): 3:2<br>
+• Insurance win: 2:1<br><br>
 <b>Streak Bonus</b><br>
 • 3 wins: +50%<br>
 • 5 wins: +100%`
@@ -1727,6 +1807,10 @@
     attachBlackjackGestureControls(document.getElementById("mpActionPanel"), {
       hit: () => document.getElementById("mpHitBtn").click(),
       stand: () => document.getElementById("mpStandBtn").click(),
+      double: () => {
+        const btn = document.getElementById("mpDoubleBtn");
+        if (btn && !btn.disabled) btn.click();
+      },
       split: () => {
         const btn = document.getElementById("mpSplitBtn");
         if (btn && !btn.disabled) btn.click();
