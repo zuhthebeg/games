@@ -690,8 +690,7 @@
       insNoBtn: document.getElementById("insNoBtn")
     };
 
-    function interpretBlackjackGesture({ durationMs = 0, moveX = 0, moveY = 0, tapCount = 1, twoFinger = false }) {
-      if (twoFinger && durationMs <= 320) return "insurance";
+    function interpretBlackjackGesture({ durationMs = 0, moveX = 0, moveY = 0, tapCount = 1 }) {
       if (tapCount >= 2 && durationMs <= 260 && Math.abs(moveX) < 18 && Math.abs(moveY) < 18) return "hit";
       if (tapCount === 1 && moveY <= -56 && Math.abs(moveY) > Math.abs(moveX) * 1.2) return "split";
       if (tapCount === 1 && moveY >= 56 && Math.abs(moveY) > Math.abs(moveX) * 1.2) return "double";
@@ -705,33 +704,20 @@
 
       let startX = 0, startY = 0, startAt = 0;
       let lastTapAt = 0, tapCount = 0;
-      let activeTouches = new Map();
-      let twoFingerAt = 0, twoFingerActive = false;
+      let activePointerId = null;
 
-      target.style.touchAction = "none";
+      target.style.touchAction = "pan-y";
 
       target.addEventListener("pointerdown", (ev) => {
-        activeTouches.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-        if (activeTouches.size === 1) {
-          startX = ev.clientX; startY = ev.clientY; startAt = Date.now();
-        }
-        if (activeTouches.size === 2) {
-          twoFingerActive = true; twoFingerAt = Date.now();
-        }
+        if (activePointerId !== null) return;
+        activePointerId = ev.pointerId;
+        startX = ev.clientX; startY = ev.clientY; startAt = Date.now();
       });
 
       target.addEventListener("pointerup", (ev) => {
-        if (!activeTouches.has(ev.pointerId)) return;
-        activeTouches.delete(ev.pointerId);
-        if (activeTouches.size > 0) return;
+        if (activePointerId !== ev.pointerId) return;
+        activePointerId = null;
         const now = Date.now();
-        if (twoFingerActive) {
-          twoFingerActive = false;
-          const gesture = interpretBlackjackGesture({ durationMs: now - twoFingerAt, twoFinger: true });
-          if (gesture === "insurance") actions.insurance?.();
-          tapCount = 0;
-          return;
-        }
         tapCount = now - lastTapAt <= 320 ? tapCount + 1 : 1;
         lastTapAt = now;
         const gesture = interpretBlackjackGesture({
@@ -747,10 +733,7 @@
         if (gesture === "insurance") actions.insurance?.();
       });
 
-      target.addEventListener("pointercancel", (ev) => {
-        activeTouches.delete(ev.pointerId);
-        if (activeTouches.size === 0) twoFingerActive = false;
-      });
+      target.addEventListener("pointercancel", () => { activePointerId = null; });
     }
 
     function makeDeck() {
@@ -1349,7 +1332,6 @@
 • 좌우 드래그 → Stand<br>
 • 위로 스와이프 → Split<br>
 • 아래로 스와이프 → Double Down<br>
-• 두 손가락 탭 → 인셔런스 (제공될 때)<br><br>
 <b>딜러 규칙</b>: 17 이상이면 Stand<br><br>
 <b>배당</b><br>
 • 일반 승리: 1:1<br>
@@ -1374,7 +1356,6 @@
 • Swipe left/right → Stand<br>
 • Swipe up → Split<br>
 • Swipe down → Double Down<br>
-• Two-finger tap → Insurance (when offered)<br><br>
 <b>Dealer rule</b>: Stands on 17+<br><br>
 <b>Payouts</b><br>
 • Normal win: 1:1<br>
