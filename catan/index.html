@@ -4285,22 +4285,22 @@
             <h1 class="lobby-title">카탄</h1>
             <div class="room-lobby">
               <p>방 코드: <strong id="roomCodeDisplay">${mpState.roomCode || "-"}</strong></p>
-              <div id="playerList">${lobbyPlayersHtml()}</div>
               ${mpState.isHost ? `
               <div class="multi-row" style="align-items:center;">
                 <label style="font-size:12px;color:var(--muted);white-space:nowrap;">맵</label>
-                <select onchange="mpState.mapId=this.value;state.selectedMapId=this.value;" style="flex:1;">
+                <select onchange="mpState.mapId=this.value;state.selectedMapId=this.value;" style="flex:1;min-width:0;">
                   ${Object.values(MAP_PRESETS).map(m =>
                     `<option value="${m.id}" ${(mpState.mapId||"standard")===m.id?"selected":""}>${m.name}${"★".repeat(m.stars||0)} (${m.minPlayers}-${m.maxPlayers}인)</option>`
                   ).join("")}
                 </select>
+                <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"} style="white-space:nowrap;">게임 시작</button>
               </div>` : `<div class="lobby-note">맵: ${MAP_PRESETS[mpState.mapId||"standard"]?.name || "기본 맵"}</div>`}
               <div class="multi-row">
                 <button onclick="setReady()">${mpState.ready ? "준비 취소" : "준비 완료"}</button>
                 <button onclick="fillAIPlayers()" ${mpState.isHost ? "" : "hidden"}>AI 채우기</button>
-                <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"}>게임 시작</button>
                 <button onclick="leaveRoom()" class="danger">나가기</button>
               </div>
+              <div id="playerList">${lobbyPlayersHtml()}</div>
               <div class="lobby-note">${waitMsg}</div>
             </div>
           </div>
