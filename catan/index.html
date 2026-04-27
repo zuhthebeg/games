@@ -1968,7 +1968,7 @@
       }
     }
 
-    function showGoldPicker(amount) {
+    function showGoldPicker(amount, currentResources) {
       return new Promise(resolve => {
         const chosen = {}; RESOURCES.forEach(r => chosen[r] = 0);
         let remaining = amount;
@@ -1979,7 +1979,7 @@
             <div class="gold-picker-title">💰 금광 수확!</div>
             <div class="gold-picker-remaining">자원 <strong>${remaining}</strong>개 선택 가능</div>
             ${RESOURCES.map(r => `<div class="gold-picker-row">
-              <span class="gold-picker-label">${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]}</span>
+              <span class="gold-picker-label">${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]}<span style="font-size:12px;opacity:0.6;margin-left:4px;">(${(currentResources&&currentResources[r])||0})</span></span>
               <div class="gold-picker-controls">
                 <button onclick="window._gAdj('${r}',-1)" ${chosen[r]<=0?"disabled":""}>−</button>
                 <span class="gold-picker-count">${chosen[r]}</span>
@@ -2006,9 +2006,9 @@
 
     async function resolveHumanGoldIfNeeded() {
       if (!state._pendingHumanGold) return;
-      const chosen = await showGoldPicker(state._pendingHumanGold);
       const humanIdx = localPlayerIndex();
       const human = state.players[humanIdx];
+      const chosen = await showGoldPicker(state._pendingHumanGold, human.resources);
       const gains = state._pendingGains || {};
       for (const [r, n] of Object.entries(chosen)) {
         const amount = Math.min(n, bankRemaining(r));
