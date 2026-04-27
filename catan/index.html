@@ -28,6 +28,8 @@
       --lake: #1a6b9e;
       --sea: #0d4a72;
       --volcano: #7a2020;
+      --gold: #a87200;
+      --strait: #0d4a72;
     }
 
     * { box-sizing: border-box; }
@@ -188,6 +190,8 @@
     .hex.lake    { background: var(--lake); }
     .hex.sea     { background: var(--sea); }
     .hex.volcano { background: var(--volcano); }
+    .hex.gold    { background: var(--gold); }
+    .hex.strait  { background: var(--strait); }
 
     .number {
       width: calc(28px * var(--zoom, 1));
@@ -334,6 +338,32 @@
     }
     .big-overlay.seven .big-number { color: #ef4444; }
     .big-overlay.robber-alert .big-number { font-size: 56px; }
+
+    .gold-picker-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+      display: flex; align-items: center; justify-content: center; z-index: 9999;
+    }
+    .gold-picker-card {
+      background: var(--panel); border: 1px solid rgba(255,215,0,0.4);
+      border-radius: 16px; padding: 20px; width: min(340px, 92vw);
+      box-shadow: 0 0 24px rgba(200,140,0,0.25);
+    }
+    .gold-picker-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; text-align: center; }
+    .gold-picker-remaining { font-size: 13px; color: #fbbf24; text-align: center; margin-bottom: 14px; }
+    .gold-picker-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .gold-picker-row:last-of-type { border-bottom: none; }
+    .gold-picker-label { font-size: 15px; display: flex; gap: 6px; align-items: center; }
+    .gold-picker-controls { display: flex; align-items: center; gap: 8px; }
+    .gold-picker-controls button {
+      width: 28px; height: 28px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.08); color: #fff; font-size: 16px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+    .gold-picker-controls button:disabled { opacity: 0.3; cursor: default; }
+    .gold-picker-count { min-width: 20px; text-align: center; font-weight: 700; }
 
     @keyframes place-building {
       0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
@@ -840,7 +870,7 @@
   <script src="./ai.js"></script>
   <script>
     const RESOURCES = ["brick", "lumber", "wool", "grain", "ore"];
-    const RESOURCE_ICONS = { brick: "🧱", lumber: "🪵", wool: "🐑", grain: "🌾", ore: "⛏️", desert: "🏜️", lake: "🏞️", sea: "🌊", volcano: "🌋" };
+    const RESOURCE_ICONS = { brick: "🧱", lumber: "🪵", wool: "🐑", grain: "🌾", ore: "⛏️", desert: "🏜️", lake: "🏞️", sea: "🌊", volcano: "🌋", gold: "💰", strait: "🌊" };
     const COST = {
       road: { brick: 1, lumber: 1 },
       settlement: { brick: 1, lumber: 1, wool: 1, grain: 1 },
@@ -903,7 +933,9 @@
       tradeDialog: { open: false, give: null, get: null },
       turnTimeLeft: 60,
       selectedMapId: "standard",
-      mapSelectSource: "single"
+      mapSelectSource: "single",
+      _pendingHumanGold: 0,
+      _pendingGains: null
     };
 
     const mpState = {
@@ -967,6 +999,8 @@
       state.phaseBeforeKnight = null;
       state.tradeDialog = { open: false, give: null, get: null };
       state.turnTimeLeft = 60;
+      state._pendingHumanGold = 0;
+      state._pendingGains = null;
     }
 
     const RESOURCE_NAMES = {
@@ -1467,6 +1501,115 @@
       }
     };
 
+    MAP_PRESETS["fog-islands"] = {
+      id: "fog-islands", name: "안개 섬", stars: 2,
+      description: "안개 속에 흩어진 섬들. 표준 크기지만 해양 타일이 섬을 갈라놓는다.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 10,
+      layout: {
+        axial: [
+          { q: -2, r: 0 }, { q: -2, r: 1 }, { q: -2, r: 2 },
+          { q: -1, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: -1, r: 2 },
+          { q: 0, r: -2 }, { q: 0, r: -1 }, { q: 0, r: 0, type: "sea" }, { q: 0, r: 1 }, { q: 0, r: 2 },
+          { q: 1, r: -2 }, { q: 1, r: -1 }, { q: 1, r: 0, type: "sea" }, { q: 1, r: 1 },
+          { q: 2, r: -2 }, { q: 2, r: -1 }, { q: 2, r: 0 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick",
+          "lumber","lumber","lumber",
+          "wool","wool","wool",
+          "grain","grain","grain",
+          "ore","ore","ore",
+          "desert","desert"
+        ],
+        fixed: false
+      },
+      numbers: {
+        pool: [2,3,3,4,4,5,5,6,8,9,9,10,10,11,12],
+        noAdjacentSame: false, noAdjacentHot: []
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},{type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    MAP_PRESETS["prairie"] = {
+      id: "prairie", name: "대초원", stars: 2,
+      description: "광활한 평원이 가로로 펼쳐진 24칸 보드. 자원이 풍부하고 전선이 길다.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 11,
+      layout: {
+        axial: [
+          { q: -2, r: -1 }, { q: -1, r: -1 }, { q: 0, r: -1 }, { q: 1, r: -1 }, { q: 2, r: -1 }, { q: 3, r: -1 },
+          { q: -3, r: 0 }, { q: -2, r: 0 }, { q: -1, r: 0 }, { q: 0, r: 0 }, { q: 1, r: 0 }, { q: 2, r: 0 }, { q: 3, r: 0 },
+          { q: -3, r: 1 }, { q: -2, r: 1 }, { q: -1, r: 1 }, { q: 0, r: 1 }, { q: 1, r: 1 }, { q: 2, r: 1 },
+          { q: -3, r: 2 }, { q: -2, r: 2 }, { q: -1, r: 2 }, { q: 0, r: 2 }, { q: 1, r: 2 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick","brick",
+          "lumber","lumber","lumber","lumber",
+          "wool","wool","wool","wool","wool",
+          "grain","grain","grain","grain","grain",
+          "ore","ore","ore","ore",
+          "desert","desert"
+        ],
+        fixed: false
+      },
+      numbers: {
+        pool: [2,3,3,3,4,4,4,5,5,5,6,6,8,8,9,9,10,10,10,11,11,12],
+        noAdjacentSame: false, noAdjacentHot: []
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},{type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    MAP_PRESETS["mega-catan"] = {
+      id: "mega-catan", name: "메가 카탄", stars: 3,
+      description: "4링 37칸 거대 육각형. 완전히 다른 규모의 전략이 필요하다.",
+      minPlayers: 3, maxPlayers: 6, vpGoal: 13,
+      layout: {
+        axial: [
+          { q: -3, r: 0 }, { q: -3, r: 1 }, { q: -3, r: 2 }, { q: -3, r: 3 },
+          { q: -2, r: -1 }, { q: -2, r: 0 }, { q: -2, r: 1 }, { q: -2, r: 2 }, { q: -2, r: 3 },
+          { q: -1, r: -2 }, { q: -1, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: -1, r: 2 }, { q: -1, r: 3 },
+          { q: 0, r: -3 }, { q: 0, r: -2 }, { q: 0, r: -1 }, { q: 0, r: 0 }, { q: 0, r: 1 }, { q: 0, r: 2 }, { q: 0, r: 3 },
+          { q: 1, r: -3 }, { q: 1, r: -2 }, { q: 1, r: -1 }, { q: 1, r: 0 }, { q: 1, r: 1 }, { q: 1, r: 2 },
+          { q: 2, r: -3 }, { q: 2, r: -2 }, { q: 2, r: -1 }, { q: 2, r: 0 }, { q: 2, r: 1 },
+          { q: 3, r: -3 }, { q: 3, r: -2 }, { q: 3, r: -1 }, { q: 3, r: 0 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick","brick","brick","brick",
+          "lumber","lumber","lumber","lumber","lumber","lumber","lumber",
+          "wool","wool","wool","wool","wool","wool","wool",
+          "grain","grain","grain","grain","grain","grain","grain",
+          "ore","ore","ore","ore","ore","ore",
+          "desert","desert","desert","desert"
+        ],
+        fixed: false
+      },
+      numbers: {
+        pool: [2,2,3,3,3,3,4,4,4,4,5,5,5,5,6,6,6,8,8,8,9,9,9,9,10,10,10,10,11,11,11,12,12],
+        noAdjacentSame: false, noAdjacentHot: []
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},{type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
     // ────────────────────────────────────────────────────────────────────
 
     function resolveMapPreset(mapId = "standard") {
@@ -1765,9 +1908,29 @@
       }
     }
 
+    function pickBestAIGoldResource(playerIdx) {
+      const p = state.players[playerIdx];
+      if (!p) return "grain";
+      return RESOURCES.reduce((best, r) => (p.resources[r] || 0) < (p.resources[best] || 0) ? r : best, "grain");
+    }
+
+    function showGainsToast(gains) {
+      const humanIdx = localPlayerIndex();
+      const parts = [];
+      for (const [pidx, res] of Object.entries(gains)) {
+        const pi = Number(pidx);
+        const name = pi === humanIdx ? "나" : state.players[pi].name;
+        const detail = Object.entries(res).map(([r, n]) => `${RESOURCE_ICONS[r] || r}×${n}`).join(" ");
+        parts.push(`${name}: ${detail}`);
+      }
+      if (parts.length > 0) { SFX.resource(); showToast(`🎁\n${parts.join("\n")}`, 4000, { bottom: 150 }); }
+    }
+
     function distributeResources(number) {
       const humanIdx = localPlayerIndex();
-      const gains = {}; // { playerIdx: { resource: amount } }
+      const gains = {};
+      state._pendingHumanGold = 0;
+
       for (const hex of state.hexes) {
         if (hex.number !== number || hex.index === state.robber) continue;
         for (const vIdx of hex.vertices) {
@@ -1775,8 +1938,19 @@
           if (!v.building || v.owner === null) continue;
           const rawAmount = v.building === "city" ? 2 : 1;
           const owner = state.players[v.owner];
-          const preferred = owner?.isAI ? "grain" : "brick";
-          const produced = resolveProducedResources(hex.type, rawAmount, preferred);
+
+          if (hex.type === "gold") {
+            if (v.owner === humanIdx && !isMultiMode()) {
+              state._pendingHumanGold += rawAmount; // deferred to picker
+            } else {
+              const preferred = pickBestAIGoldResource(v.owner);
+              const amount = Math.min(rawAmount, bankRemaining(preferred));
+              if (amount > 0) { owner.resources[preferred] += amount; if (!gains[v.owner]) gains[v.owner] = {}; gains[v.owner][preferred] = (gains[v.owner][preferred] || 0) + amount; }
+            }
+            continue;
+          }
+
+          const produced = resolveProducedResources(hex.type, rawAmount);
           for (const [resource, requested] of Object.entries(produced)) {
             const amount = Math.min(requested, bankRemaining(resource));
             if (amount <= 0) continue;
@@ -1786,18 +1960,64 @@
           }
         }
       }
-      // Show detailed gains
-      const parts = [];
-      for (const [pidx, res] of Object.entries(gains)) {
-        const pi = Number(pidx);
-        const name = pi === humanIdx ? "나" : state.players[pi].name;
-        const detail = Object.entries(res).map(([r, n]) => `${RESOURCE_ICONS[r]}×${n}`).join(" ");
-        parts.push(`${name}: ${detail}`);
+
+      if (state._pendingHumanGold > 0) {
+        state._pendingGains = gains; // toast deferred until picker resolves
+      } else {
+        showGainsToast(gains);
       }
-      if (parts.length > 0) {
-        SFX.resource();
-        showToast(`🎁\n${parts.join("\n")}`, 4000, { bottom: 150 });
+    }
+
+    function showGoldPicker(amount) {
+      return new Promise(resolve => {
+        const chosen = {}; RESOURCES.forEach(r => chosen[r] = 0);
+        let remaining = amount;
+        const render = () => {
+          let el = document.getElementById("gold-picker-modal");
+          if (!el) { el = document.createElement("div"); el.id = "gold-picker-modal"; document.body.appendChild(el); }
+          el.innerHTML = `<div class="gold-picker-overlay"><div class="gold-picker-card">
+            <div class="gold-picker-title">💰 금광 수확!</div>
+            <div class="gold-picker-remaining">자원 <strong>${remaining}</strong>개 선택 가능</div>
+            ${RESOURCES.map(r => `<div class="gold-picker-row">
+              <span class="gold-picker-label">${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]}</span>
+              <div class="gold-picker-controls">
+                <button onclick="window._gAdj('${r}',-1)" ${chosen[r]<=0?"disabled":""}>−</button>
+                <span class="gold-picker-count">${chosen[r]}</span>
+                <button onclick="window._gAdj('${r}',1)" ${remaining<=0?"disabled":""}>+</button>
+              </div></div>`).join("")}
+            <button style="width:100%;margin-top:14px;padding:10px;border-radius:10px;background:${remaining===0?'var(--accent)':'rgba(255,255,255,0.1)'};border:none;color:#fff;font-size:15px;font-weight:700;cursor:${remaining===0?'pointer':'default'};opacity:${remaining===0?1:0.45};"
+              ${remaining!==0?"disabled":""} onclick="window._gOK()">확인</button>
+          </div></div>`;
+        };
+        window._gAdj = (r, d) => {
+          if (d < 0 && chosen[r] <= 0) return;
+          if (d > 0 && remaining <= 0) return;
+          chosen[r] += d; remaining -= d; render();
+        };
+        window._gOK = () => {
+          const el = document.getElementById("gold-picker-modal");
+          if (el) el.remove();
+          delete window._gAdj; delete window._gOK;
+          resolve({ ...chosen });
+        };
+        render();
+      });
+    }
+
+    async function resolveHumanGoldIfNeeded() {
+      if (!state._pendingHumanGold) return;
+      const chosen = await showGoldPicker(state._pendingHumanGold);
+      const humanIdx = localPlayerIndex();
+      const human = state.players[humanIdx];
+      const gains = state._pendingGains || {};
+      for (const [r, n] of Object.entries(chosen)) {
+        const amount = Math.min(n, bankRemaining(r));
+        if (amount > 0) { human.resources[r] += amount; if (!gains[humanIdx]) gains[humanIdx] = {}; gains[humanIdx][r] = (gains[humanIdx][r] || 0) + amount; }
       }
+      state._pendingHumanGold = 0; state._pendingGains = null;
+      showGainsToast(gains);
+      recalcAllVP();
+      render();
     }
 
     function getDiceRevealDelayMs() {
@@ -2770,6 +2990,7 @@
       // seven sound handled in handleSeven()
       if (!applyRollDice(state.currentPlayer, [d1, d2], false)) return;
       render();
+      await resolveHumanGoldIfNeeded();
       await postDicePromptDiscards(sum);
       maybeAutoEndTurn();
       triggerAITurnIfNeeded();
@@ -3129,6 +3350,7 @@
               state.phase = "main"; state.canEndTurn = true;
             }
             render();
+            await resolveHumanGoldIfNeeded();
             await postDicePromptDiscards(d1 + d2);
           }
         }
@@ -3297,6 +3519,7 @@
           const d1 = 1 + Math.floor(Math.random() * 6);
           const d2 = 1 + Math.floor(Math.random() * 6);
           await sendGameAction(ACTION.ROLL_DICE, { playerId: p.userId || p.id, values: [d1, d2] });
+          await resolveHumanGoldIfNeeded();
           await postDicePromptDiscards(d1 + d2);
           await sleep(1200);
         }
@@ -4136,6 +4359,7 @@
           render();
           if (data.type === ACTION.ROLL_DICE) {
             const sum = (Number(data.values?.[0]) || 0) + (Number(data.values?.[1]) || 0);
+            await resolveHumanGoldIfNeeded();
             await postDicePromptDiscards(sum);
           }
           triggerAITurnIfNeeded();
