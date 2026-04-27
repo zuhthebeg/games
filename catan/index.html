@@ -340,13 +340,14 @@
     .big-overlay.robber-alert .big-number { font-size: 56px; }
 
     .gold-picker-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.65);
-      display: flex; align-items: center; justify-content: center; z-index: 9999;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding-bottom: 32px; z-index: 9999;
     }
     .gold-picker-card {
-      background: var(--panel); border: 1px solid rgba(255,215,0,0.4);
-      border-radius: 16px; padding: 20px; width: min(340px, 92vw);
-      box-shadow: 0 0 24px rgba(200,140,0,0.25);
+      background: rgba(30,24,16,0.82); border: 1px solid rgba(255,215,0,0.4);
+      border-radius: 16px; padding: 16px 20px; width: min(340px, 92vw);
+      box-shadow: 0 0 24px rgba(200,140,0,0.25); backdrop-filter: blur(6px);
     }
     .gold-picker-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; text-align: center; }
     .gold-picker-remaining { font-size: 13px; color: #fbbf24; text-align: center; margin-bottom: 14px; }
@@ -1972,12 +1973,34 @@
       return new Promise(resolve => {
         const chosen = {}; RESOURCES.forEach(r => chosen[r] = 0);
         let remaining = amount;
+        const TIMEOUT = 10;
+        let timeLeft = TIMEOUT;
+        let timerInterval = null;
+
+        const finish = (result) => {
+          clearInterval(timerInterval);
+          const el = document.getElementById("gold-picker-modal");
+          if (el) el.remove();
+          delete window._gAdj; delete window._gOK;
+          resolve(result);
+        };
+
+        const autoChoose = () => {
+          const result = {}; RESOURCES.forEach(r => result[r] = chosen[r]);
+          let left = remaining;
+          while (left > 0) {
+            const r = RESOURCES[Math.floor(Math.random() * RESOURCES.length)];
+            result[r] = (result[r] || 0) + 1; left--;
+          }
+          finish(result);
+        };
+
         const render = () => {
           let el = document.getElementById("gold-picker-modal");
           if (!el) { el = document.createElement("div"); el.id = "gold-picker-modal"; document.body.appendChild(el); }
           el.innerHTML = `<div class="gold-picker-overlay"><div class="gold-picker-card">
             <div class="gold-picker-title">💰 금광 수확!</div>
-            <div class="gold-picker-remaining">자원 <strong>${remaining}</strong>개 선택 가능</div>
+            <div class="gold-picker-remaining">자원 <strong>${remaining}</strong>개 선택 가능 <span style="color:${timeLeft<=3?'#ef4444':'#fbbf24'};font-size:12px;">${timeLeft}초</span></div>
             ${RESOURCES.map(r => `<div class="gold-picker-row">
               <span class="gold-picker-label">${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]}<span style="font-size:12px;opacity:0.6;margin-left:4px;">(${(currentResources&&currentResources[r])||0})</span></span>
               <div class="gold-picker-controls">
@@ -1989,17 +2012,20 @@
               ${remaining!==0?"disabled":""} onclick="window._gOK()">확인</button>
           </div></div>`;
         };
+
         window._gAdj = (r, d) => {
           if (d < 0 && chosen[r] <= 0) return;
           if (d > 0 && remaining <= 0) return;
           chosen[r] += d; remaining -= d; render();
         };
-        window._gOK = () => {
-          const el = document.getElementById("gold-picker-modal");
-          if (el) el.remove();
-          delete window._gAdj; delete window._gOK;
-          resolve({ ...chosen });
-        };
+        window._gOK = () => finish({ ...chosen });
+
+        timerInterval = setInterval(() => {
+          timeLeft--;
+          if (timeLeft <= 0) { autoChoose(); return; }
+          render();
+        }, 1000);
+
         render();
       });
     }
