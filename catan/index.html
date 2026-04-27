@@ -1236,6 +1236,7 @@
 
     function initSingleGame(mapId = "standard") {
       resetCoreState();
+      state.selectedMapId = mapId;
       applyResponsiveDefaults(true);
       setSinglePlayers();
       generateBoard(null, mapId);
@@ -1775,13 +1776,12 @@
 
     function buildHexesFromPreset(mapId = "standard") {
       const preset = resolveMapPreset(mapId);
-      const axial = preset.layout.axial.slice().sort((a, b) => (a.r - b.r) || (a.q - b.q));
+      const axial = preset.layout.axial.slice();
 
-      // coord.type이 설정된 칸은 고정 타일, 나머지만 pool에서 셔플 배치
-      const fixedMap = new Map(axial.filter(c => c.type).map(c => [`${c.q},${c.r}`, c.type]));
+      // preset에 적힌 순서를 그대로 유지하고, type이 고정된 칸만 그대로 둔다
       const resourcePool = preset.resources.fixed ? preset.resources.pool.slice() : shuffle(preset.resources.pool.slice());
       let pi = 0;
-      const types = axial.map(c => { const ft = fixedMap.get(`${c.q},${c.r}`); return ft !== undefined ? ft : resourcePool[pi++]; });
+      const types = axial.map(c => c.type !== undefined ? c.type : resourcePool[pi++]);
 
       const _NON_PROD = new Set(["desert","sea","lake","volcano","strait"]);
       const _nonDesertIdx = types.map((t,i) => ({t,i})).filter(x => !_NON_PROD.has(x.t)).map(x => x.i);
@@ -2277,6 +2277,28 @@
         });
         draw();
         document.body.appendChild(overlay);
+        const autoTimer = setInterval(() => {
+          if (state.turnTimeLeft > 0) return;
+          clearInterval(autoTimer);
+          overlay.remove();
+          const pickedCount = RESOURCES.reduce((s, r) => s + picked[r], 0);
+          const needed = count - pickedCount;
+          if (needed > 0) {
+            const p = state.players[playerIdx];
+            const temp = {};
+            for (const r of RESOURCES) temp[r] = p.resources[r] - picked[r];
+            let n = needed;
+            while (n > 0) {
+              const bag = RESOURCES.filter(r => temp[r] > 0);
+              if (!bag.length) break;
+              const res = bag[Math.floor(Math.random() * bag.length)];
+              temp[res] -= 1;
+              picked[res] += 1;
+              n -= 1;
+            }
+          }
+          resolve(picked);
+        }, 300);
       });
     }
 
@@ -2566,6 +2588,18 @@
       const hexLabel = getHexLabel(hexIndex);
       const detailMessage = formatRobberMoveMessage({ actorName, source, hexLabel, victimName, stolenResource: picked });
       showToast(`🦹 ${detailMessage}`, 2600, { bottom: 150 });
+      if (picked && victimIdx === localPlayerIndex()) {
+        const icon = RESOURCE_ICONS[picked] || picked;
+        const el = document.createElement("div");
+        el.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;pointer-events:none;animation:big-overlay-in 0.3s ease-out;";
+        el.innerHTML = `<div style="background:rgba(180,0,0,0.92);border:3px solid #ff4444;border-radius:20px;padding:20px 32px;text-align:center;box-shadow:0 0 40px rgba(255,0,0,0.5);">
+          <div style="font-size:38px;margin-bottom:4px;">🦹</div>
+          <div style="font-size:20px;font-weight:900;color:#fff;text-shadow:0 2px 8px #000;">${actorName}<br>에게 뺏겼다!</div>
+          <div style="font-size:30px;margin-top:6px;">${icon}</div>
+        </div>`;
+        document.body.appendChild(el);
+        setTimeout(() => { el.style.animation = "big-overlay-out 0.3s ease-in forwards"; setTimeout(() => el.remove(), 300); }, 2000);
+      }
       state.phase = "main";
       state.canEndTurn = true;
       state.hint = detailMessage;
@@ -2674,7 +2708,8 @@
         vp += (p.devCards || []).filter(c => c.type === "vp").length;
         p.vp = vp;
       }
-      const winner = state.players.findIndex(p => p.vp >= 10);
+      const _vpGoal = (MAP_PRESETS[state.selectedMapId] || MAP_PRESETS.standard).vpGoal || 10;
+      const winner = state.players.findIndex(p => p.vp >= _vpGoal);
       if (winner !== -1) {
         state.winner = winner;
         state.phase = "end";
@@ -2824,10 +2859,9 @@
       turnTimerInterval = setInterval(() => {
         if (state.screen !== "game" || state.winner !== null) return;
         if (!isHumanTurn()) return;
-        if (state.turnTimeLeft > 0) state.turnTimeLeft -= 1;
-        if (state.turnTimeLeft <= 0) {
-          state.turnTimeLeft = 0;
-          endTurn();
+        if (state.turnTimeLeft > 0) {
+          state.turnTimeLeft -= 1;
+          if (state.turnTimeLeft === 0) endTurn();
         }
         render();
       }, 1000);
@@ -2859,7 +2893,10 @@
             isAI: String(id).startsWith("ai-")
           }));
         }
-        generateBoard(clone(action.hexes || []));
+        const _initMapId = action.mapId || "standard";
+        state.selectedMapId = _initMapId;
+        generateBoard(clone(action.hexes || []), _initMapId);
+        if (Array.isArray(action.ports) && action.ports.length) state.ports = action.ports;
         if (typeof action.robber === "number") {
           state.robber = action.robber;
           state.hexes.forEach(h => { h.robber = false; });
@@ -3384,6 +3421,34 @@
       }
     }
 
+    function humanPickVictim(list) {
+      return new Promise(resolve => {
+        const overlay = document.createElement("div");
+        overlay.style.cssText = "position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);";
+        overlay.innerHTML = `
+          <div style="background:#16213e;border:2px solid #b33838;border-radius:16px;padding:20px;max-width:360px;width:92%;text-align:center;color:#fff;">
+            <div style="font-size:18px;font-weight:700;margin-bottom:12px;">🦹 누구의 자원을 뺏을까요?</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              ${list.map(vIdx => {
+                const p = state.players[vIdx];
+                const total = totalResourceCount(p);
+                return `<button data-victim="${vIdx}" style="padding:12px 16px;border-radius:10px;border:2px solid #555;background:#1a1a2e;color:#fff;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;width:100%;">
+                  <span style="font-weight:700;">${p.name}</span>
+                  <span style="color:#fbbf24;">🃏 ${total}장</span>
+                </button>`;
+              }).join("")}
+            </div>
+          </div>`;
+        overlay.addEventListener("click", e => {
+          const btn = e.target.closest("button[data-victim]");
+          if (!btn) return;
+          overlay.remove();
+          resolve(Number(btn.dataset.victim));
+        });
+        document.body.appendChild(overlay);
+      });
+    }
+
     async function onHexClick(hIdx) {
       if (!isHumanTurn() || state.winner) return;
       if (state.phase === "knight-robber") {
@@ -3403,9 +3468,20 @@
         return;
       }
       if (state.phase !== "robber") return;
+      const robberVictims = new Set();
+      for (const vIdx of (state.hexes[hIdx]?.vertices || [])) {
+        const owner = state.vertices[vIdx]?.owner;
+        if (owner !== null && owner !== undefined && owner !== state.currentPlayer && totalResourceCount(state.players[owner]) > 0) robberVictims.add(owner);
+      }
+      const victimList = [...robberVictims];
+      let chosenVictimId = null;
+      if (victimList.length > 1) {
+        const chosenIdx = await humanPickVictim(victimList);
+        chosenVictimId = state.players[chosenIdx]?.userId || state.players[chosenIdx]?.id || null;
+      }
       if (isMultiMode()) {
         const snapshot = clone(state);
-        const moveResult = moveRobber(hIdx);
+        const moveResult = moveRobber(hIdx, chosenVictimId);
         Object.assign(state, snapshot);
         if (!moveResult.ok) return;
         await sendGameAction(ACTION.MOVE_ROBBER, {
@@ -3416,7 +3492,7 @@
         });
         return;
       }
-      if (moveRobber(hIdx).ok) {
+      if (moveRobber(hIdx, chosenVictimId).ok) {
         render();
         triggerAITurnIfNeeded();
       }
@@ -4089,7 +4165,7 @@
               </select>
             </div>
             <button onclick="showMapSelect('single')">싱글플레이</button>
-            <button onclick="showMapSelect('multi')">멀티플레이</button>
+            <button onclick="showMultiOptions()">멀티플레이</button>
           </div>
         </div>
       `;
@@ -4484,7 +4560,7 @@
       if (fullPlayers.length < 2 || (!allReady && !aiPlayers.length)) return;
       setMultiplayerPlayers(fullPlayers);
       resetCoreState();
-      const mapId = mpState.mapId || mpState.room?.meta?.mapId || "standard";
+      const mapId = state.selectedMapId || mpState.mapId || mpState.room?.meta?.mapId || "standard";
       generateBoard(null, mapId);
       recalcAllVP();
       mpState.initSent = true;
@@ -4494,6 +4570,7 @@
         hexes: clone(state.hexes),
         vertices: clone(state.vertices),
         edges: clone(state.edges),
+        ports: clone(state.ports),
         robber: state.robber,
         playerOrder: state.players.map(p => p.userId || p.id),
         players: state.players.map(p => ({ id: p.userId || p.id, userId: p.userId || p.id, name: p.name, color: p.color, isAI: !!p.isAI }))
@@ -4672,6 +4749,7 @@
         maxPlayers: 4,
         supportsLocal: false,
         onGameStart: (roomState) => {
+          state.selectedMapId = state.selectedMapId || "standard";
           dbg(`[GAME-START] isHost:${roomState.players?.find(p=>p.id===catanMpUI?.getClient()?.getMyUserId())?.isHost} players:${roomState.players?.length}`);
           mpState.client = catanMpUI.getClient();
           mpState.myUserId = mpState.client.getMyUserId();
@@ -4703,6 +4781,31 @@
         },
       });
       
+      const _origRenderWaiting = catanMpUI._renderWaitingRoom.bind(catanMpUI);
+      catanMpUI._renderWaitingRoom = function(roomCode) {
+        _origRenderWaiting(roomCode);
+        if (!this.isHost) return;
+        const playerListEl = this.container.querySelector("#mp-player-list");
+        if (!playerListEl) return;
+        const maps = Object.values(MAP_PRESETS);
+        const sel = document.createElement("div");
+        sel.id = "catan-map-selector";
+        sel.style.cssText = "margin:12px 0;padding:10px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.1);";
+        const redrawSel = () => {
+          const cur = state.selectedMapId || "standard";
+          sel.innerHTML = `<div style="font-size:12px;color:#9ca3af;margin-bottom:6px;">🗺️ 맵 선택 (호스트)</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              ${maps.map(m => `<button data-map-id="${m.id}" style="padding:5px 10px;border-radius:8px;border:2px solid ${cur===m.id?"#ffd700":"#444"};background:${cur===m.id?"#2d2d00":"#1a1a2e"};color:${cur===m.id?"#ffd700":"#aaa"};font-size:11px;cursor:pointer;">${m.name}</button>`).join("")}
+            </div>
+            <div style="font-size:11px;color:#6b7280;margin-top:4px;">${MAP_PRESETS[cur]?.description || ""}</div>`;
+          sel.querySelectorAll("[data-map-id]").forEach(btn => {
+            btn.onclick = () => { state.selectedMapId = btn.dataset.mapId; redrawSel(); };
+          });
+        };
+        redrawSel();
+        playerListEl.insertAdjacentElement("afterend", sel);
+      };
+
       const roomCode = MultiplayerUI.checkUrlRoom();
       if (roomCode) {
         catanMpUI._renderLobby();

@@ -88,6 +88,7 @@ const gameplayScript = [
   extractFunction('isMultiMode', 'localPlayerIndex'),
   extractFunction('localPlayerIndex', 'isHumanTurn'),
   extractFunction('resolveProducedResources', 'buildHexesFromPreset'),
+  extractFunction('pickBestAIGoldResource', 'distributeResources'),
   extractFunction('distributeResources', 'getDiceRevealDelayMs'),
   extractFunction('bankRemaining', 'resourceStrip')
 ].join('\n');
@@ -97,6 +98,7 @@ const gameplayCtx = {
     mode: 'single',
     currentPlayer: 0,
     robber: -1,
+    _pendingHumanGold: 0,
     players: [
       { name: '나', isAI: false, resources: { brick: 0, lumber: 0, wool: 0, grain: 0, ore: 0 } },
       { name: 'AI 1', isAI: true, resources: { brick: 0, lumber: 0, wool: 0, grain: 0, ore: 0 } }
@@ -111,13 +113,15 @@ const gameplayCtx = {
   },
   RESOURCE_ICONS: { brick: '🧱', lumber: '🪵', wool: '🐑', grain: '🌾', ore: '⛏️' },
   SFX: { resource() {} },
-  showToast() {}
+  showToast() {},
+  openGoldPickModal() {}
 };
 vm.createContext(gameplayCtx);
 vm.runInContext(gameplayScript, gameplayCtx);
 gameplayCtx.distributeResources(8);
 
-assert.equal(gameplayCtx.state.players[0].resources.brick, 1, 'human gold production should grant 1 brick by default');
+assert.equal(gameplayCtx.state._pendingHumanGold, 1, 'human gold production should defer 1 resource into pending picker state');
+assert.equal(gameplayCtx.state.players[0].resources.brick, 0, 'human gold production should not auto-grant before picker resolves');
 assert.equal(gameplayCtx.state.players[1].resources.grain, 2, 'ai gold city production should grant 2 grain by default');
 
 console.log('PASS gold rush + twin continents helpers');
