@@ -4799,6 +4799,11 @@
         const playerListEl = this.container.querySelector("#mp-player-list");
         if (!playerListEl) return;
         const maps = Object.values(MAP_PRESETS);
+        const nativeStart = this.container.querySelector("#mp-start-game-btn, [data-action='start-game'], button[onclick*='startGame']");
+        if (nativeStart) {
+          nativeStart.hidden = true;
+          nativeStart.style.display = 'none';
+        }
         const sel = document.createElement("div");
         sel.id = "catan-map-selector";
         sel.style.cssText = "margin:12px 0;padding:10px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.1);display:grid;gap:8px;";
@@ -4822,10 +4827,7 @@
             };
           }
           if (startBtn) {
-            startBtn.onclick = () => {
-              const nativeStart = this.container.querySelector("#mp-start-game-btn, [data-action='start-game'], button[onclick*='startGame']");
-              if (nativeStart && !nativeStart.hidden && nativeStart.style.display !== 'none') nativeStart.click();
-            };
+            startBtn.onclick = () => { startGame(); };
           }
         };
         redrawSel();
