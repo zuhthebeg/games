@@ -846,9 +846,35 @@
       .lobby-title { font-size: 28px; }
     }
 
+    /* ── hint-bar: 맵 하단 오버레이 (세로모드) ── */
+    .hint-bar {
+      position: relative;
+      z-index: 10;
+      margin-top: -22px;
+      font-size: 12px;
+      text-align: center;
+      color: rgba(255,255,255,0.9);
+      min-height: 22px;
+      padding: 3px 12px;
+      pointer-events: none;
+      background: rgba(5, 16, 24, 0.72);
+      border-radius: 0 0 10px 10px;
+    }
+    .hint-bar:empty { display: none; }
+    .panel-hint { display: none; font-size: 10px; color: var(--muted); margin-bottom: 2px; text-align: center; }
+
     /* ── 가로모드 레이아웃 ── */
     @media (orientation: landscape) and (max-height: 560px) {
+      #turn-banner { top: calc(2px + env(safe-area-inset-top)) !important; }
+      #app {
+        height: calc(100dvh - env(safe-area-inset-bottom)) !important;
+        padding-top: calc(38px + env(safe-area-inset-top)) !important;
+        padding-bottom: calc(2px + env(safe-area-inset-bottom)) !important;
+        gap: 1px !important;
+      }
       .status { display: none; }
+      .hint-bar { display: none; }
+      .panel-hint { display: block; }
       .game-body {
         flex-direction: row;
         align-items: stretch;
@@ -896,7 +922,15 @@
         padding: 5px 6px;
         border-radius: 7px;
       }
-      .panel-action .hint { font-size: 10px; }
+    }
+
+    /* ── 풀스크린 ── */
+    :fullscreen #app, :-webkit-full-screen #app {
+      height: calc(100dvh - env(safe-area-inset-bottom)) !important;
+      padding-top: calc(38px + env(safe-area-inset-top)) !important;
+    }
+    :fullscreen #turn-banner, :-webkit-full-screen #turn-banner {
+      top: calc(2px + env(safe-area-inset-top)) !important;
     }
 
     /* ── 맵 선택 카드 그리드 ── */
@@ -3864,15 +3898,16 @@
     }
 
     function centerMapViewport(force = false) {
-      const wrap = document.querySelector('.map-wrap');
-      const board = document.querySelector('.board');
-      if (!wrap || !board) return;
       if (!force && (state.mapView.initialized || state.mapView.userMoved)) return;
-      const targetLeft = Math.max(0, Math.floor((board.scrollWidth - wrap.clientWidth) / 2));
-      const targetTop = Math.max(0, Math.floor((board.scrollHeight - wrap.clientHeight) / 2));
-      wrap.scrollLeft = targetLeft;
-      wrap.scrollTop = targetTop;
-      state.mapView.initialized = true;
+      requestAnimationFrame(() => {
+        const wrap = document.querySelector('.map-wrap');
+        if (!wrap) return;
+        const targetLeft = Math.max(0, Math.floor((wrap.scrollWidth - wrap.clientWidth) / 2));
+        const targetTop = Math.max(0, Math.floor((wrap.scrollHeight - wrap.clientHeight) / 2));
+        wrap.scrollLeft = targetLeft;
+        wrap.scrollTop = targetTop;
+        state.mapView.initialized = true;
+      });
     }
 
     function bindMapPanHandlers() {
@@ -4220,36 +4255,39 @@
         : "";
       const timerHtml = myTurn ? `<div class="turn-timer"><div class="turn-timer-label">턴 타이머: ${state.turnTimeLeft}s</div><div class="turn-timer-bar"><div class="turn-timer-fill" style="width:${turnPct}%;"></div></div></div>` : "";
       const vpBarHtml = `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#aaa;padding:2px 4px;"><span>VP: ${vp}/${vpGoal}</span><div style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;"><div style="height:100%;width:${vpPctFull}%;background:linear-gradient(90deg,#4ecca3,#ffd700);border-radius:2px;"></div></div></div>`;
-      const hintHtml = `<div class="hint">
-            ${inSetup ? `초기 배치 ${state.setupRound}라운드 | 현재: ${state.setupStep === "settlement" ? "마을" : "도로"}` : ""}
-            ${(canRobber || state.phase === "knight-robber") ? "🦹 도둑 이동: 헥스를 선택하세요." : ""}
-            ${(actionState.canMain && actionState.possible.length) ? `가능 행동: ${actionState.possible.join(', ')}` : ""}
-          </div>`;
+      const hintText = [
+        inSetup ? `초기 배치 ${state.setupRound}라운드 | ${state.setupStep === "settlement" ? "마을을 놓으세요" : "도로를 놓으세요"}` : "",
+        (canRobber || state.phase === "knight-robber") ? "🦹 도둑 이동: 헥스를 선택하세요." : "",
+        (actionState.canMain && actionState.possible.length) ? `가능: ${actionState.possible.join(', ')}` : ""
+      ].filter(Boolean).join(" · ");
+      const actionsHtml = `
+        <div class="actions">
+          <button id="diceDisplay" class="primary" style="font-size:16px;min-width:70px;" ${canRoll ? "" : "disabled"} onclick="rollDice()">🎲 주사위</button>
+          <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${getLongestRoadBadge(state.longestRoad === myIdx)}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
+          <button ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
+          <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
+          <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
+          <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
+          <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "⚔️" : ""}</button>
+          <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
+          <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️도로건설</button>
+          <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
+          <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
+        </div>`;
       return `
         <div class="status">${statusText()}</div>
         <div class="game-body">
+          ${renderMap()}
+          <div class="hint-bar">${hintText}</div>
           <div class="panel-info">
             <div class="resources">${resourceStrip(me)}</div>
             ${vpBarHtml}
             ${timerHtml}
             ${devCardText ? `<div style="font-size:11px;color:var(--muted);">${devCardText}</div>` : ""}
           </div>
-          ${renderMap()}
           <div class="panel-action">
-            <div class="actions">
-              <button id="diceDisplay" class="primary" style="font-size:16px;min-width:70px;" ${canRoll ? "" : "disabled"} onclick="rollDice()">🎲 주사위</button>
-              <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${getLongestRoadBadge(state.longestRoad === myIdx)}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
-              <button ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
-              <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
-              <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
-              <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
-              <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "⚔️" : ""}</button>
-              <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
-              <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️도로건설</button>
-              <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
-              <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
-            </div>
-            ${hintHtml}
+            ${hintText ? `<div class="panel-hint">${hintText}</div>` : ""}
+            ${actionsHtml}
           </div>
         </div>
         ${renderTradeModal()}
@@ -5339,6 +5377,22 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.zoomInMap = zoomInMap;
     window.zoomOutMap = zoomOutMap;
 
+    function enterGameFullscreen() {
+      try {
+        const el = document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      } catch (e) {}
+    }
+    function exitGameFullscreen() {
+      try {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          if (document.exitFullscreen) document.exitFullscreen();
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        }
+      } catch (e) {}
+    }
+
     window.addEventListener('resize', () => {
       const isLandscape = window.innerWidth > window.innerHeight;
       if (isLandscape !== state.mapView._wasLandscape) {
@@ -5347,6 +5401,11 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
         state.mapView.userMoved = false;
         applyResponsiveDefaults(true);
         state.mapView.initialized = false;
+        if (isLandscape && state.screen !== "mode" && state.screen !== "map-select") {
+          enterGameFullscreen();
+        } else {
+          exitGameFullscreen();
+        }
         render();
         requestAnimationFrame(() => centerMapViewport(true));
       } else if (!state.mapView.userMoved) {
