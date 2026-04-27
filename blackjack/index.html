@@ -701,29 +701,32 @@
     function attachBlackjackGestureControls(target, actions) {
       if (!target || target.dataset.gestureBound === "1") return;
       target.dataset.gestureBound = "1";
+      target.style.touchAction = "none";
 
       let startX = 0, startY = 0, startAt = 0;
       let lastTapAt = 0, tapCount = 0;
-      let activePointerId = null;
+      let tracking = false;
 
-      target.style.touchAction = "none";
+      target.addEventListener("touchstart", (ev) => {
+        if (ev.touches.length !== 1) return;
+        ev.preventDefault();
+        const t = ev.touches[0];
+        startX = t.clientX; startY = t.clientY; startAt = Date.now();
+        tracking = true;
+      }, { passive: false });
 
-      target.addEventListener("pointerdown", (ev) => {
-        if (activePointerId !== null) return;
-        activePointerId = ev.pointerId;
-        startX = ev.clientX; startY = ev.clientY; startAt = Date.now();
-      });
-
-      target.addEventListener("pointerup", (ev) => {
-        if (activePointerId !== ev.pointerId) return;
-        activePointerId = null;
+      target.addEventListener("touchend", (ev) => {
+        if (!tracking) return;
+        tracking = false;
+        ev.preventDefault();
+        const t = ev.changedTouches[0];
         const now = Date.now();
         tapCount = now - lastTapAt <= 320 ? tapCount + 1 : 1;
         lastTapAt = now;
         const gesture = interpretBlackjackGesture({
           durationMs: now - startAt,
-          moveX: ev.clientX - startX,
-          moveY: ev.clientY - startY,
+          moveX: t.clientX - startX,
+          moveY: t.clientY - startY,
           tapCount
         });
         if (gesture === "hit") actions.hit?.();
@@ -731,9 +734,9 @@
         if (gesture === "split") actions.split?.();
         if (gesture === "double") actions.double?.();
         if (gesture === "insurance") actions.insurance?.();
-      });
+      }, { passive: false });
 
-      target.addEventListener("pointercancel", () => { activePointerId = null; });
+      target.addEventListener("touchcancel", () => { tracking = false; });
     }
 
     function makeDeck() {
