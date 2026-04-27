@@ -202,6 +202,18 @@
     .actions .stand { border-color: rgba(211,226,255,0.45); }
     .actions .double { border-color: rgba(255,209,102,0.6); }
     .actions .split { border-color: rgba(255,170,236,0.58); }
+    .gesture-pad {
+      margin-bottom: 7px;
+      padding: 8px 10px;
+      border: 1px dashed rgba(255,255,255,0.2);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.58);
+      font-size: 0.62rem;
+      text-align: center;
+      user-select: none;
+      touch-action: none;
+    }
     .hidden { display: none !important; }
 
     .mode-screen, #mpLobbyContainer, .multi-game {
@@ -385,6 +397,7 @@
       </div>
     </section>
     <section class="panel actions hidden" id="mpActionPanel">
+      <div class="gesture-pad" id="mpGesturePad">더블탭 Hit · 좌우 Stand · ↑ Split · ↓ Double</div>
       <div class="row" style="gap:4px;">
         <button class="hit" id="mpHitBtn" style="font-size:0.78rem;padding:8px 0;">Hit</button>
         <button class="stand" id="mpStandBtn" style="font-size:0.78rem;padding:8px 0;">Stand</button>
@@ -472,6 +485,7 @@
           <button id="insNoBtn" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);color:#aaa;border-radius:8px;padding:7px 0;font-size:0.78rem;font-weight:700;cursor:pointer;">❌ 아니오</button>
         </div>
       </div>
+      <div class="gesture-pad" id="soloGesturePad">더블탭 Hit · 좌우 Stand · ↑ Split · ↓ Double</div>
       <div class="row" style="gap:4px;" id="mainActionRow">
         <button class="hit" id="hitBtn" style="font-size:0.78rem;padding:8px 0;">Hit</button>
         <button class="stand" id="standBtn" style="font-size:0.78rem;padding:8px 0;">Stand</button>
@@ -705,37 +719,57 @@
 
       let startX = 0, startY = 0, startAt = 0;
       let lastTapAt = 0, tapCount = 0;
-      let tracking = false;
+      let activePointerId = null;
 
-      target.addEventListener("touchstart", (ev) => {
-        if (ev.touches.length !== 1) return;
-        ev.preventDefault();
-        const t = ev.touches[0];
-        startX = t.clientX; startY = t.clientY; startAt = Date.now();
-        tracking = true;
-      }, { passive: false });
-
-      target.addEventListener("touchend", (ev) => {
-        if (!tracking) return;
-        tracking = false;
-        ev.preventDefault();
-        const t = ev.changedTouches[0];
+      function runGesture(ev, x, y) {
         const now = Date.now();
         tapCount = now - lastTapAt <= 320 ? tapCount + 1 : 1;
         lastTapAt = now;
         const gesture = interpretBlackjackGesture({
           durationMs: now - startAt,
-          moveX: t.clientX - startX,
-          moveY: t.clientY - startY,
+          moveX: x - startX,
+          moveY: y - startY,
           tapCount
         });
+        if (!gesture) return;
+        ev.preventDefault?.();
+        ev.stopPropagation?.();
         if (gesture === "hit") actions.hit?.();
         if (gesture === "stand") actions.stand?.();
         if (gesture === "split") actions.split?.();
         if (gesture === "double") actions.double?.();
         if (gesture === "insurance") actions.insurance?.();
-      }, { passive: false });
+      }
 
+      if (window.PointerEvent) {
+        target.addEventListener("pointerdown", (ev) => {
+          if (!ev.isPrimary || activePointerId !== null) return;
+          activePointerId = ev.pointerId;
+          startX = ev.clientX; startY = ev.clientY; startAt = Date.now();
+          target.setPointerCapture?.(ev.pointerId);
+        });
+        target.addEventListener("pointerup", (ev) => {
+          if (activePointerId !== ev.pointerId) return;
+          activePointerId = null;
+          runGesture(ev, ev.clientX, ev.clientY);
+        });
+        target.addEventListener("pointercancel", () => { activePointerId = null; });
+        return;
+      }
+
+      let tracking = false;
+      target.addEventListener("touchstart", (ev) => {
+        if (ev.touches.length !== 1) return;
+        const t = ev.touches[0];
+        startX = t.clientX; startY = t.clientY; startAt = Date.now();
+        tracking = true;
+      }, { passive: true });
+      target.addEventListener("touchend", (ev) => {
+        if (!tracking) return;
+        tracking = false;
+        const t = ev.changedTouches[0];
+        runGesture(ev, t.clientX, t.clientY);
+      }, { passive: false });
       target.addEventListener("touchcancel", () => { tracking = false; });
     }
 
@@ -1281,7 +1315,7 @@
     el.splitBtn.addEventListener("click", split);
     el.insYesBtn.addEventListener("click", takeInsurance);
     el.insNoBtn.addEventListener("click", skipInsurance);
-    attachBlackjackGestureControls(el.actionPanel, {
+    attachBlackjackGestureControls(document.getElementById("soloGesturePad"), {
       hit,
       stand,
       split,
@@ -1788,7 +1822,7 @@
         await mpUI.sendAction({ type: "split" });
       } catch (e) { alert(t("actionFailed", e.message)); }
     });
-    attachBlackjackGestureControls(document.getElementById("mpActionPanel"), {
+    attachBlackjackGestureControls(document.getElementById("mpGesturePad"), {
       hit: () => document.getElementById("mpHitBtn").click(),
       stand: () => document.getElementById("mpStandBtn").click(),
       double: () => {

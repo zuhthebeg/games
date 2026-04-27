@@ -34,10 +34,12 @@ vm.runInContext(script, ctx);
 
 assert.equal(ctx.interpretBlackjackGesture({ durationMs: 160, moveX: 2, moveY: 3, tapCount: 2 }), 'hit', 'double tap should map to hit');
 assert.equal(ctx.interpretBlackjackGesture({ durationMs: 280, moveX: 72, moveY: 8, tapCount: 1 }), 'stand', 'horizontal drag should map to stand');
-assert.equal(ctx.interpretBlackjackGesture({ durationMs: 280, moveX: 10, moveY: 40, tapCount: 1 }), null, 'vertical drag should not trigger action');
+assert.equal(ctx.interpretBlackjackGesture({ durationMs: 280, moveX: 10, moveY: -72, tapCount: 1 }), 'split', 'up swipe should map to split');
+assert.equal(ctx.interpretBlackjackGesture({ durationMs: 280, moveX: 10, moveY: 72, tapCount: 1 }), 'double', 'down swipe should map to double down');
 assert.equal(ctx.interpretBlackjackGesture({ durationMs: 500, moveX: 0, moveY: 0, tapCount: 1 }), null, 'single tap should not trigger action');
 
-assert(html.includes('더블탭') && html.includes('드래그') && html.includes('스탠드'), 'rules text should mention the new gesture shortcuts in Korean');
-assert(html.includes('Double tap') && html.includes('Drag') && html.includes('Stand'), 'rules text should mention the new gesture shortcuts in English');
+assert(html.includes('id="soloGesturePad"'), 'solo gesture pad should exist outside the action buttons');
+assert(html.includes('더블탭') && html.includes('좌우') && html.includes('스플릿'), 'rules text should mention the gesture shortcuts in Korean');
+assert(html.includes('Double tap') && html.includes('Swipe left/right') && html.includes('Swipe up'), 'rules text should mention the gesture shortcuts in English');
 
 console.log('PASS blackjack gesture controls');
