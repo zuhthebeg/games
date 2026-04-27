@@ -1668,9 +1668,15 @@
       let pi = 0;
       const types = axial.map(c => { const ft = fixedMap.get(`${c.q},${c.r}`); return ft !== undefined ? ft : resourcePool[pi++]; });
 
-      const balancedNumbers = preset.numbers?.pool?.length === types.filter(t => !["desert","sea","lake","volcano","strait"].includes(t)).length
-        ? preset.numbers.pool.slice()
-        : assignBalancedNumbers(axial, types, preset.numbers);
+      const _NON_PROD = new Set(["desert","sea","lake","volcano","strait"]);
+      const _nonDesertIdx = types.map((t,i) => ({t,i})).filter(x => !_NON_PROD.has(x.t)).map(x => x.i);
+      let balancedNumbers;
+      if (preset.numbers?.pool?.length === _nonDesertIdx.length) {
+        balancedNumbers = new Array(types.length).fill(null);
+        for (let j = 0; j < _nonDesertIdx.length; j++) balancedNumbers[_nonDesertIdx[j]] = preset.numbers.pool[j];
+      } else {
+        balancedNumbers = assignBalancedNumbers(axial, types, preset.numbers);
+      }
       return axial.map((coord, i) => ({
         index: i,
         q: coord.q,
@@ -3972,8 +3978,14 @@
     }
 
     function onMapCardClick(mapId) {
+      const scroller = document.getElementById("map-select-scroll");
+      const st = scroller ? scroller.scrollTop : 0;
       state.selectedMapId = mapId;
       render();
+      requestAnimationFrame(() => {
+        const s = document.getElementById("map-select-scroll");
+        if (s) s.scrollTop = st;
+      });
     }
 
     function confirmMapSelect() {
@@ -3994,7 +4006,7 @@
       const isMulti = state.mapSelectSource === "multi";
 
       return `
-        <div style="flex:1;overflow-y:auto;padding:24px 12px;display:flex;flex-direction:column;align-items:center;">
+        <div id="map-select-scroll" style="flex:1;overflow-y:auto;padding:24px 12px;display:flex;flex-direction:column;align-items:center;">
           <div class="lobby-card" style="width:min(620px,100%)">
             <h1 class="lobby-title" style="font-size:24px;margin-bottom:4px;">맵 선택</h1>
             <div class="map-grid">
