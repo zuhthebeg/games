@@ -530,12 +530,32 @@
       border: 1px solid rgba(0, 0, 0, 0.35);
     }
 
-    .my-panel {
+    .game-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .panel-info {
       border: 1px solid var(--line);
       border-radius: 10px;
       padding: 4px 6px;
       background: rgba(8, 20, 30, 0.86);
-      display: grid;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 0 0 auto;
+    }
+
+    .panel-action {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 4px 6px;
+      background: rgba(8, 20, 30, 0.86);
+      display: flex;
+      flex-direction: column;
       gap: 3px;
       flex: 0 0 auto;
     }
@@ -819,13 +839,64 @@
       .players-bar { gap: 4px; }
       .player-card { padding: 4px 6px; font-size: 11px; }
       .status { padding: 5px; font-size: 11px; }
-      .hex { width: 56px; height: 64px; }
-      .number { width: 22px; height: 22px; font-size: 11px; }
       .resources { font-size: 10px; gap: 4px; }
       .res { padding: 4px 1px; }
       .actions { gap: 4px; }
       .actions button { padding: 6px 8px; font-size: 12px; }
       .lobby-title { font-size: 28px; }
+    }
+
+    /* ── 가로모드 레이아웃 ── */
+    @media (orientation: landscape) and (max-height: 560px) {
+      .status { display: none; }
+      .game-body {
+        flex-direction: row;
+        align-items: stretch;
+        gap: 2px;
+      }
+      .panel-info {
+        order: 0;
+        width: 130px;
+        min-width: 110px;
+        flex-shrink: 0;
+        overflow-y: auto;
+        border-radius: 8px;
+        padding: 6px 5px;
+      }
+      .panel-info .resources {
+        grid-template-columns: 1fr 1fr;
+        gap: 3px;
+        font-size: 10px;
+      }
+      .panel-info .res { padding: 3px 2px; }
+      .map-wrap {
+        order: 1;
+        flex: 1;
+        min-width: 0;
+        border-radius: 8px;
+      }
+      .panel-action {
+        order: 2;
+        width: 145px;
+        min-width: 120px;
+        flex-shrink: 0;
+        overflow-y: auto;
+        border-radius: 8px;
+        padding: 6px 5px;
+      }
+      .panel-action .actions {
+        flex-direction: column;
+        gap: 3px;
+        justify-content: flex-start;
+        align-items: stretch;
+      }
+      .panel-action .actions button {
+        width: 100%;
+        font-size: 11px;
+        padding: 5px 6px;
+        border-radius: 7px;
+      }
+      .panel-action .hint { font-size: 10px; }
     }
 
     /* ── 맵 선택 카드 그리드 ── */
@@ -3763,13 +3834,23 @@
     }
 
     function clampZoom(v) {
-      return Math.max(0.65, Math.min(1.35, v));
+      return Math.max(0.45, Math.min(1.35, v));
     }
 
     function applyResponsiveDefaults(force = false) {
       if (!force && state.mapView.zoomTouched) return;
-      const mobile = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
-      state.mapView.zoom = mobile ? 0.86 : 1;
+      const vw = window.innerWidth, vh = window.innerHeight;
+      if (vw > 900) {
+        state.mapView.zoom = 1;
+      } else if (vw > vh) {
+        // 가로모드: 양 패널(130+145=275) 제외한 너비와 상태바 제외 높이로 맞춤
+        const availW = vw - 280;
+        const availH = vh - 32;
+        state.mapView.zoom = clampZoom(Math.min(availW / 900, availH / 620) * 1.05);
+      } else {
+        // 세로모드: 0.7 고정 (스크롤로 나머지 탐색)
+        state.mapView.zoom = 0.7;
+      }
       state.mapView.initialized = false;
     }
 
@@ -4132,35 +4213,43 @@
       const vp = me?.vp || 0;
       const vpPct = Math.min(100, Math.max(0, vp * 10));
       const turnPct = Math.min(100, Math.max(0, (state.turnTimeLeft / 60) * 100));
-      return `
-
-        <div class="status">${statusText()}</div>
-        ${renderMap()}
-        <div class="my-panel">
-          <div class="resources">${resourceStrip(me)}</div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#aaa;padding:2px 8px;">
-            <span>VP: ${vp}/10</span>
-            <div style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;"><div style="height:100%;width:${vpPct}%;background:linear-gradient(90deg,#4ecca3,#ffd700);border-radius:2px;"></div></div>
-          </div>
-          ${myTurn ? `<div class="turn-timer"><div class="turn-timer-label">턴 타이머: ${state.turnTimeLeft}s</div><div class="turn-timer-bar"><div class="turn-timer-fill" style="width:${turnPct}%;"></div></div></div>` : ""}
-          ${(me.devCards && me.devCards.length) ? `<div style="font-size:11px;color:var(--muted);">카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':c.type==='vp'?'⭐VP':c.type==='monopoly'?'💰모노폴리':c.type==='road_building'?'🛣️도로':c.type==='year_of_plenty'?'🌾풍년':'🃏').join(' ')}</div>` : ""}
-          <div class="actions">
-            <button id="diceDisplay" class="primary" style="font-size:16px;min-width:70px;" ${canRoll ? "" : "disabled"} onclick="rollDice()">🎲 주사위</button>
-            <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${getLongestRoadBadge(state.longestRoad === myIdx)}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
-            <button ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
-            <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
-            <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
-            <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
-            <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "⚔️" : ""}</button>
-            <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
-            <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️도로건설</button>
-            <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
-            <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
-          </div>
-          <div class="hint">
+      const vpGoal = (MAP_PRESETS[state.selectedMapId] || MAP_PRESETS.standard).vpGoal || 10;
+      const vpPctFull = Math.min(100, Math.max(0, (vp / vpGoal) * 100));
+      const devCardText = (me.devCards && me.devCards.length)
+        ? `카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':c.type==='vp'?'⭐VP':c.type==='monopoly'?'💰모노폴리':c.type==='road_building'?'🛣️도로':c.type==='year_of_plenty'?'🌾풍년':'🃏').join(' ')}`
+        : "";
+      const timerHtml = myTurn ? `<div class="turn-timer"><div class="turn-timer-label">턴 타이머: ${state.turnTimeLeft}s</div><div class="turn-timer-bar"><div class="turn-timer-fill" style="width:${turnPct}%;"></div></div></div>` : "";
+      const vpBarHtml = `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#aaa;padding:2px 4px;"><span>VP: ${vp}/${vpGoal}</span><div style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;"><div style="height:100%;width:${vpPctFull}%;background:linear-gradient(90deg,#4ecca3,#ffd700);border-radius:2px;"></div></div></div>`;
+      const hintHtml = `<div class="hint">
             ${inSetup ? `초기 배치 ${state.setupRound}라운드 | 현재: ${state.setupStep === "settlement" ? "마을" : "도로"}` : ""}
             ${(canRobber || state.phase === "knight-robber") ? "🦹 도둑 이동: 헥스를 선택하세요." : ""}
             ${(actionState.canMain && actionState.possible.length) ? `가능 행동: ${actionState.possible.join(', ')}` : ""}
+          </div>`;
+      return `
+        <div class="status">${statusText()}</div>
+        <div class="game-body">
+          <div class="panel-info">
+            <div class="resources">${resourceStrip(me)}</div>
+            ${vpBarHtml}
+            ${timerHtml}
+            ${devCardText ? `<div style="font-size:11px;color:var(--muted);">${devCardText}</div>` : ""}
+          </div>
+          ${renderMap()}
+          <div class="panel-action">
+            <div class="actions">
+              <button id="diceDisplay" class="primary" style="font-size:16px;min-width:70px;" ${canRoll ? "" : "disabled"} onclick="rollDice()">🎲 주사위</button>
+              <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${getLongestRoadBadge(state.longestRoad === myIdx)}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
+              <button ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
+              <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
+              <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
+              <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
+              <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "⚔️" : ""}</button>
+              <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
+              <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️도로건설</button>
+              <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
+              <button class="danger" ${(actionState.canMain && state.canEndTurn) ? "" : "disabled"} onclick="endTurn()">턴 종료</button>
+            </div>
+            ${hintHtml}
           </div>
         </div>
         ${renderTradeModal()}
@@ -5251,7 +5340,16 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.zoomOutMap = zoomOutMap;
 
     window.addEventListener('resize', () => {
-      if (!state.mapView.userMoved) {
+      const isLandscape = window.innerWidth > window.innerHeight;
+      if (isLandscape !== state.mapView._wasLandscape) {
+        state.mapView._wasLandscape = isLandscape;
+        state.mapView.zoomTouched = false;
+        state.mapView.userMoved = false;
+        applyResponsiveDefaults(true);
+        state.mapView.initialized = false;
+        render();
+        requestAnimationFrame(() => centerMapViewport(true));
+      } else if (!state.mapView.userMoved) {
         applyResponsiveDefaults(false);
         state.mapView.initialized = false;
         centerMapViewport(true);
