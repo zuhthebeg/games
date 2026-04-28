@@ -722,7 +722,7 @@ async function applyAiText() {
 
   setAiLoading(true);
   try {
-    const content = await callLlm('spark', [
+    const content = await callLlm('mini', [
       {
         role: 'system',
         content: '사다리 게임 참가자 추출기다. 사용자 문장에서 이름 목록 또는 인원수를 추출하라. 반드시 JSON만 반환: {"names": string[], "count": number|null}. 이름이 있으면 names 우선, 없고 인원수만 있으면 count 사용.'
