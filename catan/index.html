@@ -2184,8 +2184,9 @@
           el.innerHTML = `<div class="gold-picker-overlay"><div class="gold-picker-card">
             <div class="gold-picker-title">💰 금광 수확!</div>
             <div class="gold-picker-remaining">자원 <strong>${remaining}</strong>개 선택 가능 <span style="color:${timeLeft<=3?'#ef4444':'#fbbf24'};font-size:12px;">${timeLeft}초</span></div>
+            <div style="font-size:12px;color:var(--muted);text-align:center;margin:-6px 0 8px;">10초 안에 고르지 않으면 랜덤 지급</div>
             ${RESOURCES.map(r => `<div class="gold-picker-row">
-              <span class="gold-picker-label">${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]}<span style="font-size:12px;opacity:0.6;margin-left:4px;">(${(currentResources&&currentResources[r])||0})</span></span>
+              <span class="gold-picker-label">${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]}<span style="font-size:12px;opacity:0.68;margin-left:4px;">보유 ${(currentResources&&currentResources[r])||0}개</span></span>
               <div class="gold-picker-controls">
                 <button onclick="window._gAdj('${r}',-1)" ${chosen[r]<=0?"disabled":""}>−</button>
                 <span class="gold-picker-count">${chosen[r]}</span>

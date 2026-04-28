@@ -73,6 +73,10 @@ assert.equal(goldPreset.vpGoal, 10, 'gold rush preset should have vp goal 10');
 const goldHexes = helperCtx.buildHexesFromPreset('gold-rush');
 assert.equal(goldHexes.length, 19, 'gold rush should have 19 hexes');
 assert.equal(goldHexes.filter(h => h.type === 'gold').length, 3, 'gold rush should include 3 gold tiles');
+assert(html.includes('gold: "💰"'), 'gold tiles should keep the money-bag icon');
+assert(html.includes('💰 금광 수확!'), 'gold picker should keep money-bag title');
+assert(html.includes('보유 ${(currentResources&&currentResources[r])||0}개'), 'gold picker should show currently owned resources');
+assert(html.includes('10초 안에 고르지 않으면 랜덤 지급'), 'gold picker should explain timeout random fallback');
 
 const twinPreset = helperCtx.resolveMapPreset('twin-continents');
 assert.equal(twinPreset.vpGoal, 11, 'twin continents should have vp goal 11');
