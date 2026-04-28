@@ -1221,10 +1221,33 @@
       state.players = roomPlayers.slice(0, 4).map((p, i) => makePlayer({
         id: p.id,
         userId: p.id,
-        name: p.nickname || `Player ${i + 1}`,
+        name: p.nickname || p.name || `Player ${i + 1}`,
         color: PLAYER_COLORS[i],
         isAI: !!p.isAI
       }));
+    }
+
+    function markPlayerDisconnectedAsAI(userId) {
+      const idx = playerIndexFromAnyId(userId);
+      if (idx < 0 || userId === mpState.myUserId) return false;
+      const p = state.players[idx];
+      p.isAI = true;
+      p.wasHuman = true;
+      if (!p.originalName) p.originalName = p.name;
+      if (!String(p.name || "").includes("AI")) p.name = `${p.name || `Player ${idx + 1}`} AI`;
+      state.hint = `${p.originalName || p.name} 연결 끊김 — AI가 대신 진행합니다.`;
+      return true;
+    }
+
+    function markPlayerRejoinedHuman(userId, nickname = "") {
+      const idx = playerIndexFromAnyId(userId);
+      if (idx < 0) return false;
+      const p = state.players[idx];
+      p.isAI = false;
+      p.wasHuman = false;
+      p.name = nickname || p.originalName || p.name;
+      state.hint = `${p.name} 재접속 완료.`;
+      return true;
     }
 
     function getLobbyAiPlayers() {
@@ -4312,7 +4335,7 @@
               </select>
             </div>
             <button onclick="showMapSelect('single')">싱글플레이</button>
-            <button onclick="showMultiOptions()">멀티플레이</button>
+            <button onclick="showMapSelect('multi')">멀티플레이</button>
           </div>
         </div>
       `;
@@ -4341,7 +4364,7 @@
       if (state.mapSelectSource === "single") {
         startSingle(mapId);
       } else {
-        showMultiOptions();
+        createRoomFromSelectedMap();
       }
     }
 
@@ -4371,7 +4394,7 @@
             </div>
             <div class="multi-row" style="justify-content:space-between;">
               <button onclick="state.screen='mode';render()" style="background:var(--panel-2);border:1px solid var(--line);">← 뒤로</button>
-              <button onclick="confirmMapSelect()">${isMulti ? "다음 →" : "게임 시작"}</button>
+              <button onclick="confirmMapSelect()">${isMulti ? "방 만들기" : "게임 시작"}</button>
             </div>
           </div>
         </div>
@@ -4391,7 +4414,7 @@
                   <option value="3" ${state.maxPlayers === 3 ? "selected" : ""}>3</option>
                   <option value="4" ${state.maxPlayers === 4 ? "selected" : ""}>4</option>
                 </select>
-                <button onclick="createRoom()">방 만들기</button>
+                <button onclick="showMapSelect('multi')">맵 골라 방 만들기</button>
               </div>
               <div class="multi-row">
                 <input id="roomCodeInput" value="${state.roomCodeInput}" placeholder="방 코드" oninput="onRoomCodeInput(this.value)">
@@ -4745,7 +4768,24 @@
         await maybeHostInitGame();
         return;
       }
-      if (event.type === "player_joined" || event.type === "player_left" || event.type === "player_ready") {
+      if (event.type === "player_left") {
+        if (state.screen === "game" && markPlayerDisconnectedAsAI(event.userId)) {
+          render();
+          triggerAITurnIfNeeded();
+          return;
+        }
+        await refreshRoomState();
+        return;
+      }
+      if (event.type === "player_joined") {
+        if (state.screen === "game" && markPlayerRejoinedHuman(event.userId, event.payload?.nickname)) {
+          render();
+          return;
+        }
+        await refreshRoomState();
+        return;
+      }
+      if (event.type === "player_ready") {
         await refreshRoomState();
         return;
       }
@@ -4857,12 +4897,18 @@
       return true;
     }
 
+    async function createRoomFromSelectedMap() {
+      state.mapSelectSource = "multi";
+      return createRoom();
+    }
+
     async function createRoom() {
       try {
         const mapId = state.selectedMapId || "standard";
         const client = await ensureMp();
-        const room = await client.createRoom("catan", { maxPlayers: Number(state.maxPlayers) || 4, mapId });
+        const room = await client.createRoom("catan", { maxPlayers: Number(state.maxPlayers) || 4, mapId, gameConfig: { mapId } });
         mpState.mapId = mapId;
+        state.selectedMapId = mapId;
         mpState.roomCode = room.roomId || room.id || room.code || room.roomCode || "";
         state.mode = "multi";
         state.screen = "room-lobby";
