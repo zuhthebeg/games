@@ -7,6 +7,8 @@ assert(html.includes('id="table"'), 'solo table should exist as the large card g
 assert(html.includes('class="table multi-table"'), 'multiplayer table should exist as the large card gesture target');
 assert(html.includes('attachBlackjackGestureControls(document.getElementById("table")'), 'solo card/table area should be gesture-enabled');
 assert(html.includes('attachBlackjackGestureControls(document.querySelector(".multi-table")'), 'multiplayer card/table area should be gesture-enabled');
+assert(html.includes('touchAction: "pan-y"'), 'scrollable card/table gesture targets should preserve vertical scrolling');
+assert(html.includes('target.style.touchAction = options.touchAction || "none"'), 'gesture binding should allow scrollable targets to override touch-action');
 assert(html.includes('shouldIgnoreBlackjackGestureTarget'), 'gesture binding should ignore buttons/inputs/modals inside large areas');
 assert(html.includes('attachBlackjackGestureControls(document.getElementById("soloGesturePad")'), 'solo guide box should keep gesture support');
 assert(html.includes('attachBlackjackGestureControls(document.getElementById("mpGesturePad")'), 'multiplayer guide box should keep gesture support');

@@ -713,10 +713,10 @@
       return null;
     }
 
-    function attachBlackjackGestureControls(target, actions) {
+    function attachBlackjackGestureControls(target, actions, options = {}) {
       if (!target || target.dataset.gestureBound === "1") return;
       target.dataset.gestureBound = "1";
-      target.style.touchAction = "none";
+      target.style.touchAction = options.touchAction || "none";
 
       let startX = 0, startY = 0, startAt = 0;
       let lastTapAt = 0, tapCount = 0;
@@ -1335,7 +1335,7 @@
       split,
       double: () => { if (!el.doubleBtn.disabled) doubleDown(); },
       insurance: () => { if (state.phase === "insurance") takeInsurance(); }
-    });
+    }, { touchAction: "pan-y" });
 
     document.getElementById("langBtn").addEventListener("click", () => {
       currentLang = currentLang === "ko" ? "en" : "ko";
@@ -1859,7 +1859,7 @@
         const btn = document.getElementById("mpSplitBtn");
         if (btn && !btn.disabled) btn.click();
       }
-    });
+    }, { touchAction: "pan-y" });
 
     // ── Multi: Leave Button (header) ──
     document.getElementById("multiLeaveBtn").addEventListener("click", async () => {
