@@ -624,6 +624,22 @@
     button.danger { background: #632b2b; border-color: #b24a4a; }
     button:disabled { opacity: 0.45; cursor: not-allowed; }
 
+    .actions button.selected-action {
+      background: linear-gradient(180deg, #ffd54a, #f59e0b);
+      border-color: #fff1a8;
+      color: #1b1300;
+      box-shadow: 0 0 0 2px rgba(255,215,0,0.55), 0 0 18px rgba(255,215,0,0.65);
+      transform: translateY(-1px) scale(1.03);
+    }
+    .actions button.selected-action::before {
+      content: "✓ ";
+      font-weight: 900;
+    }
+    .actions button.settings-action {
+      border-color: rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.08);
+    }
+
     .hint {
       font-size: 12px;
       text-align: center;
@@ -3092,6 +3108,7 @@
         mpState.activeTradeProposals.set(proposalId, dismissBox);
         (async () => {
           const tradeMeta = { resources: { ...me.resources }, offer, want };
+          SFX.trade();
           const accepted = await showTradeProposal(proposer.name, offerStr, wantStr, "거래 하실래요?", myResStr, canAccept, dismissBox, tradeMeta);
           // Proposal was consumed by another player accepting first → bail without sending reject
           if (!mpState.activeTradeProposals.has(proposalId)) {
@@ -4427,18 +4444,20 @@
         (canRobber || state.phase === "knight-robber") ? "🦹 도둑 이동: 헥스를 선택하세요." : "",
         (actionState.canMain && actionState.possible.length) ? `가능: ${actionState.possible.join(', ')}` : ""
       ].filter(Boolean).join(" · ");
+      const buildActionButtonClass = (mode, extra = "") => `${extra}${state.buildMode === mode ? `${extra ? " " : ""}selected-action` : ""}`;
       const actionsHtml = `
         <div class="actions">
           <button id="diceDisplay" class="primary dice-button" ${canRoll ? "" : "disabled"} onclick="rollDice()">${renderDiceButtonContent(canRoll)}</button>
-          <button ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${getLongestRoadBadge(state.longestRoad === myIdx)}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
-          <button ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
-          <button ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
+          <button class="${buildActionButtonClass("road")}" ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${getLongestRoadBadge(state.longestRoad === myIdx)}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
+          <button class="${buildActionButtonClass("settlement")}" ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
+          <button class="${buildActionButtonClass("city")}" ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
           <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
           <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
           <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "⚔️" : ""}</button>
           <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
           <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️도로건설</button>
           <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
+          <button class="settings-action" onclick="toggleSoundPanel()">⚙️설정</button>
         </div>`;
       return `
         <div class="status">${statusText()}</div>
@@ -5133,6 +5152,11 @@
           tone(880, "sine", 0.08, 0.18);
           tone(1100, "sine", 0.06, 0.12, 0.07);
         },
+        trade() {
+          tone(740, "triangle", 0.08, 0.22);
+          tone(980, "triangle", 0.09, 0.2, 0.08);
+          tone(660, "sine", 0.12, 0.16, 0.18);
+        },
         error() {
           tone(180, "square", 0.1, 0.2);
         },
@@ -5142,6 +5166,16 @@
         }
       };
     })();
+
+    function unlockGameAudio() {
+      try {
+        SFX.resource();
+      } catch (_) {}
+      window.removeEventListener("pointerdown", unlockGameAudio);
+      window.removeEventListener("keydown", unlockGameAudio);
+    }
+    window.addEventListener("pointerdown", unlockGameAudio, { once: true, passive: true });
+    window.addEventListener("keydown", unlockGameAudio, { once: true });
 
     // Voice lines (pre-recorded)
     const Voice = {
