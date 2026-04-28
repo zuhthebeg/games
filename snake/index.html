@@ -488,6 +488,14 @@
             if (direction.x === dx && direction.y === dy) return;
             nextDirection = { x: dx, y: dy };
         }
+
+        function rotateDirection(clockwise = true) {
+            const base = { ...nextDirection };
+            const rotated = clockwise
+                ? { x: -base.y, y: base.x }
+                : { x: base.y, y: -base.x };
+            setDirection(rotated.x, rotated.y);
+        }
         
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
@@ -500,43 +508,47 @@
                     setDirection(0, 1);
                     e.preventDefault();
                     break;
-                case 'ArrowLeft': case 'a': case 'A':
-                    setDirection(-1, 0);
+                case 'ArrowLeft': case 'a': case 'A': case 'q': case 'Q':
+                    rotateDirection(false);
                     e.preventDefault();
                     break;
-                case 'ArrowRight': case 'd': case 'D':
-                    setDirection(1, 0);
+                case 'ArrowRight': case 'd': case 'D': case 'e': case 'E':
+                    rotateDirection(true);
                     e.preventDefault();
                     break;
                 case ' ':
                     if (!gameRunning) startGame();
+                    else rotateDirection(true);
                     e.preventDefault();
                     break;
             }
         });
         
-        // Touch swipe controls
-        let touchStartX, touchStartY;
+        // Drag/tap controls: horizontal drag rotates left/right, short tap rotates clockwise.
+        const SWIPE_THRESHOLD = 24;
+        let pointerStartX = null;
+        let pointerStartY = null;
         
-        container.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
+        container.addEventListener('pointerdown', (e) => {
+            pointerStartX = e.clientX;
+            pointerStartY = e.clientY;
+            container.setPointerCapture?.(e.pointerId);
         }, { passive: true });
         
-        container.addEventListener('touchend', (e) => {
-            if (!touchStartX || !touchStartY) return;
+        container.addEventListener('pointerup', (e) => {
+            if (pointerStartX === null || pointerStartY === null) return;
             
-            const dx = e.changedTouches[0].clientX - touchStartX;
-            const dy = e.changedTouches[0].clientY - touchStartY;
+            const dx = e.clientX - pointerStartX;
+            const dy = e.clientY - pointerStartY;
             
-            if (Math.abs(dx) > Math.abs(dy)) {
-                setDirection(dx > 0 ? 1 : -1, 0);
-            } else {
-                setDirection(0, dy > 0 ? 1 : -1);
+            if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) {
+                rotateDirection(true);
+            } else if (Math.abs(dx) >= Math.abs(dy)) {
+                rotateDirection(dx > 0);
             }
             
-            touchStartX = null;
-            touchStartY = null;
+            pointerStartX = null;
+            pointerStartY = null;
         }, { passive: true });
         
         // Initial draw
