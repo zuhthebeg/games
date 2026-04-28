@@ -1128,7 +1128,8 @@
       initSent: false,
       actionSeq: 0,
       processedActionIds: new Set(),
-      aiPlayers: []
+      aiPlayers: [],
+      replaying: false
     };
 
     function emptyResources() {
@@ -3068,6 +3069,7 @@
 
       // Multiplayer trade proposal received from other player
       if (type === "TRADE_PROPOSE") {
+        if (mpState.replaying) return true;
         const myIdx = localPlayerIndex();
         if (pIdx === myIdx) return true; // own proposal, skip
         const proposer = state.players[pIdx];
@@ -4586,7 +4588,7 @@
       if (!room) return;
       mpState.room = room;
       mpState.roomCode = room.id || room.roomId || mpState.roomCode;
-      const roomMapId = room.meta?.mapId || room.mapId || "standard";
+      const roomMapId = room.meta?.mapId || room.mapId || room.config?.mapId || "standard";
       mpState.mapId = roomMapId;
       state.selectedMapId = roomMapId;
       const me = room.players?.find(p => p.id === mpState.myUserId);
@@ -4643,7 +4645,7 @@
       if (fullPlayers.length < 2 || (!allReady && !aiPlayers.length)) return;
       setMultiplayerPlayers(fullPlayers);
       resetCoreState();
-      const mapId = state.selectedMapId || mpState.mapId || mpState.room?.meta?.mapId || "standard";
+      const mapId = state.selectedMapId || mpState.mapId || mpState.room?.meta?.mapId || mpState.room?.config?.mapId || "standard";
       generateBoard(null, mapId);
       recalcAllVP();
       mpState.initSent = true;
@@ -4719,6 +4721,59 @@
       } catch (_) {}
     }
 
+    async function replayCatanRoomEvents(roomId) {
+      if (!mpState.client || !roomId) return 0;
+      const res = await mpState.client.request('GET', `/api/rooms/${roomId}/events?after=0`);
+      const events = Array.isArray(res.events) ? res.events : [];
+      let lastSeq = 0;
+      mpState.replaying = true;
+      try {
+        for (const event of events) {
+          if (typeof event.seq === "number") lastSeq = Math.max(lastSeq, event.seq);
+          if (event.type !== "action") continue;
+          const raw = event.data || event.action || event.payload || {};
+          const data = raw.action || raw;
+          if (!data?.type) continue;
+          if (data.actionId && mpState.processedActionIds.has(data.actionId)) continue;
+          const ok = applyGameAction(data);
+          if (ok) markActionProcessed(data.actionId);
+        }
+      } finally {
+        mpState.replaying = false;
+      }
+      mpState.client.lastSeq = lastSeq;
+      return lastSeq;
+    }
+
+    async function restoreCatanMultiplayerSession() {
+      if (!window.MultiplayerClient) return false;
+      const client = await ensureMp();
+      const room = await client.tryReconnect("catan");
+      if (!room) return false;
+      mpState.room = room;
+      mpState.roomCode = room.id || room.roomId || client.getRoomCode() || mpState.roomCode;
+      const roomMapId = room.meta?.mapId || room.mapId || room.config?.mapId || "standard";
+      mpState.mapId = roomMapId;
+      state.selectedMapId = roomMapId;
+      const me = room.players?.find(p => p.id === mpState.myUserId);
+      mpState.isHost = !!me?.isHost;
+      mpState.ready = !!me?.isReady;
+      state.mode = "multi";
+      if (room.status === "playing") {
+        state.screen = "game";
+        resetCoreState();
+        await replayCatanRoomEvents(mpState.roomCode);
+        state.hint = "멀티플레이 복구 완료";
+      } else {
+        state.screen = "room-lobby";
+        mpState.waitingMessage = `방 복구 완료: ${mpState.roomCode}`;
+      }
+      client.startListening();
+      render();
+      triggerAITurnIfNeeded();
+      return true;
+    }
+
     async function createRoom() {
       try {
         const mapId = state.selectedMapId || "standard";
@@ -4774,6 +4829,7 @@
       mpState.myUserId = null;
       mpState.processedActionIds = new Set();
       mpState.aiPlayers = [];
+      mpState.replaying = false;
       resetCoreState();
       state.mode = null;
       state.screen = "mode";
@@ -5740,6 +5796,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       applyResponsiveDefaults(true);
       setSinglePlayers();
       ensureTurnTimer();
+      if (await restoreCatanMultiplayerSession()) return;
       render();
     })();
   </script>
