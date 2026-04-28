@@ -1588,6 +1588,24 @@
       return sum;
     }
 
+    function hideMultiResultOverlay() {
+      document.getElementById("mp-result-overlay")?.remove();
+    }
+
+    function showMultiInlineNotice(message) {
+      const statusEl = document.getElementById("mpTurnStatus");
+      if (!statusEl || !message) return;
+      statusEl.textContent = message;
+      statusEl.classList.add("push");
+      setTimeout(() => statusEl.classList.remove("push"), 1200);
+    }
+
+    function refreshMultiStateSoon(delay = 250) {
+      setTimeout(() => {
+        if (mpUI?.getClient()) handleMultiGameEvent("refresh", {});
+      }, delay);
+    }
+
     // ── Multi: Render State ──
     // Server returns: { players (lobby), gameState (public), myView (per-player) }
     // gameState has: { players[], dealer, phase, currentPlayerIndex, currentHandIndex, config }
@@ -1604,6 +1622,8 @@
       const isMyTurn = gd.isMyTurn || false;
       const currentPlayerIndex = gd.currentPlayerIndex ?? -1;
       const currentHandIndex = gd.currentHandIndex ?? 0;
+
+      if (phase !== "finished") hideMultiResultOverlay();
 
       // If game hasn't started yet (waiting room), use lobby players
       if (phase === "waiting" || (!gd.phase && gs.status === "waiting")) {
@@ -1748,8 +1768,15 @@
                 label: "🔄 다음 라운드",
                 primary: true,
                 handler: async () => {
-                  try { await mpUI.sendAction({ type: "new_round" }); }
-                  catch (e) { alert(t("actionFailed", e.message)); }
+                  try {
+                    await mpUI.sendAction({ type: "new_round" });
+                    hideMultiResultOverlay();
+                    showMultiInlineNotice(currentLang === "ko" ? "다음 라운드로 넘어갑니다..." : "Starting next round...");
+                    refreshMultiStateSoon(150);
+                  } catch (e) {
+                    showMultiInlineNotice(currentLang === "ko" ? "이미 다음 라운드로 넘어갔습니다." : "Next round is already starting.");
+                    refreshMultiStateSoon(150);
+                  }
                 }
               },
               {
