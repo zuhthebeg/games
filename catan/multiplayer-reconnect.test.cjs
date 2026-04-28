@@ -11,6 +11,10 @@ assert(html.includes('async function replayCatanRoomEvents'), 'catan should rebu
 assert(html.includes('mpState.replaying = true'), 'event replay should mark replaying mode');
 assert(html.includes('if (mpState.replaying) return true;'), 'stale trade proposals should not reopen dialogs during replay');
 assert(html.includes('mpState.client.lastSeq = lastSeq'), 'replay should advance client lastSeq to avoid old event replay');
+assert(html.includes('function createCatanStateSnapshot'), 'multiplayer actions should carry a full state snapshot for guest refresh restore');
+assert(html.includes('action.__snapshot = createCatanStateSnapshot()'), 'sent game actions should include the latest post-action snapshot');
+assert(html.includes('function applyCatanStateSnapshot'), 'guest refresh should restore from a state snapshot before replaying later events');
+assert(html.includes('latestSnapshotEvent'), 'replay should prefer the newest snapshot instead of rebuilding from truncated event history');
 assert(html.includes('state.hint = "멀티플레이 복구 완료"'), 'restore should surface successful game restoration');
 assert(html.includes('room.config?.mapId'), 'room state changes should preserve map id from room config');
 

@@ -3136,9 +3136,9 @@
             SFX.build();
             showToast("🤝 거래 성사!", 2000);
             // Notify proposer + bystanders (proposerId/proposalId let receivers identify the swap)
-            mpState.client.sendAction({ type: "TRADE_ACCEPT", playerId: me.userId || me.id, proposerId, proposalId, offer, want, actionId: `ta_${Date.now()}` }).catch(()=>{});
+            mpState.client.sendAction({ type: "TRADE_ACCEPT", playerId: me.userId || me.id, proposerId, proposalId, offer, want, actionId: `ta_${Date.now()}`, __snapshot: createCatanStateSnapshot() }).catch(()=>{});
           } else {
-            mpState.client.sendAction({ type: "TRADE_REJECT", playerId: me.userId || me.id, proposalId, actionId: `tr_${Date.now()}` }).catch(()=>{});
+            mpState.client.sendAction({ type: "TRADE_REJECT", playerId: me.userId || me.id, proposalId, actionId: `tr_${Date.now()}`, __snapshot: createCatanStateSnapshot() }).catch(()=>{});
           }
           render();
         })();
@@ -3216,6 +3216,57 @@
       }
     }
 
+    function createCatanStateSnapshot() {
+      return clone({
+        phase: state.phase,
+        currentPlayer: state.currentPlayer,
+        players: state.players,
+        hexes: state.hexes,
+        vertices: state.vertices,
+        edges: state.edges,
+        robber: state.robber,
+        longestRoad: state.longestRoad,
+        largestArmy: state.largestArmy,
+        devDeck: state.devDeck,
+        ports: state.ports,
+        turnNumber: state.turnNumber,
+        setupRound: state.setupRound,
+        setupOrderIndex: state.setupOrderIndex,
+        setupStep: state.setupStep,
+        lastSetupVertex: state.lastSetupVertex,
+        canEndTurn: state.canEndTurn,
+        winner: state.winner,
+        roadBuildingRemaining: state.roadBuildingRemaining,
+        lastDiceSum: state.lastDiceSum,
+        lastDiceValues: state.lastDiceValues,
+        selectedMapId: state.selectedMapId,
+        mapView: state.mapView,
+        tradeRejectedThisTurn: state.tradeRejectedThisTurn
+      });
+    }
+
+    function applyCatanStateSnapshot(snapshot) {
+      if (!snapshot || !Array.isArray(snapshot.players) || !Array.isArray(snapshot.hexes)) return false;
+      const keep = {
+        screen: state.screen,
+        mode: state.mode,
+        roomCodeInput: state.roomCodeInput,
+        maxPlayers: state.maxPlayers,
+        tradeDialog: state.tradeDialog,
+        debug: state.debug
+      };
+      Object.assign(state, clone(snapshot));
+      state.screen = keep.screen || "game";
+      state.mode = keep.mode || "multi";
+      state.roomCodeInput = keep.roomCodeInput || "";
+      state.maxPlayers = keep.maxPlayers || 4;
+      state.tradeDialog = { open: false, offer: {}, want: {} };
+      state.debug = keep.debug;
+      if (!state.mapView) state.mapView = { zoom: 1, userMoved: false, initialized: false };
+      recalcAllVP();
+      return true;
+    }
+
     async function sendGameAction(type, payload) {
       const action = { type, ...payload, actionId: nextActionId() };
       const applied = applyGameAction(action);
@@ -3225,6 +3276,7 @@
       triggerAITurnIfNeeded();
       if (!isMultiMode()) return true;
       try {
+        action.__snapshot = createCatanStateSnapshot();
         await mpState.client.sendAction(action);
       } catch (e) {
         state.hint = `동기화 실패: ${e.message || e}`;
@@ -4745,14 +4797,26 @@
       const res = await mpState.client.request('GET', `/api/rooms/${roomId}/events?after=0`);
       const events = Array.isArray(res.events) ? res.events : [];
       let lastSeq = 0;
+      let latestSnapshotEvent = null;
+      const actionEvents = events.map(event => {
+        if (typeof event.seq === "number") lastSeq = Math.max(lastSeq, event.seq);
+        if (event.type !== "action") return null;
+        const raw = event.data || event.action || event.payload || {};
+        const data = raw.action || raw;
+        if (data?.__snapshot) latestSnapshotEvent = { seq: event.seq || 0, data };
+        return data?.type ? { seq: event.seq || 0, data } : null;
+      }).filter(Boolean);
       mpState.replaying = true;
       try {
-        for (const event of events) {
-          if (typeof event.seq === "number") lastSeq = Math.max(lastSeq, event.seq);
-          if (event.type !== "action") continue;
-          const raw = event.data || event.action || event.payload || {};
-          const data = raw.action || raw;
-          if (!data?.type) continue;
+        const replayFromSeq = latestSnapshotEvent && applyCatanStateSnapshot(latestSnapshotEvent.data.__snapshot)
+          ? latestSnapshotEvent.seq
+          : 0;
+        for (const item of actionEvents) {
+          if (item.seq <= replayFromSeq) {
+            if (item.data.actionId) markActionProcessed(item.data.actionId);
+            continue;
+          }
+          const data = item.data;
           if (data.actionId && mpState.processedActionIds.has(data.actionId)) continue;
           const ok = applyGameAction(data);
           if (ok) markActionProcessed(data.actionId);
