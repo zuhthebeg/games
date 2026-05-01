@@ -8,7 +8,7 @@
   <link rel="icon" href="icon.svg" />
   <script src="/lib/shared-wallet.js?v=20260312a"></script>
   <script src="/lib/multiplayer.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/animejs@4.3.6/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
   <style>
     :root {
       --bg: #12324a;
@@ -4365,7 +4365,7 @@
       const maps = Object.values(MAP_PRESETS);
       const selected = state.selectedMapId || "standard";
       const preset = MAP_PRESETS[selected] || MAP_PRESETS.standard;
-      const starsHtml = n => "★".repeat(n || 0) + "☆".repeat(Math.max(0, 3 - (n || 0)));
+      const starsHtml = n => "★".repeat(n || 0);
       const isMulti = state.mapSelectSource === "multi";
 
       return `

@@ -1501,6 +1501,7 @@
 
     // ── Multi: Event Handler ──
     let mpLastPhase = null;
+    const mpAppliedSettlementKeys = new Set();
     async function handleMultiGameEvent(type, data) {
       try {
         const gs = await mpUI.getState();
@@ -1528,6 +1529,7 @@
               SFX.voice(voiceKey("dealer-win"));
             }
             if (ev.type === "settled") {
+              applyMultiWalletSettlement(gs, data);
               const me = gd.players?.find(p => p.id === myId);
               if (me) {
                 const win = me.totalWinnings;
@@ -1604,6 +1606,27 @@
       setTimeout(() => {
         if (mpUI?.getClient()) handleMultiGameEvent("refresh", {});
       }, delay);
+    }
+
+    function applyMultiWalletSettlement(gs, eventData) {
+      const myId = mpUI?.getClient()?.getMyUserId();
+      const events = eventData?.events || [];
+      const settled = events.find(ev => ev?.type === "settled");
+      if (!myId || !settled) return;
+      const roomCode = mpUI?.getClient()?.getRoomCode?.() || "blackjack";
+      const key = `${roomCode}:${eventData?.seq || JSON.stringify(settled.payload?.results || [])}`;
+      if (mpAppliedSettlementKeys.has(key)) return;
+      const myDelta = (settled.payload?.results || [])
+        .filter(r => r.playerId === myId)
+        .reduce((sum, r) => sum + Number(r.payout || 0), 0);
+      if (!Number.isFinite(myDelta) || myDelta === 0) {
+        mpAppliedSettlementKeys.add(key);
+        return;
+      }
+      if (myDelta > 0) walletAdd(Math.floor(myDelta));
+      else walletRemove(Math.abs(Math.floor(myDelta)));
+      mpAppliedSettlementKeys.add(key);
+      syncGold();
     }
 
     // ── Multi: Render State ──
@@ -1697,11 +1720,12 @@
 
         const nameDisplay = isMe ? `${p.nickname || "Me"} (나)` : (p.nickname || "Player");
         const winDisplay = p.totalWinnings !== undefined ? ` | ${t("totalWinnings")}: ${p.totalWinnings >= 0 ? "+" : ""}${p.totalWinnings}` : "";
+        const streakDisplay = Number(p.streak || 0) > 0 ? ` 🔥${p.streak}${currentLang === "ko" ? "연승" : " streak"}` : "";
         const readyBadge = phase === "betting" ? (p.ready ? " ✅" : " ⏳") : "";
 
         return `<div class="${classes.join(" ")}">
           <div class="mp-player-head">
-            <span>${nameDisplay}${readyBadge}</span>
+            <span>${nameDisplay}${readyBadge}${streakDisplay}</span>
             <span>${winDisplay}</span>
           </div>
           ${handsHTML || '<div style="color:var(--muted);font-size:0.7rem;padding:4px;">대기 중</div>'}
@@ -1740,8 +1764,9 @@
       if (phase === "playing" && isMyTurn) {
         actionPanel.classList.remove("hidden");
         const myHand = mePlayer?.hands?.[currentHandIndex];
-        document.getElementById("mpDoubleBtn").disabled = !(myHand?.cards?.length === 2 && !myHand.doubled);
-        document.getElementById("mpSplitBtn").disabled = !(myHand?.cards?.length === 2 && (mePlayer.hands || []).length <= 1 &&
+        const canCoverExtraBet = myHand ? state.gold >= Number(myHand.bet || 0) : false;
+        document.getElementById("mpDoubleBtn").disabled = !(myHand?.cards?.length === 2 && !myHand.doubled && canCoverExtraBet);
+        document.getElementById("mpSplitBtn").disabled = !(myHand?.cards?.length === 2 && (mePlayer.hands || []).length <= 1 && canCoverExtraBet &&
           myHand.cards[0]?.rank === myHand.cards[1]?.rank);
       } else {
         actionPanel.classList.add("hidden");
@@ -1841,12 +1866,14 @@
     document.getElementById("mpDoubleBtn").addEventListener("click", async () => {
       if (!mpUI?.getClient()) return;
       try {
-        // Double needs extra bet
+        syncGold();
         const gs = await mpUI.getState();
-        const me = gs.players?.find(p => p.id === mpUI.getClient().getMyUserId());
-        const hand = me?.hands?.[gs.currentHandIndex];
-        if (hand && state.gold >= hand.bet) {
-          walletRemove(hand.bet);
+        const gd = gs.myView || gs.gameState || gs;
+        const me = gd.players?.find(p => p.id === mpUI.getClient().getMyUserId());
+        const hand = me?.hands?.[gd.currentHandIndex];
+        if (hand && state.gold < Number(hand.bet || 0)) {
+          alert(t("goldInsufficient"));
+          return;
         }
         await mpUI.sendAction({ type: "double" });
       } catch (e) { alert(t("actionFailed", e.message)); }
@@ -1854,11 +1881,14 @@
     document.getElementById("mpSplitBtn").addEventListener("click", async () => {
       if (!mpUI?.getClient()) return;
       try {
+        syncGold();
         const gs = await mpUI.getState();
-        const me = gs.players?.find(p => p.id === mpUI.getClient().getMyUserId());
-        const hand = me?.hands?.[gs.currentHandIndex];
-        if (hand && state.gold >= hand.bet) {
-          walletRemove(hand.bet);
+        const gd = gs.myView || gs.gameState || gs;
+        const me = gd.players?.find(p => p.id === mpUI.getClient().getMyUserId());
+        const hand = me?.hands?.[gd.currentHandIndex];
+        if (hand && state.gold < Number(hand.bet || 0)) {
+          alert(t("goldInsufficient"));
+          return;
         }
         await mpUI.sendAction({ type: "split" });
       } catch (e) { alert(t("actionFailed", e.message)); }

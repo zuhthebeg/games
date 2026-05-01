@@ -78,6 +78,8 @@ assert.notEqual(goldHexes.map(h => h.number).filter(n => n !== null).join(','), 
 const twinHexes = helperCtx.buildHexesFromPreset('twin-continents');
 assert.equal(twinHexes[7].type, 'strait', 'twin-continents strait should remain at preset slot 7');
 assert.equal(twinHexes[0].type, 'lumber', 'twin-continents should shuffle resource pool while keeping fixed terrain slots');
+assert(html.includes('const starsHtml = n => "★".repeat(n || 0);'), 'map selection should show only earned stars without empty star placeholders');
+assert(!html.includes('"☆".repeat'), 'map selection should not render empty stars');
 
 const selectionScript = [
   extractFunction('confirmMapSelect', 'renderMapSelect'),
