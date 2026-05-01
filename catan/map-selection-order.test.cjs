@@ -55,29 +55,29 @@ function extractPresetAssignments() {
 }
 
 const helperScript = [
+  extractFunction('shuffle', 'clone'),
   extractConst('MAP_PRESETS'),
   extractPresetAssignments(),
   extractFunction('resolveMapPreset', 'assignBalancedNumbers'),
+  extractFunction('assignBalancedNumbers', 'resolveProducedResources'),
   extractFunction('buildHexesFromPreset', 'generateBoard')
 ].join('\n');
 
-const helperCtx = {
-  shuffle: (arr) => arr.slice(),
-  assignBalancedNumbers: () => { throw new Error('assignBalancedNumbers should not run for fixed-order preset'); }
-};
+const helperCtx = { Math: Object.create(Math) };
+helperCtx.Math.random = () => 0;
 vm.createContext(helperCtx);
 vm.runInContext(helperScript, helperCtx);
+helperCtx.shuffle = (arr) => arr.slice().reverse();
 
 const goldHexes = helperCtx.buildHexesFromPreset('gold-rush');
-assert.equal(goldHexes[0].type, 'brick', 'gold-rush should preserve preset tile order at slot 0');
-assert.equal(goldHexes[1].type, 'gold', 'gold-rush should preserve preset tile order at slot 1');
-assert.equal(goldHexes[11].type, 'gold', 'gold-rush should preserve preset tile order at slot 11');
-assert.equal(goldHexes[18].type, 'gold', 'gold-rush should preserve preset tile order at slot 18');
-assert.equal(goldHexes[9].type, 'desert', 'gold-rush desert should stay in preset slot 9');
+assert.equal(goldHexes[0].type, 'gold', 'gold-rush should shuffle preset resource pool instead of placing slot 0 in listed order');
+assert.equal(goldHexes.filter(h => h.type === 'desert').length, 1, 'gold-rush should still include exactly one desert after shuffled placement');
+assert.equal(goldHexes.filter(h => h.type === 'gold').length, 3, 'gold-rush should keep 3 gold tiles while randomizing their slots');
+assert.notEqual(goldHexes.map(h => h.number).filter(n => n !== null).join(','), '5,2,6,3,8,10,9,12,11,4,8,10,9,4,5,6,3,11', 'gold-rush numbers should not be assigned in listed order');
 
 const twinHexes = helperCtx.buildHexesFromPreset('twin-continents');
 assert.equal(twinHexes[7].type, 'strait', 'twin-continents strait should remain at preset slot 7');
-assert.equal(twinHexes[17].type, 'desert', 'twin-continents desert should remain at preset slot 17');
+assert.equal(twinHexes[0].type, 'lumber', 'twin-continents should shuffle resource pool while keeping fixed terrain slots');
 
 const selectionScript = [
   extractFunction('confirmMapSelect', 'renderMapSelect'),

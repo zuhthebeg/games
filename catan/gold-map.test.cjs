@@ -53,6 +53,7 @@ const helperScript = [
   extractConst('MAP_PRESETS'),
   extractPresetAssignments(),
   extractFunction('resolveMapPreset', 'assignBalancedNumbers'),
+  extractFunction('assignBalancedNumbers', 'resolveProducedResources'),
   extractFunction('resolveProducedResources'),
   extractFunction('buildHexesFromPreset', 'generateBoard')
 ].join('\n');

@@ -1880,20 +1880,13 @@
       const preset = resolveMapPreset(mapId);
       const axial = preset.layout.axial.slice();
 
-      // preset에 적힌 순서를 그대로 유지하고, type이 고정된 칸만 그대로 둔다
-      const resourcePool = preset.resources.fixed ? preset.resources.pool.slice() : shuffle(preset.resources.pool.slice());
+      // layout의 type은 바다/해협/호수/화산 같은 고정 지형만 고정한다.
+      // 자원/사막/숫자는 매 게임 셔플해야 같은 맵도 매번 다르게 열린다.
+      const resourcePool = shuffle(preset.resources.pool.slice());
       let pi = 0;
       const types = axial.map(c => c.type !== undefined ? c.type : resourcePool[pi++]);
 
-      const _NON_PROD = new Set(["desert","sea","lake","volcano","strait"]);
-      const _nonDesertIdx = types.map((t,i) => ({t,i})).filter(x => !_NON_PROD.has(x.t)).map(x => x.i);
-      let balancedNumbers;
-      if (preset.numbers?.pool?.length === _nonDesertIdx.length) {
-        balancedNumbers = new Array(types.length).fill(null);
-        for (let j = 0; j < _nonDesertIdx.length; j++) balancedNumbers[_nonDesertIdx[j]] = preset.numbers.pool[j];
-      } else {
-        balancedNumbers = assignBalancedNumbers(axial, types, preset.numbers);
-      }
+      const balancedNumbers = assignBalancedNumbers(axial, types, preset.numbers);
       return axial.map((coord, i) => ({
         index: i,
         q: coord.q,
@@ -4626,6 +4619,7 @@
       }
       if (state.screen === "mode") app.innerHTML = renderModeScreen();
       else if (state.screen === "map-select") app.innerHTML = renderMapSelect();
+      else if (state.screen === "room-lobby") app.innerHTML = renderRoomLobby();
       else if (state.screen === "multi-lobby") {
         // MultiplayerUI handles this screen
         app.classList.add("hidden");
