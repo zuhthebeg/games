@@ -519,6 +519,7 @@
   <script>
     const SUITS = ["♠", "♥", "♦", "♣"];
     const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    const RESULT_REVEAL_DELAY_MS = 1800;
 
     // ── i18n ──
     const I18N = {
@@ -1242,7 +1243,7 @@
       if (finalPayout > 0) walletAdd(finalPayout);
 
       state.streak = nextStreak;
-      state.phase = "betting";
+      state.phase = "settling";
 
       const finalProfit = finalPayout - totalBet;
       let statusType = type;
@@ -1266,6 +1267,11 @@
         SFX.voice(voiceKey("push"));
       }
       render();
+      setTimeout(() => {
+        if (state.phase !== "settling") return;
+        state.phase = "betting";
+        render();
+      }, RESULT_REVEAL_DELAY_MS);
     }
 
     function settleRound() {
@@ -1502,6 +1508,9 @@
     // ── Multi: Event Handler ──
     let mpLastPhase = null;
     const mpAppliedSettlementKeys = new Set();
+    let mpLatestRoundDelta = null;
+    let mpResultOverlayKey = null;
+    let mpResultOverlayTimer = null;
     async function handleMultiGameEvent(type, data) {
       try {
         const gs = await mpUI.getState();
@@ -1615,10 +1624,11 @@
       if (!myId || !settled) return;
       const roomCode = mpUI?.getClient()?.getRoomCode?.() || "blackjack";
       const key = `${roomCode}:${eventData?.seq || JSON.stringify(settled.payload?.results || [])}`;
-      if (mpAppliedSettlementKeys.has(key)) return;
       const myDelta = (settled.payload?.results || [])
         .filter(r => r.playerId === myId)
         .reduce((sum, r) => sum + Number(r.payout || 0), 0);
+      if (Number.isFinite(myDelta)) mpLatestRoundDelta = Math.floor(myDelta);
+      if (mpAppliedSettlementKeys.has(key)) return;
       if (!Number.isFinite(myDelta) || myDelta === 0) {
         mpAppliedSettlementKeys.add(key);
         return;
@@ -1646,7 +1656,14 @@
       const currentPlayerIndex = gd.currentPlayerIndex ?? -1;
       const currentHandIndex = gd.currentHandIndex ?? 0;
 
-      if (phase !== "finished") hideMultiResultOverlay();
+      if (phase !== "finished") {
+        hideMultiResultOverlay();
+        mpResultOverlayKey = null;
+        if (mpResultOverlayTimer) {
+          clearTimeout(mpResultOverlayTimer);
+          mpResultOverlayTimer = null;
+        }
+      }
 
       // If game hasn't started yet (waiting room), use lobby players
       if (phase === "waiting" || (!gd.phase && gs.status === "waiting")) {
@@ -1774,20 +1791,35 @@
 
       // Round finished → show result overlay with custom actions
       if (phase === "finished" && mePlayer && !document.getElementById("mp-result-overlay")) {
-        const win = mePlayer.totalWinnings;
+        const win = Number(mePlayer.totalWinnings || 0);
+        const roundDelta = Number.isFinite(mpLatestRoundDelta) ? mpLatestRoundDelta : null;
+        const resultValue = roundDelta ?? win;
         const lastHand = mePlayer.hands?.[0];
+        const overlayKey = JSON.stringify({ room: mpUI?.getClient()?.getRoomCode?.(), dealer: dealer.cards, hands: mePlayer.hands, win, roundDelta });
+        if (mpResultOverlayKey === overlayKey) return;
+        if (mpResultOverlayTimer) {
+          clearTimeout(mpResultOverlayTimer);
+          mpResultOverlayTimer = null;
+        }
+        mpResultOverlayKey = overlayKey;
+
         let resultText = "PUSH";
         if (lastHand?.busted) resultText = "BUST";
         else if (lastHand?.blackjack) resultText = "BLACKJACK!";
-        else if (win > 0) resultText = "WIN!";
-        else if (win < 0) resultText = "LOSE";
-        const title = (win > 0 ? "🎉 " : win < 0 ? "💀 " : "🤝 ") + resultText;
+        else if (resultValue > 0) resultText = "WIN!";
+        else if (resultValue < 0) resultText = "LOSE";
+        const title = (resultValue > 0 ? "🎉 " : resultValue < 0 ? "💀 " : "🤝 ") + resultText;
+        const roundLabel = currentLang === "ko" ? "이번 판" : "This round";
+        const totalLabel = t("totalWinnings");
+        const roundLine = roundDelta === null ? "" : `${roundLabel}: ${roundDelta >= 0 ? "+" : ""}${roundDelta.toLocaleString()}G<br>`;
 
-        setTimeout(() => {
+        mpResultOverlayTimer = setTimeout(() => {
+          mpResultOverlayTimer = null;
+          if (phase !== "finished" || document.getElementById("mp-result-overlay")) return;
           mpUI.showResult({
             title,
-            detail: `${t("totalWinnings")}: ${win >= 0 ? "+" : ""}${win.toLocaleString()}`,
-            isWin: win > 0 ? true : (win < 0 ? false : null),
+            detail: `${roundLine}${totalLabel}: ${win >= 0 ? "+" : ""}${win.toLocaleString()}G`,
+            isWin: resultValue > 0 ? true : (resultValue < 0 ? false : null),
             actions: [
               {
                 label: "🔄 다음 라운드",
@@ -1818,7 +1850,7 @@
               }
             ]
           });
-        }, 1000);
+        }, RESULT_REVEAL_DELAY_MS);
       }
     }
 

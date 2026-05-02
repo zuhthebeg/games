@@ -4,7 +4,7 @@ const assert = require('assert');
 const html = fs.readFileSync(__dirname + '/index.html', 'utf8');
 
 assert(html.includes('function hideMultiResultOverlay'), 'should have helper to clear multiplayer result overlay');
-assert(html.includes('if (phase !== "finished") hideMultiResultOverlay();'), 'result overlay should disappear automatically after next round starts');
+assert(html.includes('if (phase !== "finished") {') && html.includes('hideMultiResultOverlay();'), 'result overlay should disappear automatically after next round starts');
 
 const newRoundHandlerStart = html.indexOf('type: "new_round"');
 assert(newRoundHandlerStart >= 0, 'new_round action should exist');
