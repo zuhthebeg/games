@@ -4328,10 +4328,16 @@
               </select>
             </div>
             <button onclick="showMapSelect('single')">싱글플레이</button>
-            <button onclick="showMapSelect('multi')">멀티플레이</button>
+            <button onclick="openMultiplayerMenu()">멀티플레이</button>
           </div>
         </div>
       `;
+    }
+
+    function openMultiplayerMenu() {
+      state.screen = "multi-options";
+      state.mapSelectSource = "multi";
+      render();
     }
 
     function showMapSelect(source) {
@@ -4386,7 +4392,7 @@
               선택: <strong>${preset.name}</strong> — ${preset.minPlayers}~${preset.maxPlayers}인 · VP ${preset.vpGoal}
             </div>
             <div class="multi-row" style="justify-content:space-between;">
-              <button onclick="state.screen='mode';render()" style="background:var(--panel-2);border:1px solid var(--line);">← 뒤로</button>
+              <button onclick="state.screen = state.mapSelectSource === 'multi' ? 'multi-options' : 'mode'; render()" style="background:var(--panel-2);border:1px solid var(--line);">← 뒤로</button>
               <button onclick="confirmMapSelect()">${isMulti ? "방 만들기" : "게임 시작"}</button>
             </div>
           </div>
@@ -4669,6 +4675,7 @@
       }
       if (state.screen === "mode") app.innerHTML = renderModeScreen();
       else if (state.screen === "map-select") app.innerHTML = renderMapSelect();
+      else if (state.screen === "multi-options") app.innerHTML = renderMultiOptions();
       else if (state.screen === "room-lobby") app.innerHTML = renderRoomLobby();
       else if (state.screen === "multi-lobby") {
         // MultiplayerUI handles this screen
