@@ -4,7 +4,9 @@ const assert = require('assert');
 const html = fs.readFileSync(__dirname + '/index.html', 'utf8');
 
 assert(html.includes('function applyMultiWalletSettlement'), 'client should apply multiplayer settlement to SharedWallet exactly once');
-assert(html.includes('applyMultiWalletSettlement(gs, data)'), 'settled event handler should apply wallet delta from authoritative state');
+assert(html.includes('const actionEvents = data?.events || data?.payload?.events || data?.action?.events || []'), 'client should read nested action events from relay payloads');
+assert(html.includes('applyMultiWalletSettlement(gs, data, actionEvents)'), 'settled event handler should apply wallet delta from authoritative state');
+assert(html.includes('eventData?.payload?.events'), 'wallet settlement should support SSE/poll payload.events shape');
 assert(html.includes('mpAppliedSettlementKeys'), 'client should dedupe repeated settled events/state refreshes');
 assert(!html.includes('walletRemove(hand.bet);\n        }\n        await mpUI.sendAction({ type: "double" })'), 'double should not deduct local wallet before server settlement');
 assert(!html.includes('walletRemove(hand.bet);\n        }\n        await mpUI.sendAction({ type: "split" })'), 'split should not deduct local wallet before server settlement');

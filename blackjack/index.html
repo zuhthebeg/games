@@ -1518,9 +1518,11 @@
         const phase = gd.phase;
         const myId = mpUI.getClient()?.getMyUserId();
 
+        const actionEvents = data?.events || data?.payload?.events || data?.action?.events || [];
+
         // SFX based on events
-        if (data?.events) {
-          for (const ev of data.events) {
+        if (actionEvents.length) {
+          for (const ev of actionEvents) {
             if (ev.type === "bet_placed") SFX.chip();
             if (ev.type === "dealing_started") {
               SFX.voice(voiceKey("deal"));
@@ -1538,7 +1540,7 @@
               SFX.voice(voiceKey("dealer-win"));
             }
             if (ev.type === "settled") {
-              applyMultiWalletSettlement(gs, data);
+              applyMultiWalletSettlement(gs, data, actionEvents);
               const me = gd.players?.find(p => p.id === myId);
               if (me) {
                 const win = me.totalWinnings;
@@ -1617,9 +1619,9 @@
       }, delay);
     }
 
-    function applyMultiWalletSettlement(gs, eventData) {
+    function applyMultiWalletSettlement(gs, eventData, actionEvents = null) {
       const myId = mpUI?.getClient()?.getMyUserId();
-      const events = eventData?.events || [];
+      const events = actionEvents || eventData?.events || eventData?.payload?.events || eventData?.action?.events || [];
       const settled = events.find(ev => ev?.type === "settled");
       if (!myId || !settled) return;
       const roomCode = mpUI?.getClient()?.getRoomCode?.() || "blackjack";
