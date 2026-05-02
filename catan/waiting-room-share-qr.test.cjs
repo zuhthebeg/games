@@ -20,8 +20,16 @@ assert(
   'room lobby should expose a native share/copy fallback action'
 );
 assert(
-  html.includes('?room=${encodeURIComponent(roomCode || "")}'),
-  'invite URL should preserve the existing ?room=CODE join route'
+  html.includes('#room=${encodeURIComponent(roomCode || "")}'),
+  'invite URL should use a hash route so QR opens never hit a server-side 404'
+);
+assert(
+  html.includes('function inviteRoomCodeFromUrl'),
+  'boot should parse QR invite links directly'
+);
+assert(
+  html.includes('await joinRoom();'),
+  'QR invite links should auto-join into the waiting room instead of stopping at the mode screen'
 );
 
 console.log('PASS catan waiting room share QR');

@@ -4433,7 +4433,15 @@
 
     function roomInviteUrl(roomCode = mpState.roomCode) {
       const baseUrl = `${window.location.origin}${window.location.pathname.replace(/\/$/, "")}/`;
-      return `${baseUrl}?room=${encodeURIComponent(roomCode || "")}`;
+      return `${baseUrl}#room=${encodeURIComponent(roomCode || "")}`;
+    }
+
+    function inviteRoomCodeFromUrl() {
+      const hash = window.location.hash || "";
+      const hashMatch = hash.match(/(?:^#|[&#])room=([^&]+)/i);
+      if (hashMatch) return decodeURIComponent(hashMatch[1]).trim().toUpperCase();
+      const queryRoom = new URLSearchParams(window.location.search).get("room");
+      return queryRoom ? queryRoom.trim().toUpperCase() : "";
     }
 
     async function copyRoomInvite() {
@@ -5976,6 +5984,23 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       applyResponsiveDefaults(true);
       setSinglePlayers();
       ensureTurnTimer();
+      const inviteRoomCode = inviteRoomCodeFromUrl();
+      if (inviteRoomCode) {
+        if (window.MultiplayerClient) {
+          try { MultiplayerClient.getInstance()._clearRoom(); } catch (_) {}
+        }
+        state.roomCodeInput = inviteRoomCode;
+        state.mode = "multi";
+        state.screen = "room-lobby";
+        mpState.roomCode = inviteRoomCode;
+        mpState.waitingMessage = `방 참가 중: ${inviteRoomCode}`;
+        render();
+        await joinRoom();
+        if (state.screen === "room-lobby" && !String(mpState.waitingMessage || "").startsWith("방 참가 실패")) {
+          window.history.replaceState({}, "", window.location.pathname);
+        }
+        return;
+      }
       if (await restoreCatanMultiplayerSession()) return;
       render();
     })();
