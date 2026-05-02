@@ -4431,6 +4431,36 @@
       `).join("");
     }
 
+    function roomInviteUrl(roomCode = mpState.roomCode) {
+      const baseUrl = `${window.location.origin}${window.location.pathname.replace(/\/$/, "")}/`;
+      return `${baseUrl}?room=${encodeURIComponent(roomCode || "")}`;
+    }
+
+    async function copyRoomInvite() {
+      const url = roomInviteUrl();
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast("초대 링크 복사됨");
+      } catch (_) {
+        showToast("복사 실패: 주소를 길게 눌러 복사해줘");
+      }
+    }
+
+    async function shareRoomInvite() {
+      const url = roomInviteUrl();
+      const text = `카탄 방에 참가: ${mpState.roomCode}\n${url}`;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "카탄 방 초대", text, url });
+          return;
+        }
+        await navigator.clipboard.writeText(text);
+        showToast("공유 링크 복사됨");
+      } catch (_) {
+        showToast("공유 취소 또는 실패");
+      }
+    }
+
     function renderRoomLobby() {
       const players = mpState.room?.players || [];
       const displayPlayers = getLobbyDisplayPlayers();
@@ -4438,12 +4468,24 @@
       const allReady = others.length > 0 && others.every(p => p.isReady);
       const canStart = mpState.isHost && displayPlayers.length >= 2 && (allReady || getLobbyAiPlayers().length > 0);
       const waitMsg = mpState.waitingMessage || (canStart ? "게임 시작 가능" : "플레이어를 기다리는 중...");
+      const roomCode = mpState.roomCode || "";
+      const inviteUrl = roomInviteUrl(roomCode);
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=132x132&data=${encodeURIComponent(inviteUrl)}`;
       return `
         <div class="lobby-screen">
           <div class="lobby-card" style="max-height:calc(100vh - 96px);overflow-y:auto;flex:0 0 auto;">
             <h1 class="lobby-title">카탄</h1>
             <div class="room-lobby">
-              <p>방 코드: <strong id="roomCodeDisplay">${mpState.roomCode || "-"}</strong></p>
+              <p style="margin:0;text-align:center;">방 코드: <strong id="roomCodeDisplay">${roomCode || "-"}</strong></p>
+              ${roomCode ? `
+              <div class="room-share-card" style="display:grid;gap:8px;justify-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,0.04);">
+                <img src="${qrUrl}" alt="카탄 방 참가 QR" width="132" height="132" style="background:#fff;padding:6px;border-radius:10px;">
+                <div style="font-size:11px;color:var(--muted);word-break:break-all;text-align:center;">${inviteUrl}</div>
+                <div class="multi-row" style="justify-content:center;">
+                  <button onclick="copyRoomInvite()">📋 링크 복사</button>
+                  <button onclick="shareRoomInvite()">🔗 공유</button>
+                </div>
+              </div>` : ""}
               ${mpState.isHost ? `
               <div class="multi-row" style="align-items:center;">
                 <label style="font-size:12px;color:var(--muted);white-space:nowrap;">맵</label>
