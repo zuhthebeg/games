@@ -5106,10 +5106,6 @@
         const playerListEl = this.container.querySelector("#mp-player-list");
         if (!playerListEl) return;
         const maps = Object.values(MAP_PRESETS);
-        const nativeStart = this.container.querySelector("#mp-start-btn, #mp-start-game-btn, [data-action='start'], [data-action='start-game'], button[onclick*='startGame']");
-        if (nativeStart) {
-          nativeStart.remove();
-        }
         const sel = document.createElement("div");
         sel.id = "catan-map-selector";
         sel.style.cssText = "margin:12px 0;padding:10px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.1);display:grid;gap:8px;";
@@ -5120,20 +5116,15 @@
               <select data-map-select style="flex:1;min-width:0;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:#0a1c2b;color:#fff;">
                 ${maps.map(m => `<option value="${m.id}" ${cur===m.id?"selected":""}>${m.name}${"★".repeat(m.stars||0)} (${m.minPlayers}-${m.maxPlayers}인)</option>`).join("")}
               </select>
-              <button data-start-game style="white-space:nowrap;padding:8px 12px;border-radius:8px;border:none;background:#2f9e84;color:#fff;font-weight:700;cursor:pointer;">게임 시작</button>
             </div>
             <div style="font-size:11px;color:#6b7280;">${MAP_PRESETS[cur]?.description || ""}</div>`;
           const selectEl = sel.querySelector("[data-map-select]");
-          const startBtn = sel.querySelector("[data-start-game]");
           if (selectEl) {
             selectEl.onchange = () => {
               state.selectedMapId = selectEl.value;
               mpState.mapId = selectEl.value;
               redrawSel();
             };
-          }
-          if (startBtn) {
-            startBtn.onclick = () => { startGame(); };
           }
         };
         redrawSel();
@@ -5984,19 +5975,10 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       ensureTurnTimer();
       const inviteRoomCode = inviteRoomCodeFromUrl();
       if (inviteRoomCode) {
-        if (window.MultiplayerClient) {
-          try { MultiplayerClient.getInstance()._clearRoom(); } catch (_) {}
+        if (window.location.hash && !new URLSearchParams(window.location.search).get("room")) {
+          window.history.replaceState({}, "", `${window.location.pathname}?room=${encodeURIComponent(inviteRoomCode)}`);
         }
-        state.roomCodeInput = inviteRoomCode;
-        state.mode = "multi";
-        state.screen = "room-lobby";
-        mpState.roomCode = inviteRoomCode;
-        mpState.waitingMessage = `방 참가 중: ${inviteRoomCode}`;
-        render();
-        await joinRoom();
-        if (state.screen === "room-lobby" && !String(mpState.waitingMessage || "").startsWith("방 참가 실패")) {
-          window.history.replaceState({}, "", window.location.pathname);
-        }
+        showMultiOptions();
         return;
       }
       if (await restoreCatanMultiplayerSession()) return;
