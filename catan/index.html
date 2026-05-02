@@ -4328,16 +4328,10 @@
               </select>
             </div>
             <button onclick="showMapSelect('single')">싱글플레이</button>
-            <button onclick="openMultiplayerMenu()">멀티플레이</button>
+            <button onclick="showMultiOptions()">멀티플레이</button>
           </div>
         </div>
       `;
-    }
-
-    function openMultiplayerMenu() {
-      state.screen = "multi-options";
-      state.mapSelectSource = "multi";
-      render();
     }
 
     function showMapSelect(source) {
@@ -4363,7 +4357,7 @@
       if (state.mapSelectSource === "single") {
         startSingle(mapId);
       } else {
-        createRoomFromSelectedMap();
+        showMultiOptions();
       }
     }
 
@@ -4392,8 +4386,8 @@
               선택: <strong>${preset.name}</strong> — ${preset.minPlayers}~${preset.maxPlayers}인 · VP ${preset.vpGoal}
             </div>
             <div class="multi-row" style="justify-content:space-between;">
-              <button onclick="state.screen = state.mapSelectSource === 'multi' ? 'multi-options' : 'mode'; render()" style="background:var(--panel-2);border:1px solid var(--line);">← 뒤로</button>
-              <button onclick="confirmMapSelect()">${isMulti ? "방 만들기" : "게임 시작"}</button>
+              <button onclick="state.screen='mode';render()" style="background:var(--panel-2);border:1px solid var(--line);">← 뒤로</button>
+              <button onclick="confirmMapSelect()">${isMulti ? "다음 →" : "게임 시작"}</button>
             </div>
           </div>
         </div>
@@ -4413,7 +4407,7 @@
                   <option value="3" ${state.maxPlayers === 3 ? "selected" : ""}>3</option>
                   <option value="4" ${state.maxPlayers === 4 ? "selected" : ""}>4</option>
                 </select>
-                <button onclick="showMapSelect('multi')">맵 골라 방 만들기</button>
+                <button onclick="createRoom()">방 만들기</button>
               </div>
               <div class="multi-row">
                 <input id="roomCodeInput" value="${state.roomCodeInput}" placeholder="방 코드" oninput="onRoomCodeInput(this.value)">
@@ -4675,8 +4669,6 @@
       }
       if (state.screen === "mode") app.innerHTML = renderModeScreen();
       else if (state.screen === "map-select") app.innerHTML = renderMapSelect();
-      else if (state.screen === "multi-options") app.innerHTML = renderMultiOptions();
-      else if (state.screen === "room-lobby") app.innerHTML = renderRoomLobby();
       else if (state.screen === "multi-lobby") {
         // MultiplayerUI handles this screen
         app.classList.add("hidden");
@@ -5114,10 +5106,9 @@
         const playerListEl = this.container.querySelector("#mp-player-list");
         if (!playerListEl) return;
         const maps = Object.values(MAP_PRESETS);
-        const nativeStart = this.container.querySelector("#mp-start-game-btn, [data-action='start-game'], button[onclick*='startGame']");
+        const nativeStart = this.container.querySelector("#mp-start-btn, #mp-start-game-btn, [data-action='start'], [data-action='start-game'], button[onclick*='startGame']");
         if (nativeStart) {
-          nativeStart.hidden = true;
-          nativeStart.style.display = 'none';
+          nativeStart.remove();
         }
         const sel = document.createElement("div");
         sel.id = "catan-map-selector";

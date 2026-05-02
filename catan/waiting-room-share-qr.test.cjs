@@ -2,34 +2,31 @@ const fs = require('fs');
 const assert = require('assert');
 
 const html = fs.readFileSync(__dirname + '/index.html', 'utf8');
+const ui = fs.readFileSync(__dirname + '/../lib/multiplayer-ui.js', 'utf8');
 
 assert(
-  html.includes('function roomInviteUrl'),
-  'room lobby should build an invite URL for sharing'
+  html.includes('new MultiplayerUI'),
+  'catan should use shared MultiplayerUI for waiting-room invite UI'
 );
 assert(
-  html.includes('api.qrserver.com/v1/create-qr-code'),
-  'room lobby should render a QR code for the invite URL'
+  html.includes('_origRenderWaiting(roomCode)'),
+  'catan customization should preserve the native QR/copy/share waiting room'
 );
 assert(
-  html.includes('copyRoomInvite()'),
-  'room lobby should expose a copy-link action'
+  ui.includes('api.qrserver.com/v1/create-qr-code'),
+  'shared waiting room should render a QR code for the invite URL'
 );
 assert(
-  html.includes('shareRoomInvite()'),
-  'room lobby should expose a native share/copy fallback action'
+  ui.includes('data-action="copy"'),
+  'shared waiting room should expose a copy action'
 );
 assert(
-  html.includes('#room=${encodeURIComponent(roomCode || "")}'),
-  'invite URL should use a hash route so QR opens never hit a server-side 404'
+  ui.includes('data-action="share"'),
+  'shared waiting room should expose a share action'
 );
 assert(
-  html.includes('function inviteRoomCodeFromUrl'),
-  'boot should parse QR invite links directly'
-);
-assert(
-  html.includes('await joinRoom();'),
-  'QR invite links should auto-join into the waiting room instead of stopping at the mode screen'
+  ui.includes('const joinUrl = `${baseUrl}/?room=${roomCode}`'),
+  'shared QR URL should use the deployed catan directory route'
 );
 
 console.log('PASS catan waiting room share QR');

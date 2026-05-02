@@ -20,5 +20,9 @@ assert(
   chunk.includes('게임 시작') || chunk.includes('start-game'),
   'host waiting room override should keep an obvious start action in the same control block'
 );
+assert(
+  chunk.includes('#mp-start-btn') && chunk.includes("[data-action='start']") && chunk.includes('nativeStart.remove()'),
+  'host waiting room override should remove the native shared start button to avoid duplicate start controls'
+);
 
 console.log('PASS waiting room host UI');
