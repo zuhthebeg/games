@@ -1307,8 +1307,8 @@
     function setSinglePlayers() {
       state.players = [
         makePlayer({ id: "human", name: "나", color: PLAYER_COLORS[0] }),
-        makePlayer({ id: "ai1", name: "AI 1", color: PLAYER_COLORS[1] }),
-        makePlayer({ id: "ai2", name: "AI 2", color: PLAYER_COLORS[2] })
+        makePlayer({ id: "ai1", name: "AI 1", color: PLAYER_COLORS[1], isAI: true }),
+        makePlayer({ id: "ai2", name: "AI 2", color: PLAYER_COLORS[2], isAI: true })
       ];
     }
 
