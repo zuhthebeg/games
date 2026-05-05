@@ -2815,6 +2815,26 @@
       return { ok: true, gained };
     }
 
+    function myResourceSnapshotHtml(playerIdx) {
+      const p = state.players[playerIdx];
+      if (!p) return "";
+      return `<div style="margin:10px 0;padding:8px;border-radius:10px;background:rgba(255,255,255,0.06);font-size:11px;color:#cbd5e1;">
+        <div style="font-weight:800;color:#fff;margin-bottom:5px;">내가 가진 카드</div>
+        <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">${RESOURCES.map(r => `<span>${RESOURCE_ICONS[r]} ${p.resources[r] || 0}</span>`).join("")}</div>
+      </div>`;
+    }
+
+    function resourceDeckStatusHtml(resource, playerIdx = localPlayerIndex()) {
+      const owned = state.players[playerIdx]?.resources?.[resource] || 0;
+      const others = state.players.reduce((sum, p, i) => i === playerIdx ? sum : sum + (p.resources?.[resource] || 0), 0);
+      const bank = bankRemaining(resource);
+      return `<div style="font-size:10px;color:#9ca3af;margin-top:3px;">내 ${owned}/${bank} · 상대 ${others}</div>`;
+    }
+
+    function monopolyGainPreview(resource, playerIdx = localPlayerIndex()) {
+      return state.players.reduce((sum, p, i) => i === playerIdx ? sum : sum + (p.resources?.[resource] || 0), 0);
+    }
+
     function playKnight(playerIdx, hexIndex, victimIdx) {
       const p = state.players[playerIdx];
       const card = (p.devCards || []).find(c => c.type === "knight" && c.turnBought < state.turnNumber && !c.played);
@@ -3594,11 +3614,13 @@
       const overlay = document.createElement("div");
       overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);";
       overlay.innerHTML = `
-        <div style="background:#16213e;border:2px solid #ffd700;border-radius:16px;padding:20px;max-width:300px;width:90%;text-align:center;">
+        <div style="background:#16213e;border:2px solid #ffd700;border-radius:16px;padding:20px;max-width:340px;width:90%;text-align:center;">
           <div style="font-size:16px;font-weight:700;margin-bottom:8px;">💰 모노폴리</div>
-          <div style="font-size:12px;color:#9ca3af;margin-bottom:12px;">모든 플레이어에게서 가져올 자원을 선택하세요</div>
+          <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">모든 플레이어에게서 가져올 자원을 선택하세요</div>
+          ${myResourceSnapshotHtml(me)}
+          <div style="font-size:11px;color:#fbbf24;margin-bottom:8px;">모노폴리 선택 시 획득 예정 수량</div>
           <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
-            ${RESOURCES.map(r => `<button onclick="window._monoPick('${r}')" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:16px;cursor:pointer;">${RESOURCE_ICONS[r]}<div style="font-size:9px;margin-top:2px;">${RESOURCE_NAMES[r]}</div></button>`).join("")}
+            ${RESOURCES.map(r => `<button onclick="window._monoPick('${r}')" style="padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:16px;cursor:pointer;">${RESOURCE_ICONS[r]}<div style="font-size:9px;margin-top:2px;">${RESOURCE_NAMES[r]}</div><div style="font-size:11px;color:#fbbf24;font-weight:900;margin-top:3px;">+${monopolyGainPreview(r, me)}</div>${resourceDeckStatusHtml(r, me)}</button>`).join("")}
           </div>
           <button onclick="window._monoPick(null)" style="margin-top:10px;padding:6px 16px;border-radius:8px;border:1px solid #666;background:none;color:#999;cursor:pointer;font-size:12px;">취소</button>
         </div>`;
@@ -3639,40 +3661,57 @@
       const p = state.players[me];
       const card = (p.devCards || []).find(c => c.type === "year_of_plenty" && c.turnBought < state.turnNumber && !c.played);
       if (!card) { state.hint = "사용 가능한 풍년 카드가 없습니다."; render(); return; }
-      
-      const sel = [null, null];
-      function showPicker(step) {
-        const overlay = document.createElement("div");
-        overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);";
+      const sel = [];
+      const overlay = document.createElement("div");
+      overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);";
+
+      function renderYearOfPlentyPicker() {
+        const selectedHtml = sel.length
+          ? sel.map((r, i) => `<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border-radius:999px;background:rgba(78,204,163,.18);border:1px solid #4ecca3;color:#fff;font-size:12px;">${i + 1}. ${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]} 선택됨</span>`).join("")
+          : `<span style="font-size:12px;color:#9ca3af;">아직 선택 없음</span>`;
         overlay.innerHTML = `
-          <div style="background:#16213e;border:2px solid #4ecca3;border-radius:16px;padding:20px;max-width:300px;width:90%;text-align:center;">
+          <div style="background:#16213e;border:2px solid #4ecca3;border-radius:16px;padding:20px;max-width:340px;width:90%;text-align:center;">
             <div style="font-size:16px;font-weight:700;margin-bottom:8px;">🌾 풍년 카드</div>
-            <div style="font-size:12px;color:#9ca3af;margin-bottom:12px;">${step === 0 ? "첫 번째" : "두 번째"} 자원을 선택하세요</div>
+            <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">원하는 자원 2개를 고른 뒤 선택 완료를 누르세요</div>
+            ${myResourceSnapshotHtml(me)}
+            <div style="margin:8px 0 10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">풍년 선택 ${selectedHtml}</div>
             <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
-              ${RESOURCES.map(r => `<button onclick="window._yopPick('${r}')" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:16px;cursor:pointer;">${RESOURCE_ICONS[r]}<div style="font-size:9px;margin-top:2px;">${RESOURCE_NAMES[r]}</div></button>`).join("")}
+              ${RESOURCES.map(r => {
+                const picked = sel.includes(r);
+                return `<button onclick="window._yopPick('${r}')" style="padding:10px 12px;border-radius:10px;border:1px solid ${picked ? '#4ecca3' : 'rgba(255,255,255,0.2)'};background:${picked ? 'rgba(78,204,163,.2)' : 'rgba(255,255,255,0.08)'};color:#fff;font-size:16px;cursor:pointer;">${RESOURCE_ICONS[r]}<div style="font-size:9px;margin-top:2px;">${RESOURCE_NAMES[r]}</div>${resourceDeckStatusHtml(r, me)}${picked ? '<div style="font-size:10px;color:#4ecca3;font-weight:900;margin-top:3px;">선택됨</div>' : ''}</button>`;
+              }).join("")}
             </div>
-            <button onclick="window._yopPick(null)" style="margin-top:10px;padding:6px 16px;border-radius:8px;border:1px solid #666;background:none;color:#999;cursor:pointer;font-size:12px;">취소</button>
+            <button onclick="window._yopConfirm()" ${sel.filter(Boolean).length === 2 ? '' : 'disabled'} style="margin-top:12px;padding:9px 18px;border-radius:10px;border:1px solid #4ecca3;background:${sel.filter(Boolean).length === 2 ? '#4ecca3' : 'rgba(78,204,163,.18)'};color:${sel.filter(Boolean).length === 2 ? '#071316' : '#94a3b8'};font-weight:900;cursor:${sel.filter(Boolean).length === 2 ? 'pointer' : 'not-allowed'};">선택 완료</button>
+            <button onclick="window._yopCancel()" style="margin-top:8px;margin-left:6px;padding:8px 14px;border-radius:8px;border:1px solid #666;background:none;color:#999;cursor:pointer;font-size:12px;">취소</button>
           </div>`;
-        document.body.appendChild(overlay);
-        window._yopPick = (res) => {
-          overlay.remove();
-          delete window._yopPick;
-          if (!res) return;
-          sel[step] = res;
-          if (step === 0) { showPicker(1); return; }
-          // Both selected
-          card.played = true;
-          p.resources[sel[0]] += 1;
-          p.resources[sel[1]] += 1;
-          SFX.card();
-          state.canEndTurn = true;
-          state.hint = `풍년 카드: ${RESOURCE_ICONS[sel[0]]} + ${RESOURCE_ICONS[sel[1]]} 획득!`;
-          showToast(`🌾 풍년! ${RESOURCE_ICONS[sel[0]]}+${RESOURCE_ICONS[sel[1]]}`);
-          recalcAllVP();
-          render();
-        };
       }
-      showPicker(0);
+
+      window._yopPick = (res) => {
+        if (!res) return;
+        if (sel.length >= 2) sel.shift();
+        sel.push(res);
+        renderYearOfPlentyPicker();
+      };
+      window._yopConfirm = () => {
+        if (sel.filter(Boolean).length !== 2) return;
+        overlay.remove();
+        delete window._yopPick; delete window._yopConfirm; delete window._yopCancel;
+        card.played = true;
+        p.resources[sel[0]] += 1;
+        p.resources[sel[1]] += 1;
+        SFX.card();
+        state.canEndTurn = true;
+        state.hint = `풍년 카드: ${RESOURCE_ICONS[sel[0]]} + ${RESOURCE_ICONS[sel[1]]} 획득!`;
+        showToast(`🌾 풍년! ${RESOURCE_ICONS[sel[0]]}+${RESOURCE_ICONS[sel[1]]}`);
+        recalcAllVP();
+        render();
+      };
+      window._yopCancel = () => {
+        overlay.remove();
+        delete window._yopPick; delete window._yopConfirm; delete window._yopCancel;
+      };
+      document.body.appendChild(overlay);
+      renderYearOfPlentyPicker();
     }
 
     function humanBuildSettlement() {
