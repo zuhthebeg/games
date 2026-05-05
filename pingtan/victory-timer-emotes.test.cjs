@@ -22,7 +22,8 @@ assert(!html.includes('MAX_REACTIONS_PER_TURN = 3'), 'reaction count limit shoul
 assert(!html.includes('state.reactionTurnCount >='), 'reaction flow should not block by per-turn count');
 assert(!html.includes('리액션은 내 턴에만 가능해요'), 'reactions should be allowed during other players turns');
 assert(html.includes('지쳤나요'), 'reaction presets should include 지쳤나요');
-assert(html.includes('거래해줘 형님'), 'reaction presets should include 거래해줘 형님');
+assert(html.includes('label: "거래해줘"') && html.includes('phrase: "거래해줘"'), 'reaction presets should include clean 거래해줘 copy');
+assert(!html.includes('거래해줘 형님'), 'reaction presets should not use awkward 형님 copy');
 assert(html.includes('function sendCustomReactionEmote'), 'custom reaction input should be supported');
 assert(html.includes('speakReactionWithLocalTTS'), 'reaction audio should use local TTS pipeline when possible');
 assert(html.includes('/v1/audio/speech'), 'local TTS pipeline endpoint should be used');

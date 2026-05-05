@@ -13,8 +13,9 @@ assert(html.includes('renderPingtanLangSwitch()'), 'Pingtan lobby should render 
 
 assert(html.includes('sanitizeReactionSpeech'), 'Reaction TTS should sanitize display text before speech');
 assert(/\.replace\(\/ㅋㅋ\+\|ㅋ\+\/g/.test(html), 'Reaction TTS should strip ㅋㅋ/ㅋ runs before speech');
-assert(html.includes('phrase: "시발"') || html.includes('phrase: "시발 뭐야"'), 'Reactions should include a Korean swear/emphasis option');
-assert(html.includes('phrase.includes("시발")'), 'AI fallback should understand Korean swear/emphasis reactions');
+assert(html.includes('langs: ["en"]'), 'Sibal reaction should be available only outside Korean UI');
+assert(html.includes('function visibleReactionEmotes'), 'Reaction panel should filter language-specific emotes');
+assert(html.includes('phraseByLang: { en: "삥뜯겼다 시발" }'), 'Korean UI should use clean ppinged copy while English can keep K-slang edge');
 assert(html.includes('핑탄') === false, 'Do not accidentally transliterate brand as 핑탄');
 
 console.log('PASS pingtan scoped i18n and Korean reaction polish');

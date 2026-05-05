@@ -1318,13 +1318,13 @@
       { id: "hello", emoji: "👋", label: "인사", phrase: "안녕하세요", motion: "wave" },
       { id: "good", emoji: "👍", label: "좋아요", phrase: "좋아요", motion: "pop" },
       { id: "laugh", emoji: "😂", label: "웃기", phrase: "ㅋㅋ", motion: "pop" },
-      { id: "sibal", emoji: "🤯", label: "시발", phrase: "시발 뭐야", motion: "shake" },
+      { id: "sibal", emoji: "🤯", label: "Sibal", phrase: "시발 뭐야", motion: "shake", langs: ["en"] },
       { id: "wow", emoji: "😱", label: "놀람", phrase: "헉", motion: "shake" },
       { id: "nice", emoji: "🎉", label: "칭찬", phrase: "나이스", motion: "celebrate" },
       { id: "tired", emoji: "😵", label: "지쳤나요", phrase: "지쳤나요", motion: "shake" },
       { id: "please", emoji: "🙏", label: "제발", phrase: "제발", motion: "pop" },
-      { id: "trade-bro", emoji: "🤝", label: "거래해줘 형님", phrase: "거래해줘 형님", motion: "wave" },
-      { id: "ppinged", emoji: "💸", label: "삥뜯겼다", phrase: "삥뜯겼다 시발", motion: "shake" }
+      { id: "trade-bro", emoji: "🤝", label: "거래해줘", phrase: "거래해줘", motion: "wave" },
+      { id: "ppinged", emoji: "💸", label: "삥뜯겼다", phrase: "삥뜯겼다", phraseByLang: { en: "삥뜯겼다 시발" }, motion: "shake" }
     ];
 
     function emptyResources() {
@@ -5525,8 +5525,19 @@ https://game.cocy.io/pingtan/`;
       }
     }
 
+    function localizeReactionEmote(emote) {
+      const base = emote || REACTION_EMOTES[0];
+      return { ...base, phrase: base.phraseByLang?.[PINGTAN_LANG] || base.phrase };
+    }
+
+    function visibleReactionEmotes() {
+      return REACTION_EMOTES
+        .filter(e => !e.langs || e.langs.includes(PINGTAN_LANG))
+        .map(localizeReactionEmote);
+    }
+
     function getReactionEmote(emoteId) {
-      return REACTION_EMOTES.find(e => e.id === emoteId) || REACTION_EMOTES[0];
+      return localizeReactionEmote(REACTION_EMOTES.find(e => e.id === emoteId) || REACTION_EMOTES[0]);
     }
 
     function sanitizeReactionSpeech(text) {
@@ -5697,7 +5708,7 @@ https://game.cocy.io/pingtan/`;
       const phrase = String(context.phrase || "");
       if (phrase.includes("거래")) return { emoji: "🤝", phrase: "조건 봐줄게", motion: "wave" };
       if (phrase.includes("삥") || phrase.includes("뜯")) return { emoji: "💸", phrase: "삥 제대로 뜯겼네", motion: "shake" };
-      if (phrase.includes("시발")) return { emoji: "🤯", phrase: "시발 인정", motion: "shake" };
+      if (PINGTAN_LANG !== "ko" && phrase.includes("시발")) return { emoji: "🤯", phrase: "시발 인정", motion: "shake" };
       if (phrase.includes("빨리") || phrase.includes("재촉")) return { emoji: "⏰", phrase: "알았어", motion: "shake" };
       if (phrase.includes("ㅋㅋ") || phrase.includes("웃")) return { emoji: "😂", phrase: "웃기네", motion: "pop" };
       return { emoji: "👀", phrase: "봤어", motion: "pop" };
@@ -5707,7 +5718,7 @@ https://game.cocy.io/pingtan/`;
       const prompt = `삥탄 보드게임 AI 리액션 JSON만 답해. 너는 "${aiPlayer?.name || "AI"}".
 상황: ${context.kind || "user-reaction"}
 유저 리액션: ${context.emoji || "💬"} ${context.phrase || ""}
-조건: 한국어 2~12자, 너무 자주 말하지 말고 자연스럽게. emoji는 하나. motion은 pop/wave/shake/celebrate 중 하나. ㅋㅋ/ㅎㅎ 같은 TTS 부적합 문자는 쓰지 마. 삥탄/삥뜯다/시발 같은 K-용어 감탄은 상황에 맞으면 가능.
+조건: 한국어 2~12자, 너무 자주 말하지 말고 자연스럽게. emoji는 하나. motion은 pop/wave/shake/celebrate 중 하나. ㅋㅋ/ㅎㅎ 같은 TTS 부적합 문자는 쓰지 마. 삥탄/삥뜯다 같은 K-용어 감탄은 가능. 단, 한국어 UI에서는 시발을 쓰지 말고 영어 UI에서만 상황에 맞으면 가능.
 리액션 JSON: {"emoji":"👋","phrase":"잘 부탁해","motion":"wave"}`;
       try {
         const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
@@ -5775,7 +5786,7 @@ https://game.cocy.io/pingtan/`;
       panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><b>💬 ${pt("reactions")}</b><button onclick="document.getElementById('emotePanel')?.remove()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">×</button></div>
         <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">${pt("reactionHelp")}</div>
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-          ${REACTION_EMOTES.map(e => `<button onclick="sendReactionEmote('${e.id}')" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;text-align:left;cursor:pointer;"><span style="font-size:22px;vertical-align:middle;margin-right:6px;">${escapeHtml(e.emoji)}</span><span style="font-weight:700;">${escapeHtml(e.label)}</span><div style="font-size:11px;color:#9ca3af;margin-top:2px;">${escapeHtml(e.phrase)}</div></button>`).join("")}
+          ${visibleReactionEmotes().map(e => `<button onclick="sendReactionEmote('${e.id}')" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;text-align:left;cursor:pointer;"><span style="font-size:22px;vertical-align:middle;margin-right:6px;">${escapeHtml(e.emoji)}</span><span style="font-weight:700;">${escapeHtml(e.label)}</span><div style="font-size:11px;color:#9ca3af;margin-top:2px;">${escapeHtml(e.phrase)}</div></button>`).join("")}
           <button onclick="sendCustomReactionEmote()" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;text-align:left;cursor:pointer;"><span style="font-size:22px;vertical-align:middle;margin-right:6px;">⌨️</span><span style="font-weight:700;">${pt("custom")}</span><div style="font-size:11px;color:#9ca3af;margin-top:2px;">${pt("directInput")}</div></button>
         </div>`;
       document.body.appendChild(panel);
