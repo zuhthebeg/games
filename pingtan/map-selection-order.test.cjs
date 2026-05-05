@@ -85,7 +85,7 @@ const selectionScript = [
   extractFunction('confirmMapSelect', 'renderMapSelect'),
   extractFunction('roomMapIdFromState', 'onRoomStateChange'),
   extractFunction('onRoomStateChange', 'autoStartIfReady'),
-  extractFunction('catanRoomConfig', 'onRoomStateChange'),
+  extractFunction('pingtanRoomConfig', 'onRoomStateChange'),
   extractFunction('createRoom', 'joinRoom', true)
 ].join('\n');
 
@@ -157,7 +157,7 @@ assert.equal(joinerCtx.mpState.mapId, 'gold-rush', 'joiner multiplayer state sho
 
 (async () => {
   await multiCtx.createRoom();
-  assert.equal(multiCtx.createdPayload.game, 'catan', 'createRoom should target catan');
+  assert.equal(multiCtx.createdPayload.game, 'pingtan', 'createRoom should target pingtan');
   assert.equal(multiCtx.createdPayload.payload.mapId, 'gold-rush', 'multiplayer room creation should send selected map id');
   assert.equal(multiCtx.mpState.mapId, 'gold-rush', 'multiplayer state should retain selected map id');
   console.log('PASS map selection + preset order');

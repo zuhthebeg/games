@@ -4,7 +4,7 @@ source "$NVM_DIR/nvm.sh"
 
 cd /mnt/c/Users/user/games
 
-codex --full-auto "catan/index.html 카탄 게임 점검 및 수정:
+codex --full-auto "pingtan/index.html 삥탄 게임 점검 및 수정:
 
 1) 게임이 정상적으로 플레이 가능한지 전체 점검
 2) 버그가 있으면 수정
@@ -18,6 +18,6 @@ codex --full-auto "catan/index.html 카탄 게임 점검 및 수정:
 5) 콘솔 에러 없는지 확인
 
 완료 후:
-git add catan/
-git commit -m 'fix: catan game - ensure playable state'
+git add pingtan/
+git commit -m 'fix: pingtan game - ensure playable state'
 git push"

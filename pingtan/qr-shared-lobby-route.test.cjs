@@ -11,4 +11,4 @@ assert(!bootChunk.includes('await joinRoom();'), 'QR/share invite should not byp
 assert(!bootChunk.includes('state.screen = "room-lobby"'), 'QR/share invite should not render custom room-lobby directly');
 assert(html.includes('const roomCode = MultiplayerUI.checkUrlRoom();'), 'shared lobby should consume ?room code and fill its join input');
 
-console.log('PASS catan QR route uses shared lobby');
+console.log('PASS pingtan QR route uses shared lobby');

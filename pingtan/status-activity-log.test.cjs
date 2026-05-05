@@ -3,7 +3,7 @@ const assert = require('assert');
 
 const html = fs.readFileSync(__dirname + '/index.html', 'utf8');
 
-assert(!html.includes('CATAN_ACTIVITY_LOG_KEY'), 'A activity log should not persist in localStorage across game sessions');
+assert(!html.includes('pingtan_ACTIVITY_LOG_KEY'), 'A activity log should not persist in localStorage across game sessions');
 assert(html.includes('activityLog: []'), 'A activity log should live in current game state only');
 assert(html.includes('function clearActivityLog'), 'A activity log should be clearable when a game session resets or ends');
 assert(html.includes('clearActivityLog();'), 'new games and ended games should clear old A activity log entries');
@@ -28,9 +28,9 @@ const bannerActionRule = html.match(/#turn-banner \.banner-action\s*\{[\s\S]*?\n
 assert(bannerActionRule.includes('white-space: normal'), 'B banner action should wrap onto its own multiline area instead of truncating');
 assert(!bannerActionRule.includes('text-overflow: ellipsis'), 'B banner action should not ellipsize long content');
 
-assert(html.includes(':fullscreen.catan-landscape-fullscreen #sw-bar'), 'landscape fullscreen should hide global nav/wallet bar');
+assert(html.includes(':fullscreen.pingtan-landscape-fullscreen #sw-bar'), 'landscape fullscreen should hide global nav/wallet bar');
 assert(html.includes('--wallet-bar-height: 0px'), 'landscape fullscreen should remove wallet/nav reserved space');
 assert(html.includes('function syncFullscreenLayoutClass'), 'fullscreen layout class should be synced from actual fullscreen/orientation state');
 assert(html.includes('banner.style.display = "grid"'), 'B banner should keep its multiline grid layout when shown');
 
-console.log('PASS catan status activity log');
+console.log('PASS pingtan status activity log');

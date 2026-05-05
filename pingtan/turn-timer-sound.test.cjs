@@ -9,4 +9,4 @@ assert(html.includes('maybePlayTurnTimerTick'), 'timer should gate tick playback
 assert(html.includes('state.turnTimeLeft <= 10'), 'timer tick should intensify near the end of the turn');
 assert(html.includes('SFX.turnTick'), 'timer loop should play the tick sound through SFX');
 
-console.log('PASS catan turn timer sound');
+console.log('PASS pingtan turn timer sound');

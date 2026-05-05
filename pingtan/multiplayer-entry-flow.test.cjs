@@ -21,11 +21,11 @@ assert(
 );
 assert(
   showChunk.includes('_origRenderWaiting(roomCode)'),
-  'catan waiting room customization must preserve the native shared waiting-room render first'
+  'pingtan waiting room customization must preserve the native shared waiting-room render first'
 );
 assert(
   showChunk.includes('if (!this.isHost) return'),
-  'only the host should see catan-specific map/start controls in the waiting room'
+  'only the host should see pingtan-specific map/start controls in the waiting room'
 );
 
-console.log('PASS catan multiplayer entry flow');
+console.log('PASS pingtan multiplayer entry flow');

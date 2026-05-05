@@ -10,4 +10,4 @@ assert(html.includes('v.owner !== humanIdx'), 'non-local multiplayer human gold 
 assert(html.includes('sendGameAction(ACTION.GOLD_CHOICE'), 'local human gold choice should be broadcast to multiplayer peers');
 assert(html.includes('return applyGoldChoice'), 'GOLD_CHOICE action should apply received selected resources');
 
-console.log('PASS catan multiplayer gold choice sync');
+console.log('PASS pingtan multiplayer gold choice sync');

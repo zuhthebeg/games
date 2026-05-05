@@ -1,16 +1,16 @@
-# Catan UX/Sound/Animation Implementation Plan
+# pingtan UX/Sound/Animation Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Add player color differentiation (human clearly visible), Web Audio sound effects, and CSS animations to the Catan game.
+**Goal:** Add player color differentiation (human clearly visible), Web Audio sound effects, and CSS animations to the pingtan game.
 
-**Architecture:** All changes in `catan/index.html`. Web Audio API for synth sounds (no files). CSS animations + JS for visual feedback. Human player (index 0) gets distinct visual treatment.
+**Architecture:** All changes in `pingtan/index.html`. Web Audio API for synth sounds (no files). CSS animations + JS for visual feedback. Human player (index 0) gets distinct visual treatment.
 
 **Tech Stack:** Vanilla JS, Web Audio API, CSS animations, SVG/CSS shapes
 
 **CRITICAL RULES:**
 - Only use the `Edit` tool for file changes. NEVER use PowerShell Out-File/Set-Content/Add-Content.
-- Run `node --test /mnt/c/Users/user/games/catan/ai.test.cjs` after any ai.js changes.
+- Run `node --test /mnt/c/Users/user/games/pingtan/ai.test.cjs` after any ai.js changes.
 - git pull first, git add + commit after each task.
 - Test in browser after each major change.
 
@@ -18,7 +18,7 @@
 
 ## Task 1: Fix Building Colors — CSS Shapes Instead of Emoji
 
-**File:** `catan/index.html`
+**File:** `pingtan/index.html`
 
 **Problem:** Emoji icons ignore CSS `color` property. Buildings look identical for all players.
 
@@ -103,8 +103,8 @@ html += `<div class="vertex ${v.building} player-${ownerIdx}" style="left:${p.x}
 **Step 3: Commit**
 ```bash
 cd /mnt/c/Users/user/games
-git add catan/index.html
-git commit -m "fix(catan): replace emoji buildings with colored CSS shapes, human player glow"
+git add pingtan/index.html
+git commit -m "fix(pingtan): replace emoji buildings with colored CSS shapes, human player glow"
 git push
 ```
 
@@ -112,7 +112,7 @@ git push
 
 ## Task 2: Sound System (Web Audio API)
 
-**File:** `catan/index.html`
+**File:** `pingtan/index.html`
 
 Add a sound module just before the closing `</script>` tag (or in a `<script>` block).
 
@@ -208,8 +208,8 @@ For resource gain: in `grantResources` or wherever resources are distributed, ad
 
 **Step 3: Commit**
 ```bash
-git add catan/index.html
-git commit -m "feat(catan): add Web Audio sound effects (dice, build, card, robber, win)"
+git add pingtan/index.html
+git commit -m "feat(pingtan): add Web Audio sound effects (dice, build, card, robber, win)"
 git push
 ```
 
@@ -217,7 +217,7 @@ git push
 
 ## Task 3: Dice Roll Animation
 
-**File:** `catan/index.html`
+**File:** `pingtan/index.html`
 
 **Step 1: Add dice animation CSS**
 
@@ -247,8 +247,8 @@ if (el) { el.classList.remove('dice-animate'); void el.offsetWidth; el.classList
 
 **Step 3: Commit**
 ```bash
-git add catan/index.html
-git commit -m "feat(catan): add dice roll animation"
+git add pingtan/index.html
+git commit -m "feat(pingtan): add dice roll animation"
 git push
 ```
 
@@ -256,7 +256,7 @@ git push
 
 ## Task 4: Building Placement Animation
 
-**File:** `catan/index.html`
+**File:** `pingtan/index.html`
 
 **Step 1: Add CSS animation**
 
@@ -286,8 +286,8 @@ In the vertex render line, add `just-placed` class when `v.index === state.lastP
 
 **Step 4: Commit**
 ```bash
-git add catan/index.html
-git commit -m "feat(catan): building placement spring animation"
+git add pingtan/index.html
+git commit -m "feat(pingtan): building placement spring animation"
 git push
 ```
 
@@ -295,7 +295,7 @@ git push
 
 ## Task 5: Robber Hex Pulse + Toast Notifications
 
-**File:** `catan/index.html`
+**File:** `pingtan/index.html`
 
 **Step 1: Robber CSS**
 ```css
@@ -313,10 +313,10 @@ git push
 Add after SFX block:
 ```javascript
 function showToast(msg, duration = 2500) {
-  let el = document.getElementById('catan-toast');
+  let el = document.getElementById('pingtan-toast');
   if (!el) {
     el = document.createElement('div');
-    el.id = 'catan-toast';
+    el.id = 'pingtan-toast';
     el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(30,30,40,0.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:14px;z-index:9999;pointer-events:none;transition:opacity 0.3s;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.1);';
     document.body.appendChild(el);
   }
@@ -337,8 +337,8 @@ function showToast(msg, duration = 2500) {
 
 **Step 4: Commit**
 ```bash
-git add catan/index.html
-git commit -m "feat(catan): robber pulse animation + toast notification system"
+git add pingtan/index.html
+git commit -m "feat(pingtan): robber pulse animation + toast notification system"
 git push
 ```
 
@@ -346,7 +346,7 @@ git push
 
 ## Task 6: Victory Confetti
 
-**File:** `catan/index.html`
+**File:** `pingtan/index.html`
 
 Add a simple CSS confetti effect when `state.winner === humanPlayerIndex`.
 
@@ -377,8 +377,8 @@ Call `launchConfetti()` + `SFX.win()` when winner is detected.
 
 **Step 5: Commit**
 ```bash
-git add catan/index.html
-git commit -m "feat(catan): victory confetti animation"
+git add pingtan/index.html
+git commit -m "feat(pingtan): victory confetti animation"
 git push
 ```
 
@@ -387,11 +387,11 @@ git push
 ## Final Verification
 ```bash
 cd /mnt/c/Users/user/games
-node --test catan/ai.test.cjs  # must stay green
+node --test pingtan/ai.test.cjs  # must stay green
 git log --oneline -6
 ```
 
-Open https://game.cocy.io/catan/ and verify:
+Open https://game.cocy.io/pingtan/ and verify:
 - Human player buildings clearly visible with glow
 - Dice roll plays sound + animation
 - Building placement spring animation

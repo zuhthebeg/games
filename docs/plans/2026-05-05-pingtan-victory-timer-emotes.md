@@ -1,19 +1,19 @@
-# Catan Victory Timer Emotes Implementation Plan
+# pingtan Victory Timer Emotes Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Make Catan victory UI persistent, allow hosts to configure turn duration, and improve multiplayer reactions with per-turn limits, custom text, and local TTS pipeline playback.
+**Goal:** Make pingtan victory UI persistent, allow hosts to configure turn duration, and improve multiplayer reactions with per-turn limits, custom text, and local TTS pipeline playback.
 
-**Architecture:** Keep the single-file Catan app architecture. Store turn duration in room `gameConfig.turnSeconds`, copy it into `state.turnSeconds`, and use it for turn reset/render. Render a winner modal from state until dismissed. Extend reaction state with per-turn usage and route preset/custom reaction audio through `llm.cocy.io` TTS when possible, falling back to browser speech.
+**Architecture:** Keep the single-file pingtan app architecture. Store turn duration in room `gameConfig.turnSeconds`, copy it into `state.turnSeconds`, and use it for turn reset/render. Render a winner modal from state until dismissed. Extend reaction state with per-turn usage and route preset/custom reaction audio through `llm.cocy.io` TTS when possible, falling back to browser speech.
 
-**Tech Stack:** Vanilla HTML/CSS/JS, relay room `gameConfig`, existing Catan tests in `catan/*.test.cjs`, GitHub Pages deploy.
+**Tech Stack:** Vanilla HTML/CSS/JS, relay room `gameConfig`, existing pingtan tests in `pingtan/*.test.cjs`, GitHub Pages deploy.
 
 ---
 
 ### Task 1: Write failing tests
 
 **Files:**
-- Create: `catan/victory-timer-emotes.test.cjs`
+- Create: `pingtan/victory-timer-emotes.test.cjs`
 
 **Steps:**
 1. Assert persistent winner modal tokens exist.
@@ -25,7 +25,7 @@
 ### Task 2: Implement victory modal
 
 **Files:**
-- Modify: `catan/index.html`
+- Modify: `pingtan/index.html`
 
 **Steps:**
 1. Add `dismissedWinner` state reset.
@@ -36,7 +36,7 @@
 ### Task 3: Implement host turn timer setting
 
 **Files:**
-- Modify: `catan/index.html`
+- Modify: `pingtan/index.html`
 
 **Steps:**
 1. Add `turnSeconds` state and helper clamp.
@@ -47,7 +47,7 @@
 ### Task 4: Implement reaction updates
 
 **Files:**
-- Modify: `catan/index.html`
+- Modify: `pingtan/index.html`
 
 **Steps:**
 1. Add reaction presets.
@@ -59,9 +59,9 @@
 ### Task 5: Verify and deploy
 
 **Commands:**
-- `node catan/victory-timer-emotes.test.cjs`
-- `for t in catan/*.test.cjs; do node "$t" || exit 1; done`
-- `git add catan/index.html catan/victory-timer-emotes.test.cjs docs/plans/2026-05-05-catan-victory-timer-emotes.md`
-- `git commit -m "Polish Catan victory timer and emotes"`
+- `node pingtan/victory-timer-emotes.test.cjs`
+- `for t in pingtan/*.test.cjs; do node "$t" || exit 1; done`
+- `git add pingtan/index.html pingtan/victory-timer-emotes.test.cjs docs/plans/2026-05-05-pingtan-victory-timer-emotes.md`
+- `git commit -m "Polish pingtan victory timer and emotes"`
 - `git push origin main`
 - Poll production HTML for new tokens.

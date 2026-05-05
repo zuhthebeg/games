@@ -2,7 +2,7 @@
   if (typeof module === 'object' && module.exports) {
     module.exports = factory();
   } else {
-    root.CatanAI = factory();
+    root.pingtanAI = factory();
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   const DICE_WEIGHT = {

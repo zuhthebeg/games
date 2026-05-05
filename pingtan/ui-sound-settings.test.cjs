@@ -13,4 +13,4 @@ assert(html.includes('trade()'), 'SFX should provide a trade notification sound'
 assert(html.includes('SFX.trade();\n          const accepted = await showTradeProposal'), 'multiplayer trade proposals should play sound before dialog');
 assert(html.includes('window.addEventListener("pointerdown", unlockGameAudio'), 'audio should unlock from user gestures');
 
-console.log('PASS catan selected action and sound settings UI');
+console.log('PASS pingtan selected action and sound settings UI');

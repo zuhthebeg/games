@@ -6,7 +6,7 @@ const mpClient = fs.readFileSync(__dirname + '/../lib/multiplayer.js', 'utf8');
 
 assert(
   html.includes('recoverFromActionSnapshot'),
-  'catan live multiplayer should recover from action snapshot when local event application fails'
+  'pingtan live multiplayer should recover from action snapshot when local event application fails'
 );
 assert(
   html.includes('if (!ok && data.__snapshot && recoverFromActionSnapshot(data.__snapshot, data.type))'),
@@ -25,4 +25,4 @@ assert(
   'duplicate/stale events should be ignored when SSE and catch-up polling overlap'
 );
 
-console.log('PASS catan multiplayer turn resync stability');
+console.log('PASS pingtan multiplayer turn resync stability');

@@ -9,7 +9,7 @@ assert(mpClient.includes('startPresence()'), 'multiplayer client should start pr
 assert(mpClient.includes('/presence'), 'multiplayer client should call the room presence endpoint');
 assert(mpClient.includes('stopPresence()'), 'multiplayer client should stop presence ping when leaving/listening stops');
 
-assert(html.includes('aiReplacement'), 'catan should respect AI replacement payloads for disconnected players');
-assert(html.includes('markPlayerRejoinedHuman'), 'catan should restore human control on rejoin events');
+assert(html.includes('aiReplacement'), 'pingtan should respect AI replacement payloads for disconnected players');
+assert(html.includes('markPlayerRejoinedHuman'), 'pingtan should restore human control on rejoin events');
 
-console.log('PASS catan multiplayer presence stability');
+console.log('PASS pingtan multiplayer presence stability');

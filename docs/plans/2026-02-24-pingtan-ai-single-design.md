@@ -1,7 +1,7 @@
-# Catan 싱글 AI 대전 설계 (Rule-based)
+# pingtan 싱글 AI 대전 설계 (Rule-based)
 
 ## 목표
-- 멀티 테스트 없이도 카탄을 **싱글플레이(나 + AI 2명)** 로 충분히 플레이 가능하게 만든다.
+- 멀티 테스트 없이도 삥탄을 **싱글플레이(나 + AI 2명)** 로 충분히 플레이 가능하게 만든다.
 - AI는 랜덤이 아니라, 룰/휴리스틱 기반으로 최소한의 전략성을 가진다.
 
 ## 범위 (이번 배포)
@@ -32,20 +32,20 @@
    - 여러 상대를 동시에 압박 가능한 타일 보너스
 
 ## 구조
-- `catan/ai.js`:
+- `pingtan/ai.js`:
   - 순수 함수 중심 AI 모듈
-  - 브라우저(window.CatanAI) + Node 테스트(module.exports) 동시 지원
-- `catan/index.html`:
+  - 브라우저(window.pingtanAI) + Node 테스트(module.exports) 동시 지원
+- `pingtan/index.html`:
   - 기존 게임 상태/룰 엔진 유지
-  - AI 턴에서만 `window.CatanAI` 호출
+  - AI 턴에서만 `window.pingtanAI` 호출
 
 ## 테스트 전략
-- `catan/ai.test.cjs` (node:test)
+- `pingtan/ai.test.cjs` (node:test)
   - 정착지 선택
   - setup 도로 선택
   - 강도 타겟 선택
   - 빌드 우선순위
-- 테스트 실행: `node --test catan/ai.test.cjs`
+- 테스트 실행: `node --test pingtan/ai.test.cjs`
 
 ## 성공 기준
 - 싱글 시작 시 3인(나+AI2) 정상 구성

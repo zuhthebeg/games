@@ -1,4 +1,4 @@
-# Catan Multiplayer Emotes, BGM, and Clear Score Display Design
+# pingtan Multiplayer Emotes, BGM, and Clear Score Display Design
 
 ## Goal
 Improve multiplayer usability and polish before production by adding lightweight player communication, making BGM settings actually produce music, and showing each map's clear/victory score target.
@@ -36,4 +36,4 @@ Add static tests for:
 - BGM toggle/start wiring
 - clear score display helpers
 
-Run the full Catan test set plus multiplayer lib tests before deploy.
+Run the full pingtan test set plus multiplayer lib tests before deploy.

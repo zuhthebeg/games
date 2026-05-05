@@ -62,8 +62,8 @@ vm.runInContext(script, ctx);
 assert.equal(ctx.victoryPrizeForMap('standard', 10), 1000000, 'standard 10VP should keep existing 1-star prize');
 assert.equal(ctx.victoryPrizeForMap('standard', 20), 2000000, '20VP should double standard prize');
 assert.equal(ctx.victoryPrizeForMap('standard', 5), 500000, '5VP should halve standard prize');
-assert.equal(ctx.victoryPrizeForMap('mega-catan', 13), 3000000, 'default mega prize should keep existing 3-star prize');
-assert.equal(ctx.victoryPrizeForMap('mega-catan', 20), 4615385, 'custom mega prize should scale from default VP ratio');
+assert.equal(ctx.victoryPrizeForMap('mega-pingtan', 13), 3000000, 'default mega prize should keep existing 3-star prize');
+assert.equal(ctx.victoryPrizeForMap('mega-pingtan', 20), 4615385, 'custom mega prize should scale from default VP ratio');
 
 assert(html.includes('victoryPrizeForMap(state.selectedMapId)'), 'wallet reward should use VP-scaled prize helper');
 assert(html.includes('victoryPrizeForMap(state.selectedMapId)'), 'winner modal should use VP-scaled prize helper');

@@ -55,4 +55,4 @@ ctx.state.hint = '';
 assert.equal(ctx.normalizeTurnPhaseForDice(), false, 'normal post-roll main phase should not be changed');
 assert.equal(ctx.state.phase, 'main');
 
-console.log('PASS catan turn-after-robber dice recovery');
+console.log('PASS pingtan turn-after-robber dice recovery');

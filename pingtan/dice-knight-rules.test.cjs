@@ -19,4 +19,4 @@ assert(knightBlock.includes('chosenVictimId'), 'knight robber move should pass t
 
 assert(html.includes('formatRobberMoveMessage({ actorName, source, hexLabel, victimName, stolenResource: picked })'), 'knight/robber message should include stolen resource result');
 
-console.log('PASS catan dice animation and knight steal rules');
+console.log('PASS pingtan dice animation and knight steal rules');

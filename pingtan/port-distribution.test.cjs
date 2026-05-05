@@ -79,4 +79,4 @@ for (const mapId of Object.keys(ctx.MAP_PRESETS)) {
 assert(html.includes('outerEdges'), 'ports should be placed on perimeter edges, not consecutive angle-sorted vertices');
 assert(!html.includes('selectedVertexCount = portCount * 2'), 'old vertex selection clusters ports on one side');
 
-console.log('PASS catan port distribution');
+console.log('PASS pingtan port distribution');

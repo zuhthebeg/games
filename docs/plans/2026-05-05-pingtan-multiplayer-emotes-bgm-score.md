@@ -1,10 +1,10 @@
-# Catan Multiplayer Emotes, BGM, and Clear Score Implementation Plan
+# pingtan Multiplayer Emotes, BGM, and Clear Score Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Add lightweight multiplayer emotes with TTS, fix audible BGM playback, and show map clear score targets.
 
-**Architecture:** Keep all game-facing UI in `catan/index.html`. Emotes use existing multiplayer action relay as non-state-changing `REACTION_EMOTE` events. BGM uses the existing `soundSettings.bgm` setting and a minimal browser WebAudio loop. Clear score display derives from map preset metadata with a default of 10.
+**Architecture:** Keep all game-facing UI in `pingtan/index.html`. Emotes use existing multiplayer action relay as non-state-changing `REACTION_EMOTE` events. BGM uses the existing `soundSettings.bgm` setting and a minimal browser WebAudio loop. Clear score display derives from map preset metadata with a default of 10.
 
 **Tech Stack:** Vanilla HTML/CSS/JS, existing multiplayer relay client, browser `speechSynthesis`, browser WebAudio, Node static tests.
 
@@ -13,7 +13,7 @@
 ### Task 1: Static Tests
 
 **Files:**
-- Create: `catan/multiplayer-emotes-bgm-score.test.cjs`
+- Create: `pingtan/multiplayer-emotes-bgm-score.test.cjs`
 
 **Step 1: Write failing tests**
 Check for:
@@ -24,7 +24,7 @@ Check for:
 - `targetScore`/clear score display in map selection and game UI
 
 **Step 2: Run test to verify it fails**
-Run from `C:\Users\user\games\catan` or WSL path `/mnt/c/Users/user/games/catan`:
+Run from `C:\Users\user\games\pingtan` or WSL path `/mnt/c/Users/user/games/pingtan`:
 ```bash
 node multiplayer-emotes-bgm-score.test.cjs
 ```
@@ -33,7 +33,7 @@ Expected: FAIL because symbols do not exist yet.
 ### Task 2: Emote UI and Relay
 
 **Files:**
-- Modify: `catan/index.html`
+- Modify: `pingtan/index.html`
 
 **Step 1: Add constants**
 Add `REACTION_EMOTE` to action handling or use string literal. Add fixed emote list with id, emoji, label, phrase, motion.
@@ -50,7 +50,7 @@ In `onMpEvent` action branch, handle `REACTION_EMOTE` before `applyGameAction`. 
 ### Task 3: TTS and Motion
 
 **Files:**
-- Modify: `catan/index.html`
+- Modify: `pingtan/index.html`
 
 **Step 1: Add TTS helper**
 Implement `speakReaction(text)` using `window.speechSynthesis` only when `soundSettings.voice` is true.
@@ -61,7 +61,7 @@ Implement `showReactionEmote({ playerName, emoji, phrase, motion })` with CSS in
 ### Task 4: BGM Fix
 
 **Files:**
-- Modify: `catan/index.html`
+- Modify: `pingtan/index.html`
 
 **Step 1: Inspect existing BGM object**
 Preserve public API: `BGM.start()`, `BGM.stop()`, `BGM.setVolume()`.
@@ -75,7 +75,7 @@ Ensure setting checkbox calls `BGM.start()` when checked and `BGM.stop()` when u
 ### Task 5: Clear Score Display
 
 **Files:**
-- Modify: `catan/index.html`
+- Modify: `pingtan/index.html`
 
 **Step 1: Add helper**
 Implement `targetScoreForMap(mapId)` defaulting to 10, using `MAP_PRESETS[mapId].targetScore || victoryPoints || clearScore`.
@@ -93,14 +93,14 @@ Show `클리어 목표: N점` in map cards/select detail and in active game UI n
 
 **Step 1: Run focused test**
 ```bash
-cd /mnt/c/Users/user/games/catan
+cd /mnt/c/Users/user/games/pingtan
 node multiplayer-emotes-bgm-score.test.cjs
 ```
 Expected: PASS.
 
-**Step 2: Run Catan suite**
+**Step 2: Run pingtan suite**
 ```bash
-cd /mnt/c/Users/user/games/catan
+cd /mnt/c/Users/user/games/pingtan
 for t in *.test.cjs; do node "$t" || exit 1; done
 ```
 Expected: all PASS.
@@ -115,10 +115,10 @@ Expected: all PASS.
 **Step 4: Commit and push**
 ```bash
 cd /mnt/c/Users/user/games
-git add catan/index.html catan/multiplayer-emotes-bgm-score.test.cjs docs/plans/2026-05-05-catan-multiplayer-emotes-bgm-score-design.md docs/plans/2026-05-05-catan-multiplayer-emotes-bgm-score.md
-git commit -m "Add Catan multiplayer emotes and BGM polish"
+git add pingtan/index.html pingtan/multiplayer-emotes-bgm-score.test.cjs docs/plans/2026-05-05-pingtan-multiplayer-emotes-bgm-score-design.md docs/plans/2026-05-05-pingtan-multiplayer-emotes-bgm-score.md
+git commit -m "Add pingtan multiplayer emotes and BGM polish"
 git push origin main
 ```
 
 **Step 5: Production smoke**
-Fetch `https://game.cocy.io/catan/?v=<commit>` and verify new symbols are present.
+Fetch `https://game.cocy.io/pingtan/?v=<commit>` and verify new symbols are present.

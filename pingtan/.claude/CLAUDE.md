@@ -1,4 +1,4 @@
-# Catan 완성 작업
+# pingtan 완성 작업
 
 ## 프로젝트 구조
 - `index.html` — 메인 게임 (CSS+JS inline, 3135줄)

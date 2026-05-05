@@ -1,4 +1,4 @@
-# 카탄 (Catan) 게임 설계 문서
+# 삥탄 (pingtan) 게임 설계 문서
 
 ## 개요
 - 3~4인 멀티플레이어 전략 보드게임
@@ -110,7 +110,7 @@
 
 ### 서버 (GamePlugin)
 ```typescript
-interface CatanState {
+interface pingtanState {
   // 맵
   hexes: Hex[];           // 19개 타일
   vertices: Vertex[];     // 54개 정점
@@ -119,7 +119,7 @@ interface CatanState {
   robber: number;         // 도둑 위치 (hex index)
   
   // 플레이어
-  players: CatanPlayer[];
+  players: pingtanPlayer[];
   currentPlayer: number;
   turnPhase: 'setup1' | 'setup2' | 'roll' | 'main' | 'robber' | 'discard';
   
@@ -134,7 +134,7 @@ interface CatanState {
   pendingTrade: Trade | null;
 }
 
-interface CatanPlayer {
+interface pingtanPlayer {
   id: string;
   nickname: string;
   color: string;
@@ -163,18 +163,18 @@ interface CatanPlayer {
 
 ## 파일 구조
 ```
-games/catan/
+games/pingtan/
 ├── index.html      # 메인 게임
 ├── icon.svg        # 아이콘
-└── catan.js        # 게임 로직 (클라이언트)
+└── pingtan.js        # 게임 로직 (클라이언트)
 
 games-server/functions/games/
-└── catan.ts        # 서버 플러그인
+└── pingtan.ts        # 서버 플러그인
 ```
 
 ## 구현 순서
 1. [x] 설계 문서
-2. [ ] 서버 플러그인 (catan.ts)
+2. [ ] 서버 플러그인 (pingtan.ts)
    - 맵 생성 로직
    - 게임 상태 관리
    - 액션 검증/처리

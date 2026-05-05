@@ -30,11 +30,11 @@
       --volcano: #7a2020;
       --gold: #a87200;
       --strait: #0d4a72;
-      --catan-vh: 100dvh;
-      --catan-viewport-top: 0px;
+      --pingtan-vh: 100dvh;
+      --pingtan-viewport-top: 0px;
       --wallet-bar-height: 52px;
       --turn-banner-height: 60px;
-      --app-top-offset: calc(var(--wallet-bar-height) + env(safe-area-inset-top) + var(--catan-viewport-top));
+      --app-top-offset: calc(var(--wallet-bar-height) + env(safe-area-inset-top) + var(--pingtan-viewport-top));
     }
 
     * { box-sizing: border-box; }
@@ -46,7 +46,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: radial-gradient(circle at 20% 0%, #1c4d71 0%, var(--bg) 50%, #0b2232 100%);
       color: var(--text);
-      min-height: var(--catan-vh, 100dvh);
+      min-height: var(--pingtan-vh, 100dvh);
       padding-top: var(--app-top-offset);
       overflow: hidden;
     }
@@ -54,7 +54,7 @@
     .hidden { display: none !important; }
 
     #app {
-      height: calc(var(--catan-vh, 100dvh) - var(--wallet-bar-height) - env(safe-area-inset-top) - var(--catan-viewport-top) - env(safe-area-inset-bottom));
+      height: calc(var(--pingtan-vh, 100dvh) - var(--wallet-bar-height) - env(safe-area-inset-top) - var(--pingtan-viewport-top) - env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -986,7 +986,7 @@
     @media (orientation: landscape) and (max-height: 560px) {
       #turn-banner { top: var(--app-top-offset) !important; }
       #app {
-        height: calc(var(--catan-vh, 100dvh) - var(--wallet-bar-height) - env(safe-area-inset-top) - var(--catan-viewport-top) - env(safe-area-inset-bottom)) !important;
+        height: calc(var(--pingtan-vh, 100dvh) - var(--wallet-bar-height) - env(safe-area-inset-top) - var(--pingtan-viewport-top) - env(safe-area-inset-bottom)) !important;
         padding-top: calc(var(--turn-banner-height) + 2px) !important;
         padding-bottom: calc(2px + env(safe-area-inset-bottom)) !important;
         gap: 1px !important;
@@ -1063,11 +1063,11 @@
     :fullscreen #turn-banner, :-webkit-full-screen #turn-banner {
       top: calc(2px + env(safe-area-inset-top)) !important;
     }
-    :fullscreen.catan-landscape-fullscreen, :-webkit-full-screen.catan-landscape-fullscreen {
+    :fullscreen.pingtan-landscape-fullscreen, :-webkit-full-screen.pingtan-landscape-fullscreen {
       --wallet-bar-height: 0px;
       --app-top-offset: env(safe-area-inset-top);
     }
-    :fullscreen.catan-landscape-fullscreen #sw-bar, :-webkit-full-screen.catan-landscape-fullscreen #sw-bar {
+    :fullscreen.pingtan-landscape-fullscreen #sw-bar, :-webkit-full-screen.pingtan-landscape-fullscreen #sw-bar {
       display: none !important;
     }
 
@@ -1113,19 +1113,19 @@
   <script src="/lib/multiplayer-ui.js?v=20260326"></script>
   <script src="./ai.js"></script>
   <script>
-    function syncCatanViewportMetrics() {
+    function syncpingtanViewportMetrics() {
       const vv = window.visualViewport;
       const height = Math.max(1, Math.floor(vv?.height || window.innerHeight || document.documentElement.clientHeight || 0));
       const top = Math.max(0, Math.floor(vv?.offsetTop || 0));
-      document.documentElement.style.setProperty("--catan-vh", `${height}px`);
-      document.documentElement.style.setProperty("--catan-viewport-top", `${top}px`);
+      document.documentElement.style.setProperty("--pingtan-vh", `${height}px`);
+      document.documentElement.style.setProperty("--pingtan-viewport-top", `${top}px`);
     }
-    syncCatanViewportMetrics();
-    window.addEventListener("resize", syncCatanViewportMetrics, { passive: true });
-    window.addEventListener("orientationchange", () => setTimeout(syncCatanViewportMetrics, 80), { passive: true });
+    syncpingtanViewportMetrics();
+    window.addEventListener("resize", syncpingtanViewportMetrics, { passive: true });
+    window.addEventListener("orientationchange", () => setTimeout(syncpingtanViewportMetrics, 80), { passive: true });
     if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", syncCatanViewportMetrics, { passive: true });
-      window.visualViewport.addEventListener("scroll", syncCatanViewportMetrics, { passive: true });
+      window.visualViewport.addEventListener("resize", syncpingtanViewportMetrics, { passive: true });
+      window.visualViewport.addEventListener("scroll", syncpingtanViewportMetrics, { passive: true });
     }
     const RESOURCES = ["brick", "lumber", "wool", "grain", "ore"];
     const RESOURCE_ICONS = { brick: "🧱", lumber: "🪵", wool: "🐑", grain: "🌾", ore: "⛏️", desert: "🏜️", lake: "🏞️", sea: "🌊", volcano: "🌋", gold: "💰", strait: "🌊" };
@@ -1232,7 +1232,7 @@
       aiTurnTriggerAfterFinish: false
     };
 
-    const CATAN_ACTIVITY_LOG_LIMIT = 40;
+    const pingtan_ACTIVITY_LOG_LIMIT = 40;
     const AI_REACTION_COOLDOWN_MS = 25000;
 
     const REACTION_EMOTES = [
@@ -1687,8 +1687,8 @@
       }
     };
 
-    MAP_PRESETS["greater-catan"] = {
-      id: "greater-catan", name: "대제도", stars: 1,
+    MAP_PRESETS["greater-pingtan"] = {
+      id: "greater-pingtan", name: "대제도", stars: 1,
       description: "NE-SW로 확장된 28칸 맵. 5-6인에 적합하고 더 넓은 경쟁 공간을 제공한다.",
       minPlayers: 3, maxPlayers: 6, vpGoal: 10,
       layout: {
@@ -1954,8 +1954,8 @@
       }
     };
 
-    MAP_PRESETS["mega-catan"] = {
-      id: "mega-catan", name: "메가 제도", stars: 3,
+    MAP_PRESETS["mega-pingtan"] = {
+      id: "mega-pingtan", name: "메가 제도", stars: 3,
       description: "4링 37칸 거대 육각형. 완전히 다른 규모의 전략이 필요하다.",
       minPlayers: 3, maxPlayers: 6, vpGoal: 13,
       layout: {
@@ -2007,7 +2007,7 @@
         "twin-continents": "좁은 해협이 두 대륙을 가릅니다. 초반 도로 방향과 항구 선점이 중요해요.",
         "fog-islands": "해양 타일이 섬을 갈라 길 연결이 제한됩니다. 섬별 확장로를 먼저 확보하세요.",
         "prairie": "넓은 평원형 맵이라 전선이 길고 확장 경쟁이 빨라요.",
-        "mega-catan": "대형 보드라 승리 점수가 높고 장기전 확장 전략이 중요해요."
+        "mega-pingtan": "대형 보드라 승리 점수가 높고 장기전 확장 전략이 중요해요."
       }[preset.id] || (preset.description || "맵 특성에 맞춰 확장 루트를 조정하세요.");
       return { preset, behavior };
     }
@@ -2131,7 +2131,7 @@
     function generatePorts(mapId = "standard") {
       const preset = resolveMapPreset(mapId);
       const portCount = preset.ports.pool.length;
-      // Official CATAN harbors sit in coves around the sea frame. Model that by
+      // Official pingtan harbors sit in coves around the sea frame. Model that by
       // choosing evenly spaced perimeter EDGES, not consecutive angle-sorted vertices.
       const outerEdges = state.edges
         .filter(e => e.hexes.length === 1)
@@ -3475,9 +3475,9 @@
             addActivityLog("trade", `${proposer.name || "플레이어"} ↔ ${me.name || "플레이어"} 거래 완료`);
             showToast("🤝 거래 성사!", 2000);
             // Notify proposer + bystanders (proposerId/proposalId let receivers identify the swap)
-            mpState.client.sendAction({ type: "TRADE_ACCEPT", playerId: me.userId || me.id, proposerId, proposalId, offer, want, actionId: `ta_${Date.now()}`, __snapshot: createCatanStateSnapshot() }).catch(()=>{});
+            mpState.client.sendAction({ type: "TRADE_ACCEPT", playerId: me.userId || me.id, proposerId, proposalId, offer, want, actionId: `ta_${Date.now()}`, __snapshot: createpingtanStateSnapshot() }).catch(()=>{});
           } else {
-            mpState.client.sendAction({ type: "TRADE_REJECT", playerId: me.userId || me.id, proposalId, actionId: `tr_${Date.now()}`, __snapshot: createCatanStateSnapshot() }).catch(()=>{});
+            mpState.client.sendAction({ type: "TRADE_REJECT", playerId: me.userId || me.id, proposalId, actionId: `tr_${Date.now()}`, __snapshot: createpingtanStateSnapshot() }).catch(()=>{});
           }
           render();
         })();
@@ -3556,7 +3556,7 @@
       }
     }
 
-    function createCatanStateSnapshot() {
+    function createpingtanStateSnapshot() {
       return clone({
         phase: state.phase,
         currentPlayer: state.currentPlayer,
@@ -3588,7 +3588,7 @@
       });
     }
 
-    function applyCatanStateSnapshot(snapshot) {
+    function applypingtanStateSnapshot(snapshot) {
       if (!snapshot || !Array.isArray(snapshot.players) || !Array.isArray(snapshot.hexes)) return false;
       const keep = {
         screen: state.screen,
@@ -3611,7 +3611,7 @@
     }
 
     function recoverFromActionSnapshot(snapshot, actionType = "") {
-      const recovered = applyCatanStateSnapshot(snapshot);
+      const recovered = applypingtanStateSnapshot(snapshot);
       if (!recovered) return false;
       state.hint = actionType === ACTION.END_TURN
         ? "턴 동기화 복구 완료."
@@ -3629,7 +3629,7 @@
       triggerAITurnIfNeeded();
       if (!isMultiMode()) return true;
       try {
-        action.__snapshot = createCatanStateSnapshot();
+        action.__snapshot = createpingtanStateSnapshot();
         await mpState.client.sendAction(action);
       } catch (e) {
         state.hint = `동기화 실패: ${e.message || e}`;
@@ -4020,7 +4020,7 @@
 
     function aiTakeSetupTurn() {
       const pIdx = state.currentPlayer;
-      const ai = window.CatanAI;
+      const ai = window.pingtanAI;
       if (state.setupStep === "settlement") {
         const choices = validSettlementsFor(pIdx, true);
         if (!choices.length) { advanceSetupTurn(); render(); triggerAITurnIfNeeded(); return; }
@@ -4063,7 +4063,7 @@
       const pIdx = state.currentPlayer;
       const p = state.players[pIdx];
       if (!p) { state._aiTurnInProgress = false; return; }
-      const ai = window.CatanAI;
+      const ai = window.pingtanAI;
 
       try {
         // ── Phase: roll ──────────────────────────────────────────────────
@@ -4234,7 +4234,7 @@
       const pIdx = state.currentPlayer;
       const p = state.players[pIdx];
       if (!p || !p.isAI) return;
-      const ai = window.CatanAI;
+      const ai = window.pingtanAI;
 
       if (state.setupStep === "settlement") {
         const choices = validSettlementsFor(pIdx, true);
@@ -4267,7 +4267,7 @@
       const pIdx = state.currentPlayer;
       const p = state.players[pIdx];
       if (!p || !p.isAI || state.winner) { mpState.aiTurnInProgress = false; return; }
-      const ai = window.CatanAI;
+      const ai = window.pingtanAI;
 
       try {
         if (state.phase === "roll") {
@@ -5216,7 +5216,7 @@
       return clampTargetScore(roomTargetScore || localTargetScore || defaultTargetScoreForMap(mapId));
     }
 
-    function catanRoomConfig() {
+    function pingtanRoomConfig() {
       const mapId = state.selectedMapId || mpState.mapId || "standard";
       const turnSeconds = clampTurnSeconds(state.turnSeconds || 60);
       const targetScore = clampTargetScore(state.targetScore || defaultTargetScoreForMap(mapId));
@@ -5464,7 +5464,7 @@
     }
 
     function loadActivityLog() {
-      return Array.isArray(state.activityLog) ? state.activityLog.slice(-CATAN_ACTIVITY_LOG_LIMIT) : [];
+      return Array.isArray(state.activityLog) ? state.activityLog.slice(-pingtan_ACTIVITY_LOG_LIMIT) : [];
     }
 
     function clearActivityLog() {
@@ -5484,7 +5484,7 @@
       const last = items[items.length - 1];
       if (last && last.kind === kind && last.message === text && Date.now() - Number(last.ts || 0) < 1200) return;
       items.push({ kind, message: text, ts: Date.now() });
-      state.activityLog = items.slice(-CATAN_ACTIVITY_LOG_LIMIT);
+      state.activityLog = items.slice(-pingtan_ACTIVITY_LOG_LIMIT);
       updateActivityStatusDom();
     }
 
@@ -5690,7 +5690,7 @@
       } catch (_) {}
     }
 
-    async function replayCatanRoomEvents(roomId) {
+    async function replaypingtanRoomEvents(roomId) {
       if (!mpState.client || !roomId) return 0;
       const res = await mpState.client.request('GET', `/api/rooms/${roomId}/events?after=0`);
       const events = Array.isArray(res.events) ? res.events : [];
@@ -5706,7 +5706,7 @@
       }).filter(Boolean);
       mpState.replaying = true;
       try {
-        const replayFromSeq = latestSnapshotEvent && applyCatanStateSnapshot(latestSnapshotEvent.data.__snapshot)
+        const replayFromSeq = latestSnapshotEvent && applypingtanStateSnapshot(latestSnapshotEvent.data.__snapshot)
           ? latestSnapshotEvent.seq
           : 0;
         for (const item of actionEvents) {
@@ -5726,10 +5726,10 @@
       return lastSeq;
     }
 
-    async function restoreCatanMultiplayerSession() {
+    async function restorepingtanMultiplayerSession() {
       if (!window.MultiplayerClient) return false;
       const client = await ensureMp();
-      const room = await client.tryReconnect("catan");
+      const room = await client.tryReconnect("pingtan");
       if (!room) return false;
       mpState.room = room;
       mpState.roomCode = room.id || room.roomId || client.getRoomCode() || mpState.roomCode;
@@ -5745,7 +5745,7 @@
       if (room.status === "playing") {
         state.screen = "game";
         resetCoreState();
-        await replayCatanRoomEvents(mpState.roomCode);
+        await replaypingtanRoomEvents(mpState.roomCode);
         state.hint = "멀티플레이 복구 완료";
         if (soundSettings.bgm) BGM.start();
       } else {
@@ -5765,14 +5765,14 @@
 
     async function createRoom() {
       try {
-        const config = catanRoomConfig();
+        const config = pingtanRoomConfig();
         const mapId = config.mapId;
         const turnSeconds = config.gameConfig.turnSeconds;
         const targetScore = config.gameConfig.targetScore;
         state.turnSeconds = turnSeconds;
         state.targetScore = targetScore;
         const client = await ensureMp();
-        const room = await client.createRoom("catan", { maxPlayers: Number(state.maxPlayers) || 4, ...config });
+        const room = await client.createRoom("pingtan", { maxPlayers: Number(state.maxPlayers) || 4, ...config });
         mpState.mapId = mapId;
         state.selectedMapId = mapId;
         mpState.roomCode = room.roomId || room.id || room.code || room.roomCode || "";
@@ -5796,7 +5796,7 @@
       }
       try {
         const client = await ensureMp();
-        await client.joinRoom(code, "catan");
+        await client.joinRoom(code, "pingtan");
         mpState.roomCode = code;
         state.mode = "multi";
         state.screen = "room-lobby";
@@ -5828,7 +5828,7 @@
       resetCoreState();
       state.mode = null;
       state.screen = "mode";
-      catanMpUI = null;
+      pingtanMpUI = null;
       if (shouldRender) render();
     }
 
@@ -5865,7 +5865,7 @@
       render();
     }
 
-    let catanMpUI = null;
+    let pingtanMpUI = null;
     function showMultiOptions() {
       state.screen = "multi-lobby";
       state.mode = null;
@@ -5874,18 +5874,18 @@
       document.getElementById("app").classList.add("hidden");
       mpLobby.classList.remove("hidden");
       
-      if (catanMpUI) { catanMpUI.show(); return; }
+      if (pingtanMpUI) { pingtanMpUI.show(); return; }
       
-      catanMpUI = new MultiplayerUI({
-        gameType: "catan",
+      pingtanMpUI = new MultiplayerUI({
+        gameType: "pingtan",
         gameName: "🏝️ 삥탄",
         container: mpLobby,
         maxPlayers: 4,
         supportsLocal: false,
         onGameStart: (roomState) => {
           state.selectedMapId = state.selectedMapId || "standard";
-          dbg(`[GAME-START] isHost:${roomState.players?.find(p=>p.id===catanMpUI?.getClient()?.getMyUserId())?.isHost} players:${roomState.players?.length}`);
-          mpState.client = catanMpUI.getClient();
+          dbg(`[GAME-START] isHost:${roomState.players?.find(p=>p.id===pingtanMpUI?.getClient()?.getMyUserId())?.isHost} players:${roomState.players?.length}`);
+          mpState.client = pingtanMpUI.getClient();
           mpState.myUserId = mpState.client.getMyUserId();
           mpState.room = roomState;
           mpState.roomCode = mpState.client.getRoomCode();
@@ -5907,18 +5907,18 @@
         onGameEvent: (type, data) => {
           // handled by onMpEvent via client
         },
-        getRoomConfig: () => catanRoomConfig(),
+        getRoomConfig: () => pingtanRoomConfig(),
         onLeave: () => {
           mpState.client = null;
-          catanMpUI = null;
+          pingtanMpUI = null;
           state.screen = "mode";
           state.mode = null;
           render();
         },
       });
       
-      const _origRenderWaiting = catanMpUI._renderWaitingRoom.bind(catanMpUI);
-      catanMpUI._renderWaitingRoom = function(roomCode) {
+      const _origRenderWaiting = pingtanMpUI._renderWaitingRoom.bind(pingtanMpUI);
+      pingtanMpUI._renderWaitingRoom = function(roomCode) {
         _origRenderWaiting(roomCode);
         const scrollHost = this.container.querySelector(".mp-screen, .mp-card, .mp-waiting-room, .lobby-screen") || this.container.firstElementChild || this.container;
         if (scrollHost && scrollHost.style) {
@@ -5932,7 +5932,7 @@
         if (!playerListEl) return;
         const maps = Object.values(MAP_PRESETS);
         const sel = document.createElement("div");
-        sel.id = "catan-map-selector";
+        sel.id = "pingtan-map-selector";
         sel.style.cssText = "margin:12px 0;padding:10px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.1);display:grid;gap:8px;";
         const redrawSel = () => {
           const cur = state.selectedMapId || "standard";
@@ -5958,13 +5958,13 @@
 
       const roomCode = MultiplayerUI.checkUrlRoom();
       if (roomCode) {
-        catanMpUI._renderLobby();
+        pingtanMpUI._renderLobby();
         setTimeout(() => {
           const inp = document.getElementById("mp-room-code");
           if (inp) inp.value = roomCode;
         }, 100);
       } else {
-        catanMpUI.show();
+        pingtanMpUI.show();
       }
     }
 
@@ -6004,19 +6004,19 @@
     // ─── Sound System ───────────────────────────────────────────────────────────
     // ── Sound Settings ──
     const soundSettings = {
-      sfx: localStorage.getItem("catan-sfx") !== "off",
-      voice: localStorage.getItem("catan-voice") !== "off",
-      bgm: localStorage.getItem("catan-bgm") !== "off",
-      sfxVol: parseFloat(localStorage.getItem("catan-sfx-vol") || "0.5"),
-      voiceVol: parseFloat(localStorage.getItem("catan-voice-vol") || "0.7"),
-      bgmVol: parseFloat(localStorage.getItem("catan-bgm-vol") || "0.3"),
+      sfx: localStorage.getItem("pingtan-sfx") !== "off",
+      voice: localStorage.getItem("pingtan-voice") !== "off",
+      bgm: localStorage.getItem("pingtan-bgm") !== "off",
+      sfxVol: parseFloat(localStorage.getItem("pingtan-sfx-vol") || "0.5"),
+      voiceVol: parseFloat(localStorage.getItem("pingtan-voice-vol") || "0.7"),
+      bgmVol: parseFloat(localStorage.getItem("pingtan-bgm-vol") || "0.3"),
       save() {
-        localStorage.setItem("catan-sfx", this.sfx ? "on" : "off");
-        localStorage.setItem("catan-voice", this.voice ? "on" : "off");
-        localStorage.setItem("catan-bgm", this.bgm ? "on" : "off");
-        localStorage.setItem("catan-sfx-vol", this.sfxVol);
-        localStorage.setItem("catan-voice-vol", this.voiceVol);
-        localStorage.setItem("catan-bgm-vol", this.bgmVol);
+        localStorage.setItem("pingtan-sfx", this.sfx ? "on" : "off");
+        localStorage.setItem("pingtan-voice", this.voice ? "on" : "off");
+        localStorage.setItem("pingtan-bgm", this.bgm ? "on" : "off");
+        localStorage.setItem("pingtan-sfx-vol", this.sfxVol);
+        localStorage.setItem("pingtan-voice-vol", this.voiceVol);
+        localStorage.setItem("pingtan-bgm-vol", this.bgmVol);
       }
     };
 
@@ -6440,7 +6440,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표${targetScoreForMap(state.selectedMap
         offer, want, offerStr, wantStr,
         playerName: p.name,
         actionId: `ai_trade_${Date.now()}_${pIdx}`,
-        __snapshot: createCatanStateSnapshot()
+        __snapshot: createpingtanStateSnapshot()
       };
       await mpState.client.sendAction(action);
       addActivityLog("trade", `${p.name || "AI"} 거래 제안: ${offerStr} → ${wantStr}`);
@@ -6662,7 +6662,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
           turnSeconds: state.turnSeconds,
           targetScore: state.targetScore,
           actionId: nextActionId(),
-          __snapshot: createCatanStateSnapshot()
+          __snapshot: createpingtanStateSnapshot()
         };
         markActionProcessed(action.actionId);
         try { await mpState.client.sendAction(action); } catch (e) { showToast(`설정 동기화 실패: ${e.message || e}`, 1600); }
@@ -6792,10 +6792,10 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     }
 
     function showToast(msg, duration = 2500, options = {}) {
-      let el = document.getElementById("catan-toast");
+      let el = document.getElementById("pingtan-toast");
       if (!el) {
         el = document.createElement("div");
-        el.id = "catan-toast";
+        el.id = "pingtan-toast";
         el.className = "toast";
         document.body.appendChild(el);
       }
@@ -6901,8 +6901,8 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
       const landscape = window.innerWidth > window.innerHeight;
       const active = !!fsEl && landscape;
-      document.documentElement.classList.toggle("catan-landscape-fullscreen", active);
-      document.body.classList.toggle("catan-landscape-fullscreen", active);
+      document.documentElement.classList.toggle("pingtan-landscape-fullscreen", active);
+      document.body.classList.toggle("pingtan-landscape-fullscreen", active);
     }
 
     function toggleFullscreen() {
@@ -7029,7 +7029,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
         showMultiOptions();
         return;
       }
-      if (await restoreCatanMultiplayerSession()) return;
+      if (await restorepingtanMultiplayerSession()) return;
       render();
     })();
   </script>

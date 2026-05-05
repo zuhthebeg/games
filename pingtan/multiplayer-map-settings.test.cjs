@@ -6,8 +6,8 @@ const mpUi = fs.readFileSync(__dirname + '/../lib/multiplayer-ui.js', 'utf8');
 
 assert(mpUi.includes('this.getRoomConfig = options.getRoomConfig || null'), 'MultiplayerUI should accept a getRoomConfig hook');
 assert(mpUi.includes('...(roomConfig || {})'), 'MultiplayerUI should merge game-specific room config into createRoom payload');
-assert(html.includes('getRoomConfig: () => catanRoomConfig()'), 'Pingtan MultiplayerUI should inject selected map/settings into room creation');
-assert(html.includes('function catanRoomConfig()'), 'Pingtan should centralize multiplayer map/settings room config');
+assert(html.includes('getRoomConfig: () => pingtanRoomConfig()'), 'Pingtan MultiplayerUI should inject selected map/settings into room creation');
+assert(html.includes('function pingtanRoomConfig()'), 'Pingtan should centralize multiplayer map/settings room config');
 assert(html.includes('function roomMapIdFromState'), 'Pingtan should resolve room map id from meta/config/gameConfig before defaulting');
 assert(html.includes('gameConfig?.mapId'), 'Pingtan should recover map id from room gameConfig');
 assert(html.includes('addGameStartActivityLog()'), 'Pingtan should write selected map and options to major log on game start');

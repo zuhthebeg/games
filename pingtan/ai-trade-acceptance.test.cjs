@@ -12,4 +12,4 @@ assert(html.includes('heuristic.accept'), 'trade flow should use heuristic accep
 assert(html.includes('makePlayer({ id: "ai1", name: "AI 1", color: PLAYER_COLORS[1], isAI: true })'), 'single-player AI 1 must be flagged as AI so it can act/respond automatically');
 assert(html.includes('makePlayer({ id: "ai2", name: "AI 2", color: PLAYER_COLORS[2], isAI: true })'), 'single-player AI 2 must be flagged as AI so it can act/respond automatically');
 
-console.log('PASS catan AI trade acceptance balance');
+console.log('PASS pingtan AI trade acceptance balance');

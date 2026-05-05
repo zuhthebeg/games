@@ -27,4 +27,4 @@ assert(html.includes('function sendCustomReactionEmote'), 'custom reaction input
 assert(html.includes('speakReactionWithLocalTTS'), 'reaction audio should use local TTS pipeline when possible');
 assert(html.includes('/v1/audio/speech'), 'local TTS pipeline endpoint should be used');
 
-console.log('PASS catan victory timer emotes polish');
+console.log('PASS pingtan victory timer emotes polish');
