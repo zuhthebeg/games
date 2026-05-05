@@ -2029,6 +2029,15 @@
       return preset.targetScore || preset.vpGoal || preset.clearScore || 10;
     }
 
+    function victoryPrizeForMap(mapId = state.selectedMapId, targetScore = targetScoreForMap(mapId)) {
+      const preset = resolveMapPreset(mapId || "standard");
+      const stars = preset.stars || 1;
+      const basePrize = stars * 1000000;
+      const baseTarget = defaultTargetScoreForMap(mapId);
+      const ratio = clampTargetScore(targetScore) / Math.max(1, baseTarget);
+      return Math.max(0, Math.round(basePrize * ratio));
+    }
+
     function assignBalancedNumbers(axial, hexTypes, numberConfig) {
       const numbers = numberConfig.pool || [];
       const noAdjacentHot = new Set(numberConfig.noAdjacentHot || []);
@@ -3106,8 +3115,7 @@
           SFX.win();
           if (winner === localPlayerIndex()) {
             launchConfetti();
-            const _mapStars = (MAP_PRESETS[state.selectedMapId] || MAP_PRESETS.standard).stars || 1;
-            const _prize = _mapStars * 1000000;
+            const _prize = victoryPrizeForMap(state.selectedMapId);
             showToast(`🎉 승리! +${_prize.toLocaleString()}원`, 6000);
             if (typeof SharedWallet !== "undefined" && SharedWallet.addGold) SharedWallet.addGold(_prize);
           } else {
@@ -4725,7 +4733,7 @@
                 <div class="map-card${selected === m.id ? " selected" : ""}" onclick="onMapCardClick('${m.id}')">
                   <div class="map-card-name">${m.name}</div>
                   <div class="map-card-stars">${starsHtml(m.stars)}</div>
-                  <div class="map-card-meta">${m.minPlayers}–${m.maxPlayers}인 · 클리어 목표 ${targetScoreForMap(m.id)}점 · 🏆${((m.stars||1)*100).toLocaleString()}만원</div>
+                  <div class="map-card-meta">${m.minPlayers}–${m.maxPlayers}인 · 클리어 목표 ${targetScoreForMap(m.id)}점 · 🏆${Math.round(victoryPrizeForMap(m.id, targetScoreForMap(m.id)) / 10000).toLocaleString()}만원</div>
                   ${m.description ? `<div class="map-card-desc">${m.description}</div>` : ""}
                 </div>
               `).join("")}
@@ -4898,7 +4906,7 @@
       const winner = state.players[state.winner];
       if (!winner) return "";
       const isMe = state.winner === localPlayerIndex();
-      const prize = ((MAP_PRESETS[state.selectedMapId] || MAP_PRESETS.standard).stars || 1) * 1000000;
+      const prize = victoryPrizeForMap(state.selectedMapId);
       return `<div style="position:fixed;inset:0;z-index:10030;background:rgba(0,0,0,.58);display:flex;align-items:center;justify-content:center;padding:18px;">
         <div style="width:min(360px,100%);background:linear-gradient(180deg,#172554,#0f172a);border:1px solid rgba(250,204,21,.55);border-radius:20px;padding:22px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.55);">
           <div style="font-size:54px;line-height:1;">${isMe ? "🏆" : "🎉"}</div>
