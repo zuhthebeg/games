@@ -9,9 +9,13 @@ assert(html.includes('window.dismissWinnerModal'), 'winner modal close button sh
 
 assert(html.includes('turnSeconds'), 'state should include configurable turnSeconds');
 assert(html.includes('clampTurnSeconds'), 'turn seconds should be sanitized');
-assert(html.includes('gameConfig: { mapId, turnSeconds'), 'room creation should send turnSeconds in gameConfig');
+assert(html.includes('targetScore'), 'state should include configurable targetScore');
+assert(html.includes('clampTargetScore'), 'target score should be sanitized');
+assert(html.includes('gameConfig: { mapId, turnSeconds, targetScore'), 'room creation should send turnSeconds and targetScore in gameConfig');
 assert(html.includes('state.turnTimeLeft = state.turnSeconds'), 'turn start should use configured turnSeconds, not fixed 60');
 assert(html.includes('state.turnTimeLeft / state.turnSeconds'), 'timer bar should use configured turnSeconds');
+assert(html.includes('return clampTargetScore(state.targetScore'), 'targetScoreForMap should prefer host configured target score');
+assert(html.includes('onTargetScoreChange'), 'host settings should expose target score change handler');
 
 assert(html.includes('reactionTurnCount'), 'reactions should track per-turn usage count');
 assert(html.includes('MAX_REACTIONS_PER_TURN = 3'), 'reactions should allow 3 uses per turn');

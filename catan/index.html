@@ -1128,6 +1128,8 @@
       phaseBeforeKnight: null,
       tradeDialog: { open: false, give: null, get: null },
       turnSeconds: 60,
+      targetScore: 10,
+      targetScoreCustom: false,
       turnTimeLeft: 60,
       lastTurnTickSecond: null,
       reactionTurnCount: 0,
@@ -1215,6 +1217,7 @@
       state.phaseBeforeKnight = null;
       state.tradeDialog = { open: false, give: null, get: null };
       state.turnSeconds = clampTurnSeconds(state.turnSeconds || 60);
+      state.targetScore = clampTargetScore(state.targetScore || defaultTargetScoreForMap(state.selectedMapId));
       state.turnTimeLeft = state.turnSeconds;
       state.lastTurnTickSecond = null;
       state.reactionTurnCount = 0;
@@ -1364,8 +1367,10 @@
     function initSingleGame(mapId = "standard") {
       resetCoreState();
       state.turnSeconds = 60;
-      state.turnTimeLeft = state.turnSeconds;
       state.selectedMapId = mapId;
+      state.targetScore = defaultTargetScoreForMap(mapId);
+      state.targetScoreCustom = false;
+      state.turnTimeLeft = state.turnSeconds;
       applyResponsiveDefaults(true);
       setSinglePlayers();
       generateBoard(null, mapId);
@@ -1862,7 +1867,19 @@
       return MAP_PRESETS[mapId] || MAP_PRESETS.standard;
     }
 
+    function clampTargetScore(value) {
+      const n = Number(value) || 10;
+      return Math.min(20, Math.max(5, Math.round(n)));
+    }
+
     function targetScoreForMap(mapId = "standard") {
+      const requested = mapId || state.selectedMapId || "standard";
+      if (state && state.targetScore && requested === state.selectedMapId) return clampTargetScore(state.targetScore);
+      const preset = resolveMapPreset(requested);
+      return preset.targetScore || preset.vpGoal || preset.clearScore || 10;
+    }
+
+    function defaultTargetScoreForMap(mapId = "standard") {
       const preset = resolveMapPreset(mapId || state.selectedMapId || "standard");
       return preset.targetScore || preset.vpGoal || preset.clearScore || 10;
     }
@@ -3117,6 +3134,8 @@
         const _initMapId = action.mapId || "standard";
         state.selectedMapId = _initMapId;
         state.turnSeconds = clampTurnSeconds(action.turnSeconds || 60);
+        state.targetScore = clampTargetScore(action.targetScore || defaultTargetScoreForMap(_initMapId));
+        state.targetScoreCustom = true;
         generateBoard(clone(action.hexes || []), _initMapId);
         if (Array.isArray(action.ports) && action.ports.length) state.ports = action.ports;
         if (typeof action.robber === "number") {
@@ -3340,6 +3359,8 @@
         canEndTurn: state.canEndTurn,
         winner: state.winner,
         turnSeconds: state.turnSeconds,
+        targetScore: state.targetScore,
+        targetScoreCustom: state.targetScoreCustom,
         roadBuildingRemaining: state.roadBuildingRemaining,
         lastDiceSum: state.lastDiceSum,
         lastDiceValues: state.lastDiceValues,
@@ -4442,6 +4463,7 @@
       const scroller = document.getElementById("map-select-scroll");
       const st = scroller ? scroller.scrollTop : 0;
       state.selectedMapId = mapId;
+      if (!state.targetScoreCustom) state.targetScore = defaultTargetScoreForMap(mapId);
       render();
       requestAnimationFrame(() => {
         const s = document.getElementById("map-select-scroll");
@@ -4510,6 +4532,12 @@
                 <label for="turnSeconds">턴 시간</label>
                 <select id="turnSeconds" onchange="onTurnSecondsChange(this.value)">
                   ${[30,45,60,90,120].map(v => `<option value="${v}" ${state.turnSeconds === v ? "selected" : ""}>${v}초</option>`).join("")}
+                </select>
+              </div>
+              <div class="multi-row">
+                <label for="targetScore">승점</label>
+                <select id="targetScore" onchange="onTargetScoreChange(this.value)">
+                  ${[5,7,10,12,15,20].map(v => `<option value="${v}" ${targetScoreForMap(state.selectedMapId) === v ? "selected" : ""}>${v}점</option>`).join("")}
                 </select>
               </div>
               <div class="multi-row">
@@ -4610,6 +4638,12 @@
                 <label style="font-size:12px;color:var(--muted);white-space:nowrap;">턴 시간</label>
                 <select onchange="onTurnSecondsChange(this.value)" style="flex:1;min-width:0;">
                   ${[30,45,60,90,120].map(v => `<option value="${v}" ${state.turnSeconds === v ? "selected" : ""}>${v}초</option>`).join("")}
+                </select>
+              </div>
+              <div class="multi-row" style="align-items:center;">
+                <label style="font-size:12px;color:var(--muted);white-space:nowrap;">승점</label>
+                <select onchange="onTargetScoreChange(this.value)" style="flex:1;min-width:0;">
+                  ${[5,7,10,12,15,20].map(v => `<option value="${v}" ${targetScoreForMap(state.selectedMapId) === v ? "selected" : ""}>${v}점</option>`).join("")}
                 </select>
               </div>
               <div class="multi-row">
@@ -4917,6 +4951,8 @@
       resetCoreState();
       const mapId = state.selectedMapId || mpState.mapId || mpState.room?.meta?.mapId || mpState.room?.config?.mapId || "standard";
       state.turnSeconds = clampTurnSeconds(state.turnSeconds || mpState.room?.meta?.turnSeconds || mpState.room?.config?.turnSeconds || 60);
+      state.targetScore = clampTargetScore(state.targetScore || mpState.room?.meta?.targetScore || mpState.room?.config?.targetScore || defaultTargetScoreForMap(mapId));
+      state.targetScoreCustom = true;
       generateBoard(null, mapId);
       recalcAllVP();
       mpState.initSent = true;
@@ -4929,6 +4965,7 @@
         ports: clone(state.ports),
         robber: state.robber,
         turnSeconds: state.turnSeconds,
+        targetScore: state.targetScore,
         playerOrder: state.players.map(p => p.userId || p.id),
         players: state.players.map(p => ({ id: p.userId || p.id, userId: p.userId || p.id, name: p.name, color: p.color, isAI: !!p.isAI }))
       });
@@ -5223,9 +5260,11 @@
       try {
         const mapId = state.selectedMapId || "standard";
         const turnSeconds = (typeof clampTurnSeconds === "function" ? clampTurnSeconds(state.turnSeconds || 60) : (Number(state.turnSeconds) || 60));
+        const targetScore = (typeof clampTargetScore === "function" ? clampTargetScore(state.targetScore || defaultTargetScoreForMap(mapId)) : (Number(state.targetScore) || 10));
         state.turnSeconds = turnSeconds;
+        state.targetScore = targetScore;
         const client = await ensureMp();
-        const room = await client.createRoom("catan", { maxPlayers: Number(state.maxPlayers) || 4, mapId, gameConfig: { mapId, turnSeconds } });
+        const room = await client.createRoom("catan", { maxPlayers: Number(state.maxPlayers) || 4, mapId, gameConfig: { mapId, turnSeconds, targetScore } });
         mpState.mapId = mapId;
         state.selectedMapId = mapId;
         mpState.roomCode = room.roomId || room.id || room.code || room.roomCode || "";
@@ -5437,6 +5476,12 @@
 
     function onTurnSecondsChange(value) {
       state.turnSeconds = clampTurnSeconds(value);
+      render();
+    }
+
+    function onTargetScoreChange(value) {
+      state.targetScore = clampTargetScore(value);
+      state.targetScoreCustom = true;
       render();
     }
 
@@ -6154,6 +6199,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.sendCustomReactionEmote = sendCustomReactionEmote;
     window.dismissWinnerModal = dismissWinnerModal;
     window.onTurnSecondsChange = onTurnSecondsChange;
+    window.onTargetScoreChange = onTargetScoreChange;
     window.onResourceTap = onResourceTap;
     window.showManual = showManual;
     window.tradeAdjust = tradeAdjust;
