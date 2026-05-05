@@ -133,3 +133,19 @@ test('chooseBankTrade uses custom ratio function (harbor 2:1)', () => {
   const t2 = AI.chooseBankTrade(resources, { brick: 1, lumber: 1 });
   assert.equal(t2, null);
 });
+
+test('pickRobberTarget pressures a near-victory human leader sometimes', () => {
+  const s = baseState();
+  s.targetScore = 10;
+  s.robber = 2;
+  s.players[0].vp = 4;
+  s.players[1].vp = 9;
+  s.players[2].vp = 5;
+  s.vertices[1].owner = 1;
+  s.vertices[1].building = 'settlement';
+  s.vertices[3].owner = 2;
+  s.vertices[3].building = 'settlement';
+
+  const res = AI.pickRobberTarget(s, 0, 1);
+  assert.equal(res.victimIdx, 1);
+});

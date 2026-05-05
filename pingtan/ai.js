@@ -124,10 +124,18 @@
 
       const pressureBonus = touched.size * 0.7;
       for (const [victim, pips] of touched.entries()) {
-        const victimRes = Object.values(state.players[victim].resources || {}).reduce((a, b) => a + b, 0);
+        const victimPlayer = state.players[victim] || {};
+        const thiefPlayer = state.players[thiefIdx] || {};
+        const victimRes = Object.values(victimPlayer.resources || {}).reduce((a, b) => a + b, 0);
+        const victimVP = victimPlayer.vp || 0;
+        const thiefVP = thiefPlayer.vp || 0;
+        const goal = state.targetScore || state.vpGoal || 10;
+        const leaderPressureBonus = Math.max(0, victimVP - thiefVP) * 1.35;
+        const nearVictoryBonus = victimVP >= goal - 2 ? 1.8 : 0;
         const isHuman = humanIdx != null && victim === humanIdx;
+        const effectiveHumanPenalty = isHuman ? Math.max(0.8, humanPenalty - leaderPressureBonus - nearVictoryBonus) : 0;
         const score = weight * 1.7 + pips * 2.2 + Math.min(victimRes, 12) * 0.12 + pressureBonus
-          - (isHuman ? humanPenalty : 0);
+          + leaderPressureBonus + nearVictoryBonus - effectiveHumanPenalty;
         if (score > bestScore) {
           bestScore = score;
           bestHex = hex.index;

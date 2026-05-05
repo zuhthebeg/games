@@ -4279,6 +4279,13 @@
         }
         if (state.winner) return;
 
+        if (totalResourceCount(p) >= 2) {
+          try {
+            await sendAIMultiplayerTradeProposal(pIdx);
+            await sleep(800);
+          } catch (e) { console.error("AI multiplayer trade error:", e); }
+        }
+
         let safety = 15;
         let buildsDone = 0;
         const budget = ai ? ai.getTurnBudget(state.aiDifficulty, totalResourceCount(p)) : 2;
@@ -6290,6 +6297,103 @@
       }
       render();
       maybeAutoEndTurn();
+    }
+
+    function normalizeAITradeResources(obj = {}) {
+      const RES_MAP = { "벽돌":"brick","나무":"lumber","양모":"wool","양":"wool","밀":"grain","곡물":"grain","광석":"ore",
+        "Brick":"brick","Lumber":"lumber","Wool":"wool","Grain":"grain","Ore":"ore",
+        "brick":"brick","lumber":"lumber","wool":"wool","grain":"grain","ore":"ore" };
+      const out = {};
+      for (const [k, v] of Object.entries(obj || {})) {
+        const nk = RES_MAP[k] || String(k).toLowerCase();
+        const n = Math.max(0, Math.floor(Number(v) || 0));
+        if (RESOURCES.includes(nk) && n > 0) out[nk] = (out[nk] || 0) + n;
+      }
+      return out;
+    }
+
+    function isNonEmptyResourceBundle(bundle = {}) {
+      return RESOURCES.some(r => Number(bundle[r] || 0) > 0);
+    }
+
+    function canPlayerPayBundle(player, bundle = {}) {
+      return RESOURCES.every(r => Number(player?.resources?.[r] || 0) >= Number(bundle[r] || 0));
+    }
+
+    function bestHumanTradeTargetForAI(aiIdx) {
+      return state.players
+        .map((p, i) => ({ p, i }))
+        .filter(x => x.i !== aiIdx && !x.p?.isAI && totalResourceCount(x.p) > 0)
+        .sort((a, b) => (b.p.vp || 0) - (a.p.vp || 0) || totalResourceCount(b.p) - totalResourceCount(a.p))[0] || null;
+    }
+
+    async function aiTradeProposalFromLLM(pIdx, targetIdx = localPlayerIndex()) {
+      const p = state.players[pIdx];
+      const human = state.players[targetIdx];
+      if (!p || !human || totalResourceCount(p) < 2 || totalResourceCount(human) < 1) return null;
+      const rejectKey = `${pIdx}`;
+      const rejects = state.tradeRejectCount?.[rejectKey] || 0;
+      if (rejects >= 6 && Math.random() > 0.5) return { trade: false, dialogue: "" };
+      if (rejects >= 10 && Math.random() > 0.25) return { trade: false, dialogue: "" };
+      const rejectHistory = rejects > 0 ? `\n주의: 이전에 ${rejects}번 거절당했습니다. 같은 제안 반복하지 말고 더 좋은 조건(2:1 등)을 제시하세요.` : "";
+      const stateStr = `삥탄 게임. 당신은 "${p.name}".
+자원: 벽돌${p.resources.brick} 나무${p.resources.lumber} 양${p.resources.wool} 밀${p.resources.grain} 광석${p.resources.ore}
+상대(${human.name}) 자원 총: ${totalResourceCount(human)}장
+VP: 나${p.vp} vs 상대${human.vp} (목표${targetScoreForMap(state.selectedMapId)})
+비용 - 도로:벽돌1나무1, 마을:벽돌1나무1양1밀1, 도시:밀2광석3${rejectHistory}
+
+거래 제안하려면: {"trade":true,"give":{"자원명":수},"want":{"자원명":수},"dialogue":"한마디(한국어15자)"}
+자원명은 brick/lumber/wool/grain/ore만 사용. 내가 주는 자원은 내가 가진 수량 이하, 내가 받을 자원은 상대가 가진 수량 이하로 제안.
+거래 안 하려면: {"trade":false,"dialogue":"한마디(한국어15자)"}`;
+      try {
+        const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
+          body: JSON.stringify({ model: "gpt-5.4-mini", messages: [{ role: "user", content: stateStr }], max_tokens: 150 })
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content || "";
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) return { trade: false, dialogue: text.slice(0, 30) };
+        const parsed = JSON.parse(jsonMatch[0]);
+        parsed.give = normalizeAITradeResources(parsed.give);
+        parsed.want = normalizeAITradeResources(parsed.want);
+        if (!parsed.trade || !isNonEmptyResourceBundle(parsed.give) || !isNonEmptyResourceBundle(parsed.want)) return { ...parsed, trade: false };
+        if (!canPlayerPayBundle(p, parsed.give) || !canPlayerPayBundle(human, parsed.want)) return { ...parsed, trade: false };
+        return parsed;
+      } catch (e) {
+        console.error("LLM trade error:", e);
+        return null;
+      }
+    }
+
+    async function sendAIMultiplayerTradeProposal(pIdx) {
+      if (!isMultiMode() || !mpState.isHost || !mpState.client) return false;
+      const p = state.players[pIdx];
+      const target = bestHumanTradeTargetForAI(pIdx);
+      if (!p || !target) return false;
+      const parsed = await aiTradeProposalFromLLM(pIdx, target.i);
+      if (!parsed || !parsed.trade) return false;
+      const offer = parsed.give;
+      const want = parsed.want;
+      if (!canPlayerPayBundle(p, offer)) return false;
+      const eligibleHuman = state.players.some((pl, i) => i !== pIdx && !pl?.isAI && canPlayerPayBundle(pl, want));
+      if (!eligibleHuman) return false;
+      const offerStr = RESOURCES.filter(r => offer[r] > 0).map(r => `${RESOURCE_ICONS[r]}×${offer[r]}`).join(" ");
+      const wantStr = RESOURCES.filter(r => want[r] > 0).map(r => `${RESOURCE_ICONS[r]}×${want[r]}`).join(" ");
+      const action = {
+        type: "TRADE_PROPOSE",
+        playerId: p.userId || p.id,
+        offer, want, offerStr, wantStr,
+        playerName: p.name,
+        actionId: `ai_trade_${Date.now()}_${pIdx}`,
+        __snapshot: createCatanStateSnapshot()
+      };
+      await mpState.client.sendAction(action);
+      addActivityLog("trade", `${p.name || "AI"} 거래 제안: ${offerStr} → ${wantStr}`);
+      Voice.ai("trade-propose", pIdx);
+      return true;
     }
 
     // ── LLM AI Trade ────────────────────────────────────────────────
