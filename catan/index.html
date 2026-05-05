@@ -1127,8 +1127,11 @@
       lastPlacedVertex: null,
       phaseBeforeKnight: null,
       tradeDialog: { open: false, give: null, get: null },
+      turnSeconds: 60,
       turnTimeLeft: 60,
       lastTurnTickSecond: null,
+      reactionTurnUsed: false,
+      dismissedWinner: false,
       selectedMapId: "standard",
       mapSelectSource: "single",
       _pendingHumanGold: 0,
@@ -1158,7 +1161,10 @@
       { id: "good", emoji: "👍", label: "좋아요", phrase: "좋아요", motion: "pop" },
       { id: "laugh", emoji: "😂", label: "웃기", phrase: "ㅋㅋ", motion: "pop" },
       { id: "wow", emoji: "😱", label: "놀람", phrase: "헉", motion: "shake" },
-      { id: "nice", emoji: "🎉", label: "칭찬", phrase: "나이스", motion: "celebrate" }
+      { id: "nice", emoji: "🎉", label: "칭찬", phrase: "나이스", motion: "celebrate" },
+      { id: "tired", emoji: "😵", label: "지쳤나요", phrase: "지쳤나요", motion: "shake" },
+      { id: "please", emoji: "🙏", label: "제발", phrase: "제발", motion: "pop" },
+      { id: "trade-bro", emoji: "🤝", label: "거래해줘 형님", phrase: "거래해줘 형님", motion: "wave" }
     ];
 
     function emptyResources() {
@@ -1206,8 +1212,11 @@
       state.lastPlacedVertex = null;
       state.phaseBeforeKnight = null;
       state.tradeDialog = { open: false, give: null, get: null };
-      state.turnTimeLeft = 60;
+      state.turnSeconds = clampTurnSeconds(state.turnSeconds || 60);
+      state.turnTimeLeft = state.turnSeconds;
       state.lastTurnTickSecond = null;
+      state.reactionTurnUsed = false;
+      state.dismissedWinner = false;
       state._pendingHumanGold = 0;
       state._pendingGains = null;
     }
@@ -1352,6 +1361,8 @@
 
     function initSingleGame(mapId = "standard") {
       resetCoreState();
+      state.turnSeconds = 60;
+      state.turnTimeLeft = state.turnSeconds;
       state.selectedMapId = mapId;
       applyResponsiveDefaults(true);
       setSinglePlayers();
@@ -2972,9 +2983,17 @@
       setTimeout(() => el.remove(), duration);
     }
 
+    function clampTurnSeconds(value) {
+      const n = Number(value) || 60;
+      const allowed = [30, 45, 60, 90, 120];
+      return allowed.includes(n) ? n : Math.min(120, Math.max(30, Math.round(n)));
+    }
+
     function onTurnStart(announce = true) {
-      state.turnTimeLeft = 60;
+      state.turnSeconds = clampTurnSeconds(state.turnSeconds || 60);
+      state.turnTimeLeft = state.turnSeconds;
       state.lastTurnTickSecond = null;
+      state.reactionTurnUsed = false;
       state.tradeRejectedThisTurn = false;
       cancelAutoEndTimer();
       closeTradeDialog();
@@ -3092,6 +3111,7 @@
         }
         const _initMapId = action.mapId || "standard";
         state.selectedMapId = _initMapId;
+        state.turnSeconds = clampTurnSeconds(action.turnSeconds || 60);
         generateBoard(clone(action.hexes || []), _initMapId);
         if (Array.isArray(action.ports) && action.ports.length) state.ports = action.ports;
         if (typeof action.robber === "number") {
@@ -3314,6 +3334,7 @@
         lastSetupVertex: state.lastSetupVertex,
         canEndTurn: state.canEndTurn,
         winner: state.winner,
+        turnSeconds: state.turnSeconds,
         roadBuildingRemaining: state.roadBuildingRemaining,
         lastDiceSum: state.lastDiceSum,
         lastDiceValues: state.lastDiceValues,
@@ -4481,6 +4502,12 @@
                 <button onclick="createRoom()">방 만들기</button>
               </div>
               <div class="multi-row">
+                <label for="turnSeconds">턴 시간</label>
+                <select id="turnSeconds" onchange="onTurnSecondsChange(this.value)">
+                  ${[30,45,60,90,120].map(v => `<option value="${v}" ${state.turnSeconds === v ? "selected" : ""}>${v}초</option>`).join("")}
+                </select>
+              </div>
+              <div class="multi-row">
                 <input id="roomCodeInput" value="${state.roomCodeInput}" placeholder="방 코드" oninput="onRoomCodeInput(this.value)">
                 <button onclick="joinRoom()">참가하기</button>
               </div>
@@ -4574,6 +4601,12 @@
                   ).join("")}
                 </select>
               </div>
+              <div class="multi-row" style="align-items:center;">
+                <label style="font-size:12px;color:var(--muted);white-space:nowrap;">턴 시간</label>
+                <select onchange="onTurnSecondsChange(this.value)" style="flex:1;min-width:0;">
+                  ${[30,45,60,90,120].map(v => `<option value="${v}" ${state.turnSeconds === v ? "selected" : ""}>${v}초</option>`).join("")}
+                </select>
+              </div>
               <div class="multi-row">
                 <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"}>게임 시작</button>
                 <button onclick="fillAIPlayers()">AI 채우기</button>
@@ -4590,6 +4623,28 @@
           </div>
         </div>
       `;
+    }
+
+    function renderWinnerModal() {
+      if (state.winner === null || state.winner === undefined || state.dismissedWinner) return "";
+      const winner = state.players[state.winner];
+      if (!winner) return "";
+      const isMe = state.winner === localPlayerIndex();
+      const prize = ((MAP_PRESETS[state.selectedMapId] || MAP_PRESETS.standard).stars || 1) * 1000000;
+      return `<div style="position:fixed;inset:0;z-index:10030;background:rgba(0,0,0,.58);display:flex;align-items:center;justify-content:center;padding:18px;">
+        <div style="width:min(360px,100%);background:linear-gradient(180deg,#172554,#0f172a);border:1px solid rgba(250,204,21,.55);border-radius:20px;padding:22px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.55);">
+          <div style="font-size:54px;line-height:1;">${isMe ? "🏆" : "🎉"}</div>
+          <div style="font-size:22px;font-weight:900;color:#fff;margin-top:8px;">${escapeHtml(winner.name)} 승리!</div>
+          <div style="font-size:13px;color:#cbd5e1;margin-top:8px;">${winner.vp}점으로 클리어 목표 ${targetScoreForMap(state.selectedMapId)}점 달성</div>
+          ${isMe ? `<div style="font-size:14px;color:#fde68a;margin-top:8px;">보상 +${prize.toLocaleString()}원</div>` : ""}
+          <button onclick="dismissWinnerModal()" style="margin-top:18px;width:100%;padding:12px;border-radius:12px;border:none;background:#facc15;color:#111827;font-weight:900;cursor:pointer;">닫기</button>
+        </div>
+      </div>`;
+    }
+
+    function dismissWinnerModal() {
+      state.dismissedWinner = true;
+      render();
     }
 
     function getHumanActionAvailability(me, myTurn) {
@@ -4619,7 +4674,7 @@
       const actionState = getHumanActionAvailability(me, myTurn);
       const vp = me?.vp || 0;
       const vpPct = Math.min(100, Math.max(0, vp * 10));
-      const turnPct = Math.min(100, Math.max(0, (state.turnTimeLeft / 60) * 100));
+      const turnPct = Math.min(100, Math.max(0, (state.turnTimeLeft / state.turnSeconds) * 100));
       const vpGoal = targetScoreForMap(state.selectedMapId);
       const vpPctFull = Math.min(100, Math.max(0, (vp / vpGoal) * 100));
       const devCardText = (me.devCards && me.devCards.length)
@@ -4653,6 +4708,7 @@
         <div class="status">${statusText()}</div>
         <div class="game-body">
           ${renderMap()}
+          ${renderWinnerModal()}
           <div class="hint-bar">${hintText}</div>
           <div class="panel-info">
             <div class="score-compact">
@@ -4855,6 +4911,7 @@
       setMultiplayerPlayers(fullPlayers);
       resetCoreState();
       const mapId = state.selectedMapId || mpState.mapId || mpState.room?.meta?.mapId || mpState.room?.config?.mapId || "standard";
+      state.turnSeconds = clampTurnSeconds(state.turnSeconds || mpState.room?.meta?.turnSeconds || mpState.room?.config?.turnSeconds || 60);
       generateBoard(null, mapId);
       recalcAllVP();
       mpState.initSent = true;
@@ -4866,6 +4923,7 @@
         edges: clone(state.edges),
         ports: clone(state.ports),
         robber: state.robber,
+        turnSeconds: state.turnSeconds,
         playerOrder: state.players.map(p => p.userId || p.id),
         players: state.players.map(p => ({ id: p.userId || p.id, userId: p.userId || p.id, name: p.name, color: p.color, isAI: !!p.isAI }))
       });
@@ -4921,7 +4979,8 @@
             emoji: data.emoji || emote.emoji,
             phrase: data.phrase || emote.phrase,
             motion: data.motion || emote.motion,
-            speak: idx !== localPlayerIndex()
+            speak: idx !== localPlayerIndex(),
+            localTts: data.localTts !== false
           });
           markActionProcessed(data.actionId);
           return;
@@ -4965,7 +5024,7 @@
       return REACTION_EMOTES.find(e => e.id === emoteId) || REACTION_EMOTES[0];
     }
 
-    function speakReaction(text) {
+    function speakReactionBrowser(text) {
       if (!soundSettings.voice || !text || !window.speechSynthesis) return;
       try {
         window.speechSynthesis.cancel();
@@ -4978,11 +5037,35 @@
       } catch (_) {}
     }
 
+    async function speakReactionWithLocalTTS(text) {
+      if (!soundSettings.voice || !text) return;
+      try {
+        const res = await fetch("https://llm.cocy.io/v1/audio/speech", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
+          body: JSON.stringify({ model: "cosyvoice", input: text, voice: "alloy", response_format: "mp3" })
+        });
+        if (!res.ok) throw new Error("tts failed");
+        const blob = await res.blob();
+        const audio = new Audio(URL.createObjectURL(blob));
+        audio.volume = Math.max(0, Math.min(1, soundSettings.voiceVol));
+        audio.onended = () => URL.revokeObjectURL(audio.src);
+        await audio.play();
+      } catch (_) {
+        speakReactionBrowser(text);
+      }
+    }
+
+    function speakReaction(text, localTts = true) {
+      if (localTts) speakReactionWithLocalTTS(text);
+      else speakReactionBrowser(text);
+    }
+
     function escapeHtml(value) {
       return String(value ?? "").replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
     }
 
-    function showReactionEmote({ playerName = "플레이어", emoji = "💬", phrase = "", motion = "pop", speak = true } = {}) {
+    function showReactionEmote({ playerName = "플레이어", emoji = "💬", phrase = "", motion = "pop", speak = true, localTts = true } = {}) {
       let el = document.getElementById("reaction-emote-overlay");
       if (el) el.remove();
       el = document.createElement("div");
@@ -5001,7 +5084,7 @@
         <div style="font-size:18px;font-weight:800;color:#fff;margin-top:2px;">${escapeHtml(phrase)}</div>
       </div>`;
       document.body.appendChild(el);
-      if (speak) speakReaction(phrase);
+      if (speak) speakReaction(phrase, localTts);
       setTimeout(() => { if (el.parentNode) el.remove(); }, 2300);
     }
 
@@ -5012,28 +5095,44 @@
       panel.id = "emotePanel";
       panel.style.cssText = "position:fixed;bottom:62px;right:8px;z-index:10010;width:min(320px,calc(100vw - 16px));background:#16213e;border:1px solid #334155;border-radius:14px;padding:12px;box-shadow:0 18px 40px rgba(0,0,0,.4);";
       panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><b>💬 리액션</b><button onclick="document.getElementById('emotePanel')?.remove()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">×</button></div>
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">내 턴마다 1번만 가능</div>
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-          ${REACTION_EMOTES.map(e => `<button onclick="sendReactionEmote('${e.id}')" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;text-align:left;cursor:pointer;"><span style="font-size:22px;vertical-align:middle;margin-right:6px;">${escapeHtml(e.emoji)}</span><span style="font-weight:700;">${escapeHtml(e.label)}</span><div style="font-size:11px;color:#9ca3af;margin-top:2px;">${escapeHtml(e.phrase)}</div></button>`).join("")}
+          ${REACTION_EMOTES.map(e => `<button onclick="sendReactionEmote('${e.id}')" ${(!isHumanTurn() || state.reactionTurnUsed) ? "disabled" : ""} style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;text-align:left;cursor:pointer;"><span style="font-size:22px;vertical-align:middle;margin-right:6px;">${escapeHtml(e.emoji)}</span><span style="font-weight:700;">${escapeHtml(e.label)}</span><div style="font-size:11px;color:#9ca3af;margin-top:2px;">${escapeHtml(e.phrase)}</div></button>`).join("")}
+          <button onclick="sendCustomReactionEmote()" ${(!isHumanTurn() || state.reactionTurnUsed) ? "disabled" : ""} style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;text-align:left;cursor:pointer;"><span style="font-size:22px;vertical-align:middle;margin-right:6px;">⌨️</span><span style="font-weight:700;">기타</span><div style="font-size:11px;color:#9ca3af;margin-top:2px;">직접 입력</div></button>
         </div>`;
       document.body.appendChild(panel);
       panel.addEventListener("click", e => e.stopPropagation());
       setTimeout(() => document.addEventListener("click", function close(){ panel.remove(); document.removeEventListener("click", close); }, { once: true }), 100);
     }
 
-    async function sendReactionEmote(emoteId) {
+    async function sendReactionPayload({ emoteId = "custom", emoji = "💬", phrase = "", motion = "pop", localTts = true } = {}) {
       const now = Date.now();
+      if (!isHumanTurn()) { showToast("리액션은 내 턴에만 가능해요.", 1200); return; }
+      if (state.reactionTurnUsed) { showToast("리액션은 턴마다 1번만 가능해요.", 1200); return; }
       if (now < (mpState.emoteCooldownUntil || 0)) { showToast("리액션은 잠깐 쉬었다가 보낼 수 있어요.", 1200); return; }
+      phrase = String(phrase || "").trim().slice(0, 30);
+      if (!phrase) return;
+      state.reactionTurnUsed = true;
       mpState.emoteCooldownUntil = now + 1500;
-      const emote = getReactionEmote(emoteId);
       const myIdx = localPlayerIndex();
       const me = state.players[myIdx] || { name: "나" };
-      const action = { type: ACTION.REACTION_EMOTE, emoteId: emote.id, emoji: emote.emoji, phrase: emote.phrase, motion: emote.motion, playerId: mpState.myUserId || me.userId || me.id || "local", actionId: nextActionId() };
-      showReactionEmote({ playerName: me.name || "나", emoji: emote.emoji, phrase: emote.phrase, motion: emote.motion });
+      const action = { type: ACTION.REACTION_EMOTE, emoteId, emoji, phrase, motion, localTts, playerId: mpState.myUserId || me.userId || me.id || "local", actionId: nextActionId() };
+      showReactionEmote({ playerName: me.name || "나", emoji, phrase, motion, localTts });
       document.getElementById("emotePanel")?.remove();
       if (isMultiMode() && mpState.client) {
         markActionProcessed(action.actionId);
         try { await mpState.client.sendAction(action); } catch (e) { showToast(`리액션 전송 실패: ${e.message || e}`, 1600); }
       }
+    }
+
+    async function sendReactionEmote(emoteId) {
+      const emote = getReactionEmote(emoteId);
+      return sendReactionPayload({ emoteId: emote.id, emoji: emote.emoji, phrase: emote.phrase, motion: emote.motion, localTts: true });
+    }
+
+    async function sendCustomReactionEmote() {
+      const phrase = prompt("읽을 문구를 입력하세요 (30자 이내)", "") || "";
+      return sendReactionPayload({ emoteId: "custom", emoji: "⌨️", phrase, motion: "pop", localTts: false });
     }
 
     async function refreshRoomState() {
@@ -5118,8 +5217,10 @@
     async function createRoom() {
       try {
         const mapId = state.selectedMapId || "standard";
+        const turnSeconds = (typeof clampTurnSeconds === "function" ? clampTurnSeconds(state.turnSeconds || 60) : (Number(state.turnSeconds) || 60));
+        state.turnSeconds = turnSeconds;
         const client = await ensureMp();
-        const room = await client.createRoom("catan", { maxPlayers: Number(state.maxPlayers) || 4, mapId, gameConfig: { mapId } });
+        const room = await client.createRoom("catan", { maxPlayers: Number(state.maxPlayers) || 4, mapId, gameConfig: { mapId, turnSeconds } });
         mpState.mapId = mapId;
         state.selectedMapId = mapId;
         mpState.roomCode = room.roomId || room.id || room.code || room.roomCode || "";
@@ -5326,6 +5427,11 @@
     function onMaxPlayersChange(value) {
       const n = Math.max(2, Math.min(4, Number(value) || 4));
       state.maxPlayers = n;
+      render();
+    }
+
+    function onTurnSecondsChange(value) {
+      state.turnSeconds = clampTurnSeconds(value);
       render();
     }
 
@@ -6040,6 +6146,9 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.humanTrade = humanTrade;
     window.showEmotePanel = showEmotePanel;
     window.sendReactionEmote = sendReactionEmote;
+    window.sendCustomReactionEmote = sendCustomReactionEmote;
+    window.dismissWinnerModal = dismissWinnerModal;
+    window.onTurnSecondsChange = onTurnSecondsChange;
     window.onResourceTap = onResourceTap;
     window.showManual = showManual;
     window.tradeAdjust = tradeAdjust;

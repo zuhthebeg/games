@@ -4,7 +4,7 @@ const assert = require('assert');
 const html = fs.readFileSync(__dirname + '/index.html', 'utf8');
 const start = html.indexOf('function renderRoomLobby()');
 if (start === -1) throw new Error('renderRoomLobby not found');
-const chunk = html.slice(start, start + 3200);
+const chunk = html.slice(start, start + 4500);
 
 const hostMapRowIndex = chunk.indexOf('label style="font-size:12px;color:var(--muted);white-space:nowrap;">맵');
 const startButtonIndex = chunk.indexOf('id="startBtn"');
