@@ -2825,10 +2825,13 @@
 
     function applyDiscardResources(playerIdx, resources) {
       const p = state.players[playerIdx];
+      let discarded = 0;
       for (const r of RESOURCES) {
         const amount = Math.max(0, Number(resources?.[r] || 0));
+        if (amount > 0) discarded += amount;
         p.resources[r] = Math.max(0, p.resources[r] - amount);
       }
+      if (discarded > 0) addActivityLog("robber", `${p.name || "플레이어"}가 은행에게 삥을 뜯겼습니다 (${discarded}장)`);
     }
 
     function stealFromVictim(thiefIdx, victimIdx, forcedResource = null) {
@@ -2869,7 +2872,7 @@
       const source = state.phase === "knight-robber" ? "기사" : "도둑";
       const hexLabel = getHexLabel(hexIndex);
       const detailMessage = formatRobberMoveMessage({ actorName, source, hexLabel, victimName, stolenResource: picked });
-      if (picked && victimName) addActivityLog("robber", `${victimName}가 ${source}에게 삥을 뜯겼습니다 (${RESOURCE_ICONS[picked] || picked} 1장)`);
+      if (picked && victimName) addActivityLog("robber", `${victimName}가 ${actorName}의 ${source}에게 삥을 뜯겼습니다 (${RESOURCE_ICONS[picked] || picked} 1장)`);
       showToast(`🦹 ${detailMessage}`, 2600, { bottom: 150 });
       if (picked && victimIdx === localPlayerIndex()) {
         const icon = RESOURCE_ICONS[picked] || picked;
@@ -5258,7 +5261,9 @@
       if (action.type === ACTION.MOVE_ROBBER) {
         // Detailed steal entries are written by moveRobber(); plain movement is intentionally quiet.
       }
-      else if (action.type === ACTION.DISCARD_RESOURCES) addActivityLog("robber", `${name} 자원 폐기`);
+      else if (action.type === ACTION.DISCARD_RESOURCES) {
+        // Bank shakedown entries are written by applyDiscardResources().
+      }
       else if (action.type === "TRADE_PROPOSE") addActivityLog("trade", `${name} 거래 제안: ${action.offerStr || describeResourceBundle(action.offer)} → ${action.wantStr || describeResourceBundle(action.want)}`);
       else if (action.type === "TRADE_ACCEPT") {
         // Completed trade details are written where the resource swap is applied.
