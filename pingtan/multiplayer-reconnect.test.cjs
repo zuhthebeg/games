@@ -15,7 +15,7 @@ assert(html.includes('function createpingtanStateSnapshot'), 'multiplayer action
 assert(html.includes('action.__snapshot = createpingtanStateSnapshot()'), 'sent game actions should include the latest post-action snapshot');
 assert(html.includes('function applypingtanStateSnapshot'), 'guest refresh should restore from a state snapshot before replaying later events');
 assert(html.includes('latestSnapshotEvent'), 'replay should prefer the newest snapshot instead of rebuilding from truncated event history');
-assert(html.includes('state.hint = "멀티플레이 복구 완료"'), 'restore should surface successful game restoration');
+assert(html.includes('state.hint = pt("multiplayerRecovered")'), 'restore should surface successful game restoration');
 assert(html.includes('config?.mapId') && html.includes('gameConfig?.mapId'), 'room state changes should preserve map id from room config/gameConfig');
 
 assert(mpClient.includes('stream?token=${encodeURIComponent(this.token)}&after=${encodeURIComponent(this.lastSeq || 0)}'), 'SSE should request only events after current seq');

@@ -37,7 +37,8 @@ const ctx = {
     lastDiceValues: null,
     players: [{ name: 'A' }, { name: '내차례' }]
   },
-  getCurrentPlayer: () => ({ name: '내차례' })
+  getCurrentPlayer: () => ({ name: '내차례' }),
+  pt: (key, vars = {}) => key === 'turnRollHint' ? `${vars.player}의 차례: 주사위를 굴리세요.` : key
 };
 vm.createContext(ctx);
 vm.runInContext(script, ctx);
