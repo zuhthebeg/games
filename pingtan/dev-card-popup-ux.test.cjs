@@ -6,7 +6,7 @@ const html = fs.readFileSync(__dirname + '/index.html', 'utf8');
 assert(html.includes('function myResourceSnapshotHtml'), 'dev card popups should render current owned resources');
 assert(html.includes('function resourceDeckStatusHtml'), 'dev card popups should render resource/card availability counts');
 assert(html.includes('const bank = bankRemaining(resource)'), 'popup resource counts should include the same bank remaining value as the game screen');
-assert(html.includes('내 ${owned}/${bank}'), 'popup resource counts should show owned/bank values like the game screen');
+assert(html.includes('pt("ownBankOpponents", { own: owned, bank, opponents: others })'), 'popup resource counts should show localized owned/bank values like the game screen');
 assert(html.includes('function monopolyGainPreview'), 'monopoly popup should preview how many cards can be stolen');
 assert(html.includes('모노폴리 선택 시 획득 예정'), 'monopoly popup should show hidden board counts inside the popup');
 assert(html.includes('풍년 선택'), 'year of plenty popup should show selected resources');

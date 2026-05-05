@@ -1198,7 +1198,45 @@
         noLog: "기록 없음",
         robberMove: "도둑 이동: 헥스를 선택하세요.",
         setupSettlement: "마을을 놓으세요",
-        setupRoad: "도로를 놓으세요"
+        setupRoad: "도로를 놓으세요",
+        trade: "거래",
+        tradeModalTitle: "거래",
+        giveResources: "줄 자원 ({count})",
+        wantResources: "받을 자원 ({count})",
+        cancel: "취소",
+        bankTrade: "은행",
+        proposeTrade: "제안",
+        tradeProposal: "거래 제안",
+        tradeGive: "줄게",
+        tradeWant: "받을래",
+        accept: "수락",
+        reject: "거절",
+        insufficientResources: "자원이 부족합니다",
+        myResourceSnapshot: "내가 가진 카드",
+        myResources: "내 자원: {resources}",
+        onAcceptDelta: "내 자원 (수락 시 증감)",
+        noTradeableAI: "거래 가능한 AI가 없습니다 (자원 부족)",
+        tradeProposalSending: "🤔 거래 제안 중...",
+        tradeOfferSent: "📢 거래 제안: {offer} ↔ {want}",
+        tradeOfferSendFailed: "거래 제안 전송 실패",
+        robberAppeared: "도둑 출현!",
+        robberToast: "🗡️ 강도가 나타났어요!",
+        robberSevenHint: "7이 나왔습니다. 자원 폐기 후 도둑을 이동하세요.",
+        discardCardsPrompt: "버릴 카드를 {count}장 선택하세요",
+        remainingPick: "남은 선택: {remaining}장 / 보유 {total}장",
+        heldCards: "보유 {count}",
+        leftCards: "남음 {left} / {total}",
+        confirmDiscard: "🗑 확정",
+        needMoreCards: "{remaining}장 더 필요",
+        chooseVictim: "누구의 자원을 뺏을까요?",
+        playerColor: "플레이어 색상",
+        cardsCount: "🃏 {count}장",
+        ownBankOpponents: "내 {own}/{bank} · 상대 {opponents}",
+        resBrick: "벽돌",
+        resLumber: "목재",
+        resWool: "양털",
+        resGrain: "곡물",
+        resOre: "광석"
       },
       en: {
         aiDifficulty: "AI difficulty",
@@ -1257,7 +1295,45 @@
         noLog: "No logs yet",
         robberMove: "Move robber: choose a hex.",
         setupSettlement: "Place a settlement",
-        setupRoad: "Place a road"
+        setupRoad: "Place a road",
+        trade: "Trade",
+        tradeModalTitle: "Trade",
+        giveResources: "Give ({count})",
+        wantResources: "Get ({count})",
+        cancel: "Cancel",
+        bankTrade: "Bank",
+        proposeTrade: "Offer",
+        tradeProposal: "Trade offer",
+        tradeGive: "They give",
+        tradeWant: "They want",
+        accept: "Accept",
+        reject: "Reject",
+        insufficientResources: "Not enough resources",
+        myResourceSnapshot: "Your cards",
+        myResources: "Your resources: {resources}",
+        onAcceptDelta: "Your resources after accepting",
+        noTradeableAI: "No AI can trade right now (missing resources)",
+        tradeProposalSending: "🤔 Sending trade offer...",
+        tradeOfferSent: "📢 Trade offer: {offer} ↔ {want}",
+        tradeOfferSendFailed: "Failed to send trade offer",
+        robberAppeared: "Robber appeared!",
+        robberToast: "🗡️ The robber is here!",
+        robberSevenHint: "You rolled 7. Discard resources, then move the robber.",
+        discardCardsPrompt: "Choose {count} cards to discard",
+        remainingPick: "Remaining: {remaining} / held {total}",
+        heldCards: "Held {count}",
+        leftCards: "Left {left} / {total}",
+        confirmDiscard: "🗑 Confirm",
+        needMoreCards: "Need {remaining} more",
+        chooseVictim: "Whose resource will you steal?",
+        playerColor: "Player color",
+        cardsCount: "🃏 {count} cards",
+        ownBankOpponents: "You {own}/{bank} · Others {opponents}",
+        resBrick: "Brick",
+        resLumber: "Lumber",
+        resWool: "Wool",
+        resGrain: "Grain",
+        resOre: "Ore"
       }
     };
     let PINGTAN_LANG = localStorage.getItem(PINGTAN_LANG_KEY) || ((navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en");
@@ -1268,6 +1344,17 @@
       for (const [k, v] of Object.entries(vars)) text = text.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
       return text;
     }
+    function resourceName(resource) {
+      const key = {
+        brick: "resBrick",
+        lumber: "resLumber",
+        wool: "resWool",
+        grain: "resGrain",
+        ore: "resOre"
+      }[resource];
+      return key ? pt(key) : (RESOURCE_NAMES[resource] || resource);
+    }
+
     function setPingtanLang(lang) {
       if (!PINGTAN_I18N[lang] || lang === PINGTAN_LANG) return;
       PINGTAN_LANG = lang;
@@ -2725,12 +2812,12 @@
 
     function handleSeven() {
       SFX.robber();
-      showToast("🗡️ 강도가 나타났어요!", 1600, { bottom: 150 });
-      showBigOverlay("🦹", "도둑 출현!", "robber-alert", 1200);
+      showToast(pt("robberToast"), 1600, { bottom: 150 });
+      showBigOverlay("🦹", pt("robberAppeared"), "robber-alert", 1200);
       Voice.human("seven");
       state.phase = "robber";
       state.canEndTurn = false;
-      state.hint = "7이 나왔습니다. 자원 폐기 후 도둑을 이동하세요.";
+      state.hint = pt("robberSevenHint");
     }
 
     function pickRandomDiscards(playerIdx, count) {
@@ -2761,9 +2848,9 @@
           const canConfirm = pickedCount === count;
           overlay.innerHTML = `
             <div style="background:#16213e;border:2px solid #b33838;border-radius:16px;padding:20px;max-width:380px;width:92%;text-align:center;color:#fff;">
-              <div style="font-size:18px;font-weight:700;margin-bottom:6px;">🦹 도둑 출현!</div>
-              <div style="font-size:13px;color:#fbbf24;margin-bottom:4px;">버릴 카드를 ${count}장 선택하세요</div>
-              <div style="font-size:11px;color:#9ca3af;margin-bottom:14px;">남은 선택: ${remaining}장 / 보유 ${initialTotal}장</div>
+              <div style="font-size:18px;font-weight:700;margin-bottom:6px;">🦹 ${pt("robberAppeared")}</div>
+              <div style="font-size:13px;color:#fbbf24;margin-bottom:4px;">${pt("discardCardsPrompt", { count })}</div>
+              <div style="font-size:11px;color:#9ca3af;margin-bottom:14px;">${pt("remainingPick", { remaining, total: initialTotal })}</div>
               <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
                 ${RESOURCES.map(r => {
                   const have = p.resources[r];
@@ -2774,14 +2861,14 @@
                   return `
                     <div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;">
                       <div style="font-size:18px;width:30px;">${RESOURCE_ICONS[r]}</div>
-                      <div style="flex:1;text-align:left;font-size:12px;">${RESOURCE_NAMES[r]}<div style="font-size:10px;color:#9ca3af;">남음 ${left} / ${have}</div></div>
+                      <div style="flex:1;text-align:left;font-size:12px;">${resourceName(r)}<div style="font-size:10px;color:#9ca3af;">${pt("leftCards", { left, total: have })}</div></div>
                       <button data-act="dec" data-res="${r}" ${decDis ? "disabled" : ""} style="width:32px;height:32px;border-radius:8px;border:1px solid #444;background:${decDis ? "#222" : "#3a1212"};color:#fff;font-size:16px;cursor:${decDis ? "not-allowed" : "pointer"};">−</button>
                       <div style="min-width:24px;font-size:14px;font-weight:700;color:#fca5a5;">${sel}</div>
                       <button data-act="inc" data-res="${r}" ${incDis ? "disabled" : ""} style="width:32px;height:32px;border-radius:8px;border:1px solid #444;background:${incDis ? "#222" : "#3a1212"};color:#fff;font-size:16px;cursor:${incDis ? "not-allowed" : "pointer"};">+</button>
                     </div>`;
                 }).join("")}
               </div>
-              <button data-act="confirm" ${canConfirm ? "" : "disabled"} style="padding:10px 20px;border-radius:10px;border:1px solid ${canConfirm ? "#ffd700" : "#444"};background:${canConfirm ? "#b33838" : "#222"};color:#fff;font-weight:700;cursor:${canConfirm ? "pointer" : "not-allowed"};font-size:14px;">${canConfirm ? "🗑 확정" : `${remaining}장 더 필요`}</button>
+              <button data-act="confirm" ${canConfirm ? "" : "disabled"} style="padding:10px 20px;border-radius:10px;border:1px solid ${canConfirm ? "#ffd700" : "#444"};background:${canConfirm ? "#b33838" : "#222"};color:#fff;font-weight:700;cursor:${canConfirm ? "pointer" : "not-allowed"};font-size:14px;">${canConfirm ? pt("confirmDiscard") : pt("needMoreCards", { remaining })}</button>
             </div>`;
         };
         overlay.addEventListener("click", e => {
@@ -3055,7 +3142,7 @@
       const p = state.players[playerIdx];
       if (!p) return "";
       return `<div style="margin:10px 0;padding:8px;border-radius:10px;background:rgba(255,255,255,0.06);font-size:11px;color:#cbd5e1;">
-        <div style="font-weight:800;color:#fff;margin-bottom:5px;">내가 가진 카드</div>
+        <div style="font-weight:800;color:#fff;margin-bottom:5px;">${pt("myResourceSnapshot")}</div>
         <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">${RESOURCES.map(r => `<span>${RESOURCE_ICONS[r]} ${p.resources[r] || 0}</span>`).join("")}</div>
       </div>`;
     }
@@ -3064,7 +3151,7 @@
       const owned = state.players[playerIdx]?.resources?.[resource] || 0;
       const others = state.players.reduce((sum, p, i) => i === playerIdx ? sum : sum + (p.resources?.[resource] || 0), 0);
       const bank = bankRemaining(resource);
-      return `<div style="font-size:10px;color:#9ca3af;margin-top:3px;">내 ${owned}/${bank} · 상대 ${others}</div>`;
+      return `<div style="font-size:10px;color:#9ca3af;margin-top:3px;">${pt("ownBankOpponents", { own: owned, bank, opponents: others })}</div>`;
     }
 
     function monopolyGainPreview(resource, playerIdx = localPlayerIndex()) {
@@ -4091,15 +4178,15 @@
         overlay.style.cssText = "position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);";
         overlay.innerHTML = `
           <div style="background:#16213e;border:2px solid #b33838;border-radius:16px;padding:20px;max-width:360px;width:92%;text-align:center;color:#fff;">
-            <div style="font-size:18px;font-weight:700;margin-bottom:12px;">🦹 누구의 자원을 뺏을까요?</div>
+            <div style="font-size:18px;font-weight:700;margin-bottom:12px;">🦹 ${pt("chooseVictim")}</div>
             <div style="display:flex;flex-direction:column;gap:10px;">
               ${list.map(vIdx => {
                 const p = state.players[vIdx];
                 const total = totalResourceCount(p);
                 const color = p.color || PLAYER_COLORS[vIdx] || "#fff";
                 return `<button data-victim="${vIdx}" style="padding:12px 16px;border-radius:10px;border:2px solid ${escapeHtml(color)};background:#1a1a2e;color:#fff;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;width:100%;">
-                  <span style="display:flex;align-items:center;gap:8px;font-weight:700;"><span aria-label="플레이어 색상" style="width:14px;height:14px;border-radius:50%;background:${escapeHtml(color)};box-shadow:0 0 0 2px rgba(255,255,255,.2);"></span>${escapeHtml(p.name)}</span>
-                  <span style="color:#fbbf24;">🃏 ${total}장</span>
+                  <span style="display:flex;align-items:center;gap:8px;font-weight:700;"><span aria-label="${pt("playerColor")}" style="width:14px;height:14px;border-radius:50%;background:${escapeHtml(color)};box-shadow:0 0 0 2px rgba(255,255,255,.2);"></span>${escapeHtml(p.name)}</span>
+                  <span style="color:#fbbf24;">${pt("cardsCount", { count: total })}</span>
                 </button>`;
               }).join("")}
             </div>
@@ -5234,7 +5321,7 @@ https://game.cocy.io/pingtan/`;
           <button class="${buildActionButtonClass("road")}" ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">${pt("road")}${getLongestRoadBadge(state.longestRoad === myIdx)}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
           <button class="${buildActionButtonClass("settlement")}" ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">${pt("settlement")}(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
           <button class="${buildActionButtonClass("city")}" ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">${pt("city")}(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
-          <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
+          <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">${pt("trade")}</button>
           <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">${pt("devCard")}${costLabel(COST.devCard, idx)}</button>
           <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "⚔️" : ""}</button>
           <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
@@ -5283,7 +5370,7 @@ https://game.cocy.io/pingtan/`;
         const max = type === "offer" ? (p.resources[r] || 0) : 99;
         const val = counts[r] || 0;
         return `<div style="display:flex;align-items:center;gap:4px;justify-content:space-between;padding:2px 0;">
-          <span style="font-size:13px;">${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]} ${type === "offer" ? "("+p.resources[r]+")" : ""}</span>
+          <span style="font-size:13px;">${RESOURCE_ICONS[r]} ${resourceName(r)} ${type === "offer" ? "("+pt("heldCards", { count: p.resources[r] })+")" : ""}</span>
           <span style="display:flex;gap:2px;align-items:center;">
             <button class="trade-option" style="padding:2px 8px;min-width:28px;" onclick="tradeAdjust('${type}','${r}',-1)" ${val <= 0 ? "disabled" : ""}>−</button>
             <span style="min-width:20px;text-align:center;font-weight:700;">${val}</span>
@@ -5300,21 +5387,21 @@ https://game.cocy.io/pingtan/`;
       return `
         <div class="trade-modal-overlay" onclick="cancelTradeDialog()">
           <div class="trade-modal" onclick="event.stopPropagation()" style="max-width:360px;">
-            <h3>💱 거래</h3>
+            <h3>💱 ${pt("tradeModalTitle")}</h3>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
               <div class="trade-section">
-                <div class="trade-section-title">📤 줄 자원 (${totalOffer})</div>
+                <div class="trade-section-title">📤 ${pt("giveResources", { count: totalOffer })}</div>
                 ${RESOURCES.map(r => resRow(r, td.offer, "offer")).join("")}
               </div>
               <div class="trade-section">
-                <div class="trade-section-title">📥 받을 자원 (${totalWant})</div>
+                <div class="trade-section-title">📥 ${pt("wantResources", { count: totalWant })}</div>
                 ${RESOURCES.map(r => resRow(r, td.want, "want")).join("")}
               </div>
             </div>
             <div class="trade-actions" style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
-              <button onclick="cancelTradeDialog()" style="flex:1;">취소</button>
-              <button class="primary" ${canBank ? "" : "disabled"} onclick="confirmBankTrade()" style="flex:1;">🏦 은행</button>
-              <button style="background:#6366f1;border-color:#6366f1;color:#fff;flex:1;" ${(totalOffer > 0 && totalWant > 0) ? "" : "disabled"} onclick="proposeTrade()">🤝 제안</button>
+              <button onclick="cancelTradeDialog()" style="flex:1;">${pt("cancel")}</button>
+              <button class="primary" ${canBank ? "" : "disabled"} onclick="confirmBankTrade()" style="flex:1;">🏦 ${pt("bankTrade")}</button>
+              <button style="background:#6366f1;border-color:#6366f1;color:#fff;flex:1;" ${(totalOffer > 0 && totalWant > 0) ? "" : "disabled"} onclick="proposeTrade()">🤝 ${pt("proposeTrade")}</button>
             </div>
           </div>
         </div>
@@ -6452,9 +6539,9 @@ https://game.cocy.io/pingtan/`;
           offerStr, wantStr,
           actionId: `trade_${Date.now()}`
         });
-        showToast(`📢 거래 제안: ${offerStr} ↔ ${wantStr}`, 3000);
+        showToast(pt("tradeOfferSent", { offer: offerStr, want: wantStr }), 3000);
       } catch(e) {
-        showToast("거래 제안 전송 실패", 2000);
+        showToast(pt("tradeOfferSendFailed"), 2000);
       }
     }
 
@@ -6503,14 +6590,14 @@ https://game.cocy.io/pingtan/`;
       const eligible = aiPlayers.filter(x => RESOURCES.every(r => (x.p.resources[r] || 0) >= (want[r] || 0)));
       
       if (!eligible.length) {
-        showToast("거래 가능한 AI가 없습니다 (자원 부족)", 2000);
+        showToast(pt("noTradeableAI"), 2000);
         state.tradeRejectedThisTurn = true;
         render();
         maybeAutoEndTurn();
         return;
       }
 
-      showToast("🤔 거래 제안 중...", 2000);
+      showToast(pt("tradeProposalSending"), 2000);
 
       // Parallel AI decisions. Local heuristic prevents LLM role confusion and makes fair trades feel alive.
       const results = await Promise.allSettled(eligible.map(async (target) => {
@@ -6803,41 +6890,41 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
               : `<div style="font-size:10px;color:transparent;">→</div>`;
             return `<div style="flex:1;background:${cellBg};border-radius:6px;padding:6px 2px;text-align:center;min-width:0;">
               <div style="font-size:16px;line-height:1;">${RESOURCE_ICONS[r]}</div>
-              <div style="font-size:10px;color:#9ca3af;margin-top:2px;">${RESOURCE_NAMES[r]}</div>
+              <div style="font-size:10px;color:#9ca3af;margin-top:2px;">${resourceName(r)}</div>
               <div style="font-size:16px;font-weight:800;color:${haveColor};margin-top:2px;">${have}</div>
               ${deltaLine || `<div style="font-size:10px;color:transparent;">·</div>`}
               ${afterLine}
             </div>`;
           }).join("");
           resourceBlock = `<div style="margin-bottom:10px;">
-            <div style="font-size:10px;color:#9ca3af;margin-bottom:4px;text-align:left;">내 자원 (수락 시 증감)</div>
+            <div style="font-size:10px;color:#9ca3af;margin-bottom:4px;text-align:left;">${pt("onAcceptDelta")}</div>
             <div style="display:flex;gap:3px;">${cells}</div>
           </div>`;
         } else if (myResStr) {
-          resourceBlock = `<div style="font-size:11px;color:#9ca3af;margin-bottom:10px;padding:4px 8px;background:rgba(255,255,255,0.05);border-radius:6px;">내 자원: ${myResStr}</div>`;
+          resourceBlock = `<div style="font-size:11px;color:#9ca3af;margin-bottom:10px;padding:4px 8px;background:rgba(255,255,255,0.05);border-radius:6px;">${pt("myResources", { resources: myResStr })}</div>`;
         }
 
         overlay.innerHTML = `
           <div style="background:#16213e;border:2px solid #4ecca3;border-radius:16px;padding:20px;max-width:380px;width:92%;text-align:center;">
-            <div style="font-size:14px;color:#9ca3af;margin-bottom:6px;">💱 거래 제안</div>
+            <div style="font-size:14px;color:#9ca3af;margin-bottom:6px;">💱 ${pt("tradeProposal")}</div>
             <div style="font-size:18px;font-weight:700;margin-bottom:12px;">${playerName}</div>
             <div style="display:flex;justify-content:center;gap:16px;margin-bottom:12px;">
               <div style="text-align:center;">
-                <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">줄게</div>
+                <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">${pt("tradeGive")}</div>
                 <div style="font-size:16px;font-weight:600;">${giveStr}</div>
               </div>
               <div style="font-size:24px;color:#4ecca3;">⇄</div>
               <div style="text-align:center;">
-                <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">받을래</div>
+                <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">${pt("tradeWant")}</div>
                 <div style="font-size:16px;font-weight:600;">${wantStr}</div>
               </div>
             </div>
             ${dialogue ? `<div style="font-size:13px;color:#ffd700;margin-bottom:8px;font-style:italic;">"${dialogue}"</div>` : ""}
             ${resourceBlock}
-            ${!canAccept ? `<div style="font-size:11px;color:#ef4444;margin-bottom:8px;">⚠️ 자원이 부족합니다</div>` : ""}
+            ${!canAccept ? `<div style="font-size:11px;color:#ef4444;margin-bottom:8px;">⚠️ ${pt("insufficientResources")}</div>` : ""}
             <div style="display:flex;gap:8px;">
-              <button id="tradeRejectBtn" style="flex:1;padding:10px;border-radius:10px;border:1px solid #ef4444;background:rgba(239,68,68,0.15);color:#ef4444;font-weight:700;cursor:pointer;font-size:14px;">❌ 거절</button>
-              ${canAccept ? `<button id="tradeAcceptBtn" style="flex:1;padding:10px;border-radius:10px;border:none;background:#4ecca3;color:#000;font-weight:700;cursor:pointer;font-size:14px;">✅ 수락</button>` : ""}
+              <button id="tradeRejectBtn" style="flex:1;padding:10px;border-radius:10px;border:1px solid #ef4444;background:rgba(239,68,68,0.15);color:#ef4444;font-weight:700;cursor:pointer;font-size:14px;">❌ ${pt("reject")}</button>
+              ${canAccept ? `<button id="tradeAcceptBtn" style="flex:1;padding:10px;border-radius:10px;border:none;background:#4ecca3;color:#000;font-weight:700;cursor:pointer;font-size:14px;">✅ ${pt("accept")}</button>` : ""}
             </div>
           </div>`;
         document.body.appendChild(overlay);
