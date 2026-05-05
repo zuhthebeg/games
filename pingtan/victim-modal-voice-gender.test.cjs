@@ -11,5 +11,8 @@ assert(html.includes('return p?.voice || (idx % 2 === 0 ? "ko-male" : "ko-female
 assert(html.includes('border:2px solid ${escapeHtml(color)}'), 'victim picker should show the target player color');
 assert(html.includes('background:${escapeHtml(color)}'), 'victim picker should render a player color chip');
 assert(html.includes('플레이어 색상'), 'victim picker should label the color chip for accessibility');
+assert(html.includes('function renderActivityMessage'), 'activity log should render colored player mentions');
+assert(html.includes('activity-player-mention'), 'activity log player mentions should use a dedicated styled span');
+assert(html.includes('color:${escapeHtml(p.color || PLAYER_COLORS[i] || "#fff")}'), 'activity log player mentions should use each player color');
 
 console.log('PASS pingtan victim modal color and voice gender');

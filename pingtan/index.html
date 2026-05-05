@@ -5283,13 +5283,32 @@
       return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
     }
 
+    function escapeRegExp(value) {
+      return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function renderActivityMessage(message) {
+      let html = escapeHtml(message);
+      const playersByName = state.players
+        .map((p, i) => ({ p, i, name: String(p?.name || "").trim() }))
+        .filter(x => x.name)
+        .sort((a, b) => b.name.length - a.name.length);
+      for (const { p, i, name } of playersByName) {
+        const color = p.color || PLAYER_COLORS[i] || "#fff";
+        const safeName = escapeHtml(name);
+        const mention = `<span class="activity-player-mention" style="color:${escapeHtml(p.color || PLAYER_COLORS[i] || "#fff")};font-weight:900;text-shadow:0 0 10px ${escapeHtml(color)}44;">${safeName}</span>`;
+        html = html.replace(new RegExp(escapeRegExp(safeName), "g"), mention);
+      }
+      return html;
+    }
+
     function renderActivityStatus() {
       const items = loadActivityLog();
       const latest = items[items.length - 1];
       const open = !!state.activityLogOpen;
       if (!latest && !open) return `<div class="activity-status"><button class="activity-status-toggle" onclick="toggleActivityLog()"><span>주요 로그</span><span class="activity-status-latest">거래/리액션/도둑/카드 기록</span><span>▾</span></button></div>`;
-      const entries = items.slice(-12).reverse().map(item => `<div class="activity-log-entry"><time>${activityTime(item.ts)}</time><div>${activityIcon(item.kind)} ${escapeHtml(item.message)}</div></div>`).join("");
-      return `<div class="activity-status"><button class="activity-status-toggle" onclick="toggleActivityLog()"><span>주요 로그</span><span class="activity-status-latest">${latest ? `${activityIcon(latest.kind)} ${escapeHtml(latest.message)}` : "기록 없음"}</span><span>${open ? "▴" : "▾"}</span></button>${open ? `<div class="activity-log">${entries || '<div class="activity-log-entry"><time>--:--</time><div>아직 기록 없음</div></div>'}</div>` : ""}</div>`;
+      const entries = items.slice(-12).reverse().map(item => `<div class="activity-log-entry"><time>${activityTime(item.ts)}</time><div>${activityIcon(item.kind)} ${renderActivityMessage(item.message)}</div></div>`).join("");
+      return `<div class="activity-status"><button class="activity-status-toggle" onclick="toggleActivityLog()"><span>주요 로그</span><span class="activity-status-latest">${latest ? `${activityIcon(latest.kind)} ${renderActivityMessage(latest.message)}` : "기록 없음"}</span><span>${open ? "▴" : "▾"}</span></button>${open ? `<div class="activity-log">${entries || '<div class="activity-log-entry"><time>--:--</time><div>아직 기록 없음</div></div>'}</div>` : ""}</div>`;
     }
 
     function toggleActivityLog() {
