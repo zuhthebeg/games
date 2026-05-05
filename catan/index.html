@@ -1948,27 +1948,30 @@
 
     function generatePorts(mapId = "standard") {
       const preset = resolveMapPreset(mapId);
-      // Find perimeter vertices (touching ≤ 2 hexes) sorted by angle from center
-      const perim = state.vertices
-        .filter(v => v.hexes.length <= 2)
-        .map(v => ({ idx: v.index, angle: Math.atan2(v.y, v.x) }))
-        .sort((a, b) => a.angle - b.angle);
-
       const portCount = preset.ports.pool.length;
-      const selectedVertexCount = portCount * 2;
-      const step = Math.floor(perim.length / selectedVertexCount);
-      const selected = [];
-      for (let i = 0; i < selectedVertexCount; i++) {
-        const vi = perim[(i * step) % perim.length];
-        selected.push(vi.idx);
-      }
+      // Official CATAN harbors sit in coves around the sea frame. Model that by
+      // choosing evenly spaced perimeter EDGES, not consecutive angle-sorted vertices.
+      const outerEdges = state.edges
+        .filter(e => e.hexes.length === 1)
+        .map(e => {
+          const a = state.vertices[e.a];
+          const b = state.vertices[e.b];
+          const x = (a.x + b.x) / 2;
+          const y = (a.y + b.y) / 2;
+          return { edge: e, angle: Math.atan2(y, x) };
+        })
+        .sort((a, b) => a.angle - b.angle);
+      if (!outerEdges.length || portCount <= 0) return [];
 
       const portTypes = shuffle(preset.ports.pool);
-
-      return portTypes.map((pt, i) => ({
-        ...pt,
-        vertices: [selected[i * 2], selected[i * 2 + 1]]
-      }));
+      const used = new Set();
+      return portTypes.map((pt, i) => {
+        let pos = Math.round((i * outerEdges.length) / portCount) % outerEdges.length;
+        while (used.has(pos)) pos = (pos + 1) % outerEdges.length;
+        used.add(pos);
+        const edge = outerEdges[pos].edge;
+        return { ...pt, vertices: [edge.a, edge.b] };
+      });
     }
 
     function buildGraph(hexes) {
