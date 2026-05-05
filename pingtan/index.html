@@ -1454,6 +1454,15 @@
       addActivityLog("system", localGameSettingsLabel("게임 옵션"));
     }
 
+    function addGameSettingsChangeLogs(previous, next) {
+      const prevTurn = clampTurnSeconds(previous?.turnSeconds || state.turnSeconds || 60);
+      const nextTurn = clampTurnSeconds(next?.turnSeconds || state.turnSeconds || 60);
+      const prevTarget = clampTargetScore(previous?.targetScore || state.targetScore || targetScoreForMap(state.selectedMapId));
+      const nextTarget = clampTargetScore(next?.targetScore || state.targetScore || targetScoreForMap(state.selectedMapId));
+      if (prevTurn !== nextTurn) addActivityLog("system", `턴 시간 변경: ${nextTurn}초`);
+      if (prevTarget !== nextTarget) addActivityLog("system", `승리 VP 변경: ${nextTarget}점`);
+    }
+
     function localPlayerIndex() {
       if (!isMultiMode()) return 0;
       return state.players.findIndex(p => p.userId === mpState.myUserId);
@@ -1985,6 +1994,7 @@
       const behavior = {
         "standard": "기본 삥탄 규칙. 좋은 숫자 주변을 선점하고 항구를 활용하세요.",
         "gold-rush": "금 타일에서 생산되면 원하는 자원으로 받을 수 있어요.",
+        "crescent-pingtan": "초승달 안쪽 바다 때문에 동쪽 루트가 끊깁니다. 외곽 도로와 항구를 먼저 잡으세요.",
         "twin-continents": "좁은 해협이 두 대륙을 가릅니다. 초반 도로 방향과 항구 선점이 중요해요.",
         "fog-islands": "해양 타일이 섬을 갈라 길 연결이 제한됩니다. 섬별 확장로를 먼저 확보하세요.",
         "prairie": "넓은 평원형 맵이라 전선이 길고 확장 경쟁이 빨라요.",
@@ -3380,13 +3390,17 @@
       }
       if (type === ACTION.GAME_SETTINGS) {
         if (isMultiMode() && hasAnyInitialSettlement()) return false;
+        const previousSettings = {
+          turnSeconds: action.previousTurnSeconds !== undefined ? action.previousTurnSeconds : state.turnSeconds,
+          targetScore: action.previousTargetScore !== undefined ? action.previousTargetScore : state.targetScore
+        };
         const nextTurnSeconds = action.turnSeconds !== undefined ? clampTurnSeconds(action.turnSeconds) : state.turnSeconds;
         const nextTargetScore = action.targetScore !== undefined ? clampTargetScore(action.targetScore) : state.targetScore;
         state.turnSeconds = nextTurnSeconds;
         state.targetScore = nextTargetScore;
         state.targetScoreCustom = true;
         if (state.turnTimeLeft > nextTurnSeconds) state.turnTimeLeft = nextTurnSeconds;
-        addActivityLog("system", localGameSettingsLabel("게임 옵션 변경"));
+        addGameSettingsChangeLogs(previousSettings, { turnSeconds: nextTurnSeconds, targetScore: nextTargetScore });
         return true;
       }
 
@@ -6475,17 +6489,20 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
         showToast(gameSettingsLockMessage(), 1400);
         return;
       }
+      const previousSettings = { turnSeconds: state.turnSeconds, targetScore: state.targetScore };
       if (key === "turnSeconds") state.turnSeconds = clampTurnSeconds(value);
       if (key === "targetScore") {
         state.targetScore = clampTargetScore(value);
         state.targetScoreCustom = true;
       }
       if (state.turnTimeLeft > state.turnSeconds) state.turnTimeLeft = state.turnSeconds;
-      if (!isMultiMode()) addActivityLog("system", localGameSettingsLabel("게임 옵션 변경"));
+      if (!isMultiMode()) addGameSettingsChangeLogs(previousSettings, { turnSeconds: state.turnSeconds, targetScore: state.targetScore });
       if (isMultiMode() && mpState.client) {
         const action = {
           type: ACTION.GAME_SETTINGS,
           playerId: mpState.myUserId || state.players[localPlayerIndex()]?.userId || "host",
+          previousTurnSeconds: previousSettings.turnSeconds,
+          previousTargetScore: previousSettings.targetScore,
           turnSeconds: state.turnSeconds,
           targetScore: state.targetScore,
           actionId: nextActionId(),
