@@ -1424,6 +1424,36 @@
       return state.mode === "multi";
     }
 
+    function hasAnyInitialSettlement() {
+      return Array.isArray(state.vertices) && state.vertices.some(v => v && v.building === "settlement");
+    }
+
+    function canEditGameSettings() {
+      if (!isMultiMode()) return true;
+      return !!mpState.isHost && state.phase === "setup1" && state.setupStep === "settlement" && !hasAnyInitialSettlement();
+    }
+
+    function gameSettingsLockMessage() {
+      if (!isMultiMode()) return "설정 변경은 즉시 적용됩니다.";
+      if (!mpState.isHost) return "멀티 게임 설정은 호스트만 변경할 수 있어요.";
+      if (!canEditGameSettings()) return "첫 마을 배치 후에는 게임 설정을 바꿀 수 없어요.";
+      return "첫 마을 배치 전까지만 변경 가능해요.";
+    }
+
+    function localGameSettingsLabel(prefix = "게임 옵션") {
+      return `${prefix}: 턴 ${clampTurnSeconds(state.turnSeconds || 60)}초 · 승리 ${targetScoreForMap(state.selectedMapId)}점`;
+    }
+
+    function localMapLabel() {
+      const preset = resolveMapPreset(state.selectedMapId || mpState.mapId || "standard");
+      return `맵: ${preset.name} — ${preset.description || "기본 규칙 맵"}`;
+    }
+
+    function addGameStartActivityLog() {
+      addActivityLog("system", localMapLabel());
+      addActivityLog("system", localGameSettingsLabel("게임 옵션"));
+    }
+
     function localPlayerIndex() {
       if (!isMultiMode()) return 0;
       return state.players.findIndex(p => p.userId === mpState.myUserId);
@@ -1950,6 +1980,28 @@
       return MAP_PRESETS[mapId] || MAP_PRESETS.standard;
     }
 
+    function describeMapForManual(mapId = state.selectedMapId || "standard") {
+      const preset = resolveMapPreset(mapId);
+      const behavior = {
+        "standard": "기본 삥탄 규칙. 좋은 숫자 주변을 선점하고 항구를 활용하세요.",
+        "gold-rush": "금 타일에서 생산되면 원하는 자원으로 받을 수 있어요.",
+        "twin-continents": "좁은 해협이 두 대륙을 가릅니다. 초반 도로 방향과 항구 선점이 중요해요.",
+        "fog-islands": "해양 타일이 섬을 갈라 길 연결이 제한됩니다. 섬별 확장로를 먼저 확보하세요.",
+        "prairie": "넓은 평원형 맵이라 전선이 길고 확장 경쟁이 빨라요.",
+        "mega-catan": "대형 보드라 승리 점수가 높고 장기전 확장 전략이 중요해요."
+      }[preset.id] || (preset.description || "맵 특성에 맞춰 확장 루트를 조정하세요.");
+      return { preset, behavior };
+    }
+
+    function renderMapManualSection() {
+      const { preset, behavior } = describeMapForManual(state.selectedMapId || mpState.mapId || "standard");
+      const vp = targetScoreForMap(preset.id);
+      return `<b>🗺️ 현재 맵: ${preset.name}</b><br>
+          ${preset.description || "기본 맵"}<br>
+          • 인원: ${preset.minPlayers || 2}–${preset.maxPlayers || 4}명 · 승리 ${vp}점 · 난이도 ${"★".repeat(preset.stars || 1)}<br>
+          • 동작: ${behavior}<br><br>`;
+    }
+
     function clampTargetScore(value) {
       const n = Number(value) || 10;
       return Math.min(20, Math.max(5, Math.round(n)));
@@ -2032,7 +2084,7 @@
     }
 
     function generateBoard(forcedHexes = null, mapId = "standard") {
-      if (forcedHexes) {
+      if (Array.isArray(forcedHexes) && forcedHexes.length) {
         state.hexes = forcedHexes.map(h => ({ ...h, robber: !!h.robber, vertices: [], edges: [] }));
       } else {
         state.hexes = buildHexesFromPreset(mapId);
@@ -3120,6 +3172,17 @@
       return allowed.includes(n) ? n : Math.min(120, Math.max(30, Math.round(n)));
     }
 
+    function normalizeTurnPhaseForDice() {
+      if (state.screen !== "game" || state.winner) return false;
+      if (state.phase !== "main") return false;
+      if (state.lastDiceSum || state.lastDiceValues) return false;
+      const current = getCurrentPlayer();
+      state.phase = "roll";
+      state.canEndTurn = false;
+      state.hint = `${current?.name || "플레이어"}의 차례: 주사위를 굴리세요.`;
+      return true;
+    }
+
     function onTurnStart(announce = true) {
       state.turnSeconds = clampTurnSeconds(state.turnSeconds || 60);
       state.turnTimeLeft = state.turnSeconds;
@@ -3203,6 +3266,7 @@
       if (turnTimerInterval) return;
       turnTimerInterval = setInterval(() => {
         if (state.screen !== "game" || state.winner !== null) return;
+        normalizeTurnPhaseForDice();
         if (!isHumanTurn()) return;
         if (state.turnTimeLeft > 0) {
           state.turnTimeLeft -= 1;
@@ -3252,6 +3316,7 @@
           if (state.robber >= 0 && state.hexes[state.robber]) state.hexes[state.robber].robber = true;
         }
         state.hint = "멀티플레이 시작: 초기 배치";
+        addGameStartActivityLog();
         onTurnStart(false);
         recalcAllVP();
         setTimeout(() => maybeAIIntroReaction(), 500);
@@ -3314,13 +3379,14 @@
         return endTurnInternal();
       }
       if (type === ACTION.GAME_SETTINGS) {
+        if (isMultiMode() && hasAnyInitialSettlement()) return false;
         const nextTurnSeconds = action.turnSeconds !== undefined ? clampTurnSeconds(action.turnSeconds) : state.turnSeconds;
         const nextTargetScore = action.targetScore !== undefined ? clampTargetScore(action.targetScore) : state.targetScore;
         state.turnSeconds = nextTurnSeconds;
         state.targetScore = nextTargetScore;
         state.targetScoreCustom = true;
         if (state.turnTimeLeft > nextTurnSeconds) state.turnTimeLeft = nextTurnSeconds;
-        addActivityLog("system", `설정 변경: 턴 ${nextTurnSeconds}초 · 승점 ${nextTargetScore}점`);
+        addActivityLog("system", localGameSettingsLabel("게임 옵션 변경"));
         return true;
       }
 
@@ -5016,6 +5082,7 @@
         const _st = _prev ? _prev.scrollTop : 0;
         const _prevAction = document.getElementById("panel-action");
         const _actionST = _prevAction ? _prevAction.scrollTop : 0;
+        normalizeTurnPhaseForDice();
         app.innerHTML = renderGameScreen();
         bindMapPanHandlers();
         const _wrap = document.getElementById("map-wrap");
@@ -5055,16 +5122,49 @@
       return mpState.client;
     }
 
+    function roomMapIdFromState(room, preferLocal = false) {
+      const localMapId = mpState.mapId || state.selectedMapId;
+      const roomMapId = room?.meta?.mapId || room?.mapId || room?.config?.mapId || room?.gameConfig?.mapId;
+      if (preferLocal && localMapId) return localMapId;
+      return roomMapId || localMapId || "standard";
+    }
+
+    function roomTurnSecondsFromState(room, preferLocal = false) {
+      const localTurnSeconds = state.turnSeconds;
+      const roomTurnSeconds = room?.meta?.turnSeconds || room?.config?.turnSeconds || room?.gameConfig?.turnSeconds;
+      if (preferLocal && localTurnSeconds) return clampTurnSeconds(localTurnSeconds);
+      return clampTurnSeconds(roomTurnSeconds || localTurnSeconds || 60);
+    }
+
+    function roomTargetScoreFromState(room, mapId, preferLocal = false) {
+      const localTargetScore = state.targetScore;
+      const roomTargetScore = room?.meta?.targetScore || room?.config?.targetScore || room?.gameConfig?.targetScore;
+      if (preferLocal && localTargetScore) return clampTargetScore(localTargetScore);
+      return clampTargetScore(roomTargetScore || localTargetScore || defaultTargetScoreForMap(mapId));
+    }
+
+    function catanRoomConfig() {
+      const mapId = state.selectedMapId || mpState.mapId || "standard";
+      const turnSeconds = clampTurnSeconds(state.turnSeconds || 60);
+      const targetScore = clampTargetScore(state.targetScore || defaultTargetScoreForMap(mapId));
+      return {
+        mapId,
+        gameConfig: { mapId, turnSeconds, targetScore }
+      };
+    }
+
     function onRoomStateChange(room) {
       if (!room) return;
       mpState.room = room;
       mpState.roomCode = room.id || room.roomId || mpState.roomCode;
-      const roomMapId = room.meta?.mapId || room.mapId || room.config?.mapId || "standard";
-      mpState.mapId = roomMapId;
-      state.selectedMapId = roomMapId;
       const me = room.players?.find(p => p.id === mpState.myUserId);
       mpState.isHost = !!me?.isHost;
       mpState.ready = !!me?.isReady;
+      const roomMapId = roomMapIdFromState(room, mpState.isHost);
+      mpState.mapId = roomMapId;
+      state.selectedMapId = roomMapId;
+      state.turnSeconds = roomTurnSecondsFromState(room, mpState.isHost);
+      state.targetScore = roomTargetScoreFromState(room, roomMapId, mpState.isHost);
       if (mpState.isHost) {
         const maxAi = Math.max(0, 4 - (room.players?.length || 0));
         mpState.aiPlayers = getLobbyAiPlayers().slice(0, maxAi);
@@ -5116,9 +5216,11 @@
       if (fullPlayers.length < 2 || (!allReady && !aiPlayers.length)) return;
       setMultiplayerPlayers(fullPlayers);
       resetCoreState();
-      const mapId = state.selectedMapId || mpState.mapId || mpState.room?.meta?.mapId || mpState.room?.config?.mapId || "standard";
-      state.turnSeconds = clampTurnSeconds(state.turnSeconds || mpState.room?.meta?.turnSeconds || mpState.room?.config?.turnSeconds || 60);
-      state.targetScore = clampTargetScore(state.targetScore || mpState.room?.meta?.targetScore || mpState.room?.config?.targetScore || defaultTargetScoreForMap(mapId));
+      const mapId = roomMapIdFromState(mpState.room, true);
+      state.selectedMapId = mapId;
+      mpState.mapId = mapId;
+      state.turnSeconds = roomTurnSecondsFromState(mpState.room, true);
+      state.targetScore = roomTargetScoreFromState(mpState.room, mapId, true);
       state.targetScoreCustom = true;
       generateBoard(null, mapId);
       recalcAllVP();
@@ -5558,10 +5660,12 @@
       if (!room) return false;
       mpState.room = room;
       mpState.roomCode = room.id || room.roomId || client.getRoomCode() || mpState.roomCode;
-      const roomMapId = room.meta?.mapId || room.mapId || room.config?.mapId || "standard";
+      const me = room.players?.find(p => p.id === mpState.myUserId);
+      const roomMapId = roomMapIdFromState(room, !!me?.isHost);
       mpState.mapId = roomMapId;
       state.selectedMapId = roomMapId;
-      const me = room.players?.find(p => p.id === mpState.myUserId);
+      state.turnSeconds = roomTurnSecondsFromState(room, !!me?.isHost);
+      state.targetScore = roomTargetScoreFromState(room, roomMapId, !!me?.isHost);
       mpState.isHost = !!me?.isHost;
       mpState.ready = !!me?.isReady;
       state.mode = "multi";
@@ -5588,13 +5692,14 @@
 
     async function createRoom() {
       try {
-        const mapId = state.selectedMapId || "standard";
-        const turnSeconds = (typeof clampTurnSeconds === "function" ? clampTurnSeconds(state.turnSeconds || 60) : (Number(state.turnSeconds) || 60));
-        const targetScore = (typeof clampTargetScore === "function" ? clampTargetScore(state.targetScore || defaultTargetScoreForMap(mapId)) : (Number(state.targetScore) || 10));
+        const config = catanRoomConfig();
+        const mapId = config.mapId;
+        const turnSeconds = config.gameConfig.turnSeconds;
+        const targetScore = config.gameConfig.targetScore;
         state.turnSeconds = turnSeconds;
         state.targetScore = targetScore;
         const client = await ensureMp();
-        const room = await client.createRoom("catan", { maxPlayers: Number(state.maxPlayers) || 4, mapId, gameConfig: { mapId, turnSeconds, targetScore } });
+        const room = await client.createRoom("catan", { maxPlayers: Number(state.maxPlayers) || 4, ...config });
         mpState.mapId = mapId;
         state.selectedMapId = mapId;
         mpState.roomCode = room.roomId || room.id || room.code || room.roomCode || "";
@@ -5729,6 +5834,7 @@
         onGameEvent: (type, data) => {
           // handled by onMpEvent via client
         },
+        getRoomConfig: () => catanRoomConfig(),
         onLeave: () => {
           mpState.client = null;
           catanMpUI = null;
@@ -6365,9 +6471,8 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     }
 
     async function updateGameSetting(key, value) {
-      const canEditGameSettings = !isMultiMode() || mpState.isHost;
-      if (!canEditGameSettings) {
-        showToast("게임 설정은 호스트만 변경할 수 있어요.", 1400);
+      if (!canEditGameSettings()) {
+        showToast(gameSettingsLockMessage(), 1400);
         return;
       }
       if (key === "turnSeconds") state.turnSeconds = clampTurnSeconds(value);
@@ -6376,6 +6481,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
         state.targetScoreCustom = true;
       }
       if (state.turnTimeLeft > state.turnSeconds) state.turnTimeLeft = state.turnSeconds;
+      if (!isMultiMode()) addActivityLog("system", localGameSettingsLabel("게임 옵션 변경"));
       if (isMultiMode() && mpState.client) {
         const action = {
           type: ACTION.GAME_SETTINGS,
@@ -6396,8 +6502,8 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       if (panel) { panel.remove(); return; }
       panel = document.createElement("div");
       panel.id = "soundPanel";
-      const canEditGameSettings = !isMultiMode() || mpState.isHost;
-      const disabledSettings = canEditGameSettings ? "" : "disabled";
+      const settingsEditable = canEditGameSettings();
+      const disabledSettings = settingsEditable ? "" : "disabled";
       panel.style.cssText = "position:fixed;bottom:60px;right:8px;background:#16213e;border:1px solid #334155;border-radius:12px;padding:12px;z-index:9990;width:260px;font-size:12px;max-height:calc(100vh - 76px);overflow-y:auto;";
       panel.innerHTML = `
         <div style="font-weight:700;margin-bottom:8px;">⚙️ 설정</div>
@@ -6414,7 +6520,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
             ${[5,7,10,12,15,20].map(v => `<option value="${v}" ${targetScoreForMap(state.selectedMapId) === v ? "selected" : ""}>${v}점</option>`).join("")}
           </select>
         </label>
-        <div style="font-size:10px;color:#9ca3af;margin-bottom:8px;">${canEditGameSettings ? "설정 변경은 다음 턴부터 적용됩니다." : "멀티 게임 설정은 호스트만 변경할 수 있어요."}</div>
+        <div style="font-size:10px;color:#9ca3af;margin-bottom:8px;">${gameSettingsLockMessage()}</div>
         <hr style="border:none;border-top:1px solid #334155;margin:8px 0;">
         <div style="font-size:10px;color:#9ca3af;margin-bottom:4px;">🔊 사운드</div>
         <label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer;">
@@ -6449,7 +6555,8 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
             <span style="font-size:16px;font-weight:700;">📖 삥탄 가이드</span>
             <button onclick="this.closest('div[style]').parentElement.remove()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>
           </div>
-          <b>🎯 목표</b>: 10점 먼저 달성!<br><br>
+          <b>🎯 목표</b>: 현재 맵의 승리 점수 먼저 달성!<br><br>
+          ${renderMapManualSection()}
           <b>📦 자원</b><br>
           🧱벽돌 🪵나무 🐑양 🌾밀 ⛏️광석<br><br>
           <b>🏗️ 건설 비용</b><br>

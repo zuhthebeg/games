@@ -83,13 +83,19 @@ assert(!html.includes('"☆".repeat'), 'map selection should not render empty st
 
 const selectionScript = [
   extractFunction('confirmMapSelect', 'renderMapSelect'),
-  extractFunction('createRoom', 'joinRoom', true),
-  extractFunction('onRoomStateChange', 'autoStartIfReady')
+  extractFunction('roomMapIdFromState', 'onRoomStateChange'),
+  extractFunction('onRoomStateChange', 'autoStartIfReady'),
+  extractFunction('catanRoomConfig', 'onRoomStateChange'),
+  extractFunction('createRoom', 'joinRoom', true)
 ].join('\n');
 
 const singleCtx = {
   state: { selectedMapId: 'twin-continents', mapSelectSource: 'single', maxPlayers: 4 },
   mpState: {},
+  clampTurnSeconds: (v) => Math.min(120, Math.max(30, Number(v) || 60)),
+  clampTargetScore: (v) => Math.min(20, Math.max(5, Number(v) || 10)),
+  defaultTargetScoreForMap: (mapId) => mapId === 'gold-rush' ? 12 : 10,
+
   ensureMp: async () => { throw new Error('ensureMp should not be called in single mode'); },
   startSingleCalledWith: null,
   startSingle: (mapId) => { singleCtx.startSingleCalledWith = mapId; },
@@ -101,8 +107,12 @@ singleCtx.confirmMapSelect();
 assert.equal(singleCtx.startSingleCalledWith, 'twin-continents', 'single-player confirm should start with selected map');
 
 const multiCtx = {
-  state: { selectedMapId: 'gold-rush', mapSelectSource: 'multi', maxPlayers: 4, mode: null, screen: null },
+  state: { selectedMapId: 'gold-rush', mapSelectSource: 'multi', maxPlayers: 4, mode: null, screen: null, turnSeconds: 60, targetScore: 12 },
   mpState: { waitingMessage: '' },
+  clampTurnSeconds: (v) => Math.min(120, Math.max(30, Number(v) || 60)),
+  clampTargetScore: (v) => Math.min(20, Math.max(5, Number(v) || 10)),
+  defaultTargetScoreForMap: (mapId) => mapId === 'gold-rush' ? 12 : 10,
+
   createdPayload: null,
   refreshCalls: 0,
   render() {},
@@ -121,8 +131,12 @@ vm.createContext(multiCtx);
 vm.runInContext(selectionScript, multiCtx);
 
 const joinerCtx = {
-  state: { selectedMapId: 'frontier-outback', screen: 'room-lobby', mode: 'multi', hint: '' },
+  state: { selectedMapId: 'frontier-outback', screen: 'room-lobby', mode: 'multi', hint: '', turnSeconds: 60, targetScore: 10 },
   mpState: { myUserId: 'guest-1', mapId: 'frontier-outback', waitingMessage: '', aiPlayers: [] },
+  clampTurnSeconds: (v) => Math.min(120, Math.max(30, Number(v) || 60)),
+  clampTargetScore: (v) => Math.min(20, Math.max(5, Number(v) || 10)),
+  defaultTargetScoreForMap: (mapId) => mapId === 'gold-rush' ? 12 : 10,
+
   getLobbyAiPlayers: () => [],
   autoStartIfReady() {},
   render() {}
