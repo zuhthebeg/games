@@ -5644,7 +5644,7 @@ https://game.cocy.io/pingtan/`;
       let html = escapeHtml(message);
       const playersByName = state.players
         .map((p, i) => ({ p, i, name: String(p?.name || "").trim() }))
-        .filter(x => x.name)
+        .filter(x => x.name && x.name.length >= 2)
         .sort((a, b) => b.name.length - a.name.length);
       for (const { p, i, name } of playersByName) {
         const color = p.color || PLAYER_COLORS[i] || "#fff";

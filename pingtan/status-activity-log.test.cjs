@@ -15,6 +15,7 @@ assert(html.includes('renderActivityStatus()'), 'game screen should use the new 
 assert(!html.includes('<div class="status">${statusText()}</div>'), 'A area should not duplicate the full B turn/status text');
 assert(html.includes('showReactionEmote({'), 'reaction display path should still exist');
 assert(html.includes('addActivityLog("reaction"'), 'reactions should be displayed in A activity log');
+assert(html.includes('name.length >= 2'), 'activity player highlighting should ignore one-character names like 나 to avoid coloring words such as 지쳤나요');
 assert(html.includes('거래 완료'), 'completed trades should be shown as completed trade entries in A activity log');
 assert(html.includes('삥을 뜯겼습니다'), 'robber/knight steal events should show the victim got shaken down in A activity log');
 assert(html.includes('${victimName}가 ${actorName}의 ${source}에게 삥을 뜯겼습니다'), 'robber/knight steal entries should name the actor who caused the shakedown');
