@@ -281,7 +281,8 @@
         let nextDirection = { x: 1, y: 0 };
         let score = 0;
         let goldEarned = 0;
-        let goldPerFood = 100;  // 2배씩 증가: 100, 200, 400, 800...
+        let goldPerFood = 100;  // 2배씩 증가하되 먹이 1개당 최대 1,000,000G
+        const MAX_GOLD_PER_FOOD = 1000000;
         let gameLoop = null;
         let gameRunning = false;
 
@@ -374,11 +375,12 @@
             // Eat food
             if (head.x === food.x && head.y === food.y) {
                 score++;
-                goldEarned += goldPerFood;
-                SharedWallet.addGold(goldPerFood);
-                showGoldPopup(head.x * CELL_SIZE + CELL_SIZE/2, head.y * CELL_SIZE, goldPerFood);
+                const earnedGold = Math.min(goldPerFood, MAX_GOLD_PER_FOOD);
+                goldEarned += earnedGold;
+                SharedWallet.addGold(earnedGold);
+                showGoldPopup(head.x * CELL_SIZE + CELL_SIZE/2, head.y * CELL_SIZE, earnedGold);
                 playEatSound(score);
-                goldPerFood *= 2;  // 다음 먹이는 2배
+                goldPerFood = Math.min(goldPerFood * 2, MAX_GOLD_PER_FOOD);  // 다음 먹이는 2배, 최대 100만원
                 updateStats();
                 spawnFood();
             } else {
@@ -524,7 +526,7 @@
             }
         });
         
-        // Drag/tap controls: horizontal drag rotates left/right, short tap rotates clockwise.
+        // Drag/tap controls: drag maps to absolute up/down/left/right when legal, short tap rotates clockwise.
         const SWIPE_THRESHOLD = 24;
         let pointerStartX = null;
         let pointerStartY = null;
@@ -535,16 +537,23 @@
             container.setPointerCapture?.(e.pointerId);
         }, { passive: true });
         
+        function directionFromDrag(dx, dy) {
+            if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) return null;
+            if (Math.abs(dx) >= Math.abs(dy)) return { x: dx > 0 ? 1 : -1, y: 0 };
+            return { x: 0, y: dy > 0 ? 1 : -1 };
+        }
+
         container.addEventListener('pointerup', (e) => {
             if (pointerStartX === null || pointerStartY === null) return;
             
             const dx = e.clientX - pointerStartX;
             const dy = e.clientY - pointerStartY;
+            const dragDir = directionFromDrag(dx, dy);
             
-            if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) {
+            if (!dragDir) {
                 rotateDirection(true);
-            } else if (Math.abs(dx) >= Math.abs(dy)) {
-                rotateDirection(dx > 0);
+            } else {
+                setDirection(dragDir.x, dragDir.y);
             }
             
             pointerStartX = null;

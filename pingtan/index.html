@@ -1245,12 +1245,22 @@
       return { brick: 0, lumber: 0, wool: 0, grain: 0, ore: 0 };
     }
 
+    function inferVoiceFromName(name = "") {
+      const text = String(name || "").toLowerCase();
+      const femaleNameHints = ["여", "녀", "girl", "female", "woman", "queen", "princess", "공주", "여왕", "누나", "언니", "엄마", "맘", "mom", "sister", "chu", "유나", "서연", "지우", "하윤", "민지", "수아", "지민"];
+      const maleNameHints = ["남", "boy", "male", "man", "king", "prince", "왕", "형", "오빠", "아빠", "dad", "bro", "cocy", "철수", "민준", "서준", "도윤", "지호", "현우"];
+      if (femaleNameHints.some(hint => text.includes(hint))) return "ko-female";
+      if (maleNameHints.some(hint => text.includes(hint))) return "ko-male";
+      return null;
+    }
+
     function makePlayer(base) {
       return {
         id: base.id,
         userId: base.userId || null,
         name: base.name,
         color: base.color,
+        voice: inferVoiceFromName(base.name || base.nickname || ""),
         isAI: !!base.isAI,
         resources: emptyResources(),
         buildings: [],
@@ -3794,8 +3804,9 @@
               ${list.map(vIdx => {
                 const p = state.players[vIdx];
                 const total = totalResourceCount(p);
-                return `<button data-victim="${vIdx}" style="padding:12px 16px;border-radius:10px;border:2px solid #555;background:#1a1a2e;color:#fff;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;width:100%;">
-                  <span style="font-weight:700;">${p.name}</span>
+                const color = p.color || PLAYER_COLORS[vIdx] || "#fff";
+                return `<button data-victim="${vIdx}" style="padding:12px 16px;border-radius:10px;border:2px solid ${escapeHtml(color)};background:#1a1a2e;color:#fff;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;width:100%;">
+                  <span style="display:flex;align-items:center;gap:8px;font-weight:700;"><span aria-label="플레이어 색상" style="width:14px;height:14px;border-radius:50%;background:${escapeHtml(color)};box-shadow:0 0 0 2px rgba(255,255,255,.2);"></span>${escapeHtml(p.name)}</span>
                   <span style="color:#fbbf24;">🃏 ${total}장</span>
                 </button>`;
               }).join("")}
@@ -5202,8 +5213,11 @@
     function reactionVoiceForPlayer(playerIdxOrVoice) {
       if (playerIdxOrVoice === "ko-male" || playerIdxOrVoice === "ko-female") return playerIdxOrVoice;
       const idx = Number(playerIdxOrVoice);
-      if (Number.isFinite(idx)) return idx % 2 === 0 ? "ko-male" : "ko-female";
-      return "ko-male";
+      if (Number.isFinite(idx)) {
+        const p = state.players[idx];
+        return p?.voice || (idx % 2 === 0 ? "ko-male" : "ko-female");
+      }
+      return inferVoiceFromName(playerIdxOrVoice) || "ko-male";
     }
 
     async function speakReactionWithLocalTTS(text, playerVoice = "ko-male") {
