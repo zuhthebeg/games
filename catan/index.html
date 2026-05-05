@@ -3283,6 +3283,15 @@
       return true;
     }
 
+    function recoverFromActionSnapshot(snapshot, actionType = "") {
+      const recovered = applyCatanStateSnapshot(snapshot);
+      if (!recovered) return false;
+      state.hint = actionType === ACTION.END_TURN
+        ? "턴 동기화 복구 완료."
+        : "게임 상태 동기화 복구 완료.";
+      return true;
+    }
+
     async function sendGameAction(type, payload) {
       const action = { type, ...payload, actionId: nextActionId() };
       const applied = applyGameAction(action);
@@ -4854,6 +4863,12 @@
         dbg(`[MP] action: ${data.type} id:${data.actionId||"?"}`);
         console.log("[onMpEvent] applying:", data.type, data);
         const ok = applyGameAction(data);
+        if (!ok && data.__snapshot && recoverFromActionSnapshot(data.__snapshot, data.type)) {
+          markActionProcessed(data.actionId);
+          render();
+          triggerAITurnIfNeeded();
+          return;
+        }
         if (ok) {
           markActionProcessed(data.actionId);
           render();
