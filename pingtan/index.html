@@ -1204,7 +1204,9 @@
       selectedMapId: "standard",
       mapSelectSource: "single",
       _pendingHumanGold: 0,
-      _pendingGains: null
+      _pendingGains: null,
+      _aiReactionCooldownUntil: 0,
+      _aiIntroDone: false
     };
 
     const mpState = {
@@ -1225,6 +1227,7 @@
     };
 
     const CATAN_ACTIVITY_LOG_LIMIT = 40;
+    const AI_REACTION_COOLDOWN_MS = 25000;
 
     const REACTION_EMOTES = [
       { id: "hurry", emoji: "⏰", label: "재촉하기", phrase: "빨리해!", motion: "shake" },
@@ -1291,6 +1294,8 @@
       clearActivityLog();
       state._pendingHumanGold = 0;
       state._pendingGains = null;
+      state._aiReactionCooldownUntil = 0;
+      state._aiIntroDone = false;
     }
 
     const RESOURCE_NAMES = {
@@ -1446,6 +1451,7 @@
       state.screen = "game";
       state.hint = "초기 배치: 마을을 놓으세요";
       render();
+      maybeAIIntroReaction();
       triggerAITurnIfNeeded();
     }
 
@@ -3218,6 +3224,7 @@
         state.hint = "멀티플레이 시작: 초기 배치";
         onTurnStart(false);
         recalcAllVP();
+        setTimeout(() => maybeAIIntroReaction(), 500);
         return true;
       }
 
@@ -4761,13 +4768,38 @@
           <div style="font-size:22px;font-weight:900;color:#fff;margin-top:8px;">${escapeHtml(winner.name)} 승리!</div>
           <div style="font-size:13px;color:#cbd5e1;margin-top:8px;">${winner.vp}점으로 클리어 목표 ${targetScoreForMap(state.selectedMapId)}점 달성</div>
           ${isMe ? `<div style="font-size:14px;color:#fde68a;margin-top:8px;">보상 +${prize.toLocaleString()}원</div>` : ""}
-          <button onclick="dismissWinnerModal()" style="margin-top:18px;width:100%;padding:12px;border-radius:12px;border:none;background:#facc15;color:#111827;font-weight:900;cursor:pointer;">닫기</button>
+          <button onclick="${isMultiMode() ? "returnToRoomForRematch()" : "rematchSingleGame()"}" style="margin-top:18px;width:100%;padding:12px;border-radius:12px;border:none;background:#facc15;color:#111827;font-weight:900;cursor:pointer;">${isMultiMode() ? "방으로 돌아가기" : "다시 하기"}</button>
+          <button onclick="dismissWinnerModal()" style="margin-top:8px;width:100%;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e5e7eb;font-weight:800;cursor:pointer;">닫기</button>
         </div>
       </div>`;
     }
 
     function dismissWinnerModal() {
       state.dismissedWinner = true;
+      render();
+    }
+
+    function rematchSingleGame() {
+      const mapId = state.selectedMapId || "standard";
+      startSingle(mapId);
+    }
+
+    async function returnToRoomForRematch() {
+      if (!isMultiMode() || !mpState.client) { rematchSingleGame(); return; }
+      const keepRoomCode = mpState.roomCode;
+      const keepMapId = state.selectedMapId || mpState.mapId || "standard";
+      try { await mpState.client.rematch?.(); } catch (_) {}
+      resetCoreState();
+      state.mode = "multi";
+      state.screen = "room-lobby";
+      state.selectedMapId = keepMapId;
+      mpState.roomCode = keepRoomCode;
+      mpState.ready = false;
+      mpState.startRequested = false;
+      mpState.initSent = false;
+      mpState.processedActionIds = new Set();
+      mpState.waitingMessage = "리매치 대기실로 돌아왔습니다.";
+      try { await refreshRoomState(); } catch (_) {}
       render();
     }
 
@@ -5111,6 +5143,7 @@
             playerVoice: data.playerVoice || reactionVoiceForPlayer(idx)
           });
           markActionProcessed(data.actionId);
+          if (!player?.isAI) maybeAIReactToHumanReaction({ emoji: data.emoji || emote.emoji, phrase: data.phrase || emote.phrase, sourcePlayerIdx: idx });
           return;
         }
         if (data.type === "LOBBY_AI_STATE") {
@@ -5278,6 +5311,84 @@
       if (speak) speakReaction(phrase, localTts, playerVoice);
     }
 
+    function canAIReactNow() {
+      if (mpState.replaying || state.screen !== "game" || state.winner !== null) return false;
+      if (Date.now() < Number(state._aiReactionCooldownUntil || 0)) return false;
+      if (isMultiMode() && !mpState.isHost) return false;
+      return state.players.some(p => p && p.isAI);
+    }
+
+    function fallbackAIReaction(context = {}) {
+      const phrase = String(context.phrase || "");
+      if (phrase.includes("거래")) return { emoji: "🤝", phrase: "조건 봐줄게", motion: "wave" };
+      if (phrase.includes("빨리") || phrase.includes("재촉")) return { emoji: "⏰", phrase: "알았어", motion: "shake" };
+      if (phrase.includes("ㅋㅋ") || phrase.includes("웃")) return { emoji: "😂", phrase: "ㅋㅋ", motion: "pop" };
+      return { emoji: "👀", phrase: "봤어", motion: "pop" };
+    }
+
+    async function getAIReactionWithLLM(aiPlayer, context = {}) {
+      const prompt = `삥탄 보드게임 AI 리액션 JSON만 답해. 너는 "${aiPlayer?.name || "AI"}".
+상황: ${context.kind || "user-reaction"}
+유저 리액션: ${context.emoji || "💬"} ${context.phrase || ""}
+조건: 한국어 2~12자, 너무 자주 말하지 말고 자연스럽게. emoji는 하나. motion은 pop/wave/shake/celebrate 중 하나.
+리액션 JSON: {"emoji":"👋","phrase":"잘 부탁해","motion":"wave"}`;
+      try {
+        const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
+          body: JSON.stringify({ model: "gpt-5.4-mini", messages: [{ role: "user", content: prompt }], max_tokens: 80 })
+        });
+        if (!res.ok) throw new Error("llm reaction failed");
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content || "";
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+        const phrase = String(parsed?.phrase || "").trim().slice(0, 12);
+        if (!phrase) throw new Error("empty ai reaction");
+        return {
+          emoji: String(parsed.emoji || "💬").trim().slice(0, 4) || "💬",
+          phrase,
+          motion: ["pop", "wave", "shake", "celebrate"].includes(parsed.motion) ? parsed.motion : "pop"
+        };
+      } catch (_) {
+        return fallbackAIReaction(context);
+      }
+    }
+
+    async function sendAIReactionPayload(aiIdx, reaction, kind = "ai-reaction") {
+      const aiPlayer = state.players[aiIdx];
+      if (!aiPlayer || !aiPlayer.isAI || !reaction?.phrase) return;
+      state._aiReactionCooldownUntil = Date.now() + AI_REACTION_COOLDOWN_MS + Math.floor(Math.random() * 8000);
+      const playerVoice = reactionVoiceForPlayer(aiIdx);
+      showReactionEmote({ playerName: aiPlayer.name || "AI", emoji: reaction.emoji || "💬", phrase: reaction.phrase, motion: reaction.motion || "pop", localTts: true, playerVoice });
+      if (isMultiMode() && mpState.client) {
+        const action = { type: ACTION.REACTION_EMOTE, emoteId: kind, emoji: reaction.emoji || "💬", phrase: reaction.phrase, motion: reaction.motion || "pop", localTts: true, playerVoice, playerId: aiPlayer.userId || aiPlayer.id, actionId: nextActionId() };
+        markActionProcessed(action.actionId);
+        try { await mpState.client.sendAction(action); } catch (_) {}
+      }
+    }
+
+    async function maybeAIReactToHumanReaction(context = {}) {
+      if (!canAIReactNow()) return;
+      if (context.sourcePlayerIdx !== undefined && state.players[context.sourcePlayerIdx]?.isAI) return;
+      if (Math.random() > 0.32) return;
+      const aiList = state.players.map((p, i) => ({ p, i })).filter(x => x.p?.isAI);
+      if (!aiList.length) return;
+      const pick = aiList[Math.floor(Math.random() * aiList.length)];
+      const reaction = await getAIReactionWithLLM(pick.p, { ...context, kind: "user-reaction" });
+      await sendAIReactionPayload(pick.i, reaction, "ai-reply");
+    }
+
+    async function maybeAIIntroReaction() {
+      if (state._aiIntroDone || !canAIReactNow()) return;
+      state._aiIntroDone = true;
+      const aiList = state.players.map((p, i) => ({ p, i })).filter(x => x.p?.isAI);
+      if (!aiList.length) return;
+      const pick = aiList[0];
+      const reaction = await getAIReactionWithLLM(pick.p, { kind: "intro", emoji: "👋", phrase: "게임 시작 인사" });
+      await sendAIReactionPayload(pick.i, reaction, "ai-intro");
+    }
+
     function showEmotePanel() {
       let panel = document.getElementById("emotePanel");
       if (panel) { panel.remove(); return; }
@@ -5306,6 +5417,7 @@
       const playerVoice = reactionVoiceForPlayer(myIdx);
       const action = { type: ACTION.REACTION_EMOTE, emoteId, emoji, phrase, motion, localTts, playerVoice, playerId: mpState.myUserId || me.userId || me.id || "local", actionId: nextActionId() };
       showReactionEmote({ playerName: me.name || "나", emoji, phrase, motion, localTts, playerVoice });
+      maybeAIReactToHumanReaction({ emoji, phrase, sourcePlayerIdx: myIdx });
       document.getElementById("emotePanel")?.remove();
       if (isMultiMode() && mpState.client) {
         markActionProcessed(action.actionId);
@@ -6391,6 +6503,8 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.sendReactionEmote = sendReactionEmote;
     window.sendCustomReactionEmote = sendCustomReactionEmote;
     window.dismissWinnerModal = dismissWinnerModal;
+    window.rematchSingleGame = rematchSingleGame;
+    window.returnToRoomForRematch = returnToRoomForRematch;
     window.onTurnSecondsChange = onTurnSecondsChange;
     window.onTargetScoreChange = onTargetScoreChange;
     window.onResourceTap = onResourceTap;
