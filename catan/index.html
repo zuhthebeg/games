@@ -1128,6 +1128,7 @@
       phaseBeforeKnight: null,
       tradeDialog: { open: false, give: null, get: null },
       turnTimeLeft: 60,
+      lastTurnTickSecond: null,
       selectedMapId: "standard",
       mapSelectSource: "single",
       _pendingHumanGold: 0,
@@ -1206,6 +1207,7 @@
       state.phaseBeforeKnight = null;
       state.tradeDialog = { open: false, give: null, get: null };
       state.turnTimeLeft = 60;
+      state.lastTurnTickSecond = null;
       state._pendingHumanGold = 0;
       state._pendingGains = null;
     }
@@ -2972,6 +2974,7 @@
 
     function onTurnStart(announce = true) {
       state.turnTimeLeft = 60;
+      state.lastTurnTickSecond = null;
       state.tradeRejectedThisTurn = false;
       cancelAutoEndTimer();
       closeTradeDialog();
@@ -3035,6 +3038,18 @@
       }, 1800);
     }
 
+    function maybePlayTurnTimerTick() {
+      if (!soundSettings.sfx) return;
+      if (state.screen !== "game" || state.winner !== null) return;
+      if (!isHumanTurn()) return;
+      if (state.lastTurnTickSecond === state.turnTimeLeft) return;
+      state.lastTurnTickSecond = state.turnTimeLeft;
+      const urgent = state.turnTimeLeft <= 10;
+      if (state.turnTimeLeft <= 0) return;
+      if (!urgent && state.turnTimeLeft % 5 !== 0) return;
+      SFX.turnTick(urgent);
+    }
+
     function ensureTurnTimer() {
       if (turnTimerInterval) return;
       turnTimerInterval = setInterval(() => {
@@ -3042,6 +3057,7 @@
         if (!isHumanTurn()) return;
         if (state.turnTimeLeft > 0) {
           state.turnTimeLeft -= 1;
+          maybePlayTurnTimerTick();
           if (state.turnTimeLeft === 0) endTurn();
         }
         render();
@@ -5466,6 +5482,14 @@
         },
         error() {
           tone(180, "square", 0.1, 0.2);
+        },
+        turnTick(urgent = false) {
+          if (urgent) {
+            tone(980, "square", 0.045, 0.16);
+            tone(1320, "sine", 0.035, 0.11, 0.055);
+          } else {
+            tone(620, "sine", 0.035, 0.08);
+          }
         },
         win() {
           const notes = [523, 659, 784, 1047];
