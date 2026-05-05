@@ -5180,7 +5180,7 @@
         const res = await fetch("https://llm.cocy.io/v1/audio/speech", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
-          body: JSON.stringify({ model: "cosyvoice", input: text, voice, response_format: "mp3" })
+          body: JSON.stringify({ model: "cosyvoice", input: text, voice, response_format: "wav" })
         });
         if (!res.ok) throw new Error("tts failed");
         const blob = await res.blob();
