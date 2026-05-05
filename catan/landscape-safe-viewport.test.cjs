@@ -20,7 +20,7 @@ assert(appRule.includes('- env(safe-area-inset-top)'), 'base #app height should 
 const landscapeRule = html.match(/@media \(orientation: landscape\) and \(max-height: 560px\) \{[\s\S]*?\.status \{ display: none; \}/)?.[0] || '';
 assert(landscapeRule.includes('var(--catan-vh, 100dvh)'), 'landscape #app height should use corrected viewport height');
 assert(!landscapeRule.includes('- 44px - env(safe-area-inset-bottom)'), 'landscape #app height must not double-subtract the turn banner');
-assert(landscapeRule.includes('padding-top: calc(44px + 2px)'), 'landscape #app should reserve banner space with padding, not height subtraction');
+assert(landscapeRule.includes('padding-top: calc(var(--turn-banner-height) + 2px)'), 'landscape #app should reserve banner space with padding, not height subtraction');
 
 assert(
   html.includes('window.visualViewport.addEventListener("resize", syncCatanViewportMetrics'),

@@ -17,9 +17,9 @@ assert(html.includes('state.turnTimeLeft / state.turnSeconds'), 'timer bar shoul
 assert(html.includes('return clampTargetScore(state.targetScore'), 'targetScoreForMap should prefer host configured target score');
 assert(html.includes('onTargetScoreChange'), 'host settings should expose target score change handler');
 
-assert(html.includes('reactionTurnCount'), 'reactions should track per-turn usage count');
-assert(html.includes('MAX_REACTIONS_PER_TURN = 3'), 'reactions should allow 3 uses per turn');
-assert(html.includes('state.reactionTurnCount >= MAX_REACTIONS_PER_TURN'), 'reaction flow should block after 3 uses');
+assert(!html.includes('reactionTurnCount'), 'reactions should no longer track per-turn usage count');
+assert(!html.includes('MAX_REACTIONS_PER_TURN = 3'), 'reaction count limit should be removed');
+assert(!html.includes('state.reactionTurnCount >='), 'reaction flow should not block by per-turn count');
 assert(!html.includes('리액션은 내 턴에만 가능해요'), 'reactions should be allowed during other players turns');
 assert(html.includes('지쳤나요'), 'reaction presets should include 지쳤나요');
 assert(html.includes('거래해줘 형님'), 'reaction presets should include 거래해줘 형님');
