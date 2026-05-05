@@ -5576,6 +5576,28 @@
       }
     }
 
+    function evaluateAITradeOffer(aiPlayer, offer = {}, want = {}) {
+      const totalOffer = RESOURCES.reduce((s, r) => s + (Number(offer[r]) || 0), 0);
+      const totalWant = RESOURCES.reduce((s, r) => s + (Number(want[r]) || 0), 0);
+      const resourceWeight = (r) => {
+        const have = Number(aiPlayer.resources?.[r] || 0);
+        if (have <= 0) return 1.45;
+        if (have <= 1) return 1.25;
+        if (have >= 5) return 0.72;
+        return 1;
+      };
+      const receiveValue = RESOURCES.reduce((s, r) => s + (Number(offer[r]) || 0) * resourceWeight(r), 0);
+      const giveValue = RESOURCES.reduce((s, r) => s + (Number(want[r]) || 0) * (aiPlayer.resources?.[r] <= 1 ? 1.35 : 1), 0);
+      const favorableScore = receiveValue - giveValue;
+      const fairTradeAcceptChance = totalOffer === totalWant ? 0.72 : 0.55;
+      const scarceLoss = RESOURCES.some(r => (Number(want[r]) || 0) > 0 && (aiPlayer.resources?.[r] || 0) <= 1 && totalOffer < totalWant + 1);
+      if (totalOffer > totalWant || favorableScore >= 0.8) return { accept: true, fallbackAccept: true, favorableScore, dialogue: "좋아, 이건 받지!" };
+      if (totalOffer === totalWant && !scarceLoss) return { accept: Math.random() < fairTradeAcceptChance, fallbackAccept: true, favorableScore, dialogue: "공정하네, 좋아." };
+      if (favorableScore >= -0.35 && !scarceLoss) return { accept: Math.random() < 0.45, fallbackAccept: Math.random() < 0.35, favorableScore, dialogue: "음... 해볼게." };
+      if (favorableScore < -1.2 || scarceLoss) return { accept: false, fallbackAccept: false, rejectHard: true, favorableScore, dialogue: "그건 좀 아까워." };
+      return { accept: false, fallbackAccept: Math.random() < 0.2, favorableScore, dialogue: "조건이 애매해." };
+    }
+
     async function proposeTradeToAI() {
       if (!state.tradeDialog.open) return;
       const humanIdx = localPlayerIndex();
@@ -5608,25 +5630,30 @@
 
       showToast("🤔 거래 제안 중...", 2000);
 
-      // Parallel LLM requests
+      // Parallel AI decisions. Local heuristic prevents LLM role confusion and makes fair trades feel alive.
       const results = await Promise.allSettled(eligible.map(async (target) => {
         const tp = target.p;
+        const heuristic = evaluateAITradeOffer(tp, offer, want);
+        if (heuristic.accept) return { target, accept: true, dialogue: heuristic.dialogue };
+        if (heuristic.rejectHard) return { target, accept: false, dialogue: heuristic.dialogue };
         const stateStr = `카탄 게임. 당신은 "${tp.name}".
 당신 자원: 벽돌${tp.resources.brick} 나무${tp.resources.lumber} 양${tp.resources.wool} 밀${tp.resources.grain} 광석${tp.resources.ore} (VP:${tp.vp})
 상대 "${human.name}"(VP:${human.vp})의 거래 제안:
-줄 것: ${offerStr} / 받을 것: ${wantStr}
+상대가 줄 것 = 당신이 받는 자원: ${offerStr}
+상대가 받을 것 = 당신이 내는 자원: ${wantStr}
+원칙: 공정한 1:1 거래는 웬만하면 수락. 내가 받는 수량이 더 많거나 부족한 자원을 받으면 적극 수락. 단, 내가 거의 없는 자원을 많이 뺏기면 거절.
 수락? JSON: {"accept":true/false,"dialogue":"한마디(한국어20자)"}`;
         const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
           body: JSON.stringify({ model: "gpt-5.4-mini", messages: [{ role: "user", content: stateStr }], max_tokens: 100 })
         });
-        if (!res.ok) return { target, accept: false, dialogue: "..." };
+        if (!res.ok) return { target, accept: heuristic.fallbackAccept, dialogue: heuristic.dialogue || "좋아" };
         const data = await res.json();
         const text = data.choices?.[0]?.message?.content || "";
         const jsonMatch = text.match(/\{[\s\S]*\}/);
-        const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { accept: false, dialogue: "패스" };
-        return { target, accept: !!parsed.accept, dialogue: parsed.dialogue || "" };
+        const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { accept: heuristic.fallbackAccept, dialogue: heuristic.dialogue || "좋아" };
+        return { target, accept: !!parsed.accept || heuristic.fallbackAccept, dialogue: parsed.dialogue || heuristic.dialogue || "좋아" };
       }));
 
       // Process results — first acceptor wins
