@@ -1357,7 +1357,20 @@
         manualBankTradeRule: "🏦은행: 4:1 (항구 3:1 또는 2:1)",
         manualProposalRule: "🤝제안: AI/플레이어에게 N:N 거래",
         manualLongestRoad: "👑최장도로 (5개↑): +2점",
-        manualLargestArmy: "⚔️최대기사단 (3명↑): +2점"
+        manualLargestArmy: "⚔️최대기사단 (3명↑): +2점",
+        winnerStatus: "승자: {player} ({vp}점)",
+        winnerHint: "🎉 {player} 승리!",
+        victoryPrizeToast: "🎉 승리! +{prize}원",
+        defeatToast: "😢 {player} 승리...",
+        winnerTitle: "{player} 승리!",
+        winnerGoalReached: "{vp}점으로 클리어 목표 {goal}점 달성",
+        shareResult: "결과 공유",
+        backToRoom: "방으로 돌아가기",
+        backToMapSelect: "맵 선택으로",
+        close: "닫기",
+        gameOptionsLabel: "게임 옵션",
+        turnTimeChangedLog: "턴 시간 변경: {seconds}초",
+        victoryVpChangedLog: "승리 VP 변경: {vp}점"
       },
       en: {
         aiDifficulty: "AI difficulty",
@@ -1575,7 +1588,20 @@
         manualBankTradeRule: "🏦 Bank: 4:1 (ports: 3:1 or 2:1)",
         manualProposalRule: "🤝 Offer: N:N trade with AI/players",
         manualLongestRoad: "👑 Longest Road (5+ roads): +2 VP",
-        manualLargestArmy: "⚔️ Largest Army (3+ knights): +2 VP"
+        manualLargestArmy: "⚔️ Largest Army (3+ knights): +2 VP",
+        winnerStatus: "Winner: {player} ({vp} VP)",
+        winnerHint: "🎉 {player} wins!",
+        victoryPrizeToast: "🎉 Victory! +{prize} won",
+        defeatToast: "😢 {player} wins...",
+        winnerTitle: "{player} wins!",
+        winnerGoalReached: "Reached {vp} VP / {goal} VP goal",
+        shareResult: "Share result",
+        backToRoom: "Back to room",
+        backToMapSelect: "Choose map",
+        close: "Close",
+        gameOptionsLabel: "Game options",
+        turnTimeChangedLog: "Turn time changed: {seconds}s",
+        victoryVpChangedLog: "Victory VP changed: {vp}"
       }
     };
     let PINGTAN_LANG = localStorage.getItem(PINGTAN_LANG_KEY) || ((navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en");
@@ -1973,7 +1999,7 @@
     }
 
     function localGameSettingsLabel(prefix = "게임 옵션") {
-      return `${prefix}: 턴 ${clampTurnSeconds(state.turnSeconds || 60)}초 · 승리 ${targetScoreForMap(state.selectedMapId)}점`;
+      return `${prefix}: ${pt("turnSeconds")} ${clampTurnSeconds(state.turnSeconds || 60)}s · ${pt("targetScore")} ${targetScoreForMap(state.selectedMapId)}VP`;
     }
 
     function localMapLabel() {
@@ -1983,7 +2009,7 @@
 
     function addGameStartActivityLog() {
       addActivityLog("system", localMapLabel());
-      addActivityLog("system", localGameSettingsLabel("게임 옵션"));
+      addActivityLog("system", localGameSettingsLabel(pt("gameOptionsLabel")));
     }
 
     function addGameSettingsChangeLogs(previous, next) {
@@ -1991,8 +2017,8 @@
       const nextTurn = clampTurnSeconds(next?.turnSeconds || state.turnSeconds || 60);
       const prevTarget = clampTargetScore(previous?.targetScore || state.targetScore || targetScoreForMap(state.selectedMapId));
       const nextTarget = clampTargetScore(next?.targetScore || state.targetScore || targetScoreForMap(state.selectedMapId));
-      if (prevTurn !== nextTurn) addActivityLog("system", `턴 시간 변경: ${nextTurn}초`);
-      if (prevTarget !== nextTarget) addActivityLog("system", `승리 VP 변경: ${nextTarget}점`);
+      if (prevTurn !== nextTurn) addActivityLog("system", pt("turnTimeChangedLog", { seconds: nextTurn }));
+      if (prevTarget !== nextTarget) addActivityLog("system", pt("victoryVpChangedLog", { vp: nextTarget }));
     }
 
     function localPlayerIndex() {
@@ -3634,16 +3660,16 @@
         state.phase = "end";
         state.canEndTurn = false;
         clearActivityLog();
-        state.hint = `🎉 ${state.players[winner].name} 승리!`;
+        state.hint = pt("winnerHint", { player: state.players[winner].name });
         if (prevWinner !== winner) {
           SFX.win();
           if (winner === localPlayerIndex()) {
             launchConfetti();
             const _prize = victoryPrizeForMap(state.selectedMapId);
-            showToast(`🎉 승리! +${_prize.toLocaleString()}원`, 6000);
+            showToast(pt("victoryPrizeToast", { prize: _prize.toLocaleString() }), 6000);
             if (typeof SharedWallet !== "undefined" && SharedWallet.addGold) SharedWallet.addGold(_prize);
           } else {
-            showToast(`😢 ${state.players[winner].name} 승리...`, 6000);
+            showToast(pt("defeatToast", { player: state.players[winner].name }), 6000);
           }
           Voice.play("victory", winner % 2 === 0 ? "m" : "f");
         }
@@ -4927,7 +4953,7 @@
     }
 
     function statusText() {
-      if (state.winner !== null) return `승자: ${state.players[state.winner].name} (${state.players[state.winner].vp}점)`;
+      if (state.winner !== null) return pt("winnerStatus", { player: state.players[state.winner].name, vp: state.players[state.winner].vp });
       const cp = getCurrentPlayer();
       const waiting = isMultiMode() && !isHumanTurn() ? " | 다른 플레이어를 기다리는 중..." : "";
       const base = `${cp.name} 차례 | 단계: ${state.phase}${waiting}`;
@@ -5492,13 +5518,13 @@ https://game.cocy.io/pingtan/`;
       return `<div style="position:fixed;inset:0;z-index:10030;background:rgba(0,0,0,.58);display:flex;align-items:center;justify-content:center;padding:18px;">
         <div style="width:min(360px,100%);background:linear-gradient(180deg,#172554,#0f172a);border:1px solid rgba(250,204,21,.55);border-radius:20px;padding:22px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.55);">
           <div style="font-size:54px;line-height:1;">${isMe ? "🏆" : "🎉"}</div>
-          <div style="font-size:22px;font-weight:900;color:#fff;margin-top:8px;">${escapeHtml(winner.name)} 승리!</div>
-          <div style="font-size:13px;color:#cbd5e1;margin-top:8px;">${winner.vp}점으로 클리어 목표 ${targetScoreForMap(state.selectedMapId)}점 달성</div>
+          <div style="font-size:22px;font-weight:900;color:#fff;margin-top:8px;">${pt("winnerTitle", { player: escapeHtml(winner.name) })}</div>
+          <div style="font-size:13px;color:#cbd5e1;margin-top:8px;">${pt("winnerGoalReached", { vp: winner.vp, goal: targetScoreForMap(state.selectedMapId) })}</div>
           <div style="font-size:12px;color:#93c5fd;margin-top:8px;line-height:1.4;">${escapeHtml(resultShareText()).replace(/\n/g, "<br>")}</div>
           ${isMe ? `<div style="font-size:14px;color:#fde68a;margin-top:8px;">보상 +${prize.toLocaleString()}원</div>` : ""}
-          <button onclick="copyResultShare()" style="margin-top:14px;width:100%;padding:11px;border-radius:12px;border:1px solid rgba(147,197,253,.5);background:rgba(59,130,246,.18);color:#dbeafe;font-weight:900;cursor:pointer;">📣 결과 공유</button>
-          <button onclick="${isMultiMode() ? "returnToRoomForRematch()" : "returnToSingleMapSelect()"}" style="margin-top:8px;width:100%;padding:12px;border-radius:12px;border:none;background:#facc15;color:#111827;font-weight:900;cursor:pointer;">${isMultiMode() ? "방으로 돌아가기" : "맵 선택으로"}</button>
-          <button onclick="dismissWinnerModal()" style="margin-top:8px;width:100%;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e5e7eb;font-weight:800;cursor:pointer;">닫기</button>
+          <button onclick="copyResultShare()" style="margin-top:14px;width:100%;padding:11px;border-radius:12px;border:1px solid rgba(147,197,253,.5);background:rgba(59,130,246,.18);color:#dbeafe;font-weight:900;cursor:pointer;">📣 ${pt("shareResult")}</button>
+          <button onclick="${isMultiMode() ? "returnToRoomForRematch()" : "returnToSingleMapSelect()"}" style="margin-top:8px;width:100%;padding:12px;border-radius:12px;border:none;background:#facc15;color:#111827;font-weight:900;cursor:pointer;">${isMultiMode() ? pt("backToRoom") : pt("backToMapSelect")}</button>
+          <button onclick="dismissWinnerModal()" style="margin-top:8px;width:100%;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e5e7eb;font-weight:800;cursor:pointer;">${pt("close")}</button>
         </div>
       </div>`;
     }

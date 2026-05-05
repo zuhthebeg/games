@@ -74,7 +74,8 @@ const logScript = [
 const logs = [];
 const logCtx = {
   state: {},
-  addActivityLog: (kind, message) => logs.push({ kind, message })
+  addActivityLog: (kind, message) => logs.push({ kind, message }),
+  pt: (key, vars = {}) => key === 'turnTimeChangedLog' ? `턴 시간 변경: ${vars.seconds}초` : key === 'victoryVpChangedLog' ? `승리 VP 변경: ${vars.vp}점` : key
 };
 vm.createContext(logCtx);
 vm.runInContext(logScript, logCtx);
