@@ -1206,7 +1206,10 @@
       _pendingHumanGold: 0,
       _pendingGains: null,
       _aiReactionCooldownUntil: 0,
-      _aiIntroDone: false
+      _aiIntroDone: false,
+      _aiTurnScheduled: false,
+      _aiTurnInProgress: false,
+      _aiTurnTriggerAfterFinish: false
     };
 
     const mpState = {
@@ -1223,7 +1226,10 @@
       processedActionIds: new Set(),
       aiPlayers: [],
       replaying: false,
-      emoteCooldownUntil: 0
+      emoteCooldownUntil: 0,
+      aiTurnScheduled: false,
+      aiTurnInProgress: false,
+      aiTurnTriggerAfterFinish: false
     };
 
     const CATAN_ACTIVITY_LOG_LIMIT = 40;
@@ -1306,6 +1312,9 @@
       state._pendingGains = null;
       state._aiReactionCooldownUntil = 0;
       state._aiIntroDone = false;
+      state._aiTurnScheduled = false;
+      state._aiTurnInProgress = false;
+      state._aiTurnTriggerAfterFinish = false;
     }
 
     const RESOURCE_NAMES = {
@@ -4049,9 +4058,11 @@
 
     async function aiMainTurn() {
       if (state.winner || isHumanTurn() || isMultiMode()) return;
+      if (state._aiTurnInProgress) return;
+      state._aiTurnInProgress = true;
       const pIdx = state.currentPlayer;
       const p = state.players[pIdx];
-      if (!p) return;
+      if (!p) { state._aiTurnInProgress = false; return; }
       const ai = window.CatanAI;
 
       try {
@@ -4199,12 +4210,18 @@
         if (!state.winner) {
           endTurnInternal();
           render();
-          triggerAITurnIfNeeded();
+          state._aiTurnTriggerAfterFinish = true;
         }
       } catch (err) {
         console.error("aiMainTurn error:", err);
         // Recovery: force end turn
-        try { state.phase = "main"; state.canEndTurn = true; endTurnInternal(); render(); triggerAITurnIfNeeded(); } catch (_) {}
+        try { state.phase = "main"; state.canEndTurn = true; endTurnInternal(); render(); state._aiTurnTriggerAfterFinish = true; } catch (_) {}
+      } finally {
+        state._aiTurnInProgress = false;
+        if (state._aiTurnTriggerAfterFinish) {
+          state._aiTurnTriggerAfterFinish = false;
+          triggerAITurnIfNeeded();
+        }
       }
     }
 
@@ -4245,9 +4262,11 @@
 
     async function aiMultiMainTurn() {
       if (!mpState.isHost || !isMultiMode()) return;
+      if (mpState.aiTurnInProgress) return;
+      mpState.aiTurnInProgress = true;
       const pIdx = state.currentPlayer;
       const p = state.players[pIdx];
-      if (!p || !p.isAI || state.winner) return;
+      if (!p || !p.isAI || state.winner) { mpState.aiTurnInProgress = false; return; }
       const ai = window.CatanAI;
 
       try {
@@ -4342,6 +4361,7 @@
         if (!state.winner && state.currentPlayer === pIdx) {
           await sleep(1000);
           await sendGameAction(ACTION.END_TURN, { playerId: p.userId || p.id });
+          mpState.aiTurnTriggerAfterFinish = true;
         }
       } catch (err) {
         console.error("aiMultiMainTurn error:", err);
@@ -4349,7 +4369,14 @@
           state.phase = "main";
           state.canEndTurn = true;
           await sendGameAction(ACTION.END_TURN, { playerId: p.userId || p.id });
+          mpState.aiTurnTriggerAfterFinish = true;
         } catch (_) {}
+      } finally {
+        mpState.aiTurnInProgress = false;
+        if (mpState.aiTurnTriggerAfterFinish) {
+          mpState.aiTurnTriggerAfterFinish = false;
+          triggerAITurnIfNeeded();
+        }
       }
     }
 
@@ -4357,9 +4384,11 @@
       if (state.winner) return;
 
       if (!isMultiMode()) {
-        if (isHumanTurn()) return;
+        if (isHumanTurn() || state._aiTurnScheduled || state._aiTurnInProgress) return;
+        state._aiTurnScheduled = true;
         const delay = (state.phase === "setup1" || state.phase === "setup2") ? 800 : 1000;
         setTimeout(() => {
+          state._aiTurnScheduled = false;
           if (state.winner || isHumanTurn()) return;
           if (state.phase === "setup1" || state.phase === "setup2") aiTakeSetupTurn();
           else aiMainTurn();
@@ -4369,9 +4398,11 @@
 
       if (!mpState.isHost) return;
       const cp = state.players[state.currentPlayer];
-      if (!cp || !cp.isAI) return;
+      if (!cp || !cp.isAI || mpState.aiTurnScheduled || mpState.aiTurnInProgress) return;
+      mpState.aiTurnScheduled = true;
       const delay = (state.phase === "setup1" || state.phase === "setup2") ? 1200 : 1500;
       setTimeout(() => {
+        mpState.aiTurnScheduled = false;
         if (state.winner) return;
         const cp2 = state.players[state.currentPlayer];
         if (!cp2 || !cp2.isAI) return;
@@ -4913,7 +4944,7 @@
           <div style="font-size:22px;font-weight:900;color:#fff;margin-top:8px;">${escapeHtml(winner.name)} 승리!</div>
           <div style="font-size:13px;color:#cbd5e1;margin-top:8px;">${winner.vp}점으로 클리어 목표 ${targetScoreForMap(state.selectedMapId)}점 달성</div>
           ${isMe ? `<div style="font-size:14px;color:#fde68a;margin-top:8px;">보상 +${prize.toLocaleString()}원</div>` : ""}
-          <button onclick="${isMultiMode() ? "returnToRoomForRematch()" : "rematchSingleGame()"}" style="margin-top:18px;width:100%;padding:12px;border-radius:12px;border:none;background:#facc15;color:#111827;font-weight:900;cursor:pointer;">${isMultiMode() ? "방으로 돌아가기" : "다시 하기"}</button>
+          <button onclick="${isMultiMode() ? "returnToRoomForRematch()" : "returnToSingleMapSelect()"}" style="margin-top:18px;width:100%;padding:12px;border-radius:12px;border:none;background:#facc15;color:#111827;font-weight:900;cursor:pointer;">${isMultiMode() ? "방으로 돌아가기" : "맵 선택으로"}</button>
           <button onclick="dismissWinnerModal()" style="margin-top:8px;width:100%;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e5e7eb;font-weight:800;cursor:pointer;">닫기</button>
         </div>
       </div>`;
@@ -4929,8 +4960,18 @@
       startSingle(mapId);
     }
 
+    function returnToSingleMapSelect() {
+      const mapId = state.selectedMapId || "standard";
+      resetCoreState();
+      state.mode = null;
+      state.screen = "map-select";
+      state.mapSelectSource = "single";
+      state.selectedMapId = mapId;
+      render();
+    }
+
     async function returnToRoomForRematch() {
-      if (!isMultiMode() || !mpState.client) { rematchSingleGame(); return; }
+      if (!isMultiMode() || !mpState.client) { returnToSingleMapSelect(); return; }
       const keepRoomCode = mpState.roomCode;
       const keepMapId = state.selectedMapId || mpState.mapId || "standard";
       try { await mpState.client.rematch?.(); } catch (_) {}
@@ -4943,6 +4984,9 @@
       mpState.startRequested = false;
       mpState.initSent = false;
       mpState.processedActionIds = new Set();
+      mpState.aiTurnScheduled = false;
+      mpState.aiTurnInProgress = false;
+      mpState.aiTurnTriggerAfterFinish = false;
       mpState.waitingMessage = "리매치 대기실로 돌아왔습니다.";
       try { await refreshRoomState(); } catch (_) {}
       render();
@@ -6812,6 +6856,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.sendCustomReactionEmote = sendCustomReactionEmote;
     window.dismissWinnerModal = dismissWinnerModal;
     window.rematchSingleGame = rematchSingleGame;
+    window.returnToSingleMapSelect = returnToSingleMapSelect;
     window.returnToRoomForRematch = returnToRoomForRematch;
     window.onTurnSecondsChange = onTurnSecondsChange;
     window.onTargetScoreChange = onTargetScoreChange;
