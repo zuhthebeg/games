@@ -1184,7 +1184,21 @@
         copyFailed: "복사 실패: 주소를 길게 눌러 복사해줘",
         shareFailed: "공유 취소 또는 실패",
         resultCopied: "결과 공유 문구 복사됨",
-        roomCodeRequired: "방 코드를 입력하세요."
+        roomCodeRequired: "방 코드를 입력하세요.",
+        turnTimer: "턴 타이머",
+        endTurn: "턴 종료",
+        road: "도로",
+        settlement: "마을",
+        city: "도시",
+        devCard: "발전카드",
+        roadBuilding: "도로건설",
+        settings: "설정",
+        activityTitle: "주요 로그",
+        activityEmptyHint: "거래/리액션/도둑/카드 기록",
+        noLog: "기록 없음",
+        robberMove: "도둑 이동: 헥스를 선택하세요.",
+        setupSettlement: "마을을 놓으세요",
+        setupRoad: "도로를 놓으세요"
       },
       en: {
         aiDifficulty: "AI difficulty",
@@ -1229,7 +1243,21 @@
         copyFailed: "Copy failed. Long-press the address to copy it.",
         shareFailed: "Share cancelled or failed",
         resultCopied: "Result share text copied",
-        roomCodeRequired: "Enter a room code."
+        roomCodeRequired: "Enter a room code.",
+        turnTimer: "Turn timer",
+        endTurn: "End turn",
+        road: "Road",
+        settlement: "Settlement",
+        city: "City",
+        devCard: "Dev card",
+        roadBuilding: "Road Building",
+        settings: "Settings",
+        activityTitle: "Main log",
+        activityEmptyHint: "Trades / reactions / robber / cards",
+        noLog: "No logs yet",
+        robberMove: "Move robber: choose a hex.",
+        setupSettlement: "Place a settlement",
+        setupRoad: "Place a road"
       }
     };
     let PINGTAN_LANG = localStorage.getItem(PINGTAN_LANG_KEY) || ((navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en");
@@ -5192,28 +5220,28 @@ https://game.cocy.io/pingtan/`;
         ? `카드: ${me.devCards.filter(c=>!c.played).map(c=>c.type==='knight'?'🐴기사':c.type==='vp'?'⭐VP':c.type==='monopoly'?'💰모노폴리':c.type==='road_building'?'🛣️도로':c.type==='year_of_plenty'?'🌾풍년':'🃏').join(' ')}`
         : "";
       const canEndTurnNow = actionState.canMain && state.canEndTurn;
-      const timerHtml = myTurn ? `<div class="turn-timer"><div class="turn-timer-row"><div class="turn-timer-label">턴 타이머: ${state.turnTimeLeft}s</div><button class="danger end-turn-timer-btn" ${canEndTurnNow ? "" : "disabled"} onclick="endTurn()">턴 종료</button></div><div class="turn-timer-bar"><div class="turn-timer-fill" style="width:${turnPct}%;"></div></div></div>` : "";
-      const vpBarHtml = `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#aaa;padding:2px 4px;"><span>클리어 목표: ${vpGoal}점 · VP: ${vp}/${vpGoal}</span><div style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;"><div style="height:100%;width:${vpPctFull}%;background:linear-gradient(90deg,#4ecca3,#ffd700);border-radius:2px;"></div></div></div>`;
+      const timerHtml = myTurn ? `<div class="turn-timer"><div class="turn-timer-row"><div class="turn-timer-label">${pt("turnTimer")}: ${state.turnTimeLeft}s</div><button class="danger end-turn-timer-btn" ${canEndTurnNow ? "" : "disabled"} onclick="endTurn()">${pt("endTurn")}</button></div><div class="turn-timer-bar"><div class="turn-timer-fill" style="width:${turnPct}%;"></div></div></div>` : "";
+      const vpBarHtml = `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#aaa;padding:2px 4px;"><span>${pt("clearTarget")}: ${vpGoal}점 · VP: ${vp}/${vpGoal}</span><div style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;"><div style="height:100%;width:${vpPctFull}%;background:linear-gradient(90deg,#4ecca3,#ffd700);border-radius:2px;"></div></div></div>`;
       const hintText = [
-        inSetup ? `초기 배치 ${state.setupRound}라운드 | ${state.setupStep === "settlement" ? "마을을 놓으세요" : "도로를 놓으세요"}` : "",
-        (canRobber || state.phase === "knight-robber") ? "🦹 도둑 이동: 헥스를 선택하세요." : "",
+        inSetup ? `초기 배치 ${state.setupRound}라운드 | ${state.setupStep === "settlement" ? pt("setupSettlement") : pt("setupRoad")}` : "",
+        (canRobber || state.phase === "knight-robber") ? `🦹 ${pt("robberMove")}` : "",
         (actionState.canMain && actionState.possible.length) ? `가능: ${actionState.possible.join(', ')}` : ""
       ].filter(Boolean).join(" · ");
       const buildActionButtonClass = (mode, extra = "") => `${extra}${state.buildMode === mode ? `${extra ? " " : ""}selected-action` : ""}`;
       const actionsHtml = `
         <div class="actions">
           <button id="diceDisplay" class="primary dice-button" ${canRoll ? "" : "disabled"} onclick="rollDice()">${renderDiceButtonContent(canRoll)}</button>
-          <button class="${buildActionButtonClass("road")}" ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">도로${getLongestRoadBadge(state.longestRoad === myIdx)}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
-          <button class="${buildActionButtonClass("settlement")}" ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">마을(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
-          <button class="${buildActionButtonClass("city")}" ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">도시(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
+          <button class="${buildActionButtonClass("road")}" ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">${pt("road")}${getLongestRoadBadge(state.longestRoad === myIdx)}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
+          <button class="${buildActionButtonClass("settlement")}" ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">${pt("settlement")}(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
+          <button class="${buildActionButtonClass("city")}" ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">${pt("city")}(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
           <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">거래</button>
-          <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">발전카드${costLabel(COST.devCard, idx)}</button>
+          <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">${pt("devCard")}${costLabel(COST.devCard, idx)}</button>
           <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "⚔️" : ""}</button>
           <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
-          <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️도로건설</button>
+          <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️${pt("roadBuilding")}</button>
           <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
           <button class="settings-action" onclick="showEmotePanel()">💬리액션</button>
-          <button class="settings-action" onclick="toggleSoundPanel()">⚙️설정</button>
+          <button class="settings-action" onclick="toggleSoundPanel()">⚙️${pt("settings")}</button>
         </div>`;
       return `
         <div id="activity-status-slot">${renderActivityStatus()}</div>
@@ -5707,9 +5735,9 @@ https://game.cocy.io/pingtan/`;
       const items = loadActivityLog();
       const latest = items[items.length - 1];
       const open = !!state.activityLogOpen;
-      if (!latest && !open) return `<div class="activity-status"><button class="activity-status-toggle" onclick="toggleActivityLog()"><span>주요 로그</span><span class="activity-status-latest">거래/리액션/도둑/카드 기록</span><span>▾</span></button></div>`;
+      if (!latest && !open) return `<div class="activity-status"><button class="activity-status-toggle" onclick="toggleActivityLog()"><span>${pt("activityTitle")}</span><span class="activity-status-latest">${pt("activityEmptyHint")}</span><span>▾</span></button></div>`;
       const entries = items.slice(-12).reverse().map(item => `<div class="activity-log-entry"><time>${activityTime(item.ts)}</time><div>${activityIcon(item.kind)} ${renderActivityMessage(item.message)}</div></div>`).join("");
-      return `<div class="activity-status"><button class="activity-status-toggle" onclick="toggleActivityLog()"><span>주요 로그</span><span class="activity-status-latest">${latest ? `${activityIcon(latest.kind)} ${renderActivityMessage(latest.message)}` : "기록 없음"}</span><span>${open ? "▴" : "▾"}</span></button>${open ? `<div class="activity-log">${entries || '<div class="activity-log-entry"><time>--:--</time><div>아직 기록 없음</div></div>'}</div>` : ""}</div>`;
+      return `<div class="activity-status"><button class="activity-status-toggle" onclick="toggleActivityLog()"><span>${pt("activityTitle")}</span><span class="activity-status-latest">${latest ? `${activityIcon(latest.kind)} ${renderActivityMessage(latest.message)}` : pt("noLog")}</span><span>${open ? "▴" : "▾"}</span></button>${open ? `<div class="activity-log">${entries || `<div class="activity-log-entry"><time>--:--</time><div>${pt("noLog")}</div></div>`}</div>` : ""}</div>`;
     }
 
     function toggleActivityLog() {
@@ -6936,7 +6964,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
           • 인접 플레이어 카드 1장 훔치기<br><br>
           <b>🃏 발전카드</b><br>
           • 🐴기사: 도둑 이동 (3명↑ 사용 → ⚔️최대기사단 +2점)<br>
-          • 🛣️도로건설: 무료 도로 2개<br>
+          • 🛣️${pt("roadBuilding")}: 무료 도로 2개<br>
           • 🌾풍년: 아무 자원 2개 획득<br>
           • 💰독점: 자원 1종 모두 가져오기<br>
           • ⭐VP: +1점<br><br>
