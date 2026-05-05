@@ -4821,7 +4821,8 @@
         return;
       }
       if (event.type === "player_left") {
-        if (state.screen === "game" && markPlayerDisconnectedAsAI(event.userId)) {
+        const aiReplacement = event.payload?.aiReplacement === true;
+        if (state.screen === "game" && aiReplacement && markPlayerDisconnectedAsAI(event.userId)) {
           render();
           triggerAITurnIfNeeded();
           return;
