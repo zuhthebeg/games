@@ -1154,7 +1154,8 @@
       DISCARD_RESOURCES: "DISCARD_RESOURCES",
       GOLD_CHOICE: "GOLD_CHOICE",
       END_TURN: "END_TURN",
-      REACTION_EMOTE: "REACTION_EMOTE"
+      REACTION_EMOTE: "REACTION_EMOTE",
+      GAME_SETTINGS: "GAME_SETTINGS"
     };
 
     const state = {
@@ -3267,6 +3268,16 @@
       if (type === ACTION.END_TURN) {
         if (pIdx !== state.currentPlayer) return false;
         return endTurnInternal();
+      }
+      if (type === ACTION.GAME_SETTINGS) {
+        const nextTurnSeconds = action.turnSeconds !== undefined ? clampTurnSeconds(action.turnSeconds) : state.turnSeconds;
+        const nextTargetScore = action.targetScore !== undefined ? clampTargetScore(action.targetScore) : state.targetScore;
+        state.turnSeconds = nextTurnSeconds;
+        state.targetScore = nextTargetScore;
+        state.targetScoreCustom = true;
+        if (state.turnTimeLeft > nextTurnSeconds) state.turnTimeLeft = nextTurnSeconds;
+        addActivityLog("system", `설정 변경: 턴 ${nextTurnSeconds}초 · 승점 ${nextTargetScore}점`);
+        return true;
       }
 
       // Multiplayer trade proposal received from other player
@@ -6153,14 +6164,58 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       });
     }
 
+    async function updateGameSetting(key, value) {
+      const canEditGameSettings = !isMultiMode() || mpState.isHost;
+      if (!canEditGameSettings) {
+        showToast("게임 설정은 호스트만 변경할 수 있어요.", 1400);
+        return;
+      }
+      if (key === "turnSeconds") state.turnSeconds = clampTurnSeconds(value);
+      if (key === "targetScore") {
+        state.targetScore = clampTargetScore(value);
+        state.targetScoreCustom = true;
+      }
+      if (state.turnTimeLeft > state.turnSeconds) state.turnTimeLeft = state.turnSeconds;
+      if (isMultiMode() && mpState.client) {
+        const action = {
+          type: ACTION.GAME_SETTINGS,
+          playerId: mpState.myUserId || state.players[localPlayerIndex()]?.userId || "host",
+          turnSeconds: state.turnSeconds,
+          targetScore: state.targetScore,
+          actionId: nextActionId(),
+          __snapshot: createCatanStateSnapshot()
+        };
+        markActionProcessed(action.actionId);
+        try { await mpState.client.sendAction(action); } catch (e) { showToast(`설정 동기화 실패: ${e.message || e}`, 1600); }
+      }
+      render();
+    }
+
     function toggleSoundPanel() {
       let panel = document.getElementById("soundPanel");
       if (panel) { panel.remove(); return; }
       panel = document.createElement("div");
       panel.id = "soundPanel";
-      panel.style.cssText = "position:fixed;bottom:60px;right:8px;background:#16213e;border:1px solid #334155;border-radius:12px;padding:12px;z-index:9990;width:220px;font-size:12px;";
+      const canEditGameSettings = !isMultiMode() || mpState.isHost;
+      const disabledSettings = canEditGameSettings ? "" : "disabled";
+      panel.style.cssText = "position:fixed;bottom:60px;right:8px;background:#16213e;border:1px solid #334155;border-radius:12px;padding:12px;z-index:9990;width:260px;font-size:12px;max-height:calc(100vh - 76px);overflow-y:auto;";
       panel.innerHTML = `
         <div style="font-weight:700;margin-bottom:8px;">⚙️ 설정</div>
+        <div style="font-size:10px;color:#9ca3af;margin-bottom:4px;">🎮 게임</div>
+        <label style="display:grid;grid-template-columns:72px 1fr;align-items:center;gap:8px;margin-bottom:6px;">
+          <span>턴 시간</span>
+          <select ${disabledSettings} onchange="updateGameSetting('turnSeconds', this.value)" style="background:#0f172a;color:#fff;border:1px solid #334155;border-radius:8px;padding:6px;">
+            ${[30,45,60,90,120].map(v => `<option value="${v}" ${state.turnSeconds === v ? "selected" : ""}>${v}초</option>`).join("")}
+          </select>
+        </label>
+        <label style="display:grid;grid-template-columns:72px 1fr;align-items:center;gap:8px;margin-bottom:4px;">
+          <span>승리 VP</span>
+          <select ${disabledSettings} onchange="updateGameSetting('targetScore', this.value)" style="background:#0f172a;color:#fff;border:1px solid #334155;border-radius:8px;padding:6px;">
+            ${[5,7,10,12,15,20].map(v => `<option value="${v}" ${targetScoreForMap(state.selectedMapId) === v ? "selected" : ""}>${v}점</option>`).join("")}
+          </select>
+        </label>
+        <div style="font-size:10px;color:#9ca3af;margin-bottom:8px;">${canEditGameSettings ? "설정 변경은 다음 턴부터 적용됩니다." : "멀티 게임 설정은 호스트만 변경할 수 있어요."}</div>
+        <hr style="border:none;border-top:1px solid #334155;margin:8px 0;">
         <div style="font-size:10px;color:#9ca3af;margin-bottom:4px;">🔊 사운드</div>
         <label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer;">
           <input type="checkbox" ${soundSettings.sfx?"checked":""} onchange="soundSettings.sfx=this.checked;soundSettings.save()"> 효과음
@@ -6296,6 +6351,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
 
     window.startSingle = startSingle;
     window.toggleSoundPanel = toggleSoundPanel;
+    window.updateGameSetting = updateGameSetting;
     window.showMultiOptions = showMultiOptions;
     window.backToMode = backToMode;
     window.createRoom = createRoom;
