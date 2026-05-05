@@ -3,7 +3,7 @@ const assert = require('assert');
 
 const html = fs.readFileSync(__dirname + '/index.html', 'utf8');
 const modeStart = html.indexOf('function renderModeScreen()');
-const modeChunk = html.slice(modeStart, modeStart + 1000);
+const modeChunk = html.slice(modeStart, modeStart + 2400);
 const showStart = html.indexOf('function showMultiOptions()');
 const showChunk = html.slice(showStart, showStart + 4200);
 
