@@ -1199,6 +1199,7 @@
       turnTimeLeft: 60,
       lastTurnTickSecond: null,
       activityLogOpen: false,
+      activityLog: [],
       dismissedWinner: false,
       selectedMapId: "standard",
       mapSelectSource: "single",
@@ -1223,7 +1224,6 @@
       emoteCooldownUntil: 0
     };
 
-    const CATAN_ACTIVITY_LOG_KEY = "catan_activity_log_v1";
     const CATAN_ACTIVITY_LOG_LIMIT = 40;
 
     const REACTION_EMOTES = [
@@ -1288,6 +1288,7 @@
       state.turnTimeLeft = state.turnSeconds;
       state.lastTurnTickSecond = null;
       state.dismissedWinner = false;
+      clearActivityLog();
       state._pendingHumanGold = 0;
       state._pendingGains = null;
     }
@@ -2732,6 +2733,7 @@
       for (const r of RESOURCES) p.resources[r] = tempRes[r];
       state.canEndTurn = true;
       state.hint = `은행 거래: ${giveLog.join("+")} → ${getLog.join("+")}`;
+      addActivityLog("trade", `${p.name || "플레이어"} 은행 거래 완료: ${giveLog.join("+")} → ${getLog.join("+")}`);
       Voice.human("trade-bank");
       SFX.build();
       closeTradeDialog();
@@ -2867,6 +2869,7 @@
       const source = state.phase === "knight-robber" ? "기사" : "도둑";
       const hexLabel = getHexLabel(hexIndex);
       const detailMessage = formatRobberMoveMessage({ actorName, source, hexLabel, victimName, stolenResource: picked });
+      if (picked && victimName) addActivityLog("robber", `${victimName}가 ${source}에게 삥을 뜯겼습니다 (${RESOURCE_ICONS[picked] || picked} 1장)`);
       showToast(`🦹 ${detailMessage}`, 2600, { bottom: 150 });
       if (picked && victimIdx === localPlayerIndex()) {
         const icon = RESOURCE_ICONS[picked] || picked;
@@ -2996,6 +2999,7 @@
         state.winner = winner;
         state.phase = "end";
         state.canEndTurn = false;
+        clearActivityLog();
         state.hint = `🎉 ${state.players[winner].name} 승리!`;
         if (prevWinner !== winner) {
           SFX.win();
@@ -3331,6 +3335,7 @@
               if (want[r] > 0) { me.resources[r] -= want[r]; proposer.resources[r] += want[r]; }
             }
             SFX.build();
+            addActivityLog("trade", `${proposer.name || "플레이어"} ↔ ${me.name || "플레이어"} 거래 완료`);
             showToast("🤝 거래 성사!", 2000);
             // Notify proposer + bystanders (proposerId/proposalId let receivers identify the swap)
             mpState.client.sendAction({ type: "TRADE_ACCEPT", playerId: me.userId || me.id, proposerId, proposalId, offer, want, actionId: `ta_${Date.now()}`, __snapshot: createCatanStateSnapshot() }).catch(()=>{});
@@ -3372,6 +3377,7 @@
           if (want[r] > 0) { accepter.resources[r] -= want[r]; proposer.resources[r] += want[r]; }
         }
         SFX.build();
+        addActivityLog("trade", `${proposer.name || "플레이어"} ↔ ${accepter.name || "플레이어"} 거래 완료`);
         if (myIdx === proposerIdx) {
           showToast(`🤝 ${accepter.name}이 거래를 수락!`, 2000);
           state.canEndTurn = true;
@@ -5193,24 +5199,13 @@
       return String(value ?? "").replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
     }
 
-    function safeLocalStorageGet(key) {
-      try { return window.localStorage?.getItem(key) || ""; } catch (_) { return ""; }
-    }
-
-    function safeLocalStorageSet(key, value) {
-      try { window.localStorage?.setItem(key, value); } catch (_) {}
-    }
-
     function loadActivityLog() {
-      try {
-        const raw = safeLocalStorageGet(CATAN_ACTIVITY_LOG_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? parsed.slice(-CATAN_ACTIVITY_LOG_LIMIT) : [];
-      } catch (_) { return []; }
+      return Array.isArray(state.activityLog) ? state.activityLog.slice(-CATAN_ACTIVITY_LOG_LIMIT) : [];
     }
 
-    function saveActivityLog(items) {
-      safeLocalStorageSet(CATAN_ACTIVITY_LOG_KEY, JSON.stringify(items.slice(-CATAN_ACTIVITY_LOG_LIMIT)));
+    function clearActivityLog() {
+      state.activityLog = [];
+      updateActivityStatusDom();
     }
 
     function updateActivityStatusDom() {
@@ -5225,7 +5220,7 @@
       const last = items[items.length - 1];
       if (last && last.kind === kind && last.message === text && Date.now() - Number(last.ts || 0) < 1200) return;
       items.push({ kind, message: text, ts: Date.now() });
-      saveActivityLog(items);
+      state.activityLog = items.slice(-CATAN_ACTIVITY_LOG_LIMIT);
       updateActivityStatusDom();
     }
 
@@ -5260,10 +5255,14 @@
       if (mpState.replaying) return;
       const p = state.players[pIdx] || {};
       const name = p.name || action.playerName || "플레이어";
-      if (action.type === ACTION.MOVE_ROBBER) addActivityLog("robber", `${name} 도둑 이동`);
+      if (action.type === ACTION.MOVE_ROBBER) {
+        // Detailed steal entries are written by moveRobber(); plain movement is intentionally quiet.
+      }
       else if (action.type === ACTION.DISCARD_RESOURCES) addActivityLog("robber", `${name} 자원 폐기`);
       else if (action.type === "TRADE_PROPOSE") addActivityLog("trade", `${name} 거래 제안: ${action.offerStr || describeResourceBundle(action.offer)} → ${action.wantStr || describeResourceBundle(action.want)}`);
-      else if (action.type === "TRADE_ACCEPT") addActivityLog("trade", `${name} 거래 수락`);
+      else if (action.type === "TRADE_ACCEPT") {
+        // Completed trade details are written where the resource swap is applied.
+      }
       else if (action.type === "TRADE_REJECT") addActivityLog("trade", `${name} 거래 거절`);
       else if (action.type === ACTION.PLACE_CITY) addActivityLog("build", `${name} 도시 업그레이드`);
     }
@@ -5966,6 +5965,7 @@
             if (want[r] > 0) { tp.resources[r] -= want[r]; human.resources[r] += want[r]; }
           }
           SFX.build();
+          addActivityLog("trade", `${human.name || "플레이어"} ↔ ${tp.name || "AI"} 거래 완료`);
           showToast(`🤝 거래 성사! "${resp.dialogue || "거래!"}"`, 3000);
           Voice.ai("trade-accept", resp.target.i);
           state.canEndTurn = true;
@@ -6073,6 +6073,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
               for (const [r, n] of Object.entries(parsed.give)) { p.resources[r] -= n; human.resources[r] += n; }
               for (const [r, n] of Object.entries(parsed.want)) { human.resources[r] -= n; p.resources[r] += n; }
               SFX.build();
+              addActivityLog("trade", `${human.name || "플레이어"} ↔ ${p.name || "AI"} 거래 완료`);
               showToast("🤝 거래 성사!", 2000);
               Voice.ai("trade-accept", pIdx);
               state.tradeRejectCount[`${pIdx}`] = 0;

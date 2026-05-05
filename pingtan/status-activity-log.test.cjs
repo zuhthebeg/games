@@ -3,7 +3,10 @@ const assert = require('assert');
 
 const html = fs.readFileSync(__dirname + '/index.html', 'utf8');
 
-assert(html.includes('CATAN_ACTIVITY_LOG_KEY'), 'A activity log should persist locally with a dedicated localStorage key');
+assert(!html.includes('CATAN_ACTIVITY_LOG_KEY'), 'A activity log should not persist in localStorage across game sessions');
+assert(html.includes('activityLog: []'), 'A activity log should live in current game state only');
+assert(html.includes('function clearActivityLog'), 'A activity log should be clearable when a game session resets or ends');
+assert(html.includes('clearActivityLog();'), 'new games and ended games should clear old A activity log entries');
 assert(html.includes('function addActivityLog'), 'important user-facing events should be appended to a local activity log');
 assert(html.includes('function renderActivityStatus'), 'A area should render as a toggleable activity/status panel');
 assert(html.includes('toggleActivityLog'), 'A activity log should be expandable/collapsible');
@@ -12,6 +15,8 @@ assert(html.includes('renderActivityStatus()'), 'game screen should use the new 
 assert(!html.includes('<div class="status">${statusText()}</div>'), 'A area should not duplicate the full B turn/status text');
 assert(html.includes('showReactionEmote({'), 'reaction display path should still exist');
 assert(html.includes('addActivityLog("reaction"'), 'reactions should be displayed in A activity log');
+assert(html.includes('거래 완료'), 'completed trades should be shown as completed trade entries in A activity log');
+assert(html.includes('삥을 뜯겼습니다'), 'robber/knight steal events should show the victim got shaken down in A activity log');
 assert(!html.includes('reaction-emote-overlay'), 'reactions should no longer create a central overlay that covers the board');
 assert(!html.includes('MAX_REACTIONS_PER_TURN = 3'), 'reaction count limit should be removed');
 assert(!html.includes('reactionTurnCount'), 'reaction per-turn count state should be removed');
