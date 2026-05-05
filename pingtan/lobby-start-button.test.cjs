@@ -6,7 +6,7 @@ const start = html.indexOf('function renderRoomLobby()');
 if (start === -1) throw new Error('renderRoomLobby not found');
 const chunk = html.slice(start, start + 4500);
 
-const hostMapRowIndex = chunk.indexOf('label style="font-size:12px;color:var(--muted);white-space:nowrap;">맵');
+const hostMapRowIndex = chunk.indexOf('label style="font-size:12px;color:var(--muted);white-space:nowrap;">${pt("mapLabel")}');
 const startButtonIndex = chunk.indexOf('id="startBtn"');
 if (hostMapRowIndex === -1 || startButtonIndex === -1) {
   throw new Error('Could not locate host map row or start button in renderRoomLobby');

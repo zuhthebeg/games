@@ -1160,7 +1160,31 @@
         custom: "기타",
         directInput: "직접 입력",
         customPrompt: "읽을 문구를 입력하세요 (30자 이내)",
-        cooldown: "리액션은 잠깐 쉬었다가 보낼 수 있어요."
+        cooldown: "리액션은 잠깐 쉬었다가 보낼 수 있어요.",
+        maxPlayers: "최대 인원",
+        createRoom: "방 만들기",
+        turnSeconds: "턴 시간",
+        targetScore: "승점",
+        roomCode: "방 코드",
+        joinRoom: "참가하기",
+        relayReady: "relay.cocy.io 연결 후 플레이 가능합니다.",
+        ready: "준비 완료",
+        unready: "준비 취소",
+        fillAI: "AI 채우기",
+        leave: "나가기",
+        gameReady: "게임 시작 가능",
+        waitingPlayers: "플레이어를 기다리는 중...",
+        copyLink: "링크 복사",
+        share: "공유",
+        hostReadyHint: "참가자는 준비 완료를 누르면 시작 가능 상태가 된다.",
+        mapLabel: "맵",
+        defaultMap: "기본 맵",
+        shareCopied: "공유 링크 복사됨",
+        inviteCopied: "초대 문구 복사됨",
+        copyFailed: "복사 실패: 주소를 길게 눌러 복사해줘",
+        shareFailed: "공유 취소 또는 실패",
+        resultCopied: "결과 공유 문구 복사됨",
+        roomCodeRequired: "방 코드를 입력하세요."
       },
       en: {
         aiDifficulty: "AI difficulty",
@@ -1181,7 +1205,31 @@
         custom: "Custom",
         directInput: "Type your own",
         customPrompt: "Text to speak (30 chars max)",
-        cooldown: "Wait a second before sending another reaction."
+        cooldown: "Wait a second before sending another reaction.",
+        maxPlayers: "Max players",
+        createRoom: "Create room",
+        turnSeconds: "Turn time",
+        targetScore: "Victory points",
+        roomCode: "Room code",
+        joinRoom: "Join",
+        relayReady: "Connects through relay.cocy.io.",
+        ready: "Ready",
+        unready: "Cancel ready",
+        fillAI: "Fill with AI",
+        leave: "Leave",
+        gameReady: "Ready to start",
+        waitingPlayers: "Waiting for players...",
+        copyLink: "Copy invite",
+        share: "Share",
+        hostReadyHint: "Players can start once they mark ready.",
+        mapLabel: "Map",
+        defaultMap: "Default map",
+        shareCopied: "Share link copied",
+        inviteCopied: "Invite text copied",
+        copyFailed: "Copy failed. Long-press the address to copy it.",
+        shareFailed: "Share cancelled or failed",
+        resultCopied: "Result share text copied",
+        roomCodeRequired: "Enter a room code."
       }
     };
     let PINGTAN_LANG = localStorage.getItem(PINGTAN_LANG_KEY) || ((navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en");
@@ -4870,33 +4918,33 @@
             ${renderPingtanLangSwitch()}
             <div class="multi-options">
               <div class="multi-row">
-                <label for="maxPlayers">최대 인원</label>
+                <label for="maxPlayers">${pt("maxPlayers")}</label>
                 <select id="maxPlayers" onchange="onMaxPlayersChange(this.value)">
                   <option value="2" ${state.maxPlayers === 2 ? "selected" : ""}>2</option>
                   <option value="3" ${state.maxPlayers === 3 ? "selected" : ""}>3</option>
                   <option value="4" ${state.maxPlayers === 4 ? "selected" : ""}>4</option>
                 </select>
-                <button onclick="createRoom()">방 만들기</button>
+                <button onclick="createRoom()">${pt("createRoom")}</button>
               </div>
               <div class="multi-row">
-                <label for="turnSeconds">턴 시간</label>
+                <label for="turnSeconds">${pt("turnSeconds")}</label>
                 <select id="turnSeconds" onchange="onTurnSecondsChange(this.value)">
                   ${[30,45,60,90,120].map(v => `<option value="${v}" ${state.turnSeconds === v ? "selected" : ""}>${v}초</option>`).join("")}
                 </select>
               </div>
               <div class="multi-row">
-                <label for="targetScore">승점</label>
+                <label for="targetScore">${pt("targetScore")}</label>
                 <select id="targetScore" onchange="onTargetScoreChange(this.value)">
                   ${[5,7,10,12,15,20].map(v => `<option value="${v}" ${targetScoreForMap(state.selectedMapId) === v ? "selected" : ""}>${v}점</option>`).join("")}
                 </select>
               </div>
               <div class="multi-row">
-                <input id="roomCodeInput" value="${state.roomCodeInput}" placeholder="방 코드" oninput="onRoomCodeInput(this.value)">
-                <button onclick="joinRoom()">참가하기</button>
+                <input id="roomCodeInput" value="${state.roomCodeInput}" placeholder="${pt("roomCode")}" oninput="onRoomCodeInput(this.value)">
+                <button onclick="joinRoom()">${pt("joinRoom")}</button>
               </div>
             </div>
-            <div class="lobby-note">${mpState.waitingMessage || "relay.cocy.io 연결 후 플레이 가능합니다."}</div>
-            <button onclick="backToMode()">뒤로</button>
+            <div class="lobby-note">${mpState.waitingMessage || pt("relayReady")}</div>
+            <button onclick="backToMode()">${pt("back")}</button>
           </div>
         </div>
       `;
@@ -4936,24 +4984,24 @@ ${roomInviteUrl(roomCode)}`;
       const text = roomInviteText();
       try {
         await navigator.clipboard.writeText(text);
-        showToast("초대 문구 복사됨");
+        showToast(pt("inviteCopied"));
       } catch (_) {
-        showToast("복사 실패: 주소를 길게 눌러 복사해줘");
+        showToast(pt("copyFailed"));
       }
     }
 
     async function shareRoomInvite() {
       const url = roomInviteUrl();
-      const text = `삥탄 방에 참가: ${mpState.roomCode}\n${url}`;
+      const text = roomInviteText();
       try {
         if (navigator.share) {
-          await navigator.share({ title: "삥탄 방 초대", text, url });
+          await navigator.share({ title: "삥탄 방 초대 · Come get ppinged", text, url });
           return;
         }
         await navigator.clipboard.writeText(text);
-        showToast("공유 링크 복사됨");
+        showToast(pt("shareCopied"));
       } catch (_) {
-        showToast("공유 취소 또는 실패");
+        showToast(pt("shareFailed"));
       }
     }
 
@@ -4963,7 +5011,7 @@ ${roomInviteUrl(roomCode)}`;
       const others = players.filter(p => p.id !== mpState.myUserId);
       const allReady = others.length > 0 && others.every(p => p.isReady);
       const canStart = mpState.isHost && displayPlayers.length >= 2 && (allReady || getLobbyAiPlayers().length > 0);
-      const waitMsg = mpState.waitingMessage || (canStart ? "게임 시작 가능" : "플레이어를 기다리는 중...");
+      const waitMsg = mpState.waitingMessage || (canStart ? pt("gameReady") : pt("waitingPlayers"));
       const roomCode = mpState.roomCode || "";
       const inviteUrl = roomInviteUrl(roomCode);
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=132x132&data=${encodeURIComponent(inviteUrl)}`;
@@ -4972,20 +5020,20 @@ ${roomInviteUrl(roomCode)}`;
           <div class="lobby-card" style="max-height:calc(100vh - 96px);overflow-y:auto;flex:0 0 auto;">
             <h1 class="lobby-title">${PINGTAN_BRAND}</h1>
             <div class="room-lobby">
-              <p style="margin:0;text-align:center;">방 코드: <strong id="roomCodeDisplay">${roomCode || "-"}</strong></p>
+              <p style="margin:0;text-align:center;">${pt("roomCode")}: <strong id="roomCodeDisplay">${roomCode || "-"}</strong></p>
               ${roomCode ? `
               <div class="room-share-card" style="display:grid;gap:8px;justify-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,0.04);">
                 <img src="${qrUrl}" alt="삥탄 방 참가 QR" width="132" height="132" style="background:#fff;padding:6px;border-radius:10px;">
                 <div style="font-size:12px;color:#fde68a;text-align:center;font-weight:800;">Come get ppinged. No install. Open link and play.</div>
                 <div style="font-size:11px;color:var(--muted);word-break:break-all;text-align:center;">${inviteUrl}</div>
                 <div class="multi-row" style="justify-content:center;">
-                  <button onclick="copyRoomInvite()">📋 링크 복사</button>
-                  <button onclick="shareRoomInvite()">🔗 공유</button>
+                  <button onclick="copyRoomInvite()">📋 ${pt("copyLink")}</button>
+                  <button onclick="shareRoomInvite()">🔗 ${pt("share")}</button>
                 </div>
               </div>` : ""}
               ${mpState.isHost ? `
               <div class="multi-row" style="align-items:center;">
-                <label style="font-size:12px;color:var(--muted);white-space:nowrap;">맵</label>
+                <label style="font-size:12px;color:var(--muted);white-space:nowrap;">${pt("mapLabel")}</label>
                 <select onchange="mpState.mapId=this.value;state.selectedMapId=this.value;" style="flex:1;min-width:0;">
                   ${Object.values(MAP_PRESETS).map(m =>
                     `<option value="${m.id}" ${(mpState.mapId||"standard")===m.id?"selected":""}>${m.name}${"★".repeat(m.stars||0)} (${m.minPlayers}-${m.maxPlayers}인)</option>`
@@ -4993,26 +5041,26 @@ ${roomInviteUrl(roomCode)}`;
                 </select>
               </div>
               <div class="multi-row" style="align-items:center;">
-                <label style="font-size:12px;color:var(--muted);white-space:nowrap;">턴 시간</label>
+                <label style="font-size:12px;color:var(--muted);white-space:nowrap;">${pt("turnSeconds")}</label>
                 <select onchange="onTurnSecondsChange(this.value)" style="flex:1;min-width:0;">
                   ${[30,45,60,90,120].map(v => `<option value="${v}" ${state.turnSeconds === v ? "selected" : ""}>${v}초</option>`).join("")}
                 </select>
               </div>
               <div class="multi-row" style="align-items:center;">
-                <label style="font-size:12px;color:var(--muted);white-space:nowrap;">승점</label>
+                <label style="font-size:12px;color:var(--muted);white-space:nowrap;">${pt("targetScore")}</label>
                 <select onchange="onTargetScoreChange(this.value)" style="flex:1;min-width:0;">
                   ${[5,7,10,12,15,20].map(v => `<option value="${v}" ${targetScoreForMap(state.selectedMapId) === v ? "selected" : ""}>${v}점</option>`).join("")}
                 </select>
               </div>
               <div class="multi-row">
-                <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"}>게임 시작</button>
-                <button onclick="fillAIPlayers()">AI 채우기</button>
-                <button onclick="leaveRoom()" class="danger">나가기</button>
+                <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"}>${pt("startGame")}</button>
+                <button onclick="fillAIPlayers()">${pt("fillAI")}</button>
+                <button onclick="leaveRoom()" class="danger">${pt("leave")}</button>
               </div>
-              <div class="lobby-note">참가자는 준비 완료를 누르면 시작 가능 상태가 된다.</div>` : `<div class="lobby-note">맵: ${MAP_PRESETS[mpState.mapId||"standard"]?.name || "기본 맵"}</div>`}
+              <div class="lobby-note">${pt("hostReadyHint")}</div>` : `<div class="lobby-note">${pt("mapLabel")}: ${MAP_PRESETS[mpState.mapId||"standard"]?.name || pt("defaultMap")}</div>`}
               <div class="multi-row">
-                <button onclick="setReady()">${mpState.ready ? "준비 취소" : "준비 완료"}</button>
-                <button onclick="leaveRoom()" class="danger">나가기</button>
+                <button onclick="setReady()">${mpState.ready ? pt("unready") : pt("ready")}</button>
+                <button onclick="leaveRoom()" class="danger">${pt("leave")}</button>
               </div>
               <div id="playerList">${lobbyPlayersHtml()}</div>
               <div class="lobby-note">${waitMsg}</div>
@@ -5042,9 +5090,9 @@ https://game.cocy.io/pingtan/`;
           return;
         }
         await navigator.clipboard.writeText(text);
-        showToast("결과 공유 문구 복사됨");
+        showToast(pt("resultCopied"));
       } catch (_) {
-        showToast("공유 취소 또는 실패");
+        showToast(pt("shareFailed"));
       }
     }
 
@@ -5931,7 +5979,7 @@ https://game.cocy.io/pingtan/`;
     async function joinRoom() {
       const code = (state.roomCodeInput || "").trim();
       if (!code) {
-        mpState.waitingMessage = "방 코드를 입력하세요.";
+        mpState.waitingMessage = pt("roomCodeRequired");
         render();
         return;
       }
