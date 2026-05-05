@@ -56,9 +56,9 @@
     "category": "game"
   },
   {
-    "title": "제도 개척전",
-    "icon": "https://game.cocy.io/archipelago/icon.svg",
-    "url": "https://game.cocy.io/archipelago/index.html",
+    "title": "삥탄",
+    "icon": "https://game.cocy.io/pingtan/icon.svg",
+    "url": "https://game.cocy.io/pingtan/index.html",
     "desc": "3-4인 전략 보드게임 - 자원, 건설, 거래",
     "badge": "NEW",
     "platforms": [

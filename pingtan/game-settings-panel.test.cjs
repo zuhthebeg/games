@@ -12,4 +12,4 @@ assert(html.includes('!canEditGameSettings'), 'non-host multiplayer users should
 assert(html.includes('type: ACTION.GAME_SETTINGS'), 'host changes should sync through multiplayer action');
 assert(html.includes('state.targetScoreCustom = true'), 'target score override should remain explicit after settings changes');
 
-console.log('PASS archipelago in-game settings panel');
+console.log('PASS pingtan in-game settings panel');

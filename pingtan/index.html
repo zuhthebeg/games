@@ -4,7 +4,7 @@
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({"gtm.start":new Date().getTime(),event:"gtm.js"});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!="dataLayer"?"&l="+l:"";j.async=true;j.src="https://www.googletagmanager.com/gtm.js?id="+i+dl;f.parentNode.insertBefore(j,f)})(window,document,"script","dataLayer","GTM-MV8KQGJF");</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>제도 개척전</title>
+  <title>삥탄</title>
   <link rel="icon" href="icon.svg" />
   <script src="/lib/shared-wallet.js?v=20260312a"></script>
   <script src="/lib/multiplayer.js?v=20260502a"></script>
@@ -1662,8 +1662,8 @@
       }
     };
 
-    MAP_PRESETS["crescent-archipelago"] = {
-      id: "crescent-archipelago", name: "초승달 군도", stars: 1,
+    MAP_PRESETS["crescent-pingtan"] = {
+      id: "crescent-pingtan", name: "초승달 군도", stars: 1,
       description: "동쪽이 바다로 열린 초승달형 맵. 비대칭 지형이 전략적 다양성을 만든다.",
       minPlayers: 3, maxPlayers: 4, vpGoal: 10,
       layout: {
@@ -4512,7 +4512,7 @@
       return `
         <div class="lobby-screen">
           <div class="lobby-card">
-            <h1 class="lobby-title">제도 개척전</h1>
+            <h1 class="lobby-title">삥탄</h1>
             <div class="multi-row" style="margin-bottom:8px;">
               <label for="aiDifficulty">AI 난이도</label>
               <select id="aiDifficulty" onchange="onAiDifficultyChange(this.value)">
@@ -4593,7 +4593,7 @@
       return `
         <div class="lobby-screen">
           <div class="lobby-card">
-            <h1 class="lobby-title">제도 개척전</h1>
+            <h1 class="lobby-title">삥탄</h1>
             <div class="multi-options">
               <div class="multi-row">
                 <label for="maxPlayers">최대 인원</label>
@@ -4663,10 +4663,10 @@
 
     async function shareRoomInvite() {
       const url = roomInviteUrl();
-      const text = `제도 개척전 방에 참가: ${mpState.roomCode}\n${url}`;
+      const text = `삥탄 방에 참가: ${mpState.roomCode}\n${url}`;
       try {
         if (navigator.share) {
-          await navigator.share({ title: "제도 개척전 방 초대", text, url });
+          await navigator.share({ title: "삥탄 방 초대", text, url });
           return;
         }
         await navigator.clipboard.writeText(text);
@@ -4689,12 +4689,12 @@
       return `
         <div class="lobby-screen">
           <div class="lobby-card" style="max-height:calc(100vh - 96px);overflow-y:auto;flex:0 0 auto;">
-            <h1 class="lobby-title">제도 개척전</h1>
+            <h1 class="lobby-title">삥탄</h1>
             <div class="room-lobby">
               <p style="margin:0;text-align:center;">방 코드: <strong id="roomCodeDisplay">${roomCode || "-"}</strong></p>
               ${roomCode ? `
               <div class="room-share-card" style="display:grid;gap:8px;justify-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,0.04);">
-                <img src="${qrUrl}" alt="제도 개척전 방 참가 QR" width="132" height="132" style="background:#fff;padding:6px;border-radius:10px;">
+                <img src="${qrUrl}" alt="삥탄 방 참가 QR" width="132" height="132" style="background:#fff;padding:6px;border-radius:10px;">
                 <div style="font-size:11px;color:var(--muted);word-break:break-all;text-align:center;">${inviteUrl}</div>
                 <div class="multi-row" style="justify-content:center;">
                   <button onclick="copyRoomInvite()">📋 링크 복사</button>
@@ -5098,7 +5098,8 @@
             phrase: data.phrase || emote.phrase,
             motion: data.motion || emote.motion,
             speak: idx !== localPlayerIndex(),
-            localTts: data.localTts !== false
+            localTts: data.localTts !== false,
+            playerVoice: data.playerVoice || reactionVoiceForPlayer(idx)
           });
           markActionProcessed(data.actionId);
           return;
@@ -5156,13 +5157,21 @@
       } catch (_) {}
     }
 
-    async function speakReactionWithLocalTTS(text) {
+    function reactionVoiceForPlayer(playerIdxOrVoice) {
+      if (playerIdxOrVoice === "ko-male" || playerIdxOrVoice === "ko-female") return playerIdxOrVoice;
+      const idx = Number(playerIdxOrVoice);
+      if (Number.isFinite(idx)) return idx % 2 === 0 ? "ko-male" : "ko-female";
+      return "ko-male";
+    }
+
+    async function speakReactionWithLocalTTS(text, playerVoice = "ko-male") {
       if (!soundSettings.voice || !text) return;
+      const voice = reactionVoiceForPlayer(playerVoice);
       try {
         const res = await fetch("https://llm.cocy.io/v1/audio/speech", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
-          body: JSON.stringify({ model: "cosyvoice", input: text, voice: "alloy", response_format: "mp3" })
+          body: JSON.stringify({ model: "cosyvoice", input: text, voice, response_format: "mp3" })
         });
         if (!res.ok) throw new Error("tts failed");
         const blob = await res.blob();
@@ -5175,8 +5184,8 @@
       }
     }
 
-    function speakReaction(text, localTts = true) {
-      if (localTts) speakReactionWithLocalTTS(text);
+    function speakReaction(text, localTts = true, playerVoice = "ko-male") {
+      if (localTts) speakReactionWithLocalTTS(text, playerVoice);
       else speakReactionBrowser(text);
     }
 
@@ -5259,10 +5268,10 @@
       else if (action.type === ACTION.PLACE_CITY) addActivityLog("build", `${name} 도시 업그레이드`);
     }
 
-    function showReactionEmote({ playerName = "플레이어", emoji = "💬", phrase = "", motion = "pop", speak = true, localTts = true } = {}) {
+    function showReactionEmote({ playerName = "플레이어", emoji = "💬", phrase = "", motion = "pop", speak = true, localTts = true, playerVoice = "ko-male" } = {}) {
       const text = `${playerName}: ${emoji} ${phrase}`;
       addActivityLog("reaction", text);
-      if (speak) speakReaction(phrase, localTts);
+      if (speak) speakReaction(phrase, localTts, playerVoice);
     }
 
     function showEmotePanel() {
@@ -5290,8 +5299,9 @@
       mpState.emoteCooldownUntil = now + 1000;
       const myIdx = localPlayerIndex();
       const me = state.players[myIdx] || { name: "나" };
-      const action = { type: ACTION.REACTION_EMOTE, emoteId, emoji, phrase, motion, localTts, playerId: mpState.myUserId || me.userId || me.id || "local", actionId: nextActionId() };
-      showReactionEmote({ playerName: me.name || "나", emoji, phrase, motion, localTts });
+      const playerVoice = reactionVoiceForPlayer(myIdx);
+      const action = { type: ACTION.REACTION_EMOTE, emoteId, emoji, phrase, motion, localTts, playerVoice, playerId: mpState.myUserId || me.userId || me.id || "local", actionId: nextActionId() };
+      showReactionEmote({ playerName: me.name || "나", emoji, phrase, motion, localTts, playerVoice });
       document.getElementById("emotePanel")?.remove();
       if (isMultiMode() && mpState.client) {
         markActionProcessed(action.actionId);
@@ -5306,7 +5316,7 @@
 
     async function sendCustomReactionEmote() {
       const phrase = prompt("읽을 문구를 입력하세요 (30자 이내)", "") || "";
-      return sendReactionPayload({ emoteId: "custom", emoji: "⌨️", phrase, motion: "pop", localTts: false });
+      return sendReactionPayload({ emoteId: "custom", emoji: "⌨️", phrase, motion: "pop", localTts: true });
     }
 
     async function refreshRoomState() {
@@ -5502,7 +5512,7 @@
       
       catanMpUI = new MultiplayerUI({
         gameType: "catan",
-        gameName: "🏝️ 제도 개척전",
+        gameName: "🏝️ 삥탄",
         container: mpLobby,
         maxPlayers: 4,
         supportsLocal: false,
@@ -5924,7 +5934,7 @@
         const heuristic = evaluateAITradeOffer(tp, offer, want);
         if (heuristic.accept) return { target, accept: true, dialogue: heuristic.dialogue };
         if (heuristic.rejectHard) return { target, accept: false, dialogue: heuristic.dialogue };
-        const stateStr = `제도 개척전 게임. 당신은 "${tp.name}".
+        const stateStr = `삥탄 게임. 당신은 "${tp.name}".
 당신 자원: 벽돌${tp.resources.brick} 나무${tp.resources.lumber} 양${tp.resources.wool} 밀${tp.resources.grain} 광석${tp.resources.ore} (VP:${tp.vp})
 상대 "${human.name}"(VP:${human.vp})의 거래 제안:
 상대가 줄 것 = 당신이 받는 자원: ${offerStr}
@@ -5993,7 +6003,7 @@
       const rejectHistory = rejects > 0 ? `\n주의: 이전에 ${rejects}번 거절당했습니다. 같은 제안 반복하지 말고 더 좋은 조건(2:1 등)을 제시하세요.` : "";
       const strategyHint = "";
 
-      const stateStr = `제도 개척전 게임. 당신은 "${p.name}".
+      const stateStr = `삥탄 게임. 당신은 "${p.name}".
 자원: 벽돌${p.resources.brick} 나무${p.resources.lumber} 양${p.resources.wool} 밀${p.resources.grain} 광석${p.resources.ore}
 상대(${human.name}) 자원 총: ${totalResourceCount(human)}장
 VP: 나${p.vp} vs 상대${human.vp} (목표10)
@@ -6246,7 +6256,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       overlay.innerHTML = `
         <div style="background:#16213e;border-radius:16px;padding:16px;max-width:360px;width:100%;max-height:80vh;overflow-y:auto;font-size:12px;line-height:1.6;color:#ccc;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <span style="font-size:16px;font-weight:700;">📖 제도 개척전 가이드</span>
+            <span style="font-size:16px;font-weight:700;">📖 삥탄 가이드</span>
             <button onclick="this.closest('div[style]').parentElement.remove()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>
           </div>
           <b>🎯 목표</b>: 10점 먼저 달성!<br><br>
@@ -6554,9 +6564,9 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     <script src="/lib/site-meta.js"></script>
     <script>
       SiteMeta.init({
-        title: '제도 개척전 - game.cocy.io',
+        title: '삥탄 - game.cocy.io',
         description: '섬을 개척하고 자원을 교역하는 전략 보드게임',
-        url: 'https://game.cocy.io/archipelago/'
+        url: 'https://game.cocy.io/pingtan/'
       });
     </script>
 </body>
