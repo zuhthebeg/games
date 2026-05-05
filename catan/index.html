@@ -1087,6 +1087,7 @@
       ROLL_DICE: "ROLL_DICE",
       MOVE_ROBBER: "MOVE_ROBBER",
       DISCARD_RESOURCES: "DISCARD_RESOURCES",
+      GOLD_CHOICE: "GOLD_CHOICE",
       END_TURN: "END_TURN",
       REACTION_EMOTE: "REACTION_EMOTE"
     };
@@ -2173,8 +2174,16 @@
           const owner = state.players[v.owner];
 
           if (hex.type === "gold") {
-            if (v.owner === humanIdx && !isMultiMode()) {
-              state._pendingHumanGold += rawAmount; // deferred to picker
+            if (owner && !owner.isAI) {
+              if (v.owner === humanIdx) {
+                state._pendingHumanGold += rawAmount; // deferred to picker
+              } else if (isMultiMode() && v.owner !== humanIdx) {
+                // Wait for that human client's synced GOLD_CHOICE action.
+              } else {
+                const preferred = pickBestAIGoldResource(v.owner);
+                const amount = Math.min(rawAmount, bankRemaining(preferred));
+                if (amount > 0) { owner.resources[preferred] += amount; if (!gains[v.owner]) gains[v.owner] = {}; gains[v.owner][preferred] = (gains[v.owner][preferred] || 0) + amount; }
+              }
             } else {
               const preferred = pickBestAIGoldResource(v.owner);
               const amount = Math.min(rawAmount, bankRemaining(preferred));
@@ -2263,20 +2272,38 @@
       });
     }
 
+    function applyGoldChoice(playerId, resources = {}) {
+      const pIdx = playerIndexFromAnyId(playerId);
+      const player = state.players[pIdx];
+      if (pIdx < 0 || !player) return false;
+      const gains = {};
+      for (const [r, n] of Object.entries(resources || {})) {
+        if (!RESOURCES.includes(r)) continue;
+        const requested = Math.max(0, Number(n) || 0);
+        const amount = Math.min(requested, bankRemaining(r));
+        if (amount > 0) {
+          player.resources[r] += amount;
+          if (!gains[pIdx]) gains[pIdx] = {};
+          gains[pIdx][r] = (gains[pIdx][r] || 0) + amount;
+        }
+      }
+      if (Object.keys(gains).length) showGainsToast(gains);
+      recalcAllVP();
+      return true;
+    }
+
     async function resolveHumanGoldIfNeeded() {
       if (!state._pendingHumanGold) return;
       const humanIdx = localPlayerIndex();
       const human = state.players[humanIdx];
       const chosen = await showGoldPicker(state._pendingHumanGold, human.resources);
-      const gains = state._pendingGains || {};
-      for (const [r, n] of Object.entries(chosen)) {
-        const amount = Math.min(n, bankRemaining(r));
-        if (amount > 0) { human.resources[r] += amount; if (!gains[humanIdx]) gains[humanIdx] = {}; gains[humanIdx][r] = (gains[humanIdx][r] || 0) + amount; }
-      }
       state._pendingHumanGold = 0; state._pendingGains = null;
-      showGainsToast(gains);
-      recalcAllVP();
-      render();
+      if (isMultiMode()) {
+        await sendGameAction(ACTION.GOLD_CHOICE, { playerId: human.userId || human.id, resources: chosen });
+      } else {
+        applyGoldChoice(human.userId || human.id, chosen);
+        render();
+      }
     }
 
     const DICE_FACES = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
@@ -3105,6 +3132,9 @@
       if (type === ACTION.DISCARD_RESOURCES) {
         applyDiscardResources(pIdx, action.resources);
         return true;
+      }
+      if (type === ACTION.GOLD_CHOICE) {
+        return applyGoldChoice(playerId, action.resources);
       }
       if (type === ACTION.MOVE_ROBBER) {
         if (pIdx !== state.currentPlayer) return false;
