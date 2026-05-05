@@ -4,7 +4,7 @@ const assert = require('assert');
 const html = fs.readFileSync(__dirname + '/index.html', 'utf8');
 const start = html.indexOf('function renderRoomLobby()');
 if (start === -1) throw new Error('renderRoomLobby not found');
-const chunk = html.slice(start, start + 4200);
+const chunk = html.slice(start, start + 5600);
 
 const selectRowIndex = chunk.indexOf('<select onchange="mpState.mapId=this.value;state.selectedMapId=this.value;"');
 const playerListIndex = chunk.indexOf('<div id="playerList">');

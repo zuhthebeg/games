@@ -4,7 +4,18 @@
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({"gtm.start":new Date().getTime(),event:"gtm.js"});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!="dataLayer"?"&l="+l:"";j.async=true;j.src="https://www.googletagmanager.com/gtm.js?id="+i+dl;f.parentNode.insertBefore(j,f)})(window,document,"script","dataLayer","GTM-MV8KQGJF");</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>삥탄</title>
+  <title>삥탄 - Korean Slang Multiplayer Board Game</title>
+  <meta name="description" content="Build, trade, steal, and shout Korean reactions in 삥탄, a fast multiplayer board game for friends. No install. Open link and play." />
+  <meta name="keywords" content="삥탄, multiplayer board game, Korean slang game, browser game, pping" />
+  <link rel="canonical" href="https://game.cocy.io/pingtan/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="삥탄 - Korean Slang Multiplayer Board Game" />
+  <meta property="og:description" content="Build, trade, steal, and shout Korean reactions with friends. Come get ppinged." />
+  <meta property="og:url" content="https://game.cocy.io/pingtan/" />
+  <meta property="og:image" content="https://game.cocy.io/pingtan/icon.svg" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="삥탄 - Korean Slang Multiplayer Board Game" />
+  <meta name="twitter:description" content="No install. Open link and play. Come get ppinged in 삥탄." />
   <link rel="icon" href="icon.svg" />
   <script src="/lib/shared-wallet.js?v=20260312a"></script>
   <script src="/lib/multiplayer.js?v=20260502a"></script>
@@ -1145,7 +1156,7 @@
         next: "다음 →",
         startGame: "게임 시작",
         reactions: "리액션",
-        reactionHelp: "보낸 리액션은 주요 로그(A)에 표시됩니다.",
+        reactionHelp: "K-Reactions는 주요 로그(A)에 표시됩니다.",
         custom: "기타",
         directInput: "직접 입력",
         customPrompt: "읽을 문구를 입력하세요 (30자 이내)",
@@ -1166,7 +1177,7 @@
         next: "Next →",
         startGame: "Start Game",
         reactions: "Reactions",
-        reactionHelp: "Reactions appear in the main log (A). Korean slang stays Korean.",
+        reactionHelp: "K-Reactions appear in the main log (A). Korean slang stays Korean.",
         custom: "Custom",
         directInput: "Type your own",
         customPrompt: "Text to speak (30 chars max)",
@@ -4906,6 +4917,13 @@
       return `${baseUrl}#room=${encodeURIComponent(roomCode || "")}`;
     }
 
+    function roomInviteText(roomCode = mpState.roomCode) {
+      return `I made a 삥탄 room. Come get ppinged.
+Room: ${roomCode || "-"}
+No install. Open link and play.
+${roomInviteUrl(roomCode)}`;
+    }
+
     function inviteRoomCodeFromUrl() {
       const hash = window.location.hash || "";
       const hashMatch = hash.match(/(?:^#|[&#])room=([^&]+)/i);
@@ -4915,10 +4933,10 @@
     }
 
     async function copyRoomInvite() {
-      const url = roomInviteUrl();
+      const text = roomInviteText();
       try {
-        await navigator.clipboard.writeText(url);
-        showToast("초대 링크 복사됨");
+        await navigator.clipboard.writeText(text);
+        showToast("초대 문구 복사됨");
       } catch (_) {
         showToast("복사 실패: 주소를 길게 눌러 복사해줘");
       }
@@ -4958,6 +4976,7 @@
               ${roomCode ? `
               <div class="room-share-card" style="display:grid;gap:8px;justify-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,0.04);">
                 <img src="${qrUrl}" alt="삥탄 방 참가 QR" width="132" height="132" style="background:#fff;padding:6px;border-radius:10px;">
+                <div style="font-size:12px;color:#fde68a;text-align:center;font-weight:800;">Come get ppinged. No install. Open link and play.</div>
                 <div style="font-size:11px;color:var(--muted);word-break:break-all;text-align:center;">${inviteUrl}</div>
                 <div class="multi-row" style="justify-content:center;">
                   <button onclick="copyRoomInvite()">📋 링크 복사</button>
@@ -5003,6 +5022,32 @@
       `;
     }
 
+    function resultShareText() {
+      const winner = state.players[state.winner];
+      const isMe = state.winner === localPlayerIndex();
+      const goal = targetScoreForMap(state.selectedMapId);
+      const score = winner ? `${winner.vp}/${goal}VP` : `${goal}VP`;
+      return isMe
+        ? `I survived 삥탄. ${score}. Everyone else got ppinged.
+https://game.cocy.io/pingtan/`
+        : `I got ppinged in 삥탄 by ${winner?.name || "someone"}. Run it back.
+https://game.cocy.io/pingtan/`;
+    }
+
+    async function copyResultShare() {
+      const text = resultShareText();
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "삥탄 result", text, url: "https://game.cocy.io/pingtan/" });
+          return;
+        }
+        await navigator.clipboard.writeText(text);
+        showToast("결과 공유 문구 복사됨");
+      } catch (_) {
+        showToast("공유 취소 또는 실패");
+      }
+    }
+
     function renderWinnerModal() {
       if (state.winner === null || state.winner === undefined || state.dismissedWinner) return "";
       const winner = state.players[state.winner];
@@ -5014,8 +5059,10 @@
           <div style="font-size:54px;line-height:1;">${isMe ? "🏆" : "🎉"}</div>
           <div style="font-size:22px;font-weight:900;color:#fff;margin-top:8px;">${escapeHtml(winner.name)} 승리!</div>
           <div style="font-size:13px;color:#cbd5e1;margin-top:8px;">${winner.vp}점으로 클리어 목표 ${targetScoreForMap(state.selectedMapId)}점 달성</div>
+          <div style="font-size:12px;color:#93c5fd;margin-top:8px;line-height:1.4;">${escapeHtml(resultShareText()).replace(/\n/g, "<br>")}</div>
           ${isMe ? `<div style="font-size:14px;color:#fde68a;margin-top:8px;">보상 +${prize.toLocaleString()}원</div>` : ""}
-          <button onclick="${isMultiMode() ? "returnToRoomForRematch()" : "returnToSingleMapSelect()"}" style="margin-top:18px;width:100%;padding:12px;border-radius:12px;border:none;background:#facc15;color:#111827;font-weight:900;cursor:pointer;">${isMultiMode() ? "방으로 돌아가기" : "맵 선택으로"}</button>
+          <button onclick="copyResultShare()" style="margin-top:14px;width:100%;padding:11px;border-radius:12px;border:1px solid rgba(147,197,253,.5);background:rgba(59,130,246,.18);color:#dbeafe;font-weight:900;cursor:pointer;">📣 결과 공유</button>
+          <button onclick="${isMultiMode() ? "returnToRoomForRematch()" : "returnToSingleMapSelect()"}" style="margin-top:8px;width:100%;padding:12px;border-radius:12px;border:none;background:#facc15;color:#111827;font-weight:900;cursor:pointer;">${isMultiMode() ? "방으로 돌아가기" : "맵 선택으로"}</button>
           <button onclick="dismissWinnerModal()" style="margin-top:8px;width:100%;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e5e7eb;font-weight:800;cursor:pointer;">닫기</button>
         </div>
       </div>`;
@@ -6919,6 +6966,9 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.backToMode = backToMode;
     window.createRoom = createRoom;
     window.joinRoom = joinRoom;
+    window.copyRoomInvite = copyRoomInvite;
+    window.shareRoomInvite = shareRoomInvite;
+    window.copyResultShare = copyResultShare;
     window.leaveRoom = leaveRoom;
     window.setReady = setReady;
     window.fillAIPlayers = fillAIPlayers;
