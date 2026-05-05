@@ -1127,6 +1127,73 @@
       window.visualViewport.addEventListener("resize", syncpingtanViewportMetrics, { passive: true });
       window.visualViewport.addEventListener("scroll", syncpingtanViewportMetrics, { passive: true });
     }
+    const PINGTAN_BRAND = "삥탄";
+    const PINGTAN_LANG_KEY = "pingtan-lang";
+    const PINGTAN_I18N = {
+      ko: {
+        aiDifficulty: "AI 난이도",
+        easy: "쉬움",
+        normal: "보통",
+        hard: "어려움",
+        single: "싱글플레이",
+        multi: "멀티플레이",
+        mapSelect: "맵 선택",
+        selected: "선택",
+        players: "인",
+        clearTarget: "클리어 목표",
+        back: "← 뒤로",
+        next: "다음 →",
+        startGame: "게임 시작",
+        reactions: "리액션",
+        reactionHelp: "보낸 리액션은 주요 로그(A)에 표시됩니다.",
+        custom: "기타",
+        directInput: "직접 입력",
+        customPrompt: "읽을 문구를 입력하세요 (30자 이내)",
+        cooldown: "리액션은 잠깐 쉬었다가 보낼 수 있어요."
+      },
+      en: {
+        aiDifficulty: "AI difficulty",
+        easy: "Easy",
+        normal: "Normal",
+        hard: "Hard",
+        single: "Single Player",
+        multi: "Multiplayer",
+        mapSelect: "Choose Map",
+        selected: "Selected",
+        players: "players",
+        clearTarget: "Goal",
+        back: "← Back",
+        next: "Next →",
+        startGame: "Start Game",
+        reactions: "Reactions",
+        reactionHelp: "Reactions appear in the main log (A). Korean slang stays Korean.",
+        custom: "Custom",
+        directInput: "Type your own",
+        customPrompt: "Text to speak (30 chars max)",
+        cooldown: "Wait a second before sending another reaction."
+      }
+    };
+    let PINGTAN_LANG = localStorage.getItem(PINGTAN_LANG_KEY) || ((navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en");
+    if (!PINGTAN_I18N[PINGTAN_LANG]) PINGTAN_LANG = "ko";
+    document.documentElement.lang = PINGTAN_LANG;
+    function pt(key, vars = {}) {
+      let text = (PINGTAN_I18N[PINGTAN_LANG] && PINGTAN_I18N[PINGTAN_LANG][key]) || PINGTAN_I18N.ko[key] || key;
+      for (const [k, v] of Object.entries(vars)) text = text.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
+      return text;
+    }
+    function setPingtanLang(lang) {
+      if (!PINGTAN_I18N[lang] || lang === PINGTAN_LANG) return;
+      PINGTAN_LANG = lang;
+      localStorage.setItem(PINGTAN_LANG_KEY, lang);
+      document.documentElement.lang = PINGTAN_LANG;
+      render();
+    }
+    function renderPingtanLangSwitch() {
+      return `<div style="display:flex;justify-content:center;gap:6px;margin:-2px 0 8px;">
+        ${["ko", "en"].map(lang => `<button onclick="setPingtanLang('${lang}')" style="width:auto;padding:5px 9px;border-radius:999px;border:1px solid ${PINGTAN_LANG === lang ? 'var(--accent)' : 'var(--line)'};background:${PINGTAN_LANG === lang ? 'rgba(79,194,127,.18)' : 'rgba(255,255,255,.05)'};font-size:11px;">${lang.toUpperCase()}</button>`).join("")}
+      </div>`;
+    }
+
     const RESOURCES = ["brick", "lumber", "wool", "grain", "ore"];
     const RESOURCE_ICONS = { brick: "🧱", lumber: "🪵", wool: "🐑", grain: "🌾", ore: "⛏️", desert: "🏜️", lake: "🏞️", sea: "🌊", volcano: "🌋", gold: "💰", strait: "🌊" };
     const COST = {
@@ -1240,11 +1307,13 @@
       { id: "hello", emoji: "👋", label: "인사", phrase: "안녕하세요", motion: "wave" },
       { id: "good", emoji: "👍", label: "좋아요", phrase: "좋아요", motion: "pop" },
       { id: "laugh", emoji: "😂", label: "웃기", phrase: "ㅋㅋ", motion: "pop" },
+      { id: "sibal", emoji: "🤯", label: "시발", phrase: "시발 뭐야", motion: "shake" },
       { id: "wow", emoji: "😱", label: "놀람", phrase: "헉", motion: "shake" },
       { id: "nice", emoji: "🎉", label: "칭찬", phrase: "나이스", motion: "celebrate" },
       { id: "tired", emoji: "😵", label: "지쳤나요", phrase: "지쳤나요", motion: "shake" },
       { id: "please", emoji: "🙏", label: "제발", phrase: "제발", motion: "pop" },
-      { id: "trade-bro", emoji: "🤝", label: "거래해줘 형님", phrase: "거래해줘 형님", motion: "wave" }
+      { id: "trade-bro", emoji: "🤝", label: "거래해줘 형님", phrase: "거래해줘 형님", motion: "wave" },
+      { id: "ppinged", emoji: "💸", label: "삥뜯겼다", phrase: "삥뜯겼다 시발", motion: "shake" }
     ];
 
     function emptyResources() {
@@ -4704,17 +4773,18 @@
       return `
         <div class="lobby-screen">
           <div class="lobby-card">
-            <h1 class="lobby-title">삥탄</h1>
+            <h1 class="lobby-title">${PINGTAN_BRAND}</h1>
+            ${renderPingtanLangSwitch()}
             <div class="multi-row" style="margin-bottom:8px;">
-              <label for="aiDifficulty">AI 난이도</label>
+              <label for="aiDifficulty">${pt("aiDifficulty")}</label>
               <select id="aiDifficulty" onchange="onAiDifficultyChange(this.value)">
-                <option value="easy" ${state.aiDifficulty === "easy" ? "selected" : ""}>쉬움</option>
-                <option value="normal" ${state.aiDifficulty === "normal" ? "selected" : ""}>보통</option>
-                <option value="hard" ${state.aiDifficulty === "hard" ? "selected" : ""}>어려움</option>
+                <option value="easy" ${state.aiDifficulty === "easy" ? "selected" : ""}>${pt("easy")}</option>
+                <option value="normal" ${state.aiDifficulty === "normal" ? "selected" : ""}>${pt("normal")}</option>
+                <option value="hard" ${state.aiDifficulty === "hard" ? "selected" : ""}>${pt("hard")}</option>
               </select>
             </div>
-            <button onclick="showMapSelect('single')">싱글플레이</button>
-            <button onclick="showMultiOptions()">멀티플레이</button>
+            <button onclick="showMapSelect('single')">${pt("single")}</button>
+            <button onclick="showMultiOptions()">${pt("multi")}</button>
           </div>
         </div>
       `;
@@ -4758,23 +4828,23 @@
       return `
         <div id="map-select-scroll" style="flex:1;overflow-y:auto;padding:24px 12px;display:flex;flex-direction:column;align-items:center;">
           <div class="lobby-card" style="width:min(620px,100%)">
-            <h1 class="lobby-title" style="font-size:24px;margin-bottom:4px;">맵 선택</h1>
+            <h1 class="lobby-title" style="font-size:24px;margin-bottom:4px;">${pt("mapSelect")}</h1>
             <div class="map-grid">
               ${maps.map(m => `
                 <div class="map-card${selected === m.id ? " selected" : ""}" onclick="onMapCardClick('${m.id}')">
                   <div class="map-card-name">${m.name}</div>
                   <div class="map-card-stars">${starsHtml(m.stars)}</div>
-                  <div class="map-card-meta">${m.minPlayers}–${m.maxPlayers}인 · 클리어 목표 ${targetScoreForMap(m.id)}점 · 🏆${Math.round(victoryPrizeForMap(m.id, targetScoreForMap(m.id)) / 10000).toLocaleString()}만원</div>
+                  <div class="map-card-meta">${m.minPlayers}–${m.maxPlayers}${pt("players")} · ${pt("clearTarget")} ${targetScoreForMap(m.id)}점 · 🏆${Math.round(victoryPrizeForMap(m.id, targetScoreForMap(m.id)) / 10000).toLocaleString()}만원</div>
                   ${m.description ? `<div class="map-card-desc">${m.description}</div>` : ""}
                 </div>
               `).join("")}
             </div>
             <div class="lobby-note" style="margin-top:2px;">
-              선택: <strong>${preset.name}</strong> — ${preset.minPlayers}~${preset.maxPlayers}인 · 클리어 목표 ${targetScoreForMap(preset.id)}점
+              ${pt("selected")}: <strong>${preset.name}</strong> — ${preset.minPlayers}~${preset.maxPlayers}${pt("players")} · ${pt("clearTarget")} ${targetScoreForMap(preset.id)}점
             </div>
             <div class="multi-row" style="justify-content:space-between;">
-              <button onclick="state.screen='mode';render()" style="background:var(--panel-2);border:1px solid var(--line);">← 뒤로</button>
-              <button onclick="confirmMapSelect()">${isMulti ? "다음 →" : "게임 시작"}</button>
+              <button onclick="state.screen='mode';render()" style="background:var(--panel-2);border:1px solid var(--line);">${pt("back")}</button>
+              <button onclick="confirmMapSelect()">${isMulti ? pt("next") : pt("startGame")}</button>
             </div>
           </div>
         </div>
@@ -4785,7 +4855,8 @@
       return `
         <div class="lobby-screen">
           <div class="lobby-card">
-            <h1 class="lobby-title">삥탄</h1>
+            <h1 class="lobby-title">${PINGTAN_BRAND}</h1>
+            ${renderPingtanLangSwitch()}
             <div class="multi-options">
               <div class="multi-row">
                 <label for="maxPlayers">최대 인원</label>
@@ -4881,7 +4952,7 @@
       return `
         <div class="lobby-screen">
           <div class="lobby-card" style="max-height:calc(100vh - 96px);overflow-y:auto;flex:0 0 auto;">
-            <h1 class="lobby-title">삥탄</h1>
+            <h1 class="lobby-title">${PINGTAN_BRAND}</h1>
             <div class="room-lobby">
               <p style="margin:0;text-align:center;">방 코드: <strong id="roomCodeDisplay">${roomCode || "-"}</strong></p>
               ${roomCode ? `
@@ -5411,7 +5482,16 @@
       return REACTION_EMOTES.find(e => e.id === emoteId) || REACTION_EMOTES[0];
     }
 
+    function sanitizeReactionSpeech(text) {
+      return String(text || "")
+        .replace(/ㅋㅋ+|ㅋ+/g, "")
+        .replace(/ㅎㅎ+|ㅎ+/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
     function speakReactionBrowser(text) {
+      text = sanitizeReactionSpeech(text);
       if (!soundSettings.voice || !text || !window.speechSynthesis) return;
       try {
         window.speechSynthesis.cancel();
@@ -5435,6 +5515,7 @@
     }
 
     async function speakReactionWithLocalTTS(text, playerVoice = "ko-male") {
+      text = sanitizeReactionSpeech(text);
       if (!soundSettings.voice || !text) return;
       const voice = reactionVoiceForPlayer(playerVoice);
       try {
@@ -5568,8 +5649,10 @@
     function fallbackAIReaction(context = {}) {
       const phrase = String(context.phrase || "");
       if (phrase.includes("거래")) return { emoji: "🤝", phrase: "조건 봐줄게", motion: "wave" };
+      if (phrase.includes("삥") || phrase.includes("뜯")) return { emoji: "💸", phrase: "삥 제대로 뜯겼네", motion: "shake" };
+      if (phrase.includes("시발")) return { emoji: "🤯", phrase: "시발 인정", motion: "shake" };
       if (phrase.includes("빨리") || phrase.includes("재촉")) return { emoji: "⏰", phrase: "알았어", motion: "shake" };
-      if (phrase.includes("ㅋㅋ") || phrase.includes("웃")) return { emoji: "😂", phrase: "ㅋㅋ", motion: "pop" };
+      if (phrase.includes("ㅋㅋ") || phrase.includes("웃")) return { emoji: "😂", phrase: "웃기네", motion: "pop" };
       return { emoji: "👀", phrase: "봤어", motion: "pop" };
     }
 
@@ -5577,7 +5660,7 @@
       const prompt = `삥탄 보드게임 AI 리액션 JSON만 답해. 너는 "${aiPlayer?.name || "AI"}".
 상황: ${context.kind || "user-reaction"}
 유저 리액션: ${context.emoji || "💬"} ${context.phrase || ""}
-조건: 한국어 2~12자, 너무 자주 말하지 말고 자연스럽게. emoji는 하나. motion은 pop/wave/shake/celebrate 중 하나.
+조건: 한국어 2~12자, 너무 자주 말하지 말고 자연스럽게. emoji는 하나. motion은 pop/wave/shake/celebrate 중 하나. ㅋㅋ/ㅎㅎ 같은 TTS 부적합 문자는 쓰지 마. 삥탄/삥뜯다/시발 같은 K-용어 감탄은 상황에 맞으면 가능.
 리액션 JSON: {"emoji":"👋","phrase":"잘 부탁해","motion":"wave"}`;
       try {
         const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
@@ -5642,11 +5725,11 @@
       panel = document.createElement("div");
       panel.id = "emotePanel";
       panel.style.cssText = "position:fixed;bottom:62px;right:8px;z-index:10010;width:min(320px,calc(100vw - 16px));background:#16213e;border:1px solid #334155;border-radius:14px;padding:12px;box-shadow:0 18px 40px rgba(0,0,0,.4);";
-      panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><b>💬 리액션</b><button onclick="document.getElementById('emotePanel')?.remove()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">×</button></div>
-        <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">보낸 리액션은 주요 로그(A)에 표시됩니다.</div>
+      panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><b>💬 ${pt("reactions")}</b><button onclick="document.getElementById('emotePanel')?.remove()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">×</button></div>
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">${pt("reactionHelp")}</div>
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
           ${REACTION_EMOTES.map(e => `<button onclick="sendReactionEmote('${e.id}')" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;text-align:left;cursor:pointer;"><span style="font-size:22px;vertical-align:middle;margin-right:6px;">${escapeHtml(e.emoji)}</span><span style="font-weight:700;">${escapeHtml(e.label)}</span><div style="font-size:11px;color:#9ca3af;margin-top:2px;">${escapeHtml(e.phrase)}</div></button>`).join("")}
-          <button onclick="sendCustomReactionEmote()" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;text-align:left;cursor:pointer;"><span style="font-size:22px;vertical-align:middle;margin-right:6px;">⌨️</span><span style="font-weight:700;">기타</span><div style="font-size:11px;color:#9ca3af;margin-top:2px;">직접 입력</div></button>
+          <button onclick="sendCustomReactionEmote()" style="padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;text-align:left;cursor:pointer;"><span style="font-size:22px;vertical-align:middle;margin-right:6px;">⌨️</span><span style="font-weight:700;">${pt("custom")}</span><div style="font-size:11px;color:#9ca3af;margin-top:2px;">${pt("directInput")}</div></button>
         </div>`;
       document.body.appendChild(panel);
       panel.addEventListener("click", e => e.stopPropagation());
@@ -5655,7 +5738,7 @@
 
     async function sendReactionPayload({ emoteId = "custom", emoji = "💬", phrase = "", motion = "pop", localTts = true } = {}) {
       const now = Date.now();
-      if (now < (mpState.emoteCooldownUntil || 0)) { showToast("리액션은 잠깐 쉬었다가 보낼 수 있어요.", 1200); return; }
+      if (now < (mpState.emoteCooldownUntil || 0)) { showToast(pt("cooldown"), 1200); return; }
       phrase = String(phrase || "").trim().slice(0, 30);
       if (!phrase) return;
       mpState.emoteCooldownUntil = now + 1000;
@@ -5678,7 +5761,7 @@
     }
 
     async function sendCustomReactionEmote() {
-      const phrase = prompt("읽을 문구를 입력하세요 (30자 이내)", "") || "";
+      const phrase = prompt(pt("customPrompt"), "") || "";
       return sendReactionPayload({ emoteId: "custom", emoji: "⌨️", phrase, motion: "pop", localTts: true });
     }
 
@@ -6872,6 +6955,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.onRoomCodeInput = onRoomCodeInput;
     window.onMaxPlayersChange = onMaxPlayersChange;
     window.onAiDifficultyChange = onAiDifficultyChange;
+    window.setPingtanLang = setPingtanLang;
     window.zoomInMap = zoomInMap;
     window.zoomOutMap = zoomOutMap;
 
