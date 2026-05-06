@@ -17,8 +17,8 @@ assert(html.includes('showReactionEmote({'), 'reaction display path should still
 assert(html.includes('addActivityLog("reaction"'), 'reactions should be displayed in A activity log');
 assert(html.includes('name.length >= 2'), 'activity player highlighting should ignore one-character names like 나 to avoid coloring words such as 지쳤나요');
 assert(html.includes('거래 완료'), 'completed trades should be shown as completed trade entries in A activity log');
-assert(html.includes('삥을 뜯겼습니다'), 'robber/knight steal events should show the victim got shaken down in A activity log');
-assert(html.includes('${victimName}가 ${actorName}의 ${source}에게 삥을 뜯겼습니다'), 'robber/knight steal entries should name the actor who caused the shakedown');
+assert(html.includes('삥뜯겼습니다') || html.includes('삥을 뜯겼습니다'), 'robber/knight steal events should show the victim got shaken down in A activity log');
+assert(html.includes('${victimName}가 ${actorName}에게 ${formatStealResourceText(picked)}를 삥뜯겼습니다'), 'robber/knight steal entries should name the actor and stolen resource');
 assert(html.includes('은행에게 삥을 뜯겼습니다'), '7/discard events should show bank shakedown entries in A activity log');
 assert(!html.includes('reaction-emote-overlay'), 'reactions should no longer create a central overlay that covers the board');
 assert(!html.includes('MAX_REACTIONS_PER_TURN = 3'), 'reaction count limit should be removed');

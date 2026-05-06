@@ -3192,10 +3192,25 @@
     }
 
     function grantSecondSetupResources(playerIdx, vIdx) {
+      const player = state.players[playerIdx];
+      if (!player) return;
       for (const hIdx of state.vertices[vIdx].hexes) {
         const hex = state.hexes[hIdx];
         const PROD_TYPES = new Set(["brick","lumber","wool","grain","ore"]);
-        if (PROD_TYPES.has(hex.type)) state.players[playerIdx].resources[hex.type] += 1;
+        if (PROD_TYPES.has(hex.type)) {
+          player.resources[hex.type] += 1;
+        }
+        if (hex.type === "gold") {
+          if (player.isAI || (isMultiMode() && playerIdx !== localPlayerIndex())) {
+            if (player.isAI) {
+              const preferred = pickBestAIGoldResource(playerIdx);
+              const amount = Math.min(1, bankRemaining(preferred));
+              if (amount > 0) player.resources[preferred] += amount;
+            }
+          } else {
+            state._pendingHumanGold += 1;
+          }
+        }
       }
     }
 
@@ -3412,6 +3427,11 @@
       if (!hex) return "알 수 없는 타일";
       const number = hex.number ? `${hex.number}번 ` : "";
       return `${number}${RESOURCE_NAMES[hex.type] || hex.type}`;
+    }
+
+    function formatStealResourceText(resource) {
+      const icon = RESOURCE_ICONS[resource] || resource;
+      return `${icon} ${resourceName(resource)} 1장`;
     }
 
     function formatRobberMoveMessage({ actorName, source, hexLabel, victimName, stolenResource }) {
@@ -3847,16 +3867,22 @@
       const source = state.phase === "knight-robber" ? "기사" : "도둑";
       const hexLabel = getHexLabel(hexIndex);
       const detailMessage = formatRobberMoveMessage({ actorName, source, hexLabel, victimName, stolenResource: picked });
-      if (picked && victimName) addActivityLog("robber", `${victimName}가 ${actorName}의 ${source}에게 삥을 뜯겼습니다 (${RESOURCE_ICONS[picked] || picked} 1장)`);
+      if (picked && victimName) addActivityLog("robber", `${victimName}가 ${actorName}에게 ${formatStealResourceText(picked)}를 삥뜯겼습니다.`);
       showToast(`🦹 ${detailMessage}`, 2600, { bottom: 150 });
-      if (picked && victimIdx === localPlayerIndex()) {
-        const icon = RESOURCE_ICONS[picked] || picked;
+      if (picked && (victimIdx === localPlayerIndex() || state.currentPlayer === localPlayerIndex())) {
+        const isVictim = victimIdx === localPlayerIndex();
+        const targetName = isVictim ? actorName : victimName;
+        const message = isVictim
+          ? `${targetName}에게<br>${formatStealResourceText(picked)}를 삥뜯겼다!`
+          : `${targetName}에게<br>${formatStealResourceText(picked)}를 삥뜯었다!`;
         const el = document.createElement("div");
         el.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;pointer-events:none;animation:big-overlay-in 0.3s ease-out;";
-        el.innerHTML = `<div style="background:rgba(180,0,0,0.92);border:3px solid #ff4444;border-radius:20px;padding:20px 32px;text-align:center;box-shadow:0 0 40px rgba(255,0,0,0.5);">
+        const panelStyle = isVictim
+          ? "background:rgba(180,0,0,0.92);border:3px solid #ff4444;box-shadow:0 0 40px rgba(255,0,0,0.5);"
+          : "background:rgba(0,130,80,0.92);border:3px solid #4ecca3;box-shadow:0 0 40px rgba(78,204,163,0.5);";
+        el.innerHTML = `<div style="${panelStyle}border-radius:20px;padding:20px 32px;text-align:center;">
           <div style="font-size:38px;margin-bottom:4px;">🦹</div>
-          <div style="font-size:20px;font-weight:900;color:#fff;text-shadow:0 2px 8px #000;">${actorName}<br>에게 뺏겼다!</div>
-          <div style="font-size:30px;margin-top:6px;">${icon}</div>
+          <div style="font-size:20px;font-weight:900;color:#fff;text-shadow:0 2px 8px #000;">${message}</div>
         </div>`;
         document.body.appendChild(el);
         setTimeout(() => { el.style.animation = "big-overlay-out 0.3s ease-in forwards"; setTimeout(() => el.remove(), 300); }, 2000);
@@ -3958,6 +3984,18 @@
       }
       for (const v of touchedVertices) dfs(v, new Set(), 0, null);
       return best;
+    }
+
+    function hiddenDevVpForPlayer(playerIdx) {
+      const p = state.players[playerIdx];
+      return (p?.devCards || []).filter(c => c.type === "vp").length;
+    }
+
+    function publicVPForPlayer(playerIdx, viewerIdx = localPlayerIndex()) {
+      const p = state.players[playerIdx];
+      if (!p) return 0;
+      if (state.winner !== null || playerIdx === viewerIdx) return p.vp || 0;
+      return Math.max(0, (p.vp || 0) - hiddenDevVpForPlayer(playerIdx));
     }
 
     function recalcAllVP() {
@@ -4214,7 +4252,10 @@
         if (state.phase === "setup1" || state.phase === "setup2") {
           if (pIdx !== state.currentPlayer || state.setupStep !== "settlement") return false;
           if (!placeSettlement(pIdx, action.vertexId, true)) return false;
-          if (state.phase === "setup2") grantSecondSetupResources(pIdx, action.vertexId);
+          if (state.phase === "setup2") {
+            grantSecondSetupResources(pIdx, action.vertexId);
+            if (pIdx === localPlayerIndex() && state._pendingHumanGold) setTimeout(() => resolveHumanGoldIfNeeded(), 0);
+          }
           state.lastSetupVertex = action.vertexId;
           state.setupStep = "road";
           state.hint = pt("connectedRoadHint");
@@ -4713,7 +4754,10 @@
         if (state.setupStep !== "settlement") return;
         if (!placeSettlement(pIdx, vIdx, true)) return;
         SFX.build();
-        if (state.phase === "setup2") grantSecondSetupResources(pIdx, vIdx);
+        if (state.phase === "setup2") {
+          grantSecondSetupResources(pIdx, vIdx);
+          await resolveHumanGoldIfNeeded();
+        }
         state.lastSetupVertex = vIdx;
         state.setupStep = "road";
         state.hint = pt("connectedRoadHint");
@@ -5991,7 +6035,7 @@ https://game.cocy.io/pingtan/`;
           <div class="hint-bar">${hintText}</div>
           <div class="panel-info">
             <div class="score-compact">
-              ${state.players.map((p, i) => `<div class="score-compact-row${i === state.currentPlayer ? ' active' : ''}"><span style="color:${PLAYER_COLORS[i]};max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name||'P'+(i+1)}</span><span>${p.vp}VP</span></div>`).join('')}
+              ${state.players.map((p, i) => `<div class="score-compact-row${i === state.currentPlayer ? ' active' : ''}"><span style="color:${PLAYER_COLORS[i]};max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name||'P'+(i+1)}</span><span>${publicVPForPlayer(i, myIdx)}VP</span></div>`).join('')}
             </div>
             <div class="resources">${resourceStrip(me)}</div>
             ${vpBarHtml}
@@ -7933,7 +7977,8 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
         const lr = getLongestRoadBadge(state.longestRoad === i);
         const la = state.largestArmy === i ? "⚔" : "";
         const label = i === myIdx ? "나" : p.name;
-        return `<span class="vp-chip${active ? " active" : ""}" style="color:${p.color};"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${p.color};"></span>${label} ${p.vp}${lr}${la}</span>`;
+        const shownVp = publicVPForPlayer(i, myIdx);
+        return `<span class="vp-chip${active ? " active" : ""}" style="color:${p.color};"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${p.color};"></span>${label} ${shownVp}${lr}${la}</span>`;
       }).join("");
 
       const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
