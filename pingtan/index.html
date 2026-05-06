@@ -855,9 +855,11 @@
       padding-bottom: calc(28px + env(safe-area-inset-bottom));
     }
 
-    #app:has(.mode-screen) {
-      padding-top: 8px !important;
+    #app.mode-app {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
       overflow-y: auto;
+      gap: 0;
     }
 
     .lobby-card {
@@ -1186,7 +1188,7 @@
     .pingtan-menu-controls .multi-row { margin: 0 !important; }
 
     @media (max-width: 420px) {
-      .lobby-screen.mode-screen { padding: 8px 10px calc(18px + env(safe-area-inset-bottom)); }
+      .lobby-screen.mode-screen { padding: 4px 10px calc(14px + env(safe-area-inset-bottom)); }
       .pingtan-title-menu { padding: 10px; gap: 9px; border-radius: 18px; box-shadow: 0 10px 0 #120b08, 0 18px 34px rgba(0,0,0,0.42); }
       .pingtan-menu-eyebrow { padding: 4px 10px; font-size: 10px; }
       .pingtan-menu-title { font-size: clamp(44px, 14vw, 72px); text-shadow: 0 4px 0 #7c2d12, 0 8px 0 #3b1a0f, 0 14px 22px rgba(0,0,0,0.5); }
@@ -6067,6 +6069,7 @@ https://game.cocy.io/pingtan/`;
     function render() {
       const app = document.getElementById("app");
       const mpLobby = document.getElementById("mpLobbyContainer");
+      app.classList.toggle("mode-app", state.screen === "mode");
       // Hide mpLobby when not in multi lobby
       if (state.screen !== "multi-lobby") {
         mpLobby.classList.add("hidden");
