@@ -913,105 +913,210 @@
     }
 
 
-    .pingtan-hero {
+    .pingtan-title-menu {
       position: relative;
       overflow: hidden;
-      border-radius: 24px;
-      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 26px;
+      border: 3px solid rgba(255, 221, 87, 0.78);
       background:
-        radial-gradient(circle at 16% 18%, rgba(250,204,21,0.18), transparent 26%),
-        radial-gradient(circle at 84% 12%, rgba(79,194,127,0.22), transparent 28%),
-        linear-gradient(150deg, rgba(5,16,24,0.98), rgba(13,47,69,0.94) 54%, rgba(7,18,27,0.98));
-      box-shadow: 0 24px 60px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.08);
-      padding: 22px;
+        radial-gradient(circle at 50% 18%, rgba(255, 221, 87, 0.22), transparent 28%),
+        linear-gradient(180deg, #163f2e 0%, #0f2a28 48%, #24170f 100%);
+      box-shadow: 0 22px 0 #120b08, 0 30px 70px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(255,255,255,0.08);
+      padding: 18px;
       display: grid;
-      gap: 16px;
+      gap: 14px;
+      isolation: isolate;
     }
 
-    .pingtan-hero::before {
-      content: "🧱  🪵  🐑  🌾  ⛏️  🦹";
-      position: absolute;
-      inset: 10px -30px auto auto;
-      width: 280px;
-      height: 120px;
-      opacity: 0.14;
-      font-size: 34px;
-      letter-spacing: 12px;
-      line-height: 1.8;
-      transform: rotate(-12deg);
-      pointer-events: none;
-    }
-
-    .pingtan-hero::after {
+    .pingtan-title-menu::before {
       content: "";
       position: absolute;
-      inset: auto -60px -80px auto;
-      width: 220px;
-      height: 220px;
-      background: repeating-conic-gradient(from 30deg, rgba(255,255,255,0.08) 0 8deg, transparent 8deg 60deg);
-      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-      opacity: 0.35;
+      inset: 10px;
+      border-radius: 20px;
+      background-image:
+        linear-gradient(30deg, rgba(255,255,255,0.05) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,0.05) 87.5%, rgba(255,255,255,0.05)),
+        linear-gradient(150deg, rgba(255,255,255,0.05) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,0.05) 87.5%, rgba(255,255,255,0.05));
+      background-size: 38px 66px;
+      opacity: 0.45;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .pingtan-title-menu::after {
+      content: "삥! 삥! 삥!";
+      position: absolute;
+      right: -24px;
+      top: 18px;
+      transform: rotate(13deg);
+      color: rgba(255, 245, 157, 0.16);
+      font-weight: 950;
+      font-size: 34px;
+      letter-spacing: -0.08em;
       pointer-events: none;
     }
 
-    .pingtan-hero-top {
+    .pingtan-menu-top {
       position: relative;
       z-index: 1;
       display: grid;
-      gap: 8px;
+      gap: 6px;
       text-align: center;
     }
 
-    .pingtan-hero-eyebrow {
-      color: #a7f3d0;
+    .pingtan-menu-eyebrow {
+      justify-self: center;
+      width: fit-content;
+      border: 2px solid rgba(255,255,255,0.24);
+      background: #7c2d12;
+      color: #fff7ed;
+      border-radius: 999px;
+      padding: 5px 12px;
       font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 0.12em;
+      font-weight: 950;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
+      box-shadow: 0 5px 0 rgba(0,0,0,0.28);
     }
 
-    .pingtan-hero-title {
-      margin: 0;
-      font-size: clamp(44px, 13vw, 76px);
-      line-height: 0.9;
-      letter-spacing: -0.08em;
-      text-shadow: 0 8px 26px rgba(0,0,0,0.45);
+    .pingtan-menu-title {
+      margin: 2px 0 0;
+      color: #ffe66d;
+      font-size: clamp(54px, 16vw, 96px);
+      line-height: 0.82;
+      letter-spacing: -0.11em;
+      text-shadow: 0 5px 0 #7c2d12, 0 10px 0 #3b1a0f, 0 18px 28px rgba(0,0,0,0.55);
     }
 
-    .pingtan-hero-tagline {
-      font-size: 20px;
-      font-weight: 900;
+    .pingtan-menu-tagline {
       color: #fef3c7;
+      font-size: 18px;
+      font-weight: 950;
+      text-shadow: 0 2px 0 rgba(0,0,0,0.42);
     }
 
-    .pingtan-hero-subcopy {
-      max-width: 440px;
+    .pingtan-menu-subcopy {
+      max-width: 430px;
       margin: 0 auto;
-      color: #cbd5e1;
-      font-size: 13px;
-      line-height: 1.55;
+      color: #d9f99d;
+      font-size: 12px;
+      line-height: 1.45;
     }
 
-    .pingtan-hero-stats {
+    .pingtan-board-stage {
+      position: relative;
+      z-index: 1;
+      min-height: 176px;
+      border-radius: 22px;
+      border: 3px solid #8b5a2b;
+      background:
+        radial-gradient(circle at 50% 48%, rgba(255,255,255,0.12), transparent 38%),
+        linear-gradient(135deg, #3f2a17, #6b3f1d 56%, #2b1b11);
+      box-shadow: inset 0 0 0 4px rgba(255,255,255,0.08), inset 0 -18px 24px rgba(0,0,0,0.22), 0 12px 0 rgba(0,0,0,0.24);
+      display: grid;
+      place-items: center;
+      padding: 14px;
+    }
+
+    .pingtan-board-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 46px);
+      grid-auto-rows: 40px;
+      gap: 6px;
+      transform: rotate(-4deg);
+      filter: drop-shadow(0 12px 12px rgba(0,0,0,0.32));
+    }
+
+    .pingtan-menu-hex {
+      width: 46px;
+      height: 40px;
+      clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+      display: grid;
+      place-items: center;
+      border: 2px solid rgba(255,255,255,0.26);
+      color: rgba(20, 12, 6, 0.82);
+      font-size: 20px;
+      box-shadow: inset 0 -8px 0 rgba(0,0,0,0.12);
+    }
+
+    .pingtan-menu-hex.brick { background: #d65a31; }
+    .pingtan-menu-hex.lumber { background: #2f9e44; }
+    .pingtan-menu-hex.wool { background: #a7f3d0; }
+    .pingtan-menu-hex.grain { background: #facc15; }
+    .pingtan-menu-hex.ore { background: #94a3b8; }
+    .pingtan-menu-hex.desert { background: #f4a261; }
+
+    .pingtan-menu-token {
+      position: absolute;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      border: 3px solid rgba(255,255,255,0.72);
+      box-shadow: 0 8px 0 rgba(0,0,0,0.25), inset 0 -5px 0 rgba(0,0,0,0.14);
+      font-weight: 950;
+    }
+
+    .pingtan-menu-token.dice,
+    .pingtan-menu-dice {
+      left: 26px;
+      top: 24px;
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      background: #fff7ed;
+      color: #111827;
+      font-size: 24px;
+      transform: rotate(-12deg);
+    }
+
+    .pingtan-menu-token.trade {
+      right: 26px;
+      bottom: 22px;
+      min-width: 78px;
+      height: 38px;
+      border-radius: 999px;
+      background: #2563eb;
+      color: #eff6ff;
+      font-size: 13px;
+      transform: rotate(7deg);
+    }
+
+    .pingtan-menu-robber {
+      position: absolute;
+      z-index: 3;
+      right: 42px;
+      top: 20px;
+      width: 48px;
+      height: 66px;
+      border-radius: 24px 24px 16px 16px;
+      background: linear-gradient(#111827, #030712);
+      border: 3px solid rgba(255,255,255,0.2);
+      box-shadow: 0 9px 0 rgba(0,0,0,0.34);
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      transform: rotate(10deg);
+    }
+
+    .pingtan-menu-cues {
       position: relative;
       z-index: 1;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
+      gap: 7px;
     }
 
-    .pingtan-hero-chip {
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.07);
+    .pingtan-menu-cue {
+      border: 2px solid rgba(255,255,255,0.16);
+      background: rgba(0,0,0,0.24);
       border-radius: 14px;
       padding: 8px 6px;
       text-align: center;
       font-size: 11px;
-      color: #e5e7eb;
-      backdrop-filter: blur(10px);
+      color: #f8fafc;
+      font-weight: 800;
     }
 
-    .pingtan-hero-actions {
+    .pingtan-menu-actions {
       position: relative;
       z-index: 1;
       display: grid;
@@ -1020,25 +1125,32 @@
     }
 
     .pingtan-mode-button {
-      min-height: 76px;
+      min-height: 80px;
       border-radius: 18px;
       text-align: left;
-      padding: 14px;
+      padding: 14px 15px;
       display: grid;
-      gap: 4px;
-      background: rgba(255,255,255,0.07);
-      border-color: rgba(255,255,255,0.14);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+      gap: 5px;
+      background: #fff7ed;
+      color: #3b1a0f;
+      border: 3px solid #7c2d12;
+      box-shadow: 0 8px 0 #3b1a0f, inset 0 -8px 0 rgba(0,0,0,0.08);
+      transform: translateY(0);
+    }
+
+    .pingtan-mode-button:active {
+      transform: translateY(5px);
+      box-shadow: 0 3px 0 #3b1a0f, inset 0 -8px 0 rgba(0,0,0,0.08);
     }
 
     .pingtan-mode-button.primary {
-      background: linear-gradient(135deg, #4fc27f, #facc15);
-      color: #071316;
-      border-color: rgba(255,255,255,0.36);
+      background: linear-gradient(180deg, #fde047, #f97316);
+      color: #2b1208;
+      border-color: #fff7ad;
     }
 
     .pingtan-mode-button strong {
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 950;
     }
 
@@ -1048,7 +1160,7 @@
       opacity: 0.82;
     }
 
-    .pingtan-hero-controls {
+    .pingtan-menu-controls {
       position: relative;
       z-index: 1;
       display: flex;
@@ -1058,13 +1170,20 @@
       padding-top: 2px;
     }
 
-    .pingtan-hero-controls .multi-row { margin: 0 !important; }
+    .pingtan-menu-controls .multi-row { margin: 0 !important; }
 
     @media (max-width: 420px) {
-      .pingtan-hero { padding: 18px; border-radius: 20px; }
-      .pingtan-hero-stats { grid-template-columns: repeat(2, 1fr); }
-      .pingtan-hero-actions { grid-template-columns: 1fr; }
-      .pingtan-hero-controls { flex-direction: column; align-items: stretch; }
+      .pingtan-title-menu { padding: 14px; border-radius: 20px; box-shadow: 0 14px 0 #120b08, 0 22px 44px rgba(0,0,0,0.45); }
+      .pingtan-board-stage { min-height: 150px; padding: 10px; }
+      .pingtan-board-grid { grid-template-columns: repeat(5, 38px); grid-auto-rows: 34px; gap: 4px; }
+      .pingtan-menu-hex { width: 38px; height: 34px; font-size: 16px; }
+      .pingtan-menu-token.dice,
+    .pingtan-menu-dice { left: 16px; top: 18px; width: 44px; height: 44px; font-size: 20px; }
+      .pingtan-menu-token.trade { right: 16px; bottom: 18px; min-width: 64px; height: 34px; font-size: 11px; }
+      .pingtan-menu-robber { right: 24px; top: 14px; width: 40px; height: 56px; font-size: 21px; }
+      .pingtan-menu-cues { grid-template-columns: repeat(2, 1fr); }
+      .pingtan-menu-actions { grid-template-columns: 1fr; }
+      .pingtan-menu-controls { flex-direction: column; align-items: stretch; }
     }
 
     .activity-status {
@@ -1517,15 +1636,16 @@
         winnerHint: "🎉 {player} 승리!",
         victoryPrizeToast: "🎉 승리! +{prize}원",
         defeatToast: "😢 {player} 승리...",
-        heroEyebrow: "K-보드게임 · 브라우저 멀티",
-        heroTagline: "친구를 초대하고, 거래하고, 삥뜯어라.",
-        heroSubcopy: "설치 없이 링크 하나로 시작하는 빠른 삥탄. 주사위, 도둑, 항구 거래, K-리액션까지 한 판에 몰아넣었다.",
-        heroNoInstall: "설치 없음",
-        heroFastRoom: "방 링크 즉시 공유",
-        heroKReactions: "K-Reactions",
-        heroBoardGame: "전략 보드게임",
-        heroSingleDesc: "AI 상대로 맵과 전략 익히기",
-        heroMultiDesc: "친구에게 링크 보내고 바로 한 판",
+        heroEyebrow: "테이블 위 한 판 승부",
+        heroTagline: "주사위 굴리고, 길 막고, 자원 삥뜯어라.",
+        heroSubcopy: "육각판 위에서 도둑이 뛰고 토큰이 굴러다니는 빠른 보드게임. 싱글로 연습하거나 친구 방을 열어 바로 시작.",
+        heroSingleDesc: "AI 상대로 맵 고르고 한 판 연습",
+        heroMultiDesc: "친구 초대해서 테이블 난장판 열기",
+        menuDiceCue: "주사위 운빨",
+        menuRobberCue: "도둑 출몰",
+        menuTradeCue: "자원 협상",
+        menuBuildCue: "마을 확장",
+        menuTradeToken: "교환!",
         winnerTitle: "{player} 승리!",
         winnerGoalReached: "{vp}점으로 클리어 목표 {goal}점 달성",
         shareResult: "결과 공유",
@@ -1757,15 +1877,16 @@
         winnerHint: "🎉 {player} wins!",
         victoryPrizeToast: "🎉 Victory! +{prize} won",
         defeatToast: "😢 {player} wins...",
-        heroEyebrow: "K-board game · browser multiplayer",
-        heroTagline: "Trade, build, steal. Come get ppinged.",
-        heroSubcopy: "A fast no-install 삥탄 match from one link: dice, robber, ports, trades, and K-Reactions in one chaotic board game.",
-        heroNoInstall: "No install",
-        heroFastRoom: "Instant room link",
-        heroKReactions: "K-Reactions",
-        heroBoardGame: "Strategy board game",
-        heroSingleDesc: "Practice maps and tactics against AI",
-        heroMultiDesc: "Send a link and play with friends",
+        heroEyebrow: "Tabletop chaos mode",
+        heroTagline: "Roll dice, block roads, steal resources.",
+        heroSubcopy: "A quick board-game title screen for 삥탄: hexes, robber, trades, and messy resource grabs. Practice solo or open the table with friends.",
+        heroSingleDesc: "Pick a map and practice against AI",
+        heroMultiDesc: "Invite friends and start table chaos",
+        menuDiceCue: "Dice swing",
+        menuRobberCue: "Robber raid",
+        menuTradeCue: "Resource deals",
+        menuBuildCue: "Build towns",
+        menuTradeToken: "Trade!",
         winnerTitle: "{player} wins!",
         winnerGoalReached: "Reached {vp} VP / {goal} VP goal",
         shareResult: "Share result",
@@ -5417,24 +5538,46 @@
     function renderModeScreen() {
       return `
         <div class="lobby-screen">
-          <div class="lobby-card pingtan-hero">
-            <div class="pingtan-hero-top">
-              <div class="pingtan-hero-eyebrow">${pt("heroEyebrow")}</div>
-              <h1 class="pingtan-hero-title">${PINGTAN_BRAND}</h1>
-              <div class="pingtan-hero-tagline">${pt("heroTagline")}</div>
-              <div class="pingtan-hero-subcopy">${pt("heroSubcopy")}</div>
+          <div class="lobby-card pingtan-title-menu">
+            <div class="pingtan-menu-top">
+              <div class="pingtan-menu-eyebrow">${pt("heroEyebrow")}</div>
+              <h1 class="pingtan-menu-title">${PINGTAN_BRAND}</h1>
+              <div class="pingtan-menu-tagline">${pt("heroTagline")}</div>
+              <div class="pingtan-menu-subcopy">${pt("heroSubcopy")}</div>
             </div>
-            <div class="pingtan-hero-stats">
-              <div class="pingtan-hero-chip">⚡ ${pt("heroNoInstall")}</div>
-              <div class="pingtan-hero-chip">🔗 ${pt("heroFastRoom")}</div>
-              <div class="pingtan-hero-chip">💬 ${pt("heroKReactions")}</div>
-              <div class="pingtan-hero-chip">🗺️ ${pt("heroBoardGame")}</div>
+            <div class="pingtan-board-stage" aria-hidden="true">
+              <div class="pingtan-menu-token pingtan-menu-dice dice">⚅</div>
+              <div class="pingtan-menu-robber">🦹</div>
+              <div class="pingtan-board-grid">
+                <div class="pingtan-menu-hex brick">🧱</div>
+                <div class="pingtan-menu-hex lumber">🪵</div>
+                <div class="pingtan-menu-hex grain">🌾</div>
+                <div class="pingtan-menu-hex ore">⛏️</div>
+                <div class="pingtan-menu-hex wool">🐑</div>
+                <div class="pingtan-menu-hex wool">🐑</div>
+                <div class="pingtan-menu-hex desert">7</div>
+                <div class="pingtan-menu-hex brick">🧱</div>
+                <div class="pingtan-menu-hex lumber">🪵</div>
+                <div class="pingtan-menu-hex grain">🌾</div>
+                <div class="pingtan-menu-hex ore">⛏️</div>
+                <div class="pingtan-menu-hex brick">🧱</div>
+                <div class="pingtan-menu-hex wool">🐑</div>
+                <div class="pingtan-menu-hex grain">🌾</div>
+                <div class="pingtan-menu-hex lumber">🪵</div>
+              </div>
+              <div class="pingtan-menu-token trade">${pt("menuTradeToken")}</div>
             </div>
-            <div class="pingtan-hero-actions">
-              <button class="pingtan-mode-button" onclick="showMapSelect('single')"><strong>${pt("single")}</strong><span>${pt("heroSingleDesc")}</span></button>
-              <button class="pingtan-mode-button primary" onclick="showMultiOptions()"><strong>${pt("multi")}</strong><span>${pt("heroMultiDesc")}</span></button>
+            <div class="pingtan-menu-cues">
+              <div class="pingtan-menu-cue">🎲 ${pt("menuDiceCue")}</div>
+              <div class="pingtan-menu-cue">🦹 ${pt("menuRobberCue")}</div>
+              <div class="pingtan-menu-cue">🤝 ${pt("menuTradeCue")}</div>
+              <div class="pingtan-menu-cue">🏰 ${pt("menuBuildCue")}</div>
             </div>
-            <div class="pingtan-hero-controls">
+            <div class="pingtan-menu-actions">
+              <button class="pingtan-mode-button" onclick="showMapSelect('single')"><strong>🎮 ${pt("single")}</strong><span>${pt("heroSingleDesc")}</span></button>
+              <button class="pingtan-mode-button primary" onclick="showMultiOptions()"><strong>👥 ${pt("multi")}</strong><span>${pt("heroMultiDesc")}</span></button>
+            </div>
+            <div class="pingtan-menu-controls">
               ${renderPingtanLangSwitch()}
               <div class="multi-row">
                 <label for="aiDifficulty">${pt("aiDifficulty")}</label>
