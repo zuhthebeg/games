@@ -855,6 +855,11 @@
       padding-bottom: calc(28px + env(safe-area-inset-bottom));
     }
 
+    #app:has(.mode-screen) {
+      padding-top: 8px !important;
+      overflow-y: auto;
+    }
+
     .lobby-card {
       width: min(520px, 100%);
       border: 1px solid var(--line);
@@ -1181,16 +1186,25 @@
     .pingtan-menu-controls .multi-row { margin: 0 !important; }
 
     @media (max-width: 420px) {
-      .pingtan-title-menu { padding: 14px; border-radius: 20px; box-shadow: 0 14px 0 #120b08, 0 22px 44px rgba(0,0,0,0.45); }
-      .pingtan-board-stage { min-height: 150px; padding: 10px; }
-      .pingtan-board-grid { grid-template-columns: repeat(5, 38px); grid-auto-rows: 34px; gap: 4px; }
-      .pingtan-menu-hex { width: 38px; height: 34px; font-size: 16px; }
+      .lobby-screen.mode-screen { padding: 8px 10px calc(18px + env(safe-area-inset-bottom)); }
+      .pingtan-title-menu { padding: 10px; gap: 9px; border-radius: 18px; box-shadow: 0 10px 0 #120b08, 0 18px 34px rgba(0,0,0,0.42); }
+      .pingtan-menu-eyebrow { padding: 4px 10px; font-size: 10px; }
+      .pingtan-menu-title { font-size: clamp(44px, 14vw, 72px); text-shadow: 0 4px 0 #7c2d12, 0 8px 0 #3b1a0f, 0 14px 22px rgba(0,0,0,0.5); }
+      .pingtan-menu-tagline { font-size: 16px; }
+      .pingtan-menu-subcopy { font-size: 11px; line-height: 1.35; }
+      .pingtan-board-stage { min-height: 122px; padding: 8px; border-radius: 18px; }
+      .pingtan-board-grid { grid-template-columns: repeat(5, 32px); grid-auto-rows: 28px; gap: 3px; }
+      .pingtan-menu-hex { width: 32px; height: 28px; font-size: 14px; border-width: 1px; }
       .pingtan-menu-token.dice,
-    .pingtan-menu-dice { left: 16px; top: 18px; width: 44px; height: 44px; font-size: 20px; }
-      .pingtan-menu-token.trade { right: 16px; bottom: 18px; min-width: 64px; height: 34px; font-size: 11px; }
-      .pingtan-menu-robber { right: 24px; top: 14px; width: 40px; height: 56px; font-size: 21px; }
-      .pingtan-menu-cues { grid-template-columns: repeat(2, 1fr); }
-      .pingtan-menu-actions { grid-template-columns: 1fr; }
+      .pingtan-menu-dice { left: 12px; top: 14px; width: 38px; height: 38px; font-size: 18px; border-width: 2px; }
+      .pingtan-menu-token.trade { right: 12px; bottom: 14px; min-width: 56px; height: 30px; font-size: 10px; border-width: 2px; }
+      .pingtan-menu-robber { right: 18px; top: 12px; width: 34px; height: 48px; font-size: 18px; }
+      .pingtan-menu-cues { grid-template-columns: repeat(2, 1fr); gap: 5px; }
+      .pingtan-menu-cue { padding: 6px 4px; font-size: 10px; }
+      .pingtan-menu-actions { grid-template-columns: 1fr 1fr; gap: 7px; }
+      .pingtan-mode-button { min-height: 62px; padding: 10px; border-width: 2px; border-radius: 14px; box-shadow: 0 5px 0 #3b1a0f, inset 0 -6px 0 rgba(0,0,0,0.08); }
+      .pingtan-mode-button strong { font-size: 14px; }
+      .pingtan-mode-button span { font-size: 10px; }
       .pingtan-menu-controls { flex-direction: column; align-items: stretch; }
     }
 
