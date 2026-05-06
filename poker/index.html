@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({"gtm.start":new Date().getTime(),event:"gtm.js"});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!="dataLayer"?"&l="+l:"";j.async=true;j.src="https://www.googletagmanager.com/gtm.js?id="+i+dl;f.parentNode.insertBefore(j,f)})(window,document,"script","dataLayer","GTM-MV8KQGJF");</script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>포커 - 텍사스 홀덤</title>
     <link rel="icon" href="icon.svg" type="image/svg+xml">
     <style>
@@ -11,12 +11,16 @@
             --bg: #0d1117;
             --table: #1a472a;
             --table-border: #2d5a3d;
-            --card-bg: #fff;
+            --card-bg: #f8fafc;
             --card-back: #1e3a5f;
             --text: #e6edf3;
             --gold: #ffd700;
             --red: #ef4444;
             --chip: #22c55e;
+            --wallet-bar-h: 56px;
+            --app-max: 520px;
+            --cardW: 58px;
+            --cardH: 84px;
         }
 
         * {
@@ -26,26 +30,39 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        html, body {
+            width: 100%;
+            min-height: 100%;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg);
+            background:
+                radial-gradient(circle at 50% 0%, rgba(34,197,94,0.12), transparent 36%),
+                var(--bg);
             color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
+            min-height: 100dvh;
+            padding-top: calc(var(--wallet-bar-h) + env(safe-area-inset-top));
+            overflow: hidden;
         }
 
         .game-container {
-            max-width: 800px;
+            width: min(100%, var(--app-max));
+            height: calc(100dvh - var(--wallet-bar-h) - env(safe-area-inset-top));
             margin: 0 auto;
-            padding: 10px;
+            padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr) auto auto;
+            gap: 8px;
+            overflow: hidden;
         }
 
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            margin-top: 50px; /* SharedWallet 바 공간 */
+            padding: 6px 0;
+            flex-shrink: 0;
         }
 
         h1 {
@@ -83,14 +100,21 @@
 
         /* 테이블 영역 */
         .poker-table {
-            background: linear-gradient(145deg, var(--table), #0f2d1a);
-            border: 8px solid var(--table-border);
-            border-radius: 120px;
-            padding: 20px;
-            margin: 10px 0;
-            min-height: 400px;
+            background:
+                radial-gradient(ellipse at center, rgba(255,255,255,0.08), transparent 52%),
+                linear-gradient(145deg, var(--table), #0f2d1a);
+            border: 6px solid var(--table-border);
+            border-radius: 44px;
+            padding: 12px;
+            margin: 0;
+            min-height: 0;
             position: relative;
             box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 60px rgba(0,0,0,0.3);
+            display: grid;
+            grid-template-rows: auto minmax(90px, 1fr) auto;
+            align-content: space-between;
+            gap: 8px;
+            overflow: hidden;
         }
 
         /* 플레이어 영역 */
@@ -102,11 +126,11 @@
         }
 
         .opponent-area {
-            margin-bottom: 20px;
+            margin-bottom: 0;
         }
 
         .my-area {
-            margin-top: 20px;
+            margin-top: 0;
         }
 
         .player-info {
@@ -116,6 +140,74 @@
             background: rgba(0,0,0,0.4);
             padding: 8px 16px;
             border-radius: 20px;
+        }
+
+        .ai-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            min-height: 60px;
+        }
+
+        .ai-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2d5a3d, #101827);
+            border: 2px solid rgba(255,255,255,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.55rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+        }
+
+        .ai-avatar.thinking {
+            animation: aiThink 1.05s ease-in-out infinite;
+        }
+
+        @keyframes aiThink {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.08) rotate(5deg); }
+        }
+
+        .ai-speech {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+
+        .dealer-bubble {
+            position: relative;
+            max-width: 210px;
+            background: rgba(10, 20, 15, 0.84);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 11px 11px 11px 3px;
+            padding: 7px 11px;
+            font-size: 0.78rem;
+            line-height: 1.35;
+            color: rgba(255,255,255,0.94);
+            backdrop-filter: blur(6px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+            animation: bubbleIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        .dealer-bubble.hidden { display: none; }
+
+        .dealer-bubble::after {
+            content: '';
+            position: absolute;
+            left: 10px;
+            bottom: -7px;
+            border: 5px solid transparent;
+            border-top-color: rgba(10, 20, 15, 0.84);
+        }
+
+        @keyframes bubbleIn {
+            from { opacity: 0; transform: scale(0.72) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         .player-name {
@@ -139,24 +231,29 @@
         /* 카드 */
         .cards {
             display: flex;
-            gap: 8px;
+            gap: 7px;
             justify-content: center;
+            align-items: center;
+            min-height: calc(var(--cardH) + 4px);
         }
 
         .card {
-            width: 60px;
-            height: 84px;
+            width: var(--cardW);
+            height: var(--cardH);
             background: var(--card-bg);
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.2rem;
-            font-weight: 700;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            transition: transform 0.3s;
-            animation: cardDeal 0.3s ease-out;
+            border: 1px solid rgba(0,0,0,0.18);
+            border-radius: 10px;
+            padding: 5px 6px;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            color: #111827;
+            font-weight: 900;
+            line-height: 1;
+            box-shadow: 0 5px 14px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.9);
+            transition: transform 0.25s, box-shadow 0.25s, filter 0.25s;
+            transform-origin: center bottom;
+            will-change: transform;
+            user-select: none;
         }
         
         @keyframes cardDeal {
@@ -210,8 +307,10 @@
             75% { transform: translateX(5px); }
         }
         
+        .card.dealing { animation: cardDeal 0.36s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
         .card.flipping { animation: cardFlip 0.4s ease-in-out; }
         .card.revealing { animation: cardReveal 0.5s ease-out; }
+        .card.winner { animation: winGlow 1s ease-in-out 3; }
         .chip-animate { animation: chipBet 0.3s ease-out; }
         .pot-animate { animation: potCollect 0.5s ease-out; }
         .win-animate { animation: winGlow 1s ease-in-out 3; }
@@ -257,26 +356,41 @@
         }
 
         .card.back {
-            background: linear-gradient(135deg, var(--card-back), #0f2840);
-            background-image: repeating-linear-gradient(
-                45deg,
-                transparent,
-                transparent 10px,
-                rgba(255,255,255,0.03) 10px,
-                rgba(255,255,255,0.03) 20px
-            );
+            background:
+                radial-gradient(circle at 20% 15%, rgba(255,255,255,0.20), transparent 24%),
+                repeating-linear-gradient(45deg, rgba(255,255,255,0.07) 0 6px, rgba(0,0,0,0.08) 6px 12px),
+                linear-gradient(135deg, var(--card-back), #0f2840);
+            color: transparent;
+            border-color: rgba(255,255,255,0.25);
         }
 
-        .card.red { color: var(--red); }
-        .card.black { color: #1a1a1a; }
+        .card.red { color: #c9303e; }
+        .card.black { color: #111827; }
+
+        .card .card-top,
+        .card .card-bottom {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .card .card-top { align-items: flex-start; }
+        .card .card-bottom { align-items: flex-end; transform: rotate(180deg); }
 
         .card .rank {
-            font-size: 1.4rem;
+            font-size: 0.86rem;
             line-height: 1;
         }
 
         .card .suit {
-            font-size: 1.6rem;
+            font-size: 0.66rem;
+            line-height: 1;
+        }
+
+        .card .suit-center {
+            font-size: 1.38rem;
+            align-self: center;
+            justify-self: center;
             line-height: 1;
         }
 
@@ -285,8 +399,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
-            margin: 20px 0;
+            justify-content: center;
+            gap: 8px;
+            margin: 0;
+            min-height: 0;
         }
 
         .community-cards {
@@ -295,8 +411,8 @@
         }
 
         .community-cards .card {
-            width: 55px;
-            height: 77px;
+            width: calc(var(--cardW) * 0.92);
+            height: calc(var(--cardH) * 0.92);
         }
 
         .pot-display {
@@ -397,9 +513,10 @@
         /* 메시지 */
         .game-message {
             text-align: center;
-            padding: 10px;
-            font-size: 1.1rem;
-            min-height: 40px;
+            padding: 6px 10px;
+            font-size: 0.95rem;
+            min-height: 32px;
+            color: #d1d5db;
         }
 
         .hand-result {
@@ -527,28 +644,25 @@
 
         /* 반응형 */
         @media (max-width: 480px) {
-            .card {
-                width: 50px;
-                height: 70px;
-                font-size: 1rem;
-            }
+            :root { --cardW: 50px; --cardH: 72px; }
 
-            .card .rank { font-size: 1.2rem; }
-            .card .suit { font-size: 1.3rem; }
-
-            .community-cards .card {
-                width: 45px;
-                height: 63px;
-            }
+            h1 { font-size: 1.08rem; }
+            .btn { padding: 7px 10px; font-size: 0.82rem; }
+            .card .rank { font-size: 0.78rem; }
+            .card .suit { font-size: 0.58rem; }
+            .card .suit-center { font-size: 1.12rem; }
 
             .poker-table {
-                border-radius: 60px;
-                padding: 15px;
+                border-radius: 30px;
+                border-width: 5px;
+                padding: 9px;
             }
 
+            .betting-controls { padding: 10px; }
             .bet-btn {
-                padding: 10px 16px;
-                font-size: 0.9rem;
+                padding: 10px 14px;
+                font-size: 0.88rem;
+                flex: 1 1 42%;
             }
         }
 
@@ -584,7 +698,7 @@
             justify-content: center;
             z-index: 200;
             gap: 20px;
-            padding-top: 50px; /* SharedWallet 바 공간 */
+            padding-top: calc(var(--wallet-bar-h) + env(safe-area-inset-top));
         }
 
         .mode-select.hidden { display: none; }
@@ -650,7 +764,7 @@
             flex-direction: column;
             align-items: center;
             padding: 20px;
-            padding-top: 60px; /* SharedWallet 바 공간 */
+            padding-top: calc(var(--wallet-bar-h) + env(safe-area-inset-top));
             z-index: 200;
             overflow-y: auto;
         }
@@ -719,6 +833,7 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            padding-top: calc(var(--wallet-bar-h) + env(safe-area-inset-top));
             z-index: 200;
         }
 
@@ -878,10 +993,16 @@
         <div class="poker-table">
             <!-- 상대 영역 -->
             <div class="player-area opponent-area">
-                <div class="player-info">
-                    <span class="player-name">🤖 컴퓨터</span>
-                    <span class="chip-count" id="opponentChips">1000</span>
-                    <span class="dealer-btn" id="opponentDealer" style="display:none">D</span>
+                <div class="ai-row">
+                    <div class="ai-avatar" id="aiAvatar" aria-label="AI 딜러">🤖</div>
+                    <div class="ai-speech">
+                        <div class="dealer-bubble hidden" id="dealerBubble"></div>
+                        <div class="player-info">
+                            <span class="player-name">🤖 컴퓨터</span>
+                            <span class="chip-count" id="opponentChips">1000</span>
+                            <span class="dealer-btn" id="opponentDealer" style="display:none">D</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="cards" id="opponentCards"></div>
                 <div class="hand-result" id="opponentHand" style="display:none"></div>
@@ -1330,17 +1451,35 @@
         }
 
         // ===== 카드 렌더링 =====
-        function renderCard(card, faceDown = false) {
+        function renderCard(card, faceDown = false, extraClass = '') {
             if (faceDown) {
-                return '<div class="card back"></div>';
+                return `<div class="card back ${extraClass}" aria-label="숨긴 카드"></div>`;
             }
             const isRed = card.suit === '♥' || card.suit === '♦';
+            const colorClass = isRed ? 'red' : 'black';
             return `
-                <div class="card ${isRed ? 'red' : 'black'}">
-                    <span class="rank">${card.rank}</span>
-                    <span class="suit">${card.suit}</span>
+                <div class="card ${colorClass} ${extraClass}" data-rank="${card.rank}" data-suit="${card.suit}" aria-label="${card.rank}${card.suit}">
+                    <div class="card-top"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>
+                    <div class="suit-center">${card.suit}</div>
+                    <div class="card-bottom"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>
                 </div>
             `;
+        }
+
+        let dealerBubbleTimer = null;
+
+        function dealerSay(text, duration = 1700) {
+            const bubble = document.getElementById('dealerBubble');
+            if (!bubble) return;
+            if (dealerBubbleTimer) clearTimeout(dealerBubbleTimer);
+            bubble.textContent = text;
+            bubble.classList.remove('hidden');
+            dealerBubbleTimer = setTimeout(() => bubble.classList.add('hidden'), duration);
+        }
+
+        function setAiThinking(on) {
+            const avatar = document.getElementById('aiAvatar');
+            if (avatar) avatar.classList.toggle('thinking', !!on);
         }
 
         function updateDisplay() {
@@ -1685,6 +1824,8 @@
 
         // ===== AI =====
         function aiTurn() {
+            setAiThinking(true);
+            dealerSay('잠깐만. 패 좀 볼게…', 900);
             const toCall = game.myBet - game.opponentBet;
             const hand = evaluateHand([...game.opponentCards, ...game.communityCards]);
             
@@ -1731,6 +1872,7 @@
             }
             
             // 실행
+            setAiThinking(false);
             executeAiAction(action);
         }
 
@@ -1767,17 +1909,20 @@
             switch (action.type) {
                 case 'fold':
                     playSound('fold');
+                    dealerSay('흠… 이 판은 죽는다.');
                     showMessage('🤖 폴드');
                     setTimeout(() => endHand('me'), 500);
                     return;
                     
                 case 'check':
                     playSound('check');
+                    dealerSay('체크. 공짜 카드는 봐야지.');
                     showMessage('🤖 체크');
                     break;
                     
                 case 'call':
                     playSound('chips');
+                    dealerSay('콜. 아직은 따라간다.');
                     placeBet('opponent', toCall);
                     animateBet('opponent');
                     showMessage(`🤖 콜 (${toCall})`);
@@ -1785,6 +1930,7 @@
                     
                 case 'raise':
                     playSound('chips');
+                    dealerSay('레이즈. 따라올 수 있겠어?');
                     placeBet('opponent', action.amount);
                     animateBet('opponent');
                     showMessage(`🤖 레이즈 (${action.amount})`);
@@ -1813,6 +1959,7 @@
                     playSound('flip');
                     setTimeout(() => playSound('flip'), 100);
                     setTimeout(() => playSound('flip'), 200);
+                    dealerSay('플랍 깐다. 이제 냄새가 나지.');
                     showMessage('플랍');
                     break;
                     
@@ -1820,6 +1967,7 @@
                     game.phase = 'turn';
                     game.communityCards.push(...drawCards(1));
                     playSound('flip');
+                    dealerSay('턴. 여기서 판이 갈린다.');
                     showMessage('턴');
                     break;
                     
@@ -1827,6 +1975,7 @@
                     game.phase = 'river';
                     game.communityCards.push(...drawCards(1));
                     playSound('flip');
+                    dealerSay('리버 봐야지. 마지막 장이다.');
                     showMessage('리버');
                     break;
                     
@@ -1856,6 +2005,7 @@
 
         function showdown() {
             game.phase = 'showdown';
+            dealerSay('좋아, 쇼다운. 까보자.');
             
             // 쇼다운 카드 공개 사운드
             playSound('reveal');
