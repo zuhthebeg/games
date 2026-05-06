@@ -847,6 +847,14 @@
       box-sizing: border-box;
     }
 
+    .lobby-screen.mode-screen {
+      height: 100%;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: calc(28px + env(safe-area-inset-bottom));
+    }
+
     .lobby-card {
       width: min(520px, 100%);
       border: 1px solid var(--line);
@@ -5537,11 +5545,12 @@
 
     function renderModeScreen() {
       return `
-        <div class="lobby-screen">
+        <div class="lobby-screen mode-screen">
           <div class="lobby-card pingtan-title-menu">
             <div class="pingtan-menu-top">
               <div class="pingtan-menu-eyebrow">${pt("heroEyebrow")}</div>
               <h1 class="pingtan-menu-title">${PINGTAN_BRAND}</h1>
+              ${renderPingtanLangSwitch()}
               <div class="pingtan-menu-tagline">${pt("heroTagline")}</div>
               <div class="pingtan-menu-subcopy">${pt("heroSubcopy")}</div>
             </div>
@@ -5578,7 +5587,6 @@
               <button class="pingtan-mode-button primary" onclick="showMultiOptions()"><strong>👥 ${pt("multi")}</strong><span>${pt("heroMultiDesc")}</span></button>
             </div>
             <div class="pingtan-menu-controls">
-              ${renderPingtanLangSwitch()}
               <div class="multi-row">
                 <label for="aiDifficulty">${pt("aiDifficulty")}</label>
                 <select id="aiDifficulty" onchange="onAiDifficultyChange(this.value)">
