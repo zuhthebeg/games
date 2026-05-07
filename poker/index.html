@@ -30,6 +30,8 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        .hidden { display: none !important; }
+
         html, body {
             width: 100%;
             min-height: 100%;
@@ -2152,7 +2154,7 @@
         function startSinglePlayer() {
             isMultiplayer = false;
             document.getElementById('modeSelect').classList.add('hidden');
-            document.getElementById('gameContainer').style.display = 'block';
+            document.getElementById('gameContainer').style.display = 'grid';
             newGame();
         }
 

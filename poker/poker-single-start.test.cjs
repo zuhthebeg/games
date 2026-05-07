@@ -8,6 +8,7 @@ assert(match, 'startSinglePlayer function should exist');
 const body = match[1];
 assert(body.includes("isMultiplayer = false"), 'single player should disable multiplayer mode');
 assert(body.includes("gameContainer"), 'single player should show the game container');
+assert(/gameContainer[^;]+style\.display\s*=\s*['"]grid['"]/.test(body), 'single player should restore the game container grid layout');
 assert(/newGame\s*\(\s*\)/.test(body) || /startHand\s*\(\s*\)/.test(body), 'single player click should immediately start a hand instead of showing an empty table');
 
 console.log('poker-single-start.test.cjs passed');
