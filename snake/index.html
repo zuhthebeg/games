@@ -59,6 +59,8 @@
 
         .score-value { color: var(--snake); }
         .earned-value { color: var(--gold); }
+        .level-value { color: #8be9fd; }
+        .next-value { color: var(--muted); font-size: 0.9rem; }
 
         #game-container {
             position: relative;
@@ -156,6 +158,31 @@
             100% { opacity: 0; transform: translateY(-40px) scale(1.3); }
         }
 
+        .level-banner {
+            position: absolute;
+            left: 50%;
+            top: 48%;
+            transform: translate(-50%, -50%);
+            padding: 14px 24px;
+            border: 2px solid rgba(139, 233, 253, 0.75);
+            border-radius: 16px;
+            background: rgba(0,0,0,0.78);
+            color: #8be9fd;
+            font-weight: 900;
+            font-size: 1.35rem;
+            letter-spacing: 0.08em;
+            text-shadow: 0 0 14px rgba(139, 233, 253, 0.8);
+            pointer-events: none;
+            animation: levelFlash 0.85s ease-out forwards;
+        }
+
+        @keyframes levelFlash {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+            18% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
+            74% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -62%) scale(0.96); }
+        }
+
         /* Mobile controls */
         .mobile-controls {
             display: none;
@@ -223,6 +250,11 @@
             <span>💰 획득:</span>
             <span class="stat-value earned-value" id="earned">0G</span>
         </div>
+        <div class="stat">
+            <span>🧭 레벨:</span>
+            <span class="stat-value level-value" id="level">1</span>
+            <span class="next-value" id="next-level">다음 5</span>
+        </div>
     </div>
 
     <div id="game-container">
@@ -230,6 +262,7 @@
         
         <div class="overlay" id="start-overlay">
             <h2>🐍 스네이크</h2>
+            <p>5점마다 레벨업. 장애물, 움직이는 가시, 황금 먹이가 등장합니다.</p>
             <p>먹이를 먹을 때마다 골드 2배! (100→200→400...)</p>
             <button class="btn btn-primary" onclick="startGame()">게임 시작</button>
             <p class="controls-hint">방향키 또는 WASD로 조작</p>
@@ -283,6 +316,20 @@
         let goldEarned = 0;
         let goldPerFood = 100;  // 2배씩 증가하되 먹이 1개당 최대 1,000,000G
         const MAX_GOLD_PER_FOOD = 1000000;
+        const LEVEL_SCORE_STEP = 5;
+        const LEVEL_CONFIGS = [
+            { name: '기본장', speed: 120, moving: false, golden: false },
+            { name: '돌기둥', speed: 114, moving: false, golden: false },
+            { name: '벽 복도', speed: 108, moving: false, golden: true },
+            { name: '움직이는 가시', speed: 102, moving: true, golden: true },
+            { name: '황금 사냥', speed: 96, moving: true, golden: true },
+            { name: '좁아지는 외곽', speed: 90, moving: true, golden: true }
+        ];
+        let level = 1;
+        let obstacles = [];
+        let movingObstacles = [];
+        let goldenFood = null;
+        let goldenFoodTicks = 0;
         let gameLoop = null;
         let gameRunning = false;
 
@@ -326,31 +373,137 @@
             score = 0;
             goldEarned = 0;
             goldPerFood = 100;
+            level = 1;
+            obstacles = buildLevelObstacles(level);
+            movingObstacles = buildMovingObstacles(level);
+            goldenFood = null;
+            goldenFoodTicks = 0;
             updateStats();
             
             spawnFood();
             gameRunning = true;
             
             if (gameLoop) clearInterval(gameLoop);
-            gameLoop = setInterval(update, 120);
+            gameLoop = setInterval(update, currentSpeed());
         }
         
-        function spawnFood() {
+        function currentSpeed() {
+            return LEVEL_CONFIGS[Math.min(level, LEVEL_CONFIGS.length) - 1].speed;
+        }
+
+        function currentLevelConfig() {
+            return LEVEL_CONFIGS[Math.min(level, LEVEL_CONFIGS.length) - 1];
+        }
+
+        function buildLevelObstacles(level) {
+            const mid = Math.floor(CELL_COUNT / 2);
+            let cells = [];
+            if (level >= 2) {
+                cells.push(
+                    { x: mid - 3, y: mid - 3, kind: 'rock' }, { x: mid + 3, y: mid - 3, kind: 'rock' },
+                    { x: mid - 3, y: mid + 3, kind: 'rock' }, { x: mid + 3, y: mid + 3, kind: 'rock' }
+                );
+            }
+            if (level >= 3) {
+                for (let i = 3; i <= 7; i++) cells.push({ x: i, y: 5, kind: 'wall' }, { x: CELL_COUNT - 1 - i, y: 14, kind: 'wall' });
+                for (let i = 7; i <= 12; i++) cells.push({ x: 5, y: i, kind: 'wall' }, { x: 14, y: CELL_COUNT - 1 - i, kind: 'wall' });
+            }
+            if (level >= 6) {
+                for (let i = 0; i < CELL_COUNT; i++) {
+                    cells.push({ x: i, y: 0, kind: 'danger' }, { x: i, y: CELL_COUNT - 1, kind: 'danger' });
+                    cells.push({ x: 0, y: i, kind: 'danger' }, { x: CELL_COUNT - 1, y: i, kind: 'danger' });
+                }
+            }
+            const seen = new Set();
+            return cells.filter(c => {
+                const key = `${c.x},${c.y}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return !snake.some(s => s.x === c.x && s.y === c.y);
+            });
+        }
+
+        function buildMovingObstacles(level) {
+            if (level < 4) return [];
+            const movers = [{ x: 2, y: 9, dx: 1, dy: 0, minX: 2, maxX: 17, minY: 9, maxY: 9, kind: 'spike' }];
+            if (level >= 5) movers.push({ x: 10, y: 2, dx: 0, dy: 1, minX: 10, maxX: 10, minY: 2, maxY: 17, kind: 'spike' });
+            return movers;
+        }
+
+        function isBlockedCell(x, y) {
+            return obstacles.some(o => o.x === x && o.y === y) || movingObstacles.some(o => o.x === x && o.y === y);
+        }
+
+        function randomEmptyCell() {
             const empty = [];
             for (let x = 0; x < CELL_COUNT; x++) {
                 for (let y = 0; y < CELL_COUNT; y++) {
-                    if (!snake.some(s => s.x === x && s.y === y)) {
-                        empty.push({ x, y });
-                    }
+                    const occupied = snake.some(s => s.x === x && s.y === y)
+                        || isBlockedCell(x, y)
+                        || (food && food.x === x && food.y === y)
+                        || (goldenFood && goldenFood.x === x && goldenFood.y === y);
+                    if (!occupied) empty.push({ x, y });
                 }
             }
-            food = empty[Math.floor(Math.random() * empty.length)];
+            return empty[Math.floor(Math.random() * empty.length)] || null;
+        }
+
+        function spawnFood(kind = 'normal') {
+            const cell = randomEmptyCell();
+            if (kind === 'golden') {
+                goldenFood = cell;
+                goldenFoodTicks = cell ? 70 : 0;
+                return;
+            }
+            food = cell;
+        }
+
+        function maybeSpawnGoldenFood() {
+            const cfg = currentLevelConfig();
+            if (!cfg.golden || goldenFood || score < LEVEL_SCORE_STEP * 2) return;
+            if (score % 4 === 0) spawnFood('golden');
+        }
+
+        function updateLevelProgress() {
+            const nextLevel = Math.min(LEVEL_CONFIGS.length, Math.floor(score / LEVEL_SCORE_STEP) + 1);
+            if (nextLevel <= level) return;
+            level = nextLevel;
+            obstacles = buildLevelObstacles(level);
+            movingObstacles = buildMovingObstacles(level);
+            showLevelBanner(`LEVEL UP ${level}: ${currentLevelConfig().name}`);
+            if (gameLoop) {
+                clearInterval(gameLoop);
+                gameLoop = setInterval(update, currentSpeed());
+            }
+        }
+
+        function updateMovingObstacles() {
+            if (!movingObstacles.length) return;
+            movingObstacles.forEach(o => {
+                const nx = o.x + o.dx;
+                const ny = o.y + o.dy;
+                if (nx < o.minX || nx > o.maxX || ny < o.minY || ny > o.maxY) {
+                    o.dx *= -1;
+                    o.dy *= -1;
+                }
+                o.x += o.dx;
+                o.y += o.dy;
+            });
         }
         
         function update() {
             if (!gameRunning) return;
             
             direction = { ...nextDirection };
+            updateMovingObstacles();
+            if (snake.some(s => isBlockedCell(s.x, s.y))) {
+                gameOver();
+                return;
+            }
+            if (goldenFoodTicks > 0) {
+                goldenFoodTicks--;
+                if (goldenFoodTicks === 0) goldenFood = null;
+            }
             
             // Move snake
             const head = { 
@@ -364,25 +517,35 @@
                 return;
             }
             
-            // Self collision
-            if (snake.some(s => s.x === head.x && s.y === head.y)) {
+            // Self / obstacle collision
+            if (snake.some(s => s.x === head.x && s.y === head.y) || isBlockedCell(head.x, head.y)) {
                 gameOver();
                 return;
             }
             
             snake.unshift(head);
             
-            // Eat food
-            if (head.x === food.x && head.y === food.y) {
-                score++;
+            const ateGolden = goldenFood && head.x === goldenFood.x && head.y === goldenFood.y;
+            const ateNormal = food && head.x === food.x && head.y === food.y;
+            if (ateGolden || ateNormal) {
+                score += ateGolden ? 2 : 1;
+                const multiplier = ateGolden ? 5 : 1;
                 const earnedGold = Math.min(goldPerFood, MAX_GOLD_PER_FOOD);
-                goldEarned += earnedGold;
-                SharedWallet.addGold(earnedGold);
-                showGoldPopup(head.x * CELL_SIZE + CELL_SIZE/2, head.y * CELL_SIZE, earnedGold);
-                playEatSound(score);
-                goldPerFood = Math.min(goldPerFood * 2, MAX_GOLD_PER_FOOD);  // 다음 먹이는 2배, 최대 100만원
+                const payoutGold = Math.min(earnedGold * multiplier, MAX_GOLD_PER_FOOD);
+                goldEarned += payoutGold;
+                SharedWallet.addGold(payoutGold);
+                showGoldPopup(head.x * CELL_SIZE + CELL_SIZE/2, head.y * CELL_SIZE, payoutGold);
+                playEatSound(score + (ateGolden ? 4 : 0));
+                if (ateGolden) {
+                    goldenFood = null;
+                    goldenFoodTicks = 0;
+                } else {
+                    goldPerFood = Math.min(goldPerFood * 2, MAX_GOLD_PER_FOOD);  // 다음 먹이는 2배, 최대 100만원
+                    spawnFood();
+                }
+                updateLevelProgress();
+                maybeSpawnGoldenFood();
                 updateStats();
-                spawnFood();
             } else {
                 snake.pop();
             }
@@ -408,6 +571,9 @@
                 ctx.lineTo(WIDTH, i * CELL_SIZE);
                 ctx.stroke();
             }
+            
+            drawObstacles();
+            drawGoldenFood();
             
             // Food
             if (food) {
@@ -456,6 +622,60 @@
             });
         }
         
+        function drawObstacles() {
+            [...obstacles, ...movingObstacles].forEach(o => {
+                const cx = o.x * CELL_SIZE;
+                const cy = o.y * CELL_SIZE;
+                const pad = o.kind === 'spike' ? 4 : 3;
+                ctx.save();
+                ctx.shadowBlur = o.kind === 'spike' ? 10 : 0;
+                ctx.shadowColor = '#ff3b55';
+                if (o.kind === 'spike') {
+                    ctx.fillStyle = '#ff3b55';
+                    ctx.beginPath();
+                    ctx.moveTo(cx + CELL_SIZE / 2, cy + pad);
+                    ctx.lineTo(cx + CELL_SIZE - pad, cy + CELL_SIZE - pad);
+                    ctx.lineTo(cx + pad, cy + CELL_SIZE - pad);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = o.kind === 'danger' ? '#3f1d24' : '#565f6b';
+                    ctx.strokeStyle = o.kind === 'danger' ? '#ff3b55' : '#8b949e';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.roundRect(cx + pad, cy + pad, CELL_SIZE - pad * 2, CELL_SIZE - pad * 2, 5);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+                ctx.restore();
+            });
+        }
+
+        function drawGoldenFood() {
+            if (!goldenFood) return;
+            const pulse = 0.75 + 0.25 * Math.sin(Date.now() / 90);
+            ctx.fillStyle = '#ffd700';
+            ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur = 18;
+            ctx.beginPath();
+            ctx.arc(
+                goldenFood.x * CELL_SIZE + CELL_SIZE / 2,
+                goldenFood.y * CELL_SIZE + CELL_SIZE / 2,
+                (CELL_SIZE / 2 - 2) * pulse,
+                0, Math.PI * 2
+            );
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        function showLevelBanner(text) {
+            const banner = document.createElement('div');
+            banner.className = 'level-banner';
+            banner.textContent = text;
+            container.appendChild(banner);
+            setTimeout(() => banner.remove(), 900);
+        }
+
         function gameOver() {
             gameRunning = false;
             clearInterval(gameLoop);
@@ -469,6 +689,9 @@
         function updateStats() {
             document.getElementById('score').textContent = score;
             document.getElementById('earned').textContent = goldEarned.toLocaleString() + 'G';
+            document.getElementById('level').textContent = level;
+            const next = level >= LEVEL_CONFIGS.length ? 'MAX' : `다음 ${level * LEVEL_SCORE_STEP}`;
+            document.getElementById('next-level').textContent = `${currentLevelConfig().name} · ${next}`;
         }
         
         function showGoldPopup(x, y, amount) {
