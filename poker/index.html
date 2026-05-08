@@ -245,9 +245,10 @@
             background: var(--card-bg);
             border: 1px solid rgba(0,0,0,0.18);
             border-radius: 10px;
-            padding: 5px 6px;
+            padding: 4px 5px;
             display: grid;
-            grid-template-rows: auto 1fr auto;
+            grid-template-rows: min-content minmax(0, 1fr) min-content;
+            overflow: hidden;
             color: #111827;
             font-weight: 900;
             line-height: 1;
@@ -374,6 +375,7 @@
             display: flex;
             flex-direction: column;
             gap: 1px;
+            min-height: 0;
         }
 
         .card .card-top { align-items: flex-start; }
@@ -413,8 +415,8 @@
         }
 
         .community-cards .card {
-            width: calc(var(--cardW) * 0.92);
-            height: calc(var(--cardH) * 0.92);
+            width: var(--cardW);
+            height: var(--cardH);
         }
 
         .pot-display {
@@ -650,9 +652,10 @@
 
             h1 { font-size: 1.08rem; }
             .btn { padding: 7px 10px; font-size: 0.82rem; }
-            .card .rank { font-size: 0.78rem; }
-            .card .suit { font-size: 0.58rem; }
-            .card .suit-center { font-size: 1.12rem; }
+            .card { padding: 4px 5px; }
+            .card .rank { font-size: 0.72rem; }
+            .card .suit { font-size: 0.52rem; }
+            .card .suit-center { font-size: 1.02rem; }
 
             .poker-table {
                 border-radius: 30px;
@@ -1001,7 +1004,7 @@
                         <div class="dealer-bubble hidden" id="dealerBubble"></div>
                         <div class="player-info">
                             <span class="player-name">🤖 컴퓨터</span>
-                            <span class="chip-count" id="opponentChips">1000</span>
+                            <span class="chip-count" id="opponentChips">1,000G</span>
                             <span class="dealer-btn" id="opponentDealer" style="display:none">D</span>
                         </div>
                     </div>
@@ -1015,7 +1018,7 @@
             <div class="community-area">
                 <div class="community-cards" id="communityCards"></div>
                 <div class="pot-display">
-                    팟: <span class="pot-amount" id="potAmount">0</span>
+                    팟: <span class="pot-amount" id="potAmount">0G</span>
                 </div>
             </div>
 
@@ -1033,7 +1036,7 @@
                 <div class="hand-result" id="myHand"></div>
                 <div class="player-info">
                     <span class="player-name">👤 나</span>
-                    <span class="chip-count" id="myChips">1000</span>
+                    <span class="chip-count" id="myChips">1,000G</span>
                     <span class="dealer-btn" id="myDealer" style="display:none">D</span>
                 </div>
             </div>
@@ -1072,7 +1075,7 @@
                 <b>체크</b>: 베팅 없이 차례 넘기기 (상대가 베팅 안했을 때)<br>
                 <b>콜</b>: 상대 베팅과 같은 금액 베팅<br>
                 <b>레이즈</b>: 상대 베팅보다 더 많이 베팅<br>
-                <b>올인</b>: 모든 칩을 베팅
+                <b>올인</b>: 모든 골드를 베팅
             </p>
 
             <h3 style="margin: 16px 0 8px">🏆 핸드 순위 (높은 순)</h3>
@@ -1167,7 +1170,7 @@
         let sharedGold = 0;
         let cloudSyncEnabled = false;
         const BUY_IN_COST = 500;  // 바이인 비용 (골드)
-        const CHIP_VALUE = 0.5;    // 칩 1개 = 0.5 골드
+        const CHIP_VALUE = 1;      // 테이블 단위 = 골드
         
         async function loadSharedGold() {
             // 먼저 로컬 스토리지에서 로드
@@ -1219,10 +1222,16 @@
             updateGoldDisplay();
         }
         
+
+        function formatGoldAmount(value) {
+            const n = Number(value) || 0;
+            return `${Math.floor(n).toLocaleString()}G`;
+        }
+
         function updateGoldDisplay() {
             const el = document.getElementById('sharedGoldDisplay');
             if (el) {
-                el.innerHTML = `💰 ${sharedGold.toLocaleString()} G ${cloudSyncEnabled ? '<span style="color:#4ecca3;font-size:0.8em;">☁️</span>' : ''}`;
+                el.innerHTML = `💰 ${formatGoldAmount(sharedGold)} ${cloudSyncEnabled ? '<span style="color:#4ecca3;font-size:0.8em;">☁️</span>' : ''}`;
             }
         }
         
@@ -1266,7 +1275,7 @@
                         break;
                         
                     case 'chips':
-                        // 칩 베팅 - 칩 소리
+                        // 골드 베팅 효과음
                         osc.type = 'square';
                         osc.frequency.setValueAtTime(2000, now);
                         osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
@@ -1274,7 +1283,7 @@
                         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
                         osc.start(now);
                         osc.stop(now + 0.1);
-                        // 두 번째 칩
+                        // 두 번째 효과음
                         setTimeout(() => {
                             const osc2 = audioCtx.createOscillator();
                             const gain2 = audioCtx.createGain();
@@ -1496,14 +1505,14 @@
             // 커뮤니티 카드
             document.getElementById('communityCards').innerHTML = game.communityCards.map(c => renderCard(c)).join('');
 
-            // 칩
-            document.getElementById('myChips').textContent = game.myChips;
-            document.getElementById('opponentChips').textContent = game.opponentChips;
-            document.getElementById('potAmount').textContent = game.pot;
+            // 골드
+            document.getElementById('myChips').textContent = formatGoldAmount(game.myChips);
+            document.getElementById('opponentChips').textContent = formatGoldAmount(game.opponentChips);
+            document.getElementById('potAmount').textContent = formatGoldAmount(game.pot);
 
             // 현재 베팅
-            document.getElementById('myBet').textContent = game.myBet > 0 ? `베팅: ${game.myBet}` : '';
-            document.getElementById('opponentBet').textContent = game.opponentBet > 0 ? `베팅: ${game.opponentBet}` : '';
+            document.getElementById('myBet').textContent = game.myBet > 0 ? `베팅: ${formatGoldAmount(game.myBet)}` : '';
+            document.getElementById('opponentBet').textContent = game.opponentBet > 0 ? `베팅: ${formatGoldAmount(game.opponentBet)}` : '';
 
             // 딜러 버튼
             document.getElementById('myDealer').style.display = game.dealer === 'me' ? 'inline' : 'none';
@@ -1660,11 +1669,11 @@
             document.getElementById('resultOverlay').classList.remove('active');
             
             if (game.myChips <= 0) {
-                showMessage('칩이 없습니다! 새 게임을 시작하세요.');
+                showMessage('골드가 없습니다! 새 게임을 시작하세요.');
                 return;
             }
             if (game.opponentChips <= 0) {
-                showMessage('🎉 승리! 상대 칩이 없습니다!');
+                showMessage('🎉 승리! 상대 골드가 없습니다!');
                 return;
             }
             
@@ -1742,7 +1751,7 @@
             if (toCall === 0) {
                 html += '<button class="bet-btn check" onclick="playerAction(\'check\')">체크</button>';
             } else if (toCall > 0 && game.myChips >= toCall) {
-                html += `<button class="bet-btn call" onclick="playerAction('call')">콜 (${toCall})</button>`;
+                html += `<button class="bet-btn call" onclick="playerAction('call')">콜 (${formatGoldAmount(toCall)})</button>`;
             }
             
             if (canRaise && game.myChips > toCall) {
@@ -1760,7 +1769,7 @@
             }
             
             if (game.myChips > 0) {
-                html += `<button class="bet-btn allin" onclick="playerAction('allin')">올인 (${game.myChips})</button>`;
+                html += `<button class="bet-btn allin" onclick="playerAction('allin')">올인 (${formatGoldAmount(game.myChips)})</button>`;
             }
             
             buttons.innerHTML = html;
@@ -1768,7 +1777,7 @@
 
         function updateBetDisplay() {
             const slider = document.getElementById('betSlider');
-            document.getElementById('betAmountDisplay').textContent = slider.value;
+            document.getElementById('betAmountDisplay').textContent = formatGoldAmount(Number(slider.value));
         }
 
         document.getElementById('betSlider').addEventListener('input', updateBetDisplay);
@@ -2048,7 +2057,7 @@
             const title = document.getElementById('resultTitle');
             const detail = document.getElementById('resultDetail');
             
-            // 칩 변동 계산 (골드 보상용)
+            // 골드 변동 계산
             const potWon = game.pot;
             let goldChange = 0;
             
@@ -2058,8 +2067,8 @@
                 title.textContent = '🎉 승리!';
                 title.className = 'result-title win';
                 detail.innerHTML = winningHand 
-                    ? `${winningHand}으로 +${game.pot} 획득 <span style="color:#4ecca3">+${goldChange}G</span>` 
-                    : `+${game.pot} 획득 <span style="color:#4ecca3">+${goldChange}G</span>`;
+                    ? `${winningHand}으로 +${formatGoldAmount(game.pot)} 획득 <span style="color:#4ecca3">+${formatGoldAmount(goldChange)}</span>` 
+                    : `+${formatGoldAmount(game.pot)} 획득 <span style="color:#4ecca3">+${formatGoldAmount(goldChange)}</span>`;
                 
                 // 승리 사운드 & 애니메이션
                 playSound('win');
@@ -2078,8 +2087,8 @@
                 title.textContent = '😢 패배';
                 title.className = 'result-title lose';
                 detail.innerHTML = winningHand 
-                    ? `상대: ${winningHand} <span style="color:#ef4444">${goldChange}G</span>` 
-                    : `<span style="color:#ef4444">${goldChange}G</span>`;
+                    ? `상대: ${winningHand} <span style="color:#ef4444">${formatGoldAmount(goldChange)}</span>` 
+                    : `<span style="color:#ef4444">${formatGoldAmount(goldChange)}</span>`;
                 
                 // 패배 사운드
                 playSound('lose');
@@ -2251,14 +2260,14 @@
             
             if (!me || !opponent) return;
             
-            // Update chips
-            document.getElementById('myChips').textContent = me.chips;
-            document.getElementById('opponentChips').textContent = opponent.chips;
-            document.getElementById('potAmount').textContent = gs.pot;
+            // Update gold
+            document.getElementById('myChips').textContent = formatGoldAmount(me.chips);
+            document.getElementById('opponentChips').textContent = formatGoldAmount(opponent.chips);
+            document.getElementById('potAmount').textContent = formatGoldAmount(gs.pot);
             
             // Update bets
-            document.getElementById('myBet').textContent = me.bet > 0 ? `베팅: ${me.bet}` : '';
-            document.getElementById('opponentBet').textContent = opponent.bet > 0 ? `베팅: ${opponent.bet}` : '';
+            document.getElementById('myBet').textContent = me.bet > 0 ? `베팅: ${formatGoldAmount(me.bet)}` : '';
+            document.getElementById('opponentBet').textContent = opponent.bet > 0 ? `베팅: ${formatGoldAmount(opponent.bet)}` : '';
             
             // My cards
             const myHand = myView.myHand || [];
@@ -2334,7 +2343,7 @@
             if (toCall === 0) {
                 html += '<button class="bet-btn check" onclick="mpAction(\'check\')">체크</button>';
             } else if (toCall > 0 && me.chips >= toCall) {
-                html += `<button class="bet-btn call" onclick="mpAction('call')">콜 (${Math.min(toCall, me.chips)})</button>`;
+                html += `<button class="bet-btn call" onclick="mpAction('call')">콜 (${formatGoldAmount(Math.min(toCall, me.chips))})</button>`;
             }
             
             if (canRaise && me.chips > toCall) {
@@ -2352,7 +2361,7 @@
             }
             
             if (me.chips > 0) {
-                html += `<button class="bet-btn allin" onclick="mpAction('allin')">올인 (${me.chips})</button>`;
+                html += `<button class="bet-btn allin" onclick="mpAction('allin')">올인 (${formatGoldAmount(me.chips)})</button>`;
             }
             
             buttons.innerHTML = html;
@@ -2446,10 +2455,9 @@
             const me = gs.players.find(p => p.id === myId);
             const opponent = gs.players.find(p => p.id !== myId);
             
-            // Determine winner by chip count change
-            // 칩 차이를 골드로 변환 (1칩 = 0.5골드)
-            const chipDiff = me.chips - opponent.chips;
-            const goldChange = Math.floor(chipDiff * CHIP_VALUE);
+            // Determine winner by gold balance change
+            const goldDiff = me.chips - opponent.chips;
+            const goldChange = Math.floor(goldDiff * CHIP_VALUE);
             
             if (me.chips > opponent.chips) {
                 title.textContent = '🎉 이번 핸드 승리!';
@@ -2468,9 +2476,9 @@
                 title.className = 'result-title tie';
             }
             
-            const goldText = goldChange > 0 ? `<span style="color:#4ecca3">+${goldChange}G</span>` : 
-                            goldChange < 0 ? `<span style="color:#ef4444">${goldChange}G</span>` : '';
-            detail.innerHTML = `내 칩: ${me.chips} | 상대 칩: ${opponent.chips}${goldText ? ` | ${goldText}` : ''}`;
+            const goldText = goldChange > 0 ? `<span style="color:#4ecca3">+${formatGoldAmount(goldChange)}</span>` : 
+                            goldChange < 0 ? `<span style="color:#ef4444">${formatGoldAmount(goldChange)}</span>` : '';
+            detail.innerHTML = `내 골드: ${formatGoldAmount(me.chips)} | 상대 골드: ${formatGoldAmount(opponent.chips)}${goldText ? ` | ${goldText}` : ''}`;
             
             // Clear old buttons
             overlay.querySelectorAll('.mp-buttons').forEach(el => el.remove());
