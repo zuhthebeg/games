@@ -9,36 +9,36 @@ let isGameStarted = false;
 let isGameWon = false;
 let backgroundImage = null;
 const LINE_RUSH_RANDOM_IMAGES = [
-    '/linerush/img/bg1.jpg',
-    '/linerush/img/bg2.jpg',
-    '/linerush/img/bg3.jpg',
-    '/linerush/img/bg4.jpg',
-    '/linerush/img/bg5.jpg',
-    '/linerush/img/bg6.jpg',
-    '/linerush/img/bg7.jpg',
-    '/linerush/img/bg8.jpg',
-    '/linerush/img/bg9.jpg',
-    '/linerush/img/bg10.jpg',
-    '/linerush/img/bg11.jpg',
-    '/linerush/img/bg12.jpg',
-    '/linerush/img/bg13.jpg',
-    '/linerush/img/bg14.jpg',
-    '/linerush/img/bg15.jpg',
-    '/linerush/img/bg16.jpg',
-    '/linerush/img/bg17.jpg',
-    '/linerush/img/bg18.jpg',
-    '/linerush/img/bg19.jpg',
-    '/linerush/img/bg20.jpg',
-    '/linerush/img/bg21.jpg',
-    '/linerush/img/bg22.jpg',
-    '/linerush/img/bg23.jpg',
-    '/linerush/img/bg24.jpg',
-    '/linerush/img/bg25.jpg',
-    '/linerush/img/bg26.jpg',
-    '/linerush/img/bg27.jpg',
-    '/linerush/img/bg28.jpg',
-    '/linerush/img/bg29.jpg',
-    '/linerush/img/bg30.jpg'
+    '/tileslider/random-images/linerush-bg1.jpg',
+    '/tileslider/random-images/linerush-bg2.jpg',
+    '/tileslider/random-images/linerush-bg3.jpg',
+    '/tileslider/random-images/linerush-bg4.jpg',
+    '/tileslider/random-images/linerush-bg5.jpg',
+    '/tileslider/random-images/linerush-bg6.jpg',
+    '/tileslider/random-images/linerush-bg7.jpg',
+    '/tileslider/random-images/linerush-bg8.jpg',
+    '/tileslider/random-images/linerush-bg9.jpg',
+    '/tileslider/random-images/linerush-bg10.jpg',
+    '/tileslider/random-images/linerush-bg11.jpg',
+    '/tileslider/random-images/linerush-bg12.jpg',
+    '/tileslider/random-images/linerush-bg13.jpg',
+    '/tileslider/random-images/linerush-bg14.jpg',
+    '/tileslider/random-images/linerush-bg15.jpg',
+    '/tileslider/random-images/linerush-bg16.jpg',
+    '/tileslider/random-images/linerush-bg17.jpg',
+    '/tileslider/random-images/linerush-bg18.jpg',
+    '/tileslider/random-images/linerush-bg19.jpg',
+    '/tileslider/random-images/linerush-bg20.jpg',
+    '/tileslider/random-images/linerush-bg21.jpg',
+    '/tileslider/random-images/linerush-bg22.jpg',
+    '/tileslider/random-images/linerush-bg23.jpg',
+    '/tileslider/random-images/linerush-bg24.jpg',
+    '/tileslider/random-images/linerush-bg25.jpg',
+    '/tileslider/random-images/linerush-bg26.jpg',
+    '/tileslider/random-images/linerush-bg27.jpg',
+    '/tileslider/random-images/linerush-bg28.jpg',
+    '/tileslider/random-images/linerush-bg29.jpg',
+    '/tileslider/random-images/linerush-bg30.jpg'
 ];
 
 function pickRandomLineRushImage() {
@@ -96,7 +96,7 @@ function initGame(level) {
                 const col = originalValue % level;
                 
                 tile.style.backgroundImage = `url(${backgroundImage})`;
-                tile.style.backgroundSize = `${level * 100}%`;
+                tile.style.backgroundSize = `${level * 100}% ${level * 100}%`;
                 tile.style.backgroundPosition = 
                     `${(col * 100) / (level - 1)}% ${(row * 100) / (level - 1)}%`;
                 tile.classList.add('image-mode');  // 이미지 모드 클래스 추가
