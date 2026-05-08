@@ -8,38 +8,109 @@ let isAnimating = false;
 let isGameStarted = false;
 let isGameWon = false;
 let backgroundImage = null;
+let backgroundImageMeta = null;
 const LINE_RUSH_RANDOM_IMAGES = [
-    '/tileslider/random-images/linerush-bg1.jpg',
-    '/tileslider/random-images/linerush-bg2.jpg',
-    '/tileslider/random-images/linerush-bg3.jpg',
-    '/tileslider/random-images/linerush-bg4.jpg',
-    '/tileslider/random-images/linerush-bg5.jpg',
-    '/tileslider/random-images/linerush-bg6.jpg',
-    '/tileslider/random-images/linerush-bg7.jpg',
-    '/tileslider/random-images/linerush-bg8.jpg',
-    '/tileslider/random-images/linerush-bg9.jpg',
-    '/tileslider/random-images/linerush-bg10.jpg',
-    '/tileslider/random-images/linerush-bg11.jpg',
-    '/tileslider/random-images/linerush-bg12.jpg',
-    '/tileslider/random-images/linerush-bg13.jpg',
-    '/tileslider/random-images/linerush-bg14.jpg',
-    '/tileslider/random-images/linerush-bg15.jpg',
-    '/tileslider/random-images/linerush-bg16.jpg',
-    '/tileslider/random-images/linerush-bg17.jpg',
-    '/tileslider/random-images/linerush-bg18.jpg',
-    '/tileslider/random-images/linerush-bg19.jpg',
-    '/tileslider/random-images/linerush-bg20.jpg',
-    '/tileslider/random-images/linerush-bg21.jpg',
-    '/tileslider/random-images/linerush-bg22.jpg',
-    '/tileslider/random-images/linerush-bg23.jpg',
-    '/tileslider/random-images/linerush-bg24.jpg',
-    '/tileslider/random-images/linerush-bg25.jpg',
-    '/tileslider/random-images/linerush-bg26.jpg',
-    '/tileslider/random-images/linerush-bg27.jpg',
-    '/tileslider/random-images/linerush-bg28.jpg',
-    '/tileslider/random-images/linerush-bg29.jpg',
-    '/tileslider/random-images/linerush-bg30.jpg'
+    '/linerush/img/bg1.jpg',
+    '/linerush/img/bg2.jpg',
+    '/linerush/img/bg3.jpg',
+    '/linerush/img/bg4.jpg',
+    '/linerush/img/bg5.jpg',
+    '/linerush/img/bg6.jpg',
+    '/linerush/img/bg7.jpg',
+    '/linerush/img/bg8.jpg',
+    '/linerush/img/bg9.jpg',
+    '/linerush/img/bg10.jpg',
+    '/linerush/img/bg11.jpg',
+    '/linerush/img/bg12.jpg',
+    '/linerush/img/bg13.jpg',
+    '/linerush/img/bg14.jpg',
+    '/linerush/img/bg15.jpg',
+    '/linerush/img/bg16.jpg',
+    '/linerush/img/bg17.jpg',
+    '/linerush/img/bg18.jpg',
+    '/linerush/img/bg19.jpg',
+    '/linerush/img/bg20.jpg',
+    '/linerush/img/bg21.jpg',
+    '/linerush/img/bg22.jpg',
+    '/linerush/img/bg23.jpg',
+    '/linerush/img/bg24.jpg',
+    '/linerush/img/bg25.jpg',
+    '/linerush/img/bg26.jpg',
+    '/linerush/img/bg27.jpg',
+    '/linerush/img/bg28.jpg',
+    '/linerush/img/bg29.jpg',
+    '/linerush/img/bg30.jpg'
 ];
+
+
+function loadImageMeta(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.naturalWidth || img.width, height: img.naturalHeight || img.height });
+        img.onerror = reject;
+        img.src = src;
+    });
+}
+
+async function setPuzzleImage(src) {
+    backgroundImage = src;
+    try {
+        backgroundImageMeta = await loadImageMeta(src);
+    } catch (error) {
+        console.warn('이미지 비율 확인 실패, 정사각 기본값 사용:', error);
+        backgroundImageMeta = null;
+    }
+}
+
+function getContainedImageFrame(level) {
+    const firstTile = tiles.find(tile => !tile.classList.contains('empty')) || tiles[0];
+    const tileSize = firstTile?.offsetWidth || (board.clientWidth / level);
+    const puzzleSize = tileSize * level;
+    const imageWidth = backgroundImageMeta?.width || 1;
+    const imageHeight = backgroundImageMeta?.height || 1;
+    const imageRatio = imageWidth / imageHeight;
+
+    let renderWidth = puzzleSize;
+    let renderHeight = puzzleSize;
+    if (imageRatio > 1) {
+        renderHeight = puzzleSize / imageRatio;
+    } else if (imageRatio < 1) {
+        renderWidth = puzzleSize * imageRatio;
+    }
+
+    return {
+        tileSize,
+        renderWidth,
+        renderHeight,
+        offsetX: (puzzleSize - renderWidth) / 2,
+        offsetY: (puzzleSize - renderHeight) / 2
+    };
+}
+
+function applyImageToTiles(level) {
+    if (!backgroundImage) return;
+    const frame = getContainedImageFrame(level);
+
+    tiles.forEach((tile) => {
+        if (!tile.classList.contains('empty')) {
+            const originalValue = parseInt(tile.dataset.value, 10) - 1;
+            const row = Math.floor(originalValue / level);
+            const col = originalValue % level;
+
+            tile.style.backgroundImage = `url(${backgroundImage})`;
+            tile.style.backgroundRepeat = 'no-repeat';
+            tile.style.backgroundColor = '#05070d';
+            tile.style.backgroundSize = `${frame.renderWidth}px ${frame.renderHeight}px`;
+            tile.style.backgroundPosition = `${frame.offsetX - (col * frame.tileSize)}px ${frame.offsetY - (row * frame.tileSize)}px`;
+            tile.classList.add('image-mode');
+        } else {
+            tile.style.backgroundImage = '';
+            tile.style.backgroundRepeat = '';
+            tile.style.backgroundColor = '';
+            tile.classList.remove('image-mode');
+        }
+    });
+}
 
 function pickRandomLineRushImage() {
     const idx = Math.floor(Math.random() * LINE_RUSH_RANDOM_IMAGES.length);
@@ -88,23 +159,7 @@ function initGame(level) {
 
     if (backgroundImage) {
         document.body.classList.add('image-mode-active');
-        const tileSize = 100 / level;
-        tiles.forEach((tile, index) => {
-            if (!tile.classList.contains('empty')) {
-                const originalValue = parseInt(tile.dataset.value) - 1;
-                const row = Math.floor(originalValue / level);
-                const col = originalValue % level;
-                
-                tile.style.backgroundImage = `url(${backgroundImage})`;
-                tile.style.backgroundSize = `${level * 100}% ${level * 100}%`;
-                tile.style.backgroundPosition = 
-                    `${(col * 100) / (level - 1)}% ${(row * 100) / (level - 1)}%`;
-                tile.classList.add('image-mode');  // 이미지 모드 클래스 추가
-            } else {
-                tile.style.backgroundImage = '';
-                tile.classList.remove('image-mode');  // 이미지 모드 클래스 제거
-            }
-        });
+        requestAnimationFrame(() => applyImageToTiles(level));
 
         // 타일을 정답 상태로 초기화
         updateBoardPositions();
@@ -413,9 +468,9 @@ function addEventListeners() {
     });
 
     // 수정된 랜덤 이미지 버튼 이벤트
-    document.getElementById('random-image-btn').addEventListener('click', () => {
+    document.getElementById('random-image-btn').addEventListener('click', async () => {
         // backgroundImage = `https://picsum.photos/460?random=${Date.now()}`;
-        backgroundImage = pickRandomLineRushImage();
+        await setPuzzleImage(pickRandomLineRushImage());
         startNewGame();
         
         // 기존 팝업 제거
@@ -572,6 +627,7 @@ function addEventListeners() {
 // 빈 이미지로 새 게임 시작
 function startNewGameWithBlank(){
     backgroundImage = null;
+    backgroundImageMeta = null;
     document.querySelectorAll('.tile').forEach(tile => {
         tile.style.backgroundImage = '';
         tile.classList.remove('image-mode');  // 이미지 모드 클래스 제거
@@ -738,33 +794,21 @@ function handleImageUpload(event) {
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            // 이미지 전처리 (1:1 비율, 중앙 크롭)
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const size = Math.min(img.width, img.height);
-                canvas.width = size;
-                canvas.height = size;
-                
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(
-                    img,
-                    (img.width - size)/2,  // 중앙 X
-                    (img.height - size)/2, // 중앙 Y
-                    size, size,            // 크롭 영역
-                    0, 0, size, size        // 캔버스에 그리기
-                );
-                
-                backgroundImage = canvas.toDataURL();
+            setPuzzleImage(e.target.result).then(() => {
                 startNewGame();
-            };
-            img.src = e.target.result;
+            });
         };
         reader.readAsDataURL(file);
     }
 }
 
 // 스코어보드 초기화 함수 추가
+window.addEventListener('resize', () => {
+    if (backgroundImage && tiles.length) {
+        requestAnimationFrame(() => applyImageToTiles(currentLevel));
+    }
+});
+
 function initializeScoreBoard() {
     const title = document.querySelector('#score-board h3');
     title.innerHTML = '🏆';  // 제목 설정
@@ -795,7 +839,7 @@ window.addEventListener('load', () => {
 // PWA 서비스 워커 등록
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
+        navigator.serviceWorker.register('/tileslider/service-worker.js')
             .then(registration => {
                 console.log('ServiceWorker 등록 성공:', registration.scope);
             })

@@ -1,16 +1,13 @@
 const fs = require('fs');
-const path = require('path');
 const assert = require('assert');
 
-const js = fs.readFileSync(path.join(__dirname, 'script.js'), 'utf8');
+const js = fs.readFileSync(__dirname + '/script.js', 'utf8');
 
-assert(js.includes('/tileslider/random-images/linerush-bg1.jpg'), 'random pool should use square-cropped tileslider images');
-assert(!js.includes("'/linerush/img/bg1.jpg'"), 'random pool should not use original portrait Line Rush images directly');
-assert(js.includes('tile.style.backgroundSize = `${level * 100}% ${level * 100}%`;'), 'tile backgrounds should be sized to square board in both axes');
+assert(js.includes("'/linerush/img/bg1.jpg'"), 'random pool should use original Line Rush portrait images');
+assert(!js.includes("'/tileslider/random-images/linerush-bg1.jpg'"), 'random pool should not use square-cropped tileslider images');
+assert(js.includes('function getContainedImageFrame(level)'), 'image mode should calculate a contained image frame');
+assert(js.includes('tile.style.backgroundSize = `${frame.renderWidth}px ${frame.renderHeight}px`;'), 'tile backgrounds should preserve the source image aspect ratio');
+assert(js.includes('tile.style.backgroundPosition = `${frame.offsetX - (col * frame.tileSize)}px ${frame.offsetY - (row * frame.tileSize)}px`;'), 'tile backgrounds should include contain-mode letterbox offsets');
+assert(js.includes('backgroundImageMeta = await loadImageMeta(src);'), 'image dimensions should be loaded before puzzle rendering');
 
-for (let i = 1; i <= 30; i++) {
-  const p = path.join(__dirname, 'random-images', `linerush-bg${i}.jpg`);
-  assert(fs.existsSync(p), `square random image ${i} should exist`);
-}
-
-console.log('PASS tileslider square random image pool');
+console.log('PASS tileslider contained random image aspect ratio');
