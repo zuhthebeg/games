@@ -5773,8 +5773,11 @@
     }
 
     function roomInviteUrl(roomCode = mpState.roomCode) {
-      const baseUrl = `${window.location.origin}${window.location.pathname.replace(/\/$/, "")}/`;
-      return `${baseUrl}#room=${encodeURIComponent(roomCode || "")}`;
+      const path = window.location.pathname
+        .replace(/\/index\.html$/i, "/")
+        .replace(/\/$/, "");
+      const baseUrl = `${window.location.origin}${path}`;
+      return `${baseUrl}/?room=${encodeURIComponent(roomCode || "")}`;
     }
 
     function roomInviteText(roomCode = mpState.roomCode) {

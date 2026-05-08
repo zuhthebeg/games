@@ -25,8 +25,16 @@ assert(
   'shared waiting room should expose a share action'
 );
 assert(
-  ui.includes('const joinUrl = `${baseUrl}/?room=${roomCode}`'),
-  'shared QR URL should use the deployed pingtan directory route'
+  ui.includes('replace(/\\/index\\.html$/i, \'/\')'),
+  'shared QR URL should strip index.html before building the invite route'
+);
+assert(
+  ui.includes('return `${this._inviteBaseUrl()}/?room=${encodeURIComponent(roomCode || \'\')}`'),
+  'shared QR URL should use the deployed game directory route with encoded room code'
+);
+assert(
+  html.includes('replace(/\\/index\\.html$/i, "/")') && html.includes('return `${baseUrl}/?room=${encodeURIComponent(roomCode || "")}`'),
+  'pingtan custom invite URL should also strip index.html and use ?room route'
 );
 
 console.log('PASS pingtan waiting room share QR');
