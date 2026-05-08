@@ -41,26 +41,56 @@
         }
 
         .stats {
-            display: flex;
-            gap: 20px;
+            width: min(100%, 500px);
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
             margin-bottom: 12px;
-            font-size: 1rem;
+            font-size: 0.9rem;
+            min-height: 54px;
         }
 
         .stat {
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            min-width: 0;
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: auto auto;
+            align-content: center;
+            gap: 2px;
+            padding: 4px 6px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.035);
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 0.78rem;
+            line-height: 1;
+            white-space: nowrap;
         }
 
         .stat-value {
+            min-width: 0;
             font-weight: 700;
+            line-height: 1.15;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-variant-numeric: tabular-nums;
         }
 
         .score-value { color: var(--snake); }
         .earned-value { color: var(--gold); }
         .level-value { color: #8be9fd; }
-        .next-value { color: var(--muted); font-size: 0.9rem; }
+        .next-value {
+            min-width: 0;
+            color: var(--muted);
+            font-size: 0.72rem;
+            line-height: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
         #game-container {
             position: relative;
@@ -230,6 +260,9 @@
         @media (max-width: 600px) {
             .mobile-controls { display: flex; }
             .controls-hint { display: none; }
+            h1 { font-size: 1.55rem; margin-bottom: 6px; }
+            .stats { font-size: 0.84rem; gap: 6px; min-height: 50px; }
+            .stat { padding: 4px 5px; }
         }
 
         @media (pointer: coarse) {
@@ -243,15 +276,15 @@
     
     <div class="stats">
         <div class="stat">
-            <span>🍎 점수:</span>
+            <span class="stat-label">🍎 점수</span>
             <span class="stat-value score-value" id="score">0</span>
         </div>
         <div class="stat">
-            <span>💰 획득:</span>
-            <span class="stat-value earned-value" id="earned">0G</span>
+            <span class="stat-label">💰 획득</span>
+            <span class="stat-value earned-value" id="earned" title="0G"><span id="goldEarnedCompact">0G</span></span>
         </div>
         <div class="stat">
-            <span>🧭 레벨:</span>
+            <span class="stat-label">🧭 레벨</span>
             <span class="stat-value level-value" id="level">1</span>
             <span class="next-value" id="next-level">다음 5</span>
         </div>
@@ -686,9 +719,20 @@
             document.getElementById('gameover-overlay').classList.remove('hidden');
         }
         
+        function formatCompactGold(value) {
+            const n = Number(value) || 0;
+            const sign = n < 0 ? '-' : '';
+            const abs = Math.abs(n);
+            if (abs >= 100000000) return `${sign}${(abs / 100000000).toFixed(abs >= 1000000000 ? 1 : 2).replace(/\.0+$/, '')}억G`;
+            if (abs >= 10000) return `${sign}${(abs / 10000).toFixed(abs >= 100000 ? 1 : 2).replace(/\.0+$/, '')}만G`;
+            return `${sign}${abs.toLocaleString()}G`;
+        }
+
         function updateStats() {
             document.getElementById('score').textContent = score;
-            document.getElementById('earned').textContent = goldEarned.toLocaleString() + 'G';
+            const earnedEl = document.getElementById('earned');
+            document.getElementById('goldEarnedCompact').textContent = formatCompactGold(goldEarned);
+            earnedEl.title = goldEarned.toLocaleString() + 'G';
             document.getElementById('level').textContent = level;
             const next = level >= LEVEL_CONFIGS.length ? 'MAX' : `다음 ${level * LEVEL_SCORE_STEP}`;
             document.getElementById('next-level').textContent = `${currentLevelConfig().name} · ${next}`;
