@@ -8,6 +8,44 @@ let isAnimating = false;
 let isGameStarted = false;
 let isGameWon = false;
 let backgroundImage = null;
+const LINE_RUSH_RANDOM_IMAGES = [
+    '/linerush/img/bg1.jpg',
+    '/linerush/img/bg2.jpg',
+    '/linerush/img/bg3.jpg',
+    '/linerush/img/bg4.jpg',
+    '/linerush/img/bg5.jpg',
+    '/linerush/img/bg6.jpg',
+    '/linerush/img/bg7.jpg',
+    '/linerush/img/bg8.jpg',
+    '/linerush/img/bg9.jpg',
+    '/linerush/img/bg10.jpg',
+    '/linerush/img/bg11.jpg',
+    '/linerush/img/bg12.jpg',
+    '/linerush/img/bg13.jpg',
+    '/linerush/img/bg14.jpg',
+    '/linerush/img/bg15.jpg',
+    '/linerush/img/bg16.jpg',
+    '/linerush/img/bg17.jpg',
+    '/linerush/img/bg18.jpg',
+    '/linerush/img/bg19.jpg',
+    '/linerush/img/bg20.jpg',
+    '/linerush/img/bg21.jpg',
+    '/linerush/img/bg22.jpg',
+    '/linerush/img/bg23.jpg',
+    '/linerush/img/bg24.jpg',
+    '/linerush/img/bg25.jpg',
+    '/linerush/img/bg26.jpg',
+    '/linerush/img/bg27.jpg',
+    '/linerush/img/bg28.jpg',
+    '/linerush/img/bg29.jpg',
+    '/linerush/img/bg30.jpg'
+];
+
+function pickRandomLineRushImage() {
+    const idx = Math.floor(Math.random() * LINE_RUSH_RANDOM_IMAGES.length);
+    return `${LINE_RUSH_RANDOM_IMAGES[idx]}?v=${Date.now()}`;
+}
+
 let resetClickCount = 0;
 let lastClickTime = 0;
 let fileInput = null;
@@ -376,7 +414,8 @@ function addEventListeners() {
 
     // 수정된 랜덤 이미지 버튼 이벤트
     document.getElementById('random-image-btn').addEventListener('click', () => {
-        backgroundImage = `https://picsum.photos/460?random=${Date.now()}`;
+        // backgroundImage = `https://picsum.photos/460?random=${Date.now()}`;
+        backgroundImage = pickRandomLineRushImage();
         startNewGame();
         
         // 기존 팝업 제거
