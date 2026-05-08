@@ -4549,6 +4549,7 @@
         await animateDiceRoll(el, d1, d2, sum);
         showBigOverlay(`${DICE_FACES[d1]} ${DICE_FACES[d2]}`, `= ${sum}${sum === 7 ? " 🦹 도둑!" : ""}`, sum === 7 ? "seven" : "", sum === 7 ? 1500 : 1000);
         await sendGameAction(ACTION.ROLL_DICE, { playerId: currentPlayerUserId(), values: [d1, d2] });
+        await resolveHumanGoldIfNeeded();
         await postDicePromptDiscards(d1 + d2);
         maybeAutoEndTurn();
         return;
