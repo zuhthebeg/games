@@ -6031,7 +6031,7 @@ https://game.cocy.io/pingtan/`;
           <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
           <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️${pt("roadBuilding")}</button>
           <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
-          <button class="settings-action" onclick="showEmotePanel()">💬리액션</button>
+          ${isMultiMode() ? `<button class="settings-action" onclick="showEmotePanel()">💬리액션</button>` : ""}
           <button class="settings-action" onclick="toggleSoundPanel()">⚙️${pt("settings")}</button>
         </div>`;
       return `
@@ -6569,15 +6569,17 @@ https://game.cocy.io/pingtan/`;
     }
 
     function showReactionEmote({ playerName = "플레이어", emoji = "💬", phrase = "", motion = "pop", speak = true, localTts = true, playerVoice = "ko-male" } = {}) {
+      if (!isMultiMode()) return;
       const text = `${playerName}: ${emoji} ${phrase}`;
       addActivityLog("reaction", text);
       if (speak) speakReaction(phrase, localTts, playerVoice);
     }
 
     function canAIReactNow() {
+      if (!isMultiMode()) return false;
       if (mpState.replaying || state.screen !== "game" || state.winner !== null) return false;
       if (Date.now() < Number(state._aiReactionCooldownUntil || 0)) return false;
-      if (isMultiMode() && !mpState.isHost) return false;
+      if (!mpState.isHost) return false;
       return state.players.some(p => p && p.isAI);
     }
 
@@ -6655,6 +6657,7 @@ https://game.cocy.io/pingtan/`;
     }
 
     function showEmotePanel() {
+      if (!isMultiMode()) return;
       let panel = document.getElementById("emotePanel");
       if (panel) { panel.remove(); return; }
       panel = document.createElement("div");
@@ -6672,6 +6675,7 @@ https://game.cocy.io/pingtan/`;
     }
 
     async function sendReactionPayload({ emoteId = "custom", emoji = "💬", phrase = "", motion = "pop", localTts = true } = {}) {
+      if (!isMultiMode()) return;
       const now = Date.now();
       if (now < (mpState.emoteCooldownUntil || 0)) { showToast(pt("cooldown"), 1200); return; }
       phrase = String(phrase || "").trim().slice(0, 30);
