@@ -4326,6 +4326,7 @@
             const popup = document.getElementById('resultPopup');
             const overlay = document.getElementById('overlay');
             const newWeaponPreview = document.getElementById('newWeaponPreview');
+            const resultWeapon = newWeapon || state.weapon;
             
             // 디버깅: 현재 상태 확인
             console.log('[showEnhanceResult]', type, 'from:', from, 'to:', to, 'currentWeapon:', state.weapon?.name, '+' + state.weapon?.level);
@@ -4403,6 +4404,7 @@
             } else if (type === 'destroy') {
                 SFX.play('enhance-destroy');
             }
+            speakEnhanceOutcome(type, from, to, weaponSnapshotForSpeech(resultWeapon), newWeapon);
 
             // Confetti for big milestones
             if (type === 'success' && (to >= 10 || to === 7)) fireConfetti();
@@ -6076,6 +6078,55 @@
         // TTS 오디오 (재사용)
         const _enhanceTtsAudio = new Audio();
         let _enhanceTtsBlobUrl = null;
+        _enhanceTtsAudio.addEventListener('ended', () => {
+            const overlay = document.getElementById('bossDialogueOverlay');
+            if (overlay?.dataset.autoDismiss === '1') dismissBossDialogue({ stopAudio: false });
+        });
+
+        function koreanNumberToWords(value) {
+            const n = Number(String(value).replace(/,/g, ''));
+            if (!Number.isFinite(n)) return String(value);
+            if (n === 0) return '영';
+            const digits = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+            const smallUnits = ['', '십', '백', '천'];
+            const bigUnits = ['', '만', '억'];
+            const convertChunk = (num) => {
+                let out = '';
+                const chars = String(num).padStart(4, '0').split('').map(Number);
+                chars.forEach((digit, idx) => {
+                    if (!digit) return;
+                    const unit = smallUnits[3 - idx];
+                    out += (digit === 1 && unit ? '' : digits[digit]) + unit;
+                });
+                return out;
+            };
+            let remaining = Math.floor(Math.abs(n));
+            const chunks = [];
+            while (remaining > 0) {
+                chunks.push(remaining % 10000);
+                remaining = Math.floor(remaining / 10000);
+            }
+            const words = chunks.map((chunk, idx) => chunk ? convertChunk(chunk) + bigUnits[idx] : '').reverse().join('');
+            return (n < 0 ? '마이너스 ' : '') + words;
+        }
+
+        function normalizeKoreanTtsText(text) {
+            return String(text || '')
+                .replace(/\+(\d+)/g, (_, n) => koreanNumberToWords(n) + '강')
+                .replace(/(\d[\d,]*)\s*G\b/gi, (_, n) => koreanNumberToWords(n) + ' 골드')
+                .replace(/(\d[\d,]*)\s*골드/g, (_, n) => koreanNumberToWords(n) + ' 골드')
+                .replace(/\b\d[\d,]*\b/g, (n) => koreanNumberToWords(n));
+        }
+
+        function weaponSnapshotForSpeech(weapon) {
+            if (!weapon) return { name: '무기', level: 0, grade: 'common', type: 'sword' };
+            return {
+                name: weapon.name || WEAPON_TYPES[weapon.type]?.name || '무기',
+                level: Number.isFinite(weapon.level) ? weapon.level : 0,
+                grade: weapon.grade || 'common',
+                type: weapon.type || 'sword'
+            };
+        }
 
         // 보스 타입별 TTS 음성 프로필
         const BOSS_TTS_VOICE = {
@@ -6083,43 +6134,93 @@
             demon:    { voice:'ko-male',   rate:'+10%', pitch:'-20Hz' },  // 거칠고 빠름
             undead:   { voice:'ko-male',   rate:'-25%', pitch:'-40Hz' },  // 공허
             elemental:{ voice:'ko-female', rate:'-10%', pitch:'+15Hz' },  // 차갑고 나긋
+            female:   { voice:'ko-female', rate:'-4%',  pitch:'+25Hz' },  // 여성형 보스
             default:  { voice:'ko-male',   rate:'-5%',  pitch:'-10Hz' },
         };
 
-        function speakBossDialogue(text, bossType, emotion) {
-            if (!text || !dialogueEnabled) return;
-            const clean = String(text).replace(/[^\w\s가-힣.,!?]/g, '').slice(0, 120);
-            const vp = BOSS_TTS_VOICE[bossType] || BOSS_TTS_VOICE.default;
-            // 분노 시 피치 더 낮고 빠르게
-            const pitch = emotion === 'angry' ? (parseInt(vp.pitch) - 10) + 'Hz' : vp.pitch;
-            const rate = emotion === 'angry' ? (parseInt(vp.rate) + 10) + '%' : vp.rate;
+        const FEMALE_BOSS_HINTS = [
+            'succubus', 'queen', 'demon_queen', 'slime_queen',
+            '서큐버스', '퀸', '여마왕', '여왕'
+        ];
 
+        function getBossVoiceProfile(monsterOrType, emotion) {
+            const monster = typeof monsterOrType === 'object' ? monsterOrType : null;
+            const bossType = monster?.type || monsterOrType || 'default';
+            const bossKey = String(monster?.key || monster?.id || monster?.monsterKey || '').toLowerCase();
+            const bossName = String(monster?.name || '').toLowerCase();
+            const femaleForm = FEMALE_BOSS_HINTS.some((hint) => bossKey.includes(hint) || bossName.includes(hint.toLowerCase()));
+            const vp = femaleForm ? BOSS_TTS_VOICE.female : (BOSS_TTS_VOICE[bossType] || BOSS_TTS_VOICE.default);
+            return {
+                voice: vp.voice,
+                pitch: emotion === 'angry' ? (parseInt(vp.pitch, 10) - 10) + 'Hz' : vp.pitch,
+                rate: emotion === 'angry' ? (parseInt(vp.rate, 10) + 10) + '%' : vp.rate
+            };
+        }
+
+        function playTtsLine(line, voiceProfile, requireBossOverlay = false) {
+            const clean = normalizeKoreanTtsText(line).replace(/[^\w\s가-힣.,!?]/g, '').slice(0, 140);
+            if (!clean) return;
             fetch('https://llm.cocy.io/v1/audio/speech', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer choon150622' },
-                body: JSON.stringify({ model:'kokoro-v1', input:clean, voice:vp.voice, rate, pitch, response_format:'mp3' })
+                body: JSON.stringify({ model:'kokoro-v1', input:clean, voice:voiceProfile.voice, rate:voiceProfile.rate, pitch:voiceProfile.pitch, response_format:'mp3' })
             }).then(res => {
                 if (!res.ok) throw new Error('TTS error');
                 return res.blob();
             }).then(blob => {
-                // 대사 오버레이가 이미 사라졌으면 스킵
-                if (!document.getElementById('bossDialogueOverlay')) return;
+                if (requireBossOverlay && !document.getElementById('bossDialogueOverlay')) return;
                 if (_enhanceTtsBlobUrl) URL.revokeObjectURL(_enhanceTtsBlobUrl);
                 _enhanceTtsBlobUrl = URL.createObjectURL(blob);
+                _enhanceTtsAudio.pause();
+                _enhanceTtsAudio.currentTime = 0;
                 _enhanceTtsAudio.src = _enhanceTtsBlobUrl;
                 _enhanceTtsAudio.play().catch(() => {});
             }).catch(() => {});
         }
 
-        function dismissBossDialogue() {
+        function buildEnhanceOutcomeLine(type, from, to, weapon, newWeapon) {
+            const current = weaponSnapshotForSpeech(weapon);
+            const name = current.name;
+            if (type === 'success') {
+                const lines = [
+                    `${name}, ${from}강에서 ${to}강으로 깔끔하게 올라섰다. 대장간이 오늘은 네 편이다.`,
+                    `${name} 강화 성공. ${to}강의 날이 제대로 섰다.`,
+                    `${name}이 ${to}강이 됐다. 이 정도면 몬스터들이 한 발 물러설 만하지.`
+                ];
+                return lines[Math.floor(Math.random() * lines.length)];
+            }
+            if (type === 'destroy' && newWeapon) {
+                return `${name}은 산산이 흩어졌지만, 대신 ${newWeapon.name}이 손에 들어왔다. 운명은 아직 끝나지 않았다.`;
+            }
+            if (type === 'destroy') {
+                return `${name}은 보호 주문서가 붙잡았다. ${from}강 그대로, 아직 버틸 수 있다.`;
+            }
+            return `${name} 강화 실패. ${from}강에서 숨을 고른다. 다음 망치질이 진짜다.`;
+        }
+
+        function speakEnhanceOutcome(type, from, to, weapon, newWeapon) {
+            if (!dialogueEnabled) return;
+            const line = buildEnhanceOutcomeLine(type, from, to, weapon, newWeapon);
+            const vp = BOSS_TTS_VOICE.default;
+            playTtsLine(normalizeKoreanTtsText(line), vp, false);
+        }
+
+        function speakBossDialogue(text, monsterOrType, emotion) {
+            if (!text || !dialogueEnabled) return;
+            playTtsLine(text, getBossVoiceProfile(monsterOrType, emotion), true);
+        }
+
+        function dismissBossDialogue({ stopAudio = true } = {}) {
             const overlay = document.getElementById('bossDialogueOverlay');
             if (overlay) {
                 overlay.style.animation = 'bossDialogueOut 0.3s ease-in forwards';
                 setTimeout(() => overlay.remove(), 300);
             }
-            _enhanceTtsAudio.pause();
-            _enhanceTtsAudio.currentTime = 0;
-            window.speechSynthesis?.cancel();
+            if (stopAudio) {
+                _enhanceTtsAudio.pause();
+                _enhanceTtsAudio.currentTime = 0;
+                window.speechSynthesis?.cancel();
+            }
         }
 
         function showBossDialogue(bossData) {
@@ -6139,6 +6240,7 @@
             // 오버레이 레이어 생성
             const overlay = document.createElement('div');
             overlay.id = 'bossDialogueOverlay';
+            overlay.dataset.autoDismiss = '1';
             overlay.style.cssText = `position:fixed;top:60px;left:50%;transform:translateX(-50%);
                 width:90%;max-width:360px;z-index:9000;cursor:pointer;
                 animation:bossDialogueIn 0.4s ease-out;`;
@@ -6158,7 +6260,7 @@
             document.body.appendChild(overlay);
 
             // TTS 즉시 시작 (타이핑과 동시에)
-            speakBossDialogue(dialogue, huntState?.monster?.type, bossData.emotion);
+            speakBossDialogue(dialogue, huntState?.monster, bossData.emotion);
 
             // 타이핑 효과
             const text = dialogue;
@@ -6189,8 +6291,8 @@
                             if (goldEl) goldEl.textContent = state.gold.toLocaleString() + ' G';
                         }, 800);
                     }
-                    // 5초 후 페이드아웃
-                    setTimeout(() => dismissBossDialogue(), 5000);
+                    // 5초 후 페이드아웃하되 TTS 재생은 끝까지 유지
+                    setTimeout(() => dismissBossDialogue({ stopAudio: false }), 5000);
                 }
             }, 30);
 

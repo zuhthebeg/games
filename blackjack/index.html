@@ -665,6 +665,18 @@
           if (!this._voices[name]) { const r = await fetch(`sounds/${name}.ogg?v=3`); const buf = await r.arrayBuffer(); this._voices[name] = await this._getCtx().decodeAudioData(buf); }
           const ctx = this._getCtx(); const src = ctx.createBufferSource(); src.buffer = this._voices[name]; src.connect(ctx.destination); src.start();
         } catch {}
+      },
+      allInVoice() {
+        if (this._muted() || !window.speechSynthesis) return;
+        const utterance = new SpeechSynthesisUtterance(currentLang === "ko" ? "올인!" : "All in!");
+        utterance.lang = currentLang === "ko" ? "ko-KR" : "en-US";
+        utterance.rate = 0.9;
+        utterance.pitch = voiceGender === "female" ? 1.18 : 0.82;
+        utterance.volume = 1;
+        try {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(utterance);
+        } catch {}
       }
     };
 
@@ -1308,12 +1320,13 @@
       if (!btn) return;
       const raw = btn.dataset.bet;
       if (raw === "all") {
-        const gold = Math.floor(state.gold);
+        const gold = getDoubleSafeMaxBet(state.gold);
         if (gold <= 0) return;
         const msg = currentLang === "ko"
-          ? `${gold.toLocaleString()} 골드 전부 베팅합니다. 진행할까요?`
-          : `Bet all ${gold.toLocaleString()} gold. Are you sure?`;
+          ? `${gold.toLocaleString()} 골드 베팅합니다. 더블다운 여유를 남긴 최대 금액입니다. 진행할까요?`
+          : `Bet ${gold.toLocaleString()} gold, leaving enough for double down. Continue?`;
         if (!confirm(msg)) return;
+        SFX.allInVoice();
         startRound(gold);
       } else if (raw === "custom") {
         openNumpad("single");
@@ -1865,12 +1878,13 @@
       const raw = btn.dataset.mpBet;
       let amount;
       if (raw === "all") {
-        amount = Math.min(Math.floor(state.gold), MULTI_BET_MAX);
+        amount = Math.min(getDoubleSafeMaxBet(state.gold), MULTI_BET_MAX);
         if (amount <= 0) return;
         const msg = currentLang === "ko"
-          ? `${amount.toLocaleString()} 골드 베팅합니다. 진행할까요? (멀티 최대 ${MULTI_BET_MAX.toLocaleString()})`
-          : `Bet ${amount.toLocaleString()} gold? (multi cap ${MULTI_BET_MAX.toLocaleString()})`;
+          ? `${amount.toLocaleString()} 골드 베팅합니다. 더블다운 여유를 남긴 최대 금액입니다. 진행할까요? (멀티 최대 ${MULTI_BET_MAX.toLocaleString()})`
+          : `Bet ${amount.toLocaleString()} gold, leaving enough for double down? (multi cap ${MULTI_BET_MAX.toLocaleString()})`;
         if (!confirm(msg)) return;
+        SFX.allInVoice();
       } else if (raw === "custom") {
         openNumpad("multi");
         return;
@@ -2003,12 +2017,13 @@
       const ratios = [0.04, 0.1, 0.2, 0.5, 1];
       const amounts = ratios.map(r => {
         let v = Math.floor(gold * r);
-        // 깔끔한 숫자로 반올림
-        if (v >= 1000000) v = Math.round(v / 100000) * 100000;
-        else if (v >= 100000) v = Math.round(v / 10000) * 10000;
-        else if (v >= 10000) v = Math.round(v / 1000) * 1000;
-        else if (v >= 1000) v = Math.round(v / 100) * 100;
-        else if (v >= 100) v = Math.round(v / 10) * 10;
+        if (r === 1) return Math.max(1, v);
+        // 더블다운 여유를 깨지 않도록 보기 좋은 숫자도 항상 내림 처리한다.
+        if (v >= 1000000) v = Math.floor(v / 100000) * 100000;
+        else if (v >= 100000) v = Math.floor(v / 10000) * 10000;
+        else if (v >= 10000) v = Math.floor(v / 1000) * 1000;
+        else if (v >= 1000) v = Math.floor(v / 100) * 100;
+        else if (v >= 100) v = Math.floor(v / 10) * 10;
         return Math.max(1, v);
       });
       // 중복 제거
