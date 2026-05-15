@@ -77,7 +77,8 @@ assert.equal(goldHexes.filter(h => h.type === 'gold').length, 3, 'gold rush shou
 assert(html.includes('gold: "💰"'), 'gold tiles should keep the money-bag icon');
 assert(html.includes('💰 금광 수확!'), 'gold picker should keep money-bag title');
 assert(html.includes('보유 ${(currentResources&&currentResources[r])||0}개'), 'gold picker should show currently owned resources');
-assert(html.includes('10초 안에 고르지 않으면 랜덤 지급'), 'gold picker should explain timeout random fallback');
+assert(html.includes('const GOLD_PICKER_TIMEOUT_SECONDS = 20'), 'gold picker timeout should be 20 seconds');
+assert(html.includes('20초 안에 고르지 않으면 랜덤 지급'), 'gold picker should explain 20-second timeout random fallback');
 
 const twinPreset = helperCtx.resolveMapPreset('twin-continents');
 assert.equal(twinPreset.vpGoal, 11, 'twin continents should have vp goal 11');

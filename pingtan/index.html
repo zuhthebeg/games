@@ -2075,6 +2075,7 @@
       _pendingGains: null,
       _aiReactionCooldownUntil: 0,
       _aiIntroDone: false,
+      _setupTimeoutInProgress: false,
       _aiTurnScheduled: false,
       _aiTurnInProgress: false,
       _aiTurnTriggerAfterFinish: false
@@ -2182,6 +2183,7 @@
       state._pendingGains = null;
       state._aiReactionCooldownUntil = 0;
       state._aiIntroDone = false;
+      state._setupTimeoutInProgress = false;
       state._aiTurnScheduled = false;
       state._aiTurnInProgress = false;
       state._aiTurnTriggerAfterFinish = false;
@@ -3289,8 +3291,8 @@
       return new Promise(resolve => {
         const chosen = {}; RESOURCES.forEach(r => chosen[r] = 0);
         let remaining = amount;
-        const TIMEOUT = 10;
-        let timeLeft = TIMEOUT;
+        const GOLD_PICKER_TIMEOUT_SECONDS = 20;
+        let timeLeft = GOLD_PICKER_TIMEOUT_SECONDS;
         let timerInterval = null;
 
         const finish = (result) => {
@@ -3317,7 +3319,7 @@
           el.innerHTML = `<div class="gold-picker-overlay"><div class="gold-picker-card">
             <div class="gold-picker-title">💰 금광 수확!</div>
             <div class="gold-picker-remaining">자원 <strong>${remaining}</strong>개 선택 가능 <span style="color:${timeLeft<=3?'#ef4444':'#fbbf24'};font-size:12px;">${timeLeft}초</span></div>
-            <div style="font-size:12px;color:var(--muted);text-align:center;margin:-6px 0 8px;">10초 안에 고르지 않으면 랜덤 지급</div>
+            <div style="font-size:12px;color:var(--muted);text-align:center;margin:-6px 0 8px;">20초 안에 고르지 않으면 랜덤 지급</div>
             ${RESOURCES.map(r => `<div class="gold-picker-row">
               <span class="gold-picker-label">${RESOURCE_ICONS[r]} ${RESOURCE_NAMES[r]}<span style="font-size:12px;opacity:0.68;margin-left:4px;">보유 ${(currentResources&&currentResources[r])||0}개</span></span>
               <div class="gold-picker-controls">
@@ -4189,16 +4191,93 @@
       SFX.turnTick(urgent);
     }
 
+    async function autoPlaceSetupForCurrentPlayer() {
+      if (state._setupTimeoutInProgress) return false;
+      if (state.winner || !(state.phase === "setup1" || state.phase === "setup2")) return false;
+      if (!isHumanTurn()) return false;
+      state._setupTimeoutInProgress = true;
+      try {
+        const pIdx = state.currentPlayer;
+        const p = state.players[pIdx];
+        const ai = window.pingtanAI;
+        if (!p) return false;
+
+        if (state.setupStep === "settlement") {
+          const choices = validSettlementsFor(pIdx, true);
+          if (!choices.length) {
+            advanceSetupTurn();
+            render();
+            triggerAITurnIfNeeded();
+            return true;
+          }
+          const pick = ai ? ai.pickBestVertex(state, choices) : choices[Math.floor(Math.random() * choices.length)];
+          state.hint = `${p.name} 시간초과 - AI가 마을 위치를 자동 배치했습니다.`;
+          if (isMultiMode()) {
+            await sendGameAction(ACTION.PLACE_SETTLEMENT, { playerId: currentPlayerUserId(), vertexId: pick });
+          } else {
+            if (!placeSettlement(pIdx, pick, true)) return false;
+            SFX.build();
+            if (state.phase === "setup2") {
+              grantSecondSetupResources(pIdx, pick);
+              await resolveHumanGoldIfNeeded();
+            }
+            state.lastSetupVertex = pick;
+            state.setupStep = "road";
+            state.hint = pt("connectedRoadHint");
+            render();
+            triggerAITurnIfNeeded();
+          }
+          setTimeout(() => {
+            if (!state.winner && (state.phase === "setup1" || state.phase === "setup2") && state.setupStep === "road") {
+              autoPlaceSetupForCurrentPlayer();
+            }
+          }, 350);
+          return true;
+        }
+
+        if (state.setupStep === "road") {
+          const roads = validRoadsFor(pIdx, true);
+          if (!roads.length) {
+            advanceSetupTurn();
+            render();
+            triggerAITurnIfNeeded();
+            return true;
+          }
+          const pick = ai
+            ? ai.pickBestRoadFromVertex(state, roads, state.lastSetupVertex)
+            : roads[Math.floor(Math.random() * roads.length)];
+          state.hint = `${p.name} 시간초과 - AI가 도로를 자동 배치했습니다.`;
+          if (isMultiMode()) {
+            await sendGameAction(ACTION.PLACE_ROAD, { playerId: currentPlayerUserId(), edgeId: pick });
+          } else {
+            if (!placeRoad(pIdx, pick, true)) return false;
+            SFX.road();
+            advanceSetupTurn();
+            render();
+            triggerAITurnIfNeeded();
+          }
+          return true;
+        }
+
+        return false;
+      } finally {
+        state._setupTimeoutInProgress = false;
+      }
+    }
+
     function ensureTurnTimer() {
       if (turnTimerInterval) return;
-      turnTimerInterval = setInterval(() => {
+      turnTimerInterval = setInterval(async () => {
         if (state.screen !== "game" || state.winner !== null) return;
         normalizeTurnPhaseForDice();
         if (!isHumanTurn()) return;
         if (state.turnTimeLeft > 0) {
           state.turnTimeLeft -= 1;
           maybePlayTurnTimerTick();
-          if (state.turnTimeLeft === 0) endTurn();
+          if (state.turnTimeLeft === 0) {
+            if (state.phase === "setup1" || state.phase === "setup2") await autoPlaceSetupForCurrentPlayer();
+            else endTurn();
+          }
         }
         render();
       }, 1000);
