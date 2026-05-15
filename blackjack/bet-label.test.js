@@ -21,10 +21,25 @@ function extractFunction(name) {
 }
 
 const formatBetLabel = eval(`(${extractFunction('formatBetLabel').replace('function formatBetLabel', 'function')})`);
+const renderBetButtons = eval(`(${extractFunction('renderBetButtons').replace('function renderBetButtons', 'function')})`);
 
 assert.equal(formatBetLabel(1500), '1K', 'bet labels should floor K units instead of showing decimals');
 assert.equal(formatBetLabel(9999), '9K', 'bet labels should never show decimal K values');
 assert.equal(formatBetLabel(1250000), '1M', 'bet labels should floor M units instead of showing decimals');
 assert(!formatBetLabel(1500).includes('.'), 'button labels should not contain decimal points');
 
-console.log('PASS blackjack bet label flooring');
+global.generateBetAmounts = () => [40, 100, 200, 500, 6172];
+global.document = {
+  getElementById(id) {
+    assert.equal(id, 'dynamicBetButtons');
+    return this.container;
+  },
+  container: { innerHTML: '' }
+};
+
+renderBetButtons(6172, 'dynamicBetButtons', 'data-bet', 'HALF');
+assert(document.container.innerHTML.includes('data-bet="6172"'), 'half button should preserve the actual floored bet amount');
+assert(document.container.innerHTML.includes('>HALF</button>'), 'last dynamic bet button should render as HALF');
+assert(!document.container.innerHTML.includes('6.172K'), 'half button label should not expose decimal K text');
+
+console.log('PASS blackjack bet label flooring and half button');

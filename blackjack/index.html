@@ -2031,12 +2031,12 @@
       return [...new Set(amounts)];
     }
 
-    function renderBetButtons(gold, containerId, dataAttr) {
+    function renderBetButtons(gold, containerId, dataAttr, lastLabel = null) {
       const container = document.getElementById(containerId);
       if (!container) return;
       const amounts = generateBetAmounts(gold);
-      container.innerHTML = amounts.map(a =>
-        `<button ${dataAttr}="${a}" style="min-width:0;padding:6px 8px;font-size:0.7rem;">${formatBetLabel(a)}</button>`
+      container.innerHTML = amounts.map((a, idx) =>
+        `<button ${dataAttr}="${a}" style="min-width:0;padding:6px 8px;font-size:0.7rem;">${lastLabel && idx === amounts.length - 1 ? lastLabel : formatBetLabel(a)}</button>`
       ).join('');
     }
 
@@ -2055,8 +2055,8 @@
 
     function updateBetButtons() {
       const gold = typeof SharedWallet !== 'undefined' ? SharedWallet.gold : 0;
-      renderBetButtons(getDoubleSafeMaxBet(gold), 'dynamicBetButtons', 'data-bet');
-      renderBetButtons(getDoubleSafeMaxBet(Math.min(gold, MULTI_BET_MAX * 2)), 'dynamicMpBetButtons', 'data-mp-bet');
+      renderBetButtons(getDoubleSafeMaxBet(gold), 'dynamicBetButtons', 'data-bet', 'HALF');
+      renderBetButtons(getDoubleSafeMaxBet(Math.min(gold, MULTI_BET_MAX * 2)), 'dynamicMpBetButtons', 'data-mp-bet', 'HALF');
     }
 
     // 초기 + 골드 변경 시 업데이트
