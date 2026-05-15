@@ -2001,8 +2001,9 @@
 
     // ─── Dynamic bet buttons ───
     function formatBetLabel(n) {
-      if (n >= 1000000) return (n / 1000000) + 'M';
-      if (n >= 1000) return (n / 1000) + 'K';
+      n = Math.floor(Number(n) || 0);
+      if (n >= 1000000) return Math.floor(n / 1000000) + 'M';
+      if (n >= 1000) return Math.floor(n / 1000) + 'K';
       return String(n);
     }
 
