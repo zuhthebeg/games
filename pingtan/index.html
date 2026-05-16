@@ -2021,6 +2021,7 @@
       MOVE_ROBBER: "MOVE_ROBBER",
       DISCARD_RESOURCES: "DISCARD_RESOURCES",
       GOLD_CHOICE: "GOLD_CHOICE",
+      BUY_DEV_CARD: "BUY_DEV_CARD",
       END_TURN: "END_TURN",
       REACTION_EMOTE: "REACTION_EMOTE",
       GAME_SETTINGS: "GAME_SETTINGS"
@@ -2108,7 +2109,7 @@
       { id: "hurry", emoji: "⏰", label: "재촉하기", phrase: "빨리해!", motion: "shake" },
       { id: "hello", emoji: "👋", label: "인사", phrase: "안녕하세요", motion: "wave" },
       { id: "good", emoji: "👍", label: "좋아요", phrase: "좋아요", motion: "pop" },
-      { id: "laugh", emoji: "😂", label: "웃기", phrase: "ㅋㅋ", motion: "pop" },
+      { id: "offer", emoji: "🤌", label: "거절불가", phrase: "거절할 수 없는 제안을 하지", motion: "wave" },
       { id: "sibal", emoji: "🤯", label: "Sibal", phrase: "시발 뭐야", motion: "shake", langs: ["en"] },
       { id: "wow", emoji: "😱", label: "놀람", phrase: "헉", motion: "shake" },
       { id: "nice", emoji: "🎉", label: "칭찬", phrase: "나이스", motion: "celebrate" },
@@ -3638,6 +3639,32 @@
       state.tradeDialog = { open: false, give: null, get: null };
     }
 
+    function dismissActiveTradeProposals(reason = "dismiss") {
+      if (!mpState.activeTradeProposals) return;
+      for (const box of mpState.activeTradeProposals.values()) {
+        if (box?.dismiss) box.dismiss(reason);
+      }
+      mpState.activeTradeProposals.clear();
+    }
+
+    function canPlayersExecuteTrade(proposer, accepter, offer = {}, want = {}) {
+      return RESOURCES.every(r =>
+        Number(proposer?.resources?.[r] || 0) >= Number(offer[r] || 0) &&
+        Number(accepter?.resources?.[r] || 0) >= Number(want[r] || 0)
+      );
+    }
+
+    function applyTradeSwap(proposer, accepter, offer = {}, want = {}) {
+      if (!canPlayersExecuteTrade(proposer, accepter, offer, want)) return false;
+      for (const r of RESOURCES) {
+        const offerN = Number(offer[r] || 0);
+        const wantN = Number(want[r] || 0);
+        if (offerN > 0) { proposer.resources[r] -= offerN; accepter.resources[r] += offerN; }
+        if (wantN > 0) { accepter.resources[r] -= wantN; proposer.resources[r] += wantN; }
+      }
+      return true;
+    }
+
     function openTradeDialog(playerIdx) {
       const p = state.players[playerIdx];
       if (!p) return false;
@@ -4023,6 +4050,7 @@
         clearActivityLog();
         state.hint = pt("winnerHint", { player: state.players[winner].name });
         if (prevWinner !== winner) {
+          dismissActiveTradeProposals("winner");
           SFX.win();
           if (winner === localPlayerIndex()) {
             launchConfetti();
@@ -4119,6 +4147,7 @@
       state.tradeRejectedThisTurn = false;
       cancelAutoEndTimer();
       closeTradeDialog();
+      dismissActiveTradeProposals("turn-change");
       if (announce && state.players[state.currentPlayer]) {
         showTurnToast(`${state.players[state.currentPlayer].name}의 차례!`, 2000);
       }
@@ -4142,6 +4171,7 @@
     }, true);
 
     function maybeAutoEndTurn() {
+      return; // Human turns should use their full timer after dice/trade decisions.
       if (autoEndTimer) return;
       if (state.winner) return;
       if (state.phase !== "main") return;
@@ -4379,6 +4409,13 @@
       if (type === ACTION.GOLD_CHOICE) {
         return applyGoldChoice(playerId, action.resources);
       }
+      if (type === ACTION.BUY_DEV_CARD) {
+        if (pIdx !== state.currentPlayer || state.phase !== "main") return false;
+        if (!buyDevCard(pIdx)) return false;
+        state.canEndTurn = true;
+        state.hint = pt("devCardBought");
+        return true;
+      }
       if (type === ACTION.MOVE_ROBBER) {
         if (pIdx !== state.currentPlayer) return false;
         return moveRobber(action.hexId, action.stealFrom, action.stolenResource).ok;
@@ -4415,10 +4452,7 @@
         const offerStr = action.offerStr || "";
         const wantStr = action.wantStr || "";
         const me = state.players[myIdx];
-        let canAccept = true;
-        for (const [r, n] of Object.entries(want)) {
-          if ((me.resources[r] || 0) < n) canAccept = false;
-        }
+        let canAccept = canPlayersExecuteTrade(proposer, me, offer, want);
         const myResStr = RESOURCES.map(r => `${RESOURCE_ICONS[r]}${me.resources[r]}`).join(" ");
         const proposalId = action.actionId;
         const proposerId = proposer.userId || proposer.id;
@@ -4436,22 +4470,19 @@
             return;
           }
           if (accepted) {
-            // Re-check resources at click time (state may have changed since dialog opened)
-            for (const [r, n] of Object.entries(want)) {
-              if ((me.resources[r] || 0) < (n || 0)) {
-                mpState.activeTradeProposals.delete(proposalId);
-                showToast(pt("insufficientTradeResources"), 2000);
-                render();
-                return;
-              }
+            if (!canPlayersExecuteTrade(proposer, me, offer, want)) {
+              mpState.activeTradeProposals.delete(proposalId);
+              showToast(pt("insufficientTradeResources"), 2000);
+              render();
+              return;
             }
           }
           mpState.activeTradeProposals.delete(proposalId);
           if (accepted) {
-            // Execute trade locally
-            for (const r of RESOURCES) {
-              if (offer[r] > 0) { me.resources[r] += offer[r]; proposer.resources[r] -= offer[r]; }
-              if (want[r] > 0) { me.resources[r] -= want[r]; proposer.resources[r] += want[r]; }
+            if (!applyTradeSwap(proposer, me, offer, want)) {
+              showToast(pt("insufficientTradeResources"), 2000);
+              render();
+              return;
             }
             SFX.build();
             addActivityLog("trade", `${proposer.name || "플레이어"} ↔ ${me.name || "플레이어"} 거래 완료`);
@@ -4489,12 +4520,8 @@
 
         const offer = action.offer || {};
         const want = action.want || {};
-        // Apply swap explicitly to proposer + accepter (NOT to "me" — that was the bug
-        // where bystanders had their own resources deducted into negatives)
-        for (const r of RESOURCES) {
-          if (offer[r] > 0) { proposer.resources[r] -= offer[r]; accepter.resources[r] += offer[r]; }
-          if (want[r] > 0) { accepter.resources[r] -= want[r]; proposer.resources[r] += want[r]; }
-        }
+        if (!canPlayersExecuteTrade(proposer, accepter, offer, want)) return true;
+        if (!applyTradeSwap(proposer, accepter, offer, want)) return true;
         SFX.build();
         addActivityLog("trade", `${proposer.name || "플레이어"} ↔ ${accepter.name || "플레이어"} 거래 완료`);
         if (myIdx === proposerIdx) {
@@ -4515,7 +4542,6 @@
         // If I'm the current player (proposer), mark rejection so auto-end can trigger
         // when paired with no-buildable + no-playable.
         if (myIdx === state.currentPlayer) {
-          state.tradeRejectedThisTurn = true;
           maybeAutoEndTurn();
         }
         return true;
@@ -4665,12 +4691,18 @@
       triggerAITurnIfNeeded();
     }
 
-    function humanBuyDevCard() {
+    async function humanBuyDevCard() {
       if (!isHumanTurn() || state.phase !== "main" || state.winner) return;
       if (!state.devDeck.length) { state.hint = pt("devDeckEmpty"); render(); return; }
       const me = state.players[localPlayerIndex()];
       if (!canAfford(me, COST.devCard)) { state.hint = pt("devCardCostMissing"); render(); return; }
-      buyDevCard(localPlayerIndex());
+      let bought = false;
+      if (isMultiMode()) {
+        bought = await sendGameAction(ACTION.BUY_DEV_CARD, { playerId: currentPlayerUserId() });
+      } else {
+        bought = buyDevCard(localPlayerIndex());
+      }
+      if (!bought) { render(); return; }
       SFX.card();
       showToast(pt("devCardToast"));
       state.canEndTurn = true;
@@ -6528,21 +6560,45 @@ https://game.cocy.io/pingtan/`;
       return inferVoiceFromName(playerIdxOrVoice) || "ko-male";
     }
 
+    const reactionTtsCache = new Map();
+    const REACTION_TTS_CACHE_MAX = 24;
+
+    async function getCachedReactionTtsUrl(text, voice) {
+      const key = String(voice) + "|" + String(text);
+      const cached = reactionTtsCache.get(key);
+      if (cached?.url) return cached.url;
+      if (cached?.promise) return cached.promise;
+      const promise = fetch("https://llm.cocy.io/v1/audio/speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
+        body: JSON.stringify({ model: "cosyvoice", input: text, voice, response_format: "wav" })
+      }).then(async (res) => {
+        if (!res.ok) throw new Error("tts failed");
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        reactionTtsCache.set(key, { url });
+        while (reactionTtsCache.size > REACTION_TTS_CACHE_MAX) {
+          const oldest = reactionTtsCache.keys().next().value;
+          const old = reactionTtsCache.get(oldest);
+          if (old?.url) URL.revokeObjectURL(old.url);
+          reactionTtsCache.delete(oldest);
+        }
+        return url;
+      }).catch((err) => {
+        reactionTtsCache.delete(key);
+        throw err;
+      });
+      reactionTtsCache.set(key, { promise });
+      return promise;
+    }
+
     async function speakReactionWithLocalTTS(text, playerVoice = "ko-male") {
       text = sanitizeReactionSpeech(text);
       if (!soundSettings.voice || !text) return;
       const voice = reactionVoiceForPlayer(playerVoice);
       try {
-        const res = await fetch("https://llm.cocy.io/v1/audio/speech", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": "Bearer choon150622" },
-          body: JSON.stringify({ model: "cosyvoice", input: text, voice, response_format: "wav" })
-        });
-        if (!res.ok) throw new Error("tts failed");
-        const blob = await res.blob();
-        const audio = new Audio(URL.createObjectURL(blob));
+        const audio = new Audio(await getCachedReactionTtsUrl(text, voice));
         audio.volume = Math.max(0, Math.min(1, soundSettings.voiceVol));
-        audio.onended = () => URL.revokeObjectURL(audio.src);
         await audio.play();
       } catch (_) {
         speakReactionBrowser(text);
@@ -7388,7 +7444,6 @@ https://game.cocy.io/pingtan/`;
       
       if (!eligible.length) {
         showToast(pt("noTradeableAI"), 2000);
-        state.tradeRejectedThisTurn = true;
         render();
         maybeAutoEndTurn();
         return;
@@ -7446,7 +7501,6 @@ https://game.cocy.io/pingtan/`;
       }
       if (!traded) {
         showToast(pt("noTradeAccepted"), 2000);
-        state.tradeRejectedThisTurn = true;
       }
       render();
       maybeAutoEndTurn();

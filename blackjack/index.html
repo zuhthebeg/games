@@ -1320,11 +1320,11 @@
       if (!btn) return;
       const raw = btn.dataset.bet;
       if (raw === "all") {
-        const gold = getDoubleSafeMaxBet(state.gold);
+        const gold = Math.floor(Number(state.gold) || 0);
         if (gold <= 0) return;
         const msg = currentLang === "ko"
-          ? `${gold.toLocaleString()} 골드 베팅합니다. 더블다운 여유를 남긴 최대 금액입니다. 진행할까요?`
-          : `Bet ${gold.toLocaleString()} gold, leaving enough for double down. Continue?`;
+          ? `${gold.toLocaleString()} 골드 전부 베팅합니다. 진행할까요?`
+          : `Bet all ${gold.toLocaleString()} gold. Continue?`;
         if (!confirm(msg)) return;
         SFX.allInVoice();
         startRound(gold);
@@ -1878,11 +1878,11 @@
       const raw = btn.dataset.mpBet;
       let amount;
       if (raw === "all") {
-        amount = Math.min(getDoubleSafeMaxBet(state.gold), MULTI_BET_MAX);
+        amount = Math.min(Math.floor(Number(state.gold) || 0), MULTI_BET_MAX);
         if (amount <= 0) return;
         const msg = currentLang === "ko"
-          ? `${amount.toLocaleString()} 골드 베팅합니다. 더블다운 여유를 남긴 최대 금액입니다. 진행할까요? (멀티 최대 ${MULTI_BET_MAX.toLocaleString()})`
-          : `Bet ${amount.toLocaleString()} gold, leaving enough for double down? (multi cap ${MULTI_BET_MAX.toLocaleString()})`;
+          ? `${amount.toLocaleString()} 골드 전부 베팅합니다. 진행할까요? (멀티 최대 ${MULTI_BET_MAX.toLocaleString()})`
+          : `Bet all ${amount.toLocaleString()} gold? (multi cap ${MULTI_BET_MAX.toLocaleString()})`;
         if (!confirm(msg)) return;
         SFX.allInVoice();
       } else if (raw === "custom") {

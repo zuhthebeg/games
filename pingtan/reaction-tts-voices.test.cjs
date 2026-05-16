@@ -10,5 +10,7 @@ assert(html.includes('playerVoice'), 'reaction payloads should carry sender voic
 assert(html.includes('speakReaction(phrase, localTts, playerVoice'), 'reaction playback should pass player voice into TTS');
 assert(html.includes('sendCustomReactionEmote') && html.includes('localTts: true'), 'custom text reactions should try local natural TTS before browser fallback');
 assert(html.includes('response_format: "wav"'), 'reaction TTS should request WAV because CosyVoice returns WAV audio');
+assert(html.includes('reactionTtsCache'), 'reaction local TTS should cache generated audio per phrase/voice');
+assert(html.includes('getCachedReactionTtsUrl(text, voice)'), 'reaction playback should reuse cached TTS audio instead of fetching the same phrase for every playback');
 
 console.log('PASS reaction natural per-player TTS');

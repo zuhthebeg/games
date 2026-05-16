@@ -22,6 +22,7 @@ function extractFunction(name) {
 
 const formatBetLabel = eval(`(${extractFunction('formatBetLabel').replace('function formatBetLabel', 'function')})`);
 const renderBetButtons = eval(`(${extractFunction('renderBetButtons').replace('function renderBetButtons', 'function')})`);
+global.getDoubleSafeMaxBet = eval(`(${extractFunction('getDoubleSafeMaxBet').replace('function getDoubleSafeMaxBet', 'function')})`);
 
 assert.equal(formatBetLabel(1500), '1K', 'bet labels should floor K units instead of showing decimals');
 assert.equal(formatBetLabel(9999), '9K', 'bet labels should never show decimal K values');
@@ -41,5 +42,21 @@ renderBetButtons(6172, 'dynamicBetButtons', 'data-bet', 'HALF');
 assert(document.container.innerHTML.includes('data-bet="6172"'), 'half button should preserve the actual floored bet amount');
 assert(document.container.innerHTML.includes('>HALF</button>'), 'last dynamic bet button should render as HALF');
 assert(!document.container.innerHTML.includes('6.172K'), 'half button label should not expose decimal K text');
+
+const singleBetHandlerMatch = html.match(/document\.addEventListener\("click", \(e\) => \{\s*const btn = e\.target\.closest\("\[data-bet\]"\);([\s\S]*?)\n\s*\}\);/);
+if (!singleBetHandlerMatch) throw new Error('single bet click handler not found');
+const singleBetClick = eval(`(function(e){const btn = e.target.closest("[data-bet]");${singleBetHandlerMatch[1]}})`);
+
+{
+  const started = [];
+  global.state = { gold: 1235 };
+  global.currentLang = 'ko';
+  global.confirm = () => true;
+  global.SFX = { allInVoice() {} };
+  global.startRound = (amount) => started.push(amount);
+  global.openNumpad = () => { throw new Error('should not open numpad for all-in'); };
+  singleBetClick({ target: { closest: (sel) => sel === '[data-bet]' ? { dataset: { bet: 'all' } } : null } });
+  assert.deepStrictEqual(started, [1235], 'ALL button should bet the full wallet amount, not the double-safe half amount');
+}
 
 console.log('PASS blackjack bet label flooring and half button');

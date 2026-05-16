@@ -17,6 +17,8 @@ const snippets = [
   'pt("turnTimeChangedLog"', 'pt("victoryVpChangedLog"'
 ];
 for (const snippet of snippets) assert(html.includes(snippet), `victory/result UI should use i18n snippet ${snippet}`);
+assert(html.includes('renderWinnerModal()'), 'game screen should render the winner modal for all local players');
+assert(html.includes('const isMe = state.winner === localPlayerIndex();'), 'winner modal should distinguish victory and defeat views');
 
 const hardcodedUi = [
   '승자: ${state.players[state.winner].name}', '${escapeHtml(winner.name)} 승리!',
