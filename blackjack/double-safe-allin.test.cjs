@@ -33,8 +33,8 @@ for (const wallet of [1999, 2019, 9999, 19999, 199999, 1999999]) {
   assert(amounts.every((amount) => amount <= max), `quick bets must not exceed double-safe max for wallet ${wallet}`);
 }
 
-assert(html.includes('const gold = getDoubleSafeMaxBet(state.gold);'), 'solo ALL should bet the double-safe max, not full wallet');
-assert(html.includes('amount = Math.min(getDoubleSafeMaxBet(state.gold), MULTI_BET_MAX);'), 'multi ALL should use double-safe max with the multi cap');
+assert(html.includes('startRound(gold);'), 'solo ALL should be a true all-in bet');
+assert(html.includes('amount = Math.min(Math.floor(Number(state.gold) || 0), MULTI_BET_MAX);'), 'multi ALL should use the full wallet up to the multi cap');
 assert(html.includes('SFX.allInVoice();'), 'ALL bet should trigger the all-in voice cue');
 
-console.log('PASS blackjack double-safe all-in betting');
+console.log('PASS blackjack quick-bet safety and true all-in betting');

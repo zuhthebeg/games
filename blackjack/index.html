@@ -260,6 +260,25 @@
       display: grid;
       grid-template-rows: auto 1fr auto auto;
       gap: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+    .multi-game::before {
+      content: "";
+      position: absolute;
+      inset: 42px 0 92px 0;
+      background-image: var(--dealer-bg, url("assets/dealer-male.webp"));
+      background-repeat: no-repeat;
+      background-position: center 44%;
+      background-size: min(72vw, 380px) auto;
+      opacity: 0.16;
+      pointer-events: none;
+      filter: saturate(1.05) contrast(1.04);
+      z-index: 0;
+    }
+    .multi-game > * {
+      position: relative;
+      z-index: 1;
     }
     .multi-head {
       display: grid;
@@ -356,6 +375,42 @@
       display: flex;
       justify-content: space-between;
     }
+    .mp-deck-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 6px;
+      padding: 5px 7px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 9px;
+      background: rgba(0,0,0,0.2);
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 800;
+    }
+    .deck-stack {
+      width: 26px;
+      height: 32px;
+      position: relative;
+      flex: 0 0 auto;
+    }
+    .deck-stack span {
+      position: absolute;
+      inset: 0;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: linear-gradient(145deg, #12243a, #07111e);
+      box-shadow: 0 2px 0 rgba(0,0,0,0.32);
+    }
+    .deck-stack span:nth-child(1) { transform: translate(4px, -3px); opacity: 0.42; }
+    .deck-stack span:nth-child(2) { transform: translate(2px, -1px); opacity: 0.7; }
+    .deck-stack.reshuffle span { animation: deckShuffle 0.52s ease both; }
+    @keyframes deckShuffle {
+      0% { transform: translateX(0) rotate(0deg); }
+      45% { transform: translateX(12px) rotate(8deg); }
+      100% { transform: translateX(0) rotate(0deg); }
+    }
 
   </style>
 </head>
@@ -380,6 +435,10 @@
       <div class="timer" id="multiTimerText">15s</div>
     </div>
     <section class="table multi-table">
+      <div class="mp-deck-status" id="mpDeckStatus">
+        <div class="deck-stack" id="mpDeckStack"><span></span><span></span><span></span></div>
+        <div id="mpDeckText">Deck 52/52</div>
+      </div>
       <div class="seat">
         <div class="seat-head">
           <div class="seat-title" id="mpDealerLabel">DEALER</div>
@@ -1375,12 +1434,21 @@
       voiceGender = voiceGender === "male" ? "female" : "male";
       localStorage.setItem("bj-voice", voiceGender);
       SFX._voices = {}; // clear voice cache for new gender
+      updateDealerBackdrop();
       updateSettingsUI();
     });
+
+    function updateDealerBackdrop() {
+      const target = document.getElementById("multiGameScreen");
+      if (!target) return;
+      const url = voiceGender === "female" ? "assets/dealer-female.webp" : "assets/dealer-male.webp";
+      target.style.setProperty("--dealer-bg", `url("${url}")`);
+    }
 
     function updateSettingsUI() {
       document.getElementById("soundBtn").textContent = soundEnabled ? "🔊" : "🔇";
       document.getElementById("voiceBtn").textContent = voiceGender === "male" ? "🎙️♂" : "🎙️♀";
+      updateDealerBackdrop();
     }
 
     // Rules modal
@@ -1524,6 +1592,8 @@
     let mpLatestRoundDelta = null;
     let mpResultOverlayKey = null;
     let mpResultOverlayTimer = null;
+    let mpLastReshuffleCount = 0;
+    let mpBankruptLeaveTimer = null;
     async function handleMultiGameEvent(type, data) {
       try {
         const gs = await mpUI.getState();
@@ -1539,6 +1609,9 @@
             if (ev.type === "bet_placed") SFX.chip();
             if (ev.type === "dealing_started") {
               SFX.voice(voiceKey("deal"));
+              if (Number(gd.reshuffleCount || 0) > mpLastReshuffleCount) {
+                showMultiInlineNotice(currentLang === "ko" ? "새 덱을 섞었습니다." : "Shuffled a fresh deck.");
+              }
               // Card flip sounds with delay
               setTimeout(() => SFX.cardFlip(), 200);
               setTimeout(() => SFX.cardFlip(), 500);
@@ -1654,6 +1727,17 @@
       syncGold();
     }
 
+    function scheduleBankruptLeave() {
+      if (mpBankruptLeaveTimer || !mpUI?.getClient()) return;
+      mpBankruptLeaveTimer = setTimeout(async () => {
+        mpBankruptLeaveTimer = null;
+        try { await mpUI?.getClient()?.leaveRoom?.(); } catch(e) {}
+        try { MultiplayerClient.resetInstance(); } catch(e) {}
+        mpUI = null;
+        showModeSelect();
+      }, 2200);
+    }
+
     // ── Multi: Render State ──
     // Server returns: { players (lobby), gameState (public), myView (per-player) }
     // gameState has: { players[], dealer, phase, currentPlayerIndex, currentHandIndex, config }
@@ -1667,6 +1751,9 @@
       const phase = gd.phase || gs.status || "waiting";
       const gamePlayers = gd.players || [];
       const dealer = gd.dealer || {};
+      const deckCount = Math.max(0, Number(gd.deckCount ?? 52));
+      const deckSize = Math.max(1, Number(gd.deckSize ?? 52));
+      const reshuffleCount = Number(gd.reshuffleCount || 0);
       const isMyTurn = gd.isMyTurn || false;
       const currentPlayerIndex = gd.currentPlayerIndex ?? -1;
       const currentHandIndex = gd.currentHandIndex ?? 0;
@@ -1706,6 +1793,14 @@
       // Phase text
       const phaseMap = { betting: "phaseBetting", dealing: "phaseDealing", playing: "phasePlaying", dealer_turn: "phaseDealerTurn", settling: "phaseSettling", finished: "phaseFinished" };
       document.getElementById("multiPhaseText").textContent = t(phaseMap[phase] || "phasePlaying");
+      const deckText = document.getElementById("mpDeckText");
+      if (deckText) deckText.textContent = currentLang === "ko" ? `덱 ${deckCount}/${deckSize}` : `Deck ${deckCount}/${deckSize}`;
+      if (reshuffleCount > mpLastReshuffleCount) {
+        const stack = document.getElementById("mpDeckStack");
+        stack?.classList.add("reshuffle");
+        setTimeout(() => stack?.classList.remove("reshuffle"), 650);
+      }
+      mpLastReshuffleCount = reshuffleCount;
 
       // Dealer cards
       const dealerEl = document.getElementById("mpDealerCards");
@@ -1785,6 +1880,7 @@
       // Bet panel visibility
       const betPanel = document.getElementById("mpBetPanel");
       const mePlayer = gamePlayers.find(p => p.id === myId);
+      const isMeBankrupt = !!mePlayer?.bankrupt || Number(mePlayer?.bankroll ?? state.gold) <= 0;
       if (phase === "betting" && mePlayer && !mePlayer.ready) {
         betPanel.classList.remove("hidden");
       } else {
@@ -1819,51 +1915,64 @@
         mpResultOverlayKey = overlayKey;
 
         let resultText = "PUSH";
-        if (lastHand?.busted) resultText = "BUST";
+        if (isMeBankrupt) resultText = currentLang === "ko" ? "파산" : "BANKRUPT";
+        else if (lastHand?.busted) resultText = "BUST";
         else if (lastHand?.blackjack) resultText = "BLACKJACK!";
         else if (resultValue > 0) resultText = "WIN!";
         else if (resultValue < 0) resultText = "LOSE";
         const title = (resultValue > 0 ? "🎉 " : resultValue < 0 ? "💀 " : "🤝 ") + resultText;
         const roundLabel = currentLang === "ko" ? "이번 판" : "This round";
         const totalLabel = t("totalWinnings");
+        const bankrollLine = mePlayer.bankroll !== undefined ? `${currentLang === "ko" ? "보유" : "Bankroll"}: ${Number(mePlayer.bankroll || 0).toLocaleString()}G<br>` : "";
         const roundLine = roundDelta === null ? "" : `${roundLabel}: ${roundDelta >= 0 ? "+" : ""}${roundDelta.toLocaleString()}G<br>`;
+        const actions = isMeBankrupt ? [{
+          label: currentLang === "ko" ? "나가기" : "Leave",
+          primary: true,
+          handler: async () => {
+            try { await mpUI?.getClient()?.leaveRoom?.(); } catch(e) {}
+            try { MultiplayerClient.resetInstance(); } catch(e) {}
+            mpUI = null;
+            showModeSelect();
+          }
+        }] : [
+          {
+            label: "🔄 다음 라운드",
+            primary: true,
+            handler: async () => {
+              try {
+                await mpUI.sendAction({ type: "new_round" });
+                hideMultiResultOverlay();
+                showMultiInlineNotice(currentLang === "ko" ? "다음 라운드로 넘어갑니다..." : "Starting next round...");
+                refreshMultiStateSoon(150);
+              } catch (e) {
+                showMultiInlineNotice(currentLang === "ko" ? "이미 다음 라운드로 넘어갔습니다." : "Next round is already starting.");
+                refreshMultiStateSoon(150);
+              }
+            }
+          },
+          {
+            label: "나가기",
+            primary: false,
+            handler: () => {
+              if (mpUI?.getClient()) {
+                mpUI.getClient().leaveRoom().catch(()=>{});
+                MultiplayerClient.resetInstance();
+              }
+              mpUI = null;
+              showModeSelect();
+            }
+          }
+        ];
+        if (isMeBankrupt) scheduleBankruptLeave();
 
         mpResultOverlayTimer = setTimeout(() => {
           mpResultOverlayTimer = null;
           if (phase !== "finished" || document.getElementById("mp-result-overlay")) return;
           mpUI.showResult({
             title,
-            detail: `${roundLine}${totalLabel}: ${win >= 0 ? "+" : ""}${win.toLocaleString()}G`,
+            detail: `${roundLine}${bankrollLine}${totalLabel}: ${win >= 0 ? "+" : ""}${win.toLocaleString()}G`,
             isWin: resultValue > 0 ? true : (resultValue < 0 ? false : null),
-            actions: [
-              {
-                label: "🔄 다음 라운드",
-                primary: true,
-                handler: async () => {
-                  try {
-                    await mpUI.sendAction({ type: "new_round" });
-                    hideMultiResultOverlay();
-                    showMultiInlineNotice(currentLang === "ko" ? "다음 라운드로 넘어갑니다..." : "Starting next round...");
-                    refreshMultiStateSoon(150);
-                  } catch (e) {
-                    showMultiInlineNotice(currentLang === "ko" ? "이미 다음 라운드로 넘어갔습니다." : "Next round is already starting.");
-                    refreshMultiStateSoon(150);
-                  }
-                }
-              },
-              {
-                label: "나가기",
-                primary: false,
-                handler: () => {
-                  if (mpUI?.getClient()) {
-                    mpUI.getClient().leaveRoom().catch(()=>{});
-                    MultiplayerClient.resetInstance();
-                  }
-                  mpUI = null;
-                  showModeSelect();
-                }
-              }
-            ]
+            actions
           });
         }, RESULT_REVEAL_DELAY_MS);
       }
