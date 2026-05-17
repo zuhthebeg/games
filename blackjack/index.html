@@ -263,6 +263,11 @@
       position: relative;
       overflow: hidden;
     }
+    #soloApp {
+      position: relative;
+      overflow: hidden;
+    }
+    #soloApp::before,
     .multi-game::before {
       content: "";
       position: absolute;
@@ -277,6 +282,10 @@
       z-index: 0;
     }
     .multi-game > * {
+      position: relative;
+      z-index: 1;
+    }
+    #soloApp > * {
       position: relative;
       z-index: 1;
     }
@@ -480,6 +489,10 @@
     </section>
 
     <section class="table" id="table">
+      <div class="mp-deck-status" id="soloDeckStatus">
+        <div class="deck-stack" id="soloDeckStack"><span></span><span></span><span></span></div>
+        <div id="soloDeckText">Deck 52/52</div>
+      </div>
       <div class="seat">
         <div class="seat-head">
           <div class="seat-title">DEALER</div>
@@ -747,6 +760,8 @@
       activeHand: 0,
       phase: "betting",
       bet: 0,
+      deckSize: 52,
+      reshuffleCount: 0,
       streak: 0,
       status: "",
       statusType: "",
@@ -763,6 +778,8 @@
       bonusText: document.getElementById("bonusText"),
       dealerCards: document.getElementById("dealerCards"),
       dealerScore: document.getElementById("dealerScore"),
+      soloDeckText: document.getElementById("soloDeckText"),
+      soloDeckStack: document.getElementById("soloDeckStack"),
       playerScore: document.getElementById("playerScore"),
       playerHands: document.getElementById("playerHands"),
       status: document.getElementById("status"),
@@ -886,6 +903,15 @@
     }
 
     function draw() {
+      if (!state.deck.length) {
+        state.deck = makeDeck();
+        state.reshuffleCount += 1;
+        el.soloDeckStack?.classList.add("reshuffle");
+        setTimeout(() => el.soloDeckStack?.classList.remove("reshuffle"), 650);
+        if (state.phase !== "betting") {
+          setStatus(currentLang === "ko" ? "새 덱을 섞었습니다." : "Shuffled a fresh deck.", "");
+        }
+      }
       const c = state.deck.pop();
       state.animQueue.push(c.id);
       return c;
@@ -936,6 +962,11 @@
       el.betText.textContent = Math.floor(state.bet).toLocaleString();
       el.streakText.textContent = currentLang === "ko" ? `${state.streak}연승` : `${state.streak} wins`;
       el.bonusText.textContent = bonusLabel();
+      if (el.soloDeckText) {
+        el.soloDeckText.textContent = currentLang === "ko"
+          ? `덱 ${state.deck.length}/${state.deckSize}`
+          : `Deck ${state.deck.length}/${state.deckSize}`;
+      }
 
       const dealerCards = state.dealer.map((c, i) => cardHTML(c, !state.revealDealer && i === 1)).join("");
       el.dealerCards.innerHTML = dealerCards;
@@ -1006,6 +1037,7 @@
         try { await SharedWallet.init(); } catch (_) {}
       }
       state.gold = typeof SharedWallet !== "undefined" ? Number(SharedWallet.gold || 0) : 1000;
+      if (!state.deck.length) state.deck = makeDeck();
       setStatus(currentLang === "ko" ? "베팅 버튼을 눌러 시작하세요." : "Press a bet button to start.");
       render();
     }
@@ -1035,7 +1067,6 @@
     }
 
     function resetRound() {
-      state.deck = makeDeck();
       state.dealer = [];
       state.hands = [];
       state.activeHand = 0;
@@ -1439,10 +1470,9 @@
     });
 
     function updateDealerBackdrop() {
-      const target = document.getElementById("multiGameScreen");
-      if (!target) return;
       const url = voiceGender === "female" ? "assets/dealer-female.webp" : "assets/dealer-male.webp";
-      target.style.setProperty("--dealer-bg", `url("${url}")`);
+      document.getElementById("multiGameScreen")?.style.setProperty("--dealer-bg", `url("${url}")`);
+      document.getElementById("soloApp")?.style.setProperty("--dealer-bg", `url("${url}")`);
     }
 
     function updateSettingsUI() {
