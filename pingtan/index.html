@@ -1595,6 +1595,7 @@
         mapNameFogIslands: "안개 섬",
         mapNamePrairie: "대초원",
         mapNameMegaPingtan: "메가 제도",
+        mapNameHighlands: "고지대",
         mapDescStandard: "기본 삥탄 규칙. 좋은 숫자 주변을 선점하고 항구를 활용하세요.",
         mapDescCentralLake: "섬 한가운데 호수. 자원이 외곽에 집중되어 내륙 경쟁이 줄어든다.",
         mapDescFourIslands: "두 해협이 보드를 4개 영역으로 나눈다. 초기 정착지 선택이 핵심.",
@@ -1607,6 +1608,7 @@
         mapDescFogIslands: "안개 속에 흩어진 섬들. 표준 크기지만 해양 타일이 섬을 갈라놓는다.",
         mapDescPrairie: "광활한 평원이 가로로 펼쳐진 24칸 보드. 자원이 풍부하고 전선이 길다.",
         mapDescMegaPingtan: "4링 37칸 거대 육각형. 완전히 다른 규모의 전략이 필요하다.",
+        mapDescHighlands: "중앙 화산이 솟은 고원 지대. 광석·밀이 풍부해 도시화가 빠르지만 목재·벽돌이 귀하다.",
         mapBehaviorDefault: "맵 특성에 맞춰 확장 루트를 조정하세요.",
         mapBehaviorGoldRush: "금 타일에서 생산되면 원하는 자원으로 받을 수 있어요.",
         mapBehaviorCrescentPingtan: "초승달 안쪽 바다 때문에 동쪽 루트가 끊깁니다. 외곽 도로와 항구를 먼저 잡으세요.",
@@ -1614,6 +1616,7 @@
         mapBehaviorFogIslands: "해양 타일이 섬을 갈라 길 연결이 제한됩니다. 섬별 확장로를 먼저 확보하세요.",
         mapBehaviorPrairie: "넓은 평원형 맵이라 전선이 길고 확장 경쟁이 빨라요.",
         mapBehaviorMegaPingtan: "대형 보드라 승리 점수가 높고 장기전 확장 전략이 중요해요.",
+        mapBehaviorHighlands: "중앙 화산이 핵심 연결을 막습니다. 외곽을 돌아 확장하고 항구로 목재·벽돌을 보충하세요.",
         manualTitle: "삥탄 가이드",
         manualGoal: "현재 맵의 승리 점수 먼저 달성!",
         manualResources: "자원",
@@ -1836,6 +1839,7 @@
         mapNameFogIslands: "Fog Islands",
         mapNamePrairie: "Prairie",
         mapNameMegaPingtan: "Mega Archipelago",
+        mapNameHighlands: "Highlands",
         mapDescStandard: "Classic 삥탄 rules. Claim strong numbers early and use ports well.",
         mapDescCentralLake: "A lake sits in the middle. Resources shift outward, reducing center fights.",
         mapDescFourIslands: "Two sea channels split the board into four areas. Opening settlement choice matters.",
@@ -1848,6 +1852,7 @@
         mapDescFogIslands: "Scattered islands in fog. Standard size, but sea tiles split routes.",
         mapDescPrairie: "A wide 24-hex prairie board. Resources are rich and expansion races are fast.",
         mapDescMegaPingtan: "A huge 37-hex, 4-ring board. Strategy plays at a completely different scale.",
+        mapDescHighlands: "A highland plateau with a central volcano. Ore and grain are plentiful but lumber and brick are scarce.",
         mapBehaviorDefault: "Adjust your expansion route to the map shape.",
         mapBehaviorGoldRush: "Gold production lets you choose any resource.",
         mapBehaviorCrescentPingtan: "The inner crescent sea cuts the east route. Prioritize outer roads and ports.",
@@ -1855,6 +1860,7 @@
         mapBehaviorFogIslands: "Sea tiles break road links. Secure island-by-island expansion routes.",
         mapBehaviorPrairie: "The wide prairie creates long fronts and fast expansion races.",
         mapBehaviorMegaPingtan: "The larger board raises the VP goal and rewards long-game expansion.",
+        mapBehaviorHighlands: "The central volcano blocks key connections. Route around the edges and use ports to compensate for scarce lumber and brick.",
         manualTitle: "삥탄 Guide",
         manualGoal: "Reach the current map's victory score first!",
         manualResources: "Resources",
@@ -1956,7 +1962,8 @@
       "twin-continents": "TwinContinents",
       "fog-islands": "FogIslands",
       prairie: "Prairie",
-      "mega-pingtan": "MegaPingtan"
+      "mega-pingtan": "MegaPingtan",
+      highlands: "Highlands"
     };
     function mapI18nSuffix(mapId) {
       return MAP_I18N_KEYS[mapId] || MAP_I18N_KEYS.standard;
@@ -1977,7 +1984,8 @@
         "twin-continents": "mapBehaviorTwinContinents",
         "fog-islands": "mapBehaviorFogIslands",
         prairie: "mapBehaviorPrairie",
-        "mega-pingtan": "mapBehaviorMegaPingtan"
+        "mega-pingtan": "mapBehaviorMegaPingtan",
+        highlands: "mapBehaviorHighlands"
       }[preset.id];
       return special ? pt(special) : pt("mapBehaviorDefault");
     }
@@ -2860,6 +2868,41 @@
       ports: {
         pool: [
           {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},{type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    MAP_PRESETS["highlands"] = {
+      id: "highlands", name: "고지대", stars: 2,
+      description: "중앙 화산이 솟은 고원 지대. 광석·밀이 풍부해 도시화가 빠르지만 목재·벽돌이 귀하다.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 10,
+      layout: {
+        axial: [
+          { q: -2, r: 0 }, { q: -2, r: 1 }, { q: -2, r: 2 },
+          { q: -1, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: -1, r: 2 },
+          { q: 0, r: -2 }, { q: 0, r: -1 }, { q: 0, r: 0, type: "volcano" }, { q: 0, r: 1 }, { q: 0, r: 2 },
+          { q: 1, r: -2 }, { q: 1, r: -1 }, { q: 1, r: 0 }, { q: 1, r: 1 },
+          { q: 2, r: -2 }, { q: 2, r: -1 }, { q: 2, r: 0 }
+        ]
+      },
+      resources: {
+        pool: [
+          "ore","ore","ore","ore","ore",
+          "grain","grain","grain","grain",
+          "lumber","lumber","lumber",
+          "wool","wool","wool",
+          "brick","brick",
+          "desert"
+        ]
+      },
+      numbers: {
+        pool: [2,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
           {type:"brick",ratio:2},{type:"lumber",ratio:2},{type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
         ]
       }
