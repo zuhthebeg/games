@@ -2274,12 +2274,14 @@
     };
     let turnTimerInterval = null;
 
-    function setSinglePlayers() {
-      state.players = [
-        makePlayer({ id: "human", name: "나", color: PLAYER_COLORS[0] }),
-        makePlayer({ id: "ai1", name: "AI 1", color: PLAYER_COLORS[1], isAI: true }),
-        makePlayer({ id: "ai2", name: "AI 2", color: PLAYER_COLORS[2], isAI: true })
-      ];
+    function setSinglePlayers(mapId) {
+      const preset = MAP_PRESETS[mapId || "standard"] || MAP_PRESETS["standard"];
+      const aiCount = (preset && preset.maxPlayers <= 2) ? 1 : 2;
+      const players = [makePlayer({ id: "human", name: "나", color: PLAYER_COLORS[0] })];
+      for (let i = 1; i <= aiCount; i++) {
+        players.push(makePlayer({ id: `ai${i}`, name: `AI ${i}`, color: PLAYER_COLORS[i], isAI: true }));
+      }
+      state.players = players;
     }
 
     function setMultiplayerPlayers(roomPlayers) {
@@ -2448,7 +2450,7 @@
       state.targetScoreCustom = false;
       state.turnTimeLeft = state.turnSeconds;
       applyResponsiveDefaults(true);
-      setSinglePlayers();
+      setSinglePlayers(mapId);
       generateBoard(null, mapId);
       recalcAllVP();
       state.mode = "single";
