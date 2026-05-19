@@ -1559,6 +1559,12 @@
         noKnightCard: "사용 가능한 기사 카드가 없습니다.",
         knightUseHint: "기사 카드 사용: 도둑 이동할 헥스를 선택하세요.",
         knightCardToast: "⚔️ 기사 카드 사용!",
+        devCardPopupKnight: "⚔️ 기사 카드 사용!",
+        devCardPopupMonopoly: "💰 독점 선언!",
+        devCardPopupRoadBuilding: "🛣️ 도로 건설 카드!",
+        devCardPopupYearOfPlenty: "🌾 풍년 카드!",
+        devCardPopupVp: "⭐ 승점 카드 공개!",
+        devCardPopupDefault: "🃏 발전 카드 사용!",
         noMonopolyCard: "사용 가능한 모노폴리 카드가 없습니다.",
         monopolyFailed: "모노폴리 사용 실패",
         monopolyUsedHint: "모노폴리 사용: {resource} {count}개 획득",
@@ -1822,6 +1828,12 @@
         noKnightCard: "No playable Knight card.",
         knightUseHint: "Knight card: choose a hex to move the robber.",
         knightCardToast: "⚔️ Knight card used!",
+        devCardPopupKnight: "⚔️ Knight card!",
+        devCardPopupMonopoly: "💰 Monopoly!",
+        devCardPopupRoadBuilding: "🛣️ Road Building!",
+        devCardPopupYearOfPlenty: "🌾 Year of Plenty!",
+        devCardPopupVp: "⭐ Victory Point!",
+        devCardPopupDefault: "🃏 Dev card played!",
         noMonopolyCard: "No playable Monopoly card.",
         monopolyFailed: "Monopoly failed",
         monopolyUsedHint: "Monopoly: gained {resource} ×{count}",
@@ -4981,6 +4993,7 @@
       state.phaseBeforeKnight = state.phase; // save so we can restore after robber move
       state.phase = "knight-robber";
       state.hint = pt("knightUseHint");
+      showDevCardPopup(localPlayerIndex(), "knight");
       render();
     }
 
@@ -5009,6 +5022,7 @@
         const result = playMonopoly(me, res);
         if (!result.ok) { state.hint = pt("monopolyFailed"); render(); return; }
         SFX.card();
+        showDevCardPopup(me, "monopoly", `${RESOURCE_ICONS[res]} ×${result.gained}`);
         state.canEndTurn = true;
         state.hint = pt("monopolyUsedHint", { resource: RESOURCE_ICONS[res], count: result.gained });
         showToast(pt("monopolyToast", { resource: resourceName(res), count: result.gained }));
@@ -5027,6 +5041,7 @@
       state.buildMode = "road";
       state.canEndTurn = true;
       SFX.card();
+      showDevCardPopup(me, "road_building");
       state.hint = pt("roadBuildingHint", { count: 2 });
       showToast(pt("roadBuildingToast"));
       render();
@@ -5077,6 +5092,7 @@
         p.resources[sel[0]] += 1;
         p.resources[sel[1]] += 1;
         SFX.card();
+        showDevCardPopup(me, "year_of_plenty", `${RESOURCE_ICONS[sel[0]]} + ${RESOURCE_ICONS[sel[1]]}`);
         state.canEndTurn = true;
         state.hint = pt("yearOfPlentyHint", { a: RESOURCE_ICONS[sel[0]], b: RESOURCE_ICONS[sel[1]] });
         showToast(pt("yearOfPlentyToast", { a: RESOURCE_ICONS[sel[0]], b: RESOURCE_ICONS[sel[1]] }));
@@ -5362,7 +5378,7 @@
               state.phase = "robber";
               const kr = playKnight(pIdx, kHex, kTarget.victimIdx);
               if (!kr || !kr.ok) state.phase = savedPhase;
-              else { state.hint = `${p.name} 기사 카드 사용.`; render(); }
+              else { showDevCardPopup(pIdx, "knight"); state.hint = `${p.name} 기사 카드 사용.`; render(); }
             }
           }
           if (state.phase === "roll") {
@@ -5420,10 +5436,45 @@
           if (best && best.total >= 3) {
             const m = playMonopoly(pIdx, best.r);
             if (m.ok) {
-              state.hint = `${p.name} 모노폴리 사용: ${RESOURCE_NAMES[best.r]} ${m.gained}개`; 
+              showDevCardPopup(pIdx, "monopoly", `${RESOURCE_ICONS[best.r]} ×${m.gained}`);
+              state.hint = `${p.name} 모노폴리 사용: ${RESOURCE_NAMES[best.r]} ${m.gained}개`;
               render();
             }
           }
+        }
+
+        // Year of Plenty: use when can't afford preferred build action
+        const yopCard = (p.devCards||[]).find(c => c.type === "year_of_plenty" && c.turnBought < state.turnNumber && !c.played);
+        if (yopCard && !canAfford(p, COST.settlement) && !canAfford(p, COST.city)) {
+          const targetCost = validCitiesFor(pIdx).length ? COST.city : COST.settlement;
+          const deficits = RESOURCES
+            .map(r => ({ r, need: Math.max(0, (targetCost[r]||0) - (p.resources[r]||0)) }))
+            .sort((a, b) => b.need - a.need);
+          if (deficits[0]?.need > 0) {
+            const r1 = deficits[0].r;
+            const r2 = deficits[1]?.need > 0 ? deficits[1].r : r1;
+            yopCard.played = true;
+            p.resources[r1] = (p.resources[r1]||0) + 1;
+            p.resources[r2] = (p.resources[r2]||0) + 1;
+            SFX.card();
+            showDevCardPopup(pIdx, "year_of_plenty", `${RESOURCE_ICONS[r1]} + ${RESOURCE_ICONS[r2]}`);
+            state.hint = `${p.name} 풍년 카드 사용.`;
+            recalcAllVP();
+            render();
+            await new Promise(r => setTimeout(r, 700));
+          }
+        }
+
+        // Road Building: use when expansion roads are valuable
+        const rbCard = (p.devCards||[]).find(c => c.type === "road_building" && c.turnBought < state.turnNumber && !c.played);
+        if (rbCard && validRoadsFor(pIdx).length > 0) {
+          rbCard.played = true;
+          state.roadBuildingRemaining = 2;
+          SFX.card();
+          showDevCardPopup(pIdx, "road_building");
+          state.hint = `${p.name} 도로 건설 카드 사용.`;
+          render();
+          await new Promise(r => setTimeout(r, 700));
         }
 
         // ── LLM AI: trade proposal (skip if low resources) ──────────────
@@ -8199,6 +8250,30 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
         </div>`;
       document.body.appendChild(overlay);
       overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    }
+
+    function showDevCardPopup(playerIdx, cardType, detail) {
+      const p = state.players[playerIdx];
+      if (!p) return;
+      const name = p.name || "플레이어";
+      const color = p.color || "#4ecca3";
+      const configs = {
+        knight:         { label: pt("devCardPopupKnight"),       bg: "rgba(160,50,0,0.93)",   border: "#ff8c42" },
+        monopoly:       { label: pt("devCardPopupMonopoly"),     bg: "rgba(120,0,120,0.93)",  border: "#d966d6" },
+        road_building:  { label: pt("devCardPopupRoadBuilding"), bg: "rgba(0,70,150,0.93)",   border: "#4eb4ff" },
+        year_of_plenty: { label: pt("devCardPopupYearOfPlenty"), bg: "rgba(0,110,50,0.93)",   border: "#4ecca3" },
+        vp:             { label: pt("devCardPopupVp"),           bg: "rgba(100,80,0,0.93)",   border: "#ffd700" }
+      };
+      const cfg = configs[cardType] || { label: pt("devCardPopupDefault"), bg: "rgba(20,20,50,0.93)", border: "#888" };
+      const el = document.createElement("div");
+      el.style.cssText = "position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;pointer-events:none;animation:big-overlay-in 0.3s ease-out;";
+      el.innerHTML = `<div style="background:${cfg.bg};border:3px solid ${cfg.border};border-radius:20px;padding:16px 28px;text-align:center;box-shadow:0 0 30px ${cfg.border}55;">
+        <div style="font-size:13px;font-weight:700;color:${escapeHtml(color)};margin-bottom:4px;">${escapeHtml(name)}</div>
+        <div style="font-size:20px;font-weight:900;color:#fff;text-shadow:0 2px 8px #000;">${cfg.label}</div>
+        ${detail ? `<div style="font-size:13px;color:#e0e0e0;margin-top:6px;">${detail}</div>` : ""}
+      </div>`;
+      document.body.appendChild(el);
+      setTimeout(() => { el.style.animation = "big-overlay-out 0.3s ease-in forwards"; setTimeout(() => el.remove(), 300); }, 2000);
     }
 
     function showBigOverlay(main, sub, extraClass = "", duration = 1200) {
