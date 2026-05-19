@@ -1596,6 +1596,9 @@
         mapNamePrairie: "대초원",
         mapNameMegaPingtan: "메가 제도",
         mapNameHighlands: "고지대",
+        mapNameDuelIsland: "결투의 섬",
+        mapNameBattleground: "격전지",
+        mapNameTwoKingdoms: "두 왕국",
         mapDescStandard: "기본 삥탄 규칙. 좋은 숫자 주변을 선점하고 항구를 활용하세요.",
         mapDescCentralLake: "섬 한가운데 호수. 자원이 외곽에 집중되어 내륙 경쟁이 줄어든다.",
         mapDescFourIslands: "두 해협이 보드를 4개 영역으로 나눈다. 초기 정착지 선택이 핵심.",
@@ -1609,6 +1612,12 @@
         mapDescPrairie: "광활한 평원이 가로로 펼쳐진 24칸 보드. 자원이 풍부하고 전선이 길다.",
         mapDescMegaPingtan: "4링 37칸 거대 육각형. 완전히 다른 규모의 전략이 필요하다.",
         mapDescHighlands: "중앙 화산이 솟은 고원 지대. 광석·밀이 풍부해 도시화가 빠르지만 목재·벽돌이 귀하다.",
+        mapDescDuelIsland: "2인 전용 7칸 초소형 맵. 자원 하나하나가 소중한 초고속 대결.",
+        mapDescBattleground: "2인 전용 13칸 세로형 맵. 정면 충돌이 불가피한 전략적 맞대결.",
+        mapDescTwoKingdoms: "2인 전용. 해협을 사이에 두고 마주 선 두 왕국. 각 영토의 자원 성향이 달라 초반 전략이 갈린다.",
+        mapBehaviorDuelIsland: "7칸이라 초반 자원이 전부입니다. 금 타일 위치를 중심으로 확장 방향을 잡으세요.",
+        mapBehaviorBattleground: "좁은 통로에서 도로 경쟁이 일찍 시작됩니다. 먼저 목을 막으면 유리해요.",
+        mapBehaviorTwoKingdoms: "해협 타일이 두 왕국을 가릅니다. 상대 영토 방향으로 뻗기 전에 내 왕국 자원을 안정화하세요.",
         mapBehaviorDefault: "맵 특성에 맞춰 확장 루트를 조정하세요.",
         mapBehaviorGoldRush: "금 타일에서 생산되면 원하는 자원으로 받을 수 있어요.",
         mapBehaviorCrescentPingtan: "초승달 안쪽 바다 때문에 동쪽 루트가 끊깁니다. 외곽 도로와 항구를 먼저 잡으세요.",
@@ -1840,6 +1849,9 @@
         mapNamePrairie: "Prairie",
         mapNameMegaPingtan: "Mega Archipelago",
         mapNameHighlands: "Highlands",
+        mapNameDuelIsland: "Duel Island",
+        mapNameBattleground: "Battleground",
+        mapNameTwoKingdoms: "Two Kingdoms",
         mapDescStandard: "Classic 삥탄 rules. Claim strong numbers early and use ports well.",
         mapDescCentralLake: "A lake sits in the middle. Resources shift outward, reducing center fights.",
         mapDescFourIslands: "Two sea channels split the board into four areas. Opening settlement choice matters.",
@@ -1853,6 +1865,12 @@
         mapDescPrairie: "A wide 24-hex prairie board. Resources are rich and expansion races are fast.",
         mapDescMegaPingtan: "A huge 37-hex, 4-ring board. Strategy plays at a completely different scale.",
         mapDescHighlands: "A highland plateau with a central volcano. Ore and grain are plentiful but lumber and brick are scarce.",
+        mapDescDuelIsland: "A 2-player 7-hex micro map. Every resource counts in this lightning-fast duel.",
+        mapDescBattleground: "A 2-player 13-hex tall map. Head-on collisions are inevitable.",
+        mapDescTwoKingdoms: "2-player only. Two kingdoms face each other across a strait, each with different resource strengths.",
+        mapBehaviorDuelIsland: "With only 7 hexes, your opening resources define the game. Build around the gold tile.",
+        mapBehaviorBattleground: "Road races start early on the narrow board. Block the bottleneck first.",
+        mapBehaviorTwoKingdoms: "The strait splits both kingdoms. Secure your own territory before pushing toward the enemy.",
         mapBehaviorDefault: "Adjust your expansion route to the map shape.",
         mapBehaviorGoldRush: "Gold production lets you choose any resource.",
         mapBehaviorCrescentPingtan: "The inner crescent sea cuts the east route. Prioritize outer roads and ports.",
@@ -1963,7 +1981,10 @@
       "fog-islands": "FogIslands",
       prairie: "Prairie",
       "mega-pingtan": "MegaPingtan",
-      highlands: "Highlands"
+      highlands: "Highlands",
+      "duel-island": "DuelIsland",
+      battleground: "Battleground",
+      "two-kingdoms": "TwoKingdoms"
     };
     function mapI18nSuffix(mapId) {
       return MAP_I18N_KEYS[mapId] || MAP_I18N_KEYS.standard;
@@ -1985,7 +2006,10 @@
         "fog-islands": "mapBehaviorFogIslands",
         prairie: "mapBehaviorPrairie",
         "mega-pingtan": "mapBehaviorMegaPingtan",
-        highlands: "mapBehaviorHighlands"
+        highlands: "mapBehaviorHighlands",
+        "duel-island": "mapBehaviorDuelIsland",
+        battleground: "mapBehaviorBattleground",
+        "two-kingdoms": "mapBehaviorTwoKingdoms"
       }[preset.id];
       return special ? pt(special) : pt("mapBehaviorDefault");
     }
@@ -2904,6 +2928,101 @@
         pool: [
           {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
           {type:"brick",ratio:2},{type:"lumber",ratio:2},{type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    // ── 2인 전용 맵 3종 ──────────────────────────────────────────────────
+
+    MAP_PRESETS["duel-island"] = {
+      id: "duel-island", name: "결투의 섬", stars: 1,
+      description: "2인 전용 7칸 초소형 맵. 자원 하나하나가 소중한 초고속 대결.",
+      minPlayers: 2, maxPlayers: 2, vpGoal: 6,
+      specialRules: { gold: true },
+      layout: {
+        axial: [
+          { q: 0, r: -1 }, { q: 1, r: -1 },
+          { q: -1, r: 0 }, { q: 0, r: 0 }, { q: 1, r: 0 },
+          { q: -1, r: 1 }, { q: 0, r: 1 }
+        ]
+      },
+      resources: {
+        pool: ["brick","lumber","wool","grain","ore","gold","desert"]
+      },
+      numbers: {
+        pool: [4, 5, 6, 8, 9, 10],
+        noAdjacentSame: true, noAdjacentHot: [6, 8]
+      },
+      ports: {
+        pool: [
+          { type: "generic", ratio: 3 },
+          { type: "wool", ratio: 2 },
+          { type: "grain", ratio: 2 }
+        ]
+      }
+    };
+
+    MAP_PRESETS["battleground"] = {
+      id: "battleground", name: "격전지", stars: 1,
+      description: "2인 전용 13칸 세로형 맵. 정면 충돌이 불가피한 전략적 맞대결.",
+      minPlayers: 2, maxPlayers: 2, vpGoal: 7,
+      layout: {
+        axial: [
+          { q: 0, r: -2 }, { q: 1, r: -2 },
+          { q: -1, r: -1 }, { q: 0, r: -1 }, { q: 1, r: -1 },
+          { q: -1, r: 0 }, { q: 0, r: 0 }, { q: 1, r: 0 },
+          { q: -1, r: 1 }, { q: 0, r: 1 }, { q: 1, r: 1 },
+          { q: -1, r: 2 }, { q: 0, r: 2 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick",
+          "lumber","lumber",
+          "wool","wool","wool",
+          "grain","grain","grain",
+          "ore","ore",
+          "desert"
+        ]
+      },
+      numbers: {
+        pool: [2, 3, 3, 4, 4, 5, 5, 6, 8, 9, 10, 11],
+        noAdjacentSame: true, noAdjacentHot: [6, 8]
+      },
+      ports: {
+        pool: [
+          { type: "generic", ratio: 3 }, { type: "generic", ratio: 3 },
+          { type: "brick", ratio: 2 }, { type: "lumber", ratio: 2 }, { type: "ore", ratio: 2 }
+        ]
+      }
+    };
+
+    MAP_PRESETS["two-kingdoms"] = {
+      id: "two-kingdoms", name: "두 왕국", stars: 2,
+      description: "2인 전용. 해협을 사이에 두고 마주 선 두 왕국. 각 영토의 자원 성향이 달라 초반 전략이 갈린다.",
+      minPlayers: 2, maxPlayers: 2, vpGoal: 7,
+      specialRules: { gold: true },
+      layout: {
+        axial: [
+          { q: -2, r: 0 }, { q: -1, r: -1 }, { q: -1, r: 0 }, { q: -2, r: 1 }, { q: -1, r: 1 },
+          { q: 0, r: 0, type: "strait" },
+          { q: 1, r: -1 }, { q: 2, r: -1 }, { q: 1, r: 0 }, { q: 2, r: 0 }, { q: 1, r: 1 }
+        ]
+      },
+      resources: {
+        pool: [
+          "lumber","brick","wool","grain","lumber",
+          "ore","grain","ore","gold","brick"
+        ]
+      },
+      numbers: {
+        pool: [3, 4, 5, 5, 6, 8, 9, 10, 11],
+        noAdjacentSame: true, noAdjacentHot: [6, 8]
+      },
+      ports: {
+        pool: [
+          { type: "generic", ratio: 3 }, { type: "generic", ratio: 3 },
+          { type: "brick", ratio: 2 }, { type: "grain", ratio: 2 }
         ]
       }
     };
