@@ -2443,11 +2443,14 @@
     }
 
     function initSingleGame(mapId = "standard") {
+      const savedTurnSeconds = state.turnSeconds;
+      const savedCustom = state.targetScoreCustom;
+      const savedScore = state.targetScore;
       resetCoreState();
-      state.turnSeconds = 60;
+      state.turnSeconds = savedTurnSeconds || 60;
       state.selectedMapId = mapId;
-      state.targetScore = defaultTargetScoreForMap(mapId);
-      state.targetScoreCustom = false;
+      state.targetScore = savedCustom ? savedScore : defaultTargetScoreForMap(mapId);
+      state.targetScoreCustom = savedCustom || false;
       state.turnTimeLeft = state.turnSeconds;
       applyResponsiveDefaults(true);
       setSinglePlayers(mapId);
@@ -3029,7 +3032,7 @@
         ]
       },
       numbers: {
-        pool: [2, 3, 3, 4, 4, 5, 5, 6, 8, 9, 10, 11],
+        pool: [3, 3, 4, 4, 5, 5, 6, 8, 9, 10, 11, 11],
         noAdjacentSame: true, noAdjacentHot: [6, 8]
       },
       ports: {
@@ -3059,7 +3062,7 @@
         ]
       },
       numbers: {
-        pool: [3, 4, 5, 5, 6, 8, 9, 10, 11],
+        pool: [3, 4, 5, 5, 6, 8, 9, 10, 10, 11],
         noAdjacentSame: true, noAdjacentHot: [6, 8]
       },
       ports: {
@@ -6520,8 +6523,14 @@ https://game.cocy.io/pingtan/`;
       function resRow(r, counts, type) {
         const max = type === "offer" ? (p.resources[r] || 0) : 99;
         const val = counts[r] || 0;
+        const othersTotal = type === "want"
+          ? state.players.reduce((s, pl, i) => i === pIdx ? s : s + (pl.resources[r] || 0), 0)
+          : null;
+        const otherLabel = othersTotal !== null
+          ? `<span style="font-size:10px;color:#9ca3af;margin-left:2px;">유통 ${othersTotal}</span>`
+          : "";
         return `<div style="display:flex;align-items:center;gap:4px;justify-content:space-between;padding:2px 0;">
-          <span style="font-size:13px;">${RESOURCE_ICONS[r]} ${resourceName(r)} ${type === "offer" ? "("+pt("heldCards", { count: p.resources[r] })+")" : ""}</span>
+          <span style="font-size:13px;">${RESOURCE_ICONS[r]} ${resourceName(r)} ${type === "offer" ? "("+pt("heldCards", { count: p.resources[r] })+")" : otherLabel}</span>
           <span style="display:flex;gap:2px;align-items:center;">
             <button class="trade-option" style="padding:2px 8px;min-width:28px;" onclick="tradeAdjust('${type}','${r}',-1)" ${val <= 0 ? "disabled" : ""}>−</button>
             <span style="min-width:20px;text-align:center;font-weight:700;">${val}</span>

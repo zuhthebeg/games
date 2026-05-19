@@ -112,6 +112,11 @@
 
     for (const hex of state.hexes) {
       if (!hex || hex.index === state.robber || hex.type === 'desert') continue;
+      const hasOwnBuilding = (hex.vertices || []).some(vIdx => {
+        const v = state.vertices[vIdx];
+        return v && v.owner === thiefIdx;
+      });
+      if (hasOwnBuilding) continue;
       const weight = DICE_WEIGHT[hex.number] || 0;
 
       const touched = new Map();
