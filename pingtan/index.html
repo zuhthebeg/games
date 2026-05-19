@@ -1389,6 +1389,10 @@
       grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
       gap: 10px;
     }
+    .map-cat-tabs { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; justify-content:center; }
+    .map-cat-btn { padding:5px 12px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--muted); font-size:12px; cursor:pointer; transition:all 0.15s; }
+    .map-cat-btn:hover { border-color:#5a8fa8; color:var(--fg); }
+    .map-cat-btn.active { border-color:var(--accent); background:rgba(79,194,127,0.15); color:var(--accent); font-weight:600; }
     .map-card {
       border: 2px solid var(--line);
       border-radius: 10px;
@@ -1599,6 +1603,12 @@
         mapNameDuelIsland: "결투의 섬",
         mapNameBattleground: "격전지",
         mapNameTwoKingdoms: "두 왕국",
+        mapNameCalderaBay: "칼데라 만",
+        mapNameSilkRoad: "실크로드",
+        mapCatAll: "전체",
+        mapCat2p: "2인 전용",
+        mapCatStandard: "표준",
+        mapCatLarge: "대형",
         mapDescStandard: "기본 삥탄 규칙. 좋은 숫자 주변을 선점하고 항구를 활용하세요.",
         mapDescCentralLake: "섬 한가운데 호수. 자원이 외곽에 집중되어 내륙 경쟁이 줄어든다.",
         mapDescFourIslands: "두 해협이 보드를 4개 영역으로 나눈다. 초기 정착지 선택이 핵심.",
@@ -1615,9 +1625,13 @@
         mapDescDuelIsland: "2인 전용 7칸 초소형 맵. 자원 하나하나가 소중한 초고속 대결.",
         mapDescBattleground: "2인 전용 13칸 세로형 맵. 정면 충돌이 불가피한 전략적 맞대결.",
         mapDescTwoKingdoms: "2인 전용. 해협을 사이에 두고 마주 선 두 왕국. 각 영토의 자원 성향이 달라 초반 전략이 갈린다.",
+        mapDescCalderaBay: "중앙 삼각 호수가 보드를 에워싼 환형 지형. 안쪽 항구를 선점하면 상대 전체를 압박할 수 있다.",
+        mapDescSilkRoad: "북동~남서를 가로지르는 대각선 19칸 보드. 한쪽 끝은 생산자원, 반대쪽은 도시자원이 몰려 있어 교역로 장악이 핵심.",
         mapBehaviorDuelIsland: "7칸이라 초반 자원이 전부입니다. 금 타일 위치를 중심으로 확장 방향을 잡으세요.",
         mapBehaviorBattleground: "좁은 통로에서 도로 경쟁이 일찍 시작됩니다. 먼저 목을 막으면 유리해요.",
         mapBehaviorTwoKingdoms: "해협 타일이 두 왕국을 가릅니다. 상대 영토 방향으로 뻗기 전에 내 왕국 자원을 안정화하세요.",
+        mapBehaviorCalderaBay: "중앙 호수 안쪽 정점은 생산이 없지만 여러 타일에 동시 접근 가능합니다. 내항 선점 여부가 승부를 가릅니다.",
+        mapBehaviorSilkRoad: "보드가 대각선으로 길어 도로 차단이 매우 효과적입니다. 중앙 목을 먼저 장악하면 상대 확장을 반으로 자를 수 있어요.",
         mapBehaviorDefault: "맵 특성에 맞춰 확장 루트를 조정하세요.",
         mapBehaviorGoldRush: "금 타일에서 생산되면 원하는 자원으로 받을 수 있어요.",
         mapBehaviorCrescentPingtan: "초승달 안쪽 바다 때문에 동쪽 루트가 끊깁니다. 외곽 도로와 항구를 먼저 잡으세요.",
@@ -1852,6 +1866,12 @@
         mapNameDuelIsland: "Duel Island",
         mapNameBattleground: "Battleground",
         mapNameTwoKingdoms: "Two Kingdoms",
+        mapNameCalderaBay: "Caldera Bay",
+        mapNameSilkRoad: "Silk Road",
+        mapCatAll: "All",
+        mapCat2p: "2-Player",
+        mapCatStandard: "Standard",
+        mapCatLarge: "Large",
         mapDescStandard: "Classic 삥탄 rules. Claim strong numbers early and use ports well.",
         mapDescCentralLake: "A lake sits in the middle. Resources shift outward, reducing center fights.",
         mapDescFourIslands: "Two sea channels split the board into four areas. Opening settlement choice matters.",
@@ -1868,9 +1888,13 @@
         mapDescDuelIsland: "A 2-player 7-hex micro map. Every resource counts in this lightning-fast duel.",
         mapDescBattleground: "A 2-player 13-hex tall map. Head-on collisions are inevitable.",
         mapDescTwoKingdoms: "2-player only. Two kingdoms face each other across a strait, each with different resource strengths.",
+        mapDescCalderaBay: "A central triangular lake creates a ring-shaped board. Claiming the inner harbor puts pressure on the entire opponent.",
+        mapDescSilkRoad: "A diagonal 19-hex band stretching NE to SW. Production resources cluster on one end, city resources on the other — control the trade route.",
         mapBehaviorDuelIsland: "With only 7 hexes, your opening resources define the game. Build around the gold tile.",
         mapBehaviorBattleground: "Road races start early on the narrow board. Block the bottleneck first.",
         mapBehaviorTwoKingdoms: "The strait splits both kingdoms. Secure your own territory before pushing toward the enemy.",
+        mapBehaviorCalderaBay: "Inner lake vertices have no production but touch multiple tiles. Claiming the inner harbor is a decisive advantage.",
+        mapBehaviorSilkRoad: "The diagonal board makes road blocks highly effective. Seize the central bottleneck to cut your opponent's expansion in two.",
         mapBehaviorDefault: "Adjust your expansion route to the map shape.",
         mapBehaviorGoldRush: "Gold production lets you choose any resource.",
         mapBehaviorCrescentPingtan: "The inner crescent sea cuts the east route. Prioritize outer roads and ports.",
@@ -1984,7 +2008,9 @@
       highlands: "Highlands",
       "duel-island": "DuelIsland",
       battleground: "Battleground",
-      "two-kingdoms": "TwoKingdoms"
+      "two-kingdoms": "TwoKingdoms",
+      "caldera-bay": "CalderaBay",
+      "silk-road": "SilkRoad"
     };
     function mapI18nSuffix(mapId) {
       return MAP_I18N_KEYS[mapId] || MAP_I18N_KEYS.standard;
@@ -2009,7 +2035,9 @@
         highlands: "mapBehaviorHighlands",
         "duel-island": "mapBehaviorDuelIsland",
         battleground: "mapBehaviorBattleground",
-        "two-kingdoms": "mapBehaviorTwoKingdoms"
+        "two-kingdoms": "mapBehaviorTwoKingdoms",
+        "caldera-bay": "mapBehaviorCalderaBay",
+        "silk-road": "mapBehaviorSilkRoad"
       }[preset.id];
       return special ? pt(special) : pt("mapBehaviorDefault");
     }
@@ -2104,6 +2132,7 @@
       dismissedWinner: false,
       selectedMapId: "standard",
       mapSelectSource: "single",
+      mapCategory: "all",
       _pendingHumanGold: 0,
       _pendingGains: null,
       _aiReactionCooldownUntil: 0,
@@ -3023,6 +3052,80 @@
         pool: [
           { type: "generic", ratio: 3 }, { type: "generic", ratio: 3 },
           { type: "brick", ratio: 2 }, { type: "grain", ratio: 2 }
+        ]
+      }
+    };
+
+    // ── 특수 지형 맵 ───────────────────────────────────────────────────
+
+    MAP_PRESETS["caldera-bay"] = {
+      id: "caldera-bay", name: "칼데라 만", stars: 2,
+      description: "중앙 삼각 호수가 보드를 에워싼 환형 지형. 안쪽 항구를 선점하면 상대 전체를 압박할 수 있다.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 10,
+      layout: {
+        axial: [
+          { q: -2, r: 0 }, { q: -2, r: 1 }, { q: -2, r: 2 },
+          { q: -1, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: -1, r: 2 },
+          { q: 0, r: -2 }, { q: 0, r: -1 }, { q: 0, r: 0, type: "lake" }, { q: 0, r: 1, type: "lake" }, { q: 0, r: 2 },
+          { q: 1, r: -2 }, { q: 1, r: -1 }, { q: 1, r: 0, type: "lake" }, { q: 1, r: 1 },
+          { q: 2, r: -2 }, { q: 2, r: -1 }, { q: 2, r: 0 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick",
+          "lumber","lumber","lumber",
+          "wool","wool","wool",
+          "grain","grain","grain",
+          "ore","ore","ore",
+          "desert"
+        ]
+      },
+      numbers: {
+        pool: [2,3,3,4,4,5,5,6,8,9,9,10,10,11,12],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},
+          {type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    MAP_PRESETS["silk-road"] = {
+      id: "silk-road", name: "실크로드", stars: 2,
+      description: "북동~남서를 가로지르는 대각선 19칸 보드. 한쪽 끝은 생산자원, 반대쪽은 도시자원이 몰려 있어 교역로 장악이 핵심.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 11,
+      layout: {
+        axial: [
+          { q: -3, r: 2 }, { q: -2, r: 1 }, { q: -1, r: 0 }, { q: 0, r: -1 }, { q: 1, r: -2 }, { q: 2, r: -3 },
+          { q: -3, r: 3 }, { q: -2, r: 2 }, { q: -1, r: 1 }, { q: 0, r: 0 }, { q: 1, r: -1 }, { q: 2, r: -2 }, { q: 3, r: -3 },
+          { q: -2, r: 3 }, { q: -1, r: 2 }, { q: 0, r: 1 }, { q: 1, r: 0 }, { q: 2, r: -1 }, { q: 3, r: -2 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick",
+          "lumber","lumber","lumber","lumber",
+          "wool","wool","wool",
+          "grain","grain","grain","grain",
+          "ore","ore","ore",
+          "desert","desert"
+        ]
+      },
+      numbers: {
+        pool: [2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,12],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},
+          {type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
         ]
       }
     };
@@ -5966,17 +6069,35 @@
       }
     }
 
+    function getMapCategory(m) {
+      if (m.maxPlayers <= 2) return "2p";
+      if (m.maxPlayers >= 5 || (m.layout?.axial?.length || 0) >= 28) return "large";
+      return "standard";
+    }
+
     function renderMapSelect() {
-      const maps = Object.values(MAP_PRESETS);
+      const allMaps = Object.values(MAP_PRESETS);
       const selected = state.selectedMapId || "standard";
       const preset = MAP_PRESETS[selected] || MAP_PRESETS.standard;
       const starsHtml = n => "★".repeat(n || 0);
       const isMulti = state.mapSelectSource === "multi";
+      const cat = state.mapCategory || "all";
+      const maps = cat === "all" ? allMaps : allMaps.filter(m => getMapCategory(m) === cat);
+
+      const tabs = [
+        { key: "all", label: pt("mapCatAll") },
+        { key: "2p", label: pt("mapCat2p") },
+        { key: "standard", label: pt("mapCatStandard") },
+        { key: "large", label: pt("mapCatLarge") }
+      ];
 
       return `
         <div id="map-select-scroll" style="flex:1;overflow-y:auto;padding:24px 12px;display:flex;flex-direction:column;align-items:center;">
           <div class="lobby-card" style="width:min(620px,100%)">
-            <h1 class="lobby-title" style="font-size:24px;margin-bottom:4px;">${pt("mapSelect")}</h1>
+            <h1 class="lobby-title" style="font-size:24px;margin-bottom:8px;">${pt("mapSelect")}</h1>
+            <div class="map-cat-tabs">
+              ${tabs.map(t => `<button class="map-cat-btn${cat === t.key ? " active" : ""}" onclick="state.mapCategory='${t.key}';render()">${t.label}</button>`).join("")}
+            </div>
             <div class="map-grid">
               ${maps.map(m => `
                 <div class="map-card${selected === m.id ? " selected" : ""}" onclick="onMapCardClick('${m.id}')">
