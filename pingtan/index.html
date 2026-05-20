@@ -5165,7 +5165,7 @@
               return;
             }
             SFX.build();
-            addActivityLog("trade", `${proposer.name || "플레이어"} ↔ ${me.name || "플레이어"} 거래 완료`);
+            addActivityLog("trade", `${proposer.name || "플레이어"} ↔ ${me.name || "플레이어"} 거래: ${describeResourceBundle(offer)} → ${describeResourceBundle(want)}`);
             showToast(pt("tradeSuccessToast"), 2000);
             // Notify proposer + bystanders (proposerId/proposalId let receivers identify the swap)
             mpState.client.sendAction({ type: "TRADE_ACCEPT", playerId: me.userId || me.id, proposerId, proposalId, offer, want, actionId: `ta_${Date.now()}`, __snapshot: createpingtanStateSnapshot() }).catch(()=>{});
@@ -5203,7 +5203,7 @@
         if (!canPlayersExecuteTrade(proposer, accepter, offer, want)) return true;
         if (!applyTradeSwap(proposer, accepter, offer, want)) return true;
         SFX.build();
-        addActivityLog("trade", `${proposer.name || "플레이어"} ↔ ${accepter.name || "플레이어"} 거래 완료`);
+        addActivityLog("trade", `${proposer.name || "플레이어"} ↔ ${accepter.name || "플레이어"} 거래: ${describeResourceBundle(offer)} → ${describeResourceBundle(want)}`);
         if (myIdx === proposerIdx) {
           showToast(pt("tradeAcceptedToast", { player: accepter.name }), 2000);
           state.canEndTurn = true;
@@ -7623,7 +7623,7 @@ https://game.cocy.io/pingtan/`;
       let html = escapeHtml(message);
       const playersByName = state.players
         .map((p, i) => ({ p, i, name: String(p?.name || "").trim() }))
-        .filter(x => x.name && x.name.length >= 2)
+        .filter(x => x.name && x.name.length >= 1)
         .sort((a, b) => b.name.length - a.name.length);
       for (const { p, i, name } of playersByName) {
         const color = p.color || PLAYER_COLORS[i] || "#fff";
@@ -8456,7 +8456,7 @@ https://game.cocy.io/pingtan/`;
             if (want[r] > 0) { tp.resources[r] -= want[r]; human.resources[r] += want[r]; }
           }
           SFX.build();
-          addActivityLog("trade", `${human.name || "플레이어"} ↔ ${tp.name || "AI"} 거래 완료`);
+          addActivityLog("trade", `${human.name || "플레이어"} ↔ ${tp.name || "AI"} 거래: ${describeResourceBundle(offer)} → ${describeResourceBundle(want)}`);
           showToast(`🤝 거래 성사! "${resp.dialogue || "거래!"}"`, 3000);
           Voice.ai("trade-accept", resp.target.i);
           state.canEndTurn = true;
@@ -8660,7 +8660,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
               for (const [r, n] of Object.entries(parsed.give)) { p.resources[r] -= n; human.resources[r] += n; }
               for (const [r, n] of Object.entries(parsed.want)) { human.resources[r] -= n; p.resources[r] += n; }
               SFX.build();
-              addActivityLog("trade", `${human.name || "플레이어"} ↔ ${p.name || "AI"} 거래 완료`);
+              addActivityLog("trade", `${human.name || "플레이어"} ↔ ${p.name || "AI"} 거래: ${describeResourceBundle(parsed.give)} → ${describeResourceBundle(parsed.want)}`);
               showToast(pt("tradeSuccessToast"), 2000);
               Voice.ai("trade-accept", pIdx);
               state.tradeRejectCount[`${pIdx}`] = 0;
@@ -8897,6 +8897,9 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
         year_of_plenty: { label: pt("devCardPopupYearOfPlenty"), bg: "rgba(0,110,50,0.93)",   border: "#4ecca3" },
         vp:             { label: pt("devCardPopupVp"),           bg: "rgba(100,80,0,0.93)",   border: "#ffd700" }
       };
+      const logLabels = { knight: "기사 카드", monopoly: "독점 카드", road_building: "도로 건설 카드", year_of_plenty: "풍년 카드", vp: "승점 카드" };
+      const logLabel = logLabels[cardType] || "발전 카드";
+      addActivityLog("dev", `${name} ${logLabel} 사용${detail ? ` — ${detail}` : ""}`);
       const cfg = configs[cardType] || { label: pt("devCardPopupDefault"), bg: "rgba(20,20,50,0.93)", border: "#888" };
       const el = document.createElement("div");
       el.style.cssText = "position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;pointer-events:none;animation:big-overlay-in 0.3s ease-out;";
