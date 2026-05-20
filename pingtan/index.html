@@ -191,6 +191,12 @@
     .hex.volcano { background: var(--volcano); }
     .hex.gold    { background: var(--gold); }
     .hex.strait  { background: var(--strait); }
+    .hex.fog-hidden { background: #1a2540; border-color: rgba(80,110,170,0.25); }
+    @keyframes fog-reveal {
+      from { filter: blur(6px) brightness(0.2); opacity: 0.4; }
+      to   { filter: none; opacity: 1; }
+    }
+    .hex.fog-revealing { animation: fog-reveal 0.7s ease-out both; }
 
     .number {
       width: calc(28px * var(--zoom, 1));
@@ -1665,7 +1671,7 @@
         mapDescFrontierOutback: "광물 풍부, 목재 희귀한 황야. 도시 개발을 서두르되 도로 자원을 아껴야 한다.",
         mapDescGoldRush: "금광 타일이 경제를 유연하게 만들어 교역과 도시화가 빨라진다.",
         mapDescTwinContinents: "좁은 해협으로 연결된 두 육괴가 다른 자원 성향을 갖는다.",
-        mapDescFogIslands: "안개 속에 흩어진 섬들. 표준 크기지만 해양 타일이 섬을 갈라놓는다.",
+        mapDescFogIslands: "안개 속에 숨겨진 섬들. 배와 도로를 뻗어 안개를 걷어내고 새 땅을 발견하라!",
         mapDescPrairie: "광활한 평원이 가로로 펼쳐진 24칸 보드. 자원이 풍부하고 전선이 길다.",
         mapDescMegaPingtan: "4링 37칸 거대 육각형. 완전히 다른 규모의 전략이 필요하다.",
         mapDescHighlands: "중앙 화산이 솟은 고원 지대. 광석·밀이 풍부해 도시화가 빠르지만 목재·벽돌이 귀하다.",
@@ -1683,7 +1689,7 @@
         mapBehaviorGoldRush: "금 타일에서 생산되면 원하는 자원으로 받을 수 있어요.",
         mapBehaviorCrescentPingtan: "초승달 안쪽 바다 때문에 동쪽 루트가 끊깁니다. 외곽 도로와 항구를 먼저 잡으세요.",
         mapBehaviorTwinContinents: "좁은 해협이 두 대륙을 가릅니다. 초반 도로 방향과 항구 선점이 중요해요.",
-        mapBehaviorFogIslands: "해양 타일이 섬을 갈라 길 연결이 제한됩니다. 섬별 확장로를 먼저 확보하세요.",
+        mapBehaviorFogIslands: "배나 도로를 안개 타일에 인접하게 건설하면 안개가 걷혀 자원과 숫자가 공개됩니다. 섬 첫 발견 보너스 +2 승점.",
         mapBehaviorPrairie: "넓은 평원형 맵이라 전선이 길고 확장 경쟁이 빨라요.",
         mapBehaviorMegaPingtan: "대형 보드라 승리 점수가 높고 장기전 확장 전략이 중요해요.",
         mapBehaviorHighlands: "중앙 화산이 핵심 연결을 막습니다. 외곽을 돌아 확장하고 항구로 목재·벽돌을 보충하세요.",
@@ -1954,7 +1960,7 @@
         mapDescFrontierOutback: "Ore-rich, lumber-scarce outback. Rush cities but spend road resources carefully.",
         mapDescGoldRush: "Gold tiles make the economy flexible, speeding up trades and city growth.",
         mapDescTwinContinents: "Two landmasses linked by a narrow strait, each with different resource tendencies.",
-        mapDescFogIslands: "Scattered islands in fog. Standard size, but sea tiles split routes.",
+        mapDescFogIslands: "Hidden islands shrouded in fog. Extend roads and ships to reveal new lands!",
         mapDescPrairie: "A wide 24-hex prairie board. Resources are rich and expansion races are fast.",
         mapDescMegaPingtan: "A huge 37-hex, 4-ring board. Strategy plays at a completely different scale.",
         mapDescHighlands: "A highland plateau with a central volcano. Ore and grain are plentiful but lumber and brick are scarce.",
@@ -1972,7 +1978,7 @@
         mapBehaviorGoldRush: "Gold production lets you choose any resource.",
         mapBehaviorCrescentPingtan: "The inner crescent sea cuts the east route. Prioritize outer roads and ports.",
         mapBehaviorTwinContinents: "A narrow strait splits the continents. Early road direction and ports matter.",
-        mapBehaviorFogIslands: "Sea tiles break road links. Secure island-by-island expansion routes.",
+        mapBehaviorFogIslands: "Build roads or ships adjacent to fog tiles to reveal their resources and numbers. +2 VP for first settler on each island.",
         mapBehaviorPrairie: "The wide prairie creates long fronts and fast expansion races.",
         mapBehaviorMegaPingtan: "The larger board raises the VP goal and rewards long-game expansion.",
         mapBehaviorHighlands: "The central volcano blocks key connections. Route around the edges and use ports to compensate for scarce lumber and brick.",
@@ -2911,31 +2917,42 @@
 
     MAP_PRESETS["fog-islands"] = {
       id: "fog-islands", name: "안개 섬", stars: 2,
-      description: "안개 속에 흩어진 섬들. 표준 크기지만 해양 타일이 섬을 갈라놓는다.",
+      description: "안개 속에 숨겨진 섬들. 배와 도로를 뻗어 안개를 걷어내고 새 땅을 발견하라!",
       minPlayers: 3, maxPlayers: 4, vpGoal: 10,
+      specialRules: { fogExploration: true },
       layout: {
         axial: [
-          { q: -2, r: 0 }, { q: -2, r: 1 }, { q: -2, r: 2 },
-          { q: -1, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: -1, r: 2 },
-          { q: 0, r: -2 }, { q: 0, r: -1 }, { q: 0, r: 0, type: "sea" }, { q: 0, r: 1 }, { q: 0, r: 2 },
-          { q: 1, r: -2 }, { q: 1, r: -1 }, { q: 1, r: 0, type: "sea" }, { q: 1, r: 1 },
-          { q: 2, r: -2 }, { q: 2, r: -1 }, { q: 2, r: 0 }
+          // ── 중앙 시작 섬 (반지름-1, 7칸) ──
+          { q:0, r:0 }, { q:1, r:-1 }, { q:1, r:0 },
+          { q:0, r:1 }, { q:-1, r:1 }, { q:-1, r:0 }, { q:0, r:-1 },
+          // ── 바다 링 (반지름-2, 12칸) ──
+          { q:0, r:-2,type:"sea" }, { q:1, r:-2,type:"sea" }, { q:2, r:-2,type:"sea" },
+          { q:2, r:-1,type:"sea" }, { q:2, r:0, type:"sea" },
+          { q:1, r:1, type:"sea" }, { q:0, r:2, type:"sea" }, { q:-1,r:2, type:"sea" },
+          { q:-2,r:2, type:"sea" }, { q:-2,r:1, type:"sea" }, { q:-2,r:0, type:"sea" },
+          { q:-1,r:-1,type:"sea" },
+          // ── NE 안개 섬 (3칸) ──
+          { q:-1,r:-2,fog:true }, { q:0, r:-3,fog:true }, { q:1, r:-3,fog:true },
+          // ── SE 안개 섬 (3칸) ──
+          { q:3, r:-1,fog:true }, { q:3, r:0, fog:true }, { q:2, r:1, fog:true },
+          // ── SW 안개 섬 (3칸) ──
+          { q:-2,r:3, fog:true }, { q:-1,r:3, fog:true }, { q:0, r:3, fog:true },
+          // ── NW 안개 섬 (3칸) ──
+          { q:-2,r:-1,fog:true }, { q:-3,r:0, fog:true }, { q:-3,r:1, fog:true }
         ]
       },
       resources: {
-        pool: [
-          "brick","brick","brick",
-          "lumber","lumber","lumber",
-          "wool","wool","wool",
-          "grain","grain","grain",
-          "ore","ore","ore",
-          "desert","desert"
-        ],
-        fixed: false
+        pool: ["brick","brick","lumber","lumber","wool","grain","desert"]
       },
       numbers: {
-        pool: [2,3,3,4,4,5,5,6,8,9,9,10,10,11,12],
+        pool: [4,5,6,8,9,10],
         noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      fogResources: {
+        pool: ["brick","brick","brick","lumber","lumber","lumber","wool","wool","grain","grain","ore","ore"]
+      },
+      fogNumbers: {
+        pool: [3,4,4,5,5,6,8,9,9,10,10,11]
       },
       ports: {
         pool: [
@@ -3431,19 +3448,48 @@
       const preset = resolveMapPreset(mapId);
       const axial = preset.layout.axial.slice();
 
-      // layout의 type은 바다/해협/호수/화산 같은 고정 지형만 고정한다.
-      // 자원/사막/숫자는 매 게임 셔플해야 같은 맵도 매번 다르게 열린다.
+      // Identify fog hex indices
+      const fogIdxSet = new Set(axial.map((c, i) => c.fog ? i : null).filter(i => i !== null));
+
+      // Assign resources to non-fog hexes (fixed terrain types like sea kept as-is)
       const resourcePool = shuffle(preset.resources.pool.slice());
       let pi = 0;
-      const types = axial.map(c => c.type !== undefined ? c.type : resourcePool[pi++]);
+      const types = axial.map((c, i) => {
+        if (fogIdxSet.has(i)) return null; // assigned below
+        return c.type !== undefined ? c.type : resourcePool[pi++];
+      });
 
-      const balancedNumbers = assignBalancedNumbers(axial, types, preset.numbers);
+      // Assign fog resources from fogResources pool
+      if (fogIdxSet.size > 0) {
+        const fogResPool = shuffle((preset.fogResources?.pool || []).slice());
+        let fi = 0;
+        fogIdxSet.forEach(i => { types[i] = fogResPool[fi] !== undefined ? fogResPool[fi++] : "desert"; });
+      }
+
+      // Assign numbers to non-fog hexes using balanced placement
+      const nonFogAxial = axial.filter((_, i) => !fogIdxSet.has(i));
+      const nonFogTypes  = types.filter((_, i) => !fogIdxSet.has(i));
+      const nonFogNumbers = assignBalancedNumbers(nonFogAxial, nonFogTypes, preset.numbers);
+
+      // Assign fog numbers (randomly, since they're hidden anyway)
+      const fogNumPool = shuffle((preset.fogNumbers?.pool || []).slice());
+      let fni = 0;
+
+      let nfi = 0;
+      const numbers = axial.map((_, i) => {
+        if (fogIdxSet.has(i)) {
+          return types[i] === "desert" ? 0 : (fogNumPool[fni] !== undefined ? fogNumPool[fni++] : 0);
+        }
+        return nonFogNumbers[nfi++];
+      });
+
       return axial.map((coord, i) => ({
         index: i,
         q: coord.q,
         r: coord.r,
         type: types[i],
-        number: balancedNumbers[i],
+        number: numbers[i],
+        fogHidden: fogIdxSet.has(i),
         robber: false,
         vertices: [],
         edges: []
@@ -3687,6 +3733,21 @@
       }
     }
 
+    function revealFogNear(type, idx) {
+      const hexIdxs = type === "edge"
+        ? new Set([...state.edges[idx].hexes, ...state.vertices[state.edges[idx].a].hexes, ...state.vertices[state.edges[idx].b].hexes])
+        : new Set(state.vertices[idx].hexes);
+      const revealed = [...hexIdxs].filter(hi => state.hexes[hi]?.fogHidden);
+      if (!revealed.length) return;
+      revealed.forEach(hi => {
+        state.hexes[hi].fogHidden = false;
+        state.hexes[hi]._justRevealed = true;
+      });
+      const actor = state.players[state.currentPlayer]?.name || "플레이어";
+      addActivityLog("build", `${actor} 🌫️ 안개 걷힘 — 타일 ${revealed.length}개 발견`);
+      showToast(`🌫️ 안개 걷힘! 새 땅 발견!`, 2200);
+    }
+
     function movePirate(hexIndex, forcedVictim = null) {
       const hex = state.hexes[hexIndex];
       if (!hex || hex.type !== "sea") return { ok: false };
@@ -3792,6 +3853,7 @@
       state.edges[eIdx].owner = playerIdx;
       state.edges[eIdx].buildType = "ship";
       player.ships.push(eIdx);
+      revealFogNear("edge", eIdx);
       recalcLongestRoad();
       return true;
     }
@@ -3815,6 +3877,7 @@
       state.vertices[vIdx].owner = playerIdx;
       state.lastPlacedVertex = vIdx;
       player.buildings.push({ type: "settlement", vertex: vIdx });
+      revealFogNear("vertex", vIdx);
       // Island bonus: first non-setup settlement on a new island cluster
       if (!free) checkIslandBonus(playerIdx, vIdx);
       else {
@@ -3835,6 +3898,7 @@
       if (!free) spend(player, COST.road);
       state.edges[eIdx].owner = playerIdx;
       player.roads.push(eIdx);
+      revealFogNear("edge", eIdx);
       recalcLongestRoad();
       recalcAllVP();
       return true;
@@ -6593,14 +6657,23 @@
       for (const hex of state.hexes) {
         const c = state.geometry.centers[hex.index];
         const p = mapPixel(c.x, c.y, mapW, mapH);
-        const hot = hex.number === 6 || hex.number === 8;
-        const isHighlit = state.lastDiceSum && hex.number === state.lastDiceSum && hex.index !== state.robber;
-        const isBlocked = state.lastDiceSum && hex.number === state.lastDiceSum && hex.index === state.robber;
-        html += `<div class="hex ${hex.type}${hex.robber === true ? " has-robber" : ""}${isHighlit ? " hex-hit" : ""}${isBlocked ? " hex-blocked" : ""}" data-hex-num="${hex.number || 0}" style="left:${p.x}px; top:${p.y}px;" onclick="onHexClick(${hex.index})">`;
-        html += `<div>${RESOURCE_ICONS[hex.type] || ""}</div>`;
-        if (hex.number) html += `<div class="number ${hot ? "hot" : ""}">${hex.number}</div>`;
-        if (state.robber === hex.index) html += `<div class="robber">🦹</div>`;
-        if (state.pirate === hex.index) html += `<div class="robber" style="background:rgba(10,10,20,0.88);border:1.5px solid #6b21a8;">☠️</div>`;
+        const isFog = !!hex.fogHidden;
+        const displayType = isFog ? "fog-hidden" : hex.type;
+        const revealClass = hex._justRevealed ? " fog-revealing" : "";
+        if (hex._justRevealed) hex._justRevealed = false;
+        const hot = !isFog && (hex.number === 6 || hex.number === 8);
+        const isHighlit = !isFog && state.lastDiceSum && hex.number === state.lastDiceSum && hex.index !== state.robber;
+        const isBlocked = !isFog && state.lastDiceSum && hex.number === state.lastDiceSum && hex.index === state.robber;
+        html += `<div class="hex ${displayType}${revealClass}${hex.robber === true ? " has-robber" : ""}${isHighlit ? " hex-hit" : ""}${isBlocked ? " hex-blocked" : ""}" data-hex-num="${hex.number || 0}" style="left:${p.x}px; top:${p.y}px;" onclick="onHexClick(${hex.index})">`;
+        if (isFog) {
+          html += `<div style="font-size:calc(20px * var(--zoom,1));opacity:0.35;">🌫️</div>`;
+          html += `<div style="font-size:calc(16px * var(--zoom,1));font-weight:900;color:rgba(150,180,220,0.45);">?</div>`;
+        } else {
+          html += `<div>${RESOURCE_ICONS[hex.type] || ""}</div>`;
+          if (hex.number) html += `<div class="number ${hot ? "hot" : ""}">${hex.number}</div>`;
+        }
+        if (!isFog && state.robber === hex.index) html += `<div class="robber">🦹</div>`;
+        if (!isFog && state.pirate === hex.index) html += `<div class="robber" style="background:rgba(10,10,20,0.88);border:1.5px solid #6b21a8;">☠️</div>`;
         html += `</div>`;
       }
       for (const edge of state.edges) {
