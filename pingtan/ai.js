@@ -26,7 +26,7 @@
     const seenTypes = new Set();
     for (const hIdx of v.hexes || []) {
       const hex = state.hexes[hIdx];
-      if (!hex || hex.type === 'desert') continue;
+      if (!hex || hex.type === 'desert' || hex.fogHidden) continue;
       const weight = DICE_WEIGHT[hex.number] || 0;
       score += weight;
       if (!seenTypes.has(hex.type)) {
@@ -111,7 +111,7 @@
     let bestScore = -Infinity;
 
     for (const hex of state.hexes) {
-      if (!hex || hex.index === state.robber || hex.type === 'desert') continue;
+      if (!hex || hex.index === state.robber || hex.type === 'desert' || hex.fogHidden) continue;
       const hasOwnBuilding = (hex.vertices || []).some(vIdx => {
         const v = state.vertices[vIdx];
         return v && v.owner === thiefIdx;

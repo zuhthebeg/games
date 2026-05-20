@@ -1643,6 +1643,7 @@
         mapCatStandard: "표준",
         mapCatLarge: "대형",
         mapCatSeafarers: "해양 확장",
+        mapCatFog: "안개 탐험",
         mapNameOceanExpedition: "대양 원정",
         mapDescOceanExpedition: "8인 해양 확장. 주 대륙에서 배를 타고 세 개의 섬으로 탐험하라. 금광 섬 최초 발견 보너스.",
         mapBehaviorOceanExpedition: "⛵ 배 건설로 바다 건너 이동 (목재+양털). 금광 타일 포함. 새 섬 최초 상륙 시 +2 VP.",
@@ -1932,6 +1933,7 @@
         mapCatStandard: "Standard",
         mapCatLarge: "Large",
         mapCatSeafarers: "Seafarers",
+        mapCatFog: "Fog Exploration",
         mapNameOceanExpedition: "Ocean Expedition",
         mapDescOceanExpedition: "8-player seafarers. Set sail from the main island to explore three outer islands. Gold discovery bonus.",
         mapBehaviorOceanExpedition: "⛵ Build ships to cross sea (Lumber+Wool). Gold tiles included. +2 VP for first landing on new islands.",
@@ -6816,6 +6818,8 @@
     }
 
     function getMapCategory(m) {
+      const hasFogTiles = (m.layout?.axial || []).some(h => h.fog);
+      if (hasFogTiles) return "fog";
       const hasSeaTiles = (m.layout?.axial || []).some(h => h.type === "sea");
       if (hasSeaTiles) return "seafarers";
       if (m.maxPlayers <= 2) return "2p";
@@ -6837,7 +6841,8 @@
         { key: "2p", label: pt("mapCat2p") },
         { key: "standard", label: pt("mapCatStandard") },
         { key: "large", label: pt("mapCatLarge") },
-        { key: "seafarers", label: pt("mapCatSeafarers") }
+        { key: "seafarers", label: pt("mapCatSeafarers") },
+        { key: "fog", label: pt("mapCatFog") }
       ];
 
       return `
