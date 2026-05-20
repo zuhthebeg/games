@@ -3854,7 +3854,8 @@
         const v = state.vertices[vIdx];
         if (v.owner === playerIdx) return true;
         if (v.owner !== null && v.owner !== playerIdx) return false;
-        return v.edges.some(x => x !== eIdx && state.edges[x].owner === playerIdx);
+        // Empty vertex: only ships chain to ships; roads do not connect to ships without a building
+        return v.edges.some(x => x !== eIdx && state.edges[x].owner === playerIdx && state.edges[x].buildType === "ship");
       }
       return endpointConnects(e.a) || endpointConnects(e.b);
     }
