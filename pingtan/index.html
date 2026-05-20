@@ -576,9 +576,25 @@
       border: 1px solid rgba(0, 0, 0, 0.35);
     }
     .edge.ship {
-      height: calc(6px * var(--zoom, 1));
-      border: 1.5px dashed rgba(255,255,255,0.5);
-      opacity: 0.85;
+      height: calc(7px * var(--zoom, 1));
+      border: 2px dashed;
+      opacity: 0.82;
+      border-radius: 3px;
+    }
+    .edge.ship-movable {
+      animation: ship-pulse 1s ease-in-out infinite alternate;
+      cursor: grab;
+      border: 2px dashed #facc15 !important;
+      opacity: 1 !important;
+    }
+    .edge.ship-selected {
+      border: 2.5px solid #f97316 !important;
+      opacity: 1 !important;
+      box-shadow: 0 0 6px rgba(249,115,22,0.8);
+    }
+    @keyframes ship-pulse {
+      from { opacity: 0.65; }
+      to { opacity: 1; }
     }
 
     .game-body {
@@ -1623,7 +1639,22 @@
         mapCatSeafarers: "해양 확장",
         mapNameOceanExpedition: "대양 원정",
         mapDescOceanExpedition: "8인 해양 확장. 주 대륙에서 배를 타고 세 개의 섬으로 탐험하라. 금광 섬 최초 발견 보너스.",
-        mapBehaviorOceanExpedition: "⛵ 배 건설로 바다 건너 이동 (목재+양털). 금광 타일 포함.",
+        mapBehaviorOceanExpedition: "⛵ 배 건설로 바다 건너 이동 (목재+양털). 금광 타일 포함. 새 섬 최초 상륙 시 +2 VP.",
+        mapNameStraitPassage: "해협 탐험",
+        mapDescStraitPassage: "2인 해양 확장. 두 섬이 바다로 나뉘어져 있어 배로만 건널 수 있다.",
+        mapBehaviorStraitPassage: "⛵ 바다를 건너 금광이 있는 상대 섬을 탐험하라. 새 섬 최초 상륙 시 +2 VP.",
+        pirateToast: "☠️ 해적 출몰!",
+        pirateMove: "해적 이동",
+        pirateSevenHint: "7이 나왔습니다. 🦹 도둑(육지) 또는 ☠️ 해적(바다)을 이동하세요.",
+        chooseRobberOrPirate: "도둑(육지) 또는 해적(바다) 선택",
+        robberButton: "🦹 도둑 (육지)",
+        pirateButton: "☠️ 해적 (바다)",
+        islandBonus: "🏝️ 새 섬 상륙! +2 VP",
+        moveShip: "⛵ 배 이동",
+        moveShipSelectHint: "이동할 배를 선택하세요 (노란색 표시).",
+        moveShipPlaceHint: "배를 이동할 위치를 선택하세요.",
+        moveShipDone: "배를 이동했습니다.",
+        roadBuildingShipHint: "도로 건설 카드: 무료 도로 또는 배 {count}개 배치하세요.",
         ship: "배",
         mapDescStandard: "기본 삥탄 규칙. 좋은 숫자 주변을 선점하고 항구를 활용하세요.",
         mapDescCentralLake: "섬 한가운데 호수. 자원이 외곽에 집중되어 내륙 경쟁이 줄어든다.",
@@ -1897,7 +1928,22 @@
         mapCatSeafarers: "Seafarers",
         mapNameOceanExpedition: "Ocean Expedition",
         mapDescOceanExpedition: "8-player seafarers. Set sail from the main island to explore three outer islands. Gold discovery bonus.",
-        mapBehaviorOceanExpedition: "⛵ Build ships to cross sea (Lumber+Wool). Gold tiles included.",
+        mapBehaviorOceanExpedition: "⛵ Build ships to cross sea (Lumber+Wool). Gold tiles included. +2 VP for first landing on new islands.",
+        mapNameStraitPassage: "Strait Passage",
+        mapDescStraitPassage: "2-player seafarers. Two islands separated by sea — ships are the only way across.",
+        mapBehaviorStraitPassage: "⛵ Explore the gold-bearing opposite island. +2 VP for first settlement on a new island.",
+        pirateToast: "☠️ Pirate!",
+        pirateMove: "Move Pirate",
+        pirateSevenHint: "You rolled 7. Move the 🦹 Robber (land) or ☠️ Pirate (sea).",
+        chooseRobberOrPirate: "Choose: Robber (land) or Pirate (sea)",
+        robberButton: "🦹 Robber (land)",
+        pirateButton: "☠️ Pirate (sea)",
+        islandBonus: "🏝️ New island! +2 VP",
+        moveShip: "⛵ Move Ship",
+        moveShipSelectHint: "Select a ship to move (yellow = movable).",
+        moveShipPlaceHint: "Select where to move the ship.",
+        moveShipDone: "Ship moved.",
+        roadBuildingShipHint: "Road Building: place {count} free road(s) or ship(s).",
         ship: "Ship",
         mapDescStandard: "Classic 삥탄 rules. Claim strong numbers early and use ports well.",
         mapDescCentralLake: "A lake sits in the middle. Resources shift outward, reducing center fights.",
@@ -2038,7 +2084,8 @@
       "two-kingdoms": "TwoKingdoms",
       "caldera-bay": "CalderaBay",
       "silk-road": "SilkRoad",
-      "ocean-expedition": "OceanExpedition"
+      "ocean-expedition": "OceanExpedition",
+      "strait-passage": "StraitPassage"
     };
     function mapI18nSuffix(mapId) {
       return MAP_I18N_KEYS[mapId] || MAP_I18N_KEYS.standard;
@@ -2066,7 +2113,8 @@
         "two-kingdoms": "mapBehaviorTwoKingdoms",
         "caldera-bay": "mapBehaviorCalderaBay",
         "silk-road": "mapBehaviorSilkRoad",
-        "ocean-expedition": "mapBehaviorOceanExpedition"
+        "ocean-expedition": "mapBehaviorOceanExpedition",
+        "strait-passage": "mapBehaviorStraitPassage"
       }[preset.id];
       return special ? pt(special) : pt("mapBehaviorDefault");
     }
@@ -2127,6 +2175,13 @@
       vertices: [],
       edges: [],
       robber: -1,
+      pirate: -1,
+      movedShipThisTurn: false,
+      shipMovingIdx: null,
+      islandClusters: [],
+      hexCluster: {},
+      islandBonusClaimed: {},
+      islandBonusEnabled: false,
       longestRoad: null,
       largestArmy: null,
       devDeck: [],
@@ -2237,6 +2292,7 @@
         devCards: [],
         knights: 0,
         ships: [],
+        islandBonusVP: 0,
         vp: 0
       };
     }
@@ -3168,6 +3224,55 @@
 
     // ── 해양 확장 맵 ─────────────────────────────────────────────────────
 
+    MAP_PRESETS["strait-passage"] = {
+      id: "strait-passage", name: "해협 탐험", stars: 2,
+      description: "2인 해양 확장. 두 섬이 바다로 나뉘어져 있어 배로만 건널 수 있다.",
+      minPlayers: 2, maxPlayers: 2, vpGoal: 9,
+      specialRules: { gold: true },
+      layout: {
+        axial: [
+          // ── 왼쪽 섬 (5칸) ──
+          { q:-2,r:-1 }, { q:-2,r:0 }, { q:-2,r:1 },
+          { q:-1,r:-1 }, { q:-1,r:0 },
+          // ── 바다 해협 ──
+          { q:-1,r:1,type:"sea" },
+          { q:0,r:-1,type:"sea" }, { q:0,r:0,type:"sea" }, { q:0,r:1,type:"sea" },
+          { q:1,r:-1,type:"sea" },
+          // ── 오른쪽 섬 (5칸, 금광 포함) ──
+          { q:1,r:0 }, { q:1,r:1 },
+          { q:2,r:-1 }, { q:2,r:0 }, { q:2,r:1 },
+          // ── 경계 바다 ──
+          { q:-3,r:-1,type:"sea" }, { q:-3,r:0,type:"sea" }, { q:-3,r:1,type:"sea" }, { q:-3,r:2,type:"sea" },
+          { q:-2,r:-2,type:"sea" }, { q:-2,r:2,type:"sea" },
+          { q:-1,r:-2,type:"sea" }, { q:-1,r:2,type:"sea" },
+          { q:0,r:-2,type:"sea" }, { q:0,r:2,type:"sea" },
+          { q:1,r:-2,type:"sea" }, { q:1,r:2,type:"sea" },
+          { q:2,r:-2,type:"sea" }, { q:2,r:2,type:"sea" },
+          { q:3,r:-2,type:"sea" }, { q:3,r:-1,type:"sea" }, { q:3,r:0,type:"sea" }, { q:3,r:1,type:"sea" }
+        ]
+      },
+      resources: {
+        pool: [
+          // 왼쪽 섬 5칸
+          "brick", "lumber", "wool", "grain", "ore",
+          // 오른쪽 섬 5칸 (gold 포함)
+          "grain", "ore", "brick", "wool", "gold"
+        ]
+      },
+      numbers: {
+        pool: [3, 4, 4, 5, 5, 6, 8, 9, 10, 11],
+        noAdjacentSame: true, noAdjacentHot: [6, 8]
+      },
+      ports: {
+        pool: [
+          { type: "lumber", ratio: 2 },
+          { type: "grain", ratio: 2 },
+          { type: "generic", ratio: 3 },
+          { type: "generic", ratio: 3 }
+        ]
+      }
+    };
+
     MAP_PRESETS["ocean-expedition"] = {
       id: "ocean-expedition", name: "대양 원정", stars: 3,
       description: "8인 해양 확장. 주 대륙에서 배를 타고 세 개의 섬으로 탐험하라.",
@@ -3360,6 +3465,7 @@
       state.hexes.forEach(h => { h.robber = false; });
       if (state.robber >= 0 && state.hexes[state.robber]) state.hexes[state.robber].robber = true;
       state.ports = generatePorts(mapId);
+      computeIslandClusters();
     }
 
     function generatePorts(mapId = "standard") {
@@ -3527,10 +3633,142 @@
       return state.edges[eIdx].hexes.some(hi => state.hexes[hi] && state.hexes[hi].type === "sea");
     }
 
+    function computeIslandClusters() {
+      const seaTypes = new Set(["sea"]);
+      const visited = new Set();
+      const clusters = [];
+      state.hexCluster = {};
+      for (const h of state.hexes) {
+        if (!h || seaTypes.has(h.type) || visited.has(h.index)) continue;
+        const cluster = [];
+        const queue = [h.index];
+        visited.add(h.index);
+        while (queue.length) {
+          const hIdx = queue.shift();
+          cluster.push(hIdx);
+          for (const eIdx of state.hexes[hIdx].edges) {
+            for (const adjHIdx of state.edges[eIdx].hexes) {
+              if (adjHIdx === hIdx || visited.has(adjHIdx)) continue;
+              const adj = state.hexes[adjHIdx];
+              if (!adj || seaTypes.has(adj.type)) continue;
+              visited.add(adjHIdx);
+              queue.push(adjHIdx);
+            }
+          }
+        }
+        const cIdx = clusters.length;
+        clusters.push(cluster);
+        for (const hIdx of cluster) state.hexCluster[hIdx] = cIdx;
+      }
+      state.islandClusters = clusters;
+      state.islandBonusClaimed = {};
+      state.islandBonusEnabled = clusters.length > 1;
+    }
+
+    function getClusterForVertex(vIdx) {
+      const v = state.vertices[vIdx];
+      for (const hIdx of v.hexes) {
+        if (state.hexCluster[hIdx] !== undefined) return state.hexCluster[hIdx];
+      }
+      return null;
+    }
+
+    function checkIslandBonus(playerIdx, vIdx) {
+      if (!state.islandBonusEnabled) return;
+      const cIdx = getClusterForVertex(vIdx);
+      if (cIdx === null) return;
+      if (!state.islandBonusClaimed.hasOwnProperty(cIdx)) {
+        state.islandBonusClaimed[cIdx] = playerIdx;
+        const p = state.players[playerIdx];
+        if (p) {
+          p.islandBonusVP = (p.islandBonusVP || 0) + 2;
+          showToast(`${pt("islandBonus")} (${p.name})`, 3200, { bottom: 160 });
+        }
+      }
+    }
+
+    function movePirate(hexIndex, forcedVictim = null) {
+      const hex = state.hexes[hexIndex];
+      if (!hex || hex.type !== "sea") return { ok: false };
+      if (hexIndex === state.pirate) return { ok: false };
+      state.pirate = hexIndex;
+      const pIdx = state.currentPlayer;
+      const victims = new Set();
+      for (const vIdx of hex.vertices) {
+        for (const eIdx of state.vertices[vIdx].edges) {
+          const e = state.edges[eIdx];
+          if (e.buildType === "ship" && e.owner !== null && e.owner !== pIdx &&
+              totalResourceCount(state.players[e.owner]) > 0) {
+            victims.add(e.owner);
+          }
+        }
+      }
+      let victimIdx = forcedVictim !== null ? forcedVictim : -1;
+      if (victimIdx === -1 && victims.size) {
+        const list = [...victims];
+        victimIdx = list[Math.floor(Math.random() * list.length)];
+      }
+      const picked = stealFromVictim(pIdx, victimIdx, null);
+      const actorName = state.players[pIdx]?.name || "플레이어";
+      const victimName = victimIdx !== -1 ? (state.players[victimIdx]?.name || "상대") : "";
+      if (picked && victimName) addActivityLog("robber", `${victimName}이 해적에게 ${formatStealResourceText(picked)}를 빼앗겼습니다.`);
+      showToast(`☠️ ${actorName} 해적 이동! ${victimName ? victimName + " 자원 강탈!" : ""}`, 2600, { bottom: 150 });
+      state.phase = state.phaseBeforeKnight ? "main" : "main";
+      state.canEndTurn = true;
+      state.phaseBeforeKnight = null;
+      return { ok: true };
+    }
+
+    function getMovableShips(playerIdx) {
+      if (state.movedShipThisTurn) return [];
+      const ships = state.players[playerIdx]?.ships || [];
+      const movable = [];
+      for (const eIdx of ships) {
+        const e = state.edges[eIdx];
+        for (const vIdx of [e.a, e.b]) {
+          const v = state.vertices[vIdx];
+          if (v.owner !== null && v.owner !== playerIdx) continue;
+          if (v.owner === playerIdx && v.building) continue;
+          const ownedHere = v.edges.filter(x => state.edges[x].owner === playerIdx);
+          if (ownedHere.length === 1) {
+            movable.push(eIdx);
+            break;
+          }
+        }
+      }
+      return movable;
+    }
+
+    function moveShip(playerIdx, fromEIdx, toEIdx) {
+      const e = state.edges[fromEIdx];
+      if (e.owner !== playerIdx || e.buildType !== "ship") return false;
+      e.owner = null;
+      e.buildType = undefined;
+      const p = state.players[playerIdx];
+      p.ships = p.ships.filter(x => x !== fromEIdx);
+      if (!canPlaceShip(playerIdx, toEIdx)) {
+        e.owner = playerIdx;
+        e.buildType = "ship";
+        p.ships.push(fromEIdx);
+        return false;
+      }
+      state.edges[toEIdx].owner = playerIdx;
+      state.edges[toEIdx].buildType = "ship";
+      p.ships.push(toEIdx);
+      state.movedShipThisTurn = true;
+      recalcLongestRoad();
+      return true;
+    }
+
     function canPlaceShip(playerIdx, eIdx, setup = false) {
       const e = state.edges[eIdx];
       if (e.owner !== null) return false;
       if (!isSeaEdge(eIdx)) return false;
+      // Block edges adjacent to pirate hex
+      if (state.pirate >= 0) {
+        const ph = state.hexes[state.pirate];
+        if (ph && (ph.edges || []).includes(eIdx)) return false;
+      }
       if (setup) {
         if (state.lastSetupVertex === null) return false;
         return e.a === state.lastSetupVertex || e.b === state.lastSetupVertex;
@@ -3575,6 +3813,15 @@
       state.vertices[vIdx].owner = playerIdx;
       state.lastPlacedVertex = vIdx;
       player.buildings.push({ type: "settlement", vertex: vIdx });
+      // Island bonus: first non-setup settlement on a new island cluster
+      if (!free) checkIslandBonus(playerIdx, vIdx);
+      else {
+        // During setup: claim the island (no VP), so it's marked as settled
+        const cIdx = getClusterForVertex(vIdx);
+        if (cIdx !== null && !state.islandBonusClaimed.hasOwnProperty(cIdx)) {
+          state.islandBonusClaimed[cIdx] = playerIdx;
+        }
+      }
       recalcAllVP();
       return true;
     }
@@ -3864,9 +4111,24 @@
       showToast(pt("robberToast"), 1600, { bottom: 150 });
       showBigOverlay("🦹", pt("robberAppeared"), "robber-alert", 1200);
       Voice.human("seven");
-      state.phase = "robber";
+      const hasSeaTiles = state.hexes.some(h => h && h.type === "sea");
+      state.phase = hasSeaTiles ? "robber-or-pirate" : "robber";
       state.canEndTurn = false;
+      state.hint = hasSeaTiles ? pt("pirateSevenHint") : pt("robberSevenHint");
+    }
+
+    function humanChooseRobber() {
+      if (state.phase !== "robber-or-pirate") return;
+      state.phase = "robber";
       state.hint = pt("robberSevenHint");
+      render();
+    }
+
+    function humanChoosePirate() {
+      if (state.phase !== "robber-or-pirate") return;
+      state.phase = "pirate";
+      state.hint = pt("pirateMove") + " — 바다 타일을 클릭하세요.";
+      render();
     }
 
     function pickRandomDiscards(playerIdx, count) {
@@ -4363,6 +4625,8 @@
         return false;
       }
       state.buildMode = null;
+      state.shipMovingIdx = null;
+      state.movedShipThisTurn = false;
       state.lastDiceSum = 0;
       state.lastDiceValues = null;
       closeTradeDialog();
@@ -4393,9 +4657,12 @@
     }
 
     function longestRoadLength(playerIdx) {
-      const roadEdges = state.players[playerIdx].roads;
-      if (!roadEdges.length) return 0;
-      const set = new Set(roadEdges);
+      const p = state.players[playerIdx];
+      const roadEdges = p.roads || [];
+      const shipEdges = p.ships || [];
+      const allEdges = [...roadEdges, ...shipEdges];
+      if (!allEdges.length) return 0;
+      const set = new Set(allEdges);
       let best = 0;
 
       function blockedByOpponent(vIdx) {
@@ -4406,8 +4673,13 @@
       function dfs(vIdx, used, length, fromEdge) {
         best = Math.max(best, length);
         if (fromEdge !== null && blockedByOpponent(vIdx)) return;
+        const fromType = fromEdge !== null ? (state.edges[fromEdge].buildType || "road") : null;
+        const hasOwnBuilding = state.vertices[vIdx].owner === playerIdx && state.vertices[vIdx].building;
         for (const eIdx of state.vertices[vIdx].edges) {
           if (!set.has(eIdx) || used.has(eIdx)) continue;
+          const toType = state.edges[eIdx].buildType || "road";
+          // road↔ship transition only allowed through own settlement/city
+          if (fromType !== null && fromType !== toType && !hasOwnBuilding) continue;
           used.add(eIdx);
           const e = state.edges[eIdx];
           const nextV = e.a === vIdx ? e.b : e.a;
@@ -4417,7 +4689,7 @@
       }
 
       const touchedVertices = new Set();
-      for (const eIdx of roadEdges) {
+      for (const eIdx of allEdges) {
         touchedVertices.add(state.edges[eIdx].a);
         touchedVertices.add(state.edges[eIdx].b);
       }
@@ -4446,6 +4718,7 @@
         if (state.longestRoad === i) vp += 2;
         if (state.largestArmy === i) vp += 2;
         vp += (p.devCards || []).filter(c => c.type === "vp").length;
+        vp += (p.islandBonusVP || 0);
         p.vp = vp;
       }
       const _vpGoal = targetScoreForMap(state.selectedMapId);
@@ -5172,7 +5445,8 @@
       state.canEndTurn = true;
       SFX.card();
       showDevCardPopup(me, "road_building");
-      state.hint = pt("roadBuildingHint", { count: 2 });
+      const hasSeaTiles = state.hexes.some(h => h && h.type === "sea");
+      state.hint = hasSeaTiles ? pt("roadBuildingShipHint", { count: 2 }) : pt("roadBuildingHint", { count: 2 });
       showToast(pt("roadBuildingToast"));
       render();
     }
@@ -5265,6 +5539,20 @@
       render();
     }
 
+    function humanMoveShip() {
+      if (!isHumanTurn() || state.movedShipThisTurn) return;
+      if (state.buildMode === "ship-select") {
+        state.buildMode = null;
+        state.shipMovingIdx = null;
+        state.hint = "";
+      } else {
+        state.buildMode = "ship-select";
+        state.shipMovingIdx = null;
+        state.hint = pt("moveShipSelectHint");
+      }
+      render();
+    }
+
     async function onVertexClick(vIdx) {
       if (!isHumanTurn() || state.winner) return;
       if (isMultiMode()) {
@@ -5342,14 +5630,53 @@
         return;
       }
       if (state.phase !== "main") return;
+      // Ship movement modes
+      if (state.buildMode === "ship-select") {
+        const movable = getMovableShips(state.currentPlayer);
+        if (movable.includes(eIdx)) {
+          state.shipMovingIdx = eIdx;
+          state.buildMode = "ship-move";
+          state.hint = pt("moveShipPlaceHint");
+          render();
+        }
+        return;
+      }
+      if (state.buildMode === "ship-move") {
+        if (moveShip(state.currentPlayer, state.shipMovingIdx, eIdx)) {
+          SFX.road();
+          state.buildMode = null;
+          state.shipMovingIdx = null;
+          state.hint = pt("moveShipDone");
+          render();
+        }
+        return;
+      }
       if (state.buildMode === "road") {
         const isFreeRoad = state.roadBuildingRemaining > 0;
+        // During road building on sea maps: clicking a sea edge builds a ship instead
+        if (isFreeRoad && isSeaEdge(eIdx) && canPlaceShip(state.currentPlayer, eIdx)) {
+          if (placeShip(state.currentPlayer, eIdx, true)) {
+            SFX.road();
+            state.roadBuildingRemaining -= 1;
+            if (state.roadBuildingRemaining > 0) {
+              state.hint = pt("roadBuildingShipHint", { count: state.roadBuildingRemaining });
+            } else {
+              state.buildMode = null;
+              state.roadBuildingRemaining = 0;
+              state.hint = pt("roadBuildingDoneHint");
+            }
+            render();
+            triggerAITurnIfNeeded();
+          }
+          return;
+        }
         if (placeRoad(state.currentPlayer, eIdx, isFreeRoad)) {
           SFX.road();
           if (isFreeRoad) {
             state.roadBuildingRemaining -= 1;
             if (state.roadBuildingRemaining > 0) {
-              state.hint = pt("roadBuildingRemainingHint", { count: state.roadBuildingRemaining });
+              const hasSeaTiles = state.hexes.some(h => h && h.type === "sea");
+              state.hint = hasSeaTiles ? pt("roadBuildingShipHint", { count: state.roadBuildingRemaining }) : pt("roadBuildingRemainingHint", { count: state.roadBuildingRemaining });
             } else {
               state.buildMode = null;
               state.roadBuildingRemaining = 0;
@@ -5406,7 +5733,29 @@
 
     async function onHexClick(hIdx) {
       if (!isHumanTurn() || state.winner) return;
+      if (state.phase === "pirate") {
+        const result = movePirate(hIdx);
+        if (result.ok) {
+          state.phase = "main";
+          state.canEndTurn = true;
+          state.phaseBeforeKnight = null;
+          render();
+        }
+        return;
+      }
       if (state.phase === "knight-robber") {
+        // If sea map, offer pirate option for knight too
+        const hasSeaTiles = state.hexes.some(h => h && h.type === "sea");
+        if (hasSeaTiles && state.hexes[hIdx]?.type === "sea") {
+          const result = movePirate(hIdx);
+          if (result.ok) {
+            state.phase = state.phaseBeforeKnight === "roll" ? "roll" : "main";
+            state.canEndTurn = state.phaseBeforeKnight !== "roll";
+            state.phaseBeforeKnight = null;
+            render();
+          }
+          return;
+        }
         const pIdx = localPlayerIndex();
         const knightVictims = new Set();
         for (const vIdx of (state.hexes[hIdx]?.vertices || [])) {
@@ -5546,6 +5895,44 @@
             await resolveHumanGoldIfNeeded();
             await postDicePromptDiscards(d1 + d2);
           }
+        }
+
+        // ── Phase: robber-or-pirate (AI decides which to use) ────────────
+        if (state.phase === "robber-or-pirate") {
+          const opponentShips = state.players.some((pl, i) => i !== pIdx && (pl.ships || []).length > 0);
+          if (opponentShips && Math.random() > 0.4) {
+            state.phase = "pirate";
+          } else {
+            state.phase = "robber";
+          }
+          render();
+        }
+
+        // ── Phase: pirate ─────────────────────────────────────────────────
+        if (state.phase === "pirate") {
+          const seaHexes = state.hexes.filter(h => h && h.type === "sea" && h.index !== state.pirate);
+          if (seaHexes.length > 0) {
+            // Prefer sea hexes adjacent to opponent ships
+            let bestHex = seaHexes[0];
+            let bestScore = -1;
+            for (const hex of seaHexes) {
+              let score = 0;
+              for (const vIdx of hex.vertices) {
+                for (const eIdx of state.vertices[vIdx].edges) {
+                  const e = state.edges[eIdx];
+                  if (e.buildType === "ship" && e.owner !== null && e.owner !== pIdx) score += 2;
+                }
+              }
+              if (score > bestScore) { bestScore = score; bestHex = hex; }
+            }
+            movePirate(bestHex.index);
+            SFX.robber();
+            showToast(`${p.name}이 해적을 이동!`);
+          } else {
+            state.phase = "main"; state.canEndTurn = true;
+          }
+          render();
+          await new Promise(r => setTimeout(r, 1000));
         }
 
         // ── Phase: robber ─────────────────────────────────────────────────
@@ -5698,6 +6085,24 @@
           }
         }
 
+        // Ship movement: move a tip ship if it helps (on sea maps, occasionally)
+        if (!state.movedShipThisTurn && state.hexes.some(h => h.type === "sea")) {
+          const movable = getMovableShips(pIdx);
+          if (movable.length > 0 && Math.random() > 0.55) {
+            const fromEIdx = movable[Math.floor(Math.random() * movable.length)];
+            const candidates = validShipsFor(pIdx);
+            if (candidates.length > 0) {
+              const toEIdx = ai ? ai.pickBestRoadGeneral(state, candidates, pIdx) : candidates[0];
+              if (moveShip(pIdx, fromEIdx, toEIdx)) {
+                SFX.road();
+                showToast(`${p.name}이 배를 이동!`);
+                render();
+                await new Promise(r => setTimeout(r, 800));
+              }
+            }
+          }
+        }
+
         state.hint = `${p.name} 턴 종료.`;
         render();
         await new Promise(r => setTimeout(r, 800));
@@ -5771,6 +6176,32 @@
           await resolveHumanGoldIfNeeded();
           await postDicePromptDiscards(d1 + d2);
           await sleep(1200);
+        }
+
+        if (state.phase === "robber-or-pirate") {
+          const opponentShips = state.players.some((pl, i) => i !== pIdx && (pl.ships || []).length > 0);
+          state.phase = (opponentShips && Math.random() > 0.4) ? "pirate" : "robber";
+        }
+
+        if (state.phase === "pirate") {
+          const seaHexes = state.hexes.filter(h => h && h.type === "sea" && h.index !== state.pirate);
+          if (seaHexes.length > 0) {
+            let bestHex = seaHexes[0], bestScore = -1;
+            for (const hex of seaHexes) {
+              let score = 0;
+              for (const vIdx of hex.vertices) {
+                for (const eIdx of state.vertices[vIdx].edges) {
+                  const e = state.edges[eIdx];
+                  if (e.buildType === "ship" && e.owner !== null && e.owner !== pIdx) score += 2;
+                }
+              }
+              if (score > bestScore) { bestScore = score; bestHex = hex; }
+            }
+            movePirate(bestHex.index);
+            await sleep(1000);
+          } else {
+            state.phase = "main"; state.canEndTurn = true;
+          }
         }
 
         if (state.phase === "robber") {
@@ -5973,8 +6404,13 @@
         if (state.setupStep === "road") validRoadsFor(state.currentPlayer, true).forEach(e => set.add(e));
         return set;
       }
-      if (state.phase === "main" && state.buildMode === "road") validRoadsFor(state.currentPlayer).forEach(e => set.add(e));
+      if (state.phase === "main" && state.buildMode === "road") {
+        validRoadsFor(state.currentPlayer).forEach(e => set.add(e));
+        // Also highlight sea edges for road building card on sea maps
+        if (state.roadBuildingRemaining > 0) validShipsFor(state.currentPlayer).forEach(e => set.add(e));
+      }
       if (state.phase === "main" && state.buildMode === "ship") validShipsFor(state.currentPlayer).forEach(e => set.add(e));
+      if (state.phase === "main" && state.buildMode === "ship-move") validShipsFor(state.currentPlayer).forEach(e => set.add(e));
       return set;
     }
 
@@ -6148,6 +6584,7 @@
         html += `<div>${RESOURCE_ICONS[hex.type] || ""}</div>`;
         if (hex.number) html += `<div class="number ${hot ? "hot" : ""}">${hex.number}</div>`;
         if (state.robber === hex.index) html += `<div class="robber">🦹</div>`;
+        if (state.pirate === hex.index) html += `<div class="robber" style="background:rgba(10,10,20,0.88);border:1.5px solid #6b21a8;">☠️</div>`;
         html += `</div>`;
       }
       for (const edge of state.edges) {
@@ -6160,9 +6597,16 @@
         const len = Math.sqrt(dx * dx + dy * dy);
         const ang = Math.atan2(dy, dx) * 180 / Math.PI;
         const edgeBuildType = edge.owner !== null ? (edge.buildType || "road") : "";
-        const cls = ["edge", edgeBuildType, eBuild.has(edge.index) ? "buildable" : ""].filter(Boolean).join(" ");
+        const isShip = edgeBuildType === "ship";
+        const movableShips = (state.buildMode === "ship-select" || state.buildMode === "ship-move")
+          ? (state.buildMode === "ship-select" ? getMovableShips(state.currentPlayer) : [state.shipMovingIdx])
+          : [];
+        const isMovable = isShip && state.buildMode === "ship-select" && movableShips.includes(edge.index);
+        const isSelected = isShip && state.buildMode === "ship-move" && state.shipMovingIdx === edge.index;
+        const cls = ["edge", edgeBuildType, eBuild.has(edge.index) ? "buildable" : "", isMovable ? "ship-movable" : "", isSelected ? "ship-selected" : ""].filter(Boolean).join(" ");
         const color = edge.owner !== null ? state.players[edge.owner].color : "";
-        html += `<div class="${cls}" style="left:${pa.x}px; top:${pa.y}px; width:${len}px; transform: rotate(${ang}deg); ${color ? `background:${color};border-color:${color};` : ""}" onclick="onEdgeClick(${edge.index})"></div>`;
+        const shipStyle = isShip && color ? `background:${color}55;border-color:${color};` : (color ? `background:${color};border-color:${color};` : "");
+        html += `<div class="${cls}" style="left:${pa.x}px; top:${pa.y}px; width:${len}px; transform: rotate(${ang}deg); ${shipStyle}" onclick="onEdgeClick(${edge.index})"></div>`;
       }
       for (const v of state.vertices) {
         const p = mapPixel(v.x, v.y, mapW, mapH);
@@ -6283,8 +6727,9 @@
     }
 
     function getMapCategory(m) {
+      const hasSeaTiles = (m.layout?.axial || []).some(h => h.type === "sea");
+      if (hasSeaTiles) return "seafarers";
       if (m.maxPlayers <= 2) return "2p";
-      if (m.maxPlayers >= 7 || (m.layout?.axial?.length || 0) >= 50) return "seafarers";
       if (m.maxPlayers >= 5 || (m.layout?.axial?.length || 0) >= 28) return "large";
       return "standard";
     }
@@ -6596,12 +7041,14 @@ https://game.cocy.io/pingtan/`;
       const canSettlement = canAfford(me, COST.settlement) && validSettlementsFor(idx).length > 0;
       const canCity = canAfford(me, COST.city) && validCitiesFor(idx).length > 0;
       const canShip = canAfford(me, COST.ship) && validShipsFor(idx).length > 0;
+      const canMoveShip = !state.movedShipThisTurn && getMovableShips(idx).length > 0;
       const possible = [];
       if (canRoad) possible.push("도로");
       if (canSettlement) possible.push("마을");
       if (canCity) possible.push("도시");
       if (canShip) possible.push("배");
-      return { canMain, canRoad, canSettlement, canCity, canShip, possible };
+      if (canMoveShip) possible.push("배이동");
+      return { canMain, canRoad, canSettlement, canCity, canShip, canMoveShip, possible };
     }
 
     function renderGameScreen() {
@@ -6611,7 +7058,7 @@ https://game.cocy.io/pingtan/`;
       const myTurn = isHumanTurn();
       const inSetup = state.phase === "setup1" || state.phase === "setup2";
       const canRoll = myTurn && state.phase === "roll";
-      const canRobber = myTurn && state.phase === "robber";
+      const canRobber = myTurn && (state.phase === "robber" || state.phase === "robber-or-pirate" || state.phase === "pirate");
       const actionState = getHumanActionAvailability(me, myTurn);
       const vp = me?.vp || 0;
       const vpPct = Math.min(100, Math.max(0, vp * 10));
@@ -6627,14 +7074,25 @@ https://game.cocy.io/pingtan/`;
       const hintText = [
         inSetup ? `초기 배치 ${state.setupRound}라운드 | ${state.setupStep === "settlement" ? pt("setupSettlement") : pt("setupRoad")}` : "",
         (canRobber || state.phase === "knight-robber") ? `🦹 ${pt("robberMove")}` : "",
-        (actionState.canMain && actionState.possible.length) ? `가능: ${actionState.possible.join(', ')}` : ""
+        state.phase === "robber-or-pirate" ? pt("pirateSevenHint") : "",
+        state.buildMode === "ship-select" ? pt("moveShipSelectHint") : "",
+        state.buildMode === "ship-move" ? pt("moveShipPlaceHint") : "",
+        (actionState.canMain && actionState.possible.length && !["ship-select","ship-move"].includes(state.buildMode)) ? `가능: ${actionState.possible.join(', ')}` : ""
       ].filter(Boolean).join(" · ");
       const buildActionButtonClass = (mode, extra = "") => `${extra}${state.buildMode === mode ? `${extra ? " " : ""}selected-action` : ""}`;
+      const robberOrPirateHtml = (myTurn && state.phase === "robber-or-pirate") ? `
+        <div style="display:flex;gap:6px;padding:4px 0;justify-content:center;">
+          <button onclick="humanChooseRobber()" style="flex:1;background:#b91c1c;border-color:#b91c1c;color:#fff;">${pt("robberButton")}</button>
+          <button onclick="humanChoosePirate()" style="flex:1;background:#6b21a8;border-color:#6b21a8;color:#fff;">${pt("pirateButton")}</button>
+        </div>` : "";
+      const hasSeaMap = state.hexes.some(h => h.type === "sea");
       const actionsHtml = `
         <div class="actions">
+          ${robberOrPirateHtml}
           <button id="diceDisplay" class="primary dice-button" ${canRoll ? "" : "disabled"} onclick="rollDice()">${renderDiceButtonContent(canRoll)}</button>
           <button class="${buildActionButtonClass("road")}" ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">${pt("road")}${getLongestRoadBadge(state.longestRoad === myIdx)}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
-          ${state.hexes.some(h=>h.type==="sea") ? `<button class="${buildActionButtonClass("ship")}" ${actionState.canShip ? "" : "disabled"} onclick="${actionState.canShip ? "humanBuildShip()" : "humanTryBuild('ship')"}">⛵${pt("ship")}(${(me.ships||[]).length})${costLabel(COST.ship, idx)}</button>` : ""}
+          ${hasSeaMap ? `<button class="${buildActionButtonClass("ship")}" ${actionState.canShip ? "" : "disabled"} onclick="${actionState.canShip ? "humanBuildShip()" : "humanTryBuild('ship')"}">⛵${pt("ship")}(${(me.ships||[]).length})${costLabel(COST.ship, idx)}</button>` : ""}
+          ${hasSeaMap ? `<button class="${buildActionButtonClass("ship-select")}" ${actionState.canMoveShip ? "" : "disabled"} onclick="${actionState.canMoveShip ? "humanMoveShip()" : ""}">${pt("moveShip")}</button>` : ""}
           <button class="${buildActionButtonClass("settlement")}" ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">${pt("settlement")}(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
           <button class="${buildActionButtonClass("city")}" ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">${pt("city")}(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
           <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">${pt("trade")}</button>
@@ -8535,6 +8993,9 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.endTurn = endTurn;
     window.humanBuildRoad = humanBuildRoad;
     window.humanBuildShip = humanBuildShip;
+    window.humanMoveShip = humanMoveShip;
+    window.humanChooseRobber = humanChooseRobber;
+    window.humanChoosePirate = humanChoosePirate;
     window.humanBuildSettlement = humanBuildSettlement;
     window.humanBuildCity = humanBuildCity;
     window.humanBuyDevCard = humanBuyDevCard;
