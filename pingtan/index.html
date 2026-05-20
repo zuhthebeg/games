@@ -1630,6 +1630,8 @@
         mapNameGoldRush: "황금 개척지",
         mapNameTwinContinents: "쌍둥이 대륙",
         mapNameFogIslands: "안개 섬",
+        mapNameFogRoute: "안개 대항로",
+        mapNameFogTwins: "쌍둥이 안개 섬",
         mapNamePrairie: "대초원",
         mapNameMegaPingtan: "메가 제도",
         mapNameHighlands: "고지대",
@@ -1673,6 +1675,8 @@
         mapDescGoldRush: "금광 타일이 경제를 유연하게 만들어 교역과 도시화가 빨라진다.",
         mapDescTwinContinents: "좁은 해협으로 연결된 두 육괴가 다른 자원 성향을 갖는다.",
         mapDescFogIslands: "안개 속에 숨겨진 섬들. 배와 도로를 뻗어 안개를 걷어내고 새 땅을 발견하라!",
+        mapDescFogRoute: "중앙 섬에서 다섯 방향으로 배를 내보내 안개 섬을 탐험하라. 금광이 많고 탐험지가 넓다.",
+        mapDescFogTwins: "두 섬에 나뉘어 출발. 바다를 건너 사방의 안개를 걷어내고 열도를 개척하라.",
         mapDescPrairie: "광활한 평원이 가로로 펼쳐진 24칸 보드. 자원이 풍부하고 전선이 길다.",
         mapDescMegaPingtan: "4링 37칸 거대 육각형. 완전히 다른 규모의 전략이 필요하다.",
         mapDescHighlands: "중앙 화산이 솟은 고원 지대. 광석·밀이 풍부해 도시화가 빠르지만 목재·벽돌이 귀하다.",
@@ -1691,6 +1695,8 @@
         mapBehaviorCrescentPingtan: "초승달 안쪽 바다 때문에 동쪽 루트가 끊깁니다. 외곽 도로와 항구를 먼저 잡으세요.",
         mapBehaviorTwinContinents: "좁은 해협이 두 대륙을 가릅니다. 초반 도로 방향과 항구 선점이 중요해요.",
         mapBehaviorFogIslands: "배나 도로를 안개 타일에 인접하게 건설하면 안개가 걷혀 자원과 숫자가 공개됩니다. 섬 첫 발견 보너스 +2 승점.",
+        mapBehaviorFogRoute: "5곳의 안개 섬, 각 섬 최초 발견 +2 VP. 금광 타일도 안개 속에 숨어있어요.",
+        mapBehaviorFogTwins: "두 출발 섬 사이 해협을 건너고, 4방향 안개 섬을 먼저 발견하면 각 +2 VP.",
         mapBehaviorPrairie: "넓은 평원형 맵이라 전선이 길고 확장 경쟁이 빨라요.",
         mapBehaviorMegaPingtan: "대형 보드라 승리 점수가 높고 장기전 확장 전략이 중요해요.",
         mapBehaviorHighlands: "중앙 화산이 핵심 연결을 막습니다. 외곽을 돌아 확장하고 항구로 목재·벽돌을 보충하세요.",
@@ -1920,6 +1926,8 @@
         mapNameGoldRush: "Gold Rush Frontier",
         mapNameTwinContinents: "Twin Continents",
         mapNameFogIslands: "Fog Islands",
+        mapNameFogRoute: "Grand Fog Route",
+        mapNameFogTwins: "Twin Fog Islands",
         mapNamePrairie: "Prairie",
         mapNameMegaPingtan: "Mega Archipelago",
         mapNameHighlands: "Highlands",
@@ -1963,6 +1971,8 @@
         mapDescGoldRush: "Gold tiles make the economy flexible, speeding up trades and city growth.",
         mapDescTwinContinents: "Two landmasses linked by a narrow strait, each with different resource tendencies.",
         mapDescFogIslands: "Hidden islands shrouded in fog. Extend roads and ships to reveal new lands!",
+        mapDescFogRoute: "Five fog islands in all directions. More gold, more exploration.",
+        mapDescFogTwins: "Start on two separate islands. Cross the sea and uncover four fog islands around you.",
         mapDescPrairie: "A wide 24-hex prairie board. Resources are rich and expansion races are fast.",
         mapDescMegaPingtan: "A huge 37-hex, 4-ring board. Strategy plays at a completely different scale.",
         mapDescHighlands: "A highland plateau with a central volcano. Ore and grain are plentiful but lumber and brick are scarce.",
@@ -1981,6 +1991,8 @@
         mapBehaviorCrescentPingtan: "The inner crescent sea cuts the east route. Prioritize outer roads and ports.",
         mapBehaviorTwinContinents: "A narrow strait splits the continents. Early road direction and ports matter.",
         mapBehaviorFogIslands: "Build roads or ships adjacent to fog tiles to reveal their resources and numbers. +2 VP for first settler on each island.",
+        mapBehaviorFogRoute: "5 fog islands, first discovery +2 VP each. Gold fields hidden in the fog.",
+        mapBehaviorFogTwins: "Cross the central strait, discover 4 fog islands for +2 VP each.",
         mapBehaviorPrairie: "The wide prairie creates long fronts and fast expansion races.",
         mapBehaviorMegaPingtan: "The larger board raises the VP goal and rewards long-game expansion.",
         mapBehaviorHighlands: "The central volcano blocks key connections. Route around the edges and use ports to compensate for scarce lumber and brick.",
@@ -2084,6 +2096,8 @@
       "gold-rush": "GoldRush",
       "twin-continents": "TwinContinents",
       "fog-islands": "FogIslands",
+      "fog-route": "FogRoute",
+      "fog-twins": "FogTwins",
       prairie: "Prairie",
       "mega-pingtan": "MegaPingtan",
       highlands: "Highlands",
@@ -2113,6 +2127,8 @@
         "crescent-pingtan": "mapBehaviorCrescentPingtan",
         "twin-continents": "mapBehaviorTwinContinents",
         "fog-islands": "mapBehaviorFogIslands",
+        "fog-route": "mapBehaviorFogRoute",
+        "fog-twins": "mapBehaviorFogTwins",
         prairie: "mapBehaviorPrairie",
         "mega-pingtan": "mapBehaviorMegaPingtan",
         highlands: "mapBehaviorHighlands",
@@ -2965,6 +2981,114 @@
       },
       fogNumbers: {
         pool: [3,4,4,5,5,6,8,9,9,10,10,11]
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},{type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    MAP_PRESETS["fog-route"] = {
+      id: "fog-route", name: "안개 대항로", stars: 3,
+      description: "중앙 섬에서 다섯 방향으로 배를 내보내 안개 섬을 탐험하라. 금광이 많고 탐험지가 넓다.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 11,
+      specialRules: { fogExploration: true },
+      layout: {
+        axial: [
+          // ── 중앙 시작 섬 (7칸) ──
+          { q:0, r:0 }, { q:1, r:-1 }, { q:1, r:0 },
+          { q:0, r:1 }, { q:-1, r:1 }, { q:-1, r:0 }, { q:0, r:-1 },
+          // ── 바다 링 (12칸) ──
+          { q:0, r:-2,type:"sea" }, { q:1, r:-2,type:"sea" }, { q:2, r:-2,type:"sea" },
+          { q:2, r:-1,type:"sea" }, { q:2, r:0, type:"sea" },
+          { q:1, r:1, type:"sea" }, { q:0, r:2, type:"sea" }, { q:-1, r:2,type:"sea" },
+          { q:-2, r:2,type:"sea" }, { q:-2, r:1,type:"sea" }, { q:-2, r:0,type:"sea" },
+          { q:-1, r:-1,type:"sea" },
+          // ── N 안개 섬 (3칸) ──
+          { q:0, r:-3,fog:true }, { q:1, r:-3,fog:true }, { q:-1,r:-2,fog:true },
+          // ── NE 안개 섬 (3칸) ──
+          { q:2, r:-3,fog:true }, { q:3, r:-3,fog:true }, { q:3, r:-2,fog:true },
+          // ── E 안개 섬 (3칸) ──
+          { q:3, r:-1,fog:true }, { q:3, r:0, fog:true }, { q:4, r:-1,fog:true },
+          // ── SW 안개 섬 (3칸) ──
+          { q:-2, r:3,fog:true }, { q:-3, r:3,fog:true }, { q:-3, r:2,fog:true },
+          // ── NW 안개 섬 (3칸) ──
+          { q:-3, r:0,fog:true }, { q:-3, r:-1,fog:true }, { q:-4, r:0,fog:true }
+        ]
+      },
+      resources: {
+        pool: ["brick","brick","lumber","lumber","wool","grain","desert"]
+      },
+      numbers: {
+        pool: [4,5,6,8,9,10],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      fogResources: {
+        pool: ["brick","brick","lumber","lumber","wool","wool","grain","grain","ore","ore","gold","gold","gold","desert","desert"]
+      },
+      fogNumbers: {
+        pool: [3,4,4,5,5,6,8,8,9,9,10,11,11,12,3]
+      },
+      ports: {
+        pool: [
+          {type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},{type:"generic",ratio:3},
+          {type:"brick",ratio:2},{type:"lumber",ratio:2},{type:"wool",ratio:2},{type:"grain",ratio:2},{type:"ore",ratio:2}
+        ]
+      }
+    };
+
+    MAP_PRESETS["fog-twins"] = {
+      id: "fog-twins", name: "쌍둥이 안개 섬", stars: 3,
+      description: "두 섬에 나뉘어 출발. 바다를 건너 사방의 안개를 걷어내고 열도를 개척하라.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 10,
+      specialRules: { fogExploration: true },
+      layout: {
+        axial: [
+          // ── 서쪽 출발 섬 (6칸) ──
+          { q:-3, r:0 }, { q:-3, r:1 }, { q:-3, r:-1 },
+          { q:-2, r:0 }, { q:-2, r:1 }, { q:-2, r:-1 },
+          // ── 동쪽 출발 섬 (6칸) ──
+          { q:2, r:0 }, { q:2, r:1 }, { q:2, r:-1 },
+          { q:3, r:0 }, { q:3, r:-1 }, { q:3, r:1 },
+          // ── 중앙 해협 바다 ──
+          { q:-1, r:0,type:"sea" }, { q:-1, r:-1,type:"sea" }, { q:-1, r:1,type:"sea" },
+          { q:0, r:0, type:"sea" }, { q:0, r:-1,type:"sea" }, { q:0, r:1, type:"sea" },
+          { q:1, r:0, type:"sea" }, { q:1, r:-1,type:"sea" }, { q:1, r:1, type:"sea" },
+          // ── 외곽 바다 ──
+          { q:-4, r:0,type:"sea" }, { q:-4, r:1,type:"sea" }, { q:-4, r:-1,type:"sea" },
+          { q:-3, r:-2,type:"sea" }, { q:-2, r:-2,type:"sea" }, { q:-1, r:-2,type:"sea" },
+          { q:0, r:-2, type:"sea" }, { q:1, r:-2, type:"sea" }, { q:2, r:-2,type:"sea" },
+          { q:3, r:-2, type:"sea" }, { q:4, r:-1,type:"sea" }, { q:4, r:0, type:"sea" },
+          { q:4, r:1, type:"sea" }, { q:3, r:2, type:"sea" }, { q:2, r:2, type:"sea" },
+          { q:1, r:2, type:"sea" }, { q:0, r:2, type:"sea" }, { q:-1, r:2,type:"sea" },
+          { q:-2, r:2,type:"sea" }, { q:-3, r:2,type:"sea" },
+          // ── N 안개 섬 (3칸) ──
+          { q:-1, r:-3,fog:true }, { q:0, r:-3,fog:true }, { q:1, r:-3,fog:true },
+          // ── E 안개 섬 (3칸) ──
+          { q:5, r:-1,fog:true }, { q:5, r:0, fog:true }, { q:6, r:-1,fog:true },
+          // ── S 안개 섬 (3칸) ──
+          { q:-1, r:3,fog:true }, { q:0, r:3, fog:true }, { q:1, r:3, fog:true },
+          // ── W 안개 섬 (3칸) ──
+          { q:-5, r:0,fog:true }, { q:-5, r:1, fog:true }, { q:-5, r:2, fog:true }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick","lumber","lumber","lumber",
+          "wool","wool","wool","grain","grain","ore"
+        ]
+      },
+      numbers: {
+        pool: [3,4,4,5,5,6,8,9,9,10,10,11],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      fogResources: {
+        pool: ["brick","brick","lumber","lumber","wool","wool","grain","grain","ore","ore","gold","gold"]
+      },
+      fogNumbers: {
+        pool: [3,4,5,5,6,8,9,9,10,10,11,12]
       },
       ports: {
         pool: [
