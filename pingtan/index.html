@@ -1416,8 +1416,8 @@
       grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
       gap: 10px;
     }
-    .map-cat-tabs { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; justify-content:center; }
-    .map-cat-btn { padding:5px 12px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--muted); font-size:12px; cursor:pointer; transition:all 0.15s; }
+    .map-cat-tabs { display:flex; gap:5px; margin-bottom:12px; flex-wrap:wrap; justify-content:center; }
+    .map-cat-btn { padding:4px 10px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,0.05); color:var(--muted); font-size:11px; cursor:pointer; transition:all 0.15s; }
     .map-cat-btn:hover { border-color:#5a8fa8; color:var(--fg); }
     .map-cat-btn.active { border-color:var(--accent); background:rgba(79,194,127,0.15); color:var(--accent); font-weight:600; }
     .map-card {
@@ -6817,15 +6817,17 @@
       }
     }
 
-    function getMapCategory(m) {
-      const hasFogTiles = (m.layout?.axial || []).some(h => h.fog);
-      if (hasFogTiles) return "fog";
-      const hasSeaTiles = (m.layout?.axial || []).some(h => h.type === "sea");
-      if (hasSeaTiles) return "seafarers";
-      if (m.maxPlayers <= 2) return "2p";
-      if (m.maxPlayers >= 5 || (m.layout?.axial?.length || 0) >= 28) return "large";
-      return "standard";
+    function getMapTags(m) {
+      const tags = [];
+      const axial = m.layout?.axial || [];
+      if (axial.some(h => h.fog)) tags.push("fog");
+      if (axial.some(h => h.type === "sea")) tags.push("seafarers");
+      if (m.maxPlayers <= 2) tags.push("2p");
+      if (m.maxPlayers >= 5 || axial.length >= 28) tags.push("large");
+      if (!tags.length || (tags.length === 1 && tags[0] === "2p")) tags.push("standard");
+      return tags;
     }
+    function getMapCategory(m) { return getMapTags(m)[0] || "standard"; }
 
     function renderMapSelect() {
       const allMaps = Object.values(MAP_PRESETS);
@@ -6834,7 +6836,7 @@
       const starsHtml = n => "★".repeat(n || 0);
       const isMulti = state.mapSelectSource === "multi";
       const cat = state.mapCategory || "all";
-      const maps = cat === "all" ? allMaps : allMaps.filter(m => getMapCategory(m) === cat);
+      const maps = cat === "all" ? allMaps : allMaps.filter(m => getMapTags(m).includes(cat));
 
       const tabs = [
         { key: "all", label: pt("mapCatAll") },
