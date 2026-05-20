@@ -3711,7 +3711,9 @@
       const picked = stealFromVictim(pIdx, victimIdx, null);
       const actorName = state.players[pIdx]?.name || "플레이어";
       const victimName = victimIdx !== -1 ? (state.players[victimIdx]?.name || "상대") : "";
-      if (picked && victimName) addActivityLog("robber", `${victimName}이 해적에게 ${formatStealResourceText(picked)}를 빼앗겼습니다.`);
+      addActivityLog("robber", picked && victimName
+        ? `${actorName} ☠️ 해적 이동 — ${victimName}에게 ${formatStealResourceText(picked)} 강탈`
+        : `${actorName} ☠️ 해적 이동`);
       showToast(`☠️ ${actorName} 해적 이동! ${victimName ? victimName + " 자원 강탈!" : ""}`, 2600, { bottom: 150 });
       state.phase = state.phaseBeforeKnight ? "main" : "main";
       state.canEndTurn = true;
@@ -5648,6 +5650,10 @@
           state.shipMovingIdx = null;
           state.hint = pt("moveShipDone");
           render();
+        } else {
+          // Check if pirate is the reason
+          const isPirateBlocked = state.pirate >= 0 && (state.hexes[state.pirate]?.edges || []).includes(eIdx);
+          if (isPirateBlocked) showToast("☠️ 해적이 막고 있어 배를 이동할 수 없습니다.", 2000);
         }
         return;
       }
