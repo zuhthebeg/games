@@ -575,6 +575,11 @@
       height: calc(10px * var(--zoom, 1));
       border: 1px solid rgba(0, 0, 0, 0.35);
     }
+    .edge.ship {
+      height: calc(6px * var(--zoom, 1));
+      border: 1.5px dashed rgba(255,255,255,0.5);
+      opacity: 0.85;
+    }
 
     .game-body {
       flex: 1;
@@ -1615,6 +1620,11 @@
         mapCat2p: "2인 전용",
         mapCatStandard: "표준",
         mapCatLarge: "대형",
+        mapCatSeafarers: "해양 확장",
+        mapNameOceanExpedition: "대양 원정",
+        mapDescOceanExpedition: "8인 해양 확장. 주 대륙에서 배를 타고 세 개의 섬으로 탐험하라. 금광 섬 최초 발견 보너스.",
+        mapBehaviorOceanExpedition: "⛵ 배 건설로 바다 건너 이동 (목재+양털). 금광 타일 포함.",
+        ship: "배",
         mapDescStandard: "기본 삥탄 규칙. 좋은 숫자 주변을 선점하고 항구를 활용하세요.",
         mapDescCentralLake: "섬 한가운데 호수. 자원이 외곽에 집중되어 내륙 경쟁이 줄어든다.",
         mapDescFourIslands: "두 해협이 보드를 4개 영역으로 나눈다. 초기 정착지 선택이 핵심.",
@@ -1884,6 +1894,11 @@
         mapCat2p: "2-Player",
         mapCatStandard: "Standard",
         mapCatLarge: "Large",
+        mapCatSeafarers: "Seafarers",
+        mapNameOceanExpedition: "Ocean Expedition",
+        mapDescOceanExpedition: "8-player seafarers. Set sail from the main island to explore three outer islands. Gold discovery bonus.",
+        mapBehaviorOceanExpedition: "⛵ Build ships to cross sea (Lumber+Wool). Gold tiles included.",
+        ship: "Ship",
         mapDescStandard: "Classic 삥탄 rules. Claim strong numbers early and use ports well.",
         mapDescCentralLake: "A lake sits in the middle. Resources shift outward, reducing center fights.",
         mapDescFourIslands: "Two sea channels split the board into four areas. Opening settlement choice matters.",
@@ -2022,7 +2037,8 @@
       battleground: "Battleground",
       "two-kingdoms": "TwoKingdoms",
       "caldera-bay": "CalderaBay",
-      "silk-road": "SilkRoad"
+      "silk-road": "SilkRoad",
+      "ocean-expedition": "OceanExpedition"
     };
     function mapI18nSuffix(mapId) {
       return MAP_I18N_KEYS[mapId] || MAP_I18N_KEYS.standard;
@@ -2049,7 +2065,8 @@
         battleground: "mapBehaviorBattleground",
         "two-kingdoms": "mapBehaviorTwoKingdoms",
         "caldera-bay": "mapBehaviorCalderaBay",
-        "silk-road": "mapBehaviorSilkRoad"
+        "silk-road": "mapBehaviorSilkRoad",
+        "ocean-expedition": "mapBehaviorOceanExpedition"
       }[preset.id];
       return special ? pt(special) : pt("mapBehaviorDefault");
     }
@@ -2073,7 +2090,8 @@
       road: { brick: 1, lumber: 1 },
       settlement: { brick: 1, lumber: 1, wool: 1, grain: 1 },
       city: { grain: 2, ore: 3 },
-      devCard: { wool: 1, grain: 1, ore: 1 }
+      devCard: { wool: 1, grain: 1, ore: 1 },
+      ship: { lumber: 1, wool: 1 }
     };
 
     const DEV_CARD_DECK = [
@@ -2218,6 +2236,7 @@
         roads: [],
         devCards: [],
         knights: 0,
+        ships: [],
         vp: 0
       };
     }
@@ -3147,6 +3166,74 @@
       }
     };
 
+    // ── 해양 확장 맵 ─────────────────────────────────────────────────────
+
+    MAP_PRESETS["ocean-expedition"] = {
+      id: "ocean-expedition", name: "대양 원정", stars: 3,
+      description: "8인 해양 확장. 주 대륙에서 배를 타고 세 개의 섬으로 탐험하라.",
+      minPlayers: 4, maxPlayers: 8, vpGoal: 12,
+      specialRules: { gold: true },
+      layout: {
+        axial: [
+          // ── 주 대륙 (radius-2, 19칸) ──
+          { q:-2, r:0 }, { q:-2, r:1 }, { q:-2, r:2 },
+          { q:-1, r:-1 }, { q:-1, r:0 }, { q:-1, r:1 }, { q:-1, r:2 },
+          { q:0, r:-2 }, { q:0, r:-1 }, { q:0, r:0 }, { q:0, r:1 }, { q:0, r:2 },
+          { q:1, r:-2 }, { q:1, r:-1 }, { q:1, r:0 }, { q:1, r:1 },
+          { q:2, r:-2 }, { q:2, r:-1 }, { q:2, r:0 },
+          // ── 바다 (radius-3 ring, 18칸) ──
+          { q:-3, r:0, type:"sea" }, { q:-3, r:1, type:"sea" }, { q:-3, r:2, type:"sea" }, { q:-3, r:3, type:"sea" },
+          { q:-2, r:-1, type:"sea" }, { q:-2, r:3, type:"sea" },
+          { q:-1, r:-2, type:"sea" }, { q:-1, r:3, type:"sea" },
+          { q:0, r:-3, type:"sea" }, { q:0, r:3, type:"sea" },
+          { q:1, r:-3, type:"sea" }, { q:1, r:2, type:"sea" },
+          { q:2, r:-3, type:"sea" }, { q:2, r:1, type:"sea" },
+          { q:3, r:-3, type:"sea" }, { q:3, r:-2, type:"sea" }, { q:3, r:-1, type:"sea" }, { q:3, r:0, type:"sea" },
+          // ── 추가 바다 (섬 연결용) ──
+          { q:-4, r:0, type:"sea" }, { q:-3, r:-1, type:"sea" },
+          // ── 북동 섬 (NE, 7칸) ──
+          { q:3, r:-4 }, { q:4, r:-4 }, { q:4, r:-3 }, { q:4, r:-5 }, { q:5, r:-4 }, { q:5, r:-3 }, { q:5, r:-5 },
+          // ── 남동 섬 (SE, 7칸) ──
+          { q:4, r:0 }, { q:4, r:1 }, { q:4, r:2 }, { q:5, r:0 }, { q:5, r:1 }, { q:5, r:2 }, { q:4, r:3 },
+          // ── 남서 섬 (SW, 6칸) ──
+          { q:-4, r:2 }, { q:-4, r:3 }, { q:-4, r:4 }, { q:-3, r:4 }, { q:-5, r:3 }, { q:-5, r:4 },
+          // ── 북서 발견 섬 (NW, 4칸·금광) ──
+          { q:-4, r:-1 }, { q:-4, r:-2 }, { q:-5, r:-1 }, { q:-5, r:-2 }
+        ]
+      },
+      resources: {
+        pool: [
+          // 주 대륙 (19)
+          "brick","brick","brick","lumber","lumber","lumber","lumber",
+          "wool","wool","wool","wool","grain","grain","grain","grain","ore","ore","ore","desert",
+          // NE 섬 (7)
+          "lumber","lumber","grain","grain","ore","ore","desert",
+          // SE 섬 (7)
+          "brick","brick","wool","wool","grain","grain","desert",
+          // SW 섬 (6)
+          "lumber","wool","wool","brick","grain","gold",
+          // NW 발견 섬 (4)
+          "gold","gold","ore","lumber"
+        ]
+      },
+      numbers: {
+        pool: [
+          3,3,3,3,4,4,4,4,4,5,5,5,5,5,
+          6,6,6,6,6,8,8,8,8,8,9,9,9,9,9,
+          10,10,10,10,10,11,11,11,3,4,5
+        ],
+        noAdjacentSame: true, noAdjacentHot: [6, 8]
+      },
+      ports: {
+        pool: [
+          { type:"generic", ratio:3 }, { type:"generic", ratio:3 }, { type:"generic", ratio:3 },
+          { type:"generic", ratio:3 }, { type:"generic", ratio:3 },
+          { type:"brick", ratio:2 }, { type:"lumber", ratio:2 },
+          { type:"wool", ratio:2 }, { type:"grain", ratio:2 }, { type:"ore", ratio:2 }
+        ]
+      }
+    };
+
     // ────────────────────────────────────────────────────────────────────
 
     function resolveMapPreset(mapId = "standard") {
@@ -3434,6 +3521,44 @@
         return v.edges.some(x => x !== eIdx && state.edges[x].owner === playerIdx);
       }
       return endpointConnects(e.a) || endpointConnects(e.b);
+    }
+
+    function isSeaEdge(eIdx) {
+      return state.edges[eIdx].hexes.some(hi => state.hexes[hi] && state.hexes[hi].type === "sea");
+    }
+
+    function canPlaceShip(playerIdx, eIdx, setup = false) {
+      const e = state.edges[eIdx];
+      if (e.owner !== null) return false;
+      if (!isSeaEdge(eIdx)) return false;
+      if (setup) {
+        if (state.lastSetupVertex === null) return false;
+        return e.a === state.lastSetupVertex || e.b === state.lastSetupVertex;
+      }
+      function endpointConnects(vIdx) {
+        const v = state.vertices[vIdx];
+        if (v.owner === playerIdx) return true;
+        if (v.owner !== null && v.owner !== playerIdx) return false;
+        return v.edges.some(x => x !== eIdx && state.edges[x].owner === playerIdx);
+      }
+      return endpointConnects(e.a) || endpointConnects(e.b);
+    }
+
+    function placeShip(playerIdx, eIdx, free = false) {
+      const player = state.players[playerIdx];
+      if (!free && !canAfford(player, COST.ship)) return false;
+      if (!canPlaceShip(playerIdx, eIdx)) return false;
+      if (!free) spend(player, COST.ship);
+      state.edges[eIdx].owner = playerIdx;
+      state.edges[eIdx].buildType = "ship";
+      player.ships.push(eIdx);
+      recalcLongestRoad();
+      return true;
+    }
+
+    function validShipsFor(playerIdx) {
+      if (!state.hexes.some(h => h.type === "sea")) return [];
+      return state.edges.filter(e => canPlaceShip(playerIdx, e.index)).map(e => e.index);
     }
 
     function canUpgradeCity(playerIdx, vIdx) {
@@ -5133,6 +5258,13 @@
       render();
     }
 
+    function humanBuildShip() {
+      if (!isHumanTurn()) return;
+      state.buildMode = state.buildMode === "ship" ? null : "ship";
+      state.hint = state.buildMode ? "⛵ 건설 가능한 항로를 선택하세요." : "";
+      render();
+    }
+
     async function onVertexClick(vIdx) {
       if (!isHumanTurn() || state.winner) return;
       if (isMultiMode()) {
@@ -5227,6 +5359,16 @@
             state.buildMode = null;
             state.hint = pt("roadBuiltHint");
           }
+          render();
+          triggerAITurnIfNeeded();
+        }
+        return;
+      }
+      if (state.buildMode === "ship") {
+        if (placeShip(state.currentPlayer, eIdx)) {
+          SFX.road();
+          state.buildMode = null;
+          state.hint = "⛵ 항로를 건설했습니다.";
           render();
           triggerAITurnIfNeeded();
         }
@@ -5543,6 +5685,19 @@
           if (state.winner || (ai && ai.shouldStopBuilding(state.aiDifficulty, buildsDone - 1, totalResourceCount(p)))) break;
         }
 
+        // Ship building: extend network across sea when map has sea tiles
+        if (state.hexes.some(h => h.type === "sea") && canAfford(p, COST.ship)) {
+          const shipSpots = validShipsFor(pIdx);
+          if (shipSpots.length > 0) {
+            const spot = ai ? ai.pickBestRoadGeneral(state, shipSpots, pIdx) : shipSpots[0];
+            if (placeShip(pIdx, spot)) {
+              SFX.road();
+              render();
+              await new Promise(r => setTimeout(r, 800));
+            }
+          }
+        }
+
         state.hint = `${p.name} 턴 종료.`;
         render();
         await new Promise(r => setTimeout(r, 800));
@@ -5819,6 +5974,7 @@
         return set;
       }
       if (state.phase === "main" && state.buildMode === "road") validRoadsFor(state.currentPlayer).forEach(e => set.add(e));
+      if (state.phase === "main" && state.buildMode === "ship") validShipsFor(state.currentPlayer).forEach(e => set.add(e));
       return set;
     }
 
@@ -6003,9 +6159,10 @@
         const dy = pb.y - pa.y;
         const len = Math.sqrt(dx * dx + dy * dy);
         const ang = Math.atan2(dy, dx) * 180 / Math.PI;
-        const cls = ["edge", edge.owner !== null ? "road" : "", eBuild.has(edge.index) ? "buildable" : ""].filter(Boolean).join(" ");
+        const edgeBuildType = edge.owner !== null ? (edge.buildType || "road") : "";
+        const cls = ["edge", edgeBuildType, eBuild.has(edge.index) ? "buildable" : ""].filter(Boolean).join(" ");
         const color = edge.owner !== null ? state.players[edge.owner].color : "";
-        html += `<div class="${cls}" style="left:${pa.x}px; top:${pa.y}px; width:${len}px; transform: rotate(${ang}deg); ${color ? `background:${color};` : ""}" onclick="onEdgeClick(${edge.index})"></div>`;
+        html += `<div class="${cls}" style="left:${pa.x}px; top:${pa.y}px; width:${len}px; transform: rotate(${ang}deg); ${color ? `background:${color};border-color:${color};` : ""}" onclick="onEdgeClick(${edge.index})"></div>`;
       }
       for (const v of state.vertices) {
         const p = mapPixel(v.x, v.y, mapW, mapH);
@@ -6127,6 +6284,7 @@
 
     function getMapCategory(m) {
       if (m.maxPlayers <= 2) return "2p";
+      if (m.maxPlayers >= 7 || (m.layout?.axial?.length || 0) >= 50) return "seafarers";
       if (m.maxPlayers >= 5 || (m.layout?.axial?.length || 0) >= 28) return "large";
       return "standard";
     }
@@ -6144,7 +6302,8 @@
         { key: "all", label: pt("mapCatAll") },
         { key: "2p", label: pt("mapCat2p") },
         { key: "standard", label: pt("mapCatStandard") },
-        { key: "large", label: pt("mapCatLarge") }
+        { key: "large", label: pt("mapCatLarge") },
+        { key: "seafarers", label: pt("mapCatSeafarers") }
       ];
 
       return `
@@ -6430,17 +6589,19 @@ https://game.cocy.io/pingtan/`;
     function getHumanActionAvailability(me, myTurn) {
       const canMain = myTurn && state.phase === "main";
       if (!canMain || !me) {
-        return { canMain, canRoad: false, canSettlement: false, canCity: false, possible: [] };
+        return { canMain, canRoad: false, canSettlement: false, canCity: false, canShip: false, possible: [] };
       }
       const idx = state.currentPlayer;
       const canRoad = canAfford(me, COST.road) && validRoadsFor(idx).length > 0;
       const canSettlement = canAfford(me, COST.settlement) && validSettlementsFor(idx).length > 0;
       const canCity = canAfford(me, COST.city) && validCitiesFor(idx).length > 0;
+      const canShip = canAfford(me, COST.ship) && validShipsFor(idx).length > 0;
       const possible = [];
       if (canRoad) possible.push("도로");
       if (canSettlement) possible.push("마을");
       if (canCity) possible.push("도시");
-      return { canMain, canRoad, canSettlement, canCity, possible };
+      if (canShip) possible.push("배");
+      return { canMain, canRoad, canSettlement, canCity, canShip, possible };
     }
 
     function renderGameScreen() {
@@ -6473,6 +6634,7 @@ https://game.cocy.io/pingtan/`;
         <div class="actions">
           <button id="diceDisplay" class="primary dice-button" ${canRoll ? "" : "disabled"} onclick="rollDice()">${renderDiceButtonContent(canRoll)}</button>
           <button class="${buildActionButtonClass("road")}" ${actionState.canRoad ? "" : "disabled"} onclick="${actionState.canRoad ? "humanBuildRoad()" : "humanTryBuild('road')"}">${pt("road")}${getLongestRoadBadge(state.longestRoad === myIdx)}(${me.roads.length}/15)${costLabel(COST.road, idx)}</button>
+          ${state.hexes.some(h=>h.type==="sea") ? `<button class="${buildActionButtonClass("ship")}" ${actionState.canShip ? "" : "disabled"} onclick="${actionState.canShip ? "humanBuildShip()" : "humanTryBuild('ship')"}">⛵${pt("ship")}(${(me.ships||[]).length})${costLabel(COST.ship, idx)}</button>` : ""}
           <button class="${buildActionButtonClass("settlement")}" ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">${pt("settlement")}(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
           <button class="${buildActionButtonClass("city")}" ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">${pt("city")}(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
           <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">${pt("trade")}</button>
@@ -8370,6 +8532,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.rollDice = rollDice;
     window.endTurn = endTurn;
     window.humanBuildRoad = humanBuildRoad;
+    window.humanBuildShip = humanBuildShip;
     window.humanBuildSettlement = humanBuildSettlement;
     window.humanBuildCity = humanBuildCity;
     window.humanBuyDevCard = humanBuyDevCard;
