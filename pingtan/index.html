@@ -169,7 +169,7 @@
       position: absolute;
       width: calc(78px * var(--zoom, 1));
       height: calc(88px * var(--zoom, 1));
-      transform: translate(-50%, -50%) scale(0.88);
+      transform: translate(-50%, -50%) scale(var(--hex-scale, 0.88));
       clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
       border: 1px solid rgba(255, 255, 255, 0.2);
       display: flex;
@@ -6572,8 +6572,18 @@
       const mapH = Math.round(620 * zoom);
       const vBuild = buildableVertexSet();
       const eBuild = buildableEdgeSet();
+      // Compute hex element scale so tiles never overlap on large maps.
+      // mapPixelScale = how many CSS px one native-geometry px occupies after mapPixel().
+      // Hex CSS width = 78px * zoom * hexScale; center-to-center = sqrt(3)*42 * mapPixelScale.
+      // Constraint: hexWidth ≤ center-to-center → hexScale ≤ sqrt(3)*42 * mapPixelScale / (78 * zoom).
+      const _g = state.geometry;
+      const _spanX = (_g.maxX - _g.minX) || 1;
+      const _spanY = (_g.maxY - _g.minY) || 1;
+      const _mapPixelScale = Math.min((mapW - 128) / _spanX, (mapH - 128) / _spanY);
+      const _hexNativeW = (_g.size || 42) * Math.sqrt(3);
+      const hexScale = Math.min(0.88, _hexNativeW * _mapPixelScale * 0.90 / (78 * zoom)).toFixed(4);
       let html = `<div class="map-wrap" id="map-wrap">`;
-      html += `<div class="board" style="width:${mapW}px;height:${mapH}px;--zoom:${zoom};">`;
+      html += `<div class="board" style="width:${mapW}px;height:${mapH}px;--zoom:${zoom};--hex-scale:${hexScale};">`;
       for (const hex of state.hexes) {
         const c = state.geometry.centers[hex.index];
         const p = mapPixel(c.x, c.y, mapW, mapH);
