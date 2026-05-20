@@ -6688,11 +6688,13 @@ https://game.cocy.io/pingtan/`;
         const othersTotal = type === "want"
           ? state.players.reduce((s, pl, i) => i === pIdx ? s : s + (pl.resources[r] || 0), 0)
           : null;
-        const otherLabel = othersTotal !== null
-          ? `<span style="font-size:10px;color:#9ca3af;margin-left:2px;">유통 ${othersTotal}</span>`
-          : "";
+        const sideLabel = type === "offer"
+          ? `<span style="font-size:10px;color:#9ca3af;margin-left:2px;">보유 ${p.resources[r] || 0}</span>`
+          : othersTotal !== null
+            ? `<span style="font-size:10px;color:#9ca3af;margin-left:2px;">유통 ${othersTotal}</span>`
+            : "";
         return `<div style="display:flex;align-items:center;gap:4px;justify-content:space-between;padding:2px 0;">
-          <span style="font-size:13px;">${RESOURCE_ICONS[r]} ${resourceName(r)} ${type === "offer" ? "("+pt("heldCards", { count: p.resources[r] })+")" : otherLabel}</span>
+          <span style="font-size:13px;">${RESOURCE_ICONS[r]} ${resourceName(r)} ${sideLabel}</span>
           <span style="display:flex;gap:2px;align-items:center;">
             <button class="trade-option" style="padding:2px 8px;min-width:28px;" onclick="tradeAdjust('${type}','${r}',-1)" ${val <= 0 ? "disabled" : ""}>−</button>
             <span style="min-width:20px;text-align:center;font-weight:700;">${val}</span>
