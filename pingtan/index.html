@@ -6009,6 +6009,15 @@
         // If sea map, offer pirate option for knight too
         const hasSeaTiles = state.hexes.some(h => h && h.type === "sea");
         if (hasSeaTiles && state.hexes[hIdx]?.type === "sea") {
+          // Mark knight card as played (movePirate doesn't do this unlike playKnight)
+          const _kpIdx = localPlayerIndex();
+          const _kp = state.players[_kpIdx];
+          const _kCard = (_kp?.devCards || []).find(c => c.type === "knight" && c.turnBought < state.turnNumber && !c.played);
+          if (_kCard) {
+            _kCard.played = true;
+            _kp.knights += 1;
+            recalcAllVP();
+          }
           const result = movePirate(hIdx);
           if (result.ok) {
             state.phase = state.phaseBeforeKnight === "roll" ? "roll" : "main";
@@ -6043,6 +6052,16 @@
           render();
         }
         return;
+      }
+      if (state.phase === "robber-or-pirate") {
+        const hex = state.hexes[hIdx];
+        if (!hex) return;
+        if (hex.type === "sea") {
+          const result = movePirate(hIdx);
+          if (result.ok) { state.phase = "main"; state.canEndTurn = true; render(); }
+          return;
+        }
+        state.phase = "robber"; // land tile: fall through to robber handling
       }
       if (state.phase !== "robber") return;
       const robberVictims = new Set();
@@ -7464,6 +7483,7 @@ https://game.cocy.io/pingtan/`;
       
       const totalOffer = RESOURCES.reduce((s, r) => s + (td.offer[r] || 0), 0);
       const totalWant = RESOURCES.reduce((s, r) => s + (td.want[r] || 0), 0);
+      const noSameResource = RESOURCES.every(r => !((td.offer[r] || 0) > 0 && (td.want[r] || 0) > 0));
 
       function resRow(r, counts, type) {
         const max = type === "offer" ? (p.resources[r] || 0) : 99;
@@ -7508,7 +7528,7 @@ https://game.cocy.io/pingtan/`;
             <div class="trade-actions" style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
               <button onclick="cancelTradeDialog()" style="flex:1;">${pt("cancel")}</button>
               <button class="primary" ${canBank ? "" : "disabled"} onclick="confirmBankTrade()" style="flex:1;">🏦 ${pt("bankTrade")}</button>
-              <button style="background:#6366f1;border-color:#6366f1;color:#fff;flex:1;" ${(totalOffer > 0 && totalWant > 0) ? "" : "disabled"} onclick="proposeTrade()">🤝 ${pt("proposeTrade")}</button>
+              <button style="background:#6366f1;border-color:#6366f1;color:#fff;flex:1;" ${(totalOffer > 0 && totalWant > 0 && noSameResource) ? "" : "disabled"} onclick="proposeTrade()">🤝 ${pt("proposeTrade")}</button>
             </div>
           </div>
         </div>
@@ -8829,6 +8849,9 @@ https://game.cocy.io/pingtan/`;
       for (const resp of responses) {
         const tp = resp.target.p;
         if (resp.accept && !traded) {
+          const canHumanPay = RESOURCES.every(r => !(offer[r] > 0) || (human.resources[r] || 0) >= offer[r]);
+          const canAIPay = RESOURCES.every(r => !(want[r] > 0) || (tp.resources[r] || 0) >= want[r]);
+          if (!canHumanPay || !canAIPay) { showToast("❌ 자원이 변동돼 거래를 취소합니다.", 2000); break; }
           for (const r of RESOURCES) {
             if (offer[r] > 0) { human.resources[r] -= offer[r]; tp.resources[r] += offer[r]; }
             if (want[r] > 0) { tp.resources[r] -= want[r]; human.resources[r] += want[r]; }
