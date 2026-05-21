@@ -3754,6 +3754,13 @@
       return RESOURCES.reduce((n, r) => n + player.resources[r], 0);
     }
 
+    function getRobberDiscardThreshold() {
+      const preset = resolveMapPreset(state.selectedMapId);
+      const hexCount = (preset.layout?.axial || []).length;
+      // Scale: +1 per 6 hexes beyond standard 19-hex map (cap at 12)
+      return Math.min(12, 7 + Math.max(0, Math.floor((hexCount - 19) / 6)));
+    }
+
     function canAfford(player, cost) {
       for (const [k, v] of Object.entries(cost)) {
         if ((player.resources[k] || 0) < v) return false;
@@ -4446,7 +4453,8 @@
           const pl = state.players[i];
           if (!pl || !pl.isAI) continue;
           const total = totalResourceCount(pl);
-          if (total <= 7) continue;
+          const _threshold = getRobberDiscardThreshold();
+          if (total <= _threshold) continue;
           const discardCount = Math.floor(total / 2);
           const removed = pickRandomDiscards(i, discardCount);
           for (const r of RESOURCES) pl.resources[r] += removed[r];
@@ -4465,7 +4473,8 @@
       const me = state.players[myIdx];
       if (!me || me.isAI) return;
       const total = totalResourceCount(me);
-      if (total <= 7) return;
+      const _discardThreshold = getRobberDiscardThreshold();
+      if (total <= _discardThreshold) return;
       const discard = Math.floor(total / 2);
       const removed = await pickDiscardSelection(myIdx, discard);
       if (isMultiMode()) {
@@ -5125,7 +5134,7 @@
             triggerAITurnIfNeeded();
             return true;
           }
-          const pick = ai ? ai.pickBestVertex(state, choices) : choices[Math.floor(Math.random() * choices.length)];
+          const pick = ai ? ai.pickVertexByDifficulty(state, choices, state.aiDifficulty, pIdx) : choices[Math.floor(Math.random() * choices.length)];
           state.hint = `${p.name} 시간초과 - AI가 마을 위치를 자동 배치했습니다.`;
           if (isMultiMode()) {
             await sendGameAction(ACTION.PLACE_SETTLEMENT, { playerId: currentPlayerUserId(), vertexId: pick });
@@ -6072,7 +6081,7 @@
       if (state.setupStep === "settlement") {
         const choices = validSettlementsFor(pIdx, true);
         if (!choices.length) { advanceSetupTurn(); render(); triggerAITurnIfNeeded(); return; }
-        const pick = ai ? ai.pickBestVertex(state, choices) : choices[Math.floor(Math.random() * choices.length)];
+        const pick = ai ? ai.pickVertexByDifficulty(state, choices, state.aiDifficulty, pIdx) : choices[Math.floor(Math.random() * choices.length)];
         placeSettlement(pIdx, pick, true);
         SFX.build();
         showToast(`${state.players[pIdx].name}이 마을을 건설했어요`);
@@ -6322,19 +6331,19 @@
             break;
           }
           if (pickedAction === "city") {
-            const spot = ai ? ai.pickBestVertex(state, citySpots) : citySpots[Math.floor(Math.random() * citySpots.length)];
+            const spot = ai ? ai.pickVertexByDifficulty(state, citySpots, state.aiDifficulty, pIdx) : citySpots[Math.floor(Math.random() * citySpots.length)];
             upgradeCity(pIdx, spot);
             SFX.build();
             showToast(`${p.name}이 도시를 건설!`);
             Voice.ai("build-city", pIdx);
           } else if (pickedAction === "settlement") {
-            const spot = ai ? ai.pickBestVertex(state, settlementSpots) : settlementSpots[Math.floor(Math.random() * settlementSpots.length)];
+            const spot = ai ? ai.pickVertexByDifficulty(state, settlementSpots, state.aiDifficulty, pIdx) : settlementSpots[Math.floor(Math.random() * settlementSpots.length)];
             placeSettlement(pIdx, spot, false);
             SFX.build();
             showToast(`${p.name}이 마을을 건설!`);
             Voice.ai("build-settlement", pIdx);
           } else {
-            const spot = ai ? ai.pickBestRoadGeneral(state, roadSpots, pIdx) : roadSpots[Math.floor(Math.random() * roadSpots.length)];
+            const spot = ai ? ai.pickRoadByDifficulty(state, roadSpots, pIdx, state.aiDifficulty) : roadSpots[Math.floor(Math.random() * roadSpots.length)];
             placeRoad(pIdx, spot, false);
             SFX.road();
           }
@@ -6415,7 +6424,7 @@
           render();
           return;
         }
-        const pick = ai ? ai.pickBestVertex(state, choices) : choices[0];
+        const pick = ai ? ai.pickVertexByDifficulty(state, choices, state.aiDifficulty, pIdx) : choices[0];
         await sendGameAction(ACTION.PLACE_SETTLEMENT, { playerId: p.userId || p.id, vertexId: pick });
         return;
       }
@@ -6541,15 +6550,15 @@
           }
 
           if (pickedAction === "city") {
-            const spot = ai ? ai.pickBestVertex(state, citySpots) : citySpots[0];
+            const spot = ai ? ai.pickVertexByDifficulty(state, citySpots, state.aiDifficulty, pIdx) : citySpots[0];
             const ok = await sendGameAction(ACTION.PLACE_CITY, { playerId: p.userId || p.id, vertexId: spot });
             if (!ok) break;
           } else if (pickedAction === "settlement") {
-            const spot = ai ? ai.pickBestVertex(state, settlementSpots) : settlementSpots[0];
+            const spot = ai ? ai.pickVertexByDifficulty(state, settlementSpots, state.aiDifficulty, pIdx) : settlementSpots[0];
             const ok = await sendGameAction(ACTION.PLACE_SETTLEMENT, { playerId: p.userId || p.id, vertexId: spot });
             if (!ok) break;
           } else {
-            const spot = ai ? ai.pickBestRoadGeneral(state, roadSpots, pIdx) : roadSpots[0];
+            const spot = ai ? ai.pickRoadByDifficulty(state, roadSpots, pIdx, state.aiDifficulty) : roadSpots[0];
             const ok = await sendGameAction(ACTION.PLACE_ROAD, { playerId: p.userId || p.id, edgeId: spot });
             if (!ok) break;
           }
@@ -8879,14 +8888,19 @@ https://game.cocy.io/pingtan/`;
       if (rejects >= 6 && Math.random() > 0.5) return { trade: false, dialogue: "" };
       if (rejects >= 10 && Math.random() > 0.25) return { trade: false, dialogue: "" };
       const rejectHistory = rejects > 0 ? `\n주의: 이전에 ${rejects}번 거절당했습니다. 같은 제안 반복하지 말고 더 좋은 조건(2:1 등)을 제시하세요.` : "";
+      const _circ = { brick:0, lumber:0, wool:0, grain:0, ore:0 };
+      for (const _pl of state.players) { if (_pl) for (const _r of ["brick","lumber","wool","grain","ore"]) _circ[_r] += (_pl.resources?.[_r] || 0); }
+      const circStr = `벽돌${_circ.brick} 나무${_circ.lumber} 양${_circ.wool} 밀${_circ.grain} 광석${_circ.ore}`;
       const stateStr = `삥탄 게임. 당신은 "${p.name}".
 자원: 벽돌${p.resources.brick} 나무${p.resources.lumber} 양${p.resources.wool} 밀${p.resources.grain} 광석${p.resources.ore}
-상대(${human.name}) 자원 총: ${totalResourceCount(human)}장
+상대(${human.name}) 자원 총: ${totalResourceCount(human)}장 / 상대보유: 벽돌${human.resources?.brick||0} 나무${human.resources?.lumber||0} 양${human.resources?.wool||0} 밀${human.resources?.grain||0} 광석${human.resources?.ore||0}
+전체 유통량(모든 플레이어 합산): ${circStr}
 VP: 나${p.vp} vs 상대${human.vp} (목표${targetScoreForMap(state.selectedMapId)})
 비용 - 도로:벽돌1나무1, 마을:벽돌1나무1양1밀1, 도시:밀2광석3${rejectHistory}
 
 거래 제안하려면: {"trade":true,"give":{"자원명":수},"want":{"자원명":수},"dialogue":"한마디(한국어15자)"}
 자원명은 brick/lumber/wool/grain/ore만 사용. 내가 주는 자원은 내가 가진 수량 이하, 내가 받을 자원은 상대가 가진 수량 이하로 제안.
+유통량이 적은(전체합산 2 이하) 자원은 요청하지 말 것.
 거래 안 하려면: {"trade":false,"dialogue":"한마디(한국어15자)"}`;
       try {
         const res = await fetch("https://llm.cocy.io/v2/chat/completions", {
@@ -9233,7 +9247,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
           ${pt("manualProgressStep2")}<br>
           ${pt("manualProgressStep3")}<br><br>
           <b>🦹 ${pt("manualRobber")}</b><br>
-          • ${pt("manualRobberBullet1")}<br>
+          • ${pt("manualRobberBullet1").replace("8", String(getRobberDiscardThreshold() + 1))}<br>
           • ${pt("manualRobberBullet2")}<br>
           • ${pt("manualRobberBullet3")}<br><br>
           <b>🃏 ${pt("manualDevCards")}</b><br>

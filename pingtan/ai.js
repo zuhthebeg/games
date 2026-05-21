@@ -181,6 +181,73 @@
     return buildsDone >= 1;
   }
 
+  // Difficulty-aware vertex picker.
+  // easy: 35% chance to pick a random (non-optimal) spot.
+  // hard: bonus for spots adjacent to a leading opponent's road (blocking).
+  function pickVertexByDifficulty(state, candidates, difficulty, playerIdx) {
+    if (!candidates || !candidates.length) return null;
+    if (difficulty === 'easy' && candidates.length > 1 && Math.random() < 0.35) {
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+    if (difficulty === 'hard' && playerIdx != null) {
+      const myVP = (state.players[playerIdx] || {}).vp || 0;
+      let best = candidates[0], bestScore = -Infinity;
+      for (const idx of candidates) {
+        let score = scoreVertex(state, idx);
+        const v = state.vertices[idx];
+        if (v) {
+          for (const ej of v.edges || []) {
+            const edge = state.edges[ej];
+            if (edge && edge.owner != null && edge.owner !== playerIdx) {
+              const oppVP = (state.players[edge.owner] || {}).vp || 0;
+              if (oppVP > myVP) score += (oppVP - myVP) * 1.0;
+            }
+          }
+        }
+        if (score > bestScore) { bestScore = score; best = idx; }
+      }
+      return best;
+    }
+    return pickBestVertex(state, candidates);
+  }
+
+  // Difficulty-aware road/ship picker.
+  // easy: 40% chance random.
+  // hard: blocking bonus for edges adjacent to leading opponents' networks.
+  function pickRoadByDifficulty(state, candidates, playerIdx, difficulty) {
+    if (!candidates || !candidates.length) return null;
+    if (difficulty === 'easy' && candidates.length > 1 && Math.random() < 0.40) {
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+    if (difficulty === 'hard') {
+      const myVP = (state.players[playerIdx] || {}).vp || 0;
+      let best = candidates[0], bestScore = -Infinity;
+      for (const eIdx of candidates) {
+        const e = state.edges[eIdx];
+        if (!e) continue;
+        let score = 0;
+        for (const vIdx of [e.a, e.b]) {
+          const v = state.vertices[vIdx];
+          if (!v) continue;
+          if (v.owner === playerIdx) score += 1.2;
+          else if (v.owner === null) score += 0.6;
+          score += Math.max(0, scoreVertex(state, vIdx)) * 0.35;
+          for (const ej of v.edges || []) {
+            if (ej === eIdx) continue;
+            const adj = state.edges[ej];
+            if (adj && adj.owner != null && adj.owner !== playerIdx) {
+              const oppVP = (state.players[adj.owner] || {}).vp || 0;
+              if (oppVP > myVP) score += (oppVP - myVP) * 0.6;
+            }
+          }
+        }
+        if (score > bestScore) { bestScore = score; best = eIdx; }
+      }
+      return best;
+    }
+    return pickBestRoadGeneral(state, candidates, playerIdx);
+  }
+
   // Returns true if playing a knight card is strategically good right now.
   // Does NOT check whether the player actually holds a knight — callers do that.
   function shouldUseKnight(state, playerIdx) {
@@ -230,6 +297,8 @@
     getTurnBudget,
     shouldStopBuilding,
     chooseBankTrade,
-    shouldUseKnight
+    shouldUseKnight,
+    pickVertexByDifficulty,
+    pickRoadByDifficulty
   };
 });
