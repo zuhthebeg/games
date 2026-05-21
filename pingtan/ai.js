@@ -287,6 +287,27 @@
     return { give, get };
   }
 
+  function shouldBuildCKKnight(state, pIdx) {
+    if (!state.citiesKnights) return false;
+    const p = state.players[pIdx];
+    if (!p) return false;
+    const barbarianPos = state.barbarianPos || 0;
+    if (barbarianPos < 4) return false;
+    const hasCities = p.buildings.some(b => b.type === "city");
+    if (!hasCities) return false;
+    const canAfford = (p.resources.wool || 0) >= 1 && (p.resources.ore || 0) >= 1;
+    return canAfford;
+  }
+
+  function shouldActivateCKKnight(state, pIdx) {
+    if (!state.citiesKnights) return false;
+    const barbarianPos = state.barbarianPos || 0;
+    if (barbarianPos < 5) return false;
+    const p = state.players[pIdx];
+    return (p.ckKnights || []).some(vIdx => !state.knightActive[vIdx]) &&
+      (p.resources.grain || 0) >= 1;
+  }
+
   return {
     scoreVertex,
     pickBestVertex,
@@ -299,6 +320,8 @@
     chooseBankTrade,
     shouldUseKnight,
     pickVertexByDifficulty,
-    pickRoadByDifficulty
+    pickRoadByDifficulty,
+    shouldBuildCKKnight,
+    shouldActivateCKKnight
   };
 });

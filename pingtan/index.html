@@ -2173,6 +2173,18 @@
       ...Array(2).fill("year_of_plenty"),
       ...Array(2).fill("monopoly")
     ];
+    const COMMODITIES = ["cloth", "coin", "paper"];
+    const COMMODITY_SOURCE = { cloth: "wool", coin: "ore", paper: "lumber" };
+    const BARBARIAN_MAX = 7;
+    const COST_KNIGHT_BUILD = { wool: 1, ore: 1 };
+    const COST_KNIGHT_ACTIVATE = { grain: 1 };
+    const EVENT_DICE_FACES = ["barbarian","barbarian","barbarian","science","trade","politics"];
+    const PROGRESS_CARD_DECKS_PHASE1 = {
+      science: ["crane", "irrigation"],
+      trade: ["resourceMonopoly", "merchantFleet"],
+      politics: ["knightCard", "spy"],
+    };
+
     const PLAYER_COLORS = ["#e94560", "#4ecca3", "#ffd700", "#9b59b6"];
     const ACTION = {
       GAME_INIT: "GAME_INIT",
@@ -2249,7 +2261,12 @@
       _setupTimeoutInProgress: false,
       _aiTurnScheduled: false,
       _aiTurnInProgress: false,
-      _aiTurnTriggerAfterFinish: false
+      _aiTurnTriggerAfterFinish: false,
+      citiesKnights: false,
+      barbarianPos: 0,
+      eventDiceResult: null,
+      knightLevels: {},
+      knightActive: {}
     };
 
     const mpState = {
@@ -2318,7 +2335,10 @@
         knights: 0,
         ships: [],
         islandBonusVP: 0,
-        vp: 0
+        vp: 0,
+        commodities: { cloth: 0, coin: 0, paper: 0 },
+        progressCards: [],
+        ckKnights: []
       };
     }
 
@@ -2346,6 +2366,11 @@
       state.mapView = { initialized: false, userMoved: false, dragActive: false, pointerId: null, lastX: 0, lastY: 0, zoom: 1, pinchDist: 0, zoomTouched: false };
       state.lastPlacedVertex = null;
       state.phaseBeforeKnight = null;
+      state.citiesKnights = !!(resolveMapPreset(state.selectedMapId)?.specialRules?.citiesKnights);
+      state.barbarianPos = 0;
+      state.eventDiceResult = null;
+      state.knightLevels = {};
+      state.knightActive = {};
       state.tradeDialog = { open: false, give: null, get: null };
       state.turnSeconds = clampTurnSeconds(state.turnSeconds || 60);
       state.targetScore = clampTargetScore(state.targetScore || defaultTargetScoreForMap(state.selectedMapId));
@@ -3494,6 +3519,45 @@
 
     // ────────────────────────────────────────────────────────────────────
 
+    MAP_PRESETS["cities-knights-standard"] = {
+      id: "cities-knights-standard",
+      name: "도시와 기사",
+      stars: 2,
+      description: "도시와 기사 확장. 이벤트 주사위, 기사, 야만인이 등장합니다.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 13,
+      specialRules: { citiesKnights: true },
+      layout: {
+        axial: [
+          { q:-2, r:0 }, { q:-2, r:1 }, { q:-2, r:2 },
+          { q:-1, r:-1 }, { q:-1, r:0 }, { q:-1, r:1 }, { q:-1, r:2 },
+          { q:0, r:-2 }, { q:0, r:-1 }, { q:0, r:0 }, { q:0, r:1 }, { q:0, r:2 },
+          { q:1, r:-2 }, { q:1, r:-1 }, { q:1, r:0 }, { q:1, r:1 },
+          { q:2, r:-2 }, { q:2, r:-1 }, { q:2, r:0 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick",
+          "lumber","lumber","lumber","lumber",
+          "wool","wool","wool","wool",
+          "grain","grain","grain","grain",
+          "ore","ore","ore","desert"
+        ]
+      },
+      numbers: {
+        pool: [2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      ports: {
+        pool: [
+          { type:"generic", ratio:3 }, { type:"generic", ratio:3 }, { type:"generic", ratio:3 },
+          { type:"generic", ratio:3 },
+          { type:"brick", ratio:2 }, { type:"lumber", ratio:2 },
+          { type:"wool", ratio:2 }, { type:"grain", ratio:2 }, { type:"ore", ratio:2 }
+        ]
+      }
+    };
+
     function resolveMapPreset(mapId = "standard") {
       return MAP_PRESETS[mapId] || MAP_PRESETS.standard;
     }
@@ -4152,6 +4216,204 @@
       } else {
         showGainsToast(gains);
       }
+      if (state.citiesKnights) distributeCommodities(number);
+    }
+
+    function rollEventDice() {
+      return EVENT_DICE_FACES[Math.floor(Math.random() * EVENT_DICE_FACES.length)];
+    }
+
+    function advanceBarbarian() {
+      state.barbarianPos = (state.barbarianPos || 0) + 1;
+      if (state.barbarianPos >= BARBARIAN_MAX) triggerBarbarianAttack();
+    }
+
+    function triggerBarbarianAttack() {
+      let activeKnights = 0;
+      let totalCities = 0;
+      const knightsByPlayer = {};
+      for (let i = 0; i < state.players.length; i++) {
+        const p = state.players[i];
+        if (!p) continue;
+        totalCities += p.buildings.filter(b => b.type === "city").length;
+        let ak = 0;
+        for (const vIdx of (p.ckKnights || [])) {
+          if (state.knightActive[vIdx]) ak++;
+        }
+        knightsByPlayer[i] = ak;
+        activeKnights += ak;
+      }
+      const defended = activeKnights >= totalCities;
+      if (defended) {
+        let bestPIdx = -1, bestCount = -1;
+        for (const [i, cnt] of Object.entries(knightsByPlayer)) {
+          if (cnt > bestCount) { bestCount = cnt; bestPIdx = Number(i); }
+        }
+        if (bestPIdx >= 0 && bestCount > 0) {
+          const decks = ["science","trade","politics"];
+          drawProgressCard(bestPIdx, decks[Math.floor(Math.random() * decks.length)]);
+          showToast(`⚔️ 야만인 격퇴! ${state.players[bestPIdx].name} 진보카드 획득`, 3500);
+        } else {
+          showToast("⚔️ 야만인 격퇴! 방어 성공", 3000);
+        }
+      } else {
+        let worstPIdx = -1, worstCount = Infinity;
+        for (const [i, cnt] of Object.entries(knightsByPlayer)) {
+          const p = state.players[Number(i)];
+          if (!p || !p.buildings.some(b => b.type === "city")) continue;
+          if (cnt < worstCount) { worstCount = cnt; worstPIdx = Number(i); }
+        }
+        if (worstPIdx >= 0) {
+          const p = state.players[worstPIdx];
+          const cityBuilding = p.buildings.find(b => b.type === "city");
+          if (cityBuilding) {
+            cityBuilding.type = "settlement";
+            const v = state.vertices[cityBuilding.vIdx];
+            if (v) v.building = "settlement";
+            recalcAllVP();
+            showToast(`🏴 야만인 공격! ${p.name}의 도시가 마을로 강등됐습니다.`, 4000);
+          }
+        } else {
+          showToast("🏴 야만인 공격! 방어 실패 (강등 대상 없음)", 3000);
+        }
+      }
+      state.barbarianPos = 0;
+      for (const vIdx of Object.keys(state.knightActive)) {
+        state.knightActive[vIdx] = false;
+      }
+    }
+
+    function validCKKnightSpots(pIdx) {
+      const result = [];
+      for (const v of state.vertices) {
+        if (!v) continue;
+        if (v.building) continue;
+        if (state.knightLevels[v.index] !== undefined) continue;
+        const adjOwnedEdge = v.edges.some(eIdx => state.edges[eIdx]?.owner === pIdx);
+        if (adjOwnedEdge) result.push(v.index);
+      }
+      return result;
+    }
+
+    function buildCKKnight(pIdx, vIdx) {
+      const p = state.players[pIdx];
+      if (!p || !canAfford(p, COST_KNIGHT_BUILD)) return false;
+      if (state.vertices[vIdx]?.building) return false;
+      if (state.knightLevels[vIdx] !== undefined) return false;
+      spend(p, COST_KNIGHT_BUILD);
+      state.knightLevels[vIdx] = 1;
+      state.knightActive[vIdx] = false;
+      p.ckKnights = [...(p.ckKnights || []), vIdx];
+      recalcAllVP();
+      return true;
+    }
+
+    function activateCKKnight(pIdx, vIdx) {
+      const p = state.players[pIdx];
+      if (!p || !canAfford(p, COST_KNIGHT_ACTIVATE)) return false;
+      if (state.knightLevels[vIdx] === undefined) return false;
+      if (state.knightActive[vIdx]) return false;
+      spend(p, COST_KNIGHT_ACTIVATE);
+      state.knightActive[vIdx] = true;
+      return true;
+    }
+
+    function distributeCommodities(number) {
+      const gains = {};
+      for (const hex of state.hexes) {
+        if (hex.number !== number || hex.index === state.robber) continue;
+        for (const vIdx of hex.vertices) {
+          const v = state.vertices[vIdx];
+          if (v.building !== "city" || v.owner === null) continue;
+          const owner = state.players[v.owner];
+          if (!owner) continue;
+          const commodity = Object.entries(COMMODITY_SOURCE).find(([, res]) => res === hex.type)?.[0];
+          if (!commodity) continue;
+          if (!owner.commodities) owner.commodities = { cloth: 0, coin: 0, paper: 0 };
+          owner.commodities[commodity] = (owner.commodities[commodity] || 0) + 1;
+          if (!gains[v.owner]) gains[v.owner] = {};
+          gains[v.owner][commodity] = (gains[v.owner][commodity] || 0) + 1;
+        }
+      }
+      const humanIdx = localPlayerIndex();
+      if (gains[humanIdx]) {
+        const gainStr = Object.entries(gains[humanIdx]).map(([k,v])=>`${k}×${v}`).join(" ");
+        if (gainStr) showToast(`🏭 상품 획득: ${gainStr}`, 2000);
+      }
+    }
+
+    function drawProgressCard(pIdx, deck) {
+      const p = state.players[pIdx];
+      if (!p) return false;
+      const available = PROGRESS_CARD_DECKS_PHASE1[deck] || [];
+      if (!available.length) return false;
+      const cardType = available[Math.floor(Math.random() * available.length)];
+      if (!p.progressCards) p.progressCards = [];
+      p.progressCards.push({ deck, type: cardType });
+      return true;
+    }
+
+    function playProgressCard(pIdx, cardType) {
+      const p = state.players[pIdx];
+      if (!p) return false;
+      const idx = (p.progressCards || []).findIndex(c => c.type === cardType);
+      if (idx < 0) return false;
+      p.progressCards.splice(idx, 1);
+      switch (cardType) {
+        case "crane":
+          p.resources.ore = (p.resources.ore || 0) + 1;
+          showToast("🏗️ 크레인: 광석 1 획득", 2000);
+          break;
+        case "irrigation":
+          for (const hex of state.hexes) {
+            if (hex.type !== "grain" || hex.index === state.robber) continue;
+            for (const vIdx of hex.vertices) {
+              const v = state.vertices[vIdx];
+              if (v.building && v.owner === pIdx) {
+                p.resources.grain = (p.resources.grain || 0) + 1;
+              }
+            }
+          }
+          showToast("🌾 관개: 밀 획득", 2000);
+          break;
+        case "resourceMonopoly":
+          for (let i = 0; i < state.players.length; i++) {
+            if (i === pIdx) continue;
+            const opp = state.players[i];
+            const resources = Object.keys(opp.resources || {}).filter(r => (opp.resources[r] || 0) > 0);
+            if (resources.length) {
+              const res = resources[Math.floor(Math.random() * resources.length)];
+              opp.resources[res]--;
+              p.resources[res] = (p.resources[res] || 0) + 1;
+            }
+          }
+          showToast("💰 자원 독점: 각 상대에게서 자원 1장 획득", 2500);
+          break;
+        case "merchantFleet":
+          showToast("🚢 상인 함대: 이번 턴 2:1 거래 가능 (은행 비율 적용)", 2500);
+          break;
+        case "knightCard":
+          { const myKnight = (p.ckKnights || []).find(vIdx => !state.knightActive[vIdx]);
+            if (myKnight !== undefined) { state.knightActive[myKnight] = true; showToast("⚔️ 기사 카드: 기사 즉시 활성화!", 2500); }
+            else showToast("⚔️ 기사 카드: 활성화할 기사 없음", 2000); }
+          break;
+        case "spy":
+          { let stolen = false;
+            for (let i = 0; i < state.players.length; i++) {
+              if (i === pIdx) continue;
+              const opp = state.players[i];
+              if ((opp.progressCards || []).length > 0) {
+                const stolen_card = opp.progressCards.splice(Math.floor(Math.random() * opp.progressCards.length), 1)[0];
+                p.progressCards.push(stolen_card);
+                showToast(`🕵️ 스파이: ${opp.name}의 카드 탈취!`, 2500);
+                stolen = true; break;
+              }
+            }
+            if (!stolen) showToast("🕵️ 스파이: 빼앗을 카드 없음", 2000); }
+          break;
+      }
+      recalcAllVP();
+      return true;
     }
 
     function showGoldPicker(amount, currentResources) {
@@ -4821,6 +5083,18 @@
       state.hint = `${getCurrentPlayer().name}: 🎲 ${d1} + ${d2} = ${sum}`;
       state.lastDiceSum = sum;
       state.lastDiceValues = [d1, d2];
+      // C&K: roll event dice
+      if (state.citiesKnights) {
+        const evt = rollEventDice();
+        state.eventDiceResult = evt;
+        if (evt === "barbarian") {
+          advanceBarbarian();
+        } else {
+          drawProgressCard(playerIdx, evt);
+          const deckName = { science:"📗과학", trade:"📘무역", politics:"📕정치" }[evt] || evt;
+          showToast(`🎲 이벤트: ${deckName} 진보카드 획득!`, 2500);
+        }
+      }
       if (sum === 7) handleSeven(skipDiscard);
       else {
         distributeResources(sum);
@@ -4839,6 +5113,12 @@
         return false;
       }
       state.buildMode = null;
+      // C&K: deactivate all knights at turn end
+      if (state.citiesKnights) {
+        for (const vIdx of Object.keys(state.knightActive)) {
+          state.knightActive[vIdx] = false;
+        }
+      }
       state.shipMovingIdx = null;
       state.movedShipThisTurn = false;
       state.lastDiceSum = 0;
@@ -5805,6 +6085,35 @@
       render();
     }
 
+    function humanBuildCKKnight() {
+      if (!state.citiesKnights || state.phase !== "main") return;
+      const pIdx = localPlayerIndex();
+      const spots = validCKKnightSpots(pIdx);
+      if (!spots.length) return;
+      state.buildMode = "ck-knight";
+      state.hint = "기사를 배치할 꼭짓점을 선택하세요.";
+      render();
+    }
+
+    function humanActivateCKKnight() {
+      if (!state.citiesKnights || state.phase !== "main") return;
+      const pIdx = localPlayerIndex();
+      const p = state.players[pIdx];
+      const inactiveKnight = (p.ckKnights || []).find(vIdx => !state.knightActive[vIdx]);
+      if (inactiveKnight === undefined) return;
+      if (activateCKKnight(pIdx, inactiveKnight)) {
+        showToast("⚡ 기사 활성화!", 1500);
+        render();
+      }
+    }
+
+    function humanPlayProgressCard(cardType) {
+      if (state.phase !== "main") return;
+      const pIdx = localPlayerIndex();
+      playProgressCard(pIdx, cardType);
+      render();
+    }
+
     async function onVertexClick(vIdx) {
       if (!isHumanTurn() || state.winner) return;
       if (isMultiMode()) {
@@ -5855,6 +6164,14 @@
           render();
           triggerAITurnIfNeeded();
         }
+      } else if (state.buildMode === "ck-knight") {
+        const pIdx = localPlayerIndex();
+        if (buildCKKnight(pIdx, vIdx)) {
+          state.buildMode = null;
+          state.hint = "⚔️ 기사 건설 완료!";
+          render();
+        }
+        return;
       }
     }
 
@@ -6246,6 +6563,18 @@
           state.phase = "main"; state.canEndTurn = true;
         }
         if (state.winner) { render(); return; }
+
+        // C&K: activate knights if barbarian approaching
+        if (state.citiesKnights && state.phase === "main") {
+          const ckAI = window.pingtanAI;
+          if (ckAI && ckAI.shouldActivateCKKnight && ckAI.shouldActivateCKKnight(state, pIdx)) {
+            const inactiveKnight = (p.ckKnights || []).find(vIdx => !state.knightActive[vIdx]);
+            if (inactiveKnight !== undefined) {
+              activateCKKnight(pIdx, inactiveKnight);
+              await sleep(500);
+            }
+          }
+        }
 
         // Optional dev-card timing: monopoly when clearly profitable
         if (hasPlayableMonopoly(pIdx)) {
@@ -6666,12 +6995,21 @@
 
     function resourceStrip(player) {
       if (!player) return "";
-      return RESOURCES.map(r => {
+      const resHtml = RESOURCES.map(r => {
         const bank = bankRemaining(r);
         return `<div class="res" onclick="onResourceTap('${r}')" style="cursor:pointer;" title="은행: ${bank}장 남음">
           ${RESOURCE_ICONS[r]} ${player.resources[r]}<span style="font-size:8px;color:#666;"> /${bank}</span>
         </div>`;
       }).join("");
+      if (state.citiesKnights) {
+        const comm = player.commodities || { cloth: 0, coin: 0, paper: 0 };
+        const commIcons = { cloth: "🧵", coin: "💰", paper: "📚" };
+        const commHtml = COMMODITIES.map(c =>
+          `<div class="res" title="${c}" style="font-size:11px;">${commIcons[c]}${comm[c]||0}</div>`
+        ).join("");
+        return resHtml + `<div style="display:flex;gap:2px;border-left:1px solid #555;margin-left:4px;padding-left:4px;">${commHtml}</div>`;
+      }
+      return resHtml;
     }
 
     function onResourceTap(resource) {
@@ -6954,6 +7292,10 @@
           const cityClick = cityTarget ? ` onclick="onVertexClick(${v.index})"` : "";
           const bIcon = v.building === "city" ? "🏰" : "🏠";
           html += `<div class="vertex ${v.building} player-${ownerIdx}${isHuman ? " human-player" : ""}${isJustPlaced ? " just-placed" : ""}${cityTarget ? " city-target" : ""}" style="left:${p.x}px;top:${p.y}px;--owner-color:${state.players[ownerIdx].color};background:${state.players[ownerIdx].color};color:#fff;" title="${state.players[ownerIdx].name} ${label}"${cityClick}>${bIcon}</div>`;
+        } else if (state.citiesKnights && state.knightLevels[v.index] !== undefined) {
+          const active = state.knightActive[v.index];
+          const knightColor = active ? "#ffd700" : "#888";
+          html += `<div class="vertex" style="left:${p.x}px;top:${p.y}px;background:${knightColor};color:#000;border:2px solid #000;font-size:12px;cursor:default;" title="기사 Lv${state.knightLevels[v.index]}${active?' (활성)':' (비활성)'}">⚔️</div>`;
         } else {
           const cls = ["vertex", vBuild.has(v.index) ? "buildable" : ""].join(" ");
           html += `<div class="${cls}" style="left:${p.x}px; top:${p.y}px;" onclick="onVertexClick(${v.index})"></div>`;
@@ -7439,6 +7781,14 @@ https://game.cocy.io/pingtan/`;
           ${hasSeaMap ? `<button class="${buildActionButtonClass("ship-select")}" ${actionState.canMoveShip ? "" : "disabled"} onclick="${actionState.canMoveShip ? "humanMoveShip()" : ""}">${pt("moveShip")}</button>` : ""}
           <button class="${buildActionButtonClass("settlement")}" ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">${pt("settlement")}(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
           <button class="${buildActionButtonClass("city")}" ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">${pt("city")}(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
+          ${state.citiesKnights ? `
+          <button ${(actionState.canMain && canAfford(me, COST_KNIGHT_BUILD) && validCKKnightSpots(myIdx).length) ? "" : "disabled"}
+            onclick="humanBuildCKKnight()">⚔️기사건설${costLabel(COST_KNIGHT_BUILD, idx)}</button>
+          <button ${(actionState.canMain && canAfford(me, COST_KNIGHT_ACTIVATE) && (me.ckKnights||[]).some(vIdx => !state.knightActive[vIdx])) ? "" : "disabled"}
+            onclick="humanActivateCKKnight()">⚡기사활성화${costLabel(COST_KNIGHT_ACTIVATE, idx)}</button>
+          ${(me.progressCards||[]).length > 0 ? (me.progressCards||[]).map(c =>
+            `<button onclick="humanPlayProgressCard('${c.type}')">🃏${c.type}</button>`
+          ).join("") : ""}` : ""}
           <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">${pt("trade")}</button>
           <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">${pt("devCard")}${costLabel(COST.devCard, idx)}</button>
           <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "⚔️" : ""}</button>
@@ -7453,6 +7803,10 @@ https://game.cocy.io/pingtan/`;
         <div class="game-body">
           ${renderMap()}
           ${renderWinnerModal()}
+          ${state.citiesKnights ? `<div style="display:flex;align-items:center;gap:6px;padding:2px 8px;font-size:12px;background:rgba(0,0,0,0.3);border-radius:4px;margin:2px 0;">
+  🏴야만인: ${"■".repeat(state.barbarianPos || 0)}${"□".repeat(Math.max(0, BARBARIAN_MAX - (state.barbarianPos||0)))} ${state.barbarianPos||0}/${BARBARIAN_MAX}
+  ${state.eventDiceResult ? `| 이벤트: ${{"barbarian":"🏴야만인","science":"📗과학","trade":"📘무역","politics":"📕정치"}[state.eventDiceResult]||state.eventDiceResult}` : ""}
+</div>` : ""}
           <div class="hint-bar">${hintText}</div>
           <div class="panel-info">
             <div class="score-compact">
@@ -9401,6 +9755,9 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.setPlayerNickname = setPlayerNickname;
     window.rollDice = rollDice;
     window.endTurn = endTurn;
+    window.humanBuildCKKnight = humanBuildCKKnight;
+    window.humanActivateCKKnight = humanActivateCKKnight;
+    window.humanPlayProgressCard = humanPlayProgressCard;
     window.humanBuildRoad = humanBuildRoad;
     window.humanBuildShip = humanBuildShip;
     window.humanMoveShip = humanMoveShip;
