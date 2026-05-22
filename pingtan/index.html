@@ -2306,7 +2306,8 @@
       barbarianPos: 0,
       eventDiceResult: null,
       knightLevels: {},
-      knightActive: {}
+      knightActive: {},
+      merchantFleetPlayerIdx: null
     };
 
     const mpState = {
@@ -2411,6 +2412,7 @@
       state.eventDiceResult = null;
       state.knightLevels = {};
       state.knightActive = {};
+      state.merchantFleetPlayerIdx = null;
       state.tradeDialog = { open: false, give: null, get: null };
       state.turnSeconds = clampTurnSeconds(state.turnSeconds || 60);
       state.targetScore = clampTargetScore(state.targetScore || defaultTargetScoreForMap(state.selectedMapId));
@@ -4399,58 +4401,87 @@
       const idx = (p.progressCards || []).findIndex(c => c.type === cardType);
       if (idx < 0) return false;
       p.progressCards.splice(idx, 1);
+      const RES_NAMES = { brick:"벽돌", lumber:"나무", wool:"양털", grain:"밀", ore:"광석" };
       switch (cardType) {
-        case "crane":
-          p.resources.ore = (p.resources.ore || 0) + 1;
-          showToast("🏗️ 크레인: 광석 1 획득", 2000);
+        case "crane": {
+          // 도시 건설 시 광석 1개 할인 (즉시 광석 2개 지급으로 표현)
+          const gained = 2;
+          p.resources.ore = (p.resources.ore || 0) + gained;
+          showToast(`🏗️ 크레인: 광석 ${gained}개 획득 (도시 건설 할인)`, 2500);
           break;
-        case "irrigation":
+        }
+        case "irrigation": {
+          // 밀 타일에 인접한 내 마을/도시당 밀 2개 획득
+          let gained = 0;
+          const counted = new Set();
           for (const hex of state.hexes) {
-            if (hex.type !== "grain" || hex.index === state.robber) continue;
-            for (const vIdx of hex.vertices) {
+            if (hex.type !== "grain") continue;
+            for (const vIdx of (hex.vertices || [])) {
+              if (counted.has(vIdx)) continue;
               const v = state.vertices[vIdx];
-              if (v.building && v.owner === pIdx) {
-                p.resources.grain = (p.resources.grain || 0) + 1;
-              }
+              if (!v || !v.building || v.owner !== pIdx) continue;
+              counted.add(vIdx);
+              const amount = v.building === "city" ? 2 : 2;
+              p.resources.grain = (p.resources.grain || 0) + amount;
+              gained += amount;
             }
           }
-          showToast("🌾 관개: 밀 획득", 2000);
+          if (gained > 0) showToast(`🌾 관개: 밀 ${gained}개 획득`, 2500);
+          else showToast("🌾 관개: 밀 타일에 건물이 없어 획득 없음", 2500);
           break;
-        case "resourceMonopoly":
+        }
+        case "resourceMonopoly": {
+          // 가장 보유량 많은 자원을 상대 각각에게서 1장씩 취함
+          const totals = {};
+          for (const r of RESOURCES) {
+            totals[r] = state.players.filter((_, i) => i !== pIdx).reduce((s, opp) => s + (opp.resources[r] || 0), 0);
+          }
+          const targetRes = RESOURCES.reduce((best, r) => totals[r] > (totals[best] || 0) ? r : best, RESOURCES[0]);
+          let gained = 0;
           for (let i = 0; i < state.players.length; i++) {
             if (i === pIdx) continue;
             const opp = state.players[i];
-            const resources = Object.keys(opp.resources || {}).filter(r => (opp.resources[r] || 0) > 0);
-            if (resources.length) {
-              const res = resources[Math.floor(Math.random() * resources.length)];
-              opp.resources[res]--;
-              p.resources[res] = (p.resources[res] || 0) + 1;
+            if ((opp.resources[targetRes] || 0) > 0) {
+              opp.resources[targetRes]--;
+              p.resources[targetRes] = (p.resources[targetRes] || 0) + 1;
+              gained++;
             }
           }
-          showToast("💰 자원 독점: 각 상대에게서 자원 1장 획득", 2500);
+          showToast(`💰 자원 독점: ${RES_NAMES[targetRes]||targetRes} ${gained}장 획득`, 2500);
           break;
+        }
         case "merchantFleet":
-          showToast("🚢 상인 함대: 이번 턴 2:1 거래 가능 (은행 비율 적용)", 2500);
+          state.merchantFleetPlayerIdx = pIdx;
+          showToast("🚢 상인 함대: 이번 턴 모든 자원 2:1 거래 가능!", 3000);
+          render(); // 즉시 버튼 활성화 반영
           break;
-        case "knightCard":
-          { const myKnight = (p.ckKnights || []).find(vIdx => !state.knightActive[vIdx]);
-            if (myKnight !== undefined) { state.knightActive[myKnight] = true; showToast("⚔️ 기사 카드: 기사 즉시 활성화!", 2500); }
-            else showToast("⚔️ 기사 카드: 활성화할 기사 없음", 2000); }
+        case "knightCard": {
+          const myKnight = (p.ckKnights || []).find(vIdx => !state.knightActive[vIdx]);
+          if (myKnight !== undefined) {
+            state.knightActive[myKnight] = true;
+            showToast("기사 카드: 기사 즉시 활성화!", 2500);
+          } else {
+            showToast("기사 카드: 활성화할 비활성 기사 없음", 2000);
+          }
           break;
-        case "spy":
-          { let stolen = false;
-            for (let i = 0; i < state.players.length; i++) {
-              if (i === pIdx) continue;
-              const opp = state.players[i];
-              if ((opp.progressCards || []).length > 0) {
-                const stolen_card = opp.progressCards.splice(Math.floor(Math.random() * opp.progressCards.length), 1)[0];
-                p.progressCards.push(stolen_card);
-                showToast(`🕵️ 스파이: ${opp.name}의 카드 탈취!`, 2500);
-                stolen = true; break;
-              }
+        }
+        case "spy": {
+          let stolen = false;
+          for (let i = 0; i < state.players.length; i++) {
+            if (i === pIdx) continue;
+            const opp = state.players[i];
+            if ((opp.progressCards || []).length > 0) {
+              const stolen_card = opp.progressCards.splice(Math.floor(Math.random() * opp.progressCards.length), 1)[0];
+              p.progressCards.push(stolen_card);
+              const cardDeckIcon = { science:"📗", trade:"📘", politics:"📕" };
+              const cardNames = { crane:"크레인", irrigation:"관개", resourceMonopoly:"자원독점", merchantFleet:"상인함대", knightCard:"기사패", spy:"스파이" };
+              showToast(`🕵️ 스파이: ${opp.name}에게서 ${cardDeckIcon[stolen_card?.deck]||""}${cardNames[stolen_card?.type]||stolen_card?.type} 탈취!`, 3000);
+              stolen = true; break;
             }
-            if (!stolen) showToast("🕵️ 스파이: 빼앗을 카드 없음", 2000); }
+          }
+          if (!stolen) showToast("🕵️ 스파이: 빼앗을 카드 없음", 2000);
           break;
+        }
       }
       recalcAllVP();
       return true;
@@ -4801,6 +4832,8 @@
         if (port.type === "generic" && port.ratio < best) best = port.ratio;
         if (port.type === resourceType && port.ratio < best) best = port.ratio;
       }
+      // merchantFleet: 모든 자원 2:1
+      if (state.merchantFleetPlayerIdx === playerIdx) best = Math.min(best, 2);
       return best;
     }
 
@@ -5153,11 +5186,12 @@
         return false;
       }
       state.buildMode = null;
-      // C&K: deactivate all knights at turn end
+      // C&K: deactivate all knights + clear merchantFleet at turn end
       if (state.citiesKnights) {
         for (const vIdx of Object.keys(state.knightActive)) {
           state.knightActive[vIdx] = false;
         }
+        state.merchantFleetPlayerIdx = null;
       }
       state.shipMovingIdx = null;
       state.movedShipThisTurn = false;
