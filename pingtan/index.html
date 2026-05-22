@@ -687,6 +687,43 @@
       background: rgba(255,255,255,0.08);
     }
 
+    /* ── Cities & Knights UI ─────────────────────────────── */
+    .ck-bar-wrap {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 10px;
+      background: rgba(0,0,0,0.45);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      font-size: 11px; color: #ccc;
+    }
+    .ck-pips { display: flex; gap: 3px; align-items: center; }
+    .ck-pip {
+      width: 12px; height: 12px; border-radius: 3px;
+      border: 1px solid #444; background: #222;
+      transition: background 0.2s;
+    }
+    .ck-pip.filled { background: #4ecca3; border-color: #4ecca3; }
+    .ck-pip.warn   { background: #f59e0b; border-color: #f59e0b; }
+    .ck-pip.danger { background: #ef4444; border-color: #ef4444; animation: ck-pulse 0.7s infinite alternate; }
+    @keyframes ck-pulse { from { opacity:1; } to { opacity:0.45; } }
+    .ck-event-badge {
+      margin-left: 4px; padding: 1px 6px;
+      border-radius: 999px; font-size: 11px; font-weight: 700;
+      border: 1px solid currentColor;
+    }
+    .ck-divider {
+      width: 100%; text-align: center;
+      font-size: 10px; color: #888; letter-spacing: 0.5px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      margin: 2px 0; padding-top: 4px;
+    }
+    .ck-card-btn {
+      font-size: 11px; padding: 5px 8px; border-radius: 8px;
+      font-weight: 700; cursor: pointer;
+    }
+    .ck-card-science { background: rgba(34,80,34,0.85); border-color: #4ecca3; color: #a8ffd8; }
+    .ck-card-trade   { background: rgba(30,60,110,0.85); border-color: #60a5fa; color: #bfdbfe; }
+    .ck-card-politics{ background: rgba(80,20,60,0.85); border-color: #c084fc; color: #e9d5ff; }
+
     .hint {
       font-size: 12px;
       text-align: center;
@@ -7014,10 +7051,11 @@
       if (state.citiesKnights) {
         const comm = player.commodities || { cloth: 0, coin: 0, paper: 0 };
         const commIcons = { cloth: "🧵", coin: "💰", paper: "📚" };
+        const commNames = { cloth: "천", coin: "주화", paper: "책" };
         const commHtml = COMMODITIES.map(c =>
-          `<div class="res" title="${c}" style="font-size:11px;">${commIcons[c]}${comm[c]||0}</div>`
+          `<div class="res" title="${commNames[c]} (상품)" style="font-size:11px;border-color:rgba(255,215,0,0.3);background:rgba(255,215,0,0.06);">${commIcons[c]}<b>${comm[c]||0}</b></div>`
         ).join("");
-        return resHtml + `<div style="display:flex;gap:2px;border-left:1px solid #555;margin-left:4px;padding-left:4px;">${commHtml}</div>`;
+        return resHtml + `<div style="display:flex;gap:2px;border-left:2px solid rgba(255,215,0,0.4);margin-left:4px;padding-left:4px;" title="상품 (도시 생산)">${commHtml}</div>`;
       }
       return resHtml;
     }
@@ -7793,14 +7831,21 @@ https://game.cocy.io/pingtan/`;
           ${hasSeaMap ? `<button class="${buildActionButtonClass("ship-select")}" ${actionState.canMoveShip ? "" : "disabled"} onclick="${actionState.canMoveShip ? "humanMoveShip()" : ""}">${pt("moveShip")}</button>` : ""}
           <button class="${buildActionButtonClass("settlement")}" ${actionState.canSettlement ? "" : "disabled"} onclick="${actionState.canSettlement ? "humanBuildSettlement()" : "humanTryBuild('settlement')"}">${pt("settlement")}(${me.buildings.filter(b=>b.type==="settlement").length}/5)${costLabel(COST.settlement, idx)}</button>
           <button class="${buildActionButtonClass("city")}" ${actionState.canCity ? "" : "disabled"} onclick="${actionState.canCity ? "humanBuildCity()" : "humanTryBuild('city')"}">${pt("city")}(${me.buildings.filter(b=>b.type==="city").length}/4)${costLabel(COST.city, idx)}</button>
-          ${state.citiesKnights ? `
-          <button ${(actionState.canMain && canAfford(me, COST_KNIGHT_BUILD) && validCKKnightSpots(myIdx).length) ? "" : "disabled"}
-            onclick="humanBuildCKKnight()">⚔️기사건설${costLabel(COST_KNIGHT_BUILD, idx)}</button>
-          <button ${(actionState.canMain && canAfford(me, COST_KNIGHT_ACTIVATE) && (me.ckKnights||[]).some(vIdx => !state.knightActive[vIdx])) ? "" : "disabled"}
-            onclick="humanActivateCKKnight()">⚡기사활성화${costLabel(COST_KNIGHT_ACTIVATE, idx)}</button>
-          ${(me.progressCards||[]).length > 0 ? (me.progressCards||[]).map(c =>
-            `<button onclick="humanPlayProgressCard('${c.type}')">🃏${c.type}</button>`
-          ).join("") : ""}` : ""}
+          ${state.citiesKnights ? (() => {
+            const ckCanBuild = actionState.canMain && canAfford(me, COST_KNIGHT_BUILD) && validCKKnightSpots(myIdx).length > 0;
+            const ckCanActivate = actionState.canMain && canAfford(me, COST_KNIGHT_ACTIVATE) && (me.ckKnights||[]).some(vIdx => !state.knightActive[vIdx]);
+            const totalKnights = (me.ckKnights||[]).length;
+            const activeKnights = (me.ckKnights||[]).filter(vIdx => state.knightActive[vIdx]).length;
+            const cardNames = { crane:"🏗️크레인", irrigation:"🌾관개", resourceMonopoly:"💰자원독점", merchantFleet:"🚢상인함대", knightCard:"⚔️기사패", spy:"🕵️스파이" };
+            const cardDeck  = { crane:"science", irrigation:"science", resourceMonopoly:"trade", merchantFleet:"trade", knightCard:"politics", spy:"politics" };
+            const progressHtml = (me.progressCards||[]).map(c =>
+              `<button class="ck-card-btn ck-card-${cardDeck[c.type]||'science'}" onclick="humanPlayProgressCard('${c.type}')">${cardNames[c.type]||c.type}</button>`
+            ).join("");
+            return `<div class="ck-divider">⚔️ 도시와 기사 · 기사 ${activeKnights}/${totalKnights}활성</div>
+            <button ${ckCanBuild ? "" : "disabled"} onclick="humanBuildCKKnight()">⚔️ 기사건설${costLabel(COST_KNIGHT_BUILD, idx)}</button>
+            <button ${ckCanActivate ? "" : "disabled"} onclick="humanActivateCKKnight()">⚡ 기사활성화${costLabel(COST_KNIGHT_ACTIVATE, idx)}</button>
+            ${progressHtml}`;
+          })() : ""}
           <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">${pt("trade")}</button>
           <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">${pt("devCard")}${costLabel(COST.devCard, idx)}</button>
           <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "⚔️" : ""}</button>
@@ -7815,10 +7860,24 @@ https://game.cocy.io/pingtan/`;
         <div class="game-body">
           ${renderMap()}
           ${renderWinnerModal()}
-          ${state.citiesKnights ? `<div style="display:flex;align-items:center;gap:6px;padding:2px 8px;font-size:12px;background:rgba(0,0,0,0.3);border-radius:4px;margin:2px 0;">
-  🏴야만인: ${"■".repeat(state.barbarianPos || 0)}${"□".repeat(Math.max(0, BARBARIAN_MAX - (state.barbarianPos||0)))} ${state.barbarianPos||0}/${BARBARIAN_MAX}
-  ${state.eventDiceResult ? `| 이벤트: ${{"barbarian":"🏴야만인","science":"📗과학","trade":"📘무역","politics":"📕정치"}[state.eventDiceResult]||state.eventDiceResult}` : ""}
-</div>` : ""}
+          ${state.citiesKnights ? (() => {
+            const pos = state.barbarianPos || 0;
+            const pips = Array.from({length: BARBARIAN_MAX}, (_, i) => {
+              const cls = i >= pos ? "" : pos >= 6 ? "filled danger" : pos >= 4 ? "filled warn" : "filled";
+              return `<div class="ck-pip ${cls}"></div>`;
+            }).join("");
+            const evtLabels = { barbarian:"🏴 야만인", science:"📗 과학", trade:"📘 무역", politics:"📕 정치" };
+            const evtColor  = { science:"#4ecca3", trade:"#60a5fa", politics:"#c084fc", barbarian:"#ef4444" };
+            const evtBadge = state.eventDiceResult
+              ? `<span class="ck-event-badge" style="color:${evtColor[state.eventDiceResult]||'#aaa'}">${evtLabels[state.eventDiceResult]||state.eventDiceResult}</span>`
+              : "";
+            return `<div class="ck-bar-wrap">
+              <span style="font-weight:700;white-space:nowrap;">🏴 야만인</span>
+              <div class="ck-pips">${pips}</div>
+              <span style="color:#888;font-size:10px;">${pos}/${BARBARIAN_MAX}</span>
+              ${evtBadge}
+            </div>`;
+          })() : ""}
           <div class="hint-bar">${hintText}</div>
           <div class="panel-info">
             <div class="score-compact">
