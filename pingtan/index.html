@@ -4310,10 +4310,10 @@
           const cityBuilding = p.buildings.find(b => b.type === "city");
           if (cityBuilding) {
             cityBuilding.type = "settlement";
-            const v = state.vertices[cityBuilding.vIdx];
+            const v = state.vertices[cityBuilding.vertex];
             if (v) v.building = "settlement";
             recalcAllVP();
-            showToast(`🏴 야만인 공격! ${p.name}의 도시가 마을로 강등됐습니다.`, 4000);
+            showToast(`야만인 공격! ${p.name}의 도시가 마을로 강등됐습니다.`, 4000);
           }
         } else {
           showToast("🏴 야만인 공격! 방어 실패 (강등 대상 없음)", 3000);
