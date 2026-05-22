@@ -1646,6 +1646,10 @@
         mapCatLarge: "대형",
         mapCatSeafarers: "해양 확장",
         mapCatFog: "안개 탐험",
+        mapCatExpansion: "확장판",
+        mapNameCitiesKnightsStandard: "도시와 기사",
+        mapDescCitiesKnightsStandard: "도시와 기사 확장판. 이벤트 주사위, 야만인 침공, 기사 배치, 상품 생산, 진보카드 3덱.",
+        mapBehaviorCitiesKnightsStandard: "야만인이 다가오면 기사를 활성화하세요. 도시마다 상품(천·주화·책)이 추가 생산됩니다.",
         mapNameOceanExpedition: "대양 원정",
         mapDescOceanExpedition: "8인 해양 확장. 주 대륙에서 배를 타고 세 개의 섬으로 탐험하라. 금광 섬 최초 발견 보너스.",
         mapBehaviorOceanExpedition: "⛵ 배 건설로 바다 건너 이동 (목재+양털). 금광 타일 포함. 새 섬 최초 상륙 시 +2 VP.",
@@ -1942,6 +1946,10 @@
         mapCatLarge: "Large",
         mapCatSeafarers: "Seafarers",
         mapCatFog: "Fog Exploration",
+        mapCatExpansion: "Expansion",
+        mapNameCitiesKnightsStandard: "Cities & Knights",
+        mapDescCitiesKnightsStandard: "Cities & Knights expansion. Event dice, barbarian invasions, knights, commodities, and three progress card decks.",
+        mapBehaviorCitiesKnightsStandard: "Activate knights before the barbarians arrive. Cities produce commodities (cloth, coin, paper) in addition to resources.",
         mapNameOceanExpedition: "Ocean Expedition",
         mapDescOceanExpedition: "8-player seafarers. Set sail from the main island to explore three outer islands. Gold discovery bonus.",
         mapBehaviorOceanExpedition: "⛵ Build ships to cross sea (Lumber+Wool). Gold tiles included. +2 VP for first landing on new islands.",
@@ -2107,7 +2115,8 @@
       "caldera-bay": "CalderaBay",
       "silk-road": "SilkRoad",
       "ocean-expedition": "OceanExpedition",
-      "strait-passage": "StraitPassage"
+      "strait-passage": "StraitPassage",
+      "cities-knights-standard": "CitiesKnightsStandard"
     };
     function mapI18nSuffix(mapId) {
       return MAP_I18N_KEYS[mapId] || MAP_I18N_KEYS.standard;
@@ -7410,6 +7419,7 @@
     function getMapTags(m) {
       const tags = [];
       const axial = m.layout?.axial || [];
+      if (m.specialRules?.citiesKnights) tags.push("expansion");
       if (axial.some(h => h.fog)) tags.push("fog");
       if (axial.some(h => h.type === "sea")) tags.push("seafarers");
       if (m.maxPlayers <= 2) tags.push("2p");
@@ -7434,7 +7444,8 @@
         { key: "standard", label: pt("mapCatStandard") },
         { key: "large", label: pt("mapCatLarge") },
         { key: "seafarers", label: pt("mapCatSeafarers") },
-        { key: "fog", label: pt("mapCatFog") }
+        { key: "fog", label: pt("mapCatFog") },
+        { key: "expansion", label: pt("mapCatExpansion") }
       ];
 
       return `
