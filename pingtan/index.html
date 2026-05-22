@@ -688,16 +688,9 @@
     }
 
     /* ── Cities & Knights UI ─────────────────────────────── */
-    .ck-bar-wrap {
-      display: flex; align-items: center; gap: 6px;
-      padding: 5px 10px;
-      background: rgba(0,0,0,0.45);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      font-size: 11px; color: #ccc;
-    }
-    .ck-pips { display: flex; gap: 3px; align-items: center; }
+    .ck-pips { display: flex; gap: 2px; align-items: center; }
     .ck-pip {
-      width: 12px; height: 12px; border-radius: 3px;
+      width: 10px; height: 10px; border-radius: 2px;
       border: 1px solid #444; background: #222;
       transition: background 0.2s;
     }
@@ -7836,14 +7829,16 @@ https://game.cocy.io/pingtan/`;
             const ckCanActivate = actionState.canMain && canAfford(me, COST_KNIGHT_ACTIVATE) && (me.ckKnights||[]).some(vIdx => !state.knightActive[vIdx]);
             const totalKnights = (me.ckKnights||[]).length;
             const activeKnights = (me.ckKnights||[]).filter(vIdx => state.knightActive[vIdx]).length;
-            const cardNames = { crane:"🏗️크레인", irrigation:"🌾관개", resourceMonopoly:"💰자원독점", merchantFleet:"🚢상인함대", knightCard:"⚔️기사패", spy:"🕵️스파이" };
+            const cardNames = { crane:"크레인", irrigation:"관개", resourceMonopoly:"자원독점", merchantFleet:"상인함대", knightCard:"기사패", spy:"스파이" };
             const cardDeck  = { crane:"science", irrigation:"science", resourceMonopoly:"trade", merchantFleet:"trade", knightCard:"politics", spy:"politics" };
-            const progressHtml = (me.progressCards||[]).map(c =>
-              `<button class="ck-card-btn ck-card-${cardDeck[c.type]||'science'}" onclick="humanPlayProgressCard('${c.type}')">${cardNames[c.type]||c.type}</button>`
-            ).join("");
-            return `<div class="ck-divider">⚔️ 도시와 기사 · 기사 ${activeKnights}/${totalKnights}활성</div>
-            <button ${ckCanBuild ? "" : "disabled"} onclick="humanBuildCKKnight()">⚔️ 기사건설${costLabel(COST_KNIGHT_BUILD, idx)}</button>
-            <button ${ckCanActivate ? "" : "disabled"} onclick="humanActivateCKKnight()">⚡ 기사활성화${costLabel(COST_KNIGHT_ACTIVATE, idx)}</button>
+            const cardDeckIcon = { science:"📗", trade:"📘", politics:"📕" };
+            const progressHtml = (me.progressCards||[]).map(c => {
+              const deck = cardDeck[c.type] || "science";
+              return `<button class="ck-card-btn ck-card-${deck}" onclick="humanPlayProgressCard('${c.type}')">${cardDeckIcon[deck]}${cardNames[c.type]||c.type}</button>`;
+            }).join("");
+            return `<div class="ck-divider">기사단 · 활성 ${activeKnights}/${totalKnights}</div>
+            <button ${ckCanBuild ? "" : "disabled"} onclick="humanBuildCKKnight()">기사건설${costLabel(COST_KNIGHT_BUILD, idx)}</button>
+            <button ${ckCanActivate ? "" : "disabled"} onclick="humanActivateCKKnight()">⚡기사활성화${costLabel(COST_KNIGHT_ACTIVATE, idx)}</button>
             ${progressHtml}`;
           })() : ""}
           <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">${pt("trade")}</button>
@@ -7860,30 +7855,31 @@ https://game.cocy.io/pingtan/`;
         <div class="game-body">
           ${renderMap()}
           ${renderWinnerModal()}
-          ${state.citiesKnights ? (() => {
-            const pos = state.barbarianPos || 0;
-            const pips = Array.from({length: BARBARIAN_MAX}, (_, i) => {
-              const cls = i >= pos ? "" : pos >= 6 ? "filled danger" : pos >= 4 ? "filled warn" : "filled";
-              return `<div class="ck-pip ${cls}"></div>`;
-            }).join("");
-            const evtLabels = { barbarian:"🏴 야만인", science:"📗 과학", trade:"📘 무역", politics:"📕 정치" };
-            const evtColor  = { science:"#4ecca3", trade:"#60a5fa", politics:"#c084fc", barbarian:"#ef4444" };
-            const evtBadge = state.eventDiceResult
-              ? `<span class="ck-event-badge" style="color:${evtColor[state.eventDiceResult]||'#aaa'}">${evtLabels[state.eventDiceResult]||state.eventDiceResult}</span>`
-              : "";
-            return `<div class="ck-bar-wrap">
-              <span style="font-weight:700;white-space:nowrap;">🏴 야만인</span>
-              <div class="ck-pips">${pips}</div>
-              <span style="color:#888;font-size:10px;">${pos}/${BARBARIAN_MAX}</span>
-              ${evtBadge}
-            </div>`;
-          })() : ""}
           <div class="hint-bar">${hintText}</div>
           <div class="panel-info">
             <div class="score-compact">
               ${state.players.map((p, i) => `<div class="score-compact-row${i === state.currentPlayer ? ' active' : ''}"><span style="color:${PLAYER_COLORS[i]};max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name||'P'+(i+1)}</span><span>${publicVPForPlayer(i, myIdx)}VP</span></div>`).join('')}
             </div>
             <div class="resources">${resourceStrip(me)}</div>
+            ${state.citiesKnights ? (() => {
+              const pos = state.barbarianPos || 0;
+              const pips = Array.from({length: BARBARIAN_MAX}, (_, i) => {
+                const cls = i >= pos ? "" : pos >= 6 ? "filled danger" : pos >= 4 ? "filled warn" : "filled";
+                return `<div class="ck-pip ${cls}"></div>`;
+              }).join("");
+              const evtLabels = { barbarian:"야만인", science:"과학", trade:"무역", politics:"정치" };
+              const evtIcons  = { barbarian:"★", science:"📗", trade:"📘", politics:"📕" };
+              const evtColor  = { science:"#4ecca3", trade:"#60a5fa", politics:"#c084fc", barbarian:"#ef4444" };
+              const evtBadge = state.eventDiceResult
+                ? `<span style="color:${evtColor[state.eventDiceResult]||'#aaa'};font-size:10px;">${evtIcons[state.eventDiceResult]||""}${evtLabels[state.eventDiceResult]||state.eventDiceResult}</span>`
+                : "";
+              return `<div style="display:flex;align-items:center;gap:4px;padding:2px 0;font-size:10px;color:#bbb;">
+                <span style="font-weight:700;color:${pos>=6?'#ef4444':pos>=4?'#f59e0b':'#ccc'};">야만인</span>
+                <div class="ck-pips" style="flex:1;">${pips}</div>
+                <span style="color:#666;">${pos}/${BARBARIAN_MAX}</span>
+                ${evtBadge}
+              </div>`;
+            })() : ""}
             ${vpBarHtml}
             ${timerHtml}
             ${hintText ? `<div class="panel-hint-landscape">${hintText}</div>` : ""}
