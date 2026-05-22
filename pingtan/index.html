@@ -4294,9 +4294,9 @@
         if (bestPIdx >= 0 && bestCount > 0) {
           const decks = ["science","trade","politics"];
           drawProgressCard(bestPIdx, decks[Math.floor(Math.random() * decks.length)]);
-          showToast(`⚔️ 야만인 격퇴! ${state.players[bestPIdx].name} 진보카드 획득`, 3500);
+          showToast(`야만인 격퇴! ${state.players[bestPIdx].name} 진보카드 획득`, 3500);
         } else {
-          showToast("⚔️ 야만인 격퇴! 방어 성공", 3000);
+          showToast("야만인 격퇴! 방어 성공", 3000);
         }
       } else {
         let worstPIdx = -1, worstCount = Infinity;
@@ -4395,7 +4395,7 @@
       return true;
     }
 
-    function playProgressCard(pIdx, cardType) {
+    function playProgressCard(pIdx, cardType, opts) {
       const p = state.players[pIdx];
       if (!p) return false;
       const idx = (p.progressCards || []).findIndex(c => c.type === cardType);
@@ -4404,10 +4404,9 @@
       const RES_NAMES = { brick:"벽돌", lumber:"나무", wool:"양털", grain:"밀", ore:"광석" };
       switch (cardType) {
         case "crane": {
-          // 도시 건설 시 광석 1개 할인 (즉시 광석 2개 지급으로 표현)
           const gained = 2;
           p.resources.ore = (p.resources.ore || 0) + gained;
-          showToast(`🏗️ 크레인: 광석 ${gained}개 획득 (도시 건설 할인)`, 2500);
+          showToast(`크레인: 광석 ${gained}개 즉시 획득 (도시 건설 지원)`, 2500);
           break;
         }
         case "irrigation": {
@@ -4431,12 +4430,8 @@
           break;
         }
         case "resourceMonopoly": {
-          // 가장 보유량 많은 자원을 상대 각각에게서 1장씩 취함
-          const totals = {};
-          for (const r of RESOURCES) {
-            totals[r] = state.players.filter((_, i) => i !== pIdx).reduce((s, opp) => s + (opp.resources[r] || 0), 0);
-          }
-          const targetRes = RESOURCES.reduce((best, r) => totals[r] > (totals[best] || 0) ? r : best, RESOURCES[0]);
+          const targetRes = opts?.resource;
+          if (!targetRes) return false; // must be called with chosen resource
           let gained = 0;
           for (let i = 0; i < state.players.length; i++) {
             if (i === pIdx) continue;
@@ -4447,12 +4442,12 @@
               gained++;
             }
           }
-          showToast(`💰 자원 독점: ${RES_NAMES[targetRes]||targetRes} ${gained}장 획득`, 2500);
+          showToast(`자원 독점: ${RES_NAMES[targetRes]||targetRes} ${gained}장 획득`, 2500);
           break;
         }
         case "merchantFleet":
           state.merchantFleetPlayerIdx = pIdx;
-          showToast("🚢 상인 함대: 이번 턴 모든 자원 2:1 거래 가능!", 3000);
+          showToast("상인 함대: 이번 턴 모든 자원 2:1 거래 가능!", 3000);
           render(); // 즉시 버튼 활성화 반영
           break;
         case "knightCard": {
@@ -6184,6 +6179,31 @@
     function humanPlayProgressCard(cardType) {
       if (state.phase !== "main") return;
       const pIdx = localPlayerIndex();
+      if (cardType === "resourceMonopoly") {
+        const overlay = document.createElement("div");
+        overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.82);";
+        overlay.innerHTML = `
+          <div style="background:#16213e;border:2px solid #60a5fa;border-radius:16px;padding:20px;max-width:320px;width:90%;text-align:center;">
+            <div style="font-size:15px;font-weight:700;margin-bottom:6px;color:#bfdbfe;">자원 독점</div>
+            <div style="font-size:12px;color:#9ca3af;margin-bottom:12px;">상대방 각각에게서 가져올 자원을 선택하세요</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+              ${RESOURCES.map(r => {
+                const preview = state.players.filter((_, i) => i !== pIdx).reduce((s, opp) => s + ((opp.resources[r]||0) > 0 ? 1 : 0), 0);
+                return `<button onclick="window._rmPick('${r}')" style="padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:16px;cursor:pointer;">${RESOURCE_ICONS[r]}<div style="font-size:9px;margin-top:2px;">${RESOURCE_NAMES[r]}</div><div style="font-size:11px;color:#fbbf24;font-weight:900;margin-top:3px;">+${preview}</div></button>`;
+              }).join("")}
+            </div>
+            <button onclick="window._rmPick(null)" style="margin-top:10px;padding:6px 16px;border-radius:8px;border:1px solid #666;background:none;color:#999;cursor:pointer;font-size:12px;">취소</button>
+          </div>`;
+        document.body.appendChild(overlay);
+        window._rmPick = (res) => {
+          overlay.remove();
+          delete window._rmPick;
+          if (!res) return;
+          playProgressCard(pIdx, cardType, { resource: res });
+          render();
+        };
+        return;
+      }
       playProgressCard(pIdx, cardType);
       render();
     }
@@ -7371,7 +7391,7 @@
         } else if (state.citiesKnights && state.knightLevels[v.index] !== undefined) {
           const active = state.knightActive[v.index];
           const knightColor = active ? "#ffd700" : "#888";
-          html += `<div class="vertex" style="left:${p.x}px;top:${p.y}px;background:${knightColor};color:#000;border:2px solid #000;font-size:12px;cursor:default;" title="기사 Lv${state.knightLevels[v.index]}${active?' (활성)':' (비활성)'}">⚔️</div>`;
+          html += `<div class="vertex" style="left:${p.x}px;top:${p.y}px;background:${knightColor};color:#000;border:2px solid #000;font-size:10px;font-weight:700;cursor:default;" title="기사 Lv${state.knightLevels[v.index]}${active?' (활성)':' (비활성)'}">기사</div>`;
         } else {
           const cls = ["vertex", vBuild.has(v.index) ? "buildable" : ""].join(" ");
           html += `<div class="${cls}" style="left:${p.x}px; top:${p.y}px;" onclick="onVertexClick(${v.index})"></div>`;
@@ -7878,7 +7898,7 @@ https://game.cocy.io/pingtan/`;
           })() : ""}
           <button ${(actionState.canMain && totalResourceCount(me) >= 1) ? "" : "disabled"} onclick="humanTrade()">${pt("trade")}</button>
           <button ${(actionState.canMain && canAfford(me, COST.devCard) && state.devDeck.length) ? "" : "disabled"} onclick="humanBuyDevCard()">${pt("devCard")}${costLabel(COST.devCard, idx)}</button>
-          <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "⚔️" : ""}</button>
+          <button ${(myTurn && hasPlayableKnight(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseKnight()">🐴기사(${me.knights||0})${state.largestArmy === myIdx ? "[최강]" : ""}</button>
           <button ${(myTurn && hasPlayableMonopoly(localPlayerIndex())) ? "" : "disabled"} onclick="humanUseMonopoly()">💰모노폴리</button>
           <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="road_building"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseRoadBuilding()">🛣️${pt("roadBuilding")}</button>
           <button ${(myTurn && state.phase === "main" && (me.devCards||[]).some(c=>c.type==="year_of_plenty"&&c.turnBought<state.turnNumber&&!c.played)) ? "" : "disabled"} onclick="humanUseYearOfPlenty()">🌾풍년</button>
@@ -9770,10 +9790,16 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
           • 나무 타일 → 📚 책(paper)<br>
           • 마을은 자원만, 도시만 상품 추가 획득<br><br>
           <b>🃏 진보카드 (이벤트 주사위로 획득)</b><br>
-          • 📗 과학 덱: crane — 광석 1 즉시 획득 / irrigation — 밀 타일에서 즉시 수확<br>
-          • 📘 무역 덱: resourceMonopoly — 상대 각각에게서 자원 1장 탈취 / merchantFleet — 이번 턴 2:1 거래<br>
-          • 📕 정치 덱: knightCard — 기사 즉시 활성화 / spy — 상대 진보카드 1장 탈취<br>
-          • 카드 패널의 🃏 버튼을 눌러 사용<br><br>
+          • 📗 과학 덱<br>
+          &nbsp;&nbsp;- 크레인(crane): 광석 2개 즉시 획득<br>
+          &nbsp;&nbsp;- 관개(irrigation): 밀 타일에 접한 내 마을/도시마다 밀 2개 획득<br>
+          • 📘 무역 덱<br>
+          &nbsp;&nbsp;- 자원독점(resourceMonopoly): 상대방 각각에게서 가장 많이 보유한 자원 1장씩 탈취<br>
+          &nbsp;&nbsp;- 상인함대(merchantFleet): 이번 턴 동안 모든 자원 2:1 은행 거래<br>
+          • 📕 정치 덱<br>
+          &nbsp;&nbsp;- 기사패(knightCard): 내 비활성 기사 1개 즉시 활성화<br>
+          &nbsp;&nbsp;- 스파이(spy): 상대방의 진보카드 1장 무작위 탈취<br>
+          • 카드 버튼을 눌러 사용 (내 턴 메인 페이즈만 가능)<br><br>
           <b>🎯 승리 조건</b><br>
           • 13점 달성 (기본 10점 + 야만인 방어 진보카드 보상 누적으로 빨라짐)
           ` : ""}
