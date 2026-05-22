@@ -1385,7 +1385,7 @@
       .turn-timer-row { flex-direction: column; align-items: stretch; }
       .end-turn-timer-btn { width: 100%; margin-top: 1px; font-size: 10px; }
       .panel-info .resources {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
         gap: 3px;
         font-size: 10px;
       }
@@ -7035,22 +7035,23 @@
 
     function resourceStrip(player) {
       if (!player) return "";
-      const resHtml = RESOURCES.map(r => {
+      return RESOURCES.map(r => {
         const bank = bankRemaining(r);
         return `<div class="res" onclick="onResourceTap('${r}')" style="cursor:pointer;" title="은행: ${bank}장 남음">
           ${RESOURCE_ICONS[r]} ${player.resources[r]}<span style="font-size:8px;color:#666;"> /${bank}</span>
         </div>`;
       }).join("");
-      if (state.citiesKnights) {
-        const comm = player.commodities || { cloth: 0, coin: 0, paper: 0 };
-        const commIcons = { cloth: "🧵", coin: "💰", paper: "📚" };
-        const commNames = { cloth: "천", coin: "주화", paper: "책" };
-        const commHtml = COMMODITIES.map(c =>
-          `<div class="res" title="${commNames[c]} (상품)" style="font-size:11px;border-color:rgba(255,215,0,0.3);background:rgba(255,215,0,0.06);">${commIcons[c]}<b>${comm[c]||0}</b></div>`
-        ).join("");
-        return resHtml + `<div style="display:flex;gap:2px;border-left:2px solid rgba(255,215,0,0.4);margin-left:4px;padding-left:4px;" title="상품 (도시 생산)">${commHtml}</div>`;
-      }
-      return resHtml;
+    }
+
+    function commodityStrip(player) {
+      if (!player || !state.citiesKnights) return "";
+      const comm = player.commodities || { cloth: 0, coin: 0, paper: 0 };
+      const commIcons = { cloth: "🧵", coin: "💰", paper: "📚" };
+      const commNames = { cloth: "천", coin: "주화", paper: "책" };
+      const cells = COMMODITIES.map(c =>
+        `<div class="res" title="${commNames[c]} (상품)" style="font-size:11px;border-color:rgba(255,215,0,0.3);background:rgba(255,215,0,0.06);">${commIcons[c]}<b>${comm[c]||0}</b></div>`
+      ).join("");
+      return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:3px;" title="상품 (도시 생산)">${cells}</div>`;
     }
 
     function onResourceTap(resource) {
@@ -7861,6 +7862,7 @@ https://game.cocy.io/pingtan/`;
               ${state.players.map((p, i) => `<div class="score-compact-row${i === state.currentPlayer ? ' active' : ''}"><span style="color:${PLAYER_COLORS[i]};max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name||'P'+(i+1)}</span><span>${publicVPForPlayer(i, myIdx)}VP</span></div>`).join('')}
             </div>
             <div class="resources">${resourceStrip(me)}</div>
+            ${commodityStrip(me)}
             ${state.citiesKnights ? (() => {
               const pos = state.barbarianPos || 0;
               const pips = Array.from({length: BARBARIAN_MAX}, (_, i) => {
@@ -7873,10 +7875,10 @@ https://game.cocy.io/pingtan/`;
               const evtBadge = state.eventDiceResult
                 ? `<span style="color:${evtColor[state.eventDiceResult]||'#aaa'};font-size:10px;">${evtIcons[state.eventDiceResult]||""}${evtLabels[state.eventDiceResult]||state.eventDiceResult}</span>`
                 : "";
-              return `<div style="display:flex;align-items:center;gap:4px;padding:2px 0;font-size:10px;color:#bbb;">
-                <span style="font-weight:700;color:${pos>=6?'#ef4444':pos>=4?'#f59e0b':'#ccc'};">야만인</span>
-                <div class="ck-pips" style="flex:1;">${pips}</div>
-                <span style="color:#666;">${pos}/${BARBARIAN_MAX}</span>
+              return `<div style="display:flex;align-items:center;gap:3px;padding:2px 0;font-size:10px;color:#bbb;white-space:nowrap;overflow:hidden;">
+                <span style="font-weight:700;color:${pos>=6?'#ef4444':pos>=4?'#f59e0b':'#ccc'};flex-shrink:0;">야만인</span>
+                <div class="ck-pips" style="flex:1;min-width:0;">${pips}</div>
+                <span style="color:#666;flex-shrink:0;">${pos}/${BARBARIAN_MAX}</span>
                 ${evtBadge}
               </div>`;
             })() : ""}
