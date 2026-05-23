@@ -688,10 +688,10 @@
     }
 
     /* ── Cities & Knights UI ─────────────────────────────── */
-    .ck-pips { display: flex; gap: 2px; align-items: center; }
+    .ck-pips { display: flex; gap: 2px; align-items: center; overflow: hidden; }
     .ck-pip {
-      width: 10px; height: 10px; border-radius: 2px;
-      border: 1px solid #444; background: #222;
+      width: 8px; height: 8px; min-width: 6px; border-radius: 2px;
+      border: 1px solid #444; background: #222; flex-shrink: 1;
       transition: background 0.2s;
     }
     .ck-pip.filled { background: #4ecca3; border-color: #4ecca3; }
@@ -1385,8 +1385,8 @@
       .turn-timer-row { flex-direction: column; align-items: stretch; }
       .end-turn-timer-btn { width: 100%; margin-top: 1px; font-size: 10px; }
       .panel-info .resources {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 3px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 2px;
         font-size: 10px;
       }
       .panel-info .res { padding: 3px 2px; }
@@ -8090,7 +8090,7 @@ https://game.cocy.io/pingtan/`;
           ${renderMap()}
           ${renderWinnerModal()}
           <div class="hint-bar">${hintText}</div>
-          <div class="panel-info">
+          <div class="panel-info" id="panel-info">
             <div class="score-compact">
               ${state.players.map((p, i) => `<div class="score-compact-row${i === state.currentPlayer ? ' active' : ''}"><span style="color:${PLAYER_COLORS[i]};max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name||'P'+(i+1)}</span><span>${publicVPForPlayer(i, myIdx)}VP</span></div>`).join('')}
             </div>
@@ -8108,11 +8108,13 @@ https://game.cocy.io/pingtan/`;
               const evtBadge = state.eventDiceResult
                 ? `<span style="color:${evtColor[state.eventDiceResult]||'#aaa'};font-size:10px;">${evtIcons[state.eventDiceResult]||""}${evtLabels[state.eventDiceResult]||state.eventDiceResult}</span>`
                 : "";
-              return `<div style="display:flex;align-items:center;gap:3px;padding:2px 0;font-size:10px;color:#bbb;white-space:nowrap;overflow:hidden;">
-                <span style="font-weight:700;color:${pos>=6?'#ef4444':pos>=4?'#f59e0b':'#ccc'};flex-shrink:0;">야만인</span>
-                <div class="ck-pips" style="flex:1;min-width:0;">${pips}</div>
-                <span style="color:#666;flex-shrink:0;">${pos}/${BARBARIAN_MAX}</span>
-                ${evtBadge}
+              return `<div style="padding:2px 0;font-size:10px;color:#bbb;">
+                <div style="display:flex;align-items:center;gap:3px;min-width:0;">
+                  <span style="font-weight:700;color:${pos>=6?'#ef4444':pos>=4?'#f59e0b':'#ccc'};flex-shrink:0;">야만인</span>
+                  <div class="ck-pips" style="flex:1;min-width:0;overflow:hidden;">${pips}</div>
+                  <span style="color:#666;flex-shrink:0;">${pos}/${BARBARIAN_MAX}</span>
+                </div>
+                ${evtBadge ? `<div style="margin-top:2px;">${evtBadge}</div>` : ""}
               </div>`;
             })() : ""}
             ${vpBarHtml}
@@ -8220,6 +8222,8 @@ https://game.cocy.io/pingtan/`;
         const _st = _prev ? _prev.scrollTop : 0;
         const _prevAction = document.getElementById("panel-action");
         const _actionST = _prevAction ? _prevAction.scrollTop : 0;
+        const _prevInfo = document.getElementById("panel-info");
+        const _infoST = _prevInfo ? _prevInfo.scrollTop : 0;
         normalizeTurnPhaseForDice();
         app.innerHTML = renderGameScreen();
         bindMapPanHandlers();
@@ -8233,6 +8237,10 @@ https://game.cocy.io/pingtan/`;
         if (_actionST > 0) {
           const _actionEl = document.getElementById("panel-action");
           if (_actionEl) _actionEl.scrollTop = _actionST;
+        }
+        if (_infoST > 0) {
+          const _infoEl = document.getElementById("panel-info");
+          if (_infoEl) _infoEl.scrollTop = _infoST;
         }
       }
       updateTurnBanner();
