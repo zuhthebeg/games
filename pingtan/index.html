@@ -4369,7 +4369,12 @@
 
     function advanceBarbarian() {
       state.barbarianPos = (state.barbarianPos || 0) + 1;
-      if (state.barbarianPos >= BARBARIAN_MAX) triggerBarbarianAttack();
+      SFX.barbarianAdvance();
+      if (state.barbarianPos >= BARBARIAN_MAX) {
+        triggerBarbarianAttack();
+      } else if (state.barbarianPos >= 5) {
+        ckAnnounce("야만인 접근!");
+      }
     }
 
     function triggerBarbarianAttack() {
@@ -4393,14 +4398,19 @@
         for (const [i, cnt] of Object.entries(knightsByPlayer)) {
           if (cnt > bestCount) { bestCount = cnt; bestPIdx = Number(i); }
         }
+        SFX.defended();
         if (bestPIdx >= 0 && bestCount > 0) {
           const decks = ["science","trade","politics"];
           drawProgressCard(bestPIdx, decks[Math.floor(Math.random() * decks.length)]);
           showToast(`야만인 격퇴! ${state.players[bestPIdx].name} 진보카드 획득`, 3500);
+          ckAnnounce("야만인 격퇴! 방어 성공!");
         } else {
           showToast("야만인 격퇴! 방어 성공", 3000);
+          ckAnnounce("방어 성공!");
         }
       } else {
+        SFX.barbarianAttack();
+        ckAnnounce("야만인 공격!");
         let worstPIdx = -1, worstCount = Infinity;
         for (const [i, cnt] of Object.entries(knightsByPlayer)) {
           const p = state.players[Number(i)];
@@ -4448,6 +4458,7 @@
       state.knightLevels[vIdx] = 1;
       state.knightActive[vIdx] = false;
       p.ckKnights = [...(p.ckKnights || []), vIdx];
+      SFX.knight();
       recalcAllVP();
       return true;
     }
@@ -4459,6 +4470,7 @@
       if (state.knightActive[vIdx]) return false;
       spend(p, COST_KNIGHT_ACTIVATE);
       state.knightActive[vIdx] = true;
+      SFX.knightActivate();
       return true;
     }
 
@@ -4482,7 +4494,7 @@
       const humanIdx = localPlayerIndex();
       if (gains[humanIdx]) {
         const gainStr = Object.entries(gains[humanIdx]).map(([k,v])=>`${k}×${v}`).join(" ");
-        if (gainStr) showToast(`🏭 상품 획득: ${gainStr}`, 2000);
+        if (gainStr) { showToast(`🏭 상품 획득: ${gainStr}`, 2000); SFX.commodity(); }
       }
     }
 
@@ -5261,6 +5273,7 @@
           advanceBarbarian();
         } else {
           drawProgressCard(playerIdx, evt);
+          SFX.card();
           const deckName = { science:"📗과학", trade:"📘무역", politics:"📕정치" }[evt] || evt;
           showToast(`🎲 이벤트: ${deckName} 진보카드 획득!`, 2500);
         }
@@ -6276,10 +6289,12 @@
         showToast("⚡ 기사 활성화!", 1500);
         render();
       }
+
     }
 
     function humanPlayProgressCard(cardType) {
       if (state.phase !== "main") return;
+      SFX.progressCard();
       const pIdx = localPlayerIndex();
       if (cardType === "resourceMonopoly") {
         const overlay = document.createElement("div");
@@ -9260,9 +9275,74 @@ https://game.cocy.io/pingtan/`;
         win() {
           const notes = [523, 659, 784, 1047];
           notes.forEach((f, i) => tone(f, "triangle", 0.3, 0.4, i * 0.12));
+        },
+        // C&K 전용 효과음
+        knight() {
+          // 묵직한 금속 충격음 — 기사 배치
+          noise(0.07, 0.25);
+          tone(200, "square", 0.09, 0.35);
+          tone(150, "square", 0.12, 0.28, 0.06);
+          tone(100, "sine", 0.18, 0.22, 0.12);
+        },
+        knightActivate() {
+          // 에너지 차오르는 느낌 — 기사 활성화
+          tone(330, "square", 0.04, 0.2);
+          tone(495, "square", 0.05, 0.22, 0.05);
+          tone(660, "sine", 0.07, 0.28, 0.1);
+          tone(880, "sine", 0.09, 0.32, 0.16);
+          tone(1100, "sine", 0.07, 0.25, 0.24);
+        },
+        barbarianAdvance() {
+          // 저음 행진 — 야만인 전진
+          tone(65, "sawtooth", 0.25, 0.4);
+          tone(75, "sawtooth", 0.2, 0.35, 0.1);
+          noise(0.18, 0.12);
+          tone(55, "sine", 0.3, 0.45, 0.06);
+        },
+        barbarianAttack() {
+          // 강력한 충격 — 야만인 공격
+          noise(0.12, 0.5);
+          tone(50, "sawtooth", 0.35, 0.6);
+          tone(70, "sawtooth", 0.28, 0.5, 0.08);
+          tone(40, "sine", 0.4, 0.7, 0.04);
+          noise(0.1, 0.3, 0.18);
+        },
+        defended() {
+          // 승리 팡파르 — 야만인 격퇴
+          const notes = [523, 659, 784, 659, 1047];
+          notes.forEach((f, i) => tone(f, "triangle", 0.22, 0.35, i * 0.1));
+          tone(1175, "sine", 0.28, 0.4, 0.52);
+        },
+        commodity() {
+          // 상품 획득 — 자원과 다른 금속 차임 느낌
+          tone(1568, "sine", 0.06, 0.18);
+          tone(1175, "sine", 0.07, 0.15, 0.07);
+          tone(1319, "sine", 0.08, 0.2, 0.13);
+          tone(1047, "sine", 0.06, 0.16, 0.21);
+        },
+        progressCard() {
+          // 진보카드 사용 — 마법적인 4음 상승
+          tone(500, "triangle", 0.06, 0.2);
+          tone(700, "triangle", 0.07, 0.22, 0.07);
+          tone(900, "triangle", 0.08, 0.24, 0.14);
+          tone(1200, "sine", 0.1, 0.3, 0.22);
+          tone(1600, "sine", 0.08, 0.25, 0.32);
         }
       };
     })();
+
+    function ckAnnounce(text) {
+      if (!soundSettings.voice) return;
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "ko-KR";
+        u.rate = 1.1;
+        u.pitch = 1.0;
+        u.volume = soundSettings.voiceVol ?? 0.8;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(u);
+      } catch (_) {}
+    }
 
     function unlockGameAudio() {
       try {
