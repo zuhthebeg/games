@@ -1680,6 +1680,12 @@
         mapNameCitiesKnightsStandard: "도시와 기사",
         mapDescCitiesKnightsStandard: "도시와 기사 확장판. 이벤트 주사위, 야만인 침공, 기사 배치, 상품 생산, 진보카드 3덱.",
         mapBehaviorCitiesKnightsStandard: "야만인이 다가오면 기사를 활성화하세요. 도시마다 상품(천·주화·책)이 추가 생산됩니다.",
+        mapNameCitiesKnightsLarge: "도시와 기사 (대형)",
+        mapDescCitiesKnightsLarge: "도시와 기사 5-6인 대형판. 24칸 확장 대륙에서 야만인 대침공을 막아라. 승리 14점.",
+        mapBehaviorCitiesKnightsLarge: "넓은 땅만큼 야만인도 강해집니다. 더 많은 기사를 준비하고 도시를 지키세요.",
+        mapNameCitiesKnightsCoast: "도시와 기사 (해안)",
+        mapDescCitiesKnightsCoast: "도시와 기사 해안 확장. 바다 타일이 추가돼 배를 건설할 수 있습니다. 기사와 선단의 조합.",
+        mapBehaviorCitiesKnightsCoast: "내륙은 기사로, 해안은 배로 개척하세요. 항구와 야만인 방어를 동시에 챙겨야 합니다.",
         mapNameOceanExpedition: "대양 원정",
         mapDescOceanExpedition: "8인 해양 확장. 주 대륙에서 배를 타고 세 개의 섬으로 탐험하라. 금광 섬 최초 발견 보너스.",
         mapBehaviorOceanExpedition: "⛵ 배 건설로 바다 건너 이동 (목재+양털). 금광 타일 포함. 새 섬 최초 상륙 시 +2 VP.",
@@ -1980,6 +1986,12 @@
         mapNameCitiesKnightsStandard: "Cities & Knights",
         mapDescCitiesKnightsStandard: "Cities & Knights expansion. Event dice, barbarian invasions, knights, commodities, and three progress card decks.",
         mapBehaviorCitiesKnightsStandard: "Activate knights before the barbarians arrive. Cities produce commodities (cloth, coin, paper) in addition to resources.",
+        mapNameCitiesKnightsLarge: "Cities & Knights (Large)",
+        mapDescCitiesKnightsLarge: "Cities & Knights 5-6 player large map. 24-hex expanded continent. Win at 14 VP.",
+        mapBehaviorCitiesKnightsLarge: "More land means more barbarians. Build more knights to defend your cities.",
+        mapNameCitiesKnightsCoast: "Cities & Knights (Coast)",
+        mapDescCitiesKnightsCoast: "Cities & Knights with sea tiles. Build ships and knights — a seafarers hybrid.",
+        mapBehaviorCitiesKnightsCoast: "Defend inland cities with knights, expand coastally with ships. Manage both ports and barbarian defense.",
         mapNameOceanExpedition: "Ocean Expedition",
         mapDescOceanExpedition: "8-player seafarers. Set sail from the main island to explore three outer islands. Gold discovery bonus.",
         mapBehaviorOceanExpedition: "⛵ Build ships to cross sea (Lumber+Wool). Gold tiles included. +2 VP for first landing on new islands.",
@@ -2146,7 +2158,9 @@
       "silk-road": "SilkRoad",
       "ocean-expedition": "OceanExpedition",
       "strait-passage": "StraitPassage",
-      "cities-knights-standard": "CitiesKnightsStandard"
+      "cities-knights-standard": "CitiesKnightsStandard",
+      "cities-knights-large": "CitiesKnightsLarge",
+      "cities-knights-coast": "CitiesKnightsCoast"
     };
     function mapI18nSuffix(mapId) {
       return MAP_I18N_KEYS[mapId] || MAP_I18N_KEYS.standard;
@@ -2178,7 +2192,9 @@
         "silk-road": "mapBehaviorSilkRoad",
         "ocean-expedition": "mapBehaviorOceanExpedition",
         "strait-passage": "mapBehaviorStraitPassage",
-        "cities-knights-standard": "mapBehaviorCitiesKnightsStandard"
+        "cities-knights-standard": "mapBehaviorCitiesKnightsStandard",
+        "cities-knights-large": "mapBehaviorCitiesKnightsLarge",
+        "cities-knights-coast": "mapBehaviorCitiesKnightsCoast"
       }[preset.id];
       return special ? pt(special) : pt("mapBehaviorDefault");
     }
@@ -3575,6 +3591,92 @@
           { q:0, r:-2 }, { q:0, r:-1 }, { q:0, r:0 }, { q:0, r:1 }, { q:0, r:2 },
           { q:1, r:-2 }, { q:1, r:-1 }, { q:1, r:0 }, { q:1, r:1 },
           { q:2, r:-2 }, { q:2, r:-1 }, { q:2, r:0 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick",
+          "lumber","lumber","lumber","lumber",
+          "wool","wool","wool","wool",
+          "grain","grain","grain","grain",
+          "ore","ore","ore","desert"
+        ]
+      },
+      numbers: {
+        pool: [2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      ports: {
+        pool: [
+          { type:"generic", ratio:3 }, { type:"generic", ratio:3 }, { type:"generic", ratio:3 },
+          { type:"generic", ratio:3 },
+          { type:"brick", ratio:2 }, { type:"lumber", ratio:2 },
+          { type:"wool", ratio:2 }, { type:"grain", ratio:2 }, { type:"ore", ratio:2 }
+        ]
+      }
+    };
+
+    MAP_PRESETS["cities-knights-large"] = {
+      id: "cities-knights-large",
+      name: "도시와 기사 (대형)",
+      stars: 3,
+      description: "도시와 기사 5-6인 대형판. 24칸 확장 대륙에서 야만인 대침공을 막아라.",
+      minPlayers: 3, maxPlayers: 6, vpGoal: 14,
+      specialRules: { citiesKnights: true },
+      layout: {
+        axial: [
+          { q:-2, r:0 }, { q:-2, r:1 }, { q:-2, r:2 }, { q:-2, r:3 },
+          { q:-1, r:-1 }, { q:-1, r:0 }, { q:-1, r:1 }, { q:-1, r:2 }, { q:-1, r:3 },
+          { q:0, r:-2 }, { q:0, r:-1 }, { q:0, r:0 }, { q:0, r:1 }, { q:0, r:2 }, { q:0, r:3 },
+          { q:1, r:-2 }, { q:1, r:-1 }, { q:1, r:0 }, { q:1, r:1 }, { q:1, r:2 },
+          { q:2, r:-2 }, { q:2, r:-1 }, { q:2, r:0 }, { q:2, r:1 }
+        ]
+      },
+      resources: {
+        pool: [
+          "brick","brick","brick","brick",
+          "lumber","lumber","lumber","lumber","lumber",
+          "wool","wool","wool","wool","wool",
+          "grain","grain","grain","grain",
+          "ore","ore","ore","ore",
+          "desert","desert"
+        ]
+      },
+      numbers: {
+        pool: [2,3,3,4,4,4,5,5,5,6,6,8,8,8,9,9,9,10,10,10,11,11],
+        noAdjacentSame: true, noAdjacentHot: [6,8]
+      },
+      ports: {
+        pool: [
+          { type:"generic", ratio:3 }, { type:"generic", ratio:3 },
+          { type:"generic", ratio:3 }, { type:"generic", ratio:3 },
+          { type:"generic", ratio:3 }, { type:"generic", ratio:3 },
+          { type:"brick", ratio:2 }, { type:"lumber", ratio:2 },
+          { type:"wool", ratio:2 }, { type:"grain", ratio:2 }, { type:"ore", ratio:2 }
+        ]
+      }
+    };
+
+    MAP_PRESETS["cities-knights-coast"] = {
+      id: "cities-knights-coast",
+      name: "도시와 기사 (해안)",
+      stars: 3,
+      description: "도시와 기사 해안 확장. 바다 타일이 추가돼 배를 건설할 수 있는 기사·선단 혼합 맵.",
+      minPlayers: 3, maxPlayers: 4, vpGoal: 13,
+      specialRules: { citiesKnights: true },
+      layout: {
+        axial: [
+          // 19 표준 육지
+          { q:-2, r:0 }, { q:-2, r:1 }, { q:-2, r:2 },
+          { q:-1, r:-1 }, { q:-1, r:0 }, { q:-1, r:1 }, { q:-1, r:2 },
+          { q:0, r:-2 }, { q:0, r:-1 }, { q:0, r:0 }, { q:0, r:1 }, { q:0, r:2 },
+          { q:1, r:-2 }, { q:1, r:-1 }, { q:1, r:0 }, { q:1, r:1 },
+          { q:2, r:-2 }, { q:2, r:-1 }, { q:2, r:0 },
+          // 8 해양 타일
+          { q:-3, r:1, type:"sea" }, { q:-3, r:2, type:"sea" },
+          { q:-2, r:-1, type:"sea" }, { q:-2, r:3, type:"sea" },
+          { q:1, r:-3, type:"sea" }, { q:1, r:2, type:"sea" },
+          { q:2, r:1, type:"sea" }, { q:3, r:-2, type:"sea" }
         ]
       },
       resources: {
