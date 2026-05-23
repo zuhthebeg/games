@@ -5034,21 +5034,24 @@
       // Try to fulfill each wanted resource
       let traded = 0;
       const tempRes = { ...p.resources };
+      const offerRemaining = { ...offer }; // track how much of the offer is still usable
       const giveLog = [];
       const getLog = [];
-      
+
       for (const getRes of RESOURCES) {
         let needed = want[getRes] || 0;
         while (needed > 0) {
-          // Find a give resource with enough remaining
+          // Only use resources the user explicitly offered in the dialog
           const giveRes = RESOURCES.find(r => {
             if (r === getRes) return false;
+            if (!(offerRemaining[r] > 0)) return false; // must be in the offer
             const ratio = getBestTradeRatio(pIdx, r);
-            return tempRes[r] >= ratio;
+            return tempRes[r] >= ratio && offerRemaining[r] >= ratio;
           });
           if (!giveRes) break;
           const ratio = getBestTradeRatio(pIdx, giveRes);
           tempRes[giveRes] -= ratio;
+          offerRemaining[giveRes] -= ratio;
           tempRes[getRes] += 1;
           giveLog.push(`${RESOURCE_ICONS[giveRes]}×${ratio}`);
           getLog.push(`${RESOURCE_ICONS[getRes]}`);
