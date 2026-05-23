@@ -4379,6 +4379,7 @@
     function advanceBarbarian() {
       state.barbarianPos = (state.barbarianPos || 0) + 1;
       SFX.barbarianAdvance();
+      addActivityLog("ck", `야만인 전진 ${state.barbarianPos}/${BARBARIAN_MAX}`);
       if (state.barbarianPos >= BARBARIAN_MAX) {
         triggerBarbarianAttack();
       } else if (state.barbarianPos >= 5) {
@@ -4401,6 +4402,7 @@
         knightsByPlayer[i] = ak;
         activeKnights += ak;
       }
+      const countSummary = `기사단${activeKnights} vs 도시${totalCities}`;
       const defended = activeKnights >= totalCities;
       if (defended) {
         let bestPIdx = -1, bestCount = -1;
@@ -4411,11 +4413,13 @@
         if (bestPIdx >= 0 && bestCount > 0) {
           const decks = ["science","trade","politics"];
           drawProgressCard(bestPIdx, decks[Math.floor(Math.random() * decks.length)]);
-          showToast(`야만인 격퇴! ${state.players[bestPIdx].name} 진보카드 획득`, 3500);
+          showToast(`야만인 격퇴! (${countSummary})\n${state.players[bestPIdx].name} 진보카드 획득`, 3500);
           ckAnnounce("야만인 격퇴! 방어 성공!");
+          addActivityLog("ck", `야만인 격퇴 (${countSummary}) — ${state.players[bestPIdx].name} 진보카드 획득`);
         } else {
-          showToast("야만인 격퇴! 방어 성공", 3000);
+          showToast(`야만인 격퇴! 방어 성공 (${countSummary})`, 3000);
           ckAnnounce("방어 성공!");
+          addActivityLog("ck", `야만인 격퇴 (${countSummary}) — 방어 성공`);
         }
       } else {
         SFX.barbarianAttack();
@@ -4434,10 +4438,12 @@
             const v = state.vertices[cityBuilding.vertex];
             if (v) v.building = "settlement";
             recalcAllVP();
-            showToast(`야만인 공격! ${p.name}의 도시가 마을로 강등됐습니다.`, 4000);
+            showToast(`야만인 공격! (${countSummary})\n${p.name}의 도시 강등`, 4000);
+            addActivityLog("ck", `야만인 공격 (${countSummary}) — ${p.name} 도시 강등`);
           }
         } else {
-          showToast("🏴 야만인 공격! 방어 실패 (강등 대상 없음)", 3000);
+          showToast(`야만인 공격! (${countSummary}) — 강등 대상 없음`, 3000);
+          addActivityLog("ck", `야만인 공격 (${countSummary}) — 강등 대상 없음`);
         }
       }
       state.barbarianPos = 0;
@@ -4468,6 +4474,7 @@
       state.knightActive[vIdx] = false;
       p.ckKnights = [...(p.ckKnights || []), vIdx];
       SFX.knight();
+      addActivityLog("ck", `${state.players[pIdx]?.name || "플레이어"} 기사단 배치`);
       recalcAllVP();
       return true;
     }
@@ -4480,6 +4487,7 @@
       spend(p, COST_KNIGHT_ACTIVATE);
       state.knightActive[vIdx] = true;
       SFX.knightActivate();
+      addActivityLog("ck", `${state.players[pIdx]?.name || "플레이어"} 기사단 활성화`);
       return true;
     }
 
@@ -4501,9 +4509,12 @@
         }
       }
       const humanIdx = localPlayerIndex();
-      if (gains[humanIdx]) {
-        const gainStr = Object.entries(gains[humanIdx]).map(([k,v])=>`${k}×${v}`).join(" ");
-        if (gainStr) { showToast(`🏭 상품 획득: ${gainStr}`, 2000); SFX.commodity(); }
+      for (const [pIdxStr, pGains] of Object.entries(gains)) {
+        const gainStr = Object.entries(pGains).map(([k,v])=>`${k}×${v}`).join(" ");
+        if (!gainStr) continue;
+        const pIdx = Number(pIdxStr);
+        if (pIdx === humanIdx) { showToast(`🏭 상품 획득: ${gainStr}`, 2000); SFX.commodity(); }
+        addActivityLog("ck", `${state.players[pIdx]?.name || "플레이어"} 상품 획득: ${gainStr}`);
       }
     }
 
@@ -4515,6 +4526,9 @@
       const cardType = available[Math.floor(Math.random() * available.length)];
       if (!p.progressCards) p.progressCards = [];
       p.progressCards.push({ deck, type: cardType });
+      const deckIcon = { science:"📗", trade:"📘", politics:"📕" }[deck] || "";
+      const cardNames = { crane:"크레인", irrigation:"관개", resourceMonopoly:"자원독점", merchantFleet:"상인함대", knightCard:"기사패", spy:"스파이" };
+      addActivityLog("ck", `${p.name || "플레이어"} 진보카드 획득: ${deckIcon}${cardNames[cardType]||cardType}`);
       return true;
     }
 
@@ -4601,6 +4615,8 @@
           break;
         }
       }
+      const _cardNames = { crane:"크레인", irrigation:"관개", resourceMonopoly:"자원독점", merchantFleet:"상인함대", knightCard:"기사패", spy:"스파이" };
+      addActivityLog("ck", `${p.name || "플레이어"} 진보카드 사용: ${_cardNames[cardType]||cardType}`);
       recalcAllVP();
       return true;
     }
@@ -8562,7 +8578,7 @@ https://game.cocy.io/pingtan/`;
     }
 
     function activityIcon(kind) {
-      return ({ reaction: "💬", trade: "🤝", robber: "🦹", dev: "🃏", build: "🏗️", dice: "🎲", system: "ℹ️" })[kind] || "•";
+      return ({ reaction: "💬", trade: "🤝", robber: "🦹", dev: "🃏", build: "🏗️", dice: "🎲", system: "ℹ️", ck: "⚔" })[kind] || "•";
     }
 
     function activityTime(ts) {
