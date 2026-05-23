@@ -2254,7 +2254,10 @@
       BUY_DEV_CARD: "BUY_DEV_CARD",
       END_TURN: "END_TURN",
       REACTION_EMOTE: "REACTION_EMOTE",
-      GAME_SETTINGS: "GAME_SETTINGS"
+      GAME_SETTINGS: "GAME_SETTINGS",
+      BUILD_CK_KNIGHT: "BUILD_CK_KNIGHT",
+      ACTIVATE_CK_KNIGHT: "ACTIVATE_CK_KNIGHT",
+      PLAY_PROGRESS_CARD: "PLAY_PROGRESS_CARD"
     };
 
     const state = {
@@ -5709,6 +5712,9 @@
       const pIdx = playerIndexFromAnyId(playerId);
 
       if (type === ACTION.GAME_INIT) {
+        // Set mapId BEFORE resetCoreState so specialRules (citiesKnights etc.) are applied correctly
+        const _initMapId = action.mapId || "standard";
+        state.selectedMapId = _initMapId;
         resetCoreState();
         state.mode = "multi";
         state.screen = "game";
@@ -5729,8 +5735,7 @@
             isAI: String(id).startsWith("ai-")
           }));
         }
-        const _initMapId = action.mapId || "standard";
-        state.selectedMapId = _initMapId;
+        state.selectedMapId = _initMapId; // ensure after player creation
         state.turnSeconds = clampTurnSeconds(action.turnSeconds || 60);
         state.targetScore = clampTargetScore(action.targetScore || defaultTargetScoreForMap(_initMapId));
         state.targetScoreCustom = true;
@@ -5822,6 +5827,18 @@
       if (type === ACTION.END_TURN) {
         if (pIdx !== state.currentPlayer) return false;
         return endTurnInternal();
+      }
+      if (type === ACTION.BUILD_CK_KNIGHT) {
+        if (pIdx !== state.currentPlayer) return false;
+        return buildCKKnight(pIdx, action.vertexId);
+      }
+      if (type === ACTION.ACTIVATE_CK_KNIGHT) {
+        if (pIdx !== state.currentPlayer) return false;
+        return activateCKKnight(pIdx, action.vertexId);
+      }
+      if (type === ACTION.PLAY_PROGRESS_CARD) {
+        if (pIdx !== state.currentPlayer) return false;
+        return playProgressCard(pIdx, action.cardType, action.opts || {});
       }
       if (type === ACTION.GAME_SETTINGS) {
         if (isMultiMode() && hasAnyInitialSettlement()) return false;
@@ -6303,7 +6320,7 @@
       const spots = validCKKnightSpots(pIdx);
       if (!spots.length) return;
       state.buildMode = "ck-knight";
-      state.hint = "기사를 배치할 꼭짓점을 선택하세요.";
+      state.hint = "기사단을 배치할 꼭짓점을 선택하세요.";
       render();
     }
 
@@ -6313,11 +6330,14 @@
       const p = state.players[pIdx];
       const inactiveKnight = (p.ckKnights || []).find(vIdx => !state.knightActive[vIdx]);
       if (inactiveKnight === undefined) return;
+      if (isMultiMode()) {
+        sendGameAction(ACTION.ACTIVATE_CK_KNIGHT, { playerId: currentPlayerUserId(), vertexId: inactiveKnight });
+        return;
+      }
       if (activateCKKnight(pIdx, inactiveKnight)) {
-        showToast("⚡ 기사 활성화!", 1500);
+        showToast("⚡ 기사단 활성화!", 1500);
         render();
       }
-
     }
 
     function humanPlayProgressCard(cardType) {
@@ -6344,9 +6364,17 @@
           overlay.remove();
           delete window._rmPick;
           if (!res) return;
-          playProgressCard(pIdx, cardType, { resource: res });
-          render();
+          if (isMultiMode()) {
+            sendGameAction(ACTION.PLAY_PROGRESS_CARD, { playerId: currentPlayerUserId(), cardType, opts: { resource: res } });
+          } else {
+            playProgressCard(pIdx, cardType, { resource: res });
+            render();
+          }
         };
+        return;
+      }
+      if (isMultiMode()) {
+        sendGameAction(ACTION.PLAY_PROGRESS_CARD, { playerId: currentPlayerUserId(), cardType });
         return;
       }
       playProgressCard(pIdx, cardType);
@@ -6404,11 +6432,17 @@
           triggerAITurnIfNeeded();
         }
       } else if (state.buildMode === "ck-knight") {
-        const pIdx = localPlayerIndex();
-        if (buildCKKnight(pIdx, vIdx)) {
+        if (isMultiMode()) {
+          await sendGameAction(ACTION.BUILD_CK_KNIGHT, { playerId: currentPlayerUserId(), vertexId: vIdx });
           state.buildMode = null;
-          state.hint = "⚔️ 기사 건설 완료!";
           render();
+        } else {
+          const pIdx = localPlayerIndex();
+          if (buildCKKnight(pIdx, vIdx)) {
+            state.buildMode = null;
+            state.hint = "기사단 배치 완료!";
+            render();
+          }
         }
         return;
       }
