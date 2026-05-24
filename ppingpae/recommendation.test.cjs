@@ -96,7 +96,8 @@ const behaviorScript = [
   extractFunction('isValidSet'),
   extractFunction('setScore'),
   extractFunction('normalizeGroupOrder'),
-  `const state = {
+  `const mpState = { active: false, mySeat: -1 };
+  const state = {
     players: [{ isAI: false, handIds: ['k1', 'k2', 'k3'] }],
     currentPlayer: 0,
     tileMap: {
@@ -108,6 +109,7 @@ const behaviorScript = [
     selected: null,
     selectedIds: new Set(),
     activeGid: null,
+    actionLocked: false,
     gidCounter: 0,
     recentlyPlaced: new Set(),
     actionHistory: [],
@@ -199,7 +201,7 @@ assert.equal(undoCtx.undoResult.selectedCount, 0, 'undo should clear transient s
 
 const passLockScript = [
   extractFunction('deepCloneBoard'),
-  `const mpState = { active: false };`,
+  `const mpState = { active: false, mySeat: -1 };`,
   `const state = {
     players: [{ isAI: false, handIds: ['h1'] }, { isAI: true, handIds: [] }],
     currentPlayer: 0,

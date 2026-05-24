@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>삥패</title>
 <script src="/lib/multiplayer.js?v=20260524a"></script>
+<script src="/lib/multiplayer-ui.js?v=20260524a"></script>
 <script src="/lib/shared-wallet.js?v=20260524a"></script>
 <style>
   :root {
@@ -35,6 +36,8 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    /* SharedWallet 상단 바 (#sw-bar) 영역 확보 */
+    padding-top: calc(46px + env(safe-area-inset-top));
   }
 
   /* ── 타일 ── */
@@ -108,8 +111,8 @@
   }
 
   /* ── 스크린 ── */
-  #screen-menu, #screen-game, #screen-lobby { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-  #screen-lobby { padding: 20px; gap: 12px; overflow-y: auto; max-width: 480px; margin: 0 auto; width: 100%; }
+  #screen-menu, #screen-game { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  #mp-lobby-container { flex: 1; min-height: 0; overflow: auto; }
   .hidden { display: none !important; }
 
   /* ── 메뉴 ── */
@@ -556,38 +559,8 @@
   </div>
 </div>
 
-<!-- ═══════════════ 멀티 로비 ═══════════════ -->
-<div id="screen-lobby" class="hidden">
-  <div class="menu-title">멀티 로비</div>
-  <div class="menu-sub" id="lobby-status">relay.cocy.io 연결 중...</div>
-
-  <div class="menu-card">
-    <div class="menu-label">닉네임</div>
-    <input id="mp-nickname" type="text" maxlength="12" placeholder="닉네임" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);"/>
-
-    <div class="menu-row" style="margin-top:12px;">
-      <button class="btn-start" id="btn-create-room" onclick="mpCreateRoom()" style="flex:1;">🎲 방 만들기</button>
-    </div>
-
-    <div class="menu-label" style="margin-top:14px;">또는 방 코드 입력</div>
-    <div style="display:flex;gap:8px;">
-      <input id="mp-room-code" type="text" maxlength="6" placeholder="ABCDEF" style="flex:1;text-transform:uppercase;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-family:monospace;letter-spacing:2px;text-align:center;font-size:18px;"/>
-      <button class="btn-start" onclick="mpJoinRoom()" style="background:#3b82f6;">참여</button>
-    </div>
-
-    <button class="btn-start" onclick="closeMultiLobby()" style="margin-top:18px;background:#475569;">◀ 돌아가기</button>
-  </div>
-
-  <div id="mp-waiting-card" class="menu-card hidden" style="margin-top:12px;">
-    <div class="menu-label">방 코드</div>
-    <div style="font-family:monospace;letter-spacing:4px;font-size:28px;color:var(--accent);text-align:center;padding:8px 0;" id="mp-room-display">------</div>
-    <div class="menu-label">참여 플레이어</div>
-    <div id="mp-player-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-    <button class="btn-start" id="btn-start-multi" onclick="mpStartGame()" style="margin-top:12px;display:none;">🚀 게임 시작</button>
-    <div id="mp-wait-hint" style="text-align:center;color:var(--muted);font-size:12px;margin-top:8px;">호스트가 게임을 시작할 때까지 대기...</div>
-    <button class="btn-start" onclick="mpLeaveRoom()" style="margin-top:8px;background:#dc2626;">방 나가기</button>
-  </div>
-</div>
+<!-- ═══════════════ 멀티 로비 (공용 MultiplayerUI 모듈) ═══════════════ -->
+<div id="mp-lobby-container" class="hidden"></div>
 
 <!-- ═══════════════ 게임 화면 ═══════════════ -->
 <div id="screen-game" class="hidden">
@@ -1071,6 +1044,8 @@ function endTurn() {
 // ═══════════════════════════════════════════
 function selectTile(tileId, from, gid = null) {
   if (state.players[state.currentPlayer].isAI) return;
+  if (state.actionLocked) return;
+  if (mpState.active && state.currentPlayer !== mpState.mySeat) return;
 
   if (from === 'hand') {
     state.selected = null;
@@ -1097,6 +1072,8 @@ function selectTile(tileId, from, gid = null) {
 function clickGroup(gid) {
   const p = state.players[state.currentPlayer];
   if (p.isAI) return;
+  if (state.actionLocked) return;
+  if (mpState.active && state.currentPlayer !== mpState.mySeat) return;
 
   if (!state.selected) {
     if (state.selectedIds.size > 0) {
@@ -1574,6 +1551,12 @@ function showStalemate() {
 // 12. 렌더링
 // ═══════════════════════════════════════════
 function render() {
+  // 분리된 DOM에 남은 드래그 잔존 상태 정리
+  if (drag.srcEl && !document.body.contains(drag.srcEl)) {
+    drag.active = false; drag.tileId = null; drag.from = null;
+    drag.gid = null; drag.ghost?.remove(); drag.ghost = null;
+    drag.srcEl = null; drag.pointerId = null;
+  }
   renderPlayerBar();
   renderBoard();
   renderHand();
@@ -1669,11 +1652,15 @@ function initTileDrag(el, tileId, from, gid) {
 
   el.addEventListener('pointerdown', (e) => {
     if (state.players[state.currentPlayer].isAI) return;
+    if (state.actionLocked) return;
+    if (mpState.active && state.currentPlayer !== mpState.mySeat) return;
+    // 이전 드래그가 정리되지 않은 경우 회복
+    if (drag.srcEl && drag.srcEl !== el) endDrag();
     startX = e.clientX; startY = e.clientY;
     drag.tileId = tileId; drag.from = from; drag.gid = gid;
     drag.pointerId = e.pointerId;
     drag.active = false;
-    el.setPointerCapture(e.pointerId);
+    try { el.setPointerCapture(e.pointerId); } catch (_) {}
   });
 
   el.addEventListener('pointermove', (e) => {
@@ -1941,146 +1928,61 @@ function bindBoardPinch() {
 }
 
 // ═══════════════════════════════════════════
-// 15. 멀티플레이 (relay.cocy.io)
+// 15. 멀티플레이 (공용 MultiplayerUI + relay.cocy.io)
 // ═══════════════════════════════════════════
 const MP_GAME_TYPE = 'ppingpae';
+let ppingpaeMpUI = null;
 
 function showScreen(name) {
-  for (const id of ['screen-menu', 'screen-lobby', 'screen-game']) {
+  for (const id of ['screen-menu', 'screen-game']) {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('hidden', id !== name);
   }
-}
-
-function setLobbyStatus(msg) {
-  const el = document.getElementById('lobby-status');
-  if (el) el.textContent = msg;
+  document.getElementById('mp-lobby-container').classList.toggle('hidden', name !== 'screen-lobby');
 }
 
 async function openMultiLobby() {
-  if (!window.MultiplayerClient) {
+  if (!window.MultiplayerClient || !window.MultiplayerUI) {
     showToast('멀티 라이브러리 로드 실패\n새로고침해주세요');
     return;
   }
   showScreen('screen-lobby');
-  setLobbyStatus('서버 인증 중...');
-  try {
-    mpState.client = MultiplayerClient.getInstance();
-    await mpState.client.ensureAuth();
-    mpState.myUserId = mpState.client.userId;
-    const nickEl = document.getElementById('mp-nickname');
-    nickEl.value = mpState.client.nickname || '플레이어';
-    setLobbyStatus('relay.cocy.io 연결됨 · 방을 만들거나 코드로 참여하세요');
-  } catch (e) {
-    console.error(e);
-    setLobbyStatus('❌ 서버 인증 실패 — 네트워크 확인 후 다시 시도');
-  }
-}
+  const container = document.getElementById('mp-lobby-container');
 
-function closeMultiLobby() {
-  showScreen('screen-menu');
-  document.getElementById('mp-waiting-card')?.classList.add('hidden');
-}
+  if (ppingpaeMpUI) { ppingpaeMpUI.show(); return; }
 
-function mpSyncNickname() {
-  const nick = (document.getElementById('mp-nickname')?.value || '').trim();
-  if (nick) {
-    mpState.client.nickname = nick;
-    localStorage.setItem('relay_nickname', nick);
-  }
-}
+  ppingpaeMpUI = new MultiplayerUI({
+    gameType: MP_GAME_TYPE,
+    gameName: '🎴 삥패',
+    container,
+    maxPlayers: 4,
+    supportsLocal: false,
+    getRoomConfig: () => ({ timeLimit: 60, initialHandSize: 14, initialMeldScore: 30 }),
+    onGameStart: (roomState) => {
+      mpState.client = ppingpaeMpUI.getClient();
+      mpState.myUserId = mpState.client.getMyUserId();
+      mpState.roomId = mpState.client.getRoomCode();
+      mpState.roomCode = mpState.roomId;
+      const me = roomState.players?.find(p => p.id === mpState.myUserId);
+      mpState.isHost = !!me?.isHost;
+      mpState.hostUserId = roomState.hostId;
+      mpState.client.onEvent = mpHandleEvent;
+      mpStartGameFromServer(roomState);
+    },
+    onGameEvent: (type, data) => { /* mpHandleEvent on client.onEvent */ },
+    onLeave: () => {
+      mpState.active = false;
+      mpState.roomId = null;
+      mpState.roomCode = null;
+      showScreen('screen-menu');
+    },
+  });
+  ppingpaeMpUI.show();
 
-async function mpCreateRoom() {
-  if (mpState.busy) return;
-  mpSyncNickname();
-  mpState.busy = true;
-  setLobbyStatus('방 생성 중...');
-  try {
-    const res = await mpState.client.createRoom(MP_GAME_TYPE, {
-      maxPlayers: 4,
-      isPublic: true,
-      gameConfig: { timeLimit: 60, initialHandSize: 14, initialMeldScore: 30 },
-    });
-    mpState.roomId = res.roomId;
-    mpState.roomCode = res.roomId;
-    mpState.isHost = true;
-    mpEnterWaitingRoom();
-  } catch (e) {
-    console.error(e);
-    setLobbyStatus('❌ 방 생성 실패: ' + (e.message || e));
-  } finally {
-    mpState.busy = false;
-  }
-}
-
-async function mpJoinRoom() {
-  if (mpState.busy) return;
-  mpSyncNickname();
-  const code = (document.getElementById('mp-room-code').value || '').trim().toUpperCase();
-  if (code.length < 4) { showToast('방 코드를 입력하세요'); return; }
-  mpState.busy = true;
-  setLobbyStatus('방 참여 중...');
-  try {
-    // 방 코드 = 방 ID (서버가 6자리 코드를 ID로 사용)
-    const res = await mpState.client.joinRoom(code, MP_GAME_TYPE);
-    mpState.roomId = res.roomId || code;
-    mpState.roomCode = mpState.roomId;
-    mpState.isHost = false;
-    mpEnterWaitingRoom();
-  } catch (e) {
-    console.error(e);
-    setLobbyStatus('❌ 방 참여 실패: ' + (e.message || e));
-  } finally {
-    mpState.busy = false;
-  }
-}
-
-async function mpEnterWaitingRoom() {
-  document.getElementById('mp-waiting-card').classList.remove('hidden');
-  document.getElementById('mp-room-display').textContent = mpState.roomCode || mpState.roomId.slice(0, 6).toUpperCase();
-  document.getElementById('btn-start-multi').style.display = mpState.isHost ? '' : 'none';
-  document.getElementById('mp-wait-hint').style.display = mpState.isHost ? 'none' : '';
-
-  mpState.client.onEvent = mpHandleEvent;
-  mpState.client.onError = (e) => console.warn('mp error', e);
-  mpState.client.startListening();
-
-  await mpRefreshRoomState();
-}
-
-async function mpRefreshRoomState() {
-  try {
-    const room = await mpState.client.getRoomState();
-    mpState.roomPlayers = (room.players || []).map(p => ({
-      userId: p.id,
-      nickname: p.nickname,
-      isHost: !!p.isHost,
-    }));
-    mpState.hostUserId = room.hostId;
-    mpState.isHost = (room.hostId === mpState.myUserId);
-    mpRenderPlayerList();
-    if (room.status === 'playing' && room.gameState) {
-      mpStartGameFromServer(room);
-    }
-  } catch (e) {
-    console.warn('refresh failed', e);
-  }
-}
-
-function mpRenderPlayerList() {
-  const el = document.getElementById('mp-player-list');
-  if (!el) return;
-  el.innerHTML = '';
-  for (const p of mpState.roomPlayers) {
-    const row = document.createElement('div');
-    row.style.cssText = 'padding:8px;background:var(--panel2);border-radius:6px;display:flex;justify-content:space-between;';
-    row.innerHTML = `<span>${p.isHost ? '👑 ' : ''}${escapeHtml(p.nickname)}</span><span style="color:var(--muted);font-size:11px;">${p.userId === mpState.myUserId ? '(나)' : ''}</span>`;
-    el.appendChild(row);
-  }
-  const startBtn = document.getElementById('btn-start-multi');
-  if (mpState.isHost && startBtn) {
-    startBtn.disabled = mpState.roomPlayers.length < 2;
-    startBtn.textContent = mpState.roomPlayers.length < 2 ? '⏳ 2명 이상 필요' : `🚀 게임 시작 (${mpState.roomPlayers.length}명)`;
+  // URL ?room=ABCDEF 자동 참여
+  if (MultiplayerUI.checkUrlRoom && !mpState.active) {
+    const code = MultiplayerUI.checkUrlRoom();
+    if (code) ppingpaeMpUI._renderWaitingRoom?.(code);
   }
 }
 
@@ -2088,42 +1990,12 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
-async function mpStartGame() {
-  if (!mpState.isHost) return;
-  if (mpState.roomPlayers.length < 2) { showToast('2명 이상 필요'); return; }
-  try {
-    await mpState.client.request('POST', `/api/rooms/${mpState.roomId}/start`, {});
-  } catch (e) {
-    showToast('시작 실패: ' + (e.message || e));
-  }
-}
-
-async function mpLeaveRoom() {
-  try { await mpState.client.leaveRoom(); } catch (_) {}
-  mpState.client.stopListening();
-  mpState.active = false;
-  mpState.roomId = null;
-  mpState.roomCode = null;
-  document.getElementById('mp-waiting-card').classList.add('hidden');
-  setLobbyStatus('방을 나왔습니다');
-}
-
 function mpHandleEvent(type, data) {
-  if (type === 'game_started') {
-    mpRefreshRoomState();
-    return;
-  }
-  if (type === 'player_joined' || type === 'player_left' || type === 'host_changed') {
-    mpRefreshRoomState();
-    return;
-  }
-  if (type === 'action' || type === 'state_update') {
-    mpRefreshRoomState();
-    return;
-  }
-  if (type === 'game_ended') {
-    mpRefreshRoomState();
-    return;
+  // 게임 중 액션/상태 변경 시 서버에서 최신 view 가져와 재적용
+  if (type === 'action' || type === 'state_update' || type === 'game_ended') {
+    mpState.client.getRoomState().then(room => {
+      if (room.gameState) mpApplyServerView(room.gameState, room.myView);
+    }).catch(e => console.warn('refresh failed', e));
   }
 }
 
