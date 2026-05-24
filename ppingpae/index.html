@@ -65,12 +65,12 @@
   }
   .tile.black  .tile-num { color: #111827; }
   .tile.black  .tile-dot { background: #111827; }
-  .tile.red    .tile-num { color: #dc2626; }
-  .tile.red    .tile-dot { background: #dc2626; }
+  .tile.red    .tile-num { color: #e53535; }
+  .tile.red    .tile-dot { background: #e53535; }
   .tile.blue   .tile-num { color: #2563eb; }
   .tile.blue   .tile-dot { background: #2563eb; }
-  .tile.orange .tile-num { color: #ea580c; }
-  .tile.orange .tile-dot { background: #ea580c; }
+  .tile.orange .tile-num { color: #f97316; }
+  .tile.orange .tile-dot { background: #f97316; }
   .tile.joker {
     background: linear-gradient(135deg, #ffd700 0%, #ff6b35 100%);
     border-color: #ffd700;
@@ -101,6 +101,9 @@
   }
   .tile:active { transform: translateY(-4px) scale(1.04); }
   .tile.ghost { opacity: 0.35; pointer-events: none; }
+  .tile.recommended {
+    box-shadow: 0 0 0 2.5px var(--valid), 0 0 10px rgba(78,204,163,0.35);
+  }
 
   /* ── 스크린 ── */
   #screen-menu, #screen-game { display: flex; flex-direction: column; flex: 1; min-height: 0; }
@@ -336,6 +339,7 @@
 
   /* 버튼 모음 */
   .spacer { flex: 1; }
+  .action-group { display: flex; gap: 4px; }
   #btn-pass   { color: var(--warn); border-color: var(--warn) !important; }
   #btn-end    { background: #1d5c3d !important; border-color: #46a975 !important; }
   #btn-undo   { }
@@ -426,6 +430,7 @@
     #board-actions .sort-tabs { flex-direction: column; border-radius: 8px; }
     #board-actions .sort-tab  { border-radius: 0 !important; padding: 7px 4px !important; }
     #board-actions .spacer    { min-height: 8px; flex: 1; }
+    #board-actions .action-group { flex-direction: column; }
     #btn-pass { font-size: 11px; }
     #btn-end  { font-size: 11px; }
 
@@ -573,18 +578,14 @@
         <button class="sort-tab"        id="sort-number" onclick="setSortMode('number')" title="숫자순">🔢</button>
         <button class="sort-tab"        id="sort-smart"  onclick="setSortMode('smart')"  title="낼 수 있는 조합 우선">추천</button>
       </div>
-      <button id="btn-new-group" onclick="newGroup()">+ 새 조합</button>
-      <button id="btn-play-selected" onclick="placeSelectedHandTiles()" disabled>선택 내기</button>
-      <div class="sort-tabs" style="margin-left:2px;">
-        <button class="sort-tab" onclick="adjustZoom(-0.15)" title="축소">−</button>
-        <button class="sort-tab" id="zoom-label" style="min-width:36px;font-size:10px;">100%</button>
-        <button class="sort-tab" onclick="adjustZoom(+0.15)" title="확대">+</button>
-      </div>
       <button id="btn-step-undo" onclick="undoLastAction()" title="직전 동작 취소">↶ 한수취소</button>
       <button id="btn-undo" onclick="resetTurn()" title="이번 턴 전체 초기화">↩ 초기화</button>
       <div class="spacer"></div>
-      <button id="btn-pass" onclick="passTurn()">패스 (드로우)</button>
-      <button id="btn-end"  onclick="endTurn()">완료 ✓</button>
+      <div class="action-group">
+        <button id="btn-play-selected" onclick="placeSelectedHandTiles()" disabled>선택놓기</button>
+        <button id="btn-pass" onclick="passTurn()">패스</button>
+        <button id="btn-end"  onclick="endTurn()">완료 ✓</button>
+      </div>
     </div>
 
     <!-- 손패 -->
@@ -641,7 +642,7 @@ function isValidRun(tiles) {
   // 조커 포함 처리: 숫자 정렬 후 빈 슬롯 조커로 채움
   const nums = real.map(t => t.number).sort((a, b) => a - b);
   const min = nums[0], max = nums[nums.length - 1];
-  if (max - min + 1 > tiles.length) return false; // 범위가 너무 큼
+  if (max - min + 1 !== tiles.length) return false; // 범위와 타일 수 불일치
   if (max - min + 1 < real.length) return false;   // 중복
   const needed = max - min + 1 - real.length;
   return needed <= (tiles.length - real.length);
@@ -1350,21 +1351,23 @@ async function aiPlayGreedy(pIdx) {
   const delay = ms => new Promise(r => setTimeout(r, ms));
   let played = false;
 
-  // 1. 기존 그룹에 타일 추가 시도
-  for (const gid_try of state.board.map(g => g.gid)) {
-    const group = state.board.find(g => g.gid === gid_try);
-    if (!group) continue;
-    for (const tileId of [...p.handIds]) {
-      const testTiles = [...group.tileIds.map(id => state.tileMap[id]), state.tileMap[tileId]];
-      if (isValidSet(testTiles)) {
-        // 애니메이션: 타일 선택 표시
-        state.selected = { tileId, from: 'hand', gid: null };
-        render(); await delay(400);
-        group.tileIds.push(tileId);
-        p.handIds = p.handIds.filter(id => id !== tileId);
-        state.selected = null;
-        render(); await delay(300);
-        played = true;
+  // 1. 기존 그룹에 타일 추가 시도 (초기 출전 후에만 가능)
+  if (p.hasInitialMeld) {
+    for (const gid_try of state.board.map(g => g.gid)) {
+      const group = state.board.find(g => g.gid === gid_try);
+      if (!group) continue;
+      for (const tileId of [...p.handIds]) {
+        const testTiles = [...group.tileIds.map(id => state.tileMap[id]), state.tileMap[tileId]];
+        if (isValidSet(testTiles)) {
+          state.selected = { tileId, from: 'hand', gid: null };
+          render(); await delay(400);
+          group.tileIds.push(tileId);
+          normalizeGroupOrder(group);
+          p.handIds = p.handIds.filter(id => id !== tileId);
+          state.selected = null;
+          render(); await delay(300);
+          played = true;
+        }
       }
     }
   }
@@ -1499,7 +1502,7 @@ function updateSelectionControls() {
   const count = state.selectedIds.size;
   if (btn) {
     btn.disabled = count === 0 || state.actionLocked || state.currentPlayer !== state.viewPlayerIndex;
-    btn.textContent = count > 0 ? `선택 ${count}장 내기` : '선택 내기';
+    btn.textContent = count > 0 ? `선택${count}장놓기` : '선택놓기';
   }
   const undo = document.getElementById('btn-step-undo');
   if (undo) undo.disabled = state.actionHistory.length === 0 || state.actionLocked || state.currentPlayer !== state.viewPlayerIndex;
@@ -1705,6 +1708,14 @@ function renderHand() {
   const sel = state.selected;
   const sorted = sortedHand([...p.handIds]);
 
+  // 추천 타일 계산
+  const canInteract0 = state.currentPlayer === state.viewPlayerIndex && !activePlayer.isAI && !state.actionLocked;
+  const recommendedIds = new Set();
+  if (canInteract0) {
+    const handTiles = p.handIds.map(id => state.tileMap[id]);
+    findRecommendedSets(handTiles, p.hasInitialMeld).forEach(set => set.forEach(t => recommendedIds.add(t.id)));
+  }
+
   // 손패 영역 클릭 (보드에서 회수)
   if (sel?.from === 'board') {
     inner.style.cursor = 'pointer';
@@ -1721,6 +1732,8 @@ function renderHand() {
       el.style.cursor = 'default';
       el.style.pointerEvents = 'none';
       el.style.opacity = '0.88';
+    } else if (!isSelected && recommendedIds.has(id)) {
+      el.classList.add('recommended');
     }
     inner.appendChild(el);
   }
