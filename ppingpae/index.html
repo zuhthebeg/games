@@ -580,7 +580,8 @@
         <button class="sort-tab" id="zoom-label" style="min-width:36px;font-size:10px;">100%</button>
         <button class="sort-tab" onclick="adjustZoom(+0.15)" title="확대">+</button>
       </div>
-      <button id="btn-undo" onclick="resetTurn()" title="이번 턴 되돌리기">↩ 되돌리기</button>
+      <button id="btn-step-undo" onclick="undoLastAction()" title="직전 동작 취소">↶ 한수취소</button>
+      <button id="btn-undo" onclick="resetTurn()" title="이번 턴 전체 초기화">↩ 초기화</button>
       <div class="spacer"></div>
       <button id="btn-pass" onclick="passTurn()">패스 (드로우)</button>
       <button id="btn-end"  onclick="endTurn()">완료 ✓</button>
@@ -683,14 +684,18 @@ const state = {
   players: [],        // { name, handIds, hasInitialMeld, isAI, score }
   board: [],          // { gid, tileIds }
   currentPlayer: 0,
+  viewPlayerIndex: 0, // 화면 하단 손패는 내 패로 고정
   turnState: null,    // { workingBoard, workingHand, boardSnapshot, handSnapshot, playedCount }
   selected: null,     // { tileId, from: 'hand'|'board', gid? }
   selectedIds: new Set(), // 손패 다중 선택
+  actionHistory: [],  // 직전 동작 취소용 스냅샷
   activeGid: null,    // 탭으로 연속 배치할 조합
   sortMode: 'color',
   timeLimit: 0,       // 초 (0=없음)
   timerRemaining: 0,
   timerInterval: null,
+  actionLocked: false,
+  pendingTurnTimer: null,
   gidCounter: 0,
   consecutivePasses: 0,
   recentlyPlaced: new Set(),
@@ -749,8 +754,10 @@ function startGame() {
 
   state.board = [];
   state.currentPlayer = 0;
+  state.viewPlayerIndex = 0;
   state.selected = null;
   state.selectedIds = new Set();
+  state.actionHistory = [];
   state.activeGid = null;
   state.sortMode = 'color';
   state.timeLimit = timeLim;
@@ -768,6 +775,9 @@ function startGame() {
 // ═══════════════════════════════════════════
 function beginTurn() {
   const p = state.players[state.currentPlayer];
+  clearTimeout(state.pendingTurnTimer);
+  state.pendingTurnTimer = null;
+  state.actionLocked = false;
   // 스냅샷 저장
   state.turnState = {
     workingBoard: deepCloneBoard(state.board),
@@ -778,6 +788,7 @@ function beginTurn() {
   };
   state.selected = null;
   state.selectedIds.clear();
+  state.actionHistory = [];
   state.activeGid = null;
   render();
   startTimer();
@@ -794,6 +805,9 @@ function deepCloneBoard(board) {
 
 function nextPlayer() {
   stopTimer();
+  clearTimeout(state.pendingTurnTimer);
+  state.pendingTurnTimer = null;
+  state.actionLocked = false;
   state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
   beginTurn();
 }
@@ -833,10 +847,50 @@ function updateTimerBar() {
   fill.className = pct > 50 ? '' : pct > 25 ? 'warn' : 'danger';
 }
 
+function scheduleNextPlayer(delay = 400) {
+  if (state.pendingTurnTimer) return;
+  state.actionLocked = true;
+  state.pendingTurnTimer = setTimeout(() => {
+    state.pendingTurnTimer = null;
+    nextPlayer();
+  }, delay);
+}
+
+function pushActionSnapshot() {
+  const p = state.players[state.currentPlayer];
+  state.actionHistory.push({
+    board: deepCloneBoard(state.board),
+    handIds: [...p.handIds],
+    activeGid: state.activeGid,
+  });
+  if (state.actionHistory.length > 30) state.actionHistory.shift();
+}
+
+function undoLastAction() {
+  const p = state.players[state.currentPlayer];
+  if (p.isAI || state.actionLocked) return;
+  const snap = state.actionHistory.pop();
+  if (!snap) {
+    showToast('취소할 직전 동작이 없습니다', 900);
+    return;
+  }
+  state.board = deepCloneBoard(snap.board);
+  p.handIds = [...snap.handIds];
+  state.selected = null;
+  state.selectedIds.clear();
+  state.activeGid = snap.activeGid;
+  showToast('↶ 직전 동작 취소', 900);
+  render();
+}
+
 // ═══════════════════════════════════════════
 // 7. 플레이어 액션
 // ═══════════════════════════════════════════
 function passTurn() {
+  const current = state.players[state.currentPlayer];
+  if (!current || current.isAI || state.actionLocked) return;
+  state.actionLocked = true;
+  stopTimer();
   const ts = state.turnState;
   // 보드 원복 (손패에서 꺼낸 타일도 돌려주기)
   if (ts) {
@@ -853,7 +907,7 @@ function passTurn() {
     state.consecutivePasses = 0;
     showToast(`패를 1장 드로우했습니다`);
     render(); // 드로우된 패 먼저 보여준 뒤 턴 전환
-    setTimeout(() => nextPlayer(), 700);
+    scheduleNextPlayer(700);
   } else {
     state.consecutivePasses++;
     if (state.consecutivePasses >= state.players.length) {
@@ -861,13 +915,14 @@ function passTurn() {
       return;
     }
     showToast('덱이 비었습니다');
-    setTimeout(() => nextPlayer(), 400);
+    scheduleNextPlayer(400);
   }
 }
 
 function resetTurn() {
   const ts = state.turnState;
-  if (!ts) return;
+  const p = state.players[state.currentPlayer];
+  if (!ts || p.isAI || state.actionLocked) return;
   state.board = deepCloneBoard(ts.boardSnapshot);
   state.players[state.currentPlayer].handIds = [...ts.handSnapshot];
   state.turnState = {
@@ -879,6 +934,7 @@ function resetTurn() {
   };
   state.selected = null;
   state.selectedIds.clear();
+  state.actionHistory = [];
   state.activeGid = null;
   showToast('↩ 이번 턴 초기화');
   render();
@@ -891,10 +947,12 @@ function resetTurnState() {
   state.players[state.currentPlayer].handIds = [...ts.handSnapshot];
   state.selected = null;
   state.selectedIds.clear();
+  state.actionHistory = [];
   state.activeGid = null;
 }
 
 function endTurn() {
+  if (state.actionLocked || state.players[state.currentPlayer].isAI) return;
   const ts = state.turnState;
   const p = state.players[state.currentPlayer];
 
@@ -945,7 +1003,7 @@ function endTurn() {
     return;
   }
 
-  nextPlayer();
+  scheduleNextPlayer(0);
 }
 
 // ═══════════════════════════════════════════
@@ -1004,8 +1062,9 @@ function clickGroup(gid) {
   placeTileInGroup(tileId, from, fromGid, gid);
 }
 
-function placeTileInGroup(tileId, from, fromGid, toGid) {
+function placeTileInGroup(tileId, from, fromGid, toGid, recordAction = true) {
   const p = state.players[state.currentPlayer];
+  if (recordAction) pushActionSnapshot();
 
   // 출처에서 제거
   if (from === 'hand') {
@@ -1024,6 +1083,7 @@ function placeTileInGroup(tileId, from, fromGid, toGid) {
     return;
   }
   destGroup.tileIds.push(tileId);
+  normalizeGroupOrder(destGroup);
 
   state.selected = null;
   state.selectedIds.clear();
@@ -1043,6 +1103,7 @@ function returnTileToHand(tileId, fromGid) {
     render();
     return;
   }
+  pushActionSnapshot();
   const srcGroup = state.board.find(g => g.gid === fromGid);
   if (srcGroup) srcGroup.tileIds = srcGroup.tileIds.filter(id => id !== tileId);
   p.handIds.push(tileId);
@@ -1063,14 +1124,16 @@ function newGroup() {
   const p = state.players[state.currentPlayer];
   if (p.isAI) return;
 
-  const gid = createEmptyGroup();
-
   if (state.selectedIds.size > 0) {
-    placeSelectedHandTiles(gid);
+    placeSelectedHandTiles();
   } else if (state.selected) {
+    pushActionSnapshot();
+    const gid = createEmptyGroup();
     const { tileId, from, gid: fromGid } = state.selected;
-    placeTileInGroup(tileId, from, fromGid, gid);
+    placeTileInGroup(tileId, from, fromGid, gid, false);
   } else {
+    pushActionSnapshot();
+    createEmptyGroup();
     render();
   }
 }
@@ -1100,6 +1163,14 @@ function orderTilesForSet(tileIds) {
   return tileIds;
 }
 
+function normalizeGroupOrder(group) {
+  if (!group || group.tileIds.length < 2) return;
+  const tiles = group.tileIds.map(id => state.tileMap[id]);
+  if (isValidRun(tiles) || isValidGroup(tiles)) {
+    group.tileIds = orderTilesForSet(group.tileIds);
+  }
+}
+
 function placeSelectedHandTiles(targetGid = null) {
   const p = state.players[state.currentPlayer];
   if (p.isAI) return;
@@ -1109,6 +1180,7 @@ function placeSelectedHandTiles(targetGid = null) {
     return;
   }
 
+  pushActionSnapshot();
   const gid = targetGid || state.activeGid || createEmptyGroup();
   const destGroup = state.board.find(g => g.gid === gid);
   if (!destGroup) return;
@@ -1116,6 +1188,7 @@ function placeSelectedHandTiles(targetGid = null) {
   if (ids.length > 1) ids = orderTilesForSet(ids);
   p.handIds = p.handIds.filter(id => !state.selectedIds.has(id));
   destGroup.tileIds.push(...ids);
+  normalizeGroupOrder(destGroup);
   state.selectedIds.clear();
   state.selected = null;
   state.activeGid = gid;
@@ -1163,6 +1236,7 @@ function tileSortValue(t) {
 function findRecommendedSets(tiles, allowUnder30 = true) {
   const used = new Set();
   const candidates = [];
+  const tileMap = Object.fromEntries(tiles.map(t => [t.id, t]));
 
   for (let num = 1; num <= 13; num++) {
     const byColor = new Map();
@@ -1193,11 +1267,10 @@ function findRecommendedSets(tiles, allowUnder30 = true) {
     if (run.length >= 3) candidates.push([...run]);
   }
 
-  return candidates
-    .filter(set => allowUnder30 || setScore(set.map(t => t.id), Object.fromEntries(tiles.map(t => [t.id, t]))) >= 30)
+  const selected = candidates
     .sort((a, b) =>
-      setScore(b.map(t => t.id), Object.fromEntries(tiles.map(t => [t.id, t]))) -
-      setScore(a.map(t => t.id), Object.fromEntries(tiles.map(t => [t.id, t]))) ||
+      setScore(b.map(t => t.id), tileMap) -
+      setScore(a.map(t => t.id), tileMap) ||
       a.length - b.length ||
       tileSortValue(a[0]) - tileSortValue(b[0])
     )
@@ -1206,6 +1279,10 @@ function findRecommendedSets(tiles, allowUnder30 = true) {
       set.forEach(t => used.add(t.id));
       return true;
     });
+
+  if (allowUnder30) return selected;
+  const total = selected.reduce((sum, set) => sum + setScore(set.map(t => t.id), tileMap), 0);
+  return total >= 30 ? selected : selected.filter(set => setScore(set.map(t => t.id), tileMap) >= 30);
 }
 
 function smartSort(tiles, allowUnder30 = true) {
@@ -1419,10 +1496,17 @@ function render() {
 
 function updateSelectionControls() {
   const btn = document.getElementById('btn-play-selected');
-  if (!btn) return;
   const count = state.selectedIds.size;
-  btn.disabled = count === 0;
-  btn.textContent = count > 0 ? `선택 ${count}장 내기` : '선택 내기';
+  if (btn) {
+    btn.disabled = count === 0 || state.actionLocked || state.currentPlayer !== state.viewPlayerIndex;
+    btn.textContent = count > 0 ? `선택 ${count}장 내기` : '선택 내기';
+  }
+  const undo = document.getElementById('btn-step-undo');
+  if (undo) undo.disabled = state.actionHistory.length === 0 || state.actionLocked || state.currentPlayer !== state.viewPlayerIndex;
+  const pass = document.getElementById('btn-pass');
+  if (pass) pass.disabled = state.actionLocked || state.currentPlayer !== state.viewPlayerIndex;
+  const end = document.getElementById('btn-end');
+  if (end) end.disabled = state.actionLocked || state.currentPlayer !== state.viewPlayerIndex;
 }
 
 function renderPlayerBar() {
@@ -1572,8 +1656,9 @@ function commitDrop(x, y) {
   // 보드 영역에 드롭 → 새 조합 생성
   const boardInner = document.getElementById('board-inner');
   if (boardInner && (boardInner.contains(el) || el === boardInner)) {
+    pushActionSnapshot();
     const ngid = createEmptyGroup();
-    placeTileInGroup(tileId, from, gid, ngid);
+    placeTileInGroup(tileId, from, gid, ngid, false);
   }
 }
 
@@ -1610,21 +1695,12 @@ function renderTile(tile, from, gid, isSelected) {
 }
 
 function renderHand() {
-  const p = state.players[state.currentPlayer];
+  const p = state.players[state.viewPlayerIndex] || state.players[state.currentPlayer];
+  const activePlayer = state.players[state.currentPlayer];
   const inner = document.getElementById('hand-inner');
   inner.innerHTML = '';
 
-  // AI 턴이면 뒷면으로 표시
-  if (p.isAI) {
-    for (let i = 0; i < p.handIds.length; i++) {
-      const el = document.createElement('div');
-      el.className = 'tile';
-      el.style.cssText = 'background:#1e293b;border-color:#334155;cursor:default;';
-      el.innerHTML = `<div style="font-size:20px;">🎴</div>`;
-      inner.appendChild(el);
-    }
-    return;
-  }
+  if (!p) return;
 
   const sel = state.selected;
   const sorted = sortedHand([...p.handIds]);
@@ -1638,8 +1714,14 @@ function renderHand() {
 
   for (const id of sorted) {
     const tile = state.tileMap[id];
-    const isSelected = state.selectedIds.has(id) || (sel?.tileId === id && sel.from === 'hand');
+    const canInteract = state.currentPlayer === state.viewPlayerIndex && !activePlayer.isAI && !state.actionLocked;
+    const isSelected = canInteract && (state.selectedIds.has(id) || (sel?.tileId === id && sel.from === 'hand'));
     const el = renderTile(tile, 'hand', null, isSelected);
+    if (!canInteract) {
+      el.style.cursor = 'default';
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0.88';
+    }
     inner.appendChild(el);
   }
 
