@@ -271,15 +271,17 @@
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
-    min-height: calc(var(--tile-h) + 20px);
+    min-height: calc(var(--tile-h) * 2 + 14px);
   }
   #hand-inner {
-    display: flex;
+    display: grid;
+    grid-template-rows: repeat(2, var(--tile-h));
+    grid-auto-flow: column;
+    grid-auto-columns: var(--tile-w);
     gap: 4px;
-    align-items: flex-end;
     width: max-content;
     min-width: 100%;
-    padding-bottom: 4px;
+    padding-bottom: 2px;
   }
 
   /* 힌트 */
@@ -567,6 +569,7 @@ const state = {
   timerRemaining: 0,
   timerInterval: null,
   gidCounter: 0,
+  consecutivePasses: 0,
 };
 
 function newGid() { return ++state.gidCounter; }
@@ -626,6 +629,7 @@ function startGame() {
   state.sortMode = 'color';
   state.timeLimit = timeLim;
   state.gidCounter = 0;
+  state.consecutivePasses = 0;
 
   document.getElementById('screen-menu').classList.add('hidden');
   document.getElementById('screen-game').classList.remove('hidden');
@@ -715,11 +719,19 @@ function passTurn() {
   if (state.drawPile.length > 0) {
     const drawn = state.drawPile.shift();
     state.players[state.currentPlayer].handIds.push(drawn);
+    state.consecutivePasses = 0;
     showToast(`패를 1장 드로우했습니다`);
+    render(); // 드로우된 패 먼저 보여준 뒤 턴 전환
+    setTimeout(() => nextPlayer(), 700);
   } else {
+    state.consecutivePasses++;
+    if (state.consecutivePasses >= state.players.length) {
+      showStalemate();
+      return;
+    }
     showToast('덱이 비었습니다');
+    setTimeout(() => nextPlayer(), 400);
   }
-  nextPlayer();
 }
 
 function resetTurn() {
@@ -789,6 +801,7 @@ function endTurn() {
   state.board = state.board.filter(g => g.tileIds.length > 0);
 
   p.hasInitialMeld = true;
+  state.consecutivePasses = 0; // 타일을 냈으므로 연속 패스 초기화
 
   // 승리 체크
   if (p.handIds.length === 0) {
@@ -972,7 +985,15 @@ async function runAITurn() {
     if (state.drawPile.length > 0) {
       const drawn = state.drawPile.shift();
       p.handIds.push(drawn);
+      state.consecutivePasses = 0;
       showToast(`${p.name}: 드로우`);
+    } else {
+      state.consecutivePasses++;
+      if (state.consecutivePasses >= state.players.length) {
+        showStalemate();
+        return;
+      }
+      showToast(`${p.name}: 패스 (덱 없음)`);
     }
     await delay(400);
     nextPlayer();
@@ -982,6 +1003,7 @@ async function runAITurn() {
   // 빈 그룹 정리
   state.board = state.board.filter(g => g.tileIds.length > 0);
   p.hasInitialMeld = true;
+  state.consecutivePasses = 0;
 
   if (p.handIds.length === 0) {
     showWin();
@@ -1098,6 +1120,32 @@ function showWin() {
       <div style="font-size:13px;color:var(--muted);">+${winScore}점 획득</div>
       <div style="border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px;">
         ${scores.map(s => `<div class="score-row"><span class="name">${s.name}</span><span class="pts">${s.name === winner.name ? '0 (완료)' : '-' + s.remaining + '점'}</span></div>`).join('')}
+      </div>
+      <button class="btn-start" onclick="location.reload()" style="margin-top:4px;">다시 하기</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function showStalemate() {
+  stopTimer();
+  const scores = state.players.map(p => ({
+    name: p.name,
+    remaining: p.handIds.reduce((s, id) => {
+      const t = state.tileMap[id];
+      return s + (t.isJoker ? 30 : t.number);
+    }, 0),
+  }));
+  const minScore = Math.min(...scores.map(s => s.remaining));
+  const winners = scores.filter(s => s.remaining === minScore);
+
+  const modal = document.createElement('div');
+  modal.id = 'gameover-modal';
+  modal.innerHTML = `
+    <div class="gameover-card">
+      <div class="gameover-title">🤝 게임 종료</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">덱 소진 — 타일 수 최소: ${winners.map(w => w.name).join(', ')} 승</div>
+      <div style="border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px;">
+        ${scores.map(s => `<div class="score-row"><span class="name">${s.name}</span><span class="pts">-${s.remaining}점</span></div>`).join('')}
       </div>
       <button class="btn-start" onclick="location.reload()" style="margin-top:4px;">다시 하기</button>
     </div>`;
@@ -1235,7 +1283,7 @@ function renderHand() {
   // 선택된 타일이 있으면 손패에 드롭 안내 추가
   if (sel && sel.from === 'hand') {
     const hint = document.createElement('div');
-    hint.style.cssText = 'font-size:11px;color:var(--muted);align-self:center;white-space:nowrap;padding:0 8px;';
+    hint.style.cssText = 'font-size:11px;color:var(--muted);grid-row:1/3;align-self:center;white-space:nowrap;padding:0 8px;';
     hint.textContent = '→ 조합에 탭';
     inner.appendChild(hint);
   }
