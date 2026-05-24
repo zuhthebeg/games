@@ -515,6 +515,32 @@
   }
   .tile-new { animation: tile-appear 0.2s ease-out forwards; }
 
+  /* 상대 무브 단계별 재생: stagger 변수에 따라 지연 */
+  .tile.replay-step {
+    animation: tile-appear 0.45s ease-out backwards;
+    animation-delay: calc(var(--stagger, 0) * 1ms);
+    box-shadow: 0 0 0 3px var(--accent), 0 0 14px rgba(255,215,0,0.45);
+  }
+
+  /* 내가 드로우한 패 강조 */
+  @keyframes just-drawn-pulse {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(-6px) scale(1.08); }
+  }
+  .tile.just-drawn {
+    box-shadow: 0 0 0 3px var(--warn), 0 0 16px rgba(245,158,11,0.55);
+    animation: just-drawn-pulse 0.65s ease-in-out 3;
+    position: relative;
+  }
+  .tile.just-drawn::before {
+    content: '⬇';
+    position: absolute;
+    top: -16px; left: 50%; transform: translateX(-50%);
+    color: var(--warn); font-size: 12px; font-weight: 900;
+    text-shadow: 0 0 4px rgba(0,0,0,0.8);
+    pointer-events: none;
+  }
+
   /* AI 턴 오버레이 */
   #ai-overlay {
     position: absolute; inset: 0; z-index: 100;
@@ -727,6 +753,9 @@ const state = {
   gidCounter: 0,
   consecutivePasses: 0,
   recentlyPlaced: new Set(),
+  replayTiles: null,    // 상대 턴 단계별 재생 중인 타일 id 배열 (순서대로 stagger)
+  justDrawn: null,      // 방금 드로우한 타일 id (자기 시점)
+  drawnTimer: null,
 };
 
 function newGid() { return ++state.gidCounter; }
@@ -1026,9 +1055,11 @@ function passTurn() {
     state.players[state.currentPlayer].handIds.push(drawn);
     state.consecutivePasses = 0;
     SFX.draw();
+    // 내가 드로우했으면 손패에 펄스 강조
+    if (state.currentPlayer === 0 && !state.players[0].isAI) markJustDrawn(drawn);
     showToast(`패를 1장 드로우했습니다`);
-    render(); // 드로우된 패 먼저 보여준 뒤 턴 전환
-    scheduleNextPlayer(700);
+    render();
+    scheduleNextPlayer(1400); // 드로우 강조 보일 시간 확보
   } else {
     state.consecutivePasses++;
     SFX.pass();
@@ -1909,6 +1940,14 @@ function renderTile(tile, from, gid, isSelected) {
   el.className = 'tile ' + tile.color;
   if (isSelected) el.classList.add('selected', 'multi-selected');
   if (from === 'board' && state.recentlyPlaced.has(tile.id)) el.classList.add('tile-new');
+  // 상대 무브 단계별 재생
+  if (from === 'board' && state.replayTiles && state.replayTiles.includes(tile.id)) {
+    el.classList.add('replay-step');
+    const idx = state.replayTiles.indexOf(tile.id);
+    el.style.setProperty('--stagger', idx * 200);
+  }
+  // 내가 막 드로우한 패 강조
+  if (from === 'hand' && state.justDrawn === tile.id) el.classList.add('just-drawn');
   el.dataset.tileId = tile.id;
 
   if (tile.isJoker) {
@@ -2166,6 +2205,32 @@ function mpHandleEvent(type, data) {
   }
 }
 
+function markJustDrawn(tileId) {
+  clearTimeout(state.drawnTimer);
+  state.justDrawn = tileId;
+  const t = state.tileMap[tileId];
+  if (t) {
+    const name = t.isJoker ? '🃏 조커' : `${COLOR_LABEL[t.color] || ''} ${t.number}`;
+    showToast(`🎴 획득: ${name}`, 2000);
+  }
+  state.drawnTimer = setTimeout(() => {
+    state.justDrawn = null;
+    state.drawnTimer = null;
+    render();
+  }, 2200);
+}
+
+function startReplay(newTileIds) {
+  if (!newTileIds || newTileIds.length === 0) return;
+  state.replayTiles = [...newTileIds];
+  // 각 타일 200ms 간격으로 등장 → 전체 윈도우 + 600ms 후 해제
+  const duration = newTileIds.length * 200 + 700;
+  setTimeout(() => {
+    state.replayTiles = null;
+    render();
+  }, duration);
+}
+
 function mpStartGameFromServer(room) {
   const wasActive = mpState.active;
   mpState.active = true;
@@ -2179,6 +2244,12 @@ function mpStartGameFromServer(room) {
 
 function mpApplyServerView(publicState, myView) {
   if (!publicState) return;
+  // 이전 스냅샷 (diff용)
+  const prevBoardIds = new Set(state.board.flatMap(g => g.tileIds));
+  const prevHandIds = (mpState.mySeat >= 0 && state.players[mpState.mySeat])
+    ? new Set(state.players[mpState.mySeat].handIds) : new Set();
+  const prevTurn = state.currentPlayer;
+
   // tileMap: 보드와 내 손패 타일을 통합해서 채움
   state.tileMap = {};
   for (const grp of (publicState.board || [])) {
@@ -2229,6 +2300,28 @@ function mpApplyServerView(publicState, myView) {
   state.selected = null;
   state.selectedIds.clear();
   state.activeGid = null;
+
+  // diff: 보드에 새로 등장한 타일 → 상대 무브 단계별 재생
+  const newOnBoard = state.board.flatMap(g => g.tileIds).filter(id => !prevBoardIds.has(id));
+  // diff: 내 손패에 새로 들어온 타일 → 드로우 강조 (내가 PASS 했을 때)
+  const newInHand = mpState.mySeat >= 0
+    ? (state.players[mpState.mySeat]?.handIds || []).filter(id => !prevHandIds.has(id))
+    : [];
+
+  // 상대 턴이 끝났거나 게임이 시작될 때 + 보드에 새 타일이 생겼다면 재생
+  const turnChanged = prevTurn !== state.currentPlayer || publicState.finished;
+  const isFromOpponent = turnChanged && newOnBoard.length > 0 && (
+    // 직전 턴이 내가 아니었거나 (= 상대가 이번에 커밋)
+    prevTurn !== mpState.mySeat ||
+    // 또는 prevTurn이 의미 없는 경우 (게임 시작 등)
+    prevBoardIds.size === 0
+  );
+  if (isFromOpponent && newOnBoard.length > 0 && prevBoardIds.size > 0) {
+    startReplay(newOnBoard);
+  }
+  if (newInHand.length === 1) {
+    markJustDrawn(newInHand[0]);
+  }
 
   render();
   if (!publicState.finished) {

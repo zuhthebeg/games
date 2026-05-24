@@ -227,6 +227,7 @@ const passLockScript = [
   function render() {}
   function showToast() {}
   function showStalemate() {}
+  function markJustDrawn() {}
   function nextPlayer() { state.currentPlayer++; }`,
   extractFunction('scheduleNextPlayer'),
   extractFunction('passTurn'),
