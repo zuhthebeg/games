@@ -633,19 +633,23 @@ function shuffle(arr) {
 // 2. 유효성 검사
 // ═══════════════════════════════════════════
 function isValidRun(tiles) {
-  // 같은 색, 연속 숫자, 3장 이상
+  // 같은 색, 연속 숫자, 3~13장. 조커는 사이를 메우거나 양끝을 확장.
+  const n = tiles.length;
+  if (n < 3 || n > 13) return false;
   const real = tiles.filter(t => !t.isJoker);
-  if (tiles.length < 3) return false;
-  if (real.length === 0) return tiles.length >= 3; // 조커만
+  if (real.length === 0) return n <= 13;
   const color = real[0].color;
   if (!real.every(t => t.color === color)) return false;
-  // 조커 포함 처리: 숫자 정렬 후 빈 슬롯 조커로 채움
   const nums = real.map(t => t.number).sort((a, b) => a - b);
+  for (let i = 1; i < nums.length; i++) {
+    if (nums[i] === nums[i - 1]) return false; // 같은 숫자 중복 금지
+  }
   const min = nums[0], max = nums[nums.length - 1];
-  if (max - min + 1 !== tiles.length) return false; // 범위와 타일 수 불일치
-  if (max - min + 1 < real.length) return false;   // 중복
-  const needed = max - min + 1 - real.length;
-  return needed <= (tiles.length - real.length);
+  if (max - min + 1 > n) return false; // 실제 타일 범위가 런 길이를 초과
+  // 런 시작점 s ∈ [max(1, max-n+1), min(min, 14-n)] 이면 1~13 안에 배치 가능
+  const sMin = Math.max(1, max - n + 1);
+  const sMax = Math.min(min, 14 - n);
+  return sMin <= sMax;
 }
 
 function isValidGroup(tiles) {
@@ -1148,11 +1152,23 @@ function orderTilesForSet(tileIds) {
   const colorOrder = { black: 0, red: 1, blue: 2, orange: 3, joker: 4 };
   const tiles = tileIds.map(id => state.tileMap[id]);
   if (isValidRun(tiles)) {
-    return [...tileIds].sort((a, b) => {
-      const ta = state.tileMap[a], tb = state.tileMap[b];
-      if (ta.isJoker !== tb.isJoker) return ta.isJoker ? 1 : -1;
-      return ta.number - tb.number || colorOrder[ta.color] - colorOrder[tb.color];
-    });
+    // 조커가 실제로 메우는 자리에 표시되도록 배치
+    const real = tiles.filter(t => !t.isJoker).sort((a, b) => a.number - b.number);
+    const jokerIds = tileIds.filter(id => state.tileMap[id].isJoker);
+    if (real.length === 0) return tileIds;
+    const n = tiles.length;
+    const min = real[0].number, max = real[real.length - 1].number;
+    // 가능한 시작점 중 가장 큰 값(=실제 타일을 왼쪽에 배치, 조커가 우선 빈칸→오른쪽 확장)
+    const s = Math.min(min, 14 - n);
+    const result = new Array(n);
+    let jokerIdx = 0;
+    const realByNum = new Map(real.map(t => [t.number, t.id]));
+    for (let i = 0; i < n; i++) {
+      const num = s + i;
+      const realId = realByNum.get(num);
+      result[i] = realId !== undefined ? realId : jokerIds[jokerIdx++];
+    }
+    return result;
   }
   if (isValidGroup(tiles)) {
     return [...tileIds].sort((a, b) => {
