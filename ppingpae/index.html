@@ -36,8 +36,8 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    /* SharedWallet 상단 바 (#sw-bar) 영역 확보 */
-    padding-top: calc(46px + env(safe-area-inset-top));
+    /* SharedWallet 상단 바 (#sw-bar) 영역 확보 — 바 높이 52px + 노치 */
+    padding-top: calc(52px + env(safe-area-inset-top));
   }
 
   /* ── 타일 ── */
@@ -531,18 +531,8 @@
       <button onclick="setCount(4)">4인</button>
     </div>
 
-    <div class="menu-label">플레이어 이름</div>
+    <div class="menu-label">플레이어 이름 (1번은 나, 나머지는 AI)</div>
     <div class="player-name-inputs" id="name-inputs"></div>
-
-    <div class="menu-row">
-      <span class="menu-label">AI 플레이어</span>
-      <select id="ai-count">
-        <option value="0">없음 (모두 인간)</option>
-        <option value="1" selected>1명 AI</option>
-        <option value="2">2명 AI</option>
-        <option value="3">3명 AI</option>
-      </select>
-    </div>
 
     <div class="menu-row">
       <span class="menu-label">턴 제한 시간</span>
@@ -759,7 +749,7 @@ function renderNameInputs() {
 
 function startGame() {
   const n = menuConfig.count;
-  const aiCount = parseInt(document.getElementById('ai-count').value);
+  const aiCount = n - 1; // 싱글모드: 나(0번) 외에는 전부 AI
   const timeLim = parseInt(document.getElementById('time-limit').value);
   const inputs = document.querySelectorAll('#name-inputs input');
   const names = Array.from(inputs).map((inp, i) => inp.value.trim() || `P${i+1}`);
@@ -1942,7 +1932,8 @@ function showScreen(name) {
 }
 
 async function openMultiLobby() {
-  if (!window.MultiplayerClient || !window.MultiplayerUI) {
+  // class 선언은 window에 자동 노출되지 않으므로 bare name으로 검사
+  if (typeof MultiplayerClient === 'undefined' || typeof MultiplayerUI === 'undefined') {
     showToast('멀티 라이브러리 로드 실패\n새로고침해주세요');
     return;
   }
