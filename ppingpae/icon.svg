@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#1a1d28" rx="14"/>
+  <!-- 뒷줄 (3장) -->
+  <rect x="14" y="22" width="22" height="32" rx="3" fill="#f7e9c8" stroke="#000" stroke-width="1.5"/>
+  <text x="25" y="44" text-anchor="middle" font-size="18" font-weight="900" fill="#d8362f" font-family="Arial">5</text>
+  <rect x="39" y="22" width="22" height="32" rx="3" fill="#f7e9c8" stroke="#000" stroke-width="1.5"/>
+  <text x="50" y="44" text-anchor="middle" font-size="18" font-weight="900" fill="#1c5fb0" font-family="Arial">6</text>
+  <rect x="64" y="22" width="22" height="32" rx="3" fill="#2a2f3d" stroke="#000" stroke-width="1.5"/>
+  <text x="75" y="44" text-anchor="middle" font-size="16" font-weight="900" fill="#ffb84d" font-family="Arial">🃏</text>
+  <!-- 앞줄 (3장 같은 숫자) -->
+  <rect x="14" y="56" width="22" height="32" rx="3" fill="#f7e9c8" stroke="#000" stroke-width="1.5"/>
+  <text x="25" y="78" text-anchor="middle" font-size="18" font-weight="900" fill="#222" font-family="Arial">3</text>
+  <rect x="39" y="56" width="22" height="32" rx="3" fill="#f7e9c8" stroke="#000" stroke-width="1.5"/>
+  <text x="50" y="78" text-anchor="middle" font-size="18" font-weight="900" fill="#d8362f" font-family="Arial">3</text>
+  <rect x="64" y="56" width="22" height="32" rx="3" fill="#f7e9c8" stroke="#000" stroke-width="1.5"/>
+  <text x="75" y="78" text-anchor="middle" font-size="18" font-weight="900" fill="#1c5fb0" font-family="Arial">3</text>
+</svg>
