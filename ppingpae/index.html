@@ -158,11 +158,6 @@
   .player-count-btns button.active {
     border-color: var(--accent); background: rgba(255,215,0,0.12); color: var(--accent);
   }
-  .player-name-inputs { display: flex; flex-direction: column; gap: 6px; }
-  .player-name-inputs input {
-    background: var(--panel2); border: 1px solid var(--line); color: var(--text);
-    border-radius: 8px; padding: 8px 10px; font-size: 14px; width: 100%;
-  }
   .menu-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   select {
     background: var(--panel2); border: 1px solid var(--line); color: var(--text);
@@ -392,8 +387,10 @@
   #game-main {
     flex: 1;
     min-width: 0;
+    min-height: 0;       /* flex 자식이라 명시 안 하면 콘텐츠 크기로 grow → 하단 밀려남 */
     display: flex;
     flex-direction: column;
+    overflow: hidden;    /* 자식 그리드가 부모 박스 밖으로 새지 않게 */
   }
 
   /* ── 가로 모드 ── */
@@ -574,9 +571,6 @@
       <button onclick="setCount(3)">3인</button>
       <button onclick="setCount(4)">4인</button>
     </div>
-
-    <div class="menu-label">플레이어 이름 (1번은 나, 나머지는 AI)</div>
-    <div class="player-name-inputs" id="name-inputs"></div>
 
     <div class="menu-row">
       <span class="menu-label">턴 제한 시간</span>
@@ -846,32 +840,19 @@ const mpState = {
 // ═══════════════════════════════════════════
 // 4. 게임 초기화
 // ═══════════════════════════════════════════
-let menuConfig = { count: 2, names: ['나', 'AI-1', 'AI-2', 'AI-3'], aiCount: 1, timeLimit: 60 };
+let menuConfig = { count: 2, aiCount: 1, timeLimit: 60 };
 
 function setCount(n) {
   menuConfig.count = n;
   document.querySelectorAll('#count-btns button').forEach((b, i) => b.classList.toggle('active', i + 2 === n));
-  renderNameInputs();
-}
-
-function renderNameInputs() {
-  const el = document.getElementById('name-inputs');
-  el.innerHTML = '';
-  for (let i = 0; i < menuConfig.count; i++) {
-    const inp = document.createElement('input');
-    inp.placeholder = `플레이어 ${i + 1} 이름`;
-    inp.value = menuConfig.names[i] || (i === 0 ? '나' : `AI-${i}`);
-    inp.oninput = () => { menuConfig.names[i] = inp.value.trim() || `P${i+1}`; };
-    el.appendChild(inp);
-  }
 }
 
 function startGame() {
   const n = menuConfig.count;
-  const aiCount = n - 1; // 싱글모드: 나(0번) 외에는 전부 AI
+  const aiCount = n - 1;
   const timeLim = parseInt(document.getElementById('time-limit').value);
-  const inputs = document.querySelectorAll('#name-inputs input');
-  const names = Array.from(inputs).map((inp, i) => inp.value.trim() || `P${i+1}`);
+  const myName = (typeof SharedWallet !== 'undefined' && SharedWallet.user?.nickname) || '나';
+  const names = [myName, ...Array.from({ length: n - 1 }, (_, i) => `AI-${i + 1}`)];
   SFX.setEnabled(document.getElementById('sfx-toggle')?.checked !== false);
 
   // 타일 준비
@@ -1680,7 +1661,7 @@ function showWin() {
   // 내가 이긴 경우에만 골드 지급 (싱글에서 winner === 나(0번 좌석))
   const isMyWin = state.currentPlayer === 0 && !winner.isAI;
   const prizeGold = isMyWin ? winScore * 10000 : 0;
-  if (prizeGold > 0 && window.SharedWallet?.addGold) {
+  if (prizeGold > 0 && typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
     try { SharedWallet.addGold(prizeGold); } catch (_) {}
   }
 
@@ -1714,7 +1695,7 @@ function showStalemate() {
   const isMySoleWin = winners.length === 1 && winners[0].name === state.players[0].name && !state.players[0].isAI;
   const oppRemaining = scores.filter(s => s.name !== state.players[0].name).reduce((s, r) => s + r.remaining, 0);
   const prizeGold = isMySoleWin ? oppRemaining * 10000 : 0;
-  if (prizeGold > 0 && window.SharedWallet?.addGold) {
+  if (prizeGold > 0 && typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
     try { SharedWallet.addGold(prizeGold); } catch (_) {}
   }
 
@@ -2344,7 +2325,7 @@ function mpShowResult(publicState) {
     .filter(p => p.id !== mpState.myUserId)
     .reduce((s, p) => s + Math.max(0, -p.score), 0);
   const prizeGold = isMyWin ? oppNegSum * 10000 : 0;
-  if (prizeGold > 0 && window.SharedWallet?.addGold) {
+  if (prizeGold > 0 && typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
     try { SharedWallet.addGold(prizeGold); } catch (_) {}
   }
 
