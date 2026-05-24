@@ -233,6 +233,11 @@
   .meld-group.valid   { border-color: var(--valid); background: rgba(78,204,163,0.06); }
   .meld-group.invalid { border-color: var(--invalid); background: rgba(239,68,68,0.06); }
   .meld-group.drop-target { border-color: var(--accent); background: rgba(255,215,0,0.1); }
+  .meld-group.active-target {
+    border-color: var(--accent);
+    background: rgba(255,215,0,0.12);
+    box-shadow: inset 0 0 0 1px rgba(255,215,0,0.35), 0 0 18px rgba(255,215,0,0.12);
+  }
 
   /* 보드 하단 액션 */
   #board-actions {
@@ -339,28 +344,82 @@
   .score-row .name { color: var(--muted); }
   .score-row .pts  { font-weight: 700; }
 
-  /* 가로 모드 */
-  @media (orientation: landscape) and (min-height: 400px) {
-    #screen-game {
-      flex-direction: row;
-    }
+  /* game-main 기본 (portrait) */
+  #game-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── 가로 모드 ── */
+  @media (orientation: landscape) {
+    #screen-game { flex-direction: column; }
+
+    /* 상단 플레이어 바 */
     #player-bar {
-      flex-direction: column;
-      border-bottom: none;
-      border-right: 1px solid var(--line);
-      width: 90px;
-      padding: 6px 4px;
+      flex-direction: row;
+      border-bottom: 1px solid var(--line);
+      border-right: none;
+      width: auto;
+      padding: 4px 6px;
+      overflow-y: hidden;
+      flex-shrink: 0;
     }
-    .pbar-card { flex: 0 0 auto; }
+    .pbar-card { flex: 1 1 0; min-width: 0; }
+    .pbar-card.active { border-width: 2px; }
+
+    /* 중앙 보드 + 우측 액션 + 하단 랙 */
     #game-main {
-      flex: 1;
-      min-width: 0;
-      display: flex;
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) 76px;
+      grid-template-rows: 3px 1fr auto auto;
+      grid-template-areas:
+        "timer   side"
+        "board   side"
+        "hint    side"
+        "hand    side";
+    }
+    #timer-bar   { grid-area: timer; }
+    #board-wrap  { grid-area: board; }
+    #hint-bar    { grid-area: hint; }
+    #hand-wrap   { grid-area: hand; max-height: calc(var(--tile-h) * 2 + 26px); }
+
+    /* 우측 액션 사이드바 */
+    #board-actions {
+      grid-area: side;
       flex-direction: column;
+      align-items: stretch;
+      flex-wrap: nowrap;
+      border-top: none;
+      border-bottom: none;
+      border-left: 1px solid var(--line);
+      width: 76px;
+      padding: 6px 4px;
+      overflow-y: auto;
+      gap: 4px;
+      justify-content: flex-start;
     }
+    #board-actions button {
+      padding: 7px 4px;
+      font-size: 11px;
+      white-space: normal;
+      word-break: keep-all;
+      text-align: center;
+    }
+    #board-actions .sort-tabs { flex-direction: column; border-radius: 8px; }
+    #board-actions .sort-tab  { border-radius: 0 !important; padding: 7px 4px !important; }
+    #board-actions .spacer    { min-height: 8px; flex: 1; }
+    #btn-pass { font-size: 11px; }
+    #btn-end  { font-size: 11px; }
+
+    /* 손패 랙 스타일 */
     #hand-wrap {
-      max-height: calc(var(--tile-h) * 2 + 26px);
+      border-top: 3px solid #3a2a12;
+      background: linear-gradient(180deg, #2e1e08 0%, #1a1005 100%);
+      padding: 7px 8px;
     }
+    #hand-inner { justify-content: center; }
   }
 
   /* 드래그 고스트 */
@@ -478,7 +537,7 @@
   <div id="player-bar"></div>
 
   <!-- 메인 게임 영역 -->
-  <div id="game-main" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+  <div id="game-main">
     <!-- 타이머 -->
     <div id="timer-bar"><div id="timer-fill"></div></div>
 
@@ -609,6 +668,7 @@ const state = {
   currentPlayer: 0,
   turnState: null,    // { workingBoard, workingHand, boardSnapshot, handSnapshot, playedCount }
   selected: null,     // { tileId, from: 'hand'|'board', gid? }
+  activeGid: null,    // 탭으로 연속 배치할 조합
   sortMode: 'color',
   timeLimit: 0,       // 초 (0=없음)
   timerRemaining: 0,
@@ -672,6 +732,7 @@ function startGame() {
   state.board = [];
   state.currentPlayer = 0;
   state.selected = null;
+  state.activeGid = null;
   state.sortMode = 'color';
   state.timeLimit = timeLim;
   state.gidCounter = 0;
@@ -697,6 +758,7 @@ function beginTurn() {
     playedCount: 0,
   };
   state.selected = null;
+  state.activeGid = null;
   render();
   startTimer();
 
@@ -760,6 +822,8 @@ function passTurn() {
   if (ts) {
     state.board = deepCloneBoard(ts.boardSnapshot);
     state.players[state.currentPlayer].handIds = [...ts.handSnapshot];
+    state.selected = null;
+    state.activeGid = null;
   }
   // 드로우 1장
   if (state.drawPile.length > 0) {
@@ -793,6 +857,7 @@ function resetTurn() {
     playedCount: 0,
   };
   state.selected = null;
+  state.activeGid = null;
   showToast('↩ 이번 턴 초기화');
   render();
 }
@@ -802,6 +867,8 @@ function resetTurnState() {
   if (!ts) return;
   state.board = deepCloneBoard(ts.boardSnapshot);
   state.players[state.currentPlayer].handIds = [...ts.handSnapshot];
+  state.selected = null;
+  state.activeGid = null;
 }
 
 function endTurn() {
@@ -863,13 +930,26 @@ function endTurn() {
 // ═══════════════════════════════════════════
 function selectTile(tileId, from, gid = null) {
   if (state.players[state.currentPlayer].isAI) return;
+
+  if (from === 'hand' && state.activeGid && !state.selected) {
+    placeTileInGroup(tileId, 'hand', null, state.activeGid);
+    return;
+  }
+
   if (state.selected && state.selected.tileId === tileId) {
-    // 같은 타일 다시 탭 → 선택 해제
-    state.selected = null;
+    if (from === 'hand') {
+      // 같은 손패 타일을 한 번 더 탭하면 활성 조합으로 배치.
+      const targetGid = state.activeGid || createEmptyGroup();
+      placeTileInGroup(tileId, 'hand', null, targetGid);
+    } else {
+      state.selected = null;
+      render();
+    }
   } else {
     state.selected = { tileId, from, gid };
+    if (from === 'board') state.activeGid = gid;
+    render();
   }
-  render();
 }
 
 function clickGroup(gid) {
@@ -877,7 +957,9 @@ function clickGroup(gid) {
   if (p.isAI) return;
 
   if (!state.selected) {
-    // 빈 그룹 클릭 시 그냥 무시 (타일 선택 후 클릭해야)
+    state.activeGid = gid;
+    showToast('이 조합에 탭으로 배치합니다', 900);
+    render();
     return;
   }
 
@@ -907,9 +989,16 @@ function placeTileInGroup(tileId, from, fromGid, toGid) {
 
   // 목적 그룹에 추가
   const destGroup = state.board.find(g => g.gid === toGid);
-  if (destGroup) destGroup.tileIds.push(tileId);
+  if (!destGroup) {
+    state.selected = null;
+    state.activeGid = null;
+    render();
+    return;
+  }
+  destGroup.tileIds.push(tileId);
 
   state.selected = null;
+  state.activeGid = toGid;
   state.recentlyPlaced = new Set([tileId]);
   render();
   setTimeout(() => { state.recentlyPlaced.clear(); }, 400);
@@ -929,15 +1018,22 @@ function returnTileToHand(tileId, fromGid) {
   if (srcGroup) srcGroup.tileIds = srcGroup.tileIds.filter(id => id !== tileId);
   p.handIds.push(tileId);
   state.selected = null;
+  state.activeGid = fromGid;
   render();
+}
+
+function createEmptyGroup() {
+  const gid = newGid();
+  state.board.push({ gid, tileIds: [] });
+  state.activeGid = gid;
+  return gid;
 }
 
 function newGroup() {
   const p = state.players[state.currentPlayer];
   if (p.isAI) return;
 
-  const gid = newGid();
-  state.board.push({ gid, tileIds: [] });
+  const gid = createEmptyGroup();
 
   if (state.selected) {
     const { tileId, from, gid: fromGid } = state.selected;
@@ -1232,6 +1328,9 @@ function renderBoard() {
     if (tiles.length > 0) {
       div.classList.add(isValidSet(tiles) ? 'valid' : 'invalid');
     }
+    if (state.activeGid === group.gid) {
+      div.classList.add('active-target');
+    }
     if (sel && !div.classList.contains('drop-target')) {
       div.classList.add('drop-target'); // all groups are targets when selecting
     }
@@ -1298,6 +1397,7 @@ function initTileDrag(el, tileId, from, gid) {
       showDragDropZone();
     }
     if (drag.active) {
+      e.preventDefault();
       const g = drag.ghost;
       if (g) { g.style.left = (e.clientX - 21) + 'px'; g.style.top = (e.clientY - 28) + 'px'; }
       updateDragOver(e.clientX, e.clientY);
@@ -1307,6 +1407,7 @@ function initTileDrag(el, tileId, from, gid) {
   el.addEventListener('pointerup', (e) => {
     if (e.pointerId !== drag.pointerId) return;
     if (drag.active) {
+      e.preventDefault();
       commitDrop(e.clientX, e.clientY);
     }
     endDrag();
@@ -1351,8 +1452,7 @@ function commitDrop(x, y) {
   // 보드 영역에 드롭 → 새 조합 생성
   const boardInner = document.getElementById('board-inner');
   if (boardInner && (boardInner.contains(el) || el === boardInner)) {
-    const ngid = newGid();
-    state.board.push({ gid: ngid, tileIds: [] });
+    const ngid = createEmptyGroup();
     placeTileInGroup(tileId, from, gid, ngid);
   }
 }
@@ -1420,17 +1520,6 @@ function renderHand() {
     const tile = state.tileMap[id];
     const isSelected = sel?.tileId === id && sel.from === 'hand';
     const el = renderTile(tile, 'hand', null, isSelected);
-
-    // 손패 타일 클릭: 선택 OR 선택된 보드 타일의 그룹에 추가 (새 그룹)
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (sel && sel.from === 'board') {
-        // 보드 타일 선택 중 → 손패 영역 탭 = 회수
-        returnTileToHand(sel.tileId, sel.gid);
-      } else {
-        selectTile(tile.id, 'hand', null);
-      }
-    });
     inner.appendChild(el);
   }
 
@@ -1438,7 +1527,7 @@ function renderHand() {
   if (sel && sel.from === 'hand') {
     const hint = document.createElement('div');
     hint.style.cssText = 'font-size:11px;color:var(--muted);align-self:center;white-space:nowrap;padding:0 8px;';
-    hint.textContent = '→ 드래그 or 조합 탭';
+    hint.textContent = '→ 다시 탭 or 조합 탭';
     inner.appendChild(hint);
   }
 }
@@ -1452,13 +1541,15 @@ function updateHint() {
   } else if (sel) {
     const t = state.tileMap[sel.tileId];
     const name = t.isJoker ? '조커' : `${COLOR_NAME[t.color]} ${t.number}`;
-    hint = `[${name}] 선택됨 — 드래그하거나 조합을 탭해서 배치 · [+ 새 조합]`;
+    hint = `[${name}] 선택됨 — 다시 탭하면 새 조합, 조합 탭하면 그곳에 배치`;
     if (sel.from === 'board') hint += ' · 손패 탭하면 회수';
   } else {
     if (!p.hasInitialMeld) {
       hint = `첫 출전: 손패만으로 합계 30점 이상 조합 필요`;
     } else {
-      hint = `${p.name}의 턴 — 타일을 드래그하거나 탭→그룹 탭으로 배치`;
+      hint = state.activeGid
+        ? `${p.name}의 턴 — 손패를 탭하면 선택된 조합에 바로 배치`
+        : `${p.name}의 턴 — 타일을 드래그하거나 탭→그룹 탭으로 배치`;
     }
   }
   document.getElementById('hint-bar').textContent = hint;
