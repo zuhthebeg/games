@@ -97,6 +97,7 @@ const behaviorScript = [
   extractFunction('setScore'),
   extractFunction('normalizeGroupOrder'),
   `const mpState = { active: false, mySeat: -1 };
+  const SFX = { select(){}, place(){}, valid(){}, invalid(){}, joker(){}, draw(){}, pass(){}, undo(){}, turnTick(){}, win(){}, lose(){}, setEnabled(){} };
   const state = {
     players: [{ isAI: false, handIds: ['k1', 'k2', 'k3'] }],
     currentPlayer: 0,
@@ -153,7 +154,9 @@ const undoScript = [
   extractFunction('isValidSet'),
   extractFunction('setScore'),
   extractFunction('normalizeGroupOrder'),
-  `const state = {
+  `const mpState = { active: false, mySeat: -1 };
+  const SFX = { select(){}, place(){}, valid(){}, invalid(){}, joker(){}, draw(){}, pass(){}, undo(){}, turnTick(){}, win(){}, lose(){}, setEnabled(){} };
+  const state = {
     players: [{ isAI: false, handIds: ['k1', 'k2', 'k3'] }],
     currentPlayer: 0,
     tileMap: {
@@ -165,6 +168,7 @@ const undoScript = [
     selected: null,
     selectedIds: new Set(['k3', 'k1', 'k2']),
     activeGid: null,
+    actionLocked: false,
     gidCounter: 0,
     recentlyPlaced: new Set(),
     actionHistory: [],
@@ -201,7 +205,8 @@ assert.equal(undoCtx.undoResult.selectedCount, 0, 'undo should clear transient s
 
 const passLockScript = [
   extractFunction('deepCloneBoard'),
-  `const mpState = { active: false, mySeat: -1 };`,
+  `const mpState = { active: false, mySeat: -1 };
+  const SFX = { select(){}, place(){}, valid(){}, invalid(){}, joker(){}, draw(){}, pass(){}, undo(){}, turnTick(){}, win(){}, lose(){}, setEnabled(){} };`,
   `const state = {
     players: [{ isAI: false, handIds: ['h1'] }, { isAI: true, handIds: [] }],
     currentPlayer: 0,

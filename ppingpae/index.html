@@ -38,6 +38,8 @@
     flex-direction: column;
     /* SharedWallet 상단 바 (#sw-bar) 영역 확보 — 바 높이 52px + 노치 */
     padding-top: calc(52px + env(safe-area-inset-top));
+    /* 모바일에서 핀치/더블탭 줌이 보드 외 영역으로 새는 것 차단 */
+    touch-action: manipulation;
   }
 
   /* ── 타일 ── */
@@ -108,6 +110,12 @@
   .tile.ghost { opacity: 0.35; pointer-events: none; }
   .tile.recommended {
     box-shadow: 0 0 0 2.5px var(--valid), 0 0 10px rgba(78,204,163,0.35);
+  }
+  .tile.attachable {
+    box-shadow: 0 0 0 2.5px var(--accent), 0 0 8px rgba(255,215,0,0.35);
+  }
+  .tile.pair-hint {
+    box-shadow: 0 0 0 1.5px var(--warn);
   }
 
   /* ── 스크린 ── */
@@ -292,7 +300,7 @@
   }
   .sort-tab.active { background: rgba(255,215,0,0.15) !important; color: var(--accent) !important; }
 
-  /* 손패 영역 */
+  /* 손패 영역 — 보드 줌과 독립, 시각적으로 항상 분리 */
   #hand-wrap {
     flex-shrink: 0;
     background: var(--panel);
@@ -302,7 +310,17 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     max-height: calc(var(--tile-h) * 2 + 26px);
+    /* 보드 변환이 상속되지 않도록 새로운 stacking context */
+    position: relative;
+    z-index: 5;
+    transform: none !important;
+    touch-action: pan-y;
   }
+  .menu-toggle {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--text); font-size: 13px; cursor: pointer;
+  }
+  .menu-toggle input { width: 16px; height: 16px; cursor: pointer; }
   #hand-inner {
     display: flex;
     flex-wrap: wrap;
@@ -544,6 +562,11 @@
       </select>
     </div>
 
+    <div class="menu-row">
+      <span class="menu-label">효과음</span>
+      <label class="menu-toggle"><input type="checkbox" id="sfx-toggle" checked> 켜기</label>
+    </div>
+
     <button class="btn-start" onclick="startGame()">게임 시작</button>
     <button class="btn-start" id="btn-open-multi" onclick="openMultiLobby()" style="margin-top:8px;background:#4f46e5;">🌐 온라인 멀티</button>
   </div>
@@ -709,6 +732,73 @@ const state = {
 function newGid() { return ++state.gidCounter; }
 
 // ═══════════════════════════════════════════
+// 3-a. SFX (Web Audio 오실레이터 합성)
+// ═══════════════════════════════════════════
+const SFX = (() => {
+  let ctx = null;
+  let enabled = true;
+  const getCtx = () => {
+    if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {} }
+    return ctx;
+  };
+  function tone(freq, type, duration, vol = 0.22, startTime = 0) {
+    if (!enabled) return;
+    const c = getCtx(); if (!c) return;
+    try {
+      const t = c.currentTime + startTime;
+      const osc = c.createOscillator(); const gain = c.createGain();
+      osc.connect(gain); gain.connect(c.destination);
+      osc.type = type; osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(vol, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+      osc.start(t); osc.stop(t + duration);
+    } catch (_) {}
+  }
+  function noise(duration, vol = 0.12) {
+    if (!enabled) return;
+    const c = getCtx(); if (!c) return;
+    try {
+      const bufSize = Math.floor(c.sampleRate * duration);
+      const buf = c.createBuffer(1, bufSize, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+      const src = c.createBufferSource();
+      const gain = c.createGain();
+      src.buffer = buf; src.connect(gain); gain.connect(c.destination);
+      gain.gain.setValueAtTime(vol, c.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
+      src.start();
+    } catch (_) {}
+  }
+  return {
+    setEnabled(v) { enabled = !!v; },
+    select() { tone(640, 'sine', 0.04, 0.16); },
+    place()  { tone(440, 'square', 0.04, 0.18); tone(660, 'square', 0.05, 0.14, 0.035); },
+    valid()  { tone(700, 'sine', 0.07, 0.18); tone(1050, 'sine', 0.09, 0.16, 0.06); },
+    invalid(){ tone(180, 'square', 0.14, 0.22); },
+    joker()  { tone(880, 'triangle', 0.05, 0.18); tone(1320, 'triangle', 0.05, 0.16, 0.05); tone(1760, 'sine', 0.08, 0.14, 0.1); },
+    draw()   { noise(0.05, 0.16); tone(320, 'sine', 0.07, 0.17, 0.04); },
+    pass()   { tone(280, 'sine', 0.18, 0.18); },
+    undo()   { tone(380, 'triangle', 0.04, 0.15); tone(260, 'triangle', 0.06, 0.12, 0.04); },
+    turnTick(urgent) {
+      if (urgent) { tone(1320, 'square', 0.04, 0.18); tone(1660, 'sine', 0.05, 0.14, 0.04); }
+      else        { tone(900, 'square', 0.035, 0.1); }
+    },
+    win() {
+      tone(523, 'triangle', 0.1, 0.24);
+      tone(659, 'triangle', 0.1, 0.24, 0.1);
+      tone(784, 'triangle', 0.12, 0.26, 0.2);
+      tone(1047, 'triangle', 0.2, 0.28, 0.32);
+    },
+    lose() {
+      tone(440, 'sawtooth', 0.16, 0.22);
+      tone(330, 'sawtooth', 0.16, 0.2, 0.16);
+      tone(220, 'sawtooth', 0.28, 0.2, 0.32);
+    },
+  };
+})();
+
+// ═══════════════════════════════════════════
 // 3-b. 멀티플레이 상태
 // ═══════════════════════════════════════════
 const mpState = {
@@ -753,6 +843,7 @@ function startGame() {
   const timeLim = parseInt(document.getElementById('time-limit').value);
   const inputs = document.querySelectorAll('#name-inputs input');
   const names = Array.from(inputs).map((inp, i) => inp.value.trim() || `P${i+1}`);
+  SFX.setEnabled(document.getElementById('sfx-toggle')?.checked !== false);
 
   // 타일 준비
   const pool = shuffle(createTilePool());
@@ -847,6 +938,12 @@ function startTimer() {
   state.timerInterval = setInterval(() => {
     state.timerRemaining--;
     updateTimerBar();
+    // 마지막 5초는 매초 긴급 틱, 그 위 5초는 일반 틱
+    const isMyTurn = !mpState.active || state.currentPlayer === mpState.mySeat;
+    if (isMyTurn && !state.players[state.currentPlayer].isAI) {
+      if (state.timerRemaining > 0 && state.timerRemaining <= 5) SFX.turnTick(true);
+      else if (state.timerRemaining > 5 && state.timerRemaining <= 10) SFX.turnTick(false);
+    }
     if (state.timerRemaining <= 0) {
       stopTimer();
       showToast('⏰ 시간 초과! 자동 드로우');
@@ -900,6 +997,7 @@ function undoLastAction() {
   state.selected = null;
   state.selectedIds.clear();
   state.activeGid = snap.activeGid;
+  SFX.undo();
   showToast('↶ 직전 동작 취소', 900);
   render();
 }
@@ -927,11 +1025,13 @@ function passTurn() {
     const drawn = state.drawPile.shift();
     state.players[state.currentPlayer].handIds.push(drawn);
     state.consecutivePasses = 0;
+    SFX.draw();
     showToast(`패를 1장 드로우했습니다`);
     render(); // 드로우된 패 먼저 보여준 뒤 턴 전환
     scheduleNextPlayer(700);
   } else {
     state.consecutivePasses++;
+    SFX.pass();
     if (state.consecutivePasses >= state.players.length) {
       showStalemate();
       return;
@@ -982,6 +1082,7 @@ function endTurn() {
   // 손패에서 1장 이상 냈는지 확인
   const played = ts.handSnapshot.length - p.handIds.length;
   if (played <= 0) {
+    SFX.invalid();
     showToast('최소 1장 이상 내야 합니다\n패스하려면 [패스] 버튼을');
     return;
   }
@@ -999,6 +1100,7 @@ function endTurn() {
       return s + (t.isJoker ? 0 : t.number);
     }, 0);
     if (playedScore < 30) {
+      SFX.invalid();
       showToast(`첫 출전은 합계 30점 이상이어야 합니다\n현재: ${playedScore}점`);
       return;
     }
@@ -1006,6 +1108,7 @@ function endTurn() {
 
   // 보드 전체 유효성
   if (!isBoardValid(state.board, state.tileMap)) {
+    SFX.invalid();
     showToast('⚠️ 유효하지 않은 조합이 있습니다!\n보드를 수정하거나 되돌리기를 눌러주세요');
     // 빨간 그룹 하이라이트
     document.querySelectorAll('.meld-group.invalid').forEach(el => {
@@ -1019,6 +1122,7 @@ function endTurn() {
 
   p.hasInitialMeld = true;
   state.consecutivePasses = 0; // 타일을 냈으므로 연속 패스 초기화
+  SFX.valid();
 
   // 승리 체크
   if (p.handIds.length === 0) {
@@ -1036,6 +1140,7 @@ function selectTile(tileId, from, gid = null) {
   if (state.players[state.currentPlayer].isAI) return;
   if (state.actionLocked) return;
   if (mpState.active && state.currentPlayer !== mpState.mySeat) return;
+  SFX.select();
 
   if (from === 'hand') {
     state.selected = null;
@@ -1111,6 +1216,12 @@ function placeTileInGroup(tileId, from, fromGid, toGid, recordAction = true) {
   }
   destGroup.tileIds.push(tileId);
   normalizeGroupOrder(destGroup);
+
+  const placedTile = state.tileMap[tileId];
+  if (placedTile?.isJoker) SFX.joker();
+  else SFX.place();
+  const groupTiles = destGroup.tileIds.map(id => state.tileMap[id]);
+  if (groupTiles.length >= 3 && isValidSet(groupTiles)) SFX.valid();
 
   state.selected = null;
   state.selectedIds.clear();
@@ -1228,6 +1339,10 @@ function placeSelectedHandTiles(targetGid = null) {
   p.handIds = p.handIds.filter(id => !state.selectedIds.has(id));
   destGroup.tileIds.push(...ids);
   normalizeGroupOrder(destGroup);
+  const placed = ids.map(id => state.tileMap[id]);
+  if (placed.some(t => t?.isJoker)) SFX.joker(); else SFX.place();
+  const groupTiles = destGroup.tileIds.map(id => state.tileMap[id]);
+  if (groupTiles.length >= 3 && isValidSet(groupTiles)) SFX.valid();
   state.selectedIds.clear();
   state.selected = null;
   state.activeGid = gid;
@@ -1270,6 +1385,53 @@ function sortedHand(handIds) {
 function tileSortValue(t) {
   const colorOrder = { black: 0, red: 1, blue: 2, orange: 3, joker: 4 };
   return (t.number * 10) + colorOrder[t.color];
+}
+
+// 보드의 기존 유효 그룹에 손패 타일을 1장 붙여서 여전히 유효한 세트인지 검사.
+// 초기 출전 후에만 의미 있음(초기 출전 전엔 보드 재편성 불가).
+function findBoardAttachments(handTiles, board, tileMap) {
+  const attachable = new Map(); // tileId → [gid, ...]
+  for (const group of board) {
+    if (!group.tileIds || group.tileIds.length === 0) continue;
+    const groupTiles = group.tileIds.map(id => tileMap[id]);
+    if (!isValidSet(groupTiles)) continue;
+    for (const t of handTiles) {
+      // 같은 그룹에 이미 같은 색+숫자 중복이면 무효이므로 isValidSet이 알아서 거름
+      if (isValidSet([...groupTiles, t])) {
+        if (!attachable.has(t.id)) attachable.set(t.id, []);
+        attachable.get(t.id).push(group.gid);
+      }
+    }
+  }
+  return attachable;
+}
+
+// 손패 안에서 "한 장만 더 있으면 세트가 되는" 페어/이쁘로(2장 조합)도 찾아준다.
+function findHandPairs(tiles) {
+  const pairs = new Set();
+  // 같은 숫자 페어 (다른 색)
+  for (let num = 1; num <= 13; num++) {
+    const sameNum = tiles.filter(t => !t.isJoker && t.number === num);
+    const byColor = new Map();
+    for (const t of sameNum) { if (!byColor.has(t.color)) byColor.set(t.color, t); }
+    const distinct = Array.from(byColor.values());
+    if (distinct.length === 2) distinct.forEach(t => pairs.add(t.id));
+  }
+  // 같은 색 인접 페어 (연속 숫자)
+  for (const color of COLORS) {
+    const sameColor = tiles.filter(t => !t.isJoker && t.color === color)
+      .sort((a, b) => a.number - b.number);
+    const seen = new Set();
+    for (let i = 0; i < sameColor.length - 1; i++) {
+      const a = sameColor[i], b = sameColor[i + 1];
+      if (seen.has(a.number) || seen.has(b.number)) continue;
+      if (b.number === a.number + 1 || b.number === a.number + 2) {
+        pairs.add(a.id); pairs.add(b.id);
+        seen.add(a.number); seen.add(b.number);
+      }
+    }
+  }
+  return pairs;
 }
 
 function findRecommendedSets(tiles, allowUnder30 = true) {
@@ -1475,6 +1637,7 @@ async function aiPlayGreedy(pIdx) {
 function showWin() {
   stopTimer();
   const winner = state.players[state.currentPlayer];
+  if (state.currentPlayer === 0 && !winner.isAI) SFX.win(); else SFX.lose();
   const scores = state.players.map(p => ({
     name: p.name,
     remaining: p.handIds.reduce((s, id) => {
@@ -1506,6 +1669,7 @@ function showWin() {
 
 function showStalemate() {
   stopTimer();
+  SFX.lose();
   const scores = state.players.map(p => ({
     name: p.name,
     remaining: p.handIds.reduce((s, id) => {
@@ -1773,12 +1937,21 @@ function renderHand() {
   const sel = state.selected;
   const sorted = sortedHand([...p.handIds]);
 
-  // 추천 타일 계산
+  // 추천 타일 계산: ①완성된 세트(초록) ②보드에 붙일 수 있는 단일(노랑) ③한 장 더 필요 페어(주황)
   const canInteract0 = state.currentPlayer === state.viewPlayerIndex && !activePlayer.isAI && !state.actionLocked;
   const recommendedIds = new Set();
+  const attachableIds = new Set();
+  const pairIds = new Set();
   if (canInteract0) {
     const handTiles = p.handIds.map(id => state.tileMap[id]);
     findRecommendedSets(handTiles, p.hasInitialMeld).forEach(set => set.forEach(t => recommendedIds.add(t.id)));
+    if (p.hasInitialMeld) {
+      findBoardAttachments(handTiles, state.board, state.tileMap)
+        .forEach((_gids, tileId) => { if (!recommendedIds.has(tileId)) attachableIds.add(tileId); });
+    }
+    findHandPairs(handTiles).forEach(id => {
+      if (!recommendedIds.has(id) && !attachableIds.has(id)) pairIds.add(id);
+    });
   }
 
   // 손패 영역 클릭 (보드에서 회수)
@@ -1797,8 +1970,10 @@ function renderHand() {
       el.style.cursor = 'default';
       el.style.pointerEvents = 'none';
       el.style.opacity = '0.88';
-    } else if (!isSelected && recommendedIds.has(id)) {
-      el.classList.add('recommended');
+    } else if (!isSelected) {
+      if (recommendedIds.has(id)) el.classList.add('recommended');
+      else if (attachableIds.has(id)) el.classList.add('attachable');
+      else if (pairIds.has(id)) el.classList.add('pair-hint');
     }
     inner.appendChild(el);
   }
@@ -1937,6 +2112,7 @@ async function openMultiLobby() {
     showToast('멀티 라이브러리 로드 실패\n새로고침해주세요');
     return;
   }
+  SFX.setEnabled(document.getElementById('sfx-toggle')?.checked !== false);
   showScreen('screen-lobby');
   const container = document.getElementById('mp-lobby-container');
 
@@ -2070,6 +2246,7 @@ function mpShowResult(publicState) {
   const winner = publicState.players.find(p => p.id === publicState.winnerId);
   // 내가 승자면 다른 플레이어들의 -점수 합 × 10000 골드
   const isMyWin = !!winner && winner.id === mpState.myUserId;
+  if (isMyWin) SFX.win(); else SFX.lose();
   const oppNegSum = publicState.players
     .filter(p => p.id !== mpState.myUserId)
     .reduce((s, p) => s + Math.max(0, -p.score), 0);
