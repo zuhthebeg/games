@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>삥패</title>
+<script src="/lib/multiplayer.js?v=20260524a"></script>
+<script src="/lib/shared-wallet.js?v=20260524a"></script>
 <style>
   :root {
     --bg: #0a0f1a;
@@ -106,7 +108,8 @@
   }
 
   /* ── 스크린 ── */
-  #screen-menu, #screen-game { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  #screen-menu, #screen-game, #screen-lobby { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  #screen-lobby { padding: 20px; gap: 12px; overflow-y: auto; max-width: 480px; margin: 0 auto; width: 100%; }
   .hidden { display: none !important; }
 
   /* ── 메뉴 ── */
@@ -549,6 +552,40 @@
     </div>
 
     <button class="btn-start" onclick="startGame()">게임 시작</button>
+    <button class="btn-start" id="btn-open-multi" onclick="openMultiLobby()" style="margin-top:8px;background:#4f46e5;">🌐 온라인 멀티</button>
+  </div>
+</div>
+
+<!-- ═══════════════ 멀티 로비 ═══════════════ -->
+<div id="screen-lobby" class="hidden">
+  <div class="menu-title">멀티 로비</div>
+  <div class="menu-sub" id="lobby-status">relay.cocy.io 연결 중...</div>
+
+  <div class="menu-card">
+    <div class="menu-label">닉네임</div>
+    <input id="mp-nickname" type="text" maxlength="12" placeholder="닉네임" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);"/>
+
+    <div class="menu-row" style="margin-top:12px;">
+      <button class="btn-start" id="btn-create-room" onclick="mpCreateRoom()" style="flex:1;">🎲 방 만들기</button>
+    </div>
+
+    <div class="menu-label" style="margin-top:14px;">또는 방 코드 입력</div>
+    <div style="display:flex;gap:8px;">
+      <input id="mp-room-code" type="text" maxlength="6" placeholder="ABCDEF" style="flex:1;text-transform:uppercase;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-family:monospace;letter-spacing:2px;text-align:center;font-size:18px;"/>
+      <button class="btn-start" onclick="mpJoinRoom()" style="background:#3b82f6;">참여</button>
+    </div>
+
+    <button class="btn-start" onclick="closeMultiLobby()" style="margin-top:18px;background:#475569;">◀ 돌아가기</button>
+  </div>
+
+  <div id="mp-waiting-card" class="menu-card hidden" style="margin-top:12px;">
+    <div class="menu-label">방 코드</div>
+    <div style="font-family:monospace;letter-spacing:4px;font-size:28px;color:var(--accent);text-align:center;padding:8px 0;" id="mp-room-display">------</div>
+    <div class="menu-label">참여 플레이어</div>
+    <div id="mp-player-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+    <button class="btn-start" id="btn-start-multi" onclick="mpStartGame()" style="margin-top:12px;display:none;">🚀 게임 시작</button>
+    <div id="mp-wait-hint" style="text-align:center;color:var(--muted);font-size:12px;margin-top:8px;">호스트가 게임을 시작할 때까지 대기...</div>
+    <button class="btn-start" onclick="mpLeaveRoom()" style="margin-top:8px;background:#dc2626;">방 나가기</button>
   </div>
 </div>
 
@@ -709,6 +746,22 @@ const state = {
 function newGid() { return ++state.gidCounter; }
 
 // ═══════════════════════════════════════════
+// 3-b. 멀티플레이 상태
+// ═══════════════════════════════════════════
+const mpState = {
+  active: false,         // 멀티 모드 여부
+  client: null,          // MultiplayerClient 인스턴스
+  myUserId: null,
+  mySeat: -1,            // 내 좌석 인덱스
+  roomId: null,
+  roomCode: null,
+  isHost: false,
+  roomPlayers: [],       // 로비/대기 중인 플레이어 목록 [{ userId, nickname, isHost }]
+  hostUserId: null,
+  busy: false,           // 서버 요청 중 중복 전송 방지
+};
+
+// ═══════════════════════════════════════════
 // 4. 게임 초기화
 // ═══════════════════════════════════════════
 let menuConfig = { count: 2, names: ['나', 'AI-1', 'AI-2', 'AI-3'], aiCount: 1, timeLimit: 60 };
@@ -798,7 +851,7 @@ function beginTurn() {
   render();
   startTimer();
 
-  if (p.isAI) {
+  if (p.isAI && !mpState.active) {
     document.getElementById('ai-thinking-badge').classList.remove('hidden');
     setTimeout(() => runAITurn(), 800);
   }
@@ -892,6 +945,7 @@ function undoLastAction() {
 // 7. 플레이어 액션
 // ═══════════════════════════════════════════
 function passTurn() {
+  if (mpState.active) { mpSendPass(); return; }
   const current = state.players[state.currentPlayer];
   if (!current || current.isAI || state.actionLocked) return;
   state.actionLocked = true;
@@ -957,6 +1011,7 @@ function resetTurnState() {
 }
 
 function endTurn() {
+  if (mpState.active) { mpSendCompleteTurn(); return; }
   if (state.actionLocked || state.players[state.currentPlayer].isAI) return;
   const ts = state.turnState;
   const p = state.players[state.currentPlayer];
@@ -1461,13 +1516,19 @@ function showWin() {
     }, 0),
   }));
   const winScore = scores.filter(s => s.name !== winner.name).reduce((s, r) => s + r.remaining, 0);
+  // 내가 이긴 경우에만 골드 지급 (싱글에서 winner === 나(0번 좌석))
+  const isMyWin = state.currentPlayer === 0 && !winner.isAI;
+  const prizeGold = isMyWin ? winScore * 10000 : 0;
+  if (prizeGold > 0 && window.SharedWallet?.addGold) {
+    try { SharedWallet.addGold(prizeGold); } catch (_) {}
+  }
 
   const modal = document.createElement('div');
   modal.id = 'gameover-modal';
   modal.innerHTML = `
     <div class="gameover-card">
       <div class="gameover-title">🏆 ${winner.name} 승리!</div>
-      <div style="font-size:13px;color:var(--muted);">+${winScore}점 획득</div>
+      <div style="font-size:13px;color:var(--muted);">+${winScore}점${prizeGold > 0 ? ` · 💰 ${prizeGold.toLocaleString()}골드` : ''}</div>
       <div style="border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px;">
         ${scores.map(s => `<div class="score-row"><span class="name">${s.name}</span><span class="pts">${s.name === winner.name ? '0 (완료)' : '-' + s.remaining + '점'}</span></div>`).join('')}
       </div>
@@ -1487,13 +1548,20 @@ function showStalemate() {
   }));
   const minScore = Math.min(...scores.map(s => s.remaining));
   const winners = scores.filter(s => s.remaining === minScore);
+  // 내가 단독 승자(0번 좌석)면 다른 플레이어 잔여합 × 10000 골드
+  const isMySoleWin = winners.length === 1 && winners[0].name === state.players[0].name && !state.players[0].isAI;
+  const oppRemaining = scores.filter(s => s.name !== state.players[0].name).reduce((s, r) => s + r.remaining, 0);
+  const prizeGold = isMySoleWin ? oppRemaining * 10000 : 0;
+  if (prizeGold > 0 && window.SharedWallet?.addGold) {
+    try { SharedWallet.addGold(prizeGold); } catch (_) {}
+  }
 
   const modal = document.createElement('div');
   modal.id = 'gameover-modal';
   modal.innerHTML = `
     <div class="gameover-card">
       <div class="gameover-title">🤝 게임 종료</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">덱 소진 — 타일 수 최소: ${winners.map(w => w.name).join(', ')} 승</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">덱 소진 — 타일 수 최소: ${winners.map(w => w.name).join(', ')} 승${prizeGold > 0 ? ` · 💰 ${prizeGold.toLocaleString()}골드` : ''}</div>
       <div style="border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px;">
         ${scores.map(s => `<div class="score-row"><span class="name">${s.name}</span><span class="pts">-${s.remaining}점</span></div>`).join('')}
       </div>
@@ -1530,11 +1598,15 @@ function updateSelectionControls() {
 
 function renderPlayerBar() {
   const bar = document.getElementById('player-bar');
-  bar.innerHTML = state.players.map((p, i) => `
+  bar.innerHTML = state.players.map((p, i) => {
+    const count = (typeof p.handCount === 'number' && i !== state.viewPlayerIndex) ? p.handCount : p.handIds.length;
+    const me = mpState.active && i === mpState.mySeat;
+    return `
     <div class="pbar-card ${i === state.currentPlayer ? 'active' : ''}">
-      <div class="pbar-name">${p.isAI ? '🤖' : ''}${p.name}</div>
-      <div class="pbar-count">${p.handIds.length}장${p.hasInitialMeld ? '' : ' ⬜'}</div>
-    </div>`).join('');
+      <div class="pbar-name">${p.isAI ? '🤖' : (me ? '🫵 ' : '')}${p.name}</div>
+      <div class="pbar-count">${count}장${p.hasInitialMeld ? '' : ' ⬜'}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderBoard() {
@@ -1769,6 +1841,8 @@ function updateHint() {
   let hint = '';
   if (p.isAI) {
     hint = `🤖 ${p.name} 생각 중...`;
+  } else if (mpState.active && state.currentPlayer !== mpState.mySeat) {
+    hint = `⏳ ${p.name}의 턴 — 대기 중`;
   } else if (state.selectedIds.size > 0) {
     const ids = orderedHandSelection();
     const tiles = ids.map(id => state.tileMap[id]);
@@ -1867,7 +1941,362 @@ function bindBoardPinch() {
 }
 
 // ═══════════════════════════════════════════
-// 15. 메뉴 초기화
+// 15. 멀티플레이 (relay.cocy.io)
+// ═══════════════════════════════════════════
+const MP_GAME_TYPE = 'ppingpae';
+
+function showScreen(name) {
+  for (const id of ['screen-menu', 'screen-lobby', 'screen-game']) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', id !== name);
+  }
+}
+
+function setLobbyStatus(msg) {
+  const el = document.getElementById('lobby-status');
+  if (el) el.textContent = msg;
+}
+
+async function openMultiLobby() {
+  if (!window.MultiplayerClient) {
+    showToast('멀티 라이브러리 로드 실패\n새로고침해주세요');
+    return;
+  }
+  showScreen('screen-lobby');
+  setLobbyStatus('서버 인증 중...');
+  try {
+    mpState.client = MultiplayerClient.getInstance();
+    await mpState.client.ensureAuth();
+    mpState.myUserId = mpState.client.userId;
+    const nickEl = document.getElementById('mp-nickname');
+    nickEl.value = mpState.client.nickname || '플레이어';
+    setLobbyStatus('relay.cocy.io 연결됨 · 방을 만들거나 코드로 참여하세요');
+  } catch (e) {
+    console.error(e);
+    setLobbyStatus('❌ 서버 인증 실패 — 네트워크 확인 후 다시 시도');
+  }
+}
+
+function closeMultiLobby() {
+  showScreen('screen-menu');
+  document.getElementById('mp-waiting-card')?.classList.add('hidden');
+}
+
+function mpSyncNickname() {
+  const nick = (document.getElementById('mp-nickname')?.value || '').trim();
+  if (nick) {
+    mpState.client.nickname = nick;
+    localStorage.setItem('relay_nickname', nick);
+  }
+}
+
+async function mpCreateRoom() {
+  if (mpState.busy) return;
+  mpSyncNickname();
+  mpState.busy = true;
+  setLobbyStatus('방 생성 중...');
+  try {
+    const res = await mpState.client.createRoom(MP_GAME_TYPE, {
+      maxPlayers: 4,
+      isPublic: true,
+      gameConfig: { timeLimit: 60, initialHandSize: 14, initialMeldScore: 30 },
+    });
+    mpState.roomId = res.roomId;
+    mpState.roomCode = res.roomId;
+    mpState.isHost = true;
+    mpEnterWaitingRoom();
+  } catch (e) {
+    console.error(e);
+    setLobbyStatus('❌ 방 생성 실패: ' + (e.message || e));
+  } finally {
+    mpState.busy = false;
+  }
+}
+
+async function mpJoinRoom() {
+  if (mpState.busy) return;
+  mpSyncNickname();
+  const code = (document.getElementById('mp-room-code').value || '').trim().toUpperCase();
+  if (code.length < 4) { showToast('방 코드를 입력하세요'); return; }
+  mpState.busy = true;
+  setLobbyStatus('방 참여 중...');
+  try {
+    // 방 코드 = 방 ID (서버가 6자리 코드를 ID로 사용)
+    const res = await mpState.client.joinRoom(code, MP_GAME_TYPE);
+    mpState.roomId = res.roomId || code;
+    mpState.roomCode = mpState.roomId;
+    mpState.isHost = false;
+    mpEnterWaitingRoom();
+  } catch (e) {
+    console.error(e);
+    setLobbyStatus('❌ 방 참여 실패: ' + (e.message || e));
+  } finally {
+    mpState.busy = false;
+  }
+}
+
+async function mpEnterWaitingRoom() {
+  document.getElementById('mp-waiting-card').classList.remove('hidden');
+  document.getElementById('mp-room-display').textContent = mpState.roomCode || mpState.roomId.slice(0, 6).toUpperCase();
+  document.getElementById('btn-start-multi').style.display = mpState.isHost ? '' : 'none';
+  document.getElementById('mp-wait-hint').style.display = mpState.isHost ? 'none' : '';
+
+  mpState.client.onEvent = mpHandleEvent;
+  mpState.client.onError = (e) => console.warn('mp error', e);
+  mpState.client.startListening();
+
+  await mpRefreshRoomState();
+}
+
+async function mpRefreshRoomState() {
+  try {
+    const room = await mpState.client.getRoomState();
+    mpState.roomPlayers = (room.players || []).map(p => ({
+      userId: p.id,
+      nickname: p.nickname,
+      isHost: !!p.isHost,
+    }));
+    mpState.hostUserId = room.hostId;
+    mpState.isHost = (room.hostId === mpState.myUserId);
+    mpRenderPlayerList();
+    if (room.status === 'playing' && room.gameState) {
+      mpStartGameFromServer(room);
+    }
+  } catch (e) {
+    console.warn('refresh failed', e);
+  }
+}
+
+function mpRenderPlayerList() {
+  const el = document.getElementById('mp-player-list');
+  if (!el) return;
+  el.innerHTML = '';
+  for (const p of mpState.roomPlayers) {
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:8px;background:var(--panel2);border-radius:6px;display:flex;justify-content:space-between;';
+    row.innerHTML = `<span>${p.isHost ? '👑 ' : ''}${escapeHtml(p.nickname)}</span><span style="color:var(--muted);font-size:11px;">${p.userId === mpState.myUserId ? '(나)' : ''}</span>`;
+    el.appendChild(row);
+  }
+  const startBtn = document.getElementById('btn-start-multi');
+  if (mpState.isHost && startBtn) {
+    startBtn.disabled = mpState.roomPlayers.length < 2;
+    startBtn.textContent = mpState.roomPlayers.length < 2 ? '⏳ 2명 이상 필요' : `🚀 게임 시작 (${mpState.roomPlayers.length}명)`;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+async function mpStartGame() {
+  if (!mpState.isHost) return;
+  if (mpState.roomPlayers.length < 2) { showToast('2명 이상 필요'); return; }
+  try {
+    await mpState.client.request('POST', `/api/rooms/${mpState.roomId}/start`, {});
+  } catch (e) {
+    showToast('시작 실패: ' + (e.message || e));
+  }
+}
+
+async function mpLeaveRoom() {
+  try { await mpState.client.leaveRoom(); } catch (_) {}
+  mpState.client.stopListening();
+  mpState.active = false;
+  mpState.roomId = null;
+  mpState.roomCode = null;
+  document.getElementById('mp-waiting-card').classList.add('hidden');
+  setLobbyStatus('방을 나왔습니다');
+}
+
+function mpHandleEvent(type, data) {
+  if (type === 'game_started') {
+    mpRefreshRoomState();
+    return;
+  }
+  if (type === 'player_joined' || type === 'player_left' || type === 'host_changed') {
+    mpRefreshRoomState();
+    return;
+  }
+  if (type === 'action' || type === 'state_update') {
+    mpRefreshRoomState();
+    return;
+  }
+  if (type === 'game_ended') {
+    mpRefreshRoomState();
+    return;
+  }
+}
+
+function mpStartGameFromServer(room) {
+  const wasActive = mpState.active;
+  mpState.active = true;
+  if (!wasActive) {
+    showScreen('screen-game');
+    boardView.scale = 1.0;
+    setTimeout(() => { bindBoardPinch(); applyBoardZoom(); }, 50);
+  }
+  mpApplyServerView(room.gameState, room.myView);
+}
+
+function mpApplyServerView(publicState, myView) {
+  if (!publicState) return;
+  // tileMap: 보드와 내 손패 타일을 통합해서 채움
+  state.tileMap = {};
+  for (const grp of (publicState.board || [])) {
+    for (const t of (grp.tiles || [])) state.tileMap[t.id] = t;
+  }
+  for (const t of (myView?.myHand || [])) state.tileMap[t.id] = t;
+
+  // 보드
+  state.board = (publicState.board || []).map(g => ({ gid: g.gid, tileIds: g.tiles.map(t => t.id) }));
+  state.gidCounter = state.board.reduce((m, g) => Math.max(m, g.gid), 0);
+
+  // 플레이어 목록 (멀티)
+  state.players = (publicState.players || []).map(p => ({
+    name: p.nickname,
+    handIds: [], // 다른 플레이어 손패는 비공개. 내 손패는 아래서 덮어씀
+    hasInitialMeld: p.hasInitialMeld,
+    isAI: false,
+    score: p.score,
+    handCount: p.handCount,
+    userId: p.id,
+  }));
+  // 내 손패 채우기
+  mpState.mySeat = state.players.findIndex(p => p.userId === mpState.myUserId);
+  if (mpState.mySeat >= 0 && myView?.myHandIds) {
+    state.players[mpState.mySeat].handIds = [...myView.myHandIds];
+  }
+
+  state.currentPlayer = publicState.currentTurn;
+  state.viewPlayerIndex = mpState.mySeat;
+  state.drawPile = new Array(publicState.drawPileCount || 0); // 카운트만 추적
+  state.consecutivePasses = publicState.consecutivePasses || 0;
+  state.timeLimit = publicState.config?.timeLimit || 60;
+
+  // 내 턴이면 turnState 세팅, 아니면 잠금
+  const isMyTurn = mpState.mySeat === state.currentPlayer;
+  state.actionLocked = !isMyTurn || publicState.finished;
+  if (isMyTurn && !publicState.finished) {
+    const me = state.players[mpState.mySeat];
+    state.turnState = {
+      workingBoard: deepCloneBoard(state.board),
+      workingHand: [...me.handIds],
+      boardSnapshot: deepCloneBoard(state.board),
+      handSnapshot: [...me.handIds],
+      playedCount: 0,
+    };
+    state.actionHistory = [];
+  }
+  state.selected = null;
+  state.selectedIds.clear();
+  state.activeGid = null;
+
+  render();
+  if (!publicState.finished) {
+    if (isMyTurn) startTimer(); else stopTimer();
+  }
+
+  // 게임 종료 처리
+  if (publicState.finished && !document.getElementById('gameover-modal')) {
+    mpShowResult(publicState);
+  }
+}
+
+function mpShowResult(publicState) {
+  stopTimer();
+  const winner = publicState.players.find(p => p.id === publicState.winnerId);
+  // 내가 승자면 다른 플레이어들의 -점수 합 × 10000 골드
+  const isMyWin = !!winner && winner.id === mpState.myUserId;
+  const oppNegSum = publicState.players
+    .filter(p => p.id !== mpState.myUserId)
+    .reduce((s, p) => s + Math.max(0, -p.score), 0);
+  const prizeGold = isMyWin ? oppNegSum * 10000 : 0;
+  if (prizeGold > 0 && window.SharedWallet?.addGold) {
+    try { SharedWallet.addGold(prizeGold); } catch (_) {}
+  }
+
+  const modal = document.createElement('div');
+  modal.id = 'gameover-modal';
+  modal.innerHTML = `
+    <div class="gameover-card">
+      <div class="gameover-title">${winner ? `🏆 ${escapeHtml(winner.nickname)} 승리!` : '🤝 게임 종료'}</div>
+      <div style="font-size:13px;color:var(--muted);">${escapeHtml(publicState.endReason || '')}${prizeGold > 0 ? ` · 💰 ${prizeGold.toLocaleString()}골드` : ''}</div>
+      <div style="border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px;">
+        ${publicState.players.map(p => `<div class="score-row"><span class="name">${escapeHtml(p.nickname)}</span><span class="pts">${p.score >= 0 ? '+' : ''}${p.score}점</span></div>`).join('')}
+      </div>
+      <button class="btn-start" onclick="location.reload()" style="margin-top:4px;">메뉴로</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function mpSendCompleteTurn() {
+  if (mpState.busy) return;
+  if (mpState.mySeat !== state.currentPlayer) { showToast('당신의 턴이 아닙니다'); return; }
+  const me = state.players[mpState.mySeat];
+  // 사전 검증 (서버 거절 줄이기)
+  if (me.handIds.length === state.turnState.handSnapshot.length) {
+    showToast('최소 1장 이상 내야 합니다');
+    return;
+  }
+  if (!state.board.every(g => g.tileIds.length === 0 || isValidSet(g.tileIds.map(id => state.tileMap[id])))) {
+    showToast('⚠️ 유효하지 않은 조합이 있습니다');
+    return;
+  }
+  mpState.busy = true;
+  state.actionLocked = true;
+  stopTimer();
+  try {
+    const payload = {
+      board: state.board.filter(g => g.tileIds.length > 0).map(g => ({ gid: g.gid, tileIds: [...g.tileIds] })),
+      handIds: [...me.handIds],
+    };
+    const res = await mpState.client.sendAction({ type: 'COMPLETE_TURN', payload });
+    if (!res.success) {
+      showToast('서버 거절: ' + (res.error || ''));
+      state.actionLocked = false;
+      startTimer();
+    } else if (res.gameState) {
+      mpApplyServerView(res.gameState, res.myView);
+    }
+  } catch (e) {
+    showToast('전송 실패: ' + (e.message || e));
+    state.actionLocked = false;
+  } finally {
+    mpState.busy = false;
+  }
+}
+
+async function mpSendPass() {
+  if (mpState.busy) return;
+  if (mpState.mySeat !== state.currentPlayer) { showToast('당신의 턴이 아닙니다'); return; }
+  mpState.busy = true;
+  state.actionLocked = true;
+  stopTimer();
+  try {
+    // 보드는 원복하지 않음 — 서버가 PASS 시 보드 변경 없음. 그래도 로컬 잔여 변경 되돌리기:
+    const ts = state.turnState;
+    if (ts) {
+      state.board = deepCloneBoard(ts.boardSnapshot);
+      state.players[mpState.mySeat].handIds = [...ts.handSnapshot];
+    }
+    const res = await mpState.client.sendAction({ type: 'PASS' });
+    if (!res.success) {
+      showToast('패스 실패: ' + (res.error || ''));
+      state.actionLocked = false;
+      startTimer();
+    } else if (res.gameState) {
+      mpApplyServerView(res.gameState, res.myView);
+    }
+  } catch (e) {
+    showToast('전송 실패: ' + (e.message || e));
+    state.actionLocked = false;
+  } finally {
+    mpState.busy = false;
+  }
+}
+
+// ═══════════════════════════════════════════
+// 16. 메뉴 초기화
 // ═══════════════════════════════════════════
 (function init() {
   setCount(2);

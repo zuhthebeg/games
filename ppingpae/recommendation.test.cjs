@@ -199,6 +199,7 @@ assert.equal(undoCtx.undoResult.selectedCount, 0, 'undo should clear transient s
 
 const passLockScript = [
   extractFunction('deepCloneBoard'),
+  `const mpState = { active: false };`,
   `const state = {
     players: [{ isAI: false, handIds: ['h1'] }, { isAI: true, handIds: [] }],
     currentPlayer: 0,
