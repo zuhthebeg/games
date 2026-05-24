@@ -452,6 +452,11 @@
         <button class="sort-tab"        id="sort-smart"  onclick="setSortMode('smart')"  title="스마트">✨</button>
       </div>
       <button id="btn-new-group" onclick="newGroup()">+ 새 조합</button>
+      <div class="sort-tabs" style="margin-left:2px;">
+        <button class="sort-tab" onclick="adjustZoom(-0.15)" title="축소">−</button>
+        <button class="sort-tab" id="zoom-label" style="min-width:36px;font-size:10px;">100%</button>
+        <button class="sort-tab" onclick="adjustZoom(+0.15)" title="확대">+</button>
+      </div>
       <button id="btn-undo" onclick="resetTurn()" title="이번 턴 되돌리기">↩ 되돌리기</button>
       <div class="spacer"></div>
       <button id="btn-pass" onclick="passTurn()">패스 (드로우)</button>
@@ -700,6 +705,12 @@ function updateTimerBar() {
 // 7. 플레이어 액션
 // ═══════════════════════════════════════════
 function passTurn() {
+  const ts = state.turnState;
+  // 보드 원복 (손패에서 꺼낸 타일도 돌려주기)
+  if (ts) {
+    state.board = deepCloneBoard(ts.boardSnapshot);
+    state.players[state.currentPlayer].handIds = [...ts.handSnapshot];
+  }
   // 드로우 1장
   if (state.drawPile.length > 0) {
     const drawn = state.drawPile.shift();
@@ -708,7 +719,6 @@ function passTurn() {
   } else {
     showToast('덱이 비었습니다');
   }
-  resetTurnState(); // 혹시 뭔가 움직였으면 원복
   nextPlayer();
 }
 
@@ -1048,6 +1058,8 @@ async function aiPlayGreedy(pIdx) {
     if (group.length >= 3) {
       const colors = group.map(t => t.color);
       if (new Set(colors).size === colors.length) {
+        const groupScore = setScore(group.map(t => t.id), state.tileMap);
+        if (!p.hasInitialMeld && groupScore < 30) continue; // 초기출전 30점 미달
         state.selected = { tileId: group[0].id, from: 'hand', gid: null };
         render(); await delay(350);
         const gid = newGid();
@@ -1179,6 +1191,19 @@ function renderHand() {
   const p = state.players[state.currentPlayer];
   const inner = document.getElementById('hand-inner');
   inner.innerHTML = '';
+
+  // AI 턴이면 뒷면으로 표시
+  if (p.isAI) {
+    for (let i = 0; i < p.handIds.length; i++) {
+      const el = document.createElement('div');
+      el.className = 'tile';
+      el.style.cssText = 'background:#1e293b;border-color:#334155;cursor:default;';
+      el.innerHTML = `<div style="font-size:20px;">🎴</div>`;
+      inner.appendChild(el);
+    }
+    return;
+  }
+
   const sel = state.selected;
   const sorted = sortedHand([...p.handIds]);
 
@@ -1256,12 +1281,77 @@ function showToast(msg, duration = 2500) {
 }
 
 // ═══════════════════════════════════════════
-// 14. 메뉴 초기화
+// ═══════════════════════════════════════════
+// 14. 보드 줌 & 핀치
+// ═══════════════════════════════════════════
+const boardView = { scale: 1.0 };
+
+function applyBoardZoom() {
+  const inner = document.getElementById('board-inner');
+  if (!inner) return;
+  inner.style.transform = `scale(${boardView.scale})`;
+  inner.style.transformOrigin = '0 0';
+  // board-wrap의 스크롤 가능 크기를 scale에 맞게 조정
+  inner.style.minWidth = (100 / boardView.scale) + '%';
+  inner.style.minHeight = (100 / boardView.scale) + '%';
+  const label = document.getElementById('zoom-label');
+  if (label) label.textContent = Math.round(boardView.scale * 100) + '%';
+}
+
+function adjustZoom(delta) {
+  boardView.scale = Math.max(0.5, Math.min(2.5, boardView.scale + delta));
+  applyBoardZoom();
+}
+
+function bindBoardPinch() {
+  const wrap = document.getElementById('board-wrap');
+  if (!wrap) return;
+  let pinchDist = 0;
+  let pinchScale = 1;
+  wrap.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      pinchDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      pinchScale = boardView.scale;
+      e.preventDefault();
+    }
+  }, { passive: false });
+  wrap.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && pinchDist > 0) {
+      const d = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      boardView.scale = Math.max(0.5, Math.min(2.5, pinchScale * d / pinchDist));
+      applyBoardZoom();
+      e.preventDefault();
+    }
+  }, { passive: false });
+  wrap.addEventListener('touchend', () => { pinchDist = 0; }, { passive: true });
+  // 마우스 휠 줌
+  wrap.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    adjustZoom(e.deltaY < 0 ? 0.1 : -0.1);
+  }, { passive: false });
+}
+
+// ═══════════════════════════════════════════
+// 15. 메뉴 초기화
 // ═══════════════════════════════════════════
 (function init() {
   setCount(2);
   document.getElementById('count-btns').querySelectorAll('button')[0].classList.add('active');
 })();
+
+// 게임 시작 후 줌 바인딩 (startGame 후 DOM 생성됨)
+const _origStartGame = startGame;
+startGame = function() {
+  _origStartGame();
+  boardView.scale = 1.0;
+  setTimeout(() => { bindBoardPinch(); applyBoardZoom(); }, 50);
+};
 </script>
 </body>
 </html>
