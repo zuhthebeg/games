@@ -762,6 +762,7 @@ const SFX = (() => {
   let enabled = true;
   const getCtx = () => {
     if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {} }
+    if (ctx && ctx.state === 'suspended') ctx.resume();
     return ctx;
   };
   function tone(freq, type, duration, vol = 0.22, startTime = 0) {
