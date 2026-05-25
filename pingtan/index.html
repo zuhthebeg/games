@@ -9210,52 +9210,35 @@ https://game.cocy.io/pingtan/`;
     };
 
     // ── BGM ──
-    const BGM = {
-      _ctx: null, _playing: false, _osc: null, _gainNode: null, _desired: false,
-      start() {
-        this._desired = true;
-        if (this._playing || !soundSettings.bgm) return;
-        this._ctx = this._ctx || new (window.AudioContext || window.webkitAudioContext)();
-        const c = this._ctx;
-        this._gainNode = c.createGain();
-        this._gainNode.gain.value = soundSettings.bgmVol * 0.15;
-        this._gainNode.connect(c.destination);
-        // Ambient medieval loop using oscillators
-        const playNote = (freq, start, dur) => {
-          const o = c.createOscillator(); const g = c.createGain();
-          o.type = "sine"; o.frequency.value = freq;
-          g.gain.setValueAtTime(0, c.currentTime + start);
-          g.gain.linearRampToValueAtTime(0.08, c.currentTime + start + 0.3);
-          g.gain.linearRampToValueAtTime(0, c.currentTime + start + dur);
-          o.connect(g); g.connect(this._gainNode);
-          o.start(c.currentTime + start); o.stop(c.currentTime + start + dur);
-        };
-        const melody = [262,294,330,349,392,349,330,294,262,247,220,247,262,294,330,392];
-        const loop = () => {
-          if (!this._playing) return;
-          melody.forEach((f, i) => playNote(f, i * 1.2, 1.4));
-          this._timer = setTimeout(loop, melody.length * 1200);
-        };
-        this._playing = true;
-        loop();
-        this.ensureUnlocked();
-      },
-      ensureUnlocked() {
-        if (!soundSettings.bgm) return;
-        if (!this._playing && this._desired) this.start();
-        if (this._ctx && this._ctx.state === "suspended") this._ctx.resume().catch(()=>{});
-      },
-      stop() {
-        this._desired = false;
-        this._playing = false;
-        clearTimeout(this._timer);
-        if (this._ctx) { this._ctx.close().catch(()=>{}); this._ctx = null; }
-        this._gainNode = null;
-      },
-      setVolume(v) {
-        if (this._gainNode) this._gainNode.gain.value = v * 0.15;
-      }
-    };
+    const BGM = (() => {
+      let audio = null;
+      let _desired = false;
+      const init = () => {
+        if (audio) return;
+        audio = new Audio('/pingtan/bgm.mp3');
+        audio.loop = true;
+        audio.volume = soundSettings.bgmVol * 0.5;
+      };
+      return {
+        start() {
+          _desired = true;
+          if (!soundSettings.bgm) return;
+          init();
+          if (audio.paused) audio.play().catch(() => {});
+        },
+        ensureUnlocked() {
+          if (!soundSettings.bgm) return;
+          if (_desired) this.start();
+        },
+        stop() {
+          _desired = false;
+          audio?.pause();
+        },
+        setVolume(v) {
+          if (audio) audio.volume = v * 0.5;
+        }
+      };
+    })();
 
     const SFX = (() => {
       let ctx = null;

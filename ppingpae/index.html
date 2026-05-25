@@ -584,7 +584,8 @@
 
     <div class="menu-row">
       <span class="menu-label">효과음</span>
-      <label class="menu-toggle"><input type="checkbox" id="sfx-toggle" checked> 켜기</label>
+      <label class="menu-toggle"><input type="checkbox" id="sfx-toggle" checked onchange="SFX.setEnabled(this.checked)"> SFX</label>
+      <label class="menu-toggle" style="margin-left:8px"><input type="checkbox" id="bgm-toggle" checked onchange="BGM.setEnabled(this.checked)"> BGM</label>
     </div>
 
     <button class="btn-start" onclick="startGame()">게임 시작</button>
@@ -890,6 +891,7 @@ function startGame() {
   const myName = (typeof SharedWallet !== 'undefined' && SharedWallet.user?.nickname) || '나';
   const names = [myName, ...Array.from({ length: n - 1 }, (_, i) => `AI-${i + 1}`)];
   SFX.setEnabled(document.getElementById('sfx-toggle')?.checked !== false);
+  BGM.setEnabled(document.getElementById('bgm-toggle')?.checked !== false);
 
   // 타일 준비
   const pool = shuffle(createTilePool());
@@ -2172,6 +2174,7 @@ async function openMultiLobby() {
     return;
   }
   SFX.setEnabled(document.getElementById('sfx-toggle')?.checked !== false);
+  BGM.setEnabled(document.getElementById('bgm-toggle')?.checked !== false);
   showScreen('screen-lobby');
   const container = document.getElementById('mp-lobby-container');
 
