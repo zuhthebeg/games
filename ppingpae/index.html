@@ -823,7 +823,42 @@ const SFX = (() => {
 })();
 
 // ═══════════════════════════════════════════
-// 3-b. 멀티플레이 상태
+// 3-b. BGM
+// ═══════════════════════════════════════════
+const BGM = (() => {
+  const SRC = '/ppingpae/bgm.mp3';
+  let audio = null;
+  let enabled = true;
+  let ready = false;
+
+  function init() {
+    if (audio) return;
+    audio = new Audio(SRC);
+    audio.loop = true;
+    audio.volume = 0.28;
+    audio.addEventListener('canplaythrough', () => { ready = true; if (enabled && _playing) audio.play().catch(() => {}); });
+  }
+  let _playing = false;
+  return {
+    setEnabled(v) {
+      enabled = !!v;
+      if (!enabled) { audio?.pause(); } else if (_playing) { audio?.play().catch(() => {}); }
+    },
+    play() {
+      _playing = true;
+      if (!audio) init();
+      if (!enabled) return;
+      if (audio.paused) audio.play().catch(() => {});
+    },
+    pause() {
+      _playing = false;
+      audio?.pause();
+    },
+  };
+})();
+
+// ═══════════════════════════════════════════
+// 3-c. 멀티플레이 상태
 // ═══════════════════════════════════════════
 const mpState = {
   active: false,         // 멀티 모드 여부
@@ -889,6 +924,7 @@ function startGame() {
 
   document.getElementById('screen-menu').classList.add('hidden');
   document.getElementById('screen-game').classList.remove('hidden');
+  BGM.play();
 
   beginTurn();
 }
@@ -2125,6 +2161,8 @@ function showScreen(name) {
     if (el) el.classList.toggle('hidden', id !== name);
   }
   document.getElementById('mp-lobby-container').classList.toggle('hidden', name !== 'screen-lobby');
+  if (name === 'screen-game') BGM.play();
+  else BGM.pause();
 }
 
 async function openMultiLobby() {
