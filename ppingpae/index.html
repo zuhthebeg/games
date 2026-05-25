@@ -2248,7 +2248,7 @@ function mpApplyServerView(publicState, myView) {
     name: p.nickname,
     handIds: [], // 다른 플레이어 손패는 비공개. 내 손패는 아래서 덮어씀
     hasInitialMeld: p.hasInitialMeld,
-    isAI: false,
+    isAI: p.id?.startsWith('ai-') || false,
     score: p.score,
     handCount: p.handCount,
     userId: p.id,
