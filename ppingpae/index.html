@@ -304,7 +304,7 @@
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    max-height: calc(var(--tile-h) * 2 + 26px);
+    max-height: calc(var(--tile-h) * 3 + 36px);
     /* 보드 변환이 상속되지 않도록 새로운 stacking context */
     position: relative;
     z-index: 5;
@@ -643,6 +643,9 @@
 
     <!-- 힌트 -->
     <div id="hint-bar">손패에서 타일을 선택하세요</div>
+
+    <!-- 첫 출전 점수 바 -->
+    <div id="score-bar" style="display:none;padding:2px 8px;font-size:12px;font-weight:700;text-align:center;flex-shrink:0;background:var(--panel);border-top:1px solid var(--line);"></div>
 
     <!-- 보드 액션 -->
     <div id="board-actions">
@@ -1417,6 +1420,37 @@ function normalizeGroupOrder(group) {
   }
 }
 
+function partitionIntoSets(tileIds, tileMap) {
+  if (tileIds.length < 3 || tileIds.length > 12) return null;
+  function combos(arr, k) {
+    if (k === 0) return [[]];
+    const result = [];
+    for (let i = 0; i <= arr.length - k; i++) {
+      for (const rest of combos(arr.slice(i + 1), k - 1)) {
+        result.push([arr[i], ...rest]);
+      }
+    }
+    return result;
+  }
+  function search(remaining) {
+    if (remaining.length === 0) return [];
+    if (remaining.length < 3) return null;
+    for (let size = 3; size <= Math.min(remaining.length, 13); size++) {
+      for (const combo of combos(remaining, size)) {
+        if (isValidSet(combo.map(id => tileMap[id]))) {
+          const rest = remaining.filter(id => !combo.includes(id));
+          if (rest.length === 0) return [combo];
+          if (rest.length < 3) continue;
+          const sub = search(rest);
+          if (sub !== null) return [combo, ...sub];
+        }
+      }
+    }
+    return null;
+  }
+  return search(tileIds);
+}
+
 function placeSelectedHandTiles(targetGid = null) {
   const p = state.players[state.currentPlayer];
   if (p.isAI) return;
@@ -1427,6 +1461,32 @@ function placeSelectedHandTiles(targetGid = null) {
   }
 
   pushActionSnapshot();
+
+  if (!targetGid && !state.activeGid && ids.length >= 6) {
+    const partition = partitionIntoSets(ids, state.tileMap);
+    if (partition !== null && partition.length > 1) {
+      p.handIds = p.handIds.filter(id => !state.selectedIds.has(id));
+      let lastGid = null;
+      for (const subset of partition) {
+        const ngid = createEmptyGroup();
+        const destG = state.board.find(g => g.gid === ngid);
+        destG.tileIds = orderTilesForSet(subset);
+        normalizeGroupOrder(destG);
+        lastGid = ngid;
+      }
+      const allIds = ids;
+      const placed = allIds.map(id => state.tileMap[id]);
+      if (placed.some(t => t?.isJoker)) SFX.joker(); else SFX.place();
+      state.selectedIds.clear();
+      state.selected = null;
+      state.activeGid = lastGid;
+      state.recentlyPlaced = new Set(allIds);
+      render();
+      setTimeout(() => { state.recentlyPlaced.clear(); }, 400);
+      return;
+    }
+  }
+
   const gid = targetGid || state.activeGid || createEmptyGroup();
   const destGroup = state.board.find(g => g.gid === gid);
   if (!destGroup) return;
@@ -1812,6 +1872,34 @@ function render() {
   renderHand();
   updateSelectionControls();
   updateHint();
+  updateScoreBar();
+}
+
+function updateScoreBar() {
+  const bar = document.getElementById('score-bar');
+  const p = state.players[state.currentPlayer];
+  const ts = state.turnState;
+  if (!ts || p.hasInitialMeld || p.isAI || (mpState.active && state.currentPlayer !== mpState.mySeat)) {
+    bar.style.display = 'none';
+    return;
+  }
+  const playedTileIds = ts.handSnapshot.filter(id => !p.handIds.includes(id));
+  const score = playedTileIds.reduce((s, id) => {
+    const t = state.tileMap[id];
+    return s + (t.isJoker ? 0 : t.number);
+  }, 0);
+  if (playedTileIds.length === 0) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = 'block';
+  if (score >= 30) {
+    bar.style.color = 'var(--valid)';
+    bar.textContent = `낸 타일: ${score}pt ✓ (30pt 이상 충족)`;
+  } else {
+    bar.style.color = 'var(--warn)';
+    bar.textContent = `낸 타일: ${score}pt (${30 - score}pt 더 필요)`;
+  }
 }
 
 function updateSelectionControls() {
