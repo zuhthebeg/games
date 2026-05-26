@@ -682,6 +682,8 @@
     <span class="settings-label">배경음악 (BGM)</span>
     <label class="menu-toggle"><input type="checkbox" id="bgm-toggle" checked onchange="BGM.setEnabled(this.checked)"></label>
   </div>
+  <hr style="border:none;border-top:1px solid var(--line);margin:2px 0;">
+  <button class="settings-close" style="background:#7f1d1d;border-color:#b91c1c;color:#fff;" onclick="exitGame()">🚪 게임 나가기</button>
   <button class="settings-close" onclick="closeSettings()">닫기</button>
 </div>
 
@@ -2294,6 +2296,20 @@ function openSettings() {
 function closeSettings() {
   document.getElementById('settings-panel').classList.add('hidden');
   document.getElementById('settings-overlay').classList.add('hidden');
+}
+async function exitGame() {
+  closeSettings();
+  if (mpState.active && mpState.client) {
+    try { await mpState.client.leaveRoom(); } catch (_) {}
+    try { MultiplayerClient.resetInstance(); } catch (_) {}
+    mpState.active = false;
+    mpState.client = null;
+    mpState.roomId = null;
+    mpState.roomCode = null;
+    mpState.mySeat = -1;
+  }
+  stopTimer();
+  showScreen('screen-menu');
 }
 
 // ═══════════════════════════════════════════
