@@ -1045,8 +1045,24 @@ function startTimer() {
     }
     if (state.timerRemaining <= 0) {
       stopTimer();
-      showToast('⏰ 시간 초과! 자동 드로우');
-      setTimeout(() => passTurn(), 600);
+      const _ts = state.turnState;
+      const _p = state.players[state.currentPlayer];
+      const _played = _ts ? _ts.handSnapshot.length - _p.handIds.length : 0;
+      let _canRegister = _played > 0 && isBoardValid(state.board, state.tileMap);
+      if (_canRegister && !_p.hasInitialMeld) {
+        const _playedIds = _ts.handSnapshot.filter(id => !_p.handIds.includes(id));
+        const _score = _playedIds.reduce((s, id) => {
+          const t = state.tileMap[id]; return s + (t.isJoker ? 0 : t.number);
+        }, 0);
+        if (_score < 30) _canRegister = false;
+      }
+      if (_canRegister) {
+        showToast('⏰ 시간 초과! 자동 등록');
+        setTimeout(() => endTurn(), 600);
+      } else {
+        showToast('⏰ 시간 초과! 자동 드로우');
+        setTimeout(() => passTurn(), 600);
+      }
     }
   }, 1000);
 }
