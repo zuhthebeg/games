@@ -112,6 +112,9 @@
     box-shadow: 0 0 0 2.5px var(--accent), 0 0 10px rgba(255,215,0,0.4);
     transform: translateY(-3px) scale(1.04);
   }
+  .tile.recommended {
+    box-shadow: 0 0 0 2.5px var(--valid), 0 0 10px rgba(78,204,163,0.35);
+  }
   #hand-wrap.hand-drop-target {
     border-top: 2px solid var(--valid);
     background: linear-gradient(180deg, rgba(78,204,163,0.12) 0%, var(--panel) 100%);
@@ -323,6 +326,7 @@
     flex-wrap: wrap;
     gap: 4px;
     align-content: flex-start;
+    padding-top: 12px;
     padding-bottom: 2px;
   }
 
@@ -377,15 +381,14 @@
   }
   #btn-pass-float {
     position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 16px;
     bottom: 185px;
     z-index: 200;
     background: rgba(22, 14, 3, 0.95);
     border: 2px solid var(--warn);
     color: var(--warn);
     border-radius: 20px;
-    padding: 6px 20px;
+    padding: 6px 16px;
     font-size: 13px;
     font-weight: 800;
     cursor: pointer;
@@ -699,7 +702,7 @@
       </div>
       <!-- 오른쪽: 핵심 액션 + 설정 -->
       <div class="actions-right">
-        <button id="btn-play-selected" onclick="placeSelectedHandTiles()" disabled>선택놓기</button>
+        <button id="btn-play-selected" onclick="placeSelectedHandTiles()" disabled>놓기</button>
         <button id="btn-end" onclick="endTurnSmart()">완료 ✓</button>
         <button id="btn-settings" onclick="openSettings()" title="설정">⚙️</button>
       </div>
@@ -1978,10 +1981,11 @@ function showStalemate() {
 // ═══════════════════════════════════════════
 function render() {
   // 분리된 DOM에 남은 드래그 잔존 상태 정리
-  if (drag.srcEl && !document.body.contains(drag.srcEl)) {
+  if (drag._startEl && !document.body.contains(drag._startEl)) {
+    drag.ghost?.remove();
     drag.active = false; drag.tileId = null; drag.from = null;
-    drag.gid = null; drag.ghost?.remove(); drag.ghost = null;
-    drag.srcEl = null; drag.pointerId = null;
+    drag.gid = null; drag.ghost = null;
+    drag.srcEl = null; drag._startEl = null; drag.pointerId = null;
   }
   renderPlayerBar();
   renderBoard();
@@ -2127,38 +2131,41 @@ function renderBoard() {
 // ═══════════════════════════════════════════
 // 드래그 & 드롭 시스템
 // ═══════════════════════════════════════════
-const drag = { active: false, tileId: null, tileIds: [], from: null, gid: null, ghost: null, srcEl: null, pointerId: null };
+const drag = { active: false, tileId: null, tileIds: [], from: null, gid: null, ghost: null, srcEl: null, pointerId: null, startX: 0, startY: 0, _startEl: null };
 
 function initTileDrag(el, tileId, from, gid) {
-  let startX = 0, startY = 0;
-
   el.addEventListener('pointerdown', (e) => {
     if (state.players[state.currentPlayer].isAI) return;
     if (state.actionLocked) return;
     if (mpState.active && state.currentPlayer !== mpState.mySeat) return;
-    // 이전 드래그가 정리되지 않은 경우 회복
-    if (drag.srcEl && drag.srcEl !== el) endDrag();
-    startX = e.clientX; startY = e.clientY;
+    if (drag.tileId) endDrag();
     drag.tileId = tileId; drag.from = from; drag.gid = gid;
-    // 보드 다중 선택 중이면 그룹 전체 드래그
     drag.tileIds = (from === 'board' && state.boardSelectedIds.has(tileId) && state.boardSelectedIds.size > 1)
       ? [...state.boardSelectedIds]
       : [tileId];
     drag.pointerId = e.pointerId;
     drag.active = false;
+    drag.startX = e.clientX; drag.startY = e.clientY;
+    drag._startEl = el;
+    drag.srcEl = null;
     try { el.setPointerCapture(e.pointerId); } catch (_) {}
   });
+}
 
-  el.addEventListener('pointermove', (e) => {
-    if (e.pointerId !== drag.pointerId || !drag.tileId) return;
-    const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
-    if (!drag.active && dist > 10) {
-      drag.active = true;
-      drag.srcEl = el;
-      el.classList.add('tile-drag-src');
-      // 고스트 생성
-      const g = el.cloneNode(true);
-      g.className = 'tile ' + el.className.replace('tile ', '').replace('tile-drag-src', '').trim() + ' tile-drag-ghost';
+// document-level drag handlers (capture-independent — fixes first-tile drag bug)
+document.addEventListener('pointermove', (e) => {
+  if (!drag.tileId || e.pointerId !== drag.pointerId) return;
+  const dist = Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY);
+  if (!drag.active && dist > 10) {
+    drag.active = true;
+    drag.srcEl = drag._startEl;
+    if (drag._startEl) {
+      drag._startEl.classList.add('tile-drag-src');
+      const g = drag._startEl.cloneNode(true);
+      const cleanClass = drag._startEl.className
+        .replace('tile-drag-src', '').replace('tile-new', '').replace('just-drawn', '')
+        .replace(/\s+/g, ' ').trim();
+      g.className = cleanClass + ' tile-drag-ghost';
       if (drag.tileIds.length > 1) {
         const badge = document.createElement('div');
         badge.style.cssText = 'position:absolute;top:-6px;right:-6px;background:var(--accent);color:#000;border-radius:10px;font-size:10px;font-weight:900;padding:1px 5px;';
@@ -2168,28 +2175,28 @@ function initTileDrag(el, tileId, from, gid) {
       }
       document.body.appendChild(g);
       drag.ghost = g;
-      // 드롭존 표시
-      showDragDropZone();
     }
-    if (drag.active) {
-      e.preventDefault();
-      const g = drag.ghost;
-      if (g) { g.style.left = (e.clientX - 21) + 'px'; g.style.top = (e.clientY - 28) + 'px'; }
-      updateDragOver(e.clientX, e.clientY);
-    }
-  });
+    showDragDropZone();
+  }
+  if (drag.active) {
+    e.preventDefault();
+    if (drag.ghost) { drag.ghost.style.left = (e.clientX - 21) + 'px'; drag.ghost.style.top = (e.clientY - 28) + 'px'; }
+    updateDragOver(e.clientX, e.clientY);
+  }
+}, { passive: false });
 
-  el.addEventListener('pointerup', (e) => {
-    if (e.pointerId !== drag.pointerId) return;
-    if (drag.active) {
-      e.preventDefault();
-      commitDrop(e.clientX, e.clientY);
-    }
-    endDrag();
-  });
+document.addEventListener('pointerup', (e) => {
+  if (!drag.tileId || e.pointerId !== drag.pointerId) return;
+  if (drag.active) {
+    e.preventDefault();
+    commitDrop(e.clientX, e.clientY);
+  }
+  endDrag();
+});
 
-  el.addEventListener('pointercancel', endDrag);
-}
+document.addEventListener('pointercancel', (e) => {
+  if (drag.tileId && e.pointerId === drag.pointerId) endDrag();
+});
 
 function showDragDropZone() {
   const inner = document.getElementById('board-inner');
@@ -2286,13 +2293,15 @@ function commitDrop(x, y) {
 
 function endDrag() {
   if (drag.srcEl) drag.srcEl.classList.remove('tile-drag-src');
+  else if (drag._startEl) drag._startEl.classList.remove('tile-drag-src');
   drag.ghost?.remove();
   document.querySelectorAll('.meld-group.drag-over, .drop-zone-new.drag-over')
     .forEach(el => el.classList.remove('drag-over'));
   document.getElementById('drag-new-zone')?.remove();
   document.getElementById('hand-wrap')?.classList.remove('hand-drop-target');
   drag.active = false; drag.tileId = null; drag.tileIds = []; drag.from = null;
-  drag.gid = null; drag.ghost = null; drag.srcEl = null; drag.pointerId = null;
+  drag.gid = null; drag.ghost = null; drag.srcEl = null; drag._startEl = null;
+  drag.pointerId = null; drag.startX = 0; drag.startY = 0;
 }
 
 function renderTile(tile, from, gid, isSelected) {
@@ -2370,15 +2379,8 @@ function renderHand() {
       el.style.pointerEvents = 'none';
       el.style.opacity = '0.88';
     }
+    if (canInteract && recommendedIds.has(id)) el.classList.add('recommended');
     inner.appendChild(el);
-  }
-
-  // 선택된 타일이 있으면 손패에 드롭 안내 추가
-  if (state.selectedIds.size > 0) {
-    const hint = document.createElement('div');
-    hint.style.cssText = 'font-size:11px;color:var(--muted);align-self:center;white-space:nowrap;padding:0 8px;';
-    hint.textContent = '→ 선택 내기 or 조합 탭';
-    inner.appendChild(hint);
   }
 }
 
