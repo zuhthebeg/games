@@ -269,19 +269,19 @@
 
   /* 보드 하단 액션 */
   #board-actions {
-    padding: 4px 6px;
+    padding: 5px 8px;
     display: flex;
-    gap: 4px;
+    gap: 6px;
     background: var(--panel);
     border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
     flex-shrink: 0;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
   }
   #board-actions button {
     border: 1px solid var(--line); background: var(--panel2); color: var(--text);
-    border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 700;
+    border-radius: 8px; padding: 7px 10px; font-size: 12px; font-weight: 700;
     cursor: pointer; white-space: nowrap;
   }
   #board-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -294,6 +294,9 @@
     background: var(--panel2) !important;
   }
   .sort-tab.active { background: rgba(255,215,0,0.15) !important; color: var(--accent) !important; }
+  .actions-left   { display: flex; gap: 3px; align-items: center; }
+  .actions-center { display: flex; flex: 1; justify-content: center; align-items: center; }
+  .actions-right  { display: flex; gap: 5px; align-items: center; }
 
   /* 손패 영역 — 보드 줌과 독립, 시각적으로 항상 분리 */
   #hand-wrap {
@@ -359,11 +362,39 @@
   /* 버튼 모음 */
   .spacer { flex: 1; }
   .action-group { display: flex; gap: 4px; }
-  #btn-pass   { color: var(--warn); border-color: var(--warn) !important; }
-  #btn-end    { background: #1d5c3d !important; border-color: #46a975 !important; }
-  #btn-undo   { }
+  #btn-end    { background: #1d5c3d !important; border-color: #46a975 !important; font-size: 15px !important; padding: 10px 18px !important; min-width: 70px; }
+  #btn-play-selected { font-size: 13px !important; padding: 9px 12px !important; }
 
   #btn-settings { padding: 6px 8px !important; font-size: 14px !important; }
+
+  /* 플로팅 패스 버튼 */
+  @keyframes pass-shake {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    20%      { transform: rotate(-9deg) scale(1.08); }
+    40%      { transform: rotate(9deg)  scale(1.08); }
+    60%      { transform: rotate(-6deg) scale(1.04); }
+    80%      { transform: rotate(6deg)  scale(1.04); }
+  }
+  #btn-pass-float {
+    position: fixed;
+    right: 18px;
+    bottom: 200px;
+    z-index: 200;
+    background: rgba(22, 14, 3, 0.93);
+    border: 2px solid var(--warn);
+    color: var(--warn);
+    border-radius: 28px;
+    padding: 12px 22px;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(200,150,0,0.35), 0 0 0 4px rgba(200,150,0,0.08);
+    backdrop-filter: blur(6px);
+    display: none;
+    letter-spacing: 0.02em;
+  }
+  #btn-pass-float.visible { display: block; }
+  #btn-pass-float.shake   { animation: pass-shake 0.45s ease-in-out infinite; }
 
   /* 인게임 설정 패널 */
   #settings-panel {
@@ -448,7 +479,7 @@
     /* 중앙 보드 + 우측 액션 + 하단 랙 */
     #game-main {
       display: grid !important;
-      grid-template-columns: minmax(0, 1fr) 76px;
+      grid-template-columns: minmax(0, 1fr) 80px;
       grid-template-rows: 3px 1fr auto auto;
       grid-template-areas:
         "timer   side"
@@ -470,7 +501,7 @@
       border-top: none;
       border-bottom: none;
       border-left: 1px solid var(--line);
-      width: 76px;
+      width: 80px;
       padding: 6px 4px;
       overflow-y: auto;
       gap: 4px;
@@ -478,7 +509,7 @@
     }
     #board-actions button {
       padding: 7px 4px;
-      font-size: 11px;
+      font-size: 11px !important;
       white-space: normal;
       word-break: keep-all;
       text-align: center;
@@ -486,9 +517,12 @@
     #board-actions .sort-tabs { flex-direction: column; border-radius: 8px; }
     #board-actions .sort-tab  { border-radius: 0 !important; padding: 7px 4px !important; }
     #board-actions .spacer    { min-height: 8px; flex: 1; }
-    #board-actions .action-group { flex-direction: column; }
-    #btn-pass { font-size: 11px; }
-    #btn-end  { font-size: 11px; }
+    #board-actions .actions-left  { flex-direction: column; }
+    #board-actions .actions-center { flex: 0; justify-content: flex-start; }
+    #board-actions .actions-right { flex-direction: column; margin-top: auto; }
+    #btn-end  { font-size: 11px !important; padding: 8px 4px !important; min-width: unset; }
+    #btn-play-selected { font-size: 11px !important; padding: 7px 4px !important; }
+    #btn-pass-float { right: 88px; }
 
     /* 손패 랙 스타일 */
     #hand-wrap {
@@ -649,26 +683,34 @@
 
     <!-- 보드 액션 -->
     <div id="board-actions">
-      <div class="sort-tabs">
-        <button class="sort-tab active" id="sort-color"  onclick="setSortMode('color')"  title="색상순">🎨</button>
-        <button class="sort-tab"        id="sort-number" onclick="setSortMode('number')" title="숫자순">🔢</button>
-        <button class="sort-tab"        id="sort-smart"  onclick="setSortMode('smart')"  title="낼 수 있는 조합 우선">추천</button>
+      <!-- 왼쪽: 초기화/한수취소 -->
+      <div class="actions-left">
+        <button id="btn-undo" onclick="resetTurn()" title="이번 턴 전체 초기화">↩ 초기화</button>
+        <button id="btn-step-undo" onclick="undoLastAction()" title="직전 동작 취소">↶ 한수취소</button>
       </div>
-      <button id="btn-step-undo" onclick="undoLastAction()" title="직전 동작 취소">↶ 한수취소</button>
-      <button id="btn-undo" onclick="resetTurn()" title="이번 턴 전체 초기화">↩ 초기화</button>
-      <div class="spacer"></div>
-      <div class="action-group">
+      <!-- 가운데: 정렬 -->
+      <div class="actions-center">
+        <div class="sort-tabs">
+          <button class="sort-tab active" id="sort-color"  onclick="setSortMode('color')"  title="색상순">🎨</button>
+          <button class="sort-tab"        id="sort-number" onclick="setSortMode('number')" title="숫자순">🔢</button>
+          <button class="sort-tab"        id="sort-smart"  onclick="setSortMode('smart')"  title="낼 수 있는 조합 우선">추천</button>
+        </div>
+      </div>
+      <!-- 오른쪽: 핵심 액션 + 설정 -->
+      <div class="actions-right">
         <button id="btn-play-selected" onclick="placeSelectedHandTiles()" disabled>선택놓기</button>
-        <button id="btn-pass" onclick="passTurn()">패스</button>
-        <button id="btn-end"  onclick="endTurn()">완료 ✓</button>
+        <button id="btn-end" onclick="endTurnSmart()">완료 ✓</button>
+        <button id="btn-settings" onclick="openSettings()" title="설정">⚙️</button>
       </div>
-      <button id="btn-settings" onclick="openSettings()" title="설정">⚙️</button>
     </div>
 
     <!-- 손패 -->
     <div id="hand-wrap"><div id="hand-inner"></div></div>
   </div>
 </div>
+
+<!-- 플로팅 패스 버튼 (보드 위 오버레이) -->
+<button id="btn-pass-float" onclick="passTurn()">패스 ✕</button>
 
 <!-- 설정 패널 -->
 <div id="settings-overlay" class="hidden" onclick="closeSettings()"></div>
@@ -1042,6 +1084,8 @@ function startTimer() {
     if (isMyTurn && !state.players[state.currentPlayer].isAI) {
       if (state.timerRemaining > 0 && state.timerRemaining <= 5) SFX.turnTick(true);
       else if (state.timerRemaining > 5 && state.timerRemaining <= 10) SFX.turnTick(false);
+      const _pf = document.getElementById('btn-pass-float');
+      if (_pf) _pf.classList.toggle('shake', state.timerRemaining <= 5 && state.timerRemaining > 0);
     }
     if (state.timerRemaining <= 0) {
       stopTimer();
@@ -1070,6 +1114,8 @@ function startTimer() {
 function stopTimer() {
   clearInterval(state.timerInterval);
   state.timerInterval = null;
+  const pf = document.getElementById('btn-pass-float');
+  if (pf) pf.classList.remove('shake');
 }
 
 function updateTimerBar() {
@@ -1923,16 +1969,42 @@ function updateScoreBar() {
 function updateSelectionControls() {
   const btn = document.getElementById('btn-play-selected');
   const count = state.selectedIds.size;
+  const isMyActiveTurn = !state.actionLocked && state.currentPlayer === state.viewPlayerIndex;
   if (btn) {
-    btn.disabled = count === 0 || state.actionLocked || state.currentPlayer !== state.viewPlayerIndex;
+    btn.disabled = count === 0 || !isMyActiveTurn;
     btn.textContent = count > 0 ? `선택${count}장놓기` : '선택놓기';
   }
   const undo = document.getElementById('btn-step-undo');
-  if (undo) undo.disabled = state.actionHistory.length === 0 || state.actionLocked || state.currentPlayer !== state.viewPlayerIndex;
-  const pass = document.getElementById('btn-pass');
-  if (pass) pass.disabled = state.actionLocked || state.currentPlayer !== state.viewPlayerIndex;
+  if (undo) undo.disabled = state.actionHistory.length === 0 || !isMyActiveTurn;
   const end = document.getElementById('btn-end');
-  if (end) end.disabled = state.actionLocked || state.currentPlayer !== state.viewPlayerIndex;
+  if (end) end.disabled = !isMyActiveTurn;
+  // 플로팅 패스 버튼
+  const passFloat = document.getElementById('btn-pass-float');
+  if (passFloat) {
+    if (isMyActiveTurn) {
+      passFloat.classList.add('visible');
+      positionPassFloat();
+    } else {
+      passFloat.classList.remove('visible', 'shake');
+    }
+  }
+}
+
+function positionPassFloat() {
+  const btn = document.getElementById('btn-pass-float');
+  const actions = document.getElementById('board-actions');
+  const hand = document.getElementById('hand-wrap');
+  if (!btn || !actions) return;
+  const el = hand || actions;
+  const rect = el.getBoundingClientRect();
+  btn.style.bottom = (window.innerHeight - rect.top + 12) + 'px';
+}
+
+function endTurnSmart() {
+  if (state.selectedIds.size > 0) {
+    placeSelectedHandTiles();
+  }
+  endTurn();
 }
 
 function renderPlayerBar() {
