@@ -363,6 +363,41 @@
   #btn-end    { background: #1d5c3d !important; border-color: #46a975 !important; }
   #btn-undo   { }
 
+  #btn-settings { padding: 6px 8px !important; font-size: 14px !important; }
+
+  /* 인게임 설정 패널 */
+  #settings-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 22px;
+    z-index: 5000;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 200px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  #settings-panel.hidden { display: none !important; }
+  #settings-overlay {
+    position: fixed; inset: 0; z-index: 4999;
+    background: rgba(0,0,0,0.45);
+  }
+  #settings-overlay.hidden { display: none !important; }
+  .settings-title { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
+  .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .settings-label { font-size: 13px; color: var(--muted); }
+  .settings-close {
+    margin-top: 4px;
+    background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 700;
+    cursor: pointer; width: 100%;
+  }
+
   /* 게임 오버 모달 */
   #gameover-modal {
     position: fixed; inset: 0; z-index: 10000;
@@ -582,12 +617,6 @@
       </select>
     </div>
 
-    <div class="menu-row">
-      <span class="menu-label">효과음</span>
-      <label class="menu-toggle"><input type="checkbox" id="sfx-toggle" checked onchange="SFX.setEnabled(this.checked)"> SFX</label>
-      <label class="menu-toggle" style="margin-left:8px"><input type="checkbox" id="bgm-toggle" checked onchange="BGM.setEnabled(this.checked)"> BGM</label>
-    </div>
-
     <button class="btn-start" onclick="startGame()">게임 시작</button>
     <button class="btn-start" id="btn-open-multi" onclick="openMultiLobby()" style="margin-top:8px;background:#4f46e5;">🌐 온라인 멀티</button>
   </div>
@@ -630,11 +659,27 @@
         <button id="btn-pass" onclick="passTurn()">패스</button>
         <button id="btn-end"  onclick="endTurn()">완료 ✓</button>
       </div>
+      <button id="btn-settings" onclick="openSettings()" title="설정">⚙️</button>
     </div>
 
     <!-- 손패 -->
     <div id="hand-wrap"><div id="hand-inner"></div></div>
   </div>
+</div>
+
+<!-- 설정 패널 -->
+<div id="settings-overlay" class="hidden" onclick="closeSettings()"></div>
+<div id="settings-panel" class="hidden">
+  <div class="settings-title">⚙️ 설정</div>
+  <div class="settings-row">
+    <span class="settings-label">효과음 (SFX)</span>
+    <label class="menu-toggle"><input type="checkbox" id="sfx-toggle" checked onchange="SFX.setEnabled(this.checked)"></label>
+  </div>
+  <div class="settings-row">
+    <span class="settings-label">배경음악 (BGM)</span>
+    <label class="menu-toggle"><input type="checkbox" id="bgm-toggle" checked onchange="BGM.setEnabled(this.checked)"></label>
+  </div>
+  <button class="settings-close" onclick="closeSettings()">닫기</button>
 </div>
 
 <!-- 게임오버 모달 (동적 생성) -->
@@ -2149,6 +2194,18 @@ function bindBoardPinch() {
     e.preventDefault();
     adjustZoom(e.deltaY < 0 ? 0.1 : -0.1);
   }, { passive: false });
+}
+
+// ═══════════════════════════════════════════
+// 14b. 인게임 설정 패널
+// ═══════════════════════════════════════════
+function openSettings() {
+  document.getElementById('settings-panel').classList.remove('hidden');
+  document.getElementById('settings-overlay').classList.remove('hidden');
+}
+function closeSettings() {
+  document.getElementById('settings-panel').classList.add('hidden');
+  document.getElementById('settings-overlay').classList.add('hidden');
 }
 
 // ═══════════════════════════════════════════
