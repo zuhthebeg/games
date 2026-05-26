@@ -361,8 +361,9 @@
   /* 버튼 모음 */
   .spacer { flex: 1; }
   .action-group { display: flex; gap: 4px; }
-  #btn-end    { background: #1d5c3d !important; border-color: #46a975 !important; font-size: 15px !important; padding: 10px 18px !important; min-width: 70px; }
-  #btn-play-selected { font-size: 13px !important; padding: 9px 12px !important; }
+  #btn-end    { background: #1d5c3d !important; border-color: #46a975 !important; }
+  /* 모든 버튼 크기 통일 — overflow 방지 */
+  #board-actions button { padding: 7px 10px !important; font-size: 12px !important; }
 
   #btn-settings { padding: 6px 8px !important; font-size: 14px !important; }
 
@@ -374,26 +375,27 @@
     60%      { transform: rotate(-6deg) scale(1.04); }
     80%      { transform: rotate(6deg)  scale(1.04); }
   }
+  #pass-row {
+    display: none;
+    justify-content: flex-end;
+    padding: 3px 8px 1px;
+    background: var(--panel);
+    flex-shrink: 0;
+  }
+  #pass-row.visible { display: flex; }
   #btn-pass-float {
-    position: fixed;
-    right: 18px;
-    bottom: 200px;
-    z-index: 200;
-    background: rgba(22, 14, 3, 0.93);
+    background: rgba(22, 14, 3, 0.95);
     border: 2px solid var(--warn);
     color: var(--warn);
-    border-radius: 28px;
-    padding: 12px 22px;
-    font-size: 16px;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 13px;
     font-weight: 800;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(200,150,0,0.35), 0 0 0 4px rgba(200,150,0,0.08);
-    backdrop-filter: blur(6px);
-    display: none;
+    box-shadow: 0 2px 10px rgba(200,150,0,0.3);
     letter-spacing: 0.02em;
   }
-  #btn-pass-float.visible { display: block; }
-  #btn-pass-float.shake   { animation: pass-shake 0.45s ease-in-out infinite; }
+  #btn-pass-float.shake { animation: pass-shake 0.45s ease-in-out infinite; }
 
   /* 인게임 설정 패널 */
   #settings-panel {
@@ -519,9 +521,8 @@
     #board-actions .actions-left  { flex-direction: column; }
     #board-actions .actions-center { flex: 0; justify-content: flex-start; }
     #board-actions .actions-right { flex-direction: column; margin-top: auto; }
-    #btn-end  { font-size: 11px !important; padding: 8px 4px !important; min-width: unset; }
-    #btn-play-selected { font-size: 11px !important; padding: 7px 4px !important; }
-    #btn-pass-float { right: 88px; }
+    #board-actions button { padding: 6px 4px !important; font-size: 10px !important; }
+    #pass-row { padding: 3px 4px; justify-content: center; }
 
     /* 손패 랙 스타일 */
     #hand-wrap {
@@ -677,6 +678,9 @@
     <!-- 힌트 -->
     <div id="hint-bar">손패에서 타일을 선택하세요</div>
 
+    <!-- 패스 버튼 행 (hint-bar 아래, score-bar 위) -->
+    <div id="pass-row"><button id="btn-pass-float" onclick="passTurn()">패스</button></div>
+
     <!-- 첫 출전 점수 바 -->
     <div id="score-bar" style="display:none;padding:2px 8px;font-size:12px;font-weight:700;text-align:center;flex-shrink:0;background:var(--panel);border-top:1px solid var(--line);"></div>
 
@@ -707,9 +711,6 @@
     <div id="hand-wrap"><div id="hand-inner"></div></div>
   </div>
 </div>
-
-<!-- 플로팅 패스 버튼 (보드 위 오버레이) -->
-<button id="btn-pass-float" onclick="passTurn()">패스 ✕</button>
 
 <!-- 설정 패널 -->
 <div id="settings-overlay" class="hidden" onclick="closeSettings()"></div>
@@ -2028,26 +2029,15 @@ function updateSelectionControls() {
   if (undo) undo.disabled = state.actionHistory.length === 0 || !isMyActiveTurn;
   const end = document.getElementById('btn-end');
   if (end) end.disabled = !isMyActiveTurn;
-  // 플로팅 패스 버튼
-  const passFloat = document.getElementById('btn-pass-float');
-  if (passFloat) {
-    if (isMyActiveTurn) {
-      passFloat.classList.add('visible');
-      positionPassFloat();
-    } else {
-      passFloat.classList.remove('visible', 'shake');
+  // 패스 버튼 행 가시성
+  const passRow = document.getElementById('pass-row');
+  if (passRow) {
+    if (isMyActiveTurn) passRow.classList.add('visible');
+    else {
+      passRow.classList.remove('visible');
+      document.getElementById('btn-pass-float')?.classList.remove('shake');
     }
   }
-}
-
-function positionPassFloat() {
-  const btn = document.getElementById('btn-pass-float');
-  const actions = document.getElementById('board-actions');
-  const hand = document.getElementById('hand-wrap');
-  if (!btn || !actions) return;
-  const el = hand || actions;
-  const rect = el.getBoundingClientRect();
-  btn.style.bottom = (window.innerHeight - rect.top + 12) + 'px';
 }
 
 function endTurnSmart() {
