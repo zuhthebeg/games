@@ -108,14 +108,13 @@
   }
   .tile:active { transform: translateY(-4px) scale(1.04); }
   .tile.ghost { opacity: 0.35; pointer-events: none; }
-  .tile.recommended {
-    box-shadow: 0 0 0 2.5px var(--valid), 0 0 10px rgba(78,204,163,0.35);
+  .tile.board-selected {
+    box-shadow: 0 0 0 2.5px var(--accent), 0 0 10px rgba(255,215,0,0.4);
+    transform: translateY(-3px) scale(1.04);
   }
-  .tile.attachable {
-    box-shadow: 0 0 0 2.5px var(--accent), 0 0 8px rgba(255,215,0,0.35);
-  }
-  .tile.pair-hint {
-    box-shadow: 0 0 0 1.5px var(--warn);
+  #hand-wrap.hand-drop-target {
+    border-top: 2px solid var(--valid);
+    background: linear-gradient(180deg, rgba(78,204,163,0.12) 0%, var(--panel) 100%);
   }
 
   /* ── 스크린 ── */
@@ -829,6 +828,7 @@ const state = {
   turnState: null,    // { workingBoard, workingHand, boardSnapshot, handSnapshot, playedCount }
   selected: null,     // { tileId, from: 'hand'|'board', gid? }
   selectedIds: new Set(), // 손패 다중 선택
+  boardSelectedIds: new Set(), // 보드 다중 선택 (같은 그룹)
   actionHistory: [],  // 직전 동작 취소용 스냅샷
   activeGid: null,    // 탭으로 연속 배치할 조합
   sortMode: 'color',
@@ -1040,7 +1040,7 @@ function beginTurn() {
     playedCount: 0,
   };
   state.selected = null;
-  state.selectedIds.clear();
+  state.selectedIds.clear(); state.boardSelectedIds.clear();
   state.actionHistory = [];
   state.activeGid = null;
   render();
@@ -1156,7 +1156,7 @@ function undoLastAction() {
   state.board = deepCloneBoard(snap.board);
   p.handIds = [...snap.handIds];
   state.selected = null;
-  state.selectedIds.clear();
+  state.selectedIds.clear(); state.boardSelectedIds.clear();
   state.activeGid = snap.activeGid;
   SFX.undo();
   showToast('↶ 직전 동작 취소', 900);
@@ -1178,7 +1178,7 @@ function passTurn() {
     state.board = deepCloneBoard(ts.boardSnapshot);
     state.players[state.currentPlayer].handIds = [...ts.handSnapshot];
     state.selected = null;
-    state.selectedIds.clear();
+    state.selectedIds.clear(); state.boardSelectedIds.clear();
     state.activeGid = null;
   }
   // 드로우 1장
@@ -1218,7 +1218,7 @@ function resetTurn() {
     playedCount: 0,
   };
   state.selected = null;
-  state.selectedIds.clear();
+  state.selectedIds.clear(); state.boardSelectedIds.clear();
   state.actionHistory = [];
   state.activeGid = null;
   showToast('↩ 이번 턴 초기화');
@@ -1231,7 +1231,7 @@ function resetTurnState() {
   state.board = deepCloneBoard(ts.boardSnapshot);
   state.players[state.currentPlayer].handIds = [...ts.handSnapshot];
   state.selected = null;
-  state.selectedIds.clear();
+  state.selectedIds.clear(); state.boardSelectedIds.clear();
   state.actionHistory = [];
   state.activeGid = null;
 }
@@ -1316,11 +1316,41 @@ function selectTile(tileId, from, gid = null) {
     return;
   }
 
+  // 보드 타일: 같은 그룹이면 다중 선택, 다른 그룹이면 초기화
+  if (from === 'board') {
+    if (state.selected?.from === 'board' && state.selected?.gid === gid) {
+      // 같은 그룹 — 다중 선택 토글
+      if (state.boardSelectedIds.has(tileId)) {
+        state.boardSelectedIds.delete(tileId);
+        if (state.boardSelectedIds.size === 0) {
+          state.selected = null;
+        } else {
+          state.selected = { tileId: [...state.boardSelectedIds][0], from: 'board', gid };
+        }
+      } else {
+        state.boardSelectedIds.add(tileId);
+        state.selected = { tileId, from, gid };
+      }
+    } else {
+      // 다른 그룹이거나 첫 선택
+      state.boardSelectedIds.clear();
+      if (state.selected?.tileId === tileId) {
+        state.selected = null;
+      } else {
+        state.boardSelectedIds.add(tileId);
+        state.selected = { tileId, from, gid };
+        state.activeGid = gid;
+      }
+    }
+    render();
+    return;
+  }
+
   if (state.selected && state.selected.tileId === tileId) {
     state.selected = null;
     render();
   } else {
-    state.selectedIds.clear();
+    state.selectedIds.clear(); state.boardSelectedIds.clear();
     state.selected = { tileId, from, gid };
     if (from === 'board') state.activeGid = gid;
     render();
@@ -1387,7 +1417,7 @@ function placeTileInGroup(tileId, from, fromGid, toGid, recordAction = true) {
   if (groupTiles.length >= 3 && isValidSet(groupTiles)) SFX.valid();
 
   state.selected = null;
-  state.selectedIds.clear();
+  state.selectedIds.clear(); state.boardSelectedIds.clear();
   state.activeGid = toGid;
   state.recentlyPlaced = new Set([tileId]);
   render();
@@ -1409,8 +1439,28 @@ function returnTileToHand(tileId, fromGid) {
   if (srcGroup) srcGroup.tileIds = srcGroup.tileIds.filter(id => id !== tileId);
   p.handIds.push(tileId);
   state.selected = null;
-  state.selectedIds.clear();
+  state.selectedIds.clear(); state.boardSelectedIds.clear();
   state.activeGid = fromGid;
+  render();
+}
+
+function returnTilesToHand(tileIds, fromGid) {
+  const p = state.players[state.currentPlayer];
+  const hs = state.turnState?.handSnapshot || [];
+  const returnable = tileIds.filter(id => hs.includes(id));
+  if (returnable.length === 0) {
+    showToast('보드에 원래 있던 타일은\n손패로 가져올 수 없습니다');
+    return;
+  }
+  pushActionSnapshot();
+  const srcGroup = state.board.find(g => g.gid === fromGid);
+  for (const tid of returnable) {
+    if (srcGroup) srcGroup.tileIds = srcGroup.tileIds.filter(id => id !== tid);
+    p.handIds.push(tid);
+  }
+  state.selected = null;
+  state.boardSelectedIds.clear();
+  state.selectedIds.clear(); state.boardSelectedIds.clear();
   render();
 }
 
@@ -1541,7 +1591,7 @@ function placeSelectedHandTiles(targetGid = null) {
       const allIds = ids;
       const placed = allIds.map(id => state.tileMap[id]);
       if (placed.some(t => t?.isJoker)) SFX.joker(); else SFX.place();
-      state.selectedIds.clear();
+      state.selectedIds.clear(); state.boardSelectedIds.clear();
       state.selected = null;
       state.activeGid = lastGid;
       state.recentlyPlaced = new Set(allIds);
@@ -1563,7 +1613,7 @@ function placeSelectedHandTiles(targetGid = null) {
   if (placed.some(t => t?.isJoker)) SFX.joker(); else SFX.place();
   const groupTiles = destGroup.tileIds.map(id => state.tileMap[id]);
   if (groupTiles.length >= 3 && isValidSet(groupTiles)) SFX.valid();
-  state.selectedIds.clear();
+  state.selectedIds.clear(); state.boardSelectedIds.clear();
   state.selected = null;
   state.activeGid = gid;
   state.recentlyPlaced = new Set(ids);
@@ -2043,7 +2093,9 @@ function renderBoard() {
 
     for (const id of group.tileIds) {
       const tile = state.tileMap[id];
+      const isBoardSel = state.boardSelectedIds.has(id);
       const el = renderTile(tile, 'board', group.gid, sel?.tileId === id);
+      if (isBoardSel) el.classList.add('board-selected');
       div.appendChild(el);
     }
 
@@ -2063,7 +2115,11 @@ function renderBoard() {
   // 선택 중일 때 손패 영역 클릭으로 회수
   if (sel && sel.from === 'board') {
     document.getElementById('hand-wrap').onclick = () => {
-      returnTileToHand(sel.tileId, sel.gid);
+      if (state.boardSelectedIds.size > 1) {
+        returnTilesToHand([...state.boardSelectedIds], sel.gid);
+      } else {
+        returnTileToHand(sel.tileId, sel.gid);
+      }
     };
   } else {
     document.getElementById('hand-wrap').onclick = null;
@@ -2073,7 +2129,7 @@ function renderBoard() {
 // ═══════════════════════════════════════════
 // 드래그 & 드롭 시스템
 // ═══════════════════════════════════════════
-const drag = { active: false, tileId: null, from: null, gid: null, ghost: null, srcEl: null, pointerId: null };
+const drag = { active: false, tileId: null, tileIds: [], from: null, gid: null, ghost: null, srcEl: null, pointerId: null };
 
 function initTileDrag(el, tileId, from, gid) {
   let startX = 0, startY = 0;
@@ -2086,6 +2142,10 @@ function initTileDrag(el, tileId, from, gid) {
     if (drag.srcEl && drag.srcEl !== el) endDrag();
     startX = e.clientX; startY = e.clientY;
     drag.tileId = tileId; drag.from = from; drag.gid = gid;
+    // 보드 다중 선택 중이면 그룹 전체 드래그
+    drag.tileIds = (from === 'board' && state.boardSelectedIds.has(tileId) && state.boardSelectedIds.size > 1)
+      ? [...state.boardSelectedIds]
+      : [tileId];
     drag.pointerId = e.pointerId;
     drag.active = false;
     try { el.setPointerCapture(e.pointerId); } catch (_) {}
@@ -2101,6 +2161,13 @@ function initTileDrag(el, tileId, from, gid) {
       // 고스트 생성
       const g = el.cloneNode(true);
       g.className = 'tile ' + el.className.replace('tile ', '').replace('tile-drag-src', '').trim() + ' tile-drag-ghost';
+      if (drag.tileIds.length > 1) {
+        const badge = document.createElement('div');
+        badge.style.cssText = 'position:absolute;top:-6px;right:-6px;background:var(--accent);color:#000;border-radius:10px;font-size:10px;font-weight:900;padding:1px 5px;';
+        badge.textContent = drag.tileIds.length;
+        g.style.position = 'relative';
+        g.appendChild(badge);
+      }
       document.body.appendChild(g);
       drag.ghost = g;
       // 드롭존 표시
@@ -2134,6 +2201,10 @@ function showDragDropZone() {
   zone.id = 'drag-new-zone';
   zone.textContent = '+ 새 조합';
   inner.appendChild(zone);
+  // 보드 타일 드래그 시 손패 영역을 드롭 목적지로 표시
+  if (drag.from === 'board') {
+    document.getElementById('hand-wrap')?.classList.add('hand-drop-target');
+  }
 }
 
 function updateDragOver(x, y) {
@@ -2148,15 +2219,48 @@ function updateDragOver(x, y) {
 }
 
 function commitDrop(x, y) {
-  const { tileId, from, gid } = drag;
+  const { tileId, tileIds, from, gid } = drag;
   if (!tileId) return;
+  const idsToMove = tileIds.length > 0 ? tileIds : [tileId];
+
+  // 손패 영역에 드롭 → 보드 타일 반환
+  if (from === 'board') {
+    const handWrap = document.getElementById('hand-wrap');
+    const hr = handWrap?.getBoundingClientRect();
+    if (hr && x >= hr.left && x <= hr.right && y >= hr.top && y <= hr.bottom) {
+      if (idsToMove.length > 1) {
+        returnTilesToHand(idsToMove, gid);
+      } else {
+        returnTileToHand(tileId, gid);
+      }
+      return;
+    }
+  }
+
   const el = document.elementFromPoint(x, y);
   if (!el) return;
   const grp = el.closest('[data-gid]');
   if (grp) {
     const targetGid = parseInt(grp.dataset.gid);
-    if (from === 'board' && gid === targetGid) return; // 같은 그룹
-    placeTileInGroup(tileId, from, gid, targetGid);
+    if (from === 'board' && gid === targetGid && idsToMove.length === 1) return; // 같은 그룹, 단일
+    if (idsToMove.length > 1) {
+      pushActionSnapshot();
+      const p = state.players[state.currentPlayer];
+      const destGroup = state.board.find(g => g.gid === targetGid);
+      if (!destGroup) return;
+      for (const tid of idsToMove) {
+        const srcGroup = state.board.find(g => g.gid === gid);
+        if (srcGroup) srcGroup.tileIds = srcGroup.tileIds.filter(id => id !== tid);
+        destGroup.tileIds.push(tid);
+      }
+      normalizeGroupOrder(destGroup);
+      state.selected = null;
+      state.boardSelectedIds.clear();
+      SFX.place();
+      render();
+    } else {
+      placeTileInGroup(tileId, from, gid, targetGid);
+    }
     return;
   }
   // 보드 영역에 드롭 → 새 조합 생성
@@ -2164,7 +2268,21 @@ function commitDrop(x, y) {
   if (boardInner && (boardInner.contains(el) || el === boardInner)) {
     pushActionSnapshot();
     const ngid = createEmptyGroup();
-    placeTileInGroup(tileId, from, gid, ngid, false);
+    if (idsToMove.length > 1) {
+      const destGroup = state.board.find(g => g.gid === ngid);
+      for (const tid of idsToMove) {
+        const srcGroup = state.board.find(g => g.gid === gid);
+        if (srcGroup) srcGroup.tileIds = srcGroup.tileIds.filter(id => id !== tid);
+        destGroup?.tileIds.push(tid);
+      }
+      normalizeGroupOrder(destGroup);
+      state.selected = null;
+      state.boardSelectedIds.clear();
+      SFX.place();
+      render();
+    } else {
+      placeTileInGroup(tileId, from, gid, ngid, false);
+    }
   }
 }
 
@@ -2174,7 +2292,8 @@ function endDrag() {
   document.querySelectorAll('.meld-group.drag-over, .drop-zone-new.drag-over')
     .forEach(el => el.classList.remove('drag-over'));
   document.getElementById('drag-new-zone')?.remove();
-  drag.active = false; drag.tileId = null; drag.from = null;
+  document.getElementById('hand-wrap')?.classList.remove('hand-drop-target');
+  drag.active = false; drag.tileId = null; drag.tileIds = []; drag.from = null;
   drag.gid = null; drag.ghost = null; drag.srcEl = null; drag.pointerId = null;
 }
 
@@ -2252,10 +2371,6 @@ function renderHand() {
       el.style.cursor = 'default';
       el.style.pointerEvents = 'none';
       el.style.opacity = '0.88';
-    } else if (!isSelected) {
-      if (recommendedIds.has(id)) el.classList.add('recommended');
-      else if (attachableIds.has(id)) el.classList.add('attachable');
-      else if (pairIds.has(id)) el.classList.add('pair-hint');
     }
     inner.appendChild(el);
   }
@@ -2570,7 +2685,7 @@ function mpApplyServerView(publicState, myView) {
     state.actionHistory = [];
   }
   state.selected = null;
-  state.selectedIds.clear();
+  state.selectedIds.clear(); state.boardSelectedIds.clear();
   state.activeGid = null;
 
   // diff: 보드에 새로 등장한 타일 → 상대 무브 단계별 재생
