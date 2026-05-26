@@ -2394,7 +2394,11 @@ function updateHint() {
     const ids = orderedHandSelection();
     const tiles = ids.map(id => state.tileMap[id]);
     const canPlay = isValidSet(tiles);
-    hint = `${ids.length}장 선택됨 — ${canPlay ? '바로 낼 수 있는 조합' : '조합을 더 맞춰야 함'} · [선택 내기] 또는 보드 조합 탭`;
+    const selScore = ids.reduce((s, id) => { const t = state.tileMap[id]; return s + (t.isJoker ? 0 : t.number); }, 0);
+    const scoreLabel = !p.hasInitialMeld
+      ? `${selScore}pt / 30pt${selScore >= 30 ? ' ✓' : ' — 부족'}`
+      : `${selScore}pt`;
+    hint = `${ids.length}장 선택 · ${scoreLabel} · ${canPlay ? '조합 완성 ✓' : '조합 미완성'}`;
   } else if (sel) {
     const t = state.tileMap[sel.tileId];
     const name = t.isJoker ? '조커' : `${COLOR_NAME[t.color]} ${t.number}`;
