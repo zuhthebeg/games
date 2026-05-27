@@ -1826,81 +1826,39 @@ async function aiPlayGreedy(pIdx) {
   const delay = ms => new Promise(r => setTimeout(r, ms));
   let played = false;
 
-  // 1. 기존 그룹에 타일 추가 시도 (초기 출전 후에만 가능)
+  // 1. 기존 그룹에 타일 붙이기 (초기 출전 완료 후만)
   if (p.hasInitialMeld) {
-    for (const gid_try of state.board.map(g => g.gid)) {
-      const group = state.board.find(g => g.gid === gid_try);
-      if (!group) continue;
-      for (const tileId of [...p.handIds]) {
-        const testTiles = [...group.tileIds.map(id => state.tileMap[id]), state.tileMap[tileId]];
-        if (isValidSet(testTiles)) {
-          state.selected = { tileId, from: 'hand', gid: null };
-          render(); await delay(400);
-          group.tileIds.push(tileId);
-          normalizeGroupOrder(group);
-          p.handIds = p.handIds.filter(id => id !== tileId);
-          state.selected = null;
-          render(); await delay(300);
-          played = true;
+    let keepTrying = true;
+    while (keepTrying) {
+      keepTrying = false;
+      outer: for (const group of state.board) {
+        for (const tileId of [...p.handIds]) {
+          const testTiles = [...group.tileIds.map(id => state.tileMap[id]), state.tileMap[tileId]];
+          if (isValidSet(testTiles)) {
+            group.tileIds.push(tileId);
+            normalizeGroupOrder(group);
+            p.handIds = p.handIds.filter(id => id !== tileId);
+            render(); await delay(280);
+            played = true;
+            keepTrying = true;
+            break outer;
+          }
         }
       }
     }
   }
 
-  // 2. 새 그룹 만들기 시도
+  // 2. 손패에서 새 조합 구성
+  // allowUnder30=hasInitialMeld: 초기 출전 전에는 세트 합산 30pt 체크 포함
   const hand = p.handIds.map(id => state.tileMap[id]);
-
-  // 순열 찾기
-  for (const color of COLORS) {
-    const colorTiles = hand.filter(t => t.color === color).sort((a,b) => a.number - b.number);
-    let run = [];
-    for (const tile of colorTiles) {
-      if (run.length === 0 || tile.number === run[run.length-1].number + 1) {
-        run.push(tile);
-      } else {
-        if (run.length >= 3 && (p.hasInitialMeld || setScore(run.map(t=>t.id), state.tileMap) >= 30)) {
-          state.selected = { tileId: run[0].id, from: 'hand', gid: null };
-          render(); await delay(350);
-          const gid = newGid();
-          state.board.push({ gid, tileIds: run.map(t => t.id) });
-          run.forEach(t => { p.handIds = p.handIds.filter(id => id !== t.id); });
-          state.selected = null;
-          render(); await delay(400);
-          played = true;
-        }
-        run = [tile];
-      }
-    }
-    if (run.length >= 3 && (p.hasInitialMeld || setScore(run.map(t=>t.id), state.tileMap) >= 30)) {
-      state.selected = { tileId: run[0].id, from: 'hand', gid: null };
-      render(); await delay(350);
-      const gid = newGid();
-      state.board.push({ gid, tileIds: run.map(t => t.id) });
-      run.forEach(t => { p.handIds = p.handIds.filter(id => id !== t.id); });
-      state.selected = null;
-      render(); await delay(400);
-      played = true;
-    }
-  }
-
-  // 동일패 찾기
-  for (let num = 1; num <= 13; num++) {
-    const group = p.handIds.map(id => state.tileMap[id]).filter(t => t.number === num);
-    if (group.length >= 3) {
-      const colors = group.map(t => t.color);
-      if (new Set(colors).size === colors.length) {
-        const groupScore = setScore(group.map(t => t.id), state.tileMap);
-        if (!p.hasInitialMeld && groupScore < 30) continue; // 초기출전 30점 미달
-        state.selected = { tileId: group[0].id, from: 'hand', gid: null };
-        render(); await delay(350);
-        const gid = newGid();
-        state.board.push({ gid, tileIds: group.map(t => t.id) });
-        group.forEach(t => { p.handIds = p.handIds.filter(id => id !== t.id); });
-        state.selected = null;
-        render(); await delay(400);
-        played = true;
-      }
-    }
+  const sets = findRecommendedSets(hand, p.hasInitialMeld);
+  for (const set of sets) {
+    if (!set.every(t => p.handIds.includes(t.id))) continue;
+    const gid = newGid();
+    state.board.push({ gid, tileIds: set.map(t => t.id) });
+    set.forEach(t => { p.handIds = p.handIds.filter(id => id !== t.id); });
+    render(); await delay(380);
+    played = true;
   }
 
   return played;
