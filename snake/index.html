@@ -457,10 +457,7 @@
         }
 
         function buildMovingObstacles(level) {
-            if (level < 4) return [];
-            const movers = [{ x: 2, y: 9, dx: 1, dy: 0, minX: 2, maxX: 17, minY: 9, maxY: 9, kind: 'spike' }];
-            if (level >= 5) movers.push({ x: 10, y: 2, dx: 0, dy: 1, minX: 10, maxX: 10, minY: 2, maxY: 17, kind: 'spike' });
-            return movers;
+            return [];
         }
 
         function isBlockedCell(x, y) {
