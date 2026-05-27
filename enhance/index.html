@@ -4723,6 +4723,11 @@
                 // 새 보상 → 팝업 표시
                 showRankRewardPopup(reward, data.gold);
                 markSeen(rankType, reward.period_date);
+                // 서버가 이미 user_data.gold에 보상 반영 → 로컬 state 동기화
+                if (typeof data.gold === 'number' && data.gold > state.gold) {
+                    state.gold = data.gold;
+                    saveState();
+                }
             } catch { /* 무시 */ }
         }
 
