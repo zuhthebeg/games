@@ -6383,6 +6383,8 @@
             };
             // 고정 대사 풀 셔플 (사냥 세션 시작마다 초기화)
             _sessionFixedPool = [...BOSS_FIXED_DIALOGUES].sort(() => Math.random() - 0.5);
+            // 연속킬 스탯 리셋 (이전 세션 데이터 안 나오게)
+            pendingStreak = 0;
             renderHunt();
 
             // 보스 등장 시 AI 대사 호출
@@ -7048,13 +7050,25 @@
                 const playerDamage = Math.floor(Math.random() * (player.damageMax - player.damageMin + 1)) + player.damageMin;
                 playerCrit = window.debugCritMode || (Math.random() * 100 < player.critChance);
                 let baseDamage = playerCrit ? Math.floor(playerDamage * player.critDamage / 100) : playerDamage;
-                
-                // 슈퍼크리티컬: 즉사!
+
+                // 슈퍼크리티컬: 즉사! (신화 무기 1%)
                 if (superCrit) {
                     baseDamage = monster.currentHp;
                 }
-                
+
+                // 🎰 보스 럭키드로우: 0.01% 확률로 100배 데미지!
+                let luckyDraw = false;
+                if (monster.isBoss && Math.random() < 0.0001) {
+                    baseDamage = baseDamage * 100;
+                    luckyDraw = true;
+                }
+
                 finalPlayerDamage = Math.floor(baseDamage * elementMult);
+                if (luckyDraw) {
+                    huntState.log.push({ type: 'crit', text: `🎰 럭키드로우!! ${monster.name}에게 ${finalPlayerDamage.toLocaleString()} 데미지!!` });
+                    fireConfetti();
+                    SFX.play('enhance-success');
+                }
             }
             
             // 럭키드로우용: 공격 전 풀피였는지 저장
