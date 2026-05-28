@@ -3696,6 +3696,9 @@
                 };
             }
             
+            // 숙련도 배율 (봉인의 검 포함 이후 모든 계산에 사용)
+            const masteryMult = 1 + (totalMasteryBonus / 100);
+
             // 봉인의 검: +4 이하 데미지 1 고정, +5부터 폭발 성장
             if (isSealedSword(weapon)) {
                 if (level < 5) {
@@ -3736,8 +3739,7 @@
             const baseDmgMax = isStick ? 1 : (typeData.baseMax || 8);
             const dmgPerLevel = 2.5;
 
-            // 숙련도 보너스 적용 (글로벌 + 무기별)
-            const masteryMult = 1 + (totalMasteryBonus / 100);
+            // 무기 타입 보너스
             const typeBonus = typeData.bonus?.damage || 1.0;
             const critBonus = typeData.bonus?.crit || 1.0;
             const critDmgBonus = typeData.critDmgBonus || 0;

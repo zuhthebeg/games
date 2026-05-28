@@ -273,8 +273,15 @@
 </head>
 <body>
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <h1>🐍 스네이크</h1>
-    
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px 2px;">
+        <h1 style="margin:0;">🐍 스네이크</h1>
+        <button id="rank-nav-btn" onclick="GameRankings.showModal('snake')" style="
+            background:rgba(255,215,0,0.15);border:1px solid rgba(255,215,0,0.35);
+            color:#ffd700;border-radius:8px;padding:5px 12px;font-size:0.8rem;
+            cursor:pointer;font-weight:600;white-space:nowrap;
+        ">🏆 랭킹</button>
+    </div>
+
     <div class="stats">
         <div class="stat">
             <span class="stat-label">🍎 점수</span>
@@ -307,7 +314,11 @@
             <p>점수: <span id="final-score">0</span></p>
             <div class="gold-earned" id="gold-earned">+0G 획득!</div>
             <button class="btn btn-primary" onclick="startGame()">다시 하기</button>
-            <div id="snake-rank-btn" style="margin-top:8px;"></div>
+            <button onclick="GameRankings.showModal('snake')" style="
+                margin-top:8px;background:rgba(255,215,0,0.15);border:1px solid rgba(255,215,0,0.35);
+                color:#ffd700;border-radius:8px;padding:6px 16px;font-size:0.85rem;
+                cursor:pointer;font-weight:600;width:100%;
+            ">🏆 랭킹 보기</button>
         </div>
     </div>
 
@@ -791,10 +802,6 @@
             // 🏆 랭킹 제출
             if (typeof GameRankings !== 'undefined' && level > 0) {
                 GameRankings.submit('snake', { level, score });
-                const rankBtn = document.getElementById('snake-rank-btn');
-                if (rankBtn && rankBtn.children.length === 0) {
-                    GameRankings.injectButton('snake', rankBtn, { label: '🏆 랭킹 보기' });
-                }
             }
         }
         
