@@ -6437,10 +6437,26 @@
                         </div>
                     </div>
 
-                    <div class="battle-log" id="huntLog" style="height:120px;max-height:120px;overflow:hidden;">
-                        ${huntState.log.slice(-3).reverse().map(entry => `
-                            <div class="log-entry ${entry.type}">${entry.text}</div>
-                        `).join('')}
+                    <div style="display:flex;gap:6px;align-items:stretch;">
+                        <div class="battle-log" id="huntLog" style="flex:1;height:120px;max-height:120px;overflow:hidden;">
+                            ${huntState.log.slice(-3).reverse().map(entry => `
+                                <div class="log-entry ${entry.type}">${entry.text}</div>
+                            `).join('')}
+                        </div>
+                        <div style="background:rgba(15,15,25,0.9);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:7px 6px;display:flex;flex-direction:column;justify-content:space-around;min-width:68px;text-align:center;">
+                            <div>
+                                <div style="font-size:1.1rem;font-weight:900;color:#4ecca3;line-height:1;">${pendingStreak}</div>
+                                <div style="font-size:0.6rem;color:var(--muted);margin-top:2px;">🔥연속킬</div>
+                            </div>
+                            <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:5px;">
+                                <div style="font-size:0.75rem;font-weight:700;color:#ffd700;line-height:1;">+${(huntState.totalGoldEarned||0).toLocaleString()}</div>
+                                <div style="font-size:0.6rem;color:var(--muted);margin-top:2px;">💰누적G</div>
+                            </div>
+                            <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:5px;">
+                                <div style="font-size:1.1rem;font-weight:900;color:#ff6b6b;line-height:1;">${huntState.bossesKilledInSession||0}</div>
+                                <div style="font-size:0.6rem;color:var(--muted);margin-top:2px;">💀보스킬</div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="hunt-actions">
