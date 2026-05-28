@@ -4148,6 +4148,8 @@
             state.consecutiveEnhanceSuccesses = 0;
             state.consecutiveHuntKills = 0;
 
+            saveState();  // 즉시 저장 (새로고침해도 유지)
+
             SFX.play('levelup', 0.9);
             vibrate([50, 30, 50, 30, 100]);
             fireConfetti();
@@ -4192,7 +4194,7 @@
             let triggered = false;
             switch (reason) {
                 case 'enhance_success':
-                    if (state.consecutiveEnhanceSuccesses >= 5) triggered = true;
+                    if (state.consecutiveEnhanceSuccesses >= 7) triggered = true;
                     break;
                 case 'hunt_streak':
                     if (state.consecutiveHuntKills >= 100) triggered = true;
