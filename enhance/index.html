@@ -5985,7 +5985,7 @@
             const killScale = 1 + kills * 0.05; // 보스킬당 +5%
             const scale = baseScale * killScale;
             const hpMod = monster.isBoss ? 1.5 : 1.0;   // 보스 HP 1.5배 (TTS 재생 시간 확보)
-            const dmgMod = monster.isBoss ? 0.7 : 1.0;  // 보스 공격 30% 감소
+            const dmgMod = monster.isBoss ? 0.56 : 1.0; // 보스 공격 44% 감소 (30%+20% 추가)
             if (scale === 1.0 && !monster.isBoss) return monster;
             return {
                 ...monster,
@@ -6264,12 +6264,31 @@
             }
         }
 
+        // 세션당 한 번씩만 나오는 고정 대사 풀
+        const BOSS_FIXED_DIALOGUES = [
+            '아 형/오빠 제발',
+            '고만 해라 마이 때렷다 아이가',
+            '거 죽기 딱 좋은 날씨군',
+            'I can do this all day',
+            '무기가 사기네 사기. 님 해킹함?',
+            '골드보니 블랙잭으로 돈 좀 벌었나본데',
+            '강화가 그게뭐냐 돈없으면 가서 스네이크해봐 재밌음',
+            '삥탄하면 2백만언씩준데',
+            '삥패하면 3백씩 벌수있음',
+        ];
+        let _sessionFixedPool = [];  // 사냥 시작 시 초기화
+
         function showBossDialogue(bossData) {
             if (!dialogueEnabled) return;
             if (!bossData || !bossData.dialogue) return;
 
             // 보스가 이미 죽었으면 대사 스킵
             if (huntState && huntState.monster && huntState.monster.currentHp <= 0) return;
+
+            // 고정 대사 풀에서 꺼내기 (40% 확률, 풀 남아있을 때)
+            if (_sessionFixedPool.length > 0 && Math.random() < 0.4) {
+                bossData = { ...bossData, dialogue: _sessionFixedPool.shift() };
+            }
 
             // "dialogue:" 접두사 제거
             let dialogue = bossData.dialogue.replace(/^dialogue:\s*/i, '').trim();
@@ -6362,6 +6381,8 @@
                 pendingBoss: null,           // 9킬 시점에 미리 선택한 다음 보스
                 pendingBossDialoguePromise: null // 미리 fetch한 보스 대사 Promise
             };
+            // 고정 대사 풀 셔플 (사냥 세션 시작마다 초기화)
+            _sessionFixedPool = [...BOSS_FIXED_DIALOGUES].sort(() => Math.random() - 0.5);
             renderHunt();
 
             // 보스 등장 시 AI 대사 호출
