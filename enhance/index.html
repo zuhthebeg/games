@@ -3587,26 +3587,31 @@
             hammer: 'icons/hammer-legendary.png'
         };
 
+        // 특수 무기 커스텀 아이콘
+        const SPECIAL_ICONS = {
+            '눈물 단검':    'icons/dagger-teardrop.svg',
+            '역설의 칼':    'icons/katana-paradox.svg',
+            '봉인의 검':    'icons/sword-sealed.svg',
+            '도박사의 동전': 'icons/coin-gambler.svg',
+            '복수의 낫':    'icons/scythe-revenge.svg',
+        };
+
         function getWeaponIcon(weapon) {
-            if (weapon.name === '나무막대기') {
-                return WEAPON_TYPES.staff.img;
-            }
+            if (weapon.name === '나무막대기') return WEAPON_TYPES.staff.img;
+            // 특수 무기: 전용 아이콘
+            if (SPECIAL_ICONS[weapon.name]) return SPECIAL_ICONS[weapon.name];
             // 신화 등급: 커스텀 컬러 이미지
-            if (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) {
-                return MYTHIC_ICONS[weapon.type];
-            }
+            if (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) return MYTHIC_ICONS[weapon.type];
             // 전설 등급: 커스텀 컬러 이미지
-            if (weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) {
-                return LEGENDARY_ICONS[weapon.type];
-            }
-            return WEAPON_TYPES[weapon.type].img;
+            if (weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) return LEGENDARY_ICONS[weapon.type];
+            return WEAPON_TYPES[weapon.type]?.img || WEAPON_TYPES.sword.img;
         }
         
         // Get weapon image HTML with proper coloring
         function getWeaponImgHtml(weapon, size = 80) {
             const gradeData = GRADES[weapon.grade];
             const iconUrl = getWeaponIcon(weapon);
-            const isCustomImg = (weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]);
+            const isCustomImg = (weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) || !!SPECIAL_ICONS[weapon.name];
             let filterStyle = `drop-shadow(0 0 15px ${gradeData.color})`;
             // 👿 저주받은 무기: 보라색 틴트 + 어두운 글로우
             if (isCursed(weapon)) {
@@ -3850,8 +3855,8 @@
 
                         <div class="weapon-icon-area">
                             <img src="${getWeaponIcon(weapon)}"
-                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) ? ' legendary-img' : ''}${isCursed(weapon) ? ' cursed-weapon' : isBlessed(weapon) ? ' blessed-weapon' : ''}"
-                                 style="width:100px;height:100px;filter:${isCursed(weapon) ? 'drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa)' : isBlessed(weapon) ? 'drop-shadow(0 0 20px #ffd700) drop-shadow(0 0 40px #ffaa00) brightness(1.2)' : `drop-shadow(0 0 20px ${gradeData.color})`}${weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type] && !isCursed(weapon) && !isBlessed(weapon) ? ' grayscale(0.6) brightness(1.2)' : ''};"
+                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) || SPECIAL_ICONS[weapon.name] ? ' legendary-img' : ''}${isCursed(weapon) ? ' cursed-weapon' : isBlessed(weapon) ? ' blessed-weapon' : ''}"
+                                 style="width:100px;height:100px;filter:${isCursed(weapon) ? 'drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa)' : isBlessed(weapon) ? 'drop-shadow(0 0 20px #ffd700) drop-shadow(0 0 40px #ffaa00) brightness(1.15)' : SPECIAL_ICONS[weapon.name] ? 'drop-shadow(0 0 12px rgba(255,255,255,0.4))' : `drop-shadow(0 0 20px ${gradeData.color})`};"
                                  alt="${weapon.name}">
                         </div>
 
@@ -3962,9 +3967,9 @@
 
                         <div class="weapon-icon-area">
                             <img src="${getWeaponIcon(weapon)}"
-                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) ? ' legendary-img' : ''}${isCursed(weapon) ? ' cursed-weapon' : isBlessed(weapon) ? ' blessed-weapon' : ''}"
+                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) || SPECIAL_ICONS[weapon.name] ? ' legendary-img' : ''}${isCursed(weapon) ? ' cursed-weapon' : isBlessed(weapon) ? ' blessed-weapon' : ''}"
                                  id="weaponIcon"
-                                 style="width:120px;height:120px;filter:${isCursed(weapon) ? 'drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa) hue-rotate(270deg) saturate(2)' : isBlessed(weapon) ? 'drop-shadow(0 0 20px #ffd700) drop-shadow(0 0 40px #ffaa00) brightness(1.25) saturate(1.3)' : `drop-shadow(0 0 20px ${gradeData.color})`};"
+                                 style="width:120px;height:120px;filter:${isCursed(weapon) ? 'drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa) hue-rotate(270deg) saturate(2)' : isBlessed(weapon) ? 'drop-shadow(0 0 20px #ffd700) drop-shadow(0 0 40px #ffaa00) brightness(1.25) saturate(1.3)' : SPECIAL_ICONS[weapon.name] ? 'drop-shadow(0 0 16px rgba(255,255,255,0.5))' : `drop-shadow(0 0 20px ${gradeData.color})`};"
                                  alt="${weapon.name}">
                         </div>
 
@@ -5035,7 +5040,18 @@
                 unique:'#aa44ff', legendary:'#ff8c00', mythic:'#ff2d6b'
             };
 
-            // 무기 아이콘
+            // 무기 아이콘 (특수 무기는 SVG 이미지, 일반은 이모지)
+            function weaponIcon(weaponObj) {
+                const name = weaponObj?.weapon_name || weaponObj?.name || '';
+                const type = weaponObj?.weapon_type || weaponObj?.type || 'sword';
+                if (SPECIAL_ICONS[name]) {
+                    return `<img src="${SPECIAL_ICONS[name]}" style="width:32px;height:32px;object-fit:contain;" alt="${name}">`;
+                }
+                const icons = { sword:'⚔️', axe:'🪓', bow:'🏹', staff:'🪄', crossbow:'🎯',
+                    dagger:'🗡️', spear:'🔱', hammer:'🔨', wand:'⚡', scythe:'☠️',
+                    knuckle:'👊', shield:'🛡️', book:'📖' };
+                return icons[type] || '⚔️';
+            }
             function weaponEmoji(type) {
                 const icons = { sword:'⚔️', axe:'🪓', bow:'🏹', staff:'🪄', crossbow:'🎯',
                     dagger:'🗡️', spear:'🔱', hammer:'🔨', wand:'⚡', scythe:'☠️',
@@ -5048,7 +5064,7 @@
                 const current = state.weapon;
                 const items = [
                     `<div class="col-weapon-item current">
-                        <div class="col-weapon-icon">${weaponEmoji(current.type)}</div>
+                        <div class="col-weapon-icon">${weaponIcon(current)}</div>
                         <div class="col-weapon-info">
                             <div class="col-weapon-name" style="color:${GRADE_COLORS[current.grade]}">${current.name}</div>
                             <div class="col-weapon-sub">${GRADES[current.grade]?.name || ''} · ${WEAPON_TYPES[current.type]?.name || current.type}</div>
@@ -5058,7 +5074,7 @@
                     </div>`,
                     ...destroyed.map(w => `
                     <div class="col-weapon-item destroyed">
-                        <div class="col-weapon-icon">${weaponEmoji(w.weapon_type || w.type)}</div>
+                        <div class="col-weapon-icon">${weaponIcon(w)}</div>
                         <div class="col-weapon-info">
                             <div class="col-weapon-name" style="color:${GRADE_COLORS[w.weapon_grade || w.grade] || '#aaa'}">${w.weapon_name || w.name || '???'}</div>
                             <div class="col-weapon-sub">${GRADES[w.weapon_grade || w.grade]?.name || ''}</div>
@@ -5408,11 +5424,7 @@
             if (weaponName === '이쑤시개') return '🪥';
             if (weaponName === '유리검') return '🔮';
             if (weaponName === '피닉스 지팡이') return '🔥';
-            if (weaponName === '눈물 단검') return '😭';
-            if (weaponName === '역설의 칼') return '🔄';
-            if (weaponName === '봉인의 검') return '🔐';
-            if (weaponName === '도박사의 동전') return '🪙';
-            if (weaponName === '복수의 낫') return '🩸';
+            // 특수 무기 아이콘은 SPECIAL_ICONS에서 getWeaponIcon이 처리
             
             // 원거리 무기
             if (weaponName === '새총') return '🪨';
