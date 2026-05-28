@@ -226,6 +226,20 @@
             0%, 100% { filter: drop-shadow(0 0 15px #8b00ff) drop-shadow(0 0 30px #5500aa) hue-rotate(270deg) saturate(2); }
             50% { filter: drop-shadow(0 0 25px #bb00ff) drop-shadow(0 0 50px #8800dd) hue-rotate(270deg) saturate(3); }
         }
+        /* ✨ 축복받은 무기 */
+        .weapon-icon.blessed-weapon {
+            animation: blessedShimmer 1.8s ease-in-out infinite;
+        }
+        @keyframes blessedShimmer {
+            0%   { filter: drop-shadow(0 0 15px #ffd700) drop-shadow(0 0 30px #ffaa00) brightness(1.15); }
+            33%  { filter: drop-shadow(0 0 20px #ffffff) drop-shadow(0 0 40px #ffe066) brightness(1.35) saturate(1.4); }
+            66%  { filter: drop-shadow(0 0 18px #aef0ff) drop-shadow(0 0 35px #ffd700) brightness(1.25); }
+            100% { filter: drop-shadow(0 0 15px #ffd700) drop-shadow(0 0 30px #ffaa00) brightness(1.15); }
+        }
+        @keyframes blessedCardGlow {
+            0%, 100% { box-shadow: 0 0 18px rgba(255,215,0,0.45), inset 0 0 18px rgba(255,215,0,0.08); }
+            50%       { box-shadow: 0 0 32px rgba(255,230,102,0.7), inset 0 0 32px rgba(255,215,0,0.15); }
+        }
 
         .weapon-icon.shake { animation: shake 0.5s ease-in-out; }
         .weapon-icon.glow-success { filter: drop-shadow(0 0 30px var(--success)) drop-shadow(0 0 60px var(--success)) brightness(1.3); }
@@ -2725,7 +2739,10 @@
             consecutiveEnhanceFails: 0,  // +0에서 연속 강화 실패
             consecutiveFlees: 0,         // 연속 도망
             consecutivePvpLosses: 0,     // 연속 PVP 패배
-            consecutiveCritsTaken: 0     // 연속 크리티컬 피격
+            consecutiveCritsTaken: 0,    // 연속 크리티컬 피격
+            // 축복 트리거 카운터
+            consecutiveEnhanceSuccesses: 0,  // 연속 강화 성공
+            consecutiveHuntKills: 0          // 연속 사냥 킬 (리셋: 도망/사망)
         };
         
         // ===== CLOUD SYNC =====
@@ -3795,7 +3812,7 @@
                     <div class="weapon-card ${weapon.grade} ${getLevelClass(weapon.level)}">
                         <div class="weapon-header">
                             <div class="weapon-info">
-                                <div class="weapon-grade ${weapon.grade}">${gradeData.name}${isCursed(weapon) ? ' <span style="color:#8b00ff;">👿저주</span>' : ''}</div>
+                                <div class="weapon-grade ${weapon.grade}">${gradeData.name}${isCursed(weapon) ? ' <span style="color:#8b00ff;">👿저주</span>' : isBlessed(weapon) ? ' <span style="color:#ffd700;">✨축복</span>' : ''}</div>
                                 <div class="weapon-name">${weapon.name} ${weapon.element && weapon.element !== 'none' ? ELEMENTS[weapon.element]?.icon || '' : ''}</div>
                                 <div class="weapon-type">${WEAPON_TYPES[weapon.type].name}${weapon.element && weapon.element !== 'none' ? ` | ${ELEMENTS[weapon.element]?.name}` : ''}</div>
                             </div>
@@ -3806,9 +3823,9 @@
                         </div>
 
                         <div class="weapon-icon-area">
-                            <img src="${getWeaponIcon(weapon)}" 
-                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) ? ' legendary-img' : ''}${isCursed(weapon) ? ' cursed-weapon' : ''}" 
-                                 style="width:100px;height:100px;filter:${isCursed(weapon) ? 'drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa)' : `drop-shadow(0 0 20px ${gradeData.color})`}${weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type] && !isCursed(weapon) ? ' grayscale(0.6) brightness(1.2)' : ''};"
+                            <img src="${getWeaponIcon(weapon)}"
+                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) ? ' legendary-img' : ''}${isCursed(weapon) ? ' cursed-weapon' : isBlessed(weapon) ? ' blessed-weapon' : ''}"
+                                 style="width:100px;height:100px;filter:${isCursed(weapon) ? 'drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa)' : isBlessed(weapon) ? 'drop-shadow(0 0 20px #ffd700) drop-shadow(0 0 40px #ffaa00) brightness(1.2)' : `drop-shadow(0 0 20px ${gradeData.color})`}${weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type] && !isCursed(weapon) && !isBlessed(weapon) ? ' grayscale(0.6) brightness(1.2)' : ''};"
                                  alt="${weapon.name}">
                         </div>
 
@@ -3908,7 +3925,7 @@
                     <div class="weapon-card ${weapon.grade} ${getLevelClass(weapon.level)}">
                         <div class="weapon-header">
                             <div class="weapon-info">
-                                <div class="weapon-grade ${weapon.grade}">${gradeData.name}${isCursed(weapon) ? ' <span style="color:#8b00ff;">👿저주</span>' : ''}</div>
+                                <div class="weapon-grade ${weapon.grade}">${gradeData.name}${isCursed(weapon) ? ' <span style="color:#8b00ff;">👿저주</span>' : isBlessed(weapon) ? ' <span style="color:#ffd700;">✨축복</span>' : ''}</div>
                                 <div class="weapon-name">${weapon.name}</div>
                             </div>
                             <div class="weapon-level">
@@ -3918,10 +3935,10 @@
                         </div>
 
                         <div class="weapon-icon-area">
-                            <img src="${getWeaponIcon(weapon)}" 
-                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) ? ' legendary-img' : ''}${isCursed(weapon) ? ' cursed-weapon' : ''}" 
+                            <img src="${getWeaponIcon(weapon)}"
+                                 class="weapon-icon${(weapon.grade === 'legendary' && LEGENDARY_ICONS[weapon.type]) || (weapon.grade === 'mythic' && MYTHIC_ICONS[weapon.type]) ? ' legendary-img' : ''}${isCursed(weapon) ? ' cursed-weapon' : isBlessed(weapon) ? ' blessed-weapon' : ''}"
                                  id="weaponIcon"
-                                 style="width:120px;height:120px;filter:${isCursed(weapon) ? 'drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa)' : `drop-shadow(0 0 20px ${gradeData.color})`}${isCursed(weapon) ? ' hue-rotate(270deg) saturate(2)' : ''};"
+                                 style="width:120px;height:120px;filter:${isCursed(weapon) ? 'drop-shadow(0 0 20px #8b00ff) drop-shadow(0 0 40px #5500aa) hue-rotate(270deg) saturate(2)' : isBlessed(weapon) ? 'drop-shadow(0 0 20px #ffd700) drop-shadow(0 0 40px #ffaa00) brightness(1.25) saturate(1.3)' : `drop-shadow(0 0 20px ${gradeData.color})`};"
                                  alt="${weapon.name}">
                         </div>
 
@@ -3949,15 +3966,17 @@
                             ${(() => {
                                 const base = isWoodenStick(weapon) ? 99 : getBaseEnhanceRates(weapon.level).success;
                                 const cursed = isCursed(weapon);
+                                const blessed = isBlessed(weapon);
                                 const bossBonus = state.bossKills || 0;
                                 const finalRate = rates.success;
-                                const hasModifiers = cursed || bossBonus > 0;
+                                const hasModifiers = cursed || blessed || bossBonus > 0;
                                 const colorClass = finalRate >= 50 ? 'safe' : finalRate >= 20 ? '' : 'danger';
                                 if (!hasModifiers) {
                                     return `<span class="enhance-value ${colorClass}">${finalRate}%</span>`;
                                 }
                                 let breakdown = `기본 ${base}%`;
                                 if (cursed) breakdown += ` 👿×2`;
+                                if (blessed) breakdown += ` <span style="color:#ffd700">✨파괴-50%</span>`;
                                 if (bossBonus) breakdown += ` 🐉+${bossBonus}%`;
                                 return `<span class="enhance-value ${colorClass}" style="line-height:1.2;display:inline-block;">
                                     <span style="font-size:1.05em;font-weight:700;">${finalRate}%</span>
@@ -3967,7 +3986,7 @@
                         </div>
                         <div class="enhance-row">
                             <span class="enhance-label">${rates.destroy >= 50 ? '💀' : rates.destroy > 0 ? '⚠️' : '✅'} 파괴</span>
-                            <span class="enhance-value ${rates.destroy >= 50 ? 'danger' : rates.destroy > 0 ? 'warning' : 'safe'}">${rates.destroy > 0 ? rates.destroy + '%' : '없음'}</span>
+                            <span class="enhance-value ${rates.destroy >= 50 ? 'danger' : rates.destroy > 0 ? 'warning' : 'safe'}">${rates.destroy > 0 ? rates.destroy + '%' : '없음'}${isBlessed(weapon) && getBaseEnhanceRates(weapon.level).destroy > 0 ? ' <span style="color:#ffd700;font-size:0.7em;">✨-50%</span>' : ''}</span>
                         </div>
                         <div class="enhance-row">
                             <span class="enhance-label">💰 비용</span>
@@ -4111,6 +4130,84 @@
             return weapon && weapon.cursed === true;
         }
 
+        // ✨ 축복받은 무기 체크
+        function isBlessed(weapon) {
+            return weapon && weapon.blessed === true;
+        }
+
+        // ✨ 축복 적용
+        function applyBlessing(weapon, reason) {
+            if (!weapon || isBlessed(weapon)) return false;
+            if (isWoodenStick(weapon)) return false;
+
+            weapon.blessed = true;
+            // 저주와 공존 불가: 저주가 있으면 해제
+            if (isCursed(weapon)) weapon.cursed = false;
+
+            // 축복 카운터 리셋
+            state.consecutiveEnhanceSuccesses = 0;
+            state.consecutiveHuntKills = 0;
+
+            SFX.play('levelup', 0.9);
+            vibrate([50, 30, 50, 30, 100]);
+            fireConfetti();
+
+            const reasonText = {
+                'enhance_success': '연속 강화 성공의 의지가 무기에 깃들었다!',
+                'hunt_streak':     '피 냄새 물씬한 연전의 기세가 무기를 깨웠다!',
+                'boss_oneshot':    '보스를 단숨에 쓰러뜨린 위업이 무기에 전해졌다!'
+            }[reason] || '밝은 기운이 무기를 감싸고 있다...';
+
+            const popup = document.getElementById('resultPopup');
+            const overlay = document.getElementById('overlay');
+            popup.className = 'result-popup success show';
+            document.getElementById('resultIcon').textContent = '✨';
+            document.getElementById('resultText').textContent = '축복받은 무기!';
+            document.getElementById('resultText').style.color = '#ffd700';
+            document.getElementById('resultDetail').innerHTML = `
+                <div style="color:#ffe066;margin-bottom:8px;">${reasonText}</div>
+                <div style="font-size:0.85rem;color:#aaa;line-height:1.6;">
+                    🛡️ 강화 파괴 확률 <span style="color:var(--success)">-50%</span><br>
+                    💰 사냥 골드 <span style="color:var(--success)">+50%</span><br>
+                    🔧 내구도 소모 <span style="color:var(--success)">-50%</span>
+                </div>
+            `;
+            document.getElementById('newWeaponPreview').style.display = 'none';
+            document.getElementById('resultBtn').textContent = '확인';
+            document.getElementById('resultBtn').style.display = 'block';
+            document.getElementById('resultBtn').onclick = () => {
+                closeResult();
+                if (huntState) renderHunt();
+                else showMain();
+            };
+            overlay.classList.add('show');
+            return true;
+        }
+
+        // ✨ 축복 트리거 체크
+        function checkBlessTrigger(reason) {
+            if (!state.weapon || isBlessed(state.weapon)) return false;
+            if (isWoodenStick(state.weapon)) return false;
+
+            let triggered = false;
+            switch (reason) {
+                case 'enhance_success':
+                    if (state.consecutiveEnhanceSuccesses >= 5) triggered = true;
+                    break;
+                case 'hunt_streak':
+                    if (state.consecutiveHuntKills >= 10) triggered = true;
+                    break;
+                case 'boss_oneshot':
+                    triggered = true;  // 보스 한방킬은 즉시 발동
+                    break;
+            }
+
+            if (triggered) {
+                return applyBlessing(state.weapon, reason);
+            }
+            return false;
+        }
+
         // 무기 교체 시 파괴방지 스크롤 유지 + 기본 2개 지급
         function replaceWeapon(newWeapon) {
             const saved = state.weapon?.protectionScrolls || 0;
@@ -4124,13 +4221,17 @@
             if (isWoodenStick(weapon)) return false;  // 나무막대기는 저주 면역
             
             weapon.cursed = true;
+            // 축복과 공존 불가: 축복 해제
+            if (isBlessed(weapon)) weapon.blessed = false;
             // 내구도 유지 (수리 불가, 1 깎일 때마다 적 즉사)
-            
+
             // 저주 카운터 리셋
             state.consecutiveEnhanceFails = 0;
             state.consecutiveFlees = 0;
             state.consecutivePvpLosses = 0;
             state.consecutiveCritsTaken = 0;
+            state.consecutiveEnhanceSuccesses = 0;
+            state.consecutiveHuntKills = 0;
             
             saveState();
             
@@ -4242,8 +4343,13 @@
             if (bossBonus > 0) {
                 successRate = Math.min(99, successRate + bossBonus);
             }
-            if (successRate !== baseRates.success) {
-                return { ...baseRates, success: successRate };
+            // ✨ 축복받은 무기: 파괴 확률 -50%
+            let destroyRate = baseRates.destroy;
+            if (isBlessed(weapon) && destroyRate > 0) {
+                destroyRate = Math.max(0, Math.floor(destroyRate * 0.5));
+            }
+            if (successRate !== baseRates.success || destroyRate !== baseRates.destroy) {
+                return { ...baseRates, success: successRate, destroy: destroyRate };
             }
             return baseRates;
         }
@@ -4347,21 +4453,33 @@
                 resetMastery();  // 무기 변경 시 숙련도 초기화
                 state.bossKills = 0;  // 보스킬 보너스 리셋
                 state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
-                state.consecutiveEnhanceFails = 0;  // 무기 변경 시 리셋
+                state.consecutiveEnhanceFails = 0;
+                state.consecutiveEnhanceSuccesses = 0;  // 무기 변경 시 리셋
             } else {
                 state.weapon.level = toLevel;
-                // 성공 시 연속 실패 카운터 리셋
                 if (result === 'success') {
                     state.consecutiveEnhanceFails = 0;
+                    state.consecutiveEnhanceSuccesses = (state.consecutiveEnhanceSuccesses || 0) + 1;
+                } else if (result === 'fail') {
+                    state.consecutiveEnhanceSuccesses = 0;
                 }
             }
-            
+
             saveState();
-            
+
             // 👿 저주 트리거 체크 (강화 실패 시)
             if (result === 'fail' && !newWeapon) {
                 setTimeout(() => {
-                    if (checkCurseTrigger('enhance_fail')) return;  // 저주 팝업이 뜨면 강화결과 스킵
+                    if (checkCurseTrigger('enhance_fail')) return;
+                    showEnhanceResult(result, fromLevel, state.weapon.level, newWeapon);
+                }, 300);
+                return;
+            }
+
+            // ✨ 축복 트리거 체크 (강화 성공 시)
+            if (result === 'success' && !newWeapon) {
+                setTimeout(() => {
+                    if (checkBlessTrigger('enhance_success')) return;
                     showEnhanceResult(result, fromLevel, state.weapon.level, newWeapon);
                 }, 300);
                 return;
@@ -6599,6 +6717,7 @@
             state.gold = Math.max(0, totalGoldAfterEarned - goldLoss);
             // 저주 트리거: 연속 도망 5회
             state.consecutiveFlees = (state.consecutiveFlees || 0) + 1;
+            state.consecutiveHuntKills = 0;  // 도망 시 연속킬 리셋
             saveState();
             
             playSound('fail');
@@ -7083,6 +7202,8 @@
             let durabilityMod = gradeData.durabilityMod || 1.0;
             // 유리검: 내구도 3배 빠르게 감소!
             if (isGlassSword(state.weapon)) durabilityMod *= 3;
+            // ✨ 축복받은 무기: 내구도 소모 -50%
+            if (isBlessed(state.weapon)) durabilityMod *= 0.5;
             const durabilityThreshold = Math.floor(10 / durabilityMod);  // 낮을수록 빨리 감소
             if (state.weapon._durabilityCounter >= durabilityThreshold) {
                 state.weapon._durabilityCounter = 0;
@@ -7359,11 +7480,18 @@
             // 사냥 성공 시 카운터 리셋
             state.consecutiveFlees = 0;
             state.consecutiveCritsTaken = 0;
-            
+            // ✨ 축복 연속 사냥 카운터
+            state.consecutiveHuntKills = (state.consecutiveHuntKills || 0) + 1;
+
             // 💀 언데드 보스킬 보너스: 골드 +5% per kill
             const undeadKills = (state.bossTypeKills || {}).undead || 0;
             if (undeadKills > 0) goldReward = Math.floor(goldReward * (1 + undeadKills * 0.05));
-            
+
+            // ✨ 축복받은 무기: 사냥 골드 +50%
+            if (isBlessed(state.weapon)) {
+                goldReward = Math.floor(goldReward * 1.5);
+            }
+
             // 🎰 한방킬 럭키드로우! 일반몹 10배 / 보스 무조건 100배!
             const isLuckyDraw = isOneShot;
             if (isLuckyDraw) {
@@ -7389,6 +7517,11 @@
                 if (!state.weapon.protectionScrolls) state.weapon.protectionScrolls = 0;
                 state.weapon.protectionScrolls += scrollBonus;
                 huntState.log.push({ type: 'boss_reward', text: `🛡️ 보스 처치 보상! 파괴방지 주문서 +${scrollBonus}개 (세션 ${scrollBonus}번째 보스)` });
+
+                // ✨ 축복 트리거: 보스 한방킬
+                if (isOneShot && !isBlessed(state.weapon)) {
+                    setTimeout(() => checkBlessTrigger('boss_oneshot'), 1500);
+                }
             }
 
             // 9번째 킬 시점: 다음이 보스 → 미리 선택 + 대사 fetch
@@ -7432,6 +7565,11 @@
             }
             huntState._lastKillWasLucky = isLuckyDraw;
             huntState._lastGoldReward = goldReward;
+
+            // ✨ 축복 트리거: 연속 10킬
+            if (!monster.isBoss && !isBlessed(state.weapon)) {
+                setTimeout(() => checkBlessTrigger('hunt_streak'), 1200);
+            }
             
             // 🐉 사냥 랭킹 동기화 (배치)
             pendingKills++;
@@ -7766,6 +7904,7 @@
             playSound('destroy');
             vibrate([200, 100, 200, 100, 300]);
             state.consecutiveCritsTaken = 0;  // 사망 후 카운터 리셋
+            state.consecutiveHuntKills = 0;   // 사망 시 연속킬 리셋
             
             // Lose weapon! 몬스터 종족 기반 속성 부여
             const lostWeapon = state.weapon;
