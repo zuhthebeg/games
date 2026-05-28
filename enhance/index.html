@@ -4060,6 +4060,13 @@
         function isCursed(weapon) {
             return weapon && weapon.cursed === true;
         }
+
+        // 무기 교체 시 파괴방지 스크롤 유지 + 기본 2개 지급
+        function replaceWeapon(newWeapon) {
+            const saved = state.weapon?.protectionScrolls || 0;
+            state.weapon = newWeapon;
+            state.weapon.protectionScrolls = saved + 2;
+        }
         
         // 저주 적용! 무기에 저주 옵션 추가
         function applyCurse(weapon, reason) {
@@ -4286,7 +4293,7 @@
             const destroyedLevel = fromLevel; // 강화 파괴된 레벨 저장
             
             if (newWeapon) {
-                state.weapon = newWeapon;
+                replaceWeapon(newWeapon);
                 resetMastery();  // 무기 변경 시 숙련도 초기화
                 state.bossKills = 0;  // 보스킬 보너스 리셋
                 state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
@@ -4553,7 +4560,7 @@
             
             if (confirm(`${state.weapon.name}을(를) ${value.toLocaleString()}G에 판매하시겠습니까?\n\n새로운 무기를 받게 됩니다. (일반~레어)`)) {
                 state.gold += value;
-                state.weapon = generateWeaponBySource('sell', {});
+                replaceWeapon(generateWeaponBySource('sell', {}));
                 resetMastery();  // 무기 변경 시 숙련도 초기화
                 state.bossKills = 0;
                 state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
@@ -5870,7 +5877,7 @@
                         const enemy = gs?.players?.find(p => p.id !== myId);
                         const enemyGrade = enemy?.weaponGrade || 'common';
                         const newWeapon = generateWeaponByPvPLoss(enemyGrade);
-                        state.weapon = newWeapon;
+                        replaceWeapon(newWeapon);
                         state.mastery = {};  // 숙련도 리셋
                         state.bossKills = 0;
                         state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
@@ -5977,13 +5984,15 @@
             const baseScale = monster.isBoss ? 0.85 : 1.0; // 보스 기본 난이도 15% 감소
             const killScale = 1 + kills * 0.05; // 보스킬당 +5%
             const scale = baseScale * killScale;
-            if (scale === 1.0) return monster;
+            const hpMod = monster.isBoss ? 1.5 : 1.0;   // 보스 HP 1.5배 (TTS 재생 시간 확보)
+            const dmgMod = monster.isBoss ? 0.7 : 1.0;  // 보스 공격 30% 감소
+            if (scale === 1.0 && !monster.isBoss) return monster;
             return {
                 ...monster,
-                hp: Math.floor(monster.hp * scale),
-                currentHp: Math.floor(monster.currentHp * scale),
-                maxHp: Math.floor(monster.maxHp * scale),
-                damage: [Math.floor(monster.damage[0] * scale), Math.floor(monster.damage[1] * scale)]
+                hp: Math.floor(monster.hp * scale * hpMod),
+                currentHp: Math.floor(monster.currentHp * scale * hpMod),
+                maxHp: Math.floor(monster.maxHp * scale * hpMod),
+                damage: [Math.floor(monster.damage[0] * scale * dmgMod), Math.floor(monster.damage[1] * scale * dmgMod)]
             };
         }
 
@@ -6212,7 +6221,7 @@
 
         function speakBossDialogue(text, monsterOrType, emotion) {
             if (!text || !dialogueEnabled) return;
-            playTtsLine(text, getBossVoiceProfile(monsterOrType, emotion), true);
+            playTtsLine(text, getBossVoiceProfile(monsterOrType, emotion), false);
         }
 
         function dismissBossDialogue({ stopAudio = true } = {}) {
@@ -6845,7 +6854,7 @@
                         // 저주 해제 + 새 무기
                         const oldWeapon = state.weapon;
                         addDestroyedWeaponRecord(oldWeapon, 'durability_break', huntState?.monstersKilled || 0);
-                        state.weapon = generateWeaponBySource('durability_break', {});
+                        replaceWeapon(generateWeaponBySource('durability_break', {}));
                         resetMastery();
                         state.bossKills = 0;
                         state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
@@ -6874,7 +6883,7 @@
                     // 새 무기 지급 (내구도 파괴 = 숙련도 기반 속성!)
                     const oldWeapon = state.weapon;
                     addDestroyedWeaponRecord(oldWeapon, 'durability_break', huntState?.monstersKilled || 0);
-                    state.weapon = generateWeaponBySource('durability_break', {});
+                    replaceWeapon(generateWeaponBySource('durability_break', {}));
                     resetMastery();  // 무기 변경 시 숙련도 초기화
                     state.bossKills = 0;
                     state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
@@ -7598,11 +7607,7 @@
             const monsterType = huntState.monster?.type || 'beast';
             const monsterName = huntState.monster?.name || '몬스터';
             addDestroyedWeaponRecord(lostWeapon, 'monster_death', huntState?.monstersKilled || 0);
-            const inheritCurse = isCursed(lostWeapon); // 저주 상태면 다음 무기에 승계
-            state.weapon = generateWeaponBySource('monster_death', { monsterType });
-            if (inheritCurse) {
-                state.weapon.cursed = true;
-            }
+            replaceWeapon(generateWeaponBySource('monster_death', { monsterType }));
             resetMastery();  // 무기 변경 시 숙련도 초기화
             state.bossKills = 0;
             state.bossTypeKills = { dragon: 0, demon: 0, undead: 0, elemental: 0 };
@@ -7622,7 +7627,7 @@
             document.getElementById('resultText').textContent = '사망...';
             document.getElementById('resultText').style.color = 'var(--fail)';
             document.getElementById('resultDetail').innerHTML = `
-                무기를 잃었습니다!${inheritCurse ? '<br><span style="color:#bb77ff;">👿 저주가 새 무기로 승계됨</span>' : ''}<br>
+                무기를 잃었습니다!<br>
                 <span style="color:var(--muted);font-size:0.9em">
                     처치: ${huntState.monstersKilled}마리 | 획득: ${huntState.totalGoldEarned.toLocaleString()}G
                 </span>
