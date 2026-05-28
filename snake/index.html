@@ -834,28 +834,32 @@
             setDirection(rotated.x, rotated.y);
         }
         
-        // Keyboard controls
+        // Keyboard controls (모바일 터치와 완전 독립, 절대 방향 사용)
         document.addEventListener('keydown', (e) => {
+            if (e.repeat) return;  // 키 홀드 반복 이벤트 무시
             switch (e.key) {
                 case 'ArrowUp': case 'w': case 'W':
+                    if (!gameRunning) break;
                     setDirection(0, -1);
                     e.preventDefault();
                     break;
                 case 'ArrowDown': case 's': case 'S':
+                    if (!gameRunning) break;
                     setDirection(0, 1);
                     e.preventDefault();
                     break;
-                case 'ArrowLeft': case 'a': case 'A': case 'q': case 'Q':
-                    rotateDirection(false);
+                case 'ArrowLeft': case 'a': case 'A':
+                    if (!gameRunning) break;
+                    setDirection(-1, 0);  // 절대 방향: 왼쪽
                     e.preventDefault();
                     break;
-                case 'ArrowRight': case 'd': case 'D': case 'e': case 'E':
-                    rotateDirection(true);
+                case 'ArrowRight': case 'd': case 'D':
+                    if (!gameRunning) break;
+                    setDirection(1, 0);   // 절대 방향: 오른쪽
                     e.preventDefault();
                     break;
                 case ' ':
                     if (!gameRunning) startGame();
-                    else rotateDirection(true);
                     e.preventDefault();
                     break;
             }

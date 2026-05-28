@@ -2552,7 +2552,7 @@
                 name: '일반', 
                 color: '#9d9d9d', 
                 multiplier: 1.0,
-                dropRate: 49.2,
+                dropRate: 47.7,
                 durabilityMod: 2.0,  // 내구도 2배 빨리 소모
                 prefixes: ['낡은', '평범한', '기본', '단순한'],
                 names: {
@@ -2648,7 +2648,7 @@
                 name: '신화',
                 color: '#ff00ff',
                 multiplier: 4.0,
-                dropRate: 0.3,  // 0.3% 확률
+                dropRate: 1.8,  // 1.8% 확률 (상향)
                 durabilityMod: 0.3,  // 내구도 70% 덜 소모
                 prefixes: [''],
                 names: {
@@ -3391,20 +3391,20 @@
             let element = 'none';
             
             if (dropSource === 'sell') {
-                // 판매: 폭넓은 등급 (신화도 극소 확률)
-                if (gradeRoll < 0.1) grade = 'mythic';        // 0.1%
-                else if (gradeRoll < 0.5) grade = 'unique';   // 0.4%
-                else if (gradeRoll < 3) grade = 'legendary';  // 2.5%
-                else if (gradeRoll < 18) grade = 'rare';      // 15%
-                else if (gradeRoll < 50) grade = 'magic';     // 32%
-                else grade = 'common';                        // 50%
-                
+                // 판매: 폭넓은 등급 (신화 확률 상향)
+                if (gradeRoll < 1) grade = 'mythic';           // 1%
+                else if (gradeRoll < 3) grade = 'unique';      // 2%
+                else if (gradeRoll < 8) grade = 'legendary';   // 5%
+                else if (gradeRoll < 25) grade = 'rare';       // 17%
+                else if (gradeRoll < 55) grade = 'magic';      // 30%
+                else grade = 'common';                         // 45%
+
             } else if (dropSource === 'monster_death' || dropSource === 'pvp_death') {
                 // 사망: 레어~신화, 취약 속성 부여
-                if (gradeRoll < 1) grade = 'mythic';           // 1%
-                else if (gradeRoll < 16) grade = 'unique';     // 15%
-                else if (gradeRoll < 46) grade = 'legendary';  // 30%
-                else grade = 'rare';                           // 54%
+                if (gradeRoll < 4) grade = 'mythic';           // 4%
+                else if (gradeRoll < 20) grade = 'unique';     // 16%
+                else if (gradeRoll < 50) grade = 'legendary';  // 30%
+                else grade = 'rare';                           // 50%
                 
                 // 속성: 몬스터 취약 or 상대 무기 속성
                 if (dropSource === 'monster_death' && context.monsterType) {
@@ -3420,19 +3420,19 @@
                 
             } else if (dropSource === 'enhance_destroy_high') {
                 // +7 이상 강화 파괴: 신화~전설, 속성 없음!
-                if (gradeRoll < 3) grade = 'mythic';        // 3%
-                else if (gradeRoll < 43) grade = 'unique';  // 40%
-                else grade = 'legendary';                   // 57%
+                if (gradeRoll < 8) grade = 'mythic';        // 8%
+                else if (gradeRoll < 45) grade = 'unique';  // 37%
+                else grade = 'legendary';                   // 55%
                 element = 'none'; // 속성 없음 고정
-                
+
             } else if (dropSource === 'enhance_destroy_low') {
-                // +6 이하 강화 파괴: 완전 랜덤 등급 (신화도 극소!)
-                if (gradeRoll < 0.5) grade = 'mythic';       // 0.5%
-                else if (gradeRoll < 3) grade = 'unique';    // 2.5%
-                else if (gradeRoll < 11) grade = 'legendary'; // 8%
-                else if (gradeRoll < 31) grade = 'rare';     // 20%
-                else if (gradeRoll < 61) grade = 'magic';    // 30%
-                else grade = 'common';                       // 39%
+                // +6 이하 강화 파괴: 완전 랜덤 등급
+                if (gradeRoll < 2) grade = 'mythic';         // 2%
+                else if (gradeRoll < 7) grade = 'unique';    // 5%
+                else if (gradeRoll < 18) grade = 'legendary'; // 11%
+                else if (gradeRoll < 38) grade = 'rare';     // 20%
+                else if (gradeRoll < 65) grade = 'magic';    // 27%
+                else grade = 'common';                       // 35%
                 // 랜덤 속성
                 
             } else if (dropSource === 'durability_break') {
