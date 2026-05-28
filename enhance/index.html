@@ -3771,6 +3771,7 @@
 
         // ===== MAIN SCREEN =====
         function showMain() {
+            stopHuntBgm();
             const weapon = state.weapon;
             const stats = getWeaponStats(weapon);
             const gradeData = GRADES[weapon.grade];
@@ -6089,6 +6090,34 @@
             }
         }
 
+        // ===== 사냥 BGM =====
+        const _huntBgm = new Audio();
+        _huntBgm.loop = true;
+        _huntBgm.volume = 0.22;
+        let _huntBgmLoaded = false;
+        let _huntBgmMode = null; // 'hunt' | 'boss'
+        const BGM_URLS = {
+            hunt: 'https://llm.cocy.io/api/game/bgm/hunt.mp3',
+            boss: 'https://llm.cocy.io/api/game/bgm/boss.mp3',
+        };
+
+        function setHuntBgm(mode) {
+            if (!dialogueEnabled) return;  // 사운드 설정 따름
+            if (_huntBgmMode === mode) return;
+            _huntBgmMode = mode;
+            const url = BGM_URLS[mode];
+            if (!url) { _huntBgm.pause(); return; }
+            _huntBgm.src = url;
+            _huntBgm.load();
+            _huntBgm.play().catch(() => {});
+        }
+
+        function stopHuntBgm() {
+            _huntBgmMode = null;
+            _huntBgm.pause();
+            _huntBgm.currentTime = 0;
+        }
+
         // TTS 오디오 (재사용)
         const _enhanceTtsAudio = new Audio();
         let _enhanceTtsBlobUrl = null;
@@ -6385,6 +6414,8 @@
             _sessionFixedPool = [...BOSS_FIXED_DIALOGUES].sort(() => Math.random() - 0.5);
             // 연속킬 스탯 리셋 (이전 세션 데이터 안 나오게)
             pendingStreak = 0;
+            // 사냥 BGM 시작
+            setHuntBgm(huntState.monster?.isBoss ? 'boss' : 'hunt');
             renderHunt();
 
             // 보스 등장 시 AI 대사 호출
@@ -7586,9 +7617,12 @@
                 const cached = huntState.pendingBossDialoguePromise;
                 huntState.pendingBossDialoguePromise = null;
                 (cached || fetchBossDialogue(huntState.monster)).then(d => d && showBossDialogue(d));
+                setHuntBgm('boss');
+            } else {
+                setHuntBgm('hunt');
             }
         }
-        
+
         // 사망 후 다시 사냥 (새 무기, 만피, 골드 0)
         function huntRestart() {
             closeResult();
@@ -7630,6 +7664,9 @@
                 const cached = huntState.pendingBossDialoguePromise;
                 huntState.pendingBossDialoguePromise = null;
                 (cached || fetchBossDialogue(huntState.monster)).then(d => d && showBossDialogue(d));
+                setHuntBgm('boss');
+            } else {
+                setHuntBgm('hunt');
             }
         }
         
