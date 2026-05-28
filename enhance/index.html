@@ -6171,15 +6171,39 @@
             };
         }
 
+        // Web Speech API 폴백 (Kokoro 서버 다운 시)
+        let _wsTtsVoices = null;
+        function _wsSpeak(text, voiceProfile) {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = 'ko-KR';
+            utter.volume = 0.95;
+            const isFemale = voiceProfile.voice === 'ko-female';
+            // rate/pitch: Kokoro 값을 Web Speech 스케일로 근사
+            const rateNum = parseInt(voiceProfile.rate, 10) || 0;
+            const pitchNum = parseInt(voiceProfile.pitch, 10) || 0;
+            utter.rate = Math.max(0.5, Math.min(2.0, 1.0 + rateNum / 100));
+            utter.pitch = Math.max(0.1, Math.min(2.0, 1.0 + pitchNum / 100));
+            // 가능하면 성별 맞는 한국어 목소리 선택
+            if (!_wsTtsVoices) _wsTtsVoices = window.speechSynthesis.getVoices();
+            const koVoices = _wsTtsVoices.filter(v => v.lang.startsWith('ko'));
+            if (koVoices.length) {
+                const genderMatch = koVoices.find(v => isFemale ? /female|여|f/i.test(v.name) : /male|남|m/i.test(v.name));
+                utter.voice = genderMatch || koVoices[0];
+            }
+            window.speechSynthesis.speak(utter);
+        }
+
         function playTtsLine(line, voiceProfile, requireBossOverlay = false) {
-            const clean = normalizeKoreanTtsText(line).replace(/[^\w\s가-힣.,!?]/g, '').slice(0, 140);
+            const clean = normalizeKoreanTtsText(line).replace(/[^\w\s가-힣.,!?ㄱ-ㅎㅏ-ㅣ]/g, '').slice(0, 140);
             if (!clean) return;
             fetch('https://llm.cocy.io/v1/audio/speech', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer choon150622' },
                 body: JSON.stringify({ model:'kokoro-v1', input:clean, voice:voiceProfile.voice, rate:voiceProfile.rate, pitch:voiceProfile.pitch, response_format:'mp3' })
             }).then(res => {
-                if (!res.ok) throw new Error('TTS error');
+                if (!res.ok) throw new Error('TTS error ' + res.status);
                 return res.blob();
             }).then(blob => {
                 if (requireBossOverlay && !document.getElementById('bossDialogueOverlay')) return;
@@ -6189,7 +6213,10 @@
                 _enhanceTtsAudio.currentTime = 0;
                 _enhanceTtsAudio.src = _enhanceTtsBlobUrl;
                 _enhanceTtsAudio.play().catch(() => {});
-            }).catch(() => {});
+            }).catch(() => {
+                // Kokoro 서버 다운 시 Web Speech API 폴백
+                _wsSpeak(clean, voiceProfile);
+            });
         }
 
         function buildEnhanceOutcomeLine(type, from, to, weapon, newWeapon) {
