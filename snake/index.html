@@ -7,6 +7,7 @@
     <title>🐍 스네이크</title>
     <link rel="icon" href="icon.svg">
     <script src="/lib/shared-wallet.js?v=20260312a"></script>
+    <script src="/lib/game-rankings.js"></script>
     <style>
         :root {
             --bg: #0a0a0a;
@@ -306,6 +307,7 @@
             <p>점수: <span id="final-score">0</span></p>
             <div class="gold-earned" id="gold-earned">+0G 획득!</div>
             <button class="btn btn-primary" onclick="startGame()">다시 하기</button>
+            <div id="snake-rank-btn" style="margin-top:8px;"></div>
         </div>
     </div>
 
@@ -781,10 +783,19 @@
             clearInterval(gameLoop);
             BGM.stop();
             playDeathSound();
-            
+
             document.getElementById('final-score').textContent = score;
             document.getElementById('gold-earned').textContent = `+${goldEarned.toLocaleString()}G 획득!`;
             document.getElementById('gameover-overlay').classList.remove('hidden');
+
+            // 🏆 랭킹 제출
+            if (typeof GameRankings !== 'undefined' && level > 0) {
+                GameRankings.submit('snake', { level, score });
+                const rankBtn = document.getElementById('snake-rank-btn');
+                if (rankBtn && rankBtn.children.length === 0) {
+                    GameRankings.injectButton('snake', rankBtn, { label: '🏆 랭킹 보기' });
+                }
+            }
         }
         
         function formatCompactGold(value) {
