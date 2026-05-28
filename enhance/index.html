@@ -2592,21 +2592,26 @@
                 durabilityMod: 1.5,  // 내구도 1.5배 빨리 소모
                 prefixes: ['강화된', '마력의', '빛나는', '정교한'],
                 names: {
-                    sword: '유리검',  // 특수: 능력치 2배, 파괴확률 30%!
+                    sword: '유리검',     // 특수: 능력치 2배, 파괴확률 30%!
+                    dagger: '눈물 단검', // 특수: HP 낮을수록 데미지 증가!
+                    katana: '역설의 칼', // 특수: 강화 성공/실패 반전!
                     wand: '견습 완드',
                     bow: '마력의 활',
                     crossbow: '연발 석궁',
                     knuckle: '강철 너클'
                 }
             },
-            rare: { 
-                name: '희귀', 
-                color: '#ffcc00', 
+            rare: {
+                name: '희귀',
+                color: '#ffcc00',
                 multiplier: 1.7,
                 dropRate: 13.5,
                 durabilityMod: 1.0,  // 기준 내구도 소모
                 prefixes: ['정예', '명인의', '고대의', '축복받은'],
                 names: {
+                    sword: '봉인의 검',  // 특수: +5 미만 데미지1, +5 이상 폭발 성장!
+                    dagger: '도박사의 동전', // 특수: 50% 3배 or 50% 0 데미지!
+                    scythe: '복수의 낫', // 특수: 받은 누적 피해량의 30% 보너스 데미지!
                     staff: '피닉스 지팡이',  // 특수: 연속 사냥 시 HP 100% 회복!
                     wand: '마력 완드',
                     bow: '명궁의 활',
@@ -3645,6 +3650,27 @@
                 };
             }
             
+            // 봉인의 검: +4 이하 데미지 1 고정, +5부터 폭발 성장
+            if (isSealedSword(weapon)) {
+                if (level < 5) {
+                    return { damageMin: 1, damageMax: 1, critChance: 5, critDamage: 150,
+                             hp: Math.floor((100 + level * 20) * mult),
+                             masteryBonus: globalMasteryBonus, weaponMasteryBonus };
+                }
+                const unlocked = level - 4;
+                const sealDmg = Math.floor(Math.pow(unlocked, 1.9) * 8 * mult * masteryMult);
+                return { damageMin: sealDmg, damageMax: Math.floor(sealDmg * 1.4),
+                         critChance: Math.min(60, 15 + unlocked * 4),
+                         critDamage: 200 + unlocked * 15,
+                         hp: Math.floor((100 + level * 20) * mult),
+                         masteryBonus: globalMasteryBonus, weaponMasteryBonus };
+            }
+
+            // 눈물 단검: 스탯은 일반, 전투 중 HP 비율로 데미지 조정
+            // 역설의 칼: 스탯은 일반, 강화에서만 특수
+            // 도박사의 동전: 스탯은 일반, 전투 중 50/50
+            // 복수의 낫: 스탯은 일반, 전투 중 누적 피해 보너스
+
             // 새총: 크리 100%, 데미지 0~(1+레벨*2, 최대30)
             if (isSlingshot(weapon)) {
                 return { 
@@ -4032,6 +4058,16 @@
                         </button>
                         <button class="btn btn-home" onclick="showMain()">홈으로</button>
                     </div>
+                    ${isParadoxBlade(weapon) ? `
+                    <div style="background:rgba(100,100,255,0.1);border:1px solid rgba(100,100,255,0.3);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:0.8rem;color:#aaf;">
+                        🔄 <b>역설의 칼</b> — 실패가 성공이다!<br>
+                        <span style="color:#888;font-size:0.75em;">표시 확률 = 실제 성공률 (반전 적용됨)</span>
+                    </div>` : ''}
+                    ${isSealedSword(weapon) ? `
+                    <div style="background:rgba(255,200,0,0.1);border:1px solid rgba(255,200,0,0.3);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:0.8rem;color:#ffd700;">
+                        🔐 <b>봉인의 검</b> — ${weapon.level < 5 ? `봉인 중 (+5 해제까지 ${5 - weapon.level}단계)` : `봉인 해제! 폭발 성장 중`}<br>
+                        ${weapon.level >= 5 ? `<span style="color:#ff8;">현재 배율: ×${(Math.pow(weapon.level - 4, 1.9) * 8).toFixed(0)}</span>` : ''}
+                    </div>` : ''}
                 </div>
             `;
         }
@@ -4124,6 +4160,11 @@
         function isSlingshot(weapon) {
             return weapon && weapon.name === '새총';
         }
+        function isTeardropDagger(weapon) { return weapon && weapon.name === '눈물 단검'; }
+        function isParadoxBlade(weapon)   { return weapon && weapon.name === '역설의 칼'; }
+        function isSealedSword(weapon)    { return weapon && weapon.name === '봉인의 검'; }
+        function isDiceWeapon(weapon)     { return weapon && weapon.name === '도박사의 동전'; }
+        function isRevengeScythe(weapon)  { return weapon && weapon.name === '복수의 낫'; }
         
         // 저주받은 무기 체크
         function isCursed(weapon) {
@@ -4335,6 +4376,19 @@
                 const destroyChance = Math.min(90, 30 + weapon.level * 3);
                 return { success: baseRates.success, destroy: destroyChance, cost: baseRates.cost };
             }
+            // 🔐 봉인의 검: +4 이하 파괴 없음
+            if (isSealedSword(weapon) && weapon.level < 5) {
+                return { success: baseRates.success, destroy: 0, cost: baseRates.cost };
+            }
+            // 🪙 도박사의 동전: 성공 50% 고정, 파괴 없음, 비용 절반
+            if (isDiceWeapon(weapon)) {
+                return { success: 50, destroy: 0, cost: Math.max(100, Math.floor(baseRates.cost / 2)) };
+            }
+            // 🔄 역설의 칼: 표시 확률 = 실제 실패 확률 (성공/실패 반전)
+            if (isParadoxBlade(weapon)) {
+                const failRate = Math.max(1, 100 - baseRates.success - (baseRates.destroy || 0));
+                return { ...baseRates, success: failRate, destroy: 0, _paradox: true };
+            }
             let successRate = baseRates.success;
             // 👿 저주받은 무기: 강화확률 2배!
             if (isCursed(weapon)) {
@@ -4384,7 +4438,10 @@
             let result = 'fail';
             let newWeapon = null;
 
-            if (roll < rates.success) {
+            // 🔄 역설의 칼: roll 판정 반전 (fail zone = success, success zone = fail)
+            const effectiveRoll = isParadoxBlade(weapon) ? (100 - roll) : roll;
+
+            if (effectiveRoll < rates.success) {
                 // Success! 🎉
                 toLevel = fromLevel + 1;
                 result = 'success';
@@ -4397,7 +4454,7 @@
                 setTimeout(() => weaponIcon.classList.remove('glow-success'), 1300);
                 // 🏆 무기 랭킹 동기화
                 setTimeout(() => syncWeaponRanking(), 500);
-            } else if (rates.destroy > 0 && roll < rates.success + rates.destroy) {
+            } else if (rates.destroy > 0 && effectiveRoll < rates.success + rates.destroy) {
                 // Destroy! 💥
                 result = 'destroy';
                 state.stats.destroys++;
@@ -5351,6 +5408,11 @@
             if (weaponName === '이쑤시개') return '🪥';
             if (weaponName === '유리검') return '🔮';
             if (weaponName === '피닉스 지팡이') return '🔥';
+            if (weaponName === '눈물 단검') return '😭';
+            if (weaponName === '역설의 칼') return '🔄';
+            if (weaponName === '봉인의 검') return '🔐';
+            if (weaponName === '도박사의 동전') return '🪙';
+            if (weaponName === '복수의 낫') return '🩸';
             
             // 원거리 무기
             if (weaponName === '새총') return '🪨';
@@ -6594,7 +6656,8 @@
                 totalGoldEarned: 0,
                 bossesKilledInSession: 0,   // 이번 세션 보스 처치 수 (보상 계산용)
                 pendingBoss: null,           // 9킬 시점에 미리 선택한 다음 보스
-                pendingBossDialoguePromise: null // 미리 fetch한 보스 대사 Promise
+                pendingBossDialoguePromise: null, // 미리 fetch한 보스 대사 Promise
+                _revengeAccDmg: 0           // 🩸 복수의 낫: 이번 전투 누적 피해량
             };
             // 고정 대사 풀 셔플 (사냥 세션 시작마다 초기화)
             _sessionFixedPool = [...BOSS_FIXED_DIALOGUES].sort(() => Math.random() - 0.5);
@@ -7290,7 +7353,34 @@
                     SFX.play('enhance-success');
                 }
             }
-            
+
+            // 😭 눈물 단검: HP 낮을수록 데미지 증가 (HP 1% → 1.9배, HP 100% → 0.1배)
+            if (isTeardropDagger(state.weapon)) {
+                const hpRatio = player.hp / player.maxHp;
+                const tearMult = Math.max(0.1, 2.0 - hpRatio * 1.9);
+                finalPlayerDamage = Math.floor(finalPlayerDamage * tearMult);
+                if (tearMult >= 1.5) huntState.log.push({ type: 'crit', text: `😭 눈물의 분노! ×${tearMult.toFixed(1)} 데미지!` });
+            }
+
+            // 🪙 도박사의 동전: 50% → 3배 / 50% → 0
+            if (isDiceWeapon(state.weapon)) {
+                if (Math.random() < 0.5) {
+                    finalPlayerDamage = Math.floor(finalPlayerDamage * 3);
+                    huntState.log.push({ type: 'crit', text: `🪙 도박 성공! 3배 데미지!` });
+                    SFX.play('enhance-success', 0.5);
+                } else {
+                    finalPlayerDamage = 0;
+                    huntState.log.push({ type: 'warning', text: `🪙 도박 실패... 0 데미지` });
+                }
+            }
+
+            // 🩸 복수의 낫: 이번 전투 누적 피해량의 30% 보너스
+            if (isRevengeScythe(state.weapon) && (huntState._revengeAccDmg || 0) > 0) {
+                const revengeBonus = Math.floor(huntState._revengeAccDmg * 0.3);
+                finalPlayerDamage += revengeBonus;
+                if (revengeBonus > 5) huntState.log.push({ type: 'crit', text: `🩸 복수! +${revengeBonus.toLocaleString()} 데미지 (누적 ${huntState._revengeAccDmg.toLocaleString()} 피해)` });
+            }
+
             // 럭키드로우용: 공격 전 풀피였는지 저장
             const wasAtFullHp = (monster.currentHp === monster.maxHp);
             
@@ -7443,7 +7533,12 @@
                 const wasFullHp = player.hp === player.maxHp;
                 
                 player.hp = Math.max(0, player.hp - finalMonsterDamage);
-                
+
+                // 🩸 복수의 낫: 받은 피해 누적
+                if (isRevengeScythe(state.weapon) && finalMonsterDamage > 0) {
+                    huntState._revengeAccDmg = (huntState._revengeAccDmg || 0) + finalMonsterDamage;
+                }
+
                 // 크리티컬 연속 피격 카운터
                 if (monsterCrit) {
                     state.consecutiveCritsTaken = (state.consecutiveCritsTaken || 0) + 1;
@@ -7818,6 +7913,7 @@
                 huntState.monster = spawnMonster();
             }
             huntState.log = [{ type: 'info', text: `👀 새로운 몬스터 발견!` }];
+            huntState._revengeAccDmg = 0;  // 🩸 복수의 낫: 새 몬스터마다 리셋
             renderHunt();
             if (huntState.monster.isBoss) {
                 const cached = huntState.pendingBossDialoguePromise;
@@ -7865,6 +7961,7 @@
             }
             huntState.player.hp = Math.min(huntState.player.maxHp, huntState.player.hp + Math.floor(huntState.player.maxHp * 0.1));
             huntState.log = [{ type: 'info', text: `❤️ HP 10% 회복!` }];
+            huntState._revengeAccDmg = 0;  // 🩸 복수의 낫: 새 몬스터마다 리셋
             renderHunt();
             if (huntState.monster.isBoss) {
                 const cached = huntState.pendingBossDialoguePromise;
