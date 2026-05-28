@@ -1,18 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" fill="#0a0515"/>
-  <!-- paradox loop arc top -->
-  <path d="M30 50 Q30 15 50 15 Q70 15 70 50" fill="none" stroke="#bb55ff" stroke-width="4" stroke-linecap="round"/>
-  <!-- paradox loop arc bottom (reversed) -->
-  <path d="M70 50 Q70 85 50 85 Q30 85 30 50" fill="none" stroke="#7722cc" stroke-width="4" stroke-linecap="round"/>
-  <!-- blade — diagonal across loop -->
-  <line x1="20" y1="72" x2="80" y2="28" stroke="#ddaaff" stroke-width="3" stroke-linecap="round"/>
-  <!-- blade tip triangle -->
-  <polygon points="80,28 73,25 77,33" fill="#ddaaff"/>
-  <!-- guard -->
-  <rect x="42" y="54" width="16" height="5" rx="2" transform="rotate(-35,50,56)" fill="#aa44ee"/>
+  <rect width="100" height="100" fill="#080410" rx="8"/>
+  <!-- infinity loop (thick) -->
+  <path d="M20 50 Q20 28 35 28 Q50 28 50 50 Q50 72 65 72 Q80 72 80 50 Q80 28 65 28 Q50 28 50 50 Q50 72 35 72 Q20 72 20 50Z"
+        fill="none" stroke="#7722cc" stroke-width="7" opacity="0.9"/>
+  <!-- inner highlight -->
+  <path d="M22 50 Q22 32 35 32 Q48 32 50 50 Q52 68 65 68 Q78 68 78 50 Q78 32 65 32 Q52 32 50 50"
+        fill="none" stroke="#bb66ff" stroke-width="2" opacity="0.5"/>
+  <!-- katana blade across -->
+  <path d="M12 78 L82 15" stroke="#ddaaff" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- blade tip -->
+  <path d="M82 15 L76 12 L80 22Z" fill="#ddaaff"/>
+  <!-- tsuba (guard) - at 45deg -->
+  <ellipse cx="42" cy="57" rx="8" ry="4" fill="#8833bb" transform="rotate(-40 42 57)"/>
   <!-- handle -->
-  <line x1="28" y1="67" x2="20" y2="75" stroke="#882acc" stroke-width="5" stroke-linecap="round"/>
-  <!-- sparkles -->
-  <circle cx="50" cy="50" r="3" fill="#ee99ff" opacity="0.7"/>
-  <circle cx="50" cy="50" r="5" fill="none" stroke="#bb55ff" stroke-width="1" opacity="0.5"/>
+  <path d="M15 75 L8 88" stroke="#551199" stroke-width="6" stroke-linecap="round"/>
+  <!-- handle wrap -->
+  <path d="M13 78 L9 84" stroke="#9944ee" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  <!-- center orb -->
+  <circle cx="50" cy="50" r="5" fill="#cc88ff" opacity="0.9"/>
+  <circle cx="50" cy="50" r="3" fill="#ffffff" opacity="0.4"/>
 </svg>

@@ -3589,6 +3589,14 @@
 
         // 특수 무기 커스텀 아이콘
         const SPECIAL_ICONS = {
+            // 기존 특수 무기
+            '나무막대기':   'icons/weapon-wooden-stick.svg',
+            '나뭇가지':     'icons/weapon-tree-branch.svg',
+            '이쑤시개':     'icons/weapon-toothpick.svg',
+            '유리검':       'icons/weapon-glass-sword.svg',
+            '피닉스 지팡이': 'icons/weapon-phoenix-staff.svg',
+            '새총':         'icons/weapon-slingshot.svg',
+            // 신규 특수 무기
             '눈물 단검':    'icons/dagger-teardrop.svg',
             '역설의 칼':    'icons/katana-paradox.svg',
             '봉인의 검':    'icons/sword-sealed.svg',
@@ -5040,12 +5048,17 @@
                 unique:'#aa44ff', legendary:'#ff8c00', mythic:'#ff2d6b'
             };
 
-            // 무기 아이콘 (특수 무기는 SVG 이미지, 일반은 이모지)
+            // 무기 아이콘 (특수·전설·신화 무기는 실제 이미지, 나머지 이모지)
             function weaponIcon(weaponObj) {
-                const name = weaponObj?.weapon_name || weaponObj?.name || '';
-                const type = weaponObj?.weapon_type || weaponObj?.type || 'sword';
-                if (SPECIAL_ICONS[name]) {
-                    return `<img src="${SPECIAL_ICONS[name]}" style="width:32px;height:32px;object-fit:contain;" alt="${name}">`;
+                const name  = weaponObj?.weapon_name  || weaponObj?.name  || '';
+                const type  = weaponObj?.weapon_type  || weaponObj?.type  || 'sword';
+                const grade = weaponObj?.weapon_grade || weaponObj?.grade || '';
+                const iconSrc = SPECIAL_ICONS[name]
+                    || (grade === 'mythic'    && MYTHIC_ICONS[type])
+                    || (grade === 'legendary' && LEGENDARY_ICONS[type])
+                    || null;
+                if (iconSrc) {
+                    return `<img src="${iconSrc}" style="width:36px;height:36px;object-fit:contain;border-radius:6px;" alt="${name}">`;
                 }
                 const icons = { sword:'⚔️', axe:'🪓', bow:'🏹', staff:'🪄', crossbow:'🎯',
                     dagger:'🗡️', spear:'🔱', hammer:'🔨', wand:'⚡', scythe:'☠️',

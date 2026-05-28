@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#030a02" rx="8"/>
+  <!-- main trunk -->
+  <path d="M48 90 Q46 72 44 56 Q42 46 40 38" stroke="#6b3d10" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <!-- left branch -->
+  <path d="M40 38 Q28 28 20 18" stroke="#6b3d10" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <!-- right branch -->
+  <path d="M40 38 Q54 26 66 14" stroke="#6b3d10" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <!-- small side twig -->
+  <path d="M44 56 Q54 50 60 44" stroke="#6b3d10" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  <!-- highlights on bark -->
+  <path d="M50 88 Q48 70 47 58" stroke="#9a6030" stroke-width="2" stroke-linecap="round" opacity="0.4" fill="none"/>
+  <!-- leaf cluster left -->
+  <ellipse cx="18" cy="16" rx="9" ry="6" fill="#2e9620" transform="rotate(-25 18 16)"/>
+  <ellipse cx="24" cy="12" rx="7" ry="5" fill="#38b028" transform="rotate(-10 24 12)" opacity="0.9"/>
+  <!-- leaf cluster right -->
+  <ellipse cx="68" cy="12" rx="9" ry="6" fill="#2e9620" transform="rotate(20 68 12)"/>
+  <ellipse cx="62" cy="10" rx="7" ry="5" fill="#38b028" transform="rotate(5 62 10)" opacity="0.9"/>
+  <!-- small twig leaf -->
+  <ellipse cx="62" cy="42" rx="6" ry="4" fill="#2e9620" transform="rotate(50 62 42)"/>
+  <!-- leaf veins -->
+  <line x1="18" y1="13" x2="18" y2="20" stroke="#1a6010" stroke-width="1" opacity="0.5"/>
+  <line x1="68" y1="9" x2="68" y2="16" stroke="#1a6010" stroke-width="1" opacity="0.5"/>
+</svg>

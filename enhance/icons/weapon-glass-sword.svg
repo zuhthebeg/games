@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#020810" rx="8"/>
+  <!-- blade shadow/glow base -->
+  <path d="M50 8 C54 8 60 20 60 55 L50 70 L40 55 C40 20 46 8 50 8Z" fill="#0a2040" opacity="0.8"/>
+  <!-- main blade facet left -->
+  <path d="M50 8 L44 55 L50 70 L50 38Z" fill="#4488cc" opacity="0.85"/>
+  <!-- main blade facet right -->
+  <path d="M50 8 L56 55 L50 70 L50 38Z" fill="#66aaee" opacity="0.85"/>
+  <!-- center bright line -->
+  <line x1="50" y1="8" x2="50" y2="65" stroke="#cce8ff" stroke-width="1.5" opacity="0.7"/>
+  <!-- facet highlights -->
+  <path d="M50 10 L46 40" stroke="#aaddff" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  <path d="M50 10 L54 42" stroke="#ffffff" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+  <!-- internal fracture line (it can break!) -->
+  <path d="M46 36 L54 50" stroke="#ff4444" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M54 50 L48 60" stroke="#ff4444" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+  <!-- crossguard (crystal) -->
+  <path d="M34 62 L50 56 L66 62 L60 68 L50 65 L40 68Z" fill="#3366bb"/>
+  <path d="M36 63 L50 58 L64 63" stroke="#88bbff" stroke-width="1" opacity="0.5" fill="none"/>
+  <!-- handle -->
+  <rect x="46" y="65" width="8" height="20" rx="4" fill="#1a3366"/>
+  <!-- handle shimmer -->
+  <rect x="47" y="68" width="3" height="14" rx="2" fill="#3366bb" opacity="0.4"/>
+  <!-- pommel gem -->
+  <polygon points="50,87 54,84 54,90 50,93 46,90 46,84" fill="#4488cc"/>
+  <polygon points="50,87 53,85 53,89 50,91 47,89 47,85" fill="#88ccff" opacity="0.6"/>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#080500" rx="8"/>
+  <!-- main stick body (tapered) -->
+  <path d="M28 85 Q25 82 22 78 L70 18 Q73 16 76 19 Q78 22 76 25Z" fill="#8b5a1a"/>
+  <!-- bark texture dark side -->
+  <path d="M28 85 Q25 82 22 78 L68 21 Q65 20 63 22Z" fill="#6a3f0e"/>
+  <!-- bark knot 1 -->
+  <ellipse cx="44" cy="60" rx="4" ry="3" fill="#5a3008" transform="rotate(-40 44 60)" opacity="0.8"/>
+  <!-- bark knot 2 -->
+  <ellipse cx="60" cy="38" rx="3" ry="2.5" fill="#5a3008" transform="rotate(-40 60 38)" opacity="0.8"/>
+  <!-- grain lines -->
+  <path d="M32 78 L35 74" stroke="#5a3008" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M48 58 L51 54" stroke="#5a3008" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M62 36 L65 32" stroke="#5a3008" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <!-- highlight edge -->
+  <path d="M26 80 L72 22" stroke="#c08040" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+  <!-- blunt tip glow -->
+  <ellipse cx="74" cy="22" rx="4" ry="4" fill="#c08040" opacity="0.4"/>
+</svg>

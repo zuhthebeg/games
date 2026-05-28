@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="#080806" rx="8"/>
+  <!-- toothpick body (very thin, ivory color) -->
+  <path d="M50 6 L54 94 L50 94 L46 94 L50 6Z" fill="#d4c08a"/>
+  <!-- taper at top (sharp tip) -->
+  <polygon points="50,6 48,25 52,25" fill="#ede0b0"/>
+  <!-- subtle flat end at bottom -->
+  <ellipse cx="50" cy="93" rx="4" ry="2.5" fill="#c0a860"/>
+  <!-- grain lines along body -->
+  <line x1="49" y1="28" x2="49" y2="85" stroke="#b09040" stroke-width="0.8" opacity="0.5"/>
+  <line x1="51" y1="28" x2="51" y2="85" stroke="#e8d0a0" stroke-width="0.8" opacity="0.3"/>
+  <!-- CRITICAL CRACK effect near tip -->
+  <path d="M47 30 L53 38 M50 38 L44 48" stroke="#ff6600" stroke-width="1.5" stroke-linecap="round" opacity="0.85"/>
+  <!-- crack glow -->
+  <path d="M47 30 L53 38" stroke="#ffaa44" stroke-width="0.8" opacity="0.5"/>
+  <!-- damage sparks -->
+  <circle cx="58" cy="28" r="2" fill="#ff8800" opacity="0.7"/>
+  <circle cx="62" cy="38" r="1.5" fill="#ffaa00" opacity="0.5"/>
+  <circle cx="42" cy="44" r="1.5" fill="#ff6600" opacity="0.6"/>
+  <!-- critical number hint -->
+  <text x="68" y="55" font-family="monospace" font-size="10" fill="#ff8800" opacity="0.7" font-weight="bold">×10</text>
+</svg>

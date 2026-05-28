@@ -1,21 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" fill="#100a00"/>
-  <!-- outer coin ring -->
-  <circle cx="50" cy="50" r="36" fill="#cc9900" stroke="#ffdd44" stroke-width="2"/>
-  <!-- coin face -->
-  <circle cx="50" cy="50" r="30" fill="#e6aa00"/>
-  <!-- coin inner ring decoration -->
-  <circle cx="50" cy="50" r="26" fill="none" stroke="#ffdd44" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <!-- sword engraved on coin -->
-  <line x1="50" y1="28" x2="50" y2="68" stroke="#773300" stroke-width="3" stroke-linecap="round"/>
-  <!-- sword crossguard -->
-  <line x1="40" y1="60" x2="60" y2="60" stroke="#773300" stroke-width="3" stroke-linecap="round"/>
-  <!-- sword tip -->
-  <polygon points="50,25 52,30 48,30" fill="#773300"/>
-  <!-- dice pips — 3 dots -->
-  <circle cx="42" cy="38" r="2.5" fill="#773300"/>
-  <circle cx="58" cy="38" r="2.5" fill="#773300"/>
-  <circle cx="50" cy="44" r="2.5" fill="#773300"/>
-  <!-- edge shine -->
-  <path d="M26 38 Q22 50 26 62" fill="none" stroke="#ffee88" stroke-width="2" opacity="0.6"/>
+  <rect width="100" height="100" fill="#0a0800" rx="8"/>
+  <!-- coin shadow/depth -->
+  <ellipse cx="52" cy="52" rx="34" ry="34" fill="#7a5500"/>
+  <!-- coin body -->
+  <circle cx="50" cy="50" r="34" fill="#e8a800"/>
+  <!-- coin rim -->
+  <circle cx="50" cy="50" r="34" fill="none" stroke="#ffd700" stroke-width="2.5"/>
+  <!-- coin inner ring -->
+  <circle cx="50" cy="50" r="28" fill="none" stroke="#b87800" stroke-width="1.5"/>
+  <!-- coin face: sword silhouette engraved -->
+  <path d="M50 22 C51.5 22 53 26 53 48 L50 55 L47 48 C47 26 48.5 22 50 22Z" fill="#7a4a00"/>
+  <rect x="43" y="52" width="14" height="4" rx="2" fill="#7a4a00"/>
+  <rect x="47.5" y="56" width="5" height="10" rx="2" fill="#7a4a00"/>
+  <!-- coin face: two dice -->
+  <rect x="20" y="34" width="14" height="14" rx="3" fill="#b87800"/>
+  <circle cx="24" cy="38" r="1.8" fill="#0a0800"/>
+  <circle cx="30" cy="38" r="1.8" fill="#0a0800"/>
+  <circle cx="27" cy="44" r="1.8" fill="#0a0800"/>
+  <rect x="66" y="52" width="14" height="14" rx="3" fill="#b87800"/>
+  <circle cx="70" cy="56" r="1.8" fill="#0a0800"/>
+  <circle cx="76" cy="56" r="1.8" fill="#0a0800"/>
+  <circle cx="70" cy="62" r="1.8" fill="#0a0800"/>
+  <circle cx="76" cy="62" r="1.8" fill="#0a0800"/>
+  <!-- shine arc -->
+  <path d="M26 28 Q18 50 24 68" fill="none" stroke="#fff5aa" stroke-width="2.5" opacity="0.35" stroke-linecap="round"/>
 </svg>
