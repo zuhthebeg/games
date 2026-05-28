@@ -3558,6 +3558,22 @@
             hammer: 'lightning'  // 천둥 해머
         };
 
+        // 전설 무기 패시브 설명 (UI 표시용)
+        const LEGENDARY_PASSIVES = {
+            sword:    { name: '성검의 심판',  desc: '언데드/악마 상대 데미지 ×2' },
+            axe:      { name: '달빛 베기',    desc: '매 3번째 공격 자동 크리티컬' },
+            spear:    { name: '용살',          desc: 'dragon/elemental 상대 데미지 ×2.5' },
+            hammer:   { name: '천둥 스턴',    desc: '20% 확률로 적 1턴 공격 스킵' },
+            dagger:   { name: '기습',          desc: '적 만피일 때 데미지 ×2' },
+            staff:    { name: '속성 관통',    desc: '속성 저항 무시 (최소 1.3배 보장)' },
+            wand:     { name: '마법 연쇄',    desc: '크리티컬 시 30% 추가 마법 타격' },
+            katana:   { name: '각성 5연격',   desc: '5번 공격 후 다음 한 방 ×5' },
+            scythe:   { name: '사신의 낫',    desc: '적 HP 25% 이하에서 10% 즉사' },
+            bow:      { name: '쌍살',          desc: '크리티컬 시 추가 화살 +50%' },
+            crossbow: { name: '보스 특효',    desc: '보스 상대 데미지 ×1.5' },
+            knuckle:  { name: '트리플 러시',  desc: '3연타 (기존 2연타 → 3연타)' },
+        };
+
         const LEGENDARY_ICONS = {
             sword: 'icons/sword-legendary-v2.png',
             axe: 'icons/axe-legendary.png',
@@ -4032,6 +4048,12 @@
                             <span class="enhance-value gold">${rates.cost.toLocaleString()} G</span>
                         </div>
                     </div>
+
+                    ${weapon.grade === 'legendary' && LEGENDARY_PASSIVES[weapon.type] ? `
+                    <div style="background:rgba(255,130,0,0.1);border:1px solid rgba(255,130,0,0.4);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:0.8rem;">
+                        <div style="color:#ff8c00;font-weight:700;margin-bottom:3px;">⚔️ ${LEGENDARY_PASSIVES[weapon.type].name}</div>
+                        <div style="color:#ffcc88;">${LEGENDARY_PASSIVES[weapon.type].desc}</div>
+                    </div>` : ''}
 
                     ${(() => { const btk = state.bossTypeKills || {}; const any = (btk.dragon||0)+(btk.demon||0)+(btk.undead||0)+(btk.elemental||0); return any > 0 ? `
                     <div style="background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.3);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:0.8rem;">
@@ -6682,7 +6704,8 @@
                 bossesKilledInSession: 0,   // 이번 세션 보스 처치 수 (보상 계산용)
                 pendingBoss: null,           // 9킬 시점에 미리 선택한 다음 보스
                 pendingBossDialoguePromise: null, // 미리 fetch한 보스 대사 Promise
-                _revengeAccDmg: 0           // 🩸 복수의 낫: 이번 전투 누적 피해량
+                _revengeAccDmg: 0,          // 🩸 복수의 낫: 이번 전투 누적 피해량
+                _lgd: { hitCount: 0, tenkenCharged: false, stunNext: false } // ⚔️ 전설 패시브 카운터
             };
             // 고정 대사 풀 셔플 (사냥 세션 시작마다 초기화)
             _sessionFixedPool = [...BOSS_FIXED_DIALOGUES].sort(() => Math.random() - 0.5);
@@ -7333,14 +7356,15 @@
             const elementMult = getElementMultiplier(weaponElement, monster.type);
             const superCrit = checkSuperCritical(state.weapon);  // 신화 무기 1% 즉사기
             
-            // 👊 너클: 2회 독립 공격 (각각 크리티컬 판정)
+            // 👊 너클: 2회 독립 공격 (전설 타이탄 피스트: 3연타)
             let finalPlayerDamage = 0;
             let playerCrit = false;
             let knuckleCrits = 0;  // 너클 크리 횟수
             
             if (isKnuckle) {
-                // 2회 독립 공격
-                for (let hit = 0; hit < 2; hit++) {
+                const knuckleHits = (state.weapon.grade === 'legendary') ? 3 : 2;  // 타이탄 피스트: 3연타
+                if (state.weapon.grade === 'legendary' && knuckleHits === 3) huntState.log.push({ type: 'info', text: `👊 트리플 러시!` });
+                for (let hit = 0; hit < knuckleHits; hit++) {
                     const hitDamage = Math.floor(Math.random() * (player.damageMax - player.damageMin + 1)) + player.damageMin;
                     const hitCrit = window.debugCritMode || (Math.random() * 100 < player.critChance);
                     let hitFinal = hitCrit ? Math.floor(hitDamage * player.critDamage / 100) : hitDamage;
@@ -7404,6 +7428,98 @@
                 const revengeBonus = Math.floor(huntState._revengeAccDmg * 0.3);
                 finalPlayerDamage += revengeBonus;
                 if (revengeBonus > 5) huntState.log.push({ type: 'crit', text: `🩸 복수! +${revengeBonus.toLocaleString()} 데미지 (누적 ${huntState._revengeAccDmg.toLocaleString()} 피해)` });
+            }
+
+            // ⚔️ 전설 무기 패시브 적용
+            if (state.weapon.grade === 'legendary') {
+                const lgd = huntState._lgd || (huntState._lgd = { hitCount: 0, tenkenCharged: false, stunNext: false });
+                const wtype = state.weapon.type;
+                lgd.hitCount++;
+
+                switch (wtype) {
+                    case 'sword': // 엑스칼리버: 언데드/악마 ×2
+                        if (['undead','demon'].includes(monster.type)) {
+                            finalPlayerDamage = Math.floor(finalPlayerDamage * 2);
+                            huntState.log.push({ type: 'crit', text: `⚔️ 성검의 심판! ${monster.name} ×2 데미지!` });
+                        }
+                        break;
+                    case 'axe': // 월광도끼: 3번째 공격 자동 크리
+                        if (lgd.hitCount % 3 === 0 && !playerCrit) {
+                            finalPlayerDamage = Math.floor(finalPlayerDamage * player.critDamage / 100);
+                            playerCrit = true;
+                            huntState.log.push({ type: 'crit', text: `🌙 달빛 베기! 자동 크리티컬!` });
+                        }
+                        break;
+                    case 'spear': // 용살창: dragon/elemental ×2.5
+                        if (['dragon','elemental'].includes(monster.type)) {
+                            finalPlayerDamage = Math.floor(finalPlayerDamage * 2.5);
+                            huntState.log.push({ type: 'crit', text: `🐉 용살! ${monster.name} ×2.5 데미지!` });
+                        }
+                        break;
+                    case 'hammer': // 천둥망치: 20% 스턴
+                        if (Math.random() < 0.2) {
+                            lgd.stunNext = true;
+                            huntState.log.push({ type: 'info', text: `⚡ 천둥 스턴! ${monster.name}이(가) 1턴 행동 불가!` });
+                        }
+                        break;
+                    case 'dagger': // 그림자 단검: 만피 기습 ×2
+                        if (monster.currentHp - finalPlayerDamage >= monster.maxHp - 1) {
+                            // (공격 전 만피 상태였으면)
+                        }
+                        // 이 시점에선 아직 HP를 안 깎았으므로 현재 HP가 maxHp면 기습
+                        if (monster.currentHp === monster.maxHp) {
+                            finalPlayerDamage = Math.floor(finalPlayerDamage * 2);
+                            huntState.log.push({ type: 'crit', text: `🗡️ 기습! 만피 적에게 ×2 데미지!` });
+                        }
+                        break;
+                    case 'staff': // 대현자의 지팡이: 속성 저항 무시 (최소 1.3배)
+                        if (elementMult < 1.3) {
+                            const oldDmg = finalPlayerDamage;
+                            finalPlayerDamage = Math.floor(finalPlayerDamage * (1.3 / Math.max(0.1, elementMult)));
+                            if (finalPlayerDamage > oldDmg) huntState.log.push({ type: 'info', text: `🔮 속성 관통! 저항 무시!` });
+                        }
+                        break;
+                    case 'wand': // 대마법사의 완드: 크리 시 +30% 추가타
+                        if (playerCrit) {
+                            const extraMagic = Math.floor(finalPlayerDamage * 0.3);
+                            finalPlayerDamage += extraMagic;
+                            huntState.log.push({ type: 'crit', text: `✨ 마법 연쇄! +${extraMagic.toLocaleString()} 추가 타격!` });
+                        }
+                        break;
+                    case 'katana': // 천검: 5연격 후 ×5
+                        if (lgd.tenkenCharged) {
+                            finalPlayerDamage = Math.floor(finalPlayerDamage * 5);
+                            lgd.tenkenCharged = false;
+                            lgd.hitCount = 0;
+                            huntState.log.push({ type: 'crit', text: `⚡ 천검 각성!! ×5 데미지!!` });
+                            SFX.play('levelup', 0.8);
+                        } else if (lgd.hitCount >= 5) {
+                            lgd.tenkenCharged = true;
+                            lgd.hitCount = 0;
+                            huntState.log.push({ type: 'info', text: `⚡ 천검 5연격 충전! 다음 한 방 ×5!` });
+                        }
+                        break;
+                    case 'scythe': // 저승사자의 낫: HP 25% 이하 10% 즉사
+                        if (monster.currentHp <= monster.maxHp * 0.25 && Math.random() < 0.1) {
+                            finalPlayerDamage = monster.currentHp;
+                            huntState.log.push({ type: 'crit', text: `💀 사신의 낫! ${monster.name} 즉사!!` });
+                        }
+                        break;
+                    case 'bow': // 천상의 활: 크리 시 +50% 추가 화살
+                        if (playerCrit) {
+                            const extraArrow = Math.floor(finalPlayerDamage * 0.5);
+                            finalPlayerDamage += extraArrow;
+                            huntState.log.push({ type: 'crit', text: `🏹 쌍살! +${extraArrow.toLocaleString()} 추가 화살!` });
+                        }
+                        break;
+                    case 'crossbow': // 드래곤 킬러: 보스 ×1.5
+                        if (monster.isBoss) {
+                            finalPlayerDamage = Math.floor(finalPlayerDamage * 1.5);
+                            huntState.log.push({ type: 'crit', text: `🎯 보스 특효! ×1.5 데미지!` });
+                        }
+                        break;
+                    // 너클 3연타는 아래 별도 처리
+                }
             }
 
             // 럭키드로우용: 공격 전 풀피였는지 저장
@@ -7536,6 +7652,13 @@
                 if (huntState.monsterFrozen) {
                     huntState.monsterFrozen = false;
                     huntState.log.push({ type: 'info', text: `❄️ ${monster.name}이(가) 얼어붙어 공격하지 못했다!` });
+                    renderHunt();
+                    return;
+                }
+                // ⚡ 천둥망치 스턴
+                if (huntState._lgd?.stunNext) {
+                    huntState._lgd.stunNext = false;
+                    huntState.log.push({ type: 'info', text: `⚡ 스턴! ${monster.name}이(가) 공격하지 못했다!` });
                     renderHunt();
                     return;
                 }
@@ -7939,6 +8062,9 @@
             }
             huntState.log = [{ type: 'info', text: `👀 새로운 몬스터 발견!` }];
             huntState._revengeAccDmg = 0;  // 🩸 복수의 낫: 새 몬스터마다 리셋
+            if (!huntState._lgd) huntState._lgd = {};
+            huntState._lgd.hitCount = 0;
+            huntState._lgd.tenkenCharged = false;
             renderHunt();
             if (huntState.monster.isBoss) {
                 const cached = huntState.pendingBossDialoguePromise;
@@ -7987,6 +8113,9 @@
             huntState.player.hp = Math.min(huntState.player.maxHp, huntState.player.hp + Math.floor(huntState.player.maxHp * 0.1));
             huntState.log = [{ type: 'info', text: `❤️ HP 10% 회복!` }];
             huntState._revengeAccDmg = 0;  // 🩸 복수의 낫: 새 몬스터마다 리셋
+            if (!huntState._lgd) huntState._lgd = {};
+            huntState._lgd.hitCount = 0;
+            huntState._lgd.tenkenCharged = false;
             renderHunt();
             if (huntState.monster.isBoss) {
                 const cached = huntState.pendingBossDialoguePromise;
