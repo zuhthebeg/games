@@ -4790,6 +4790,22 @@
                                 내구도 파괴 시 적 즉사 효과 발동
                             </span>
                         </div>
+                        ` : isBlessed(weapon) ? `
+                        <div style="background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.35);border-radius:12px;padding:16px;margin-top:8px;">
+                            <div style="color:#ffd700;font-weight:700;margin-bottom:8px;text-align:center;">✨ 축복받은 무기</div>
+                            <div style="font-size:0.85rem;color:#ffe066;line-height:1.8;">
+                                🛡️ 강화 파괴 확률 <b>-50%</b><br>
+                                💰 사냥 골드 <b>+50%</b><br>
+                                🔧 내구도 소모 <b>없음</b>
+                            </div>
+                            ${durability < MAX_DURABILITY ? `
+                            <div style="margin-top:12px;border-top:1px solid rgba(255,215,0,0.2);padding-top:12px;">
+                                <div class="enhance-row"><span>수리 비용</span><span class="gold">${repairCost.toLocaleString()} G</span></div>
+                                <button class="btn btn-enhance" onclick="repairWeapon()" ${state.gold < repairCost ? 'disabled' : ''} style="margin-top:10px;width:100%;">
+                                    ${state.gold < repairCost ? '💰 골드 부족' : '🔧 수리하기'}
+                                </button>
+                            </div>` : `<div style="text-align:center;margin-top:10px;color:var(--success);font-size:0.85rem;">✅ 완벽한 상태</div>`}
+                        </div>
                         ` : durability < MAX_DURABILITY ? `
                         <div class="enhance-panel" style="margin-top:16px;">
                             <div class="enhance-row">
@@ -7205,10 +7221,9 @@
             let durabilityMod = gradeData.durabilityMod || 1.0;
             // 유리검: 내구도 3배 빠르게 감소!
             if (isGlassSword(state.weapon)) durabilityMod *= 3;
-            // ✨ 축복받은 무기: 내구도 소모 없음
-            if (isBlessed(state.weapon)) return;
             const durabilityThreshold = Math.floor(10 / durabilityMod);  // 낮을수록 빨리 감소
-            if (state.weapon._durabilityCounter >= durabilityThreshold) {
+            // ✨ 축복받은 무기: 내구도 소모 없음 (감소 블록 스킵)
+            if (!isBlessed(state.weapon) && state.weapon._durabilityCounter >= durabilityThreshold) {
                 state.weapon._durabilityCounter = 0;
                 state.weapon.durability = Math.max(0, (state.weapon.durability || 100) - 1);
                 
