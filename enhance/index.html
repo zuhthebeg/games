@@ -3946,7 +3946,24 @@
                     <div class="enhance-panel">
                         <div class="enhance-row">
                             <span class="enhance-label">🎯 성공</span>
-                            <span class="enhance-value ${rates.success >= 50 ? 'safe' : rates.success >= 20 ? '' : 'danger'}">${rates.success}%${isCursed(weapon) ? ' <span style="color:#8b00ff;font-size:0.7em;">👿x2</span>' : ''}${(state.bossKills || 0) > 0 ? ` <span style="color:#ff8c00;font-size:0.7em;">🐉+${state.bossKills}%</span>` : ''}</span>
+                            ${(() => {
+                                const base = isWoodenStick(weapon) ? 99 : getBaseEnhanceRates(weapon.level).success;
+                                const cursed = isCursed(weapon);
+                                const bossBonus = state.bossKills || 0;
+                                const finalRate = rates.success;
+                                const hasModifiers = cursed || bossBonus > 0;
+                                const colorClass = finalRate >= 50 ? 'safe' : finalRate >= 20 ? '' : 'danger';
+                                if (!hasModifiers) {
+                                    return `<span class="enhance-value ${colorClass}">${finalRate}%</span>`;
+                                }
+                                let breakdown = `기본 ${base}%`;
+                                if (cursed) breakdown += ` 👿×2`;
+                                if (bossBonus) breakdown += ` 🐉+${bossBonus}%`;
+                                return `<span class="enhance-value ${colorClass}" style="line-height:1.2;display:inline-block;">
+                                    <span style="font-size:1.05em;font-weight:700;">${finalRate}%</span>
+                                    <div style="font-size:0.68em;color:#aaa;margin-top:1px;">${breakdown}</div>
+                                </span>`;
+                            })()}
                         </div>
                         <div class="enhance-row">
                             <span class="enhance-label">${rates.destroy >= 50 ? '💀' : rates.destroy > 0 ? '⚠️' : '✅'} 파괴</span>
@@ -3978,6 +3995,14 @@
                                 +구매 (10,000G)
                             </button>
                         </div>
+                    </div>
+                    ` : ''}
+                    ${isCursed(weapon) ? `
+                    <div class="protection-toggle" style="border:1px solid rgba(139,0,255,0.4);background:rgba(139,0,255,0.08);">
+                        <span style="color:#bb77ff;">🔮 저주 해제 주문서</span>
+                        <button onclick="buyCurseRemoval()" style="padding:4px 10px;background:linear-gradient(135deg,#8b00ff,#5500aa);border:none;border-radius:8px;color:#fff;font-size:0.75rem;font-weight:600;cursor:pointer;white-space:nowrap;">
+                            구매 (100,000,000G)
+                        </button>
                     </div>
                     ` : ''}
 
@@ -4025,6 +4050,30 @@
             playSound('success');
             SFX.play('purchase', 0.6);
             showEnhance();
+        }
+
+        function buyCurseRemoval() {
+            const cost = 100000000;
+            if (state.gold < cost) {
+                alert(`골드가 부족합니다!\n(${cost.toLocaleString()}G 필요, 현재 ${state.gold.toLocaleString()}G)`);
+                return;
+            }
+            if (!isCursed(state.weapon)) return;
+            if (confirm(`저주 해제 주문서를 ${cost.toLocaleString()}G에 구매하시겠습니까?\n\n무기의 저주가 해제됩니다.\n무기 효과(속성, 능력치)는 그대로 유지됩니다.`)) {
+                state.gold -= cost;
+                state.weapon.cursed = false;
+                saveState();
+                playSound('success');
+                SFX.play('levelup', 0.7);
+                showEnhance();
+                const popup = document.getElementById('resultPopup');
+                if (popup) {
+                    popup.className = 'result-popup success show';
+                    document.getElementById('resultText').textContent = '🔮 저주 해제!';
+                    document.getElementById('resultText').style.color = '#aa55ff';
+                    setTimeout(() => popup.classList.remove('show'), 2000);
+                }
+            }
         }
 
         // 나무막대기 특수 처리 (99% 성공률)
@@ -7087,9 +7136,10 @@
                     baseDamage = monster.currentHp;
                 }
 
-                // 🎰 보스 럭키드로우: 0.01% 확률로 100배 데미지!
+                // 🎰 럭키드로우: 일반몹 0.1% / 보스 0.01% → 100배 데미지!
                 let luckyDraw = false;
-                if (monster.isBoss && Math.random() < 0.0001) {
+                const luckyChance = monster.isBoss ? 0.0001 : 0.001;
+                if (Math.random() < luckyChance) {
                     baseDamage = baseDamage * 100;
                     luckyDraw = true;
                 }
@@ -7314,10 +7364,10 @@
             const undeadKills = (state.bossTypeKills || {}).undead || 0;
             if (undeadKills > 0) goldReward = Math.floor(goldReward * (1 + undeadKills * 0.05));
             
-            // 🎰 한방킬 럭키드로우! 10배 보상!
-            const isLuckyDraw = isOneShot && Math.random() < 1.0; // 한방킬이면 무조건 럭키드로우
+            // 🎰 한방킬 럭키드로우! 일반몹 10배 / 보스 무조건 100배!
+            const isLuckyDraw = isOneShot;
             if (isLuckyDraw) {
-                goldReward *= 10;
+                goldReward *= monster.isBoss ? 100 : 10;
             }
             
             // 골드는 사냥 완료 시 지급 (새로고침 방지)
@@ -7430,7 +7480,7 @@
                 <div style="font-size:1.5rem;color:var(--gold);animation:pulse 0.5s infinite alternate;">
                     💰 +${finalGold.toLocaleString()}G
                 </div>
-                <div style="color:var(--success);margin:8px 0;">⚡ 한방킬 10배 보너스!</div>
+                <div style="color:var(--success);margin:8px 0;">${monster.isBoss ? '🎰 보스 럭키드로우! 100배 보너스!' : '⚡ 한방킬 10배 보너스!'}</div>
                 ${bossBonusHtml}
                 <span style="color:var(--muted);font-size:0.85em">
                     🔧 내구도: ${state.weapon.durability || 100}% | ⭐ 처치: ${huntState.monstersKilled}
