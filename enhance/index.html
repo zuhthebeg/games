@@ -4169,7 +4169,7 @@
                 <div style="font-size:0.85rem;color:#aaa;line-height:1.6;">
                     🛡️ 강화 파괴 확률 <span style="color:var(--success)">-50%</span><br>
                     💰 사냥 골드 <span style="color:var(--success)">+50%</span><br>
-                    🔧 내구도 소모 <span style="color:var(--success)">-50%</span>
+                    🔧 내구도 소모 <span style="color:var(--success)">없음</span>
                 </div>
             `;
             document.getElementById('newWeaponPreview').style.display = 'none';
@@ -4195,7 +4195,7 @@
                     if (state.consecutiveEnhanceSuccesses >= 5) triggered = true;
                     break;
                 case 'hunt_streak':
-                    if (state.consecutiveHuntKills >= 10) triggered = true;
+                    if (state.consecutiveHuntKills >= 100) triggered = true;
                     break;
                 case 'boss_oneshot':
                     triggered = true;  // 보스 한방킬은 즉시 발동
@@ -7202,8 +7202,8 @@
             let durabilityMod = gradeData.durabilityMod || 1.0;
             // 유리검: 내구도 3배 빠르게 감소!
             if (isGlassSword(state.weapon)) durabilityMod *= 3;
-            // ✨ 축복받은 무기: 내구도 소모 -50%
-            if (isBlessed(state.weapon)) durabilityMod *= 0.5;
+            // ✨ 축복받은 무기: 내구도 소모 없음
+            if (isBlessed(state.weapon)) return;
             const durabilityThreshold = Math.floor(10 / durabilityMod);  // 낮을수록 빨리 감소
             if (state.weapon._durabilityCounter >= durabilityThreshold) {
                 state.weapon._durabilityCounter = 0;
