@@ -3111,6 +3111,7 @@
                 reason,
                 reasonLabel,
                 name: weapon.name,
+                type: weapon.type,   // 아이콘 매칭에 필요
                 grade: weapon.grade,
                 level: weapon.level || 0,
                 kills: weapon.weaponMastery?.kills || 0,
@@ -3574,6 +3575,22 @@
             knuckle:  { name: '트리플 러시',  desc: '3연타 (기존 2연타 → 3연타)' },
         };
 
+        // 신화 무기 패시브 설명 (슈퍼크리+추가)
+        const MYTHIC_PASSIVES = {
+            sword:    { name: '피의 맹세',   desc: '공격 데미지의 5% 흡혈' },
+            axe:      { name: '대지 분쇄',   desc: '항상 최대 데미지 (min=max)' },
+            spear:    { name: '신성 관통',   desc: '모든 속성 저항 무시 (항상 1.5배)' },
+            hammer:   { name: '천지개벽',    desc: '첫 공격 항상 크리티컬' },
+            dagger:   { name: '혼돈의 날',   desc: '크리 데미지 ×2~×5 랜덤' },
+            staff:    { name: '영혼 수확',   desc: '처치마다 HP 15% 추가 회복' },
+            wand:     { name: '속성 폭발',   desc: '속성 효과 시 추가 데미지 2배' },
+            katana:   { name: '태양신 강림', desc: '크리 시 다음 적 공격력 -50%' },
+            scythe:   { name: '종언',         desc: 'HP 33% 이하 적에게 데미지 ×3' },
+            bow:      { name: '독화살 연격', desc: '크리 시 독 4턴 추가 적용' },
+            crossbow: { name: '신의 심판',   desc: '보스에게 항상 크리티컬' },
+            knuckle:  { name: '일격',         desc: '마지막 연타는 ×3 (4연타 마무리)' },
+        };
+
         const LEGENDARY_ICONS = {
             sword: 'icons/sword-legendary-v2.png',
             axe: 'icons/axe-legendary.png',
@@ -3751,6 +3768,11 @@
             if (btk.dragon) { damageMin = Math.floor(damageMin * (1 + btk.dragon * 0.02)); damageMax = Math.floor(damageMax * (1 + btk.dragon * 0.02)); }
             if (btk.demon) { critChance = Math.min(80, critChance + btk.demon * 1); }
             if (btk.elemental) { hp = Math.floor(hp * (1 + btk.elemental * 0.03)); }
+
+            // 💫 세계수의 도끼 (신화 도끼): 항상 최대 데미지
+            if (weapon.grade === 'mythic' && weapon.type === 'axe') {
+                damageMin = damageMax;
+            }
 
             return { damageMin, damageMax, critChance, critDamage, hp, masteryBonus: globalMasteryBonus, weaponMasteryBonus };
         }
@@ -4053,6 +4075,11 @@
                     <div style="background:rgba(255,130,0,0.1);border:1px solid rgba(255,130,0,0.4);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:0.8rem;">
                         <div style="color:#ff8c00;font-weight:700;margin-bottom:3px;">⚔️ ${LEGENDARY_PASSIVES[weapon.type].name}</div>
                         <div style="color:#ffcc88;">${LEGENDARY_PASSIVES[weapon.type].desc}</div>
+                    </div>` : ''}
+                    ${weapon.grade === 'mythic' && MYTHIC_PASSIVES[weapon.type] ? `
+                    <div style="background:rgba(255,0,220,0.08);border:1px solid rgba(255,0,220,0.4);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:0.8rem;">
+                        <div style="color:#ff44ff;font-weight:700;margin-bottom:3px;">🌟 슈퍼크리 1% 즉사 · ${MYTHIC_PASSIVES[weapon.type].name}</div>
+                        <div style="color:#ffaaff;">${MYTHIC_PASSIVES[weapon.type].desc}</div>
                     </div>` : ''}
 
                     ${(() => { const btk = state.bossTypeKills || {}; const any = (btk.dragon||0)+(btk.demon||0)+(btk.undead||0)+(btk.elemental||0); return any > 0 ? `
@@ -5075,12 +5102,20 @@
                 const name  = weaponObj?.weapon_name  || weaponObj?.name  || '';
                 const type  = weaponObj?.weapon_type  || weaponObj?.type  || 'sword';
                 const grade = weaponObj?.weapon_grade || weaponObj?.grade || '';
-                const iconSrc = SPECIAL_ICONS[name]
+                // 저장된 image 경로 먼저 사용 (가장 정확)
+                const savedImage = weaponObj?.image;
+                const iconSrc = savedImage
+                    || SPECIAL_ICONS[name]
                     || (grade === 'mythic'    && MYTHIC_ICONS[type])
                     || (grade === 'legendary' && LEGENDARY_ICONS[type])
                     || null;
-                if (iconSrc) {
+                if (iconSrc && !iconSrc.includes('game-icons.net')) {
+                    // 로컬 파일 또는 icons/ 경로
                     return `<img src="${iconSrc}" style="width:36px;height:36px;object-fit:contain;border-radius:6px;" alt="${name}">`;
+                }
+                if (iconSrc) {
+                    // CDN SVG도 표시
+                    return `<img src="${iconSrc}" style="width:36px;height:36px;object-fit:contain;border-radius:6px;background:#111;" alt="${name}">`;
                 }
                 const icons = { sword:'⚔️', axe:'🪓', bow:'🏹', staff:'🪄', crossbow:'🎯',
                     dagger:'🗡️', spear:'🔱', hammer:'🔨', wand:'⚡', scythe:'☠️',
@@ -5096,7 +5131,7 @@
 
             // 무기 탭 HTML
             function weaponsHTML() {
-                const current = state.weapon;
+                const current = { ...state.weapon, image: getWeaponIcon(state.weapon) };
                 const items = [
                     `<div class="col-weapon-item current">
                         <div class="col-weapon-icon">${weaponIcon(current)}</div>
@@ -6705,7 +6740,8 @@
                 pendingBoss: null,           // 9킬 시점에 미리 선택한 다음 보스
                 pendingBossDialoguePromise: null, // 미리 fetch한 보스 대사 Promise
                 _revengeAccDmg: 0,          // 🩸 복수의 낫: 이번 전투 누적 피해량
-                _lgd: { hitCount: 0, tenkenCharged: false, stunNext: false } // ⚔️ 전설 패시브 카운터
+                _lgd: { hitCount: 0, tenkenCharged: false, stunNext: false }, // ⚔️ 전설 패시브 카운터
+                _myth: { firstHit: true, weakenNext: false }  // 💫 신화 패시브 카운터
             };
             // 고정 대사 풀 셔플 (사냥 세션 시작마다 초기화)
             _sessionFixedPool = [...BOSS_FIXED_DIALOGUES].sort(() => Math.random() - 0.5);
@@ -7362,13 +7398,19 @@
             let knuckleCrits = 0;  // 너클 크리 횟수
             
             if (isKnuckle) {
-                const knuckleHits = (state.weapon.grade === 'legendary') ? 3 : 2;  // 타이탄 피스트: 3연타
-                if (state.weapon.grade === 'legendary' && knuckleHits === 3) huntState.log.push({ type: 'info', text: `👊 트리플 러시!` });
+                const knuckleHits = (state.weapon.grade === 'mythic') ? 4 : (state.weapon.grade === 'legendary') ? 3 : 2;
+                if (state.weapon.grade === 'legendary') huntState.log.push({ type: 'info', text: `👊 트리플 러시!` });
+                if (state.weapon.grade === 'mythic') huntState.log.push({ type: 'info', text: `💥 원펀치 4연격!` });
                 for (let hit = 0; hit < knuckleHits; hit++) {
                     const hitDamage = Math.floor(Math.random() * (player.damageMax - player.damageMin + 1)) + player.damageMin;
                     const hitCrit = window.debugCritMode || (Math.random() * 100 < player.critChance);
                     let hitFinal = hitCrit ? Math.floor(hitDamage * player.critDamage / 100) : hitDamage;
                     hitFinal = Math.floor(hitFinal * elementMult);
+                    // 💫 원펀치(신화 너클): 마지막 타격 ×3
+                    if (state.weapon.grade === 'mythic' && hit === knuckleHits - 1) {
+                        hitFinal = Math.floor(hitFinal * 3);
+                        huntState.log.push({ type: 'crit', text: `💥 일격! 마지막 타격 ×3!!` });
+                    }
                     finalPlayerDamage += hitFinal;
                     if (hitCrit) {
                         knuckleCrits++;
@@ -7522,6 +7564,80 @@
                 }
             }
 
+            // 💫 신화 무기 패시브 적용 (슈퍼크리 외 추가)
+            if (state.weapon.grade === 'mythic') {
+                const myth = huntState._myth || (huntState._myth = { firstHit: true, weakenNext: false });
+                const wtype = state.weapon.type;
+
+                switch (wtype) {
+                    case 'sword': // 에고소드: 5% 흡혈
+                        const soulHeal = Math.floor(finalPlayerDamage * 0.05);
+                        if (soulHeal > 0) {
+                            player.hp = Math.min(player.maxHp, player.hp + soulHeal);
+                            huntState.log.push({ type: 'heal', text: `🩸 피의 맹세! +${soulHeal} HP 흡혈!` });
+                        }
+                        break;
+                    case 'axe': // 세계수의 도끼: 항상 최대 데미지
+                        // getWeaponStats에서 damageMin=damageMax 처리 (아래 별도)
+                        break;
+                    case 'spear': // 롱기누스: 속성 저항 무시 → 항상 1.5배
+                        if (elementMult < 1.5) {
+                            finalPlayerDamage = Math.floor(finalPlayerDamage * (1.5 / Math.max(0.1, elementMult)));
+                            huntState.log.push({ type: 'info', text: `🌟 신성 관통! 저항 무시 1.5배!` });
+                        }
+                        break;
+                    case 'hammer': // 창세의 망치: 첫 공격 항상 크리
+                        if (myth.firstHit && !playerCrit) {
+                            finalPlayerDamage = Math.floor(finalPlayerDamage * player.critDamage / 100);
+                            playerCrit = true;
+                            huntState.log.push({ type: 'crit', text: `🔨 천지개벽! 첫 공격 크리티컬!!` });
+                        }
+                        myth.firstHit = false;
+                        break;
+                    case 'dagger': // 카오스 블레이드: 크리 시 ×2~×5
+                        if (playerCrit) {
+                            const chaosX = 2 + Math.floor(Math.random() * 4);  // 2,3,4,5
+                            finalPlayerDamage = Math.floor(finalPlayerDamage * chaosX);
+                            huntState.log.push({ type: 'crit', text: `🌀 혼돈의 날! 크리 ×${chaosX} 데미지!!` });
+                        }
+                        break;
+                    case 'wand': // 세계수의 완드: 속성 효과 시 추가 데미지 2배
+                        if (elementMult > 1.0) {
+                            const extraElem = Math.floor(finalPlayerDamage * (elementMult - 1.0));
+                            finalPlayerDamage += extraElem;
+                            huntState.log.push({ type: 'crit', text: `⚡ 속성 폭발! +${extraElem.toLocaleString()} 추가!` });
+                        }
+                        break;
+                    case 'katana': // 아마테라스: 크리 시 다음 턴 적 공격력 -50%
+                        if (playerCrit) {
+                            myth.weakenNext = true;
+                            huntState.log.push({ type: 'info', text: `☀️ 태양신 강림! 다음 적 공격력 -50%!` });
+                        }
+                        break;
+                    case 'scythe': // 종언의 낫: HP 33% 이하 ×3
+                        if (monster.currentHp <= monster.maxHp * 0.33) {
+                            finalPlayerDamage = Math.floor(finalPlayerDamage * 3);
+                            huntState.log.push({ type: 'crit', text: `💀 종언! HP 33% 이하 ×3 데미지!!` });
+                        }
+                        break;
+                    case 'bow': // 아르테미스: 크리 시 독 4턴
+                        if (playerCrit && !huntState.monsterPoisoned) {
+                            huntState.monsterPoisoned = 4;
+                            huntState.poisonDamage = Math.floor(finalPlayerDamage * 0.15);
+                            huntState.log.push({ type: 'crit', text: `☠️ 독화살 연격! 4턴 독 적용!` });
+                        }
+                        break;
+                    case 'crossbow': // 신벌: 보스에게 항상 크리
+                        if (monster.isBoss && !playerCrit) {
+                            finalPlayerDamage = Math.floor(finalPlayerDamage * player.critDamage / 100);
+                            playerCrit = true;
+                            huntState.log.push({ type: 'crit', text: `🎯 신의 심판! 보스 항상 크리티컬!` });
+                        }
+                        break;
+                    // 너클(원펀치) 4연타 마무리 ×3 → 너클 섹션 별도 처리
+                }
+            }
+
             // 럭키드로우용: 공격 전 풀피였는지 저장
             const wasAtFullHp = (monster.currentHp === monster.maxHp);
             
@@ -7654,6 +7770,12 @@
                     huntState.log.push({ type: 'info', text: `❄️ ${monster.name}이(가) 얼어붙어 공격하지 못했다!` });
                     renderHunt();
                     return;
+                }
+                // ☀️ 아마테라스 약화 (-50% 공격력)
+                if (huntState._myth?.weakenNext) {
+                    huntState._myth.weakenNext = false;
+                    finalMonsterDamage = Math.floor(finalMonsterDamage * 0.5);
+                    huntState.log.push({ type: 'info', text: `☀️ 태양신의 가호! 적 공격력 -50%!` });
                 }
                 // ⚡ 천둥망치 스턴
                 if (huntState._lgd?.stunNext) {
@@ -7798,6 +7920,13 @@
                 }
             }
             
+            // 💫 아카식 레코드(신화 지팡이): 처치마다 HP 15% 추가 회복
+            if (state.weapon.grade === 'mythic' && state.weapon.type === 'staff') {
+                const mythHeal = Math.floor(huntState.player.maxHp * 0.15);
+                huntState.player.hp = Math.min(huntState.player.maxHp, huntState.player.hp + mythHeal);
+                huntState.log.push({ type: 'heal', text: `📖 영혼 수확! +${mythHeal} HP 회복!` });
+            }
+
             // 🔥 피닉스 지팡이: 연속 사냥 시 HP 100% 회복!
             if (isPhoenixStaff(state.weapon)) {
                 const healAmount = huntState.player.maxHp - huntState.player.hp;
@@ -8065,6 +8194,9 @@
             if (!huntState._lgd) huntState._lgd = {};
             huntState._lgd.hitCount = 0;
             huntState._lgd.tenkenCharged = false;
+            if (!huntState._myth) huntState._myth = {};
+            huntState._myth.firstHit = true;
+            huntState._myth.weakenNext = false;
             renderHunt();
             if (huntState.monster.isBoss) {
                 const cached = huntState.pendingBossDialoguePromise;
@@ -8116,6 +8248,9 @@
             if (!huntState._lgd) huntState._lgd = {};
             huntState._lgd.hitCount = 0;
             huntState._lgd.tenkenCharged = false;
+            if (!huntState._myth) huntState._myth = {};
+            huntState._myth.firstHit = true;
+            huntState._myth.weakenNext = false;
             renderHunt();
             if (huntState.monster.isBoss) {
                 const cached = huntState.pendingBossDialoguePromise;
