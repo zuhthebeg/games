@@ -43,16 +43,16 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .btn-discard{background:var(--red);color:#fff;}
 .btn-tsumo{background:var(--green);color:#0a0f1a;}
 .btn-kan{background:#8b5cf6;color:#fff;}
-.tile{width:32px;height:44px;border-radius:5px;border:1.5px solid #334155;background:#f0f4f8;color:#111;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative;}
+.tile{width:42px;height:58px;border-radius:6px;border:1.5px solid #334155;border-bottom:4px solid #b8a880;background:#f0f4f8;color:#111;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative;box-shadow:0 2px 4px rgba(0,0,0,.3);}
 .tile.hidden{background:#1e3a5f;font-size:0;}
-.tile.hidden::after{content:'🀫';font-size:18px;}
+.tile.hidden::after{content:'🀫';font-size:24px;}
 .tile.flower-tile{background:#fef3c7;border-color:#f59e0b;}
 .tile.wind-tile{background:#e0f2fe;border-color:#0284c7;color:#0c4a6e;}
 .tile.dragon-tile{background:#fce7f3;border-color:#ec4899;color:#831843;}
 .tile.selected{transform:translateY(-10px) scale(1.08);box-shadow:0 6px 20px rgba(255,215,0,.6);border-color:var(--accent)!important;z-index:10;}
-.tile-sm{width:20px;height:28px;border-radius:3px;border:1px solid #334155;background:#f0f4f8;color:#111;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.tile-sm{width:24px;height:33px;border-radius:4px;border:1px solid #334155;background:#f0f4f8;color:#111;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
 .tile-sm.hidden{background:#1e3a5f;font-size:0;}
-.tile-sm.hidden::after{content:'🀫';font-size:11px;}
+.tile-sm.hidden::after{content:'🀫';font-size:14px;}
 .tile-sm.flower-tile{background:#fef3c7;}
 .tile-sm.wind-tile{background:#e0f2fe;color:#0c4a6e;}
 .tile-sm.dragon-tile{background:#fce7f3;color:#831843;}
@@ -85,7 +85,55 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   <h1>🀄 대만 마작</h1>
   <p>인간 1명 + CPU 3명<br>16장 핸드 · 대만 룰</p>
   <button class="big-btn" onclick="startGame()">게임 시작</button>
+  <button class="big-btn" onclick="document.getElementById('howto-overlay').style.display='block'" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);">플레이 방법</button>
   <div id="sw-gold" style="color:var(--accent);font-size:.85rem;margin-top:4px;"></div>
+</div>
+
+<div id="howto-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:500;overflow-y:auto;padding:20px;">
+  <div style="max-width:430px;margin:0 auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <span style="font-size:1.2rem;font-weight:800;">🀄 플레이 방법</span>
+      <button onclick="document.getElementById('howto-overlay').style.display='none'" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-weight:700;">닫기</button>
+    </div>
+    <div style="font-size:.86rem;line-height:1.75;color:var(--text);">
+      <div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;">
+        <div style="color:var(--accent);font-weight:700;margin-bottom:5px;">🎯 목표</div>
+        패 16장으로 <b>5몸통 + 1머리</b>를 완성해 화료(和了)!
+      </div>
+      <div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;">
+        <div style="color:var(--green);font-weight:700;margin-bottom:5px;">🔄 기본 순서</div>
+        1. <b>뽑기</b> — 벽에서 패 1장 (내 차례에 자동)<br>
+        2. <b>버리기</b> — 패 클릭해 선택 → 버리기 버튼<br>
+        3. 반시계 방향으로 4명이 반복
+      </div>
+      <div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;">
+        <div style="color:#f59e0b;font-weight:700;margin-bottom:5px;">✋ 상대 버린 패 가져오기</div>
+        상대가 버릴 때 버튼이 뜹니다:<br>
+        • <span style="color:#ef4444;font-weight:700;">화료</span> — 그 패로 완성 (론 승리)<br>
+        • <span style="color:#f59e0b;font-weight:700;">퐁</span> — 같은 패 3장 (누구 패든)<br>
+        • <span style="color:#3b82f6;font-weight:700;">치</span> — 연속패 3장 (왼쪽 사람 패만)<br>
+        • <span style="color:#8b5cf6;font-weight:700;">깡</span> — 같은 패 4장<br>
+        • <span style="color:var(--muted);">패스</span> — 넘기기
+      </div>
+      <div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;">
+        <div style="color:var(--accent);font-weight:700;margin-bottom:5px;">🃏 몸통 종류</div>
+        • <b>순쯔</b>: 연속 3장 (🀇🀈🀉)<br>
+        • <b>커쯔</b>: 같은 패 3장 (🀇🀇🀇)<br>
+        • <b>깡쯔</b>: 같은 패 4장<br>
+        • <b>머리</b>: 같은 패 2장 (딱 1조)
+      </div>
+      <div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;">
+        <div style="color:#ec4899;font-weight:700;margin-bottom:5px;">🌸 화패</div>
+        春夏秋冬·梅蘭菊竹 뽑으면 자동 공개 + 보충패.<br>
+        자리 일치(정화) 시 추가 점수.
+      </div>
+      <div style="background:var(--panel);border-radius:8px;padding:12px;">
+        <div style="color:var(--green);font-weight:700;margin-bottom:5px;">💰 보상</div>
+        화료 시 <b>타이(台) × 10만 골드</b><br>
+        기본 5타이 + 역 합산 (자모·평화·대대화 등)
+      </div>
+    </div>
+  </div>
 </div>
 <div id="game-container" style="display:none">
   <div id="round-info">
