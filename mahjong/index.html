@@ -449,8 +449,12 @@ const DEF_SET={turnTime:15,claimTime:8,sfx:true,bgm:false};
 let SET=(function(){try{return Object.assign({},DEF_SET,JSON.parse(localStorage.getItem('mahjong_set')||'{}'));}catch(_){return Object.assign({},DEF_SET);}})();
 function saveSet(){try{localStorage.setItem('mahjong_set',JSON.stringify(SET));}catch(_){}}
 // ── 사운드 (실제 오디오는 후속 단계, 지금은 토글만 동작) ──
-const SFX={};
-function playSfx(name){if(!SET.sfx)return;const a=SFX[name];if(a){try{a.currentTime=0;a.play().catch(()=>{});}catch(_){}}}
+const SFX_SRC={discard:'sounds/tile.mp3',claim:'sounds/claim.mp3',win:'sounds/win.mp3'};
+const _sfxCache={};
+function playSfx(name){
+  if(!SET.sfx)return;const src=SFX_SRC[name];if(!src)return;
+  try{let a=_sfxCache[name];if(!a){a=new Audio(src);a.volume=0.55;_sfxCache[name]=a;}a.currentTime=0;a.play().catch(()=>{});}catch(_){}
+}
 // ── 카운트다운 타이머 ──
 let turnTO=null,turnIV=null,claimIV=null;
 function clearTurnTimer(){if(turnTO){clearTimeout(turnTO);turnTO=null;}if(turnIV){clearInterval(turnIV);turnIV=null;}const w=document.getElementById('turn-timer-wrap');if(w)w.style.display='none';}
