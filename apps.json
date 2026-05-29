@@ -1,5 +1,19 @@
 [
   {
+    "title": "대만 마작",
+    "icon": "https://game.cocy.io/mahjong/icon.svg",
+    "url": "https://game.cocy.io/mahjong/",
+    "desc": "대만 마작 (台灣麻將) - 16타일 핸드, 4인 플레이, 타이 × 10만G 보상",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko"
+    ],
+    "category": "classic"
+  },
+  {
     "title": "블랙잭",
     "icon": "https://game.cocy.io/blackjack/icon.svg",
     "url": "https://game.cocy.io/blackjack/",
