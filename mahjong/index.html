@@ -120,7 +120,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   <div id="sw-gold" style="color:var(--accent);font-size:.85rem;margin-top:4px;"></div>
 </div>
 
-<div id="howto-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:500;overflow-y:auto;padding:20px;">
+<div id="howto-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:10001;overflow-y:auto;padding:20px;padding-top:calc(20px + env(safe-area-inset-top));">
   <div style="max-width:430px;margin:0 auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;position:sticky;top:0;background:rgba(0,0,0,.94);padding:10px 0;z-index:1;">
       <span style="font-size:1.2rem;font-weight:800;">🀄 플레이 방법</span>
