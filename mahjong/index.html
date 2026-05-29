@@ -133,6 +133,8 @@ body.mj-fs #sw-bar{display:none !important;}
 #result-overlay.win-fanfare #result-title{animation:winPop .5s ease-out,winGlow 1.3s ease-in-out .5s infinite;}
 @keyframes confFall{0%{transform:translateY(-30px) rotate(0);opacity:0;}10%{opacity:1;}100%{transform:translateY(180px) rotate(360deg);opacity:0;}}
 .conf{position:absolute;top:0;width:8px;height:12px;border-radius:2px;animation:confFall 1.4s linear infinite;}
+@keyframes dealIn{from{transform:translateY(-70px) scale(.55) rotate(-10deg);opacity:0;}70%{opacity:1;}to{transform:translateY(0) scale(1) rotate(0);opacity:1;}}
+.deal-anim{animation:dealIn .34s cubic-bezier(.2,.7,.3,1.2) backwards;}
 </style>
 </head>
 <body>
@@ -538,7 +540,7 @@ function dealAndStart(state){
   for(let p=0;p<4;p++)state.players[p].hand=sortHand(state.players[p].hand);
   state.discards=[[],[],[],[]];state.currentPlayer=dealer;state.phase='discard';
   state.flags={firstDraw:true,firstDiscard:true,isRinshan:false,isHaitei:false};
-  render();scheduleNext(dealer);
+  _dealAnim=true;render();scheduleNext(dealer);
 }
 function processFlowers(state,pidx){
   const p=state.players[pidx];let changed=true;
@@ -757,7 +759,7 @@ function render(){
   for(let p=1;p<=3;p++)renderCpu(p);
   renderDiscards();renderPlayer();
 }
-let _discCounts=[0,0,0,0],_meldCounts=[0,0,0,0];
+let _discCounts=[0,0,0,0],_meldCounts=[0,0,0,0],_dealAnim=false;
 function spawnConfetti(on){
   const ov=document.getElementById('result-overlay');
   ov.querySelectorAll('.conf').forEach(c=>c.remove());
@@ -792,13 +794,14 @@ function renderDiscards(){
 }
 function renderPlayer(){
   const p=G.players[0];const hr=document.getElementById('player-hand-row');hr.innerHTML='';
-  p.hand.forEach(t=>{const d=document.createElement('div');d.className='tile '+tileClass(t)+suitCls(t)+(t===selTile?' selected':'');d.innerHTML=tileFace(t);d.onclick=()=>{if(G.currentPlayer!==0||G.phase!=='discard')return;if(t[0]==='f')return;selTile=(selTile===t)?null:t;renderPlayer();};hr.appendChild(d);});
+  p.hand.forEach((t,i)=>{const d=document.createElement('div');d.className='tile '+tileClass(t)+suitCls(t)+(t===selTile?' selected':'');if(_dealAnim){d.classList.add('deal-anim');d.style.animationDelay=(i*0.035).toFixed(3)+'s';}d.innerHTML=tileFace(t);d.onclick=()=>{if(G.currentPlayer!==0||G.phase!=='discard')return;if(t[0]==='f')return;selTile=(selTile===t)?null:t;renderPlayer();};hr.appendChild(d);});
   const me=document.getElementById('player-melds');me.innerHTML='';
   const newMeldC=p.melds.length>_meldCounts[0];
   p.melds.forEach((m,j)=>{const g=document.createElement('div');g.className='meld-group';const animNew=newMeldC&&j===p.melds.length-1;m.tiles.forEach((tt,k)=>{const s=document.createElement('div');s.className='tile-sm '+tileClass(tt)+suitCls(tt);s.innerHTML=tileFace(tt);if(animNew){s.classList.add(m.type==='ankan'?'ankan-anim':'meld-anim');s.style.animationDelay=(k*0.07)+'s';}g.appendChild(s);});me.appendChild(g);});
   _meldCounts[0]=p.melds.length;
   const fe=document.getElementById('player-flowers');fe.innerHTML='';
   for(const f of p.flowers){const s=document.createElement('div');s.className='tile-sm flower-tile';s.innerHTML=tileFace(f);fe.appendChild(s);}
+  _dealAnim=false;
 }
 
 function showToast(msg,ms=2200){const el=document.getElementById('msg-toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),ms);}
@@ -833,7 +836,7 @@ function openMultiplayer(){
   MP.ui.show();
 }
 function mpStart(roomState){
-  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();
+  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();_dealAnim=true;
   MP.client.onEvent=()=>mpRefresh();
   document.getElementById('mp-lobby').style.display='none';
   document.getElementById('mp-lobby').innerHTML='';
@@ -919,7 +922,7 @@ function mpShowResult(gs){
   const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
   ov.classList.add('on');
 }
-async function mpRematch(){try{await MP.client.rematch();showToast(t('waiting'));}catch(e){showToast('재시작 실패');}document.getElementById('result-overlay').classList.remove('on','win-fanfare');spawnConfetti(false);}
+async function mpRematch(){try{await MP.client.rematch();_dealAnim=true;showToast(t('waiting'));}catch(e){showToast('재시작 실패');}document.getElementById('result-overlay').classList.remove('on','win-fanfare');spawnConfetti(false);}
 async function mpLeave(){MP.active=false;try{if(MP.client)await MP.client.leaveRoom();}catch(_){}MP.client=null;MP.ui=null;
   document.getElementById('result-overlay').classList.remove('win-fanfare');spawnConfetti(false);
   ['result-overlay','claim-overlay','chi-overlay'].forEach(id=>document.getElementById(id).classList.remove('on'));
