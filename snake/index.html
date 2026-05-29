@@ -273,14 +273,7 @@
 </head>
 <body>
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px 2px;">
-        <h1 style="margin:0;">🐍 스네이크</h1>
-        <button id="rank-nav-btn" onclick="GameRankings.showModal('snake')" style="
-            background:rgba(255,215,0,0.15);border:1px solid rgba(255,215,0,0.35);
-            color:#ffd700;border-radius:8px;padding:5px 12px;font-size:0.8rem;
-            cursor:pointer;font-weight:600;white-space:nowrap;
-        ">🏆 랭킹</button>
-    </div>
+    <h1>🐍 스네이크</h1>
 
     <div class="stats">
         <div class="stat">
@@ -919,6 +912,11 @@
         
         // Initial draw
         draw();
+
+        // 🏆 글로벌 네비에 랭킹 버튼 삽입
+        if (typeof GameRankings !== 'undefined') {
+            GameRankings.injectNavButton('snake');
+        }
     </script>
     <script src="/lib/site-meta.js"></script>
     <script>
