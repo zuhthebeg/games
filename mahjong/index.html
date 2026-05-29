@@ -7,1761 +7,539 @@
 <script src="/lib/shared-wallet.js?v=20260524a"></script>
 <script src="/lib/multiplayer.js?v=20260524a"></script>
 <style>
-:root {
-  --bg: #0a0f1a;
-  --panel: #111827;
-  --panel2: #1f2937;
-  --border: rgba(255,255,255,0.08);
-  --text: #e5e7eb;
-  --muted: #6b7280;
-  --accent: #3b82f6;
-  --gold: #f59e0b;
-  --green: #10b981;
-  --red: #ef4444;
-  --tile-bg: #f5f0e8;
-  --tile-border: #d4c9a8;
-  --tile-text: #1a1008;
-  --tile-man: #c0392b;
-  --tile-pin: #2980b9;
-  --tile-sou: #27ae60;
-  --tile-honor: #8e44ad;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  min-height: 100vh;
-  overflow: hidden;
-  user-select: none;
-  padding-top: calc(48px + env(safe-area-inset-top));
-}
-
-/* ===== SCREENS ===== */
-.screen { display: none; width: 100%; height: calc(100vh - 48px - env(safe-area-inset-top)); overflow: hidden; }
-.screen.active { display: flex; flex-direction: column; }
-
-/* ===== START SCREEN ===== */
-#start-screen {
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  background: radial-gradient(ellipse at center, #1a2535 0%, var(--bg) 70%);
-}
-.logo { font-size: 3rem; letter-spacing: 4px; }
-.logo-sub { color: var(--muted); font-size: 0.85rem; letter-spacing: 2px; }
-.btn { padding: 12px 32px; border-radius: 8px; border: none; font-size: 1rem; cursor: pointer; transition: all 0.15s; font-weight: 600; }
-.btn-primary { background: var(--accent); color: white; }
-.btn-primary:hover { background: #2563eb; }
-.btn-secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
-.btn-sm { padding: 8px 16px; font-size: 0.85rem; }
-.start-info { color: var(--muted); font-size: 0.8rem; text-align: center; line-height: 1.6; }
-
-/* ===== GAME SCREEN ===== */
-#game-screen { flex-direction: column; }
-
-/* Round info bar */
-#round-bar {
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  padding: 6px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.78rem;
-  flex-shrink: 0;
-}
-.round-info { color: var(--gold); font-weight: 700; }
-.wall-count { color: var(--muted); }
-.score-mini { display: flex; gap: 12px; }
-.score-mini span { font-size: 0.72rem; }
-
-/* Game table */
-#game-table {
-  flex: 1;
-  display: grid;
-  grid-template-rows: auto 1fr auto auto;
-  grid-template-columns: 60px 1fr 60px;
-  gap: 4px;
-  padding: 4px;
-  overflow: hidden;
-  min-height: 0;
-}
-
-/* CPU areas */
-.cpu-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.cpu-area.top {
-  grid-column: 1 / 4;
-  grid-row: 1;
-  flex-direction: column;
-}
-.cpu-area.left { grid-column: 1; grid-row: 2; justify-content: center; }
-.cpu-area.right { grid-column: 3; grid-row: 2; justify-content: center; }
-
-.cpu-label {
-  font-size: 0.65rem;
-  color: var(--muted);
-  white-space: nowrap;
-}
-.cpu-score-label { font-size: 0.65rem; color: var(--gold); }
-
-/* CPU hand - face down */
-.cpu-hand { display: flex; gap: 1px; flex-wrap: wrap; justify-content: center; }
-.cpu-hand.vertical { flex-direction: column; align-items: center; }
-
-.tile-back {
-  width: 18px; height: 26px;
-  background: linear-gradient(135deg, #1e3a5f, #0d2137);
-  border: 1px solid #2a4a6f;
-  border-radius: 3px;
-  font-size: 10px;
-  display: flex; align-items: center; justify-content: center;
-  color: #2a4a6f;
-}
-.tile-back.sm { width: 14px; height: 20px; }
-
-/* Center area */
-#center-area {
-  grid-column: 2;
-  grid-row: 2;
-  background: rgba(0,0,0,0.2);
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  display: grid;
-  grid-template-rows: 1fr 20px 1fr;
-  grid-template-columns: 1fr 20px 1fr;
-  overflow: hidden;
-}
-.discard-zone {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  padding: 4px;
-  align-content: flex-start;
-  overflow: hidden;
-}
-.discard-zone.p0 { grid-column: 2; grid-row: 3; align-content: flex-end; justify-content: center; }
-.discard-zone.p1 { grid-column: 1; grid-row: 2; align-content: center; }
-.discard-zone.p2 { grid-column: 2; grid-row: 1; align-content: flex-start; justify-content: center; }
-.discard-zone.p3 { grid-column: 3; grid-row: 2; align-content: center; justify-content: flex-end; }
-.center-dora {
-  grid-column: 2; grid-row: 2;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.6rem; color: var(--muted);
-  flex-direction: column; gap: 2px;
-}
-
-/* CPU open melds */
-.cpu-melds { display: flex; gap: 1px; flex-wrap: wrap; }
-
-/* Player hand area */
-#player-area {
-  grid-column: 1 / 4;
-  grid-row: 4;
-  background: var(--panel);
-  border-top: 1px solid var(--border);
-  padding: 6px;
-  flex-shrink: 0;
-}
-.player-info-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
-  font-size: 0.75rem;
-}
-.player-name { font-weight: 700; }
-.player-score { color: var(--gold); }
-.player-wind { color: var(--muted); font-size: 0.65rem; }
-
-/* Player hand tiles */
-#player-hand {
-  display: flex;
-  gap: 3px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  -webkit-overflow-scrolling: touch;
-}
-#player-hand::-webkit-scrollbar { height: 3px; }
-#player-hand::-webkit-scrollbar-track { background: transparent; }
-#player-hand::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-/* Tile styles */
-.tile {
-  min-width: 32px; width: 32px; height: 44px;
-  background: var(--tile-bg);
-  border: 1px solid var(--tile-border);
-  border-bottom: 3px solid var(--tile-border);
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s;
-  flex-shrink: 0;
-  font-size: 18px;
-  line-height: 1;
-  position: relative;
-}
-.tile:hover { transform: translateY(-4px); box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
-.tile.selected { transform: translateY(-8px); box-shadow: 0 6px 12px rgba(59,130,246,0.5); border-color: var(--accent); }
-.tile.just-drawn { border-color: var(--green); box-shadow: 0 0 6px rgba(16,185,129,0.4); }
-.tile.discard-tile {
-  width: 18px; min-width: 18px; height: 26px;
-  font-size: 10px; border-width: 1px; border-bottom-width: 2px;
-  cursor: default;
-}
-.tile.discard-tile:hover { transform: none; box-shadow: none; }
-.tile.sm {
-  min-width: 22px; width: 22px; height: 30px;
-  font-size: 13px; border-bottom-width: 2px;
-  cursor: default;
-}
-.tile.man { color: var(--tile-man); }
-.tile.pin { color: var(--tile-pin); }
-.tile.sou { color: var(--tile-sou); }
-.tile.honor, .tile.flower { color: var(--tile-honor); font-size: 11px; }
-.tile-label { font-size: 7px; color: var(--muted); line-height: 1; margin-top: 1px; }
-
-/* Player melds */
-#player-melds {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 4px;
-}
-.meld-group { display: flex; gap: 1px; }
-
-/* Player flowers */
-#player-flowers { display: flex; gap: 2px; margin-top: 2px; flex-wrap: wrap; }
-
-/* Action buttons */
-#action-buttons {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-}
-.action-btn {
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: none;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-.btn-discard { background: var(--accent); color: white; }
-.btn-tsumo { background: var(--green); color: white; }
-.btn-kan { background: #7c3aed; color: white; }
-.btn-pass { background: var(--panel2); color: var(--muted); border: 1px solid var(--border); }
-
-/* ===== CLAIM OVERLAY ===== */
-#claim-overlay {
-  display: none;
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  background: rgba(0,0,0,0.85);
-  padding: 16px;
-  z-index: 100;
-  border-top: 1px solid var(--border);
-  animation: slideUp 0.2s ease;
-}
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-#claim-overlay.show { display: block; }
-.claim-title { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; }
-.claim-tile-show { display: flex; justify-content: center; margin-bottom: 10px; gap: 4px; }
-.claim-buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.claim-btn {
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: none;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  min-width: 80px;
-}
-.claim-btn-ron { background: #dc2626; color: white; }
-.claim-btn-pon { background: #d97706; color: white; }
-.claim-btn-chi { background: #0891b2; color: white; }
-.claim-btn-kan { background: #7c3aed; color: white; }
-.claim-btn-pass { background: var(--panel2); color: var(--muted); border: 1px solid var(--border); }
-
-/* ===== RESULT OVERLAY ===== */
-#result-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.9);
-  z-index: 200;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-}
-#result-overlay.show { display: flex; }
-.result-card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-  width: 100%;
-  max-width: 360px;
-}
-.result-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 12px; text-align: center; }
-.result-title.win { color: var(--green); }
-.result-title.lose { color: var(--red); }
-.result-title.draw { color: var(--gold); }
-.yaku-list { margin: 8px 0; }
-.yaku-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
-.yaku-name { color: var(--text); }
-.yaku-tai { color: var(--gold); font-weight: 700; }
-.result-total { font-size: 1.1rem; font-weight: 800; color: var(--gold); text-align: center; margin-top: 10px; }
-.result-gold { font-size: 1rem; color: var(--green); text-align: center; }
-.result-scores { margin-top: 12px; }
-.score-change-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 2px 0; }
-
-/* ===== LOG ===== */
-#game-log {
-  position: fixed;
-  top: calc(48px + env(safe-area-inset-top) + 32px);
-  right: 8px;
-  width: 140px;
-  max-height: 100px;
-  overflow: hidden;
-  font-size: 0.65rem;
-  color: var(--muted);
-  pointer-events: none;
-  z-index: 50;
-}
-.log-line { padding: 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.log-line.win { color: var(--green); }
-.log-line.action { color: var(--accent); }
-
-/* ===== TURN INDICATOR ===== */
-.turn-indicator {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 6px var(--green);
-  animation: pulse 1s infinite;
-  display: inline-block;
-  margin-right: 4px;
-}
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-/* ===== TIMER BAR ===== */
-#timer-bar {
-  height: 2px;
-  background: var(--accent);
-  transition: width 0.1s linear;
-  position: fixed;
-  top: calc(48px + env(safe-area-inset-top));
-  left: 0;
-  z-index: 150;
-}
-
-/* Dealer badge */
-.dealer-badge {
-  background: var(--gold);
-  color: #000;
-  font-size: 0.6rem;
-  font-weight: 800;
-  padding: 1px 4px;
-  border-radius: 3px;
-}
-
-/* Riichi / waiting indicator */
-.tenpai-badge {
-  background: var(--green);
-  color: white;
-  font-size: 0.6rem;
-  padding: 1px 4px;
-  border-radius: 3px;
-  animation: pulse 1s infinite;
-}
+:root{--bg:#0a0f1a;--panel:#111827;--panel2:#1f2937;--line:#334155;--text:#f1f5f9;--muted:#64748b;--accent:#ffd700;--green:#4ecca3;--red:#ef4444;--blue:#3b82f6;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100dvh;overflow:hidden;display:flex;flex-direction:column;padding-top:calc(48px + env(safe-area-inset-top));touch-action:manipulation;user-select:none;}
+#start-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:100;padding-top:calc(48px + env(safe-area-inset-top));}
+#start-screen h1{font-size:2.5rem;color:var(--accent);text-shadow:0 0 20px rgba(255,215,0,.4);}
+#start-screen p{color:var(--muted);font-size:.95rem;text-align:center;}
+.big-btn{padding:14px 40px;font-size:1.2rem;font-weight:700;background:var(--accent);color:#0a0f1a;border:none;border-radius:12px;cursor:pointer;box-shadow:0 4px 20px rgba(255,215,0,.3);}
+.big-btn:active{transform:scale(.96);}
+#game-container{display:flex;flex-direction:column;height:100%;overflow:hidden;}
+#round-info{display:flex;align-items:center;justify-content:space-between;padding:4px 12px;background:var(--panel);border-bottom:1px solid var(--line);font-size:.78rem;flex-shrink:0;gap:8px;flex-wrap:wrap;}
+.ri-item{display:flex;flex-direction:column;align-items:center;}
+.ri-label{color:var(--muted);font-size:.65rem;}
+.ri-val{font-weight:700;color:var(--accent);}
+#score-row{display:flex;gap:6px;flex-wrap:wrap;}
+.score-chip{background:var(--panel2);border-radius:6px;padding:2px 6px;font-size:.7rem;border:1px solid var(--line);}
+.score-chip.dealer{border-color:var(--accent);color:var(--accent);}
+#opponent-areas{display:grid;grid-template-columns:52px 1fr 52px;grid-template-rows:auto 1fr;flex:1;min-height:0;overflow:hidden;padding:4px;gap:4px;}
+.cpu-area{display:flex;flex-direction:column;align-items:center;background:var(--panel);border-radius:8px;padding:4px;overflow:hidden;min-width:0;}
+.cpu-area.top{grid-column:2;grid-row:1;}
+.cpu-area.left{grid-column:1;grid-row:1/3;justify-content:center;}
+.cpu-area.right{grid-column:3;grid-row:1/3;justify-content:center;}
+.cpu-name{font-size:.68rem;color:var(--muted);margin-bottom:2px;white-space:nowrap;}
+.cpu-name.active{color:var(--green);font-weight:700;}
+.cpu-hand{display:flex;flex-wrap:wrap;gap:1px;justify-content:center;}
+.cpu-area.left .cpu-hand,.cpu-area.right .cpu-hand{flex-direction:column;}
+.cpu-melds,.cpu-flowers{display:flex;flex-wrap:wrap;gap:2px;margin-top:2px;justify-content:center;}
+#center-area{grid-column:2;grid-row:2;background:var(--panel2);border-radius:8px;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;min-height:0;}
+.discard-pool{display:flex;flex-wrap:wrap;gap:2px;padding:4px;overflow:hidden;align-content:flex-start;}
+#player-area{background:var(--panel);border-top:1px solid var(--line);padding:6px 8px;flex-shrink:0;display:flex;flex-direction:column;gap:5px;}
+#player-hand-row{display:flex;gap:3px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--line) transparent;}
+#action-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.action-btn{padding:8px 12px;font-size:.82rem;font-weight:700;border:none;border-radius:8px;cursor:pointer;flex:1;min-width:56px;}
+.action-btn:disabled{opacity:.3;cursor:not-allowed;}
+.btn-discard{background:var(--red);color:#fff;}
+.btn-tsumo{background:var(--green);color:#0a0f1a;}
+.btn-kan{background:#8b5cf6;color:#fff;}
+.tile{width:32px;height:44px;border-radius:5px;border:1.5px solid #334155;background:#f0f4f8;color:#111;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative;}
+.tile.hidden{background:#1e3a5f;font-size:0;}
+.tile.hidden::after{content:'🀫';font-size:18px;}
+.tile.flower-tile{background:#fef3c7;border-color:#f59e0b;}
+.tile.wind-tile{background:#e0f2fe;border-color:#0284c7;color:#0c4a6e;}
+.tile.dragon-tile{background:#fce7f3;border-color:#ec4899;color:#831843;}
+.tile.selected{transform:translateY(-10px) scale(1.08);box-shadow:0 6px 20px rgba(255,215,0,.6);border-color:var(--accent)!important;z-index:10;}
+.tile-sm{width:20px;height:28px;border-radius:3px;border:1px solid #334155;background:#f0f4f8;color:#111;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.tile-sm.hidden{background:#1e3a5f;font-size:0;}
+.tile-sm.hidden::after{content:'🀫';font-size:11px;}
+.tile-sm.flower-tile{background:#fef3c7;}
+.tile-sm.wind-tile{background:#e0f2fe;color:#0c4a6e;}
+.tile-sm.dragon-tile{background:#fce7f3;color:#831843;}
+.tile-sm.last{box-shadow:0 0 6px rgba(255,80,80,.8);border-color:#ef4444;}
+.meld-group{display:flex;gap:1px;padding:1px 2px;background:rgba(255,255,255,.06);border-radius:3px;}
+#claim-overlay,#chi-overlay,#result-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:50;gap:12px;}
+#claim-overlay.on,#chi-overlay.on,#result-overlay.on{display:flex;}
+.overlay-title{font-size:1.1rem;font-weight:700;color:var(--accent);}
+.overlay-sub{font-size:.82rem;color:var(--muted);}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.cbtn{padding:12px 22px;font-size:1rem;font-weight:700;border:none;border-radius:10px;cursor:pointer;min-width:80px;}
+.cbtn:active{transform:scale(.95);}
+.c-ron{background:#ef4444;color:#fff;}
+.c-pon{background:#f59e0b;color:#0a0f1a;}
+.c-chi{background:#3b82f6;color:#fff;}
+.c-kan{background:#8b5cf6;color:#fff;}
+.c-pass{background:var(--panel2);color:var(--muted);border:1px solid var(--line);}
+.chi-opt{display:flex;gap:2px;background:var(--panel);border:2px solid var(--blue);border-radius:8px;padding:8px;cursor:pointer;}
+.chi-opt:hover{border-color:var(--accent);}
+#result-title{font-size:1.8rem;font-weight:900;color:var(--accent);}
+#result-detail{color:var(--text);font-size:.9rem;text-align:center;line-height:1.8;max-width:340px;}
+.next-btn{padding:12px 32px;font-size:1rem;font-weight:700;background:var(--accent);color:#0a0f1a;border:none;border-radius:10px;cursor:pointer;margin-top:8px;}
+#msg-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--panel2);color:var(--text);padding:7px 18px;border-radius:20px;font-size:.82rem;opacity:0;transition:opacity .3s;z-index:70;border:1px solid var(--line);pointer-events:none;white-space:nowrap;}
+#msg-toast.show{opacity:1;}
+#turn-indicator{font-size:.7rem;color:var(--muted);text-align:center;padding:2px 0;}
 </style>
 </head>
 <body>
-
-<!-- Start Screen -->
-<div id="start-screen" class="screen active">
-  <div class="logo">🀄 대만 마작</div>
-  <div class="logo-sub">台灣麻將</div>
-  <button class="btn btn-primary" onclick="startGame()">게임 시작</button>
-  <div class="start-info">
-    4인 플레이 (인간 1 + CPU 3)<br>
-    화료 시 획득 타이 × 10만 골드 보상<br>
-    대만 마작 룰 · 16타일 핸드
-  </div>
+<div id="start-screen">
+  <h1>🀄 대만 마작</h1>
+  <p>인간 1명 + CPU 3명<br>16장 핸드 · 대만 룰</p>
+  <button class="big-btn" onclick="startGame()">게임 시작</button>
+  <div id="sw-gold" style="color:var(--accent);font-size:.85rem;margin-top:4px;"></div>
 </div>
-
-<!-- Game Screen -->
-<div id="game-screen" class="screen">
-  <div id="round-bar">
-    <span class="round-info" id="round-text">동1국</span>
-    <span class="wall-count" id="wall-text">잔여 <span id="wall-count">0</span>장</span>
-    <div class="score-mini" id="score-mini"></div>
+<div id="game-container" style="display:none">
+  <div id="round-info">
+    <div class="ri-item"><span class="ri-label">국</span><span class="ri-val" id="ri-round">동1국</span></div>
+    <div class="ri-item"><span class="ri-label">잔여</span><span class="ri-val" id="ri-wall">0</span></div>
+    <div class="ri-item"><span class="ri-label">본장</span><span class="ri-val" id="ri-honba">0</span></div>
+    <div id="score-row"></div>
   </div>
-  <div id="timer-bar" style="width:0%"></div>
-  <div id="game-log"></div>
-
-  <div id="game-table">
-    <!-- CPU 2 (top, opposite) -->
-    <div class="cpu-area top" id="cpu2-area">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <span class="cpu-label" id="cpu2-name">CPU 서</span>
-        <span class="cpu-score-label" id="cpu2-score">50000</span>
-        <span id="cpu2-dealer"></span>
-        <span id="cpu2-tenpai"></span>
-      </div>
-      <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;justify-content:center;">
-        <div class="cpu-hand" id="cpu2-hand"></div>
-        <div class="cpu-melds" id="cpu2-melds"></div>
-      </div>
-      <div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;" id="cpu2-flowers"></div>
+  <div id="opponent-areas">
+    <div class="cpu-area left" id="area-p1">
+      <div class="cpu-name" id="name-p1">CPU 남</div>
+      <div class="cpu-flowers" id="flowers-p1"></div>
+      <div class="cpu-melds" id="melds-p1"></div>
+      <div class="cpu-hand" id="hand-p1"></div>
     </div>
-
-    <!-- CPU 1 (left) -->
-    <div class="cpu-area left" id="cpu1-area">
-      <span class="cpu-label" id="cpu1-name">CPU 남</span>
-      <span class="cpu-score-label" id="cpu1-score">50000</span>
-      <span id="cpu1-dealer"></span>
-      <div class="cpu-hand vertical" id="cpu1-hand"></div>
-      <div class="cpu-melds" id="cpu1-melds" style="flex-direction:column;"></div>
-      <div id="cpu1-flowers"></div>
+    <div class="cpu-area top" id="area-p2">
+      <div class="cpu-name" id="name-p2">CPU 서</div>
+      <div class="cpu-flowers" id="flowers-p2"></div>
+      <div class="cpu-melds" id="melds-p2"></div>
+      <div class="cpu-hand" id="hand-p2"></div>
     </div>
-
-    <!-- Center area with discard piles -->
     <div id="center-area">
-      <div class="discard-zone p2" id="discard-p2"></div>
-      <div class="center-dora" id="center-info">
-        <span id="current-player-label">—</span>
-      </div>
-      <div class="discard-zone p0" id="discard-p0"></div>
-      <div class="discard-zone p1" id="discard-p1"></div>
-      <div class="discard-zone p3" id="discard-p3"></div>
+      <div class="discard-pool" id="discards-center"></div>
     </div>
-
-    <!-- CPU 3 (right) -->
-    <div class="cpu-area right" id="cpu3-area">
-      <span class="cpu-label" id="cpu3-name">CPU 북</span>
-      <span class="cpu-score-label" id="cpu3-score">50000</span>
-      <span id="cpu3-dealer"></span>
-      <div class="cpu-hand vertical" id="cpu3-hand"></div>
-      <div class="cpu-melds" id="cpu3-melds" style="flex-direction:column;"></div>
-      <div id="cpu3-flowers"></div>
+    <div class="cpu-area right" id="area-p3">
+      <div class="cpu-name" id="name-p3">CPU 북</div>
+      <div class="cpu-flowers" id="flowers-p3"></div>
+      <div class="cpu-melds" id="melds-p3"></div>
+      <div class="cpu-hand" id="hand-p3"></div>
     </div>
-
-    <!-- Player hand (bottom) -->
-    <div id="player-area">
-      <div class="player-info-row">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span class="turn-indicator" id="player-turn-dot" style="display:none"></span>
-          <span class="player-name" id="player-name">나</span>
-          <span id="player-dealer"></span>
-          <span class="player-wind" id="player-wind">동</span>
-          <span id="player-tenpai"></span>
-        </div>
-        <span class="player-score" id="player-score">50000</span>
-      </div>
-      <div id="player-hand"></div>
-      <div id="player-melds"></div>
-      <div id="player-flowers"></div>
-      <div id="action-buttons">
-        <button class="action-btn btn-discard" id="btn-discard" onclick="playerDiscard()" disabled>버리기</button>
-        <button class="action-btn btn-tsumo" id="btn-tsumo" onclick="playerTsumo()" disabled>자모!</button>
-        <button class="action-btn btn-kan" id="btn-kan" onclick="playerKan()" disabled>깡</button>
-      </div>
+  </div>
+  <div id="player-area">
+    <div id="turn-indicator">-</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:.7rem;color:var(--muted)">화패</span>
+      <div id="player-flowers" style="display:flex;gap:2px;"></div>
+      <div id="player-melds" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+    </div>
+    <div id="player-hand-row"></div>
+    <div id="action-btns">
+      <button class="action-btn btn-discard" id="btn-discard" onclick="humanDiscard()" disabled>버리기</button>
+      <button class="action-btn btn-tsumo" id="btn-tsumo" onclick="humanTsumo()" disabled>자모</button>
+      <button class="action-btn btn-kan" id="btn-kan" onclick="humanKan()" disabled>깡</button>
     </div>
   </div>
 </div>
-
-<!-- Claim Overlay -->
 <div id="claim-overlay">
-  <div class="claim-title">선언하시겠습니까?</div>
-  <div class="claim-tile-show" id="claim-tile-show"></div>
-  <div class="claim-buttons" id="claim-buttons"></div>
+  <div class="overlay-title" id="claim-title">클레임 선택</div>
+  <div class="overlay-sub" id="claim-sub"></div>
+  <div class="btn-row" id="claim-btns"></div>
 </div>
-
-<!-- Result Overlay -->
+<div id="chi-overlay">
+  <div class="overlay-title">치 조합 선택</div>
+  <div class="btn-row" id="chi-opts"></div>
+  <button class="cbtn c-pass" onclick="cancelChi()">취소</button>
+</div>
 <div id="result-overlay">
-  <div class="result-card" id="result-card"></div>
-  <button class="btn btn-primary" onclick="nextRound()">다음 라운드</button>
-  <button class="btn btn-secondary btn-sm" onclick="backToTitle()">처음으로</button>
+  <div id="result-title"></div>
+  <div id="result-detail"></div>
+  <button class="next-btn" id="result-next" onclick="nextRound()">다음 라운드</button>
 </div>
-
+<div id="msg-toast"></div>
 <script>
-// =====================================================
-// TILE ENGINE
-// =====================================================
-const TILE_SUITS = ['m','p','s'];
-const WIND_NAMES = ['東','南','西','北'];
-const DRAGON_NAMES = {z5:'白',z6:'發',z7:'中'};
-const FLOWER_NAMES = {f1:'春',f2:'夏',f3:'秋',f4:'冬',f5:'梅',f6:'蘭',f7:'菊',f8:'竹'};
+const RELAY_URL='';
+const TE={m1:'🀇',m2:'🀈',m3:'🀉',m4:'🀊',m5:'🀋',m6:'🀌',m7:'🀍',m8:'🀎',m9:'🀏',p1:'🀙',p2:'🀚',p3:'🀛',p4:'🀜',p5:'🀝',p6:'🀞',p7:'🀟',p8:'🀠',p9:'🀡',s1:'🀐',s2:'🀑',s3:'🀒',s4:'🀓',s5:'🀔',s6:'🀕',s7:'🀖',s8:'🀗',s9:'🀘',z1:'東',z2:'南',z3:'西',z4:'北',z5:'白',z6:'發',z7:'中',f1:'春',f2:'夏',f3:'秋',f4:'冬',f5:'梅',f6:'蘭',f7:'菊',f8:'竹'};
+const WL=['동','남','서','북'];
+function td(id){return TE[id]||id;}
+function suit(id){return id[0];}
+function num(id){return parseInt(id.slice(1));}
+function isFlower(id){return id[0]==='f';}
+function isTerminal(id){return'mps'.includes(suit(id))&&(num(id)===1||num(id)===9);}
+function isSimple(id){return'mps'.includes(suit(id))&&num(id)>=2&&num(id)<=8;}
+function tileClass(id){if(!id)return'';const s=suit(id);if(s==='f')return'flower-tile';if(s==='z')return num(id)<=4?'wind-tile':'dragon-tile';return'';}
+function sortHand(h){const o={m:0,p:1,s:2,z:3,f:4};return[...h].sort((a,b)=>{const sa=o[a[0]]??5,sb=o[b[0]]??5;return sa!==sb?sa-sb:num(a)-num(b);});}
+function countMap(t){const c={};for(const x of t)c[x]=(c[x]||0)+1;return c;}
+function removeN(arr,tile,n){const r=[...arr];let rem=n;for(let i=r.length-1;i>=0&&rem>0;i--)if(r[i]===tile){r.splice(i,1);rem--;}return r;}
 
-// Mahjong tile unicode block
-const TILE_UNICODE = {
-  m1:'🀇',m2:'🀈',m3:'🀉',m4:'🀊',m5:'🀋',m6:'🀌',m7:'🀍',m8:'🀎',m9:'🀏',
-  p1:'🀙',p2:'🀚',p3:'🀛',p4:'🀜',p5:'🀝',p6:'🀞',p7:'🀟',p8:'🀠',p9:'🀡',
-  s1:'🀐',s2:'🀑',s3:'🀒',s4:'🀓',s5:'🀔',s6:'🀕',s7:'🀖',s8:'🀗',s9:'🀘',
-  z1:'東',z2:'南',z3:'西',z4:'北',z5:'白',z6:'發',z7:'中',
-  f1:'春',f2:'夏',f3:'秋',f4:'冬',f5:'梅',f6:'蘭',f7:'菊',f8:'竹'
-};
+function buildWall(){const t=[];for(const s of['m','p','s'])for(let n=1;n<=9;n++)for(let k=0;k<4;k++)t.push(s+n);for(let n=1;n<=7;n++)for(let k=0;k<4;k++)t.push('z'+n);for(let n=1;n<=8;n++)t.push('f'+n);return t;}
+function shuffle(a){const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
 
-function tileClass(t) {
-  if (!t) return '';
-  const s = t[0];
-  if (s === 'm') return 'man';
-  if (s === 'p') return 'pin';
-  if (s === 's') return 'sou';
-  if (s === 'z') return 'honor';
-  if (s === 'f') return 'flower';
-  return '';
-}
-
-function tileSuit(t) { return t ? t[0] : ''; }
-function tileNum(t) { return t ? parseInt(t.slice(1)) : 0; }
-function isFlower(t) { return t && t[0] === 'f'; }
-function isHonor(t) { return t && (t[0] === 'z'); }
-function isTerminal(t) { if (isHonor(t)) return false; const n = tileNum(t); return n === 1 || n === 9; }
-function isYaochu(t) { return isHonor(t) || isTerminal(t); }
-
-function buildWall() {
-  const tiles = [];
-  // 수패 (man, pin, sou) × 4
-  for (const s of ['m','p','s']) {
-    for (let n = 1; n <= 9; n++) {
-      for (let i = 0; i < 4; i++) tiles.push(s + n);
-    }
-  }
-  // 바람패 × 4
-  for (let n = 1; n <= 4; n++) {
-    for (let i = 0; i < 4; i++) tiles.push('z' + n);
-  }
-  // 삼원패 × 4
-  for (let n = 5; n <= 7; n++) {
-    for (let i = 0; i < 4; i++) tiles.push('z' + n);
-  }
-  // 화패 × 1 each
-  for (let n = 1; n <= 8; n++) tiles.push('f' + n);
-  return shuffle(tiles);
-}
-
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function sortHand(hand) {
-  return [...hand].sort((a, b) => {
-    const order = ['m','p','s','z','f'];
-    const ai = order.indexOf(a[0]), bi = order.indexOf(b[0]);
-    if (ai !== bi) return ai - bi;
-    return tileNum(a) - tileNum(b);
-  });
-}
-
-// =====================================================
-// WIN DETECTION (화료 판정)
-// =====================================================
-
-// Check if tiles can form all melds (순쯔/커쯔)
-function canFormMelds(tiles) {
-  if (tiles.length === 0) return true;
-  const sorted = [...tiles].sort();
-  const first = sorted[0];
-  // 커쯔 시도 (3장 같은 패)
-  if (sorted.filter(t => t === first).length >= 3) {
-    const rest = removeFromArr(sorted, [first, first, first]);
-    if (canFormMelds(rest)) return true;
-  }
-  // 순쯔 시도 (연속 3장, 수패만)
-  const s = tileSuit(first);
-  if (s === 'm' || s === 'p' || s === 's') {
-    const n = tileNum(first);
-    const t2 = s + (n + 1), t3 = s + (n + 2);
-    if (sorted.includes(t2) && sorted.includes(t3)) {
-      const rest = removeFromArr(sorted, [first, t2, t3]);
-      if (canFormMelds(rest)) return true;
-    }
-  }
+function canWin(hand,melds){
+  const needed=5-melds.length;if(needed<0)return false;
+  if(needed===5&&sevenPairs(hand))return true;
+  if(needed===5&&thirteenOrphans(hand))return true;
+  const c=countMap(hand);
+  for(const t of Object.keys(c)){if(c[t]>=2){const rest=removeN(hand,t,2);if(canFormSets(rest,needed))return true;}}
   return false;
 }
-
-function removeFromArr(arr, remove) {
-  const a = [...arr];
-  for (const r of remove) {
-    const idx = a.indexOf(r);
-    if (idx >= 0) a.splice(idx, 1);
-  }
-  return a;
-}
-
-// 화료 판정: hand(비공개) + melds(공개), 총 16장 or 완성패
-function canWin(hand, melds) {
-  const handTiles = [...hand];
-  const meldCount = melds.reduce((acc, m) => acc + (m.type === 'ankan' || m.type === 'minkan' || m.type === 'addkan' ? 0 : 1), 0);
-  const totalMeldsNeeded = 5 - melds.length; // 남은 몸통 수
-
-  // 7또이쯔 (7 pairs) - 멘젠만
-  if (melds.length === 0 && handTiles.length === 16) {
-    const counts = {};
-    for (const t of handTiles) counts[t] = (counts[t] || 0) + 1;
-    const pairs = Object.values(counts).filter(c => c >= 2).length;
-    const singles = Object.values(counts).filter(c => c === 1).length;
-    if (pairs === 7 && singles === 0) return { win: true, special: '칠대자' };
-    // 7쌍 with quadruples counting as 2 pairs
-    const allPairs = Object.entries(counts).filter(([,c]) => c >= 2);
-    if (allPairs.length === 7) return { win: true, special: '칠대자' };
-  }
-
-  // 13야오 (국사무쌍) - 멘젠만
-  if (melds.length === 0 && handTiles.length === 16) {
-    const yaochuTiles = ['m1','m9','p1','p9','s1','s9','z1','z2','z3','z4','z5','z6','z7'];
-    const hasAll = yaochuTiles.every(t => handTiles.includes(t));
-    if (hasAll) {
-      const counts = {};
-      for (const t of handTiles) if (yaochuTiles.includes(t)) counts[t] = (counts[t] || 0) + 1;
-      const hasPair = Object.values(counts).some(c => c >= 2);
-      if (hasPair) return { win: true, special: '국사무쌍' };
-    }
-  }
-
-  // 표준 5몸통+1머리
-  // 각 타일을 머리(또이쯔) 후보로 시도
-  const unique = [...new Set(handTiles)];
-  for (const pair of unique) {
-    const cnt = handTiles.filter(t => t === pair).length;
-    if (cnt < 2) continue;
-    const remaining = removeFromArr(handTiles, [pair, pair]);
-    if (remaining.length !== (16 - 2 - melds.reduce((s, m) => s + (m.type.includes('kan') ? 4 : 3), 0))) continue;
-    if (canFormMelds(remaining)) return { win: true, pair, special: null };
-  }
-  return { win: false };
-}
-
-// 화료 가능 여부 확인 (tenpai check - 1장 빼면 화료 가능?)
-function isTenpai(hand, melds) {
-  for (let i = 0; i < hand.length; i++) {
-    const test = [...hand];
-    test.splice(i, 1);
-    if (canWin(test, melds).win) return true;
-  }
+function sevenPairs(h){if(h.length!==14)return false;const c=countMap(h);return Object.values(c).every(v=>v===2)&&Object.keys(c).length===7;}
+function thirteenOrphans(h){if(h.length!==14)return false;const O=['m1','m9','p1','p9','s1','s9','z1','z2','z3','z4','z5','z6','z7'];const c=countMap(h);return O.every(t=>(c[t]||0)>=1)&&O.some(t=>(c[t]||0)>=2);}
+function canFormSets(tiles,needed){
+  if(tiles.length===0)return needed===0;if(needed===0)return tiles.length===0;
+  const t=tiles[0],s=suit(t),n=num(t),c=countMap(tiles);
+  if((c[t]||0)>=3){if(canFormSets(removeN(tiles,t,3),needed-1))return true;}
+  if('mps'.includes(s)){const t2=s+(n+1),t3=s+(n+2);if((c[t2]||0)>=1&&(c[t3]||0)>=1){let r=[...tiles];r=removeN(r,t,1);r=removeN(r,t2,1);r=removeN(r,t3,1);if(canFormSets(r,needed-1))return true;}}
   return false;
 }
+function chiOptions(hand,disc){
+  const s=suit(disc),n=num(disc);if(!'mps'.includes(s))return[];
+  const opts=[];const h=new Set(hand);
+  if(n>=2&&n<=8&&h.has(s+(n-1))&&h.has(s+(n+1)))opts.push([s+(n-1),disc,s+(n+1)]);
+  if(n>=3&&h.has(s+(n-2))&&h.has(s+(n-1)))opts.push([s+(n-2),s+(n-1),disc]);
+  if(n<=7&&h.has(s+(n+1))&&h.has(s+(n+2)))opts.push([disc,s+(n+1),s+(n+2)]);
+  const seen=new Set();return opts.filter(o=>{const k=[...o].sort().join(',');if(seen.has(k))return false;seen.add(k);return true;});
+}
+function canPon(hand,tile){return hand.filter(t=>t===tile).length>=2;}
+function canMinKan(hand,tile){return hand.filter(t=>t===tile).length>=3;}
+function canAnKan(hand){const c=countMap(hand);return Object.entries(c).filter(([t,n])=>n>=4).map(([t])=>t);}
 
-// =====================================================
-// YAKU CALCULATION (역 계산)
-// =====================================================
+const TURN_ORDER=[0,3,2,1];
+function nextPlayer(i){const p=TURN_ORDER.indexOf(i);return TURN_ORDER[(p+1)%4];}
+function prevPlayer(i){const p=TURN_ORDER.indexOf(i);return TURN_ORDER[(p-1+4)%4];}
 
-function calcYaku(hand, melds, flowers, winTile, winType, seatWind, roundWind, isDealer, honba) {
-  const yaku = [];
-  const allTiles = [...hand, ...melds.flatMap(m => m.tiles)];
-  const isMenzen = melds.every(m => m.type === 'ankan');
-  const isTsumo = winType === 'tsumo';
+function isYakuhai(tile,pidx,windIdx){if(!tile)return false;const s=suit(tile),n=num(tile);if(s!=='z')return false;if(n>=5)return true;return n===(pidx+1)||n===(windIdx+1);}
+function yakuhaiBonus(tile,pidx,windIdx){const s=suit(tile);if(s!=='z')return 0;const n=num(tile);if(n>=5)return 1;if(n===(pidx+1)||n===(windIdx+1))return 2;return 1;}
+function isTwoSided(hand,winTile){const s=suit(winTile),n=num(winTile);if(!'mps'.includes(s))return false;const rest=removeN(hand,winTile,1);const c=countMap(rest);return(n>=2&&(c[s+(n-1)]||0)>=1)||( n<=8&&(c[s+(n+1)]||0)>=1);}
 
-  // 기본 5타이
-  yaku.push({ name: '기본', tai: 5 });
+function decompose(hand,melds){
+  const needed=5-melds.length;const sorted=sortHand(hand);const c=countMap(sorted);
+  for(const h of Object.keys(c)){if(c[h]<2)continue;const rest=removeN(sorted,h,2);const sets=extractSets(rest,needed);if(sets!==null)return{head:h,sets};}
+  return{head:null,sets:[]};
+}
+function extractSets(tiles,needed){
+  if(tiles.length===0)return needed===0?[]:null;if(needed===0)return tiles.length===0?[]:null;
+  const t=tiles[0],s=suit(t),n=num(t),c=countMap(tiles);
+  if((c[t]||0)>=3){const r=extractSets(removeN(tiles,t,3),needed-1);if(r!==null)return[{type:'tri',tile:t},...r];}
+  if('mps'.includes(s)){const t2=s+(n+1),t3=s+(n+2);if((c[t2]||0)>=1&&(c[t3]||0)>=1){let r2=[...tiles];r2=removeN(r2,t,1);r2=removeN(r2,t2,1);r2=removeN(r2,t3,1);const r=extractSets(r2,needed-1);if(r!==null)return[{type:'seq',tile:t},...r];}}
+  return null;
+}
 
-  // 츠모 (1타이)
-  if (isTsumo) yaku.push({ name: '자모', tai: 1 });
+function calcYaku(hand,melds,flowers,winTile,winType,pidx,ri){
+  const yaku=[];let tai=0;
+  function add(name,t){yaku.push({name,tai:t});tai+=t;}
+  function remove(name){const i=yaku.findIndex(y=>y.name===name);if(i>=0){tai-=yaku[i].tai;yaku.splice(i,1);}}
+  if(ri.firstDraw&&ri.isDealer&&winType==='tsumo'){add('천화',14);return{yaku,total:tai};}
+  if(ri.firstDiscard&&!ri.isDealer&&winType==='ron'){add('지화',14);return{yaku,total:tai};}
+  const isConcealed=melds.filter(m=>m.type!=='ankan').length===0;
+  const allTiles=[...hand,...melds.flatMap(m=>m.tiles)];
+  if(winType==='tsumo')add('츠모',1);
+  if(isConcealed)add('멘젠',1);
+  if(isConcealed&&winType==='tsumo'){remove('츠모');remove('멘젠');add('멘젠츠모',3);}
+  if(melds.length>=4&&winType==='ron'){add('전구인',2);}
+  const{head,sets}=decompose(hand,melds);
+  const allTri=[...sets.filter(s=>s.type==='tri').map(s=>s.tile),...melds.filter(m=>['pon','minkan','addkan','ankan'].includes(m.type)).map(m=>m.tiles[0])];
+  if(allTiles.every(t=>!'zf'.includes(suit(t))))add('무자',1);
+  if(isConcealed){const allSeq=sets.every(s=>s.type==='seq');const hYaku=head&&isYakuhai(head,pidx,ri.windIdx);const ts=isTwoSided(hand,winTile);if(allSeq&&!hYaku&&ts)add('핑후',2);}
+  const isTT=sets.length>0&&sets.every(s=>s.type==='tri')&&melds.every(m=>['pon','minkan','addkan','ankan'].includes(m.type))&&(sets.length+melds.length)>=5;
+  if(isTT)add('또이또이',7);
+  const concTri=sets.filter(s=>s.type==='tri').length+melds.filter(m=>m.type==='ankan').length;
+  if(concTri>=3)add('삼안커',2);
+  if(concTri>=4){remove('삼안커');add('사안커',7);}
+  if(concTri>=5){remove('사안커');add('오안커',14);}
+  for(const t of allTri){const b=yakuhaiBonus(t,pidx,ri.windIdx);if(b>0)add('역패('+td(t)+')',b);}
+  const dragons=['z5','z6','z7'];const dTri=allTri.filter(t=>dragons.includes(t));const dHead=head&&dragons.includes(head);
+  if(dTri.length===2&&dHead)add('소삼원',7);
+  if(dTri.length===3){remove('소삼원');add('대삼원',14);}
+  const winds=['z1','z2','z3','z4'];const wTri=allTri.filter(t=>winds.includes(t));const wHead=head&&winds.includes(head);
+  if(wTri.length===3&&wHead)add('소사희',7);
+  if(wTri.length===4){remove('소사희');add('대사희',14);}
+  const anKC=melds.filter(m=>m.type==='ankan').length;const minKC=melds.filter(m=>m.type==='minkan'||m.type==='addkan').length;
+  if(anKC>0)add('안깡×'+anKC,anKC*2);if(minKC>0)add('명깡×'+minKC,minKC);
+  if(ri.isRinshan)add('영상개화',1);
+  if(ri.isHaitei&&winType==='tsumo')add('해저',1);
+  if(head===winTile&&!isTwoSided(hand,winTile))add('단기대기',1);
+  if(flowers.length===8)return{yaku:[{name:'화만관',tai:14}],total:14};
+  if(flowers.length===0)add('무화',1);
+  const season=flowers.filter(f=>num(f)<=4);const plant=flowers.filter(f=>num(f)>=5);
+  if(season.length===4)add('춘하추동',2);if(plant.length===4)add('매난국죽',2);
+  const seatF=[[1,5],[2,6],[3,7],[4,8]][pidx]||[];
+  for(const f of flowers){if(seatF.includes(num(f)))add('정화('+td(f)+')',2);}
+  if(ri.isDealer)add('친장가',1);
+  if(ri.honba>0)add('본장×'+ri.honba,ri.honba*2);
+  return{yaku,total:Math.max(tai,0)};
+}
 
-  // 멘젠 (1타이) - 론으로 이겼을 때
-  if (isMenzen && !isTsumo) yaku.push({ name: '멘젠', tai: 1 });
+function aiDecideDiscard(state,pidx){
+  const hand=state.players[pidx].hand;let worst=null,ws=-Infinity;
+  for(const t of hand){const sc=isoScore(t,hand);if(sc>ws){ws=sc;worst=t;}}
+  return worst||hand[hand.length-1];
+}
+function isoScore(tile,hand){
+  const s=suit(tile),n=num(tile);if(s==='f')return-100;if(s==='z'){return hand.filter(t=>t===tile).length>=2?-5:5;}
+  const nb=[s+(n-2),s+(n-1),s+(n+1),s+(n+2)].filter(t=>num(t)>=1&&num(t)<=9);
+  return -nb.filter(t=>hand.includes(t)).length+(hand.filter(t=>t===tile).length>=2?-3:0)+(isTerminal(tile)?1:0);
+}
+function aiDecideClaim(state,pidx,disc,discarderIdx){
+  const p=state.players[pidx];const hand=p.hand;const melds=p.melds;
+  if(canWin([...hand,disc],melds))return{type:'ron',tile:disc};
+  if(canMinKan(hand,disc)&&Math.random()<0.7)return{type:'kan',kanType:'min',tile:disc};
+  if(canPon(hand,disc)){const yk=isYakuhai(disc,pidx,state.round.windIdx);if(yk||Math.random()<0.5)return{type:'pon',tile:disc};}
+  if(discarderIdx===prevPlayer(pidx)){const opts=chiOptions(hand,disc);if(opts.length>0&&Math.random()<0.3)return{type:'chi',tiles:opts[0],discarded:disc};}
+  return{type:'pass'};
+}
 
-  // 멘젠 츠모 (3타이) - 멘젠+자모 (기존 자모 1타이 대신 3타이)
-  if (isMenzen && isTsumo) {
-    // 자모 1타이 제거하고 멘젠츠모 3타이로
-    const tsumoIdx = yaku.findIndex(y => y.name === '자모');
-    if (tsumoIdx >= 0) yaku.splice(tsumoIdx, 1);
-    yaku.push({ name: '멘젠츠모', tai: 3 });
+let G=null,selTile=null,cpuTimer=null,claimTimer=null,pending=[];
+
+function makeState(sc,dealer,windIdx,honba){
+  const s=sc||[50000,50000,50000,50000];
+  return{round:{windIdx:windIdx||0,dealer:dealer||0,honba:honba||0},
+    players:[
+      {id:'p0',name:'나',type:'human',seatWind:0,hand:[],melds:[],flowers:[],score:s[0],isDealer:false},
+      {id:'p1',name:'CPU 남',type:'cpu',seatWind:1,hand:[],melds:[],flowers:[],score:s[1],isDealer:false},
+      {id:'p2',name:'CPU 서',type:'cpu',seatWind:2,hand:[],melds:[],flowers:[],score:s[2],isDealer:false},
+      {id:'p3',name:'CPU 북',type:'cpu',seatWind:3,hand:[],melds:[],flowers:[],score:s[3],isDealer:false},
+    ],
+    wall:[],discards:[[],[],[],[]],currentPlayer:0,phase:'idle',claimInfo:null,
+    flags:{firstDraw:true,firstDiscard:true,isRinshan:false,isHaitei:false}};
+}
+
+function dealAndStart(state){
+  state.wall=shuffle(buildWall());const dealer=state.round.dealer;
+  for(let p=0;p<4;p++){state.players[p].seatWind=(p-dealer+4)%4;state.players[p].isDealer=(p===dealer);state.players[p].hand=[];state.players[p].melds=[];state.players[p].flowers=[];}
+  for(let p=0;p<4;p++){const n=(p===dealer)?17:16;state.players[p].hand=state.wall.splice(0,n);}
+  for(let p=0;p<4;p++)processFlowers(state,p);
+  for(let p=0;p<4;p++)state.players[p].hand=sortHand(state.players[p].hand);
+  state.discards=[[],[],[],[]];state.currentPlayer=dealer;state.phase='discard';
+  state.flags={firstDraw:true,firstDiscard:true,isRinshan:false,isHaitei:false};
+  render();scheduleNext(dealer);
+}
+function processFlowers(state,pidx){
+  const p=state.players[pidx];let changed=true;
+  while(changed){changed=false;for(let i=p.hand.length-1;i>=0;i--){if(isFlower(p.hand[i])){p.flowers.push(p.hand.splice(i,1)[0]);if(state.wall.length>0){const d=state.wall.shift();p.hand.push(d);if(isFlower(d))changed=true;}}}}
+}
+
+function applyAction(action){
+  const pidx=G.currentPlayer,player=G.players[pidx];
+  if(action.type==='discard'){
+    const i=player.hand.indexOf(action.tile);if(i<0){showToast('패 없음');return;}
+    player.hand.splice(i,1);G.discards[pidx].push(action.tile);G.flags.firstDiscard=false;
+    G.phase='claim';G.claimInfo={tile:action.tile,discarder:pidx};render();startClaim(action.tile,pidx);return;
   }
+  if(action.type==='draw'){
+    if(G.wall.length===0){endRound('패 소진');return;}
+    const tile=G.wall.shift();G.flags.isHaitei=G.wall.length===0;player.hand.push(tile);
+    if(isFlower(tile)){player.flowers.push(player.hand.pop());G.flags.isRinshan=false;if(G.wall.length>0)applyAction({type:'draw'});else endRound('패 소진');return;}
+    player.hand=sortHand(player.hand);G.flags.isRinshan=false;G.phase='discard';render();
+    if(player.type==='cpu')scheduleCpu(pidx,1000);else enableHuman(pidx);return;
+  }
+  if(action.type==='tsumo'){
+    const ri=bri(pidx);const h=player.hand;const wt=h[h.length-1];
+    const res=calcYaku(h.slice(0,-1),player.melds,player.flowers,wt,'tsumo',pidx,ri);
+    showWin(pidx,-1,wt,res);return;
+  }
+  if(action.type==='kan'){doKan(action,pidx);return;}
+  if(action.type==='chi'){
+    const disc=action.discarded,discarder=G.claimInfo?.discarder;
+    const fromH=action.tiles.filter(t=>t!==disc);
+    for(const t of fromH){const i=player.hand.indexOf(t);if(i>=0)player.hand.splice(i,1);}
+    const di=G.discards[discarder];const dIdx=di.lastIndexOf(disc);if(dIdx>=0)di.splice(dIdx,1);
+    player.melds.push({type:'chi',tiles:[...action.tiles].sort(),from:discarder});
+    G.phase='discard';render();if(player.type==='cpu')scheduleCpu(pidx,800);else enableHuman(pidx);return;
+  }
+  if(action.type==='pon'){
+    const tile=action.tile,discarder=G.claimInfo?.discarder;let rm=0;
+    for(let i=player.hand.length-1;i>=0&&rm<2;i--)if(player.hand[i]===tile){player.hand.splice(i,1);rm++;}
+    const di=G.discards[discarder];const dIdx=di.lastIndexOf(tile);if(dIdx>=0)di.splice(dIdx,1);
+    player.melds.push({type:'pon',tiles:[tile,tile,tile],from:discarder});
+    G.phase='discard';render();if(player.type==='cpu')scheduleCpu(pidx,800);else enableHuman(pidx);return;
+  }
+  if(action.type==='ron'){
+    const tile=action.tile,discarder=G.claimInfo?.discarder;player.hand.push(tile);
+    const ri=bri(pidx);const res=calcYaku(player.hand.slice(0,-1),player.melds,player.flowers,tile,'ron',pidx,ri);
+    showWin(pidx,discarder,tile,res);return;
+  }
+}
+function doKan(action,pidx){
+  const player=G.players[pidx];
+  if(action.kanType==='an'){
+    const tile=action.tiles[0];for(let i=player.hand.length-1;i>=0;i--)if(player.hand[i]===tile)player.hand.splice(i,1);
+    player.melds.push({type:'ankan',tiles:[tile,tile,tile,tile],from:pidx});
+  }else if(action.kanType==='min'){
+    const tile=action.tile,discarder=G.claimInfo?.discarder;let rm=0;
+    for(let i=player.hand.length-1;i>=0&&rm<3;i--)if(player.hand[i]===tile){player.hand.splice(i,1);rm++;}
+    const di=G.discards[discarder];const dIdx=di.lastIndexOf(tile);if(dIdx>=0)di.splice(dIdx,1);
+    player.melds.push({type:'minkan',tiles:[tile,tile,tile,tile],from:discarder});
+  }else if(action.kanType==='add'){
+    const tile=action.tiles[0];const mi=player.melds.findIndex(m=>m.type==='pon'&&m.tiles[0]===tile);
+    if(mi>=0){player.melds[mi].type='addkan';player.melds[mi].tiles.push(tile);}
+    const i=player.hand.indexOf(tile);if(i>=0)player.hand.splice(i,1);
+  }
+  G.flags.isRinshan=true;
+  if(G.wall.length>0){const d=G.wall.shift();player.hand.push(d);if(isFlower(d)){player.flowers.push(player.hand.pop());if(G.wall.length>0){const d2=G.wall.shift();player.hand.push(d2);}}player.hand=sortHand(player.hand);}
+  G.phase='discard';render();if(player.type==='cpu')scheduleCpu(pidx,800);else enableHuman(pidx);
+}
+function bri(pidx){return{windIdx:G.round.windIdx,isDealer:G.players[pidx].seatWind===0,honba:G.round.honba,isRinshan:G.flags.isRinshan,isHaitei:G.flags.isHaitei,firstDraw:G.flags.firstDraw,firstDiscard:G.flags.firstDiscard};}
 
-  // 무자 (1타이) - 자패 없음
-  const hasHonor = allTiles.some(t => isHonor(t));
-  if (!hasHonor) yaku.push({ name: '무자', tai: 1 });
+function startClaim(tile,discarderIdx){
+  if(claimTimer){clearTimeout(claimTimer);claimTimer=null;}pending=[];
+  for(let p=0;p<4;p++){if(p===discarderIdx)continue;if(G.players[p].type==='cpu'){const cl=aiDecideClaim(G,p,tile,discarderIdx);if(cl.type!=='pass')pending.push({pidx:p,claim:cl});}}
+  const hopts=getHumanOpts(tile,discarderIdx);
+  if(hopts.length>0)showClaimOv(tile,hopts,discarderIdx);
+  else claimTimer=setTimeout(()=>resolveClaims(discarderIdx),pending.length>0?700:400);
+}
+function getHumanOpts(tile,discarderIdx){
+  const p=G.players[0];const opts=[];
+  if(canWin([...p.hand,tile],p.melds))opts.push('ron');
+  if(canMinKan(p.hand,tile))opts.push('kan');
+  if(canPon(p.hand,tile))opts.push('pon');
+  if(discarderIdx===prevPlayer(0)&&chiOptions(p.hand,tile).length>0)opts.push('chi');
+  return opts;
+}
+function showClaimOv(tile,opts,discarderIdx){
+  const ov=document.getElementById('claim-overlay');
+  document.getElementById('claim-title').textContent='클레임? ('+td(tile)+')';
+  document.getElementById('claim-sub').textContent=G.players[discarderIdx].name+'이 버린 패';
+  const btns=document.getElementById('claim-btns');btns.innerHTML='';
+  const map={ron:['론(화료)','c-ron'],pon:['퐁','c-pon'],chi:['치','c-chi'],kan:['깡','c-kan']};
+  for(const o of opts){const b=document.createElement('button');b.className='cbtn '+map[o][1];b.textContent=map[o][0];b.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);humanClaim(o,tile,discarderIdx);};btns.appendChild(b);}
+  const pb=document.createElement('button');pb.className='cbtn c-pass';pb.textContent='패스';pb.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);resolveClaims(discarderIdx);};btns.appendChild(pb);
+  ov.classList.add('on');
+  claimTimer=setTimeout(()=>{ov.classList.remove('on');resolveClaims(discarderIdx);},8000);
+}
+function humanClaim(opt,tile,discarderIdx){
+  G.currentPlayer=0;G.claimInfo={tile,discarder:discarderIdx};
+  if(opt==='ron')applyAction({type:'ron',tile});
+  else if(opt==='pon')applyAction({type:'pon',tile});
+  else if(opt==='kan')applyAction({type:'kan',kanType:'min',tile});
+  else if(opt==='chi'){const opts=chiOptions(G.players[0].hand,tile);if(opts.length===1)applyAction({type:'chi',tiles:opts[0],discarded:tile});else showChiOv(opts,tile,discarderIdx);}
+}
+function showChiOv(opts,tile,discarderIdx){
+  const ov=document.getElementById('chi-overlay');const cont=document.getElementById('chi-opts');cont.innerHTML='';
+  for(const opt of opts){const btn=document.createElement('div');btn.className='chi-opt';for(const t of opt){const s=document.createElement('div');s.className='tile-sm '+tileClass(t);s.textContent=td(t);btn.appendChild(s);}btn.onclick=()=>{ov.classList.remove('on');applyAction({type:'chi',tiles:opt,discarded:tile});};cont.appendChild(btn);}
+  ov.classList.add('on');
+}
+function cancelChi(){document.getElementById('chi-overlay').classList.remove('on');resolveClaims(G.claimInfo?.discarder??0);}
+function resolveClaims(discarderIdx){
+  if(claimTimer){clearTimeout(claimTimer);claimTimer=null;}
+  const byT=(t)=>pending.filter(c=>c.claim.type===t);
+  const ron=byT('ron');if(ron.length>0){const f=ron[0];G.currentPlayer=f.pidx;G.claimInfo={tile:f.claim.tile,discarder:discarderIdx};applyAction({type:'ron',tile:f.claim.tile});return;}
+  const kan=byT('kan');if(kan.length>0){const f=kan[0];G.currentPlayer=f.pidx;G.claimInfo={tile:f.claim.tile,discarder:discarderIdx};applyAction({type:'kan',kanType:'min',tile:f.claim.tile});return;}
+  const pon=byT('pon');if(pon.length>0){const f=pon[0];G.currentPlayer=f.pidx;G.claimInfo={tile:f.claim.tile,discarder:discarderIdx};applyAction({type:'pon',tile:f.claim.tile});return;}
+  const chi=byT('chi');if(chi.length>0){const f=chi[0];G.currentPlayer=f.pidx;G.claimInfo={tile:f.claim.discarded,discarder:discarderIdx};applyAction({type:'chi',tiles:f.claim.tiles,discarded:f.claim.discarded});return;}
+  pending=[];G.claimInfo=null;const next=nextPlayer(discarderIdx);G.currentPlayer=next;G.phase='draw';
+  if(G.wall.length===0){endRound('패 소진');return;}
+  if(G.players[next].type==='cpu')scheduleCpu(next,600);else applyAction({type:'draw'});
+}
 
-  // 핑후 (2타이) - 전부 순쯔 + 역패 아닌 머리 + 양면대기
-  if (isMenzen && melds.length === 0) {
-    const winResult = canWin(hand, melds);
-    if (winResult.win && !winResult.special) {
-      // Check all sequences
-      const nonPairTiles = removeFromArr(hand, [winResult.pair, winResult.pair]);
-      let allChi = true;
-      let tempTiles = [...nonPairTiles].sort();
-      while (tempTiles.length > 0) {
-        const f = tempTiles[0];
-        const s = tileSuit(f), n = tileNum(f);
-        if (isHonor(f) || tempTiles.filter(t => t === f).length >= 3) {
-          allChi = false; break;
-        }
-        const t2 = s + (n + 1), t3 = s + (n + 2);
-        if (!tempTiles.includes(t2) || !tempTiles.includes(t3)) { allChi = false; break; }
-        tempTiles = removeFromArr(tempTiles, [f, t2, t3]);
-      }
-      // 역패 아닌 머리
-      const pairIsHonor = isHonor(winResult.pair);
-      const pairIsWindOrDragon = pairIsHonor && (
-        (winResult.pair === 'z' + (seatWind + 1)) ||
-        (winResult.pair === 'z' + (roundWind + 1)) ||
-        (winResult.pair >= 'z5')
-      );
-      if (allChi && !pairIsWindOrDragon) {
-        yaku.push({ name: '평화', tai: 2 });
-      }
+function scheduleCpu(pidx,delay){
+  if(cpuTimer)clearTimeout(cpuTimer);
+  cpuTimer=setTimeout(()=>{
+    if(!G||G.players[pidx].type!=='cpu')return;
+    const p=G.players[pidx];
+    if(G.phase==='draw'){applyAction({type:'draw'});return;}
+    if(G.phase==='discard'){
+      const ankans=canAnKan(p.hand);if(ankans.length>0&&Math.random()<0.7){applyAction({type:'kan',kanType:'an',tiles:p.hand.filter(t=>t===ankans[0])});return;}
+      for(const m of p.melds){if(m.type==='pon'&&p.hand.includes(m.tiles[0])&&Math.random()<0.7){applyAction({type:'kan',kanType:'add',tiles:[m.tiles[0]]});return;}}
+      if(canWin(p.hand,p.melds)){applyAction({type:'tsumo'});return;}
+      applyAction({type:'discard',tile:aiDecideDiscard(G,pidx)});
     }
-  }
-
-  // 또이또이 (7타이) - 전부 커쯔
-  const allPonKan = melds.every(m => m.type === 'pon' || m.type.includes('kan'));
-  if (melds.length > 0 && allPonKan) {
-    // check hand has only pairs→pungs
-    const winResult = canWin(hand, melds);
-    if (winResult.win && !winResult.special) {
-      const nonPair = removeFromArr(hand, [winResult.pair, winResult.pair]);
-      const allPung = nonPair.length === 0 || checkAllPungs(nonPair);
-      if (allPung && melds.length === 5) yaku.push({ name: '대대화', tai: 7 });
-    }
-  }
-  // 멘젠 또이또이
-  if (melds.length === 0) {
-    const wr = canWin(hand, melds);
-    if (wr.win && !wr.special) {
-      const nonPair = removeFromArr(hand, [wr.pair, wr.pair]);
-      if (checkAllPungs(nonPair)) yaku.push({ name: '대대화', tai: 7 });
-    }
-  }
-
-  // 삼안커 (2타이) - 비공개 커쯔 3개
-  const ankoCount = countAnko(hand, melds);
-  if (ankoCount >= 3) yaku.push({ name: '삼암각', tai: 2 });
-  if (ankoCount >= 4) yaku.push({ name: '사암각', tai: 7 });
-  if (ankoCount >= 5) yaku.push({ name: '오암각', tai: 14 });
-
-  // 소삼원 (7타이)
-  const dragonMelds = melds.filter(m => m.tiles[0] >= 'z5' && m.tiles[0] <= 'z7');
-  const wr2 = canWin(hand, melds);
-  if (wr2.win && dragonMelds.length === 2 && wr2.pair >= 'z5' && wr2.pair <= 'z7') {
-    yaku.push({ name: '소삼원', tai: 7 });
-  }
-  // 대삼원 (14타이)
-  if (dragonMelds.length === 3) yaku.push({ name: '대삼원', tai: 14 });
-
-  // 소사희/대사희 (7/14타이)
-  const windMelds = melds.filter(m => m.tiles[0] >= 'z1' && m.tiles[0] <= 'z4');
-  if (wr2.win && windMelds.length === 3 && wr2.pair >= 'z1' && wr2.pair <= 'z4') {
-    yaku.push({ name: '소사희', tai: 7 });
-  }
-  if (windMelds.length === 4) yaku.push({ name: '대사희', tai: 14 });
-
-  // 바깥깡 (1타이)
-  const minkanCount = melds.filter(m => m.type === 'minkan' || m.type === 'addkan').length;
-  if (minkanCount > 0 && winType !== 'rinshan') yaku.push({ name: '바깥깡', tai: minkanCount });
-
-  // 안깡 (2타이/개)
-  const ankanCount = melds.filter(m => m.type === 'ankan').length;
-  if (ankanCount > 0) yaku.push({ name: '안깡', tai: ankanCount * 2 });
-
-  // 영상개화 (1타이)
-  if (winType === 'rinshan') yaku.push({ name: '영상개화', tai: 1 });
-
-  // 해저 (1타이)
-  if (winType === 'haitei') yaku.push({ name: '해저', tai: 1 });
-
-  // 전구인 (2타이) - 전부 울어서 + 론
-  if (melds.length === 5 && !isMenzen && !isTsumo) yaku.push({ name: '전구인', tai: 2 });
-
-  // 역패 커쯔 (바람/삼원)
-  for (const m of melds) {
-    if (!m.tiles[0]) continue;
-    const t = m.tiles[0];
-    if (t === 'z5' || t === 'z6' || t === 'z7') {
-      yaku.push({ name: TILE_UNICODE[t] + '커쯔', tai: 1 });
-    } else if (t === 'z' + (seatWind + 1) && t === 'z' + (roundWind + 1)) {
-      yaku.push({ name: WIND_NAMES[seatWind] + '커쯔(더블)', tai: 4 });
-    } else if (t === 'z' + (seatWind + 1)) {
-      yaku.push({ name: WIND_NAMES[seatWind] + '커쯔', tai: 2 });
-    } else if (t === 'z' + (roundWind + 1)) {
-      yaku.push({ name: WIND_NAMES[roundWind] + '커쯔', tai: 2 });
-    } else if (t[0] === 'z' && tileNum(t) <= 4) {
-      yaku.push({ name: WIND_NAMES[tileNum(t)-1] + '커쯔', tai: 1 });
-    }
-  }
-
-  // 단기대기 (1타이)
-  if (wr2.win && !wr2.special) {
-    // 단기: 머리 기다리는 형태 (1장만 기다림)
-    // 간략 체크: 나머지가 모두 커쯔면 단기
-    const nonPair = removeFromArr(hand, [wr2.pair, wr2.pair]);
-    if (allTiles.filter(t => t === winTile).length <= 1) {
-      // single wait heuristic
-    }
-  }
-
-  // 화패 처리
-  if (flowers.length === 0) {
-    yaku.push({ name: '무화', tai: 1 });
-  } else {
-    // 춘하추동 (f1-f4) 모두
-    const seasons = flowers.filter(f => f >= 'f1' && f <= 'f4');
-    if (seasons.length === 4) yaku.push({ name: '춘하추동', tai: 2 });
-    // 매난국죽 (f5-f8) 모두
-    const flowers2 = flowers.filter(f => f >= 'f5' && f <= 'f8');
-    if (flowers2.length === 4) yaku.push({ name: '매난국죽', tai: 2 });
-    // 화만관
-    if (flowers.length === 8) yaku.push({ name: '화만관', tai: 14 });
-    // 정화 (좌석 일치)
-    for (const fl of flowers) {
-      const fn = tileNum(fl);
-      const playerFlower = (fn === seatWind + 1) || (fn === seatWind + 5);
-      if (playerFlower) yaku.push({ name: FLOWER_NAMES[fl] + '(정화)', tai: 2 });
-      else yaku.push({ name: FLOWER_NAMES[fl], tai: 1 });
-    }
-  }
-
-  // 친 장가 (1타이)
-  if (isDealer) yaku.push({ name: '친(동가)', tai: 1 });
-
-  // 연장 (2타이/연장)
-  if (honba > 0 && isDealer) yaku.push({ name: '연장 ×' + honba, tai: honba * 2 });
-
-  // 특수패
-  if (wr2.special === '칠대자') yaku.push({ name: '칠대자', tai: 7 });
-  if (wr2.special === '국사무쌍') yaku.push({ name: '국사무쌍', tai: 13 });
-
-  const total = yaku.reduce((s, y) => s + y.tai, 0);
-  return { yaku, total };
+  },delay);
+}
+function scheduleNext(pidx){if(G.players[pidx].type==='cpu')scheduleCpu(pidx,1200);else enableHuman(pidx);}
+function enableHuman(pidx){
+  if(pidx!==0)return;const p=G.players[0];
+  document.getElementById('btn-discard').disabled=false;
+  document.getElementById('btn-tsumo').disabled=!canWin(p.hand,p.melds);
+  const ak=canAnKan(p.hand);const addK=p.melds.filter(m=>m.type==='pon').map(m=>m.tiles[0]).filter(t=>p.hand.includes(t));
+  document.getElementById('btn-kan').disabled=(ak.length===0&&addK.length===0);
+  setTI('내 차례');
+}
+function disableHuman(){['btn-discard','btn-tsumo','btn-kan'].forEach(id=>document.getElementById(id).disabled=true);}
+function setTI(t){document.getElementById('turn-indicator').textContent=t;}
+function humanDiscard(){
+  if(G.currentPlayer!==0||G.phase!=='discard')return;
+  if(!selTile){showToast('버릴 패를 선택하세요');return;}
+  const tile=selTile;selTile=null;disableHuman();applyAction({type:'discard',tile});
+}
+function humanTsumo(){if(G.currentPlayer!==0)return;applyAction({type:'tsumo'});}
+function humanKan(){
+  if(G.currentPlayer!==0)return;const p=G.players[0];
+  const ak=canAnKan(p.hand);if(ak.length>0){applyAction({type:'kan',kanType:'an',tiles:p.hand.filter(t=>t===ak[0])});return;}
+  const addK=p.melds.filter(m=>m.type==='pon').map(m=>m.tiles[0]).filter(t=>p.hand.includes(t));
+  if(addK.length>0)applyAction({type:'kan',kanType:'add',tiles:[addK[0]]});
 }
 
-function checkAllPungs(tiles) {
-  const t = [...tiles].sort();
-  while (t.length > 0) {
-    const f = t[0];
-    if (t.filter(x => x === f).length < 3) return false;
-    t.splice(0, 3);
-  }
-  return true;
+function showWin(winnerIdx,discarderIdx,winTile,result){
+  if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);G.phase='roundEnd';
+  const winner=G.players[winnerIdx];const tai=result.total+5;const isDW=winner.seatWind===0;
+  if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?tai*2000:tai*1000;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
+  else{const isDPay=G.players[discarderIdx].seatWind===0;const mult=(isDW||isDPay)?2:1;const amt=tai*1000*mult;G.players[discarderIdx].score-=amt;G.players[winnerIdx].score+=amt;}
+  if(winnerIdx===0){const gold=tai*100000;if(typeof SharedWallet!=='undefined'&&SharedWallet.addGold)try{SharedWallet.addGold(gold);}catch(_){}}
+  const wl=discarderIdx===-1?'자모':'론';
+  document.getElementById('result-title').textContent=winner.name+' 화료! ('+wl+')';
+  document.getElementById('result-detail').innerHTML='<b>'+tai+'台 (기본5 + 역'+result.total+')</b><br>'+result.yaku.map(y=>y.name+' +'+y.tai+'台').join(' / ')+'<br><br>'+G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>');
+  document.getElementById('result-next').textContent=isDW?'연장 라운드':'다음 라운드';
+  document.getElementById('result-overlay').classList.add('on');render();
+}
+function endRound(reason){
+  if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);G.phase='roundEnd';
+  document.getElementById('result-title').textContent=reason||'유국';
+  document.getElementById('result-detail').innerHTML=G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>');
+  document.getElementById('result-next').textContent='다음 라운드';
+  document.getElementById('result-overlay').classList.add('on');render();
+}
+function nextRound(){
+  document.getElementById('result-overlay').classList.remove('on');
+  if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);
+  selTile=null;disableHuman();
+  const sc=G.players.map(p=>p.score);const pd=G.round.dealer;const pw=G.round.windIdx;
+  const nd=(pd+1)%4;const nw=nd===0?pw+1:pw;
+  G=makeState(sc,nd,nw%4,0);dealAndStart(G);
 }
 
-function countAnko(hand, melds) {
-  let count = melds.filter(m => m.type === 'ankan').length;
-  // count pungs in hand
-  const sorted = [...hand].sort();
-  let i = 0;
-  while (i < sorted.length) {
-    let j = i;
-    while (j < sorted.length && sorted[j] === sorted[i]) j++;
-    if (j - i >= 3) count++;
-    i = j;
-  }
-  return count;
+function render(){
+  if(!G)return;
+  document.getElementById('ri-round').textContent=WL[G.round.windIdx]+(G.round.dealer+1)+'국';
+  document.getElementById('ri-wall').textContent=G.wall.length;
+  document.getElementById('ri-honba').textContent=G.round.honba;
+  const sr=document.getElementById('score-row');
+  sr.innerHTML=G.players.map(p=>'<div class="score-chip'+(p.isDealer?' dealer':'')+'">'+WL[p.seatWind]+'·'+p.name.replace('CPU ','')+' '+Math.floor(p.score/1000)+'k</div>').join('');
+  setTI(G.players[G.currentPlayer].name+(G.currentPlayer===0?' (내 차례)':' 차례'));
+  for(let p=1;p<=3;p++)renderCpu(p);
+  renderDiscards();renderPlayer();
 }
-
-// =====================================================
-// GAME STATE
-// =====================================================
-let G = null; // global game state
-let selectedTile = null; // index in player hand
-let claimTimer = null;
-let cpuTimer = null;
-
-const WINDS = ['동','남','서','북'];
-const START_SCORE = 50000;
-
-function initGameState() {
-  const wall = buildWall();
-  const players = [
-    { id: 'p0', name: (typeof SharedWallet !== 'undefined' && SharedWallet.user?.nickname) || '나', type: 'human', seatWind: 0, hand: [], melds: [], flowers: [], score: START_SCORE, isDealer: true },
-    { id: 'p1', name: 'CPU 남', type: 'cpu', seatWind: 1, hand: [], melds: [], flowers: [], score: START_SCORE, isDealer: false },
-    { id: 'p2', name: 'CPU 서', type: 'cpu', seatWind: 2, hand: [], melds: [], flowers: [], score: START_SCORE, isDealer: false },
-    { id: 'p3', name: 'CPU 북', type: 'cpu', seatWind: 3, hand: [], melds: [], flowers: [], score: START_SCORE, isDealer: false },
-  ];
-
-  return {
-    players,
-    wall: wall.slice(16 * 4 + 1), // dealt 64+1 tiles
-    deadWall: [],
-    round: { windIdx: 0, dealer: 0, honba: 0 },
-    currentPlayer: 0,
-    phase: 'draw', // draw | action | claim | end
-    lastDiscard: null,
-    lastDiscardPlayer: -1,
-    claimInfo: null,
-    log: [],
-    gameOver: false,
-    justDrawn: null, // index of just-drawn tile in hand
-    rinshan: false,
-  };
+function renderCpu(pidx){
+  const p=G.players[pidx];const isCur=G.currentPlayer===pidx;
+  const ne=document.getElementById('name-p'+pidx);
+  ne.textContent=p.name+'('+WL[p.seatWind]+')'+(p.isDealer?'◆':'');
+  ne.className='cpu-name'+(isCur?' active':'');
+  const he=document.getElementById('hand-p'+pidx);he.innerHTML='';
+  for(let i=0;i<p.hand.length;i++){const d=document.createElement('div');d.className='tile-sm hidden';he.appendChild(d);}
+  const me=document.getElementById('melds-p'+pidx);me.innerHTML='';
+  for(const m of p.melds){const g=document.createElement('div');g.className='meld-group';const st=m.type==='ankan'?[m.tiles[0],'_h',m.tiles[2],'_h']:m.tiles;for(const t of st){const s=document.createElement('div');if(t==='_h'){s.className='tile-sm hidden';}else{s.className='tile-sm '+tileClass(t);s.textContent=td(t);}g.appendChild(s);}me.appendChild(g);}
+  const fe=document.getElementById('flowers-p'+pidx);fe.innerHTML='';
+  for(const f of p.flowers){const s=document.createElement('div');s.className='tile-sm flower-tile';s.textContent=td(f);fe.appendChild(s);}
 }
-
-function dealTiles(state) {
-  const wall = buildWall();
-  let wallIdx = 0;
-
-  // Deal 16 each, dealer gets 17th later
-  for (let round = 0; round < 4; round++) {
-    for (let p = 0; p < 4; p++) {
-      for (let i = 0; i < 4; i++) {
-        state.players[p].hand.push(wall[wallIdx++]);
-      }
-    }
-  }
-
-  // Handle flower tiles drawn during initial deal
-  // (simplified: deal remaining wall)
-  state.wall = wall.slice(wallIdx);
-
-  // Resolve flowers for all players
-  for (let p = 0; p < 4; p++) {
-    resolveFlowers(state, p);
-    state.players[p].hand = sortHand(state.players[p].hand);
-  }
-
-  // Dealer draws extra tile
-  const extra = drawFromWall(state);
-  if (extra) {
-    if (isFlower(extra)) {
-      state.players[0].flowers.push(extra);
-      addLog('화패 ' + TILE_UNICODE[extra] + ' 교체', 'action');
-      const rep = drawFromWall(state);
-      if (rep) {
-        state.players[0].hand.push(rep);
-        state.players[0].hand = sortHand(state.players[0].hand);
-      }
-    } else {
-      state.players[0].hand.push(extra);
-      state.players[0].hand = sortHand(state.players[0].hand);
-      state.justDrawn = state.players[0].hand.length - 1;
-    }
+function renderDiscards(){
+  const el=document.getElementById('discards-center');el.innerHTML='';
+  for(let p=0;p<4;p++){
+    if(G.discards[p].length===0)continue;
+    const grp=document.createElement('div');grp.style.cssText='display:flex;flex-wrap:wrap;gap:1px;margin:2px;';
+    G.discards[p].forEach((t,i)=>{const s=document.createElement('div');const isLast=i===G.discards[p].length-1&&G.phase==='claim';s.className='tile-sm '+tileClass(t)+(isLast?' last':'');s.textContent=td(t);grp.appendChild(s);});
+    el.appendChild(grp);
   }
 }
-
-function resolveFlowers(state, playerIdx) {
-  const player = state.players[playerIdx];
-  let i = 0;
-  while (i < player.hand.length) {
-    if (isFlower(player.hand[i])) {
-      player.flowers.push(player.hand.splice(i, 1)[0]);
-      // Draw replacement
-      const rep = drawFromWall(state);
-      if (rep) player.hand.push(rep);
-    } else {
-      i++;
-    }
-  }
+function renderPlayer(){
+  const p=G.players[0];const hr=document.getElementById('player-hand-row');hr.innerHTML='';
+  p.hand.forEach(t=>{const d=document.createElement('div');d.className='tile '+tileClass(t)+(t===selTile?' selected':'');d.textContent=td(t);d.onclick=()=>{if(G.currentPlayer!==0||G.phase!=='discard')return;selTile=(selTile===t)?null:t;renderPlayer();};hr.appendChild(d);});
+  const me=document.getElementById('player-melds');me.innerHTML='';
+  for(const m of p.melds){const g=document.createElement('div');g.className='meld-group';m.tiles.forEach(t=>{const s=document.createElement('div');s.className='tile-sm '+tileClass(t);s.textContent=td(t);g.appendChild(s);});me.appendChild(g);}
+  const fe=document.getElementById('player-flowers');fe.innerHTML='';
+  for(const f of p.flowers){const s=document.createElement('div');s.className='tile-sm flower-tile';s.textContent=td(f);fe.appendChild(s);}
 }
 
-function drawFromWall(state) {
-  if (state.wall.length === 0) return null;
-  return state.wall.shift();
+function showToast(msg,ms=2200){const el=document.getElementById('msg-toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),ms);}
+
+function startGame(){
+  document.getElementById('start-screen').style.display='none';
+  document.getElementById('game-container').style.display='flex';
+  G=makeState(null,0,0,0);dealAndStart(G);
 }
 
-// =====================================================
-// AI ENGINE
-// =====================================================
-
-function cpuChooseDiscard(playerIdx) {
-  const player = G.players[playerIdx];
-  const hand = [...player.hand];
-
-  // Score each tile for isolation
-  const scores = hand.map((t, i) => ({
-    tile: t, idx: i,
-    score: isolationScore(t, hand, player.melds)
-  }));
-  scores.sort((a, b) => b.score - a.score);
-
-  // Discard highest isolation score (most isolated)
-  return scores[0].idx;
-}
-
-function isolationScore(tile, hand, melds) {
-  if (isFlower(tile)) return -100; // flowers should be removed already
-  let score = 0;
-  // Honor tiles are more isolated (unless they form melds)
-  if (isHonor(tile)) score += 3;
-  // Terminal tiles slightly more isolated
-  if (isTerminal(tile)) score += 1;
-
-  const s = tileSuit(tile), n = tileNum(tile);
-  if (!isHonor(tile)) {
-    // Check neighbors
-    const neighbors = [s + (n - 2), s + (n - 1), s + (n + 1), s + (n + 2)];
-    for (const nb of neighbors) {
-      if (hand.includes(nb)) score -= 2;
-    }
-    // Same tile count
-    const sameCount = hand.filter(t => t === tile).length;
-    if (sameCount >= 2) score -= 3;
-    if (sameCount >= 3) score -= 5;
-  }
-  return score;
-}
-
-function cpuDecideClaim(playerIdx, discardedTile, discarderIdx) {
-  const player = G.players[playerIdx];
-  const hand = player.hand;
-
-  // Check ron (화료)
-  const testHand = [...hand, discardedTile];
-  if (canWin(testHand, player.melds).win) {
-    return { type: 'ron' };
-  }
-
-  // Check pon
-  const sameInHand = hand.filter(t => t === discardedTile).length;
-  if (sameInHand >= 2) {
-    // Always pon honor/dragon/wind tiles for yaku
-    const isValueTile = isHonor(discardedTile);
-    if (isValueTile || Math.random() < 0.5) {
-      return { type: 'pon' };
-    }
-  }
-
-  // Check chi (only from left player = previous in turn order)
-  const prevPlayer = (playerIdx + 3) % 4;
-  if (prevPlayer === discarderIdx) {
-    const s = tileSuit(discardedTile);
-    if (s === 'm' || s === 'p' || s === 's') {
-      const n = tileNum(discardedTile);
-      const chiOptions = [
-        [s+(n-2), s+(n-1)], [s+(n-1), s+(n+1)], [s+(n+1), s+(n+2)]
-      ];
-      for (const opt of chiOptions) {
-        if (opt.every(t => hand.includes(t)) && Math.random() < 0.3) {
-          return { type: 'chi', tiles: opt };
-        }
-      }
-    }
-  }
-
-  return { type: 'pass' };
-}
-
-// =====================================================
-// GAME CONTROLLER
-// =====================================================
-
-function startGame() {
-  G = initGameState();
-  dealTiles(G);
-  showScreen('game-screen');
-  render();
-  G.phase = 'action';
-  G.currentPlayer = G.round.dealer;
-
-  // If dealer is CPU, start CPU turn
-  if (G.players[G.currentPlayer].type === 'cpu') {
-    scheduleCpuTurn();
-  } else {
-    render();
-  }
-  addLog('게임 시작! 동1국', 'action');
-}
-
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-function addLog(text, cls = '') {
-  if (!G) return;
-  G.log.unshift({ text, cls });
-  if (G.log.length > 8) G.log.pop();
-}
-
-// Player selects tile
-function selectTile(idx) {
-  if (G.phase !== 'action' || G.currentPlayer !== 0) return;
-  selectedTile = (selectedTile === idx) ? null : idx;
-  render();
-}
-
-// Player discards selected tile
-function playerDiscard() {
-  if (selectedTile === null) return;
-  if (G.phase !== 'action' || G.currentPlayer !== 0) return;
-  doDiscard(0, selectedTile);
-  selectedTile = null;
-}
-
-function doDiscard(playerIdx, tileIdx) {
-  const player = G.players[playerIdx];
-  const tile = player.hand[tileIdx];
-  player.hand.splice(tileIdx, 1);
-  player.hand = sortHand(player.hand);
-
-  G.lastDiscard = tile;
-  G.lastDiscardPlayer = playerIdx;
-  G.justDrawn = null;
-
-  // Add to discard pile (we'll track in a separate structure)
-  if (!G.discards) G.discards = [[],[],[],[]];
-  G.discards[playerIdx].push(tile);
-
-  addLog(player.name + ' → ' + TILE_UNICODE[tile]);
-  G.phase = 'claim';
-  G.claimInfo = {
-    tile,
-    discarder: playerIdx,
-    pending: [],
-    timerEnd: Date.now() + 2000
-  };
-
-  // Check all other players for claims
-  processClaims(playerIdx, tile);
-}
-
-function processClaims(discarderIdx, tile) {
-  // Check if human player (p0) can claim
-  if (discarderIdx !== 0) {
-    const humanClaims = getHumanClaimOptions(0, tile, discarderIdx);
-    if (humanClaims.length > 0) {
-      showClaimOverlay(tile, humanClaims);
-      // Start timer
-      G.claimInfo.timer = setTimeout(() => {
-        hideClaimOverlay();
-        resolveClaims(null);
-      }, 2500);
-      return;
-    }
-  }
-  // No human claim options, resolve with CPU only
-  resolveClaims(null);
-}
-
-function getHumanClaimOptions(playerIdx, tile, discarderIdx) {
-  const player = G.players[playerIdx];
-  const hand = player.hand;
-  const options = [];
-
-  // Ron
-  const testHand = [...hand, tile];
-  if (canWin(testHand, player.melds).win) options.push('ron');
-
-  // Pon
-  if (hand.filter(t => t === tile).length >= 2) options.push('pon');
-
-  // Chi (only from left/previous player)
-  const prevPlayer = (playerIdx + 3) % 4;
-  if (prevPlayer === discarderIdx) {
-    const s = tileSuit(tile);
-    if (s === 'm' || s === 'p' || s === 's') {
-      const n = tileNum(tile);
-      const chiOptions = [
-        [s+(n-2), s+(n-1)], [s+(n-1), s+(n+1)], [s+(n+1), s+(n+2)]
-      ];
-      for (const opt of chiOptions) {
-        if (opt.every(t => hand.includes(t))) {
-          options.push({ type: 'chi', tiles: opt });
-        }
-      }
-    }
-  }
-
-  return options;
-}
-
-function resolveClaims(humanClaim) {
-  if (!G || G.phase !== 'claim') return;
-  clearTimeout(G.claimInfo?.timer);
-
-  const { tile, discarder } = G.claimInfo;
-
-  // Collect all CPU claims
-  const cpuClaims = [];
-  for (let p = 1; p < 4; p++) {
-    if (p === discarder) continue;
-    const decision = cpuDecideClaim(p, tile, discarder);
-    if (decision.type !== 'pass') {
-      cpuClaims.push({ player: p, ...decision });
-    }
-  }
-
-  // Determine winning claim (ron > pon > chi)
-  let winner = null;
-  if (humanClaim && humanClaim.type === 'ron') winner = { player: 0, ...humanClaim };
-  else if (cpuClaims.find(c => c.type === 'ron')) winner = cpuClaims.find(c => c.type === 'ron');
-  else if (humanClaim && (humanClaim.type === 'pon' || humanClaim.type === 'chi')) winner = { player: 0, ...humanClaim };
-  else if (cpuClaims.length > 0) winner = cpuClaims[0];
-
-  if (winner) {
-    applyClaimAction(winner);
-  } else {
-    // No claim, next player draws
-    const nextPlayer = (discarder + 1) % 4;
-    G.currentPlayer = nextPlayer;
-    G.phase = 'draw';
-    playerDraw(nextPlayer);
-  }
-}
-
-function applyClaimAction(claim) {
-  const player = G.players[claim.player];
-
-  if (claim.type === 'ron') {
-    // Win by ron
-    const winTile = G.claimInfo.tile;
-    player.hand.push(winTile);
-    player.hand = sortHand(player.hand);
-    handleWin(claim.player, winTile, 'ron', G.claimInfo.discarder);
-    return;
-  }
-
-  if (claim.type === 'pon') {
-    const tile = G.claimInfo.tile;
-    const idx1 = player.hand.indexOf(tile);
-    player.hand.splice(idx1, 1);
-    const idx2 = player.hand.indexOf(tile);
-    player.hand.splice(idx2, 1);
-    player.melds.push({ type: 'pon', tiles: [tile, tile, tile], from: G.claimInfo.discarder });
-    addLog(player.name + ' 퐁! ' + TILE_UNICODE[tile], 'action');
-    G.currentPlayer = claim.player;
-    G.phase = 'action';
-    G.justDrawn = null;
-    render();
-    if (player.type === 'cpu') scheduleCpuTurn();
-    return;
-  }
-
-  if (claim.type === 'chi') {
-    const tile = G.claimInfo.tile;
-    const tiles = claim.tiles || [];
-    for (const t of tiles) {
-      const idx = player.hand.indexOf(t);
-      if (idx >= 0) player.hand.splice(idx, 1);
-    }
-    player.melds.push({ type: 'chi', tiles: [tile, ...tiles].sort(), from: G.claimInfo.discarder });
-    addLog(player.name + ' 치! ' + tiles.map(t => TILE_UNICODE[t]).join(''), 'action');
-    G.currentPlayer = claim.player;
-    G.phase = 'action';
-    G.justDrawn = null;
-    render();
-    if (player.type === 'cpu') scheduleCpuTurn();
-    return;
-  }
-}
-
-function playerDraw(playerIdx) {
-  if (G.wall.length === 0) {
-    // 유산 (exhaustive draw)
-    handleDraw();
-    return;
-  }
-
-  const tile = drawFromWall(G);
-  if (!tile) { handleDraw(); return; }
-
-  const player = G.players[playerIdx];
-
-  // Handle flower
-  if (isFlower(tile)) {
-    player.flowers.push(tile);
-    addLog(player.name + ' 화패 ' + TILE_UNICODE[tile], 'action');
-    playerDraw(playerIdx); // draw replacement
-    return;
-  }
-
-  player.hand.push(tile);
-  player.hand = sortHand(player.hand);
-  G.justDrawn = player.hand.lastIndexOf(tile);
-  G.phase = 'action';
-  G.currentPlayer = playerIdx;
-
-  // Check tsumo
-  if (canWin(player.hand, player.melds).win) {
-    if (player.type === 'cpu') {
-      handleWin(playerIdx, tile, 'tsumo', -1);
-      return;
-    }
-    // Human: show tsumo button
-  }
-
-  render();
-  if (player.type === 'cpu') scheduleCpuTurn();
-}
-
-function scheduleCpuTurn() {
-  clearTimeout(cpuTimer);
-  cpuTimer = setTimeout(doCpuTurn, 900 + Math.random() * 400);
-}
-
-function doCpuTurn() {
-  if (!G || G.phase !== 'action') return;
-  const playerIdx = G.currentPlayer;
-  const player = G.players[playerIdx];
-  if (player.type !== 'cpu') return;
-
-  // Check tsumo
-  if (canWin(player.hand, player.melds).win) {
-    const lastTile = G.justDrawn !== null ? player.hand[G.justDrawn] : player.hand[player.hand.length - 1];
-    handleWin(playerIdx, lastTile, 'tsumo', -1);
-    return;
-  }
-
-  // Check kan in hand
-  const counts = {};
-  for (const t of player.hand) counts[t] = (counts[t] || 0) + 1;
-  const kanTile = Object.entries(counts).find(([t, c]) => c === 4);
-  if (kanTile && Math.random() < 0.7) {
-    doCpuKan(playerIdx, kanTile[0]);
-    return;
-  }
-
-  // Discard
-  const discIdx = cpuChooseDiscard(playerIdx);
-  doDiscard(playerIdx, discIdx);
-  render();
-}
-
-function doCpuKan(playerIdx, tile) {
-  const player = G.players[playerIdx];
-  const tiles = player.hand.filter(t => t === tile);
-  player.hand = player.hand.filter(t => t !== tile);
-  player.melds.push({ type: 'ankan', tiles: [tile, tile, tile, tile], from: playerIdx });
-  addLog(player.name + ' 안깡! ' + TILE_UNICODE[tile], 'action');
-  G.rinshan = true;
-  playerDraw(playerIdx);
-}
-
-// Player tsumo
-function playerTsumo() {
-  if (G.phase !== 'action' || G.currentPlayer !== 0) return;
-  const player = G.players[0];
-  if (!canWin(player.hand, player.melds).win) return;
-  const lastTile = G.justDrawn !== null ? player.hand[G.justDrawn] : player.hand[player.hand.length - 1];
-  handleWin(0, lastTile, 'tsumo', -1);
-}
-
-// Player kan
-function playerKan() {
-  if (G.phase !== 'action' || G.currentPlayer !== 0) return;
-  const player = G.players[0];
-  const counts = {};
-  for (const t of player.hand) counts[t] = (counts[t] || 0) + 1;
-  const kanTile = Object.entries(counts).find(([t, c]) => c === 4);
-  if (!kanTile) return;
-  const tile = kanTile[0];
-  player.hand = player.hand.filter(t => t !== tile);
-  player.melds.push({ type: 'ankan', tiles: [tile, tile, tile, tile], from: 0 });
-  addLog('안깡! ' + TILE_UNICODE[tile], 'action');
-  G.rinshan = true;
-  playerDraw(0);
-}
-
-// Handle win
-function handleWin(winnerIdx, winTile, winType, discarderIdx) {
-  G.phase = 'end';
-  clearTimeout(cpuTimer);
-  hideClaimOverlay();
-
-  const winner = G.players[winnerIdx];
-  const isDealer = winnerIdx === G.round.dealer;
-  const { yaku, total } = calcYaku(
-    winner.hand, winner.melds, winner.flowers,
-    winTile, winType,
-    winner.seatWind, G.round.windIdx,
-    isDealer, G.round.honba
-  );
-
-  // Calculate payments
-  const basePayment = total * 1000;
-  let payments = [0, 0, 0, 0];
-  let scoreChanges = [0, 0, 0, 0];
-
-  if (winType === 'tsumo') {
-    for (let p = 0; p < 4; p++) {
-      if (p === winnerIdx) continue;
-      let pay = basePayment;
-      if (p === G.round.dealer) pay *= 2;
-      payments[p] = -pay;
-      scoreChanges[winnerIdx] += pay;
-    }
-  } else {
-    // Ron
-    let pay = basePayment;
-    if (discarderIdx === G.round.dealer) pay *= 2;
-    if (winnerIdx === G.round.dealer) pay *= 2;
-    payments[discarderIdx] = -pay;
-    scoreChanges[winnerIdx] = pay;
-  }
-
-  // Apply scores
-  for (let p = 0; p < 4; p++) {
-    G.players[p].score += (p === winnerIdx ? scoreChanges[p] : payments[p]);
-  }
-
-  // SharedWallet reward
-  if (winnerIdx === 0) {
-    const goldReward = total * 100000;
-    if (goldReward > 0 && typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
-      try { SharedWallet.addGold(goldReward); } catch (_) {}
-    }
-    addLog('화료! ' + total + '타이 → +' + goldReward.toLocaleString() + 'G', 'win');
-  } else {
-    addLog(winner.name + ' 화료! ' + total + '타이', 'win');
-  }
-
-  // Show result
-  showResult(winnerIdx, yaku, total, winType, discarderIdx, scoreChanges, payments);
-}
-
-function handleDraw() {
-  G.phase = 'end';
-  clearTimeout(cpuTimer);
-  hideClaimOverlay();
-  addLog('유산! (패 소진)', 'action');
-  showResultDraw();
-}
-
-// =====================================================
-// CLAIM OVERLAY
-// =====================================================
-
-function showClaimOverlay(tile, options) {
-  const overlay = document.getElementById('claim-overlay');
-  const tileShow = document.getElementById('claim-tile-show');
-  const buttons = document.getElementById('claim-buttons');
-
-  tileShow.innerHTML = `<div class="tile ${tileClass(tile)}">${TILE_UNICODE[tile]||tile}</div>`;
-
-  buttons.innerHTML = '';
-  for (const opt of options) {
-    const type = typeof opt === 'string' ? opt : opt.type;
-    const btn = document.createElement('button');
-    btn.className = 'claim-btn claim-btn-' + type;
-    btn.textContent = { ron: '화료!', pon: '퐁', chi: '치', kan: '깡' }[type] || type;
-    btn.onclick = () => {
-      clearTimeout(G.claimInfo?.timer);
-      hideClaimOverlay();
-      if (type === 'chi') {
-        // For chi, need to pick which tiles to use
-        resolveClaims({ type: 'chi', tiles: opt.tiles || [] });
-      } else {
-        resolveClaims({ type });
-      }
-    };
-    buttons.appendChild(btn);
-  }
-
-  // Pass button
-  const passBtn = document.createElement('button');
-  passBtn.className = 'claim-btn claim-btn-pass';
-  passBtn.textContent = '패스';
-  passBtn.onclick = () => {
-    clearTimeout(G.claimInfo?.timer);
-    hideClaimOverlay();
-    resolveClaims(null);
-  };
-  buttons.appendChild(passBtn);
-
-  overlay.classList.add('show');
-}
-
-function hideClaimOverlay() {
-  document.getElementById('claim-overlay').classList.remove('show');
-}
-
-// =====================================================
-// RESULT
-// =====================================================
-
-function showResult(winnerIdx, yaku, total, winType, discarderIdx, scoreChanges, payments) {
-  const winner = G.players[winnerIdx];
-  const isHumanWin = winnerIdx === 0;
-
-  let html = `<div class="result-title ${isHumanWin ? 'win' : 'lose'}">${isHumanWin ? '🎉 화료!' : winner.name + ' 화료'}</div>`;
-
-  if (isHumanWin) {
-    html += `<div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">`;
-    html += winType === 'tsumo' ? '자모 (自摸)' : '론 (放銃: ' + G.players[discarderIdx]?.name + ')';
-    html += `</div>`;
-  }
-
-  html += `<div class="yaku-list">`;
-  for (const y of yaku) {
-    html += `<div class="yaku-row"><span class="yaku-name">${y.name}</span><span class="yaku-tai">${y.tai}타이</span></div>`;
-  }
-  html += `</div>`;
-  html += `<div class="result-total">합계: ${total}타이</div>`;
-
-  if (isHumanWin) {
-    html += `<div class="result-gold">+${(total * 100000).toLocaleString()}G 획득!</div>`;
-  }
-
-  html += `<div class="result-scores">`;
-  for (let p = 0; p < 4; p++) {
-    const change = p === winnerIdx ? scoreChanges[p] : payments[p];
-    if (change === 0) continue;
-    const name = G.players[p].name;
-    const sign = change > 0 ? '+' : '';
-    html += `<div class="score-change-row"><span>${name}</span><span style="color:${change > 0 ? 'var(--green)':'var(--red)'}">${sign}${change.toLocaleString()}</span></div>`;
-  }
-  html += `</div>`;
-
-  const card = document.getElementById('result-card');
-  card.innerHTML = html;
-  document.getElementById('result-overlay').classList.add('show');
-  render();
-}
-
-function showResultDraw() {
-  let html = `<div class="result-title draw">유산 (流局)</div>`;
-  html += `<div style="font-size:0.85rem;color:var(--muted);text-align:center;margin:12px 0;">패가 모두 소진되었습니다</div>`;
-  html += `<div class="result-scores">`;
-  for (let p = 0; p < 4; p++) {
-    html += `<div class="score-change-row"><span>${G.players[p].name}</span><span>${G.players[p].score.toLocaleString()}</span></div>`;
-  }
-  html += `</div>`;
-  document.getElementById('result-card').innerHTML = html;
-  document.getElementById('result-overlay').classList.add('show');
-}
-
-function nextRound() {
-  document.getElementById('result-overlay').classList.remove('show');
-  if (!G) return;
-
-  // Rotate dealer
-  G.round.dealer = (G.round.dealer + 1) % 4;
-  if (G.round.dealer === 0) G.round.windIdx = (G.round.windIdx + 1) % 4;
-
-  // Reset for new round
-  G.players.forEach((p, i) => {
-    p.hand = [];
-    p.melds = [];
-    p.flowers = [];
-    p.isDealer = (i === G.round.dealer);
-    p.seatWind = (i - G.round.dealer + 4) % 4;
-  });
-
-  G.phase = 'draw';
-  G.lastDiscard = null;
-  G.lastDiscardPlayer = -1;
-  G.claimInfo = null;
-  G.log = [];
-  G.justDrawn = null;
-  G.rinshan = false;
-  if (!G.discards) G.discards = [[],[],[],[]];
-  G.discards = [[],[],[],[]];
-
-  dealTiles(G);
-  render();
-  G.phase = 'action';
-  G.currentPlayer = G.round.dealer;
-  addLog(WINDS[G.round.windIdx] + (G.round.dealer + 1) + '국 시작', 'action');
-
-  if (G.players[G.currentPlayer].type === 'cpu') {
-    scheduleCpuTurn();
-  } else {
-    render();
-  }
-}
-
-function backToTitle() {
-  document.getElementById('result-overlay').classList.remove('show');
-  G = null;
-  showScreen('start-screen');
-}
-
-// =====================================================
-// RENDER
-// =====================================================
-
-function render() {
-  if (!G) return;
-  renderRoundBar();
-  renderCpuAreas();
-  renderPlayerArea();
-  renderDiscards();
-  renderLog();
-}
-
-function renderRoundBar() {
-  const wi = G.round.windIdx;
-  const dealer = G.round.dealer;
-  document.getElementById('round-text').textContent = WINDS[wi] + (dealer + 1) + '국' + (G.round.honba > 0 ? ' ' + G.round.honba + '연' : '');
-  document.getElementById('wall-count').textContent = '잔여 ' + (G.wall ? G.wall.length : 0) + '장';
-
-  const scoreMini = document.getElementById('score-mini');
-  scoreMini.innerHTML = G.players.map(p =>
-    `<span style="color:${p.id==='p0'?'var(--accent)':'var(--muted)'}">${p.name.slice(0,2)}: ${(p.score/1000).toFixed(0)}k</span>`
-  ).join('');
-}
-
-function renderCpuAreas() {
-  // CPU 1 (p1, left, south)
-  renderCpuArea(1, 'cpu1', 'vertical');
-  // CPU 2 (p2, top, west)
-  renderCpuArea(2, 'cpu2', 'horizontal');
-  // CPU 3 (p3, right, north)
-  renderCpuArea(3, 'cpu3', 'vertical');
-}
-
-function renderCpuArea(playerIdx, prefix, orientation) {
-  const player = G.players[playerIdx];
-  const handEl = document.getElementById(prefix + '-hand');
-  const nameEl = document.getElementById(prefix + '-name');
-  const scoreEl = document.getElementById(prefix + '-score');
-  const dealerEl = document.getElementById(prefix + '-dealer');
-
-  nameEl.textContent = player.name + ' (' + WINDS[player.seatWind] + ')';
-  scoreEl.textContent = player.score.toLocaleString();
-  dealerEl.innerHTML = player.isDealer ? '<span class="dealer-badge">親</span>' : '';
-
-  // Show turn indicator
-  const isCurrent = G.currentPlayer === playerIdx;
-  nameEl.style.color = isCurrent ? 'var(--green)' : '';
-
-  handEl.innerHTML = '';
-  const count = player.hand.length;
-  for (let i = 0; i < count; i++) {
-    const tile = document.createElement('div');
-    tile.className = 'tile-back' + (orientation === 'vertical' ? ' sm' : '');
-    tile.textContent = '🀫';
-    handEl.appendChild(tile);
-  }
-
-  // Show melds
-  const meldsEl = document.getElementById(prefix + '-melds');
-  meldsEl.innerHTML = '';
-  for (const meld of player.melds) {
-    const group = document.createElement('div');
-    group.className = 'meld-group';
-    for (const t of meld.tiles) {
-      const tile = document.createElement('div');
-      tile.className = `tile sm ${tileClass(t)}`;
-      tile.textContent = TILE_UNICODE[t] || t;
-      group.appendChild(tile);
-    }
-    meldsEl.appendChild(group);
-  }
-
-  // Show flowers
-  const flowersEl = document.getElementById(prefix + '-flowers');
-  if (flowersEl) {
-    flowersEl.innerHTML = player.flowers.map(f =>
-      `<div class="tile sm flower">${TILE_UNICODE[f]||f}</div>`
-    ).join('');
-  }
-}
-
-function renderPlayerArea() {
-  const player = G.players[0];
-  const handEl = document.getElementById('player-hand');
-
-  document.getElementById('player-name').textContent = player.name;
-  document.getElementById('player-score').textContent = player.score.toLocaleString();
-  document.getElementById('player-wind').textContent = WINDS[player.seatWind];
-  document.getElementById('player-dealer').innerHTML = player.isDealer ? '<span class="dealer-badge">親</span>' : '';
-
-  // Turn indicator
-  const isCurrent = G.currentPlayer === 0 && G.phase === 'action';
-  document.getElementById('player-turn-dot').style.display = isCurrent ? 'inline-block' : 'none';
-
-  handEl.innerHTML = '';
-  player.hand.forEach((tile, idx) => {
-    const el = document.createElement('div');
-    el.className = `tile ${tileClass(tile)}`;
-    if (idx === selectedTile) el.classList.add('selected');
-    if (idx === G.justDrawn) el.classList.add('just-drawn');
-    el.textContent = TILE_UNICODE[tile] || tile;
-    el.onclick = () => selectTile(idx);
-    handEl.appendChild(el);
-  });
-
-  // Player melds
-  const meldsEl = document.getElementById('player-melds');
-  meldsEl.innerHTML = '';
-  for (const meld of player.melds) {
-    const group = document.createElement('div');
-    group.className = 'meld-group';
-    for (const t of meld.tiles) {
-      const tile = document.createElement('div');
-      tile.className = `tile sm ${tileClass(t)}`;
-      tile.textContent = TILE_UNICODE[t] || t;
-      group.appendChild(tile);
-    }
-    meldsEl.appendChild(group);
-  }
-
-  // Flowers
-  const flowersEl = document.getElementById('player-flowers');
-  flowersEl.innerHTML = player.flowers.map(f =>
-    `<div class="tile sm flower">${TILE_UNICODE[f]||f}</div>`
-  ).join('');
-
-  // Action buttons
-  const canDiscard = isCurrent && selectedTile !== null;
-  const canTsumo = isCurrent && canWin(player.hand, player.melds).win;
-  const counts = {};
-  for (const t of player.hand) counts[t] = (counts[t] || 0) + 1;
-  const canKan = isCurrent && Object.values(counts).some(c => c === 4);
-
-  document.getElementById('btn-discard').disabled = !canDiscard;
-  document.getElementById('btn-tsumo').disabled = !canTsumo;
-  document.getElementById('btn-kan').disabled = !canKan;
-
-  // Tenpai indicator
-  const tenpaiEl = document.getElementById('player-tenpai');
-  if (tenpaiEl) {
-    tenpaiEl.innerHTML = isTenpai(player.hand, player.melds) ? '<span class="tenpai-badge">텐파이</span>' : '';
-  }
-}
-
-function renderDiscards() {
-  if (!G.discards) G.discards = [[],[],[],[]];
-  for (let p = 0; p < 4; p++) {
-    const el = document.getElementById('discard-p' + p);
-    if (!el) continue;
-    el.innerHTML = '';
-    for (const t of G.discards[p]) {
-      const tile = document.createElement('div');
-      tile.className = `tile discard-tile ${tileClass(t)}`;
-      tile.textContent = TILE_UNICODE[t] || t;
-      el.appendChild(tile);
-    }
-  }
-
-  // Center info
-  const info = document.getElementById('current-player-label');
-  if (G.phase === 'claim') {
-    info.textContent = '클레임';
-    info.style.color = 'var(--gold)';
-  } else {
-    info.textContent = G.players[G.currentPlayer]?.name.slice(0, 2) + ' 차례';
-    info.style.color = G.currentPlayer === 0 ? 'var(--accent)' : 'var(--muted)';
-  }
-}
-
-function renderLog() {
-  const el = document.getElementById('game-log');
-  if (!el || !G.log) return;
-  el.innerHTML = G.log.slice(0, 6).map(l =>
-    `<div class="log-line ${l.cls||''}">${l.text}</div>`
-  ).join('');
-}
-
-// =====================================================
-// INIT
-// =====================================================
-document.addEventListener('DOMContentLoaded', () => {
-  // Check if SharedWallet available
-  if (typeof SharedWallet !== 'undefined' && SharedWallet.user?.nickname) {
-    // Player name available
-  }
+window.addEventListener('load',()=>{
+  if(typeof SharedWallet!=='undefined'){try{const g=SharedWallet.gold;if(g!=null)document.getElementById('sw-gold').textContent='보유 골드: '+Number(g).toLocaleString()+'G';}catch(_){}}
 });
 </script>
 </body>
