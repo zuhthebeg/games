@@ -4703,7 +4703,8 @@
             } else if (type === 'destroy') {
                 SFX.play('enhance-destroy');
             }
-            speakEnhanceOutcome(type, from, to, weaponSnapshotForSpeech(resultWeapon), newWeapon);
+            // 강화 화면 TTS 제거 (설명 없애고 사냥 보스 대사만 유지)
+            // speakEnhanceOutcome 호출 제거됨
 
             // Confetti for big milestones
             if (type === 'success' && (to >= 10 || to === 7)) fireConfetti();
@@ -6625,18 +6626,70 @@
             }
         }
 
-        // 세션당 한 번씩만 나오는 고정 대사 풀
-        const BOSS_FIXED_DIALOGUES = [
-            '아 형/오빠 제발',
-            '고만 해라 마이 때렷다 아이가',
-            '거 죽기 딱 좋은 날씨군',
-            'I can do this all day',
-            '무기가 사기네 사기. 님 해킹함?',
-            '골드보니 블랙잭으로 돈 좀 벌었나본데',
-            '강화가 그게뭐냐 돈없으면 가서 스네이크해봐 재밌음',
-            '삥탄하면 2백만언씩준데',
-            '삥패하면 3백씩 벌수있음',
-        ];
+        // 세션당 한 번씩만 나오는 고정 대사 풀 (컨텍스트 기반 동적 생성)
+        function getBossFixedDialogues() {
+            const gold = state.gold || 0;
+            const wLevel = state.weapon?.level || 0;
+            const kills = state.mastery?.kills || 0;
+            const grade = state.weapon?.grade || 'common';
+            const isCursed = state.weapon?.cursed;
+            const isBlessed = state.weapon?.blessed;
+
+            const always = [
+                '아 형/오빠 제발',
+                '고만 해라 마이 때렷다 아이가',
+                '거 죽기 딱 좋은 날씨군',
+                'I can do this all day',
+            ];
+
+            const goldLines =
+                gold >= 10_000_000 ? [
+                    `골드가 ${Math.floor(gold / 10_000).toLocaleString()}만이나 되네. 블랙잭 또 터뜨렸어?`,
+                    '돈 좀 있다고 날뛰지 마라',
+                ] : gold >= 1_000_000 ? [
+                    `골드보니 어디서 좀 벌었나본데`,
+                    '삥패하면 3백만은 벌 수 있음',
+                ] : gold >= 100_000 ? [
+                    '돈이 좀 있긴 하네. 강화나 더 해라',
+                    '삥탄 하면 2백만씩 준다니까',
+                ] : [
+                    '지금 골드 몇 개야. 스네이크라도 해봐 재밌음',
+                    '강화비용도 없냐? 가서 블랙잭이나 한 판 해',
+                ];
+
+            const weaponLines =
+                wLevel >= 15 ? [
+                    `${wLevel}강짜리 무기 들고 와서 뭘 바라냐`,
+                    '무기가 사기네 사기. 님 해킹함?',
+                ] : wLevel >= 10 ? [
+                    `${wLevel}강이면 어지간히 됐다`,
+                    '강화 좀 된다고 방심하면 안 되지',
+                ] : wLevel >= 5 ? [
+                    '그 무기 강화가 그게 다냐',
+                ] : [
+                    '강화를 더 해오든가',
+                    `${grade === 'legendary' || grade === 'mythic' ? '무기는 좋은데 강화를 안 했네' : '무기도 별로고 강화도 별로네'}`,
+                ];
+
+            const killLines =
+                kills >= 200 ? [
+                    `처치수 ${kills}마리. 이미 학살자네`,
+                ] : kills >= 50 ? [
+                    `${kills}마리 잡았으면 나도 조심해야겠군`,
+                ] : [
+                    kills === 0 ? '첫 사냥이냐? 삥탄 해서 골드부터 모아라' : '아직 신입티 못 벗었군',
+                ];
+
+            const statusLines = [
+                ...(isCursed ? ['저주받은 무기 들고 왔네. 죽으려고 환장했군'] : []),
+                ...(isBlessed ? ['축복받은 무기야? 운도 실력이지 뭐'] : []),
+            ];
+
+            return [...always, ...goldLines, ...weaponLines, ...killLines, ...statusLines];
+        }
+
+        // BOSS_FIXED_DIALOGUES는 런타임에 동적으로 생성 (getBossFixedDialogues() 호출)
+        const BOSS_FIXED_DIALOGUES = [];
         let _sessionFixedPool = [];  // 사냥 시작 시 초기화
 
         function showBossDialogue(bossData) {
@@ -6746,7 +6799,7 @@
                 _myth: { firstHit: true, weakenNext: false }  // 💫 신화 패시브 카운터
             };
             // 고정 대사 풀 셔플 (사냥 세션 시작마다 초기화)
-            _sessionFixedPool = [...BOSS_FIXED_DIALOGUES].sort(() => Math.random() - 0.5);
+            _sessionFixedPool = getBossFixedDialogues().sort(() => Math.random() - 0.5);
             // 연속킬 스탯 리셋 (이전 세션 데이터 안 나오게)
             pendingStreak = 0;
             // 사냥 BGM 시작
