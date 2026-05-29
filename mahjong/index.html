@@ -6,6 +6,7 @@
 <title>대만 마작</title>
 <script src="/lib/shared-wallet.js?v=20260524a"></script>
 <script src="/lib/multiplayer.js?v=20260524a"></script>
+<script src="/lib/multiplayer-ui.js?v=20260524a"></script>
 <style>
 :root{--bg:#0a0f1a;--panel:#111827;--panel2:#1f2937;--line:#334155;--text:#f1f5f9;--muted:#64748b;--accent:#ffd700;--green:#4ecca3;--red:#ef4444;--blue:#3b82f6;--wallet-bar-h:56px;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -126,6 +127,7 @@ body.mj-fs #sw-bar{display:none !important;}
   <h1 data-i18n="title">🀄 대만 마작</h1>
   <p data-i18n="subtitle" data-i18n-html>인간 1명 + CPU 3명<br>16장 핸드 · 대만 룰</p>
   <button class="big-btn" onclick="startGame()" data-i18n="start">게임 시작</button>
+  <button class="big-btn" onclick="openMultiplayer()" style="background:var(--green);color:#0a0f1a;" data-i18n="multiplayer">👥 멀티플레이</button>
   <button class="big-btn" onclick="document.getElementById('howto-overlay').style.display='block'" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);" data-i18n="howto">플레이 방법</button>
   <button class="big-btn" onclick="openSettings()" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);" data-i18n="settings">⚙ 설정</button>
   <div id="sw-gold" style="color:var(--accent);font-size:.85rem;margin-top:4px;"></div>
@@ -280,6 +282,7 @@ body.mj-fs #sw-bar{display:none !important;}
     <button class="big-btn" style="width:100%;background:var(--red);color:#fff;margin-top:6px;" onclick="exitToMenu()" data-i18n="exitGame">🚪 게임 나가기</button>
   </div>
 </div>
+<div id="mp-lobby" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));"></div>
 <div id="msg-toast"></div>
 <script>
 const TE={m1:'🀇',m2:'🀈',m3:'🀉',m4:'🀊',m5:'🀋',m6:'🀌',m7:'🀍',m8:'🀎',m9:'🀏',p1:'🀙',p2:'🀚',p3:'🀛',p4:'🀜',p5:'🀝',p6:'🀞',p7:'🀟',p8:'🀠',p9:'🀡',s1:'🀐',s2:'🀑',s3:'🀒',s4:'🀓',s5:'🀔',s6:'🀕',s7:'🀖',s8:'🀗',s9:'🀘',z1:'東',z2:'南',z3:'西',z4:'北',z5:'白',z6:'發',z7:'中',f1:'春',f2:'夏',f3:'秋',f4:'冬',f5:'梅',f6:'蘭',f7:'菊',f8:'竹'};
@@ -296,13 +299,13 @@ const I18N={
    myTurn:'내 차례',selectDiscard:'버릴 패를 선택하세요',timeUp:'시간 초과 — 자동 버림',
    claimQ:'가져올 패',claimFrom:'버린 패',nextRound:'다음 라운드',extendRound:'연장 라운드',exit:'나가기',
    setTitle:'⚙ 설정',turnLimit:'⏱ 내 턴 제한',claimLimit:'✋ 먹기/퐁/치 제한',sfx:'🔊 효과음',bgm:'🎵 배경음악',exitGame:'🚪 게임 나가기',none:'없음',language:'🌐 언어',
-   selectChi:'치 조합 선택',cancel:'취소',tsumoWin:'자모',ronWin:'론',win:'화료',draw:'유국'},
+   selectChi:'치 조합 선택',cancel:'취소',tsumoWin:'자모',ronWin:'론',win:'화료',draw:'유국',multiplayer:'👥 멀티플레이',waiting:'상대 기다리는 중…',mpNewHand:'새 판'},
  'zh-TW':{title:'🀄 台灣麻將',subtitle:'1位玩家 + 3位電腦<br>16張手牌 · 台灣規則',start:'開始遊戲',howto:'玩法說明',settings:'⚙ 設定',close:'關閉',
    kan:'槓',tsumo:'自摸',discard:'打牌',ron:'胡',pon:'碰',chi:'吃',pass:'過',
    myTurn:'輪到你',selectDiscard:'請選擇要打出的牌',timeUp:'超時 — 自動打牌',
    claimQ:'要的牌',claimFrom:'打出的牌',nextRound:'下一局',extendRound:'連莊',exit:'離開',
    setTitle:'⚙ 設定',turnLimit:'⏱ 我的回合限時',claimLimit:'✋ 吃/碰/槓限時',sfx:'🔊 音效',bgm:'🎵 背景音樂',exitGame:'🚪 離開遊戲',none:'無',language:'🌐 語言',
-   selectChi:'選擇吃牌組合',cancel:'取消',tsumoWin:'自摸',ronWin:'胡',win:'胡牌',draw:'流局'}
+   selectChi:'選擇吃牌組合',cancel:'取消',tsumoWin:'自摸',ronWin:'胡',win:'胡牌',draw:'流局',multiplayer:'👥 多人連線',waiting:'等待對手…',mpNewHand:'新一局'}
 };
 let LANG=(function(){try{const s=localStorage.getItem('mahjong_lang');if(s)return s;}catch(_){}return (navigator.language||'').toLowerCase().startsWith('zh')?'zh-TW':'ko';})();
 function t(k){return (I18N[LANG]&&I18N[LANG][k]!=null)?I18N[LANG][k]:(I18N.ko[k]!=null?I18N.ko[k]:k);}
@@ -464,7 +467,9 @@ function onTurnTimeout(){
   clearTurnTimer();
   if(!G||G.currentPlayer!==0||G.phase!=='discard')return;
   const p=G.players[0];const tile=selTile||p.hand[p.hand.length-1];selTile=null;disableHuman();
-  showToast(t('timeUp'));playSfx('discard');applyAction({type:'discard',tile});
+  showToast(t('timeUp'));playSfx('discard');
+  if(MP.active){mpSend({type:'DISCARD',payload:{tile}});return;}
+  applyAction({type:'discard',tile});
 }
 function clearClaimVisual(){if(claimIV){clearInterval(claimIV);claimIV=null;}}
 function startClaimVisual(secs){
@@ -486,6 +491,7 @@ function setClaim(v){SET.claimTime=v;saveSet();renderSettings();}
 function toggleSfx(){SET.sfx=!SET.sfx;saveSet();renderSettings();}
 function toggleBgm(){SET.bgm=!SET.bgm;saveSet();renderSettings();}
 function exitToMenu(){
+  if(MP.active){mpLeave();return;}
   if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();
   ['result-overlay','claim-overlay','chi-overlay'].forEach(id=>document.getElementById(id).classList.remove('on'));
   document.getElementById('settings-overlay').style.display='none';
@@ -680,11 +686,14 @@ function setTI(t){document.getElementById('turn-indicator').textContent=t;}
 function humanDiscard(){
   if(G.currentPlayer!==0||G.phase!=='discard')return;
   if(!selTile){showToast(t('selectDiscard'));return;}
+  if(MP.active){const tile=selTile;selTile=null;disableHuman();mpSend({type:'DISCARD',payload:{tile}});return;}
   const tile=selTile;selTile=null;disableHuman();applyAction({type:'discard',tile});
 }
-function humanTsumo(){if(G.currentPlayer!==0)return;clearTurnTimer();applyAction({type:'tsumo'});}
+function humanTsumo(){if(G.currentPlayer!==0)return;clearTurnTimer();if(MP.active){mpSend({type:'TSUMO'});return;}applyAction({type:'tsumo'});}
 function humanKan(){
-  if(G.currentPlayer!==0)return;clearTurnTimer();const p=G.players[0];
+  if(G.currentPlayer!==0)return;clearTurnTimer();
+  if(MP.active){const a=MP.mv&&MP.mv.myActions;const kt=(a&&(a.ankan||[]).length)?'an':'add';mpSend({type:'KAN',payload:{kanType:kt}});return;}
+  const p=G.players[0];
   const ak=canAnKan(p.hand);if(ak.length>0){applyAction({type:'kan',kanType:'an',tiles:p.hand.filter(t=>t===ak[0])});return;}
   const addK=p.melds.filter(m=>m.type==='pon').map(m=>m.tiles[0]).filter(t=>p.hand.includes(t));
   if(addK.length>0)applyAction({type:'kan',kanType:'add',tiles:[addK[0]]});
@@ -775,6 +784,114 @@ function toggleFS(){if(document.fullscreenElement||document.webkitFullscreenElem
 document.addEventListener('fullscreenchange',syncFS);
 document.addEventListener('webkitfullscreenchange',syncFS);
 window.addEventListener('resize',syncFS);
+
+// ════════ 멀티플레이 ════════
+const MP={active:false,ui:null,client:null,myUserId:null,mySeat:0,gs:null,mv:null};
+function openMultiplayer(){
+  if(typeof MultiplayerUI==='undefined'){showToast('멀티 모듈 로드 실패');return;}
+  document.getElementById('start-screen').style.display='none';
+  const cont=document.getElementById('mp-lobby');cont.style.display='block';
+  MP.ui=new MultiplayerUI({
+    gameType:'mahjong-tw',gameName:t('title').replace('🀄 ','').trim(),container:cont,maxPlayers:4,supportsLocal:false,
+    getRoomConfig:()=>({timeLimit:SET.turnTime||20}),
+    onGameStart:(roomState)=>mpStart(roomState),
+    onLeave:()=>{cont.style.display='none';cont.innerHTML='';document.getElementById('start-screen').style.display='flex';}
+  });
+  MP.ui.show();
+}
+function mpStart(roomState){
+  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();
+  MP.client.onEvent=()=>mpRefresh();
+  document.getElementById('mp-lobby').style.display='none';
+  document.getElementById('mp-lobby').innerHTML='';
+  document.getElementById('game-container').style.display='flex';
+  if(roomState&&roomState.gameState)applyServerView(roomState.gameState,roomState.myView);
+  else mpRefresh();
+}
+function mpRefresh(){
+  if(!MP.active||!MP.client)return;
+  MP.client.getRoomState().then(room=>{if(room&&room.gameState)applyServerView(room.gameState,room.myView);}).catch(()=>{});
+}
+async function mpSend(action){
+  if(!MP.client)return;
+  try{const res=await MP.client.sendAction(action);if(res&&res.gameState)applyServerView(res.gameState,res.myView);else if(res&&res.success===false)showToast(res.error||'서버 거절');}
+  catch(e){showToast('전송 실패');}
+}
+function mpClaimTiles(o,tile,mv){
+  if(o==='pon')return[tile,tile,tile];
+  if(o==='kan')return[tile,tile,tile,tile];
+  if(o==='chi'){const co=(mv.myActions&&mv.myActions.chiOptions)||[];return co.length?co[0]:[tile];}
+  return[tile];
+}
+function applyServerView(gs,mv){
+  MP.gs=gs;MP.mv=mv;
+  const mySeat=(mv&&typeof mv.mySeat==='number'&&mv.mySeat>=0)?mv.mySeat:0;MP.mySeat=mySeat;
+  const order=[mySeat,(mySeat+1)%4,(mySeat+2)%4,(mySeat+3)%4];
+  const players=order.map((seat,di)=>{
+    const sp=gs.players.find(p=>p.seat===seat)||gs.players[seat]||{};
+    const isMe=di===0;
+    return{id:sp.id,name:sp.nickname||'-',type:isMe?'human':'cpu',seatWind:sp.seatWind||0,isDealer:!!sp.isDealer,score:sp.score||0,
+      hand:isMe?((mv&&mv.myHand)||[]):new Array(sp.handCount||0).fill('__b__'),melds:sp.melds||[],flowers:sp.flowers||[]};
+  });
+  const discards=order.map(seat=>gs.discards[seat]||[]);
+  const serverCur=gs.phase==='claim'?(gs.claim&&gs.claim.seat):gs.turn;
+  const cur=Math.max(0,order.indexOf(serverCur));
+  G={players,wall:{length:gs.wallCount||0},discards,currentPlayer:cur,
+     phase:gs.phase==='over'?'roundEnd':gs.phase,round:gs.round||{windIdx:0,dealer:0,honba:0},
+     claimInfo:gs.lastDiscard?{tile:gs.lastDiscard.tile,discarder:Math.max(0,order.indexOf(gs.lastDiscard.from))}:null,flags:{}};
+  render();
+  mpUpdateControls(mv);
+  if(gs.finished)mpShowResult(gs);
+}
+function mpUpdateControls(mv){
+  const a=mv&&mv.myActions;const dis=document.getElementById('btn-discard'),ts=document.getElementById('btn-tsumo'),kn=document.getElementById('btn-kan');
+  const claimOv=document.getElementById('claim-overlay');
+  if(a&&a.claim){claimOv&&mpShowClaim(a);dis.disabled=ts.disabled=kn.disabled=true;clearTurnTimer();return;}
+  claimOv&&claimOv.classList.remove('on');clearClaimVisual();
+  if(a&&mv.isMyTurn){dis.disabled=false;ts.disabled=!a.canTsumo;kn.disabled=!(((a.ankan||[]).length)||((a.addkan||[]).length));startTurnTimer();}
+  else{dis.disabled=ts.disabled=kn.disabled=true;clearTurnTimer();}
+}
+function mpShowClaim(a){
+  const ov=document.getElementById('claim-overlay');const tile=a.tile;
+  const ti=document.getElementById('claim-title');
+  ti.innerHTML='<span class="tile-sm '+tileClass(tile)+suitCls(tile)+'" style="width:26px;height:33px;">'+tileFace(tile)+'</span><span style="font-size:.88rem;">'+t('claimFrom')+'</span>';
+  ti.style.cssText='display:flex;align-items:center;gap:8px;';
+  document.getElementById('claim-sub').textContent='';
+  const btns=document.getElementById('claim-btns');btns.innerHTML='';
+  const cls={ron:'c-ron',pon:'c-pon',chi:'c-chi',kan:'c-kan'};
+  for(const o of a.claim){
+    const b=document.createElement('button');b.className='claim-opt '+(cls[o]||'');
+    const lab=document.createElement('span');lab.className='clabel';lab.textContent=t(o);
+    const tr=document.createElement('span');tr.className='ctiles';
+    for(const mt of mpClaimTiles(o,tile,MP.mv)){const s=document.createElement('span');s.className='tile-sm '+tileClass(mt)+suitCls(mt);s.innerHTML=tileFace(mt);tr.appendChild(s);}
+    b.appendChild(lab);b.appendChild(tr);
+    b.onclick=()=>{ov.classList.remove('on');clearClaimVisual();playSfx('claim');const payload={what:o};if(o==='chi'){const co=(MP.mv.myActions&&MP.mv.myActions.chiOptions)||[];if(co.length)payload.tiles=co[0];}mpSend({type:'CLAIM',payload});};
+    btns.appendChild(b);
+  }
+  const pb=document.createElement('button');pb.className='claim-opt c-pass';pb.innerHTML='<span class="clabel">'+t('pass')+'</span>';pb.onclick=()=>{ov.classList.remove('on');clearClaimVisual();mpSend({type:'PASS'});};btns.appendChild(pb);
+  ov.classList.add('on');
+  const secs=SET.claimTime||8;startClaimVisual(secs);
+}
+function mpShowResult(gs){
+  clearTurnTimer();clearClaimVisual();
+  const r=gs.result||{};
+  const win=r.winnerId?gs.players.find(p=>p.id===r.winnerId):null;
+  document.getElementById('result-title').textContent=win?(win.nickname+' '+t('win')):(t('draw'));
+  let detail='';
+  if(r.yaku)detail+='<b>'+(r.tai||'')+'台</b><br>'+r.yaku.map(y=>y.name+' +'+y.tai).join(' / ')+'<br><br>';
+  detail+=gs.players.map(p=>p.nickname+': '+(p.score||0).toLocaleString()+'G').join('<br>');
+  document.getElementById('result-detail').innerHTML=detail;
+  const nb=document.getElementById('result-next');nb.textContent=t('mpNewHand');nb.onclick=mpRematch;
+  document.getElementById('result-overlay').classList.add('on');
+}
+async function mpRematch(){try{await MP.client.rematch();showToast(t('waiting'));}catch(e){showToast('재시작 실패');}document.getElementById('result-overlay').classList.remove('on');}
+async function mpLeave(){MP.active=false;try{if(MP.client)await MP.client.leaveRoom();}catch(_){}MP.client=null;MP.ui=null;
+  ['result-overlay','claim-overlay','chi-overlay'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById('game-container').style.display='none';
+  document.getElementById('mp-lobby').style.display='none';document.getElementById('mp-lobby').innerHTML='';
+  document.getElementById('start-screen').style.display='flex';G=null;selTile=null;
+  const nb=document.getElementById('result-next');nb.textContent=t('nextRound');nb.onclick=nextRound;
+}
 
 window.addEventListener('load',()=>{
   applyLang();
