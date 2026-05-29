@@ -54,8 +54,16 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .tile.hidden::after{content:'🀫';font-size:30px;color:#cbd5e1;}
 .tile-sm.hidden::after{content:'🀫';font-size:18px;color:#cbd5e1;}
 .meld-group{display:flex;gap:1px;padding:1px 2px;background:rgba(255,255,255,.06);border-radius:3px;}
-#claim-overlay,#chi-overlay,#result-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:50;gap:12px;}
-#claim-overlay.on,#chi-overlay.on,#result-overlay.on{display:flex;}
+#chi-overlay,#result-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:50;gap:12px;}
+#chi-overlay.on,#result-overlay.on{display:flex;}
+/* 클레임 패널: 손패 가리지 않게 상단 카드로 (배경 안 어둡게) */
+#claim-overlay{position:fixed;left:50%;top:calc(var(--wallet-bar-h) + 60px);transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:8px;z-index:60;background:rgba(12,18,32,.97);border:1.5px solid var(--accent);border-radius:14px;padding:11px 14px;box-shadow:0 10px 34px rgba(0,0,0,.65);max-width:96vw;}
+#claim-overlay.on{display:flex;}
+.claim-opt{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 9px;border:none;border-radius:10px;cursor:pointer;min-width:58px;font-weight:800;}
+.claim-opt:active{transform:scale(.95);}
+.claim-opt .clabel{font-size:.9rem;}
+.claim-opt .ctiles{display:flex;gap:1px;}
+.claim-opt .ctiles .tile-sm{width:21px;height:27px;}
 .overlay-title{font-size:1.1rem;font-weight:700;color:var(--accent);}
 .overlay-sub{font-size:.82rem;color:var(--muted);}
 .btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
@@ -115,11 +123,11 @@ body.mj-fs #sw-bar{display:none !important;}
 </head>
 <body>
 <div id="start-screen">
-  <h1>🀄 대만 마작</h1>
-  <p>인간 1명 + CPU 3명<br>16장 핸드 · 대만 룰</p>
-  <button class="big-btn" onclick="startGame()">게임 시작</button>
-  <button class="big-btn" onclick="document.getElementById('howto-overlay').style.display='block'" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);">플레이 방법</button>
-  <button class="big-btn" onclick="openSettings()" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);">⚙ 설정</button>
+  <h1 data-i18n="title">🀄 대만 마작</h1>
+  <p data-i18n="subtitle" data-i18n-html>인간 1명 + CPU 3명<br>16장 핸드 · 대만 룰</p>
+  <button class="big-btn" onclick="startGame()" data-i18n="start">게임 시작</button>
+  <button class="big-btn" onclick="document.getElementById('howto-overlay').style.display='block'" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);" data-i18n="howto">플레이 방법</button>
+  <button class="big-btn" onclick="openSettings()" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);" data-i18n="settings">⚙ 설정</button>
   <div id="sw-gold" style="color:var(--accent);font-size:.85rem;margin-top:4px;"></div>
 </div>
 
@@ -214,9 +222,9 @@ body.mj-fs #sw-bar{display:none !important;}
     </div>
     <div id="player-hand-row"></div>
     <div id="action-btns">
-      <button class="action-btn btn-discard" id="btn-discard" onclick="humanDiscard()" disabled>버리기</button>
-      <button class="action-btn btn-tsumo" id="btn-tsumo" onclick="humanTsumo()" disabled>자모</button>
-      <button class="action-btn btn-kan" id="btn-kan" onclick="humanKan()" disabled>깡</button>
+      <button class="action-btn btn-kan" id="btn-kan" onclick="humanKan()" disabled data-i18n="kan">깡</button>
+      <button class="action-btn btn-tsumo" id="btn-tsumo" onclick="humanTsumo()" disabled data-i18n="tsumo">자모</button>
+      <button class="action-btn btn-discard" id="btn-discard" onclick="humanDiscard()" disabled data-i18n="discard">버리기</button>
     </div>
   </div>
 </div>
@@ -227,43 +235,49 @@ body.mj-fs #sw-bar{display:none !important;}
   <div id="claim-timer"><div id="claim-timer-fill"></div></div>
 </div>
 <div id="chi-overlay">
-  <div class="overlay-title">치 조합 선택</div>
+  <div class="overlay-title" data-i18n="selectChi">치 조합 선택</div>
   <div class="btn-row" id="chi-opts"></div>
-  <button class="cbtn c-pass" onclick="cancelChi()">취소</button>
+  <button class="cbtn c-pass" onclick="cancelChi()" data-i18n="cancel">취소</button>
 </div>
 <div id="result-overlay">
   <div id="result-title"></div>
   <div id="result-detail"></div>
   <div class="btn-row" style="margin-top:8px;">
     <button class="next-btn" id="result-next" onclick="nextRound()">다음 라운드</button>
-    <button class="next-btn" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);margin-top:0;" onclick="exitToMenu()">나가기</button>
+    <button class="next-btn" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);margin-top:0;" onclick="exitToMenu()" data-i18n="exit">나가기</button>
   </div>
 </div>
 <div id="settings-overlay">
   <div class="set-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;position:sticky;top:0;background:rgba(0,0,0,.92);padding:10px 0;z-index:1;">
-      <span style="font-size:1.2rem;font-weight:800;">⚙ 설정</span>
-      <button onclick="closeSettings()" class="fs-btn" style="padding:6px 16px;font-size:.9rem;">닫기</button>
+      <span style="font-size:1.2rem;font-weight:800;" data-i18n="setTitle">⚙ 설정</span>
+      <button onclick="closeSettings()" class="fs-btn" style="padding:6px 16px;font-size:.9rem;" data-i18n="close">닫기</button>
     </div>
-    <div class="set-row"><span class="set-label">⏱ 내 턴 제한</span>
+    <div class="set-row"><span class="set-label" data-i18n="language">🌐 언어</span>
+      <div class="set-seg" id="set-lang">
+        <button class="seg-btn" data-v="ko" onclick="setLang('ko')">한국어</button>
+        <button class="seg-btn" data-v="zh-TW" onclick="setLang('zh-TW')">繁體中文</button>
+      </div>
+    </div>
+    <div class="set-row"><span class="set-label" data-i18n="turnLimit">⏱ 내 턴 제한</span>
       <div class="set-seg" id="set-turn">
-        <button class="seg-btn" data-v="10" onclick="setTurn(10)">10초</button>
-        <button class="seg-btn" data-v="15" onclick="setTurn(15)">15초</button>
-        <button class="seg-btn" data-v="20" onclick="setTurn(20)">20초</button>
-        <button class="seg-btn" data-v="30" onclick="setTurn(30)">30초</button>
-        <button class="seg-btn" data-v="0" onclick="setTurn(0)">없음</button>
+        <button class="seg-btn" data-v="10" onclick="setTurn(10)">10s</button>
+        <button class="seg-btn" data-v="15" onclick="setTurn(15)">15s</button>
+        <button class="seg-btn" data-v="20" onclick="setTurn(20)">20s</button>
+        <button class="seg-btn" data-v="30" onclick="setTurn(30)">30s</button>
+        <button class="seg-btn" data-v="0" onclick="setTurn(0)" data-i18n="none">없음</button>
       </div>
     </div>
-    <div class="set-row"><span class="set-label">✋ 먹기/퐁/치 제한</span>
+    <div class="set-row"><span class="set-label" data-i18n="claimLimit">✋ 먹기/퐁/치 제한</span>
       <div class="set-seg" id="set-claim">
-        <button class="seg-btn" data-v="5" onclick="setClaim(5)">5초</button>
-        <button class="seg-btn" data-v="8" onclick="setClaim(8)">8초</button>
-        <button class="seg-btn" data-v="12" onclick="setClaim(12)">12초</button>
+        <button class="seg-btn" data-v="5" onclick="setClaim(5)">5s</button>
+        <button class="seg-btn" data-v="8" onclick="setClaim(8)">8s</button>
+        <button class="seg-btn" data-v="12" onclick="setClaim(12)">12s</button>
       </div>
     </div>
-    <div class="set-row"><span class="set-label">🔊 효과음</span><div class="toggle" id="tog-sfx" onclick="toggleSfx()"></div></div>
-    <div class="set-row"><span class="set-label">🎵 배경음악</span><div class="toggle" id="tog-bgm" onclick="toggleBgm()"></div></div>
-    <button class="big-btn" style="width:100%;background:var(--red);color:#fff;margin-top:6px;" onclick="exitToMenu()">🚪 게임 나가기</button>
+    <div class="set-row"><span class="set-label" data-i18n="sfx">🔊 효과음</span><div class="toggle" id="tog-sfx" onclick="toggleSfx()"></div></div>
+    <div class="set-row"><span class="set-label" data-i18n="bgm">🎵 배경음악</span><div class="toggle" id="tog-bgm" onclick="toggleBgm()"></div></div>
+    <button class="big-btn" style="width:100%;background:var(--red);color:#fff;margin-top:6px;" onclick="exitToMenu()" data-i18n="exitGame">🚪 게임 나가기</button>
   </div>
 </div>
 <div id="msg-toast"></div>
@@ -274,6 +288,30 @@ const SUITC={m:'萬',p:'筒',s:'索'};
 function td(id){if(!id)return id;const s=suit(id);return SUITC[s]?num(id)+SUITC[s]:(TE[id]||id);}
 function tileFace(id){return '<img class="tface" src="tiles/'+id+'.svg" alt="'+td(id)+'" draggable="false">';}
 function suitCls(id){const s=suit(id);return SUITC[s]?' s-'+s:'';}
+
+// ── 국제화 (i18n): 한국어 / 대만 번체 ──
+const I18N={
+ ko:{title:'🀄 대만 마작',subtitle:'인간 1명 + CPU 3명<br>16장 핸드 · 대만 룰',start:'게임 시작',howto:'플레이 방법',settings:'⚙ 설정',close:'닫기',
+   kan:'깡',tsumo:'자모',discard:'버리기',ron:'론',pon:'퐁',chi:'치',pass:'패스',
+   myTurn:'내 차례',selectDiscard:'버릴 패를 선택하세요',timeUp:'시간 초과 — 자동 버림',
+   claimQ:'가져올 패',claimFrom:'버린 패',nextRound:'다음 라운드',extendRound:'연장 라운드',exit:'나가기',
+   setTitle:'⚙ 설정',turnLimit:'⏱ 내 턴 제한',claimLimit:'✋ 먹기/퐁/치 제한',sfx:'🔊 효과음',bgm:'🎵 배경음악',exitGame:'🚪 게임 나가기',none:'없음',language:'🌐 언어',
+   selectChi:'치 조합 선택',cancel:'취소',tsumoWin:'자모',ronWin:'론',win:'화료',draw:'유국'},
+ 'zh-TW':{title:'🀄 台灣麻將',subtitle:'1位玩家 + 3位電腦<br>16張手牌 · 台灣規則',start:'開始遊戲',howto:'玩法說明',settings:'⚙ 設定',close:'關閉',
+   kan:'槓',tsumo:'自摸',discard:'打牌',ron:'胡',pon:'碰',chi:'吃',pass:'過',
+   myTurn:'輪到你',selectDiscard:'請選擇要打出的牌',timeUp:'超時 — 自動打牌',
+   claimQ:'要的牌',claimFrom:'打出的牌',nextRound:'下一局',extendRound:'連莊',exit:'離開',
+   setTitle:'⚙ 設定',turnLimit:'⏱ 我的回合限時',claimLimit:'✋ 吃/碰/槓限時',sfx:'🔊 音效',bgm:'🎵 背景音樂',exitGame:'🚪 離開遊戲',none:'無',language:'🌐 語言',
+   selectChi:'選擇吃牌組合',cancel:'取消',tsumoWin:'自摸',ronWin:'胡',win:'胡牌',draw:'流局'}
+};
+let LANG=(function(){try{const s=localStorage.getItem('mahjong_lang');if(s)return s;}catch(_){}return (navigator.language||'').toLowerCase().startsWith('zh')?'zh-TW':'ko';})();
+function t(k){return (I18N[LANG]&&I18N[LANG][k]!=null)?I18N[LANG][k]:(I18N.ko[k]!=null?I18N.ko[k]:k);}
+function applyLang(){
+  document.documentElement.lang=(LANG==='zh-TW')?'zh-Hant':'ko';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');const v=t(k);if(el.hasAttribute('data-i18n-html'))el.innerHTML=v;else el.textContent=v;});
+  document.querySelectorAll('#set-lang .seg-btn').forEach(b=>b.classList.toggle('on',b.dataset.v===LANG));
+}
+function setLang(l){LANG=l;try{localStorage.setItem('mahjong_lang',l);}catch(_){}applyLang();if(typeof renderSettings==='function')renderSettings();if(typeof G!=='undefined'&&G)render();}
 function suit(id){return id[0];}
 function num(id){return parseInt(id.slice(1));}
 function isFlower(id){return id[0]==='f';}
@@ -426,7 +464,7 @@ function onTurnTimeout(){
   clearTurnTimer();
   if(!G||G.currentPlayer!==0||G.phase!=='discard')return;
   const p=G.players[0];const tile=selTile||p.hand[p.hand.length-1];selTile=null;disableHuman();
-  showToast('시간 초과 — 자동 버림');playSfx('discard');applyAction({type:'discard',tile});
+  showToast(t('timeUp'));playSfx('discard');applyAction({type:'discard',tile});
 }
 function clearClaimVisual(){if(claimIV){clearInterval(claimIV);claimIV=null;}}
 function startClaimVisual(secs){
@@ -561,14 +599,30 @@ function getHumanOpts(tile,discarderIdx){
   if(discarderIdx===prevPlayer(0)&&chiOptions(p.hand,tile).length>0)opts.push('chi');
   return opts;
 }
+function claimMeldTiles(o,tile){
+  if(o==='pon')return [tile,tile,tile];
+  if(o==='kan')return [tile,tile,tile,tile];
+  if(o==='chi'){const co=chiOptions(G.players[0].hand,tile);return co.length?co[0]:[tile];}
+  return [tile];
+}
 function showClaimOv(tile,opts,discarderIdx){
   const ov=document.getElementById('claim-overlay');
-  document.getElementById('claim-title').textContent='클레임? ('+td(tile)+')';
-  document.getElementById('claim-sub').textContent=G.players[discarderIdx].name+'이 버린 패';
+  const ti=document.getElementById('claim-title');
+  ti.innerHTML='<span class="tile-sm '+tileClass(tile)+suitCls(tile)+'" style="width:26px;height:33px;">'+tileFace(tile)+'</span><span style="font-size:.88rem;">'+G.players[discarderIdx].name+' · '+t('claimFrom')+'</span>';
+  ti.style.cssText='display:flex;align-items:center;gap:8px;';
+  document.getElementById('claim-sub').textContent='';
   const btns=document.getElementById('claim-btns');btns.innerHTML='';
-  const map={ron:['론(화료)','c-ron'],pon:['퐁','c-pon'],chi:['치','c-chi'],kan:['깡','c-kan']};
-  for(const o of opts){const b=document.createElement('button');b.className='cbtn '+map[o][1];b.textContent=map[o][0];b.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);clearClaimVisual();playSfx('claim');humanClaim(o,tile,discarderIdx);};btns.appendChild(b);}
-  const pb=document.createElement('button');pb.className='cbtn c-pass';pb.textContent='패스';pb.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);clearClaimVisual();resolveClaims(discarderIdx);};btns.appendChild(pb);
+  const cls={ron:'c-ron',pon:'c-pon',chi:'c-chi',kan:'c-kan'};
+  for(const o of opts){
+    const b=document.createElement('button');b.className='claim-opt '+(cls[o]||'');
+    const lab=document.createElement('span');lab.className='clabel';lab.textContent=t(o);
+    const tr=document.createElement('span');tr.className='ctiles';
+    for(const mt of claimMeldTiles(o,tile)){const s=document.createElement('span');s.className='tile-sm '+tileClass(mt)+suitCls(mt);s.innerHTML=tileFace(mt);tr.appendChild(s);}
+    b.appendChild(lab);b.appendChild(tr);
+    b.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);clearClaimVisual();playSfx('claim');humanClaim(o,tile,discarderIdx);};
+    btns.appendChild(b);
+  }
+  const pb=document.createElement('button');pb.className='claim-opt c-pass';pb.innerHTML='<span class="clabel">'+t('pass')+'</span>';pb.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);clearClaimVisual();resolveClaims(discarderIdx);};btns.appendChild(pb);
   ov.classList.add('on');
   const secs=SET.claimTime||8;startClaimVisual(secs);
   claimTimer=setTimeout(()=>{ov.classList.remove('on');clearClaimVisual();resolveClaims(discarderIdx);},secs*1000);
@@ -619,13 +673,13 @@ function enableHuman(pidx){
   document.getElementById('btn-tsumo').disabled=!canWin(p.hand,p.melds);
   const ak=canAnKan(p.hand);const addK=p.melds.filter(m=>m.type==='pon').map(m=>m.tiles[0]).filter(t=>p.hand.includes(t));
   document.getElementById('btn-kan').disabled=(ak.length===0&&addK.length===0);
-  setTI('내 차례');startTurnTimer();
+  setTI(t('myTurn'));startTurnTimer();
 }
 function disableHuman(){clearTurnTimer();['btn-discard','btn-tsumo','btn-kan'].forEach(id=>document.getElementById(id).disabled=true);}
 function setTI(t){document.getElementById('turn-indicator').textContent=t;}
 function humanDiscard(){
   if(G.currentPlayer!==0||G.phase!=='discard')return;
-  if(!selTile){showToast('버릴 패를 선택하세요');return;}
+  if(!selTile){showToast(t('selectDiscard'));return;}
   const tile=selTile;selTile=null;disableHuman();applyAction({type:'discard',tile});
 }
 function humanTsumo(){if(G.currentPlayer!==0)return;clearTurnTimer();applyAction({type:'tsumo'});}
@@ -642,17 +696,17 @@ function showWin(winnerIdx,discarderIdx,winTile,result){
   if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?tai*2000:tai*1000;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
   else{const isDPay=G.players[discarderIdx].seatWind===0;const mult=(isDW||isDPay)?2:1;const amt=tai*1000*mult;G.players[discarderIdx].score-=amt;G.players[winnerIdx].score+=amt;}
   if(winnerIdx===0){const gold=tai*100000;if(typeof SharedWallet!=='undefined'&&SharedWallet.addGold)try{SharedWallet.addGold(gold);}catch(_){}}
-  const wl=discarderIdx===-1?'자모':'론';
-  document.getElementById('result-title').textContent=winner.name+' 화료! ('+wl+')';
+  const wl=discarderIdx===-1?t('tsumoWin'):t('ronWin');
+  document.getElementById('result-title').textContent=winner.name+' '+t('win')+'! ('+wl+')';
   document.getElementById('result-detail').innerHTML='<b>'+tai+'台 (기본5 + 역'+result.total+')</b><br>'+result.yaku.map(y=>y.name+' +'+y.tai+'台').join(' / ')+'<br><br>'+G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>');
-  document.getElementById('result-next').textContent=isDW?'연장 라운드':'다음 라운드';
+  document.getElementById('result-next').textContent=isDW?t('extendRound'):t('nextRound');
   document.getElementById('result-overlay').classList.add('on');render();
 }
 function endRound(reason){
   if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();G.phase='roundEnd';
-  document.getElementById('result-title').textContent=reason||'유국';
+  document.getElementById('result-title').textContent=t('draw');
   document.getElementById('result-detail').innerHTML=G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>');
-  document.getElementById('result-next').textContent='다음 라운드';
+  document.getElementById('result-next').textContent=t('nextRound');
   document.getElementById('result-overlay').classList.add('on');render();
 }
 function nextRound(){
@@ -671,7 +725,7 @@ function render(){
   document.getElementById('ri-honba').textContent=G.round.honba;
   const sr=document.getElementById('score-row');
   sr.innerHTML=G.players.map(p=>'<div class="score-chip'+(p.isDealer?' dealer':'')+'">'+WL[p.seatWind]+'·'+p.name.replace('CPU ','')+' '+Math.floor(p.score/1000)+'k</div>').join('');
-  setTI(G.players[G.currentPlayer].name+(G.currentPlayer===0?' (내 차례)':' 차례'));
+  setTI(G.currentPlayer===0?t('myTurn'):G.players[G.currentPlayer].name);
   for(let p=1;p<=3;p++)renderCpu(p);
   renderDiscards();renderPlayer();
 }
@@ -723,6 +777,7 @@ document.addEventListener('webkitfullscreenchange',syncFS);
 window.addEventListener('resize',syncFS);
 
 window.addEventListener('load',()=>{
+  applyLang();
   if(typeof SharedWallet!=='undefined'){try{const g=SharedWallet.gold;if(g!=null)document.getElementById('sw-gold').textContent='보유 골드: '+Number(g).toLocaleString()+'G';}catch(_){}}
 });
 </script>
