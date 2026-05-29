@@ -90,24 +90,26 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 #msg-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--panel2);color:var(--text);padding:7px 18px;border-radius:20px;font-size:.82rem;opacity:0;transition:opacity .3s;z-index:70;border:1px solid var(--line);pointer-events:none;white-space:nowrap;}
 #msg-toast.show{opacity:1;}
 #turn-indicator{font-size:.7rem;color:var(--muted);text-align:center;padding:2px 0;}
-/* ── 가로모드: 손패 한 줄 풀사이즈, 세로 chrome 축소 ── */
+/* 전체화면 토글 버튼 */
+.fs-btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:1px 9px;font-size:1rem;line-height:1.5;cursor:pointer;flex-shrink:0;}
+.fs-btn:active{transform:scale(.94);}
+/* CPU 숨은 손패: 16장 깔지 않고 컴팩트 카운트로 (사이드레일 잘림 방지) */
+.cpu-hand-count{display:inline-flex;align-items:center;gap:3px;background:#1e3a5f;color:#cbd5e1;border:1px solid #334155;border-radius:6px;padding:2px 7px;font-size:.72rem;font-weight:700;white-space:nowrap;}
+/* ── 전체화면(가로) 모드 ── */
+body.mj-fs{padding-top:0 !important;}
+body.mj-fs #sw-bar{display:none !important;}
+/* ── 가로 레이아웃: 손패 한 줄 풀사이즈, 세로 chrome 축소 ── */
 @media (orientation:landscape){
   #round-info{padding:2px 12px;font-size:.74rem;}
-  #opponent-areas{grid-template-columns:46px 1fr 46px;padding:3px;gap:3px;}
-  .cpu-hand .tile-sm{width:18px;height:25px;}
-  #player-area{padding:4px 10px;padding-bottom:calc(4px + env(safe-area-inset-bottom));gap:3px;}
+  #opponent-areas{grid-template-columns:96px 1fr 96px;padding:4px;gap:4px;}
+  #player-area{padding:4px 12px;padding-bottom:calc(4px + env(safe-area-inset-bottom));gap:2px;}
   #turn-indicator{padding:0;}
   #player-hand-row{flex-wrap:nowrap;justify-content:center;overflow-x:auto;gap:4px;}
-  #player-hand-row .tile{width:44px;height:60px;}
+  #player-hand-row .tile{width:42px;height:56px;}
 }
-/* 가로로 더 짧은 기기에선 손패가 한 줄에 다 들어가도록 살짝 축소 */
-@media (orientation:landscape) and (max-width:820px){
-  #player-hand-row .tile{width:40px;height:54px;}
-  #player-hand-row .tile .tn{font-size:23px;}
-}
-.rotate-hint{display:none;}
-@media (orientation:portrait){
-  .rotate-hint{display:inline-flex;align-items:center;gap:4px;font-size:.66rem;color:var(--accent);background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.25);border-radius:8px;padding:2px 8px;margin-left:auto;}
+@media (orientation:landscape) and (max-width:780px){
+  #player-hand-row .tile{width:38px;height:50px;}
+  #player-hand-row .tile .tn{font-size:22px;}
 }
 </style>
 </head>
@@ -172,6 +174,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <div class="ri-item"><span class="ri-label">잔여</span><span class="ri-val" id="ri-wall">0</span></div>
     <div class="ri-item"><span class="ri-label">본장</span><span class="ri-val" id="ri-honba">0</span></div>
     <div id="score-row"></div>
+    <button id="fs-btn" class="fs-btn" onclick="toggleFS()" title="가로 전체화면 전환">⛶</button>
   </div>
   <div id="opponent-areas">
     <div class="cpu-area left" id="area-p1">
@@ -202,7 +205,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <span style="font-size:.7rem;color:var(--muted)">화패</span>
       <div id="player-flowers" style="display:flex;gap:2px;"></div>
       <div id="player-melds" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
-      <span class="rotate-hint">📱↻ 가로로 돌리면 손패가 한 줄로</span>
     </div>
     <div id="player-hand-row"></div>
     <div id="action-btns">
@@ -588,7 +590,7 @@ function renderCpu(pidx){
   ne.textContent=p.name+'('+WL[p.seatWind]+')'+(p.isDealer?'◆':'');
   ne.className='cpu-name'+(isCur?' active':'');
   const he=document.getElementById('hand-p'+pidx);he.innerHTML='';
-  for(let i=0;i<p.hand.length;i++){const d=document.createElement('div');d.className='tile-sm hidden';he.appendChild(d);}
+  const cnt=document.createElement('div');cnt.className='cpu-hand-count';cnt.textContent='🀫 '+p.hand.length;he.appendChild(cnt);
   const me=document.getElementById('melds-p'+pidx);me.innerHTML='';
   for(const m of p.melds){const g=document.createElement('div');g.className='meld-group';const st=m.type==='ankan'?[m.tiles[0],'_h',m.tiles[2],'_h']:m.tiles;for(const t of st){const s=document.createElement('div');if(t==='_h'){s.className='tile-sm hidden';}else{s.className='tile-sm '+tileClass(t)+suitCls(t);s.innerHTML=tileFace(t);}g.appendChild(s);}me.appendChild(g);}
   const fe=document.getElementById('flowers-p'+pidx);fe.innerHTML='';
@@ -619,6 +621,15 @@ function startGame(){
   document.getElementById('game-container').style.display='flex';
   G=makeState(null,0,0,0);dealAndStart(G);
 }
+
+/* ── 전체화면(가로) 토글 ── */
+async function enterFS(){try{const el=document.documentElement;if(el.requestFullscreen)await el.requestFullscreen();else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();if(screen.orientation&&screen.orientation.lock){await screen.orientation.lock('landscape').catch(()=>{});}}catch(e){}}
+async function exitFS(){try{if(document.fullscreenElement||document.webkitFullscreenElement){if(document.exitFullscreen)await document.exitFullscreen();else if(document.webkitExitFullscreen)document.webkitExitFullscreen();}if(screen.orientation&&screen.orientation.unlock){try{screen.orientation.unlock();}catch(_){}}}catch(e){}}
+function syncFS(){const fs=document.fullscreenElement||document.webkitFullscreenElement;const land=window.innerWidth>window.innerHeight;document.body.classList.toggle('mj-fs',!!fs&&land);const b=document.getElementById('fs-btn');if(b)b.textContent=fs?'⊡':'⛶';}
+function toggleFS(){if(document.fullscreenElement||document.webkitFullscreenElement)exitFS();else enterFS();setTimeout(syncFS,160);}
+document.addEventListener('fullscreenchange',syncFS);
+document.addEventListener('webkitfullscreenchange',syncFS);
+window.addEventListener('resize',syncFS);
 
 window.addEventListener('load',()=>{
   if(typeof SharedWallet!=='undefined'){try{const g=SharedWallet.gold;if(g!=null)document.getElementById('sw-gold').textContent='보유 골드: '+Number(g).toLocaleString()+'G';}catch(_){}}
