@@ -4129,7 +4129,7 @@
                     </div>` : ''}
                     ${isSealedSword(weapon) ? `
                     <div style="background:rgba(255,200,0,0.1);border:1px solid rgba(255,200,0,0.3);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:0.8rem;color:#ffd700;">
-                        🔐 <b>봉인의 검</b> — ${weapon.level < 5 ? `봉인 중 (+5 해제까지 ${5 - weapon.level}단계)` : `봉인 해제! 폭발 성장 중`}<br>
+                        🔐 <b>봉인의 검</b> — ${weapon.level < 5 ? `봉인 중 (+5 해제까지 ${5 - weapon.level}단계 · 강화비용 1억 고정)` : `봉인 해제! 폭발 성장 중`}<br>
                         ${weapon.level >= 5 ? `<span style="color:#ff8;">현재 배율: ×${(Math.pow(weapon.level - 4, 1.9) * 8).toFixed(0)}</span>` : ''}
                     </div>` : ''}
                 </div>
@@ -4440,9 +4440,9 @@
                 const destroyChance = Math.min(90, 30 + weapon.level * 3);
                 return { success: baseRates.success, destroy: destroyChance, cost: baseRates.cost };
             }
-            // 🔐 봉인의 검: +4 이하 파괴 없음
+            // 🔐 봉인의 검: +4 이하 파괴 없음, 비용 1억 고정 (봉인 해제 조건)
             if (isSealedSword(weapon) && weapon.level < 5) {
-                return { success: baseRates.success, destroy: 0, cost: baseRates.cost };
+                return { success: baseRates.success, destroy: 0, cost: 100000000 };
             }
             // 🪙 도박사의 동전: 성공 50% 고정, 파괴 없음, 비용 절반
             if (isDiceWeapon(weapon)) {
