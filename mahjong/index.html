@@ -7,6 +7,7 @@
 <script src="/lib/shared-wallet.js?v=20260524a"></script>
 <script src="/lib/multiplayer.js?v=20260524a"></script>
 <script src="/lib/multiplayer-ui.js?v=20260524a"></script>
+<script src="/lib/game-rankings.js?v=20260529a"></script>
 <style>
 :root{--bg:#0a0f1a;--panel:#111827;--panel2:#1f2937;--line:#334155;--text:#f1f5f9;--muted:#64748b;--accent:#ffd700;--green:#4ecca3;--red:#ef4444;--blue:#3b82f6;--wallet-bar-h:56px;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -721,7 +722,7 @@ function showWin(winnerIdx,discarderIdx,winTile,result){
   const winner=G.players[winnerIdx];const tai=result.total+5;const isDW=winner.seatWind===0;
   if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?tai*2000:tai*1000;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
   else{const isDPay=G.players[discarderIdx].seatWind===0;const mult=(isDW||isDPay)?2:1;const amt=tai*1000*mult;G.players[discarderIdx].score-=amt;G.players[winnerIdx].score+=amt;}
-  if(winnerIdx===0){const gold=tai*100000;if(typeof SharedWallet!=='undefined'&&SharedWallet.addGold)try{SharedWallet.addGold(gold);}catch(_){}}
+  if(winnerIdx===0){const gold=tai*1000000;if(typeof SharedWallet!=='undefined'&&SharedWallet.addGold)try{SharedWallet.addGold(gold);}catch(_){}if(typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:tai});}catch(_){}}
   const wl=discarderIdx===-1?t('tsumoWin'):t('ronWin');
   document.getElementById('result-title').textContent=winner.name+' '+t('win')+'! ('+wl+')';
   document.getElementById('result-detail').innerHTML='<b>'+tai+'台 (기본5 + 역'+result.total+')</b><br>'+result.yaku.map(y=>y.name+' +'+y.tai+'台').join(' / ')+'<br><br>'+G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>');
@@ -914,6 +915,7 @@ function mpShowResult(gs){
   detail+=gs.players.map(p=>p.nickname+': '+(p.score||0).toLocaleString()+'G').join('<br>');
   document.getElementById('result-detail').innerHTML=detail;
   const nb=document.getElementById('result-next');nb.textContent=t('mpNewHand');nb.onclick=mpRematch;
+  if(win&&win.id===MP.myUserId&&r.tai&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:r.tai});}catch(_){}
   const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
   ov.classList.add('on');
 }
@@ -929,6 +931,7 @@ async function mpLeave(){MP.active=false;try{if(MP.client)await MP.client.leaveR
 
 window.addEventListener('load',()=>{
   applyLang();
+  if(typeof GameRankings!=='undefined')try{GameRankings.injectNavButton('mahjong');}catch(_){}
   if(typeof SharedWallet!=='undefined'){try{const g=SharedWallet.gold;if(g!=null)document.getElementById('sw-gold').textContent='보유 골드: '+Number(g).toLocaleString()+'G';}catch(_){}}
 });
 </script>
