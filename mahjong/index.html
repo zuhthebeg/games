@@ -147,6 +147,8 @@ body.mj-fs #sw-bar{display:none !important;}
 .conf{position:absolute;top:0;width:8px;height:12px;border-radius:2px;animation:confFall 1.4s linear infinite;}
 @keyframes dealIn{from{transform:translateY(-70px) scale(.55) rotate(-10deg);opacity:0;}70%{opacity:1;}to{transform:translateY(0) scale(1) rotate(0);opacity:1;}}
 .deal-anim{animation:dealIn .34s cubic-bezier(.2,.7,.3,1.2) backwards;}
+.tile-sm.claimed{outline:2px solid #ef4444;outline-offset:-1px;border-radius:4px;}
+.tile-sm.claimed .tface{filter:drop-shadow(0 0 5px rgba(255,80,80,.95));}
 </style>
 </head>
 <body>
@@ -584,14 +586,14 @@ function applyAction(action){
     const fromH=action.tiles.filter(t=>t!==disc);
     for(const t of fromH){const i=player.hand.indexOf(t);if(i>=0)player.hand.splice(i,1);}
     const di=G.discards[discarder];const dIdx=di.lastIndexOf(disc);if(dIdx>=0)di.splice(dIdx,1);
-    player.melds.push({type:'chi',tiles:[...action.tiles].sort(),from:discarder});
+    player.melds.push({type:'chi',tiles:[...action.tiles].sort(),from:discarder,claimed:disc});
     G.phase='discard';render();if(player.type==='cpu')scheduleCpu(pidx,800);else enableHuman(pidx);return;
   }
   if(action.type==='pon'){
     const tile=action.tile,discarder=G.claimInfo?.discarder;let rm=0;
     for(let i=player.hand.length-1;i>=0&&rm<2;i--)if(player.hand[i]===tile){player.hand.splice(i,1);rm++;}
     const di=G.discards[discarder];const dIdx=di.lastIndexOf(tile);if(dIdx>=0)di.splice(dIdx,1);
-    player.melds.push({type:'pon',tiles:[tile,tile,tile],from:discarder});
+    player.melds.push({type:'pon',tiles:[tile,tile,tile],from:discarder,claimed:tile});
     G.phase='discard';render();if(player.type==='cpu')scheduleCpu(pidx,800);else enableHuman(pidx);return;
   }
   if(action.type==='ron'){
@@ -609,7 +611,7 @@ function doKan(action,pidx){
     const tile=action.tile,discarder=G.claimInfo?.discarder;let rm=0;
     for(let i=player.hand.length-1;i>=0&&rm<3;i--)if(player.hand[i]===tile){player.hand.splice(i,1);rm++;}
     const di=G.discards[discarder];const dIdx=di.lastIndexOf(tile);if(dIdx>=0)di.splice(dIdx,1);
-    player.melds.push({type:'minkan',tiles:[tile,tile,tile,tile],from:discarder});
+    player.melds.push({type:'minkan',tiles:[tile,tile,tile,tile],from:discarder,claimed:tile});
   }else if(action.kanType==='add'){
     const tile=action.tiles[0];const mi=player.melds.findIndex(m=>m.type==='pon'&&m.tiles[0]===tile);
     if(mi>=0){player.melds[mi].type='addkan';player.melds[mi].tiles.push(tile);}
@@ -788,7 +790,7 @@ function renderCpu(pidx){
   const cnt=document.createElement('div');cnt.className='cpu-hand-count';cnt.textContent='🀫 '+p.hand.length;he.appendChild(cnt);
   const me=document.getElementById('melds-p'+pidx);me.innerHTML='';
   const newMeldC=p.melds.length>_meldCounts[pidx];
-  p.melds.forEach((m,j)=>{const g=document.createElement('div');g.className='meld-group';const st=m.type==='ankan'?[m.tiles[0],'_h',m.tiles[2],'_h']:m.tiles;const animNew=newMeldC&&j===p.melds.length-1;st.forEach((tt,k)=>{const s=document.createElement('div');if(tt==='_h'){s.className='tile-sm hidden';}else{s.className='tile-sm '+tileClass(tt)+suitCls(tt);s.innerHTML=tileFace(tt);}if(animNew){s.classList.add(m.type==='ankan'?'ankan-anim':'meld-anim');s.style.animationDelay=(k*0.07)+'s';}g.appendChild(s);});me.appendChild(g);});
+  p.melds.forEach((m,j)=>{const g=document.createElement('div');g.className='meld-group';const st=m.type==='ankan'?[m.tiles[0],'_h',m.tiles[2],'_h']:m.tiles;const animNew=newMeldC&&j===p.melds.length-1;let mk=false;st.forEach((tt,k)=>{const s=document.createElement('div');if(tt==='_h'){s.className='tile-sm hidden';}else{s.className='tile-sm '+tileClass(tt)+suitCls(tt);if(!mk&&m.claimed&&tt===m.claimed){s.classList.add('claimed');mk=true;}s.innerHTML=tileFace(tt);}if(animNew){s.classList.add(m.type==='ankan'?'ankan-anim':'meld-anim');s.style.animationDelay=(k*0.07)+'s';}g.appendChild(s);});me.appendChild(g);});
   _meldCounts[pidx]=p.melds.length;
   const fe=document.getElementById('flowers-p'+pidx);fe.innerHTML='';
   for(const f of p.flowers){const s=document.createElement('div');s.className='tile-sm flower-tile';s.innerHTML=tileFace(f);fe.appendChild(s);}
@@ -809,7 +811,7 @@ function renderPlayer(){
   p.hand.forEach((t,i)=>{const d=document.createElement('div');d.className='tile '+tileClass(t)+suitCls(t)+(t===selTile?' selected':'');if(_dealAnim){d.classList.add('deal-anim');d.style.animationDelay=(i*0.035).toFixed(3)+'s';}d.innerHTML=tileFace(t);d.onclick=()=>{if(G.currentPlayer!==0||G.phase!=='discard')return;if(t[0]==='f')return;selTile=(selTile===t)?null:t;renderPlayer();};hr.appendChild(d);});
   const me=document.getElementById('player-melds');me.innerHTML='';
   const newMeldC=p.melds.length>_meldCounts[0];
-  p.melds.forEach((m,j)=>{const g=document.createElement('div');g.className='meld-group';const animNew=newMeldC&&j===p.melds.length-1;m.tiles.forEach((tt,k)=>{const s=document.createElement('div');s.className='tile-sm '+tileClass(tt)+suitCls(tt);s.innerHTML=tileFace(tt);if(animNew){s.classList.add(m.type==='ankan'?'ankan-anim':'meld-anim');s.style.animationDelay=(k*0.07)+'s';}g.appendChild(s);});me.appendChild(g);});
+  p.melds.forEach((m,j)=>{const g=document.createElement('div');g.className='meld-group';const animNew=newMeldC&&j===p.melds.length-1;let mk=false;m.tiles.forEach((tt,k)=>{const s=document.createElement('div');s.className='tile-sm '+tileClass(tt)+suitCls(tt);if(!mk&&m.claimed&&tt===m.claimed){s.classList.add('claimed');mk=true;}s.innerHTML=tileFace(tt);if(animNew){s.classList.add(m.type==='ankan'?'ankan-anim':'meld-anim');s.style.animationDelay=(k*0.07)+'s';}g.appendChild(s);});me.appendChild(g);});
   _meldCounts[0]=p.melds.length;
   const fe=document.getElementById('player-flowers');fe.innerHTML='';
   for(const f of p.flowers){const s=document.createElement('div');s.className='tile-sm flower-tile';s.innerHTML=tileFace(f);fe.appendChild(s);}
@@ -848,7 +850,7 @@ function openMultiplayer(){
   MP.ui.show();
 }
 function mpStart(roomState){
-  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();_dealAnim=true;
+  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();_dealAnim=true;MP._resultShown=false;
   MP.client.onEvent=()=>mpRefresh();
   document.getElementById('mp-lobby').style.display='none';
   document.getElementById('mp-lobby').innerHTML='';
@@ -921,6 +923,7 @@ function mpShowClaim(a){
   const secs=SET.claimTime||8;startClaimVisual(secs);
 }
 function mpShowResult(gs){
+  if(MP._resultShown)return; MP._resultShown=true;
   clearTurnTimer();clearClaimVisual();
   const r=gs.result||{};
   const win=r.winnerId?gs.players.find(p=>p.id===r.winnerId):null;
@@ -930,11 +933,14 @@ function mpShowResult(gs){
   detail+=gs.players.map(p=>p.nickname+': '+(p.score||0).toLocaleString()+'G').join('<br>');
   document.getElementById('result-detail').innerHTML=detail;
   const nb=document.getElementById('result-next');nb.textContent=t('mpNewHand');nb.onclick=mpRematch;
-  if(win&&win.id===MP.myUserId&&r.tai&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:r.tai});}catch(_){}
+  if(win&&win.id===MP.myUserId&&r.tai){
+    if(typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:r.tai});}catch(_){}
+    if(typeof SharedWallet!=='undefined'&&SharedWallet.addGold)try{SharedWallet.addGold(r.tai*1000000);}catch(_){}
+  }
   const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
   ov.classList.add('on');
 }
-async function mpRematch(){try{await MP.client.rematch();_dealAnim=true;showToast(t('waiting'));}catch(e){showToast('재시작 실패');}document.getElementById('result-overlay').classList.remove('on','win-fanfare');spawnConfetti(false);}
+async function mpRematch(){try{await MP.client.rematch();_dealAnim=true;MP._resultShown=false;showToast(t('waiting'));}catch(e){showToast('재시작 실패');}document.getElementById('result-overlay').classList.remove('on','win-fanfare');spawnConfetti(false);}
 async function mpLeave(){MP.active=false;try{if(MP.client)await MP.client.leaveRoom();}catch(_){}MP.client=null;MP.ui=null;
   document.getElementById('result-overlay').classList.remove('win-fanfare');spawnConfetti(false);
   ['result-overlay','claim-overlay','chi-overlay'].forEach(id=>document.getElementById(id).classList.remove('on'));
