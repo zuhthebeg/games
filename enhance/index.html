@@ -6397,6 +6397,8 @@
 
         async function fetchBossDialogue(monster) {
             try {
+                const weaponStats = getWeaponStats(state.weapon);
+                const playerHpPercent = huntState ? Math.round(huntState.player.hp / huntState.player.maxHp * 100) : 100;
                 const res = await fetch(`${RELAY_URL}/api/llm/boss`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -6412,7 +6414,10 @@
                         playerElement: state.weapon.element || 'none',
                         playerWeaponType: state.weapon.type || 'sword',
                         bossType: monster.type || 'unknown',
-                        gameId: 'enhance'
+                        gameId: 'enhance',
+                        playerHpPercent,
+                        playerDamageMin: weaponStats.damageMin,
+                        playerDamageMax: weaponStats.damageMax,
                     })
                 });
                 if (!res.ok) throw new Error('API error');
@@ -6811,6 +6816,8 @@
                 huntState.monster.name?.includes('리치') &&
                 isSealedSword(state.weapon) && state.weapon.level >= 5) {
 
+                huntState._sealing = true;
+                renderHunt();
                 setTimeout(() => {
                     const sealedLevel = state.weapon.level;
                     state.weapon.level = 4;  // 봉인 상태(+4)로 복귀
@@ -6824,6 +6831,7 @@
                     setTimeout(() => document.body.classList.remove('screen-shake'), 600);
 
                     huntState.log.push({ type: 'crit', text: `👻 리치가 봉인의 검을 재봉인! +${sealedLevel} → +4로 돌아갔다!` });
+                    huntState._sealing = false;
                     renderHunt();
                 }, 800);
             } else if (huntState.monster.isBoss) {
@@ -6922,7 +6930,7 @@
                     </div>
 
                     <div class="hunt-actions">
-                        <button class="btn btn-enhance" onclick="huntAttack()">⚔️ 공격!</button>
+                        <button class="btn btn-enhance" onclick="huntAttack()" ${huntState._sealing ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>⚔️ 공격!</button>
                         <button class="btn btn-secondary" onclick="huntRunAway()" style="background:rgba(255,100,100,0.2);border:1px solid var(--fail);">
                             🏃 도망 (-${getRunPenaltyPercent(monster.tier)}%)
                         </button>
@@ -7333,6 +7341,7 @@
         
         function huntAttack() {
             if (!huntState) return;
+            if (huntState._sealing) return;  // 봉인 애니메이션 중 공격 불가
             if (huntAttackCooldown) return;  // 따닥 방지
             
             huntAttackCooldown = true;
@@ -8277,6 +8286,8 @@
                 // 👻 리치 재봉인 체크
                 if (huntState.monster.name?.includes('리치') &&
                     isSealedSword(state.weapon) && state.weapon.level >= 5) {
+                    huntState._sealing = true;
+                    renderHunt();
                     setTimeout(() => {
                         const sealedLevel = state.weapon.level;
                         state.weapon.level = 4;
@@ -8286,6 +8297,7 @@
                         SFX.play('enhance-destroy');
                         vibrate([200, 100, 200, 100, 400]);
                         huntState.log.push({ type: 'crit', text: `👻 리치가 봉인의 검을 재봉인! +${sealedLevel} → +4로 돌아갔다!` });
+                        huntState._sealing = false;
                         renderHunt();
                     }, 800);
                 } else {
@@ -8348,6 +8360,8 @@
                 // 👻 리치 재봉인 체크
                 if (huntState.monster.name?.includes('리치') &&
                     isSealedSword(state.weapon) && state.weapon.level >= 5) {
+                    huntState._sealing = true;
+                    renderHunt();
                     setTimeout(() => {
                         const sealedLevel = state.weapon.level;
                         state.weapon.level = 4;
@@ -8359,6 +8373,7 @@
                         document.body.classList.add('screen-shake');
                         setTimeout(() => document.body.classList.remove('screen-shake'), 600);
                         huntState.log.push({ type: 'crit', text: `👻 리치가 봉인의 검을 재봉인! +${sealedLevel} → +4로 돌아갔다!` });
+                        huntState._sealing = false;
                         renderHunt();
                     }, 800);
                 } else {
