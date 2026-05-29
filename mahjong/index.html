@@ -95,7 +95,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   #round-info{padding:2px 12px;font-size:.74rem;}
   #opponent-areas{grid-template-columns:46px 1fr 46px;padding:3px;gap:3px;}
   .cpu-hand .tile-sm{width:18px;height:25px;}
-  #player-area{padding:4px 10px;gap:3px;}
+  #player-area{padding:4px 10px;padding-bottom:calc(4px + env(safe-area-inset-bottom));gap:3px;}
   #turn-indicator{padding:0;}
   #player-hand-row{flex-wrap:nowrap;justify-content:center;overflow-x:auto;gap:4px;}
   #player-hand-row .tile{width:44px;height:60px;}
