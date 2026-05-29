@@ -21,6 +21,7 @@
   <script src="https://cdn.jsdelivr.net/npm/party-js@2.2.0/bundle/party.min.js"></script>
   <script>window.SharedWalletConfig = { autoGuest: true };</script>
   <script src="/lib/shared-wallet.js?v=20260312a"></script>
+  <script src="/lib/game-rankings.js?v=20260529a"></script>
   <style>
     :root {
       color-scheme: dark;
@@ -1040,6 +1041,8 @@
       if (!state.deck.length) state.deck = makeDeck();
       setStatus(currentLang === "ko" ? "베팅 버튼을 눌러 시작하세요." : "Press a bet button to start.");
       render();
+      // 🏆 글로벌 네비 랭킹 버튼
+      if (typeof GameRankings !== 'undefined') GameRankings.injectNavButton('blackjack');
     }
 
     function walletRemove(amount) {
@@ -1354,6 +1357,11 @@
       if (finalProfit < 0) statusType = "lose";
 
       setStatus(summarizeRound(label, finalProfit, bonusGold, finalPayout), statusType);
+
+      // 🏆 랭킹 제출: 순수익 > 0인 경우만
+      if (finalProfit > 0 && typeof GameRankings !== 'undefined') {
+          GameRankings.submit('blackjack', { profit: finalProfit });
+      }
 
       if (finalProfit > 0) {
         if (label === t("blackjack") || label === "BLACKJACK") {

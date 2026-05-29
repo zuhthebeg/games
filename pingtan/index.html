@@ -18,6 +18,7 @@
   <meta name="twitter:description" content="No install. Open link and play. Come get ppinged in 삥탄." />
   <link rel="icon" href="icon.svg" />
   <script src="/lib/shared-wallet.js?v=20260312a"></script>
+  <script src="/lib/game-rankings.js?v=20260529a"></script>
   <script src="/lib/multiplayer.js?v=20260502a"></script>
   <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
   <style>
@@ -2641,7 +2642,10 @@
       return state.players.findIndex(p => p.userId === playerId || p.id === playerId);
     }
 
+    let _gameStartTimestamp = null;  // 🏆 게임 시작 시간 기록
+
     function initSingleGame(mapId = "standard") {
+      _gameStartTimestamp = Date.now();  // 시작 시각 기록
       const savedTurnSeconds = state.turnSeconds;
       const savedCustom = state.targetScoreCustom;
       const savedScore = state.targetScore;
@@ -5449,6 +5453,11 @@
             const _prize = victoryPrizeForMap(state.selectedMapId);
             showToast(pt("victoryPrizeToast", { prize: _prize.toLocaleString() }), 6000);
             if (typeof SharedWallet !== "undefined" && SharedWallet.addGold) SharedWallet.addGold(_prize);
+            // 🏆 랭킹 제출: 싱글플레이 승리 시 경과 시간(초)
+            if (typeof GameRankings !== 'undefined' && _gameStartTimestamp) {
+              const elapsedSec = Math.floor((Date.now() - _gameStartTimestamp) / 1000);
+              if (elapsedSec > 0) GameRankings.submit('pingtan', { timeSec: elapsedSec });
+            }
           } else {
             showToast(pt("defeatToast", { player: state.players[winner].name }), 6000);
           }
@@ -10376,6 +10385,8 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
       if (window.SharedWallet) {
         try { await SharedWallet.init(); } catch (_) {}
       }
+      // 🏆 글로벌 네비 랭킹 버튼
+      if (typeof GameRankings !== 'undefined') GameRankings.injectNavButton('pingtan');
       applyResponsiveDefaults(true);
       setSinglePlayers();
       ensureTurnTimer();
