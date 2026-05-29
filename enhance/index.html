@@ -6806,8 +6806,28 @@
             setHuntBgm(huntState.monster?.isBoss ? 'boss' : 'hunt');
             renderHunt();
 
-            // 보스 등장 시 AI 대사 호출
-            if (huntState.monster.isBoss) {
+            // 👻 리치 특수: 봉인의 검 해제 상태면 즉시 재봉인!
+            if (huntState.monster.type === 'undead' &&
+                huntState.monster.name?.includes('리치') &&
+                isSealedSword(state.weapon) && state.weapon.level >= 5) {
+
+                setTimeout(() => {
+                    const sealedLevel = state.weapon.level;
+                    state.weapon.level = 4;  // 봉인 상태(+4)로 복귀
+                    saveState();
+
+                    const sealDialogue = `+${sealedLevel}짜리 봉인의 검이라고? 그건 좀 너무하지 않나... 잠깐, 내가 다시 봉인해줄게. 처음부터 다시 해봐라.`;
+                    showBossDialogue({ dialogue: sealDialogue });
+                    vibrate([200, 100, 200, 100, 400]);
+                    SFX.play('enhance-destroy');
+                    document.body.classList.add('screen-shake');
+                    setTimeout(() => document.body.classList.remove('screen-shake'), 600);
+
+                    huntState.log.push({ type: 'crit', text: `👻 리치가 봉인의 검을 재봉인! +${sealedLevel} → +4로 돌아갔다!` });
+                    renderHunt();
+                }, 800);
+            } else if (huntState.monster.isBoss) {
+                // 일반 보스 등장 대사
                 fetchBossDialogue(huntState.monster).then(data => {
                     if (data) showBossDialogue(data);
                 });
@@ -8254,9 +8274,25 @@
             huntState._myth.weakenNext = false;
             renderHunt();
             if (huntState.monster.isBoss) {
-                const cached = huntState.pendingBossDialoguePromise;
-                huntState.pendingBossDialoguePromise = null;
-                (cached || fetchBossDialogue(huntState.monster)).then(d => d && showBossDialogue(d));
+                // 👻 리치 재봉인 체크
+                if (huntState.monster.name?.includes('리치') &&
+                    isSealedSword(state.weapon) && state.weapon.level >= 5) {
+                    setTimeout(() => {
+                        const sealedLevel = state.weapon.level;
+                        state.weapon.level = 4;
+                        saveState();
+                        const sealDialogue = `+${sealedLevel}짜리 봉인의 검이라고? 그건 좀 너무하지 않나... 잠깐, 내가 다시 봉인해줄게. 처음부터 다시 해봐라.`;
+                        showBossDialogue({ dialogue: sealDialogue });
+                        SFX.play('enhance-destroy');
+                        vibrate([200, 100, 200, 100, 400]);
+                        huntState.log.push({ type: 'crit', text: `👻 리치가 봉인의 검을 재봉인! +${sealedLevel} → +4로 돌아갔다!` });
+                        renderHunt();
+                    }, 800);
+                } else {
+                    const cached = huntState.pendingBossDialoguePromise;
+                    huntState.pendingBossDialoguePromise = null;
+                    (cached || fetchBossDialogue(huntState.monster)).then(d => d && showBossDialogue(d));
+                }
                 setHuntBgm('boss');
             } else {
                 setHuntBgm('hunt');
