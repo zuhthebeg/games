@@ -230,10 +230,24 @@ body.mj-fs #sw-bar{display:none !important;}
         春夏秋冬·梅蘭菊竹 뽑으면 자동 공개 + 보충패.<br>
         자리 일치(정화) 시 추가 점수.
       </div>
+      <div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;">
+        <div style="color:#22d3ee;font-weight:700;margin-bottom:5px;">🧮 점수(台) 계산</div>
+        화료하면 <b>기본 5台</b>에서 시작해, 아래 역(役)마다 台가 더해집니다:<br>
+        • <b>役牌(점수패)</b>: 中·發·白(삼원패), 내 자리·자리바람 — 커쯔마다 +1台<br>
+        • <b>정화</b>(내 자리 꽃) +2台 / 春夏秋冬·梅蘭菊竹 다 모음 +2台 / 꽃 없음 +1台<br>
+        • <b>자모</b>(스스로 뽑음) +1 · <b>멘젠</b>(안 먹고 모음) +1 · <b>핑후</b> +2<br>
+        • <b>또이또이</b>(전부 커쯔) +7 · 삼안커 +2 / 사안커 +7<br>
+        • <b>영상개화</b>(깡 보충패로 완성) +1 · <b>해저</b>(마지막 패 자모) +1<br>
+        • 소삼원 +7 / 대삼원 +14 · 대사희 +14 · 천화·지화 +14<br>
+        <span style="color:var(--muted)">※ 게임 끝나면 음성으로도 "왜 이 점수인지" 풀이해줍니다.</span>
+      </div>
       <div style="background:var(--panel);border-radius:8px;padding:12px;">
-        <div style="color:var(--green);font-weight:700;margin-bottom:5px;">💰 보상</div>
-        화료 시 <b>타이(台) × 10만 골드</b><br>
-        기본 5타이 + 역 합산 (자모·평화·대대화 등)
+        <div style="color:var(--green);font-weight:700;margin-bottom:5px;">💰 정산</div>
+        최종 <b>台 × (판돈 ÷ 5)</b> 골드 — 판돈은 설정에서 변경(기본 10만).<br>
+        <b>딜러(장가)</b>가 내거나 받으면 <b>×2</b>.<br>
+        • <b>론</b>: 그 패 버린 <span style="color:#ef4444;font-weight:700;">독박</span> 한 명이 전액 지급<br>
+        • <b>자모</b>: 나머지 <b>전원</b>이 분담 지급<br>
+        <span style="color:var(--muted)">로그인 시 골드 누적 · 0원이어도 참여 가능(져도 0원 밑으론 안 깎임).</span>
       </div>
       <div style="font-size:.62rem;color:var(--muted);text-align:center;margin-top:6px;line-height:1.5;">
         타일 그래픽: <a href="https://commons.wikimedia.org/wiki/Category:SVG_Mahjong_tiles" target="_blank" rel="noopener" style="color:var(--muted);">Wikimedia Commons</a> · CC BY-SA 4.0
@@ -963,7 +977,7 @@ function attachTileDrag(d,t){
   d.onpointercancel=()=>{if(_drag&&_drag.d===d){_drag=null;d.style.transition='';d.style.transform='';d.style.zIndex='';d.classList.remove('drag-ready');}};
 }
 function isLoggedIn(){return typeof SharedWallet!=='undefined'&&SharedWallet.isLoggedIn;}
-function hasFunds(){if(!isLoggedIn())return true;return (Number(SharedWallet.gold)||0)>=curBet();}
+function hasFunds(){return true;} // 0원이어도 게임 참여 가능(져도 0원 밑으론 안 깎임 — spendGold 0클램프)
 function setSig(el,sig){if(el.__sig===sig)return false;el.__sig=sig;return true;} // 변경 없으면 재렌더 스킵(깜빡임 방지)
 function spawnConfetti(on){
   const ov=document.getElementById('result-overlay');
