@@ -149,8 +149,8 @@ body.mj-fs #sw-bar{display:none !important;}
 .deal-anim{animation:dealIn .34s cubic-bezier(.2,.7,.3,1.2) backwards;}
 .tile-sm.claimed{outline:2px solid #ef4444;outline-offset:-1px;border-radius:4px;}
 .tile-sm.claimed .tface{filter:drop-shadow(0 0 5px rgba(255,80,80,.95));}
-.tile.just-drawn{transform:translateY(-7px);}
-.tile.just-drawn .tface{filter:drop-shadow(0 0 8px rgba(255,90,90,1)) drop-shadow(0 2px 3px rgba(0,0,0,.4));}
+.tile.just-drawn{background:rgba(255,90,90,.22);border-radius:7px;box-shadow:0 0 11px 2px rgba(255,90,90,.55);}
+.tile-sm.disc-last{background:rgba(255,90,90,.22);border-radius:5px;box-shadow:0 0 9px 1px rgba(255,90,90,.55);}
 </style>
 </head>
 <body>
@@ -215,9 +215,9 @@ body.mj-fs #sw-bar{display:none !important;}
 </div>
 <div id="game-container" style="display:none">
   <div id="round-info">
-    <div class="ri-item"><span class="ri-label">국</span><span class="ri-val" id="ri-round">동1국</span></div>
-    <div class="ri-item"><span class="ri-label">잔여</span><span class="ri-val" id="ri-wall">0</span></div>
-    <div class="ri-item"><span class="ri-label">본장</span><span class="ri-val" id="ri-honba">0</span></div>
+    <div class="ri-item"><span class="ri-label" data-i18n="kuk">국</span><span class="ri-val" id="ri-round">동1국</span></div>
+    <div class="ri-item"><span class="ri-label" data-i18n="remain">잔여</span><span class="ri-val" id="ri-wall">0</span></div>
+    <div class="ri-item"><span class="ri-label" data-i18n="honbaL">본장</span><span class="ri-val" id="ri-honba">0</span></div>
     <div id="score-row"></div>
     <button class="fs-btn" onclick="openSettings()" title="설정">⚙</button>
     <button id="fs-btn" class="fs-btn" onclick="toggleFS()" title="가로 전체화면 전환">⛶</button>
@@ -249,7 +249,7 @@ body.mj-fs #sw-bar{display:none !important;}
     <div id="turn-indicator">-</div>
     <div id="turn-timer-wrap"><div id="turn-timer-fill"></div></div>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-      <span style="font-size:.7rem;color:var(--muted)">화패</span>
+      <span style="font-size:.7rem;color:var(--muted)" data-i18n="flowersL">화패</span>
       <div id="player-flowers" style="display:flex;gap:2px;"></div>
       <div id="player-melds" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
     </div>
@@ -318,6 +318,7 @@ body.mj-fs #sw-bar{display:none !important;}
 <script>
 const TE={m1:'🀇',m2:'🀈',m3:'🀉',m4:'🀊',m5:'🀋',m6:'🀌',m7:'🀍',m8:'🀎',m9:'🀏',p1:'🀙',p2:'🀚',p3:'🀛',p4:'🀜',p5:'🀝',p6:'🀞',p7:'🀟',p8:'🀠',p9:'🀡',s1:'🀐',s2:'🀑',s3:'🀒',s4:'🀓',s5:'🀔',s6:'🀕',s7:'🀖',s8:'🀗',s9:'🀘',z1:'東',z2:'南',z3:'西',z4:'北',z5:'白',z6:'發',z7:'中',f1:'春',f2:'夏',f3:'秋',f4:'冬',f5:'梅',f6:'蘭',f7:'菊',f8:'竹'};
 const WL=['동','남','서','북'];
+function wind(i){return ((typeof LANG!=='undefined'&&LANG==='zh-TW')?['東','南','西','北']:WL)[i]||'';}
 const SUITC={m:'萬',p:'筒',s:'索'};
 function td(id){if(!id)return id;const s=suit(id);return SUITC[s]?num(id)+SUITC[s]:(TE[id]||id);}
 function tileFace(id){return '<img class="tface" src="tiles/'+id+'.svg" alt="'+td(id)+'" draggable="false">';}
@@ -326,17 +327,19 @@ function suitCls(id){const s=suit(id);return SUITC[s]?' s-'+s:'';}
 // ── 국제화 (i18n): 한국어 / 대만 번체 ──
 const I18N={
  ko:{title:'🀄 대만 마작',subtitle:'인간 1명 + CPU 3명<br>16장 핸드 · 대만 룰',start:'게임 시작',howto:'플레이 방법',settings:'⚙ 설정',close:'닫기',
-   kan:'깡',tsumo:'자모',discard:'버리기',ron:'론',pon:'퐁',chi:'치',pass:'패스',
+   kan:'깡',tsumo:'자모',discard:'버리기',ron:'론',pon:'퐁',chi:'츠',pass:'패스',
    myTurn:'내 차례',selectDiscard:'버릴 패를 선택하세요',timeUp:'시간 초과 — 자동 버림',
    claimQ:'가져올 패',claimFrom:'버린 패',nextRound:'다음 라운드',extendRound:'연장 라운드',exit:'나가기',
-   setTitle:'⚙ 설정',turnLimit:'⏱ 내 턴 제한',claimLimit:'✋ 먹기/퐁/치 제한',sfx:'🔊 효과음',bgm:'🎵 배경음악',exitGame:'🚪 게임 나가기',none:'없음',language:'🌐 언어',
-   selectChi:'치 조합 선택',cancel:'취소',tsumoWin:'자모',ronWin:'론',win:'화료',draw:'유국',multiplayer:'👥 멀티플레이',waiting:'상대 기다리는 중…',mpNewHand:'새 판'},
+   setTitle:'⚙ 설정',turnLimit:'⏱ 내 턴 제한',claimLimit:'✋ 먹기/퐁/츠 제한',sfx:'🔊 효과음',bgm:'🎵 배경음악',exitGame:'🚪 게임 나가기',none:'없음',language:'🌐 언어',
+   selectChi:'츠 조합 선택',cancel:'취소',tsumoWin:'자모',ronWin:'론',win:'완료',draw:'유국',multiplayer:'👥 멀티플레이',waiting:'상대 기다리는 중…',mpNewHand:'새 판',
+   kuk:'국',remain:'잔여',honbaL:'본장',flowersL:'화패'},
  'zh-TW':{title:'🀄 台灣麻將',subtitle:'1位玩家 + 3位電腦<br>16張手牌 · 台灣規則',start:'開始遊戲',howto:'玩法說明',settings:'⚙ 設定',close:'關閉',
    kan:'槓',tsumo:'自摸',discard:'打牌',ron:'胡',pon:'碰',chi:'吃',pass:'過',
    myTurn:'輪到你',selectDiscard:'請選擇要打出的牌',timeUp:'超時 — 自動打牌',
    claimQ:'要的牌',claimFrom:'打出的牌',nextRound:'下一局',extendRound:'連莊',exit:'離開',
    setTitle:'⚙ 設定',turnLimit:'⏱ 我的回合限時',claimLimit:'✋ 吃/碰/槓限時',sfx:'🔊 音效',bgm:'🎵 背景音樂',exitGame:'🚪 離開遊戲',none:'無',language:'🌐 語言',
-   selectChi:'選擇吃牌組合',cancel:'取消',tsumoWin:'自摸',ronWin:'胡',win:'胡牌',draw:'流局',multiplayer:'👥 多人連線',waiting:'等待對手…',mpNewHand:'新一局'}
+   selectChi:'選擇吃牌組合',cancel:'取消',tsumoWin:'自摸',ronWin:'胡',win:'胡牌',draw:'流局',multiplayer:'👥 多人連線',waiting:'等待對手…',mpNewHand:'新一局',
+   kuk:'局',remain:'剩餘',honbaL:'本場',flowersL:'花牌'}
 };
 let LANG=(function(){try{const s=localStorage.getItem('mahjong_lang');if(s)return s;}catch(_){}return (navigator.language||'').toLowerCase().startsWith('zh')?'zh-TW':'ko';})();
 function t(k){return (I18N[LANG]&&I18N[LANG][k]!=null)?I18N[LANG][k]:(I18N.ko[k]!=null?I18N.ko[k]:k);}
@@ -589,6 +592,7 @@ function applyAction(action){
     for(const t of fromH){const i=player.hand.indexOf(t);if(i>=0)player.hand.splice(i,1);}
     const di=G.discards[discarder];const dIdx=di.lastIndexOf(disc);if(dIdx>=0)di.splice(dIdx,1);
     player.melds.push({type:'chi',tiles:[...action.tiles].sort(),from:discarder,claimed:disc});
+    showToast(player.name+' '+t('chi')+' '+td(disc));
     G.lastDraw=null;G.phase='discard';render();if(player.type==='cpu')scheduleCpu(pidx,800);else enableHuman(pidx);return;
   }
   if(action.type==='pon'){
@@ -596,6 +600,7 @@ function applyAction(action){
     for(let i=player.hand.length-1;i>=0&&rm<2;i--)if(player.hand[i]===tile){player.hand.splice(i,1);rm++;}
     const di=G.discards[discarder];const dIdx=di.lastIndexOf(tile);if(dIdx>=0)di.splice(dIdx,1);
     player.melds.push({type:'pon',tiles:[tile,tile,tile],from:discarder,claimed:tile});
+    showToast(player.name+' '+t('pon')+' '+td(tile));
     G.lastDraw=null;G.phase='discard';render();if(player.type==='cpu')scheduleCpu(pidx,800);else enableHuman(pidx);return;
   }
   if(action.type==='ron'){
@@ -606,6 +611,7 @@ function applyAction(action){
 }
 function doKan(action,pidx){
   const player=G.players[pidx];
+  showToast(player.name+' '+t('kan'));
   if(action.kanType==='an'){
     const tile=action.tiles[0];for(let i=player.hand.length-1;i>=0;i--)if(player.hand[i]===tile)player.hand.splice(i,1);
     player.melds.push({type:'ankan',tiles:[tile,tile,tile,tile],from:pidx});
@@ -660,7 +666,7 @@ function showClaimOv(tile,opts,discarderIdx){
     const tr=document.createElement('span');tr.className='ctiles';
     for(const mt of claimMeldTiles(o,tile)){const s=document.createElement('span');s.className='tile-sm '+tileClass(mt)+suitCls(mt);s.innerHTML=tileFace(mt);tr.appendChild(s);}
     b.appendChild(lab);b.appendChild(tr);
-    b.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);clearClaimVisual();playSfx('claim');showToast(t(o)+' '+td(tile));humanClaim(o,tile,discarderIdx);};
+    b.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);clearClaimVisual();playSfx('claim');humanClaim(o,tile,discarderIdx);};
     btns.appendChild(b);
   }
   const pb=document.createElement('button');pb.className='claim-opt c-pass';pb.innerHTML='<span class="clabel">'+t('pass')+'</span>';pb.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);clearClaimVisual();resolveClaims(discarderIdx);};btns.appendChild(pb);
@@ -766,16 +772,16 @@ function nextRound(){
 
 function render(){
   if(!G)return;
-  document.getElementById('ri-round').textContent=WL[G.round.windIdx]+(G.round.dealer+1)+'국';
+  document.getElementById('ri-round').textContent=wind(G.round.windIdx)+(G.round.dealer+1)+t('kuk');
   document.getElementById('ri-wall').textContent=G.wall.length;
   document.getElementById('ri-honba').textContent=G.round.honba;
   const sr=document.getElementById('score-row');
-  sr.innerHTML=G.players.map(p=>'<div class="score-chip'+(p.isDealer?' dealer':'')+'">'+WL[p.seatWind]+'·'+p.name.replace('CPU ','')+' '+Math.floor(p.score/1000)+'k</div>').join('');
+  sr.innerHTML=G.players.map(p=>'<div class="score-chip'+(p.isDealer?' dealer':'')+'">'+wind(p.seatWind)+'·'+p.name.replace('CPU ','')+' '+Math.floor(p.score/1000)+'k</div>').join('');
   setTI(G.currentPlayer===0?t('myTurn'):G.players[G.currentPlayer].name);
   for(let p=1;p<=3;p++)renderCpu(p);
   renderDiscards();renderPlayer();
 }
-let _discCounts=[0,0,0,0],_meldCounts=[0,0,0,0],_dealAnim=false;
+let _discCounts=[0,0,0,0],_meldCounts=[0,0,0,0],_dealAnim=false,_lastDiscSeat=-1;
 function spawnConfetti(on){
   const ov=document.getElementById('result-overlay');
   ov.querySelectorAll('.conf').forEach(c=>c.remove());
@@ -799,11 +805,12 @@ function renderCpu(pidx){
 }
 function renderDiscards(){
   const el=document.getElementById('discards-center');el.innerHTML='';
+  for(let p=0;p<4;p++){if(G.discards[p].length>_discCounts[p])_lastDiscSeat=p;}
   for(let p=0;p<4;p++){
     if(G.discards[p].length===0)continue;
     const grp=document.createElement('div');grp.style.cssText='display:flex;flex-wrap:wrap;gap:1px;margin:2px;';
     const newLast=G.discards[p].length>_discCounts[p];
-    G.discards[p].forEach((t,i)=>{const s=document.createElement('div');const last=i===G.discards[p].length-1;const isLast=last&&G.phase==='claim';s.className='tile-sm '+tileClass(t)+suitCls(t)+(isLast?' last':'');s.innerHTML=tileFace(t);if(last&&newLast){s.classList.add('disc-anim');s.style.setProperty('--dx',p===1?'-50px':p===3?'50px':'0px');s.style.setProperty('--dy',p===2?'-44px':p===0?'44px':'0px');}grp.appendChild(s);});
+    G.discards[p].forEach((t,i)=>{const s=document.createElement('div');const last=i===G.discards[p].length-1;const isLast=last&&G.phase==='claim';s.className='tile-sm '+tileClass(t)+suitCls(t)+(isLast?' last':'');if(last&&p===_lastDiscSeat)s.classList.add('disc-last');s.innerHTML=tileFace(t);if(last&&newLast){s.classList.add('disc-anim');s.style.setProperty('--dx',p===1?'-50px':p===3?'50px':'0px');s.style.setProperty('--dy',p===2?'-44px':p===0?'44px':'0px');}grp.appendChild(s);});
     el.appendChild(grp);
   }
   _discCounts=G.discards.map(d=>d.length);
@@ -853,7 +860,7 @@ function openMultiplayer(){
   MP.ui.show();
 }
 function mpStart(roomState){
-  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();_dealAnim=true;MP._resultShown=false;
+  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();_dealAnim=true;MP._resultShown=false;MP._meldN=[0,0,0,0];
   MP.client.onEvent=()=>mpRefresh();
   document.getElementById('mp-lobby').style.display='none';
   document.getElementById('mp-lobby').innerHTML='';
@@ -893,6 +900,9 @@ function applyServerView(gs,mv){
      phase:gs.phase==='over'?'roundEnd':gs.phase,round:gs.round||{windIdx:0,dealer:0,honba:0},
      claimInfo:gs.lastDiscard?{tile:gs.lastDiscard.tile,discarder:Math.max(0,order.indexOf(gs.lastDiscard.from))}:null,
      lastDraw:(mv&&mv.lastDraw)||null,flags:{}};
+  // 남이 츠/퐁/깡 하면 토스트 (멜드 증가 감지, 나 제외)
+  if(MP._meldN){for(let di=1;di<4;di++){const pl=players[di];const prev=MP._meldN[di]||0;if(pl.melds.length>prev){const m=pl.melds[pl.melds.length-1];const lbl=m.type==='chi'?t('chi'):m.type==='pon'?t('pon'):(/kan/.test(m.type)?t('kan'):'');if(lbl)showToast(pl.name+' '+lbl+(m.claimed?' '+td(m.claimed):''));}}}
+  MP._meldN=players.map(pl=>pl.melds.length);
   render();
   mpUpdateControls(mv);
   if(gs.finished)mpShowResult(gs);
