@@ -164,16 +164,16 @@ body.mj-fs #sw-bar{display:none !important;}
 .conf{position:absolute;top:0;width:8px;height:12px;border-radius:2px;animation:confFall 1.4s linear infinite;}
 @keyframes dealIn{from{transform:translateY(-70px) scale(.55) rotate(-10deg);opacity:0;}70%{opacity:1;}to{transform:translateY(0) scale(1) rotate(0);opacity:1;}}
 .deal-anim{animation:dealIn .34s cubic-bezier(.2,.7,.3,1.2) backwards;}
-.tile-sm.claimed{outline:2px solid #ef4444;outline-offset:-1px;border-radius:4px;}
+.tile-sm.claimed{outline:3px solid #ff3b3b;outline-offset:-1px;border-radius:4px;background:rgba(255,55,55,.35);box-shadow:0 0 10px 2px rgba(255,55,55,.7);}
 .tile-sm.claimed .tface{filter:drop-shadow(0 0 5px rgba(255,80,80,.95));}
-.tile.just-drawn{background:rgba(255,90,90,.22);border-radius:7px;box-shadow:0 0 11px 2px rgba(255,90,90,.55);}
+.tile.just-drawn{background:rgba(255,55,55,.5);border-radius:7px;outline:2.5px solid #ff3b3b;outline-offset:-1px;box-shadow:0 0 16px 4px rgba(255,55,55,.9);}
 .tile.drag-ready .tface{filter:drop-shadow(0 0 11px rgba(239,68,68,1)) drop-shadow(0 0 4px rgba(239,68,68,.9));}
 #claim-pop{position:fixed;left:50%;top:48%;transform:translate(-50%,-50%);z-index:80;display:none;flex-direction:column;align-items:center;gap:5px;pointer-events:none;}
 #claim-pop.on{display:flex;animation:claimPop 1.05s ease-out;}
 #claim-pop .cp-label{font-size:2.7rem;font-weight:900;letter-spacing:2px;text-shadow:0 3px 12px rgba(0,0,0,.8);}
 #claim-pop .cp-name{font-size:.85rem;color:#fff;background:rgba(0,0,0,.55);padding:2px 12px;border-radius:11px;}
 @keyframes claimPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-10deg);}22%{opacity:1;transform:translate(-50%,-50%) scale(1.2) rotate(4deg);}38%{transform:translate(-50%,-50%) scale(1) rotate(0);}80%{opacity:1;transform:translate(-50%,-50%) scale(1);}100%{opacity:0;transform:translate(-50%,-58%) scale(1);}}
-.tile-sm.disc-last{background:rgba(255,90,90,.22);border-radius:5px;box-shadow:0 0 9px 1px rgba(255,90,90,.55);}
+.tile-sm.disc-last{background:rgba(255,55,55,.5);border-radius:5px;outline:2.5px solid #ff3b3b;outline-offset:-1px;box-shadow:0 0 14px 3px rgba(255,55,55,.9);}
 .tile-sm.disc-match{outline:2px solid #38bdf8;outline-offset:-1px;border-radius:5px;}
 </style>
 </head>
@@ -415,6 +415,7 @@ function canWin(hand,melds){
   const needed=5-melds.length;if(needed<0)return false;
   if(needed===5&&sevenPairs(hand))return true;
   if(needed===5&&thirteenOrphans(hand))return true;
+  hand=[...hand].sort();  // canFormSets는 tiles[0]=최소패(정렬) 전제 → 승리패가 끝에 붙어 정렬 깨지는 것 방지
   const c=countMap(hand);
   for(const t of Object.keys(c)){if(c[t]>=2){const rest=removeN(hand,t,2);if(canFormSets(rest,needed))return true;}}
   return false;
@@ -753,7 +754,7 @@ function doKan(action,pidx){
     const i=player.hand.indexOf(tile);if(i>=0)player.hand.splice(i,1);
   }
   G.flags.isRinshan=true;G.lastDraw=null;
-  if(G.wall.length>0){const rin=G.wall.shift();player.hand.push(rin);processFlowers(G,pidx);player.hand=sortHand(player.hand);if(pidx===0&&player.hand.includes(rin))G.lastDraw=rin;setTimeout(()=>playCallFx('rinshan'),450);}
+  if(G.wall.length>0){const rin=G.wall.shift();player.hand.push(rin);processFlowers(G,pidx);player.hand=sortHand(player.hand);if(pidx===0&&player.hand.includes(rin))G.lastDraw=rin;setTimeout(()=>playCallFx('rinshan'),950);}
   G.phase='discard';render();if(player.type==='cpu')scheduleCpu(pidx,1000);else enableHuman(pidx);
 }
 function bri(pidx){return{windIdx:G.round.windIdx,isDealer:G.players[pidx].seatWind===0,honba:G.round.honba,isRinshan:G.flags.isRinshan,isHaitei:G.flags.isHaitei,firstDraw:G.flags.firstDraw,firstDiscard:G.flags.firstDiscard};}
@@ -873,7 +874,7 @@ function humanKan(){
 }
 
 function showWin(winnerIdx,discarderIdx,winTile,result){
-  if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();playSfx('win');playCallFx(discarderIdx===-1?'tsumo':'hu');if(discarderIdx===0)setTimeout(()=>playCallFx('bangchong'),650);G.phase='roundEnd';
+  if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();playSfx('win');playCallFx(discarderIdx===-1?'tsumo':'hu');if(discarderIdx===0)setTimeout(()=>playCallFx('bangchong'),950);G.phase='roundEnd';
   const pre=G.players.map(p=>p.score);const myPre=G.players[0].score;
   const winner=G.players[winnerIdx];const winPre=winner.score;const tai=result.total+5;const isDW=winner.seatWind===0;const bet=curBet();const U=Math.round(bet/5);
   if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?tai*U*2:tai*U;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
@@ -1158,7 +1159,7 @@ function mpShowResult(gs){
   const nb=document.getElementById('result-next');nb.textContent=t('mpNewHand');nb.onclick=mpRematch;
   if(myDelta!==0&&typeof SharedWallet!=='undefined'){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
   if(win&&win.id===MP.myUserId&&r.tai&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:r.tai});}catch(_){}
-  const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);playSfx('win');playCallFx(r.winType==='tsumo'?'tsumo':'hu');if(r.discarderId&&r.discarderId===MP.myUserId)setTimeout(()=>playCallFx('bangchong'),650);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
+  const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);playSfx('win');playCallFx(r.winType==='tsumo'?'tsumo':'hu');if(r.discarderId&&r.discarderId===MP.myUserId)setTimeout(()=>playCallFx('bangchong'),950);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
   ov.classList.add('on');
   if(win){const _yk=(r.yaku||[]).map(y=>y.name).join(', ');const _wl=r.winType==='tsumo'?'자모':'론';if(win.id!==MP.myUserId)llmReact(_wl+'으로 '+(r.tai||'')+'台 완료('+_yk+')해서 이김. 이긴 사람으로서 능청/도발 한마디',win.nickname);else{const o=gs.players.filter(p=>p.id!==MP.myUserId);if(o.length)llmReact('상대가 '+_wl+' '+(r.tai||'')+'台('+_yk+') 완료로 이겨서 내가 짐. 진 사람으로서 분하거나 너스레 한마디',o[Math.floor(Math.random()*o.length)].nickname);}}
 }
