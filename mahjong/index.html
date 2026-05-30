@@ -549,7 +549,13 @@ function setTurn(v){if(MP.active)return;SET.turnTime=v;saveSet();renderSettings(
 function setClaim(v){if(MP.active)return;SET.claimTime=v;saveSet();renderSettings();}
 function setBet(v){if(MP.active)return;SET.bet=v;saveSet();renderSettings();}
 function toggleSfx(){SET.sfx=!SET.sfx;saveSet();renderSettings();}
-function toggleBgm(){SET.bgm=!SET.bgm;saveSet();renderSettings();}
+let _bgm=null;
+function applyBgm(){
+  if(!_bgm){_bgm=new Audio('sounds/bgm.mp3');_bgm.loop=true;_bgm.volume=0.32;}
+  const inGame=document.getElementById('game-container').style.display!=='none';
+  if(SET.bgm&&inGame){_bgm.play().catch(()=>{});}else{try{_bgm.pause();}catch(_){}}
+}
+function toggleBgm(){SET.bgm=!SET.bgm;saveSet();renderSettings();applyBgm();}
 function exitToMenu(){
   if(MP.active){mpLeave();return;}
   if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();
@@ -557,7 +563,7 @@ function exitToMenu(){
   document.getElementById('settings-overlay').style.display='none';
   document.getElementById('game-container').style.display='none';
   document.getElementById('start-screen').style.display='flex';
-  G=null;selTile=null;
+  G=null;selTile=null;applyBgm();
 }
 
 function makeState(sc,dealer,windIdx,honba){
@@ -771,7 +777,7 @@ function showWin(winnerIdx,discarderIdx,winTile,result){
   if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?tai*U*2:tai*U;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
   else{const isDPay=G.players[discarderIdx].seatWind===0;const mult=(isDW||isDPay)?2:1;const amt=tai*U*mult;G.players[discarderIdx].score-=amt;G.players[winnerIdx].score+=amt;}
   const myDelta=G.players[0].score-myPre;
-  if(isLoggedIn()){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
+  if(typeof SharedWallet!=='undefined'){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
   if(winnerIdx===0&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:tai});}catch(_){}
   const wl=discarderIdx===-1?t('tsumoWin'):t('ronWin');
   document.getElementById('result-title').textContent=winner.name+' '+t('win')+'! ('+wl+')';
@@ -892,7 +898,7 @@ function startGame(){
   if(!hasFunds()){showToast(t('noFunds'));return;}
   document.getElementById('start-screen').style.display='none';
   document.getElementById('game-container').style.display='flex';
-  G=makeState(null,0,0,0);dealAndStart(G);
+  G=makeState(null,0,0,0);dealAndStart(G);applyBgm();
 }
 
 /* ── 전체화면(가로) 토글 ── */
@@ -925,6 +931,7 @@ function mpStart(roomState){
   document.getElementById('mp-lobby').style.display='none';
   document.getElementById('mp-lobby').innerHTML='';
   document.getElementById('game-container').style.display='flex';
+  applyBgm();
   if(roomState&&roomState.gameState)applyServerView(roomState.gameState,roomState.myView);
   else mpRefresh();
 }
@@ -1015,7 +1022,7 @@ function mpShowResult(gs){
   detail+=gs.players.map(p=>p.nickname+': '+(p.score||0).toLocaleString()+'G').join('<br>');
   document.getElementById('result-detail').innerHTML=detail;
   const nb=document.getElementById('result-next');nb.textContent=t('mpNewHand');nb.onclick=mpRematch;
-  if(myDelta!==0&&isLoggedIn()){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
+  if(myDelta!==0&&typeof SharedWallet!=='undefined'){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
   if(win&&win.id===MP.myUserId&&r.tai&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:r.tai});}catch(_){}
   const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
   ov.classList.add('on');
@@ -1027,7 +1034,7 @@ async function mpLeave(){MP.active=false;try{if(MP.client)await MP.client.leaveR
   ['result-overlay','claim-overlay','chi-overlay'].forEach(id=>document.getElementById(id).classList.remove('on'));
   document.getElementById('game-container').style.display='none';
   document.getElementById('mp-lobby').style.display='none';document.getElementById('mp-lobby').innerHTML='';
-  document.getElementById('start-screen').style.display='flex';G=null;selTile=null;
+  document.getElementById('start-screen').style.display='flex';G=null;selTile=null;applyBgm();
   const nb=document.getElementById('result-next');nb.textContent=t('nextRound');nb.onclick=nextRound;
 }
 
