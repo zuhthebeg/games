@@ -1,0 +1,17 @@
+{
+  "name": "대만 마작 · 台灣麻將",
+  "short_name": "마작",
+  "description": "16장 대만 마작. CPU 3명과 싱글, 실시간 멀티플레이, 골드 베팅, 패 콜 음성.",
+  "id": "/mahjong/",
+  "start_url": "/mahjong/",
+  "scope": "/mahjong/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0f1a",
+  "theme_color": "#0a0f1a",
+  "lang": "ko",
+  "categories": ["games"],
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
