@@ -782,16 +782,24 @@ function humanKan(){
 function showWin(winnerIdx,discarderIdx,winTile,result){
   if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();playSfx('win');G.phase='roundEnd';
   const myPre=G.players[0].score;
-  const winner=G.players[winnerIdx];const tai=result.total+5;const isDW=winner.seatWind===0;const U=Math.round(curBet()/5);
+  const winner=G.players[winnerIdx];const winPre=winner.score;const tai=result.total+5;const isDW=winner.seatWind===0;const bet=curBet();const U=Math.round(bet/5);
   if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?tai*U*2:tai*U;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
   else{const isDPay=G.players[discarderIdx].seatWind===0;const mult=(isDW||isDPay)?2:1;const amt=tai*U*mult;G.players[discarderIdx].score-=amt;G.players[winnerIdx].score+=amt;}
-  const myDelta=G.players[0].score-myPre;
+  const myDelta=G.players[0].score-myPre;const winGain=G.players[winnerIdx].score-winPre;
   if(typeof SharedWallet!=='undefined'){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
   if(winnerIdx===0&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:tai});}catch(_){}
   const wl=discarderIdx===-1?t('tsumoWin'):t('ronWin');
   document.getElementById('result-title').textContent=winner.name+' '+t('win')+'! ('+wl+')';
+  let calc;
+  if(discarderIdx===-1){calc='자모(전원 지급) · 합 '+winGain.toLocaleString()+'G';}
+  else{const m=(isDW||G.players[discarderIdx].seatWind===0)?2:1;calc='론 · '+G.players[discarderIdx].name+'(방총) 지급<br>'+tai+'台 × '+U.toLocaleString()+'G'+(m===2?' × 2(장가)':'')+' = '+winGain.toLocaleString()+'G';}
   const gc=myDelta>=0?'var(--green)':'var(--red)';const gainStr=(myDelta>=0?'+':'')+myDelta.toLocaleString()+'G';
-  document.getElementById('result-detail').innerHTML='<b>'+tai+'台</b> · '+t('gain')+' <b style="color:'+gc+'">'+gainStr+'</b><br><span style="font-size:.82rem;color:var(--muted)">'+result.yaku.map(y=>y.name+' '+y.tai+'台').join(' / ')+'</span><br><br>'+G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>');
+  document.getElementById('result-detail').innerHTML=
+    '<b>'+tai+'台</b> <span style="font-size:.78rem;color:var(--muted)">(기본5 + 역'+result.total+')</span> · '+t('gain')+' <b style="color:'+gc+'">'+gainStr+'</b>'+
+    '<br><span style="font-size:.8rem;color:var(--muted)">'+result.yaku.map(y=>y.name+' '+y.tai+'台').join(' / ')+'</span>'+
+    '<br><span style="font-size:.78rem;color:#94a3b8">판돈 '+bet.toLocaleString()+' · 1台 = '+U.toLocaleString()+'G</span>'+
+    '<br><span style="font-size:.78rem;color:#94a3b8">'+calc+'</span>'+
+    '<br><br>'+G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>');
   document.getElementById('result-next').textContent=isDW?t('extendRound'):t('nextRound');
   document.getElementById('result-overlay').classList.add('on','win-fanfare');spawnConfetti(true);render();
   if(winnerIdx!==0)llmReact(tai+'台로 완료해서 이김(상대 약올리기)',winner.name);
@@ -1035,7 +1043,8 @@ function mpShowResult(gs){
   const myDelta=(typeof myFinal==='number'&&typeof MP._myStartScore==='number')?(myFinal-MP._myStartScore):0;
   let detail='';
   if(r.tai){const gc=myDelta>=0?'var(--green)':'var(--red)';detail+='<b>'+r.tai+'台</b> · '+t('gain')+' <b style="color:'+gc+'">'+(myDelta>=0?'+':'')+myDelta.toLocaleString()+'G</b><br>';}
-  if(r.yaku)detail+='<span style="font-size:.82rem;color:var(--muted)">'+r.yaku.map(y=>y.name+' '+y.tai+'台').join(' / ')+'</span><br><br>';
+  if(r.yaku)detail+='<span style="font-size:.8rem;color:var(--muted)">'+r.yaku.map(y=>y.name+' '+y.tai+'台').join(' / ')+'</span><br>';
+  {const bet=(MP.gs&&MP.gs.config&&MP.gs.config.bet)||100000;const U=Math.round(bet/5);const wt=r.winType==='tsumo'?'자모(전원 지급)':'론(방총만 지급)';detail+='<span style="font-size:.78rem;color:#94a3b8">판돈 '+bet.toLocaleString()+' · 1台 = '+U.toLocaleString()+'G · '+wt+'</span><br><br>';}
   detail+=gs.players.map(p=>p.nickname+': '+(p.score||0).toLocaleString()+'G').join('<br>');
   document.getElementById('result-detail').innerHTML=detail;
   const nb=document.getElementById('result-next');nb.textContent=t('mpNewHand');nb.onclick=mpRematch;
