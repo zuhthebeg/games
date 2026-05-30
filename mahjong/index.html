@@ -9,7 +9,7 @@
 <script src="/lib/multiplayer-ui.js?v=20260524a"></script>
 <script src="/lib/game-rankings.js?v=20260530a"></script>
 <style>
-:root{--bg:#0a0f1a;--panel:#111827;--panel2:#1f2937;--line:#334155;--text:#f1f5f9;--muted:#64748b;--accent:#ffd700;--green:#4ecca3;--red:#ef4444;--blue:#3b82f6;--wallet-bar-h:56px;}
+:root{--bg:#0a0f1a;--panel:#111827;--panel2:#1f2937;--line:#334155;--text:#f1f5f9;--muted:#64748b;--accent:#ffd700;--green:#4ecca3;--red:#ef4444;--blue:#3b82f6;--wallet-bar-h:56px;--tz:1;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100dvh;overflow:hidden;display:flex;flex-direction:column;padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));touch-action:manipulation;user-select:none;}
 #start-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:100;padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));}
@@ -45,16 +45,16 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .btn-discard{background:var(--red);color:#fff;}
 .btn-tsumo{background:var(--green);color:#0a0f1a;}
 .btn-kan{background:#8b5cf6;color:#fff;}
-.tile{width:48px;height:58px;flex-shrink:0;cursor:pointer;position:relative;transition:transform .12s,filter .12s;}
-.tile-sm{width:27px;height:33px;flex-shrink:0;position:relative;}
+.tile{width:calc(48px*var(--tz));height:calc(58px*var(--tz));flex-shrink:0;cursor:pointer;position:relative;transition:transform .12s,filter .12s;}
+.tile-sm{width:calc(27px*var(--tz));height:calc(33px*var(--tz));flex-shrink:0;position:relative;}
 .tface{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;-webkit-user-drag:none;user-select:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35));}
 .tile.selected{transform:translateY(-10px) scale(1.08);z-index:10;}
 .tile.selected .tface{filter:drop-shadow(0 6px 10px rgba(255,215,0,.85));}
 .tile-sm.last .tface{filter:drop-shadow(0 0 5px rgba(255,70,70,1));}
 /* 숨은 패(암깡 등) 뒷면 */
 .tile.hidden,.tile-sm.hidden{background:#1e3a5f;border-radius:5px;display:flex;align-items:center;justify-content:center;}
-.tile.hidden::after{content:'🀫';font-size:30px;color:#cbd5e1;}
-.tile-sm.hidden::after{content:'🀫';font-size:18px;color:#cbd5e1;}
+.tile.hidden::after{content:'🀫';font-size:calc(30px*var(--tz));color:#cbd5e1;}
+.tile-sm.hidden::after{content:'🀫';font-size:calc(18px*var(--tz));color:#cbd5e1;}
 .meld-group{display:flex;gap:1px;padding:1px 2px;background:rgba(255,255,255,.06);border-radius:3px;}
 #chi-overlay,#result-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:50;gap:12px;}
 #chi-overlay.on,#result-overlay.on{display:flex;}
@@ -103,10 +103,10 @@ body.mj-fs #sw-bar{display:none !important;}
   #player-area{padding:4px 12px;padding-bottom:calc(4px + env(safe-area-inset-bottom));gap:2px;}
   #turn-indicator{padding:0;}
   #player-hand-row{flex-wrap:nowrap;justify-content:center;overflow-x:auto;gap:3px;}
-  #player-hand-row .tile{width:43px;height:52px;}
+  #player-hand-row .tile{width:calc(43px*var(--tz));height:calc(52px*var(--tz));}
 }
 @media (orientation:landscape) and (max-width:800px){
-  #player-hand-row .tile{width:40px;height:48px;}
+  #player-hand-row .tile{width:calc(40px*var(--tz));height:calc(48px*var(--tz));}
 }
 /* ── 세로모드: 점수칩 숨김, 손패 2줄, 측면 CPU 패 잘림 방지 ── */
 @media (orientation:portrait){
@@ -114,7 +114,7 @@ body.mj-fs #sw-bar{display:none !important;}
   #round-info{flex-wrap:nowrap;justify-content:flex-start;gap:10px;}
   #round-info .fs-btn:first-of-type{margin-left:auto;}
   #player-hand-row{flex-wrap:wrap;overflow:visible;justify-content:center;gap:2px;row-gap:4px;padding-bottom:0;}
-  #player-hand-row .tile{width:38px;height:46px;}
+  #player-hand-row .tile{width:calc(38px*var(--tz));height:calc(46px*var(--tz));}
   #opponent-areas{grid-template-columns:60px 1fr 60px;}
   .cpu-area.left .tile-sm,.cpu-area.right .tile-sm{width:17px;height:23px;}
   .cpu-area{padding:3px 2px;overflow:visible;}
@@ -230,6 +230,8 @@ body.mj-fs #sw-bar{display:none !important;}
     <div class="ri-item"><span class="ri-label" data-i18n="remain">잔여</span><span class="ri-val" id="ri-wall">0</span></div>
     <div class="ri-item"><span class="ri-label" data-i18n="honbaL">본장</span><span class="ri-val" id="ri-honba">0</span></div>
     <div id="score-row"></div>
+    <button class="fs-btn" onclick="zoomTiles(-1)" title="패 작게">🔍−</button>
+    <button class="fs-btn" onclick="zoomTiles(1)" title="패 크게">🔍+</button>
     <button class="fs-btn" onclick="openSettings()" title="설정">⚙</button>
     <button id="fs-btn" class="fs-btn" onclick="toggleFS()" title="가로 전체화면 전환">⛶</button>
   </div>
@@ -512,7 +514,7 @@ function aiDecideClaim(state,pidx,disc,discarderIdx){
 let G=null,selTile=null,cpuTimer=null,claimTimer=null,pending=[];
 
 // ── 설정 (시간제한·음향) ──
-const DEF_SET={turnTime:15,claimTime:8,sfx:true,bgm:false,tilecall:true,bet:100000};
+const DEF_SET={turnTime:15,claimTime:8,sfx:true,bgm:false,tilecall:true,zoom:1,bet:100000};
 function curBet(){return (MP.active&&MP.gs&&MP.gs.config&&MP.gs.config.bet)?MP.gs.config.bet:(SET.bet||100000);}
 let SET=(function(){try{return Object.assign({},DEF_SET,JSON.parse(localStorage.getItem('mahjong_set')||'{}'));}catch(_){return Object.assign({},DEF_SET);}})();
 function saveSet(){try{localStorage.setItem('mahjong_set',JSON.stringify(SET));}catch(_){}}
@@ -626,6 +628,8 @@ function setClaim(v){if(MP.active)return;SET.claimTime=v;saveSet();renderSetting
 function setBet(v){if(MP.active)return;SET.bet=v;saveSet();renderSettings();}
 function toggleSfx(){SET.sfx=!SET.sfx;saveSet();renderSettings();}
 function toggleTilecall(){SET.tilecall=!SET.tilecall;saveSet();renderSettings();}
+function applyZoom(){const z=Math.max(0.8,Math.min(1.8,SET.zoom||1));document.documentElement.style.setProperty('--tz',z);}
+function zoomTiles(dir){let z=Math.round(((SET.zoom||1)+dir*0.15)*100)/100;z=Math.max(0.8,Math.min(1.8,z));SET.zoom=z;saveSet();applyZoom();showToast('🔍 패 크기 '+Math.round(z*100)+'%');}
 let _bgm=null;
 function applyBgm(){
   if(!_bgm){_bgm=new Audio('sounds/bgm.mp3');_bgm.loop=true;_bgm.volume=0.32;}
@@ -1145,6 +1149,7 @@ async function mpLeave(){MP.active=false;try{if(MP.client)await MP.client.leaveR
 
 window.addEventListener('load',()=>{
   applyLang();
+  try{applyZoom();}catch(_){}
   try{loadCustomVoices();}catch(_){}
   if(typeof GameRankings!=='undefined')try{GameRankings.injectNavButton('mahjong');}catch(_){}
   if(typeof SharedWallet!=='undefined'){try{const g=SharedWallet.gold;if(g!=null)document.getElementById('sw-gold').textContent='보유 골드: '+Number(g).toLocaleString()+'G';}catch(_){}}
