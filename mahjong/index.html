@@ -917,6 +917,11 @@ function showWin(winnerIdx,discarderIdx,winTile,result){
     '<br><br>'+breakdown;
   document.getElementById('result-next').textContent=isDW?t('extendRound'):t('nextRound');
   document.getElementById('result-overlay').classList.add('on','win-fanfare');spawnConfetti(true);render();
+  // 점수 해설 TTS(짧게): 누가 어떻게 얼마 / 론이면 독박 누구
+  {const dk=(LANG==='zh-TW')?'放槍':'독박';const s=(discarderIdx===-1)
+      ?(winner.name+' '+wl+' '+tai+'台, '+_goldShort(winGain)+' 골드')
+      :(winner.name+' '+wl+' '+tai+'台, '+G.players[discarderIdx].name+' '+dk+', '+_goldShort(winGain)+' 골드');
+   speakResult(s);}
   const _yk=result.yaku.map(y=>y.name).join(', ');
   if(winnerIdx!==0)llmReact(wl+'으로 '+tai+'台 완료('+_yk+')해서 이김. 이긴 사람으로서 능청/도발 한마디',winner.name);
   else{const o=G.players.filter((_,i)=>i!==0);const rr=o[Math.floor(Math.random()*o.length)];if(rr)llmReact('상대가 '+wl+' '+tai+'台('+_yk+') 완료로 이겨서 내가 짐. 진 사람으로서 분하거나 너스레 한마디',rr.name);}
@@ -928,6 +933,7 @@ function endRound(reason){
   document.getElementById('result-next').textContent=t('nextRound');
   document.getElementById('result-overlay').classList.remove('win-fanfare');spawnConfetti(false);
   document.getElementById('result-overlay').classList.add('on');render();
+  speakResult((LANG==='zh-TW')?'流局，平手':'유국, 무승부입니다');
 }
 function nextRound(){
   document.getElementById('result-overlay').classList.remove('on','win-fanfare');spawnConfetti(false);
@@ -1042,12 +1048,16 @@ function showClaimPop(action,tile,name){
   if(_cpTimer)clearTimeout(_cpTimer);_cpTimer=setTimeout(()=>el.classList.remove('on'),1150);
 }
 // LLM 상대 리액션 한마디 (llm.cocy.io 경유, 실패 시 조용히 무시)
-function speakLine(text){
+function speakLine(text,interrupt){
   if(!SET.sfx||!text)return;
-  try{if(!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(text);u.lang=(LANG==='zh-TW')?'zh-TW':'ko-KR';u.rate=1.06;u.pitch=1.05;u.volume=.9;try{speechSynthesis.cancel();}catch(_){}speechSynthesis.speak(u);}catch(_){}
+  try{if(!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(text);u.lang=(LANG==='zh-TW')?'zh-TW':'ko-KR';u.rate=1.06;u.pitch=1.05;u.volume=.9;if(interrupt){try{speechSynthesis.cancel();}catch(_){}}speechSynthesis.speak(u);}catch(_){}
 }
+// 골드 짧게 읽기용(36만 / 360만 등)
+function _goldShort(v){v=Math.abs(Math.round(v));if(v>=100000000)return (Math.round(v/10000000)/10)+'억';if(v>=10000)return Math.round(v/10000)+'만';return v.toLocaleString();}
+// 게임끝 점수 해설(짧게). 해설을 먼저 말하고, LLM 멘트는 뒤에 큐로 따라붙음
+function speakResult(text){speakLine(text,true);}
 function llmReact(situation,name){
-  try{fetch('https://relay.cocy.io/api/llm/react',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({situation,lang:LANG,name})}).then(r=>r.json()).then(d=>{if(d&&d.text){showToast('💬 '+name+': '+d.text,3600);speakLine(d.text);}}).catch(()=>{});}catch(_){}
+  try{fetch('https://relay.cocy.io/api/llm/react',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({situation,lang:LANG,name})}).then(r=>r.json()).then(d=>{if(d&&d.text){showToast('💬 '+name+': '+d.text,3600);speakLine(d.text,false);}}).catch(()=>{});}catch(_){}
 }
 
 function startGame(){
@@ -1195,6 +1205,10 @@ function mpShowResult(gs){
   if(win&&win.id===MP.myUserId&&r.tai&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:r.tai});}catch(_){}
   const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);playSfx('win');playCallFx(r.winType==='tsumo'?'tsumo':'hu');if(r.discarderId&&r.discarderId===MP.myUserId)setTimeout(()=>playCallFx('bangchong'),950);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
   ov.classList.add('on');
+  // 점수 해설 TTS(짧게)
+  {const dk=(LANG==='zh-TW')?'放槍':'독박';const wlw=r.winType==='tsumo'?((LANG==='zh-TW')?'自摸':'자모'):((LANG==='zh-TW')?'胡':'론');
+   if(win){const wg=(r.deltas&&typeof r.deltas[r.winnerId]==='number')?r.deltas[r.winnerId]:0;const s=(r.winType==='tsumo')?(win.nickname+' '+wlw+' '+(r.tai||'')+'台, '+_goldShort(wg)+' 골드'):(win.nickname+' '+wlw+' '+(r.tai||'')+'台'+(dealer?(', '+dealer+' '+dk):'')+', '+_goldShort(wg)+' 골드');speakResult(s);}
+   else speakResult((LANG==='zh-TW')?'流局，平手':'유국, 무승부입니다');}
   if(win){const _yk=(r.yaku||[]).map(y=>y.name).join(', ');const _wl=r.winType==='tsumo'?'자모':'론';if(win.id!==MP.myUserId)llmReact(_wl+'으로 '+(r.tai||'')+'台 완료('+_yk+')해서 이김. 이긴 사람으로서 능청/도발 한마디',win.nickname);else{const o=gs.players.filter(p=>p.id!==MP.myUserId);if(o.length)llmReact('상대가 '+_wl+' '+(r.tai||'')+'台('+_yk+') 완료로 이겨서 내가 짐. 진 사람으로서 분하거나 너스레 한마디',o[Math.floor(Math.random()*o.length)].nickname);}}
 }
 async function mpRematch(){if(!hasFunds()){showToast(t('noFunds'));mpLeave();return;}try{await MP.client.rematch();_dealAnim=true;MP._resultShown=false;showToast(t('waiting'));}catch(e){showToast('재시작 실패');}document.getElementById('result-overlay').classList.remove('on','win-fanfare');spawnConfetti(false);}
