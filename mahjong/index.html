@@ -211,64 +211,10 @@ body.mj-fs #sw-bar{display:none !important;}
 <div id="howto-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:10001;overflow-y:auto;padding:20px;padding-top:calc(20px + env(safe-area-inset-top));">
   <div style="max-width:430px;margin:0 auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;position:sticky;top:0;background:rgba(0,0,0,.94);padding:10px 0;z-index:1;">
-      <span style="font-size:1.2rem;font-weight:800;">🀄 플레이 방법</span>
-      <button onclick="document.getElementById('howto-overlay').style.display='none'" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-weight:700;">닫기</button>
+      <span id="howto-title" style="font-size:1.2rem;font-weight:800;">🀄 How to Play</span>
+      <button onclick="document.getElementById('howto-overlay').style.display='none'" data-i18n="close" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-weight:700;">닫기</button>
     </div>
-    <div style="font-size:.86rem;line-height:1.75;color:var(--text);">
-      <div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;">
-        <div style="color:var(--accent);font-weight:700;margin-bottom:5px;">🎯 목표</div>
-        패 16장으로 <b>5몸통 + 1머리</b>를 완성해 화료(和了)!
-      </div>
-      <div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;">
-        <div style="color:var(--green);font-weight:700;margin-bottom:5px;">🔄 기본 순서</div>
-        1. <b>뽑기</b> — 벽에서 패 1장 (내 차례에 자동)<br>
-        2. <b>버리기</b> — 패 클릭해 선택 → 버리기 버튼<br>
-        3. 반시계 방향으로 4명이 반복
-      </div>
-      <div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;">
-        <div style="color:#f59e0b;font-weight:700;margin-bottom:5px;">✋ 상대 버린 패 가져오기</div>
-        상대가 버릴 때 버튼이 뜹니다:<br>
-        • <span style="color:#ef4444;font-weight:700;">화료</span> — 그 패로 완성 (론 승리)<br>
-        • <span style="color:#f59e0b;font-weight:700;">퐁</span> — 같은 패 3장 (누구 패든)<br>
-        • <span style="color:#3b82f6;font-weight:700;">치</span> — 연속패 3장 (왼쪽 사람 패만)<br>
-        • <span style="color:#8b5cf6;font-weight:700;">깡</span> — 같은 패 4장<br>
-        • <span style="color:var(--muted);">패스</span> — 넘기기
-      </div>
-      <div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;">
-        <div style="color:var(--accent);font-weight:700;margin-bottom:5px;">🃏 몸통 종류</div>
-        • <b>순쯔</b>: 연속 3장 (🀇🀈🀉)<br>
-        • <b>커쯔</b>: 같은 패 3장 (🀇🀇🀇)<br>
-        • <b>깡쯔</b>: 같은 패 4장<br>
-        • <b>머리</b>: 같은 패 2장 (딱 1조)
-      </div>
-      <div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;">
-        <div style="color:#ec4899;font-weight:700;margin-bottom:5px;">🌸 화패</div>
-        春夏秋冬·梅蘭菊竹 뽑으면 자동 공개 + 보충패.<br>
-        자리 일치(정화) 시 추가 점수.
-      </div>
-      <div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;">
-        <div style="color:#22d3ee;font-weight:700;margin-bottom:5px;">🧮 점수(台) 계산</div>
-        화료하면 <b>기본 5台</b>에서 시작해, 아래 역(役)마다 台가 더해집니다:<br>
-        • <b>役牌(점수패)</b>: 中·發·白(삼원패), 내 자리·자리바람 — 커쯔마다 +1台<br>
-        • <b>정화</b>(내 자리 꽃) +2台 / 春夏秋冬·梅蘭菊竹 다 모음 +2台 / 꽃 없음 +1台<br>
-        • <b>자모</b>(스스로 뽑음) +1 · <b>멘젠</b>(안 먹고 모음) +1 · <b>핑후</b> +2<br>
-        • <b>또이또이</b>(전부 커쯔) +7 · 삼안커 +2 / 사안커 +7<br>
-        • <b>영상개화</b>(깡 보충패로 완성) +1 · <b>해저</b>(마지막 패 자모) +1<br>
-        • 소삼원 +7 / 대삼원 +14 · 대사희 +14 · 천화·지화 +14<br>
-        <span style="color:var(--muted)">※ 게임 끝나면 음성으로도 "왜 이 점수인지" 풀이해줍니다.</span>
-      </div>
-      <div style="background:var(--panel);border-radius:8px;padding:12px;">
-        <div style="color:var(--green);font-weight:700;margin-bottom:5px;">💰 정산</div>
-        최종 <b>台 × (판돈 ÷ 5)</b> 골드 — 판돈은 설정에서 변경(기본 10만).<br>
-        <b>딜러(장가)</b>가 내거나 받으면 <b>×2</b>.<br>
-        • <b>론</b>: 그 패 버린 <span style="color:#ef4444;font-weight:700;">독박</span> 한 명이 전액 지급<br>
-        • <b>자모</b>: 나머지 <b>전원</b>이 분담 지급<br>
-        <span style="color:var(--muted)">로그인 시 골드 누적 · 0원이어도 참여 가능(져도 0원 밑으론 안 깎임).</span>
-      </div>
-      <div style="font-size:.62rem;color:var(--muted);text-align:center;margin-top:6px;line-height:1.5;">
-        타일 그래픽: <a href="https://commons.wikimedia.org/wiki/Category:SVG_Mahjong_tiles" target="_blank" rel="noopener" style="color:var(--muted);">Wikimedia Commons</a> · CC BY-SA 4.0
-      </div>
-    </div>
+    <div id="howto-body" style="font-size:.86rem;line-height:1.75;color:var(--text);"></div>
   </div>
 </div>
 <div id="game-container" style="display:none">
@@ -446,6 +392,46 @@ function applyLang(){
   document.documentElement.lang=(LANG==='zh-TW')?'zh-Hant':(LANG==='en')?'en':'ko';
   document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');const v=t(k);if(el.hasAttribute('data-i18n-html'))el.innerHTML=v;else el.textContent=v;});
   document.querySelectorAll('#set-lang .seg-btn').forEach(b=>b.classList.toggle('on',b.dataset.v===LANG));
+  if(typeof renderHowto==='function')renderHowto();
+}
+// ── 플레이 방법(howto) 3개국어 ──
+const HOWTO_TITLE={ko:'🀄 플레이 방법',zhTW:'🀄 玩法說明',en:'🀄 How to Play'};
+const HOWTO=[
+ {c:'var(--accent)',t:{ko:'🎯 목표',zhTW:'🎯 目標',en:'🎯 Goal'},b:{
+   ko:'패 16장으로 <b>5몸통 + 1머리</b>를 완성해 화료(和了)!',
+   zhTW:'用16張牌組成 <b>5副 + 1對</b> 即可胡牌（和了）！',
+   en:'Form <b>5 sets + 1 pair</b> from 16 tiles to win!'}},
+ {c:'var(--green)',t:{ko:'🔄 기본 순서',zhTW:'🔄 基本流程',en:'🔄 Basic flow'},b:{
+   ko:'1. <b>뽑기</b> — 벽에서 패 1장 (내 차례에 자동)<br>2. <b>버리기</b> — 패 클릭해 선택 → 버리기 버튼<br>3. 반시계 방향으로 4명이 반복',
+   zhTW:'1. <b>摸牌</b> — 從牌牆摸1張（輪到你時自動）<br>2. <b>打牌</b> — 點選牌 → 打牌鈕<br>3. 逆時針四人輪流',
+   en:'1. <b>Draw</b> — one tile from the wall (auto on your turn)<br>2. <b>Discard</b> — tap a tile → Discard<br>3. Four players take turns counter-clockwise'}},
+ {c:'#f59e0b',t:{ko:'✋ 상대 버린 패 가져오기',zhTW:'✋ 吃碰別人的牌',en:'✋ Claim a discard'},b:{
+   ko:'상대가 버릴 때 버튼이 뜹니다:<br>• <span style="color:#ef4444;font-weight:700;">화료</span> — 그 패로 완성 (론 승리)<br>• <span style="color:#f59e0b;font-weight:700;">퐁</span> — 같은 패 3장 (누구 패든)<br>• <span style="color:#3b82f6;font-weight:700;">치</span> — 연속패 3장 (왼쪽 사람 패만)<br>• <span style="color:#8b5cf6;font-weight:700;">깡</span> — 같은 패 4장<br>• <span style="color:var(--muted);">패스</span> — 넘기기',
+   zhTW:'對手打牌時會出現按鈕：<br>• <span style="color:#ef4444;font-weight:700;">胡</span> — 用該牌胡牌（榮和）<br>• <span style="color:#f59e0b;font-weight:700;">碰</span> — 同樣3張（任何人的牌）<br>• <span style="color:#3b82f6;font-weight:700;">吃</span> — 連續3張（僅上家的牌）<br>• <span style="color:#8b5cf6;font-weight:700;">槓</span> — 同樣4張<br>• <span style="color:var(--muted);">過</span> — 略過',
+   en:'Buttons appear when an opponent discards:<br>• <span style="color:#ef4444;font-weight:700;">Win</span> — win on that tile (Ron)<br>• <span style="color:#f59e0b;font-weight:700;">Pong</span> — three of a kind (any player)<br>• <span style="color:#3b82f6;font-weight:700;">Chi</span> — run of three (left player only)<br>• <span style="color:#8b5cf6;font-weight:700;">Kong</span> — four of a kind<br>• <span style="color:var(--muted);">Pass</span>'}},
+ {c:'var(--accent)',t:{ko:'🃏 몸통 종류',zhTW:'🃏 牌型',en:'🃏 Set types'},b:{
+   ko:'• <b>순쯔</b>: 연속 3장 (🀇🀈🀉)<br>• <b>커쯔</b>: 같은 패 3장 (🀇🀇🀇)<br>• <b>깡쯔</b>: 같은 패 4장<br>• <b>머리</b>: 같은 패 2장 (딱 1조)',
+   zhTW:'• <b>順子</b>：連續3張 (🀇🀈🀉)<br>• <b>刻子</b>：同樣3張 (🀇🀇🀇)<br>• <b>槓子</b>：同樣4張<br>• <b>對子(將)</b>：同樣2張（僅1組）',
+   en:'• <b>Run</b>: 3 in sequence (🀇🀈🀉)<br>• <b>Triplet</b>: 3 of a kind (🀇🀇🀇)<br>• <b>Kong</b>: 4 of a kind<br>• <b>Pair</b>: 2 of a kind (exactly one)'}},
+ {c:'#ec4899',t:{ko:'🌸 화패',zhTW:'🌸 花牌',en:'🌸 Flowers'},b:{
+   ko:'春夏秋冬·梅蘭菊竹 뽑으면 자동 공개 + 보충패.<br>자리 일치(정화) 시 추가 점수.',
+   zhTW:'摸到 春夏秋冬·梅蘭菊竹 會自動亮出並補牌。<br>與座位相符（正花）可加台。',
+   en:'Drawing 春夏秋冬·梅蘭菊竹 auto-reveals and draws a replacement.<br>Matching your seat (flower) adds tai.'}},
+ {c:'#22d3ee',t:{ko:'🧮 점수(台) 계산',zhTW:'🧮 台數計算',en:'🧮 Scoring (tai)'},b:{
+   ko:'화료하면 <b>기본 5台</b>에서 시작해, 아래 역(役)마다 台가 더해집니다:<br>• <b>役牌(점수패)</b>: 中·發·白(삼원패), 내 자리·자리바람 — 커쯔마다 +1台<br>• <b>정화</b>(내 자리 꽃) +2台 / 春夏秋冬·梅蘭菊竹 다 모음 +2台 / 꽃 없음 +1台<br>• <b>자모</b> +1 · <b>멘젠</b>(안 먹고 모음) +1 · <b>핑후</b> +2<br>• <b>퐁퐁후</b>(전부 커쯔) +4 · 삼안커 +2 / 사안커 +7<br>• <b>일기통관</b>(한 색 1~9) +2 · <b>청일색</b>(한 색만) +8 · <b>혼일색</b>(한 색+글자) +4<br>• <b>영상개화</b>(깡 보충패로 완성) +1 · <b>해저</b>(마지막 패 자모) +1<br>• 소삼원 +7 / 대삼원 +14 · 대사희 +14 · 천화·지화 +14<br><span style="color:var(--muted)">※ 게임 끝나면 음성으로도 "왜 이 점수인지" 풀이해줍니다.</span>',
+   zhTW:'胡牌時從 <b>基本5台</b> 起算，每個役加台：<br>• <b>役牌</b>：中·發·白(三元牌)、自風·場風 — 每組刻子 +1台<br>• <b>正花</b>(自家花) +2台 / 春夏秋冬·梅蘭菊竹 全集 +2台 / 無花 +1台<br>• <b>自摸</b> +1 · <b>門前</b>(未吃碰) +1 · <b>平胡</b> +2<br>• <b>碰碰胡</b>(全刻子) +4 · 三暗刻 +2 / 四暗刻 +7<br>• <b>一氣通貫</b> +2 · <b>清一色</b> +8 · <b>混一色</b> +4<br>• <b>嶺上開花</b>(槓後補牌胡) +1 · <b>海底</b> +1<br>• 小三元 +7 / 大三元 +14 · 大四喜 +14 · 天胡·地胡 +14<br><span style="color:var(--muted)">※ 牌局結束會用語音解說「為何是這個台數」。</span>',
+   en:'A win starts at <b>base 5 tai</b>; each yaku adds tai:<br>• <b>Value tiles</b>: 中/發/白 (dragons), seat & round wind — +1 per triplet<br>• <b>Seat flower</b> +2 / all 春夏秋冬·梅蘭菊竹 +2 / no flowers +1<br>• <b>Self-draw</b> +1 · <b>Concealed</b> +1 · <b>Pinhu</b> +2<br>• <b>All triplets</b> +4 · 3 concealed triplets +2 / 4 +7<br>• <b>Pure straight (1-9)</b> +2 · <b>Full flush</b> +8 · <b>Half flush</b> +4<br>• <b>After-a-kong</b> +1 · <b>Last tile</b> +1<br>• Small/Big dragons +7/+14 · Big winds +14 · Heaven/Earth +14<br><span style="color:var(--muted)">※ A voice explains "why this score" at game end.</span>'}},
+ {c:'var(--green)',t:{ko:'💰 정산',zhTW:'💰 結算',en:'💰 Payout'},b:{
+   ko:'최종 <b>台 × (판돈 ÷ 5)</b> 골드 — 판돈은 설정에서 변경(기본 10만).<br><b>딜러(장가)</b>가 내거나 받으면 <b>×2</b>.<br>• <b>론</b>: 그 패 버린 <span style="color:#ef4444;font-weight:700;">독박</span> 한 명이 전액 지급<br>• <b>자모</b>: 나머지 <b>전원</b>이 분담 지급<br><span style="color:var(--muted)">로그인 시 골드 누적 · 0원이어도 참여 가능(져도 0원 밑으론 안 깎임).</span>',
+   zhTW:'最終 <b>台 × (底注 ÷ 5)</b> 金幣 — 底注可在設定變更（預設10萬）。<br><b>莊家</b>支付或收取時 <b>×2</b>。<br>• <b>胡(榮和)</b>：打出該牌的 <span style="color:#ef4444;font-weight:700;">放槍者</span> 獨自全額支付<br>• <b>自摸</b>：其餘 <b>全員</b> 分攤<br><span style="color:var(--muted)">登入可累積金幣 · 0元也能玩（輸了也不會低於0）。</span>',
+   en:'Final <b>tai × (bet ÷ 5)</b> gold — bet is set in Settings (default 100k).<br>If the <b>dealer</b> pays or wins, <b>×2</b>.<br>• <b>Ron</b>: the <span style="color:#ef4444;font-weight:700;">deal-in</span> player pays it all<br>• <b>Self-draw</b>: <b>everyone</b> else splits it<br><span style="color:var(--muted)">Gold accrues when logged in · play at 0 (never drops below 0).</span>'}},
+];
+function renderHowto(){
+  const L=(LANG==='zh-TW')?'zhTW':(LANG==='en')?'en':'ko';
+  const tt=document.getElementById('howto-title');if(tt)tt.textContent=HOWTO_TITLE[L];
+  const body=document.getElementById('howto-body');if(!body)return;
+  const cards=HOWTO.map(s=>'<div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;"><div style="color:'+s.c+';font-weight:700;margin-bottom:5px;">'+s.t[L]+'</div>'+s.b[L]+'</div>').join('');
+  body.innerHTML=cards+'<div style="font-size:.62rem;color:var(--muted);text-align:center;margin-top:6px;line-height:1.5;">Tiles: <a href="https://commons.wikimedia.org/wiki/Category:SVG_Mahjong_tiles" target="_blank" rel="noopener" style="color:var(--muted);">Wikimedia Commons</a> · CC BY-SA 4.0</div>';
 }
 function setLang(l){LANG=l;try{localStorage.setItem('mahjong_lang',l);}catch(_){}applyLang();if(typeof renderSettings==='function')renderSettings();if(typeof G!=='undefined'&&G)render();}
 function suit(id){return id[0];}
