@@ -101,6 +101,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 #msg-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--panel2);color:var(--text);padding:7px 18px;border-radius:20px;font-size:.82rem;opacity:0;transition:opacity .3s;z-index:70;border:1px solid var(--line);pointer-events:none;white-space:nowrap;}
 #msg-toast.show{opacity:1;}
 #turn-indicator{font-size:.7rem;color:var(--muted);text-align:center;padding:2px 0;}
+#tenpai-info{display:none;align-items:center;gap:3px;justify-content:center;padding:2px 0;flex-wrap:wrap;}
+#tenpai-info.on{display:flex;}
+#tenpai-info .ti-lbl{font-weight:900;color:var(--accent);font-size:.82rem;margin-right:2px;}
+#tenpai-info .tile-sm{width:calc(21px*var(--tz));height:calc(26px*var(--tz));}
 /* 전체화면 토글 버튼 */
 .fs-btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:1px 9px;font-size:1rem;line-height:1.5;cursor:pointer;flex-shrink:0;}
 .fs-btn:active{transform:scale(.94);}
@@ -276,6 +280,7 @@ body.mj-fs #sw-bar{display:none !important;}
   </div>
   <div id="player-area">
     <div id="turn-indicator">-</div>
+    <div id="tenpai-info"></div>
     <div id="turn-timer-wrap"><div id="turn-timer-fill"></div></div>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <span style="font-size:.7rem;color:var(--muted)" data-i18n="flowersL">화패</span>
@@ -442,6 +447,14 @@ function canMinKan(hand,tile){return hand.filter(t=>t===tile).length>=3;}
 function canAnKan(hand){const c=countMap(hand);return Object.entries(c).filter(([t,n])=>n>=4).map(([t])=>t);}
 const ALL_TILES=(function(){const a=[];for(const s of['m','p','s'])for(let n=1;n<=9;n++)a.push(s+n);for(let n=1;n<=7;n++)a.push('z'+n);return a;})();
 function isTenpai(hand,melds){for(const tt of ALL_TILES){if(canWin([...hand,tt],melds))return true;}return false;}
+// 내가 어떤 패를 기다리는지(팅 대기패). 차례(뽑은상태)면 버릴패별 대기 합집합.
+function tenpaiWaits(){
+  if(!G||!G.players)return[];const p=G.players[0];const melds=p.melds||[];
+  const hand=(p.hand||[]).filter(t=>t&&t[0]!=='f');const complete=17-melds.length*3;const waits=new Set();
+  if(hand.length===complete-1){for(const tt of ALL_TILES)if(canWin([...hand,tt],melds))waits.add(tt);}
+  else if(hand.length===complete){const uniq=[...new Set(hand)];for(const d of uniq){const rest=[...hand];rest.splice(rest.indexOf(d),1);for(const tt of ALL_TILES)if(canWin([...rest,tt],melds))waits.add(tt);}}
+  return [...waits].sort();
+}
 
 const TURN_ORDER=[0,3,2,1];
 function nextPlayer(i){const p=TURN_ORDER.indexOf(i);return TURN_ORDER[(p+1)%4];}
@@ -997,6 +1010,7 @@ function renderPlayer(){
   _meldCounts[0]=p.melds.length;
   const fe=document.getElementById('player-flowers');
   if(setSig(fe,p.flowers.join(','))){fe.innerHTML='';for(const f of p.flowers){const s=document.createElement('div');s.className='tile-sm flower-tile';s.innerHTML=tileFace(f);fe.appendChild(s);}}
+  {const ti=document.getElementById('tenpai-info');if(ti){const w=(G.phase==='roundEnd')?[]:tenpaiWaits();const wsig='tp:'+w.join(',');if(setSig(ti,wsig)){if(w.length){ti.classList.add('on');ti.innerHTML='<span class="ti-lbl">聽</span>'+w.map(tt=>'<span class="tile-sm '+tileClass(tt)+suitCls(tt)+'">'+tileFace(tt)+'</span>').join('');}else{ti.classList.remove('on');ti.innerHTML='';}}}}
   _dealAnim=false;
 }
 
