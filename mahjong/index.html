@@ -633,7 +633,7 @@ function startTurnTimer(){
 function onTurnTimeout(){
   clearTurnTimer();
   if(!G||G.currentPlayer!==0||G.phase!=='discard')return;
-  const p=G.players[0];const tile=selTile||p.hand[p.hand.length-1];selTile=null;disableHuman();
+  const p=G.players[0];const tile=selTile||G.lastDraw||p.hand[p.hand.length-1];selTile=null;disableHuman();
   showToast(t('timeUp'));playSfx('discard');
   if(MP.active){mpSend({type:'DISCARD',payload:{tile}});return;}
   applyAction({type:'discard',tile});
@@ -878,10 +878,12 @@ function disableHuman(){clearTurnTimer();['btn-discard','btn-tsumo','btn-kan'].f
 function setTI(t){document.getElementById('turn-indicator').textContent=t;}
 function humanDiscard(){
   if(G.currentPlayer!==0||G.phase!=='discard')return;
-  if(!selTile){showToast(t('selectDiscard'));return;}
-  if(selTile[0]==='f'){showToast('화패는 버릴 수 없습니다');selTile=null;renderPlayer();return;}
-  if(MP.active){const tile=selTile;selTile=null;disableHuman();mpSend({type:'DISCARD',payload:{tile}});return;}
-  const tile=selTile;selTile=null;disableHuman();applyAction({type:'discard',tile});
+  let tile=selTile||G.lastDraw;            // 선택 안 했으면 새로 뽑은(하이라이트) 패를 기본으로 버림(쯔모기리)
+  if(!tile){showToast(t('selectDiscard'));return;}
+  if(tile[0]==='f'){showToast('화패는 버릴 수 없습니다');selTile=null;renderPlayer();return;}
+  selTile=null;disableHuman();
+  if(MP.active){mpSend({type:'DISCARD',payload:{tile}});return;}
+  applyAction({type:'discard',tile});
 }
 function humanTsumo(){if(G.currentPlayer!==0)return;clearTurnTimer();if(MP.active){mpSend({type:'TSUMO'});return;}applyAction({type:'tsumo'});}
 function humanKan(){
@@ -919,9 +921,6 @@ function showWin(winnerIdx,discarderIdx,winTile,result){
   document.getElementById('result-overlay').classList.add('on','win-fanfare');spawnConfetti(true);render();
   // 점수 해설 TTS(짧게): 왜 그 점수가 붙었는지 초보자용
   speakResult(yakuExplain(result.yaku,tai));
-  const _yk=result.yaku.map(y=>y.name).join(', ');
-  if(winnerIdx!==0)llmReact(wl+'으로 '+tai+'台 완료('+_yk+')해서 이김. 이긴 사람으로서 능청/도발 한마디',winner.name);
-  else{const o=G.players.filter((_,i)=>i!==0);const rr=o[Math.floor(Math.random()*o.length)];if(rr)llmReact('상대가 '+wl+' '+tai+'台('+_yk+') 완료로 이겨서 내가 짐. 진 사람으로서 분하거나 너스레 한마디',rr.name);}
 }
 function endRound(reason){
   if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();G.phase='roundEnd';
@@ -1221,7 +1220,6 @@ function mpShowResult(gs){
   // 점수 해설 TTS(짧게): 왜 그 점수가 붙었는지 초보자용
   if(win)speakResult(yakuExplain(r.yaku,r.tai||5));
   else speakResult((LANG==='zh-TW')?'流局，平手':'유국, 무승부입니다');
-  if(win){const _yk=(r.yaku||[]).map(y=>y.name).join(', ');const _wl=r.winType==='tsumo'?'자모':'론';if(win.id!==MP.myUserId)llmReact(_wl+'으로 '+(r.tai||'')+'台 완료('+_yk+')해서 이김. 이긴 사람으로서 능청/도발 한마디',win.nickname);else{const o=gs.players.filter(p=>p.id!==MP.myUserId);if(o.length)llmReact('상대가 '+_wl+' '+(r.tai||'')+'台('+_yk+') 완료로 이겨서 내가 짐. 진 사람으로서 분하거나 너스레 한마디',o[Math.floor(Math.random()*o.length)].nickname);}}
 }
 async function mpRematch(){if(!hasFunds()){showToast(t('noFunds'));mpLeave();return;}try{await MP.client.rematch();_dealAnim=true;MP._resultShown=false;showToast(t('waiting'));}catch(e){showToast('재시작 실패');}document.getElementById('result-overlay').classList.remove('on','win-fanfare');spawnConfetti(false);}
 async function mpLeave(){MP.active=false;try{if(MP.client)await MP.client.leaveRoom();}catch(_){}MP.client=null;MP.ui=null;
