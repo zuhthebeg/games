@@ -794,7 +794,7 @@ function showClaimOv(tile,opts,discarderIdx){
     const tr=document.createElement('span');tr.className='ctiles';
     for(const mt of claimMeldTiles(o,tile)){const s=document.createElement('span');s.className='tile-sm '+tileClass(mt)+suitCls(mt);s.innerHTML=tileFace(mt);tr.appendChild(s);}
     b.appendChild(lab);b.appendChild(tr);
-    b.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);clearClaimVisual();playSfx('claim');humanClaim(o,tile,discarderIdx);};
+    b.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);clearClaimVisual();humanClaim(o,tile,discarderIdx);};
     btns.appendChild(b);
   }
   const pb=document.createElement('button');pb.className='claim-opt c-pass';pb.innerHTML='<span class="clabel">'+t('pass')+'</span>';pb.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);clearClaimVisual();resolveClaims(discarderIdx);};btns.appendChild(pb);
@@ -1134,7 +1134,7 @@ function mpShowClaim(a){
     const tr=document.createElement('span');tr.className='ctiles';
     for(const mt of mpClaimTiles(o,tile,MP.mv)){const s=document.createElement('span');s.className='tile-sm '+tileClass(mt)+suitCls(mt);s.innerHTML=tileFace(mt);tr.appendChild(s);}
     b.appendChild(lab);b.appendChild(tr);
-    b.onclick=()=>{ov.classList.remove('on');clearClaimVisual();playSfx('claim');showClaimPop(o,tile,'');const payload={what:o};if(o==='chi'){const co=(MP.mv.myActions&&MP.mv.myActions.chiOptions)||[];if(co.length)payload.tiles=co[0];}mpSend({type:'CLAIM',payload});};
+    b.onclick=()=>{ov.classList.remove('on');clearClaimVisual();showClaimPop(o,tile,'');const payload={what:o};if(o==='chi'){const co=(MP.mv.myActions&&MP.mv.myActions.chiOptions)||[];if(co.length)payload.tiles=co[0];}mpSend({type:'CLAIM',payload});};
     btns.appendChild(b);
   }
   const pb=document.createElement('button');pb.className='claim-opt c-pass';pb.innerHTML='<span class="clabel">'+t('pass')+'</span>';pb.onclick=()=>{ov.classList.remove('on');clearClaimVisual();mpSend({type:'PASS'});};btns.appendChild(pb);
