@@ -329,6 +329,7 @@ body.mj-fs #sw-bar{display:none !important;}
     </div>
     <div class="set-row"><span class="set-label" data-i18n="sfx">🔊 효과음</span><div class="toggle" id="tog-sfx" onclick="toggleSfx()"></div></div>
     <div class="set-row"><span class="set-label" data-i18n="bgm">🎵 배경음악</span><div class="toggle" id="tog-bgm" onclick="toggleBgm()"></div></div>
+    <div class="set-row"><span class="set-label" data-i18n="tilecall">🗣 패 콜(打牌)</span><div class="toggle" id="tog-tilecall" onclick="toggleTilecall()"></div></div>
     <button class="big-btn" style="width:100%;background:var(--red);color:#fff;margin-top:6px;" onclick="exitToMenu()" data-i18n="exitGame">🚪 게임 나가기</button>
   </div>
 </div>
@@ -350,14 +351,14 @@ const I18N={
    kan:'깡',tsumo:'즈모',discard:'버리기',ron:'론',pon:'퐁',chi:'츠',pass:'패스',
    myTurn:'내 차례',selectDiscard:'버릴 패를 선택하세요',timeUp:'시간 초과 — 자동 버림',
    claimQ:'가져올 패',claimFrom:'버린 패',nextRound:'다음 라운드',extendRound:'연장 라운드',exit:'나가기',
-   setTitle:'⚙ 설정',turnLimit:'⏱ 내 턴 제한',claimLimit:'✋ 먹기/퐁/츠 제한',sfx:'🔊 효과음',bgm:'🎵 배경음악',exitGame:'🚪 게임 나가기',none:'없음',language:'🌐 언어',
+   setTitle:'⚙ 설정',turnLimit:'⏱ 내 턴 제한',claimLimit:'✋ 먹기/퐁/츠 제한',sfx:'🔊 효과음',bgm:'🎵 배경음악',tilecall:'🗣 패 콜(打牌)',exitGame:'🚪 게임 나가기',none:'없음',language:'🌐 언어',
    selectChi:'츠 조합 선택',cancel:'취소',tsumoWin:'즈모',ronWin:'론',win:'완료',draw:'유국',multiplayer:'👥 멀티플레이',waiting:'상대 기다리는 중…',mpNewHand:'새 판',
    kuk:'국',remain:'잔여',honbaL:'본장',flowersL:'화패',noFunds:'골드 부족 — 판돈만큼 필요',tenpai:'팅(聽)',baseBet:'💵 기본판돈',gain:'획득'},
  'zh-TW':{title:'🀄 台灣麻將',subtitle:'1位玩家 + 3位電腦<br>16張手牌 · 台灣規則',start:'開始遊戲',howto:'玩法說明',settings:'⚙ 設定',close:'關閉',
    kan:'槓',tsumo:'自摸',discard:'打牌',ron:'胡',pon:'碰',chi:'吃',pass:'過',
    myTurn:'輪到你',selectDiscard:'請選擇要打出的牌',timeUp:'超時 — 自動打牌',
    claimQ:'要的牌',claimFrom:'打出的牌',nextRound:'下一局',extendRound:'連莊',exit:'離開',
-   setTitle:'⚙ 設定',turnLimit:'⏱ 我的回合限時',claimLimit:'✋ 吃/碰/槓限時',sfx:'🔊 音效',bgm:'🎵 背景音樂',exitGame:'🚪 離開遊戲',none:'無',language:'🌐 語言',
+   setTitle:'⚙ 設定',turnLimit:'⏱ 我的回合限時',claimLimit:'✋ 吃/碰/槓限時',sfx:'🔊 音效',bgm:'🎵 背景音樂',tilecall:'🗣 報牌(打牌)',exitGame:'🚪 離開遊戲',none:'無',language:'🌐 語言',
    selectChi:'選擇吃牌組合',cancel:'取消',tsumoWin:'自摸',ronWin:'胡',win:'胡牌',draw:'流局',multiplayer:'👥 多人連線',waiting:'等待對手…',mpNewHand:'新一局',
    kuk:'局',remain:'剩餘',honbaL:'本場',flowersL:'花牌',noFunds:'金幣不足 — 需要至少底注金額',tenpai:'聽牌',baseBet:'💵 底注',gain:'獲得'}
 };
@@ -501,7 +502,7 @@ function aiDecideClaim(state,pidx,disc,discarderIdx){
 let G=null,selTile=null,cpuTimer=null,claimTimer=null,pending=[];
 
 // ── 설정 (시간제한·음향) ──
-const DEF_SET={turnTime:15,claimTime:8,sfx:true,bgm:false,bet:100000};
+const DEF_SET={turnTime:15,claimTime:8,sfx:true,bgm:false,tilecall:true,bet:100000};
 function curBet(){return (MP.active&&MP.gs&&MP.gs.config&&MP.gs.config.bet)?MP.gs.config.bet:(SET.bet||100000);}
 let SET=(function(){try{return Object.assign({},DEF_SET,JSON.parse(localStorage.getItem('mahjong_set')||'{}'));}catch(_){return Object.assign({},DEF_SET);}})();
 function saveSet(){try{localStorage.setItem('mahjong_set',JSON.stringify(SET));}catch(_){}}
@@ -512,6 +513,14 @@ function playSfx(name){
   if(!SET.sfx)return;const src=SFX_SRC[name];if(!src)return;
   try{let a=_sfxCache[name];if(!a){a=new Audio(src);a.volume=0.55;_sfxCache[name]=a;}a.currentTime=0;a.play().catch(()=>{});}catch(_){}
 }
+// ── 패 콜(打牌) 보이스: voice/<id>.mp3 (m1..s9,z1..z7) / voice/fx-{hu,pon,chi}.mp3 ──
+const _voiceCache={};
+function playVoice(file){
+  if(!SET.tilecall||!file)return;
+  try{let a=_voiceCache[file];if(!a){a=new Audio('voice/'+file+'.mp3?v=1');a.volume=0.85;_voiceCache[file]=a;}a.currentTime=0;a.play().catch(()=>{});}catch(_){}
+}
+function playTileVoice(id){if(!id)return;const s=id[0];if(s==='f')return;playVoice(id);} // 花패는 콜 안함
+function playCallFx(name){playVoice('fx-'+name);} // name: hu|pon|chi
 // ── 카운트다운 타이머 ──
 let turnTO=null,turnIV=null,claimIV=null;
 function clearTurnTimer(){if(turnTO){clearTimeout(turnTO);turnTO=null;}if(turnIV){clearInterval(turnIV);turnIV=null;}const w=document.getElementById('turn-timer-wrap');if(w)w.style.display='none';}
@@ -547,6 +556,7 @@ function renderSettings(){
   document.querySelectorAll('#set-bet .seg-btn').forEach(b=>b.classList.toggle('on',+b.dataset.v===SET.bet));
   document.getElementById('tog-sfx').classList.toggle('on',SET.sfx);
   document.getElementById('tog-bgm').classList.toggle('on',SET.bgm);
+  {const e=document.getElementById('tog-tilecall');if(e)e.classList.toggle('on',SET.tilecall);}
   // 멀티 진행 중엔 시간·판돈 설정 잠금(방장이 방 생성 시 고정)
   const lock=!!MP.active;['set-turn','set-claim','set-bet'].forEach(id=>{const seg=document.getElementById(id);if(seg){seg.style.opacity=lock?'.35':'';seg.style.pointerEvents=lock?'none':'';}});
 }
@@ -554,6 +564,7 @@ function setTurn(v){if(MP.active)return;SET.turnTime=v;saveSet();renderSettings(
 function setClaim(v){if(MP.active)return;SET.claimTime=v;saveSet();renderSettings();}
 function setBet(v){if(MP.active)return;SET.bet=v;saveSet();renderSettings();}
 function toggleSfx(){SET.sfx=!SET.sfx;saveSet();renderSettings();}
+function toggleTilecall(){SET.tilecall=!SET.tilecall;saveSet();renderSettings();}
 let _bgm=null;
 function applyBgm(){
   if(!_bgm){_bgm=new Audio('sounds/bgm.mp3');_bgm.loop=true;_bgm.volume=0.32;}
@@ -603,7 +614,7 @@ function applyAction(action){
   const pidx=G.currentPlayer,player=G.players[pidx];
   if(action.type==='discard'){
     const i=player.hand.indexOf(action.tile);if(i<0){showToast('패 없음');return;}
-    player.hand.splice(i,1);G.discards[pidx].push(action.tile);G.flags.firstDiscard=false;G.flags.firstDraw=false;G.lastDraw=null;playSfx('discard');
+    player.hand.splice(i,1);G.discards[pidx].push(action.tile);G.flags.firstDiscard=false;G.flags.firstDraw=false;G.lastDraw=null;playSfx('discard');playTileVoice(action.tile);
     {const tp=isTenpai(player.hand,player.melds);if(tp&&!player._tp)showToast(player.name+' '+t('tenpai'));player._tp=tp;}
     G.phase='claim';G.claimInfo={tile:action.tile,discarder:pidx};render();startClaim(action.tile,pidx);return;
   }
@@ -780,7 +791,7 @@ function humanKan(){
 }
 
 function showWin(winnerIdx,discarderIdx,winTile,result){
-  if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();playSfx('win');G.phase='roundEnd';
+  if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();playSfx('win');playCallFx('hu');G.phase='roundEnd';
   const myPre=G.players[0].score;
   const winner=G.players[winnerIdx];const winPre=winner.score;const tai=result.total+5;const isDW=winner.seatWind===0;const bet=curBet();const U=Math.round(bet/5);
   if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?tai*U*2:tai*U;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
@@ -908,6 +919,7 @@ function renderPlayer(){
 function showToast(msg,ms=2200){const el=document.getElementById('msg-toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),ms);}
 let _cpTimer=null;
 function showClaimPop(action,tile,name){
+  if(action==='pon')playCallFx('pon');else if(action==='chi')playCallFx('chi');
   const el=document.getElementById('claim-pop');if(!el)return;
   const colors={ron:'var(--red)',pon:'#f59e0b',chi:'#3b82f6',kan:'#8b5cf6'};
   const tileHtml=tile?('<span class="tile-sm '+tileClass(tile)+suitCls(tile)+'" style="width:52px;height:64px;">'+tileFace(tile)+'</span>'):'';
