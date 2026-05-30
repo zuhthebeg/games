@@ -525,7 +525,7 @@ function calcYaku(hand,melds,flowers,winTile,winType,pidx,ri){
   if(allTiles.every(t=>!'zf'.includes(suit(t))))add('무자',1);
   if(isConcealed){const allSeq=sets.every(s=>s.type==='seq');const hYaku=head&&isYakuhai(head,pidx,ri.windIdx);const ts=isTwoSided(hand,winTile);if(allSeq&&!hYaku&&ts)add('핑후',2);}
   const isTT=sets.length>0&&sets.every(s=>s.type==='tri')&&melds.every(m=>['pon','minkan','addkan','ankan'].includes(m.type))&&(sets.length+melds.length)>=5;
-  if(isTT)add('또이또이',7);
+  if(isTT)add('퐁퐁후',4);  // 碰碰胡: 전부 커쯔
   const concTri=sets.filter(s=>s.type==='tri').length+melds.filter(m=>m.type==='ankan').length;
   if(concTri>=3)add('삼안커',2);
   if(concTri>=4){remove('삼안커');add('사안커',7);}
@@ -537,6 +537,13 @@ function calcYaku(hand,melds,flowers,winTile,winType,pidx,ri){
   const winds=['z1','z2','z3','z4'];const wTri=allTri.filter(t=>winds.includes(t));const wHead=head&&winds.includes(head);
   if(wTri.length===3&&wHead)add('소사희',7);
   if(wTri.length===4){remove('소사희');add('대사희',14);}
+  // 一氣通貫: 한 색에서 123·456·789 (시퀀스 시작이 1·4·7 모두)
+  {const runStarts=[...sets.filter(s=>s.type==='seq').map(s=>s.tile),...melds.filter(m=>m.type==='chi').map(m=>[...m.tiles].sort()[0])];
+   for(const su of['m','p','s'])if(runStarts.includes(su+'1')&&runStarts.includes(su+'4')&&runStarts.includes(su+'7')){add('일기통관',2);break;}}
+  // 淸一色(한 색만, 글자 없음) 8台 / 混一色(한 색+글자) 4台
+  {const numSuits=new Set(allTiles.map(suit).filter(s=>'mps'.includes(s)));const hasHonor=allTiles.some(x=>suit(x)==='z');
+   if(numSuits.size===1&&!hasHonor){remove('무자');add('청일색',8);}
+   else if(numSuits.size===1&&hasHonor)add('혼일색',4);}
   const anKC=melds.filter(m=>m.type==='ankan').length;const minKC=melds.filter(m=>m.type==='minkan'||m.type==='addkan').length;
   if(anKC>0)add('안깡×'+anKC,anKC*2);if(minKC>0)add('명깡×'+minKC,minKC);
   if(ri.isRinshan)add('영상개화',1);
@@ -1093,7 +1100,7 @@ function yakuSay(name,tai){
   if(m=name.match(/^안깡×(\d+)$/))return '안깡 '+m[1]+'번 '+pt;
   if(m=name.match(/^명깡×(\d+)$/))return '깡 '+m[1]+'번 '+pt;
   if(m=name.match(/^본장×(\d+)$/))return '연장 '+m[1]+'회로 '+pt;
-  const R={'천화':'첫 패로 바로 나서','지화':'첫 버림에 론해서','츠모':'스스로 뽑아 나서','멘젠':'안 먹고 다 모아서','멘젠츠모':'안 먹고 스스로 뽑아서','전구인':'다 먹은 패로 론해서','무자':'글자패 없이 숫자만','핑후':'전부 순자에 점수패 아닌 핑후로','또이또이':'전부 같은 패 세개씩(또이또이)','삼안커':'감춘 세트 셋(삼안커)','사안커':'감춘 세트 넷(사안커)','오안커':'감춘 세트 다섯','소삼원':'중·발·백 모아(소삼원)','대삼원':'중·발·백 셋 다(대삼원)','소사희':'바람패 모아(소사희)','대사희':'바람패 넷 다(대사희)','영상개화':'깡 보충패로 완성해서','해저':'마지막 패로 자모해서','단기대기':'머리 단독 대기로','무화':'꽃패 하나도 없어서','춘하추동':'사계절 꽃 다 모아서','매난국죽':'사군자 꽃 다 모아서','친장가':'딜러(장가)라'};
+  const R={'천화':'첫 패로 바로 나서','지화':'첫 버림에 론해서','츠모':'스스로 뽑아 나서','멘젠':'안 먹고 다 모아서','멘젠츠모':'안 먹고 스스로 뽑아서','전구인':'다 먹은 패로 론해서','무자':'글자패 없이 숫자만','핑후':'전부 순자에 점수패 아닌 핑후로','퐁퐁후':'전부 같은 패 세개씩(퐁퐁후)','일기통관':'한 색으로 1부터 9까지 다 이어서','청일색':'한 가지 색만으로(청일색)','혼일색':'한 색에 글자패만 섞어(혼일색)','삼안커':'감춘 세트 셋(삼안커)','사안커':'감춘 세트 넷(사안커)','오안커':'감춘 세트 다섯','소삼원':'중·발·백 모아(소삼원)','대삼원':'중·발·백 셋 다(대삼원)','소사희':'바람패 모아(소사희)','대사희':'바람패 넷 다(대사희)','영상개화':'깡 보충패로 완성해서','해저':'마지막 패로 자모해서','단기대기':'머리 단독 대기로','무화':'꽃패 하나도 없어서','춘하추동':'사계절 꽃 다 모아서','매난국죽':'사군자 꽃 다 모아서','친장가':'딜러(장가)라'};
   return (R[name]?R[name]+' ':name+' ')+pt;
 }
 function yakuExplain(yaku,tai){
