@@ -150,6 +150,11 @@ body.mj-fs #sw-bar{display:none !important;}
 .tile-sm.claimed{outline:2px solid #ef4444;outline-offset:-1px;border-radius:4px;}
 .tile-sm.claimed .tface{filter:drop-shadow(0 0 5px rgba(255,80,80,.95));}
 .tile.just-drawn{background:rgba(255,90,90,.22);border-radius:7px;box-shadow:0 0 11px 2px rgba(255,90,90,.55);}
+#claim-pop{position:fixed;left:50%;top:36%;transform:translate(-50%,-50%);z-index:80;display:none;flex-direction:column;align-items:center;gap:5px;pointer-events:none;}
+#claim-pop.on{display:flex;animation:claimPop 1.05s ease-out;}
+#claim-pop .cp-label{font-size:2.7rem;font-weight:900;letter-spacing:2px;text-shadow:0 3px 12px rgba(0,0,0,.8);}
+#claim-pop .cp-name{font-size:.85rem;color:#fff;background:rgba(0,0,0,.55);padding:2px 12px;border-radius:11px;}
+@keyframes claimPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-10deg);}22%{opacity:1;transform:translate(-50%,-50%) scale(1.2) rotate(4deg);}38%{transform:translate(-50%,-50%) scale(1) rotate(0);}80%{opacity:1;transform:translate(-50%,-50%) scale(1);}100%{opacity:0;transform:translate(-50%,-58%) scale(1);}}
 .tile-sm.disc-last{background:rgba(255,90,90,.22);border-radius:5px;box-shadow:0 0 9px 1px rgba(255,90,90,.55);}
 .tile-sm.disc-match{outline:2px solid #38bdf8;outline-offset:-1px;border-radius:5px;}
 </style>
@@ -323,6 +328,7 @@ body.mj-fs #sw-bar{display:none !important;}
   </div>
 </div>
 <div id="mp-lobby" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));"></div>
+<div id="claim-pop"></div>
 <div id="msg-toast"></div>
 <script>
 const TE={m1:'🀇',m2:'🀈',m3:'🀉',m4:'🀊',m5:'🀋',m6:'🀌',m7:'🀍',m8:'🀎',m9:'🀏',p1:'🀙',p2:'🀚',p3:'🀛',p4:'🀜',p5:'🀝',p6:'🀞',p7:'🀟',p8:'🀠',p9:'🀡',s1:'🀐',s2:'🀑',s3:'🀒',s4:'🀓',s5:'🀔',s6:'🀕',s7:'🀖',s8:'🀗',s9:'🀘',z1:'東',z2:'南',z3:'西',z4:'北',z5:'白',z6:'發',z7:'中',f1:'春',f2:'夏',f3:'秋',f4:'冬',f5:'梅',f6:'蘭',f7:'菊',f8:'竹'};
@@ -609,7 +615,7 @@ function applyAction(action){
     for(const t of fromH){const i=player.hand.indexOf(t);if(i>=0)player.hand.splice(i,1);}
     const di=G.discards[discarder];const dIdx=di.lastIndexOf(disc);if(dIdx>=0)di.splice(dIdx,1);
     player.melds.push({type:'chi',tiles:[...action.tiles].sort(),from:discarder,claimed:disc});
-    showToast(player.name+' '+t('chi')+' '+td(disc));
+    showClaimPop('chi',disc,player.name);
     G.lastDraw=null;G.phase='discard';render();if(player.type==='cpu')scheduleCpu(pidx,1000);else enableHuman(pidx);return;
   }
   if(action.type==='pon'){
@@ -617,7 +623,7 @@ function applyAction(action){
     for(let i=player.hand.length-1;i>=0&&rm<2;i--)if(player.hand[i]===tile){player.hand.splice(i,1);rm++;}
     const di=G.discards[discarder];const dIdx=di.lastIndexOf(tile);if(dIdx>=0)di.splice(dIdx,1);
     player.melds.push({type:'pon',tiles:[tile,tile,tile],from:discarder,claimed:tile});
-    showToast(player.name+' '+t('pon')+' '+td(tile));
+    showClaimPop('pon',tile,player.name);
     G.lastDraw=null;G.phase='discard';render();if(player.type==='cpu')scheduleCpu(pidx,1000);else enableHuman(pidx);return;
   }
   if(action.type==='ron'){
@@ -628,7 +634,7 @@ function applyAction(action){
 }
 function doKan(action,pidx){
   const player=G.players[pidx];
-  showToast(player.name+' '+t('kan'));
+  showClaimPop('kan',(action.tiles&&action.tiles[0])||action.tile||null,player.name);
   if(action.kanType==='an'){
     const tile=action.tiles[0];for(let i=player.hand.length-1;i>=0;i--)if(player.hand[i]===tile)player.hand.splice(i,1);
     player.melds.push({type:'ankan',tiles:[tile,tile,tile,tile],from:pidx});
@@ -868,6 +874,15 @@ function renderPlayer(){
 }
 
 function showToast(msg,ms=2200){const el=document.getElementById('msg-toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),ms);}
+let _cpTimer=null;
+function showClaimPop(action,tile,name){
+  const el=document.getElementById('claim-pop');if(!el)return;
+  const colors={ron:'var(--red)',pon:'#f59e0b',chi:'#3b82f6',kan:'#8b5cf6'};
+  const tileHtml=tile?('<span class="tile-sm '+tileClass(tile)+suitCls(tile)+'" style="width:52px;height:64px;">'+tileFace(tile)+'</span>'):'';
+  el.innerHTML='<div class="cp-label" style="color:'+(colors[action]||'#fff')+'">'+(t(action)||action)+'</div>'+tileHtml+(name?'<div class="cp-name">'+name+'</div>':'');
+  el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
+  if(_cpTimer)clearTimeout(_cpTimer);_cpTimer=setTimeout(()=>el.classList.remove('on'),1150);
+}
 // LLM 상대 리액션 한마디 (llm.cocy.io 경유, 실패 시 조용히 무시)
 function llmReact(situation,name){
   try{fetch('https://relay.cocy.io/api/llm/react',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({situation,lang:LANG,name})}).then(r=>r.json()).then(d=>{if(d&&d.text)showToast('💬 '+name+': '+d.text,3400);}).catch(()=>{});}catch(_){}
@@ -948,7 +963,7 @@ function applyServerView(gs,mv){
   // 판 시작 시 내 점수 기록(지갑 정산용)
   if(gs.discards.every(d=>!d.length)){const ms=(gs.players.find(p=>p.id===MP.myUserId)||{}).score;if(typeof ms==='number')MP._myStartScore=ms;}
   // 남이 츠/퐁/깡 하면 토스트 (멜드 증가 감지, 나 제외)
-  if(MP._meldN){for(let di=1;di<4;di++){const pl=players[di];const prev=MP._meldN[di]||0;if(pl.melds.length>prev){const m=pl.melds[pl.melds.length-1];const lbl=m.type==='chi'?t('chi'):m.type==='pon'?t('pon'):(/kan/.test(m.type)?t('kan'):'');if(lbl)showToast(pl.name+' '+lbl+(m.claimed?' '+td(m.claimed):''));}}}
+  if(MP._meldN){for(let di=1;di<4;di++){const pl=players[di];const prev=MP._meldN[di]||0;if(pl.melds.length>prev){const m=pl.melds[pl.melds.length-1];const act=m.type==='chi'?'chi':m.type==='pon'?'pon':(/kan/.test(m.type)?'kan':'');if(act)showClaimPop(act,m.claimed||null,pl.name);}}}
   MP._meldN=players.map(pl=>pl.melds.length);
   // 텐파이(팅) 토스트
   if(MP._tp){for(let di=0;di<4;di++){const sp=gs.players.find(x=>x.seat===order[di])||{};if(sp.tenpai&&!MP._tp[di])showToast((sp.nickname||'-')+' '+t('tenpai'));}}
@@ -979,7 +994,7 @@ function mpShowClaim(a){
     const tr=document.createElement('span');tr.className='ctiles';
     for(const mt of mpClaimTiles(o,tile,MP.mv)){const s=document.createElement('span');s.className='tile-sm '+tileClass(mt)+suitCls(mt);s.innerHTML=tileFace(mt);tr.appendChild(s);}
     b.appendChild(lab);b.appendChild(tr);
-    b.onclick=()=>{ov.classList.remove('on');clearClaimVisual();playSfx('claim');showToast(t(o)+' '+td(tile));const payload={what:o};if(o==='chi'){const co=(MP.mv.myActions&&MP.mv.myActions.chiOptions)||[];if(co.length)payload.tiles=co[0];}mpSend({type:'CLAIM',payload});};
+    b.onclick=()=>{ov.classList.remove('on');clearClaimVisual();playSfx('claim');showClaimPop(o,tile,'');const payload={what:o};if(o==='chi'){const co=(MP.mv.myActions&&MP.mv.myActions.chiOptions)||[];if(co.length)payload.tiles=co[0];}mpSend({type:'CLAIM',payload});};
     btns.appendChild(b);
   }
   const pb=document.createElement('button');pb.className='claim-opt c-pass';pb.innerHTML='<span class="clabel">'+t('pass')+'</span>';pb.onclick=()=>{ov.classList.remove('on');clearClaimVisual();mpSend({type:'PASS'});};btns.appendChild(pb);
