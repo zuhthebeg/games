@@ -836,7 +836,8 @@ function renderDiscards(){
 function renderPlayer(){
   const p=G.players[0];const hr=document.getElementById('player-hand-row');
   const handSig=p.hand.join(',')+'|'+selTile+'|'+G.lastDraw+'|'+G.currentPlayer+'|'+G.phase;
-  if(_dealAnim||setSig(hr,handSig)){
+  const handChanged=setSig(hr,handSig);
+  if(_dealAnim||handChanged){
     hr.innerHTML='';let jd=false;
     p.hand.forEach((t,i)=>{const d=document.createElement('div');let cls='tile '+tileClass(t)+suitCls(t)+(t===selTile?' selected':'');if(!jd&&G.lastDraw&&t===G.lastDraw&&G.currentPlayer===0&&G.phase==='discard'){cls+=' just-drawn';jd=true;}d.className=cls;if(_dealAnim){d.classList.add('deal-anim');d.style.animationDelay=(i*0.035).toFixed(3)+'s';}d.innerHTML=tileFace(t);d.onclick=()=>{if(G.currentPlayer!==0||G.phase!=='discard')return;if(t[0]==='f')return;selTile=(selTile===t)?null:t;renderPlayer();};hr.appendChild(d);});
   }
