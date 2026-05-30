@@ -308,6 +308,14 @@ body.mj-fs #sw-bar{display:none !important;}
         <button class="seg-btn" data-v="12" onclick="setClaim(12)">12s</button>
       </div>
     </div>
+    <div class="set-row"><span class="set-label" data-i18n="baseBet">💵 기본판돈</span>
+      <div class="set-seg" id="set-bet">
+        <button class="seg-btn" data-v="100" onclick="setBet(100)">100</button>
+        <button class="seg-btn" data-v="1000" onclick="setBet(1000)">1천</button>
+        <button class="seg-btn" data-v="10000" onclick="setBet(10000)">1만</button>
+        <button class="seg-btn" data-v="100000" onclick="setBet(100000)">10만</button>
+      </div>
+    </div>
     <div class="set-row"><span class="set-label" data-i18n="sfx">🔊 효과음</span><div class="toggle" id="tog-sfx" onclick="toggleSfx()"></div></div>
     <div class="set-row"><span class="set-label" data-i18n="bgm">🎵 배경음악</span><div class="toggle" id="tog-bgm" onclick="toggleBgm()"></div></div>
     <button class="big-btn" style="width:100%;background:var(--red);color:#fff;margin-top:6px;" onclick="exitToMenu()" data-i18n="exitGame">🚪 게임 나가기</button>
@@ -332,14 +340,14 @@ const I18N={
    claimQ:'가져올 패',claimFrom:'버린 패',nextRound:'다음 라운드',extendRound:'연장 라운드',exit:'나가기',
    setTitle:'⚙ 설정',turnLimit:'⏱ 내 턴 제한',claimLimit:'✋ 먹기/퐁/츠 제한',sfx:'🔊 효과음',bgm:'🎵 배경음악',exitGame:'🚪 게임 나가기',none:'없음',language:'🌐 언어',
    selectChi:'츠 조합 선택',cancel:'취소',tsumoWin:'즈모',ronWin:'론',win:'완료',draw:'유국',multiplayer:'👥 멀티플레이',waiting:'상대 기다리는 중…',mpNewHand:'새 판',
-   kuk:'국',remain:'잔여',honbaL:'본장',flowersL:'화패',noFunds:'골드 부족 — 플레이하려면 최소 10만G 필요',tenpai:'팅(聽)'},
+   kuk:'국',remain:'잔여',honbaL:'본장',flowersL:'화패',noFunds:'골드 부족 — 판돈만큼 필요',tenpai:'팅(聽)',baseBet:'💵 기본판돈',gain:'획득'},
  'zh-TW':{title:'🀄 台灣麻將',subtitle:'1位玩家 + 3位電腦<br>16張手牌 · 台灣規則',start:'開始遊戲',howto:'玩法說明',settings:'⚙ 設定',close:'關閉',
    kan:'槓',tsumo:'自摸',discard:'打牌',ron:'胡',pon:'碰',chi:'吃',pass:'過',
    myTurn:'輪到你',selectDiscard:'請選擇要打出的牌',timeUp:'超時 — 自動打牌',
    claimQ:'要的牌',claimFrom:'打出的牌',nextRound:'下一局',extendRound:'連莊',exit:'離開',
    setTitle:'⚙ 設定',turnLimit:'⏱ 我的回合限時',claimLimit:'✋ 吃/碰/槓限時',sfx:'🔊 音效',bgm:'🎵 背景音樂',exitGame:'🚪 離開遊戲',none:'無',language:'🌐 語言',
    selectChi:'選擇吃牌組合',cancel:'取消',tsumoWin:'自摸',ronWin:'胡',win:'胡牌',draw:'流局',multiplayer:'👥 多人連線',waiting:'等待對手…',mpNewHand:'新一局',
-   kuk:'局',remain:'剩餘',honbaL:'本場',flowersL:'花牌',noFunds:'金幣不足 — 至少需要 10萬 才能遊玩',tenpai:'聽牌'}
+   kuk:'局',remain:'剩餘',honbaL:'本場',flowersL:'花牌',noFunds:'金幣不足 — 需要至少底注金額',tenpai:'聽牌',baseBet:'💵 底注',gain:'獲得'}
 };
 let LANG=(function(){try{const s=localStorage.getItem('mahjong_lang');if(s)return s;}catch(_){}return (navigator.language||'').toLowerCase().startsWith('zh')?'zh-TW':'ko';})();
 function t(k){return (I18N[LANG]&&I18N[LANG][k]!=null)?I18N[LANG][k]:(I18N.ko[k]!=null?I18N.ko[k]:k);}
@@ -481,7 +489,8 @@ function aiDecideClaim(state,pidx,disc,discarderIdx){
 let G=null,selTile=null,cpuTimer=null,claimTimer=null,pending=[];
 
 // ── 설정 (시간제한·음향) ──
-const DEF_SET={turnTime:15,claimTime:8,sfx:true,bgm:false};
+const DEF_SET={turnTime:15,claimTime:8,sfx:true,bgm:false,bet:100000};
+function curBet(){return (MP.active&&MP.gs&&MP.gs.config&&MP.gs.config.bet)?MP.gs.config.bet:(SET.bet||100000);}
 let SET=(function(){try{return Object.assign({},DEF_SET,JSON.parse(localStorage.getItem('mahjong_set')||'{}'));}catch(_){return Object.assign({},DEF_SET);}})();
 function saveSet(){try{localStorage.setItem('mahjong_set',JSON.stringify(SET));}catch(_){}}
 // ── 사운드 (실제 오디오는 후속 단계, 지금은 토글만 동작) ──
@@ -523,13 +532,15 @@ function closeSettings(){document.getElementById('settings-overlay').style.displ
 function renderSettings(){
   document.querySelectorAll('#set-turn .seg-btn').forEach(b=>b.classList.toggle('on',+b.dataset.v===SET.turnTime));
   document.querySelectorAll('#set-claim .seg-btn').forEach(b=>b.classList.toggle('on',+b.dataset.v===SET.claimTime));
+  document.querySelectorAll('#set-bet .seg-btn').forEach(b=>b.classList.toggle('on',+b.dataset.v===SET.bet));
   document.getElementById('tog-sfx').classList.toggle('on',SET.sfx);
   document.getElementById('tog-bgm').classList.toggle('on',SET.bgm);
-  // 멀티 진행 중엔 시간설정 잠금(방장이 방 생성 시 고정)
-  const lock=!!MP.active;['set-turn','set-claim'].forEach(id=>{const seg=document.getElementById(id);if(seg){seg.style.opacity=lock?'.35':'';seg.style.pointerEvents=lock?'none':'';}});
+  // 멀티 진행 중엔 시간·판돈 설정 잠금(방장이 방 생성 시 고정)
+  const lock=!!MP.active;['set-turn','set-claim','set-bet'].forEach(id=>{const seg=document.getElementById(id);if(seg){seg.style.opacity=lock?'.35':'';seg.style.pointerEvents=lock?'none':'';}});
 }
 function setTurn(v){if(MP.active)return;SET.turnTime=v;saveSet();renderSettings();}
 function setClaim(v){if(MP.active)return;SET.claimTime=v;saveSet();renderSettings();}
+function setBet(v){if(MP.active)return;SET.bet=v;saveSet();renderSettings();}
 function toggleSfx(){SET.sfx=!SET.sfx;saveSet();renderSettings();}
 function toggleBgm(){SET.bgm=!SET.bgm;saveSet();renderSettings();}
 function exitToMenu(){
@@ -749,15 +760,16 @@ function humanKan(){
 function showWin(winnerIdx,discarderIdx,winTile,result){
   if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();playSfx('win');G.phase='roundEnd';
   const myPre=G.players[0].score;
-  const winner=G.players[winnerIdx];const tai=result.total+5;const isDW=winner.seatWind===0;
-  if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?tai*20000:tai*10000;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
-  else{const isDPay=G.players[discarderIdx].seatWind===0;const mult=(isDW||isDPay)?2:1;const amt=tai*10000*mult;G.players[discarderIdx].score-=amt;G.players[winnerIdx].score+=amt;}
+  const winner=G.players[winnerIdx];const tai=result.total+5;const isDW=winner.seatWind===0;const U=Math.round(curBet()/5);
+  if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?tai*U*2:tai*U;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
+  else{const isDPay=G.players[discarderIdx].seatWind===0;const mult=(isDW||isDPay)?2:1;const amt=tai*U*mult;G.players[discarderIdx].score-=amt;G.players[winnerIdx].score+=amt;}
   const myDelta=G.players[0].score-myPre;
   if(typeof SharedWallet!=='undefined'){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
   if(winnerIdx===0&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:tai});}catch(_){}
   const wl=discarderIdx===-1?t('tsumoWin'):t('ronWin');
   document.getElementById('result-title').textContent=winner.name+' '+t('win')+'! ('+wl+')';
-  document.getElementById('result-detail').innerHTML='<b>'+tai+'台 (기본5 + 역'+result.total+')</b><br>'+result.yaku.map(y=>y.name+' +'+y.tai+'台').join(' / ')+'<br><br>'+G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>');
+  const gc=myDelta>=0?'var(--green)':'var(--red)';const gainStr=(myDelta>=0?'+':'')+myDelta.toLocaleString()+'G';
+  document.getElementById('result-detail').innerHTML='<b>'+tai+'台</b> · '+t('gain')+' <b style="color:'+gc+'">'+gainStr+'</b><br><span style="font-size:.82rem;color:var(--muted)">'+result.yaku.map(y=>y.name+' '+y.tai+'台').join(' / ')+'</span><br><br>'+G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>');
   document.getElementById('result-next').textContent=isDW?t('extendRound'):t('nextRound');
   document.getElementById('result-overlay').classList.add('on','win-fanfare');spawnConfetti(true);render();
 }
@@ -791,8 +803,7 @@ function render(){
   renderDiscards();renderPlayer();
 }
 let _discCounts=[0,0,0,0],_meldCounts=[0,0,0,0],_dealAnim=false,_lastDiscSeat=-1;
-const MIN_STAKE=100000;
-function hasFunds(){if(typeof SharedWallet==='undefined')return true;return (Number(SharedWallet.gold)||0)>=MIN_STAKE;}
+function hasFunds(){if(typeof SharedWallet==='undefined')return true;return (Number(SharedWallet.gold)||0)>=curBet();}
 function setSig(el,sig){if(el.__sig===sig)return false;el.__sig=sig;return true;} // 변경 없으면 재렌더 스킵(깜빡임 방지)
 function spawnConfetti(on){
   const ov=document.getElementById('result-overlay');
@@ -879,7 +890,7 @@ function openMultiplayer(){
   const cont=document.getElementById('mp-lobby');cont.style.display='block';
   MP.ui=new MultiplayerUI({
     gameType:'mahjong-tw',gameName:t('title').replace('🀄 ','').trim(),container:cont,maxPlayers:4,supportsLocal:false,
-    getRoomConfig:()=>({timeLimit:SET.turnTime||20}),
+    getRoomConfig:()=>({timeLimit:SET.turnTime||20,bet:SET.bet||100000}),
     onGameStart:(roomState)=>mpStart(roomState),
     onLeave:()=>{cont.style.display='none';cont.innerHTML='';document.getElementById('start-screen').style.display='flex';}
   });
@@ -973,13 +984,15 @@ function mpShowResult(gs){
   const r=gs.result||{};
   const win=r.winnerId?gs.players.find(p=>p.id===r.winnerId):null;
   document.getElementById('result-title').textContent=win?(win.nickname+' '+t('win')):(t('draw'));
+  const myFinal=(gs.players.find(p=>p.id===MP.myUserId)||{}).score;
+  const myDelta=(typeof myFinal==='number'&&typeof MP._myStartScore==='number')?(myFinal-MP._myStartScore):0;
   let detail='';
-  if(r.yaku)detail+='<b>'+(r.tai||'')+'台</b><br>'+r.yaku.map(y=>y.name+' +'+y.tai).join(' / ')+'<br><br>';
+  if(r.tai){const gc=myDelta>=0?'var(--green)':'var(--red)';detail+='<b>'+r.tai+'台</b> · '+t('gain')+' <b style="color:'+gc+'">'+(myDelta>=0?'+':'')+myDelta.toLocaleString()+'G</b><br>';}
+  if(r.yaku)detail+='<span style="font-size:.82rem;color:var(--muted)">'+r.yaku.map(y=>y.name+' '+y.tai+'台').join(' / ')+'</span><br><br>';
   detail+=gs.players.map(p=>p.nickname+': '+(p.score||0).toLocaleString()+'G').join('<br>');
   document.getElementById('result-detail').innerHTML=detail;
   const nb=document.getElementById('result-next');nb.textContent=t('mpNewHand');nb.onclick=mpRematch;
-  const myFinal=(gs.players.find(p=>p.id===MP.myUserId)||{}).score;
-  if(typeof myFinal==='number'&&typeof MP._myStartScore==='number'){const d=myFinal-MP._myStartScore;if(typeof SharedWallet!=='undefined'){try{if(d>0&&SharedWallet.addGold)SharedWallet.addGold(d);else if(d<0&&SharedWallet.spendGold)SharedWallet.spendGold(-d);}catch(_){}}}
+  if(myDelta!==0&&typeof SharedWallet!=='undefined'){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
   if(win&&win.id===MP.myUserId&&r.tai&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:r.tai});}catch(_){}
   const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
   ov.classList.add('on');
