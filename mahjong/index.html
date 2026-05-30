@@ -773,6 +773,8 @@ function showWin(winnerIdx,discarderIdx,winTile,result){
   document.getElementById('result-detail').innerHTML='<b>'+tai+'台</b> · '+t('gain')+' <b style="color:'+gc+'">'+gainStr+'</b><br><span style="font-size:.82rem;color:var(--muted)">'+result.yaku.map(y=>y.name+' '+y.tai+'台').join(' / ')+'</span><br><br>'+G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>');
   document.getElementById('result-next').textContent=isDW?t('extendRound'):t('nextRound');
   document.getElementById('result-overlay').classList.add('on','win-fanfare');spawnConfetti(true);render();
+  if(winnerIdx!==0)llmReact(tai+'台로 완료해서 이김(상대 약올리기)',winner.name);
+  else{const o=G.players.filter((_,i)=>i!==0);const rr=o[Math.floor(Math.random()*o.length)];if(rr)llmReact('상대에게 '+tai+'台 완료로 져서 분함',rr.name);}
 }
 function endRound(reason){
   if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();G.phase='roundEnd';
@@ -866,6 +868,10 @@ function renderPlayer(){
 }
 
 function showToast(msg,ms=2200){const el=document.getElementById('msg-toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),ms);}
+// LLM 상대 리액션 한마디 (llm.cocy.io 경유, 실패 시 조용히 무시)
+function llmReact(situation,name){
+  try{fetch('https://relay.cocy.io/api/llm/react',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({situation,lang:LANG,name})}).then(r=>r.json()).then(d=>{if(d&&d.text)showToast('💬 '+name+': '+d.text,3400);}).catch(()=>{});}catch(_){}
+}
 
 function startGame(){
   if(!hasFunds()){showToast(t('noFunds'));return;}
@@ -998,6 +1004,7 @@ function mpShowResult(gs){
   if(win&&win.id===MP.myUserId&&r.tai&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:r.tai});}catch(_){}
   const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
   ov.classList.add('on');
+  if(win){if(win.id!==MP.myUserId)llmReact((r.tai||'')+'台로 완료해서 이김(약올리기)',win.nickname);else{const o=gs.players.filter(p=>p.id!==MP.myUserId);if(o.length)llmReact('상대에게 져서 분함',o[Math.floor(Math.random()*o.length)].nickname);}}
 }
 async function mpRematch(){if(!hasFunds()){showToast(t('noFunds'));mpLeave();return;}try{await MP.client.rematch();_dealAnim=true;MP._resultShown=false;showToast(t('waiting'));}catch(e){showToast('재시작 실패');}document.getElementById('result-overlay').classList.remove('on','win-fanfare');spawnConfetti(false);}
 async function mpLeave(){MP.active=false;try{if(MP.client)await MP.client.leaveRoom();}catch(_){}MP.client=null;MP.ui=null;
