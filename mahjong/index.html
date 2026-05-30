@@ -150,6 +150,7 @@ body.mj-fs #sw-bar{display:none !important;}
 .tile-sm.claimed{outline:2px solid #ef4444;outline-offset:-1px;border-radius:4px;}
 .tile-sm.claimed .tface{filter:drop-shadow(0 0 5px rgba(255,80,80,.95));}
 .tile.just-drawn{background:rgba(255,90,90,.22);border-radius:7px;box-shadow:0 0 11px 2px rgba(255,90,90,.55);}
+.tile.drag-ready .tface{filter:drop-shadow(0 0 11px rgba(239,68,68,1)) drop-shadow(0 0 4px rgba(239,68,68,.9));}
 #claim-pop{position:fixed;left:50%;top:36%;transform:translate(-50%,-50%);z-index:80;display:none;flex-direction:column;align-items:center;gap:5px;pointer-events:none;}
 #claim-pop.on{display:flex;animation:claimPop 1.05s ease-out;}
 #claim-pop .cp-label{font-size:2.7rem;font-weight:900;letter-spacing:2px;text-shadow:0 3px 12px rgba(0,0,0,.8);}
@@ -817,7 +818,15 @@ function render(){
   for(let p=1;p<=3;p++)renderCpu(p);
   renderDiscards();renderPlayer();
 }
-let _discCounts=[0,0,0,0],_meldCounts=[0,0,0,0],_dealAnim=false,_lastDiscSeat=-1;
+let _discCounts=[0,0,0,0],_meldCounts=[0,0,0,0],_dealAnim=false,_lastDiscSeat=-1,_drag=null;
+function attachTileDrag(d,t){
+  d.style.touchAction='pan-x';
+  d.onpointerdown=(e)=>{if(G.currentPlayer!==0||G.phase!=='discard'||t[0]==='f')return;_drag={t,d,sx:e.clientX,sy:e.clientY,active:false,moved:false};try{d.setPointerCapture(e.pointerId);}catch(_){}};
+  d.onpointermove=(e)=>{if(!_drag||_drag.d!==d)return;const dx=e.clientX-_drag.sx,dy=e.clientY-_drag.sy;if(Math.abs(dx)>4||Math.abs(dy)>4)_drag.moved=true;if(dy<-6&&Math.abs(dy)>=Math.abs(dx)){_drag.active=true;e.preventDefault();d.style.transition='none';d.style.transform='translateY('+Math.max(dy,-95)+'px) scale(1.06)';d.style.zIndex='30';d.classList.toggle('drag-ready',dy<-48);}};
+  const end=(e)=>{if(!_drag||_drag.d!==d)return;const dy=(e.clientY||0)-_drag.sy;const active=_drag.active,moved=_drag.moved,tile=_drag.t;_drag=null;d.style.transition='';d.style.transform='';d.style.zIndex='';d.classList.remove('drag-ready');if(active&&dy<-48){selTile=tile;humanDiscard();}else if(!moved){selTile=(selTile===tile)?null:tile;render();}};
+  d.onpointerup=end;
+  d.onpointercancel=()=>{if(_drag&&_drag.d===d){_drag=null;d.style.transition='';d.style.transform='';d.style.zIndex='';d.classList.remove('drag-ready');}};
+}
 function isLoggedIn(){return typeof SharedWallet!=='undefined'&&SharedWallet.isLoggedIn;}
 function hasFunds(){if(!isLoggedIn())return true;return (Number(SharedWallet.gold)||0)>=curBet();}
 function setSig(el,sig){if(el.__sig===sig)return false;el.__sig=sig;return true;} // 변경 없으면 재렌더 스킵(깜빡임 방지)
@@ -866,7 +875,7 @@ function renderPlayer(){
   const handChanged=setSig(hr,handSig);
   if(_dealAnim||handChanged){
     hr.innerHTML='';let jd=false;
-    p.hand.forEach((t,i)=>{const d=document.createElement('div');let cls='tile '+tileClass(t)+suitCls(t)+(t===selTile?' selected':'');if(!jd&&G.lastDraw&&t===G.lastDraw&&G.currentPlayer===0&&G.phase==='discard'){cls+=' just-drawn';jd=true;}d.className=cls;if(_dealAnim){d.classList.add('deal-anim');d.style.animationDelay=(i*0.035).toFixed(3)+'s';}d.innerHTML=tileFace(t);d.onclick=()=>{if(G.currentPlayer!==0||G.phase!=='discard')return;if(t[0]==='f')return;selTile=(selTile===t)?null:t;render();};hr.appendChild(d);});
+    p.hand.forEach((t,i)=>{const d=document.createElement('div');let cls='tile '+tileClass(t)+suitCls(t)+(t===selTile?' selected':'');if(!jd&&G.lastDraw&&t===G.lastDraw&&G.currentPlayer===0&&G.phase==='discard'){cls+=' just-drawn';jd=true;}d.className=cls;if(_dealAnim){d.classList.add('deal-anim');d.style.animationDelay=(i*0.035).toFixed(3)+'s';}d.innerHTML=tileFace(t);attachTileDrag(d,t);hr.appendChild(d);});
   }
   const me=document.getElementById('player-melds');
   const newMeldC=p.melds.length>_meldCounts[0];
