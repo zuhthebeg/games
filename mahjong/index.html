@@ -598,7 +598,7 @@ function applyAction(action){
   const pidx=G.currentPlayer,player=G.players[pidx];
   if(action.type==='discard'){
     const i=player.hand.indexOf(action.tile);if(i<0){showToast('패 없음');return;}
-    player.hand.splice(i,1);G.discards[pidx].push(action.tile);G.flags.firstDiscard=false;G.lastDraw=null;playSfx('discard');
+    player.hand.splice(i,1);G.discards[pidx].push(action.tile);G.flags.firstDiscard=false;G.flags.firstDraw=false;G.lastDraw=null;playSfx('discard');
     {const tp=isTenpai(player.hand,player.melds);if(tp&&!player._tp)showToast(player.name+' '+t('tenpai'));player._tp=tp;}
     G.phase='claim';G.claimInfo={tile:action.tile,discarder:pidx};render();startClaim(action.tile,pidx);return;
   }
