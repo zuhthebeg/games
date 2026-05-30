@@ -35,7 +35,17 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .cpu-hand{display:flex;flex-wrap:wrap;gap:1px;justify-content:center;}
 .cpu-area.left .cpu-hand,.cpu-area.right .cpu-hand{flex-direction:column;}
 .cpu-melds,.cpu-flowers{display:flex;flex-wrap:wrap;gap:2px;margin-top:2px;justify-content:center;}
-#center-area{grid-column:2;grid-row:2;background:var(--panel2);border-radius:8px;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;min-height:0;}
+#center-area{grid-column:2;grid-row:2;background:var(--panel2);border-radius:8px;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto 1fr auto;gap:2px;padding:3px;overflow:hidden;min-height:0;min-width:0;}
+.dz{display:flex;flex-wrap:wrap;gap:1px;align-content:flex-start;overflow:hidden;min-width:0;min-height:0;border-radius:4px;}
+#dz-top{grid-column:2;grid-row:1;justify-content:center;align-items:flex-start;max-height:38%;}
+#dz-bottom{grid-column:2;grid-row:3;justify-content:center;align-items:flex-end;max-height:38%;}
+#dz-left{grid-column:1;grid-row:2;flex-direction:column;justify-content:flex-start;max-width:42%;}
+#dz-right{grid-column:3;grid-row:2;flex-direction:column;justify-content:flex-start;align-items:flex-end;max-width:42%;}
+/* 플레이어 색 힌트(아주 옅게) — 나/남/서/북 */
+#dz-bottom{background:rgba(255,215,0,.07);}
+#dz-left{background:rgba(78,204,163,.07);}
+#dz-top{background:rgba(59,130,246,.07);}
+#dz-right{background:rgba(245,158,11,.07);}
 .discard-pool{display:flex;flex-wrap:wrap;gap:2px;padding:4px;overflow:hidden;align-content:flex-start;}
 #player-area{background:var(--panel);border-top:1px solid var(--line);padding:6px 8px;flex-shrink:0;display:flex;flex-direction:column;gap:5px;}
 #player-hand-row{display:flex;gap:0;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--line) transparent;}
@@ -252,7 +262,10 @@ body.mj-fs #sw-bar{display:none !important;}
       <div class="cpu-hand" id="hand-p2"></div>
     </div>
     <div id="center-area">
-      <div class="discard-pool" id="discards-center"></div>
+      <div class="dz" id="dz-top"></div>
+      <div class="dz" id="dz-left"></div>
+      <div class="dz" id="dz-right"></div>
+      <div class="dz" id="dz-bottom"></div>
     </div>
     <div class="cpu-area right" id="area-p3">
       <div class="cpu-name" id="name-p3">CPU 북</div>
@@ -951,20 +964,15 @@ function renderCpu(pidx){
   if(setSig(fe,p.flowers.join(','))){fe.innerHTML='';for(const f of p.flowers){const s=document.createElement('div');s.className='tile-sm flower-tile';s.innerHTML=tileFace(f);fe.appendChild(s);}}
 }
 function renderDiscards(){
-  const el=document.getElementById('discards-center');
+  const ZONE=['dz-bottom','dz-left','dz-top','dz-right'];  // p0 나(아래)/p1 남(좌)/p2 서(위)/p3 북(우)
   for(let p=0;p<4;p++){if(G.discards[p].length>_discCounts[p])_lastDiscSeat=p;}
+  const host=document.getElementById('center-area');
   const sig=JSON.stringify(G.discards)+'|'+G.phase+'|'+_lastDiscSeat+'|'+selTile;
-  if(setSig(el,sig)){
-    el.innerHTML='';
-    const DC=['#ffd700','#4ecca3','#3b82f6','#f59e0b'];  // 나/남/서/북 색
+  if(setSig(host,sig)){
     for(let p=0;p<4;p++){
-      if(G.discards[p].length===0)continue;
-      const row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;gap:4px;margin:2px;';
-      const lab=document.createElement('div');lab.textContent=(p===0?t('meLabel'):(G.players[p].name||'').replace('CPU ',''));lab.style.cssText='font-size:.6rem;font-weight:800;color:'+DC[p]+';min-width:20px;text-align:right;padding-top:3px;flex-shrink:0;line-height:1.1;';
-      const grp=document.createElement('div');grp.style.cssText='display:flex;flex-wrap:wrap;gap:1px;border-left:2px solid '+DC[p]+';padding-left:4px;';
+      const el=document.getElementById(ZONE[p]);if(!el)continue;el.innerHTML='';
       const newLast=G.discards[p].length>_discCounts[p];
-      G.discards[p].forEach((t,i)=>{const s=document.createElement('div');const last=i===G.discards[p].length-1;const isLast=last&&G.phase==='claim';s.className='tile-sm '+tileClass(t)+suitCls(t)+(isLast?' last':'');if(last&&p===_lastDiscSeat)s.classList.add('disc-last');if(selTile&&t===selTile)s.classList.add('disc-match');s.innerHTML=tileFace(t);if(last&&newLast){s.classList.add('disc-anim');s.style.setProperty('--dx',p===1?'-50px':p===3?'50px':'0px');s.style.setProperty('--dy',p===2?'-44px':p===0?'44px':'0px');}grp.appendChild(s);});
-      row.appendChild(lab);row.appendChild(grp);el.appendChild(row);
+      G.discards[p].forEach((t,i)=>{const s=document.createElement('div');const last=i===G.discards[p].length-1;const isLast=last&&G.phase==='claim';s.className='tile-sm '+tileClass(t)+suitCls(t)+(isLast?' last':'');if(last&&p===_lastDiscSeat)s.classList.add('disc-last');if(selTile&&t===selTile)s.classList.add('disc-match');s.innerHTML=tileFace(t);if(last&&newLast){s.classList.add('disc-anim');s.style.setProperty('--dx',p===1?'-50px':p===3?'50px':'0px');s.style.setProperty('--dy',p===2?'-44px':p===0?'44px':'0px');}el.appendChild(s);});
     }
   }
   _discCounts=G.discards.map(d=>d.length);
