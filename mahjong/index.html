@@ -330,8 +330,18 @@ body.mj-fs #sw-bar{display:none !important;}
     <div class="set-row"><span class="set-label" data-i18n="sfx">🔊 효과음</span><div class="toggle" id="tog-sfx" onclick="toggleSfx()"></div></div>
     <div class="set-row"><span class="set-label" data-i18n="bgm">🎵 배경음악</span><div class="toggle" id="tog-bgm" onclick="toggleBgm()"></div></div>
     <div class="set-row"><span class="set-label" data-i18n="tilecall">🗣 패 콜(打牌)</span><div class="toggle" id="tog-tilecall" onclick="toggleTilecall()"></div></div>
+    <div class="set-row" style="cursor:pointer" onclick="openVoiceCustomizer()"><span class="set-label" data-i18n="myVoice">🎙 내 목소리로 덮어쓰기</span><span style="color:var(--muted)">›</span></div>
     <button class="big-btn" style="width:100%;background:var(--red);color:#fff;margin-top:6px;" onclick="exitToMenu()" data-i18n="exitGame">🚪 게임 나가기</button>
   </div>
+</div>
+<div id="voice-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,12,22,.97);z-index:210;flex-direction:column;padding:calc(var(--wallet-bar-h) + 12px) 14px 14px;overflow:hidden;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <b style="font-size:1rem" data-i18n="myVoice">🎙 내 목소리로 덮어쓰기</b>
+    <button onclick="closeVoiceCustomizer()" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-weight:700">닫기</button>
+  </div>
+  <div style="font-size:.76rem;color:var(--muted);margin-bottom:8px">🎤 누르고 말한 뒤 다시 눌러 정지하면 그 소리가 내 목소리로 바뀝니다. ↺는 기본음으로 되돌리기. 저장은 이 브라우저에만 됩니다.</div>
+  <button onclick="resetAllVoices()" style="background:var(--panel);border:1px solid var(--red);color:#fca5a5;border-radius:8px;padding:7px;cursor:pointer;margin-bottom:8px;font-size:.82rem">전체 기본음으로 초기화</button>
+  <div id="voice-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
 </div>
 <div id="mp-lobby" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));"></div>
 <div id="claim-pop"></div>
@@ -351,14 +361,14 @@ const I18N={
    kan:'깡',tsumo:'즈모',discard:'버리기',ron:'론',pon:'퐁',chi:'츠',pass:'패스',
    myTurn:'내 차례',selectDiscard:'버릴 패를 선택하세요',timeUp:'시간 초과 — 자동 버림',
    claimQ:'가져올 패',claimFrom:'버린 패',nextRound:'다음 라운드',extendRound:'연장 라운드',exit:'나가기',
-   setTitle:'⚙ 설정',turnLimit:'⏱ 내 턴 제한',claimLimit:'✋ 먹기/퐁/츠 제한',sfx:'🔊 효과음',bgm:'🎵 배경음악',tilecall:'🗣 패 콜(打牌)',exitGame:'🚪 게임 나가기',none:'없음',language:'🌐 언어',
+   setTitle:'⚙ 설정',turnLimit:'⏱ 내 턴 제한',claimLimit:'✋ 먹기/퐁/츠 제한',sfx:'🔊 효과음',bgm:'🎵 배경음악',tilecall:'🗣 패 콜(打牌)',myVoice:'🎙 내 목소리로 덮어쓰기',exitGame:'🚪 게임 나가기',none:'없음',language:'🌐 언어',
    selectChi:'츠 조합 선택',cancel:'취소',tsumoWin:'즈모',ronWin:'론',win:'완료',draw:'유국',multiplayer:'👥 멀티플레이',waiting:'상대 기다리는 중…',mpNewHand:'새 판',
    kuk:'국',remain:'잔여',honbaL:'본장',flowersL:'화패',noFunds:'골드 부족 — 판돈만큼 필요',tenpai:'팅(聽)',baseBet:'💵 기본판돈',gain:'획득'},
  'zh-TW':{title:'🀄 台灣麻將',subtitle:'1位玩家 + 3位電腦<br>16張手牌 · 台灣規則',start:'開始遊戲',howto:'玩法說明',settings:'⚙ 設定',close:'關閉',
    kan:'槓',tsumo:'自摸',discard:'打牌',ron:'胡',pon:'碰',chi:'吃',pass:'過',
    myTurn:'輪到你',selectDiscard:'請選擇要打出的牌',timeUp:'超時 — 自動打牌',
    claimQ:'要的牌',claimFrom:'打出的牌',nextRound:'下一局',extendRound:'連莊',exit:'離開',
-   setTitle:'⚙ 設定',turnLimit:'⏱ 我的回合限時',claimLimit:'✋ 吃/碰/槓限時',sfx:'🔊 音效',bgm:'🎵 背景音樂',tilecall:'🗣 報牌(打牌)',exitGame:'🚪 離開遊戲',none:'無',language:'🌐 語言',
+   setTitle:'⚙ 設定',turnLimit:'⏱ 我的回合限時',claimLimit:'✋ 吃/碰/槓限時',sfx:'🔊 音效',bgm:'🎵 背景音樂',tilecall:'🗣 報牌(打牌)',myVoice:'🎙 用我的聲音覆蓋',exitGame:'🚪 離開遊戲',none:'無',language:'🌐 語言',
    selectChi:'選擇吃牌組合',cancel:'取消',tsumoWin:'自摸',ronWin:'胡',win:'胡牌',draw:'流局',multiplayer:'👥 多人連線',waiting:'等待對手…',mpNewHand:'新一局',
    kuk:'局',remain:'剩餘',honbaL:'本場',flowersL:'花牌',noFunds:'金幣不足 — 需要至少底注金額',tenpai:'聽牌',baseBet:'💵 底注',gain:'獲得'}
 };
@@ -517,10 +527,61 @@ function playSfx(name){
 const _voiceCache={};
 function playVoice(file){
   if(!SET.tilecall||!file)return;
-  try{let a=_voiceCache[file];if(!a){a=new Audio('voice/'+file+'.mp3?v=1');a.volume=0.85;_voiceCache[file]=a;}a.currentTime=0;a.play().catch(()=>{});}catch(_){}
+  try{
+    const cu=_VDB.urls[file];                                  // 사용자가 덮어쓴 목소리 우선
+    if(cu){const a=new Audio(cu);a.volume=0.95;a.play().catch(()=>{});return;}
+    let a=_voiceCache[file];if(!a){a=new Audio('voice/'+file+'.mp3?v=1');a.volume=0.85;_voiceCache[file]=a;}a.currentTime=0;a.play().catch(()=>{});
+  }catch(_){}
 }
 function playTileVoice(id){if(!id)return;const s=id[0];if(s==='f')return;playVoice(id);} // 花패는 콜 안함
-function playCallFx(name){playVoice('fx-'+name);} // name: hu|pon|chi
+function playCallFx(name){playVoice('fx-'+name);} // hu|tsumo|pon|chi|kan|ankan|rinshan|tenpai|bangchong
+
+// ── 사용자 목소리 덮어쓰기: 기본 mp3 대신 본인 녹음(IndexedDB, 로컬 저장) ──
+const _VDB={db:null,urls:{}};
+function vdbOpen(){return new Promise(res=>{if(_VDB.db)return res(_VDB.db);try{const r=indexedDB.open('mjvoice',1);r.onupgradeneeded=e=>{e.target.result.createObjectStore('clips');};r.onsuccess=e=>{_VDB.db=e.target.result;res(_VDB.db);};r.onerror=()=>res(null);}catch(_){res(null);}});}
+function vdbGetAll(){return new Promise(async res=>{const db=await vdbOpen();if(!db)return res({});try{const os=db.transaction('clips','readonly').objectStore('clips');const kr=os.getAllKeys(),vr=os.getAll();let ks=null,vs=null;const done=()=>{if(ks&&vs){const o={};ks.forEach((k,i)=>o[k]=vs[i]);res(o);}};kr.onsuccess=()=>{ks=kr.result;done();};vr.onsuccess=()=>{vs=vr.result;done();};kr.onerror=vr.onerror=()=>res({});}catch(_){res({});}});}
+function vdbPut(id,blob){return new Promise(async res=>{const db=await vdbOpen();if(!db)return res(false);try{const tx=db.transaction('clips','readwrite');tx.objectStore('clips').put(blob,id);tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);}catch(_){res(false);}});}
+function vdbDel(id){return new Promise(async res=>{const db=await vdbOpen();if(!db)return res(false);try{const tx=db.transaction('clips','readwrite');tx.objectStore('clips').delete(id);tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);}catch(_){res(false);}});}
+function vdbClear(){return new Promise(async res=>{const db=await vdbOpen();if(!db)return res(false);try{const tx=db.transaction('clips','readwrite');tx.objectStore('clips').clear();tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);}catch(_){res(false);}});}
+async function loadCustomVoices(){const all=await vdbGetAll();for(const id in _VDB.urls){try{URL.revokeObjectURL(_VDB.urls[id]);}catch(_){}}_VDB.urls={};for(const id in all){try{_VDB.urls[id]=URL.createObjectURL(all[id]);}catch(_){}}}
+
+// 음성 카탈로그(라벨)
+const FX_LABEL={'fx-hu':'후(완료/론)','fx-tsumo':'즈모(自摸)','fx-pon':'퐁','fx-chi':'츠','fx-kan':'깡(明槓)','fx-ankan':'안깡(暗槓)','fx-rinshan':'보충패(嶺上)','fx-tenpai':'팅(聽)','fx-bangchong':'빵창(독박)'};
+function voiceCatalog(){const g=[];const mk=(p,n)=>Array.from({length:n},(_,i)=>p+(i+1));
+  g.push({t:'萬(만)',ids:mk('m',9)});g.push({t:'筒(통)',ids:mk('p',9)});g.push({t:'索(삭/띠)',ids:mk('s',9)});
+  g.push({t:'특수패',ids:['z1','z2','z3','z4','z5','z6','z7']});g.push({t:'효과음',ids:Object.keys(FX_LABEL)});return g;}
+function voiceLabel(id){return FX_LABEL[id]||td(id);}
+
+let _rec={mr:null,id:null,chunks:[],stream:null};
+async function recToggle(id,btn){
+  if(_rec.mr){if(_rec.id===id){try{_rec.mr.stop();}catch(_){}return;}else{try{_rec.mr.stop();}catch(_){}}}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const mr=new MediaRecorder(stream);_rec={mr,id,chunks:[],stream};
+    mr.ondataavailable=e=>{if(e.data&&e.data.size)_rec.chunks.push(e.data);};
+    mr.onstop=async()=>{const blob=new Blob(_rec.chunks,{type:mr.mimeType||'audio/webm'});try{_rec.stream.getTracks().forEach(t=>t.stop());}catch(_){}_rec={mr:null,id:null,chunks:[],stream:null};
+      if(blob.size){await vdbPut(id,blob);if(_VDB.urls[id])try{URL.revokeObjectURL(_VDB.urls[id]);}catch(_){}try{_VDB.urls[id]=URL.createObjectURL(blob);}catch(_){}showToast('🎙 저장됨: '+voiceLabel(id));}renderVoiceList();};
+    mr.start();renderVoiceList();
+  }catch(e){showToast('🎤 마이크 권한이 필요합니다');}
+}
+async function resetVoice(id){await vdbDel(id);if(_VDB.urls[id]){try{URL.revokeObjectURL(_VDB.urls[id]);}catch(_){}delete _VDB.urls[id];}renderVoiceList();}
+async function resetAllVoices(){if(!confirm('내가 녹음한 목소리를 모두 지우고 기본 음성으로 되돌릴까요?'))return;await vdbClear();for(const id in _VDB.urls){try{URL.revokeObjectURL(_VDB.urls[id]);}catch(_){}}_VDB.urls={};renderVoiceList();showToast('기본 음성으로 초기화됨');}
+function openVoiceCustomizer(){document.getElementById('voice-overlay').style.display='flex';renderVoiceList();}
+function closeVoiceCustomizer(){if(_rec.mr)try{_rec.mr.stop();}catch(_){}document.getElementById('voice-overlay').style.display='none';}
+function renderVoiceList(){
+  const box=document.getElementById('voice-list');if(!box)return;let h='';
+  for(const grp of voiceCatalog()){
+    h+='<div style="font-weight:800;color:var(--accent);margin:10px 0 4px;font-size:.82rem">'+grp.t+'</div>';
+    h+='<div style="display:grid;grid-template-columns:1fr;gap:5px">';
+    for(const id of grp.ids){const has=!!_VDB.urls[id];const recing=_rec.id===id;
+      h+='<div class="vrow" style="display:flex;align-items:center;gap:6px;background:var(--panel);border-radius:8px;padding:6px 9px">'
+       +'<span style="flex:1;font-size:.85rem">'+voiceLabel(id)+(has?' <span style="color:#34d399">●</span>':'')+'</span>'
+       +'<button onclick="playVoice(\''+id+'\')" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:4px 9px;cursor:pointer">▶</button>'
+       +'<button onclick="recToggle(\''+id+'\',this)" style="background:'+(recing?'#ef4444':'var(--panel2)')+';border:1px solid var(--line);color:'+(recing?'#fff':'var(--text)')+';border-radius:7px;padding:4px 9px;cursor:pointer">'+(recing?'⏹ 정지':'🎤')+'</button>'
+       +'<button onclick="resetVoice(\''+id+'\')" '+(has?'':'disabled')+' style="background:var(--panel2);border:1px solid var(--line);color:'+(has?'var(--text)':'var(--muted)')+';border-radius:7px;padding:4px 9px;cursor:'+(has?'pointer':'default')+';opacity:'+(has?1:.4)+'">↺</button>'
+       +'</div>';}
+    h+='</div>';}
+  box.innerHTML=h;}
 // ── 카운트다운 타이머 ──
 let turnTO=null,turnIV=null,claimIV=null;
 function clearTurnTimer(){if(turnTO){clearTimeout(turnTO);turnTO=null;}if(turnIV){clearInterval(turnIV);turnIV=null;}const w=document.getElementById('turn-timer-wrap');if(w)w.style.display='none';}
@@ -615,7 +676,7 @@ function applyAction(action){
   if(action.type==='discard'){
     const i=player.hand.indexOf(action.tile);if(i<0){showToast('패 없음');return;}
     player.hand.splice(i,1);G.discards[pidx].push(action.tile);G.flags.firstDiscard=false;G.flags.firstDraw=false;G.lastDraw=null;playSfx('discard');playTileVoice(action.tile);
-    {const tp=isTenpai(player.hand,player.melds);if(tp&&!player._tp)showToast(player.name+' '+t('tenpai'));player._tp=tp;}
+    {const tp=isTenpai(player.hand,player.melds);if(tp&&!player._tp){showToast(player.name+' '+t('tenpai'));playCallFx('tenpai');}player._tp=tp;}
     G.phase='claim';G.claimInfo={tile:action.tile,discarder:pidx};render();startClaim(action.tile,pidx);return;
   }
   if(action.type==='draw'){
@@ -657,6 +718,7 @@ function applyAction(action){
 function doKan(action,pidx){
   const player=G.players[pidx];
   showClaimPop('kan',(action.tiles&&action.tiles[0])||action.tile||null,player.name);
+  playCallFx(action.kanType==='an'?'ankan':'kan');
   if(action.kanType==='an'){
     const tile=action.tiles[0];for(let i=player.hand.length-1;i>=0;i--)if(player.hand[i]===tile)player.hand.splice(i,1);
     player.melds.push({type:'ankan',tiles:[tile,tile,tile,tile],from:pidx});
@@ -671,7 +733,7 @@ function doKan(action,pidx){
     const i=player.hand.indexOf(tile);if(i>=0)player.hand.splice(i,1);
   }
   G.flags.isRinshan=true;G.lastDraw=null;
-  if(G.wall.length>0){const rin=G.wall.shift();player.hand.push(rin);processFlowers(G,pidx);player.hand=sortHand(player.hand);if(pidx===0&&player.hand.includes(rin))G.lastDraw=rin;}
+  if(G.wall.length>0){const rin=G.wall.shift();player.hand.push(rin);processFlowers(G,pidx);player.hand=sortHand(player.hand);if(pidx===0&&player.hand.includes(rin))G.lastDraw=rin;setTimeout(()=>playCallFx('rinshan'),450);}
   G.phase='discard';render();if(player.type==='cpu')scheduleCpu(pidx,1000);else enableHuman(pidx);
 }
 function bri(pidx){return{windIdx:G.round.windIdx,isDealer:G.players[pidx].seatWind===0,honba:G.round.honba,isRinshan:G.flags.isRinshan,isHaitei:G.flags.isHaitei,firstDraw:G.flags.firstDraw,firstDiscard:G.flags.firstDiscard};}
@@ -791,7 +853,7 @@ function humanKan(){
 }
 
 function showWin(winnerIdx,discarderIdx,winTile,result){
-  if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();playSfx('win');playCallFx('hu');G.phase='roundEnd';
+  if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();playSfx('win');playCallFx(discarderIdx===-1?'tsumo':'hu');if(discarderIdx>=0)setTimeout(()=>playCallFx('bangchong'),650);G.phase='roundEnd';
   const myPre=G.players[0].score;
   const winner=G.players[winnerIdx];const winPre=winner.score;const tai=result.total+5;const isDW=winner.seatWind===0;const bet=curBet();const U=Math.round(bet/5);
   if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?tai*U*2:tai*U;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
@@ -1015,7 +1077,7 @@ function applyServerView(gs,mv){
   if(MP._meldN){for(let di=1;di<4;di++){const pl=players[di];const prev=MP._meldN[di]||0;if(pl.melds.length>prev){const m=pl.melds[pl.melds.length-1];const act=m.type==='chi'?'chi':m.type==='pon'?'pon':(/kan/.test(m.type)?'kan':'');if(act)showClaimPop(act,m.claimed||null,pl.name);}}}
   MP._meldN=players.map(pl=>pl.melds.length);
   // 텐파이(팅) 토스트
-  if(MP._tp){for(let di=0;di<4;di++){const sp=gs.players.find(x=>x.seat===order[di])||{};if(sp.tenpai&&!MP._tp[di])showToast((sp.nickname||'-')+' '+t('tenpai'));}}
+  if(MP._tp){for(let di=0;di<4;di++){const sp=gs.players.find(x=>x.seat===order[di])||{};if(sp.tenpai&&!MP._tp[di]){showToast((sp.nickname||'-')+' '+t('tenpai'));playCallFx('tenpai');}}}
   MP._tp=order.map(seat=>{const sp=gs.players.find(x=>x.seat===seat)||{};return !!sp.tenpai;});
   render();
   mpUpdateControls(mv);
@@ -1067,7 +1129,7 @@ function mpShowResult(gs){
   const nb=document.getElementById('result-next');nb.textContent=t('mpNewHand');nb.onclick=mpRematch;
   if(myDelta!==0&&typeof SharedWallet!=='undefined'){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
   if(win&&win.id===MP.myUserId&&r.tai&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:r.tai});}catch(_){}
-  const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
+  const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);playSfx('win');playCallFx(r.winType==='tsumo'?'tsumo':'hu');if(r.winType!=='tsumo')setTimeout(()=>playCallFx('bangchong'),650);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
   ov.classList.add('on');
   if(win){const _yk=(r.yaku||[]).map(y=>y.name).join(', ');const _wl=r.winType==='tsumo'?'자모':'론';if(win.id!==MP.myUserId)llmReact(_wl+'으로 '+(r.tai||'')+'台 완료('+_yk+')해서 이김. 이긴 사람으로서 능청/도발 한마디',win.nickname);else{const o=gs.players.filter(p=>p.id!==MP.myUserId);if(o.length)llmReact('상대가 '+_wl+' '+(r.tai||'')+'台('+_yk+') 완료로 이겨서 내가 짐. 진 사람으로서 분하거나 너스레 한마디',o[Math.floor(Math.random()*o.length)].nickname);}}
 }
@@ -1083,6 +1145,7 @@ async function mpLeave(){MP.active=false;try{if(MP.client)await MP.client.leaveR
 
 window.addEventListener('load',()=>{
   applyLang();
+  try{loadCustomVoices();}catch(_){}
   if(typeof GameRankings!=='undefined')try{GameRankings.injectNavButton('mahjong');}catch(_){}
   if(typeof SharedWallet!=='undefined'){try{const g=SharedWallet.gold;if(g!=null)document.getElementById('sw-gold').textContent='보유 골드: '+Number(g).toLocaleString()+'G';}catch(_){}}
 });
