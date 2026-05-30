@@ -332,14 +332,14 @@ const I18N={
    claimQ:'가져올 패',claimFrom:'버린 패',nextRound:'다음 라운드',extendRound:'연장 라운드',exit:'나가기',
    setTitle:'⚙ 설정',turnLimit:'⏱ 내 턴 제한',claimLimit:'✋ 먹기/퐁/츠 제한',sfx:'🔊 효과음',bgm:'🎵 배경음악',exitGame:'🚪 게임 나가기',none:'없음',language:'🌐 언어',
    selectChi:'츠 조합 선택',cancel:'취소',tsumoWin:'자모',ronWin:'론',win:'완료',draw:'유국',multiplayer:'👥 멀티플레이',waiting:'상대 기다리는 중…',mpNewHand:'새 판',
-   kuk:'국',remain:'잔여',honbaL:'본장',flowersL:'화패'},
+   kuk:'국',remain:'잔여',honbaL:'본장',flowersL:'화패',noFunds:'골드 부족 — 플레이하려면 최소 10만G 필요'},
  'zh-TW':{title:'🀄 台灣麻將',subtitle:'1位玩家 + 3位電腦<br>16張手牌 · 台灣規則',start:'開始遊戲',howto:'玩法說明',settings:'⚙ 設定',close:'關閉',
    kan:'槓',tsumo:'自摸',discard:'打牌',ron:'胡',pon:'碰',chi:'吃',pass:'過',
    myTurn:'輪到你',selectDiscard:'請選擇要打出的牌',timeUp:'超時 — 自動打牌',
    claimQ:'要的牌',claimFrom:'打出的牌',nextRound:'下一局',extendRound:'連莊',exit:'離開',
    setTitle:'⚙ 設定',turnLimit:'⏱ 我的回合限時',claimLimit:'✋ 吃/碰/槓限時',sfx:'🔊 音效',bgm:'🎵 背景音樂',exitGame:'🚪 離開遊戲',none:'無',language:'🌐 語言',
    selectChi:'選擇吃牌組合',cancel:'取消',tsumoWin:'自摸',ronWin:'胡',win:'胡牌',draw:'流局',multiplayer:'👥 多人連線',waiting:'等待對手…',mpNewHand:'新一局',
-   kuk:'局',remain:'剩餘',honbaL:'本場',flowersL:'花牌'}
+   kuk:'局',remain:'剩餘',honbaL:'本場',flowersL:'花牌',noFunds:'金幣不足 — 至少需要 10萬 才能遊玩'}
 };
 let LANG=(function(){try{const s=localStorage.getItem('mahjong_lang');if(s)return s;}catch(_){}return (navigator.language||'').toLowerCase().startsWith('zh')?'zh-TW':'ko';})();
 function t(k){return (I18N[LANG]&&I18N[LANG][k]!=null)?I18N[LANG][k]:(I18N.ko[k]!=null?I18N.ko[k]:k);}
@@ -743,10 +743,13 @@ function humanKan(){
 
 function showWin(winnerIdx,discarderIdx,winTile,result){
   if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();playSfx('win');G.phase='roundEnd';
+  const myPre=G.players[0].score;
   const winner=G.players[winnerIdx];const tai=result.total+5;const isDW=winner.seatWind===0;
   if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?tai*20000:tai*10000;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
   else{const isDPay=G.players[discarderIdx].seatWind===0;const mult=(isDW||isDPay)?2:1;const amt=tai*10000*mult;G.players[discarderIdx].score-=amt;G.players[winnerIdx].score+=amt;}
-  if(winnerIdx===0){const gold=tai*1000000;if(typeof SharedWallet!=='undefined'&&SharedWallet.addGold)try{SharedWallet.addGold(gold);}catch(_){}if(typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:tai});}catch(_){}}
+  const myDelta=G.players[0].score-myPre;
+  if(typeof SharedWallet!=='undefined'){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
+  if(winnerIdx===0&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:tai});}catch(_){}
   const wl=discarderIdx===-1?t('tsumoWin'):t('ronWin');
   document.getElementById('result-title').textContent=winner.name+' '+t('win')+'! ('+wl+')';
   document.getElementById('result-detail').innerHTML='<b>'+tai+'台 (기본5 + 역'+result.total+')</b><br>'+result.yaku.map(y=>y.name+' +'+y.tai+'台').join(' / ')+'<br><br>'+G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>');
@@ -765,6 +768,7 @@ function nextRound(){
   document.getElementById('result-overlay').classList.remove('on','win-fanfare');spawnConfetti(false);
   if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);
   selTile=null;disableHuman();
+  if(!hasFunds()){showToast(t('noFunds'));exitToMenu();return;}
   const sc=G.players.map(p=>p.score);const pd=G.round.dealer;const pw=G.round.windIdx;
   const nd=(pd+1)%4;const nw=nd===0?pw+1:pw;
   G=makeState(sc,nd,nw%4,0);dealAndStart(G);
@@ -782,6 +786,8 @@ function render(){
   renderDiscards();renderPlayer();
 }
 let _discCounts=[0,0,0,0],_meldCounts=[0,0,0,0],_dealAnim=false,_lastDiscSeat=-1;
+const MIN_STAKE=100000;
+function hasFunds(){if(typeof SharedWallet==='undefined')return true;return (Number(SharedWallet.gold)||0)>=MIN_STAKE;}
 function spawnConfetti(on){
   const ov=document.getElementById('result-overlay');
   ov.querySelectorAll('.conf').forEach(c=>c.remove());
@@ -831,6 +837,7 @@ function renderPlayer(){
 function showToast(msg,ms=2200){const el=document.getElementById('msg-toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),ms);}
 
 function startGame(){
+  if(!hasFunds()){showToast(t('noFunds'));return;}
   document.getElementById('start-screen').style.display='none';
   document.getElementById('game-container').style.display='flex';
   G=makeState(null,0,0,0);dealAndStart(G);
@@ -848,6 +855,7 @@ window.addEventListener('resize',syncFS);
 // ════════ 멀티플레이 ════════
 const MP={active:false,ui:null,client:null,myUserId:null,mySeat:0,gs:null,mv:null};
 function openMultiplayer(){
+  if(!hasFunds()){showToast(t('noFunds'));return;}
   if(typeof MultiplayerUI==='undefined'){showToast('멀티 모듈 로드 실패');return;}
   document.getElementById('start-screen').style.display='none';
   const cont=document.getElementById('mp-lobby');cont.style.display='block';
@@ -900,6 +908,8 @@ function applyServerView(gs,mv){
      phase:gs.phase==='over'?'roundEnd':gs.phase,round:gs.round||{windIdx:0,dealer:0,honba:0},
      claimInfo:gs.lastDiscard?{tile:gs.lastDiscard.tile,discarder:Math.max(0,order.indexOf(gs.lastDiscard.from))}:null,
      lastDraw:(mv&&mv.lastDraw)||null,flags:{}};
+  // 판 시작 시 내 점수 기록(지갑 정산용)
+  if(gs.discards.every(d=>!d.length)){const ms=(gs.players.find(p=>p.id===MP.myUserId)||{}).score;if(typeof ms==='number')MP._myStartScore=ms;}
   // 남이 츠/퐁/깡 하면 토스트 (멜드 증가 감지, 나 제외)
   if(MP._meldN){for(let di=1;di<4;di++){const pl=players[di];const prev=MP._meldN[di]||0;if(pl.melds.length>prev){const m=pl.melds[pl.melds.length-1];const lbl=m.type==='chi'?t('chi'):m.type==='pon'?t('pon'):(/kan/.test(m.type)?t('kan'):'');if(lbl)showToast(pl.name+' '+lbl+(m.claimed?' '+td(m.claimed):''));}}}
   MP._meldN=players.map(pl=>pl.melds.length);
@@ -947,14 +957,13 @@ function mpShowResult(gs){
   detail+=gs.players.map(p=>p.nickname+': '+(p.score||0).toLocaleString()+'G').join('<br>');
   document.getElementById('result-detail').innerHTML=detail;
   const nb=document.getElementById('result-next');nb.textContent=t('mpNewHand');nb.onclick=mpRematch;
-  if(win&&win.id===MP.myUserId&&r.tai){
-    if(typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:r.tai});}catch(_){}
-    if(typeof SharedWallet!=='undefined'&&SharedWallet.addGold)try{SharedWallet.addGold(r.tai*1000000);}catch(_){}
-  }
+  const myFinal=(gs.players.find(p=>p.id===MP.myUserId)||{}).score;
+  if(typeof myFinal==='number'&&typeof MP._myStartScore==='number'){const d=myFinal-MP._myStartScore;if(typeof SharedWallet!=='undefined'){try{if(d>0&&SharedWallet.addGold)SharedWallet.addGold(d);else if(d<0&&SharedWallet.spendGold)SharedWallet.spendGold(-d);}catch(_){}}}
+  if(win&&win.id===MP.myUserId&&r.tai&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:r.tai});}catch(_){}
   const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
   ov.classList.add('on');
 }
-async function mpRematch(){try{await MP.client.rematch();_dealAnim=true;MP._resultShown=false;showToast(t('waiting'));}catch(e){showToast('재시작 실패');}document.getElementById('result-overlay').classList.remove('on','win-fanfare');spawnConfetti(false);}
+async function mpRematch(){if(!hasFunds()){showToast(t('noFunds'));mpLeave();return;}try{await MP.client.rematch();_dealAnim=true;MP._resultShown=false;showToast(t('waiting'));}catch(e){showToast('재시작 실패');}document.getElementById('result-overlay').classList.remove('on','win-fanfare');spawnConfetti(false);}
 async function mpLeave(){MP.active=false;try{if(MP.client)await MP.client.leaveRoom();}catch(_){}MP.client=null;MP.ui=null;
   document.getElementById('result-overlay').classList.remove('win-fanfare');spawnConfetti(false);
   ['result-overlay','claim-overlay','chi-overlay'].forEach(id=>document.getElementById(id).classList.remove('on'));
