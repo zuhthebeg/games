@@ -1144,7 +1144,7 @@ function openMultiplayer(){
   MP.ui.show();
 }
 function mpStart(roomState){
-  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();_dealAnim=true;MP._resultShown=false;MP._meldN=[0,0,0,0];MP._discN=[0,0,0,0];MP._claimSig=null;MP._tp=[false,false,false,false];
+  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();_dealAnim=true;MP._resultShown=false;MP._meldN=[0,0,0,0];MP._discN=[0,0,0,0];MP._claimSig=null;MP._tp=[false,false,false,false];MP._replaying=false;
   MP.client.onEvent=()=>mpRefresh();
   document.getElementById('mp-lobby').style.display='none';
   document.getElementById('mp-lobby').innerHTML='';
@@ -1155,11 +1155,31 @@ function mpStart(roomState){
 }
 function mpRefresh(){
   if(!MP.active||!MP.client)return;
-  MP.client.getRoomState().then(room=>{if(room&&room.gameState)applyServerView(room.gameState,room.myView);}).catch(()=>{});
+  if(MP._replaying)return;                 // 턴 재생 중엔 폴링 무시(점프 방지)
+  MP.client.getRoomState().then(room=>{if(room&&room.gameState&&!MP._replaying)applyServerView(room.gameState,room.myView);}).catch(()=>{});
+}
+// 서버가 준 AI 수별 스냅샷을 한 수씩 텀 두고 재생(진짜 턴 페이싱)
+let _replayTO=null;
+function mpReplay(steps,myView){
+  if(_replayTO){clearTimeout(_replayTO);_replayTO=null;}
+  MP._replaying=true;
+  const interim=myView?Object.assign({},myView,{myActions:null,isMyTurn:false}):myView; // 재생 중엔 클레임/내턴 UI 숨김
+  let i=0;
+  applyServerView(steps[0],steps.length>1?interim:myView);
+  const step=()=>{
+    i++;
+    if(i>=steps.length){MP._replaying=false;_replayTO=null;return;}
+    applyServerView(steps[i], i===steps.length-1?myView:interim);
+    _replayTO=setTimeout(step,750);
+  };
+  if(steps.length>1)_replayTO=setTimeout(step,750); else MP._replaying=false;
 }
 async function mpSend(action){
   if(!MP.client)return;
-  try{const res=await MP.client.sendAction(action);if(res&&res.gameState)applyServerView(res.gameState,res.myView);else if(res&&res.success===false)showToast(res.error||'서버 거절');}
+  try{const res=await MP.client.sendAction(action);
+    if(res&&Array.isArray(res.aiSteps)&&res.aiSteps.length>1)mpReplay(res.aiSteps,res.myView);
+    else if(res&&res.gameState)applyServerView(res.gameState,res.myView);
+    else if(res&&res.success===false)showToast(res.error||'서버 거절');}
   catch(e){showToast('전송 실패');}
 }
 function mpClaimTiles(o,tile,mv){
