@@ -357,7 +357,7 @@ body.mj-fs #sw-bar{display:none !important;}
     <button class="big-btn" style="width:100%;background:var(--red);color:#fff;margin-top:6px;" onclick="exitToMenu()" data-i18n="exitGame">🚪 게임 나가기</button>
   </div>
 </div>
-<div id="voice-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,12,22,.97);z-index:210;flex-direction:column;padding:calc(var(--wallet-bar-h) + 12px) 14px 14px;overflow:hidden;">
+<div id="voice-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,12,22,.97);z-index:10020;flex-direction:column;padding:calc(var(--wallet-bar-h) + 12px) 14px 14px;overflow:hidden;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
     <b style="font-size:1rem" data-i18n="myVoice">🎙 내 목소리로 덮어쓰기</b>
     <button onclick="closeVoiceCustomizer()" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-weight:700">닫기</button>
@@ -557,16 +557,19 @@ function playSfx(name){
 }
 // ── 패 콜(打牌) 보이스: voice/<id>.mp3 (m1..s9,z1..z7) / voice/fx-{hu,pon,chi}.mp3 ──
 const _voiceCache={};
-function playVoice(file){
+function _setRate(a,rate){const r=rate||1;a.playbackRate=r;try{a.preservesPitch=false;a.mozPreservesPitch=false;a.webkitPreservesPitch=false;}catch(_){}}
+function playVoice(file,rate){
   if(!SET.tilecall||!file)return;
   try{
     const cu=_VDB.urls[file];                                  // 사용자가 덮어쓴 목소리 우선
-    if(cu){const a=new Audio(cu);a.volume=0.95;a.play().catch(()=>{});return;}
-    let a=_voiceCache[file];if(!a){a=new Audio('voice/'+file+'.mp3?v=1');a.volume=0.85;_voiceCache[file]=a;}a.currentTime=0;a.play().catch(()=>{});
+    if(cu){const a=new Audio(cu);a.volume=0.95;_setRate(a,rate);a.play().catch(()=>{});return;}
+    let a=_voiceCache[file];if(!a){a=new Audio('voice/'+file+'.mp3?v=1');a.volume=0.85;_voiceCache[file]=a;}a.currentTime=0;_setRate(a,rate);a.play().catch(()=>{});
   }catch(_){}
 }
-function playTileVoice(id){if(!id)return;const s=id[0];if(s==='f')return;playVoice(id);} // 花패는 콜 안함
-function playCallFx(name){playVoice('fx-'+name);} // hu|tsumo|pon|chi|kan|ankan|rinshan|tenpai|bangchong
+// 플레이어(좌석)별 음높이 차별화 — 같은 녹음이라도 톤이 달라 누구 콜인지 구분됨 (나/남/서/북)
+const SEAT_RATE=[1.0,0.9,1.13,1.24];
+function playTileVoice(id,seat){if(!id)return;const s=id[0];if(s==='f')return;playVoice(id,SEAT_RATE[(seat||0)%4]);} // 花패는 콜 안함
+function playCallFx(name,seat){playVoice('fx-'+name,seat?SEAT_RATE[seat%4]:1);} // hu|tsumo|pon|chi|kan|ankan|rinshan|tenpai|bangchong
 
 // ── 사용자 목소리 덮어쓰기: 기본 mp3 대신 본인 녹음(IndexedDB, 로컬 저장) ──
 const _VDB={db:null,urls:{}};
@@ -709,7 +712,7 @@ function applyAction(action){
   const pidx=G.currentPlayer,player=G.players[pidx];
   if(action.type==='discard'){
     const i=player.hand.indexOf(action.tile);if(i<0){showToast('패 없음');return;}
-    player.hand.splice(i,1);G.discards[pidx].push(action.tile);G.flags.firstDiscard=false;G.flags.firstDraw=false;G.lastDraw=null;playSfx('discard');playTileVoice(action.tile);
+    player.hand.splice(i,1);G.discards[pidx].push(action.tile);G.flags.firstDiscard=false;G.flags.firstDraw=false;G.lastDraw=null;playSfx('discard');playTileVoice(action.tile,pidx);
     {const tp=isTenpai(player.hand,player.melds);if(tp&&!player._tp){showToast(player.name+' '+t('tenpai'));playCallFx('tenpai');}player._tp=tp;}
     G.phase='claim';G.claimInfo={tile:action.tile,discarder:pidx};render();startClaim(action.tile,pidx);return;
   }
@@ -1113,7 +1116,7 @@ function applyServerView(gs,mv){
   // 판 시작 시 내 점수 기록(지갑 정산용)
   if(gs.discards.every(d=>!d.length)){const ms=(gs.players.find(p=>p.id===MP.myUserId)||{}).score;if(typeof ms==='number')MP._myStartScore=ms;}
   // 새 버림패 → 패콜(보이스). 전 좌석(나 포함)
-  if(MP._discN){for(let di=0;di<4;di++){if(discards[di].length>(MP._discN[di]||0)){const tl=discards[di][discards[di].length-1];playTileVoice(tl);}}}
+  if(MP._discN){for(let di=0;di<4;di++){if(discards[di].length>(MP._discN[di]||0)){const tl=discards[di][discards[di].length-1];playTileVoice(tl,di);}}}
   MP._discN=discards.map(d=>d.length);
   // 남이 츠/퐁/깡 하면 토스트 (멜드 증가 감지, 나 제외)
   if(MP._meldN){for(let di=1;di<4;di++){const pl=players[di];const prev=MP._meldN[di]||0;if(pl.melds.length>prev){const m=pl.melds[pl.melds.length-1];const act=m.type==='chi'?'chi':m.type==='pon'?'pon':(/kan/.test(m.type)?'kan':'');if(act)showClaimPop(act,m.claimed||null,pl.name);}}}
