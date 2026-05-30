@@ -38,7 +38,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 #center-area{grid-column:2;grid-row:2;background:var(--panel2);border-radius:8px;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;min-height:0;}
 .discard-pool{display:flex;flex-wrap:wrap;gap:2px;padding:4px;overflow:hidden;align-content:flex-start;}
 #player-area{background:var(--panel);border-top:1px solid var(--line);padding:6px 8px;flex-shrink:0;display:flex;flex-direction:column;gap:5px;}
-#player-hand-row{display:flex;gap:3px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--line) transparent;}
+#player-hand-row{display:flex;gap:0;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:var(--line) transparent;}
+/* 손패는 살짝 겹쳐서 확대해도 더 많이 보이게 (겹침량은 줌에 비례) */
+#player-hand-row .tile{margin-right:calc(-6px*var(--tz));}
+#player-hand-row .tile:last-child{margin-right:0;}
 #action-btns{display:flex;gap:6px;flex-wrap:wrap;}
 .action-btn{padding:8px 12px;font-size:.82rem;font-weight:700;border:none;border-radius:8px;cursor:pointer;flex:1;min-width:56px;}
 .action-btn:disabled{opacity:.3;cursor:not-allowed;}
@@ -102,7 +105,7 @@ body.mj-fs #sw-bar{display:none !important;}
   #opponent-areas{grid-template-columns:96px 1fr 96px;padding:4px;gap:4px;}
   #player-area{padding:4px 12px;padding-bottom:calc(4px + env(safe-area-inset-bottom));gap:2px;}
   #turn-indicator{padding:0;}
-  #player-hand-row{flex-wrap:nowrap;justify-content:center;overflow-x:auto;gap:3px;}
+  #player-hand-row{flex-wrap:nowrap;justify-content:center;overflow-x:auto;gap:0;}
   #player-hand-row .tile{width:calc(43px*var(--tz));height:calc(52px*var(--tz));}
 }
 @media (orientation:landscape) and (max-width:800px){
@@ -113,7 +116,7 @@ body.mj-fs #sw-bar{display:none !important;}
   #score-row{display:none;}
   #round-info{flex-wrap:nowrap;justify-content:flex-start;gap:10px;}
   #round-info .fs-btn:first-of-type{margin-left:auto;}
-  #player-hand-row{flex-wrap:wrap;overflow:visible;justify-content:center;gap:2px;row-gap:4px;padding-bottom:0;}
+  #player-hand-row{flex-wrap:wrap;overflow:visible;justify-content:center;gap:0;row-gap:4px;padding-bottom:0;}
   #player-hand-row .tile{width:calc(38px*var(--tz));height:calc(46px*var(--tz));}
   #opponent-areas{grid-template-columns:60px 1fr 60px;}
   .cpu-area.left .tile-sm,.cpu-area.right .tile-sm{width:17px;height:23px;}
@@ -363,14 +366,14 @@ const I18N={
    kan:'깡',tsumo:'즈모',discard:'버리기',ron:'론',pon:'퐁',chi:'츠',pass:'패스',
    myTurn:'내 차례',selectDiscard:'버릴 패를 선택하세요',timeUp:'시간 초과 — 자동 버림',
    claimQ:'가져올 패',claimFrom:'버린 패',nextRound:'다음 라운드',extendRound:'연장 라운드',exit:'나가기',
-   setTitle:'⚙ 설정',turnLimit:'⏱ 내 턴 제한',claimLimit:'✋ 먹기/퐁/츠 제한',sfx:'🔊 효과음',bgm:'🎵 배경음악',tilecall:'🗣 패 콜(打牌)',myVoice:'🎙 내 목소리로 덮어쓰기',exitGame:'🚪 게임 나가기',none:'없음',language:'🌐 언어',
+   setTitle:'⚙ 설정',turnLimit:'⏱ 내 턴 제한',claimLimit:'✋ 먹기/퐁/츠 제한',sfx:'🔊 효과음',bgm:'🎵 배경음악',tilecall:'🗣 패 콜(打牌)',myVoice:'🎙 내 목소리로 덮어쓰기',meLabel:'나',exitGame:'🚪 게임 나가기',none:'없음',language:'🌐 언어',
    selectChi:'츠 조합 선택',cancel:'취소',tsumoWin:'즈모',ronWin:'론',win:'완료',draw:'유국',multiplayer:'👥 멀티플레이',waiting:'상대 기다리는 중…',mpNewHand:'새 판',
    kuk:'국',remain:'잔여',honbaL:'본장',flowersL:'화패',noFunds:'골드 부족 — 판돈만큼 필요',tenpai:'팅(聽)',baseBet:'💵 기본판돈',gain:'획득'},
  'zh-TW':{title:'🀄 台灣麻將',subtitle:'1位玩家 + 3位電腦<br>16張手牌 · 台灣規則',start:'開始遊戲',howto:'玩法說明',settings:'⚙ 設定',close:'關閉',
    kan:'槓',tsumo:'自摸',discard:'打牌',ron:'胡',pon:'碰',chi:'吃',pass:'過',
    myTurn:'輪到你',selectDiscard:'請選擇要打出的牌',timeUp:'超時 — 自動打牌',
    claimQ:'要的牌',claimFrom:'打出的牌',nextRound:'下一局',extendRound:'連莊',exit:'離開',
-   setTitle:'⚙ 設定',turnLimit:'⏱ 我的回合限時',claimLimit:'✋ 吃/碰/槓限時',sfx:'🔊 音效',bgm:'🎵 背景音樂',tilecall:'🗣 報牌(打牌)',myVoice:'🎙 用我的聲音覆蓋',exitGame:'🚪 離開遊戲',none:'無',language:'🌐 語言',
+   setTitle:'⚙ 設定',turnLimit:'⏱ 我的回合限時',claimLimit:'✋ 吃/碰/槓限時',sfx:'🔊 音效',bgm:'🎵 背景音樂',tilecall:'🗣 報牌(打牌)',myVoice:'🎙 用我的聲音覆蓋',meLabel:'我',exitGame:'🚪 離開遊戲',none:'無',language:'🌐 語言',
    selectChi:'選擇吃牌組合',cancel:'取消',tsumoWin:'自摸',ronWin:'胡',win:'胡牌',draw:'流局',multiplayer:'👥 多人連線',waiting:'等待對手…',mpNewHand:'新一局',
    kuk:'局',remain:'剩餘',honbaL:'本場',flowersL:'花牌',noFunds:'金幣不足 — 需要至少底注金額',tenpai:'聽牌',baseBet:'💵 底注',gain:'獲得'}
 };
@@ -953,12 +956,15 @@ function renderDiscards(){
   const sig=JSON.stringify(G.discards)+'|'+G.phase+'|'+_lastDiscSeat+'|'+selTile;
   if(setSig(el,sig)){
     el.innerHTML='';
+    const DC=['#ffd700','#4ecca3','#3b82f6','#f59e0b'];  // 나/남/서/북 색
     for(let p=0;p<4;p++){
       if(G.discards[p].length===0)continue;
-      const grp=document.createElement('div');grp.style.cssText='display:flex;flex-wrap:wrap;gap:1px;margin:2px;';
+      const row=document.createElement('div');row.style.cssText='display:flex;align-items:flex-start;gap:4px;margin:2px;';
+      const lab=document.createElement('div');lab.textContent=(p===0?t('meLabel'):(G.players[p].name||'').replace('CPU ',''));lab.style.cssText='font-size:.6rem;font-weight:800;color:'+DC[p]+';min-width:20px;text-align:right;padding-top:3px;flex-shrink:0;line-height:1.1;';
+      const grp=document.createElement('div');grp.style.cssText='display:flex;flex-wrap:wrap;gap:1px;border-left:2px solid '+DC[p]+';padding-left:4px;';
       const newLast=G.discards[p].length>_discCounts[p];
       G.discards[p].forEach((t,i)=>{const s=document.createElement('div');const last=i===G.discards[p].length-1;const isLast=last&&G.phase==='claim';s.className='tile-sm '+tileClass(t)+suitCls(t)+(isLast?' last':'');if(last&&p===_lastDiscSeat)s.classList.add('disc-last');if(selTile&&t===selTile)s.classList.add('disc-match');s.innerHTML=tileFace(t);if(last&&newLast){s.classList.add('disc-anim');s.style.setProperty('--dx',p===1?'-50px':p===3?'50px':'0px');s.style.setProperty('--dy',p===2?'-44px':p===0?'44px':'0px');}grp.appendChild(s);});
-      el.appendChild(grp);
+      row.appendChild(lab);row.appendChild(grp);el.appendChild(row);
     }
   }
   _discCounts=G.discards.map(d=>d.length);
