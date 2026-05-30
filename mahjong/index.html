@@ -354,6 +354,7 @@ body.mj-fs #sw-bar{display:none !important;}
       <div class="set-seg" id="set-lang">
         <button class="seg-btn" data-v="ko" onclick="setLang('ko')">한국어</button>
         <button class="seg-btn" data-v="zh-TW" onclick="setLang('zh-TW')">繁體中文</button>
+        <button class="seg-btn" data-v="en" onclick="setLang('en')">English</button>
       </div>
     </div>
     <div class="set-row"><span class="set-label" data-i18n="turnLimit">⏱ 내 턴 제한</span>
@@ -403,7 +404,7 @@ body.mj-fs #sw-bar{display:none !important;}
 <script>
 const TE={m1:'🀇',m2:'🀈',m3:'🀉',m4:'🀊',m5:'🀋',m6:'🀌',m7:'🀍',m8:'🀎',m9:'🀏',p1:'🀙',p2:'🀚',p3:'🀛',p4:'🀜',p5:'🀝',p6:'🀞',p7:'🀟',p8:'🀠',p9:'🀡',s1:'🀐',s2:'🀑',s3:'🀒',s4:'🀓',s5:'🀔',s6:'🀕',s7:'🀖',s8:'🀗',s9:'🀘',z1:'東',z2:'南',z3:'西',z4:'北',z5:'白',z6:'發',z7:'中',f1:'春',f2:'夏',f3:'秋',f4:'冬',f5:'梅',f6:'蘭',f7:'菊',f8:'竹'};
 const WL=['동','남','서','북'];
-function wind(i){return ((typeof LANG!=='undefined'&&LANG==='zh-TW')?['東','南','西','北']:WL)[i]||'';}
+function wind(i){const L=(typeof LANG!=='undefined')?LANG:'ko';return ((L==='zh-TW')?['東','南','西','北']:(L==='en')?['E','S','W','N']:WL)[i]||'';}
 const SUITC={m:'萬',p:'筒',s:'索'};
 function td(id){if(!id)return id;const s=suit(id);return SUITC[s]?num(id)+SUITC[s]:(TE[id]||id);}
 function tileFace(id){return '<img class="tface" src="tiles/'+id+'.svg" alt="'+td(id)+'" draggable="false">';}
@@ -424,12 +425,19 @@ const I18N={
    claimQ:'要的牌',claimFrom:'打出的牌',nextRound:'下一局',extendRound:'連莊',exit:'離開',
    setTitle:'⚙ 設定',turnLimit:'⏱ 我的回合限時',claimLimit:'✋ 吃/碰/槓限時',sfx:'🔊 音效',bgm:'🎵 背景音樂',tilecall:'🗣 報牌(打牌)',seatPitch:'🎚 各玩家語音音調',myVoice:'🎙 用我的聲音覆蓋',meLabel:'我',exitGame:'🚪 離開遊戲',none:'無',language:'🌐 語言',
    selectChi:'選擇吃牌組合',cancel:'取消',tsumoWin:'自摸',ronWin:'胡',win:'胡牌',draw:'流局',multiplayer:'👥 多人連線',waiting:'等待對手…',mpNewHand:'新一局',
-   kuk:'局',remain:'剩餘',honbaL:'本場',flowersL:'花牌',noFunds:'金幣不足 — 需要至少底注金額',tenpai:'聽牌',baseBet:'💵 底注',gain:'獲得'}
+   kuk:'局',remain:'剩餘',honbaL:'本場',flowersL:'花牌',noFunds:'金幣不足 — 需要至少底注金額',tenpai:'聽牌',baseBet:'💵 底注',gain:'獲得'},
+ en:{title:'🀄 Taiwanese Mahjong',subtitle:'1 Player + 3 CPU<br>16-tile hand · Taiwanese rules',start:'Start Game',howto:'How to Play',settings:'⚙ Settings',close:'Close',
+   kan:'Kong',tsumo:'Self-draw',discard:'Discard',ron:'Ron',pon:'Pong',chi:'Chi',pass:'Pass',
+   myTurn:'Your turn',selectDiscard:'Select a tile to discard',timeUp:'Time out — auto discard',
+   claimQ:'Claim',claimFrom:'discarded',nextRound:'Next round',extendRound:'Dealer repeat',exit:'Exit',
+   setTitle:'⚙ Settings',turnLimit:'⏱ My turn limit',claimLimit:'✋ Claim limit (chi/pong)',sfx:'🔊 Sound FX',bgm:'🎵 Music',tilecall:'🗣 Tile call',seatPitch:'🎚 Per-player voice tone',myVoice:'🎙 Use my voice',meLabel:'Me',exitGame:'🚪 Leave game',none:'None',language:'🌐 Language',
+   selectChi:'Choose chi set',cancel:'Cancel',tsumoWin:'Self-draw',ronWin:'Ron',win:'Win',draw:'Draw',multiplayer:'👥 Multiplayer',waiting:'Waiting for players…',mpNewHand:'New hand',
+   kuk:'Round',remain:'Wall',honbaL:'Honba',flowersL:'Flowers',noFunds:'Not enough gold — need the base bet',tenpai:'Ready (聽)',baseBet:'💵 Base bet',gain:'Gain'}
 };
-let LANG=(function(){try{const s=localStorage.getItem('mahjong_lang');if(s)return s;}catch(_){}return (navigator.language||'').toLowerCase().startsWith('zh')?'zh-TW':'ko';})();
+let LANG=(function(){try{const s=localStorage.getItem('mahjong_lang');if(s)return s;}catch(_){}const n=(navigator.language||'').toLowerCase();return n.startsWith('zh')?'zh-TW':n.startsWith('ko')?'ko':'en';})();
 function t(k){return (I18N[LANG]&&I18N[LANG][k]!=null)?I18N[LANG][k]:(I18N.ko[k]!=null?I18N.ko[k]:k);}
 function applyLang(){
-  document.documentElement.lang=(LANG==='zh-TW')?'zh-Hant':'ko';
+  document.documentElement.lang=(LANG==='zh-TW')?'zh-Hant':(LANG==='en')?'en':'ko';
   document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');const v=t(k);if(el.hasAttribute('data-i18n-html'))el.innerHTML=v;else el.textContent=v;});
   document.querySelectorAll('#set-lang .seg-btn').forEach(b=>b.classList.toggle('on',b.dataset.v===LANG));
 }
@@ -1005,7 +1013,7 @@ function spawnConfetti(on){
 function renderCpu(pidx){
   const p=G.players[pidx];const isCur=G.currentPlayer===pidx;
   const ne=document.getElementById('name-p'+pidx);
-  ne.textContent=p.name+'('+WL[p.seatWind]+')'+(p.isDealer?'◆':'');
+  ne.textContent=p.name+'('+wind(p.seatWind)+')'+(p.isDealer?'◆':'');
   ne.className='cpu-name'+(isCur?' active':'');
   {const ae=document.getElementById('area-p'+pidx);if(ae)ae.classList.toggle('turn',isCur&&G.phase!=='roundEnd');}
   const he=document.getElementById('hand-p'+pidx);
@@ -1078,7 +1086,7 @@ function showClaimPop(action,tile,name){
 // LLM 상대 리액션 한마디 (llm.cocy.io 경유, 실패 시 조용히 무시)
 function speakLine(text,interrupt){
   if(!SET.sfx||!text)return;
-  try{if(!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(text);u.lang=(LANG==='zh-TW')?'zh-TW':'ko-KR';u.rate=1.06;u.pitch=1.05;u.volume=.9;if(interrupt){try{speechSynthesis.cancel();}catch(_){}}speechSynthesis.speak(u);}catch(_){}
+  try{if(!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(text);u.lang=(LANG==='zh-TW')?'zh-TW':(LANG==='en')?'en-US':'ko-KR';u.rate=1.06;u.pitch=1.05;u.volume=.9;if(interrupt){try{speechSynthesis.cancel();}catch(_){}}speechSynthesis.speak(u);}catch(_){}
 }
 // 골드 짧게 읽기용(36만 / 360만 등)
 function _goldShort(v){v=Math.abs(Math.round(v));if(v>=100000000)return (Math.round(v/10000000)/10)+'억';if(v>=10000)return Math.round(v/10000)+'만';return v.toLocaleString();}
