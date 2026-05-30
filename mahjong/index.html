@@ -60,7 +60,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 #chi-overlay.on,#result-overlay.on{display:flex;}
 /* 클레임 패널: 손패 가리지 않게 상단 카드로 (배경 안 어둡게) */
 #claim-overlay{position:fixed;left:50%;top:calc(var(--wallet-bar-h) + 60px);transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:8px;z-index:60;background:rgba(12,18,32,.97);border:1.5px solid var(--accent);border-radius:14px;padding:11px 14px;box-shadow:0 10px 34px rgba(0,0,0,.65);max-width:96vw;}
-#claim-overlay.on{display:flex;}
+#claim-overlay.on{display:flex;animation:claimAttn .32s cubic-bezier(.2,.8,.3,1.2);}
+@keyframes claimAttn{0%{opacity:0;transform:translateX(-50%) scale(.7);}60%{opacity:1;transform:translateX(-50%) scale(1.06);}100%{transform:translateX(-50%) scale(1);}}
+#claim-overlay.ron-alert{border-color:var(--red);box-shadow:0 0 0 2px var(--red),0 0 22px rgba(239,68,68,.7),0 10px 34px rgba(0,0,0,.65);}
+#claim-overlay.ron-alert.on{animation:claimAttn .32s cubic-bezier(.2,.8,.3,1.2),ronPulse 1s ease-in-out .32s infinite;}
+@keyframes ronPulse{0%,100%{box-shadow:0 0 0 2px var(--red),0 0 16px rgba(239,68,68,.55),0 10px 34px rgba(0,0,0,.65);}50%{box-shadow:0 0 0 3px var(--red),0 0 30px rgba(239,68,68,.95),0 10px 34px rgba(0,0,0,.65);}}
 .claim-opt{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 9px;border:none;border-radius:10px;cursor:pointer;min-width:58px;font-weight:800;}
 .claim-opt:active{transform:scale(.95);}
 .claim-opt .clabel{font-size:.9rem;}
@@ -700,8 +704,12 @@ function showClaimOv(tile,opts,discarderIdx){
     btns.appendChild(b);
   }
   const pb=document.createElement('button');pb.className='claim-opt c-pass';pb.innerHTML='<span class="clabel">'+t('pass')+'</span>';pb.onclick=()=>{ov.classList.remove('on');if(claimTimer)clearTimeout(claimTimer);clearClaimVisual();resolveClaims(discarderIdx);};btns.appendChild(pb);
+  const isRon=opts.includes('ron');
+  ov.classList.toggle('ron-alert',isRon);
   ov.classList.add('on');
-  const secs=SET.claimTime||8;startClaimVisual(secs);
+  playSfx('claim');try{if('vibrate'in navigator)navigator.vibrate(isRon?[60,40,60]:30);}catch(_){}
+  const secs=(SET.claimTime||8)+(isRon?4:0); // 론은 시간 더 줌
+  startClaimVisual(secs);
   claimTimer=setTimeout(()=>{ov.classList.remove('on');clearClaimVisual();resolveClaims(discarderIdx);},secs*1000);
 }
 function humanClaim(opt,tile,discarderIdx){
