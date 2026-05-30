@@ -990,14 +990,20 @@ function renderCpu(pidx){
 function renderDiscards(){
   const ZONE=['dz-bottom','dz-left','dz-top','dz-right'];  // p0 나(아래)/p1 남(좌)/p2 서(위)/p3 북(우)
   for(let p=0;p<4;p++){if(G.discards[p].length>_discCounts[p])_lastDiscSeat=p;}
-  const host=document.getElementById('center-area');
-  const sig=JSON.stringify(G.discards)+'|'+G.phase+'|'+_lastDiscSeat+'|'+selTile;
-  if(setSig(host,sig)){
-    for(let p=0;p<4;p++){
-      const el=document.getElementById(ZONE[p]);if(!el)continue;el.innerHTML='';
-      const newLast=G.discards[p].length>_discCounts[p];
-      G.discards[p].forEach((t,i)=>{const s=document.createElement('div');const last=i===G.discards[p].length-1;const isLast=last&&G.phase==='claim';s.className='tile-sm '+tileClass(t)+suitCls(t)+(isLast?' last':'');if(last&&p===_lastDiscSeat)s.classList.add('disc-last');if(selTile&&t===selTile)s.classList.add('disc-match');s.innerHTML=tileFace(t);if(last&&newLast){s.classList.add('disc-anim');s.style.setProperty('--dx',p===1?'-50px':p===3?'50px':'0px');s.style.setProperty('--dy',p===2?'-44px':p===0?'44px':'0px');}el.appendChild(s);});
+  for(let p=0;p<4;p++){
+    const el=document.getElementById(ZONE[p]);if(!el)continue;
+    const arr=G.discards[p];
+    if(el.childElementCount>arr.length){el.innerHTML='';}      // 회수(클레임)/새 판 → 그 구역만 리셋
+    for(let i=el.childElementCount;i<arr.length;i++){           // 새로 버린 패만 추가(기존 재생성 X → 깜빡임 없음)
+      const t=arr[i];const s=document.createElement('div');s.className='tile-sm '+tileClass(t)+suitCls(t);s.innerHTML=tileFace(t);
+      if(i===arr.length-1){s.classList.add('disc-anim');s.style.setProperty('--dx',p===1?'-50px':p===3?'50px':'0px');s.style.setProperty('--dy',p===2?'-44px':p===0?'44px':'0px');}
+      el.appendChild(s);
     }
+    const kids=el.children;                                     // 하이라이트는 클래스만 갱신(재생성 X)
+    for(let i=0;i<kids.length;i++){const t=arr[i];const last=i===arr.length-1;
+      kids[i].classList.toggle('last',last&&G.phase==='claim');
+      kids[i].classList.toggle('disc-last',last&&p===_lastDiscSeat);
+      kids[i].classList.toggle('disc-match',!!(selTile&&t===selTile));}
   }
   _discCounts=G.discards.map(d=>d.length);
 }
@@ -1117,16 +1123,23 @@ function applyServerView(gs,mv){
      phase:gs.phase==='over'?'roundEnd':gs.phase,round:gs.round||{windIdx:0,dealer:0,honba:0},
      claimInfo:gs.lastDiscard?{tile:gs.lastDiscard.tile,discarder:Math.max(0,order.indexOf(gs.lastDiscard.from))}:null,
      lastDraw:(mv&&mv.lastDraw)||null,flags:{}};
+  // 동일 상태 중복처리 방지 (mpSend 응답 + onEvent 폴링이 같은 상태 두 번 처리 → 소리 두번/깜빡임)
+  const ssig=gs.turn+'|'+gs.phase+'|'+(gs.wallCount||0)+'|'+gs.discards.map(d=>d.length).join(',')+'|'+gs.players.map(p=>(p.melds||[]).length).join(',')+'|'+(gs.finished?1:0)+'|'+(gs.lastDiscard?(gs.lastDiscard.from+''+gs.lastDiscard.tile):'');
+  const dup=(MP._ssig===ssig);MP._ssig=ssig;
   // 판 시작 시 내 점수 기록(지갑 정산용)
   if(gs.discards.every(d=>!d.length)){const ms=(gs.players.find(p=>p.id===MP.myUserId)||{}).score;if(typeof ms==='number')MP._myStartScore=ms;}
-  // 새 버림패 → 패콜(보이스). 전 좌석(나 포함)
-  if(MP._discN){for(let di=0;di<4;di++){if(discards[di].length>(MP._discN[di]||0)){const tl=discards[di][discards[di].length-1];playTileVoice(tl,di);}}}
+  if(!dup){
+    // 새 버림패 → 패콜: 여러 턴이 한꺼번에 밀려와도 '가장 최근 1개'만 재생(소리 겹침 방지)
+    if(MP._discN){let any=false;for(let di=0;di<4;di++)if(discards[di].length>(MP._discN[di]||0))any=true;
+      if(any&&gs.lastDiscard){const di=Math.max(0,order.indexOf(gs.lastDiscard.from));playTileVoice(gs.lastDiscard.tile,di);}}
+    // 츠/퐁/깡 → 가장 최근 멜드 1개만 팝업(나 제외)
+    if(MP._meldN){let latest=null;for(let di=1;di<4;di++){const pl=players[di];if(pl.melds.length>(MP._meldN[di]||0))latest={pl,m:pl.melds[pl.melds.length-1]};}
+      if(latest){const m=latest.m;const act=m.type==='chi'?'chi':m.type==='pon'?'pon':(/kan/.test(m.type)?'kan':'');if(act)showClaimPop(act,m.claimed||null,latest.pl.name);}}
+    // 텐파이(팅) 토스트
+    if(MP._tp){for(let di=0;di<4;di++){const sp=gs.players.find(x=>x.seat===order[di])||{};if(sp.tenpai&&!MP._tp[di]){showToast((sp.nickname||'-')+' '+t('tenpai'));playCallFx('tenpai');}}}
+  }
   MP._discN=discards.map(d=>d.length);
-  // 남이 츠/퐁/깡 하면 토스트 (멜드 증가 감지, 나 제외)
-  if(MP._meldN){for(let di=1;di<4;di++){const pl=players[di];const prev=MP._meldN[di]||0;if(pl.melds.length>prev){const m=pl.melds[pl.melds.length-1];const act=m.type==='chi'?'chi':m.type==='pon'?'pon':(/kan/.test(m.type)?'kan':'');if(act)showClaimPop(act,m.claimed||null,pl.name);}}}
   MP._meldN=players.map(pl=>pl.melds.length);
-  // 텐파이(팅) 토스트
-  if(MP._tp){for(let di=0;di<4;di++){const sp=gs.players.find(x=>x.seat===order[di])||{};if(sp.tenpai&&!MP._tp[di]){showToast((sp.nickname||'-')+' '+t('tenpai'));playCallFx('tenpai');}}}
   MP._tp=order.map(seat=>{const sp=gs.players.find(x=>x.seat===seat)||{};return !!sp.tenpai;});
   render();
   mpUpdateControls(mv);
