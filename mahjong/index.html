@@ -1059,7 +1059,8 @@ function renderDiscards(){
 }
 function renderPlayer(){
   const p=G.players[0];const hr=document.getElementById('player-hand-row');
-  const handSig=p.hand.join(',')+'|'+selTile+'|'+G.lastDraw+'|'+G.currentPlayer+'|'+G.phase;
+  // 내 손패 렌더는 손패/선택/(내 차례의)갓뽑은패에만 의존 — currentPlayer/phase를 넣으면 상대 턴마다 재렌더돼 깜빡임
+  const handSig=p.hand.join(',')+'|'+selTile+'|'+((G.currentPlayer===0&&G.phase==='discard')?(G.lastDraw||''):'');
   const handChanged=setSig(hr,handSig);
   if(_dealAnim||handChanged){
     hr.innerHTML='';let jd=false;
@@ -1232,7 +1233,7 @@ function applyServerView(gs,mv){
   const ssig=gs.turn+'|'+gs.phase+'|'+(gs.wallCount||0)+'|'+gs.discards.map(d=>d.length).join(',')+'|'+gs.players.map(p=>(p.melds||[]).length).join(',')+'|'+(gs.finished?1:0)+'|'+(gs.lastDiscard?(gs.lastDiscard.from+''+gs.lastDiscard.tile):'');
   const dup=(MP._ssig===ssig);MP._ssig=ssig;
   // 판 시작 시 내 점수 기록(지갑 정산용)
-  if(gs.discards.every(d=>!d.length)){const ms=(gs.players.find(p=>p.id===MP.myUserId)||{}).score;if(typeof ms==='number')MP._myStartScore=ms;MP._tpDone=[false,false,false,false];}
+  if(gs.discards.every(d=>!d.length)&&!gs.finished){const ms=(gs.players.find(p=>p.id===MP.myUserId)||{}).score;if(typeof ms==='number')MP._myStartScore=ms;MP._tpDone=[false,false,false,false];MP._resultShown=false;}
   if(!dup){
     // 새 버림패 → 패콜: 여러 턴이 한꺼번에 밀려와도 '가장 최근 1개'만 재생(소리 겹침 방지)
     if(MP._discN){let any=false;for(let di=0;di<4;di++)if(discards[di].length>(MP._discN[di]||0))any=true;
