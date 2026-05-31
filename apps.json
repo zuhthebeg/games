@@ -1,5 +1,19 @@
 [
   {
+    "title": "2026 월드컵 한국 대표팀",
+    "icon": "https://game.cocy.io/worldcup/icon.svg",
+    "url": "https://game.cocy.io/worldcup/",
+    "desc": "A조(멕시코·남아공·체코) 일정·KST 시간·16강 진출 경우의 수 계산기. 손흥민·홍명보호.",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko"
+    ],
+    "category": "info"
+  },
+  {
     "title": "대만 마작",
     "icon": "https://game.cocy.io/mahjong/icon.svg",
     "url": "https://game.cocy.io/mahjong/",

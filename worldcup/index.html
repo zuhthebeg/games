@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- 메타3종: GTM -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f)})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<!-- 메타3종: AdSense 자동광고 -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6634731722045607" crossorigin="anonymous"></script>
+<title>2026 월드컵 한국 대표팀 — 일정·A조 순위·16강 진출 경우의 수</title>
+<meta name="description" content="2026 FIFA 월드컵 대한민국 대표팀 A조(멕시코·남아공·체코) 일정, KST 시간, 조 순위, 16강 진출 경우의 수 계산기. 손흥민·홍명보호 정보 한눈에.">
+<meta name="theme-color" content="#0a0f1a">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta property="og:type" content="website">
+<meta property="og:title" content="2026 월드컵 한국 대표팀 — A조 일정·진출 경우의 수">
+<meta property="og:description" content="대한민국 A조 일정(체코·멕시코·남아공), KST 시간, 16강 진출 경우의 수를 한눈에.">
+<meta property="og:image" content="https://game.cocy.io/worldcup/icon.svg">
+<meta property="og:url" content="https://game.cocy.io/worldcup/">
+<meta name="twitter:card" content="summary">
+<style>
+:root{--bg:#0a0f1a;--panel:#111827;--panel2:#1f2937;--line:#2b3648;--text:#f1f5f9;--muted:#94a3b8;--accent:#e11d48;--blue:#3b82f6;--green:#22c55e;--gold:#fbbf24;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6;}
+.wrap{max-width:680px;margin:0 auto;padding:0 14px 60px;}
+header{text-align:center;padding:26px 14px 18px;background:linear-gradient(160deg,#1e293b,#0a0f1a);border-bottom:1px solid var(--line);}
+header .kicker{color:var(--accent);font-weight:800;letter-spacing:1px;font-size:.8rem;}
+header h1{margin:6px 0 4px;font-size:1.5rem;font-weight:900;}
+header .sub{color:var(--muted);font-size:.85rem;}
+.flag{font-size:1.1em;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0;}
+.card h2{margin:0 0 12px;font-size:1.08rem;display:flex;align-items:center;gap:7px;}
+.cd{display:flex;justify-content:center;gap:10px;margin:10px 0 4px;}
+.cd .u{background:var(--panel2);border-radius:10px;padding:8px 12px;min-width:58px;text-align:center;}
+.cd .u b{display:block;font-size:1.5rem;font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums;}
+.cd .u span{font-size:.66rem;color:var(--muted);}
+.cd-label{text-align:center;color:var(--muted);font-size:.82rem;}
+.match{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);}
+.match:last-child{border-bottom:none;}
+.match .teams{flex:1;font-weight:700;}
+.match .teams small{display:block;color:var(--muted);font-weight:400;font-size:.74rem;margin-top:2px;}
+.match .when{text-align:right;font-size:.82rem;white-space:nowrap;}
+.match .when b{color:var(--gold);}
+.match .res{font-size:.72rem;color:var(--muted);}
+table{width:100%;border-collapse:collapse;font-size:.88rem;}
+th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);}
+th{color:var(--muted);font-weight:600;font-size:.76rem;}
+td.team{text-align:left;font-weight:700;}
+tr.kr td{background:rgba(225,29,72,.12);}
+.note{color:var(--muted);font-size:.78rem;margin-top:8px;}
+.calc label{display:block;margin:9px 0 4px;font-size:.85rem;font-weight:600;}
+.calc .row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.calc .row span{flex:1;}
+.seg{display:flex;gap:4px;}
+.seg button{flex:0 0 auto;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-weight:700;cursor:pointer;font-size:.85rem;}
+.seg button.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+#calc-out{margin-top:12px;padding:12px;border-radius:10px;background:var(--panel2);text-align:center;}
+#calc-out .pts{font-size:1.6rem;font-weight:900;color:var(--gold);}
+#calc-out .verdict{font-weight:800;margin-top:4px;}
+.opp{padding:10px 0;border-bottom:1px solid var(--line);}
+.opp:last-child{border-bottom:none;}
+.opp h3{margin:0 0 3px;font-size:.98rem;}
+.opp p{margin:0;color:var(--muted);font-size:.84rem;}
+.adslot{margin:16px 0;min-height:90px;display:flex;align-items:center;justify-content:center;}
+footer{text-align:center;color:var(--muted);font-size:.72rem;margin-top:24px;line-height:1.7;}
+footer a{color:var(--muted);}
+.pill{display:inline-block;background:var(--panel2);border-radius:20px;padding:2px 10px;font-size:.72rem;color:var(--muted);margin:2px;}
+</style>
+</head>
+<body>
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<header>
+  <div class="kicker">FIFA WORLD CUP 2026 · 🇺🇸🇨🇦🇲🇽</div>
+  <h1>🇰🇷 대한민국 대표팀</h1>
+  <div class="sub">A조 · 멕시코 · 남아프리카공화국 · 체코 &nbsp;|&nbsp; 6.11 ~ 7.19</div>
+</header>
+<div class="wrap">
+
+  <div class="card">
+    <h2>⏳ 다음 경기까지</h2>
+    <div class="cd" id="countdown"><div class="u"><b>-</b><span>일</span></div></div>
+    <div class="cd-label" id="cd-label">—</div>
+  </div>
+
+  <div class="adslot"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-6634731722045607" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
+
+  <div class="card">
+    <h2>📅 한국 조별리그 일정 <span class="pill">KST</span></h2>
+    <div id="fixtures"></div>
+    <div class="note">시간은 한국시간(KST). 현지 사정으로 변동될 수 있어요.</div>
+  </div>
+
+  <div class="card">
+    <h2>📊 A조 순위</h2>
+    <table id="group">
+      <thead><tr><th class="team" style="text-align:left">팀</th><th>경기</th><th>승</th><th>무</th><th>패</th><th>득실</th><th>승점</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="note">본선 시작 전입니다. 경기 결과는 진행에 맞춰 갱신됩니다.</div>
+  </div>
+
+  <div class="card calc">
+    <h2>🧮 16강 진출 경우의 수</h2>
+    <p style="margin:0 0 4px;font-size:.86rem">48팀·12개조, 조별리그 뒤 <b>32강</b>으로. <b>각 조 1·2위(24팀) + 3위 중 상위 8팀</b>이 진출합니다.</p>
+    <p style="margin:0 0 10px;color:var(--muted);font-size:.82rem">한국 3경기 결과를 눌러보면 승점과 진출 가능성을 알려드려요.</p>
+    <div id="calc-rows"></div>
+    <div id="calc-out"><div class="pts">0점</div><div class="verdict">결과를 선택하세요</div></div>
+    <div class="note">2위까지 직행, 3위는 12개조 3위 중 승점·득실 상위 8팀만. 보통 <b>승점 4~5점</b>이면 진출 경쟁권, <b>6점+</b>면 유력합니다.</div>
+  </div>
+
+  <div class="adslot"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-6634731722045607" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
+
+  <div class="card">
+    <h2>🆚 상대팀</h2>
+    <div class="opp"><h3>🇲🇽 멕시코</h3><p>공동 개최국. 과달라하라 홈 분위기 속에 치르는 조 최강 후보. 빠른 공격 전개와 홈 이점이 위협.</p></div>
+    <div class="opp"><h3>🇨🇿 체코</h3><p>유럽의 탄탄한 조직력과 높이. 세트피스·역습이 강점. 첫 경기 상대라 승점 확보가 중요.</p></div>
+    <div class="opp"><h3>🇿🇦 남아프리카공화국</h3><p>아프리카의 빠른 발과 활동량. 변수 많은 마지막 경기 상대, 진출 분수령이 될 가능성.</p></div>
+  </div>
+
+  <div class="card">
+    <h2>ℹ️ 대회 방식</h2>
+    <p style="margin:0;font-size:.86rem">사상 첫 <b>48개국</b> 본선. <b>12개 조 × 4팀</b> 조별리그 후 <b>32강 토너먼트</b>(32→16→8→4→결승). 한국은 <b>A조</b>에서 상위 2위 또는 3위(상위 8) 안에 들면 32강 진출.</p>
+    <p class="note">개최: 미국·캐나다·멕시코 / 기간: 2026.6.11 ~ 7.19 / 감독: 홍명보 · 주장: 손흥민</p>
+  </div>
+
+  <footer>
+    데이터는 공개 정보 기준으로 정리했으며 일정·결과는 변동될 수 있습니다.<br>
+    <a href="https://game.cocy.io/">cocy</a> · 비공식 팬 정보 페이지
+  </footer>
+</div>
+
+<script>
+const MATCHES=[
+ {opp:'체코',oppFlag:'🇨🇿',home:false,kst:'2026-06-12T11:00:00+09:00',label:'6/12(금) 11:00',venue:'과달라하라 · Estadio Akron'},
+ {opp:'멕시코',oppFlag:'🇲🇽',home:true,kst:'2026-06-19T10:00:00+09:00',label:'6/19(금) 10:00',venue:'과달라하라 · Estadio Akron'},
+ {opp:'남아공',oppFlag:'🇿🇦',home:true,kst:'2026-06-25T10:00:00+09:00',label:'6/25(목) 10:00',venue:'몬테레이'},
+];
+const GROUP=[
+ {name:'대한민국',flag:'🇰🇷',kr:true},
+ {name:'멕시코',flag:'🇲🇽'},
+ {name:'체코',flag:'🇨🇿'},
+ {name:'남아공',flag:'🇿🇦'},
+];
+// 일정 렌더
+(function(){
+ let h='';
+ MATCHES.forEach(m=>{
+   const krLeft=!m.home;
+   const teams=krLeft?('🇰🇷 한국 vs '+m.oppFlag+' '+m.opp):(m.oppFlag+' '+m.opp+' vs 🇰🇷 한국');
+   h+='<div class="match"><div class="teams">'+teams+'<small>'+m.venue+'</small></div><div class="when"><b>'+m.label+'</b></div></div>';
+ });
+ document.getElementById('fixtures').innerHTML=h;
+})();
+// A조 순위표(경기 전 0)
+(function(){
+ const tb=document.querySelector('#group tbody');
+ tb.innerHTML=GROUP.map(t=>'<tr'+(t.kr?' class="kr"':'')+'><td class="team">'+t.flag+' '+t.name+'</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>').join('');
+})();
+// 카운트다운(다음 한국 경기)
+function nextMatch(){const now=Date.now();for(const m of MATCHES){if(new Date(m.kst).getTime()>now)return m;}return null;}
+function tickCountdown(){
+ const m=nextMatch();const el=document.getElementById('countdown');const lab=document.getElementById('cd-label');
+ if(!m){el.innerHTML='<div class="u"><b>—</b><span>종료</span></div>';lab.textContent='조별리그 종료';return;}
+ let diff=Math.max(0,new Date(m.kst).getTime()-Date.now());
+ const d=Math.floor(diff/86400000);diff-=d*86400000;
+ const h=Math.floor(diff/3600000);diff-=h*3600000;
+ const mi=Math.floor(diff/60000);diff-=mi*60000;
+ const s=Math.floor(diff/1000);
+ const pad=n=>String(n).padStart(2,'0');
+ el.innerHTML='<div class="u"><b>'+d+'</b><span>일</span></div><div class="u"><b>'+pad(h)+'</b><span>시</span></div><div class="u"><b>'+pad(mi)+'</b><span>분</span></div><div class="u"><b>'+pad(s)+'</b><span>초</span></div>';
+ lab.innerHTML='🇰🇷 vs '+m.oppFlag+' '+m.opp+' · '+m.label;
+}
+tickCountdown();setInterval(tickCountdown,1000);
+// 진출 경우의 수 계산기
+const RES=['승','무','패'];const PT={'승':3,'무':1,'패':0};
+let picks=[null,null,null];
+(function(){
+ const cont=document.getElementById('calc-rows');
+ cont.innerHTML=MATCHES.map((m,i)=>{
+   const opp=m.oppFlag+' '+m.opp;
+   const btns=RES.map(r=>'<button data-i="'+i+'" data-r="'+r+'">'+r+'</button>').join('');
+   return '<div class="row"><span>vs '+opp+'</span><div class="seg">'+btns+'</div></div>';
+ }).join('');
+ cont.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+   const i=+b.dataset.i;picks[i]=b.dataset.r;
+   cont.querySelectorAll('button[data-i="'+i+'"]').forEach(x=>x.classList.toggle('on',x===b));
+   updateCalc();
+ });
+})();
+function updateCalc(){
+ const out=document.getElementById('calc-out');
+ if(picks.includes(null)){out.querySelector('.pts').textContent='—';out.querySelector('.verdict').textContent='세 경기 결과를 모두 선택하세요';return;}
+ const pts=picks.reduce((a,r)=>a+PT[r],0);
+ const w=picks.filter(r=>r==='승').length;
+ let v,c;
+ if(pts>=7){v='🟢 16강 진출 거의 확정';c='var(--green)';}
+ else if(pts>=5){v='🟢 진출 유력 (1·2위 경쟁)';c='var(--green)';}
+ else if(pts===4){v='🟡 진출 경쟁권 (3위 → 와일드카드 가능)';c='var(--gold)';}
+ else if(pts===3){v='🟠 진출 어려움 (다른 조 결과 의존)';c='var(--gold)';}
+ else{v='🔴 탈락 가능성 높음';c='var(--accent)';}
+ out.querySelector('.pts').textContent=pts+'점';
+ const vd=out.querySelector('.verdict');vd.textContent=v+' · '+w+'승';vd.style.color=c;
+}
+// AdSense 슬롯 활성화
+try{(adsbygoogle=window.adsbygoogle||[]).push({});(adsbygoogle=window.adsbygoogle||[]).push({});}catch(e){}
+</script>
+</body>
+</html>
