@@ -1163,7 +1163,7 @@ function openMultiplayer(){
   MP.ui.show();
 }
 function mpStart(roomState){
-  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();_dealAnim=true;MP._resultShown=false;MP._meldN=[0,0,0,0];MP._discN=[0,0,0,0];MP._claimSig=null;MP._tp=[false,false,false,false];MP._tpDone=[false,false,false,false];MP._replaying=false;
+  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();_dealAnim=true;MP._resultShown=false;MP._meldN=[0,0,0,0];MP._discN=[0,0,0,0];MP._claimSig=null;MP._tp=[false,false,false,false];MP._tpDone=[false,false,false,false];MP._replaying=false;MP._lastStepGen=0;
   MP.client.onEvent=()=>mpRefresh();
   document.getElementById('mp-lobby').style.display='none';
   document.getElementById('mp-lobby').innerHTML='';
@@ -1196,8 +1196,7 @@ function mpReplay(steps,myView){
 async function mpSend(action){
   if(!MP.client)return;
   try{const res=await MP.client.sendAction(action);
-    if(res&&Array.isArray(res.aiSteps)&&res.aiSteps.length>1)mpReplay(res.aiSteps,res.myView);
-    else if(res&&res.gameState)applyServerView(res.gameState,res.myView);
+    if(res&&res.gameState)applyServerView(res.gameState,res.myView);  // 재생은 applyServerView가 stepGen 보고 처리
     else if(res&&res.success===false)showToast(res.error||t('serverReject'));}
   catch(e){showToast(t('sendFail'));}
 }
@@ -1208,6 +1207,11 @@ function mpClaimTiles(o,tile,mv){
   return[tile];
 }
 function applyServerView(gs,mv){
+  // 여러 턴이 몰려온 경우: 서버 스텝열을 한 수씩 재생(옵저버 포함). 이미 본 stepGen은 스킵
+  if(gs&&gs.stepGen&&gs.stepGen!==MP._lastStepGen&&Array.isArray(gs.lastSteps)&&gs.lastSteps.length>1&&!MP._replaying){
+    MP._lastStepGen=gs.stepGen;mpReplay(gs.lastSteps,mv);return;
+  }
+  if(gs&&gs.stepGen)MP._lastStepGen=gs.stepGen;
   MP.gs=gs;MP.mv=mv;
   const mySeat=(mv&&typeof mv.mySeat==='number'&&mv.mySeat>=0)?mv.mySeat:0;MP.mySeat=mySeat;
   const order=[mySeat,(mySeat+1)%4,(mySeat+2)%4,(mySeat+3)%4];
