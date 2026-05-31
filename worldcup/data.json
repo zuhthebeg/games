@@ -1,0 +1,15 @@
+{
+  "updated": "",
+  "group": "A",
+  "standings": [
+    { "team": "대한민국", "flag": "🇰🇷", "kr": true, "mp": 0, "w": 0, "d": 0, "l": 0, "gd": 0, "pts": 0 },
+    { "team": "멕시코", "flag": "🇲🇽", "mp": 0, "w": 0, "d": 0, "l": 0, "gd": 0, "pts": 0 },
+    { "team": "체코", "flag": "🇨🇿", "mp": 0, "w": 0, "d": 0, "l": 0, "gd": 0, "pts": 0 },
+    { "team": "남아공", "flag": "🇿🇦", "mp": 0, "w": 0, "d": 0, "l": 0, "gd": 0, "pts": 0 }
+  ],
+  "matches": [
+    { "opp": "체코", "status": "scheduled", "krGoals": null, "oppGoals": null },
+    { "opp": "멕시코", "status": "scheduled", "krGoals": null, "oppGoals": null },
+    { "opp": "남아공", "status": "scheduled", "krGoals": null, "oppGoals": null }
+  ]
+}

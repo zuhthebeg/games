@@ -1,0 +1,33 @@
+name: worldcup-update
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # 30분마다 (스크립트가 대회기간 밖이면 즉시 스킵)
+  workflow_dispatch:           # 수동 실행 버튼
+permissions:
+  contents: write
+concurrency:
+  group: worldcup-update
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Fetch World Cup results
+        env:
+          FOOTBALL_DATA_KEY: ${{ secrets.FOOTBALL_DATA_KEY }}
+        run: node scripts/worldcup-fetch.mjs
+      - name: Commit if changed
+        run: |
+          if ! git diff --quiet -- worldcup/data.json; then
+            git config user.name "worldcup-bot"
+            git config user.email "bot@cocy.io"
+            git add worldcup/data.json
+            git commit -m "worldcup: auto-update results $(date -u +%H:%MZ)"
+            git push
+          else
+            echo "변경 없음"
+          fi

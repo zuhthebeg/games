@@ -121,7 +121,8 @@ footer a{color:var(--muted);}
       <thead><tr><th class="team" style="text-align:left">팀</th><th>경기</th><th>승</th><th>무</th><th>패</th><th>득실</th><th>승점</th></tr></thead>
       <tbody></tbody>
     </table>
-    <div class="note">본선 시작 전입니다. 경기 결과는 진행에 맞춰 갱신됩니다.</div>
+    <div class="note">본선 시작 전입니다. 경기 결과는 진행에 맞춰 자동 갱신됩니다.</div>
+    <div class="note" id="upd"></div>
   </div>
 
   <div class="card calc">
@@ -193,21 +194,30 @@ const GROUP=[
  {name:'체코',flag:'🇨🇿'},
  {name:'남아공',flag:'🇿🇦'},
 ];
-// 일정 렌더
-(function(){
- let h='';
- MATCHES.forEach(m=>{
-   const krLeft=!m.home;
+let DATA=null;
+// 일정 렌더 (data.json 있으면 스코어 표시)
+function renderFixtures(){
+ const dm=(DATA&&DATA.matches)||[];let h='';
+ MATCHES.forEach((m,i)=>{
+   const krLeft=!m.home;const d=dm[i]||{};let score='';
+   if((d.status==='finished'||d.status==='live')&&d.krGoals!=null){
+     const sc=krLeft?(d.krGoals+' : '+d.oppGoals):(d.oppGoals+' : '+d.krGoals);
+     score='<span style="color:var(--gold);font-weight:800">'+sc+'</span>'+(d.status==='live'?' <span style="color:var(--accent);font-size:.7rem">● LIVE</span>':'');
+   }
    const teams=krLeft?('🇰🇷 한국 vs '+m.oppFlag+' '+m.opp):(m.oppFlag+' '+m.opp+' vs 🇰🇷 한국');
-   h+='<div class="match"><div class="teams">'+teams+'<small>'+m.venue+'</small></div><div class="when"><b>'+m.label+'</b></div></div>';
+   h+='<div class="match"><div class="teams">'+teams+'<small>'+m.venue+'</small></div><div class="when">'+(score?score+'<br>':'')+'<b>'+m.label+'</b></div></div>';
  });
  document.getElementById('fixtures').innerHTML=h;
-})();
-// A조 순위표(경기 전 0)
-(function(){
- const tb=document.querySelector('#group tbody');
- tb.innerHTML=GROUP.map(t=>'<tr'+(t.kr?' class="kr"':'')+'><td class="team">'+t.flag+' '+t.name+'</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>').join('');
-})();
+}
+// A조 순위표 (data.json standings, 없으면 0)
+function renderGroup(){
+ const st=(DATA&&DATA.standings)||GROUP.map(t=>({team:t.name,flag:t.flag,kr:t.kr}));
+ document.querySelector('#group tbody').innerHTML=st.map(t=>'<tr'+(t.kr?' class="kr"':'')+'><td class="team">'+(t.flag||'')+' '+(t.team||t.name)+'</td><td>'+(t.mp||0)+'</td><td>'+(t.w||0)+'</td><td>'+(t.d||0)+'</td><td>'+(t.l||0)+'</td><td>'+((t.gd>0?'+':'')+(t.gd||0))+'</td><td>'+(t.pts||0)+'</td></tr>').join('');
+}
+function loadData(){
+ fetch('data.json?cb='+Date.now()).then(r=>r.json()).then(d=>{if(d&&Array.isArray(d.standings)){DATA=d;renderGroup();renderFixtures();const u=document.getElementById('upd');if(u&&d.updated)u.textContent='🔄 업데이트: '+new Date(d.updated).toLocaleString('ko-KR');}}).catch(()=>{});
+}
+renderFixtures();renderGroup();loadData();
 // 카운트다운(다음 한국 경기)
 function nextMatch(){const now=Date.now();for(const m of MATCHES){if(new Date(m.kst).getTime()>now)return m;}return null;}
 function tickCountdown(){
