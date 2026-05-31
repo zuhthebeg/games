@@ -322,9 +322,9 @@ body.mj-fs #sw-bar{display:none !important;}
     <div class="set-row"><span class="set-label" data-i18n="baseBet">💵 기본판돈</span>
       <div class="set-seg" id="set-bet">
         <button class="seg-btn" data-v="100" onclick="setBet(100)">100</button>
-        <button class="seg-btn" data-v="1000" onclick="setBet(1000)">1천</button>
-        <button class="seg-btn" data-v="10000" onclick="setBet(10000)">1만</button>
-        <button class="seg-btn" data-v="100000" onclick="setBet(100000)">10만</button>
+        <button class="seg-btn" data-v="1000" data-i18n="bet1k" onclick="setBet(1000)">1천</button>
+        <button class="seg-btn" data-v="10000" data-i18n="bet10k" onclick="setBet(10000)">1만</button>
+        <button class="seg-btn" data-v="100000" data-i18n="bet100k" onclick="setBet(100000)">10만</button>
       </div>
     </div>
     <div class="set-row"><span class="set-label" data-i18n="sfx">🔊 효과음</span><div class="toggle" id="tog-sfx" onclick="toggleSfx()"></div></div>
@@ -338,7 +338,7 @@ body.mj-fs #sw-bar{display:none !important;}
 <div id="voice-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,12,22,.97);z-index:10020;flex-direction:column;padding:calc(var(--wallet-bar-h) + 12px) 14px 14px;overflow:hidden;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
     <b style="font-size:1rem" data-i18n="myVoice">🎙 내 목소리로 덮어쓰기</b>
-    <button onclick="closeVoiceCustomizer()" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-weight:700">닫기</button>
+    <button onclick="closeVoiceCustomizer()" data-i18n="close" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-weight:700">닫기</button>
   </div>
   <div data-i18n="voiceDesc" style="font-size:.76rem;color:var(--muted);margin-bottom:8px">🎤 누르고 말한 뒤 다시 눌러 정지하면 그 소리가 내 목소리로 바뀝니다. ↺는 기본음으로 되돌리기. 저장은 이 브라우저에만 됩니다.</div>
   <button onclick="resetAllVoices()" data-i18n="voiceResetAll" style="background:var(--panel);border:1px solid var(--red);color:#fca5a5;border-radius:8px;padding:7px;cursor:pointer;margin-bottom:8px;font-size:.82rem">전체 기본음으로 초기화</button>
@@ -367,7 +367,7 @@ const I18N={
    kuk:'국',remain:'잔여',honbaL:'본장',flowersL:'화패',noFunds:'골드 부족 — 판돈만큼 필요',tenpai:'팅(聽)',baseBet:'💵 기본판돈',gain:'획득',
    vSaved:'🎙 저장됨: ',micNeed:'🎤 마이크 권한이 필요합니다',vResetConfirm:'내가 녹음한 목소리를 모두 지우고 기본 음성으로 되돌릴까요?',vResetDone:'기본 음성으로 초기화됨',tileSize:'🔍 패 크기 ',noTile:'패 없음',noFlowerDiscard:'화패는 버릴 수 없습니다',mpLoadFail:'멀티 모듈 로드 실패',serverReject:'서버 거절',sendFail:'전송 실패',restartFail:'재시작 실패',
    dealInTag:'(독박)',tsumoAllPay:'자모(전원 지급)',dealerX2:'× 2(장가)',balance:'잔액',baseYaku:'기본5 + 역',betLabel:'판돈',myGold:'보유 골드',drawSpoken:'유국, 무승부입니다',
-   cpuS:'CPU 남',cpuW:'CPU 서',cpuN:'CPU 북',titleSmaller:'패 작게',titleBigger:'패 크게',titleSettings:'설정',titleFs:'가로 전체화면 전환',voiceDesc:'🎤 누르고 말한 뒤 다시 눌러 정지하면 그 소리가 내 목소리로 바뀝니다. ↺는 기본음으로 되돌리기. 저장은 이 브라우저에만 됩니다.',voiceResetAll:'전체 기본음으로 초기화'},
+   cpuS:'CPU 남',cpuW:'CPU 서',cpuN:'CPU 북',titleSmaller:'패 작게',titleBigger:'패 크게',titleSettings:'설정',titleFs:'가로 전체화면 전환',voiceDesc:'🎤 누르고 말한 뒤 다시 눌러 정지하면 그 소리가 내 목소리로 바뀝니다. ↺는 기본음으로 되돌리기. 저장은 이 브라우저에만 됩니다.',voiceResetAll:'전체 기본음으로 초기화',recStop:'⏹ 정지',bet1k:'1천',bet10k:'1만',bet100k:'10만'},
  'zh-TW':{title:'🀄 台灣麻將',subtitle:'1位玩家 + 3位電腦<br>16張手牌 · 台灣規則',start:'開始遊戲',howto:'玩法說明',settings:'⚙ 設定',close:'關閉',
    kan:'槓',tsumo:'自摸',discard:'打牌',ron:'胡',pon:'碰',chi:'吃',pass:'過',
    myTurn:'輪到你',selectDiscard:'請選擇要打出的牌',timeUp:'超時 — 自動打牌',
@@ -377,7 +377,7 @@ const I18N={
    kuk:'局',remain:'剩餘',honbaL:'本場',flowersL:'花牌',noFunds:'金幣不足 — 需要至少底注金額',tenpai:'聽牌',baseBet:'💵 底注',gain:'獲得',
    vSaved:'🎙 已儲存: ',micNeed:'🎤 需要麥克風權限',vResetConfirm:'要刪除你錄製的所有語音並還原為預設嗎？',vResetDone:'已還原為預設語音',tileSize:'🔍 牌大小 ',noTile:'沒有這張牌',noFlowerDiscard:'花牌不能打出',mpLoadFail:'多人模組載入失敗',serverReject:'伺服器拒絕',sendFail:'傳送失敗',restartFail:'重啟失敗',
    dealInTag:'（放槍）',tsumoAllPay:'自摸（全員支付）',dealerX2:'× 2（莊家）',balance:'餘額',baseYaku:'基本5 + 役',betLabel:'底注',myGold:'持有金幣',drawSpoken:'流局，平手',
-   cpuS:'電腦 南',cpuW:'電腦 西',cpuN:'電腦 北',titleSmaller:'牌縮小',titleBigger:'牌放大',titleSettings:'設定',titleFs:'橫向全螢幕',voiceDesc:'🎤 按下說話，再按一次停止，該音效就會換成你的聲音。↺ 還原預設。僅儲存在此瀏覽器。',voiceResetAll:'全部還原為預設音'},
+   cpuS:'電腦 南',cpuW:'電腦 西',cpuN:'電腦 北',titleSmaller:'牌縮小',titleBigger:'牌放大',titleSettings:'設定',titleFs:'橫向全螢幕',voiceDesc:'🎤 按下說話，再按一次停止，該音效就會換成你的聲音。↺ 還原預設。僅儲存在此瀏覽器。',voiceResetAll:'全部還原為預設音',recStop:'⏹ 停止',bet1k:'1千',bet10k:'1萬',bet100k:'10萬'},
  en:{title:'🀄 Taiwanese Mahjong',subtitle:'1 Player + 3 CPU<br>16-tile hand · Taiwanese rules',start:'Start Game',howto:'How to Play',settings:'⚙ Settings',close:'Close',
    kan:'Kong',tsumo:'Self-draw',discard:'Discard',ron:'Ron',pon:'Pong',chi:'Chi',pass:'Pass',
    myTurn:'Your turn',selectDiscard:'Select a tile to discard',timeUp:'Time out — auto discard',
@@ -387,7 +387,7 @@ const I18N={
    kuk:'Round',remain:'Wall',honbaL:'Honba',flowersL:'Flowers',noFunds:'Not enough gold — need the base bet',tenpai:'Ready (聽)',baseBet:'💵 Base bet',gain:'Gain',
    vSaved:'🎙 Saved: ',micNeed:'🎤 Microphone permission required',vResetConfirm:'Delete all your recorded voices and reset to default?',vResetDone:'Reset to default voices',tileSize:'🔍 Tile size ',noTile:'No such tile',noFlowerDiscard:"Flowers can't be discarded",mpLoadFail:'Failed to load multiplayer',serverReject:'Rejected by server',sendFail:'Send failed',restartFail:'Restart failed',
    dealInTag:'(deal-in)',tsumoAllPay:'Self-draw — all pay',dealerX2:'× 2 (dealer)',balance:'Bal',baseYaku:'base 5 + yaku ',betLabel:'Bet',myGold:'Gold',drawSpoken:'Draw — no winner',
-   cpuS:'CPU S',cpuW:'CPU W',cpuN:'CPU N',titleSmaller:'Smaller tiles',titleBigger:'Bigger tiles',titleSettings:'Settings',titleFs:'Landscape fullscreen',voiceDesc:'🎤 Tap to record, tap again to stop — that sound becomes your voice. ↺ resets to default. Saved only in this browser.',voiceResetAll:'Reset all to default'}
+   cpuS:'CPU S',cpuW:'CPU W',cpuN:'CPU N',titleSmaller:'Smaller tiles',titleBigger:'Bigger tiles',titleSettings:'Settings',titleFs:'Landscape fullscreen',voiceDesc:'🎤 Tap to record, tap again to stop — that sound becomes your voice. ↺ resets to default. Saved only in this browser.',voiceResetAll:'Reset all to default',recStop:'⏹ Stop',bet1k:'1K',bet10k:'10K',bet100k:'100K'}
 };
 let LANG=(function(){try{const s=localStorage.getItem('mahjong_lang');if(s)return s;}catch(_){}const n=(navigator.language||'').toLowerCase();return n.startsWith('zh')?'zh-TW':n.startsWith('ko')?'ko':'en';})();
 function t(k){return (I18N[LANG]&&I18N[LANG][k]!=null)?I18N[LANG][k]:(I18N.ko[k]!=null?I18N.ko[k]:k);}
@@ -658,7 +658,7 @@ function renderVoiceList(){
       h+='<div class="vrow" style="display:flex;align-items:center;gap:6px;background:var(--panel);border-radius:8px;padding:6px 9px">'
        +'<span style="flex:1;font-size:.85rem">'+voiceLabel(id)+(has?' <span style="color:#34d399">●</span>':'')+'</span>'
        +'<button onclick="playVoice(\''+id+'\')" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:4px 9px;cursor:pointer">▶</button>'
-       +'<button onclick="recToggle(\''+id+'\',this)" style="background:'+(recing?'#ef4444':'var(--panel2)')+';border:1px solid var(--line);color:'+(recing?'#fff':'var(--text)')+';border-radius:7px;padding:4px 9px;cursor:pointer">'+(recing?'⏹ 정지':'🎤')+'</button>'
+       +'<button onclick="recToggle(\''+id+'\',this)" style="background:'+(recing?'#ef4444':'var(--panel2)')+';border:1px solid var(--line);color:'+(recing?'#fff':'var(--text)')+';border-radius:7px;padding:4px 9px;cursor:pointer">'+(recing?t('recStop'):'🎤')+'</button>'
        +'<button onclick="resetVoice(\''+id+'\')" '+(has?'':'disabled')+' style="background:var(--panel2);border:1px solid var(--line);color:'+(has?'var(--text)':'var(--muted)')+';border-radius:7px;padding:4px 9px;cursor:'+(has?'pointer':'default')+';opacity:'+(has?1:.4)+'">↺</button>'
        +'</div>';}
     h+='</div>';}
