@@ -223,7 +223,9 @@ function updateCalc(){
 // ── 진출 OX 퀴즈 미니게임 ──
 const QT=[{n:'대한민국',f:'🇰🇷'},{n:'멕시코',f:'🇲🇽'},{n:'체코',f:'🇨🇿'},{n:'남아공',f:'🇿🇦'}];
 const QPAIRS=[[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
-let qScore=0,qStreak=0,qScn=null,qAnswered=false;
+let qScore=0,qStreak=0,qBest=0,qScn=null,qAnswered=false;
+try{const s=JSON.parse(localStorage.getItem('wc_quiz')||'{}');qScore=s.score||0;qBest=s.best||0;}catch(_){}
+function saveQuiz(){try{localStorage.setItem('wc_quiz',JSON.stringify({score:qScore,best:qBest}));}catch(_){}}
 function genScn(){
  const t=QT.map(x=>({n:x.n,f:x.f,pts:0,gf:0,ga:0,kr3:[]}));
  QPAIRS.forEach(([a,b])=>{const ga=Math.floor(Math.random()*4),gb=Math.floor(Math.random()*4);
@@ -246,14 +248,15 @@ function renderQuiz(){
 function answerQuiz(a){
  if(qAnswered)return;qAnswered=true;
  const correct=((a===1)===qScn.advance);
- if(correct){qScore++;qStreak++;}else qStreak=0;
+ if(correct){qScore++;qStreak++;if(qStreak>qBest)qBest=qStreak;}else qStreak=0;
+ saveQuiz();
  document.getElementById('quiz-ox').style.display='none';
  document.querySelector('#quiz-table tbody').innerHTML=qScn.ranked.map((x,r)=>'<tr'+(x.i===0?' class="kr"':'')+'><td class="team">'+(r+1)+'. '+x.f+' '+x.n+'</td><td>'+x.pts+'</td><td>'+(x.gd>0?'+':'')+x.gd+'</td></tr>').join('');
  document.getElementById('quiz-verdict').innerHTML=(correct?'<span style="color:var(--green)">정답! ⭕</span>':'<span style="color:var(--accent)">땡! ❌</span>')+'<br>한국 '+qScn.krRank+'위 · '+qScn.kr.pts+'점 → '+(qScn.advance?'<b style="color:var(--green)">진출</b>':'<b style="color:var(--accent)">탈락</b>');
  document.getElementById('quiz-reveal').style.display='block';
  updateQScore();
 }
-function updateQScore(){const e=document.getElementById('quiz-score');if(e)e.textContent='점수 '+qScore+'  ·  연승 '+qStreak;}
+function updateQScore(){const e=document.getElementById('quiz-score');if(e)e.textContent='맞힌 수 '+qScore+'  ·  연승 '+qStreak+'  ·  최고연승 '+qBest;}
 document.getElementById('quiz-ox').querySelectorAll('.ox').forEach(b=>b.onclick=()=>answerQuiz(+b.dataset.a));
 document.getElementById('quiz-next').onclick=renderQuiz;
 renderQuiz();
