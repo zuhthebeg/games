@@ -819,7 +819,7 @@ function doKan(action,pidx){
     const i=player.hand.indexOf(tile);if(i>=0)player.hand.splice(i,1);
   }
   G.flags.isRinshan=true;G.lastDraw=null;
-  if(G.wall.length>0){const rin=G.wall.shift();player.hand.push(rin);processFlowers(G,pidx);player.hand=sortHand(player.hand);if(pidx===0&&player.hand.includes(rin))G.lastDraw=rin;setTimeout(()=>playCallFx('rinshan'),950);}
+  if(G.wall.length>0){const rin=G.wall.shift();player.hand.push(rin);processFlowers(G,pidx);player.hand=sortHand(player.hand);if(pidx===0&&player.hand.includes(rin))G.lastDraw=rin;setTimeout(()=>playCallFx('rinshan'),1300);}
   G.phase='discard';render();if(player.type==='cpu')scheduleCpu(pidx,1000);else enableHuman(pidx);
 }
 function bri(pidx){return{windIdx:G.round.windIdx,isDealer:G.players[pidx].seatWind===0,honba:G.round.honba,isRinshan:G.flags.isRinshan,isHaitei:G.flags.isHaitei,firstDraw:G.flags.firstDraw,firstDiscard:G.flags.firstDiscard};}
@@ -944,9 +944,9 @@ function humanKan(){
 function showWin(winnerIdx,discarderIdx,winTile,result){
   if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();playSfx('win');playCallFx(discarderIdx===-1?'tsumo':'hu');if(discarderIdx===0)setTimeout(()=>playCallFx('bangchong'),950);G.phase='roundEnd';
   const pre=G.players.map(p=>p.score);const myPre=G.players[0].score;
-  const winner=G.players[winnerIdx];const winPre=winner.score;const tai=Math.max(result.total,1);const isDW=winner.seatWind===0;const bet=curBet();const U=Math.round(bet/5);
-  if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?tai*U*2:tai*U;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
-  else{const isDPay=G.players[discarderIdx].seatWind===0;const mult=(isDW||isDPay)?2:1;const amt=tai*U*mult;G.players[discarderIdx].score-=amt;G.players[winnerIdx].score+=amt;}
+  const winner=G.players[winnerIdx];const winPre=winner.score;const tai=result.total;const payTai=tai+5;const isDW=winner.seatWind===0;const bet=curBet();const U=Math.round(bet/5);  // 표시台=役, 정산=役+5(=판돈 기본 포함)
+  if(discarderIdx===-1){for(let p=0;p<4;p++){if(p===winnerIdx)continue;const isDPay=G.players[p].seatWind===0;const amt=(isDW||isDPay)?payTai*U*2:payTai*U;G.players[p].score-=amt;G.players[winnerIdx].score+=amt;}}
+  else{const isDPay=G.players[discarderIdx].seatWind===0;const mult=(isDW||isDPay)?2:1;const amt=payTai*U*mult;G.players[discarderIdx].score-=amt;G.players[winnerIdx].score+=amt;}
   const myDelta=G.players[0].score-myPre;const winGain=G.players[winnerIdx].score-winPre;
   if(typeof SharedWallet!=='undefined'){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
   if(winnerIdx===0&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:tai});}catch(_){}
@@ -954,7 +954,7 @@ function showWin(winnerIdx,discarderIdx,winTile,result){
   document.getElementById('result-title').textContent=winner.name+' '+t('win')+'! ('+wl+')';
   let calc;
   if(discarderIdx===-1){calc=t('tsumoAllPay')+' · '+winGain.toLocaleString()+'G';}
-  else{const m=(isDW||G.players[discarderIdx].seatWind===0)?2:1;calc=t('ronWin')+' · <b style="color:var(--red)">'+G.players[discarderIdx].name+' '+t('dealInTag')+'</b><br>'+tai+'台 × '+U.toLocaleString()+'G'+(m===2?' '+t('dealerX2'):'')+' = '+winGain.toLocaleString()+'G';}
+  else{const m=(isDW||G.players[discarderIdx].seatWind===0)?2:1;calc=t('ronWin')+' · <b style="color:var(--red)">'+G.players[discarderIdx].name+' '+t('dealInTag')+'</b><br>'+t('betLabel')+' '+bet.toLocaleString()+' + '+tai+'台×'+U.toLocaleString()+(m===2?' '+t('dealerX2'):'')+' = '+winGain.toLocaleString()+'G';}
   const gc=myDelta>=0?'var(--green)':'var(--red)';const gainStr=(myDelta>=0?'+':'')+myDelta.toLocaleString()+'G';
   const breakdown=G.players.map((p,i)=>{const d=p.score-pre[i];const col=d>0?'var(--green)':d<0?'var(--red)':'var(--muted)';const tag=(i===winnerIdx)?' 🏆':(i===discarderIdx?' <span style="color:var(--red)">'+t('dealInTag')+'</span>':'');return p.name+tag+': <b style="color:'+col+'">'+(d>0?'+':'')+d.toLocaleString()+'G</b> <span style="color:#64748b;font-size:.72rem">('+t('balance')+' '+p.score.toLocaleString()+')</span>';}).join('<br>');
   document.getElementById('result-detail').innerHTML=
