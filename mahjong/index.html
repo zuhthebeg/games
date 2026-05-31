@@ -1206,6 +1206,7 @@ function mpClaimTiles(o,tile,mv){
   return[tile];
 }
 function applyServerView(gs,mv){
+  if(MP._replaying&&gs&&gs.stepGen){return;} // 재생 중엔 외부 전체상태 갱신 무시(mpSend응답·SSE 동시도착 시 최종상태 미리 노출 방지). 스텝 스냅샷은 stepGen 없어 통과
   // 여러 턴이 몰려온 경우: 서버 스텝열을 한 수씩 재생(옵저버 포함). 이미 본 stepGen은 스킵
   if(gs&&gs.stepGen&&gs.stepGen!==MP._lastStepGen&&Array.isArray(gs.lastSteps)&&gs.lastSteps.length>1&&!MP._replaying){
     MP._lastStepGen=gs.stepGen;mpReplay(gs.lastSteps,mv);return;
