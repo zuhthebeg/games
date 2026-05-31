@@ -1188,9 +1188,9 @@ function mpReplay(steps,myView){
     i++;
     if(i>=steps.length){MP._replaying=false;_replayTO=null;return;}
     applyServerView(steps[i], i===steps.length-1?myView:interim);
-    _replayTO=setTimeout(step,750);
+    _replayTO=setTimeout(step,2000);
   };
-  if(steps.length>1)_replayTO=setTimeout(step,750); else MP._replaying=false;
+  if(steps.length>1)_replayTO=setTimeout(step,2000); else MP._replaying=false;
 }
 async function mpSend(action){
   if(!MP.client)return;
