@@ -57,6 +57,8 @@ tr.kr td{background:rgba(225,29,72,.12);}
 #calc-out{margin-top:12px;padding:12px;border-radius:10px;background:var(--panel2);text-align:center;}
 #calc-out .pts{font-size:1.6rem;font-weight:900;color:var(--gold);}
 #calc-out .verdict{font-weight:800;margin-top:4px;}
+.ox{padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:800;cursor:pointer;font-size:.95rem;flex:1;}
+.ox:active{transform:scale(.97);}
 .opp{padding:10px 0;border-bottom:1px solid var(--line);}
 .opp:last-child{border-bottom:none;}
 .opp h3{margin:0 0 3px;font-size:.98rem;}
@@ -121,6 +123,23 @@ footer a{color:var(--muted);}
     <h2>ℹ️ 대회 방식</h2>
     <p style="margin:0;font-size:.86rem">사상 첫 <b>48개국</b> 본선. <b>12개 조 × 4팀</b> 조별리그 후 <b>32강 토너먼트</b>(32→16→8→4→결승). 한국은 <b>A조</b>에서 상위 2위 또는 3위(상위 8) 안에 들면 32강 진출.</p>
     <p class="note">개최: 미국·캐나다·멕시코 / 기간: 2026.6.11 ~ 7.19 / 감독: 홍명보 · 주장: 손흥민</p>
+  </div>
+
+  <div class="card" id="quiz-card">
+    <h2>🎮 진출 OX 퀴즈</h2>
+    <p style="margin:0 0 4px;font-size:.86rem">무작위 A조 최종 결과! <b>한국이 32강(16강)에 갈지</b> 맞혀보세요.</p>
+    <p style="margin:0 0 10px;color:var(--muted);font-size:.8rem">규칙: 조 1·2위 진출 / 3위는 승점 5 이상이면 진출(와일드카드 단순화).</p>
+    <div id="quiz-kr"></div>
+    <div class="seg" id="quiz-ox" style="margin:12px 0">
+      <button class="ox" data-a="1">⭕ 진출</button>
+      <button class="ox" data-a="0">❌ 탈락</button>
+    </div>
+    <div id="quiz-reveal" style="display:none">
+      <table id="quiz-table"><thead><tr><th class="team" style="text-align:left">팀</th><th>승점</th><th>득실</th></tr></thead><tbody></tbody></table>
+      <div id="quiz-verdict" style="text-align:center;font-weight:800;margin:10px 0"></div>
+      <button id="quiz-next" class="ox" style="width:100%">다음 문제 →</button>
+    </div>
+    <div id="quiz-score" class="note" style="text-align:center"></div>
   </div>
 
   <footer>
@@ -201,6 +220,43 @@ function updateCalc(){
  out.querySelector('.pts').textContent=pts+'점';
  const vd=out.querySelector('.verdict');vd.textContent=v+' · '+w+'승';vd.style.color=c;
 }
+// ── 진출 OX 퀴즈 미니게임 ──
+const QT=[{n:'대한민국',f:'🇰🇷'},{n:'멕시코',f:'🇲🇽'},{n:'체코',f:'🇨🇿'},{n:'남아공',f:'🇿🇦'}];
+const QPAIRS=[[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
+let qScore=0,qStreak=0,qScn=null,qAnswered=false;
+function genScn(){
+ const t=QT.map(x=>({n:x.n,f:x.f,pts:0,gf:0,ga:0,kr3:[]}));
+ QPAIRS.forEach(([a,b])=>{const ga=Math.floor(Math.random()*4),gb=Math.floor(Math.random()*4);
+  t[a].gf+=ga;t[a].ga+=gb;t[b].gf+=gb;t[b].ga+=ga;
+  if(ga>gb)t[a].pts+=3;else if(gb>ga)t[b].pts+=3;else{t[a].pts++;t[b].pts++;}
+  if(a===0)t[0].kr3.push({opp:t[b],f:ga,ag:gb});
+  if(b===0)t[0].kr3.push({opp:t[a],f:gb,ag:ga});});
+ const ranked=t.map((x,i)=>({...x,gd:x.gf-x.ga,i})).sort((p,q)=>q.pts-p.pts||q.gd-p.gd||q.gf-p.gf||Math.random()-0.5);
+ const krRank=ranked.findIndex(x=>x.i===0)+1;const kr=ranked.find(x=>x.i===0);
+ const advance=krRank<=2||(krRank===3&&kr.pts>=5);
+ return {t,ranked,krRank,kr,advance};
+}
+function renderQuiz(){
+ qScn=genScn();qAnswered=false;const kr=qScn.t[0];
+ document.getElementById('quiz-kr').innerHTML='<div style="font-size:.9rem;line-height:1.9">'+kr.kr3.map(m=>'🇰🇷 한국 <b>'+m.f+' : '+m.ag+'</b> '+m.opp.f+' '+m.opp.n).join('<br>')+'</div>';
+ document.getElementById('quiz-reveal').style.display='none';
+ document.getElementById('quiz-ox').style.display='flex';
+ updateQScore();
+}
+function answerQuiz(a){
+ if(qAnswered)return;qAnswered=true;
+ const correct=((a===1)===qScn.advance);
+ if(correct){qScore++;qStreak++;}else qStreak=0;
+ document.getElementById('quiz-ox').style.display='none';
+ document.querySelector('#quiz-table tbody').innerHTML=qScn.ranked.map((x,r)=>'<tr'+(x.i===0?' class="kr"':'')+'><td class="team">'+(r+1)+'. '+x.f+' '+x.n+'</td><td>'+x.pts+'</td><td>'+(x.gd>0?'+':'')+x.gd+'</td></tr>').join('');
+ document.getElementById('quiz-verdict').innerHTML=(correct?'<span style="color:var(--green)">정답! ⭕</span>':'<span style="color:var(--accent)">땡! ❌</span>')+'<br>한국 '+qScn.krRank+'위 · '+qScn.kr.pts+'점 → '+(qScn.advance?'<b style="color:var(--green)">진출</b>':'<b style="color:var(--accent)">탈락</b>');
+ document.getElementById('quiz-reveal').style.display='block';
+ updateQScore();
+}
+function updateQScore(){const e=document.getElementById('quiz-score');if(e)e.textContent='점수 '+qScore+'  ·  연승 '+qStreak;}
+document.getElementById('quiz-ox').querySelectorAll('.ox').forEach(b=>b.onclick=()=>answerQuiz(+b.dataset.a));
+document.getElementById('quiz-next').onclick=renderQuiz;
+renderQuiz();
 // AdSense 슬롯 활성화
 try{(adsbygoogle=window.adsbygoogle||[]).push({});(adsbygoogle=window.adsbygoogle||[]).push({});}catch(e){}
 </script>
