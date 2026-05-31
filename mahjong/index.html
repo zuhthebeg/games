@@ -742,7 +742,7 @@ function makeState(sc,dealer,windIdx,honba){
 
 function dealAndStart(state){
   state.wall=shuffle(buildWall());const dealer=state.round.dealer;
-  for(let p=0;p<4;p++){state.players[p].seatWind=(p-dealer+4)%4;state.players[p].isDealer=(p===dealer);state.players[p].hand=[];state.players[p].melds=[];state.players[p].flowers=[];}
+  for(let p=0;p<4;p++){state.players[p].seatWind=(p-dealer+4)%4;state.players[p].isDealer=(p===dealer);state.players[p].hand=[];state.players[p].melds=[];state.players[p].flowers=[];state.players[p]._tpDone=false;}
   for(let p=0;p<4;p++){const n=(p===dealer)?17:16;state.players[p].hand=state.wall.splice(0,n);}
   for(let p=0;p<4;p++)processFlowers(state,p);
   for(let p=0;p<4;p++)state.players[p].hand=sortHand(state.players[p].hand);
@@ -760,7 +760,7 @@ function applyAction(action){
   if(action.type==='discard'){
     const i=player.hand.indexOf(action.tile);if(i<0){showToast(t('noTile'));return;}
     player.hand.splice(i,1);G.discards[pidx].push(action.tile);G.flags.firstDiscard=false;G.flags.firstDraw=false;G.lastDraw=null;playSfx('discard');playTileVoice(action.tile,pidx);
-    {const tp=isTenpai(player.hand,player.melds);if(tp&&!player._tp){showToast(player.name+' '+t('tenpai'));playCallFx('tenpai');}player._tp=tp;}
+    {if(isTenpai(player.hand,player.melds)&&!player._tpDone){player._tpDone=true;showToast(player.name+' '+t('tenpai'));playCallFx('tenpai');}}  // 판당 1회만(먹고 다시 버려도 재알림 X)
     G.phase='claim';G.claimInfo={tile:action.tile,discarder:pidx};render();startClaim(action.tile,pidx);return;
   }
   if(action.type==='draw'){
