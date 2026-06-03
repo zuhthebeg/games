@@ -37,9 +37,11 @@ img{display:block}
 /* opponent */
 .opp{padding:6px 10px;display:flex;align-items:center;gap:8px;font-size:.76rem}
 .opp .who{font-weight:700} .opp .who.turn{color:var(--gold)}
-.captured{display:flex;flex-wrap:wrap;gap:1px;flex:1}
-.captured .grp{display:flex;align-items:center;gap:1px;margin-right:5px}
-.captured img{width:26px;border-radius:2px}
+.captured{display:flex;flex-direction:column;gap:2px;flex:1}
+.captured .grp{display:flex;align-items:center}
+.captured .grp img{width:23px;border-radius:2px;margin-left:-13px;box-shadow:-1px 0 2px rgba(0,0,0,.5)}
+.captured .grp img:first-of-type{margin-left:0}
+
 .captured .lab{font-size:.6rem;color:var(--muted);margin-right:1px}
 /* table */
 .field{flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:4px}
@@ -55,8 +57,11 @@ img{display:block}
 .mine{padding:6px 8px 10px;background:linear-gradient(transparent,rgba(0,0,0,.4))}
 .myscore{text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:4px}
 .myscore b{color:var(--gold);font-size:1rem}
-#myCaptured{display:flex;flex-wrap:wrap;gap:1px;justify-content:center;margin-bottom:6px;min-height:20px}
-#myCaptured img{width:22px;border-radius:2px}
+#myCaptured{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:6px;min-height:20px}
+#myCaptured .grp{display:flex;align-items:center}
+#myCaptured .grp .lab{font-size:.6rem;color:var(--muted);margin-right:2px;min-width:14px}
+#myCaptured .grp img{width:27px;border-radius:2px;margin-left:-15px;box-shadow:-1px 0 2px rgba(0,0,0,.5)}
+#myCaptured .grp img:first-of-type{margin-left:0}
 #myHand{display:flex;gap:3px;justify-content:center;flex-wrap:wrap}
 #myHand img{width:var(--cw);border-radius:5px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.4);transition:transform .12s}
 #myHand img.sel{transform:translateY(-10px);box-shadow:0 0 0 3px var(--gold)}
@@ -152,7 +157,7 @@ img{display:block}
    • <b>피</b>: 10장 1점+ (쌍피=2장)<br>
    • 점수가 <b>7점</b> 이상 나면 (맞고 기준) <b>고</b>(계속·배수↑) 또는 <b>스톱</b>(끝).<br>
    • <b>피박</b>(상대 피 적음)·<b>광박</b>(상대 광 0) 시 2배.<br>
-   <span style="color:var(--muted)">v1: 뻑·따닥·쪽·쓸·폭탄·흔들기 등 특수룰은 곧 추가.</span>
+   • <b>따닥/쪽/쓸</b> 시 상대 <b>피 1장</b> 뺏어옴.<br><span style="color:var(--muted)">뻑·폭탄·흔들기는 곧 추가.</span>
   </div>
   <button class="close" onclick="hide('howto')">닫기</button>
 </div></div>
@@ -208,23 +213,31 @@ function playFlow(p, card, fromHand){
   return captured;
 }
 function removeFromTable(c){ const i=G.table.findIndex(x=>x.id===c.id); if(i>=0)G.table.splice(i,1); }
+function stealPi(from,to){ const src=G.players[from].cap; let j=src.findIndex(c=>c.role==='pi'&&!c.ssangpi); if(j<0)j=src.findIndex(c=>c.role==='pi'); if(j<0)return null; const c=src.splice(j,1)[0]; G.players[to].cap.push(c); return c; }
 
 async function takeTurn(p, handCard){
   const pl=G.players[p];
   sound('play');
-  let cap = playFlow(p, handCard, true);
-  const capturedFromHand = cap.length>0;
+  const handCap = playFlow(p, handCard, true);
   renderAll();
   await sleep(520);
+  let flipCap=[], flipCard=null;
   // flip from deck
   if(G.deck.length){
-    const f=G.deck.shift(); G.flip=f; renderFlip(f); sound('flip'); await sleep(700);
-    const fc=playFlow(p, f, false); cap=cap.concat(fc); G.flip=null;
+    flipCard=G.deck.shift(); G.flip=flipCard; renderFlip(flipCard); sound('flip'); await sleep(700);
+    flipCap = playFlow(p, flipCard, false); G.flip=null;
   }
+  let cap = handCap.concat(flipCap);
   pl.cap.push(...cap);
-  if(cap.length){ sound('take'); } 
+  // 특수룰 (피 뺏기)
+  let steals=0; const stags=[];
+  if(handCap.length && flipCap.length){ steals++; stags.push('따닥'); }
+  if(handCap.length===0 && flipCard && flipCap.length && flipCard.m===handCard.m){ steals++; stags.push('쪽'); }
+  if(G.table.length===0 && cap.length){ steals++; stags.push('쓸'); }
+  for(let i=0;i<steals;i++) stealPi(1-p,p);
+  if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'! 피뺏기 '+steals); sound('play'); }
   renderAll();
-  await sleep(220);
+  await sleep(stags.length?750:220);
   // score
   const sc=score(pl.cap);
   const prev=G.lastScore[p];
@@ -341,10 +354,10 @@ function capGroup(cap){
   const g=cap.filter(c=>c.gwang),y=cap.filter(c=>c.role==='yul'),t=cap.filter(c=>c.role==='tti'),p=cap.filter(c=>c.role==='pi');
   const seg=(arr)=>arr.map(c=>`<img src="${c.file}">`).join('');
   let h='';
-  if(g.length)h+=`<span class="grp"><span class="lab">광</span>${seg(g)}</span>`;
-  if(y.length)h+=`<span class="grp"><span class="lab">끗</span>${seg(y)}</span>`;
-  if(t.length)h+=`<span class="grp"><span class="lab">띠</span>${seg(t)}</span>`;
-  if(p.length)h+=`<span class="grp"><span class="lab">피</span>${seg(p)}</span>`;
+  if(g.length)h+=`<div class="grp"><span class="lab">광</span>${seg(g)}</div>`;
+  if(y.length)h+=`<div class="grp"><span class="lab">끗</span>${seg(y)}</div>`;
+  if(t.length)h+=`<div class="grp"><span class="lab">띠</span>${seg(t)}</div>`;
+  for(let i=0;i<p.length;i+=5){ h+=`<div class="grp"><span class="lab">${i===0?'피':''}</span>${seg(p.slice(i,i+5))}</div>`; }
   return h;
 }
 function renderCaptured(){
