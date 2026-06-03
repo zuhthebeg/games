@@ -51,6 +51,7 @@ img{display:block}
 .mgroup img{width:var(--cw);border-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,.5)}
 @keyframes cin{from{transform:translateY(-30px) scale(1.1);opacity:0}to{transform:none;opacity:1}}
 .mgroup img.cin{animation:cin .34s var(--ease)}
+.captured .grp img.cin,#myCaptured .grp img.cin{animation:cin .38s var(--ease)}
 .flip img{animation:flipin .3s var(--ease)}
 @keyframes flipin{from{transform:translateX(-160px) rotateY(60deg) scale(.7);opacity:.2}to{transform:none;opacity:1}}
 .deck{position:absolute;top:50%;left:14px;transform:translateY(-50%);text-align:center;color:var(--muted);font-size:.66rem}
@@ -225,6 +226,7 @@ async function takeTurn(p, handCard){
   if(!G.shakeMult)G.shakeMult=[1,1,1,1];
   { const mh={}; G.players[p].hand.forEach(c=>mh[c.m]=(mh[c.m]||0)+1); if(Object.values(mh).some(n=>n>=3)&&G.shakeMult[p]===1){G.shakeMult[p]=2; toast((p===0?'':'CPU ')+'흔들기! ×2');} }
   sound('play');
+  const playM=handCard.m; const beforeM=sameMonth(G.table,playM).length;
   const handCap = playFlow(p, handCard, true);
   renderAll();
   await sleep(540);
@@ -235,24 +237,26 @@ async function takeTurn(p, handCard){
     flipCap = playFlow(p, flipCard, false); G.flip=null;
   }
   let cap = handCap.concat(flipCap);
-  // 뻑: 낸패=뒤집은패 같은 월이고 바닥에서 먹은 게 있으면 → 못 먹고 3장 쌓임
+  const flipSame = !!(flipCard && flipCard.m===playM);
   let ppuk=false;
-  if(flipCard && handCard.m===flipCard.m && handCap.length>=2){
+  if(flipSame && beforeM===1){
+    // 뻑: 바닥1+손1 먹으려는데 뒤집기도 같은 월 → 3장 쌓임, 먹기 무효
     ppuk=true; const inv=[...handCap]; if(flipCap.length) inv.push(...flipCap); else { removeFromTable(flipCard); inv.push(flipCard); }
     inv.forEach(c=>{ if(!G.table.find(x=>x.id===c.id)) G.table.push(c); if(G._newIds)G._newIds.add(c.id); });
     cap=[]; toast((p===0?'':'CPU ')+'뻑!');
   }
   pl.cap.push(...cap);
-  let steals=0; const stags=[];
+  let steals=0; const stags=[]; const stolen=[];
   if(!ppuk){
-    if(handCap.length && flipCap.length){ steals++; stags.push('따닥'); }
-    if(handCap.length===0 && flipCard && flipCap.length && flipCard.m===handCard.m){ steals++; stags.push('쪽'); }
+    if(flipSame && beforeM===2){ steals++; stags.push('따닥'); }      // 바닥2+손1+뒤집기1 = 4장 싹쓸이
+    if(flipSame && beforeM===0 && flipCap.length){ steals++; stags.push('쪽'); }
     if(G.table.length===0 && cap.length){ steals++; stags.push('쓸'); }
-    for(let i=0;i<steals;i++) stealPi(1-p,p);
+    for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp.id); }
     if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'! 피뺏기 '+steals); sound('play'); }
   }
+  G._newCapIds=new Set([...cap.map(c=>c.id),...stolen]);
   renderAll();
-  await sleep((stags.length||ppuk)?800:220);
+  await sleep((stags.length||ppuk)?900:240);
   // score
   const sc=score(pl.cap);
   const prev=G.lastScore[p];
@@ -374,7 +378,7 @@ let lastTap=-1;
 function selectCard(i){ if(G.turn!==0||G.over)return; if(G.sel===i){ playSelected(); return;} G.sel=i; renderMyHand(); renderTable(); }
 function capGroup(cap){
   const g=cap.filter(c=>c.gwang),y=cap.filter(c=>c.role==='yul'),t=cap.filter(c=>c.role==='tti'),p=cap.filter(c=>c.role==='pi');
-  const seg=(arr)=>arr.map(c=>`<img src="${c.file}">`).join('');
+  const seg=(arr)=>arr.map(c=>`<img src="${c.file}" class="${(G._newCapIds&&G._newCapIds.has(c.id))?'cin':''}">`).join('');
   let h='';
   if(g.length)h+=`<div class="grp"><span class="lab">광</span>${seg(g)}</div>`;
   if(y.length)h+=`<div class="grp"><span class="lab">끗</span>${seg(y)}</div>`;
