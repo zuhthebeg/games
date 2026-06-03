@@ -23,7 +23,7 @@ body{background:radial-gradient(120% 90% at 50% 0%,var(--felt),var(--felt2));col
   font-family:"Noto Sans KR",system-ui,sans-serif;overflow:hidden;user-select:none}
 [data-en]{display:none}
 body.ja [data-ko]{display:none}
-body.ja [data-en]{display:inline}
+body.ja [data-en]{display:revert}
 
 /* menu */
 #menu{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
@@ -108,8 +108,8 @@ body.ja [data-en]{display:inline}
   <h1>🀄 <span data-ko>일본 리치마작</span><span data-en>立直麻雀</span></h1>
   <p data-ko>13장 · 동풍전 · CPU 3명<br>리치 · 도라 · 役 점수계산</p>
   <p data-en>13 tiles · East round · 3 CPUs<br>Riichi · Dora · Yaku scoring</p>
-  <button class="big-btn" onclick="newGame()" data-ko>게임 시작</button><button class="big-btn" onclick="newGame()" data-en style="display:none">Start</button>
-  <button class="big-btn sec" onclick="show('howto')" data-ko>플레이 방법</button><button class="big-btn sec" onclick="show('howto')" data-en style="display:none">How to play</button>
+  <button class="big-btn" onclick="newGame()" data-ko>게임 시작</button><button class="big-btn" onclick="newGame()" data-en>Start</button>
+  <button class="big-btn sec" onclick="show('howto')" data-ko>플레이 방법</button><button class="big-btn sec" onclick="show('howto')" data-en>How to play</button>
   <button class="big-btn sec" onclick="show('settings')">⚙ <span data-ko>설정</span><span data-en>Settings</span></button>
 </div>
 
@@ -121,7 +121,7 @@ body.ja [data-en]{display:inline}
     <span class="b dora-ind"><span data-ko>도라</span><span data-en>Dora</span> <span id="t-dora"></span></span>
     <span class="sp"></span>
     <button onclick="show('settings')">⚙</button>
-    <button onclick="quitToMenu()" data-ko>나가기</button><button onclick="quitToMenu()" data-en style="display:none">Exit</button>
+    <button onclick="quitToMenu()" data-ko>나가기</button><button onclick="quitToMenu()" data-en>Exit</button>
   </div>
   <div class="table">
     <div class="opp top" id="opp2"></div>
@@ -145,7 +145,7 @@ body.ja [data-en]{display:inline}
   <div id="r-yaku"></div>
   <div class="score-big" id="r-score"></div>
   <div id="r-detail" style="color:var(--muted);font-size:.82rem;text-align:center"></div>
-  <button class="close" onclick="nextHand()" data-ko>다음 국</button><button class="close" onclick="nextHand()" data-en style="display:none">Next</button>
+  <button class="close" onclick="nextHand()" data-ko>다음 국</button><button class="close" onclick="nextHand()" data-en>Next</button>
 </div></div>
 
 <!-- settings -->
@@ -156,14 +156,14 @@ body.ja [data-en]{display:inline}
   <div class="row"><span data-ko>🔊 소리</span><span data-en>🔊 Sound</span>
     <div class="seg"><button data-snd="1" onclick="setSnd(1)">ON</button><button data-snd="0" onclick="setSnd(0)">OFF</button></div></div>
   <div class="row"><span data-ko>🀅 적도라</span><span data-en>🀅 Red fives</span><span style="color:var(--muted);font-size:.82rem" data-ko>켜짐</span><span data-en>On</span></div>
-  <button class="close" onclick="hide('settings')" data-ko>닫기</button><button class="close" onclick="hide('settings')" data-en style="display:none">Close</button>
+  <button class="close" onclick="hide('settings')" data-ko>닫기</button><button class="close" onclick="hide('settings')" data-en>Close</button>
 </div></div>
 
 <!-- howto -->
 <div class="ov" id="howto"><div class="card">
-  <h2 data-ko>플레이 방법</h2><h2 data-en style="display:none">How to play</h2>
+  <h2 data-ko>플레이 방법</h2><h2 data-en>How to play</h2>
   <div style="font-size:.9rem;line-height:1.7;color:var(--text)" id="howtoBody"></div>
-  <button class="close" onclick="hide('howto')" data-ko>닫기</button><button class="close" onclick="hide('howto')" data-en style="display:none">Close</button>
+  <button class="close" onclick="hide('howto')" data-ko>닫기</button><button class="close" onclick="hide('howto')" data-en>Close</button>
 </div></div>
 
 <script>
