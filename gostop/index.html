@@ -13,7 +13,7 @@
   --bg:#15120e; --felt:#2a5a3a; --felt2:#1f4a2f; --panel:#1c1a14; --panel2:#262219;
   --text:#f2ede0; --muted:#a89e86; --line:rgba(242,237,224,.14);
   --gold:#e6b84d; --red:#e15c52; --blue:#5aa9e6; --green:#5fcf86;
-  --ease:cubic-bezier(.22,.61,.36,1); --cw:46px; --wallet-bar-h:calc(52px + env(safe-area-inset-top));
+  --ease:cubic-bezier(.22,.61,.36,1); --tz:1; --cw:calc(46px * var(--tz)); --wallet-bar-h:calc(52px + env(safe-area-inset-top));
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -39,7 +39,7 @@ img{display:block}
 .opp .who{font-weight:700} .opp .who.turn{color:var(--gold)}
 .captured{display:flex;flex-direction:column;gap:2px;flex:1}
 .captured .grp{display:flex;align-items:center}
-.captured .grp img{width:23px;border-radius:2px;margin-left:-13px;box-shadow:-1px 0 2px rgba(0,0,0,.5)}
+.captured .grp img{width:calc(23px * var(--tz));border-radius:2px;margin-left:-13px;box-shadow:-1px 0 2px rgba(0,0,0,.5)}
 .captured .grp img:first-of-type{margin-left:0}
 
 .captured .lab{font-size:.6rem;color:var(--muted);margin-right:1px}
@@ -67,7 +67,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 #myCaptured{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:6px;min-height:20px}
 #myCaptured .grp{display:flex;align-items:center}
 #myCaptured .grp .lab{font-size:.6rem;color:var(--muted);margin-right:2px;min-width:14px}
-#myCaptured .grp img{width:27px;border-radius:2px;margin-left:-15px;box-shadow:-1px 0 2px rgba(0,0,0,.5)}
+#myCaptured .grp img{width:calc(27px * var(--tz));border-radius:2px;margin-left:-15px;box-shadow:-1px 0 2px rgba(0,0,0,.5)}
 #myCaptured .grp img:first-of-type{margin-left:0}
 #myHand{display:flex;gap:3px;justify-content:center;flex-wrap:wrap}
 .hcard{position:relative;cursor:pointer;transition:transform .12s}
@@ -131,6 +131,8 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
     <span class="b">더미 <b id="t-deck">20</b></span>
     <span class="b">나 <b id="t-myscore">0</b>점</span>
     <span class="sp"></span>
+    <button onclick="zoomCards(-1)">🔍−</button>
+    <button onclick="zoomCards(1)">🔍+</button>
     <button onclick="show('settings')">⚙</button>
     <button onclick="quitMenu()">나가기</button>
   </div>
@@ -244,6 +246,7 @@ function sameMonth(arr,m){ return arr.filter(c=>c.m===m); }
 const ROLE_ORD={gwang:0,yul:1,tti:2,pi:3};
 function sortHand(p){ G.players[p].hand.sort((a,b)=> (a.m-b.m) || ((ROLE_ORD[a.role]??9)-(ROLE_ORD[b.role]??9)) ); }
 function tchar(c){ return c.gwang?'광':c.role==='yul'?'열':c.role==='tti'?'띠':(c.ssangpi?'쌍':'피'); }
+function cardKey(c){ return c.role+(c.ssangpi?'S':'')+(c.godori?'G':'')+(c.tti||''); }
 function cardValue(c){ return c.gwang?4:c.ssangpi?3:c.role==='yul'?2:c.role==='tti'?2:1; }
 function playFlow(p, card, fromHand, pick){
   // remove from hand if fromHand
@@ -332,8 +335,9 @@ async function takeTurn(p, handCard, opts){
     else { captured.push(handCards[0], preM[0]); }
   } else if(beforeM===2){
     if(flipSame){ captured.push(handCards[0], preM[0], preM[1], flipCard); }   // 따닥
-    else { let take=preM.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0];
-           if(p===0){ take=await askPick(preM); }
+    else { let take; const same=cardKey(preM[0])===cardKey(preM[1]);
+           if(p===0 && !same){ take=await askPick(preM); }                      // 가치 다를 때만 선택
+           else { take=preM.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]; }
            captured.push(handCards[0], take); }
   } else {                                                       // 뻑쓸이/자뻑
     captured.push(handCards[0], ...preM);
@@ -549,6 +553,9 @@ function quitMenu(){ ['gostop','result','settings','bombAsk','pickAsk'].forEach(
 function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',1200); }
 function setSnd(s){ SND=!!s; localStorage.setItem('gostop_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
 function setBet(n){ BET=n; localStorage.setItem('gostop_bet',n); document.querySelectorAll('[data-bet]').forEach(b=>b.classList.toggle('on',+b.dataset.bet===n)); }
+let TZ=+(localStorage.getItem('gostop_zoom')||1);
+function applyZoom(){ TZ=Math.max(.8,Math.min(1.7,TZ||1)); document.documentElement.style.setProperty('--tz',TZ); }
+function zoomCards(d){ TZ=Math.round((TZ+d*0.12)*100)/100; applyZoom(); localStorage.setItem('gostop_zoom',TZ); toast('패 크기 '+Math.round(TZ*100)+'%'); }
 function sound(n){ if(!SND)return; const map={take:'claim',play:'tile',flip:'tile',win:'win',lose:'tile'}; const fn=map[n]||'tile'; try{const a=new Audio('sounds/'+fn+'.mp3');a.volume=.4;a.play().catch(()=>{});}catch(e){} }
 let AC=null;
 function boom(){
@@ -574,7 +581,7 @@ function bombFx(prefix){
   const tt=$('toast'); tt.textContent=prefix+'💥 콰쾅! 폭탄!'; tt.classList.add('dbl'); tt.style.display='block';
   setTimeout(()=>{ tt.style.display='none'; tt.classList.remove('dbl'); },1300);
 }
-setSnd(SND?1:0); setBet(BET);
+setSnd(SND?1:0); setBet(BET); applyZoom();
 </script>
 </body>
 </html>
