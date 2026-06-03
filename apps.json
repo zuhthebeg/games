@@ -43,6 +43,20 @@
     "category": "classic"
   },
   {
+    "title": "맞고 (화투)",
+    "icon": "https://game.cocy.io/gostop/icon.svg",
+    "url": "https://game.cocy.io/gostop/",
+    "desc": "화투 2인 맞고 - 광·띠·끗·피·고도리·고스톱·피박, CPU 대전",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko"
+    ],
+    "category": "classic"
+  },
+  {
     "title": "블랙잭",
     "icon": "https://game.cocy.io/blackjack/icon.svg",
     "url": "https://game.cocy.io/blackjack/",

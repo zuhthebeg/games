@@ -1,0 +1,1 @@
+{ "name":"맞고 · 화투 고스톱","short_name":"맞고","description":"화투 2인 맞고. CPU 대전, 광·띠·끗·피·고도리, 고/스톱·피박.","id":"/gostop/","start_url":"/gostop/","scope":"/gostop/","display":"standalone","orientation":"any","background_color":"#15120e","theme_color":"#2a5a3a","lang":"ko","categories":["games"],"icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}] }
