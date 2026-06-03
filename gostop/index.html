@@ -313,7 +313,7 @@ async function takeTurn(p, handCard, opts){
     if(p===0){ pendingBomb=bomb; return offerGoStop(sc); }
     else {
       const goAgain = sc.total<5 && Math.random()<0.6;
-      if(goAgain){ G.go++; G.goBy=1; toast('CPU 고!'); await sleep(700); return (bomb?keepTurn(1):advance()); }
+      if(goAgain){ G.go++; G.goBy=1; toast('CPU '+G.go+'고!'); await sleep(700); return (bomb?keepTurn(1):advance()); }
       else return settle(1, sc);
     }
   }
@@ -399,12 +399,12 @@ function offerGoStop(sc){
   pendingScore=sc;
   $('gs-title').textContent=sc.total+'점!';
   $('gs-detail').innerHTML=sc.parts.map(p=>`<div>${p[0]} <b>+${p[1]}</b></div>`).join('');
-  $('gs-pt').textContent=(G.go>0?`현재 ${G.go}고`:'');
+  $('gs-pt').textContent=(G.go>0?`현재 ${G.go}고 · 고 누르면 ${G.go+1}고`:'고를 부르면 1고');
   show('gostop');
 }
 function chooseGo(go){
   hide('gostop');
-  if(go){ G.go++; G.goBy=0; toast('고!'); if(pendingBomb){ pendingBomb=false; setTimeout(()=>keepTurn(0),500); } else setTimeout(advance,500); }
+  if(go){ G.go++; G.goBy=0; toast(G.go+'고!'); if(pendingBomb){ pendingBomb=false; setTimeout(()=>keepTurn(0),500); } else setTimeout(advance,500); }
   else { settle(0,pendingScore); }
 }
 function settle(winner,sc,opts){
@@ -423,7 +423,7 @@ function settle(winner,sc,opts){
   }
   const who=winner===0?'나':'CPU';
   const gold=pt*10000*BET;
-  if(window.SharedWallet&&SharedWallet._initialized){ try{ winner===0?SharedWallet.addGold(gold):SharedWallet.removeGold(gold); }catch(e){} }
+  if(typeof SharedWallet!=='undefined' && SharedWallet._initialized){ try{ winner===0?SharedWallet.addGold(gold):SharedWallet.removeGold(gold); }catch(e){} }
   $('r-title').textContent=(winner===0?'🎉 ':'')+who+' 승!';
   $('r-detail').innerHTML = (opts.ppuk3?'<div>3뻑 즉시 승</div>':sc.parts.map(p=>`<div>${p[0]} <b>+${p[1]}</b></div>`).join('')) + (tags.length?`<div style="color:var(--gold);margin-top:6px">${tags.join(' · ')}</div>`:'');
   $('r-pt').innerHTML=pt+'점 <span style="font-size:1.05rem;color:'+(winner===0?'var(--green)':'var(--red)')+'">'+(winner===0?'+':'−')+gold.toLocaleString()+'G</span>';
