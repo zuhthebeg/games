@@ -255,7 +255,7 @@ function nextDora(ind){ // dora = tile after indicator
 let G=null; // game state
 function newGame(){
   $('menu').style.display='none'; $('board').style.display='flex';
-  G={ roundWind:27, hand:0, dealer:0, honba:0, pts:[25000,25000,25000,25000], aka:AKA, riichiSticks:0 };
+  G={ roundWind:27, hand:0, dealer:0, honba:0, pts:[25000,25000,25000,25000], aka:AKA, riichiSticks:0, kyoku:1 };
   startHand(); applyBgm();
 }
 function startHand(){
@@ -555,18 +555,34 @@ function evalYaku(hand14, tsumo, p, winTile){
 }
 function hasYaku(hand14,tsumo,p,winTile){ const r=evalYaku(hand14,tsumo,p,winTile); if(r.yakuman>0)return true; const nd=r.yaku.filter(y=>!/도라|ドラ/.test(y.n)).reduce((a,y)=>a+y.h,0); return nd>0; }
 
-function calcFu(hand14,tsumo,p,decBased){
-  // simplified fu: chiitoi=25; else base20 +menzen ron10 +tsumo2 + triplets/pair/wait approx
+function calcFu(hand14,tsumo,p,winTile){
+  const pl=G.players[p]; const melds=pl.melds||[];
+  const menzen=melds.every(m=>m.type==='ankan');
   const c=counts(hand14);
-  if(isChiitoi(c))return 25;
-  let fu=20; const pl=G.players[p]; const closed=pl.melds.length===0;
-  if(!tsumo && closed)fu+=10;
+  if(menzen && isChiitoi(c)) return 25;
+  const roundW=G.roundWind, seatW=27+pl.seat;
+  const meldFu=melds.reduce((a,m)=>{ const t=m.tiles[0]; const term=isHonor(t)||numOf(t)===1||numOf(t)===9;
+    if(m.type==='pon')return a+(term?4:2); if(m.type==='minkan')return a+(term?16:8); if(m.type==='ankan')return a+(term?32:16); return a; },0);
+  const decs=decompose(c); let bestFu=20+meldFu, pinfu=false;
+  for(const dec of decs){
+    let fu=20+meldFu;
+    if((dec.pair>=31)||dec.pair===roundW||dec.pair===seatW) fu+=2;
+    let allSeq=(melds.every(m=>m.type==='chi'));
+    for(const st of dec.sets){ if(st.type==='seq')continue; allSeq=false;
+      const term=isHonor(st.t)||numOf(st.t)===1||numOf(st.t)===9;
+      let concealed=true; if(!tsumo && st.t===winTile && c[winTile]>=3)concealed=false;  // 론으로 완성된 커쯔
+      fu+= concealed?(term?8:4):(term?4:2);
+    }
+    let waitFu=0; if(winTile===dec.pair)waitFu=2; fu+=waitFu;
+    if(menzen && allSeq && !((dec.pair>=31)||dec.pair===roundW||dec.pair===seatW) && waitFu===0)pinfu=true;
+    if(fu>bestFu)bestFu=fu;
+  }
+  if(pinfu) return tsumo?20:30;
+  let fu=bestFu;
+  if(!tsumo && menzen)fu+=10;
   if(tsumo)fu+=2;
-  // triplets
-  for(let t=0;t<34;t++){ if(c[t]>=3){ const term=isHonor(t)||numOf(t)===1||numOf(t)===9; fu+= term?8:4; } }
-  // pair yakuhai
-  // round up to 10
-  fu=Math.ceil(fu/10)*10; if(fu<30&&!tsumo)fu=30; if(fu<20)fu=20;
+  fu=Math.ceil(fu/10)*10;
+  if(!tsumo && fu<30)fu=30; if(fu<20)fu=20;
   return fu;
 }
 function scorePoints(han,fu,dealer,tsumo){
@@ -585,13 +601,15 @@ function declareWin(p,tsumo,winTile,from){
   const hand14 = pl.hand.slice(); if(tsumo){ /* drawn already in hand */ } else { hand14.push(winTile); }
   sortHand(hand14);
   const ev=evalYaku(hand14,tsumo,p,winTile);
-  const fu=calcFu(hand14,tsumo,p);
+  const fu=calcFu(hand14,tsumo,p,winTile);
   const dealer=(p===G.dealer);
   let han=ev.yakuman>0?ev.yakuman:ev.han;
   let sc=ev.yakuman>0?scorePoints(13,fu,dealer,tsumo):scorePoints(han,fu,dealer,tsumo);
   // apply points
-  if(tsumo){ for(let q=0;q<4;q++){ if(q===p)continue; const isD=(q===G.dealer); let pay; if(dealer)pay=sc.each; else pay=isD?sc.dealer:sc.nondealer; G.pts[q]-=pay; G.pts[p]+=pay; } }
-  else { G.pts[from]-=sc.total; G.pts[p]+=sc.total; }
+  const hb=G.honba||0;
+  if(tsumo){ for(let q=0;q<4;q++){ if(q===p)continue; const isD=(q===G.dealer); let pay=(dealer?sc.each:(isD?sc.dealer:sc.nondealer))+hb*100; G.pts[q]-=pay; G.pts[p]+=pay; } }
+  else { const tot=sc.total+hb*300; G.pts[from]-=tot; G.pts[p]+=tot; }
+  G._result={winner:p, dealerWin:(p===G.dealer), draw:false};
   if(G.riichiSticks){ G.pts[p]+=G.riichiSticks*1000; G.riichiSticks=0; }
   sound(tsumo?'tsumo':'ron'); try{navigator.vibrate&&navigator.vibrate(p===0?[40,40,80]:30);}catch(e){}
   settleGold();
@@ -608,24 +626,28 @@ function showResult(p,tsumo,hand14,winTile,ev,fu,han,sc,from){
 }
 function spawnConfetti(){ const cols=['#e9c46a','#6ad29a','#67c1e8','#ff5d73','#fff']; for(let i=0;i<70;i++){ const c=document.createElement('div'); c.className='confetti'; c.style.left=Math.random()*100+'vw'; c.style.background=cols[i%cols.length]; c.style.animation='cfall '+(1.6+Math.random()*1.4)+'s linear '+(Math.random()*0.5)+'s forwards'; document.body.appendChild(c); setTimeout(()=>c.remove(),3600); } }
 function showClaimPop(label,t){ const el=$('claimPop'); if(!el)return; el.innerHTML='<span class="lbl">'+label+'</span>'+(t!=null&&t>=0?'<img src="'+tileSvg(t)+'">':''); el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1100); }
-function drawnGame(){ // ryuukyoku: tenpai players
-  if(G.over)return; G.over=true; clearTurnTimer(); settleGold();
-  const tenpai=G.players.map((pl,i)=> waits(pl.hand.length%3===1?pl.hand:pl.hand.slice(0,pl.hand.length-1)).length>0 );
+function drawnGame(){ // ryuukyoku
+  if(G.over)return; G.over=true; clearTurnTimer();
+  const tenpai=G.players.map(pl=> waits(pl.hand.length%3===1?pl.hand:pl.hand.slice(0,pl.hand.length-1), pl.melds.length).length>0 );
+  const nT=tenpai.filter(Boolean).length;
+  if(nT>0 && nT<4){ const get=Math.floor(3000/nT), pay=Math.floor(3000/(4-nT));
+    for(let i=0;i<4;i++){ if(tenpai[i])G.pts[i]+=get; else G.pts[i]-=pay; } }
+  G._result={draw:true, dealerTenpai:tenpai[G.dealer]};
+  settleGold();
   $('r-title').textContent=T('유국 (황패)','流局');
   $('r-tiles').innerHTML='';
   $('r-yaku').innerHTML=G.players.map((pl,i)=>`<div class="yaku-row"><span>${i===0?T('나','あなた'):'CPU '+i}</span><b>${tenpai[i]?T('텐파이','聴牌'):T('노텐','不聴')}</b></div>`).join('');
-  $('r-score').textContent=T('유국','流局'); $('r-detail').textContent='';
+  $('r-score').textContent= nT>0&&nT<4 ? T('노텐벌부 정산','不聴罰符') : T('유국','流局'); $('r-detail').textContent='';
   show('result');
 }
 function nextHand(){
   hide('result');
-  const winnerWasDealer = !G.over ? false : true;
-  // rotate dealer (simple: always advance; East round 4 hands)
-  G.hand++;
-  if(G.hand>=4){ // game end after East 4
-    $('c-info').textContent=''; endGame(); return;
-  }
-  G.dealer=(G.dealer+1)%4;
+  const res=G._result||{}; let advance;
+  if(res.draw){ G.honba=(G.honba||0)+1; advance=!res.dealerTenpai; }
+  else { if(res.dealerWin){ G.honba=(G.honba||0)+1; advance=false; } else { G.honba=0; advance=true; } }
+  if(advance){ G.dealer=(G.dealer+1)%4; G.kyoku=(G.kyoku||1)+1; }
+  G._result=null;
+  if((G.kyoku||1)>4){ endGame(); return; }
   startHand();
 }
 function endGame(){
@@ -662,7 +684,7 @@ function renderTenpai(){ const el=$('tenpaiInfo'); if(!el||!G)return; const pl=G
   else { waits(pl.hand).forEach(w=>wset.add(w)); }
   el.innerHTML = wset.size ? ('<span class="lab">'+T('대기','待ち')+'</span>'+[...wset].sort((a,b)=>a-b).map(t=>`<img src="${tileSvg(t)}">`).join('')) : ''; }
 function updateTop(){
-  $('t-round').textContent=(LANG==='ja'?'東':'東')+(G.hand+1);
+  $('t-round').textContent='東'+(G.kyoku||1)+((G.honba||0)?(' '+G.honba+T('본','本')):'');
   $('c-round').textContent='東';
   $('t-wall').textContent=Math.max(0,G.wall.length-14);
   $('t-pts').textContent=G.pts[0].toLocaleString();
