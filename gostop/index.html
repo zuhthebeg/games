@@ -243,66 +243,115 @@ function playFlow(p, card, fromHand, pick){
 }
 function removeFromTable(c){ const i=G.table.findIndex(x=>x.id===c.id); if(i>=0)G.table.splice(i,1); }
 function stealPi(from,to){ const src=G.players[from].cap; let j=src.findIndex(c=>c.role==='pi'&&!c.ssangpi); if(j<0)j=src.findIndex(c=>c.role==='pi'); if(j<0)return null; const c=src.splice(j,1)[0]; G.players[to].cap.push(c); return c; }
+// 먹은 패가 바닥 위치 → 먹은 자리로 날아가는 애니메이션
+function flyToPile(cards, destEl){
+  return new Promise(resolve=>{
+    if(!cards||!cards.length){ resolve(); return; }
+    const dest=destEl.getBoundingClientRect();
+    const destX=dest.left+Math.min((dest.width||60)-20,30), destY=dest.top+6;
+    let pending=cards.length, fired=false;
+    const done=()=>{ if(!fired&&--pending<=0){ fired=true; resolve(); } };
+    cards.forEach(c=>{
+      const el=document.querySelector('#tableCards img[data-id="'+c.id+'"]');
+      const from=el?el.getBoundingClientRect():$('flipArea').getBoundingClientRect();
+      if(el) el.style.visibility='hidden';
+      const clone=document.createElement('img'); clone.src=c.file;
+      clone.style.cssText='position:fixed;left:'+from.left+'px;top:'+from.top+'px;width:'+(from.width||46)+'px;border-radius:4px;z-index:60;box-shadow:0 5px 14px rgba(0,0,0,.55);transition:transform .42s cubic-bezier(.5,0,.25,1),opacity .42s;pointer-events:none';
+      document.body.appendChild(clone);
+      const dx=destX-from.left, dy=destY-from.top;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{ clone.style.transform='translate('+dx+'px,'+dy+'px) scale(.55)'; clone.style.opacity='.4'; }));
+      setTimeout(()=>{ clone.remove(); done(); }, 440);
+    });
+    setTimeout(()=>{ if(!fired){ fired=true; resolve(); } }, 560);
+  });
+}
 
 async function takeTurn(p, handCard, opts){
   opts=opts||{};
   const pl=G.players[p];
   const bomb = opts.bombMonth!=null;
   const playM = bomb ? opts.bombMonth : handCard.m;
-  const beforeM = sameMonth(G.table,playM).length;
+  const preM = sameMonth(G.table,playM).slice();   // 내기 전 바닥의 같은 월(원본)
+  const beforeM = preM.length;
+  const handCountM = pl.hand.filter(c=>c.m===playM).length;
   if(!G.shakeMult)G.shakeMult=[1,1,1,1];
-  let handCap=[];
+  const destEl = p===0 ? $('myCaptured') : $('cpuCaptured');
+
+  // 손패 빼기
+  let handCards=[];
   if(bomb){
-    // 폭탄: 손에서 같은 월 3장 투하 → 바닥의 그 월 + 3장 다 먹기
-    const three=[]; for(let k=0;k<3;k++){ const idx=pl.hand.findIndex(c=>c.m===playM); if(idx>=0) three.push(pl.hand.splice(idx,1)[0]); }
-    const matches=sameMonth(G.table,playM); matches.forEach(removeFromTable);
-    handCap=[...three,...matches];
-    G._newIds=new Set(three.map(c=>c.id));
-    toast((p===0?'':'CPU ')+'💣 폭탄!'); sound('play');
-    renderAll(); await sleep(600);
+    for(let k=0;k<3;k++){ const idx=pl.hand.findIndex(c=>c.m===playM); if(idx>=0) handCards.push(pl.hand.splice(idx,1)[0]); }
+    toast((p===0?'':'CPU ')+'💣 폭탄!');
   } else {
-    G._newIds=new Set([handCard.id]);
-    // 흔들기: 낼 월을 손에 3장 보유 + 바닥에 그 월 있을 때 ×2
-    if(pl.hand.filter(c=>c.m===playM).length>=3 && beforeM>=1 && G.shakeMult[p]===1){ G.shakeMult[p]=2; toast((p===0?'':'CPU ')+'흔들기! ×2'); }
-    sound('play');
-    const matchesPre=sameMonth(G.table,playM);
-    let pickChoice=null;
-    if(p===0 && matchesPre.length===2){ pickChoice=await askPick(matchesPre); }
-    handCap = playFlow(p, handCard, true, pickChoice);
-    renderAll(); await sleep(540);
+    pl.hand.splice(pl.hand.findIndex(c=>c.id===handCard.id),1);
+    handCards=[handCard];
+    if(handCountM>=3 && beforeM>=1 && G.shakeMult[p]===1){ G.shakeMult[p]=2; toast((p===0?'':'CPU ')+'흔들기! ×2'); }
   }
-  let flipCap=[], flipCard=null;
+
+  // 1) 손패 바닥에 착지 (짝 붙는 느낌)
+  handCards.forEach(c=>G.table.push(c));
+  G._newIds=new Set(handCards.map(c=>c.id)); G._newCapIds=null;
+  sound('play'); renderAll(); await sleep(320);
+
+  // 2) 더미 뒤집기 → 바닥 착지
+  let flipCard=null;
   if(G.deck.length){
-    flipCard=G.deck.shift(); G._newIds.add(flipCard.id); G.flip=flipCard; renderFlip(flipCard); sound('flip'); await sleep(720);
-    flipCap = playFlow(p, flipCard, false); G.flip=null;
+    flipCard=G.deck.shift(); G.flip=flipCard; renderFlip(flipCard); sound('flip'); await sleep(680);
+    G.flip=null; G.table.push(flipCard); G._newIds=new Set([flipCard.id]); renderAll(); await sleep(300);
   }
-  let cap = handCap.concat(flipCap);
+
+  // 3) 캡처 판정 (테이블 기준)
   const flipSame = !!(flipCard && flipCard.m===playM);
-  let ppuk=false;
-  if(!bomb && flipSame && beforeM===1){
-    // 뻑: 바닥1+손1 먹으려는데 뒤집기도 같은 월 → 3장 쌓임, 먹기 무효
-    ppuk=true; const inv=[...handCap]; if(flipCap.length) inv.push(...flipCap); else { removeFromTable(flipCard); inv.push(flipCard); }
-    inv.forEach(c=>{ if(!G.table.find(x=>x.id===c.id)) G.table.push(c); if(G._newIds)G._newIds.add(c.id); });
-    cap=[]; G.ppukCount[p]=(G.ppukCount[p]||0)+1; G.ppukOwner[playM]=p; toast((p===0?'':'CPU ')+'뻑! ('+G.ppukCount[p]+')');
+  let captured=[]; let ppuk=false;
+  const inCap=id=>captured.some(c=>c.id===id);
+  if(bomb){
+    captured.push(...preM, ...handCards);                       // 폭탄: 그 월 전부
+  } else if(beforeM===0){
+    if(flipSame){ captured.push(...handCards, flipCard); }      // 쪽
+  } else if(beforeM===1){
+    if(flipSame){ ppuk=true; G.ppukCount[p]=(G.ppukCount[p]||0)+1; G.ppukOwner[playM]=p; toast((p===0?'':'CPU ')+'뻑! ('+G.ppukCount[p]+')'); }
+    else { captured.push(handCards[0], preM[0]); }
+  } else if(beforeM===2){
+    if(flipSame){ captured.push(handCards[0], preM[0], preM[1], flipCard); }   // 따닥
+    else { let take=preM.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0];
+           if(p===0){ take=await askPick(preM); }
+           captured.push(handCards[0], take); }
+  } else {                                                       // 뻑쓸이/자뻑
+    captured.push(handCards[0], ...preM);
   }
-  pl.cap.push(...cap);
-  const canSteal = G.deck.length>0;   // 마지막(더미 0) 차례엔 피 못 뺏음
+  // 뒤집기 패가 다른 월이면 별도 판정
+  if(flipCard && !flipSame && !inCap(flipCard.id)){
+    const fm=G.table.filter(c=>c.m===flipCard.m && c.id!==flipCard.id && !inCap(c.id));
+    if(fm.length>=3) captured.push(flipCard,...fm);
+    else if(fm.length===2){ captured.push(flipCard, fm.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]); }
+    else if(fm.length===1) captured.push(flipCard, fm[0]);
+  }
+
+  // 4) 특수룰 피뺏기
+  const willEmpty=(G.table.length-captured.length)===0 && captured.length>0;
+  const canSteal=G.deck.length>0;
   let steals=0; const stags=[]; const stolen=[];
   if(!ppuk){
     if(bomb){ steals++; stags.push('폭탄'); }
-    if(flipSame && beforeM===2){ steals++; stags.push('따닥'); }                 // 바닥2+손1+뒤집기1 = 4장 싹쓸이
-    if(!bomb && flipSame && beforeM===0 && flipCap.length){ steals++; stags.push('쪽'); }
-    if(beforeM===3 && handCap.length){                                          // 뻑 쓸기 / 자뻑
-      const own=G.ppukOwner[playM]; if(own===p){ steals+=2; stags.push('자뻑'); } else { steals++; stags.push('뻑쓸이'); }
-      delete G.ppukOwner[playM];
-    }
-    if(G.table.length===0 && cap.length){ steals++; stags.push('쓸'); }
-    if(canSteal){ for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp.id); } }
-    if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'!'+((canSteal&&steals)?(' 피뺏기 '+steals):'')); sound('play'); }
+    if(flipSame && beforeM===2){ steals++; stags.push('따닥'); }
+    if(flipSame && beforeM===0){ steals++; stags.push('쪽'); }
+    if(beforeM>=3){ const own=G.ppukOwner[playM]; if(own===p){ steals+=2; stags.push('자뻑'); } else { steals++; stags.push('뻑쓸이'); } if(own!=null)delete G.ppukOwner[playM]; }
+    if(willEmpty){ steals++; stags.push('쓸'); }
   }
-  G._newCapIds=new Set([...cap.map(c=>c.id),...stolen]);
-  renderAll();
-  await sleep((stags.length||ppuk)?900:240);
+
+  // 5) 먹은 패: 바닥 → 내 자리로 날아가기
+  if(captured.length){
+    renderAll();
+    await flyToPile(captured, destEl);
+    captured.forEach(removeFromTable);
+    if(canSteal){ for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp.id); } }
+    pl.cap.push(...captured);
+    G._newCapIds=new Set([...captured.map(c=>c.id),...stolen]); G._newIds=null;
+    renderAll();
+    if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'!'+((canSteal&&steals)?(' 피뺏기 '+steals):'')); sound('play'); }
+    await sleep(stags.length?460:140);
+  } else { G._newIds=null; renderAll(); await sleep(ppuk?460:120); }
+
   // 3뻑 = 즉시 승리(10점)
   if(ppuk && G.ppukCount[p]>=3){ toast((p===0?'':'CPU ')+'3뻑! 승리'); await sleep(700); return settle(p, score(pl.cap), {ppuk3:true}); }
   // score
@@ -442,7 +491,7 @@ function renderTable(){
   const dl=(G&&G._dealing); let di=0;
   $('tableCards').innerHTML=order.map(m=>{
     const cs=by[m];
-    return `<div class="mgroup ${sel===m?'hl':''}">`+cs.map((c,i)=>`<img src="${c.file}" class="${(G._newIds&&G._newIds.has(c.id))?'cin':''}" style="margin-left:${i?'-26px':'0'}${dl?(';animation-delay:'+((di++)*55)+'ms'):''}" alt="${c.m}월">`).join('')+`</div>`;
+    return `<div class="mgroup ${sel===m?'hl':''}">`+cs.map((c,i)=>`<img src="${c.file}" data-id="${c.id}" class="${(G._newIds&&G._newIds.has(c.id))?'cin':''}" style="margin-left:${i?'-26px':'0'}${dl?(';animation-delay:'+((di++)*55)+'ms'):''}" alt="${c.m}월">`).join('')+`</div>`;
   }).join('');
   $('deckN').textContent=G.deck.length; $('t-deck').textContent=G.deck.length;
 }
