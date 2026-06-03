@@ -358,7 +358,7 @@ function show(id){ $(id).classList.add('show'); } function hide(id){ $(id).class
 function quitMenu(){ ['gostop','result','settings'].forEach(hide); $('board').style.display='none'; $('menu').style.display='flex'; }
 function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',1200); }
 function setSnd(s){ SND=!!s; localStorage.setItem('gostop_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
-function sound(n){ if(!SND)return; try{const a=new Audio('../mahjong/sounds/'+(n==='take'?'pong':n==='win'?'win':n==='lose'?'lose':'click')+'.mp3');a.volume=.4;a.play().catch(()=>{});}catch(e){} }
+function sound(n){ if(!SND)return; const map={take:'claim',win:'win',lose:'tile'}; const fn=map[n]||'tile'; try{const a=new Audio('sounds/'+fn+'.mp3');a.volume=.4;a.play().catch(()=>{});}catch(e){} }
 setSnd(SND?1:0);
 </script>
 </body>

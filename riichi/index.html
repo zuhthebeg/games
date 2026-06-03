@@ -555,7 +555,7 @@ function doAnkan(t){ const pl=G.players[0]; for(let k=0;k<4;k++){const i=pl.hand
 function ankanCandidates(hand){ const c=counts(hand); const r=[]; for(let t=0;t<34;t++)if(c[t]===4)r.push(t); return r; }
 function setLang(l){ LANG=l; localStorage.setItem('riichi_lang',l); document.body.classList.toggle('ja',l==='ja'); document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('on',b.dataset.lang===l)); if(G)renderAll(); }
 function setSnd(s){ SND=!!s; localStorage.setItem('riichi_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
-function sound(n){ if(!SND)return; try{ const a=new Audio('sounds/'+n+'.mp3'); a.volume=.5; a.play().catch(()=>{}); }catch(e){} }
+function sound(n){ if(!SND)return; const map={tsumo:'win',ron:'win',riichi:'claim'}; const fn=map[n]||'tile'; try{ const a=new Audio('sounds/'+fn+'.mp3'); a.volume=.5; a.play().catch(()=>{}); }catch(e){} }
 
 $('howtoBody').innerHTML = T(
  '• 13장으로 4몸통+머리(또는 치또이쯔/국사무쌍)를 완성하면 화료.<br>• 화료엔 <b>役</b>이 최소 1개 필요(리치·탕야오·역패 등).<br>• 텐파이면 <b>리치</b> 선언(1000점), 이후 뽑은 패만 버림.<br>• <b>쯔모</b>=자기 뽑기 화료, <b>론</b>=남의 버린패 화료.<br>• <b>도라</b>(표시패 다음 패)는 보너스 판.<br>• 동풍전 4국, 점수 높은 사람 승.<br>• v1은 멘젠(닫힌 손) 중심 — 폰/치는 곧 추가.',
