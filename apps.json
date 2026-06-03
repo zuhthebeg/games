@@ -28,6 +28,21 @@
     "category": "classic"
   },
   {
+    "title": "일본 리치마작",
+    "icon": "https://game.cocy.io/riichi/icon.svg",
+    "url": "https://game.cocy.io/riichi/",
+    "desc": "일본 리치마작 (立直麻雀) - 13타일, 리치·도라·役 점수계산, CPU 3인",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko",
+      "ja"
+    ],
+    "category": "classic"
+  },
+  {
     "title": "블랙잭",
     "icon": "https://game.cocy.io/blackjack/icon.svg",
     "url": "https://game.cocy.io/blackjack/",

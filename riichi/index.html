@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+<title>일본 리치마작 · 立直麻雀 — 온라인 마작</title>
+<meta name="description" content="일본 리치마작(立直)을 무료로. CPU 3명과 싱글 플레이, 도라·역·점수 계산, 한국어/日本語. 13장 멘젠 리치." />
+<meta property="og:title" content="일본 리치마작 · 立直麻雀" />
+<meta property="og:description" content="CPU와 즐기는 13장 일본 리치마작. 리치·도라·役 점수계산. 한국어/日本語." />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon.svg" />
+<style>
+:root{
+  --bg:#0a1f1a; --felt:#10302a; --felt2:#0c2722; --panel:#13241f; --panel2:#1b332c;
+  --text:#eef3ef; --muted:#8fa69d; --line:rgba(238,243,239,.12);
+  --gold:#e9c46a; --green:#6ad29a; --red:#e76f63; --blue:#67c1e8; --riichi:#ff5d73;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --tile-w:42px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:radial-gradient(120% 90% at 50% 0%,var(--felt),var(--felt2));color:var(--text);
+  font-family:"Noto Sans KR",system-ui,sans-serif;overflow:hidden;user-select:none}
+[data-en]{display:none}
+body.ja [data-ko]{display:none}
+body.ja [data-en]{display:inline}
+
+/* menu */
+#menu{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  background:radial-gradient(120% 90% at 50% 0%,var(--felt),var(--felt2))}
+#menu h1{font-size:2rem;font-weight:800;letter-spacing:.02em}
+#menu p{color:var(--muted);font-size:.9rem;text-align:center;margin-top:-6px;line-height:1.5}
+.big-btn{width:min(80vw,320px);padding:15px;border:none;border-radius:14px;background:var(--gold);color:#1a160a;
+  font-size:1.05rem;font-weight:800;cursor:pointer;transition:.2s var(--ease)}
+.big-btn:hover{filter:brightness(1.08)}
+.big-btn.sec{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+
+/* board */
+#board{position:fixed;inset:0;display:none;flex-direction:column}
+.topbar{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:.78rem;color:var(--muted);flex-wrap:wrap}
+.topbar .b{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 9px}
+.topbar .b b{color:var(--text)}
+.topbar .sp{flex:1}
+.topbar button{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:5px 9px;font-size:.8rem;cursor:pointer}
+.dora-ind{display:flex;gap:2px;align-items:center}
+.dora-ind img{width:24px;border-radius:3px;background:#fff}
+
+.table{flex:1;position:relative;display:flex;align-items:center;justify-content:center}
+/* opponents */
+.opp{position:absolute;text-align:center;color:var(--muted);font-size:.72rem}
+.opp .nm{font-weight:700;color:var(--text)}
+.opp .nm.turn{color:var(--gold)}
+.opp .nm .ri{color:var(--riichi);font-weight:800}
+.opp .cnt{font-size:.66rem}
+.opp .disc{display:flex;flex-wrap:wrap;gap:1px;max-width:230px;margin:3px auto 0}
+.opp .disc img{width:20px;border-radius:2px;background:#fff;opacity:.95}
+.opp.top{top:6px;left:50%;transform:translateX(-50%)}
+.opp.left{left:6px;top:50%;transform:translateY(-50%);max-width:120px}
+.opp.right{right:6px;top:50%;transform:translateY(-50%);max-width:120px}
+.opp.left .disc,.opp.right .disc{max-width:118px}
+
+/* center info */
+.center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:var(--muted);font-size:.7rem;pointer-events:none}
+.center .rd{font-size:1.4rem;font-weight:800;color:var(--text)}
+
+/* my discards */
+#myDisc{position:absolute;bottom:140px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:2px;max-width:300px;justify-content:center}
+#myDisc img{width:22px;border-radius:2px;background:#fff}
+
+/* hand */
+.handzone{padding:8px 6px 12px;background:linear-gradient(transparent,rgba(0,0,0,.35))}
+#hand{display:flex;gap:2px;justify-content:center;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}
+#hand .t{position:relative;flex:0 0 auto;cursor:pointer;transition:transform .12s var(--ease)}
+#hand .t img{width:var(--tile-w);border-radius:5px;background:#fff;display:block;box-shadow:0 2px 4px rgba(0,0,0,.4)}
+#hand .t.sel{transform:translateY(-12px)}
+#hand .t.draw{margin-left:10px}
+#hand .t.aka img{box-shadow:0 0 0 2px var(--red),0 2px 4px rgba(0,0,0,.4)}
+.actions{display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap;min-height:40px}
+.act{padding:9px 16px;border:none;border-radius:10px;font-weight:800;font-size:.92rem;cursor:pointer;color:#10201b}
+.act:disabled{display:none}
+.a-tsumo{background:var(--gold)} .a-ron{background:var(--red);color:#fff} .a-riichi{background:var(--riichi);color:#fff}
+.a-kan{background:var(--blue)} .a-discard{background:var(--green)} .a-skip{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+
+/* overlays */
+.ov{position:fixed;inset:0;z-index:40;background:rgba(5,12,10,.82);display:none;align-items:center;justify-content:center;padding:18px}
+.ov.show{display:flex}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;max-width:460px;width:100%;max-height:88vh;overflow:auto}
+.card h2{font-size:1.3rem;margin-bottom:10px}
+.yaku-row{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:6px 0;font-size:.9rem}
+.yaku-row b{color:var(--gold)}
+.score-big{font-size:2rem;font-weight:800;color:var(--gold);text-align:center;margin:12px 0}
+.win-tiles{display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.win-tiles img{width:30px;border-radius:3px;background:#fff}
+.win-tiles img.win{box-shadow:0 0 0 2px var(--gold)}
+.card .row{display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:.92rem}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;border:none;color:var(--muted);padding:7px 12px;cursor:pointer;font-size:.85rem}
+.seg button.on{background:var(--gold);color:#1a160a;font-weight:700}
+.card .close{width:100%;margin-top:14px;padding:12px;border:none;border-radius:10px;background:var(--gold);color:#1a160a;font-weight:800;cursor:pointer}
+.toast{position:fixed;top:46%;left:50%;transform:translate(-50%,-50%);z-index:50;background:rgba(0,0,0,.8);
+  border:2px solid var(--gold);color:#fff;font-size:2rem;font-weight:800;padding:14px 30px;border-radius:14px;display:none;animation:pop .5s var(--ease)}
+@keyframes pop{from{transform:translate(-50%,-50%) scale(.7);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <h1>🀄 <span data-ko>일본 리치마작</span><span data-en>立直麻雀</span></h1>
+  <p data-ko>13장 · 동풍전 · CPU 3명<br>리치 · 도라 · 役 점수계산</p>
+  <p data-en>13 tiles · East round · 3 CPUs<br>Riichi · Dora · Yaku scoring</p>
+  <button class="big-btn" onclick="newGame()" data-ko>게임 시작</button><button class="big-btn" onclick="newGame()" data-en style="display:none">Start</button>
+  <button class="big-btn sec" onclick="show('howto')" data-ko>플레이 방법</button><button class="big-btn sec" onclick="show('howto')" data-en style="display:none">How to play</button>
+  <button class="big-btn sec" onclick="show('settings')">⚙ <span data-ko>설정</span><span data-en>Settings</span></button>
+</div>
+
+<div id="board">
+  <div class="topbar">
+    <span class="b"><span data-ko>국</span><span data-en>Round</span> <b id="t-round">東1</b></span>
+    <span class="b"><span data-ko>잔여</span><span data-en>Wall</span> <b id="t-wall">70</b></span>
+    <span class="b"><span data-ko>점수</span><span data-en>Pts</span> <b id="t-pts">25000</b></span>
+    <span class="b dora-ind"><span data-ko>도라</span><span data-en>Dora</span> <span id="t-dora"></span></span>
+    <span class="sp"></span>
+    <button onclick="show('settings')">⚙</button>
+    <button onclick="quitToMenu()" data-ko>나가기</button><button onclick="quitToMenu()" data-en style="display:none">Exit</button>
+  </div>
+  <div class="table">
+    <div class="opp top" id="opp2"></div>
+    <div class="opp left" id="opp3"></div>
+    <div class="opp right" id="opp1"></div>
+    <div class="center"><div class="rd" id="c-round">東</div><div id="c-info"></div></div>
+    <div id="myDisc"></div>
+  </div>
+  <div class="handzone">
+    <div id="hand"></div>
+    <div class="actions" id="actions"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- result -->
+<div class="ov" id="result"><div class="card">
+  <h2 id="r-title"></h2>
+  <div class="win-tiles" id="r-tiles"></div>
+  <div id="r-yaku"></div>
+  <div class="score-big" id="r-score"></div>
+  <div id="r-detail" style="color:var(--muted);font-size:.82rem;text-align:center"></div>
+  <button class="close" onclick="nextHand()" data-ko>다음 국</button><button class="close" onclick="nextHand()" data-en style="display:none">Next</button>
+</div></div>
+
+<!-- settings -->
+<div class="ov" id="settings"><div class="card">
+  <h2>⚙ <span data-ko>설정</span><span data-en>Settings</span></h2>
+  <div class="row"><span data-ko>🌐 언어</span><span data-en>🌐 Language</span>
+    <div class="seg"><button data-lang="ko" onclick="setLang('ko')">한국어</button><button data-lang="ja" onclick="setLang('ja')">日本語</button></div></div>
+  <div class="row"><span data-ko>🔊 소리</span><span data-en>🔊 Sound</span>
+    <div class="seg"><button data-snd="1" onclick="setSnd(1)">ON</button><button data-snd="0" onclick="setSnd(0)">OFF</button></div></div>
+  <div class="row"><span data-ko>🀅 적도라</span><span data-en>🀅 Red fives</span><span style="color:var(--muted);font-size:.82rem" data-ko>켜짐</span><span data-en>On</span></div>
+  <button class="close" onclick="hide('settings')" data-ko>닫기</button><button class="close" onclick="hide('settings')" data-en style="display:none">Close</button>
+</div></div>
+
+<!-- howto -->
+<div class="ov" id="howto"><div class="card">
+  <h2 data-ko>플레이 방법</h2><h2 data-en style="display:none">How to play</h2>
+  <div style="font-size:.9rem;line-height:1.7;color:var(--text)" id="howtoBody"></div>
+  <button class="close" onclick="hide('howto')" data-ko>닫기</button><button class="close" onclick="hide('howto')" data-en style="display:none">Close</button>
+</div></div>
+
+<script>
+/* ===== Riichi Mahjong SP engine v1 (closed-hand) ===== */
+const $=id=>document.getElementById(id);
+let LANG=localStorage.getItem('riichi_lang')||'ko';
+let SND=localStorage.getItem('riichi_snd')!=='0';
+const T=(ko,ja)=>LANG==='ja'?ja:ko;
+
+// tile: 0-8 man, 9-17 pin, 18-26 sou, 27-33 honor(27=E,28=S,29=W,30=N,31=白,32=發,33=中)
+function suitOf(t){return t<9?0:t<18?1:t<27?2:3;}
+function numOf(t){return t%9+1;} // for suits
+function isHonor(t){return t>=27;}
+function isTerminalOrHonor(t){return isHonor(t)||numOf(t)===1||numOf(t)===9 && t<27;}
+function tileSvg(t,aka){ // aka: red five
+  if(t<27){const s=['m','p','s'][suitOf(t)];return 'tiles/'+s+(t%9+1)+'.svg';}
+  return 'tiles/z'+(t-26)+'.svg';
+}
+const HONOR_NAME_KO=['동','남','서','북','백','발','중'];
+const HONOR_NAME_JA=['東','南','西','北','白','發','中'];
+function tileLabel(t){ if(t<27){const s=['萬','筒','索'][suitOf(t)];return (t%9+1)+s;} return (LANG==='ja'?HONOR_NAME_JA:HONOR_NAME_KO)[t-27]; }
+function nextDora(ind){ // dora = tile after indicator
+  if(ind<27){const n=ind%9; const base=ind-n; return base+((n+1)%9);}
+  if(ind<=30){return 27+((ind-27+1)%4);} // winds E S W N
+  return 31+((ind-31+1)%3); // dragons 白發中
+}
+
+let G=null; // game state
+function newGame(){
+  $('menu').style.display='none'; $('board').style.display='flex';
+  G={ roundWind:27, hand:0, dealer:0, honba:0, pts:[25000,25000,25000,25000], aka:true };
+  startHand();
+}
+function startHand(){
+  // build wall 136
+  let wall=[]; for(let t=0;t<34;t++)for(let k=0;k<4;k++)wall.push(t);
+  // red fives: mark one 5 of each suit as aka (index 4,13,22) — track via Set of positions later; simple: akaSet by tile flag per drawn tile
+  for(let i=wall.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[wall[i],wall[j]]=[wall[j],wall[i]];}
+  G.wall=wall; G.akaPicked={4:false,13:false,22:false}; // first drawn 5m/5p/5s becomes aka
+  G.players=[0,1,2,3].map(i=>({hand:[],discards:[],riichi:false,riichiTile:-1,ippatsu:false,melds:[],seat:(i-G.dealer+4)%4}));
+  // seat: 0=E for dealer; seat wind = 27+seat
+  // deal 13
+  for(let r=0;r<13;r++)for(let p=0;p<4;p++)G.players[p].hand.push(drawWall());
+  G.players.forEach(p=>sortHand(p.hand));
+  // dead wall dora indicators (take 1 visible + ura)
+  G.doraInd=[drawWall()]; G.uraInd=[drawWall()];
+  G.live=G.wall.length-14; // approx remaining playable
+  G.turn=G.dealer; G.drawn=-1; G.lastDiscard=-1; G.lastDiscardBy=-1; G.over=false; G.firstGoAround=true;
+  renderAll(); updateTop();
+  setTimeout(()=>turnLoop(),500);
+}
+function drawWall(){ return G.wall.shift(); }
+function sortHand(h){ h.sort((a,b)=>a-b); }
+
+function turnLoop(){
+  if(G.over) return;
+  if(G.wall.length<=14){ return drawnGame(); } // exhaustive draw (ryuukyoku)
+  const p=G.turn;
+  G.drawn=drawWall();
+  const pl=G.players[p];
+  pl.hand.push(G.drawn);
+  updateTop();
+  if(p===0){ renderHand(); humanOptions(); }
+  else { setTimeout(()=>cpuTurn(p),600); }
+}
+
+function humanOptions(){
+  const pl=G.players[0];
+  const acts=$('actions'); acts.innerHTML='';
+  // tsumo?
+  const full=pl.hand.slice();
+  if(canWin(full, true, 0)){ addAct('a-tsumo',T('쯔모','ツモ'),()=>declareWin(0,true,G.drawn)); }
+  // riichi?
+  if(!pl.riichi && pl.melds.length===0 && G.pts[0]>=1000 && G.wall.length>14){
+    const t=tenpaiDiscards(pl.hand);
+    if(t.length){ addAct('a-riichi',T('리치','立直'),()=>doRiichi()); }
+  }
+  // ankan?
+  const kanT=ankanCandidates(pl.hand);
+  if(kanT.length){ addAct('a-kan',T('안깡','暗槓'),()=>doAnkan(kanT[0])); }
+  addAct('a-discard',T('버리기','打牌'),()=>{ if(selIdx>=0) humanDiscard(selIdx); else toast(T('패 선택','選択')); });
+  renderHand();
+}
+function addAct(cls,label,fn){ const b=document.createElement('button'); b.className='act '+cls; b.textContent=label; b.onclick=fn; $('actions').appendChild(b); }
+
+let selIdx=-1;
+function renderHand(){
+  const pl=G.players[0]; const h=$('hand'); h.innerHTML='';
+  const hand=pl.hand;
+  hand.forEach((t,i)=>{
+    const d=document.createElement('div'); d.className='t'+(i===selIdx?' sel':'')+((i===hand.length-1&&G.drawn>=0&&G.turn===0)?' draw':'');
+    const img=document.createElement('img'); img.src=tileSvg(t); img.alt=tileLabel(t); d.appendChild(img);
+    d.onclick=()=>{ if(G.turn!==0)return; selIdx=(selIdx===i?-1:i); renderHand(); };
+    h.appendChild(d);
+  });
+}
+function humanDiscard(i){
+  const pl=G.players[0]; const t=pl.hand[i];
+  if(pl.riichi && i!==pl.hand.length-1){ toast(T('리치 중엔 뽑은 패만','リーチ中はツモ切り')); return; }
+  pl.hand.splice(i,1); sortHand(pl.hand); selIdx=-1; G.drawn=-1;
+  discardTile(0,t);
+}
+function discardTile(p,t){
+  const pl=G.players[p]; pl.discards.push(t);
+  G.lastDiscard=t; G.lastDiscardBy=p;
+  if(pl.pendingRiichi){ pl.riichi=true; pl.pendingRiichi=false; pl.riichiTile=t; pl.ippatsu=true; G.pts[p]-=1000; sound('riichi'); }
+  else { G.players.forEach(x=>{ if(x!==pl) {} }); }
+  // clear ippatsu of others after a discard (their ippatsu window passed once they discard; simple: clear all others' ippatsu)
+  renderAll(); updateTop();
+  // check ron by others
+  const ronners=[];
+  for(let k=1;k<4;k++){ const q=(p+k)%4; const pl2=G.players[q];
+    const test=pl2.hand.concat([t]);
+    if(canWin(test,false,q) && !isFuriten(pl2,t) && hasYaku(test,false,q,t)){ ronners.push(q); }
+  }
+  if(ronners.length){ // human ron priority handled in humanReact; for CPU auto-ron
+    if(ronners.includes(0)){ offerRon(0,t,p); return; }
+    else { declareWin(ronners[0],false,t,p); return; }
+  }
+  // pass turn
+  G.players.forEach(x=>{ if(x.seat!==undefined) x.ippatsu=x.ippatsu&&false; });
+  G.turn=(p+1)%4; G.firstGoAround = G.firstGoAround && G.turn!==G.dealer;
+  setTimeout(()=>turnLoop(),350);
+}
+function offerRon(who,t,from){
+  const acts=$('actions'); acts.innerHTML='';
+  addAct('a-ron',T('론','ロン'),()=>declareWin(who,false,t,from));
+  addAct('a-skip',T('패스','スキップ'),()=>{ // furiten temporary
+    G.players[who]._tempFuriten=true; G.turn=(from+1)%4; setTimeout(()=>turnLoop(),300);
+  });
+  toast(T('론 가능!','ロン!'));
+}
+
+function cpuTurn(p){
+  const pl=G.players[p];
+  // tsumo?
+  if(canWin(pl.hand,true,p) && hasYaku(pl.hand,true,p,G.drawn)){ return declareWin(p,true,G.drawn); }
+  // riichi if tenpai & closed & not already
+  if(!pl.riichi && pl.melds.length===0 && G.pts[p]>=1000 && G.wall.length>14){
+    const t=tenpaiDiscards(pl.hand);
+    if(t.length){ pl.pendingRiichi=true; // discard the riichi tile (one that keeps tenpai)
+      const disc=t[0].discard; const idx=pl.hand.indexOf(disc); pl.hand.splice(idx,1); sortHand(pl.hand);
+      G.drawn=-1; return discardTile(p,disc);
+    }
+  }
+  // riichi locked: must discard drawn
+  if(pl.riichi){ const t=pl.hand[pl.hand.length-1]; pl.hand.pop(); sortHand(pl.hand); G.drawn=-1; return discardTile(p,t); }
+  // discard: pick least useful (isolated honors/terminals first via simple shanten-ish heuristic)
+  const t=cpuChooseDiscard(pl.hand); const idx=pl.hand.indexOf(t); pl.hand.splice(idx,1); sortHand(pl.hand); G.drawn=-1;
+  discardTile(p,t);
+}
+function cpuChooseDiscard(hand){
+  // score each tile by how much removing it hurts; prefer discarding isolated tiles
+  let best=hand[0],bestScore=-1;
+  for(const t of new Set(hand)){
+    const cnt=hand.filter(x=>x===t).length;
+    let conn=0;
+    if(t<27){const n=numOf(t); for(const o of hand){ if(suitOf(o)===suitOf(t)){const d=Math.abs(numOf(o)-n); if(d<=2&&d>0)conn++;}}}
+    const useless=(cnt===1?2:0)+(isHonor(t)&&cnt<2?3:0)+(t<27&&(numOf(t)===1||numOf(t)===9)?1:0)-conn-cnt*2;
+    if(useless>bestScore){bestScore=useless;best=t;}
+  }
+  return best;
+}
+
+/* ===== win / tenpai / yaku ===== */
+function counts(hand){ const c=new Array(34).fill(0); hand.forEach(t=>c[t]++); return c; }
+function isWin(hand){ // hand length 14 (incl winning tile), closed
+  const c=counts(hand);
+  if(isKokushi(c)) return true;
+  if(isChiitoi(c)) return true;
+  return standardWin(c);
+}
+function isChiitoi(c){ let pairs=0; for(let i=0;i<34;i++){ if(c[i]===2)pairs++; else if(c[i]!==0)return false;} return pairs===7; }
+function isKokushi(c){ const terms=[0,8,9,17,18,26,27,28,29,30,31,32,33]; let pair=false; for(const t of terms){ if(c[t]===0)return false; if(c[t]===2)pair=true; else if(c[t]!==1)return false;} let sum=terms.reduce((a,t)=>a+c[t],0); return pair&&sum===14; }
+function standardWin(c){
+  // try each pair then check melds
+  for(let p=0;p<34;p++){ if(c[p]>=2){ c[p]-=2; if(canMelds(c.slice())){c[p]+=2;return true;} c[p]+=2; } }
+  return false;
+}
+function canMelds(c){
+  let i=0; while(i<34&&c[i]===0)i++;
+  if(i===34)return true;
+  // triplet
+  if(c[i]>=3){ c[i]-=3; if(canMelds(c))return true; c[i]+=3; }
+  // sequence (suits only, not honor, i num<=7)
+  if(i<27 && numOf(i)<=7 && c[i+1]>0 && c[i+2]>0){ c[i]--;c[i+1]--;c[i+2]--; if(canMelds(c))return true; c[i]++;c[i+1]++;c[i+2]++; }
+  return false;
+}
+function canWin(hand14, tsumo, p){ return hand14.length%3===2 && isWin(hand14); }
+
+function waits(hand13){ // tiles that complete (length 13 or 13-style)
+  const res=[]; for(let t=0;t<34;t++){ if(hand13.filter(x=>x===t).length>=4)continue; if(isWin(hand13.concat([t])))res.push(t); } return res;
+}
+function tenpaiDiscards(hand){ // hand length 14: list {discard, waits} that are tenpai
+  const res=[]; const seen=new Set();
+  for(const d of hand){ if(seen.has(d))continue; seen.add(d); const h=hand.slice(); h.splice(h.indexOf(d),1); const w=waits(h); if(w.length)res.push({discard:d,waits:w}); }
+  return res;
+}
+function isFuriten(pl,winTile){
+  if(pl._tempFuriten) return true;
+  const h=pl.hand.slice(); // hand already has nothing extra here for ron check we pass hand+tile; compute waits of 13
+  const h13 = pl.hand.slice();
+  const w=waits(h13);
+  for(const t of w){ if(pl.discards.includes(t))return true; }
+  return false;
+}
+
+/* yaku */
+function decompose(c){ // return list of decompositions: {pair, sets:[{type:'tri'|'seq', t}]}
+  const results=[];
+  for(let p=0;p<34;p++){ if(c[p]>=2){ const cc=c.slice(); cc[p]-=2; const sets=[]; rec(cc,sets,results,p); } }
+  return results;
+}
+function rec(c,sets,results,pair){
+  let i=0; while(i<34&&c[i]===0)i++;
+  if(i===34){ results.push({pair,sets:sets.map(s=>({...s}))}); return; }
+  if(c[i]>=3){ c[i]-=3; sets.push({type:'tri',t:i}); rec(c,sets,results,pair); sets.pop(); c[i]+=3; }
+  if(i<27&&numOf(i)<=7&&c[i+1]>0&&c[i+2]>0){ c[i]--;c[i+1]--;c[i+2]--; sets.push({type:'seq',t:i}); rec(c,sets,results,pair); sets.pop(); c[i]++;c[i+1]++;c[i+2]++; }
+}
+function akaCount(hand){ return 0; } // v1: aka tracking simplified to 0 (visual TBD)
+function countDora(hand,inds){ let n=0; for(const ind of inds){ const d=nextDora(ind); n+=hand.filter(x=>x===d).length; } return n; }
+
+function evalYaku(hand14, tsumo, p, winTile){
+  const pl=G.players[p]; const c=counts(hand14); const yaku=[]; let han=0; let yakuman=0;
+  const closed=pl.melds.length===0;
+  const roundW=G.roundWind; const seatW=27+pl.seat;
+  // yakuman
+  if(isKokushi(c)){ yaku.push({n:T('국사무쌍','国士無双'),h:13}); yakuman+=13; }
+  let chiitoi=isChiitoi(c);
+  // riichi
+  if(pl.riichi){ yaku.push({n:T('리치','立直'),h:1}); han++; if(pl.ippatsu){ yaku.push({n:T('일발','一発'),h:1}); han++; } }
+  if(tsumo&&closed){ yaku.push({n:T('멘젠쯔모','門前清自摸'),h:1}); han++; }
+  // tanyao
+  if(hand14.every(t=>t<27&&numOf(t)>=2&&numOf(t)<=8)){ yaku.push({n:T('탕야오','断么九'),h:1}); han++; }
+  // yakuhai
+  [31,32,33].forEach((d,k)=>{ if(c[d]>=3){ yaku.push({n:T('역패 '+HONOR_NAME_KO[4+k],'役牌 '+HONOR_NAME_JA[4+k]),h:1}); han++; } });
+  if(c[roundW]>=3){ yaku.push({n:T('장풍패','場風'),h:1}); han++; }
+  if(c[seatW]>=3 && seatW!==roundW){ yaku.push({n:T('자풍패','自風'),h:1}); han++; }
+  // honitsu/chinitsu
+  const suitsUsed=new Set(hand14.filter(t=>t<27).map(t=>suitOf(t)));
+  const hasHonor=hand14.some(t=>t>=27);
+  if(suitsUsed.size===1 && !hasHonor){ yaku.push({n:T('청일색','清一色'),h:closed?6:5}); han+=closed?6:5; }
+  else if(suitsUsed.size===1 && hasHonor){ yaku.push({n:T('혼일색','混一色'),h:closed?3:2}); han+=closed?3:2; }
+  // chiitoi
+  if(chiitoi){ yaku.push({n:T('치또이쯔','七対子'),h:2}); han+=2; }
+  // structural (best decomposition) for pinfu/iipeikou/sanshoku/ittsu/toitoi/sanankou
+  if(!chiitoi && !isKokushi(c)){
+    const decs=decompose(c); let bestExtra=0, bestList=[];
+    for(const dec of decs){ let h=0; const list=[];
+      const seqs=dec.sets.filter(s=>s.type==='seq'); const tris=dec.sets.filter(s=>s.type==='tri');
+      // pinfu (closed, all seq, pair not yakuhai, ryanmen wait) — approx: closed & 4 seq & pair not yakuhai
+      if(closed && seqs.length===4){ const pr=dec.pair; const isYakuhaiPair=(pr>=31)||pr===roundW||pr===seatW; if(!isYakuhaiPair){ h++; list.push({n:T('핑후','平和'),h:1}); } }
+      // iipeikou (closed, two identical seq)
+      if(closed){ const segKey=seqs.map(s=>s.t).sort(); for(let k=0;k<segKey.length-1;k++){ if(segKey[k]===segKey[k+1]){ h++; list.push({n:T('이페코','一盃口'),h:1}); break; } } }
+      // toitoi
+      if(tris.length===4){ h+=2; list.push({n:T('또이또이','対々和'),h:2}); }
+      // sanankou (3 concealed triplets; closed so all tri concealed except ron-completed — approx all)
+      if(tris.length>=3){ h+=2; list.push({n:T('산안커','三暗刻'),h:2}); }
+      // sanshoku doujun
+      const seqStarts=seqs.map(s=>s.t);
+      for(const st of seqStarts){ if(st<27){ const n=numOf(st); if(seqStarts.includes(n-1+9)&&seqStarts.includes(n-1+18)){ // same number across 3 suits
+            // map: man start = n-1, pin = n-1+9, sou = n-1+18
+            const m=n-1; if(seqStarts.includes(m)&&seqStarts.includes(m+9)&&seqStarts.includes(m+18)){ h+=closed?2:1; list.push({n:T('삼색동순','三色同順'),h:closed?2:1}); break; } } } }
+      // ittsu (123 456 789 same suit)
+      for(let s=0;s<3;s++){ const b=s*9; if(seqStarts.includes(b)&&seqStarts.includes(b+3)&&seqStarts.includes(b+6)){ h+=closed?2:1; list.push({n:T('일기통관','一気通貫'),h:closed?2:1}); break; } }
+      if(h>bestExtra){bestExtra=h;bestList=list;}
+    }
+    han+=bestExtra; yaku.push(...bestList);
+  }
+  // dora
+  const doraN=countDora(hand14,G.doraInd); if(doraN){ yaku.push({n:T('도라','ドラ'),h:doraN}); han+=doraN; }
+  if(pl.riichi){ const uraN=countDora(hand14,G.uraInd); if(uraN){ yaku.push({n:T('우라도라','裏ドラ'),h:uraN}); han+=uraN; } }
+  if(yakuman>0){ return {yaku:yaku.filter(y=>y.h>=13||y.n.includes('도라')||y.n.includes('ドラ')),han:0,yakuman}; }
+  return {yaku,han,yakuman:0};
+}
+function hasYaku(hand14,tsumo,p,winTile){ const r=evalYaku(hand14,tsumo,p,winTile); return r.yakuman>0 || (r.han - countDora(hand14,G.doraInd) - (G.players[p].riichi?countDora(hand14,G.uraInd):0)) >0 ; }
+
+function calcFu(hand14,tsumo,p,decBased){
+  // simplified fu: chiitoi=25; else base20 +menzen ron10 +tsumo2 + triplets/pair/wait approx
+  const c=counts(hand14);
+  if(isChiitoi(c))return 25;
+  let fu=20; const pl=G.players[p]; const closed=pl.melds.length===0;
+  if(!tsumo && closed)fu+=10;
+  if(tsumo)fu+=2;
+  // triplets
+  for(let t=0;t<34;t++){ if(c[t]>=3){ const term=isHonor(t)||numOf(t)===1||numOf(t)===9; fu+= term?8:4; } }
+  // pair yakuhai
+  // round up to 10
+  fu=Math.ceil(fu/10)*10; if(fu<30&&!tsumo)fu=30; if(fu<20)fu=20;
+  return fu;
+}
+function scorePoints(han,fu,dealer,tsumo){
+  let base;
+  if(han>=13)base=8000; else if(han>=11)base=6000; else if(han>=8)base=4000; else if(han>=6)base=3000;
+  else if(han>=5)base=2000; else { base=fu*Math.pow(2,2+han); if(base>2000)base=2000; }
+  const r=v=>Math.ceil(v/100)*100;
+  if(tsumo){ if(dealer){ const e=r(base*2); return {total:e*3, each:e, label:e+' all'}; } else { const nd=r(base), d=r(base*2); return {total:nd*2+d, nondealer:nd, dealer:d, label:nd+'/'+d}; } }
+  else { const pay=r(base*(dealer?6:4)); return {total:pay, label:''+pay}; }
+}
+
+let WIN_TILE=-1;
+function declareWin(p,tsumo,winTile,from){
+  if(G.over)return; G.over=true; WIN_TILE=winTile;
+  const pl=G.players[p];
+  const hand14 = pl.hand.slice(); if(tsumo){ /* drawn already in hand */ } else { hand14.push(winTile); }
+  sortHand(hand14);
+  const ev=evalYaku(hand14,tsumo,p,winTile);
+  const fu=calcFu(hand14,tsumo,p);
+  const dealer=(p===G.dealer);
+  let han=ev.yakuman>0?ev.yakuman:ev.han;
+  let sc=ev.yakuman>0?scorePoints(13,fu,dealer,tsumo):scorePoints(han,fu,dealer,tsumo);
+  // apply points
+  if(tsumo){ for(let q=0;q<4;q++){ if(q===p)continue; const isD=(q===G.dealer); let pay; if(dealer)pay=sc.each; else pay=isD?sc.dealer:sc.nondealer; G.pts[q]-=pay; G.pts[p]+=pay; } }
+  else { G.pts[from]-=sc.total; G.pts[p]+=sc.total; }
+  sound(tsumo?'tsumo':'ron');
+  showResult(p,tsumo,hand14,winTile,ev,fu,han,sc,from);
+}
+function showResult(p,tsumo,hand14,winTile,ev,fu,han,sc,from){
+  const who=p===0?T('나','あなた'):'CPU '+p;
+  $('r-title').textContent=who+' — '+(tsumo?T('쯔모','ツモ'):T('론','ロン'))+(ev.yakuman?' · '+T('역만','役満'):'');
+  $('r-tiles').innerHTML=hand14.map(t=>`<img class="${t===winTile?'win':''}" src="${tileSvg(t)}">`).join('');
+  $('r-yaku').innerHTML=ev.yaku.map(y=>`<div class="yaku-row"><span>${y.n}</span><b>${y.h}${T('판','飜')}</b></div>`).join('')||`<div class="yaku-row"><span>${T('역 없음','役なし')}</span></div>`;
+  $('r-score').textContent = (ev.yakuman?T('역만 ','役満 '):han+T('판 ','飜 '))+(ev.yakuman?'':fu+T('부 ','符 '))+'· '+sc.total.toLocaleString()+T('점','点');
+  $('r-detail').textContent = tsumo?(T('쯔모 ','ツモ ')+sc.label):(T('론 ','ロン ')+(p===0?'':'')+ '+'+sc.total);
+  show('result');
+}
+function drawnGame(){ // ryuukyoku: tenpai players
+  if(G.over)return; G.over=true;
+  const tenpai=G.players.map((pl,i)=> waits(pl.hand.length%3===1?pl.hand:pl.hand.slice(0,pl.hand.length-1)).length>0 );
+  $('r-title').textContent=T('유국 (황패)','流局');
+  $('r-tiles').innerHTML='';
+  $('r-yaku').innerHTML=G.players.map((pl,i)=>`<div class="yaku-row"><span>${i===0?T('나','あなた'):'CPU '+i}</span><b>${tenpai[i]?T('텐파이','聴牌'):T('노텐','不聴')}</b></div>`).join('');
+  $('r-score').textContent=T('유국','流局'); $('r-detail').textContent='';
+  show('result');
+}
+function nextHand(){
+  hide('result');
+  const winnerWasDealer = !G.over ? false : true;
+  // rotate dealer (simple: always advance; East round 4 hands)
+  G.hand++;
+  if(G.hand>=4){ // game end after East 4
+    $('c-info').textContent=''; endGame(); return;
+  }
+  G.dealer=(G.dealer+1)%4;
+  startHand();
+}
+function endGame(){
+  const order=[0,1,2,3].sort((a,b)=>G.pts[b]-G.pts[a]);
+  const rank=order.indexOf(0)+1;
+  $('r-title').textContent=T('게임 종료','終局');
+  $('r-tiles').innerHTML='';
+  $('r-yaku').innerHTML=order.map((i,idx)=>`<div class="yaku-row"><span>${idx+1}위 · ${i===0?T('나','あなた'):'CPU '+i}</span><b>${G.pts[i].toLocaleString()}</b></div>`).join('');
+  $('r-score').textContent=T('내 순위 ','順位 ')+rank+T('위','位');
+  $('r-detail').textContent='';
+  $('#result .close')&&($('#result .close').textContent=T('메뉴','メニュー'));
+  document.querySelectorAll('#result .close').forEach(b=>b.onclick=quitToMenu);
+  show('result');
+}
+
+/* render */
+function renderAll(){ renderHand(); renderOpps(); renderMyDisc(); }
+function renderOpps(){
+  for(let i=1;i<4;i++){ const pl=G.players[i]; const el=$('opp'+i);
+    const seatN=(LANG==='ja'?HONOR_NAME_JA:HONOR_NAME_KO)[pl.seat];
+    el.innerHTML=`<div class="nm ${G.turn===i?'turn':''}">CPU ${i} <span style="color:var(--muted)">${seatN}</span>${pl.riichi?' <span class="ri">'+T('리치','リーチ')+'</span>':''}</div>`+
+      `<div class="cnt">${pl.hand.length}${T('장','枚')} · ${G.pts[i].toLocaleString()}</div>`+
+      `<div class="disc">${pl.discards.map(t=>`<img src="${tileSvg(t)}">`).join('')}</div>`;
+  }
+}
+function renderMyDisc(){ $('myDisc').innerHTML=G.players[0].discards.map(t=>`<img src="${tileSvg(t)}">`).join(''); }
+function updateTop(){
+  $('t-round').textContent=(LANG==='ja'?'東':'東')+(G.hand+1);
+  $('c-round').textContent='東';
+  $('t-wall').textContent=Math.max(0,G.wall.length-14);
+  $('t-pts').textContent=G.pts[0].toLocaleString();
+  $('t-dora').innerHTML=G.doraInd.map(t=>`<img src="${tileSvg(t)}">`).join('');
+}
+
+/* ui helpers */
+function show(id){ $(id).classList.add('show'); }
+function hide(id){ $(id).classList.remove('show'); }
+function quitToMenu(){ hide('result'); $('board').style.display='none'; $('menu').style.display='flex'; document.querySelectorAll('#result .close').forEach(b=>b.onclick=nextHand); }
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',1200); }
+function doRiichi(){ const pl=G.players[0]; const t=tenpaiDiscards(pl.hand); if(!t.length)return; pl.pendingRiichi=true; toast(T('리치! 버릴 패 선택','リーチ！打牌選択')); humanOptions2(); }
+function humanOptions2(){ const acts=$('actions'); acts.innerHTML=''; addAct('a-discard',T('버리기','打牌'),()=>{ if(selIdx>=0){ // ensure discard keeps tenpai
+  const pl=G.players[0]; const h=pl.hand.slice(); h.splice(selIdx,1); if(waits(h).length===0){ toast(T('텐파이 유지 안됨','聴牌維持不可')); return; } humanDiscard(selIdx);} else toast(T('패 선택','選択')); }); }
+function doAnkan(t){ const pl=G.players[0]; for(let k=0;k<4;k++){const i=pl.hand.indexOf(t);pl.hand.splice(i,1);} pl.melds.push({type:'ankan',t}); // new dora + draw replacement
+  G.doraInd.push(drawWall()); G.drawn=drawWall(); pl.hand.push(G.drawn); sortHand(pl.hand); updateTop(); renderHand(); humanOptions(); }
+function ankanCandidates(hand){ const c=counts(hand); const r=[]; for(let t=0;t<34;t++)if(c[t]===4)r.push(t); return r; }
+function setLang(l){ LANG=l; localStorage.setItem('riichi_lang',l); document.body.classList.toggle('ja',l==='ja'); document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('on',b.dataset.lang===l)); if(G)renderAll(); }
+function setSnd(s){ SND=!!s; localStorage.setItem('riichi_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
+function sound(n){ if(!SND)return; try{ const a=new Audio('sounds/'+n+'.mp3'); a.volume=.5; a.play().catch(()=>{}); }catch(e){} }
+
+$('howtoBody').innerHTML = T(
+ '• 13장으로 4몸통+머리(또는 치또이쯔/국사무쌍)를 완성하면 화료.<br>• 화료엔 <b>役</b>이 최소 1개 필요(리치·탕야오·역패 등).<br>• 텐파이면 <b>리치</b> 선언(1000점), 이후 뽑은 패만 버림.<br>• <b>쯔모</b>=자기 뽑기 화료, <b>론</b>=남의 버린패 화료.<br>• <b>도라</b>(표시패 다음 패)는 보너스 판.<br>• 동풍전 4국, 점수 높은 사람 승.<br>• v1은 멘젠(닫힌 손) 중심 — 폰/치는 곧 추가.',
+ '• Complete 4 sets + a pair (or chiitoitsu / kokushi) with 13 tiles to win.<br>• A win needs at least one <b>yaku</b> (riichi, tanyao, yakuhai…).<br>• When tenpai, declare <b>Riichi</b> (1000 pts); afterwards discard only drawn tiles.<br>• <b>Tsumo</b>=self-draw win, <b>Ron</b>=win on a discard.<br>• <b>Dora</b> (tile after the indicator) gives bonus han.<br>• East round, 4 hands; highest score wins.<br>• v1 is closed-hand focused — calls (pon/chi) coming soon.'
+);
+setLang(LANG); setSnd(SND?1:0);
+</script>
+</body>
+</html>
