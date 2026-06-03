@@ -45,10 +45,14 @@ img{display:block}
 .captured .lab{font-size:.6rem;color:var(--muted);margin-right:1px}
 /* table */
 .field{flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:4px}
-#tableCards{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;align-content:center;max-width:540px}
-#tableCards img{width:var(--cw);border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,.4)}
-#tableCards .slot{position:relative}
-#tableCards .slot.hl img{box-shadow:0 0 0 3px var(--gold)}
+#tableCards{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;align-content:center;max-width:560px;padding:0 64px}
+.mgroup{display:flex;align-items:center;border-radius:6px;padding:2px;transition:box-shadow .2s}
+.mgroup.hl{box-shadow:0 0 0 3px var(--gold);background:rgba(230,184,77,.18)}
+.mgroup img{width:var(--cw);border-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,.5)}
+@keyframes cin{from{transform:translateY(-30px) scale(1.1);opacity:0}to{transform:none;opacity:1}}
+.mgroup img.cin{animation:cin .34s var(--ease)}
+.flip img{animation:flipin .3s var(--ease)}
+@keyframes flipin{from{transform:translateX(-160px) rotateY(60deg) scale(.7);opacity:.2}to{transform:none;opacity:1}}
 .deck{position:absolute;top:50%;left:14px;transform:translateY(-50%);text-align:center;color:var(--muted);font-size:.66rem}
 .deck .back{width:var(--cw);height:calc(var(--cw)*1.5);border-radius:5px;background:repeating-linear-gradient(45deg,#7a2630,#7a2630 6px,#8d2f3a 6px,#8d2f3a 12px);border:2px solid #aa3b48;margin-bottom:3px}
 .flip{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5}
@@ -217,14 +221,15 @@ function stealPi(from,to){ const src=G.players[from].cap; let j=src.findIndex(c=
 
 async function takeTurn(p, handCard){
   const pl=G.players[p];
+  G._newIds=new Set([handCard.id]);
   sound('play');
   const handCap = playFlow(p, handCard, true);
   renderAll();
-  await sleep(520);
+  await sleep(540);
   let flipCap=[], flipCard=null;
   // flip from deck
   if(G.deck.length){
-    flipCard=G.deck.shift(); G.flip=flipCard; renderFlip(flipCard); sound('flip'); await sleep(700);
+    flipCard=G.deck.shift(); G._newIds.add(flipCard.id); G.flip=flipCard; renderFlip(flipCard); sound('flip'); await sleep(720);
     flipCap = playFlow(p, flipCard, false); G.flip=null;
   }
   let cap = handCap.concat(flipCap);
@@ -340,7 +345,13 @@ function nextRound(){ hide('result'); deal(); }
 /* ===== render ===== */
 function renderAll(){ renderTable(); renderMyHand(); renderCaptured(); renderBar(); }
 function renderTable(){
-  $('tableCards').innerHTML=G.table.map(c=>`<div class="slot ${G.turn===0&&G.sel>=0&&G.players[0].hand[G.sel]&&G.players[0].hand[G.sel].m===c.m?'hl':''}"><img src="${c.file}" alt="${c.m}월"></div>`).join('');
+  const sel=(G.turn===0&&G.sel>=0&&G.players[0].hand[G.sel])?G.players[0].hand[G.sel].m:-1;
+  const by={}, order=[];
+  G.table.forEach(c=>{ if(!by[c.m]){by[c.m]=[];order.push(c.m);} by[c.m].push(c); });
+  $('tableCards').innerHTML=order.map(m=>{
+    const cs=by[m];
+    return `<div class="mgroup ${sel===m?'hl':''}">`+cs.map((c,i)=>`<img src="${c.file}" class="${(G._newIds&&G._newIds.has(c.id))?'cin':''}" style="margin-left:${i?'-26px':'0'}" alt="${c.m}월">`).join('')+`</div>`;
+  }).join('');
   $('deckN').textContent=G.deck.length; $('t-deck').textContent=G.deck.length;
 }
 function renderFlip(c){ $('flipArea').innerHTML=c?`<img src="${c.file}">`:''; if(!c)return; setTimeout(()=>{$('flipArea').innerHTML='';},800); }
