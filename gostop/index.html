@@ -54,7 +54,7 @@ img{display:block}
 .captured .grp img.cin,#myCaptured .grp img.cin{animation:cin .38s var(--ease)}
 .flip img{animation:flipin .3s var(--ease)}
 @keyframes dealIn{from{transform:translate(-38vw,-32vh) scale(.45) rotate(-18deg);opacity:0}to{transform:none;opacity:1}}
-body.dealing #myHand img,body.dealing #tableCards .mgroup img{animation:dealIn .5s var(--ease) backwards}
+body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealIn .5s var(--ease) backwards}
 @keyframes flipin{from{transform:translateX(-160px) rotateY(60deg) scale(.7);opacity:.2}to{transform:none;opacity:1}}
 .deck{position:absolute;top:50%;left:14px;transform:translateY(-50%);text-align:center;color:var(--muted);font-size:.66rem}
 .deck .back{width:var(--cw);height:calc(var(--cw)*1.5);border-radius:5px;background:repeating-linear-gradient(45deg,#7a2630,#7a2630 6px,#8d2f3a 6px,#8d2f3a 12px);border:2px solid #aa3b48;margin-bottom:3px}
@@ -70,8 +70,14 @@ body.dealing #myHand img,body.dealing #tableCards .mgroup img{animation:dealIn .
 #myCaptured .grp img{width:27px;border-radius:2px;margin-left:-15px;box-shadow:-1px 0 2px rgba(0,0,0,.5)}
 #myCaptured .grp img:first-of-type{margin-left:0}
 #myHand{display:flex;gap:3px;justify-content:center;flex-wrap:wrap}
-#myHand img{width:var(--cw);border-radius:5px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.4);transition:transform .12s}
-#myHand img.sel{transform:translateY(-10px);box-shadow:0 0 0 3px var(--gold)}
+.hcard{position:relative;cursor:pointer;transition:transform .12s}
+.hcard img{width:var(--cw);border-radius:5px;box-shadow:0 2px 4px rgba(0,0,0,.4);display:block}
+.hcard.sel{transform:translateY(-10px)}
+.hcard.sel img{box-shadow:0 0 0 3px var(--gold)}
+.hcard.canplay img{box-shadow:0 0 0 2px var(--green),0 2px 5px rgba(0,0,0,.45)}
+.hcard.canplay::after{content:"먹기";position:absolute;bottom:2px;left:50%;transform:translateX(-50%);background:var(--green);color:#0c2417;font-size:.52rem;font-weight:800;padding:1px 4px;border-radius:5px;pointer-events:none}
+.mtag{position:absolute;top:2px;left:2px;background:rgba(0,0,0,.62);color:#fff;font-size:.58rem;font-weight:700;line-height:1;padding:2px 4px;border-radius:4px;pointer-events:none;z-index:2}
+.mgroup{position:relative}
 /* overlays */
 .ov{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;padding:18px}
 .ov.show{display:flex}
@@ -230,11 +236,14 @@ function deal(){
   G.table=deck.splice(0,8);
   G.players=[{hand:deck.splice(0,10),cap:[]},{hand:deck.splice(0,10),cap:[]}];
   G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={};
-  G._dealing=true; document.body.classList.add('dealing'); renderAll();
+  sortHand(0); G._dealing=true; document.body.classList.add('dealing'); renderAll();
   setTimeout(()=>{ G._dealing=false; document.body.classList.remove('dealing'); },1050);
 }
 /* ===== matching / capture ===== */
 function sameMonth(arr,m){ return arr.filter(c=>c.m===m); }
+const ROLE_ORD={gwang:0,yul:1,tti:2,pi:3};
+function sortHand(p){ G.players[p].hand.sort((a,b)=> (a.m-b.m) || ((ROLE_ORD[a.role]??9)-(ROLE_ORD[b.role]??9)) ); }
+function tchar(c){ return c.gwang?'광':c.role==='yul'?'열':c.role==='tti'?'띠':(c.ssangpi?'쌍':'피'); }
 function cardValue(c){ return c.gwang?4:c.ssangpi?3:c.role==='yul'?2:c.role==='tti'?2:1; }
 function playFlow(p, card, fromHand, pick){
   // remove from hand if fromHand
@@ -289,10 +298,12 @@ async function takeTurn(p, handCard, opts){
   let handCards=[];
   if(bomb){
     for(let k=0;k<3;k++){ const idx=pl.hand.findIndex(c=>c.m===playM); if(idx>=0) handCards.push(pl.hand.splice(idx,1)[0]); }
+    if(p===0) sortHand(0);
     bombFx(p===0?'':'CPU ');
   } else {
     pl.hand.splice(pl.hand.findIndex(c=>c.id===handCard.id),1);
     handCards=[handCard];
+    if(p===0) sortHand(0);
     if(handCountM>=3 && beforeM>=1 && G.shakeMult[p]===1){ G.shakeMult[p]=2; toast((p===0?'':'CPU ')+'흔들기! ×2'); }
   }
 
@@ -499,14 +510,17 @@ function renderTable(){
   const dl=(G&&G._dealing); let di=0;
   $('tableCards').innerHTML=order.map(m=>{
     const cs=by[m];
-    return `<div class="mgroup ${sel===m?'hl':''}">`+cs.map((c,i)=>`<img src="${c.file}" data-id="${c.id}" class="${(G._newIds&&G._newIds.has(c.id))?'cin':''}" style="margin-left:${i?'-26px':'0'}${dl?(';animation-delay:'+((di++)*55)+'ms'):''}" alt="${c.m}월">`).join('')+`</div>`;
+    return `<div class="mgroup ${sel===m?'hl':''}"><span class="mtag">${m}</span>`+cs.map((c,i)=>`<img src="${c.file}" data-id="${c.id}" class="${(G._newIds&&G._newIds.has(c.id))?'cin':''}" style="margin-left:${i?'-26px':'0'}${dl?(';animation-delay:'+((di++)*55)+'ms'):''}" alt="${c.m}월">`).join('')+`</div>`;
   }).join('');
   $('deckN').textContent=G.deck.length; $('t-deck').textContent=G.deck.length;
 }
 function renderFlip(c){ $('flipArea').innerHTML=c?`<img src="${c.file}">`:''; if(!c)return; setTimeout(()=>{$('flipArea').innerHTML='';},800); }
 function renderMyHand(){
   const dl=(G&&G._dealing);
-  $('myHand').innerHTML=G.players[0].hand.map((c,i)=>`<img src="${c.file}" class="${i===G.sel?'sel':''}" onclick="selectCard(${i})"${dl?` style="animation-delay:${i*55}ms"`:''}>`).join('');
+  $('myHand').innerHTML=G.players[0].hand.map((c,i)=>{
+    const canPlay=(G.turn===0&&!G.over&&sameMonth(G.table,c.m).length>0);
+    return `<div class="hcard ${i===G.sel?'sel':''} ${canPlay?'canplay':''}" onclick="selectCard(${i})"${dl?` style="animation-delay:${i*55}ms"`:''}><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`;
+  }).join('');
 }
 let lastTap=-1;
 function selectCard(i){ if(G.turn!==0||G.over)return; if(G.sel===i){ playSelected(); return;} G.sel=i; renderMyHand(); renderTable(); }
