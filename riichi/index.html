@@ -410,21 +410,31 @@ function canMelds(c){
   if(i<27 && numOf(i)<=7 && c[i+1]>0 && c[i+2]>0){ c[i]--;c[i+1]--;c[i+2]--; if(canMelds(c))return true; c[i]++;c[i+1]++;c[i+2]++; }
   return false;
 }
-function canWin(hand14, tsumo, p){ return hand14.length%3===2 && isWin(hand14); }
+function canMeldsN(c,need){ let i=0; while(i<34&&c[i]===0)i++; if(i===34)return need===0; if(need<=0)return false;
+  if(c[i]>=3){ c[i]-=3; if(canMeldsN(c,need-1))return true; c[i]+=3; }
+  if(i<27&&numOf(i)<=7&&c[i+1]>0&&c[i+2]>0){ c[i]--;c[i+1]--;c[i+2]--; if(canMeldsN(c,need-1))return true; c[i]++;c[i+1]++;c[i+2]++; }
+  return false; }
+function isWinM(concealed,nMeld){ const c=counts(concealed);
+  if(nMeld===0){ if(isKokushi(c))return true; if(isChiitoi(c))return true; }
+  const need=4-nMeld;
+  for(let p=0;p<34;p++){ if(c[p]>=2){ c[p]-=2; let ok; if(need===0){ ok=c.every(x=>x===0); } else { ok=canMeldsN(c.slice(),need); } c[p]+=2; if(ok)return true; } }
+  return false; }
+function canWin(hand14, tsumo, p){ const m=(G.players[p].melds||[]).length; return hand14.length===14-3*m && isWinM(hand14,m); }
 
-function waits(hand13){ // tiles that complete (length 13 or 13-style)
-  const res=[]; for(let t=0;t<34;t++){ if(hand13.filter(x=>x===t).length>=4)continue; if(isWin(hand13.concat([t])))res.push(t); } return res;
+function waits(hand13,nMeld){ nMeld=nMeld||0;
+  const res=[]; for(let t=0;t<34;t++){ if(hand13.filter(x=>x===t).length>=4)continue; if(isWinM(hand13.concat([t]),nMeld))res.push(t); } return res;
 }
-function tenpaiDiscards(hand){ // hand length 14: list {discard, waits} that are tenpai
+function tenpaiDiscards(hand,nMeld){ nMeld=nMeld||0;
   const res=[]; const seen=new Set();
-  for(const d of hand){ if(seen.has(d))continue; seen.add(d); const h=hand.slice(); h.splice(h.indexOf(d),1); const w=waits(h); if(w.length)res.push({discard:d,waits:w}); }
+  for(const d of hand){ if(seen.has(d))continue; seen.add(d); const h=hand.slice(); h.splice(h.indexOf(d),1); const w=waits(h,nMeld); if(w.length)res.push({discard:d,waits:w}); }
   return res;
 }
 function isFuriten(pl,winTile){
   if(pl._tempFuriten) return true;
   const h=pl.hand.slice(); // hand already has nothing extra here for ron check we pass hand+tile; compute waits of 13
   const h13 = pl.hand.slice();
-  const w=waits(h13);
+  const w=waits(h13, pl.melds.length);
+  if(pl._riichiFuriten)return true;
   for(const t of w){ if(pl.discards.includes(t))return true; }
   return false;
 }
@@ -445,59 +455,49 @@ function akaCount(hand){ return 0; } // v1: aka tracking simplified to 0 (visual
 function countDora(hand,inds){ let n=0; for(const ind of inds){ const d=nextDora(ind); n+=hand.filter(x=>x===d).length; } return n; }
 
 function evalYaku(hand14, tsumo, p, winTile){
-  const pl=G.players[p]; const c=counts(hand14); const yaku=[]; let han=0; let yakuman=0;
-  const closed=pl.melds.length===0;
-  const roundW=G.roundWind; const seatW=27+pl.seat;
-  // yakuman
-  if(isKokushi(c)){ yaku.push({n:T('국사무쌍','国士無双'),h:13}); yakuman+=13; }
-  let chiitoi=isChiitoi(c);
-  // riichi
+  const pl=G.players[p]; const melds=pl.melds||[]; const yaku=[]; let han=0; let yakuman=0;
+  const menzen = melds.every(m=>m.type==='ankan');                 // 멘젠(암깡만 있어도 멘젠)
+  const meldSets = melds.map(m=> m.type==='chi' ? {type:'seq',t:Math.min(...m.tiles),open:true} : {type:'tri',t:m.tiles[0],open:m.type!=='ankan'} );
+  const meldTiles = [].concat(...melds.map(m=>m.tiles));
+  const all = hand14.concat(meldTiles); const allC=counts(all);
+  const c=counts(hand14);
+  const roundW=G.roundWind, seatW=27+pl.seat;
+  if(menzen && isKokushi(c)){ yaku.push({n:T('국사무쌍','国士無双'),h:13}); yakuman+=13; }
+  const chiitoi = menzen && isChiitoi(c);
   if(pl.riichi){ yaku.push({n:T('리치','立直'),h:1}); han++; if(pl.ippatsu){ yaku.push({n:T('일발','一発'),h:1}); han++; } }
-  if(tsumo&&closed){ yaku.push({n:T('멘젠쯔모','門前清自摸'),h:1}); han++; }
-  // tanyao
-  if(hand14.every(t=>t<27&&numOf(t)>=2&&numOf(t)<=8)){ yaku.push({n:T('탕야오','断么九'),h:1}); han++; }
-  // yakuhai
-  [31,32,33].forEach((d,k)=>{ if(c[d]>=3){ yaku.push({n:T('역패 '+HONOR_NAME_KO[4+k],'役牌 '+HONOR_NAME_JA[4+k]),h:1}); han++; } });
-  if(c[roundW]>=3){ yaku.push({n:T('장풍패','場風'),h:1}); han++; }
-  if(c[seatW]>=3 && seatW!==roundW){ yaku.push({n:T('자풍패','自風'),h:1}); han++; }
-  // honitsu/chinitsu
-  const suitsUsed=new Set(hand14.filter(t=>t<27).map(t=>suitOf(t)));
-  const hasHonor=hand14.some(t=>t>=27);
-  if(suitsUsed.size===1 && !hasHonor){ yaku.push({n:T('청일색','清一色'),h:closed?6:5}); han+=closed?6:5; }
-  else if(suitsUsed.size===1 && hasHonor){ yaku.push({n:T('혼일색','混一色'),h:closed?3:2}); han+=closed?3:2; }
-  // chiitoi
+  if(tsumo&&menzen){ yaku.push({n:T('멘젠쯔모','門前清自摸'),h:1}); han++; }
+  if(all.every(t=>t<27&&numOf(t)>=2&&numOf(t)<=8)){ yaku.push({n:T('탕야오','断么九'),h:1}); han++; }
+  [31,32,33].forEach((d,k)=>{ if(allC[d]>=3){ yaku.push({n:T('역패 '+HONOR_NAME_KO[4+k],'役牌 '+HONOR_NAME_JA[4+k]),h:1}); han++; } });
+  if(allC[roundW]>=3){ yaku.push({n:T('장풍','場風'),h:1}); han++; }
+  if(allC[seatW]>=3 && seatW!==roundW){ yaku.push({n:T('자풍','自風'),h:1}); han++; }
+  const suits=new Set(all.filter(t=>t<27).map(t=>suitOf(t))); const hasHonor=all.some(t=>t>=27);
+  if(suits.size===1 && !hasHonor){ const h=menzen?6:5; yaku.push({n:T('청일색','清一色'),h}); han+=h; }
+  else if(suits.size===1 && hasHonor){ const h=menzen?3:2; yaku.push({n:T('혼일색','混一色'),h}); han+=h; }
   if(chiitoi){ yaku.push({n:T('치또이쯔','七対子'),h:2}); han+=2; }
-  // structural (best decomposition) for pinfu/iipeikou/sanshoku/ittsu/toitoi/sanankou
-  if(!chiitoi && !isKokushi(c)){
-    const decs=decompose(c); let bestExtra=0, bestList=[];
-    for(const dec of decs){ let h=0; const list=[];
-      const seqs=dec.sets.filter(s=>s.type==='seq'); const tris=dec.sets.filter(s=>s.type==='tri');
-      // pinfu (closed, all seq, pair not yakuhai, ryanmen wait) — approx: closed & 4 seq & pair not yakuhai
-      if(closed && seqs.length===4){ const pr=dec.pair; const isYakuhaiPair=(pr>=31)||pr===roundW||pr===seatW; if(!isYakuhaiPair){ h++; list.push({n:T('핑후','平和'),h:1}); } }
-      // iipeikou (closed, two identical seq)
-      if(closed){ const segKey=seqs.map(s=>s.t).sort(); for(let k=0;k<segKey.length-1;k++){ if(segKey[k]===segKey[k+1]){ h++; list.push({n:T('이페코','一盃口'),h:1}); break; } } }
-      // toitoi
+  if(!chiitoi && yakuman===0){
+    const decs=decompose(c); let best=0,bestList=[];
+    for(const dec of decs){
+      const sets=meldSets.concat(dec.sets); if(sets.length!==4)continue;
+      let h=0; const list=[];
+      const seqs=sets.filter(s=>s.type==='seq'); const tris=sets.filter(s=>s.type==='tri');
+      if(menzen && seqs.length===4){ const pr=dec.pair; const yk=(pr>=31)||pr===roundW||pr===seatW; if(!yk){ h++; list.push({n:T('핑후','平和'),h:1}); } }
+      if(menzen){ const ks=seqs.map(s=>s.t).sort((a,b)=>a-b); for(let k=0;k<ks.length-1;k++)if(ks[k]===ks[k+1]){ h++; list.push({n:T('이페코','一盃口'),h:1}); break; } }
       if(tris.length===4){ h+=2; list.push({n:T('또이또이','対々和'),h:2}); }
-      // sanankou (3 concealed triplets; closed so all tri concealed except ron-completed — approx all)
-      if(tris.length>=3){ h+=2; list.push({n:T('산안커','三暗刻'),h:2}); }
-      // sanshoku doujun
-      const seqStarts=seqs.map(s=>s.t);
-      for(const st of seqStarts){ if(st<27){ const n=numOf(st); if(seqStarts.includes(n-1+9)&&seqStarts.includes(n-1+18)){ // same number across 3 suits
-            // map: man start = n-1, pin = n-1+9, sou = n-1+18
-            const m=n-1; if(seqStarts.includes(m)&&seqStarts.includes(m+9)&&seqStarts.includes(m+18)){ h+=closed?2:1; list.push({n:T('삼색동순','三色同順'),h:closed?2:1}); break; } } } }
-      // ittsu (123 456 789 same suit)
-      for(let s=0;s<3;s++){ const b=s*9; if(seqStarts.includes(b)&&seqStarts.includes(b+3)&&seqStarts.includes(b+6)){ h+=closed?2:1; list.push({n:T('일기통관','一気通貫'),h:closed?2:1}); break; } }
-      if(h>bestExtra){bestExtra=h;bestList=list;}
+      if(menzen && tris.filter(t=>!t.open).length>=3){ h+=2; list.push({n:T('산안커','三暗刻'),h:2}); }
+      const ss=seqs.map(s=>s.t);
+      for(let n=0;n<=6;n++){ if(ss.includes(n)&&ss.includes(n+9)&&ss.includes(n+18)){ const hh=menzen?2:1; h+=hh; list.push({n:T('삼색동순','三色同順'),h:hh}); break; } }
+      for(let st=0;st<3;st++){ const b=st*9; if(ss.includes(b)&&ss.includes(b+3)&&ss.includes(b+6)){ const hh=menzen?2:1; h+=hh; list.push({n:T('일기통관','一気通貫'),h:hh}); break; } }
+      if(h>best){ best=h; bestList=list; }
     }
-    han+=bestExtra; yaku.push(...bestList);
+    han+=best; yaku.push(...bestList);
   }
-  // dora
-  const doraN=countDora(hand14,G.doraInd); if(doraN){ yaku.push({n:T('도라','ドラ'),h:doraN}); han+=doraN; }
-  if(pl.riichi){ const uraN=countDora(hand14,G.uraInd); if(uraN){ yaku.push({n:T('우라도라','裏ドラ'),h:uraN}); han+=uraN; } }
-  if(yakuman>0){ return {yaku:yaku.filter(y=>y.h>=13||y.n.includes('도라')||y.n.includes('ドラ')),han:0,yakuman}; }
+  const doraN=countDora(all,G.doraInd); if(doraN){ yaku.push({n:T('도라','ドラ'),h:doraN}); han+=doraN; }
+  const akaN=akaCount(all); if(akaN){ yaku.push({n:T('적도라','赤ドラ'),h:akaN}); han+=akaN; }
+  if(pl.riichi){ const uraN=countDora(all,G.uraInd); if(uraN){ yaku.push({n:T('우라도라','裏ドラ'),h:uraN}); han+=uraN; } }
+  if(yakuman>0){ return {yaku:yaku.filter(y=>y.h>=13||/도라|ドラ/.test(y.n)),han:0,yakuman}; }
   return {yaku,han,yakuman:0};
 }
-function hasYaku(hand14,tsumo,p,winTile){ const r=evalYaku(hand14,tsumo,p,winTile); return r.yakuman>0 || (r.han - countDora(hand14,G.doraInd) - (G.players[p].riichi?countDora(hand14,G.uraInd):0)) >0 ; }
+function hasYaku(hand14,tsumo,p,winTile){ const r=evalYaku(hand14,tsumo,p,winTile); if(r.yakuman>0)return true; const nd=r.yaku.filter(y=>!/도라|ドラ/.test(y.n)).reduce((a,y)=>a+y.h,0); return nd>0; }
 
 function calcFu(hand14,tsumo,p,decBased){
   // simplified fu: chiitoi=25; else base20 +menzen ron10 +tsumo2 + triplets/pair/wait approx
