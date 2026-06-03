@@ -9,13 +9,14 @@
 <meta property="og:description" content="CPU와 즐기는 13장 일본 리치마작. 리치·도라·役 점수계산. 한국어/日本語." />
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icon.svg" />
+<script src="/lib/shared-wallet.js?v=20260214"></script>
 <style>
 :root{
   --bg:#0a1f1a; --felt:#10302a; --felt2:#0c2722; --panel:#13241f; --panel2:#1b332c;
   --text:#eef3ef; --muted:#8fa69d; --line:rgba(238,243,239,.12);
   --gold:#e9c46a; --green:#6ad29a; --red:#e76f63; --blue:#67c1e8; --riichi:#ff5d73;
   --ease:cubic-bezier(.22,.61,.36,1);
-  --tile-w:42px;
+  --tz:1; --tile-w:calc(42px * var(--tz)); --wallet-bar-h:calc(52px + env(safe-area-inset-top));
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -26,7 +27,7 @@ body.ja [data-ko]{display:none}
 body.ja [data-en]{display:revert}
 
 /* menu */
-#menu{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+#menu{position:fixed;top:var(--wallet-bar-h);left:0;right:0;bottom:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
   background:radial-gradient(120% 90% at 50% 0%,var(--felt),var(--felt2))}
 #menu h1{font-size:2rem;font-weight:800;letter-spacing:.02em}
 #menu p{color:var(--muted);font-size:.9rem;text-align:center;margin-top:-6px;line-height:1.5}
@@ -36,7 +37,7 @@ body.ja [data-en]{display:revert}
 .big-btn.sec{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
 
 /* board */
-#board{position:fixed;inset:0;display:none;flex-direction:column}
+#board{position:fixed;top:var(--wallet-bar-h);left:0;right:0;bottom:0;display:none;flex-direction:column}
 .topbar{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:.78rem;color:var(--muted);flex-wrap:wrap}
 .topbar .b{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 9px}
 .topbar .b b{color:var(--text)}
@@ -100,6 +101,12 @@ body.ja [data-en]{display:revert}
 .toast{position:fixed;top:46%;left:50%;transform:translate(-50%,-50%);z-index:50;background:rgba(0,0,0,.8);
   border:2px solid var(--gold);color:#fff;font-size:2rem;font-weight:800;padding:14px 30px;border-radius:14px;display:none;animation:pop .5s var(--ease)}
 @keyframes pop{from{transform:translate(-50%,-50%) scale(.7);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+#turnTimer{position:absolute;left:0;right:0;bottom:0;height:3px;background:transparent}
+#turnTimer .bar{height:100%;background:var(--gold);width:100%;transform-origin:left;transition:transform .2s linear}
+#turnTimer.warn .bar{background:var(--red)}
+#tenpaiInfo{text-align:center;font-size:.72rem;color:var(--gold);min-height:24px;display:flex;gap:3px;justify-content:center;align-items:center;flex-wrap:wrap}
+#tenpaiInfo img{width:20px;border-radius:2px;background:#fff}
+#tenpaiInfo .lab{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -108,7 +115,11 @@ body.ja [data-en]{display:revert}
   <h1>🀄 <span data-ko>일본 리치마작</span><span data-en>立直麻雀</span></h1>
   <p data-ko>13장 · 동풍전 · CPU 3명<br>리치 · 도라 · 役 점수계산</p>
   <p data-en>13 tiles · East round · 3 CPUs<br>Riichi · Dora · Yaku scoring</p>
+  <div style="color:var(--gold);font-weight:700;font-size:.95rem" id="menu-gold">💰 -</div>
   <button class="big-btn" onclick="newGame()" data-ko>게임 시작</button><button class="big-btn" onclick="newGame()" data-en>Start</button>
+  <div style="display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--muted)"><span data-ko>판돈</span><span data-en>Bet</span>
+    <div class="seg"><button data-bet="1" onclick="setBet(1)">×1</button><button data-bet="5" onclick="setBet(5)">×5</button><button data-bet="10" onclick="setBet(10)">×10</button></div>
+  </div>
   <button class="big-btn sec" onclick="show('howto')" data-ko>플레이 방법</button><button class="big-btn sec" onclick="show('howto')" data-en>How to play</button>
   <button class="big-btn sec" onclick="show('settings')">⚙ <span data-ko>설정</span><span data-en>Settings</span></button>
 </div>
@@ -120,6 +131,7 @@ body.ja [data-en]{display:revert}
     <span class="b"><span data-ko>점수</span><span data-en>Pts</span> <b id="t-pts">25000</b></span>
     <span class="b dora-ind"><span data-ko>도라</span><span data-en>Dora</span> <span id="t-dora"></span></span>
     <span class="sp"></span>
+    <button onclick="zoomTiles(-1)">🔍−</button><button onclick="zoomTiles(1)">🔍+</button>
     <button onclick="show('settings')">⚙</button>
     <button onclick="quitToMenu()" data-ko>나가기</button><button onclick="quitToMenu()" data-en>Exit</button>
   </div>
@@ -129,8 +141,10 @@ body.ja [data-en]{display:revert}
     <div class="opp right" id="opp1"></div>
     <div class="center"><div class="rd" id="c-round">東</div><div id="c-info"></div></div>
     <div id="myDisc"></div>
+    <div id="turnTimer"><div class="bar"></div></div>
   </div>
   <div class="handzone">
+    <div id="tenpaiInfo"></div>
     <div id="hand"></div>
     <div class="actions" id="actions"></div>
   </div>
@@ -155,7 +169,12 @@ body.ja [data-en]{display:revert}
     <div class="seg"><button data-lang="ko" onclick="setLang('ko')">한국어</button><button data-lang="ja" onclick="setLang('ja')">日本語</button></div></div>
   <div class="row"><span data-ko>🔊 소리</span><span data-en>🔊 Sound</span>
     <div class="seg"><button data-snd="1" onclick="setSnd(1)">ON</button><button data-snd="0" onclick="setSnd(0)">OFF</button></div></div>
-  <div class="row"><span data-ko>🀅 적도라</span><span data-en>🀅 Red fives</span><span style="color:var(--muted);font-size:.82rem" data-ko>켜짐</span><span data-en>On</span></div>
+  <div class="row"><span data-ko>🎵 배경음</span><span data-en>🎵 BGM</span>
+    <div class="seg"><button data-bgm="1" onclick="setBgm(1)">ON</button><button data-bgm="0" onclick="setBgm(0)">OFF</button></div></div>
+  <div class="row"><span data-ko>🀅 적도라</span><span data-en>🀅 Red fives</span>
+    <div class="seg"><button data-aka="1" onclick="setAka(1)">ON</button><button data-aka="0" onclick="setAka(0)">OFF</button></div></div>
+  <div class="row"><span data-ko>⏱ 턴 제한</span><span data-en>⏱ Turn limit</span>
+    <div class="seg"><button data-tl="0" onclick="setTL(0)">∞</button><button data-tl="10" onclick="setTL(10)">10s</button><button data-tl="20" onclick="setTL(20)">20s</button></div></div>
   <button class="close" onclick="hide('settings')" data-ko>닫기</button><button class="close" onclick="hide('settings')" data-en>Close</button>
 </div></div>
 
@@ -171,6 +190,12 @@ body.ja [data-en]{display:revert}
 const $=id=>document.getElementById(id);
 let LANG=localStorage.getItem('riichi_lang')||'ko';
 let SND=localStorage.getItem('riichi_snd')!=='0';
+let BGM=localStorage.getItem('riichi_bgm')==='1';
+let AKA=localStorage.getItem('riichi_aka')!=='0';
+let BET=+(localStorage.getItem('riichi_bet')||1);
+let TZ=+(localStorage.getItem('riichi_zoom')||1);
+let TL=+(localStorage.getItem('riichi_tl')||0);
+let _bgmA=null, _turnT=null;
 const T=(ko,ja)=>LANG==='ja'?ja:ko;
 
 // tile: 0-8 man, 9-17 pin, 18-26 sou, 27-33 honor(27=E,28=S,29=W,30=N,31=白,32=發,33=中)
@@ -194,8 +219,8 @@ function nextDora(ind){ // dora = tile after indicator
 let G=null; // game state
 function newGame(){
   $('menu').style.display='none'; $('board').style.display='flex';
-  G={ roundWind:27, hand:0, dealer:0, honba:0, pts:[25000,25000,25000,25000], aka:true };
-  startHand();
+  G={ roundWind:27, hand:0, dealer:0, honba:0, pts:[25000,25000,25000,25000], aka:AKA };
+  startHand(); applyBgm();
 }
 function startHand(){
   // build wall 136
@@ -211,7 +236,7 @@ function startHand(){
   // dead wall dora indicators (take 1 visible + ura)
   G.doraInd=[drawWall()]; G.uraInd=[drawWall()];
   G.live=G.wall.length-14; // approx remaining playable
-  G.turn=G.dealer; G.drawn=-1; G.lastDiscard=-1; G.lastDiscardBy=-1; G.over=false; G.firstGoAround=true;
+  G.turn=G.dealer; G.drawn=-1; G.lastDiscard=-1; G.lastDiscardBy=-1; G.over=false; G.firstGoAround=true; G.ptsStart=G.pts.slice();
   renderAll(); updateTop();
   setTimeout(()=>turnLoop(),500);
 }
@@ -227,7 +252,7 @@ function turnLoop(){
   pl.hand.push(G.drawn);
   updateTop();
   if(p===0){ renderHand(); humanOptions(); }
-  else { setTimeout(()=>cpuTurn(p),600); }
+  else { clearTurnTimer(); $('tenpaiInfo').innerHTML=''; setTimeout(()=>cpuTurn(p),600); }
 }
 
 function humanOptions(){
@@ -244,8 +269,8 @@ function humanOptions(){
   // ankan?
   const kanT=ankanCandidates(pl.hand);
   if(kanT.length){ addAct('a-kan',T('안깡','暗槓'),()=>doAnkan(kanT[0])); }
-  addAct('a-discard',T('버리기','打牌'),()=>{ if(selIdx>=0) humanDiscard(selIdx); else toast(T('패 선택','選択')); });
-  renderHand();
+  addAct('a-discard',T('버리기','打牌'),()=>{ if(selIdx>=0) humanDiscard(selIdx); else humanDiscard(pl.hand.length-1); });
+  renderHand(); renderTenpai(); startTurnTimer();
 }
 function addAct(cls,label,fn){ const b=document.createElement('button'); b.className='act '+cls; b.textContent=label; b.onclick=fn; $('actions').appendChild(b); }
 
@@ -261,6 +286,7 @@ function renderHand(){
   });
 }
 function humanDiscard(i){
+  clearTurnTimer(); $('tenpaiInfo').innerHTML='';
   const pl=G.players[0]; const t=pl.hand[i];
   if(pl.riichi && i!==pl.hand.length-1){ toast(T('리치 중엔 뽑은 패만','リーチ中はツモ切り')); return; }
   pl.hand.splice(i,1); sortHand(pl.hand); selIdx=-1; G.drawn=-1;
@@ -466,7 +492,7 @@ function scorePoints(han,fu,dealer,tsumo){
 
 let WIN_TILE=-1;
 function declareWin(p,tsumo,winTile,from){
-  if(G.over)return; G.over=true; WIN_TILE=winTile;
+  if(G.over)return; G.over=true; WIN_TILE=winTile; clearTurnTimer();
   const pl=G.players[p];
   const hand14 = pl.hand.slice(); if(tsumo){ /* drawn already in hand */ } else { hand14.push(winTile); }
   sortHand(hand14);
@@ -478,7 +504,8 @@ function declareWin(p,tsumo,winTile,from){
   // apply points
   if(tsumo){ for(let q=0;q<4;q++){ if(q===p)continue; const isD=(q===G.dealer); let pay; if(dealer)pay=sc.each; else pay=isD?sc.dealer:sc.nondealer; G.pts[q]-=pay; G.pts[p]+=pay; } }
   else { G.pts[from]-=sc.total; G.pts[p]+=sc.total; }
-  sound(tsumo?'tsumo':'ron');
+  sound(tsumo?'tsumo':'ron'); try{navigator.vibrate&&navigator.vibrate(p===0?[40,40,80]:30);}catch(e){}
+  settleGold();
   showResult(p,tsumo,hand14,winTile,ev,fu,han,sc,from);
 }
 function showResult(p,tsumo,hand14,winTile,ev,fu,han,sc,from){
@@ -491,7 +518,7 @@ function showResult(p,tsumo,hand14,winTile,ev,fu,han,sc,from){
   show('result');
 }
 function drawnGame(){ // ryuukyoku: tenpai players
-  if(G.over)return; G.over=true;
+  if(G.over)return; G.over=true; clearTurnTimer(); settleGold();
   const tenpai=G.players.map((pl,i)=> waits(pl.hand.length%3===1?pl.hand:pl.hand.slice(0,pl.hand.length-1)).length>0 );
   $('r-title').textContent=T('유국 (황패)','流局');
   $('r-tiles').innerHTML='';
@@ -534,6 +561,10 @@ function renderOpps(){
   }
 }
 function renderMyDisc(){ $('myDisc').innerHTML=G.players[0].discards.map(t=>`<img src="${tileSvg(t)}">`).join(''); }
+function renderTenpai(){ const el=$('tenpaiInfo'); if(!el||!G)return; const pl=G.players[0]; const wset=new Set();
+  if(pl.hand.length%3===2){ tenpaiDiscards(pl.hand).forEach(o=>o.waits.forEach(w=>wset.add(w))); }
+  else { waits(pl.hand).forEach(w=>wset.add(w)); }
+  el.innerHTML = wset.size ? ('<span class="lab">'+T('대기','待ち')+'</span>'+[...wset].sort((a,b)=>a-b).map(t=>`<img src="${tileSvg(t)}">`).join('')) : ''; }
 function updateTop(){
   $('t-round').textContent=(LANG==='ja'?'東':'東')+(G.hand+1);
   $('c-round').textContent='東';
@@ -545,7 +576,7 @@ function updateTop(){
 /* ui helpers */
 function show(id){ $(id).classList.add('show'); }
 function hide(id){ $(id).classList.remove('show'); }
-function quitToMenu(){ hide('result'); $('board').style.display='none'; $('menu').style.display='flex'; document.querySelectorAll('#result .close').forEach(b=>b.onclick=nextHand); }
+function quitToMenu(){ clearTurnTimer(); if(_bgmA)_bgmA.pause(); hide('result'); $('board').style.display='none'; $('menu').style.display='flex'; document.querySelectorAll('#result .close').forEach(b=>b.onclick=nextHand); refreshMenuGold(); }
 function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',1200); }
 function doRiichi(){ const pl=G.players[0]; const t=tenpaiDiscards(pl.hand); if(!t.length)return; pl.pendingRiichi=true; toast(T('리치! 버릴 패 선택','リーチ！打牌選択')); humanOptions2(); }
 function humanOptions2(){ const acts=$('actions'); acts.innerHTML=''; addAct('a-discard',T('버리기','打牌'),()=>{ if(selIdx>=0){ // ensure discard keeps tenpai
@@ -556,12 +587,27 @@ function ankanCandidates(hand){ const c=counts(hand); const r=[]; for(let t=0;t<
 function setLang(l){ LANG=l; localStorage.setItem('riichi_lang',l); document.body.classList.toggle('ja',l==='ja'); document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('on',b.dataset.lang===l)); if(G)renderAll(); }
 function setSnd(s){ SND=!!s; localStorage.setItem('riichi_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
 function sound(n){ if(!SND)return; const map={tsumo:'win',ron:'win',riichi:'claim'}; const fn=map[n]||'tile'; try{ const a=new Audio('sounds/'+fn+'.mp3'); a.volume=.5; a.play().catch(()=>{}); }catch(e){} }
+function settleGold(){ if(!G||!G.ptsStart)return; const d=Math.round((G.pts[0]-G.ptsStart[0])*BET); G.ptsStart=G.pts.slice(); if(!d)return; try{ if(typeof SharedWallet!=='undefined'&&SharedWallet._initialized){ d>0?SharedWallet.addGold(d):SharedWallet.removeGold(-d);} }catch(e){} }
+function refreshMenuGold(){ try{ if(typeof SharedWallet!=='undefined'){ $('menu-gold').textContent='💰 '+(SharedWallet.gold||0).toLocaleString(); } }catch(e){} }
+function setBet(n){ BET=n; localStorage.setItem('riichi_bet',n); document.querySelectorAll('[data-bet]').forEach(b=>b.classList.toggle('on',+b.dataset.bet===n)); }
+function setAka(v){ AKA=!!v; localStorage.setItem('riichi_aka',v?'1':'0'); document.querySelectorAll('[data-aka]').forEach(b=>b.classList.toggle('on',+b.dataset.aka===(v?1:0))); }
+function setTL(v){ TL=v; localStorage.setItem('riichi_tl',v); document.querySelectorAll('[data-tl]').forEach(b=>b.classList.toggle('on',+b.dataset.tl===v)); }
+function setBgm(v){ BGM=!!v; localStorage.setItem('riichi_bgm',v?'1':'0'); document.querySelectorAll('[data-bgm]').forEach(b=>b.classList.toggle('on',+b.dataset.bgm===(v?1:0))); applyBgm(); }
+function applyBgm(){ try{ if(BGM && G && !G.over){ if(!_bgmA){ _bgmA=new Audio('sounds/bgm.mp3'); _bgmA.loop=true; _bgmA.volume=.25; } _bgmA.play().catch(()=>{}); } else if(_bgmA){ _bgmA.pause(); } }catch(e){} }
+function applyZoom(){ TZ=Math.max(.8,Math.min(1.7,TZ||1)); document.documentElement.style.setProperty('--tz',TZ); }
+function zoomTiles(d){ TZ=Math.round((TZ+d*0.12)*100)/100; applyZoom(); localStorage.setItem('riichi_zoom',TZ); }
+// 턴 타이머
+function clearTurnTimer(){ if(_turnT){ clearInterval(_turnT.iv); _turnT=null; } const w=$('turnTimer'); if(w){ w.classList.remove('warn'); w.querySelector('.bar').style.transform='scaleX(1)'; } }
+function startTurnTimer(){ clearTurnTimer(); if(!TL||TL<=0)return; const w=$('turnTimer'); const bar=w.querySelector('.bar'); let left=TL*1000; const t0=Date.now(); _turnT={iv:setInterval(()=>{ left=TL*1000-(Date.now()-t0); const f=Math.max(0,left/(TL*1000)); bar.style.transform='scaleX('+f+')'; w.classList.toggle('warn',f<0.34); if(left<=0){ clearTurnTimer(); onTurnTimeout(); } },120)}; }
+function onTurnTimeout(){ if(G.turn!==0||G.over)return; const pl=G.players[0]; // 쯔모기리 자동
+  const i=pl.hand.length-1; humanDiscard(i>=0?i:0); }
 
 $('howtoBody').innerHTML = T(
  '• 13장으로 4몸통+머리(또는 치또이쯔/국사무쌍)를 완성하면 화료.<br>• 화료엔 <b>役</b>이 최소 1개 필요(리치·탕야오·역패 등).<br>• 텐파이면 <b>리치</b> 선언(1000점), 이후 뽑은 패만 버림.<br>• <b>쯔모</b>=자기 뽑기 화료, <b>론</b>=남의 버린패 화료.<br>• <b>도라</b>(표시패 다음 패)는 보너스 판.<br>• 동풍전 4국, 점수 높은 사람 승.<br>• v1은 멘젠(닫힌 손) 중심 — 폰/치는 곧 추가.',
  '• Complete 4 sets + a pair (or chiitoitsu / kokushi) with 13 tiles to win.<br>• A win needs at least one <b>yaku</b> (riichi, tanyao, yakuhai…).<br>• When tenpai, declare <b>Riichi</b> (1000 pts); afterwards discard only drawn tiles.<br>• <b>Tsumo</b>=self-draw win, <b>Ron</b>=win on a discard.<br>• <b>Dora</b> (tile after the indicator) gives bonus han.<br>• East round, 4 hands; highest score wins.<br>• v1 is closed-hand focused — calls (pon/chi) coming soon.'
 );
-setLang(LANG); setSnd(SND?1:0);
+setLang(LANG); setSnd(SND?1:0); setBet(BET); setAka(AKA?1:0); setTL(TL); setBgm(BGM?1:0); applyZoom();
+try{ if(typeof SharedWallet!=='undefined'&&SharedWallet._initPromise){ SharedWallet._initPromise.then(refreshMenuGold);} else { setTimeout(refreshMenuGold,800);} }catch(e){}
 </script>
 </body>
 </html>
