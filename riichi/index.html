@@ -16,7 +16,7 @@
   --text:#eef3ef; --muted:#8fa69d; --line:rgba(238,243,239,.12);
   --gold:#e9c46a; --green:#6ad29a; --red:#e76f63; --blue:#67c1e8; --riichi:#ff5d73;
   --ease:cubic-bezier(.22,.61,.36,1);
-  --tz:1; --tile-w:calc(42px * var(--tz)); --wallet-bar-h:calc(52px + env(safe-area-inset-top));
+  --tz:1; --tile-w:calc(38px * var(--tz)); --wallet-bar-h:calc(52px + env(safe-area-inset-top));
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -37,7 +37,7 @@ body.ja [data-en]{display:revert}
 .big-btn.sec{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
 
 /* board */
-#board{position:fixed;top:var(--wallet-bar-h);left:0;right:0;bottom:0;display:none;flex-direction:column}
+#board{position:fixed;top:var(--wallet-bar-h);left:0;right:0;bottom:0;display:none;flex-direction:column;background:radial-gradient(130% 100% at 50% 35%,var(--felt),var(--felt2))}
 .topbar{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:.78rem;color:var(--muted);flex-wrap:wrap}
 .topbar .b{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 9px}
 .topbar .b b{color:var(--text)}
@@ -70,9 +70,10 @@ body.ja [data-en]{display:revert}
 
 /* hand */
 .handzone{padding:8px 6px 12px;background:linear-gradient(transparent,rgba(0,0,0,.35))}
-#hand{display:flex;gap:2px;justify-content:center;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}
+#hand{display:flex;gap:2px;justify-content:safe center;flex-wrap:nowrap;overflow-x:auto;padding:0 6px 4px;scrollbar-width:none}
+#hand::-webkit-scrollbar{display:none}
 #hand .t{position:relative;flex:0 0 auto;cursor:pointer;transition:transform .12s var(--ease)}
-#hand .t img{width:var(--tile-w);border-radius:5px;background:#fff;display:block;box-shadow:0 2px 4px rgba(0,0,0,.4)}
+#hand .t img{width:min(var(--tile-w),7vw);border-radius:5px;background:#fff;display:block;box-shadow:0 2px 4px rgba(0,0,0,.4)}
 #hand .t.sel{transform:translateY(-12px)}
 #hand .t.draw{margin-left:10px}
 #hand .t.aka img{box-shadow:0 0 0 2px var(--red),0 2px 4px rgba(0,0,0,.4)}
@@ -114,7 +115,7 @@ body.ja [data-en]{display:revert}
 .disc-anim{animation:discIn .34s var(--ease)}
 .disc img.ri,#myDisc img.ri{transform:rotate(90deg);box-shadow:0 0 0 2px var(--riichi)}
 .meld{display:flex;align-items:flex-end;margin-left:7px;border-left:2px solid var(--gold);padding-left:4px}
-.meld img{width:calc(var(--tile-w)*.82);border-radius:4px;background:#fff;display:block}
+.meld img{width:calc(min(var(--tile-w),7vw)*.82);border-radius:4px;background:#fff;display:block}
 .omeld{display:flex;flex-wrap:wrap;gap:1px;justify-content:center;margin-top:1px}
 .omeld img{width:16px;border-radius:2px;background:#fff;opacity:.95}
 #hand .t.draw img{box-shadow:0 0 0 2px var(--gold),0 2px 6px rgba(0,0,0,.5)}
@@ -162,7 +163,7 @@ body.ja [data-en]{display:revert}
   <div class="topbar">
     <span class="b"><span data-ko>국</span><span data-en>Round</span> <b id="t-round">東1</b></span>
     <span class="b"><span data-ko>잔여</span><span data-en>Wall</span> <b id="t-wall">70</b></span>
-    <span class="b"><span data-ko>점수</span><span data-en>Pts</span> <b id="t-pts">25000</b></span>
+    <span class="b" title="게임 내 점수(국 진행용). 골드는 결과에 정산"><span data-ko>점</span><span data-en>Pts</span> <b id="t-pts">25000</b></span>
     <span class="b dora-ind"><span data-ko>도라</span><span data-en>Dora</span> <span id="t-dora"></span></span>
     <span class="sp"></span>
     <button onclick="zoomTiles(-1)">🔍−</button><button onclick="zoomTiles(1)">🔍+</button>
@@ -621,7 +622,8 @@ function showResult(p,tsumo,hand14,winTile,ev,fu,han,sc,from){
   $('r-tiles').innerHTML=hand14.map(t=>`<img class="${t===winTile?'win':''}" src="${tileSvg(t)}">`).join('');
   $('r-yaku').innerHTML=ev.yaku.map(y=>`<div class="yaku-row"><span>${y.n}</span><b>${y.h}${T('판','飜')}</b></div>`).join('')||`<div class="yaku-row"><span>${T('역 없음','役なし')}</span></div>`;
   $('r-score').textContent = (ev.yakuman?T('역만 ','役満 '):han+T('판 ','飜 '))+(ev.yakuman?'':fu+T('부 ','符 '))+'· '+sc.total.toLocaleString()+T('점','点');
-  $('r-detail').textContent = tsumo?(T('쯔모 ','ツモ ')+sc.label):(T('론 ','ロン ')+(p===0?'':'')+ '+'+sc.total);
+  const _gd=G._lastGoldDelta||0; const _gl=_gd?(`<div style="color:var(--gold);margin-top:5px">💰 ${T('지갑','財布')} ${_gd>0?'+':''}${_gd.toLocaleString()}G${BET>1?(' (×'+BET+')'):''}</div>`):'';
+  $('r-detail').innerHTML = (tsumo?(T('쯔모 ','ツモ ')+sc.label):(T('론 ','ロン ')+'+'+sc.total))+_gl;
   show('result'); if(p===0)spawnConfetti();
 }
 function spawnConfetti(){ const cols=['#e9c46a','#6ad29a','#67c1e8','#ff5d73','#fff']; for(let i=0;i<70;i++){ const c=document.createElement('div'); c.className='confetti'; c.style.left=Math.random()*100+'vw'; c.style.background=cols[i%cols.length]; c.style.animation='cfall '+(1.6+Math.random()*1.4)+'s linear '+(Math.random()*0.5)+'s forwards'; document.body.appendChild(c); setTimeout(()=>c.remove(),3600); } }
@@ -637,7 +639,8 @@ function drawnGame(){ // ryuukyoku
   $('r-title').textContent=T('유국 (황패)','流局');
   $('r-tiles').innerHTML='';
   $('r-yaku').innerHTML=G.players.map((pl,i)=>`<div class="yaku-row"><span>${i===0?T('나','あなた'):'CPU '+i}</span><b>${tenpai[i]?T('텐파이','聴牌'):T('노텐','不聴')}</b></div>`).join('');
-  $('r-score').textContent= nT>0&&nT<4 ? T('노텐벌부 정산','不聴罰符') : T('유국','流局'); $('r-detail').textContent='';
+  $('r-score').textContent= nT>0&&nT<4 ? T('노텐벌부 정산','不聴罰符') : T('유국','流局');
+  const _gd=G._lastGoldDelta||0; $('r-detail').innerHTML = _gd?(`<div style="color:var(--gold)">💰 ${T('지갑','財布')} ${_gd>0?'+':''}${_gd.toLocaleString()}G</div>`):'';
   show('result');
 }
 function nextHand(){
@@ -705,7 +708,7 @@ function ankanCandidates(hand){ const c=counts(hand); const r=[]; for(let t=0;t<
 function setLang(l){ LANG=l; localStorage.setItem('riichi_lang',l); document.body.classList.toggle('ja',l==='ja'); document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('on',b.dataset.lang===l)); if(G)renderAll(); }
 function setSnd(s){ SND=!!s; localStorage.setItem('riichi_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
 function sound(n){ if(!SND)return; const map={tsumo:'win',ron:'win',riichi:'claim'}; const fn=map[n]||'tile'; try{ const a=new Audio('sounds/'+fn+'.mp3'); a.volume=.5; a.play().catch(()=>{}); }catch(e){} }
-function settleGold(){ if(!G||!G.ptsStart)return; const d=Math.round((G.pts[0]-G.ptsStart[0])*BET); G.ptsStart=G.pts.slice(); if(!d)return; try{ if(typeof SharedWallet!=='undefined'&&SharedWallet._initialized){ d>0?SharedWallet.addGold(d):SharedWallet.removeGold(-d);} }catch(e){} }
+function settleGold(){ if(!G||!G.ptsStart)return; const d=Math.round((G.pts[0]-G.ptsStart[0])*BET); G._lastGoldDelta=d; G.ptsStart=G.pts.slice(); if(!d)return; try{ if(typeof SharedWallet!=='undefined'&&SharedWallet._initialized){ d>0?SharedWallet.addGold(d):SharedWallet.removeGold(-d);} }catch(e){} }
 function refreshMenuGold(){ try{ if(typeof SharedWallet!=='undefined'){ $('menu-gold').textContent='💰 '+(SharedWallet.gold||0).toLocaleString(); } }catch(e){} }
 function setBet(n){ BET=n; localStorage.setItem('riichi_bet',n); document.querySelectorAll('[data-bet]').forEach(b=>b.classList.toggle('on',+b.dataset.bet===n)); }
 function setAka(v){ AKA=!!v; localStorage.setItem('riichi_aka',v?'1':'0'); document.querySelectorAll('[data-aka]').forEach(b=>b.classList.toggle('on',+b.dataset.aka===(v?1:0))); }
