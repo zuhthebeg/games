@@ -137,7 +137,7 @@ img{display:block}
 <div class="ov" id="settings"><div class="card2">
   <h2>⚙ 설정</h2>
   <div class="row"><span>🔊 소리</span><div class="seg"><button data-snd="1" onclick="setSnd(1)">ON</button><button data-snd="0" onclick="setSnd(0)">OFF</button></div></div>
-  <div class="row"><span>고/스톱 최소점</span><span style="color:var(--muted)">3점</span></div>
+  <div class="row"><span>고/스톱 최소점</span><span style="color:var(--muted)">7점 (맞고)</span></div>
   <button class="close" onclick="hide('settings')">닫기</button>
 </div></div>
 
@@ -150,7 +150,7 @@ img{display:block}
    • <b>끗</b>: 5장 1점+ / <b>고도리</b>(2·4·8월 새) 5점<br>
    • <b>띠</b>: 5장 1점+ / 홍단·청단·초단 각 3장 3점<br>
    • <b>피</b>: 10장 1점+ (쌍피=2장)<br>
-   • 점수가 <b>3점</b> 이상 나면 <b>고</b>(계속·배수↑) 또는 <b>스톱</b>(끝).<br>
+   • 점수가 <b>7점</b> 이상 나면 (맞고 기준) <b>고</b>(계속·배수↑) 또는 <b>스톱</b>(끝).<br>
    • <b>피박</b>(상대 피 적음)·<b>광박</b>(상대 광 0) 시 2배.<br>
    <span style="color:var(--muted)">v1: 뻑·따닥·쪽·쓸·폭탄·흔들기 등 특수룰은 곧 추가.</span>
   </div>
@@ -160,7 +160,7 @@ img{display:block}
 <script>
 const $=id=>document.getElementById(id);
 let SND=localStorage.getItem('gostop_snd')!=='0';
-const GO_MIN=3;
+const GO_MIN=7; // 맞고(2인)=7점 / 고스톱(3인+)=3점은 3인모드에서
 
 /* ===== deck build ===== */
 const GW=[1,3,8,11,12], YUL=[2,4,5,6,7,8,9,10,12], TTI=[1,2,3,4,5,6,7,9,10,12];
@@ -211,17 +211,20 @@ function removeFromTable(c){ const i=G.table.findIndex(x=>x.id===c.id); if(i>=0)
 
 async function takeTurn(p, handCard){
   const pl=G.players[p];
+  sound('play');
   let cap = playFlow(p, handCard, true);
+  const capturedFromHand = cap.length>0;
   renderAll();
-  await sleep(380);
+  await sleep(520);
   // flip from deck
   if(G.deck.length){
-    const f=G.deck.shift(); G.flip=f; renderFlip(f); await sleep(420);
+    const f=G.deck.shift(); G.flip=f; renderFlip(f); sound('flip'); await sleep(700);
     const fc=playFlow(p, f, false); cap=cap.concat(fc); G.flip=null;
   }
   pl.cap.push(...cap);
-  if(cap.length) sound('take');
+  if(cap.length){ sound('take'); } 
   renderAll();
+  await sleep(220);
   // score
   const sc=score(pl.cap);
   const prev=G.lastScore[p];
@@ -242,14 +245,14 @@ function advance(){
   if(G.players[0].hand.length===0 && G.players[1].hand.length===0){ return drawGame(); }
   G.turn=1-G.turn;
   if(G.turn===0){ G.sel=-1; renderAll(); }
-  else setTimeout(cpuTurn,650);
+  else setTimeout(cpuTurn,900);
 }
 function cpuTurn(){
   const pl=G.players[1]; if(!pl.hand.length)return advance();
   // choose: prefer a hand card that captures highest value
   let best=pl.hand[0],bestV=-1;
   for(const c of pl.hand){ const m=sameMonth(G.table,c.m); const v=m.length?Math.max(...m.map(cardValue))+ (c.gwang?2:0):(-cardValue(c)*0.1); if(v>bestV){bestV=v;best=c;} }
-  takeTurn(1,best);
+  toast('CPU ▶ '+best.m+'월'); setTimeout(()=>takeTurn(1,best),650);
 }
 /* my play */
 function selectCard(i){ if(G.turn!==0||G.over)return; G.sel=(G.sel===i?-1:i); renderMyHand(); }
@@ -358,7 +361,7 @@ function show(id){ $(id).classList.add('show'); } function hide(id){ $(id).class
 function quitMenu(){ ['gostop','result','settings'].forEach(hide); $('board').style.display='none'; $('menu').style.display='flex'; }
 function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',1200); }
 function setSnd(s){ SND=!!s; localStorage.setItem('gostop_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
-function sound(n){ if(!SND)return; const map={take:'claim',win:'win',lose:'tile'}; const fn=map[n]||'tile'; try{const a=new Audio('sounds/'+fn+'.mp3');a.volume=.4;a.play().catch(()=>{});}catch(e){} }
+function sound(n){ if(!SND)return; const map={take:'claim',play:'tile',flip:'tile',win:'win',lose:'tile'}; const fn=map[n]||'tile'; try{const a=new Audio('sounds/'+fn+'.mp3');a.volume=.4;a.play().catch(()=>{});}catch(e){} }
 setSnd(SND?1:0);
 </script>
 </body>
