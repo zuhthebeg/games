@@ -37,12 +37,23 @@ img{display:block}
 /* opponent */
 .opp{padding:6px 10px;display:flex;align-items:center;gap:8px;font-size:.76rem}
 .opp .who{font-weight:700} .opp .who.turn{color:var(--gold)}
-.captured{display:flex;flex-direction:column;gap:2px;flex:1}
+.captured{display:flex;align-items:center;flex:1;overflow:hidden}
 .captured .grp{display:flex;align-items:center}
 .captured .grp img{width:calc(23px * var(--tz));border-radius:2px;margin-left:-13px;box-shadow:-1px 0 2px rgba(0,0,0,.5)}
 .captured .grp img:first-of-type{margin-left:0}
 
 .captured .lab{font-size:.6rem;color:var(--muted);margin-right:1px}
+/* 먹은 패 2D 배치 */
+.capset{display:flex;align-items:flex-start;gap:7px;overflow-x:auto;max-width:100%}
+.capset .lap{display:flex;align-items:center}
+.capset .lap img{margin-left:-13px}
+.capset .lap img:first-child{margin-left:0}
+.capset img{width:calc(25px*var(--tz));border-radius:2px;box-shadow:-1px 0 2px rgba(0,0,0,.55)}
+.capset img.cin{animation:cin .38s var(--ease)}
+.cap-mid{display:flex;flex-direction:column;gap:1px}
+.cap-pi{display:flex;gap:4px}
+.pi-col{display:flex;flex-direction:column;gap:1px}
+#cpuCaptured .capset img{width:calc(21px*var(--tz))}
 /* table */
 .field{flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:4px}
 #tableCards{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;align-content:center;max-width:560px;padding:0 64px}
@@ -64,7 +75,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 .mine{padding:6px 8px 10px;background:linear-gradient(transparent,rgba(0,0,0,.4))}
 .myscore{text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:4px}
 .myscore b{color:var(--gold);font-size:1rem}
-#myCaptured{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:6px;min-height:20px}
+#myCaptured{display:flex;justify-content:center;margin-bottom:6px;min-height:20px;max-height:76px;overflow:hidden}
 #myCaptured .grp{display:flex;align-items:center}
 #myCaptured .grp .lab{font-size:.6rem;color:var(--muted);margin-right:2px;min-width:14px}
 #myCaptured .grp img{width:calc(27px * var(--tz));border-radius:2px;margin-left:-15px;box-shadow:-1px 0 2px rgba(0,0,0,.5)}
@@ -529,13 +540,18 @@ function renderMyHand(){
 let lastTap=-1;
 function selectCard(i){ if(G.turn!==0||G.over)return; if(G.sel===i){ playSelected(); return;} G.sel=i; renderMyHand(); renderTable(); }
 function capGroup(cap){
-  const g=cap.filter(c=>c.gwang),y=cap.filter(c=>c.role==='yul'),t=cap.filter(c=>c.role==='tti'),p=cap.filter(c=>c.role==='pi');
-  const seg=(arr)=>arr.map(c=>`<img src="${c.file}" class="${(G._newCapIds&&G._newCapIds.has(c.id))?'cin':''}">`).join('');
-  let h='';
-  if(g.length)h+=`<div class="grp"><span class="lab">광</span>${seg(g)}</div>`;
-  if(y.length)h+=`<div class="grp"><span class="lab">끗</span>${seg(y)}</div>`;
-  if(t.length)h+=`<div class="grp"><span class="lab">띠</span>${seg(t)}</div>`;
-  for(let i=0;i<p.length;i+=5){ h+=`<div class="grp"><span class="lab">${i===0?'피':''}</span>${seg(p.slice(i,i+5))}</div>`; }
+  const g=cap.filter(c=>c.gwang), y=cap.filter(c=>c.role==='yul'), t=cap.filter(c=>c.role==='tti'), p=cap.filter(c=>c.role==='pi');
+  const cls=c=>(G._newCapIds&&G._newCapIds.has(c.id))?'cin':'';
+  const lap=arr=>`<div class="lap">`+arr.map(c=>`<img src="${c.file}" class="${cls(c)}">`).join('')+`</div>`;
+  let h='<div class="capset">';
+  if(g.length) h+=lap(g);                                      // 광 왼쪽
+  if(t.length||y.length){ h+='<div class="cap-mid">'+lap(t)+lap(y)+'</div>'; }  // 띠 위 / 열끗(동물) 아래
+  if(p.length){                                                // 피 오른쪽: 10개씩 열, 위5/아래5
+    h+='<div class="cap-pi">';
+    for(let i=0;i<p.length;i+=10){ const ch=p.slice(i,i+10); h+='<div class="pi-col">'+lap(ch.slice(0,5))+lap(ch.slice(5,10))+'</div>'; }
+    h+='</div>';
+  }
+  h+='</div>';
   return h;
 }
 function renderCaptured(){
