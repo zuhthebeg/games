@@ -53,6 +53,8 @@ img{display:block}
 .mgroup img.cin{animation:cin .34s var(--ease)}
 .captured .grp img.cin,#myCaptured .grp img.cin{animation:cin .38s var(--ease)}
 .flip img{animation:flipin .3s var(--ease)}
+@keyframes dealIn{from{transform:translate(-38vw,-32vh) scale(.45) rotate(-18deg);opacity:0}to{transform:none;opacity:1}}
+body.dealing #myHand img,body.dealing #tableCards .mgroup img{animation:dealIn .5s var(--ease) backwards}
 @keyframes flipin{from{transform:translateX(-160px) rotateY(60deg) scale(.7);opacity:.2}to{transform:none;opacity:1}}
 .deck{position:absolute;top:50%;left:14px;transform:translateY(-50%);text-align:center;color:var(--muted);font-size:.66rem}
 .deck .back{width:var(--cw);height:calc(var(--cw)*1.5);border-radius:5px;background:repeating-linear-gradient(45deg,#7a2630,#7a2630 6px,#8d2f3a 6px,#8d2f3a 12px);border:2px solid #aa3b48;margin-bottom:3px}
@@ -130,7 +132,6 @@ img{display:block}
   </div>
   <div class="mine">
     <div class="myscore" id="myScoreLine"></div>
-    <button id="bombBtn" onclick="doBomb()" style="display:none;margin:0 auto 6px;padding:8px 20px;border:none;border-radius:10px;background:var(--red);color:#fff;font-weight:800;cursor:pointer">💣 폭탄</button>
     <div id="myCaptured"></div>
     <div id="myHand"></div>
   </div>
@@ -151,6 +152,17 @@ img{display:block}
   <div id="r-detail" class="scoreline"></div>
   <div class="bigpt" id="r-pt"></div>
   <button class="close" onclick="nextRound()">다시</button>
+</div></div>
+
+<div class="ov" id="bombAsk"><div class="card2">
+  <h2>💣 폭탄!</h2>
+  <div id="bombAskMsg" class="scoreline" style="text-align:center"></div>
+  <div class="gobtns"><button class="go" id="bombYes">폭탄 치기</button><button class="stop" id="bombNo">그냥 내기</button></div>
+</div></div>
+
+<div class="ov" id="pickAsk"><div class="card2">
+  <h2>어떤 패를 먹을까?</h2>
+  <div id="pickCards" style="display:flex;gap:14px;justify-content:center;margin:16px 0;flex-wrap:wrap"></div>
 </div></div>
 
 <div class="ov" id="settings"><div class="card2">
@@ -210,20 +222,21 @@ function deal(){
   G.table=deck.splice(0,8);
   G.players=[{hand:deck.splice(0,10),cap:[]},{hand:deck.splice(0,10),cap:[]}];
   G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={};
-  renderAll();
+  G._dealing=true; document.body.classList.add('dealing'); renderAll();
+  setTimeout(()=>{ G._dealing=false; document.body.classList.remove('dealing'); },1050);
 }
 /* ===== matching / capture ===== */
 function sameMonth(arr,m){ return arr.filter(c=>c.m===m); }
 function cardValue(c){ return c.gwang?4:c.ssangpi?3:c.role==='yul'?2:c.role==='tti'?2:1; }
-function playFlow(p, card, fromHand){
+function playFlow(p, card, fromHand, pick){
   // remove from hand if fromHand
   if(fromHand){ const h=G.players[p].hand; h.splice(h.findIndex(c=>c.id===card.id),1); }
   const matches=sameMonth(G.table,card.m);
   let captured=[];
   if(matches.length===0){ G.table.push(card); }
   else if(matches.length===1){ captured=[card,matches[0]]; removeFromTable(matches[0]); }
-  else if(matches.length===2){ // take higher-value one; leave other
-    matches.sort((a,b)=>cardValue(b)-cardValue(a)); captured=[card,matches[0]]; removeFromTable(matches[0]); }
+  else if(matches.length===2){ // 2장: 플레이어 지정 픽 or 높은값
+    const take=(pick&&matches.find(c=>c.id===pick.id))||(matches.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]); captured=[card,take]; removeFromTable(take); }
   else { // 3 same month on table → take all (총통류 단순화)
     captured=[card,...matches]; matches.forEach(removeFromTable); }
   return captured;
@@ -252,7 +265,10 @@ async function takeTurn(p, handCard, opts){
     // 흔들기: 낼 월을 손에 3장 보유 + 바닥에 그 월 있을 때 ×2
     if(pl.hand.filter(c=>c.m===playM).length>=3 && beforeM>=1 && G.shakeMult[p]===1){ G.shakeMult[p]=2; toast((p===0?'':'CPU ')+'흔들기! ×2'); }
     sound('play');
-    handCap = playFlow(p, handCard, true);
+    const matchesPre=sameMonth(G.table,playM);
+    let pickChoice=null;
+    if(p===0 && matchesPre.length===2){ pickChoice=await askPick(matchesPre); }
+    handCap = playFlow(p, handCard, true, pickChoice);
     renderAll(); await sleep(540);
   }
   let flipCap=[], flipCard=null;
@@ -326,7 +342,25 @@ function cpuTurn(){
 }
 /* my play */
 function selectCard(i){ if(G.turn!==0||G.over)return; G.sel=(G.sel===i?-1:i); renderMyHand(); }
-function playSelected(){ if(G.sel<0)return; const c=G.players[0].hand[G.sel]; G.sel=-1; takeTurn(0,c); }
+function playSelected(){ if(G.sel<0)return; const c=G.players[0].hand[G.sel]; const m=c.m; G.sel=-1;
+  const canBomb = G.players[0].hand.filter(x=>x.m===m).length>=3 && sameMonth(G.table,m).length>=1;
+  renderMyHand();
+  if(canBomb) askBomb(c); else takeTurn(0,c);
+}
+function askBomb(card){
+  $('bombAskMsg').textContent=card.m+'월 패가 손에 3장! 폭탄을 치면 4장 다 먹고 피 1장 + 한 번 더.';
+  $('bombYes').onclick=()=>{ hide('bombAsk'); takeTurn(0,null,{bombMonth:card.m}); };
+  $('bombNo').onclick=()=>{ hide('bombAsk'); takeTurn(0,card); };
+  show('bombAsk');
+}
+function askPick(cards){
+  return new Promise(res=>{
+    const box=$('pickCards');
+    box.innerHTML=cards.map((c,i)=>`<img src="${c.file}" data-i="${i}" style="width:68px;border-radius:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.55)">`).join('');
+    box.querySelectorAll('img').forEach(img=>img.onclick=()=>{ hide('pickAsk'); res(cards[+img.dataset.i]); });
+    show('pickAsk');
+  });
+}
 
 /* ===== scoring ===== */
 function score(cap){
@@ -405,25 +439,18 @@ function renderTable(){
   const sel=(G.turn===0&&G.sel>=0&&G.players[0].hand[G.sel])?G.players[0].hand[G.sel].m:-1;
   const by={}, order=[];
   G.table.forEach(c=>{ if(!by[c.m]){by[c.m]=[];order.push(c.m);} by[c.m].push(c); });
+  const dl=(G&&G._dealing); let di=0;
   $('tableCards').innerHTML=order.map(m=>{
     const cs=by[m];
-    return `<div class="mgroup ${sel===m?'hl':''}">`+cs.map((c,i)=>`<img src="${c.file}" class="${(G._newIds&&G._newIds.has(c.id))?'cin':''}" style="margin-left:${i?'-26px':'0'}" alt="${c.m}월">`).join('')+`</div>`;
+    return `<div class="mgroup ${sel===m?'hl':''}">`+cs.map((c,i)=>`<img src="${c.file}" class="${(G._newIds&&G._newIds.has(c.id))?'cin':''}" style="margin-left:${i?'-26px':'0'}${dl?(';animation-delay:'+((di++)*55)+'ms'):''}" alt="${c.m}월">`).join('')+`</div>`;
   }).join('');
   $('deckN').textContent=G.deck.length; $('t-deck').textContent=G.deck.length;
 }
 function renderFlip(c){ $('flipArea').innerHTML=c?`<img src="${c.file}">`:''; if(!c)return; setTimeout(()=>{$('flipArea').innerHTML='';},800); }
 function renderMyHand(){
-  $('myHand').innerHTML=G.players[0].hand.map((c,i)=>`<img src="${c.file}" class="${i===G.sel?'sel':''}" onclick="selectCard(${i})">`).join('');
-  updateBombBtn();
+  const dl=(G&&G._dealing);
+  $('myHand').innerHTML=G.players[0].hand.map((c,i)=>`<img src="${c.file}" class="${i===G.sel?'sel':''}" onclick="selectCard(${i})"${dl?` style="animation-delay:${i*55}ms"`:''}>`).join('');
 }
-function updateBombBtn(){
-  const btn=$('bombBtn'); if(!btn||!G)return;
-  if(G.turn!==0||G.over){ btn.style.display='none'; return; }
-  const cnt={}; G.players[0].hand.forEach(c=>cnt[c.m]=(cnt[c.m]||0)+1);
-  const m=Object.keys(cnt).find(mm=>cnt[mm]>=3 && sameMonth(G.table,+mm).length>=1);
-  if(m){ btn.style.display='block'; btn.dataset.m=m; btn.textContent='💣 폭탄 ('+m+'월)'; } else btn.style.display='none';
-}
-function doBomb(){ const btn=$('bombBtn'); const m=+btn.dataset.m; if(!m||G.turn!==0||G.over)return; btn.style.display='none'; G.sel=-1; takeTurn(0,null,{bombMonth:m}); }
 let lastTap=-1;
 function selectCard(i){ if(G.turn!==0||G.over)return; if(G.sel===i){ playSelected(); return;} G.sel=i; renderMyHand(); renderTable(); }
 function capGroup(cap){
@@ -447,7 +474,7 @@ function renderBar(){ $('t-go').textContent=G.go; }
 /* utils */
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function show(id){ $(id).classList.add('show'); } function hide(id){ $(id).classList.remove('show'); }
-function quitMenu(){ ['gostop','result','settings'].forEach(hide); $('board').style.display='none'; $('menu').style.display='flex'; }
+function quitMenu(){ ['gostop','result','settings','bombAsk','pickAsk'].forEach(hide); $('board').style.display='none'; $('menu').style.display='flex'; }
 function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',1200); }
 function setSnd(s){ SND=!!s; localStorage.setItem('gostop_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
 function setBet(n){ BET=n; localStorage.setItem('gostop_bet',n); document.querySelectorAll('[data-bet]').forEach(b=>b.classList.toggle('on',+b.dataset.bet===n)); }
