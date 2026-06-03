@@ -90,6 +90,13 @@ body.dealing #myHand img,body.dealing #tableCards .mgroup img{animation:dealIn .
 .seg button.on{background:var(--gold);color:#1e1604;font-weight:700}
 .toast{position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);z-index:50;background:rgba(0,0,0,.82);border:2px solid var(--gold);color:#fff;font-size:1.6rem;font-weight:800;padding:12px 26px;border-radius:14px;display:none;animation:pp .4s var(--ease)}
 @keyframes pp{from{transform:translate(-50%,-50%) scale(.7);opacity:0}}
+@keyframes shake{0%,100%{transform:translate(0,0)}15%{transform:translate(-9px,5px)}30%{transform:translate(8px,-6px)}45%{transform:translate(-7px,6px)}60%{transform:translate(7px,-4px)}75%{transform:translate(-4px,3px)}}
+#board.shake{animation:shake .46s var(--ease)}
+#flash{position:fixed;inset:0;z-index:55;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 55%,rgba(255,170,50,.6),rgba(255,90,40,.25) 45%,transparent 72%)}
+#flash.on{animation:flashpop .55s}
+@keyframes flashpop{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+@keyframes pulse2{0%{transform:translate(-50%,-50%) scale(.7);opacity:0}25%{transform:translate(-50%,-50%) scale(1.15);opacity:1}50%{transform:translate(-50%,-50%) scale(.95)}75%{transform:translate(-50%,-50%) scale(1.1)}100%{transform:translate(-50%,-50%) scale(1)}}
+.toast.dbl{animation:pulse2 .6s var(--ease)}
 .credit{position:fixed;bottom:2px;right:4px;font-size:.55rem;color:rgba(255,255,255,.25);z-index:1}
 .credit a{color:inherit}
 </style>
@@ -138,6 +145,7 @@ body.dealing #myHand img,body.dealing #tableCards .mgroup img{animation:dealIn .
   <div class="credit">cards: <a href="https://commons.wikimedia.org/wiki/Category:SVG_Hwatu" target="_blank">Spenĉjo CC BY-SA</a></div>
 </div>
 
+<div id="flash"></div>
 <div class="toast" id="toast"></div>
 
 <div class="ov" id="gostop"><div class="card2">
@@ -281,7 +289,7 @@ async function takeTurn(p, handCard, opts){
   let handCards=[];
   if(bomb){
     for(let k=0;k<3;k++){ const idx=pl.hand.findIndex(c=>c.m===playM); if(idx>=0) handCards.push(pl.hand.splice(idx,1)[0]); }
-    toast((p===0?'':'CPU ')+'💣 폭탄!');
+    bombFx(p===0?'':'CPU ');
   } else {
     pl.hand.splice(pl.hand.findIndex(c=>c.id===handCard.id),1);
     handCards=[handCard];
@@ -348,7 +356,7 @@ async function takeTurn(p, handCard, opts){
     pl.cap.push(...captured);
     G._newCapIds=new Set([...captured.map(c=>c.id),...stolen]); G._newIds=null;
     renderAll();
-    if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'!'+((canSteal&&steals)?(' 피뺏기 '+steals):'')); sound('play'); }
+    if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'!'+((canSteal&&steals)?(' 피뺏기 '+steals):'')); const tt=$('toast'); if(stags.includes('따닥')){ tt.classList.add('dbl'); setTimeout(()=>tt.classList.remove('dbl'),650); sound('play'); setTimeout(()=>sound('play'),150); } else sound('play'); }
     await sleep(stags.length?460:140);
   } else { G._newIds=null; renderAll(); await sleep(ppuk?460:120); }
 
@@ -528,6 +536,30 @@ function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block';
 function setSnd(s){ SND=!!s; localStorage.setItem('gostop_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
 function setBet(n){ BET=n; localStorage.setItem('gostop_bet',n); document.querySelectorAll('[data-bet]').forEach(b=>b.classList.toggle('on',+b.dataset.bet===n)); }
 function sound(n){ if(!SND)return; const map={take:'claim',play:'tile',flip:'tile',win:'win',lose:'tile'}; const fn=map[n]||'tile'; try{const a=new Audio('sounds/'+fn+'.mp3');a.volume=.4;a.play().catch(()=>{});}catch(e){} }
+let AC=null;
+function boom(){
+  if(!SND)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume();
+    const t=AC.currentTime;
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(140,t); o.frequency.exponentialRampToValueAtTime(38,t+0.45);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.7,t+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+0.55);
+    o.connect(g).connect(AC.destination); o.start(t); o.stop(t+0.55);
+    const buf=AC.createBuffer(1,Math.floor(AC.sampleRate*0.3),AC.sampleRate); const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+    const ns=AC.createBufferSource(); ns.buffer=buf; const ng=AC.createGain();
+    ng.gain.setValueAtTime(0.55,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+    ns.connect(ng).connect(AC.destination); ns.start(t);
+  }catch(e){}
+}
+function bombFx(prefix){
+  boom();
+  const b=$('board'); if(b){ b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); setTimeout(()=>b.classList.remove('shake'),480); }
+  const f=$('flash'); if(f){ f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); setTimeout(()=>f.classList.remove('on'),560); }
+  const tt=$('toast'); tt.textContent=prefix+'💥 콰쾅! 폭탄!'; tt.classList.add('dbl'); tt.style.display='block';
+  setTimeout(()=>{ tt.style.display='none'; tt.classList.remove('dbl'); },1300);
+}
 setSnd(SND?1:0); setBet(BET);
 </script>
 </body>
