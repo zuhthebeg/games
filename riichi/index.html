@@ -721,8 +721,8 @@ function onTurnTimeout(){ if(G.turn!==0||G.over)return; const pl=G.players[0]; /
   const i=pl.hand.length-1; humanDiscard(i>=0?i:0); }
 
 $('howtoBody').innerHTML = T(
- '• 13장으로 4몸통+머리(또는 치또이쯔/국사무쌍)를 완성하면 화료.<br>• 화료엔 <b>役</b>이 최소 1개 필요(리치·탕야오·역패 등).<br>• 텐파이면 <b>리치</b> 선언(1000점), 이후 뽑은 패만 버림.<br>• <b>쯔모</b>=자기 뽑기 화료, <b>론</b>=남의 버린패 화료.<br>• <b>도라</b>(표시패 다음 패)는 보너스 판.<br>• 동풍전 4국, 점수 높은 사람 승.<br>• v1은 멘젠(닫힌 손) 중심 — 폰/치는 곧 추가.',
- '• Complete 4 sets + a pair (or chiitoitsu / kokushi) with 13 tiles to win.<br>• A win needs at least one <b>yaku</b> (riichi, tanyao, yakuhai…).<br>• When tenpai, declare <b>Riichi</b> (1000 pts); afterwards discard only drawn tiles.<br>• <b>Tsumo</b>=self-draw win, <b>Ron</b>=win on a discard.<br>• <b>Dora</b> (tile after the indicator) gives bonus han.<br>• East round, 4 hands; highest score wins.<br>• v1 is closed-hand focused — calls (pon/chi) coming soon.'
+ '• 13장으로 4몸통+머리(또는 치또이쯔/국사무쌍)를 완성하면 화료.<br>• 화료엔 <b>役</b>이 최소 1개 필요(리치·탕야오·역패 등).<br>• 텐파이면 <b>리치</b> 선언(1000점), 이후 뽑은 패만 버림.<br>• <b>쯔모</b>=자기 뽑기 화료, <b>론</b>=남의 버린패 화료.<br>• <b>도라</b>(표시패 다음 패)는 보너스 판.<br>• <b>폰</b>(같은패2)·<b>치</b>(상가 순자)·<b>깡</b>·<b>론</b> 호출 가능 — 내 차례에 버튼 등장.<br>• 동풍전 4국(친 화료/텐파이 시 렌찬·혼바), 점수 높은 사람 승.<br>• 점수는 지갑 골드와 연동(판돈 ×N).',
+ '• Complete 4 sets + a pair (or chiitoitsu / kokushi) with 13 tiles to win.<br>• A win needs at least one <b>yaku</b> (riichi, tanyao, yakuhai…).<br>• When tenpai, declare <b>Riichi</b> (1000 pts); afterwards discard only drawn tiles.<br>• <b>Tsumo</b>=self-draw win, <b>Ron</b>=win on a discard.<br>• <b>Dora</b> (tile after the indicator) gives bonus han.<br>• Call <b>pon/chi/kan/ron</b> on discards — buttons appear on your turn.<br>• East round (dealer repeats on win/tenpai, honba). Gold-linked (bet ×N).'
 );
 setLang(LANG); setSnd(SND?1:0); setBet(BET); setAka(AKA?1:0); setTL(TL); setBgm(BGM?1:0); applyZoom();
 try{ if(typeof SharedWallet!=='undefined'&&SharedWallet._initPromise){ SharedWallet._initPromise.then(refreshMenuGold);} else { setTimeout(refreshMenuGold,800);} }catch(e){}
