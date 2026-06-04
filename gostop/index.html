@@ -254,7 +254,7 @@ function deal(){
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   G.table=deck.splice(0,8);
   G.players=[{hand:deck.splice(0,10),cap:[]},{hand:deck.splice(0,10),cap:[]}];
-  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={};
+  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0];
   sortHand(0); G._dealing=true; document.body.classList.add('dealing'); renderAll();
   setTimeout(()=>{ G._dealing=false; document.body.classList.remove('dealing'); },1050);
 }
@@ -394,6 +394,7 @@ async function takeTurn(p, handCard, opts){
     await sleep(stags.length?460:140);
   } else { G._newIds=null; renderAll(); await sleep(ppuk?460:120); }
 
+  if(bomb){ if(!G.flipOwed)G.flipOwed=[0,0]; G.flipOwed[p]+=2; }   // 폭탄: 다음 자기 차례 2번 뒤집기전용
   // 3뻑 = 즉시 승리(10점)
   if(ppuk && G.ppukCount[p]>=3){ toast((p===0?'':'CPU ')+'3뻑! 승리'); await sleep(700); return settle(p, score(pl.cap), {ppuk3:true}); }
   // score
@@ -404,21 +405,61 @@ async function takeTurn(p, handCard, opts){
     if(p===0){ pendingBomb=bomb; return offerGoStop(sc); }
     else {
       const goAgain = sc.total<5 && Math.random()<0.6;
-      if(goAgain){ G.go++; G.goBy=1; toast('CPU '+G.go+'고!'); await sleep(700); return (bomb?keepTurn(1):advance()); }
+      if(goAgain){ G.go++; G.goBy=1; toast('CPU '+G.go+'고!'); await sleep(700); return advance(); }
       else return settle(1, sc);
     }
   }
   G.lastScore[p]=Math.max(prev,sc.total);
-  if(bomb && !G.over) return keepTurn(p);
   advance();
 }
 function keepTurn(p){ G.turn=p; if(p===0){ G.sel=-1; renderAll(); toast('한 번 더!'); } else { renderAll(); setTimeout(cpuTurn,900); } }
 function advance(){
   if(G.over)return;
-  if(G.players[0].hand.length===0 && G.players[1].hand.length===0){ return drawGame(); }
+  const owed=G.flipOwed?(G.flipOwed[0]+G.flipOwed[1]):0;
+  if(G.players[0].hand.length===0 && G.players[1].hand.length===0 && owed<=0){ return drawGame(); }
   G.turn=1-G.turn;
-  if(G.turn===0){ G.sel=-1; renderAll(); }
+  startTurn();
+}
+function startTurn(){
+  const p=G.turn;
+  if(G.flipOwed && G.flipOwed[p]>0){ setTimeout(()=>flipOnlyTurn(p), p===0?650:850); return; }
+  if(p===0){ G.sel=-1; renderAll(); }
   else setTimeout(cpuTurn,900);
+}
+async function flipOnlyTurn(p){
+  const pl=G.players[p];
+  if(!G.deck.length){ if(G.flipOwed)G.flipOwed[p]=0; return advance(); }
+  toast((p===0?'':'CPU ')+'뒤집기 턴 ('+(G.flipOwed?G.flipOwed[p]:0)+')');
+  const flip=G.deck.shift(); const playM=flip.m;
+  const preM=sameMonth(G.table,playM).slice();
+  G.table.push(flip); G._newIds=new Set([flip.id]); G._newCapIds=null; sound('flip'); renderAll(); await sleep(520);
+  let captured=[]; const stags=[]; let steals=0; const stolen=[];
+  if(preM.length>=3) captured=[flip,...preM];
+  else if(preM.length===2) captured=[flip, preM.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]];
+  else if(preM.length===1) captured=[flip,preM[0]];
+  if(preM.length>=3){ const own=G.ppukOwner[playM]; if(own===p){steals+=2;stags.push('자뻑');}else{steals++;stags.push('뻑쓸이');} if(own!=null)delete G.ppukOwner[playM]; }
+  const willEmpty=(G.table.length-captured.length)===0 && captured.length>0;
+  if(willEmpty){ steals++; stags.push('쓸'); }
+  if(captured.length){
+    renderAll(); await flyToPile(captured, p===0?$('myCaptured'):$('cpuCaptured'));
+    captured.forEach(removeFromTable);
+    if(G.deck.length>0) for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp.id); }
+    pl.cap.push(...captured);
+    G._newCapIds=new Set([...captured.map(c=>c.id),...stolen]); G._newIds=null; renderAll();
+    if(stags.length) toast((p===0?'':'CPU ')+stags.join('+')+'!');
+    await sleep(stags.length?420:160);
+  } else { G._newIds=null; renderAll(); await sleep(220); }
+  if(G.flipOwed) G.flipOwed[p]--;
+  const sc=score(pl.cap); const prev=G.lastScore[p];
+  if(sc.total>=GO_MIN && sc.total>prev && G.deck.length>0 && (pl.hand.length>0 || (G.flipOwed&&G.flipOwed[p]>0))){
+    G.lastScore[p]=sc.total;
+    if(p===0){ pendingBomb=false; return offerGoStop(sc); }
+    const goAgain=sc.total<5 && Math.random()<0.6;
+    if(!goAgain) return settle(1,sc);
+    G.go++; G.goBy=1; toast('CPU '+G.go+'고!'); await sleep(600);
+  }
+  G.lastScore[p]=Math.max(prev,sc.total);
+  advance();
 }
 function cpuTurn(){
   const pl=G.players[1]; if(!pl.hand.length)return advance();
@@ -492,7 +533,7 @@ function offerGoStop(sc){
 }
 function chooseGo(go){
   hide('gostop');
-  if(go){ G.go++; G.goBy=0; toast(G.go+'고!'); if(pendingBomb){ pendingBomb=false; setTimeout(()=>keepTurn(0),500); } else setTimeout(advance,500); }
+  if(go){ G.go++; G.goBy=0; toast(G.go+'고!'); pendingBomb=false; setTimeout(advance,500); }
   else { settle(0,pendingScore); }
 }
 function settle(winner,sc,opts){
