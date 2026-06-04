@@ -284,7 +284,7 @@ function turnLoop(){
   if(G.over) return;
   if(G.wall.length<=14){ return drawnGame(); } // exhaustive draw (ryuukyoku)
   const p=G.turn;
-  G.players[p]._tempFuriten=false;
+  G.players[p]._tempFuriten=false; G._rinshan=false;
   G.drawn=drawWall();
   const pl=G.players[p];
   pl.hand.push(G.drawn);
@@ -336,7 +336,7 @@ function discardTile(p,t){
   if(pl.ippatsu && !pl.pendingRiichi) pl.ippatsu=false;            // 자기 다음 타로 일발 종료
   pl.discards.push(t); pl._newDisc=true;
   G.lastDiscard=t; G.lastDiscardBy=p;
-  if(pl.pendingRiichi){ pl.riichi=true; pl.pendingRiichi=false; pl.riichiTile=t; pl.riichiDiscIdx=pl.discards.length-1; pl.ippatsu=true; G.pts[p]-=1000; G.riichiSticks=(G.riichiSticks||0)+1; sound('riichi'); showClaimPop(T('리치','リーチ'),t); }
+  if(pl.pendingRiichi){ pl.riichi=true; pl.pendingRiichi=false; pl.riichiTile=t; pl.riichiDiscIdx=pl.discards.length-1; pl.ippatsu=true; if(G.firstGoAround&&pl.discards.length===1)pl.doubleRiichi=true; G.pts[p]-=1000; G.riichiSticks=(G.riichiSticks||0)+1; sound('riichi'); showClaimPop(T('리치','リーチ'),t); }
   renderAll(); updateTop();
   // 리치 후 패스했던 패는 영구 후리텐
   const claims=collectClaims(p,t);
@@ -396,7 +396,7 @@ function applyCall(who,type,tile,from,chiPair){
   const LBL={pon:T('퐁','ポン'),minkan:T('깡','カン'),chi:T('치','チー')};
   showClaimPop(LBL[type]||'',tile); sound('riichi'); try{navigator.vibrate&&navigator.vibrate(25);}catch(e){}
   G.turn=who; G.drawn=-1; selIdx=-1;
-  if(type==='minkan'){ G.doraInd.push(drawWall()); if(G.wall.length>0){ G.drawn=drawWall(); pl.hand.push(G.drawn); } }
+  if(type==='minkan'){ G.doraInd.push(drawWall()); G._rinshan=true; if(G.wall.length>0){ G.drawn=drawWall(); pl.hand.push(G.drawn); } }
   sortHand(pl.hand); renderAll(); updateTop();
   if(who===0){ if(type==='minkan') humanOptions(); else humanOptionsAfterCall(); }
   else setTimeout(()=>cpuAfterCall(who, type==='minkan'),700);
@@ -508,7 +508,8 @@ function rec(c,sets,results,pair){
   if(c[i]>=3){ c[i]-=3; sets.push({type:'tri',t:i}); rec(c,sets,results,pair); sets.pop(); c[i]+=3; }
   if(i<27&&numOf(i)<=7&&c[i+1]>0&&c[i+2]>0){ c[i]--;c[i+1]--;c[i+2]--; sets.push({type:'seq',t:i}); rec(c,sets,results,pair); sets.pop(); c[i]++;c[i+1]++;c[i+2]++; }
 }
-function akaCount(hand){ return 0; } // v1: aka tracking simplified to 0 (visual TBD)
+function akaCount(hand){ return 0; }
+function chiitoi0(c){ let pr=0; for(let i=0;i<34;i++){ if(c[i]===2)pr++; else if(c[i])return false; } return pr===7; }
 function countDora(hand,inds){ let n=0; for(const ind of inds){ const d=nextDora(ind); n+=hand.filter(x=>x===d).length; } return n; }
 
 function evalYaku(hand14, tsumo, p, winTile){
@@ -520,8 +521,20 @@ function evalYaku(hand14, tsumo, p, winTile){
   const c=counts(hand14);
   const roundW=G.roundWind, seatW=27+pl.seat;
   if(menzen && isKokushi(c)){ yaku.push({n:T('국사무쌍','国士無双'),h:13}); yakuman+=13; }
+  // 역만 (count 기반)
+  if(allC[31]>=3&&allC[32]>=3&&allC[33]>=3){ yaku.push({n:T('대삼원','大三元'),h:13}); yakuman+=13; }
+  { const W=[27,28,29,30]; const wt=W.filter(w=>allC[w]>=3).length; const wp=W.some(w=>allC[w]===2);
+    if(wt===4){ yaku.push({n:T('대사희','大四喜'),h:26}); yakuman+=26; } else if(wt===3&&wp){ yaku.push({n:T('소사희','小四喜'),h:13}); yakuman+=13; } }
+  if(all.length&&all.every(t=>t>=27)){ yaku.push({n:T('자일색','字一色'),h:13}); yakuman+=13; }
+  if(all.length&&all.every(t=>t<27&&(numOf(t)===1||numOf(t)===9))){ yaku.push({n:T('청노두','清老頭'),h:13}); yakuman+=13; }
+  { const GR=new Set([19,20,21,23,25,32]); if(all.length&&all.every(t=>GR.has(t))){ yaku.push({n:T('녹일색','緑一色'),h:13}); yakuman+=13; } }
+  if(menzen && !chiitoi0(c)){ const ds=decompose(c); if(ds.some(d=>{const tr=d.sets.filter(s=>s.type==='tri'); return tr.length===4;})){ yaku.push({n:T('스안커','四暗刻'),h:13}); yakuman+=13; } }
   const chiitoi = menzen && isChiitoi(c);
-  if(pl.riichi){ yaku.push({n:T('리치','立直'),h:1}); han++; if(pl.ippatsu){ yaku.push({n:T('일발','一発'),h:1}); han++; } }
+  const wc=G._winCtx||{};
+  if(pl.riichi){ const dbl=pl.doubleRiichi; yaku.push({n:dbl?T('더블리치','ダブル立直'):T('리치','立直'),h:dbl?2:1}); han+=dbl?2:1; if(pl.ippatsu){ yaku.push({n:T('일발','一発'),h:1}); han++; } }
+  if(wc.rinshan){ yaku.push({n:T('영상개화','嶺上開花'),h:1}); han++; }
+  if(wc.haitei){ yaku.push({n:T('해저로월','海底摸月'),h:1}); han++; }
+  if(wc.houtei){ yaku.push({n:T('하저로어','河底撈魚'),h:1}); han++; }
   if(tsumo&&menzen){ yaku.push({n:T('멘젠쯔모','門前清自摸'),h:1}); han++; }
   if(all.every(t=>t<27&&numOf(t)>=2&&numOf(t)<=8)){ yaku.push({n:T('탕야오','断么九'),h:1}); han++; }
   [31,32,33].forEach((d,k)=>{ if(allC[d]>=3){ yaku.push({n:T('역패 '+HONOR_NAME_KO[4+k],'役牌 '+HONOR_NAME_JA[4+k]),h:1}); han++; } });
@@ -544,10 +557,18 @@ function evalYaku(hand14, tsumo, p, winTile){
       const ss=seqs.map(s=>s.t);
       for(let n=0;n<=6;n++){ if(ss.includes(n)&&ss.includes(n+9)&&ss.includes(n+18)){ const hh=menzen?2:1; h+=hh; list.push({n:T('삼색동순','三色同順'),h:hh}); break; } }
       for(let st=0;st<3;st++){ const b=st*9; if(ss.includes(b)&&ss.includes(b+3)&&ss.includes(b+6)){ const hh=menzen?2:1; h+=hh; list.push({n:T('일기통관','一気通貫'),h:hh}); break; } }
+      // 찬타/준찬타 (모든 멘쯔+머리가 끝수/자패 포함)
+      const outer=sets.every(st2=> st2.type==='seq' ? (numOf(st2.t)===1||numOf(st2.t)===7) : (isHonor(st2.t)||numOf(st2.t)===1||numOf(st2.t)===9)) && (dec.pair>=27||numOf(dec.pair)===1||numOf(dec.pair)===9);
+      if(outer){ const hasHonor=sets.some(st2=>st2.type==='tri'&&isHonor(st2.t))||dec.pair>=27;
+        if(hasHonor){ const hh=menzen?2:1; h+=hh; list.push({n:T('찬타','混全帯么'),h:hh}); } else { const hh=menzen?3:2; h+=hh; list.push({n:T('준찬타','純全帯么'),h:hh}); } }
+      // 삼색동각
+      for(let nn=0;nn<9;nn++){ if([0,1,2].every(su=>tris.some(st2=>st2.t<27&&Math.floor(st2.t/9)===su&&st2.t%9===nn))){ h+=2; list.push({n:T('삼색동각','三色同刻'),h:2}); break; } }
       if(h>best){ best=h; bestList=list; }
     }
     han+=best; yaku.push(...bestList);
   }
+  { const dr=[31,32,33]; const dt=dr.filter(d=>allC[d]>=3).length; const dp=dr.some(d=>allC[d]===2); if(dt===2&&dp){ yaku.push({n:T('소삼원','小三元'),h:2}); han+=2; } }
+  if(all.length&&yakuman===0&&all.every(t=>t>=27||(t<27&&(numOf(t)===1||numOf(t)===9)))){ yaku.push({n:T('혼노두','混老頭'),h:2}); han+=2; }
   const doraN=countDora(all,G.doraInd); if(doraN){ yaku.push({n:T('도라','ドラ'),h:doraN}); han+=doraN; }
   const akaN=akaCount(all); if(akaN){ yaku.push({n:T('적도라','赤ドラ'),h:akaN}); han+=akaN; }
   if(pl.riichi){ const uraN=countDora(all,G.uraInd); if(uraN){ yaku.push({n:T('우라도라','裏ドラ'),h:uraN}); han+=uraN; } }
@@ -601,7 +622,9 @@ function declareWin(p,tsumo,winTile,from){
   const pl=G.players[p];
   const hand14 = pl.hand.slice(); if(tsumo){ /* drawn already in hand */ } else { hand14.push(winTile); }
   sortHand(hand14);
+  G._winCtx={ haitei: tsumo&&G.wall.length<=14, houtei: !tsumo&&G.wall.length<=14, rinshan: !!G._rinshan };
   const ev=evalYaku(hand14,tsumo,p,winTile);
+  G._rinshan=false;
   const fu=calcFu(hand14,tsumo,p,winTile);
   const dealer=(p===G.dealer);
   let han=ev.yakuman>0?ev.yakuman:ev.han;
@@ -703,7 +726,7 @@ function doRiichi(){ const pl=G.players[0]; const t=tenpaiDiscards(pl.hand); if(
 function humanOptions2(){ const acts=$('actions'); acts.innerHTML=''; addAct('a-discard',T('버리기','打牌'),()=>{ if(selIdx>=0){ // ensure discard keeps tenpai
   const pl=G.players[0]; const h=pl.hand.slice(); h.splice(selIdx,1); if(waits(h).length===0){ toast(T('텐파이 유지 안됨','聴牌維持不可')); return; } humanDiscard(selIdx);} else toast(T('패 선택','選択')); }); }
 function doAnkan(t){ const pl=G.players[0]; for(let k=0;k<4;k++){const i=pl.hand.indexOf(t);pl.hand.splice(i,1);} pl.melds.push({type:'ankan',t}); // new dora + draw replacement
-  G.doraInd.push(drawWall()); G.drawn=drawWall(); pl.hand.push(G.drawn); sortHand(pl.hand); updateTop(); renderHand(); humanOptions(); }
+  G.doraInd.push(drawWall()); G._rinshan=true; G.drawn=drawWall(); pl.hand.push(G.drawn); sortHand(pl.hand); updateTop(); renderHand(); humanOptions(); }
 function ankanCandidates(hand){ const c=counts(hand); const r=[]; for(let t=0;t<34;t++)if(c[t]===4)r.push(t); return r; }
 function setLang(l){ LANG=l; localStorage.setItem('riichi_lang',l); document.body.classList.toggle('ja',l==='ja'); document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('on',b.dataset.lang===l)); if(G)renderAll(); }
 function setSnd(s){ SND=!!s; localStorage.setItem('riichi_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
