@@ -187,9 +187,10 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 </div></div>
 
 <div class="ov" id="bombAsk"><div class="card2">
-  <h2>💣 폭탄!</h2>
+  <h2 id="bombAskTitle">같은 월 3장!</h2>
   <div id="bombAskMsg" class="scoreline" style="text-align:center"></div>
-  <div class="gobtns"><button class="go" id="bombYes">폭탄 치기</button><button class="stop" id="bombNo">그냥 내기</button></div>
+  <div class="gobtns"><button class="go" id="bombYes">💣 폭탄</button><button class="stop" id="bombShake">🤲 흔들기 ×2</button></div>
+  <button class="close" id="bombNo" style="background:var(--panel2);color:var(--text);border:1px solid var(--line)">그냥 내기</button>
 </div></div>
 
 <div class="ov" id="pickAsk"><div class="card2">
@@ -324,7 +325,7 @@ async function takeTurn(p, handCard, opts){
     pl.hand.splice(pl.hand.findIndex(c=>c.id===handCard.id),1);
     handCards=[handCard];
     if(p===0) sortHand(0);
-    if(handCountM>=3 && beforeM>=1 && G.shakeMult[p]===1){ G.shakeMult[p]=2; toast((p===0?'':'CPU ')+'흔들기! ×2'); }
+    if(handCountM>=3 && beforeM>=1 && G.shakeMult[p]===1 && (opts.shake || p===1)){ G.shakeMult[p]=2; toast((p===0?'':'CPU ')+'흔들기! ×2'); }
   }
 
   // 1) 손패 바닥에 착지 (짝 붙는 느낌)
@@ -480,8 +481,9 @@ function playSelected(){ if(G.sel<0)return; const c=G.players[0].hand[G.sel]; co
   if(canBomb) askBomb(c); else takeTurn(0,c);
 }
 function askBomb(card){
-  $('bombAskMsg').textContent=card.m+'월 패가 손에 3장! 폭탄을 치면 4장 다 먹고 피 1장 + 한 번 더.';
+  $('bombAskMsg').innerHTML=card.m+'월 패가 손에 3장!<br>💣 <b>폭탄</b>: 3장 투하·4장 먹기+피1장+뒤집기 2턴<br>🤲 <b>흔들기</b>: 1장만 내고 이 판 점수 ×2';
   $('bombYes').onclick=()=>{ hide('bombAsk'); takeTurn(0,null,{bombMonth:card.m}); };
+  $('bombShake').onclick=()=>{ hide('bombAsk'); showClaimPop&&toast('흔들기!'); takeTurn(0,card,{shake:true}); };
   $('bombNo').onclick=()=>{ hide('bombAsk'); takeTurn(0,card); };
   show('bombAsk');
 }
