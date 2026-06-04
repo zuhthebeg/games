@@ -419,7 +419,7 @@ function humanOptionsAfterCall(){
 function cpuAfterCall(who,drew){
   const pl=G.players[who];
   if(drew && canWin(pl.hand,true,who) && hasYaku(pl.hand,true,who,G.drawn)) return declareWin(who,true,G.drawn);
-  const t=cpuChooseDiscard(pl.hand); const i=pl.hand.indexOf(t); pl.hand.splice(i,1); sortHand(pl.hand); G.drawn=-1;
+  const t=cpuChooseDiscard(pl.hand,who); const i=pl.hand.indexOf(t); pl.hand.splice(i,1); sortHand(pl.hand); G.drawn=-1;
   discardTile(who,t);
 }
 function cpuTurn(p){
@@ -437,22 +437,34 @@ function cpuTurn(p){
   // riichi locked: must discard drawn
   if(pl.riichi){ const t=pl.hand[pl.hand.length-1]; pl.hand.pop(); sortHand(pl.hand); G.drawn=-1; return discardTile(p,t); }
   // discard: pick least useful (isolated honors/terminals first via simple shanten-ish heuristic)
-  const t=cpuChooseDiscard(pl.hand); const idx=pl.hand.indexOf(t); pl.hand.splice(idx,1); sortHand(pl.hand); G.drawn=-1;
+  const t=cpuChooseDiscard(pl.hand,p); const idx=pl.hand.indexOf(t); pl.hand.splice(idx,1); sortHand(pl.hand); G.drawn=-1;
   discardTile(p,t);
 }
-function cpuChooseDiscard(hand){
-  // score each tile by how much removing it hurts; prefer discarding isolated tiles
-  let best=hand[0],bestScore=-1;
-  for(const t of new Set(hand)){
-    const cnt=hand.filter(x=>x===t).length;
-    let conn=0;
-    if(t<27){const n=numOf(t); for(const o of hand){ if(suitOf(o)===suitOf(t)){const d=Math.abs(numOf(o)-n); if(d<=2&&d>0)conn++;}}}
+function _leastUseful(hand, cands){
+  let best=cands[0], bestScore=-1e9;
+  for(const t of new Set(cands)){
+    const cnt=hand.filter(x=>x===t).length; let conn=0;
+    if(t<27){const n=numOf(t); for(const o of hand){ if(o!==t&&suitOf(o)===suitOf(t)){const d=Math.abs(numOf(o)-n); if(d<=2)conn++;}}}
     const useless=(cnt===1?2:0)+(isHonor(t)&&cnt<2?3:0)+(t<27&&(numOf(t)===1||numOf(t)===9)?1:0)-conn-cnt*2;
     if(useless>bestScore){bestScore=useless;best=t;}
   }
   return best;
 }
-
+function cpuChooseDiscard(hand, pIdx){
+  // 상대 리치 시 방어: 겐부츠(상대 버림패에 있는 안전패) 우선
+  if(pIdx!=null){
+    const ro=G.players.filter((x,i)=>i!==pIdx && x.riichi);
+    if(ro.length){
+      const safeAll=ro.map(o=>new Set(o.discards.concat(o.riichiTile>=0?[o.riichiTile]:[])));
+      const genbutsu=hand.filter(t=>safeAll.every(sset=>sset.has(t)));
+      if(genbutsu.length) return _leastUseful(hand, genbutsu);     // 완전안전패로 폴드
+      // 안전패 없음 → 자패/끝수 위주로(스지 근사) 덜 위험한 것
+      const lowRisk=hand.filter(t=>isHonor(t)||(t<27&&(numOf(t)===1||numOf(t)===9)));
+      if(lowRisk.length) return _leastUseful(hand, lowRisk);
+    }
+  }
+  return _leastUseful(hand, hand);
+}
 /* ===== win / tenpai / yaku ===== */
 function counts(hand){ const c=new Array(34).fill(0); hand.forEach(t=>c[t]++); return c; }
 function isWin(hand){ // hand length 14 (incl winning tile), closed
