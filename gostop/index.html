@@ -254,7 +254,7 @@ function deal(){
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   G.table=deck.splice(0,8);
   G.players=[{hand:deck.splice(0,10),cap:[]},{hand:deck.splice(0,10),cap:[]}];
-  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.debt=[0,0];
+  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={};
   sortHand(0); G._dealing=true; document.body.classList.add('dealing'); renderAll();
   setTimeout(()=>{ G._dealing=false; document.body.classList.remove('dealing'); },1050);
 }
@@ -280,8 +280,6 @@ function playFlow(p, card, fromHand, pick){
 }
 function removeFromTable(c){ const i=G.table.findIndex(x=>x.id===c.id); if(i>=0)G.table.splice(i,1); }
 function stealPi(from,to){ const src=G.players[from].cap; let j=src.findIndex(c=>c.role==='pi'&&!c.ssangpi); if(j<0)j=src.findIndex(c=>c.role==='pi'); if(j<0)j=src.findIndex(c=>c.role==='yul'&&c.m===9); if(j<0)return null; const c=src.splice(j,1)[0]; G.players[to].cap.push(c); return c; }
-// 밀린 피 빚 정산: debt[x] = x가 상대(1-x)에게 갚아야 할 피 수. 상대가 피 생기면 받아옴
-function settleDebt(){ if(!G.debt)return []; const got=[]; for(let x=0;x<2;x++){ const cred=1-x; let guard=0; while((G.debt[x]||0)>0 && guard++<20){ const sp=stealPi(x,cred); if(!sp)break; G.debt[x]--; got.push(sp.id); } } return got; }
 // 먹은 패가 바닥 위치 → 먹은 자리로 날아가는 애니메이션
 function flyToPile(cards, destEl){
   return new Promise(resolve=>{
@@ -388,10 +386,9 @@ async function takeTurn(p, handCard, opts){
     renderAll();
     await flyToPile(captured, destEl);
     captured.forEach(removeFromTable);
-    if(canSteal){ for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp.id); else { if(!G.debt)G.debt=[0,0]; G.debt[1-p]=(G.debt[1-p]||0)+1; } } }
+    if(canSteal){ for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp.id); } }
     pl.cap.push(...captured);
-    const paid=settleDebt();
-    G._newCapIds=new Set([...captured.map(c=>c.id),...stolen,...paid]); G._newIds=null;
+    G._newCapIds=new Set([...captured.map(c=>c.id),...stolen]); G._newIds=null;
     renderAll();
     if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'!'+((canSteal&&steals)?(' 피뺏기 '+steals):'')); const tt=$('toast'); if(stags.includes('따닥')){ tt.classList.add('dbl'); setTimeout(()=>tt.classList.remove('dbl'),650); sound('play'); setTimeout(()=>sound('play'),150); } else sound('play'); }
     await sleep(stags.length?460:140);
