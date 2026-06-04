@@ -53,7 +53,7 @@ body.ja [data-en]{display:revert}
 .opp .nm.turn{color:var(--gold)}
 .opp .nm .ri{color:var(--riichi);font-weight:800}
 .opp .cnt{font-size:.66rem}
-.opp .disc{display:flex;flex-wrap:wrap;gap:1px;max-width:230px;margin:3px auto 0}
+.opp .disc{display:none}
 .opp .disc img{width:20px;border-radius:2px;background:#fff;opacity:.95}
 .opp.top{top:6px;left:50%;transform:translateX(-50%)}
 .opp.left{left:6px;top:50%;transform:translateY(-50%);max-width:120px}
@@ -65,8 +65,15 @@ body.ja [data-en]{display:revert}
 .center .rd{font-size:1.4rem;font-weight:800;color:var(--text)}
 
 /* my discards */
-#myDisc{position:absolute;bottom:140px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:2px;max-width:300px;justify-content:center}
-#myDisc img{width:22px;border-radius:2px;background:#fff}
+/* 4방향 버림패(카와) */
+.kawa{position:absolute;display:flex;flex-wrap:wrap;gap:1px;align-content:flex-start}
+.kawa img{width:calc(22px*var(--tz));border-radius:2px;background:#fff;display:block}
+#dz0{bottom:6px;left:50%;transform:translateX(-50%);width:calc(150px*var(--tz));justify-content:center}
+#dz2{top:6px;left:50%;transform:translateX(-50%);width:calc(150px*var(--tz));justify-content:center}
+#dz1{right:4px;top:50%;transform:translateY(-50%);width:calc(72px*var(--tz));justify-content:flex-end}
+#dz3{left:4px;top:50%;transform:translateY(-50%);width:calc(72px*var(--tz));justify-content:flex-start}
+#dz1 img,#dz3 img{width:calc(19px*var(--tz))}
+#dz2 img{width:calc(19px*var(--tz))}
 
 /* hand */
 .handzone{padding:8px 6px 12px;background:linear-gradient(transparent,rgba(0,0,0,.35))}
@@ -175,8 +182,11 @@ body.ja [data-en]{display:revert}
     <div class="opp top" id="opp2"></div>
     <div class="opp left" id="opp3"></div>
     <div class="opp right" id="opp1"></div>
+    <div class="kawa" id="dz2"></div>
+    <div class="kawa" id="dz1"></div>
+    <div class="kawa" id="dz3"></div>
     <div class="center"><div class="rd" id="c-round">東</div><div id="c-info"></div></div>
-    <div id="myDisc"></div>
+    <div class="kawa" id="dz0"></div>
     <div id="turnTimer"><div class="bar"></div></div>
   </div>
   <div class="handzone">
@@ -690,7 +700,7 @@ function endGame(){
 }
 
 /* render */
-function renderAll(){ renderHand(); renderOpps(); renderMyDisc(); renderScores(); const hz=document.querySelector('.handzone'); if(hz)hz.classList.toggle('myturn',G&&G.turn===0&&!G.over); }
+function renderAll(){ renderHand(); renderOpps(); renderDiscards(); renderScores(); const hz=document.querySelector('.handzone'); if(hz)hz.classList.toggle('myturn',G&&G.turn===0&&!G.over); }
 function renderScores(){ const el=$('scoreRow'); if(!el||!G)return; const wind=(LANG==='ja'?HONOR_NAME_JA:HONOR_NAME_KO);
   el.innerHTML=[0,1,2,3].map(i=>{ const pl=G.players[i]; const me=i===0; const dlr=i===G.dealer;
     return `<div class="sc ${me?'me':''} ${dlr?'dealer':''} ${G.turn===i?'turnon':''}">${me?T('나','私'):'CPU'+i} <span style="color:var(--gold)">${wind[pl.seat]}</span>${dlr?' <b class="w">'+T('친','親')+'</b>':''} <b>${G.pts[i].toLocaleString()}</b>${pl.riichi?' <span style="color:var(--riichi)">●</span>':''}</div>`;
@@ -699,12 +709,11 @@ function renderOpps(){
   for(let i=1;i<4;i++){ const pl=G.players[i]; const el=$('opp'+i); el.classList.toggle('turnseat',G.turn===i);
     const seatN=(LANG==='ja'?HONOR_NAME_JA:HONOR_NAME_KO)[pl.seat];
     el.innerHTML=`<div class="nm ${G.turn===i?'turn':''}">CPU ${i} <span style="color:var(--muted)">${seatN}</span>${pl.riichi?' <span class="ri">'+T('리치','リーチ')+'</span>':''}</div>`+
-      `<div class="cnt">${pl.hand.length}${T('장','枚')} · ${G.pts[i].toLocaleString()}</div>`+`<div class="omeld">${(pl.melds||[]).map(m=>m.tiles.map(t=>`<img src="${tileSvg(t)}">`).join('')+'&nbsp;').join('')}</div>`+
-      `<div class="disc">${discHTML(pl)}</div>`;
+      `<div class="cnt">${pl.hand.length}${T('장','枚')} · ${G.pts[i].toLocaleString()}</div>`+`<div class="omeld">${(pl.melds||[]).map(m=>m.tiles.map(t=>`<img src="${tileSvg(t)}">`).join('')+'&nbsp;').join('')}</div>`;
   }
 }
 function discHTML(pl){ const h=pl.discards.map((t,i)=>{ const last=i===pl.discards.length-1; const cls=((last&&pl._newDisc)?'disc-anim ':'')+((i===pl.riichiDiscIdx)?'ri':''); return `<img class="${cls.trim()}" src="${tileSvg(t)}">`; }).join(''); pl._newDisc=false; return h; }
-function renderMyDisc(){ $('myDisc').innerHTML=discHTML(G.players[0]); }
+function renderDiscards(){ for(let i=0;i<4;i++){ const el=$('dz'+i); if(el)el.innerHTML=discHTML(G.players[i]); } }
 function renderTenpai(){ const el=$('tenpaiInfo'); if(!el||!G)return; const pl=G.players[0]; const wset=new Set();
   if(pl.hand.length%3===2){ tenpaiDiscards(pl.hand).forEach(o=>o.waits.forEach(w=>wset.add(w))); }
   else { waits(pl.hand).forEach(w=>wset.add(w)); }
