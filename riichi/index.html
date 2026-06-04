@@ -222,6 +222,8 @@ body.ja [data-en]{display:revert}
     <div class="seg"><button data-aka="1" onclick="setAka(1)">ON</button><button data-aka="0" onclick="setAka(0)">OFF</button></div></div>
   <div class="row"><span data-ko>⏱ 턴 제한</span><span data-en>⏱ Turn limit</span>
     <div class="seg"><button data-tl="0" onclick="setTL(0)">∞</button><button data-tl="10" onclick="setTL(10)">10s</button><button data-tl="20" onclick="setTL(20)">20s</button></div></div>
+  <div class="row"><span data-ko>🗣 패 콜</span><span data-en>🗣 Tile call</span>
+    <div class="seg"><button data-tc="1" onclick="setTC(1)">ON</button><button data-tc="0" onclick="setTC(0)">OFF</button></div></div>
   <button class="close" onclick="hide('settings')" data-ko>닫기</button><button class="close" onclick="hide('settings')" data-en>Close</button>
 </div></div>
 
@@ -242,6 +244,7 @@ let AKA=localStorage.getItem('riichi_aka')!=='0';
 let BET=+(localStorage.getItem('riichi_bet')||1);
 let TZ=+(localStorage.getItem('riichi_zoom')||1);
 let TL=+(localStorage.getItem('riichi_tl')||0);
+let TILECALL=localStorage.getItem('riichi_tilecall')!=='0';
 let _bgmA=null, _turnT=null;
 const T=(ko,ja)=>LANG==='ja'?ja:ko;
 
@@ -346,7 +349,8 @@ function discardTile(p,t){
   if(pl.ippatsu && !pl.pendingRiichi) pl.ippatsu=false;            // 자기 다음 타로 일발 종료
   pl.discards.push(t); pl._newDisc=true;
   G.lastDiscard=t; G.lastDiscardBy=p;
-  if(pl.pendingRiichi){ pl.riichi=true; pl.pendingRiichi=false; pl.riichiTile=t; pl.riichiDiscIdx=pl.discards.length-1; pl.ippatsu=true; if(G.firstGoAround&&pl.discards.length===1)pl.doubleRiichi=true; G.pts[p]-=1000; G.riichiSticks=(G.riichiSticks||0)+1; sound('riichi'); showClaimPop(T('리치','リーチ'),t); }
+  playTileVoice(t,p);
+  if(pl.pendingRiichi){ pl.riichi=true; pl.pendingRiichi=false; pl.riichiTile=t; pl.riichiDiscIdx=pl.discards.length-1; pl.ippatsu=true; if(G.firstGoAround&&pl.discards.length===1)pl.doubleRiichi=true; G.pts[p]-=1000; G.riichiSticks=(G.riichiSticks||0)+1; sound('riichi'); playCallFx('tenpai',p); showClaimPop(T('리치','リーチ'),t); }
   renderAll(); updateTop();
   // 리치 후 패스했던 패는 영구 후리텐
   const claims=collectClaims(p,t);
@@ -404,7 +408,7 @@ function applyCall(who,type,tile,from,chiPair){
   else if(type==='chi'){ removeN(pl.hand,chiPair[0],1); removeN(pl.hand,chiPair[1],1); pl.melds.push({type:'chi',tiles:[chiPair[0],chiPair[1],tile].sort((a,b)=>a-b),from}); }
   G.players.forEach(x=>x.ippatsu=false); G.firstGoAround=false;
   const LBL={pon:T('퐁','ポン'),minkan:T('깡','カン'),chi:T('치','チー')};
-  showClaimPop(LBL[type]||'',tile); sound('riichi'); try{navigator.vibrate&&navigator.vibrate(25);}catch(e){}
+  showClaimPop(LBL[type]||'',tile); sound('riichi'); playCallFx(type==='minkan'?'kan':type,who); try{navigator.vibrate&&navigator.vibrate(25);}catch(e){}
   G.turn=who; G.drawn=-1; selIdx=-1;
   if(type==='minkan'){ G.doraInd.push(drawWall()); G._rinshan=true; if(G.wall.length>0){ G.drawn=drawWall(); pl.hand.push(G.drawn); } }
   sortHand(pl.hand); renderAll(); updateTop();
@@ -657,7 +661,7 @@ function declareWin(p,tsumo,winTile,from){
   else { const tot=sc.total+hb*300; G.pts[from]-=tot; G.pts[p]+=tot; }
   G._result={winner:p, dealerWin:(p===G.dealer), draw:false};
   if(G.riichiSticks){ G.pts[p]+=G.riichiSticks*1000; G.riichiSticks=0; }
-  sound(tsumo?'tsumo':'ron'); try{navigator.vibrate&&navigator.vibrate(p===0?[40,40,80]:30);}catch(e){}
+  sound(tsumo?'tsumo':'ron'); playCallFx(tsumo?'tsumo':'hu',p); try{navigator.vibrate&&navigator.vibrate(p===0?[40,40,80]:30);}catch(e){}
   settleGold();
   showResult(p,tsumo,hand14,winTile,ev,fu,han,sc,from);
 }
@@ -752,6 +756,15 @@ function ankanCandidates(hand){ const c=counts(hand); const r=[]; for(let t=0;t<
 function setLang(l){ LANG=l; localStorage.setItem('riichi_lang',l); document.body.classList.toggle('ja',l==='ja'); document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('on',b.dataset.lang===l)); if(G)renderAll(); }
 function setSnd(s){ SND=!!s; localStorage.setItem('riichi_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
 function sound(n){ if(!SND)return; const map={tsumo:'win',ron:'win',riichi:'claim'}; const fn=map[n]||'tile'; try{ const a=new Audio('sounds/'+fn+'.mp3'); a.volume=.5; a.play().catch(()=>{}); }catch(e){} }
+// 패 콜(打牌) 음성 — voice/<id>.mp3 (m1..s9,z1..z7) + fx-{pon,chi,kan,hu,tsumo,tenpai,rinshan}
+function voiceId(t){ return t<27 ? (['m','p','s'][Math.floor(t/9)]+((t%9)+1)) : ('z'+(t-26)); }
+let _vc={};
+function _rate(a,r){ a.playbackRate=r||1; try{a.preservesPitch=false;a.mozPreservesPitch=false;a.webkitPreservesPitch=false;}catch(e){} }
+function playVoice(file,rate){ if(!TILECALL||!file)return; try{ let a=_vc[file]; if(!a){ a=new Audio('voice/'+file+'.mp3?v=1'); a.volume=.85; _vc[file]=a; } a.currentTime=0; _rate(a,rate); a.play().catch(()=>{}); }catch(e){} }
+const SEAT_RATE=[1.0,0.9,1.13,1.24];
+function playTileVoice(t,p){ if(t!=null&&t>=0) playVoice(voiceId(t), SEAT_RATE[(p||0)%4]); }
+function playCallFx(name,p){ playVoice('fx-'+name, SEAT_RATE[(p||0)%4]); }
+function setTC(v){ TILECALL=!!v; localStorage.setItem('riichi_tilecall',v?'1':'0'); document.querySelectorAll('[data-tc]').forEach(b=>b.classList.toggle('on',+b.dataset.tc===(v?1:0))); }
 function settleGold(){ if(!G||!G.ptsStart)return; const d=Math.round((G.pts[0]-G.ptsStart[0])*BET); G._lastGoldDelta=d; G.ptsStart=G.pts.slice(); if(!d)return; try{ if(typeof SharedWallet!=='undefined'&&SharedWallet._initialized){ d>0?SharedWallet.addGold(d):SharedWallet.removeGold(-d);} }catch(e){} }
 function refreshMenuGold(){ try{ if(typeof SharedWallet!=='undefined'){ $('menu-gold').textContent='💰 '+(SharedWallet.gold||0).toLocaleString(); } }catch(e){} }
 function setBet(n){ BET=n; localStorage.setItem('riichi_bet',n); document.querySelectorAll('[data-bet]').forEach(b=>b.classList.toggle('on',+b.dataset.bet===n)); }
@@ -771,7 +784,7 @@ $('howtoBody').innerHTML = T(
  '• 13장으로 4몸통+머리(또는 치또이쯔/국사무쌍)를 완성하면 화료.<br>• 화료엔 <b>役</b>이 최소 1개 필요(리치·탕야오·역패 등).<br>• 텐파이면 <b>리치</b> 선언(1000점), 이후 뽑은 패만 버림.<br>• <b>쯔모</b>=자기 뽑기 화료, <b>론</b>=남의 버린패 화료.<br>• <b>도라</b>(표시패 다음 패)는 보너스 판.<br>• <b>폰</b>(같은패2)·<b>치</b>(상가 순자)·<b>깡</b>·<b>론</b> 호출 가능 — 내 차례에 버튼 등장.<br>• 동풍전 4국(친 화료/텐파이 시 렌찬·혼바), 점수 높은 사람 승.<br>• 점수는 지갑 골드와 연동(판돈 ×N).',
  '• Complete 4 sets + a pair (or chiitoitsu / kokushi) with 13 tiles to win.<br>• A win needs at least one <b>yaku</b> (riichi, tanyao, yakuhai…).<br>• When tenpai, declare <b>Riichi</b> (1000 pts); afterwards discard only drawn tiles.<br>• <b>Tsumo</b>=self-draw win, <b>Ron</b>=win on a discard.<br>• <b>Dora</b> (tile after the indicator) gives bonus han.<br>• Call <b>pon/chi/kan/ron</b> on discards — buttons appear on your turn.<br>• East round (dealer repeats on win/tenpai, honba). Gold-linked (bet ×N).'
 );
-setLang(LANG); setSnd(SND?1:0); setBet(BET); setAka(AKA?1:0); setTL(TL); setBgm(BGM?1:0); applyZoom();
+setLang(LANG); setSnd(SND?1:0); setBet(BET); setAka(AKA?1:0); setTL(TL); setBgm(BGM?1:0); setTC(TILECALL?1:0); applyZoom();
 try{ if(typeof SharedWallet!=='undefined'&&SharedWallet._initPromise){ SharedWallet._initPromise.then(refreshMenuGold);} else { setTimeout(refreshMenuGold,800);} }catch(e){}
 </script>
 </body>
