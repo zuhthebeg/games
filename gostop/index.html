@@ -279,7 +279,7 @@ function playFlow(p, card, fromHand, pick){
   return captured;
 }
 function removeFromTable(c){ const i=G.table.findIndex(x=>x.id===c.id); if(i>=0)G.table.splice(i,1); }
-function stealPi(from,to){ const src=G.players[from].cap; let j=src.findIndex(c=>c.role==='pi'&&!c.ssangpi); if(j<0)j=src.findIndex(c=>c.role==='pi'); if(j<0)return null; const c=src.splice(j,1)[0]; G.players[to].cap.push(c); return c; }
+function stealPi(from,to){ const src=G.players[from].cap; let j=src.findIndex(c=>c.role==='pi'&&!c.ssangpi); if(j<0)j=src.findIndex(c=>c.role==='pi'); if(j<0)j=src.findIndex(c=>c.role==='yul'&&c.m===9); if(j<0)return null; const c=src.splice(j,1)[0]; G.players[to].cap.push(c); return c; }
 // 밀린 피 빚 정산: debt[x] = x가 상대(1-x)에게 갚아야 할 피 수. 상대가 피 생기면 받아옴
 function settleDebt(){ if(!G.debt)return []; const got=[]; for(let x=0;x<2;x++){ const cred=1-x; let guard=0; while((G.debt[x]||0)>0 && guard++<20){ const sp=stealPi(x,cred); if(!sp)break; G.debt[x]--; got.push(sp.id); } } return got; }
 // 먹은 패가 바닥 위치 → 먹은 자리로 날아가는 애니메이션
@@ -458,34 +458,31 @@ function askPick(cards){
 
 /* ===== scoring ===== */
 function score(cap){
-  const gw=cap.filter(c=>c.gwang), yul=cap.filter(c=>c.role==='yul'),
-        tti=cap.filter(c=>c.role==='tti'), pi=cap.filter(c=>c.role==='pi');
-  let total=0; const parts=[];
-  // 광
-  let gp=0; const ng=gw.length, hasBi=gw.some(c=>c.bigwang);
-  if(ng>=5)gp=15; else if(ng===4)gp=4; else if(ng===3)gp=hasBi?2:3;
-  if(gp){total+=gp;parts.push(['광 '+ng+'개',gp]);}
-  // 끗 + 고도리
-  const ny=yul.length; let yp=0;
-  if(ny>=5)yp=ny-4;
-  const godori=yul.filter(c=>c.godori).length;
-  if(godori>=3){yp+=5;parts.push(['고도리',5]);}
-  if(ny>=5)parts.push(['끗 '+ny+'개',ny-4]);
-  total+=yp;
-  // 띠
-  const nt=tti.length; let tp=0;
-  if(nt>=5)tp+=nt-4;
-  const hong=tti.filter(c=>c.tti==='hong').length, chung=tti.filter(c=>c.tti==='chung').length, cho=tti.filter(c=>c.tti==='cho').length;
-  if(hong>=3){tp+=3;parts.push(['홍단',3]);}
-  if(chung>=3){tp+=3;parts.push(['청단',3]);}
-  if(cho>=3){tp+=3;parts.push(['초단',3]);}
-  if(nt>=5)parts.push(['띠 '+nt+'개',nt-4]);
-  total+=tp;
-  // 피 (쌍피=2)
-  const np=pi.reduce((a,c)=>a+(c.ssangpi?2:1),0); let pp=0;
-  if(np>=10){pp=np-9;parts.push(['피 '+np+'장',pp]);}
-  total+=pp;
-  return {total,parts,gw:ng,pi:np};
+  const gw=cap.filter(c=>c.gwang), tti=cap.filter(c=>c.role==='tti');
+  const yulAll=cap.filter(c=>c.role==='yul'), piAll=cap.filter(c=>c.role==='pi');
+  const kuk=yulAll.find(c=>c.m===9);   // 9월 국진(열끗) — 쌍피로도 사용 가능
+  function core(yul,pi){
+    let total=0; const parts=[];
+    let gp=0; const ng=gw.length, hasBi=gw.some(c=>c.bigwang);
+    if(ng>=5)gp=15; else if(ng===4)gp=4; else if(ng===3)gp=hasBi?2:3;
+    if(gp){total+=gp;parts.push(['광 '+ng+'개',gp]);}
+    const ny=yul.length; let yp=0; if(ny>=5)yp=ny-4;
+    const godori=yul.filter(c=>c.godori).length; if(godori>=3){yp+=5;parts.push(['고도리',5]);}
+    if(ny>=5)parts.push(['끗 '+ny+'개',ny-4]); total+=yp;
+    const nt=tti.length; let tp=0; if(nt>=5)tp+=nt-4;
+    const hong=tti.filter(c=>c.tti==='hong').length, chung=tti.filter(c=>c.tti==='chung').length, cho=tti.filter(c=>c.tti==='cho').length;
+    if(hong>=3){tp+=3;parts.push(['홍단',3]);}
+    if(chung>=3){tp+=3;parts.push(['청단',3]);}
+    if(cho>=3){tp+=3;parts.push(['초단',3]);}
+    if(nt>=5)parts.push(['띠 '+nt+'개',nt-4]); total+=tp;
+    const np=pi.reduce((a,c)=>a+(c.ssangpi?2:1),0); let pp=0;
+    if(np>=10){pp=np-9;parts.push(['피 '+np+'장',pp]);} total+=pp;
+    return {total,parts,gw:ng,pi:np};
+  }
+  if(!kuk) return core(yulAll,piAll);
+  const asYul=core(yulAll,piAll);
+  const asPi=core(yulAll.filter(c=>c!==kuk), piAll.concat([{ssangpi:true,role:'pi',m:9}]));
+  return asPi.total>asYul.total ? asPi : asYul;
 }
 /* go/stop */
 let pendingScore=null,pendingBomb=false;
