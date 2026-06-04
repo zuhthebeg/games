@@ -9,7 +9,17 @@
 <meta property="og:description" content="CPU와 즐기는 13장 일본 리치마작. 리치·도라·役 점수계산. 한국어/日本語." />
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icon.svg" />
+<meta name="theme-color" content="#0a1f1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="리치마작">
+<meta property="og:url" content="https://game.cocy.io/riichi/">
+<meta property="og:image" content="https://game.cocy.io/riichi/icon.svg">
+<meta name="twitter:card" content="summary">
+<link rel="apple-touch-icon" href="icon.svg">
+<script>if('serviceWorker'in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});</script>
 <script src="/lib/shared-wallet.js?v=20260214"></script>
+<script src="/lib/game-rankings.js?v=20260530a"></script>
 <style>
 :root{
   --bg:#0a1f1a; --felt:#10302a; --felt2:#0c2722; --panel:#13241f; --panel2:#1b332c;
@@ -663,6 +673,7 @@ function declareWin(p,tsumo,winTile,from){
   if(G.riichiSticks){ G.pts[p]+=G.riichiSticks*1000; G.riichiSticks=0; }
   sound(tsumo?'tsumo':'ron'); playCallFx(tsumo?'tsumo':'hu',p); try{navigator.vibrate&&navigator.vibrate(p===0?[40,40,80]:30);}catch(e){}
   settleGold();
+  if(p===0 && typeof GameRankings!=='undefined'){ try{ GameRankings.submit('riichi',{score:sc.total}); }catch(e){} }
   showResult(p,tsumo,hand14,winTile,ev,fu,han,sc,from);
 }
 function showResult(p,tsumo,hand14,winTile,ev,fu,han,sc,from){
@@ -785,6 +796,7 @@ $('howtoBody').innerHTML = T(
  '• Complete 4 sets + a pair (or chiitoitsu / kokushi) with 13 tiles to win.<br>• A win needs at least one <b>yaku</b> (riichi, tanyao, yakuhai…).<br>• When tenpai, declare <b>Riichi</b> (1000 pts); afterwards discard only drawn tiles.<br>• <b>Tsumo</b>=self-draw win, <b>Ron</b>=win on a discard.<br>• <b>Dora</b> (tile after the indicator) gives bonus han.<br>• Call <b>pon/chi/kan/ron</b> on discards — buttons appear on your turn.<br>• East round (dealer repeats on win/tenpai, honba). Gold-linked (bet ×N).'
 );
 setLang(LANG); setSnd(SND?1:0); setBet(BET); setAka(AKA?1:0); setTL(TL); setBgm(BGM?1:0); setTC(TILECALL?1:0); applyZoom();
+try{ if(typeof GameRankings!=='undefined')GameRankings.injectNavButton('riichi'); }catch(e){}
 try{ if(typeof SharedWallet!=='undefined'&&SharedWallet._initPromise){ SharedWallet._initPromise.then(refreshMenuGold);} else { setTimeout(refreshMenuGold,800);} }catch(e){}
 </script>
 </body>
