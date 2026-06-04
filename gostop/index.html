@@ -258,6 +258,9 @@ function deal(){
   G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0];
   sortHand(0); G._dealing=true; document.body.classList.add('dealing'); renderAll();
   setTimeout(()=>{ G._dealing=false; document.body.classList.remove('dealing'); },1050);
+  G._chongtong=null;
+  for(let p=0;p<2;p++){ const cnt={}; G.players[p].hand.forEach(c=>cnt[c.m]=(cnt[c.m]||0)+1); if(Object.values(cnt).some(n=>n===4)){ G._chongtong=p; break; } }
+  if(G._chongtong!=null){ const cp=G._chongtong; setTimeout(()=>{ if(!G.over){ toast((cp===0?'':'CPU ')+'총통!'); setTimeout(()=>settle(cp,score(G.players[cp].cap),{chongtong:true}),700); } },1150); }
 }
 /* ===== matching / capture ===== */
 function sameMonth(arr,m){ return arr.filter(c=>c.m===m); }
@@ -544,12 +547,16 @@ function settle(winner,sc,opts){
   const loser=1-winner; const lcap=G.players[loser].cap; const ls=score(lcap);
   let pt; const tags=[];
   if(opts.ppuk3){ pt=10; tags.push('3뻑 10점'); }
+  else if(opts.chongtong){ pt=10; tags.push('총통'); }
   else {
     pt=sc.total; let mult=1;
-    if(G.go>0){ const gm=Math.pow(2,Math.max(0,G.go-1)); mult*=gm; tags.push(G.go+'고 ×'+gm); } // 1고=×1,2고=×2...
-    if(ls.pi<=6){ mult*=2; tags.push('피박 ×2'); }
-    if(sc.gw>=3 && ls.gw===0){ mult*=2; tags.push('광박 ×2'); }
-    if(G.shakeMult&&G.shakeMult[winner]>1){ mult*=G.shakeMult[winner]; tags.push('흔들기 ×'+G.shakeMult[winner]); }
+    if(G.goBy===winner && G.go>0){ pt+=Math.min(G.go,2); if(G.go>=3)mult*=Math.pow(2,G.go-2); tags.push(G.go+'고'); }  // 정통: 1·2고 +점, 3고부터 ×2 (부른사람 승리 시)
+    if(ls.pi<=6){ mult*=2; tags.push('피박'); }
+    if(sc.gw>=3 && ls.gw===0){ mult*=2; tags.push('광박'); }
+    const wyul=G.players[winner].cap.filter(c=>c.role==='yul').length;
+    if(wyul>=7){ mult*=2; tags.push('멍박'); }                          // 멍따(열끗 7장↑)
+    if(G.shakeMult&&G.shakeMult[winner]>1){ mult*=G.shakeMult[winner]; tags.push('흔들기'); }
+    if(G.goBy>=0 && G.goBy!==winner){ mult*=2; tags.push('고박'); }     // 고 부른 사람이 짐(독박)
     pt*=mult;
   }
   if(CARRY>1) tags.push('나가리누적 ×'+CARRY);
@@ -557,7 +564,7 @@ function settle(winner,sc,opts){
   const gold=pt*10000*BET*CARRY;
   if(typeof SharedWallet!=='undefined' && SharedWallet._initialized){ try{ winner===0?SharedWallet.addGold(gold):SharedWallet.removeGold(gold); }catch(e){} }
   $('r-title').textContent=(winner===0?'🎉 ':'')+who+' 승!';
-  $('r-detail').innerHTML = (opts.ppuk3?'<div>3뻑 즉시 승</div>':sc.parts.map(p=>`<div>${p[0]} <b>+${p[1]}</b></div>`).join('')) + (tags.length?`<div style="color:var(--gold);margin-top:6px">${tags.join(' · ')}</div>`:'');
+  $('r-detail').innerHTML = (opts.ppuk3?'<div>3뻑 즉시 승</div>':opts.chongtong?'<div>총통! 즉시 승</div>':sc.parts.map(p=>`<div>${p[0]} <b>+${p[1]}</b></div>`).join('')) + (tags.length?`<div style="color:var(--gold);margin-top:6px">${tags.join(' · ')}</div>`:'');
   $('r-pt').innerHTML=pt+'점 <span style="font-size:1.05rem;color:'+(winner===0?'var(--green)':'var(--red)')+'">'+(winner===0?'+':'−')+gold.toLocaleString()+'G</span>';
   sound(winner===0?'win':'lose');
   show('result');
