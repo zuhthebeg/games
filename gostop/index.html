@@ -118,6 +118,11 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 @keyframes flashpop{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
 @keyframes pulse2{0%{transform:translate(-50%,-50%) scale(.7);opacity:0}25%{transform:translate(-50%,-50%) scale(1.15);opacity:1}50%{transform:translate(-50%,-50%) scale(.95)}75%{transform:translate(-50%,-50%) scale(1.1)}100%{transform:translate(-50%,-50%) scale(1)}}
 .toast.dbl{animation:pulse2 .6s var(--ease)}
+#mpOpps{display:none;gap:8px;padding:4px 10px;overflow-x:auto;flex-wrap:nowrap}
+.mpopp{background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:9px;padding:4px 7px;font-size:.7rem;min-width:118px;flex-shrink:0}
+.mpopp.turn{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.mpopp .who{color:var(--muted);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mpopp .capset img{width:calc(17px*var(--tz))}
 .credit{position:fixed;bottom:2px;right:4px;font-size:.55rem;color:rgba(255,255,255,.25);z-index:1}
 .credit a{color:inherit}
 </style>
@@ -127,7 +132,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
   <h1>🎴 맞고</h1>
   <p>화투 2인 맞고 · CPU 대전<br>광·띠·끗·피 · 고도리 · 고/스톱</p>
   <button class="big-btn" onclick="newGame()">게임 시작 (맞고)</button>
-  <button class="big-btn dim" onclick="toast('고스톱(3인)은 곧 추가됩니다')">고스톱 3인 (준비중)</button>
+  <button class="big-btn" style="background:var(--green);color:#0a1a12" onclick="openMultiplayer()">👥 온라인 멀티 (2~4인)</button>
   <div style="display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--muted);margin:2px 0">판돈
     <div class="seg" style="border-color:var(--line)">
       <button data-bet="1" onclick="setBet(1)">1만</button>
@@ -140,6 +145,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
   <button class="big-btn sec" onclick="show('settings')">⚙ 설정</button>
 </div>
 
+<div id="mpLobby" style="display:none;position:fixed;top:var(--wallet-bar-h);left:0;right:0;bottom:0;z-index:35;overflow:auto;background:var(--bg)"></div>
 <div id="board">
   <div class="bar">
     <span class="b">고 <b id="t-go">0</b></span>
@@ -151,7 +157,8 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
     <button onclick="show('settings')">⚙</button>
     <button onclick="quitMenu()">나가기</button>
   </div>
-  <div class="opp"><span class="who" id="cpu-who">CPU</span>
+  <div class="opp" id="mpOpps"></div>
+  <div class="opp" id="spOpp"><span class="who" id="cpu-who">CPU</span>
     <div class="captured" id="cpuCaptured"></div>
     <span id="cpu-score" style="color:var(--gold);font-weight:700">0점</span>
   </div>
@@ -222,6 +229,8 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 </div></div>
 
 <script src="/lib/shared-wallet.js?v=20260214"></script>
+<script src="/lib/multiplayer.js?v=20260524a"></script>
+<script src="/lib/multiplayer-ui.js?v=20260508a"></script>
 <script>
 const $=id=>document.getElementById(id);
 let SND=localStorage.getItem('gostop_snd')!=='0';
@@ -656,6 +665,85 @@ function bombFx(prefix){
   setTimeout(()=>{ tt.style.display='none'; tt.classList.remove('dbl'); },1300);
 }
 setSnd(SND?1:0); setBet(BET); applyZoom();
+/* ===== 온라인 멀티 (COC-21) ===== */
+const MP={active:false,ui:null,client:null,myUserId:null,view:null,_sel:-1,_poll:null,_resultShown:false};
+function mpSameMonth(arr,m){ return (arr||[]).filter(c=>c.m===m); }
+function openMultiplayer(){
+  if(typeof MultiplayerUI==='undefined'){ toast('멀티 로드 실패'); return; }
+  $('menu').style.display='none';
+  const lob=$('mpLobby'); lob.style.display='block';
+  MP.ui=new MultiplayerUI({ gameType:'gostop', gameName:'맞고·고스톱', container:lob, maxPlayers:4, supportsLocal:false,
+    getRoomConfig:()=>({timeLimit:30, bet:BET||1}),
+    onGameStart:(rs)=>mpStart(rs),
+    onLeave:()=>{ lob.style.display='none'; lob.innerHTML=''; $('menu').style.display='flex'; } });
+  MP.ui.show();
+}
+function mpStart(rs){
+  MP.active=true; MP.client=MP.ui.getClient(); MP.myUserId=MP.client.getMyUserId(); MP._sel=-1; MP._resultShown=false;
+  MP.client.onEvent=()=>mpRefresh();
+  $('mpLobby').style.display='none'; $('mpLobby').innerHTML='';
+  $('board').style.display='flex'; $('mpOpps').style.display='flex'; const sp=$('spOpp'); if(sp)sp.style.display='none';
+  if(rs&&rs.myView) applyServerView(rs.myView); else mpRefresh();
+  if(MP._poll)clearInterval(MP._poll); MP._poll=setInterval(mpRefresh,2500);
+}
+function mpRefresh(){ if(!MP.active||!MP.client)return; MP.client.getRoomState().then(room=>{ if(room&&room.myView) applyServerView(room.myView); }).catch(()=>{}); }
+function mpSend(action){ if(!MP.client)return; MP._sel=-1; MP.client.sendAction(action).then(()=>setTimeout(mpRefresh,150)).catch(()=>toast('전송 실패')); }
+function applyServerView(v){ MP.view=v; mpRender(v); if(v.finished){ mpResult(v); return; } if(v.pending && v.pending.seat===v.mySeat) mpOfferGoStop(v.pending.total); }
+function mpScoreOf(cap){ try{ return score(cap).total; }catch(e){ return 0; } }
+function mpEsc(t){ return (''+(t||'')).replace(/[<>&]/g,''); }
+function mpRender(v){
+  G=G||{}; G._newCapIds=null; G._newIds=null;
+  const by={},order=[]; (v.table||[]).forEach(c=>{ if(!by[c.m]){by[c.m]=[];order.push(c.m);} by[c.m].push(c); });
+  $('tableCards').innerHTML=order.map(m=>`<div class="mgroup">`+by[m].map((c,i)=>`<img src="${c.file}" style="margin-left:${i?'-26px':'0'}">`).join('')+`</div>`).join('');
+  if($('deckN'))$('deckN').textContent=v.deckCount; if($('t-deck'))$('t-deck').textContent=v.deckCount; if($('t-go'))$('t-go').textContent=v.go;
+  const myhand=v.myHand||[];
+  $('myHand').innerHTML=myhand.map((c,i)=>{ const canPlay=v.isMyTurn && mpSameMonth(v.table,c.m).length>0;
+    return `<div class="hcard ${i===MP._sel?'sel':''} ${canPlay?'canplay':''}" onclick="mpTapCard(${i})"><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`; }).join('');
+  const meP=v.players.find(p=>p.seat===v.mySeat)||{cap:[]};
+  $('myCaptured').innerHTML=capGroup(meP.cap);
+  if($('t-myscore'))$('t-myscore').textContent=v.myScore; if($('myScoreLine'))$('myScoreLine').innerHTML=`내 점수 <b>${v.myScore}</b>점`;
+  const el=$('mpOpps'); const opps=v.players.filter(p=>p.seat!==v.mySeat).sort((a,b)=>a.seat-b.seat);
+  el.innerHTML=opps.map(p=>{ const turn=(v.pending?v.pending.seat===p.seat:v.currentTurn===p.seat);
+    return `<div class="mpopp ${turn?'turn':''}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)} · ${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
+}
+function mpTapCard(i){
+  const v=MP.view; if(!v||!v.isMyTurn||v.pending)return;
+  const myhand=v.myHand||[]; const c=myhand[i]; if(!c)return;
+  if(MP._sel!==i){ MP._sel=i; mpRender(v); return; }
+  MP._sel=-1;
+  const m=c.m, handCnt=myhand.filter(x=>x.m===m).length, bottom=mpSameMonth(v.table,m).length;
+  if(handCnt>=3 && bottom>=1){ return mpAskBomb(c); }
+  if(bottom===2){ const cands=v.table.filter(x=>x.m===m); const k=cands.map(x=>x.role+(x.ssangpi?'S':'')+(x.tti||'')); if(k[0]!==k[1]) return mpAskPick(cands,c); }
+  mpSend({type:'PLAY',payload:{cardId:c.id}});
+}
+function mpAskBomb(card){
+  $('bombAskMsg').innerHTML=card.m+'월 3장! 💣<b>폭탄</b> / 🤲<b>흔들기 ×2</b> / 그냥';
+  $('bombYes').onclick=()=>{ hide('bombAsk'); mpSend({type:'BOMB',payload:{month:card.m}}); };
+  $('bombShake').onclick=()=>{ hide('bombAsk'); mpSend({type:'PLAY',payload:{cardId:card.id,shake:true}}); };
+  $('bombNo').onclick=()=>{ hide('bombAsk'); mpSend({type:'PLAY',payload:{cardId:card.id}}); };
+  show('bombAsk');
+}
+function mpAskPick(cands,card){
+  const box=$('pickCards'); box.innerHTML=cands.map((c,i)=>`<img src="${c.file}" data-i="${i}" style="width:68px;border-radius:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.55)">`).join('');
+  box.querySelectorAll('img').forEach(img=>img.onclick=()=>{ hide('pickAsk'); mpSend({type:'PLAY',payload:{cardId:card.id,pick:cands[+img.dataset.i].id}}); });
+  show('pickAsk');
+}
+function mpOfferGoStop(total){
+  if($('gostop').classList.contains('show'))return;
+  $('gs-title').textContent=total+'점! 고? 스톱?'; $('gs-detail').innerHTML=''; $('gs-pt').textContent='';
+  document.querySelector('#gostop .go').onclick=()=>{ hide('gostop'); mpSend({type:'GO'}); };
+  document.querySelector('#gostop .stop').onclick=()=>{ hide('gostop'); mpSend({type:'STOP'}); };
+  show('gostop');
+}
+function mpResult(v){
+  if(MP._resultShown)return; MP._resultShown=true;
+  const meWin=v.winnerSeat===v.mySeat; const my=(v.scores&&v.scores[MP.myUserId])||0;
+  $('r-title').textContent=v.winnerSeat==null?'나가리':(meWin?'🎉 승!':'패');
+  $('r-detail').innerHTML=mpEsc(v.endReason||'');
+  $('r-pt').innerHTML='<span style="color:'+(my>=0?'var(--green)':'var(--red)')+'">'+(my>=0?'+':'')+my.toLocaleString()+'G</span>';
+  document.querySelectorAll('#result .close').forEach(b=>{ b.textContent='메뉴로'; b.onclick=()=>{ hide('result'); if(MP._poll)clearInterval(MP._poll); MP.active=false; try{MP.client&&MP.client.leaveRoom&&MP.client.leaveRoom();}catch(e){} quitMenu(); }; });
+  sound(meWin?'win':'lose'); show('result');
+}
 </script>
 </body>
 </html>
