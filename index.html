@@ -208,6 +208,7 @@
         <h1>🎮 Game Portal</h1>
         <div class="auth-area">
             <div class="gold-display" id="goldDisplay" style="display:none;">💰 <span id="goldAmt">0</span></div>
+            <button class="auth-btn" id="langBtn" onclick="toggleLang()" title="언어 / 語言">🌐 繁中</button>
             <button class="auth-btn" id="authBtn" onclick="handleAuth()">로그인</button>
         </div>
     </header>
@@ -235,6 +236,60 @@
         let apps = [];
         let currentFilter = 'all';
         let currentUser = null;
+
+        // ── i18n (한국어 / 繁體中文) ──
+        let LANG = (function(){ try{ const s=localStorage.getItem('portal_lang'); if(s) return s; }catch(_){}
+            return (navigator.language||'').toLowerCase().startsWith('zh') ? 'zh-TW' : 'ko'; })();
+        const PORTAL_I18N = {
+            ko: { login:'로그인', logout:'로그아웃', logoutConfirm:'로그아웃 하시겠습니까?', empty:'표시할 게임이 없습니다',
+                  langBtn:'🌐 繁中', tabs:{ all:'전체', hot:'🔥 인기', multi:'👥 멀티', board:'♟️ 보드', card:'🃏 카드', puzzle:'🧩 퍼즐', arcade:'🕹️ 아케이드' } },
+            'zh-TW': { login:'登入', logout:'登出', logoutConfirm:'確定要登出嗎？', empty:'沒有可顯示的遊戲',
+                  langBtn:'🌐 한국어', tabs:{ all:'全部', hot:'🔥 熱門', multi:'👥 多人', board:'♟️ 棋盤', card:'🃏 紙牌', puzzle:'🧩 益智', arcade:'🕹️ 街機' } }
+        };
+        function tt(k){ return (PORTAL_I18N[LANG]||PORTAL_I18N.ko)[k]; }
+        // 게임 카드 번체중국어 번역(gameId 기준). 없으면 apps.json 한국어 폴백.
+        const GAME_TW = {
+            worldcup:{title:'2026 世界盃韓國代表隊',desc:'A組(墨西哥·南非·捷克)賽程·KST時間·晉級16強情境計算機。孫興慜·洪明甫教練。'},
+            mahjong:{title:'台灣麻將',desc:'台灣麻將 - 16張手牌，4人遊戲，台 ×10萬G獎勵'},
+            riichi:{title:'日本立直麻將',desc:'日本立直麻將 (立直麻雀) - 13張，立直·寶牌·役計分，3位電腦'},
+            gostop:{title:'韓國花牌 (Go-Stop)',desc:'花牌雙人對戰 - 光·帶·十·皮·五鳥·Go-Stop·皮霸，電腦對戰'},
+            blackjack:{title:'21點',desc:'與莊家1:1對戰21點！金幣下注，3:2賠率，連勝獎勵'},
+            'd2r-runewords':{title:'D2R 符文之語組合器',desc:'選擇符文順序 → 搜尋符文之語。裝備/職業/等級篩選'},
+            jokerrun:{title:'小丑跑',desc:'撲克 Roguelike！組合牌型，用小丑讓分數爆發'},
+            enhance:{title:'武器強化 & 對戰',desc:'暗黑風格等級系統！強化武器對戰賺金幣'},
+            pingtan:{title:'拼蛋',desc:'3-4人策略桌遊 - 資源、建設、交易'},
+            ppingpae:{title:'拼牌',desc:'理牌桌遊 - 順子/刻子/鬼牌運用'},
+            connect4:{title:'三人四子棋',desc:'3人即時四子棋對決'},
+            gomoku:{title:'五子棋',desc:'即時1:1五子棋對決'},
+            poker:{title:'撲克',desc:'1:1 德州撲克'},
+            'number-guess':{title:'猜數字',desc:'簡單的猜數字遊戲'},
+            rps:{title:'剪刀石頭布',desc:'經典剪刀石頭布'},
+            tileslider:{title:'滑動拼圖',desc:'滑動數字/圖片拼圖'},
+            blockpuzzle:{title:'方塊拼圖',desc:'方塊組合拼圖'},
+            pikmin:{title:'皮克敏追蹤器',desc:'皮克敏收集管理'},
+            snake:{title:'🐍 貪食蛇',desc:'每顆食物 +100G！登入累積金幣'},
+            minesweeper:{title:'💣 踩地雷',desc:'各難度金幣獎勵！通關獎金 + 時間獎金'},
+            breakout:{title:'打磚塊',desc:'經典打磚塊遊戲'},
+            billiards:{title:'三顆星撞球模擬器',desc:'PBA 三顆星撞球物理模擬 - 開球、旋轉、鑽石系統'},
+            d2r:{title:'D2R 攻略 (Diablo 2)',desc:'暗黑破壞神2 重製版 升級攻略 & 死靈法師build'},
+            linerush:{title:'圈地衝刺 / Line Rush',desc:'畫線圈地、解放背景的觸控街機'},
+            bulletdodge:{title:'躲子彈',desc:'閃避如雨的子彈盡量存活！支援搖桿'},
+            ladder:{title:'抽籤梯子',desc:'鬼腳圖抽籤遊戲'},
+            blockblast:{title:'方塊爆破 Block Blast',desc:'8x8 方塊拼圖！連擊爆破'}
+        };
+        function appText(app){
+            if(LANG==='zh-TW'){ const tw=GAME_TW[getGameId(app.url)]; if(tw) return tw; }
+            return { title:app.title, desc:app.desc };
+        }
+        function applyLang(){
+            document.documentElement.lang = (LANG==='zh-TW') ? 'zh-Hant' : 'ko';
+            document.querySelectorAll('.tab').forEach(tab=>{ const lbl=tt('tabs')[tab.dataset.filter]; if(lbl) tab.textContent=lbl; });
+            const empty=document.getElementById('emptyState'); if(empty) empty.textContent=tt('empty');
+            const lb=document.getElementById('langBtn'); if(lb) lb.textContent=tt('langBtn');
+            if(typeof updateAuthUI==='function') updateAuthUI();
+            renderApps();
+        }
+        function toggleLang(){ LANG = (LANG==='zh-TW') ? 'ko' : 'zh-TW'; try{ localStorage.setItem('portal_lang',LANG); }catch(_){}; applyLang(); }
 
         // 카테고리 매핑 (URL 기반)
         const categories = {
@@ -273,6 +328,8 @@
             });
         });
 
+        applyLang();  // 초기 언어 적용(탭/버튼/빈상태 라벨)
+
         function renderApps() {
             const grid = document.getElementById('appGrid');
             const empty = document.getElementById('emptyState');
@@ -286,14 +343,16 @@
             }
 
             empty.style.display = 'none';
-            grid.innerHTML = filtered.map(app => `
+            grid.innerHTML = filtered.map(app => {
+                const txt = appText(app);
+                return `
                 <a href="${app.url}" class="card">
                     ${app.badge ? `<span class="card-badge badge-${app.badge.toLowerCase()}">${app.badge}</span>` : ''}
                     <img class="card-icon" src="${app.icon}" alt="" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🎮</text></svg>'">
-                    <div class="card-title">${app.title}</div>
-                    <div class="card-desc">${app.desc}</div>
-                </a>
-            `).join('');
+                    <div class="card-title">${txt.title}</div>
+                    <div class="card-desc">${txt.desc}</div>
+                </a>`;
+            }).join('');
         }
 
         // SharedWallet 연동 인증
@@ -312,14 +371,14 @@
                 if (gd) { gd.style.display = 'flex'; document.getElementById('goldAmt').textContent = Number(SharedWallet.gold || 0).toLocaleString() + 'G'; }
             } else {
                 currentUser = null;
-                btn.textContent = '로그인';
+                btn.textContent = tt('login');
                 if (gd) gd.style.display = 'none';
             }
         }
 
         function handleAuth() {
             if (SharedWallet.isLoggedIn) {
-                if (confirm('로그아웃 하시겠습니까?')) {
+                if (confirm(tt('logoutConfirm'))) {
                     SharedWallet.logout();
                     location.reload();
                 }
