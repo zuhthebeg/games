@@ -69,6 +69,8 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 @keyframes flipin{from{transform:translateX(-160px) rotateY(60deg) scale(.7);opacity:.2}to{transform:none;opacity:1}}
 .deck{position:absolute;top:50%;left:14px;transform:translateY(-50%);text-align:center;color:var(--muted);font-size:.66rem}
 .deck .back{width:var(--cw);height:calc(var(--cw)*1.5);border-radius:5px;background:repeating-linear-gradient(45deg,#7a2630,#7a2630 6px,#8d2f3a 6px,#8d2f3a 12px);border:2px solid #aa3b48;margin-bottom:3px}
+.deck .back.await{cursor:pointer;border-color:#ffd34d;box-shadow:0 0 0 2px #ffd34d,0 0 16px 3px rgba(255,211,77,.8);animation:deckPulse 1s ease-in-out infinite}
+@keyframes deckPulse{0%,100%{box-shadow:0 0 0 2px #ffd34d,0 0 10px 1px rgba(255,211,77,.6)}50%{box-shadow:0 0 0 3px #ffd34d,0 0 22px 5px rgba(255,211,77,.95)}}
 .flip{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:5}
 .flip img{width:calc(var(--cw)*1.3);border-radius:6px;box-shadow:0 0 18px rgba(0,0,0,.6),0 0 0 3px var(--gold)}
 /* my hand */
@@ -166,7 +168,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
     <span id="cpu-score" style="color:var(--gold);font-weight:700">0점</span>
   </div>
   <div class="field">
-    <div class="deck"><div class="back" id="deckBack" onclick="0"></div><span id="deckN">20</span></div>
+    <div class="deck"><div class="back" id="deckBack" onclick="onDeckClick()"></div><span id="deckN">20</span></div>
     <div id="tableCards"></div>
     <div class="flip" id="flipArea"></div>
   </div>
@@ -416,11 +418,15 @@ async function takeTurn(p, handCard, opts){
   // score
   const sc=score(pl.cap);
   const prev=G.lastScore[p];
-  if(sc.total>=GO_MIN && sc.total>prev && G.deck.length>0 && pl.hand.length>0){
+  if(sc.total>=GO_MIN && sc.total>prev){
     G.lastScore[p]=sc.total;
-    if(p===0){ pendingBomb=bomb; return offerGoStop(sc); }
-    else {
-      const goAgain = sc.total<5 && Math.random()<0.6;
+    // 고 하려면 더 진행 가능해야(덱·손패 남음). 진행 불가면 7점 도달=자동 스톱(승리) → 나가리 안 됨
+    const canGo = G.deck.length>0 && pl.hand.length>0;
+    if(p===0){
+      if(canGo){ pendingBomb=bomb; return offerGoStop(sc); }
+      return settle(0, sc);
+    } else {
+      const goAgain = canGo && sc.total<5 && Math.random()<0.6;
       if(goAgain){ G.go++; G.goBy=1; toast('CPU '+G.go+'고!'); await sleep(700); return advance(); }
       else return settle(1, sc);
     }
@@ -438,12 +444,19 @@ function advance(){
 }
 function startTurn(){
   const p=G.turn;
-  if(G.flipOwed && G.flipOwed[p]>0){ setTimeout(()=>flipOnlyTurn(p), p===0?650:850); return; }
+  if(G.flipOwed && G.flipOwed[p]>0){
+    if(p===0){ G.awaitFlip=true; G.sel=-1; renderAll(); const db=$('deckBack'); if(db)db.classList.add('await'); toast('💣 뒤집기 탄 '+G.flipOwed[0]+'개 — 더미를 눌러 뒤집기'); return; }
+    setTimeout(()=>flipOnlyTurn(p), 850); return;
+  }
   if(p===0){ G.sel=-1; renderAll(); }
   else setTimeout(cpuTurn,900);
 }
+function onDeckClick(){
+  if(G.awaitFlip && G.turn===0 && !G.over){ G.awaitFlip=false; const db=$('deckBack'); if(db)db.classList.remove('await'); flipOnlyTurn(0); }
+}
 async function flipOnlyTurn(p){
   const pl=G.players[p];
+  G.awaitFlip=false; { const db=$('deckBack'); if(db)db.classList.remove('await'); }
   if(!G.deck.length){ if(G.flipOwed)G.flipOwed[p]=0; return advance(); }
   toast((p===0?'':'CPU ')+'뒤집기 턴 ('+(G.flipOwed?G.flipOwed[p]:0)+')');
   const flip=G.deck.shift(); const playM=flip.m;
@@ -467,10 +480,14 @@ async function flipOnlyTurn(p){
   } else { G._newIds=null; renderAll(); await sleep(220); }
   if(G.flipOwed) G.flipOwed[p]--;
   const sc=score(pl.cap); const prev=G.lastScore[p];
-  if(sc.total>=GO_MIN && sc.total>prev && G.deck.length>0 && (pl.hand.length>0 || (G.flipOwed&&G.flipOwed[p]>0))){
+  if(sc.total>=GO_MIN && sc.total>prev){
     G.lastScore[p]=sc.total;
-    if(p===0){ pendingBomb=false; return offerGoStop(sc); }
-    const goAgain=sc.total<5 && Math.random()<0.6;
+    const canGo = G.deck.length>0 && (pl.hand.length>0 || (G.flipOwed&&G.flipOwed[p]>0));
+    if(p===0){
+      if(canGo){ pendingBomb=false; return offerGoStop(sc); }
+      return settle(0, sc);
+    }
+    const goAgain = canGo && sc.total<5 && Math.random()<0.6;
     if(!goAgain) return settle(1,sc);
     G.go++; G.goBy=1; toast('CPU '+G.go+'고!'); await sleep(600);
   }
