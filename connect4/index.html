@@ -6,7 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>삼인 사목 - Connect 4</title>
     <link rel="icon" href="icon.svg">
-    <script src="/lib/shared-wallet.js?v=20260605a"></script>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
+    <script>window.SharedWalletConfig = window.SharedWalletConfig || { autoGuest: true };</script>
+    <script src="/lib/shared-wallet.js?v=20260606a"></script>
     <style>
         :root {
             --bg: #1e1e2e;
@@ -248,7 +251,9 @@
         let mpUI = null;
 
         // ===== Initialize =====
-        function init() {
+        async function init() {
+            // 로그인 상태 확정 후 로비 표시(안 하면 isLoggedIn=false라 "로그인하고 방 만들기"만 뜸)
+            try { if (typeof SharedWallet !== 'undefined' && SharedWallet.init && !SharedWallet._initialized) await SharedWallet.init(); } catch (e) {}
             mpUI = new MultiplayerUI({
                 gameType: 'connect4',
                 gameName: '🔴🟡🔵 삼인 사목',
