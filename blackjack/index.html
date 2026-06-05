@@ -431,8 +431,8 @@
     <h1 id="modeTitle">블랙잭 카지노</h1>
     <p id="modeDesc">게임 모드를 선택하세요</p>
     <div class="mode-buttons">
-      <button class="mode-btn" id="modeSoloBtn">🎮 솔로<span id="modeSoloDesc">기존 싱글 플레이</span></button>
-      <button class="mode-btn" id="modeMultiBtn">👥 멀티<span id="modeMultiDesc">방 생성/참여 후 실시간 플레이</span></button>
+      <button class="mode-btn" id="modeSoloBtn"><span id="modeSoloLabel">🎮 솔로</span><span id="modeSoloDesc">기존 싱글 플레이</span></button>
+      <button class="mode-btn" id="modeMultiBtn"><span id="modeMultiLabel">👥 멀티</span><span id="modeMultiDesc">방 생성/참여 후 실시간 플레이</span></button>
     </div>
   </section>
 
@@ -525,7 +525,7 @@
     <div id="numpadOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;">
       <div style="background:#1a1a28;border:2px solid #3a3a50;border-radius:16px;padding:16px;width:90%;max-width:320px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="font-size:0.85rem;color:#8888a0;">베팅 금액 입력</span>
+          <span id="numpadTitle" style="font-size:0.85rem;color:#8888a0;">베팅 금액 입력</span>
           <button onclick="closeNumpad()" style="background:none;border:none;color:#888;font-size:1.2rem;cursor:pointer;">✕</button>
         </div>
         <div id="numpadDisplay" style="background:#0f0f14;border:1px solid #2e2e40;border-radius:10px;padding:12px;text-align:right;font-size:1.6rem;font-family:monospace;color:#4ecdc4;margin-bottom:10px;min-height:2.5rem;">0</div>
@@ -547,13 +547,13 @@
           <button class="npad" onclick="numpadInput('000')" style="flex:1;font-size:0.75rem;">000</button>
           <button class="npad" onclick="numpadInput('0000')" style="flex:1;font-size:0.75rem;">0000</button>
         </div>
-        <button onclick="numpadConfirm()" style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;background:#4ecdc4;color:#000;font-size:1rem;font-weight:700;cursor:pointer;">확인</button>
+        <button id="numpadConfirmBtn" onclick="numpadConfirm()" style="width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;background:#4ecdc4;color:#000;font-size:1rem;font-weight:700;cursor:pointer;">확인</button>
       </div>
     </div>
 
     <section class="panel actions" id="soloActionPanel">
       <div id="insuranceRow" style="display:none;padding:6px 8px 0;text-align:center;">
-        <div style="font-size:0.72rem;color:#ffd166;margin-bottom:4px;">🛡️ 딜러 Ace — 인셔런스?</div>
+        <div id="insurancePrompt" style="font-size:0.72rem;color:#ffd166;margin-bottom:4px;">🛡️ 딜러 Ace — 인셔런스?</div>
         <div class="row" style="gap:4px;">
           <button id="insYesBtn" style="flex:1;background:rgba(255,209,102,0.18);border:1px solid rgba(255,209,102,0.5);color:#ffd166;border-radius:8px;padding:7px 0;font-size:0.78rem;font-weight:700;cursor:pointer;">✅ 예</button>
           <button id="insNoBtn" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);color:#aaa;border-radius:8px;padding:7px 0;font-size:0.78rem;font-weight:700;cursor:pointer;">❌ 아니오</button>
@@ -693,10 +693,60 @@
         actionFailed: (m) => `Action failed: ${m}`,
         noMultiClient: "Multiplayer client is not ready.",
         voiceSuffix: "-en",
+      },
+      "zh-TW": {
+        title: "21點賭場",
+        gold: "金幣",
+        bet: "下注",
+        streak: "連勝",
+        bonus: "獎勵",
+        none: "無",
+        dealer: "莊家",
+        player: "玩家",
+        hit: "要牌",
+        stand: "停牌",
+        double: "加倍",
+        split: "分牌",
+        allin: "ALL IN",
+        betInsufficient: "下注金額不足。",
+        goldInsufficient: "金幣不足。",
+        playerTurn: "玩家回合：要牌 / 停牌 / 加倍 / 分牌",
+        handBust: (n) => `手牌 ${n} 爆牌`,
+        handDoubleBust: (n) => `手牌 ${n} 加倍爆牌`,
+        blackjack: "BLACKJACK",
+        win: "WIN",
+        lose: "LOSE",
+        push: "PUSH",
+        streakBonus: (g) => `連勝獎勵 +${g}`,
+        settle: (p) => `結算 +${p}`,
+        profit: (p) => `淨利 ${p >= 0 ? "+" : ""}${p}`,
+        modeSelect: "請選擇遊戲模式",
+        modeSolo: "單人",
+        modeSoloDesc: "經典單人模式",
+        modeMulti: "多人",
+        modeMultiDesc: "建立/加入房間即時對戰",
+        leave: "離開",
+        waitingRoom: "等候室",
+        multiplayer: "多人遊戲",
+        yourTurn: "你的回合",
+        turnOf: (name) => `目前回合：${name}`,
+        phaseBetting: "下注階段",
+        phaseDealing: "發牌中",
+        phasePlaying: "遊戲中",
+        phaseDealerTurn: "莊家回合",
+        phaseSettling: "結算中",
+        phaseFinished: "本局結束",
+        totalWinnings: "總贏分",
+        timerLeft: (s) => `${s}s`,
+        betPrompt: "請輸入下注金額：",
+        actionFailed: (m) => `動作失敗：${m}`,
+        noMultiClient: "多人連線尚未就緒。",
+        voiceSuffix: "-en",
       }
     };
 
-    let currentLang = localStorage.getItem("bj-lang") || (navigator.language.startsWith("ko") ? "ko" : "en");
+    let currentLang = localStorage.getItem("bj-lang") || (function(){ const n=(navigator.language||"").toLowerCase(); return n.startsWith("ko") ? "ko" : n.startsWith("zh") ? "zh-TW" : "en"; })();
+    if (!["ko","en","zh-TW"].includes(currentLang)) currentLang = "en";
     // voice: "male" | "female", sound: true | false
     let voiceGender = localStorage.getItem("bj-voice") || "male";
     let soundEnabled = localStorage.getItem("bj-sound") !== "off";
@@ -741,8 +791,8 @@
       },
       allInVoice() {
         if (this._muted() || !window.speechSynthesis) return;
-        const utterance = new SpeechSynthesisUtterance(currentLang === "ko" ? "올인!" : "All in!");
-        utterance.lang = currentLang === "ko" ? "ko-KR" : "en-US";
+        const utterance = new SpeechSynthesisUtterance(currentLang === "ko" ? "올인!" : currentLang === "zh-TW" ? "全押！" : "All in!");
+        utterance.lang = currentLang === "ko" ? "ko-KR" : currentLang === "zh-TW" ? "zh-TW" : "en-US";
         utterance.rate = 0.9;
         utterance.pitch = voiceGender === "female" ? 1.18 : 0.82;
         utterance.volume = 1;
@@ -910,7 +960,7 @@
         el.soloDeckStack?.classList.add("reshuffle");
         setTimeout(() => el.soloDeckStack?.classList.remove("reshuffle"), 650);
         if (state.phase !== "betting") {
-          setStatus(currentLang === "ko" ? "새 덱을 섞었습니다." : "Shuffled a fresh deck.", "");
+          setStatus(currentLang === "ko" ? "새 덱을 섞었습니다." : currentLang === "zh-TW" ? "已洗好新牌組。" : "Shuffled a fresh deck.", "");
         }
       }
       const c = state.deck.pop();
@@ -947,25 +997,48 @@
 
     function updateLangUI() {
       document.getElementById("gameTitle").textContent = t("title");
-      document.getElementById("gameSub").textContent = currentLang === "ko" ? "딜러는 17 이상에서 Stand" : "Dealer stands on 17+";
-      document.getElementById("betLabel").textContent = currentLang === "ko" ? "현재 베팅" : "Current Bet";
+      document.getElementById("gameSub").textContent = currentLang === "ko" ? "딜러는 17 이상에서 Stand" : currentLang === "zh-TW" ? "莊家 17 點以上停牌" : "Dealer stands on 17+";
+      document.getElementById("betLabel").textContent = currentLang === "ko" ? "현재 베팅" : currentLang === "zh-TW" ? "目前下注" : "Current Bet";
       document.getElementById("streakLabel").textContent = t("streak");
       document.getElementById("bonusLabel").textContent = t("bonus");
-      document.getElementById("langBtn").textContent = currentLang === "ko" ? "🌐 EN" : "🌐 한국어";
+      document.getElementById("langBtn").textContent = currentLang === "ko" ? "🌐 繁中" : currentLang === "zh-TW" ? "🌐 EN" : "🌐 한국어";
       el.hitBtn.textContent = t("hit");
       el.standBtn.textContent = t("stand");
-      el.doubleBtn.textContent = t("double") + (currentLang === "ko" ? " 다운" : " Down");
+      el.doubleBtn.textContent = t("double") + (currentLang === "ko" ? " 다운" : currentLang === "zh-TW" ? "" : " Down");
       el.splitBtn.textContent = t("split");
+      // 정적 요소(제스처/넘패드/인셔런스/규칙버튼)도 언어 적용
+      const setTxt = (id, ko, en, zh) => { const e = document.getElementById(id); if (e) e.textContent = currentLang === "ko" ? ko : currentLang === "zh-TW" ? zh : en; };
+      const gest = (ko, en, zh) => currentLang === "ko" ? ko : currentLang === "zh-TW" ? zh : en;
+      ["mpGesturePad","soloGesturePad"].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = gest("더블탭 Hit · 좌우 Stand · ↑ Split · ↓ Double", "Double-tap Hit · Swipe Stand · ↑ Split · ↓ Double", "雙擊 要牌 · 左右 停牌 · ↑ 分牌 · ↓ 加倍"); });
+      setTxt("numpadTitle", "베팅 금액 입력", "Enter bet amount", "輸入下注金額");
+      setTxt("numpadConfirmBtn", "확인", "Confirm", "確認");
+      setTxt("insurancePrompt", "🛡️ 딜러 Ace — 인셔런스?", "🛡️ Dealer Ace — Insurance?", "🛡️ 莊家 Ace — 保險？");
+      setTxt("insYesBtn", "✅ 예", "✅ Yes", "✅ 是");
+      setTxt("insNoBtn", "❌ 아니오", "❌ No", "❌ 否");
+      setTxt("streakLabel", "연승", "Streak", "連勝");
+      setTxt("bonusLabel", "보너스", "Bonus", "獎勵");
+      setTxt("rulesBtn", "📖", "📖", "📖");
+      const rt = document.getElementById("rulesTitle"); if (rt) rt.textContent = gest("📖 게임 규칙", "📖 Game Rules", "📖 遊戲規則");
+      // 모드 선택 화면
+      const mTitle = document.getElementById("modeTitle"); if (mTitle) mTitle.textContent = t("title");
+      const mDesc = document.getElementById("modeDesc"); if (mDesc) mDesc.textContent = t("modeSelect");
+      setTxt("modeSoloLabel", "🎮 솔로", "🎮 Solo", "🎮 單人");
+      setTxt("modeMultiLabel", "👥 멀티", "👥 Multi", "👥 多人");
+      setTxt("modeSoloDesc", "기존 싱글 플레이", "Classic single-player", "經典單人模式");
+      setTxt("modeMultiDesc", "방 생성/참여 후 실시간 플레이", "Create/join a room", "建立/加入房間對戰");
+      setTxt("multiLeaveBtn", "← 나가기", "← Leave", "← 離開");
     }
 
     function render() {
       el.goldText.textContent = `${t("gold")} ${Math.floor(state.gold).toLocaleString()}`;
       el.betText.textContent = Math.floor(state.bet).toLocaleString();
-      el.streakText.textContent = currentLang === "ko" ? `${state.streak}연승` : `${state.streak} wins`;
+      el.streakText.textContent = currentLang === "ko" ? `${state.streak}연승` : currentLang === "zh-TW" ? `${state.streak}連勝` : `${state.streak} wins`;
       el.bonusText.textContent = bonusLabel();
       if (el.soloDeckText) {
         el.soloDeckText.textContent = currentLang === "ko"
           ? `덱 ${state.deck.length}/${state.deckSize}`
+          : currentLang === "zh-TW"
+          ? `牌組 ${state.deck.length}/${state.deckSize}`
           : `Deck ${state.deck.length}/${state.deckSize}`;
       }
 
@@ -978,15 +1051,15 @@
         const active = state.phase === "player" && idx === state.activeHand ? " active" : "";
         const score = handValue(h.cards);
         const tag = h.busted ? "BUST" : (h.blackjack ? "BLACKJACK" : (h.stood ? "STAND" : ""));
-        const handLabel = currentLang === "ko" ? "핸드" : "Hand";
-        const betLabel = currentLang === "ko" ? "베팅" : "Bet";
+        const handLabel = currentLang === "ko" ? "핸드" : currentLang === "zh-TW" ? "手牌" : "Hand";
+        const betLabel = currentLang === "ko" ? "베팅" : currentLang === "zh-TW" ? "下注" : "Bet";
         return `<div class="hand${active}">
           <div class="hand-top"><span>${handLabel} ${idx + 1} · ${betLabel} ${Math.floor(h.bet).toLocaleString()}</span><span>${tag || score}</span></div>
           <div class="cards">${h.cards.map((c) => cardHTML(c, false)).join("")}</div>
         </div>`;
       }).join("");
 
-      if (!state.hands.length) el.playerHands.innerHTML = `<div class="hand"><div class="hand-top"><span>${currentLang === "ko" ? "핸드 없음" : "No hand"}</span><span>-</span></div><div class="cards"></div></div>`;
+      if (!state.hands.length) el.playerHands.innerHTML = `<div class="hand"><div class="hand-top"><span>${currentLang === "ko" ? "핸드 없음" : currentLang === "zh-TW" ? "無手牌" : "No hand"}</span><span>-</span></div><div class="cards"></div></div>`;
       const active = state.hands[state.activeHand];
       el.playerScore.textContent = active ? handValue(active.cards) : "-";
 
@@ -1039,7 +1112,7 @@
       }
       state.gold = typeof SharedWallet !== "undefined" ? Number(SharedWallet.gold || 0) : 1000;
       if (!state.deck.length) state.deck = makeDeck();
-      setStatus(currentLang === "ko" ? "베팅 버튼을 눌러 시작하세요." : "Press a bet button to start.");
+      setStatus(currentLang === "ko" ? "베팅 버튼을 눌러 시작하세요." : currentLang === "zh-TW" ? "按下注按鈕開始遊戲。" : "Press a bet button to start.");
       render();
       // 🏆 글로벌 네비 랭킹 버튼
       if (typeof GameRankings !== 'undefined') GameRankings.injectNavButton('blackjack');
@@ -1148,7 +1221,7 @@
       } else if (dealerUpAce) {
         state.phase = "insurance";
         state.insuranceBet = 0;
-        setStatus(currentLang === "ko" ? "🛡️ 딜러 Ace! 인셔런스 하시겠어요?" : "🛡️ Dealer Ace! Take insurance?", "");
+        setStatus(currentLang === "ko" ? "🛡️ 딜러 Ace! 인셔런스 하시겠어요?" : currentLang === "zh-TW" ? "🛡️ 莊家 Ace！要買保險嗎？" : "🛡️ Dealer Ace! Take insurance?", "");
       } else {
         setStatus(t("playerTurn"), "");
       }
@@ -1179,7 +1252,7 @@
       if (state.phase !== "insurance") return;
       const insBet = Math.floor(state.hands[0].bet / 2);
       if (!walletRemove(insBet)) {
-        setStatus(currentLang === "ko" ? "골드 부족!" : "Not enough gold!", "lose");
+        setStatus(currentLang === "ko" ? "골드 부족!" : currentLang === "zh-TW" ? "金幣不足！" : "Not enough gold!", "lose");
         render(); return;
       }
       state.insuranceBet = insBet;
@@ -1187,11 +1260,11 @@
       state.revealDealer = true;
       if (dealerBJ) {
         walletAdd(insBet * 3);
-        setStatus(currentLang === "ko" ? `🛡️ 인셔런스 성공! +${(insBet * 2).toLocaleString()}G` : `🛡️ Insurance wins! +${(insBet * 2).toLocaleString()}G`, "win");
+        setStatus(currentLang === "ko" ? `🛡️ 인셔런스 성공! +${(insBet * 2).toLocaleString()}G` : currentLang === "zh-TW" ? `🛡️ 保險成功！+${(insBet * 2).toLocaleString()}G` : `🛡️ Insurance wins! +${(insBet * 2).toLocaleString()}G`, "win");
         state.phase = "betting";
         state.streak = 0;
       } else {
-        setStatus(currentLang === "ko" ? "🛡️ 인셔런스 실패. 계속 진행." : "🛡️ Insurance lost. Game continues.", "");
+        setStatus(currentLang === "ko" ? "🛡️ 인셔런스 실패. 계속 진행." : currentLang === "zh-TW" ? "🛡️ 保險失敗，繼續遊戲。" : "🛡️ Insurance lost. Game continues.", "");
         state.phase = "player";
       }
       render();
@@ -1236,7 +1309,7 @@
         nextHand();
       } else if (v === 21) {
         h.stood = true;
-        setStatus(`${currentLang === "ko" ? "핸드" : "Hand"} ${state.activeHand + 1} 21`, "");
+        setStatus(`${currentLang === "ko" ? "핸드" : currentLang === "zh-TW" ? "手牌" : "Hand"} ${state.activeHand + 1} 21`, "");
         nextHand();
       }
       render();
@@ -1246,7 +1319,7 @@
       if (state.phase !== "player") return;
       const h = currentHand();
       h.stood = true;
-      setStatus(`${currentLang === "ko" ? "핸드" : "Hand"} ${state.activeHand + 1} STAND`, "");
+      setStatus(`${currentLang === "ko" ? "핸드" : currentLang === "zh-TW" ? "手牌" : "Hand"} ${state.activeHand + 1} STAND`, "");
       nextHand();
       render();
     }
@@ -1267,7 +1340,7 @@
         h.busted = true;
         setStatus(t("handDoubleBust", state.activeHand + 1), "lose");
       } else {
-        setStatus(`${currentLang === "ko" ? "핸드" : "Hand"} ${state.activeHand + 1} DOUBLE STAND`, "");
+        setStatus(`${currentLang === "ko" ? "핸드" : currentLang === "zh-TW" ? "手牌" : "Hand"} ${state.activeHand + 1} DOUBLE STAND`, "");
       }
       h.stood = true;
       nextHand();
@@ -1288,7 +1361,7 @@
       const h2 = { cards: [c2, draw()], bet: h.bet, stood: false, busted: false, blackjack: false, doubled: false };
       state.hands = [h1, h2];
       state.activeHand = 0;
-      setStatus(currentLang === "ko" ? "SPLIT 완료: 핸드 1부터 진행" : "SPLIT done: starting Hand 1", "");
+      setStatus(currentLang === "ko" ? "SPLIT 완료: 핸드 1부터 진행" : currentLang === "zh-TW" ? "分牌完成：從手牌 1 開始" : "SPLIT done: starting Hand 1", "");
       render();
     }
 
@@ -1455,7 +1528,7 @@
     }, { touchAction: "pan-y" });
 
     document.getElementById("langBtn").addEventListener("click", () => {
-      currentLang = currentLang === "ko" ? "en" : "ko";
+      currentLang = currentLang === "ko" ? "zh-TW" : currentLang === "zh-TW" ? "en" : "ko";
       localStorage.setItem("bj-lang", currentLang);
       SFX._voices = {}; // clear voice cache for new lang
       updateLangUI();
@@ -1539,13 +1612,38 @@
 • Insurance win: 2:1<br><br>
 <b>Streak Bonus</b><br>
 • 3 wins: +50%<br>
-• 5 wins: +100%`
+• 5 wins: +100%`,
+      "zh-TW": `<b>目標</b>：讓牌點盡量接近 21，但超過就爆牌(Bust)！<br><br>
+<b>牌值</b><br>
+• 2~10：照數字<br>
+• J/Q/K：10<br>
+• A：1 或 11（自動取最有利）<br><br>
+<b>進行</b><br>
+• 下注後玩家·莊家各拿 2 張<br>
+• 要牌(Hit)：再拿一張<br>
+• 停牌(Stand)：以目前點數停住<br>
+• 加倍(Double)：下注加倍 + 拿一張後自動停牌<br>
+• 分牌(Split)：兩張同點時分成兩副手牌<br>
+• 保險：莊家亮 A 時，可下注一半作邊注；莊家 21 點時賠 2:1<br><br>
+<b>手勢（牌桌區）</b><br>
+• 雙擊 → 要牌<br>
+• 左右滑 → 停牌<br>
+• 上滑 → 分牌<br>
+• 下滑 → 加倍<br>
+<b>莊家規則</b>：17 點以上停牌<br><br>
+<b>賠率</b><br>
+• 一般獲勝：1:1<br>
+• 21點(前2張21)：3:2<br>
+• 保險獲勝：2:1<br><br>
+<b>連勝獎勵</b><br>
+• 3連勝：+50%<br>
+• 5連勝：+100%`
     };
 
     const rulesModal = document.getElementById("rulesModal");
     document.getElementById("rulesBtn").addEventListener("click", () => {
-      document.getElementById("rulesTitle").textContent = currentLang === "ko" ? "📖 게임 규칙" : "📖 Game Rules";
-      document.getElementById("rulesContent").innerHTML = RULES[currentLang];
+      document.getElementById("rulesTitle").textContent = currentLang === "ko" ? "📖 게임 규칙" : currentLang === "zh-TW" ? "📖 遊戲規則" : "📖 Game Rules";
+      document.getElementById("rulesContent").innerHTML = RULES[currentLang] || RULES.en;
       rulesModal.style.display = "flex";
     });
     document.getElementById("rulesClose").addEventListener("click", () => { rulesModal.style.display = "none"; });
@@ -1651,7 +1749,7 @@
             if (ev.type === "dealing_started") {
               SFX.voice(voiceKey("deal"));
               if (Number(gd.reshuffleCount || 0) > mpLastReshuffleCount) {
-                showMultiInlineNotice(currentLang === "ko" ? "새 덱을 섞었습니다." : "Shuffled a fresh deck.");
+                showMultiInlineNotice(currentLang === "ko" ? "새 덱을 섞었습니다." : currentLang === "zh-TW" ? "已洗好新牌組。" : "Shuffled a fresh deck.");
               }
               // Card flip sounds with delay
               setTimeout(() => SFX.cardFlip(), 200);
@@ -1822,10 +1920,10 @@
             <div style="color:var(--muted);font-size:0.7rem;padding:4px;">대기 중</div>
           </div>`;
         }).join("");
-        document.getElementById("multiPhaseText").textContent = "대기 중";
+        document.getElementById("multiPhaseText").textContent = currentLang === "ko" ? "대기 중" : currentLang === "zh-TW" ? "等待中" : "Waiting";
         document.getElementById("mpDealerCards").innerHTML = "";
         document.getElementById("mpDealerScore").textContent = "-";
-        document.getElementById("mpTurnStatus").textContent = "플레이 중";
+        document.getElementById("mpTurnStatus").textContent = currentLang === "ko" ? "플레이 중" : currentLang === "zh-TW" ? "遊戲中" : "Playing";
         document.getElementById("mpBetPanel").classList.add("hidden");
         document.getElementById("mpActionPanel").classList.add("hidden");
         return;
@@ -1835,7 +1933,7 @@
       const phaseMap = { betting: "phaseBetting", dealing: "phaseDealing", playing: "phasePlaying", dealer_turn: "phaseDealerTurn", settling: "phaseSettling", finished: "phaseFinished" };
       document.getElementById("multiPhaseText").textContent = t(phaseMap[phase] || "phasePlaying");
       const deckText = document.getElementById("mpDeckText");
-      if (deckText) deckText.textContent = currentLang === "ko" ? `덱 ${deckCount}/${deckSize}` : `Deck ${deckCount}/${deckSize}`;
+      if (deckText) deckText.textContent = currentLang === "ko" ? `덱 ${deckCount}/${deckSize}` : currentLang === "zh-TW" ? `牌組 ${deckCount}/${deckSize}` : `Deck ${deckCount}/${deckSize}`;
       if (reshuffleCount > mpLastReshuffleCount) {
         const stack = document.getElementById("mpDeckStack");
         stack?.classList.add("reshuffle");
@@ -1888,7 +1986,7 @@
 
         const nameDisplay = isMe ? `${p.nickname || "Me"} (나)` : (p.nickname || "Player");
         const winDisplay = p.totalWinnings !== undefined ? ` | ${t("totalWinnings")}: ${p.totalWinnings >= 0 ? "+" : ""}${p.totalWinnings}` : "";
-        const streakDisplay = Number(p.streak || 0) > 0 ? ` 🔥${p.streak}${currentLang === "ko" ? "연승" : " streak"}` : "";
+        const streakDisplay = Number(p.streak || 0) > 0 ? ` 🔥${p.streak}${currentLang === "ko" ? "연승" : currentLang === "zh-TW" ? "連勝" : " streak"}` : "";
         const readyBadge = phase === "betting" ? (p.ready ? " ✅" : " ⏳") : "";
 
         return `<div class="${classes.join(" ")}">
@@ -1904,7 +2002,7 @@
       const statusEl = document.getElementById("mpTurnStatus");
       if (phase === "betting") {
         const mePlayer = gamePlayers.find(p => p.id === myId);
-        statusEl.textContent = mePlayer?.ready ? "다른 플레이어 베팅 대기..." : t("phaseBetting") + " - 베팅하세요!";
+        statusEl.textContent = mePlayer?.ready ? (currentLang === "ko" ? "다른 플레이어 베팅 대기..." : currentLang === "zh-TW" ? "等待其他玩家下注…" : "Waiting for other players...") : t("phaseBetting") + (currentLang === "ko" ? " - 베팅하세요!" : currentLang === "zh-TW" ? " - 請下注！" : " - place your bet!");
       } else if (phase === "playing") {
         const currentPlayer = gamePlayers[currentPlayerIndex];
         if (currentPlayer?.id === myId) {
@@ -1956,18 +2054,18 @@
         mpResultOverlayKey = overlayKey;
 
         let resultText = "PUSH";
-        if (isMeBankrupt) resultText = currentLang === "ko" ? "파산" : "BANKRUPT";
+        if (isMeBankrupt) resultText = currentLang === "ko" ? "파산" : currentLang === "zh-TW" ? "破產" : "BANKRUPT";
         else if (lastHand?.busted) resultText = "BUST";
         else if (lastHand?.blackjack) resultText = "BLACKJACK!";
         else if (resultValue > 0) resultText = "WIN!";
         else if (resultValue < 0) resultText = "LOSE";
         const title = (resultValue > 0 ? "🎉 " : resultValue < 0 ? "💀 " : "🤝 ") + resultText;
-        const roundLabel = currentLang === "ko" ? "이번 판" : "This round";
+        const roundLabel = currentLang === "ko" ? "이번 판" : currentLang === "zh-TW" ? "本局" : "This round";
         const totalLabel = t("totalWinnings");
-        const bankrollLine = mePlayer.bankroll !== undefined ? `${currentLang === "ko" ? "보유" : "Bankroll"}: ${Number(mePlayer.bankroll || 0).toLocaleString()}G<br>` : "";
+        const bankrollLine = mePlayer.bankroll !== undefined ? `${currentLang === "ko" ? "보유" : currentLang === "zh-TW" ? "持有" : "Bankroll"}: ${Number(mePlayer.bankroll || 0).toLocaleString()}G<br>` : "";
         const roundLine = roundDelta === null ? "" : `${roundLabel}: ${roundDelta >= 0 ? "+" : ""}${roundDelta.toLocaleString()}G<br>`;
         const actions = isMeBankrupt ? [{
-          label: currentLang === "ko" ? "나가기" : "Leave",
+          label: currentLang === "ko" ? "나가기" : currentLang === "zh-TW" ? "離開" : "Leave",
           primary: true,
           handler: async () => {
             try { await mpUI?.getClient()?.leaveRoom?.(); } catch(e) {}
@@ -1977,22 +2075,22 @@
           }
         }] : [
           {
-            label: "🔄 다음 라운드",
+            label: currentLang === "ko" ? "🔄 다음 라운드" : currentLang === "zh-TW" ? "🔄 下一局" : "🔄 Next round",
             primary: true,
             handler: async () => {
               try {
                 await mpUI.sendAction({ type: "new_round" });
                 hideMultiResultOverlay();
-                showMultiInlineNotice(currentLang === "ko" ? "다음 라운드로 넘어갑니다..." : "Starting next round...");
+                showMultiInlineNotice(currentLang === "ko" ? "다음 라운드로 넘어갑니다..." : currentLang === "zh-TW" ? "進入下一局…" : "Starting next round...");
                 refreshMultiStateSoon(150);
               } catch (e) {
-                showMultiInlineNotice(currentLang === "ko" ? "이미 다음 라운드로 넘어갔습니다." : "Next round is already starting.");
+                showMultiInlineNotice(currentLang === "ko" ? "이미 다음 라운드로 넘어갔습니다." : currentLang === "zh-TW" ? "已經進入下一局了。" : "Next round is already starting.");
                 refreshMultiStateSoon(150);
               }
             }
           },
           {
-            label: "나가기",
+            label: currentLang === "ko" ? "나가기" : currentLang === "zh-TW" ? "離開" : "Leave",
             primary: false,
             handler: () => {
               if (mpUI?.getClient()) {
@@ -2032,6 +2130,8 @@
         if (amount <= 0) return;
         const msg = currentLang === "ko"
           ? `${amount.toLocaleString()} 골드 전부 베팅합니다. 진행할까요? (멀티 최대 ${MULTI_BET_MAX.toLocaleString()})`
+          : currentLang === "zh-TW"
+          ? `全押 ${amount.toLocaleString()} 金幣，要繼續嗎？(多人上限 ${MULTI_BET_MAX.toLocaleString()})`
           : `Bet all ${amount.toLocaleString()} gold? (multi cap ${MULTI_BET_MAX.toLocaleString()})`;
         if (!confirm(msg)) return;
         SFX.allInVoice();
@@ -2257,6 +2357,8 @@
         if (amount < v) {
           alert(currentLang === "ko"
             ? `멀티는 ${MULTI_BET_MAX.toLocaleString()} 골드까지만 베팅할 수 있어요.`
+            : currentLang === "zh-TW"
+            ? `多人模式最多只能下注 ${MULTI_BET_MAX.toLocaleString()} 金幣。`
             : `Multi bets are capped at ${MULTI_BET_MAX.toLocaleString()} gold.`);
         }
         if (state.gold < amount) {
