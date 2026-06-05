@@ -133,6 +133,9 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
   <p>화투 2인 맞고 · CPU 대전<br>광·띠·끗·피 · 고도리 · 고/스톱</p>
   <button class="big-btn" onclick="newGame()">게임 시작 (맞고)</button>
   <button class="big-btn" style="background:var(--green);color:#0a1a12" onclick="openMultiplayer()">👥 온라인 멀티 (2~4인)</button>
+  <div style="display:flex;gap:6px;align-items:center;font-size:.82rem;color:var(--muted)">멀티 인원(빈자리 AI)
+    <div class="seg"><button data-seats="2" onclick="setSeats(2)">2인</button><button data-seats="3" onclick="setSeats(3)">3인</button><button data-seats="4" onclick="setSeats(4)">4인</button></div>
+  </div>
   <div style="display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--muted);margin:2px 0">판돈
     <div class="seg" style="border-color:var(--line)">
       <button data-bet="1" onclick="setBet(1)">1만</button>
@@ -664,8 +667,10 @@ function bombFx(prefix){
   const tt=$('toast'); tt.textContent=prefix+'💥 콰쾅! 폭탄!'; tt.classList.add('dbl'); tt.style.display='block';
   setTimeout(()=>{ tt.style.display='none'; tt.classList.remove('dbl'); },1300);
 }
-setSnd(SND?1:0); setBet(BET); applyZoom();
+setSnd(SND?1:0); setBet(BET); applyZoom(); setSeats(MP_SEATS);
 /* ===== 온라인 멀티 (COC-21) ===== */
+let MP_SEATS=+(localStorage.getItem('gostop_seats')||2);
+function setSeats(n){ MP_SEATS=n; localStorage.setItem('gostop_seats',n); document.querySelectorAll('[data-seats]').forEach(b=>b.classList.toggle('on',+b.dataset.seats===n)); }
 const MP={active:false,ui:null,client:null,myUserId:null,view:null,_sel:-1,_poll:null,_resultShown:false};
 function mpSameMonth(arr,m){ return (arr||[]).filter(c=>c.m===m); }
 function openMultiplayer(){
@@ -673,7 +678,7 @@ function openMultiplayer(){
   $('menu').style.display='none';
   const lob=$('mpLobby'); lob.style.display='block';
   MP.ui=new MultiplayerUI({ gameType:'gostop', gameName:'맞고·고스톱', container:lob, maxPlayers:4, supportsLocal:false,
-    getRoomConfig:()=>({timeLimit:30, bet:BET||1}),
+    getRoomConfig:()=>({timeLimit:30, bet:BET||1, seats:MP_SEATS}),
     onGameStart:(rs)=>mpStart(rs),
     onLeave:()=>{ lob.style.display='none'; lob.innerHTML=''; $('menu').style.display='flex'; } });
   MP.ui.show();
