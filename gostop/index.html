@@ -697,7 +697,13 @@ function mpStart(rs){
 }
 function mpRefresh(){ if(!MP.active||!MP.client)return; MP.client.getRoomState().then(room=>{ if(room&&room.myView) applyServerView(room.myView); }).catch(()=>{}); }
 function mpSend(action){ if(!MP.client)return; MP._sel=-1; MP.client.sendAction(action).then(()=>setTimeout(mpRefresh,150)).catch(()=>toast('전송 실패')); }
-function applyServerView(v){ MP.view=v; mpRender(v); if(v.finished){ mpResult(v); return; } if(v.pending && v.pending.seat===v.mySeat) mpOfferGoStop(v.pending.total); }
+function applyServerView(v){ MP.view=v; mpRender(v); if(v.finished){ mpResult(v); return; } if(v.pendingFlip && v.pendingFlip.seat===v.mySeat){ mpAskFlipPick(v.pendingFlip.candidates); return; } if(v.pending && v.pending.seat===v.mySeat) mpOfferGoStop(v.pending.total); }
+function mpAskFlipPick(cands){
+  if(!cands||!cands.length||$('pickAsk').classList.contains('show'))return;
+  const box=$('pickCards'); box.innerHTML=cands.map((c,i)=>`<img src="${c.file}" data-i="${i}" style="width:68px;border-radius:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.55)">`).join('');
+  box.querySelectorAll('img').forEach(img=>img.onclick=()=>{ hide('pickAsk'); mpSend({type:'FLIPPICK',payload:{pickId:cands[+img.dataset.i].id}}); });
+  show('pickAsk');
+}
 function mpScoreOf(cap){ try{ return score(cap).total; }catch(e){ return 0; } }
 function mpEsc(t){ return (''+(t||'')).replace(/[<>&]/g,''); }
 function mpRender(v){
