@@ -20,7 +20,8 @@
       --cell-border: #bcc7da;
       --shadow: 0 12px 32px rgba(16, 32, 58, 0.12);
       --cols: 9;
-      --cell-size: clamp(10px, calc((100vw - 28px) / var(--cols)), 34px);
+      --zoom: 1;
+      --cell-size: calc(clamp(10px, calc((100vw - 28px) / var(--cols)), 34px) * var(--zoom));
     }
 
     @media (prefers-color-scheme: dark) {
@@ -613,10 +614,10 @@ window.addEventListener('DOMContentLoaded', function(){
       stopTimer();
       saveBestTime(config.key, timer);
       updateBestTimeText();
-      const reward = config.mines * 1000000;
+      const rewardMult = { easy: 1, medium: 2, hard: 3 }[config.key] || 1;
+      const reward = rewardMult * 1000000;
       awardWinGold(reward);
-      const rewardText = (config.mines) + '개 × 100만 = ' + reward.toLocaleString() + 'G 획득!';
-      showModal("승리!", `${config.label} 난이도 클리어: ${timer}초\n💰 ${rewardText}`);
+      showModal("승리!", `${config.label} 난이도 클리어: ${timer}초\n💰 ${reward.toLocaleString()}G 획득!`);
     }
 
     function floodReveal(r, c) {
@@ -778,6 +779,31 @@ window.addEventListener('DOMContentLoaded', function(){
     window.addEventListener("blur", () => {
       if (pointerState?.timer) clearTimeout(pointerState.timer);
     });
+
+    // 큰 맵: 핀치(두 손가락)/휠로 확대·축소. 확대 후엔 스크롤로 이동(삥패식)
+    function bindBoardZoom() {
+      const wrap = document.querySelector('.board-wrap');
+      if (!wrap) return;
+      const root = document.documentElement;
+      let zoom = 1, pinchDist = 0, pinchStart = 1;
+      const clamp = z => Math.max(0.6, Math.min(3, z));
+      const apply = () => root.style.setProperty('--zoom', zoom.toFixed(3));
+      wrap.addEventListener('touchstart', e => {
+        if (e.touches.length === 2) {
+          pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          pinchStart = zoom; e.preventDefault();
+        }
+      }, { passive: false });
+      wrap.addEventListener('touchmove', e => {
+        if (e.touches.length === 2 && pinchDist > 0) {
+          const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          zoom = clamp(pinchStart * d / pinchDist); apply(); e.preventDefault();
+        }
+      }, { passive: false });
+      wrap.addEventListener('touchend', () => { pinchDist = 0; }, { passive: true });
+      wrap.addEventListener('wheel', e => { e.preventDefault(); zoom = clamp(zoom + (e.deltaY < 0 ? 0.12 : -0.12)); apply(); }, { passive: false });
+    }
+    bindBoardZoom();
 
     applyTheme(localStorage.getItem(THEME_KEY) || "auto");
     config = DIFFICULTIES[difficultyEl.value];
