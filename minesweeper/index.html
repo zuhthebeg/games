@@ -292,6 +292,7 @@ body{padding-top:calc(46px + env(safe-area-inset-top))}
 </style>
 <script>window.SharedWalletConfig = window.SharedWalletConfig || { autoGuest: true };</script>
 <script src="/lib/shared-wallet.js?v=20260606a"></script>
+<script src="/lib/game-rankings.js?v=20260606b"></script>
 <script>
 /* SharedWallet 초기화 — 안 하면 클리어 골드가 실제 계정에 적립·동기화 안 됨 */
 window.addEventListener('DOMContentLoaded', function(){
@@ -614,9 +615,17 @@ window.addEventListener('DOMContentLoaded', function(){
       stopTimer();
       saveBestTime(config.key, timer);
       updateBestTimeText();
-      const rewardMult = { easy: 1, medium: 2, hard: 3 }[config.key] || 1;
+      const rewardMult = { easy: 1, medium: 5, hard: 10 }[config.key] || 1;
       const reward = rewardMult * 1000000;
       awardWinGold(reward);
+      // 🏆 랭킹: 난이도 베이스 + 속도 보너스(빠를수록↑) → 어려움>보통>쉬움, 동난이도는 빠른 쪽
+      try {
+        if (typeof GameRankings !== 'undefined') {
+          const base = { easy: 10000, medium: 50000, hard: 100000 }[config.key] || 0;
+          const rankScore = base + Math.max(0, 3000 - timer);
+          GameRankings.submit('minesweeper', { score: rankScore });
+        }
+      } catch (e) {}
       showModal("승리!", `${config.label} 난이도 클리어: ${timer}초\n💰 ${reward.toLocaleString()}G 획득!`);
     }
 
@@ -804,6 +813,7 @@ window.addEventListener('DOMContentLoaded', function(){
       wrap.addEventListener('wheel', e => { e.preventDefault(); zoom = clamp(zoom + (e.deltaY < 0 ? 0.12 : -0.12)); apply(); }, { passive: false });
     }
     bindBoardZoom();
+    try { if (typeof GameRankings !== 'undefined') GameRankings.injectNavButton('minesweeper'); } catch (e) {}
 
     applyTheme(localStorage.getItem(THEME_KEY) || "auto");
     config = DIFFICULTIES[difficultyEl.value];
