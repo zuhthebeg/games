@@ -3531,14 +3531,14 @@
             mythic: 1.0     // 100공격당 1레벨
         };
         
-        // 무기 숙련도 레벨 (등급별 차등, 최대 50)
+        // 무기 숙련도 레벨 (등급별 차등, 최대 100)
         function getWeaponMasteryLevel(weapon) {
             if (!weapon?.weaponMastery) return 0;
             const mult = MASTERY_MULTIPLIER[weapon.grade] || 1.0;
-            return Math.min(50, Math.floor(weapon.weaponMastery.attacks * mult / 100));
+            return Math.min(100, Math.floor(weapon.weaponMastery.attacks * mult / 100));
         }
-        
-        // 숙련도 보너스 (레벨당 1%, 최대 50%)
+
+        // 숙련도 보너스 (레벨당 1%, 최대 100%)
         function getWeaponMasteryBonus(weapon) {
             return getWeaponMasteryLevel(weapon);
         }
