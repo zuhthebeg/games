@@ -1,5 +1,21 @@
 [
   {
+    "title": "스도쿠",
+    "icon": "https://game.cocy.io/sudoku/icon.svg",
+    "url": "https://game.cocy.io/sudoku/",
+    "desc": "스도쿠 (數獨) - 쉬움·보통·어려움, 골드 보상·랭킹, 한국어/繁體中文/English",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko",
+      "zhTW",
+      "en"
+    ],
+    "category": "puzzle"
+  },
+  {
     "title": "2026 월드컵 한국 대표팀",
     "icon": "https://game.cocy.io/worldcup/icon.svg",
     "url": "https://game.cocy.io/worldcup/",

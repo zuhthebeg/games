@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>스도쿠 · Sudoku</title>
+<meta name="description" content="무료 스도쿠. 쉬움·보통·어려움 난이도, 골드 보상과 랭킹. 한국어·繁體中文·English 지원. 설치 없이 브라우저에서 바로 플레이.">
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<!-- End Google Tag Manager -->
+<script>window.SharedWalletConfig = window.SharedWalletConfig || { autoGuest: true };</script>
+<script src="/lib/shared-wallet.js?v=20260606a"></script>
+<script src="/lib/game-rankings.js?v=20260606b"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', function(){
+    try { if (typeof SharedWallet !== 'undefined' && SharedWallet.init && !SharedWallet._initialized) SharedWallet.init(); } catch(e){}
+  });
+</script>
+<style>
+  :root{
+    --wallet-bar-h:52px;
+    --bg:#0a0f1a; --panel:#131a2b; --panel2:#1b2438; --line:#2a3550;
+    --text:#e8eefc; --muted:#8a96b4; --accent:#4ecca3; --accent2:#3b82f6;
+    --given:#cdd8f3; --user:#7fd4ff; --bad:#ef4444; --hl:rgba(78,204,163,.16); --hl2:rgba(59,130,246,.18);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+    padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));-webkit-user-select:none;user-select:none}
+  .wrap{max-width:480px;margin:0 auto;padding:10px 12px 28px;display:flex;flex-direction:column;gap:12px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  h1{font-size:1.35rem;margin:0;font-weight:800;letter-spacing:.5px}
+  h1 .sub{font-size:.7rem;color:var(--muted);font-weight:600;margin-left:6px}
+  .hbtns{display:flex;gap:6px}
+  .hbtn{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:5px 9px;font-size:.74rem;font-weight:700;cursor:pointer}
+  .hbtn:active{transform:scale(.96)}
+  .stat{display:flex;gap:8px}
+  .stat .card{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:7px 6px;text-align:center}
+  .stat .k{font-size:.66rem;color:var(--muted)}
+  .stat .v{font-size:1rem;font-weight:800;margin-top:1px}
+  .diffs{display:flex;gap:6px}
+  .diff{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:8px 4px;font-size:.8rem;font-weight:700;cursor:pointer}
+  .diff.active{background:linear-gradient(180deg,rgba(78,204,163,.25),rgba(78,204,163,.08));border-color:var(--accent);color:#fff}
+  .board{display:grid;grid-template-columns:repeat(9,1fr);aspect-ratio:1;background:var(--line);border:3px solid var(--line);border-radius:10px;overflow:hidden;gap:1px;touch-action:manipulation}
+  .cell{background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:clamp(16px,5.4vw,26px);font-weight:700;color:var(--user);cursor:pointer;position:relative;aspect-ratio:1}
+  .cell.given{color:var(--given);font-weight:800;background:#0f1626}
+  .cell.sel{background:var(--hl2)!important;box-shadow:inset 0 0 0 2px var(--accent2)}
+  .cell.peer{background:var(--hl)}
+  .cell.same{background:rgba(78,204,163,.28)}
+  .cell.bad{color:var(--bad)!important}
+  .cell.badcell{background:rgba(239,68,68,.18)!important}
+  /* 3x3 박스 경계 */
+  .cell:nth-child(3n){box-shadow:inset -2px 0 0 0 var(--line)}
+  .cell:nth-child(9n){box-shadow:none}
+  .board .cell.br{box-shadow:inset 0 -2px 0 0 var(--line)}
+  .board .cell.br.bc{box-shadow:inset -2px -2px 0 0 var(--line)}
+  .board .cell.bc{box-shadow:inset -2px 0 0 0 var(--line)}
+  .notes{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);font-size:8px;color:var(--muted);font-weight:600;pointer-events:none}
+  .notes span{display:flex;align-items:center;justify-content:center}
+  .pad{display:grid;grid-template-columns:repeat(9,1fr);gap:5px}
+  .pad.tools{grid-template-columns:repeat(3,1fr);margin-top:2px}
+  .num{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px 0;font-size:1.15rem;font-weight:800;cursor:pointer;position:relative}
+  .num:active{transform:scale(.94)}
+  .num .left{position:absolute;top:2px;right:4px;font-size:.55rem;color:var(--muted);font-weight:600}
+  .num.done{opacity:.32}
+  .tool{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:11px 0;font-size:.82rem;font-weight:700;cursor:pointer}
+  .tool.on{background:linear-gradient(180deg,rgba(59,130,246,.3),rgba(59,130,246,.1));border-color:var(--accent2);color:#fff}
+  .howto{font-size:.72rem;color:var(--muted);line-height:1.5;text-align:center}
+  /* overlay */
+  .ov{position:fixed;inset:0;background:rgba(4,8,16,.82);display:none;align-items:center;justify-content:center;z-index:60;padding:18px}
+  .ov.on{display:flex}
+  .card2{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;max-width:340px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+  .card2 h2{margin:0 0 6px;font-size:1.5rem}
+  .card2 p{color:var(--muted);font-size:.86rem;margin:4px 0}
+  .gold{color:#ffd34d;font-weight:800;font-size:1.05rem}
+  .btn{background:linear-gradient(180deg,var(--accent),#2fa982);border:none;color:#04130d;border-radius:11px;padding:12px 18px;font-size:.95rem;font-weight:800;cursor:pointer;width:100%;margin-top:12px}
+  .conf{position:absolute;top:0;width:9px;height:13px;border-radius:2px;animation:cf 1.4s linear infinite}
+  @keyframes cf{0%{transform:translateY(-20px) rotate(0);opacity:0}10%{opacity:1}100%{transform:translateY(360px) rotate(380deg);opacity:0}}
+</style>
+</head>
+<body>
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+<div class="wrap">
+  <header class="top">
+    <h1>🔢 <span data-i18n="title">스도쿠</span><span class="sub" data-i18n="sub">Sudoku</span></h1>
+    <div class="hbtns">
+      <button class="hbtn" id="langBtn" onclick="cycleLang()">🌐 繁中</button>
+      <button class="hbtn" id="newBtn" onclick="newGame()" data-i18n="newGame">새 게임</button>
+    </div>
+  </header>
+
+  <div class="diffs">
+    <button class="diff active" data-diff="easy"   onclick="setDiff('easy')"   data-i18n="easy">쉬움</button>
+    <button class="diff"        data-diff="medium" onclick="setDiff('medium')" data-i18n="medium">보통</button>
+    <button class="diff"        data-diff="hard"   onclick="setDiff('hard')"   data-i18n="hard">어려움</button>
+  </div>
+
+  <div class="stat">
+    <div class="card"><div class="k" data-i18n="time">시간</div><div class="v" id="timer">0:00</div></div>
+    <div class="card"><div class="k" data-i18n="mistakes">실수</div><div class="v" id="mistakes">0/3</div></div>
+    <div class="card"><div class="k" data-i18n="best">최고</div><div class="v" id="best">-</div></div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="pad" id="numpad"></div>
+  <div class="pad tools">
+    <button class="tool" id="notesBtn" onclick="toggleNotes()">✏️ <span data-i18n="notes">메모</span></button>
+    <button class="tool" onclick="eraseCell()">⌫ <span data-i18n="erase">지우기</span></button>
+    <button class="tool" onclick="hint()">💡 <span data-i18n="hint">힌트</span></button>
+  </div>
+
+  <p class="howto" data-i18n="howto">칸을 누르고 숫자를 입력하세요 · 실수 3번이면 게임 오버</p>
+</div>
+
+<div class="ov" id="ovWin"><div class="card2">
+  <h2>🎉 <span data-i18n="win">완성!</span></h2>
+  <p id="winStat"></p>
+  <p class="gold" id="winGold"></p>
+  <button class="btn" onclick="closeWin();newGame()" data-i18n="again">다시 하기</button>
+</div></div>
+
+<div class="ov" id="ovLose"><div class="card2">
+  <h2>💥 <span data-i18n="over">게임 오버</span></h2>
+  <p data-i18n="overMsg">실수가 3번 누적되었습니다.</p>
+  <button class="btn" onclick="closeLose();newGame()" data-i18n="retry">다시 도전</button>
+</div></div>
+
+<script>
+/* ───────── i18n (한국어 / 繁體中文 / English) ───────── */
+const I18N = {
+  ko:{ title:'스도쿠', sub:'Sudoku', newGame:'새 게임', easy:'쉬움', medium:'보통', hard:'어려움',
+       time:'시간', mistakes:'실수', best:'최고', notes:'메모', erase:'지우기', hint:'힌트',
+       howto:'칸을 누르고 숫자를 입력하세요 · 실수 3번이면 게임 오버', win:'완성!', again:'다시 하기',
+       over:'게임 오버', overMsg:'실수가 3번 누적되었습니다.', retry:'다시 도전',
+       langBtn:'🌐 繁中', clearLine:(d,t)=>`${d} · ${t}`, goldLine:(g)=>`💰 +${g.toLocaleString()}G`,
+       diffName:{easy:'쉬움',medium:'보통',hard:'어려움'}, noHint:'힌트 소진' },
+  'zh-TW':{ title:'數獨', sub:'Sudoku', newGame:'新遊戲', easy:'簡單', medium:'普通', hard:'困難',
+       time:'時間', mistakes:'錯誤', best:'最佳', notes:'筆記', erase:'清除', hint:'提示',
+       howto:'點選格子並輸入數字 · 錯誤 3 次即遊戲結束', win:'完成！', again:'再玩一次',
+       over:'遊戲結束', overMsg:'累積錯誤達 3 次。', retry:'再挑戰一次',
+       langBtn:'🌐 EN', clearLine:(d,t)=>`${d} · ${t}`, goldLine:(g)=>`💰 +${g.toLocaleString()}G`,
+       diffName:{easy:'簡單',medium:'普通',hard:'困難'}, noHint:'提示已用完' },
+  en:{ title:'Sudoku', sub:'', newGame:'New Game', easy:'Easy', medium:'Medium', hard:'Hard',
+       time:'Time', mistakes:'Mistakes', best:'Best', notes:'Notes', erase:'Erase', hint:'Hint',
+       howto:'Tap a cell and enter a number · 3 mistakes ends the game', win:'Solved!', again:'Play Again',
+       over:'Game Over', overMsg:'You made 3 mistakes.', retry:'Try Again',
+       langBtn:'🌐 한국어', clearLine:(d,t)=>`${d} · ${t}`, goldLine:(g)=>`💰 +${g.toLocaleString()}G`,
+       diffName:{easy:'Easy',medium:'Medium',hard:'Hard'}, noHint:'No hints left' } };
+let LANG = (function(){ try{const s=localStorage.getItem('sudoku-lang'); if(s) return s;}catch(e){}
+  const n=(navigator.language||'').toLowerCase(); return n.startsWith('zh')?'zh-TW':n.startsWith('ko')?'ko':'en'; })();
+function t(k){ return (I18N[LANG]||I18N.ko)[k]; }
+function applyLang(){
+  document.documentElement.lang = LANG==='zh-TW'?'zh-Hant':(LANG==='en'?'en':'ko');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ const v=t(el.dataset.i18n); if(typeof v==='string') el.textContent=v; });
+  document.getElementById('langBtn').textContent = t('langBtn');
+  updateBestLabel();
+}
+function cycleLang(){ LANG = LANG==='ko'?'zh-TW':(LANG==='zh-TW'?'en':'ko'); try{localStorage.setItem('sudoku-lang',LANG);}catch(e){}; applyLang(); }
+
+/* ───────── 스도쿠 생성/로직 ───────── */
+const GIVENS = { easy:42, medium:34, hard:28 };
+const REWARD = { easy:1000000, medium:3000000, hard:5000000 };
+const RANK_BASE = { easy:10000, medium:50000, hard:100000 };
+const HINTS = { easy:3, medium:3, hard:2 };
+
+let diff='easy', solution=[], puzzle=[], cells=[], notes=[], given=[];
+let sel=-1, mistakes=0, hintsLeft=3, startTime=0, timerId=null, notesMode=false, finished=false;
+
+function rnd(n){ return Math.floor(Math.random()*n); }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// 완성 그리드: 베이스 패턴 + 무작위 치환(숫자/밴드/행·열)으로 유효 솔루션 빠르게 생성
+function makeSolution(){
+  const base=3;
+  const pattern=(r,c)=>(base*(r%base)+Math.floor(r/base)+c)%(base*base);
+  const rBase=[0,1,2];
+  const rows=[].concat(...shuffle(rBase.slice()).map(g=>shuffle(rBase.slice()).map(r=>g*base+r)));
+  const cols=[].concat(...shuffle(rBase.slice()).map(g=>shuffle(rBase.slice()).map(c=>g*base+c)));
+  const nums=shuffle([1,2,3,4,5,6,7,8,9]);
+  const g=[];
+  for(const r of rows) for(const c of cols) g.push(nums[pattern(r,c)]);
+  return g; // length 81
+}
+function makePuzzle(){
+  solution=makeSolution();
+  puzzle=solution.slice();
+  given=new Array(81).fill(true);
+  // 대칭으로 칸 제거
+  const target=GIVENS[diff];
+  const idx=shuffle([...Array(81).keys()]);
+  let remaining=81;
+  for(const i of idx){
+    if(remaining<=target) break;
+    const j=80-i;
+    if(puzzle[i]===0) continue;
+    puzzle[i]=0; given[i]=false; remaining--;
+    if(j!==i && puzzle[j]!==0 && remaining>target){ puzzle[j]=0; given[j]=false; remaining--; }
+  }
+  notes=Array.from({length:81},()=>new Set());
+}
+
+function newGame(){
+  closeWin(); closeLose();
+  finished=false; mistakes=0; sel=-1; notesMode=false; hintsLeft=HINTS[diff]||3;
+  document.getElementById('notesBtn').classList.remove('on');
+  makePuzzle();
+  buildBoard();
+  buildPad();
+  render();
+  document.getElementById('mistakes').textContent='0/3';
+  startTime=Date.now();
+  if(timerId) clearInterval(timerId);
+  timerId=setInterval(tick,1000); tick();
+  updateBestLabel();
+}
+function tick(){
+  const s=Math.floor((Date.now()-startTime)/1000);
+  document.getElementById('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+}
+function elapsedSec(){ return Math.floor((Date.now()-startTime)/1000); }
+
+function buildBoard(){
+  const b=document.getElementById('board'); b.innerHTML=''; cells=[];
+  for(let i=0;i<81;i++){
+    const d=document.createElement('div'); d.className='cell';
+    const r=Math.floor(i/9), c=i%9;
+    if(r%3===2 && r!==8) d.classList.add('br');
+    if(c%3===2 && c!==8) d.classList.add('bc');
+    if(given[i]) d.classList.add('given');
+    d.addEventListener('click',()=>selectCell(i));
+    b.appendChild(d); cells.push(d);
+  }
+}
+function buildPad(){
+  const p=document.getElementById('numpad'); p.innerHTML='';
+  for(let n=1;n<=9;n++){
+    const btn=document.createElement('button'); btn.className='num'; btn.dataset.n=n;
+    btn.innerHTML=n+'<span class="left" data-left="'+n+'"></span>';
+    btn.addEventListener('click',()=>inputNum(n));
+    p.appendChild(btn);
+  }
+}
+function selectCell(i){ if(finished) return; sel=i; render(); }
+
+function inputNum(n){
+  if(finished || sel<0 || given[sel]) return;
+  if(notesMode){
+    if(puzzle[sel]!==0) return;
+    if(notes[sel].has(n)) notes[sel].delete(n); else notes[sel].add(n);
+    render(); return;
+  }
+  if(puzzle[sel]===n){ puzzle[sel]=0; render(); return; } // 같은 숫자 → 지우기
+  puzzle[sel]=n; notes[sel].clear();
+  if(n!==solution[sel]){
+    mistakes++;
+    document.getElementById('mistakes').textContent=mistakes+'/3';
+    flashBad(sel);
+    if(mistakes>=3){ render(); return loseGame(); }
+  }
+  render();
+  checkWin();
+}
+function eraseCell(){ if(finished||sel<0||given[sel]) return; puzzle[sel]=0; notes[sel]&&notes[sel].clear(); render(); }
+function toggleNotes(){ notesMode=!notesMode; document.getElementById('notesBtn').classList.toggle('on',notesMode); }
+function hint(){
+  if(finished||sel<0||given[sel]) return;
+  if(hintsLeft<=0){ toast(t('noHint')); return; }
+  if(puzzle[sel]===solution[sel]) return;
+  hintsLeft--; puzzle[sel]=solution[sel]; notes[sel].clear(); given[sel]=true; // 힌트 채운 칸 고정
+  cells[sel].classList.add('given');
+  render(); checkWin();
+}
+let _toastT=null;
+function toast(msg){ let el=document.getElementById('_toast'); if(!el){ el=document.createElement('div'); el.id='_toast'; el.style.cssText='position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:8px 14px;border-radius:10px;z-index:80;font-size:.8rem;font-weight:700'; document.body.appendChild(el);} el.textContent=msg; el.style.opacity='1'; clearTimeout(_toastT); _toastT=setTimeout(()=>el.style.opacity='0',1400); }
+function flashBad(i){ cells[i].classList.add('badcell'); setTimeout(()=>cells[i].classList.remove('badcell'),500); }
+
+function conflictSet(){
+  // 같은 행/열/박스에 중복된 채워진 칸 표시
+  const bad=new Set();
+  const groups=[];
+  for(let r=0;r<9;r++) groups.push([...Array(9)].map((_,c)=>r*9+c));
+  for(let c=0;c<9;c++) groups.push([...Array(9)].map((_,r)=>r*9+c));
+  for(let br=0;br<3;br++)for(let bc=0;bc<3;bc++){ const g=[]; for(let r=0;r<3;r++)for(let c=0;c<3;c++)g.push((br*3+r)*9+(bc*3+c)); groups.push(g); }
+  for(const g of groups){ const seen={}; for(const i of g){ const v=puzzle[i]; if(!v)continue; if(seen[v]!=null){ bad.add(i); bad.add(seen[v]); } else seen[v]=i; } }
+  return bad;
+}
+function render(){
+  const bad=conflictSet();
+  const selV = sel>=0 ? puzzle[sel] : 0;
+  const sr = sel>=0?Math.floor(sel/9):-1, sc = sel>=0?sel%9:-1;
+  const sbr = sel>=0?Math.floor(sr/3):-1, sbc = sel>=0?Math.floor(sc/3):-1;
+  for(let i=0;i<81;i++){
+    const el=cells[i], v=puzzle[i];
+    const r=Math.floor(i/9), c=i%9;
+    el.classList.remove('sel','peer','same','bad');
+    el.innerHTML='';
+    if(v){ el.textContent=v; if(bad.has(i)) el.classList.add('bad'); }
+    else if(notes[i] && notes[i].size){ const nd=document.createElement('div'); nd.className='notes'; for(let k=1;k<=9;k++){ const s=document.createElement('span'); s.textContent=notes[i].has(k)?k:''; nd.appendChild(s);} el.appendChild(nd); }
+    if(sel>=0){
+      if(i===sel) el.classList.add('sel');
+      else if(r===sr||c===sc||(Math.floor(r/3)===sbr&&Math.floor(c/3)===sbc)) el.classList.add('peer');
+      if(selV && v===selV) el.classList.add('same');
+    }
+  }
+  // 숫자패드: 다 쓴 숫자 흐리게 + 남은 개수
+  const cnt={}; for(let n=1;n<=9;n++)cnt[n]=0; for(let i=0;i<81;i++)if(puzzle[i])cnt[puzzle[i]]++;
+  document.querySelectorAll('#numpad .num').forEach(btn=>{ const n=+btn.dataset.n; const left=9-cnt[n]; btn.classList.toggle('done',left<=0); btn.querySelector('.left').textContent=left>0?left:''; });
+}
+
+function checkWin(){
+  for(let i=0;i<81;i++){ if(puzzle[i]!==solution[i]) return; }
+  finished=true; if(timerId) clearInterval(timerId);
+  const secs=elapsedSec();
+  const reward=REWARD[diff]||1000000;
+  try{ if(typeof SharedWallet!=='undefined' && SharedWallet._initialized) SharedWallet.addGold(reward); }catch(e){}
+  try{ if(typeof GameRankings!=='undefined'){ const score=(RANK_BASE[diff]||0)+Math.max(0,3600-secs); GameRankings.submit('sudoku',{score}); } }catch(e){}
+  saveBest(secs);
+  const tstr=Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0');
+  document.getElementById('winStat').textContent = t('clearLine')(t('diffName')[diff], tstr);
+  document.getElementById('winGold').textContent = t('goldLine')(reward);
+  document.getElementById('ovWin').classList.add('on');
+  spawnConfetti();
+}
+function loseGame(){ finished=true; if(timerId)clearInterval(timerId); document.getElementById('ovLose').classList.add('on'); }
+function closeWin(){ document.getElementById('ovWin').classList.remove('on'); document.querySelectorAll('.conf').forEach(c=>c.remove()); }
+function closeLose(){ document.getElementById('ovLose').classList.remove('on'); }
+
+/* 최고 기록(난이도별 최단시간, 로컬) */
+function bestKey(){ return 'sudoku-best-'+diff; }
+function saveBest(secs){ try{ const cur=+localStorage.getItem(bestKey())||0; if(!cur||secs<cur) localStorage.setItem(bestKey(),secs); }catch(e){} updateBestLabel(); }
+function updateBestLabel(){ try{ const s=+localStorage.getItem(bestKey())||0; document.getElementById('best').textContent = s? (Math.floor(s/60)+':'+String(s%60).padStart(2,'0')) : '-'; }catch(e){ document.getElementById('best').textContent='-'; } }
+
+function setDiff(d){ diff=d; document.querySelectorAll('.diff').forEach(b=>b.classList.toggle('active',b.dataset.diff===d)); newGame(); }
+
+function spawnConfetti(){
+  const card=document.querySelector('#ovWin .card2'); if(!card) return;
+  const cols=['#ffd700','#4ecca3','#ef4444','#3b82f6','#f59e0b','#ec4899'];
+  for(let i=0;i<18;i++){ const s=document.createElement('span'); s.className='conf'; s.style.left=(Math.random()*100)+'%'; s.style.background=cols[i%cols.length]; s.style.animationDelay=(Math.random()*0.7).toFixed(2)+'s'; card.appendChild(s); }
+}
+
+// 키보드 입력(데스크탑)
+window.addEventListener('keydown',e=>{
+  if(e.key>='1'&&e.key<='9') inputNum(+e.key);
+  else if(e.key==='Backspace'||e.key==='Delete'||e.key==='0') eraseCell();
+  else if(sel>=0 && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){
+    let r=Math.floor(sel/9),c=sel%9;
+    if(e.key==='ArrowUp')r=(r+8)%9; if(e.key==='ArrowDown')r=(r+1)%9;
+    if(e.key==='ArrowLeft')c=(c+8)%9; if(e.key==='ArrowRight')c=(c+1)%9;
+    sel=r*9+c; render(); e.preventDefault();
+  }
+});
+
+applyLang();
+try{ if(typeof GameRankings!=='undefined') GameRankings.injectNavButton('sudoku'); }catch(e){}
+newGame();
+</script>
+<script src="/lib/site-meta.js"></script>
+</body>
+</html>

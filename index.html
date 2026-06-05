@@ -249,6 +249,7 @@
         function tt(k){ return (PORTAL_I18N[LANG]||PORTAL_I18N.ko)[k]; }
         // 게임 카드 번체중국어 번역(gameId 기준). 없으면 apps.json 한국어 폴백.
         const GAME_TW = {
+            sudoku:{title:'數獨',desc:'數獨 (Sudoku) - 簡單·普通·困難，金幣獎勵·排行榜，支援 한국어/繁體中文/English'},
             worldcup:{title:'2026 世界盃韓國代表隊',desc:'A組(墨西哥·南非·捷克)賽程·KST時間·晉級16強情境計算機。孫興慜·洪明甫教練。'},
             mahjong:{title:'台灣麻將',desc:'台灣麻將 - 16張手牌，4人遊戲，台 ×10萬G獎勵'},
             riichi:{title:'日本立直麻將',desc:'日本立直麻將 (立直麻雀) - 13張，立直·寶牌·役計分，3位電腦'},
@@ -296,7 +297,7 @@
             multi: ['poker', 'pingtan', 'blackjack', 'connect4', 'gomoku', 'rps'],
             board: ['pingtan', 'connect4', 'gomoku', 'ppingpae'],
             card: ['blackjack', 'jokerrun', 'poker'],
-            puzzle: ['tileslider', 'blockpuzzle', 'minesweeper', 'number-guess'],
+            puzzle: ['sudoku', 'tileslider', 'blockpuzzle', 'minesweeper', 'number-guess'],
             arcade: ['snake', 'breakout', 'billiards', 'enhance']
         };
 
