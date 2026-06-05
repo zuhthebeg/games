@@ -8,6 +8,130 @@
 <script src="/lib/multiplayer-ui.js?v=20260524a"></script>
 <script src="/lib/shared-wallet.js?v=20260524a"></script>
 <script src="/lib/game-rankings.js?v=20260529a"></script>
+<script>
+/* ── 번체중국어(zh-TW) i18n: DOM 텍스트노드 자동번역 (toast/textContent/innerHTML 전부 커버) ── */
+(function(){
+  var nav=(navigator.language||'').toLowerCase();
+  window.PP_LANG = (function(){ try{ var s=localStorage.getItem('pp-lang'); if(s) return s; }catch(e){} return nav.indexOf('zh')===0 ? 'zh-TW' : 'ko'; })();
+  // 긴 구절 → 짧은 단어 순서(앞쪽 우선). split/join 리터럴 치환이라 정규식 이스케이프 불필요.
+  var TR = [
+    ['최소 1장 이상 내야 합니다','至少要出 1 張牌'],
+    ['패스하려면 [패스] 버튼을','要跳過請按 [跳過] 按鈕'],
+    ['첫 출전은 합계 30점 이상이어야 합니다','首次出牌合計需 30 點以上'],
+    ['첫 출전: 손패만으로 합계 30점 이상 조합 필요','首次出牌：僅用手牌湊出合計 30 點以上的組合'],
+    ['⚠️ 유효하지 않은 조합이 있습니다','⚠️ 有無效的組合'],
+    ['보드를 수정하거나 되돌리기를 눌러주세요','請修改牌面或按復原'],
+    ['보드에 원래 있던 타일은','牌面上原有的牌'],
+    ['손패로 가져올 수 없습니다','無法拿回手牌'],
+    ['손패에서 타일을 선택하세요','請從手牌選擇牌'],
+    ['먼저 손패를 선택하세요','請先選擇手牌'],
+    ['이 조합에 탭으로 배치합니다','點擊放入此組合'],
+    ['한 장만 더 있으면 세트가 되는','再一張就能成組的'],
+    ['낼 수 있는 조합 우선','可出組合優先'],
+    ['취소할 직전 동작이 없습니다','沒有可撤銷的動作'],
+    ['패를 1장 드로우했습니다','摸了 1 張牌'],
+    ['덱이 비었습니다','牌庫已空'],
+    ['선택됨 — 다시 탭하면 새 조합, 조합 탭하면 그곳에 배치','已選 — 再次點擊開新組合，點組合則放入該處'],
+    ['의 턴 — 손패를 탭하면 선택된 조합에 바로 배치','的回合 — 點手牌即可放入所選組合'],
+    ['의 턴 — 타일을 드래그하거나 탭→그룹 탭으로 배치','的回合 — 拖曳牌或點牌→點組合放入'],
+    ['의 턴 — 대기 중','的回合 — 等待中'],
+    ['손패 탭하면 회수','點手牌可收回'],
+    ['멀티 라이브러리 로드 실패','多人函式庫載入失敗'],
+    ['새로고침해주세요','請重新整理'],
+    ['당신의 턴이 아닙니다','還沒輪到你'],
+    ['⏰ 시간 초과! 자동 등록','⏰ 超時！自動登錄'],
+    ['⏰ 시간 초과! 자동 드로우','⏰ 超時！自動摸牌'],
+    ['이번 턴 전체 초기화','重置整個回合'],
+    ['이번 턴 초기화','重置本回合'],
+    ['직전 동작 취소','撤銷上一步'],
+    ['루미큐브 스타일 타일 전략 게임','拉密(Rummikub)風格策略牌遊戲'],
+    ['🌐 온라인 멀티','🌐 線上多人'],
+    ['🚪 게임 나가기','🚪 離開遊戲'],
+    ['게임 나가기','離開遊戲'],
+    ['효과음 (SFX)','音效 (SFX)'],
+    ['배경음악 (BGM)','背景音樂 (BGM)'],
+    ['턴 제한 시간','回合時限'],
+    ['플레이어 수','玩家人數'],
+    ['게임 시작','開始遊戲'],
+    ['게임 종료','遊戲結束'],
+    ['다시 하기','再玩一次'],
+    ['낸 타일','出的牌'],
+    ['이상 충족','以上達成'],
+    ['더 필요','還需要'],
+    ['+ 새 조합','+ 新組合'],
+    ['새 조합','新組合'],
+    ['조합 완성','組合完成'],
+    ['조합 미완성','組合未完成'],
+    ['선택놓기','放下所選'],
+    ['장놓기','張放下'],
+    ['장 선택','張選擇'],
+    ['선택','選擇'],
+    ['패스 (덱 없음)','跳過 (牌庫空)'],
+    ['생각 중...','思考中...'],
+    ['초기화','重置'],
+    ['색상순','依顏色排序'],
+    ['숫자순','依數字排序'],
+    ['여기에 추가','加到這裡'],
+    ['2인','2人'],['3인','3人'],['4인','4人'],
+    ['30초','30秒'],['1분','1分鐘'],['2분','2分鐘'],
+    ['드로우','摸牌'],
+    ['패스','跳過'],
+    ['추천','推薦'],
+    ['리셋','重置'],
+    ['취소','撤銷'],
+    ['완료','完成'],
+    ['설정','設定'],
+    ['닫기','關閉'],
+    ['승리','勝利'],
+    ['현재','目前'],
+    ['부족','不足'],
+    ['조커','鬼牌'],
+    ['검정','黑色'],['빨강','紅色'],['파랑','藍色'],['주황','橙色'],
+    ['플레이어','玩家'],
+    ['손패','手牌'],
+    ['조합','組合'],
+    ['보드','牌面'],
+    ['타일','牌'],
+    ['메뉴로','回主選單'],
+    ['없음','無'],
+    ['삥패','拼牌'],
+    ['골드','金幣'],
+    ['턴','回合'],
+    ['점','點'],
+    ['장','張']
+  ];
+  window.ppL = function(s){ if(PP_LANG!=='zh-TW'||s==null) return s; var r=String(s); for(var i=0;i<TR.length;i++){ if(r.indexOf(TR[i][0])>=0) r=r.split(TR[i][0]).join(TR[i][1]); } return r; };
+  var busy=false;
+  function walk(node){
+    if(!node) return;
+    if(node.nodeType===3){ var a=node.nodeValue; if(a && /[가-힣]/.test(a)){ var b=ppL(a); if(b!==a) node.nodeValue=b; } return; }
+    if(node.nodeType===1){ var tag=node.tagName; if(tag==='SCRIPT'||tag==='STYLE') return;
+      var ats=['title','placeholder','aria-label'];
+      for(var k=0;k<ats.length;k++){ var v=node.getAttribute&&node.getAttribute(ats[k]); if(v && /[가-힣]/.test(v)){ var nv=ppL(v); if(nv!==v) node.setAttribute(ats[k],nv);} }
+      for(var c=node.firstChild;c;c=c.nextSibling) walk(c);
+    }
+  }
+  function setup(){
+    if(PP_LANG==='zh-TW'){
+      document.documentElement.lang='zh-Hant';
+      busy=true; walk(document.body); busy=false;
+      var mo=new MutationObserver(function(muts){ if(busy) return; busy=true;
+        for(var i=0;i<muts.length;i++){ var m=muts[i];
+          if(m.type==='characterData') walk(m.target);
+          else if(m.type==='attributes') walk(m.target);
+          else for(var j=0;j<m.addedNodes.length;j++) walk(m.addedNodes[j]);
+        } busy=false; });
+      mo.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['title','placeholder','aria-label']});
+    }
+    var btn=document.createElement('button');
+    btn.textContent = PP_LANG==='zh-TW' ? '🌐 한국어' : '🌐 繁中';
+    btn.style.cssText='position:fixed;top:calc(52px + env(safe-area-inset-top));right:8px;z-index:99999;background:rgba(0,0,0,.6);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:4px 9px;font-size:.72rem;cursor:pointer;';
+    btn.onclick=function(){ window.PP_LANG = PP_LANG==='zh-TW'?'ko':'zh-TW'; try{localStorage.setItem('pp-lang',PP_LANG);}catch(e){}; location.reload(); };
+    document.body.appendChild(btn);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setup); else setup();
+})();
+</script>
 <style>
   :root {
     --bg: #0a0f1a;
@@ -986,7 +1110,7 @@ function startGame() {
   const n = menuConfig.count;
   const aiCount = n - 1;
   const timeLim = parseInt(document.getElementById('time-limit').value);
-  const myName = (typeof SharedWallet !== 'undefined' && SharedWallet.user?.nickname) || '나';
+  const myName = (typeof SharedWallet !== 'undefined' && SharedWallet.user?.nickname) || (window.PP_LANG==='zh-TW'?'我':'나');
   const names = [myName, ...Array.from({ length: n - 1 }, (_, i) => `AI-${i + 1}`)];
   SFX.setEnabled(document.getElementById('sfx-toggle')?.checked !== false);
   BGM.setEnabled(document.getElementById('bgm-toggle')?.checked !== false);
