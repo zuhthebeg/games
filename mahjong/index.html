@@ -1062,8 +1062,21 @@ function renderPlayer(){
   const handSig=p.hand.join(',')+'|'+selTile+'|'+((G.currentPlayer===0&&G.phase==='discard')?(G.lastDraw||''):'');
   const handChanged=setSig(hr,handSig);
   if(_dealAnim||handChanged){
-    hr.innerHTML='';let jd=false;
-    p.hand.forEach((t,i)=>{const d=document.createElement('div');let cls='tile '+tileClass(t)+suitCls(t)+(t===selTile?' selected':'');if(!jd&&G.lastDraw&&t===G.lastDraw&&G.currentPlayer===0&&G.phase==='discard'){cls+=' just-drawn';jd=true;}d.className=cls;if(_dealAnim){d.classList.add('deal-anim');d.style.animationDelay=(i*0.035).toFixed(3)+'s';}d.innerHTML=tileFace(t);attachTileDrag(d,t);hr.appendChild(d);});
+    // 손패 타일 엘리먼트 재사용(패값별 풀) — innerHTML 전체교체 시 <img> 재디코드로 생기는 깜빡임 방지.
+    // 기존 노드는 그대로 두고 순서만 재배치(append=이동, 이미지 재로드 없음). 뽑은 패 1장만 새로 생성.
+    const pool={};Array.from(hr.children).forEach(el=>{const k=el.dataset.tile;if(k){(pool[k]=pool[k]||[]).push(el);}});
+    const want=[];let jd=false;
+    p.hand.forEach((t,i)=>{
+      let d=(pool[t]&&pool[t].length)?pool[t].shift():null;
+      if(!d){d=document.createElement('div');d.dataset.tile=t;d.innerHTML=tileFace(t);attachTileDrag(d,t);}
+      let cls='tile '+tileClass(t)+suitCls(t)+(t===selTile?' selected':'');
+      if(!jd&&G.lastDraw&&t===G.lastDraw&&G.currentPlayer===0&&G.phase==='discard'){cls+=' just-drawn';jd=true;}
+      if(_dealAnim)cls+=' deal-anim';
+      d.className=cls;d.style.animationDelay=_dealAnim?(i*0.035).toFixed(3)+'s':'';
+      want.push(d);
+    });
+    want.forEach(d=>hr.appendChild(d));
+    Object.values(pool).forEach(arr=>arr.forEach(el=>el.remove()));  // 버려진/안 쓰인 타일 제거
   }
   const me=document.getElementById('player-melds');
   const newMeldC=p.melds.length>_meldCounts[0];
@@ -1163,7 +1176,7 @@ function openMultiplayer(){
   MP.ui.show();
 }
 function mpStart(roomState){
-  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();_dealAnim=true;MP._resultShown=false;MP._meldN=[0,0,0,0];MP._discN=[0,0,0,0];MP._claimSig=null;MP._tp=[false,false,false,false];MP._tpDone=[false,false,false,false];MP._replaying=false;MP._lastStepGen=0;
+  MP.active=true;MP.client=MP.ui.getClient();MP.myUserId=MP.client.getMyUserId();_dealAnim=true;MP._resultShown=false;MP._meldN=[0,0,0,0];MP._discN=[0,0,0,0];MP._claimSig=null;MP._tp=[false,false,false,false];MP._tpDone=[false,false,false,false];MP._replaying=false;MP._lastStepGen=0;MP._meldSeen={};MP._tpSeen={};MP._activity=0;
   MP.client.onEvent=()=>mpRefresh();
   document.getElementById('mp-lobby').style.display='none';
   document.getElementById('mp-lobby').innerHTML='';
@@ -1232,20 +1245,25 @@ function applyServerView(gs,mv){
   // 동일 상태 중복처리 방지 (mpSend 응답 + onEvent 폴링이 같은 상태 두 번 처리 → 소리 두번/깜빡임)
   const ssig=gs.turn+'|'+gs.phase+'|'+(gs.wallCount||0)+'|'+gs.discards.map(d=>d.length).join(',')+'|'+gs.players.map(p=>(p.melds||[]).length).join(',')+'|'+(gs.finished?1:0)+'|'+(gs.lastDiscard?(gs.lastDiscard.from+''+gs.lastDiscard.tile):'');
   const dup=(MP._ssig===ssig);MP._ssig=ssig;
-  // 판 시작 시 내 점수 기록(지갑 정산용)
-  if(gs.discards.every(d=>!d.length)&&!gs.finished){const ms=(gs.players.find(p=>p.id===MP.myUserId)||{}).score;if(typeof ms==='number')MP._myStartScore=ms;MP._tpDone=[false,false,false,false];MP._resultShown=false;}
+  // 새 판 감지: 활동량(버림패+멜드 수)이 줄어들면 새 판 → 콜 원장/플래그 리셋.
+  // (기존 'discards 전부 빔' 기반은 폴링마다 반복 트리거되고, 폰으로 버림패 제거 시 오작동 → 텐파이/콜 재발동 원인)
+  const activity=gs.discards.reduce((a,d)=>a+d.length,0)+gs.players.reduce((a,p)=>a+((p.melds||[]).length),0);
+  if(!MP._meldSeen||activity<(MP._activity==null?activity:MP._activity)){
+    MP._meldSeen={};MP._tpSeen={};MP._resultShown=false;
+    const ms=(gs.players.find(p=>p.id===MP.myUserId)||{}).score;if(typeof ms==='number')MP._myStartScore=ms;
+  }
+  MP._activity=activity;
   if(!dup){
     // 새 버림패 → 패콜: 여러 턴이 한꺼번에 밀려와도 '가장 최근 1개'만 재생(소리 겹침 방지)
     if(MP._discN){let any=false;for(let di=0;di<4;di++)if(discards[di].length>(MP._discN[di]||0))any=true;
       if(any&&gs.lastDiscard){const di=Math.max(0,order.indexOf(gs.lastDiscard.from));playTileVoice(gs.lastDiscard.tile,di);}}
-    // 츠/퐁/깡 → 가장 최근 멜드 1개만 팝업(나 제외)
-    if(MP._meldN){let latest=null;for(let di=1;di<4;di++){const pl=players[di];if(pl.melds.length>(MP._meldN[di]||0))latest={pl,m:pl.melds[pl.melds.length-1]};}
-      if(latest){const m=latest.m;const act=m.type==='chi'?'chi':m.type==='pon'?'pon':(/kan/.test(m.type)?'kan':'');if(act)showClaimPop(act,m.claimed||null,latest.pl.name);}}
-    // 텐파이(팅) 토스트
-    for(let di=0;di<4;di++){const sp=gs.players.find(x=>x.seat===order[di])||{};if(sp.tenpai&&MP._tpDone&&!MP._tpDone[di]){MP._tpDone[di]=true;showToast((sp.nickname||'-')+' '+t('tenpai'));playCallFx('tenpai');}}
   }
+  // 츠/퐁/깡 콜 — 멜드별(seat:idx) 딱 1회. seen-set이라 replay/폴링/SSE 어느 경로로 같은 상태가 와도 중복 불가. (나=order[0] 제외)
+  {let latest=null;for(let di=1;di<4;di++){const pl=players[di],seat=order[di];for(let mi=0;mi<pl.melds.length;mi++){const k=seat+':'+mi;if(!MP._meldSeen[k]){MP._meldSeen[k]=true;latest={pl,m:pl.melds[mi]};}}}
+   if(latest){const m=latest.m;const act=m.type==='chi'?'chi':m.type==='pon'?'pon':(/kan/.test(m.type)?'kan':'');if(act)showClaimPop(act,m.claimed||null,latest.pl.name);}}
+  // 텐파이(팅) — 자리별(seat) 딱 1회
+  for(let di=0;di<4;di++){const seat=order[di];const sp=gs.players.find(x=>x.seat===seat)||{};if(sp.tenpai&&!MP._tpSeen[seat]){MP._tpSeen[seat]=true;showToast((sp.nickname||'-')+' '+t('tenpai'));playCallFx('tenpai');}}
   MP._discN=discards.map(d=>d.length);
-  MP._meldN=players.map(pl=>pl.melds.length);
   MP._tp=order.map(seat=>{const sp=gs.players.find(x=>x.seat===seat)||{};return !!sp.tenpai;});
   render();
   mpUpdateControls(mv);
