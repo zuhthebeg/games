@@ -340,7 +340,7 @@ async function takeTurn(p, handCard, opts){
     pl.hand.splice(pl.hand.findIndex(c=>c.id===handCard.id),1);
     handCards=[handCard];
     if(p===0) sortHand(0);
-    if(handCountM>=3 && beforeM>=1 && G.shakeMult[p]===1 && (opts.shake || p===1)){ G.shakeMult[p]=2; toast((p===0?'':'CPU ')+'흔들기! ×2'); }
+    if(handCountM>=3 && G.shakeMult[p]===1 && (opts.shake || (p===1 && beforeM>=1))){ G.shakeMult[p]=2; toast((p===0?'':'CPU ')+'흔들기! ×2'); }
   }
 
   // 1) 손패 바닥에 착지 (짝 붙는 느낌)
@@ -491,14 +491,18 @@ function cpuTurn(){
 /* my play */
 function selectCard(i){ if(G.turn!==0||G.over)return; G.sel=(G.sel===i?-1:i); renderMyHand(); }
 function playSelected(){ if(G.sel<0)return; const c=G.players[0].hand[G.sel]; const m=c.m; G.sel=-1;
-  const canBomb = G.players[0].hand.filter(x=>x.m===m).length>=3 && sameMonth(G.table,m).length>=1;
+  const cnt=G.players[0].hand.filter(x=>x.m===m).length;
+  const canBomb = cnt>=3 && sameMonth(G.table,m).length>=1;
+  const canShake = cnt>=3;
   renderMyHand();
-  if(canBomb) askBomb(c); else takeTurn(0,c);
+  if(canShake) askBomb(c, canBomb); else takeTurn(0,c);
 }
-function askBomb(card){
-  $('bombAskMsg').innerHTML=card.m+'월 패가 손에 3장!<br>💣 <b>폭탄</b>: 3장 투하·4장 먹기+피1장+뒤집기 2턴<br>🤲 <b>흔들기</b>: 1장만 내고 이 판 점수 ×2';
+function askBomb(card, canBomb){
+  if($('bombAskTitle'))$('bombAskTitle').textContent=card.m+'월 3장!';
+  $('bombAskMsg').innerHTML=(canBomb?'💣 <b>폭탄</b>: 3장 투하·4장 먹기+피1장+뒤집기 2턴<br>':'')+'🤲 <b>흔들기</b>: 그대로 1장만 내되 이 판 점수 ×2';
+  $('bombYes').style.display=canBomb?'':'none';
   $('bombYes').onclick=()=>{ hide('bombAsk'); takeTurn(0,null,{bombMonth:card.m}); };
-  $('bombShake').onclick=()=>{ hide('bombAsk'); showClaimPop&&toast('흔들기!'); takeTurn(0,card,{shake:true}); };
+  $('bombShake').onclick=()=>{ hide('bombAsk'); toast('흔들기!'); takeTurn(0,card,{shake:true}); };
   $('bombNo').onclick=()=>{ hide('bombAsk'); takeTurn(0,card); };
   show('bombAsk');
 }
@@ -717,12 +721,13 @@ function mpTapCard(i){
   if(MP._sel!==i){ MP._sel=i; mpRender(v); return; }
   MP._sel=-1;
   const m=c.m, handCnt=myhand.filter(x=>x.m===m).length, bottom=mpSameMonth(v.table,m).length;
-  if(handCnt>=3 && bottom>=1){ return mpAskBomb(c); }
+  if(handCnt>=3){ return mpAskBomb(c, bottom>=1); }
   if(bottom===2){ const cands=v.table.filter(x=>x.m===m); const k=cands.map(x=>x.role+(x.ssangpi?'S':'')+(x.tti||'')); if(k[0]!==k[1]) return mpAskPick(cands,c); }
   mpSend({type:'PLAY',payload:{cardId:c.id}});
 }
-function mpAskBomb(card){
-  $('bombAskMsg').innerHTML=card.m+'월 3장! 💣<b>폭탄</b> / 🤲<b>흔들기 ×2</b> / 그냥';
+function mpAskBomb(card, canBomb){
+  $('bombAskMsg').innerHTML=card.m+'월 3장! '+(canBomb?'💣<b>폭탄</b> / ':'')+'🤲<b>흔들기 ×2</b> / 그냥';
+  $('bombYes').style.display=canBomb?'':'none';
   $('bombYes').onclick=()=>{ hide('bombAsk'); mpSend({type:'BOMB',payload:{month:card.m}}); };
   $('bombShake').onclick=()=>{ hide('bombAsk'); mpSend({type:'PLAY',payload:{cardId:card.id,shake:true}}); };
   $('bombNo').onclick=()=>{ hide('bombAsk'); mpSend({type:'PLAY',payload:{cardId:card.id}}); };
