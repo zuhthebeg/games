@@ -281,7 +281,15 @@
       .app { padding: 22px; }
       .controls { max-width: 420px; }
     }
-  </style>
+  /* 지갑바 + 깃발모드 + 골드토스트 */
+body{padding-top:calc(46px + env(safe-area-inset-top))}
+.flagmode{background:var(--panel,#1c2230);border:1px solid rgba(255,255,255,.18);color:#e7ecf3;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+.flagmode.on{background:#e9c46a;color:#1a1606;border-color:#e9c46a}
+#goldFx{position:fixed;z-index:9998;pointer-events:none;font-weight:900;color:#ffd34d;text-shadow:0 2px 6px rgba(0,0,0,.6);font-size:1.1rem;opacity:0}
+@keyframes goldpop{0%{opacity:0;transform:translate(-50%,0) scale(.6)}20%{opacity:1;transform:translate(-50%,-10px) scale(1.1)}100%{opacity:0;transform:translate(-50%,-46px) scale(1)}}
+#goldFx.on{animation:goldpop 1s ease-out}
+</style>
+<script src="/lib/shared-wallet.js?v=20260214"></script>
 </head>
 <body>
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -298,7 +306,8 @@
             <option value="medium">보통 (16x16, 지뢰 40)</option>
             <option value="hard">어려움 (30x16, 지뢰 99)</option>
           </select>
-          <button class="restart" id="restart" type="button">새 게임</button>
+          <button class="flagmode" id="flagModeBtn" type="button">🚩 깃발</button>
+            <button class="restart" id="restart" type="button">새 게임</button>
         </div>
       </div>
       <div class="status">
@@ -321,7 +330,7 @@
       <div class="board" id="board" aria-label="지뢰찾기 보드" role="grid"></div>
     </section>
 
-    <p class="hint">탭/클릭: 열기 · 길게 누르기/우클릭: 깃발</p>
+    <p class="hint">📱 <b>탭</b>=열기 · <b>길게 누르기</b>=깃발 &nbsp;|&nbsp; 💻 <b>클릭</b>=열기 · <b>우클릭</b>=깃발<br><span style="opacity:.8">🚩 <b>깃발 버튼</b>을 켜면 탭만으로 깃발 표시 · 지뢰를 깃발로 찾을 때마다 <b style="color:#ffd34d">+100만G</b></span></p>
   </main>
 
   <div class="modal-bg" id="modalBg" role="dialog" aria-modal="true">
@@ -346,6 +355,8 @@
     const boardEl = document.getElementById("board");
     const timerEl = document.getElementById("timer");
     const mineCounterEl = document.getElementById("mineCounter");
+    const flagModeBtn = document.getElementById("flagModeBtn");
+    let FLAG_MODE = false;
     const bestTimeEl = document.getElementById("bestTime");
     const difficultyEl = document.getElementById("difficulty");
     const modalBg = document.getElementById("modalBg");
@@ -598,6 +609,7 @@
       if (cell.revealed) return;
       cell.flagged = !cell.flagged;
       flaggedCount += cell.flagged ? 1 : -1;
+      if (cell.flagged && cell.mine && !cell.awarded) { cell.awarded = true; awardMineGold(cell); }
       renderCell(cell);
       updateCounters();
     }
@@ -623,7 +635,7 @@
         event.preventDefault();
         return;
       }
-      reveal(r, c);
+      if (FLAG_MODE) { toggleFlag(r, c); } else { reveal(r, c); }
       updateCounters();
     }
 
@@ -660,6 +672,21 @@
       }
     }
 
+    function awardMineGold(cell) {
+      try { if (typeof SharedWallet !== 'undefined' && SharedWallet._initialized) SharedWallet.addGold(1000000); } catch (e) {}
+      let fx = document.getElementById('goldFx');
+      if (!fx) { fx = document.createElement('div'); fx.id = 'goldFx'; document.body.appendChild(fx); }
+      const rect = cell.el ? cell.el.getBoundingClientRect() : { left: innerWidth/2, top: innerHeight/2, width: 0 };
+      fx.textContent = '💣 +100만G';
+      fx.style.left = (rect.left + rect.width/2) + 'px';
+      fx.style.top = (rect.top - 6) + 'px';
+      fx.classList.remove('on'); void fx.offsetWidth; fx.classList.add('on');
+    }
+    if (flagModeBtn) flagModeBtn.addEventListener('click', () => {
+      FLAG_MODE = !FLAG_MODE;
+      flagModeBtn.classList.toggle('on', FLAG_MODE);
+      flagModeBtn.textContent = FLAG_MODE ? '🚩 깃발모드 ON' : '🚩 깃발';
+    });
     function newGame() {
       hideModal();
       stopTimer();
