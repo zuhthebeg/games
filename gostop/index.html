@@ -380,7 +380,7 @@ async function takeTurn(p, handCard, opts){
   if(flipCard && !flipSame && !inCap(flipCard.id)){
     const fm=G.table.filter(c=>c.m===flipCard.m && c.id!==flipCard.id && !inCap(c.id));
     if(fm.length>=3){ captured.push(flipCard,...fm); flipSweepM=flipCard.m; }   // 더미패가 뻑 쓸기
-    else if(fm.length===2){ captured.push(flipCard, fm.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]); }
+    else if(fm.length===2){ let take; const same=cardKey(fm[0])===cardKey(fm[1]); if(p===0 && !same){ take=await askPick(fm); } else { take=fm.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]; } captured.push(flipCard, take); }
     else if(fm.length===1) captured.push(flipCard, fm[0]);
   }
 
@@ -451,7 +451,7 @@ async function flipOnlyTurn(p){
   G.table.push(flip); G._newIds=new Set([flip.id]); G._newCapIds=null; sound('flip'); renderAll(); await sleep(520);
   let captured=[]; const stags=[]; let steals=0; const stolen=[];
   if(preM.length>=3) captured=[flip,...preM];
-  else if(preM.length===2) captured=[flip, preM.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]];
+  else if(preM.length===2){ let take; const same=cardKey(preM[0])===cardKey(preM[1]); if(p===0 && !same){ take=await askPick(preM); } else { take=preM.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]; } captured=[flip,take]; }
   else if(preM.length===1) captured=[flip,preM[0]];
   if(preM.length>=3){ const own=G.ppukOwner[playM]; if(own===p){steals+=2;stags.push('자뻑');}else{steals++;stags.push('뻑쓸이');} if(own!=null)delete G.ppukOwner[playM]; }
   const willEmpty=(G.table.length-captured.length)===0 && captured.length>0;
