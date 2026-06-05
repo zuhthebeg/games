@@ -40,24 +40,27 @@
 
         .header {
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            padding: 1.5rem;
-            text-align: center;
-            position: relative;
+            padding: 1.1rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px 12px;
         }
 
         .header h1 {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 700;
+            white-space: nowrap;
         }
 
         .auth-area {
-            position: absolute;
-            top: 50%;
-            right: 1rem;
-            transform: translateY(-50%);
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            min-width: 0;
         }
 
         .gold-display {
