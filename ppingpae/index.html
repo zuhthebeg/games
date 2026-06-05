@@ -1031,6 +1031,12 @@ const SFX = (() => {
       if (urgent) { tone(1320, 'square', 0.04, 0.18); tone(1660, 'sine', 0.05, 0.14, 0.04); }
       else        { tone(900, 'square', 0.035, 0.1); }
     },
+    myTurn() {
+      // 내 턴 알림: 밝은 상승 3음 차임
+      tone(784, 'triangle', 0.12, 0.26);
+      tone(988, 'triangle', 0.12, 0.26, 0.12);
+      tone(1319, 'sine', 0.18, 0.24, 0.24);
+    },
     win() {
       tone(523, 'triangle', 0.1, 0.24);
       tone(659, 'triangle', 0.1, 0.24, 0.1);
@@ -1219,6 +1225,8 @@ function startTimer() {
     }
     if (state.timerRemaining <= 0) {
       stopTimer();
+      // 남의 턴 표시용 타이머는 시간이 다 돼도 자동 액션 안 함(해당 클라/서버가 진행)
+      if (mpState.active && state.currentPlayer !== mpState.mySeat) return;
       const _ts = state.turnState;
       const _p = state.players[state.currentPlayer];
       const _played = _ts ? _ts.handSnapshot.length - _p.handIds.length : 0;
@@ -2683,6 +2691,30 @@ function mpHandleEvent(type, data) {
   }
 }
 
+function showMyTurnCue() {
+  try { SFX.myTurn(); } catch (_) {}
+  try { if (navigator.vibrate) navigator.vibrate([45, 40, 45]); } catch (_) {}
+  let el = document.getElementById('my-turn-cue');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'my-turn-cue';
+    el.style.cssText = 'position:fixed;left:50%;top:40%;z-index:99998;pointer-events:none;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:900;font-size:clamp(20px,6vw,34px);padding:14px 28px;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.55);white-space:nowrap;';
+    document.body.appendChild(el);
+  }
+  el.textContent = (window.PP_LANG === 'zh-TW') ? '🎯 輪到你了！' : '🎯 내 턴!';
+  el.style.display = 'block';
+  try {
+    el.animate([
+      { opacity: 0, transform: 'translate(-50%,-50%) scale(.6)' },
+      { opacity: 1, transform: 'translate(-50%,-50%) scale(1.08)', offset: .3 },
+      { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .72 },
+      { opacity: 0, transform: 'translate(-50%,-62%) scale(1)' }
+    ], { duration: 1300, easing: 'ease-out' });
+  } catch (_) {}
+  el.style.transform = 'translate(-50%,-50%)';
+  clearTimeout(el._t); el._t = setTimeout(() => { el.style.display = 'none'; }, 1280);
+}
+
 function markJustDrawn(tileId) {
   clearTimeout(state.drawnTimer);
   state.justDrawn = tileId;
@@ -2712,6 +2744,7 @@ function startReplay(newTileIds) {
 function mpStartGameFromServer(room) {
   const wasActive = mpState.active;
   mpState.active = true;
+  if (!wasActive) mpState.wasMyTurn = false;
   if (!wasActive) {
     showScreen('screen-game');
     boardView.scale = 1.0;
@@ -2802,9 +2835,11 @@ function mpApplyServerView(publicState, myView) {
   }
 
   render();
-  if (!publicState.finished) {
-    if (isMyTurn) startTimer(); else stopTimer();
-  }
+  // 내 턴 진입 알림(팝업+소리) — 상대턴→내턴 전환 시 1회만
+  if (isMyTurn && !publicState.finished && !mpState.wasMyTurn) showMyTurnCue();
+  mpState.wasMyTurn = isMyTurn && !publicState.finished;
+  // 남의 턴에도 동일 제한시간 카운트다운 표시(동기화는 아님, 턴 넘어가면 리셋). 자동 액션은 내 턴에서만.
+  if (!publicState.finished) startTimer(); else stopTimer();
 
   // 게임 종료 처리
   if (publicState.finished && !document.getElementById('gameover-modal')) {
