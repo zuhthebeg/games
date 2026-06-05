@@ -148,6 +148,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
       <button data-bet="10" onclick="setBet(10)">10만</button>
     </div><span style="font-size:.7rem">/점</span>
   </div>
+  <button class="big-btn sec" onclick="openRanking()">🏆 랭킹</button>
   <button class="big-btn sec" onclick="show('howto')">플레이 방법</button>
   <button class="big-btn sec" onclick="show('settings')">⚙ 설정</button>
 </div>
@@ -248,6 +249,7 @@ window.addEventListener('DOMContentLoaded', function(){
 <script src="/lib/multiplayer-ui.js?v=20260508a"></script>
 <script>
 const $=id=>document.getElementById(id);
+function openRanking(){ try{ if(typeof GameRankings!=='undefined') GameRankings.showModal('gostop'); else alert('랭킹 로딩 중'); }catch(e){ alert('랭킹을 열 수 없습니다'); } }
 let SND=localStorage.getItem('gostop_snd')!=='0';
 const GO_MIN=7; // 맞고(2인)=7점 / 고스톱(3인+)=3점은 3인모드에서
 let BET=+(localStorage.getItem('gostop_bet')||1);
