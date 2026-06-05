@@ -3017,6 +3017,10 @@ function mpShowResult(publicState) {
   if (prizeGold > 0 && typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
     try { SharedWallet.addGold(prizeGold); } catch (_) {}
   }
+  // 멀티 승리 → 랭킹 등록(SP와 동일 지표: 상대 잔여점 합)
+  if (isMyWin && oppNegSum > 0 && typeof GameRankings !== 'undefined') {
+    try { GameRankings.submit('ppingpae', { score: oppNegSum }); } catch (_) {}
+  }
 
   const modal = document.createElement('div');
   modal.id = 'gameover-modal';
