@@ -361,6 +361,7 @@ window.addEventListener('DOMContentLoaded', function(){
         <div class="controls">
           <select class="difficulty" id="difficulty" aria-label="난이도 선택">
             <option value="easy">쉬움 (9x9, 지뢰 10)</option>
+            <option value="large">12×12 (지뢰 30)</option>
             <option value="medium">보통 (16x16, 지뢰 40)</option>
             <option value="hard">어려움 (30x16, 지뢰 99)</option>
           </select>
@@ -402,6 +403,7 @@ window.addEventListener('DOMContentLoaded', function(){
   <script>
     const DIFFICULTIES = {
       easy: { key: "easy", rows: 9, cols: 9, mines: 10, label: "쉬움" },
+      large: { key: "large", rows: 12, cols: 12, mines: 30, label: "12×12" },
       medium: { key: "medium", rows: 16, cols: 16, mines: 40, label: "보통" },
       hard: { key: "hard", rows: 16, cols: 30, mines: 99, label: "어려움" }
     };
@@ -618,13 +620,13 @@ window.addEventListener('DOMContentLoaded', function(){
       stopTimer();
       saveBestTime(config.key, timer);
       updateBestTimeText();
-      const rewardMult = { easy: 1, medium: 5, hard: 10 }[config.key] || 1;
+      const rewardMult = { easy: 1, large: 3, medium: 5, hard: 10 }[config.key] || 1;
       const reward = rewardMult * 1000000;
       awardWinGold(reward);
       // 🏆 랭킹: 난이도 베이스 + 속도 보너스(빠를수록↑) → 어려움>보통>쉬움, 동난이도는 빠른 쪽
       try {
         if (typeof GameRankings !== 'undefined') {
-          const base = { easy: 10000, medium: 50000, hard: 100000 }[config.key] || 0;
+          const base = { easy: 10000, large: 30000, medium: 50000, hard: 100000 }[config.key] || 0;
           const rankScore = base + Math.max(0, 3000 - timer);
           GameRankings.submit('minesweeper', { score: rankScore });
         }
