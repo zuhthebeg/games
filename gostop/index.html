@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" /><meta http-equiv="Expires" content="0" />
 <title>맞고 · 고스톱 — 화투 온라인</title>
 <meta name="description" content="화투 맞고(2인)를 무료로. CPU와 싱글, 광·띠·끗·피·고도리 점수, 고/스톱·피박·광박. 한국 전통 화투 게임." />
 <meta property="og:title" content="맞고 · 화투 고스톱" />
@@ -233,7 +235,15 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
   <button class="close" onclick="hide('howto')">닫기</button>
 </div></div>
 
-<script src="/lib/shared-wallet.js?v=20260214"></script>
+<script>window.SharedWalletConfig = window.SharedWalletConfig || { autoGuest: true };</script>
+<script src="/lib/shared-wallet.js?v=20260606a"></script>
+<script src="/lib/game-rankings.js?v=20260606b"></script>
+<script>
+window.addEventListener('DOMContentLoaded', function(){
+  try { if (typeof SharedWallet !== 'undefined' && SharedWallet.init && !SharedWallet._initialized) SharedWallet.init(); } catch(e){}
+  try { if (typeof GameRankings !== 'undefined') GameRankings.injectNavButton('gostop'); } catch(e){}
+});
+</script>
 <script src="/lib/multiplayer.js?v=20260524a"></script>
 <script src="/lib/multiplayer-ui.js?v=20260508a"></script>
 <script>
@@ -596,6 +606,7 @@ function settle(winner,sc,opts){
   const who=winner===0?'나':'CPU';
   const gold=pt*10000*BET*CARRY;
   if(typeof SharedWallet!=='undefined' && SharedWallet._initialized){ try{ winner===0?SharedWallet.addGold(gold):SharedWallet.removeGold(gold); }catch(e){} }
+  if(winner===0 && pt>0 && typeof GameRankings!=='undefined'){ try{ GameRankings.submit('gostop',{score:pt}); }catch(e){} }
   $('r-title').textContent=(winner===0?'🎉 ':'')+who+' 승!';
   $('r-detail').innerHTML = (opts.ppuk3?'<div>3뻑 즉시 승</div>':opts.chongtong?'<div>총통! 즉시 승</div>':sc.parts.map(p=>`<div>${p[0]} <b>+${p[1]}</b></div>`).join('')) + (tags.length?`<div style="color:var(--gold);margin-top:6px">${tags.join(' · ')}</div>`:'');
   $('r-pt').innerHTML=pt+'점 <span style="font-size:1.05rem;color:'+(winner===0?'var(--green)':'var(--red)')+'">'+(winner===0?'+':'−')+gold.toLocaleString()+'G</span>';
@@ -771,6 +782,7 @@ function mpOfferGoStop(total){
 function mpResult(v){
   if(MP._resultShown)return; MP._resultShown=true;
   const meWin=v.winnerSeat===v.mySeat; const my=(v.scores&&v.scores[MP.myUserId])||0;
+  if(meWin && my>0 && typeof GameRankings!=='undefined'){ try{ GameRankings.submit('gostop',{score:Math.max(1,Math.round(my/10000))}); }catch(e){} }
   $('r-title').textContent=v.winnerSeat==null?'나가리':(meWin?'🎉 승!':'패');
   $('r-detail').innerHTML=mpEsc(v.endReason||'');
   $('r-pt').innerHTML='<span style="color:'+(my>=0?'var(--green)':'var(--red)')+'">'+(my>=0?'+':'')+my.toLocaleString()+'G</span>';
