@@ -20,7 +20,7 @@
   <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/party-js@2.2.0/bundle/party.min.js"></script>
   <script>window.SharedWalletConfig = { autoGuest: true };</script>
-  <script src="/lib/shared-wallet.js?v=20260312a"></script>
+  <script src="/lib/shared-wallet.js?v=20260605a"></script>
   <script src="/lib/game-rankings.js?v=20260529a"></script>
   <style>
     :root {
@@ -1596,6 +1596,9 @@
         container: document.getElementById("mpLobbyContainer"),
         maxPlayers: 6,
         supportsLocal: false,
+        // 방 생성·참가 시 내 실제 골드를 서버에 전달 → 서버 bankroll = 실제 보유 골드.
+        // (없으면 서버가 bankroll을 기본 1000으로 잡아 큰 베팅이 거절됨)
+        getPlayerData: () => ({ gold: Math.floor(Number((typeof SharedWallet !== "undefined" && SharedWallet.gold) || 0)) }),
         onGameStart: handleMultiGameStart,
         onGameEvent: handleMultiGameEvent,
         onLeave: () => { mpUI = null; showModeSelect(); },
