@@ -2752,10 +2752,9 @@ async function sendReactionEmote(id) {
   const actionId = 'react_' + now + '_' + Math.floor(Math.random() * 1e6);
   reactProcessed.add(actionId);
   closeEmotePanel();
-  const myVoice = voiceForSeat(mpState.mySeat);
-  showReactionBubble(myName, e.emoji, emotePhrase(e), false, myVoice); // 본인은 소리 없이 즉시 표시
-  // emoteId를 보내 받는 쪽이 자기 언어로 렌더. phrase는 폴백용. voice로 보낸이 음색 통일.
-  try { await mpState.client.sendAction({ type: 'REACTION_EMOTE', emoteId: id, emoji: e.emoji, phrase: emotePhrase(e), playerName: myName, voice: myVoice, actionId }); } catch (_) {}
+  showReactionBubble(myName, e.emoji, emotePhrase(e), false); // 본인은 소리 없이 즉시 표시
+  // emoteId+seat 전송 → 받는 쪽이 자기 언어로 멘트·음색 결정(성별은 보낸이 좌석). phrase는 폴백용.
+  try { await mpState.client.sendAction({ type: 'REACTION_EMOTE', emoteId: id, emoji: e.emoji, phrase: emotePhrase(e), playerName: myName, seat: mpState.mySeat, actionId }); } catch (_) {}
 }
 
 function showReactionBubble(name, emoji, phrase, speak, voice) {
@@ -2782,7 +2781,12 @@ const REACTION_TTS_CACHE_MAX = 24;
 function sanitizeReactionSpeech(t) {
   return String(t || '').replace(/ㅋㅋ+|ㅋ+/g, '').replace(/ㅎㅎ+|ㅎ+/g, '').replace(/\s+/g, ' ').trim();
 }
-function voiceForSeat(seat) { return (Number(seat) || 0) % 2 === 0 ? 'ko-male' : 'ko-female'; }
+// 음색: 현재(수신자) 언어 + 좌석 성별. zh-TW면 중국어 음색(zh-*), 아니면 ko-*.
+function voiceForSeat(seat) {
+  const g = (Number(seat) || 0) % 2 === 0 ? 'male' : 'female';
+  return (window.PP_LANG === 'zh-TW' ? 'zh' : 'ko') + '-' + g;
+}
+function voiceFor(gender) { return (window.PP_LANG === 'zh-TW' ? 'zh' : 'ko') + '-' + (gender === 'female' ? 'female' : 'male'); }
 async function getCachedReactionTtsUrl(text, voice) {
   const key = String(voice) + '|' + String(text);
   const cached = reactionTtsCache.get(key);
@@ -2843,7 +2847,10 @@ function mpHandleEvent(type, data) {
       if (a.actionId) reactProcessed.add(a.actionId);
       const e = REACTION_EMOTES.find(x => x.id === a.emoteId);
       const phrase = e ? emotePhrase(e) : (a.phrase || '');  // 받는 사람 언어로 표시
-      showReactionBubble(a.playerName || '?', (e && e.emoji) || a.emoji || '💬', phrase, true, a.voice);
+      // 음색: 받는 사람 언어 + 보낸이 성별(좌석). 옛 클라 폴백은 a.voice의 성별만 사용.
+      const gender = (typeof a.seat === 'number') ? (a.seat % 2 === 0 ? 'male' : 'female')
+                   : (a.voice && /female/.test(a.voice) ? 'female' : 'male');
+      showReactionBubble(a.playerName || '?', (e && e.emoji) || a.emoji || '💬', phrase, true, voiceFor(gender));
       return;
     }
   }
