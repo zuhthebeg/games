@@ -2743,12 +2743,13 @@ async function sendReactionEmote(id) {
   const actionId = 'react_' + now + '_' + Math.floor(Math.random() * 1e6);
   reactProcessed.add(actionId);
   closeEmotePanel();
-  showReactionBubble(myName, e.emoji, emotePhrase(e), false); // 본인은 소리 없이 즉시 표시
-  // emoteId를 보내 받는 쪽이 자기 언어로 렌더. phrase는 폴백용.
-  try { await mpState.client.sendAction({ type: 'REACTION_EMOTE', emoteId: id, emoji: e.emoji, phrase: emotePhrase(e), playerName: myName, actionId }); } catch (_) {}
+  const myVoice = voiceForSeat(mpState.mySeat);
+  showReactionBubble(myName, e.emoji, emotePhrase(e), false, myVoice); // 본인은 소리 없이 즉시 표시
+  // emoteId를 보내 받는 쪽이 자기 언어로 렌더. phrase는 폴백용. voice로 보낸이 음색 통일.
+  try { await mpState.client.sendAction({ type: 'REACTION_EMOTE', emoteId: id, emoji: e.emoji, phrase: emotePhrase(e), playerName: myName, voice: myVoice, actionId }); } catch (_) {}
 }
 
-function showReactionBubble(name, emoji, phrase, speak) {
+function showReactionBubble(name, emoji, phrase, speak, voice) {
   let host = document.getElementById('reaction-host');
   if (!host) {
     host = document.createElement('div');
@@ -2763,14 +2764,63 @@ function showReactionBubble(name, emoji, phrase, speak) {
   try { b.animate([{ opacity: 0, transform: 'translateY(-10px) scale(.9)' }, { opacity: 1, transform: 'translateY(0) scale(1)' }], { duration: 220, easing: 'ease-out' }); } catch (_) {}
   setTimeout(() => { try { const a = b.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: 300, easing: 'ease-in' }); a.onfinish = () => b.remove(); } catch (_) { b.remove(); } }, 3200);
   try { SFX.select(); } catch (_) {}
-  if (speak && phrase) {
-    try {
-      if (window.speechSynthesis) {
-        const u = new SpeechSynthesisUtterance(phrase);
-        u.lang = (window.PP_LANG === 'zh-TW') ? 'zh-TW' : 'ko-KR'; u.rate = 1.08; u.pitch = 1.05; u.volume = 0.9;
-        speechSynthesis.cancel(); speechSynthesis.speak(u);
-      }
-    } catch (_) {}
+  if (speak && phrase) speakReactionTTS(phrase, voice);
+}
+
+// ── 리액션 TTS 파이프라인 (llm.cocy.io cosyvoice + 캐시, 실패 시 브라우저 폴백) ──
+const reactionTtsCache = new Map();
+const REACTION_TTS_CACHE_MAX = 24;
+function sanitizeReactionSpeech(t) {
+  return String(t || '').replace(/ㅋㅋ+|ㅋ+/g, '').replace(/ㅎㅎ+|ㅎ+/g, '').replace(/\s+/g, ' ').trim();
+}
+function voiceForSeat(seat) { return (Number(seat) || 0) % 2 === 0 ? 'ko-male' : 'ko-female'; }
+async function getCachedReactionTtsUrl(text, voice) {
+  const key = String(voice) + '|' + String(text);
+  const cached = reactionTtsCache.get(key);
+  if (cached?.url) return cached.url;
+  if (cached?.promise) return cached.promise;
+  const promise = fetch('https://llm.cocy.io/v1/audio/speech', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer choon150622' },
+    body: JSON.stringify({ model: 'cosyvoice', input: text, voice, response_format: 'wav' })
+  }).then(async (res) => {
+    if (!res.ok) throw new Error('tts failed');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    reactionTtsCache.set(key, { url });
+    while (reactionTtsCache.size > REACTION_TTS_CACHE_MAX) {
+      const oldest = reactionTtsCache.keys().next().value;
+      const old = reactionTtsCache.get(oldest);
+      if (old?.url) URL.revokeObjectURL(old.url);
+      reactionTtsCache.delete(oldest);
+    }
+    return url;
+  }).catch((err) => { reactionTtsCache.delete(key); throw err; });
+  reactionTtsCache.set(key, { promise });
+  return promise;
+}
+function speakReactionBrowser(text) {
+  if (!window.speechSynthesis) return;
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = (window.PP_LANG === 'zh-TW') ? 'zh-TW' : 'ko-KR';
+    u.rate = 1.08; u.pitch = 1.05; u.volume = 0.95;
+    window.speechSynthesis.speak(u);
+  } catch (_) {}
+}
+async function speakReactionTTS(text, voice) {
+  const sfx = document.getElementById('sfx-toggle');
+  if (sfx && !sfx.checked) return;  // 효과음 OFF면 음성도 끔
+  const t = sanitizeReactionSpeech(text);
+  if (!t) return;
+  const v = voice || 'ko-male';
+  try {
+    const audio = new Audio(await getCachedReactionTtsUrl(t, v));
+    audio.volume = 0.95;
+    await audio.play();
+  } catch (_) {
+    speakReactionBrowser(t);
   }
 }
 
@@ -2784,7 +2834,7 @@ function mpHandleEvent(type, data) {
       if (a.actionId) reactProcessed.add(a.actionId);
       const e = REACTION_EMOTES.find(x => x.id === a.emoteId);
       const phrase = e ? emotePhrase(e) : (a.phrase || '');  // 받는 사람 언어로 표시
-      showReactionBubble(a.playerName || '?', (e && e.emoji) || a.emoji || '💬', phrase, true);
+      showReactionBubble(a.playerName || '?', (e && e.emoji) || a.emoji || '💬', phrase, true, a.voice);
       return;
     }
   }
