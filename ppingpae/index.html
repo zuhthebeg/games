@@ -2601,6 +2601,8 @@ function closeSettings() {
 }
 async function exitGame() {
   closeSettings();
+  closeEmotePanel();
+  document.getElementById('reaction-btn')?.remove();
   if (mpState.active && mpState.client) {
     try { await mpState.client.leaveRoom(); } catch (_) {}
     try { MultiplayerClient.resetInstance(); } catch (_) {}
@@ -2682,7 +2684,91 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
+// ═══════════════════════════════════════════
+// 리액션(이모트) — 삥탄식 K-리액션을 멀티에 이식
+// ═══════════════════════════════════════════
+const REACTION_EMOTES = [
+  { id:'hurry', emoji:'⏰', label:'재촉',   phrase:'빨리빨리!' },
+  { id:'hello', emoji:'👋', label:'인사',   phrase:'안녕하세요' },
+  { id:'take',  emoji:'😤', label:'다가져가', phrase:'그렇게 다 가져가야 속이 후련했냐' },
+  { id:'wow',   emoji:'😱', label:'놀람',   phrase:'헐 대박' },
+  { id:'nice',  emoji:'🎉', label:'칭찬',   phrase:'나이스!' },
+  { id:'tired', emoji:'😵', label:'지침',   phrase:'아 지친다' },
+  { id:'please',emoji:'🙏', label:'제발',   phrase:'제발 한 번만' },
+  { id:'gg',    emoji:'🤝', label:'잘하자', phrase:'잘 부탁해요' },
+  { id:'lol',   emoji:'🤣', label:'웃김',   phrase:'ㅋㅋㅋㅋ' },
+  { id:'angry', emoji:'🤯', label:'빡침',   phrase:'아 진짜!' }
+];
+const reactProcessed = new Set();
+let reactionCooldownUntil = 0;
+
+function toggleEmotePanel() {
+  let p = document.getElementById('emote-panel');
+  if (p) { p.remove(); return; }
+  p = document.createElement('div');
+  p.id = 'emote-panel';
+  p.style.cssText = 'position:fixed;bottom:66px;left:8px;z-index:100010;width:min(300px,calc(100vw - 16px));background:#16213e;border:1px solid #334155;border-radius:14px;padding:10px;box-shadow:0 18px 40px rgba(0,0,0,.45);';
+  const title = window.PP_LANG === 'zh-TW' ? '💬 表情' : '💬 리액션';
+  p.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;color:#fff;"><b>' + title + '</b><button onclick="toggleEmotePanel()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">×</button></div>'
+    + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">'
+    + REACTION_EMOTES.map(e => '<button onclick="sendReactionEmote(\'' + e.id + '\')" style="padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;text-align:left;cursor:pointer;"><span style="font-size:20px;margin-right:5px;">' + e.emoji + '</span><b style="font-size:13px;">' + e.label + '</b></button>').join('')
+    + '</div>';
+  document.body.appendChild(p);
+}
+function closeEmotePanel() { const p = document.getElementById('emote-panel'); if (p) p.remove(); }
+
+async function sendReactionEmote(id) {
+  if (!mpState.active || !mpState.client) return;
+  const now = Date.now();
+  if (now < reactionCooldownUntil) { showToast(window.PP_LANG === 'zh-TW' ? '稍等一下再發送' : '잠깐 쉬었다 보내요', 900); return; }
+  reactionCooldownUntil = now + 2500;
+  const e = REACTION_EMOTES.find(x => x.id === id) || REACTION_EMOTES[0];
+  const myName = (mpState.mySeat >= 0 && state.players[mpState.mySeat]?.name) || (window.PP_LANG === 'zh-TW' ? '我' : '나');
+  const actionId = 'react_' + now + '_' + Math.floor(Math.random() * 1e6);
+  reactProcessed.add(actionId);
+  closeEmotePanel();
+  showReactionBubble(myName, e.emoji, e.phrase, false); // 본인은 소리 없이 즉시 표시
+  try { await mpState.client.sendAction({ type: 'REACTION_EMOTE', emoteId: id, emoji: e.emoji, phrase: e.phrase, playerName: myName, actionId }); } catch (_) {}
+}
+
+function showReactionBubble(name, emoji, phrase, speak) {
+  let host = document.getElementById('reaction-host');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'reaction-host';
+    host.style.cssText = 'position:fixed;top:calc(60px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:99997;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;max-width:92vw;';
+    document.body.appendChild(host);
+  }
+  const b = document.createElement('div');
+  b.style.cssText = 'background:rgba(15,23,42,.93);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:14px;padding:8px 14px;font-size:15px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.45);white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;';
+  b.innerHTML = '<span style="font-size:22px;margin-right:6px;">' + emoji + '</span><span style="opacity:.8;font-weight:600;">' + escapeHtml(name) + '</span> ' + escapeHtml(phrase);
+  host.appendChild(b);
+  try { b.animate([{ opacity: 0, transform: 'translateY(-10px) scale(.9)' }, { opacity: 1, transform: 'translateY(0) scale(1)' }], { duration: 220, easing: 'ease-out' }); } catch (_) {}
+  setTimeout(() => { try { const a = b.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-8px)' }], { duration: 300, easing: 'ease-in' }); a.onfinish = () => b.remove(); } catch (_) { b.remove(); } }, 3200);
+  try { SFX.select(); } catch (_) {}
+  if (speak && phrase) {
+    try {
+      if (window.speechSynthesis) {
+        const u = new SpeechSynthesisUtterance(phrase);
+        u.lang = 'ko-KR'; u.rate = 1.08; u.pitch = 1.05; u.volume = 0.9;
+        speechSynthesis.cancel(); speechSynthesis.speak(u);
+      }
+    } catch (_) {}
+  }
+}
+
 function mpHandleEvent(type, data) {
+  // 리액션 이벤트: 상태 변경 없이 표시만 (refetch 불필요)
+  if (type === 'action') {
+    const raw = (data && (data.data || data.action || data.payload)) || data || {};
+    const a = raw.action || raw;
+    if (a && a.type === 'REACTION_EMOTE') {
+      if (a.actionId && reactProcessed.has(a.actionId)) return;
+      if (a.actionId) reactProcessed.add(a.actionId);
+      showReactionBubble(a.playerName || '?', a.emoji || '💬', a.phrase || '', true);
+      return;
+    }
+  }
   // 게임 중 액션/상태 변경 시 서버에서 최신 view 가져와 재적용
   if (type === 'action' || type === 'state_update' || type === 'game_ended') {
     mpState.client.getRoomState().then(room => {
@@ -2745,6 +2831,13 @@ function mpStartGameFromServer(room) {
   const wasActive = mpState.active;
   mpState.active = true;
   if (!wasActive) mpState.wasMyTurn = false;
+  if (!document.getElementById('reaction-btn')) {
+    const rb = document.createElement('button');
+    rb.id = 'reaction-btn'; rb.textContent = '💬'; rb.title = '리액션';
+    rb.onclick = toggleEmotePanel;
+    rb.style.cssText = 'position:fixed;bottom:14px;left:10px;z-index:100009;width:46px;height:46px;border-radius:50%;border:none;background:#6366f1;color:#fff;font-size:22px;box-shadow:0 6px 18px rgba(0,0,0,.4);cursor:pointer;';
+    document.body.appendChild(rb);
+  }
   if (!wasActive) {
     showScreen('screen-game');
     boardView.scale = 1.0;
