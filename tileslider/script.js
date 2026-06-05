@@ -409,12 +409,21 @@ function checkWin() {
         (tile && parseInt(tile.dataset.value) === index + 1)
     );
     
-    if(isWin) {
+    if(isWin && !isGameWon) {
         isGameWon = true;
         clearInterval(timerInterval);
         saveScore();
         updateHighScores();
-        
+
+        // 🏆 클리어 보상: 100만 골드 (판당 1회)
+        let goldLine = '';
+        try {
+            if (typeof SharedWallet !== 'undefined' && SharedWallet._initialized) {
+                SharedWallet.addGold(1000000);
+                goldLine = '<span>💰 +1,000,000G</span>';
+            }
+        } catch (e) {}
+
         // CLEAR 메시지 생성
         const clearEffect = document.createElement('div');
         clearEffect.className = 'clear-effect';
@@ -424,6 +433,7 @@ function checkWin() {
                 <div class="clear-stats">
                     <span>⏳${timer}</span>
                     <span>🏃‍‍${moves}</span>
+                    ${goldLine}
                 </div>
             </div>
             <div class="particles"></div>
