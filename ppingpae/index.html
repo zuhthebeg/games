@@ -9,6 +9,13 @@
 <script src="/lib/shared-wallet.js?v=20260524a"></script>
 <script src="/lib/game-rankings.js?v=20260529a"></script>
 <script>
+/* SharedWallet 초기화 — 안 하면 지갑 미초기화(게스트·미동기화) 상태라 멀티 상금이 실제 계정에 안 들어감 */
+window.SharedWalletConfig = window.SharedWalletConfig || { autoGuest: true };
+window.addEventListener('DOMContentLoaded', function(){
+  try { if (typeof SharedWallet !== 'undefined' && SharedWallet.init && !SharedWallet._initialized) SharedWallet.init(); } catch (e) {}
+});
+</script>
+<script>
 /* ── 번체중국어(zh-TW) i18n: DOM 텍스트노드 자동번역 (toast/textContent/innerHTML 전부 커버) ── */
 (function(){
   var nav=(navigator.language||'').toLowerCase();
@@ -96,11 +103,16 @@
     ['없음','無'],
     ['삥패','拼牌'],
     ['골드','金幣'],
-    ['턴','回合'],
-    ['점','點'],
-    ['장','張']
+    ['턴','回合']
   ];
-  window.ppL = function(s){ if(PP_LANG!=='zh-TW'||s==null) return s; var r=String(s); for(var i=0;i<TR.length;i++){ if(r.indexOf(TR[i][0])>=0) r=r.split(TR[i][0]).join(TR[i][1]); } return r; };
+  window.ppL = function(s){
+    if(PP_LANG!=='zh-TW'||s==null) return s;
+    var r=String(s);
+    for(var i=0;i<TR.length;i++){ if(r.indexOf(TR[i][0])>=0) r=r.split(TR[i][0]).join(TR[i][1]); }
+    // 숫자 뒤의 장/점만 단위 치환(로비의 입장·방장·점수 등 오염 방지)
+    r = r.replace(/(\d)\s*장/g,'$1張').replace(/(\d)\s*점/g,'$1點');
+    return r;
+  };
   var busy=false;
   function walk(node){
     if(!node) return;
