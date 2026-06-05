@@ -417,7 +417,13 @@ window.addEventListener('DOMContentLoaded', function(){
     flex-shrink: 0;
     flex-wrap: nowrap;
     align-items: center;
+    overflow-x: auto;            /* 버튼 많아 넘치면 가로 스크롤(설정/⚙ 숨음 방지) */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
   }
+  #board-actions::-webkit-scrollbar { height: 4px; }
+  #board-actions::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+  #board-actions > div { flex-shrink: 0; }   /* 좌/중/우 그룹이 줄어들어 버튼 겹치지 않게 */
   #board-actions button {
     border: 1px solid var(--line); background: var(--panel2); color: var(--text);
     border-radius: 8px; padding: 7px 10px; font-size: 12px; font-weight: 700;
