@@ -348,7 +348,7 @@ body{padding-top:calc(46px + env(safe-area-inset-top))}
       hard: { key: "hard", rows: 16, cols: 30, mines: 99, label: "어려움" }
     };
 
-    const LONG_PRESS_MS = 360;
+    const LONG_PRESS_MS = 550;
     const BEST_KEY = "minesweeper-best-times-v1";
     const THEME_KEY = "minesweeper-theme";
 
@@ -625,6 +625,8 @@ body{padding-top:calc(46px + env(safe-area-inset-top))}
       pointerState.timer = setTimeout(() => {
         pointerState.longPressed = true;
         toggleFlag(r, c);
+        updateCounters();
+        try { if (navigator.vibrate) navigator.vibrate(45); } catch (e) {}
       }, LONG_PRESS_MS);
     }
 
