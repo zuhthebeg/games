@@ -289,7 +289,60 @@ body{padding-top:calc(46px + env(safe-area-inset-top))}
 @keyframes goldpop{0%{opacity:0;transform:translate(-50%,0) scale(.6)}20%{opacity:1;transform:translate(-50%,-10px) scale(1.1)}100%{opacity:0;transform:translate(-50%,-46px) scale(1)}}
 #goldFx.on{animation:goldpop 1s ease-out}
 </style>
-<script src="/lib/shared-wallet.js?v=20260214"></script>
+<script>window.SharedWalletConfig = window.SharedWalletConfig || { autoGuest: true };</script>
+<script src="/lib/shared-wallet.js?v=20260606a"></script>
+<script>
+/* SharedWallet 초기화 — 안 하면 클리어 골드가 실제 계정에 적립·동기화 안 됨 */
+window.addEventListener('DOMContentLoaded', function(){
+  try { if (typeof SharedWallet !== 'undefined' && SharedWallet.init && !SharedWallet._initialized) SharedWallet.init(); } catch(e){}
+});
+</script>
+<script>
+/* ── 번체중국어(zh-TW) i18n: DOM 텍스트 자동번역 ── */
+(function(){
+  var nav=(navigator.language||'').toLowerCase();
+  window.MS_LANG = (function(){ try{var s=localStorage.getItem('ms-lang'); if(s) return s;}catch(e){} return nav.indexOf('zh')===0?'zh-TW':'ko'; })();
+  var TR=[
+    ['지뢰를 밟았습니다. 다시 도전해 보세요.','踩到地雷了，再挑戰一次。'],
+    ['클래식 지뢰찾기 게임','經典踩地雷遊戲'],
+    ['을 켜면 탭만으로 깃발 표시','開啟後只需點擊即可標旗'],
+    ['난이도 선택','難度選擇'],['난이도 클리어','難度通關'],
+    ['남은 지뢰','剩餘地雷'],['최고 기록','最佳紀錄'],
+    ['지뢰찾기 보드','踩地雷盤面'],['지뢰찾기','踩地雷'],
+    ['게임 오버','遊戲結束'],['새 게임','新遊戲'],['다시 하기','再玩一次'],
+    ['길게 누르기','長按'],
+    ['깃발모드 ON','旗標模式 ON'],['깃발모드','旗標模式'],['깃발 버튼','旗標按鈕'],['깃발','旗標'],
+    ['클리어 시','通關時'],['지뢰수','地雷數'],
+    ['우클릭','右鍵'],['클릭','點擊'],['열기','開啟'],['탭','點擊'],
+    ['쉬움','簡單'],['보통','普通'],['어려움','困難'],
+    ['지뢰','地雷'],['시간','時間'],
+    ['테마','主題'],['자동','自動'],['어둡게','暗色'],['밝게','亮色'],
+    ['획득','獲得'],['승리','勝利'],['100만','100萬']
+  ];
+  window.msL=function(s){ if(MS_LANG!=='zh-TW'||s==null) return s; var r=String(s);
+    for(var i=0;i<TR.length;i++){ if(r.indexOf(TR[i][0])>=0) r=r.split(TR[i][0]).join(TR[i][1]); }
+    r=r.replace(/(\d)\s*초/g,'$1秒').replace(/(\d)\s*개/g,'$1個'); return r; };
+  var busy=false;
+  function walk(n){ if(!n) return;
+    if(n.nodeType===3){ var a=n.nodeValue; if(a&&/[가-힣]/.test(a)){ var b=msL(a); if(b!==a) n.nodeValue=b; } return; }
+    if(n.nodeType===1){ if(n.tagName==='SCRIPT'||n.tagName==='STYLE') return;
+      ['aria-label','title','placeholder'].forEach(function(at){ var v=n.getAttribute&&n.getAttribute(at); if(v&&/[가-힣]/.test(v)){ var nv=msL(v); if(nv!==v) n.setAttribute(at,nv);} });
+      for(var c=n.firstChild;c;c=c.nextSibling) walk(c);
+    } }
+  function setup(){
+    if(MS_LANG==='zh-TW'){ document.documentElement.lang='zh-Hant'; busy=true; walk(document.body); busy=false;
+      var mo=new MutationObserver(function(ms){ if(busy) return; busy=true;
+        for(var i=0;i<ms.length;i++){ var m=ms[i]; if(m.type==='characterData') walk(m.target); else if(m.type==='attributes') walk(m.target); else for(var j=0;j<m.addedNodes.length;j++) walk(m.addedNodes[j]); } busy=false; });
+      mo.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['aria-label','title','placeholder']});
+    }
+    var b=document.createElement('button'); b.textContent= MS_LANG==='zh-TW'?'🌐 한국어':'🌐 繁中';
+    b.style.cssText='position:fixed;top:calc(50px + env(safe-area-inset-top));right:8px;z-index:99999;background:rgba(0,0,0,.6);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:4px 9px;font-size:.72rem;cursor:pointer;';
+    b.onclick=function(){ var n=MS_LANG==='zh-TW'?'ko':'zh-TW'; try{localStorage.setItem('ms-lang',n);}catch(e){}; location.reload(); };
+    document.body.appendChild(b);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setup); else setup();
+})();
+</script>
 </head>
 <body>
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -375,6 +428,7 @@ body{padding-top:calc(46px + env(safe-area-inset-top))}
     let timer = 0;
     let timerId = null;
     let pointerState = null;
+    let lastPointerType = 'mouse';
 
     function loadBestTimes() {
       try {
@@ -618,6 +672,7 @@ body{padding-top:calc(46px + env(safe-area-inset-top))}
 
     function onPointerDown(event, r, c) {
       if (event.button !== undefined && event.button !== 0) return;
+      lastPointerType = event.pointerType || 'mouse';
       if (pointerState && pointerState.timer) {
         clearTimeout(pointerState.timer);
       }
@@ -666,7 +721,11 @@ body{padding-top:calc(46px + env(safe-area-inset-top))}
 
           button.addEventListener("contextmenu", (e) => {
             e.preventDefault();
-            toggleFlag(r, c);
+            // 마우스 우클릭만 여기서 깃발 처리. 터치 롱프레스는 타이머가 처리(중복 토글로 상쇄되던 버그 방지)
+            if (lastPointerType === 'mouse') { toggleFlag(r, c); updateCounters(); }
+          });
+          button.addEventListener("pointercancel", () => {
+            if (pointerState?.timer) clearTimeout(pointerState.timer);
           });
 
           cell.el = button;
