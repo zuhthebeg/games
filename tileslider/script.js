@@ -415,12 +415,13 @@ function checkWin() {
         saveScore();
         updateHighScores();
 
-        // 🏆 클리어 보상: 100만 골드 (판당 1회)
+        // 🏆 클리어 보상: 레벨(그리드 크기) × 100만 골드 (판당 1회). 9레벨=900만
         let goldLine = '';
         try {
             if (typeof SharedWallet !== 'undefined' && SharedWallet._initialized) {
-                SharedWallet.addGold(1000000);
-                goldLine = '<span>💰 +1,000,000G</span>';
+                const reward = currentLevel * 1000000;
+                SharedWallet.addGold(reward);
+                goldLine = '<span>💰 +' + reward.toLocaleString() + 'G</span>';
             }
         } catch (e) {}
 

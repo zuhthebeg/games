@@ -10,6 +10,12 @@
     <link rel="stylesheet" href="style.css?v=1.0.12">
     <script>window.SharedWalletConfig = { autoGuest: true };</script>
     <script src="/lib/shared-wallet.js?v=20260605a"></script>
+    <script>
+    /* SharedWallet 초기화 — 안 하면 _initialized=false라 클리어 골드 적립이 스킵됨 */
+    window.addEventListener('DOMContentLoaded', function(){
+      try { if (typeof SharedWallet !== 'undefined' && SharedWallet.init && !SharedWallet._initialized) SharedWallet.init(); } catch(e){}
+    });
+    </script>
     <style>body{padding-top:calc(48px + env(safe-area-inset-top));}</style>
     <meta name="description" content="Free online sliding puzzle game! Challenge yourself with number puzzles and custom image puzzles. Supports 3x3 to 9x9 difficulty levels">
     <meta name="keywords" content="number puzzle, sliding puzzle, tile game, online puzzle, brain game, free game, 숫자 퍼즐, 슬라이딩 퍼즐, 타일 게임, 두뇌 게임, 무료 퍼즐 게임, 이미지 퍼즐">
