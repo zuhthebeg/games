@@ -1,10 +1,45 @@
 # cocy (game.cocy.io)
 
-> 무료 웹게임과 정보 미니사이트 모음. 설치 없이 브라우저에서 바로 플레이/이용.
+> 설치 없이 브라우저에서 바로 즐기는 무료 웹게임·정보 미니사이트 모음. 모든 게임은 모바일·PC 모두 지원하며 한국어가 기본(일부 多언어). 로그인하면 게임 전반에서 공용 골드 지갑을 쓰고, 일부 게임은 relay.cocy.io 기반 실시간 멀티플레이(CPU 봇 자동 채움)를 지원한다.
 
-## 2026 FIFA 월드컵 한국 대표팀
-- [2026 월드컵 한국 대표팀 정보](https://game.cocy.io/worldcup/): 대한민국은 **A조**(멕시코·남아프리카공화국·체코). 조별리그 한국시간(KST): 체코전 6/12(금) 11:00, 멕시코전 6/19(금) 10:00, 남아공전 6/25(목) 10:00. 16강(32강) 진출 = 각 조 1·2위 + 3위 중 상위 8팀. 감독 홍명보, 주장 손흥민. 진출 경우의 수 계산기·OX 퀴즈 포함. 대회 기간 2026-06-11~07-19, 미국·캐나다·멕시코 공동 개최(48개국).
+## 화투·마작·카드 (Classic / Card)
+- [대만 마작 (台灣麻將)](https://game.cocy.io/mahjong/): 16타일 대만 마작. CPU 3인 싱글 + 실시간 멀티, 한국어/繁體中文/English. 타이 ×10만G 보상.
+- [일본 리치마작 (立直麻雀)](https://game.cocy.io/riichi/): 13타일, 리치·도라·역(役) 점수계산, CPU 3인. 한국어/일본어.
+- [맞고·고스톱 (화투)](https://game.cocy.io/gostop/): 정통룰 화투. 광·띠·끗·피·고도리·고/스톱·피박/광박·흔들기·폭탄·총통. 2인 맞고 + 3~4인 고스톱, CPU/실시간 멀티.
+- [블랙잭](https://game.cocy.io/blackjack/): 딜러와 1:1 블랙잭. 골드 베팅, 3:2 배당, 연승 보너스.
+- [조커런](https://game.cocy.io/jokerrun/): 포커 로그라이크. 핸드 조합 + 조커로 점수 폭발.
+- [포커](https://game.cocy.io/poker/): 1:1 텍사스 홀덤 포커.
 
-## 게임
-- [대만 마작 (台灣麻將)](https://game.cocy.io/mahjong/): 16장 대만 마작. CPU 3인 싱글 + 실시간 멀티, 한국어/繁體中文/English.
-- [전체 게임 목록](https://game.cocy.io/): 마작·블랙잭·테트리스·고모쿠 등 다수.
+## 보드게임 (Board)
+- [삥탄](https://game.cocy.io/pingtan/): 3~4인 전략 보드게임 — 자원·건설·거래.
+- [삥패](https://game.cocy.io/ppingpae/): 타일 정리 보드게임 — 런·그룹·조커 활용.
+- [삼인 사목](https://game.cocy.io/connect4/): 3인 실시간 사목(커넥트4) 대결.
+- [오목](https://game.cocy.io/gomoku/): 실시간 1:1 오목 대결.
+
+## 아케이드·액션 (Arcade / Action)
+- [스네이크](https://game.cocy.io/snake/): 먹이 하나당 +100G. 로그인해 골드 모으기.
+- [지뢰찾기](https://game.cocy.io/minesweeper/): 난이도별 지뢰수 ×100만G 클리어 보상. 깃발모드·롱프레스 모바일 최적화.
+- [벽돌깨기](https://game.cocy.io/breakout/): 클래식 벽돌깨기.
+- [블록 블라스트](https://game.cocy.io/blockblast/): 8×8 블록 퍼즐, 콤보 터뜨리기.
+- [블럭 퍼즐](https://game.cocy.io/blockpuzzle/): 블럭 조합 퍼즐.
+- [타일 슬라이더](https://game.cocy.io/tileslider/): 슬라이딩 숫자·이미지 퍼즐.
+- [총알 피하기](https://game.cocy.io/bulletdodge/): 쏟아지는 총알 회피 생존, 조이스틱 지원.
+- [라인러시 / Line Rush](https://game.cocy.io/linerush/): 라인을 그어 영역을 확보하는 터치 아케이드.
+- [3쿠션 당구 시뮬레이터](https://game.cocy.io/billiards/): PBA 3쿠션 물리 시뮬 — 초구·스핀·다이아몬드 시스템.
+
+## 캐주얼 (Casual)
+- [사다리 게임](https://game.cocy.io/ladder/): 사다리 타기.
+- [가위바위보](https://game.cocy.io/rps/): 클래식 가위바위보.
+- [숫자 맞추기](https://game.cocy.io/number-guess/): 간단한 숫자 맞추기.
+
+## RPG·강화 (RPG)
+- [무기 강화 & 배틀](https://game.cocy.io/enhance/): 디아블로식 등급 시스템. 무기 강화·배틀로 골드 획득, 무기별 숙련도(최대 Lv.100).
+
+## 정보·도구 (Info / Tools)
+- [2026 FIFA 월드컵 한국 대표팀](https://game.cocy.io/worldcup/): 대한민국 A조(멕시코·남아공·체코). 조별리그 KST 일정, 16강 진출 경우의 수 계산기, OX 퀴즈. 감독 홍명보·주장 손흥민. 대회 2026-06-11~07-19, 미국·캐나다·멕시코 공동개최(48개국).
+- [D2R 룬워드 조합기](https://game.cocy.io/d2r-runewords/): 디아블로2 레저렉션 룬 순서 선택 → 룬워드 검색, 장비/직업/레벨 필터.
+- [D2R 가이드](https://game.cocy.io/d2r/): 디아블로2 레저렉션 레벨업 가이드 & 악마술사 빌드.
+- [피크민 트래커](https://game.cocy.io/pikmin/): 피크민 수집 관리.
+
+## 전체 목록
+- [game.cocy.io 홈](https://game.cocy.io/): 위 게임 전체를 카테고리별로 모은 홈.
