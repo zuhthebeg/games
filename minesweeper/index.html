@@ -330,13 +330,13 @@ body{padding-top:calc(46px + env(safe-area-inset-top))}
       <div class="board" id="board" aria-label="지뢰찾기 보드" role="grid"></div>
     </section>
 
-    <p class="hint">📱 <b>탭</b>=열기 · <b>길게 누르기</b>=깃발 &nbsp;|&nbsp; 💻 <b>클릭</b>=열기 · <b>우클릭</b>=깃발<br><span style="opacity:.8">🚩 <b>깃발 버튼</b>을 켜면 탭만으로 깃발 표시 · 지뢰를 깃발로 찾을 때마다 <b style="color:#ffd34d">+100만G</b></span></p>
+    <p class="hint">📱 <b>탭</b>=열기 · <b>길게 누르기</b>=깃발 &nbsp;|&nbsp; 💻 <b>클릭</b>=열기 · <b>우클릭</b>=깃발<br><span style="opacity:.8">🚩 <b>깃발 버튼</b>을 켜면 탭만으로 깃발 표시 · 🏆 <b>클리어 시</b> 지뢰수 × <b style="color:#ffd34d">100만G</b> 획득</span></p>
   </main>
 
   <div class="modal-bg" id="modalBg" role="dialog" aria-modal="true">
     <div class="modal">
       <h2 id="modalTitle"></h2>
-      <p id="modalText"></p>
+      <p id="modalText" style="white-space:pre-line"></p>
       <button id="modalBtn" type="button">다시 하기</button>
     </div>
   </div>
@@ -559,7 +559,10 @@ body{padding-top:calc(46px + env(safe-area-inset-top))}
       stopTimer();
       saveBestTime(config.key, timer);
       updateBestTimeText();
-      showModal("승리!", `${config.label} 난이도 클리어: ${timer}초`);
+      const reward = config.mines * 1000000;
+      awardWinGold(reward);
+      const rewardText = (config.mines) + '개 × 100만 = ' + reward.toLocaleString() + 'G 획득!';
+      showModal("승리!", `${config.label} 난이도 클리어: ${timer}초\n💰 ${rewardText}`);
     }
 
     function floodReveal(r, c) {
@@ -609,7 +612,6 @@ body{padding-top:calc(46px + env(safe-area-inset-top))}
       if (cell.revealed) return;
       cell.flagged = !cell.flagged;
       flaggedCount += cell.flagged ? 1 : -1;
-      if (cell.flagged && cell.mine && !cell.awarded) { cell.awarded = true; awardMineGold(cell); }
       renderCell(cell);
       updateCounters();
     }
@@ -672,14 +674,13 @@ body{padding-top:calc(46px + env(safe-area-inset-top))}
       }
     }
 
-    function awardMineGold(cell) {
-      try { if (typeof SharedWallet !== 'undefined' && SharedWallet._initialized) SharedWallet.addGold(1000000); } catch (e) {}
+    function awardWinGold(amount) {
+      try { if (typeof SharedWallet !== 'undefined' && SharedWallet._initialized) SharedWallet.addGold(amount); } catch (e) {}
       let fx = document.getElementById('goldFx');
       if (!fx) { fx = document.createElement('div'); fx.id = 'goldFx'; document.body.appendChild(fx); }
-      const rect = cell.el ? cell.el.getBoundingClientRect() : { left: innerWidth/2, top: innerHeight/2, width: 0 };
-      fx.textContent = '💣 +100만G';
-      fx.style.left = (rect.left + rect.width/2) + 'px';
-      fx.style.top = (rect.top - 6) + 'px';
+      fx.textContent = '💰 +' + amount.toLocaleString() + 'G';
+      fx.style.left = (innerWidth / 2) + 'px';
+      fx.style.top = (innerHeight / 2) + 'px';
       fx.classList.remove('on'); void fx.offsetWidth; fx.classList.add('on');
     }
     if (flagModeBtn) flagModeBtn.addEventListener('click', () => {
