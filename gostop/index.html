@@ -281,7 +281,7 @@ function deal(){
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   G.table=deck.splice(0,8);
   G.players=[{hand:deck.splice(0,10),cap:[]},{hand:deck.splice(0,10),cap:[]}];
-  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0];
+  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0]; G.firstPpuk=true;
   sortHand(0); G._dealing=true; document.body.classList.add('dealing'); renderAll();
   setTimeout(()=>{ G._dealing=false; document.body.classList.remove('dealing'); },1050);
   G._chongtong=null;
@@ -378,7 +378,8 @@ async function takeTurn(p, handCard, opts){
   } else if(beforeM===0){
     if(flipSame){ captured.push(...handCards, flipCard); }      // 쪽
   } else if(beforeM===1){
-    if(flipSame){ ppuk=true; G.ppukCount[p]=(G.ppukCount[p]||0)+1; G.ppukOwner[playM]=p; toast((p===0?'':'CPU ')+'뻑! ('+G.ppukCount[p]+')'); }
+    if(flipSame){ ppuk=true; G.ppukCount[p]=(G.ppukCount[p]||0)+1; G.ppukOwner[playM]=p; toast((p===0?'':'CPU ')+'뻑! ('+G.ppukCount[p]+')');
+      if(G.firstPpuk){ G.firstPpuk=false; if(p===0){ const fb=1000000*BET; if(typeof SharedWallet!=='undefined'&&SharedWallet._initialized){ try{ SharedWallet.addGold(fb); }catch(e){} } setTimeout(()=>toast('🎉 첫뻑 보너스 +'+fb.toLocaleString()+'G'),500); } else setTimeout(()=>toast('CPU 첫뻑'),500); } }
     else { captured.push(handCards[0], preM[0]); }
   } else if(beforeM===2){
     if(flipSame){ captured.push(handCards[0], preM[0], preM[1], flipCard); }   // 따닥
@@ -438,7 +439,7 @@ async function takeTurn(p, handCard, opts){
       if(canGo){ pendingBomb=bomb; return offerGoStop(sc); }
       return settle(0, sc);
     } else {
-      const goAgain = canGo && sc.total<5 && Math.random()<0.6;
+      const goAgain = canGo && sc.total<=9 && G.deck.length>=4 && Math.random()<0.5;
       if(goAgain){ G.go++; G.goBy=1; toast('CPU '+G.go+'고!'); await sleep(700); return advance(); }
       else return settle(1, sc);
     }
@@ -499,7 +500,7 @@ async function flipOnlyTurn(p){
       if(canGo){ pendingBomb=false; return offerGoStop(sc); }
       return settle(0, sc);
     }
-    const goAgain = canGo && sc.total<5 && Math.random()<0.6;
+    const goAgain = canGo && sc.total<=9 && G.deck.length>=4 && Math.random()<0.5;
     if(!goAgain) return settle(1,sc);
     G.go++; G.goBy=1; toast('CPU '+G.go+'고!'); await sleep(600);
   }
