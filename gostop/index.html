@@ -54,6 +54,8 @@ img{display:block}
 .capset img.cin{animation:cin .38s var(--ease)}
 .cap-mid{display:flex;flex-direction:column;gap:1px}
 .cap-pi{display:flex;gap:4px}
+.cap-pi .lap img{margin-left:-7px}
+.cap-pi .lap img:first-of-type{margin-left:0}
 .pi-col{display:flex;flex-direction:column;gap:1px}
 #cpuCaptured .capset img{width:calc(21px*var(--tz))}
 /* table */
@@ -741,9 +743,13 @@ function capGroup(cap){
   let h='<div class="capset">';
   if(g.length) h+=lap(g);                                      // 광 왼쪽
   if(t.length||y.length){ h+='<div class="cap-mid">'+lap(t)+lap(y)+'</div>'; }  // 띠 위 / 열끗(동물) 아래
-  if(p.length){                                                // 피 오른쪽: 10개씩 열, 위5/아래5
+  if(p.length){                                                // 피 오른쪽: 쌍피=2가치로 묶어 5가치씩 한 줄(쌍피1+일반3=4장, 쌍피2+일반1=3장)
+    const sorted=p.slice().sort((a,b)=>(a.ssangpi?2:1)-(b.ssangpi?2:1)); // 단피 먼저
+    const rows=[]; let cur=[], val=0;
+    sorted.forEach(c=>{ cur.push(c); val+=c.ssangpi?2:1; if(val>=5){ rows.push(cur); cur=[]; val=0; } });
+    if(cur.length) rows.push(cur);
     h+='<div class="cap-pi">';
-    for(let i=0;i<p.length;i+=10){ const ch=p.slice(i,i+10); h+='<div class="pi-col">'+lap(ch.slice(0,5))+lap(ch.slice(5,10))+'</div>'; }
+    for(let i=0;i<rows.length;i+=2){ h+='<div class="pi-col">'+lap(rows[i])+(rows[i+1]?lap(rows[i+1]):'')+'</div>'; }
     h+='</div>';
   }
   h+='</div>';
