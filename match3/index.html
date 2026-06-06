@@ -408,9 +408,18 @@ const BGM=(()=>{
   }
   function tick(){ const c=getACany(); if(!c||!alive)return;
     while(nextT < c.currentTime+0.18){ playStep(step,nextT); step++; nextT+=STEP; } }
+  // 합성 폴백
+  function synthStart(){ if(alive||!on())return; const c=getACany(); if(!c)return; alive=true; step=0; nextT=c.currentTime+0.1; timer=setInterval(tick,40); }
+  function synthStop(){ alive=false; if(timer){clearInterval(timer);timer=null;} }
+  // 메인: ACE-Step 생성 트랙(mp3). 로드 실패 시 합성 루프로 폴백
+  let audio=null, mp3failed=false;
+  function startMp3(){ if(mp3failed)return;
+    if(!audio){ audio=new Audio('/match3/bgm.mp3?v=2'); audio.loop=true; audio.volume=.42;
+      audio.onerror=()=>{ mp3failed=true; audio=null; if(on())synthStart(); }; }
+    const p=audio.play(); if(p&&p.catch)p.catch(()=>{}); }
   return { on,
-    start(){ if(alive||!on())return; const c=getACany(); if(!c)return; alive=true; step=0; nextT=c.currentTime+0.1; timer=setInterval(tick,40); },
-    stop(){ alive=false; if(timer){clearInterval(timer);timer=null;} },
+    start(){ if(!on())return; if(mp3failed)synthStart(); else startMp3(); },
+    stop(){ if(audio)audio.pause(); synthStop(); },
     toggle(){ const next=on()?'0':'1'; try{localStorage.setItem('m3-bgm',next);}catch(e){} if(next==='1')this.start(); else this.stop(); return next==='1'; } };
 })();
 function toggleBgm(){ const onNow=BGM.toggle(); document.getElementById('bgmBtn').textContent=onNow?'🎵':'🔇'; }
