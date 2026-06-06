@@ -859,7 +859,7 @@ function setVoice(s){ VOICE=!!s; localStorage.setItem('gostop_voice',s?'1':'0');
 // 음성 미리듣기 (VOICE 토글과 무관하게 재생)
 const VOICE_PREVIEW=[['go1','원고'],['go2','투고'],['go3','쓰리고'],['go4','포고'],['go5','파이브고'],['stop','스톱'],['ppeok','뻑'],['firstppeok','첫뻑'],['ppeok3','3뻑'],['chongtong','총통'],['shake','흔들기'],['nagari','나가리'],['bomb','폭탄'],['ogwang','오광'],['sagwang','사광'],['samgwang','삼광'],['godori','고도리'],['hongdan','홍단'],['cheongdan','청단'],['chodan','초단'],['ttadak','따닥'],['jjok','쪽'],['ssul','쓸'],['naenwa','내놔'],['win','승'],['lose','패']];
 function previewVoice(k,btn){ const lang=(window.GS_LANG==='zh-TW')?'zh':'ko';
-  const tryPlay=(l,fb)=>{ try{ const a=new Audio('voice/'+k+'_'+l+'.mp3'); a.volume=1;
+  const tryPlay=(l,fb)=>{ try{ const a=new Audio('voice/'+k+'_'+l+'.mp3?v='+VOICE_VER); a.volume=1;
     a.play().then(()=>{ if(btn){btn.style.transform='scale(1.18)';setTimeout(()=>btn.style.transform='',160);} }).catch(()=>{ if(fb)tryPlay('ko',false); else toast('재생 실패(녹음 없음/음소거)'); });
   }catch(e){} };
   tryPlay(lang, lang!=='ko');   // 해당 언어 없으면 한국어 폴백
@@ -879,8 +879,9 @@ function zoomCards(d){ TZ=Math.round((TZ+d*0.12)*100)/100; applyZoom(); localSto
 function sound(n){ if(!SND)return; const map={take:'claim',play:'tile',flip:'tile',win:'win',lose:'tile'}; const fn=map[n]||'tile'; try{const a=new Audio('sounds/'+fn+'.mp3');a.volume=.4;a.play().catch(()=>{});}catch(e){} }
 // 콜 보이스: voice/<key>.mp3 (파일 없으면 조용히 무시). key: ppeok,firstppeok,ttadak,jjok,sweep,jappeok,ppeoksseuri,ssada,bomb,shake,chongtong,ppeok3,go1..go5,stop,pibak,gwangbak,meongbak,gobak,godori,win,lose,nagari,pisteal
 const _gv={};
+const VOICE_VER='2';   // 음성 파일 캐시버전 (무음 버그 수정 후 bump)
 function gsVoice(k){ if(!VOICE||!k)return; const lang=(window.GS_LANG==='zh-TW')?'zh':'ko';
-  const play=(l)=>{ try{ const a=new Audio('voice/'+k+'_'+l+'.mp3'); a.volume=.92; a.play().catch(()=>{ if(l!=='ko')play('ko'); }); }catch(e){} };
+  const play=(l)=>{ try{ const a=new Audio('voice/'+k+'_'+l+'.mp3?v='+VOICE_VER); a.volume=.92; a.play().catch(()=>{ if(l!=='ko')play('ko'); }); }catch(e){} };
   play(lang);   // 해당 언어 파일 없으면 한국어로 폴백
 }
 // 확정 족보 콜: 점수 족보가 새로 완성되면 1회 음성 (오광/사광/삼광·고도리·홍단·청단·초단)
