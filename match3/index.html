@@ -414,7 +414,7 @@ const BGM=(()=>{
   // 메인: ACE-Step 생성 트랙(mp3). 로드 실패 시 합성 루프로 폴백
   let audio=null, mp3failed=false;
   function startMp3(){ if(mp3failed)return;
-    if(!audio){ audio=new Audio('/match3/bgm.mp3?v=2'); audio.loop=true; audio.volume=.42;
+    if(!audio){ audio=new Audio('/match3/bgm.mp3?v=3'); audio.loop=true; audio.volume=.42;
       audio.onerror=()=>{ mp3failed=true; audio=null; if(on())synthStart(); }; }
     const p=audio.play(); if(p&&p.catch)p.catch(()=>{}); }
   return { on,
