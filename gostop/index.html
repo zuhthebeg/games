@@ -258,6 +258,9 @@ window.addEventListener('DOMContentLoaded', function(){
   var nav=(navigator.language||'').toLowerCase();
   window.GS_LANG=(function(){try{var s=localStorage.getItem('gs-lang');if(s)return s;}catch(e){}return nav.indexOf('zh')===0?'zh-TW':'ko';})();
   var TR=[
+    ['효과음','音效'],['음성 콜','人聲'],['음성 미리듣기','試聽人聲音效'],
+    ['원고','1 GO'],['투고','2 GO'],['쓰리고','3 GO'],['포고','4 GO'],['파이브고','5 GO'],['스톱','停'],
+    ['오광','五光'],['사광','四光'],['삼광','三光'],['쪽','吃回'],['내놔','拿來'],['패배','敗'],
     ['손패를 내서 같은 월(月) 바닥패와 짝지어 먹습니다.','出手牌與牌面上同月的牌配對吃掉。'],
     ['낸 뒤 더미에서 1장 뒤집어 또 같은 월이면 먹습니다.','出牌後從牌庫翻1張，若同月也可吃。'],
     ['점수가 7점 이상 나면 (맞고 기준) 고(계속·배수↑) 또는 스톱(끝).','分數達7點以上時，可選繼續(Go·倍數↑)或停(Stop)。'],
@@ -285,7 +288,7 @@ window.addEventListener('DOMContentLoaded', function(){
     ['💣 뒤집기 탄 ','💣 翻牌彈 '],['개 — 더미를 눌러 뒤집기','張 — 點牌庫翻牌'],['뒤집기 턴 (','翻牌回合 ('],
     ['💥 콰쾅! 폭탄!','💥 轟！炸彈！'],['멀티 로드 실패','多人載入失敗'],['전송 실패','傳送失敗'],
     ['랭킹 로딩 중','排行榜載入中'],['랭킹을 열 수 없습니다','無法開啟排行榜'],
-    ['한 번 더!','再一次！'],['3뻑! 이 판 ×2','三뻑！本局×2'],['3뻑','三뻑'],
+    ['한 번 더!','再一次！'],['3뻑! 이 판 ×2','連三卡！本局×2'],['3뻑','連三卡'],
     ['점! 고? 스톱?','點！繼續？停？'],['고? 스톱?','繼續？停？'],['고를 부르면 1고','喊繼續就是1Go'],
     ['고 (GO)','繼續(GO)'],['스톱 (STOP)','停(STOP)'],
     ['고도리','五鳥'],['홍단','紅短'],['청단','青短'],['초단','草短'],
@@ -293,20 +296,23 @@ window.addEventListener('DOMContentLoaded', function(){
     ['멍박 ×2','動物霸 ×2'],['멍박','動物霸'],['고박 ×2','賭債 ×2'],['고박','賭債'],
     ['나가리누적 ×','流局累積 ×'],['나가리 ×','流局 ×'],['나가리','流局'],
     ['흔들기 ×','搖牌 ×'],['흔들기!','搖牌！'],['흔들기','搖牌'],
-    ['3뻑 ×2','三뻑×2'],['총통! 즉시 승','總統！即勝'],['총통!','總統！'],['총통','總統'],
-    ['피뺏기','搶皮'],['따닥','連打'],['뻑쓸이','全吃'],['자뻑','吃回'],
+    ['3뻑 ×2','連三卡×2'],['총통! 즉시 승','總統！即勝'],['총통!','總統！'],['총통','總統'],
+    ['피뺏기','搶皮'],['따닥','連打'],['뻑쓸이','全吃'],['쓸','掃牌'],['자뻑','吃回'],
     ['아무도 못 났습니다','沒有人胡牌'],['다음 판 판돈','下局賭注'],['패 크기','牌大小'],
     ['메뉴로','回主選單'],['다시 하기','再玩一次'],['내 점수','我的分數'],
     ['더미','牌庫'],['소리','音效'],['설정','設定'],['닫기','關閉'],['나가기','離開'],
     ['그냥','就這樣'],['판돈','賭注'],['월 3장','月3張'],['장 쌓임','張堆疊'],
     ['쌍피','雙皮'],['굳은자','保證牌'],['먹기','吃'],['기본','基本'],['골드','金幣'],['다시','再玩'],
-    ['CPU','電腦'],['광 5장','五光'],['광 4장','四光'],['광 3장','三光'],['첫뻑','首卡住'],['광','光'],['열','動物'],['띠','帶'],['쌍','雙'],['피','皮'],['끗','動物'],
+    ['CPU','電腦'],['광 5장','五光'],['광 4장','四光'],['광 3장','三光'],['첫뻑','初次卡住'],['광','光'],['열','動物'],['띠','帶'],['쌍','雙'],['피','皮'],['끗','動物'],
     ['현재','現在'],['고 누르면','喊Go就'],['뒤집기탄','翻牌彈'],['탭해 사용 또는 패 내기','點擊使用或出牌'],
     ['나 ','我 '],['점','點'],
     ['보너스','獎金'],['폭탄','炸彈'],['뻑','卡住'],
     ['승!','勝！'],['승','勝']
   ];
   var EN=[
+    ['효과음','SFX'],['음성 콜','Voice'],['음성 미리듣기','Voice preview'],
+    ['원고','1 GO'],['투고','2 GO'],['쓰리고','3 GO'],['포고','4 GO'],['파이브고','5 GO'],['스톱','Stop'],
+    ['오광','5 Gwang'],['사광','4 Gwang'],['삼광','3 Gwang'],['첫뻑','First Ppeok'],['쪽','Jjok'],['내놔','Take'],['패배','Lose'],
     ['손패를 내서 같은 월(月) 바닥패와 짝지어 먹습니다.','Play a hand card to match & take same-month floor cards.'],
     ['낸 뒤 더미에서 1장 뒤집어 또 같은 월이면 먹습니다.','After playing, flip 1 from the deck; same month takes it too.'],
     ['점수가 7점 이상 나면 (맞고 기준) 고(계속·배수↑) 또는 스톱(끝).','At 7+ points, choose Go (continue, ×mult) or Stop (end).'],
@@ -343,7 +349,7 @@ window.addEventListener('DOMContentLoaded', function(){
     ['나가리누적 ×','Nagari carry ×'],['나가리 ×','Nagari ×'],['나가리','Nagari'],
     ['흔들기 ×','Shake ×'],['흔들기!','Shake!'],['흔들기','Shake'],
     ['3뻑 ×2','3-ppeok ×2'],['총통! 즉시 승','Chongtong! Instant win'],['총통!','Chongtong!'],['총통','Chongtong'],
-    ['피뺏기','pi steal'],['따닥','Ttadak'],['뻑쓸이','Sweep-ppeok'],['자뻑','Self-ppeok'],
+    ['피뺏기','pi steal'],['따닥','Ttadak'],['뻑쓸이','Sweep-ppeok'],['쓸','Sweep'],['자뻑','Self-ppeok'],
     ['아무도 못 났습니다','No one won'],['다음 판 판돈','Next round bet'],['패 크기','Card size'],
     ['메뉴로','Menu'],['다시 하기','Play again'],['내 점수','My score'],
     ['더미','Deck'],['소리','Sound'],['설정','Settings'],['닫기','Close'],['나가기','Leave'],
@@ -873,7 +879,7 @@ function cpuReveal(card){ if(!card)return; const el=$('cpuReveal'); if(!el)retur
 function setSnd(s){ SND=!!s; localStorage.setItem('gostop_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
 function setVoice(s){ VOICE=!!s; localStorage.setItem('gostop_voice',s?'1':'0'); document.querySelectorAll('[data-voice]').forEach(b=>b.classList.toggle('on',+b.dataset.voice===(s?1:0))); }
 // 음성 미리듣기 (VOICE 토글과 무관하게 재생)
-const VOICE_PREVIEW=[['go1','원고'],['go2','투고'],['go3','쓰리고'],['go4','포고'],['go5','파이브고'],['stop','스톱'],['ppeok','뻑'],['firstppeok','첫뻑'],['ppeok3','3뻑'],['chongtong','총통'],['shake','흔들기'],['nagari','나가리'],['bomb','폭탄'],['ogwang','오광'],['sagwang','사광'],['samgwang','삼광'],['godori','고도리'],['hongdan','홍단'],['cheongdan','청단'],['chodan','초단'],['ttadak','따닥'],['jjok','쪽'],['ssul','쓸'],['naenwa','내놔'],['win','승'],['lose','패']];
+const VOICE_PREVIEW=[['go1','원고'],['go2','투고'],['go3','쓰리고'],['go4','포고'],['go5','파이브고'],['stop','스톱'],['ppeok','뻑'],['firstppeok','첫뻑'],['ppeok3','3뻑'],['chongtong','총통'],['shake','흔들기'],['nagari','나가리'],['bomb','폭탄'],['ogwang','오광'],['sagwang','사광'],['samgwang','삼광'],['godori','고도리'],['hongdan','홍단'],['cheongdan','청단'],['chodan','초단'],['ttadak','따닥'],['jjok','쪽'],['ssul','쓸'],['naenwa','내놔'],['win','승'],['lose','패배']];
 function previewVoice(k,btn){ const lang=(window.GS_LANG==='zh-TW')?'zh':'ko';
   const tryPlay=(l,fb)=>{ try{ const a=new Audio('voice/'+k+'_'+l+'.mp3?v='+VOICE_VER); a.volume=1;
     a.play().then(()=>{ if(btn){btn.style.transform='scale(1.18)';setTimeout(()=>btn.style.transform='',160);} }).catch(()=>{ if(fb)tryPlay('ko',false); else toast('재생 실패(녹음 없음/음소거)'); });
@@ -1046,7 +1052,7 @@ function mpResult(v){
   if(MP._resultShown)return; MP._resultShown=true;
   const meWin=v.winnerSeat===v.mySeat; const my=(v.scores&&v.scores[MP.myUserId])||0;
   if(meWin && my>0 && typeof GameRankings!=='undefined'){ try{ GameRankings.submit('gostop',{score:Math.max(1,Math.round(my/10000))}); }catch(e){} }
-  $('r-title').textContent=v.winnerSeat==null?'나가리':(meWin?'🎉 승!':'패');
+  $('r-title').textContent=v.winnerSeat==null?'나가리':(meWin?'🎉 승!':'패배');
   $('r-detail').innerHTML=mpEsc(v.endReason||'');
   $('r-pt').innerHTML='<span style="color:'+(my>=0?'var(--green)':'var(--red)')+'">'+(my>=0?'+':'')+my.toLocaleString()+'G</span>';
   document.querySelectorAll('#result .close').forEach(b=>{ b.textContent='메뉴로'; b.onclick=()=>{ hide('result'); if(MP._poll)clearInterval(MP._poll); MP.active=false; try{MP.client&&MP.client.leaveRoom&&MP.client.leaveRoom();}catch(e){} quitMenu(); }; });
