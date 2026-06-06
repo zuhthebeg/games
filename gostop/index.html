@@ -765,12 +765,12 @@ function settle(winner,sc,opts){
   opts=opts||{};
   if(G.over)return; G.over=true;
   const loser=1-winner; const lcap=G.players[loser].cap; const ls=score(lcap);
-  let pt; const tags=[]; let baseP=0, mult=1; const multTags=[];   // 배수 표시용
+  let pt; const tags=[]; let baseP=0, mult=1; const multTags=[]; let goPtBonus=0;   // 배수/고보너스 표시용
   if(opts.ppuk3){ pt=10; tags.push('3뻑 10점'); }
   else if(opts.chongtong){ pt=10; tags.push('총통'); }
   else {
     pt=sc.total; baseP=sc.total;
-    if(G.goBy===winner && G.go>0){ pt+=Math.min(G.go,2); baseP=pt; if(G.go>=3){const f=Math.pow(2,G.go-2);mult*=f;multTags.push(G.go+'고 ×'+f);} tags.push(G.go+'고'); }  // 정통: 1·2고 +점, 3고부터 ×2
+    if(G.goBy===winner && G.go>0){ goPtBonus=Math.min(G.go,2); pt+=goPtBonus; baseP=pt; if(G.go>=3){const f=Math.pow(2,G.go-2);mult*=f;multTags.push(G.go+'고 ×'+f);} tags.push(G.go+'고'); }  // 정통: 1·2고 +점, 3고부터 ×2
     if(ls.pi<=6){ mult*=2; tags.push('피박'); multTags.push('피박 ×2'); }
     if(sc.gw>=3 && ls.gw===0){ mult*=2; tags.push('광박'); multTags.push('광박 ×2'); }
     const wyul=G.players[winner].cap.filter(c=>c.role==='yul').length;
@@ -790,7 +790,7 @@ function settle(winner,sc,opts){
   const calcLine=(!opts.ppuk3 && !opts.chongtong && multTags.length)
     ? `<div style="margin-top:6px;color:var(--gold);font-weight:700">기본 ${baseP}점 ${multTags.map(t=>'× '+t.replace(/.* ×/,'')).join(' ')} = ${pt}점</div><div style="font-size:.78rem;color:var(--muted)">${multTags.join(' · ')}</div>`
     : (tags.length?`<div style="color:var(--gold);margin-top:6px">${tags.join(' · ')}</div>`:'');
-  $('r-detail').innerHTML = (opts.ppuk3?'<div>3뻑 즉시 승</div>':opts.chongtong?'<div>총통! 즉시 승</div>':sc.parts.map(p=>`<div>${p[0]} <b>+${p[1]}</b></div>`).join('')) + calcLine;
+  $('r-detail').innerHTML = (opts.ppuk3?'<div>3뻑 즉시 승</div>':opts.chongtong?'<div>총통! 즉시 승</div>':(sc.parts.map(p=>`<div>${p[0]} <b>+${p[1]}</b></div>`).join('')+(goPtBonus>0?`<div>${G.go}고 <b>+${goPtBonus}</b></div>`:''))) + calcLine;
   $('r-pt').innerHTML=pt+'점 <span style="font-size:1.05rem;color:'+(winner===0?'var(--green)':'var(--red)')+'">'+(winner===0?'+':'−')+gold.toLocaleString()+'G</span>';
   sound(winner===0?'win':'lose');
   // 콜 보이스: 박/총통/3뻑 → 잠시 후 승패
