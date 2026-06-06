@@ -300,7 +300,7 @@ window.addEventListener('DOMContentLoaded', function(){
     ['더미','牌庫'],['소리','音效'],['설정','設定'],['닫기','關閉'],['나가기','離開'],
     ['그냥','就這樣'],['판돈','賭注'],['월 3장','月3張'],['장 쌓임','張堆疊'],
     ['쌍피','雙皮'],['굳은자','穩牌'],['먹기','吃'],['기본','基本'],['골드','金幣'],['다시','再玩'],
-    ['광','光'],['열','十'],['띠','帶'],['쌍','雙'],['피','皮'],['끗','十'],
+    ['CPU','電腦'],['광','光'],['열','動物'],['띠','帶'],['쌍','雙'],['피','皮'],['끗','動物'],
     ['현재','現在'],['고 누르면','喊Go就'],['뒤집기탄','翻牌彈'],['탭해 사용 또는 패 내기','點擊使用或出牌'],
     ['나 ','我 '],['점','點'],
     ['승!','勝！'],['승','勝']
@@ -720,16 +720,16 @@ function score(cap){
     let total=0; const parts=[];
     let gp=0; const ng=gw.length, hasBi=gw.some(c=>c.bigwang);
     if(ng>=5)gp=15; else if(ng===4)gp=4; else if(ng===3)gp=hasBi?2:3;
-    if(gp){total+=gp;parts.push(['광 '+ng+'개',gp]);}
+    if(gp){total+=gp;parts.push(['광 '+ng+'장',gp]);}
     const ny=yul.length; let yp=0; if(ny>=5)yp=ny-4;
     const godori=yul.filter(c=>c.godori).length; if(godori>=3){yp+=5;parts.push(['고도리',5]);}
-    if(ny>=5)parts.push(['끗 '+ny+'개',ny-4]); total+=yp;
+    if(ny>=5)parts.push(['끗 '+ny+'장',ny-4]); total+=yp;
     const nt=tti.length; let tp=0; if(nt>=5)tp+=nt-4;
     const hong=tti.filter(c=>c.tti==='hong').length, chung=tti.filter(c=>c.tti==='chung').length, cho=tti.filter(c=>c.tti==='cho').length;
     if(hong>=3){tp+=3;parts.push(['홍단',3]);}
     if(chung>=3){tp+=3;parts.push(['청단',3]);}
     if(cho>=3){tp+=3;parts.push(['초단',3]);}
-    if(nt>=5)parts.push(['띠 '+nt+'개',nt-4]); total+=tp;
+    if(nt>=5)parts.push(['띠 '+nt+'장',nt-4]); total+=tp;
     const np=pi.reduce((a,c)=>a+(c.ssangpi?2:1),0); let pp=0;
     if(np>=10){pp=np-9;parts.push(['피 '+np+'장',pp]);} total+=pp;
     return {total,parts,gw:ng,pi:np};
