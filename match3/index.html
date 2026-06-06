@@ -255,11 +255,11 @@ async function resolve(){
     lastMatch=Date.now(); clearHint();          // 성공 매치 → 힌트 타이머 리셋
     const multi = res.groups>=2;                       // 한 번에 여러 그룹 동시 매치 = 콤보
     const comboN = chain>=2 ? chain : (multi ? res.groups : 1);
-    // 콤보 3+ → 콤보 폭탄: 매치 중심에 콤보수만큼 NxN(3×3~6×6) 추가 폭발
+    // 콤보 3+ → 콤보 폭탄: 매치 중심에 콤보수만큼 NxN(3×3 ~ 최대 5×5) 추가 폭발
     let comboBomb=0;
     if(comboN>=3 && !res.full){
       let sr=0,sc=0,cnt=0; res.clear.forEach(i=>{ sr+=Math.floor(i/N); sc+=i%N; cnt++; });
-      const cr=Math.round(sr/cnt), cc=Math.round(sc/cnt), S=Math.min(comboN,6), off=Math.floor((S-1)/2);
+      const cr=Math.round(sr/cnt), cc=Math.round(sc/cnt), S=Math.min(comboN,5), off=Math.floor((S-1)/2);
       comboBomb=S;
       for(let dr=-off;dr<=S-1-off;dr++)for(let dc=-off;dc<=S-1-off;dc++){ const nr=cr+dr,nc=cc+dc; if(inBounds(nr,nc))res.clear.add(idx(nr,nc)); }
     }
