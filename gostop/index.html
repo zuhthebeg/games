@@ -429,6 +429,8 @@ const ROLE_ORD={gwang:0,yul:1,tti:2,pi:3};
 function sortHand(p){ G.players[p].hand.sort((a,b)=> (a.m-b.m) || ((ROLE_ORD[a.role]??9)-(ROLE_ORD[b.role]??9)) ); }
 function tchar(c){ return c.gwang?'광':c.role==='yul'?'열':c.role==='tti'?'띠':(c.ssangpi?'쌍':'피'); }
 function cardKey(c){ return c.role+(c.ssangpi?'S':'')+(c.godori?'G':'')+(c.tti||''); }
+// 선택 불필요 = 후보가 전부 피(쌍피 포함, 값 높은 걸 자동으로 먹으면 됨) 또는 전부 동일패. 띠 색(단) 등 전략 선택일 때만 물음
+function autoTakeOK(cards){ if(!cards||cards.length<2)return true; if(cards.every(c=>c.role==='pi'))return true; const k=cardKey(cards[0]); return cards.every(c=>cardKey(c)===k); }
 function cardValue(c){ return c.gwang?4:c.ssangpi?3:c.role==='yul'?2:c.role==='tti'?2:1; }
 function playFlow(p, card, fromHand, pick){
   // remove from hand if fromHand
@@ -542,8 +544,8 @@ async function takeTurn(p, handCard, opts){
     else { captured.push(handCards[0], preM[0]); }
   } else if(beforeM===2){
     if(flipSame){ captured.push(handCards[0], preM[0], preM[1], flipCard); }   // 따닥
-    else { let take; const same=cardKey(preM[0])===cardKey(preM[1]);
-           if(p===0 && !same){ take=await askPick(preM); }                      // 가치 다를 때만 선택
+    else { let take;
+           if(p===0 && !autoTakeOK(preM)){ take=await askPick(preM); }            // 띠 색 등 전략 선택일 때만
            else { take=preM.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]; }
            captured.push(handCards[0], take); }
   } else {                                                       // 뻑쓸이/자뻑
@@ -554,7 +556,7 @@ async function takeTurn(p, handCard, opts){
   if(flipCard && !flipSame && !inCap(flipCard.id)){
     const fm=G.table.filter(c=>c.m===flipCard.m && c.id!==flipCard.id && !inCap(c.id));
     if(fm.length>=3){ captured.push(flipCard,...fm); flipSweepM=flipCard.m; }   // 더미패가 뻑 쓸기
-    else if(fm.length===2){ let take; const same=cardKey(fm[0])===cardKey(fm[1]); if(p===0 && !same){ take=await askPick(fm); } else { take=fm.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]; } captured.push(flipCard, take); }
+    else if(fm.length===2){ let take; if(p===0 && !autoTakeOK(fm)){ take=await askPick(fm); } else { take=fm.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]; } captured.push(flipCard, take); }
     else if(fm.length===1) captured.push(flipCard, fm[0]);
   }
 
@@ -641,7 +643,7 @@ async function flipOnlyTurn(p){
   G.table.push(flip); G._newIds=new Set([flip.id]); G._newCapIds=null; sound('flip'); renderAll(); await sleep(520);
   let captured=[]; const stags=[]; let steals=0; const stolen=[];
   if(preM.length>=3) captured=[flip,...preM];
-  else if(preM.length===2){ let take; const same=cardKey(preM[0])===cardKey(preM[1]); if(p===0 && !same){ take=await askPick(preM); } else { take=preM.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]; } captured=[flip,take]; }
+  else if(preM.length===2){ let take; if(p===0 && !autoTakeOK(preM)){ take=await askPick(preM); } else { take=preM.slice().sort((a,b)=>cardValue(b)-cardValue(a))[0]; } captured=[flip,take]; }
   else if(preM.length===1) captured=[flip,preM[0]];
   if(preM.length>=3){ const own=G.ppukOwner[playM]; if(own===p){steals+=2;stags.push('자뻑');}else{steals++;stags.push('뻑쓸이');} if(own!=null)delete G.ppukOwner[playM]; }
   const willEmpty=(G.table.length-captured.length)===0 && captured.length>0;
@@ -1016,7 +1018,7 @@ function mpTapCard(i){
   MP._sel=-1;
   const m=c.m, handCnt=myhand.filter(x=>x.m===m).length, bottom=mpSameMonth(v.table,m).length;
   if(handCnt>=3){ return mpAskBomb(c, bottom>=1); }
-  if(bottom===2){ const cands=v.table.filter(x=>x.m===m); const k=cands.map(x=>x.role+(x.ssangpi?'S':'')+(x.tti||'')); if(k[0]!==k[1]) return mpAskPick(cands,c); }
+  if(bottom===2){ const cands=v.table.filter(x=>x.m===m); if(!autoTakeOK(cands)) return mpAskPick(cands,c); }
   mpSend({type:'PLAY',payload:{cardId:c.id}});
 }
 function mpAskBomb(card, canBomb){
