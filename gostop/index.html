@@ -516,7 +516,7 @@ async function takeTurn(p, handCard, opts){
   // 1) 손패 바닥에 착지 (짝 붙는 느낌)
   handCards.forEach(c=>G.table.push(c));
   G._newIds=new Set(handCards.map(c=>c.id)); G._newCapIds=null;
-  sound('play'); renderAll(); await sleep(1000);   // 패 놓기 "착" → 1초 공백 → 더미 뒤집기 "착"
+  sound('play'); renderAll(); await sleep(1500);   // 패 놓기 "착" → 1.5초 공백 → 더미 뒤집기 "착" (놓기 애니는 CSS 고정, 영향 없음)
 
   // 2) 더미 뒤집기 → 바닥 착지
   let flipCard=null;
