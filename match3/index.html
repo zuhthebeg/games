@@ -52,6 +52,15 @@
   @keyframes tplus{0%{opacity:0;transform:translateX(-50%) translateY(6px) scale(.7)}25%{opacity:1;transform:translateX(-50%) translateY(-4px) scale(1.1)}100%{opacity:0;transform:translateX(-50%) translateY(-26px) scale(1)}}
   .cell.drop{animation:drop .22s cubic-bezier(.3,1.2,.4,1)}
   @keyframes drop{from{transform:translateY(-18px)}to{transform:translateY(0)}}
+  /* 과즙 터짐: 중앙 블롭 + 사방 물방울 */
+  .juice{position:fixed;width:26px;height:26px;z-index:54;pointer-events:none;transform:translate(-50%,-50%);
+    background:radial-gradient(circle,var(--jc),transparent 68%);border-radius:50%;animation:juiceBlob .42s ease-out forwards}
+  .juice::before,.juice::after{content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:var(--jc);box-shadow:0 0 0 0 var(--jc)}
+  .juice::before{animation:drop1 .42s ease-out forwards}
+  .juice::after{animation:drop2 .42s ease-out forwards}
+  @keyframes juiceBlob{0%{opacity:.95;transform:translate(-50%,-50%) scale(.4)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.7)}}
+  @keyframes drop1{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(16px,-14px) scale(.4)}}
+  @keyframes drop2{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(-15px,13px) scale(.4)}}
   #combo{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);z-index:6;pointer-events:none;
     font-size:2.1rem;font-weight:900;color:#fff;text-shadow:0 3px 12px rgba(0,0,0,.8);opacity:0}
   #combo.on{animation:cb .8s ease-out}
@@ -111,7 +120,7 @@ const I18N={
   ko:{title:'팝매치',restart:'다시',score:'점수',time:'시간',best:'최고',moves:'이동',
       howto:'블록을 드래그해서 3개 이상 맞추세요',start:'시작',goalHint:'60초 안에 콤보·폭탄·컬러밤으로 최고점 도전!',
       timeup:'타임 오버!',finalScore:'최종 점수',again:'다시 하기',langBtn:'🌐 繁中',
-      combo:(n)=>n+' 콤보!',comboWords:['굿!','나이스!','대박!','멋져!','파워!','폭발!','미쳤다!','갓!'],bomb:'💥 폭탄!',colorbomb:'🌈 올터짐!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
+      combo:(n)=>n+' 콤보!',comboWords:['굿!','나이스!','대박!','멋져!','파워!','폭발!','미쳤다!','갓!'],bomb:'💥 폭탄!',colorbomb:'🌈 싹쓸이!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   'zh-TW':{title:'啵啵消',restart:'重來',score:'分數',time:'時間',best:'最佳',moves:'步數',
       howto:'拖曳方塊連成3個以上消除',start:'開始',goalHint:'60秒內用連擊·炸彈·全消挑戰最高分！',
       timeup:'時間到！',finalScore:'最終分數',again:'再玩一次',langBtn:'🌐 EN',
@@ -138,8 +147,15 @@ let grid=[], cells=[], score=0, timeLeft=DUR, timerId=null, busy=false, playing=
 let sel=null; // {r,c}
 let activeTypes=[0,1,2,3,4,5]; // 살아있는 과일 종류(5매치+30초↓면 제거)
 
+const FACE_COLORS=['#ff5d6c','#9b5cff','#ffe14d','#ff9f3c','#5a8cff','#ff6fae']; // 과즙 색(과일 종류별)
 function rnd(n){return Math.floor(Math.random()*n);}
 function randType(){ return activeTypes[rnd(activeTypes.length)]; }
+function removeTypeTemp(type){ if(!activeTypes.includes(type)||activeTypes.length<=3)return;
+  activeTypes=activeTypes.filter(x=>x!==type);
+  setTimeout(()=>{ if(playing && !activeTypes.includes(type)){ activeTypes.push(type); activeTypes.sort((a,b)=>a-b); } }, 5000); }
+function juiceSplash(i,type){ const cell=cells[i]; if(!cell)return; const r=cell.getBoundingClientRect();
+  const sp=document.createElement('div'); sp.className='juice'; sp.style.left=(r.left+r.width/2)+'px'; sp.style.top=(r.top+r.height/2)+'px';
+  sp.style.setProperty('--jc', FACE_COLORS[type]||'#fff'); document.body.appendChild(sp); setTimeout(()=>sp.remove(),440); }
 function idx(r,c){return r*N+c;}
 function inBounds(r,c){return r>=0&&r<N&&c>=0&&c<N;}
 
@@ -210,15 +226,15 @@ async function resolve(){
     const comboN = chain>=2 ? chain : (multi ? res.groups : 1);
     score += res.clear.size*10*chain + (res.cross?120:0) + (res.five?200:0);
     // (시간 추가 없음 — 고정 60초 타임어택)
-    // 5개 컬러밤: 30초 이하 남았으면 그 과일 종류 영구 제외(최소 3종 유지)
-    if(res.five && res.fiveType!=null && timeLeft<30 && activeTypes.length>3){ activeTypes=activeTypes.filter(x=>x!==res.fiveType); }
+    // 5개 컬러밤: 그 과일 종류를 5초간만 제외(이후 복귀, 최소 3종 유지)
+    if(res.five && res.fiveType!=null) removeTypeTemp(res.fiveType);
     if(res.five) showCombo(comboN,'color');
     else if(res.cross) showCombo(comboN,'bomb');
     else if(comboN>=2) showCombo(comboN);
     const strong = big || res.maxRun>=4;        // 4개 이상이면 강한 팝
     if(big) bigEffect(res.cross||res.five);
     else if(res.maxRun>=4){ const bw=document.querySelector('.boardwrap'); bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(()=>bw.classList.remove('shake'),340); vibe(20); }
-    res.clear.forEach(i=>{ cells[i].classList.add('pop'); if(strong)cells[i].classList.add('big'); });
+    let _jc=0; res.clear.forEach(i=>{ cells[i].classList.add('pop'); if(strong)cells[i].classList.add('big'); if(_jc<24){ juiceSplash(i,grid[i]); _jc++; } });
     sound('pop', chain + (big?2:0) + (strong?1:0));
     await sleep(strong?250:190);
     res.clear.forEach(i=>{ grid[i]=null; cells[i].classList.remove('pop','big'); });
@@ -294,7 +310,7 @@ function clearSel(){ sel=null; clearSelVis(); }
 
 function comboText(n,kind){ if(kind==='bomb')return t('bomb'); if(kind==='color')return t('colorbomb');
   const w=t('comboWords'); return w[Math.min(n-2,w.length-1)]||(n+'!'); }
-function showCombo(n,kind){ const el=document.getElementById('combo'); el.textContent=comboText(n,kind);
+function showCombo(n,kind){ const el=document.getElementById('combo'); el.textContent=comboText(n,kind)+(n>=2?(' ×'+n):'');
   el.style.color = kind==='color'?'#7fffb0':(kind==='bomb'?'#ffd34d':'#fff');
   el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
   if(n>=3||kind){ const bw=document.querySelector('.boardwrap'); bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(()=>bw.classList.remove('shake'),340); } }
