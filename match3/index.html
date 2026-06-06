@@ -120,15 +120,15 @@ const I18N={
   ko:{title:'팝매치',restart:'다시',score:'점수',time:'시간',best:'최고',moves:'이동',
       howto:'블록을 드래그해서 3개 이상 맞추세요',start:'시작',goalHint:'60초 안에 콤보·폭탄·컬러밤으로 최고점 도전!',
       timeup:'타임 오버!',finalScore:'최종 점수',again:'다시 하기',langBtn:'🌐 繁中',
-      combo:(n)=>n+' 콤보!',comboWords:['굿!','나이스!','대박!','멋져!','파워!','폭발!','미쳤다!','갓!'],bomb:'💥 폭탄!',colorbomb:'🌈 싹쓸이!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
+      combo:(n)=>n+' 콤보!',comboWords:['굿!','나이스!','대박!','멋져!','파워!','폭발!','미쳤다!','갓!'],bomb:'💥 폭탄!',line:'➡️ 라인 클리어!',full:'🌟 올클리어!',colorbomb:'🌈 싹쓸이!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   'zh-TW':{title:'啵啵消',restart:'重來',score:'分數',time:'時間',best:'最佳',moves:'步數',
       howto:'拖曳方塊連成3個以上消除',start:'開始',goalHint:'60秒內用連擊·炸彈·全消挑戰最高分！',
       timeup:'時間到！',finalScore:'最終分數',again:'再玩一次',langBtn:'🌐 EN',
-      combo:(n)=>n+' 連擊！',comboWords:['不錯！','讚！','厲害！','超棒！','爆發！','瘋了！','神！','無敵！'],bomb:'💥 炸彈！',colorbomb:'🌈 全消！',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
+      combo:(n)=>n+' 連擊！',comboWords:['不錯！','讚！','厲害！','超棒！','爆發！','瘋了！','神！','無敵！'],bomb:'💥 炸彈！',line:'➡️ 整列消！',full:'🌟 全清！',colorbomb:'🌈 全消！',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   en:{title:'Pop Match',restart:'Reset',score:'Score',time:'Time',best:'Best',moves:'Moves',
       howto:'Drag blocks to match 3 or more',start:'Start',goalHint:'Score as high as you can in 60s with combos, bombs & color blasts!',
       timeup:"Time's up!",finalScore:'Final score',again:'Play again',langBtn:'🌐 한국어',
-      combo:(n)=>n+' Combo!',comboWords:['Good!','Nice!','Great!','Super!','Wild!','Insane!','God!','Unreal!'],bomb:'💥 Bomb!',colorbomb:'🌈 Clear All!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'}};
+      combo:(n)=>n+' Combo!',comboWords:['Good!','Nice!','Great!','Super!','Wild!','Insane!','God!','Unreal!'],bomb:'💥 Bomb!',line:'➡️ Line!',full:'🌟 Full Clear!',colorbomb:'🌈 Clear All!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'}};
 let LANG=(function(){try{const s=localStorage.getItem('m3-lang');if(s)return s;}catch(e){}
   const n=(navigator.language||'').toLowerCase();return n.startsWith('zh')?'zh-TW':n.startsWith('ko')?'ko':'en';})();
 function t(k){return (I18N[LANG]||I18N.ko)[k];}
@@ -204,15 +204,17 @@ function computeClears(){
   for(let c=0;c<N;c++){ let run=1; for(let r=1;r<=N;r++){ const same=r<N&&grid[idx(r,c)]!=null&&grid[idx(r,c)]===grid[idx(r-1,c)]; if(same)run++; else { if(run>=3){ const cs=[]; for(let k=1;k<=run;k++)cs.push(idx(r-k,c)); runs.push({o:'v',line:c,len:run,cells:cs}); } run=1; } } }
   const matched=new Set(), hSet=new Set(), vSet=new Set(); let maxRun=0;
   runs.forEach(rn=>{ maxRun=Math.max(maxRun,rn.len); rn.cells.forEach(i=>{ matched.add(i); (rn.o==='h'?hSet:vSet).add(i); }); });
-  const clear=new Set(matched); let cross=false; let five=false;
-  // T/크로스(가로·세로 동시) → 그 자리 폭탄: 3×3(9칸) 제거
+  const clear=new Set(matched); let cross=false, line=false, color=false, full=false, colorType=null;
+  // T/크로스(가로·세로 동시) → 폭탄: 3×3(9칸)
   matched.forEach(i=>{ if(hSet.has(i)&&vSet.has(i)){ cross=true; const r=Math.floor(i/N),c=i%N;
     for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){ const nr=r+dr,nc=c+dc; if(inBounds(nr,nc))clear.add(idx(nr,nc)); } } });
-  // 5개 일렬 → 아이템 발동: 그 종류 과일 전부 제거(컬러밤). 4개는 그냥 4칸만.
-  let fiveType=null;
-  runs.forEach(rn=>{ if(rn.len>=5){ five=true; fiveType=grid[rn.cells[0]]; } });
-  if(five && fiveType!=null){ for(let i=0;i<N*N;i++) if(grid[i]===fiveType) clear.add(i); }
-  return {clear,maxRun,cross,five,fiveType,groups:runs.length};
+  // 런 길이별 베리에이션: 4=라인 / 5=싹쓸이(컬러밤) / 6+=올클리어
+  runs.forEach(rn=>{
+    if(rn.len>=6){ full=true; for(let i=0;i<N*N;i++)clear.add(i); }
+    else if(rn.len===5){ color=true; colorType=grid[rn.cells[0]]; for(let i=0;i<N*N;i++) if(grid[i]===colorType)clear.add(i); }
+    else if(rn.len===4){ line=true; if(rn.o==='h'){ for(let c=0;c<N;c++)clear.add(idx(rn.line,c)); } else { for(let r=0;r<N;r++)clear.add(idx(r,rn.line)); } }
+  });
+  return {clear,maxRun,cross,line,color,full,colorType,groups:runs.length};
 }
 async function resolve(){
   let chain=0;
@@ -221,19 +223,21 @@ async function resolve(){
     if(res.clear.size===0) break;
     chain++;
     lastMatch=Date.now(); clearHint();          // 성공 매치 → 힌트 타이머 리셋
-    const big = res.cross || res.five;          // 폭탄/컬러밤 = 강력 매치
-    const multi = res.groups>=2;                // 한 번에 여러 그룹 동시 매치 = 콤보
+    const big = res.cross || res.color || res.full;   // 폭탄/싹쓸이/올클리어 = 강력 매치
+    const multi = res.groups>=2;                       // 한 번에 여러 그룹 동시 매치 = 콤보
     const comboN = chain>=2 ? chain : (multi ? res.groups : 1);
-    score += res.clear.size*10*chain + (res.cross?120:0) + (res.five?200:0);
+    score += res.clear.size*10*chain + (res.line?60:0) + (res.cross?120:0) + (res.color?200:0) + (res.full?500:0);
     // (시간 추가 없음 — 고정 60초 타임어택)
-    // 5개 컬러밤: 그 과일 종류를 5초간만 제외(이후 복귀, 최소 3종 유지)
-    if(res.five && res.fiveType!=null) removeTypeTemp(res.fiveType);
-    if(res.five) showCombo(comboN,'color');
+    // 싹쓸이(5): 그 과일 종류를 5초간만 제외(이후 복귀, 최소 3종 유지)
+    if(res.color && res.colorType!=null) removeTypeTemp(res.colorType);
+    if(res.full) showCombo(comboN,'full');
+    else if(res.color) showCombo(comboN,'color');
     else if(res.cross) showCombo(comboN,'bomb');
+    else if(res.line) showCombo(comboN,'line');
     else if(comboN>=2) showCombo(comboN);
-    const strong = big || res.maxRun>=4;        // 4개 이상이면 강한 팝
-    if(big) bigEffect(res.cross||res.five);
-    else if(res.maxRun>=4){ const bw=document.querySelector('.boardwrap'); bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(()=>bw.classList.remove('shake'),340); vibe(20); }
+    const strong = big || res.line;             // 라인 이상이면 강한 팝
+    if(big) bigEffect(res.full);
+    else if(res.line){ const bw=document.querySelector('.boardwrap'); bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(()=>bw.classList.remove('shake'),340); vibe(22); }
     let _jc=0; res.clear.forEach(i=>{ cells[i].classList.add('pop'); if(strong)cells[i].classList.add('big'); if(_jc<24){ juiceSplash(i,grid[i]); _jc++; } });
     sound('pop', chain + (big?2:0) + (strong?1:0));
     await sleep(strong?250:190);
@@ -308,7 +312,7 @@ function markSel(){ clearSelVis(); if(sel)cells[idx(sel.r,sel.c)].classList.add(
 function clearSelVis(){ cells.forEach(c=>c.classList.remove('sel')); }
 function clearSel(){ sel=null; clearSelVis(); }
 
-function comboText(n,kind){ if(kind==='bomb')return t('bomb'); if(kind==='color')return t('colorbomb');
+function comboText(n,kind){ if(kind==='full')return t('full'); if(kind==='color')return t('colorbomb'); if(kind==='bomb')return t('bomb'); if(kind==='line')return t('line');
   const w=t('comboWords'); return w[Math.min(n-2,w.length-1)]||(n+'!'); }
 function showCombo(n,kind){ const el=document.getElementById('combo'); el.textContent=comboText(n,kind)+(n>=2?(' ×'+n):'');
   el.style.color = kind==='color'?'#7fffb0':(kind==='bomb'?'#ffd34d':'#fff');
