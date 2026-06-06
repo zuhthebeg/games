@@ -482,7 +482,7 @@ async function takeTurn(p, handCard, opts){
     pl.hand.splice(pl.hand.findIndex(c=>c.id===handCard.id),1);
     handCards=[handCard];
     if(p===0) sortHand(0);
-    if(handCountM>=3 && G.shakeMult[p]===1 && (opts.shake || (p===1 && beforeM>=1))){ G.shakeMult[p]=2; toast((p===0?'':'CPU ')+'흔들기! ×2'); }
+    if(handCountM>=3 && G.shakeMult[p]===1 && (opts.shake || (p===1 && beforeM>=1))){ G.shakeMult[p]=2; toast((p===0?'':'CPU ')+'흔들기! ×2'); gsVoice('shake'); }
   }
 
   // 1) 손패 바닥에 착지 (짝 붙는 느낌)
@@ -506,8 +506,8 @@ async function takeTurn(p, handCard, opts){
   } else if(beforeM===0){
     if(flipSame){ captured.push(...handCards, flipCard); }      // 쪽
   } else if(beforeM===1){
-    if(flipSame){ ppuk=true; G.ppukCount[p]=(G.ppukCount[p]||0)+1; G.ppukOwner[playM]=p; toast((p===0?'':'CPU ')+'뻑! ('+G.ppukCount[p]+')');
-      if(G.playCount && G.playCount[p]===1){ // 첫뻑 = 그 플레이어의 첫 턴에 난 뻑만 (이후 턴 뻑은 보너스 없음)
+    if(flipSame){ ppuk=true; G.ppukCount[p]=(G.ppukCount[p]||0)+1; G.ppukOwner[playM]=p; toast((p===0?'':'CPU ')+'뻑! ('+G.ppukCount[p]+')'); gsVoice('ppeok');
+      if(G.playCount && G.playCount[p]===1){ gsVoice('firstppeok'); // 첫뻑 = 그 플레이어의 첫 턴에 난 뻑만 (이후 턴 뻑은 보너스 없음)
         if(p===0){ const fb=300000*BET; if(typeof SharedWallet!=='undefined'&&SharedWallet._initialized){ try{ SharedWallet.addGold(fb); }catch(e){} } setTimeout(()=>toast('🎉 첫뻑 보너스 +'+fb.toLocaleString()+'G'),500); } else setTimeout(()=>toast('CPU 첫뻑'),500); } }
     else { captured.push(handCards[0], preM[0]); }
   } else if(beforeM===2){
@@ -556,7 +556,7 @@ async function takeTurn(p, handCard, opts){
 
   if(bomb){ if(!G.flipOwed)G.flipOwed=[0,0]; G.flipOwed[p]+=2; }   // 폭탄: 다음 자기 차례 2번 뒤집기전용
   // 3뻑 = 즉시 승리(10점)
-  if(ppuk && G.ppukCount[p]>=3){ toast((p===0?'':'CPU ')+'3뻑! 승리'); await sleep(700); return settle(p, score(pl.cap), {ppuk3:true}); }
+  if(ppuk && G.ppukCount[p]>=3){ toast((p===0?'':'CPU ')+'3뻑! 승리'); gsVoice('ppeok3'); await sleep(700); return settle(p, score(pl.cap), {ppuk3:true}); }
   // score
   const sc=score(pl.cap);
   const prev=G.lastScore[p];
@@ -569,7 +569,7 @@ async function takeTurn(p, handCard, opts){
       return settle(0, sc);
     } else {
       const goAgain = canGo && sc.total<=9 && G.deck.length>=4 && Math.random()<0.5;
-      if(goAgain){ G.go++; G.goBy=1; toast('CPU '+G.go+'고!'); await sleep(700); return advance(); }
+      if(goAgain){ G.go++; G.goBy=1; toast('CPU '+G.go+'고!'); gsVoice('go'+Math.min(G.go,5)); await sleep(700); return advance(); }
       else return settle(1, sc);
     }
   }
@@ -631,7 +631,7 @@ async function flipOnlyTurn(p){
     }
     const goAgain = canGo && sc.total<=9 && G.deck.length>=4 && Math.random()<0.5;
     if(!goAgain) return settle(1,sc);
-    G.go++; G.goBy=1; toast('CPU '+G.go+'고!'); await sleep(600);
+    G.go++; G.goBy=1; toast('CPU '+G.go+'고!'); gsVoice('go'+Math.min(G.go,5)); await sleep(600);
   }
   G.lastScore[p]=Math.max(prev,sc.total);
   advance();
@@ -661,7 +661,7 @@ function askBomb(card, canBomb){
   $('bombAskMsg').innerHTML=(canBomb?'💣 <b>폭탄</b>: 3장 투하·4장 먹기+피1장+뒤집기 2턴<br>':'')+'🤲 <b>흔들기</b>: 그대로 1장만 내되 이 판 점수 ×2';
   $('bombYes').style.display=canBomb?'':'none';
   $('bombYes').onclick=()=>{ hide('bombAsk'); takeTurn(0,null,{bombMonth:card.m}); };
-  $('bombShake').onclick=()=>{ hide('bombAsk'); toast('흔들기!'); takeTurn(0,card,{shake:true}); };
+  $('bombShake').onclick=()=>{ hide('bombAsk'); toast('흔들기!'); gsVoice('shake'); takeTurn(0,card,{shake:true}); };
   $('bombNo').onclick=()=>{ hide('bombAsk'); takeTurn(0,card); };
   show('bombAsk');
 }
@@ -713,8 +713,8 @@ function offerGoStop(sc){
 }
 function chooseGo(go){
   hide('gostop');
-  if(go){ G.go++; G.goBy=0; toast(G.go+'고!'); pendingBomb=false; setTimeout(advance,500); }
-  else { settle(0,pendingScore); }
+  if(go){ G.go++; G.goBy=0; toast(G.go+'고!'); gsVoice('go'+Math.min(G.go,5)); pendingBomb=false; setTimeout(advance,500); }
+  else { gsVoice('stop'); settle(0,pendingScore); }
 }
 function settle(winner,sc,opts){
   opts=opts||{};
@@ -747,10 +747,14 @@ function settle(winner,sc,opts){
   $('r-detail').innerHTML = (opts.ppuk3?'<div>3뻑 즉시 승</div>':opts.chongtong?'<div>총통! 즉시 승</div>':sc.parts.map(p=>`<div>${p[0]} <b>+${p[1]}</b></div>`).join('')) + calcLine;
   $('r-pt').innerHTML=pt+'점 <span style="font-size:1.05rem;color:'+(winner===0?'var(--green)':'var(--red)')+'">'+(winner===0?'+':'−')+gold.toLocaleString()+'G</span>';
   sound(winner===0?'win':'lose');
+  // 콜 보이스: 박/총통/3뻑 → 잠시 후 승패
+  { const bakV = tags.includes('고박')?'gobak':tags.includes('피박')?'pibak':tags.includes('광박')?'gwangbak':tags.includes('멍박')?'meongbak':null;
+    if(opts.chongtong) gsVoice('chongtong'); else if(opts.ppuk3) gsVoice('ppeok3'); else if(bakV) gsVoice(bakV);
+    setTimeout(()=>gsVoice(winner===0?'win':'lose'), 700); }
   show('result');
   CARRY=1; // 승부났으니 누적 리셋
 }
-function drawGame(){ if(G.over)return; G.over=true; CARRY*=2; $('r-title').textContent='나가리'; $('r-detail').innerHTML='<div style="text-align:center">아무도 못 났습니다<br><b style="color:var(--gold)">다음 판 판돈 ×'+CARRY+'</b></div>'; $('r-pt').textContent=''; sound('lose'); show('result'); }
+function drawGame(){ if(G.over)return; G.over=true; CARRY*=2; $('r-title').textContent='나가리'; gsVoice('nagari'); $('r-detail').innerHTML='<div style="text-align:center">아무도 못 났습니다<br><b style="color:var(--gold)">다음 판 판돈 ×'+CARRY+'</b></div>'; $('r-pt').textContent=''; sound('lose'); show('result'); }
 function nextRound(){ hide('result'); deal(); }
 
 /* ===== render ===== */
@@ -827,6 +831,9 @@ let TZ=+(localStorage.getItem('gostop_zoom')||1);
 function applyZoom(){ TZ=Math.max(.8,Math.min(1.7,TZ||1)); document.documentElement.style.setProperty('--tz',TZ); }
 function zoomCards(d){ TZ=Math.round((TZ+d*0.12)*100)/100; applyZoom(); localStorage.setItem('gostop_zoom',TZ); toast('패 크기 '+Math.round(TZ*100)+'%'); }
 function sound(n){ if(!SND)return; const map={take:'claim',play:'tile',flip:'tile',win:'win',lose:'tile'}; const fn=map[n]||'tile'; try{const a=new Audio('sounds/'+fn+'.mp3');a.volume=.4;a.play().catch(()=>{});}catch(e){} }
+// 콜 보이스: voice/<key>.mp3 (파일 없으면 조용히 무시). key: ppeok,firstppeok,ttadak,jjok,sweep,jappeok,ppeoksseuri,ssada,bomb,shake,chongtong,ppeok3,go1..go5,stop,pibak,gwangbak,meongbak,gobak,godori,win,lose,nagari,pisteal
+const _gv={};
+function gsVoice(k){ if(!SND||!k)return; try{ let a=_gv[k]; if(!a){a=new Audio('voice/'+k+'.mp3');a.volume=.92;_gv[k]=a;} a.currentTime=0; a.play().catch(()=>{}); }catch(e){} }
 let AC=null;
 function boom(){
   if(!SND)return;
@@ -845,7 +852,7 @@ function boom(){
   }catch(e){}
 }
 function bombFx(prefix){
-  boom();
+  boom(); gsVoice('bomb');
   const b=$('board'); if(b){ b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); setTimeout(()=>b.classList.remove('shake'),480); }
   const f=$('flash'); if(f){ f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); setTimeout(()=>f.classList.remove('on'),560); }
   const tt=$('toast'); tt.textContent=prefix+'💥 콰쾅! 폭탄!'; tt.classList.add('dbl'); tt.style.display='block';
