@@ -117,30 +117,29 @@ window.addEventListener('DOMContentLoaded', function(){
     return r;
   };
   var busy=false;
+  // 노드별 원본 한국어 저장 → 항상 원본에서 번역(언어 전환 새로고침 없이 즉시·게임 유지)
   function walk(node){
     if(!node) return;
-    if(node.nodeType===3){ var a=node.nodeValue; if(a && /[가-힣]/.test(a)){ var b=ppL(a); if(b!==a) node.nodeValue=b; } return; }
+    if(node.nodeType===3){ var a=node.nodeValue; if(node.__ppko==null){ if(a && /[가-힣]/.test(a)) node.__ppko=a; else return; } var b=ppL(node.__ppko); if(b!==node.nodeValue) node.nodeValue=b; return; }
     if(node.nodeType===1){ var tag=node.tagName; if(tag==='SCRIPT'||tag==='STYLE') return;
       var ats=['title','placeholder','aria-label'];
-      for(var k=0;k<ats.length;k++){ var v=node.getAttribute&&node.getAttribute(ats[k]); if(v && /[가-힣]/.test(v)){ var nv=ppL(v); if(nv!==v) node.setAttribute(ats[k],nv);} }
+      for(var k=0;k<ats.length;k++){ var v=node.getAttribute&&node.getAttribute(ats[k]); if(v && /[가-힣]/.test(v)){ var ak='__ppat_'+ats[k]; if(node[ak]==null) node[ak]=v; var nv=ppL(node[ak]); if(nv!==v) node.setAttribute(ats[k],nv);} }
       for(var c=node.firstChild;c;c=c.nextSibling) walk(c);
     }
   }
+  function ppApplyAll(){ document.documentElement.lang=(PP_LANG==='zh-TW')?'zh-Hant':'ko'; busy=true; walk(document.body); busy=false; }
   function setup(){
-    if(PP_LANG==='zh-TW'){
-      document.documentElement.lang='zh-Hant';
-      busy=true; walk(document.body); busy=false;
-      var mo=new MutationObserver(function(muts){ if(busy) return; busy=true;
-        for(var i=0;i<muts.length;i++){ var m=muts[i];
-          if(m.type==='characterData') walk(m.target);
-          else if(m.type==='attributes') walk(m.target);
-          else for(var j=0;j<m.addedNodes.length;j++) walk(m.addedNodes[j]);
-        } busy=false; });
-      mo.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['title','placeholder','aria-label']});
-    }
+    ppApplyAll();
+    var mo=new MutationObserver(function(muts){ if(busy) return; busy=true;
+      for(var i=0;i<muts.length;i++){ var m=muts[i];
+        if(m.type==='characterData') walk(m.target);
+        else if(m.type==='attributes') walk(m.target);
+        else for(var j=0;j<m.addedNodes.length;j++) walk(m.addedNodes[j]);
+      } busy=false; });
+    mo.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['title','placeholder','aria-label']});
   }
-  // 언어 토글 — 설정 패널에서 호출
-  window.ppToggleLang = function(){ var n = (window.PP_LANG==='zh-TW') ? 'ko' : 'zh-TW'; try{localStorage.setItem('pp-lang',n);}catch(e){}; location.reload(); };
+  // 언어 토글 — 설정 패널에서 호출 (새로고침 없이 즉시)
+  window.ppToggleLang = function(){ window.PP_LANG = PP_LANG = (PP_LANG==='zh-TW') ? 'ko' : 'zh-TW'; try{localStorage.setItem('pp-lang',PP_LANG);}catch(e){}; ppApplyAll(); };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setup); else setup();
 })();
 </script>

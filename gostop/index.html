@@ -834,7 +834,7 @@ function zoomCards(d){ TZ=Math.round((TZ+d*0.12)*100)/100; applyZoom(); localSto
 function sound(n){ if(!SND)return; const map={take:'claim',play:'tile',flip:'tile',win:'win',lose:'tile'}; const fn=map[n]||'tile'; try{const a=new Audio('sounds/'+fn+'.mp3');a.volume=.4;a.play().catch(()=>{});}catch(e){} }
 // 콜 보이스: voice/<key>.mp3 (파일 없으면 조용히 무시). key: ppeok,firstppeok,ttadak,jjok,sweep,jappeok,ppeoksseuri,ssada,bomb,shake,chongtong,ppeok3,go1..go5,stop,pibak,gwangbak,meongbak,gobak,godori,win,lose,nagari,pisteal
 const _gv={};
-function gsVoice(k){ if(!SND||!k)return; try{ let a=_gv[k]; if(!a){a=new Audio('voice/'+k+'.mp3');a.volume=.92;_gv[k]=a;} a.currentTime=0; a.play().catch(()=>{}); }catch(e){} }
+function gsVoice(k){ if(!SND||!k)return; try{ const lang=(window.GS_LANG==='zh-TW')?'zh':'ko'; const key=k+'_'+lang; let a=_gv[key]; if(!a){a=new Audio('voice/'+key+'.mp3');a.volume=.92;_gv[key]=a;} a.currentTime=0; a.play().catch(()=>{}); }catch(e){} }
 let AC=null;
 function boom(){
   if(!SND)return;
