@@ -48,7 +48,9 @@
   #combo{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);z-index:6;pointer-events:none;
     font-size:2.1rem;font-weight:900;color:#fff;text-shadow:0 3px 12px rgba(0,0,0,.8);opacity:0}
   #combo.on{animation:cb .8s ease-out}
-  @keyframes cb{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}25%{opacity:1;transform:translate(-50%,-60%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-80%) scale(1)}}
+  @keyframes cb{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}25%{opacity:1;transform:translate(-50%,-60%) scale(1.3)}100%{opacity:0;transform:translate(-50%,-82%) scale(1)}}
+  .boardwrap.shake{animation:bshake .32s ease-in-out}
+  @keyframes bshake{0%,100%{transform:translate(0,0)}20%{transform:translate(-4px,2px)}40%{transform:translate(4px,-2px)}60%{transform:translate(-3px,-2px)}80%{transform:translate(3px,2px)}}
   .howto{font-size:.72rem;color:var(--muted);text-align:center}
   .ov{position:fixed;inset:0;background:rgba(8,4,20,.84);display:none;align-items:center;justify-content:center;z-index:60;padding:18px}
   .ov.on{display:flex}
@@ -71,7 +73,7 @@
   </header>
   <div class="stat">
     <div class="c"><div class="k" data-i18n="score">점수</div><div class="v" id="score">0</div></div>
-    <div class="c"><div class="k" data-i18n="time">시간</div><div class="v" id="time">60</div></div>
+    <div class="c"><div class="k" id="timeLabel" data-i18n="time">시간</div><div class="v" id="time">60</div></div>
     <div class="c"><div class="k" data-i18n="best">최고</div><div class="v" id="best">-</div></div>
   </div>
   <div id="timebar"><div id="timefill"></div></div>
@@ -84,12 +86,14 @@
 
 <div class="ov" id="ovStart"><div class="card">
   <h2>🍬 <span data-i18n="title">팝매치</span></h2>
-  <p class="sub" data-i18n="howto">이웃한 블록을 드래그/탭으로 바꿔 3개 이상 맞추세요</p>
-  <button class="btn" onclick="startGame()" data-i18n="start">시작</button>
+  <p class="sub" data-i18n="howto">블록을 드래그해서 3개 이상 맞추세요</p>
+  <p class="sub" data-i18n="pick" style="margin-top:10px;font-weight:800;color:var(--text)">모드 선택</p>
+  <button class="btn" onclick="startGame('time')" data-i18n="modeTime">⏱ 시간제 60초</button>
+  <button class="btn" style="background:linear-gradient(180deg,#9b5cff,#6b3bff);color:#fff" onclick="startGame('moves')" data-i18n="modeMoves">🎯 이동제 25수</button>
 </div></div>
 
 <div class="ov" id="ovEnd"><div class="card">
-  <h2 data-i18n="timeup">타임 오버!</h2>
+  <h2 id="endTitle">타임 오버!</h2>
   <p class="sub"><span data-i18n="finalScore">최종 점수</span> <b id="finalScore">0</b></p>
   <p class="gold" id="endGold"></p>
   <button class="btn" onclick="closeEnd();startGame()" data-i18n="again">다시 하기</button>
@@ -98,17 +102,17 @@
 <script>
 /* ── i18n (한국어 / 繁體中文 / English) — 사전식, 즉시전환 ── */
 const I18N={
-  ko:{title:'팝매치',restart:'다시',score:'점수',time:'시간',best:'최고',
-      howto:'이웃한 블록을 드래그/탭으로 바꿔 3개 이상 맞추세요',start:'시작',
-      timeup:'타임 오버!',finalScore:'최종 점수',again:'다시 하기',langBtn:'🌐 繁中',
+  ko:{title:'팝매치',restart:'다시',score:'점수',time:'시간',best:'최고',moves:'이동',
+      howto:'블록을 드래그(스와이프)해서 3개 이상 맞추세요',start:'시작',pick:'모드 선택',modeTime:'⏱ 시간제 60초',modeMoves:'🎯 이동제 25수',
+      timeup:'타임 오버!',movesup:'이동 종료!',finalScore:'최종 점수',again:'다시 하기',langBtn:'🌐 繁中',
       combo:(n)=>n+' 콤보!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
-  'zh-TW':{title:'啵啵消',restart:'重來',score:'分數',time:'時間',best:'最佳',
-      howto:'拖曳/點擊交換相鄰方塊，連成3個以上即可消除',start:'開始',
-      timeup:'時間到！',finalScore:'最終分數',again:'再玩一次',langBtn:'🌐 EN',
+  'zh-TW':{title:'啵啵消',restart:'重來',score:'分數',time:'時間',best:'最佳',moves:'步數',
+      howto:'拖曳(滑動)方塊，連成3個以上即可消除',start:'開始',pick:'選擇模式',modeTime:'⏱ 限時60秒',modeMoves:'🎯 限步25步',
+      timeup:'時間到！',movesup:'步數用完！',finalScore:'最終分數',again:'再玩一次',langBtn:'🌐 EN',
       combo:(n)=>n+' 連擊！',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
-  en:{title:'Pop Match',restart:'Reset',score:'Score',time:'Time',best:'Best',
-      howto:'Drag/tap to swap adjacent blocks and match 3+',start:'Start',
-      timeup:"Time's up!",finalScore:'Final score',again:'Play again',langBtn:'🌐 한국어',
+  en:{title:'Pop Match',restart:'Reset',score:'Score',time:'Time',best:'Best',moves:'Moves',
+      howto:'Drag (swipe) blocks to match 3 or more',start:'Start',pick:'Pick mode',modeTime:'⏱ Time 60s',modeMoves:'🎯 Moves 25',
+      timeup:"Time's up!",movesup:'Out of moves!',finalScore:'Final score',again:'Play again',langBtn:'🌐 한국어',
       combo:(n)=>n+' Combo!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'}};
 let LANG=(function(){try{const s=localStorage.getItem('m3-lang');if(s)return s;}catch(e){}
   const n=(navigator.language||'').toLowerCase();return n.startsWith('zh')?'zh-TW':n.startsWith('ko')?'ko':'en';})();
@@ -136,7 +140,6 @@ function buildDOM(){
   for(let i=0;i<N*N;i++){
     const d=document.createElement('div'); d.className='cell'; const r=Math.floor(i/N), c=i%N;
     d.addEventListener('pointerdown',e=>onDown(e,r,c));
-    d.addEventListener('pointerenter',e=>onEnter(e,r,c));
     b.appendChild(d); cells.push(d);
   }
 }
@@ -202,58 +205,89 @@ async function trySwap(r1,c1,r2,c2){
   if(busy||!playing) return; if(!inBounds(r2,c2)) return;
   if(Math.abs(r1-r2)+Math.abs(c1-c2)!==1) return; // 인접만
   busy=true; clearSel();
-  swapG(r1,c1,r2,c2); render();
+  swapG(r1,c1,r2,c2); render(); sound('swap');
   await sleep(140);
-  if(findMatches().size===0){ swapG(r1,c1,r2,c2); render(); await sleep(140); busy=false; return; } // 무효 → 복귀
+  if(findMatches().size===0){ swapG(r1,c1,r2,c2); render(); sound('bad'); await sleep(140); busy=false; return; } // 무효 → 복귀
+  if(MODE==='moves'){ movesLeft--; updateMoves(); }
   await resolve();
   if(!hasAnyMove()){ genGrid(); render(); await resolve(); }
   busy=false;
+  if(MODE==='moves' && movesLeft<=0) endGame();
 }
 
-/* 입력: 포인터 다운 후 인접 칸 enter → 스왑. 탭 두 번도 지원 */
-let downCell=null, downXY=null;
-function onDown(e,r,c){ if(busy||!playing)return; downCell={r,c}; downXY={x:e.clientX,y:e.clientY};
-  if(sel && (Math.abs(sel.r-r)+Math.abs(sel.c-c)===1)){ trySwap(sel.r,sel.c,r,c); return; }
-  if(sel && sel.r===r && sel.c===c){ clearSel(); return; }
+/* 입력: 드래그(스와이프)로 방향 스왑 — 터치 우선. 짧은 탭은 선택 후 인접 탭으로도 가능 */
+let drag=null; // {r,c,x,y,moved}
+function cellPx(){ const r=cells[0]&&cells[0].getBoundingClientRect(); return (r&&r.width)||44; }
+function onDown(e,r,c){ if(busy||!playing)return;
+  // 선택 상태에서 인접 탭 → 즉시 스왑(폴백)
+  if(sel && (Math.abs(sel.r-r)+Math.abs(sel.c-c)===1)){ const s=sel; clearSel(); trySwap(s.r,s.c,r,c); return; }
+  drag={r,c,x:e.clientX,y:e.clientY,moved:false};
   sel={r,c}; markSel(); try{e.target.setPointerCapture(e.pointerId);}catch(_){}
 }
-function onEnter(e,r,c){ if(busy||!playing||!downCell)return; if(e.buttons!==1 && e.pressure===0)return;
-  if(Math.abs(downCell.r-r)+Math.abs(downCell.c-c)===1){ const d=downCell; downCell=null; trySwap(d.r,d.c,r,c); } }
-document.addEventListener('pointerup',()=>{ downCell=null; });
+function onMove(e){ if(busy||!playing||!drag||drag.moved)return;
+  const dx=e.clientX-drag.x, dy=e.clientY-drag.y; const thr=cellPx()*0.35;
+  if(Math.abs(dx)<thr && Math.abs(dy)<thr) return;
+  drag.moved=true;
+  let nr=drag.r, nc=drag.c;
+  if(Math.abs(dx)>Math.abs(dy)) nc += dx>0?1:-1; else nr += dy>0?1:-1;
+  const d=drag; drag=null; clearSel();
+  trySwap(d.r,d.c,nr,nc);
+}
+document.addEventListener('pointermove',onMove,{passive:true});
+document.addEventListener('pointerup',()=>{ drag=null; });
+document.addEventListener('pointercancel',()=>{ drag=null; });
 function markSel(){ clearSelVis(); if(sel)cells[idx(sel.r,sel.c)].classList.add('sel'); }
 function clearSelVis(){ cells.forEach(c=>c.classList.remove('sel')); }
 function clearSel(){ sel=null; clearSelVis(); }
 
-function showCombo(n){ const el=document.getElementById('combo'); el.textContent=t('combo')(n); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
+function showCombo(n){ const el=document.getElementById('combo'); el.textContent=t('combo')(n); el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+  if(n>=3){ const bw=document.querySelector('.boardwrap'); bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(()=>bw.classList.remove('shake'),340); } }
 
-/* ── 사운드(합성, 임시) ── */
-let AC=null; function sound(type,chain){ try{ const on=localStorage.getItem('m3-sound')!=='0'; if(!on)return; AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume();
-  const t0=AC.currentTime; const o=AC.createOscillator(),g=AC.createGain(); o.type='triangle';
-  const base=520+(chain||1)*90; o.frequency.setValueAtTime(base,t0); o.frequency.exponentialRampToValueAtTime(base*1.5,t0+.12);
-  g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(.18,t0+.02); g.gain.exponentialRampToValueAtTime(.001,t0+.16);
-  o.connect(g).connect(AC.destination); o.start(t0); o.stop(t0+.18);
-}catch(e){} }
+/* ── 사운드(합성) + 진동 ── */
+let AC=null;
+function soundOn(){ return localStorage.getItem('m3-sound')!=='0'; }
+function getAC(){ if(!soundOn())return null; try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); return AC; }catch(e){ return null; } }
+function vibe(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+function blip(freq,dur,vol,type,glide){ const c=getAC(); if(!c)return; const t0=c.currentTime;
+  const o=c.createOscillator(),g=c.createGain(); o.type=type||'triangle';
+  o.frequency.setValueAtTime(freq,t0); if(glide)o.frequency.exponentialRampToValueAtTime(freq*glide,t0+dur*.8);
+  g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+.012); g.gain.exponentialRampToValueAtTime(.0008,t0+dur);
+  o.connect(g).connect(c.destination); o.start(t0); o.stop(t0+dur+.02); }
+function noiseBurst(dur,vol){ const c=getAC(); if(!c)return; const n=Math.floor(c.sampleRate*dur); const buf=c.createBuffer(1,n,c.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2); const s=c.createBufferSource(),g=c.createGain(); s.buffer=buf; g.gain.value=vol; s.connect(g).connect(c.destination); s.start(); }
+// 매치/콤보: 체인이 높을수록 음 높고 화려하게 + 진동
+function sound(type,chain){ const ch=chain||1;
+  if(type==='pop'){ blip(440+ch*120, .14, .2, 'triangle', 1.6); noiseBurst(.05,.08); vibe(ch>=3?[12,20,12]:ch>=2?22:12); if(ch>=3){ setTimeout(()=>blip(880+ch*80,.18,.18,'sine',1.3),60); } }
+  else if(type==='swap'){ blip(300,.05,.1,'sine',1.4); vibe(8); }
+  else if(type==='bad'){ blip(180,.12,.14,'square',.7); vibe(0); }
+  else if(type==='end'){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>blip(f,.18,.2,'triangle'),i*90)); }
+}
 
 /* ── 게임 흐름 ── */
-function newGame(){ closeEnd(); startGame(); }
-function startGame(){
+let MODE='time', movesLeft=0; const MOVES=25;
+function newGame(){ closeEnd(); document.getElementById('ovStart').classList.add('on'); } // 다시 → 모드 선택
+function startGame(mode){
+  MODE=mode||MODE||'time';
   document.getElementById('ovStart').classList.remove('on'); closeEnd();
-  score=0; timeLeft=DUR; busy=false; playing=true; sel=null;
+  score=0; timeLeft=DUR; movesLeft=MOVES; busy=false; playing=true; sel=null;
   genGrid(); render();
-  // 시작 시 우연한 매치 정리
   (async()=>{ busy=true; await resolve(); if(!hasAnyMove()){genGrid();render();} busy=false; })();
-  updateTime();
+  document.getElementById('timeLabel').textContent = MODE==='moves'? t('moves') : t('time');
+  document.getElementById('timebar').style.display = MODE==='moves' ? 'none' : '';
   if(timerId)clearInterval(timerId);
-  timerId=setInterval(()=>{ timeLeft--; updateTime(); if(timeLeft<=0) endGame(); },1000);
+  if(MODE==='time'){ updateTime(); timerId=setInterval(()=>{ timeLeft--; updateTime(); if(timeLeft<=0) endGame(); },1000); }
+  else { updateMoves(); }
   updateBest();
 }
 function updateTime(){ document.getElementById('time').textContent=Math.max(0,timeLeft); document.getElementById('timefill').style.width=(Math.max(0,timeLeft)/DUR*100)+'%'; }
+function updateMoves(){ document.getElementById('time').textContent=Math.max(0,movesLeft); }
 function endGame(){
-  playing=false; if(timerId)clearInterval(timerId);
+  if(!playing)return; playing=false; if(timerId)clearInterval(timerId);
+  sound('end');
   const reward=Math.round(score*1000); // 점수×1000골드
   try{ if(typeof SharedWallet!=='undefined'&&SharedWallet._initialized&&reward>0)SharedWallet.addGold(reward); }catch(e){}
   try{ if(typeof GameRankings!=='undefined'&&score>0)GameRankings.submit('match3',{score}); }catch(e){}
   saveBest(score);
+  document.getElementById('endTitle').textContent = MODE==='moves'? t('movesup') : t('timeup');
   document.getElementById('finalScore').textContent=score;
   document.getElementById('endGold').textContent=reward>0?t('goldLine')(reward):'';
   document.getElementById('ovEnd').classList.add('on');
