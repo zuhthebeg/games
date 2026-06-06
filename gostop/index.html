@@ -512,7 +512,7 @@ async function takeTurn(p, handCard, opts){
   // 1) 손패 바닥에 착지 (짝 붙는 느낌)
   handCards.forEach(c=>G.table.push(c));
   G._newIds=new Set(handCards.map(c=>c.id)); G._newCapIds=null;
-  sound('play'); renderAll(); await sleep(500);   // 패 놓기 "착" → 0.5초 공백 → 더미 뒤집기 "착"
+  sound('play'); renderAll(); await sleep(1000);   // 패 놓기 "착" → 1초 공백 → 더미 뒤집기 "착"
 
   // 2) 더미 뒤집기 → 바닥 착지
   let flipCard=null;
@@ -615,15 +615,17 @@ function advance(){
 }
 function startTurn(){
   const p=G.turn;
-  if(G.flipOwed && G.flipOwed[p]>0){
-    if(p===0){ G.acting=false; G.awaitFlip=true; G.sel=-1; renderAll(); const db=$('deckBack'); if(db)db.classList.add('await'); toast('💣 뒤집기 탄 '+G.flipOwed[0]+'개 — 더미를 눌러 뒤집기'); return; }
-    setTimeout(()=>flipOnlyTurn(p), 850); return;
+  // CPU는 뒤집기탄 자동 사용. 사람은 강제 안 함 — 평소처럼 패 내거나 더미 탭해서 선택적으로 사용
+  if(p===1 && G.flipOwed && G.flipOwed[p]>0){ setTimeout(()=>flipOnlyTurn(p), 850); return; }
+  if(p===0){ G.acting=false; G.awaitFlip=false; G.sel=-1; renderAll();
+    const db=$('deckBack');
+    if(G.flipOwed && G.flipOwed[0]>0){ if(db)db.classList.add('await'); toast('💣 뒤집기탄 '+G.flipOwed[0]+'개 — 더미 탭해 쓰거나 패를 내세요'); }
+    else if(db)db.classList.remove('await');
   }
-  if(p===0){ G.acting=false; G.sel=-1; renderAll(); }
   else setTimeout(cpuTurn,900);
 }
 function onDeckClick(){
-  if(G.awaitFlip && G.turn===0 && !G.over){ G.awaitFlip=false; const db=$('deckBack'); if(db)db.classList.remove('await'); flipOnlyTurn(0); }
+  if(G.turn===0 && !G.over && !G.acting && G.flipOwed && G.flipOwed[0]>0){ G.acting=true; G.awaitFlip=false; const db=$('deckBack'); if(db)db.classList.remove('await'); flipOnlyTurn(0); }
 }
 async function flipOnlyTurn(p){
   const pl=G.players[p];
@@ -825,7 +827,7 @@ function renderMyHand(){
   }).join('');
 }
 let lastTap=-1;
-function selectCard(i){ if(G.turn!==0||G.over||G.acting||G.awaitFlip)return; if(G.sel===i){ playSelected(); return;} G.sel=i; renderMyHand(); renderTable(); }
+function selectCard(i){ if(G.turn!==0||G.over||G.acting)return; if(G.sel===i){ playSelected(); return;} G.sel=i; renderMyHand(); renderTable(); }
 function capGroup(cap){
   const g=cap.filter(c=>c.gwang), y=cap.filter(c=>c.role==='yul'), t=cap.filter(c=>c.role==='tti'), p=cap.filter(c=>c.role==='pi');
   const cls=c=>(G._newCapIds&&G._newCapIds.has(c.id))?'cin':'';
@@ -925,11 +927,11 @@ function bombFx(prefix){
 setSnd(SND?1:0); setVoice(VOICE?1:0); buildVoicePreview(); setBet(BET); applyZoom();
 // 손패 드래그로 내기 (위로 끌어올려 release → 그 패 냄). 두 번 탭 방식과 병행
 (function(){ const hand=document.getElementById('myHand'); if(!hand)return; let drag=null;
-  hand.addEventListener('pointerdown',e=>{ const card=e.target.closest('.hcard'); if(!card||G.turn!==0||G.over||G.acting||G.awaitFlip)return;
+  hand.addEventListener('pointerdown',e=>{ const card=e.target.closest('.hcard'); if(!card||G.turn!==0||G.over||G.acting)return;
     const i=[].indexOf.call(hand.children,card); if(i<0)return; drag={i,card,y0:e.clientY}; try{card.setPointerCapture(e.pointerId);}catch(_){} });
   hand.addEventListener('pointermove',e=>{ if(!drag)return; const dy=e.clientY-drag.y0; if(dy<-4){ drag.card.style.transform='translateY('+Math.max(dy,-72)+'px)'; drag.card.style.zIndex='6'; drag.card.style.transition='none'; } });
   function end(e){ if(!drag)return; const dy=e.clientY-drag.y0, d=drag; drag=null; d.card.style.transform=''; d.card.style.zIndex=''; d.card.style.transition='';
-    if(dy<=-38 && G.turn===0 && !G.over && !G.acting && !G.awaitFlip){ G.sel=d.i; playSelected(); } }
+    if(dy<=-38 && G.turn===0 && !G.over && !G.acting){ G.sel=d.i; playSelected(); } }
   hand.addEventListener('pointerup',end); hand.addEventListener('pointercancel',()=>{ if(drag){drag.card.style.transform='';drag.card.style.zIndex='';drag.card.style.transition='';drag=null;} });
 })();
 /* ===== 온라인 멀티 (COC-21) ===== */
