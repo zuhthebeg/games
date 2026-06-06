@@ -192,7 +192,7 @@ function computeClears(){
     for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){ const nr=r+dr,nc=c+dc; if(inBounds(nr,nc))clear.add(idx(nr,nc)); } } });
   // 5개 일렬 → 그 줄 한 줄 제거 (가로런=행 / 세로런=열). 4개는 그냥 4칸만.
   runs.forEach(rn=>{ if(rn.len>=5){ five=true; if(rn.o==='h'){ for(let c=0;c<N;c++)clear.add(idx(rn.line,c)); } else { for(let r=0;r<N;r++)clear.add(idx(r,rn.line)); } } });
-  return {clear,maxRun,cross,five};
+  return {clear,maxRun,cross,five,groups:runs.length};
 }
 async function resolve(){
   let chain=0;
@@ -200,12 +200,15 @@ async function resolve(){
     const res=computeClears();
     if(res.clear.size===0) break;
     chain++;
+    lastMatch=Date.now(); clearHint();          // 성공 매치 → 힌트 타이머 리셋
     const big = res.cross || res.five;          // 폭탄/한줄 = 강력 매치
+    const multi = res.groups>=2;                // 한 번에 여러 그룹 동시 매치 = 콤보
+    const comboN = chain>=2 ? chain : (multi ? res.groups : 1);
     score += res.clear.size*10*chain + (big?120:0);
-    // 시간 가중(짠물): 3개=0초 · 4개=+1 · 5개=+1 · 폭탄(크로스)=+2 · 콤보(2연쇄+)=+1
-    let add = res.cross?2 : (res.five?1 : (res.maxRun>=4?1:0)); if(chain>=2) add+=1;
+    // 시간 가중(짠물): 3개=0초 · 4개=+1 · 5개=+1 · 폭탄(크로스)=+2 · 콤보(연쇄 또는 동시다중)=+1
+    let add = res.cross?2 : (res.five?1 : (res.maxRun>=4?1:0)); if(chain>=2 || multi) add+=1;
     if(add>0) addTime(add);
-    if(chain>=2 || big) showCombo(chain);
+    if(comboN>=2 || big) showCombo(comboN);
     if(big) bigEffect(res.cross);
     res.clear.forEach(i=>{ cells[i].classList.add('pop'); if(big)cells[i].classList.add('big'); });
     sound('pop', chain + (big?2:0));
@@ -234,10 +237,11 @@ function findHint(){
   }
   return null;
 }
-let hintTimer=null, hintCells=[];
+let hintCells=[], lastMatch=0;
 function clearHint(){ hintCells.forEach(i=>cells[i]&&cells[i].classList.remove('hint')); hintCells=[]; }
-function scheduleHint(){ clearTimeout(hintTimer); clearHint(); if(!playing)return;
-  hintTimer=setTimeout(()=>{ if(busy||!playing)return; const mv=findHint(); if(!mv)return; hintCells=[mv.a,mv.b]; hintCells.forEach(i=>cells[i].classList.add('hint')); }, 3000); }
+function showHint(){ if(busy||!playing||hintCells.length)return; const mv=findHint(); if(!mv)return; hintCells=[mv.a,mv.b]; hintCells.forEach(i=>cells[i].classList.add('hint')); }
+// 매 초: 마지막 '성공 매치'로부터 3초 지났고 힌트 없으면 표시 (실패한 스왑은 lastMatch 갱신 안 함 → 무시됨)
+function hintCheck(){ if(playing && !busy && hintCells.length===0 && Date.now()-lastMatch>=3000) showHint(); }
 
 async function trySwap(r1,c1,r2,c2){
   if(busy||!playing) return; if(!inBounds(r2,c2)) return;
@@ -245,16 +249,16 @@ async function trySwap(r1,c1,r2,c2){
   busy=true; clearSel();
   swapG(r1,c1,r2,c2); render(); sound('swap');
   await sleep(140);
-  if(findMatches().size===0){ swapG(r1,c1,r2,c2); render(); sound('bad'); await sleep(140); busy=false; scheduleHint(); return; } // 무효 → 복귀
+  if(findMatches().size===0){ swapG(r1,c1,r2,c2); render(); sound('bad'); await sleep(140); busy=false; return; } // 무효 → 복귀(힌트 타이머 리셋 안 함)
   await resolve();
   if(!hasAnyMove()){ genGrid(); render(); await resolve(); }
-  busy=false; scheduleHint();
+  busy=false;
 }
 
 /* 입력: 드래그(스와이프)로 방향 스왑 — 터치 우선. 짧은 탭은 선택 후 인접 탭으로도 가능 */
 let drag=null; // {r,c,x,y,moved}
 function cellPx(){ const r=cells[0]&&cells[0].getBoundingClientRect(); return (r&&r.width)||44; }
-function onDown(e,r,c){ if(busy||!playing)return; clearTimeout(hintTimer); clearHint();
+function onDown(e,r,c){ if(busy||!playing)return; clearHint();
   // 선택 상태에서 인접 탭 → 즉시 스왑(폴백)
   if(sel && (Math.abs(sel.r-r)+Math.abs(sel.c-c)===1)){ const s=sel; clearSel(); trySwap(s.r,s.c,r,c); return; }
   drag={r,c,x:e.clientX,y:e.clientY,moved:false};
@@ -306,12 +310,12 @@ function sound(type,chain){ const ch=chain||1;
 function newGame(){ closeEnd(); document.getElementById('ovStart').classList.add('on'); }
 function startGame(){
   document.getElementById('ovStart').classList.remove('on'); closeEnd();
-  score=0; timeLeft=DUR; busy=false; playing=true; sel=null;
+  score=0; timeLeft=DUR; busy=false; playing=true; sel=null; lastMatch=Date.now();
   genGrid(); render();
-  (async()=>{ busy=true; await resolve(); if(!hasAnyMove()){genGrid();render();} busy=false; scheduleHint(); })();
+  (async()=>{ busy=true; await resolve(); if(!hasAnyMove()){genGrid();render();} busy=false; lastMatch=Date.now(); })();
   updateTime();
   if(timerId)clearInterval(timerId);
-  timerId=setInterval(()=>{ timeLeft--; updateTime(); if(timeLeft<=0) endGame(); },1000);
+  timerId=setInterval(()=>{ timeLeft--; updateTime(); if(timeLeft<=0){ endGame(); return; } hintCheck(); },1000);
   updateBest();
 }
 function updateTime(){ const tl=Math.max(0,timeLeft); document.getElementById('time').textContent=tl;
@@ -321,7 +325,7 @@ function showTimePlus(s){ let el=document.getElementById('tplus'); if(!el){ el=d
 function bigEffect(cross){ const bw=document.querySelector('.boardwrap'); bw.classList.remove('flash'); void bw.offsetWidth; bw.classList.add('flash'); setTimeout(()=>bw.classList.remove('flash'),360); vibe(cross?[20,30,20,30]:[15,25,15]); }
 function endGame(){
   if(!playing)return; playing=false; if(timerId)clearInterval(timerId);
-  clearTimeout(hintTimer); clearHint();
+  clearHint();
   sound('end');
   const reward=Math.round(score*1000);
   try{ if(typeof SharedWallet!=='undefined'&&SharedWallet._initialized&&reward>0)SharedWallet.addGold(reward); }catch(e){}
