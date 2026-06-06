@@ -61,9 +61,8 @@ img{display:block}
 #tableCards{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;align-content:center;max-width:560px;padding:0 64px}
 .mgroup{display:flex;align-items:center;border-radius:6px;padding:2px;transition:box-shadow .2s}
 .mgroup.hl{box-shadow:0 0 0 3px var(--gold);background:rgba(230,184,77,.18)}
-.mgroup.gudeun{box-shadow:0 0 0 2px #8b5cf6;background:rgba(139,92,246,.16)}
-.mgroup.gudeun::before{content:"굳";position:absolute;top:-6px;right:-4px;background:#8b5cf6;color:#fff;font-size:.5rem;font-weight:800;padding:0 4px;border-radius:6px;z-index:3}
-.mgroup.hl.gudeun{box-shadow:0 0 0 3px var(--gold),0 0 0 5px #8b5cf6}
+.hcard.gudeun img{box-shadow:0 0 0 2px #b06bff,0 2px 5px rgba(0,0,0,.45)}
+.hcard.gudeun::before{content:"굳은자";position:absolute;top:2px;left:50%;transform:translateX(-50%);background:#b06bff;color:#fff;font-size:.5rem;font-weight:800;padding:1px 4px;border-radius:5px;pointer-events:none;z-index:3;white-space:nowrap}
 .mgroup img{width:var(--cw);border-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,.5)}
 @keyframes cin{from{transform:translateY(-30px) scale(1.1);opacity:0}to{transform:none;opacity:1}}
 .mgroup img.cin{animation:cin .34s var(--ease)}
@@ -220,6 +219,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
   <h2>⚙ 설정</h2>
   <div class="row"><span>🔊 소리</span><div class="seg"><button data-snd="1" onclick="setSnd(1)">ON</button><button data-snd="0" onclick="setSnd(0)">OFF</button></div></div>
   <div class="row"><span>고/스톱 최소점</span><span style="color:var(--muted)">7점 (맞고)</span></div>
+  <div class="row"><span>🌐 언어 / 語言</span><button class="seg" style="padding:4px 12px;cursor:pointer" onclick="gsToggleLang()">한국어 ↔ 繁中</button></div>
   <button class="close" onclick="hide('settings')">닫기</button>
 </div></div>
 
@@ -247,6 +247,76 @@ window.addEventListener('DOMContentLoaded', function(){
   try { if (typeof SharedWallet !== 'undefined' && SharedWallet.init && !SharedWallet._initialized) SharedWallet.init(); } catch(e){}
   try { if (typeof GameRankings !== 'undefined') GameRankings.injectNavButton('gostop'); } catch(e){}
 });
+</script>
+<script>
+/* ── 번체중국어(zh-TW) i18n: DOM 텍스트 자동번역 ── */
+(function(){
+  var nav=(navigator.language||'').toLowerCase();
+  window.GS_LANG=(function(){try{var s=localStorage.getItem('gs-lang');if(s)return s;}catch(e){}return nav.indexOf('zh')===0?'zh-TW':'ko';})();
+  var TR=[
+    ['손패를 내서 같은 월(月) 바닥패와 짝지어 먹습니다.','出手牌與牌面上同月的牌配對吃掉。'],
+    ['낸 뒤 더미에서 1장 뒤집어 또 같은 월이면 먹습니다.','出牌後從牌庫翻1張，若同月也可吃。'],
+    ['점수가 7점 이상 나면 (맞고 기준) 고(계속·배수↑) 또는 스톱(끝).','分數達7點以上時，可選繼續(Go·倍數↑)或停(Stop)。'],
+    ['피박(상대 피 적음)·광박(상대 광 0) 시 2배.','皮霸(對手皮少)·光霸(對手無光)時2倍。'],
+    ['따닥/쪽/쓸 시 상대 피 1장 뺏어옴.','連打/啄/掃時搶對手皮1張。'],
+    ['뻑(같은 월 3장 쌓임) / 뻑쓸이 피1장·자뻑 피2장 / 3뻑이면 즉시 승(10점).','뻑(同月3張堆疊) / 掃뻑皮1張·自뻑皮2張 / 三뻑即勝(10點)。'],
+    ['흔들기(손에 같은 월 3장+바닥1장 ×2) / 💣폭탄(3장 투하·4장 먹고 피1장+한번더).','搖牌(手中同月3張+牌面1張 ×2) / 💣炸彈(投3張·吃4張+皮1張+再一次)。'],
+    ['점수 × 1만골드 × 판돈배수가 지갑에 정산됩니다.','分數 × 1萬金幣 × 賭注倍數結算到錢包。'],
+    ['3광 3점(비광 포함 시 2점)·4광 4점·5광 15점','三光3點(含雨光2點)·四光4點·五光15點'],
+    ['5장 1점+ / 고도리(2·4·8월 새) 5점','5張1點+ / 五鳥(2·4·8月鳥)5點'],
+    ['5장 1점+ / 홍단·청단·초단 각 3장 3점','5張1點+ / 紅短·青短·草短 各3張3點'],
+    ['10장 1점+ (쌍피=2장)','10張1點+ (雙皮=2張)'],
+    ['고스톱 3인 모드 곧 추가.','Go-Stop 3人模式即將加入。'],
+    ['화투 2인 맞고 · CPU 대전','花牌雙人對戰 · 電腦對戰'],
+    ['광·띠·끗·피 · 고도리 · 고/스톱','光·帶·十·皮 · 五鳥 · Go/Stop'],
+    ['게임 시작 (맞고)','開始遊戲'],['게임 시작','開始遊戲'],
+    ['👥 온라인 멀티 (2~4인)','👥 線上多人 (2~4人)'],
+    ['멀티 인원(빈자리 AI)','多人人數(空位電腦)'],
+    ['플레이 방법','玩法說明'],['맞고 방법','玩法說明'],
+    ['고/스톱 최소점','Go/Stop 最低分'],['7점 (맞고)','7點'],
+    ['🏆 랭킹','🏆 排行榜'],['어떤 패를 먹을까?','要吃哪張？'],
+    ['같은 월 3장!','同月3張！'],['같은 월(月)','同月'],
+    ['🤲 흔들기 ×2','🤲 搖牌 ×2'],['그냥 내기','直接出'],['💣 폭탄','💣 炸彈'],
+    ['🎉 첫뻑 보너스 +','🎉 首뻑獎勵 +'],['CPU 첫뻑','電腦 首뻑'],
+    ['💣 뒤집기 탄 ','💣 翻牌彈 '],['개 — 더미를 눌러 뒤집기','張 — 點牌庫翻牌'],['뒤집기 턴 (','翻牌回合 ('],
+    ['💥 콰쾅! 폭탄!','💥 轟！炸彈！'],['멀티 로드 실패','多人載入失敗'],['전송 실패','傳送失敗'],
+    ['랭킹 로딩 중','排行榜載入中'],['랭킹을 열 수 없습니다','無法開啟排行榜'],
+    ['한 번 더!','再一次！'],['3뻑! 승리','三뻑！勝利'],
+    ['점! 고? 스톱?','點！繼續？停？'],['고? 스톱?','繼續？停？'],['고를 부르면 1고','喊繼續就是1Go'],
+    ['고 (GO)','繼續(GO)'],['스톱 (STOP)','停(STOP)'],
+    ['고도리','五鳥'],['홍단','紅短'],['청단','青短'],['초단','草短'],
+    ['피박 ×2','皮霸 ×2'],['피박','皮霸'],['광박 ×2','光霸 ×2'],['광박','光霸'],
+    ['멍박 ×2','悶霸 ×2'],['멍박','悶霸'],['고박 ×2','賭債 ×2'],['고박','賭債'],
+    ['나가리누적 ×','流局累積 ×'],['나가리 ×','流局 ×'],['나가리','流局'],
+    ['흔들기 ×','搖牌 ×'],['흔들기!','搖牌！'],['흔들기','搖牌'],
+    ['3뻑 10점','三뻑10點'],['총통! 즉시 승','總統！即勝'],['총통!','總統！'],['총통','總統'],['3뻑 즉시 승','三뻑即勝'],
+    ['피뺏기','搶皮'],['따닥','連打'],['뻑쓸이','掃뻑'],['자뻑','自뻑'],
+    ['아무도 못 났습니다','沒有人胡牌'],['다음 판 판돈','下局賭注'],['패 크기','牌大小'],
+    ['메뉴로','回主選單'],['다시 하기','再玩一次'],['내 점수','我的分數'],
+    ['더미','牌庫'],['소리','音效'],['설정','設定'],['닫기','關閉'],['나가기','離開'],
+    ['그냥','就這樣'],['판돈','賭注'],['월 3장','月3張'],['장 쌓임','張堆疊'],
+    ['쌍피','雙皮'],['굳은자','穩牌'],['먹기','吃'],['기본','基本'],['골드','金幣'],['다시','再玩'],
+    ['광','光'],['열','十'],['띠','帶'],['쌍','雙'],['피','皮'],['끗','十'],
+    ['승!','勝！'],['승','勝']
+  ];
+  window.gsL=function(s){ if(GS_LANG!=='zh-TW'||s==null) return s; var r=String(s);
+    for(var i=0;i<TR.length;i++){ if(r.indexOf(TR[i][0])>=0) r=r.split(TR[i][0]).join(TR[i][1]); }
+    r=r.replace(/(\d)\s*점/g,'$1點').replace(/(\d)\s*장/g,'$1張').replace(/(\d)\s*개/g,'$1個').replace(/(\d)\s*만/g,'$1萬').replace(/(\d)\s*인/g,'$1人').replace(/(\d)\s*초/g,'$1秒'); return r; };
+  var busy=false;
+  function walk(n){ if(!n) return;
+    if(n.nodeType===3){ var a=n.nodeValue; if(a&&/[가-힣]/.test(a)){ var b=gsL(a); if(b!==a) n.nodeValue=b; } return; }
+    if(n.nodeType===1){ if(n.tagName==='SCRIPT'||n.tagName==='STYLE') return;
+      for(var c=n.firstChild;c;c=c.nextSibling) walk(c); } }
+  function setup(){
+    if(GS_LANG==='zh-TW'){ document.documentElement.lang='zh-Hant'; busy=true; walk(document.body); busy=false;
+      var mo=new MutationObserver(function(ms){ if(busy) return; busy=true;
+        for(var i=0;i<ms.length;i++){ var m=ms[i]; if(m.type==='characterData') walk(m.target); else for(var j=0;j<m.addedNodes.length;j++) walk(m.addedNodes[j]); } busy=false; });
+      mo.observe(document.body,{childList:true,subtree:true,characterData:true});
+    }
+  }
+  window.gsToggleLang=function(){ var n=GS_LANG==='zh-TW'?'ko':'zh-TW'; try{localStorage.setItem('gs-lang',n);}catch(e){}; location.reload(); };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setup); else setup();
+})();
 </script>
 <script src="/lib/multiplayer.js?v=20260524a"></script>
 <script src="/lib/multiplayer-ui.js?v=20260508a"></script>
@@ -594,27 +664,31 @@ function settle(winner,sc,opts){
   opts=opts||{};
   if(G.over)return; G.over=true;
   const loser=1-winner; const lcap=G.players[loser].cap; const ls=score(lcap);
-  let pt; const tags=[];
+  let pt; const tags=[]; let baseP=0, mult=1; const multTags=[];   // 배수 표시용
   if(opts.ppuk3){ pt=10; tags.push('3뻑 10점'); }
   else if(opts.chongtong){ pt=10; tags.push('총통'); }
   else {
-    pt=sc.total; let mult=1;
-    if(G.goBy===winner && G.go>0){ pt+=Math.min(G.go,2); if(G.go>=3)mult*=Math.pow(2,G.go-2); tags.push(G.go+'고'); }  // 정통: 1·2고 +점, 3고부터 ×2 (부른사람 승리 시)
-    if(ls.pi<=6){ mult*=2; tags.push('피박'); }
-    if(sc.gw>=3 && ls.gw===0){ mult*=2; tags.push('광박'); }
+    pt=sc.total; baseP=sc.total;
+    if(G.goBy===winner && G.go>0){ pt+=Math.min(G.go,2); baseP=pt; if(G.go>=3){const f=Math.pow(2,G.go-2);mult*=f;multTags.push(G.go+'고 ×'+f);} tags.push(G.go+'고'); }  // 정통: 1·2고 +점, 3고부터 ×2
+    if(ls.pi<=6){ mult*=2; tags.push('피박'); multTags.push('피박 ×2'); }
+    if(sc.gw>=3 && ls.gw===0){ mult*=2; tags.push('광박'); multTags.push('광박 ×2'); }
     const wyul=G.players[winner].cap.filter(c=>c.role==='yul').length;
-    if(wyul>=7){ mult*=2; tags.push('멍박'); }                          // 멍따(열끗 7장↑)
-    if(G.shakeMult&&G.shakeMult[winner]>1){ mult*=G.shakeMult[winner]; tags.push('흔들기'); }
-    if(G.goBy>=0 && G.goBy!==winner){ mult*=2; tags.push('고박'); }     // 고 부른 사람이 짐(독박)
+    if(wyul>=7){ mult*=2; tags.push('멍박'); multTags.push('멍박 ×2'); }    // 멍따(열끗 7장↑)
+    if(G.shakeMult&&G.shakeMult[winner]>1){ mult*=G.shakeMult[winner]; tags.push('흔들기'); multTags.push('흔들기 ×'+G.shakeMult[winner]); }
+    if(G.goBy>=0 && G.goBy!==winner){ mult*=2; tags.push('고박'); multTags.push('고박 ×2'); }  // 고 부른 사람이 짐(독박)
     pt*=mult;
   }
-  if(CARRY>1) tags.push('나가리누적 ×'+CARRY);
+  if(CARRY>1){ tags.push('나가리누적 ×'+CARRY); multTags.push('나가리 ×'+CARRY); }
   const who=winner===0?'나':'CPU';
   const gold=pt*10000*BET*CARRY;
   if(typeof SharedWallet!=='undefined' && SharedWallet._initialized){ try{ winner===0?SharedWallet.addGold(gold):SharedWallet.removeGold(gold); }catch(e){} }
   if(winner===0 && pt>0 && typeof GameRankings!=='undefined'){ try{ GameRankings.submit('gostop',{score:pt}); }catch(e){} }
   $('r-title').textContent=(winner===0?'🎉 ':'')+who+' 승!';
-  $('r-detail').innerHTML = (opts.ppuk3?'<div>3뻑 즉시 승</div>':opts.chongtong?'<div>총통! 즉시 승</div>':sc.parts.map(p=>`<div>${p[0]} <b>+${p[1]}</b></div>`).join('')) + (tags.length?`<div style="color:var(--gold);margin-top:6px">${tags.join(' · ')}</div>`:'');
+  // 계산식: 기본 N점 ×피박2 ×광박2 = pt점
+  const calcLine=(!opts.ppuk3 && !opts.chongtong && multTags.length)
+    ? `<div style="margin-top:6px;color:var(--gold);font-weight:700">기본 ${baseP}점 ${multTags.map(t=>'× '+t.replace(/.* ×/,'')).join(' ')} = ${pt}점</div><div style="font-size:.78rem;color:var(--muted)">${multTags.join(' · ')}</div>`
+    : (tags.length?`<div style="color:var(--gold);margin-top:6px">${tags.join(' · ')}</div>`:'');
+  $('r-detail').innerHTML = (opts.ppuk3?'<div>3뻑 즉시 승</div>':opts.chongtong?'<div>총통! 즉시 승</div>':sc.parts.map(p=>`<div>${p[0]} <b>+${p[1]}</b></div>`).join('')) + calcLine;
   $('r-pt').innerHTML=pt+'점 <span style="font-size:1.05rem;color:'+(winner===0?'var(--green)':'var(--red)')+'">'+(winner===0?'+':'−')+gold.toLocaleString()+'G</span>';
   sound(winner===0?'win':'lose');
   show('result');
@@ -624,26 +698,36 @@ function drawGame(){ if(G.over)return; G.over=true; CARRY*=2; $('r-title').textC
 function nextRound(){ hide('result'); deal(); }
 
 /* ===== render ===== */
+// 굳은자: 같은 월이 (내 손 + 바닥 + 양쪽 먹은패)에 4장 다 있고 바닥에 1장+ → 상대 손에 없음 = 무조건 내꺼
+function gudeunMonths(handCards, tableCards, capCards){
+  const h={},f={},c={};
+  (handCards||[]).forEach(x=>h[x.m]=(h[x.m]||0)+1);
+  (tableCards||[]).forEach(x=>f[x.m]=(f[x.m]||0)+1);
+  (capCards||[]).forEach(x=>c[x.m]=(c[x.m]||0)+1);
+  const s=new Set();
+  Object.keys(h).forEach(k=>{ const m=+k; if((f[m]||0)>=1 && (h[m]+(f[m]||0)+(c[m]||0))===4) s.add(m); });
+  return s;
+}
+function mpGudeunMonths(v){ const caps=[]; (v.players||[]).forEach(p=>(p.cap||[]).forEach(c=>caps.push(c))); return gudeunMonths(v.myHand||[], v.table||[], caps); }
 function renderAll(){ renderTable(); renderMyHand(); renderCaptured(); renderBar(); }
 function renderTable(){
   const sel=(G.turn===0&&G.sel>=0&&G.players[0].hand[G.sel])?G.players[0].hand[G.sel].m:-1;
-  // 굳은자: 한 월의 4장 중 2장 이상 이미 먹힌(양쪽 획득) 월의 바닥패 표시
-  const capM={}; [...G.players[0].cap,...G.players[1].cap].forEach(c=>{capM[c.m]=(capM[c.m]||0)+1;});
   const by={}, order=[];
   G.table.forEach(c=>{ if(!by[c.m]){by[c.m]=[];order.push(c.m);} by[c.m].push(c); });
   const dl=(G&&G._dealing); let di=0;
   $('tableCards').innerHTML=order.map(m=>{
-    const cs=by[m]; const gudeun=(capM[m]||0)>=2;
-    return `<div class="mgroup ${sel===m?'hl':''} ${gudeun?'gudeun':''}"><span class="mtag">${m}</span>`+cs.map((c,i)=>`<img src="${c.file}" data-id="${c.id}" class="${(G._newIds&&G._newIds.has(c.id))?'cin':''}" style="margin-left:${i?'-26px':'0'}${dl?(';animation-delay:'+((di++)*55)+'ms'):''}" alt="${c.m}월">`).join('')+`</div>`;
+    const cs=by[m];
+    return `<div class="mgroup ${sel===m?'hl':''}"><span class="mtag">${m}</span>`+cs.map((c,i)=>`<img src="${c.file}" data-id="${c.id}" class="${(G._newIds&&G._newIds.has(c.id))?'cin':''}" style="margin-left:${i?'-26px':'0'}${dl?(';animation-delay:'+((di++)*55)+'ms'):''}" alt="${c.m}월">`).join('')+`</div>`;
   }).join('');
   $('deckN').textContent=G.deck.length; $('t-deck').textContent=G.deck.length;
 }
 function renderFlip(c){ $('flipArea').innerHTML=c?`<img src="${c.file}">`:''; if(!c)return; setTimeout(()=>{$('flipArea').innerHTML='';},800); }
 function renderMyHand(){
   const dl=(G&&G._dealing);
+  const gud=gudeunMonths(G.players[0].hand, G.table, [...G.players[0].cap, ...G.players[1].cap]);
   $('myHand').innerHTML=G.players[0].hand.map((c,i)=>{
     const canPlay=(G.turn===0&&!G.over&&sameMonth(G.table,c.m).length>0);
-    return `<div class="hcard ${i===G.sel?'sel':''} ${canPlay?'canplay':''}" onclick="selectCard(${i})"${dl?` style="animation-delay:${i*55}ms"`:''}><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`;
+    return `<div class="hcard ${i===G.sel?'sel':''} ${canPlay?'canplay':''} ${gud.has(c.m)?'gudeun':''}" onclick="selectCard(${i})"${dl?` style="animation-delay:${i*55}ms"`:''}><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`;
   }).join('');
 }
 let lastTap=-1;
@@ -745,12 +829,12 @@ function mpEsc(t){ return (''+(t||'')).replace(/[<>&]/g,''); }
 function mpRender(v){
   G=G||{}; G._newCapIds=null; G._newIds=null;
   const by={},order=[]; (v.table||[]).forEach(c=>{ if(!by[c.m]){by[c.m]=[];order.push(c.m);} by[c.m].push(c); });
-  const capM={}; (v.players||[]).forEach(p=>(p.cap||[]).forEach(c=>{capM[c.m]=(capM[c.m]||0)+1;}));  // 굳은자: 양쪽 합쳐 2장+ 먹힌 월
-  $('tableCards').innerHTML=order.map(m=>`<div class="mgroup ${(capM[m]||0)>=2?'gudeun':''}">`+by[m].map((c,i)=>`<img src="${c.file}" style="margin-left:${i?'-26px':'0'}">`).join('')+`</div>`).join('');
+  $('tableCards').innerHTML=order.map(m=>`<div class="mgroup">`+by[m].map((c,i)=>`<img src="${c.file}" style="margin-left:${i?'-26px':'0'}">`).join('')+`</div>`).join('');
+  const gudM=mpGudeunMonths(v);
   if($('deckN'))$('deckN').textContent=v.deckCount; if($('t-deck'))$('t-deck').textContent=v.deckCount; if($('t-go'))$('t-go').textContent=v.go;
   const myhand=v.myHand||[];
   $('myHand').innerHTML=myhand.map((c,i)=>{ const canPlay=v.isMyTurn && mpSameMonth(v.table,c.m).length>0;
-    return `<div class="hcard ${i===MP._sel?'sel':''} ${canPlay?'canplay':''}" onclick="mpTapCard(${i})"><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`; }).join('');
+    return `<div class="hcard ${i===MP._sel?'sel':''} ${canPlay?'canplay':''} ${gudM.has(c.m)?'gudeun':''}" onclick="mpTapCard(${i})"><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`; }).join('');
   const meP=v.players.find(p=>p.seat===v.mySeat)||{cap:[]};
   $('myCaptured').innerHTML=capGroup(meP.cap);
   if($('t-myscore'))$('t-myscore').textContent=v.myScore; if($('myScoreLine'))$('myScoreLine').innerHTML=`내 점수 <b>${v.myScore}</b>점`;
