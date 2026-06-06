@@ -183,20 +183,48 @@ function makeSolution(){
   for(const r of rows) for(const c of cols) g.push(nums[pattern(r,c)]);
   return g; // length 81
 }
+// 한 칸의 후보 숫자
+function candAt(p,i){ if(p[i])return []; const r=(i/9)|0, c=i%9, br=(r/3|0)*3, bc=(c/3|0)*3; const used=new Set();
+  for(let k=0;k<9;k++){ used.add(p[r*9+k]); used.add(p[k*9+c]); }
+  for(let dr=0;dr<3;dr++)for(let dc=0;dc<3;dc++) used.add(p[(br+dr)*9+(bc+dc)]);
+  const out=[]; for(let v=1;v<=9;v++) if(!used.has(v)) out.push(v); return out; }
+// 유닛(0-8 행, 9-17 열, 18-26 박스) 셀 인덱스
+function unitCells(u){ const out=[]; if(u<9){ for(let c=0;c<9;c++)out.push(u*9+c); } else if(u<18){ const c=u-9; for(let r=0;r<9;r++)out.push(r*9+c); } else { const b=u-18, br=(b/3|0)*3, bc=(b%3)*3; for(let dr=0;dr<3;dr++)for(let dc=0;dc<3;dc++)out.push((br+dr)*9+(bc+dc)); } return out; }
+// 기본 기법(네이키드 싱글 + 히든 싱글)만으로 끝까지 풀리면 그 해를, 막히면 null → '추측 없이 풀림' 판정
+function logicSolve(p0){ const p=p0.slice(); let prog=true;
+  while(prog){ prog=false;
+    for(let i=0;i<81;i++){ if(p[i])continue; const cd=candAt(p,i); if(cd.length===0)return null; if(cd.length===1){ p[i]=cd[0]; prog=true; } }
+    if(prog)continue;
+    for(let u=0;u<27;u++){ const cu=unitCells(u);
+      for(let v=1;v<=9;v++){ let present=false,cnt=0,spot=-1;
+        for(const i of cu){ if(p[i]===v){present=true;break;} if(!p[i] && candAt(p,i).indexOf(v)>=0){ cnt++; spot=i; } }
+        if(!present && cnt===1){ p[spot]=v; prog=true; } } }
+  }
+  for(let i=0;i<81;i++) if(!p[i]) return null; return p; }
+// 백트래킹 해 개수(최대 limit개까지) — 유니크 판정용
+function countSolutions(p0,limit){ const p=p0.slice(); let count=0;
+  (function bt(){ if(count>=limit)return; let bi=-1,bc=10,bcand=null;
+    for(let i=0;i<81;i++){ if(p[i])continue; const cd=candAt(p,i); if(cd.length<bc){ bc=cd.length; bi=i; bcand=cd; if(bc===0)return; } }
+    if(bi<0){ count++; return; }
+    for(const v of bcand){ p[bi]=v; bt(); p[bi]=0; if(count>=limit)return; } })();
+  return count; }
 function makePuzzle(){
   solution=makeSolution();
   puzzle=solution.slice();
   given=new Array(81).fill(true);
-  // 대칭으로 칸 제거
   const target=GIVENS[diff];
   const idx=shuffle([...Array(81).keys()]);
-  let remaining=81;
+  // 초급: 추측 없이(기본 기법만) 풀리는 상태 유지하며 제거 / 중·고급: 유니크 해 유지
+  const stillOk = diff==='easy' ? (p)=>logicSolve(p)!==null : (p)=>countSolutions(p,2)===1;
+  let givenCount=81;
   for(const i of idx){
-    if(remaining<=target) break;
-    const j=80-i;
+    if(givenCount<=target) break;
     if(puzzle[i]===0) continue;
-    puzzle[i]=0; given[i]=false; remaining--;
-    if(j!==i && puzzle[j]!==0 && remaining>target){ puzzle[j]=0; given[j]=false; remaining--; }
+    const j=80-i, si=puzzle[i], sj=puzzle[j];
+    puzzle[i]=0; let removed=1;
+    if(j!==i && puzzle[j]!==0 && givenCount-1>target){ puzzle[j]=0; removed=2; }
+    if(stillOk(puzzle)){ given[i]=false; if(removed===2)given[j]=false; givenCount-=removed; }
+    else { puzzle[i]=si; if(removed===2)puzzle[j]=sj; }   // 되돌림
   }
   notes=Array.from({length:81},()=>new Set());
 }
