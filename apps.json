@@ -4,7 +4,7 @@
     "icon": "https://game.cocy.io/match3/icon.svg",
     "url": "https://game.cocy.io/match3/",
     "desc": "애니팡식 매치-3! 60초 시간제·콤보 폭발·골드 보상·랭킹, 한국어/繁體中文/English",
-    "badge": "NEW",
+    "badge": "HOT",
     "platforms": ["WEB"],
     "languages": ["ko","zhTW","en"],
     "category": "puzzle"
@@ -44,7 +44,7 @@
     "icon": "https://game.cocy.io/mahjong/icon.svg",
     "url": "https://game.cocy.io/mahjong/",
     "desc": "대만 마작 (台灣麻將) - 16타일 핸드, 4인 플레이, 타이 × 10만G 보상",
-    "badge": "NEW",
+    "badge": "HOT",
     "platforms": [
       "WEB"
     ],
@@ -73,7 +73,7 @@
     "icon": "https://game.cocy.io/gostop/icon.svg",
     "url": "https://game.cocy.io/gostop/",
     "desc": "화투 2인 맞고 - 광·띠·끗·피·고도리·고스톱·피박, CPU 대전",
-    "badge": "NEW",
+    "badge": "HOT",
     "platforms": [
       "WEB"
     ],
@@ -87,7 +87,7 @@
     "icon": "https://game.cocy.io/blackjack/icon.svg",
     "url": "https://game.cocy.io/blackjack/",
     "desc": "딜러와 1:1 블랙잭! 골드 베팅, 3:2 배당, 연승 보너스",
-    "badge": "NEW",
+    "badge": "HOT",
     "platforms": [
       "WEB"
     ],
@@ -270,7 +270,7 @@
     "icon": "https://game.cocy.io/pikmin/favicon.svg",
     "url": "https://game.cocy.io/pikmin/",
     "desc": "피크민 수집 관리",
-    "badge": "HOT",
+    "badge": "NEW",
     "platforms": [
       "PWA"
     ],

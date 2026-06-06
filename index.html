@@ -216,11 +216,13 @@
     <div class="tabs">
         <button class="tab active" data-filter="all">전체</button>
         <button class="tab" data-filter="hot">🔥 인기</button>
+        <button class="tab" data-filter="new">🆕 신규</button>
         <button class="tab" data-filter="multi">👥 멀티</button>
         <button class="tab" data-filter="board">♟️ 보드</button>
         <button class="tab" data-filter="card">🃏 카드</button>
         <button class="tab" data-filter="puzzle">🧩 퍼즐</button>
         <button class="tab" data-filter="arcade">🕹️ 아케이드</button>
+        <button class="tab" data-filter="tool">🛠️ 도구</button>
     </div>
 
     <div class="container">
@@ -242,9 +244,9 @@
             return (navigator.language||'').toLowerCase().startsWith('zh') ? 'zh-TW' : 'ko'; })();
         const PORTAL_I18N = {
             ko: { login:'로그인', logout:'로그아웃', logoutConfirm:'로그아웃 하시겠습니까?', empty:'표시할 게임이 없습니다',
-                  langBtn:'🌐 繁中', tabs:{ all:'전체', hot:'🔥 인기', multi:'👥 멀티', board:'♟️ 보드', card:'🃏 카드', puzzle:'🧩 퍼즐', arcade:'🕹️ 아케이드' } },
+                  langBtn:'🌐 繁中', tabs:{ all:'전체', hot:'🔥 인기', new:'🆕 신규', multi:'👥 멀티', board:'♟️ 보드', card:'🃏 카드', puzzle:'🧩 퍼즐', arcade:'🕹️ 아케이드', tool:'🛠️ 도구' } },
             'zh-TW': { login:'登入', logout:'登出', logoutConfirm:'確定要登出嗎？', empty:'沒有可顯示的遊戲',
-                  langBtn:'🌐 한국어', tabs:{ all:'全部', hot:'🔥 熱門', multi:'👥 多人', board:'♟️ 棋盤', card:'🃏 紙牌', puzzle:'🧩 益智', arcade:'🕹️ 街機' } }
+                  langBtn:'🌐 한국어', tabs:{ all:'全部', hot:'🔥 熱門', new:'🆕 新作', multi:'👥 多人', board:'♟️ 棋盤', card:'🃏 紙牌', puzzle:'🧩 益智', arcade:'🕹️ 街機', tool:'🛠️ 工具' } }
         };
         function tt(k){ return (PORTAL_I18N[LANG]||PORTAL_I18N.ko)[k]; }
         // 게임 카드 번체중국어 번역(gameId 기준). 없으면 apps.json 한국어 폴백.
@@ -295,11 +297,12 @@
 
         // 카테고리 매핑 (URL 기반)
         const categories = {
-            multi: ['poker', 'pingtan', 'blackjack', 'connect4', 'gomoku', 'rps'],
+            multi: ['poker', 'pingtan', 'blackjack', 'connect4', 'gomoku', 'rps', 'gostop', 'mahjong', 'riichi', 'ppingpae'],
             board: ['pingtan', 'connect4', 'gomoku', 'ppingpae'],
-            card: ['blackjack', 'jokerrun', 'poker'],
-            puzzle: ['match3', 'sudoku', 'tileslider', 'blockpuzzle', 'minesweeper', 'number-guess'],
-            arcade: ['snake', 'breakout', 'billiards', 'enhance']
+            card: ['blackjack', 'jokerrun', 'poker', 'gostop', 'mahjong', 'riichi'],
+            puzzle: ['match3', 'sudoku', 'tileslider', 'blockpuzzle', 'minesweeper', 'number-guess', 'blockblast'],
+            arcade: ['snake', 'breakout', 'billiards', 'enhance', 'linerush', 'bulletdodge', 'ladder', 'worldcup'],
+            tool: ['d2r', 'd2r-runewords', 'pikmin']
         };
 
         function getGameId(url) {
@@ -310,6 +313,7 @@
         function matchCategory(app, filter) {
             if (filter === 'all') return true;
             if (filter === 'hot') return app.badge === 'HOT';
+            if (filter === 'new') return app.badge === 'NEW';
             const gameId = getGameId(app.url);
             return categories[filter]?.includes(gameId) || false;
         }
