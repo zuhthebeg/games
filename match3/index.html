@@ -41,6 +41,8 @@
     background:rgba(255,255,255,.05);border-radius:11px;cursor:pointer;position:relative;
     transition:transform .14s cubic-bezier(.3,1.4,.5,1),opacity .14s;will-change:transform}
   .cell.sel{box-shadow:inset 0 0 0 3px var(--accent);background:rgba(255,207,77,.18)}
+  .cell.hint{animation:hint 1s ease-in-out infinite}
+  @keyframes hint{0%,100%{box-shadow:inset 0 0 0 2px rgba(127,255,176,.5);background:rgba(127,255,176,.1)}50%{box-shadow:inset 0 0 0 3px #7fffb0,0 0 14px rgba(127,255,176,.7);background:rgba(127,255,176,.28)}}
   .cell.pop{animation:pop .22s ease-out forwards}
   @keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.25)}100%{transform:scale(0);opacity:0}}
   .cell.big{animation:bigpop .26s ease-out forwards;z-index:4}
@@ -224,6 +226,18 @@ function hasAnyMove(){
   return false;
 }
 function swapG(r1,c1,r2,c2){ const a=idx(r1,c1),b=idx(r2,c2); const t=grid[a]; grid[a]=grid[b]; grid[b]=t; }
+/* 힌트: 3초간 매치 없으면 가능한 한 수 하이라이트 */
+function findHint(){
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    for(const [dr,dc] of [[0,1],[1,0]]){ const nr=r+dr,nc=c+dc; if(!inBounds(nr,nc))continue;
+      swapG(r,c,nr,nc); const ok=findMatches().size>0; swapG(r,c,nr,nc); if(ok)return {a:idx(r,c),b:idx(nr,nc)}; }
+  }
+  return null;
+}
+let hintTimer=null, hintCells=[];
+function clearHint(){ hintCells.forEach(i=>cells[i]&&cells[i].classList.remove('hint')); hintCells=[]; }
+function scheduleHint(){ clearTimeout(hintTimer); clearHint(); if(!playing)return;
+  hintTimer=setTimeout(()=>{ if(busy||!playing)return; const mv=findHint(); if(!mv)return; hintCells=[mv.a,mv.b]; hintCells.forEach(i=>cells[i].classList.add('hint')); }, 3000); }
 
 async function trySwap(r1,c1,r2,c2){
   if(busy||!playing) return; if(!inBounds(r2,c2)) return;
@@ -231,16 +245,16 @@ async function trySwap(r1,c1,r2,c2){
   busy=true; clearSel();
   swapG(r1,c1,r2,c2); render(); sound('swap');
   await sleep(140);
-  if(findMatches().size===0){ swapG(r1,c1,r2,c2); render(); sound('bad'); await sleep(140); busy=false; return; } // 무효 → 복귀
+  if(findMatches().size===0){ swapG(r1,c1,r2,c2); render(); sound('bad'); await sleep(140); busy=false; scheduleHint(); return; } // 무효 → 복귀
   await resolve();
   if(!hasAnyMove()){ genGrid(); render(); await resolve(); }
-  busy=false;
+  busy=false; scheduleHint();
 }
 
 /* 입력: 드래그(스와이프)로 방향 스왑 — 터치 우선. 짧은 탭은 선택 후 인접 탭으로도 가능 */
 let drag=null; // {r,c,x,y,moved}
 function cellPx(){ const r=cells[0]&&cells[0].getBoundingClientRect(); return (r&&r.width)||44; }
-function onDown(e,r,c){ if(busy||!playing)return;
+function onDown(e,r,c){ if(busy||!playing)return; clearTimeout(hintTimer); clearHint();
   // 선택 상태에서 인접 탭 → 즉시 스왑(폴백)
   if(sel && (Math.abs(sel.r-r)+Math.abs(sel.c-c)===1)){ const s=sel; clearSel(); trySwap(s.r,s.c,r,c); return; }
   drag={r,c,x:e.clientX,y:e.clientY,moved:false};
@@ -294,7 +308,7 @@ function startGame(){
   document.getElementById('ovStart').classList.remove('on'); closeEnd();
   score=0; timeLeft=DUR; busy=false; playing=true; sel=null;
   genGrid(); render();
-  (async()=>{ busy=true; await resolve(); if(!hasAnyMove()){genGrid();render();} busy=false; })();
+  (async()=>{ busy=true; await resolve(); if(!hasAnyMove()){genGrid();render();} busy=false; scheduleHint(); })();
   updateTime();
   if(timerId)clearInterval(timerId);
   timerId=setInterval(()=>{ timeLeft--; updateTime(); if(timeLeft<=0) endGame(); },1000);
@@ -303,10 +317,11 @@ function startGame(){
 function updateTime(){ const tl=Math.max(0,timeLeft); document.getElementById('time').textContent=tl;
   const f=document.getElementById('timefill'); f.style.width=Math.min(100,tl/TMAX*100)+'%'; f.style.background= tl<=5 ? 'linear-gradient(90deg,#ff5d6c,#ff2d4d)' : 'linear-gradient(90deg,#ffcf4d,#ff7a59)'; }
 function addTime(s){ if(!playing||s<=0)return; if(timeLeft>=TMAX){ return; } timeLeft=Math.min(TMAX,timeLeft+s); updateTime(); showTimePlus(s); }
-function showTimePlus(s){ let el=document.getElementById('tplus'); if(!el){ el=document.createElement('div'); el.id='tplus'; el.style.cssText='position:fixed;left:50%;top:calc(var(--wallet-bar-h) + 70px);transform:translateX(-50%);z-index:50;pointer-events:none;font-weight:900;font-size:1.4rem;color:#7fffb0;text-shadow:0 2px 8px rgba(0,0,0,.7)'; document.body.appendChild(el);} el.textContent='+'+s+'s'; el.style.animation='none'; void el.offsetWidth; el.style.animation='tplus .9s ease-out'; }
+function showTimePlus(s){ let el=document.getElementById('tplus'); if(!el){ el=document.createElement('div'); el.id='tplus'; el.style.cssText='position:fixed;left:50%;top:calc(var(--wallet-bar-h) + 150px);transform:translateX(-50%);z-index:50;pointer-events:none;font-weight:900;font-size:1.5rem;color:#7fffb0;text-shadow:0 2px 10px rgba(0,0,0,.8);opacity:0'; document.body.appendChild(el);} el.textContent='+'+s+'s'; el.style.animation='none'; void el.offsetWidth; el.style.animation='tplus 1s ease-out'; }
 function bigEffect(cross){ const bw=document.querySelector('.boardwrap'); bw.classList.remove('flash'); void bw.offsetWidth; bw.classList.add('flash'); setTimeout(()=>bw.classList.remove('flash'),360); vibe(cross?[20,30,20,30]:[15,25,15]); }
 function endGame(){
   if(!playing)return; playing=false; if(timerId)clearInterval(timerId);
+  clearTimeout(hintTimer); clearHint();
   sound('end');
   const reward=Math.round(score*1000);
   try{ if(typeof SharedWallet!=='undefined'&&SharedWallet._initialized&&reward>0)SharedWallet.addGold(reward); }catch(e){}
