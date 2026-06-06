@@ -354,7 +354,7 @@ function deal(){
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   G.table=deck.splice(0,8);
   G.players=[{hand:deck.splice(0,10),cap:[]},{hand:deck.splice(0,10),cap:[]}];
-  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0]; G.firstPpuk=true;
+  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0]; G.playCount=[0,0];
   sortHand(0); G._dealing=true; document.body.classList.add('dealing'); renderAll();
   setTimeout(()=>{ G._dealing=false; document.body.classList.remove('dealing'); },1050);
   G._chongtong=null;
@@ -408,6 +408,7 @@ function flyToPile(cards, destEl){
 
 async function takeTurn(p, handCard, opts){
   opts=opts||{};
+  if(!G.playCount)G.playCount=[0,0]; G.playCount[p]=(G.playCount[p]||0)+1;  // 플레이어별 턴 수(첫뻑 판정용)
   const pl=G.players[p];
   const bomb = opts.bombMonth!=null;
   const playM = bomb ? opts.bombMonth : handCard.m;
@@ -452,7 +453,8 @@ async function takeTurn(p, handCard, opts){
     if(flipSame){ captured.push(...handCards, flipCard); }      // 쪽
   } else if(beforeM===1){
     if(flipSame){ ppuk=true; G.ppukCount[p]=(G.ppukCount[p]||0)+1; G.ppukOwner[playM]=p; toast((p===0?'':'CPU ')+'뻑! ('+G.ppukCount[p]+')');
-      if(G.firstPpuk){ G.firstPpuk=false; if(p===0){ const fb=1000000*BET; if(typeof SharedWallet!=='undefined'&&SharedWallet._initialized){ try{ SharedWallet.addGold(fb); }catch(e){} } setTimeout(()=>toast('🎉 첫뻑 보너스 +'+fb.toLocaleString()+'G'),500); } else setTimeout(()=>toast('CPU 첫뻑'),500); } }
+      if(G.playCount && G.playCount[p]===1){ // 첫뻑 = 그 플레이어의 첫 턴에 난 뻑만 (이후 턴 뻑은 보너스 없음)
+        if(p===0){ const fb=300000*BET; if(typeof SharedWallet!=='undefined'&&SharedWallet._initialized){ try{ SharedWallet.addGold(fb); }catch(e){} } setTimeout(()=>toast('🎉 첫뻑 보너스 +'+fb.toLocaleString()+'G'),500); } else setTimeout(()=>toast('CPU 첫뻑'),500); } }
     else { captured.push(handCards[0], preM[0]); }
   } else if(beforeM===2){
     if(flipSame){ captured.push(handCards[0], preM[0], preM[1], flipCard); }   // 따닥
