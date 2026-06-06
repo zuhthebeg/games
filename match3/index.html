@@ -43,6 +43,11 @@
   .cell.sel{box-shadow:inset 0 0 0 3px var(--accent);background:rgba(255,207,77,.18)}
   .cell.pop{animation:pop .22s ease-out forwards}
   @keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.25)}100%{transform:scale(0);opacity:0}}
+  .cell.big{animation:bigpop .26s ease-out forwards;z-index:4}
+  @keyframes bigpop{0%{transform:scale(1)}35%{transform:scale(1.5);filter:brightness(1.8) drop-shadow(0 0 10px #fff)}100%{transform:scale(0) rotate(40deg);opacity:0}}
+  .boardwrap.flash::after{content:"";position:absolute;inset:0;border-radius:14px;background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animation:flash .36s ease-out;pointer-events:none;z-index:7}
+  @keyframes flash{from{opacity:1}to{opacity:0}}
+  @keyframes tplus{0%{opacity:0;transform:translateX(-50%) translateY(6px) scale(.7)}25%{opacity:1;transform:translateX(-50%) translateY(-4px) scale(1.1)}100%{opacity:0;transform:translateX(-50%) translateY(-26px) scale(1)}}
   .cell.drop{animation:drop .22s cubic-bezier(.3,1.2,.4,1)}
   @keyframes drop{from{transform:translateY(-18px)}to{transform:translateY(0)}}
   #combo{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);z-index:6;pointer-events:none;
@@ -87,9 +92,8 @@
 <div class="ov" id="ovStart"><div class="card">
   <h2>🍬 <span data-i18n="title">팝매치</span></h2>
   <p class="sub" data-i18n="howto">블록을 드래그해서 3개 이상 맞추세요</p>
-  <p class="sub" data-i18n="pick" style="margin-top:10px;font-weight:800;color:var(--text)">모드 선택</p>
-  <button class="btn" onclick="startGame('time')" data-i18n="modeTime">⏱ 시간제 60초</button>
-  <button class="btn" style="background:linear-gradient(180deg,#9b5cff,#6b3bff);color:#fff" onclick="startGame('moves')" data-i18n="modeMoves">🎯 이동제 25수</button>
+  <p class="sub" data-i18n="goalHint" style="margin-top:8px">매치할수록 시간 추가! 콤보·큰 매치로 더 길게 버텨 최고점 도전</p>
+  <button class="btn" onclick="startGame()" data-i18n="start">시작</button>
 </div></div>
 
 <div class="ov" id="ovEnd"><div class="card">
@@ -103,16 +107,16 @@
 /* ── i18n (한국어 / 繁體中文 / English) — 사전식, 즉시전환 ── */
 const I18N={
   ko:{title:'팝매치',restart:'다시',score:'점수',time:'시간',best:'최고',moves:'이동',
-      howto:'블록을 드래그(스와이프)해서 3개 이상 맞추세요',start:'시작',pick:'모드 선택',modeTime:'⏱ 시간제 60초',modeMoves:'🎯 이동제 25수',
-      timeup:'타임 오버!',movesup:'이동 종료!',finalScore:'최종 점수',again:'다시 하기',langBtn:'🌐 繁中',
+      howto:'블록을 드래그해서 3개 이상 맞추세요 · 매치하면 시간 추가!',start:'시작',goalHint:'매치할수록 시간 추가! 콤보·큰 매치로 더 길게 버텨 최고점 도전',
+      timeup:'타임 오버!',finalScore:'최종 점수',again:'다시 하기',langBtn:'🌐 繁中',
       combo:(n)=>n+' 콤보!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   'zh-TW':{title:'啵啵消',restart:'重來',score:'分數',time:'時間',best:'最佳',moves:'步數',
-      howto:'拖曳(滑動)方塊，連成3個以上即可消除',start:'開始',pick:'選擇模式',modeTime:'⏱ 限時60秒',modeMoves:'🎯 限步25步',
-      timeup:'時間到！',movesup:'步數用完！',finalScore:'最終分數',again:'再玩一次',langBtn:'🌐 EN',
+      howto:'拖曳方塊連成3個以上消除 · 消除可加時間！',start:'開始',goalHint:'消除越多加越多時間！靠連擊·大消除撐更久，挑戰最高分',
+      timeup:'時間到！',finalScore:'最終分數',again:'再玩一次',langBtn:'🌐 EN',
       combo:(n)=>n+' 連擊！',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   en:{title:'Pop Match',restart:'Reset',score:'Score',time:'Time',best:'Best',moves:'Moves',
-      howto:'Drag (swipe) blocks to match 3 or more',start:'Start',pick:'Pick mode',modeTime:'⏱ Time 60s',modeMoves:'🎯 Moves 25',
-      timeup:"Time's up!",movesup:'Out of moves!',finalScore:'Final score',again:'Play again',langBtn:'🌐 한국어',
+      howto:'Drag blocks to match 3+ · matching adds time!',start:'Start',goalHint:'Matching adds time! Survive longer with combos & big matches for a high score',
+      timeup:"Time's up!",finalScore:'Final score',again:'Play again',langBtn:'🌐 한국어',
       combo:(n)=>n+' Combo!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'}};
 let LANG=(function(){try{const s=localStorage.getItem('m3-lang');if(s)return s;}catch(e){}
   const n=(navigator.language||'').toLowerCase();return n.startsWith('zh')?'zh-TW':n.startsWith('ko')?'ko':'en';})();
@@ -126,7 +130,8 @@ function cycleLang(){LANG=LANG==='ko'?'zh-TW':(LANG==='zh-TW'?'en':'ko');try{loc
 
 /* ── 매치-3 엔진 ── */
 const N=7, TYPES=6, FACES=['🍎','🍇','🍋','🍊','🫐','🍓'];
-const DUR=60;
+const DUR=25;      // 시작 시간(초). 매치마다 시간 추가로 연장
+const TMAX=40;     // 시간바 기준 최대
 let grid=[], cells=[], score=0, timeLeft=DUR, timerId=null, busy=false, playing=false;
 let sel=null; // {r,c}
 
@@ -172,23 +177,42 @@ function gravity(){
     for(let r=write;r>=0;r--){ grid[idx(r,c)]=rnd(TYPES); cells[idx(r,c)].classList.add('drop'); setTimeout(()=>cells[idx(r,c)]&&cells[idx(r,c)].classList.remove('drop'),240); }
   }
 }
+/* 런 단위 분석 → 매치셀 + 보너스 라인(4+런/크로스) */
+function computeClears(){
+  const runs=[];
+  for(let r=0;r<N;r++){ let run=1; for(let c=1;c<=N;c++){ const same=c<N&&grid[idx(r,c)]!=null&&grid[idx(r,c)]===grid[idx(r,c-1)]; if(same)run++; else { if(run>=3){ const cs=[]; for(let k=1;k<=run;k++)cs.push(idx(r,c-k)); runs.push({o:'h',line:r,len:run,cells:cs}); } run=1; } } }
+  for(let c=0;c<N;c++){ let run=1; for(let r=1;r<=N;r++){ const same=r<N&&grid[idx(r,c)]!=null&&grid[idx(r,c)]===grid[idx(r-1,c)]; if(same)run++; else { if(run>=3){ const cs=[]; for(let k=1;k<=run;k++)cs.push(idx(r-k,c)); runs.push({o:'v',line:c,len:run,cells:cs}); } run=1; } } }
+  const matched=new Set(), hSet=new Set(), vSet=new Set(); let maxRun=0;
+  runs.forEach(rn=>{ maxRun=Math.max(maxRun,rn.len); rn.cells.forEach(i=>{ matched.add(i); (rn.o==='h'?hSet:vSet).add(i); }); });
+  const clear=new Set(matched); let cross=false;
+  matched.forEach(i=>{ if(hSet.has(i)&&vSet.has(i)) cross=true; });
+  // 4+런 → 그 줄 전체 라인클리어
+  runs.forEach(rn=>{ if(rn.len>=4){ if(rn.o==='h'){ for(let c=0;c<N;c++)clear.add(idx(rn.line,c)); } else { for(let r=0;r<N;r++)clear.add(idx(r,rn.line)); } } });
+  // 크로스 → 그 셀의 행+열 전체
+  if(cross) matched.forEach(i=>{ if(hSet.has(i)&&vSet.has(i)){ const r=Math.floor(i/N),c=i%N; for(let cc=0;cc<N;cc++)clear.add(idx(r,cc)); for(let rr=0;rr<N;rr++)clear.add(idx(rr,c)); } });
+  return {clear,maxRun,cross};
+}
 async function resolve(){
   let chain=0;
   while(true){
-    const m=findMatches();
-    if(m.size===0) break;
+    const res=computeClears();
+    if(res.clear.size===0) break;
     chain++;
-    // 점수: 칸당 10 × 콤보배수
-    score += m.size*10*chain;
-    if(chain>=2) showCombo(chain);
-    m.forEach(i=>cells[i].classList.add('pop'));
-    sound('pop',chain);
-    await sleep(200);
-    m.forEach(i=>{ grid[i]=null; cells[i].classList.remove('pop'); });
+    const big = res.maxRun>=4 || res.cross;
+    score += res.clear.size*10*chain + (big?100:0);
+    // 시간 가중: 3개=+1 · 4개=+2 · 5개/크로스=+3 · 콤보(2연쇄+)=+2
+    let add = res.cross?3 : (res.maxRun>=5?3 : (res.maxRun>=4?2:1)); if(chain>=2) add+=2;
+    addTime(add);
+    if(chain>=2 || big) showCombo(chain);
+    if(big) bigEffect(res.cross);
+    res.clear.forEach(i=>{ cells[i].classList.add('pop'); if(big)cells[i].classList.add('big'); });
+    sound('pop', chain + (big?2:0));
+    await sleep(big?240:190);
+    res.clear.forEach(i=>{ grid[i]=null; cells[i].classList.remove('pop','big'); });
     render();
-    await sleep(60);
+    await sleep(55);
     gravity(); render();
-    await sleep(200);
+    await sleep(195);
   }
   render();
 }
@@ -208,11 +232,9 @@ async function trySwap(r1,c1,r2,c2){
   swapG(r1,c1,r2,c2); render(); sound('swap');
   await sleep(140);
   if(findMatches().size===0){ swapG(r1,c1,r2,c2); render(); sound('bad'); await sleep(140); busy=false; return; } // 무효 → 복귀
-  if(MODE==='moves'){ movesLeft--; updateMoves(); }
   await resolve();
   if(!hasAnyMove()){ genGrid(); render(); await resolve(); }
   busy=false;
-  if(MODE==='moves' && movesLeft<=0) endGame();
 }
 
 /* 입력: 드래그(스와이프)로 방향 스왑 — 터치 우선. 짧은 탭은 선택 후 인접 탭으로도 가능 */
@@ -224,18 +246,22 @@ function onDown(e,r,c){ if(busy||!playing)return;
   drag={r,c,x:e.clientX,y:e.clientY,moved:false};
   sel={r,c}; markSel(); try{e.target.setPointerCapture(e.pointerId);}catch(_){}
 }
-function onMove(e){ if(busy||!playing||!drag||drag.moved)return;
-  const dx=e.clientX-drag.x, dy=e.clientY-drag.y; const thr=cellPx()*0.35;
-  if(Math.abs(dx)<thr && Math.abs(dy)<thr) return;
-  drag.moved=true;
-  let nr=drag.r, nc=drag.c;
-  if(Math.abs(dx)>Math.abs(dy)) nc += dx>0?1:-1; else nr += dy>0?1:-1;
-  const d=drag; drag=null; clearSel();
-  trySwap(d.r,d.c,nr,nc);
+function resetCell(i){ const c=cells[i]; if(c){ c.style.transition=''; c.style.transform=''; c.style.zIndex=''; } }
+function resetDrag(d){ if(!d)return; resetCell(idx(d.r,d.c)); if(d.nb) resetCell(idx(d.nb.r,d.nb.c)); }
+function onMove(e){ if(busy||!playing||!drag)return;
+  const dx=e.clientX-drag.x, dy=e.clientY-drag.y; const cp=cellPx()+3;
+  const ax=Math.abs(dx)>Math.abs(dy)?'h':'v'; let off=ax==='h'?dx:dy; const dir=off>0?1:-1;
+  const nr=drag.r+(ax==='v'?dir:0), nc=drag.c+(ax==='h'?dir:0);
+  off=Math.max(-cp,Math.min(cp,off)); if(!inBounds(nr,nc)) off=Math.max(-cp*0.25,Math.min(cp*0.25,off));
+  const cell=cells[idx(drag.r,drag.c)]; cell.style.transition='none'; cell.style.zIndex='5';
+  cell.style.transform = ax==='h'?`translateX(${off}px)`:`translateY(${off}px)`;
+  if(drag.nb && (drag.nb.r!==nr||drag.nb.c!==nc)){ resetCell(idx(drag.nb.r,drag.nb.c)); drag.nb=null; }
+  if(inBounds(nr,nc)){ const nb=cells[idx(nr,nc)]; nb.style.transition='none'; nb.style.transform = ax==='h'?`translateX(${-off}px)`:`translateY(${-off}px)`; drag.nb={r:nr,c:nc}; }
+  if(Math.abs(off)>=cp*0.55 && inBounds(nr,nc)){ const d=drag; drag=null; resetDrag(d); clearSel(); trySwap(d.r,d.c,nr,nc); }
 }
 document.addEventListener('pointermove',onMove,{passive:true});
-document.addEventListener('pointerup',()=>{ drag=null; });
-document.addEventListener('pointercancel',()=>{ drag=null; });
+document.addEventListener('pointerup',()=>{ if(drag){ resetDrag(drag); drag=null; } });
+document.addEventListener('pointercancel',()=>{ if(drag){ resetDrag(drag); drag=null; } });
 function markSel(){ clearSelVis(); if(sel)cells[idx(sel.r,sel.c)].classList.add('sel'); }
 function clearSelVis(){ cells.forEach(c=>c.classList.remove('sel')); }
 function clearSel(){ sel=null; clearSelVis(); }
@@ -262,32 +288,31 @@ function sound(type,chain){ const ch=chain||1;
   else if(type==='end'){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>blip(f,.18,.2,'triangle'),i*90)); }
 }
 
-/* ── 게임 흐름 ── */
-let MODE='time', movesLeft=0; const MOVES=25;
-function newGame(){ closeEnd(); document.getElementById('ovStart').classList.add('on'); } // 다시 → 모드 선택
-function startGame(mode){
-  MODE=mode||MODE||'time';
+/* ── 게임 흐름 (시간제 단일 — 매치로 시간 연장) ── */
+function newGame(){ closeEnd(); document.getElementById('ovStart').classList.add('on'); }
+function startGame(){
   document.getElementById('ovStart').classList.remove('on'); closeEnd();
-  score=0; timeLeft=DUR; movesLeft=MOVES; busy=false; playing=true; sel=null;
+  score=0; timeLeft=DUR; busy=false; playing=true; sel=null;
   genGrid(); render();
   (async()=>{ busy=true; await resolve(); if(!hasAnyMove()){genGrid();render();} busy=false; })();
-  document.getElementById('timeLabel').textContent = MODE==='moves'? t('moves') : t('time');
-  document.getElementById('timebar').style.display = MODE==='moves' ? 'none' : '';
+  updateTime();
   if(timerId)clearInterval(timerId);
-  if(MODE==='time'){ updateTime(); timerId=setInterval(()=>{ timeLeft--; updateTime(); if(timeLeft<=0) endGame(); },1000); }
-  else { updateMoves(); }
+  timerId=setInterval(()=>{ timeLeft--; updateTime(); if(timeLeft<=0) endGame(); },1000);
   updateBest();
 }
-function updateTime(){ document.getElementById('time').textContent=Math.max(0,timeLeft); document.getElementById('timefill').style.width=(Math.max(0,timeLeft)/DUR*100)+'%'; }
-function updateMoves(){ document.getElementById('time').textContent=Math.max(0,movesLeft); }
+function updateTime(){ const tl=Math.max(0,timeLeft); document.getElementById('time').textContent=tl;
+  const f=document.getElementById('timefill'); f.style.width=Math.min(100,tl/TMAX*100)+'%'; f.style.background= tl<=5 ? 'linear-gradient(90deg,#ff5d6c,#ff2d4d)' : 'linear-gradient(90deg,#ffcf4d,#ff7a59)'; }
+function addTime(s){ if(!playing||s<=0)return; timeLeft+=s; if(timeLeft>99)timeLeft=99; updateTime(); showTimePlus(s); }
+function showTimePlus(s){ let el=document.getElementById('tplus'); if(!el){ el=document.createElement('div'); el.id='tplus'; el.style.cssText='position:fixed;left:50%;top:calc(var(--wallet-bar-h) + 70px);transform:translateX(-50%);z-index:50;pointer-events:none;font-weight:900;font-size:1.4rem;color:#7fffb0;text-shadow:0 2px 8px rgba(0,0,0,.7)'; document.body.appendChild(el);} el.textContent='+'+s+'s'; el.style.animation='none'; void el.offsetWidth; el.style.animation='tplus .9s ease-out'; }
+function bigEffect(cross){ const bw=document.querySelector('.boardwrap'); bw.classList.remove('flash'); void bw.offsetWidth; bw.classList.add('flash'); setTimeout(()=>bw.classList.remove('flash'),360); vibe(cross?[20,30,20,30]:[15,25,15]); }
 function endGame(){
   if(!playing)return; playing=false; if(timerId)clearInterval(timerId);
   sound('end');
-  const reward=Math.round(score*1000); // 점수×1000골드
+  const reward=Math.round(score*1000);
   try{ if(typeof SharedWallet!=='undefined'&&SharedWallet._initialized&&reward>0)SharedWallet.addGold(reward); }catch(e){}
   try{ if(typeof GameRankings!=='undefined'&&score>0)GameRankings.submit('match3',{score}); }catch(e){}
   saveBest(score);
-  document.getElementById('endTitle').textContent = MODE==='moves'? t('movesup') : t('timeup');
+  document.getElementById('endTitle').textContent = t('timeup');
   document.getElementById('finalScore').textContent=score;
   document.getElementById('endGold').textContent=reward>0?t('goldLine')(reward):'';
   document.getElementById('ovEnd').classList.add('on');
