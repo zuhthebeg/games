@@ -130,8 +130,8 @@ function cycleLang(){LANG=LANG==='ko'?'zh-TW':(LANG==='zh-TW'?'en':'ko');try{loc
 
 /* ── 매치-3 엔진 ── */
 const N=7, TYPES=6, FACES=['🍎','🍇','🍋','🍊','🫐','🍓'];
-const DUR=25;      // 시작 시간(초). 매치마다 시간 추가로 연장
-const TMAX=40;     // 시간바 기준 최대
+const DUR=60;      // 시작 시간(초). 매치마다 시간 추가, 단 60초 상한
+const TMAX=60;     // 시간바 기준 최대(=상한)
 let grid=[], cells=[], score=0, timeLeft=DUR, timerId=null, busy=false, playing=false;
 let sel=null; // {r,c}
 
@@ -302,7 +302,7 @@ function startGame(){
 }
 function updateTime(){ const tl=Math.max(0,timeLeft); document.getElementById('time').textContent=tl;
   const f=document.getElementById('timefill'); f.style.width=Math.min(100,tl/TMAX*100)+'%'; f.style.background= tl<=5 ? 'linear-gradient(90deg,#ff5d6c,#ff2d4d)' : 'linear-gradient(90deg,#ffcf4d,#ff7a59)'; }
-function addTime(s){ if(!playing||s<=0)return; timeLeft+=s; if(timeLeft>99)timeLeft=99; updateTime(); showTimePlus(s); }
+function addTime(s){ if(!playing||s<=0)return; if(timeLeft>=TMAX){ return; } timeLeft=Math.min(TMAX,timeLeft+s); updateTime(); showTimePlus(s); }
 function showTimePlus(s){ let el=document.getElementById('tplus'); if(!el){ el=document.createElement('div'); el.id='tplus'; el.style.cssText='position:fixed;left:50%;top:calc(var(--wallet-bar-h) + 70px);transform:translateX(-50%);z-index:50;pointer-events:none;font-weight:900;font-size:1.4rem;color:#7fffb0;text-shadow:0 2px 8px rgba(0,0,0,.7)'; document.body.appendChild(el);} el.textContent='+'+s+'s'; el.style.animation='none'; void el.offsetWidth; el.style.animation='tplus .9s ease-out'; }
 function bigEffect(cross){ const bw=document.querySelector('.boardwrap'); bw.classList.remove('flash'); void bw.offsetWidth; bw.classList.add('flash'); setTimeout(()=>bw.classList.remove('flash'),360); vibe(cross?[20,30,20,30]:[15,25,15]); }
 function endGame(){
