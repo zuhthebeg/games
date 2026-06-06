@@ -859,10 +859,11 @@ function bombFx(prefix){
   const tt=$('toast'); tt.textContent=prefix+'💥 콰쾅! 폭탄!'; tt.classList.add('dbl'); tt.style.display='block';
   setTimeout(()=>{ tt.style.display='none'; tt.classList.remove('dbl'); },1300);
 }
-setSnd(SND?1:0); setBet(BET); applyZoom(); setSeats(MP_SEATS);
+setSnd(SND?1:0); setBet(BET); applyZoom();
 /* ===== 온라인 멀티 (COC-21) ===== */
 let MP_SEATS=+(localStorage.getItem('gostop_seats')||2);
 function setSeats(n){ MP_SEATS=n; localStorage.setItem('gostop_seats',n); document.querySelectorAll('[data-seats]').forEach(b=>b.classList.toggle('on',+b.dataset.seats===n)); }
+setSeats(MP_SEATS);   // MP_SEATS 선언 후 호출(이전엔 선언 전 호출로 TDZ 에러→스크립트 중단)
 const MP={active:false,ui:null,client:null,myUserId:null,view:null,_sel:-1,_poll:null,_resultShown:false};
 function mpSameMonth(arr,m){ return (arr||[]).filter(c=>c.m===m); }
 function openMultiplayer(){

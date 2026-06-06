@@ -259,7 +259,7 @@
                 gameName: '🔴🟡🔵 삼인 사목',
                 container: document.getElementById('app'),
                 maxPlayers: 3,
-                supportsLocal: false,  // 멀티플레이어 전용
+                supportsLocal: true,  // 솔로(로컬 3인 핫시트) + 멀티 선택
                 onGameStart: handleGameStart,
                 onGameEvent: handleGameEvent,
                 onLeave: () => { isMultiplayer = false; }
