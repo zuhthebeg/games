@@ -881,7 +881,7 @@ function zoomCards(d){ TZ=Math.round((TZ+d*0.12)*100)/100; applyZoom(); localSto
 function sound(n){ if(!SND)return; const map={take:'claim',play:'tile',flip:'tile',win:'win',lose:'tile'}; const fn=map[n]||'tile'; try{const a=new Audio('sounds/'+fn+'.mp3');a.volume=.4;a.play().catch(()=>{});}catch(e){} }
 // 콜 보이스: voice/<key>.mp3 (파일 없으면 조용히 무시). key: ppeok,firstppeok,ttadak,jjok,sweep,jappeok,ppeoksseuri,ssada,bomb,shake,chongtong,ppeok3,go1..go5,stop,pibak,gwangbak,meongbak,gobak,godori,win,lose,nagari,pisteal
 const _gv={};
-const VOICE_VER='4';   // 음성 파일 캐시버전 (무음 버그 수정 후 bump)
+const VOICE_VER='5';   // 음성 파일 캐시버전 (무음 버그 수정 후 bump)
 function gsVoice(k){ if(!VOICE||!k)return; const lang=(window.GS_LANG==='zh-TW')?'zh':'ko';
   const play=(l)=>{ try{ const a=new Audio('voice/'+k+'_'+l+'.mp3?v='+VOICE_VER); a.volume=.92; a.play().catch(()=>{ if(l!=='ko')play('ko'); }); }catch(e){} };
   play(lang);   // 해당 언어 파일 없으면 한국어로 폴백
