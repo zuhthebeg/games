@@ -89,7 +89,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 #myCaptured .grp img{width:calc(27px * var(--tz));border-radius:2px;margin-left:-15px;box-shadow:-1px 0 2px rgba(0,0,0,.5)}
 #myCaptured .grp img:first-of-type{margin-left:0}
 #myHand{display:flex;gap:3px;justify-content:center;flex-wrap:wrap}
-.hcard{position:relative;cursor:pointer;transition:transform .12s}
+.hcard{position:relative;cursor:pointer;transition:transform .12s;touch-action:none}
 .hcard img{width:var(--cw);border-radius:5px;box-shadow:0 2px 4px rgba(0,0,0,.4);display:block}
 .hcard.sel{transform:translateY(-10px)}
 .hcard.sel img{box-shadow:0 0 0 3px var(--gold)}
@@ -917,6 +917,15 @@ function bombFx(prefix){
   setTimeout(()=>{ tt.style.display='none'; tt.classList.remove('dbl'); },1300);
 }
 setSnd(SND?1:0); setVoice(VOICE?1:0); buildVoicePreview(); setBet(BET); applyZoom();
+// 손패 드래그로 내기 (위로 끌어올려 release → 그 패 냄). 두 번 탭 방식과 병행
+(function(){ const hand=document.getElementById('myHand'); if(!hand)return; let drag=null;
+  hand.addEventListener('pointerdown',e=>{ const card=e.target.closest('.hcard'); if(!card||G.turn!==0||G.over||G.acting)return;
+    const i=[].indexOf.call(hand.children,card); if(i<0)return; drag={i,card,y0:e.clientY}; try{card.setPointerCapture(e.pointerId);}catch(_){} });
+  hand.addEventListener('pointermove',e=>{ if(!drag)return; const dy=e.clientY-drag.y0; if(dy<-4){ drag.card.style.transform='translateY('+Math.max(dy,-72)+'px)'; drag.card.style.zIndex='6'; drag.card.style.transition='none'; } });
+  function end(e){ if(!drag)return; const dy=e.clientY-drag.y0, d=drag; drag=null; d.card.style.transform=''; d.card.style.zIndex=''; d.card.style.transition='';
+    if(dy<=-38 && G.turn===0 && !G.over && !G.acting){ G.sel=d.i; playSelected(); } }
+  hand.addEventListener('pointerup',end); hand.addEventListener('pointercancel',()=>{ if(drag){drag.card.style.transform='';drag.card.style.zIndex='';drag.card.style.transition='';drag=null;} });
+})();
 /* ===== 온라인 멀티 (COC-21) ===== */
 let MP_SEATS=+(localStorage.getItem('gostop_seats')||2);
 function setSeats(n){ MP_SEATS=n; localStorage.setItem('gostop_seats',n); document.querySelectorAll('[data-seats]').forEach(b=>b.classList.toggle('on',+b.dataset.seats===n)); }
