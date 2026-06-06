@@ -301,6 +301,8 @@ window.addEventListener('DOMContentLoaded', function(){
     ['그냥','就這樣'],['판돈','賭注'],['월 3장','月3張'],['장 쌓임','張堆疊'],
     ['쌍피','雙皮'],['굳은자','穩牌'],['먹기','吃'],['기본','基本'],['골드','金幣'],['다시','再玩'],
     ['광','光'],['열','十'],['띠','帶'],['쌍','雙'],['피','皮'],['끗','十'],
+    ['현재','現在'],['고 누르면','喊Go就'],['뒤집기탄','翻牌彈'],['탭해 사용 또는 패 내기','點擊使用或出牌'],
+    ['나 ','我 '],['점','點'],
     ['승!','勝！'],['승','勝']
   ];
   var EN=[
@@ -347,6 +349,8 @@ window.addEventListener('DOMContentLoaded', function(){
     ['그냥','Just'],['판돈','Bet'],['월 3장',' same-month 3'],['장 쌓임',' stacked'],
     ['쌍피','Double-pi'],['굳은자','Locked'],['먹기','Take'],['기본','Base'],['골드','gold'],['다시','Again'],
     ['광','Gwang'],['열','Animal'],['띠','Ribbon'],['쌍','Dbl'],['피','Pi'],['끗','Animal'],
+    ['현재','Now'],['고 누르면','press Go→'],['뒤집기탄','Flip shot'],['탭해 사용 또는 패 내기','tap to use or play'],
+    ['나 ','Me '],['점','pt'],
     ['승!','Win!'],['승','Win']
   ];
   window.gsL=function(s){
@@ -355,8 +359,8 @@ window.addEventListener('DOMContentLoaded', function(){
     if(!D) return s;
     var r=String(s);
     for(var i=0;i<D.length;i++){ if(r.indexOf(D[i][0])>=0) r=r.split(D[i][0]).join(D[i][1]); }
-    if(GS_LANG==='zh-TW') r=r.replace(/(\d)\s*점/g,'$1點').replace(/(\d)\s*장/g,'$1張').replace(/(\d)\s*개/g,'$1個').replace(/(\d)\s*만/g,'$1萬').replace(/(\d)\s*인/g,'$1人').replace(/(\d)\s*초/g,'$1秒');
-    else r=r.replace(/(\d)\s*점/g,'$1pt').replace(/(\d)\s*초/g,'$1s').replace(/(\d)\s*개/g,'$1').replace(/(\d)\s*장/g,'$1');
+    if(GS_LANG==='zh-TW') r=r.replace(/(\d)\s*점/g,'$1點').replace(/(\d)\s*장/g,'$1張').replace(/(\d)\s*개/g,'$1個').replace(/(\d)\s*만/g,'$1萬').replace(/(\d)\s*인/g,'$1人').replace(/(\d)\s*초/g,'$1秒').replace(/(\d)\s*고/g,'$1Go');
+    else r=r.replace(/(\d)\s*점/g,'$1pt').replace(/(\d)\s*초/g,'$1s').replace(/(\d)\s*개/g,'$1').replace(/(\d)\s*장/g,'$1').replace(/(\d)\s*고/g,'$1 Go');
     return r; };
   var busy=false;
   // 각 텍스트노드의 '원본 한국어'를 저장해두고 항상 원본에서 번역 → 언어 전환이 새로고침 없이 즉시(판 유지)
@@ -619,7 +623,7 @@ function startTurn(){
   if(p===1 && G.flipOwed && G.flipOwed[p]>0){ setTimeout(()=>flipOnlyTurn(p), 850); return; }
   if(p===0){ G.acting=false; G.awaitFlip=false; G.sel=-1; renderAll();
     const db=$('deckBack');
-    if(G.flipOwed && G.flipOwed[0]>0){ if(db)db.classList.add('await'); toast('💣 뒤집기탄 '+G.flipOwed[0]+'개 — 더미 탭해 쓰거나 패를 내세요'); }
+    if(G.flipOwed && G.flipOwed[0]>0){ if(db)db.classList.add('await'); toast('💣 뒤집기탄 '+G.flipOwed[0]+'개 · 탭해 사용 또는 패 내기'); }
     else if(db)db.classList.remove('await');
   }
   else setTimeout(cpuTurn,900);
