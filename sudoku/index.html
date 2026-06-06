@@ -84,6 +84,7 @@
   <header class="top">
     <h1>🔢 <span data-i18n="title">스도쿠</span><span class="sub" data-i18n="sub">Sudoku</span></h1>
     <div class="hbtns">
+      <button class="hbtn" id="bgmBtn" onclick="toggleBgm()" title="배경음악">🎵</button>
       <button class="hbtn" id="langBtn" onclick="cycleLang()">🌐 繁中</button>
       <button class="hbtn" id="newBtn" onclick="newGame()" data-i18n="newGame">새 게임</button>
     </div>
@@ -354,6 +355,17 @@ window.addEventListener('keydown',e=>{
 applyLang();
 try{ if(typeof GameRankings!=='undefined') GameRankings.injectNavButton('sudoku'); }catch(e){}
 newGame();
+/* 배경음악(자급식) */
+(function(){ var KEY='sudoku-bgm', audio=null;
+  function on(){ return localStorage.getItem(KEY)!=='0'; }
+  window.BGM={ on:on,
+    start:function(){ if(!on())return; if(!audio){ audio=new Audio('/sudoku/bgm.mp3?v=1'); audio.loop=true; audio.volume=.3; } var p=audio.play(); if(p&&p.catch)p.catch(function(){}); },
+    stop:function(){ if(audio)audio.pause(); },
+    toggle:function(){ var n=on()?'0':'1'; try{localStorage.setItem(KEY,n);}catch(e){} if(n==='1')this.start(); else this.stop(); return n==='1'; } };
+  window.toggleBgm=function(){ var o=window.BGM.toggle(); var b=document.getElementById('bgmBtn'); if(b)b.textContent=o?'🎵':'🔇'; };
+  var b=document.getElementById('bgmBtn'); if(b)b.textContent=on()?'🎵':'🔇';
+  window.addEventListener('pointerdown',function u(){ if(on())window.BGM.start(); window.removeEventListener('pointerdown',u); });
+})();
 </script>
 <script src="/lib/site-meta.js"></script>
 </body>

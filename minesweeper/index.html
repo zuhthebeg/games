@@ -357,6 +357,7 @@ window.addEventListener('DOMContentLoaded', function(){
       <div>
         <div class="title-row">
           <h1>지뢰찾기</h1>
+          <button class="theme-btn" id="bgmBtn" type="button" onclick="toggleBgm()" title="배경음악">🎵</button>
           <button class="theme-btn" id="themeBtn" type="button">테마: 자동</button>
         </div>
         <div class="controls">
@@ -832,6 +833,19 @@ window.addEventListener('DOMContentLoaded', function(){
         description: '클래식 지뢰찾기 게임',
         url: 'https://game.cocy.io/minesweeper/'
       });
+    </script>
+    <script>
+    /* 배경음악(자급식, 게임 사운드와 독립) */
+    (function(){ var KEY='ms-bgm', audio=null;
+      function on(){ return localStorage.getItem(KEY)!=='0'; }
+      window.BGM={ on:on,
+        start:function(){ if(!on())return; if(!audio){ audio=new Audio('/minesweeper/bgm.mp3?v=1'); audio.loop=true; audio.volume=.3; } var p=audio.play(); if(p&&p.catch)p.catch(function(){}); },
+        stop:function(){ if(audio)audio.pause(); },
+        toggle:function(){ var n=on()?'0':'1'; try{localStorage.setItem(KEY,n);}catch(e){} if(n==='1')this.start(); else this.stop(); return n==='1'; } };
+      window.toggleBgm=function(){ var o=window.BGM.toggle(); var b=document.getElementById('bgmBtn'); if(b)b.textContent=o?'🎵':'🔇'; };
+      var b=document.getElementById('bgmBtn'); if(b)b.textContent=on()?'🎵':'🔇';
+      window.addEventListener('pointerdown',function u(){ if(on())window.BGM.start(); window.removeEventListener('pointerdown',u); });
+    })();
     </script>
 </body>
 </html>
