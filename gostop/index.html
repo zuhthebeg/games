@@ -221,7 +221,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
   <h2>⚙ 설정</h2>
   <div class="row"><span>🔊 소리</span><div class="seg"><button data-snd="1" onclick="setSnd(1)">ON</button><button data-snd="0" onclick="setSnd(0)">OFF</button></div></div>
   <div class="row"><span>고/스톱 최소점</span><span style="color:var(--muted)">7점 (맞고)</span></div>
-  <div class="row"><span>🌐 언어 / 語言</span><button class="seg" style="padding:4px 12px;cursor:pointer" onclick="gsToggleLang()">한국어 ↔ 繁中</button></div>
+  <div class="row"><span>🌐 언어 / 語言 / Lang</span><button class="seg" style="padding:4px 12px;cursor:pointer" onclick="gsToggleLang()">한국어 → 繁中 → EN</button></div>
   <button class="close" onclick="hide('settings')">닫기</button>
 </div></div>
 
@@ -301,22 +301,74 @@ window.addEventListener('DOMContentLoaded', function(){
     ['광','光'],['열','十'],['띠','帶'],['쌍','雙'],['피','皮'],['끗','十'],
     ['승!','勝！'],['승','勝']
   ];
-  window.gsL=function(s){ if(GS_LANG!=='zh-TW'||s==null) return s; var r=String(s);
-    for(var i=0;i<TR.length;i++){ if(r.indexOf(TR[i][0])>=0) r=r.split(TR[i][0]).join(TR[i][1]); }
-    r=r.replace(/(\d)\s*점/g,'$1點').replace(/(\d)\s*장/g,'$1張').replace(/(\d)\s*개/g,'$1個').replace(/(\d)\s*만/g,'$1萬').replace(/(\d)\s*인/g,'$1人').replace(/(\d)\s*초/g,'$1秒'); return r; };
+  var EN=[
+    ['손패를 내서 같은 월(月) 바닥패와 짝지어 먹습니다.','Play a hand card to match & take same-month floor cards.'],
+    ['낸 뒤 더미에서 1장 뒤집어 또 같은 월이면 먹습니다.','After playing, flip 1 from the deck; same month takes it too.'],
+    ['점수가 7점 이상 나면 (맞고 기준) 고(계속·배수↑) 또는 스톱(끝).','At 7+ points, choose Go (continue, ×mult) or Stop (end).'],
+    ['피박(상대 피 적음)·광박(상대 광 0) 시 2배.','Pi-bak (opp few pi) · Gwang-bak (opp 0 gwang) → ×2.'],
+    ['따닥/쪽/쓸 시 상대 피 1장 뺏어옴.','Ttadak/Jjok/Sweep steals 1 pi from opponent.'],
+    ['뻑(같은 월 3장 쌓임) / 뻑쓸이 피1장·자뻑 피2장 / 3뻑이면 즉시 승(10점).','Ppeok (3 same-month stacked) / Sweep-ppeok 1pi · Self-ppeok 2pi / 3 ppeok = instant win (10pt).'],
+    ['흔들기(손에 같은 월 3장+바닥1장 ×2) / 💣폭탄(3장 투하·4장 먹고 피1장+한번더).','Shake (3 same-month in hand +1 floor, ×2) / 💣Bomb (drop 3, take 4 +1pi +extra turn).'],
+    ['점수 × 1만골드 × 판돈배수가 지갑에 정산됩니다.','Score × 10,000 gold × bet multiplier is paid to your wallet.'],
+    ['3광 3점(비광 포함 시 2점)·4광 4점·5광 15점','3 Gwang 3pt (2pt w/ rain)·4 Gwang 4pt·5 Gwang 15pt'],
+    ['5장 1점+ / 고도리(2·4·8월 새) 5점','5 cards 1pt+ / Godori (birds 2·4·8) 5pt'],
+    ['5장 1점+ / 홍단·청단·초단 각 3장 3점','5 cards 1pt+ / Hong/Cheong/Cho-dan each 3 = 3pt'],
+    ['10장 1점+ (쌍피=2장)','10 cards 1pt+ (double-pi = 2)'],
+    ['고스톱 3인 모드 곧 추가.','Go-Stop 3-player mode coming soon.'],
+    ['화투 2인 맞고 · CPU 대전','Hwatu 2-player Matgo · vs CPU'],
+    ['광·띠·끗·피 · 고도리 · 고/스톱','Gwang·Tti·Kkeut·Pi · Godori · Go/Stop'],
+    ['게임 시작 (맞고)','Start (Matgo)'],['게임 시작','Start Game'],
+    ['👥 온라인 멀티 (2~4인)','👥 Online Multi (2-4P)'],
+    ['멀티 인원(빈자리 AI)','Players (empty = AI)'],
+    ['플레이 방법','How to Play'],['맞고 방법','How to Play'],
+    ['고/스톱 최소점','Go/Stop min score'],['7점 (맞고)','7pt (Matgo)'],
+    ['🏆 랭킹','🏆 Ranking'],['어떤 패를 먹을까?','Which card to take?'],
+    ['같은 월 3장!','3 same month!'],['같은 월(月)','same month'],
+    ['🤲 흔들기 ×2','🤲 Shake ×2'],['그냥 내기','Just play'],['💣 폭탄','💣 Bomb'],
+    ['🎉 첫뻑 보너스 +','🎉 First-ppeok bonus +'],['CPU 첫뻑','CPU first-ppeok'],
+    ['💣 뒤집기 탄 ','💣 Flip shots '],['개 — 더미를 눌러 뒤집기',' — tap the deck to flip'],['뒤집기 턴 (','Flip turn ('],
+    ['💥 콰쾅! 폭탄!','💥 Boom! Bomb!'],['멀티 로드 실패','Multiplayer load failed'],['전송 실패','Send failed'],
+    ['랭킹 로딩 중','Loading ranking'],['랭킹을 열 수 없습니다','Cannot open ranking'],
+    ['한 번 더!','Once more!'],['3뻑! 승리','3-ppeok! Win'],
+    ['점! 고? 스톱?','pt! Go? Stop?'],['고? 스톱?','Go? Stop?'],['고를 부르면 1고','Calling Go = 1 Go'],
+    ['고 (GO)','Go'],['스톱 (STOP)','Stop'],
+    ['고도리','Godori'],['홍단','Hongdan'],['청단','Cheongdan'],['초단','Chodan'],
+    ['피박 ×2','Pi-bak ×2'],['피박','Pi-bak'],['광박 ×2','Gwang-bak ×2'],['광박','Gwang-bak'],
+    ['멍박 ×2','Meong-bak ×2'],['멍박','Meong-bak'],['고박 ×2','Go-bak ×2'],['고박','Go-bak'],
+    ['나가리누적 ×','Nagari carry ×'],['나가리 ×','Nagari ×'],['나가리','Nagari'],
+    ['흔들기 ×','Shake ×'],['흔들기!','Shake!'],['흔들기','Shake'],
+    ['3뻑 10점','3-ppeok 10pt'],['총통! 즉시 승','Chongtong! Instant win'],['총통!','Chongtong!'],['총통','Chongtong'],['3뻑 즉시 승','3-ppeok instant win'],
+    ['피뺏기','pi steal'],['따닥','Ttadak'],['뻑쓸이','Sweep-ppeok'],['자뻑','Self-ppeok'],
+    ['아무도 못 났습니다','No one won'],['다음 판 판돈','Next round bet'],['패 크기','Card size'],
+    ['메뉴로','Menu'],['다시 하기','Play again'],['내 점수','My score'],
+    ['더미','Deck'],['소리','Sound'],['설정','Settings'],['닫기','Close'],['나가기','Leave'],
+    ['그냥','Just'],['판돈','Bet'],['월 3장',' same-month 3'],['장 쌓임',' stacked'],
+    ['쌍피','Double-pi'],['굳은자','Locked'],['먹기','Take'],['기본','Base'],['골드','gold'],['다시','Again'],
+    ['광','Gwang'],['열','Animal'],['띠','Ribbon'],['쌍','Dbl'],['피','Pi'],['끗','Animal'],
+    ['승!','Win!'],['승','Win']
+  ];
+  window.gsL=function(s){
+    if(s==null) return s;
+    var D = GS_LANG==='zh-TW'?TR : (GS_LANG==='en'?EN : null);
+    if(!D) return s;
+    var r=String(s);
+    for(var i=0;i<D.length;i++){ if(r.indexOf(D[i][0])>=0) r=r.split(D[i][0]).join(D[i][1]); }
+    if(GS_LANG==='zh-TW') r=r.replace(/(\d)\s*점/g,'$1點').replace(/(\d)\s*장/g,'$1張').replace(/(\d)\s*개/g,'$1個').replace(/(\d)\s*만/g,'$1萬').replace(/(\d)\s*인/g,'$1人').replace(/(\d)\s*초/g,'$1秒');
+    else r=r.replace(/(\d)\s*점/g,'$1pt').replace(/(\d)\s*초/g,'$1s').replace(/(\d)\s*개/g,'$1').replace(/(\d)\s*장/g,'$1');
+    return r; };
   var busy=false;
   function walk(n){ if(!n) return;
     if(n.nodeType===3){ var a=n.nodeValue; if(a&&/[가-힣]/.test(a)){ var b=gsL(a); if(b!==a) n.nodeValue=b; } return; }
     if(n.nodeType===1){ if(n.tagName==='SCRIPT'||n.tagName==='STYLE') return;
       for(var c=n.firstChild;c;c=c.nextSibling) walk(c); } }
   function setup(){
-    if(GS_LANG==='zh-TW'){ document.documentElement.lang='zh-Hant'; busy=true; walk(document.body); busy=false;
+    if(GS_LANG!=='ko'){ document.documentElement.lang=(GS_LANG==='zh-TW')?'zh-Hant':'en'; busy=true; walk(document.body); busy=false;
       var mo=new MutationObserver(function(ms){ if(busy) return; busy=true;
         for(var i=0;i<ms.length;i++){ var m=ms[i]; if(m.type==='characterData') walk(m.target); else for(var j=0;j<m.addedNodes.length;j++) walk(m.addedNodes[j]); } busy=false; });
       mo.observe(document.body,{childList:true,subtree:true,characterData:true});
     }
   }
-  window.gsToggleLang=function(){ var n=GS_LANG==='zh-TW'?'ko':'zh-TW'; try{localStorage.setItem('gs-lang',n);}catch(e){}; location.reload(); };
+  window.gsToggleLang=function(){ var n=GS_LANG==='ko'?'zh-TW':(GS_LANG==='zh-TW'?'en':'ko'); try{localStorage.setItem('gs-lang',n);}catch(e){}; location.reload(); };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setup); else setup();
 })();
 </script>
