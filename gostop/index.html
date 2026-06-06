@@ -258,7 +258,7 @@ window.addEventListener('DOMContentLoaded', function(){
   var nav=(navigator.language||'').toLowerCase();
   window.GS_LANG=(function(){try{var s=localStorage.getItem('gs-lang');if(s)return s;}catch(e){}return nav.indexOf('zh')===0?'zh-TW':'ko';})();
   var TR=[
-    ['효과음','音效'],['음성 콜','人聲'],['음성 미리듣기','試聽人聲音效'],
+    ['모은','收集'],['효과음','音效'],['음성 콜','人聲'],['음성 미리듣기','試聽人聲音效'],
     ['원고','1 GO'],['투고','2 GO'],['쓰리고','3 GO'],['포고','4 GO'],['파이브고','5 GO'],['스톱','停'],
     ['오광','五光'],['사광','四光'],['삼광','三光'],['쪽','吃回'],['내놔','拿來'],['패배','敗'],
     ['손패를 내서 같은 월(月) 바닥패와 짝지어 먹습니다.','出手牌與牌面上同月的牌配對吃掉。'],
@@ -310,7 +310,7 @@ window.addEventListener('DOMContentLoaded', function(){
     ['승!','勝！'],['승','勝']
   ];
   var EN=[
-    ['효과음','SFX'],['음성 콜','Voice'],['음성 미리듣기','Voice preview'],
+    ['모은','Got'],['효과음','SFX'],['음성 콜','Voice'],['음성 미리듣기','Voice preview'],
     ['원고','1 GO'],['투고','2 GO'],['쓰리고','3 GO'],['포고','4 GO'],['파이브고','5 GO'],['스톱','Stop'],
     ['오광','5 Gwang'],['사광','4 Gwang'],['삼광','3 Gwang'],['첫뻑','First Ppeok'],['쪽','Jjok'],['내놔','Take'],['패배','Lose'],
     ['손패를 내서 같은 월(月) 바닥패와 짝지어 먹습니다.','Play a hand card to match & take same-month floor cards.'],
@@ -767,6 +767,11 @@ function chooseGo(go){
 }
 // 내 표시 이름: 지갑 닉네임 우선, 없으면 '나'
 function myNick(){ try{ if(typeof SharedWallet!=='undefined' && SharedWallet.user && SharedWallet.user.nickname) return SharedWallet.user.nickname; }catch(e){} return '나'; }
+// 점수줄: 실제 점수 낸 족보(금색) + 아직 모으는 중인 광/피 카운트(회색) 구분
+function scoreLineHTML(sc){
+  const gold=(sc.parts||[]).map(p=>`<span style="color:var(--gold);font-weight:700">${p[0]}+${p[1]}</span>`).join(' ');
+  return `내 점수 <b>${sc.total}</b>점`+(gold?` · ${gold}`:'')+` · <span style="color:var(--muted);opacity:.7;font-weight:400">모은 광${sc.gw} 피${sc.pi}</span>`;
+}
 function settle(winner,sc,opts){
   opts=opts||{};
   if(G.over)return; G.over=true;
@@ -866,7 +871,7 @@ function renderCaptured(){
   $('cpuCaptured').innerHTML=capGroup(G.players[1].cap);
   $('myCaptured').innerHTML=capGroup(G.players[0].cap);
   const ms=score(G.players[0].cap), cs=score(G.players[1].cap);
-  $('cpu-score').textContent=cs.total+'점'; $('t-myscore').textContent=ms.total; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } $('myScoreLine').innerHTML=`내 점수 <b>${ms.total}</b>점 · 광${ms.gw} 피${ms.pi}`;
+  $('cpu-score').textContent=cs.total+'점'; $('t-myscore').textContent=ms.total; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } $('myScoreLine').innerHTML=scoreLineHTML(ms);
   $('cpu-who').className='who'+(G.turn===1?' turn':'');
 }
 function renderBar(){ $('t-go').textContent=G.go; }
@@ -1013,7 +1018,7 @@ function mpRender(v){
     return `<div class="hcard ${i===MP._sel?'sel':''} ${canPlay?'canplay':''} ${gudM.has(c.m)?'gudeun':''}" onclick="mpTapCard(${i})"><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`; }).join('');
   const meP=v.players.find(p=>p.seat===v.mySeat)||{cap:[]};
   $('myCaptured').innerHTML=capGroup(meP.cap);
-  if($('t-myscore'))$('t-myscore').textContent=v.myScore; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } if($('myScoreLine'))$('myScoreLine').innerHTML=`내 점수 <b>${v.myScore}</b>점`;
+  if($('t-myscore'))$('t-myscore').textContent=v.myScore; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } if($('myScoreLine')){ const msc=score((v.players.find(p=>p.seat===v.mySeat)||{cap:[]}).cap); $('myScoreLine').innerHTML=scoreLineHTML(msc); }
   const el=$('mpOpps'); const opps=v.players.filter(p=>p.seat!==v.mySeat).sort((a,b)=>a.seat-b.seat);
   el.innerHTML=opps.map(p=>{ const turn=(v.pending?v.pending.seat===p.seat:v.currentTurn===p.seat);
     return `<div class="mpopp ${turn?'turn':''}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)} · ${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
