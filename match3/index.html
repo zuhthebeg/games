@@ -120,15 +120,15 @@ const I18N={
   ko:{title:'팝매치',restart:'다시',score:'점수',time:'시간',best:'최고',moves:'이동',
       howto:'블록을 드래그해서 3개 이상 맞추세요',start:'시작',goalHint:'60초 안에 콤보·폭탄·컬러밤으로 최고점 도전!',
       timeup:'타임 오버!',finalScore:'최종 점수',again:'다시 하기',langBtn:'🌐 繁中',
-      combo:(n)=>n+' 콤보!',comboWords:['굿!','나이스!','대박!','멋져!','파워!','폭발!','미쳤다!','갓!'],bomb:'💥 폭탄!',line:'➡️ 라인 클리어!',full:'🌟 올클리어!',colorbomb:'🌈 싹쓸이!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
+      combo:(n)=>n+' 콤보!',comboWords:['굿!','나이스!','대박!','멋져!','파워!','폭발!','미쳤다!','갓!'],bomb:'💥 폭탄!',line:'💫 라인 클리어!',full:'🌟 올클리어!',colorbomb:'🌈 싹쓸이!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   'zh-TW':{title:'啵啵消',restart:'重來',score:'分數',time:'時間',best:'最佳',moves:'步數',
       howto:'拖曳方塊連成3個以上消除',start:'開始',goalHint:'60秒內用連擊·炸彈·全消挑戰最高分！',
       timeup:'時間到！',finalScore:'最終分數',again:'再玩一次',langBtn:'🌐 EN',
-      combo:(n)=>n+' 連擊！',comboWords:['不錯！','讚！','厲害！','超棒！','爆發！','瘋了！','神！','無敵！'],bomb:'💥 炸彈！',line:'➡️ 整列消！',full:'🌟 全清！',colorbomb:'🌈 全消！',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
+      combo:(n)=>n+' 連擊！',comboWords:['不錯！','讚！','厲害！','超棒！','爆發！','瘋了！','神！','無敵！'],bomb:'💥 炸彈！',line:'💫 整列消！',full:'🌟 全清！',colorbomb:'🌈 全消！',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   en:{title:'Pop Match',restart:'Reset',score:'Score',time:'Time',best:'Best',moves:'Moves',
       howto:'Drag blocks to match 3 or more',start:'Start',goalHint:'Score as high as you can in 60s with combos, bombs & color blasts!',
       timeup:"Time's up!",finalScore:'Final score',again:'Play again',langBtn:'🌐 한국어',
-      combo:(n)=>n+' Combo!',comboWords:['Good!','Nice!','Great!','Super!','Wild!','Insane!','God!','Unreal!'],bomb:'💥 Bomb!',line:'➡️ Line!',full:'🌟 Full Clear!',colorbomb:'🌈 Clear All!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'}};
+      combo:(n)=>n+' Combo!',comboWords:['Good!','Nice!','Great!','Super!','Wild!','Insane!','God!','Unreal!'],bomb:'💥 Bomb!',line:'💫 Line!',full:'🌟 Full Clear!',colorbomb:'🌈 Clear All!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'}};
 let LANG=(function(){try{const s=localStorage.getItem('m3-lang');if(s)return s;}catch(e){}
   const n=(navigator.language||'').toLowerCase();return n.startsWith('zh')?'zh-TW':n.startsWith('ko')?'ko':'en';})();
 function t(k){return (I18N[LANG]||I18N.ko)[k];}
@@ -204,17 +204,23 @@ function computeClears(){
   for(let c=0;c<N;c++){ let run=1; for(let r=1;r<=N;r++){ const same=r<N&&grid[idx(r,c)]!=null&&grid[idx(r,c)]===grid[idx(r-1,c)]; if(same)run++; else { if(run>=3){ const cs=[]; for(let k=1;k<=run;k++)cs.push(idx(r-k,c)); runs.push({o:'v',line:c,len:run,cells:cs}); } run=1; } } }
   const matched=new Set(), hSet=new Set(), vSet=new Set(); let maxRun=0;
   runs.forEach(rn=>{ maxRun=Math.max(maxRun,rn.len); rn.cells.forEach(i=>{ matched.add(i); (rn.o==='h'?hSet:vSet).add(i); }); });
-  const clear=new Set(matched); let cross=false, line=false, color=false, full=false, colorType=null;
-  // T/크로스(가로·세로 동시) → 폭탄: 3×3(9칸)
+  const clear=new Set(matched); let cross=false, line=false, color=false, full=false, colorType=null, bombSide=0;
+  // 셀별 가로/세로 런 길이 기록 (교차점 폭탄 크기 산정용)
+  const hLenAt={}, vLenAt={};
+  runs.forEach(rn=>{ const m=rn.o==='h'?hLenAt:vLenAt; rn.cells.forEach(i=>{ if((m[i]||0)<rn.len)m[i]=rn.len; }); });
+  // T/크로스(가로·세로 동시) → 폭탄. 크기는 교차 런 길이에 비례 (3,3→3×3 / 4,3→4×4 / 4,4→4×4 …)
   matched.forEach(i=>{ if(hSet.has(i)&&vSet.has(i)){ cross=true; const r=Math.floor(i/N),c=i%N;
-    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){ const nr=r+dr,nc=c+dc; if(inBounds(nr,nc))clear.add(idx(nr,nc)); } } });
-  // 런 길이별 베리에이션: 4=라인 / 5=싹쓸이(컬러밤) / 6+=올클리어
+    const S=Math.max(hLenAt[i]||3, vLenAt[i]||3); bombSide=Math.max(bombSide,S);
+    const off=Math.floor((S-1)/2);
+    for(let dr=-off;dr<=S-1-off;dr++)for(let dc=-off;dc<=S-1-off;dc++){ const nr=r+dr,nc=c+dc; if(inBounds(nr,nc))clear.add(idx(nr,nc)); } } });
+  // 런 길이별 베리에이션: 4=라인(교차 아닐 때만, 교차면 폭탄 우선) / 5=싹쓸이(컬러밤) / 6+=올클리어
   runs.forEach(rn=>{
+    const crosses=rn.cells.some(i=>hSet.has(i)&&vSet.has(i));
     if(rn.len>=6){ full=true; for(let i=0;i<N*N;i++)clear.add(i); }
     else if(rn.len===5){ color=true; colorType=grid[rn.cells[0]]; for(let i=0;i<N*N;i++) if(grid[i]===colorType)clear.add(i); }
-    else if(rn.len===4){ line=true; if(rn.o==='h'){ for(let c=0;c<N;c++)clear.add(idx(rn.line,c)); } else { for(let r=0;r<N;r++)clear.add(idx(r,rn.line)); } }
+    else if(rn.len===4 && !crosses){ line=true; if(rn.o==='h'){ for(let c=0;c<N;c++)clear.add(idx(rn.line,c)); } else { for(let r=0;r<N;r++)clear.add(idx(r,rn.line)); } }
   });
-  return {clear,maxRun,cross,line,color,full,colorType,groups:runs.length};
+  return {clear,maxRun,cross,line,color,full,colorType,bombSide,groups:runs.length};
 }
 async function resolve(){
   let chain=0;
@@ -257,13 +263,22 @@ function hasAnyMove(){
   return false;
 }
 function swapG(r1,c1,r2,c2){ const a=idx(r1,c1),b=idx(r2,c2); const t=grid[a]; grid[a]=grid[b]; grid[b]=t; }
-/* 힌트: 3초간 매치 없으면 가능한 한 수 하이라이트 */
+/* 매치 잠재 점수: 가장 긴 런(특수블록 유발) 우선, 그 다음 매치 셀 수 */
+function matchPotential(){
+  let maxRun=0, total=0;
+  for(let r=0;r<N;r++){ let run=1; for(let c=1;c<=N;c++){ if(c<N&&grid[idx(r,c)]!=null&&grid[idx(r,c)]===grid[idx(r,c-1)])run++; else{ if(run>=3){maxRun=Math.max(maxRun,run);total+=run;} run=1; } } }
+  for(let c=0;c<N;c++){ let run=1; for(let r=1;r<=N;r++){ if(r<N&&grid[idx(r,c)]!=null&&grid[idx(r,c)]===grid[idx(r-1,c)])run++; else{ if(run>=3){maxRun=Math.max(maxRun,run);total+=run;} run=1; } } }
+  return maxRun*100 + total;   // 런 길이 가중 → 4·5·6연쇄(특수) 우선 추천
+}
+/* 힌트: 3초간 매치 없으면 가능한 수 중 점수 가장 높은 한 수 하이라이트 */
 function findHint(){
+  let best=null, bestScore=0;
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
     for(const [dr,dc] of [[0,1],[1,0]]){ const nr=r+dr,nc=c+dc; if(!inBounds(nr,nc))continue;
-      swapG(r,c,nr,nc); const ok=findMatches().size>0; swapG(r,c,nr,nc); if(ok)return {a:idx(r,c),b:idx(nr,nc)}; }
+      swapG(r,c,nr,nc); const sc=findMatches().size>0?matchPotential():0; swapG(r,c,nr,nc);
+      if(sc>bestScore){ bestScore=sc; best={a:idx(r,c),b:idx(nr,nc)}; } }
   }
-  return null;
+  return best;
 }
 let hintCells=[], lastMatch=0;
 function clearHint(){ hintCells.forEach(i=>cells[i]&&cells[i].classList.remove('hint')); hintCells=[]; }
