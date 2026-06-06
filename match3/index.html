@@ -83,6 +83,8 @@
   <header class="top">
     <h1>🍬 <span data-i18n="title">팝매치</span></h1>
     <div class="hbtns">
+      <button class="hbtn" id="bgmBtn" onclick="toggleBgm()" title="배경음악">🎵</button>
+      <button class="hbtn" id="sfxBtn" onclick="toggleSfx()" title="효과음">🔊</button>
       <button class="hbtn" id="langBtn" onclick="cycleLang()">🌐 繁中</button>
       <button class="hbtn" onclick="newGame()" data-i18n="restart">다시</button>
     </div>
@@ -140,15 +142,23 @@ function applyLang(){
 function cycleLang(){LANG=LANG==='ko'?'zh-TW':(LANG==='zh-TW'?'en':'ko');try{localStorage.setItem('m3-lang',LANG);}catch(e){};applyLang();}
 
 /* ── 매치-3 엔진 ── */
-const N=7, TYPES=6, FACES=['🍎','🍇','🍋','🍊','🫐','🍓'];
+const N=7, TYPES=6;
+// 이모지 세트 — 게임 시작마다 랜덤으로 하나 선택 (과일/동물/공)
+const EMOJI_SETS=[
+  {name:'fruit',  faces:['🍎','🍇','🍋','🍊','🫐','🍓'], colors:['#ff5d6c','#9b5cff','#ffe14d','#ff9f3c','#5a8cff','#ff6fae']},
+  {name:'animal', faces:['🐶','🐱','🐰','🐻','🐼','🦊'], colors:['#f0b27a','#c9a0ec','#ff9fb6','#a9764e','#cfd6dc','#ff8a3c']},
+  {name:'ball',   faces:['⚽','🏀','🎾','⚾','🏐','🎱'], colors:['#e8edf2','#ff8a3c','#caf24d','#eef2f5','#4fc3ff','#3a3f55']},
+];
+let FACES=EMOJI_SETS[0].faces;
 const DUR=60;      // 시작 시간(초). 매치마다 시간 추가, 단 60초 상한
 const TMAX=60;     // 시간바 기준 최대(=상한)
 let grid=[], cells=[], score=0, timeLeft=DUR, timerId=null, busy=false, playing=false;
 let sel=null; // {r,c}
 let activeTypes=[0,1,2,3,4,5]; // 살아있는 과일 종류(5매치+30초↓면 제거)
 
-const FACE_COLORS=['#ff5d6c','#9b5cff','#ffe14d','#ff9f3c','#5a8cff','#ff6fae']; // 과즙 색(과일 종류별)
+let FACE_COLORS=EMOJI_SETS[0].colors; // 과즙 색(종류별, 세트 따라 교체)
 function rnd(n){return Math.floor(Math.random()*n);}
+function pickEmojiSet(){ const s=EMOJI_SETS[rnd(EMOJI_SETS.length)]; FACES=s.faces; FACE_COLORS=s.colors; }
 function randType(){ return activeTypes[rnd(activeTypes.length)]; }
 function removeTypeTemp(type){ if(!activeTypes.includes(type)||activeTypes.length<=3)return;
   activeTypes=activeTypes.filter(x=>x!==type);
@@ -352,13 +362,49 @@ function sound(type,chain){ const ch=chain||1;
   else if(type==='bad'){ blip(180,.12,.14,'square',.7); vibe(0); }
   else if(type==='end'){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>blip(f,.18,.2,'triangle'),i*90)); }
 }
+/* ── 배경음악: WebAudio 합성 루프(에셋 없음, 밝은 캐주얼 퍼즐풍 I–V–vi–IV) ── */
+function getACany(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); return AC; }catch(e){ return null; } }
+const BGM=(()=>{
+  let alive=false, timer=null, step=0, nextT=0, master=null;
+  const BPM=108, STEP=(60/BPM)/2;                 // 8분음표 간격
+  const PROG=[[60,64,67],[55,59,62],[57,60,64],[53,57,60]]; // C G Am F
+  function on(){ return localStorage.getItem('m3-bgm')!=='0'; }
+  function freq(n){ return 440*Math.pow(2,(n-69)/12); }
+  function masterGain(c){ if(!master){ master=c.createGain(); master.gain.value=.5; master.connect(c.destination); } return master; }
+  function note(f,t,dur,vol,type){ const c=getACany(); if(!c)return; const o=c.createOscillator(),g=c.createGain();
+    o.type=type||'sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+.02); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g).connect(masterGain(c)); o.start(t); o.stop(t+dur+.03); }
+  function pad(f,t,dur,vol){ const c=getACany(); if(!c)return; const o=c.createOscillator(),g=c.createGain();
+    o.type='triangle'; o.frequency.value=f;
+    g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(vol,t+dur*.35); g.gain.linearRampToValueAtTime(.0001,t+dur);
+    o.connect(g).connect(masterGain(c)); o.start(t); o.stop(t+dur+.05); }
+  function playStep(s,t){ const ci=Math.floor(s/8)%PROG.length, k=s%8, ch=PROG[ci];
+    if(k===0) ch.forEach(n=>pad(freq(n),t,STEP*8,.018));   // 마디 시작 패드
+    if(k%2===0) note(freq(ch[0]-12),t,STEP*1.9,.05,'triangle'); // 베이스(4분)
+    note(freq(ch[k%ch.length]+12),t,STEP*.85,.038,'sine');      // 아르페지오(8분)
+  }
+  function tick(){ const c=getACany(); if(!c||!alive)return;
+    while(nextT < c.currentTime+0.18){ playStep(step,nextT); step++; nextT+=STEP; } }
+  return { on,
+    start(){ if(alive||!on())return; const c=getACany(); if(!c)return; alive=true; step=0; nextT=c.currentTime+0.1; timer=setInterval(tick,40); },
+    stop(){ alive=false; if(timer){clearInterval(timer);timer=null;} },
+    toggle(){ const next=on()?'0':'1'; try{localStorage.setItem('m3-bgm',next);}catch(e){} if(next==='1')this.start(); else this.stop(); return next==='1'; } };
+})();
+function toggleBgm(){ const onNow=BGM.toggle(); document.getElementById('bgmBtn').textContent=onNow?'🎵':'🔇'; }
+function toggleSfx(){ const nowOn=soundOn(); try{localStorage.setItem('m3-sound',nowOn?'0':'1');}catch(e){} document.getElementById('sfxBtn').textContent=soundOn()?'🔊':'🔈'; }
+function syncAudioBtns(){ const b=document.getElementById('bgmBtn'),s=document.getElementById('sfxBtn');
+  if(b)b.textContent=BGM.on()?'🎵':'🔇'; if(s)s.textContent=soundOn()?'🔊':'🔈'; }
+// 첫 사용자 제스처에 BGM 잠금해제(모바일 자동재생 정책)
+window.addEventListener('pointerdown',function unlock(){ if(BGM.on())BGM.start(); window.removeEventListener('pointerdown',unlock); },{once:true});
 
 /* ── 게임 흐름 (시간제 단일 — 매치로 시간 연장) ── */
 function newGame(){ closeEnd(); document.getElementById('ovStart').classList.add('on'); }
 function startGame(){
   document.getElementById('ovStart').classList.remove('on'); closeEnd();
+  pickEmojiSet();
   score=0; timeLeft=DUR; busy=false; playing=true; sel=null; lastMatch=Date.now(); activeTypes=[0,1,2,3,4,5];
-  genGrid(); render();
+  genGrid(); render(); BGM.start();
   (async()=>{ busy=true; await resolve(); if(!hasAnyMove()){genGrid();render();} busy=false; lastMatch=Date.now(); })();
   updateTime();
   if(timerId)clearInterval(timerId);
@@ -392,7 +438,7 @@ function saveBest(s){ try{ const c=+localStorage.getItem('m3-best')||0; if(s>c)l
 function updateBest(){ try{ document.getElementById('best').textContent=(+localStorage.getItem('m3-best')||0).toLocaleString(); }catch(e){} }
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-applyLang(); buildDOM(); genGrid(); render(); updateBest();
+applyLang(); buildDOM(); genGrid(); render(); updateBest(); syncAudioBtns();
 document.getElementById('ovStart').classList.add('on');
 </script>
 <script src="/lib/site-meta.js"></script>
