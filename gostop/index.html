@@ -460,6 +460,26 @@ function flyToPile(cards, destEl){
     setTimeout(()=>{ if(!fired){ fired=true; resolve(); } }, 560);
   });
 }
+// 피뺏기: 상대 패더미 → 내 패더미로 날아오기
+function flyStolen(cards, fromEl, destEl){
+  return new Promise(resolve=>{
+    if(!cards||!cards.length||!fromEl||!destEl){ resolve(); return; }
+    const f=fromEl.getBoundingClientRect(), d=destEl.getBoundingClientRect();
+    const fromX=f.left+Math.min((f.width||40)/2,24), fromY=f.top+4;
+    const destX=d.left+Math.min((d.width||60)-20,30), destY=d.top+6;
+    let pending=cards.length, fired=false;
+    const done=()=>{ if(!fired&&--pending<=0){ fired=true; resolve(); } };
+    cards.forEach((c,i)=>{
+      const clone=document.createElement('img'); clone.src=c.file;
+      clone.style.cssText='position:fixed;left:'+fromX+'px;top:'+fromY+'px;width:30px;border-radius:3px;z-index:62;box-shadow:0 5px 16px rgba(0,0,0,.6);outline:2px solid #ffd34d;transition:transform .52s cubic-bezier(.45,0,.2,1),opacity .52s;pointer-events:none';
+      document.body.appendChild(clone);
+      const dx=destX-fromX, dy=destY-fromY;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{ clone.style.transform='translate('+dx+'px,'+dy+'px) scale(.85)'; clone.style.opacity='.7'; }));
+      setTimeout(()=>{ clone.remove(); done(); }, 540);
+    });
+    setTimeout(()=>{ if(!fired){ fired=true; resolve(); } }, 660);
+  });
+}
 
 async function takeTurn(p, handCard, opts){
   opts=opts||{};
@@ -547,12 +567,13 @@ async function takeTurn(p, handCard, opts){
     renderAll();
     await flyToPile(captured, destEl);
     captured.forEach(removeFromTable);
-    if(canSteal){ for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp.id); } }
+    if(canSteal){ for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp); } }
     pl.cap.push(...captured);
-    G._newCapIds=new Set([...captured.map(c=>c.id),...stolen]); G._newIds=null;
+    G._newCapIds=new Set([...captured.map(c=>c.id),...stolen.map(c=>c.id)]); G._newIds=null;
     renderAll();
-    if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'!'+((canSteal&&steals)?(' 피뺏기 '+steals):'')); const tt=$('toast'); if(stags.includes('따닥')){ tt.classList.add('dbl'); setTimeout(()=>tt.classList.remove('dbl'),650); sound('play'); setTimeout(()=>sound('play'),150); } else sound('play'); }
-    await sleep(stags.length?460:140);
+    if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'!'+(stolen.length?(' 피뺏기 '+stolen.length):'')); const tt=$('toast'); if(stags.includes('따닥')){ tt.classList.add('dbl'); setTimeout(()=>tt.classList.remove('dbl'),650); sound('play'); setTimeout(()=>sound('play'),150); } else sound('play'); }
+    if(stolen.length){ const fromEl=(1-p===0)?$('myCaptured'):$('cpuCaptured'); const toEl=(p===0)?$('myCaptured'):$('cpuCaptured'); sound('take'); await flyStolen(stolen, fromEl, toEl); }
+    await sleep(stags.length?420:140);
   } else { G._newIds=null; renderAll(); await sleep(ppuk?460:120); }
 
   if(bomb){ if(!G.flipOwed)G.flipOwed=[0,0]; G.flipOwed[p]+=2; }   // 폭탄: 다음 자기 차례 2번 뒤집기전용
@@ -615,10 +636,11 @@ async function flipOnlyTurn(p){
   if(captured.length){
     renderAll(); await flyToPile(captured, p===0?$('myCaptured'):$('cpuCaptured'));
     captured.forEach(removeFromTable);
-    if(G.deck.length>0) for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp.id); }
+    if(G.deck.length>0) for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp); }
     pl.cap.push(...captured);
-    G._newCapIds=new Set([...captured.map(c=>c.id),...stolen]); G._newIds=null; renderAll();
-    if(stags.length) toast((p===0?'':'CPU ')+stags.join('+')+'!');
+    G._newCapIds=new Set([...captured.map(c=>c.id),...stolen.map(c=>c.id)]); G._newIds=null; renderAll();
+    if(stags.length) toast((p===0?'':'CPU ')+stags.join('+')+'!'+(stolen.length?(' 피뺏기 '+stolen.length):''));
+    if(stolen.length){ const fromEl=(1-p===0)?$('myCaptured'):$('cpuCaptured'); const toEl=(p===0)?$('myCaptured'):$('cpuCaptured'); sound('take'); await flyStolen(stolen, fromEl, toEl); }
     await sleep(stags.length?420:160);
   } else { G._newIds=null; renderAll(); await sleep(220); }
   if(G.flipOwed) G.flipOwed[p]--;
