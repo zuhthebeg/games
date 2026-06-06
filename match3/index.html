@@ -75,6 +75,10 @@
   .gold{color:var(--accent);font-weight:900;font-size:1.1rem;margin:6px 0}
   .btn{background:linear-gradient(180deg,#ffcf4d,#ff9f1c);border:none;color:#3a1d00;border-radius:12px;padding:13px 18px;font-size:1rem;font-weight:900;cursor:pointer;width:100%;margin-top:12px}
   .sub{color:var(--muted);font-size:.85rem}
+  .setpick{display:flex;gap:10px;justify-content:center;margin-bottom:4px}
+  .setbtn{font-size:1.5rem;width:52px;height:52px;border-radius:13px;background:var(--bg2);border:2px solid var(--line);cursor:pointer;transition:transform .12s,border-color .12s,background .12s}
+  .setbtn:active{transform:scale(.92)}
+  .setbtn.on{border-color:var(--accent);background:rgba(255,207,77,.16);box-shadow:0 0 0 2px rgba(255,207,77,.25)}
 </style>
 </head>
 <body>
@@ -106,6 +110,12 @@
   <h2>🍬 <span data-i18n="title">팝매치</span></h2>
   <p class="sub" data-i18n="howto">블록을 드래그해서 3개 이상 맞추세요</p>
   <p class="sub" data-i18n="goalHint" style="margin-top:8px">60초 안에 콤보·폭탄·컬러밤으로 최고점 도전!</p>
+  <p class="sub" data-i18n="pickSet" style="margin:14px 0 6px">블록 종류</p>
+  <div class="setpick">
+    <button class="setbtn" onclick="chooseSet(0)">🍎</button>
+    <button class="setbtn" onclick="chooseSet(1)">🐶</button>
+    <button class="setbtn" onclick="chooseSet(2)">⚽</button>
+  </div>
   <button class="btn" onclick="startGame()" data-i18n="start">시작</button>
 </div></div>
 
@@ -120,15 +130,15 @@
 /* ── i18n (한국어 / 繁體中文 / English) — 사전식, 즉시전환 ── */
 const I18N={
   ko:{title:'팝매치',restart:'다시',score:'점수',time:'시간',best:'최고',moves:'이동',
-      howto:'블록을 드래그해서 3개 이상 맞추세요',start:'시작',goalHint:'60초 안에 콤보·폭탄·컬러밤으로 최고점 도전!',
+      howto:'블록을 드래그해서 3개 이상 맞추세요',start:'시작',goalHint:'60초 안에 콤보·폭탄·컬러밤으로 최고점 도전!',pickSet:'블록 종류',
       timeup:'타임 오버!',finalScore:'최종 점수',again:'다시 하기',langBtn:'🌐 繁中',
       combo:(n)=>n+' 콤보!',comboWords:['굿!','나이스!','대박!','멋져!','파워!','폭발!','미쳤다!','갓!'],bomb:'💥 폭탄!',line:'💫 라인 클리어!',full:'🌟 올클리어!',colorbomb:'🌈 싹쓸이!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   'zh-TW':{title:'啵啵消',restart:'重來',score:'分數',time:'時間',best:'最佳',moves:'步數',
-      howto:'拖曳方塊連成3個以上消除',start:'開始',goalHint:'60秒內用連擊·炸彈·全消挑戰最高分！',
+      howto:'拖曳方塊連成3個以上消除',start:'開始',goalHint:'60秒內用連擊·炸彈·全消挑戰最高分！',pickSet:'方塊種類',
       timeup:'時間到！',finalScore:'最終分數',again:'再玩一次',langBtn:'🌐 EN',
       combo:(n)=>n+' 連擊！',comboWords:['不錯！','讚！','厲害！','超棒！','爆發！','瘋了！','神！','無敵！'],bomb:'💥 炸彈！',line:'💫 整列消！',full:'🌟 全清！',colorbomb:'🌈 全消！',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   en:{title:'Pop Match',restart:'Reset',score:'Score',time:'Time',best:'Best',moves:'Moves',
-      howto:'Drag blocks to match 3 or more',start:'Start',goalHint:'Score as high as you can in 60s with combos, bombs & color blasts!',
+      howto:'Drag blocks to match 3 or more',start:'Start',goalHint:'Score as high as you can in 60s with combos, bombs & color blasts!',pickSet:'Block set',
       timeup:"Time's up!",finalScore:'Final score',again:'Play again',langBtn:'🌐 한국어',
       combo:(n)=>n+' Combo!',comboWords:['Good!','Nice!','Great!','Super!','Wild!','Insane!','God!','Unreal!'],bomb:'💥 Bomb!',line:'💫 Line!',full:'🌟 Full Clear!',colorbomb:'🌈 Clear All!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'}};
 let LANG=(function(){try{const s=localStorage.getItem('m3-lang');if(s)return s;}catch(e){}
@@ -158,7 +168,11 @@ let activeTypes=[0,1,2,3,4,5]; // 살아있는 과일 종류(5매치+30초↓면
 
 let FACE_COLORS=EMOJI_SETS[0].colors; // 과즙 색(종류별, 세트 따라 교체)
 function rnd(n){return Math.floor(Math.random()*n);}
-function pickEmojiSet(){ const s=EMOJI_SETS[rnd(EMOJI_SETS.length)]; FACES=s.faces; FACE_COLORS=s.colors; }
+// 이모지 세트 = 사용자 선택(기본 과일). localStorage 기억
+let setIdx=(function(){ try{ const v=+localStorage.getItem('m3-set'); return (v>=0&&v<EMOJI_SETS.length)?v:0; }catch(e){ return 0; } })();
+function applySet(){ const s=EMOJI_SETS[setIdx]||EMOJI_SETS[0]; FACES=s.faces; FACE_COLORS=s.colors; }
+function chooseSet(i){ setIdx=i; try{localStorage.setItem('m3-set',i);}catch(e){} applySet(); if(cells.length)render(); updateSetUI(); }
+function updateSetUI(){ document.querySelectorAll('.setbtn').forEach((b,i)=>b.classList.toggle('on',i===setIdx)); }
 function randType(){ return activeTypes[rnd(activeTypes.length)]; }
 function removeTypeTemp(type){ if(!activeTypes.includes(type)||activeTypes.length<=3)return;
   activeTypes=activeTypes.filter(x=>x!==type);
@@ -239,10 +253,18 @@ async function resolve(){
     if(res.clear.size===0) break;
     chain++;
     lastMatch=Date.now(); clearHint();          // 성공 매치 → 힌트 타이머 리셋
-    const big = res.cross || res.color || res.full;   // 폭탄/싹쓸이/올클리어 = 강력 매치
     const multi = res.groups>=2;                       // 한 번에 여러 그룹 동시 매치 = 콤보
     const comboN = chain>=2 ? chain : (multi ? res.groups : 1);
-    score += res.clear.size*10*chain + (res.line?60:0) + (res.cross?120:0) + (res.color?200:0) + (res.full?500:0);
+    // 콤보 3+ → 콤보 폭탄: 매치 중심에 콤보수만큼 NxN(3×3~6×6) 추가 폭발
+    let comboBomb=0;
+    if(comboN>=3 && !res.full){
+      let sr=0,sc=0,cnt=0; res.clear.forEach(i=>{ sr+=Math.floor(i/N); sc+=i%N; cnt++; });
+      const cr=Math.round(sr/cnt), cc=Math.round(sc/cnt), S=Math.min(comboN,6), off=Math.floor((S-1)/2);
+      comboBomb=S;
+      for(let dr=-off;dr<=S-1-off;dr++)for(let dc=-off;dc<=S-1-off;dc++){ const nr=cr+dr,nc=cc+dc; if(inBounds(nr,nc))res.clear.add(idx(nr,nc)); }
+    }
+    const big = res.cross || res.color || res.full || comboBomb;   // 폭탄/싹쓸이/올클리어/콤보폭탄 = 강력 매치
+    score += res.clear.size*10*chain + (res.line?60:0) + (res.cross?120:0) + (res.color?200:0) + (res.full?500:0) + (comboBomb?comboBomb*40:0);
     // (시간 추가 없음 — 고정 60초 타임어택)
     // 싹쓸이(5): 그 과일 종류를 5초간만 제외(이후 복귀, 최소 3종 유지)
     if(res.color && res.colorType!=null) removeTypeTemp(res.colorType);
@@ -402,7 +424,7 @@ window.addEventListener('pointerdown',function unlock(){ if(BGM.on())BGM.start()
 function newGame(){ closeEnd(); document.getElementById('ovStart').classList.add('on'); }
 function startGame(){
   document.getElementById('ovStart').classList.remove('on'); closeEnd();
-  pickEmojiSet();
+  applySet();
   score=0; timeLeft=DUR; busy=false; playing=true; sel=null; lastMatch=Date.now(); activeTypes=[0,1,2,3,4,5];
   genGrid(); render(); BGM.start();
   (async()=>{ busy=true; await resolve(); if(!hasAnyMove()){genGrid();render();} busy=false; lastMatch=Date.now(); })();
@@ -438,7 +460,7 @@ function saveBest(s){ try{ const c=+localStorage.getItem('m3-best')||0; if(s>c)l
 function updateBest(){ try{ document.getElementById('best').textContent=(+localStorage.getItem('m3-best')||0).toLocaleString(); }catch(e){} }
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-applyLang(); buildDOM(); genGrid(); render(); updateBest(); syncAudioBtns();
+applySet(); applyLang(); buildDOM(); genGrid(); render(); updateBest(); syncAudioBtns(); updateSetUI();
 document.getElementById('ovStart').classList.add('on');
 </script>
 <script src="/lib/site-meta.js"></script>
