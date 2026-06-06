@@ -88,13 +88,13 @@
     <div id="board"></div>
     <div id="combo"></div>
   </div>
-  <p class="howto" data-i18n="howto">이웃한 블록을 드래그/탭으로 바꿔 3개 이상 맞추세요</p>
+  <p class="howto" data-i18n="howto">블록을 드래그해서 3개 이상 맞추세요</p>
 </div>
 
 <div class="ov" id="ovStart"><div class="card">
   <h2>🍬 <span data-i18n="title">팝매치</span></h2>
   <p class="sub" data-i18n="howto">블록을 드래그해서 3개 이상 맞추세요</p>
-  <p class="sub" data-i18n="goalHint" style="margin-top:8px">매치할수록 시간 추가! 콤보·큰 매치로 더 길게 버텨 최고점 도전</p>
+  <p class="sub" data-i18n="goalHint" style="margin-top:8px">60초 안에 콤보·폭탄·컬러밤으로 최고점 도전!</p>
   <button class="btn" onclick="startGame()" data-i18n="start">시작</button>
 </div></div>
 
@@ -109,15 +109,15 @@
 /* ── i18n (한국어 / 繁體中文 / English) — 사전식, 즉시전환 ── */
 const I18N={
   ko:{title:'팝매치',restart:'다시',score:'점수',time:'시간',best:'최고',moves:'이동',
-      howto:'블록을 드래그해서 3개 이상 맞추세요 · 매치하면 시간 추가!',start:'시작',goalHint:'매치할수록 시간 추가! 콤보·큰 매치로 더 길게 버텨 최고점 도전',
+      howto:'블록을 드래그해서 3개 이상 맞추세요',start:'시작',goalHint:'60초 안에 콤보·폭탄·컬러밤으로 최고점 도전!',
       timeup:'타임 오버!',finalScore:'최종 점수',again:'다시 하기',langBtn:'🌐 繁中',
       combo:(n)=>n+' 콤보!',comboWords:['굿!','나이스!','대박!','멋져!','파워!','폭발!','미쳤다!','갓!'],bomb:'💥 폭탄!',colorbomb:'🌈 올터짐!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   'zh-TW':{title:'啵啵消',restart:'重來',score:'分數',time:'時間',best:'最佳',moves:'步數',
-      howto:'拖曳方塊連成3個以上消除 · 消除可加時間！',start:'開始',goalHint:'消除越多加越多時間！靠連擊·大消除撐更久，挑戰最高分',
+      howto:'拖曳方塊連成3個以上消除',start:'開始',goalHint:'60秒內用連擊·炸彈·全消挑戰最高分！',
       timeup:'時間到！',finalScore:'最終分數',again:'再玩一次',langBtn:'🌐 EN',
       combo:(n)=>n+' 連擊！',comboWords:['不錯！','讚！','厲害！','超棒！','爆發！','瘋了！','神！','無敵！'],bomb:'💥 炸彈！',colorbomb:'🌈 全消！',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   en:{title:'Pop Match',restart:'Reset',score:'Score',time:'Time',best:'Best',moves:'Moves',
-      howto:'Drag blocks to match 3+ · matching adds time!',start:'Start',goalHint:'Matching adds time! Survive longer with combos & big matches for a high score',
+      howto:'Drag blocks to match 3 or more',start:'Start',goalHint:'Score as high as you can in 60s with combos, bombs & color blasts!',
       timeup:"Time's up!",finalScore:'Final score',again:'Play again',langBtn:'🌐 한국어',
       combo:(n)=>n+' Combo!',comboWords:['Good!','Nice!','Great!','Super!','Wild!','Insane!','God!','Unreal!'],bomb:'💥 Bomb!',colorbomb:'🌈 Clear All!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'}};
 let LANG=(function(){try{const s=localStorage.getItem('m3-lang');if(s)return s;}catch(e){}
@@ -209,9 +209,7 @@ async function resolve(){
     const multi = res.groups>=2;                // 한 번에 여러 그룹 동시 매치 = 콤보
     const comboN = chain>=2 ? chain : (multi ? res.groups : 1);
     score += res.clear.size*10*chain + (res.cross?120:0) + (res.five?200:0);
-    // 시간 가중(짠물): 3개=0초 · 4개=+1 · 5개=+2 · 폭탄(크로스)=+2 · 콤보(연쇄·동시다중)=+1
-    let add = res.cross?2 : (res.five?2 : (res.maxRun>=4?1:0)); if(chain>=2 || multi) add+=1;
-    if(add>0) addTime(add);
+    // (시간 추가 없음 — 고정 60초 타임어택)
     // 5개 컬러밤: 30초 이하 남았으면 그 과일 종류 영구 제외(최소 3종 유지)
     if(res.five && res.fiveType!=null && timeLeft<30 && activeTypes.length>3){ activeTypes=activeTypes.filter(x=>x!==res.fiveType); }
     if(res.five) showCombo(comboN,'color');
