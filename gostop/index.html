@@ -202,7 +202,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
   <h2 id="r-title"></h2>
   <div id="r-detail" class="scoreline"></div>
   <div class="bigpt" id="r-pt"></div>
-  <button class="close" onclick="nextRound()">다시</button>
+  <div style="display:flex;gap:8px"><button class="close" onclick="nextRound()" style="flex:1">다시</button><button class="close" id="r-menu" onclick="quitMenu()" style="flex:1;background:var(--panel2);color:var(--text);border:1px solid var(--line)">메뉴로</button></div>
 </div></div>
 
 <div class="ov" id="bombAsk"><div class="card2">
@@ -412,7 +412,7 @@ function deal(){
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   G.table=deck.splice(0,8);
   G.players=[{hand:deck.splice(0,10),cap:[]},{hand:deck.splice(0,10),cap:[]}];
-  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0]; G.playCount=[0,0]; G.ppuk3x=1; G._voiced=[{},{},{},{}];
+  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0]; G.playCount=[0,0]; G.ppuk3x=1; G._voiced=[{},{},{},{}]; G.acting=false;
   sortHand(0); G._dealing=true; document.body.classList.add('dealing'); renderAll();
   setTimeout(()=>{ G._dealing=false; document.body.classList.remove('dealing'); },1050);
   G._chongtong=null;
@@ -603,7 +603,7 @@ async function takeTurn(p, handCard, opts){
   G.lastScore[p]=Math.max(prev,sc.total);
   advance();
 }
-function keepTurn(p){ G.turn=p; if(p===0){ G.sel=-1; renderAll(); toast('한 번 더!'); } else { renderAll(); setTimeout(cpuTurn,900); } }
+function keepTurn(p){ G.turn=p; if(p===0){ G.acting=false; G.sel=-1; renderAll(); toast('한 번 더!'); } else { renderAll(); setTimeout(cpuTurn,900); } }
 function advance(){
   if(G.over)return;
   const owed=G.flipOwed?(G.flipOwed[0]+G.flipOwed[1]):0;
@@ -617,7 +617,7 @@ function startTurn(){
     if(p===0){ G.awaitFlip=true; G.sel=-1; renderAll(); const db=$('deckBack'); if(db)db.classList.add('await'); toast('💣 뒤집기 탄 '+G.flipOwed[0]+'개 — 더미를 눌러 뒤집기'); return; }
     setTimeout(()=>flipOnlyTurn(p), 850); return;
   }
-  if(p===0){ G.sel=-1; renderAll(); }
+  if(p===0){ G.acting=false; G.sel=-1; renderAll(); }
   else setTimeout(cpuTurn,900);
 }
 function onDeckClick(){
@@ -678,7 +678,7 @@ function cpuTurn(){
 }
 /* my play */
 function selectCard(i){ if(G.turn!==0||G.over)return; G.sel=(G.sel===i?-1:i); renderMyHand(); }
-function playSelected(){ if(G.sel<0)return; const c=G.players[0].hand[G.sel]; const m=c.m; G.sel=-1;
+function playSelected(){ if(G.sel<0||G.acting)return; G.acting=true; const c=G.players[0].hand[G.sel]; const m=c.m; G.sel=-1;
   const cnt=G.players[0].hand.filter(x=>x.m===m).length;
   const canBomb = cnt>=3 && sameMonth(G.table,m).length>=1;
   const canShake = cnt>=3;
@@ -820,7 +820,7 @@ function renderMyHand(){
   }).join('');
 }
 let lastTap=-1;
-function selectCard(i){ if(G.turn!==0||G.over)return; if(G.sel===i){ playSelected(); return;} G.sel=i; renderMyHand(); renderTable(); }
+function selectCard(i){ if(G.turn!==0||G.over||G.acting)return; if(G.sel===i){ playSelected(); return;} G.sel=i; renderMyHand(); renderTable(); }
 function capGroup(cap){
   const g=cap.filter(c=>c.gwang), y=cap.filter(c=>c.role==='yul'), t=cap.filter(c=>c.role==='tti'), p=cap.filter(c=>c.role==='pi');
   const cls=c=>(G._newCapIds&&G._newCapIds.has(c.id))?'cin':'';
