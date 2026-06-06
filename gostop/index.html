@@ -219,7 +219,9 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 
 <div class="ov" id="settings"><div class="card2">
   <h2>⚙ 설정</h2>
-  <div class="row"><span>🔊 소리</span><div class="seg"><button data-snd="1" onclick="setSnd(1)">ON</button><button data-snd="0" onclick="setSnd(0)">OFF</button></div></div>
+  <div class="row"><span>🔊 효과음</span><div class="seg"><button data-snd="1" onclick="setSnd(1)">ON</button><button data-snd="0" onclick="setSnd(0)">OFF</button></div></div>
+  <div class="row"><span>🗣 음성 콜</span><div class="seg"><button data-voice="1" onclick="setVoice(1)">ON</button><button data-voice="0" onclick="setVoice(0)">OFF</button></div></div>
+  <div class="row" style="flex-direction:column;align-items:stretch;gap:6px"><span>🎧 음성 미리듣기</span><div id="voicePreview" style="display:flex;flex-wrap:wrap;gap:5px"></div></div>
   <div class="row"><span>고/스톱 최소점</span><span style="color:var(--muted)">7점 (맞고)</span></div>
   <div class="row"><span>🌐 언어 / 語言 / Lang</span><button class="seg" style="padding:4px 12px;cursor:pointer" onclick="gsToggleLang()">한국어 → 繁中 → EN</button></div>
   <button class="close" onclick="hide('settings')">닫기</button>
@@ -379,6 +381,7 @@ window.addEventListener('DOMContentLoaded', function(){
 const $=id=>document.getElementById(id);
 function openRanking(){ try{ if(typeof GameRankings!=='undefined') GameRankings.showModal('gostop'); else alert('랭킹 로딩 중'); }catch(e){ alert('랭킹을 열 수 없습니다'); } }
 let SND=localStorage.getItem('gostop_snd')!=='0';
+let VOICE=localStorage.getItem('gostop_voice')!=='0';
 const GO_MIN=7; // 맞고(2인)=7점 / 고스톱(3인+)=3점은 3인모드에서
 let BET=+(localStorage.getItem('gostop_bet')||1);
 let CARRY=1; // 나가리 누적 배수
@@ -409,7 +412,7 @@ function deal(){
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   G.table=deck.splice(0,8);
   G.players=[{hand:deck.splice(0,10),cap:[]},{hand:deck.splice(0,10),cap:[]}];
-  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0]; G.playCount=[0,0]; G.ppuk3x=1;
+  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0]; G.playCount=[0,0]; G.ppuk3x=1; G._voiced=[{},{},{},{}];
   sortHand(0); G._dealing=true; document.body.classList.add('dealing'); renderAll();
   setTimeout(()=>{ G._dealing=false; document.body.classList.remove('dealing'); },1050);
   G._chongtong=null;
@@ -571,8 +574,10 @@ async function takeTurn(p, handCard, opts){
     pl.cap.push(...captured);
     G._newCapIds=new Set([...captured.map(c=>c.id),...stolen.map(c=>c.id)]); G._newIds=null;
     renderAll();
-    if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'!'+(stolen.length?(' 피뺏기 '+stolen.length):'')); const tt=$('toast'); if(stags.includes('따닥')){ tt.classList.add('dbl'); setTimeout(()=>tt.classList.remove('dbl'),650); sound('play'); setTimeout(()=>sound('play'),150); } else sound('play'); }
+    if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'!'+(stolen.length?(' 피뺏기 '+stolen.length):'')); const tt=$('toast'); if(stags.includes('따닥')){ tt.classList.add('dbl'); setTimeout(()=>tt.classList.remove('dbl'),650); sound('play'); setTimeout(()=>sound('play'),150); } else sound('play');
+      if(stags.includes('쪽'))gsVoice('jjok'); else if(stags.includes('쓸'))gsVoice('ssul'); }
     if(stolen.length){ const fromEl=(1-p===0)?$('myCaptured'):$('cpuCaptured'); const toEl=(p===0)?$('myCaptured'):$('cpuCaptured'); sound('take'); await flyStolen(stolen, fromEl, toEl); }
+    voiceCombos(p);
     await sleep(stags.length?420:140);
   } else { G._newIds=null; renderAll(); await sleep(ppuk?460:120); }
 
@@ -639,8 +644,9 @@ async function flipOnlyTurn(p){
     if(G.deck.length>0) for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp); }
     pl.cap.push(...captured);
     G._newCapIds=new Set([...captured.map(c=>c.id),...stolen.map(c=>c.id)]); G._newIds=null; renderAll();
-    if(stags.length) toast((p===0?'':'CPU ')+stags.join('+')+'!'+(stolen.length?(' 피뺏기 '+stolen.length):''));
+    if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'!'+(stolen.length?(' 피뺏기 '+stolen.length):'')); if(stags.includes('쓸'))gsVoice('ssul'); }
     if(stolen.length){ const fromEl=(1-p===0)?$('myCaptured'):$('cpuCaptured'); const toEl=(p===0)?$('myCaptured'):$('cpuCaptured'); sound('take'); await flyStolen(stolen, fromEl, toEl); }
+    voiceCombos(p);
     await sleep(stags.length?420:160);
   } else { G._newIds=null; renderAll(); await sleep(220); }
   if(G.flipOwed) G.flipOwed[p]--;
@@ -772,8 +778,7 @@ function settle(winner,sc,opts){
   $('r-pt').innerHTML=pt+'점 <span style="font-size:1.05rem;color:'+(winner===0?'var(--green)':'var(--red)')+'">'+(winner===0?'+':'−')+gold.toLocaleString()+'G</span>';
   sound(winner===0?'win':'lose');
   // 콜 보이스: 박/총통/3뻑 → 잠시 후 승패
-  { const bakV = tags.includes('고박')?'gobak':tags.includes('피박')?'pibak':tags.includes('광박')?'gwangbak':tags.includes('멍박')?'meongbak':null;
-    if(opts.chongtong) gsVoice('chongtong'); else if(opts.ppuk3) gsVoice('ppeok3'); else if(bakV) gsVoice(bakV);
+  { if(opts.chongtong) gsVoice('chongtong'); else if(opts.ppuk3) gsVoice('ppeok3');   // 정산 박(피박/광박/멍박/고박) 음성은 사용 안 함
     setTimeout(()=>gsVoice(winner===0?'win':'lose'), 700); }
   show('result');
   CARRY=1; // 승부났으니 누적 리셋
@@ -850,6 +855,11 @@ function quitMenu(){ ['gostop','result','settings','bombAsk','pickAsk'].forEach(
 function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',1200); }
 function cpuReveal(card){ if(!card)return; const el=$('cpuReveal'); if(!el)return; el.innerHTML='<img src="'+card.file+'">'; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); setTimeout(()=>{el.classList.remove('on');el.innerHTML='';},760); }
 function setSnd(s){ SND=!!s; localStorage.setItem('gostop_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
+function setVoice(s){ VOICE=!!s; localStorage.setItem('gostop_voice',s?'1':'0'); document.querySelectorAll('[data-voice]').forEach(b=>b.classList.toggle('on',+b.dataset.voice===(s?1:0))); }
+// 음성 미리듣기 (VOICE 토글과 무관하게 재생)
+const VOICE_PREVIEW=[['go1','원고'],['go2','투고'],['go3','쓰리고'],['go4','포고'],['go5','파이브고'],['stop','스톱'],['ppeok','뻑'],['firstppeok','첫뻑'],['ppeok3','3뻑'],['chongtong','총통'],['shake','흔들기'],['nagari','나가리'],['bomb','폭탄'],['ogwang','오광'],['sagwang','사광'],['samgwang','삼광'],['godori','고도리'],['hongdan','홍단'],['cheongdan','청단'],['chodan','초단'],['jjok','쪽'],['ssul','쓸'],['win','승'],['lose','패']];
+function previewVoice(k){ try{ const lang=(window.GS_LANG==='zh-TW')?'zh':'ko'; const a=new Audio('voice/'+k+'_'+lang+'.mp3'); a.volume=1; a.play().catch(()=>{}); }catch(e){} }
+function buildVoicePreview(){ const el=document.getElementById('voicePreview'); if(!el)return; el.innerHTML=VOICE_PREVIEW.map(v=>`<button class="seg" style="padding:3px 9px;font-size:.78rem;cursor:pointer" onclick="previewVoice('${v[0]}')">${v[1]}</button>`).join(''); }
 function setBet(n){ BET=n; localStorage.setItem('gostop_bet',n); document.querySelectorAll('[data-bet]').forEach(b=>b.classList.toggle('on',+b.dataset.bet===n)); }
 let TZ=+(localStorage.getItem('gostop_zoom')||1);
 function applyZoom(){ TZ=Math.max(.8,Math.min(1.7,TZ||1)); document.documentElement.style.setProperty('--tz',TZ); }
@@ -857,7 +867,16 @@ function zoomCards(d){ TZ=Math.round((TZ+d*0.12)*100)/100; applyZoom(); localSto
 function sound(n){ if(!SND)return; const map={take:'claim',play:'tile',flip:'tile',win:'win',lose:'tile'}; const fn=map[n]||'tile'; try{const a=new Audio('sounds/'+fn+'.mp3');a.volume=.4;a.play().catch(()=>{});}catch(e){} }
 // 콜 보이스: voice/<key>.mp3 (파일 없으면 조용히 무시). key: ppeok,firstppeok,ttadak,jjok,sweep,jappeok,ppeoksseuri,ssada,bomb,shake,chongtong,ppeok3,go1..go5,stop,pibak,gwangbak,meongbak,gobak,godori,win,lose,nagari,pisteal
 const _gv={};
-function gsVoice(k){ if(!SND||!k)return; try{ const lang=(window.GS_LANG==='zh-TW')?'zh':'ko'; const key=k+'_'+lang; let a=_gv[key]; if(!a){a=new Audio('voice/'+key+'.mp3');a.volume=.92;_gv[key]=a;} a.currentTime=0; a.play().catch(()=>{}); }catch(e){} }
+function gsVoice(k){ if(!VOICE||!k)return; try{ const lang=(window.GS_LANG==='zh-TW')?'zh':'ko'; const key=k+'_'+lang; let a=_gv[key]; if(!a){a=new Audio('voice/'+key+'.mp3');a.volume=.92;_gv[key]=a;} a.currentTime=0; a.play().catch(()=>{}); }catch(e){} }
+// 확정 족보 콜: 점수 족보가 새로 완성되면 1회 음성 (오광/사광/삼광·고도리·홍단·청단·초단)
+const COMBO_VOICE={'고도리':'godori','홍단':'hongdan','청단':'cheongdan','초단':'chodan'};
+function voiceCombos(p){ if(!VOICE)return; const pl=G.players&&G.players[p]; if(!pl)return; const sc=score(pl.cap);
+  if(!G._voiced)G._voiced=[{},{},{},{}]; const v=G._voiced[p]||(G._voiced[p]={});
+  if(sc.gw>=5&&!v.ogwang){v.ogwang=1;gsVoice('ogwang');}
+  else if(sc.gw===4&&!v.sagwang){v.sagwang=1;gsVoice('sagwang');}
+  else if(sc.gw===3&&!v.samgwang){v.samgwang=1;gsVoice('samgwang');}
+  sc.parts.forEach(part=>{ const key=COMBO_VOICE[part[0]]; if(key&&!v[key]){v[key]=1;gsVoice(key);} });
+}
 let AC=null;
 function boom(){
   if(!SND)return;
@@ -882,7 +901,7 @@ function bombFx(prefix){
   const tt=$('toast'); tt.textContent=prefix+'💥 콰쾅! 폭탄!'; tt.classList.add('dbl'); tt.style.display='block';
   setTimeout(()=>{ tt.style.display='none'; tt.classList.remove('dbl'); },1300);
 }
-setSnd(SND?1:0); setBet(BET); applyZoom();
+setSnd(SND?1:0); setVoice(VOICE?1:0); buildVoicePreview(); setBet(BET); applyZoom();
 /* ===== 온라인 멀티 (COC-21) ===== */
 let MP_SEATS=+(localStorage.getItem('gostop_seats')||2);
 function setSeats(n){ MP_SEATS=n; localStorage.setItem('gostop_seats',n); document.querySelectorAll('[data-seats]').forEach(b=>b.classList.toggle('on',+b.dataset.seats===n)); }
