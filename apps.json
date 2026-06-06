@@ -1,5 +1,15 @@
 [
   {
+    "title": "팝매치",
+    "icon": "https://game.cocy.io/match3/icon.svg",
+    "url": "https://game.cocy.io/match3/",
+    "desc": "애니팡식 매치-3! 60초 시간제·콤보 폭발·골드 보상·랭킹, 한국어/繁體中文/English",
+    "badge": "NEW",
+    "platforms": ["WEB"],
+    "languages": ["ko","zhTW","en"],
+    "category": "puzzle"
+  },
+  {
     "title": "스도쿠",
     "icon": "https://game.cocy.io/sudoku/icon.svg",
     "url": "https://game.cocy.io/sudoku/",
