@@ -124,6 +124,10 @@
   <p class="sub"><span data-i18n="finalScore">최종 점수</span> <b id="finalScore">0</b></p>
   <p class="gold" id="endGold"></p>
   <button class="btn" onclick="closeEnd();startGame()" data-i18n="again">다시 하기</button>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button class="btn" onclick="newGame()" data-i18n="modeSelect" style="flex:1;width:auto;margin-top:0;background:var(--panel);color:var(--text);border:1px solid var(--line)">모드 선택</button>
+    <button class="btn" onclick="closeEnd()" data-i18n="close" style="flex:1;width:auto;margin-top:0;background:var(--panel);color:var(--text);border:1px solid var(--line)">닫기</button>
+  </div>
 </div></div>
 
 <script>
@@ -131,15 +135,15 @@
 const I18N={
   ko:{title:'팝매치',restart:'다시',score:'점수',time:'시간',best:'최고',moves:'이동',
       howto:'블록을 드래그해서 3개 이상 맞추세요',start:'시작',goalHint:'60초 안에 콤보·폭탄·컬러밤으로 최고점 도전!',pickSet:'블록 종류',
-      timeup:'타임 오버!',finalScore:'최종 점수',again:'다시 하기',langBtn:'🌐 繁中',
+      timeup:'타임 오버!',finalScore:'최종 점수',again:'다시 하기',modeSelect:'모드 선택',close:'닫기',langBtn:'🌐 繁中',
       combo:(n)=>n+' 콤보!',comboWords:['굿!','나이스!','대박!','멋져!','파워!','폭발!','미쳤다!','갓!'],bomb:'💥 폭탄!',line:'💫 라인 클리어!',full:'🌟 올클리어!',colorbomb:'🌈 싹쓸이!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   'zh-TW':{title:'啵啵消',restart:'重來',score:'分數',time:'時間',best:'最佳',moves:'步數',
       howto:'拖曳方塊連成3個以上消除',start:'開始',goalHint:'60秒內用連擊·炸彈·全消挑戰最高分！',pickSet:'方塊種類',
-      timeup:'時間到！',finalScore:'最終分數',again:'再玩一次',langBtn:'🌐 EN',
+      timeup:'時間到！',finalScore:'最終分數',again:'再玩一次',modeSelect:'選模式',close:'關閉',langBtn:'🌐 EN',
       combo:(n)=>n+' 連擊！',comboWords:['不錯！','讚！','厲害！','超棒！','爆發！','瘋了！','神！','無敵！'],bomb:'💥 炸彈！',line:'💫 整列消！',full:'🌟 全清！',colorbomb:'🌈 全消！',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'},
   en:{title:'Pop Match',restart:'Reset',score:'Score',time:'Time',best:'Best',moves:'Moves',
       howto:'Drag blocks to match 3 or more',start:'Start',goalHint:'Score as high as you can in 60s with combos, bombs & color blasts!',pickSet:'Block set',
-      timeup:"Time's up!",finalScore:'Final score',again:'Play again',langBtn:'🌐 한국어',
+      timeup:"Time's up!",finalScore:'Final score',again:'Play again',modeSelect:'Mode',close:'Close',langBtn:'🌐 한국어',
       combo:(n)=>n+' Combo!',comboWords:['Good!','Nice!','Great!','Super!','Wild!','Insane!','God!','Unreal!'],bomb:'💥 Bomb!',line:'💫 Line!',full:'🌟 Full Clear!',colorbomb:'🌈 Clear All!',goldLine:(g)=>'💰 +'+g.toLocaleString()+'G'}};
 let LANG=(function(){try{const s=localStorage.getItem('m3-lang');if(s)return s;}catch(e){}
   const n=(navigator.language||'').toLowerCase();return n.startsWith('zh')?'zh-TW':n.startsWith('ko')?'ko':'en';})();
