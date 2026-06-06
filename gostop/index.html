@@ -236,7 +236,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
    • <b>피</b>: 10장 1점+ (쌍피=2장)<br>
    • 점수가 <b>7점</b> 이상 나면 (맞고 기준) <b>고</b>(계속·배수↑) 또는 <b>스톱</b>(끝).<br>
    • <b>피박</b>(상대 피 적음)·<b>광박</b>(상대 광 0) 시 2배.<br>
-   • <b>따닥/쪽/쓸</b> 시 상대 <b>피 1장</b> 뺏어옴.<br>• <b>뻑</b>(같은 월 3장 쌓임) / <b>뻑쓸이</b> 피1장·<b>자뻑</b> 피2장 / <b>3뻑</b>이면 즉시 승(10점).<br>• <b>흔들기</b>(손에 같은 월 3장+바닥1장 ×2) / <b>💣폭탄</b>(3장 투하·4장 먹고 피1장+한번더).<br>• 점수 × <b>1만골드 × 판돈배수</b>가 지갑에 정산됩니다.<br><span style="color:var(--muted)">고스톱 3인 모드 곧 추가.</span>
+   • <b>따닥/쪽/쓸</b> 시 상대 <b>피 1장</b> 뺏어옴.<br>• <b>뻑</b>(같은 월 3장 쌓임) / <b>뻑쓸이</b> 피1장·<b>자뻑</b> 피2장 / <b>3뻑</b>이면 그 판 점수 ×2.<br>• <b>흔들기</b>(손에 같은 월 3장+바닥1장 ×2) / <b>💣폭탄</b>(3장 투하·4장 먹고 피1장+한번더).<br>• 점수 × <b>1만골드 × 판돈배수</b>가 지갑에 정산됩니다.<br><span style="color:var(--muted)">고스톱 3인 모드 곧 추가.</span>
   </div>
   <button class="close" onclick="hide('howto')">닫기</button>
 </div></div>
@@ -261,7 +261,7 @@ window.addEventListener('DOMContentLoaded', function(){
     ['점수가 7점 이상 나면 (맞고 기준) 고(계속·배수↑) 또는 스톱(끝).','分數達7點以上時，可選繼續(Go·倍數↑)或停(Stop)。'],
     ['피박(상대 피 적음)·광박(상대 광 0) 시 2배.','皮霸(對手皮少)·光霸(對手無光)時2倍。'],
     ['따닥/쪽/쓸 시 상대 피 1장 뺏어옴.','連打/啄/掃時搶對手皮1張。'],
-    ['뻑(같은 월 3장 쌓임) / 뻑쓸이 피1장·자뻑 피2장 / 3뻑이면 즉시 승(10점).','뻑(同月3張堆疊) / 掃뻑皮1張·自뻑皮2張 / 三뻑即勝(10點)。'],
+    ['뻑(같은 월 3장 쌓임) / 뻑쓸이 피1장·자뻑 피2장 / 3뻑이면 그 판 점수 ×2.','뻑(同月3張堆疊) / 掃뻑皮1張·自뻑皮2張 / 三뻑該局分數×2。'],
     ['흔들기(손에 같은 월 3장+바닥1장 ×2) / 💣폭탄(3장 투하·4장 먹고 피1장+한번더).','搖牌(手中同月3張+牌面1張 ×2) / 💣炸彈(投3張·吃4張+皮1張+再一次)。'],
     ['점수 × 1만골드 × 판돈배수가 지갑에 정산됩니다.','分數 × 1萬金幣 × 賭注倍數結算到錢包。'],
     ['3광 3점(비광 포함 시 2점)·4광 4점·5광 15점','三光3點(含雨光2點)·四光4點·五光15點'],
@@ -283,7 +283,7 @@ window.addEventListener('DOMContentLoaded', function(){
     ['💣 뒤집기 탄 ','💣 翻牌彈 '],['개 — 더미를 눌러 뒤집기','張 — 點牌庫翻牌'],['뒤집기 턴 (','翻牌回合 ('],
     ['💥 콰쾅! 폭탄!','💥 轟！炸彈！'],['멀티 로드 실패','多人載入失敗'],['전송 실패','傳送失敗'],
     ['랭킹 로딩 중','排行榜載入中'],['랭킹을 열 수 없습니다','無法開啟排行榜'],
-    ['한 번 더!','再一次！'],['3뻑! 승리','三뻑！勝利'],
+    ['한 번 더!','再一次！'],['3뻑! 이 판 ×2','三뻑！本局×2'],['3뻑','三뻑'],
     ['점! 고? 스톱?','點！繼續？停？'],['고? 스톱?','繼續？停？'],['고를 부르면 1고','喊繼續就是1Go'],
     ['고 (GO)','繼續(GO)'],['스톱 (STOP)','停(STOP)'],
     ['고도리','五鳥'],['홍단','紅短'],['청단','青短'],['초단','草短'],
@@ -291,7 +291,7 @@ window.addEventListener('DOMContentLoaded', function(){
     ['멍박 ×2','悶霸 ×2'],['멍박','悶霸'],['고박 ×2','賭債 ×2'],['고박','賭債'],
     ['나가리누적 ×','流局累積 ×'],['나가리 ×','流局 ×'],['나가리','流局'],
     ['흔들기 ×','搖牌 ×'],['흔들기!','搖牌！'],['흔들기','搖牌'],
-    ['3뻑 10점','三뻑10點'],['총통! 즉시 승','總統！即勝'],['총통!','總統！'],['총통','總統'],['3뻑 즉시 승','三뻑即勝'],
+    ['3뻑 ×2','三뻑×2'],['총통! 즉시 승','總統！即勝'],['총통!','總統！'],['총통','總統'],
     ['피뺏기','搶皮'],['따닥','連打'],['뻑쓸이','掃뻑'],['자뻑','自뻑'],
     ['아무도 못 났습니다','沒有人胡牌'],['다음 판 판돈','下局賭注'],['패 크기','牌大小'],
     ['메뉴로','回主選單'],['다시 하기','再玩一次'],['내 점수','我的分數'],
@@ -307,7 +307,7 @@ window.addEventListener('DOMContentLoaded', function(){
     ['점수가 7점 이상 나면 (맞고 기준) 고(계속·배수↑) 또는 스톱(끝).','At 7+ points, choose Go (continue, ×mult) or Stop (end).'],
     ['피박(상대 피 적음)·광박(상대 광 0) 시 2배.','Pi-bak (opp few pi) · Gwang-bak (opp 0 gwang) → ×2.'],
     ['따닥/쪽/쓸 시 상대 피 1장 뺏어옴.','Ttadak/Jjok/Sweep steals 1 pi from opponent.'],
-    ['뻑(같은 월 3장 쌓임) / 뻑쓸이 피1장·자뻑 피2장 / 3뻑이면 즉시 승(10점).','Ppeok (3 same-month stacked) / Sweep-ppeok 1pi · Self-ppeok 2pi / 3 ppeok = instant win (10pt).'],
+    ['뻑(같은 월 3장 쌓임) / 뻑쓸이 피1장·자뻑 피2장 / 3뻑이면 그 판 점수 ×2.','Ppeok (3 same-month stacked) / Sweep-ppeok 1pi · Self-ppeok 2pi / 3 ppeok = round score ×2.'],
     ['흔들기(손에 같은 월 3장+바닥1장 ×2) / 💣폭탄(3장 투하·4장 먹고 피1장+한번더).','Shake (3 same-month in hand +1 floor, ×2) / 💣Bomb (drop 3, take 4 +1pi +extra turn).'],
     ['점수 × 1만골드 × 판돈배수가 지갑에 정산됩니다.','Score × 10,000 gold × bet multiplier is paid to your wallet.'],
     ['3광 3점(비광 포함 시 2점)·4광 4점·5광 15점','3 Gwang 3pt (2pt w/ rain)·4 Gwang 4pt·5 Gwang 15pt'],
@@ -329,7 +329,7 @@ window.addEventListener('DOMContentLoaded', function(){
     ['💣 뒤집기 탄 ','💣 Flip shots '],['개 — 더미를 눌러 뒤집기',' — tap the deck to flip'],['뒤집기 턴 (','Flip turn ('],
     ['💥 콰쾅! 폭탄!','💥 Boom! Bomb!'],['멀티 로드 실패','Multiplayer load failed'],['전송 실패','Send failed'],
     ['랭킹 로딩 중','Loading ranking'],['랭킹을 열 수 없습니다','Cannot open ranking'],
-    ['한 번 더!','Once more!'],['3뻑! 승리','3-ppeok! Win'],
+    ['한 번 더!','Once more!'],['3뻑! 이 판 ×2','3-ppeok! Round ×2'],['3뻑','3-ppeok'],
     ['점! 고? 스톱?','pt! Go? Stop?'],['고? 스톱?','Go? Stop?'],['고를 부르면 1고','Calling Go = 1 Go'],
     ['고 (GO)','Go'],['스톱 (STOP)','Stop'],
     ['고도리','Godori'],['홍단','Hongdan'],['청단','Cheongdan'],['초단','Chodan'],
@@ -337,7 +337,7 @@ window.addEventListener('DOMContentLoaded', function(){
     ['멍박 ×2','Meong-bak ×2'],['멍박','Meong-bak'],['고박 ×2','Go-bak ×2'],['고박','Go-bak'],
     ['나가리누적 ×','Nagari carry ×'],['나가리 ×','Nagari ×'],['나가리','Nagari'],
     ['흔들기 ×','Shake ×'],['흔들기!','Shake!'],['흔들기','Shake'],
-    ['3뻑 10점','3-ppeok 10pt'],['총통! 즉시 승','Chongtong! Instant win'],['총통!','Chongtong!'],['총통','Chongtong'],['3뻑 즉시 승','3-ppeok instant win'],
+    ['3뻑 ×2','3-ppeok ×2'],['총통! 즉시 승','Chongtong! Instant win'],['총통!','Chongtong!'],['총통','Chongtong'],
     ['피뺏기','pi steal'],['따닥','Ttadak'],['뻑쓸이','Sweep-ppeok'],['자뻑','Self-ppeok'],
     ['아무도 못 났습니다','No one won'],['다음 판 판돈','Next round bet'],['패 크기','Card size'],
     ['메뉴로','Menu'],['다시 하기','Play again'],['내 점수','My score'],
@@ -409,7 +409,7 @@ function deal(){
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   G.table=deck.splice(0,8);
   G.players=[{hand:deck.splice(0,10),cap:[]},{hand:deck.splice(0,10),cap:[]}];
-  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0]; G.playCount=[0,0];
+  G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0]; G.playCount=[0,0]; G.ppuk3x=1;
   sortHand(0); G._dealing=true; document.body.classList.add('dealing'); renderAll();
   setTimeout(()=>{ G._dealing=false; document.body.classList.remove('dealing'); },1050);
   G._chongtong=null;
@@ -556,8 +556,8 @@ async function takeTurn(p, handCard, opts){
   } else { G._newIds=null; renderAll(); await sleep(ppuk?460:120); }
 
   if(bomb){ if(!G.flipOwed)G.flipOwed=[0,0]; G.flipOwed[p]+=2; }   // 폭탄: 다음 자기 차례 2번 뒤집기전용
-  // 3뻑 = 즉시 승리(10점)
-  if(ppuk && G.ppukCount[p]>=3){ toast((p===0?'':'CPU ')+'3뻑! 승리'); gsVoice('ppeok3'); await sleep(700); return settle(p, score(pl.cap), {ppuk3:true}); }
+  // 3뻑 = 즉시 승리가 아니라 그 판 점수 ×2 (계속 진행)
+  if(ppuk && G.ppukCount[p]===3){ G.ppuk3x=(G.ppuk3x||1)*2; toast((p===0?'':'CPU ')+'3뻑! 이 판 ×2'); gsVoice('ppeok3'); await sleep(600); }
   // score
   const sc=score(pl.cap);
   const prev=G.lastScore[p];
@@ -732,6 +732,7 @@ function settle(winner,sc,opts){
     const wyul=G.players[winner].cap.filter(c=>c.role==='yul').length;
     if(wyul>=7){ mult*=2; tags.push('멍박'); multTags.push('멍박 ×2'); }    // 멍따(열끗 7장↑)
     if(G.shakeMult&&G.shakeMult[winner]>1){ mult*=G.shakeMult[winner]; tags.push('흔들기'); multTags.push('흔들기 ×'+G.shakeMult[winner]); }
+    if(G.ppuk3x>1){ mult*=G.ppuk3x; tags.push('3뻑'); multTags.push('3뻑 ×'+G.ppuk3x); }   // 3뻑: 그 판 점수 ×2
     if(G.goBy>=0 && G.goBy!==winner){ mult*=2; tags.push('고박'); multTags.push('고박 ×2'); }  // 고 부른 사람이 짐(독박)
     pt*=mult;
   }
