@@ -162,7 +162,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
   <div class="bar">
     <span class="b">고 <b id="t-go">0</b></span>
     <span class="b">더미 <b id="t-deck">20</b></span>
-    <span class="b">나 <b id="t-myscore">0</b>점</span>
+    <span class="b"><span id="t-myname">나</span> <b id="t-myscore">0</b>점</span>
     <span class="sp"></span>
     <button onclick="zoomCards(-1)">🔍−</button>
     <button onclick="zoomCards(1)">🔍+</button>
@@ -756,6 +756,8 @@ function chooseGo(go){
   if(go){ G.go++; G.goBy=0; toast(G.go+'고!'); gsVoice('go'+Math.min(G.go,5)); pendingBomb=false; setTimeout(advance,500); }
   else { gsVoice('stop'); settle(0,pendingScore); }
 }
+// 내 표시 이름: 지갑 닉네임 우선, 없으면 '나'
+function myNick(){ try{ if(typeof SharedWallet!=='undefined' && SharedWallet.user && SharedWallet.user.nickname) return SharedWallet.user.nickname; }catch(e){} return '나'; }
 function settle(winner,sc,opts){
   opts=opts||{};
   if(G.over)return; G.over=true;
@@ -776,7 +778,7 @@ function settle(winner,sc,opts){
     pt*=mult;
   }
   if(CARRY>1){ tags.push('나가리누적 ×'+CARRY); multTags.push('나가리 ×'+CARRY); }
-  const who=winner===0?'나':'CPU';
+  const who=winner===0?myNick():'CPU';
   const gold=pt*10000*BET*CARRY;
   if(typeof SharedWallet!=='undefined' && SharedWallet._initialized){ try{ winner===0?SharedWallet.addGold(gold):SharedWallet.removeGold(gold); }catch(e){} }
   if(winner===0 && pt>0 && typeof GameRankings!=='undefined'){ try{ GameRankings.submit('gostop',{score:pt}); }catch(e){} }
@@ -855,7 +857,7 @@ function renderCaptured(){
   $('cpuCaptured').innerHTML=capGroup(G.players[1].cap);
   $('myCaptured').innerHTML=capGroup(G.players[0].cap);
   const ms=score(G.players[0].cap), cs=score(G.players[1].cap);
-  $('cpu-score').textContent=cs.total+'점'; $('t-myscore').textContent=ms.total; $('myScoreLine').innerHTML=`내 점수 <b>${ms.total}</b>점 · 광${ms.gw} 피${ms.pi}`;
+  $('cpu-score').textContent=cs.total+'점'; $('t-myscore').textContent=ms.total; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } $('myScoreLine').innerHTML=`내 점수 <b>${ms.total}</b>점 · 광${ms.gw} 피${ms.pi}`;
   $('cpu-who').className='who'+(G.turn===1?' turn':'');
 }
 function renderBar(){ $('t-go').textContent=G.go; }
@@ -1002,7 +1004,7 @@ function mpRender(v){
     return `<div class="hcard ${i===MP._sel?'sel':''} ${canPlay?'canplay':''} ${gudM.has(c.m)?'gudeun':''}" onclick="mpTapCard(${i})"><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`; }).join('');
   const meP=v.players.find(p=>p.seat===v.mySeat)||{cap:[]};
   $('myCaptured').innerHTML=capGroup(meP.cap);
-  if($('t-myscore'))$('t-myscore').textContent=v.myScore; if($('myScoreLine'))$('myScoreLine').innerHTML=`내 점수 <b>${v.myScore}</b>점`;
+  if($('t-myscore'))$('t-myscore').textContent=v.myScore; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } if($('myScoreLine'))$('myScoreLine').innerHTML=`내 점수 <b>${v.myScore}</b>점`;
   const el=$('mpOpps'); const opps=v.players.filter(p=>p.seat!==v.mySeat).sort((a,b)=>a.seat-b.seat);
   el.innerHTML=opps.map(p=>{ const turn=(v.pending?v.pending.seat===p.seat:v.currentTurn===p.seat);
     return `<div class="mpopp ${turn?'turn':''}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)} · ${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
