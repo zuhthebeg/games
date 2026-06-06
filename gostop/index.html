@@ -518,12 +518,12 @@ async function takeTurn(p, handCard, opts){
   // 1) 손패 바닥에 착지 (짝 붙는 느낌)
   handCards.forEach(c=>G.table.push(c));
   G._newIds=new Set(handCards.map(c=>c.id)); G._newCapIds=null;
-  sound('play'); renderAll(); await sleep(1500);   // 패 놓기 "착" → 1.5초 공백 → 더미 뒤집기 "착" (놓기 애니는 CSS 고정, 영향 없음)
+  sound('play'); renderAll(); await sleep(320);   // 속도감 위해 간격 최소(원복)
 
   // 2) 더미 뒤집기 → 바닥 착지
   let flipCard=null;
   if(G.deck.length){
-    flipCard=G.deck.shift(); G.flip=flipCard; renderFlip(flipCard); sound('flip'); await sleep(200);   // 뒤집힌 패 펼침 0.5초 빠르게(680→200), 사운드 간격은 위 1.5초 그대로
+    flipCard=G.deck.shift(); G.flip=flipCard; renderFlip(flipCard); sound('flip'); await sleep(680);   // 원복
     G.flip=null; G.table.push(flipCard); G._newIds=new Set([flipCard.id]); renderAll(); await sleep(300);
   }
 
