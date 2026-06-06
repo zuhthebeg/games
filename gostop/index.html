@@ -81,8 +81,9 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 .flip img{width:calc(var(--cw)*1.3);border-radius:6px;box-shadow:0 0 18px rgba(0,0,0,.6),0 0 0 3px var(--gold)}
 /* my hand */
 .mine{padding:6px 8px 10px;background:linear-gradient(transparent,rgba(0,0,0,.4))}
-.myscore{text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:4px}
-.myscore b{color:var(--gold);font-size:1rem}
+.myscore{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--muted);margin-bottom:4px;padding:0 4px}
+.myscore .tally{color:var(--muted)}
+.myscore .sc{color:var(--gold);font-size:1.05rem;font-weight:800}
 #myCaptured{display:flex;justify-content:center;margin-bottom:6px;min-height:34px;max-height:132px;overflow:hidden}
 #myCaptured .grp{display:flex;align-items:center}
 #myCaptured .grp .lab{font-size:.6rem;color:var(--muted);margin-right:2px;min-width:14px}
@@ -767,11 +768,11 @@ function chooseGo(go){
 }
 // 내 표시 이름: 지갑 닉네임 우선, 없으면 '나'
 function myNick(){ try{ if(typeof SharedWallet!=='undefined' && SharedWallet.user && SharedWallet.user.nickname) return SharedWallet.user.nickname; }catch(e){} return '나'; }
-// 점수줄: 실제 점수 낸 족보(금색) + 아직 모으는 중인 광/피 카운트(회색) 구분
-function scoreLineHTML(sc){
-  const gold=(sc.parts||[]).map(p=>`<span style="color:var(--gold);font-weight:700">${p[0]}+${p[1]}</span>`).join(' ');
-  return `내 점수 <b>${sc.total}</b>점`+(gold?` · ${gold}`:'')+` · <span style="color:var(--muted);opacity:.7;font-weight:400">모은 광${sc.gw} 피${sc.pi}</span>`;
-}
+// 카테고리별 모은 개수(피는 쌍피=2 가치)
+function countsOf(cap){ let gw=0,yul=0,tti=0,pi=0; (cap||[]).forEach(c=>{ if(c.gwang)gw++; else if(c.role==='yul')yul++; else if(c.role==='tti')tti++; else if(c.role==='pi')pi+=(c.ssangpi?2:1); }); return {gw,yul,tti,pi}; }
+// 점수줄: 좌=모은 개수(광/끗/띠/피), 우=점수(상대처럼 우측정렬)
+function scoreLineHTML(cap, total){ const c=countsOf(cap);
+  return `<span class="tally">광 ${c.gw} · 끗 ${c.yul} · 띠 ${c.tti} · 피 ${c.pi}</span><b class="sc">${total}점</b>`; }
 function settle(winner,sc,opts){
   opts=opts||{};
   if(G.over)return; G.over=true;
@@ -871,7 +872,7 @@ function renderCaptured(){
   $('cpuCaptured').innerHTML=capGroup(G.players[1].cap);
   $('myCaptured').innerHTML=capGroup(G.players[0].cap);
   const ms=score(G.players[0].cap), cs=score(G.players[1].cap);
-  $('cpu-score').textContent=cs.total+'점'; $('t-myscore').textContent=ms.total; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } $('myScoreLine').innerHTML=scoreLineHTML(ms);
+  $('cpu-score').textContent=cs.total+'점'; $('t-myscore').textContent=ms.total; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } $('myScoreLine').innerHTML=scoreLineHTML(G.players[0].cap, ms.total);
   $('cpu-who').className='who'+(G.turn===1?' turn':'');
 }
 function renderBar(){ $('t-go').textContent=G.go; }
@@ -1018,7 +1019,7 @@ function mpRender(v){
     return `<div class="hcard ${i===MP._sel?'sel':''} ${canPlay?'canplay':''} ${gudM.has(c.m)?'gudeun':''}" onclick="mpTapCard(${i})"><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`; }).join('');
   const meP=v.players.find(p=>p.seat===v.mySeat)||{cap:[]};
   $('myCaptured').innerHTML=capGroup(meP.cap);
-  if($('t-myscore'))$('t-myscore').textContent=v.myScore; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } if($('myScoreLine')){ const msc=score((v.players.find(p=>p.seat===v.mySeat)||{cap:[]}).cap); $('myScoreLine').innerHTML=scoreLineHTML(msc); }
+  if($('t-myscore'))$('t-myscore').textContent=v.myScore; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } if($('myScoreLine')){ const myc=(v.players.find(p=>p.seat===v.mySeat)||{cap:[]}).cap; $('myScoreLine').innerHTML=scoreLineHTML(myc, v.myScore); }
   const el=$('mpOpps'); const opps=v.players.filter(p=>p.seat!==v.mySeat).sort((a,b)=>a.seat-b.seat);
   el.innerHTML=opps.map(p=>{ const turn=(v.pending?v.pending.seat===p.seat:v.currentTurn===p.seat);
     return `<div class="mpopp ${turn?'turn':''}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)} · ${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
