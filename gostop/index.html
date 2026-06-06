@@ -740,6 +740,9 @@ function offerGoStop(sc){
   $('gs-title').textContent=sc.total+'점!';
   $('gs-detail').innerHTML=sc.parts.map(p=>`<div>${p[0]} <b>+${p[1]}</b></div>`).join('');
   $('gs-pt').textContent=(G.go>0?`현재 ${G.go}고 · 고 누르면 ${G.go+1}고`:'고를 부르면 1고');
+  // 멀티 게임 후 버튼 onclick이 mpSend로 덮여있을 수 있어 솔로용 chooseGo로 재바인딩(스톱 먹통 방지)
+  const gb=document.querySelector('#gostop .go'), sb=document.querySelector('#gostop .stop');
+  if(gb)gb.onclick=()=>chooseGo(true); if(sb)sb.onclick=()=>chooseGo(false);
   show('gostop');
 }
 function chooseGo(go){
