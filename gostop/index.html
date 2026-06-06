@@ -371,7 +371,7 @@ window.addEventListener('DOMContentLoaded', function(){
       for(var i=0;i<ms.length;i++){ var m=ms[i]; if(m.type==='characterData') walk(m.target); else for(var j=0;j<m.addedNodes.length;j++) walk(m.addedNodes[j]); } busy=false; });
     mo.observe(document.body,{childList:true,subtree:true,characterData:true});
   }
-  window.gsToggleLang=function(){ GS_LANG=(GS_LANG==='ko'?'zh-TW':(GS_LANG==='zh-TW'?'en':'ko')); window.GS_LANG=GS_LANG; try{localStorage.setItem('gs-lang',GS_LANG);}catch(e){}; applyAll(); };
+  window.gsToggleLang=function(){ GS_LANG=(GS_LANG==='ko'?'zh-TW':(GS_LANG==='zh-TW'?'en':'ko')); window.GS_LANG=GS_LANG; try{localStorage.setItem('gs-lang',GS_LANG);}catch(e){}; applyAll(); try{buildVoicePreview();}catch(e){} };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setup); else setup();
 })();
 </script>
@@ -858,8 +858,16 @@ function setSnd(s){ SND=!!s; localStorage.setItem('gostop_snd',s?'1':'0'); docum
 function setVoice(s){ VOICE=!!s; localStorage.setItem('gostop_voice',s?'1':'0'); document.querySelectorAll('[data-voice]').forEach(b=>b.classList.toggle('on',+b.dataset.voice===(s?1:0))); }
 // 음성 미리듣기 (VOICE 토글과 무관하게 재생)
 const VOICE_PREVIEW=[['go1','원고'],['go2','투고'],['go3','쓰리고'],['go4','포고'],['go5','파이브고'],['stop','스톱'],['ppeok','뻑'],['firstppeok','첫뻑'],['ppeok3','3뻑'],['chongtong','총통'],['shake','흔들기'],['nagari','나가리'],['bomb','폭탄'],['ogwang','오광'],['sagwang','사광'],['samgwang','삼광'],['godori','고도리'],['hongdan','홍단'],['cheongdan','청단'],['chodan','초단'],['ttadak','따닥'],['jjok','쪽'],['ssul','쓸'],['naenwa','내놔'],['win','승'],['lose','패']];
-function previewVoice(k){ try{ const lang=(window.GS_LANG==='zh-TW')?'zh':'ko'; const a=new Audio('voice/'+k+'_'+lang+'.mp3'); a.volume=1; a.play().catch(()=>{}); }catch(e){} }
-function buildVoicePreview(){ const el=document.getElementById('voicePreview'); if(!el)return; el.innerHTML=VOICE_PREVIEW.map(v=>`<button class="seg" style="padding:3px 9px;font-size:.78rem;cursor:pointer" onclick="previewVoice('${v[0]}')">${v[1]}</button>`).join(''); }
+function previewVoice(k,btn){ if(btn&&btn.dataset.missing==='1'){ toast('아직 녹음 안 됨'); return; }
+  try{ const lang=(window.GS_LANG==='zh-TW')?'zh':'ko'; const a=new Audio('voice/'+k+'_'+lang+'.mp3'); a.volume=1;
+    a.play().then(()=>{ if(btn){btn.style.transform='scale(1.18)';setTimeout(()=>btn.style.transform='',160);} }).catch(()=>{ if(btn){btn.style.opacity='.35';btn.dataset.missing='1';} toast('재생 실패(녹음 없음/음소거)'); });
+  }catch(e){} }
+function buildVoicePreview(){ const el=document.getElementById('voicePreview'); if(!el)return;
+  const lang=(window.GS_LANG==='zh-TW')?'zh':'ko';
+  el.innerHTML=VOICE_PREVIEW.map(v=>`<button class="seg vpb" data-k="${v[0]}" style="padding:3px 9px;font-size:.78rem;cursor:pointer" onclick="previewVoice('${v[0]}',this)">${v[1]}</button>`).join('');
+  // 가용성 표시: 파일 없으면 회색 처리
+  VOICE_PREVIEW.forEach(v=>{ fetch('voice/'+v[0]+'_'+lang+'.mp3',{method:'HEAD'}).then(r=>{ const b=el.querySelector('[data-k="'+v[0]+'"]'); if(b&&!r.ok){ b.style.opacity='.35'; b.dataset.missing='1'; } }).catch(()=>{}); });
+}
 function setBet(n){ BET=n; localStorage.setItem('gostop_bet',n); document.querySelectorAll('[data-bet]').forEach(b=>b.classList.toggle('on',+b.dataset.bet===n)); }
 let TZ=+(localStorage.getItem('gostop_zoom')||1);
 function applyZoom(){ TZ=Math.max(.8,Math.min(1.7,TZ||1)); document.documentElement.style.setProperty('--tz',TZ); }
