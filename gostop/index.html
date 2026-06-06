@@ -357,18 +357,19 @@ window.addEventListener('DOMContentLoaded', function(){
     else r=r.replace(/(\d)\s*점/g,'$1pt').replace(/(\d)\s*초/g,'$1s').replace(/(\d)\s*개/g,'$1').replace(/(\d)\s*장/g,'$1');
     return r; };
   var busy=false;
+  // 각 텍스트노드의 '원본 한국어'를 저장해두고 항상 원본에서 번역 → 언어 전환이 새로고침 없이 즉시(판 유지)
   function walk(n){ if(!n) return;
-    if(n.nodeType===3){ var a=n.nodeValue; if(a&&/[가-힣]/.test(a)){ var b=gsL(a); if(b!==a) n.nodeValue=b; } return; }
+    if(n.nodeType===3){ var a=n.nodeValue; if(n.__gsko==null){ if(a&&/[가-힣]/.test(a)) n.__gsko=a; else return; } var b=gsL(n.__gsko); if(b!==n.nodeValue) n.nodeValue=b; return; }
     if(n.nodeType===1){ if(n.tagName==='SCRIPT'||n.tagName==='STYLE') return;
       for(var c=n.firstChild;c;c=c.nextSibling) walk(c); } }
+  function applyAll(){ document.documentElement.lang=(GS_LANG==='zh-TW')?'zh-Hant':(GS_LANG==='en'?'en':'ko'); busy=true; walk(document.body); busy=false; }
   function setup(){
-    if(GS_LANG!=='ko'){ document.documentElement.lang=(GS_LANG==='zh-TW')?'zh-Hant':'en'; busy=true; walk(document.body); busy=false;
-      var mo=new MutationObserver(function(ms){ if(busy) return; busy=true;
-        for(var i=0;i<ms.length;i++){ var m=ms[i]; if(m.type==='characterData') walk(m.target); else for(var j=0;j<m.addedNodes.length;j++) walk(m.addedNodes[j]); } busy=false; });
-      mo.observe(document.body,{childList:true,subtree:true,characterData:true});
-    }
+    applyAll();
+    var mo=new MutationObserver(function(ms){ if(busy) return; busy=true;
+      for(var i=0;i<ms.length;i++){ var m=ms[i]; if(m.type==='characterData') walk(m.target); else for(var j=0;j<m.addedNodes.length;j++) walk(m.addedNodes[j]); } busy=false; });
+    mo.observe(document.body,{childList:true,subtree:true,characterData:true});
   }
-  window.gsToggleLang=function(){ var n=GS_LANG==='ko'?'zh-TW':(GS_LANG==='zh-TW'?'en':'ko'); try{localStorage.setItem('gs-lang',n);}catch(e){}; location.reload(); };
+  window.gsToggleLang=function(){ GS_LANG=(GS_LANG==='ko'?'zh-TW':(GS_LANG==='zh-TW'?'en':'ko')); window.GS_LANG=GS_LANG; try{localStorage.setItem('gs-lang',GS_LANG);}catch(e){}; applyAll(); };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setup); else setup();
 })();
 </script>
