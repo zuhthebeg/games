@@ -50,7 +50,7 @@ img{display:block}
 .capset .lap{display:flex;align-items:center}
 .capset .lap img{margin-left:-13px}
 .capset .lap img:first-child{margin-left:0}
-.capset img{width:calc(25px*var(--tz));border-radius:2px;box-shadow:-1px 0 2px rgba(0,0,0,.55)}
+.capset img{width:calc(33px*var(--tz));border-radius:2px;box-shadow:-1px 0 2px rgba(0,0,0,.55)}
 .capset img.cin{animation:cin .38s var(--ease)}
 .cap-mid{display:flex;flex-direction:column;gap:1px}
 .cap-pi{display:flex;gap:4px}
@@ -83,7 +83,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 .mine{padding:6px 8px 10px;background:linear-gradient(transparent,rgba(0,0,0,.4))}
 .myscore{text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:4px}
 .myscore b{color:var(--gold);font-size:1rem}
-#myCaptured{display:flex;justify-content:center;margin-bottom:6px;min-height:20px;max-height:76px;overflow:hidden}
+#myCaptured{display:flex;justify-content:center;margin-bottom:6px;min-height:34px;max-height:132px;overflow:hidden}
 #myCaptured .grp{display:flex;align-items:center}
 #myCaptured .grp .lab{font-size:.6rem;color:var(--muted);margin-right:2px;min-width:14px}
 #myCaptured .grp img{width:calc(27px * var(--tz));border-radius:2px;margin-left:-15px;box-shadow:-1px 0 2px rgba(0,0,0,.5)}
@@ -878,6 +878,7 @@ function openMultiplayer(){
 }
 function mpStart(rs){
   MP.active=true; MP.client=MP.ui.getClient(); MP.myUserId=MP.client.getMyUserId(); MP._sel=-1; MP._resultShown=false;
+  MP._prevTable=null; MP._prevCap=null; MP._prevGo=undefined;
   MP.client.onEvent=()=>mpRefresh();
   $('mpLobby').style.display='none'; $('mpLobby').innerHTML='';
   $('board').style.display='flex'; $('mpOpps').style.display='flex'; const sp=$('spOpp'); if(sp)sp.style.display='none';
@@ -896,9 +897,26 @@ function mpAskFlipPick(cands){
 function mpScoreOf(cap){ try{ return score(cap).total; }catch(e){ return 0; } }
 function mpEsc(t){ return (''+(t||'')).replace(/[<>&]/g,''); }
 function mpRender(v){
-  G=G||{}; G._newCapIds=null; G._newIds=null;
+  G=G||{};
+  // ── 서버 스냅샷 diff → 애니메이션/사운드 juice (MP는 thin renderer라 직접 감지해야 함) ──
+  const tableIds=new Set((v.table||[]).map(c=>c.id));
+  const capIds=new Set(); (v.players||[]).forEach(p=>(p.cap||[]).forEach(c=>capIds.add(c.id)));
+  const first=!MP._prevTable;
+  const newTable=new Set(), newCap=new Set();
+  if(!first){
+    tableIds.forEach(id=>{ if(!MP._prevTable.has(id))newTable.add(id); });
+    capIds.forEach(id=>{ if(!MP._prevCap.has(id))newCap.add(id); });
+  }
+  G._newIds=newTable.size?newTable:null;
+  G._newCapIds=newCap.size?newCap:null;
+  if(!first){
+    if(newCap.size){ sound('take'); }
+    else if(newTable.size){ sound('play'); }
+    if(typeof MP._prevGo==='number' && v.go>MP._prevGo){ const who=(v.currentTurn===v.mySeat)?'':''; toast(who+v.go+'고!'); gsVoice('go'+Math.min(v.go,5)); }
+  }
+  MP._prevTable=tableIds; MP._prevCap=capIds; MP._prevGo=v.go;
   const by={},order=[]; (v.table||[]).forEach(c=>{ if(!by[c.m]){by[c.m]=[];order.push(c.m);} by[c.m].push(c); });
-  $('tableCards').innerHTML=order.map(m=>`<div class="mgroup">`+by[m].map((c,i)=>`<img src="${c.file}" style="margin-left:${i?'-26px':'0'}">`).join('')+`</div>`).join('');
+  $('tableCards').innerHTML=order.map(m=>`<div class="mgroup">`+by[m].map((c,i)=>`<img src="${c.file}" class="${(G._newIds&&G._newIds.has(c.id))?'cin':''}" style="margin-left:${i?'-26px':'0'}">`).join('')+`</div>`).join('');
   const gudM=mpGudeunMonths(v);
   if($('deckN'))$('deckN').textContent=v.deckCount; if($('t-deck'))$('t-deck').textContent=v.deckCount; if($('t-go'))$('t-go').textContent=v.go;
   const myhand=v.myHand||[];
