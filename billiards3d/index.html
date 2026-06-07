@@ -126,7 +126,7 @@
 </div></div>
 
 <script src="three.min.js?v=2"></script>
-<script src="physics.js?v=14"></script>
+<script src="physics.js?v=15"></script>
 <script src="game.js?v=11"></script>
 <script>
 'use strict';
@@ -464,7 +464,7 @@ const TUNE_META=[
   ['roll','구름 마찰',0.005,0.03,0.001,3],
   ['follow','밀어/끌어',0.5,3.0,0.1,1],
   ['side','좌우 스핀',0.5,3.0,0.1,1],
-  ['cushSide','쿠션 잉글리시',0.10,0.60,0.02,2],
+  ['cushSide','쿠션 잉글리시',0.10,1.00,0.02,2],
 ];
 function saveTune(){ localStorage.setItem('b3d_tune',JSON.stringify(window.BIL_TUNE)); MAXPOW=window.BIL_TUNE.maxpow; }
 function buildTune(){ const box=document.getElementById('tuneBox'); box.innerHTML='';

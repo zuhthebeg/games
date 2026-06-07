@@ -57,8 +57,8 @@ function simulate(shot) {
   const k_side = PHYSICS.CUSHION_SIDE_FACTOR;
   const mu_throw = PHYSICS.THROW_FRICTION;
   const mu_throw_ball = num(T.throw, 0.045);  // 공-공 throw 상한
-  const K_CUSH_SIDE = num(T.cushSide, 0.34);  // 쿠션 사이드스핀 반사각/회전력
-  const CUSH_WZ_KEEP = 0.32;    // 쿠션 후 사이드스핀 잔존
+  const K_CUSH_SIDE = num(T.cushSide, 0.5);   // 쿠션 사이드스핀 반사각/회전력(접시)
+  const CUSH_WZ_KEEP = 0.3;     // 쿠션 후 사이드스핀 잔존(다음 쿠션엔 약하게)
 
   // 각속도 초기화: 모든 공 wx,wy(구름축)·wz(수직축=좌우스핀) = 0
   for (const b of balls) { b.wx = b.wx || 0; b.wy = b.wy || 0; b.wz = b.wz || 0; }
@@ -262,7 +262,7 @@ function simulate(shot) {
         b.vx = 0; b.vy = 0; b.wx = 0; b.wy = 0;
       }
       // 사이드스핀 마찰 감쇠(천에 의해 점차 죽음)
-      b.wz *= 0.994;
+      b.wz *= 0.9992;   // 이동 중엔 거의 유지(첫 쿠션에 풀로 먹게), 쿠션·충돌에서만 크게 소진
     }
 
     // ── 위치 업데이트 ──────────────────────────────────────────
