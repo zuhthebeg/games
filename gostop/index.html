@@ -134,6 +134,14 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 .mpopp .capset img{width:calc(17px*var(--tz))}
 .credit{position:fixed;bottom:2px;right:4px;font-size:.55rem;color:rgba(255,255,255,.25);z-index:1}
 .credit a{color:inherit}
+/* 고/스톱 결정 팝업: 반투명·소형 — 뒤 판 보면서 판단 */
+#gostop{background:rgba(0,0,0,.30)}
+#gostop .card2{background:rgba(28,26,20,.82);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);max-width:300px;padding:13px 15px}
+#gostop .card2 h2{font-size:1.02rem;margin-bottom:3px}
+#gostop .scoreline{font-size:.74rem;margin:2px 0}
+#gostop .bigpt{font-size:1.5rem;margin:6px 0}
+#gostop .gobtns{margin-top:9px;gap:8px}
+#gostop .gobtns button{padding:9px;font-size:.9rem;border-radius:10px}
 </style>
 </head>
 <body>
@@ -420,8 +428,16 @@ function buildDeck(){
 let G=null;
 function newGame(){ $('menu').style.display='none'; $('board').style.display='flex'; CARRY=1; G={go:0,goBy:-1}; deal(); }
 function deal(){
-  const deck=buildDeck();
-  for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+  // 바닥(8장)에 같은 월 4장이 다 깔리면 나가리 → 그 딜 무효·재딜·다음판 ×2
+  let deck, washes=0;
+  while(true){
+    deck=buildDeck();
+    for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+    const top=deck.slice(0,8); const fc={}; top.forEach(c=>fc[c.m]=(fc[c.m]||0)+1);
+    if(washes<20 && Object.values(fc).some(n=>n>=4)){ washes++; continue; }
+    break;
+  }
+  if(washes>0){ CARRY*=Math.pow(2,washes); setTimeout(()=>{ if(!G.over) toast('바닥 4장 나가리! 다음 판 ×'+CARRY); gsVoice('nagari'); },300); }
   G.table=deck.splice(0,8);
   G.players=[{hand:deck.splice(0,10),cap:[]},{hand:deck.splice(0,10),cap:[]}];
   G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0]; G.playCount=[0,0]; G.ppuk3x=1; G._voiced=[{},{},{},{}]; G.acting=false;
