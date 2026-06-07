@@ -58,7 +58,8 @@ class BilliardsUI {
     // 두께 미리보기/조절 상태
     this._thickness = null;   // 가이드 계산 시 갱신 { frac, side, ballColor }
     this._aimTarget = null;   // 현재 조준이 향한 1목적구 { ball, side }
-    this.targetThickness = 0.5;
+    this.targetThickness = 1;     // 현재 두께(풀=1)
+    this.thickPos = 0.5;          // 슬라이더 위치(가운데=정면)
 
     // 드래그 상태
     this._mode = null;      // 'aim' | 'spin' | 'power' | null
@@ -303,23 +304,26 @@ class BilliardsUI {
     this.shotPower = Math.max(0.02, Math.min(1, (sx - pb.x) / pb.w));
   }
 
-  // 두께 슬라이더 → 목표두께(0얇게~1정면)로 조준각 재계산
+  // 두께 슬라이더: 가운데=정면(풀), 왼쪽=왼쪽얇게, 오른쪽=오른쪽얇게
+  // → 한 슬라이더로 컷 방향+두께 동시 조절(양쪽 다 가능, 왔다갔다 없음)
   _updateThickness(sx) {
     const tb = this._thickBar;
-    const frac = Math.max(0, Math.min(1, (sx - tb.x) / tb.w));
+    this.thickPos = Math.max(0, Math.min(1, (sx - tb.x) / tb.w));
+    const signed = (this.thickPos - 0.5) * 2;   // -1(좌끝) ~ +1(우끝)
+    const frac = 1 - Math.abs(signed);          // 가운데=1 정면
+    const side = signed >= 0 ? 1 : -1;
     this.targetThickness = frac;
-    // 드래그 동안 고정된 컷 방향 사용(없으면 현재 타겟)
-    const tgt = this._thickLock || this._aimTarget || this._pickTarget();
+    const tgt = this._thickLock || this._pickTarget(); // 공만 고정, 방향은 슬라이더
     if (!tgt) return;
     const cue = this.game.cueBall();
     if (!cue) return;
     const R = this.game.ballRadius;
     const ox = tgt.ball.x - cue.x, oy = tgt.ball.y - cue.y;
     const D = Math.hypot(ox, oy) || 1;
-    const perp = (1 - frac) * 2 * R;           // frac=1 정면(perp0)
+    const perp = (1 - frac) * 2 * R;
     const alpha = Math.asin(Math.max(0, Math.min(1, perp / D)));
     const base = Math.atan2(oy, ox);
-    this.aimAngleDeg = (base + tgt.side * alpha) * 180 / Math.PI;
+    this.aimAngleDeg = (base + side * alpha) * 180 / Math.PI;
   }
 
   // 조준 대상 1목적구 선택: 현재 조준선에 '수직거리상 가장 가까운' 앞쪽 적구
@@ -527,24 +531,29 @@ class BilliardsUI {
   _drawThickBar() {
     const ctx = this.ctx;
     const { x, y, w, h } = this._thickBar;
-    const p = this.targetThickness;
-    // 트랙 (얇게→두껍게 그라데이션 느낌)
+    const p = this.thickPos;            // 0좌끝 0.5정면 1우끝
+    // 트랙
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
     this._roundRect(x, y, w, h, h / 2); ctx.fill();
+    // 가운데(정면) 마크
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillRect(x + w / 2 - 1, y - 2, 2, h + 4);
+    // 가운데에서 핸들 쪽으로 채움(어느쪽 컷인지 표시)
     ctx.fillStyle = 'rgba(120,200,255,0.55)';
-    this._roundRect(x, y, w * p, h, h / 2); ctx.fill();
+    const cxm = x + w / 2, hx = x + w * p;
+    this._roundRect(Math.min(cxm, hx), y, Math.abs(hx - cxm), h, 0); ctx.fill();
     // 핸들
-    const hx = x + w * p;
     ctx.beginPath(); ctx.arc(hx, y + h / 2, h * 0.75, 0, Math.PI * 2);
     ctx.fillStyle = '#fff'; ctx.fill();
     ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1; ctx.stroke();
-    // 라벨 (8등분 + 얇게/두껍게)
-    const eighth = Math.round(p * 8);
+    // 라벨: 두께(8등분) + 컷 방향
+    const eighth = Math.round(this.targetThickness * 8);
+    const dir = Math.abs(p - 0.5) < 0.04 ? '정면' : (p < 0.5 ? '◀좌' : '우▶');
     ctx.fillStyle = '#cfe1ee'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText(`두께 ${eighth}/8`, x, y - 7);
+    ctx.fillText(`두께 ${eighth}/8 ${dir}`, x, y - 7);
     ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '10px sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText('얇게 ◀ ▶ 두껍게', x + w, y - 7);
+    ctx.fillText('좌얇게 ◀ 정면 ▶ 우얇게', x + w, y - 7);
   }
 
   // ── 두께 미리보기 위젯 (좌하단, 당점 위 / 1목적구 충돌 시) ──
@@ -743,6 +752,8 @@ class BilliardsUI {
       this._thickness = { frac, side, ballColor: this.game.cfg.ballColors[tb.id] || '#ccc' };
       this._aimTarget = { ball: tb, side };
       this.targetThickness = frac;
+      // 테이블로 조준 중이면 슬라이더 위치도 동기화(드래그 중 아닐 때만)
+      if (this._mode !== 'thick') this.thickPos = 0.5 + (side * (1 - frac)) / 2;
     } else if (hit.type === 'cushion') {
       this._aimTarget = null;
       // 반사선 (1차)
