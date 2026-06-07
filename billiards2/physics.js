@@ -82,6 +82,14 @@ function simulate(shot) {
   let t = 0;
   let cushionCount = 0;       // 수구 쿠션 횟수 (3구: 득점 판정용)
   const hitIds = new Set();   // 수구가 맞힌 공 id 집합
+  let cueObjCount = 0;        // 수구가 맞힌 '서로 다른' 공 개수(순서)
+  let cushBeforeSecond = -1;  // 2번째 적구 맞히는 순간까지의 쿠션 수
+  function registerCueHit(objId) {
+    if (hitIds.has(objId)) return;
+    hitIds.add(objId);
+    cueObjCount++;
+    if (cueObjCount === 2) cushBeforeSecond = cushionCount; // 2적구 시점 쿠션수 고정
+  }
 
   // 공별 내부 상태: vx, vy, spinX, spinY, wx (angular velocity, simplified)
   // 단순화: spin은 발사 시 초기값만 사용 → 충돌·감속에서 점차 소멸
@@ -152,9 +160,9 @@ function simulate(shot) {
             const type = 'ball-ball';
             events.push({ t, type, ball1: a.id, ball2: b.id });
 
-            // 수구 히트 추적
-            if (a.id === cueId) hitIds.add(b.id);
-            if (b.id === cueId) hitIds.add(a.id);
+            // 수구 히트 추적 (순서 포함)
+            if (a.id === cueId) registerCueHit(b.id);
+            if (b.id === cueId) registerCueHit(a.id);
           }
         }
       }
@@ -265,10 +273,10 @@ function simulate(shot) {
   let foul = false;
 
   if (mode === '3ball') {
-    // 수구(cueId)가 나머지 두 공 모두 맞히고 쿠션 3회 이상
+    // 쓰리쿠션: 두 적구 모두 맞히되 '2번째 적구 맞기 전' 쿠션 3회 이상
     const others = balls.map(b => b.id).filter(id => id !== cueId);
     const allHit = others.every(id => hitIds.has(id));
-    if (allHit && cushionCount >= 3) score = 1;
+    if (allHit && cushBeforeSecond >= 3) score = 1;
   } else if (mode === '4ball') {
     // 상대 수구를 맞히면 파울(득점 무효). 아니면 빨강 2개 다 맞혀야 1점
     const REDS = (shot.redIds && shot.redIds.length) ? shot.redIds : [1, 2];
@@ -283,7 +291,7 @@ function simulate(shot) {
   // 마지막 수구 위치도 노출(편의)
   void cueId;
 
-  return { frames, events, cushionCount, hitIds: [...hitIds], score, foul };
+  return { frames, events, cushionCount, cushBeforeSecond, hitIds: [...hitIds], score, foul };
 }
 
 // ── 유틸: 샷 입력 빌더 ────────────────────────────────────
@@ -352,6 +360,19 @@ function runTests() {
     // 쿠션 카운트만 검증 (두 적구 히트 여부는 배치에 따라 다름)
     assert('3구 시뮬: 이벤트 배열 존재', res.events.length > 0);
     assert('3구 시뮬: 프레임 배열 존재', res.frames.length > 0);
+  }
+
+  // Test 3b: 3구 순서 판정 — 적구 둘 먼저 맞고(쿠션0) 나중에 쿠션 채우면 무효
+  {
+    const shot = makeShotInput('3ball', [
+      { id: 0, x: 500, y: 710, vx: 6500, vy: 0, spinX: 0, spinY: 0 },
+      { id: 1, x: 760, y: 720, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 2, x: 1000, y: 740, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+    ]);
+    const res = simulate(shot);
+    assert('3구 순서: 두 적구 모두 히트', res.hitIds.includes(1) && res.hitIds.includes(2));
+    assert('3구 순서: 총 쿠션 3회 이상', res.cushionCount >= 3);
+    assert('3구 순서: 2적구 전 쿠션 부족 → score 0', res.score === 0);
   }
 
   // Test 4: 4구 득점 — 빨강1 얇게 쳐서 빨강2까지 (캐롬)
