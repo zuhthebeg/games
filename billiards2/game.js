@@ -66,8 +66,8 @@ class GameState {
     const cueBall = this.balls.find(b => b.id === 0);
     if (!cueBall) return null;
 
-    // 미스큐 체크
-    if (Math.sqrt(spinX * spinX + spinY * spinY) > 0.5) {
+    // 미스큐 체크 (ui.js MAX_SPIN=0.7 과 일치, 약간 여유)
+    if (Math.sqrt(spinX * spinX + spinY * spinY) > 0.72) {
       console.warn('미스큐!');
       return null;
     }

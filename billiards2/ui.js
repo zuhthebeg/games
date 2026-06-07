@@ -1,6 +1,8 @@
 'use strict';
 // ui.js — 조준/당점/파워 UI 컨트롤러 (v2: 회전·게이지·가이드)
 
+const MAX_SPIN = 0.7;   // 당점 최대 반경(미스큐 한계). game.js shoot()와 일치시킬 것
+
 class BilliardsUI {
   constructor(canvas, game, onShot) {
     this.canvas = canvas;
@@ -168,7 +170,8 @@ class BilliardsUI {
     let dx = (sx - sw.cx) / sw.r;
     let dy = (sy - sw.cy) / sw.r;
     const len = Math.hypot(dx, dy);
-    if (len > 1) { dx /= len; dy /= len; }   // 원 안에 클램프
+    // 최대 당점 반경으로 클램프(미스큐 영역 진입 방지 → 항상 유효한 샷)
+    if (len > MAX_SPIN) { dx *= MAX_SPIN / len; dy *= MAX_SPIN / len; }
     this.spinX = dx;
     this.spinY = -dy;   // 화면 아래 = 끌어(-)
   }
@@ -369,7 +372,7 @@ class BilliardsUI {
   _drawSpinWidget() {
     const ctx = this.ctx;
     const { cx, cy, r } = this._spinWidget;
-    const miscue = Math.hypot(this.spinX, this.spinY) > 0.85;
+    const miscue = Math.hypot(this.spinX, this.spinY) > MAX_SPIN + 0.02;
 
     // 흰 공 베이스
     const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
@@ -382,6 +385,10 @@ class BilliardsUI {
     ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy);
     ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r); ctx.stroke();
+
+    // 최대 당점 한계 링
+    ctx.beginPath(); ctx.arc(cx, cy, r * MAX_SPIN, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(200,0,0,0.18)'; ctx.lineWidth = 1; ctx.stroke();
 
     // 당점 표시
     const dotX = cx + this.spinX * r * 0.82;
