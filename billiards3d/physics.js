@@ -45,17 +45,20 @@ function simulate(shot) {
   const cueId = shot.cueId != null ? shot.cueId : 0;  // 수구 id (3구: 노랑0/흰1 교대)
   const balls = cloneBalls(shot.balls);
   const r = ballRadius;
-  const mu_r = PHYSICS.ROLLING_FRICTION;
+  // 튜닝 오버라이드(설정에서 조정) — 없으면 기본값
+  const T = (typeof window !== 'undefined' && window.BIL_TUNE) || {};
+  const num = (v, d) => (typeof v === 'number' && isFinite(v)) ? v : d;
+  const mu_r = num(T.roll, PHYSICS.ROLLING_FRICTION);
   const mu_s = PHYSICS.SLIDING_FRICTION;
   const g = PHYSICS.GRAVITY;
   const dt = PHYSICS.DT;
-  const e_cush = PHYSICS.CUSHION_RESTITUTION;
+  const e_cush = num(T.cushE, PHYSICS.CUSHION_RESTITUTION);
   const e_ball = PHYSICS.BALL_RESTITUTION;
   const k_side = PHYSICS.CUSHION_SIDE_FACTOR;
   const mu_throw = PHYSICS.THROW_FRICTION;
-  const mu_throw_ball = 0.045;  // 공-공 throw 상한(좌우스핀 영향, 최대 ~3도)
-  const K_CUSH_SIDE = 0.34;     // 쿠션 사이드스핀 반사각/회전력 추가(첫 접촉 강하게)
-  const CUSH_WZ_KEEP = 0.32;    // 쿠션 후 사이드스핀 잔존(빨리 소진→마지막 충돌엔 안 휨)
+  const mu_throw_ball = num(T.throw, 0.045);  // 공-공 throw 상한
+  const K_CUSH_SIDE = num(T.cushSide, 0.34);  // 쿠션 사이드스핀 반사각/회전력
+  const CUSH_WZ_KEEP = 0.32;    // 쿠션 후 사이드스핀 잔존
 
   // 각속도 초기화: 모든 공 wx,wy(구름축)·wz(수직축=좌우스핀) = 0
   for (const b of balls) { b.wx = b.wx || 0; b.wy = b.wy || 0; b.wz = b.wz || 0; }
@@ -67,8 +70,8 @@ function simulate(shot) {
       if (sp > 1) {
         const dx = cb.vx / sp, dy = cb.vy / sp;
         const base = sp / r;                       // 자연 구름 각속도
-        const FOLLOW_GAIN = 1.3;                   // 밀어/끌어 강도(과하지 않게)
-        const SIDE_GAIN = 1.4;                     // 좌우 스핀 강도
+        const FOLLOW_GAIN = num(T.follow, 1.3);    // 밀어/끌어 강도
+        const SIDE_GAIN = num(T.side, 1.4);        // 좌우 스핀 강도
         const w = base * (cb.spinY || 0) * FOLLOW_GAIN;
         cb.wx = -dy * w;                           // 톱스핀 축 = 진행방향 수평 수직
         cb.wy = dx * w;
@@ -160,7 +163,7 @@ function simulate(shot) {
             // (follow/draw는 각속도 ω 유지 + 충돌후 마찰로 자연 발생)
 
             const type = 'ball-ball';
-            events.push({ t, type, ball1: a.id, ball2: b.id });
+            events.push({ t, type, ball1: a.id, ball2: b.id, speed: vRel });
 
             // 수구 히트 추적 (순서 포함)
             if (a.id === cueId) registerCueHit(b.id);

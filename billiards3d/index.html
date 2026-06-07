@@ -81,6 +81,10 @@
   <div class="setrow"><span>테이블</span><span class="seg"><button data-table="large">대대</button><button data-table="medium">중대</button></span></div>
   <div class="setrow"><span>빈쿠션 2점제<br><small style="color:#89a">첫 적구 전 3쿠션 성공 시 2점</small></span><span class="seg"><button data-bank="1">ON</button><button data-bank="0">OFF</button></span></div>
   <div class="setrow"><span>목표 점수</span><input id="setTarget" type="number" min="5" max="200" step="5" style="width:70px;padding:6px;background:#1e1e2e;border:1px solid #555;color:#fff;text-align:center;border-radius:6px"></div>
+  <details style="margin-top:10px"><summary style="cursor:pointer;color:#9cf;font-size:13px;padding:4px 0">🔧 물리 세부설정 (고급)</summary>
+    <div id="tuneBox" style="font-size:12px"></div>
+    <button id="tuneReset" style="width:100%;margin-top:6px;background:#555;color:#fff;font-size:12px;padding:8px">기본값 복원</button>
+  </details>
   <div style="display:flex;gap:8px;margin-top:14px">
     <button id="setGuide" style="flex:1;background:#3a6ea5;color:#fff">📖 대대룰 가이드</button>
     <button id="setNew" style="flex:1;background:#e8453c;color:#fff">새 게임</button>
@@ -103,15 +107,20 @@
 </div></div>
 
 <script src="three.min.js?v=2"></script>
-<script src="physics.js?v=9"></script>
-<script src="game.js?v=9"></script>
+<script src="physics.js?v=11"></script>
+<script src="game.js?v=11"></script>
 <script>
 'use strict';
 // 설정 (localStorage)
 const SET={ table: localStorage.getItem('b3d_table')||'large', bank2: localStorage.getItem('b3d_bank2')==='1', target:+(localStorage.getItem('b3d_target')||15) };
 const MODE = SET.table==='medium' ? '3ball-medium' : '3ball';
 let game=new GameState(MODE);
-const S=0.001, MAX_SPIN=0.7, MAXPOW=7800;
+// 물리 튜닝 (설정에서 조정, physics.js가 window.BIL_TUNE 읽음)
+const TUNE_DEF={ maxpow:7800, cushE:0.90, roll:0.011, follow:1.3, side:1.4, cushSide:0.34, throw:0.045 };
+window.BIL_TUNE=Object.assign({},TUNE_DEF);
+try{ const saved=JSON.parse(localStorage.getItem('b3d_tune')||'{}'); Object.assign(window.BIL_TUNE,saved); }catch(e){}
+const S=0.001, MAX_SPIN=0.7;
+let MAXPOW=window.BIL_TUNE.maxpow;
 const TW=game.tableW, TH=game.tableH, R=game.ballRadius, rW=R*S;
 let TARGET=SET.target;
 const COLHEX={0:0xe8c800,1:0xf2f2f2,2:0xd5342c};
@@ -264,12 +273,18 @@ let AC=null; const BUF={};
 function loadBuf(name,url){ fetch(url).then(r=>r.arrayBuffer()).then(a=>AC.decodeAudioData(a)).then(b=>{BUF[name]=b;}).catch(()=>{}); }
 function initAudio(){ if(AC){if(AC.state==='suspended')AC.resume();return;}
   try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){AC=null;return;}
-  loadBuf('ball','snd_ball.wav?v=4'); loadBuf('cushion','snd_cushion.wav?v=4'); }
+  loadBuf('cue','snd_ball.wav?v=5');       // 큐 타격(발사음)
+  loadBuf('ball','snd_ballhit.wav?v=5');   // 공-공 충돌
+  loadBuf('cushion','snd_cushion.wav?v=5'); }
 function playBuf(b,vol,rate){ if(!b)return; const s=AC.createBufferSource(); s.buffer=b; s.playbackRate.value=rate||1; const g=AC.createGain(); g.gain.value=vol; s.connect(g).connect(AC.destination); s.start(); }
 function ping(f0,f1,pk,dur,type){const n=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'triangle';o.frequency.setValueAtTime(f0,n);o.frequency.exponentialRampToValueAtTime(f1,n+dur);g.gain.setValueAtTime(0.0001,n);g.gain.exponentialRampToValueAtTime(pk,n+0.003);g.gain.exponentialRampToValueAtTime(0.0001,n+dur);o.connect(g).connect(AC.destination);o.start(n);o.stop(n+dur+0.02);}
-function sfx(k){ if(!AC)return; if(AC.state==='suspended')AC.resume();
-  if(k==='ball'){ playBuf(BUF.ball, 0.95, 0.94+Math.random()*0.12); }       // 매번 살짝 피치 변화로 자연스럽게
-  else if(k==='cushion'){ playBuf(BUF.cushion, 0.6, 0.95+Math.random()*0.1); }
+// speed: 충돌 상대속도(mm/s) → 볼륨/피치 스케일
+function sfx(k, speed){ if(!AC)return; if(AC.state==='suspended')AC.resume();
+  if(k==='cue'){ playBuf(BUF.cue, 0.9, 0.97+Math.random()*0.06); }
+  else if(k==='ball'){ const sp=Math.max(0,Math.min(1,(speed||1500)/6500));
+    playBuf(BUF.ball, 0.3+sp*0.7, 0.9+sp*0.22+Math.random()*0.04); }   // 셀수록 크고 약간 높게
+  else if(k==='cushion'){ const sp=Math.max(0,Math.min(1,(speed||1500)/6500));
+    playBuf(BUF.cushion, 0.35+sp*0.5, 0.96+Math.random()*0.06); }
   else if(k==='score'){ ping(660,660,0.35,0.12,'sine'); setTimeout(()=>{if(AC)ping(990,990,0.35,0.16,'sine');},110); } }
 
 // ───── 발사 + 애니 ─────
@@ -280,14 +295,15 @@ document.getElementById('shoot').addEventListener('click',()=>{
   // 빈쿠션 2점제: 첫 적구 전 쿠션 3회 이상 + 득점 → 2점
   if(SET.bank2 && res.score>0 && res.cushBeforeFirst>=3){ res.score=2; res.bank=true; if(game.lastResult)game.lastResult.score=2; }
   lastShot={aimAngle,powerV:+pwr.value,spinX,spinY,thickPos};   // 발사 직전 셋팅 기억
+  sfx('cue');   // 큐 타격음(발사)
   document.getElementById('hint').style.opacity='0'; playAnim(res);
 });
 function playAnim(res){
   const frames=res.frames,total=frames[frames.length-1].t,SPEED=1.4;
-  const evq=[];let lb=-1,lc=-1;for(const e of res.events||[]){if(e.type==='ball-ball'){if(e.t-lb>0.06){evq.push({t:e.t,s:'ball'});lb=e.t;}}else if(e.type==='cushion'){if(e.t-lc>0.05){evq.push({t:e.t,s:'cushion'});lc=e.t;}}}
+  const evq=[];let lb=-1,lc=-1;for(const e of res.events||[]){if(e.type==='ball-ball'){if(e.t-lb>0.04){evq.push({t:e.t,s:'ball',sp:Math.abs(e.speed||1500)});lb=e.t;}}else if(e.type==='cushion'){if(e.t-lc>0.05){evq.push({t:e.t,s:'cushion',sp:1500});lc=e.t;}}}
   let simT=0,fi=0,last=null,ei=0,prev=frames[0].balls; animating=true; updateAim();
   function step(ts){if(last==null)last=ts;const dtr=Math.min(0.05,(ts-last)/1000);last=ts;simT+=dtr*SPEED;
-    while(ei<evq.length&&evq[ei].t<=simT){sfx(evq[ei].s);ei++;}
+    while(ei<evq.length&&evq[ei].t<=simT){sfx(evq[ei].s,evq[ei].sp);ei++;}
     while(fi<frames.length-1&&frames[fi+1].t<=simT)fi++;
     let cur; if(fi>=frames.length-1)cur=frames[frames.length-1].balls;
     else{const a=frames[fi],b=frames[fi+1],u=(simT-a.t)/((b.t-a.t)||1);cur=a.balls.map((ba,k)=>{const bb=b.balls[k]||ba;return{id:ba.id,x:ba.x+(bb.x-ba.x)*u,y:ba.y+(bb.y-ba.y)*u,wz:ba.wz};});}
@@ -364,6 +380,28 @@ document.getElementById('setTarget').onchange=e=>{ TARGET=Math.max(1,+e.target.v
 document.getElementById('setNew').onclick=()=>{ if(confirm('새 게임을 시작할까요?')) location.reload(); };
 document.getElementById('setGuide').onclick=()=>guideOv.classList.add('show');
 document.getElementById('guideClose').onclick=()=>guideOv.classList.remove('show');
+// 물리 세부설정 슬라이더
+const TUNE_META=[
+  ['maxpow','파워 최대',5000,11000,100,0],
+  ['cushE','쿠션 반발',0.70,0.98,0.01,2],
+  ['roll','구름 마찰',0.005,0.03,0.001,3],
+  ['follow','밀어/끌어',0.5,3.0,0.1,1],
+  ['side','좌우 스핀',0.5,3.0,0.1,1],
+  ['cushSide','쿠션 잉글리시',0.10,0.60,0.02,2],
+];
+function saveTune(){ localStorage.setItem('b3d_tune',JSON.stringify(window.BIL_TUNE)); MAXPOW=window.BIL_TUNE.maxpow; }
+function buildTune(){ const box=document.getElementById('tuneBox'); box.innerHTML='';
+  TUNE_META.forEach(([k,label,mn,mx,st,dg])=>{
+    const row=document.createElement('div'); row.style.margin='8px 0';
+    const v=window.BIL_TUNE[k];
+    row.innerHTML=`<div style="display:flex;justify-content:space-between"><span>${label}</span><b id="tv_${k}">${(+v).toFixed(dg)}</b></div>`;
+    const inp=document.createElement('input'); inp.type='range'; inp.min=mn; inp.max=mx; inp.step=st; inp.value=v; inp.style.width='100%';
+    inp.oninput=()=>{ window.BIL_TUNE[k]=+inp.value; document.getElementById('tv_'+k).textContent=(+inp.value).toFixed(dg); saveTune(); };
+    row.appendChild(inp); box.appendChild(row);
+  });
+}
+buildTune();
+document.getElementById('tuneReset').onclick=()=>{ window.BIL_TUNE=Object.assign({},TUNE_DEF); saveTune(); buildTune(); };
 // 종목 뱃지
 document.getElementById('modeLbl').textContent = SET.table==='medium'?'3구 중대':'3구 대대';
 
