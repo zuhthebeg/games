@@ -8,13 +8,14 @@ const MODES = {
     tableH: PHYSICS.TABLE_H_LARGE,
     ballRadius: PHYSICS.BALL_RADIUS_LARGE,
     ballColors: ['#e8c800', 'white', 'red'], // id0=수구(노랑), id1=흰(적), id2=빨강(적)
-    // 쓰리쿠션 초구 배치: 빨강=foot spot(원거리), 흰=head spot, 노랑 수구=head string 옆
+    // 쓰리쿠션 초구: 빨강=화면 위(원거리 foot spot), 노랑 수구·흰=화면 아래(head 쪽)
+    // 회전렌더에서 작은 x = 화면 위 → 빨강 x작게, 수구/흰 x크게
     initialPositions(tw, th) {
       const cy = th / 2;
       return [
-        { id: 0, x: tw * 0.25, y: cy - th * 0.13, vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 노랑 수구
-        { id: 1, x: tw * 0.25, y: cy,             vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 흰 head spot
-        { id: 2, x: tw * 0.75, y: cy,             vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 빨강 foot spot
+        { id: 0, x: tw * 0.75, y: cy + th * 0.13, vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 노랑 수구(아래)
+        { id: 1, x: tw * 0.75, y: cy,             vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 흰 head spot(아래)
+        { id: 2, x: tw * 0.25, y: cy,             vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 빨강 foot spot(위)
       ];
     },
   },
@@ -71,6 +72,14 @@ class GameState {
       console.warn('미스큐!');
       return null;
     }
+
+    // 되돌리기용 스냅샷 (샷 직전 상태)
+    this._snapshot = {
+      balls: this.balls.map(b => ({ ...b })),
+      scores: [...this.scores],
+      currentPlayer: this.currentPlayer,
+      inning: this.inning,
+    };
 
     const shotBalls = this.balls.map(b => {
       if (b.id === 0) {
@@ -129,6 +138,23 @@ class GameState {
     this.lastResult = null;
     this.simResult = null;
   }
+
+  /** 직전 샷 되돌리기 (1단계). 성공 시 true */
+  undo() {
+    if (!this._snapshot) return false;
+    const s = this._snapshot;
+    this.balls = s.balls.map(b => ({ ...b }));
+    this.scores = [...s.scores];
+    this.currentPlayer = s.currentPlayer;
+    this.inning = s.inning;
+    this.phase = 'aiming';
+    this.lastResult = null;
+    this.simResult = null;
+    this._snapshot = null;   // 한 단계만
+    return true;
+  }
+
+  canUndo() { return !!this._snapshot; }
 
   reset() {
     const newState = new GameState(this.mode);

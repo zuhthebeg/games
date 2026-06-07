@@ -17,12 +17,22 @@ class BilliardsUI {
 
     this.rotated = false;   // 세로화면이면 테이블 90도 회전
 
+    // 줌/팬 (핀치줌)
+    this.zoom = 1;
+    this.panX = 0;
+    this.panY = 0;
+    this._pinch = null;     // { startDist, startZoom, lastMid }
+
+    // 두께 미리보기 상태 (가이드 계산 시 갱신)
+    this._thickness = null; // { frac, cutDir } | null
+
     // 드래그 상태
     this._mode = null;      // 'aim' | 'spin' | 'power' | null
     this._spinWidget = null;
     this._powerBar = null;
     this._shotBtn = null;
     this._tableRect = null;
+    this._thickView = null; // 두께 미리보기 위젯 위치
     this.scale = 1;
 
     // 애니메이션
@@ -62,10 +72,17 @@ class BilliardsUI {
     const tY = headerH + (availH - tH) / 2;
     this._tableRect = { x: tX, y: tY, w: tW, h: tH };
     this.scale = this.rotated ? (tW / g.tableH) : (tW / g.tableW);
+    // 줌 중심 = 테이블 중심
+    this._viewCx = tX + tW / 2;
+    this._viewCy = tY + tH / 2;
 
     // 당점 위젯 (좌하단)
     const wR = Math.min(60, footerH * 0.42);
     this._spinWidget = { cx: padX + wR + 6, cy: H - wR - 18, r: wR };
+
+    // 두께 미리보기 위젯 (당점 위젯 바로 위)
+    const tvR = wR * 0.72;
+    this._thickView = { cx: padX + tvR + 6, cy: this._spinWidget.cy - wR - tvR - 14, r: tvR };
 
     // 샷 버튼 (우하단)
     const btnW = Math.min(110, W * 0.26), btnH = 54;
@@ -77,22 +94,24 @@ class BilliardsUI {
     this._powerBar = { x: pbX, y: H - footerH * 0.55, w: pbW, h: 22 };
   }
 
-  // ── 좌표 변환 (회전 지원) ────────────────────────────────
+  // ── 좌표 변환 (회전 + 줌/팬 지원) ────────────────────────
   toScreen(mx, my) {
-    const { x, y, w, h } = this._tableRect;
-    if (this.rotated) {
-      // 90도 회전: 테이블 mm(x:0..W, y:0..H) → 화면
-      // 화면 가로 = mm y축, 화면 세로 = mm x축
-      return [x + my * this.scale, y + mx * this.scale];
-    }
-    return [x + mx * this.scale, y + my * this.scale];
+    const { x, y } = this._tableRect;
+    let bx, by;
+    if (this.rotated) { bx = x + my * this.scale; by = y + mx * this.scale; }
+    else { bx = x + mx * this.scale; by = y + my * this.scale; }
+    // 줌/팬 적용 (테이블 중심 기준 확대)
+    const sx = (bx - this._viewCx) * this.zoom + this._viewCx + this.panX;
+    const sy = (by - this._viewCy) * this.zoom + this._viewCy + this.panY;
+    return [sx, sy];
   }
   fromScreen(sx, sy) {
     const { x, y } = this._tableRect;
-    if (this.rotated) {
-      return [(sy - y) / this.scale, (sx - x) / this.scale];
-    }
-    return [(sx - x) / this.scale, (sy - y) / this.scale];
+    // 줌/팬 역변환
+    const bx = (sx - this.panX - this._viewCx) / this.zoom + this._viewCx;
+    const by = (sy - this.panY - this._viewCy) / this.zoom + this._viewCy;
+    if (this.rotated) { return [(by - y) / this.scale, (bx - x) / this.scale]; }
+    return [(bx - x) / this.scale, (by - y) / this.scale];
   }
 
   // ── 이벤트 ───────────────────────────────────────────────
@@ -101,9 +120,65 @@ class BilliardsUI {
     el.addEventListener('mousedown', e => this._onDown(e));
     el.addEventListener('mousemove', e => this._onMove(e));
     window.addEventListener('mouseup', e => this._onUp(e));
-    el.addEventListener('touchstart', e => { e.preventDefault(); this._onDown(e.touches[0]); }, { passive: false });
-    el.addEventListener('touchmove', e => { e.preventDefault(); this._onMove(e.touches[0]); }, { passive: false });
-    el.addEventListener('touchend', e => { e.preventDefault(); this._onUp(e.changedTouches[0]); }, { passive: false });
+    el.addEventListener('wheel', e => this._onWheel(e), { passive: false });
+    el.addEventListener('touchstart', e => {
+      e.preventDefault();
+      if (e.touches.length >= 2) this._pinchStart(e.touches);
+      else this._onDown(e.touches[0]);
+    }, { passive: false });
+    el.addEventListener('touchmove', e => {
+      e.preventDefault();
+      if (this._pinch && e.touches.length >= 2) this._pinchMove(e.touches);
+      else if (!this._pinch) this._onMove(e.touches[0]);
+    }, { passive: false });
+    el.addEventListener('touchend', e => {
+      e.preventDefault();
+      if (this._pinch) { if (e.touches.length < 2) this._pinch = null; return; }
+      this._onUp(e.changedTouches[0]);
+    }, { passive: false });
+  }
+
+  // ── 핀치줌 ───────────────────────────────────────────────
+  _touchMid(touches) {
+    const r = this.canvas.getBoundingClientRect();
+    const sxk = this.canvas.width / r.width, syk = this.canvas.height / r.height;
+    const a = touches[0], b = touches[1];
+    return {
+      mx: ((a.clientX + b.clientX) / 2 - r.left) * sxk,
+      my: ((a.clientY + b.clientY) / 2 - r.top) * syk,
+      dist: Math.hypot((a.clientX - b.clientX) * sxk, (a.clientY - b.clientY) * syk),
+    };
+  }
+  _pinchStart(touches) {
+    this._mode = null;
+    const m = this._touchMid(touches);
+    this._pinch = { startDist: m.dist || 1, startZoom: this.zoom, lastMid: m };
+  }
+  _pinchMove(touches) {
+    const m = this._touchMid(touches);
+    const p = this._pinch;
+    this.zoom = Math.max(1, Math.min(3.5, p.startZoom * (m.dist / p.startDist)));
+    // 두 손가락 이동 = 팬
+    this.panX += m.mx - p.lastMid.mx;
+    this.panY += m.my - p.lastMid.my;
+    p.lastMid = m;
+    if (this.zoom <= 1.01) { this.zoom = 1; this.panX = 0; this.panY = 0; }
+    this._clampPan();
+    this.draw();
+  }
+  _onWheel(e) {
+    e.preventDefault();
+    const f = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    this.zoom = Math.max(1, Math.min(3.5, this.zoom * f));
+    if (this.zoom <= 1.01) { this.zoom = 1; this.panX = 0; this.panY = 0; }
+    this._clampPan();
+    this.draw();
+  }
+  _clampPan() {
+    // 테이블이 화면 밖으로 너무 빠지지 않게 제한
+    const lim = Math.max(this._tableRect.w, this._tableRect.h) * this.zoom * 0.6;
+    this.panX = Math.max(-lim, Math.min(lim, this.panX));
+    this.panY = Math.max(-lim, Math.min(lim, this.panY));
   }
 
   _pos(e) {
@@ -214,35 +289,116 @@ class BilliardsUI {
     this._drawTable();
     const balls = overrideBalls || this.game.balls;
 
-    if (this.game.phase === 'aiming' && !overrideBalls) {
-      this._drawGuide(balls);
-    }
+    const aiming = this.game.phase === 'aiming' && !overrideBalls;
+    if (aiming) this._drawGuide(balls);
     this._drawBalls(balls);
+    if (aiming) this._drawThickView();
     this._drawSpinWidget();
     this._drawPowerBar();
     this._drawShotBtn();
     this._drawHUD();
   }
 
+  // ── 두께 미리보기 위젯 (좌하단, 당점 위 / 1목적구 충돌 시) ──
+  _drawThickView() {
+    const tv = this._thickView;
+    if (!tv) return;
+    const ctx = this.ctx;
+    const { cx, cy, r } = tv;
+    const t = this._thickness;
+
+    // 배경 패널
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(20,40,28,0.92)'; ctx.fill();
+    ctx.strokeStyle = t ? '#7fd6a0' : 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 2; ctx.stroke();
+
+    if (!t) {
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.font = `${Math.max(8, r * 0.28)}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('두께', cx, cy);
+      ctx.textBaseline = 'alphabetic';
+      return;
+    }
+
+    // 적구(중앙) + 수구 ghost(겹쳐서 두께 표현)
+    const rr = r * 0.46;
+    const offset = (1 - t.frac) * 2 * rr;     // frac=1 정면(겹침0) ~ frac=0 빗맞음
+    const obx = cx, oby = cy - r * 0.12;
+    const cux = cx - t.side * offset, cuy = oby;
+
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, r - 3, 0, Math.PI * 2); ctx.clip();
+    // 적구
+    ctx.beginPath(); ctx.arc(obx, oby, rr, 0, Math.PI * 2);
+    ctx.fillStyle = t.ballColor; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1; ctx.stroke();
+    // 수구 ghost
+    ctx.beginPath(); ctx.arc(cux, cuy, rr, 0, Math.PI * 2);
+    const cueCol = this.game.cfg.ballColors[0] || 'white';
+    ctx.fillStyle = cueCol; ctx.globalAlpha = 0.55; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.arc(cux, cuy, rr, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+
+    // 두께 수치 (8등분 표기)
+    const eighth = Math.round(t.frac * 8);
+    ctx.fillStyle = '#cfe9d6';
+    ctx.font = `bold ${Math.max(9, r * 0.3)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`${eighth}/8`, cx, cy + r - 6);
+  }
+
+  // 반지름/길이용 화면 배율 (스케일×줌)
+  get px() { return this.scale * this.zoom; }
+
   _drawTable() {
     const ctx = this.ctx;
-    const { x, y, w, h } = this._tableRect;
-    const rail = Math.max(8, w * 0.025);
+    const g = this.game;
+    // mm 코너로 화면 사각형 산출 → 줌/팬/회전 일관 적용
+    const [x0, y0] = this.toScreen(0, 0);
+    const [x1, y1] = this.toScreen(g.tableW, g.tableH);
+    const x = Math.min(x0, x1), y = Math.min(y0, y1);
+    const w = Math.abs(x1 - x0), h = Math.abs(y1 - y0);
+    const rail = Math.max(10, w * 0.030);
+
     // 나무 레일
     ctx.fillStyle = '#5a3d24';
     ctx.fillRect(x - rail, y - rail, w + rail * 2, h + rail * 2);
     // 펠트
     ctx.fillStyle = '#1d7d46';
     ctx.fillRect(x, y, w, h);
-    // 안쪽 라인
     ctx.strokeStyle = 'rgba(0,0,0,0.25)';
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y, w, h);
+
+    // ── 다이아몬드 포인트 (표준 355mm 간격: 장변 8등분, 단변 4등분) ──
+    // 화면 가로변 등분수 / 세로변 등분수 (회전 여부에 따라 장단변 교체)
+    const segH = this.rotated ? 4 : 8;   // 가로 화면변
+    const segV = this.rotated ? 8 : 4;   // 세로 화면변
+    const ds = Math.max(3, rail * 0.32); // 다이아 크기
+    const off = rail * 0.5;              // 레일 중앙
+    ctx.fillStyle = '#efe2c0';
+    const diamond = (px, py) => {
+      ctx.beginPath();
+      ctx.moveTo(px, py - ds); ctx.lineTo(px + ds, py);
+      ctx.lineTo(px, py + ds); ctx.lineTo(px - ds, py);
+      ctx.closePath(); ctx.fill();
+    };
+    for (let i = 1; i < segH; i++) {
+      const px = x + (w * i) / segH;
+      diamond(px, y - off); diamond(px, y + h + off);
+    }
+    for (let i = 1; i < segV; i++) {
+      const py = y + (h * i) / segV;
+      diamond(x - off, py); diamond(x + w + off, py);
+    }
   }
 
   _drawBalls(balls) {
     const ctx = this.ctx;
-    const r = this.game.ballRadius * this.scale;
+    const r = this.game.ballRadius * this.px;
     const colors = this.game.cfg.ballColors;
     for (const b of balls) {
       const [sx, sy] = this.toScreen(b.x, b.y);
@@ -292,8 +448,9 @@ class BilliardsUI {
     ctx.beginPath(); ctx.moveTo(csx, csy); ctx.lineTo(hsx, hsy); ctx.stroke();
     ctx.restore();
 
-    const rScreen = R * this.scale;
+    const rScreen = R * this.px;
 
+    this._thickness = null;
     if (hit.type === 'ball') {
       // ghost ball
       ctx.save();
@@ -315,6 +472,16 @@ class BilliardsUI {
       ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(tsx, tsy); ctx.lineTo(esx, esy); ctx.stroke();
       ctx.restore();
+
+      // 두께 계산: 적구 중심과 조준선의 수직거리 d → 겹침비율
+      // d=0 정면(두께1), d=2R 빗맞음(두께0)
+      const ox = tb.x - cue.x, oy = tb.y - cue.y;
+      const proj = ox * dx + oy * dy;
+      const perp = Math.abs(ox * (-dy) + oy * dx); // 조준선까지 수직거리
+      const frac = Math.max(0, Math.min(1, 1 - perp / (2 * R)));
+      // 컷 방향(적구가 조준선 어느쪽?): 부호
+      const side = (ox * (-dy) + oy * dx) >= 0 ? 1 : -1;
+      this._thickness = { frac, side, ballColor: this.game.cfg.ballColors[tb.id] || '#ccc' };
     } else if (hit.type === 'cushion') {
       // 반사선 (1차)
       let rdx = dx, rdy = dy;
