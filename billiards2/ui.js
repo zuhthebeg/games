@@ -348,7 +348,7 @@ class BilliardsUI {
   }
 
   _fire() {
-    const MAX = 6500;
+    const MAX = 7800;   // 풀파워 +20%
     const power = this.shotPower * MAX;
     if (power < 50) return;
     this._initAudio();   // 사용자 제스처 시점에 오디오 활성화
