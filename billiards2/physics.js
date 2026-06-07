@@ -10,7 +10,7 @@ var PHYSICS = {
   TABLE_H_MEDIUM: 1270,
   CUSHION_RESTITUTION: 0.75,
   BALL_RESTITUTION: 0.95,
-  ROLLING_FRICTION: 0.01,
+  ROLLING_FRICTION: 0.03,
   SLIDING_FRICTION: 0.2,
   CUSHION_SIDE_FACTOR: 0.1,
   THROW_FRICTION: 0.04,
@@ -305,9 +305,9 @@ function runTests() {
   // Test 4: 4구 득점 — 빨강1 얇게 쳐서 빨강2까지 (캐롬)
   {
     const shot = makeShotInput('4ball', [
-      { id: 0, x: 500, y: 635, vx: 5500, vy: 0, spinX: 0, spinY: 0 },
-      { id: 1, x: 850, y: 687, vx: 0, vy: 0, spinX: 0, spinY: 0 },   // 살짝 위(얇은 히트)
-      { id: 2, x: 1300, y: 665, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 0, x: 500, y: 635, vx: 6500, vy: 0, spinX: 0, spinY: 0 },
+      { id: 1, x: 850, y: 693, vx: 0, vy: 0, spinX: 0, spinY: 0 },   // 살짝 위(얇은 히트)
+      { id: 2, x: 1250, y: 650, vx: 0, vy: 0, spinX: 0, spinY: 0 },
       { id: 3, x: 2300, y: 300, vx: 0, vy: 0, spinX: 0, spinY: 0 },
     ]);
     const res = simulate(shot);
