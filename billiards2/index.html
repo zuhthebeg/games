@@ -70,10 +70,11 @@
 
   /* ── 힌트 ── */
   #hint-bar {
-    position: absolute; bottom: 130px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 20px;
-    font-size: 12px; color: #aaa; pointer-events: none; z-index: 5;
-    white-space: nowrap;
+    position: absolute; bottom: 224px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.55); padding: 5px 12px; border-radius: 20px;
+    font-size: 11px; color: #9aa; pointer-events: none; z-index: 5;
+    white-space: nowrap; max-width: 94vw; overflow: hidden; text-overflow: ellipsis;
+    transition: opacity 0.4s;
   }
 
   /* ── 되돌리기 버튼 ── */
@@ -133,9 +134,9 @@
 
 </div>
 
-<script src="physics.js?v=76"></script>
-<script src="game.js?v=76"></script>
-<script src="ui.js?v=76"></script>
+<script src="physics.js?v=77"></script>
+<script src="game.js?v=77"></script>
+<script src="ui.js?v=77"></script>
 <script>
 'use strict';
 
@@ -214,6 +215,7 @@ function onShotDone(result) {
 
   overlay.classList.add('show');
   refreshUndo();
+  const hb = document.getElementById('hint-bar'); if (hb) hb.style.opacity = '0';
 
   // Check win condition
   const targetScore = parseInt(document.getElementById('target-input').value) || 15;
