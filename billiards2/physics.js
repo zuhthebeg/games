@@ -54,8 +54,8 @@ function simulate(shot) {
   const k_side = PHYSICS.CUSHION_SIDE_FACTOR;
   const mu_throw = PHYSICS.THROW_FRICTION;
   const mu_throw_ball = 0.045;  // 공-공 throw 상한(좌우스핀 영향, 최대 ~3도)
-  const K_CUSH_SIDE = 0.34;     // 쿠션 사이드스핀 반사각/회전력 추가
-  const CUSH_WZ_KEEP = 0.6;     // 쿠션 후 사이드스핀 유지(다단 쿠션 누적)
+  const K_CUSH_SIDE = 0.34;     // 쿠션 사이드스핀 반사각/회전력 추가(첫 접촉 강하게)
+  const CUSH_WZ_KEEP = 0.32;    // 쿠션 후 사이드스핀 잔존(빨리 소진→마지막 충돌엔 안 휨)
 
   // 각속도 초기화: 모든 공 wx,wy(구름축)·wz(수직축=좌우스핀) = 0
   for (const b of balls) { b.wx = b.wx || 0; b.wy = b.wy || 0; b.wz = b.wz || 0; }
@@ -151,8 +151,8 @@ function simulate(shot) {
               const Jt = sgn * Math.min(Math.abs(uT) * 0.5, mu_throw_ball * Math.abs(J) + 0);
               a.vx -= Jt * tx; a.vy -= Jt * ty;
               b.vx += Jt * tx; b.vy += Jt * ty;
-              // 스핀은 throw에 일부 소모
-              a.wz *= 0.78; b.wz *= 0.78;
+              // 스핀은 throw에 크게 소모(공 맞은 뒤엔 거의 안 남음)
+              a.wz *= 0.5; b.wz *= 0.5;
             }
 
             // (follow/draw는 각속도 ω 유지 + 충돌후 마찰로 자연 발생)
@@ -248,8 +248,8 @@ function simulate(shot) {
           Math.hypot(b.vx - b.wy * r, b.vy + b.wx * r) < SLIP_EPS) {
         b.vx = 0; b.vy = 0; b.wx = 0; b.wy = 0;
       }
-      // 사이드스핀 서서히 감쇠
-      b.wz *= 0.997;
+      // 사이드스핀 마찰 감쇠(천에 의해 점차 죽음)
+      b.wz *= 0.994;
     }
 
     // ── 위치 업데이트 ──────────────────────────────────────────

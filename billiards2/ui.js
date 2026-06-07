@@ -322,22 +322,24 @@ class BilliardsUI {
     this.aimAngleDeg = (base + tgt.side * alpha) * 180 / Math.PI;
   }
 
-  // 조준 대상 1목적구 선택 (현 조준 타겟 없으면 가장 가까운 적구)
+  // 조준 대상 1목적구 선택: 현재 조준선에 '수직거리상 가장 가까운' 앞쪽 적구
   _pickTarget() {
     const cue = this.game.cueBall();
     if (!cue) return null;
     const cueId = this.game.cueId();
-    let best = Infinity, ball = null;
-    for (const b of this.game.balls) {
-      if (b.id === cueId) continue;
-      const d = Math.hypot(b.x - cue.x, b.y - cue.y);
-      if (d < best) { best = d; ball = b; }
-    }
-    if (!ball) return null;
-    // 현재 조준선 기준 적구가 어느 쪽인지로 side 유지
     const rad = this.aimAngleDeg * Math.PI / 180;
     const dx = Math.cos(rad), dy = Math.sin(rad);
-    const side = ((ball.x - cue.x) * (-dy) + (ball.y - cue.y) * dx) >= 0 ? 1 : -1;
+    let best = Infinity, ball = null, side = 1;
+    for (const b of this.game.balls) {
+      if (b.id === cueId) continue;
+      const ox = b.x - cue.x, oy = b.y - cue.y;
+      const proj = ox * dx + oy * dy;
+      if (proj <= 0) continue;                 // 조준 뒤쪽 공 제외
+      const perp = ox * (-dy) + oy * dx;       // 조준선까지 부호있는 수직거리
+      const ap = Math.abs(perp);
+      if (ap < best) { best = ap; ball = b; side = perp >= 0 ? 1 : -1; }
+    }
+    if (!ball) return null;
     return { ball, side };
   }
 
