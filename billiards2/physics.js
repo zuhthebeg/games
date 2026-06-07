@@ -302,16 +302,16 @@ function runTests() {
     assert('3구 시뮬: 프레임 배열 존재', res.frames.length > 0);
   }
 
-  // Test 4: 4구 득점 — 빨강 2개 히트
+  // Test 4: 4구 득점 — 빨강1 얇게 쳐서 빨강2까지 (캐롬)
   {
     const shot = makeShotInput('4ball', [
-      { id: 0, x: 600, y: 635, vx: 3000, vy: 0, spinX: 0, spinY: 0 },
-      { id: 1, x: 800, y: 635, vx: 0, vy: 0, spinX: 0, spinY: 0 },
-      { id: 2, x: 1000, y: 635, vx: 0, vy: 0, spinX: 0, spinY: 0 },
-      { id: 3, x: 2000, y: 635, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 0, x: 500, y: 635, vx: 5500, vy: 0, spinX: 0, spinY: 0 },
+      { id: 1, x: 850, y: 687, vx: 0, vy: 0, spinX: 0, spinY: 0 },   // 살짝 위(얇은 히트)
+      { id: 2, x: 1300, y: 665, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 3, x: 2300, y: 300, vx: 0, vy: 0, spinX: 0, spinY: 0 },
     ]);
     const res = simulate(shot);
-    assert('4구: id1 히트', res.hitIds.includes(1));
+    assert('4구: 빨강1+빨강2 모두 히트', res.hitIds.includes(1) && res.hitIds.includes(2));
     assert('4구: score 1', res.score === 1);
   }
 
