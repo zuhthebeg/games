@@ -264,11 +264,14 @@ function simulate(shot) {
     const allHit = others.every(id => hitIds.has(id));
     if (allHit && cushionCount >= 3) score = 1;
   } else if (mode === '4ball') {
-    // 수구가 빨강 2개(REDS) 모두 맞히면 1점. 상대수구 맞으면 파울
+    // 상대 수구를 맞히면 파울(득점 무효). 아니면 빨강 2개 다 맞혀야 1점
     const REDS = (shot.redIds && shot.redIds.length) ? shot.redIds : [1, 2];
     const oppCueId = shot.oppCueId != null ? shot.oppCueId : 3;
-    if (REDS.every(id => hitIds.has(id))) score = 1;
-    if (hitIds.has(oppCueId)) foul = true;
+    if (hitIds.has(oppCueId)) {
+      foul = true;          // 상대공 접촉 → 파울, 점수 없음
+    } else if (REDS.every(id => hitIds.has(id))) {
+      score = 1;
+    }
   }
 
   // 마지막 수구 위치도 노출(편의)
@@ -356,6 +359,20 @@ function runTests() {
     const res = simulate(shot);
     assert('4구: 빨강1+빨강2 모두 히트', res.hitIds.includes(1) && res.hitIds.includes(2));
     assert('4구: score 1', res.score === 1);
+  }
+
+  // Test 4b: 4구 파울 — 빨강 둘 다 맞아도 상대공 맞으면 득점 무효
+  {
+    const shot = makeShotInput('4ball', [
+      { id: 0, x: 500, y: 635, vx: 6500, vy: 0, spinX: 0, spinY: 0 },
+      { id: 1, x: 850, y: 697, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 2, x: 1350, y: 640, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 3, x: 2300, y: 300, vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 캐롬 경로상 상대공
+    ]);
+    const res = simulate(shot);
+    assert('4구 파울: 상대공 맞음', res.hitIds.includes(3));
+    assert('4구 파울: score 0 (득점 무효)', res.score === 0);
+    assert('4구 파울: foul true', res.foul === true);
   }
 
   // Test 5: 정지 조건

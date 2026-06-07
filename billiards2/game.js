@@ -135,18 +135,18 @@ class GameState {
     if (this.phase !== 'result') return;
     const r = this.lastResult;
 
+    // 파울 감점은 '친 사람'에게 먼저 적용 (턴 교체 전)
+    if (this.mode === '4ball' && r && r.foul) {
+      this.scores[this.currentPlayer] = Math.max(0, this.scores[this.currentPlayer] - 1);
+    }
+
     if (r && r.score > 0) {
       this.scores[this.currentPlayer] += r.score;
       // 성공 시 연속 → 같은 플레이어 유지
     } else {
-      // 실패 시 턴 교체
+      // 실패/파울 → 턴 교체
       this.currentPlayer = 1 - this.currentPlayer;
       this.inning++;
-    }
-
-    // 4구 파울 처리 (감점 옵션)
-    if (this.mode === '4ball' && r && r.foul) {
-      this.scores[this.currentPlayer] = Math.max(0, this.scores[this.currentPlayer] - 1);
     }
 
     this.phase = 'aiming';
