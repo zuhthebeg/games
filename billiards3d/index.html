@@ -64,7 +64,11 @@
   <button id="shoot">치기</button>
 </div>
 
-<div class="ov" id="resultOv"><div class="ovcard"><h2 id="rMsg"></h2><p id="rDetail"></p><button id="rNext">다음 턴 ▶</button></div></div>
+<div class="ov" id="resultOv"><div class="ovcard"><h2 id="rMsg"></h2><p id="rDetail"></p>
+  <div style="display:flex;gap:10px;justify-content:center">
+    <button id="rUndo" style="background:#5b6472;color:#fff">↩ 되돌리기</button>
+    <button id="rNext">다음 턴 ▶</button>
+  </div></div></div>
 <div class="ov" id="winOv"><div class="ovcard"><h2 id="wMsg" style="color:#ffd633"></h2><p id="wScore"></p><button id="wRestart">처음으로</button></div></div>
 
 <script src="three.min.js?v=2"></script>
@@ -220,12 +224,18 @@ function syncThickFromAim(){const cue=game.cueBall();const hit=raycastMM(cue,Mat
   if(hit.type==='ball'){const tb=hit.ball,ox=tb.x-cue.x,oy=tb.y-cue.y,perp=Math.abs(ox*(-Math.sin(aimAngle))+oy*Math.cos(aimAngle)),frac=Math.max(0,Math.min(1,1-perp/(2*R))),side=(ox*(-Math.sin(aimAngle))+oy*Math.cos(aimAngle))>=0?1:-1;
     thickPos=0.5+side*(1-frac)/2; thk.value=Math.round(thickPos*100); const eighth=Math.round(frac*8),dir=Math.abs(thickPos-0.5)<0.04?'정면':(thickPos<0.5?'◀좌':'우▶'); thlbl.textContent=`두께 ${eighth}/8 ${dir}`;}}
 
-// ───── 사운드 ─────
-let AC=null;
-function initAudio(){if(AC){if(AC.state==='suspended')AC.resume();return;}try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){AC=null;}}
+// ───── 사운드 (실샘플 WAV 버퍼) ─────
+let AC=null; const BUF={};
+function loadBuf(name,url){ fetch(url).then(r=>r.arrayBuffer()).then(a=>AC.decodeAudioData(a)).then(b=>{BUF[name]=b;}).catch(()=>{}); }
+function initAudio(){ if(AC){if(AC.state==='suspended')AC.resume();return;}
+  try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){AC=null;return;}
+  loadBuf('ball','snd_ball.wav?v=2'); loadBuf('cushion','snd_cushion.wav?v=2'); }
+function playBuf(b,vol,rate){ if(!b)return; const s=AC.createBufferSource(); s.buffer=b; s.playbackRate.value=rate||1; const g=AC.createGain(); g.gain.value=vol; s.connect(g).connect(AC.destination); s.start(); }
 function ping(f0,f1,pk,dur,type){const n=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'triangle';o.frequency.setValueAtTime(f0,n);o.frequency.exponentialRampToValueAtTime(f1,n+dur);g.gain.setValueAtTime(0.0001,n);g.gain.exponentialRampToValueAtTime(pk,n+0.003);g.gain.exponentialRampToValueAtTime(0.0001,n+dur);o.connect(g).connect(AC.destination);o.start(n);o.stop(n+dur+0.02);}
-function noise(dur,pk,ft,fr){const n=AC.currentTime,len=Math.floor(AC.sampleRate*dur),buf=AC.createBuffer(1,len,AC.sampleRate),d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);const s=AC.createBufferSource();s.buffer=buf;const bp=AC.createBiquadFilter();bp.type=ft;bp.frequency.value=fr;const g=AC.createGain();g.gain.value=pk;s.connect(bp).connect(g).connect(AC.destination);s.start(n);}
-function sfx(k){if(!AC)return;if(AC.state==='suspended')AC.resume();if(k==='ball'){ping(1900,950,0.5,0.08,'triangle');noise(0.03,0.22,'bandpass',2600);}else if(k==='cushion'){ping(260,130,0.3,0.12,'sine');noise(0.04,0.10,'lowpass',600);}else if(k==='score'){ping(660,660,0.35,0.12,'sine');setTimeout(()=>{if(AC)ping(990,990,0.35,0.16,'sine');},110);}}
+function sfx(k){ if(!AC)return; if(AC.state==='suspended')AC.resume();
+  if(k==='ball'){ playBuf(BUF.ball, 0.95, 0.94+Math.random()*0.12); }       // 매번 살짝 피치 변화로 자연스럽게
+  else if(k==='cushion'){ playBuf(BUF.cushion, 0.6, 0.95+Math.random()*0.1); }
+  else if(k==='score'){ ping(660,660,0.35,0.12,'sine'); setTimeout(()=>{if(AC)ping(990,990,0.35,0.16,'sine');},110); } }
 
 // ───── 발사 + 애니 ─────
 const orientReset={};
@@ -266,7 +276,9 @@ document.getElementById('wRestart').addEventListener('click',()=>{location.reloa
 
 // 되돌리기
 const undoBtn=document.getElementById('undo');
-undoBtn.addEventListener('click',()=>{if(game.undo()){document.getElementById('resultOv').classList.remove('show');afterTurn();}});
+function doUndo(){ if(game.undo()){ document.getElementById('resultOv').classList.remove('show'); afterTurn(); } }
+undoBtn.addEventListener('click',doUndo);
+document.getElementById('rUndo').addEventListener('click',doUndo);
 function refreshHud(){
   document.getElementById('inning').textContent=game.inning;
   const p1=document.getElementById('p1'),p2=document.getElementById('p2');
