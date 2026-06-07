@@ -26,8 +26,16 @@
     background:linear-gradient(transparent,rgba(0,0,0,.6))}
   #spin{width:108px;height:108px;flex-shrink:0}
   #mid{flex:1;display:flex;flex-direction:column;gap:12px;padding-bottom:6px}
-  .slab{font-size:12px;color:#cde;margin-bottom:3px}
-  input[type=range]{width:100%}
+  .slab{font-size:13px;color:#cde;margin-bottom:5px;font-weight:600}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:12px;border-radius:7px;
+    background:#2a3340;outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#fff,#d6d6d6);border:2px solid #4CAF50;box-shadow:0 2px 6px rgba(0,0,0,.55);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:#eee;border:2px solid #4CAF50;box-shadow:0 2px 6px rgba(0,0,0,.55);cursor:pointer}
+  #pwr{background:linear-gradient(90deg,#cfe000,#4CAF50)}
+  #pwr::-webkit-slider-thumb,#pwr::-moz-range-thumb{border-color:#cfe000}
+  #thk{background:linear-gradient(90deg,#5aa9e6,#2a3340 50%,#5aa9e6)}
+  #thk::-webkit-slider-thumb,#thk::-moz-range-thumb{border-color:#5aa9e6}
   #shoot{flex-shrink:0;padding:16px 20px;background:#e8453c;border:none;color:#fff;font-size:17px;font-weight:800;border-radius:12px}
   /* 오버레이 */
   .ov{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}
@@ -66,7 +74,7 @@
     <div><div class="slab" id="pwlbl">파워 45%</div><input id="pwr" type="range" min="5" max="100" value="45"></div>
     <div><div class="slab" id="thlbl">두께 정면</div><input id="thk" type="range" min="0" max="100" value="50"></div>
   </div>
-  <button id="shoot">치기</button>
+  <button id="shoot">SHOT</button>
 </div>
 
 <div class="ov" id="resultOv"><div class="ovcard"><h2 id="rMsg"></h2><p id="rDetail"></p>
@@ -177,8 +185,10 @@ const aimLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE
 scene.add(aimLine);
 const predLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),new THREE.LineBasicMaterial({color:0xffdc64,transparent:true,opacity:0.7}));
 scene.add(predLine);
-const ghost=new THREE.Mesh(new THREE.SphereGeometry(rW,20,20),new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:0.5}));
-scene.add(ghost);
+// 가상공(ghost): 큐색 반투명 솔리드 + 외곽 와이어 → 적구와 겹침으로 두께 가시화
+const ghostFill=new THREE.Mesh(new THREE.SphereGeometry(rW,24,24),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.42,depthWrite:false}));
+const ghostWire=new THREE.Mesh(new THREE.SphereGeometry(rW*1.01,18,14),new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:0.6,depthWrite:false}));
+const ghost=new THREE.Group(); ghost.add(ghostFill); ghost.add(ghostWire); scene.add(ghost);
 
 function raycastMM(cue,dx,dy){
   let best=Infinity,res={type:'none',x:cue.x+dx*1000,y:cue.y+dy*1000};
@@ -201,6 +211,7 @@ function updateAim(){
   aimTarget=null;
   if(hit.type==='ball'){
     ghost.position.set(wx(hit.x),rW,wz(hit.y)); ghost.visible=true;
+    const cc=COLHEX[game.cueId()]||0xffffff; ghostFill.material.color.setHex(cc); ghostWire.material.color.setHex(cc);
     const tb=hit.ball, ndx=tb.x-hit.x,ndy=tb.y-hit.y,nl=Math.hypot(ndx,ndy)||1,ux=ndx/nl,uy=ndy/nl;
     predLine.geometry.setFromPoints([new THREE.Vector3(wx(tb.x),rW,wz(tb.y)),new THREE.Vector3(wx(tb.x+ux*R*6),rW,wz(tb.y+uy*R*6))]);
     predLine.visible=true;
