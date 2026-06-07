@@ -361,47 +361,70 @@ class BilliardsUI {
       }
     }
     let ei = 0;
-    // 재생 속도 압축: 긴 샷도 ~3초 내(최대 ~200프레임)로 스트라이드
-    const stride = Math.max(1, Math.round(frames.length / 200));
-    let prevIdx = 0;
-    this._animFrames = frames; this._animIdx = 0;
-    const step = () => {
-      if (this._animIdx >= frames.length) {
-        // 마지막 프레임 보정
-        const lastPrev = frames[prevIdx], last = frames[frames.length - 1];
-        if (lastPrev !== last) this._rollUpdate(lastPrev, last);
+    // 시간기반 보간 재생: 디스플레이 주사율로 부드럽게, 살짝(1.4x) 압축
+    const SPEED = 1.4;
+    const totalT = frames[frames.length - 1].t;
+    let simT = 0, fi = 0, lastTs = null;
+    let prevBalls = frames[0].balls;
+    this._animFrames = frames;
+
+    const sample = (st) => {
+      while (fi < frames.length - 1 && frames[fi + 1].t <= st) fi++;
+      if (fi >= frames.length - 1) return frames[frames.length - 1].balls;
+      const a = frames[fi], b = frames[fi + 1];
+      const u = (st - a.t) / ((b.t - a.t) || 1);
+      return a.balls.map((ba, k) => {
+        const bb = b.balls[k] || ba;
+        return { id: ba.id, x: ba.x + (bb.x - ba.x) * u, y: ba.y + (bb.y - ba.y) * u, wz: ba.wz };
+      });
+    };
+
+    const step = (ts) => {
+      if (lastTs == null) lastTs = ts || 0;
+      const dtr = Math.min(0.05, ((ts || 0) - lastTs) / 1000);
+      lastTs = ts || 0;
+      simT += dtr * SPEED;
+
+      while (ei < evq.length && evq[ei].t <= simT) { this._sfx(evq[ei].s); ei++; }
+
+      const balls = sample(simT);
+      const dt = Math.max(1e-3, dtr * SPEED);
+      this._rollFromPositions(prevBalls, balls, dt);
+      prevBalls = balls;
+      this.draw(balls);
+
+      if (simT >= totalT) {
         this._animFrames = null;
         this.draw();
         if (res.score > 0) this._sfx('score');
         if (done) done();
         return;
       }
-      const fr = frames[this._animIdx];
-      while (ei < evq.length && evq[ei].t <= fr.t) { this._sfx(evq[ei].s); ei++; }
-      // 구름 회전 갱신 (직전 표시 프레임 대비 이동)
-      if (this._animIdx > 0) this._rollUpdate(frames[prevIdx], fr);
-      this.draw(fr.balls);
-      prevIdx = this._animIdx;
-      this._animIdx += stride;
       this._rafId = requestAnimationFrame(step);
     };
-    step();
+    this._rafId = requestAnimationFrame(step);
   }
 
-  // ── 공 구름 회전 ─────────────────────────────────────────
+  // ── 공 회전 (구름 + 좌우스핀 가시화) ─────────────────────
   _orientOf(id) { return this._orient[id] || (this._orient[id] = mat3Identity()); }
-  _rollUpdate(prev, cur) {
+  _rollFromPositions(prev, cur, dt) {
     const R = this.game.ballRadius;
-    for (const cb of cur.balls) {
-      const pb = prev.balls.find(p => p.id === cb.id);
+    for (const cb of cur) {
+      const pb = prev.find(p => p.id === cb.id);
       if (!pb) continue;
       const dxm = cb.x - pb.x, dym = cb.y - pb.y;
       const dist = Math.hypot(dxm, dym);
-      if (dist < 0.4) continue;
-      const theta = dist / R;                 // 구름: 이동거리/반지름
-      const ax = -dym / dist, ay = dxm / dist; // 진행방향 수직 수평축
-      const dR = mat3Axis(ax, ay, 0, theta);
-      this._orient[cb.id] = mat3Mul(dR, this._orientOf(cb.id));
+      let O = this._orientOf(cb.id);
+      if (dist >= 0.4) {                        // 구름: 진행방향 수직 수평축
+        const theta = dist / R;
+        O = mat3Mul(mat3Axis(-dym / dist, dxm / dist, 0, theta), O);
+      }
+      // 좌우스핀: 수직축(z) 회전 — 제자리 회전 보임
+      const wz = cb.wz || 0;
+      if (Math.abs(wz) > 0.05 && dt) {
+        O = mat3Mul(mat3Axis(0, 0, 1, wz * dt), O);
+      }
+      this._orient[cb.id] = O;
     }
   }
   _drawSpots(b, rpx) {

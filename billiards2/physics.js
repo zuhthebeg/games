@@ -53,10 +53,12 @@ function simulate(shot) {
   const e_ball = PHYSICS.BALL_RESTITUTION;
   const k_side = PHYSICS.CUSHION_SIDE_FACTOR;
   const mu_throw = PHYSICS.THROW_FRICTION;
+  const mu_throw_ball = 0.045;  // 공-공 throw 상한(좌우스핀 영향, 최대 ~3도)
+  const K_CUSH_SIDE = 0.16;     // 쿠션 사이드스핀 반사각 영향
 
-  // 각속도 초기화: 모든 공 wx,wy(구름축) = 0
-  for (const b of balls) { b.wx = b.wx || 0; b.wy = b.wy || 0; }
-  // 수구에 당점(spinY)으로 톱/백스핀 부여 (follow/draw)
+  // 각속도 초기화: 모든 공 wx,wy(구름축)·wz(수직축=좌우스핀) = 0
+  for (const b of balls) { b.wx = b.wx || 0; b.wy = b.wy || 0; b.wz = b.wz || 0; }
+  // 수구에 당점으로 스핀 부여: spinY=톱/백(follow/draw), spinX=좌우(english)
   {
     const cb = balls.find(b => b.id === cueId);
     if (cb) {
@@ -64,11 +66,12 @@ function simulate(shot) {
       if (sp > 1) {
         const dx = cb.vx / sp, dy = cb.vy / sp;
         const base = sp / r;                       // 자연 구름 각속도
-        const FOLLOW_GAIN = 2.0;                   // 밀어/끌어 강도
+        const FOLLOW_GAIN = 1.3;                   // 밀어/끌어 강도(과하지 않게)
+        const SIDE_GAIN = 1.4;                     // 좌우 스핀 강도
         const w = base * (cb.spinY || 0) * FOLLOW_GAIN;
-        // 톱스핀 축 = 진행방향 수평 수직 (−dy, dx)
-        cb.wx = -dy * w;
+        cb.wx = -dy * w;                           // 톱스핀 축 = 진행방향 수평 수직
         cb.wy = dx * w;
+        cb.wz = base * (cb.spinX || 0) * SIDE_GAIN; // 수직축 사이드스핀
       }
     }
   }
@@ -88,7 +91,7 @@ function simulate(shot) {
   function recordFrame() {
     frames.push({
       t,
-      balls: balls.map(b => ({ id: b.id, x: b.x, y: b.y, vx: b.vx, vy: b.vy, spinX: b.spinX, spinY: b.spinY })),
+      balls: balls.map(b => ({ id: b.id, x: b.x, y: b.y, vx: b.vx, vy: b.vy, wz: b.wz })),
     });
   }
 
@@ -130,16 +133,20 @@ function simulate(shot) {
             b.vx += J * nx;
             b.vy += J * ny;
 
-            // throw 효과 (접선 방향 마찰)
+            // throw 효과: 접촉점 상대 접선 표면속도(좌우스핀 wz 포함)로 적구가 밀림
             const tx = -ny, ty = nx;
-            const vRelT = vDot(dvx, dvy, tx, ty);
-            const Jt = mu_throw * Math.abs(J) * Math.sign(vRelT);
-            a.vx -= Jt * tx;
-            a.vy -= Jt * ty;
-            b.vx += Jt * tx;
-            b.vy += Jt * ty;
+            // 접선 표면속도: 선속도 성분 + 사이드스핀(wz*r) 기여
+            const uT = vDot(dvx, dvy, tx, ty) + (a.wz + b.wz) * r;
+            if (Math.abs(uT) > 1e-3) {
+              const sgn = Math.sign(uT);
+              const Jt = sgn * Math.min(Math.abs(uT) * 0.5, mu_throw_ball * Math.abs(J) + 0);
+              a.vx -= Jt * tx; a.vy -= Jt * ty;
+              b.vx += Jt * tx; b.vy += Jt * ty;
+              // 스핀은 throw에 일부 소모
+              a.wz *= 0.78; b.wz *= 0.78;
+            }
 
-            // (follow/draw는 각속도 ω 유지 + 충돌후 마찰로 자연 발생 → 별도 nudge 없음)
+            // (follow/draw는 각속도 ω 유지 + 충돌후 마찰로 자연 발생)
 
             const type = 'ball-ball';
             events.push({ t, type, ball1: a.id, ball2: b.id });
@@ -157,40 +164,38 @@ function simulate(shot) {
       let cushionHit = false;
       let side = null;
 
-      // 좌 쿠션
+      // 사이드스핀 표면속도(wz*r)가 쿠션 접선방향으로 공을 끌어 반사각 변형
+      const wzSurf = b.wz * r;
+      // 좌 쿠션 (법선 +x). 접선=y. 우회전(wz>0)이면 +y로 꺾임
       if (b.x - r < 0) {
         b.x = r;
-        const spinContrib = b.spinX * k_side * Math.abs(b.vx);
         b.vx = Math.abs(b.vx) * e_cush;
-        b.vy = b.vy * (1 - mu_s * 0.3) + spinContrib;
-        b.spinX *= 0.6;
+        b.vy = b.vy * (1 - mu_s * 0.3) + wzSurf * K_CUSH_SIDE;
+        b.wz *= 0.45;
         cushionHit = true; side = 'left';
       }
-      // 우 쿠션
+      // 우 쿠션 (법선 −x). 접선 반대
       if (b.x + r > tableW) {
         b.x = tableW - r;
-        const spinContrib = b.spinX * k_side * Math.abs(b.vx);
         b.vx = -Math.abs(b.vx) * e_cush;
-        b.vy = b.vy * (1 - mu_s * 0.3) - spinContrib;
-        b.spinX *= 0.6;
+        b.vy = b.vy * (1 - mu_s * 0.3) - wzSurf * K_CUSH_SIDE;
+        b.wz *= 0.45;
         cushionHit = true; side = 'right';
       }
-      // 상 쿠션
+      // 상 쿠션 (법선 +y). 접선=x
       if (b.y - r < 0) {
         b.y = r;
-        const spinContrib = b.spinX * k_side * Math.abs(b.vy);
         b.vy = Math.abs(b.vy) * e_cush;
-        b.vx = b.vx * (1 - mu_s * 0.3) + spinContrib;
-        b.spinX *= 0.6;
+        b.vx = b.vx * (1 - mu_s * 0.3) - wzSurf * K_CUSH_SIDE;
+        b.wz *= 0.45;
         cushionHit = true; side = 'top';
       }
-      // 하 쿠션
+      // 하 쿠션 (법선 −y)
       if (b.y + r > tableH) {
         b.y = tableH - r;
-        const spinContrib = b.spinX * k_side * Math.abs(b.vy);
         b.vy = -Math.abs(b.vy) * e_cush;
-        b.vx = b.vx * (1 - mu_s * 0.3) - spinContrib;
-        b.spinX *= 0.6;
+        b.vx = b.vx * (1 - mu_s * 0.3) + wzSurf * K_CUSH_SIDE;
+        b.wz *= 0.45;
         cushionHit = true; side = 'bottom';
       }
 
@@ -234,8 +239,8 @@ function simulate(shot) {
           Math.hypot(b.vx - b.wy * r, b.vy + b.wx * r) < SLIP_EPS) {
         b.vx = 0; b.vy = 0; b.wx = 0; b.wy = 0;
       }
-      // 사이드스핀(쿠션용) 서서히 감쇠
-      b.spinX *= 0.999;
+      // 사이드스핀 서서히 감쇠
+      b.wz *= 0.997;
     }
 
     // ── 위치 업데이트 ──────────────────────────────────────────
@@ -365,9 +370,9 @@ function runTests() {
   {
     const shot = makeShotInput('4ball', [
       { id: 0, x: 500, y: 635, vx: 6500, vy: 0, spinX: 0, spinY: 0 },
-      { id: 1, x: 850, y: 697, vx: 0, vy: 0, spinX: 0, spinY: 0 },
-      { id: 2, x: 1350, y: 640, vx: 0, vy: 0, spinX: 0, spinY: 0 },
-      { id: 3, x: 2300, y: 300, vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 캐롬 경로상 상대공
+      { id: 1, x: 850, y: 700, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 2, x: 1600, y: 650, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 3, x: 2300, y: 400, vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 캐롬 경로상 상대공
     ]);
     const res = simulate(shot);
     assert('4구 파울: 상대공 맞음', res.hitIds.includes(3));
