@@ -136,7 +136,7 @@ const SET={ table: localStorage.getItem('b3d_table')||'large', bank2: localStora
 const MODE = SET.table==='medium' ? '3ball-medium' : '3ball';
 let game=new GameState(MODE);
 // 물리 튜닝 (설정에서 조정, physics.js가 window.BIL_TUNE 읽음)
-const TUNE_DEF={ maxpow:7800, cushE:0.90, roll:0.011, follow:1.3, side:1.4, cushSide:0.34, throw:0.045 };
+const TUNE_DEF={ maxpow:7800, cushE:0.90, roll:0.011, follow:1.3, side:1.4, cushSide:0.5, throw:0.045 };
 window.BIL_TUNE=Object.assign({},TUNE_DEF);
 try{ const saved=JSON.parse(localStorage.getItem('b3d_tune')||'{}'); Object.assign(window.BIL_TUNE,saved); }catch(e){}
 const S=0.001, MAX_SPIN=0.7;
@@ -148,13 +148,14 @@ let aimAngle=-Math.PI/2, power=0.45, spinX=0, spinY=0, thickPos=0.5;
 let animating=false, aimTarget=null;
 let practiceScore=0, practiceTries=0;
 // 기본 연습 패턴 (테이블 비율 좌표 fx,fy: 0~1) — 수구=노랑(id0)
+// sol = 실제 득점 해법 {aim(deg), pow(%), spinX, spinY} (시뮬 탐색으로 검증됨)
 const PRESETS=[
-  ['초구',        [[0,.75,.37],[1,.75,.50],[2,.25,.50]]],
-  ['옆돌리기',     [[0,.80,.30],[2,.55,.50],[1,.30,.70]]],
-  ['뒤돌리기',     [[0,.85,.22],[2,.55,.50],[1,.28,.30]]],
-  ['앞돌리기',     [[0,.82,.50],[2,.50,.32],[1,.40,.68]]],
-  ['제각돌리기',   [[0,.75,.20],[2,.45,.40],[1,.62,.66]]],
-  ['横단(대회전)', [[0,.85,.50],[2,.50,.18],[1,.50,.82]]],
+  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:10,pow:38,sx:0,sy:-0.5}},
+  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:8,pow:38,sx:0.65,sy:0}},
+  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:0,pow:38,sx:0.4,sy:0}},
+  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:74,pow:38,sx:-0.65,sy:0}},
+  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:28,pow:38,sx:0.65,sy:0}},
+  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:4,pow:38,sx:0.4,sy:-0.5}},
 ];
 
 // ───── three ─────
@@ -465,21 +466,34 @@ function loadSetup(s){
   syncBalls(game.balls); drawSpin(); updateAim(); refreshHud();
   saveOv.classList.remove('show');
 }
-function loadPreset(p){
-  p[1].forEach(([id,fx,fy])=>{ const b=game.balls.find(x=>x.id===id); if(b){ b.x=fx*TW; b.y=fy*TH; b.vx=0; b.vy=0; } });
+function loadPreset(p, showSol){
+  p.b.forEach(([id,fx,fy])=>{ const b=game.balls.find(x=>x.id===id); if(b){ b.x=fx*TW; b.y=fy*TH; b.vx=0; b.vy=0; } });
   game.currentPlayer=0; game.phase='aiming'; game.lastResult=null; game._snapshot=null;
-  spinX=0;spinY=0; thickPos=0.5; thk.value=50; pwr.value=45; power=0.45; pwlbl.textContent='파워 45%';
-  // 조준: 수구 → 빨강
-  const cue=game.balls.find(b=>b.id===0), red=game.balls.find(b=>b.id===2);
-  if(cue&&red) aimAngle=Math.atan2(red.y-cue.y, red.x-cue.x);
   document.getElementById('resultOv').classList.remove('show');
+  if(showSol && p.sol){
+    // 실제 해법으로 셋팅(조준/파워/당점) → 바로 SHOT하면 득점
+    aimAngle=p.sol.aim*Math.PI/180; spinX=p.sol.sx; spinY=p.sol.sy;
+    power=p.sol.pow/100; pwr.value=p.sol.pow; pwlbl.textContent='파워 '+p.sol.pow+'%';
+    thickPos=0.5; thk.value=50;
+  } else {
+    // 직접 풀기: 빨강 향해 기본 조준만
+    spinX=0;spinY=0; thickPos=0.5; thk.value=50; pwr.value=45; power=0.45; pwlbl.textContent='파워 45%';
+    const cue=game.balls.find(b=>b.id===0), red=game.balls.find(b=>b.id===2);
+    if(cue&&red) aimAngle=Math.atan2(red.y-cue.y, red.x-cue.x);
+  }
   syncBalls(game.balls); drawSpin(); updateAim(); refreshHud();
   saveOv.classList.remove('show');
 }
 function renderPresets(){ const el=document.getElementById('presetList');
-  el.innerHTML=''; PRESETS.forEach((p,i)=>{ const b=document.createElement('button');
-    b.textContent=p[0]; b.style.cssText='background:#2c4a63;color:#fff;padding:8px 12px;font-size:13px;border-radius:8px;flex:1 1 40%';
-    b.onclick=()=>loadPreset(p); el.appendChild(b); });
+  el.innerHTML=''; PRESETS.forEach((p)=>{ const wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;gap:4px;flex:1 1 46%';
+    const main=document.createElement('button'); main.textContent=p.n;
+    main.style.cssText='background:#2c4a63;color:#fff;padding:8px 6px;font-size:13px;border-radius:8px;flex:1';
+    main.onclick=()=>loadPreset(p,false);   // 직접 풀기
+    const sol=document.createElement('button'); sol.textContent='💡'; sol.title='해법 보기';
+    sol.style.cssText='background:#5a4a2c;color:#fff;padding:8px 9px;font-size:13px;border-radius:8px';
+    sol.onclick=()=>loadPreset(p,true);      // 해법 셋팅
+    wrap.appendChild(main); wrap.appendChild(sol); el.appendChild(wrap); });
 }
 document.getElementById('saveBtn').onclick=()=>{ renderPresets(); renderSetups(); saveOv.classList.add('show'); };
 document.getElementById('saveClose').onclick=()=>saveOv.classList.remove('show');
