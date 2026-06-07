@@ -80,6 +80,7 @@
 </div>
 
 <div class="ov" id="resultOv"><div class="ovcard"><h2 id="rMsg"></h2><p id="rDetail"></p>
+  <img id="rReward" alt="" style="display:none;max-width:240px;max-height:300px;width:auto;border-radius:12px;margin:6px auto 12px;box-shadow:0 6px 24px rgba(0,0,0,.5)">
   <div style="display:flex;gap:10px;justify-content:center">
     <button id="rUndo" style="background:#5b6472;color:#fff">↩ 되돌리기</button>
     <button id="rNext">다음 턴 ▶</button>
@@ -147,6 +148,8 @@ const COLHEX={0:0xe8c800,1:0xf2f2f2,2:0xd5342c};
 let aimAngle=-Math.PI/2, power=0.45, spinX=0, spinY=0, thickPos=0.5;
 let animating=false, aimTarget=null;
 let practiceScore=0, practiceTries=0;
+// 득점 시 보여줄 리워드 이미지 풀 (나중에 reward_02.png… 추가하면 랜덤 출력)
+const REWARDS=['reward_01.png'];
 // 기본 연습 패턴 (테이블 비율 좌표 fx,fy: 0~1) — 수구=노랑(id0)
 // sol = 실제 득점 해법 {aim(deg), pow(%), spinX, spinY} (시뮬 탐색으로 검증됨)
 const PRESETS=[
@@ -157,6 +160,11 @@ const PRESETS=[
   {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:124,pow:42,sx:0.3,sy:-0.4}},
   {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:153,pow:32,sx:0.7,sy:0.4}},
 ];
+// 사용자가 직접 등록한 해법(localStorage) → 기본 sol 덮어씀 (aim 라디안, thick 포함)
+const SOLKEY='b3d_presetsol';
+function getSols(){ try{return JSON.parse(localStorage.getItem(SOLKEY)||'{}');}catch(e){return{};} }
+function setSols(o){ localStorage.setItem(SOLKEY,JSON.stringify(o)); }
+(function(){ const o=getSols(); PRESETS.forEach(p=>{ if(o[p.n]) p.sol=Object.assign({},p.sol,o[p.n]); }); })();
 
 // ───── three ─────
 const canvas=document.getElementById('c');
@@ -381,6 +389,10 @@ function onShotDone(res){
   // 연습 집계: 성공 횟수만, 턴/이닝 없음
   practiceTries++; if(res.score>0) practiceScore++;
   refreshHud();
+  // 득점 리워드 이미지 (성공 시 풀에서 랜덤 1장)
+  const rw=document.getElementById('rReward');
+  if(res.score>0 && REWARDS.length){ rw.src=REWARDS[Math.floor(Math.random()*REWARDS.length)]+'?v=1'; rw.style.display='block'; }
+  else { rw.style.display='none'; rw.removeAttribute('src'); }
   ov.classList.add('show');
 }
 // 연습모드: 턴 안 넘김 — 항상 노란 수구로 다시 조준
@@ -476,7 +488,7 @@ function loadPreset(p, showSol){
     // 실제 해법으로 셋팅(조준/파워/당점) → 바로 SHOT하면 득점
     aimAngle=p.sol.aim*Math.PI/180; spinX=p.sol.sx; spinY=p.sol.sy;
     power=p.sol.pow/100; pwr.value=p.sol.pow; pwlbl.textContent='파워 '+p.sol.pow+'%';
-    thickPos=0.5; thk.value=50;
+    thickPos=(p.sol.thick!=null?p.sol.thick:0.5); thk.value=Math.round(thickPos*100);
   } else {
     // 직접 풀기: 빨강 향해 기본 조준만
     spinX=0;spinY=0; thickPos=0.5; thk.value=50; pwr.value=45; power=0.45; pwlbl.textContent='파워 45%';
@@ -495,7 +507,17 @@ function renderPresets(){ const el=document.getElementById('presetList');
     const sol=document.createElement('button'); sol.textContent='💡'; sol.title='해법 보기';
     sol.style.cssText='background:#5a4a2c;color:#fff;padding:8px 9px;font-size:13px;border-radius:8px';
     sol.onclick=()=>loadPreset(p,true);      // 해법 셋팅
-    wrap.appendChild(main); wrap.appendChild(sol); el.appendChild(wrap); });
+    const bind=document.createElement('button'); bind.textContent='📌'; bind.title='지금 조준/파워/당점/두께를 이 패턴 해법으로 저장';
+    bind.style.cssText='background:#2c5a3a;color:#fff;padding:8px 9px;font-size:13px;border-radius:8px';
+    bind.onclick=()=>{
+      const deg=Math.round(aimAngle*180/Math.PI*10)/10, pw=+pwr.value;
+      const ns={aim:deg,pow:pw,sx:+spinX.toFixed(2),sy:+spinY.toFixed(2),thick:+thickPos.toFixed(3)};
+      const o=getSols(); o[p.n]=ns; setSols(o); p.sol=Object.assign({},p.sol,ns);
+      const sg=(thickPos-0.5)*2,fr=1-Math.abs(sg),e8=Math.round(fr*8),dr=Math.abs(thickPos-0.5)<0.04?'정면':(thickPos<0.5?'좌':'우');
+      bind.textContent='✅'; setTimeout(()=>bind.textContent='📌',1200);
+      alert('["'+p.n+'" 해법 저장]\\n조준 '+deg+'° · 파워 '+pw+'% · 두께 '+e8+'/8 '+dr+' · 당점('+ns.sx+','+ns.sy+')');
+    };
+    wrap.appendChild(main); wrap.appendChild(sol); wrap.appendChild(bind); el.appendChild(wrap); });
 }
 document.getElementById('saveBtn').onclick=()=>{ renderPresets(); renderSetups(); saveOv.classList.add('show'); };
 document.getElementById('saveClose').onclick=()=>saveOv.classList.remove('show');
