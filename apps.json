@@ -326,10 +326,10 @@
     "category": "game"
   },
   {
-    "title": "3쿠션 당구 시뮬레이터",
-    "icon": "https://game.cocy.io/billiards/icon.svg",
-    "url": "https://game.cocy.io/billiards/",
-    "desc": "PBA 3쿠션 당구 물리 시뮬레이터 - 초구, 스핀, 다이아몬드 시스템",
+    "title": "3D 당구 · 3구",
+    "icon": "https://game.cocy.io/billiards3d/icon.svg",
+    "url": "https://game.cocy.io/billiards3d/",
+    "desc": "3D 쓰리쿠션 당구 - 당점·두께·잉글리시 물리, 다이아몬드 시스템",
     "badge": "HOT",
     "platforms": [
       "WEB"
