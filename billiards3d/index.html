@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>당구 3D (프로토)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html,body { height: 100%; background: #0a0d12; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #fff; }
+  #c { display: block; width: 100vw; height: 100svh; height: 100dvh; touch-action: none; }
+  #hud { position: fixed; top: 8px; left: 10px; font-size: 13px; color: #cfe; z-index: 5; text-shadow: 0 1px 2px #000; }
+  #ctrl { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 14px calc(18px + env(safe-area-inset-bottom));
+    display: flex; align-items: center; gap: 12px; z-index: 5;
+    background: linear-gradient(transparent, rgba(0,0,0,0.55)); }
+  #pw { flex: 1; }
+  #pw input { width: 100%; }
+  #pwlbl { font-size: 13px; min-width: 84px; }
+  #shoot { padding: 14px 22px; background: #e8453c; border: none; color: #fff; font-size: 17px; font-weight: 800; border-radius: 12px; }
+  #hint { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 4;
+    background: rgba(0,0,0,0.5); padding: 8px 14px; border-radius: 18px; font-size: 12px; color: #bcd; pointer-events: none; transition: opacity .4s; }
+  #cam { position: fixed; top: 8px; right: 10px; z-index: 5; display:flex; gap:6px; }
+  #cam button { background: rgba(40,46,60,0.85); border:1px solid #678; color:#fff; border-radius:8px; padding:6px 9px; font-size:12px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">3구 · 펠트를 탭해 조준 · 파워 후 치기</div>
+<div id="cam"><button id="camTop">탑뷰</button><button id="camAngle">앵글</button></div>
+<div id="hint">펠트 위를 탭하면 그 방향으로 조준돼요</div>
+<div id="ctrl">
+  <div id="pw"><div id="pwlbl">파워 45%</div><input id="pwr" type="range" min="5" max="100" value="45"></div>
+  <button id="shoot">치기</button>
+</div>
+
+<script src="three.min.js"></script>
+<script src="physics.js"></script>
+<script>
+'use strict';
+const TW = 2840, TH = 1420, R = 30.75;       // mm (대대 3구)
+const S = 0.001;                              // mm → world(m)
+const COLORS = { 0:0xe8c800, 1:0xf2f2f2, 2:0xd5342c }; // 수구(노랑)·흰·빨강
+let balls = [
+  { id:0, x:TW*0.72, y:TH/2+TH*0.13 },
+  { id:1, x:TW*0.72, y:TH/2 },
+  { id:2, x:TW*0.28, y:TH/2 },
+];
+let aimAngle = -Math.PI/2;                     // mm 좌표계 조준각
+let power = 0.45;
+let animating = false;
+
+// ── three 기본 ─────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0d12);
+scene.fog = new THREE.Fog(0x0a0d12, 4, 11);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+const CAM = {
+  angle: { pos:[0, 2.7, 3.0], look:[0,0,0] },
+  top:   { pos:[0, 4.2, 0.01], look:[0,0,0] },
+};
+let camMode = 'angle';
+function applyCam(){ const c=CAM[camMode]; camera.position.set(c.pos[0],c.pos[1],c.pos[2]); camera.lookAt(c.look[0],c.look[1],c.look[2]); }
+
+// 조명
+scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+const key = new THREE.DirectionalLight(0xffffff, 0.9);
+key.position.set(1.5, 4, 1.2); key.castShadow = true;
+key.shadow.mapSize.set(1024,1024); key.shadow.camera.near=0.5; key.shadow.camera.far=12;
+key.shadow.camera.left=-2.5; key.shadow.camera.right=2.5; key.shadow.camera.top=2; key.shadow.camera.bottom=-2;
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xbcd6ff, 0.25); fill.position.set(-2,2,-1.5); scene.add(fill);
+
+// ── 테이블 ─────────────────────────────────────────────────
+const tableW = TW*S, tableH = TH*S, railH = 0.045, railW = 0.06;
+const feltMat = new THREE.MeshStandardMaterial({ color:0x1f7a45, roughness:0.95, metalness:0 });
+const felt = new THREE.Mesh(new THREE.BoxGeometry(tableW, 0.04, tableH), feltMat);
+felt.position.y = -0.02; felt.receiveShadow = true; scene.add(felt);
+// 레일(나무)
+const woodMat = new THREE.MeshStandardMaterial({ color:0x6b4a2b, roughness:0.6, metalness:0.05 });
+function addRail(w,d,x,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,railH,d),woodMat); m.position.set(x,railH/2-0.02,z); m.castShadow=true; m.receiveShadow=true; scene.add(m); }
+addRail(tableW+railW*2, railW, 0, -(tableH/2+railW/2));
+addRail(tableW+railW*2, railW, 0,  (tableH/2+railW/2));
+addRail(railW, tableH, -(tableW/2+railW/2), 0);
+addRail(railW, tableH,  (tableW/2+railW/2), 0);
+// 다이아몬드 포인트
+const diaMat = new THREE.MeshStandardMaterial({ color:0xefe2c0, roughness:0.5 });
+function addDia(x,z){ const m=new THREE.Mesh(new THREE.SphereGeometry(0.009,8,8),diaMat); m.position.set(x,railH-0.018,z); scene.add(m); }
+for(let i=1;i<8;i++){ const x=-tableW/2+tableW*i/8; addDia(x,-(tableH/2+railW/2)); addDia(x,(tableH/2+railW/2)); }
+for(let i=1;i<4;i++){ const z=-tableH/2+tableH*i/4; addDia(-(tableW/2+railW/2),z); addDia((tableW/2+railW/2),z); }
+
+// ── 공 (마킹 텍스처로 회전 보이게) ─────────────────────────
+function ballTexture(hex){
+  const cv=document.createElement('canvas'); cv.width=cv.height=128; const g=cv.getContext('2d');
+  const col='#'+hex.toString(16).padStart(6,'0');
+  g.fillStyle=col; g.fillRect(0,0,128,128);
+  // 대비 점들
+  const spot = (hex===0xf2f2f2)?'#c0392b':(hex===0xd5342c?'#ffe39a':'#5a3a00');
+  const dots=[[64,30],[64,98],[30,64],[98,64],[44,44]];
+  g.fillStyle=spot; dots.forEach(([x,y],i)=>{ g.beginPath(); g.arc(x,y,i===4?12:8,0,7); g.fill(); });
+  const tex=new THREE.CanvasTexture(cv); tex.anisotropy=4; return tex;
+}
+const rW = R*S;
+const ballMeshes = {};
+balls.forEach(b=>{
+  const mat=new THREE.MeshStandardMaterial({ map:ballTexture(COLORS[b.id]), roughness:0.25, metalness:0.05 });
+  const m=new THREE.Mesh(new THREE.SphereGeometry(rW,32,32),mat);
+  m.castShadow=true; m.receiveShadow=true; scene.add(m); ballMeshes[b.id]=m;
+});
+function worldX(mx){ return (mx-TW/2)*S; }
+function worldZ(my){ return (my-TH/2)*S; }
+function placeBalls(arr){ arr.forEach(b=>{ const m=ballMeshes[b.id]; m.position.set(worldX(b.x), rW, worldZ(b.y)); }); }
+placeBalls(balls);
+
+// 조준 가이드 라인
+const aimMat=new THREE.LineDashedMaterial({ color:0xffffff, dashSize:0.04, gapSize:0.03, transparent:true, opacity:0.8 });
+const aimGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
+const aimLine=new THREE.Line(aimGeo,aimMat); scene.add(aimLine);
+function updateAim(){
+  const cue=balls.find(b=>b.id===0);
+  const dx=Math.cos(aimAngle), dy=Math.sin(aimAngle);
+  // 첫 충돌(공/쿠션)까지 길이
+  let len=1200;
+  for(const b of balls){ if(b.id===0)continue; const ox=b.x-cue.x,oy=b.y-cue.y; const proj=ox*dx+oy*dy; if(proj<=0)continue; const perp2=(ox*ox+oy*oy)-proj*proj; if(perp2>(2*R)*(2*R))continue; const t=proj-Math.sqrt((2*R)*(2*R)-perp2); if(t>0)len=Math.min(len,t); }
+  const ex=cue.x+dx*len, ey=cue.y+dy*len;
+  aimGeo.setFromPoints([ new THREE.Vector3(worldX(cue.x),rW,worldZ(cue.y)), new THREE.Vector3(worldX(ex),rW,worldZ(ey)) ]);
+  aimLine.computeLineDistances(); aimLine.visible=!animating;
+}
+updateAim();
+
+// ── 입력: 펠트 탭 → 조준 ───────────────────────────────────
+const ray=new THREE.Raycaster(); const ndc=new THREE.Vector2();
+const planeY=new THREE.Plane(new THREE.Vector3(0,1,0), -rW);
+function pickAim(clientX,clientY){
+  const r=canvas.getBoundingClientRect();
+  ndc.x=((clientX-r.left)/r.width)*2-1; ndc.y=-((clientY-r.top)/r.height)*2+1;
+  ray.setFromCamera(ndc,camera);
+  const pt=new THREE.Vector3(); if(!ray.ray.intersectPlane(planeY,pt))return;
+  const mx=pt.x/S+TW/2, my=pt.z/S+TH/2; const cue=balls.find(b=>b.id===0);
+  aimAngle=Math.atan2(my-cue.y, mx-cue.x); updateAim();
+}
+canvas.addEventListener('pointerdown',e=>{ if(animating)return; pickAim(e.clientX,e.clientY); });
+canvas.addEventListener('pointermove',e=>{ if(animating||e.buttons===0)return; pickAim(e.clientX,e.clientY); });
+
+const pwr=document.getElementById('pwr'), pwlbl=document.getElementById('pwlbl');
+pwr.addEventListener('input',()=>{ power=pwr.value/100; pwlbl.textContent='파워 '+pwr.value+'%'; });
+document.getElementById('camTop').onclick=()=>{ camMode='top'; applyCam(); };
+document.getElementById('camAngle').onclick=()=>{ camMode='angle'; applyCam(); };
+
+// ── 발사 + 애니메이션 ──────────────────────────────────────
+const orient={}; // 굴림 회전 (three는 mesh.quaternion 자체로 누적)
+document.getElementById('shoot').addEventListener('click',()=>{
+  if(animating)return;
+  const MAX=7800; const sp=power*MAX;
+  const shot={ mode:'3ball', tableW:TW, tableH:TH, ballRadius:R, cueId:0,
+    balls: balls.map(b=> b.id===0 ? {...b,vx:Math.cos(aimAngle)*sp,vy:Math.sin(aimAngle)*sp,spinX:0,spinY:0} : {...b,vx:0,vy:0,spinX:0,spinY:0}) };
+  const res=simulate(shot);
+  document.getElementById('hint').style.opacity='0';
+  playAnim(res);
+});
+function playAnim(res){
+  const frames=res.frames; const total=frames[frames.length-1].t; const SPEED=1.4;
+  let simT=0, fi=0, last=null; let prev=frames[0].balls; animating=true; aimLine.visible=false;
+  function step(ts){
+    if(last==null)last=ts; const dtr=Math.min(0.05,(ts-last)/1000); last=ts; simT+=dtr*SPEED;
+    while(fi<frames.length-1 && frames[fi+1].t<=simT) fi++;
+    let cur;
+    if(fi>=frames.length-1) cur=frames[frames.length-1].balls;
+    else { const a=frames[fi],b=frames[fi+1],u=(simT-a.t)/((b.t-a.t)||1);
+      cur=a.balls.map((ba,k)=>{const bb=b.balls[k]||ba; return {id:ba.id,x:ba.x+(bb.x-ba.x)*u,y:ba.y+(bb.y-ba.y)*u,wz:ba.wz};}); }
+    // 위치 + 구름 회전
+    cur.forEach(b=>{ const m=ballMeshes[b.id]; const pb=prev.find(p=>p.id===b.id);
+      m.position.set(worldX(b.x),rW,worldZ(b.y));
+      if(pb){ const ddx=b.x-pb.x, ddy=b.y-pb.y, d=Math.hypot(ddx,ddy);
+        if(d>0.4){ const ang=d*S/rW; const axis=new THREE.Vector3(ddy,0,-ddx).normalize(); m.rotateOnWorldAxis(axis,ang); }
+        if(b.wz){ m.rotateOnWorldAxis(new THREE.Vector3(0,1,0), b.wz*dtr*SPEED*0.6); } }
+    });
+    prev=cur;
+    if(simT>=total){ animating=false; balls=cur.map(b=>({id:b.id,x:b.x,y:b.y})); updateAim();
+      document.getElementById('hud').textContent = res.score>0 ? '득점! 🎉' : '미스 (쿠션 '+res.cushionCount+')';
+      return; }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ── 리사이즈 + 루프 ────────────────────────────────────────
+function resize(){ const w=innerWidth,h=innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+addEventListener('resize',resize); resize(); applyCam();
+(function loop(){ requestAnimationFrame(loop); renderer.render(scene,camera); })();
+</script>
+</body>
+</html>
