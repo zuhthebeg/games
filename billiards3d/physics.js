@@ -117,6 +117,8 @@ function simulate(shot) {
       Math.hypot(b.vx - b.wy * r, b.vy + b.wx * r) < 30);
   }
 
+  const contactPairs = new Set();  // 현재 접촉 중인 쌍 (새 접촉 1회만 히트 등록)
+
   recordFrame();
 
   while (step < PHYSICS.MAX_STEPS && !allStopped()) {
@@ -124,51 +126,43 @@ function simulate(shot) {
     for (let i = 0; i < balls.length; i++) {
       for (let j = i + 1; j < balls.length; j++) {
         const a = balls[i], b = balls[j];
+        const key = a.id < b.id ? a.id + '|' + b.id : b.id + '|' + a.id;
         const dx = b.x - a.x, dy = b.y - a.y;
         const dist = vLen(dx, dy);
         const minDist = 2 * r;
         if (dist < minDist && dist > 1e-9) {
-          // 법선 벡터
           const [nx, ny] = vNorm(dx, dy);
-          // 관통 해소 (겹침 반 씩 밀기)
           const overlap = minDist - dist;
-          a.x -= nx * overlap * 0.5;
-          a.y -= ny * overlap * 0.5;
-          b.x += nx * overlap * 0.5;
-          b.y += ny * overlap * 0.5;
+          a.x -= nx * overlap * 0.5; a.y -= ny * overlap * 0.5;
+          b.x += nx * overlap * 0.5; b.y += ny * overlap * 0.5;
 
-          // 상대 속도 법선 성분
           const dvx = a.vx - b.vx, dvy = a.vy - b.vy;
           const vRel = vDot(dvx, dvy, nx, ny);
-          if (vRel > 0) { // 접근 중일 때만
-            const J = (1 + e_ball) * vRel * 0.5; // 질량 동일
-            a.vx -= J * nx;
-            a.vy -= J * ny;
-            b.vx += J * nx;
-            b.vy += J * ny;
 
-            // throw 효과: 접촉점 상대 접선 표면속도(좌우스핀 wz 포함)로 적구가 밀림
-            const tx = -ny, ty = nx;
-            // 접선 표면속도: 선속도 성분 + 사이드스핀(wz*r) 기여
-            const uT = vDot(dvx, dvy, tx, ty) + (a.wz + b.wz) * r;
-            if (Math.abs(uT) > 1e-3) {
-              const sgn = Math.sign(uT);
-              const Jt = sgn * Math.min(Math.abs(uT) * 0.5, mu_throw_ball * Math.abs(J) + 0);
-              a.vx -= Jt * tx; a.vy -= Jt * ty;
-              b.vx += Jt * tx; b.vy += Jt * ty;
-              // 스핀은 throw에 크게 소모(공 맞은 뒤엔 거의 안 남음)
-              a.wz *= 0.5; b.wz *= 0.5;
-            }
-
-            // (follow/draw는 각속도 ω 유지 + 충돌후 마찰로 자연 발생)
-
-            const type = 'ball-ball';
-            events.push({ t, type, ball1: a.id, ball2: b.id, speed: vRel });
-
-            // 수구 히트 추적 (순서 포함)
+          // 새 접촉이면 히트 등록(점수용) — 접근/분리 무관(얇게 스친 것도 포함)
+          if (!contactPairs.has(key)) {
+            contactPairs.add(key);
+            events.push({ t, type: 'ball-ball', ball1: a.id, ball2: b.id, speed: Math.abs(vRel) });
             if (a.id === cueId) registerCueHit(b.id);
             if (b.id === cueId) registerCueHit(a.id);
           }
+
+          if (vRel > 0) { // 운동량/throw는 접근 중일 때만
+            const J = (1 + e_ball) * vRel * 0.5;
+            a.vx -= J * nx; a.vy -= J * ny;
+            b.vx += J * nx; b.vy += J * ny;
+            const tx = -ny, ty = nx;
+            const uT = vDot(dvx, dvy, tx, ty) + (a.wz + b.wz) * r;
+            if (Math.abs(uT) > 1e-3) {
+              const sgn = Math.sign(uT);
+              const Jt = sgn * Math.min(Math.abs(uT) * 0.5, mu_throw_ball * Math.abs(J));
+              a.vx -= Jt * tx; a.vy -= Jt * ty;
+              b.vx += Jt * tx; b.vy += Jt * ty;
+              a.wz *= 0.5; b.wz *= 0.5;
+            }
+          }
+        } else {
+          contactPairs.delete(key);  // 떨어지면 접촉 해제(다음에 다시 닿으면 새 히트)
         }
       }
     }
