@@ -60,11 +60,10 @@
 
 <div id="hud">
   <span class="badge" id="modeLbl">3구</span>
-  <span class="badge">이닝 <b id="inning">1</b></span>
-  <span id="cuedot"></span>
+  <span class="badge" style="background:rgba(95,207,134,.22);color:#9fe">연습</span>
   <span class="sp"></span>
-  <span class="pscore" id="p1">P1 0</span>
-  <span class="pscore" id="p2">P2 0</span>
+  <span class="pscore" id="pscore" style="color:#9fe">성공 0</span>
+  <span style="font-size:11px;color:#789" id="tries">/ 0회</span>
 </div>
 <button id="undo" disabled>↩ 되돌리기</button>
 <div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button><button id="saveBtn">📍</button><button id="setBtn">⚙</button></div>
@@ -118,8 +117,10 @@
 </div></div>
 
 <div class="ov" id="saveOv"><div class="ovcard" style="text-align:left;min-width:290px;max-height:82vh;overflow:auto">
-  <h2 style="font-size:20px;text-align:center">📍 배치·샷 기록 (연습)</h2>
-  <p style="color:#9ab;font-size:12px;text-align:center;margin-bottom:10px">현재 공 배치 + 조준/파워/당점/두께를 저장해두고 다시 불러와 반복 연습</p>
+  <h2 style="font-size:20px;text-align:center">📍 연습 샷</h2>
+  <div style="color:#9cf;font-size:12px;margin-bottom:6px;font-weight:700">기본 패턴</div>
+  <div id="presetList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
+  <div style="color:#9cf;font-size:12px;margin-bottom:6px;font-weight:700">내 저장 배치</div>
   <button id="saveNow" style="width:100%;background:#4CAF50;color:#012;margin-bottom:10px">＋ 현재 배치·샷 저장</button>
   <div id="saveList" style="font-size:13px"></div>
   <button id="saveClose" style="width:100%;margin-top:10px;background:#444;color:#fff">닫기</button>
@@ -145,6 +146,16 @@ let TARGET=SET.target;
 const COLHEX={0:0xe8c800,1:0xf2f2f2,2:0xd5342c};
 let aimAngle=-Math.PI/2, power=0.45, spinX=0, spinY=0, thickPos=0.5;
 let animating=false, aimTarget=null;
+let practiceScore=0, practiceTries=0;
+// 기본 연습 패턴 (테이블 비율 좌표 fx,fy: 0~1) — 수구=노랑(id0)
+const PRESETS=[
+  ['초구',        [[0,.75,.37],[1,.75,.50],[2,.25,.50]]],
+  ['옆돌리기',     [[0,.80,.30],[2,.55,.50],[1,.30,.70]]],
+  ['뒤돌리기',     [[0,.85,.22],[2,.55,.50],[1,.28,.30]]],
+  ['앞돌리기',     [[0,.82,.50],[2,.50,.32],[1,.40,.68]]],
+  ['제각돌리기',   [[0,.75,.20],[2,.45,.40],[1,.62,.66]]],
+  ['横단(대회전)', [[0,.85,.50],[2,.50,.18],[1,.50,.82]]],
+];
 
 // ───── three ─────
 const canvas=document.getElementById('c');
@@ -366,11 +377,14 @@ function onShotDone(res){
     else if(res.cushBeforeSecond<3) reason = ` · 미스 사유: 2적구 전 쿠션 ${Math.max(0,res.cushBeforeSecond)}회(3회 필요)`;
   }
   document.getElementById('rDetail').textContent = `쿠션 ${res.cushionCount} · 맞힌 공 ${res.hitIds.length}개${reason}`;
-  if(game.scores[0]>=TARGET||game.scores[1]>=TARGET){ showWin(); return; }
+  // 연습 집계: 성공 횟수만, 턴/이닝 없음
+  practiceTries++; if(res.score>0) practiceScore++;
+  refreshHud();
   ov.classList.add('show');
 }
-document.getElementById('rNext').addEventListener('click',()=>{document.getElementById('resultOv').classList.remove('show');game.nextTurn();afterTurn();});
-function afterTurn(){ syncBalls(game.balls); spinX=0;spinY=0;drawSpin(); thickPos=0.5;thk.value=50;applyThickness(); updateAim(); refreshHud(); }
+// 연습모드: 턴 안 넘김 — 항상 노란 수구로 다시 조준
+document.getElementById('rNext').addEventListener('click',()=>{document.getElementById('resultOv').classList.remove('show'); game.currentPlayer=0; game.phase='aiming'; game.lastResult=null; game.simResult=null; afterTurn();});
+function afterTurn(){ game.currentPlayer=0; syncBalls(game.balls); spinX=0;spinY=0;drawSpin(); thickPos=0.5;thk.value=50;applyThickness(); updateAim(); refreshHud(); }
 function showWin(){const w=game.scores[0]>=TARGET?0:1;document.getElementById('wMsg').textContent='P'+(w+1)+' 승리!';document.getElementById('wScore').textContent=`${game.scores[0]} : ${game.scores[1]}`;document.getElementById('winOv').classList.add('show');}
 document.getElementById('wRestart').addEventListener('click',()=>{location.reload();});
 
@@ -393,11 +407,8 @@ function doUndo(){
 undoBtn.addEventListener('click',doUndo);
 document.getElementById('rUndo').addEventListener('click',doUndo);
 function refreshHud(){
-  document.getElementById('inning').textContent=game.inning;
-  const p1=document.getElementById('p1'),p2=document.getElementById('p2');
-  p1.textContent='P1 '+game.scores[0]; p2.textContent='P2 '+game.scores[1];
-  p1.classList.toggle('on',game.currentPlayer===0); p2.classList.toggle('on',game.currentPlayer===1);
-  const cc=game.cueColor(); document.getElementById('cuedot').style.background=cc==='white'?'#f2f2f2':(cc==='red'?'#d5342c':cc);
+  document.getElementById('pscore').textContent='성공 '+practiceScore;
+  document.getElementById('tries').textContent='/ '+practiceTries+'회';
   undoBtn.disabled=!game.canUndo();
 }
 
@@ -454,7 +465,23 @@ function loadSetup(s){
   syncBalls(game.balls); drawSpin(); updateAim(); refreshHud();
   saveOv.classList.remove('show');
 }
-document.getElementById('saveBtn').onclick=()=>{ renderSetups(); saveOv.classList.add('show'); };
+function loadPreset(p){
+  p[1].forEach(([id,fx,fy])=>{ const b=game.balls.find(x=>x.id===id); if(b){ b.x=fx*TW; b.y=fy*TH; b.vx=0; b.vy=0; } });
+  game.currentPlayer=0; game.phase='aiming'; game.lastResult=null; game._snapshot=null;
+  spinX=0;spinY=0; thickPos=0.5; thk.value=50; pwr.value=45; power=0.45; pwlbl.textContent='파워 45%';
+  // 조준: 수구 → 빨강
+  const cue=game.balls.find(b=>b.id===0), red=game.balls.find(b=>b.id===2);
+  if(cue&&red) aimAngle=Math.atan2(red.y-cue.y, red.x-cue.x);
+  document.getElementById('resultOv').classList.remove('show');
+  syncBalls(game.balls); drawSpin(); updateAim(); refreshHud();
+  saveOv.classList.remove('show');
+}
+function renderPresets(){ const el=document.getElementById('presetList');
+  el.innerHTML=''; PRESETS.forEach((p,i)=>{ const b=document.createElement('button');
+    b.textContent=p[0]; b.style.cssText='background:#2c4a63;color:#fff;padding:8px 12px;font-size:13px;border-radius:8px;flex:1 1 40%';
+    b.onclick=()=>loadPreset(p); el.appendChild(b); });
+}
+document.getElementById('saveBtn').onclick=()=>{ renderPresets(); renderSetups(); saveOv.classList.add('show'); };
 document.getElementById('saveClose').onclick=()=>saveOv.classList.remove('show');
 document.getElementById('saveNow').onclick=()=>{ const a=getSetups(); a.push(captureSetup()); setSetups(a); renderSetups(); };
 // 물리 세부설정 슬라이더
