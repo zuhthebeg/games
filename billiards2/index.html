@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>당구 — 3구 대대 / 4구 중대</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d0d1a; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; }
+  #app { display: flex; flex-direction: column; width: 100vw; height: 100dvh; }
+
+  /* ── 시작화면 ── */
+  #start-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex: 1; gap: 20px;
+  }
+  #start-screen h1 { font-size: 28px; letter-spacing: 2px; }
+  .mode-buttons { display: flex; gap: 12px; }
+  .btn-mode {
+    padding: 14px 28px; border: 2px solid #4CAF50; background: transparent;
+    color: #4CAF50; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-mode.selected, .btn-mode:hover { background: #4CAF50; color: #000; }
+  .target-row { display: flex; align-items: center; gap: 10px; }
+  .target-row label { font-size: 14px; color: #aaa; }
+  .target-row input {
+    width: 70px; padding: 8px; background: #1e1e2e; border: 1px solid #555;
+    color: #fff; font-size: 16px; text-align: center; border-radius: 6px;
+  }
+  .btn-start {
+    padding: 16px 48px; background: #4CAF50; border: none;
+    color: #000; font-size: 18px; font-weight: bold; border-radius: 10px;
+    cursor: pointer; transition: transform 0.15s;
+  }
+  .btn-start:hover { transform: scale(1.05); }
+
+  /* ── 게임화면 ── */
+  #game-screen { display: none; flex-direction: column; flex: 1; }
+  #canvas-container { flex: 1; position: relative; }
+  canvas { display: block; width: 100%; height: 100%; }
+
+  /* ── 결과 오버레이 ── */
+  #result-overlay {
+    display: none; position: absolute; inset: 0;
+    background: rgba(0,0,0,0.55); align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px; z-index: 10;
+  }
+  #result-overlay.show { display: flex; }
+  #result-msg { font-size: 36px; font-weight: bold; }
+  #result-detail { font-size: 15px; color: #bbb; }
+  .btn-next {
+    padding: 12px 36px; background: #4CAF50; border: none; color: #000;
+    font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer;
+  }
+
+  /* ── 승리 오버레이 ── */
+  #win-overlay {
+    display: none; position: absolute; inset: 0;
+    background: rgba(0,0,0,0.75); align-items: center; justify-content: center;
+    flex-direction: column; gap: 18px; z-index: 20;
+  }
+  #win-overlay.show { display: flex; }
+  #win-msg { font-size: 40px; font-weight: bold; color: #FFD700; }
+  #win-score { font-size: 22px; color: #eee; }
+  .btn-restart {
+    padding: 14px 40px; background: #4CAF50; border: none; color: #000;
+    font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer;
+  }
+
+  /* ── 힌트 ── */
+  #hint-bar {
+    position: absolute; bottom: 130px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 20px;
+    font-size: 12px; color: #aaa; pointer-events: none; z-index: 5;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- 시작화면 -->
+  <div id="start-screen">
+    <h1>🎱 당구</h1>
+    <div class="mode-buttons">
+      <button class="btn-mode selected" data-mode="3ball">3구 대대</button>
+      <button class="btn-mode" data-mode="4ball">4구 중대</button>
+    </div>
+    <div class="target-row">
+      <label>목표 점수</label>
+      <input type="number" id="target-input" value="15" min="5" max="200" step="5">
+      <label>점</label>
+    </div>
+    <button class="btn-start" id="btn-start">게임 시작</button>
+    <p style="font-size:12px;color:#666;text-align:center;max-width:280px;line-height:1.6">
+      테이블 드래그 → 조준<br>
+      수구 근처 드래그 후 놓기 → 파워 & 발사<br>
+      좌하단 원형 = 당점(스핀)
+    </p>
+  </div>
+
+  <!-- 게임화면 -->
+  <div id="game-screen">
+    <div id="canvas-container">
+      <canvas id="game-canvas"></canvas>
+      <div id="hint-bar">테이블 드래그: 조준 &nbsp;|&nbsp; 수구 근처서 당겨 놓기: 발사</div>
+
+      <!-- 결과 오버레이 -->
+      <div id="result-overlay">
+        <div id="result-msg"></div>
+        <div id="result-detail"></div>
+        <button class="btn-next" id="btn-next">다음 턴 ▶</button>
+      </div>
+
+      <!-- 승리 오버레이 -->
+      <div id="win-overlay">
+        <div id="win-msg"></div>
+        <div id="win-score"></div>
+        <button class="btn-restart" id="btn-restart">처음으로</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="physics.js"></script>
+<script src="game.js"></script>
+<script src="ui.js"></script>
+<script>
+'use strict';
+
+let game = null;
+let ui = null;
+let selectedMode = '3ball';
+
+// ── 시작화면 ──
+document.querySelectorAll('.btn-mode').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedMode = btn.dataset.mode;
+  });
+});
+
+document.getElementById('btn-start').addEventListener('click', startGame);
+document.getElementById('btn-next').addEventListener('click', nextTurn);
+document.getElementById('btn-restart').addEventListener('click', backToStart);
+
+function startGame() {
+  const target = parseInt(document.getElementById('target-input').value) || 15;
+  game = new GameState(selectedMode);
+
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'flex';
+
+  const container = document.getElementById('canvas-container');
+  const canvas = document.getElementById('game-canvas');
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+
+  ui = new BilliardsUI(canvas, game, onShotDone);
+  ui.layout();
+  ui.draw();
+
+  window.addEventListener('resize', () => ui.resize());
+}
+
+function onShotDone(result) {
+  // Show result overlay
+  const overlay = document.getElementById('result-overlay');
+  const msgEl = document.getElementById('result-msg');
+  const detailEl = document.getElementById('result-detail');
+
+  const r = game.lastResult;
+  if (!r) return;
+
+  if (r.score > 0) {
+    msgEl.textContent = `득점! +${r.score}`;
+    msgEl.style.color = '#44ff88';
+  } else if (r.foul) {
+    msgEl.textContent = '파울 -1점';
+    msgEl.style.color = '#ff4444';
+  } else {
+    msgEl.textContent = '미스';
+    msgEl.style.color = '#aaaaaa';
+  }
+
+  const label3 = r.cushionCount !== undefined ? `쿠션: ${r.cushionCount}  ` : '';
+  const hitStr = r.hitIds && r.hitIds.length > 0 ? `맞힌 공: ${r.hitIds.length}개` : '';
+  detailEl.textContent = label3 + hitStr;
+
+  overlay.classList.add('show');
+
+  // Check win condition
+  const targetScore = parseInt(document.getElementById('target-input').value) || 15;
+  if (game.scores[0] >= targetScore || game.scores[1] >= targetScore) {
+    overlay.classList.remove('show');
+    showWin(targetScore);
+    return;
+  }
+}
+
+function nextTurn() {
+  document.getElementById('result-overlay').classList.remove('show');
+  game.nextTurn();
+  ui.draw();
+}
+
+function showWin(target) {
+  const winner = game.scores[0] >= target ? 0 : 1;
+  const overlay = document.getElementById('win-overlay');
+  document.getElementById('win-msg').textContent = `P${winner + 1} 승리!`;
+  document.getElementById('win-score').textContent =
+    `최종 점수: ${game.scores[0]} : ${game.scores[1]}`;
+  overlay.classList.add('show');
+}
+
+function backToStart() {
+  document.getElementById('win-overlay').classList.remove('show');
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('start-screen').style.display = 'flex';
+  game = null; ui = null;
+}
+
+// physics.js 테스트 (콘솔에서 runTests() 실행 가능)
+</script>
+</body>
+</html>
