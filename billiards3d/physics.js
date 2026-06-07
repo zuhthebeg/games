@@ -83,11 +83,13 @@ function simulate(shot) {
   let cushionCount = 0;       // 수구 쿠션 횟수 (3구: 득점 판정용)
   const hitIds = new Set();   // 수구가 맞힌 공 id 집합
   let cueObjCount = 0;        // 수구가 맞힌 '서로 다른' 공 개수(순서)
+  let cushBeforeFirst = -1;   // 1번째 적구 맞히기 전 쿠션 수 (빈쿠션 판정)
   let cushBeforeSecond = -1;  // 2번째 적구 맞히는 순간까지의 쿠션 수
   function registerCueHit(objId) {
     if (hitIds.has(objId)) return;
     hitIds.add(objId);
     cueObjCount++;
+    if (cueObjCount === 1) cushBeforeFirst = cushionCount;  // 1적구 전 쿠션수
     if (cueObjCount === 2) cushBeforeSecond = cushionCount; // 2적구 시점 쿠션수 고정
   }
 
@@ -291,7 +293,7 @@ function simulate(shot) {
   // 마지막 수구 위치도 노출(편의)
   void cueId;
 
-  return { frames, events, cushionCount, cushBeforeSecond, hitIds: [...hitIds], score, foul };
+  return { frames, events, cushionCount, cushBeforeFirst, cushBeforeSecond, hitIds: [...hitIds], score, foul };
 }
 
 // ── 유틸: 샷 입력 빌더 ────────────────────────────────────

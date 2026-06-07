@@ -20,6 +20,22 @@ const MODES = {
       ];
     },
   },
+  '3ball-medium': {
+    label: '3구 중대',
+    tableW: PHYSICS.TABLE_W_MEDIUM,
+    tableH: PHYSICS.TABLE_H_MEDIUM,
+    ballRadius: PHYSICS.BALL_RADIUS_MEDIUM,
+    cueIds: [0, 1],
+    ballColors: ['#e8c800', 'white', 'red'],
+    initialPositions(tw, th) {
+      const cy = th / 2;
+      return [
+        { id: 0, x: tw * 0.75, y: cy - th * 0.13, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+        { id: 1, x: tw * 0.75, y: cy,             vx: 0, vy: 0, spinX: 0, spinY: 0 },
+        { id: 2, x: tw * 0.25, y: cy,             vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      ];
+    },
+  },
   '4ball': {
     label: '4구 중대',
     tableW: PHYSICS.TABLE_W_MEDIUM,

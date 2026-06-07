@@ -38,6 +38,11 @@
   .ovcard button{padding:12px 28px;background:#4CAF50;border:none;color:#000;font-weight:800;border-radius:10px;font-size:15px}
   #hint{position:fixed;top:58%;left:50%;transform:translateX(-50%);z-index:5;background:rgba(0,0,0,.5);
     padding:6px 13px;border-radius:16px;font-size:11px;color:#bcd;pointer-events:none;transition:opacity .4s}
+  .setrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:12px 0;font-size:14px}
+  .seg{display:inline-flex;border:1px solid #567;border-radius:8px;overflow:hidden;flex-shrink:0}
+  .seg button{background:transparent;border:none;color:#9ab;padding:7px 14px;font-weight:700;font-size:13px}
+  .seg button.on{background:#4CAF50;color:#012}
+  .ovcard small{font-weight:400}
 </style>
 </head>
 <body>
@@ -52,7 +57,7 @@
   <span class="pscore" id="p2">P2 0</span>
 </div>
 <button id="undo" disabled>↩ 되돌리기</button>
-<div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button></div>
+<div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button><button id="setBtn">⚙</button></div>
 <div id="hint">펠트 탭=조준 · 두 손가락=카메라 · 당점/두께/파워 후 치기</div>
 
 <div id="ctrl">
@@ -71,15 +76,45 @@
   </div></div></div>
 <div class="ov" id="winOv"><div class="ovcard"><h2 id="wMsg" style="color:#ffd633"></h2><p id="wScore"></p><button id="wRestart">처음으로</button></div></div>
 
+<div class="ov" id="setOv"><div class="ovcard" style="text-align:left;min-width:280px">
+  <h2 style="font-size:22px;text-align:center">⚙ 설정</h2>
+  <div class="setrow"><span>테이블</span><span class="seg"><button data-table="large">대대</button><button data-table="medium">중대</button></span></div>
+  <div class="setrow"><span>빈쿠션 2점제<br><small style="color:#89a">첫 적구 전 3쿠션 성공 시 2점</small></span><span class="seg"><button data-bank="1">ON</button><button data-bank="0">OFF</button></span></div>
+  <div class="setrow"><span>목표 점수</span><input id="setTarget" type="number" min="5" max="200" step="5" style="width:70px;padding:6px;background:#1e1e2e;border:1px solid #555;color:#fff;text-align:center;border-radius:6px"></div>
+  <div style="display:flex;gap:8px;margin-top:14px">
+    <button id="setGuide" style="flex:1;background:#3a6ea5;color:#fff">📖 대대룰 가이드</button>
+    <button id="setNew" style="flex:1;background:#e8453c;color:#fff">새 게임</button>
+  </div>
+  <button id="setClose" style="width:100%;margin-top:8px;background:#444;color:#fff">닫기</button>
+</div></div>
+
+<div class="ov" id="guideOv"><div class="ovcard" style="text-align:left;max-width:340px;max-height:80vh;overflow:auto">
+  <h2 style="font-size:20px;text-align:center">📖 3쿠션(대대) 룰</h2>
+  <div style="font-size:13px;line-height:1.7;color:#dde">
+    • <b>테이블</b>: 포켓 없는 대대(2.84×1.42m). 공 3개 — 노랑·흰(각자 수구), 빨강(공통 적구).<br>
+    • <b>득점</b>: 내 수구로 <b>두 적구를 모두</b> 맞히되, <b>두 번째 적구 맞기 전 쿠션 3회 이상</b> 접촉 → <b>1점</b>.<br>
+    • 성공하면 <b>한 번 더</b>, 실패하면 상대 턴(이닝 종료).<br>
+    • <b>당점</b>: 위=밀어(follow), 아래=끌어(draw), 좌우=회전(english). 회전은 쿠션 반사각·throw에 영향.<br>
+    • <b>빈쿠션 2점제</b>(옵션): 첫 적구를 맞히기 전에 쿠션 3회 이상 친 뒤 성공하면 <b>2점</b>.<br>
+    • <b>수구 교대</b>: P1=노랑, P2=흰.<br>
+    • <b>승리</b>: 목표 점수 선취.
+  </div>
+  <button id="guideClose" style="width:100%;margin-top:14px;background:#4CAF50;color:#000">확인</button>
+</div></div>
+
 <script src="three.min.js?v=2"></script>
-<script src="physics.js?v=2"></script>
-<script src="game.js?v=3"></script>
+<script src="physics.js?v=4"></script>
+<script src="game.js?v=4"></script>
 <script>
 'use strict';
-const TW=2840, TH=1420, R=30.75, S=0.001, rW=R*S, MAX_SPIN=0.7, MAXPOW=7800, TARGET=15;
+// 설정 (localStorage)
+const SET={ table: localStorage.getItem('b3d_table')||'large', bank2: localStorage.getItem('b3d_bank2')==='1', target:+(localStorage.getItem('b3d_target')||15) };
+const MODE = SET.table==='medium' ? '3ball-medium' : '3ball';
+let game=new GameState(MODE);
+const S=0.001, MAX_SPIN=0.7, MAXPOW=7800;
+const TW=game.tableW, TH=game.tableH, R=game.ballRadius, rW=R*S;
+let TARGET=SET.target;
 const COLHEX={0:0xe8c800,1:0xf2f2f2,2:0xd5342c};
-
-let game=new GameState('3ball');
 let aimAngle=-Math.PI/2, power=0.45, spinX=0, spinY=0, thickPos=0.5;
 let animating=false, aimTarget=null;
 
@@ -242,6 +277,8 @@ let lastShot=null;   // 되돌리기 시 복원할 직전 샷 수치
 document.getElementById('shoot').addEventListener('click',()=>{
   if(animating)return; initAudio();
   const res=game.shoot(aimAngle*180/Math.PI, power*MAXPOW, spinX, spinY); if(!res)return;
+  // 빈쿠션 2점제: 첫 적구 전 쿠션 3회 이상 + 득점 → 2점
+  if(SET.bank2 && res.score>0 && res.cushBeforeFirst>=3){ res.score=2; res.bank=true; if(game.lastResult)game.lastResult.score=2; }
   lastShot={aimAngle,powerV:+pwr.value,spinX,spinY,thickPos};   // 발사 직전 셋팅 기억
   document.getElementById('hint').style.opacity='0'; playAnim(res);
 });
@@ -264,7 +301,7 @@ function playAnim(res){
 function onShotDone(res){
   refreshHud();
   const ov=document.getElementById('resultOv');
-  document.getElementById('rMsg').textContent = res.score>0?'득점! +'+res.score:(res.foul?'파울':'미스');
+  document.getElementById('rMsg').textContent = res.score>0?('득점! +'+res.score+(res.bank?' 빈쿠션':'')):(res.foul?'파울':'미스');
   document.getElementById('rMsg').style.color = res.score>0?'#44ff88':(res.foul?'#ff5555':'#aaa');
   document.getElementById('rDetail').textContent = `쿠션 ${res.cushionCount} · 맞힌 공 ${res.hitIds.length}개`;
   if(game.scores[0]>=TARGET||game.scores[1]>=TARGET){ showWin(); return; }
@@ -305,6 +342,30 @@ function refreshHud(){
 // 카메라 버튼
 document.getElementById('camAngle').onclick=()=>{camMode='angle';orbit={az:0,el:0,dist:1};applyCam();};
 document.getElementById('camTop').onclick=()=>{camMode='top';orbit={az:0,el:0,dist:1};applyCam();};
+
+// ───── 설정 ─────
+const setOv=document.getElementById('setOv'), guideOv=document.getElementById('guideOv');
+function refreshSetUI(){
+  setOv.querySelectorAll('[data-table]').forEach(b=>b.classList.toggle('on', b.dataset.table===SET.table));
+  setOv.querySelectorAll('[data-bank]').forEach(b=>b.classList.toggle('on', (b.dataset.bank==='1')===SET.bank2));
+  document.getElementById('setTarget').value=TARGET;
+}
+document.getElementById('setBtn').onclick=()=>{ refreshSetUI(); setOv.classList.add('show'); };
+document.getElementById('setClose').onclick=()=>setOv.classList.remove('show');
+setOv.querySelectorAll('[data-table]').forEach(b=>b.onclick=()=>{
+  const v=b.dataset.table; if(v===SET.table)return;
+  localStorage.setItem('b3d_table',v);
+  if(confirm((v==='medium'?'중대':'대대')+'로 바꾸려면 새 게임이 시작됩니다. 계속?')) location.reload();
+});
+setOv.querySelectorAll('[data-bank]').forEach(b=>b.onclick=()=>{
+  SET.bank2 = b.dataset.bank==='1'; localStorage.setItem('b3d_bank2', SET.bank2?'1':'0'); refreshSetUI();
+});
+document.getElementById('setTarget').onchange=e=>{ TARGET=Math.max(1,+e.target.value||15); localStorage.setItem('b3d_target',TARGET); };
+document.getElementById('setNew').onclick=()=>{ if(confirm('새 게임을 시작할까요?')) location.reload(); };
+document.getElementById('setGuide').onclick=()=>guideOv.classList.add('show');
+document.getElementById('guideClose').onclick=()=>guideOv.classList.remove('show');
+// 종목 뱃지
+document.getElementById('modeLbl').textContent = SET.table==='medium'?'3구 중대':'3구 대대';
 
 // 루프
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
