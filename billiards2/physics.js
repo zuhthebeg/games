@@ -54,7 +54,8 @@ function simulate(shot) {
   const k_side = PHYSICS.CUSHION_SIDE_FACTOR;
   const mu_throw = PHYSICS.THROW_FRICTION;
   const mu_throw_ball = 0.045;  // 공-공 throw 상한(좌우스핀 영향, 최대 ~3도)
-  const K_CUSH_SIDE = 0.16;     // 쿠션 사이드스핀 반사각 영향
+  const K_CUSH_SIDE = 0.34;     // 쿠션 사이드스핀 반사각/회전력 추가
+  const CUSH_WZ_KEEP = 0.6;     // 쿠션 후 사이드스핀 유지(다단 쿠션 누적)
 
   // 각속도 초기화: 모든 공 wx,wy(구름축)·wz(수직축=좌우스핀) = 0
   for (const b of balls) { b.wx = b.wx || 0; b.wy = b.wy || 0; b.wz = b.wz || 0; }
@@ -171,7 +172,7 @@ function simulate(shot) {
         b.x = r;
         b.vx = Math.abs(b.vx) * e_cush;
         b.vy = b.vy * (1 - mu_s * 0.3) + wzSurf * K_CUSH_SIDE;
-        b.wz *= 0.45;
+        b.wz *= CUSH_WZ_KEEP;
         cushionHit = true; side = 'left';
       }
       // 우 쿠션 (법선 −x). 접선 반대
@@ -179,7 +180,7 @@ function simulate(shot) {
         b.x = tableW - r;
         b.vx = -Math.abs(b.vx) * e_cush;
         b.vy = b.vy * (1 - mu_s * 0.3) - wzSurf * K_CUSH_SIDE;
-        b.wz *= 0.45;
+        b.wz *= CUSH_WZ_KEEP;
         cushionHit = true; side = 'right';
       }
       // 상 쿠션 (법선 +y). 접선=x
@@ -187,7 +188,7 @@ function simulate(shot) {
         b.y = r;
         b.vy = Math.abs(b.vy) * e_cush;
         b.vx = b.vx * (1 - mu_s * 0.3) - wzSurf * K_CUSH_SIDE;
-        b.wz *= 0.45;
+        b.wz *= CUSH_WZ_KEEP;
         cushionHit = true; side = 'top';
       }
       // 하 쿠션 (법선 −y)
@@ -195,7 +196,7 @@ function simulate(shot) {
         b.y = tableH - r;
         b.vy = -Math.abs(b.vy) * e_cush;
         b.vx = b.vx * (1 - mu_s * 0.3) + wzSurf * K_CUSH_SIDE;
-        b.wz *= 0.45;
+        b.wz *= CUSH_WZ_KEEP;
         cushionHit = true; side = 'bottom';
       }
 

@@ -251,6 +251,8 @@ class BilliardsUI {
     // 두께바
     const tb = this._thickBar;
     if (sy > tb.y - 16 && sy < tb.y + tb.h + 16 && sx > tb.x - 6 && sx < tb.x + tb.w + 6) {
+      // 드래그 시작 시 컷 방향 고정(좌우 왔다갔다 방지)
+      this._thickLock = this._aimTarget || this._pickTarget();
       this._mode = 'thick'; this._updateThickness(sx); this.draw(); return;
     }
     // 테이블 → 조준
@@ -267,7 +269,7 @@ class BilliardsUI {
     this.draw();
   }
 
-  _onUp() { this._mode = null; }
+  _onUp() { this._mode = null; this._thickLock = null; }
 
   _updateAim(sx, sy) {
     const cue = this.game.cueBall();
@@ -306,7 +308,8 @@ class BilliardsUI {
     const tb = this._thickBar;
     const frac = Math.max(0, Math.min(1, (sx - tb.x) / tb.w));
     this.targetThickness = frac;
-    const tgt = this._aimTarget || this._pickTarget();
+    // 드래그 동안 고정된 컷 방향 사용(없으면 현재 타겟)
+    const tgt = this._thickLock || this._aimTarget || this._pickTarget();
     if (!tgt) return;
     const cue = this.game.cueBall();
     if (!cue) return;
