@@ -374,9 +374,11 @@ class BilliardsUI {
     const { cx, cy, r } = this._spinWidget;
     const miscue = Math.hypot(this.spinX, this.spinY) > MAX_SPIN + 0.02;
 
-    // 흰 공 베이스
+    // 수구 색 베이스(3구는 노랑, 4구는 흰)
+    const cueCol = (this.game.cfg.ballColors && this.game.cfg.ballColors[0]) || 'white';
     const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
-    grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, '#d8d8d8');
+    grad.addColorStop(0, this._lighten(cueCol));
+    grad.addColorStop(1, cueCol === 'white' ? '#d8d8d8' : cueCol);
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fillStyle = grad; ctx.fill();
     ctx.strokeStyle = miscue ? '#ff3b3b' : '#999'; ctx.lineWidth = 2.5; ctx.stroke();

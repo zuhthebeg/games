@@ -7,14 +7,14 @@ const MODES = {
     tableW: PHYSICS.TABLE_W_LARGE,
     tableH: PHYSICS.TABLE_H_LARGE,
     ballRadius: PHYSICS.BALL_RADIUS_LARGE,
-    ballColors: ['white', '#e8e800', 'red', 'red'], // 수구, 상대수구 없음, 적1, 적2
-    // id: 0=수구(흰), 1=적1(빨강), 2=적2(빨강)
+    ballColors: ['#e8c800', 'white', 'red'], // id0=수구(노랑), id1=흰(적), id2=빨강(적)
+    // 쓰리쿠션 초구 배치: 빨강=foot spot(원거리), 흰=head spot, 노랑 수구=head string 옆
     initialPositions(tw, th) {
-      const cx = tw / 2, cy = th / 2;
+      const cy = th / 2;
       return [
-        { id: 0, x: cx - tw * 0.18, y: cy, vx: 0, vy: 0, spinX: 0, spinY: 0 },
-        { id: 1, x: cx + tw * 0.18, y: cy - th * 0.15, vx: 0, vy: 0, spinX: 0, spinY: 0 },
-        { id: 2, x: cx + tw * 0.18, y: cy + th * 0.15, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+        { id: 0, x: tw * 0.25, y: cy - th * 0.13, vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 노랑 수구
+        { id: 1, x: tw * 0.25, y: cy,             vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 흰 head spot
+        { id: 2, x: tw * 0.75, y: cy,             vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 빨강 foot spot
       ];
     },
   },
