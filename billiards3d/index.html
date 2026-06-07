@@ -67,7 +67,7 @@
 </div>
 <button id="undo" disabled>↩ 되돌리기</button>
 <div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button><button id="saveBtn">📍</button><button id="setBtn">⚙</button></div>
-<div id="hint">펠트 탭=조준 · 두 손가락=카메라 · 당점/두께/파워 후 치기</div>
+<div id="hint">펠트 탭=조준 · 공 끌기=위치이동 · 두 손가락=카메라 · 당점/두께/파워 후 치기</div>
 
 <canvas id="thpv" width="150" height="104"></canvas>
 <div id="ctrl">
@@ -124,6 +124,10 @@
   <div style="color:#9cf;font-size:12px;margin-bottom:6px;font-weight:700">내 저장 배치</div>
   <button id="saveNow" style="width:100%;background:#4CAF50;color:#012;margin-bottom:10px">＋ 현재 배치·샷 저장</button>
   <div id="saveList" style="font-size:13px"></div>
+  <div style="display:flex;gap:6px;margin-top:8px">
+    <button id="setExport" style="flex:1;background:#3a6ea5;color:#fff;font-size:12px">⬆ JSON 내보내기</button>
+    <button id="setImport" style="flex:1;background:#6a4a8a;color:#fff;font-size:12px">⬇ JSON 가져오기</button>
+  </div>
   <button id="saveClose" style="width:100%;margin-top:10px;background:#444;color:#fff">닫기</button>
 </div></div>
 
@@ -277,20 +281,29 @@ function evMM(cx,cy){const r=canvas.getBoundingClientRect(),ndc=new THREE.Vector
   const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-rW), pt=new THREE.Vector3();
   if(!ray.ray.intersectPlane(plane,pt))return null; return {mx:pt.x/S+TW/2,my:pt.z/S+TH/2};}
 function aimAt(cx,cy){const p=evMM(cx,cy); if(!p)return; const cue=game.cueBall(); aimAngle=Math.atan2(p.my-cue.y,p.mx-cue.x); syncThickFromAim(); updateAim();}
+// 연습모드 공 끌기: 포인터 근처(≈1.8R) 공 잡기
+let dragBall=null;
+function ballAt(mx,my){let best=1.8*R,hit=null; for(const b of game.balls){const d=Math.hypot(b.x-mx,b.y-my); if(d<best){best=d;hit=b;}} return hit;}
+function dragMove(cx,cy){const p=evMM(cx,cy); if(!p||!dragBall)return;
+  dragBall.x=Math.max(R,Math.min(TW-R,p.mx)); dragBall.y=Math.max(R,Math.min(TH-R,p.my)); dragBall.vx=0; dragBall.vy=0;
+  syncBalls(game.balls); aimTarget=null; updateAim();}
 canvas.addEventListener('touchstart',e=>{e.preventDefault(); if(animating)return;
   if(e.touches.length>=2){touchMode='cam';const a=e.touches[0],b=e.touches[1];pinchStart={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),dist:orbit.dist};lastMid={x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2};}
-  else {touchMode='aim';aimAt(e.touches[0].clientX,e.touches[0].clientY);}},{passive:false});
+  else {const t=e.touches[0],p=evMM(t.clientX,t.clientY),gb=p&&ballAt(p.mx,p.my);
+    if(gb){touchMode='drag';dragBall=gb;}else{touchMode='aim';aimAt(t.clientX,t.clientY);}}},{passive:false});
 canvas.addEventListener('touchmove',e=>{e.preventDefault(); if(animating)return;
   if(touchMode==='cam'&&e.touches.length>=2){const a=e.touches[0],b=e.touches[1],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
     orbit.dist=Math.max(0.55,Math.min(1.6,pinchStart.dist*pinchStart.d/d));
     const mid={x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2};
     orbit.az-=(mid.x-lastMid.x)*0.005; orbit.el+=(mid.y-lastMid.y)*0.004; lastMid=mid; applyCam();}
+  else if(touchMode==='drag'){dragMove(e.touches[0].clientX,e.touches[0].clientY);}
   else if(touchMode==='aim'){aimAt(e.touches[0].clientX,e.touches[0].clientY);}},{passive:false});
-canvas.addEventListener('touchend',e=>{if(e.touches.length===0)touchMode=null;},{passive:false});
+canvas.addEventListener('touchend',e=>{if(e.touches.length===0){touchMode=null;dragBall=null;}},{passive:false});
 // 마우스(데스크탑)
-canvas.addEventListener('mousedown',e=>{if(animating)return;touchMode='aim';aimAt(e.clientX,e.clientY);});
-canvas.addEventListener('mousemove',e=>{if(animating||touchMode!=='aim'||e.buttons===0)return;aimAt(e.clientX,e.clientY);});
-addEventListener('mouseup',()=>{touchMode=null;});
+canvas.addEventListener('mousedown',e=>{if(animating)return;const p=evMM(e.clientX,e.clientY),gb=p&&ballAt(p.mx,p.my);
+  if(gb){touchMode='drag';dragBall=gb;}else{touchMode='aim';aimAt(e.clientX,e.clientY);}});
+canvas.addEventListener('mousemove',e=>{if(animating||e.buttons===0)return; if(touchMode==='drag')dragMove(e.clientX,e.clientY); else if(touchMode==='aim')aimAt(e.clientX,e.clientY);});
+addEventListener('mouseup',()=>{touchMode=null;dragBall=null;});
 
 // ───── 당점 위젯 ─────
 const spinCv=document.getElementById('spin'), sg=spinCv.getContext('2d');
@@ -350,15 +363,19 @@ function sfx(k, speed){ if(!AC)return; if(AC.state==='suspended')AC.resume();
 
 // ───── 발사 + 애니 ─────
 let lastShot=null;   // 되돌리기 시 복원할 직전 샷 수치
-document.getElementById('shoot').addEventListener('click',()=>{
-  if(animating)return; initAudio();
-  const res=game.shoot(aimAngle*180/Math.PI, power*MAXPOW, spinX, spinY); if(!res)return;
+function fireShot(){
+  if(animating)return false; initAudio();
+  // 당점 미스큐 방지: 입력 한계(MAX_SPIN)로 클램프 (해법값이 한계 넘으면 샷이 안 나가던 버그)
+  const slen=Math.hypot(spinX,spinY); if(slen>MAX_SPIN){spinX*=MAX_SPIN/slen;spinY*=MAX_SPIN/slen;drawSpin();}
+  const res=game.shoot(aimAngle*180/Math.PI, power*MAXPOW, spinX, spinY); if(!res)return false;
   // 빈쿠션 2점제: 첫 적구 전 쿠션 3회 이상 + 득점 → 2점
   if(SET.bank2 && res.score>0 && res.cushBeforeFirst>=3){ res.score=2; res.bank=true; if(game.lastResult)game.lastResult.score=2; }
   lastShot={aimAngle,powerV:+pwr.value,spinX,spinY,thickPos};   // 발사 직전 셋팅 기억
   sfx('cue', power);   // 큐팁 타격음(발사, 파워 반영)
   document.getElementById('hint').style.opacity='0'; playAnim(res);
-});
+  return true;
+}
+document.getElementById('shoot').addEventListener('click',fireShot);
 function playAnim(res){
   const frames=res.frames,total=frames[frames.length-1].t,SPEED=1.4;
   const evq=[];let lb=-1,lc=-1;for(const e of res.events||[]){if(e.type==='ball-ball'){if(e.t-lb>0.04){evq.push({t:e.t,s:'ball',sp:Math.abs(e.speed||1500)});lb=e.t;}}else if(e.type==='cushion'){if(e.t-lc>0.05){evq.push({t:e.t,s:'cushion',sp:1500});lc=e.t;}}}
@@ -459,11 +476,13 @@ function captureSetup(){ return { name:'배치 '+(getSetups().length+1), table:S
   aim:aimAngle, power:+pwr.value, spinX, spinY, thick:thickPos, cur:game.currentPlayer }; }
 function renderSetups(){ const list=document.getElementById('saveList'); const arr=getSetups();
   if(!arr.length){ list.innerHTML='<div style="color:#789;padding:6px 0">저장된 배치 없음</div>'; return; }
-  list.innerHTML=arr.map((s,i)=>`<div style="display:flex;gap:6px;align-items:center;margin:6px 0">
+  list.innerHTML=arr.map((s,i)=>`<div style="display:flex;gap:5px;align-items:center;margin:6px 0">
     <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name} <small style="color:#789">${s.table==='medium'?'중대':'대대'}</small></span>
-    <button data-load="${i}" style="background:#3a6ea5;color:#fff;padding:6px 10px;font-size:12px">불러오기</button>
-    <button data-del="${i}" style="background:#a33;color:#fff;padding:6px 9px;font-size:12px">✕</button></div>`).join('');
+    <button data-load="${i}" style="background:#3a6ea5;color:#fff;padding:6px 9px;font-size:12px">불러오기</button>
+    <button data-ren="${i}" style="background:#5a6a4a;color:#fff;padding:6px 8px;font-size:12px" title="이름변경">✏</button>
+    <button data-del="${i}" style="background:#a33;color:#fff;padding:6px 8px;font-size:12px">✕</button></div>`).join('');
   list.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>loadSetup(getSetups()[+b.dataset.load]));
+  list.querySelectorAll('[data-ren]').forEach(b=>b.onclick=()=>{ const a=getSetups(),i=+b.dataset.ren; const nn=prompt('샷 이름',a[i].name); if(nn&&nn.trim()){a[i].name=nn.trim();setSetups(a);renderSetups();} });
   list.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ const a=getSetups(); a.splice(+b.dataset.del,1); setSetups(a); renderSetups(); });
 }
 function loadSetup(s){
@@ -487,6 +506,7 @@ function loadPreset(p, showSol){
     window.BIL_TUNE=Object.assign({},TUNE_DEF); saveTune(); buildTune();
     // 실제 해법으로 셋팅(조준/파워/당점) → 바로 SHOT하면 득점
     aimAngle=p.sol.aim*Math.PI/180; spinX=p.sol.sx; spinY=p.sol.sy;
+    const sl=Math.hypot(spinX,spinY); if(sl>MAX_SPIN){spinX*=MAX_SPIN/sl;spinY*=MAX_SPIN/sl;} // 미스큐 방지
     power=p.sol.pow/100; pwr.value=p.sol.pow; pwlbl.textContent='파워 '+p.sol.pow+'%';
     thickPos=(p.sol.thick!=null?p.sol.thick:0.5); thk.value=Math.round(thickPos*100);
   } else {
@@ -504,9 +524,9 @@ function renderPresets(){ const el=document.getElementById('presetList');
     const main=document.createElement('button'); main.textContent=p.n;
     main.style.cssText='background:#2c4a63;color:#fff;padding:8px 6px;font-size:13px;border-radius:8px;flex:1';
     main.onclick=()=>loadPreset(p,false);   // 직접 풀기
-    const sol=document.createElement('button'); sol.textContent='💡'; sol.title='해법 보기';
+    const sol=document.createElement('button'); sol.textContent='💡'; sol.title='해법 셋팅 후 자동 샷';
     sol.style.cssText='background:#5a4a2c;color:#fff;padding:8px 9px;font-size:13px;border-radius:8px';
-    sol.onclick=()=>loadPreset(p,true);      // 해법 셋팅
+    sol.onclick=()=>{ loadPreset(p,true); setTimeout(fireShot,650); };  // 해법 셋팅 → 자동 발사
     const bind=document.createElement('button'); bind.textContent='📌'; bind.title='지금 조준/파워/당점/두께를 이 패턴 해법으로 저장';
     bind.style.cssText='background:#2c5a3a;color:#fff;padding:8px 9px;font-size:13px;border-radius:8px';
     bind.onclick=()=>{
@@ -522,6 +542,20 @@ function renderPresets(){ const el=document.getElementById('presetList');
 document.getElementById('saveBtn').onclick=()=>{ renderPresets(); renderSetups(); saveOv.classList.add('show'); };
 document.getElementById('saveClose').onclick=()=>saveOv.classList.remove('show');
 document.getElementById('saveNow').onclick=()=>{ const a=getSetups(); a.push(captureSetup()); setSetups(a); renderSetups(); };
+// JSON 내보내기/가져오기 (사용자↔개발자 샷 공유)
+document.getElementById('setExport').onclick=async()=>{
+  const arr=getSetups(); if(!arr.length){alert('저장된 배치가 없어요.');return;}
+  const json=JSON.stringify(arr,null,2);
+  try{ await navigator.clipboard.writeText(json); alert('샷 '+arr.length+'개 JSON을 클립보드에 복사했어요.\\n붙여넣어서 보내주세요.'); }
+  catch(e){ prompt('아래 JSON을 복사해서 보내주세요:', json); }
+};
+document.getElementById('setImport').onclick=()=>{
+  const txt=prompt('JSON을 붙여넣으세요 (기존 목록에 추가됩니다):'); if(!txt)return;
+  try{ const inc=JSON.parse(txt); if(!Array.isArray(inc))throw 0;
+    const a=getSetups(); inc.forEach(s=>{ if(s&&s.balls&&Array.isArray(s.balls)) a.push(s); });
+    setSetups(a); renderSetups(); alert(inc.length+'개 가져왔어요.');
+  }catch(e){ alert('JSON 형식이 올바르지 않아요.'); }
+};
 // 물리 세부설정 슬라이더
 const TUNE_META=[
   ['maxpow','파워 최대',5000,11000,100,0],
