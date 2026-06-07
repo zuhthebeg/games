@@ -7,7 +7,8 @@ const MODES = {
     tableW: PHYSICS.TABLE_W_LARGE,
     tableH: PHYSICS.TABLE_H_LARGE,
     ballRadius: PHYSICS.BALL_RADIUS_LARGE,
-    ballColors: ['#e8c800', 'white', 'red'], // id0=수구(노랑), id1=흰(적), id2=빨강(적)
+    cueIds: [0, 1],   // P1 수구=노랑(id0), P2 수구=흰(id1)
+    ballColors: ['#e8c800', 'white', 'red'], // id0=노랑, id1=흰, id2=빨강
     // 쓰리쿠션 초구: 빨강=화면 위(원거리 foot spot), 노랑 수구·흰=화면 아래(head 쪽)
     // 회전렌더에서 작은 x = 화면 위 → 빨강 x작게, 수구/흰 x크게
     initialPositions(tw, th) {
@@ -24,8 +25,10 @@ const MODES = {
     tableW: PHYSICS.TABLE_W_MEDIUM,
     tableH: PHYSICS.TABLE_H_MEDIUM,
     ballRadius: PHYSICS.BALL_RADIUS_MEDIUM,
-    // id: 0=수구(흰), 1=빨강1, 2=빨강2, 3=상대수구(노랑)
-    ballColors: ['white', 'red', 'red', '#e8e800'],
+    // id: 0=흰, 1=빨강1, 2=빨강2, 3=노랑. P1 수구=흰(0), P2 수구=노랑(3)
+    cueIds: [0, 3],
+    redIds: [1, 2],
+    ballColors: ['white', 'red', 'red', '#e8c800'],
     initialPositions(tw, th) {
       const cx = tw / 2, cy = th / 2;
       return [
@@ -59,12 +62,21 @@ class GameState {
   get tableH() { return this.cfg.tableH; }
   get ballRadius() { return this.cfg.ballRadius; }
 
-  /** 발사. 수구(id=0)에 속도 부여 */
+  /** 현재 플레이어의 수구 id (P1/P2 교대) */
+  cueId() {
+    const ids = this.cfg.cueIds || [0, 0];
+    return ids[this.currentPlayer] != null ? ids[this.currentPlayer] : ids[0];
+  }
+  cueBall() { const id = this.cueId(); return this.balls.find(b => b.id === id); }
+  cueColor() { return this.cfg.ballColors[this.cueId()] || 'white'; }
+
+  /** 발사. 현재 플레이어 수구에 속도 부여 */
   shoot(angleDeg, powerMmPerSec, spinX, spinY) {
     if (this.phase !== 'aiming') return null;
 
     const rad = angleDeg * Math.PI / 180;
-    const cueBall = this.balls.find(b => b.id === 0);
+    const cueId = this.cueId();
+    const cueBall = this.balls.find(b => b.id === cueId);
     if (!cueBall) return null;
 
     // 미스큐 체크 (ui.js MAX_SPIN=0.7 과 일치, 약간 여유)
@@ -82,7 +94,7 @@ class GameState {
     };
 
     const shotBalls = this.balls.map(b => {
-      if (b.id === 0) {
+      if (b.id === cueId) {
         return { ...b, vx: Math.cos(rad) * powerMmPerSec, vy: Math.sin(rad) * powerMmPerSec, spinX, spinY };
       }
       return { ...b, vx: 0, vy: 0 };
@@ -94,6 +106,9 @@ class GameState {
       tableH: this.tableH,
       ballRadius: this.ballRadius,
       balls: shotBalls,
+      cueId,
+      redIds: this.cfg.redIds,
+      oppCueId: (this.cfg.cueIds || [])[1 - this.currentPlayer],
     };
 
     this.phase = 'simulating';

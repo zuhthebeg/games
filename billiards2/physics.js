@@ -42,6 +42,7 @@ function cloneBalls(balls) {
  */
 function simulate(shot) {
   const { mode, tableW, tableH, ballRadius } = shot;
+  const cueId = shot.cueId != null ? shot.cueId : 0;  // 수구 id (3구: 노랑0/흰1 교대)
   const balls = cloneBalls(shot.balls);
   const r = ballRadius;
   const mu_r = PHYSICS.ROLLING_FRICTION;
@@ -115,8 +116,8 @@ function simulate(shot) {
             b.vx += Jt * tx;
             b.vy += Jt * ty;
 
-            // spinY 효과 (follow/draw): 수구가 a=0일 때만
-            if (a.id === 0) {
+            // spinY 효과 (follow/draw): 수구일 때만
+            if (a.id === cueId) {
               const spd = vLen(a.vx, a.vy);
               a.vx += a.spinY * 0.2 * spd * nx * 0.3;
               a.vy += a.spinY * 0.2 * spd * ny * 0.3;
@@ -126,8 +127,8 @@ function simulate(shot) {
             events.push({ t, type, ball1: a.id, ball2: b.id });
 
             // 수구 히트 추적
-            if (a.id === 0) hitIds.add(b.id);
-            if (b.id === 0) hitIds.add(a.id);
+            if (a.id === cueId) hitIds.add(b.id);
+            if (b.id === cueId) hitIds.add(a.id);
           }
         }
       }
@@ -177,7 +178,7 @@ function simulate(shot) {
 
       if (cushionHit) {
         events.push({ t, type: 'cushion', ball1: b.id, cushionSide: side });
-        if (b.id === 0) cushionCount++;
+        if (b.id === cueId) cushionCount++;
       }
     }
 
@@ -220,16 +221,20 @@ function simulate(shot) {
   let foul = false;
 
   if (mode === '3ball') {
-    // 수구가 적구1(id1)과 적구2(id2) 모두 맞히고, 쿠션 3회 이상
-    const hit1 = hitIds.has(1), hit2 = hitIds.has(2);
-    if (hit1 && hit2 && cushionCount >= 3) score = 1;
+    // 수구(cueId)가 나머지 두 공 모두 맞히고 쿠션 3회 이상
+    const others = balls.map(b => b.id).filter(id => id !== cueId);
+    const allHit = others.every(id => hitIds.has(id));
+    if (allHit && cushionCount >= 3) score = 1;
   } else if (mode === '4ball') {
-    // 수구가 빨강 2개(id1, id2) 모두 맞히면 1점
-    const hit1 = hitIds.has(1), hit2 = hitIds.has(2);
-    if (hit1 && hit2) score = 1;
-    // 상대수구(id3) 맞히면 파울 (옵션)
-    if (hitIds.has(3)) foul = true;
+    // 수구가 빨강 2개(REDS) 모두 맞히면 1점. 상대수구 맞으면 파울
+    const REDS = (shot.redIds && shot.redIds.length) ? shot.redIds : [1, 2];
+    const oppCueId = shot.oppCueId != null ? shot.oppCueId : 3;
+    if (REDS.every(id => hitIds.has(id))) score = 1;
+    if (hitIds.has(oppCueId)) foul = true;
   }
+
+  // 마지막 수구 위치도 노출(편의)
+  void cueId;
 
   return { frames, events, cushionCount, hitIds: [...hitIds], score, foul };
 }

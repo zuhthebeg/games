@@ -23,8 +23,10 @@ class BilliardsUI {
     this.panY = 0;
     this._pinch = null;     // { startDist, startZoom, lastMid }
 
-    // 두께 미리보기 상태 (가이드 계산 시 갱신)
-    this._thickness = null; // { frac, cutDir } | null
+    // 두께 미리보기/조절 상태
+    this._thickness = null;   // 가이드 계산 시 갱신 { frac, side, ballColor }
+    this._aimTarget = null;   // 현재 조준이 향한 1목적구 { ball, side }
+    this.targetThickness = 0.5;
 
     // 드래그 상태
     this._mode = null;      // 'aim' | 'spin' | 'power' | null
@@ -49,7 +51,7 @@ class BilliardsUI {
     const g = this.game;
 
     const headerH = 56;
-    const footerH = Math.max(150, H * 0.20);
+    const footerH = Math.max(176, H * 0.24);
     const padX = 10;
     const availW = W - padX * 2;
     const availH = H - headerH - footerH;
@@ -88,10 +90,11 @@ class BilliardsUI {
     const btnW = Math.min(110, W * 0.26), btnH = 54;
     this._shotBtn = { x: W - btnW - padX, y: H - btnH - 18, w: btnW, h: btnH };
 
-    // 파워바 (가운데, 당점위젯과 샷버튼 사이)
+    // 파워바 + 두께바 (가운데, 당점위젯과 샷버튼 사이에 2단)
     const pbX = this._spinWidget.cx + wR + 16;
     const pbW = this._shotBtn.x - pbX - 16;
-    this._powerBar = { x: pbX, y: H - footerH * 0.55, w: pbW, h: 22 };
+    this._powerBar = { x: pbX, y: H - footerH * 0.66, w: pbW, h: 20 };
+    this._thickBar = { x: pbX, y: H - footerH * 0.30, w: pbW, h: 20 };
   }
 
   // ── 좌표 변환 (회전 + 줌/팬 지원) ────────────────────────
@@ -206,8 +209,13 @@ class BilliardsUI {
     }
     // 파워바
     const pb = this._powerBar;
-    if (sy > pb.y - 18 && sy < pb.y + pb.h + 18 && sx > pb.x - 6 && sx < pb.x + pb.w + 6) {
+    if (sy > pb.y - 16 && sy < pb.y + pb.h + 16 && sx > pb.x - 6 && sx < pb.x + pb.w + 6) {
       this._mode = 'power'; this._updatePower(sx); this.draw(); return;
+    }
+    // 두께바
+    const tb = this._thickBar;
+    if (sy > tb.y - 16 && sy < tb.y + tb.h + 16 && sx > tb.x - 6 && sx < tb.x + tb.w + 6) {
+      this._mode = 'thick'; this._updateThickness(sx); this.draw(); return;
     }
     // 테이블 → 조준
     this._mode = 'aim'; this._updateAim(sx, sy); this.draw();
@@ -218,6 +226,7 @@ class BilliardsUI {
     const { sx, sy } = this._pos(e);
     if (this._mode === 'spin') this._updateSpin(sx, sy);
     else if (this._mode === 'power') this._updatePower(sx);
+    else if (this._mode === 'thick') this._updateThickness(sx);
     else if (this._mode === 'aim') this._updateAim(sx, sy);
     this.draw();
   }
@@ -225,7 +234,7 @@ class BilliardsUI {
   _onUp() { this._mode = null; }
 
   _updateAim(sx, sy) {
-    const cue = this.game.balls.find(b => b.id === 0);
+    const cue = this.game.cueBall();
     if (!cue) return;
     const [cx, cy] = this.toScreen(cue.x, cue.y);
     const sdx = sx - cx, sdy = sy - cy;
@@ -256,30 +265,133 @@ class BilliardsUI {
     this.shotPower = Math.max(0.02, Math.min(1, (sx - pb.x) / pb.w));
   }
 
+  // 두께 슬라이더 → 목표두께(0얇게~1정면)로 조준각 재계산
+  _updateThickness(sx) {
+    const tb = this._thickBar;
+    const frac = Math.max(0, Math.min(1, (sx - tb.x) / tb.w));
+    this.targetThickness = frac;
+    const tgt = this._aimTarget || this._pickTarget();
+    if (!tgt) return;
+    const cue = this.game.cueBall();
+    if (!cue) return;
+    const R = this.game.ballRadius;
+    const ox = tgt.ball.x - cue.x, oy = tgt.ball.y - cue.y;
+    const D = Math.hypot(ox, oy) || 1;
+    const perp = (1 - frac) * 2 * R;           // frac=1 정면(perp0)
+    const alpha = Math.asin(Math.max(0, Math.min(1, perp / D)));
+    const base = Math.atan2(oy, ox);
+    this.aimAngleDeg = (base + tgt.side * alpha) * 180 / Math.PI;
+  }
+
+  // 조준 대상 1목적구 선택 (현 조준 타겟 없으면 가장 가까운 적구)
+  _pickTarget() {
+    const cue = this.game.cueBall();
+    if (!cue) return null;
+    const cueId = this.game.cueId();
+    let best = Infinity, ball = null;
+    for (const b of this.game.balls) {
+      if (b.id === cueId) continue;
+      const d = Math.hypot(b.x - cue.x, b.y - cue.y);
+      if (d < best) { best = d; ball = b; }
+    }
+    if (!ball) return null;
+    // 현재 조준선 기준 적구가 어느 쪽인지로 side 유지
+    const rad = this.aimAngleDeg * Math.PI / 180;
+    const dx = Math.cos(rad), dy = Math.sin(rad);
+    const side = ((ball.x - cue.x) * (-dy) + (ball.y - cue.y) * dx) >= 0 ? 1 : -1;
+    return { ball, side };
+  }
+
   _fire() {
     const MAX = 6500;
     const power = this.shotPower * MAX;
     if (power < 50) return;
+    this._initAudio();   // 사용자 제스처 시점에 오디오 활성화
     const res = this.game.shoot(this.aimAngleDeg, power, this.spinX, this.spinY);
     if (!res) return;
-    this._playAnim(res.frames, () => { if (this.onShot) this.onShot(res); });
+    this._playAnim(res, () => { if (this.onShot) this.onShot(res); });
   }
 
-  // ── 애니메이션 ───────────────────────────────────────────
-  _playAnim(frames, done) {
+  // ── 애니메이션 (+사운드 이벤트) ──────────────────────────
+  _playAnim(res, done) {
+    const frames = res.frames;
+    // 이벤트 디듀프(같은 종류 60ms 내 합치기) → 사운드 큐
+    const evq = [];
+    let lastBall = -1, lastCush = -1;
+    for (const e of (res.events || [])) {
+      if (e.type === 'ball-ball') {
+        if (e.t - lastBall > 0.06) { evq.push({ t: e.t, s: 'ball' }); lastBall = e.t; }
+      } else if (e.type === 'cushion') {
+        if (e.t - lastCush > 0.05) { evq.push({ t: e.t, s: 'cushion' }); lastCush = e.t; }
+      }
+    }
+    let ei = 0;
     this._animFrames = frames; this._animIdx = 0;
     const step = () => {
       if (this._animIdx >= frames.length) {
         this._animFrames = null;
         this.draw();
+        // 득점 사운드
+        if (res.score > 0) this._sfx('score');
         if (done) done();
         return;
       }
-      this.draw(frames[this._animIdx].balls);
+      const fr = frames[this._animIdx];
+      // 이 프레임 시점까지 도달한 사운드 이벤트 재생
+      while (ei < evq.length && evq[ei].t <= fr.t) { this._sfx(evq[ei].s); ei++; }
+      this.draw(fr.balls);
       this._animIdx += 1;
       this._rafId = requestAnimationFrame(step);
     };
     step();
+  }
+
+  // ── 사운드 (WebAudio 합성) ───────────────────────────────
+  _initAudio() {
+    if (this._actx) { if (this._actx.state === 'suspended') this._actx.resume(); return; }
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this._actx = AC ? new AC() : null;
+    } catch (e) { this._actx = null; }
+  }
+  _noise(dur, peak, filterType, freq) {
+    const ac = this._actx, now = ac.currentTime;
+    const len = Math.floor(ac.sampleRate * dur);
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const bp = ac.createBiquadFilter(); bp.type = filterType; bp.frequency.value = freq;
+    const g = ac.createGain(); g.gain.value = peak;
+    src.connect(bp).connect(g).connect(ac.destination);
+    src.start(now);
+  }
+  _ping(f0, f1, peak, dur, type) {
+    const ac = this._actx, now = ac.currentTime;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type || 'triangle';
+    o.frequency.setValueAtTime(f0, now);
+    o.frequency.exponentialRampToValueAtTime(f1, now + dur);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(peak, now + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    o.connect(g).connect(ac.destination);
+    o.start(now); o.stop(now + dur + 0.02);
+  }
+  _sfx(kind) {
+    const ac = this._actx; if (!ac) return;
+    if (ac.state === 'suspended') ac.resume();
+    if (kind === 'ball') {            // 공-공: 날카로운 '딱'
+      this._ping(1900, 950, 0.5, 0.08, 'triangle');
+      this._noise(0.03, 0.22, 'bandpass', 2600);
+    } else if (kind === 'cushion') {  // 쿠션: 낮고 부드러운 '툭'
+      this._ping(260, 130, 0.3, 0.12, 'sine');
+      this._noise(0.04, 0.10, 'lowpass', 600);
+    } else if (kind === 'score') {    // 득점: 띠링
+      this._ping(660, 660, 0.35, 0.12, 'sine');
+      const ac2 = this._actx;
+      setTimeout(() => { if (ac2) this._ping(990, 990, 0.35, 0.16, 'sine'); }, 110);
+    }
   }
 
   // ── 드로잉 ───────────────────────────────────────────────
@@ -295,8 +407,32 @@ class BilliardsUI {
     if (aiming) this._drawThickView();
     this._drawSpinWidget();
     this._drawPowerBar();
+    this._drawThickBar();
     this._drawShotBtn();
     this._drawHUD();
+  }
+
+  _drawThickBar() {
+    const ctx = this.ctx;
+    const { x, y, w, h } = this._thickBar;
+    const p = this.targetThickness;
+    // 트랙 (얇게→두껍게 그라데이션 느낌)
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    this._roundRect(x, y, w, h, h / 2); ctx.fill();
+    ctx.fillStyle = 'rgba(120,200,255,0.55)';
+    this._roundRect(x, y, w * p, h, h / 2); ctx.fill();
+    // 핸들
+    const hx = x + w * p;
+    ctx.beginPath(); ctx.arc(hx, y + h / 2, h * 0.75, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+    // 라벨 (8등분 + 얇게/두껍게)
+    const eighth = Math.round(p * 8);
+    ctx.fillStyle = '#cfe1ee'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(`두께 ${eighth}/8`, x, y - 7);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '10px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('얇게 ◀ ▶ 두껍게', x + w, y - 7);
   }
 
   // ── 두께 미리보기 위젯 (좌하단, 당점 위 / 1목적구 충돌 시) ──
@@ -336,7 +472,7 @@ class BilliardsUI {
     ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1; ctx.stroke();
     // 수구 ghost
     ctx.beginPath(); ctx.arc(cux, cuy, rr, 0, Math.PI * 2);
-    const cueCol = this.game.cfg.ballColors[0] || 'white';
+    const cueCol = this.game.cueColor();
     ctx.fillStyle = cueCol; ctx.globalAlpha = 0.55; ctx.fill(); ctx.globalAlpha = 1;
     ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.setLineDash([3, 3]);
     ctx.beginPath(); ctx.arc(cux, cuy, rr, 0, Math.PI * 2); ctx.stroke();
@@ -428,7 +564,8 @@ class BilliardsUI {
   // ── 가이드: 조준선 + ghost ball + 1차 반사 ──────────────
   _drawGuide(balls) {
     const ctx = this.ctx;
-    const cue = balls.find(b => b.id === 0);
+    const cueId = this.game.cueId();
+    const cue = balls.find(b => b.id === cueId);
     if (!cue) return;
     const R = this.game.ballRadius;
     const rad = this.aimAngleDeg * Math.PI / 180;
@@ -451,6 +588,7 @@ class BilliardsUI {
     const rScreen = R * this.px;
 
     this._thickness = null;
+    this._aimTarget = null;
     if (hit.type === 'ball') {
       // ghost ball
       ctx.save();
@@ -482,7 +620,10 @@ class BilliardsUI {
       // 컷 방향(적구가 조준선 어느쪽?): 부호
       const side = (ox * (-dy) + oy * dx) >= 0 ? 1 : -1;
       this._thickness = { frac, side, ballColor: this.game.cfg.ballColors[tb.id] || '#ccc' };
+      this._aimTarget = { ball: tb, side };
+      this.targetThickness = frac;
     } else if (hit.type === 'cushion') {
+      this._aimTarget = null;
       // 반사선 (1차)
       let rdx = dx, rdy = dy;
       if (hit.side === 'L' || hit.side === 'R') rdx = -rdx; else rdy = -rdy;
@@ -503,7 +644,7 @@ class BilliardsUI {
 
     // 공 충돌 (확장 반경 2R)
     for (const b of balls) {
-      if (b.id === 0) continue;
+      if (b.id === cue.id) continue;
       const ox = b.x - cue.x, oy = b.y - cue.y;
       const proj = ox * dx + oy * dy;
       if (proj <= 0) continue;
@@ -541,8 +682,8 @@ class BilliardsUI {
     const { cx, cy, r } = this._spinWidget;
     const miscue = Math.hypot(this.spinX, this.spinY) > MAX_SPIN + 0.02;
 
-    // 수구 색 베이스(3구는 노랑, 4구는 흰)
-    const cueCol = (this.game.cfg.ballColors && this.game.cfg.ballColors[0]) || 'white';
+    // 수구 색 베이스(현재 플레이어 수구색)
+    const cueCol = this.game.cueColor();
     const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
     grad.addColorStop(0, this._lighten(cueCol));
     grad.addColorStop(1, cueCol === 'white' ? '#d8d8d8' : cueCol);
