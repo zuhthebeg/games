@@ -130,39 +130,53 @@ function simulate(shot) {
         const dx = b.x - a.x, dy = b.y - a.y;
         const dist = vLen(dx, dy);
         const minDist = 2 * r;
-        if (dist < minDist && dist > 1e-9) {
-          const [nx, ny] = vNorm(dx, dy);
-          const overlap = minDist - dist;
-          a.x -= nx * overlap * 0.5; a.y -= ny * overlap * 0.5;
-          b.x += nx * overlap * 0.5; b.y += ny * overlap * 0.5;
 
-          const dvx = a.vx - b.vx, dvy = a.vy - b.vy;
-          const vRel = vDot(dvx, dvy, nx, ny);
+        // 스윕(연속) 검출: 이번 스텝 상대변위로 최근접거리·접근여부 계산
+        // → 빠른 얇은 히트도 잡고, 옆으로 굴러 스치는(비접근) 건 히트 제외
+        const rvx = (b.vx - a.vx) * dt, rvy = (b.vy - a.vy) * dt;
+        const dotRV = dx * rvx + dy * rvy;       // <0이면 접근 중
+        const aa = rvx * rvx + rvy * rvy;
+        let minD = dist;
+        if (aa > 1e-12) { let tau = -dotRV / aa; if (tau < 0) tau = 0; else if (tau > 1) tau = 1; minD = Math.hypot(dx + rvx * tau, dy + rvy * tau); }
+        const swept = minD < minDist;           // 이번 스텝에 표면이 닿았나
+        const approaching = dotRV < 0;
 
-          // 새 접촉이면 히트 등록(점수용) — 접근/분리 무관(얇게 스친 것도 포함)
+        if (swept) {
+          // 히트 등록(점수용): 새 접촉 + 접근(실제 충돌)일 때만
           if (!contactPairs.has(key)) {
             contactPairs.add(key);
-            events.push({ t, type: 'ball-ball', ball1: a.id, ball2: b.id, speed: Math.abs(vRel) });
-            if (a.id === cueId) registerCueHit(b.id);
-            if (b.id === cueId) registerCueHit(a.id);
+            if (approaching) {
+              const relSp = Math.hypot(b.vx - a.vx, b.vy - a.vy);
+              events.push({ t, type: 'ball-ball', ball1: a.id, ball2: b.id, speed: relSp });
+              if (a.id === cueId) registerCueHit(b.id);
+              if (b.id === cueId) registerCueHit(a.id);
+            }
           }
-
-          if (vRel > 0) { // 운동량/throw는 접근 중일 때만
-            const J = (1 + e_ball) * vRel * 0.5;
-            a.vx -= J * nx; a.vy -= J * ny;
-            b.vx += J * nx; b.vy += J * ny;
-            const tx = -ny, ty = nx;
-            const uT = vDot(dvx, dvy, tx, ty) + (a.wz + b.wz) * r;
-            if (Math.abs(uT) > 1e-3) {
-              const sgn = Math.sign(uT);
-              const Jt = sgn * Math.min(Math.abs(uT) * 0.5, mu_throw_ball * Math.abs(J));
-              a.vx -= Jt * tx; a.vy -= Jt * ty;
-              b.vx += Jt * tx; b.vy += Jt * ty;
-              a.wz *= 0.5; b.wz *= 0.5;
+          // 운동량/위치 해소는 실제 겹쳐있을 때
+          if (dist < minDist && dist > 1e-9) {
+            const [nx, ny] = vNorm(dx, dy);
+            const overlap = minDist - dist;
+            a.x -= nx * overlap * 0.5; a.y -= ny * overlap * 0.5;
+            b.x += nx * overlap * 0.5; b.y += ny * overlap * 0.5;
+            const dvx = a.vx - b.vx, dvy = a.vy - b.vy;
+            const vRel = vDot(dvx, dvy, nx, ny);
+            if (vRel > 0) {
+              const J = (1 + e_ball) * vRel * 0.5;
+              a.vx -= J * nx; a.vy -= J * ny;
+              b.vx += J * nx; b.vy += J * ny;
+              const tx = -ny, ty = nx;
+              const uT = vDot(dvx, dvy, tx, ty) + (a.wz + b.wz) * r;
+              if (Math.abs(uT) > 1e-3) {
+                const sgn = Math.sign(uT);
+                const Jt = sgn * Math.min(Math.abs(uT) * 0.5, mu_throw_ball * Math.abs(J));
+                a.vx -= Jt * tx; a.vy -= Jt * ty;
+                b.vx += Jt * tx; b.vy += Jt * ty;
+                a.wz *= 0.5; b.wz *= 0.5;
+              }
             }
           }
         } else {
-          contactPairs.delete(key);  // 떨어지면 접촉 해제(다음에 다시 닿으면 새 히트)
+          contactPairs.delete(key);  // 떨어지면 접촉 해제
         }
       }
     }
