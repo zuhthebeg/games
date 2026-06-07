@@ -238,10 +238,11 @@ function sfx(k){ if(!AC)return; if(AC.state==='suspended')AC.resume();
   else if(k==='score'){ ping(660,660,0.35,0.12,'sine'); setTimeout(()=>{if(AC)ping(990,990,0.35,0.16,'sine');},110); } }
 
 // ───── 발사 + 애니 ─────
-const orientReset={};
+let lastShot=null;   // 되돌리기 시 복원할 직전 샷 수치
 document.getElementById('shoot').addEventListener('click',()=>{
   if(animating)return; initAudio();
   const res=game.shoot(aimAngle*180/Math.PI, power*MAXPOW, spinX, spinY); if(!res)return;
+  lastShot={aimAngle,powerV:+pwr.value,spinX,spinY,thickPos};   // 발사 직전 셋팅 기억
   document.getElementById('hint').style.opacity='0'; playAnim(res);
 });
 function playAnim(res){
@@ -276,7 +277,20 @@ document.getElementById('wRestart').addEventListener('click',()=>{location.reloa
 
 // 되돌리기
 const undoBtn=document.getElementById('undo');
-function doUndo(){ if(game.undo()){ document.getElementById('resultOv').classList.remove('show'); afterTurn(); } }
+function doUndo(){
+  if(!game.undo())return;
+  document.getElementById('resultOv').classList.remove('show');
+  syncBalls(game.balls); refreshHud();
+  // 직전 샷 수치 그대로 복원 (조준·파워·당점·두께)
+  if(lastShot){
+    aimAngle=lastShot.aimAngle; spinX=lastShot.spinX; spinY=lastShot.spinY; thickPos=lastShot.thickPos;
+    pwr.value=lastShot.powerV; power=lastShot.powerV/100; pwlbl.textContent='파워 '+lastShot.powerV+'%';
+    thk.value=Math.round(thickPos*100);
+    const signed=(thickPos-0.5)*2,frac=1-Math.abs(signed),eighth=Math.round(frac*8),dir=Math.abs(thickPos-0.5)<0.04?'정면':(thickPos<0.5?'◀좌':'우▶');
+    thlbl.textContent=`두께 ${eighth}/8 ${dir}`;
+    drawSpin(); updateAim();
+  } else { afterTurn(); }
+}
 undoBtn.addEventListener('click',doUndo);
 document.getElementById('rUndo').addEventListener('click',doUndo);
 function refreshHud(){
