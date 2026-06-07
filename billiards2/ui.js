@@ -86,7 +86,8 @@ class BilliardsUI {
     const g = this.game;
 
     const headerH = 56;
-    const footerH = Math.max(176, H * 0.24);
+    const padB = 24;                       // 바닥 안전여백(네비바 회피)
+    const footerH = Math.max(168, H * 0.22) + padB;
     const padX = 10;
     const availW = W - padX * 2;
     const availH = H - headerH - footerH;
@@ -113,23 +114,23 @@ class BilliardsUI {
     this._viewCx = tX + tW / 2;
     this._viewCy = tY + tH / 2;
 
-    // 당점 위젯 (좌하단)
-    const wR = Math.min(60, footerH * 0.42);
-    this._spinWidget = { cx: padX + wR + 6, cy: H - wR - 18, r: wR };
+    // 당점 위젯 (좌하단) — 바닥에서 padB 띄움
+    const wR = Math.min(52, (footerH - padB) * 0.46);
+    this._spinWidget = { cx: padX + wR + 6, cy: H - padB - wR, r: wR };
 
     // 두께 미리보기 위젯 (당점 위젯 바로 위)
-    const tvR = wR * 0.72;
-    this._thickView = { cx: padX + tvR + 6, cy: this._spinWidget.cy - wR - tvR - 14, r: tvR };
+    const tvR = wR * 0.66;
+    this._thickView = { cx: padX + tvR + 6, cy: this._spinWidget.cy - wR - tvR - 10, r: tvR };
 
     // 샷 버튼 (우하단)
-    const btnW = Math.min(110, W * 0.26), btnH = 54;
-    this._shotBtn = { x: W - btnW - padX, y: H - btnH - 18, w: btnW, h: btnH };
+    const btnW = Math.min(108, W * 0.26), btnH = Math.min(50, wR * 2);
+    this._shotBtn = { x: W - btnW - padX, y: H - padB - btnH, w: btnW, h: btnH };
 
-    // 파워바 + 두께바 (가운데, 당점위젯과 샷버튼 사이에 2단)
+    // 파워바(위) + 두께바(아래) — 당점위젯과 샷버튼 사이 2단, 바닥여백 위에
     const pbX = this._spinWidget.cx + wR + 16;
     const pbW = this._shotBtn.x - pbX - 16;
-    this._powerBar = { x: pbX, y: H - footerH * 0.66, w: pbW, h: 20 };
-    this._thickBar = { x: pbX, y: H - footerH * 0.30, w: pbW, h: 20 };
+    this._thickBar = { x: pbX, y: H - padB - 26, w: pbW, h: 18 };
+    this._powerBar = { x: pbX, y: this._thickBar.y - 46, w: pbW, h: 18 };
   }
 
   // ── 좌표 변환 (회전 + 줌/팬 지원) ────────────────────────
