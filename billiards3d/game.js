@@ -14,7 +14,7 @@ const MODES = {
     initialPositions(tw, th) {
       const cy = th / 2;
       return [
-        { id: 0, x: tw * 0.75, y: cy + th * 0.13, vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 노랑 수구(아래)
+        { id: 0, x: tw * 0.75, y: cy - th * 0.13, vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 노랑 수구(반대쪽)
         { id: 1, x: tw * 0.75, y: cy,             vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 흰 head spot(아래)
         { id: 2, x: tw * 0.25, y: cy,             vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 빨강 foot spot(위)
       ];

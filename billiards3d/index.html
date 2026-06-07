@@ -229,7 +229,7 @@ let AC=null; const BUF={};
 function loadBuf(name,url){ fetch(url).then(r=>r.arrayBuffer()).then(a=>AC.decodeAudioData(a)).then(b=>{BUF[name]=b;}).catch(()=>{}); }
 function initAudio(){ if(AC){if(AC.state==='suspended')AC.resume();return;}
   try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){AC=null;return;}
-  loadBuf('ball','snd_ball.wav?v=2'); loadBuf('cushion','snd_cushion.wav?v=2'); }
+  loadBuf('ball','snd_ball.wav?v=3'); loadBuf('cushion','snd_cushion.wav?v=3'); }
 function playBuf(b,vol,rate){ if(!b)return; const s=AC.createBufferSource(); s.buffer=b; s.playbackRate.value=rate||1; const g=AC.createGain(); g.gain.value=vol; s.connect(g).connect(AC.destination); s.start(); }
 function ping(f0,f1,pk,dur,type){const n=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'triangle';o.frequency.setValueAtTime(f0,n);o.frequency.exponentialRampToValueAtTime(f1,n+dur);g.gain.setValueAtTime(0.0001,n);g.gain.exponentialRampToValueAtTime(pk,n+0.003);g.gain.exponentialRampToValueAtTime(0.0001,n+dur);o.connect(g).connect(AC.destination);o.start(n);o.stop(n+dur+0.02);}
 function sfx(k){ if(!AC)return; if(AC.state==='suspended')AC.resume();
