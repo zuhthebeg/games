@@ -37,6 +37,8 @@
   #thk{background:linear-gradient(90deg,#5aa9e6,#2a3340 50%,#5aa9e6)}
   #thk::-webkit-slider-thumb,#thk::-moz-range-thumb{border-color:#5aa9e6}
   #shoot{flex-shrink:0;padding:16px 20px;background:#e8453c;border:none;color:#fff;font-size:17px;font-weight:800;border-radius:12px}
+  #thpv{position:fixed;left:10px;z-index:6;bottom:calc(132px + env(safe-area-inset-bottom));
+    background:rgba(12,20,16,.78);border:1px solid #2c4536;border-radius:12px}
   /* 오버레이 */
   .ov{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}
   .ov.show{display:flex}
@@ -68,6 +70,7 @@
 <div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button><button id="setBtn">⚙</button></div>
 <div id="hint">펠트 탭=조준 · 두 손가락=카메라 · 당점/두께/파워 후 치기</div>
 
+<canvas id="thpv" width="150" height="104"></canvas>
 <div id="ctrl">
   <canvas id="spin" width="216" height="216"></canvas>
   <div id="mid">
@@ -217,7 +220,26 @@ function updateAim(){
     predLine.visible=true;
     const sp=(tb.x-cue.x)*(-dy)+(tb.y-cue.y)*dx;
     aimTarget={ball:tb,side:sp>=0?1:-1};
-  } else { ghost.visible=false; predLine.visible=false; }
+    const frac=Math.max(0,Math.min(1,1-Math.abs(sp)/(2*R)));
+    drawThPv(frac, sp>=0?1:-1, COLHEX[tb.id]||0xffffff, COLHEX[game.cueId()]||0xffffff);
+  } else { ghost.visible=false; predLine.visible=false; drawThPv(null); }
+}
+// ───── 두께 미리보기(좌하단): 적구 + 수구 가상볼 겹침 ─────
+const thpv=document.getElementById('thpv'), tp=thpv.getContext('2d');
+function hx(n){return '#'+(n>>>0).toString(16).padStart(6,'0').slice(-6);}
+function drawThPv(frac, side, objHex, cueHex){
+  const W=thpv.width,H=thpv.height; tp.clearRect(0,0,W,H);
+  if(frac==null){ tp.fillStyle='rgba(255,255,255,.35)'; tp.font='13px sans-serif'; tp.textAlign='center'; tp.textBaseline='middle'; tp.fillText('두께',W/2,H/2); tp.textBaseline='alphabetic'; return; }
+  const rr=26, cy=H/2-6, ocx=W/2+10;
+  const offset=(1-frac)*2*rr, cux=ocx - side*offset;
+  // 적구
+  tp.beginPath(); tp.arc(ocx,cy,rr,0,7); tp.fillStyle=hx(objHex); tp.fill(); tp.strokeStyle='rgba(0,0,0,.4)'; tp.lineWidth=1; tp.stroke();
+  // 수구 가상볼(반투명 + 점선)
+  tp.save(); tp.globalAlpha=0.5; tp.beginPath(); tp.arc(cux,cy,rr,0,7); tp.fillStyle=hx(cueHex); tp.fill(); tp.restore();
+  tp.beginPath(); tp.arc(cux,cy,rr,0,7); tp.strokeStyle='rgba(255,255,255,.85)'; tp.setLineDash([3,3]); tp.lineWidth=1.5; tp.stroke(); tp.setLineDash([]);
+  // 수치
+  const e=Math.round(frac*8), dir=Math.abs(side)&&frac<0.98?(side>0?'우':'좌'):'';
+  tp.fillStyle='#cfe9d6'; tp.font='bold 13px sans-serif'; tp.textAlign='center'; tp.fillText(`${e}/8 ${dir}`.trim(), W/2, H-6);
 }
 
 // ───── 입력: 한 손가락=조준, 두 손가락=카메라 ─────
