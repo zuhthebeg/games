@@ -75,7 +75,7 @@ function simulate(shot) {
         const w = base * (cb.spinY || 0) * FOLLOW_GAIN;
         cb.wx = -dy * w;                           // 톱스핀 축 = 진행방향 수평 수직
         cb.wy = dx * w;
-        cb.wz = base * (cb.spinX || 0) * SIDE_GAIN; // 수직축 사이드스핀
+        cb.wz = -base * (cb.spinX || 0) * SIDE_GAIN; // 수직축 사이드스핀(우회전=시계=wz<0)
       }
     }
   }
@@ -285,8 +285,8 @@ function simulate(shot) {
   let score = 0;
   let foul = false;
 
-  if (mode === '3ball') {
-    // 쓰리쿠션: 두 적구 모두 맞히되 '2번째 적구 맞기 전' 쿠션 3회 이상
+  if (mode === '3ball' || mode === '3ball-medium') {
+    // 쓰리쿠션(대대/중대): 두 적구 모두 맞히되 '2번째 적구 맞기 전' 쿠션 3회 이상
     const others = balls.map(b => b.id).filter(id => id !== cueId);
     const allHit = others.every(id => hitIds.has(id));
     if (allHit && cushBeforeSecond >= 3) score = 1;
