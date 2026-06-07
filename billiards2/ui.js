@@ -3,6 +3,38 @@
 
 const MAX_SPIN = 0.7;   // 당점 최대 반경(미스큐 한계). game.js shoot()와 일치시킬 것
 
+// ── 3x3 회전 유틸 (공 구름 표현) ──────────────────────────
+function mat3Identity() { return [1,0,0, 0,1,0, 0,0,1]; }
+function mat3Mul(a, b) {
+  const r = new Array(9);
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+    r[i*3+j] = a[i*3]*b[j] + a[i*3+1]*b[3+j] + a[i*3+2]*b[6+j];
+  }
+  return r;
+}
+function mat3Vec(m, v) {
+  return [
+    m[0]*v[0] + m[1]*v[1] + m[2]*v[2],
+    m[3]*v[0] + m[4]*v[1] + m[5]*v[2],
+    m[6]*v[0] + m[7]*v[1] + m[8]*v[2],
+  ];
+}
+// 축(단위)·각도 → 회전행렬 (Rodrigues)
+function mat3Axis(ax, ay, az, th) {
+  const c = Math.cos(th), s = Math.sin(th), t = 1 - c;
+  return [
+    t*ax*ax + c,     t*ax*ay - s*az,  t*ax*az + s*ay,
+    t*ax*ay + s*az,  t*ay*ay + c,     t*ay*az - s*ax,
+    t*ax*az - s*ay,  t*ay*az + s*ax,  t*az*az + c,
+  ];
+}
+// 공 표면 마킹점(바디좌표 단위벡터). [0]은 큰 메인 점
+const BALL_SPOTS = [
+  [0, 0, 1], [0, 0, -1],
+  [1, 0, 0], [-1, 0, 0],
+  [0, 1, 0], [0, -1, 0],
+];
+
 class BilliardsUI {
   constructor(canvas, game, onShot) {
     this.canvas = canvas;
@@ -41,6 +73,9 @@ class BilliardsUI {
     this._animFrames = null;
     this._animIdx = 0;
     this._rafId = null;
+
+    // 공 구름 방향(회전행렬) — 표면 마킹으로 회전 가시화
+    this._orient = {};
 
     this._bindEvents();
   }
@@ -339,11 +374,54 @@ class BilliardsUI {
       const fr = frames[this._animIdx];
       // 이 프레임 시점까지 도달한 사운드 이벤트 재생
       while (ei < evq.length && evq[ei].t <= fr.t) { this._sfx(evq[ei].s); ei++; }
+      // 구름 회전 갱신 (이전 프레임 대비 이동)
+      if (this._animIdx > 0) this._rollUpdate(frames[this._animIdx - 1], fr);
       this.draw(fr.balls);
       this._animIdx += 1;
       this._rafId = requestAnimationFrame(step);
     };
     step();
+  }
+
+  // ── 공 구름 회전 ─────────────────────────────────────────
+  _orientOf(id) { return this._orient[id] || (this._orient[id] = mat3Identity()); }
+  _rollUpdate(prev, cur) {
+    const R = this.game.ballRadius;
+    for (const cb of cur.balls) {
+      const pb = prev.balls.find(p => p.id === cb.id);
+      if (!pb) continue;
+      const dxm = cb.x - pb.x, dym = cb.y - pb.y;
+      const dist = Math.hypot(dxm, dym);
+      if (dist < 0.4) continue;
+      const theta = dist / R;                 // 구름: 이동거리/반지름
+      const ax = -dym / dist, ay = dxm / dist; // 진행방향 수직 수평축
+      const dR = mat3Axis(ax, ay, 0, theta);
+      this._orient[cb.id] = mat3Mul(dR, this._orientOf(cb.id));
+    }
+  }
+  _drawSpots(b, rpx) {
+    const ctx = this.ctx;
+    const R = this.game.ballRadius;
+    const O = this._orientOf(b.id);
+    const baseCol = this.game.cfg.ballColors[b.id] || '#ccc';
+    const spotCol = this._spotColor(baseCol);
+    const surf = R * 0.80;
+    for (let i = 0; i < BALL_SPOTS.length; i++) {
+      const v = mat3Vec(O, BALL_SPOTS[i]);
+      if (v[2] <= 0.10) continue;             // 앞면(보이는 쪽)만
+      const [mx, my] = this.toScreen(b.x + v[0] * surf, b.y + v[1] * surf);
+      const sz = rpx * (i === 0 ? 0.30 : 0.17) * (0.55 + 0.45 * v[2]);
+      ctx.beginPath(); ctx.arc(mx, my, sz, 0, Math.PI * 2);
+      ctx.fillStyle = spotCol;
+      ctx.globalAlpha = 0.35 + 0.65 * v[2];
+      ctx.fill(); ctx.globalAlpha = 1;
+    }
+  }
+  _spotColor(ballCol) {
+    if (ballCol === 'red') return '#ffe39a';
+    if (ballCol === 'white' || ballCol === '#fff') return '#c0392b';
+    if (typeof ballCol === 'string' && ballCol.startsWith('#e8')) return '#6b4200';
+    return 'rgba(0,0,0,0.55)';
   }
 
   // ── 사운드 (WebAudio 합성) ───────────────────────────────
@@ -551,6 +629,15 @@ class BilliardsUI {
       ctx.arc(sx, sy, r, 0, Math.PI * 2);
       ctx.fillStyle = grad; ctx.fill();
       ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+      // 표면 마킹(구름 회전 가시화) — 공 원 안으로 클립
+      ctx.save();
+      ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.clip();
+      this._drawSpots(b, r);
+      ctx.restore();
+      // 하이라이트
+      ctx.beginPath();
+      ctx.arc(sx - r * 0.32, sy - r * 0.32, r * 0.18, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fill();
     }
   }
 
