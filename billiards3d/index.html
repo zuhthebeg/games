@@ -150,12 +150,12 @@ let practiceScore=0, practiceTries=0;
 // 기본 연습 패턴 (테이블 비율 좌표 fx,fy: 0~1) — 수구=노랑(id0)
 // sol = 실제 득점 해법 {aim(deg), pow(%), spinX, spinY} (시뮬 탐색으로 검증됨)
 const PRESETS=[
-  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:10,pow:38,sx:0,sy:-0.5}},
-  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:8,pow:38,sx:0.65,sy:0}},
-  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:0,pow:38,sx:0.4,sy:0}},
-  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:74,pow:38,sx:-0.65,sy:0}},
-  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:28,pow:38,sx:0.65,sy:0}},
-  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:4,pow:38,sx:0.4,sy:-0.5}},
+  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:71,pow:35,sx:-0.7,sy:0.4}},
+  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:154,pow:54,sx:-0.7,sy:-0.4}},
+  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:175,pow:51,sx:-0.7,sy:0.4}},
+  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:166,pow:48,sx:-0.7,sy:0.4}},
+  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:124,pow:42,sx:0.3,sy:-0.4}},
+  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:153,pow:32,sx:0.7,sy:0.4}},
 ];
 
 // ───── three ─────
@@ -471,6 +471,8 @@ function loadPreset(p, showSol){
   game.currentPlayer=0; game.phase='aiming'; game.lastResult=null; game._snapshot=null;
   document.getElementById('resultOv').classList.remove('show');
   if(showSol && p.sol){
+    // 해법은 기본 물리값 기준 → 커스텀 튜닝 리셋해야 재현됨
+    window.BIL_TUNE=Object.assign({},TUNE_DEF); saveTune(); buildTune();
     // 실제 해법으로 셋팅(조준/파워/당점) → 바로 SHOT하면 득점
     aimAngle=p.sol.aim*Math.PI/180; spinX=p.sol.sx; spinY=p.sol.sy;
     power=p.sol.pow/100; pwr.value=p.sol.pow; pwlbl.textContent='파워 '+p.sol.pow+'%';
