@@ -60,6 +60,19 @@ function simulate(shot) {
   const K_CUSH_SIDE = num(T.cushSide, 0.5);   // 쿠션 사이드스핀 반사각/회전력(접시)
   const CUSH_WZ_KEEP = 0.3;     // 쿠션 후 사이드스핀 잔존(다음 쿠션엔 약하게)
 
+  // ── 스트로크(타격) 종류 ─────────────────────────────────────
+  // 끊어치기(stun): 짧게 끊어 follow를 죽임 → 충돌 후 수구가 분리각으로 깔끔히 정지/분리, 회전 빨리 소멸
+  // 기본(normal): 표준
+  // 밀어치기(follow): 길게 밀어 follow 회전을 유지·증폭 → 충돌 후 수구가 적구를 따라 더 전진, 회전 오래
+  // follow=상하스핀(밀어/끌어) 강도 배율, keep=사이드스핀(wz) 스텝당 감쇠 유지율
+  const STROKE_TABLE = {
+    stun:   { follow: 0.30, keep: 0.9968 },
+    normal: { follow: 1.00, keep: 0.9992 },
+    follow: { follow: 1.65, keep: 0.9996 },
+  };
+  const stroke = STROKE_TABLE[shot.stroke] || STROKE_TABLE.normal;
+  const WZ_KEEP_RATE = stroke.keep;
+
   // 각속도 초기화: 모든 공 wx,wy(구름축)·wz(수직축=좌우스핀) = 0
   for (const b of balls) { b.wx = b.wx || 0; b.wy = b.wy || 0; b.wz = b.wz || 0; }
   // 수구에 당점으로 스핀 부여: spinY=톱/백(follow/draw), spinX=좌우(english)
@@ -68,14 +81,25 @@ function simulate(shot) {
     if (cb) {
       const sp = vLen(cb.vx, cb.vy);
       if (sp > 1) {
-        const dx = cb.vx / sp, dy = cb.vy / sp;
+        let dx = cb.vx / sp, dy = cb.vy / sp;
         const base = sp / r;                       // 자연 구름 각속도
-        const FOLLOW_GAIN = num(T.follow, 1.3);    // 밀어/끌어 강도
+        const FOLLOW_GAIN = num(T.follow, 1.0);    // 밀어/끌어 강도(과민 줄여 1.3→1.0)
         const SIDE_GAIN = num(T.side, 1.4);        // 좌우 스핀 강도
-        const w = base * (cb.spinY || 0) * FOLLOW_GAIN;
+        const sx = cb.spinX || 0, sy = cb.spinY || 0;
+        // 스쿼트(squirt): 사이드를 주면 출발 방향이 반대쪽으로 아주 살짝 빗나감(실제 1~3°)
+        const SQUIRT = num(T.squirt, 0.045);       // 최대 당점에서 rad(≈2.6°)
+        if (sx) {
+          const ang = -sx * SQUIRT;                // 우회전(sx>0)이면 좌로 살짝
+          const ca = Math.cos(ang), sa = Math.sin(ang);
+          const ndx = dx * ca - dy * sa, ndy = dx * sa + dy * ca;
+          dx = ndx; dy = ndy;
+          cb.vx = dx * sp; cb.vy = dy * sp;
+        }
+        // 상하스핀 → 구름축 각속도(스트로크가 follow 생존·강도 좌우)
+        const w = base * sy * FOLLOW_GAIN * stroke.follow;
         cb.wx = -dy * w;                           // 톱스핀 축 = 진행방향 수평 수직
         cb.wy = dx * w;
-        cb.wz = -base * (cb.spinX || 0) * SIDE_GAIN; // 수직축 사이드스핀(우회전=시계=wz<0)
+        cb.wz = -base * sx * SIDE_GAIN;            // 수직축 사이드스핀(우회전=시계=wz<0)
       }
     }
   }
@@ -261,8 +285,8 @@ function simulate(shot) {
           Math.hypot(b.vx - b.wy * r, b.vy + b.wx * r) < SLIP_EPS) {
         b.vx = 0; b.vy = 0; b.wx = 0; b.wy = 0;
       }
-      // 사이드스핀 마찰 감쇠(천에 의해 점차 죽음)
-      b.wz *= 0.9992;   // 이동 중엔 거의 유지(첫 쿠션에 풀로 먹게), 쿠션·충돌에서만 크게 소진
+      // 사이드스핀 마찰 감쇠(천에 의해 점차 죽음) — 스트로크별 유지율(끊어=빨리 죽음, 밀어=오래)
+      b.wz *= WZ_KEEP_RATE;   // 이동 중엔 거의 유지(첫 쿠션에 풀로 먹게), 쿠션·충돌에서만 크게 소진
     }
 
     // ── 위치 업데이트 ──────────────────────────────────────────

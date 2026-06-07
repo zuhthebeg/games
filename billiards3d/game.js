@@ -87,7 +87,7 @@ class GameState {
   cueColor() { return this.cfg.ballColors[this.cueId()] || 'white'; }
 
   /** 발사. 현재 플레이어 수구에 속도 부여 */
-  shoot(angleDeg, powerMmPerSec, spinX, spinY) {
+  shoot(angleDeg, powerMmPerSec, spinX, spinY, stroke) {
     if (this.phase !== 'aiming') return null;
 
     const rad = angleDeg * Math.PI / 180;
@@ -95,8 +95,8 @@ class GameState {
     const cueBall = this.balls.find(b => b.id === cueId);
     if (!cueBall) return null;
 
-    // 미스큐 체크 (ui.js MAX_SPIN=0.7 과 일치, 약간 여유)
-    if (Math.sqrt(spinX * spinX + spinY * spinY) > 0.72) {
+    // 미스큐 체크 (ui MAX_SPIN=0.5 과 일치, 약간 여유)
+    if (Math.sqrt(spinX * spinX + spinY * spinY) > 0.52) {
       console.warn('미스큐!');
       return null;
     }
@@ -123,6 +123,7 @@ class GameState {
       ballRadius: this.ballRadius,
       balls: shotBalls,
       cueId,
+      stroke: stroke || 'normal',
       redIds: this.cfg.redIds,
       oppCueId: (this.cfg.cueIds || [])[1 - this.currentPlayer],
     };
