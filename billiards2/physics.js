@@ -8,14 +8,14 @@ var PHYSICS = {
   TABLE_H_LARGE: 1420,
   TABLE_W_MEDIUM: 2540,
   TABLE_H_MEDIUM: 1270,
-  CUSHION_RESTITUTION: 0.75,
+  CUSHION_RESTITUTION: 0.90,   // 3구대 쿠션 살아있게(여러 쿠션 가능)
   BALL_RESTITUTION: 0.95,
-  ROLLING_FRICTION: 0.03,
-  SLIDING_FRICTION: 0.2,
+  ROLLING_FRICTION: 0.011,     // 구름저항(슬라이딩 손실 별도라 낮춤)
+  SLIDING_FRICTION: 0.2,       // 미끄럼 운동마찰(follow/draw 전이)
   CUSHION_SIDE_FACTOR: 0.1,
   THROW_FRICTION: 0.04,
   GRAVITY: 9800,              // mm/s²
-  STOP_VELOCITY: 5,           // mm/s
+  STOP_VELOCITY: 18,          // mm/s (느린 꼬리 컷)
   DT: 1 / 240,
   MAX_STEPS: 72000,           // 300s @ 240hz 상한
 };
@@ -54,6 +54,25 @@ function simulate(shot) {
   const k_side = PHYSICS.CUSHION_SIDE_FACTOR;
   const mu_throw = PHYSICS.THROW_FRICTION;
 
+  // 각속도 초기화: 모든 공 wx,wy(구름축) = 0
+  for (const b of balls) { b.wx = b.wx || 0; b.wy = b.wy || 0; }
+  // 수구에 당점(spinY)으로 톱/백스핀 부여 (follow/draw)
+  {
+    const cb = balls.find(b => b.id === cueId);
+    if (cb) {
+      const sp = vLen(cb.vx, cb.vy);
+      if (sp > 1) {
+        const dx = cb.vx / sp, dy = cb.vy / sp;
+        const base = sp / r;                       // 자연 구름 각속도
+        const FOLLOW_GAIN = 2.0;                   // 밀어/끌어 강도
+        const w = base * (cb.spinY || 0) * FOLLOW_GAIN;
+        // 톱스핀 축 = 진행방향 수평 수직 (−dy, dx)
+        cb.wx = -dy * w;
+        cb.wy = dx * w;
+      }
+    }
+  }
+
   const frames = [];
   const events = [];
   let t = 0;
@@ -74,7 +93,11 @@ function simulate(shot) {
   }
 
   function allStopped() {
-    return balls.every(b => vLen(b.vx, b.vy) < PHYSICS.STOP_VELOCITY);
+    // 속도뿐 아니라 잔여 스핀(슬립)도 거의 없어야 정지로 본다
+    // (끌어치기 공이 v=0 지나 역주행하는 순간 조기종료 방지)
+    return balls.every(b =>
+      vLen(b.vx, b.vy) < PHYSICS.STOP_VELOCITY &&
+      Math.hypot(b.vx - b.wy * r, b.vy + b.wx * r) < 30);
   }
 
   recordFrame();
@@ -116,12 +139,7 @@ function simulate(shot) {
             b.vx += Jt * tx;
             b.vy += Jt * ty;
 
-            // spinY 효과 (follow/draw): 수구일 때만
-            if (a.id === cueId) {
-              const spd = vLen(a.vx, a.vy);
-              a.vx += a.spinY * 0.2 * spd * nx * 0.3;
-              a.vy += a.spinY * 0.2 * spd * ny * 0.3;
-            }
+            // (follow/draw는 각속도 ω 유지 + 충돌후 마찰로 자연 발생 → 별도 nudge 없음)
 
             const type = 'ball-ball';
             events.push({ t, type, ball1: a.id, ball2: b.id });
@@ -182,22 +200,42 @@ function simulate(shot) {
       }
     }
 
-    // ── 감속 ──────────────────────────────────────────────────
+    // ── 마찰: 미끄럼(슬라이딩) → 구름 전이 + 구름저항 ──────────
+    // 접촉점 슬립 u = v + ω×c (c=아래방향 r). 슬립 있으면 운동마찰이
+    // v와 ω를 동시에 바꿔 구름으로 수렴. 충돌로 v가 죽어도 남은 ω(톱/백스핀)가
+    // 마찰로 다시 굴려보냄 → follow/draw 자연 발생.
+    const SLIP_EPS = 25;          // mm/s, 이 이하 슬립이면 구름으로 간주
+    const KW = 2.5 / r;           // 5/(2r): 마찰 토크→각가속
     for (const b of balls) {
-      const spd = vLen(b.vx, b.vy);
-      if (spd < PHYSICS.STOP_VELOCITY) {
-        b.vx = 0; b.vy = 0;
-        continue;
+      const ux = b.vx - b.wy * r;
+      const uy = b.vy + b.wx * r;
+      const uslip = Math.hypot(ux, uy);
+
+      if (uslip > SLIP_EPS) {
+        // 미끄럼 운동마찰
+        const a = mu_s * g * dt;
+        const fx = -ux / uslip, fy = -uy / uslip;
+        b.vx += a * fx; b.vy += a * fy;
+        b.wx += KW * a * fy;
+        b.wy += -KW * a * fx;
+      } else {
+        // 구름: ω를 v에 정합시키고 구름저항으로 감속
+        b.wy = b.vx / r; b.wx = -b.vy / r;
+        const spd = vLen(b.vx, b.vy);
+        if (spd > PHYSICS.STOP_VELOCITY) {
+          const ratio = Math.max(0, spd - mu_r * g * dt) / spd;
+          b.vx *= ratio; b.vy *= ratio;
+          b.wx *= ratio; b.wy *= ratio;
+        }
       }
-      // 구름 감속
-      const decel = mu_r * g * dt;
-      const newSpd = Math.max(0, spd - decel);
-      const ratio = newSpd / spd;
-      b.vx *= ratio;
-      b.vy *= ratio;
-      // spin 감쇠
-      b.spinX *= 0.9995;
-      b.spinY *= 0.9995;
+
+      // 정지 처리
+      if (vLen(b.vx, b.vy) < PHYSICS.STOP_VELOCITY &&
+          Math.hypot(b.vx - b.wy * r, b.vy + b.wx * r) < SLIP_EPS) {
+        b.vx = 0; b.vy = 0; b.wx = 0; b.wy = 0;
+      }
+      // 사이드스핀(쿠션용) 서서히 감쇠
+      b.spinX *= 0.999;
     }
 
     // ── 위치 업데이트 ──────────────────────────────────────────
@@ -310,10 +348,10 @@ function runTests() {
   // Test 4: 4구 득점 — 빨강1 얇게 쳐서 빨강2까지 (캐롬)
   {
     const shot = makeShotInput('4ball', [
-      { id: 0, x: 500, y: 635, vx: 6500, vy: 0, spinX: 0, spinY: 0 },
-      { id: 1, x: 850, y: 693, vx: 0, vy: 0, spinX: 0, spinY: 0 },   // 살짝 위(얇은 히트)
+      { id: 0, x: 500, y: 635, vx: 6000, vy: 0, spinX: 0, spinY: 0 },
+      { id: 1, x: 850, y: 695, vx: 0, vy: 0, spinX: 0, spinY: 0 },   // 살짝 위(얇은 히트)
       { id: 2, x: 1250, y: 650, vx: 0, vy: 0, spinX: 0, spinY: 0 },
-      { id: 3, x: 2300, y: 300, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 3, x: 2300, y: 1100, vx: 0, vy: 0, spinX: 0, spinY: 0 },
     ]);
     const res = simulate(shot);
     assert('4구: 빨강1+빨강2 모두 히트', res.hitIds.includes(1) && res.hitIds.includes(2));

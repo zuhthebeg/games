@@ -361,23 +361,28 @@ class BilliardsUI {
       }
     }
     let ei = 0;
+    // 재생 속도 압축: 긴 샷도 ~3초 내(최대 ~200프레임)로 스트라이드
+    const stride = Math.max(1, Math.round(frames.length / 200));
+    let prevIdx = 0;
     this._animFrames = frames; this._animIdx = 0;
     const step = () => {
       if (this._animIdx >= frames.length) {
+        // 마지막 프레임 보정
+        const lastPrev = frames[prevIdx], last = frames[frames.length - 1];
+        if (lastPrev !== last) this._rollUpdate(lastPrev, last);
         this._animFrames = null;
         this.draw();
-        // 득점 사운드
         if (res.score > 0) this._sfx('score');
         if (done) done();
         return;
       }
       const fr = frames[this._animIdx];
-      // 이 프레임 시점까지 도달한 사운드 이벤트 재생
       while (ei < evq.length && evq[ei].t <= fr.t) { this._sfx(evq[ei].s); ei++; }
-      // 구름 회전 갱신 (이전 프레임 대비 이동)
-      if (this._animIdx > 0) this._rollUpdate(frames[this._animIdx - 1], fr);
+      // 구름 회전 갱신 (직전 표시 프레임 대비 이동)
+      if (this._animIdx > 0) this._rollUpdate(frames[prevIdx], fr);
       this.draw(fr.balls);
-      this._animIdx += 1;
+      prevIdx = this._animIdx;
+      this._animIdx += stride;
       this._rafId = requestAnimationFrame(step);
     };
     step();
