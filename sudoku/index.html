@@ -281,6 +281,7 @@ function inputNum(n){
   }
   if(puzzle[sel]===n){ puzzle[sel]=0; render(); return; } // 같은 숫자 → 지우기
   puzzle[sel]=n; notes[sel].clear();
+  clearPeerNotes(sel,n); // 확정 숫자 → 같은 행/열/박스 메모에서 자동 제거
   if(n!==solution[sel]){
     mistakes++;
     document.getElementById('mistakes').textContent=mistakes+'/3';
@@ -290,13 +291,19 @@ function inputNum(n){
   render();
   checkWin();
 }
+// 확정 숫자를 같은 행/열/3x3 박스의 메모에서 제거
+function clearPeerNotes(i,n){
+  const r=Math.floor(i/9), c=i%9, br=Math.floor(r/3)*3, bc=Math.floor(c/3)*3;
+  for(let k=0;k<9;k++){ if(notes[r*9+k]) notes[r*9+k].delete(n); if(notes[k*9+c]) notes[k*9+c].delete(n); }
+  for(let dr=0;dr<3;dr++)for(let dc=0;dc<3;dc++){ const bi=(br+dr)*9+(bc+dc); if(notes[bi]) notes[bi].delete(n); }
+}
 function eraseCell(){ if(finished||sel<0||given[sel]) return; puzzle[sel]=0; notes[sel]&&notes[sel].clear(); render(); }
 function toggleNotes(){ notesMode=!notesMode; document.getElementById('notesBtn').classList.toggle('on',notesMode); }
 function hint(){
   if(finished||sel<0||given[sel]) return;
   if(hintsLeft<=0){ toast(t('noHint')); return; }
   if(puzzle[sel]===solution[sel]) return;
-  hintsLeft--; puzzle[sel]=solution[sel]; notes[sel].clear(); given[sel]=true; // 힌트 채운 칸 고정
+  hintsLeft--; puzzle[sel]=solution[sel]; notes[sel].clear(); clearPeerNotes(sel,solution[sel]); given[sel]=true; // 힌트 채운 칸 고정
   cells[sel].classList.add('given');
   render(); checkWin();
 }
