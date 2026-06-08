@@ -248,9 +248,13 @@ function raycastMM(cue,dx,dy){
   for(const t of cand){ if(t>0&&t<best){best=t;res={type:'cushion',x:cue.x+dx*t,y:cue.y+dy*t};}}
   return res;
 }
+// 실제 발사 방향 = 조준각 + 스쿼트(사이드스핀에 의한 빗나감). 물리엔진과 동일하게 맞춰
+// 조준선·가상공·두께·예상선이 모두 '실제로 가는 방향'을 표시하도록 함(WYSIWYG)
+function squirtA(){ const sq=(window.BIL_TUNE&&isFinite(window.BIL_TUNE.squirt))?window.BIL_TUNE.squirt:0.045; return -spinX*sq; }
+function aimDir(){ const a=aimAngle+squirtA(); return [Math.cos(a),Math.sin(a)]; }
 function updateAim(){
   if(animating){aimLine.visible=predLine.visible=ghost.visible=false;return;}
-  const cue=game.cueBall(); const dx=Math.cos(aimAngle),dy=Math.sin(aimAngle);
+  const cue=game.cueBall(); const [dx,dy]=aimDir();
   const hit=raycastMM(cue,dx,dy);
   aimLine.geometry.setFromPoints([new THREE.Vector3(wx(cue.x),rW,wz(cue.y)),new THREE.Vector3(wx(hit.x),rW,wz(hit.y))]);
   aimLine.computeLineDistances(); aimLine.visible=true;
@@ -291,7 +295,7 @@ function evMM(cx,cy){const r=canvas.getBoundingClientRect(),ndc=new THREE.Vector
   const ray=new THREE.Raycaster(); ray.setFromCamera(ndc,camera);
   const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-rW), pt=new THREE.Vector3();
   if(!ray.ray.intersectPlane(plane,pt))return null; return {mx:pt.x/S+TW/2,my:pt.z/S+TH/2};}
-function aimAt(cx,cy){const p=evMM(cx,cy); if(!p)return; const cue=game.cueBall(); aimAngle=Math.atan2(p.my-cue.y,p.mx-cue.x); syncThickFromAim(); updateAim();}
+function aimAt(cx,cy){const p=evMM(cx,cy); if(!p)return; const cue=game.cueBall(); aimAngle=Math.atan2(p.my-cue.y,p.mx-cue.x)-squirtA(); syncThickFromAim(); updateAim();}
 // 연습모드 공 끌기: 포인터 근처(≈1.8R) 공 잡기
 let dragBall=null;
 function ballAt(mx,my){let best=1.8*R,hit=null; for(const b of game.balls){const d=Math.hypot(b.x-mx,b.y-my); if(d<best){best=d;hit=b;}} return hit;}
@@ -327,7 +331,7 @@ function drawSpin(){const W=spinCv.width,cx=W/2,cy=W/2,rr=W/2-10; sg.clearRect(0
   sg.beginPath();sg.arc(cx,cy,rr*0.7,0,7);sg.strokeStyle='rgba(200,0,0,.18)';sg.lineWidth=2;sg.stroke();
   const dx=cx+spinX*rr*0.82, dy=cy-spinY*rr*0.82; sg.beginPath();sg.arc(dx,dy,rr*0.16,0,7);sg.fillStyle='#d11';sg.fill();}
 function spinAt(cx,cy){const r=spinCv.getBoundingClientRect();let dx=(cx-r.left)/r.width*2-1,dy=(cy-r.top)/r.height*2-1;
-  const len=Math.hypot(dx,dy); if(len>MAX_SPIN){dx*=MAX_SPIN/len;dy*=MAX_SPIN/len;} spinX=dx;spinY=-dy;drawSpin();}
+  const len=Math.hypot(dx,dy); if(len>MAX_SPIN){dx*=MAX_SPIN/len;dy*=MAX_SPIN/len;} spinX=dx;spinY=-dy;drawSpin();applyThickness();}
 let spinDrag=false;
 spinCv.addEventListener('touchstart',e=>{e.preventDefault();spinDrag=true;spinAt(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
 spinCv.addEventListener('touchmove',e=>{e.preventDefault();if(spinDrag)spinAt(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
@@ -345,16 +349,17 @@ thk.addEventListener('input',()=>{thickPos=thk.value/100;applyThickness();});
 const strokeSeg=document.getElementById('strokeSeg');
 function setStroke(s){ strokeType=s; strokeSeg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.stroke===s)); }
 strokeSeg.querySelectorAll('button').forEach(b=>b.onclick=()=>setStroke(b.dataset.stroke));
-function pickTarget(){const cue=game.cueBall();const dx=Math.cos(aimAngle),dy=Math.sin(aimAngle);let best=Infinity,ball=null,side=1;
+function pickTarget(){const cue=game.cueBall();const [dx,dy]=aimDir();let best=Infinity,ball=null,side=1;
   for(const b of game.balls){if(b.id===game.cueId())continue;const ox=b.x-cue.x,oy=b.y-cue.y,proj=ox*dx+oy*dy;if(proj<=0)continue;const perp=ox*(-dy)+oy*dx,ap=Math.abs(perp);if(ap<best){best=ap;ball=b;side=perp>=0?1:-1;}}
   return ball?{ball,side}:null;}
 function applyThickness(){const signed=(thickPos-0.5)*2,frac=1-Math.abs(signed),side=signed>=0?1:-1;
   const eighth=Math.round(frac*8),dir=Math.abs(thickPos-0.5)<0.04?'정면':(thickPos<0.5?'◀좌':'우▶'); thlbl.textContent=`두께 ${eighth}/8 ${dir}`;
-  const tgt=aimTarget||pickTarget(); if(!tgt)return; const cue=game.cueBall();
+  const tgt=aimTarget||pickTarget(); if(!tgt){updateAim();return;} const cue=game.cueBall();
   const ox=tgt.ball.x-cue.x,oy=tgt.ball.y-cue.y,D=Math.hypot(ox,oy)||1,perp=(1-frac)*2*R,alpha=Math.asin(Math.max(0,Math.min(1,perp/D))),base=Math.atan2(oy,ox);
-  aimAngle=base+side*alpha; updateAim();}
-function syncThickFromAim(){const cue=game.cueBall();const hit=raycastMM(cue,Math.cos(aimAngle),Math.sin(aimAngle));
-  if(hit.type==='ball'){const tb=hit.ball,ox=tb.x-cue.x,oy=tb.y-cue.y,perp=Math.abs(ox*(-Math.sin(aimAngle))+oy*Math.cos(aimAngle)),frac=Math.max(0,Math.min(1,1-perp/(2*R))),side=(ox*(-Math.sin(aimAngle))+oy*Math.cos(aimAngle))>=0?1:-1;
+  // 실제 발사방향(=조준+스쿼트)이 목표 두께가 되도록 조준각에서 스쿼트만큼 미리 보정
+  aimAngle=base+side*alpha-squirtA(); updateAim();}
+function syncThickFromAim(){const cue=game.cueBall();const [dx,dy]=aimDir();const hit=raycastMM(cue,dx,dy);
+  if(hit.type==='ball'){const tb=hit.ball,ox=tb.x-cue.x,oy=tb.y-cue.y,sp=ox*(-dy)+oy*dx,perp=Math.abs(sp),frac=Math.max(0,Math.min(1,1-perp/(2*R))),side=sp>=0?1:-1;
     thickPos=0.5+side*(1-frac)/2; thk.value=Math.round(thickPos*100); const eighth=Math.round(frac*8),dir=Math.abs(thickPos-0.5)<0.04?'정면':(thickPos<0.5?'◀좌':'우▶'); thlbl.textContent=`두께 ${eighth}/8 ${dir}`;}}
 
 // ───── 사운드 (실샘플 WAV 버퍼) ─────
