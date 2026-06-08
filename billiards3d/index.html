@@ -74,7 +74,7 @@
 <div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button><button id="photoBtn" title="사진/이미지로 공 배치(비전)" style="background:linear-gradient(135deg,#2c6a5a,#3a8a72);border-color:#5cc0a0">📷</button><button id="setBtn">⚙</button></div>
 <input type="file" id="photoInput" accept="image/*" style="display:none">
 <div id="aiToast"></div>
-<div id="hint">펠트 탭=조준 · 공 끌기=위치이동 · 두 손가락=확대·팬(이동) · 당점/두께/파워 후 치기</div>
+<div id="hint">펠트 탭=조준 · 공 끌기=위치이동 · 두 손가락=확대·회전 · 당점/두께/파워 후 치기</div>
 
 <canvas id="thpv" width="150" height="104"></canvas>
 <div id="ctrl">
@@ -181,18 +181,17 @@ const REWARDS=['reward_01.png','reward_02.png','reward_03.png'];
 // 기본 연습 패턴 (테이블 비율 좌표 fx,fy: 0~1) — 수구=노랑(id0)
 // sol = 실제 득점 해법 {aim(deg), pow(%), spinX, spinY} (시뮬 탐색으로 검증됨)
 const PRESETS=[
-  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:175.1,pow:72,sx:0,sy:0,stroke:'normal'}},
-  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:163.2,pow:85,sx:0.2,sy:0.2,stroke:'normal'}},
-  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:150,pow:60,sx:-0.4,sy:0,stroke:'normal'}},
-  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:165.4,pow:60,sx:0,sy:0.2,stroke:'normal'}},
-  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:114.5,pow:60,sx:0,sy:0.2,stroke:'normal'}},
-  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:-152.9,pow:60,sx:-0.4,sy:0,stroke:'normal'}},
+  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:175.1,pow:85,sx:0.4,sy:0,stroke:'normal'},   solM:{aim:175.1,pow:72,sx:0,sy:0,stroke:'normal'}},
+  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:153.2,pow:60,sx:-0.4,sy:0,stroke:'normal'},  solM:{aim:163.2,pow:85,sx:0.2,sy:0.2,stroke:'normal'}},
+  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:157.5,pow:100,sx:-0.2,sy:0,stroke:'normal'}, solM:{aim:150,pow:60,sx:-0.4,sy:0,stroke:'normal'}},
+  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:165.4,pow:72,sx:0,sy:0,stroke:'normal'},     solM:{aim:165.4,pow:60,sx:0,sy:0.2,stroke:'normal'}},
+  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:124.5,pow:60,sx:0.2,sy:0,stroke:'normal'},   solM:{aim:114.5,pow:60,sx:0,sy:0.2,stroke:'normal'}},
+  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:-157.9,pow:72,sx:0,sy:-0.15,stroke:'normal'},solM:{aim:-152.9,pow:60,sx:-0.4,sy:0,stroke:'normal'}},
 ];
 // 사용자가 직접 등록한 해법(localStorage) → 기본 sol 덮어씀 (aim 라디안, thick 포함)
 const SOLKEY='b3d_presetsol';
 function getSols(){ try{return JSON.parse(localStorage.getItem(SOLKEY)||'{}');}catch(e){return{};} }
 function setSols(o){ localStorage.setItem(SOLKEY,JSON.stringify(o)); }
-(function(){ const o=getSols(); PRESETS.forEach(p=>{ if(o[p.n]) p.sol=Object.assign({},p.sol,o[p.n]); }); })();
 
 // ───── three ─────
 const canvas=document.getElementById('c');
@@ -201,14 +200,13 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0a0d12); scene.fog=new THREE.Fog(0x0a0d12,4,12);
 const camera=new THREE.PerspectiveCamera(45,1,0.1,100);
-let camMode='angle', orbit={az:0,el:0,dist:1}, panX=0, panZ=0;
+let camMode='angle', orbit={az:0,el:0,dist:1};
 function applyCam(){
   // az=π/2: 카메라가 +x(수구쪽)에서 -x(빨간공쪽) 바라봄 → 다이 세로, 빨간공 위쪽
   const base = camMode==='top' ? {r:4.4,el:1.45,az:Math.PI/2} : {r:4.2,el:0.62,az:Math.PI/2};
   const el=Math.max(0.2,Math.min(1.5,base.el+orbit.el)), az=base.az+orbit.az, r=base.r*orbit.dist;
-  // pan: 바라보는 지점을 (panX,0,panZ)로 옮겨 단쿠션 등 특정 영역 확대 가능
-  camera.position.set(panX+Math.sin(az)*Math.cos(el)*r, Math.sin(el)*r, panZ+Math.cos(az)*Math.cos(el)*r);
-  camera.lookAt(panX,0,panZ);
+  camera.position.set(Math.sin(az)*Math.cos(el)*r, Math.sin(el)*r, Math.cos(az)*Math.cos(el)*r);
+  camera.lookAt(0,0,0);
 }
 scene.add(new THREE.AmbientLight(0xffffff,0.45));
 const key=new THREE.DirectionalLight(0xffffff,0.95); key.position.set(1.5,4,1.2); key.castShadow=true;
@@ -303,7 +301,7 @@ function drawThPv(frac, side, objHex, cueHex){
   tp.fillStyle='#cfe9d6'; tp.font='bold 13px sans-serif'; tp.textAlign='center'; tp.fillText(`${e}/8 ${dir}`.trim(), W/2, H-6);
 }
 
-// ───── 입력: 한 손가락=조준, 두 손가락=확대·팬(이동) ─────
+// ───── 입력: 한 손가락=조준, 두 손가락=확대·회전 ─────
 let touchMode=null, pinchStart=null, lastMid=null, aimBeforeTouch=null;
 function evMM(cx,cy){const r=canvas.getBoundingClientRect(),ndc=new THREE.Vector2(((cx-r.left)/r.width)*2-1,-((cy-r.top)/r.height)*2+1);
   const ray=new THREE.Raycaster(); ray.setFromCamera(ndc,camera);
@@ -327,11 +325,7 @@ canvas.addEventListener('touchmove',e=>{e.preventDefault(); if(animating)return;
   if(touchMode==='cam'&&e.touches.length>=2){const a=e.touches[0],b=e.touches[1],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
     orbit.dist=Math.max(0.30,Math.min(2.4,pinchStart.dist*pinchStart.d/d));
     const mid={x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2};
-    // 투핑거 드래그 = 팬(바라보는 지점 이동, 회전 대신). 화면x↔단축, 화면y↔장축. 줌 드리프트 없음
-    const k=0.0022*orbit.dist;
-    panZ=Math.max(-tableH*0.55,Math.min(tableH*0.55, panZ+(mid.x-lastMid.x)*k));
-    panX=Math.max(-tableW*0.55,Math.min(tableW*0.55, panX-(mid.y-lastMid.y)*k));
-    lastMid=mid; applyCam();}
+    orbit.az-=(mid.x-lastMid.x)*0.005; orbit.el+=(mid.y-lastMid.y)*0.004; lastMid=mid; applyCam();}
   else if(touchMode==='drag'){dragMove(e.touches[0].clientX,e.touches[0].clientY);}
   else if(touchMode==='aim'){aimAt(e.touches[0].clientX,e.touches[0].clientY);}},{passive:false});
 canvas.addEventListener('touchend',e=>{if(e.touches.length===0){touchMode=null;dragBall=null;}},{passive:false});
@@ -484,8 +478,8 @@ function refreshHud(){
 }
 
 // 카메라 버튼
-document.getElementById('camAngle').onclick=()=>{camMode='angle';orbit={az:0,el:0,dist:1};panX=panZ=0;applyCam();};
-document.getElementById('camTop').onclick=()=>{camMode='top';orbit={az:0,el:0,dist:1};panX=panZ=0;applyCam();};
+document.getElementById('camAngle').onclick=()=>{camMode='angle';orbit={az:0,el:0,dist:1};applyCam();};
+document.getElementById('camTop').onclick=()=>{camMode='top';orbit={az:0,el:0,dist:1};applyCam();};
 
 // ───── 설정 ─────
 const setOv=document.getElementById('setOv'), guideOv=document.getElementById('guideOv');
@@ -548,12 +542,13 @@ function loadPreset(p, showSol){
   if(showSol && p.sol){
     // 해법은 기본 물리값 기준 → 커스텀 튜닝 리셋해야 재현됨
     window.BIL_TUNE=Object.assign({},TUNE_DEF); saveTune(); buildTune();
-    // 실제 해법으로 셋팅(조준/파워/당점) → 바로 SHOT하면 득점
-    aimAngle=p.sol.aim*Math.PI/180; spinX=p.sol.sx; spinY=p.sol.sy;
+    // 테이블별 해법 선택(대대=sol, 중대=solM) + 📌 수동저장 우선
+    const s = getSols()[p.n] || (SET.table==='medium' && p.solM ? p.solM : p.sol);
+    aimAngle=s.aim*Math.PI/180; spinX=s.sx; spinY=s.sy;
     const sl=Math.hypot(spinX,spinY); if(sl>MAX_SPIN){spinX*=MAX_SPIN/sl;spinY*=MAX_SPIN/sl;} // 미스큐 방지
-    power=p.sol.pow/100; pwr.value=p.sol.pow; pwlbl.textContent='파워 '+p.sol.pow+'%';
-    thickPos=(p.sol.thick!=null?p.sol.thick:0.5); thk.value=Math.round(thickPos*100);
-    setStroke(p.sol.stroke||'normal');
+    power=s.pow/100; pwr.value=s.pow; pwlbl.textContent='파워 '+s.pow+'%';
+    thickPos=(s.thick!=null?s.thick:0.5); thk.value=Math.round(thickPos*100);
+    setStroke(s.stroke||'normal');
   } else {
     // 직접 풀기: 빨강 향해 기본 조준만
     spinX=0;spinY=0; thickPos=0.5; thk.value=50; pwr.value=45; power=0.45; pwlbl.textContent='파워 45%'; setStroke('normal');
