@@ -162,7 +162,7 @@ const TW=game.tableW, TH=game.tableH, R=game.ballRadius, rW=R*S;
 let TARGET=SET.target;
 const COLHEX={0:0xe8c800,1:0xf2f2f2,2:0xd5342c};
 let aimAngle=-Math.PI/2, power=0.45, spinX=0, spinY=0, thickPos=0.5, strokeType='normal';
-let animating=false, aimTarget=null;
+let animating=false, aimTarget=null, lockTargetId=null;
 let practiceScore=0, practiceTries=0;
 // 득점 시 보여줄 리워드 이미지 풀 (나중에 reward_02.png… 추가하면 랜덤 출력)
 const REWARDS=['reward_01.png','reward_02.png','reward_03.png'];
@@ -267,7 +267,7 @@ function updateAim(){
     predLine.geometry.setFromPoints([new THREE.Vector3(wx(tb.x),rW,wz(tb.y)),new THREE.Vector3(wx(tb.x+ux*R*6),rW,wz(tb.y+uy*R*6))]);
     predLine.visible=true;
     const sp=(tb.x-cue.x)*(-dy)+(tb.y-cue.y)*dx;
-    aimTarget={ball:tb,side:sp>=0?1:-1};
+    aimTarget={ball:tb,side:sp>=0?1:-1}; lockTargetId=tb.id;  // 조준한 공 잠금(스핀 변경 시 타겟 안 튐)
     const frac=Math.max(0,Math.min(1,1-Math.abs(sp)/(2*R)));
     drawThPv(frac, sp>=0?1:-1, COLHEX[tb.id]||0xffffff, COLHEX[game.cueId()]||0xffffff);
   } else { ghost.visible=false; predLine.visible=false; drawThPv(null); }
@@ -355,7 +355,11 @@ function pickTarget(){const cue=game.cueBall();const [dx,dy]=aimDir();let best=I
   return ball?{ball,side}:null;}
 function applyThickness(){const signed=(thickPos-0.5)*2,frac=1-Math.abs(signed),side=signed>=0?1:-1;
   const eighth=Math.round(frac*8),dir=Math.abs(thickPos-0.5)<0.04?'정면':(thickPos<0.5?'◀좌':'우▶'); thlbl.textContent=`두께 ${eighth}/8 ${dir}`;
-  const tgt=aimTarget||pickTarget(); if(!tgt){updateAim();return;} const cue=game.cueBall();
+  // 잠근 타겟 우선 사용 → 스핀 변경 시 흰공↔빨강공으로 타겟이 튀어 두께가 제멋대로 바뀌던 문제 방지
+  let tgt=null;
+  if(lockTargetId!=null){ const lb=game.balls.find(b=>b.id===lockTargetId); if(lb) tgt={ball:lb}; }
+  if(!tgt) tgt=aimTarget||pickTarget();
+  if(!tgt){updateAim();return;} const cue=game.cueBall();
   const ox=tgt.ball.x-cue.x,oy=tgt.ball.y-cue.y,D=Math.hypot(ox,oy)||1,perp=(1-frac)*2*R,alpha=Math.asin(Math.max(0,Math.min(1,perp/D))),base=Math.atan2(oy,ox);
   // 실제 발사방향(=조준+스쿼트)이 목표 두께가 되도록 조준각에서 스쿼트만큼 미리 보정
   aimAngle=base+side*alpha-squirtA(); updateAim();}
@@ -435,7 +439,7 @@ function onShotDone(res){
 }
 // 연습모드: 턴 안 넘김 — 항상 노란 수구로 다시 조준
 document.getElementById('rNext').addEventListener('click',()=>{document.getElementById('resultOv').classList.remove('show'); game.currentPlayer=0; game.phase='aiming'; game.lastResult=null; game.simResult=null; afterTurn();});
-function afterTurn(){ game.currentPlayer=0; syncBalls(game.balls); spinX=0;spinY=0;drawSpin(); thickPos=0.5;thk.value=50;applyThickness(); setStroke('normal'); updateAim(); refreshHud(); }
+function afterTurn(){ game.currentPlayer=0; lockTargetId=null; syncBalls(game.balls); spinX=0;spinY=0;drawSpin(); thickPos=0.5;thk.value=50;applyThickness(); setStroke('normal'); updateAim(); refreshHud(); }
 function showWin(){const w=game.scores[0]>=TARGET?0:1;document.getElementById('wMsg').textContent='P'+(w+1)+' 승리!';document.getElementById('wScore').textContent=`${game.scores[0]} : ${game.scores[1]}`;document.getElementById('winOv').classList.add('show');}
 document.getElementById('wRestart').addEventListener('click',()=>{location.reload();});
 
@@ -509,6 +513,7 @@ function renderSetups(){ const list=document.getElementById('saveList'); const a
 function loadSetup(s){
   if(!s) return;
   if(s.table && s.table!==SET.table){ alert('이 배치는 '+(s.table==='medium'?'중대':'대대')+'용입니다. 설정에서 테이블을 먼저 바꿔주세요.'); return; }
+  lockTargetId=null;
   s.balls.forEach(sb=>{ const b=game.balls.find(x=>x.id===sb.id); if(b){ b.x=sb.x; b.y=sb.y; b.vx=0; b.vy=0; } });
   game.phase='aiming'; game.lastResult=null; game._snapshot=null;
   if(s.cur!=null) game.currentPlayer=s.cur;
@@ -520,6 +525,7 @@ function loadSetup(s){
   saveOv.classList.remove('show');
 }
 function loadPreset(p, showSol){
+  lockTargetId=null;
   p.b.forEach(([id,fx,fy])=>{ const b=game.balls.find(x=>x.id===id); if(b){ b.x=fx*TW; b.y=fy*TH; b.vx=0; b.vy=0; } });
   game.currentPlayer=0; game.phase='aiming'; game.lastResult=null; game._snapshot=null;
   document.getElementById('resultOv').classList.remove('show');
