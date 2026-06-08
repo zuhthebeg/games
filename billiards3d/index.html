@@ -71,7 +71,7 @@
   <span style="font-size:11px;color:#789" id="tries">/ 0회</span>
 </div>
 <button id="undo" disabled>↩ 되돌리기</button>
-<div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button><button id="saveBtn">📍</button><button id="aiSolveBtn" title="이 배치 자동 해법 찾기" style="background:linear-gradient(135deg,#6a4ca0,#8a5cc0);border-color:#a87cd0">🤖</button><button id="photoBtn" title="사진/이미지로 공 배치(비전)" style="background:linear-gradient(135deg,#2c6a5a,#3a8a72);border-color:#5cc0a0">📷</button><button id="setBtn">⚙</button></div>
+<div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button><button id="photoBtn" title="사진/이미지로 공 배치(비전)" style="background:linear-gradient(135deg,#2c6a5a,#3a8a72);border-color:#5cc0a0">📷</button><button id="setBtn">⚙</button></div>
 <input type="file" id="photoInput" accept="image/*" style="display:none">
 <div id="aiToast"></div>
 <div id="hint">펠트 탭=조준 · 공 끌기=위치이동 · 두 손가락=카메라 · 당점/두께/파워 후 치기</div>
@@ -88,7 +88,13 @@
       <button data-stroke="follow" title="밀어치기: 길게 밀어 충돌 후 수구 전진">밀어</button>
     </div>
   </div>
-  <button id="shoot">SHOT</button>
+  <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;align-items:stretch">
+    <div style="display:flex;gap:6px">
+      <button id="saveBtn" title="연습 샷·저장" style="flex:1;background:rgba(40,46,60,.92);border:1px solid #678;color:#fff;border-radius:8px;padding:8px 10px;font-size:16px">📍</button>
+      <button id="aiSolveBtn" title="이 배치 자동 해법 찾기" style="flex:1;background:linear-gradient(135deg,#6a4ca0,#8a5cc0);border:1px solid #a87cd0;color:#fff;border-radius:8px;padding:8px 10px;font-size:16px">🤖</button>
+    </div>
+    <button id="shoot">SHOT</button>
+  </div>
 </div>
 
 <div class="ov" id="resultOv"><div class="ovcard"><h2 id="rMsg"></h2><p id="rDetail"></p>
