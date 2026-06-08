@@ -57,7 +57,7 @@ function simulate(shot) {
   const k_side = PHYSICS.CUSHION_SIDE_FACTOR;
   const mu_throw = PHYSICS.THROW_FRICTION;
   const mu_throw_ball = num(T.throw, 0.045);  // 공-공 throw 상한
-  const K_CUSH_SIDE = num(T.cushSide, 0.55);  // 쿠션 사이드스핀 반사각/회전력(접시·잉글리시)
+  const K_CUSH_SIDE = num(T.cushSide, 0.65);  // 쿠션 사이드스핀 반사각/회전력(접시·잉글리시)
   const CUSH_WZ_KEEP = 0.3;     // 쿠션 후 사이드스핀 잔존(다음 쿠션엔 약하게)
 
   // ── 스트로크(타격) 종류 ─────────────────────────────────────
@@ -72,6 +72,12 @@ function simulate(shot) {
   };
   const stroke = STROKE_TABLE[shot.stroke] || STROKE_TABLE.normal;
   const WZ_KEEP_RATE = stroke.keep;
+  // 잉글리시 비선형 응답: 저당점=둔감(살짝만 꺾임), 고당점=풀 효과(시스템 유지)
+  // engResp(±SPIN_REF)=±SPIN_REF 로 끝값은 보존, 중간은 약화
+  const ENG_EXP = num(T.engExp, 1.7);
+  const SPIN_REF = 0.6;
+  const engResp = s => { const a = Math.min(Math.abs(s), SPIN_REF); return Math.sign(s) * Math.pow(a / SPIN_REF, ENG_EXP) * SPIN_REF; };
+  const CONTACT_WZ_KEEP = num(T.contactWz, 0.6);  // 공-공 충돌 후 사이드스핀 잔존(밀림 완화)
 
   // 각속도 초기화: 모든 공 wx,wy(구름축)·wz(수직축=좌우스핀) = 0
   for (const b of balls) { b.wx = b.wx || 0; b.wy = b.wy || 0; b.wz = b.wz || 0; }
@@ -99,7 +105,7 @@ function simulate(shot) {
         const w = base * sy * FOLLOW_GAIN * stroke.follow;
         cb.wx = -dy * w;                           // 톱스핀 축 = 진행방향 수평 수직
         cb.wy = dx * w;
-        cb.wz = -base * sx * SIDE_GAIN;            // 수직축 사이드스핀(우회전=시계=wz<0)
+        cb.wz = -base * engResp(sx) * SIDE_GAIN;  // 수직축 사이드스핀(비선형 응답)
       }
     }
   }
@@ -174,6 +180,8 @@ function simulate(shot) {
               events.push({ t, type: 'ball-ball', ball1: a.id, ball2: b.id, speed: relSp });
               if (a.id === cueId) registerCueHit(b.id);
               if (b.id === cueId) registerCueHit(a.id);
+              // 충돌 후 사이드스핀 감쇠 — 공 맞고 쿠션 때 과한 밀림 완화
+              a.wz *= CONTACT_WZ_KEEP; b.wz *= CONTACT_WZ_KEEP;
             }
           }
           // 운동량/위치 해소는 실제 겹쳐있을 때
@@ -195,7 +203,6 @@ function simulate(shot) {
                 const Jt = sgn * Math.min(Math.abs(uT) * 0.5, mu_throw_ball * Math.abs(J));
                 a.vx -= Jt * tx; a.vy -= Jt * ty;
                 b.vx += Jt * tx; b.vy += Jt * ty;
-                a.wz *= 0.5; b.wz *= 0.5;
               }
             }
           }

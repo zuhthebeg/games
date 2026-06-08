@@ -148,15 +148,15 @@ const SET={ table: localStorage.getItem('b3d_table')||'large', bank2: localStora
 const MODE = SET.table==='medium' ? '3ball-medium' : '3ball';
 let game=new GameState(MODE);
 // 물리 튜닝 (설정에서 조정, physics.js가 window.BIL_TUNE 읽음)
-const TUNE_DEF={ maxpow:7800, cushE:0.86, cushAngle:0.95, roll:0.011, follow:1.0, side:1.4, cushSide:0.55, throw:0.045, squirt:0.045 };
+const TUNE_DEF={ maxpow:7800, cushE:0.86, cushAngle:0.95, roll:0.011, follow:1.0, side:1.4, cushSide:0.65, engExp:1.7, contactWz:0.6, throw:0.045, squirt:0.045 };
 window.BIL_TUNE=Object.assign({},TUNE_DEF);
 // 물리 재캘리브레이션(v2): 옛 커스텀 튜닝 1회 초기화 → 모두 새 기본값 적용
-const TUNE_VER='3';
+const TUNE_VER='4';
 try{
   if(localStorage.getItem('b3d_tune_v')!==TUNE_VER){ localStorage.removeItem('b3d_tune'); localStorage.setItem('b3d_tune_v',TUNE_VER); }
   const saved=JSON.parse(localStorage.getItem('b3d_tune')||'{}'); Object.assign(window.BIL_TUNE,saved);
 }catch(e){}
-const S=0.001, MAX_SPIN=0.5;
+const S=0.001, MAX_SPIN=0.6;
 let MAXPOW=window.BIL_TUNE.maxpow;
 const TW=game.tableW, TH=game.tableH, R=game.ballRadius, rW=R*S;
 let TARGET=SET.target;
@@ -587,7 +587,9 @@ const TUNE_META=[
   ['roll','구름 마찰',0.005,0.03,0.001,3],
   ['follow','밀어/끌어',0.5,3.0,0.1,1],
   ['side','좌우 스핀',0.5,3.0,0.1,1],
-  ['cushSide','쿠션 잉글리시',0.10,1.00,0.02,2],
+  ['cushSide','쿠션 잉글리시',0.10,1.20,0.02,2],
+  ['engExp','잉글리시 곡선(저당점둔감)',1.0,2.5,0.1,1],
+  ['contactWz','충돌후 스핀잔존',0.2,1.0,0.05,2],
   ['squirt','스쿼트(빗나감)',0.0,0.12,0.005,3],
 ];
 function saveTune(){ localStorage.setItem('b3d_tune',JSON.stringify(window.BIL_TUNE)); MAXPOW=window.BIL_TUNE.maxpow; }
