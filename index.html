@@ -239,14 +239,19 @@
         let currentFilter = 'all';
         let currentUser = null;
 
-        // ── i18n (한국어 / 繁體中文) ──
+        // ── i18n (한국어 / 繁體中文 / English) ──
         let LANG = (function(){ try{ const s=localStorage.getItem('portal_lang'); if(s) return s; }catch(_){}
-            return (navigator.language||'').toLowerCase().startsWith('zh') ? 'zh-TW' : 'ko'; })();
+            const l=(navigator.language||'').toLowerCase();
+            if(l.startsWith('zh')) return 'zh-TW';
+            if(l.startsWith('ko')) return 'ko';
+            return 'en'; })();
         const PORTAL_I18N = {
             ko: { login:'로그인', logout:'로그아웃', logoutConfirm:'로그아웃 하시겠습니까?', empty:'표시할 게임이 없습니다',
                   langBtn:'🌐 繁中', tabs:{ all:'전체', hot:'🔥 인기', new:'🆕 신규', multi:'👥 멀티', board:'♟️ 보드', card:'🃏 카드', puzzle:'🧩 퍼즐', arcade:'🕹️ 아케이드', tool:'🛠️ 도구' } },
             'zh-TW': { login:'登入', logout:'登出', logoutConfirm:'確定要登出嗎？', empty:'沒有可顯示的遊戲',
-                  langBtn:'🌐 한국어', tabs:{ all:'全部', hot:'🔥 熱門', new:'🆕 新作', multi:'👥 多人', board:'♟️ 棋盤', card:'🃏 紙牌', puzzle:'🧩 益智', arcade:'🕹️ 街機', tool:'🛠️ 工具' } }
+                  langBtn:'🌐 EN', tabs:{ all:'全部', hot:'🔥 熱門', new:'🆕 新作', multi:'👥 多人', board:'♟️ 棋盤', card:'🃏 紙牌', puzzle:'🧩 益智', arcade:'🕹️ 街機', tool:'🛠️ 工具' } },
+            en: { login:'Log in', logout:'Log out', logoutConfirm:'Log out?', empty:'No games to show',
+                  langBtn:'🌐 한국어', tabs:{ all:'All', hot:'🔥 Hot', new:'🆕 New', multi:'👥 Multi', board:'♟️ Board', card:'🃏 Card', puzzle:'🧩 Puzzle', arcade:'🕹️ Arcade', tool:'🛠️ Tools' } }
         };
         function tt(k){ return (PORTAL_I18N[LANG]||PORTAL_I18N.ko)[k]; }
         // 게임 카드 번체중국어 번역(gameId 기준). 없으면 apps.json 한국어 폴백.
@@ -281,19 +286,53 @@
             ladder:{title:'抽籤梯子',desc:'鬼腳圖抽籤遊戲'},
             blockblast:{title:'方塊爆破 Block Blast',desc:'8x8 方塊拼圖！連擊爆破'}
         };
+        // 게임 카드 영어 번역(gameId 기준). 없으면 apps.json 한국어 폴백.
+        const GAME_EN = {
+            match3:{title:'Pop Match',desc:'Anipang-style Match-3! 60-sec timer, combo blasts, gold rewards, ranking. KO/繁中/EN'},
+            sudoku:{title:'Sudoku',desc:'Sudoku - Easy/Normal/Hard, gold rewards & ranking. KO/繁中/EN'},
+            worldcup:{title:'2026 World Cup: Team Korea',desc:'Group A (Mexico·South Africa·Czechia) schedule, KST times, Round-of-16 scenario calculator. Son Heung-min · coach Hong Myung-bo.'},
+            mahjong:{title:'Taiwanese Mahjong',desc:'Taiwanese Mahjong - 16-tile hands, 4 players, tai ×100,000G rewards'},
+            riichi:{title:'Japanese Riichi Mahjong',desc:'Riichi Mahjong - 13 tiles, riichi·dora·yaku scoring, 3 CPU players'},
+            gostop:{title:'Go-Stop (Hwatu)',desc:'2-player Hwatu Go-Stop - gwang·tti·kkeut·pi·godori·go-stop·pibak, vs CPU'},
+            blackjack:{title:'Blackjack',desc:'1:1 Blackjack vs the dealer! Gold betting, 3:2 payout, win-streak bonus'},
+            'd2r-runewords':{title:'D2R Runeword Builder',desc:'Pick rune order → search runewords. Filter by gear/class/level'},
+            jokerrun:{title:'Joker Run',desc:'Poker roguelike! Build hands and blow up your score with jokers'},
+            enhance:{title:'Weapon Enhance & Battle',desc:'Diablo-style tier system! Enhance weapons, battle, and earn gold'},
+            pingtan:{title:'Pingtan',desc:'3-4 player strategy board game - resources, building, trading'},
+            ppingpae:{title:'Ppingpae',desc:'Tile-melding board game - runs/groups/joker play'},
+            connect4:{title:'3-Player Connect Four',desc:'Real-time 3-player Connect Four'},
+            gomoku:{title:'Gomoku',desc:'Real-time 1:1 Gomoku (Five in a Row)'},
+            poker:{title:'Poker',desc:"1:1 Texas Hold'em poker"},
+            'number-guess':{title:'Number Guess',desc:'Simple number-guessing game'},
+            rps:{title:'Rock Paper Scissors',desc:'Classic rock-paper-scissors'},
+            tileslider:{title:'Tile Slider',desc:'Sliding number/image puzzle'},
+            blockpuzzle:{title:'Block Puzzle',desc:'Block-combining puzzle'},
+            pikmin:{title:'Pikmin Tracker',desc:'Pikmin collection manager'},
+            snake:{title:'🐍 Snake',desc:'+100G per food! Log in to stack up gold'},
+            minesweeper:{title:'💣 Minesweeper',desc:'Gold rewards by difficulty! Clear bonus + time bonus'},
+            breakout:{title:'Breakout',desc:'Classic brick-breaker game'},
+            billiards3d:{title:'3D Billiards · 3-Cushion',desc:'3D three-cushion billiards - tip/thickness/english physics, Five-and-Half diamond system, stun/follow strokes'},
+            d2r:{title:'D2R Guide (Diablo 2)',desc:'Diablo 2 Resurrected leveling guide & Necromancer builds'},
+            linerush:{title:'Line Rush',desc:'Draw lines to claim territory and reveal the background - touch arcade'},
+            bulletdodge:{title:'Bullet Dodge',desc:'Dodge waves of bullets and survive as long as you can! Joystick supported'},
+            ladder:{title:'Ladder Game',desc:'Ghost-leg ladder lottery game'},
+            blockblast:{title:'Block Blast',desc:'8x8 block puzzle! Chain combos to blast them away'}
+        };
         function appText(app){
-            if(LANG==='zh-TW'){ const tw=GAME_TW[getGameId(app.url)]; if(tw) return tw; }
+            const gid=getGameId(app.url);
+            if(LANG==='zh-TW'){ const tw=GAME_TW[gid]; if(tw) return tw; }
+            if(LANG==='en'){ const en=GAME_EN[gid]; if(en) return en; }
             return { title:app.title, desc:app.desc };
         }
         function applyLang(){
-            document.documentElement.lang = (LANG==='zh-TW') ? 'zh-Hant' : 'ko';
+            document.documentElement.lang = (LANG==='zh-TW') ? 'zh-Hant' : (LANG==='en' ? 'en' : 'ko');
             document.querySelectorAll('.tab').forEach(tab=>{ const lbl=tt('tabs')[tab.dataset.filter]; if(lbl) tab.textContent=lbl; });
             const empty=document.getElementById('emptyState'); if(empty) empty.textContent=tt('empty');
             const lb=document.getElementById('langBtn'); if(lb) lb.textContent=tt('langBtn');
             if(typeof updateAuthUI==='function') updateAuthUI();
             renderApps();
         }
-        function toggleLang(){ LANG = (LANG==='zh-TW') ? 'ko' : 'zh-TW'; try{ localStorage.setItem('portal_lang',LANG); }catch(_){}; applyLang(); }
+        function toggleLang(){ const order=['ko','zh-TW','en']; LANG = order[(order.indexOf(LANG)+1+order.length)%order.length] || 'ko'; try{ localStorage.setItem('portal_lang',LANG); }catch(_){}; applyLang(); }
 
         // 카테고리 매핑 (URL 기반)
         const categories = {
