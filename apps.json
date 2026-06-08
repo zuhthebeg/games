@@ -329,15 +329,15 @@
     "title": "3D 당구 · 3구",
     "icon": "https://game.cocy.io/billiards3d/icon.svg",
     "url": "https://game.cocy.io/billiards3d/",
-    "desc": "3D 쓰리쿠션 당구 - 당점·두께·잉글리시 물리, 다이아몬드 시스템",
+    "desc": "3D 쓰리쿠션 당구 - 당점·두께·잉글리시 물리, 파이브앤하프 다이아몬드 시스템·끊어/밀어 스트로크",
     "badge": "HOT",
     "platforms": [
       "WEB"
     ],
     "languages": [
-      "🌍"
+      "ko"
     ],
-    "category": "game"
+    "category": "arcade"
   },
   {
     "title": "D2R 가이드 (Diablo 2)",
