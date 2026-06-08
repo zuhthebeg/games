@@ -116,6 +116,7 @@
     • 성공하면 <b>한 번 더</b>, 실패하면 상대 턴(이닝 종료).<br>
     • <b>당점</b>: 위=밀어(follow), 아래=끌어(draw), 좌우=회전(english). 회전은 진행경로는 거의 안 바꾸고(스쿼트만 살짝) <b>쿠션 반사각·throw</b>에 영향.<br>
     • <b>스트로크</b>: <b>끊어</b>=충돌 후 수구 정지·분리 / <b>기본</b> / <b>밀어</b>=충돌 후 수구 전진. 같은 당점도 타격에 따라 결과가 달라짐.<br>
+    • <b>다이아몬드 시스템</b>: 쿠션 반사각을 실제 당구대처럼 보정함. <b>파이브앤하프</b>(도착=출발−1쿠션)는 <b>러닝 잉글리시(좌우 약 ⅔)+중간 스피드</b>로 치면 숫자대로 떨어짐. 잉글리시 많을수록 길어지고, 무회전·역회전이면 짧아짐.<br>
     • <b>빈쿠션 2점제</b>(옵션): 첫 적구를 맞히기 전에 쿠션 3회 이상 친 뒤 성공하면 <b>2점</b>.<br>
     • <b>수구 교대</b>: P1=노랑, P2=흰.<br>
     • <b>승리</b>: 목표 점수 선취.
@@ -147,10 +148,10 @@ const SET={ table: localStorage.getItem('b3d_table')||'large', bank2: localStora
 const MODE = SET.table==='medium' ? '3ball-medium' : '3ball';
 let game=new GameState(MODE);
 // 물리 튜닝 (설정에서 조정, physics.js가 window.BIL_TUNE 읽음)
-const TUNE_DEF={ maxpow:7800, cushE:0.90, roll:0.011, follow:1.0, side:1.4, cushSide:0.5, throw:0.045, squirt:0.045 };
+const TUNE_DEF={ maxpow:7800, cushE:0.86, cushAngle:0.95, roll:0.011, follow:1.0, side:1.4, cushSide:0.55, throw:0.045, squirt:0.045 };
 window.BIL_TUNE=Object.assign({},TUNE_DEF);
 // 물리 재캘리브레이션(v2): 옛 커스텀 튜닝 1회 초기화 → 모두 새 기본값 적용
-const TUNE_VER='2';
+const TUNE_VER='3';
 try{
   if(localStorage.getItem('b3d_tune_v')!==TUNE_VER){ localStorage.removeItem('b3d_tune'); localStorage.setItem('b3d_tune_v',TUNE_VER); }
   const saved=JSON.parse(localStorage.getItem('b3d_tune')||'{}'); Object.assign(window.BIL_TUNE,saved);
@@ -581,7 +582,8 @@ document.getElementById('setImport').onclick=()=>{
 // 물리 세부설정 슬라이더
 const TUNE_META=[
   ['maxpow','파워 최대',5000,11000,100,0],
-  ['cushE','쿠션 반발',0.70,0.98,0.01,2],
+  ['cushE','쿠션 속도반발',0.75,0.95,0.01,2],
+  ['cushAngle','쿠션 각도(자연각)',0.85,1.00,0.01,2],
   ['roll','구름 마찰',0.005,0.03,0.001,3],
   ['follow','밀어/끌어',0.5,3.0,0.1,1],
   ['side','좌우 스핀',0.5,3.0,0.1,1],

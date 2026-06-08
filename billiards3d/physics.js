@@ -57,7 +57,7 @@ function simulate(shot) {
   const k_side = PHYSICS.CUSHION_SIDE_FACTOR;
   const mu_throw = PHYSICS.THROW_FRICTION;
   const mu_throw_ball = num(T.throw, 0.045);  // 공-공 throw 상한
-  const K_CUSH_SIDE = num(T.cushSide, 0.5);   // 쿠션 사이드스핀 반사각/회전력(접시)
+  const K_CUSH_SIDE = num(T.cushSide, 0.55);  // 쿠션 사이드스핀 반사각/회전력(접시·잉글리시)
   const CUSH_WZ_KEEP = 0.3;     // 쿠션 후 사이드스핀 잔존(다음 쿠션엔 약하게)
 
   // ── 스트로크(타격) 종류 ─────────────────────────────────────
@@ -205,43 +205,44 @@ function simulate(shot) {
       }
     }
 
-    // ── 공-쿠션 충돌 ──────────────────────────────────────────
+    // ── 공-쿠션 충돌 (각도/속도/잉글리시 분리 모델) ──────────────
+    // 다이아몬드 시스템(파이브앤하프) 재현을 위해:
+    //  · 반사각 = 기하반사 × ANGLE_KEEP(자연각, 1=완전반사 <1=짧아짐) — 잉글리시 없으면 살짝 짧게(실제 쿠션)
+    //  · 속도   = SPEED_REST 배율로만 감소(이동거리·에너지) → 각도와 분리(잉글리시 줘도 안 늘어지게)
+    //  · 잉글리시 = 접선방향 회전(러닝=길어짐/역=짧아짐). 속도엔 거의 영향 없음
+    const ANGLE_KEEP = num(T.cushAngle, 0.95);
+    const SPEED_REST = num(T.cushE, 0.86);
     for (const b of balls) {
       let cushionHit = false;
       let side = null;
-
-      // 사이드스핀 표면속도(wz*r)가 쿠션 접선방향으로 공을 끌어 반사각 변형
-      const wzSurf = b.wz * r;
-      // 좌 쿠션 (법선 +x). 접선=y. 우회전(wz>0)이면 +y로 꺾임
-      if (b.x - r < 0) {
-        b.x = r;
-        b.vx = Math.abs(b.vx) * e_cush;
-        b.vy = b.vy * (1 - mu_s * 0.3) + wzSurf * K_CUSH_SIDE;
+      const wzSurf = b.wz * r;   // 사이드스핀 표면속도
+      // 한 쿠션 반사 처리: 법선축(반사) + 접선축(자연각×잉글리시) → 전체 속도는 SPEED_REST로 스케일
+      function bounce(normalAxis, normalSign, vN, vT, engSign) {
+        const nvn = Math.abs(vN);                              // 법선 성분(반사 후 크기)
+        const nvt = vT * ANGLE_KEEP + engSign * wzSurf * K_CUSH_SIDE; // 접선: 자연각 + 잉글리시
+        const sIn = Math.hypot(vN, vT), sRaw = Math.hypot(nvn, nvt);
+        const k = sRaw > 1e-6 ? (sIn * SPEED_REST) / sRaw : 0;
         b.wz *= CUSH_WZ_KEEP;
+        return { n: normalSign * nvn * k, t: nvt * k };
+      }
+      // 좌 쿠션 (법선 +x, 접선 y, 우회전 +y)
+      if (b.x - r < 0) {
+        b.x = r; const o = bounce('x', +1, b.vx, b.vy, +1); b.vx = o.n; b.vy = o.t;
         cushionHit = true; side = 'left';
       }
-      // 우 쿠션 (법선 −x). 접선 반대
+      // 우 쿠션 (법선 −x)
       if (b.x + r > tableW) {
-        b.x = tableW - r;
-        b.vx = -Math.abs(b.vx) * e_cush;
-        b.vy = b.vy * (1 - mu_s * 0.3) - wzSurf * K_CUSH_SIDE;
-        b.wz *= CUSH_WZ_KEEP;
+        b.x = tableW - r; const o = bounce('x', -1, b.vx, b.vy, -1); b.vx = o.n; b.vy = o.t;
         cushionHit = true; side = 'right';
       }
-      // 상 쿠션 (법선 +y). 접선=x
+      // 상 쿠션 (법선 +y, 접선 x)
       if (b.y - r < 0) {
-        b.y = r;
-        b.vy = Math.abs(b.vy) * e_cush;
-        b.vx = b.vx * (1 - mu_s * 0.3) - wzSurf * K_CUSH_SIDE;
-        b.wz *= CUSH_WZ_KEEP;
+        b.y = r; const o = bounce('y', +1, b.vy, b.vx, -1); b.vy = o.n; b.vx = o.t;
         cushionHit = true; side = 'top';
       }
       // 하 쿠션 (법선 −y)
       if (b.y + r > tableH) {
-        b.y = tableH - r;
-        b.vy = -Math.abs(b.vy) * e_cush;
-        b.vx = b.vx * (1 - mu_s * 0.3) + wzSurf * K_CUSH_SIDE;
-        b.wz *= CUSH_WZ_KEEP;
+        b.y = tableH - r; const o = bounce('y', -1, b.vy, b.vx, +1); b.vy = o.n; b.vx = o.t;
         cushionHit = true; side = 'bottom';
       }
 
