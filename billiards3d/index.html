@@ -346,7 +346,12 @@ function drawSpin(){const W=spinCv.width,cx=W/2,cy=W/2,rr=W/2-10; sg.clearRect(0
   sg.beginPath();sg.arc(cx,cy,rr*0.7,0,7);sg.strokeStyle='rgba(200,0,0,.18)';sg.lineWidth=2;sg.stroke();
   const dx=cx+spinX*rr*0.82, dy=cy-spinY*rr*0.82; sg.beginPath();sg.arc(dx,dy,rr*0.16,0,7);sg.fillStyle='#d11';sg.fill();}
 function spinAt(cx,cy){const r=spinCv.getBoundingClientRect();let dx=(cx-r.left)/r.width*2-1,dy=(cy-r.top)/r.height*2-1;
-  const len=Math.hypot(dx,dy); if(len>MAX_SPIN){dx*=MAX_SPIN/len;dy*=MAX_SPIN/len;} spinX=dx;spinY=-dy;drawSpin();applyThickness();}
+  const len=Math.hypot(dx,dy); if(len>MAX_SPIN){dx*=MAX_SPIN/len;dy*=MAX_SPIN/len;}
+  const oldSqA=squirtA(); spinX=dx; spinY=-dy;
+  // 발사방향(=조준각+스쿼트)을 일정하게 유지 → 스쿼트 변화분만 조준각에 보정.
+  // 슬라이더로 맞추든 직접 드래그로 맞추든 스핀 바꿔도 각도/두께 안 틀어짐
+  aimAngle += oldSqA - squirtA();
+  drawSpin(); updateAim();}
 let spinDrag=false;
 spinCv.addEventListener('touchstart',e=>{e.preventDefault();spinDrag=true;spinAt(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
 spinCv.addEventListener('touchmove',e=>{e.preventDefault();if(spinDrag)spinAt(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
