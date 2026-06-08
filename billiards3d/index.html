@@ -126,6 +126,8 @@
 
 <div class="ov" id="saveOv"><div class="ovcard" style="text-align:left;min-width:290px;max-height:82vh;overflow:auto">
   <h2 style="font-size:20px;text-align:center">📍 연습 샷</h2>
+  <button id="aiSolve" style="width:100%;background:linear-gradient(90deg,#6a4ca0,#8a5cc0);color:#fff;margin-bottom:6px;font-weight:700;padding:11px">🤖 이 배치 자동 해법 찾기</button>
+  <div id="aiSolveMsg" style="font-size:12px;color:#9fe;min-height:1.1em;margin-bottom:12px"></div>
   <div style="color:#9cf;font-size:12px;margin-bottom:6px;font-weight:700">기본 패턴</div>
   <div id="presetList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
   <div style="color:#9cf;font-size:12px;margin-bottom:6px;font-weight:700">내 저장 배치</div>
@@ -571,6 +573,72 @@ function renderPresets(){ const el=document.getElementById('presetList');
 document.getElementById('saveBtn').onclick=()=>{ renderPresets(); renderSetups(); saveOv.classList.add('show'); };
 document.getElementById('saveClose').onclick=()=>saveOv.classList.remove('show');
 document.getElementById('saveNow').onclick=()=>{ const a=getSetups(); a.push(captureSetup()); setSetups(a); renderSetups(); };
+
+// ───── 🤖 자동 해법기: 결정론 시뮬로 현재 배치의 득점샷 탐색(검증된 해법) ─────
+// 하이브리드의 "정답 엔진". (LLM 해설/전략은 서버 라우트로 2단계 예정)
+function simShot(aimDeg, powPct, sx, sy, stroke){
+  const rad=aimDeg*Math.PI/180, cid=game.cueId();
+  const balls=game.balls.map(b=> b.id===cid
+    ? {id:b.id,x:b.x,y:b.y,vx:Math.cos(rad)*powPct/100*MAXPOW,vy:Math.sin(rad)*powPct/100*MAXPOW,spinX:sx,spinY:sy}
+    : {id:b.id,x:b.x,y:b.y,vx:0,vy:0,spinX:0,spinY:0});
+  return window.simulate({mode:game.mode,tableW:TW,tableH:TH,ballRadius:R,balls,cueId:cid,stroke});
+}
+let solving=false;
+function solveLayout(onProgress,onDone){
+  const cue=game.cueBall(); if(!cue){onDone(null,0);return;}
+  const objs=game.balls.filter(b=>b.id!==game.cueId());
+  const powers=[60,72,85,100], sxs=[-0.4,-0.2,0,0.2,0.4], sys=[0,0.2,-0.15];
+  const jobs=[];
+  for(const o of objs){ const base=Math.atan2(o.y-cue.y,o.x-cue.x)*180/Math.PI;
+    for(let d=-15; d<=15; d+=2.5){ const aim=base+d;
+      for(const p of powers) for(const sx of sxs) for(const sy of sys) jobs.push({aim,p,sx,sy,d}); } }
+  function cost(j){ return Math.abs(j.sx)*1.6 + Math.abs(j.sy)*0.8 + (j.p-60)/120 + Math.abs(j.d)*0.05; }
+  let i=0,best=null,tries=0;
+  function chunk(){
+    const end=Math.min(i+45,jobs.length);
+    for(;i<end;i++){ const j=jobs[i]; tries++;
+      const r=simShot(j.aim,j.p,j.sx,j.sy,'normal');
+      if(r.score>0 && (!best||cost(j)<cost(best))) best={...j,res:r};
+    }
+    onProgress(Math.round(i/jobs.length*100));
+    if(i<jobs.length && !(best && cost(best)<0.15)) requestAnimationFrame(chunk);
+    else onDone(best,tries);
+  }
+  chunk();
+}
+function applySolution(b){
+  aimAngle=b.aim*Math.PI/180; spinX=b.sx; spinY=b.sy;
+  power=b.p/100; pwr.value=b.p; pwlbl.textContent='파워 '+b.p+'%';
+  setStroke('normal'); lockTargetId=null;
+  syncBalls(game.balls); drawSpin(); syncThickFromAim(); updateAim();
+}
+function solveExplain(res){
+  const cu=res.cushionCount, railFirst=(res.cushBeforeFirst>0);
+  const kind = railFirst ? '빈쿠션 계열' : (cu>=4?'대회전 계열':'돌리기 계열');
+  return `✓ 득점 해법 (${kind}) · 쿠션 ${cu}회`;
+}
+document.getElementById('aiSolve').onclick=function(){
+  if(solving) return; solving=true;
+  const btn=this, msg=document.getElementById('aiSolveMsg');
+  const t0=Date.now(); btn.disabled=true; btn.style.opacity='0.7';
+  msg.style.color='#9fe'; msg.textContent='탐색 중… 0%';
+  solveLayout(
+    pct=>{ msg.textContent='탐색 중… '+pct+'%'; },
+    (best,tries)=>{
+      solving=false; btn.disabled=false; btn.style.opacity='1';
+      if(best){
+        applySolution(best);
+        const dr=best.sx>0.05?'우':(best.sx<-0.05?'좌':'무'), updn=best.sy>0.05?'상':(best.sy<-0.05?'하':'중');
+        msg.style.color='#9fe';
+        msg.innerHTML=solveExplain(best.res)+`<br><span style="color:#cde">파워 ${best.p}% · 당점 ${dr}${updn} · 검증됨(${tries}샷 탐색)</span>`;
+        setTimeout(()=>saveOv.classList.remove('show'), 900);
+      } else {
+        msg.style.color='#f9a';
+        msg.textContent='이 배치에선 해법을 못 찾았어요. 공 위치를 바꾸거나 다시 시도해줘.';
+      }
+    }
+  );
+};
 // JSON 내보내기/가져오기 (사용자↔개발자 샷 공유)
 document.getElementById('setExport').onclick=async()=>{
   const arr=getSetups(); if(!arr.length){alert('저장된 배치가 없어요.');return;}
