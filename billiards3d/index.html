@@ -559,9 +559,12 @@ function renderPresets(){ const el=document.getElementById('presetList');
     const main=document.createElement('button'); main.textContent=p.n;
     main.style.cssText='background:#2c4a63;color:#fff;padding:8px 6px;font-size:13px;border-radius:8px;flex:1';
     main.onclick=()=>loadPreset(p,false);   // 직접 풀기
-    const sol=document.createElement('button'); sol.textContent='💡'; sol.title='해법 셋팅 후 자동 샷';
+    const sol=document.createElement('button'); sol.textContent='💡'; sol.title='자동 해법기로 셋팅 후 발사';
     sol.style.cssText='background:#5a4a2c;color:#fff;padding:8px 9px;font-size:13px;border-radius:8px';
-    sol.onclick=()=>{ loadPreset(p,true); setTimeout(fireShot,650); };  // 해법 셋팅 → 자동 발사
+    sol.onclick=()=>{
+      if(getSols()[p.n]){ loadPreset(p,true); setTimeout(fireShot,650); }   // 📌 수동 등록 해법 존중
+      else { loadPreset(p,false); runSolver(true); }                         // 자동 해법기(🤖와 동일)로 셋팅
+    };
     const bind=document.createElement('button'); bind.textContent='📌'; bind.title='지금 조준/파워/당점/두께를 이 패턴 해법으로 저장';
     bind.style.cssText='background:#2c5a3a;color:#fff;padding:8px 9px;font-size:13px;border-radius:8px';
     bind.onclick=()=>{
@@ -638,9 +641,10 @@ function solveExplain(res){
 }
 const aiToast=document.getElementById('aiToast'); let aiToastTimer=null;
 function showToast(html,ms){ aiToast.innerHTML=html; aiToast.classList.add('show'); if(aiToastTimer)clearTimeout(aiToastTimer); if(ms)aiToastTimer=setTimeout(()=>aiToast.classList.remove('show'),ms); }
-document.getElementById('aiSolveBtn').onclick=function(){
+// 자동 해법기 실행(🤖 버튼·💡 연습샷 공용). autoFire=true면 셋팅 후 자동 발사
+function runSolver(autoFire){
   if(solving) return; solving=true;
-  const btn=this; btn.disabled=true; btn.textContent='⏳';
+  const btn=document.getElementById('aiSolveBtn'); btn.disabled=true; btn.textContent='⏳';
   saveOv.classList.remove('show'); document.getElementById('resultOv').classList.remove('show');
   showToast('🤖 해법 탐색 중… <b>0%</b>',0);
   solveLayout(
@@ -650,13 +654,15 @@ document.getElementById('aiSolveBtn').onclick=function(){
       if(best){
         applySolution(best);
         const dr=best.sx>0.05?'우':(best.sx<-0.05?'좌':'무'), updn=best.sy>0.05?'상':(best.sy<-0.05?'하':'중');
-        showToast('🤖 '+solveExplain(best.res)+'<br><span style="color:#cdb8ff">파워 '+best.p+'% · 당점 '+dr+updn+' · 검증됨</span><br><span style="color:#9a8cc0;font-size:11px">SHOT 누르면 그대로 득점</span>',4000);
+        showToast('🤖 '+solveExplain(best.res)+'<br><span style="color:#cdb8ff">파워 '+best.p+'% · 당점 '+dr+updn+' · 검증됨</span><br><span style="color:#9a8cc0;font-size:11px">'+(autoFire?'자동 발사…':'SHOT 누르면 그대로 득점')+'</span>',4000);
+        if(autoFire) setTimeout(()=>{ if(!animating) fireShot(); },750);
       } else {
         showToast('이 배치에선 해법을 못 찾았어요.<br><span style="color:#cdb8ff">공 위치를 바꾸거나 다시 시도해줘.</span>',3500);
       }
     }
   );
-};
+}
+document.getElementById('aiSolveBtn').onclick=()=>runSolver(false);
 // JSON 내보내기/가져오기 (사용자↔개발자 샷 공유)
 document.getElementById('setExport').onclick=async()=>{
   const arr=getSetups(); if(!arr.length){alert('저장된 배치가 없어요.');return;}
