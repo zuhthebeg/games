@@ -71,7 +71,8 @@
   <span style="font-size:11px;color:#789" id="tries">/ 0회</span>
 </div>
 <button id="undo" disabled>↩ 되돌리기</button>
-<div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button><button id="saveBtn">📍</button><button id="setBtn">⚙</button><button id="aiSolveBtn" title="이 배치 자동 해법 찾기" style="background:linear-gradient(135deg,#6a4ca0,#8a5cc0);border-color:#a87cd0">🤖</button></div>
+<div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button><button id="saveBtn">📍</button><button id="setBtn">⚙</button><button id="aiSolveBtn" title="이 배치 자동 해법 찾기" style="background:linear-gradient(135deg,#6a4ca0,#8a5cc0);border-color:#a87cd0">🤖</button><button id="photoBtn" title="사진으로 공 배치(비전)" style="background:linear-gradient(135deg,#2c6a5a,#3a8a72);border-color:#5cc0a0">📷</button></div>
+<input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
 <div id="aiToast"></div>
 <div id="hint">펠트 탭=조준 · 공 끌기=위치이동 · 두 손가락=카메라 · 당점/두께/파워 후 치기</div>
 
@@ -663,6 +664,40 @@ function runSolver(autoFire){
   );
 }
 document.getElementById('aiSolveBtn').onclick=()=>runSolver(false);
+
+// ───── 📷 사진 → 비전 공 배치 (Claude 비전 + 4점 호모그래피 원근보정) ─────
+function _solve8(A,b){const n=8;for(let i=0;i<n;i++){let p=i;for(let r=i+1;r<n;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;[A[i],A[p]]=[A[p],A[i]];[b[i],b[p]]=[b[p],b[i]];for(let r=0;r<n;r++)if(r!==i){const f=A[r][i]/A[i][i];for(let c2=i;c2<n;c2++)A[r][c2]-=f*A[i][c2];b[r]-=f*b[i];}}return b.map((v,i)=>v/A[i][i]);}
+function _homography(src,dst){const A=[],b=[];for(let i=0;i<4;i++){const[x,y]=src[i],[u,v]=dst[i];A.push([x,y,1,0,0,0,-u*x,-u*y]);b.push(u);A.push([0,0,0,x,y,1,-v*x,-v*y]);b.push(v);}const h=_solve8(A,b);return[h[0],h[1],h[2],h[3],h[4],h[5],h[6],h[7],1];}
+function _applyH(H,px,py){const d=H[6]*px+H[7]*py+H[8];return[(H[0]*px+H[1]*py+H[2])/d,(H[3]*px+H[4]*py+H[5])/d];}
+function _downscale(file){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{const m=1024,s=Math.min(1,m/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',0.82));};img.onerror=rej;img.src=URL.createObjectURL(file);});}
+const VPROMPT='이것은 3구 당구(캐롬) 테이블 사진이다. 픽셀좌표(좌상단=원점, x오른쪽 y아래)로 추정해 JSON만 출력(설명·코드블록 금지). corners=초록 플레이면(쿠션 안쪽 천)의 네 모서리. balls=각 공 중심. 안보이는 공은 null:\\n{"image_w":정수,"image_h":정수,"corners":{"TL":[x,y],"TR":[x,y],"BR":[x,y],"BL":[x,y]},"balls":{"yellow":[x,y],"white":[x,y],"red":[x,y]}}';
+async function photoPlace(file){
+  showToast('📷 사진 인식 중… <b>(비전, 최대 1분)</b>',0);
+  let dataUrl; try{ dataUrl=await _downscale(file); }catch(e){ showToast('이미지를 못 읽었어요.',3000); return; }
+  let parsed;
+  try{
+    const r=await fetch('https://llm.cocy.io/v1/chat/completions',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({messages:[{role:'user',content:[{type:'image_url',image_url:{url:dataUrl}},{type:'text',text:VPROMPT}]}]})});
+    const j=await r.json(); const txt=(((j.choices||[])[0]||{}).message||{}).content||'';
+    parsed=JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1));
+  }catch(e){ showToast('인식 실패 — 다시 찍거나 수동 배치해줘.',3500); return; }
+  const c=parsed.corners||{}, b=parsed.balls||{};
+  if(!c.TL||!c.TR||!c.BR||!c.BL){ showToast('테이블 코너 인식 실패 — 테이블 전체가 나오게 찍어줘.',3500); return; }
+  const H=_homography([c.TL,c.TR,c.BR,c.BL],[[0,0],[TW,0],[TW,TH],[0,TH]]);
+  const map={yellow:0,white:1,red:2}; let n=0;
+  for(const col in map){ const p=b[col]; if(!p||p.length<2)continue;
+    const xy=_applyH(H,p[0],p[1]); const ball=game.balls.find(z=>z.id===map[col]);
+    if(ball){ ball.x=Math.max(R,Math.min(TW-R,xy[0])); ball.y=Math.max(R,Math.min(TH-R,xy[1])); ball.vx=0; ball.vy=0; n++; } }
+  if(!n){ showToast('공 인식 실패 — 공이 잘 보이게 찍어줘.',3500); return; }
+  lockTargetId=null; game.phase='aiming'; game.lastResult=null; game._snapshot=null;
+  document.getElementById('resultOv').classList.remove('show');
+  syncBalls(game.balls); spinX=0;spinY=0;drawSpin(); thickPos=0.5;thk.value=50; setStroke('normal');
+  { const cue=game.cueBall(), red=game.balls.find(z=>z.id===2); if(cue&&red) aimAngle=Math.atan2(red.y-cue.y,red.x-cue.x); }
+  updateAim(); refreshHud();
+  showToast('📷 공 '+n+'개 배치됨 ✓<br><span style="color:#cde">드래그로 미세조정 후 🤖 해법</span>',5000);
+}
+document.getElementById('photoBtn').onclick=()=>document.getElementById('photoInput').click();
+document.getElementById('photoInput').onchange=function(e){ const f=e.target.files[0]; if(f) photoPlace(f); e.target.value=''; };
 // JSON 내보내기/가져오기 (사용자↔개발자 샷 공유)
 document.getElementById('setExport').onclick=async()=>{
   const arr=getSetups(); if(!arr.length){alert('저장된 배치가 없어요.');return;}
