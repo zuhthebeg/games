@@ -167,7 +167,7 @@
 </div></div>
 
 <script src="three.min.js?v=2"></script>
-<script src="physics.js?v=16"></script>
+<script src="physics.js?v=17"></script>
 <script src="game.js?v=12"></script>
 <script>
 'use strict';
@@ -176,10 +176,10 @@ const SET={ table: localStorage.getItem('b3d_table')||'large', bank2: localStora
 const MODE = SET.table==='medium' ? '3ball-medium' : '3ball';
 let game=new GameState(MODE);
 // 물리 튜닝 (설정에서 조정, physics.js가 window.BIL_TUNE 읽음)
-const TUNE_DEF={ maxpow:7800, cushE:0.86, cushAngle:0.95, roll:0.011, follow:1.0, side:1.4, cushSide:0.65, engExp:1.7, contactWz:0.6, throw:0.045, squirt:0.045 };
+const TUNE_DEF={ maxpow:8600, cushE:0.86, cushAngle:0.95, roll:0.011, follow:0.75, side:1.1, cushSide:0.55, engExp:1.7, contactWz:0.6, throw:0.045, squirt:0.045 };
 window.BIL_TUNE=Object.assign({},TUNE_DEF);
 // 물리 재캘리브레이션(v2): 옛 커스텀 튜닝 1회 초기화 → 모두 새 기본값 적용
-const TUNE_VER='4';
+const TUNE_VER='5';
 try{
   if(localStorage.getItem('b3d_tune_v')!==TUNE_VER){ localStorage.removeItem('b3d_tune'); localStorage.setItem('b3d_tune_v',TUNE_VER); }
   const saved=JSON.parse(localStorage.getItem('b3d_tune')||'{}'); Object.assign(window.BIL_TUNE,saved);
@@ -197,12 +197,12 @@ const REWARDS=['reward_01.png','reward_02.png','reward_03.png'];
 // 기본 연습 패턴 (테이블 비율 좌표 fx,fy: 0~1) — 수구=노랑(id0)
 // sol = 실제 득점 해법 {aim(deg), pow(%), spinX, spinY} (시뮬 탐색으로 검증됨)
 const PRESETS=[
-  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:171.6,pow:65,sx:0.4,sy:0.2,stroke:'follow'},  solM:{aim:170.6,pow:60,sx:0.3,sy:0.2,stroke:'follow'}},
-  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:161.2,pow:80,sx:0,sy:0,stroke:'normal'},      solM:{aim:165.7,pow:80,sx:0,sy:0.2,stroke:'normal'}},
-  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:174.5,pow:88,sx:0,sy:0,stroke:'normal'},      solM:{aim:188,pow:80,sx:0,sy:0.2,stroke:'normal'}},
-  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:-182.3,pow:88,sx:0,sy:0.2,stroke:'normal'},   solM:{aim:182.9,pow:80,sx:0,sy:0.2,stroke:'normal'}},
-  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:104.5,pow:80,sx:0,sy:-0.15,stroke:'normal'},  solM:{aim:107.5,pow:88,sx:0,sy:-0.15,stroke:'normal'}},
-  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:158.4,pow:80,sx:0,sy:0,stroke:'normal'},      solM:{aim:167.4,pow:88,sx:0,sy:0,stroke:'normal'}},
+  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:160.1,pow:88,sx:0,sy:-0.15,stroke:'normal'}, solM:{aim:175.6,pow:55,sx:0.2,sy:0.2,stroke:'follow'}},
+  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:165.7,pow:80,sx:0,sy:0,stroke:'normal'},      solM:{aim:165.7,pow:80,sx:0,sy:0.2,stroke:'normal'}},
+  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:173.5,pow:88,sx:0,sy:0.2,stroke:'normal'},    solM:{aim:191,pow:80,sx:-0.2,sy:0,stroke:'normal'}},
+  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:170.4,pow:80,sx:0,sy:0,stroke:'normal'},      solM:{aim:-171.8,pow:88,sx:0.2,sy:0,stroke:'normal'}},
+  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:104.5,pow:80,sx:0.2,sy:0,stroke:'normal'},    solM:{aim:149.1,pow:72,sx:0,sy:0.2,stroke:'normal'}},
+  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:147.9,pow:72,sx:0,sy:0.2,stroke:'normal'},     solM:{aim:147.9,pow:65,sx:0,sy:0.2,stroke:'normal'}},
 ];
 // 사용자가 직접 등록한 해법(localStorage) → 기본 sol 덮어씀 (aim 라디안, thick 포함)
 const SOLKEY='b3d_presetsol';

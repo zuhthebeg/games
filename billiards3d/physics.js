@@ -68,7 +68,7 @@ function simulate(shot) {
   const STROKE_TABLE = {
     stun:   { follow: 0.30, keep: 0.9968 },
     normal: { follow: 1.00, keep: 0.9992 },
-    follow: { follow: 1.65, keep: 0.9996 },
+    follow: { follow: 1.45, keep: 0.9996 },
   };
   const stroke = STROKE_TABLE[shot.stroke] || STROKE_TABLE.normal;
   const WZ_KEEP_RATE = stroke.keep;
