@@ -482,11 +482,11 @@ function motionHandler(e){
     mArmed=false;
     if(now<mCool){ mPeak=0; return; }
     mCool=now+700;                           // 연속 오발 방지(쿨다운)
-    const dur=mLast-mRise, peakFrac = dur>20 ? (mPeakT-mRise)/dur : 0;
+    const dur=mLast-mRise;
     const pw=Math.max(15,Math.min(100,Math.round(mPeak/MOTION_MAXG*100)));
     pwr.value=pw; power=pw/100; pwlbl.textContent='파워 '+pw+'%';
-    // 끊어=초반 정점 찍고 뚝(짧음) / 밀어=후반까지 가속(정점 늦거나 김) / 그 외 기본
-    const stroke = (peakFrac>=0.5 || dur>=240) ? 'follow' : (dur<=140 ? 'stun' : 'normal');
+    // 스윙 지속시간 기준(원복): 짧음=끊어 / 중간=기본 / 길게=밀어
+    const stroke = dur<110?'stun':(dur>260?'follow':'normal');
     setStroke(stroke);
     const mh=document.getElementById('motionHint');                       // 감지결과 즉시 표시(보정용)
     mh.textContent='📳 '+({stun:'끊어',normal:'기본',follow:'밀어'}[stroke])+' '+pw+'%';
