@@ -42,8 +42,7 @@
   #thk{background:linear-gradient(90deg,#5aa9e6,#2a3340 50%,#5aa9e6)}
   #thk::-webkit-slider-thumb,#thk::-moz-range-thumb{border-color:#5aa9e6}
   #shoot{flex-shrink:0;padding:16px 20px;background:#e8453c;border:none;color:#fff;font-size:17px;font-weight:800;border-radius:12px}
-  #thpv{position:fixed;left:10px;z-index:6;bottom:calc(132px + env(safe-area-inset-bottom));
-    background:rgba(12,20,16,.78);border:1px solid #2c4536;border-radius:12px}
+  #thpv{width:100px;height:58px;background:rgba(12,20,16,.78);border:1px solid #2c4536;border-radius:8px}
   /* 오버레이 */
   .ov{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}
   .ov.show{display:flex}
@@ -72,13 +71,24 @@
 </div>
 <button id="undo" disabled>↩ 되돌리기</button>
 <div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button><button id="photoBtn" title="사진/이미지로 공 배치(비전)" style="background:linear-gradient(135deg,#2c6a5a,#3a8a72);border-color:#5cc0a0">📷</button><button id="setBtn">⚙</button></div>
-<input type="file" id="photoInput" accept="image/*" style="display:none">
+<input type="file" id="photoInputCam" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="photoInputLib" accept="image/*" style="display:none">
+<div id="photoMenu" style="position:fixed;inset:0;z-index:22;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5)">
+  <div style="background:rgba(20,30,26,.96);border:1px solid #3a8a72;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:210px">
+    <div style="color:#cfe;text-align:center;font-weight:700;margin-bottom:2px">사진으로 공 배치</div>
+    <button id="pmCam" style="background:#3a8a72;color:#fff;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:700">📷 카메라로 촬영</button>
+    <button id="pmLib" style="background:#3a6ea5;color:#fff;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:700">🖼 이미지 선택</button>
+    <button id="pmCancel" style="background:#444;color:#fff;padding:9px;border:none;border-radius:10px;font-size:13px">취소</button>
+  </div>
+</div>
 <div id="aiToast"></div>
 <div id="hint">펠트 탭=조준 · 공 끌기=위치이동 · 두 손가락=확대·회전 · 당점/두께/파워 후 치기</div>
 
-<canvas id="thpv" width="150" height="104"></canvas>
 <div id="ctrl">
-  <canvas id="spin" width="216" height="216"></canvas>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+    <canvas id="thpv" width="150" height="88"></canvas>
+    <canvas id="spin" width="216" height="216"></canvas>
+  </div>
   <div id="mid">
     <div><div class="slab" id="pwlbl">파워 45%</div><input id="pwr" type="range" min="5" max="100" value="45"></div>
     <div><div class="slab" id="thlbl">두께 정면</div><input id="thk" type="range" min="0" max="100" value="50"></div>
@@ -702,8 +712,15 @@ async function photoPlace(file){
   updateAim(); refreshHud();
   showToast('📷 공 '+n+'개 배치됨 ✓<br><span style="color:#cde">드래그로 미세조정 후 🤖 해법</span>',5000);
 }
-document.getElementById('photoBtn').onclick=()=>document.getElementById('photoInput').click();
-document.getElementById('photoInput').onchange=function(e){ const f=e.target.files[0]; if(f) photoPlace(f); e.target.value=''; };
+const photoMenu=document.getElementById('photoMenu');
+document.getElementById('photoBtn').onclick=()=>{ photoMenu.style.display='flex'; };
+document.getElementById('pmCancel').onclick=()=>{ photoMenu.style.display='none'; };
+photoMenu.onclick=e=>{ if(e.target===photoMenu) photoMenu.style.display='none'; };
+document.getElementById('pmCam').onclick=()=>{ photoMenu.style.display='none'; document.getElementById('photoInputCam').click(); };
+document.getElementById('pmLib').onclick=()=>{ photoMenu.style.display='none'; document.getElementById('photoInputLib').click(); };
+function onPhotoPick(e){ const f=e.target.files[0]; if(f) photoPlace(f); e.target.value=''; }
+document.getElementById('photoInputCam').onchange=onPhotoPick;
+document.getElementById('photoInputLib').onchange=onPhotoPick;
 // JSON 내보내기/가져오기 (사용자↔개발자 샷 공유)
 document.getElementById('setExport').onclick=async()=>{
   const arr=getSetups(); if(!arr.length){alert('저장된 배치가 없어요.');return;}
