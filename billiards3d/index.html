@@ -88,6 +88,7 @@
 </div>
 <div id="aiToast"></div>
 <div id="solOpts"></div>
+<div id="motionHint" style="position:fixed;right:12px;bottom:210px;z-index:7;display:none;background:rgba(60,40,90,.92);color:#e8dcff;border:1px solid #8a5cc0;border-radius:8px;padding:5px 9px;font-size:11px;font-weight:700">📳 흔들어 치기</div>
 <div id="hint">펠트 탭=조준 · 공 끌기=위치이동 · 두 손가락=확대·회전 · 당점/두께/파워 후 치기</div>
 
 <div id="ctrl">
@@ -124,6 +125,7 @@
   <h2 style="font-size:22px;text-align:center">⚙ 설정</h2>
   <div class="setrow"><span>테이블</span><span class="seg"><button data-table="large">대대</button><button data-table="medium">중대</button></span></div>
   <div class="setrow"><span>빈쿠션 2점제<br><small style="color:#89a">첫 적구 전 3쿠션 성공 시 2점</small></span><span class="seg"><button data-bank="1">ON</button><button data-bank="0">OFF</button></span></div>
+  <div class="setrow"><span>📳 모션샷 (실험)<br><small style="color:#89a">폰을 앞으로 흔들어 타격 · 세기=파워, 스윙=끊어/밀어</small></span><span class="seg"><button data-motion="1">ON</button><button data-motion="0">OFF</button></span></div>
   <div class="setrow"><span>목표 점수</span><input id="setTarget" type="number" min="5" max="200" step="5" style="width:70px;padding:6px;background:#1e1e2e;border:1px solid #555;color:#fff;text-align:center;border-radius:6px"></div>
   <details style="margin-top:10px"><summary style="cursor:pointer;color:#9cf;font-size:13px;padding:4px 0">🔧 물리 세부설정 (고급)</summary>
     <div id="tuneBox" style="font-size:12px"></div>
@@ -462,6 +464,39 @@ function fireShot(){
   return true;
 }
 document.getElementById('shoot').addEventListener('click',fireShot);
+
+// ── 📳 모션샷: 가속도센서로 흔들어 치기(실험). 피크 가속도=파워, 트리거 지속시간=끊어/기본/밀어 ──
+let motionOn=false, mArmed=false, mPeak=0, mRise=0, mLast=0, mCool=0;
+const MOTION_TRIG=12, MOTION_MAXG=40;   // m/s² 스윙 트리거/최대(실기 보정 상수)
+function motionHandler(e){
+  if(!motionOn || animating) return;
+  let mag; const a=e.acceleration;
+  if(a && a.x!=null) mag=Math.hypot(a.x||0,a.y||0,a.z||0);                              // 중력 제외 가속도(있으면)
+  else { const g=e.accelerationIncludingGravity||{}; mag=Math.abs(Math.hypot(g.x||0,g.y||0,g.z||0)-9.81); }
+  const now=e.timeStamp||performance.now();
+  if(mag>MOTION_TRIG){                       // 스윙 중: 피크 추적
+    if(!mArmed){ mArmed=true; mPeak=mag; mRise=now; } else mPeak=Math.max(mPeak,mag);
+    mLast=now;
+  } else if(mArmed && now-mLast>90){         // 스윙 종료 → 발사
+    mArmed=false;
+    if(now<mCool){ mPeak=0; return; }
+    mCool=now+700;                           // 연속 오발 방지(쿨다운)
+    const dur=mLast-mRise;
+    const pw=Math.max(15,Math.min(100,Math.round(mPeak/MOTION_MAXG*100)));
+    pwr.value=pw; power=pw/100; pwlbl.textContent='파워 '+pw+'%';
+    setStroke(dur<110?'stun':(dur>260?'follow':'normal'));   // 짧고 강함=끊어 / 길게 밀기=밀어
+    if(!animating) fireShot();
+    mPeak=0;
+  }
+}
+async function enableMotion(){
+  if(typeof DeviceMotionEvent==='undefined'){ alert('이 기기는 모션센서를 지원하지 않아요.'); return false; }
+  if(typeof DeviceMotionEvent.requestPermission==='function'){   // iOS 13+ 권한
+    try{ const p=await DeviceMotionEvent.requestPermission(); if(p!=='granted'){ alert('모션 권한이 필요해요.'); return false; } }
+    catch(err){ alert('모션 권한 요청 실패.'); return false; }
+  }
+  window.addEventListener('devicemotion', motionHandler); return true;
+}
 function playAnim(res){
   const frames=res.frames,total=frames[frames.length-1].t,SPEED=1.4;
   const evq=[];let lb=-1,lc=-1;for(const e of res.events||[]){if(e.type==='ball-ball'){if(e.t-lb>0.04){evq.push({t:e.t,s:'ball',sp:Math.abs(e.speed||1500)});lb=e.t;}}else if(e.type==='cushion'){if(e.t-lc>0.05){evq.push({t:e.t,s:'cushion',sp:1500});lc=e.t;}}}
@@ -536,6 +571,7 @@ const setOv=document.getElementById('setOv'), guideOv=document.getElementById('g
 function refreshSetUI(){
   setOv.querySelectorAll('[data-table]').forEach(b=>b.classList.toggle('on', b.dataset.table===SET.table));
   setOv.querySelectorAll('[data-bank]').forEach(b=>b.classList.toggle('on', (b.dataset.bank==='1')===SET.bank2));
+  setOv.querySelectorAll('[data-motion]').forEach(b=>b.classList.toggle('on', (b.dataset.motion==='1')===motionOn));
   document.getElementById('setTarget').value=TARGET;
 }
 document.getElementById('setBtn').onclick=()=>{ refreshSetUI(); setOv.classList.add('show'); };
@@ -547,6 +583,13 @@ setOv.querySelectorAll('[data-table]').forEach(b=>b.onclick=()=>{
 });
 setOv.querySelectorAll('[data-bank]').forEach(b=>b.onclick=()=>{
   SET.bank2 = b.dataset.bank==='1'; localStorage.setItem('b3d_bank2', SET.bank2?'1':'0'); refreshSetUI();
+});
+setOv.querySelectorAll('[data-motion]').forEach(b=>b.onclick=async()=>{
+  const want=b.dataset.motion==='1';
+  if(want){ const ok=await enableMotion(); if(!ok){ refreshSetUI(); return; } motionOn=true; }
+  else { motionOn=false; window.removeEventListener('devicemotion',motionHandler); }
+  document.getElementById('motionHint').style.display = motionOn?'block':'none';
+  refreshSetUI();
 });
 document.getElementById('setTarget').onchange=e=>{ TARGET=Math.max(1,+e.target.value||15); localStorage.setItem('b3d_target',TARGET); };
 document.getElementById('setNew').onclick=()=>{ if(confirm('새 게임을 시작할까요?')) location.reload(); };
