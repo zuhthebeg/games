@@ -22,6 +22,11 @@
   #aiToast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:18;display:none;
     background:rgba(24,18,38,.95);border:1px solid #8a5cc0;border-radius:12px;padding:14px 18px;
     color:#e8dcff;font-size:13px;max-width:80vw;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  #solOpts{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:19;display:none;
+    background:rgba(24,18,38,.96);border:1px solid #8a5cc0;border-radius:12px;padding:10px;width:min(92vw,420px);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  #solOpts .solopt{display:block;width:100%;text-align:left;margin:4px 0;padding:9px 11px;border:1px solid #4a3a6a;border-radius:9px;background:rgba(50,40,75,.6);color:#e8dcff;font-size:12px}
+  #solOpts .solopt.on{border-color:#b58cff;background:rgba(120,90,200,.45)}
+  #solOpts #solClose{margin-top:4px;width:100%;padding:7px;background:#3a2f55;color:#cdb8ff;border:none;border-radius:9px;font-size:12px}
   #aiToast.show{display:block}
   #aiToast b{color:#c9a0ff}
   #undo:disabled{opacity:.35}
@@ -82,6 +87,7 @@
   </div>
 </div>
 <div id="aiToast"></div>
+<div id="solOpts"></div>
 <div id="hint">펠트 탭=조준 · 공 끌기=위치이동 · 두 손가락=확대·회전 · 당점/두께/파워 후 치기</div>
 
 <div id="ctrl">
@@ -419,6 +425,7 @@ function sfx(k, speed){ if(!AC)return; if(AC.state==='suspended')AC.resume();
 let lastShot=null;   // 되돌리기 시 복원할 직전 샷 수치
 function fireShot(){
   if(animating)return false; initAudio();
+  { const so=document.getElementById('solOpts'); if(so) so.style.display='none'; }   // 발사 시 해법 패널 닫기
   // 당점 미스큐 방지: 입력 한계(MAX_SPIN)로 클램프 (해법값이 한계 넘으면 샷이 안 나가던 버그)
   const slen=Math.hypot(spinX,spinY); if(slen>MAX_SPIN){spinX*=MAX_SPIN/slen;spinY*=MAX_SPIN/slen;drawSpin();}
   const res=game.shoot(aimAngle*180/Math.PI, power*MAXPOW, spinX, spinY, strokeType); if(!res)return false;
@@ -647,16 +654,26 @@ function solveLayout(onProgress,onDone){
     c+=objObj*2.5;                                    // 적구끼리 키스
     return c;                                          // 대회전·가락 패널티 없음
   }
-  let i=0,best=null,bestC=1e9,tries=0;
+  function firstHitId(r){const bb=(r.events||[]).find(e=>e.type==='ball-ball'&&(e.ball1===cid||e.ball2===cid));return bb?(bb.ball1===cid?bb.ball2:bb.ball1):-1;}
+  // 비용순 정렬 후 서로 다른 해법(각도≥8°·다른 첫적구·파워≥20 차이) top-N만 선택 → 닮은꼴 중복 제거
+  function topN(cs,n){
+    cs.sort((a,b)=>a.c-b.c); const out=[];
+    for(const cd of cs){
+      const dup=out.some(o=>{let dd=Math.abs(o.aim-cd.aim)%360; if(dd>180)dd=360-dd; return dd<8 && o.fh===cd.fh && Math.abs(o.p-cd.p)<20;});
+      if(!dup){ out.push(cd); if(out.length>=n) break; }
+    }
+    return out;
+  }
+  let i=0,tries=0; const cands=[];
   function chunk(){
     const end=Math.min(i+45,jobs.length);
     for(;i<end;i++){ const j=jobs[i]; tries++;
       const r=simShot(j.aim,j.p,j.sx,j.sy,'normal');
-      if(r.score>0){ const c=difficulty(r,j); if(c<bestC){bestC=c;best={...j,res:r};} }
+      if(r.score>0){ cands.push({aim:j.aim,p:j.p,sx:j.sx,sy:j.sy,c:difficulty(r,j),cu:r.cushionCount,cbf:r.cushBeforeFirst,full:firstFull(r),fh:firstHitId(r)}); }
     }
     onProgress(Math.round(i/jobs.length*100));
-    if(i<jobs.length && !(best && bestC<0.5)) requestAnimationFrame(chunk);
-    else onDone(best,tries);
+    if(i<jobs.length) requestAnimationFrame(chunk);          // 전수 탐색(top-3 위해 조기종료 없음)
+    else onDone(topN(cands,3),tries);
   }
   chunk();
 }
@@ -681,20 +698,36 @@ function runSolver(autoFire){
   showToast('🤖 해법 탐색 중… <b>0%</b>',0);
   solveLayout(
     pct=>{ showToast('🤖 해법 탐색 중… <b>'+pct+'%</b>',0); },
-    (best,tries)=>{
+    (cands,tries)=>{
       solving=false; btn.disabled=false; btn.textContent='🤖';
-      if(best){
-        applySolution(best);
-        const dr=best.sx>0.05?'우':(best.sx<-0.05?'좌':'무'), updn=best.sy>0.05?'상':(best.sy<-0.05?'하':'중');
-        showToast('🤖 '+solveExplain(best.res)+'<br><span style="color:#cdb8ff">파워 '+best.p+'% · 당점 '+dr+updn+' · 검증됨</span><br><span style="color:#9a8cc0;font-size:11px">'+(autoFire?'자동 발사…':'SHOT 누르면 그대로 득점')+'</span>',4000);
-        if(autoFire) setTimeout(()=>{ if(!animating) fireShot(); },750);
-      } else {
-        showToast('이 배치에선 해법을 못 찾았어요.<br><span style="color:#cdb8ff">공 위치를 바꾸거나 다시 시도해줘.</span>',3500);
-      }
+      aiToast.classList.remove('show');
+      if(cands && cands.length){ showSolOptions(cands); }
+      else { showToast('이 배치에선 해법을 못 찾았어요.<br><span style="color:#cdb8ff">공 위치를 바꾸거나 다시 시도해줘.</span>',3500); }
     }
   );
 }
-document.getElementById('aiSolveBtn').onclick=()=>runSolver(false);
+// 🤖 해법 후보(최대 3개)를 패널로 제시 — 탭해서 선택, SHOT으로 발사
+let solCands=[];
+function solLabel(b,idx){
+  const dr=b.sx>0.05?'우':(b.sx<-0.05?'좌':''), updn=b.sy>0.05?'상':(b.sy<-0.05?'하':'');
+  const eng=(!dr&&!updn)?'무회전':('당점'+dr+updn);
+  const kind=b.cbf>0?'가락':(b.cu>=4?'대회전':'돌리기');
+  return '<b>'+'①②③'[idx]+'</b> '+b.cu+'쿠션·'+kind+' <span style="color:#9a8cc0">|</span> 두께'+(b.full*8).toFixed(1)+'/8 · '+eng+' · 파워'+b.p+'%';
+}
+function showSolOptions(cands){
+  solCands=cands; applySolution(cands[0]);
+  const el=document.getElementById('solOpts');
+  el.innerHTML='<div style="font-size:11px;color:#b8a8e0;margin-bottom:6px">🤖 해법 '+cands.length+'개 — 탭해서 선택, SHOT으로 발사</div>'+
+    cands.map((b,i)=>'<button data-i="'+i+'" class="solopt'+(i===0?' on':'')+'">'+solLabel(b,i)+'</button>').join('')+
+    '<button id="solClose">닫기</button>';
+  el.style.display='block';
+  el.querySelectorAll('.solopt').forEach(btn=>btn.onclick=()=>{
+    applySolution(solCands[+btn.dataset.i]);
+    el.querySelectorAll('.solopt').forEach(x=>x.classList.toggle('on',x===btn));
+  });
+  document.getElementById('solClose').onclick=()=>{ el.style.display='none'; };
+}
+document.getElementById('aiSolveBtn').onclick=()=>{ document.getElementById('solOpts').style.display='none'; runSolver(false); };
 
 // ───── 📷 사진 → 비전 공 배치 (Claude 비전 + 4점 호모그래피 원근보정) ─────
 function _solve8(A,b){const n=8;for(let i=0;i<n;i++){let p=i;for(let r=i+1;r<n;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;[A[i],A[p]]=[A[p],A[i]];[b[i],b[p]]=[b[p],b[i]];for(let r=0;r<n;r++)if(r!==i){const f=A[r][i]/A[i][i];for(let c2=i;c2<n;c2++)A[r][c2]-=f*A[i][c2];b[r]-=f*b[i];}}return b.map((v,i)=>v/A[i][i]);}
