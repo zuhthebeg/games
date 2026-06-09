@@ -217,16 +217,17 @@ renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0a0d12); scene.fog=new THREE.Fog(0x0a0d12,4,12);
 const camera=new THREE.PerspectiveCamera(45,1,0.1,100);
 let camMode='angle', orbit={az:0,el:0,dist:1};
+const camTgt=new THREE.Vector3(), camTgtLook=new THREE.Vector3(), camCur=new THREE.Vector3(), camCurLook=new THREE.Vector3(); let camFollowInit=false;
 function applyCam(){
   // 시점(1인칭 추적): 수구 뒤·약간 위에서 큐(aim)방향을 화면 위쪽(북)으로. 조준 바꾸면 따라 돎
   if(camMode==='follow'){
     const cue=game.cueBall(); if(cue){
       const a=aimAngle, ax=Math.cos(a), az2=Math.sin(a);   // aim 방향 월드(X,Z)
-      const cx=wx(cue.x), cz=wz(cue.y), z=Math.max(0.5,Math.min(2.2,orbit.dist));
+      const cx=wx(cue.x), cz=wz(cue.y), z=Math.max(0.5,Math.min(5.0,orbit.dist));
       const back=1.0*z, height=0.78*z, ahead=0.9;
-      camera.up.set(0,1,0);
-      camera.position.set(cx - ax*back, height, cz - az2*back);
-      camera.lookAt(cx + ax*ahead, 0.12, cz + az2*ahead);
+      // 카메라를 즉시 옮기지 않고 '목표 포즈'만 갱신 → 렌더 루프가 부드럽게 lerp(급회전 방지)
+      camTgt.set(cx - ax*back, height, cz - az2*back);
+      camTgtLook.set(cx + ax*ahead, 0.12, cz + az2*ahead);
       return;
     }
   }
@@ -352,7 +353,7 @@ canvas.addEventListener('touchstart',e=>{e.preventDefault(); if(animating)return
     if(gb){touchMode='drag';dragBall=gb;}else{touchMode='aim';aimBeforeTouch=aimAngle;aimAt(t.clientX,t.clientY);}}},{passive:false});
 canvas.addEventListener('touchmove',e=>{e.preventDefault(); if(animating)return;
   if(touchMode==='cam'&&e.touches.length>=2){const a=e.touches[0],b=e.touches[1],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
-    orbit.dist=Math.max(0.30,Math.min(2.4,pinchStart.dist*pinchStart.d/d));
+    orbit.dist=Math.max(0.30,Math.min(camMode==='follow'?5.0:2.4,pinchStart.dist*pinchStart.d/d));
     const mid={x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2};
     orbit.az-=(mid.x-lastMid.x)*0.005; orbit.el+=(mid.y-lastMid.y)*0.004; lastMid=mid; applyCam();}
   else if(touchMode==='drag'){dragMove(e.touches[0].clientX,e.touches[0].clientY);}
@@ -848,7 +849,14 @@ function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);c
 // 초기 조준: 수구 → 빨간공 방향
 { const cue=game.cueBall(), red=game.balls.find(b=>b.id===2); if(cue&&red) aimAngle=Math.atan2(red.y-cue.y, red.x-cue.x); }
 addEventListener('resize',resize); resize(); applyCam(); drawSpin(); refreshHud(); syncThickFromAim(); updateAim();
-(function loop(){requestAnimationFrame(loop);renderer.render(scene,camera);})();
+(function loop(){requestAnimationFrame(loop);
+  if(camMode==='follow'){
+    if(!camFollowInit){ camCur.copy(camTgt); camCurLook.copy(camTgtLook); camFollowInit=true; }   // 토글 시 초기 포즈로 스냅
+    else { camCur.lerp(camTgt,0.12); camCurLook.lerp(camTgtLook,0.12); }                            // 이후 조준변화엔 부드럽게 추적
+    camera.up.set(0,1,0); camera.position.copy(camCur); camera.lookAt(camCurLook);
+  } else camFollowInit=false;
+  renderer.render(scene,camera);
+})();
 </script>
 </body>
 </html>
