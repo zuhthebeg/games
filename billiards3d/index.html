@@ -191,12 +191,12 @@ const REWARDS=['reward_01.png','reward_02.png','reward_03.png'];
 // 기본 연습 패턴 (테이블 비율 좌표 fx,fy: 0~1) — 수구=노랑(id0)
 // sol = 실제 득점 해법 {aim(deg), pow(%), spinX, spinY} (시뮬 탐색으로 검증됨)
 const PRESETS=[
-  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:175.1,pow:85,sx:0.4,sy:0,stroke:'normal'},   solM:{aim:175.1,pow:72,sx:0,sy:0,stroke:'normal'}},
-  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:153.2,pow:60,sx:-0.4,sy:0,stroke:'normal'},  solM:{aim:163.2,pow:85,sx:0.2,sy:0.2,stroke:'normal'}},
-  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:157.5,pow:100,sx:-0.2,sy:0,stroke:'normal'}, solM:{aim:150,pow:60,sx:-0.4,sy:0,stroke:'normal'}},
-  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:165.4,pow:72,sx:0,sy:0,stroke:'normal'},     solM:{aim:165.4,pow:60,sx:0,sy:0.2,stroke:'normal'}},
-  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:124.5,pow:60,sx:0.2,sy:0,stroke:'normal'},   solM:{aim:114.5,pow:60,sx:0,sy:0.2,stroke:'normal'}},
-  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:-157.9,pow:72,sx:0,sy:-0.15,stroke:'normal'},solM:{aim:-152.9,pow:60,sx:-0.4,sy:0,stroke:'normal'}},
+  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:105,pow:60,sx:0,sy:0,stroke:'normal'},        solM:{aim:175.1,pow:72,sx:0,sy:0,stroke:'normal'}},
+  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:165.7,pow:85,sx:0,sy:0,stroke:'normal'},      solM:{aim:165.7,pow:85,sx:0,sy:0,stroke:'normal'}},
+  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:167.5,pow:85,sx:-0.2,sy:0.2,stroke:'normal'}, solM:{aim:178.5,pow:85,sx:0,sy:0,stroke:'normal'}},
+  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:165.4,pow:72,sx:0,sy:0,stroke:'normal'},     solM:{aim:-154.3,pow:85,sx:0,sy:0,stroke:'normal'}},
+  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:104.5,pow:72,sx:0,sy:-0.15,stroke:'normal'}, solM:{aim:124.5,pow:85,sx:0.2,sy:0,stroke:'normal'}},
+  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:-157.9,pow:72,sx:0,sy:-0.15,stroke:'normal'},solM:{aim:-140.4,pow:85,sx:0,sy:0,stroke:'normal'}},
 ];
 // 사용자가 직접 등록한 해법(localStorage) → 기본 sol 덮어씀 (aim 라디안, thick 포함)
 const SOLKEY='b3d_presetsol';
@@ -617,20 +617,29 @@ function solveLayout(onProgress,onDone){
   for(const o of objs){ const base=Math.atan2(o.y-cue.y,o.x-cue.x)*180/Math.PI;
     for(let d=-15; d<=15; d+=2.5){ const aim=base+d;
       for(const p of powers) for(const sx of sxs) for(const sy of sys) jobs.push({aim,p,sx,sy,d}); } }
-  // 난이도 비용: 일반적인 해법(직접 3쿠션·풀히트·적당 파워/잉글리시) 우선,
-  // 키스샷·가락쿠션(레일먼저)·대회전(추가쿠션)엔 큰 패널티 → 묘기 해법은 최후수단
+  // 첫 적구 두께(0~1, 1=정면). 충돌 직전 프레임의 수구 속도방향과 수구→적구 사잇각으로 실측
+  function firstFull(r){
+    const bb=(r.events||[]).find(e=>e.type==='ball-ball'&&(e.ball1===cid||e.ball2===cid)); if(!bb)return 1;
+    const oid=bb.ball1===cid?bb.ball2:bb.ball1;
+    let fr=null; for(const f of (r.frames||[])){ if(f.t<bb.t) fr=f; else break; } if(!fr)fr=(r.frames||[])[0]; if(!fr)return 1;
+    const cue=fr.balls.find(b=>b.id===cid),obj=fr.balls.find(b=>b.id===oid); if(!cue||!obj)return 1;
+    const sp=Math.hypot(cue.vx,cue.vy); if(sp<1)return 1;
+    const ox=obj.x-cue.x,oy=obj.y-cue.y,od=Math.hypot(ox,oy)||1;
+    const cos=(cue.vx*ox+cue.vy*oy)/(sp*od); return Math.max(0,1-Math.sqrt(Math.max(0,1-cos*cos)));
+  }
+  // 난이도 비용: 두께<1/8(얇은히트)·풀파워(100%)·키스샷 회피 → 강패널티.
+  // 대회전(추가쿠션)·가락쿠션(레일먼저)은 정상 해법으로 허용(각 안 나올 때 자연히 선택됨).
   function difficulty(r,j){
     const ev=r.events.filter(e=>e.type==='ball-ball');
     const cueHits=ev.filter(e=>e.ball1===cid||e.ball2===cid).length;
     const objObj=ev.filter(e=>e.ball1!==cid&&e.ball2!==cid).length;
-    let c=Math.abs(j.sx)*1.5+Math.abs(j.sy)*0.7;     // 잉글리시
-    c+=Math.max(0,j.p-65)/55;                         // 고파워
-    c+=Math.abs(j.d)*0.09;                            // 얇은 히트
-    c+=Math.max(0,r.cushionCount-3)*0.7;             // 대회전(추가 쿠션)
-    c+=(r.cushBeforeFirst>0?1.3:0);                  // 빈쿠션/가락(레일 먼저)
-    c+=(cueHits>2?(cueHits-2)*2.2:0);                // 수구 키스(추가 충돌)
-    c+=objObj*2.2;                                    // 적구끼리 키스
-    return c;
+    const full=firstFull(r);
+    let c=Math.abs(j.sx)*1.2+Math.abs(j.sy)*0.5;     // 잉글리시(약)
+    c+=(j.p>=100?2.2:Math.max(0,j.p-85)/35);         // 풀파워 회피
+    c+=(full<0.125?4:(1-full)*0.8);                  // 두께<1/8 razor 강패널티, 얇을수록↑
+    c+=(cueHits>2?(cueHits-2)*2.5:0);                // 수구 키스(추가 충돌)
+    c+=objObj*2.5;                                    // 적구끼리 키스
+    return c;                                          // 대회전·가락 패널티 없음
   }
   let i=0,best=null,bestC=1e9,tries=0;
   function chunk(){
