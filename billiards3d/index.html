@@ -225,9 +225,12 @@ function applyCam(){
       const a=aimAngle, ax=Math.cos(a), az2=Math.sin(a);   // aim 방향 월드(X,Z)
       const cx=wx(cue.x), cz=wz(cue.y), z=Math.max(0.5,Math.min(5.0,orbit.dist));
       const back=1.0*z, height=0.78*z, ahead=0.9;
+      // 줌아웃(z↑)할수록 시선을 수구 앞 → 테이블 중앙(원점)으로 블렌딩 → 한쪽 쏠림 없이 다이 전체 프레임
+      const t=Math.max(0,Math.min(1,(z-1.6)/2.4));
+      const lx=(cx+ax*ahead)*(1-t), lz=(cz+az2*ahead)*(1-t);
       // 카메라를 즉시 옮기지 않고 '목표 포즈'만 갱신 → 렌더 루프가 부드럽게 lerp(급회전 방지)
       camTgt.set(cx - ax*back, height, cz - az2*back);
-      camTgtLook.set(cx + ax*ahead, 0.12, cz + az2*ahead);
+      camTgtLook.set(lx, 0.12, lz);
       return;
     }
   }
