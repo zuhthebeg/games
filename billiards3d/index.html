@@ -466,7 +466,7 @@ function fireShot(){
 document.getElementById('shoot').addEventListener('click',fireShot);
 
 // ── 📳 모션샷: 가속도센서로 흔들어 치기(실험). 피크 가속도=파워, 트리거 지속시간=끊어/기본/밀어 ──
-let motionOn=false, mArmed=false, mPeak=0, mRise=0, mLast=0, mCool=0;
+let motionOn=false, mArmed=false, mPeak=0, mPeakT=0, mRise=0, mLast=0, mCool=0;
 const MOTION_TRIG=12, MOTION_MAXG=40;   // m/s² 스윙 트리거/최대(실기 보정 상수)
 function motionHandler(e){
   if(!motionOn || animating) return;
@@ -474,17 +474,23 @@ function motionHandler(e){
   if(a && a.x!=null) mag=Math.hypot(a.x||0,a.y||0,a.z||0);                              // 중력 제외 가속도(있으면)
   else { const g=e.accelerationIncludingGravity||{}; mag=Math.abs(Math.hypot(g.x||0,g.y||0,g.z||0)-9.81); }
   const now=e.timeStamp||performance.now();
-  if(mag>MOTION_TRIG){                       // 스윙 중: 피크 추적
-    if(!mArmed){ mArmed=true; mPeak=mag; mRise=now; } else mPeak=Math.max(mPeak,mag);
+  if(mag>MOTION_TRIG){                       // 스윙 중: 피크 값+시점 추적
+    if(!mArmed){ mArmed=true; mPeak=mag; mRise=now; mPeakT=now; }
+    else if(mag>mPeak){ mPeak=mag; mPeakT=now; }
     mLast=now;
   } else if(mArmed && now-mLast>90){         // 스윙 종료 → 발사
     mArmed=false;
     if(now<mCool){ mPeak=0; return; }
     mCool=now+700;                           // 연속 오발 방지(쿨다운)
-    const dur=mLast-mRise;
+    const dur=mLast-mRise, peakFrac = dur>20 ? (mPeakT-mRise)/dur : 0;
     const pw=Math.max(15,Math.min(100,Math.round(mPeak/MOTION_MAXG*100)));
     pwr.value=pw; power=pw/100; pwlbl.textContent='파워 '+pw+'%';
-    setStroke(dur<110?'stun':(dur>260?'follow':'normal'));   // 짧고 강함=끊어 / 길게 밀기=밀어
+    // 끊어=초반 정점 찍고 뚝(짧음) / 밀어=후반까지 가속(정점 늦거나 김) / 그 외 기본
+    const stroke = (peakFrac>=0.5 || dur>=240) ? 'follow' : (dur<=140 ? 'stun' : 'normal');
+    setStroke(stroke);
+    const mh=document.getElementById('motionHint');                       // 감지결과 즉시 표시(보정용)
+    mh.textContent='📳 '+({stun:'끊어',normal:'기본',follow:'밀어'}[stroke])+' '+pw+'%';
+    setTimeout(()=>{ if(motionOn) mh.textContent='📳 흔들어 치기'; },1300);
     if(!animating) fireShot();
     mPeak=0;
   }
