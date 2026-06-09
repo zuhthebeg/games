@@ -699,24 +699,24 @@ function solveLayout(onProgress,onDone){
   function classifyShot(r){
     const ev=r.events||[];
     const cueSeq=ev.filter(e=>(e.type==='cushion'&&e.ball1===cid)||(e.type==='ball-ball'&&(e.ball1===cid||e.ball2===cid)));
-    const objObj=ev.filter(e=>e.type==='ball-ball'&&e.ball1!==cid&&e.ball2!==cid).length;
-    let o1=null,preC=0,cueObjHits=0,seenO1=false; const rails=[];
+    let o1=null,preC=0,cueObjHits=0,seenO1=false,o2t=Infinity; const rails=[],pathRails=[];
     for(const e of cueSeq){
       if(e.type==='ball-ball'){ const oid=e.ball1===cid?e.ball2:e.ball1; cueObjHits++;
-        if(o1==null){o1=oid;seenO1=true;} else if(oid!==o1){break;} }   // 2적구 도달 → 종료
-      else { if(!seenO1)preC++; else rails.push(e.cushionSide); }
+        if(o1==null){o1=oid;seenO1=true;} else if(oid!==o1){o2t=e.t;break;} }   // 2적구(득점) 도달 → 이후 쿠션 무시
+      else { pathRails.push(e.cushionSide); if(!seenO1)preC++; else rails.push(e.cushionSide); }
     }
+    const objObj=ev.filter(e=>e.type==='ball-ball'&&e.ball1!==cid&&e.ball2!==cid&&e.t<=o2t).length;
     const kiss = objObj>0 || cueObjHits>2;
-    const distinct=new Set(rails).size;
+    const distinct=new Set(pathRails).size, nCush=pathRails.length;   // 득점 시점까지만(후속 쿠션 제외)
     let base;
     // 궤적만으로 신뢰 가능한 분류만(더블/횡단 등 모호한 건 제외):
     if(preC>0) base = preC>=2?'빈쿠션':'걸어치기';            // 적구 전 쿠션 = 빈쿠션/걸어치기
-    else if(distinct>=4 || r.cushionCount>=5) base='대회전';  // 4레일 전부/5쿠션+ = 진짜 큰 회전
+    else if(distinct>=4 || nCush>=5) base='대회전';          // 4레일 전부/5쿠션+ = 진짜 큰 회전
     else { const ang=turnAngleAtO1(r); base = ang==null?'돌리기':(ang<55?'앞돌리기':(ang>120?'뒤돌리기':'옆돌리기')); } // O1 회전각
-    // 실제 쿠션 경로(상/하/좌/우)를 ground truth로 함께 표기 → 이름이 근사여도 실제 샷 확인 가능
+    // 실제 쿠션 경로(상/하/좌/우)·쿠션수를 ground truth로 함께 표기(이름이 근사여도 실제 샷 확인 가능)
     const KO={top:'상',bottom:'하',left:'좌',right:'우'};
-    const allRails=cueSeq.filter(e=>e.type==='cushion').map(e=>KO[e.cushionSide]||'?');
-    return (kiss?'키스 ':'')+base+(allRails.length?' ('+allRails.join('>')+')':'');
+    const path=pathRails.map(s=>KO[s]||'?');
+    return (kiss?'키스 ':'')+base+'·'+nCush+'쿠션'+(path.length?' ('+path.join('>')+')':'');
   }
   // 비용순 정렬 후 서로 다른 해법(각도≥8°·다른 첫적구·파워≥20 차이) top-N만 선택 → 닮은꼴 중복 제거
   function topN(cs,n){
@@ -774,8 +774,8 @@ let solCands=[];
 function solLabel(b,idx){
   const dr=b.sx>0.05?'우':(b.sx<-0.05?'좌':''), updn=b.sy>0.05?'상':(b.sy<-0.05?'하':'');
   const eng=(!dr&&!updn)?'무회전':('당점'+dr+updn);
-  const kind=b.kind||(b.cbf>0?'가락':(b.cu>=4?'대회전':'돌리기'));
-  return '<b>'+'①②③'[idx]+'</b> '+kind+'·'+b.cu+'쿠션 <span style="color:#9a8cc0">|</span> 두께'+(b.full*8).toFixed(1)+'/8 · '+eng+' · 파워'+b.p+'%';
+  const kind=b.kind||(b.cbf>0?'가락':'돌리기');
+  return '<b>'+'①②③'[idx]+'</b> '+kind+' <span style="color:#9a8cc0">|</span> 두께'+(b.full*8).toFixed(1)+'/8 · '+eng+' · 파워'+b.p+'%';
 }
 function showSolOptions(cands){
   solCands=cands; applySolution(cands[0]);
