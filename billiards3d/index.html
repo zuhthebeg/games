@@ -197,12 +197,12 @@ const REWARDS=['reward_01.png','reward_02.png','reward_03.png'];
 // 기본 연습 패턴 (테이블 비율 좌표 fx,fy: 0~1) — 수구=노랑(id0)
 // sol = 실제 득점 해법 {aim(deg), pow(%), spinX, spinY} (시뮬 탐색으로 검증됨)
 const PRESETS=[
-  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:160.1,pow:88,sx:0,sy:-0.15,stroke:'normal'}, solM:{aim:175.6,pow:55,sx:0.2,sy:0.2,stroke:'follow'}},
-  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:165.7,pow:80,sx:0,sy:0,stroke:'normal'},      solM:{aim:165.7,pow:80,sx:0,sy:0.2,stroke:'normal'}},
-  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:173.5,pow:88,sx:0,sy:0.2,stroke:'normal'},    solM:{aim:191,pow:80,sx:-0.2,sy:0,stroke:'normal'}},
-  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:170.4,pow:80,sx:0,sy:0,stroke:'normal'},      solM:{aim:-171.8,pow:88,sx:0.2,sy:0,stroke:'normal'}},
-  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:104.5,pow:80,sx:0.2,sy:0,stroke:'normal'},    solM:{aim:149.1,pow:72,sx:0,sy:0.2,stroke:'normal'}},
-  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:147.9,pow:72,sx:0,sy:0.2,stroke:'normal'},     solM:{aim:147.9,pow:65,sx:0,sy:0.2,stroke:'normal'}},
+  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:171.6,pow:70,sx:0.2,sy:0,stroke:'follow'},   solM:{aim:176.6,pow:55,sx:0.5,sy:0,stroke:'follow'}},
+  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:165.7,pow:80,sx:0,sy:0,stroke:'normal'},      solM:{aim:160.7,pow:80,sx:-0.5,sy:-0.15,stroke:'normal'}},
+  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:178.5,pow:72,sx:0.5,sy:0,stroke:'normal'},    solM:{aim:157.5,pow:80,sx:-0.3,sy:0,stroke:'normal'}},
+  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:165.4,pow:55,sx:0,sy:-0.15,stroke:'normal'},  solM:{aim:165.4,pow:88,sx:-0.3,sy:0,stroke:'normal'}},
+  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:164.1,pow:88,sx:0.5,sy:0.2,stroke:'normal'},  solM:{aim:124.5,pow:80,sx:0,sy:-0.15,stroke:'normal'}},
+  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:-157.9,pow:88,sx:0,sy:0,stroke:'normal'},     solM:{aim:-157.9,pow:65,sx:0,sy:0,stroke:'normal'}},
 ];
 // 사용자가 직접 등록한 해법(localStorage) → 기본 sol 덮어씀 (aim 라디안, thick 포함)
 const SOLKEY='b3d_presetsol';
@@ -639,20 +639,22 @@ function solveLayout(onProgress,onDone){
     const bb=(r.events||[]).find(e=>e.type==='ball-ball'&&(e.ball1===cid||e.ball2===cid)); if(!bb)return 1e9;
     let last=null,s=0; for(const f of (r.frames||[])){ if(f.t>bb.t)break; const c=f.balls.find(b=>b.id===cid); if(!c)continue; if(last)s+=Math.hypot(c.x-last.x,c.y-last.y); last=c; } return s;
   }
-  // 난이도 비용: 두께<1/8(얇은히트)·풀파워(100%)·키스샷·근접 탭 회피 → 강패널티.
-  // 대회전(추가쿠션)·가락쿠션(레일먼저)은 정상 해법으로 허용(각 안 나올 때 자연히 선택됨).
+  // 난이도 비용: 일반적인 직접 돌리기(3쿠션·중간두께·약한 회전) 우선.
+  // 두께<1/8·풀파워·키스·근접탭 강패널티 + 가락(레일먼저)·대회전·과한회전은 약하게 비선호(로봇샷 억제).
   function difficulty(r,j){
     const ev=r.events.filter(e=>e.type==='ball-ball');
     const cueHits=ev.filter(e=>e.ball1===cid||e.ball2===cid).length;
     const objObj=ev.filter(e=>e.ball1!==cid&&e.ball2!==cid).length;
     const full=firstFull(r), tv=travelToFirst(r);
-    let c=Math.abs(j.sx)*1.2+Math.abs(j.sy)*0.5;     // 잉글리시(약)
+    let c=Math.abs(j.sx)*1.5+Math.abs(j.sy)*0.6;     // 잉글리시(과한 회전 비선호)
     c+=(j.p>=100?2.2:Math.max(0,j.p-85)/35);         // 풀파워 회피
     c+=(full<0.125?4:(1-full)*0.8);                  // 두께<1/8 razor 강패널티, 얇을수록↑
     c+=Math.max(0,0.45-tv/TW)*1.6;                   // 근접 탭(첫적구까지 이동거리 짧음) 회피
+    c+=(r.cushBeforeFirst>0?1.2:0);                  // 가락/빈쿠션(레일 먼저) — 로봇샷 비선호
+    c+=Math.max(0,r.cushionCount-3)*0.4;             // 대회전(쿠션 과다) 약한 비선호
     c+=(cueHits>2?(cueHits-2)*2.5:0);                // 수구 키스(추가 충돌)
     c+=objObj*2.5;                                    // 적구끼리 키스
-    return c;                                          // 대회전·가락 패널티 없음
+    return c;
   }
   function firstHitId(r){const bb=(r.events||[]).find(e=>e.type==='ball-ball'&&(e.ball1===cid||e.ball2===cid));return bb?(bb.ball1===cid?bb.ball2:bb.ball1):-1;}
   // 비용순 정렬 후 서로 다른 해법(각도≥8°·다른 첫적구·파워≥20 차이) top-N만 선택 → 닮은꼴 중복 제거
