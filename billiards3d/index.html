@@ -167,8 +167,8 @@
 </div></div>
 
 <script src="three.min.js?v=2"></script>
-<script src="physics.js?v=17"></script>
-<script src="game.js?v=12"></script>
+<script src="physics.js?v=18"></script>
+<script src="game.js?v=13"></script>
 <script>
 'use strict';
 // 설정 (localStorage)
@@ -176,15 +176,15 @@ const SET={ table: localStorage.getItem('b3d_table')||'large', bank2: localStora
 const MODE = SET.table==='medium' ? '3ball-medium' : '3ball';
 let game=new GameState(MODE);
 // 물리 튜닝 (설정에서 조정, physics.js가 window.BIL_TUNE 읽음)
-const TUNE_DEF={ maxpow:8600, cushE:0.86, cushAngle:0.95, roll:0.011, follow:0.75, side:1.1, cushSide:0.55, engExp:1.7, contactWz:0.6, throw:0.045, squirt:0.045 };
+const TUNE_DEF={ maxpow:8600, cushE:0.86, cushAngle:0.95, roll:0.011, follow:0.5, side:0.73, cushSide:0.55, engExp:1.7, contactWz:0.6, throw:0.045, squirt:0.045 };
 window.BIL_TUNE=Object.assign({},TUNE_DEF);
 // 물리 재캘리브레이션(v2): 옛 커스텀 튜닝 1회 초기화 → 모두 새 기본값 적용
-const TUNE_VER='5';
+const TUNE_VER='6';
 try{
   if(localStorage.getItem('b3d_tune_v')!==TUNE_VER){ localStorage.removeItem('b3d_tune'); localStorage.setItem('b3d_tune_v',TUNE_VER); }
   const saved=JSON.parse(localStorage.getItem('b3d_tune')||'{}'); Object.assign(window.BIL_TUNE,saved);
 }catch(e){}
-const S=0.001, MAX_SPIN=0.6;
+const S=0.001, MAX_SPIN=0.9;
 let MAXPOW=window.BIL_TUNE.maxpow;
 const TW=game.tableW, TH=game.tableH, R=game.ballRadius, rW=R*S;
 let TARGET=SET.target;
@@ -360,7 +360,7 @@ function drawSpin(){const W=spinCv.width,cx=W/2,cy=W/2,rr=W/2-10; sg.clearRect(0
   sg.strokeStyle='#888';sg.lineWidth=4;sg.stroke();
   sg.strokeStyle='rgba(0,0,0,.12)';sg.lineWidth=2;sg.beginPath();sg.moveTo(cx-rr,cy);sg.lineTo(cx+rr,cy);sg.moveTo(cx,cy-rr);sg.lineTo(cx,cy+rr);sg.stroke();
   sg.beginPath();sg.arc(cx,cy,rr*0.7,0,7);sg.strokeStyle='rgba(200,0,0,.18)';sg.lineWidth=2;sg.stroke();
-  const dx=cx+spinX*rr*0.82, dy=cy-spinY*rr*0.82; sg.beginPath();sg.arc(dx,dy,rr*0.16,0,7);sg.fillStyle='#d11';sg.fill();}
+  const dx=cx+spinX*rr*0.95, dy=cy-spinY*rr*0.95; sg.beginPath();sg.arc(dx,dy,rr*0.16,0,7);sg.fillStyle='#d11';sg.fill();}
 function spinAt(cx,cy){const r=spinCv.getBoundingClientRect();let dx=(cx-r.left)/r.width*2-1,dy=(cy-r.top)/r.height*2-1;
   const len=Math.hypot(dx,dy); if(len>MAX_SPIN){dx*=MAX_SPIN/len;dy*=MAX_SPIN/len;}
   const oldSqA=squirtA(); spinX=dx; spinY=-dy;

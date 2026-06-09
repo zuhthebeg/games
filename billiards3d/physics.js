@@ -75,7 +75,7 @@ function simulate(shot) {
   // 잉글리시 비선형 응답: 저당점=둔감(살짝만 꺾임), 고당점=풀 효과(시스템 유지)
   // engResp(±SPIN_REF)=±SPIN_REF 로 끝값은 보존, 중간은 약화
   const ENG_EXP = num(T.engExp, 1.7);
-  const SPIN_REF = 0.6;
+  const SPIN_REF = 0.9;   // 당점 입력영역 확대(0.6→0.9): 같은 피크를 넓은 영역에 펼쳐 응답 둔감화
   const engResp = s => { const a = Math.min(Math.abs(s), SPIN_REF); return Math.sign(s) * Math.pow(a / SPIN_REF, ENG_EXP) * SPIN_REF; };
   const CONTACT_WZ_KEEP = num(T.contactWz, 0.6);  // 공-공 충돌 후 사이드스핀 잔존(밀림 완화)
 
