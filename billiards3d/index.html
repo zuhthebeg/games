@@ -776,12 +776,21 @@ function solveLayout(onProgress,onDone){
     }
     return out;
   }
+  // 오프닝(초구) 감지: 새 게임/초구 프리셋 배치(수구0.75·흰0.75·빨강0.25)와 일치하면 룰상 빨강(먼 적구) 먼저만
+  function isOpeningBreak(){
+    if(cid!==0) return false;
+    const w=game.balls.find(b=>b.id===1), rd=game.balls.find(b=>b.id===2); if(!w||!rd)return false;
+    const tol=0.06*TW, near=(b,fx,fy)=>Math.abs(b.x-fx*TW)<tol&&Math.abs(b.y-fy*TH)<tol;
+    return near(cue,0.75,0.37)&&near(w,0.75,0.50)&&near(rd,0.25,0.50);
+  }
+  const breakMode=isOpeningBreak();
   let i=0,tries=0; const cands=[];
   function chunk(){
     const end=Math.min(i+45,jobs.length);
     for(;i<end;i++){ const j=jobs[i]; tries++;
       const r=simShot(j.aim,j.p,j.sx,j.sy,'normal');
-      if(r.score>0){ cands.push({aim:j.aim,p:j.p,sx:j.sx,sy:j.sy,c:difficulty(r,j),cu:r.cushionCount,cbf:r.cushBeforeFirst,full:firstFull(r),fh:firstHitId(r),kind:classifyShot(r)}); }
+      if(r.score>0){ if(breakMode && firstHitId(r)!==2) continue;   // 초구: 가까운 흰공 금지, 빨강 먼저만
+        cands.push({aim:j.aim,p:j.p,sx:j.sx,sy:j.sy,c:difficulty(r,j),cu:r.cushionCount,cbf:r.cushBeforeFirst,full:firstFull(r),fh:firstHitId(r),kind:classifyShot(r)}); }
     }
     onProgress(Math.round(i/jobs.length*100));
     if(i<jobs.length) requestAnimationFrame(chunk);          // 전수 탐색(top-3 위해 조기종료 없음)
