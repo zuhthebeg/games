@@ -75,7 +75,7 @@
   <span style="font-size:11px;color:#789" id="tries">/ 0회</span>
 </div>
 <button id="undo" disabled>↩ 되돌리기</button>
-<div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button><button id="photoBtn" title="사진/이미지로 공 배치(비전)" style="background:linear-gradient(135deg,#2c6a5a,#3a8a72);border-color:#5cc0a0">📷</button><button id="setBtn">⚙</button></div>
+<div id="cam"><button id="camAngle">앵글</button><button id="camTop">탑뷰</button><button id="camFollow" title="시점: 큐 방향이 화면 위로(1인칭 추적)">시점</button><button id="photoBtn" title="사진/이미지로 공 배치(비전)" style="background:linear-gradient(135deg,#2c6a5a,#3a8a72);border-color:#5cc0a0">📷</button><button id="setBtn">⚙</button></div>
 <input type="file" id="photoInputCam" accept="image/*" capture="environment" style="display:none">
 <input type="file" id="photoInputLib" accept="image/*" style="display:none">
 <div id="photoMenu" style="position:fixed;inset:0;z-index:22;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5)">
@@ -218,6 +218,18 @@ const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0a0d12); scene
 const camera=new THREE.PerspectiveCamera(45,1,0.1,100);
 let camMode='angle', orbit={az:0,el:0,dist:1};
 function applyCam(){
+  // 시점(1인칭 추적): 수구 뒤·약간 위에서 큐(aim)방향을 화면 위쪽(북)으로. 조준 바꾸면 따라 돎
+  if(camMode==='follow'){
+    const cue=game.cueBall(); if(cue){
+      const a=aimAngle, ax=Math.cos(a), az2=Math.sin(a);   // aim 방향 월드(X,Z)
+      const cx=wx(cue.x), cz=wz(cue.y), z=Math.max(0.5,Math.min(2.2,orbit.dist));
+      const back=1.0*z, height=0.78*z, ahead=0.9;
+      camera.up.set(0,1,0);
+      camera.position.set(cx - ax*back, height, cz - az2*back);
+      camera.lookAt(cx + ax*ahead, 0.12, cz + az2*ahead);
+      return;
+    }
+  }
   // az=π/2: 카메라가 +x(수구쪽)에서 -x(빨간공쪽) 바라봄 → 다이 세로, 빨간공 위쪽
   const base = camMode==='top' ? {r:4.4,el:1.45,az:Math.PI/2} : {r:4.2,el:0.62,az:Math.PI/2};
   const el=Math.max(0.2,Math.min(1.5,base.el+orbit.el)), az=base.az+orbit.az, r=base.r*orbit.dist;
@@ -298,6 +310,7 @@ function updateAim(){
     const frac=Math.max(0,Math.min(1,1-Math.abs(sp)/(2*R)));
     drawThPv(frac, sp>=0?1:-1, COLHEX[tb.id]||0xffffff, COLHEX[game.cueId()]||0xffffff);
   } else { ghost.visible=false; predLine.visible=false; drawThPv(null); }
+  if(camMode==='follow') applyCam();   // 시점캠: 조준 따라 카메라 회전
 }
 // ───── 두께 미리보기(좌하단): 적구 + 수구 가상볼 겹침 ─────
 const thpv=document.getElementById('thpv'), tp=thpv.getContext('2d');
@@ -500,8 +513,11 @@ function refreshHud(){
 }
 
 // 카메라 버튼
-document.getElementById('camAngle').onclick=()=>{camMode='angle';orbit={az:0,el:0,dist:1};applyCam();};
-document.getElementById('camTop').onclick=()=>{camMode='top';orbit={az:0,el:0,dist:1};applyCam();};
+function setActiveCam(which){ [['camAngle','angle'],['camTop','top'],['camFollow','follow']].forEach(([id,m])=>{ const b=document.getElementById(id); if(b) b.style.background=(which===m)?'rgba(90,140,200,.95)':'rgba(40,46,60,.88)'; }); }
+document.getElementById('camAngle').onclick=()=>{camMode='angle';orbit={az:0,el:0,dist:1};setActiveCam('angle');applyCam();};
+document.getElementById('camTop').onclick=()=>{camMode='top';orbit={az:0,el:0,dist:1};setActiveCam('top');applyCam();};
+document.getElementById('camFollow').onclick=()=>{ if(camMode==='follow'){camMode='angle';setActiveCam('angle');} else {camMode='follow';setActiveCam('follow');} orbit={az:0,el:0,dist:1}; applyCam(); };
+setActiveCam('angle');
 
 // ───── 설정 ─────
 const setOv=document.getElementById('setOv'), guideOv=document.getElementById('guideOv');
