@@ -191,12 +191,12 @@ const REWARDS=['reward_01.png','reward_02.png','reward_03.png'];
 // 기본 연습 패턴 (테이블 비율 좌표 fx,fy: 0~1) — 수구=노랑(id0)
 // sol = 실제 득점 해법 {aim(deg), pow(%), spinX, spinY} (시뮬 탐색으로 검증됨)
 const PRESETS=[
-  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:105,pow:60,sx:0,sy:0,stroke:'normal'},        solM:{aim:175.1,pow:72,sx:0,sy:0,stroke:'normal'}},
-  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:165.7,pow:85,sx:0,sy:0,stroke:'normal'},      solM:{aim:165.7,pow:85,sx:0,sy:0,stroke:'normal'}},
-  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:167.5,pow:85,sx:-0.2,sy:0.2,stroke:'normal'}, solM:{aim:178.5,pow:85,sx:0,sy:0,stroke:'normal'}},
-  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:165.4,pow:72,sx:0,sy:0,stroke:'normal'},     solM:{aim:-154.3,pow:85,sx:0,sy:0,stroke:'normal'}},
-  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:104.5,pow:72,sx:0,sy:-0.15,stroke:'normal'}, solM:{aim:124.5,pow:85,sx:0.2,sy:0,stroke:'normal'}},
-  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:-157.9,pow:72,sx:0,sy:-0.15,stroke:'normal'},solM:{aim:-140.4,pow:85,sx:0,sy:0,stroke:'normal'}},
+  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:171.1,pow:80,sx:0.2,sy:-0.15,stroke:'normal'},solM:{aim:171.1,pow:80,sx:0.2,sy:0,stroke:'normal'}},
+  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:161.2,pow:80,sx:0,sy:0,stroke:'normal'},      solM:{aim:165.7,pow:80,sx:0,sy:0.2,stroke:'normal'}},
+  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:174.5,pow:88,sx:0,sy:0,stroke:'normal'},      solM:{aim:188,pow:80,sx:0,sy:0.2,stroke:'normal'}},
+  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:-182.3,pow:88,sx:0,sy:0.2,stroke:'normal'},   solM:{aim:182.9,pow:80,sx:0,sy:0.2,stroke:'normal'}},
+  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:104.5,pow:80,sx:0,sy:-0.15,stroke:'normal'},  solM:{aim:107.5,pow:88,sx:0,sy:-0.15,stroke:'normal'}},
+  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:158.4,pow:80,sx:0,sy:0,stroke:'normal'},      solM:{aim:167.4,pow:88,sx:0,sy:0,stroke:'normal'}},
 ];
 // 사용자가 직접 등록한 해법(localStorage) → 기본 sol 덮어씀 (aim 라디안, thick 포함)
 const SOLKEY='b3d_presetsol';
@@ -627,16 +627,22 @@ function solveLayout(onProgress,onDone){
     const ox=obj.x-cue.x,oy=obj.y-cue.y,od=Math.hypot(ox,oy)||1;
     const cos=(cue.vx*ox+cue.vy*oy)/(sp*od); return Math.max(0,1-Math.sqrt(Math.max(0,1-cos*cos)));
   }
-  // 난이도 비용: 두께<1/8(얇은히트)·풀파워(100%)·키스샷 회피 → 강패널티.
+  // 첫 적구까지 수구가 실제로 이동한 경로 길이(근접 탭 판별용)
+  function travelToFirst(r){
+    const bb=(r.events||[]).find(e=>e.type==='ball-ball'&&(e.ball1===cid||e.ball2===cid)); if(!bb)return 1e9;
+    let last=null,s=0; for(const f of (r.frames||[])){ if(f.t>bb.t)break; const c=f.balls.find(b=>b.id===cid); if(!c)continue; if(last)s+=Math.hypot(c.x-last.x,c.y-last.y); last=c; } return s;
+  }
+  // 난이도 비용: 두께<1/8(얇은히트)·풀파워(100%)·키스샷·근접 탭 회피 → 강패널티.
   // 대회전(추가쿠션)·가락쿠션(레일먼저)은 정상 해법으로 허용(각 안 나올 때 자연히 선택됨).
   function difficulty(r,j){
     const ev=r.events.filter(e=>e.type==='ball-ball');
     const cueHits=ev.filter(e=>e.ball1===cid||e.ball2===cid).length;
     const objObj=ev.filter(e=>e.ball1!==cid&&e.ball2!==cid).length;
-    const full=firstFull(r);
+    const full=firstFull(r), tv=travelToFirst(r);
     let c=Math.abs(j.sx)*1.2+Math.abs(j.sy)*0.5;     // 잉글리시(약)
     c+=(j.p>=100?2.2:Math.max(0,j.p-85)/35);         // 풀파워 회피
     c+=(full<0.125?4:(1-full)*0.8);                  // 두께<1/8 razor 강패널티, 얇을수록↑
+    c+=Math.max(0,0.45-tv/TW)*1.6;                   // 근접 탭(첫적구까지 이동거리 짧음) 회피
     c+=(cueHits>2?(cueHits-2)*2.5:0);                // 수구 키스(추가 충돌)
     c+=objObj*2.5;                                    // 적구끼리 키스
     return c;                                          // 대회전·가락 패널티 없음
@@ -694,8 +700,14 @@ document.getElementById('aiSolveBtn').onclick=()=>runSolver(false);
 function _solve8(A,b){const n=8;for(let i=0;i<n;i++){let p=i;for(let r=i+1;r<n;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;[A[i],A[p]]=[A[p],A[i]];[b[i],b[p]]=[b[p],b[i]];for(let r=0;r<n;r++)if(r!==i){const f=A[r][i]/A[i][i];for(let c2=i;c2<n;c2++)A[r][c2]-=f*A[i][c2];b[r]-=f*b[i];}}return b.map((v,i)=>v/A[i][i]);}
 function _homography(src,dst){const A=[],b=[];for(let i=0;i<4;i++){const[x,y]=src[i],[u,v]=dst[i];A.push([x,y,1,0,0,0,-u*x,-u*y]);b.push(u);A.push([0,0,0,x,y,1,-v*x,-v*y]);b.push(v);}const h=_solve8(A,b);return[h[0],h[1],h[2],h[3],h[4],h[5],h[6],h[7],1];}
 function _applyH(H,px,py){const d=H[6]*px+H[7]*py+H[8];return[(H[0]*px+H[1]*py+H[2])/d,(H[3]*px+H[4]*py+H[5])/d];}
+// LLM 코너 라벨을 안 믿고 4점을 이미지 위치로 재정렬: TL=min(x+y) BR=max(x+y) TR=max(x-y) BL=min(x-y)
+function _orderCorners(pts){
+  const s=pts.map(p=>p[0]+p[1]),d=pts.map(p=>p[0]-p[1]);
+  const at=(arr,fn)=>pts[arr.indexOf(fn(...arr))];
+  return [at(s,Math.min),at(d,Math.max),at(s,Math.max),at(d,Math.min)]; // TL,TR,BR,BL
+}
 function _downscale(file){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{const m=1024,s=Math.min(1,m/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',0.82));};img.onerror=rej;img.src=URL.createObjectURL(file);});}
-const VPROMPT='이것은 3구 당구(캐롬) 테이블 사진이다. 픽셀좌표(좌상단=원점, x오른쪽 y아래)로 추정해 JSON만 출력(설명·코드블록 금지). corners=초록 플레이면(쿠션 안쪽 천)의 네 모서리. balls=각 공 중심. 안보이는 공은 null:\\n{"image_w":정수,"image_h":정수,"corners":{"TL":[x,y],"TR":[x,y],"BR":[x,y],"BL":[x,y]},"balls":{"yellow":[x,y],"white":[x,y],"red":[x,y]}}';
+const VPROMPT='이것은 3구 당구(캐롬) 테이블 사진이다. 실제 당구대는 가로:세로=2:1 직사각형이며, 사진은 비스듬한 각도이거나 세로(포트레이트)일 수 있다. 픽셀좌표(좌상단=원점, x오른쪽 y아래)로 추정해 JSON만 출력(설명·코드블록 금지). corners=초록 플레이면(쿠션 안쪽 천)의 실제 네 모서리 꼭짓점을 사진에 보이는 그대로(원근 왜곡 포함) 정확히 찍어라. TL/TR/BR/BL은 사진 기준 좌상/우상/우하/좌하. balls=각 공 중심. 안보이는 공은 null:\\n{"image_w":정수,"image_h":정수,"corners":{"TL":[x,y],"TR":[x,y],"BR":[x,y],"BL":[x,y]},"balls":{"yellow":[x,y],"white":[x,y],"red":[x,y]}}';
 async function photoPlace(file){
   showToast('📷 사진 인식 중… <b>(비전, 최대 1분)</b>',0);
   let dataUrl; try{ dataUrl=await _downscale(file); }catch(e){ showToast('이미지를 못 읽었어요.',3000); return; }
@@ -708,7 +720,14 @@ async function photoPlace(file){
   }catch(e){ showToast('인식 실패 — 다시 찍거나 수동 배치해줘.',3500); return; }
   const c=parsed.corners||{}, b=parsed.balls||{};
   if(!c.TL||!c.TR||!c.BR||!c.BL){ showToast('테이블 코너 인식 실패 — 테이블 전체가 나오게 찍어줘.',3500); return; }
-  const H=_homography([c.TL,c.TR,c.BR,c.BL],[[0,0],[TW,0],[TW,TH],[0,TH]]);
+  // 1) 라벨 무시하고 이미지 위치로 코너 재정렬(LLM이 TL/TR 뒤바꿔도 무관)
+  const [TLc,TRc,BRc,BLc]=_orderCorners([c.TL,c.TR,c.BR,c.BL]);
+  // 2) 사진 방향 판정: 당구대는 2:1(긴 레일=TW). 검출 사각형이 세로로 길면 90° 보정
+  const eW=(Math.hypot(TRc[0]-TLc[0],TRc[1]-TLc[1])+Math.hypot(BRc[0]-BLc[0],BRc[1]-BLc[1]))/2;
+  const eH=(Math.hypot(BLc[0]-TLc[0],BLc[1]-TLc[1])+Math.hypot(BRc[0]-TRc[0],BRc[1]-TRc[1]))/2;
+  const dst = eW>=eH ? [[0,0],[TW,0],[TW,TH],[0,TH]]   // 가로(긴 레일이 수평)
+                     : [[0,TH],[0,0],[TW,0],[TW,TH]];  // 세로 → 90° 회전 보정(긴 레일=TW로)
+  const H=_homography([TLc,TRc,BRc,BLc],dst);
   const map={yellow:0,white:1,red:2}; let n=0;
   for(const col in map){ const p=b[col]; if(!p||p.length<2)continue;
     const xy=_applyH(H,p[0],p[1]); const ball=game.balls.find(z=>z.id===map[col]);
