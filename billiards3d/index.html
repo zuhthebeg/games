@@ -120,7 +120,7 @@
   </div></div></div>
 <div class="ov" id="winOv"><div class="ovcard"><h2 id="wMsg" style="color:#ffd633"></h2><p id="wScore"></p><button id="wRestart">처음으로</button></div></div>
 
-<div class="ov" id="setOv"><div class="ovcard" style="text-align:left;min-width:280px">
+<div class="ov" id="setOv"><div class="ovcard" style="text-align:left;min-width:280px;max-height:90vh;overflow-y:auto">
   <h2 style="font-size:22px;text-align:center">⚙ 설정</h2>
   <div class="setrow"><span>테이블</span><span class="seg"><button data-table="large">대대</button><button data-table="medium">중대</button></span></div>
   <div class="setrow"><span>빈쿠션 2점제<br><small style="color:#89a">첫 적구 전 3쿠션 성공 시 2점</small></span><span class="seg"><button data-bank="1">ON</button><button data-bank="0">OFF</button></span></div>
@@ -176,10 +176,10 @@ const SET={ table: localStorage.getItem('b3d_table')||'large', bank2: localStora
 const MODE = SET.table==='medium' ? '3ball-medium' : '3ball';
 let game=new GameState(MODE);
 // 물리 튜닝 (설정에서 조정, physics.js가 window.BIL_TUNE 읽음)
-const TUNE_DEF={ maxpow:8600, cushE:0.86, cushAngle:0.95, roll:0.011, follow:0.5, side:0.73, cushSide:0.55, engExp:1.7, contactWz:0.6, throw:0.045, squirt:0.045 };
+const TUNE_DEF={ maxpow:8600, cushE:0.91, cushAngle:0.95, roll:0.011, follow:0.5, side:0.73, cushSide:0.55, engExp:1.7, contactWz:0.6, throw:0.045, squirt:0.045 };
 window.BIL_TUNE=Object.assign({},TUNE_DEF);
 // 물리 재캘리브레이션(v2): 옛 커스텀 튜닝 1회 초기화 → 모두 새 기본값 적용
-const TUNE_VER='6';
+const TUNE_VER='7';
 try{
   if(localStorage.getItem('b3d_tune_v')!==TUNE_VER){ localStorage.removeItem('b3d_tune'); localStorage.setItem('b3d_tune_v',TUNE_VER); }
   const saved=JSON.parse(localStorage.getItem('b3d_tune')||'{}'); Object.assign(window.BIL_TUNE,saved);
@@ -198,11 +198,11 @@ const REWARDS=['reward_01.png','reward_02.png','reward_03.png'];
 // sol = 실제 득점 해법 {aim(deg), pow(%), spinX, spinY} (시뮬 탐색으로 검증됨)
 const PRESETS=[
   {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:171.6,pow:70,sx:0.2,sy:0,stroke:'follow'},   solM:{aim:176.6,pow:55,sx:0.5,sy:0,stroke:'follow'}},
-  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:165.7,pow:80,sx:0,sy:0,stroke:'normal'},      solM:{aim:160.7,pow:80,sx:-0.5,sy:-0.15,stroke:'normal'}},
-  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:178.5,pow:72,sx:0.5,sy:0,stroke:'normal'},    solM:{aim:157.5,pow:80,sx:-0.3,sy:0,stroke:'normal'}},
-  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:165.4,pow:55,sx:0,sy:-0.15,stroke:'normal'},  solM:{aim:165.4,pow:88,sx:-0.3,sy:0,stroke:'normal'}},
-  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:164.1,pow:88,sx:0.5,sy:0.2,stroke:'normal'},  solM:{aim:124.5,pow:80,sx:0,sy:-0.15,stroke:'normal'}},
-  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:-157.9,pow:88,sx:0,sy:0,stroke:'normal'},     solM:{aim:-157.9,pow:65,sx:0,sy:0,stroke:'normal'}},
+  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:155.7,pow:72,sx:0,sy:0.2,stroke:'normal'},    solM:{aim:155.7,pow:72,sx:0.3,sy:0.2,stroke:'normal'}},
+  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:176,pow:80,sx:-0.3,sy:0,stroke:'normal'},     solM:{aim:173.5,pow:72,sx:-0.5,sy:0,stroke:'normal'}},
+  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:170.4,pow:80,sx:0,sy:0,stroke:'normal'},      solM:{aim:165.4,pow:80,sx:0.3,sy:0.2,stroke:'normal'}},
+  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:164.1,pow:80,sx:0.3,sy:0,stroke:'normal'},    solM:{aim:164.1,pow:80,sx:0.3,sy:0.2,stroke:'normal'}},
+  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:-157.9,pow:80,sx:0,sy:0,stroke:'normal'},     solM:{aim:-157.9,pow:65,sx:0,sy:0,stroke:'normal'}},
 ];
 // 사용자가 직접 등록한 해법(localStorage) → 기본 sol 덮어씀 (aim 라디안, thick 포함)
 const SOLKEY='b3d_presetsol';
