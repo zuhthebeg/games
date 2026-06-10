@@ -2,111 +2,126 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://game.cocy.io/</loc>
-    <lastmod>2026-02-18</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://game.cocy.io/match3/</loc>
-    <lastmod>2026-06-06</lastmod>
+    <loc>https://game.cocy.io/about</loc>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://game.cocy.io/match3/</loc>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/sudoku/</loc>
-    <lastmod>2026-06-06</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://game.cocy.io/worldcup/</loc>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://game.cocy.io/mahjong/</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://game.cocy.io/riichi/</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://game.cocy.io/gostop/</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://game.cocy.io/blackjack/</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://game.cocy.io/d2r-runewords/</loc>
-    <lastmod>2026-02-21</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/jokerrun/</loc>
-    <lastmod>2026-02-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/enhance/</loc>
-    <lastmod>2026-02-18</lastmod>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://game.cocy.io/pingtan/</loc>
-    <lastmod>2026-02-18</lastmod>
-    <priority>0.8</priority>
+    <loc>https://game.cocy.io/pingtan/index.html</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://game.cocy.io/ppingpae/index.html</loc>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/connect4/</loc>
-    <lastmod>2026-02-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/gomoku/</loc>
-    <lastmod>2026-02-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/poker/</loc>
-    <lastmod>2026-02-18</lastmod>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/number-guess/</loc>
-    <lastmod>2026-02-18</lastmod>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/rps/</loc>
-    <lastmod>2026-02-18</lastmod>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/tileslider/</loc>
-    <lastmod>2026-02-18</lastmod>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/blockpuzzle/</loc>
-    <lastmod>2026-02-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/pikmin/</loc>
-    <lastmod>2026-02-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/snake/</loc>
-    <lastmod>2026-02-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/minesweeper/</loc>
-    <lastmod>2026-02-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/breakout/</loc>
-    <lastmod>2026-02-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://game.cocy.io/billiards/</loc>
-    <lastmod>2026-02-18</lastmod>
-    <priority>0.8</priority>
+    <loc>https://game.cocy.io/billiards3d/</loc>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://game.cocy.io/d2r/</loc>
-    <lastmod>2026-02-21</lastmod>
-  </url>
-  <url>
-    <loc>https://game.cocy.io/d2r-warlock/</loc>
-    <lastmod>2026-02-18</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://game.cocy.io/worldcup/</loc>
-    <lastmod>2026-05-31</lastmod>
-    <priority>0.9</priority>
+    <loc>https://game.cocy.io/linerush/</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://game.cocy.io/bulletdodge/</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://game.cocy.io/ladder/</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://game.cocy.io/blockblast/</loc>
+    <priority>0.8</priority>
   </url>
 </urlset>
