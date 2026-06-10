@@ -127,6 +127,7 @@
   <div class="setrow"><span>빈쿠션 2점제<br><small style="color:#89a">첫 적구 전 3쿠션 성공 시 2점</small></span><span class="seg"><button data-bank="1">ON</button><button data-bank="0">OFF</button></span></div>
   <div class="setrow"><span>📳 모션샷 (실험)<br><small style="color:#89a">폰을 앞으로 흔들어 타격 · 세기=파워, 스윙=끊어/밀어</small></span><span class="seg"><button data-motion="1">ON</button><button data-motion="0">OFF</button></span></div>
   <div class="setrow"><span>목표 점수</span><input id="setTarget" type="number" min="5" max="200" step="5" style="width:70px;padding:6px;background:#1e1e2e;border:1px solid #555;color:#fff;text-align:center;border-radius:6px"></div>
+  <div class="setrow"><span>물리 프리셋<br><small style="color:#89a">리얼: 끌어치기·쿠션 회전생존·수직반발 실측 보정</small></span><span class="seg"><button data-phys="classic">클래식</button><button data-phys="real">리얼</button></span></div>
   <details style="margin-top:10px"><summary style="cursor:pointer;color:#9cf;font-size:13px;padding:4px 0">🔧 물리 세부설정 (고급)</summary>
     <div id="tuneBox" style="font-size:12px"></div>
     <button id="tuneReset" style="width:100%;margin-top:6px;background:#555;color:#fff;font-size:12px;padding:8px">기본값 복원</button>
@@ -169,7 +170,7 @@
 </div></div>
 
 <script src="three.min.js?v=2"></script>
-<script src="physics.js?v=18"></script>
+<script src="physics.js?v=19"></script>
 <script src="game.js?v=13"></script>
 <script>
 'use strict';
@@ -178,7 +179,12 @@ const SET={ table: localStorage.getItem('b3d_table')||'large', bank2: localStora
 const MODE = SET.table==='medium' ? '3ball-medium' : '3ball';
 let game=new GameState(MODE);
 // 물리 튜닝 (설정에서 조정, physics.js가 window.BIL_TUNE 읽음)
-const TUNE_DEF={ maxpow:8600, cushE:0.91, cushAngle:0.95, roll:0.011, follow:0.5, side:0.73, cushSide:0.55, engExp:1.7, contactWz:0.6, throw:0.045, squirt:0.045 };
+const TUNE_DEF={ maxpow:8600, cushE:0.91, cushAngle:0.95, roll:0.011, follow:0.5, side:0.73, cushSide:0.55, engExp:1.7, contactWz:0.6, throw:0.045, squirt:0.045, cushWzKeep:0.3, drawFix:0, cushNormE:0, cushTanE:0.95 };
+// 물리 프리셋: classic=기존 그대로 / real=실측 보정(끌어치기 복원·잉글리시 쿠션생존·쿠션 법선분리)
+const PHYS_PRESETS={
+  classic:{},
+  real:{ follow:0.9, drawFix:1, cushWzKeep:0.6, cushNormE:0.7, cushTanE:0.95 },
+};
 window.BIL_TUNE=Object.assign({},TUNE_DEF);
 // 물리 재캘리브레이션(v2): 옛 커스텀 튜닝 1회 초기화 → 모두 새 기본값 적용
 const TUNE_VER='7';
@@ -581,7 +587,12 @@ function refreshSetUI(){
   setOv.querySelectorAll('[data-table]').forEach(b=>b.classList.toggle('on', b.dataset.table===SET.table));
   setOv.querySelectorAll('[data-bank]').forEach(b=>b.classList.toggle('on', (b.dataset.bank==='1')===SET.bank2));
   setOv.querySelectorAll('[data-motion]').forEach(b=>b.classList.toggle('on', (b.dataset.motion==='1')===motionOn));
+  setOv.querySelectorAll('[data-phys]').forEach(b=>b.classList.toggle('on', b.dataset.phys===(localStorage.getItem('b3d_phys')||'classic')));
   document.getElementById('setTarget').value=TARGET;
+}
+function applyPhysPreset(p){
+  window.BIL_TUNE=Object.assign({},TUNE_DEF,PHYS_PRESETS[p]||{});
+  localStorage.setItem('b3d_phys',p); saveTune(); buildTune(); refreshSetUI();
 }
 document.getElementById('setBtn').onclick=()=>{ refreshSetUI(); setOv.classList.add('show'); };
 document.getElementById('setClose').onclick=()=>setOv.classList.remove('show');
@@ -593,6 +604,7 @@ setOv.querySelectorAll('[data-table]').forEach(b=>b.onclick=()=>{
 setOv.querySelectorAll('[data-bank]').forEach(b=>b.onclick=()=>{
   SET.bank2 = b.dataset.bank==='1'; localStorage.setItem('b3d_bank2', SET.bank2?'1':'0'); refreshSetUI();
 });
+setOv.querySelectorAll('[data-phys]').forEach(b=>b.onclick=()=>applyPhysPreset(b.dataset.phys));
 setOv.querySelectorAll('[data-motion]').forEach(b=>b.onclick=async()=>{
   const want=b.dataset.motion==='1';
   if(want){ const ok=await enableMotion(); if(!ok){ refreshSetUI(); return; } motionOn=true; }
@@ -642,8 +654,8 @@ function loadPreset(p, showSol){
   game.currentPlayer=0; game.phase='aiming'; game.lastResult=null; game._snapshot=null;
   document.getElementById('resultOv').classList.remove('show');
   if(showSol && p.sol){
-    // 해법은 기본 물리값 기준 → 커스텀 튜닝 리셋해야 재현됨
-    window.BIL_TUNE=Object.assign({},TUNE_DEF); saveTune(); buildTune();
+    // 해법은 기본(클래식) 물리값 기준 → 커스텀 튜닝 리셋해야 재현됨
+    applyPhysPreset('classic');
     // 테이블별 해법 선택(대대=sol, 중대=solM) + 📌 수동저장 우선
     const s = getSols()[p.n] || (SET.table==='medium' && p.solM ? p.solM : p.sol);
     aimAngle=s.aim*Math.PI/180; spinX=s.sx; spinY=s.sy;
@@ -931,6 +943,7 @@ const TUNE_META=[
   ['cushSide','쿠션 잉글리시',0.10,1.20,0.02,2],
   ['engExp','잉글리시 곡선(저당점둔감)',1.0,2.5,0.1,1],
   ['contactWz','충돌후 스핀잔존',0.2,1.0,0.05,2],
+  ['cushWzKeep','쿠션 회전잔존',0.1,0.9,0.05,2],
   ['squirt','스쿼트(빗나감)',0.0,0.12,0.005,3],
 ];
 function saveTune(){ localStorage.setItem('b3d_tune',JSON.stringify(window.BIL_TUNE)); MAXPOW=window.BIL_TUNE.maxpow; }
@@ -945,7 +958,7 @@ function buildTune(){ const box=document.getElementById('tuneBox'); box.innerHTM
   });
 }
 buildTune();
-document.getElementById('tuneReset').onclick=()=>{ window.BIL_TUNE=Object.assign({},TUNE_DEF); saveTune(); buildTune(); };
+document.getElementById('tuneReset').onclick=()=>{ applyPhysPreset('classic'); };
 // 종목 뱃지
 document.getElementById('modeLbl').textContent = SET.table==='medium'?'3구 중대':'3구 대대';
 

@@ -58,7 +58,10 @@ function simulate(shot) {
   const mu_throw = PHYSICS.THROW_FRICTION;
   const mu_throw_ball = num(T.throw, 0.045);  // 공-공 throw 상한
   const K_CUSH_SIDE = num(T.cushSide, 0.65);  // 쿠션 사이드스핀 반사각/회전력(접시·잉글리시)
-  const CUSH_WZ_KEEP = 0.3;     // 쿠션 후 사이드스핀 잔존(다음 쿠션엔 약하게)
+  const CUSH_WZ_KEEP = num(T.cushWzKeep, 0.3); // 쿠션 후 사이드스핀 잔존(실제 ~0.6, 클래식 0.3)
+  const DRAW_FIX = num(T.drawFix, 0);          // 1이면 하단당점(끌기)은 스트로크 감쇠 미적용(끊어+하단=전진 모순 방지)
+  const CUSH_NORM_E = num(T.cushNormE, 0);     // >0이면 쿠션 법선/접선 분리 복원(법선만 죽음, 실제 ~0.7). 0=클래식(통속도 스케일)
+  const CUSH_TAN_E = num(T.cushTanE, 0.95);    // 분리 모델의 접선 보존율
 
   // ── 스트로크(타격) 종류 ─────────────────────────────────────
   // 끊어치기(stun): 짧게 끊어 follow를 죽임 → 충돌 후 수구가 분리각으로 깔끔히 정지/분리, 회전 빨리 소멸
@@ -102,7 +105,9 @@ function simulate(shot) {
           cb.vx = dx * sp; cb.vy = dy * sp;
         }
         // 상하스핀 → 구름축 각속도(스트로크가 follow 생존·강도 좌우)
-        const w = base * sy * FOLLOW_GAIN * stroke.follow;
+        // drawFix: 끌기(sy<0)는 스트로크 감쇠를 안 받음 — 실제 당구에서 잽(끊어)+하단도 백스핀은 실린다
+        const strokeY = (sy < 0 && DRAW_FIX) ? Math.max(stroke.follow, 1) : stroke.follow;
+        const w = base * sy * FOLLOW_GAIN * strokeY;
         cb.wx = -dy * w;                           // 톱스핀 축 = 진행방향 수평 수직
         cb.wy = dx * w;
         cb.wz = -base * engResp(sx) * SIDE_GAIN;  // 수직축 사이드스핀(비선형 응답)
@@ -225,6 +230,13 @@ function simulate(shot) {
       const wzSurf = b.wz * r;   // 사이드스핀 표면속도
       // 한 쿠션 반사 처리: 법선축(반사) + 접선축(자연각×잉글리시) → 전체 속도는 SPEED_REST로 스케일
       function bounce(normalAxis, normalSign, vN, vT, engSign) {
+        if (CUSH_NORM_E > 0) {
+          // 리얼 모델: 법선 성분만 크게 죽고(e≈0.7) 접선은 거의 보존 → 수직 입사는 죽고 얕은 입사는 살아나옴
+          const nvn = Math.abs(vN) * CUSH_NORM_E;
+          const nvt = (vT * ANGLE_KEEP + engSign * wzSurf * K_CUSH_SIDE) * CUSH_TAN_E;
+          b.wz *= CUSH_WZ_KEEP;
+          return { n: normalSign * nvn, t: nvt };
+        }
         const nvn = Math.abs(vN);                              // 법선 성분(반사 후 크기)
         const nvt = vT * ANGLE_KEEP + engSign * wzSurf * K_CUSH_SIDE; // 접선: 자연각 + 잉글리시
         const sIn = Math.hypot(vN, vT), sRaw = Math.hypot(nvn, nvt);
