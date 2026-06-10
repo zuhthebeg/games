@@ -179,15 +179,15 @@ const SET={ table: localStorage.getItem('b3d_table')||'large', bank2: localStora
 const MODE = SET.table==='medium' ? '3ball-medium' : '3ball';
 let game=new GameState(MODE);
 // 물리 튜닝 (설정에서 조정, physics.js가 window.BIL_TUNE 읽음)
-const TUNE_DEF={ maxpow:8600, cushE:0.91, cushAngle:0.95, roll:0.011, follow:0.5, side:0.73, cushSide:0.55, engExp:1.7, contactWz:0.6, throw:0.045, squirt:0.045, cushWzKeep:0.3, drawFix:0, cushNormE:0, cushTanE:0.95 };
-// 물리 프리셋: classic=기존 그대로 / real=실측 보정(끌어치기 복원·잉글리시 쿠션생존·쿠션 법선분리)
+// 기본=리얼(실측 보정: 끌어치기 복원·잉글리시 쿠션생존·쿠션 법선분리). 클래식=이전 물리.
+const TUNE_DEF={ maxpow:8600, cushE:0.91, cushAngle:0.95, roll:0.011, follow:0.9, side:0.73, cushSide:0.55, engExp:1.7, contactWz:0.6, throw:0.045, squirt:0.045, cushWzKeep:0.6, drawFix:1, cushNormE:0.7, cushTanE:0.95 };
 const PHYS_PRESETS={
-  classic:{},
-  real:{ follow:0.9, drawFix:1, cushWzKeep:0.6, cushNormE:0.7, cushTanE:0.95 },
+  real:{},
+  classic:{ follow:0.5, drawFix:0, cushWzKeep:0.3, cushNormE:0 },
 };
 window.BIL_TUNE=Object.assign({},TUNE_DEF);
 // 물리 재캘리브레이션(v2): 옛 커스텀 튜닝 1회 초기화 → 모두 새 기본값 적용
-const TUNE_VER='7';
+const TUNE_VER='8'; // v8: 리얼 물리 기본화(끌어치기·쿠션 보정)
 try{
   if(localStorage.getItem('b3d_tune_v')!==TUNE_VER){ localStorage.removeItem('b3d_tune'); localStorage.setItem('b3d_tune_v',TUNE_VER); }
   const saved=JSON.parse(localStorage.getItem('b3d_tune')||'{}'); Object.assign(window.BIL_TUNE,saved);
@@ -226,18 +226,20 @@ const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0a0d12); scene
 const camera=new THREE.PerspectiveCamera(45,1,0.1,100);
 let camMode='angle', orbit={az:0,el:0,dist:1};
 const camTgt=new THREE.Vector3(), camTgtLook=new THREE.Vector3(), camCur=new THREE.Vector3(), camCurLook=new THREE.Vector3(); let camFollowInit=false;
-function applyCam(){
+function applyCam(ballsOverride){
   // 시점(1인칭 추적): 수구 뒤·약간 위에서 큐(aim)방향을 화면 위쪽(북)으로. 조준 바꾸면 따라 돎
   if(camMode==='follow'){
     const cue=game.cueBall(); if(cue){
       const a=aimAngle, ax=Math.cos(a), az2=Math.sin(a);   // aim 방향 월드(X,Z)
       // 공 3개 자동 프레이밍: 무게중심·바운딩 반경 구해 전부 화면에 들어오게 거리 산출
-      const bs=game.balls.map(b=>({x:wx(b.x),z:wz(b.y)}));
+      const bs=(ballsOverride||game.balls).map(b=>({x:wx(b.x),z:wz(b.y)}));
       const cxg=bs.reduce((s,p)=>s+p.x,0)/bs.length, czg=bs.reduce((s,p)=>s+p.z,0)/bs.length;
       let rb=0; for(const p of bs) rb=Math.max(rb,Math.hypot(p.x-cxg,p.z-czg));
       rb=Math.max(rb+0.30,0.6);
       const z=Math.max(0.6,Math.min(3.2,orbit.dist));                 // 핀치 줌(기본1=자동맞춤)
-      const fit=(rb/Math.tan(45*Math.PI/360))*1.2*z;                  // FOV45°에 바운딩 들어오는 거리
+      // 세로화면은 가로FOV가 좁음 → 좁은 축 기준으로 거리 산출(폰에서 공 잘림 방지)
+      const halfTan=Math.tan(45*Math.PI/360)*Math.min(1,camera.aspect||1);
+      const fit=(rb/halfTan)*1.2*z;                                   // 바운딩이 좁은 축에도 들어오는 거리
       const height=fit*0.6;
       // 시선=3공 무게중심, 카메라는 무게중심 뒤(-aim)·약간 위 → 공3개 다 나오고 aim방향이 화면 위
       camTgt.set(cxg - ax*fit, height, czg - az2*fit);
@@ -521,6 +523,7 @@ function playAnim(res){
     while(fi<frames.length-1&&frames[fi+1].t<=simT)fi++;
     let cur; if(fi>=frames.length-1)cur=frames[frames.length-1].balls;
     else{const a=frames[fi],b=frames[fi+1],u=(simT-a.t)/((b.t-a.t)||1);cur=a.balls.map((ba,k)=>{const bb=b.balls[k]||ba;return{id:ba.id,x:ba.x+(bb.x-ba.x)*u,y:ba.y+(bb.y-ba.y)*u,wz:ba.wz};});}
+    if(camMode==='follow') applyCam(cur);   // 시점캠: 샷 진행 중에도 공들을 따라 프레이밍(렌더루프 lerp가 부드럽게 추적)
     cur.forEach(b=>{const m=ballMeshes[b.id],pb=prev.find(p=>p.id===b.id);m.position.set(wx(b.x),rW,wz(b.y));
       if(pb){const ddx=b.x-pb.x,ddy=b.y-pb.y,d=Math.hypot(ddx,ddy);if(d>0.4){m.rotateOnWorldAxis(new THREE.Vector3(ddy,0,-ddx).normalize(),d*S/rW);}if(b.wz)m.rotateOnWorldAxis(new THREE.Vector3(0,1,0),b.wz*dtr*SPEED*0.5);}});
     prev=cur;
@@ -587,7 +590,7 @@ function refreshSetUI(){
   setOv.querySelectorAll('[data-table]').forEach(b=>b.classList.toggle('on', b.dataset.table===SET.table));
   setOv.querySelectorAll('[data-bank]').forEach(b=>b.classList.toggle('on', (b.dataset.bank==='1')===SET.bank2));
   setOv.querySelectorAll('[data-motion]').forEach(b=>b.classList.toggle('on', (b.dataset.motion==='1')===motionOn));
-  setOv.querySelectorAll('[data-phys]').forEach(b=>b.classList.toggle('on', b.dataset.phys===(localStorage.getItem('b3d_phys')||'classic')));
+  setOv.querySelectorAll('[data-phys]').forEach(b=>b.classList.toggle('on', b.dataset.phys===(localStorage.getItem('b3d_phys')||'real')));
   document.getElementById('setTarget').value=TARGET;
 }
 function applyPhysPreset(p){
@@ -963,7 +966,7 @@ document.getElementById('tuneReset').onclick=()=>{ applyPhysPreset('classic'); }
 document.getElementById('modeLbl').textContent = SET.table==='medium'?'3구 중대':'3구 대대';
 
 // 루프
-function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();applyCam();}
 // 초기 조준: 수구 → 빨간공 방향
 { const cue=game.cueBall(), red=game.balls.find(b=>b.id===2); if(cue&&red) aimAngle=Math.atan2(red.y-cue.y, red.x-cue.x); }
 addEventListener('resize',resize); resize(); applyCam(); drawSpin(); refreshHud(); syncThickFromAim(); updateAim();
