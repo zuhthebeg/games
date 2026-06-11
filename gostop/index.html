@@ -250,7 +250,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
    • <b>피</b>: 10장 1점+ (쌍피=2장)<br>
    • 점수가 <b>7점</b> 이상 나면 (맞고 기준) <b>고</b>(계속·배수↑) 또는 <b>스톱</b>(끝).<br>
    • <b>피박</b>(상대 피 적음)·<b>광박</b>(상대 광 0) 시 2배.<br>
-   • <b>따닥/쪽/쓸</b> 시 상대 <b>피 1장</b> 뺏어옴.<br>• <b>뻑</b>(같은 월 3장 쌓임) / <b>뻑쓸이</b> 피1장·<b>자뻑</b> 피2장 / <b>3뻑</b>이면 그 판 점수 ×2.<br>• <b>흔들기</b>(손에 같은 월 3장+바닥1장 ×2) / <b>💣폭탄</b>(3장 투하·4장 먹고 피1장+한번더).<br>• 점수 × <b>1만골드 × 판돈배수</b>가 지갑에 정산됩니다.<br><span style="color:var(--muted)">고스톱 3인 모드 곧 추가.</span>
+   • <b>따닥/쪽/쓸</b> 시 상대 <b>단피 1장</b> 뺏어옴(쌍피·국진 보호).<br>• <b>뻑</b>(같은 월 3장 쌓임) / <b>뻑쓸이</b> 피1장·<b>자뻑</b> 피2장 / <b>3뻑</b>이면 그 판 점수 ×2.<br>• <b>흔들기</b>(손에 같은 월 3장+바닥1장 ×2) / <b>💣폭탄</b>(3장 투하·4장 먹고 피1장+한번더).<br>• 점수 × <b>1만골드 × 판돈배수</b>가 지갑에 정산됩니다.<br><span style="color:var(--muted)">고스톱 3인 모드 곧 추가.</span>
   </div>
   <button class="close" onclick="hide('howto')">닫기</button>
 </div></div>
@@ -277,7 +277,7 @@ window.addEventListener('DOMContentLoaded', function(){
     ['낸 뒤 더미에서 1장 뒤집어 또 같은 월이면 먹습니다.','出牌後從牌庫翻1張，若同月也可吃。'],
     ['점수가 7점 이상 나면 (맞고 기준) 고(계속·배수↑) 또는 스톱(끝).','分數達7點以上時，可選繼續(Go·倍數↑)或停(Stop)。'],
     ['피박(상대 피 적음)·광박(상대 광 0) 시 2배.','皮霸(對手皮少)·光霸(對手無光)時2倍。'],
-    ['따닥/쪽/쓸 시 상대 피 1장 뺏어옴.','連打/啄/掃時搶對手皮1張。'],
+    ['따닥/쪽/쓸 시 상대 단피 1장 뺏어옴(쌍피·국진 보호).','連打/啄/掃時搶對手單皮1張(雙皮受保護)。'],
     ['뻑(같은 월 3장 쌓임) / 뻑쓸이 피1장·자뻑 피2장 / 3뻑이면 그 판 점수 ×2.','卡住(同月3張堆疊) / 全吃皮1張·吃回皮2張 / 三卡住該局分數×2。'],
     ['흔들기(손에 같은 월 3장+바닥1장 ×2) / 💣폭탄(3장 투하·4장 먹고 피1장+한번더).','搖牌(手中同月3張+牌面1張 ×2) / 💣炸彈(投3張·吃4張+皮1張+再一次)。'],
     ['점수 × 1만골드 × 판돈배수가 지갑에 정산됩니다.','分數 × 1萬金幣 × 賭注倍數結算到錢包。'],
@@ -329,7 +329,7 @@ window.addEventListener('DOMContentLoaded', function(){
     ['낸 뒤 더미에서 1장 뒤집어 또 같은 월이면 먹습니다.','After playing, flip 1 from the deck; same month takes it too.'],
     ['점수가 7점 이상 나면 (맞고 기준) 고(계속·배수↑) 또는 스톱(끝).','At 7+ points, choose Go (continue, ×mult) or Stop (end).'],
     ['피박(상대 피 적음)·광박(상대 광 0) 시 2배.','Pi-bak (opp few pi) · Gwang-bak (opp 0 gwang) → ×2.'],
-    ['따닥/쪽/쓸 시 상대 피 1장 뺏어옴.','Ttadak/Jjok/Sweep steals 1 pi from opponent.'],
+    ['따닥/쪽/쓸 시 상대 단피 1장 뺏어옴(쌍피·국진 보호).','Ttadak/Jjok/Sweep steals 1 normal pi (double-pi protected).'],
     ['뻑(같은 월 3장 쌓임) / 뻑쓸이 피1장·자뻑 피2장 / 3뻑이면 그 판 점수 ×2.','Ppeok (3 same-month stacked) / Sweep-ppeok 1pi · Self-ppeok 2pi / 3 ppeok = round score ×2.'],
     ['흔들기(손에 같은 월 3장+바닥1장 ×2) / 💣폭탄(3장 투하·4장 먹고 피1장+한번더).','Shake (3 same-month in hand +1 floor, ×2) / 💣Bomb (drop 3, take 4 +1pi +extra turn).'],
     ['점수 × 1만골드 × 판돈배수가 지갑에 정산됩니다.','Score × 10,000 gold × bet multiplier is paid to your wallet.'],
@@ -473,7 +473,7 @@ function playFlow(p, card, fromHand, pick){
   return captured;
 }
 function removeFromTable(c){ const i=G.table.findIndex(x=>x.id===c.id); if(i>=0)G.table.splice(i,1); }
-function stealPi(from,to){ const src=G.players[from].cap; let j=src.findIndex(c=>c.role==='pi'&&!c.ssangpi); if(j<0)j=src.findIndex(c=>c.role==='pi'); if(j<0)j=src.findIndex(c=>c.role==='yul'&&c.m===9); if(j<0)return null; const c=src.splice(j,1)[0]; G.players[to].cap.push(c); return c; }
+function stealPi(from,to){ const src=G.players[from].cap; const j=src.findIndex(c=>c.role==='pi'&&!c.ssangpi); if(j<0)return null; /* 쌍피(우산·오동)·국진 보호 — 단피만 뺏김 */ const c=src.splice(j,1)[0]; G.players[to].cap.push(c); return c; }
 // 먹은 패가 바닥 위치 → 먹은 자리로 날아가는 애니메이션
 function flyToPile(cards, destEl){
   return new Promise(resolve=>{
