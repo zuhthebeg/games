@@ -1,11 +1,11 @@
 {
-  "updated": "2026-06-10T15:02:00Z",
+  "updated": "2026-06-11T23:02:38Z",
   "group": "A",
   "standings": [
+    { "team": "멕시코", "flag": "🇲🇽", "mp": 1, "w": 1, "d": 0, "l": 0, "gd": 2, "pts": 3 },
     { "team": "대한민국", "flag": "🇰🇷", "kr": true, "mp": 0, "w": 0, "d": 0, "l": 0, "gd": 0, "pts": 0 },
-    { "team": "멕시코", "flag": "🇲🇽", "mp": 0, "w": 0, "d": 0, "l": 0, "gd": 0, "pts": 0 },
     { "team": "체코", "flag": "🇨🇿", "mp": 0, "w": 0, "d": 0, "l": 0, "gd": 0, "pts": 0 },
-    { "team": "남아공", "flag": "🇿🇦", "mp": 0, "w": 0, "d": 0, "l": 0, "gd": 0, "pts": 0 }
+    { "team": "남아공", "flag": "🇿🇦", "mp": 1, "w": 0, "d": 0, "l": 1, "gd": -2, "pts": 0 }
   ],
   "matches": [
     { "opp": "체코", "status": "scheduled", "krGoals": null, "oppGoals": null },
