@@ -1,12 +1,33 @@
 [
   {
+    "title": "비트탭",
+    "icon": "https://game.cocy.io/beattap/icon.svg",
+    "url": "https://game.cocy.io/beattap/",
+    "desc": "비트에 맞춰 탭하는 네온 리듬게임! 강한 타격감·콤보 폭발·골드 보상·랭킹. 한국어/English",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko",
+      "en"
+    ],
+    "category": "arcade"
+  },
+  {
     "title": "팝매치",
     "icon": "https://game.cocy.io/match3/icon.svg",
     "url": "https://game.cocy.io/match3/",
     "desc": "애니팡식 매치-3! 60초 시간제·콤보 폭발·골드 보상·랭킹, 한국어/繁體中文/English",
     "badge": "HOT",
-    "platforms": ["WEB"],
-    "languages": ["ko","zhTW","en"],
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko",
+      "zhTW",
+      "en"
+    ],
     "category": "puzzle"
   },
   {
