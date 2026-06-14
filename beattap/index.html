@@ -26,57 +26,58 @@
 <style>
   :root{
     --wallet-bar-h:56px;
-    --bg:#0a0512; --bg2:#160a2e; --text:#f3ecff; --muted:#b9a9e0;
-    --mag:#ff2e9a; --cya:#22e6ff; --pur:#a35bff; --lim:#b6ff3a;
-    --gold:#ffcf4d;
+    --bg:#0a0a0d; --bg2:#101014; --text:#f4f4f7; --muted:#83838f; --faint:rgba(255,255,255,.07);
+    --accent:#5cd1ff;            /* single cool accent, used sparingly */
+    --gold:#e9c45a;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#000;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
-    color:var(--text);user-select:none;-webkit-user-select:none;touch-action:none;}
+    color:var(--text);user-select:none;-webkit-user-select:none;touch-action:none;
+    -webkit-font-smoothing:antialiased;}
   body{padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));}
   #wrap{position:fixed;left:0;right:0;
     top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));bottom:0;
     display:flex;align-items:center;justify-content:center;}
   /* play area keeps a portrait aspect, centered, max width for desktop */
-  #stage{position:relative;width:100%;height:100%;max-width:540px;margin:0 auto;
-    background:#0a0512 center/cover no-repeat;overflow:hidden;}
+  #stage{position:relative;width:100%;height:100%;max-width:520px;margin:0 auto;
+    background:var(--bg) center/cover no-repeat;overflow:hidden;}
   canvas{display:block;width:100%;height:100%;touch-action:none;}
 
-  /* overlays */
+  /* overlays — near-black, restrained, generous whitespace */
   .screen{position:absolute;inset:0;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;gap:18px;text-align:center;padding:24px;
-    background:radial-gradient(120% 90% at 50% 0%,rgba(40,12,70,.72),rgba(8,3,18,.94));
-    backdrop-filter:blur(2px);z-index:20;}
+    align-items:center;justify-content:center;gap:22px;text-align:center;padding:32px 28px;
+    background:radial-gradient(130% 100% at 50% 8%,#15151b 0%,#0a0a0d 58%,#070709 100%);
+    z-index:20;}
   .hide{display:none!important;}
-  h1.logo{margin:0;font-size:clamp(38px,13vw,72px);font-weight:900;letter-spacing:-2px;line-height:.92;
-    background:linear-gradient(100deg,var(--cya),var(--mag) 60%,var(--gold));
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-    filter:drop-shadow(0 1px 10px rgba(255,46,154,.22));}
-  .sub{margin:-6px 0 6px;color:var(--muted);font-size:14px;letter-spacing:1px}
-  .btn{appearance:none;border:0;cursor:pointer;font-weight:900;font-size:20px;color:#0a0512;
-    padding:16px 46px;border-radius:999px;
-    background:linear-gradient(100deg,var(--cya),var(--mag));
-    box-shadow:0 5px 0 rgba(90,0,60,.4),0 0 14px rgba(34,230,255,.22);
-    transition:transform .06s ease, box-shadow .06s ease;}
-  .btn:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(90,0,60,.4);}
-  .btn.sec{background:linear-gradient(100deg,#3a2a66,#26183f);color:var(--text);
-    box-shadow:0 5px 0 rgba(0,0,0,.45);font-size:16px;padding:12px 30px;}
+  /* logo: clean wordmark, light tracking, fits within frame */
+  h1.logo{margin:0;font-size:clamp(34px,11vw,58px);font-weight:800;letter-spacing:.14em;line-height:1.0;
+    color:var(--text);padding-left:.14em;}
+  h1.logo .dot{color:var(--accent);}
+  .sub{margin:-10px 0 2px;color:var(--muted);font-size:13px;letter-spacing:.32em;text-transform:uppercase;font-weight:600}
+  /* primary button: clean filled accent, no 3D/gradient */
+  .btn{appearance:none;border:0;cursor:pointer;font-weight:700;font-size:17px;letter-spacing:.1em;color:#06121a;
+    padding:15px 52px;border-radius:14px;background:var(--accent);
+    box-shadow:0 6px 24px -8px rgba(92,209,255,.5);
+    transition:transform .12s ease, opacity .12s ease, box-shadow .12s ease;}
+  .btn:active{transform:scale(.97);opacity:.92;}
+  .btn.sec{background:transparent;color:var(--text);font-size:15px;padding:13px 32px;
+    border:1px solid var(--faint);box-shadow:none;font-weight:600;}
   .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}
-  .diffsel{display:flex;gap:10px}
-  .diffsel button{appearance:none;border:2px solid #3d2a66;background:#1a0f30;color:var(--muted);
-    border-radius:14px;padding:10px 18px;font-weight:800;font-size:15px;cursor:pointer}
-  .diffsel button.on{border-color:var(--cya);color:#fff;box-shadow:0 0 14px rgba(34,230,255,.4)}
-  .smallnote{color:var(--muted);font-size:12px;max-width:300px;line-height:1.5}
-  .res-grade{font-size:clamp(70px,22vw,130px);font-weight:900;line-height:1;
-    filter:drop-shadow(0 0 22px currentColor)}
-  .res-line{font-size:17px;color:var(--text)}
-  .res-line b{color:var(--gold)}
-  .stat{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;color:var(--muted);font-size:14px}
-  .stat b{color:#fff;font-size:18px;display:block}
-  .calib{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted)}
-  .calib button{width:38px;height:38px;border-radius:10px;border:1px solid #3d2a66;background:#1a0f30;color:#fff;font-size:20px;cursor:pointer}
-  a.creds{color:var(--muted);font-size:11px;text-decoration:none;margin-top:6px}
+  .diffsel{display:flex;gap:8px}
+  .diffsel button{appearance:none;border:1px solid var(--faint);background:rgba(255,255,255,.02);color:var(--muted);
+    border-radius:12px;padding:11px 22px;font-weight:600;font-size:14px;letter-spacing:.08em;cursor:pointer;
+    transition:color .12s, border-color .12s, background .12s;}
+  .diffsel button.on{border-color:var(--accent);color:var(--text);background:rgba(92,209,255,.08)}
+  .smallnote{color:var(--muted);font-size:12px;max-width:288px;line-height:1.6;font-weight:400}
+  .res-grade{font-size:clamp(64px,20vw,116px);font-weight:800;line-height:1;letter-spacing:-.02em}
+  .res-line{font-size:15px;color:var(--muted);letter-spacing:.02em}
+  .res-line b{color:var(--text);font-weight:700}
+  .stat{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;color:var(--muted);font-size:12px;letter-spacing:.08em}
+  .stat b{color:var(--text);font-size:19px;display:block;font-weight:700;margin-bottom:2px}
+  .calib{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+  .calib button{width:36px;height:36px;border-radius:10px;border:1px solid var(--faint);background:rgba(255,255,255,.02);color:var(--text);font-size:19px;cursor:pointer}
+  a.creds{color:var(--muted);font-size:11px;text-decoration:none;margin-top:4px;letter-spacing:.04em;opacity:.7}
 </style>
 </head>
 <body>
@@ -86,7 +87,7 @@
 
   <!-- START -->
   <div id="scrStart" class="screen">
-    <h1 class="logo">BEAT<br>TAP</h1>
+    <h1 class="logo">BEAT<br>TAP<span class="dot">.</span></h1>
     <div class="sub" data-i18n="tagline">비트에 맞춰 탭해라</div>
     <div class="diffsel" id="diffSel">
       <button data-d="easy" data-i18n="easy">EASY</button>
@@ -130,7 +131,9 @@
 'use strict';
 const $=s=>document.querySelector(s);
 const LANES=4;
-const LANE_COLORS=['#22e6ff','#ff2e9a','#a35bff','#b6ff3a'];
+const ACCENT='#5cd1ff';            // single cool accent (hit line, targets, perfect)
+const NOTE_COL='#e9f2ff';          // near-white note bodies (minimal/premium)
+const LANE_COLORS=[NOTE_COL,NOTE_COL,NOTE_COL,NOTE_COL];
 const ASSET='/beattap/assets/';
 const SONG_URL=ASSET+'audio/song1.mp3?v=1';
 const SFX_URL={perfect:ASSET+'audio/sfx_tap_perfect.mp3?v=1',tap:ASSET+'audio/sfx_tap.mp3?v=1',miss:ASSET+'audio/sfx_miss.mp3?v=1'};
@@ -291,9 +294,8 @@ function judge(lane){
     combo++; maxCombo=Math.max(maxCombo,combo);
     const mult=1+Math.min(combo,100)*0.01;
     score+=Math.round(SCORE[kind]*mult);
-    const col=kind==='perfect'?'#fff':kind==='great'?LANE_COLORS[lane]:'#b9a9e0';
-    judgeText={txt:kind.toUpperCase(),col:kind==='perfect'?'#22e6ff':col,t:1};
-    spawnParticles(lane,LANE_COLORS[lane],kind==='perfect');
+    judgeText={txt:kind.toUpperCase(),col:kind==='perfect'?ACCENT:kind==='great'?'#e9f2ff':'#83838f',t:1};
+    spawnParticles(lane,kind==='perfect'?ACCENT:NOTE_COL,kind==='perfect');
     playSfx(kind==='good'?'tap':'perfect',0.96+Math.random()*0.08);
     if(kind==='perfect'){vibrate(18);if(combo%50===0)shake=Math.max(shake,10);}
     else vibrate(10);
@@ -358,7 +360,7 @@ function frame(ts){
     if(laneFlash[l]>0){
       const a=laneFlash[l];
       const grd=ctx.createLinearGradient(0,hitY-H_*0.32,0,hitY+30);
-      grd.addColorStop(0,LANE_COLORS[l]+'00');grd.addColorStop(1,LANE_COLORS[l]+Math.floor(a*44).toString(16).padStart(2,'0'));
+      grd.addColorStop(0,ACCENT+'00');grd.addColorStop(1,ACCENT+Math.floor(a*40).toString(16).padStart(2,'0'));
       ctx.fillStyle=grd;ctx.fillRect(l*laneW,0,laneW,hitY+30);
       laneFlash[l]=Math.max(0,laneFlash[l]-dt*4.5);
     }
@@ -367,13 +369,13 @@ function frame(ts){
   // beat pulse on hit line
   const beatPhase=((now-LEAD_IN)%BEAT+BEAT)%BEAT/BEAT;
   const pulse=running&&now>0?(1-beatPhase)*0.5+0.5:0.6;
-  // hit line + lane targets (thin, calm)
-  ctx.globalAlpha=0.5;ctx.fillStyle='rgba(255,255,255,0.7)';ctx.fillRect(0,hitY-1,W_,2);ctx.globalAlpha=1;
+  // hit line + lane targets (thin accent, calm)
+  ctx.globalAlpha=0.32;ctx.fillStyle=ACCENT;ctx.fillRect(0,hitY-1,W_,2);ctx.globalAlpha=1;
   for(let l=0;l<LANES;l++){
     const x=l*laneW+laneW/2;
-    ctx.globalAlpha=0.18+0.18*pulse;
-    ctx.beginPath();ctx.arc(x,hitY,laneW*0.24,0,Math.PI*2);
-    ctx.strokeStyle=LANE_COLORS[l];ctx.lineWidth=2;ctx.stroke();
+    ctx.globalAlpha=0.14+0.16*pulse;
+    ctx.beginPath();ctx.arc(x,hitY,laneW*0.22,0,Math.PI*2);
+    ctx.strokeStyle=ACCENT;ctx.lineWidth=1.5;ctx.stroke();
     ctx.globalAlpha=1;
   }
 
@@ -465,7 +467,7 @@ function finish(){
   const hits=stat.perfect+stat.great+stat.good;
   const acc=total?((stat.perfect*1+stat.great*0.65+stat.good*0.3)/total*100):0;
   const grade=acc>=95?'S':acc>=88?'A':acc>=75?'B':acc>=60?'C':'D';
-  const gcol={S:'#22e6ff',A:'#b6ff3a',B:'#ffcf4d',C:'#ff9f43',D:'#ff5470'}[grade];
+  const gcol={S:'#5cd1ff',A:'#8be0a8',B:'#e9c45a',C:'#e8a45c',D:'#e87a7a'}[grade];
   $('#resGrade').textContent=grade;$('#resGrade').style.color=gcol;
   $('#resScore').textContent=score.toLocaleString();
   $('#resPerfect').textContent=stat.perfect;$('#resGreat').textContent=stat.great;
