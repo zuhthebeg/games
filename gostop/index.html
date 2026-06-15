@@ -1127,7 +1127,7 @@ function mpResult(v){
     ws.onopen = function(){ setStatus('연결됨 ✓'); if (pendingStart){ pendingStart=false; doStart(); } };
     ws.onmessage = function(e){
       var d; try{ d = JSON.parse(e.data); }catch(_){ return; }
-      if (d.type === 'state'){ lastView = d.view; if (started) applyServerView(d.view); }
+      if (d.type === 'state'){ lastView = d.view; ensureStarted(); applyServerView(d.view); }
       else if (d.type === 'started'){ ensureStarted(); }
       else if (d.type === 'event'){ if (started && lastView) applyServerView(lastView); }
       else if (d.type === 'presence' || d.type === 'connected'){ var el=document.getElementById('doConns'); if (el && typeof d.connections==='number') el.textContent='접속자: '+d.connections; }
