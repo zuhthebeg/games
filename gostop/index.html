@@ -1095,14 +1095,21 @@ function mpResult(v){
 
   function startWS(){
     var ws = new WebSocket(WORKER + '/room/' + encodeURIComponent(room) + '?u=' + encodeURIComponent(user));
-    var lastView = null, started = false;
+    var lastView = null, started = false, pendingStart = false;
+    function setStatus(t){ var el=document.getElementById('doStatus'); if(el) el.textContent=t; }
+    function doStart(){
+      if (ws.readyState !== 1){ pendingStart = true; setStatus('연결 대기 중… 열리면 자동 시작'); return; }
+      try{ ws.send(JSON.stringify({type:'start', config:{seats:2, bet:(window.BET||1)}})); setStatus('시작 요청 보냄 → 서버 응답 대기…'); }
+      catch(e){ setStatus('전송 실패: '+e.message); return; }
+      setTimeout(function(){ if(!started) setStatus('⚠️ 10초간 서버 응답 없음 (서버측 의심)'); }, 10000);
+    }
     var client = {
       getMyUserId: function(){ return user; },
       onEvent: null,
       leaveRoom: function(){ try{ ws.close(); }catch(e){} return Promise.resolve({}); },
       sendAction: function(action){ try{ ws.send(JSON.stringify({type:'action', action:action})); }catch(e){} return Promise.resolve({}); },
       getRoomState: function(){ return Promise.resolve({ myView: lastView }); },
-      _start: function(){ try{ ws.send(JSON.stringify({type:'start', config:{seats:2, bet:(window.BET||1)}})); }catch(e){} }
+      _start: doStart
     };
     window.MP = window.MP || {};
     MP.client = client;
@@ -1117,26 +1124,28 @@ function mpResult(v){
       if (lastView) applyServerView(lastView);
     }
 
+    ws.onopen = function(){ setStatus('연결됨 ✓'); if (pendingStart){ pendingStart=false; doStart(); } };
     ws.onmessage = function(e){
       var d; try{ d = JSON.parse(e.data); }catch(_){ return; }
       if (d.type === 'state'){ lastView = d.view; if (started) applyServerView(d.view); }
       else if (d.type === 'started'){ ensureStarted(); }
       else if (d.type === 'event'){ if (started && lastView) applyServerView(lastView); }
-      else if (d.type === 'presence' || d.type === 'connected'){ var el=document.getElementById('doConns'); if (el && d.connections) el.textContent='접속자: '+d.connections; }
+      else if (d.type === 'presence' || d.type === 'connected'){ var el=document.getElementById('doConns'); if (el && typeof d.connections==='number') el.textContent='접속자: '+d.connections; }
     };
-    ws.onclose = function(){ try{ toast('WS 끊김 — 새로고침'); }catch(e){} };
-    ws.onerror = function(){};
+    ws.onclose = function(ev){ setStatus('연결 끊김 (code '+(ev&&ev.code)+') — 새로고침'); };
+    ws.onerror = function(){ setStatus('⚠️ WS 연결 오류 — 네트워크/주소 확인'); };
 
     var menu = document.getElementById('menu'); if (menu) menu.style.display='none';
     var lob = document.getElementById('mpLobby') || document.body;
     lob.style.display = 'block';
     lob.innerHTML = '<div style="padding:28px;text-align:center;color:#fff">'
       + '<h3 style="margin-bottom:8px">🦞 DO 실시간 테스트</h3>'
-      + '<p>방코드 <b>'+room+'</b></p>'
+      + '<p>방코드 <b>'+room+'</b> · 나 '+user+'</p>'
       + '<p id="doConns" style="font-size:12px;opacity:.75">접속자: 1</p>'
-      + '<p style="font-size:12px;opacity:.6;margin:10px 0">상대가 같은 URL로 들어온 걸 확인하고 시작</p>'
+      + '<p id="doStatus" style="font-size:13px;color:#ffd76a;margin:8px 0">연결 중…</p>'
+      + '<p style="font-size:12px;opacity:.6;margin:10px 0">상대도 같은 URL 들어오면(접속자:2) 시작</p>'
       + '<button id="doStart" class="big-btn" style="background:var(--green,#23c552);color:#0a1a12">시작 (딜)</button></div>';
-    var sb = document.getElementById('doStart'); if (sb) sb.onclick = function(){ client._start(); };
+    var sb = document.getElementById('doStart'); if (sb) sb.onclick = function(){ doStart(); };
   }
 
   window.openMultiplayer = function(){ startWS(); };
