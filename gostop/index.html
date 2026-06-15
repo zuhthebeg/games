@@ -1084,5 +1084,63 @@ function mpResult(v){
   sound(meWin?'win':'lose'); show('result');
 }
 </script>
+<script>
+/* ===== relay-do WS PoC 훅 (플래그: ?relay=do) — 플래그 없으면 0 실행 = 라이브 무영향 ===== */
+(function(){
+  var P = new URLSearchParams(location.search);
+  if (P.get('relay') !== 'do') return;
+  var WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
+  var room = P.get('room') || 'gs-test';
+  var user = 'u-' + Math.random().toString(36).slice(2,8);
+
+  function startWS(){
+    var ws = new WebSocket(WORKER + '/room/' + encodeURIComponent(room) + '?u=' + encodeURIComponent(user));
+    var lastView = null, started = false;
+    var client = {
+      getMyUserId: function(){ return user; },
+      onEvent: null,
+      leaveRoom: function(){ try{ ws.close(); }catch(e){} return Promise.resolve({}); },
+      sendAction: function(action){ try{ ws.send(JSON.stringify({type:'action', action:action})); }catch(e){} return Promise.resolve({}); },
+      getRoomState: function(){ return Promise.resolve({ myView: lastView }); },
+      _start: function(){ try{ ws.send(JSON.stringify({type:'start', config:{seats:2, bet:(window.BET||1)}})); }catch(e){} }
+    };
+    window.MP = window.MP || {};
+    MP.client = client;
+
+    function ensureStarted(){
+      if (started) return; started = true;
+      MP.active = true; MP.myUserId = user; MP._sel = -1; MP._resultShown = false;
+      MP._prevTable = null; MP._prevCap = null; MP._prevGo = undefined;
+      var lb = document.getElementById('mpLobby'); if (lb){ lb.style.display='none'; lb.innerHTML=''; }
+      var bd = document.getElementById('board'); if (bd) bd.style.display='flex';
+      var opp = document.getElementById('mpOpps'); if (opp) opp.style.display='flex';
+      if (lastView) applyServerView(lastView);
+    }
+
+    ws.onmessage = function(e){
+      var d; try{ d = JSON.parse(e.data); }catch(_){ return; }
+      if (d.type === 'state'){ lastView = d.view; if (started) applyServerView(d.view); }
+      else if (d.type === 'started'){ ensureStarted(); }
+      else if (d.type === 'event'){ if (started && lastView) applyServerView(lastView); }
+      else if (d.type === 'presence' || d.type === 'connected'){ var el=document.getElementById('doConns'); if (el && d.connections) el.textContent='접속자: '+d.connections; }
+    };
+    ws.onclose = function(){ try{ toast('WS 끊김 — 새로고침'); }catch(e){} };
+    ws.onerror = function(){};
+
+    var menu = document.getElementById('menu'); if (menu) menu.style.display='none';
+    var lob = document.getElementById('mpLobby') || document.body;
+    lob.style.display = 'block';
+    lob.innerHTML = '<div style="padding:28px;text-align:center;color:#fff">'
+      + '<h3 style="margin-bottom:8px">🦞 DO 실시간 테스트</h3>'
+      + '<p>방코드 <b>'+room+'</b></p>'
+      + '<p id="doConns" style="font-size:12px;opacity:.75">접속자: 1</p>'
+      + '<p style="font-size:12px;opacity:.6;margin:10px 0">상대가 같은 URL로 들어온 걸 확인하고 시작</p>'
+      + '<button id="doStart" class="big-btn" style="background:var(--green,#23c552);color:#0a1a12">시작 (딜)</button></div>';
+    var sb = document.getElementById('doStart'); if (sb) sb.onclick = function(){ client._start(); };
+  }
+
+  window.openMultiplayer = function(){ startWS(); };
+})();
+</script>
 </body>
 </html>
