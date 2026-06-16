@@ -1193,6 +1193,8 @@ function mpResult(v){
 (function(){
   var P = new URLSearchParams(location.search);
   if (P.get('relay') !== 'do') return;
+  var DO_BUILD = 'do-v3';   // 로비에 표시 — 이 값이 보이면 최신 코드 로드됨(캐시 판별용)
+  try{ console.log('[gostop] DO build', DO_BUILD, '— event-driven sound/anim, tile removed'); }catch(e){}
   var WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
   var room = P.get('room') || 'gs-test';
   // 영속 uid: 페이지 재로드/나갔다오기 시에도 같은 정체성 → 서버가 내 좌석·손패 복원(관전모드 버그 방지).
@@ -1249,7 +1251,8 @@ function mpResult(v){
     lob.style.display = 'block';
     lob.innerHTML = '<div style="padding:28px;text-align:center;color:#fff">'
       + '<h3 style="margin-bottom:8px">🦞 DO 실시간 테스트</h3>'
-      + '<p>방코드 <b>'+room+'</b> · 나 '+user+'</p>'
+      + '<p style="font-size:11px;color:#7CFC9A;margin:-4px 0 8px">build '+DO_BUILD+' · 이벤트구동·tile제거</p>'
+      + '<p>방코드 <b>'+room+'</b> · 나 '+(nick||user)+'</p>'
       + '<p id="doConns" style="font-size:12px;opacity:.75">접속자: 1</p>'
       + '<p id="doStatus" style="font-size:13px;color:#ffd76a;margin:8px 0">연결 중…</p>'
       + '<p style="font-size:12px;opacity:.6;margin:10px 0">상대도 같은 URL 들어오면(접속자:2) 시작</p>'
