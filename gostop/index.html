@@ -400,7 +400,7 @@ window.addEventListener('DOMContentLoaded', function(){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setup); else setup();
 })();
 </script>
-<script src="/lib/multiplayer.js?v=20260524a"></script>
+<script src="/lib/multiplayer.js?v=20260617a"></script>
 <script src="/lib/multiplayer-ui.js?v=20260508a"></script>
 <script>
 const $=id=>document.getElementById(id);
@@ -1223,8 +1223,8 @@ function mpResult(v){
 (function(){
   var P = new URLSearchParams(location.search);
   if (P.get('relay') !== 'do') return;
-  var DO_BUILD = 'do-v7';   // 로비에 표시 — 이 값이 보이면 최신 코드 로드됨(캐시 판별용)
-  try{ console.log('[gostop] DO build', DO_BUILD, '— cards settle after fly, bigger turn banner, reconnect indicator+auto, zombie-room reset'); }catch(e){}
+  var DO_BUILD = 'do-v8';   // 로비에 표시 — 이 값이 보이면 최신 코드 로드됨(캐시 판별용)
+  try{ console.log('[gostop] DO build', DO_BUILD, '— transport promoted to shared MultiplayerWSClient (lib)'); }catch(e){}
   var WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
   var room = P.get('room') || 'gs-test';
   // 영속 uid: 페이지 재로드/나갔다오기 시에도 같은 정체성 → 서버가 내 좌석·손패 복원(관전모드 버그 방지).
@@ -1233,26 +1233,14 @@ function mpResult(v){
   var nick = ''; try{ nick = (typeof myNick==='function' ? myNick() : '') || ''; }catch(e){}
 
   function startWS(){
-    var ws = null;
-    var lastView = null, started = false, pendingStart = false;
-    var reconnectTimer = null, reconnectTries = 0, manualClose = false;
-    var WS_URL = WORKER + '/room/' + encodeURIComponent(room) + '?u=' + encodeURIComponent(user) + (nick ? '&n=' + encodeURIComponent(nick) : '');
+    // 트랜스포트는 공용 lib(MultiplayerWSClient)로 승격. 인라인 WS 플러밍 제거.
+    // 게임은 콜백만 배선하고 렌더/턴/사운드 로직은 그대로 유지(공개 표면 동일).
+    var started = false;
     function setStatus(t){ var el=document.getElementById('doStatus'); if(el) el.textContent=t; }
     function showConn(msg){ var el=document.getElementById('mpConn'); if(!el)return; if(msg){ el.textContent=msg; el.style.display='block'; } else { el.style.display='none'; } }
-    function doStart(){
-      if (ws.readyState !== 1){ pendingStart = true; setStatus('연결 대기 중… 열리면 자동 시작'); return; }
-      try{ ws.send(JSON.stringify({type:'start', config:{seats:2, bet:(window.BET||1)}})); setStatus('시작 요청 보냄 → 서버 응답 대기…'); }
-      catch(e){ setStatus('전송 실패: '+e.message); return; }
-      setTimeout(function(){ if(!started) setStatus('⚠️ 10초간 서버 응답 없음 (서버측 의심)'); }, 10000);
-    }
-    var client = {
-      getMyUserId: function(){ return user; },
-      onEvent: null,
-      leaveRoom: function(){ manualClose=true; if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null;} try{ ws&&ws.close(); }catch(e){} return Promise.resolve({}); },
-      sendAction: function(action){ try{ ws.send(JSON.stringify({type:'action', action:action})); }catch(e){} return Promise.resolve({}); },
-      getRoomState: function(){ return Promise.resolve({ myView: lastView }); },
-      _start: doStart
-    };
+
+    if (typeof MultiplayerWSClient !== 'function'){ setStatus('⚠️ 멀티 라이브러리 로드 실패 — 새로고침'); return; }
+    var client = new MultiplayerWSClient({ workerBase: WORKER, room: room, userId: user, nickname: nick, gameType: 'gostop' });
     window.MP = window.MP || {};
     MP.client = client;
 
@@ -1265,30 +1253,23 @@ function mpResult(v){
       var bd = document.getElementById('board'); if (bd) bd.style.display='flex';
       var opp = document.getElementById('mpOpps'); if (opp) opp.style.display='flex';
       var sp = document.getElementById('spOpp'); if (sp) sp.style.display='none';   // 싱글 'CPU' 상대 박스 숨김
-      if (lastView) applyServerView(lastView);
     }
 
-    function scheduleReconnect(){
-      if (reconnectTimer || manualClose) return;
-      reconnectTries++;
-      var delay = Math.min(1200 * reconnectTries, 5000);
-      showConn('🔌 연결 끊김 — 재접속 중… ('+reconnectTries+')');
-      reconnectTimer = setTimeout(function(){ reconnectTimer=null; connect(); }, delay);
+    client.onOpen = function(){ setStatus('연결됨 ✓'); };
+    client.onStateChange = function(view){ ensureStarted(); showConn(null); applyServerView(view); };
+    client.onEvent = function(ev){ try{ mpOnEvent(ev); }catch(_){} };
+    client.onReconnecting = function(tries){ showConn('🔌 연결 끊김 — 재접속 중… ('+tries+')'); };
+    client.onReconnected = function(){ if(started) showConn(null); };
+    client.onPresence = function(n){ var el=document.getElementById('doConns'); if (el) el.textContent='접속자: '+n; };
+    client.onPreStartFail = function(kind, code){ setStatus(kind==='error' ? '⚠️ WS 연결 오류 — 네트워크/주소 확인' : '연결 끊김 (code '+code+') — 새로고침'); };
+
+    function doStart(){
+      var open = client._ws && client._ws.readyState === 1;
+      client.start({ seats:2, bet:(window.BET||1) });
+      setStatus(open ? '시작 요청 보냄 → 서버 응답 대기…' : '연결 대기 중… 열리면 자동 시작');
+      setTimeout(function(){ if(!started) setStatus('⚠️ 10초간 서버 응답 없음 (서버측 의심)'); }, 10000);
     }
-    function connect(){
-      ws = new WebSocket(WS_URL);
-      ws.onopen = function(){ setStatus('연결됨 ✓'); reconnectTries=0; if(started) showConn(null); if (pendingStart){ pendingStart=false; doStart(); } };
-      ws.onmessage = function(e){
-        var d; try{ d = JSON.parse(e.data); }catch(_){ return; }
-        if (d.type === 'state'){ lastView = d.view; ensureStarted(); showConn(null); applyServerView(d.view); }
-        else if (d.type === 'started'){ ensureStarted(); }
-        else if (d.type === 'event'){ try{ mpOnEvent(d.event); }catch(_){} }
-        else if (d.type === 'presence' || d.type === 'connected'){ var el=document.getElementById('doConns'); if (el && typeof d.connections==='number') el.textContent='접속자: '+d.connections; }
-      };
-      ws.onclose = function(ev){ if (manualClose) return; if (started){ scheduleReconnect(); } else setStatus('연결 끊김 (code '+(ev&&ev.code)+') — 새로고침'); };
-      ws.onerror = function(){ if(!started) setStatus('⚠️ WS 연결 오류 — 네트워크/주소 확인'); };
-    }
-    connect();
+    MP.client._start = doStart;
 
     var menu = document.getElementById('menu'); if (menu) menu.style.display='none';
     var lob = document.getElementById('mpLobby') || document.body;
