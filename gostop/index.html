@@ -873,7 +873,7 @@ function selectCard(i){ if(G.turn!==0||G.over||G.acting)return; if(G.sel===i){ p
 function capGroup(cap){
   const g=cap.filter(c=>c.gwang), y=cap.filter(c=>c.role==='yul'), t=cap.filter(c=>c.role==='tti'), p=cap.filter(c=>c.role==='pi');
   const cls=c=>(G._newCapIds&&G._newCapIds.has(c.id))?'cin':'';
-  const lap=arr=>`<div class="lap">`+arr.map(c=>`<img src="${c.file}" class="${cls(c)}">`).join('')+`</div>`;
+  const lap=arr=>`<div class="lap">`+arr.map(c=>`<img src="${c.file}" data-id="${c.id}" class="${cls(c)}">`).join('')+`</div>`;
   let h='<div class="capset">';
   if(g.length) h+=lap(g);                                      // 광 왼쪽
   if(t.length||y.length){ h+='<div class="cap-mid">'+lap(t)+lap(y)+'</div>'; }  // 띠 위 / 열끗(동물) 아래
@@ -1015,6 +1015,8 @@ function mpEsc(t){ return (''+(t||'')).replace(/[<>&]/g,''); }
 function mpRender(v){
   G=G||{};
   // ── 서버 스냅샷 diff → 애니메이션/사운드 juice (MP는 thin renderer라 직접 감지해야 함) ──
+  // fly 애니용: DOM 새로 그리기 "전"에 현재 바닥 카드 좌표를 캡처(스왑 후엔 사라짐).
+  const prevRects={}; try{ document.querySelectorAll('#tableCards img[data-id]').forEach(img=>{ prevRects[img.dataset.id]=img.getBoundingClientRect(); }); }catch(e){}
   const tableIds=new Set((v.table||[]).map(c=>c.id));
   const capIds=new Set(); (v.players||[]).forEach(p=>(p.cap||[]).forEach(c=>capIds.add(c.id)));
   const first=!MP._prevTable;
@@ -1034,7 +1036,7 @@ function mpRender(v){
   }
   MP._prevTable=tableIds; MP._prevCap=capIds; MP._prevGo=v.go;
   const by={},order=[]; (v.table||[]).forEach(c=>{ if(!by[c.m]){by[c.m]=[];order.push(c.m);} by[c.m].push(c); });
-  $('tableCards').innerHTML=order.map(m=>`<div class="mgroup">`+by[m].map((c,i)=>`<img src="${c.file}" class="${(G._newIds&&G._newIds.has(c.id))?'cin':''}" style="margin-left:${i?'-26px':'0'}">`).join('')+`</div>`).join('');
+  $('tableCards').innerHTML=order.map(m=>`<div class="mgroup">`+by[m].map((c,i)=>`<img src="${c.file}" data-id="${c.id}" class="${(G._newIds&&G._newIds.has(c.id))?'cin':''}" style="margin-left:${i?'-26px':'0'}">`).join('')+`</div>`).join('');
   const gudM=mpGudeunMonths(v);
   if($('deckN'))$('deckN').textContent=v.deckCount; if($('t-deck'))$('t-deck').textContent=v.deckCount; if($('t-go'))$('t-go').textContent=v.go;
   const myhand=v.myHand||[];
@@ -1045,8 +1047,39 @@ function mpRender(v){
   if($('t-myscore'))$('t-myscore').textContent=v.myScore; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } if($('myScoreLine')){ const myc=(v.players.find(p=>p.seat===v.mySeat)||{cap:[]}).cap; $('myScoreLine').innerHTML=scoreLineHTML(myc, v.myScore); }
   const el=$('mpOpps'); const opps=v.players.filter(p=>p.seat!==v.mySeat).sort((a,b)=>a.seat-b.seat);
   el.innerHTML=opps.map(p=>{ const turn=(v.pending?v.pending.seat===p.seat:v.currentTurn===p.seat);
-    return `<div class="mpopp ${turn?'turn':''}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)} · ${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
+    return `<div class="mpopp ${turn?'turn':''}" data-seat="${p.seat}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)} · ${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
+  mpFlyCaptures(prevRects, newCap, v);   // 먹은 패: 바닥 옛 좌표 → 먹은 사람 무더기로 날아가기(싱글 flyToPile 재활용)
   mpVoiceCombos(v);
+}
+// 스냅샷 diff로 "바닥→무더기" 이동을 복원해 fly 애니. board 렌더와 독립(실패해도 화면 정확).
+function mpFly(fromRect, destEl, file){
+  try{
+    if(!fromRect||!destEl)return;
+    const d=destEl.getBoundingClientRect();
+    const clone=document.createElement('img'); clone.src=file;
+    clone.style.cssText='position:fixed;left:'+fromRect.left+'px;top:'+fromRect.top+'px;width:'+(fromRect.width||46)+'px;border-radius:4px;z-index:60;box-shadow:0 5px 14px rgba(0,0,0,.55);transition:transform .42s cubic-bezier(.5,0,.25,1),opacity .42s;pointer-events:none';
+    document.body.appendChild(clone);
+    const dx=(d.left+8)-fromRect.left, dy=(d.top+6)-fromRect.top;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ clone.style.transform='translate('+dx+'px,'+dy+'px) scale(.6)'; clone.style.opacity='.5'; }));
+    setTimeout(()=>{ try{clone.remove();}catch(e){} }, 470);
+  }catch(e){}
+}
+function mpFlyCaptures(prevRects, newCap, v){
+  try{
+    if(!newCap||!newCap.size||!prevRects)return;
+    newCap.forEach(id=>{
+      const fr=prevRects[id]; if(!fr)return;   // 바닥에 있던 카드만(손패/덱发은 cin 페이드로 대체)
+      let seat=-1, card=null;
+      (v.players||[]).forEach(p=>{ (p.cap||[]).forEach(c=>{ if(c.id===id){ seat=p.seat; card=c; } }); });
+      if(seat<0||!card)return;
+      const dest=(seat===v.mySeat)? document.getElementById('myCaptured') : document.querySelector('#mpOpps [data-seat="'+seat+'"]');
+      if(!dest)return;
+      const tgt=document.querySelector('#myCaptured img[data-id="'+id+'"], #mpOpps img[data-id="'+id+'"]');
+      if(tgt) tgt.style.visibility='hidden';        // 정착 카드 잠깐 숨김 → 클론이 도착하면 노출(이중 표시 방지)
+      mpFly(fr, dest, card.file);
+      setTimeout(()=>{ if(tgt) tgt.style.visibility=''; }, 440);
+    });
+  }catch(e){}
 }
 // 새 족보(오광/사광/삼광·고도리·홍단·청단·초단) 완성 시 1회 콜 — 싱글 voiceCombos의 MP판(좌석별 메모리)
 const MP_COMBO_VOICE={'고도리':'godori','홍단':'hongdan','청단':'cheongdan','초단':'chodan'};
