@@ -1002,8 +1002,17 @@ function mpStart(rs){
   if(MP._poll)clearInterval(MP._poll); MP._poll=setInterval(mpRefresh,2500);
 }
 function mpRefresh(){ if(!MP.active||!MP.client)return; MP.client.getRoomState().then(room=>{ if(room&&room.myView) applyServerView(room.myView); }).catch(()=>{}); }
-function mpSend(action){ if(!MP.client)return; MP._sel=-1; MP.client.sendAction(action).then(()=>setTimeout(mpRefresh,150)).catch(()=>toast('전송 실패')); }
-function applyServerView(v){ MP.view=v; mpRender(v); if(v.finished){ mpResult(v); return; } if(v.pendingFlip && v.pendingFlip.seat===v.mySeat){ mpAskFlipPick(v.pendingFlip.candidates); return; } if(v.pending && v.pending.seat===v.mySeat) mpOfferGoStop(v.pending.total); }
+function mpSend(action){ if(!MP.client)return; MP._sel=-1;
+  // DO(WS)는 서버가 state를 push → refresh 불필요. 옛 캐시 view 재적용이 pending 팝업을 되살리는 버그 방지.
+  MP.client.sendAction(action).then(()=>{ if(!MP._eventDriven) setTimeout(mpRefresh,150); }).catch(()=>toast('전송 실패')); }
+function applyServerView(v){ MP.view=v; mpRender(v);
+  if(v.finished){ mpResult(v); return; }
+  const myFlip = v.pendingFlip && v.pendingFlip.seat===v.mySeat;
+  const myPend = v.pending && v.pending.seat===v.mySeat;
+  if(myFlip) mpAskFlipPick(v.pendingFlip.candidates);
+  if(myPend) mpOfferGoStop(v.pending.total);
+  else if($('gostop')&&$('gostop').classList.contains('show')) hide('gostop');   // pending 해소 → GO/STOP 팝업 닫기(1고 이후 먹통 방지)
+}
 function mpAskFlipPick(cands){
   if(!cands||!cands.length||$('pickAsk').classList.contains('show'))return;
   const box=$('pickCards'); box.innerHTML=cands.map((c,i)=>`<img src="${c.file}" data-i="${i}" style="width:68px;border-radius:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.55)">`).join('');
@@ -1098,13 +1107,13 @@ function mpOnEvent(ev){
   if(!ev||!ev.type)return;
   if(ev.type==='play' || ev.type==='flip_turn'){
     const p=ev.payload||{}; const stags=p.stags||[]; const stolen=p.stolen||[];
+    // 띠용(tile.mp3) 제거 — 의미있는 소리만: 폭탄/뻑/따닥/쪽/쓸 voice + 먹기(claim). 평범한 놓기는 무음.
     if(stags.includes('폭탄')){ bombFx(''); }
-    else if(p.ppuk){ gsVoice('ppeok'); sound('flip'); }
-    else if(stags.includes('따닥')){ sound('play'); setTimeout(()=>sound('play'),150); gsVoice('ttadak'); }
+    else if(p.ppuk){ gsVoice('ppeok'); }
+    else if(stags.includes('따닥')){ sound('take'); gsVoice('ttadak'); }
     else if(stags.includes('쪽')){ sound('take'); gsVoice('jjok'); }
     else if(stags.includes('쓸')){ sound('take'); gsVoice('ssul'); }
     else if(p.captured && p.captured.length){ sound('take'); }
-    else { sound('flip'); }
     if(stags.length){ toast(stags.join('+')+'!'+(stolen.length?(' 피뺏기 '+stolen.length):'')); }
     if(stolen.length){ sound('take'); setTimeout(()=>gsVoice('naenwa'),320); }
   }
