@@ -1133,10 +1133,13 @@ function mpResult(v){
   if (P.get('relay') !== 'do') return;
   var WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
   var room = P.get('room') || 'gs-test';
-  var user = 'u-' + Math.random().toString(36).slice(2,8);
+  // 영속 uid: 페이지 재로드/나갔다오기 시에도 같은 정체성 → 서버가 내 좌석·손패 복원(관전모드 버그 방지).
+  var user = ''; try{ user = localStorage.getItem('gostop_uid') || ''; }catch(e){}
+  if(!user){ user = 'u-' + Math.random().toString(36).slice(2,8); try{ localStorage.setItem('gostop_uid', user); }catch(e){} }
+  var nick = ''; try{ nick = (typeof myNick==='function' ? myNick() : '') || ''; }catch(e){}
 
   function startWS(){
-    var ws = new WebSocket(WORKER + '/room/' + encodeURIComponent(room) + '?u=' + encodeURIComponent(user));
+    var ws = new WebSocket(WORKER + '/room/' + encodeURIComponent(room) + '?u=' + encodeURIComponent(user) + (nick ? '&n=' + encodeURIComponent(nick) : ''));
     var lastView = null, started = false, pendingStart = false;
     function setStatus(t){ var el=document.getElementById('doStatus'); if(el) el.textContent=t; }
     function doStart(){
@@ -1164,6 +1167,7 @@ function mpResult(v){
       var lb = document.getElementById('mpLobby'); if (lb){ lb.style.display='none'; lb.innerHTML=''; }
       var bd = document.getElementById('board'); if (bd) bd.style.display='flex';
       var opp = document.getElementById('mpOpps'); if (opp) opp.style.display='flex';
+      var sp = document.getElementById('spOpp'); if (sp) sp.style.display='none';   // 싱글 'CPU' 상대 박스 숨김
       if (lastView) applyServerView(lastView);
     }
 
