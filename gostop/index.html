@@ -1127,19 +1127,21 @@ function mpOnEvent(ev){
   mpAnimateEvent(ev);   // fly 애니(이벤트 구동) — 출발 좌표가 살아있는 지금 캡처
   if(ev.type==='play' || ev.type==='flip_turn'){
     const p=ev.payload||{}; const stags=p.stags||[]; const stolen=p.stolen||[];
-    // 띠용(tile.mp3) 제거 — 의미있는 소리만: 폭탄/뻑/따닥/쪽/쓸 voice + 먹기(claim). 평범한 놓기는 무음.
+    // 싱글과 동일한 사운드 시퀀스 (claim '또잉'은 싱글에서 제거됨 — 피뺏기에서만 사용).
+    //  패 놓기→tile(play), 덱 뒤집기→tile(flip), 특수→play(+따닥 더블), 평범한 먹기→무음, 피뺏기→claim(take).
+    sound('play');                                   // 패 놓기 (single line 550)
+    if(p.flipId) sound('flip');                      // 덱 뒤집힘 (single line 555/672)
     if(stags.includes('폭탄')){ bombFx(''); }
-    else if(p.ppuk){ gsVoice('ppeok'); }
-    else if(stags.includes('따닥')){ sound('take'); gsVoice('ttadak'); }
-    else if(stags.includes('쪽')){ sound('take'); gsVoice('jjok'); }
-    else if(stags.includes('쓸')){ sound('take'); gsVoice('ssul'); }
-    else if(p.captured && p.captured.length){ sound('take'); }
+    else if(p.ppuk){ gsVoice('ppeok'); }             // 뻑 (single line 570)
+    else if(stags.length){                           // 특수 먹기 (single line 614-615)
+      if(stags.includes('따닥')){ sound('play'); setTimeout(()=>sound('play'),150); gsVoice('ttadak'); }
+      else { sound('play'); if(stags.includes('쪽')) gsVoice('jjok'); else if(stags.includes('쓸')) gsVoice('ssul'); }
+    }
     if(stags.length){ toast(stags.join('+')+'!'+(stolen.length?(' 피뺏기 '+stolen.length):'')); }
-    if(stolen.length){ sound('take'); setTimeout(()=>gsVoice('naenwa'),320); }
+    if(stolen.length){ sound('take'); setTimeout(()=>gsVoice('naenwa'),320); }   // 피뺏기만 claim (single line 616)
   }
   else if(ev.type==='ppeok3'){ toast('3뻑! 이 판 ×2'); gsVoice('ppeok3'); }
   else if(ev.type==='go'){ const g=(ev.payload&&ev.payload.go)||1; toast(g+'고!'); gsVoice('go'+Math.min(g,5)); }
-  else if(ev.type==='flip_pick'){ sound('take'); }
   else if(ev.type==='draw'){ gsVoice('nagari'); }
 }
 function mpTapCard(i){
@@ -1193,7 +1195,7 @@ function mpResult(v){
 (function(){
   var P = new URLSearchParams(location.search);
   if (P.get('relay') !== 'do') return;
-  var DO_BUILD = 'do-v3';   // 로비에 표시 — 이 값이 보이면 최신 코드 로드됨(캐시 판별용)
+  var DO_BUILD = 'do-v4';   // 로비에 표시 — 이 값이 보이면 최신 코드 로드됨(캐시 판별용)
   try{ console.log('[gostop] DO build', DO_BUILD, '— event-driven sound/anim, tile removed'); }catch(e){}
   var WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
   var room = P.get('room') || 'gs-test';
