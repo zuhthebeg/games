@@ -1050,14 +1050,14 @@ function mpRender(v){
   if($('deckN'))$('deckN').textContent=v.deckCount; if($('t-deck'))$('t-deck').textContent=v.deckCount; if($('t-go'))$('t-go').textContent=v.go;
   const myhand=v.myHand||[];
   $('myHand').innerHTML=myhand.map((c,i)=>{ const canPlay=v.isMyTurn && mpSameMonth(v.table,c.m).length>0;
-    return `<div class="hcard ${i===MP._sel?'sel':''} ${canPlay?'canplay':''} ${gudM.has(c.m)?'gudeun':''}" onclick="mpTapCard(${i})"><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`; }).join('');
+    return `<div class="hcard ${i===MP._sel?'sel':''} ${canPlay?'canplay':''} ${gudM.has(c.m)?'gudeun':''}" data-id="${c.id}" onclick="mpTapCard(${i})"><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`; }).join('');
   const meP=v.players.find(p=>p.seat===v.mySeat)||{cap:[]};
   $('myCaptured').innerHTML=capGroup(meP.cap);
   if($('t-myscore'))$('t-myscore').textContent=v.myScore; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } if($('myScoreLine')){ const myc=(v.players.find(p=>p.seat===v.mySeat)||{cap:[]}).cap; $('myScoreLine').innerHTML=scoreLineHTML(myc, v.myScore); }
   const el=$('mpOpps'); const opps=v.players.filter(p=>p.seat!==v.mySeat).sort((a,b)=>a.seat-b.seat);
   el.innerHTML=opps.map(p=>{ const turn=(v.pending?v.pending.seat===p.seat:v.currentTurn===p.seat);
     return `<div class="mpopp ${turn?'turn':''}" data-seat="${p.seat}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)} · ${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
-  mpFlyCaptures(prevRects, newCap, v);   // 먹은 패: 바닥 옛 좌표 → 먹은 사람 무더기로 날아가기(싱글 flyToPile 재활용)
+  if(!MP._eventDriven) mpFlyCaptures(prevRects, newCap, v);   // REST 폴백: 스냅샷 diff fly. DO는 mpAnimateEvent(이벤트 구동)가 처리.
   mpVoiceCombos(v);
 }
 // 스냅샷 diff로 "바닥→무더기" 이동을 복원해 fly 애니. board 렌더와 독립(실패해도 화면 정확).
@@ -1090,6 +1090,25 @@ function mpFlyCaptures(prevRects, newCap, v){
     });
   }catch(e){}
 }
+// 이벤트 구동 fly (DO 멀티). 화면 갱신 "전"에 와서 출발 좌표(손패·바닥·상대무더기)가 아직 살아있음 → 거기서 날림.
+// 클론은 fire-and-forget 오버레이라 직후 state 렌더와 독립. flip 카드(덱→바닥)는 cin 페이드로 대체.
+function mpAnimateEvent(ev){ try{
+  if(!MP._eventDriven||!ev) return;
+  const t=ev.type; if(t!=='play'&&t!=='flip_turn'&&t!=='flip_pick') return;
+  const v=MP.view||{}; const p=ev.payload||{};
+  let seat=(typeof p.seat==='number')?p.seat:-1;
+  if(seat<0 && ev.playerId){ const pl=(v.players||[]).find(x=>x.id===ev.playerId); if(pl)seat=pl.seat; }
+  const dest=(seat===v.mySeat)? document.getElementById('myCaptured') : document.querySelector('#mpOpps [data-seat="'+seat+'"]');
+  const flyEl=(el,d)=>{ if(!el||!d)return; mpFly(el.getBoundingClientRect(), d, el.src||el.getAttribute('src')); };
+  const captured=p.captured||[], stolen=p.stolen||[];
+  // 1) 내가 낸 손패(앞면) → 먹었으면 무더기, 아니면 바닥
+  if(p.cardId && seat===v.mySeat){ const he=document.querySelector('#myHand [data-id="'+p.cardId+'"] img');
+    if(he) flyEl(he, (captured.indexOf(p.cardId)>=0 && dest)? dest : document.getElementById('tableCards')); }
+  // 2) 먹은 바닥 카드들 → 먹은 사람 무더기 (낸 패는 위에서 처리)
+  captured.forEach(id=>{ if(id===p.cardId)return; const te=document.querySelector('#tableCards img[data-id="'+id+'"]'); if(te&&dest) flyEl(te,dest); });
+  // 3) 피뺏기: 현재 위치한 무더기 → 먹은 사람 무더기
+  stolen.forEach(id=>{ const se=document.querySelector('#myCaptured img[data-id="'+id+'"], #mpOpps img[data-id="'+id+'"]'); if(se&&dest) flyEl(se,dest); });
+}catch(e){} }
 // 새 족보(오광/사광/삼광·고도리·홍단·청단·초단) 완성 시 1회 콜 — 싱글 voiceCombos의 MP판(좌석별 메모리)
 const MP_COMBO_VOICE={'고도리':'godori','홍단':'hongdan','청단':'cheongdan','초단':'chodan'};
 function mpVoiceCombos(v){ if(!VOICE||!v||!v.players)return;
@@ -1105,6 +1124,7 @@ function mpVoiceCombos(v){ if(!VOICE||!v||!v.players)return;
 // 서버 event 스트림 → voice/SFX (DO 멀티 전용). 싱글의 play 처리부와 동일 어휘.
 function mpOnEvent(ev){
   if(!ev||!ev.type)return;
+  mpAnimateEvent(ev);   // fly 애니(이벤트 구동) — 출발 좌표가 살아있는 지금 캡처
   if(ev.type==='play' || ev.type==='flip_turn'){
     const p=ev.payload||{}; const stags=p.stags||[]; const stolen=p.stolen||[];
     // 띠용(tile.mp3) 제거 — 의미있는 소리만: 폭탄/뻑/따닥/쪽/쓸 voice + 먹기(claim). 평범한 놓기는 무음.
