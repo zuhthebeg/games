@@ -181,6 +181,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
     <button onclick="show('settings')">⚙</button>
     <button onclick="quitMenu()">나가기</button>
   </div>
+  <div id="mpTurn" style="display:none;text-align:center;font-weight:800;font-size:.92rem;padding:5px;letter-spacing:.5px"></div>
   <div class="opp" id="mpOpps"></div>
   <div class="opp" id="spOpp"><span class="who" id="cpu-who">CPU</span>
     <div class="captured" id="cpuCaptured"></div>
@@ -431,8 +432,9 @@ function buildDeck(){
 let G=null;
 function newGame(){ $('menu').style.display='none'; $('board').style.display='flex'; CARRY=1; G={go:0,goBy:-1}; deal(); }
 function deal(){
-  // 싱글 시작: 멀티가 숨겼을 수 있는 결과창 '다시' 버튼 복원 + 이벤트구동 플래그 해제
-  MP._eventDriven=false; const _rb=document.querySelectorAll('#result .close'); if(_rb[0]){ _rb[0].style.display=''; _rb[0].textContent='다시'; _rb[0].onclick=nextRound; }
+  // 싱글 시작: 멀티가 숨겼을 수 있는 결과창 '다시' 버튼 복원 + 이벤트구동 플래그 해제 + 멀티 턴배너 숨김
+  MP._eventDriven=false; MP.active=false; { const mt=$('mpTurn'); if(mt)mt.style.display='none'; const db=$('deckBack'); if(db)db.classList.remove('await'); }
+  const _rb=document.querySelectorAll('#result .close'); if(_rb[0]){ _rb[0].style.display=''; _rb[0].textContent='다시'; _rb[0].onclick=nextRound; }
   // 바닥(8장)에 같은 월 4장이 다 깔리면 나가리 → 그 딜 무효·재딜·다음판 ×2
   let deck, washes=0;
   while(true){
@@ -660,6 +662,8 @@ function startTurn(){
   else setTimeout(cpuTurn,900);
 }
 function onDeckClick(){
+  // 멀티(DO): 내 차례 + 뒤집기탄 보유 시 FLIP 액션 전송(서버가 뒤집기 처리)
+  if(MP&&MP.active){ const v=MP.view; if(v&&v.isMyTurn&&!v.pending&&v.myFlipOwed>0){ const db=$('deckBack'); if(db)db.classList.remove('await'); mpSend({type:'FLIP'}); } return; }
   if(G.turn===0 && !G.over && !G.acting && G.flipOwed && G.flipOwed[0]>0){ G.acting=true; G.awaitFlip=false; const db=$('deckBack'); if(db)db.classList.remove('await'); flipOnlyTurn(0); }
 }
 async function flipOnlyTurn(p){
@@ -1058,6 +1062,19 @@ function mpRender(v){
   el.innerHTML=opps.map(p=>{ const turn=(v.pending?v.pending.seat===p.seat:v.currentTurn===p.seat);
     return `<div class="mpopp ${turn?'turn':''}" data-seat="${p.seat}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)} · ${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
   if(!MP._eventDriven) mpFlyCaptures(prevRects, newCap, v);   // REST 폴백: 스냅샷 diff fly. DO는 mpAnimateEvent(이벤트 구동)가 처리.
+  // 비행 중인 카드는 정착 위치에서 숨김(클론이 도착할 때까지) — mpAnimateEvent의 타이머가 다시 노출.
+  if(MP._flying&&MP._flying.size){ MP._flying.forEach(id=>{ document.querySelectorAll('img[data-id="'+id+'"]').forEach(im=>im.style.visibility='hidden'); }); }
+  // 명시적 턴 표시 + 폭탄 뒤집기탄 안내
+  const tb=$('mpTurn');
+  if(tb){ tb.style.display='block';
+    if(v.finished){ tb.style.display='none'; }
+    else if(v.isMyTurn){
+      if(v.myFlipOwed>0){ tb.textContent='💣 내 차례 — 뒤집기탄 '+v.myFlipOwed+'개 (더미 탭) 또는 패 내기'; tb.style.background='rgba(230,184,77,.22)'; tb.style.color='var(--gold)'; }
+      else { tb.textContent='🟢 내 차례'; tb.style.background='rgba(95,207,134,.18)'; tb.style.color='var(--green)'; }
+    } else { const cur=(v.players||[]).find(pp=>v.pending?pp.seat===v.pending.seat:pp.seat===v.currentTurn); tb.textContent='⏳ '+(cur?mpEsc(cur.nickname):'상대')+' 차례'; tb.style.background='rgba(0,0,0,.25)'; tb.style.color='var(--muted)'; }
+  }
+  // 뒤집기탄 보유 시 덱 하이라이트(싱글 await 패턴 재사용)
+  const db=$('deckBack'); if(db){ if(v.isMyTurn && v.myFlipOwed>0) db.classList.add('await'); else db.classList.remove('await'); }
   mpVoiceCombos(v);
 }
 // 스냅샷 diff로 "바닥→무더기" 이동을 복원해 fly 애니. board 렌더와 독립(실패해도 화면 정확).
@@ -1066,11 +1083,11 @@ function mpFly(fromRect, destEl, file){
     if(!fromRect||!destEl)return;
     const d=destEl.getBoundingClientRect();
     const clone=document.createElement('img'); clone.src=file;
-    clone.style.cssText='position:fixed;left:'+fromRect.left+'px;top:'+fromRect.top+'px;width:'+(fromRect.width||46)+'px;border-radius:4px;z-index:60;box-shadow:0 5px 14px rgba(0,0,0,.55);transition:transform .42s cubic-bezier(.5,0,.25,1),opacity .42s;pointer-events:none';
+    clone.style.cssText='position:fixed;left:'+fromRect.left+'px;top:'+fromRect.top+'px;width:'+(fromRect.width||46)+'px;border-radius:4px;z-index:60;box-shadow:0 5px 14px rgba(0,0,0,.55);transition:transform .55s cubic-bezier(.34,.8,.3,1),opacity .55s ease-out;pointer-events:none';
     document.body.appendChild(clone);
     const dx=(d.left+8)-fromRect.left, dy=(d.top+6)-fromRect.top;
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{ clone.style.transform='translate('+dx+'px,'+dy+'px) scale(.6)'; clone.style.opacity='.5'; }));
-    setTimeout(()=>{ try{clone.remove();}catch(e){} }, 470);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ clone.style.transform='translate('+dx+'px,'+dy+'px) scale(.62)'; clone.style.opacity='.45'; }));
+    setTimeout(()=>{ try{clone.remove();}catch(e){} }, 600);
   }catch(e){}
 }
 function mpFlyCaptures(prevRects, newCap, v){
@@ -1103,6 +1120,11 @@ function mpAnimateEvent(ev){ try{
   const dest=(seat===v.mySeat)? document.getElementById('myCaptured') : document.querySelector('#mpOpps [data-seat="'+seat+'"]');
   const flyEl=(el,d)=>{ if(!el||!d)return; mpFly(el.getBoundingClientRect(), d, el.src||el.getAttribute('src')); };
   const captured=p.captured||[], stolen=p.stolen||[];
+  // 무더기에 안착할 id들 → 비행 동안 정착 카드 숨김(직후 state 렌더가 풀사이즈로 띄워 클론과 겹치는 "끊김" 방지)
+  const landing=new Set(); captured.forEach(id=>landing.add(id)); stolen.forEach(id=>landing.add(id));
+  if(p.cardId && captured.indexOf(p.cardId)>=0) landing.add(p.cardId);
+  MP._flying=landing;
+  setTimeout(()=>{ try{ landing.forEach(id=>document.querySelectorAll('img[data-id="'+id+'"]').forEach(im=>im.style.visibility='')); if(MP._flying===landing)MP._flying=null; }catch(_){} }, 560);
   // 1) 내가 낸 손패(앞면) → 먹었으면 무더기, 아니면 바닥
   if(p.cardId && seat===v.mySeat){ const he=document.querySelector('#myHand [data-id="'+p.cardId+'"] img');
     if(he) flyEl(he, (captured.indexOf(p.cardId)>=0 && dest)? dest : document.getElementById('tableCards')); }
@@ -1197,8 +1219,8 @@ function mpResult(v){
 (function(){
   var P = new URLSearchParams(location.search);
   if (P.get('relay') !== 'do') return;
-  var DO_BUILD = 'do-v5';   // 로비에 표시 — 이 값이 보이면 최신 코드 로드됨(캐시 판별용)
-  try{ console.log('[gostop] DO build', DO_BUILD, '— event-before-state(anim fix), flip render, self-only combo voice'); }catch(e){}
+  var DO_BUILD = 'do-v6';   // 로비에 표시 — 이 값이 보이면 최신 코드 로드됨(캐시 판별용)
+  try{ console.log('[gostop] DO build', DO_BUILD, '— bomb FLIP turn model, turn banner, smoother fly, flip-shot deck tap'); }catch(e){}
   var WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
   var room = P.get('room') || 'gs-test';
   // 영속 uid: 페이지 재로드/나갔다오기 시에도 같은 정체성 → 서버가 내 좌석·손패 복원(관전모드 버그 방지).
@@ -1255,7 +1277,7 @@ function mpResult(v){
     lob.style.display = 'block';
     lob.innerHTML = '<div style="padding:28px;text-align:center;color:#fff">'
       + '<h3 style="margin-bottom:8px">🦞 DO 실시간 테스트</h3>'
-      + '<p style="font-size:11px;color:#7CFC9A;margin:-4px 0 8px">build '+DO_BUILD+' · 애니순서수정·뒤집기연출·삼광자기콜</p>'
+      + '<p style="font-size:11px;color:#7CFC9A;margin:-4px 0 8px">build '+DO_BUILD+' · 폭탄턴수정·턴표시·애니부드럽게</p>'
       + '<p>방코드 <b>'+room+'</b> · 나 '+(nick||user)+'</p>'
       + '<p id="doConns" style="font-size:12px;opacity:.75">접속자: 1</p>'
       + '<p id="doStatus" style="font-size:13px;color:#ffd76a;margin:8px 0">연결 중…</p>'
