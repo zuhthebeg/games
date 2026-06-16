@@ -181,7 +181,8 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
     <button onclick="show('settings')">⚙</button>
     <button onclick="quitMenu()">나가기</button>
   </div>
-  <div id="mpTurn" style="display:none;text-align:center;font-weight:800;font-size:.92rem;padding:5px;letter-spacing:.5px"></div>
+  <div id="mpTurn" style="display:none;text-align:center;font-weight:800;font-size:1.02rem;padding:9px 8px;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.12);box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>
+  <div id="mpConn" style="display:none;text-align:center;font-weight:700;font-size:.82rem;padding:6px;background:rgba(225,92,82,.9);color:#fff"></div>
   <div class="opp" id="mpOpps"></div>
   <div class="opp" id="spOpp"><span class="who" id="cpu-who">CPU</span>
     <div class="captured" id="cpuCaptured"></div>
@@ -433,7 +434,7 @@ let G=null;
 function newGame(){ $('menu').style.display='none'; $('board').style.display='flex'; CARRY=1; G={go:0,goBy:-1}; deal(); }
 function deal(){
   // 싱글 시작: 멀티가 숨겼을 수 있는 결과창 '다시' 버튼 복원 + 이벤트구동 플래그 해제 + 멀티 턴배너 숨김
-  MP._eventDriven=false; MP.active=false; { const mt=$('mpTurn'); if(mt)mt.style.display='none'; const db=$('deckBack'); if(db)db.classList.remove('await'); }
+  MP._eventDriven=false; MP.active=false; { const mt=$('mpTurn'); if(mt)mt.style.display='none'; const mc=$('mpConn'); if(mc)mc.style.display='none'; const db=$('deckBack'); if(db)db.classList.remove('await'); }
   const _rb=document.querySelectorAll('#result .close'); if(_rb[0]){ _rb[0].style.display=''; _rb[0].textContent='다시'; _rb[0].onclick=nextRound; }
   // 바닥(8장)에 같은 월 4장이 다 깔리면 나가리 → 그 딜 무효·재딜·다음판 ×2
   let deck, washes=0;
@@ -1062,8 +1063,15 @@ function mpRender(v){
   el.innerHTML=opps.map(p=>{ const turn=(v.pending?v.pending.seat===p.seat:v.currentTurn===p.seat);
     return `<div class="mpopp ${turn?'turn':''}" data-seat="${p.seat}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)} · ${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
   if(!MP._eventDriven) mpFlyCaptures(prevRects, newCap, v);   // REST 폴백: 스냅샷 diff fly. DO는 mpAnimateEvent(이벤트 구동)가 처리.
-  // 비행 중인 카드는 정착 위치에서 숨김(클론이 도착할 때까지) — mpAnimateEvent의 타이머가 다시 노출.
-  if(MP._flying&&MP._flying.size){ MP._flying.forEach(id=>{ document.querySelectorAll('img[data-id="'+id+'"]').forEach(im=>im.style.visibility='hidden'); }); }
+  // DO: 이번 렌더에 "새로 등장"한 카드(바닥 착지·먹은 패·피뺏기)는 클론이 날아가 도착할 때까지 숨김 →
+  // 보드가 애니보다 먼저 "깔리는" 현상 제거(카드가 애니 끝난 뒤 안착하는 느낌). flip 중앙 연출과도 정합.
+  if(MP._eventDriven && !first){
+    const settle=new Set([...newTable, ...newCap]);
+    if(settle.size){
+      settle.forEach(id=>document.querySelectorAll('img[data-id="'+id+'"]').forEach(im=>{ im.style.visibility='hidden'; }));
+      setTimeout(()=>{ try{ settle.forEach(id=>document.querySelectorAll('img[data-id="'+id+'"]').forEach(im=>im.style.visibility='')); }catch(_){} }, 500);
+    }
+  }
   // 명시적 턴 표시 + 폭탄 뒤집기탄 안내
   const tb=$('mpTurn');
   if(tb){ tb.style.display='block';
@@ -1120,11 +1128,7 @@ function mpAnimateEvent(ev){ try{
   const dest=(seat===v.mySeat)? document.getElementById('myCaptured') : document.querySelector('#mpOpps [data-seat="'+seat+'"]');
   const flyEl=(el,d)=>{ if(!el||!d)return; mpFly(el.getBoundingClientRect(), d, el.src||el.getAttribute('src')); };
   const captured=p.captured||[], stolen=p.stolen||[];
-  // 무더기에 안착할 id들 → 비행 동안 정착 카드 숨김(직후 state 렌더가 풀사이즈로 띄워 클론과 겹치는 "끊김" 방지)
-  const landing=new Set(); captured.forEach(id=>landing.add(id)); stolen.forEach(id=>landing.add(id));
-  if(p.cardId && captured.indexOf(p.cardId)>=0) landing.add(p.cardId);
-  MP._flying=landing;
-  setTimeout(()=>{ try{ landing.forEach(id=>document.querySelectorAll('img[data-id="'+id+'"]').forEach(im=>im.style.visibility='')); if(MP._flying===landing)MP._flying=null; }catch(_){} }, 560);
+  // (정착 카드 숨김/노출은 mpRender가 newTable/newCap 기준으로 처리 — 여기선 클론 비행만)
   // 1) 내가 낸 손패(앞면) → 먹었으면 무더기, 아니면 바닥
   if(p.cardId && seat===v.mySeat){ const he=document.querySelector('#myHand [data-id="'+p.cardId+'"] img');
     if(he) flyEl(he, (captured.indexOf(p.cardId)>=0 && dest)? dest : document.getElementById('tableCards')); }
@@ -1219,8 +1223,8 @@ function mpResult(v){
 (function(){
   var P = new URLSearchParams(location.search);
   if (P.get('relay') !== 'do') return;
-  var DO_BUILD = 'do-v6';   // 로비에 표시 — 이 값이 보이면 최신 코드 로드됨(캐시 판별용)
-  try{ console.log('[gostop] DO build', DO_BUILD, '— bomb FLIP turn model, turn banner, smoother fly, flip-shot deck tap'); }catch(e){}
+  var DO_BUILD = 'do-v7';   // 로비에 표시 — 이 값이 보이면 최신 코드 로드됨(캐시 판별용)
+  try{ console.log('[gostop] DO build', DO_BUILD, '— cards settle after fly, bigger turn banner, reconnect indicator+auto, zombie-room reset'); }catch(e){}
   var WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
   var room = P.get('room') || 'gs-test';
   // 영속 uid: 페이지 재로드/나갔다오기 시에도 같은 정체성 → 서버가 내 좌석·손패 복원(관전모드 버그 방지).
@@ -1229,9 +1233,12 @@ function mpResult(v){
   var nick = ''; try{ nick = (typeof myNick==='function' ? myNick() : '') || ''; }catch(e){}
 
   function startWS(){
-    var ws = new WebSocket(WORKER + '/room/' + encodeURIComponent(room) + '?u=' + encodeURIComponent(user) + (nick ? '&n=' + encodeURIComponent(nick) : ''));
+    var ws = null;
     var lastView = null, started = false, pendingStart = false;
+    var reconnectTimer = null, reconnectTries = 0, manualClose = false;
+    var WS_URL = WORKER + '/room/' + encodeURIComponent(room) + '?u=' + encodeURIComponent(user) + (nick ? '&n=' + encodeURIComponent(nick) : '');
     function setStatus(t){ var el=document.getElementById('doStatus'); if(el) el.textContent=t; }
+    function showConn(msg){ var el=document.getElementById('mpConn'); if(!el)return; if(msg){ el.textContent=msg; el.style.display='block'; } else { el.style.display='none'; } }
     function doStart(){
       if (ws.readyState !== 1){ pendingStart = true; setStatus('연결 대기 중… 열리면 자동 시작'); return; }
       try{ ws.send(JSON.stringify({type:'start', config:{seats:2, bet:(window.BET||1)}})); setStatus('시작 요청 보냄 → 서버 응답 대기…'); }
@@ -1241,7 +1248,7 @@ function mpResult(v){
     var client = {
       getMyUserId: function(){ return user; },
       onEvent: null,
-      leaveRoom: function(){ try{ ws.close(); }catch(e){} return Promise.resolve({}); },
+      leaveRoom: function(){ manualClose=true; if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null;} try{ ws&&ws.close(); }catch(e){} return Promise.resolve({}); },
       sendAction: function(action){ try{ ws.send(JSON.stringify({type:'action', action:action})); }catch(e){} return Promise.resolve({}); },
       getRoomState: function(){ return Promise.resolve({ myView: lastView }); },
       _start: doStart
@@ -1261,23 +1268,34 @@ function mpResult(v){
       if (lastView) applyServerView(lastView);
     }
 
-    ws.onopen = function(){ setStatus('연결됨 ✓'); if (pendingStart){ pendingStart=false; doStart(); } };
-    ws.onmessage = function(e){
-      var d; try{ d = JSON.parse(e.data); }catch(_){ return; }
-      if (d.type === 'state'){ lastView = d.view; ensureStarted(); applyServerView(d.view); }
-      else if (d.type === 'started'){ ensureStarted(); }
-      else if (d.type === 'event'){ try{ mpOnEvent(d.event); }catch(_){} }
-      else if (d.type === 'presence' || d.type === 'connected'){ var el=document.getElementById('doConns'); if (el && typeof d.connections==='number') el.textContent='접속자: '+d.connections; }
-    };
-    ws.onclose = function(ev){ setStatus('연결 끊김 (code '+(ev&&ev.code)+') — 새로고침'); };
-    ws.onerror = function(){ setStatus('⚠️ WS 연결 오류 — 네트워크/주소 확인'); };
+    function scheduleReconnect(){
+      if (reconnectTimer || manualClose) return;
+      reconnectTries++;
+      var delay = Math.min(1200 * reconnectTries, 5000);
+      showConn('🔌 연결 끊김 — 재접속 중… ('+reconnectTries+')');
+      reconnectTimer = setTimeout(function(){ reconnectTimer=null; connect(); }, delay);
+    }
+    function connect(){
+      ws = new WebSocket(WS_URL);
+      ws.onopen = function(){ setStatus('연결됨 ✓'); reconnectTries=0; if(started) showConn(null); if (pendingStart){ pendingStart=false; doStart(); } };
+      ws.onmessage = function(e){
+        var d; try{ d = JSON.parse(e.data); }catch(_){ return; }
+        if (d.type === 'state'){ lastView = d.view; ensureStarted(); showConn(null); applyServerView(d.view); }
+        else if (d.type === 'started'){ ensureStarted(); }
+        else if (d.type === 'event'){ try{ mpOnEvent(d.event); }catch(_){} }
+        else if (d.type === 'presence' || d.type === 'connected'){ var el=document.getElementById('doConns'); if (el && typeof d.connections==='number') el.textContent='접속자: '+d.connections; }
+      };
+      ws.onclose = function(ev){ if (manualClose) return; if (started){ scheduleReconnect(); } else setStatus('연결 끊김 (code '+(ev&&ev.code)+') — 새로고침'); };
+      ws.onerror = function(){ if(!started) setStatus('⚠️ WS 연결 오류 — 네트워크/주소 확인'); };
+    }
+    connect();
 
     var menu = document.getElementById('menu'); if (menu) menu.style.display='none';
     var lob = document.getElementById('mpLobby') || document.body;
     lob.style.display = 'block';
     lob.innerHTML = '<div style="padding:28px;text-align:center;color:#fff">'
       + '<h3 style="margin-bottom:8px">🦞 DO 실시간 테스트</h3>'
-      + '<p style="font-size:11px;color:#7CFC9A;margin:-4px 0 8px">build '+DO_BUILD+' · 폭탄턴수정·턴표시·애니부드럽게</p>'
+      + '<p style="font-size:11px;color:#7CFC9A;margin:-4px 0 8px">build '+DO_BUILD+' · 안착늦춤·턴배너크게·재접속·좀비방리셋</p>'
       + '<p>방코드 <b>'+room+'</b> · 나 '+(nick||user)+'</p>'
       + '<p id="doConns" style="font-size:12px;opacity:.75">접속자: 1</p>'
       + '<p id="doStatus" style="font-size:13px;color:#ffd76a;margin:8px 0">연결 중…</p>'
