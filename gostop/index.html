@@ -1098,6 +1098,8 @@ function mpAnimateEvent(ev){ try{
   const v=MP.view||{}; const p=ev.payload||{};
   let seat=(typeof p.seat==='number')?p.seat:-1;
   if(seat<0 && ev.playerId){ const pl=(v.players||[]).find(x=>x.id===ev.playerId); if(pl)seat=pl.seat; }
+  // 덱 뒤집기 연출: flip 카드를 중앙에 크게(flipin) — 싱글의 renderFlip 재활용. 직후 state 렌더가 바닥에 작게 안착.
+  if(p.flipCard && p.flipCard.file){ try{ sound('flip'); renderFlip(p.flipCard); }catch(_){} }
   const dest=(seat===v.mySeat)? document.getElementById('myCaptured') : document.querySelector('#mpOpps [data-seat="'+seat+'"]');
   const flyEl=(el,d)=>{ if(!el||!d)return; mpFly(el.getBoundingClientRect(), d, el.src||el.getAttribute('src')); };
   const captured=p.captured||[], stolen=p.stolen||[];
@@ -1109,17 +1111,17 @@ function mpAnimateEvent(ev){ try{
   // 3) 피뺏기: 현재 위치한 무더기 → 먹은 사람 무더기
   stolen.forEach(id=>{ const se=document.querySelector('#myCaptured img[data-id="'+id+'"], #mpOpps img[data-id="'+id+'"]'); if(se&&dest) flyEl(se,dest); });
 }catch(e){} }
-// 새 족보(오광/사광/삼광·고도리·홍단·청단·초단) 완성 시 1회 콜 — 싱글 voiceCombos의 MP판(좌석별 메모리)
+// 새 족보(오광/사광/삼광·고도리·홍단·청단·초단) 완성 시 1회 콜 — 내 좌석만(상대 콜은 "나 삼광 아닌데?" 혼란 유발).
 const MP_COMBO_VOICE={'고도리':'godori','홍단':'hongdan','청단':'cheongdan','초단':'chodan'};
 function mpVoiceCombos(v){ if(!VOICE||!v||!v.players)return;
   if(!MP._voiced)MP._voiced=[{},{},{},{}];
-  v.players.forEach(p=>{ const seat=p.seat; if(seat==null)return; const mem=MP._voiced[seat]||(MP._voiced[seat]={});
-    let sc; try{ sc=score(p.cap||[]); }catch(e){ return; }
-    if(sc.gw>=5&&!mem.ogwang){mem.ogwang=1;gsVoice('ogwang');}
-    else if(sc.gw===4&&!mem.sagwang){mem.sagwang=1;gsVoice('sagwang');}
-    else if(sc.gw===3&&!mem.samgwang){mem.samgwang=1;gsVoice('samgwang');}
-    (sc.parts||[]).forEach(part=>{ const key=MP_COMBO_VOICE[part[0]]; if(key&&!mem[key]){mem[key]=1;gsVoice(key);} });
-  });
+  const me=v.players.find(p=>p.seat===v.mySeat); if(!me)return;   // 내 족보만 콜
+  const seat=me.seat; const mem=MP._voiced[seat]||(MP._voiced[seat]={});
+  let sc; try{ sc=score(me.cap||[]); }catch(e){ return; }
+  if(sc.gw>=5&&!mem.ogwang){mem.ogwang=1;gsVoice('ogwang');}
+  else if(sc.gw===4&&!mem.sagwang){mem.sagwang=1;gsVoice('sagwang');}
+  else if(sc.gw===3&&!mem.samgwang){mem.samgwang=1;gsVoice('samgwang');}
+  (sc.parts||[]).forEach(part=>{ const key=MP_COMBO_VOICE[part[0]]; if(key&&!mem[key]){mem[key]=1;gsVoice(key);} });
 }
 // 서버 event 스트림 → voice/SFX (DO 멀티 전용). 싱글의 play 처리부와 동일 어휘.
 function mpOnEvent(ev){
@@ -1130,7 +1132,7 @@ function mpOnEvent(ev){
     // 싱글과 동일한 사운드 시퀀스 (claim '또잉'은 싱글에서 제거됨 — 피뺏기에서만 사용).
     //  패 놓기→tile(play), 덱 뒤집기→tile(flip), 특수→play(+따닥 더블), 평범한 먹기→무음, 피뺏기→claim(take).
     sound('play');                                   // 패 놓기 (single line 550)
-    if(p.flipId) sound('flip');                      // 덱 뒤집힘 (single line 555/672)
+    // 덱 뒤집기 sound('flip')은 mpAnimateEvent(flipCard 연출)에서 처리 — 여기서 또 치면 이중음.
     if(stags.includes('폭탄')){ bombFx(''); }
     else if(p.ppuk){ gsVoice('ppeok'); }             // 뻑 (single line 570)
     else if(stags.length){                           // 특수 먹기 (single line 614-615)
@@ -1195,8 +1197,8 @@ function mpResult(v){
 (function(){
   var P = new URLSearchParams(location.search);
   if (P.get('relay') !== 'do') return;
-  var DO_BUILD = 'do-v4';   // 로비에 표시 — 이 값이 보이면 최신 코드 로드됨(캐시 판별용)
-  try{ console.log('[gostop] DO build', DO_BUILD, '— event-driven sound/anim, tile removed'); }catch(e){}
+  var DO_BUILD = 'do-v5';   // 로비에 표시 — 이 값이 보이면 최신 코드 로드됨(캐시 판별용)
+  try{ console.log('[gostop] DO build', DO_BUILD, '— event-before-state(anim fix), flip render, self-only combo voice'); }catch(e){}
   var WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
   var room = P.get('room') || 'gs-test';
   // 영속 uid: 페이지 재로드/나갔다오기 시에도 같은 정체성 → 서버가 내 좌석·손패 복원(관전모드 버그 방지).
@@ -1253,7 +1255,7 @@ function mpResult(v){
     lob.style.display = 'block';
     lob.innerHTML = '<div style="padding:28px;text-align:center;color:#fff">'
       + '<h3 style="margin-bottom:8px">🦞 DO 실시간 테스트</h3>'
-      + '<p style="font-size:11px;color:#7CFC9A;margin:-4px 0 8px">build '+DO_BUILD+' · 이벤트구동·tile제거</p>'
+      + '<p style="font-size:11px;color:#7CFC9A;margin:-4px 0 8px">build '+DO_BUILD+' · 애니순서수정·뒤집기연출·삼광자기콜</p>'
       + '<p>방코드 <b>'+room+'</b> · 나 '+(nick||user)+'</p>'
       + '<p id="doConns" style="font-size:12px;opacity:.75">접속자: 1</p>'
       + '<p id="doStatus" style="font-size:13px;color:#ffd76a;margin:8px 0">연결 중…</p>'
