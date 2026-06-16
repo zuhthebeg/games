@@ -431,6 +431,8 @@ function buildDeck(){
 let G=null;
 function newGame(){ $('menu').style.display='none'; $('board').style.display='flex'; CARRY=1; G={go:0,goBy:-1}; deal(); }
 function deal(){
+  // 싱글 시작: 멀티가 숨겼을 수 있는 결과창 '다시' 버튼 복원 + 이벤트구동 플래그 해제
+  MP._eventDriven=false; const _rb=document.querySelectorAll('#result .close'); if(_rb[0]){ _rb[0].style.display=''; _rb[0].textContent='다시'; _rb[0].onclick=nextRound; }
   // 바닥(8장)에 같은 월 4장이 다 깔리면 나가리 → 그 딜 무효·재딜·다음판 ×2
   let deck, washes=0;
   while(true){
@@ -1023,10 +1025,12 @@ function mpRender(v){
   }
   G._newIds=newTable.size?newTable:null;
   G._newCapIds=newCap.size?newCap:null;
-  if(!first){
+  // 구(REST/SSE) 멀티는 이벤트 스트림이 없어 diff로 사운드를 흉내냄.
+  // DO(WS) 멀티는 서버 event를 mpOnEvent가 직접 voice/SFX로 처리 → 여기선 스킵(중복·뛰용 방지).
+  if(!first && !MP._eventDriven){
     if(newCap.size){ sound('take'); }
     else if(newTable.size){ sound('play'); }
-    if(typeof MP._prevGo==='number' && v.go>MP._prevGo){ const who=(v.currentTurn===v.mySeat)?'':''; toast(who+v.go+'고!'); gsVoice('go'+Math.min(v.go,5)); }
+    if(typeof MP._prevGo==='number' && v.go>MP._prevGo){ toast(v.go+'고!'); gsVoice('go'+Math.min(v.go,5)); }
   }
   MP._prevTable=tableIds; MP._prevCap=capIds; MP._prevGo=v.go;
   const by={},order=[]; (v.table||[]).forEach(c=>{ if(!by[c.m]){by[c.m]=[];order.push(c.m);} by[c.m].push(c); });
@@ -1042,6 +1046,39 @@ function mpRender(v){
   const el=$('mpOpps'); const opps=v.players.filter(p=>p.seat!==v.mySeat).sort((a,b)=>a.seat-b.seat);
   el.innerHTML=opps.map(p=>{ const turn=(v.pending?v.pending.seat===p.seat:v.currentTurn===p.seat);
     return `<div class="mpopp ${turn?'turn':''}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)} · ${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
+  mpVoiceCombos(v);
+}
+// 새 족보(오광/사광/삼광·고도리·홍단·청단·초단) 완성 시 1회 콜 — 싱글 voiceCombos의 MP판(좌석별 메모리)
+const MP_COMBO_VOICE={'고도리':'godori','홍단':'hongdan','청단':'cheongdan','초단':'chodan'};
+function mpVoiceCombos(v){ if(!VOICE||!v||!v.players)return;
+  if(!MP._voiced)MP._voiced=[{},{},{},{}];
+  v.players.forEach(p=>{ const seat=p.seat; if(seat==null)return; const mem=MP._voiced[seat]||(MP._voiced[seat]={});
+    let sc; try{ sc=score(p.cap||[]); }catch(e){ return; }
+    if(sc.gw>=5&&!mem.ogwang){mem.ogwang=1;gsVoice('ogwang');}
+    else if(sc.gw===4&&!mem.sagwang){mem.sagwang=1;gsVoice('sagwang');}
+    else if(sc.gw===3&&!mem.samgwang){mem.samgwang=1;gsVoice('samgwang');}
+    (sc.parts||[]).forEach(part=>{ const key=MP_COMBO_VOICE[part[0]]; if(key&&!mem[key]){mem[key]=1;gsVoice(key);} });
+  });
+}
+// 서버 event 스트림 → voice/SFX (DO 멀티 전용). 싱글의 play 처리부와 동일 어휘.
+function mpOnEvent(ev){
+  if(!ev||!ev.type)return;
+  if(ev.type==='play' || ev.type==='flip_turn'){
+    const p=ev.payload||{}; const stags=p.stags||[]; const stolen=p.stolen||[];
+    if(stags.includes('폭탄')){ bombFx(''); }
+    else if(p.ppuk){ gsVoice('ppeok'); sound('flip'); }
+    else if(stags.includes('따닥')){ sound('play'); setTimeout(()=>sound('play'),150); gsVoice('ttadak'); }
+    else if(stags.includes('쪽')){ sound('take'); gsVoice('jjok'); }
+    else if(stags.includes('쓸')){ sound('take'); gsVoice('ssul'); }
+    else if(p.captured && p.captured.length){ sound('take'); }
+    else { sound('flip'); }
+    if(stags.length){ toast(stags.join('+')+'!'+(stolen.length?(' 피뺏기 '+stolen.length):'')); }
+    if(stolen.length){ sound('take'); setTimeout(()=>gsVoice('naenwa'),320); }
+  }
+  else if(ev.type==='ppeok3'){ toast('3뻑! 이 판 ×2'); gsVoice('ppeok3'); }
+  else if(ev.type==='go'){ const g=(ev.payload&&ev.payload.go)||1; toast(g+'고!'); gsVoice('go'+Math.min(g,5)); }
+  else if(ev.type==='flip_pick'){ sound('take'); }
+  else if(ev.type==='draw'){ gsVoice('nagari'); }
 }
 function mpTapCard(i){
   const v=MP.view; if(!v||!v.isMyTurn||v.pending)return;
@@ -1080,7 +1117,12 @@ function mpResult(v){
   $('r-title').textContent=v.winnerSeat==null?'나가리':(meWin?'🎉 승!':'패배');
   $('r-detail').innerHTML=mpEsc(v.endReason||'');
   $('r-pt').innerHTML='<span style="color:'+(my>=0?'var(--green)':'var(--red)')+'">'+(my>=0?'+':'')+my.toLocaleString()+'G</span>';
-  document.querySelectorAll('#result .close').forEach(b=>{ b.textContent='메뉴로'; b.onclick=()=>{ hide('result'); if(MP._poll)clearInterval(MP._poll); MP.active=false; try{MP.client&&MP.client.leaveRoom&&MP.client.leaveRoom();}catch(e){} quitMenu(); }; });
+  const leaveToMenu=()=>{ hide('result'); if(MP._poll)clearInterval(MP._poll); MP.active=false; MP._eventDriven=false; try{MP.client&&MP.client.leaveRoom&&MP.client.leaveRoom();}catch(e){} quitMenu(); };
+  // #result 버튼: [다시(싱글 nextRound)] + [메뉴로]. 멀티에선 '다시'(싱글 딜)가 오작동 → 숨김(재대국은 방 리셋 필요, TODO). 메뉴로만 노출.
+  const rbtns=document.querySelectorAll('#result .close');
+  if(rbtns[0]) rbtns[0].style.display='none';
+  const rmenu=document.getElementById('r-menu')||rbtns[rbtns.length-1];
+  if(rmenu){ rmenu.style.display=''; rmenu.textContent='메뉴로'; rmenu.onclick=leaveToMenu; }
   sound(meWin?'win':'lose'); show('result');
 }
 </script>
@@ -1118,6 +1160,7 @@ function mpResult(v){
       if (started) return; started = true;
       MP.active = true; MP.myUserId = user; MP._sel = -1; MP._resultShown = false;
       MP._prevTable = null; MP._prevCap = null; MP._prevGo = undefined;
+      MP._eventDriven = true; MP._voiced = [{},{},{},{}];   // DO 멀티: 사운드/voice는 서버 event로 구동
       var lb = document.getElementById('mpLobby'); if (lb){ lb.style.display='none'; lb.innerHTML=''; }
       var bd = document.getElementById('board'); if (bd) bd.style.display='flex';
       var opp = document.getElementById('mpOpps'); if (opp) opp.style.display='flex';
@@ -1129,7 +1172,7 @@ function mpResult(v){
       var d; try{ d = JSON.parse(e.data); }catch(_){ return; }
       if (d.type === 'state'){ lastView = d.view; ensureStarted(); applyServerView(d.view); }
       else if (d.type === 'started'){ ensureStarted(); }
-      else if (d.type === 'event'){ if (started && lastView) applyServerView(lastView); }
+      else if (d.type === 'event'){ try{ mpOnEvent(d.event); }catch(_){} }
       else if (d.type === 'presence' || d.type === 'connected'){ var el=document.getElementById('doConns'); if (el && typeof d.connections==='number') el.textContent='접속자: '+d.connections; }
     };
     ws.onclose = function(ev){ setStatus('연결 끊김 (code '+(ev&&ev.code)+') — 새로고침'); };
