@@ -1922,10 +1922,15 @@
         mpAppliedSettlementKeys.add(key);
         return;
       }
-      if (myDelta > 0) walletAdd(Math.floor(myDelta));
-      else walletRemove(Math.abs(Math.floor(myDelta)));
+      // ⚠️ DO/WS PoC(?relay=do)는 서버 bankroll이 실제 SharedWallet 골드와 미연동(기본값)이다.
+      // 이 경로에서 실지갑을 정산하면 골드 프린팅이 되므로 실골드 변경을 건너뛴다(표시는 서버 totalWinnings로 됨).
+      // 실골드 연동(DO 로스터에 per-player gold 전달)이 들어오면 이 가드를 푼다.
+      if (!doClient) {
+        if (myDelta > 0) walletAdd(Math.floor(myDelta));
+        else walletRemove(Math.abs(Math.floor(myDelta)));
+        syncGold();
+      }
       mpAppliedSettlementKeys.add(key);
-      syncGold();
     }
 
     function scheduleBankruptLeave() {
