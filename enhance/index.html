@@ -22,7 +22,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script>if(location.search.includes('debug=1')){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';s.onload=function(){eruda.init()};document.head.appendChild(s)}</script>
-    <script src="/lib/multiplayer.js?v=20260617e"></script>
+    <script src="/lib/multiplayer.js?v=20260617f"></script>
+    <script src="/lib/mp-lobby.js?v=20260617a"></script>
     <script src="/lib/multiplayer-ui.js?v=20260310d"></script>
     <script>window.SharedWalletConfig = { autoGuest: true };</script>
     <script src="/lib/shared-wallet.js?v=20260312a"></script>
@@ -5376,131 +5377,36 @@
         // → mpUI를 WSClient 백킹 shim으로 대체. 이벤트는 state가 직접 운반(state_update payload.gameState) → DO state를 그대로 브리지.
         // 종료 판정: 뷰에 finished 필드 없음 → winnerId != null. 2인 전용(AI 없음) → 2탭 필요. PvP 결과는 클라가 SharedWallet 안 건드림(가드 불필요).
         function startEnhanceDO() {
-            if (typeof MultiplayerWSClient !== 'function') { alert('멀티 라이브러리 로드 실패'); return; }
-            const P = new URLSearchParams(location.search);
-            const WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
-            const room = P.get('room') || 'pvp-test';
-            // userId: ?u= 우선. 없으면 탭별 고유 id 생성(sessionStorage=탭마다 다름+새로고침 시 좌석복원).
-            // ⚠️ 안 그러면 둘 다 서버에서 'anon'으로 합쳐져 명단 1명 → 시작 거부(접속자 2인데 시작 안 됨).
-            let uid = P.get('u') || '';
-            if (!uid) {
-                try {
-                    uid = sessionStorage.getItem('enhance_do_uid') || '';
-                    if (!uid) {
-                        uid = 'p' + ((self.crypto && crypto.randomUUID) ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).slice(2, 10));
-                        sessionStorage.setItem('enhance_do_uid', uid);
-                    }
-                } catch (e) { uid = 'p' + Math.random().toString(36).slice(2, 10); }
-            }
-            let nick = ''; try { nick = localStorage.getItem('enhance_nick') || ''; } catch (e) {}
-            if (!nick) nick = '전사-' + String(uid).slice(-4);
-            const ws = new MultiplayerWSClient({ workerBase: WORKER, room, userId: uid, nickname: nick, gameType: 'pvp-battle' });
-            // 본인 실제 무기 + 계산 스탯을 서버에 등록 (DO가 양쪽 프로필을 모아 createInitialState에 전달).
-            // 이게 없으면 서버가 양쪽 다 '기본 무기' fallback → 기본 이미지/스탯만 나옴.
-            try {
-                const _w = state.weapon || { type: 'sword', grade: 'common', level: 0, name: '기본 무기', element: 'none' };
-                const _s = getWeaponStats(_w, true);
-                ws.sendProfile({
-                    nickname: nick || undefined,
-                    weapon: {
-                        ..._w,
-                        damageMin: isNaN(_s.damageMin) ? 5 : _s.damageMin,
-                        damageMax: isNaN(_s.damageMax) ? 8 : _s.damageMax,
-                        critChance: isNaN(_s.critChance) ? 5 : _s.critChance,
-                        critDamage: isNaN(_s.critDamage) ? 150 : _s.critDamage,
-                        hp: isNaN(_s.hp) ? 100 : _s.hp
-                    }
-                });
-            } catch (e) { console.warn('sendProfile failed', e); }
-            let entered = false, ended = false;
-            const shimClient = {
-                getMyUserId: () => ws.getMyUserId(),
-                getRoomCode: () => room,
-                leaveRoom: () => ws.leaveRoom(),
-                rematch: () => Promise.resolve(),
-                _clearRoom: () => {},
-            };
-            function doShowResult(opts) {
-                let ov = document.getElementById('do-result'); if (ov) ov.remove();
-                ov = document.createElement('div'); ov.id = 'do-result';
-                ov.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.72);z-index:100000;font-family:sans-serif';
-                const card = document.createElement('div');
-                card.style.cssText = 'background:#1a2030;color:#fff;padding:28px;border-radius:16px;text-align:center;max-width:320px';
-                card.innerHTML = '<h2 style="margin:0 0 8px">' + (opts && opts.title || '결과') + '</h2><p style="opacity:.85;margin:0 0 16px">' + (opts && opts.message || '') + '</p>';
-                ((opts && opts.buttons) || [{ label: '확인', primary: true }]).forEach(b => {
-                    const btn = document.createElement('button');
-                    btn.textContent = b.label;
-                    btn.style.cssText = 'display:block;width:100%;margin:6px 0;padding:11px;border:0;border-radius:9px;font-weight:700;cursor:pointer;background:' + (b.primary ? '#23c552' : '#374151') + ';color:#fff';
-                    btn.onclick = () => { ov.remove(); try { b.handler && b.handler(); } catch (e) {} };
-                    card.appendChild(btn);
-                });
-                ov.appendChild(card); document.body.appendChild(ov);
-            }
-            mpUI = {
-                getClient: () => shimClient,
-                sendAction: (a) => ws.sendAction(a).then(() => ({})),
-                getPlayerData: () => null,
-                goToWaitingRoom: () => {},
-                show: () => {}, _renderLobby: () => {},
-                showResult: doShowResult,
-            };
-            const lob = document.createElement('div'); lob.id = 'do-lobby';
-            lob.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0f1622;color:#fff;z-index:99999;text-align:center;font-family:sans-serif';
-            lob.innerHTML = '<div style="padding:24px;max-width:340px">'
-                + '<h2 style="margin:0 0 4px">⚔️ 턴제 배틀 · DO 실시간</h2>'
-                + '<p style="font-size:11px;color:#7CFC9A;margin:0 0 10px">build do-v1 · 공용 WSClient · gameType=pvp-battle</p>'
-                + '<p>방코드 <b>' + room + '</b> · 나 ' + (nick || uid || '익명') + '</p>'
-                + '<p id="do-conns" style="font-size:13px;opacity:.75;margin:6px 0">접속자: 1</p>'
-                + '<p id="do-status" style="font-size:13px;color:#ffd76a;margin:6px 0">연결 중…</p>'
-                + '<p style="font-size:12px;opacity:.6;margin:8px 0">2명이 같은 URL(접속자:2)이면 시작</p>'
-                + '<button id="do-start" disabled style="padding:12px 30px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700;opacity:0.5;cursor:not-allowed">상대 대기 중…</button></div>';
-            document.body.appendChild(lob);
-            const setS = (tx) => { const e = document.getElementById('do-status'); if (e) e.textContent = tx; };
-            let _conns = 1;
-            const _syncStartBtn = () => {
-                const b = document.getElementById('do-start');
-                if (!b) return;
-                if (_conns >= 2) {
-                    b.disabled = false; b.style.opacity = '1'; b.style.cursor = 'pointer';
-                    b.textContent = '시작';
-                } else {
-                    b.disabled = true; b.style.opacity = '0.5'; b.style.cursor = 'not-allowed';
-                    b.textContent = '상대 대기 중…';
-                }
-            };
-            ws.onOpen = () => { setS('연결됨 ✓'); _syncStartBtn(); };
-            ws.onPresence = (n) => {
-                _conns = n;
-                const e = document.getElementById('do-conns'); if (e) e.textContent = '접속자: ' + n;
-                _syncStartBtn();
-            };
-            ws.onPreStartFail = (k) => setS(k === 'error' ? '⚠️ 연결 오류 — 새로고침' : '연결 끊김 — 새로고침');
-            ws.onNotice = (d) => {
-                if (d && d.type === 'start_rejected') {
-                    setS('⚠️ 상대가 아직 안 들어왔어요 (필요 ' + (d.need || 2) + '명) — 접속자:2 되면 시작');
-                    _syncStartBtn();
-                }
-            };
-            ws.onStateChange = (view) => {
-                if (!entered) {
-                    entered = true;
-                    const l = document.getElementById('do-lobby'); if (l) l.remove();
-                    handleBattleStart({ gameState: view });
-                    return;
-                }
-                handleBattleEvent('state_update', { gameState: view });
-                if (!ended && view && view.winnerId != null) {
-                    ended = true;
-                    handleBattleEvent('game_end', { result: { winnerId: view.winnerId, prizeGold: 0 } });
-                }
-            };
-            ws.onEvent = () => { /* 상태 구동 — 이벤트는 state_update로 흡수 */ };
-            const sb = document.getElementById('do-start');
-            if (sb) sb.onclick = () => {
-                if (_conns < 2) { setS('⚠️ 상대 접속(접속자:2) 후 시작 가능'); return; }
-                ws.start({}); setS('시작 요청 보냄 → 대전 시작 대기…');
-            };
-            _syncStartBtn();
+            // 공용 로비 모듈(MultiplayerLobby)로 이관 — 인라인 미니로비 제거.
+            // 로비/명단/ready/재대결/좀비정리는 모듈+서버가 담당. 게임은 콜백만 받는다.
+            if (typeof MultiplayerLobby !== 'function') { alert('멀티 라이브러리 로드 실패 — 새로고침'); return; }
+            _battleBg = pickFantasyBg();
+            mpUI = new MultiplayerLobby({
+                gameType: 'pvp-battle',
+                gameName: '⚔️ 무기 배틀',
+                maxPlayers: 2,
+                minPlayers: 2,
+                container: document.body,
+                // 본인 실제 무기+계산 스탯을 서버에 등록(양쪽 프로필을 DO가 모아 createInitialState에 전달).
+                // 없으면 서버가 '기본 무기' fallback → 기본 이미지/스탯만 나옴.
+                getPlayerData: () => {
+                    const _w = state.weapon || { type: 'sword', grade: 'common', level: 0, name: '기본 무기', element: 'none' };
+                    const _s = getWeaponStats(_w, true);
+                    return {
+                        weapon: {
+                            ..._w,
+                            damageMin: isNaN(_s.damageMin) ? 5 : _s.damageMin,
+                            damageMax: isNaN(_s.damageMax) ? 8 : _s.damageMax,
+                            critChance: isNaN(_s.critChance) ? 5 : _s.critChance,
+                            critDamage: isNaN(_s.critDamage) ? 150 : _s.critDamage,
+                            hp: isNaN(_s.hp) ? 100 : _s.hp
+                        }
+                    };
+                },
+                onGameStart: (gs) => { handleBattleStart(gs); },
+                onGameEvent: (type, data) => { if (type === 'event') return; handleBattleEvent(type, data); },
+                onLeave: () => { clearBattleTimer(); battleState = null; showMain(); },
+            });
         }
         // ?relay=do 진입 — enhance 부팅(showMain 라우팅)이 끝난 뒤 로비를 띄운다.
         // load 시점에 바로 호출하면 부팅 라우팅과 순서가 엉켜 메인 화면에 묻혔다 → 부팅 후로 지연 + 1회 가드.
