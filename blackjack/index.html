@@ -297,6 +297,18 @@
     .dealer-speech::after{ content:""; position:absolute; top:-7px; left:50%; transform:translateX(-50%);
       border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:7px solid #fffdf3; }
     .dealer-speech.show{ opacity:1; transform:translateY(0) scale(1); }
+    /* 카드 3D 플립 딜링 */
+    .cards { perspective: 760px; }
+    .card.dealing { will-change: transform, opacity; }
+    /* 칩 베팅 슬라이드 */
+    .fly-chip { position: fixed; font-size: 26px; z-index: 60; pointer-events: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,.5)); }
+    /* 딜러 아바타 반응 (승/패/블랙잭) */
+    #soloApp.react-win::before { animation: avatarWin 1.3s ease; }
+    #soloApp.react-bj::before { animation: avatarBJ 1.7s ease; }
+    #soloApp.react-lose::before { animation: avatarLose 1.3s ease; }
+    @keyframes avatarWin { 0%{opacity:.28} 30%{opacity:.5; filter:saturate(1.4) brightness(1.15)} 100%{opacity:.28} }
+    @keyframes avatarBJ { 0%{opacity:.28} 18%,58%{opacity:.62; filter:saturate(1.7) brightness(1.3) drop-shadow(0 0 14px gold)} 100%{opacity:.28} }
+    @keyframes avatarLose { 0%{opacity:.28} 32%{opacity:.15; filter:grayscale(.65) brightness(.78)} 100%{opacity:.28} }
     .multi-game > * {
       position: relative;
       z-index: 1;
@@ -1016,6 +1028,34 @@
       _dealerSpeechTimer = setTimeout(() => el.classList.remove("show"), hold);
     }
 
+    // 칩 베팅 슬라이드 — 베팅 시 칩이 하단에서 테이블 중앙으로 날아감
+    function flyChip() {
+      try {
+        if (typeof anime !== "function") return;
+        const tableEl = (typeof el !== "undefined" && el.table) || document.getElementById("table");
+        if (!tableEl) return;
+        const r = tableEl.getBoundingClientRect();
+        const chip = document.createElement("div");
+        chip.className = "fly-chip"; chip.textContent = "🪙";
+        document.body.appendChild(chip);
+        const sx = window.innerWidth / 2 - 13, sy = window.innerHeight - 130;
+        const ex = r.left + r.width * 0.5 - 13, ey = r.top + r.height * 0.55;
+        chip.style.left = sx + "px"; chip.style.top = sy + "px";
+        anime({ targets: chip, left: [sx, ex], top: [sy, ey], scale: [1, 0.66], rotate: [0, 320], duration: 540, easing: "easeOutQuad",
+          complete: () => { chip.style.transition = "opacity .2s"; chip.style.opacity = "0"; setTimeout(() => chip.remove(), 220); } });
+      } catch (_) {}
+    }
+
+    // 딜러 아바타 반응 — 결과(win/lose/bj)에 표정/광택 애니
+    function dealerReact(kind) {
+      const a = document.getElementById("soloApp");
+      if (!a) return;
+      a.classList.remove("react-win", "react-lose", "react-bj");
+      void a.offsetWidth;
+      a.classList.add("react-" + kind);
+      setTimeout(() => a.classList.remove("react-" + kind), 1800);
+    }
+
     function setStatus(text, type = "") {
       state.status = text;
       state.statusType = type;
@@ -1193,11 +1233,12 @@
         const allCards = document.querySelectorAll(`[data-card-id="${card.id}"]`);
         allCards.forEach(node => {
           if (typeof anime === "function") {
-            node.style.opacity = "0"; node.style.transform = "translateY(-40px) rotate(-8deg)";
-            anime({ targets: node, opacity: [0,1], translateY: [-40,0], rotate: [-8,0], duration: 320, easing: "easeOutCubic" });
+            // 뒷면(rotateY 90°, 엣지온)에서 앞면으로 뒤집히며 떨어지는 딜링 연출
+            node.style.opacity = "0"; node.style.transform = "translateY(-44px) rotateY(90deg)";
+            anime({ targets: node, opacity: [0,1], translateY: [-44,0], rotateY: [90,0], duration: 440, easing: "easeOutCubic" });
           }
         });
-        await wait(380);
+        await wait(430);
       } catch(e) { console.warn("dealCardTo error:", e); render(); }
     }
 
@@ -1218,6 +1259,7 @@
       resetRound();
       state.phase = "dealing";
       SFX.chip();
+      flyChip();
       state.hands = [{ cards: [], bet: betAmount, stood: false, busted: false, blackjack: false, doubled: false }];
       state.dealer = [];
       render();
@@ -1484,15 +1526,18 @@
         if (label === t("blackjack") || label === "BLACKJACK") {
           SFX.fanfare(); SFX.voice(voiceKey("blackjack"));
           dealerSay("블랙잭! 축하드립니다. 멋진 패네요.", "Blackjack! Congratulations — beautiful hand.", "黑傑克！恭喜，好牌。", 3200);
+          dealerReact("bj");
           party.confetti(el.table, { count: 50, spread: 60, speed: 400, color: ["#ffd166", "#ff6b6b", "#76f5ae", "#ffffff"] });
         } else {
           SFX.win(); SFX.voice(voiceKey("player-win"));
           dealerSay("당신의 승리입니다. 잘하셨어요.", "You win — well played.", "你贏了，打得好。", 3200);
+          dealerReact("win");
         }
         party.sparkles(el.table, { count: 28, spread: 42, speed: 260, color: ["#ffd166", "#76f5ae", "#ffffff"] });
       } else if (finalProfit < 0) {
         SFX.lose(); SFX.voice(voiceKey("dealer-win"));
         dealerSay("이번엔 딜러가 가져갑니다. 다음 판에 또 하시죠.", "Dealer takes this one. Next hand?", "這局莊家贏，再來一局？", 3200);
+        dealerReact("lose");
       } else {
         SFX.voice(voiceKey("push"));
         dealerSay("무승부네요. 베팅은 돌려드립니다.", "Push — your bet is returned.", "和局，退回賭注。", 3200);
