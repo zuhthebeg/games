@@ -1,4 +1,4 @@
-const CACHE = 'enhance-v12';
+const CACHE = 'enhance-v13';
 const OFFLINE = [
   '/enhance/',
   '/enhance/index.html',
@@ -17,12 +17,28 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
+  // cross-origin(relay.cocy.io API, GTM, WS 워커 등)은 SW가 개입하지 않음 —
+  // 가로채서 fetch 실패 시 캐시도 없으면 undefined 반환 → "Failed to convert value to 'Response'" 크래시.
+  if (url.origin !== self.location.origin) return;
   // /lib/ 파일은 항상 네트워크 (캐시버스터 쿼리로 관리)
   if (url.pathname.startsWith('/lib/')) {
-    e.respondWith(fetch(e.request));
+    e.respondWith((async () => {
+      try { return await fetch(e.request); }
+      catch (_) { return (await caches.match(e.request)) || Response.error(); }
+    })());
     return;
   }
-  e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
-  );
+  // 항상 Response를 보장: 네트워크 실패 → 캐시 → (네비게이션이면 index) → Response.error()
+  e.respondWith((async () => {
+    try { return await fetch(e.request); }
+    catch (_) {
+      const cached = await caches.match(e.request);
+      if (cached) return cached;
+      if (e.request.mode === 'navigate') {
+        const idx = await caches.match('/enhance/index.html');
+        if (idx) return idx;
+      }
+      return Response.error();
+    }
+  })());
 });
