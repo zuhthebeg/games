@@ -22,7 +22,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script>if(location.search.includes('debug=1')){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';s.onload=function(){eruda.init()};document.head.appendChild(s)}</script>
-    <script src="/lib/multiplayer.js?v=20260617b"></script>
+    <script src="/lib/multiplayer.js?v=20260617c"></script>
     <script src="/lib/multiplayer-ui.js?v=20260310d"></script>
     <script>window.SharedWalletConfig = { autoGuest: true };</script>
     <script src="/lib/shared-wallet.js?v=20260312a"></script>
@@ -2839,8 +2839,9 @@
                         if (serverData.protectionScrolls !== undefined) state.protectionScrolls = serverData.protectionScrolls;
                         // bossKills는 weapon 안에 저장 (무기 교체 시 자동 초기화)
                         // 하위호환: 구버전 serverData에 bossKills가 있으면 weapon이 같을 때만 복원
-                        const savedBossKills = w._bossKills;
-                        const savedBossTypeKills = w._bossTypeKills;
+                        // ⚠️ w는 if(serverData.weapon) 블록 안에서만 정의됨 → 밖에서 참조 시 ReferenceError
+                        const savedBossKills = serverData.weapon ? serverData.weapon._bossKills : undefined;
+                        const savedBossTypeKills = serverData.weapon ? serverData.weapon._bossTypeKills : undefined;
                         state.bossKills = savedBossKills !== undefined ? savedBossKills : (serverData.bossKills || 0);
                         state.bossTypeKills = savedBossTypeKills || serverData.bossTypeKills || { dragon:0, demon:0, undead:0, elemental:0 };
                         
@@ -5382,6 +5383,23 @@
             const uid = P.get('u') || undefined;
             let nick = ''; try { nick = localStorage.getItem('enhance_nick') || ''; } catch (e) {}
             const ws = new MultiplayerWSClient({ workerBase: WORKER, room, userId: uid, nickname: nick, gameType: 'pvp-battle' });
+            // 본인 실제 무기 + 계산 스탯을 서버에 등록 (DO가 양쪽 프로필을 모아 createInitialState에 전달).
+            // 이게 없으면 서버가 양쪽 다 '기본 무기' fallback → 기본 이미지/스탯만 나옴.
+            try {
+                const _w = state.weapon || { type: 'sword', grade: 'common', level: 0, name: '기본 무기', element: 'none' };
+                const _s = getWeaponStats(_w, true);
+                ws.sendProfile({
+                    nickname: nick || undefined,
+                    weapon: {
+                        ..._w,
+                        damageMin: isNaN(_s.damageMin) ? 5 : _s.damageMin,
+                        damageMax: isNaN(_s.damageMax) ? 8 : _s.damageMax,
+                        critChance: isNaN(_s.critChance) ? 5 : _s.critChance,
+                        critDamage: isNaN(_s.critDamage) ? 150 : _s.critDamage,
+                        hp: isNaN(_s.hp) ? 100 : _s.hp
+                    }
+                });
+            } catch (e) { console.warn('sendProfile failed', e); }
             let entered = false, ended = false;
             const shimClient = {
                 getMyUserId: () => ws.getMyUserId(),
@@ -5978,9 +5996,14 @@
             const enemyRage = enemy?.rage || 0;
             const canUltimate = myRage >= 100;
 
-            // 무기 이모지
-            const myWeaponEmoji = getWeaponEmoji(me?.weaponName, me?.weaponType);
-            const enemyWeaponEmoji = getWeaponEmoji(enemy?.weaponName, enemy?.weaponType);
+            // 무기 이미지 — 서버 view 필드로 실제 무기 아이콘 재구성 (이모지 폴백)
+            const _mkW = (p) => ({
+                type: p?.weaponType || 'sword', grade: p?.weaponGrade || 'common',
+                name: p?.weaponName || '무기', element: p?.weaponElement || 'none', level: p?.weaponLevel || 0
+            });
+            let myWeaponEmoji, enemyWeaponEmoji;
+            try { myWeaponEmoji = getWeaponImgHtml(_mkW(me), 54); } catch (e) { myWeaponEmoji = getWeaponEmoji(me?.weaponName, me?.weaponType); }
+            try { enemyWeaponEmoji = getWeaponImgHtml(_mkW(enemy), 54); } catch (e) { enemyWeaponEmoji = getWeaponEmoji(enemy?.weaponName, enemy?.weaponType); }
 
             // HP 비율
             const myHpPercent = Math.max(0, ((me?.hp || 0) / (me?.maxHp || 100)) * 100);
