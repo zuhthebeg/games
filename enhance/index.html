@@ -5575,6 +5575,7 @@
                     }
                 }
             } else if (type === 'game_end' || type === 'game_ended') {
+                clearBattleTimer();
                 // Normalize winnerId from various structures:
                 // Direct: { winnerId, prizeGold }
                 // Polled game_ended: { result: { winnerId, reason } }
@@ -5960,6 +5961,50 @@
             setTimeout(() => popup.remove(), 1000);
         }
 
+        // ===== 라운드 제한시간 + 자동행동 (다이나믹 전투 A) =====
+        // 선택 페이즈에서 제한시간 내 미선택 시 자동 공격 → '둘 다 무한 대기' 데드락 제거.
+        const BATTLE_TURN_SECONDS = 7;
+        let _battleTimer = null;     // setInterval 핸들
+        let _battleTimerKey = null;  // 현재 타이머가 도는 라운드(중복 시작 방지)
+        let _battleTimerEnd = 0;     // 마감 시각(ms)
+
+        function clearBattleTimer() {
+            if (_battleTimer) { clearInterval(_battleTimer); _battleTimer = null; }
+            _battleTimerKey = null;
+        }
+
+        function ensureBattleTimer(round) {
+            if (_battleTimerKey === round && _battleTimer) return; // 이미 이 라운드 타이머 작동 중
+            clearBattleTimer();
+            _battleTimerKey = round;
+            _battleTimerEnd = Date.now() + BATTLE_TURN_SECONDS * 1000;
+            const tick = () => {
+                const remain = Math.max(0, _battleTimerEnd - Date.now());
+                const sec = Math.ceil(remain / 1000);
+                const pct = Math.max(0, Math.min(100, (remain / (BATTLE_TURN_SECONDS * 1000)) * 100));
+                const numEl = document.getElementById('battle-timer-num');
+                const barEl = document.getElementById('battle-timer-bar');
+                if (numEl) numEl.textContent = sec;
+                if (barEl) {
+                    barEl.style.width = pct + '%';
+                    barEl.style.background = pct < 30 ? '#ff5a5a' : (pct < 60 ? '#ffd76a' : '#23c552');
+                }
+                if (remain <= 0) {
+                    clearBattleTimer();
+                    // 마감: 아직 선택 페이즈 & 내가 미선택이면 자동 공격
+                    const gs = battleState?.gameState;
+                    if (!gs || gs.phase !== 'select' || gs.winnerId != null) return;
+                    const myId = cachedMyId || mpUI?.getClient()?.getMyUserId();
+                    const me = gs.players?.find(p => p.id === myId);
+                    if (me && !(me.hasSelected || me.selectedAction) && !battleActionPending) {
+                        battleAction('attack');
+                    }
+                }
+            };
+            tick();
+            _battleTimer = setInterval(tick, 200);
+        }
+
         function renderBattle() {
             if (!battleState || !battleState.gameState) return;
 
@@ -5975,6 +6020,13 @@
             
             const hasSelected = me?.hasSelected || me?.selectedAction;
             const enemyReady = enemy?.hasSelected;
+
+            // 라운드 제한시간: 선택 페이즈 & 내가 미선택일 때만 카운트다운, 그 외엔 정지
+            if (gs.phase === 'select' && !hasSelected && gs.winnerId == null) {
+                ensureBattleTimer(gs.round || 1);
+            } else {
+                clearBattleTimer();
+            }
 
             const myGrade = me?.weaponGrade ? GRADES[me.weaponGrade] : GRADES.common;
             const enemyGrade = enemy?.weaponGrade ? GRADES[enemy.weaponGrade] : GRADES.common;
@@ -6109,6 +6161,15 @@
                                 ⏳ 상대 행동 대기중...
                             </div>
                         ` : `
+                            <div class="turn-timer" style="margin:0 0 10px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.72rem;color:var(--muted);margin-bottom:4px;">
+                                    <span>⏱️ 행동 선택</span>
+                                    <span><b id="battle-timer-num" style="color:#fff;">${BATTLE_TURN_SECONDS}</b>초 — 시간초과 시 자동 공격</span>
+                                </div>
+                                <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.12);overflow:hidden;">
+                                    <div id="battle-timer-bar" style="height:100%;width:100%;background:#23c552;transition:width 0.2s linear;"></div>
+                                </div>
+                            </div>
                             <div class="action-grid">
                                 <button class="action-btn attack" onclick="battleAction('attack')">
                                     <span class="action-icon">⚔️</span>
@@ -6151,7 +6212,8 @@
 
         function battleSurrender() {
             if (!confirm('항복하면 패배 처리됩니다.\n정말 항복하시겠습니까?')) return;
-            
+            clearBattleTimer();
+
             // Leave room (counts as loss)
             if (mpUI && mpUI.getClient()) {
                 mpUI.getClient().leaveRoom().catch(() => {});
