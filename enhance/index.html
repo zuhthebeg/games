@@ -5380,8 +5380,20 @@
             const P = new URLSearchParams(location.search);
             const WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
             const room = P.get('room') || 'pvp-test';
-            const uid = P.get('u') || undefined;
+            // userId: ?u= 우선. 없으면 탭별 고유 id 생성(sessionStorage=탭마다 다름+새로고침 시 좌석복원).
+            // ⚠️ 안 그러면 둘 다 서버에서 'anon'으로 합쳐져 명단 1명 → 시작 거부(접속자 2인데 시작 안 됨).
+            let uid = P.get('u') || '';
+            if (!uid) {
+                try {
+                    uid = sessionStorage.getItem('enhance_do_uid') || '';
+                    if (!uid) {
+                        uid = 'p' + ((self.crypto && crypto.randomUUID) ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).slice(2, 10));
+                        sessionStorage.setItem('enhance_do_uid', uid);
+                    }
+                } catch (e) { uid = 'p' + Math.random().toString(36).slice(2, 10); }
+            }
             let nick = ''; try { nick = localStorage.getItem('enhance_nick') || ''; } catch (e) {}
+            if (!nick) nick = '전사-' + String(uid).slice(-4);
             const ws = new MultiplayerWSClient({ workerBase: WORKER, room, userId: uid, nickname: nick, gameType: 'pvp-battle' });
             // 본인 실제 무기 + 계산 스탯을 서버에 등록 (DO가 양쪽 프로필을 모아 createInitialState에 전달).
             // 이게 없으면 서버가 양쪽 다 '기본 무기' fallback → 기본 이미지/스탯만 나옴.
