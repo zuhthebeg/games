@@ -23,7 +23,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script>if(location.search.includes('debug=1')){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';s.onload=function(){eruda.init()};document.head.appendChild(s)}</script>
     <script src="/lib/multiplayer.js?v=20260617f"></script>
-    <script src="/lib/mp-lobby.js?v=20260617a"></script>
+    <script src="/lib/mp-lobby.js?v=20260617b"></script>
     <script src="/lib/multiplayer-ui.js?v=20260310d"></script>
     <script>window.SharedWalletConfig = { autoGuest: true };</script>
     <script src="/lib/shared-wallet.js?v=20260312a"></script>
@@ -5420,53 +5420,10 @@
         window.addEventListener('load', () => setTimeout(_enhanceDORoute, 400));
         if (document.readyState === 'complete') setTimeout(_enhanceDORoute, 400);
 
+        // 온라인 멀티 메뉴 버튼 → 새 공용 DO 로비(모드선택: 빠른대전/방만들기/코드/방목록).
+        // 레거시 MultiplayerUI(D1/SSE) 대체. startEnhanceDO가 MultiplayerLobby를 띄운다(?room 없으면 모드선택).
         function showBattleLobby() {
-            _battleBg = pickFantasyBg(); // 배틀 배경 랜덤 선택
-            mpUI = new MultiplayerUI({
-                gameType: 'pvp-battle',
-                gameName: '⚔️ 턴제 배틀',
-                container: document.getElementById('app'),
-                maxPlayers: 2,
-                supportsLocal: false,
-                onGameStart: handleBattleStart,
-                onGameEvent: handleBattleEvent,
-                onLeave: () => { battleState = null; showMain(); },
-                getPlayerData: () => {
-                    // 무기 스탯 계산해서 함께 전송 (사냥과 동일한 공식)
-                    const weapon = state.weapon || { type: 'sword', grade: 'common', level: 0, name: '기본 무기', element: 'none' };
-                    const stats = getWeaponStats(weapon, true);
-                    
-                    // 디버그: NaN 체크
-                    console.log('[getPlayerData] weapon:', weapon);
-                    console.log('[getPlayerData] stats:', stats);
-                    if (isNaN(stats.damageMin) || isNaN(stats.damageMax) || isNaN(stats.hp)) {
-                        console.error('[getPlayerData] NaN detected! weapon:', JSON.stringify(weapon), 'stats:', JSON.stringify(stats));
-                    }
-                    
-                    return {
-                        weapon: {
-                            ...weapon,
-                            // 계산된 스탯 전송 (서버가 그대로 사용)
-                            damageMin: isNaN(stats.damageMin) ? 5 : stats.damageMin,
-                            damageMax: isNaN(stats.damageMax) ? 8 : stats.damageMax,
-                            critChance: isNaN(stats.critChance) ? 5 : stats.critChance,
-                            critDamage: isNaN(stats.critDamage) ? 150 : stats.critDamage,
-                            hp: isNaN(stats.hp) ? 100 : stats.hp
-                        },
-                        gold: state.gold
-                    };
-                }
-            });
-
-            const roomCode = MultiplayerUI.checkUrlRoom();
-            if (roomCode) {
-                mpUI._renderLobby();
-                setTimeout(() => {
-                    document.getElementById('mp-room-code').value = roomCode;
-                }, 100);
-            } else {
-                mpUI.show();
-            }
+            startEnhanceDO();
         }
 
         function handleBattleStart(gameState) {
