@@ -1,20 +1,5 @@
 [
   {
-    "title": "비트탭",
-    "icon": "https://game.cocy.io/beattap/icon.svg",
-    "url": "https://game.cocy.io/beattap/",
-    "desc": "비트에 맞춰 탭하는 네온 리듬게임! 강한 타격감·콤보 폭발·골드 보상·랭킹. 한국어/English",
-    "badge": "NEW",
-    "platforms": [
-      "WEB"
-    ],
-    "languages": [
-      "ko",
-      "en"
-    ],
-    "category": "arcade"
-  },
-  {
     "title": "팝매치",
     "icon": "https://game.cocy.io/match3/icon.svg",
     "url": "https://game.cocy.io/match3/",
@@ -206,48 +191,6 @@
     "icon": "https://game.cocy.io/gomoku/icon.svg",
     "url": "https://game.cocy.io/gomoku/",
     "desc": "실시간 1:1 오목 대결",
-    "badge": "NEW",
-    "platforms": [
-      "WEB"
-    ],
-    "languages": [
-      "🌍"
-    ],
-    "category": "game"
-  },
-  {
-    "title": "포커",
-    "icon": "https://game.cocy.io/poker/icon.svg",
-    "url": "https://game.cocy.io/poker/",
-    "desc": "1:1 텍사스 홀덤 포커",
-    "badge": "HOT",
-    "platforms": [
-      "WEB"
-    ],
-    "languages": [
-      "🌍"
-    ],
-    "category": "card"
-  },
-  {
-    "title": "간단한 숫자",
-    "icon": "https://game.cocy.io/number-guess/icon.svg",
-    "url": "https://game.cocy.io/number-guess/",
-    "desc": "간단한 숫자 맞추기 게임",
-    "badge": "NEW",
-    "platforms": [
-      "WEB"
-    ],
-    "languages": [
-      "🌍"
-    ],
-    "category": "game"
-  },
-  {
-    "title": "가위바위보",
-    "icon": "https://game.cocy.io/rps/icon.svg",
-    "url": "https://game.cocy.io/rps/",
-    "desc": "클래식 가위바위보 게임",
     "badge": "NEW",
     "platforms": [
       "WEB"
