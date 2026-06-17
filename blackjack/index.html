@@ -1111,6 +1111,8 @@
         try { await SharedWallet.init(); } catch (_) {}
       }
       state.gold = typeof SharedWallet !== "undefined" ? Number(SharedWallet.gold || 0) : 1000;
+      // DO/WS 실시간 경로(?relay=do): REST MultiplayerUI 대신 공용 WSClient + shim mpUI.
+      if (new URLSearchParams(location.search).get("relay") === "do") { startBlackjackDO(); return; }
       if (!state.deck.length) state.deck = makeDeck();
       setStatus(currentLang === "ko" ? "베팅 버튼을 눌러 시작하세요." : currentLang === "zh-TW" ? "按下注按鈕開始遊戲。" : "Press a bet button to start.");
       render();
@@ -1657,6 +1659,7 @@
     // ══════════════════════════════════════════════════════════════
 
     let mpUI = null;
+    let doClient = null;   // ?relay=do DO/WS 경로의 MultiplayerWSClient (mpUI는 이때 shim)
     let mpTimerInterval = null;
 
     function showScreen(id) {
@@ -1685,6 +1688,67 @@
       showScreen("mpLobbyContainer");
       initMultiplayer();
     });
+
+    // ── DO/WS 실시간 경로 (?relay=do) ──
+    // gostop/gomoku/connect4와 동일 인프라(공용 MultiplayerWSClient + generic RoomDO). gameType=blackjack.
+    // 핵심: blackjack 멀티 코드는 mpUI.{sendAction,getState,getClient}만 쓴다 → 그 인터페이스를 WSClient로 흉내내는 shim을 mpUI에 꽂으면
+    //       렌더/액션/정산 2378줄을 무수정 재사용. gd = (gs.myView||gs.gameState||gs) 패턴이라 getState는 {myView: 최신뷰} 반환.
+    // ⚠️ 한계(PoC): DO 로스터는 좌석만 전달 → 서버 bankroll=기본값(실제 SharedWallet gold 미연동). 트랜스포트/렌더/턴/정산 검증용.
+    function startBlackjackDO() {
+      const P = new URLSearchParams(location.search);
+      const WORKER = "wss://relay-do-poc.zuhejbeg.workers.dev";
+      const room = P.get("room") || "bj-test";
+      const uid = P.get("u") || undefined;   // 같은 브라우저 다탭 테스트용 uid 분리
+      let nick = ""; try { nick = localStorage.getItem("blackjack_nick") || ""; } catch (e) {}
+
+      const ws = new MultiplayerWSClient({ workerBase: WORKER, room, userId: uid, nickname: nick, gameType: "blackjack" });
+      doClient = ws;
+      let entered = false;
+      let pendingEvents = [];
+
+      // shim: blackjack 멀티 코드가 호출하는 mpUI 표면만 구현.
+      mpUI = {
+        getClient: () => ws,                                  // getMyUserId/leaveRoom 제공. getRoomCode/rematch는 없음(옵셔널 체이닝으로 처리됨)
+        sendAction: (action) => ws.sendAction(action),
+        getState: () => Promise.resolve({ myView: ws._lastView }),   // gd = myView = DO getPlayerView (REST와 동일 shape)
+        getPlayerData: () => ({ gold: Math.floor(Number((typeof SharedWallet !== "undefined" && SharedWallet.gold) || 0)) }),
+        show: () => {}, _renderLobby: () => {}, showResult: () => {}, goToWaitingRoom: () => {},
+      };
+
+      const lob = document.createElement("div");
+      lob.id = "do-lobby";
+      lob.style.cssText = "position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0f1420;color:#fff;z-index:9999;text-align:center;font-family:sans-serif";
+      lob.innerHTML = '<div style="padding:24px;max-width:340px">'
+        + '<h2 style="margin:0 0 4px">🃏 블랙잭 · DO 실시간</h2>'
+        + '<p style="font-size:11px;color:#7CFC9A;margin:0 0 10px">build do-v1 · 공용 WSClient · gameType=blackjack</p>'
+        + '<p>방코드 <b>' + room + '</b> · 나 ' + (nick || uid || "익명") + '</p>'
+        + '<p id="do-conns" style="font-size:13px;opacity:.75;margin:6px 0">접속자: 1</p>'
+        + '<p id="do-status" style="font-size:13px;color:#ffd76a;margin:6px 0">연결 중…</p>'
+        + '<p style="font-size:12px;opacity:.6;margin:8px 0">2명 이상 같은 URL(접속자 수 확인)이면 시작</p>'
+        + '<button id="do-start" style="padding:12px 30px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700">시작 (딜)</button></div>';
+      document.body.appendChild(lob);
+      const setS = (tx) => { const e = document.getElementById("do-status"); if (e) e.textContent = tx; };
+
+      ws.onOpen = () => setS("연결됨 ✓");
+      ws.onPresence = (n) => { const e = document.getElementById("do-conns"); if (e) e.textContent = "접속자: " + n; };
+      ws.onPreStartFail = (k) => setS(k === "error" ? "⚠️ 연결 오류 — 새로고침" : "연결 끊김 — 새로고침");
+      ws.onReconnecting = (tr) => showMultiInlineNotice("🔌 재접속 중… (" + tr + ")");
+      ws.onEvent = (ev) => { pendingEvents.push(ev); };   // event-before-state → 버퍼링 후 state 도착 시 처리
+      ws.onStateChange = (view) => {
+        if (!entered) {
+          entered = true;
+          const l = document.getElementById("do-lobby"); if (l) l.remove();
+          handleMultiGameStart({ myView: view });   // showScreen(multiGameScreen) + 첫 렌더
+          pendingEvents = [];
+          return;
+        }
+        // 최신 state 도착 → 버퍼된 이벤트와 함께 처리(getState가 최신 반환 → 정산 totalWinnings 정확)
+        const evs = pendingEvents; pendingEvents = [];
+        handleMultiGameEvent("event", { events: evs });
+      };
+      const sb = document.getElementById("do-start");
+      if (sb) sb.onclick = () => { ws.start({}); setS("시작 요청 보냄 → 서버 응답 대기…"); };
+    }
 
     function initMultiplayer() {
       if (mpUI) { mpUI.show(); return; }
