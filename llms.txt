@@ -22,7 +22,6 @@
 - [블록 블라스트](https://game.cocy.io/blockblast/): 8×8 블록 퍼즐, 콤보 터뜨리기.
 - [블럭 퍼즐](https://game.cocy.io/blockpuzzle/): 블럭 조합 퍼즐.
 - [타일 슬라이더](https://game.cocy.io/tileslider/): 슬라이딩 숫자·이미지 퍼즐.
-- [총알 피하기](https://game.cocy.io/bulletdodge/): 쏟아지는 총알 회피 생존, 조이스틱 지원.
 - [라인러시 / Line Rush](https://game.cocy.io/linerush/): 라인을 그어 영역을 확보하는 터치 아케이드.
 - [3쿠션 당구 시뮬레이터](https://game.cocy.io/billiards/): PBA 3쿠션 물리 시뮬 — 초구·스핀·다이아몬드 시스템.
 
