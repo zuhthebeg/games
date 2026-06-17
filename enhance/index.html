@@ -5473,6 +5473,8 @@
             battleState = gameState;
             battleActionPending = false;  // 새 배틀 시작 시 리셋
             battleResultShown = false;    // 결과 표시 플래그 리셋
+            _myActionRound = -1;          // 라운드 행동 가드 리셋
+            _animatedRound = -1;          // 애니메이션 가드 리셋
             // Cache user ID for use even after client is destroyed
             cachedMyId = mpUI?.getClient()?.getMyUserId() || null;
             console.log('[handleBattleStart] cachedMyId:', cachedMyId);
@@ -5490,8 +5492,10 @@
                 const gs = payload.gameState || payload;
                 const myId = cachedMyId || mpUI?.getClient()?.getMyUserId();
                 
-                // 턴 결과 애니메이션 (폴링으로 받은 경우)
-                if (gs.lastTurnResult && battleState?.gameState?.round !== gs.round) {
+                // 턴 결과 애니메이션 — 라운드당 1회. _animatedRound를 await 전에 박아서
+                // 애니메이션(await) 도중 같은 라운드 state가 또 와도 재생 안 되게(중복 공격 연출 방지).
+                if (gs.lastTurnResult && gs.round !== _animatedRound && battleState?.gameState?.round !== gs.round) {
+                    _animatedRound = gs.round;
                     const tr = gs.lastTurnResult;
                     const isP1Me = gs.players[0]?.id === myId;
                     const myAction = isP1Me ? tr.p1Action : tr.p2Action;
@@ -6176,11 +6180,15 @@
         }
 
         let battleActionPending = false;  // 중복 클릭 방지
-        
+        let _myActionRound = -1;          // 이번 라운드 내 행동 전송 여부 (중복 공격 방지 — DO 모드는 pending이 즉시 풀림)
+        let _animatedRound = -1;          // 턴 결과 애니메이션을 라운드당 1회만 (await 중 중복 state 재진입 방지)
+
         async function battleUltimate(ultType) {
             if (!mpUI || !mpUI.getClient()) return;
-            if (battleActionPending) return;
-            
+            const _round = battleState?.gameState?.round ?? 0;
+            if (battleActionPending || _myActionRound === _round) return;
+            _myActionRound = _round;
+
             battleActionPending = true;
             try {
                 const response = await mpUI.sendAction({ type: 'ultimate', payload: { ultimate: ultType } });
@@ -6198,8 +6206,11 @@
         
         async function battleAction(action) {
             if (!mpUI || !mpUI.getClient()) return;
-            if (battleActionPending) return;
-            
+            const _round = battleState?.gameState?.round ?? 0;
+            // 이번 라운드에 이미 행동을 보냈으면 무시 — 더블탭/타이머 자동공격 중복으로 "두 번 공격" 방지
+            if (battleActionPending || _myActionRound === _round) return;
+            _myActionRound = _round;
+
             battleActionPending = true;
             try {
                 const response = await mpUI.sendAction({ type: action });
