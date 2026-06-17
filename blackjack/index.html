@@ -1111,8 +1111,6 @@
         try { await SharedWallet.init(); } catch (_) {}
       }
       state.gold = typeof SharedWallet !== "undefined" ? Number(SharedWallet.gold || 0) : 1000;
-      // DO/WS 실시간 경로(?relay=do): REST MultiplayerUI 대신 공용 WSClient + shim mpUI.
-      if (new URLSearchParams(location.search).get("relay") === "do") { startBlackjackDO(); return; }
       if (!state.deck.length) state.deck = makeDeck();
       setStatus(currentLang === "ko" ? "베팅 버튼을 눌러 시작하세요." : currentLang === "zh-TW" ? "按下注按鈕開始遊戲。" : "Press a bet button to start.");
       render();
@@ -2293,6 +2291,17 @@
     // ── Auto-reconnect / URL room / mode select on load ──
     (function startupRoute() {
       const params = new URLSearchParams(window.location.search);
+
+      // DO/WS 실시간 경로(?relay=do): REST 라우팅보다 먼저. URL 보존(스트립 안 함).
+      if (params.get("relay") === "do") {
+        (async () => {
+          if (typeof SharedWallet !== "undefined" && SharedWallet.init) { try { await SharedWallet.init(); } catch (_) {} }
+          state.gold = typeof SharedWallet !== "undefined" ? Number(SharedWallet.gold || 0) : 1000;
+          startBlackjackDO();
+        })();
+        return;
+      }
+
       const roomCode = params.get("room");
 
       if (roomCode) {
