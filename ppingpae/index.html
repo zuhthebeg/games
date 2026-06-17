@@ -14,7 +14,7 @@
 <meta property="og:url" content="https://game.cocy.io/ppingpae/">
 <meta property="og:image" content="https://game.cocy.io/ppingpae/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<script src="/lib/multiplayer.js?v=20260606a"></script>
+<script src="/lib/multiplayer.js?v=20260617b"></script>
 <script src="/lib/multiplayer-ui.js?v=20260606a"></script>
 <script src="/lib/shared-wallet.js?v=20260606a"></script>
 <script src="/lib/game-rankings.js?v=20260606a"></script>
@@ -2045,7 +2045,7 @@ function showWin() {
   // 내가 이긴 경우에만 골드 지급 (싱글에서 winner === 나(0번 좌석))
   const isMyWin = state.currentPlayer === 0 && !winner.isAI;
   const prizeGold = isMyWin ? winScore * 10000 : 0;
-  if (prizeGold > 0 && typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
+  if (prizeGold > 0 && !mpState._doMode && typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
     try { SharedWallet.addGold(prizeGold); } catch (_) {}
   }
   // 🏆 랭킹 제출: 내가 이겼을 때만
@@ -2083,7 +2083,7 @@ function showStalemate() {
   const isMySoleWin = winners.length === 1 && winners[0].name === state.players[0].name && !state.players[0].isAI;
   const oppRemaining = scores.filter(s => s.name !== state.players[0].name).reduce((s, r) => s + r.remaining, 0);
   const prizeGold = isMySoleWin ? oppRemaining * 10000 : 0;
-  if (prizeGold > 0 && typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
+  if (prizeGold > 0 && !mpState._doMode && typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
     try { SharedWallet.addGold(prizeGold); } catch (_) {}
   }
 
@@ -2710,6 +2710,67 @@ async function openMultiLobby() {
   }
 }
 
+// ── DO/WS 실시간 경로 (?relay=do) ──
+// gostop/blackjack/mahjong과 동일 인프라(공용 MultiplayerWSClient + generic RoomDO). gameType=ppingpae.
+// ppingpae MP 레이어는 mpState.client.{getMyUserId,getRoomCode,onEvent,getRoomState,sendAction,leaveRoom}만 쓴다 →
+// 그 표면을 WSClient로 흉내내는 shim을 mpState.client에 꽂으면 렌더/액션 무수정 재사용.
+// getRoomState→{gameState:view, myView:view} (DO view는 public+myHand 둘 다 포함). 상대=handCount만(프라이버시).
+// minPlayers 2라 2명 접속 필요(AI 자동충원 없음). 골드 가드 mpState._doMode.
+function startPpingpaeDO() {
+  if (typeof MultiplayerWSClient !== 'function') { showToast('멀티 라이브러리 로드 실패'); return; }
+  const P = new URLSearchParams(location.search);
+  const WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
+  const room = P.get('room') || 'pp-test';
+  const uid = P.get('u') || undefined;
+  let nick = ''; try { nick = localStorage.getItem('pp_nick') || ''; } catch (e) {}
+  const ws = new MultiplayerWSClient({ workerBase: WORKER, room, userId: uid, nickname: nick, gameType: 'ppingpae' });
+  mpState._doMode = true;
+  let entered = false;
+  mpState.client = {
+    getMyUserId: () => ws.getMyUserId(),
+    getRoomCode: () => room,
+    onEvent: null,
+    getRoomState: () => Promise.resolve({ gameState: ws._lastView, myView: ws._lastView }),
+    sendAction: (a) => ws.sendAction(a).then(() => ({})),
+    rematch: () => Promise.resolve(),
+    leaveRoom: () => ws.leaveRoom(),
+  };
+  const lob = document.createElement('div');
+  lob.id = 'do-lobby';
+  lob.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0f1622;color:#fff;z-index:99999;text-align:center;font-family:sans-serif';
+  lob.innerHTML = '<div style="padding:24px;max-width:340px">'
+    + '<h2 style="margin:0 0 4px">🎴 삥패 · DO 실시간</h2>'
+    + '<p style="font-size:11px;color:#7CFC9A;margin:0 0 10px">build do-v1 · 공용 WSClient · gameType=ppingpae</p>'
+    + '<p>방코드 <b>' + room + '</b> · 나 ' + (nick || uid || '익명') + '</p>'
+    + '<p id="do-conns" style="font-size:13px;opacity:.75;margin:6px 0">접속자: 1</p>'
+    + '<p id="do-status" style="font-size:13px;color:#ffd76a;margin:6px 0">연결 중…</p>'
+    + '<p style="font-size:12px;opacity:.6;margin:8px 0">2명 이상 같은 URL(접속자 수 확인)이면 시작</p>'
+    + '<button id="do-start" style="padding:12px 30px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700">시작</button></div>';
+  document.body.appendChild(lob);
+  const setS = (tx) => { const e = document.getElementById('do-status'); if (e) e.textContent = tx; };
+  ws.onOpen = () => setS('연결됨 ✓');
+  ws.onPresence = (n) => { const e = document.getElementById('do-conns'); if (e) e.textContent = '접속자: ' + n; };
+  ws.onPreStartFail = (k) => setS(k === 'error' ? '⚠️ 연결 오류 — 새로고침' : '연결 끊김 — 새로고침');
+  ws.onStateChange = (view) => {
+    if (!entered) {
+      entered = true;
+      const l = document.getElementById('do-lobby'); if (l) l.remove();
+      mpState.myUserId = mpState.client.getMyUserId();
+      mpState.roomId = room; mpState.roomCode = room;
+      mpState.client.onEvent = mpHandleEvent;
+      mpStartGameFromServer({ gameState: view, myView: view });
+      return;
+    }
+    mpApplyServerView(view, view);
+  };
+  ws.onEvent = (ev) => { try { if (typeof mpHandleEvent === 'function') mpHandleEvent(ev && ev.type || 'state_update', ev); } catch (_) {} };
+  const sb = document.getElementById('do-start');
+  if (sb) sb.onclick = () => { ws.start({ timeLimit: 60, initialHandSize: 14, initialMeldScore: 30 }); setS('시작 요청 보냄 → 딜링 대기…'); };
+}
+window.addEventListener('load', () => {
+  if (new URLSearchParams(location.search).get('relay') === 'do') { try { startPpingpaeDO(); } catch (e) { console.error('startPpingpaeDO', e); } }
+});
+
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
@@ -3037,7 +3098,7 @@ function mpShowResult(publicState) {
     .filter(p => p.id !== mpState.myUserId)
     .reduce((s, p) => s + Math.max(0, -p.score), 0);
   const prizeGold = isMyWin ? oppNegSum * 10000 : 0;
-  if (prizeGold > 0 && typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
+  if (prizeGold > 0 && !mpState._doMode && typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
     try { SharedWallet.addGold(prizeGold); } catch (_) {}
   }
   // 멀티 승리 → 랭킹 등록(SP와 동일 지표: 상대 잔여점 합)
