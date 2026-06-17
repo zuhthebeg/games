@@ -303,9 +303,9 @@
     /* 칩 베팅 슬라이드 */
     .fly-chip { position: fixed; font-size: 26px; z-index: 60; pointer-events: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,.5)); }
     /* 딜러 아바타 반응 (승/패/블랙잭) */
-    #soloApp.react-win::before { animation: avatarWin 1.3s ease; }
-    #soloApp.react-bj::before { animation: avatarBJ 1.7s ease; }
-    #soloApp.react-lose::before { animation: avatarLose 1.3s ease; }
+    #soloApp.react-win::before, .multi-game.react-win::before { animation: avatarWin 1.3s ease; }
+    #soloApp.react-bj::before, .multi-game.react-bj::before { animation: avatarBJ 1.7s ease; }
+    #soloApp.react-lose::before, .multi-game.react-lose::before { animation: avatarLose 1.3s ease; }
     @keyframes avatarWin { 0%{opacity:.28} 30%{opacity:.5; filter:saturate(1.4) brightness(1.15)} 100%{opacity:.28} }
     @keyframes avatarBJ { 0%{opacity:.28} 18%,58%{opacity:.62; filter:saturate(1.7) brightness(1.3) drop-shadow(0 0 14px gold)} 100%{opacity:.28} }
     @keyframes avatarLose { 0%{opacity:.28} 32%{opacity:.15; filter:grayscale(.65) brightness(.78)} 100%{opacity:.28} }
@@ -481,6 +481,7 @@
           <div class="seat-title" id="mpDealerLabel">DEALER</div>
           <div class="score" id="mpDealerScore">-</div>
         </div>
+        <div class="dealer-speech" id="mpDealerSpeech"></div>
         <div class="cards" id="mpDealerCards"></div>
       </div>
       <div class="multi-players" id="mpPlayers"></div>
@@ -1049,6 +1050,28 @@
     // 딜러 아바타 반응 — 결과(win/lose/bj)에 표정/광택 애니
     function dealerReact(kind) {
       const a = document.getElementById("soloApp");
+      if (!a) return;
+      a.classList.remove("react-win", "react-lose", "react-bj");
+      void a.offsetWidth;
+      a.classList.add("react-" + kind);
+      setTimeout(() => a.classList.remove("react-" + kind), 1800);
+    }
+
+    // ── 멀티 blackjack 딜러 연출 (솔로 dealerSay/dealerReact의 멀티판) ──
+    function mpDealerSay(ko, en, zh, hold = 2800) {
+      const el = document.getElementById("mpDealerSpeech");
+      if (!el) return;
+      const msg = currentLang === "ko" ? ko : currentLang === "zh-TW" ? (zh || en || ko) : (en || ko);
+      if (!msg) { el.classList.remove("show"); return; }
+      el.textContent = msg;
+      el.classList.remove("show");
+      void el.offsetWidth;
+      el.classList.add("show");
+      if (mpDealerSay._t) clearTimeout(mpDealerSay._t);
+      mpDealerSay._t = setTimeout(() => el.classList.remove("show"), hold);
+    }
+    function mpDealerReact(kind) {
+      const a = document.getElementById("multiGameScreen");
       if (!a) return;
       a.classList.remove("react-win", "react-lose", "react-bj");
       void a.offsetWidth;
@@ -1903,6 +1926,7 @@
             if (ev.type === "bet_placed") SFX.chip();
             if (ev.type === "dealing_started") {
               SFX.voice(voiceKey("deal"));
+              mpDealerSay("자, 카드 갑니다. 행운을 빌어요.", "Here come the cards. Good luck.", "發牌了，祝你好運。");
               if (Number(gd.reshuffleCount || 0) > mpLastReshuffleCount) {
                 showMultiInlineNotice(currentLang === "ko" ? "새 덱을 섞었습니다." : currentLang === "zh-TW" ? "已洗好新牌組。" : "Shuffled a fresh deck.");
               }
@@ -1918,6 +1942,10 @@
             if (ev.type === "split") { SFX.chip(); SFX.cardFlip(); }
             if (ev.type === "dealer_turn_completed") {
               SFX.voice(voiceKey("dealer-win"));
+              const dCards = (gd.dealer?.cards || []).filter(Boolean);
+              const dv = dCards.length ? mpHandValue(dCards) : 0;
+              if (dv > 21) mpDealerSay("딜러 버스트! 운이 좋으시네요.", "Dealer busts! Lucky you.", "莊家爆牌！你運氣不錯。");
+              else mpDealerSay(`딜러 ${dv}, 스탠드합니다.`, `Dealer stands on ${dv}.`, `莊家 ${dv}，停牌。`);
             }
             if (ev.type === "settled") {
               applyMultiWalletSettlement(gs, data, actionEvents);
@@ -1929,16 +1957,23 @@
                   const hadBJ = me.hands?.some(h => h.blackjack);
                   if (hadBJ) {
                     SFX.fanfare();
+                    mpDealerSay("블랙잭! 축하드립니다. 멋진 패네요.", "Blackjack! Congratulations.", "黑傑克！恭喜，好牌。", 3400);
+                    mpDealerReact("bj");
                     try { party.confetti(document.getElementById("multiGameScreen")); } catch(e) {}
                   } else {
                     SFX.win();
+                    mpDealerSay("당신의 승리입니다. 잘하셨어요.", "You win — well played.", "你贏了，打得好。", 3400);
+                    mpDealerReact("win");
                   }
                   SFX.voice(voiceKey("player-win"));
                 } else if (win < 0) {
                   SFX.lose();
                   SFX.voice(voiceKey("dealer-win"));
+                  mpDealerSay("이번엔 딜러가 가져갑니다. 다음 판에 또 하시죠.", "Dealer takes this one. Next hand?", "這局莊家贏，再來一局？", 3400);
+                  mpDealerReact("lose");
                 } else {
                   SFX.voice(voiceKey("push"));
+                  mpDealerSay("무승부네요. 베팅은 돌려드립니다.", "Push — your bet is returned.", "和局，退回賭注。", 3400);
                 }
               }
             }
