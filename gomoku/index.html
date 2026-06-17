@@ -314,7 +314,7 @@
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div id="app"></div>
 
-    <script src="/lib/multiplayer.js?v=20260605a"></script>
+    <script src="/lib/multiplayer.js?v=20260617b"></script>
     <script src="/lib/multiplayer-ui.js?v=20260605a"></script>
     <script src="/lib/shared-wallet.js?v=20260605a"></script>
     <script>
@@ -402,6 +402,7 @@
         let myColor = null;
         let isMultiplayer = false;
         let mpUI = null;
+        let doClient = null;   // ?relay=do DO/WS 경로의 MultiplayerWSClient (REST mpUI와 배타)
         
         // Settings
         let confirmBeforePlace = localStorage.getItem('gomoku_confirm') === 'true';
@@ -481,7 +482,10 @@
             } else {
                 loadSharedGold();
             }
-            
+
+            // DO/WS 실시간 경로(?relay=do): REST MultiplayerUI 대신 공용 WSClient 직접 사용.
+            if (new URLSearchParams(location.search).get('relay') === 'do') { startGomokuDO(); return; }
+
             mpUI = new MultiplayerUI({
                 gameType: 'gomoku',
                 gameName: '⚫⚪ 오목',
@@ -502,6 +506,53 @@
             } else {
                 mpUI.show();
             }
+        }
+
+        // ===== DO/WS 실시간 경로 (?relay=do) =====
+        // gostop do-v8과 동일 인프라(공용 MultiplayerWSClient + generic RoomDO). gameType=gomoku로 서버가 plugin 선택.
+        function startGomokuDO() {
+            const P = new URLSearchParams(location.search);
+            const WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
+            const room = P.get('room') || 'go-test';
+            let nick = ''; try { nick = localStorage.getItem('gomoku_nick') || ''; } catch (e) {}
+            // 같은 브라우저 2탭 테스트용: URL u= 로 uid 분리 가능(없으면 localStorage 영속 uid).
+            const uid = P.get('u') || undefined;
+
+            const ws = new MultiplayerWSClient({ workerBase: WORKER, room, userId: uid, nickname: nick, gameType: 'gomoku' });
+            doClient = ws;
+            let entered = false;
+
+            const lob = document.createElement('div');
+            lob.id = 'do-lobby';
+            lob.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#1a1a2e;color:#fff;z-index:9999;text-align:center;font-family:sans-serif';
+            lob.innerHTML = '<div style="padding:24px;max-width:340px">'
+                + '<h2 style="margin:0 0 4px">⚫⚪ 오목 · DO 실시간</h2>'
+                + '<p style="font-size:11px;color:#7CFC9A;margin:0 0 10px">build do-v1 · 공용 WSClient · gameType=gomoku</p>'
+                + '<p>방코드 <b>' + room + '</b> · 나 ' + (nick || uid || '익명') + '</p>'
+                + '<p id="do-conns" style="font-size:13px;opacity:.75;margin:6px 0">접속자: 1</p>'
+                + '<p id="do-status" style="font-size:13px;color:#ffd76a;margin:6px 0">연결 중…</p>'
+                + '<p style="font-size:12px;opacity:.6;margin:8px 0">상대도 같은 URL(접속자:2)이면 시작</p>'
+                + '<button id="do-start" style="padding:12px 30px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700">시작</button></div>';
+            document.body.appendChild(lob);
+            const setS = (t) => { const e = document.getElementById('do-status'); if (e) e.textContent = t; };
+            const connBanner = (msg) => { /* 진행 중 끊김 표시: 상단 토스트 재사용 */ if (msg) showToast(msg); };
+
+            ws.onOpen = () => setS('연결됨 ✓');
+            ws.onPresence = (n) => { const e = document.getElementById('do-conns'); if (e) e.textContent = '접속자: ' + n; };
+            ws.onPreStartFail = (k) => setS(k === 'error' ? '⚠️ 연결 오류 — 새로고침' : '연결 끊김 — 새로고침');
+            ws.onReconnecting = (t) => connBanner('🔌 연결 끊김 — 재접속 중… (' + t + ')');
+            ws.onReconnected = () => { if (entered) showToast('재접속됨 ✓'); };
+            ws.onStateChange = (view) => {
+                if (!entered) {
+                    entered = true;
+                    isMultiplayer = true;
+                    myColor = view.myColor;
+                    const l = document.getElementById('do-lobby'); if (l) l.remove();
+                }
+                updateFromState({ gameState: view });
+            };
+            const sb = document.getElementById('do-start');
+            if (sb) sb.onclick = () => { ws.start({}); setS('시작 요청 보냄 → 서버 응답 대기…'); };
         }
 
         // ===== Game Start Handler =====
@@ -657,6 +708,12 @@
         }
 
         async function sendMove(row, col) {
+            // DO 경로: 서버 권위 → 낙관적 배치 없이 액션만 전송, state echo로 렌더.
+            if (doClient) {
+                try { await doClient.sendAction({ type: 'place', payload: { row, col } }); }
+                catch (e) { showToast('실패: ' + e.message); }
+                return;
+            }
             try {
                 await mpUI.sendAction({ type: 'place', payload: { row, col } });
                 placeStone(row, col, myColor);
@@ -784,7 +841,7 @@
         function renderGame(gs = {}) {
             const blackName = gs.players?.find(p => p.color === 'black')?.nickname || 'P1';
             const whiteName = gs.players?.find(p => p.color === 'white')?.nickname || 'P2';
-            const myId = mpUI?.getClient()?.getMyUserId();
+            const myId = mpUI?.getClient()?.getMyUserId() || doClient?.getMyUserId();
             
             document.getElementById('app').innerHTML = `
                 <div class="game-screen">
