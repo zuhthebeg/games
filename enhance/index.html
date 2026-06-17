@@ -5446,9 +5446,17 @@
             const sb = document.getElementById('do-start');
             if (sb) sb.onclick = () => { ws.start({}); setS('시작 요청 보냄 → 대전 시작 대기…'); };
         }
-        window.addEventListener('load', () => {
-            if (new URLSearchParams(location.search).get('relay') === 'do') { try { startEnhanceDO(); } catch (e) { console.error('startEnhanceDO', e); } }
-        });
+        // ?relay=do 진입 — enhance 부팅(showMain 라우팅)이 끝난 뒤 로비를 띄운다.
+        // load 시점에 바로 호출하면 부팅 라우팅과 순서가 엉켜 메인 화면에 묻혔다 → 부팅 후로 지연 + 1회 가드.
+        let _enhanceDORouted = false;
+        function _enhanceDORoute() {
+            if (_enhanceDORouted) return;
+            if (new URLSearchParams(location.search).get('relay') !== 'do') return;
+            _enhanceDORouted = true;
+            try { startEnhanceDO(); } catch (e) { console.error('startEnhanceDO', e); }
+        }
+        window.addEventListener('load', () => setTimeout(_enhanceDORoute, 400));
+        if (document.readyState === 'complete') setTimeout(_enhanceDORoute, 400);
 
         function showBattleLobby() {
             _battleBg = pickFantasyBg(); // 배틀 배경 랜덤 선택
