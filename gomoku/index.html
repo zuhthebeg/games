@@ -314,7 +314,7 @@
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div id="app"></div>
 
-    <script src="/lib/multiplayer.js?v=20260618match"></script>
+    <script src="/lib/multiplayer.js?v=20260618leave"></script>
     <script src="/lib/multiplayer-ui.js?v=20260605a"></script>
     <script src="/lib/shared-wallet.js?v=20260605a"></script>
     <script>
@@ -647,6 +647,10 @@
                 }
                 updateFromState({ gameState: view });
             };
+            ws.onEvent = (ev) => {
+                // 상대가 의도적으로 나감(튕김 아님) → 진행 중이면 게임 종료 처리
+                if (ev && ev.type === 'opponent_left') handleOpponentLeft();
+            };
             const sb = document.getElementById('do-start');
             if (sb) sb.onclick = () => { ws.start({}); setS('시작 요청 보냄 → 서버 응답 대기…'); };
         }
@@ -943,6 +947,17 @@
             }
         }
 
+        // 상대가 '나가기'로 이탈 → 게임 종료 처리. 이미 끝난 판이면 무시(중복 방지).
+        // 부전승 골드는 주지 않는다(quit 파밍 방지) — 종료/안내만.
+        function handleOpponentLeft() {
+            if (!doClient || gameOver) return;
+            gameOver = true;
+            clearTimer();
+            doResultInfo = { title: '🚪 상대가 나갔습니다', detail: '게임이 종료되었습니다' };
+            doRoster = { myReady: false, oppReady: false, oppPresent: false };
+            renderDOResult(); // oppPresent=false → '새 상대를 찾으세요' + 나가기만 노출
+        }
+
         // DO/WS 경로 전용 결과창 (mpUI 없음).
         // 재대결은 합의 방식: 내가 '다시 한 판' → setReady(true) → 상대에게 제안 표시 →
         // 상대가 '수락' → 둘 다 ready → 호스트가 start → 서버가 새 판 딜 + ready 초기화.
@@ -994,7 +1009,7 @@
                 catch (e) {}
             };
             document.getElementById('dor-exit').onclick = () => {
-                try { doClient && doClient.leaveRoom(); } catch (e) {}
+                try { doClient && doClient.leave(); } catch (e) {}
                 location.href = location.pathname + '?relay=do';
             };
         }
@@ -1127,7 +1142,7 @@
             // DO/WS 경로: mpUI 없음 → 방 떠나 매칭화면으로
             if (doClient) {
                 if (confirm('게임을 나가시겠습니까?')) {
-                    try { doClient.leaveRoom(); } catch (e) {}
+                    try { doClient.leave(); } catch (e) {}
                     location.href = location.pathname + '?relay=do';
                 }
                 return;
