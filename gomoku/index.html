@@ -403,6 +403,8 @@
         let isMultiplayer = false;
         let mpUI = null;
         let doClient = null;   // ?relay=do DO/WS 경로의 MultiplayerWSClient (REST mpUI와 배타)
+        let doResultInfo = null;  // DO 결과창 정보 {title, detail} — null이면 결과창 닫힘
+        let doRoster = null;      // 재대결 합의 상태 {myReady, oppReady, oppPresent}
         
         // Settings
         let confirmBeforePlace = localStorage.getItem('gomoku_confirm') === 'true';
@@ -608,7 +610,23 @@
             const connBanner = (msg) => { /* 진행 중 끊김 표시: 상단 토스트 재사용 */ if (msg) showToast(msg); };
 
             ws.onOpen = () => setS('연결됨 ✓');
-            ws.onPresence = (n) => { const e = document.getElementById('do-conns'); if (e) e.textContent = '접속자: ' + n; };
+            ws.onPresence = (n) => {
+                const e = document.getElementById('do-conns'); if (e) e.textContent = '접속자: ' + n;
+                // 결과창이 떠 있는데 상대가 빠지면 재대결 불가 표시
+                if (doResultInfo && n < 2) { doRoster = { myReady: doRoster?.myReady || false, oppReady: false, oppPresent: false }; renderDOResult(); }
+            };
+            ws.onRoster = (d) => {
+                if (!doResultInfo) return; // 결과창(재대결 합의 단계)에서만 처리
+                const myId = ws.getMyUserId();
+                const me = (d.players || []).find(p => p.user === myId);
+                const opp = (d.players || []).find(p => p.user !== myId);
+                doRoster = { myReady: !!me?.ready, oppReady: !!opp?.ready, oppPresent: !!opp };
+                renderDOResult();
+                // 둘 다 수락 + 내가 호스트면 새 판 시작(서버가 ready 초기화하고 started 브로드캐스트)
+                if (doRoster.myReady && doRoster.oppReady && d.hostUser === myId) {
+                    ws.start({});
+                }
+            };
             ws.onPreStartFail = (k) => setS(k === 'error' ? '⚠️ 연결 오류 — 새로고침' : '연결 끊김 — 새로고침');
             ws.onReconnecting = (t) => connBanner('🔌 연결 끊김 — 재접속 중… (' + t + ')');
             ws.onReconnected = () => { if (entered) showToast('재접속됨 ✓'); };
@@ -796,7 +814,14 @@
 
         function updateFromState(state) {
             const gs = state.gameState;
-            
+
+            // 재대결 합의 후 새 판이 시작되면(승자 없음) 결과창 정리
+            if (doResultInfo && !gs.winner) {
+                const ov = document.getElementById('do-result'); if (ov) ov.remove();
+                doResultInfo = null;
+                doRoster = null;
+            }
+
             board = gs.board.map(row => row.map(cell => {
                 if (!cell) return null;
                 const p = gs.players.find(pl => pl.id === cell);
@@ -900,23 +925,55 @@
             }
         }
 
-        // DO/WS 경로 전용 결과창 (mpUI 없음). 재대결=서버 start(끝난 판 리셋), 나가기=방 떠나 매칭화면.
+        // DO/WS 경로 전용 결과창 (mpUI 없음).
+        // 재대결은 합의 방식: 내가 '다시 한 판' → setReady(true) → 상대에게 제안 표시 →
+        // 상대가 '수락' → 둘 다 ready → 호스트가 start → 서버가 새 판 딜 + ready 초기화.
         function showDOResult(title, detail) {
+            doResultInfo = { title, detail };
+            doRoster = { myReady: false, oppReady: false, oppPresent: true };
+            renderDOResult();
+        }
+
+        function renderDOResult() {
+            if (!doResultInfo) return;
             const old = document.getElementById('do-result'); if (old) old.remove();
+            const r = doRoster || { myReady: false, oppReady: false, oppPresent: true };
+
+            let note = '', mainBtn = '';
+            if (!r.oppPresent) {
+                note = '<p style="margin:0 0 14px;font-size:14px;color:#ffb4b4">상대가 나갔습니다 — 새 상대를 찾으세요</p>';
+            } else if (r.myReady && r.oppReady) {
+                note = '<p style="margin:0 0 14px;font-size:14px;color:#7CFC9A">🎮 새 게임 시작 중…</p>';
+            } else if (r.myReady) {
+                note = '<p style="margin:0 0 14px;font-size:14px;color:#ffd76a">⏳ 상대의 수락을 기다리는 중…</p>';
+                mainBtn = '<button id="dor-cancel" style="display:block;width:100%;padding:13px;margin:0 0 8px;font-size:15px;background:#3a4a8c;border:0;border-radius:10px;color:#fff">재대결 취소</button>';
+            } else if (r.oppReady) {
+                note = '<p style="margin:0 0 14px;font-size:14px;color:#7CFC9A">💬 상대가 재대결을 제안했습니다!</p>';
+                mainBtn = '<button id="dor-again" style="display:block;width:100%;padding:13px;margin:0 0 8px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700">✅ 수락하고 시작</button>';
+            } else {
+                mainBtn = '<button id="dor-again" style="display:block;width:100%;padding:13px;margin:0 0 8px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700">🔄 다시 한 판</button>';
+            }
+
             const ov = document.createElement('div');
             ov.id = 'do-result';
             ov.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,10,25,.85);z-index:10000;font-family:sans-serif';
             ov.innerHTML = '<div style="background:#1a2244;padding:28px 24px;border-radius:16px;text-align:center;max-width:320px;width:86%;color:#fff;box-shadow:0 12px 40px rgba(0,0,0,.5)">'
-                + '<h2 style="margin:0 0 8px;font-size:26px">' + title + '</h2>'
-                + '<p style="margin:0 0 18px;font-size:15px;opacity:.9">' + detail + '</p>'
-                + '<button id="dor-again" style="display:block;width:100%;padding:13px;margin:0 0 8px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700">🔄 다시 한 판</button>'
+                + '<h2 style="margin:0 0 8px;font-size:26px">' + doResultInfo.title + '</h2>'
+                + '<p style="margin:0 0 14px;font-size:15px;opacity:.9">' + doResultInfo.detail + '</p>'
+                + note + mainBtn
                 + '<button id="dor-exit" style="display:block;width:100%;padding:12px;font-size:15px;background:#2d3a66;border:0;border-radius:10px;color:#fff">나가기</button>'
                 + '</div>';
             document.body.appendChild(ov);
-            document.getElementById('dor-again').onclick = () => {
-                ov.remove();
-                try { doClient.start({}); showToast('재대결 요청 — 상대 대기 중…'); }
-                catch (e) { showToast('재대결 실패: ' + e.message); }
+
+            const again = document.getElementById('dor-again');
+            if (again) again.onclick = () => {
+                try { doClient.setReady(true); doRoster.myReady = true; renderDOResult(); }
+                catch (e) { showToast('재대결 요청 실패: ' + e.message); }
+            };
+            const cancel = document.getElementById('dor-cancel');
+            if (cancel) cancel.onclick = () => {
+                try { doClient.setReady(false); doRoster.myReady = false; renderDOResult(); }
+                catch (e) {}
             };
             document.getElementById('dor-exit').onclick = () => {
                 try { doClient && doClient.leaveRoom(); } catch (e) {}
