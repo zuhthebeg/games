@@ -860,13 +860,21 @@
                 sharedGold = Math.max(0, sharedGold + goldChange);
                 saveSharedGold();
                 
-                goldText = goldChange > 0 
-                    ? `<span style="color:#4ecca3">+${goldChange}G</span>` 
-                    : `<span style="color:#ff6b6b">${goldChange}G</span>`;
-                
+                goldText = goldChange > 0
+                    ? `<span style="color:#4ecca3">+${goldChange.toLocaleString()}G</span>`
+                    : `<span style="color:#ff6b6b">${goldChange.toLocaleString()}G</span>`;
+
+                const title = isWin ? '🎉 승리!' : '😢 패배';
+                const detail = `${(winner === 'black' ? '흑' : '백')} 승리 ${goldText}`;
+
+                // DO/WS 경로: mpUI가 없음 → 자체 결과창 사용
+                if (doClient) {
+                    showDOResult(title, detail);
+                    return;
+                }
                 mpUI.showResult({
-                    title: isWin ? '🎉 승리!' : '😢 패배',
-                    detail: `${(winner === 'black' ? '흑' : '백')} 승리 ${goldText}`,
+                    title,
+                    detail,
                     isWin: isWin,
                     actions: [
                         { label: '🔄 다시 한 판', primary: true, handler: async () => {
@@ -890,6 +898,30 @@
                     showRematch: false
                 });
             }
+        }
+
+        // DO/WS 경로 전용 결과창 (mpUI 없음). 재대결=서버 start(끝난 판 리셋), 나가기=방 떠나 매칭화면.
+        function showDOResult(title, detail) {
+            const old = document.getElementById('do-result'); if (old) old.remove();
+            const ov = document.createElement('div');
+            ov.id = 'do-result';
+            ov.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,10,25,.85);z-index:10000;font-family:sans-serif';
+            ov.innerHTML = '<div style="background:#1a2244;padding:28px 24px;border-radius:16px;text-align:center;max-width:320px;width:86%;color:#fff;box-shadow:0 12px 40px rgba(0,0,0,.5)">'
+                + '<h2 style="margin:0 0 8px;font-size:26px">' + title + '</h2>'
+                + '<p style="margin:0 0 18px;font-size:15px;opacity:.9">' + detail + '</p>'
+                + '<button id="dor-again" style="display:block;width:100%;padding:13px;margin:0 0 8px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700">🔄 다시 한 판</button>'
+                + '<button id="dor-exit" style="display:block;width:100%;padding:12px;font-size:15px;background:#2d3a66;border:0;border-radius:10px;color:#fff">나가기</button>'
+                + '</div>';
+            document.body.appendChild(ov);
+            document.getElementById('dor-again').onclick = () => {
+                ov.remove();
+                try { doClient.start({}); showToast('재대결 요청 — 상대 대기 중…'); }
+                catch (e) { showToast('재대결 실패: ' + e.message); }
+            };
+            document.getElementById('dor-exit').onclick = () => {
+                try { doClient && doClient.leaveRoom(); } catch (e) {}
+                location.href = location.pathname + '?relay=do';
+            };
         }
 
         // ===== Event Handler =====
@@ -1017,15 +1049,25 @@
 
         function exitGame() {
             clearTimer();
-            if (isMultiplayer && mpUI.getClient()) {
+            // DO/WS 경로: mpUI 없음 → 방 떠나 매칭화면으로
+            if (doClient) {
+                if (confirm('게임을 나가시겠습니까?')) {
+                    try { doClient.leaveRoom(); } catch (e) {}
+                    location.href = location.pathname + '?relay=do';
+                }
+                return;
+            }
+            if (isMultiplayer && mpUI && mpUI.getClient()) {
                 if (confirm('게임을 나가시겠습니까?')) {
                     mpUI.getClient().leaveRoom().catch(() => {});
                     MultiplayerClient.resetInstance();
                     isMultiplayer = false;
                     mpUI.show();
                 }
-            } else {
+            } else if (mpUI) {
                 mpUI.show();
+            } else {
+                location.href = location.pathname + '?relay=do';
             }
         }
 
