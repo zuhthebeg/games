@@ -517,18 +517,61 @@
             // 같은 브라우저 2탭 테스트용: URL u= 로 uid 분리 가능(없으면 localStorage 영속 uid).
             const uid = P.get('u') || undefined;
 
-            // 방 결정(코디네이터 매칭 배선): ?room= 있으면 그 방(공유링크/2탭 테스트).
-            // 없으면 빠른매칭(/match) → 열린 방 있으면 합류, 없으면 새 방 생성. 새로고침·공유 위해 URL 반영.
+            // ?room= 있으면(공유링크/2탭 테스트) 바로 그 방에 연결. 없으면 사전선택 화면.
             const explicit = P.get('room');
-            let room, created = false;
             if (explicit && explicit.trim()) {
-                room = explicit.trim().toUpperCase();
+                connectGomokuDO(explicit.trim().toUpperCase(), false, WORKER, uid, nick);
             } else {
-                const r = await MultiplayerWSClient.resolveEntryRoom('gomoku', null, WORKER);
-                room = r.room; created = r.created;
-                try { const u = new URL(location.href); u.searchParams.set('room', room); history.replaceState(null, '', u); } catch (e) {}
+                gomokuDOChooser(WORKER, uid, nick);
             }
+        }
 
+        // ===== 사전선택 화면 (코디네이터 매칭 UI): 빠른대전 / 공개방 목록 / 새 방 / 코드입장 =====
+        function gomokuDOChooser(WORKER, uid, nick) {
+            const pick = (room, created) => {
+                try { const u = new URL(location.href); u.searchParams.set('room', room); history.replaceState(null, '', u); } catch (e) {}
+                const c = document.getElementById('do-chooser'); if (c) c.remove();
+                connectGomokuDO(room, created, WORKER, uid, nick);
+            };
+            const ch = document.createElement('div');
+            ch.id = 'do-chooser';
+            ch.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#1a1a2e;color:#fff;z-index:9999;text-align:center;font-family:sans-serif';
+            ch.innerHTML = '<div style="padding:24px;max-width:360px;width:90%">'
+                + '<h2 style="margin:0 0 4px">⚫⚪ 오목 · 온라인 대전</h2>'
+                + '<p style="font-size:11px;color:#7CFC9A;margin:0 0 14px">DO 실시간 · 빠른매칭</p>'
+                + '<button id="ch-quick" style="display:block;width:100%;padding:14px;margin:0 0 8px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700">⚡ 빠른 대전</button>'
+                + '<button id="ch-new" style="display:block;width:100%;padding:12px;margin:0 0 8px;font-size:15px;background:#2d3a66;border:0;border-radius:10px;color:#fff">+ 새 방 만들기</button>'
+                + '<div style="display:flex;gap:6px;margin:0 0 12px"><input id="ch-code" placeholder="방 코드" maxlength="8" style="flex:1;min-width:0;padding:11px;border-radius:10px;border:1px solid #444;background:#0f1530;color:#fff;text-transform:uppercase"><button id="ch-join" style="padding:11px 16px;font-size:14px;background:#3a4a8c;border:0;border-radius:10px;color:#fff">입장</button></div>'
+                + '<div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 6px"><span style="font-size:13px;opacity:.8">📋 공개방</span><button id="ch-refresh" style="font-size:12px;background:none;border:1px solid #444;border-radius:8px;color:#9fb3ff;padding:4px 10px;cursor:pointer">새로고침</button></div>'
+                + '<div id="ch-rooms" style="max-height:180px;overflow:auto;text-align:left;font-size:13px"><p style="opacity:.6;text-align:center">불러오는 중…</p></div>'
+                + '</div>';
+            document.body.appendChild(ch);
+
+            async function loadRooms() {
+                const box = document.getElementById('ch-rooms');
+                if (box) box.innerHTML = '<p style="opacity:.6;text-align:center">불러오는 중…</p>';
+                const rooms = await MultiplayerWSClient.listRooms('gomoku', WORKER);
+                if (!box) return;
+                if (!rooms.length) { box.innerHTML = '<p style="opacity:.5;text-align:center">열린 방이 없습니다 — 빠른 대전이나 새 방을 만드세요</p>'; return; }
+                box.innerHTML = rooms.map(r =>
+                    '<div class="ch-room" data-room="' + r.roomId + '" style="display:flex;justify-content:space-between;align-items:center;padding:10px;margin:0 0 6px;background:#0f1530;border-radius:8px;cursor:pointer"><b>' + r.roomId + '</b><span style="opacity:.7">' + r.players + '/' + r.max + '명</span></div>'
+                ).join('');
+                box.querySelectorAll('.ch-room').forEach(el => el.onclick = () => pick(el.getAttribute('data-room'), false));
+            }
+            document.getElementById('ch-quick').onclick = async () => {
+                const r = await MultiplayerWSClient.resolveEntryRoom('gomoku', null, WORKER);
+                pick(r.room, r.created);
+            };
+            document.getElementById('ch-new').onclick = () => pick(MultiplayerWSClient.genRoomCode(), true);
+            document.getElementById('ch-join').onclick = () => {
+                const v = (document.getElementById('ch-code').value || '').trim().toUpperCase();
+                if (v) pick(v, false);
+            };
+            document.getElementById('ch-refresh').onclick = loadRooms;
+            loadRooms();
+        }
+
+        function connectGomokuDO(room, created, WORKER, uid, nick) {
             const ws = new MultiplayerWSClient({ workerBase: WORKER, room, userId: uid, nickname: nick, gameType: 'gomoku' });
             doClient = ws;
             let entered = false;
