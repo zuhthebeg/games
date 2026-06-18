@@ -5872,14 +5872,14 @@
       if (type === "TRADE_PROPOSE") {
         if (mpState.replaying) return true;
         const myIdx = localPlayerIndex();
-        if (pIdx === myIdx) return true; // own proposal, skip
         const proposer = state.players[pIdx];
         if (!proposer) return true;
         const offer = action.offer || {};
         const want = action.want || {};
         const offerStr = action.offerStr || "";
         const wantStr = action.wantStr || "";
-        // Host: auto-respond on behalf of AI players who are targeted
+        // Host: auto-respond on behalf of AI players. ANY proposer 포함(호스트 자기 제안=혼자멀티) —
+        // AI 수신자 필터(x.i2 !== pIdx)가 제안자를 제외하므로 AI만 응답. 자기 제안이라도 여기서 AI 응답이 나간다.
         if (mpState.isHost && mpState.client && !mpState.replaying) {
           const proposalId = action.actionId;
           const aiRecipients = state.players
@@ -5904,6 +5904,7 @@
             }, aiDelay);
           }
         }
+        if (pIdx === myIdx) return true; // 자기 제안: AI 응답은 위에서 처리됨, 나한테 다이얼로그는 안 띄움
         const me = state.players[myIdx];
         let canAccept = canPlayersExecuteTrade(proposer, me, offer, want);
         const myResStr = RESOURCES.map(r => `${RESOURCE_ICONS[r]}${me.resources[r]}`).join(" ");
