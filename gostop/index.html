@@ -400,8 +400,9 @@ window.addEventListener('DOMContentLoaded', function(){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',setup); else setup();
 })();
 </script>
-<script src="/lib/multiplayer.js?v=20260617b"></script>
+<script src="/lib/multiplayer.js?v=20260618leave"></script>
 <script src="/lib/multiplayer-ui.js?v=20260508a"></script>
+<script src="/lib/mp-lobby.js?v=20260618D"></script>
 <script>
 const $=id=>document.getElementById(id);
 function openRanking(){ try{ if(typeof GameRankings!=='undefined') GameRankings.showModal('gostop'); else alert('랭킹 로딩 중'); }catch(e){ alert('랭킹을 열 수 없습니다'); } }
@@ -1216,9 +1217,16 @@ function mpResult(v){
   $('r-detail').innerHTML=mpEsc(v.endReason||'');
   $('r-pt').innerHTML='<span style="color:'+(my>=0?'var(--green)':'var(--red)')+'">'+(my>=0?'+':'')+my.toLocaleString()+'G</span>';
   const leaveToMenu=()=>{ hide('result'); if(MP._poll)clearInterval(MP._poll); MP.active=false; MP._eventDriven=false; try{MP.client&&MP.client.leaveRoom&&MP.client.leaveRoom();}catch(e){} quitMenu(); };
-  // #result 버튼: [다시(싱글 nextRound)] + [메뉴로]. 멀티에선 '다시'(싱글 딜)가 오작동 → 숨김(재대국은 방 리셋 필요, TODO). 메뉴로만 노출.
+  // #result 버튼: [다시] + [메뉴로]. 모듈(로비) 경로면 '다시'=대기실 합의 재대결(모델A), 아니면 숨김(레거시 REST).
   const rbtns=document.querySelectorAll('#result .close');
-  if(rbtns[0]) rbtns[0].style.display='none';
+  if(rbtns[0]){
+    if(MP._usingLobby && MP.ui && MP.ui.goToWaitingRoom){
+      rbtns[0].style.display=''; rbtns[0].textContent='🔄 다시';
+      rbtns[0].onclick=function(){ hide('result'); MP._resultShown=false; MP.ui.goToWaitingRoom(); };
+    } else {
+      rbtns[0].style.display='none';
+    }
+  }
   const rmenu=document.getElementById('r-menu')||rbtns[rbtns.length-1];
   if(rmenu){ rmenu.style.display=''; rmenu.textContent='메뉴로'; rmenu.onclick=leaveToMenu; }
   sound(meWin?'win':'lose'); show('result');
@@ -1238,57 +1246,37 @@ function mpResult(v){
   if(!user){ user = 'u-' + Math.random().toString(36).slice(2,8); try{ localStorage.setItem('gostop_uid', user); }catch(e){} }
   var nick = ''; try{ nick = (typeof myNick==='function' ? myNick() : '') || ''; }catch(e){}
 
+  // 공용 MultiplayerLobby로 이관(Phase 2). 인라인 WS/로비 제거. 렌더/턴/사운드/결과정산은 그대로 유지.
+  // 매칭·대기실·재대결(모델A 합의)·상대나감은 모듈+서버 담당. DO PoC은 2인 범위 유지(seats:2).
   function startWS(){
-    // 트랜스포트는 공용 lib(MultiplayerWSClient)로 승격. 인라인 WS 플러밍 제거.
-    // 게임은 콜백만 배선하고 렌더/턴/사운드 로직은 그대로 유지(공개 표면 동일).
-    var started = false;
-    function setStatus(t){ var el=document.getElementById('doStatus'); if(el) el.textContent=t; }
-    function showConn(msg){ var el=document.getElementById('mpConn'); if(!el)return; if(msg){ el.textContent=msg; el.style.display='block'; } else { el.style.display='none'; } }
-
-    if (typeof MultiplayerWSClient !== 'function'){ setStatus('⚠️ 멀티 라이브러리 로드 실패 — 새로고침'); return; }
-    var client = new MultiplayerWSClient({ workerBase: WORKER, room: room, userId: user, nickname: nick, gameType: 'gostop' });
-    window.MP = window.MP || {};
-    MP.client = client;
-
-    function ensureStarted(){
-      if (started) return; started = true;
-      MP.active = true; MP.myUserId = user; MP._sel = -1; MP._resultShown = false;
-      MP._prevTable = null; MP._prevCap = null; MP._prevGo = undefined;
-      MP._eventDriven = true; MP._voiced = [{},{},{},{}];   // DO 멀티: 사운드/voice는 서버 event로 구동
-      var lb = document.getElementById('mpLobby'); if (lb){ lb.style.display='none'; lb.innerHTML=''; }
-      var bd = document.getElementById('board'); if (bd) bd.style.display='flex';
-      var opp = document.getElementById('mpOpps'); if (opp) opp.style.display='flex';
-      var sp = document.getElementById('spOpp'); if (sp) sp.style.display='none';   // 싱글 'CPU' 상대 박스 숨김
-    }
-
-    client.onOpen = function(){ setStatus('연결됨 ✓'); };
-    client.onStateChange = function(view){ ensureStarted(); showConn(null); applyServerView(view); };
-    client.onEvent = function(ev){ try{ mpOnEvent(ev); }catch(_){} };
-    client.onReconnecting = function(tries){ showConn('🔌 연결 끊김 — 재접속 중… ('+tries+')'); };
-    client.onReconnected = function(){ if(started) showConn(null); };
-    client.onPresence = function(n){ var el=document.getElementById('doConns'); if (el) el.textContent='접속자: '+n; };
-    client.onPreStartFail = function(kind, code){ setStatus(kind==='error' ? '⚠️ WS 연결 오류 — 네트워크/주소 확인' : '연결 끊김 (code '+code+') — 새로고침'); };
-
-    function doStart(){
-      var open = client._ws && client._ws.readyState === 1;
-      client.start({ seats:2, bet:(window.BET||1) });
-      setStatus(open ? '시작 요청 보냄 → 서버 응답 대기…' : '연결 대기 중… 열리면 자동 시작');
-      setTimeout(function(){ if(!started) setStatus('⚠️ 10초간 서버 응답 없음 (서버측 의심)'); }, 10000);
-    }
-    MP.client._start = doStart;
-
+    if (typeof MultiplayerLobby !== 'function'){ toast('멀티 라이브러리 로드 실패 — 새로고침'); return; }
     var menu = document.getElementById('menu'); if (menu) menu.style.display='none';
-    var lob = document.getElementById('mpLobby') || document.body;
-    lob.style.display = 'block';
-    lob.innerHTML = '<div style="padding:28px;text-align:center;color:#fff">'
-      + '<h3 style="margin-bottom:8px">🦞 DO 실시간 테스트</h3>'
-      + '<p style="font-size:11px;color:#7CFC9A;margin:-4px 0 8px">build '+DO_BUILD+' · 안착늦춤·턴배너크게·재접속·좀비방리셋</p>'
-      + '<p>방코드 <b>'+room+'</b> · 나 '+(nick||user)+'</p>'
-      + '<p id="doConns" style="font-size:12px;opacity:.75">접속자: 1</p>'
-      + '<p id="doStatus" style="font-size:13px;color:#ffd76a;margin:8px 0">연결 중…</p>'
-      + '<p style="font-size:12px;opacity:.6;margin:10px 0">상대도 같은 URL 들어오면(접속자:2) 시작</p>'
-      + '<button id="doStart" class="big-btn" style="background:var(--green,#23c552);color:#0a1a12">시작 (딜)</button></div>';
-    var sb = document.getElementById('doStart'); if (sb) sb.onclick = function(){ doStart(); };
+    window.MP = window.MP || {};
+    MP.ui = new MultiplayerLobby({
+      gameType:'gostop', gameName:'맞고·고스톱', maxPlayers:2, minPlayers:2,
+      container: document.body, userId: user, nickname: nick,
+      startConfig: function(){ return { seats:2, bet:(window.BET||1) }; },
+      onGameStart: function(rs){ doGameStart(rs); },
+      onGameEvent: function(type, data){
+        if (type === 'state_update') applyServerView(data.gameState);
+        else if (type === 'event') { try{ mpOnEvent(data); }catch(_){} }
+        // 'game_end'는 applyServerView(finished)가 mpResult로 처리 → 별도 불필요
+      },
+      onLeave: function(){ quitMenu(); }
+    });
+    MP.client = MP.ui;       // gostop은 MP.client.sendAction/leaveRoom/getMyUserId 사용 → 로비가 제공
+    MP._usingLobby = true;
+  }
+
+  // DO/모듈 경로 게임 시작(최초/재대결). 이벤트구동 렌더 + 첫 view 적용.
+  function doGameStart(rs){
+    MP.active = true; MP.myUserId = MP.ui.getMyUserId(); MP._sel = -1; MP._resultShown = false;
+    MP._prevTable = null; MP._prevCap = null; MP._prevGo = undefined;
+    MP._eventDriven = true; MP._voiced = [{},{},{},{}];
+    var bd = document.getElementById('board'); if (bd) bd.style.display='flex';
+    var opp = document.getElementById('mpOpps'); if (opp) opp.style.display='flex';
+    var sp = document.getElementById('spOpp'); if (sp) sp.style.display='none';
+    if (rs && rs.gameState) applyServerView(rs.gameState);
   }
 
   window.openMultiplayer = function(){ startWS(); };
