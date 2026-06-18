@@ -1539,6 +1539,7 @@
         unready: "준비 취소",
         fillAI: "+ AI 봇",
         removeAI: "− AI 봇",
+        hostTookOver: "방장이 나가 내가 진행을 이어받았습니다.",
         aiSeatsFull: "빈 자리가 없습니다.",
         aiBotCount: "AI 봇 {n}명 추가됨.",
         aiBotNone: "AI 봇 없음.",
@@ -1850,6 +1851,7 @@
         unready: "Cancel ready",
         fillAI: "+ AI bot",
         removeAI: "− AI bot",
+        hostTookOver: "Host left — you are now running the game.",
         aiSeatsFull: "No empty seats.",
         aiBotCount: "{n} AI bot(s) added.",
         aiBotNone: "No AI bots.",
@@ -8515,6 +8517,7 @@ https://game.cocy.io/pingtan/`;
       mpState.room = room;
       mpState.roomCode = room.id || room.roomId || mpState.roomCode;
       const me = room.players?.find(p => p.id === mpState.myUserId);
+      const wasHost = mpState.isHost;
       mpState.isHost = !!me?.isHost;
       mpState.ready = !!me?.isReady;
       const roomMapId = roomMapIdFromState(room, mpState.isHost);
@@ -8537,6 +8540,14 @@ https://game.cocy.io/pingtan/`;
         state.screen = "game";
         state.mode = "multi";
         state.hint = pt("initWaiting");
+      }
+      // 호스트 승계: 진행 중 방장이 이탈하면 서버가 roster에서 다음 유저를 hostUser로 올린다.
+      // host-authoritative라 새 호스트가 AI 좌석 구동을 넘겨받아야 게임이 안 멈춘다.
+      // (떠난 호스트 좌석은 roster diff player_left가 AI로 바꾸고 그쪽에서도 구동을 킥하지만,
+      //  여기서 isHost 0→1 전이에 직접 한 번 더 킥 — belt-and-suspenders.)
+      if (!wasHost && mpState.isHost && state.screen === "game" && !state.winner) {
+        state.hint = pt("hostTookOver");
+        triggerAITurnIfNeeded();
       }
       autoStartIfReady();
       render();
