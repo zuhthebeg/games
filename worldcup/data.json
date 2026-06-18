@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-12T04:51:00Z",
+  "updated": "2026-06-18T19:05:00Z",
   "group": "A",
   "standings": [
     {
@@ -26,22 +26,22 @@
     {
       "team": "체코",
       "flag": "🇨🇿",
-      "mp": 1,
+      "mp": 2,
       "w": 0,
-      "d": 0,
+      "d": 1,
       "l": 1,
       "gd": -1,
-      "pts": 0
+      "pts": 1
     },
     {
       "team": "남아공",
       "flag": "🇿🇦",
-      "mp": 1,
+      "mp": 2,
       "w": 0,
-      "d": 0,
+      "d": 1,
       "l": 1,
       "gd": -2,
-      "pts": 0
+      "pts": 1
     }
   ],
   "matches": [
@@ -65,7 +65,7 @@
     }
   ],
   "summary": {
-    "ko": "한국 2:1 체코 — 역전승으로 첫 승\n멕시코 2:0 남아공",
-    "en": "Korea Republic 2:1 Czechia — comeback win in Group A opener\nMexico 2:0 South Africa"
+    "ko": "한국 2:1 체코 — 역전승으로 첫 승\n멕시코 2:0 남아공\n체코 1:1 남아공 — 6월 18일 애틀랜타 무승부",
+    "en": "Korea Republic 2:1 Czechia — comeback win in Group A opener\nMexico 2:0 South Africa\nCzechia 1:1 South Africa — draw in Atlanta on June 18"
   }
 }
