@@ -8354,7 +8354,30 @@ https://game.cocy.io/pingtan/`;
         room = String(room || "").toUpperCase().replace(/[^A-Z0-9_-]/g, "-").slice(0, 64);
         this._room = room; this._startedEmitted = false;
         this._ws = new MultiplayerWSClient({ workerBase: PINGTAN_DO_WORKER, room, userId: this._userId, nickname: this._nick, gameType: "catan" });
-        this._ws.onRoster = (d) => { const r = this._rosterToRoom(d); this._lastRoom = r; if (this.onStateChange) this.onStateChange(r); };
+        this._ws.onRoster = (d) => {
+          const r = this._rosterToRoom(d);
+          const prev = this._lastRoom;
+          this._lastRoom = r;
+          if (this.onStateChange) this.onStateChange(r);
+          // DO 전송은 이탈 시 roster만 재방송하고 per-player leave 이벤트를 안 준다.
+          // 진행 중(game) 게임에서 명단이 줄면 그 자리를 AI로 승계해야 턴이 안 멈춘다.
+          // roster를 직접 diff해서 기존 player_left/player_joined 경로(검증된 AI 승계)를 합성한다.
+          if (prev && this.onEvent && typeof state !== "undefined" && state.screen === "game") {
+            const prevIds = new Set((prev.players || []).map(p => p.userId || p.id));
+            const newIds = new Set((r.players || []).map(p => p.userId || p.id));
+            for (const id of prevIds) {
+              if (id && !newIds.has(id) && id !== this._userId) {
+                this.onEvent({ type: "player_left", userId: id, payload: { aiReplacement: true } });
+              }
+            }
+            for (const np of (r.players || [])) {
+              const id = np.userId || np.id;
+              if (id && !prevIds.has(id) && id !== this._userId) {
+                this.onEvent({ type: "player_joined", userId: id, payload: { nickname: np.nickname || np.name } });
+              }
+            }
+          }
+        };
         this._ws.onStarted = (d) => {
           if (this._startedEmitted) return; this._startedEmitted = true;
           // 'started'는 roster를 재방송 안 함 → room.status를 직접 playing으로 올려야
