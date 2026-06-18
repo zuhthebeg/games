@@ -2050,14 +2050,12 @@
         mpAppliedSettlementKeys.add(key);
         return;
       }
-      // ⚠️ DO/WS PoC(?relay=do)는 서버 bankroll이 실제 SharedWallet 골드와 미연동(기본값)이다.
-      // 이 경로에서 실지갑을 정산하면 골드 프린팅이 되므로 실골드 변경을 건너뛴다(표시는 서버 totalWinnings로 됨).
-      // 실골드 연동(DO 로스터에 per-player gold 전달)이 들어오면 이 가드를 푼다.
-      if (!doClient) {
-        if (myDelta > 0) walletAdd(Math.floor(myDelta));
-        else walletRemove(Math.abs(Math.floor(myDelta)));
-        syncGold();
-      }
+      // DO 멀티 골드 정산: 서버 settled 이벤트의 results[].payout = 순델타(승 +bet/+1.5bet · 패 −bet · 푸시 0).
+      // DO 입장 시 서버 bankroll을 실제 골드로 시드(server configuredGold)하므로 순델타를 실지갑에 반영하면 단판 economics와 동일.
+      // 하우스 게임이라 제로섬은 아니지만 싱글플레이 블랙잭과 동일(서버권위라 딜러 조작 불가). key 가드로 단판 1회만 적용 → 프린팅 불가.
+      if (myDelta > 0) walletAdd(Math.floor(myDelta));
+      else walletRemove(Math.abs(Math.floor(myDelta)));
+      syncGold();
       mpAppliedSettlementKeys.add(key);
     }
 

@@ -1205,6 +1205,12 @@ function mpOfferGoStop(total){
 function mpResult(v){
   if(MP._resultShown)return; MP._resultShown=true;
   const meWin=v.winnerSeat===v.mySeat; const my=(v.scores&&v.scores[MP.myUserId])||0;
+  // DO 멀티 골드 정산: 서버 settle()이 권위적으로 계산한 제로섬 델타(scores[myId])를 내 지갑에 1회 반영.
+  // 서버가 승자 +gain / 패자 각 −pay로 합=0 보장 → 각 클라는 자기 델타만 적용 → 골드 프린팅 불가능.
+  // 나가리(winnerSeat==null)는 my=0이라 무변동. _resultShown 가드로 중복정산 차단(라운드당 1회).
+  if(my!==0 && typeof SharedWallet!=='undefined' && SharedWallet._initialized){
+    try{ my>0 ? SharedWallet.addGold(my) : SharedWallet.removeGold(-my); }catch(e){}
+  }
   if(meWin && my>0 && typeof GameRankings!=='undefined'){ try{ GameRankings.submit('gostop',{score:Math.max(1,Math.round(my/10000))}); }catch(e){} }
   $('r-title').textContent=v.winnerSeat==null?'나가리':(meWin?'🎉 승!':'패배');
   $('r-detail').innerHTML=mpEsc(v.endReason||'');

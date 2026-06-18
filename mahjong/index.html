@@ -1380,8 +1380,9 @@ function mpShowResult(gs){
   detail+=gs.players.map(p=>{const d=(r.deltas&&typeof r.deltas[p.id]==='number')?r.deltas[p.id]:0;const col=d>0?'var(--green)':d<0?'var(--red)':'var(--muted)';const tag=(win&&p.id===win.id)?' 🏆':(r.discarderId&&p.id===r.discarderId?' <span style="color:var(--red)">'+t('dealInTag')+'</span>':'');return (p.nickname||'-')+tag+': <b style="color:'+col+'">'+(d>0?'+':'')+d.toLocaleString()+'G</b>';}).join('<br>');
   document.getElementById('result-detail').innerHTML=detail;
   const nb=document.getElementById('result-next');nb.textContent=t('mpNewHand');nb.onclick=mpRematch;
-  // ⚠️ DO/WS PoC(?relay=do)는 서버 점수가 실 SharedWallet 골드와 미연동(AI 상대·기본 bet) → 실지갑 정산 스킵(골드 프린팅 방지).
-  if(!MP._doMode&&myDelta!==0&&typeof SharedWallet!=='undefined'){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
+  // DO 멀티 골드 정산: 서버가 권위적으로 계산한 제로섬 델타(r.deltas[myId], 승자+/방총자−)를 내 지갑에 1회 반영.
+  // 서버에서 점수 이전이 합=0 보장 → 각 클라가 자기 델타만 적용 → 골드 프린팅 불가능. 단판 1회(_resultShown 가드).
+  if(myDelta!==0&&typeof SharedWallet!=='undefined'){try{if(myDelta>0&&SharedWallet.addGold)SharedWallet.addGold(myDelta);else if(myDelta<0&&SharedWallet.spendGold)SharedWallet.spendGold(-myDelta);}catch(_){}}
   if(win&&win.id===MP.myUserId&&r.tai&&typeof GameRankings!=='undefined')try{GameRankings.submit('mahjong',{score:r.tai});}catch(_){}
   const ov=document.getElementById('result-overlay');if(win){ov.classList.add('win-fanfare');spawnConfetti(true);playSfx('win');playCallFx(r.winType==='tsumo'?'tsumo':'hu');if(r.discarderId&&r.discarderId===MP.myUserId)setTimeout(()=>playCallFx('bangchong'),950);}else{ov.classList.remove('win-fanfare');spawnConfetti(false);}
   ov.classList.add('on');
