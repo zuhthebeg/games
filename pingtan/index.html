@@ -8560,6 +8560,8 @@ https://game.cocy.io/pingtan/`;
         console.log("[onMpEvent] applying:", data.type, data);
         const ok = applyGameAction(data);
         if (!ok && data.__snapshot && recoverFromActionSnapshot(data.__snapshot, data.type)) {
+          // 재접속/동기화 복구: 스냅샷은 게임이 진행 중일 때만 옴 → 로비에 머물러 있으면 게임 화면으로 전환.
+          if (isMultiMode() || state.mode === "multi") { state.mode = "multi"; if (state.screen !== "game") state.screen = "game"; }
           markActionProcessed(data.actionId);
           render();
           triggerAITurnIfNeeded();
@@ -8570,7 +8572,15 @@ https://game.cocy.io/pingtan/`;
           markActionProcessed(data.actionId);
           render();
           if (data.type === ACTION.ROLL_DICE) {
-            const sum = (Number(data.values?.[0]) || 0) + (Number(data.values?.[1]) || 0);
+            const d1 = Number(data.values?.[0]) || 0, d2 = Number(data.values?.[1]) || 0, sum = d1 + d2;
+            // 관전자(=굴린 사람이 내가 아님)에게도 주사위 결과를 크게 보여준다. 안 그러면 상대가 뭘 던졌는지 안 보임.
+            const rollerIdx = playerIndexFromAnyId(data.playerId || event.userId);
+            if (rollerIdx !== localPlayerIndex() && d1 && d2) {
+              const rn = state.players[rollerIdx]?.name || "상대";
+              const el = document.getElementById("diceDisplay");
+              if (el) animateDiceRoll(el, d1, d2, sum);
+              showBigOverlay(`${DICE_FACES[d1]} ${DICE_FACES[d2]}`, `${rn}: ${d1}+${d2}=${sum}${sum === 7 ? " 🦹 도둑!" : ""}`, sum === 7 ? "seven" : "", 1200);
+            }
             await resolveHumanGoldIfNeeded();
             await postDicePromptDiscards(sum);
           }
@@ -8628,6 +8638,10 @@ https://game.cocy.io/pingtan/`;
 
     const reactionTtsCache = new Map();
     const REACTION_TTS_CACHE_MAX = 24;
+    // 원격 CosyVoice TTS(llm.cocy.io)가 죽어있으면(530 등) 매 리액션마다 재시도해 콘솔이 530으로 도배됨.
+    // 한 번 실패하면 쿨다운 동안 원격 호출을 건너뛰고 브라우저 TTS로 직행한다.
+    let reactionTtsDownUntil = 0;
+    const REACTION_TTS_COOLDOWN_MS = 5 * 60 * 1000;
 
     async function getCachedReactionTtsUrl(text, voice) {
       const key = String(voice) + "|" + String(text);
@@ -8652,6 +8666,7 @@ https://game.cocy.io/pingtan/`;
         return url;
       }).catch((err) => {
         reactionTtsCache.delete(key);
+        reactionTtsDownUntil = Date.now() + REACTION_TTS_COOLDOWN_MS; // 원격 다운 표시 → 쿨다운 동안 스킵
         throw err;
       });
       reactionTtsCache.set(key, { promise });
@@ -8661,6 +8676,8 @@ https://game.cocy.io/pingtan/`;
     async function speakReactionWithLocalTTS(text, playerVoice = "ko-male") {
       text = sanitizeReactionSpeech(text);
       if (!soundSettings.voice || !text) return;
+      // 원격 TTS가 최근 죽었으면 곧장 브라우저 TTS로(530 재시도 도배 방지).
+      if (Date.now() < reactionTtsDownUntil) { speakReactionBrowser(text); return; }
       const voice = reactionVoiceForPlayer(playerVoice);
       try {
         const audio = new Audio(await getCachedReactionTtsUrl(text, voice));
