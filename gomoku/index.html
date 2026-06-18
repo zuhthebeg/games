@@ -314,7 +314,7 @@
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div id="app"></div>
 
-    <script src="/lib/multiplayer.js?v=20260617b"></script>
+    <script src="/lib/multiplayer.js?v=20260618match"></script>
     <script src="/lib/multiplayer-ui.js?v=20260605a"></script>
     <script src="/lib/shared-wallet.js?v=20260605a"></script>
     <script>
@@ -510,13 +510,24 @@
 
         // ===== DO/WS 실시간 경로 (?relay=do) =====
         // gostop do-v8과 동일 인프라(공용 MultiplayerWSClient + generic RoomDO). gameType=gomoku로 서버가 plugin 선택.
-        function startGomokuDO() {
+        async function startGomokuDO() {
             const P = new URLSearchParams(location.search);
             const WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
-            const room = P.get('room') || 'go-test';
             let nick = ''; try { nick = localStorage.getItem('gomoku_nick') || ''; } catch (e) {}
             // 같은 브라우저 2탭 테스트용: URL u= 로 uid 분리 가능(없으면 localStorage 영속 uid).
             const uid = P.get('u') || undefined;
+
+            // 방 결정(코디네이터 매칭 배선): ?room= 있으면 그 방(공유링크/2탭 테스트).
+            // 없으면 빠른매칭(/match) → 열린 방 있으면 합류, 없으면 새 방 생성. 새로고침·공유 위해 URL 반영.
+            const explicit = P.get('room');
+            let room, created = false;
+            if (explicit && explicit.trim()) {
+                room = explicit.trim().toUpperCase();
+            } else {
+                const r = await MultiplayerWSClient.resolveEntryRoom('gomoku', null, WORKER);
+                room = r.room; created = r.created;
+                try { const u = new URL(location.href); u.searchParams.set('room', room); history.replaceState(null, '', u); } catch (e) {}
+            }
 
             const ws = new MultiplayerWSClient({ workerBase: WORKER, room, userId: uid, nickname: nick, gameType: 'gomoku' });
             doClient = ws;
@@ -529,6 +540,7 @@
                 + '<h2 style="margin:0 0 4px">⚫⚪ 오목 · DO 실시간</h2>'
                 + '<p style="font-size:11px;color:#7CFC9A;margin:0 0 10px">build do-v1 · 공용 WSClient · gameType=gomoku</p>'
                 + '<p>방코드 <b>' + room + '</b> · 나 ' + (nick || uid || '익명') + '</p>'
+                + '<p style="font-size:12px;color:#7CFC9A;margin:0 0 6px">' + (created ? '새 방 — 친구에게 이 URL/방코드 공유' : '매칭된 방에 합류') + '</p>'
                 + '<p id="do-conns" style="font-size:13px;opacity:.75;margin:6px 0">접속자: 1</p>'
                 + '<p id="do-status" style="font-size:13px;color:#ffd76a;margin:6px 0">연결 중…</p>'
                 + '<p style="font-size:12px;opacity:.6;margin:8px 0">상대도 같은 URL(접속자:2)이면 시작</p>'
