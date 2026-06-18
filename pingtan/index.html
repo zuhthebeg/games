@@ -2520,7 +2520,11 @@
     }
 
     function getLobbyDisplayPlayers() {
-      const humans = (mpState.room?.players || []).map(p => ({ ...p, isAI: false }));
+      // 혹시 모를 중복(ghost 소켓/uid 중복)에 대비해 id 기준 dedup 후 AI 합치기.
+      const seen = new Set();
+      const humans = (mpState.room?.players || [])
+        .filter(p => { const id = p.id || p.userId; if (!id || seen.has(id)) return false; seen.add(id); return true; })
+        .map(p => ({ ...p, isAI: false }));
       return humans.concat(getLobbyAiPlayers());
     }
 
@@ -8418,6 +8422,9 @@ https://game.cocy.io/pingtan/`;
     }
 
     async function autoStartIfReady() {
+      // DO 모드는 호스트가 명시적 Start 버튼으로 시작 — roster 들어올 때마다 자동시작하면
+      // AI 채우기 직후 의도치 않게 게임이 시작돼버린다. 자동시작 비활성.
+      if (PINGTAN_DO) return;
       if (!mpState.client || !mpState.room || !mpState.isHost) return;
       if (mpState.room.status === "playing" || mpState.startRequested) return;
       const players = mpState.room.players || [];
