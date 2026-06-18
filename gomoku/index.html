@@ -529,6 +529,14 @@
         async function startGomokuDO() {
             const P = new URLSearchParams(location.search);
             const WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
+            // 로그인 닉을 확실히 얻기 위해 SharedWallet 초기화 '완료'를 기다린다.
+            // init()는 _initialized를 동기로 세워 즉시 반환 → 로그인 fetch 완료 전에 끝남(레이스).
+            // 실제 완료 프로미스는 _initPromise(자동초기화가 저장). 없으면 init() 폴백.
+            try {
+                if (typeof SharedWallet !== 'undefined') {
+                    await (SharedWallet._initPromise || SharedWallet.init());
+                }
+            } catch (e) {}
             let nick = resolveNick();
             try { localStorage.setItem('gomoku_nick', nick); } catch (e) {}
             // 같은 브라우저 2탭 테스트용: URL u= 로 uid 분리 가능(없으면 localStorage 영속 uid).
