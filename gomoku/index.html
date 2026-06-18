@@ -405,6 +405,7 @@
         let doClient = null;   // ?relay=do DO/WS 경로의 MultiplayerWSClient (REST mpUI와 배타)
         let doResultInfo = null;  // DO 결과창 정보 {title, detail} — null이면 결과창 닫힘
         let doRoster = null;      // 재대결 합의 상태 {myReady, oppReady, oppPresent}
+        let swReady = null;       // SharedWallet 초기화(로그인 fetch 포함) 완료 프로미스
         
         // Settings
         let confirmBeforePlace = localStorage.getItem('gomoku_confirm') === 'true';
@@ -477,10 +478,12 @@
         function init() {
             // 공용 재화 로드 (SharedWallet에서)
             if (typeof SharedWallet !== 'undefined') {
-                SharedWallet.init().then(() => {
+                // 이 첫 init() 호출의 프로미스가 '로그인 fetch까지 끝나는' 진짜 완료 프로미스다.
+                // init()는 _initialized를 동기로 세워 두 번째 호출부터는 즉시 반환 → 반드시 이걸 잡아둬야 함.
+                swReady = SharedWallet.init().then(() => {
                     sharedGold = SharedWallet.gold;
                     cloudSyncEnabled = SharedWallet.cloudSyncEnabled;
-                });
+                }).catch(() => {});
             } else {
                 loadSharedGold();
             }
@@ -529,14 +532,10 @@
         async function startGomokuDO() {
             const P = new URLSearchParams(location.search);
             const WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
-            // 로그인 닉을 확실히 얻기 위해 SharedWallet 초기화 '완료'를 기다린다.
-            // init()는 _initialized를 동기로 세워 즉시 반환 → 로그인 fetch 완료 전에 끝남(레이스).
-            // 실제 완료 프로미스는 _initPromise(자동초기화가 저장). 없으면 init() 폴백.
-            try {
-                if (typeof SharedWallet !== 'undefined') {
-                    await (SharedWallet._initPromise || SharedWallet.init());
-                }
-            } catch (e) {}
+            // 로그인 닉을 확실히 얻기 위해 SharedWallet 초기화 '완료'(로그인 fetch 포함)를 기다린다.
+            // swReady = init()의 첫 호출 프로미스. (init()은 _initialized를 동기로 세워 재호출 시 즉시 반환하므로
+            // _initPromise/재호출 await로는 fetch 완료를 못 기다림 → 게스트로 빠지던 버그)
+            try { if (swReady) await swReady; } catch (e) {}
             let nick = resolveNick();
             try { localStorage.setItem('gomoku_nick', nick); } catch (e) {}
             // 같은 브라우저 2탭 테스트용: URL u= 로 uid 분리 가능(없으면 localStorage 영속 uid).
@@ -612,8 +611,16 @@
                 + '<p id="do-conns" style="font-size:13px;opacity:.75;margin:6px 0">접속자: 1</p>'
                 + '<p id="do-status" style="font-size:13px;color:#ffd76a;margin:6px 0">연결 중…</p>'
                 + '<p style="font-size:12px;opacity:.6;margin:8px 0">상대도 같은 URL(접속자:2)이면 시작</p>'
-                + '<button id="do-start" style="padding:12px 30px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700">시작</button></div>';
+                + '<button id="do-start" style="padding:12px 30px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700">시작</button>'
+                + '<button id="do-back" style="display:block;width:100%;margin:10px 0 0;padding:10px;font-size:14px;background:none;border:1px solid #444;border-radius:10px;color:#9fb3ff">← 대기실로 (방 나가기)</button></div>';
             document.body.appendChild(lob);
+            // 대기실(방 선택)로 복귀 — 방을 떠나고 chooser로. room 파라미터 제거.
+            const backBtn = document.getElementById('do-back');
+            if (backBtn) backBtn.onclick = () => {
+                try { ws.leave(); } catch (e) {}
+                doClient = null;
+                location.href = location.pathname + '?relay=do';
+            };
             const setS = (t) => { const e = document.getElementById('do-status'); if (e) e.textContent = t; };
             const connBanner = (msg) => { /* 진행 중 끊김 표시: 상단 토스트 재사용 */ if (msg) showToast(msg); };
 
