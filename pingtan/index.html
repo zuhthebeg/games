@@ -1644,6 +1644,7 @@
         bankTradeUnavailable: "은행 거래 불가: 자원이 부족합니다.",
         bankTradeHint: "은행 거래: {give} → {get}",
         insufficientTradeResources: "자원이 부족해 거래할 수 없습니다.",
+        tradeAlreadyResolved: "이미 성사된 거래입니다.",
         tradeSuccessToast: "🤝 거래 성사!",
         tradeAcceptedToast: "🤝 {player}이 거래를 수락!",
         tradeMatchedToast: "🤝 {from} ↔ {to} 거래 성사",
@@ -1950,6 +1951,7 @@
         bankTradeUnavailable: "Bank trade unavailable: not enough resources.",
         bankTradeHint: "Bank trade: {give} → {get}",
         insufficientTradeResources: "Not enough resources to trade.",
+        tradeAlreadyResolved: "This trade was already taken.",
         tradeSuccessToast: "🤝 Trade completed!",
         tradeAcceptedToast: "🤝 {player} accepted the trade!",
         tradeMatchedToast: "🤝 {from} ↔ {to} trade completed",
@@ -2347,6 +2349,7 @@
       actionSeq: 0,
       processedActionIds: new Set(),
       aiPlayers: [],
+      resolvedTradeProposals: new Set(),
       replaying: false,
       emoteCooldownUntil: 0,
       aiTurnScheduled: false,
@@ -5014,6 +5017,24 @@
         if (box?.dismiss) box.dismiss(reason);
       }
       mpState.activeTradeProposals.clear();
+      // Trades don't survive a turn — reset the consumed-once ledger at the turn/game boundary.
+      if (reason === "turn-change" || reason === "winner") {
+        mpState.resolvedTradeProposals && mpState.resolvedTradeProposals.clear();
+      }
+    }
+
+    // A trade proposal must resolve exactly once. The first ACCEPT (human or AI) claims it;
+    // every later accept for the same proposalId is ignored so the proposer can't pay twice.
+    // Cleared on turn change since proposals don't survive a turn.
+    function claimTradeProposal(proposalId) {
+      if (!proposalId) return true; // legacy/no-id: can't dedupe, allow
+      if (!mpState.resolvedTradeProposals) mpState.resolvedTradeProposals = new Set();
+      if (mpState.resolvedTradeProposals.has(proposalId)) return false;
+      mpState.resolvedTradeProposals.add(proposalId);
+      return true;
+    }
+    function isTradeProposalResolved(proposalId) {
+      return !!proposalId && !!mpState.resolvedTradeProposals && mpState.resolvedTradeProposals.has(proposalId);
     }
 
     function canPlayersExecuteTrade(proposer, accepter, offer = {}, want = {}) {
@@ -5899,6 +5920,9 @@
               const aiP = state.players[aiActor.i2];
               const prop = state.players[pIdx];
               if (!aiP || !prop) return;
+              // Someone (human or another AI) already closed this proposal — don't double-accept.
+              // The apply handler is the single claim authority; here we only early-out.
+              if (isTradeProposalResolved(proposalId)) return;
               const snap = createpingtanStateSnapshot ? createpingtanStateSnapshot() : undefined;
               if (shouldAccept && canPlayerPayBundle(aiP, want) && canPlayerPayBundle(prop, offer)) {
                 try { await mpState.client.sendAction({ type: "TRADE_ACCEPT", playerId: aiP.userId || aiP.id, proposerId: prop.userId || prop.id, proposalId, offer, want, actionId: `ai_ta_${Date.now()}`, ...(snap ? { __snapshot: snap } : {}) }); } catch {}
@@ -5937,6 +5961,12 @@
           }
           mpState.activeTradeProposals.delete(proposalId);
           if (accepted) {
+            // Claim the proposal so a racing AI accept (host timer) can't also pay the proposer.
+            if (!claimTradeProposal(proposalId)) {
+              showToast(pt("tradeAlreadyResolved"), 2000);
+              render();
+              return;
+            }
             if (!applyTradeSwap(proposer, me, offer, want)) {
               showToast(pt("insufficientTradeResources"), 2000);
               render();
@@ -5975,6 +6005,9 @@
         if (!accepter || !proposer) return true;
         // Accepter already mutated their own state in TRADE_PROPOSE when clicking accept — skip duplicate
         if (pIdx === myIdx) return true;
+        // Single claim authority: first ACCEPT for this proposalId wins; later ones are ignored
+        // so the proposer never pays twice (human + AI both accepting the same offer).
+        if (!claimTradeProposal(proposalId)) return true;
 
         const offer = action.offer || {};
         const want = action.want || {};
