@@ -1537,7 +1537,11 @@
         relayReady: "relay.cocy.io 연결 후 플레이 가능합니다.",
         ready: "준비 완료",
         unready: "준비 취소",
-        fillAI: "AI 채우기",
+        fillAI: "+ AI 봇",
+        removeAI: "− AI 봇",
+        aiSeatsFull: "빈 자리가 없습니다.",
+        aiBotCount: "AI 봇 {n}명 추가됨.",
+        aiBotNone: "AI 봇 없음.",
         leave: "나가기",
         gameReady: "게임 시작 가능",
         waitingPlayers: "플레이어를 기다리는 중...",
@@ -1844,7 +1848,11 @@
         relayReady: "Connects through relay.cocy.io.",
         ready: "Ready",
         unready: "Cancel ready",
-        fillAI: "Fill with AI",
+        fillAI: "+ AI bot",
+        removeAI: "− AI bot",
+        aiSeatsFull: "No empty seats.",
+        aiBotCount: "{n} AI bot(s) added.",
+        aiBotNone: "No AI bots.",
         leave: "Leave",
         gameReady: "Ready to start",
         waitingPlayers: "Waiting for players...",
@@ -2558,13 +2566,42 @@
       }
     }
 
+    function aiSeatCap() {
+      const preset = resolveMapPreset(mpState.mapId || state.selectedMapId || "standard");
+      return (preset && preset.maxPlayers) ? preset.maxPlayers : 4;
+    }
+    function emptyAiSeats() {
+      const humans = (mpState.room?.players || []).length;
+      return Math.max(0, aiSeatCap() - humans - (mpState.aiPlayers?.length || 0));
+    }
+    // 호스트가 버튼으로 AI를 "한 명씩" 추가한다(자동 정원 채우기 폐기 — cocy 결정 2026-06-18).
     async function fillAIPlayers() {
       if (!mpState.isHost) return;
-      const humans = mpState.room?.players || [];
-      mpState.aiPlayers = buildAiPlayers(humans);
+      if (emptyAiSeats() <= 0) {
+        mpState.waitingMessage = pt("aiSeatsFull");
+        render();
+        return;
+      }
+      if (!Array.isArray(mpState.aiPlayers)) mpState.aiPlayers = [];
+      const humans = (mpState.room?.players || []).length;
+      const n = mpState.aiPlayers.length;
+      const seat = humans + n;
+      mpState.aiPlayers.push({
+        id: `ai-${n + 1}`, userId: `ai-${n + 1}`,
+        name: `AI 봇 ${n + 1}`, nickname: `AI 봇 ${n + 1}`,
+        isAI: true, color: PLAYER_COLORS[seat % PLAYER_COLORS.length]
+      });
+      mpState.waitingMessage = pt("aiBotCount", { n: mpState.aiPlayers.length });
+      render();
+      await syncLobbyAIPlayers();
+    }
+    async function removeAIPlayer() {
+      if (!mpState.isHost) return;
+      if (!mpState.aiPlayers?.length) return;
+      mpState.aiPlayers.pop();
       mpState.waitingMessage = mpState.aiPlayers.length
-        ? `AI ${mpState.aiPlayers.length}명으로 빈 자리를 채웠습니다.`
-        : "이미 4명입니다.";
+        ? pt("aiBotCount", { n: mpState.aiPlayers.length })
+        : pt("aiBotNone");
       render();
       await syncLobbyAIPlayers();
     }
@@ -7951,9 +7988,11 @@ ${roomInviteUrl(roomCode)}`;
               </div>
               <div class="multi-row">
                 <button onclick="startGame()" id="startBtn" ${canStart ? "" : "hidden"}>${pt("startGame")}</button>
-                <button onclick="fillAIPlayers()">${pt("fillAI")}</button>
+                <button onclick="fillAIPlayers()" ${emptyAiSeats() > 0 ? "" : "disabled"}>${pt("fillAI")}</button>
+                <button onclick="removeAIPlayer()" ${(mpState.aiPlayers?.length || 0) > 0 ? "" : "hidden"}>${pt("removeAI")}</button>
                 <button onclick="leaveRoom()" class="danger">${pt("leave")}</button>
               </div>
+              <div class="lobby-note">AI 봇 ${(mpState.aiPlayers?.length || 0)} · 빈 자리 ${emptyAiSeats()} / 정원 ${aiSeatCap()}</div>
               <div class="lobby-note">${pt("hostReadyHint")}</div>` : `<div class="lobby-note">${pt("mapLabel")}: ${mapName(mpState.mapId||"standard")}</div>`}
               <div class="multi-row">
                 <button onclick="setReady()">${mpState.ready ? pt("unready") : pt("ready")}</button>
@@ -8519,9 +8558,7 @@ https://game.cocy.io/pingtan/`;
       const players = mpState.room.players || [];
       const _ip = resolveMapPreset(mpState.mapId || state.selectedMapId || "standard");
       const _ipCap = (_ip && _ip.maxPlayers) ? _ip.maxPlayers : 4;
-      if (!getLobbyAiPlayers().length && players.length < _ipCap) {
-        mpState.aiPlayers = buildAiPlayers(players);
-      }
+      // 자동 정원 채우기 폐기 — 호스트가 로비에서 "+ AI 봇" 버튼으로 추가한 AI만 사용한다.
       const aiPlayers = getLobbyAiPlayers();
       const others = players.filter(p => p.id !== mpState.myUserId);
       const allReady = others.length > 0 && others.every(p => p.isReady);
@@ -10373,6 +10410,7 @@ VP: 나${p.vp} vs 상대${human.vp} (목표10)
     window.leaveRoom = leaveRoom;
     window.setReady = setReady;
     window.fillAIPlayers = fillAIPlayers;
+    window.removeAIPlayer = removeAIPlayer;
     window.startGame = startGame;
     window.setPlayerNickname = setPlayerNickname;
     window.rollDice = rollDice;
