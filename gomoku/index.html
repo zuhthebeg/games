@@ -321,7 +321,7 @@
         // ===== 공용 재화 시스템 =====
         let sharedGold = 0;
         let cloudSyncEnabled = false;
-        const WIN_REWARD = 1000;  // 승리 보상
+        const WIN_REWARD = 1000000;  // 승리 보상 (100만G)
         const LOSE_PENALTY = 100; // 패배 페널티
         
         // ===== Sound Effects =====
@@ -510,10 +510,25 @@
 
         // ===== DO/WS 실시간 경로 (?relay=do) =====
         // gostop do-v8과 동일 인프라(공용 MultiplayerWSClient + generic RoomDO). gameType=gomoku로 서버가 plugin 선택.
+        // 닉네임 해석: 로그인 닉 > relay 공용 닉 > 게임 로컬 닉 > 게스트
+        function resolveNick() {
+            try {
+                if (typeof SharedWallet !== 'undefined' && SharedWallet.isLoggedIn && SharedWallet.user?.nickname) {
+                    return SharedWallet.user.nickname;
+                }
+            } catch (e) {}
+            try {
+                const rn = localStorage.getItem('relay_nickname'); if (rn && rn.trim()) return rn.trim();
+                const gn = localStorage.getItem('gomoku_nick'); if (gn && gn.trim()) return gn.trim();
+            } catch (e) {}
+            return '게스트' + Math.floor(Math.random() * 9000 + 1000);
+        }
+
         async function startGomokuDO() {
             const P = new URLSearchParams(location.search);
             const WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';
-            let nick = ''; try { nick = localStorage.getItem('gomoku_nick') || ''; } catch (e) {}
+            let nick = resolveNick();
+            try { localStorage.setItem('gomoku_nick', nick); } catch (e) {}
             // 같은 브라우저 2탭 테스트용: URL u= 로 uid 분리 가능(없으면 localStorage 영속 uid).
             const uid = P.get('u') || undefined;
 
