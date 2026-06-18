@@ -822,12 +822,22 @@
                 doRoster = null;
             }
 
+            // 내 색 매 상태마다 갱신 — 재대결 시 좌석/색이 바뀔 수 있어 stale myColor면
+            // 차례 판정(myColor===currentPlayer)이 어긋나 돌이 안 놓이는 버그가 생김.
+            if (gs.myColor) {
+                myColor = gs.myColor;
+            } else {
+                const myId = doClient?.getMyUserId() || mpUI?.getClient()?.getMyUserId();
+                const meP = gs.players?.find(p => p.id === myId);
+                if (meP?.color) myColor = meP.color;
+            }
+
             board = gs.board.map(row => row.map(cell => {
                 if (!cell) return null;
                 const p = gs.players.find(pl => pl.id === cell);
                 return p?.color || null;
             }));
-            
+
             if (gs.currentPlayer) {
                 const cp = gs.players.find(p => p.id === gs.currentPlayer);
                 currentPlayer = cp?.color || 'black';
