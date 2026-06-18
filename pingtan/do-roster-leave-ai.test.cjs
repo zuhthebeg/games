@@ -23,4 +23,11 @@ assert(html.includes('aiReplacement && markPlayerDisconnectedAsAI(event.userId)'
 assert(html.includes('triggerAITurnIfNeeded();'),
   'after conversion the host must drive the AI turn so play continues');
 
+// Return path: a rejoining player gets a resync snapshot where the host had marked them AI.
+// On resync they must reclaim their own seat as human, else their turn deadlocks.
+const recover = html.slice(html.indexOf('function recoverFromActionSnapshot'),
+                           html.indexOf('async function sendGameAction'));
+assert(/const myIdx = localPlayerIndex\(\)/.test(recover) && /me\.isAI = false/.test(recover),
+  'resync must reclaim the local player seat as human (returning player resumes control)');
+
 console.log('PASS pingtan DO roster-leave AI takeover');

@@ -6159,6 +6159,18 @@
     function recoverFromActionSnapshot(snapshot, actionType = "") {
       const recovered = applypingtanStateSnapshot(snapshot);
       if (!recovered) return false;
+      // 재접속 좌석 회수: 호스트가 나를 AI로 바꾼 뒤 저장한 스냅샷이 올 수 있다.
+      // 내가 살아서 이 상태를 받고 있다는 것 자체가 "내 좌석=사람"의 증거 → 내 좌석은 절대 AI로 두지 않는다.
+      // (다른 클라는 roster diff의 player_joined로 나를 human 복귀시킨다 → 전체 수렴.)
+      if (isMultiMode()) {
+        const myIdx = localPlayerIndex();
+        const me = myIdx >= 0 ? state.players[myIdx] : null;
+        if (me && me.isAI) {
+          me.isAI = false;
+          me.wasHuman = false;
+          if (me.originalName) me.name = me.originalName;
+        }
+      }
       state.hint = actionType === ACTION.END_TURN
         ? "턴 동기화 복구 완료."
         : "게임 상태 동기화 복구 완료.";
