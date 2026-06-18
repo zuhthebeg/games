@@ -19,7 +19,7 @@
   <link rel="icon" href="icon.svg" />
   <script src="/lib/shared-wallet.js?v=20260312a"></script>
   <script src="/lib/game-rankings.js?v=20260529a"></script>
-  <script src="/lib/multiplayer.js?v=20260502a"></script>
+  <script src="/lib/multiplayer.js?v=20260618do"></script>
   <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
   <style>
     :root {
@@ -7867,6 +7867,7 @@ ${roomInviteUrl(roomCode)}`;
         <div class="lobby-screen">
           <div class="lobby-card" style="max-height:calc(100vh - 96px);overflow-y:auto;flex:0 0 auto;">
             <h1 class="lobby-title">${PINGTAN_BRAND}</h1>
+            ${PINGTAN_DO ? `<p style="font-size:11px;color:#7CFC9A;margin:0 0 6px;text-align:center;">build do-relay-v1 · WebSocket relay</p>` : ""}
             <div class="room-lobby">
               <p style="margin:0;text-align:center;">${pt("roomCode")}: <strong id="roomCodeDisplay">${roomCode || "-"}</strong></p>
               ${roomCode ? `
@@ -8221,6 +8222,8 @@ https://game.cocy.io/pingtan/`;
       }
       if (state.screen === "mode") app.innerHTML = renderModeScreen();
       else if (state.screen === "map-select") app.innerHTML = renderMapSelect();
+      else if (PINGTAN_DO && state.screen === "do-multi") { app.innerHTML = renderMultiOptions(); return; }
+      else if (PINGTAN_DO && state.screen === "room-lobby") { app.innerHTML = renderRoomLobby(); return; }
       else if (state.screen === "multi-lobby") {
         // MultiplayerUI handles this screen
         app.classList.add("hidden");
@@ -8264,7 +8267,77 @@ https://game.cocy.io/pingtan/`;
       return a || {};
     }
 
+    // ===== DO/WS relay 모드 (?relay=do) =====
+    // pingtan은 host-authoritative. 다른 7게임처럼 전송계층만 REST→WS(Durable Object)로 교체.
+    // PingtanDOClient = MultiplayerWSClient를 감싸 MultiplayerClient 표면을 흉내내는 어댑터.
+    // 엔진/onMpEvent/스냅샷 코드 무수정 — DO 이벤트 형태 {seq,type:'action',data:action}가
+    // onMpEvent의 action 분기(event.data)와 그대로 호환되기 때문.
+    const PINGTAN_DO = new URLSearchParams(location.search).get("relay") === "do";
+    const PINGTAN_DO_WORKER = "wss://relay-do-poc.zuhejbeg.workers.dev";
+    class PingtanDOClient {
+      constructor() {
+        const q = new URLSearchParams(location.search);
+        this._ws = null; this._room = ""; this._lastRoom = null; this.lastSeq = 0;
+        this.onStateChange = null; this.onEvent = null; this.onRoomDestroyed = null;
+        this._startedEmitted = false; this._config = {};
+        // uid/nick 선확정 (room 생성 전 getMyUserId 대응). ?u=/?n= 테스트 오버라이드 지원.
+        let uid = q.get("u") || "";
+        if (!uid) { try { uid = localStorage.getItem("catan_uid") || ""; } catch (e) {} }
+        if (!uid) { uid = "u-" + Math.random().toString(36).slice(2, 8); }
+        try { localStorage.setItem("catan_uid", uid); } catch (e) {}
+        this._userId = uid;
+        this._nick = q.get("n") || (window.SharedWallet && SharedWallet.user && SharedWallet.user.nickname) || ("Player" + uid.slice(-3));
+      }
+      async ensureAuth() { return true; }
+      getMyUserId() { return this._userId; }
+      getRoomCode() { return this._room; }
+      isInRoom() { return !!this._ws; }
+      startListening() { /* WSClient는 생성 시 자동 연결 */ }
+      _rosterToRoom(d) {
+        const players = (d.players || []).map(p => ({
+          id: p.user, userId: p.user, nickname: p.nick, name: p.nick,
+          isHost: p.user === d.hostUser, isReady: !!p.ready, isAI: false,
+        }));
+        return { id: this._room, roomId: this._room, players, hostUser: d.hostUser, status: d.started ? "playing" : "waiting" };
+      }
+      _connect(room) {
+        this._room = room; this._startedEmitted = false;
+        this._ws = new MultiplayerWSClient({ workerBase: PINGTAN_DO_WORKER, room, userId: this._userId, nickname: this._nick, gameType: "catan" });
+        this._ws.onRoster = (d) => { const r = this._rosterToRoom(d); this._lastRoom = r; if (this.onStateChange) this.onStateChange(r); };
+        this._ws.onStarted = (d) => {
+          if (this._startedEmitted) return; this._startedEmitted = true;
+          // 'started'는 roster를 재방송 안 함 → room.status를 직접 playing으로 올려야
+          // maybeHostInitGame(status==='playing' 가드)이 통과해 GAME_INIT을 쏜다.
+          if (this._lastRoom) { this._lastRoom.status = "playing"; if (this.onStateChange) this.onStateChange(this._lastRoom); }
+          if (this.onEvent) this.onEvent({ type: "game_started", payload: d || {} });
+        };
+        this._ws.onEvent = (ev) => { if (ev && typeof ev.seq === "number") this.lastSeq = Math.max(this.lastSeq, ev.seq); if (this.onEvent) this.onEvent(ev); };
+        this._ws.onNotice = (d) => { if (d && d.type === "start_rejected") { mpState.waitingMessage = `시작 거부: 인원 부족(${d.have}/${d.need})`; render(); } };
+      }
+      _genCode() { const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s = ""; for (let i = 0; i < 4; i++) s += A[Math.floor(Math.random() * A.length)]; return s; }
+      async createRoom(_game, config) { this._config = config || {}; const urlRoom = new URLSearchParams(location.search).get("room"); const code = (urlRoom || this._genCode()).toUpperCase(); this._connect(code); return { roomId: code, id: code, roomCode: code }; }
+      async joinRoom(code, _game) { this._connect(String(code).trim().toUpperCase()); return { roomId: this._room, id: this._room }; }
+      async setReady(ready) { if (this._ws) this._ws.setReady(ready); return {}; }
+      async startGame() { if (this._ws) this._ws.start(this._config || {}); return {}; }
+      async sendAction(action) { if (this._ws) this._ws.sendAction(action); return {}; }
+      async getRoomState() { return this._lastRoom || { id: this._room, roomId: this._room, players: [], status: "waiting" }; }
+      async tryReconnect() { return null; } // DO 재접속은 WS가 자동 처리 → REST 세션복구 경로 미사용
+      async leaveRoom() { if (this._ws) this._ws.leaveRoom(); this._ws = null; return {}; }
+      async request() { throw new Error("REST request not available in DO mode"); }
+    }
+
     async function ensureMp() {
+      if (PINGTAN_DO) {
+        if (!window.MultiplayerWSClient) throw new Error("multiplayer.js(WSClient) 로드 실패");
+        if (!mpState.client) {
+          mpState.client = new PingtanDOClient();
+          mpState.myUserId = mpState.client.getMyUserId();
+          mpState.client.onStateChange = onRoomStateChange;
+          mpState.client.onEvent = onMpEvent;
+          mpState.client.onRoomDestroyed = () => { mpState.waitingMessage = "방이 종료되었습니다."; leaveRoom(false); };
+        }
+        return mpState.client;
+      }
       if (!window.MultiplayerClient) throw new Error("multiplayer.js 로드 실패");
       if (!mpState.client) {
         mpState.client = MultiplayerClient.getInstance();
@@ -8985,8 +9058,8 @@ https://game.cocy.io/pingtan/`;
       }
     }
 
-    async function joinRoom() {
-      const code = (state.roomCodeInput || "").trim();
+    async function joinRoom(codeArg) {
+      const code = (typeof codeArg === "string" ? codeArg : (state.roomCodeInput || "")).trim();
       if (!code) {
         mpState.waitingMessage = pt("roomCodeRequired");
         render();
@@ -9065,9 +9138,18 @@ https://game.cocy.io/pingtan/`;
 
     let pingtanMpUI = null;
     function showMultiOptions() {
+      // DO/WS 모드: MultiplayerUI(REST) 대신 인앱 로비. ?room= 있으면 자동 접속(테스트 패턴).
+      if (PINGTAN_DO) {
+        const urlRoom = new URLSearchParams(location.search).get("room");
+        state.mode = null;
+        if (urlRoom) { joinRoom(urlRoom); return; }
+        state.screen = "do-multi";
+        render();
+        return;
+      }
       state.screen = "multi-lobby";
       state.mode = null;
-      
+
       const mpLobby = document.getElementById("mpLobbyContainer");
       document.getElementById("app").classList.add("hidden");
       mpLobby.classList.remove("hidden");
