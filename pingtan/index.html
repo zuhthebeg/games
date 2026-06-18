@@ -6072,6 +6072,16 @@
       state.tradeDialog = { open: false, offer: {}, want: {} };
       state.debug = keep.debug;
       if (!state.mapView) state.mapView = { zoom: 1, userMoved: false, initialized: false };
+      // geometry(centers/bounds/size)는 스냅샷에 안 담긴다(파생값). hexes로부터 재계산 안 하면
+      // 보드 한 번도 안 그린 입장자(좀비방 resync)에서 centers=[] → render의 c.x가 터진다.
+      // buildGraph는 hexes에서 결정론적으로 동일 vertices/edges를 만들지만, 소유권 있는 스냅샷
+      // vertices/edges는 보존하고 geometry만 가져온다.
+      if (Array.isArray(state.hexes) && state.hexes.length) {
+        try {
+          const g = buildGraph(state.hexes);
+          state.geometry = { centers: g.centers, minX: g.bounds.minX, minY: g.bounds.minY, maxX: g.bounds.maxX, maxY: g.bounds.maxY, size: g.size };
+        } catch (e) { console.warn("[resync] geometry 재계산 실패:", e && e.message); }
+      }
       recalcAllVP();
       return true;
     }
@@ -8306,6 +8316,9 @@ https://game.cocy.io/pingtan/`;
         return { id: this._room, roomId: this._room, players, hostUser: d.hostUser, status: d.started ? "playing" : "waiting" };
       }
       _connect(room) {
+        // DO 라우팅 정규식은 [A-Za-z0-9_-]만 허용. 'cat3:7531' 같은 ':' 포함 코드는 %3A로 인코딩돼
+        // 워커 라우팅(^/room/[A-Za-z0-9_-]{1,64}$)에서 탈락 → WS 업그레이드 실패. 미리 정규화한다.
+        room = String(room || "").toUpperCase().replace(/[^A-Z0-9_-]/g, "-").slice(0, 64);
         this._room = room; this._startedEmitted = false;
         this._ws = new MultiplayerWSClient({ workerBase: PINGTAN_DO_WORKER, room, userId: this._userId, nickname: this._nick, gameType: "catan" });
         this._ws.onRoster = (d) => { const r = this._rosterToRoom(d); this._lastRoom = r; if (this.onStateChange) this.onStateChange(r); };
@@ -8318,6 +8331,7 @@ https://game.cocy.io/pingtan/`;
         };
         this._ws.onEvent = (ev) => { if (ev && typeof ev.seq === "number") this.lastSeq = Math.max(this.lastSeq, ev.seq); if (this.onEvent) this.onEvent(ev); };
         this._ws.onNotice = (d) => { if (d && d.type === "start_rejected") { mpState.waitingMessage = `시작 거부: 인원 부족(${d.have}/${d.need})`; render(); } };
+        this._ws.onRoomClosed = () => { this._ws = null; if (this.onRoomDestroyed) this.onRoomDestroyed(); };
       }
       _genCode() { const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s = ""; for (let i = 0; i < 4; i++) s += A[Math.floor(Math.random() * A.length)]; return s; }
       async createRoom(_game, config) { this._config = config || {}; const urlRoom = new URLSearchParams(location.search).get("room"); const code = (urlRoom || this._genCode()).toUpperCase(); this._connect(code); return { roomId: code, id: code, roomCode: code }; }
