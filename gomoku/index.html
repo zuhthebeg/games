@@ -488,8 +488,8 @@
                 loadSharedGold();
             }
 
-            // DO/WS 실시간 경로(?relay=do): REST MultiplayerUI 대신 공용 WSClient 직접 사용.
-            if (new URLSearchParams(location.search).get('relay') === 'do') { startGomokuDO(); return; }
+            // DO/WS 실시간 경로: 기본 ON(게이트 플립). ?relay=rest 또는 localStorage.relayKill=1로 REST 복귀.
+            if (MultiplayerWSClient.relayDefaultOn(true)) { startGomokuDO(); return; }
 
             mpUI = new MultiplayerUI({
                 gameType: 'gomoku',

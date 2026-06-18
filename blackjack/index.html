@@ -2407,7 +2407,7 @@
       const params = new URLSearchParams(window.location.search);
 
       // DO/WS 실시간 경로(?relay=do): REST 라우팅보다 먼저. URL 보존(스트립 안 함).
-      if (params.get("relay") === "do") {
+      if (MultiplayerWSClient.relayDefaultOn(true)) {
         (async () => {
           if (typeof SharedWallet !== "undefined" && SharedWallet.init) { try { await SharedWallet.init(); } catch (_) {} }
           state.gold = typeof SharedWallet !== "undefined" ? Number(SharedWallet.gold || 0) : 1000;

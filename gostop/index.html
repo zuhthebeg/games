@@ -1236,7 +1236,8 @@ function mpResult(v){
 /* ===== relay-do WS PoC 훅 (플래그: ?relay=do) — 플래그 없으면 0 실행 = 라이브 무영향 ===== */
 (function(){
   var P = new URLSearchParams(location.search);
-  if (P.get('relay') !== 'do') return;
+  // DO 기본 ON(게이트 플립). ?relay=rest 또는 localStorage.relayKill=1이면 REST(메뉴 멀티버튼)로.
+  if (!MultiplayerWSClient.relayDefaultOn(true)) return;
   var DO_BUILD = 'do-v8';   // 로비에 표시 — 이 값이 보이면 최신 코드 로드됨(캐시 판별용)
   try{ console.log('[gostop] DO build', DO_BUILD, '— transport promoted to shared MultiplayerWSClient (lib)'); }catch(e){}
   var WORKER = 'wss://relay-do-poc.zuhejbeg.workers.dev';

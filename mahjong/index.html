@@ -1399,7 +1399,7 @@ window.addEventListener('load',()=>{
   if(typeof GameRankings!=='undefined')try{GameRankings.injectNavButton('mahjong');}catch(_){}
   if(typeof SharedWallet!=='undefined'){try{const g=SharedWallet.gold;if(g!=null)document.getElementById('sw-gold').textContent=t('myGold')+': '+Number(g).toLocaleString()+'G';}catch(_){}}
   // DO/WS 실시간 경로(?relay=do): REST 멀티 대신 공용 WSClient + shim.
-  if(new URLSearchParams(location.search).get('relay')==='do'){ try{startMahjongDO();}catch(e){console.error('startMahjongDO',e);} }
+  if(MultiplayerWSClient.relayDefaultOn(true)){ try{startMahjongDO();}catch(e){console.error('startMahjongDO',e);} }
 });
 </script>
 </body>

@@ -266,8 +266,8 @@
             // 로그인 상태 확정 후 로비 표시(안 하면 isLoggedIn=false라 "로그인하고 방 만들기"만 뜸)
             try { if (typeof SharedWallet !== 'undefined' && SharedWallet.init && !SharedWallet._initialized) await SharedWallet.init(); } catch (e) {}
 
-            // DO/WS 실시간 경로(?relay=do): REST MultiplayerUI 대신 공용 WSClient 직접 사용.
-            if (new URLSearchParams(location.search).get('relay') === 'do') { startConnect4DO(); return; }
+            // DO/WS 실시간 경로: 기본 ON(게이트 플립). ?relay=rest 또는 localStorage.relayKill=1로 REST 복귀.
+            if (MultiplayerWSClient.relayDefaultOn(true)) { startConnect4DO(); return; }
 
             mpUI = new MultiplayerUI({
                 gameType: 'connect4',

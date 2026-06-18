@@ -2754,7 +2754,7 @@ async function startPpingpaeDO() {
   mpState.ui = lobby;
 }
 window.addEventListener('load', () => {
-  if (new URLSearchParams(location.search).get('relay') === 'do') { try { startPpingpaeDO(); } catch (e) { console.error('startPpingpaeDO', e); } }
+  if (MultiplayerWSClient.relayDefaultOn(true)) { try { startPpingpaeDO(); } catch (e) { console.error('startPpingpaeDO', e); } }
 });
 
 function escapeHtml(s) {
