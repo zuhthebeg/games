@@ -1856,6 +1856,8 @@
         container: document.body,
         // 방 생성·참가 시 내 실제 골드를 서버에 전달 → 서버 bankroll = 실제 보유 골드(없으면 기본 1000 → 큰 베팅 거절).
         getPlayerData: () => ({ gold: Math.floor(Number((typeof SharedWallet !== "undefined" && SharedWallet.gold) || 0)) }),
+        // 빈 자리는 AI 봇으로 채워 테이블을 채운다(4석 기준). 사람이 더 들어오면 그만큼 AI가 줄어듦.
+        startConfig: () => ({ seats: 4 }),
         onGameStart: (rs) => {
           lastView = rs.gameState; pendingEvents = [];
           handleMultiGameStart({ myView: rs.gameState });   // showScreen(multiGameScreen) + 첫 렌더
