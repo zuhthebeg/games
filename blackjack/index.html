@@ -341,17 +341,48 @@
       cursor: pointer;
     }
     .multi-table {
-      padding: 8px;
+      padding: 10px 8px 16px;
       overflow-y: auto;
       min-height: 0;
       display: grid;
       align-content: start;
-      gap: 8px;
+      gap: 12px;
+      /* 카지노 펠트 테이블 */
+      background: radial-gradient(ellipse 120% 78% at 50% 30%, #1f8052 0%, #15623d 48%, #0b3f27 100%);
+      border-radius: 22px;
+      box-shadow: inset 0 0 0 5px rgba(255,255,255,0.05), inset 0 0 48px rgba(0,0,0,0.5);
+      border: 1px solid rgba(0,0,0,0.5);
     }
     .multi-players {
-      display: grid;
-      gap: 7px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
     }
+    /* 상대들 = 테이블 둘레 아치(가운데 뒤, 가장자리 앞). 카드 작게. */
+    .mp-opponents {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 8px 10px;
+      width: 100%;
+      padding-top: 2px;
+    }
+    .mp-opponents .mp-player-seat {
+      width: 104px;
+      flex: 0 0 auto;
+      transition: transform 0.2s ease;
+    }
+    .mp-opponents .mp-player-seat .card { width: 26px; height: 38px; padding: 2px; border-radius: 5px; }
+    .mp-opponents .mp-player-seat .rank { font-size: 0.55rem; }
+    .mp-opponents .mp-player-seat .suit { font-size: 0.72rem; }
+    .mp-opponents .mp-player-seat .card-bottom { display: none; }
+    .mp-opponents .mp-player-head { font-size: 0.6rem; margin-bottom: 3px; }
+    .mp-opponents .mp-hand-meta { font-size: 0.55rem; }
+    /* 나 = 전면 중앙, 크게 */
+    .mp-me-seat-wrap { width: 100%; display: flex; justify-content: center; margin-top: 2px; }
+    .mp-me-seat-wrap .mp-player-seat.me { width: 100%; max-width: 360px; }
     .mp-player-seat {
       border: 1px solid rgba(255,255,255,0.15);
       background: rgba(0,0,0,0.24);
@@ -2135,7 +2166,7 @@
 
       // Players (from gameState, which has hands/cards/bet info)
       const playersEl = document.getElementById("mpPlayers");
-      playersEl.innerHTML = gamePlayers.map((p, pi) => {
+      const _seats = gamePlayers.map((p, pi) => {
         const isMe = p.id === myId;
         const isTurn = phase === "playing" && pi === currentPlayerIndex;
         const classes = ["mp-player-seat"];
@@ -2164,14 +2195,23 @@
         const streakDisplay = Number(p.streak || 0) > 0 ? ` 🔥${p.streak}${currentLang === "ko" ? "연승" : currentLang === "zh-TW" ? "連勝" : " streak"}` : "";
         const readyBadge = phase === "betting" ? (p.ready ? " ✅" : " ⏳") : "";
 
-        return `<div class="${classes.join(" ")}">
-          <div class="mp-player-head">
+        return { isMe, classesStr: classes.join(" "), inner: `<div class="mp-player-head">
             <span>${nameDisplay}${readyBadge}${streakDisplay}</span>
             <span>${winDisplay}</span>
           </div>
-          ${handsHTML || '<div style="color:var(--muted);font-size:0.7rem;padding:4px;">대기 중</div>'}
-        </div>`;
+          ${handsHTML || '<div style="color:var(--muted);font-size:0.7rem;padding:4px;">대기 중</div>'}` };
+      });
+      // 테이블 배치: 상대 = 둘레 아치(가운데 뒤·가장자리 앞), 나 = 전면 중앙.
+      const _opp = _seats.filter(s => !s.isMe);
+      const _me = _seats.find(s => s.isMe);
+      const _K = _opp.length;
+      const _oppHTML = _opp.map((s, j) => {
+        const _d = Math.abs(j - (_K - 1) / 2);   // 가운데에서 멀수록 앞(아래)으로
+        const _ty = Math.round(_d * 10);
+        return `<div class="${s.classesStr}" style="transform:translateY(${_ty}px)">${s.inner}</div>`;
       }).join("");
+      playersEl.innerHTML = `<div class="mp-opponents">${_oppHTML}</div>` +
+        (_me ? `<div class="mp-me-seat-wrap"><div class="${_me.classesStr}">${_me.inner}</div></div>` : "");
 
       // Turn status
       const statusEl = document.getElementById("mpTurnStatus");
