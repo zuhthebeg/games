@@ -2258,7 +2258,7 @@
       politics: ["knightCard", "spy"],
     };
 
-    const PLAYER_COLORS = ["#e94560", "#4ecca3", "#ffd700", "#9b59b6"];
+    const PLAYER_COLORS = ["#e94560", "#4ecca3", "#ffd700", "#9b59b6", "#3b82f6", "#f59e0b"];
     const ACTION = {
       GAME_INIT: "GAME_INIT",
       PLACE_SETTLEMENT: "PLACE_SETTLEMENT",
@@ -2529,7 +2529,9 @@
     }
 
     function getLobbyAiPlayers() {
-      return (mpState.aiPlayers || []).slice(0, 4);
+      const humans = (mpState.room?.players || []).length;
+      const cap = Math.max(0, aiSeatCap() - humans); // 방 정원 - 사람 수 = AI 가능 좌석
+      return (mpState.aiPlayers || []).slice(0, cap);
     }
 
     function getLobbyDisplayPlayers() {
@@ -2569,6 +2571,9 @@
     }
 
     function aiSeatCap() {
+      // 호스트가 방 만들 때 정한 정원(state.maxPlayers)이 우선 — 6인 방이면 6좌석.
+      const cfg = Number(state.maxPlayers);
+      if (cfg >= 2) return cfg;
       const preset = resolveMapPreset(mpState.mapId || state.selectedMapId || "standard");
       return (preset && preset.maxPlayers) ? preset.maxPlayers : 4;
     }
