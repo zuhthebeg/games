@@ -1745,7 +1745,8 @@ function placeSelectedHandTiles(targetGid = null) {
 
   pushActionSnapshot();
 
-  if (!targetGid && !state.activeGid && ids.length >= 6) {
+  // 여러 세트(6장+)를 한 번에 고르면 활성 그룹 여부와 무관하게 자동 분리 등록(명시 targetGid 제외).
+  if (!targetGid && ids.length >= 6) {
     const partition = partitionIntoSets(ids, state.tileMap);
     if (partition !== null && partition.length > 1) {
       p.handIds = p.handIds.filter(id => !state.selectedIds.has(id));
@@ -2266,9 +2267,11 @@ function initTileDrag(el, tileId, from, gid) {
     if (mpState.active && state.currentPlayer !== mpState.mySeat) return;
     if (drag.tileId) endDrag();
     drag.tileId = tileId; drag.from = from; drag.gid = gid;
-    drag.tileIds = (from === 'board' && state.boardSelectedIds.has(tileId) && state.boardSelectedIds.size > 1)
-      ? [...state.boardSelectedIds]
-      : [tileId];
+    drag.tileIds = (from === 'hand' && state.selectedIds.has(tileId) && state.selectedIds.size > 1)
+      ? orderedHandSelection()
+      : (from === 'board' && state.boardSelectedIds.has(tileId) && state.boardSelectedIds.size > 1)
+        ? [...state.boardSelectedIds]
+        : [tileId];
     drag.pointerId = e.pointerId;
     drag.active = false;
     drag.startX = e.clientX; drag.startY = e.clientY;
@@ -2379,6 +2382,7 @@ function commitDrop(x, y) {
       const p = state.players[state.currentPlayer];
       const destGroup = state.board.find(g => g.gid === targetGid);
       if (!destGroup) return;
+      if (from === 'hand') p.handIds = p.handIds.filter(id => !idsToMove.includes(id));  // 손패 멀티드래그
       for (const tid of idsToMove) {
         const srcGroup = state.board.find(g => g.gid === gid);
         if (srcGroup) srcGroup.tileIds = srcGroup.tileIds.filter(id => id !== tid);
@@ -2386,7 +2390,7 @@ function commitDrop(x, y) {
       }
       normalizeGroupOrder(destGroup);
       state.selected = null;
-      state.boardSelectedIds.clear();
+      state.selectedIds.clear(); state.boardSelectedIds.clear();
       SFX.place();
       render();
     } else {
@@ -2401,6 +2405,8 @@ function commitDrop(x, y) {
     const ngid = createEmptyGroup();
     if (idsToMove.length > 1) {
       const destGroup = state.board.find(g => g.gid === ngid);
+      const p = state.players[state.currentPlayer];
+      if (from === 'hand') p.handIds = p.handIds.filter(id => !idsToMove.includes(id));  // 손패 멀티드래그
       for (const tid of idsToMove) {
         const srcGroup = state.board.find(g => g.gid === gid);
         if (srcGroup) srcGroup.tileIds = srcGroup.tileIds.filter(id => id !== tid);
@@ -2408,7 +2414,7 @@ function commitDrop(x, y) {
       }
       normalizeGroupOrder(destGroup);
       state.selected = null;
-      state.boardSelectedIds.clear();
+      state.selectedIds.clear(); state.boardSelectedIds.clear();
       SFX.place();
       render();
     } else {
@@ -3130,7 +3136,16 @@ async function mpSendCompleteTurn() {
     const res = await mpState.client.sendAction({ type: 'COMPLETE_TURN', payload });
     if (!res.success) {
       showToast('서버 거절: ' + (res.error || ''));
+      // 서버가 거절했으면 로컬 보드도 턴 시작 상태로 원복 — 거절인데 등록돼 보이는 desync 방지.
+      const ts = state.turnState;
+      if (ts) {
+        state.board = deepCloneBoard(ts.boardSnapshot);
+        if (state.players[mpState.mySeat]) state.players[mpState.mySeat].handIds = [...ts.handSnapshot];
+      }
+      state.selected = null;
+      state.selectedIds.clear(); state.boardSelectedIds.clear();
       state.actionLocked = false;
+      render();
       startTimer();
     } else if (res.gameState) {
       mpApplyServerView(res.gameState, res.myView);
