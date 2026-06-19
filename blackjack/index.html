@@ -375,6 +375,7 @@
       gap: 8px 10px;
       width: 100%;
       padding-top: 2px;
+      margin-bottom: 8px;   /* me-seat과 분리(아치 translateY가 겹치지 않게) */
     }
     .mp-opponents .mp-player-seat {
       width: 104px;
@@ -528,7 +529,8 @@
     <section class="panel bet hidden" id="mpBetPanel">
       <div class="row" style="flex-wrap:wrap;gap:4px;">
         <button data-mp-bet="custom" style="min-width:0;padding:6px 8px;font-size:0.7rem;">✏️</button>
-        <button data-mp-bet="all" style="min-width:0;padding:6px 8px;font-size:0.7rem;">ALL</button>
+        <button data-mp-bet="half" style="min-width:0;padding:6px 8px;font-size:0.7rem;">½</button>
+        <button data-mp-bet="all" class="allin" style="min-width:0;padding:6px 8px;font-size:0.7rem;">ALL</button>
         <span id="dynamicMpBetButtons" class="dynamic-bet-buttons"></span>
       </div>
     </section>
@@ -2216,7 +2218,7 @@
       const _K = _opp.length;
       const _oppHTML = _opp.map((s, j) => {
         const _d = Math.abs(j - (_K - 1) / 2);   // 가운데에서 멀수록 앞(아래)으로
-        const _ty = Math.round(_d * 10);
+        const _ty = Math.round(_d * 5);   // 아치 곡률 완화 — me-seat과 겹침 방지
         return `<div class="${s.classesStr}" style="transform:translateY(${_ty}px)">${s.inner}</div>`;
       }).join("");
       playersEl.innerHTML = `<div class="mp-opponents">${_oppHTML}</div>` +
@@ -2359,6 +2361,9 @@
           : `Bet all ${amount.toLocaleString()} gold?`;
         if (!confirm(msg)) return;
         SFX.allInVoice();
+      } else if (raw === "half") {
+        amount = Math.floor((Number(state.gold) || 0) / 2);
+        if (amount <= 0) return;
       } else if (raw === "custom") {
         openNumpad("multi");
         return;
@@ -2541,7 +2546,8 @@
     function updateBetButtons() {
       const gold = typeof SharedWallet !== 'undefined' ? SharedWallet.gold : 0;
       renderBetButtons(getDoubleSafeMaxBet(gold), 'dynamicBetButtons', 'data-bet', 'HALF');
-      renderBetButtons(getDoubleSafeMaxBet(Math.min(gold, MULTI_BET_MAX * 2)), 'dynamicMpBetButtons', 'data-mp-bet', 'HALF');
+      // 멀티 티어는 절대값(100~1천만, 보유 이하)으로 — %기반이면 부자는 작은 베팅이 안 됨. 하프/올인은 별도 버튼.
+      renderFixedBetButtons('dynamicMpBetButtons', 'data-mp-bet', [100, 1000, 10000, 100000, 1000000, 10000000].filter(a => a <= Math.floor(Number(gold) || 0)));
     }
 
     // 초기 + 골드 변경 시 업데이트
