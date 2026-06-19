@@ -1020,6 +1020,15 @@ function applyServerView(v){ MP.view=v; mpRender(v);
   if(myPend) mpOfferGoStop(v.pending.total);
   else if($('gostop')&&$('gostop').classList.contains('show')) hide('gostop');   // pending 해소 → GO/STOP 팝업 닫기(1고 이후 먹통 방지)
 }
+// 서버는 한 수(놓기+뒤집기+먹기)를 한 번에 보내 보드가 즉시 스냅된다(=싱글보다 빠름).
+// 직전 event(mpOnEvent)가 쌓아둔 애니 시간만큼 보드 적용을 늦춰 싱글의 놓기→뒤집기→먹기 페이싱을 흉내.
+function mpScheduleView(v){
+  MP._latestView=v;
+  var d=MP._pendingAnimMs||0; MP._pendingAnimMs=0;
+  if(d<=0){ if(MP._viewTimer){clearTimeout(MP._viewTimer);MP._viewTimer=null;} applyServerView(v); return; }
+  if(MP._viewTimer) clearTimeout(MP._viewTimer);
+  MP._viewTimer=setTimeout(function(){ MP._viewTimer=null; applyServerView(MP._latestView); }, Math.min(d,1300));
+}
 function mpAskFlipPick(cands){
   if(!cands||!cands.length||$('pickAsk').classList.contains('show'))return;
   const box=$('pickCards'); box.innerHTML=cands.map((c,i)=>`<img src="${c.file}" data-i="${i}" style="width:68px;border-radius:6px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.55)">`).join('');
@@ -1155,6 +1164,13 @@ function mpVoiceCombos(v){ if(!VOICE||!v||!v.players)return;
 function mpOnEvent(ev){
   if(!ev||!ev.type)return;
   mpAnimateEvent(ev);   // fly 애니(이벤트 구동) — 출발 좌표가 살아있는 지금 캡처
+  // 이 수의 애니 길이만큼 보드 적용을 늦춘다(mpScheduleView). 놓기+뒤집기+먹기를 단계적으로 보이게.
+  if(ev.type==='play' || ev.type==='flip_turn'){
+    const _p=ev.payload||{}; let _d=300;                       // 손패 놓기
+    if(_p.flipCard) _d+=600;                                   // 덱 뒤집기 중앙 연출
+    if((_p.captured&&_p.captured.length)||(_p.stolen&&_p.stolen.length)) _d+=350;  // 먹기/피뺏기 fly
+    MP._pendingAnimMs=(MP._pendingAnimMs||0)+_d;
+  }
   if(ev.type==='play' || ev.type==='flip_turn'){
     const p=ev.payload||{}; const stags=p.stags||[]; const stolen=p.stolen||[];
     // 싱글과 동일한 사운드 시퀀스 (claim '또잉'은 싱글에서 제거됨 — 피뺏기에서만 사용).
@@ -1255,12 +1271,13 @@ function mpResult(v){
     var menu = document.getElementById('menu'); if (menu) menu.style.display='none';
     window.MP = window.MP || {};
     MP.ui = new MultiplayerLobby({
-      gameType:'gostop', gameName:'맞고·고스톱', maxPlayers:2, minPlayers:2,
+      gameType:'gostop', gameName:'맞고·고스톱', maxPlayers:4, minPlayers:2,
       container: document.body, userId: user, nickname: nick,
-      startConfig: function(){ return { seats:2, bet:(window.BET||1) }; },
+      // 인원 선택(2~4인) 반영. 빈자리는 '🤖 지금 시작' 버튼(fillAI)일 때만 AI로 채움.
+      startConfig: function(){ return { seats: MP_SEATS, bet:(window.BET||1) }; },
       onGameStart: function(rs){ doGameStart(rs); },
       onGameEvent: function(type, data){
-        if (type === 'state_update') applyServerView(data.gameState);
+        if (type === 'state_update') mpScheduleView(data.gameState);   // 싱글 수준 페이싱(애니 끝난 뒤 보드 안착)
         else if (type === 'event') { try{ mpOnEvent(data); }catch(_){} }
         // 'game_end'는 applyServerView(finished)가 mpResult로 처리 → 별도 불필요
       },
