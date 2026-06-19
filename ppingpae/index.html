@@ -2721,9 +2721,10 @@ async function startPpingpaeDO() {
   let lastView = null;  // getRoomState()가 반환할 최신 뷰(mpHandleEvent action/state refresh가 사용)
 
   const lobby = new MultiplayerLobby({
-    gameType: 'ppingpae', gameName: '삥패', maxPlayers: 2, minPlayers: 2,
+    gameType: 'ppingpae', gameName: '삥패', maxPlayers: Math.max(2, Number(menuConfig.count) || 2), minPlayers: 1,
     container: document.body, nickname: nick,
-    startConfig: () => ({ timeLimit: 60, initialHandSize: 14, initialMeldScore: 30 }),
+    // seats = 메뉴에서 고른 인원수 → 서버가 빈 좌석을 AI(🤖)로 채움. 혼자 시작도 가능(minPlayers 1).
+    startConfig: () => ({ seats: Math.max(2, Number(menuConfig.count) || 2), timeLimit: 60, initialHandSize: 14, initialMeldScore: 30 }),
     onGameStart: (rs) => {
       lastView = rs.gameState;
       mpState.myUserId = mpState.client.getMyUserId();
