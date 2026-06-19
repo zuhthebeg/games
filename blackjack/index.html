@@ -341,12 +341,12 @@
       cursor: pointer;
     }
     .multi-table {
-      padding: 10px 8px 16px;
+      padding: 6px 7px 8px;
       overflow-y: auto;
       min-height: 0;
       display: grid;
       align-content: start;
-      gap: 12px;
+      gap: 7px;
       /* 카지노 펠트 테이블 */
       background: radial-gradient(ellipse 120% 78% at 50% 30%, #1f8052 0%, #15623d 48%, #0b3f27 100%);
       border-radius: 22px;
@@ -357,8 +357,15 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 12px;
+      gap: 7px;
     }
+    /* 멀티 딜러 카드 축소(공간 절약 — 90px는 너무 큼) + 딜러존 컴팩트 */
+    .multi-table .seat { padding: 4px 7px; }
+    .multi-table .seat .cards { min-height: 66px; gap: 5px; }
+    .multi-table .seat .card { width: 44px; height: 62px; }
+    .multi-table .seat .card .rank { font-size: 0.72rem; }
+    .multi-table .seat .card .suit { font-size: 0.95rem; }
+    .multi-table .dealer-speech { margin: 3px auto 1px; }
     /* 상대들 = 테이블 둘레 아치(가운데 뒤, 가장자리 앞). 카드 작게. */
     .mp-opponents {
       display: flex;
@@ -381,7 +388,7 @@
     .mp-opponents .mp-player-head { font-size: 0.6rem; margin-bottom: 3px; }
     .mp-opponents .mp-hand-meta { font-size: 0.55rem; }
     /* 나 = 전면 중앙, 크게 */
-    .mp-me-seat-wrap { width: 100%; display: flex; justify-content: center; margin-top: 2px; }
+    .mp-me-seat-wrap { width: 100%; display: flex; justify-content: center; margin-top: 0; }
     .mp-me-seat-wrap .mp-player-seat.me { width: 100%; max-width: 360px; }
     .mp-player-seat {
       border: 1px solid rgba(255,255,255,0.15);
@@ -2346,10 +2353,10 @@
         amount = Math.min(Math.floor(Number(state.gold) || 0), MULTI_BET_MAX);
         if (amount <= 0) return;
         const msg = currentLang === "ko"
-          ? `${amount.toLocaleString()} 골드 전부 베팅합니다. 진행할까요? (멀티 최대 ${MULTI_BET_MAX.toLocaleString()})`
+          ? `${amount.toLocaleString()} 골드 전부 베팅합니다. 진행할까요?`
           : currentLang === "zh-TW"
-          ? `全押 ${amount.toLocaleString()} 金幣，要繼續嗎？(多人上限 ${MULTI_BET_MAX.toLocaleString()})`
-          : `Bet all ${amount.toLocaleString()} gold? (multi cap ${MULTI_BET_MAX.toLocaleString()})`;
+          ? `全押 ${amount.toLocaleString()} 金幣，要繼續嗎？`
+          : `Bet all ${amount.toLocaleString()} gold?`;
         if (!confirm(msg)) return;
         SFX.allInVoice();
       } else if (raw === "custom") {
@@ -2520,7 +2527,7 @@
 
     // Multi bet is capped at 10K with fixed tiers to avoid server-side
     // validation mismatches between players' relative wagers.
-    const MULTI_BET_MAX = 10000;
+    const MULTI_BET_MAX = 1e12;   // 사실상 무제한 — 하프/올인은 보유 골드(서버 bankroll)가 한계
     const MULTI_BET_TIERS = [100, 500, 1000, 5000, 10000];
 
     function renderFixedBetButtons(containerId, dataAttr, tiers) {
