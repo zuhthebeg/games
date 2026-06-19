@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <script src="/lib/multiplayer.js?v=20260618leave"></script>
 <script src="/lib/multiplayer-ui.js?v=20260606a"></script>
-<script src="/lib/mp-lobby.js?v=20260619A"></script>
+<script src="/lib/mp-lobby.js?v=20260619B"></script>
 <script src="/lib/shared-wallet.js?v=20260606a"></script>
 <script src="/lib/game-rankings.js?v=20260606a"></script>
 <script>
@@ -2664,14 +2664,12 @@ function showScreen(name) {
 }
 
 async function openMultiLobby() {
-  // class 선언은 window에 자동 노출되지 않으므로 bare name으로 검사
-  if (typeof MultiplayerClient === 'undefined' || typeof MultiplayerUI === 'undefined') {
-    showToast('멀티 라이브러리 로드 실패\n새로고침해주세요');
-    return;
-  }
   SFX.setEnabled(document.getElementById('sfx-toggle')?.checked !== false);
   BGM.setEnabled(document.getElementById('bgm-toggle')?.checked !== false);
-  showScreen('screen-lobby');
+  // 멀티 = DO 실시간(공용 MultiplayerLobby). menu 솔로는 그대로 유지(게이트 미플립).
+  if (typeof MultiplayerLobby !== 'function') { showToast('멀티 라이브러리 로드 실패\n새로고침해주세요'); return; }
+  try { return startPpingpaeDO(); } catch (e) { console.error('startPpingpaeDO', e); showToast('멀티 시작 실패'); return; }
+  // ↓ (레거시 REST 로비 — 도달 안 함, ?relay=rest 시 수동 사용 가능)
   const container = document.getElementById('mp-lobby-container');
 
   if (ppingpaeMpUI) { ppingpaeMpUI.show(); return; }
@@ -2754,7 +2752,8 @@ async function startPpingpaeDO() {
   mpState.ui = lobby;
 }
 window.addEventListener('load', () => {
-  if (MultiplayerWSClient.relayDefaultOn(true)) { try { startPpingpaeDO(); } catch (e) { console.error('startPpingpaeDO', e); } }
+  // ?relay=do는 직접 DO 진입(테스트). 일반 진입은 menu(솔로/멀티) 유지 — 멀티 버튼이 DO 로비로 감.
+  if (new URLSearchParams(location.search).get('relay') === 'do') { try { startPpingpaeDO(); } catch (e) { console.error('startPpingpaeDO', e); } }
 });
 
 function escapeHtml(s) {

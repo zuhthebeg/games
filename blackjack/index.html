@@ -618,7 +618,7 @@
 
   <script src="/lib/multiplayer.js?v=20260618leave"></script>
   <script src="/lib/multiplayer-ui.js?v=20260605a"></script>
-  <script src="/lib/mp-lobby.js?v=20260619A"></script>
+  <script src="/lib/mp-lobby.js?v=20260619B"></script>
   <script>
     const SUITS = ["♠", "♥", "♦", "♣"];
     const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
@@ -1798,10 +1798,9 @@
       init();
     });
 
-    // Multi mode
+    // Multi mode — DO 실시간(공용 MultiplayerLobby). 솔로 모드선택은 그대로 유지(게이트 미플립).
     document.getElementById("modeMultiBtn").addEventListener("click", () => {
-      showScreen("mpLobbyContainer");
-      initMultiplayer();
+      startBlackjackDO();
     });
 
     // ── DO/WS 실시간 경로 (?relay=do) ──
@@ -2407,7 +2406,7 @@
       const params = new URLSearchParams(window.location.search);
 
       // DO/WS 실시간 경로(?relay=do): REST 라우팅보다 먼저. URL 보존(스트립 안 함).
-      if (MultiplayerWSClient.relayDefaultOn(true)) {
+      if (params.get("relay") === "do") {
         (async () => {
           if (typeof SharedWallet !== "undefined" && SharedWallet.init) { try { await SharedWallet.init(); } catch (_) {} }
           state.gold = typeof SharedWallet !== "undefined" ? Number(SharedWallet.gold || 0) : 1000;

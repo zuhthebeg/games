@@ -563,6 +563,7 @@
             ch.innerHTML = '<div style="padding:24px;max-width:360px;width:90%">'
                 + '<h2 style="margin:0 0 4px">⚫⚪ 오목 · 온라인 대전</h2>'
                 + '<p style="font-size:11px;color:#7CFC9A;margin:0 0 14px">DO 실시간 · 빠른매칭</p>'
+                + '<button id="ch-solo" style="display:block;width:100%;padding:12px;margin:0 0 14px;font-size:15px;background:#444;border:0;border-radius:10px;color:#fff">🎮 혼자 두기 (로컬 2인)</button>'
                 + '<button id="ch-quick" style="display:block;width:100%;padding:14px;margin:0 0 8px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700">⚡ 빠른 대전</button>'
                 + '<button id="ch-new" style="display:block;width:100%;padding:12px;margin:0 0 8px;font-size:15px;background:#2d3a66;border:0;border-radius:10px;color:#fff">+ 새 방 만들기</button>'
                 + '<div style="display:flex;gap:6px;margin:0 0 12px"><input id="ch-code" placeholder="방 코드" maxlength="8" style="flex:1;min-width:0;padding:11px;border-radius:10px;border:1px solid #444;background:#0f1530;color:#fff;text-transform:uppercase"><button id="ch-join" style="padding:11px 16px;font-size:14px;background:#3a4a8c;border:0;border-radius:10px;color:#fff">입장</button></div>'
@@ -582,6 +583,10 @@
                 ).join('');
                 box.querySelectorAll('.ch-room').forEach(el => el.onclick = () => pick(el.getAttribute('data-room'), false));
             }
+            document.getElementById('ch-solo').onclick = () => {
+                const c = document.getElementById('do-chooser'); if (c) c.remove();
+                startLocalGame();
+            };
             document.getElementById('ch-quick').onclick = async () => {
                 const r = await MultiplayerWSClient.resolveEntryRoom('gomoku', null, WORKER);
                 pick(r.room, r.created);
@@ -608,6 +613,7 @@
                 + '<p style="font-size:11px;color:#7CFC9A;margin:0 0 10px">build do-v1 · 공용 WSClient · gameType=gomoku</p>'
                 + '<p>방코드 <b>' + room + '</b> · 나 ' + (nick || uid || '익명') + '</p>'
                 + '<p style="font-size:12px;color:#7CFC9A;margin:0 0 6px">' + (created ? '새 방 — 친구에게 이 URL/방코드 공유' : '매칭된 방에 합류') + '</p>'
+                + '<div style="margin:8px 0"><img alt="입장 QR" width="120" height="120" style="border-radius:8px;background:#fff;padding:5px" src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(location.origin + location.pathname + '?room=' + room) + '"></div>'
                 + '<p id="do-conns" style="font-size:13px;opacity:.75;margin:6px 0">접속자: 1</p>'
                 + '<p id="do-status" style="font-size:13px;color:#ffd76a;margin:6px 0">연결 중…</p>'
                 + '<p style="font-size:12px;opacity:.6;margin:8px 0">상대도 같은 URL(접속자:2)이면 시작</p>'

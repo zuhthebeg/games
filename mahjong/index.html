@@ -24,7 +24,7 @@
 <script src="/lib/shared-wallet.js?v=20260530b"></script>
 <script src="/lib/multiplayer.js?v=20260618leave"></script>
 <script src="/lib/multiplayer-ui.js?v=20260524a"></script>
-<script src="/lib/mp-lobby.js?v=20260619A"></script>
+<script src="/lib/mp-lobby.js?v=20260619B"></script>
 <script src="/lib/game-rankings.js?v=20260530a"></script>
 <style>
 :root{--bg:#0a0f1a;--panel:#111827;--panel2:#1f2937;--line:#334155;--text:#f1f5f9;--muted:#64748b;--accent:#ffd700;--green:#4ecca3;--red:#ef4444;--blue:#3b82f6;--wallet-bar-h:56px;--tz:1;}
@@ -1167,16 +1167,9 @@ window.addEventListener('resize',syncFS);
 const MP={active:false,ui:null,client:null,myUserId:null,mySeat:0,gs:null,mv:null};
 function openMultiplayer(){
   if(!hasFunds()){showToast(t('noFunds'));return;}
-  if(typeof MultiplayerUI==='undefined'){showToast(t('mpLoadFail'));return;}
-  document.getElementById('start-screen').style.display='none';
-  const cont=document.getElementById('mp-lobby');cont.style.display='block';
-  MP.ui=new MultiplayerUI({
-    gameType:'mahjong-tw',gameName:t('title').replace('🀄 ','').trim(),container:cont,maxPlayers:4,supportsLocal:false,
-    getRoomConfig:()=>({timeLimit:SET.turnTime||20,bet:SET.bet||100000}),
-    onGameStart:(roomState)=>mpStart(roomState),
-    onLeave:()=>{cont.style.display='none';cont.innerHTML='';document.getElementById('start-screen').style.display='flex';}
-  });
-  MP.ui.show();
+  // 멀티 = DO 실시간(공용 MultiplayerLobby). start-screen 솔로는 그대로 유지(게이트 미플립).
+  if(typeof MultiplayerLobby!=='function'){showToast(t('mpLoadFail'));return;}
+  try{startMahjongDO();}catch(e){console.error('startMahjongDO',e);showToast(t('mpLoadFail'));}
 }
 // ── DO/WS 실시간 경로 (?relay=do) ──
 // gostop/gomoku/connect4/blackjack와 동일 인프라(공용 MultiplayerWSClient + generic RoomDO). gameType=mahjong-tw.
@@ -1399,7 +1392,8 @@ window.addEventListener('load',()=>{
   if(typeof GameRankings!=='undefined')try{GameRankings.injectNavButton('mahjong');}catch(_){}
   if(typeof SharedWallet!=='undefined'){try{const g=SharedWallet.gold;if(g!=null)document.getElementById('sw-gold').textContent=t('myGold')+': '+Number(g).toLocaleString()+'G';}catch(_){}}
   // DO/WS 실시간 경로(?relay=do): REST 멀티 대신 공용 WSClient + shim.
-  if(MultiplayerWSClient.relayDefaultOn(true)){ try{startMahjongDO();}catch(e){console.error('startMahjongDO',e);} }
+  // ?relay=do는 직접 DO 진입(테스트). 일반 진입은 start-screen(솔로/멀티) 유지 — 멀티 버튼이 DO 로비로 감.
+  if(new URLSearchParams(location.search).get('relay')==='do'){ try{startMahjongDO();}catch(e){console.error('startMahjongDO',e);} }
 });
 </script>
 </body>
