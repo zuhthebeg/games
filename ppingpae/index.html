@@ -2196,7 +2196,11 @@ function renderPlayerBar() {
       <div class="pbar-name">${p.isAI ? '🤖' : (me ? '🫵 ' : '')}${p.name}</div>
       <div class="pbar-count">${count}장${p.hasInitialMeld ? '' : ' ⬜'}</div>
     </div>`;
-  }).join('');
+  }).join('') + `
+    <div class="pbar-card" style="opacity:.9">
+      <div class="pbar-name">🀫 ${window.PP_LANG==='zh-TW'?'剩餘':'남은패'}</div>
+      <div class="pbar-count">${(state.drawPile && state.drawPile.length) || 0}장</div>
+    </div>`;
 }
 
 function renderBoard() {
@@ -3005,6 +3009,16 @@ function mpApplyServerView(publicState, myView) {
   const prevHandIds = (mpState.mySeat >= 0 && state.players[mpState.mySeat])
     ? new Set(state.players[mpState.mySeat].handIds) : new Set();
   const prevTurn = state.currentPlayer;
+
+  // ⚠️ 내 턴 진행 중(멜드 작업 중)에 들어온 중복/리액션발 갱신은 무시 — 작업하던 보드·선택 보존.
+  // 내 턴엔 나만 액션하므로 서버 상태가 바뀔 일이 없음. 서버 보드가 실제로 달라졌으면(아래 비교) 통과.
+  // (이게 없으면 리액션·중복 state_update가 들어올 때 내 턴 작업이 초기화됨)
+  if (mpState.active && !publicState.finished && state.turnState
+      && mpState.mySeat >= 0 && prevTurn === mpState.mySeat && publicState.currentTurn === mpState.mySeat) {
+    const srvBoard = (publicState.board || []).flatMap(g => (g.tiles || []).map(t => t.id)).sort().join(',');
+    const snapBoard = (state.turnState.boardSnapshot || []).flatMap(g => g.tileIds).sort().join(',');
+    if (srvBoard === snapBoard) return;  // 서버 보드 동일 = 의미 있는 변화 없음 → 내 작업 유지
+  }
 
   // tileMap: 보드와 내 손패 타일을 통합해서 채움
   state.tileMap = {};
