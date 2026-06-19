@@ -2676,7 +2676,7 @@ async function openMultiLobby() {
 
   ppingpaeMpUI = new MultiplayerUI({
     gameType: MP_GAME_TYPE,
-    gameName: '🎴 삥패',
+    gameName: '삥패',
     container,
     maxPlayers: 4,
     supportsLocal: false,
@@ -2721,7 +2721,7 @@ async function startPpingpaeDO() {
   let lastView = null;  // getRoomState()가 반환할 최신 뷰(mpHandleEvent action/state refresh가 사용)
 
   const lobby = new MultiplayerLobby({
-    gameType: 'ppingpae', gameName: '🎴 삥패', maxPlayers: 2, minPlayers: 2,
+    gameType: 'ppingpae', gameName: '삥패', maxPlayers: 2, minPlayers: 2,
     container: document.body, nickname: nick,
     startConfig: () => ({ timeLimit: 60, initialHandSize: 14, initialMeldScore: 30 }),
     onGameStart: (rs) => {

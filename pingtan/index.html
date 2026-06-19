@@ -8373,7 +8373,8 @@ https://game.cocy.io/pingtan/`;
     // PingtanDOClient = MultiplayerWSClient를 감싸 MultiplayerClient 표면을 흉내내는 어댑터.
     // 엔진/onMpEvent/스냅샷 코드 무수정 — DO 이벤트 형태 {seq,type:'action',data:action}가
     // onMpEvent의 action 분기(event.data)와 그대로 호환되기 때문.
-    const PINGTAN_DO = new URLSearchParams(location.search).get("relay") === "do";
+    // DO 기본 ON(게이트 플립). 멀티만 DO 전송(솔로=showMapSelect는 무관). ?relay=rest 또는 localStorage.relayKill=1로 REST 복귀.
+    const PINGTAN_DO = MultiplayerWSClient.relayDefaultOn(true);
     const PINGTAN_DO_WORKER = "wss://relay-do-poc.zuhejbeg.workers.dev";
     class PingtanDOClient {
       constructor() {
