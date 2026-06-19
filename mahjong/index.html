@@ -70,6 +70,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 /* 손패는 살짝 겹쳐서 확대해도 더 많이 보이게 (겹침량은 줌에 비례) */
 #player-hand-row .tile{margin-right:calc(-6px*var(--tz));}
 #player-hand-row .tile:last-child{margin-right:0;}
+#player-hand-row .tile.drawn-sep{margin-left:calc(16px*var(--tz));}  /* 갓 뽑은/깡 보충패 — 맨 오른쪽에 따로 */
 #action-btns{display:flex;gap:6px;flex-wrap:wrap;}
 .action-btn{padding:8px 12px;font-size:.82rem;font-weight:700;border:none;border-radius:8px;cursor:pointer;flex:1;min-width:56px;}
 .action-btn:disabled{opacity:.3;cursor:not-allowed;}
@@ -1068,16 +1069,21 @@ function renderPlayer(){
     // 손패 타일 엘리먼트 재사용(패값별 풀) — innerHTML 전체교체 시 <img> 재디코드로 생기는 깜빡임 방지.
     // 기존 노드는 그대로 두고 순서만 재배치(append=이동, 이미지 재로드 없음). 뽑은 패 1장만 새로 생성.
     const pool={};Array.from(hr.children).forEach(el=>{const k=el.dataset.tile;if(k){(pool[k]=pool[k]||[]).push(el);}});
-    const want=[];let jd=false;
-    p.hand.forEach((t,i)=>{
+    // 갓 뽑은/깡 보충패는 정렬 손패에서 빼서 맨 오른쪽에 따로(쯔모기리·보충패 식별).
+    const drawn=(G.lastDraw&&G.currentPlayer===0&&G.phase==='discard')?G.lastDraw:null;
+    const order=p.hand.slice();let drawnPos=-1;
+    if(drawn){drawnPos=order.indexOf(drawn);if(drawnPos>=0)order.splice(drawnPos,1);}
+    const mkTile=(t,extra,i)=>{
       let d=(pool[t]&&pool[t].length)?pool[t].shift():null;
       if(!d){d=document.createElement('div');d.dataset.tile=t;d.innerHTML=tileFace(t);attachTileDrag(d,t);}
-      let cls='tile '+tileClass(t)+suitCls(t)+(t===selTile?' selected':'');
-      if(!jd&&G.lastDraw&&t===G.lastDraw&&G.currentPlayer===0&&G.phase==='discard'){cls+=' just-drawn';jd=true;}
+      let cls='tile '+tileClass(t)+suitCls(t)+(t===selTile?' selected':'')+extra;
       if(_dealAnim)cls+=' deal-anim';
       d.className=cls;d.style.animationDelay=_dealAnim?(i*0.035).toFixed(3)+'s':'';
-      want.push(d);
-    });
+      return d;
+    };
+    const want=[];
+    order.forEach((t,i)=>want.push(mkTile(t,'',i)));
+    if(drawn&&drawnPos>=0)want.push(mkTile(drawn,' just-drawn drawn-sep',order.length));
     want.forEach(d=>hr.appendChild(d));
     Object.values(pool).forEach(arr=>arr.forEach(el=>el.remove()));  // 버려진/안 쓰인 타일 제거
   }
