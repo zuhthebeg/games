@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <script src="/lib/multiplayer.js?v=20260618leave"></script>
 <script src="/lib/multiplayer-ui.js?v=20260606a"></script>
-<script src="/lib/mp-lobby.js?v=20260619F"></script>
+<script src="/lib/mp-lobby.js?v=20260619G"></script>
 <script src="/lib/shared-wallet.js?v=20260606a"></script>
 <script src="/lib/game-rankings.js?v=20260606a"></script>
 <script>
@@ -2740,6 +2740,18 @@ async function startPpingpaeDO() {
     },
     onGameEvent: (type, data) => {
       if (type === 'state_update') { lastView = data.gameState; mpApplyServerView(data.gameState, data.gameState); }
+      else if (type === 'action_error') {
+        // 서버가 내 액션을 진짜로 거절(유효하지 않은 조합 등) → 보드 원복 + 사유 표시.
+        const ts = state.turnState;
+        if (ts) {
+          state.board = deepCloneBoard(ts.boardSnapshot);
+          if (mpState.mySeat >= 0 && state.players[mpState.mySeat]) state.players[mpState.mySeat].handIds = [...ts.handSnapshot];
+        }
+        state.selected = null; state.selectedIds.clear(); state.boardSelectedIds.clear();
+        state.actionLocked = false;
+        showToast('서버 거절: ' + ((data && data.error) || ''));
+        render(); startTimer();
+      }
       else if (type === 'event') { try { if (typeof mpHandleEvent === 'function') mpHandleEvent(data && data.type || 'state_update', data); } catch (_) {} }
       // 'game_end'는 state_update(finished view)가 mpApplyServerView로 처리 → 별도 불필요
     },
@@ -3134,20 +3146,9 @@ async function mpSendCompleteTurn() {
       handIds: [...me.handIds],
     };
     const res = await mpState.client.sendAction({ type: 'COMPLETE_TURN', payload });
-    if (!res.success) {
-      showToast('서버 거절: ' + (res.error || ''));
-      // 서버가 거절했으면 로컬 보드도 턴 시작 상태로 원복 — 거절인데 등록돼 보이는 desync 방지.
-      const ts = state.turnState;
-      if (ts) {
-        state.board = deepCloneBoard(ts.boardSnapshot);
-        if (state.players[mpState.mySeat]) state.players[mpState.mySeat].handIds = [...ts.handSnapshot];
-      }
-      state.selected = null;
-      state.selectedIds.clear(); state.boardSelectedIds.clear();
-      state.actionLocked = false;
-      render();
-      startTimer();
-    } else if (res.gameState) {
+    // DO 경로: 결과는 비동기다. 수락=서버 state_update가 보드 적용, 거절=서버 'error'→action_error가 원복+사유.
+    // 동기 반환({})으로 거절 판단하면 매번 거짓 "서버 거절"이 뜨므로 여기선 판단하지 않는다.
+    if (res && res.gameState) {
       mpApplyServerView(res.gameState, res.myView);
     }
   } catch (e) {
@@ -3172,11 +3173,8 @@ async function mpSendPass() {
       state.players[mpState.mySeat].handIds = [...ts.handSnapshot];
     }
     const res = await mpState.client.sendAction({ type: 'PASS' });
-    if (!res.success) {
-      showToast('패스 실패: ' + (res.error || ''));
-      state.actionLocked = false;
-      startTimer();
-    } else if (res.gameState) {
+    // DO 경로: 결과 비동기. 거절은 action_error로 처리. 동기 반환({})으로 거짓 거절 띄우지 않음.
+    if (res && res.gameState) {
       mpApplyServerView(res.gameState, res.myView);
     }
   } catch (e) {
