@@ -508,13 +508,10 @@
     <div class="multi-head">
       <button class="back-btn" id="multiLeaveBtn">← 나가기</button>
       <div class="phase" id="multiPhaseText">-</div>
+      <div class="timer" id="mpDeckText" style="color:var(--muted);font-weight:700;min-width:auto;">🂠52/52</div>
       <div class="timer" id="multiTimerText">15s</div>
     </div>
     <section class="table multi-table">
-      <div class="mp-deck-status" id="mpDeckStatus">
-        <div class="deck-stack" id="mpDeckStack"><span></span><span></span><span></span></div>
-        <div id="mpDeckText">Deck 52/52</div>
-      </div>
       <div class="seat">
         <div class="seat-head">
           <div class="seat-title" id="mpDealerLabel">DEALER</div>
@@ -555,13 +552,10 @@
       <div class="item"><div class="k" id="betLabel">현재 베팅</div><div class="v" id="betText">0</div></div>
       <div class="item"><div class="k" id="streakLabel">연승</div><div class="v" id="streakText">0</div></div>
       <div class="item"><div class="k" id="bonusLabel">보너스</div><div class="v" id="bonusText">없음</div></div>
+      <div class="item"><div class="k">🂠 덱</div><div class="v" id="soloDeckText">52/52</div></div>
     </section>
 
     <section class="table" id="table">
-      <div class="mp-deck-status" id="soloDeckStatus">
-        <div class="deck-stack" id="soloDeckStack"><span></span><span></span><span></span></div>
-        <div id="soloDeckText">Deck 52/52</div>
-      </div>
       <div class="seat">
         <div class="seat-head">
           <div class="seat-title">DEALER</div>
@@ -1171,11 +1165,7 @@
       el.streakText.textContent = currentLang === "ko" ? `${state.streak}연승` : currentLang === "zh-TW" ? `${state.streak}連勝` : `${state.streak} wins`;
       el.bonusText.textContent = bonusLabel();
       if (el.soloDeckText) {
-        el.soloDeckText.textContent = currentLang === "ko"
-          ? `덱 ${state.deck.length}/${state.deckSize}`
-          : currentLang === "zh-TW"
-          ? `牌組 ${state.deck.length}/${state.deckSize}`
-          : `Deck ${state.deck.length}/${state.deckSize}`;
+        el.soloDeckText.textContent = `${state.deck.length}/${state.deckSize}`;
       }
 
       const dealerCards = state.dealer.map((c, i) => cardHTML(c, !state.revealDealer && i === 1)).join("");
@@ -2150,7 +2140,7 @@
       const phaseMap = { betting: "phaseBetting", dealing: "phaseDealing", playing: "phasePlaying", dealer_turn: "phaseDealerTurn", settling: "phaseSettling", finished: "phaseFinished" };
       document.getElementById("multiPhaseText").textContent = t(phaseMap[phase] || "phasePlaying");
       const deckText = document.getElementById("mpDeckText");
-      if (deckText) deckText.textContent = currentLang === "ko" ? `덱 ${deckCount}/${deckSize}` : currentLang === "zh-TW" ? `牌組 ${deckCount}/${deckSize}` : `Deck ${deckCount}/${deckSize}`;
+      if (deckText) deckText.textContent = `🂠${deckCount}/${deckSize}`;
       if (reshuffleCount > mpLastReshuffleCount) {
         const stack = document.getElementById("mpDeckStack");
         stack?.classList.add("reshuffle");
