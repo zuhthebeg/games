@@ -365,7 +365,19 @@
     .multi-table .seat .card { width: 44px; height: 62px; }
     .multi-table .seat .card .rank { font-size: 0.72rem; }
     .multi-table .seat .card .suit { font-size: 0.95rem; }
-    .multi-table .dealer-speech { margin: 3px auto 1px; }
+    /* 딜러 라벨 ↔ 카드 간격 최소화 */
+    .multi-table .dealer-seat { position: relative; padding: 3px 7px 5px; }
+    .multi-table .dealer-seat .seat-head { margin-bottom: 1px; }
+    .multi-table .dealer-seat .cards { min-height: 64px; margin: 0; }
+    /* 말풍선 = 카드 위 절대 오버레이(레이아웃 안 밀고 떠 있음) */
+    .multi-table #mpDealerSpeech {
+      position: absolute; left: 50%; top: 24px; margin: 0; z-index: 9;
+      transform: translateX(-50%) translateY(-6px) scale(.95);
+      max-width: 80%; white-space: nowrap;
+    }
+    .multi-table #mpDealerSpeech.show {
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
     /* 상대들 = 테이블 둘레 아치(가운데 뒤, 가장자리 앞). 카드 작게. */
     .mp-opponents {
       display: flex;
@@ -391,6 +403,14 @@
     /* 나 = 전면 중앙, 크게 */
     .mp-me-seat-wrap { width: 100%; display: flex; justify-content: center; margin-top: 0; }
     .mp-me-seat-wrap .mp-player-seat.me { width: 100%; max-width: 360px; }
+    /* 멀티 베팅: 선택 → 확인 (오발 방지) */
+    .mp-bet-head { display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--muted); margin-bottom: 5px; }
+    .mp-bet-head b { color: var(--text); }
+    .mp-bet-head .mp-bet-pick b { color: var(--gold); }
+    #mpBetPanel button[data-mp-pick].sel { outline: 2px solid var(--gold); background: rgba(255,200,80,0.18); }
+    .mp-bet-confirm { width: 100%; margin-top: 6px; padding: 11px; font-size: 0.92rem; font-weight: 900;
+      border-radius: 11px; border: none; color: #1a1205; background: linear-gradient(180deg,#ffd76a,#e8a82a); cursor: pointer; }
+    .mp-bet-confirm:disabled { background: rgba(255,255,255,0.1); color: var(--muted); cursor: default; }
     .mp-player-seat {
       border: 1px solid rgba(255,255,255,0.15);
       background: rgba(0,0,0,0.24);
@@ -509,27 +529,31 @@
       <button class="back-btn" id="multiLeaveBtn">← 나가기</button>
       <div class="phase" id="multiPhaseText">-</div>
       <div class="timer" id="mpDeckText" style="color:var(--muted);font-weight:700;min-width:auto;">🂠52/52</div>
-      <div class="timer" id="multiTimerText">15s</div>
     </div>
     <section class="table multi-table">
-      <div class="seat">
+      <div class="seat dealer-seat">
         <div class="seat-head">
           <div class="seat-title" id="mpDealerLabel">DEALER</div>
           <div class="score" id="mpDealerScore">-</div>
         </div>
-        <div class="dealer-speech" id="mpDealerSpeech"></div>
         <div class="cards" id="mpDealerCards"></div>
+        <div class="dealer-speech" id="mpDealerSpeech"></div>
       </div>
       <div class="multi-players" id="mpPlayers"></div>
     </section>
     <section class="status" id="mpTurnStatus">-</section>
     <section class="panel bet hidden" id="mpBetPanel">
+      <div class="mp-bet-head">
+        <span class="mp-bet-gold">보유 <b id="mpBetGold">0</b>G</span>
+        <span class="mp-bet-pick">선택 <b id="mpBetSelected">0</b>G</span>
+      </div>
       <div class="row" style="flex-wrap:wrap;gap:4px;">
-        <button data-mp-bet="custom" style="min-width:0;padding:6px 8px;font-size:0.7rem;">✏️</button>
-        <button data-mp-bet="half" style="min-width:0;padding:6px 8px;font-size:0.7rem;">½</button>
-        <button data-mp-bet="all" class="allin" style="min-width:0;padding:6px 8px;font-size:0.7rem;">ALL</button>
+        <button data-mp-pick="custom" style="min-width:0;padding:6px 8px;font-size:0.7rem;">✏️</button>
+        <button data-mp-pick="half" style="min-width:0;padding:6px 8px;font-size:0.7rem;">½</button>
+        <button data-mp-pick="all" class="allin" style="min-width:0;padding:6px 8px;font-size:0.7rem;">ALL</button>
         <span id="dynamicMpBetButtons" class="dynamic-bet-buttons"></span>
       </div>
+      <button id="mpBetConfirm" class="mp-bet-confirm" disabled>금액 선택</button>
     </section>
     <section class="panel actions hidden" id="mpActionPanel">
       <div class="gesture-pad" id="mpGesturePad">더블탭 Hit · 좌우 Stand · ↑ Split · ↓ Double</div>
@@ -2237,7 +2261,9 @@
       const mePlayer = gamePlayers.find(p => p.id === myId);
       const isMeBankrupt = !!mePlayer?.bankrupt || Number(mePlayer?.bankroll ?? state.gold) <= 0;
       if (phase === "betting" && mePlayer && !mePlayer.ready) {
+        const wasHidden = betPanel.classList.contains("hidden");
         betPanel.classList.remove("hidden");
+        if (wasHidden) { updateBetButtons(); setMpSelectedBet(null); }  // 새 베팅 라운드 진입 → 선택 초기화 + 보유 갱신
       } else {
         betPanel.classList.add("hidden");
       }
@@ -2333,41 +2359,59 @@
       }
     }
 
-    // ── Multi: Bet Buttons (event delegation — tier buttons are re-rendered every 5s) ──
-    document.addEventListener("click", async (e) => {
-      const btn = e.target.closest("[data-mp-bet]");
+    // ── Multi: Bet (선택 → 확인. 탭 한 번에 잘못 베팅되는 오발 방지) ──
+    let mpSelectedBet = null;
+    function setMpSelectedBet(amount) {
+      mpSelectedBet = (amount && amount > 0) ? Math.floor(amount) : null;
+      const selEl = document.getElementById("mpBetSelected");
+      const confirmBtn = document.getElementById("mpBetConfirm");
+      if (selEl) selEl.textContent = (mpSelectedBet || 0).toLocaleString();
+      // 티어 버튼 하이라이트
+      document.querySelectorAll('#mpBetPanel [data-mp-pick]').forEach((b) => {
+        const raw = b.dataset.mpPick;
+        const v = (raw === "all" || raw === "half" || raw === "custom") ? null : Number(raw);
+        b.classList.toggle("sel", v != null && v === mpSelectedBet);
+      });
+      if (confirmBtn) {
+        const ok = mpSelectedBet != null && mpSelectedBet > 0;
+        confirmBtn.disabled = !ok;
+        confirmBtn.textContent = ok
+          ? (currentLang === "ko" ? `${mpSelectedBet.toLocaleString()}G 베팅하기` : currentLang === "zh-TW" ? `下注 ${mpSelectedBet.toLocaleString()}G` : `Bet ${mpSelectedBet.toLocaleString()}G`)
+          : (currentLang === "ko" ? "금액 선택" : currentLang === "zh-TW" ? "選擇金額" : "Pick amount");
+      }
+    }
+    // 픽 버튼: 금액만 선택(전송 안 함)
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-mp-pick]");
       if (!btn) return;
       if (!mpUI?.getClient()) return;
       syncGold();
-      const raw = btn.dataset.mpBet;
+      const gold = Math.floor(Number(state.gold) || 0);
+      const raw = btn.dataset.mpPick;
+      if (raw === "custom") { openNumpad("multi"); return; }
       let amount;
-      if (raw === "all") {
-        amount = Math.min(Math.floor(Number(state.gold) || 0), MULTI_BET_MAX);
-        if (amount <= 0) return;
-        const msg = currentLang === "ko"
-          ? `${amount.toLocaleString()} 골드 전부 베팅합니다. 진행할까요?`
-          : currentLang === "zh-TW"
-          ? `全押 ${amount.toLocaleString()} 金幣，要繼續嗎？`
-          : `Bet all ${amount.toLocaleString()} gold?`;
-        if (!confirm(msg)) return;
-        SFX.allInVoice();
-      } else if (raw === "half") {
-        amount = Math.floor((Number(state.gold) || 0) / 2);
-        if (amount <= 0) return;
-      } else if (raw === "custom") {
-        openNumpad("multi");
-        return;
-      } else {
-        amount = Math.min(Number(raw), MULTI_BET_MAX);
-      }
-      if (state.gold < amount) {
-        alert(t("goldInsufficient"));
-        return;
-      }
+      if (raw === "all") amount = gold;
+      else if (raw === "half") amount = Math.floor(gold / 2);
+      else amount = Number(raw);
+      if (!amount || amount <= 0) return;
+      if (amount > gold) { showMultiInlineNotice(t("goldInsufficient")); return; }
+      setMpSelectedBet(amount);
+    });
+    // 확인 버튼: 선택한 금액으로 실제 베팅 전송
+    document.getElementById("mpBetConfirm").addEventListener("click", async () => {
+      if (!mpUI?.getClient()) return;
+      syncGold();
+      const gold = Math.floor(Number(state.gold) || 0);
+      const amount = mpSelectedBet;
+      if (!amount || amount <= 0) { showMultiInlineNotice(currentLang === "ko" ? "금액을 먼저 선택해줘." : "Pick an amount first."); return; }
+      if (amount > gold) { showMultiInlineNotice(t("goldInsufficient")); return; }
+      if (amount === gold) SFX.allInVoice();
       try {
         await mpUI.sendAction({ type: "bet", payload: { amount } });
+        showMultiInlineNotice(currentLang === "ko" ? `${amount.toLocaleString()}G 베팅 완료 — 다른 플레이어 대기 중` : currentLang === "zh-TW" ? `已下注 ${amount.toLocaleString()}G` : `Bet ${amount.toLocaleString()}G placed`);
+        setMpSelectedBet(null);
       } catch (err) {
-        alert(t("actionFailed", err.message));
+        showMultiInlineNotice((currentLang === "ko" ? "베팅 실패: " : "Bet failed: ") + (err?.message || ""));
       }
     });
 
@@ -2537,7 +2581,11 @@
       const gold = typeof SharedWallet !== 'undefined' ? SharedWallet.gold : 0;
       renderBetButtons(getDoubleSafeMaxBet(gold), 'dynamicBetButtons', 'data-bet', 'HALF');
       // 멀티 티어는 절대값(100~1천만, 보유 이하)으로 — %기반이면 부자는 작은 베팅이 안 됨. 하프/올인은 별도 버튼.
-      renderFixedBetButtons('dynamicMpBetButtons', 'data-mp-bet', [100, 1000, 10000, 100000, 1000000, 10000000].filter(a => a <= Math.floor(Number(gold) || 0)));
+      renderFixedBetButtons('dynamicMpBetButtons', 'data-mp-pick', [100, 1000, 10000, 100000, 1000000, 10000000].filter(a => a <= Math.floor(Number(gold) || 0)));
+      const gEl = document.getElementById('mpBetGold');
+      if (gEl) gEl.textContent = Math.floor(Number(gold) || 0).toLocaleString();
+      // 선택값이 보유 초과면 무효화
+      if (mpSelectedBet != null && mpSelectedBet > Math.floor(Number(gold) || 0)) setMpSelectedBet(null);
     }
 
     // 초기 + 골드 변경 시 업데이트
@@ -2582,22 +2630,11 @@
       if (numpadMode === "single") {
         startRound(v);
       } else {
-        // multi custom bet: same payload shape as normal mp bet buttons
+        // multi custom bet: 금액만 선택(확인 버튼으로 전송)
         syncGold();
-        const amount = Math.min(v, MULTI_BET_MAX);
-        if (amount < v) {
-          alert(currentLang === "ko"
-            ? `멀티는 ${MULTI_BET_MAX.toLocaleString()} 골드까지만 베팅할 수 있어요.`
-            : currentLang === "zh-TW"
-            ? `多人模式最多只能下注 ${MULTI_BET_MAX.toLocaleString()} 金幣。`
-            : `Multi bets are capped at ${MULTI_BET_MAX.toLocaleString()} gold.`);
-        }
-        if (state.gold < amount) {
-          alert(t("goldInsufficient"));
-          return;
-        }
-        mpUI?.sendAction({ type: "bet", payload: { amount } })
-          .catch((e) => alert(t("actionFailed", e?.message || "")));
+        const gold = Math.floor(Number(state.gold) || 0);
+        if (v > gold) { showMultiInlineNotice(t("goldInsufficient")); return; }
+        setMpSelectedBet(v);
       }
     }
     // 오버레이 바깥 클릭 시 닫기
