@@ -7744,7 +7744,7 @@
             </div>
             <div class="pingtan-menu-actions">
               <button class="pingtan-mode-button" onclick="showMapSelect('single')"><strong>🎮 ${pt("single")}</strong><span>${pt("heroSingleDesc")}</span></button>
-              <button class="pingtan-mode-button primary" onclick="showMultiOptions()"><strong>👥 ${pt("multi")}</strong><span>${pt("heroMultiDesc")}</span></button>
+              <button class="pingtan-mode-button primary" onclick="showMapSelect('multi')"><strong>👥 ${pt("multi")}</strong><span>${pt("heroMultiDesc")}</span></button>
             </div>
             <div class="pingtan-menu-controls">
               <div class="multi-row">
@@ -7856,7 +7856,7 @@
 
     function renderMultiOptions() {
       return `
-        <div class="lobby-screen">
+        <div class="lobby-screen mode-screen">
           <div class="lobby-card">
             <h1 class="lobby-title">${PINGTAN_BRAND}</h1>
             ${renderPingtanLangSwitch()}
@@ -7864,9 +7864,14 @@
               <div class="multi-row">
                 <label for="maxPlayers">${pt("maxPlayers")}</label>
                 <select id="maxPlayers" onchange="onMaxPlayersChange(this.value)">
-                  <option value="2" ${state.maxPlayers === 2 ? "selected" : ""}>2</option>
-                  <option value="3" ${state.maxPlayers === 3 ? "selected" : ""}>3</option>
-                  <option value="4" ${state.maxPlayers === 4 ? "selected" : ""}>4</option>
+                  ${(() => {
+                    const _p = resolveMapPreset(state.selectedMapId || mpState.mapId || "standard");
+                    const _lo = (_p && _p.minPlayers) ? _p.minPlayers : 2;
+                    const _hi = (_p && _p.maxPlayers) ? _p.maxPlayers : 4;
+                    let _o = "";
+                    for (let _n = _lo; _n <= _hi; _n++) _o += `<option value="${_n}" ${Number(state.maxPlayers) === _n ? "selected" : ""}>${_n}</option>`;
+                    return _o;
+                  })()}
                 </select>
                 <button onclick="createRoom()">${pt("createRoom")}</button>
               </div>
@@ -7963,7 +7968,7 @@ ${roomInviteUrl(roomCode)}`;
       const inviteUrl = roomInviteUrl(roomCode);
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=132x132&data=${encodeURIComponent(inviteUrl)}`;
       return `
-        <div class="lobby-screen">
+        <div class="lobby-screen mode-screen">
           <div class="lobby-card" style="max-height:calc(100vh - 96px);overflow-y:auto;flex:0 0 auto;">
             <h1 class="lobby-title">${PINGTAN_BRAND}</h1>
             ${PINGTAN_DO ? `<p style="font-size:11px;color:#7CFC9A;margin:0 0 6px;text-align:center;">build do-relay-v1 · WebSocket relay</p>` : ""}
@@ -8315,7 +8320,7 @@ https://game.cocy.io/pingtan/`;
     function render() {
       const app = document.getElementById("app");
       const mpLobby = document.getElementById("mpLobbyContainer");
-      app.classList.toggle("mode-app", state.screen === "mode");
+      app.classList.toggle("mode-app", state.screen === "mode" || state.screen === "do-multi" || state.screen === "room-lobby");
       // Hide mpLobby when not in multi lobby
       if (state.screen !== "multi-lobby") {
         mpLobby.classList.add("hidden");
@@ -9299,6 +9304,11 @@ https://game.cocy.io/pingtan/`;
         const urlRoom = new URLSearchParams(location.search).get("room");
         state.mode = null;
         if (urlRoom) { joinRoom(urlRoom); return; }
+        // 선택한 맵의 최대 인원으로 기본 셋업(맵별 max 반영). 범위 밖이면 맵 max로.
+        const _p = resolveMapPreset(state.selectedMapId || "standard");
+        const _hi = (_p && _p.maxPlayers) ? _p.maxPlayers : 4;
+        const _lo = (_p && _p.minPlayers) ? _p.minPlayers : 2;
+        if (!state.maxPlayers || state.maxPlayers < _lo || state.maxPlayers > _hi) state.maxPlayers = _hi;
         state.screen = "do-multi";
         render();
         return;
@@ -9414,7 +9424,10 @@ https://game.cocy.io/pingtan/`;
     }
 
     function onMaxPlayersChange(value) {
-      const n = Math.max(2, Math.min(4, Number(value) || 4));
+      const _p = resolveMapPreset(state.selectedMapId || mpState.mapId || "standard");
+      const _hi = (_p && _p.maxPlayers) ? _p.maxPlayers : 4;
+      const _lo = (_p && _p.minPlayers) ? _p.minPlayers : 2;
+      const n = Math.max(_lo, Math.min(_hi, Number(value) || _hi));
       state.maxPlayers = n;
       render();
     }
