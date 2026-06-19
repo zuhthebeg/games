@@ -1,26 +1,26 @@
 {
-  "updated": "2026-06-18T19:05:00Z",
+  "updated": "2026-06-19T03:03:00Z",
   "group": "A",
   "standings": [
     {
       "team": "멕시코",
       "flag": "🇲🇽",
-      "mp": 1,
-      "w": 1,
+      "mp": 2,
+      "w": 2,
       "d": 0,
       "l": 0,
-      "gd": 2,
-      "pts": 3
+      "gd": 3,
+      "pts": 6
     },
     {
       "team": "대한민국",
       "flag": "🇰🇷",
       "kr": true,
-      "mp": 1,
+      "mp": 2,
       "w": 1,
       "d": 0,
-      "l": 0,
-      "gd": 1,
+      "l": 1,
+      "gd": 0,
       "pts": 3
     },
     {
@@ -53,9 +53,9 @@
     },
     {
       "opp": "멕시코",
-      "status": "scheduled",
-      "krGoals": null,
-      "oppGoals": null
+      "status": "finished",
+      "krGoals": 0,
+      "oppGoals": 1
     },
     {
       "opp": "남아공",
@@ -65,7 +65,7 @@
     }
   ],
   "summary": {
-    "ko": "한국 2:1 체코 — 역전승으로 첫 승\n멕시코 2:0 남아공\n체코 1:1 남아공 — 6월 18일 애틀랜타 무승부",
-    "en": "Korea Republic 2:1 Czechia — comeback win in Group A opener\nMexico 2:0 South Africa\nCzechia 1:1 South Africa — draw in Atlanta on June 18"
+    "ko": "한국 0:1 멕시코 — 후반 로모 결승골로 패배\n멕시코 2연승 A조 1위(승점 6), 한국 승점 3으로 2위 유지",
+    "en": "Korea Republic 0:1 Mexico — Romo 50' decides it\nMexico top Group A with 6pts (2W), Korea Republic 2nd with 3pts"
   }
 }
