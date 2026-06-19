@@ -618,7 +618,8 @@
                 + '<p id="do-status" style="font-size:13px;color:#ffd76a;margin:6px 0">연결 중…</p>'
                 + '<p style="font-size:12px;opacity:.6;margin:8px 0">상대도 같은 URL(접속자:2)이면 시작</p>'
                 + '<button id="do-start" style="padding:12px 30px;font-size:16px;background:#23c552;border:0;border-radius:10px;color:#0a1a12;font-weight:700">시작</button>'
-                + '<button id="do-back" style="display:block;width:100%;margin:10px 0 0;padding:10px;font-size:14px;background:none;border:1px solid #444;border-radius:10px;color:#9fb3ff">← 대기실로 (방 나가기)</button></div>';
+                + '<button id="do-solo" style="display:block;width:100%;margin:10px 0 0;padding:11px;font-size:14px;background:#444;border:0;border-radius:10px;color:#fff">🎮 혼자 두기 (로컬)</button>'
+                + '<button id="do-back" style="display:block;width:100%;margin:8px 0 0;padding:10px;font-size:14px;background:none;border:1px solid #444;border-radius:10px;color:#9fb3ff">← 대기실로 (방 나가기)</button></div>';
             document.body.appendChild(lob);
             // 대기실(방 선택)로 복귀 — 방을 떠나고 chooser로. room 파라미터 제거.
             const backBtn = document.getElementById('do-back');
@@ -626,6 +627,14 @@
                 try { ws.leave(); } catch (e) {}
                 doClient = null;
                 location.href = location.pathname + '?relay=do';
+            };
+            // 혼자 두기: 상대 안 와도 로컬 솔로(2인 핫시트)로 시작. 방 떠남.
+            const soloBtn = document.getElementById('do-solo');
+            if (soloBtn) soloBtn.onclick = () => {
+                try { ws.leave(); } catch (e) {}
+                doClient = null;
+                const l = document.getElementById('do-lobby'); if (l) l.remove();
+                startLocalGame();
             };
             const setS = (t) => { const e = document.getElementById('do-status'); if (e) e.textContent = t; };
             const connBanner = (msg) => { /* 진행 중 끊김 표시: 상단 토스트 재사용 */ if (msg) showToast(msg); };
