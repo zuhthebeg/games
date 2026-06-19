@@ -2120,6 +2120,41 @@ function render() {
   updateSelectionControls();
   updateHint();
   updateScoreBar();
+  mpSendPreview();   // 내 턴이면 작업 중 보드를 상대에게 실시간 공유(쓰로틀)
+}
+
+// 내 턴 동안 보드 변화를 ~300ms 쓰로틀로 상대에게 미리보기 송신(상태 무변경 TURN_PREVIEW).
+let _previewTimer = null, _previewDirty = false;
+function mpSendPreview() {
+  if (!mpState.active || !mpState.client || state._previewSeat != null) return;  // 셰도우 보는 쪽은 송신 안 함
+  if (mpState.mySeat !== state.currentPlayer || state.actionLocked) return;       // 내 턴(작업 가능)일 때만
+  _previewDirty = true;
+  if (_previewTimer) return;
+  _previewTimer = setTimeout(() => {
+    _previewTimer = null;
+    if (!_previewDirty) return;
+    _previewDirty = false;
+    if (!mpState.active || mpState.mySeat !== state.currentPlayer) return;
+    const board = state.board.filter(g => g.tileIds.length > 0)
+      .map(g => ({ gid: g.gid, tiles: g.tileIds.map(id => state.tileMap[id]).filter(Boolean) }));
+    try { mpState.client.sendAction({ type: 'TURN_PREVIEW', seat: mpState.mySeat, board }); } catch (_) {}
+  }, 300);
+}
+
+// 상대 작업 중 배지(잠깐 표시)
+let _previewBadgeTimer = null;
+function showPreviewBadge(name) {
+  let b = document.getElementById('preview-badge');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'preview-badge';
+    b.style.cssText = 'position:fixed;left:50%;top:calc(var(--wallet-bar-h) + 6px);transform:translateX(-50%);z-index:60;background:rgba(79,70,229,.92);color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.4);pointer-events:none;';
+    document.body.appendChild(b);
+  }
+  b.textContent = '✍️ ' + (name || '상대') + (window.PP_LANG === 'zh-TW' ? ' 操作中…' : ' 작업 중…');
+  b.style.display = 'block';
+  if (_previewBadgeTimer) clearTimeout(_previewBadgeTimer);
+  _previewBadgeTimer = setTimeout(() => { if (b) b.style.display = 'none'; }, 1400);
 }
 
 function updateScoreBar() {
@@ -2929,6 +2964,20 @@ function mpHandleEvent(type, data) {
       showReactionBubble(a.playerName || '?', (e && e.emoji) || a.emoji || '💬', phrase, true, voiceFor(gender));
       return;
     }
+    // 상대 턴 미리보기 — 발신자가 현재 턴이고 내가 아니면, 그가 작업 중인 보드를 셰도우로 표시.
+    // (서버 미확정 — 커밋/패스 시 정식 state_update가 덮어써 자동 정리. refetch 안 함.)
+    if (a && a.type === 'TURN_PREVIEW') {
+      if (a.seat !== mpState.mySeat && a.seat === state.currentPlayer) {
+        try {
+          for (const g of (a.board || [])) for (const t of (g.tiles || [])) state.tileMap[t.id] = t;
+          state.board = (a.board || []).map(g => ({ gid: g.gid, tileIds: (g.tiles || []).map(t => t.id) }));
+          state._previewSeat = a.seat;
+          render();
+          showPreviewBadge(state.players[a.seat] && state.players[a.seat].name);
+        } catch (_) {}
+      }
+      return;
+    }
   }
   // 게임 중 액션/상태 변경 시 서버에서 최신 view 가져와 재적용
   if (type === 'action' || type === 'state_update' || type === 'game_ended') {
@@ -3019,6 +3068,8 @@ function mpApplyServerView(publicState, myView) {
     const snapBoard = (state.turnState.boardSnapshot || []).flatMap(g => g.tileIds).sort().join(',');
     if (srvBoard === snapBoard) return;  // 서버 보드 동일 = 의미 있는 변화 없음 → 내 작업 유지
   }
+
+  state._previewSeat = null;  // 정식 갱신(커밋/턴변경) = 상대 미리보기 종료 → 셰도우 해제
 
   // tileMap: 보드와 내 손패 타일을 통합해서 채움
   state.tileMap = {};
@@ -3133,9 +3184,20 @@ function mpShowResult(publicState) {
       <div style="border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px;">
         ${publicState.players.map(p => `<div class="score-row"><span class="name">${escapeHtml(p.nickname)}</span><span class="pts">${p.score >= 0 ? '+' : ''}${p.score}점</span></div>`).join('')}
       </div>
-      <button class="btn-start" onclick="location.reload()" style="margin-top:4px;">메뉴로</button>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn-start" onclick="ppingpaeRematch()" style="flex:1;">🔄 재대결</button>
+        <button class="btn-start" onclick="location.reload()" style="flex:1;background:var(--panel-2,#243044);">메뉴로</button>
+      </div>
     </div>`;
   document.body.appendChild(modal);
+}
+
+// 재대결: 결과창 닫고 대기실로 복귀 → 호스트가 시작하면 서버가 끝난 판 리셋·재딜(빈자리 AI 충원).
+function ppingpaeRematch() {
+  const m = document.getElementById('gameover-modal'); if (m) m.remove();
+  mpState._resultShown = false;
+  if (mpState.ui && mpState.ui.goToWaitingRoom) mpState.ui.goToWaitingRoom();
+  else showToast('대기실로 돌아갈 수 없어요 — 메뉴로 다시 시작해주세요');
 }
 
 async function mpSendCompleteTurn() {
