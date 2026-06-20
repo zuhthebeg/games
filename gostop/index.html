@@ -132,9 +132,9 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 /* 마작식 상대 배치: 상대 좌석을 좌/상단/우로 절대배치(내 손패는 하단 고정). 좌·우는 테이블 양옆에 세로 중앙. */
 #mpOpps{display:none;position:absolute;top:82px;left:0;right:0;bottom:150px;z-index:6;pointer-events:none}
 .mpopp{position:absolute;pointer-events:auto;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:9px;padding:5px 7px;font-size:.72rem;max-width:40vw;backdrop-filter:blur(2px)}
-.mpopp.pos-top{top:0;left:50%;transform:translateX(-50%);text-align:center;max-width:64vw}
-.mpopp.pos-left{top:50%;left:4px;transform:translateY(-50%);max-width:33vw}
-.mpopp.pos-right{top:50%;right:4px;transform:translateY(-50%);max-width:33vw}
+.mpopp.pos-top{top:0;left:50%;transform:translateX(-50%);text-align:center;max-width:72vw}
+.mpopp.pos-left{top:50%;left:4px;transform:translateY(-50%);max-width:42vw}
+.mpopp.pos-right{top:50%;right:4px;transform:translateY(-50%);max-width:42vw}
 /* MP에선 덱 더미를 좌측중앙(좌측 상대패널과 겹침)에서 하단중앙 빈 공간으로 이동 — 뒤집기탄 탭 가림 방지 */
 #board.mp .deck{top:auto;bottom:116px;left:50%;right:auto;transform:translateX(-50%)}
 .mpopp.turn{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 14px rgba(230,184,77,.35)}
@@ -144,8 +144,10 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 .mpopp .obadge{display:inline-block;font-size:.64rem;padding:1px 5px;border-radius:6px;background:rgba(225,92,82,.35);color:#fff;margin-left:3px}
 .mpopp .obadge.dec{background:rgba(230,184,77,.4);color:#1e1604;animation:pulse 1s infinite}
 .mpopp .obadge.sold{background:rgba(95,207,134,.4)}
-.mpopp .capset img{width:calc(22px*var(--tz))}
+.mpopp .capset{max-width:40vw;overflow-x:auto;overflow-y:hidden}
+.mpopp .capset img{width:calc(30px*var(--tz))}
 .mpopp .capset .lap img{margin-left:-15px}
+.mpopp.pos-top .capset{max-width:70vw}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .credit{position:fixed;bottom:2px;right:4px;font-size:.55rem;color:rgba(255,255,255,.25);z-index:1}
 .credit a{color:inherit}
