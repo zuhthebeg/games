@@ -144,8 +144,8 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 .mpopp .capset img{width:calc(32px*var(--tz))}
 .mpopp .capset .lap img{margin-left:-15px}
 .mpopp.pos-top .capset{max-width:78vw}
-/* 빠진(광팔이) 사람 — 우상단 작은 텍스트만 */
-.mp-out{position:absolute;top:1px;right:8px;font-size:.66rem;color:var(--muted);background:rgba(0,0,0,.42);border:1px solid var(--line);border-radius:6px;padding:2px 7px;opacity:.85;pointer-events:auto}
+/* 빠진(광팔이) 사람 — 상단 중앙 작은 텍스트만(우상단은 활성 상대 패널 자리라 충돌 회피) */
+.mp-out{position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:.66rem;color:var(--muted);background:rgba(0,0,0,.42);border:1px solid var(--line);border-radius:6px;padding:2px 8px;opacity:.85;pointer-events:auto;white-space:nowrap}
 /* MP에선 덱 더미를 내 먹은패 위쪽(하단 우측)으로 — 상대패널·테이블과 겹치지 않게 */
 #board.mp .deck{top:auto;bottom:150px;right:12px;left:auto;transform:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
