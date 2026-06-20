@@ -300,6 +300,9 @@
     /* 카드 3D 플립 딜링 */
     .cards { perspective: 760px; }
     .card.dealing { will-change: transform, opacity; }
+    /* MP 딜러 카드 순차 펼침(까는 거 보이게) */
+    @keyframes mpCardIn { from { opacity: 0; transform: translateY(-14px) scale(.82) rotateX(35deg); } to { opacity: 1; transform: none; } }
+    #mpDealerCards .card.mp-reveal { animation: mpCardIn .34s ease backwards; }
     /* 칩 베팅 슬라이드 */
     .fly-chip { position: fixed; font-size: 26px; z-index: 60; pointer-events: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,.5)); }
     /* 딜러 아바타 반응 (승/패/블랙잭) */
@@ -1947,6 +1950,8 @@
     let mpLatestRoundDelta = null;
     let mpResultOverlayKey = null;
     let mpResultOverlayTimer = null;
+    let mpDealerAnimKey = "";
+    const MP_RESULT_DELAY_MS = 2600; // 딜러패 까고 결과 오버레이까지 — 뭐 나왔는지 볼 시간(단일 1.8s보다 길게)
     let mpLastReshuffleCount = 0;
     let mpBankruptLeaveTimer = null;
     async function handleMultiGameEvent(type, data) {
@@ -2177,6 +2182,16 @@
       const dealerScoreEl = document.getElementById("mpDealerScore");
       if (dealer.cards && dealer.cards.length > 0) {
         dealerEl.innerHTML = dealer.cards.map(c => mpCardHTML(c)).join("");
+        // 딜러 공개 시: 이번 라운드 첫 공개면 카드를 하나씩 순차로 펼쳐 보여줌(휙 지나감 방지)
+        if (dealer.revealed) {
+          const animKey = JSON.stringify(dealer.cards);
+          if (animKey !== mpDealerAnimKey) {
+            mpDealerAnimKey = animKey;
+            Array.from(dealerEl.children).forEach((el, i) => { el.classList.add("mp-reveal"); el.style.animationDelay = (i * 280) + "ms"; setTimeout(() => { try { SFX.cardFlip(); } catch (e) {} }, i * 280); });
+          }
+        } else {
+          mpDealerAnimKey = "";
+        }
         if (dealer.revealed) {
           const validCards = dealer.cards.filter(c => c);
           dealerScoreEl.textContent = validCards.length ? mpHandValue(validCards) : "-";
@@ -2355,7 +2370,7 @@
             isWin: resultValue > 0 ? true : (resultValue < 0 ? false : null),
             actions
           });
-        }, RESULT_REVEAL_DELAY_MS);
+        }, MP_RESULT_DELAY_MS);
       }
     }
 
