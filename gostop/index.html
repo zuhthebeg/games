@@ -140,14 +140,14 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 .mpopp .osub{color:var(--gold);font-size:.7rem;margin-bottom:3px}
 .mpopp .obadge{display:inline-block;font-size:.64rem;padding:1px 5px;border-radius:6px;margin-left:3px}
 .mpopp .obadge.dec{background:rgba(230,184,77,.4);color:#1e1604;animation:pulse 1s infinite}
-.mpopp .capset{max-width:46vw;overflow-x:auto;overflow-y:hidden}
+.mpopp .capset{max-width:46vw;overflow-x:auto;overflow-y:hidden;justify-content:center}
 .mpopp .capset img{width:calc(32px*var(--tz))}
 .mpopp .capset .lap img{margin-left:-15px}
 .mpopp.pos-top .capset{max-width:78vw}
 /* 빠진(광팔이) 사람 — 상단 중앙 작은 텍스트만(우상단은 활성 상대 패널 자리라 충돌 회피) */
 .mp-out{position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:.66rem;color:var(--muted);background:rgba(0,0,0,.42);border:1px solid var(--line);border-radius:6px;padding:2px 8px;opacity:.85;pointer-events:auto;white-space:nowrap}
-/* MP에선 덱 더미를 우측 중앙(상대가 상단으로 빠져 빈 공간)으로 — 거기서 뒤집은 패가 날아오는 드로우 더미 */
-#board.mp .deck{top:50%;bottom:auto;right:4px;left:auto;transform:translateY(-50%)}
+/* MP 덱 더미는 좌측 중앙 — 뒤집기 연출(flipin)이 왼쪽(-160px)에서 날아오므로 출발점과 일치 */
+#board.mp .deck{top:50%;bottom:auto;left:4px;right:auto;transform:translateY(-50%)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .credit{position:fixed;bottom:2px;right:4px;font-size:.55rem;color:rgba(255,255,255,.25);z-index:1}
 .credit a{color:inherit}
