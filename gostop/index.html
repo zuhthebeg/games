@@ -146,8 +146,8 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 .mpopp.pos-top .capset{max-width:78vw}
 /* 빠진(광팔이) 사람 — 상단 중앙 작은 텍스트만(우상단은 활성 상대 패널 자리라 충돌 회피) */
 .mp-out{position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:.66rem;color:var(--muted);background:rgba(0,0,0,.42);border:1px solid var(--line);border-radius:6px;padding:2px 8px;opacity:.85;pointer-events:auto;white-space:nowrap}
-/* MP에선 덱 더미를 내 먹은패 위쪽(하단 우측)으로 — 상대패널·테이블과 겹치지 않게 */
-#board.mp .deck{top:auto;bottom:150px;right:12px;left:auto;transform:none}
+/* MP에선 덱 더미를 우측 중앙(상대가 상단으로 빠져 빈 공간)으로 — 거기서 뒤집은 패가 날아오는 드로우 더미 */
+#board.mp .deck{top:50%;bottom:auto;right:4px;left:auto;transform:translateY(-50%)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .credit{position:fixed;bottom:2px;right:4px;font-size:.55rem;color:rgba(255,255,255,.25);z-index:1}
 .credit a{color:inherit}
@@ -455,8 +455,10 @@ function buildDeck(){
 let G=null;
 function newGame(){ $('menu').style.display='none'; $('board').style.display='flex'; $('board').classList.remove('mp'); CARRY=1; G={go:0,goBy:-1}; deal(); }
 function deal(){
-  // 싱글 시작: 멀티가 숨겼을 수 있는 결과창 '다시' 버튼 복원 + 이벤트구동 플래그 해제 + 멀티 턴배너 숨김
-  MP._eventDriven=false; MP.active=false; { const mt=$('mpTurn'); if(mt)mt.style.display='none'; const mc=$('mpConn'); if(mc)mc.style.display='none'; const db=$('deckBack'); if(db)db.classList.remove('await'); }
+  // 싱글 시작: 멀티 상태 완전 정리(폴링/애니큐/방연결/패널) — 안 하면 봇 패널·먹은패가 싱글에 잔존하고
+  // 들어오던 WS state가 싱글 보드를 덮어씀.
+  mpTeardown();
+  { const mt=$('mpTurn'); if(mt)mt.style.display='none'; const mc=$('mpConn'); if(mc)mc.style.display='none'; const db=$('deckBack'); if(db)db.classList.remove('await'); }
   const _rb=document.querySelectorAll('#result .close'); if(_rb[0]){ _rb[0].style.display=''; _rb[0].textContent='다시'; _rb[0].onclick=nextRound; }
   // 바닥(8장)에 같은 월 4장이 다 깔리면 나가리 → 그 딜 무효·재딜·다음판 ×2
   let deck, washes=0;
@@ -927,7 +929,7 @@ function renderBar(){ $('t-go').textContent=G.go; }
 /* utils */
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function show(id){ $(id).classList.add('show'); } function hide(id){ $(id).classList.remove('show'); }
-function quitMenu(){ ['gostop','result','settings','bombAsk','pickAsk','sitAsk'].forEach(hide); $('board').style.display='none'; $('board').classList.remove('mp'); $('menu').style.display='flex'; }
+function quitMenu(){ ['gostop','result','settings','bombAsk','pickAsk','sitAsk'].forEach(hide); try{mpTeardown();}catch(e){} $('board').style.display='none'; $('board').classList.remove('mp'); $('menu').style.display='flex'; }
 function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',1200); }
 function cpuReveal(card){ if(!card)return; const el=$('cpuReveal'); if(!el)return; el.innerHTML='<img src="'+card.file+'">'; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); setTimeout(()=>{el.classList.remove('on');el.innerHTML='';},760); }
 function setSnd(s){ SND=!!s; localStorage.setItem('gostop_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
@@ -1019,6 +1021,16 @@ function openMultiplayer(){
     onLeave:()=>{ lob.style.display='none'; lob.innerHTML=''; $('menu').style.display='flex'; } });
   MP.ui.show();
 }
+// 멀티 완전 종료: 폴링/애니타이머/애니큐 정리 + 방 떠나기 + 상대패널 숨김. 싱글 전환·메뉴복귀 시 호출.
+function mpTeardown(){
+  MP.active=false; MP._eventDriven=false;
+  if(MP._poll){ clearInterval(MP._poll); MP._poll=null; }
+  if(MP._viewTimer){ clearTimeout(MP._viewTimer); MP._viewTimer=null; }
+  MP._animQ=[]; MP._animBusy=false; MP._lastPlayEv=null; MP._pendingView=null;
+  try{ if(MP.client&&MP.client.leaveRoom) MP.client.leaveRoom(); }catch(e){}
+  MP.client=null;
+  const op=$('mpOpps'); if(op){ op.style.display='none'; op.innerHTML=''; }
+}
 function mpStart(rs){
   MP.active=true; MP.client=MP.ui.getClient(); MP.myUserId=MP.client.getMyUserId(); MP._sel=-1; MP._resultShown=false;
   MP._prevTable=null; MP._prevCap=null; MP._prevGo=undefined;
@@ -1055,6 +1067,7 @@ function mpAskSitOut(v){
 // 직전 play 이벤트 페이로드로 놓기→뒤집기→먹기 중간 단계를 재현해 싱글처럼 단계적으로 보이게 한다.
 // 수는 큐로 직렬 처리 → 봇 연속 수가 서로 겹쳐 건너뛰는 일 없음.
 function mpScheduleView(v){
+  if(!MP.active) return;   // 싱글 전환 후 들어온 잔여 WS state 무시(싱글 보드 덮어쓰기 방지)
   MP._animQ = MP._animQ || [];
   MP._animQ.push({ ev: MP._lastPlayEv || null, view: v });
   MP._lastPlayEv = null;
@@ -1248,7 +1261,7 @@ function mpVoiceCombos(v){ if(!VOICE||!v||!v.players)return;
 }
 // 서버 event 스트림 → voice/SFX (DO 멀티 전용). 싱글의 play 처리부와 동일 어휘.
 function mpOnEvent(ev){
-  if(!ev||!ev.type)return;
+  if(!ev||!ev.type||!MP.active)return;
   // 수(놓기/뒤집기/먹기)는 큐에서 비트별로 애니+사운드 처리(mpAnimateMove). 여기선 직전 수만 기록.
   if(ev.type==='play' || ev.type==='flip_turn' || ev.type==='flip_pick'){ MP._lastPlayEv=ev; return; }
   else if(ev.type==='ppeok3'){ toast('3뻑! 이 판 ×2'); gsVoice('ppeok3'); }
