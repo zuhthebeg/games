@@ -1856,6 +1856,15 @@
       font-size: 0.86rem;
       font-weight: 700;
     }
+    /* JuiceFX 화면 셰이크 */
+    @keyframes jrShake {
+      0%,100% { transform: translate(0,0); }
+      20% { transform: translate(calc(var(--jr-shake,6px) * -1), calc(var(--jr-shake,6px) * 0.4)); }
+      40% { transform: translate(var(--jr-shake,6px), calc(var(--jr-shake,6px) * -0.5)); }
+      60% { transform: translate(calc(var(--jr-shake,6px) * -0.7), var(--jr-shake,6px)); }
+      80% { transform: translate(calc(var(--jr-shake,6px) * 0.6), calc(var(--jr-shake,6px) * -0.3)); }
+    }
+    .jr-shaking { animation: jrShake 0.24s cubic-bezier(.36,.07,.19,.97); }
   </style>
 </head>
 <body>
@@ -2168,6 +2177,29 @@
           default:
             break;
         }
+      }
+    };
+
+    // ── ZzFXMicro (LittleJS 사운드엔진) — MIT, Frank Force ──
+    let zzfx,zzfxV,zzfxX;
+    zzfx=(...t)=>zzfxP(zzfxG(...t));zzfxV=.3;zzfxX=new(window.AudioContext||window.webkitAudioContext);
+    const zzfxP=(...t)=>{let e=zzfxX.createBufferSource(),f=zzfxX.createBuffer(t.length,t[0].length,44100);t.map((d,i)=>f.getChannelData(i).set(d)),e.buffer=f,e.connect(zzfxX.destination),e.start();return e};
+    const zzfxG=(q=1,k=.05,c=220,e=0,t=0,u=.1,r=0,F=1,v=0,z=0,w=0,A=0,l=0,B=0,x=0,G=0,d=0,y=1,m=0,C=0)=>{let b=2*Math.PI,H=v*=500*b/44100/44100,I=c*=(1-k+2*k*Math.random(k=[]))*b/44100,g=0,h=0,a=0,n=1,J=0,K=0,f=0,p,L;e=44100*e+9;m*=44100;t*=44100;u*=44100;d*=44100;z*=500*b/44100**3;x*=b/44100;w*=b/44100;A*=44100;l=44100*l|0;for(p=e+m+t+u+d|0;a<p;k[a++]=f)++K%(100*G|0)||(f=r?1<r?2<r?3<r?Math.sin((g%b)**3):Math.max(Math.min(Math.tan(g),1),-1):1-(2*g/b%2+2)%2:1-4*Math.abs(Math.round(g/b)-g/b):Math.sin(g),f=(l?1-C+C*Math.sin(2*Math.PI*a/l):1)*(0<f?1:-1)*Math.abs(f)**F*q*zzfxV*(a<e?a/e:a<e+m?1-(a-e)/m*(1-y):a<e+m+t?y:a<p-d?(p-a-d)/u*y:0),f=d?f/2+(d>a?0:(a<p-d?1:(p-a)/d)*k[a-d|0]/2):f),p=(c+=v+=z)*Math.cos(A*h++),g+=p-p*B*(1-1e9*(Math.sin(a)+1)%2),n&&++n>x&&(c+=w,I+=w,n=1),G&&!(++J%G)&&(c=I,v=H,n=n||1);return k};
+
+    // ── JuiceFX: 화면 셰이크 + 펀치 사운드(ZzFX) ──
+    const JUICE_SOUNDS = {
+      chip:  [1.1,.05,420,,.02,.06,1,2.5,,,,,,,,,,.6,.02],
+      mult:  [1.4,.05,360,.01,.06,.12,1,1.8,,,180,.05,,,,,,.7,.05],
+      slam:  [2,.1,150,.01,.12,.28,1,2,,-2,,,,.4,,.15,,.6,.1],
+      win:   [1.6,.05,523,.02,.2,.3,1,1.5,,,260,.06,,,,,,.7,.1],
+      lose:  [1.3,.1,320,.02,.1,.4,2,1.2,-3,,,,,.3,,,,.6,.1],
+      select:[.8,.05,720,,.01,.04,1,2,,,,,,,,,,.5],
+    };
+    const JuiceFX = {
+      sfx(name){ try{ const p=JUICE_SOUNDS[name]; if(p&&zzfx) zzfx(...p); }catch(e){} },
+      shake(power=6, dur=240){
+        const el=document.getElementById("tablePanel")||document.body;
+        try{ el.style.setProperty("--jr-shake", power+"px"); el.classList.remove("jr-shaking"); void el.offsetWidth; el.classList.add("jr-shaking"); setTimeout(()=>el.classList.remove("jr-shaking"), dur); }catch(e){}
       }
     };
 
@@ -2736,6 +2768,7 @@
         easing: "easeOutBounce"
       });
       multLabel.textContent = `x${mult}`;
+      JuiceFX.sfx("mult"); JuiceFX.shake(Math.min(8, 3 + mult * 0.4));
 
       const finalFx = document.createElement("div");
       finalFx.className = "dramatic-final";
@@ -2748,6 +2781,7 @@
       }
       spawnChipParticles(points);
       await runAnime({ targets: finalFx, opacity: [0, 1], scale: [0.82, 1], duration: 140, easing: "easeOutQuad" });
+      JuiceFX.sfx("slam"); JuiceFX.shake(Math.min(16, 6 + points / 400));
       await runCountUp(finalFx.querySelector("#dramaticScoreNum"), points, { duration: 0.6 });
       AudioFX.play("score");
       await runAnime({ targets: finalFx, opacity: [1, 0], translateY: [0, -14], duration: 180, easing: "easeInQuad" });
@@ -2992,6 +3026,7 @@
       addLog(`블라인드 클리어! 보상 +$${reward}`);
       state.gameEnded = true;
       AudioFX.play("win");
+      JuiceFX.sfx("win"); JuiceFX.shake(9);
       spawnWinConfetti();
       renderHUD();
       const isLastBlind = state.roundIndex >= 2;
@@ -3013,6 +3048,7 @@
       if (state.gameEnded) return;
       state.gameEnded = true;
       AudioFX.play("lose");
+      JuiceFX.sfx("lose"); JuiceFX.shake(12);
       renderHUD();
       const anteText = `Ante ${state.ante} - ${["스몰", "빅", "보스"][state.roundIndex]} 블라인드에서 탈락`;
       const totalScore = state.score;
