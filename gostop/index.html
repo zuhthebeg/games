@@ -618,7 +618,7 @@ async function takeTurn(p, handCard, opts){
 
   // 4) 특수룰 피뺏기
   const willEmpty=(G.table.length-captured.length)===0 && captured.length>0;
-  const canSteal=G.deck.length>0 || G.players.some(pl=>pl.hand.length>0); // 마지막 차례에서만 못 뺏음(덱0이어도 손패 남으면 발동)
+  const canSteal=pl.hand.length>0 || bomb || (G.flipOwed&&G.flipOwed[p]>0); // 마지막 액션(손패0)에선 피뺏기 안 함. 손패 남거나 폭탄/뒤집기탄 있으면 발동
   let steals=0; const stags=[]; const stolen=[];
   if(!ppuk){
     if(bomb){ steals++; stags.push('폭탄'); }
@@ -709,7 +709,7 @@ async function flipOnlyTurn(p){
   if(captured.length){
     renderAll(); await flyToPile(captured, p===0?$('myCaptured'):$('cpuCaptured'));
     captured.forEach(removeFromTable);
-    if(G.deck.length>0 || G.players.some(pl2=>pl2.hand.length>0)) for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp); }
+    if(pl.hand.length>0 || (G.flipOwed&&G.flipOwed[p]>1)) for(let i=0;i<steals;i++){ const sp=stealPi(1-p,p); if(sp)stolen.push(sp); } // 마지막 뒤집기탄에선 안 뺏음
     pl.cap.push(...captured);
     G._newCapIds=new Set([...captured.map(c=>c.id),...stolen.map(c=>c.id)]); G._newIds=null; renderAll();
     if(stags.length){ toast((p===0?'':'CPU ')+stags.join('+')+'!'+(stolen.length?(' 피뺏기 '+stolen.length):'')); if(stags.includes('쓸'))gsVoice('ssul'); }
