@@ -129,12 +129,14 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 @keyframes flashpop{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
 @keyframes pulse2{0%{transform:translate(-50%,-50%) scale(.7);opacity:0}25%{transform:translate(-50%,-50%) scale(1.15);opacity:1}50%{transform:translate(-50%,-50%) scale(.95)}75%{transform:translate(-50%,-50%) scale(1.1)}100%{transform:translate(-50%,-50%) scale(1)}}
 .toast.dbl{animation:pulse2 .6s var(--ease)}
-/* 마작식 상대 배치: 상대 좌석을 좌/상단/우로 절대배치(내 손패는 하단 고정) */
-#mpOpps{display:none;position:absolute;top:92px;left:0;right:0;bottom:128px;z-index:6;pointer-events:none}
-.mpopp{position:absolute;pointer-events:auto;background:rgba(0,0,0,.42);border:1px solid var(--line);border-radius:9px;padding:5px 8px;font-size:.74rem;max-width:42vw;backdrop-filter:blur(2px)}
-.mpopp.pos-top{top:0;left:50%;transform:translateX(-50%);text-align:center}
-.mpopp.pos-left{top:34%;left:4px;max-width:34vw}
-.mpopp.pos-right{top:34%;right:4px;max-width:34vw}
+/* 마작식 상대 배치: 상대 좌석을 좌/상단/우로 절대배치(내 손패는 하단 고정). 좌·우는 테이블 양옆에 세로 중앙. */
+#mpOpps{display:none;position:absolute;top:82px;left:0;right:0;bottom:150px;z-index:6;pointer-events:none}
+.mpopp{position:absolute;pointer-events:auto;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:9px;padding:5px 7px;font-size:.72rem;max-width:40vw;backdrop-filter:blur(2px)}
+.mpopp.pos-top{top:0;left:50%;transform:translateX(-50%);text-align:center;max-width:64vw}
+.mpopp.pos-left{top:50%;left:4px;transform:translateY(-50%);max-width:33vw}
+.mpopp.pos-right{top:50%;right:4px;transform:translateY(-50%);max-width:33vw}
+/* MP에선 덱 더미를 좌측중앙(좌측 상대패널과 겹침)에서 하단중앙 빈 공간으로 이동 — 뒤집기탄 탭 가림 방지 */
+#board.mp .deck{top:auto;bottom:116px;left:50%;right:auto;transform:translateX(-50%)}
 .mpopp.turn{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 14px rgba(230,184,77,.35)}
 .mpopp.out{opacity:.5;filter:grayscale(.6)}
 .mpopp .who{color:var(--muted);margin-bottom:2px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38vw}
@@ -449,7 +451,7 @@ function buildDeck(){
 }
 
 let G=null;
-function newGame(){ $('menu').style.display='none'; $('board').style.display='flex'; CARRY=1; G={go:0,goBy:-1}; deal(); }
+function newGame(){ $('menu').style.display='none'; $('board').style.display='flex'; $('board').classList.remove('mp'); CARRY=1; G={go:0,goBy:-1}; deal(); }
 function deal(){
   // 싱글 시작: 멀티가 숨겼을 수 있는 결과창 '다시' 버튼 복원 + 이벤트구동 플래그 해제 + 멀티 턴배너 숨김
   MP._eventDriven=false; MP.active=false; { const mt=$('mpTurn'); if(mt)mt.style.display='none'; const mc=$('mpConn'); if(mc)mc.style.display='none'; const db=$('deckBack'); if(db)db.classList.remove('await'); }
@@ -923,7 +925,7 @@ function renderBar(){ $('t-go').textContent=G.go; }
 /* utils */
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function show(id){ $(id).classList.add('show'); } function hide(id){ $(id).classList.remove('show'); }
-function quitMenu(){ ['gostop','result','settings','bombAsk','pickAsk'].forEach(hide); $('board').style.display='none'; $('menu').style.display='flex'; }
+function quitMenu(){ ['gostop','result','settings','bombAsk','pickAsk','sitAsk'].forEach(hide); $('board').style.display='none'; $('board').classList.remove('mp'); $('menu').style.display='flex'; }
 function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',1200); }
 function cpuReveal(card){ if(!card)return; const el=$('cpuReveal'); if(!el)return; el.innerHTML='<img src="'+card.file+'">'; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); setTimeout(()=>{el.classList.remove('on');el.innerHTML='';},760); }
 function setSnd(s){ SND=!!s; localStorage.setItem('gostop_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
@@ -1020,7 +1022,7 @@ function mpStart(rs){
   MP._prevTable=null; MP._prevCap=null; MP._prevGo=undefined;
   MP.client.onEvent=()=>mpRefresh();
   $('mpLobby').style.display='none'; $('mpLobby').innerHTML='';
-  $('board').style.display='flex'; $('mpOpps').style.display='flex'; const sp=$('spOpp'); if(sp)sp.style.display='none';
+  $('board').style.display='flex'; $('board').classList.add('mp'); $('mpOpps').style.display='flex'; const sp=$('spOpp'); if(sp)sp.style.display='none';
   if(rs&&rs.myView) applyServerView(rs.myView); else mpRefresh();
   if(MP._poll)clearInterval(MP._poll); MP._poll=setInterval(mpRefresh,2500);
 }
@@ -1047,14 +1049,58 @@ function mpAskSitOut(v){
   $('sitOut').onclick=()=>{ hide('sitAsk'); mpSend({type:'SITDECIDE',payload:{join:false}}); };
   show('sitAsk');
 }
-// 서버는 한 수(놓기+뒤집기+먹기)를 한 번에 보내 보드가 즉시 스냅된다(=싱글보다 빠름).
-// 직전 event(mpOnEvent)가 쌓아둔 애니 시간만큼 보드 적용을 늦춰 싱글의 놓기→뒤집기→먹기 페이싱을 흉내.
+// 서버는 한 수의 최종 보드를 한 번에 보낸다(즉시 스냅 → 싱글보다 빠름·밋밋).
+// 직전 play 이벤트 페이로드로 놓기→뒤집기→먹기 중간 단계를 재현해 싱글처럼 단계적으로 보이게 한다.
+// 수는 큐로 직렬 처리 → 봇 연속 수가 서로 겹쳐 건너뛰는 일 없음.
 function mpScheduleView(v){
-  MP._latestView=v;
-  var d=MP._pendingAnimMs||0; MP._pendingAnimMs=0;
-  if(d<=0){ if(MP._viewTimer){clearTimeout(MP._viewTimer);MP._viewTimer=null;} applyServerView(v); return; }
-  if(MP._viewTimer) clearTimeout(MP._viewTimer);
-  MP._viewTimer=setTimeout(function(){ MP._viewTimer=null; applyServerView(MP._latestView); }, Math.min(d,1300));
+  MP._animQ = MP._animQ || [];
+  MP._animQ.push({ ev: MP._lastPlayEv || null, view: v });
+  MP._lastPlayEv = null;
+  mpDrainAnim();
+}
+async function mpDrainAnim(){
+  if(MP._animBusy) return; MP._animBusy = true;
+  try{
+    while(MP._animQ && MP._animQ.length){
+      const job = MP._animQ.shift();
+      try{ await mpAnimateMove(job.ev, job.view); }
+      catch(_){ try{ applyServerView(job.view); }catch(__){} }
+    }
+  } finally { MP._animBusy = false; }
+}
+// 한 수를 싱글 비트로 재현: (1)놓기 (2)뒤집기 중앙연출 (3)먹기+보드 안착
+async function mpAnimateMove(ev, view){
+  const p = (ev && ev.payload) || {};
+  const isMove = ev && (ev.type==='play' || ev.type==='flip_turn' || ev.type==='flip_pick');
+  if(!isMove){ applyServerView(view); return; }
+  // 최종 view의 모든 카드에서 id→객체 맵(상대가 낸 패 얼굴도 여기서 얻음)
+  const cardOf = {};
+  (view.table||[]).forEach(c=>cardOf[c.id]=c);
+  (view.players||[]).forEach(pl=>(pl.cap||[]).forEach(c=>cardOf[c.id]=c));
+  (view.myHand||[]).forEach(c=>cardOf[c.id]=c);
+  if(p.flipCard&&p.flipCard.id) cardOf[p.flipCard.id]=p.flipCard;
+  // (1) 놓기 — 낸 패를 현재 바닥 DOM에 얹어 잠깐 보여줌(상대 패면 여기서 처음 공개)
+  const played = (p.cardId && ev.type==='play') ? cardOf[p.cardId] : null;
+  if(played){
+    try{ const tc=$('tableCards'); if(tc){ const d=document.createElement('div'); d.className='mgroup'; d.innerHTML='<img src="'+played.file+'" class="cin">'; tc.appendChild(d); } }catch(_){}
+    try{ const he=document.querySelector('#myHand [data-id="'+p.cardId+'"]'); if(he) he.style.visibility='hidden'; }catch(_){}
+    sound('play'); await sleep(300);
+  }
+  // (2) 뒤집기 — 덱에서 뒤집은 패 중앙 크게(싱글 renderFlip 재활용)
+  if(p.flipCard && p.flipCard.file){ try{ sound('flip'); renderFlip(p.flipCard); }catch(_){}; await sleep(640); }
+  // (3) 먹기/안착 — 서버 최종 보드 적용(먹은 패는 cin 페이드로 무더기에 등장) + 특수룰 연출
+  applyServerView(view);
+  const stags=p.stags||[], stolen=p.stolen||[];
+  if(stags.includes('폭탄')){ try{ bombFx(''); }catch(_){} }
+  else if(p.ppuk){ gsVoice('ppeok'); }
+  else if(stags.length){
+    if(stags.includes('따닥')){ sound('play'); setTimeout(()=>sound('play'),150); gsVoice('ttadak'); }
+    else if(stags.includes('쪽')){ gsVoice('jjok'); }
+    else if(stags.includes('쓸')){ gsVoice('ssul'); }
+  }
+  if(stags.length){ toast(stags.join('+')+'!'+(stolen.length?(' 피뺏기 '+stolen.length):'')); }
+  if(stolen.length){ sound('take'); setTimeout(()=>gsVoice('naenwa'),320); }
+  await sleep((stags.length||stolen.length||(p.captured&&p.captured.length))?300:140);
 }
 function mpAskFlipPick(cands){
   if(!cands||!cands.length||$('pickAsk').classList.contains('show'))return;
@@ -1107,16 +1153,8 @@ function mpRender(v){
     if(p.out){ const sold=v.out&&v.out.seat===p.seat&&v.out.forced&&v.out.gwang>0; badge=`<span class="obadge ${sold?'sold':''}">${sold?'광팔이':'빠짐'}</span>`; }
     else if(v.prePhase&&v.prePhase.decider===p.seat){ badge='<span class="obadge dec">결정중</span>'; }
     return `<div class="mpopp pos-${pos} ${turn?'turn':''} ${p.out?'out':''}" data-seat="${p.seat}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)}${badge}</div><div class="osub">${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
-  if(!MP._eventDriven) mpFlyCaptures(prevRects, newCap, v);   // REST 폴백: 스냅샷 diff fly. DO는 mpAnimateEvent(이벤트 구동)가 처리.
-  // DO: 이번 렌더에 "새로 등장"한 카드(바닥 착지·먹은 패·피뺏기)는 클론이 날아가 도착할 때까지 숨김 →
-  // 보드가 애니보다 먼저 "깔리는" 현상 제거(카드가 애니 끝난 뒤 안착하는 느낌). flip 중앙 연출과도 정합.
-  if(MP._eventDriven && !first){
-    const settle=new Set([...newTable, ...newCap]);
-    if(settle.size){
-      settle.forEach(id=>document.querySelectorAll('img[data-id="'+id+'"]').forEach(im=>{ im.style.visibility='hidden'; }));
-      setTimeout(()=>{ try{ settle.forEach(id=>document.querySelectorAll('img[data-id="'+id+'"]').forEach(im=>im.style.visibility='')); }catch(_){} }, 500);
-    }
-  }
+  if(!MP._eventDriven) mpFlyCaptures(prevRects, newCap, v);   // REST 폴백: 스냅샷 diff fly. DO는 순차 애니 큐(mpAnimateMove)가 처리.
+  // DO 이벤트구동: 새로 등장한 카드(바닥 착지·먹은 패)는 cin 클래스로 페이드 인(싱글 _newIds 연출과 동일). 별도 숨김 불필요.
   // 명시적 턴 표시 + 폭탄 뒤집기탄 안내
   const tb=$('mpTurn');
   if(tb){ tb.style.display='block';
@@ -1198,29 +1236,8 @@ function mpVoiceCombos(v){ if(!VOICE||!v||!v.players)return;
 // 서버 event 스트림 → voice/SFX (DO 멀티 전용). 싱글의 play 처리부와 동일 어휘.
 function mpOnEvent(ev){
   if(!ev||!ev.type)return;
-  mpAnimateEvent(ev);   // fly 애니(이벤트 구동) — 출발 좌표가 살아있는 지금 캡처
-  // 이 수의 애니 길이만큼 보드 적용을 늦춘다(mpScheduleView). 놓기+뒤집기+먹기를 단계적으로 보이게.
-  if(ev.type==='play' || ev.type==='flip_turn'){
-    const _p=ev.payload||{}; let _d=300;                       // 손패 놓기
-    if(_p.flipCard) _d+=600;                                   // 덱 뒤집기 중앙 연출
-    if((_p.captured&&_p.captured.length)||(_p.stolen&&_p.stolen.length)) _d+=350;  // 먹기/피뺏기 fly
-    MP._pendingAnimMs=(MP._pendingAnimMs||0)+_d;
-  }
-  if(ev.type==='play' || ev.type==='flip_turn'){
-    const p=ev.payload||{}; const stags=p.stags||[]; const stolen=p.stolen||[];
-    // 싱글과 동일한 사운드 시퀀스 (claim '또잉'은 싱글에서 제거됨 — 피뺏기에서만 사용).
-    //  패 놓기→tile(play), 덱 뒤집기→tile(flip), 특수→play(+따닥 더블), 평범한 먹기→무음, 피뺏기→claim(take).
-    sound('play');                                   // 패 놓기 (single line 550)
-    // 덱 뒤집기 sound('flip')은 mpAnimateEvent(flipCard 연출)에서 처리 — 여기서 또 치면 이중음.
-    if(stags.includes('폭탄')){ bombFx(''); }
-    else if(p.ppuk){ gsVoice('ppeok'); }             // 뻑 (single line 570)
-    else if(stags.length){                           // 특수 먹기 (single line 614-615)
-      if(stags.includes('따닥')){ sound('play'); setTimeout(()=>sound('play'),150); gsVoice('ttadak'); }
-      else { sound('play'); if(stags.includes('쪽')) gsVoice('jjok'); else if(stags.includes('쓸')) gsVoice('ssul'); }
-    }
-    if(stags.length){ toast(stags.join('+')+'!'+(stolen.length?(' 피뺏기 '+stolen.length):'')); }
-    if(stolen.length){ sound('take'); setTimeout(()=>gsVoice('naenwa'),320); }   // 피뺏기만 claim (single line 616)
-  }
+  // 수(놓기/뒤집기/먹기)는 큐에서 비트별로 애니+사운드 처리(mpAnimateMove). 여기선 직전 수만 기록.
+  if(ev.type==='play' || ev.type==='flip_turn' || ev.type==='flip_pick'){ MP._lastPlayEv=ev; return; }
   else if(ev.type==='ppeok3'){ toast('3뻑! 이 판 ×2'); gsVoice('ppeok3'); }
   else if(ev.type==='go'){ const g=(ev.payload&&ev.payload.go)||1; toast(g+'고!'); gsVoice('go'+Math.min(g,5)); }
   else if(ev.type==='draw'){ gsVoice('nagari'); }
@@ -1330,7 +1347,7 @@ function mpResult(v){
     MP.active = true; MP.myUserId = MP.ui.getMyUserId(); MP._sel = -1; MP._resultShown = false;
     MP._prevTable = null; MP._prevCap = null; MP._prevGo = undefined;
     MP._eventDriven = true; MP._voiced = [{},{},{},{}];
-    var bd = document.getElementById('board'); if (bd) bd.style.display='flex';
+    var bd = document.getElementById('board'); if (bd) { bd.style.display='flex'; bd.classList.add('mp'); }
     var opp = document.getElementById('mpOpps'); if (opp) opp.style.display='flex';
     var sp = document.getElementById('spOpp'); if (sp) sp.style.display='none';
     if (rs && rs.gameState) applyServerView(rs.gameState);
