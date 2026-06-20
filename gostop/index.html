@@ -129,25 +129,25 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
 @keyframes flashpop{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
 @keyframes pulse2{0%{transform:translate(-50%,-50%) scale(.7);opacity:0}25%{transform:translate(-50%,-50%) scale(1.15);opacity:1}50%{transform:translate(-50%,-50%) scale(.95)}75%{transform:translate(-50%,-50%) scale(1.1)}100%{transform:translate(-50%,-50%) scale(1)}}
 .toast.dbl{animation:pulse2 .6s var(--ease)}
-/* 마작식 상대 배치: 상대 좌석을 좌/상단/우로 절대배치(내 손패는 하단 고정). 좌·우는 테이블 양옆에 세로 중앙. */
-#mpOpps{display:none;position:absolute;top:82px;left:0;right:0;bottom:150px;z-index:6;pointer-events:none}
-.mpopp{position:absolute;pointer-events:auto;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:9px;padding:5px 7px;font-size:.72rem;max-width:40vw;backdrop-filter:blur(2px)}
-.mpopp.pos-top{top:0;left:50%;transform:translateX(-50%);text-align:center;max-width:72vw}
-.mpopp.pos-left{top:50%;left:4px;transform:translateY(-50%);max-width:42vw}
-.mpopp.pos-right{top:50%;right:4px;transform:translateY(-50%);max-width:42vw}
-/* MP에선 덱 더미를 좌측중앙(좌측 상대패널과 겹침)에서 하단중앙 빈 공간으로 이동 — 뒤집기탄 탭 가림 방지 */
-#board.mp .deck{top:auto;bottom:116px;left:50%;right:auto;transform:translateX(-50%)}
+/* 상대 배치: 활성 상대만 상단 좌/우(단독시 상단중앙)에 크게. 빠진 사람은 우상단 텍스트만. 내 손패는 하단 고정. */
+#mpOpps{display:none;position:absolute;top:80px;left:0;right:0;bottom:150px;z-index:6;pointer-events:none}
+.mpopp{position:absolute;pointer-events:auto;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:9px;padding:5px 7px;font-size:.74rem;max-width:48vw;backdrop-filter:blur(2px)}
+.mpopp.pos-top{top:0;left:50%;transform:translateX(-50%);text-align:center;max-width:80vw}
+.mpopp.pos-ltop{top:0;left:4px;max-width:48vw}
+.mpopp.pos-rtop{top:0;right:4px;max-width:48vw}
 .mpopp.turn{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 14px rgba(230,184,77,.35)}
-.mpopp.out{opacity:.5;filter:grayscale(.6)}
-.mpopp .who{color:var(--muted);margin-bottom:2px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38vw}
+.mpopp .who{color:var(--muted);margin-bottom:2px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
 .mpopp .osub{color:var(--gold);font-size:.7rem;margin-bottom:3px}
-.mpopp .obadge{display:inline-block;font-size:.64rem;padding:1px 5px;border-radius:6px;background:rgba(225,92,82,.35);color:#fff;margin-left:3px}
+.mpopp .obadge{display:inline-block;font-size:.64rem;padding:1px 5px;border-radius:6px;margin-left:3px}
 .mpopp .obadge.dec{background:rgba(230,184,77,.4);color:#1e1604;animation:pulse 1s infinite}
-.mpopp .obadge.sold{background:rgba(95,207,134,.4)}
-.mpopp .capset{max-width:40vw;overflow-x:auto;overflow-y:hidden}
-.mpopp .capset img{width:calc(30px*var(--tz))}
+.mpopp .capset{max-width:46vw;overflow-x:auto;overflow-y:hidden}
+.mpopp .capset img{width:calc(32px*var(--tz))}
 .mpopp .capset .lap img{margin-left:-15px}
-.mpopp.pos-top .capset{max-width:70vw}
+.mpopp.pos-top .capset{max-width:78vw}
+/* 빠진(광팔이) 사람 — 우상단 작은 텍스트만 */
+.mp-out{position:absolute;top:1px;right:8px;font-size:.66rem;color:var(--muted);background:rgba(0,0,0,.42);border:1px solid var(--line);border-radius:6px;padding:2px 7px;opacity:.85;pointer-events:auto}
+/* MP에선 덱 더미를 내 먹은패 위쪽(하단 우측)으로 — 상대패널·테이블과 겹치지 않게 */
+#board.mp .deck{top:auto;bottom:150px;right:12px;left:auto;transform:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .credit{position:fixed;bottom:2px;right:4px;font-size:.55rem;color:rgba(255,255,255,.25);z-index:1}
 .credit a{color:inherit}
@@ -1081,15 +1081,25 @@ async function mpAnimateMove(ev, view){
   (view.players||[]).forEach(pl=>(pl.cap||[]).forEach(c=>cardOf[c.id]=c));
   (view.myHand||[]).forEach(c=>cardOf[c.id]=c);
   if(p.flipCard&&p.flipCard.id) cardOf[p.flipCard.id]=p.flipCard;
-  // (1) 놓기 — 낸 패를 현재 바닥 DOM에 얹어 잠깐 보여줌(상대 패면 여기서 처음 공개)
+  // 행동 좌석
+  let seat=(typeof p.seat==='number')?p.seat:-1;
+  if(seat<0 && ev.playerId){ const pl=(view.players||[]).find(x=>x.id===ev.playerId); if(pl)seat=pl.seat; }
+  // 직전 보드를 복제해 중간 단계를 합성 렌더(카드가 같은 월 그룹 옆에 안착 → 어디로 가는지 명확)
+  let mid = MP.view ? JSON.parse(JSON.stringify(MP.view)) : null;
   const played = (p.cardId && ev.type==='play') ? cardOf[p.cardId] : null;
-  if(played){
-    try{ const tc=$('tableCards'); if(tc){ const d=document.createElement('div'); d.className='mgroup'; d.innerHTML='<img src="'+played.file+'" class="cin">'; tc.appendChild(d); } }catch(_){}
-    try{ const he=document.querySelector('#myHand [data-id="'+p.cardId+'"]'); if(he) he.style.visibility='hidden'; }catch(_){}
-    sound('play'); await sleep(300);
+  // (1) 놓기 — 낸 패를 직전 보드의 해당 월 그룹에 안착시켜 렌더
+  if(played && mid){
+    mid.table = (mid.table||[]).concat([played]);
+    if(p.cardId) mid.myHand = (mid.myHand||[]).filter(c=>c.id!==p.cardId);
+    const ap=(mid.players||[]).find(x=>x.seat===seat); if(ap && seat!==mid.mySeat && ap.handCount>0) ap.handCount--;
+    try{ mpRender(mid); }catch(_){}
+    sound('play'); await sleep(320);
   }
-  // (2) 뒤집기 — 덱에서 뒤집은 패 중앙 크게(싱글 renderFlip 재활용)
-  if(p.flipCard && p.flipCard.file){ try{ sound('flip'); renderFlip(p.flipCard); }catch(_){}; await sleep(640); }
+  // (2) 뒤집기 — 중앙 크게 잠깐 보여준 뒤 해당 월 그룹에 안착
+  if(p.flipCard && p.flipCard.file){
+    try{ sound('flip'); renderFlip(p.flipCard); }catch(_){}; await sleep(560);
+    if(mid){ mid.table=(mid.table||[]).concat([p.flipCard]); try{ mpRender(mid); }catch(_){}; await sleep(280); }
+  }
   // (3) 먹기/안착 — 서버 최종 보드 적용(먹은 패는 cin 페이드로 무더기에 등장) + 특수룰 연출
   applyServerView(view);
   const stags=p.stags||[], stolen=p.stolen||[];
@@ -1146,15 +1156,16 @@ function mpRender(v){
   $('myCaptured').innerHTML=capGroup(meP.cap);
   if($('t-myscore'))$('t-myscore').textContent=v.myScore; { const tn=$('t-myname'); if(tn)tn.textContent=myNick(); } if($('myScoreLine')){ const myc=(v.players.find(p=>p.seat===v.mySeat)||{cap:[]}).cap; $('myScoreLine').innerHTML=scoreLineHTML(myc, v.myScore); }
   const el=$('mpOpps'); const N=(v.players||[]).length;
-  // 상대 좌석을 내 다음 좌석부터 시계방향으로 정렬 → 마작식 좌/상단/우 슬롯에 배치
+  // 상대 좌석을 내 다음부터 정렬. 빠진(광팔이)는 패널 빼고 우상단 텍스트로, 활성 상대만 상단 좌/우(또는 단독시 중앙)에 크게.
   const opps=v.players.filter(p=>p.seat!==v.mySeat).sort((a,b)=>((a.seat-v.mySeat+N)%N)-((b.seat-v.mySeat+N)%N));
-  const slots = opps.length<=1?['top'] : opps.length===2?['left','right'] : ['left','top','right'];
-  el.innerHTML=opps.map((p,idx)=>{ const pos=slots[idx]||'top';
-    const turn=!p.out && (v.prePhase? v.prePhase.decider===p.seat : (v.pending?v.pending.seat===p.seat:v.currentTurn===p.seat));
-    let badge='';
-    if(p.out){ const sold=v.out&&v.out.seat===p.seat&&v.out.forced&&v.out.gwang>0; badge=`<span class="obadge ${sold?'sold':''}">${sold?'광팔이':'빠짐'}</span>`; }
-    else if(v.prePhase&&v.prePhase.decider===p.seat){ badge='<span class="obadge dec">결정중</span>'; }
-    return `<div class="mpopp pos-${pos} ${turn?'turn':''} ${p.out?'out':''}" data-seat="${p.seat}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)}${badge}</div><div class="osub">${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
+  const active=opps.filter(p=>!p.out), outs=opps.filter(p=>p.out);
+  const slots = active.length<=1?['top'] : ['ltop','rtop'];   // 1명=상단중앙, 2명=상단 좌·우
+  let html=active.map((p,idx)=>{ const pos=slots[idx]||'rtop';
+    const turn=(v.prePhase? v.prePhase.decider===p.seat : (v.pending?v.pending.seat===p.seat:v.currentTurn===p.seat));
+    const dec=(v.prePhase&&v.prePhase.decider===p.seat)?'<span class="obadge dec">결정중</span>':'';
+    return `<div class="mpopp pos-${pos} ${turn?'turn':''}" data-seat="${p.seat}"><div class="who">${turn?'▶ ':''}${mpEsc(p.nickname)}${dec}</div><div class="osub">${p.handCount}장 · ${mpScoreOf(p.cap)}점</div><div>${capGroup(p.cap)}</div></div>`; }).join('');
+  if(outs.length){ html+='<div class="mp-out">'+outs.map(p=>{ const sold=v.out&&v.out.seat===p.seat&&v.out.forced&&v.out.gwang>0; return mpEsc(p.nickname)+' '+(sold?'🃏광팔이':'빠짐'); }).join(' · ')+'</div>'; }
+  el.innerHTML=html;
   if(!MP._eventDriven) mpFlyCaptures(prevRects, newCap, v);   // REST 폴백: 스냅샷 diff fly. DO는 순차 애니 큐(mpAnimateMove)가 처리.
   // DO 이벤트구동: 새로 등장한 카드(바닥 착지·먹은 패)는 cin 클래스로 페이드 인(싱글 _newIds 연출과 동일). 별도 숨김 불필요.
   // 명시적 턴 표시 + 폭탄 뒤집기탄 안내
