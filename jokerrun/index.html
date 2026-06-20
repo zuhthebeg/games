@@ -1183,25 +1183,6 @@
       text-shadow: 0 0 10px rgba(255, 79, 197, 0.3);
     }
 
-    .pvp-panel {
-      display: none;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: center;
-      padding: 8px 10px;
-      font-size: 0.77rem;
-      color: var(--muted);
-    }
-
-    .pvp-panel.show {
-      display: grid;
-    }
-
-    .pvp-score {
-      color: var(--gold);
-      font-weight: 800;
-      text-shadow: 0 0 8px rgba(255, 207, 109, 0.4);
-    }
 
     .actions {
       display: grid;
@@ -1923,11 +1904,6 @@
       <div style="text-align:right;">남은 버리기 <b id="discardsLabel">0</b></div>
     </section>
 
-    <section class="pvp-panel glass" id="pvpPanel">
-      <div id="opponentStatus">상대 정보 없음</div>
-      <div class="pvp-score" id="opponentScore">상대 점수 0</div>
-    </section>
-
     <section class="actions">
       <button class="btn-main" id="playBtn">핸드 플레이</button>
       <button class="btn-warn" id="discardBtn">카드 버리기</button>
@@ -1986,48 +1962,6 @@
     </div>
   </div>
 
-  <div class="modal show" id="modeModal">
-    <div class="mode-sheet">
-      <div>
-        <div class="title">모드 선택</div>
-        <div class="subtitle">싱글 플레이 또는 대전 모드를 선택하세요.</div>
-      </div>
-      <div class="mode-grid">
-        <div class="mode-card">
-          <h4>싱글 플레이</h4>
-          <p>현재 모드 그대로 라운드와 상점을 진행합니다.</p>
-          <button class="btn-main" id="singleModeBtn">싱글 플레이 시작</button>
-        </div>
-        <div class="mode-card">
-          <h4>대전 모드 (PvP)</h4>
-          <p>배팅 금액을 걸고 2인 대전을 진행합니다.</p>
-          <div class="row">
-            <select id="betSelect" class="input" style="max-width:130px;">
-              <option value="100">100G</option>
-              <option value="500">500G</option>
-              <option value="1000">1000G</option>
-            </select>
-            <button class="btn-main" id="createRoomBtn">방 만들기</button>
-          </div>
-          <div class="row">
-            <input id="roomCodeInput" class="input" placeholder="방 코드 입력">
-            <button class="btn-warn" id="joinRoomBtn">방 참가</button>
-          </div>
-          <div class="subtitle" id="roomHint">멀티플레이 연결 대기 중...</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal" id="pvpResultModal">
-    <div class="mode-sheet">
-      <div>
-        <div class="title">대전 결과</div>
-        <div class="subtitle" id="pvpFinalText">결과 정산 중...</div>
-      </div>
-      <button class="btn-main" id="pvpConfirmBtn">확인</button>
-    </div>
-  </div>
 
   <div class="joker-popup" id="jokerPopup">
     <div class="joker-popup-content">
@@ -2039,7 +1973,6 @@
     </div>
   </div>
 
-  <script src="/lib/multiplayer.js"></script>
   <script src="/lib/shared-wallet.js?v=20260312a"></script>
   <script>
     const suits = ["heart", "diamond", "club", "spade"];
@@ -2179,26 +2112,6 @@
       rerollCost: 5
     };
 
-    const pvp = {
-      active: false,
-      mp: null,
-      isHost: false,
-      roomId: "",
-      bet: 100,
-      roundTarget: 700,
-      currentRound: 0,
-      maxRounds: 3,
-      myRoundsWon: 0,
-      oppRoundsWon: 0,
-      myRoundEnded: false,
-      oppRoundEnded: false,
-      oppRoundScore: 0,
-      stakePaid: false,
-      opponentNickname: "",
-      finalized: false,
-      initialized: false
-    };
-
     const AudioFX = {
       ctx: null,
       init() {
@@ -2314,12 +2227,10 @@
     }
 
     function activeRoundLabel() {
-      if (state.mode === "pvp") return `${pvp.currentRound}/${pvp.maxRounds}`;
       return `${state.ante}-${state.roundIndex + 1}`;
     }
 
     function activeTarget() {
-      if (state.mode === "pvp") return pvp.roundTarget;
       const blindDefs = getBlindTargets(state.ante);
       const round = blindDefs[state.roundIndex] || blindDefs[blindDefs.length - 1];
       return round.target;
@@ -2347,9 +2258,6 @@
       label.textContent = `G ${gold.toLocaleString()}`;
     }
 
-    function setOpponentStatus(text) {
-      $("#opponentStatus").textContent = text;
-    }
 
     function renderCards() {
       cardsWrap.innerHTML = "";
@@ -2656,8 +2564,7 @@
 
     function renderHUD(chips = 0, mult = 1) {
       $("#roundLabel").textContent = activeRoundLabel();
-      if (state.mode === "pvp") $("#anteBlindLabel").textContent = `ROUND ${pvp.currentRound}/${pvp.maxRounds}`;
-      else $("#anteBlindLabel").textContent = `Ante ${state.ante} | Blind ${state.roundIndex + 1}/3`;
+      $("#anteBlindLabel").textContent = `Ante ${state.ante} | Blind ${state.roundIndex + 1}/3`;
       $("#targetLabel").textContent = activeTarget().toLocaleString();
       $("#scoreLabel").textContent = state.score.toLocaleString();
       $("#moneyLabel").textContent = `$${state.money}`;
@@ -2671,7 +2578,6 @@
       $("#handGuide").textContent = state.bossModifier?.id === "max3cards"
         ? "손패 8장 중 최대 3장을 선택"
         : "손패 8장 중 최대 5장을 선택";
-      $("#pvpPanel").classList.toggle("show", state.mode === "pvp");
       renderJokers();
       renderPlanetCards();
       updateHandPreview();
@@ -2863,81 +2769,11 @@
       updateHandPreview();
     }
 
-    async function sendPvpAction(data) {
-      if (state.mode !== "pvp" || !pvp.mp) return;
-      try { await pvp.mp.sendAction(data); } catch (e) { addLog(`동기화 실패: ${e.message || e}`); }
-    }
-
-    function openPvpResult(text) {
-      $("#pvpFinalText").textContent = text;
-      $("#pvpResultModal").classList.add("show");
-    }
-
-    async function settlePvpGold(result) {
-      if (!window.SharedWallet || !pvp.stakePaid) return;
-      if (result === "win") SharedWallet.addGold(pvp.bet * 2);
-      if (result === "draw") SharedWallet.addGold(pvp.bet);
-      pvp.stakePaid = false;
-      updateGoldLabel();
-    }
-
-    async function finalizePvpMatch() {
-      if (pvp.finalized) return;
-      pvp.finalized = true;
-      let result = "draw";
-      if (pvp.myRoundsWon > pvp.oppRoundsWon) result = "win";
-      if (pvp.myRoundsWon < pvp.oppRoundsWon) result = "lose";
-      if (result === "win") {
-        AudioFX.play("win");
-        spawnWinConfetti();
-      }
-      if (result === "lose") AudioFX.play("lose");
-      await settlePvpGold(result);
-      await sendPvpAction({ type: "GAME_OVER", finalScore: state.score, result });
-      const gainText = result === "win" ? `승리! +${pvp.bet * 2}G` : result === "draw" ? `무승부! +${pvp.bet}G 환불` : "패배...";
-      openPvpResult(`${gainText} (라운드 ${pvp.myRoundsWon}:${pvp.oppRoundsWon})`);
-      addLog(`대전 종료: ${gainText}`);
-    }
-
-    async function resolvePvpRound() {
-      if (!pvp.myRoundEnded || !pvp.oppRoundEnded) return;
-      if (state.score > pvp.oppRoundScore) {
-        pvp.myRoundsWon += 1;
-        setInfo(`라운드 승리! (${state.score} vs ${pvp.oppRoundScore})`);
-      } else if (state.score < pvp.oppRoundScore) {
-        pvp.oppRoundsWon += 1;
-        setInfo(`라운드 패배... (${state.score} vs ${pvp.oppRoundScore})`);
-      } else {
-        setInfo(`라운드 무승부 (${state.score})`);
-      }
-      if (pvp.myRoundsWon >= 2 || pvp.oppRoundsWon >= 2 || pvp.currentRound >= pvp.maxRounds) return finalizePvpMatch();
-      if (pvp.isHost) setTimeout(() => sendRoundStart(pvp.currentRound + 1), 900);
-    }
-
-    async function endLocalPvpRound() {
-      if (pvp.myRoundEnded) return;
-      state.gameEnded = true;
-      pvp.myRoundEnded = true;
-      renderHUD();
-      setOpponentStatus("상대방 대기 중...");
-      await sendPvpAction({ type: "ROUND_ENDED", roundScore: state.score, roundsWon: pvp.myRoundsWon });
-      resolvePvpRound();
-    }
-
     function canContinue() {
       if (state.gameEnded) return false;
       const target = activeTarget();
-      console.log("[JokerRun][canContinue]", { score: state.score, target, handsLeft: state.handsLeft, mode: state.mode });
-      if (state.score >= target) {
-        if (state.mode === "pvp") endLocalPvpRound();
-        else winRound();
-        return false;
-      }
-      if (state.handsLeft <= 0) {
-        if (state.mode === "pvp") endLocalPvpRound();
-        else loseRun();
-        return false;
-      }
+      if (state.score >= target) { winRound(); return false; }
+      if (state.handsLeft <= 0) { loseRun(); return false; }
       return true;
     }
 
@@ -2994,10 +2830,6 @@
       renderHUD(chips, mult);
       const shouldContinue = canContinue();
       if (!shouldContinue) return;
-      if (state.mode === "pvp") {
-        await sendPvpAction({ type: "HAND_PLAYED", handType: hand.handType, chips, mult, totalScore: state.score });
-        setOpponentStatus("상대방 플레이 중...");
-      }
     }
 
     function discardSelected() {
@@ -3209,8 +3041,6 @@
       closeVictoryModal();
       document.getElementById("gameOverModal").classList.remove("show");
       startRound(0);
-      $("#modeModal").classList.remove("show");
-      $("#pvpPanel").classList.remove("show");
     }
 
     function showRunClearModal() {
@@ -3234,145 +3064,6 @@
       closeShop();
     };
 
-    function startSingleMode() {
-      $("#modeModal").classList.remove("show");
-      state.mode = "single";
-      pvp.active = false;
-      startRound(0);
-    }
-
-    function applyRemoteAction(event) {
-      if (!event || !event.data) return;
-      const data = event.data;
-      if (data.type === "ROUND_START") {
-        pvp.currentRound = data.round;
-        pvp.roundTarget = data.target || 700;
-        pvp.myRoundEnded = false;
-        pvp.oppRoundEnded = false;
-        pvp.oppRoundScore = 0;
-        pvp.finalized = false;
-        state.mode = "pvp";
-        state.jokers = [];
-        $("#opponentScore").textContent = "상대 점수 0";
-        setOpponentStatus("상대방 플레이 중...");
-        startRound(pvp.currentRound - 1, data.seed || "");
-      }
-      if (data.type === "HAND_PLAYED") {
-        $("#opponentScore").textContent = `상대 점수 ${Number(data.totalScore || 0).toLocaleString()}`;
-        setOpponentStatus("상대방 플레이 중...");
-      }
-      if (data.type === "ROUND_ENDED") {
-        pvp.oppRoundEnded = true;
-        pvp.oppRoundScore = Number(data.roundScore || 0);
-        pvp.oppRoundsWon = Number(data.roundsWon || pvp.oppRoundsWon);
-        setOpponentStatus("상대방 대기 중...");
-        resolvePvpRound();
-      }
-      if (data.type === "GAME_OVER" && !pvp.finalized) {
-        pvp.finalized = true;
-        const text = data.result === "win" ? "패배..." : data.result === "lose" ? `승리! +${pvp.bet * 2}G` : `무승부! +${pvp.bet}G 환불`;
-        openPvpResult(`${text} (상대 전송 결과)`);
-      }
-    }
-
-    function sendRoundStart(roundNo) {
-      if (!pvp.isHost || !pvp.mp) return;
-      const seed = `${Date.now()}-${Math.random().toString(16).slice(2)}-${roundNo}`;
-      const data = { type: "ROUND_START", round: roundNo, seed, target: pvp.roundTarget };
-      applyRemoteAction({ data });
-      sendPvpAction(data);
-    }
-
-    async function ensureStakePaid() {
-      if (!window.SharedWallet || pvp.stakePaid) return true;
-      const ok = SharedWallet.removeGold(pvp.bet);
-      if (!ok) {
-        setInfo(`골드 부족: ${pvp.bet}G 필요`);
-        updateGoldLabel();
-        return false;
-      }
-      pvp.stakePaid = true;
-      updateGoldLabel();
-      return true;
-    }
-
-    async function initMultiplayer() {
-      if (pvp.initialized) return true;
-      if (!window.MultiplayerClient) return false;
-      pvp.mp = MultiplayerClient.getInstance();
-      await pvp.mp.ensureAuth();
-      pvp.mp.onEvent = async (event) => {
-        if (event.type === "player_joined") {
-          pvp.opponentNickname = event.nickname || "상대";
-          setOpponentStatus(`${pvp.opponentNickname} 접속`);
-        }
-        if (event.type === "game_started") {
-          const roomBet = Number(event.betting || (event.room && event.room.betting) || 0);
-          if (roomBet > 0) pvp.bet = roomBet;
-          const paid = await ensureStakePaid();
-          if (!paid) return;
-          $("#modeModal").classList.remove("show");
-          state.mode = "pvp";
-          pvp.active = true;
-          pvp.myRoundsWon = 0;
-          pvp.oppRoundsWon = 0;
-          pvp.finalized = false;
-          $("#opponentScore").textContent = "상대 점수 0";
-          setOpponentStatus("상대방 플레이 중...");
-          addLog(`대전 시작! 배팅 ${pvp.bet}G`);
-          if (pvp.isHost) sendRoundStart(1);
-        }
-        if (event.type === "action") applyRemoteAction(event);
-      };
-      pvp.mp.startListening();
-      pvp.initialized = true;
-      $("#roomHint").textContent = `로그인 완료: ${pvp.mp.nickname || "익명"}`;
-      return true;
-    }
-
-    async function createPvpRoom() {
-      const ok = await initMultiplayer();
-      if (!ok) return setInfo("멀티플레이 클라이언트를 불러오지 못했습니다.");
-      pvp.bet = Number($("#betSelect").value || 100);
-      pvp.isHost = true;
-      const room = await pvp.mp.createRoom("jokerrun", { maxPlayers: 2, betting: pvp.bet });
-      pvp.roomId = room.id || room.roomId || room.code || room.roomCode || "";
-      await pvp.mp.setReady(true);
-      $("#roomHint").textContent = `방 생성 완료. 코드: ${pvp.roomId || "(자동 매칭)"}`;
-      setOpponentStatus("상대방 접속 대기 중...");
-      addLog(`방 생성: 배팅 ${pvp.bet}G`);
-    }
-
-    async function joinPvpRoom() {
-      const ok = await initMultiplayer();
-      if (!ok) return setInfo("멀티플레이 클라이언트를 불러오지 못했습니다.");
-      const code = $("#roomCodeInput").value.trim();
-      if (!code) return setInfo("참가할 방 코드를 입력하세요.");
-      pvp.bet = Number($("#betSelect").value || 100);
-      pvp.isHost = false;
-      await pvp.mp.joinRoom(code);
-      pvp.roomId = code;
-      await pvp.mp.setReady(true);
-      $("#roomHint").textContent = `방 참가 완료: ${code}`;
-      setOpponentStatus("상대방 준비 중...");
-      addLog(`방 참가: ${code}`);
-    }
-
-    async function resetFromPvp() {
-      if (pvp.mp) {
-        try { await pvp.mp.leaveRoom(); } catch (_) {}
-      }
-      pvp.active = false;
-      pvp.stakePaid = false;
-      pvp.finalized = false;
-      $("#pvpResultModal").classList.remove("show");
-      $("#modeModal").classList.add("show");
-      setOpponentStatus("상대 정보 없음");
-      $("#opponentScore").textContent = "상대 점수 0";
-      state.mode = "single";
-      startRound(0);
-    }
-
     $("#playBtn").addEventListener("click", playSelected);
     $("#discardBtn").addEventListener("click", discardSelected);
     $("#deckBtn").addEventListener("click", openDeckModal);
@@ -3388,15 +3079,8 @@
       setInfo("선택을 해제했습니다.");
     });
     $("#shopContinueBtn").addEventListener("click", window.continueFromShop);
-    $("#restartBtn").addEventListener("click", () => {
-      if (state.mode === "pvp") resetFromPvp();
-      else newRun();
-    });
+    $("#restartBtn").addEventListener("click", newRun);
     $("#themeBtn").addEventListener("click", () => document.documentElement.classList.toggle("light"));
-    $("#singleModeBtn").addEventListener("click", startSingleMode);
-    $("#createRoomBtn").addEventListener("click", createPvpRoom);
-    $("#joinRoomBtn").addEventListener("click", joinPvpRoom);
-    $("#pvpConfirmBtn").addEventListener("click", resetFromPvp);
     $("#victoryConfirmBtn").addEventListener("click", newRun);
 
     if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) document.documentElement.classList.add("light");
@@ -3406,8 +3090,7 @@
         try { await SharedWallet.init(); } catch (_) {}
       }
       updateGoldLabel();
-      startRound(0);
-      $("#modeModal").classList.add("show");
+      newRun();
     })();
   </script>
     <script src="/lib/site-meta.js"></script>
