@@ -1437,6 +1437,7 @@
     .pip.flip { transform: translate(-50%, -50%) rotate(180deg); }
     .pip.big { font-size: clamp(30px, 8.5vw, 46px); }
 
+    .trump-full { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; z-index: 1; }
     .card-face.face-img { position: absolute; inset: 6px 5px; padding: 0; border-radius: 6px; overflow: hidden; }
     .card-face.face-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .face-court {
@@ -2111,10 +2112,10 @@
     .reroll-btn-sm { padding: 5px 12px; font-size: 12px; font-weight: 800; border-radius: 8px; background: var(--panel-2, rgba(255,255,255,.06)); border: 1px solid var(--line, rgba(255,255,255,.18)); color: var(--text); cursor: pointer; }
     .reroll-btn-sm:disabled { opacity: .45; cursor: not-allowed; }
 
-    .shop-tilerow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
+    .shop-tilerow { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; }
     .shop-tile {
-      width: clamp(66px, 21vw, 86px);
-      padding: 5px 5px 6px;
+      width: clamp(54px, 17.3vw, 70px);   /* 한 줄에 5장 들어가도록(기본 슬롯 5칸) */
+      padding: 4px 4px 5px;
       border-radius: 10px;
       border: 1.5px solid rgba(255,255,255,.18);
       background: linear-gradient(165deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
@@ -2486,6 +2487,7 @@
       <button class="start-continue" id="startContinueBtn" style="display:none">↩️ 이어하기</button>
       <button class="start-play" id="startPlayBtn">▶ 플레이</button>
       <button class="start-help" id="startHelpBtn">＂어떻게 하는 거야?＂ — 도움말</button>
+      <button class="start-help" id="cardSkinBtn" style="margin-top:6px">🎴 카드 스킨: 클래식 트럼프</button>
     </div>
   </div>
 
@@ -2950,6 +2952,10 @@
     function isCardBossDisabled(c){ return state.bossModifier?.id === "no_hearts" && c.suit === "heart"; }
     function cardScoreChips(c){ if (isCardBossDisabled(c)) return 0; return (RANK_CHIPS[c.rank]||0) + (enhOf(c)?.chips||0); }
     function enhBadgeHTML(card){ const e=enhOf(card); return e ? `<span class="enh-badge" style="background:${e.color}">${e.short}</span>` : ""; }
+    // 페이스 카드(J/Q/K) 스킨 — classic: 오리지널 트럼프 풀카드 이미지 / fantasy: 직접 그린 일러스트
+    const FACE_IMG = { 11: "jack", 12: "queen", 13: "king" };
+    function getCardSkin(){ try { return localStorage.getItem("jokerrun_card_skin") || "classic"; } catch (_) { return "classic"; } }
+    function setCardSkin(s){ try { localStorage.setItem("jokerrun_card_skin", s); } catch (_) {} }
     // 조커/효과 설명에서 '칩'은 파랑, '배수'는 빨강으로 눈에 띄게 강조(내부 정의 문자열만 사용 → 안전)
     function colorizeEffect(text){
       if (text == null) return "";
@@ -3341,7 +3347,6 @@
       9:  [[28,14],[72,14],[28,38],[72,38],[50,50],[28,62],[72,62],[28,86],[72,86]],
       10: [[28,14],[72,14],[50,28],[28,38],[72,38],[28,62],[72,62],[50,72],[28,86],[72,86]]
     };
-    const FACE_IMG = { 11: "jack", 12: "queen", 13: "king" };
     function cardFaceHTML(card) {
       const s = suitSymbol[card.suit];
       if (FACE_IMG[card.rank]) {
@@ -3358,6 +3363,10 @@
           <div class="stone-face"><span class="stone-rock">🪨</span><span class="stone-chip">+50</span></div>`;
       }
       const locked = isCardBossDisabled(card) ? `<span class="card-lock" aria-label="봉인됨">🚫</span>` : "";
+      // 클래식 스킨: J/Q/K를 오리지널 트럼프 풀카드 이미지로 통째 교체
+      if (FACE_IMG[card.rank] && getCardSkin() === "classic") {
+        return `${enhBadgeHTML(card)}${locked}<img class="trump-full" src="faces_classic/${FACE_IMG[card.rank]}_${card.suit}.webp" alt="" draggable="false">`;
+      }
       return `${enhBadgeHTML(card)}${locked}
   <div class="card-corner card-tl">
     <span class="ci-rank">${formatRank(card.rank)}</span>
@@ -5189,6 +5198,13 @@
     $("#bgmBtn").addEventListener("click", () => BGM.toggle());
     $("#startPlayBtn").addEventListener("click", beginRun);
     $("#startContinueBtn").addEventListener("click", () => { try { BGM.unlock?.(); } catch (_) {} restoreRun(); });
+    function updateSkinBtn() { const b = $("#cardSkinBtn"); if (b) b.textContent = `🎴 카드 스킨: ${getCardSkin() === "classic" ? "클래식 트럼프" : "판타지 일러스트"}`; }
+    $("#cardSkinBtn").addEventListener("click", () => {
+      setCardSkin(getCardSkin() === "classic" ? "fantasy" : "classic");
+      updateSkinBtn();
+      try { renderCards(); } catch (_) {}
+    });
+    updateSkinBtn();
     $("#collectionBtn").addEventListener("click", openCollection);
     $("#closeCollectionBtn").addEventListener("click", () => $("#collectionModal").classList.remove("show"));
     document.querySelectorAll(".col-tab").forEach(b => b.addEventListener("click", () => renderCollection(b.dataset.ctab)));
