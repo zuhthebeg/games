@@ -318,6 +318,7 @@
     }
 
     .planet-card-mini.tarot-mini { border-color: rgba(181, 106, 214, 0.55); }
+    .planet-card-mini.tarot-disabled { opacity: 0.4; filter: grayscale(0.5); cursor: not-allowed; }
     .planet-card-mini.tarot-mini .planet-target { color: #d8a8ff; }
 
     .planet-card-mini.empty {
@@ -3057,6 +3058,7 @@
           setTimeout(() => d.classList.remove("pick-fx"), 280);
           AudioFX.play("select");
           updateHandPreview();
+          updateConsumableUsability();
         });
         d.addEventListener('mousemove', (e) => {
           if (state.selected.has(card.id)) return;
@@ -3214,8 +3216,9 @@
           return;
         }
         const sel = selectedCards();
-        if (tarot.exact ? sel.length !== need : sel.length < need) {
-          setInfo(`<span style="color:var(--danger)">${tarot.name}</span> — 카드를 ${tarot.exact ? "정확히 " : ""}${need}장 선택 후 사용하세요.`);
+        // need장과 정확히 일치해야 사용 가능(1장짜리에 2장 선택 시 적용되던 버그 수정)
+        if (sel.length !== need) {
+          setInfo(`<span style="color:var(--danger)">${tarot.name}</span> — 카드를 정확히 ${need}장 선택 후 사용하세요. (현재 ${sel.length}장)`);
           return;
         }
         tarot.apply(sel);
@@ -3291,15 +3294,28 @@
         } else {
           const tarot = it.data;
           card.classList.add("tarot-mini");
+          card.dataset.need = String(tarot.need || 0);
           card.innerHTML = `
             <img class="planet-art" src="tarot/${tarot.id}.webp" alt="" draggable="false" onerror="this.style.display='none'">
             <span class="planet-grad" aria-hidden="true"></span>
             <span class="planet-glyph">${tarot.name}</span>
-            <span class="planet-target">타로</span>`;
+            <span class="planet-target">타로${(tarot.need || 0) > 0 ? ` ·${tarot.need}장` : ""}</span>`;
           card.addEventListener("click", () => useTarot(tarot, card));
         }
         container.appendChild(card);
       }
+      updateConsumableUsability();
+    }
+
+    // 선택 카드 수에 따라 타로 사용 가능 여부 갱신(need장과 정확히 일치할 때만 활성)
+    function updateConsumableUsability() {
+      const n = selectedCards().length;
+      document.querySelectorAll(".planet-card-mini.tarot-mini").forEach(btn => {
+        const need = parseInt(btn.dataset.need || "0", 10);
+        const ok = need === 0 || n === need;
+        btn.disabled = !ok;
+        btn.classList.toggle("tarot-disabled", !ok);
+      });
     }
 
     function renderBossBanner() {
@@ -4359,6 +4375,7 @@
       state.selected.clear();
       renderCards();
       updateHandPreview();
+      updateConsumableUsability();
       setInfo("선택을 해제했습니다.");
     });
     $("#cashoutContinueBtn").addEventListener("click", continueFromCashout);
