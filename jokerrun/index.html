@@ -304,6 +304,9 @@
       transition: transform var(--ease), box-shadow var(--ease);
     }
 
+    .planet-card-mini.tarot-mini { border-color: rgba(181, 106, 214, 0.55); }
+    .planet-card-mini.tarot-mini .planet-target { color: #d8a8ff; }
+
     .planet-card-mini.empty {
       cursor: default;
       border-style: dashed;
@@ -2483,6 +2486,19 @@
       { id:"pluto",    name:"명왕성",planet:"⯓", hand:"HIGH_CARD",     chipsBonus:15, multBonus:1 },
     ];
 
+    // ── 타로 카드 (소모품, 행성과 슬롯 공유) ── 발라트로식
+    const tarotPool = [
+      { id:"star",     name:"별",            need:1, desc:"선택 카드 → ◆다이아", apply(sel){ sel.forEach(c=>c.suit="diamond"); } },
+      { id:"moon",     name:"달",            need:1, desc:"선택 카드 → ♣클럽",   apply(sel){ sel.forEach(c=>c.suit="club"); } },
+      { id:"sun",      name:"태양",          need:1, desc:"선택 카드 → ♥하트",   apply(sel){ sel.forEach(c=>c.suit="heart"); } },
+      { id:"world",    name:"세계",          need:1, desc:"선택 카드 → ♠스페이드", apply(sel){ sel.forEach(c=>c.suit="spade"); } },
+      { id:"strength", name:"힘",            need:1, desc:"선택 카드 랭크 +1",   apply(sel){ sel.forEach(c=>{ if(c.rank<14) c.rank++; }); } },
+      { id:"death",    name:"죽음",          need:2, exact:true, desc:"정확히 2장: 오른쪽=왼쪽 복제", apply(sel){ const a=sel[0], b=sel[1]; if(a&&b){ b.rank=a.rank; b.suit=a.suit; } } },
+      { id:"hermit",   name:"은둔자",        need:0, desc:"보유 자금 2배(최대 +$20)", apply(){ const add=Math.min(20, state.money||0); state.money=(state.money||0)+add; } },
+      { id:"wheel",    name:"운명의 수레바퀴", need:0, desc:"즉시 +$12",          apply(){ state.money=(state.money||0)+12; } }
+    ];
+    function consumableCount(){ return (state.planetCards?.length||0) + (state.tarotCards?.length||0); }
+
     const jokerGlyphClass = {
       flat50: "joker-bomb",
       flushx2: "joker-wave",
@@ -2530,6 +2546,7 @@
       shopJokers: [],
       handLevels: { HIGH_CARD:1, PAIR:1, TWO_PAIR:1, THREE:1, STRAIGHT:1, FLUSH:1, FULL_HOUSE:1, FOUR:1, STRAIGHT_FLUSH:1 },
       planetCards: [],
+      tarotCards: [],
       shopPlanets: [],
       rerollCost: 5
     };
@@ -2893,12 +2910,39 @@
       }
     }
 
+    function useTarot(tarot, anchorEl) {
+      const idx = state.tarotCards.indexOf(tarot);
+      if (idx < 0) return;
+      const need = tarot.need || 0;
+      if (need > 0) {
+        const sel = selectedCards();
+        if (tarot.exact ? sel.length !== need : sel.length < need) {
+          setInfo(`<span style="color:var(--danger)">${tarot.name}</span> — 카드를 ${tarot.exact ? "정확히 " : ""}${need}장 선택 후 사용하세요.`);
+          return;
+        }
+        tarot.apply(sel);
+        renderCards();
+      } else {
+        tarot.apply();
+      }
+      state.tarotCards.splice(idx, 1);
+      addLog(`타로 사용: ${tarot.name}`);
+      if (anchorEl) showLevelUpPopup(anchorEl);
+      updateHandPreview();
+      renderHUD();
+      if ($("#shopModal").classList.contains("show")) openShop(_shopIsAnteClear);
+    }
+
     function renderPlanetCards() {
       if (!consumableArea) return;
       consumableArea.innerHTML = "";
+      const items = [
+        ...state.planetCards.map(p => ({ kind: "planet", data: p })),
+        ...state.tarotCards.map(t => ({ kind: "tarot", data: t }))
+      ];
       for (let i = 0; i < 2; i++) {
-        const planet = state.planetCards[i];
-        if (!planet) {
+        const it = items[i];
+        if (!it) {
           const empty = document.createElement("div");
           empty.className = "planet-card-mini empty";
           empty.setAttribute("aria-label", "빈 소모품 슬롯");
@@ -2908,24 +2952,34 @@
         const card = document.createElement("button");
         card.type = "button";
         card.className = "planet-card-mini";
-        const handName = handBase[planet.hand]?.name || planet.hand;
-        card.innerHTML = `
-          <img class="planet-art" src="planets/${planet.id}.webp" alt="" draggable="false" onerror="this.style.display='none'">
-          <span class="planet-grad" aria-hidden="true"></span>
-          <span class="planet-glyph">${planet.name}</span>
-          <span class="planet-target">${handName} Lv.${state.handLevels?.[planet.hand] || 1}</span>
-        `;
-        card.addEventListener("click", () => {
-          const idx = state.planetCards.indexOf(planet);
-          if (idx < 0) return;
-          const current = state.handLevels?.[planet.hand] || 1;
-          const newLevel = current + 1;
-          state.handLevels[planet.hand] = newLevel;
-          state.planetCards.splice(idx, 1);
-          addLog(`${planet.name} 사용: ${handName} Lv.${newLevel}`);
-          showLevelUpPopup(card);
-          renderHUD();
-        });
+        if (it.kind === "planet") {
+          const planet = it.data;
+          const handName = handBase[planet.hand]?.name || planet.hand;
+          card.innerHTML = `
+            <img class="planet-art" src="planets/${planet.id}.webp" alt="" draggable="false" onerror="this.style.display='none'">
+            <span class="planet-grad" aria-hidden="true"></span>
+            <span class="planet-glyph">${planet.name}</span>
+            <span class="planet-target">${handName} Lv.${state.handLevels?.[planet.hand] || 1}</span>`;
+          card.addEventListener("click", () => {
+            const pi = state.planetCards.indexOf(planet);
+            if (pi < 0) return;
+            const newLevel = (state.handLevels?.[planet.hand] || 1) + 1;
+            state.handLevels[planet.hand] = newLevel;
+            state.planetCards.splice(pi, 1);
+            addLog(`${planet.name} 사용: ${handName} Lv.${newLevel}`);
+            showLevelUpPopup(card);
+            renderHUD();
+          });
+        } else {
+          const tarot = it.data;
+          card.classList.add("tarot-mini");
+          card.innerHTML = `
+            <img class="planet-art" src="tarot/${tarot.id}.webp" alt="" draggable="false" onerror="this.style.display='none'">
+            <span class="planet-grad" aria-hidden="true"></span>
+            <span class="planet-glyph">${tarot.name}</span>
+            <span class="planet-target">타로</span>`;
+          card.addEventListener("click", () => useTarot(tarot, card));
+        }
         consumableArea.appendChild(card);
       }
     }
@@ -3474,10 +3528,16 @@
       state.shopPlanets = shuffled.slice(0, 2);
     }
 
+    function generateShopTarots() {
+      const shuffled = [...tarotPool].sort(() => Math.random() - 0.5);
+      state.shopTarots = shuffled.slice(0, 2);
+    }
+
     function openShop(anteClear = false) {
       _shopIsAnteClear = anteClear;
       if (state.shopJokers.length === 0) generateShopJokers();
       if (state.shopPlanets.length === 0) generateShopPlanets();
+      if (!state.shopTarots || state.shopTarots.length === 0) generateShopTarots();
       const grid = $("#shopGrid");
       grid.innerHTML = "";
       $("#shopMoney").textContent = `보유 자금: $${state.money}`;
@@ -3495,6 +3555,7 @@
         state.rerollCost += 1;
         generateShopJokers();
         generateShopPlanets();
+        generateShopTarots();
         openShop(_shopIsAnteClear);
       });
       grid.appendChild(rerollBtn);
@@ -3533,7 +3594,7 @@
 
       state.shopPlanets.forEach((planet, idx) => {
         const afford = state.money >= 3;
-        const planetFull = state.planetCards.length >= 2;
+        const planetFull = consumableCount() >= 2;
         const handName = handBase[planet.hand]?.name || planet.hand;
         const card = document.createElement("div");
         card.className = "shop-item shop-item-planet";
@@ -3552,6 +3613,34 @@
         card.appendChild(btn);
         grid.appendChild(card);
       });
+
+      const tarotTitle = document.createElement("div");
+      tarotTitle.className = "shop-subtitle";
+      tarotTitle.textContent = "타로 카드";
+      grid.appendChild(tarotTitle);
+
+      (state.shopTarots || []).forEach((tarot, idx) => {
+        const afford = state.money >= 4;
+        const full = consumableCount() >= 2;
+        const card = document.createElement("div");
+        card.className = "shop-item shop-item-tarot";
+        card.style.borderColor = "#b56ad688";
+        card.innerHTML = `<div class="shop-art-wrap"><img class="shop-art" src="tarot/${tarot.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'"><span class="shop-rarity" style="background:#b56ad6">타로</span></div><div class="name">${tarot.name}</div><div class="desc">${tarot.desc}</div><div class="price"><span class="coin" aria-hidden="true"></span>$4</div>`;
+        const btn = document.createElement("button");
+        btn.textContent = full ? "슬롯 가득 참" : afford ? "구매" : "자금 부족";
+        btn.disabled = full || !afford;
+        btn.addEventListener("click", () => {
+          state.money -= 4;
+          state.tarotCards.push({ ...tarot });
+          state.shopTarots.splice(idx, 1);
+          addLog(`타로 구매: ${tarot.name} (-$4)`);
+          renderHUD();
+          openShop(_shopIsAnteClear);
+        });
+        card.appendChild(btn);
+        grid.appendChild(card);
+      });
+
       $("#shopContinueBtn").textContent = anteClear
         ? `Ante ${state.ante + 1} 시작 →`
         : `블라인드 ${Math.min(3, state.roundIndex + 2)}/3 시작 →`;
@@ -3570,6 +3659,7 @@
       state.bossModifier = null;
       state.shopJokers = [];   // 새 라운드마다 상점 갱신
       state.shopPlanets = [];
+      state.shopTarots = [];
       state.rerollCost = 5;    // 갱신 비용 초기화
       state.deck = buildDeck(seedText);
       state.hand = [];
@@ -3648,7 +3738,9 @@
       state.jokers = [];
       state.handLevels = { HIGH_CARD:1, PAIR:1, TWO_PAIR:1, THREE:1, STRAIGHT:1, FLUSH:1, FULL_HOUSE:1, FOUR:1, STRAIGHT_FLUSH:1 };
       state.planetCards = [];
+      state.tarotCards = [];
       state.shopPlanets = [];
+      state.shopTarots = [];
       state.bossModifier = null;
       logEl.innerHTML = "";
       closeShop();
