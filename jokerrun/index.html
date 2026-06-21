@@ -2386,6 +2386,7 @@
       <h1 class="start-title">조커런</h1>
       <p class="start-tagline">포커 핸드를 짜고, 조커로 점수를 폭발시켜라.<br>8앤티를 돌파하는 카드 로그라이크.</p>
       <div class="start-hs" id="startHighScore">최고 기록: 0점</div>
+      <button class="start-play" id="startContinueBtn" style="display:none;background:linear-gradient(150deg,#2e7d4f,#1f6b3e)">↩️ 이어하기</button>
       <button class="start-play" id="startPlayBtn">▶ 플레이</button>
       <button class="start-help" id="startHelpBtn">＂어떻게 하는 거야?＂ — 도움말</button>
     </div>
@@ -2577,6 +2578,7 @@
       <h2 style="color:#ff7f91;font-size:22px;margin-bottom:4px;">게임 오버</h2>
       <p id="gameOverAnteText" style="color:var(--muted);font-size:13px;margin-bottom:16px;"></p>
       <p id="gameOverHighScore" style="color:var(--gold);font-size:13px;margin-bottom:20px;"></p>
+      <button id="gameOverContinueBtn" onclick="restoreRun()" style="display:none;width:100%;padding:12px;margin-bottom:9px;background:linear-gradient(150deg,#2e7d4f,#1f6b3e);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">↩️ 이어하기 — 마지막 핸드 다시</button>
       <button onclick="newRun()" style="width:100%;padding:12px;background:linear-gradient(150deg,var(--red-start),var(--red-end));color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">다시 시작</button>
     </div>
   </div>
@@ -3951,6 +3953,78 @@
       return true;
     }
 
+    // ── 세이브/이어하기 ── localStorage에 "마지막 핸드 차례 시작(템 사용 전)" 스냅샷을 저장.
+    // 게임오버 시 이 시점으로 복원 → 마지막 핸드를 다른 카드/템으로 다시 시도(블라인드 전체 부활은 아님).
+    const SAVE_KEY = "jokerrun_continue";
+    function snapshotRun() {
+      try {
+        if (!state.runDeck || state.gameEnded) return;
+        const snap = {
+          v: 2, ts: Date.now(),
+          ante: state.ante, roundIndex: state.roundIndex, money: state.money,
+          score: state.score, handsLeft: state.handsLeft, discardsLeft: state.discardsLeft,
+          sortMode: state.sortMode, lastHandType: state.lastHandType || null,
+          handLevels: { ...state.handLevels },
+          vouchers: { ...state.vouchers }, voucherAnte: state.voucherAnte,
+          shopVoucherId: state.shopVoucher ? state.shopVoucher.id : null,
+          bossModifier: state.bossModifier ? { ...state.bossModifier } : null,
+          isBossBlind: !!state.isBossBlind,
+          extraCards: (state.extraCards || []).map(c => ({ suit: c.suit, rank: c.rank })),
+          jokers: state.jokers.map(j => ({ id: j.id, counter: j.counter || 0, desc: j.desc })),
+          tarotCards: state.tarotCards.map(t => ({ id: t.id })),
+          planetCards: state.planetCards.map(p => ({ id: p.id })),
+          runDeck: state.runDeck.map(c => ({ id: c.id, suit: c.suit, rank: c.rank, enh: c.enh || null })),
+          deckUid: state._deckUid || state.runDeck.length,
+          handIds: state.hand.map(c => c.id),
+          deckIds: state.deck.map(c => c.id)
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(snap));
+      } catch (_) {}
+    }
+    function hasSavedRun() { try { return !!localStorage.getItem(SAVE_KEY); } catch (_) { return false; } }
+    function clearSavedRun() { try { localStorage.removeItem(SAVE_KEY); } catch (_) {} }
+
+    function restoreRun() {
+      let snap;
+      try { snap = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); } catch (_) { snap = null; }
+      if (!snap || !snap.runDeck) return false;
+      state.mode = "single";
+      state.ante = snap.ante; state.roundIndex = snap.roundIndex; state.money = snap.money;
+      state.score = snap.score; state.handsLeft = snap.handsLeft; state.discardsLeft = snap.discardsLeft;
+      state.sortMode = snap.sortMode || "rank"; state.lastHandType = snap.lastHandType || null;
+      state.handLevels = { ...snap.handLevels };
+      state.vouchers = { ...snap.vouchers }; state.voucherAnte = snap.voucherAnte || 0;
+      state.shopVoucher = snap.shopVoucherId ? (voucherPool.find(v => v.id === snap.shopVoucherId) || null) : null;
+      state.bossModifier = snap.bossModifier || null;
+      state.isBossBlind = !!snap.isBossBlind;
+      state.extraCards = (snap.extraCards || []).map(c => ({ suit: c.suit, rank: c.rank }));
+      // 런 덱 복원(enh 보존). uidMap으로 손패/덱을 같은 카드 객체에 연결 → enh 영속 유지.
+      state.runDeck = snap.runDeck.map(c => ({ id: c.id, suit: c.suit, rank: c.rank, enh: c.enh || null }));
+      state._deckUid = snap.deckUid || state.runDeck.length;
+      const uidMap = {}; state.runDeck.forEach(c => { uidMap[c.id] = c; });
+      state.hand = (snap.handIds || []).map(id => uidMap[id]).filter(Boolean);
+      state.deck = (snap.deckIds || []).map(id => uidMap[id]).filter(Boolean);
+      // 조커 복원: 풀에서 apply 함수 재연결 + counter/desc 복원
+      state.jokers = (snap.jokers || []).map(s => {
+        const base = jokerPool.find(j => j.id === s.id); if (!base) return null;
+        const j = { ...base, counter: s.counter || 0 }; if (s.desc) j.desc = s.desc; return j;
+      }).filter(Boolean);
+      state.tarotCards = (snap.tarotCards || []).map(s => { const t = tarotPool.find(x => x.id === s.id); return t ? { ...t } : null; }).filter(Boolean);
+      state.planetCards = (snap.planetCards || []).map(s => { const p = planetPool.find(x => x.id === s.id); return p ? { ...p } : null; }).filter(Boolean);
+      state.shopJokers = []; state.shopPlanets = []; state.shopTarots = []; state.shopCards = [];
+      state.shopStocked = false; state.rerollCost = 5;
+      state.selected.clear();
+      state.gameEnded = false;
+      document.getElementById("gameOverModal").classList.remove("show");
+      closeShop(); closeDeckModal(); closeVictoryModal();
+      const ss = document.getElementById("startScreen"); if (ss) ss.classList.remove("show");
+      sortHand(); renderCards(); renderBossBanner(); renderHUD(); updateHandPreview();
+      try { BGM.setTrack(state.isBossBlind ? "boss" : "normal"); } catch (_) {}
+      setInfo("↩️ 이어하기 — 마지막 핸드를 다시 시도하세요.");
+      return true;
+    }
+    window.restoreRun = restoreRun;
+
     // 점수 계산용 별도 스테이지: 선택 카드를 잘림 없이 크게 띄워 강조
     function buildPlayStage(cards, scoringIds, headText) {
       const stage = document.createElement("div");
@@ -4116,6 +4190,7 @@
       renderHUD(chips, mult);
       const shouldContinue = canContinue();
       if (!shouldContinue) return;
+      snapshotRun();   // 다음 핸드 차례 시작(템 사용 전) — 게임오버 시 여기로 복원
     }
 
     function discardSelected() {
@@ -4517,6 +4592,7 @@
         setInfo(`<span style="color:var(--danger)">⚠️ ${state.bossModifier.label}</span> — ${state.bossModifier.desc}`);
       }
       addLog(`${activeRoundLabel()} 시작. 목표 ${activeTarget()}점`);
+      snapshotRun();   // 블라인드 첫 핸드 차례 시작 — 세이브/컨티뉴 스냅샷
     }
 
     function winRound() {
@@ -4593,6 +4669,8 @@
       const hsText = isNew ? `🏆 신기록! ${totalScore.toLocaleString()}점` : `최고 기록: ${prev.toLocaleString()}점`;
       document.getElementById("gameOverAnteText").textContent = anteText;
       document.getElementById("gameOverHighScore").textContent = hsText;
+      const contBtn = document.getElementById("gameOverContinueBtn");
+      if (contBtn) contBtn.style.display = hasSavedRun() ? "" : "none";
       document.getElementById("gameOverModal").classList.add("show");
       addLog("게임 오버.");
     }
@@ -4686,6 +4764,8 @@
       const hs = parseInt(localStorage.getItem("jokerrun_hs") || "0", 10);
       const el = $("#startHighScore");
       if (el) el.textContent = `최고 기록: ${hs.toLocaleString()}점`;
+      const cb = $("#startContinueBtn");
+      if (cb) cb.style.display = hasSavedRun() ? "" : "none";   // 진행 중이던 게임 있으면 이어하기 노출
     }
     function unlockAudio() {
       try { if (AudioFX.ctx && AudioFX.ctx.state === "suspended") AudioFX.ctx.resume(); } catch (_) {}
@@ -4700,6 +4780,7 @@
     }
     $("#bgmBtn").addEventListener("click", () => BGM.toggle());
     $("#startPlayBtn").addEventListener("click", beginRun);
+    $("#startContinueBtn").addEventListener("click", () => { try { BGM.unlock?.(); } catch (_) {} restoreRun(); });
     $("#helpStartBtn").addEventListener("click", beginRun);
     $("#startHelpBtn").addEventListener("click", () => $("#helpModal").classList.add("show"));
     $("#helpCloseBtn").addEventListener("click", () => $("#helpModal").classList.remove("show"));
