@@ -3682,13 +3682,16 @@
           action2Label: `팔기 +$${sell}`, action2Fn: () => { closeJokerPopup(); sellConsumable("planet", item); }
         });
       } else {
+        const inShop = $("#shopModal").classList.contains("show");
+        const need = item.need || 0;
+        const cardLocked = need > 0 && inShop;   // 카드 선택형은 상점에선 사용 불가(손패 없음)
         openDetailPopup({
           imgSrc: `tarot/${item.id}.webp`, emoji: "🔮",
           name: item.name, badgeLabel: "타로", badgeColor: "#b56ad6",
-          desc: (item.desc || "") + ((item.need || 0) > 0 ? ` · 카드 ${item.need}장 선택 후 핸드 화면에서 사용` : " · 즉시 사용"),
+          desc: (item.desc || "") + (need > 0 ? ` · 카드 ${item.need}장 선택 후 사용` : " · 즉시 사용"),
           costLine: `판매 +$${sell}`,
-          actionLabel: (item.need || 0) > 0 ? "핸드 화면에서 사용" : "사용",
-          actionDisabled: (item.need || 0) > 0,
+          actionLabel: cardLocked ? "핸드 화면에서 사용" : (need > 0 ? `사용 (카드 ${need}장 선택)` : "사용"),
+          actionDisabled: cardLocked,
           actionFn: () => { closeJokerPopup(); useTarot(item, null); },
           action2Label: `팔기 +$${sell}`, action2Fn: () => { closeJokerPopup(); sellConsumable("tarot", item); }
         });
@@ -3722,7 +3725,7 @@
             <span class="planet-grad" aria-hidden="true"></span>
             <span class="planet-glyph">${planet.name}</span>
             <span class="planet-target">${sub}</span>`;
-          card.addEventListener("click", () => isShop ? openConsumableDetail("planet", planet) : usePlanetCard(planet, card));
+          card.addEventListener("click", () => openConsumableDetail("planet", planet));
         } else {
           const tarot = it.data;
           card.classList.add("tarot-mini");
@@ -3732,7 +3735,7 @@
             <span class="planet-grad" aria-hidden="true"></span>
             <span class="planet-glyph">${tarot.name}</span>
             <span class="planet-target">타로${(tarot.need || 0) > 0 ? ` ·${tarot.need}장` : ""}</span>`;
-          card.addEventListener("click", () => isShop ? openConsumableDetail("tarot", tarot) : useTarot(tarot, card));
+          card.addEventListener("click", () => openConsumableDetail("tarot", tarot));
         }
         container.appendChild(card);
       }
