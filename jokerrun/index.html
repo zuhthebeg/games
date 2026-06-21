@@ -1212,15 +1212,19 @@
     }
 
     .cards-wrap {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       align-content: start;
+      gap: 5px;
       height: 100%;
       min-height: 0;
+      overflow-y: auto;
     }
 
     .card {
+      width: clamp(48px, 15.5vw, 60px);
+      flex: 0 0 auto;
       border-radius: 10px;
       aspect-ratio: 5 / 7;
       min-height: 0;
@@ -1398,10 +1402,28 @@
 
     .actions {
       display: grid;
-      grid-template-columns: 1fr 1fr 44px;
+      grid-template-columns: 1fr 1fr 56px 44px;
       gap: 8px;
       align-items: stretch;
     }
+
+    #sortBtn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      background: linear-gradient(160deg, #2a2545, #1a1730);
+      box-shadow: inset 0 0 0 1px rgba(255,215,0,0.28), 0 4px 12px rgba(0,0,0,0.4);
+      color: var(--gold);
+      line-height: 1;
+    }
+    #sortBtn .sort-ico { font-size: 0.95rem; font-weight: 900; }
+    #sortBtn .sort-lbl { font-size: 0.56rem; font-weight: 800; letter-spacing: 0.02em; color: #e7defb; }
+    #sortBtn:active { transform: scale(0.95); }
 
     .btn-main,
     .btn-warn {
@@ -2119,7 +2141,7 @@
         gap: 8px;
       }
       .actions {
-        grid-template-columns: 1fr 1fr 52px;
+        grid-template-columns: 1fr 1fr 60px 52px;
       }
       .deck-grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2275,6 +2297,7 @@
     <section class="actions">
       <button class="btn-main" id="playBtn">핸드 플레이</button>
       <button class="btn-warn" id="discardBtn">카드 버리기</button>
+      <button id="sortBtn" type="button" aria-label="카드 정렬"><span class="sort-ico">⇅</span><span class="sort-lbl" id="sortModeLabel">랭크</span></button>
       <button id="clearBtn" aria-label="선택 해제"></button>
     </section>
 
@@ -2536,6 +2559,7 @@
       money: 10,
       handsLeft: 4,
       discardsLeft: 3,
+      sortMode: "rank",
       deck: [],
       hand: [],
       selected: new Set(),
@@ -2698,8 +2722,18 @@
       return round.target;
     }
 
+    const SUIT_SORT_ORDER = { spade: 0, heart: 1, club: 2, diamond: 3 };
+    function sortHand() {
+      if (state.sortMode === "suit") {
+        state.hand.sort((a, b) => (SUIT_SORT_ORDER[a.suit] - SUIT_SORT_ORDER[b.suit]) || (b.rank - a.rank));
+      } else {
+        state.hand.sort((a, b) => (b.rank - a.rank) || (SUIT_SORT_ORDER[a.suit] - SUIT_SORT_ORDER[b.suit]));
+      }
+    }
+
     function drawToEight() {
       while (state.hand.length < 8 && state.deck.length > 0) state.hand.push(state.deck.pop());
+      sortHand();
     }
 
     function setInfo(msg) {
@@ -3773,6 +3807,14 @@
 
     $("#playBtn").addEventListener("click", playSelected);
     $("#discardBtn").addEventListener("click", discardSelected);
+    $("#sortBtn").addEventListener("click", () => {
+      state.sortMode = state.sortMode === "rank" ? "suit" : "rank";
+      const lbl = $("#sortModeLabel");
+      if (lbl) lbl.textContent = state.sortMode === "rank" ? "랭크" : "무늬";
+      sortHand();
+      renderCards();
+      AudioFX.play("select");
+    });
     $("#deckBtn").addEventListener("click", openDeckModal);
     $("#closeDeckBtn").addEventListener("click", closeDeckModal);
     $("#handsInfoBtn").addEventListener("click", openHandsModal);
