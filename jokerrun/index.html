@@ -3375,7 +3375,7 @@
       const locked = isCardBossDisabled(card) ? `<span class="card-lock" aria-label="봉인됨">🚫</span>` : "";
       // 클래식 스킨: J/Q/K를 오리지널 트럼프 풀카드 이미지로 통째 교체
       if (FACE_IMG[card.rank] && getCardSkin() === "classic") {
-        return `${enhBadgeHTML(card)}${locked}<img class="trump-full" src="faces_classic/${FACE_IMG[card.rank]}_${card.suit}.webp" alt="" draggable="false">`;
+        return `${enhBadgeHTML(card)}${locked}<img class="trump-full" src="faces_classic/${FACE_IMG[card.rank]}_${card.suit}.webp?v=2" alt="" draggable="false">`;
       }
       return `${enhBadgeHTML(card)}${locked}
   <div class="card-corner card-tl">
