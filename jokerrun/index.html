@@ -3481,7 +3481,8 @@
     function openDetailPopup(opts) {
       const icon = $("#jokerPopupIcon");
       if (opts.imgSrc) {
-        icon.innerHTML = `<img class="joker-popup-art" src="${opts.imgSrc}" alt="" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${opts.glyph || "joker-duo"}\\'></span>'">`;
+        const fb = opts.emoji ? `<span class=\\'jp-emoji\\'>${opts.emoji}</span>` : `<span class=\\'joker-glyph ${opts.glyph || "joker-duo"}\\'></span>`;
+        icon.innerHTML = `<img class="joker-popup-art" src="${opts.imgSrc}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">`;
       } else if (opts.emoji) {
         icon.innerHTML = `<span class="jp-emoji">${opts.emoji}</span>`;
       } else {
@@ -4268,9 +4269,9 @@
         const planetFull = consumableCount() >= 2;
         const handName = handBase[planet.hand]?.name || planet.hand;
         pRow.appendChild(buildShopTile({
-          emoji: planet.planet, name: planet.name, price: cost, afford, borderColor: "#4a84ff",
+          imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: planet.name, price: cost, afford, borderColor: "#4a84ff",
           onClick: () => openDetailPopup({
-            emoji: planet.planet, name: `${planet.planet} ${planet.name}`,
+            imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: `${planet.planet} ${planet.name}`,
             desc: `${handName} 족보 영구 강화 (+${planet.chipsBonus}칩 / +${planet.multBonus}배수)`,
             costLine: `구매 $${cost} · 소모품 슬롯 사용`,
             actionLabel: planetFull ? "소모품 슬롯 가득 참" : (afford ? `구매 $${cost}` : "자금 부족"),
@@ -4298,10 +4299,10 @@
         const afford = state.money >= cost;
         const full = consumableCount() >= 2;
         tRow.appendChild(buildShopTile({
-          imgSrc: `tarot/${tarot.id}.webp`, name: tarot.name, price: cost, afford, borderColor: "#b56ad6",
+          imgSrc: `tarot/${tarot.id}.webp`, emoji: "🔮", name: tarot.name, price: cost, afford, borderColor: "#b56ad6",
           badge: { label: "타로", color: "#b56ad6" },
           onClick: () => openDetailPopup({
-            imgSrc: `tarot/${tarot.id}.webp`, name: tarot.name, badgeLabel: "타로", badgeColor: "#b56ad6",
+            imgSrc: `tarot/${tarot.id}.webp`, emoji: "🔮", name: tarot.name, badgeLabel: "타로", badgeColor: "#b56ad6",
             desc: tarot.desc + ((tarot.need || 0) > 0 ? ` · 사용 시 카드 정확히 ${tarot.need}장 선택` : " · 즉시 사용"),
             costLine: `구매 $${cost} · 소모품 슬롯 사용`,
             actionLabel: full ? "소모품 슬롯 가득 참" : (afford ? `구매 $${cost}` : "자금 부족"),
