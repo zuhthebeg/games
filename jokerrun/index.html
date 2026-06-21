@@ -2571,7 +2571,20 @@
       { id: "compound", name: "복리 광대", cost: 11, desc: "풀하우스+ 플레이마다 배수 영구 +2", detail: "풀하우스 이상(풀하우스/포카드/스트레이트 플러시)을 플레이할 때마다 배수 보너스가 영구히 +2씩 쌓입니다.", apply(ctx, self) { self.counter = self.counter || 0; if (["FULL_HOUSE", "FOUR", "STRAIGHT_FLUSH"].includes(ctx.handType)) { self.counter += 2; } if (self.counter > 0) { ctx.mult += self.counter; ctx.activate("compound"); } self.desc = `풀하우스+ 플레이마다 배수 영구 +2 (현재 +${self.counter})`; } },
       { id: "legion", name: "광대 군단", cost: 9, desc: "보유 조커 1개당 배수 +1", detail: "현재 보유 중인 조커 1개당 배수 +1. 조커를 많이 모을수록 강해집니다(자기 자신 포함).", apply(ctx, self) { const n = state.jokers.length; if (n > 0) { ctx.mult += n; ctx.activate("legion"); } } },
       { id: "tycoon", name: "자본가", cost: 8, desc: "보유 자금 $5당 배수 +1", detail: "점수 계산 시 보유 자금 $5당 배수 +1. 돈을 아낄수록 강해집니다.", apply(ctx, self) { const add = Math.floor((state.money || 0) / 5); if (add > 0) { ctx.mult += add; ctx.activate("tycoon"); } } },
-      { id: "gambler", name: "도박꾼", cost: 7, desc: "25% 확률로 배수 x3", detail: "매 핸드 25% 확률로 배수 x3. 고위험 고수익.", apply(ctx, self) { if (Math.random() < 0.25) { ctx.mult *= 3; ctx.activate("gambler"); } } }
+      { id: "gambler", name: "도박꾼", cost: 7, desc: "25% 확률로 배수 x3", detail: "매 핸드 25% 확률로 배수 x3. 고위험 고수익.", apply(ctx, self) { if (Math.random() < 0.25) { ctx.mult *= 3; ctx.activate("gambler"); } } },
+      // ── 확장 세트 (자급식 정의: id·name·cost·rarity·desc·apply만 있으면 동작. mult:true면 ×표기·등장가중 자동) ──
+      { id: "ironclad", name: "강철 조커", cost: 6, rarity: "common", desc: "안 낸 손패 1장당 칩 +4", detail: "점수 계산 시 플레이하지 않고 손에 남은 카드 1장당 칩 +4.", apply(ctx) { const held = Math.max(0, state.hand.length - ctx.cards.length); if (held > 0) { ctx.chips += held * 4; ctx.activate("ironclad"); } } },
+      { id: "sniper", name: "저격수", cost: 7, rarity: "uncommon", desc: "정확히 1장 플레이 시 칩 +70", detail: "카드를 딱 1장만 내면 칩 +70.", apply(ctx) { if (ctx.cards.length === 1) { ctx.chips += 70; ctx.activate("sniper"); } } },
+      { id: "trinity", name: "삼위일체", cost: 8, rarity: "uncommon", desc: "같은 무늬 3장↑이면 배수 +3", detail: "플레이 카드 중 같은 무늬가 3장 이상이면 배수 +3.", apply(ctx) { const m = {}; ctx.cards.forEach(c => m[c.suit] = (m[c.suit] || 0) + 1); if (Math.max(0, ...Object.values(m)) >= 3) { ctx.mult += 3; ctx.activate("trinity"); } } },
+      { id: "monochrome", name: "흑백 조커", cost: 7, rarity: "uncommon", desc: "전부 같은 색이면 칩 +55", detail: "플레이 카드가 모두 빨강(♥♦) 또는 모두 검정(♣♠)이면 칩 +55.", apply(ctx) { if (!ctx.cards.length) return; const red = c => c.suit === "heart" || c.suit === "diamond"; if (ctx.cards.every(red) || ctx.cards.every(c => !red(c))) { ctx.chips += 55; ctx.activate("monochrome"); } } },
+      { id: "fibonacci", name: "피보나치", cost: 10, rarity: "rare", desc: "A·2·3·5·8 1장당 배수 +1", detail: "플레이 카드 중 A·2·3·5·8 1장마다 배수 +1.", apply(ctx) { const f = new Set([14, 2, 3, 5, 8]); const n = ctx.cards.filter(c => f.has(c.rank)).length; if (n > 0) { ctx.mult += n; ctx.activate("fibonacci"); } } },
+      { id: "patience", name: "인내", cost: 6, rarity: "common", desc: "남은 버리기 1개당 배수 +1", detail: "점수 계산 시 남은 버리기 횟수 1개당 배수 +1.", apply(ctx) { const d = state.discardsLeft || 0; if (d > 0) { ctx.mult += d; ctx.activate("patience"); } } },
+      { id: "highRoller", name: "하이롤러", cost: 12, rarity: "rare", mult: true, desc: "자금 $20↑면 배수 x2", detail: "보유 자금이 $20 이상이면 배수 x2.", apply(ctx) { if ((state.money || 0) >= 20) { ctx.mult *= 2; ctx.activate("highRoller"); } } },
+      { id: "theQueen", name: "여왕의 가호", cost: 7, rarity: "uncommon", desc: "Q 1장당 배수 +1.5", detail: "플레이한 퀸(Q) 1장마다 배수 +1.5.", apply(ctx) { const n = ctx.cards.filter(c => c.rank === 12).length; if (n > 0) { ctx.mult += n * 1.5; ctx.activate("theQueen"); } } },
+      { id: "flushBank", name: "플러시 금고", cost: 9, rarity: "uncommon", desc: "플러시면 칩 +70", detail: "플러시/스트레이트 플러시면 칩 +70.", apply(ctx) { if (ctx.handType === "FLUSH" || ctx.handType === "STRAIGHT_FLUSH") { ctx.chips += 70; ctx.activate("flushBank"); } } },
+      { id: "allShapes", name: "만물상", cost: 13, rarity: "rare", mult: true, desc: "5장+4무늬면 배수 x2.5", detail: "5장을 내고 무늬가 4종이면 배수 x2.5.", apply(ctx) { if (ctx.cards.length === 5 && new Set(ctx.cards.map(c => c.suit)).size >= 4) { ctx.mult *= 2.5; ctx.activate("allShapes"); } } },
+      { id: "echo", name: "메아리", cost: 11, rarity: "rare", mult: true, desc: "직전과 같은 족보면 배수 x2", detail: "직전 플레이와 같은 족보를 내면 배수 x2. 연속 콤보.", apply(ctx) { if (state.lastHandType && ctx.handType === state.lastHandType) { ctx.mult *= 2; ctx.activate("echo"); } } },
+      { id: "lowRoller", name: "로우롤러", cost: 5, rarity: "common", desc: "전부 5 이하면 칩 +45", detail: "플레이 카드가 모두 5 이하이면 칩 +45.", apply(ctx) { if (ctx.cards.length && ctx.cards.every(c => c.rank <= 5)) { ctx.chips += 45; ctx.activate("lowRoller"); } } }
     ];
 
     // ── 조커 등급(레어도) 시스템 ── 발라트로식: 등급↑ = 판매가↑·등장확률↓
@@ -2590,9 +2603,11 @@
       doubleDown:"rare", fullHouseFan:"rare", allInClown:"rare", streakBonus:"rare", chipRain:"rare", trioMult:"rare", compound:"rare",
       fourMaster:"legendary", royalFlush:"legendary"
     };
-    jokerPool.forEach(j => { j.rarity = JOKER_RARITY[j.id] || "common"; });
-    // 점수 표시용: 배수를 곱하는 조커(× 표기), 나머지는 +Δ 표기
-    const MULT_JOKERS = new Set(["flushx2","doubleDown","fourMaster","allInClown","fourFlush","royalFlush","trioMult","gambler"]);
+    // 등급: 인라인 rarity 우선 → JOKER_RARITY 맵 → common. 새 조커는 객체에 rarity만 박으면 됨.
+    jokerPool.forEach(j => { j.rarity = j.rarity || JOKER_RARITY[j.id] || "common"; });
+    // 점수 표시용: 배수를 곱하는 조커(× 표기). 새 조커는 정의에 mult:true만 추가하면 자동 포함.
+    const _MULT_SEED = ["flushx2","doubleDown","fourMaster","allInClown","fourFlush","royalFlush","trioMult","gambler"];
+    const MULT_JOKERS = new Set([..._MULT_SEED, ...jokerPool.filter(j => j.mult).map(j => j.id)]);
     function rarityOf(joker){ return RARITY[joker.rarity || JOKER_RARITY[joker.id] || "common"]; }
     function jokerSellValue(joker){ return Math.max(2, Math.floor((joker.cost / 2) * rarityOf(joker).sellMul)); }
     // 등급 가중 랜덤 추첨 (등장확률: 등급 높을수록 낮음)
@@ -2628,7 +2643,14 @@
       { id:"strength", name:"힘",            need:1, desc:"선택 카드 랭크 +1",   apply(sel){ sel.forEach(c=>{ if(c.rank<14) c.rank++; }); } },
       { id:"death",    name:"죽음",          need:2, exact:true, desc:"정확히 2장: 오른쪽=왼쪽 복제", apply(sel){ const a=sel[0], b=sel[1]; if(a&&b){ b.rank=a.rank; b.suit=a.suit; } } },
       { id:"hermit",   name:"은둔자",        need:0, desc:"보유 자금 2배(최대 +$20)", apply(){ const add=Math.min(20, state.money||0); state.money=(state.money||0)+add; } },
-      { id:"wheel",    name:"운명의 수레바퀴", need:0, desc:"즉시 +$12",          apply(){ state.money=(state.money||0)+12; } }
+      { id:"wheel",    name:"운명의 수레바퀴", need:0, desc:"즉시 +$12",          apply(){ state.money=(state.money||0)+12; } },
+      // ── 확장 타로 (카드 모델 내에서 동작: 무늬/랭크 변경·제거·자금. 도감/상점 자동 노출) ──
+      { id:"magician",  name:"마법사",   need:1, desc:"선택 카드 랭크 +2",        apply(sel){ sel.forEach(c=>{ c.rank=Math.min(14, c.rank+2); }); } },
+      { id:"empress",   name:"여황제",   need:1, desc:"선택 카드를 A로",          apply(sel){ sel.forEach(c=>{ c.rank=14; }); } },
+      { id:"emperor",   name:"황제",     need:2, exact:true, desc:"선택 2장 랭크 +1", apply(sel){ sel.forEach(c=>{ if(c.rank<14) c.rank++; }); } },
+      { id:"priestess", name:"여사제",   need:2, desc:"선택 카드 무늬를 왼쪽과 동일하게", apply(sel){ if(sel[0]) sel.forEach(c=>{ c.suit=sel[0].suit; }); } },
+      { id:"hanged",    name:"매달린 자", need:2, exact:true, desc:"선택 2장 제거 후 새 카드", apply(sel){ const ids=new Set(sel.map(c=>c.id)); state.hand=state.hand.filter(c=>!ids.has(c.id)); state.selected.clear(); drawToEight(); } },
+      { id:"temperance",name:"절제",     need:0, desc:"조커 판매가 합 획득(최대 $20)", apply(){ const sum=Math.min(20, state.jokers.reduce((s,j)=>s+jokerSellValue(j),0)); state.money=(state.money||0)+sum; } }
     ];
     function consumableCount(){ return (state.planetCards?.length||0) + (state.tarotCards?.length||0); }
 
@@ -2658,8 +2680,43 @@
       royalFlush: "joker-house",
       lowCard: "joker-diamond",
       highCard: "joker-seven",
-      trioMult: "joker-double"
+      trioMult: "joker-double",
+      ironclad: "joker-bomb",
+      sniper: "joker-spade",
+      trinity: "joker-wave",
+      monochrome: "joker-double",
+      fibonacci: "joker-calc",
+      patience: "joker-dice",
+      highRoller: "joker-crown",
+      theQueen: "joker-crown",
+      flushBank: "joker-house",
+      allShapes: "joker-wave",
+      echo: "joker-runner",
+      lowRoller: "joker-diamond"
     };
+
+    // 콘텐츠 무결성 검증 — 잘못된/누락 항목이 있어도 게임이 깨지지 않게 기본값 보정 + 경고.
+    // 새 조커/타로는 풀에 객체 하나만 append하면 상점·도감·추첨에 자동 반영된다.
+    function validateContent() {
+      const jseen = new Set();
+      jokerPool.forEach(j => {
+        if (jseen.has(j.id)) console.warn("[jokerrun] 중복 조커 id:", j.id);
+        jseen.add(j.id);
+        if (!RARITY[j.rarity]) j.rarity = "common";
+        if (typeof j.cost !== "number") j.cost = 5;
+        if (typeof j.apply !== "function") { console.warn("[jokerrun] apply 없는 조커:", j.id); j.apply = () => {}; }
+        if (!jokerGlyphClass[j.id]) jokerGlyphClass[j.id] = "joker-duo";
+      });
+      const tseen = new Set();
+      tarotPool.forEach(t => {
+        if (tseen.has(t.id)) console.warn("[jokerrun] 중복 타로 id:", t.id);
+        tseen.add(t.id);
+        if (typeof t.need !== "number") t.need = 0;
+        if (typeof t.apply !== "function") { console.warn("[jokerrun] apply 없는 타로:", t.id); t.apply = () => {}; }
+      });
+      console.log(`[jokerrun] content OK — jokers:${jokerPool.length} tarots:${tarotPool.length} mult:${MULT_JOKERS.size}`);
+    }
+    validateContent();
 
     const state = {
       mode: "single",
@@ -2671,6 +2728,7 @@
       discardsLeft: 3,
       sortMode: "rank",
       shopStocked: false,
+      lastHandType: null,
       deck: [],
       hand: [],
       selected: new Set(),
@@ -3772,6 +3830,7 @@
         }
       }
       await wait(160);
+      state.lastHandType = hand.handType;   // 메아리 조커 콤보용(다음 플레이가 같은 족보면 발동)
       chips = Math.max(0, Math.floor(ctx.chips));
       mult = Math.max(1, Math.floor(ctx.mult * 100) / 100);
       const points = Math.floor(chips * mult);
@@ -4066,6 +4125,7 @@
       state.handsLeft = 4;
       state.discardsLeft = 3;
       state.bossModifier = null;
+      state.lastHandType = null;   // 메아리 조커 콤보는 블라인드 내에서만 유지
       state.shopJokers = [];   // 새 라운드마다 상점 갱신
       state.shopPlanets = [];
       state.shopTarots = [];
