@@ -1151,6 +1151,10 @@
     @keyframes scoreBump { 0%{transform:scale(1)} 40%{transform:scale(1.28)} 100%{transform:scale(1)} }
     .card.scoring-lift { transform: translateY(-12px) !important; box-shadow: 0 10px 24px rgba(0,0,0,0.5); transition: transform .18s ease, box-shadow .18s ease; z-index: 5; }
     .card.scoring { transform: translateY(-22px) scale(1.08) !important; box-shadow: 0 0 20px var(--gold,#ffcf6d), 0 0 10px #fff; transition: transform .14s ease, box-shadow .14s ease; z-index: 6; }
+    /* 점수 기여 카드 강조 / 키커 흐림 */
+    .card.scoring-active { box-shadow: 0 0 0 2px var(--gold,#ffcf6d), 0 0 16px rgba(255,207,109,.7) !important; transition: box-shadow .2s ease, transform .2s ease, opacity .2s ease; z-index: 5; }
+    .card.scoring-dim { opacity: 0.34 !important; filter: grayscale(0.6); transform: translateY(0) scale(0.94) !important; transition: opacity .2s ease, transform .2s ease, filter .2s ease; }
+    .card.scoring-pop { transform: translateY(-26px) scale(1.12) !important; box-shadow: 0 0 26px var(--gold,#ffcf6d), 0 0 12px #fff !important; transition: transform .16s cubic-bezier(.2,1.4,.4,1), box-shadow .16s ease; z-index: 7; }
 
     .score-inline {
       display: flex;
@@ -1750,6 +1754,22 @@
       max-height: min(86dvh, 660px);
       overflow: auto;
     }
+
+    /* 상점 스크롤해도 상단 고정되는 헤더(앤티/골드/자금) */
+    .shop-stickyhead {
+      position: sticky;
+      top: -12px;
+      margin: -12px -12px 0;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: linear-gradient(180deg, rgba(6, 26, 22, 0.99), rgba(5, 20, 16, 0.96));
+      border-bottom: 1px solid var(--border);
+      z-index: 6;
+    }
+    .shop-stats { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
     .row {
       display: flex;
@@ -2365,12 +2385,13 @@
 
   <div class="modal" id="shopModal">
     <div class="shop">
-      <div class="row">
-        <div>
-          <div class="title">상점</div>
-          <div class="subtitle">조커를 사서 다음 블라인드를 대비하세요.</div>
+      <div class="shop-stickyhead">
+        <div class="title">상점</div>
+        <div class="shop-stats">
+          <span class="round-label" id="shopAnte">Ante 1</span>
+          <span class="gold-badge" id="shopGold">G 0</span>
+          <span class="money-badge" id="shopMoney">$0</span>
         </div>
-        <div class="tag" id="shopMoney">보유 자금: $0</div>
       </div>
       <div id="shopCashout" class="shop-cashout" style="display:none"></div>
       <div class="consumable-strip" id="shopConsumableArea" aria-label="보유 소모품(상점에서 사용)" style="margin:6px 0"></div>
@@ -2731,21 +2752,34 @@
     const BGM = {
       el: null,
       enabled: true,
+      track: "normal",
+      srcs: { normal: "bgm.mp3?v=1", boss: "bgm-boss.mp3?v=1" },
       init() {
         this.el = document.getElementById("bgmAudio");
         this.enabled = localStorage.getItem("jokerrun_bgm") !== "off";
         this.syncBtn();
       },
-      start() {
-        if (!this.el || !this.enabled) return;
-        this.el.volume = 0.4;
-        const p = this.el.play();
-        if (p && p.catch) p.catch(() => {});
+      apply() {
+        if (!this.el) return;
+        const want = this.srcs[this.track] || this.srcs.normal;
+        if (!this.el.getAttribute("src") || !this.el.getAttribute("src").endsWith(want)) {
+          this.el.setAttribute("src", want);
+        }
+        if (this.enabled) {
+          this.el.volume = this.track === "boss" ? 0.46 : 0.38;
+          const p = this.el.play();
+          if (p && p.catch) p.catch(() => {});
+        }
+      },
+      start() { this.apply(); },
+      setTrack(t) {
+        if (this.track !== t) this.track = t;
+        this.apply();
       },
       toggle() {
         this.enabled = !this.enabled;
         localStorage.setItem("jokerrun_bgm", this.enabled ? "on" : "off");
-        if (this.enabled) this.start();
+        if (this.enabled) this.apply();
         else if (this.el) this.el.pause();
         this.syncBtn();
       },
@@ -2871,10 +2905,12 @@
     }
 
     function updateGoldLabel() {
-      const label = $("#goldLabel");
-      if (!label) return;
       const gold = window.SharedWallet ? Number(SharedWallet.gold || 0) : 0;
-      label.textContent = `G ${gold.toLocaleString()}`;
+      const txt = `G ${gold.toLocaleString()}`;
+      const label = $("#goldLabel");
+      if (label) label.textContent = txt;
+      const shopGold = $("#shopGold");
+      if (shopGold) shopGold.textContent = txt;
     }
 
 
@@ -3508,6 +3544,20 @@
       return { handType: "HIGH_CARD", ...handBase.HIGH_CARD };
     }
 
+    // 발라트로 규칙: 실제 점수에 기여하는 카드만 반환(키커 제외). 손패 순서 유지.
+    function scoringCards(cards, handType) {
+      if (["FLUSH", "STRAIGHT", "STRAIGHT_FLUSH", "FULL_HOUSE"].includes(handType)) return cards.slice();
+      const byRank = {};
+      cards.forEach(c => { (byRank[c.rank] = byRank[c.rank] || []).push(c); });
+      if (handType === "FOUR") return cards.filter(c => byRank[c.rank].length === 4);
+      if (handType === "THREE") return cards.filter(c => byRank[c.rank].length === 3);
+      if (handType === "TWO_PAIR") return cards.filter(c => byRank[c.rank].length === 2);
+      if (handType === "PAIR") return cards.filter(c => byRank[c.rank].length === 2);
+      // HIGH_CARD → 가장 높은 카드 1장만
+      const hi = cards.reduce((a, b) => (b.rank > a.rank ? b : a));
+      return [hi];
+    }
+
     function spawnChipParticles(points) {
       const scoreEl = $("#scoreLabel");
       const source = tablePanel.getBoundingClientRect();
@@ -3650,7 +3700,10 @@
       await new Promise(r => setTimeout(r, 200));
       AudioFX.play("play");
       const hand = scoreHand(cards);
-      const cardChips = cards.reduce((sum, c) => sum + (RANK_CHIPS[c.rank] || 0), 0);
+      // 점수 기여 카드만 추출(키커 제외) → 그 카드만 강조·칩 가산
+      const scoreCards = scoringCards(cards, hand.handType);
+      const scoringIds = new Set(scoreCards.map(c => String(c.id)));
+      const cardChips = scoreCards.reduce((sum, c) => sum + (RANK_CHIPS[c.rank] || 0), 0);
       let chips = hand.chips + cardChips;
       let mult = hand.mult;
       // 플래닛 레벨 적용
@@ -3671,21 +3724,35 @@
         ctx.chips = Math.max(5, ctx.chips - cards.filter(c => c.suit === "heart").length * 5);
       }
       // ── 발라트로식 순차 점수 연출 ──
-      // 1) 족보 기본(카드 칩 제외) 표시
+      // 0) 유효 카드 강조 / 키커 흐리게 (몇 장이 점수에 쓰이는지 먼저 인지)
+      selectedEls.forEach(el => {
+        if (scoringIds.has(el.dataset.id)) el.classList.add("scoring-active");
+        else el.classList.add("scoring-dim");
+      });
+      const kickers = cards.length - scoreCards.length;
+      setInfo(`<span class="hand-tag">${hand.name}</span>${lvl > 0 ? ` <b style="color:var(--gold)">Lv.${lvl + 1}</b>` : ""} · 유효 <b style="color:var(--gold)">${scoreCards.length}장</b>${kickers > 0 ? ` (키커 ${kickers}장 제외)` : ""}`);
+      await wait(620);
+      // 1) 족보 기본 칩(카드 칩 제외) 표시
       let dispChips = Math.max(0, ctx.chips - cardChips);
       setRunReadout(dispChips, ctx.mult);
-      setInfo(`<span class="hand-tag">${hand.name}</span>${lvl > 0 ? ` <b style="color:var(--gold)">Lv.${lvl + 1}</b>` : ""} · 기본 ${Math.floor(dispChips)} × ${Math.round(ctx.mult * 100) / 100}`);
-      await wait(240);
-      // 1b) 플레이한 카드 왼쪽→오른쪽 순차 칩 가산
-      for (const card of cards) {
+      await wait(360);
+      // 1b) 유효 카드만 왼쪽→오른쪽 한 장씩 칩 가산 (또렷하게 인지되도록 천천히)
+      for (const card of scoreCards) {
         const cc = RANK_CHIPS[card.rank] || 0;
         dispChips += cc;
         const cel = cardsWrap.querySelector(`.card[data-id="${card.id}"]`);
-        if (cel) { cel.classList.add("scoring"); jrFloat(cel, `+${cc}`, "chip"); setTimeout(() => cel.classList.remove("scoring"), 320); }
+        if (cel) {
+          cel.classList.add("scoring-pop");
+          jrFloat(cel, `+${cc}`, "chip");
+          setTimeout(() => cel.classList.remove("scoring-pop"), 380);
+        }
         setRunReadout(dispChips, ctx.mult);
-        await wait(130);
+        AudioFX.play("select");
+        JuiceFX.sfx("chip");
+        await wait(300);
       }
-      // 2) 조커 왼쪽→오른쪽 순차 발동, 기여분 플로팅
+      await wait(220);
+      // 2) 조커 왼쪽→오른쪽 순차 발동(배수 단계), 기여분 플로팅
       for (const joker of state.jokers) {
         const cb = ctx.chips, mb = ctx.mult, ab = ctx.activated.length;
         joker.apply(ctx, joker);
@@ -3699,10 +3766,12 @@
             if (dm > 0.001) jrFloat(el, MULT_JOKERS.has(joker.id) && mb > 0 ? `×${Math.round((ctx.mult / mb) * 100) / 100}` : `+${Math.round(dm * 100) / 100}`, "mult");
           }
           AudioFX.play("select");
+          JuiceFX.sfx("mult");
           setRunReadout(ctx.chips, ctx.mult);
-          await wait(230);
+          await wait(340);
         }
       }
+      await wait(160);
       chips = Math.max(0, Math.floor(ctx.chips));
       mult = Math.max(1, Math.floor(ctx.mult * 100) / 100);
       const points = Math.floor(chips * mult);
@@ -3781,7 +3850,10 @@
       }
       const grid = $("#shopGrid");
       grid.innerHTML = "";
-      $("#shopMoney").textContent = `보유 자금: $${state.money}`;
+      $("#shopMoney").textContent = `$${state.money}`;
+      const shopAnte = $("#shopAnte");
+      if (shopAnte) shopAnte.textContent = `Ante ${state.ante}`;
+      updateGoldLabel();
       // 정산 내역(이전 블라인드 클리어 보상) 표시
       const coEl = $("#shopCashout");
       if (coEl) {
@@ -4020,6 +4092,7 @@
       renderBossBanner();
       renderHUD();
       updateHandPreview();
+      BGM.setTrack(state.isBossBlind ? "boss" : "normal");
       setInfo("핸드를 선택해 플레이하세요.");
       if (state.bossModifier) {
         setInfo(`<span style="color:var(--danger)">⚠️ ${state.bossModifier.label}</span> — ${state.bossModifier.desc}`);
