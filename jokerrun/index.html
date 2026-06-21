@@ -4423,6 +4423,7 @@
       if (!v) return;
       const cost = priceOf(v.cost);
       if (state.money < cost) return;
+      closeJokerPopup();   // 구매 상세 팝업 닫기(안 닫히던 버그 수정)
       state.money -= cost;
       state.vouchers[v.id] = true;
       state.shopVoucher = null;
