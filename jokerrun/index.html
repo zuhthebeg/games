@@ -2624,6 +2624,16 @@
     </div>
   </div>
 
+  <div class="modal" id="clearConfirmModal">
+    <div class="mode-sheet" style="text-align:center">
+      <div class="title">🎯 블라인드 클리어!</div>
+      <div style="margin:10px 0 4px;font-size:1.6rem;font-weight:900;color:var(--gold,#ffcf6d)"><span id="ccScore">0</span></div>
+      <div style="font-size:.8rem;color:var(--muted)">목표 <span id="ccTarget">0</span> 달성</div>
+      <div id="ccBoss" style="display:none;margin-top:8px;font-size:.85rem;color:#ffcf6d"></div>
+      <button class="btn-main" id="ccContinueBtn" style="margin-top:14px;padding:12px;border-radius:12px;font-weight:800">정산 받기 →</button>
+    </div>
+  </div>
+
   <div class="modal" id="cashoutModal">
     <div class="mode-sheet" style="text-align:center">
       <div class="title">💰 정산 완료</div>
@@ -5045,7 +5055,19 @@
         return;
       }
       setInfo(bossGold ? `보스 격파! +${bossGold.toLocaleString()} G` : `블라인드 돌파! 정산 +$${reward}`);
-      showCashoutModal(isLastBlind);
+      showClearConfirm(isLastBlind);   // 점수 확인 단계 → 확인 눌러야 정산 팝업
+    }
+
+    // 블라인드 클리어 시 점수/목표를 먼저 보여주고, 확인을 눌러야 정산 팝업으로 넘어간다.
+    function showClearConfirm(anteClear) {
+      state._pendingClearAnte = anteClear;
+      const sc = $("#ccScore"), tg = $("#ccTarget"), bg = $("#ccBoss");
+      if (sc) sc.textContent = Math.floor(state.score).toLocaleString();
+      if (tg) tg.textContent = activeTarget().toLocaleString();
+      const bossGold = state.lastCashout?.bossGold || 0;
+      if (bg) bg.style.display = bossGold ? "" : "none";
+      if (bg && bossGold) bg.innerHTML = `👑 보스 격파 보상 <b>+${bossGold.toLocaleString()} G</b>`;
+      $("#clearConfirmModal").classList.add("show");
     }
 
     function showCashoutModal(anteClear) {
@@ -5203,6 +5225,10 @@
       setCardSkin(getCardSkin() === "classic" ? "fantasy" : "classic");
       updateSkinBtn();
       try { renderCards(); } catch (_) {}
+    });
+    $("#ccContinueBtn").addEventListener("click", () => {
+      $("#clearConfirmModal").classList.remove("show");
+      showCashoutModal(!!state._pendingClearAnte);
     });
     updateSkinBtn();
     $("#collectionBtn").addEventListener("click", openCollection);
