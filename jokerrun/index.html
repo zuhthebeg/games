@@ -1288,6 +1288,101 @@
       animation: chipFly 720ms cubic-bezier(0.25, 0.6, 0.2, 1) forwards;
     }
 
+    /* ── 시작 화면 ── */
+    .start-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: calc(48px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+      background:
+        radial-gradient(120% 120% at 50% 0%, rgba(255, 79, 197, 0.18), transparent 50%),
+        radial-gradient(120% 120% at 50% 100%, rgba(69, 245, 255, 0.16), transparent 55%),
+        linear-gradient(165deg, var(--felt-3), var(--felt-1) 45%, var(--felt-2));
+    }
+    .start-screen.show { display: flex; }
+    .start-card {
+      width: min(92vw, 380px);
+      text-align: center;
+      padding: 30px 24px 26px;
+      border-radius: 22px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(6, 26, 22, 0.86), rgba(5, 18, 15, 0.94));
+      box-shadow: var(--shadow);
+      animation: startIn 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @keyframes startIn { from { opacity: 0; transform: translateY(18px) scale(0.96); } to { opacity: 1; transform: none; } }
+    .start-logo {
+      font-size: 64px;
+      line-height: 1;
+      filter: drop-shadow(0 6px 16px rgba(255, 79, 197, 0.4));
+      animation: logoFloat 3.2s ease-in-out infinite;
+    }
+    @keyframes logoFloat { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-8px) rotate(4deg); } }
+    .start-title {
+      margin: 12px 0 4px;
+      font-size: 40px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(120deg, var(--cyan), var(--pink) 55%, var(--gold));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .start-tagline { color: var(--muted); font-size: 13.5px; line-height: 1.6; margin-bottom: 16px; }
+    .start-hs { color: var(--gold); font-size: 13px; font-weight: 700; margin-bottom: 20px; }
+    .start-play {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      color: #062f27;
+      background: linear-gradient(150deg, var(--cyan), var(--ok));
+      box-shadow: 0 8px 22px rgba(69, 245, 255, 0.32);
+      transition: transform 140ms ease, box-shadow 140ms ease;
+    }
+    .start-play:active { transform: scale(0.97); }
+    .start-help {
+      width: 100%;
+      margin-top: 12px;
+      padding: 11px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--text);
+      background: var(--panel);
+      border: 1px solid var(--border);
+    }
+    /* ── 도움말 시트 ── */
+    .help-sheet {
+      width: min(94vw, 420px);
+      max-height: calc(100dvh - 80px);
+      display: flex;
+      flex-direction: column;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(6, 26, 22, 0.94), rgba(5, 18, 15, 0.97));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .help-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 10px; }
+    .help-head .title { font-size: 18px; font-weight: 800; }
+    .help-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 4px 8px; }
+    .help-body { overflow-y: auto; padding: 4px 18px 8px; }
+    .help-block { padding: 10px 0; border-top: 1px solid rgba(118, 255, 225, 0.12); }
+    .help-block:first-child { border-top: none; }
+    .help-block b { display: block; font-size: 14.5px; color: var(--cyan); margin-bottom: 4px; }
+    .help-block p { font-size: 13px; line-height: 1.62; color: var(--muted); }
+    .help-block em { color: var(--gold); font-style: normal; font-weight: 600; }
+    .help-start { margin: 12px 18px 18px; padding: 13px; font-size: 15px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; color: #062f27; background: linear-gradient(150deg, var(--ok), #3af5a0); }
+
     .modal {
       position: fixed;
       inset: 0;
@@ -1869,6 +1964,49 @@
 </head>
 <body>
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <div class="start-screen show" id="startScreen">
+    <div class="start-card">
+      <div class="start-logo">🃏</div>
+      <h1 class="start-title">조커런</h1>
+      <p class="start-tagline">포커 핸드를 짜고, 조커로 점수를 폭발시켜라.<br>8앤티를 돌파하는 카드 로그라이크.</p>
+      <div class="start-hs" id="startHighScore">최고 기록: 0점</div>
+      <button class="start-play" id="startPlayBtn">▶ 플레이</button>
+      <button class="start-help" id="startHelpBtn">＂어떻게 하는 거야?＂ — 도움말</button>
+    </div>
+  </div>
+
+  <div class="modal" id="helpModal">
+    <div class="help-sheet">
+      <div class="help-head">
+        <div class="title">조커런 가이드</div>
+        <button class="help-close" id="helpCloseBtn" aria-label="닫기">✕</button>
+      </div>
+      <div class="help-body">
+        <div class="help-block">
+          <b>① 점수 = 칩 × 배수</b>
+          <p>손패 8장 중 최대 5장을 골라 <em>포커 족보</em>를 만들면 <b>칩</b>과 <b>배수</b>가 정해진다. 둘을 곱한 값이 점수. 목표 점수를 넘기면 블라인드 클리어.</p>
+        </div>
+        <div class="help-block">
+          <b>② 핸드 & 버리기</b>
+          <p>블라인드마다 <b>플레이 횟수</b>와 <b>버리기 횟수</b>가 제한된다. 별로인 패는 버리고 새로 뽑아 더 좋은 족보를 노려라.</p>
+        </div>
+        <div class="help-block">
+          <b>③ 조커 = 빌드의 핵심</b>
+          <p>클리어 보상 $로 상점에서 <b>조커</b>를 산다. 조커는 점수 계산에 끼어들어 칩·배수를 뻥튀기한다. <em>눈덩이·복리</em>처럼 굴릴수록 커지는 조커를 일찍 잡으면 후반이 폭발한다. 슬롯은 5칸.</p>
+        </div>
+        <div class="help-block">
+          <b>④ 플래닛 카드</b>
+          <p>특정 족보를 <b>영구 강화</b>한다. 자주 쓰는 족보에 투자하면 같은 패로 점점 높은 점수가 나온다.</p>
+        </div>
+        <div class="help-block">
+          <b>⑤ 보스 블라인드</b>
+          <p>각 앤티의 3번째 블라인드는 <em>제약(버리기 불가·문양 봉인 등)</em>이 걸린 보스다. 조커 빌드로 정면 돌파하라.</p>
+        </div>
+      </div>
+      <button class="btn-main help-start" id="helpStartBtn">바로 시작 →</button>
+    </div>
+  </div>
+
   <div class="app" id="tablePanel">
     <header class="topbar glass">
       <div class="header-left">
@@ -2055,7 +2193,14 @@
       { id: "royalFlush", name: "로열 조커", cost: 14, desc: "스트레이트 플러시면 배수 x3", detail: "족보가 스트레이트 플러시이면 배수 x3.", apply(ctx) { if (ctx.handType === "STRAIGHT_FLUSH") { ctx.mult *= 3; ctx.activate("royalFlush"); } } },
       { id: "lowCard", name: "로우 카드", cost: 5, desc: "2~5 카드당 칩 +10", detail: "2~5 카드 1장당 칩 +10.", apply(ctx) { const n = ctx.cards.filter(c => c.rank <= 5).length; ctx.chips += n * 10; ctx.activate("lowCard"); } },
       { id: "highCard", name: "하이 카드", cost: 5, desc: "10 이상 카드당 배수 +0.5", detail: "10 이상 카드 1장당 배수 +0.5.", apply(ctx) { const n = ctx.cards.filter(c => c.rank >= 10).length; ctx.mult += n * 0.5; ctx.activate("highCard"); } },
-      { id: "trioMult", name: "트리오 증폭", cost: 9, desc: "트리플 이상이면 배수 x1.5", detail: "트리플/풀하우스/포카드면 배수 x1.5.", apply(ctx) { if (["THREE", "FULL_HOUSE", "FOUR"].includes(ctx.handType)) { ctx.mult *= 1.5; ctx.activate("trioMult"); } } }
+      { id: "trioMult", name: "트리오 증폭", cost: 9, desc: "트리플 이상이면 배수 x1.5", detail: "트리플/풀하우스/포카드면 배수 x1.5.", apply(ctx) { if (["THREE", "FULL_HOUSE", "FOUR"].includes(ctx.handType)) { ctx.mult *= 1.5; ctx.activate("trioMult"); } } },
+      // ── 스케일링 / 신규 조커 (런마다 다른 빌드) ──
+      { id: "snowball", name: "눈덩이", cost: 8, desc: "플레이마다 배수 영구 +1", detail: "핸드를 플레이할 때마다 배수 보너스가 영구히 +1씩 쌓입니다. 길게 굴릴수록 강해집니다.", apply(ctx, self) { self.counter = (self.counter || 0) + 1; ctx.mult += self.counter; ctx.activate("snowball"); self.desc = `플레이마다 배수 영구 +1 (현재 +${self.counter})`; } },
+      { id: "magnet", name: "칩 자석", cost: 8, desc: "플레이마다 칩 영구 +15", detail: "핸드를 플레이할 때마다 칩 보너스가 영구히 +15씩 쌓입니다.", apply(ctx, self) { self.counter = (self.counter || 0) + 15; ctx.chips += self.counter; ctx.activate("magnet"); self.desc = `플레이마다 칩 영구 +15 (현재 +${self.counter})`; } },
+      { id: "compound", name: "복리 광대", cost: 11, desc: "풀하우스+ 플레이마다 배수 영구 +2", detail: "풀하우스 이상(풀하우스/포카드/스트레이트 플러시)을 플레이할 때마다 배수 보너스가 영구히 +2씩 쌓입니다.", apply(ctx, self) { self.counter = self.counter || 0; if (["FULL_HOUSE", "FOUR", "STRAIGHT_FLUSH"].includes(ctx.handType)) { self.counter += 2; } if (self.counter > 0) { ctx.mult += self.counter; ctx.activate("compound"); } self.desc = `풀하우스+ 플레이마다 배수 영구 +2 (현재 +${self.counter})`; } },
+      { id: "legion", name: "광대 군단", cost: 9, desc: "보유 조커 1개당 배수 +1", detail: "현재 보유 중인 조커 1개당 배수 +1. 조커를 많이 모을수록 강해집니다(자기 자신 포함).", apply(ctx, self) { const n = state.jokers.length; if (n > 0) { ctx.mult += n; ctx.activate("legion"); } } },
+      { id: "tycoon", name: "자본가", cost: 8, desc: "보유 자금 $5당 배수 +1", detail: "점수 계산 시 보유 자금 $5당 배수 +1. 돈을 아낄수록 강해집니다.", apply(ctx, self) { const add = Math.floor((state.money || 0) / 5); if (add > 0) { ctx.mult += add; ctx.activate("tycoon"); } } },
+      { id: "gambler", name: "도박꾼", cost: 7, desc: "25% 확률로 배수 x3", detail: "매 핸드 25% 확률로 배수 x3. 고위험 고수익.", apply(ctx, self) { if (Math.random() < 0.25) { ctx.mult *= 3; ctx.activate("gambler"); } } }
     ];
 
     const planetPool = [
@@ -2849,7 +2994,7 @@
       if (state.bossModifier?.id === "no_hearts") {
         ctx.chips = Math.max(5, ctx.chips - cards.filter(c => c.suit === "heart").length * 5);
       }
-      for (const joker of state.jokers) joker.apply(ctx);
+      for (const joker of state.jokers) joker.apply(ctx, joker);
       chips = Math.max(0, Math.floor(ctx.chips));
       mult = Math.max(1, Math.floor(ctx.mult * 100) / 100);
       pulseJokers(ctx.activated);
@@ -2936,7 +3081,7 @@
         btn.disabled = full || !afford;
         btn.addEventListener("click", () => {
           state.money -= joker.cost;
-          state.jokers.push(joker);
+          state.jokers.push({ ...joker, counter: 0 });
           state.shopJokers = state.shopJokers.filter(j => j.id !== joker.id);
           addLog(`조커 구매: ${joker.name} (-$${joker.cost})`);
           renderHUD();
@@ -3121,12 +3266,37 @@
 
     if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) document.documentElement.classList.add("light");
 
+    // ── 시작 화면 ──
+    function refreshStartHighScore() {
+      const hs = parseInt(localStorage.getItem("jokerrun_hs") || "0", 10);
+      const el = $("#startHighScore");
+      if (el) el.textContent = `최고 기록: ${hs.toLocaleString()}점`;
+    }
+    function unlockAudio() {
+      try { if (AudioFX.ctx && AudioFX.ctx.state === "suspended") AudioFX.ctx.resume(); } catch (_) {}
+      try { if (typeof zzfxX !== "undefined" && zzfxX.state === "suspended") zzfxX.resume(); } catch (_) {}
+    }
+    function beginRun() {
+      unlockAudio();
+      $("#helpModal").classList.remove("show");
+      $("#startScreen").classList.remove("show");
+      newRun();
+    }
+    $("#startPlayBtn").addEventListener("click", beginRun);
+    $("#helpStartBtn").addEventListener("click", beginRun);
+    $("#startHelpBtn").addEventListener("click", () => $("#helpModal").classList.add("show"));
+    $("#helpCloseBtn").addEventListener("click", () => $("#helpModal").classList.remove("show"));
+    $("#helpModal").addEventListener("click", (e) => { if (e.target === $("#helpModal")) $("#helpModal").classList.remove("show"); });
+
     (async () => {
       if (window.SharedWallet) {
         try { await SharedWallet.init(); } catch (_) {}
       }
       updateGoldLabel();
+      refreshStartHighScore();
+      // 보드는 미리 구성해두되, 시작 화면을 먼저 노출 (온보딩 + 오디오 언락)
       newRun();
+      $("#startScreen").classList.add("show");
     })();
   </script>
     <script src="/lib/site-meta.js"></script>
