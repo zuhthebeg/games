@@ -3027,8 +3027,8 @@
 
     let _collectionTab = "joker";
     function collectionData(kind) {
-      if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: `tarot/${t.id}.webp`, badge: { label: "타로", color: "#b56ad6" } }));
-      if (kind === "planet") return planetPool.map(p => { if (p.special) return { id: p.id, name: p.name, desc: p.desc, img: `planets/${p.id}.webp`, badge: { label: "특수", color: "#a06bff" } }; const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 족보 영구 강화 (+${p.chipsBonus}칩 / +${p.multBonus}배수)`, img: `planets/${p.id}.webp`, badge: { label: "행성", color: "#4a84ff" } }; });
+      if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: `tarot/${t.id}.webp?v=2`, badge: { label: "타로", color: "#b56ad6" } }));
+      if (kind === "planet") return planetPool.map(p => { if (p.special) return { id: p.id, name: p.name, desc: p.desc, img: `planets/${p.id}.webp?v=2`, badge: { label: "특수", color: "#a06bff" } }; const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 족보 영구 강화 (+${p.chipsBonus}칩 / +${p.multBonus}배수)`, img: `planets/${p.id}.webp?v=2`, badge: { label: "행성", color: "#4a84ff" } }; });
       return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: `jokers/${j.id}.webp`, glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
     }
     function renderCollection(kind) {
@@ -3734,7 +3734,7 @@
         const isSpecial = !!item.special;
         const hn = isSpecial ? "특수" : (handBase[item.hand]?.name || item.hand);
         openDetailPopup({
-          imgSrc: `planets/${item.id}.webp`, emoji: item.planet,
+          imgSrc: `planets/${item.id}.webp?v=2`, emoji: item.planet,
           name: `${item.planet} ${item.name}`, badgeLabel: isSpecial ? "특수 행성" : "행성", badgeColor: isSpecial ? "#a06bff" : "#4a84ff",
           desc: isSpecial ? item.desc : `${hn} 족보 영구 강화 (+${item.chipsBonus}칩 / +${item.multBonus}배수)`,
           costLine: isSpecial ? `사용 즉시 발동 · 판매 +$${sell}` : `사용 시 ${hn} 레벨업 · 판매 +$${sell}`,
@@ -3746,7 +3746,7 @@
         const need = item.need || 0;
         const cardLocked = need > 0 && inShop;   // 카드 선택형은 상점에선 사용 불가(손패 없음)
         openDetailPopup({
-          imgSrc: `tarot/${item.id}.webp`, emoji: "🔮",
+          imgSrc: `tarot/${item.id}.webp?v=2`, emoji: "🔮",
           name: item.name, badgeLabel: "타로", badgeColor: "#b56ad6",
           desc: (item.desc || "") + (need > 0 ? ` · 카드 ${item.need}장 선택 후 사용` : " · 즉시 사용"),
           costLine: `판매 +$${sell}`,
@@ -3781,7 +3781,7 @@
           const planet = it.data;
           const sub = planet.special ? "특수 행성" : `${handBase[planet.hand]?.name || planet.hand} Lv.${state.handLevels?.[planet.hand] || 1}`;
           card.innerHTML = `
-            <img class="planet-art" src="planets/${planet.id}.webp" alt="" draggable="false" onerror="this.style.display='none'">
+            <img class="planet-art" src="planets/${planet.id}.webp?v=2" alt="" draggable="false" onerror="this.style.display='none'">
             <span class="planet-grad" aria-hidden="true"></span>
             <span class="planet-glyph">${planet.name}</span>
             <span class="planet-target">${sub}</span>`;
@@ -3791,7 +3791,7 @@
           card.classList.add("tarot-mini");
           card.dataset.need = String(tarot.need || 0);
           card.innerHTML = `
-            <img class="planet-art" src="tarot/${tarot.id}.webp" alt="" draggable="false" onerror="this.style.display='none'">
+            <img class="planet-art" src="tarot/${tarot.id}.webp?v=2" alt="" draggable="false" onerror="this.style.display='none'">
             <span class="planet-grad" aria-hidden="true"></span>
             <span class="planet-glyph">${tarot.name}</span>
             <span class="planet-target">타로${(tarot.need || 0) > 0 ? ` ·${tarot.need}장` : ""}</span>`;
@@ -4459,7 +4459,7 @@
       const wrap = document.createElement("div");
       wrap.className = "tarot-flash";
       const fb = `<span style=\\'font-size:3rem\\'>🔮</span>`;
-      wrap.innerHTML = `<div class="tf-card"><img src="tarot/${tarot.id}.webp" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${tarot.name}</div></div>`;
+      wrap.innerHTML = `<div class="tf-card"><img src="tarot/${tarot.id}.webp?v=2" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${tarot.name}</div></div>`;
       document.body.appendChild(wrap);
       try { AudioFX.play("select"); JuiceFX.sfx("chip"); } catch (_) {}
       setTimeout(() => wrap.remove(), 1100);
@@ -4470,7 +4470,7 @@
       const wrap = document.createElement("div");
       wrap.className = "planet-flash";
       const fb = `<span style=\\'font-size:3rem\\'>${planet.planet || "🪐"}</span>`;
-      wrap.innerHTML = `<div class="pf-card"><img src="planets/${planet.id}.webp" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${planet.name}</div></div><div class="pf-level">${levelText || ""} ▲</div>`;
+      wrap.innerHTML = `<div class="pf-card"><img src="planets/${planet.id}.webp?v=2" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${planet.name}</div></div><div class="pf-level">${levelText || ""} ▲</div>`;
       document.body.appendChild(wrap);
       try { AudioFX.play("win"); JuiceFX.sfx("win"); JuiceFX.shake(6); } catch (_) {}
       setTimeout(() => wrap.remove(), 1200);
@@ -4869,10 +4869,10 @@
         const tileName = isSpecial ? planet.name : `${planet.name}(${handName})`;
         const desc = isSpecial ? planet.desc : `${handName} 족보 영구 강화 (+${planet.chipsBonus}칩 / +${planet.multBonus}배수)`;
         pRow.appendChild(buildShopTile({
-          imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: tileName, price: cost, afford, borderColor: isSpecial ? "#a06bff" : "#4a84ff",
+          imgSrc: `planets/${planet.id}.webp?v=2`, emoji: planet.planet, name: tileName, price: cost, afford, borderColor: isSpecial ? "#a06bff" : "#4a84ff",
           badge: isSpecial ? { label: "특수", color: "#a06bff" } : null,
           onClick: () => openDetailPopup({
-            imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: `${planet.planet} ${planet.name}${isSpecial ? "" : " · " + handName}`,
+            imgSrc: `planets/${planet.id}.webp?v=2`, emoji: planet.planet, name: `${planet.planet} ${planet.name}${isSpecial ? "" : " · " + handName}`,
             badgeLabel: isSpecial ? "특수 행성" : null, badgeColor: "#a06bff",
             desc,
             costLine: planetFull ? `구매 $${cost} · 슬롯 가득 → 구매 즉시 사용` : `구매 $${cost} · 소모품 슬롯 사용`,
@@ -4924,10 +4924,10 @@
         // 슬롯 가득이어도 즉시효과 타로는 구매 후 바로 사용 가능(슬롯 안 차지). 카드 선택형만 슬롯 필요.
         const blocked = full && !instant;
         tRow.appendChild(buildShopTile({
-          imgSrc: `tarot/${tarot.id}.webp`, emoji: "🔮", name: tarot.name, price: cost, afford, borderColor: "#b56ad6",
+          imgSrc: `tarot/${tarot.id}.webp?v=2`, emoji: "🔮", name: tarot.name, price: cost, afford, borderColor: "#b56ad6",
           badge: { label: "타로", color: "#b56ad6" },
           onClick: () => openDetailPopup({
-            imgSrc: `tarot/${tarot.id}.webp`, emoji: "🔮", name: tarot.name, badgeLabel: "타로", badgeColor: "#b56ad6",
+            imgSrc: `tarot/${tarot.id}.webp?v=2`, emoji: "🔮", name: tarot.name, badgeLabel: "타로", badgeColor: "#b56ad6",
             desc: tarot.desc + (instant ? " · 즉시 사용" : ` · 사용 시 카드 정확히 ${tarot.need}장 선택`),
             costLine: (full && instant) ? `구매 $${cost} · 슬롯 가득 → 구매 즉시 사용` : `구매 $${cost} · 소모품 슬롯 사용`,
             actionLabel: blocked ? "소모품 슬롯 가득 참" : (!afford ? "자금 부족" : ((full && instant) ? `구매 후 바로 사용 $${cost}` : `구매 $${cost}`)),
