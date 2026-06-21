@@ -1133,6 +1133,8 @@
     .score-inline b { display: inline-block; }
     .score-bump { animation: scoreBump 280ms ease; }
     @keyframes scoreBump { 0%{transform:scale(1)} 40%{transform:scale(1.28)} 100%{transform:scale(1)} }
+    .card.scoring-lift { transform: translateY(-12px) !important; box-shadow: 0 10px 24px rgba(0,0,0,0.5); transition: transform .18s ease, box-shadow .18s ease; z-index: 5; }
+    .card.scoring { transform: translateY(-22px) scale(1.08) !important; box-shadow: 0 0 20px var(--gold,#ffcf6d), 0 0 10px #fff; transition: transform .14s ease, box-shadow .14s ease; z-index: 6; }
 
     .score-inline {
       display: flex;
@@ -2722,11 +2724,8 @@
       return `<div class="card-face"><span class="pip big" style="left:50%;top:50%">${s}</span></div>`;
     }
 
-    function renderCards() {
-      cardsWrap.innerHTML = "";
-      state.hand.forEach(card => {
+    function buildCardEl(card) {
         const d = document.createElement("div");
-        d.className = `card ${suitClass[card.suit]} ${state.selected.has(card.id) ? "selected" : ""}`;
         d.dataset.id = String(card.id);
         d.innerHTML = `
   <div class="card-corner card-tl">
@@ -2768,12 +2767,34 @@
             d.style.boxShadow = '';
           }
         });
+        return d;
+    }
+
+    // diff 렌더: 손패 중 바뀐 카드만 추가/제거. 기존 카드는 DOM 유지 → 깜빡임 없음
+    function renderCards() {
+      const existing = new Map();
+      Array.from(cardsWrap.children).forEach(el => existing.set(el.dataset.id, el));
+      const wantIds = new Set(state.hand.map(c => String(c.id)));
+      existing.forEach((el, id) => { if (!wantIds.has(id)) { el.remove(); existing.delete(id); } });
+      let newIndex = 0;
+      state.hand.forEach(card => {
+        const id = String(card.id);
+        let d = existing.get(id);
+        if (!d) {
+          d = buildCardEl(card);
+          d.style.animationDelay = `${newIndex * 45}ms`;
+          newIndex++;
+        } else {
+          d.style.animation = "none"; // 기존 카드는 딜 애니메이션 재생 방지
+          d.style.transform = "";
+          d.style.boxShadow = "";
+        }
+        d.className = `card ${suitClass[card.suit]} ${state.selected.has(card.id) ? "selected" : ""}`;
         if (state.lastToggledCardId === card.id) {
           d.classList.add("pick-fx");
           setTimeout(() => d.classList.remove("pick-fx"), 280);
         }
-        d.style.animationDelay = `${Array.from(cardsWrap.children).length * 35}ms`;
-        cardsWrap.appendChild(d);
+        cardsWrap.appendChild(d); // 순서 유지(기존 노드 재배치는 애니메이션 재생 안 함)
       });
       state.lastToggledCardId = null;
     }
@@ -3346,10 +3367,10 @@
       if (!cards.length) return setInfo("먼저 카드를 1장 이상 선택하세요.");
       if (state.bossModifier?.id === "max3cards" && cards.length > 3) return setInfo("이번 블라인드는 최대 3장까지만 선택 가능합니다.");
       if (state.bossModifier?.id === "min4cards" && cards.length < 4) return setInfo("이번 블라인드는 최소 4장을 선택해야 합니다.");
-      // Animate selected cards flying out
+      // 선택 카드를 제자리에서 살짝 들어 채점 준비 (날리는 건 채점 후)
       const selectedEls = Array.from(cardsWrap.querySelectorAll('.card.selected'));
-      selectedEls.forEach(el => el.classList.add('playing-out'));
-      await new Promise(r => setTimeout(r, 300));
+      selectedEls.forEach(el => el.classList.add('scoring-lift'));
+      await new Promise(r => setTimeout(r, 200));
       AudioFX.play("play");
       const hand = scoreHand(cards);
       const cardChips = cards.reduce((sum, c) => sum + (RANK_CHIPS[c.rank] || 0), 0);
@@ -3373,10 +3394,20 @@
         ctx.chips = Math.max(5, ctx.chips - cards.filter(c => c.suit === "heart").length * 5);
       }
       // ── 발라트로식 순차 점수 연출 ──
-      // 1) 족보 기본(+행성 레벨 강화) 표시
-      setRunReadout(ctx.chips, ctx.mult);
-      setInfo(`<span class="hand-tag">${hand.name}</span>${lvl > 0 ? ` <b style="color:var(--gold)">Lv.${lvl + 1}</b>` : ""} · 기본 ${Math.floor(ctx.chips)}칩 × ${Math.round(ctx.mult * 100) / 100}`);
-      await wait(280);
+      // 1) 족보 기본(카드 칩 제외) 표시
+      let dispChips = Math.max(0, ctx.chips - cardChips);
+      setRunReadout(dispChips, ctx.mult);
+      setInfo(`<span class="hand-tag">${hand.name}</span>${lvl > 0 ? ` <b style="color:var(--gold)">Lv.${lvl + 1}</b>` : ""} · 기본 ${Math.floor(dispChips)} × ${Math.round(ctx.mult * 100) / 100}`);
+      await wait(240);
+      // 1b) 플레이한 카드 왼쪽→오른쪽 순차 칩 가산
+      for (const card of cards) {
+        const cc = RANK_CHIPS[card.rank] || 0;
+        dispChips += cc;
+        const cel = cardsWrap.querySelector(`.card[data-id="${card.id}"]`);
+        if (cel) { cel.classList.add("scoring"); jrFloat(cel, `+${cc}`, "chip"); setTimeout(() => cel.classList.remove("scoring"), 320); }
+        setRunReadout(dispChips, ctx.mult);
+        await wait(130);
+      }
       // 2) 조커 왼쪽→오른쪽 순차 발동, 기여분 플로팅
       for (const joker of state.jokers) {
         const cb = ctx.chips, mb = ctx.mult, ab = ctx.activated.length;
