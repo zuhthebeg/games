@@ -1196,6 +1196,21 @@
     /* 효과 설명 강조: 칩=파랑, 배수=빨강 */
     .fx-chip { color: #5b9dff; font-weight: 900; }
     .fx-mult { color: #ff6b7a; font-weight: 900; }
+
+    /* 도감 */
+    .col-tabs { display: flex; gap: 6px; margin: 8px 0; }
+    .col-tab { flex: 1; padding: 7px; border-radius: 9px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.05); color: var(--muted); font-weight: 700; font-size: .82rem; cursor: pointer; }
+    .col-tab.active { background: rgba(255,207,109,.16); border-color: rgba(255,207,109,.5); color: var(--gold); }
+    .col-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; padding: 4px 2px; }
+    .col-tile { padding: 5px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05); color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; position: relative; }
+    .col-tile:not(.locked):active { transform: scale(.96); }
+    .col-tile.locked { cursor: default; opacity: .55; }
+    .col-art { width: 100%; aspect-ratio: 5/7; border-radius: 7px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.3); }
+    .col-art img { width: 100%; height: 100%; object-fit: cover; }
+    .col-art .col-glyph { font-size: 1.7rem; }
+    .col-art.locked span { font-size: 1.7rem; opacity: .5; }
+    .col-name { font-size: .62rem; font-weight: 700; text-align: center; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .col-badge { font-size: .56rem; font-weight: 800; }
     @keyframes psDeal { from { transform: translateY(18px) scale(.82); opacity: 0; } to { transform: none; opacity: 1; } }
 
     .score-inline {
@@ -2472,6 +2487,7 @@
         <div class="info-line" id="handGuide">손패 8장 중 최대 5장을 선택</div>
         <button id="handsInfoBtn" class="deck-btn" type="button">📊 족보</button>
         <button id="tarotInfoBtn" class="deck-btn" type="button">🔮 타로</button>
+        <button id="collectionBtn" class="deck-btn" type="button">📖 도감</button>
         <button id="deckBtn" class="deck-btn" type="button">🃏 덱 (0장)</button>
       </div>
     </section>
@@ -2552,6 +2568,24 @@
       <div id="tarotCodexBody" style="overflow-y:auto;max-height:64vh"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px;">
         <button class="btn-main" id="closeTarotBtn">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="collectionModal">
+    <div class="deck-modal">
+      <div class="deck-title">
+        <div class="title">📖 도감</div>
+        <div id="collectionCount" style="font-size:.74rem;color:var(--muted)"></div>
+      </div>
+      <div class="col-tabs">
+        <button class="col-tab active" data-ctab="joker" type="button">조커</button>
+        <button class="col-tab" data-ctab="tarot" type="button">타로</button>
+        <button class="col-tab" data-ctab="planet" type="button">행성</button>
+      </div>
+      <div id="collectionBody" style="overflow-y:auto;max-height:60vh"></div>
+      <div class="row" style="justify-content:flex-end;margin-top:10px;">
+        <button class="btn-main" id="closeCollectionBtn">닫기</button>
       </div>
     </div>
   </div>
@@ -2705,7 +2739,15 @@
       { id: "flushBank", name: "플러시 금고", cost: 9, rarity: "uncommon", desc: "플러시면 칩 +70", detail: "플러시/스트레이트 플러시면 칩 +70.", apply(ctx) { if (ctx.handType === "FLUSH" || ctx.handType === "STRAIGHT_FLUSH") { ctx.chips += 70; ctx.activate("flushBank"); } } },
       { id: "allShapes", name: "만물상", cost: 13, rarity: "rare", mult: true, desc: "5장+4무늬면 배수 x2.5", detail: "5장을 내고 무늬가 4종이면 배수 x2.5.", apply(ctx) { if (ctx.cards.length === 5 && new Set(ctx.cards.map(c => c.suit)).size >= 4) { ctx.mult *= 2.5; ctx.activate("allShapes"); } } },
       { id: "echo", name: "메아리", cost: 11, rarity: "rare", mult: true, desc: "직전과 같은 족보면 배수 x2", detail: "직전 플레이와 같은 족보를 내면 배수 x2. 연속 콤보.", apply(ctx) { if (state.lastHandType && ctx.handType === state.lastHandType) { ctx.mult *= 2; ctx.activate("echo"); } } },
-      { id: "lowRoller", name: "로우롤러", cost: 5, rarity: "common", desc: "전부 5 이하면 칩 +45", detail: "플레이 카드가 모두 5 이하이면 칩 +45.", apply(ctx) { if (ctx.cards.length && ctx.cards.every(c => c.rank <= 5)) { ctx.chips += 45; ctx.activate("lowRoller"); } } }
+      { id: "lowRoller", name: "로우롤러", cost: 5, rarity: "common", desc: "전부 5 이하면 칩 +45", detail: "플레이 카드가 모두 5 이하이면 칩 +45.", apply(ctx) { if (ctx.cards.length && ctx.cards.every(c => c.rank <= 5)) { ctx.chips += 45; ctx.activate("lowRoller"); } } },
+      // ── 진짜 곱배수(×) 조커 — 신화/전설급, 빌드를 폭발시키는 핵심 ──
+      { id: "fullmoon", name: "만월", cost: 12, rarity: "rare", mult: true, desc: "무조건 배수 ×2.5", detail: "족보·무늬 상관없이 매 핸드 배수 ×2.5. 단순하지만 강력한 곱연산.", apply(ctx) { if (ctx.cards.length) { ctx.mult *= 2.5; ctx.activate("fullmoon"); } } },
+      { id: "reaperking", name: "사신왕", cost: 14, rarity: "rare", mult: true, desc: "포카드·스플이면 배수 ×5", detail: "족보가 포카드 또는 스트레이트 플러시면 배수 ×5. 고족보 특화 폭발기.", apply(ctx) { if (ctx.handType === "FOUR" || ctx.handType === "STRAIGHT_FLUSH") { ctx.mult *= 5; ctx.activate("reaperking"); } } },
+      { id: "berserk", name: "광폭", cost: 13, rarity: "rare", mult: true, desc: "조커 5칸 가득이면 배수 ×4", detail: "보유 조커가 5개로 가득 차면 배수 ×4. 슬롯을 다 채울수록 보상.", apply(ctx) { if (state.jokers.length >= 5) { ctx.mult *= 4; ctx.activate("berserk"); } } },
+      { id: "bloodmoon", name: "블러드문", cost: 16, rarity: "legendary", mult: true, desc: "K·Q 1장당 배수 ×1.5", detail: "플레이한 킹(K)·퀸(Q) 1장마다 배수 ×1.5 누적(2장이면 ×2.25). 페이스 덱의 끝판왕.", apply(ctx) { const n = ctx.cards.filter(c => c.rank === 12 || c.rank === 13).length; if (n > 0) { ctx.mult *= Math.pow(1.5, n); ctx.activate("bloodmoon"); } } },
+      { id: "constellation", name: "성좌", cost: 18, rarity: "legendary", mult: true, desc: "행성 사용 누적마다 배수 ×0.2씩 영구 증가", detail: "지금까지 사용한 행성 카드 1장당 배수 배율이 영구히 +0.2. 행성을 모을수록 곱연산이 무한 확장.", apply(ctx, self) { const used = Object.values(state.handLevels || {}).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0); const m = 1 + used * 0.2; if (m > 1) { ctx.mult *= m; ctx.activate("constellation"); } self.desc = `행성 사용 ${used}회 → 배수 ×${m.toFixed(1)}`; } },
+      { id: "vampire", name: "흡혈귀", cost: 17, rarity: "legendary", mult: true, desc: "강화 카드 플레이마다 흡수 → 배수 ×0.25 영구 증가", detail: "플레이한 강화(enhancement) 카드를 흡수해 그 강화를 없애고, 1장당 배수 배율이 영구히 +0.25. 굴릴수록 무한 성장.", apply(ctx, self) { const enh = ctx.cards.filter(c => c.enh).length; if (enh > 0) { self.counter = (self.counter || 0) + enh * 0.25; ctx.cards.forEach(c => { if (c.enh) c.enh = null; }); } const m = 1 + (self.counter || 0); if (m > 1) { ctx.mult *= m; ctx.activate("vampire"); } self.desc = `강화 흡수 누적 → 배수 ×${m.toFixed(2)}`; } },
+      { id: "chaos", name: "혼돈", cost: 13, rarity: "legendary", mult: true, desc: "25% 배수 ×6 / 아니면 ×0.5", detail: "도박. 25% 확률로 배수 ×6, 실패하면 ×0.5. 한 방을 노리는 신화 조커.", apply(ctx) { if (Math.random() < 0.25) { ctx.mult *= 6; ctx.activate("chaos"); } else { ctx.mult *= 0.5; ctx.activate("chaos"); } } }
     ];
 
     // ── 조커 등급(레어도) 시스템 ── 발라트로식: 등급↑ = 판매가↑·등장확률↓
@@ -2825,6 +2867,50 @@
       return String(text).replace(/배수/g, '<b class="fx-mult">배수</b>').replace(/칩/g, '<b class="fx-chip">칩</b>');
     }
 
+    // ── 도감(수집 기록) — 한 번이라도 보유/사용한 조커·타로·행성을 영구 기록(localStorage) ──
+    const COLLECTION_KEY = "jokerrun_collection";
+    let _collection = (() => { try { return JSON.parse(localStorage.getItem(COLLECTION_KEY) || "{}"); } catch (_) { return {}; } })();
+    function markDiscovered(kind, id) {
+      if (!id) return;
+      if (!_collection[kind]) _collection[kind] = {};
+      if (_collection[kind][id]) return;
+      _collection[kind][id] = 1;
+      try { localStorage.setItem(COLLECTION_KEY, JSON.stringify(_collection)); } catch (_) {}
+    }
+    function isDiscovered(kind, id) { return !!(_collection[kind] && _collection[kind][id]); }
+
+    let _collectionTab = "joker";
+    function collectionData(kind) {
+      if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: `tarot/${t.id}.webp`, badge: { label: "타로", color: "#b56ad6" } }));
+      if (kind === "planet") return planetPool.map(p => { const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 족보 영구 강화 (+${p.chipsBonus}칩 / +${p.multBonus}배수)`, img: `planets/${p.id}.webp`, badge: { label: "행성", color: "#4a84ff" } }; });
+      return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: `jokers/${j.id}.webp`, glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
+    }
+    function renderCollection(kind) {
+      _collectionTab = kind;
+      document.querySelectorAll(".col-tab").forEach(b => b.classList.toggle("active", b.dataset.ctab === kind));
+      const items = collectionData(kind);
+      const found = items.filter(it => isDiscovered(kind, it.id)).length;
+      $("#collectionCount").textContent = `${found} / ${items.length} 수집`;
+      const body = $("#collectionBody");
+      body.innerHTML = "";
+      const grid = document.createElement("div");
+      grid.className = "col-grid";
+      items.forEach(it => {
+        const got = isDiscovered(kind, it.id);
+        const tile = document.createElement(got ? "button" : "div");
+        tile.type = got ? "button" : undefined;
+        tile.className = "col-tile" + (got ? "" : " locked");
+        if (got && it.badge) tile.style.borderColor = it.badge.color;
+        tile.innerHTML = got
+          ? `<div class="col-art"><img src="${it.img}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'col-glyph joker-glyph ${it.glyph || "joker-duo"}\\'></span>'"></div><div class="col-name">${it.name}</div>${it.badge ? `<div class="col-badge" style="color:${it.badge.color}">${it.badge.label}</div>` : ""}`
+          : `<div class="col-art locked"><span>❓</span></div><div class="col-name">？？？</div>`;
+        if (got) tile.addEventListener("click", () => openDetailPopup({ imgSrc: it.img, glyph: it.glyph, name: it.name, badgeLabel: it.badge?.label, badgeColor: it.badge?.color, desc: it.desc, costLine: "" }));
+        grid.appendChild(tile);
+      });
+      body.appendChild(grid);
+    }
+    function openCollection() { renderCollection(_collectionTab); $("#collectionModal").classList.add("show"); }
+
     const jokerGlyphClass = {
       flat50: "joker-bomb",
       flushx2: "joker-wave",
@@ -2863,7 +2949,9 @@
       flushBank: "joker-house",
       allShapes: "joker-wave",
       echo: "joker-runner",
-      lowRoller: "joker-diamond"
+      lowRoller: "joker-diamond",
+      fullmoon: "joker-double", reaperking: "joker-crown", berserk: "joker-bomb",
+      bloodmoon: "joker-crown", constellation: "joker-wave", vampire: "joker-double", chaos: "joker-dice"
     };
 
     // 콘텐츠 무결성 검증 — 잘못된/누락 항목이 있어도 게임이 깨지지 않게 기본값 보정 + 경고.
@@ -4419,6 +4507,7 @@
               closeJokerPopup();
               state.money -= cost;
               state.jokers.push({ ...joker, counter: 0 });
+              markDiscovered("joker", joker.id);
               state.shopJokers = state.shopJokers.filter(j => j.id !== joker.id);
               addLog(`조커 구매: ${joker.name} (-$${cost})`);
               renderHUD(); openShop(_shopIsAnteClear);
@@ -4450,6 +4539,7 @@
               closeJokerPopup();
               state.money -= cost;
               state.planetCards.push({ ...planet });
+              markDiscovered("planet", planet.id);
               state.shopPlanets.splice(idx, 1);
               addLog(`플래닛 구매: ${planet.name} (-$${cost})`);
               renderHUD(); openShop(_shopIsAnteClear);
@@ -4481,6 +4571,7 @@
               closeJokerPopup();
               state.money -= cost;
               state.tarotCards.push({ ...tarot });
+              markDiscovered("tarot", tarot.id);
               state.shopTarots.splice(idx, 1);
               addLog(`타로 구매: ${tarot.name} (-$${cost})`);
               renderHUD(); openShop(_shopIsAnteClear);
@@ -4798,6 +4889,9 @@
     $("#bgmBtn").addEventListener("click", () => BGM.toggle());
     $("#startPlayBtn").addEventListener("click", beginRun);
     $("#startContinueBtn").addEventListener("click", () => { try { BGM.unlock?.(); } catch (_) {} restoreRun(); });
+    $("#collectionBtn").addEventListener("click", openCollection);
+    $("#closeCollectionBtn").addEventListener("click", () => $("#collectionModal").classList.remove("show"));
+    document.querySelectorAll(".col-tab").forEach(b => b.addEventListener("click", () => renderCollection(b.dataset.ctab)));
     $("#helpStartBtn").addEventListener("click", beginRun);
     $("#startHelpBtn").addEventListener("click", () => $("#helpModal").classList.add("show"));
     $("#helpCloseBtn").addEventListener("click", () => $("#helpModal").classList.remove("show"));
