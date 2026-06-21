@@ -4277,9 +4277,9 @@
         const planetFull = consumableCount() >= 2;
         const handName = handBase[planet.hand]?.name || planet.hand;
         pRow.appendChild(buildShopTile({
-          imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: planet.name, price: cost, afford, borderColor: "#4a84ff",
+          imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: `${planet.name}(${handName})`, price: cost, afford, borderColor: "#4a84ff",
           onClick: () => openDetailPopup({
-            imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: `${planet.planet} ${planet.name}`,
+            imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: `${planet.planet} ${planet.name} · ${handName}`,
             desc: `${handName} 족보 영구 강화 (+${planet.chipsBonus}칩 / +${planet.multBonus}배수)`,
             costLine: `구매 $${cost} · 소모품 슬롯 사용`,
             actionLabel: planetFull ? "소모품 슬롯 가득 참" : (afford ? `구매 $${cost}` : "자금 부족"),
