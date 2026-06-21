@@ -1211,6 +1211,13 @@
     .col-art.locked span { font-size: 1.7rem; opacity: .5; }
     .col-name { font-size: .62rem; font-weight: 700; text-align: center; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     .col-badge { font-size: .56rem; font-weight: 800; }
+
+    /* 특이점 족보 선택 */
+    .sg-pick { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%;
+      padding: 10px 12px; border-radius: 10px; border: 1.5px solid rgba(120,90,200,.5);
+      background: linear-gradient(150deg, rgba(60,40,90,.5), rgba(30,20,50,.55)); color: var(--text);
+      font-weight: 700; font-size: .86rem; cursor: pointer; }
+    .sg-pick:active { transform: scale(.98); }
     @keyframes psDeal { from { transform: translateY(18px) scale(.82); opacity: 0; } to { transform: none; opacity: 1; } }
 
     .score-inline {
@@ -2590,6 +2597,18 @@
     </div>
   </div>
 
+  <div class="modal" id="singularityModal">
+    <div class="deck-modal">
+      <div class="deck-title"><div class="title">⚫ 특이점 — 레벨 몰빵</div></div>
+      <div id="singularityTotal" style="font-weight:800;color:var(--gold);margin:4px 0"></div>
+      <p style="font-size:.76rem;color:var(--muted);margin:0 0 8px">몰빵할 족보를 선택하면 흩어진 모든 족보 레벨이 그 하나로 합쳐집니다. (나머지는 Lv.1로 리셋)</p>
+      <div id="singularityBody" style="display:grid;gap:6px;max-height:52vh;overflow-y:auto"></div>
+      <div class="row" style="justify-content:flex-end;margin-top:10px;">
+        <button class="btn-main" id="closeSingularityBtn">취소</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="blindSelectModal">
     <div class="mode-sheet">
       <div style="text-align:center">
@@ -2818,6 +2837,11 @@
       { id:"uranus",   name:"천왕성",planet:"⛢", hand:"FOUR",          chipsBonus:30, multBonus:3 },
       { id:"neptune",  name:"해왕성",planet:"♆", hand:"STRAIGHT_FLUSH",chipsBonus:40, multBonus:4 },
       { id:"pluto",    name:"명왕성",planet:"⯓", hand:"HIGH_CARD",     chipsBonus:15, multBonus:1 },
+      // ── 특수 행성(전체/무작위/흡수). hand 대신 special로 동작. 강력해서 비싸고 후반에 등장 ──
+      { id:"blackhole",   name:"블랙홀", planet:"🕳️", special:"all",    amount:1, cost:8,  desc:"모든 족보 레벨 +1" },
+      { id:"galaxy",      name:"은하",   planet:"🌌", special:"all",    amount:3, cost:16, desc:"모든 족보 레벨 +3 (올 5업 대박)" },
+      { id:"supernova",   name:"초신성", planet:"💥", special:"random", amount:5, cost:10, desc:"무작위 족보 1개 레벨 +5" },
+      { id:"singularity", name:"특이점", planet:"⚫", special:"absorb",           cost:12, desc:"흩어진 모든 족보 레벨을 흡수해 선택한 1개 족보에 몰빵" },
     ];
 
     // ── 타로 카드 (소모품, 행성과 슬롯 공유) ── 발라트로식
@@ -2883,7 +2907,7 @@
     let _collectionTab = "joker";
     function collectionData(kind) {
       if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: `tarot/${t.id}.webp`, badge: { label: "타로", color: "#b56ad6" } }));
-      if (kind === "planet") return planetPool.map(p => { const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 족보 영구 강화 (+${p.chipsBonus}칩 / +${p.multBonus}배수)`, img: `planets/${p.id}.webp`, badge: { label: "행성", color: "#4a84ff" } }; });
+      if (kind === "planet") return planetPool.map(p => { if (p.special) return { id: p.id, name: p.name, desc: p.desc, img: `planets/${p.id}.webp`, badge: { label: "특수", color: "#a06bff" } }; const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 족보 영구 강화 (+${p.chipsBonus}칩 / +${p.multBonus}배수)`, img: `planets/${p.id}.webp`, badge: { label: "행성", color: "#4a84ff" } }; });
       return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: `jokers/${j.id}.webp`, glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
     }
     function renderCollection(kind) {
@@ -3497,6 +3521,16 @@
     function usePlanetCard(planet, anchorEl) {
       const pi = state.planetCards.indexOf(planet);
       if (pi < 0) return;
+      if (planet.special) {
+        // 흡수형(특이점)은 족보 선택이 필요하므로 picker를 띄우고 거기서 소비한다.
+        if (planet.special === "absorb") { openSingularityPicker(planet); return; }
+        applySpecialPlanet(planet);
+        state.planetCards.splice(pi, 1);
+        if (anchorEl) showLevelUpPopup(anchorEl);
+        renderHUD();
+        refreshConsumables();
+        return;
+      }
       const handName = handBase[planet.hand]?.name || planet.hand;
       const newLevel = (state.handLevels?.[planet.hand] || 1) + 1;
       state.handLevels[planet.hand] = newLevel;
@@ -3505,6 +3539,44 @@
       if (anchorEl) showLevelUpPopup(anchorEl);
       renderHUD();
       refreshConsumables();
+    }
+    function applySpecialPlanet(planet) {
+      const keys = Object.keys(state.handLevels);
+      if (planet.special === "all") {
+        keys.forEach(k => state.handLevels[k] = (state.handLevels[k] || 1) + planet.amount);
+        addLog(`${planet.name}: 모든 족보 레벨 +${planet.amount}`);
+      } else if (planet.special === "random") {
+        const k = keys[Math.floor(Math.random() * keys.length)];
+        state.handLevels[k] = (state.handLevels[k] || 1) + planet.amount;
+        addLog(`${planet.name}: ${handBase[k]?.name || k} 레벨 +${planet.amount}`);
+      }
+    }
+    // 특이점: 모든 족보의 추가 레벨(레벨-1)을 흡수해 선택한 한 족보에 몰빵
+    let _singularityPlanet = null;
+    function openSingularityPicker(planet) {
+      _singularityPlanet = planet;
+      const total = Object.values(state.handLevels).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0);
+      const body = $("#singularityBody");
+      $("#singularityTotal").textContent = `흡수 가능한 총 추가 레벨: +${total}`;
+      body.innerHTML = "";
+      HAND_ORDER.forEach(h => {
+        const btn = document.createElement("button");
+        btn.className = "sg-pick";
+        const cur = state.handLevels?.[h] || 1;
+        btn.innerHTML = `<span>${handBase[h].name}</span><span style="color:var(--gold)">Lv.${cur} → Lv.${1 + total}</span>`;
+        btn.addEventListener("click", () => {
+          Object.keys(state.handLevels).forEach(k => state.handLevels[k] = 1);
+          state.handLevels[h] = 1 + total;
+          const pi = state.planetCards.indexOf(_singularityPlanet);
+          if (pi >= 0) state.planetCards.splice(pi, 1);
+          addLog(`특이점: 모든 족보 흡수 → ${handBase[h].name} Lv.${1 + total} 몰빵`);
+          $("#singularityModal").classList.remove("show");
+          AudioFX.play("win"); JuiceFX.sfx("win");
+          renderHUD(); refreshConsumables();
+        });
+        body.appendChild(btn);
+      });
+      $("#singularityModal").classList.add("show");
     }
     // 소모품(타로/행성) 판매가 — 구매가 절반
     function consumableSellValue(kind) { return Math.max(1, Math.floor((kind === "tarot" ? 4 : 3) / 2)); }
@@ -3524,13 +3596,14 @@
     function openConsumableDetail(kind, item) {
       const sell = consumableSellValue(kind);
       if (kind === "planet") {
-        const hn = handBase[item.hand]?.name || item.hand;
+        const isSpecial = !!item.special;
+        const hn = isSpecial ? "특수" : (handBase[item.hand]?.name || item.hand);
         openDetailPopup({
           imgSrc: `planets/${item.id}.webp`, emoji: item.planet,
-          name: `${item.name}(${hn})`, badgeLabel: "행성", badgeColor: "#4a84ff",
-          desc: `${hn} 족보 영구 강화 (+${item.chipsBonus}칩 / +${item.multBonus}배수)`,
-          costLine: `사용 시 ${hn} 레벨업 · 판매 +$${sell}`,
-          actionLabel: "사용 (레벨업)", actionFn: () => { closeJokerPopup(); usePlanetCard(item, null); },
+          name: `${item.planet} ${item.name}`, badgeLabel: isSpecial ? "특수 행성" : "행성", badgeColor: isSpecial ? "#a06bff" : "#4a84ff",
+          desc: isSpecial ? item.desc : `${hn} 족보 영구 강화 (+${item.chipsBonus}칩 / +${item.multBonus}배수)`,
+          costLine: isSpecial ? `사용 즉시 발동 · 판매 +$${sell}` : `사용 시 ${hn} 레벨업 · 판매 +$${sell}`,
+          actionLabel: "사용", actionFn: () => { closeJokerPopup(); usePlanetCard(item, null); },
           action2Label: `팔기 +$${sell}`, action2Fn: () => { closeJokerPopup(); sellConsumable("planet", item); }
         });
       } else {
@@ -3568,12 +3641,12 @@
         card.className = "planet-card-mini";
         if (it.kind === "planet") {
           const planet = it.data;
-          const handName = handBase[planet.hand]?.name || planet.hand;
+          const sub = planet.special ? "특수 행성" : `${handBase[planet.hand]?.name || planet.hand} Lv.${state.handLevels?.[planet.hand] || 1}`;
           card.innerHTML = `
             <img class="planet-art" src="planets/${planet.id}.webp" alt="" draggable="false" onerror="this.style.display='none'">
             <span class="planet-grad" aria-hidden="true"></span>
             <span class="planet-glyph">${planet.name}</span>
-            <span class="planet-target">${handName} Lv.${state.handLevels?.[planet.hand] || 1}</span>`;
+            <span class="planet-target">${sub}</span>`;
           card.addEventListener("click", () => isShop ? openConsumableDetail("planet", planet) : usePlanetCard(planet, card));
         } else {
           const tarot = it.data;
@@ -4574,15 +4647,20 @@
       const pRow = document.createElement("div");
       pRow.className = "shop-tilerow";
       state.shopPlanets.forEach((planet, idx) => {
-        const cost = priceOf(3);
+        const cost = priceOf(planet.cost || 3);
         const afford = state.money >= cost;
         const planetFull = consumableCount() >= 2;
-        const handName = handBase[planet.hand]?.name || planet.hand;
+        const isSpecial = !!planet.special;
+        const handName = isSpecial ? "특수" : (handBase[planet.hand]?.name || planet.hand);
+        const tileName = isSpecial ? planet.name : `${planet.name}(${handName})`;
+        const desc = isSpecial ? planet.desc : `${handName} 족보 영구 강화 (+${planet.chipsBonus}칩 / +${planet.multBonus}배수)`;
         pRow.appendChild(buildShopTile({
-          imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: `${planet.name}(${handName})`, price: cost, afford, borderColor: "#4a84ff",
+          imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: tileName, price: cost, afford, borderColor: isSpecial ? "#a06bff" : "#4a84ff",
+          badge: isSpecial ? { label: "특수", color: "#a06bff" } : null,
           onClick: () => openDetailPopup({
-            imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: `${planet.planet} ${planet.name} · ${handName}`,
-            desc: `${handName} 족보 영구 강화 (+${planet.chipsBonus}칩 / +${planet.multBonus}배수)`,
+            imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: `${planet.planet} ${planet.name}${isSpecial ? "" : " · " + handName}`,
+            badgeLabel: isSpecial ? "특수 행성" : null, badgeColor: "#a06bff",
+            desc,
             costLine: `구매 $${cost} · 소모품 슬롯 사용`,
             actionLabel: planetFull ? "소모품 슬롯 가득 참" : (afford ? `구매 $${cost}` : "자금 부족"),
             actionDisabled: planetFull || !afford,
@@ -4951,6 +5029,7 @@
     $("#collectionBtn").addEventListener("click", openCollection);
     $("#closeCollectionBtn").addEventListener("click", () => $("#collectionModal").classList.remove("show"));
     document.querySelectorAll(".col-tab").forEach(b => b.addEventListener("click", () => renderCollection(b.dataset.ctab)));
+    $("#closeSingularityBtn").addEventListener("click", () => $("#singularityModal").classList.remove("show"));
     $("#helpStartBtn").addEventListener("click", beginRun);
     $("#startHelpBtn").addEventListener("click", () => $("#helpModal").classList.add("show"));
     $("#helpCloseBtn").addEventListener("click", () => $("#helpModal").classList.remove("show"));
