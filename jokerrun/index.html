@@ -1913,6 +1913,16 @@
       font-weight: 800;
     }
 
+    .shop-soldout {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 8px 0;
+      opacity: 0.7;
+    }
+
     .shop-item-planet {
       border-color: rgba(136, 179, 255, 0.5);
       background: linear-gradient(155deg, rgba(8, 27, 60, 0.94), rgba(24, 48, 98, 0.92) 55%, rgba(30, 74, 146, 0.9));
@@ -2285,6 +2295,7 @@
       <div class="hand-bottom">
         <div class="info-line" id="handGuide">손패 8장 중 최대 5장을 선택</div>
         <button id="handsInfoBtn" class="deck-btn" type="button">📊 족보</button>
+        <button id="tarotInfoBtn" class="deck-btn" type="button">🔮 타로</button>
         <button id="deckBtn" class="deck-btn" type="button">🃏 덱 (0장)</button>
       </div>
     </section>
@@ -2341,6 +2352,34 @@
       <div class="row" style="justify-content:flex-end;margin-top:10px;">
         <button class="btn-main" id="closeHandsBtn">닫기</button>
       </div>
+    </div>
+  </div>
+
+  <div class="modal" id="tarotModal">
+    <div class="deck-modal">
+      <div class="deck-title">
+        <div class="title">🔮 타로 카드 도감</div>
+      </div>
+      <div id="tarotCodexBody" style="overflow-y:auto;max-height:64vh"></div>
+      <div class="row" style="justify-content:flex-end;margin-top:10px;">
+        <button class="btn-main" id="closeTarotBtn">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="blindSelectModal">
+    <div class="mode-sheet">
+      <div style="text-align:center">
+        <div class="subtitle" id="bsAnte" style="color:var(--gold);font-weight:800">Ante 1</div>
+        <div class="title" id="bsBlindName" style="margin-top:2px">스몰 블라인드</div>
+        <div class="subtitle" id="bsTarget" style="margin-top:6px">목표 점수 0</div>
+        <div class="subtitle" id="bsReward" style="margin-top:2px;color:var(--muted);font-size:.78rem"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
+        <button class="btn-main" id="bsPlayBtn" style="padding:12px;border-radius:12px;font-weight:800">▶ 플레이</button>
+        <button id="bsSkipBtn" style="padding:12px;border-radius:12px;font-weight:800;background:linear-gradient(150deg,#2a2545,#1a1730);color:#e7defb;border:1px solid rgba(255,215,0,.3);cursor:pointer">⏭ 스킵</button>
+      </div>
+      <div class="subtitle" id="bsHint" style="text-align:center;color:var(--muted);font-size:.72rem;margin-top:2px">스킵 시 상점 없이 다음 블라인드로. 보스는 스킵 불가.</div>
     </div>
   </div>
 
@@ -2560,6 +2599,7 @@
       handsLeft: 4,
       discardsLeft: 3,
       sortMode: "rank",
+      shopStocked: false,
       deck: [],
       hand: [],
       selected: new Set(),
@@ -3277,6 +3317,37 @@
       $("#handsModal").classList.remove("show");
     }
 
+    function renderTarotCodex() {
+      const body = $("#tarotCodexBody");
+      if (!body) return;
+      const ownedCount = {};
+      (state.tarotCards || []).forEach(t => { ownedCount[t.id] = (ownedCount[t.id] || 0) + 1; });
+      body.innerHTML =
+        `<p style="font-size:.78rem;color:var(--muted);margin:2px 0 10px">상점 타로 섹션($4)에서 구매. 소모품 슬롯(최대 2칸)을 플래닛과 공유. 보유한 타로는 핸드 화면에서 사용.</p>` +
+        tarotPool.map(t => {
+          const owned = ownedCount[t.id] || 0;
+          const needTxt = t.need > 0
+            ? `<span style="color:#9fd0ff">${t.exact ? "정확히 " : ""}${t.need}장 선택 후 사용</span>`
+            : `<span style="color:#9fd0ff">즉시 사용</span>`;
+          return `<div style="display:flex;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08)">
+            <img src="tarot/${t.id}.webp" alt="" style="width:46px;height:64px;object-fit:cover;border-radius:7px;border:1px solid #b56ad688;flex:0 0 auto" onerror="this.style.visibility='hidden'">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:800;color:#e7defb">${t.name}${owned ? ` <span style="color:var(--gold);font-size:.72rem">×${owned} 보유</span>` : ""}</div>
+              <div style="font-size:.82rem;color:var(--text);margin:2px 0">${t.desc}</div>
+              <div style="font-size:.7rem">${needTxt}</div>
+            </div>
+          </div>`;
+        }).join("");
+    }
+    function openTarotModal() {
+      renderTarotCodex();
+      $("#tarotModal").classList.add("show");
+      AudioFX.play("select");
+    }
+    function closeTarotModal() {
+      $("#tarotModal").classList.remove("show");
+    }
+
     function openVictoryModal(message = "") {
       const totalScore = state.score;
       const prev = parseInt(localStorage.getItem("jokerrun_hs") || "0", 10);
@@ -3569,9 +3640,13 @@
 
     function openShop(anteClear = false) {
       _shopIsAnteClear = anteClear;
-      if (state.shopJokers.length === 0) generateShopJokers();
-      if (state.shopPlanets.length === 0) generateShopPlanets();
-      if (!state.shopTarots || state.shopTarots.length === 0) generateShopTarots();
+      // 상점은 입장 시 1회만 진열. 구매로 비어도 같은 방문 중엔 재진열 안 함(다음 라운드에 갱신).
+      if (!state.shopStocked) {
+        generateShopJokers();
+        generateShopPlanets();
+        generateShopTarots();
+        state.shopStocked = true;
+      }
       const grid = $("#shopGrid");
       grid.innerHTML = "";
       $("#shopMoney").textContent = `보유 자금: $${state.money}`;
@@ -3616,6 +3691,12 @@
         card.appendChild(btn);
         grid.appendChild(card);
       });
+      if (state.shopJokers.length === 0) {
+        const s = document.createElement("div");
+        s.className = "shop-soldout";
+        s.textContent = "조커 매진 — 다음 블라인드에 갱신";
+        grid.appendChild(s);
+      }
 
       const separator = document.createElement("div");
       separator.className = "shop-separator";
@@ -3647,6 +3728,12 @@
         card.appendChild(btn);
         grid.appendChild(card);
       });
+      if ((state.shopPlanets || []).length === 0) {
+        const s = document.createElement("div");
+        s.className = "shop-soldout";
+        s.textContent = "플래닛 매진";
+        grid.appendChild(s);
+      }
 
       const tarotTitle = document.createElement("div");
       tarotTitle.className = "shop-subtitle";
@@ -3674,6 +3761,12 @@
         card.appendChild(btn);
         grid.appendChild(card);
       });
+      if ((state.shopTarots || []).length === 0) {
+        const s = document.createElement("div");
+        s.className = "shop-soldout";
+        s.textContent = "타로 매진";
+        grid.appendChild(s);
+      }
 
       $("#shopContinueBtn").textContent = anteClear
         ? `Ante ${state.ante + 1} 시작 →`
@@ -3685,6 +3778,41 @@
       $("#shopModal").classList.remove("show");
     }
 
+    // 블라인드 진입 게이트: 스몰(0)·빅(1)은 선택 화면(플레이/스킵), 보스(2)는 강제 플레이.
+    let _pendingSeed = "";
+    function beginBlind(index, seedText = "") {
+      _pendingSeed = seedText;
+      if (index >= 2) { startRound(index, seedText); return; }
+      showBlindSelect(index);
+    }
+
+    function showBlindSelect(index) {
+      state.pendingBlindIndex = index;
+      const blindDefs = getBlindTargets(state.ante);
+      const blind = blindDefs[index];
+      const reward = 7 + 4 * 2 + 3 + state.ante * 2; // 만점 클리어 시 예상 보상(핸드4·버리기3 기준)
+      $("#bsAnte").textContent = `Ante ${state.ante}`;
+      $("#bsBlindName").textContent = blind.label;
+      $("#bsTarget").textContent = `목표 점수 ${blind.target.toLocaleString()}`;
+      $("#bsReward").textContent = `클리어 보상 최대 +$${reward} · 스킵 보너스 +$${state.ante}`;
+      $("#blindSelectModal").classList.add("show");
+      AudioFX.play("select");
+    }
+
+    function playPendingBlind(index) {
+      $("#blindSelectModal").classList.remove("show");
+      startRound(index, _pendingSeed);
+    }
+
+    function skipBlind(index) {
+      $("#blindSelectModal").classList.remove("show");
+      const bonus = state.ante;
+      state.money += bonus;
+      addLog(`${["스몰", "빅"][index] || "블라인드"} 블라인드 스킵 (+$${bonus}, 상점 없음)`);
+      AudioFX.play("select");
+      beginBlind(index + 1, _pendingSeed);
+    }
+
     function startRound(index, seedText = "") {
       state.roundIndex = index;
       state.score = 0;
@@ -3694,6 +3822,7 @@
       state.shopJokers = [];   // 새 라운드마다 상점 갱신
       state.shopPlanets = [];
       state.shopTarots = [];
+      state.shopStocked = false;
       state.rerollCost = 5;    // 갱신 비용 초기화
       state.deck = buildDeck(seedText);
       state.hand = [];
@@ -3781,7 +3910,7 @@
       closeDeckModal();
       closeVictoryModal();
       document.getElementById("gameOverModal").classList.remove("show");
-      startRound(0);
+      beginBlind(0);
     }
 
     function showRunClearModal() {
@@ -3796,13 +3925,13 @@
     }
 
     window.continueFromShop = function continueFromShop() {
+      closeShop();
       if (_shopIsAnteClear) {
         state.ante = Math.min(8, state.ante + 1);
-        startRound(0);
+        beginBlind(0);
       } else {
-        startRound(state.roundIndex + 1);
+        beginBlind(state.roundIndex + 1);
       }
-      closeShop();
     };
 
     $("#playBtn").addEventListener("click", playSelected);
@@ -3819,6 +3948,13 @@
     $("#closeDeckBtn").addEventListener("click", closeDeckModal);
     $("#handsInfoBtn").addEventListener("click", openHandsModal);
     $("#closeHandsBtn").addEventListener("click", closeHandsModal);
+    $("#tarotInfoBtn").addEventListener("click", openTarotModal);
+    $("#closeTarotBtn").addEventListener("click", closeTarotModal);
+    $("#tarotModal").addEventListener("click", (event) => {
+      if (event.target === $("#tarotModal")) closeTarotModal();
+    });
+    $("#bsPlayBtn").addEventListener("click", () => playPendingBlind(state.pendingBlindIndex));
+    $("#bsSkipBtn").addEventListener("click", () => skipBlind(state.pendingBlindIndex));
     $("#deckModal").addEventListener("click", (event) => {
       if (event.target === $("#deckModal")) closeDeckModal();
     });
@@ -3861,8 +3997,8 @@
       }
       updateGoldLabel();
       refreshStartHighScore();
-      // 보드는 미리 구성해두되, 시작 화면을 먼저 노출 (온보딩 + 오디오 언락)
-      newRun();
+      // 보드는 미리 구성해두되(모달 없이), 시작 화면을 먼저 노출 (온보딩 + 오디오 언락)
+      startRound(0);
       $("#startScreen").classList.add("show");
     })();
   </script>
