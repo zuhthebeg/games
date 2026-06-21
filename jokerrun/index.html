@@ -1192,6 +1192,10 @@
       background: repeating-linear-gradient(45deg, rgba(0,0,0,.32) 0 7px, rgba(0,0,0,.12) 7px 14px); pointer-events: none; z-index: 2; }
     .card-lock { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 5;
       font-size: 1.3rem; filter: drop-shadow(0 1px 3px rgba(0,0,0,.8)); pointer-events: none; }
+
+    /* 효과 설명 강조: 칩=파랑, 배수=빨강 */
+    .fx-chip { color: #5b9dff; font-weight: 900; }
+    .fx-mult { color: #ff6b7a; font-weight: 900; }
     @keyframes psDeal { from { transform: translateY(18px) scale(.82); opacity: 0; } to { transform: none; opacity: 1; } }
 
     .score-inline {
@@ -2815,6 +2819,11 @@
     function isCardBossDisabled(c){ return state.bossModifier?.id === "no_hearts" && c.suit === "heart"; }
     function cardScoreChips(c){ if (isCardBossDisabled(c)) return 0; return (RANK_CHIPS[c.rank]||0) + (enhOf(c)?.chips||0); }
     function enhBadgeHTML(card){ const e=enhOf(card); return e ? `<span class="enh-badge" style="background:${e.color}">${e.short}</span>` : ""; }
+    // 조커/효과 설명에서 '칩'은 파랑, '배수'는 빨강으로 눈에 띄게 강조(내부 정의 문자열만 사용 → 안전)
+    function colorizeEffect(text){
+      if (text == null) return "";
+      return String(text).replace(/배수/g, '<b class="fx-mult">배수</b>').replace(/칩/g, '<b class="fx-chip">칩</b>');
+    }
 
     const jokerGlyphClass = {
       flat50: "joker-bomb",
@@ -3546,7 +3555,7 @@
         icon.innerHTML = `<span class="joker-glyph ${opts.glyph || "joker-duo"}"></span>`;
       }
       $("#jokerPopupName").innerHTML = `${opts.name}${opts.badgeLabel ? ` <span style="font-size:.7rem;font-weight:800;color:${opts.badgeColor};border:1px solid ${opts.badgeColor}66;border-radius:10px;padding:1px 7px;margin-left:4px;vertical-align:middle">${opts.badgeLabel}</span>` : ""}`;
-      $("#jokerPopupDesc").textContent = opts.desc || "";
+      $("#jokerPopupDesc").innerHTML = colorizeEffect(opts.desc || "");
       $("#jokerPopupCost").textContent = opts.costLine || "";
       const actBtn = $("#jokerPopupAction");
       if (opts.actionLabel) {
@@ -3647,7 +3656,7 @@
             <span class="joker-grad" aria-hidden="true"></span>
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
             <span class="joker-name-mini">${joker.name}</span>
-            <span class="joker-desc-mini">${joker.desc}</span>
+            <span class="joker-desc-mini">${colorizeEffect(joker.desc)}</span>
             <button class="joker-sell" type="button">팔기</button>
           `;
           box.addEventListener("click", () => openJokerPopup(joker));
