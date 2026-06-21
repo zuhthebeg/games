@@ -1994,6 +1994,8 @@
 
     .co-line { display: flex; justify-content: space-between; gap: 12px; padding: 7px 4px; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 0.88rem; color: #d8cda0; }
     .co-line b { color: #ffe9a8; font-weight: 800; }
+    .co-line.co-boss { border-bottom: 1px solid rgba(255,215,0,.4); }
+    .co-line.co-boss span, .co-line.co-boss b { color: var(--gold,#ffcf6d); font-size: 1rem; font-weight: 900; }
     .co-total-big { font-size: 1.9rem; font-weight: 900; color: var(--gold,#ffcf6d); text-shadow: 0 2px 14px rgba(255,207,109,.45); margin: 10px 0; }
 
     /* ── 상점 리뉴얼: 작은 카드형 타일 + 상세 팝업 ── */
@@ -2581,6 +2583,7 @@
   </div>
 
   <script src="/lib/shared-wallet.js?v=20260312a"></script>
+  <script src="/lib/game-rankings.js?v=20260621a"></script>
   <script>
     const suits = ["heart", "diamond", "club", "spade"];
     const suitSymbol = { heart: "♥", diamond: "♦", club: "♣", spade: "♠" };
@@ -4033,6 +4036,11 @@
       const prevScore = state.score;
       state.score += points;
       state.handsLeft = Math.max(0, state.handsLeft - 1);
+      // 랭킹: 1회 핸드 최고 점수 기준. 세션 베스트 갱신 시에만 제출(서버가 전체 최고 보관).
+      if (points > (state.bestHand || 0)) {
+        state.bestHand = points;
+        try { if (window.GameRankings) GameRankings.submit("jokerrun", { score: points }); } catch (_) {}
+      }
       await animateScore(hand.name, chips, points, mult, prevScore, state.score);
       setInfo(`<span class="hand-tag">${hand.name}</span> | ${chips}칩 × ${mult}배 = <b>${points.toLocaleString()}</b>점`);
       addLog(`${hand.name} 플레이: +${points}점 (남은 핸드 ${state.handsLeft})`);
@@ -4454,6 +4462,14 @@
       AudioFX.play("win");
       JuiceFX.sfx("win"); JuiceFX.shake(9);
       spawnWinConfetti();
+      // 보스 격파 보상: 앤티 N 보스 = N × 100만 G (전역 지갑)
+      let bossGold = 0;
+      if (state.roundIndex === 2) {
+        bossGold = state.ante * 1000000;
+        try { if (window.SharedWallet && SharedWallet._initialized) SharedWallet.addGold(bossGold); } catch (_) {}
+        addLog(`보스 격파! 보상 ${bossGold.toLocaleString()} G`);
+      }
+      state.lastCashout.bossGold = bossGold;
       renderHUD();
       const isLastBlind = state.roundIndex >= 2;
       const isLastAnte = state.ante >= 8;
@@ -4461,7 +4477,7 @@
         showRunClearModal();
         return;
       }
-      setInfo(`블라인드 돌파! 정산 +$${reward}`);
+      setInfo(bossGold ? `보스 격파! +${bossGold.toLocaleString()} G` : `블라인드 돌파! 정산 +$${reward}`);
       showCashoutModal(isLastBlind);
     }
 
@@ -4471,6 +4487,7 @@
       const body = $("#cashoutBody");
       if (body) {
         body.innerHTML =
+          (co.bossGold ? `<div class="co-line co-boss"><span>👑 보스 격파 보상</span><b>+${co.bossGold.toLocaleString()} G</b></div>` : "") +
           `<div class="co-line"><span>블라인드 클리어</span><b>+$${co.blindBase}</b></div>` +
           `<div class="co-line"><span>남은 핸드 ${co.handCash} × $1</span><b>+$${co.handCash}</b></div>` +
           `<div class="co-line"><span>이자 (자금 $5당 $1)</span><b>+$${co.interest}</b></div>`;
@@ -4616,6 +4633,7 @@
       if (window.SharedWallet) {
         try { await SharedWallet.init(); } catch (_) {}
       }
+      try { if (window.GameRankings) GameRankings.injectNavButton("jokerrun"); } catch (_) {}
       updateGoldLabel();
       refreshStartHighScore();
       BGM.init();
