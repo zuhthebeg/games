@@ -2768,7 +2768,10 @@
       FOUR: { name: "포카드", chips: 60, mult: 7 },
       ROYAL_STRAIGHT: { name: "로열 스트레이트", chips: 45, mult: 5 },
       STRAIGHT_FLUSH: { name: "스트레이트 플러시", chips: 100, mult: 8 },
-      ROYAL_FLUSH: { name: "로열 플러시", chips: 130, mult: 10 }
+      ROYAL_FLUSH: { name: "로열 플러시", chips: 130, mult: 10 },
+      FIVE: { name: "파이브 카드", chips: 120, mult: 12 },
+      FLUSH_HOUSE: { name: "플러시 하우스", chips: 140, mult: 14 },
+      FLUSH_FIVE: { name: "플러시 파이브", chips: 160, mult: 16 }
     };
 
     const bossModifiers = [
@@ -2812,12 +2815,12 @@
       { id: "spadeAce", name: "스페이드 에이스", cost: 7, desc: "스페이드당 배수 +0.5", detail: "선택한 카드의 스페이드 1장마다 배수 +0.5.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "spade").length; if (count > 0) { ctx.mult += count * 0.5; ctx.activate("spadeAce"); } } },
       { id: "luckySeven", name: "럭키 세븐", cost: 8, desc: "7 카드당 칩 +77", detail: "선택한 카드 중 숫자 7이 포함될 때마다 칩 +77.", apply(ctx) { const count = ctx.cards.filter(c => c.rank === 7).length; if (count > 0) { ctx.chips += count * 77; ctx.activate("luckySeven"); } } },
       { id: "doubleDown", name: "더블 다운", cost: 10, desc: "투페어면 배수 x2", detail: "족보가 투페어(TWO_PAIR)일 때 배수 x2.", apply(ctx) { if (ctx.handType === "TWO_PAIR") { ctx.mult *= 2; ctx.activate("doubleDown"); } } },
-      { id: "fullHouseFan", name: "풀하우스 팬", cost: 9, desc: "풀하우스면 칩 +100", detail: "족보가 풀하우스(FULL_HOUSE)면 칩 +100.", apply(ctx) { if (ctx.handType === "FULL_HOUSE") { ctx.chips += 100; ctx.activate("fullHouseFan"); } } },
+      { id: "fullHouseFan", name: "풀하우스 팬", cost: 9, desc: "풀하우스면 칩 +100", detail: "족보가 풀하우스(FULL_HOUSE)면 칩 +100.", apply(ctx) { if (isFullHouseHand(ctx.handType)) { ctx.chips += 100; ctx.activate("fullHouseFan"); } } },
       { id: "straightRunner", name: "스트레이트 러너", cost: 8, desc: "스트레이트면 배수 +3", detail: "족보가 스트레이트(STRAIGHT)일 때 배수 +3.", apply(ctx) { if (isStraightHand(ctx.handType)) { ctx.mult += 3; ctx.activate("straightRunner"); } } },
       { id: "diamondMiner", name: "다이아몬드 광부", cost: 6, desc: "다이아당 칩 +12", detail: "선택한 카드 중 다이아몬드 1장당 칩 +12.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "diamond").length; if (count > 0) { ctx.chips += count * 12; ctx.activate("diamondMiner"); } } },
       { id: "clubKing", name: "클럽 킹", cost: 7, desc: "클럽 페이스당 배수 +1", detail: "클럽 문양의 J/Q/K 1장마다 배수 +1.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "club" && c.rank >= 11 && c.rank <= 13).length; if (count > 0) { ctx.mult += count; ctx.activate("clubKing"); } } },
       { id: "allInClown", name: "올인 광대", cost: 12, desc: "5장 플레이 시 배수 x1.5", detail: "정확히 5장을 선택해 플레이하면 배수 x1.5.", apply(ctx) { if (ctx.cards.length === 5) { ctx.mult *= 1.5; ctx.activate("allInClown"); } } },
-      { id: "fourMaster", name: "포카드 마스터", cost: 15, desc: "포카드면 배수 x4", detail: "족보가 포카드(FOUR)면 배수 x4. 신화 등급.", apply(ctx) { if (ctx.handType === "FOUR") { ctx.mult *= 4; ctx.activate("fourMaster"); } } },
+      { id: "fourMaster", name: "포카드 마스터", cost: 15, desc: "포카드면 배수 x4", detail: "족보가 포카드(FOUR)면 배수 x4. 신화 등급.", apply(ctx) { if (ctx.handType === "FOUR" || isFiveHand(ctx.handType)) { ctx.mult *= 4; ctx.activate("fourMaster"); } } },
       { id: "acePower", name: "에이스 파워", cost: 9, desc: "에이스당 칩 +30", detail: "선택한 카드의 에이스(14) 1장당 칩 +30.", apply(ctx) { const n = ctx.cards.filter(c => c.rank === 14).length; if (n > 0) { ctx.chips += n * 30; ctx.activate("acePower"); } } },
       { id: "faceCard", name: "페이스 카드", cost: 7, desc: "J/Q/K당 배수 +0.75", detail: "J/Q/K 1장당 배수 +0.75.", apply(ctx) { const n = ctx.cards.filter(c => c.rank >= 11 && c.rank <= 13).length; if (n > 0) { ctx.mult += n * 0.75; ctx.activate("faceCard"); } } },
       { id: "evenSteven", name: "짝수 마법사", cost: 6, desc: "짝수 카드당 칩 +8", detail: "2~10 짝수 카드 1장당 칩 +8.", apply(ctx) { const n = ctx.cards.filter(c => c.rank % 2 === 0 && c.rank <= 10).length; if (n > 0) { ctx.chips += n * 8; ctx.activate("evenSteven"); } } },
@@ -2828,11 +2831,11 @@
       { id: "royalFlush", name: "로열 조커", cost: 14, desc: "스트레이트 플러시면 배수 x4", detail: "족보가 스트레이트 플러시이면 배수 x4. 신화 등급.", apply(ctx) { if (isStraightFlushHand(ctx.handType)) { ctx.mult *= 4; ctx.activate("royalFlush"); } } },
       { id: "lowCard", name: "로우 카드", cost: 5, desc: "2~5 카드당 칩 +10", detail: "2~5 카드 1장당 칩 +10.", apply(ctx) { const n = ctx.cards.filter(c => c.rank <= 5).length; if (n > 0) { ctx.chips += n * 10; ctx.activate("lowCard"); } } },
       { id: "highCard", name: "하이 카드", cost: 5, desc: "10 이상 카드당 배수 +0.5", detail: "10 이상 카드 1장당 배수 +0.5.", apply(ctx) { const n = ctx.cards.filter(c => c.rank >= 10).length; if (n > 0) { ctx.mult += n * 0.5; ctx.activate("highCard"); } } },
-      { id: "trioMult", name: "트리오 증폭", cost: 9, desc: "트리플 이상이면 배수 x2", detail: "트리플/풀하우스/포카드면 배수 x2.", apply(ctx) { if (["THREE", "FULL_HOUSE", "FOUR"].includes(ctx.handType)) { ctx.mult *= 2; ctx.activate("trioMult"); } } },
+      { id: "trioMult", name: "트리오 증폭", cost: 9, desc: "트리플 이상이면 배수 x2", detail: "트리플/풀하우스/포카드면 배수 x2.", apply(ctx) { if (["THREE", "FULL_HOUSE", "FOUR", "FLUSH_HOUSE", "FIVE", "FLUSH_FIVE"].includes(ctx.handType)) { ctx.mult *= 2; ctx.activate("trioMult"); } } },
       // ── 스케일링 / 신규 조커 (런마다 다른 빌드) ──
       { id: "snowball", name: "눈덩이", cost: 8, desc: "플레이마다 배수 영구 +1", detail: "핸드를 플레이할 때마다 배수 보너스가 영구히 +1씩 쌓입니다. 길게 굴릴수록 강해집니다.", apply(ctx, self) { self.counter = (self.counter || 0) + 1; ctx.mult += self.counter; ctx.activate("snowball"); self.desc = `플레이마다 배수 영구 +1 (현재 +${self.counter})`; } },
       { id: "magnet", name: "칩 자석", cost: 8, desc: "플레이마다 칩 영구 +15", detail: "핸드를 플레이할 때마다 칩 보너스가 영구히 +15씩 쌓입니다.", apply(ctx, self) { self.counter = (self.counter || 0) + 15; ctx.chips += self.counter; ctx.activate("magnet"); self.desc = `플레이마다 칩 영구 +15 (현재 +${self.counter})`; } },
-      { id: "compound", name: "복리 광대", cost: 11, desc: "풀하우스+ 플레이마다 배수 영구 +3", detail: "풀하우스 이상(풀하우스/포카드/스트레이트 플러시)을 플레이할 때마다 배수 보너스가 영구히 +3씩 쌓입니다.", apply(ctx, self) { self.counter = self.counter || 0; if (["FULL_HOUSE", "FOUR", "STRAIGHT_FLUSH", "ROYAL_FLUSH"].includes(ctx.handType)) { self.counter += 3; } if (self.counter > 0) { ctx.mult += self.counter; ctx.activate("compound"); } self.desc = `풀하우스+ 플레이마다 배수 영구 +3 (현재 +${self.counter})`; } },
+      { id: "compound", name: "복리 광대", cost: 11, desc: "풀하우스+ 플레이마다 배수 영구 +3", detail: "풀하우스 이상(풀하우스/포카드/스트레이트 플러시)을 플레이할 때마다 배수 보너스가 영구히 +3씩 쌓입니다.", apply(ctx, self) { self.counter = self.counter || 0; if (["FULL_HOUSE", "FOUR", "STRAIGHT_FLUSH", "ROYAL_FLUSH", "FLUSH_HOUSE", "FIVE", "FLUSH_FIVE"].includes(ctx.handType)) { self.counter += 3; } if (self.counter > 0) { ctx.mult += self.counter; ctx.activate("compound"); } self.desc = `풀하우스+ 플레이마다 배수 영구 +3 (현재 +${self.counter})`; } },
       { id: "legion", name: "광대 군단", cost: 9, desc: "보유 조커 1개당 배수 +1", detail: "현재 보유 중인 조커 1개당 배수 +1. 조커를 많이 모을수록 강해집니다(자기 자신 포함).", apply(ctx, self) { const n = state.jokers.length; if (n > 0) { ctx.mult += n; ctx.activate("legion"); } } },
       { id: "tycoon", name: "자본가", cost: 8, desc: "보유 자금 $5당 배수 +1", detail: "점수 계산 시 보유 자금 $5당 배수 +1. 돈을 아낄수록 강해집니다.", apply(ctx, self) { const add = Math.floor((state.money || 0) / 5); if (add > 0) { ctx.mult += add; ctx.activate("tycoon"); } } },
       { id: "gambler", name: "도박꾼", cost: 7, desc: "25% 확률로 배수 x3", detail: "매 핸드 25% 확률로 배수 x3. 고위험 고수익.", apply(ctx, self) { if (Math.random() < 0.25) { ctx.mult *= 3; ctx.activate("gambler"); } } },
@@ -2851,7 +2854,7 @@
       { id: "lowRoller", name: "로우롤러", cost: 5, rarity: "common", desc: "전부 5 이하면 칩 +45", detail: "플레이 카드가 모두 5 이하이면 칩 +45.", apply(ctx) { if (ctx.cards.length && ctx.cards.every(c => c.rank <= 5)) { ctx.chips += 45; ctx.activate("lowRoller"); } } },
       // ── 진짜 곱배수(×) 조커 — 신화/전설급, 빌드를 폭발시키는 핵심 ──
       { id: "fullmoon", name: "만월", cost: 12, rarity: "rare", mult: true, desc: "무조건 배수 ×2.5", detail: "족보·무늬 상관없이 매 핸드 배수 ×2.5. 단순하지만 강력한 곱연산.", apply(ctx) { if (ctx.cards.length) { ctx.mult *= 2.5; ctx.activate("fullmoon"); } } },
-      { id: "reaperking", name: "사신왕", cost: 14, rarity: "rare", mult: true, desc: "포카드·스플이면 배수 ×5", detail: "족보가 포카드 또는 스트레이트 플러시면 배수 ×5. 고족보 특화 폭발기.", apply(ctx) { if (ctx.handType === "FOUR" || isStraightFlushHand(ctx.handType)) { ctx.mult *= 5; ctx.activate("reaperking"); } } },
+      { id: "reaperking", name: "사신왕", cost: 14, rarity: "rare", mult: true, desc: "포카드·스플이면 배수 ×5", detail: "족보가 포카드 또는 스트레이트 플러시면 배수 ×5. 고족보 특화 폭발기.", apply(ctx) { if (ctx.handType === "FOUR" || isFiveHand(ctx.handType) || isStraightFlushHand(ctx.handType)) { ctx.mult *= 5; ctx.activate("reaperking"); } } },
       { id: "berserk", name: "광폭", cost: 13, rarity: "rare", mult: true, desc: "조커 5칸 가득이면 배수 ×4", detail: "보유 조커가 5개로 가득 차면 배수 ×4. 슬롯을 다 채울수록 보상.", apply(ctx) { if (state.jokers.length >= 5) { ctx.mult *= 4; ctx.activate("berserk"); } } },
       { id: "bloodmoon", name: "블러드문", cost: 16, rarity: "legendary", mult: true, desc: "K·Q 1장당 배수 ×1.5", detail: "플레이한 킹(K)·퀸(Q) 1장마다 배수 ×1.5 누적(2장이면 ×2.25). 페이스 덱의 끝판왕.", apply(ctx) { const n = ctx.cards.filter(c => c.rank === 12 || c.rank === 13).length; if (n > 0) { ctx.mult *= Math.pow(1.5, n); ctx.activate("bloodmoon"); } } },
       { id: "constellation", name: "성좌", cost: 18, rarity: "legendary", mult: true, desc: "행성 사용 누적마다 배수 ×0.2씩 영구 증가", detail: "지금까지 사용한 행성 카드 1장당 배수 배율이 영구히 +0.2. 행성을 모을수록 곱연산이 무한 확장.", apply(ctx, self) { const used = Object.values(state.handLevels || {}).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0); const m = 1 + used * 0.2; if (m > 1) { ctx.mult *= m; ctx.activate("constellation"); } self.desc = `행성 사용 ${used}회 → 배수 ×${m.toFixed(1)}`; } },
@@ -3139,7 +3142,7 @@
       gameEnded: false,
       lastToggledCardId: null,
       shopJokers: [],
-      handLevels: { HIGH_CARD:1, PAIR:1, TWO_PAIR:1, THREE:1, STRAIGHT:1, FLUSH:1, FULL_HOUSE:1, FOUR:1, ROYAL_STRAIGHT:1, STRAIGHT_FLUSH:1, ROYAL_FLUSH:1 },
+      handLevels: { HIGH_CARD:1, PAIR:1, TWO_PAIR:1, THREE:1, STRAIGHT:1, FLUSH:1, FULL_HOUSE:1, FOUR:1, ROYAL_STRAIGHT:1, STRAIGHT_FLUSH:1, ROYAL_FLUSH:1, FIVE:1, FLUSH_HOUSE:1, FLUSH_FIVE:1 },
       planetCards: [],
       tarotCards: [],
       shopPlanets: [],
@@ -3805,7 +3808,7 @@
       document.querySelectorAll(".planet-card-mini.tarot-mini").forEach(btn => {
         const need = parseInt(btn.dataset.need || "0", 10);
         const ok = need === 0 || n === need;
-        btn.disabled = !ok;
+        // disabled로 막으면 상세 팝업조차 안 열림 → 흐림 표시만 하고 클릭은 항상 허용(조건은 팝업 안에서 체크)
         btn.classList.toggle("tarot-disabled", !ok);
       });
     }
@@ -4093,7 +4096,7 @@
       $("#deckModal").classList.remove("show");
     }
 
-    const HAND_ORDER = ["HIGH_CARD","PAIR","TWO_PAIR","THREE","STRAIGHT","FLUSH","FULL_HOUSE","FOUR","ROYAL_STRAIGHT","STRAIGHT_FLUSH","ROYAL_FLUSH"];
+    const HAND_ORDER = ["HIGH_CARD","PAIR","TWO_PAIR","THREE","STRAIGHT","FLUSH","FULL_HOUSE","FOUR","ROYAL_STRAIGHT","STRAIGHT_FLUSH","ROYAL_FLUSH","FIVE","FLUSH_HOUSE","FLUSH_FIVE"];
     function renderHandsInfo() {
       const body = $("#handsInfoBody");
       if (!body) return;
@@ -4185,7 +4188,9 @@
 
     // 족보 계열 판정(로열은 스트레이트/플러시/스플의 상위라 관련 조커가 같이 발동)
     function isStraightHand(ht) { return ht === "STRAIGHT" || ht === "ROYAL_STRAIGHT" || ht === "STRAIGHT_FLUSH" || ht === "ROYAL_FLUSH"; }
-    function isFlushHand(ht) { return ht === "FLUSH" || ht === "STRAIGHT_FLUSH" || ht === "ROYAL_FLUSH"; }
+    function isFlushHand(ht) { return ht === "FLUSH" || ht === "STRAIGHT_FLUSH" || ht === "ROYAL_FLUSH" || ht === "FLUSH_HOUSE" || ht === "FLUSH_FIVE"; }
+    function isFullHouseHand(ht) { return ht === "FULL_HOUSE" || ht === "FLUSH_HOUSE"; }
+    function isFiveHand(ht) { return ht === "FIVE" || ht === "FLUSH_FIVE"; }
     function isStraightFlushHand(ht) { return ht === "STRAIGHT_FLUSH" || ht === "ROYAL_FLUSH"; }
     function scoreHand(cards) {
       if (!cards.length) return { handType: "HIGH_CARD", ...handBase.HIGH_CARD };
@@ -4199,6 +4204,10 @@
         const uniq = [...new Set(ranks)];
         if (uniq.length === 5) isStraight = uniq[4] - uniq[0] === 4 || uniq.join(",") === "2,3,4,5,14";
       }
+      // 시크릿 족보(같은 랭크 5장 / 풀하우스+동일무늬) — 최상위
+      if (isFive && counts[0] === 5 && isFlush) return { handType: "FLUSH_FIVE", ...handBase.FLUSH_FIVE };
+      if (isFive && counts[0] === 3 && counts[1] === 2 && isFlush) return { handType: "FLUSH_HOUSE", ...handBase.FLUSH_HOUSE };
+      if (isFive && counts[0] === 5) return { handType: "FIVE", ...handBase.FIVE };
       const isRoyalRanks = isStraight && [...new Set(ranks)].join(",") === "10,11,12,13,14";  // 10-J-Q-K-A
       if (isStraight && isFlush && isRoyalRanks) return { handType: "ROYAL_FLUSH", ...handBase.ROYAL_FLUSH };
       if (isStraight && isFlush) return { handType: "STRAIGHT_FLUSH", ...handBase.STRAIGHT_FLUSH };
@@ -4216,7 +4225,7 @@
     // 발라트로 규칙: 실제 점수에 기여하는 카드만 반환(키커 제외). 손패 순서 유지.
     function scoringCards(cards, handType) {
       let base;
-      if (["FLUSH", "STRAIGHT", "STRAIGHT_FLUSH", "FULL_HOUSE", "ROYAL_STRAIGHT", "ROYAL_FLUSH"].includes(handType)) {
+      if (["FLUSH", "STRAIGHT", "STRAIGHT_FLUSH", "FULL_HOUSE", "ROYAL_STRAIGHT", "ROYAL_FLUSH", "FIVE", "FLUSH_HOUSE", "FLUSH_FIVE"].includes(handType)) {
         base = cards.slice();
       } else {
         const byRank = {};
@@ -5207,7 +5216,7 @@
       state.ante = 1;
       state.money = 10;
       state.jokers = [];
-      state.handLevels = { HIGH_CARD:1, PAIR:1, TWO_PAIR:1, THREE:1, STRAIGHT:1, FLUSH:1, FULL_HOUSE:1, FOUR:1, ROYAL_STRAIGHT:1, STRAIGHT_FLUSH:1, ROYAL_FLUSH:1 };
+      state.handLevels = { HIGH_CARD:1, PAIR:1, TWO_PAIR:1, THREE:1, STRAIGHT:1, FLUSH:1, FULL_HOUSE:1, FOUR:1, ROYAL_STRAIGHT:1, STRAIGHT_FLUSH:1, ROYAL_FLUSH:1, FIVE:1, FLUSH_HOUSE:1, FLUSH_FIVE:1 };
       state.planetCards = [];
       state.tarotCards = [];
       state.shopPlanets = [];
