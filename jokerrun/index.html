@@ -108,6 +108,7 @@
       overflow: hidden;
       z-index: 1;
     }
+    .app > * { min-width: 0; }   /* grid 자식이 내용으로 폭을 키워 밀어내는 것 방지 */
 
     .glass {
       border: 1px solid var(--border);
@@ -1262,23 +1263,26 @@
 
     .hand-bottom {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      justify-content: center;
+      gap: 6px;
       min-height: 16px;
       padding: 0 4px;
     }
 
     .hand-bottom .info-line {
-      flex: 1;
+      flex-basis: 100%;
+      flex-grow: 0;
+      text-align: center;
       padding: 0;
     }
 
     .deck-btn {
       min-height: 28px;
-      padding: 0 8px;
+      padding: 0 7px;
       border-radius: 8px;
-      font-size: 0.7rem;
+      font-size: 0.66rem;
       font-weight: 800;
       color: #062b22;
       background: linear-gradient(120deg, #9af8ff, #c4ffd2 58%, #ffdd86);
@@ -1665,6 +1669,13 @@
       transition: transform 140ms ease, box-shadow 140ms ease;
     }
     .start-play:active { transform: scale(0.97); }
+    .start-continue {
+      width: auto; align-self: center; padding: 7px 18px; margin-bottom: 10px;
+      font-size: 12.5px; font-weight: 700; border-radius: 10px; cursor: pointer;
+      color: #cfeede; border: 1px solid rgba(120,230,170,.45);
+      background: rgba(46,125,79,.22);
+    }
+    .start-continue:active { transform: scale(0.97); }
     .start-help {
       width: 100%;
       margin-top: 12px;
@@ -2419,7 +2430,7 @@
       <h1 class="start-title">조커런</h1>
       <p class="start-tagline">포커 핸드를 짜고, 조커로 점수를 폭발시켜라.<br>8앤티를 돌파하는 카드 로그라이크.</p>
       <div class="start-hs" id="startHighScore">최고 기록: 0점</div>
-      <button class="start-play" id="startContinueBtn" style="display:none;background:linear-gradient(150deg,#2e7d4f,#1f6b3e)">↩️ 이어하기</button>
+      <button class="start-continue" id="startContinueBtn" style="display:none">↩️ 이어하기</button>
       <button class="start-play" id="startPlayBtn">▶ 플레이</button>
       <button class="start-help" id="startHelpBtn">＂어떻게 하는 거야?＂ — 도움말</button>
     </div>
