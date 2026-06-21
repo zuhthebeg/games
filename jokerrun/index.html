@@ -1185,6 +1185,13 @@
     .card.enh-glass { outline: 2px solid #5fd6f5; outline-offset: -2px; box-shadow: 0 0 10px rgba(95,214,245,.4); }
     .card.enh-steel { outline: 2px solid #c3ccd6; outline-offset: -2px; }
     .card.enh-gold  { outline: 2px solid #ffcf6d; outline-offset: -2px; box-shadow: 0 0 10px rgba(255,207,109,.4); }
+
+    /* 보스 모디파이어로 봉인된 카드(하트 봉인 등) — 흑백 + 자물쇠 */
+    .card.boss-disabled { filter: grayscale(1) brightness(.62); opacity: .82; }
+    .card.boss-disabled::after { content: ""; position: absolute; inset: 0; border-radius: inherit;
+      background: repeating-linear-gradient(45deg, rgba(0,0,0,.32) 0 7px, rgba(0,0,0,.12) 7px 14px); pointer-events: none; z-index: 2; }
+    .card-lock { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 5;
+      font-size: 1.3rem; filter: drop-shadow(0 1px 3px rgba(0,0,0,.8)); pointer-events: none; }
     @keyframes psDeal { from { transform: translateY(18px) scale(.82); opacity: 0; } to { transform: none; opacity: 1; } }
 
     .score-inline {
@@ -2804,7 +2811,9 @@
       gold:  { label:"골드",   short:"$",   endCash:3, color:"#ffcf6d", desc:"라운드 끝 손에 있으면 +$3" }
     };
     function enhOf(c){ return c && c.enh ? ENH[c.enh] : null; }
-    function cardScoreChips(c){ return (RANK_CHIPS[c.rank]||0) + (enhOf(c)?.chips||0); }
+    // 보스 모디파이어로 무력화된 카드(현재: 하트 봉인). 점수에 기여하지 않고 흑백으로 표시된다.
+    function isCardBossDisabled(c){ return state.bossModifier?.id === "no_hearts" && c.suit === "heart"; }
+    function cardScoreChips(c){ if (isCardBossDisabled(c)) return 0; return (RANK_CHIPS[c.rank]||0) + (enhOf(c)?.chips||0); }
     function enhBadgeHTML(card){ const e=enhOf(card); return e ? `<span class="enh-badge" style="background:${e.color}">${e.short}</span>` : ""; }
 
     const jokerGlyphClass = {
@@ -3155,7 +3164,8 @@
     }
 
     function cardInnerHTML(card) {
-      return `${enhBadgeHTML(card)}
+      const locked = isCardBossDisabled(card) ? `<span class="card-lock" aria-label="봉인됨">🚫</span>` : "";
+      return `${enhBadgeHTML(card)}${locked}
   <div class="card-corner card-tl">
     <span class="ci-rank">${formatRank(card.rank)}</span>
     <span class="ci-suit">${suitSymbol[card.suit]}</span>
@@ -3228,7 +3238,7 @@
           const sig = card.suit + ":" + card.rank + ":" + (card.enh || "");
           if (d.dataset.sig !== sig) { d.innerHTML = cardInnerHTML(card); d.dataset.sig = sig; }
         }
-        d.className = `card ${suitClass[card.suit]} ${card.enh ? "enh-" + card.enh : ""} ${state.selected.has(card.id) ? "selected" : ""}`;
+        d.className = `card ${suitClass[card.suit]} ${card.enh ? "enh-" + card.enh : ""} ${isCardBossDisabled(card) ? "boss-disabled" : ""} ${state.selected.has(card.id) ? "selected" : ""}`;
         if (state.lastToggledCardId === card.id) {
           d.classList.add("pick-fx");
           setTimeout(() => d.classList.remove("pick-fx"), 280);
@@ -4040,7 +4050,7 @@
       const map = {};
       cards.forEach((c, i) => {
         const el = document.createElement("div");
-        el.className = `card ps-card ${suitClass[c.suit]} ${c.enh ? "enh-" + c.enh : ""} ${scoringIds.has(String(c.id)) ? "scoring-active" : "scoring-dim"}`;
+        el.className = `card ps-card ${suitClass[c.suit]} ${c.enh ? "enh-" + c.enh : ""} ${isCardBossDisabled(c) ? "boss-disabled" : ""} ${scoringIds.has(String(c.id)) ? "scoring-active" : "scoring-dim"}`;
         el.style.animationDelay = `${i * 40}ms`;
         el.innerHTML = cardInnerHTML(c);
         row.appendChild(el);
@@ -4097,9 +4107,7 @@
         activated: [],
         activate(id) { this.activated.push(id); }
       };
-      if (state.bossModifier?.id === "no_hearts") {
-        ctx.chips = Math.max(5, ctx.chips - cards.filter(c => c.suit === "heart").length * 5);
-      }
+      // 하트 봉인 보스: cardScoreChips가 하트 카드 칩을 0으로 처리(별도 페널티 불필요).
       // ── 발라트로식 순차 점수 연출 (별도 스테이지 팝업) ──
       const kickers = cards.length - scoreCards.length;
       const headText = `<span class="hand-tag">${hand.name}</span>${lvl > 0 ? ` <b style="color:var(--gold)">Lv.${lvl + 1}</b>` : ""} · 유효 <b style="color:var(--gold)">${scoreCards.length}장</b>${kickers > 0 ? ` (키커 ${kickers}장 제외)` : ""}`;
