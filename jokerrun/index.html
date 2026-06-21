@@ -2885,6 +2885,31 @@
       }
       return out;
     }
+    // 가중치 함수로 추첨(타로/행성 등장 빈도 차등용)
+    function weightedSampleBy(pool, n, weightFn){
+      const arr = [...pool]; const out = [];
+      while (out.length < n && arr.length) {
+        const total = arr.reduce((s,x)=>s + Math.max(0.01, weightFn(x)), 0);
+        let r = Math.random() * total, idx = 0;
+        for (let i=0;i<arr.length;i++){ r -= Math.max(0.01, weightFn(arr[i])); if (r<=0){ idx=i; break; } }
+        out.push(arr.splice(idx,1)[0]);
+      }
+      return out;
+    }
+    // 타로 등장 가중치: 돈 버는 타로는 가끔, 카드 강화 타로는 중간, 나머지 일반
+    const MONEY_TAROT = new Set(["hermit", "wheel", "temperance"]);
+    function tarotWeight(t){
+      if (MONEY_TAROT.has(t.id)) return 3;        // 은둔자·수레바퀴·절제 — 드물게
+      if (String(t.id).startsWith("enh_")) return 6;  // 카드 강화 타로 — 중간
+      return 12;                                   // 일반 타로(무늬/랭크 변경 등)
+    }
+    // 행성 등장 가중치: 특수 행성(전체/흡수)은 드물게, 은하(올업 대박)는 가장 희귀
+    function planetWeight(p){
+      if (!p.special) return 12;
+      if (p.id === "galaxy") return 2;
+      if (p.id === "blackhole") return 4;
+      return 3;                                    // 초신성·특이점
+    }
 
     // ── 바우처(Balatro식): 앤티마다 상점에 1개 랜덤 등장, 구매 시 런 내내 영구 효과 ──
     const voucherPool = [
@@ -4619,14 +4644,12 @@
     }
 
     function generateShopPlanets() {
-      const shuffled = [...planetPool].sort(() => Math.random() - 0.5);
-      state.shopPlanets = shuffled.slice(0, 2);
+      state.shopPlanets = weightedSampleBy(planetPool, 2, planetWeight);
     }
 
     function generateShopTarots() {
-      const shuffled = [...tarotPool].sort(() => Math.random() - 0.5);
       const slots = 2 + (hasVoucher("tarotMerchant") ? 1 : 0);  // 타로 상인 바우처
-      state.shopTarots = shuffled.slice(0, slots);
+      state.shopTarots = weightedSampleBy(tarotPool, slots, tarotWeight);
     }
 
     // 플레이 카드는 '마술 트릭' 바우처 보유 시에만 상점에 등장(구매 시 덱에 영구 추가)
