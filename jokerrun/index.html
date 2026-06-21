@@ -1242,6 +1242,9 @@
     .card-lock { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 5;
       font-size: 1.3rem; filter: drop-shadow(0 1px 3px rgba(0,0,0,.8)); pointer-events: none; }
 
+    /* 드래그 재배치 중 카드/조커 */
+    .card.dragging, .joker.dragging { opacity: .72; z-index: 30; box-shadow: 0 8px 26px rgba(0,0,0,.55) !important; cursor: grabbing; transition: none !important; }
+
     /* 스킵 보상 토스트 */
     .skip-reward-toast { position: fixed; top: 18%; left: 50%; transform: translateX(-50%); z-index: 63;
       background: linear-gradient(150deg, rgba(40,30,60,.96), rgba(24,18,38,.96)); border: 1.5px solid rgba(255,207,109,.55);
@@ -3363,6 +3366,7 @@
 
     const SUIT_SORT_ORDER = { spade: 0, heart: 1, club: 2, diamond: 3 };
     function sortHand() {
+      if (state.sortMode === "manual") return;   // 수동 드래그 배치 중엔 자동 정렬 안 함
       if (state.sortMode === "suit") {
         state.hand.sort((a, b) => (SUIT_SORT_ORDER[a.suit] - SUIT_SORT_ORDER[b.suit]) || (b.rank - a.rank));
       } else {
@@ -3440,12 +3444,59 @@
   </div>`;
     }
 
+    // 포인터 기반 드래그 재배치(터치+마우스 통일). 짧게 누르면 탭(_suppressClick=false), 끌면 순서 변경.
+    function makeDraggable(el, selector, onDrop) {
+      el.style.touchAction = "none";
+      el.addEventListener("pointerdown", (e) => {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        if (e.target.closest("button")) return;   // 팔기 등 버튼 제외
+        const sx = e.clientX, sy = e.clientY;
+        let moved = false;
+        const move = (ev) => {
+          if (!moved && (Math.abs(ev.clientX - sx) > 10 || Math.abs(ev.clientY - sy) > 10)) {
+            moved = true; el.classList.add("dragging"); el.style.transform = ""; el.style.boxShadow = "";
+          }
+          if (moved) {
+            ev.preventDefault();
+            const under = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(selector);
+            if (under && under !== el && under.parentNode === el.parentNode && !under.classList.contains("empty")) {
+              const r = under.getBoundingClientRect();
+              const after = ev.clientX > r.left + r.width / 2;
+              el.parentNode.insertBefore(el, after ? under.nextSibling : under);
+            }
+          }
+        };
+        const up = () => {
+          document.removeEventListener("pointermove", move);
+          document.removeEventListener("pointerup", up);
+          document.removeEventListener("pointercancel", up);
+          if (moved) { el.classList.remove("dragging"); el._suppressClick = true; onDrop(); }
+        };
+        document.addEventListener("pointermove", move, { passive: false });
+        document.addEventListener("pointerup", up);
+        document.addEventListener("pointercancel", up);
+      });
+    }
+    function commitHandOrder() {
+      const order = [...cardsWrap.querySelectorAll(".card[data-id]")].map(e => e.dataset.id);
+      state.hand.sort((a, b) => order.indexOf(String(a.id)) - order.indexOf(String(b.id)));
+      state.sortMode = "manual";   // 수동 배치 → 자동 정렬 해제
+      const lbl = $("#sortModeLabel"); if (lbl) lbl.textContent = "수동";
+      renderCards();
+    }
+    function commitJokerOrder() {
+      const order = [...jokerArea.querySelectorAll(".joker[data-idx]")].map(e => +e.dataset.idx);
+      state.jokers = order.map(i => state.jokers[i]).filter(Boolean);
+      renderJokers();
+    }
     function buildCardEl(card) {
         const d = document.createElement("div");
         d.dataset.id = String(card.id);
         d.dataset.sig = card.suit + ":" + card.rank + ":" + (card.enh || "");
         d.innerHTML = cardInnerHTML(card);
+        makeDraggable(d, ".card", commitHandOrder);
         d.addEventListener("click", () => {
+          if (d._suppressClick) { d._suppressClick = false; return; }   // 드래그였으면 선택 무시
           if (state.gameEnded) return;
           if (state.selected.has(card.id)) {
             state.selected.delete(card.id);
@@ -3463,7 +3514,7 @@
           updateConsumableUsability();
         });
         d.addEventListener('mousemove', (e) => {
-          if (state.selected.has(card.id)) return;
+          if (state.selected.has(card.id) || d.classList.contains("dragging")) return;
           const r = d.getBoundingClientRect();
           const x = ((e.clientX - r.left) / r.width - 0.5) * 18;
           const y = ((e.clientY - r.top) / r.height - 0.5) * -18;
@@ -4014,6 +4065,7 @@
         } else {
           box.className = `joker joker-${joker.id} has-sell`;
           box.dataset.jokerId = joker.id;
+          box.dataset.idx = String(i);
           const _r = rarityOf(joker);
           box.style.setProperty("--rar", _r.color);
           box.innerHTML = `
@@ -4024,7 +4076,8 @@
             <span class="joker-desc-mini">${colorizeEffect(joker.desc)}</span>
             <button class="joker-sell" type="button">팔기</button>
           `;
-          box.addEventListener("click", () => openJokerPopup(joker));
+          makeDraggable(box, ".joker", commitJokerOrder);
+          box.addEventListener("click", () => { if (box._suppressClick) { box._suppressClick = false; return; } openJokerPopup(joker); });
           const sellBtn = box.querySelector(".joker-sell");
           sellBtn.addEventListener("click", (event) => {
             event.stopPropagation();
