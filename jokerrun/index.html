@@ -4146,7 +4146,7 @@
             ? `<span style="color:#9fd0ff">${t.exact ? "정확히 " : ""}${t.need}장 선택 후 사용</span>`
             : `<span style="color:#9fd0ff">즉시 사용</span>`;
           return `<div style="display:flex;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08)">
-            <img src="tarot/${t.id}.webp" alt="" style="width:46px;height:64px;object-fit:cover;border-radius:7px;border:1px solid #b56ad688;flex:0 0 auto" onerror="this.style.visibility='hidden'">
+            <img src="tarot/${t.id}.webp?v=2" alt="" loading="lazy" style="width:46px;height:64px;object-fit:cover;border-radius:7px;border:1px solid #b56ad688;flex:0 0 auto;background:#1a0f24" onerror="this.outerHTML='<span style=\\'width:46px;height:64px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex:0 0 auto\\'>🔮</span>'">
             <div style="flex:1;min-width:0">
               <div style="font-weight:800;color:#e7defb">${t.name}${owned ? ` <span style="color:var(--gold);font-size:.72rem">×${owned} 보유</span>` : ""}</div>
               <div style="font-size:.82rem;color:var(--text);margin:2px 0">${t.desc}</div>
