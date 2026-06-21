@@ -1176,6 +1176,16 @@
     .play-stage-cards { display: flex; gap: 6px; flex-wrap: nowrap; justify-content: center; max-width: 98vw; }
     .ps-card { width: clamp(44px, 16.5vw, 72px) !important; flex: 0 0 auto; cursor: default !important; animation: psDeal .32s cubic-bezier(.2,.9,.3,1) both; }
 
+    /* 조커 발동 중앙 카드 플래시 */
+    .joker-flash { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+    .jf-card { width: clamp(110px, 34vw, 150px); aspect-ratio: 5/7; border-radius: 14px; border: 3px solid; overflow: hidden; position: relative;
+      background: #14101e; opacity: 0; transform: scale(.55) rotate(-9deg) translateY(10px);
+      transition: transform .26s cubic-bezier(.2,1.5,.4,1), opacity .18s ease; }
+    .joker-flash.show .jf-card { opacity: 1; transform: scale(1) rotate(0) translateY(0); }
+    .jf-card img { width: 100%; height: 100%; object-fit: cover; }
+    .jf-tag { position: absolute; top: 6px; left: 0; right: 0; text-align: center; font-weight: 900; font-size: .92rem; text-shadow: 0 2px 8px rgba(0,0,0,.9); letter-spacing: 1px; }
+    .jf-name { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,.82)); color: #fff; font-weight: 800; font-size: .76rem; text-align: center; padding: 10px 4px 5px; }
+
     /* 카드 강화(enhancement) 표시 — 손패/스테이지 공통(.card 기반) */
     .enh-badge { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); z-index: 4;
       font-size: .5rem; font-weight: 900; color: #0a0a12; padding: 1px 5px; border-radius: 6px;
@@ -4292,6 +4302,22 @@
     }
     window.restoreRun = restoreRun;
 
+    // 조커 발동 시 그 조커 카드를 화면 중앙에 잠깐 띄우는 연출
+    function flashJokerCard(joker, isMult) {
+      const r = rarityOf(joker);
+      const wrap = document.createElement("div");
+      wrap.className = "joker-flash";
+      const fb = `<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\' style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem\\'></span>`;
+      wrap.innerHTML = `<div class="jf-card" style="border-color:${r.color};box-shadow:0 0 36px ${r.color}99">
+        <img src="jokers/${joker.id}.webp" alt="" draggable="false" onerror="this.outerHTML='${fb}'">
+        <div class="jf-tag" style="color:${isMult ? "#ff8a98" : "#8fd6ff"}">발동!</div>
+        <div class="jf-name">${joker.name}</div>
+      </div>`;
+      document.body.appendChild(wrap);
+      requestAnimationFrame(() => wrap.classList.add("show"));
+      setTimeout(() => { wrap.classList.remove("show"); setTimeout(() => wrap.remove(), 230); }, 420);
+    }
+
     // 점수 계산용 별도 스테이지: 선택 카드를 잘림 없이 크게 띄워 강조
     function buildPlayStage(cards, scoringIds, headText) {
       const stage = document.createElement("div");
@@ -4417,6 +4443,7 @@
         if (ctx.activated.length > ab) {
           const dc = ctx.chips - cb, dm = ctx.mult - mb;
           ps.head.innerHTML = `<b style="color:var(--gold)">${joker.name}</b> 발동!`;
+          flashJokerCard(joker, dm > 0.001 && (MULT_JOKERS.has(joker.id) || dm >= 1));
           const el = jokerArea.querySelector(`.joker[data-joker-id="${joker.id}"]`);
           if (el) { el.classList.remove("active"); void el.offsetWidth; el.classList.add("active"); setTimeout(() => el.classList.remove("active"), 600); }
           if (dc > 0.001) jrFloat(ps.readout, `+${Math.round(dc)} 칩`, "chip");
@@ -4424,7 +4451,7 @@
           AudioFX.play("select");
           JuiceFX.sfx("mult");
           ps.setReadout(ctx.chips, ctx.mult);
-          await wait(360);
+          await wait(430);
         }
       }
       await wait(260);
