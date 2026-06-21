@@ -1186,6 +1186,20 @@
     .jf-tag { position: absolute; top: 6px; left: 0; right: 0; text-align: center; font-weight: 900; font-size: .92rem; text-shadow: 0 2px 8px rgba(0,0,0,.9); letter-spacing: 1px; }
     .jf-name { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,.82)); color: #fff; font-weight: 800; font-size: .76rem; text-align: center; padding: 10px 4px 5px; }
 
+    /* 타로 사용: 중앙에서 회전 → 세로로 잘리며 소멸 */
+    .tarot-flash { position: fixed; inset: 0; z-index: 62; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+    .tf-card { width: clamp(110px, 34vw, 150px); aspect-ratio: 5/7; border-radius: 14px; border: 3px solid #b56ad6; overflow: hidden; position: relative;
+      background: #1a0f24; box-shadow: 0 0 40px rgba(181,106,214,.6); transform-origin: center;
+      opacity: 0; animation: tarotUse 1.05s cubic-bezier(.3,.7,.4,1) forwards; }
+    .tf-card img { width: 100%; height: 100%; object-fit: cover; }
+    @keyframes tarotUse {
+      0%   { opacity: 0; transform: scale(.4) rotate(0deg); }
+      16%  { opacity: 1; transform: scale(1) rotate(0deg); }
+      58%  { opacity: 1; transform: scale(1.04) rotate(390deg); }
+      78%  { opacity: 1; transform: scale(1) rotate(360deg); }
+      100% { opacity: 0; transform: scaleX(0.02) scaleY(1.12) rotate(360deg); filter: brightness(2.4); }
+    }
+
     /* 카드 강화(enhancement) 표시 — 손패/스테이지 공통(.card 기반) */
     .enh-badge { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); z-index: 4;
       font-size: .5rem; font-weight: 900; color: #0a0a12; padding: 1px 5px; border-radius: 6px;
@@ -2750,16 +2764,16 @@
       { id: "clubKing", name: "클럽 킹", cost: 7, desc: "클럽 페이스당 배수 +1", detail: "클럽 문양의 J/Q/K 1장마다 배수 +1.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "club" && c.rank >= 11 && c.rank <= 13).length; if (count > 0) { ctx.mult += count; ctx.activate("clubKing"); } } },
       { id: "allInClown", name: "올인 광대", cost: 12, desc: "5장 플레이 시 배수 x1.5", detail: "정확히 5장을 선택해 플레이하면 배수 x1.5.", apply(ctx) { if (ctx.cards.length === 5) { ctx.mult *= 1.5; ctx.activate("allInClown"); } } },
       { id: "fourMaster", name: "포카드 마스터", cost: 15, desc: "포카드면 배수 x4", detail: "족보가 포카드(FOUR)면 배수 x4. 신화 등급.", apply(ctx) { if (ctx.handType === "FOUR") { ctx.mult *= 4; ctx.activate("fourMaster"); } } },
-      { id: "acePower", name: "에이스 파워", cost: 9, desc: "에이스당 칩 +30", detail: "선택한 카드의 에이스(14) 1장당 칩 +30.", apply(ctx) { ctx.chips += ctx.cards.filter(c => c.rank === 14).length * 30; ctx.activate("acePower"); } },
-      { id: "faceCard", name: "페이스 카드", cost: 7, desc: "J/Q/K당 배수 +0.75", detail: "J/Q/K 1장당 배수 +0.75.", apply(ctx) { const n = ctx.cards.filter(c => c.rank >= 11 && c.rank <= 13).length; ctx.mult += n * 0.75; ctx.activate("faceCard"); } },
-      { id: "evenSteven", name: "짝수 마법사", cost: 6, desc: "짝수 카드당 칩 +8", detail: "2~10 짝수 카드 1장당 칩 +8.", apply(ctx) { const n = ctx.cards.filter(c => c.rank % 2 === 0 && c.rank <= 10).length; ctx.chips += n * 8; ctx.activate("evenSteven"); } },
-      { id: "oddOne", name: "홀수 악당", cost: 6, desc: "홀수 카드당 배수 +0.5", detail: "3~9 홀수 카드 1장당 배수 +0.5.", apply(ctx) { const n = ctx.cards.filter(c => c.rank % 2 === 1 && c.rank <= 9).length; ctx.mult += n * 0.5; ctx.activate("oddOne"); } },
+      { id: "acePower", name: "에이스 파워", cost: 9, desc: "에이스당 칩 +30", detail: "선택한 카드의 에이스(14) 1장당 칩 +30.", apply(ctx) { const n = ctx.cards.filter(c => c.rank === 14).length; if (n > 0) { ctx.chips += n * 30; ctx.activate("acePower"); } } },
+      { id: "faceCard", name: "페이스 카드", cost: 7, desc: "J/Q/K당 배수 +0.75", detail: "J/Q/K 1장당 배수 +0.75.", apply(ctx) { const n = ctx.cards.filter(c => c.rank >= 11 && c.rank <= 13).length; if (n > 0) { ctx.mult += n * 0.75; ctx.activate("faceCard"); } } },
+      { id: "evenSteven", name: "짝수 마법사", cost: 6, desc: "짝수 카드당 칩 +8", detail: "2~10 짝수 카드 1장당 칩 +8.", apply(ctx) { const n = ctx.cards.filter(c => c.rank % 2 === 0 && c.rank <= 10).length; if (n > 0) { ctx.chips += n * 8; ctx.activate("evenSteven"); } } },
+      { id: "oddOne", name: "홀수 악당", cost: 6, desc: "홀수 카드당 배수 +0.5", detail: "3~9 홀수 카드 1장당 배수 +0.5.", apply(ctx) { const n = ctx.cards.filter(c => c.rank % 2 === 1 && c.rank <= 9).length; if (n > 0) { ctx.mult += n * 0.5; ctx.activate("oddOne"); } } },
       { id: "fourFlush", name: "4색 조커", cost: 8, desc: "4가지 무늬 사용 시 배수 x2", detail: "선택한 카드의 무늬가 4종 이상이면 배수 x2.", apply(ctx) { if (new Set(ctx.cards.map(c => c.suit)).size >= 4) { ctx.mult *= 2; ctx.activate("fourFlush"); } } },
       { id: "streakBonus", name: "연속 보너스", cost: 10, desc: "스트레이트면 칩+배수 모두 +5", detail: "스트레이트/스트레이트 플러시일 때 칩+5, 배수+5.", apply(ctx) { if (ctx.handType === "STRAIGHT" || ctx.handType === "STRAIGHT_FLUSH") { ctx.chips += 5; ctx.mult += 5; ctx.activate("streakBonus"); } } },
       { id: "chipRain", name: "칩 비", cost: 11, desc: "핸드당 랜덤 칩 +10~100", detail: "매 핸드 점수 계산 시 칩 +10~100 랜덤 추가.", apply(ctx) { ctx.chips += Math.floor(Math.random() * 91) + 10; ctx.activate("chipRain"); } },
       { id: "royalFlush", name: "로열 조커", cost: 14, desc: "스트레이트 플러시면 배수 x4", detail: "족보가 스트레이트 플러시이면 배수 x4. 신화 등급.", apply(ctx) { if (ctx.handType === "STRAIGHT_FLUSH") { ctx.mult *= 4; ctx.activate("royalFlush"); } } },
-      { id: "lowCard", name: "로우 카드", cost: 5, desc: "2~5 카드당 칩 +10", detail: "2~5 카드 1장당 칩 +10.", apply(ctx) { const n = ctx.cards.filter(c => c.rank <= 5).length; ctx.chips += n * 10; ctx.activate("lowCard"); } },
-      { id: "highCard", name: "하이 카드", cost: 5, desc: "10 이상 카드당 배수 +0.5", detail: "10 이상 카드 1장당 배수 +0.5.", apply(ctx) { const n = ctx.cards.filter(c => c.rank >= 10).length; ctx.mult += n * 0.5; ctx.activate("highCard"); } },
+      { id: "lowCard", name: "로우 카드", cost: 5, desc: "2~5 카드당 칩 +10", detail: "2~5 카드 1장당 칩 +10.", apply(ctx) { const n = ctx.cards.filter(c => c.rank <= 5).length; if (n > 0) { ctx.chips += n * 10; ctx.activate("lowCard"); } } },
+      { id: "highCard", name: "하이 카드", cost: 5, desc: "10 이상 카드당 배수 +0.5", detail: "10 이상 카드 1장당 배수 +0.5.", apply(ctx) { const n = ctx.cards.filter(c => c.rank >= 10).length; if (n > 0) { ctx.mult += n * 0.5; ctx.activate("highCard"); } } },
       { id: "trioMult", name: "트리오 증폭", cost: 9, desc: "트리플 이상이면 배수 x2", detail: "트리플/풀하우스/포카드면 배수 x2.", apply(ctx) { if (["THREE", "FULL_HOUSE", "FOUR"].includes(ctx.handType)) { ctx.mult *= 2; ctx.activate("trioMult"); } } },
       // ── 스케일링 / 신규 조커 (런마다 다른 빌드) ──
       { id: "snowball", name: "눈덩이", cost: 8, desc: "플레이마다 배수 영구 +1", detail: "핸드를 플레이할 때마다 배수 보너스가 영구히 +1씩 쌓입니다. 길게 굴릴수록 강해집니다.", apply(ctx, self) { self.counter = (self.counter || 0) + 1; ctx.mult += self.counter; ctx.activate("snowball"); self.desc = `플레이마다 배수 영구 +1 (현재 +${self.counter})`; } },
@@ -3509,6 +3523,7 @@
         tarot.apply();
       }
       state.tarotCards.splice(idx, 1);
+      flashTarotCard(tarot);
       addLog(`타로 사용: ${tarot.name}`);
       if (anchorEl) showLevelUpPopup(anchorEl);
       updateHandPreview();
@@ -4318,6 +4333,17 @@
       setTimeout(() => { wrap.classList.remove("show"); setTimeout(() => wrap.remove(), 230); }, 420);
     }
 
+    // 타로 사용 시 그 타로 카드를 중앙에 띄워 회전 → 잘리며 소멸하는 연출
+    function flashTarotCard(tarot) {
+      const wrap = document.createElement("div");
+      wrap.className = "tarot-flash";
+      const fb = `<span style=\\'font-size:3rem\\'>🔮</span>`;
+      wrap.innerHTML = `<div class="tf-card"><img src="tarot/${tarot.id}.webp" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${tarot.name}</div></div>`;
+      document.body.appendChild(wrap);
+      try { AudioFX.play("select"); JuiceFX.sfx("chip"); } catch (_) {}
+      setTimeout(() => wrap.remove(), 1100);
+    }
+
     // 점수 계산용 별도 스테이지: 선택 카드를 잘림 없이 크게 띄워 강조
     function buildPlayStage(cards, scoringIds, headText) {
       const stage = document.createElement("div");
@@ -4764,6 +4790,7 @@
               state.shopTarots.splice(idx, 1);
               if (full && instant) {
                 tarot.apply();   // 슬롯 가득 → 즉시 효과 발동, 슬롯 안 차지
+                flashTarotCard(tarot);
                 addLog(`타로 즉시 사용: ${tarot.name} (-$${cost})`);
               } else {
                 state.tarotCards.push({ ...tarot });
