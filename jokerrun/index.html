@@ -1074,6 +1074,66 @@
       line-height: 1.2;
     }
 
+    /* 조커 등급 표시 */
+    .joker-rar {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      z-index: 3;
+      box-shadow: 0 0 6px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.5);
+    }
+    .rar-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    /* 상점 조커 아트 + 등급 배지 */
+    .shop-art-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 5px;
+      background: #0c0a14;
+    }
+    .shop-art {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: top center;
+    }
+    .shop-rarity {
+      position: absolute;
+      top: 4px; left: 4px;
+      font-size: 0.56rem;
+      font-weight: 800;
+      color: #0c0a14;
+      padding: 1px 6px;
+      border-radius: 10px;
+      letter-spacing: .02em;
+    }
+    /* 점수 플로팅 효과 (조커가 만드는 점수) */
+    .jr-fx {
+      position: fixed;
+      z-index: 9999;
+      font-family: var(--display, inherit);
+      font-weight: 900;
+      font-size: 1.1rem;
+      pointer-events: none;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.85);
+      white-space: nowrap;
+    }
+    .jr-fx.chip { color: #5cc8ff; }
+    .jr-fx.mult { color: #ff5d73; }
+    .score-inline b { display: inline-block; }
+    .score-bump { animation: scoreBump 280ms ease; }
+    @keyframes scoreBump { 0%{transform:scale(1)} 40%{transform:scale(1.28)} 100%{transform:scale(1)} }
+
     .score-inline {
       display: flex;
       align-items: center;
@@ -2197,6 +2257,7 @@
       <div class="cards-wrap" id="cardsWrap"></div>
       <div class="hand-bottom">
         <div class="info-line" id="handGuide">손패 8장 중 최대 5장을 선택</div>
+        <button id="handsInfoBtn" class="deck-btn" type="button">📊 족보</button>
         <button id="deckBtn" class="deck-btn" type="button">🃏 덱 (0장)</button>
       </div>
     </section>
@@ -2239,6 +2300,18 @@
       <div class="suit-counts" id="deckSuitCounts">♥0 ♦0 ♣0 ♠0</div>
       <div class="row" style="justify-content:flex-end;">
         <button class="btn-main" id="closeDeckBtn">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="handsModal">
+    <div class="deck-modal">
+      <div class="deck-title">
+        <div class="title">족보 점수표 — 기본 vs 행성 강화</div>
+      </div>
+      <div id="handsInfoBody" style="overflow-y:auto;max-height:60vh"></div>
+      <div class="row" style="justify-content:flex-end;margin-top:10px;">
+        <button class="btn-main" id="closeHandsBtn">닫기</button>
       </div>
     </div>
   </div>
@@ -2362,6 +2435,39 @@
       { id: "tycoon", name: "자본가", cost: 8, desc: "보유 자금 $5당 배수 +1", detail: "점수 계산 시 보유 자금 $5당 배수 +1. 돈을 아낄수록 강해집니다.", apply(ctx, self) { const add = Math.floor((state.money || 0) / 5); if (add > 0) { ctx.mult += add; ctx.activate("tycoon"); } } },
       { id: "gambler", name: "도박꾼", cost: 7, desc: "25% 확률로 배수 x3", detail: "매 핸드 25% 확률로 배수 x3. 고위험 고수익.", apply(ctx, self) { if (Math.random() < 0.25) { ctx.mult *= 3; ctx.activate("gambler"); } } }
     ];
+
+    // ── 조커 등급(레어도) 시스템 ── 발라트로식: 등급↑ = 판매가↑·등장확률↓
+    const RARITY = {
+      common:    { label:"커먼",     color:"#9aa7b4", weight:100, sellMul:1.0 },
+      uncommon:  { label:"언커먼",   color:"#4f9d69", weight:40,  sellMul:1.4 },
+      rare:      { label:"레어",     color:"#d4574e", weight:12,  sellMul:2.0 },
+      legendary: { label:"레전더리", color:"#b56ad6", weight:3,   sellMul:3.0 }
+    };
+    const JOKER_RARITY = {
+      flat50:"common", perCardMult:"common", heartChip:"common", goldDice:"common", diamondMiner:"common",
+      evenSteven:"common", oddOne:"common", lowCard:"common", highCard:"common", faceCard:"common",
+      flushx2:"uncommon", pairBoost:"uncommon", spadeAce:"uncommon", luckySeven:"uncommon", straightRunner:"uncommon",
+      clubKing:"uncommon", acePower:"uncommon", fourFlush:"uncommon", snowball:"uncommon", magnet:"uncommon",
+      gambler:"uncommon", tycoon:"uncommon", legion:"uncommon",
+      doubleDown:"rare", fullHouseFan:"rare", allInClown:"rare", streakBonus:"rare", chipRain:"rare", trioMult:"rare", compound:"rare",
+      fourMaster:"legendary", royalFlush:"legendary"
+    };
+    jokerPool.forEach(j => { j.rarity = JOKER_RARITY[j.id] || "common"; });
+    // 점수 표시용: 배수를 곱하는 조커(× 표기), 나머지는 +Δ 표기
+    const MULT_JOKERS = new Set(["flushx2","doubleDown","fourMaster","allInClown","fourFlush","royalFlush","trioMult","gambler"]);
+    function rarityOf(joker){ return RARITY[joker.rarity || JOKER_RARITY[joker.id] || "common"]; }
+    function jokerSellValue(joker){ return Math.max(2, Math.floor((joker.cost / 2) * rarityOf(joker).sellMul)); }
+    // 등급 가중 랜덤 추첨 (등장확률: 등급 높을수록 낮음)
+    function weightedSample(pool, n){
+      const arr = [...pool]; const out = [];
+      while (out.length < n && arr.length) {
+        const total = arr.reduce((s,j)=>s + (RARITY[j.rarity]?.weight || 100), 0);
+        let r = Math.random() * total, idx = 0;
+        for (let i=0;i<arr.length;i++){ r -= (RARITY[arr[i].rarity]?.weight || 100); if (r<=0){ idx=i; break; } }
+        out.push(arr.splice(idx,1)[0]);
+      }
+      return out;
+    }
 
     const planetPool = [
       { id:"mercury",  name:"수성",  planet:"☿", hand:"PAIR",          chipsBonus:15, multBonus:1 },
@@ -2827,7 +2933,7 @@
     function sellJoker(index, anchorEl) {
       const joker = state.jokers[index];
       if (!joker) return;
-      const refund = Math.floor(joker.cost / 2);
+      const refund = jokerSellValue(joker);
       state.jokers.splice(index, 1);
       state.money += refund;
       addLog(`조커 판매: ${joker.name} (+${refund}골드)`);
@@ -2842,7 +2948,7 @@
       box.innerHTML = "";
       const title = document.createElement("div");
       title.className = "subtitle";
-      title.textContent = "보유 조커 (판매: 반값)";
+      title.textContent = "보유 조커 (판매: 등급별 환급)";
       box.appendChild(title);
       if (!state.jokers.length) {
         const empty = document.createElement("div");
@@ -2856,12 +2962,13 @@
       state.jokers.forEach((joker, index) => {
         const item = document.createElement("div");
         item.className = "shop-owned-item";
+        const _r = rarityOf(joker);
         item.innerHTML = `
-          <div class="shop-owned-name">${joker.name}</div>
-          <div class="shop-owned-refund">환급 ${Math.floor(joker.cost / 2)}골드</div>
+          <div class="shop-owned-name"><span class="rar-dot" style="background:${_r.color}"></span>${joker.name}</div>
+          <div class="shop-owned-refund">환급 ${jokerSellValue(joker)}골드</div>
         `;
         const btn = document.createElement("button");
-        btn.textContent = "팔기 [반값]";
+        btn.textContent = `팔기 +${jokerSellValue(joker)}`;
         btn.addEventListener("click", (event) => {
           event.stopPropagation();
           sellJoker(index, btn);
@@ -2875,9 +2982,10 @@
     function openJokerPopup(joker) {
       const glyph = jokerGlyphClass[joker.id] || "joker-duo";
       $("#jokerPopupIcon").innerHTML = `<img class="joker-popup-art" src="jokers/${joker.id}.webp" alt="" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${glyph}\\'></span>'">`;
-      $("#jokerPopupName").textContent = joker.name;
+      const _r = rarityOf(joker);
+      $("#jokerPopupName").innerHTML = `${joker.name} <span style="font-size:.7rem;font-weight:800;color:${_r.color};border:1px solid ${_r.color}66;border-radius:10px;padding:1px 7px;margin-left:4px;vertical-align:middle">${_r.label}</span>`;
       $("#jokerPopupDesc").textContent = joker.detail || joker.desc;
-      $("#jokerPopupCost").textContent = `획득 비용: $${joker.cost}`;
+      $("#jokerPopupCost").textContent = `획득 비용: $${joker.cost} · 판매가: $${jokerSellValue(joker)}`;
       jokerPopup.classList.add("show");
       AudioFX.play("select");
     }
@@ -2891,6 +2999,33 @@
         el.classList.add("active");
         setTimeout(() => el.classList.remove("active"), 700);
       });
+    }
+
+    // 점수 기여 플로팅 효과 (요소 위로 +칩/×배수 띄움)
+    function jrFloat(el, text, type) {
+      try {
+        const r = el.getBoundingClientRect();
+        const fx = document.createElement("div");
+        fx.className = "jr-fx " + type;
+        fx.textContent = text;
+        fx.style.left = (r.left + r.width / 2 - 12 + (Math.random() * 16 - 8)) + "px";
+        fx.style.top = (r.top - 4) + "px";
+        document.body.appendChild(fx);
+        if (window.anime) {
+          anime({ targets: fx, translateY: [-2, -44], opacity: [0, 1, 1, 0], scale: [0.7, 1.18, 1], duration: 740, easing: "easeOutCubic", complete: () => fx.remove() });
+        } else {
+          fx.style.transition = "transform .72s ease, opacity .72s ease";
+          requestAnimationFrame(() => { fx.style.transform = "translateY(-42px)"; fx.style.opacity = "0"; });
+          setTimeout(() => fx.remove(), 740);
+        }
+      } catch (e) {}
+    }
+
+    // 점수계산 중 칩/배수 러닝 표시 갱신
+    function setRunReadout(c, m) {
+      const cl = $("#chipsLabel"), ml = $("#multLabel");
+      if (cl) { cl.textContent = Math.floor(c).toLocaleString(); cl.classList.remove("score-bump"); void cl.offsetWidth; cl.classList.add("score-bump"); }
+      if (ml) { ml.textContent = "x" + (Math.round(m * 100) / 100); ml.classList.remove("score-bump"); void ml.offsetWidth; ml.classList.add("score-bump"); }
     }
 
     function spawnWinConfetti() {
@@ -2921,9 +3056,12 @@
         } else {
           box.className = `joker joker-${joker.id} has-sell`;
           box.dataset.jokerId = joker.id;
+          const _r = rarityOf(joker);
+          box.style.setProperty("--rar", _r.color);
           box.innerHTML = `
             <img class="joker-art" src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
             <span class="joker-grad" aria-hidden="true"></span>
+            <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
             <span class="joker-name-mini">${joker.name}</span>
             <span class="joker-desc-mini">${joker.desc}</span>
             <button class="joker-sell" type="button">팔기</button>
@@ -2988,6 +3126,46 @@
 
     function closeDeckModal() {
       $("#deckModal").classList.remove("show");
+    }
+
+    const HAND_ORDER = ["HIGH_CARD","PAIR","TWO_PAIR","THREE","STRAIGHT","FLUSH","FULL_HOUSE","FOUR","STRAIGHT_FLUSH"];
+    function renderHandsInfo() {
+      const body = $("#handsInfoBody");
+      if (!body) return;
+      let rows = "";
+      HAND_ORDER.forEach(h => {
+        const base = handBase[h];
+        const lvl = state.handLevels?.[h] || 1;
+        const planet = planetPool.find(p => p.hand === h);
+        const lc = base.chips + (planet ? planet.chipsBonus * (lvl - 1) : 0);
+        const lm = base.mult + (planet ? planet.multBonus * (lvl - 1) : 0);
+        const baseScore = base.chips * base.mult;
+        const lvlScore = lc * lm;
+        const up = lvl > 1;
+        rows += `<tr style="border-bottom:1px solid var(--line,rgba(255,255,255,.08))">
+          <td style="padding:7px 6px;font-weight:700">${base.name}${up?` <span style="color:var(--gold);font-size:.72rem">Lv.${lvl}</span>`:""}</td>
+          <td style="padding:7px 6px;text-align:right;color:var(--muted)">${base.chips}×${base.mult}<br><span style="font-size:.72rem">=${baseScore}</span></td>
+          <td style="padding:7px 6px;text-align:right;font-weight:800;color:${up?'var(--gold)':'var(--text)'}">${lc}×${lm}<br><span style="font-size:.72rem">=${lvlScore}</span></td>
+        </tr>`;
+      });
+      body.innerHTML = `
+        <p style="font-size:.78rem;color:var(--muted);margin:2px 0 8px">기본 점수(칩×배수)와 행성 카드로 레벨업한 현재 점수 비교. 행성 사용 시 영구 상승.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:.86rem">
+          <thead><tr style="border-bottom:1px solid var(--line,rgba(255,255,255,.15))">
+            <th style="text-align:left;padding:5px 6px;color:var(--muted);font-size:.7rem">족보</th>
+            <th style="text-align:right;padding:5px 6px;color:var(--muted);font-size:.7rem">기본</th>
+            <th style="text-align:right;padding:5px 6px;color:var(--muted);font-size:.7rem">현재(강화)</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+    function openHandsModal() {
+      renderHandsInfo();
+      $("#handsModal").classList.add("show");
+      AudioFX.play("select");
+    }
+    function closeHandsModal() {
+      $("#handsModal").classList.remove("show");
     }
 
     function openVictoryModal(message = "") {
@@ -3194,10 +3372,31 @@
       if (state.bossModifier?.id === "no_hearts") {
         ctx.chips = Math.max(5, ctx.chips - cards.filter(c => c.suit === "heart").length * 5);
       }
-      for (const joker of state.jokers) joker.apply(ctx, joker);
+      // ── 발라트로식 순차 점수 연출 ──
+      // 1) 족보 기본(+행성 레벨 강화) 표시
+      setRunReadout(ctx.chips, ctx.mult);
+      setInfo(`<span class="hand-tag">${hand.name}</span>${lvl > 0 ? ` <b style="color:var(--gold)">Lv.${lvl + 1}</b>` : ""} · 기본 ${Math.floor(ctx.chips)}칩 × ${Math.round(ctx.mult * 100) / 100}`);
+      await wait(280);
+      // 2) 조커 왼쪽→오른쪽 순차 발동, 기여분 플로팅
+      for (const joker of state.jokers) {
+        const cb = ctx.chips, mb = ctx.mult, ab = ctx.activated.length;
+        joker.apply(ctx, joker);
+        if (ctx.activated.length > ab) {
+          const dc = ctx.chips - cb, dm = ctx.mult - mb;
+          const el = jokerArea.querySelector(`.joker[data-joker-id="${joker.id}"]`);
+          if (el) {
+            el.classList.remove("active"); void el.offsetWidth; el.classList.add("active");
+            setTimeout(() => el.classList.remove("active"), 600);
+            if (dc > 0.001) jrFloat(el, `+${Math.round(dc)}`, "chip");
+            if (dm > 0.001) jrFloat(el, MULT_JOKERS.has(joker.id) && mb > 0 ? `×${Math.round((ctx.mult / mb) * 100) / 100}` : `+${Math.round(dm * 100) / 100}`, "mult");
+          }
+          AudioFX.play("select");
+          setRunReadout(ctx.chips, ctx.mult);
+          await wait(230);
+        }
+      }
       chips = Math.max(0, Math.floor(ctx.chips));
       mult = Math.max(1, Math.floor(ctx.mult * 100) / 100);
-      pulseJokers(ctx.activated);
       const points = Math.floor(chips * mult);
       const prevScore = state.score;
       state.score += points;
@@ -3236,8 +3435,7 @@
     function generateShopJokers() {
       const owned = new Set(state.jokers.map(j => j.id));
       const available = jokerPool.filter(j => !owned.has(j.id));
-      const shuffled = available.sort(() => Math.random() - 0.5);
-      state.shopJokers = shuffled.slice(0, 3);
+      state.shopJokers = weightedSample(available, 3);
     }
 
     function generateShopPlanets() {
@@ -3275,7 +3473,9 @@
         const afford = state.money >= joker.cost;
         const card = document.createElement("div");
         card.className = "shop-item";
-        card.innerHTML = `<div class="name">${joker.name}</div><div class="desc">${joker.desc}</div><div class="price"><span class="coin" aria-hidden="true"></span>$${joker.cost}</div>`;
+        const _r = rarityOf(joker);
+        card.style.borderColor = _r.color + "88";
+        card.innerHTML = `<div class="shop-art-wrap"><img class="shop-art" src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'"><span class="shop-rarity" style="background:${_r.color}">${_r.label}</span></div><div class="name">${joker.name}</div><div class="desc">${joker.desc}</div><div class="price"><span class="coin" aria-hidden="true"></span>$${joker.cost}</div>`;
         const btn = document.createElement("button");
         btn.textContent = full ? "슬롯 가득 참" : afford ? "구매" : "자금 부족";
         btn.disabled = full || !afford;
@@ -3452,6 +3652,8 @@
     $("#discardBtn").addEventListener("click", discardSelected);
     $("#deckBtn").addEventListener("click", openDeckModal);
     $("#closeDeckBtn").addEventListener("click", closeDeckModal);
+    $("#handsInfoBtn").addEventListener("click", openHandsModal);
+    $("#closeHandsBtn").addEventListener("click", closeHandsModal);
     $("#deckModal").addEventListener("click", (event) => {
       if (event.target === $("#deckModal")) closeDeckModal();
     });
