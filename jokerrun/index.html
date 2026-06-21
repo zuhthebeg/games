@@ -3372,7 +3372,7 @@
     }
 
     function updateGoldLabel() {
-      const gold = window.SharedWallet ? Number(SharedWallet.gold || 0) : 0;
+      const gold = (typeof SharedWallet !== "undefined" && SharedWallet) ? Number(SharedWallet.gold || 0) : 0;
       const txt = `G ${gold.toLocaleString()}`;
       const label = $("#goldLabel");
       if (label) label.textContent = txt;
@@ -5122,7 +5122,7 @@
       let bossGold = 0;
       if (state.roundIndex === 2) {
         bossGold = state.ante * 1000000;
-        try { if (window.SharedWallet && SharedWallet._initialized) SharedWallet.addGold(bossGold); } catch (_) {}
+        try { if ((typeof SharedWallet !== "undefined" && SharedWallet) && SharedWallet._initialized) SharedWallet.addGold(bossGold); } catch (_) {}
         addLog(`보스 격파! 보상 ${bossGold.toLocaleString()} G`);
       }
       state.lastCashout.bossGold = bossGold;
@@ -5333,7 +5333,7 @@
         const rank = idx + 1;
         const reward = (11 - rank) * 1000000;    // 1위 10M ~ 10위 1M
         localStorage.setItem(RANK_REWARD_KEY, String(rank));
-        try { if (window.SharedWallet && SharedWallet._initialized) SharedWallet.addGold(reward); } catch (_) {}
+        try { if ((typeof SharedWallet !== "undefined" && SharedWallet) && SharedWallet._initialized) SharedWallet.addGold(reward); } catch (_) {}
         updateGoldLabel();
         showRankRewardPopup(rank, reward);
       } catch (_) {}
@@ -5361,7 +5361,7 @@
     }
 
     (async () => {
-      if (window.SharedWallet) {
+      if ((typeof SharedWallet !== "undefined" && SharedWallet)) {
         try { await SharedWallet.init(); } catch (_) {}
       }
       try { if (window.GameRankings) GameRankings.injectNavButton("jokerrun"); } catch (_) {}
