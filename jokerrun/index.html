@@ -3378,7 +3378,11 @@
     function renderPlanetCards() { renderConsumablesInto(consumableArea); }
     function refreshConsumables() {
       renderConsumablesInto(consumableArea);
-      if ($("#shopModal").classList.contains("show")) renderConsumablesInto($("#shopConsumableArea"));
+      // 상점이 열려 있으면 소모품 사용으로 슬롯이 비었을 수 있으니 그리드 전체를 재렌더
+      // (구매 버튼의 "소모품 슬롯 가득 참" disabled 상태를 다시 계산해야 함).
+      if ($("#shopModal").classList.contains("show")) {
+        openShop(typeof _shopIsAnteClear !== "undefined" ? _shopIsAnteClear : false);
+      }
     }
     function renderConsumablesInto(container) {
       if (!container) return;
