@@ -383,8 +383,8 @@
       border-image: linear-gradient(135deg, var(--gold), #ff6b6b, var(--gold)) 1;
       flex: 0 0 auto;
       display: grid;
-      grid-template-rows: 24px auto auto;
-      align-content: start;
+      grid-template-rows: 1fr auto auto;
+      align-content: end;
       gap: 2px;
       position: relative;
       overflow: hidden;
@@ -510,6 +510,33 @@
       position: relative;
       display: block;
       filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.32));
+    }
+
+    .joker-art {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      z-index: 0;
+    }
+
+    .joker-grad {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 70%;
+      background: linear-gradient(to top, rgba(8, 6, 16, 0.94) 8%, rgba(8, 6, 16, 0.6) 45%, transparent 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .joker .joker-name-mini,
+    .joker .joker-desc-mini {
+      position: relative;
+      z-index: 2;
     }
 
     .joker-glyph {
@@ -1430,15 +1457,25 @@
     }
 
     .joker-popup-icon {
-      width: 72px;
-      height: 72px;
+      width: 132px;
+      height: 176px;
       border-radius: 14px;
       margin: 0 auto;
       position: relative;
+      overflow: hidden;
       display: grid;
       place-items: center;
       background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 0 20px rgba(255, 215, 0, 0.32);
+    }
+
+    .joker-popup-art {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
     }
 
     .joker-popup-icon .joker-glyph {
@@ -2675,7 +2712,7 @@
 
     function openJokerPopup(joker) {
       const glyph = jokerGlyphClass[joker.id] || "joker-duo";
-      $("#jokerPopupIcon").innerHTML = `<span class="joker-glyph ${glyph}"></span>`;
+      $("#jokerPopupIcon").innerHTML = `<img class="joker-popup-art" src="jokers/${joker.id}.webp" alt="" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${glyph}\\'></span>'">`;
       $("#jokerPopupName").textContent = joker.name;
       $("#jokerPopupDesc").textContent = joker.detail || joker.desc;
       $("#jokerPopupCost").textContent = `획득 비용: $${joker.cost}`;
@@ -2723,7 +2760,8 @@
           box.className = `joker joker-${joker.id} has-sell`;
           box.dataset.jokerId = joker.id;
           box.innerHTML = `
-            <span class="joker-icon" aria-hidden="true"><span class="joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}"></span></span>
+            <img class="joker-art" src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
+            <span class="joker-grad" aria-hidden="true"></span>
             <span class="joker-name-mini">${joker.name}</span>
             <span class="joker-desc-mini">${joker.desc}</span>
             <button class="joker-sell" type="button">팔기</button>
