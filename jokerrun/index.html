@@ -101,7 +101,7 @@
       box-shadow: var(--shadow);
       backdrop-filter: var(--blur);
       display: grid;
-      grid-template-rows: var(--header-h) var(--joker-h) auto var(--score-h) minmax(160px, 1fr) var(--status-h) auto var(--actions-h);
+      grid-template-rows: var(--header-h) auto minmax(150px, 1fr) var(--status-h) var(--actions-h);
       gap: var(--gap);
       padding: 10px;
       position: relative;
@@ -229,13 +229,20 @@
       cursor: not-allowed;
     }
 
-    .joker-strip {
-      padding: 7px;
+    .top-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
       overflow-x: auto;
       overflow-y: hidden;
-      display: flex;
-      gap: 8px;
       scrollbar-width: thin;
+    }
+
+    .joker-strip {
+      display: flex;
+      gap: 6px;
+      flex: 0 0 auto;
     }
 
     .joker-strip::-webkit-scrollbar {
@@ -248,10 +255,11 @@
     }
 
     .consumable-strip {
-      padding: 8px;
-      display: grid;
+      display: flex;
       gap: 6px;
-      min-height: 56px;
+      flex: 0 0 auto;
+      padding-left: 8px;
+      border-left: 1px solid rgba(255, 207, 109, 0.22);
     }
 
     .consumable-title {
@@ -279,8 +287,8 @@
 
     .planet-card-mini {
       flex: 0 0 auto;
-      width: 76px;
-      height: 92px;
+      width: 50px;
+      height: 70px;
       border-radius: 10px;
       border: 1px solid rgba(255, 207, 109, 0.32);
       background: #0c0a14;
@@ -294,6 +302,24 @@
       cursor: pointer;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
       transition: transform var(--ease), box-shadow var(--ease);
+    }
+
+    .planet-card-mini.empty {
+      cursor: default;
+      border-style: dashed;
+      border-color: rgba(255, 255, 255, 0.2);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+      box-shadow: none;
+    }
+
+    .planet-card-mini.empty::before {
+      content: "✦";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: rgba(255, 255, 255, 0.28);
+      font-size: 18px;
     }
 
     .planet-card-mini:hover {
@@ -323,26 +349,32 @@
 
     .planet-card-mini .planet-glyph {
       position: absolute;
-      left: 6px;
-      right: 6px;
-      bottom: 18px;
+      left: 4px;
+      right: 4px;
+      bottom: 15px;
       z-index: 2;
-      font-size: 0.74rem;
+      font-size: 0.6rem;
       line-height: 1.05;
       color: #fff;
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
     }
 
     .planet-card-mini .planet-target {
       position: absolute;
-      left: 6px;
-      right: 6px;
-      bottom: 5px;
+      left: 4px;
+      right: 4px;
+      bottom: 3px;
       z-index: 2;
       color: var(--gold);
-      font-size: 0.58rem;
+      font-size: 0.5rem;
       font-weight: 700;
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
     }
 
     .joker {
@@ -959,36 +991,67 @@
     }
 
     .hand-preview {
-      min-height: 28px;
-      padding: 7px 10px;
+      min-height: 0;
+      max-height: 0;
+      padding: 0 10px;
       border-radius: 12px;
-      border: 1px solid rgba(69, 245, 255, 0.25);
-      background: rgba(7, 18, 16, 0.58);
-      color: rgba(230, 247, 241, 0.78);
+      border: 1px solid rgba(255, 207, 109, 0.22);
+      background: rgba(18, 14, 30, 0.6);
+      color: rgba(236, 232, 245, 0.82);
       font-size: 0.78rem;
       font-weight: 700;
       letter-spacing: 0.01em;
       text-align: center;
       opacity: 0;
-      transform: translateY(4px);
-      transition: opacity 220ms ease, transform 220ms ease, color 220ms ease;
+      overflow: hidden;
+      transition: opacity 200ms ease, max-height 220ms ease, padding 220ms ease, color 200ms ease;
       pointer-events: none;
     }
 
     .hand-preview.show {
       opacity: 1;
-      transform: translateY(0);
-      color: var(--cyan);
-      text-shadow: 0 0 10px rgba(69, 245, 255, 0.35);
+      max-height: 44px;
+      padding: 7px 10px;
+      color: var(--gold);
+      text-shadow: 0 0 10px rgba(255, 207, 109, 0.35);
     }
 
     .table {
       position: relative;
       padding: 8px;
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr) auto;
-      gap: 7px;
+      grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+      gap: 6px;
       overflow: hidden;
+    }
+
+    .score-inline {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 2px 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .score-inline .chips-readout,
+    .score-inline .mult-readout { white-space: nowrap; }
+
+    .score-inline b {
+      color: var(--text);
+      font-size: 0.98rem;
+      text-shadow: 0 0 8px rgba(255, 207, 109, 0.3);
+    }
+
+    .score-inline .score-total {
+      margin-left: auto;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--gold);
+      white-space: nowrap;
+      text-shadow: 0 0 12px rgba(255, 207, 109, 0.5);
+      transition: transform var(--ease), color var(--ease), text-shadow var(--ease);
     }
 
     .info-line {
@@ -1086,7 +1149,6 @@
 
     .card-br {
       align-self: flex-end;
-      transform: rotate(180deg);
     }
 
     .ci-rank {
@@ -2069,18 +2131,17 @@
       </div>
     </header>
 
-    <section class="joker-strip glass" id="jokerArea" aria-label="조커 슬롯"></section>
-    <section class="consumable-strip glass" id="consumableArea" aria-label="소모품"></section>
-
-    <section class="score-line glass">
-      <div class="score-main">
-        <span class="chips-readout">칩 <b id="chipsLabel">0</b></span>
-        <span class="mult-readout">배수 <b id="multLabel">x1</b></span>
-      </div>
-      <div class="score-total" id="scoreLabel">0</div>
+    <section class="top-strip glass">
+      <div class="joker-strip" id="jokerArea" aria-label="조커 슬롯"></div>
+      <div class="consumable-strip" id="consumableArea" aria-label="소모품"></div>
     </section>
 
     <section class="table glass">
+      <div class="score-inline">
+        <span class="chips-readout">칩 <b id="chipsLabel">0</b></span>
+        <span class="mult-readout">배수 <b id="multLabel">x1</b></span>
+        <span class="score-total" id="scoreLabel">0</span>
+      </div>
       <div class="hand-preview" id="handPreview">족보명 | 예상: 0점</div>
       <div class="info-line" id="handResult">핸드를 선택해 플레이하세요.</div>
       <div class="cards-wrap" id="cardsWrap"></div>
@@ -2497,12 +2558,7 @@
       if (card.rank >= 11 && card.rank <= 13) {
         return `<div class="card-face"><div class="face-court"><span class="face-letter">${rankLabel[card.rank]}</span><span class="fc-suit">${s}</span></div></div>`;
       }
-      if (card.rank === 14) {
-        return `<div class="card-face"><span class="pip big" style="left:50%;top:50%">${s}</span></div>`;
-      }
-      const pips = (PIP_POS[card.rank] || []).map(([x, y]) =>
-        `<span class="pip${y > 50 ? " flip" : ""}" style="left:${x}%;top:${y}%">${s}</span>`).join("");
-      return `<div class="card-face">${pips}</div>`;
+      return `<div class="card-face"><span class="pip big" style="left:50%;top:50%">${s}</span></div>`;
     }
 
     function renderCards() {
@@ -2658,20 +2714,15 @@
     function renderPlanetCards() {
       if (!consumableArea) return;
       consumableArea.innerHTML = "";
-      const title = document.createElement("div");
-      title.className = "consumable-title";
-      title.textContent = "소모품";
-      consumableArea.appendChild(title);
-      if (!state.planetCards.length) {
-        const empty = document.createElement("div");
-        empty.className = "consumable-empty";
-        empty.textContent = "보유 중인 플래닛 카드가 없습니다.";
-        consumableArea.appendChild(empty);
-        return;
-      }
-      const list = document.createElement("div");
-      list.className = "consumable-list";
-      state.planetCards.forEach((planet, index) => {
+      for (let i = 0; i < 2; i++) {
+        const planet = state.planetCards[i];
+        if (!planet) {
+          const empty = document.createElement("div");
+          empty.className = "planet-card-mini empty";
+          empty.setAttribute("aria-label", "빈 소모품 슬롯");
+          consumableArea.appendChild(empty);
+          continue;
+        }
         const card = document.createElement("button");
         card.type = "button";
         card.className = "planet-card-mini";
@@ -2683,17 +2734,18 @@
           <span class="planet-target">${handName} Lv.${state.handLevels?.[planet.hand] || 1}</span>
         `;
         card.addEventListener("click", () => {
+          const idx = state.planetCards.indexOf(planet);
+          if (idx < 0) return;
           const current = state.handLevels?.[planet.hand] || 1;
           const newLevel = current + 1;
           state.handLevels[planet.hand] = newLevel;
-          state.planetCards.splice(index, 1);
+          state.planetCards.splice(idx, 1);
           addLog(`${planet.name} 사용: ${handName} Lv.${newLevel}`);
           showLevelUpPopup(card);
           renderHUD();
         });
-        list.appendChild(card);
-      });
-      consumableArea.appendChild(list);
+        consumableArea.appendChild(card);
+      }
     }
 
     function sellJoker(index, anchorEl) {
@@ -3174,13 +3226,14 @@
 
       state.shopPlanets.forEach((planet, idx) => {
         const afford = state.money >= 3;
+        const planetFull = state.planetCards.length >= 2;
         const handName = handBase[planet.hand]?.name || planet.hand;
         const card = document.createElement("div");
         card.className = "shop-item shop-item-planet";
         card.innerHTML = `<div class="name">${planet.planet} ${planet.name}</div><div class="desc">${handName} 영구 강화<br>+${planet.chipsBonus}칩 / +${planet.multBonus}배수</div><div class="price"><span class="coin" aria-hidden="true"></span>$3</div>`;
         const btn = document.createElement("button");
-        btn.textContent = afford ? "구매" : "자금 부족";
-        btn.disabled = !afford;
+        btn.textContent = planetFull ? "슬롯 가득 참" : afford ? "구매" : "자금 부족";
+        btn.disabled = planetFull || !afford;
         btn.addEventListener("click", () => {
           state.money -= 3;
           state.planetCards.push({ ...planet });
