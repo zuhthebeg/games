@@ -1814,8 +1814,8 @@
     }
 
     .shop-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      display: flex;
+      flex-direction: column;
       gap: 8px;
     }
 
@@ -2583,7 +2583,7 @@
   </div>
 
   <script src="/lib/shared-wallet.js?v=20260312a"></script>
-  <script src="/lib/game-rankings.js?v=20260621a"></script>
+  <script src="/lib/game-rankings.js?v=20260621b"></script>
   <script>
     const suits = ["heart", "diamond", "club", "spade"];
     const suitSymbol = { heart: "♥", diamond: "♦", club: "♣", spade: "♠" };
@@ -4039,7 +4039,13 @@
       // 랭킹: 1회 핸드 최고 점수 기준. 세션 베스트 갱신 시에만 제출(서버가 전체 최고 보관).
       if (points > (state.bestHand || 0)) {
         state.bestHand = points;
-        try { if (window.GameRankings) GameRankings.submit("jokerrun", { score: points }); } catch (_) {}
+        (async () => {
+          try {
+            if (!window.GameRankings) return;
+            await GameRankings.submit("jokerrun", { score: points });
+            await maybeRankReward();
+          } catch (_) {}
+        })();
       }
       await animateScore(hand.name, chips, points, mult, prevScore, state.score);
       setInfo(`<span class="hand-tag">${hand.name}</span> | ${chips}칩 × ${mult}배 = <b>${points.toLocaleString()}</b>점`);
@@ -4628,6 +4634,47 @@
     $("#startHelpBtn").addEventListener("click", () => $("#helpModal").classList.add("show"));
     $("#helpCloseBtn").addEventListener("click", () => $("#helpModal").classList.remove("show"));
     $("#helpModal").addEventListener("click", (e) => { if (e.target === $("#helpModal")) $("#helpModal").classList.remove("show"); });
+
+    // 랭킹 등재 축하금: TOP10 진입 시 순위별 1회 지급 (1위 1000만 ~ 10위 100만)
+    const RANK_REWARD_KEY = "jokerrun_rank_reward_done";
+    async function maybeRankReward() {
+      try {
+        if (localStorage.getItem(RANK_REWARD_KEY)) return;
+        if (!window.GameRankings || !GameRankings.getUserInfo) return;
+        const { userId } = GameRankings.getUserInfo();
+        if (!userId) return;
+        const top = await GameRankings.fetchRankings("jokerrun", 10);
+        const idx = (top || []).findIndex(r => r.user_id === userId);
+        if (idx < 0) return;                     // 아직 TOP10 밖이면 다음 갱신 때 재시도
+        const rank = idx + 1;
+        const reward = (11 - rank) * 1000000;    // 1위 10M ~ 10위 1M
+        localStorage.setItem(RANK_REWARD_KEY, String(rank));
+        try { if (window.SharedWallet && SharedWallet._initialized) SharedWallet.addGold(reward); } catch (_) {}
+        updateGoldLabel();
+        showRankRewardPopup(rank, reward);
+      } catch (_) {}
+    }
+    function showRankRewardPopup(rank, reward) {
+      const medal = ["🥇", "🥈", "🥉"][rank - 1] || `${rank}위`;
+      let ov = document.getElementById("rankRewardOverlay");
+      if (ov) ov.remove();
+      ov = document.createElement("div");
+      ov.id = "rankRewardOverlay";
+      ov.style.cssText = "position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.78);padding:20px";
+      ov.innerHTML =
+        `<div style="background:linear-gradient(160deg,#241a2e,#16131f);border:1.5px solid rgba(255,207,109,.55);border-radius:18px;max-width:340px;width:100%;padding:24px 22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6)">
+          <div style="font-size:2.6rem;line-height:1">🏆</div>
+          <div style="font-size:1.15rem;font-weight:900;color:#ffe9a8;margin:8px 0 2px">랭킹 ${medal} 등재!</div>
+          <div style="font-size:.82rem;color:var(--muted,#9aa)">TOP 10 진입 축하금</div>
+          <div style="font-size:1.9rem;font-weight:900;color:#ffcf6d;margin:12px 0">+${reward.toLocaleString()} G</div>
+          <div style="font-size:.7rem;color:var(--muted,#9aa);margin-bottom:14px">최초 1회 지급 · 전역 지갑 반영</div>
+          <button id="rankRewardClose" style="width:100%;padding:11px;border-radius:11px;border:0;font-weight:800;background:linear-gradient(120deg,#ffd76a,#ffb24a);color:#2a1d05;cursor:pointer">확인</button>
+        </div>`;
+      document.body.appendChild(ov);
+      const close = () => ov.remove();
+      ov.querySelector("#rankRewardClose").addEventListener("click", close);
+      ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
+    }
 
     (async () => {
       if (window.SharedWallet) {
