@@ -1227,7 +1227,10 @@
       line-height: 1.35; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.55); pointer-events: none; }
     .card.enh-bonus { outline: 2px solid #5b8fff; outline-offset: -2px; }
     .card.enh-mult  { outline: 2px solid #ff5a6a; outline-offset: -2px; }
-    .card.enh-stone { outline: 2px solid #9aa0a6; outline-offset: -2px; }
+    .card.enh-stone { outline: 2px solid #9aa0a6; outline-offset: -2px; background: linear-gradient(160deg, #71757d 0%, #4a4d54 55%, #34363c 100%) !important; }
+    .stone-face { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+    .stone-rock { font-size: 1.8rem; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+    .stone-chip { font-size: .58rem; font-weight: 900; color: #d6e6ff; }
     .card.enh-glass { outline: 2px solid #5fd6f5; outline-offset: -2px; box-shadow: 0 0 10px rgba(95,214,245,.4); }
     .card.enh-steel { outline: 2px solid #c3ccd6; outline-offset: -2px; }
     .card.enh-gold  { outline: 2px solid #ffcf6d; outline-offset: -2px; box-shadow: 0 0 10px rgba(255,207,109,.4); }
@@ -3342,6 +3345,11 @@
     }
 
     function cardInnerHTML(card) {
+      if (card.enh === "stone") {
+        // 스톤 카드: 무늬/랭크 숨기고 돌맹이로 표현 (+50칩)
+        return `<span class="enh-badge" style="background:#9aa0a6">石</span>
+          <div class="stone-face"><span class="stone-rock">🪨</span><span class="stone-chip">+50</span></div>`;
+      }
       const locked = isCardBossDisabled(card) ? `<span class="card-lock" aria-label="봉인됨">🚫</span>` : "";
       return `${enhBadgeHTML(card)}${locked}
   <div class="card-corner card-tl">
@@ -4133,16 +4141,22 @@
 
     // 발라트로 규칙: 실제 점수에 기여하는 카드만 반환(키커 제외). 손패 순서 유지.
     function scoringCards(cards, handType) {
-      if (["FLUSH", "STRAIGHT", "STRAIGHT_FLUSH", "FULL_HOUSE"].includes(handType)) return cards.slice();
-      const byRank = {};
-      cards.forEach(c => { (byRank[c.rank] = byRank[c.rank] || []).push(c); });
-      if (handType === "FOUR") return cards.filter(c => byRank[c.rank].length === 4);
-      if (handType === "THREE") return cards.filter(c => byRank[c.rank].length === 3);
-      if (handType === "TWO_PAIR") return cards.filter(c => byRank[c.rank].length === 2);
-      if (handType === "PAIR") return cards.filter(c => byRank[c.rank].length === 2);
-      // HIGH_CARD → 가장 높은 카드 1장만
-      const hi = cards.reduce((a, b) => (b.rank > a.rank ? b : a));
-      return [hi];
+      let base;
+      if (["FLUSH", "STRAIGHT", "STRAIGHT_FLUSH", "FULL_HOUSE"].includes(handType)) {
+        base = cards.slice();
+      } else {
+        const byRank = {};
+        cards.forEach(c => { (byRank[c.rank] = byRank[c.rank] || []).push(c); });
+        if (handType === "FOUR") base = cards.filter(c => byRank[c.rank].length === 4);
+        else if (handType === "THREE") base = cards.filter(c => byRank[c.rank].length === 3);
+        else if (handType === "TWO_PAIR") base = cards.filter(c => byRank[c.rank].length === 2);
+        else if (handType === "PAIR") base = cards.filter(c => byRank[c.rank].length === 2);
+        else { const hi = cards.reduce((a, b) => (b.rank > a.rank ? b : a)); base = [hi]; }
+      }
+      // 스톤 카드는 족보와 무관하게 항상 점수에 포함(발라트로 규칙) — 키커여도 +50 적용
+      const baseSet = new Set(base);
+      cards.forEach(c => { if (c.enh === "stone" && !baseSet.has(c)) base.push(c); });
+      return base;
     }
 
     function spawnChipParticles(points) {
@@ -4780,16 +4794,35 @@
             imgSrc: `planets/${planet.id}.webp`, emoji: planet.planet, name: `${planet.planet} ${planet.name}${isSpecial ? "" : " · " + handName}`,
             badgeLabel: isSpecial ? "특수 행성" : null, badgeColor: "#a06bff",
             desc,
-            costLine: `구매 $${cost} · 소모품 슬롯 사용`,
-            actionLabel: planetFull ? "소모품 슬롯 가득 참" : (afford ? `구매 $${cost}` : "자금 부족"),
-            actionDisabled: planetFull || !afford,
+            costLine: planetFull ? `구매 $${cost} · 슬롯 가득 → 구매 즉시 사용` : `구매 $${cost} · 소모품 슬롯 사용`,
+            actionLabel: !afford ? "자금 부족" : (planetFull ? `구매 후 바로 사용 $${cost}` : `구매 $${cost}`),
+            actionDisabled: !afford,
             actionFn: () => {
               closeJokerPopup();
               state.money -= cost;
-              state.planetCards.push({ ...planet });
               markDiscovered("planet", planet.id);
               state.shopPlanets.splice(idx, 1);
-              addLog(`플래닛 구매: ${planet.name} (-$${cost})`);
+              if (planetFull) {
+                // 슬롯 가득 → 슬롯에 안 넣고 즉시 사용
+                if (planet.special === "absorb") {
+                  addLog(`행성 즉시 사용: ${planet.name} (-$${cost})`);
+                  renderHUD();
+                  openSingularityPicker({ ...planet });   // picker 콜백이 refreshConsumables→상점 갱신
+                  return;
+                }
+                if (planet.special) {
+                  flashPlanetCard(planet, applySpecialPlanet(planet));
+                } else {
+                  const hn = handBase[planet.hand]?.name || planet.hand;
+                  const nl = (state.handLevels?.[planet.hand] || 1) + 1;
+                  state.handLevels[planet.hand] = nl;
+                  flashPlanetCard(planet, `${hn} Lv.${nl}`);
+                }
+                addLog(`행성 즉시 사용: ${planet.name} (-$${cost})`);
+              } else {
+                state.planetCards.push({ ...planet });
+                addLog(`플래닛 구매: ${planet.name} (-$${cost})`);
+              }
               renderHUD(); openShop(_shopIsAnteClear);
             }
           })
