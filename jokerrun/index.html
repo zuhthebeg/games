@@ -1020,9 +1020,58 @@
       position: relative;
       padding: 8px;
       display: grid;
-      grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+      grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
       gap: 6px;
       overflow: hidden;
+    }
+
+    .boss-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 79, 110, 0.4);
+      background: linear-gradient(110deg, rgba(40, 8, 16, 0.92), rgba(18, 14, 30, 0.85));
+      box-shadow: 0 0 18px rgba(255, 65, 108, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .boss-banner[hidden] { display: none; }
+
+    .boss-art {
+      width: 46px;
+      height: 60px;
+      flex: 0 0 auto;
+      object-fit: cover;
+      object-position: top center;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 207, 109, 0.45);
+    }
+
+    .boss-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .boss-name {
+      font-size: 0.84rem;
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 0 8px rgba(255, 207, 109, 0.4);
+    }
+
+    .boss-rule {
+      font-size: 0.74rem;
+      font-weight: 800;
+      color: var(--danger);
+    }
+
+    .boss-desc {
+      font-size: 0.68rem;
+      color: var(--muted);
+      line-height: 1.2;
     }
 
     .score-inline {
@@ -2137,6 +2186,7 @@
     </section>
 
     <section class="table glass">
+      <div class="boss-banner" id="bossBanner" hidden></div>
       <div class="score-inline">
         <span class="chips-readout">칩 <b id="chipsLabel">0</b></span>
         <span class="mult-readout">배수 <b id="multLabel">x1</b></span>
@@ -2255,6 +2305,11 @@
       { id: "no_discard", label: "버리기 불가", desc: "이번 블라인드는 버리기를 사용할 수 없습니다." },
       { id: "max3cards", label: "최대 3장 선택", desc: "이번 블라인드는 3장 이하로만 플레이할 수 있습니다." },
       { id: "min4cards", label: "최소 4장 + 버리기 불가", desc: "최소 4장 필수, 버리기 불가. 최후의 블라인드!" }
+    ];
+
+    const bossNames = [
+      "링마스터", "도박왕", "인형술사", "하트브레이커",
+      "시간지기", "사형집행인", "트릭스터", "카니발 군주"
     ];
 
     function getBossModifier(ante) {
@@ -2746,6 +2801,27 @@
         });
         consumableArea.appendChild(card);
       }
+    }
+
+    function renderBossBanner() {
+      const banner = document.getElementById("bossBanner");
+      if (!banner) return;
+      if (!state.isBossBlind) {
+        banner.hidden = true;
+        banner.innerHTML = "";
+        return;
+      }
+      const ante = state.ante;
+      const name = bossNames[ante - 1] || "보스";
+      const mod = state.bossModifier;
+      const rule = mod ? `<span class="boss-rule">⚠️ ${mod.label}</span><span class="boss-desc">${mod.desc}</span>` : `<span class="boss-desc">특수 규칙 없음 — 정면 승부</span>`;
+      banner.hidden = false;
+      banner.innerHTML = `
+        <img class="boss-art" src="bosses/boss${ante}.webp" alt="" draggable="false" onerror="this.style.display='none'">
+        <div class="boss-info">
+          <span class="boss-name">Ante ${ante} 보스 · ${name}</span>
+          ${rule}
+        </div>`;
     }
 
     function sellJoker(index, anchorEl) {
@@ -3271,6 +3347,7 @@
       const blindDefs = getBlindTargets(state.ante);
       const blind = blindDefs[index];
       state.bossModifier = (index === 2 && blind && blind.modifier) ? blind.modifier : null;
+      state.isBossBlind = (index === 2);
       if (state.bossModifier) {
         if (state.bossModifier.id === "no_discard") state.discardsLeft = 0;
         if (state.bossModifier.id === "only2hands") state.handsLeft = 2;
@@ -3280,6 +3357,7 @@
       closeVictoryModal();
       drawToEight();
       renderCards();
+      renderBossBanner();
       renderHUD();
       updateHandPreview();
       setInfo("핸드를 선택해 플레이하세요.");
