@@ -1172,8 +1172,8 @@
     .play-stage-readout .ps-chips { color: #7cd4ff; }
     .play-stage-readout .ps-x { opacity: .65; font-size: 1.1rem; }
     .play-stage-readout .ps-mult { color: #ff7a8c; }
-    .play-stage-cards { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 94vw; }
-    .ps-card { width: clamp(58px, 18vw, 82px) !important; cursor: default !important; animation: psDeal .32s cubic-bezier(.2,.9,.3,1) both; }
+    .play-stage-cards { display: flex; gap: 6px; flex-wrap: nowrap; justify-content: center; max-width: 98vw; }
+    .ps-card { width: clamp(44px, 16.5vw, 72px) !important; flex: 0 0 auto; cursor: default !important; animation: psDeal .32s cubic-bezier(.2,.9,.3,1) both; }
     @keyframes psDeal { from { transform: translateY(18px) scale(.82); opacity: 0; } to { transform: none; opacity: 1; } }
 
     .score-inline {
@@ -2650,7 +2650,7 @@
       { id: "diamondMiner", name: "다이아몬드 광부", cost: 6, desc: "다이아당 칩 +12", detail: "선택한 카드 중 다이아몬드 1장당 칩 +12.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "diamond").length; if (count > 0) { ctx.chips += count * 12; ctx.activate("diamondMiner"); } } },
       { id: "clubKing", name: "클럽 킹", cost: 7, desc: "클럽 페이스당 배수 +1", detail: "클럽 문양의 J/Q/K 1장마다 배수 +1.", apply(ctx) { const count = ctx.cards.filter(c => c.suit === "club" && c.rank >= 11 && c.rank <= 13).length; if (count > 0) { ctx.mult += count; ctx.activate("clubKing"); } } },
       { id: "allInClown", name: "올인 광대", cost: 12, desc: "5장 플레이 시 배수 x1.5", detail: "정확히 5장을 선택해 플레이하면 배수 x1.5.", apply(ctx) { if (ctx.cards.length === 5) { ctx.mult *= 1.5; ctx.activate("allInClown"); } } },
-      { id: "fourMaster", name: "포카드 마스터", cost: 15, desc: "포카드면 배수 x3", detail: "족보가 포카드(FOUR)면 배수 x3.", apply(ctx) { if (ctx.handType === "FOUR") { ctx.mult *= 3; ctx.activate("fourMaster"); } } },
+      { id: "fourMaster", name: "포카드 마스터", cost: 15, desc: "포카드면 배수 x4", detail: "족보가 포카드(FOUR)면 배수 x4. 신화 등급.", apply(ctx) { if (ctx.handType === "FOUR") { ctx.mult *= 4; ctx.activate("fourMaster"); } } },
       { id: "acePower", name: "에이스 파워", cost: 9, desc: "에이스당 칩 +30", detail: "선택한 카드의 에이스(14) 1장당 칩 +30.", apply(ctx) { ctx.chips += ctx.cards.filter(c => c.rank === 14).length * 30; ctx.activate("acePower"); } },
       { id: "faceCard", name: "페이스 카드", cost: 7, desc: "J/Q/K당 배수 +0.75", detail: "J/Q/K 1장당 배수 +0.75.", apply(ctx) { const n = ctx.cards.filter(c => c.rank >= 11 && c.rank <= 13).length; ctx.mult += n * 0.75; ctx.activate("faceCard"); } },
       { id: "evenSteven", name: "짝수 마법사", cost: 6, desc: "짝수 카드당 칩 +8", detail: "2~10 짝수 카드 1장당 칩 +8.", apply(ctx) { const n = ctx.cards.filter(c => c.rank % 2 === 0 && c.rank <= 10).length; ctx.chips += n * 8; ctx.activate("evenSteven"); } },
@@ -2658,14 +2658,14 @@
       { id: "fourFlush", name: "4색 조커", cost: 8, desc: "4가지 무늬 사용 시 배수 x2", detail: "선택한 카드의 무늬가 4종 이상이면 배수 x2.", apply(ctx) { if (new Set(ctx.cards.map(c => c.suit)).size >= 4) { ctx.mult *= 2; ctx.activate("fourFlush"); } } },
       { id: "streakBonus", name: "연속 보너스", cost: 10, desc: "스트레이트면 칩+배수 모두 +5", detail: "스트레이트/스트레이트 플러시일 때 칩+5, 배수+5.", apply(ctx) { if (ctx.handType === "STRAIGHT" || ctx.handType === "STRAIGHT_FLUSH") { ctx.chips += 5; ctx.mult += 5; ctx.activate("streakBonus"); } } },
       { id: "chipRain", name: "칩 비", cost: 11, desc: "핸드당 랜덤 칩 +10~100", detail: "매 핸드 점수 계산 시 칩 +10~100 랜덤 추가.", apply(ctx) { ctx.chips += Math.floor(Math.random() * 91) + 10; ctx.activate("chipRain"); } },
-      { id: "royalFlush", name: "로열 조커", cost: 14, desc: "스트레이트 플러시면 배수 x3", detail: "족보가 스트레이트 플러시이면 배수 x3.", apply(ctx) { if (ctx.handType === "STRAIGHT_FLUSH") { ctx.mult *= 3; ctx.activate("royalFlush"); } } },
+      { id: "royalFlush", name: "로열 조커", cost: 14, desc: "스트레이트 플러시면 배수 x4", detail: "족보가 스트레이트 플러시이면 배수 x4. 신화 등급.", apply(ctx) { if (ctx.handType === "STRAIGHT_FLUSH") { ctx.mult *= 4; ctx.activate("royalFlush"); } } },
       { id: "lowCard", name: "로우 카드", cost: 5, desc: "2~5 카드당 칩 +10", detail: "2~5 카드 1장당 칩 +10.", apply(ctx) { const n = ctx.cards.filter(c => c.rank <= 5).length; ctx.chips += n * 10; ctx.activate("lowCard"); } },
       { id: "highCard", name: "하이 카드", cost: 5, desc: "10 이상 카드당 배수 +0.5", detail: "10 이상 카드 1장당 배수 +0.5.", apply(ctx) { const n = ctx.cards.filter(c => c.rank >= 10).length; ctx.mult += n * 0.5; ctx.activate("highCard"); } },
-      { id: "trioMult", name: "트리오 증폭", cost: 9, desc: "트리플 이상이면 배수 x1.5", detail: "트리플/풀하우스/포카드면 배수 x1.5.", apply(ctx) { if (["THREE", "FULL_HOUSE", "FOUR"].includes(ctx.handType)) { ctx.mult *= 1.5; ctx.activate("trioMult"); } } },
+      { id: "trioMult", name: "트리오 증폭", cost: 9, desc: "트리플 이상이면 배수 x2", detail: "트리플/풀하우스/포카드면 배수 x2.", apply(ctx) { if (["THREE", "FULL_HOUSE", "FOUR"].includes(ctx.handType)) { ctx.mult *= 2; ctx.activate("trioMult"); } } },
       // ── 스케일링 / 신규 조커 (런마다 다른 빌드) ──
       { id: "snowball", name: "눈덩이", cost: 8, desc: "플레이마다 배수 영구 +1", detail: "핸드를 플레이할 때마다 배수 보너스가 영구히 +1씩 쌓입니다. 길게 굴릴수록 강해집니다.", apply(ctx, self) { self.counter = (self.counter || 0) + 1; ctx.mult += self.counter; ctx.activate("snowball"); self.desc = `플레이마다 배수 영구 +1 (현재 +${self.counter})`; } },
       { id: "magnet", name: "칩 자석", cost: 8, desc: "플레이마다 칩 영구 +15", detail: "핸드를 플레이할 때마다 칩 보너스가 영구히 +15씩 쌓입니다.", apply(ctx, self) { self.counter = (self.counter || 0) + 15; ctx.chips += self.counter; ctx.activate("magnet"); self.desc = `플레이마다 칩 영구 +15 (현재 +${self.counter})`; } },
-      { id: "compound", name: "복리 광대", cost: 11, desc: "풀하우스+ 플레이마다 배수 영구 +2", detail: "풀하우스 이상(풀하우스/포카드/스트레이트 플러시)을 플레이할 때마다 배수 보너스가 영구히 +2씩 쌓입니다.", apply(ctx, self) { self.counter = self.counter || 0; if (["FULL_HOUSE", "FOUR", "STRAIGHT_FLUSH"].includes(ctx.handType)) { self.counter += 2; } if (self.counter > 0) { ctx.mult += self.counter; ctx.activate("compound"); } self.desc = `풀하우스+ 플레이마다 배수 영구 +2 (현재 +${self.counter})`; } },
+      { id: "compound", name: "복리 광대", cost: 11, desc: "풀하우스+ 플레이마다 배수 영구 +3", detail: "풀하우스 이상(풀하우스/포카드/스트레이트 플러시)을 플레이할 때마다 배수 보너스가 영구히 +3씩 쌓입니다.", apply(ctx, self) { self.counter = self.counter || 0; if (["FULL_HOUSE", "FOUR", "STRAIGHT_FLUSH"].includes(ctx.handType)) { self.counter += 3; } if (self.counter > 0) { ctx.mult += self.counter; ctx.activate("compound"); } self.desc = `풀하우스+ 플레이마다 배수 영구 +3 (현재 +${self.counter})`; } },
       { id: "legion", name: "광대 군단", cost: 9, desc: "보유 조커 1개당 배수 +1", detail: "현재 보유 중인 조커 1개당 배수 +1. 조커를 많이 모을수록 강해집니다(자기 자신 포함).", apply(ctx, self) { const n = state.jokers.length; if (n > 0) { ctx.mult += n; ctx.activate("legion"); } } },
       { id: "tycoon", name: "자본가", cost: 8, desc: "보유 자금 $5당 배수 +1", detail: "점수 계산 시 보유 자금 $5당 배수 +1. 돈을 아낄수록 강해집니다.", apply(ctx, self) { const add = Math.floor((state.money || 0) / 5); if (add > 0) { ctx.mult += add; ctx.activate("tycoon"); } } },
       { id: "gambler", name: "도박꾼", cost: 7, desc: "25% 확률로 배수 x3", detail: "매 핸드 25% 확률로 배수 x3. 고위험 고수익.", apply(ctx, self) { if (Math.random() < 0.25) { ctx.mult *= 3; ctx.activate("gambler"); } } },
@@ -2687,9 +2687,9 @@
     // ── 조커 등급(레어도) 시스템 ── 발라트로식: 등급↑ = 판매가↑·등장확률↓
     const RARITY = {
       common:    { label:"일반", color:"#9aa7b4", weight:100, sellMul:1.0 },
-      uncommon:  { label:"희귀", color:"#4f9d69", weight:40,  sellMul:1.4 },
-      rare:      { label:"전설", color:"#d4574e", weight:12,  sellMul:2.0 },
-      legendary: { label:"신화", color:"#b56ad6", weight:3,   sellMul:3.0 }
+      uncommon:  { label:"희귀", color:"#4f9d69", weight:34,  sellMul:1.5 },
+      rare:      { label:"전설", color:"#d4574e", weight:7,   sellMul:2.4 },
+      legendary: { label:"신화", color:"#b56ad6", weight:1.6, sellMul:3.5 }
     };
     const JOKER_RARITY = {
       flat50:"common", perCardMult:"common", heartChip:"common", goldDice:"common", diamondMiner:"common",
@@ -4110,10 +4110,12 @@
       state.shopCards = out;
     }
 
-    // 앤티마다 1개 바우처 갱신(이미 보유한 건 제외). 같은 앤티 내에선 유지(리롤로 안 바뀜).
-    function refreshVoucherForAnte() {
-      if (state.voucherAnte === state.ante) return;
-      state.voucherAnte = state.ante;
+    // 바우처 갱신: 보스 클리어(앤티 클리어) 시 새 바우처로 교체. 같은 앤티 내 일반 블라인드 상점에선 유지.
+    // anteClear=true면 다음 앤티 기준으로 갱신 → 보스 깨면 즉시 새 바우처가 뜬다.
+    function refreshVoucherForAnte(anteClear = false) {
+      const targetAnte = anteClear ? state.ante + 1 : state.ante;
+      if (state.voucherAnte === targetAnte) return;
+      state.voucherAnte = targetAnte;
       const avail = voucherPool.filter(v => !hasVoucher(v.id));
       state.shopVoucher = avail.length ? avail[Math.floor(Math.random() * avail.length)] : null;
     }
@@ -4171,7 +4173,7 @@
 
     function openShop(anteClear = false) {
       _shopIsAnteClear = anteClear;
-      refreshVoucherForAnte();
+      refreshVoucherForAnte(anteClear);
       // 상점은 입장 시 1회만 진열. 구매로 비어도 같은 방문 중엔 재진열 안 함(다음 라운드에 갱신).
       if (!state.shopStocked) {
         generateShopJokers();
