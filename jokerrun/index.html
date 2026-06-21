@@ -1174,6 +1174,17 @@
     .play-stage-readout .ps-mult { color: #ff7a8c; }
     .play-stage-cards { display: flex; gap: 6px; flex-wrap: nowrap; justify-content: center; max-width: 98vw; }
     .ps-card { width: clamp(44px, 16.5vw, 72px) !important; flex: 0 0 auto; cursor: default !important; animation: psDeal .32s cubic-bezier(.2,.9,.3,1) both; }
+
+    /* 카드 강화(enhancement) 표시 — 손패/스테이지 공통(.card 기반) */
+    .enh-badge { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); z-index: 4;
+      font-size: .5rem; font-weight: 900; color: #0a0a12; padding: 1px 5px; border-radius: 6px;
+      line-height: 1.35; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.55); pointer-events: none; }
+    .card.enh-bonus { outline: 2px solid #5b8fff; outline-offset: -2px; }
+    .card.enh-mult  { outline: 2px solid #ff5a6a; outline-offset: -2px; }
+    .card.enh-stone { outline: 2px solid #9aa0a6; outline-offset: -2px; }
+    .card.enh-glass { outline: 2px solid #5fd6f5; outline-offset: -2px; box-shadow: 0 0 10px rgba(95,214,245,.4); }
+    .card.enh-steel { outline: 2px solid #c3ccd6; outline-offset: -2px; }
+    .card.enh-gold  { outline: 2px solid #ffcf6d; outline-offset: -2px; box-shadow: 0 0 10px rgba(255,207,109,.4); }
     @keyframes psDeal { from { transform: translateY(18px) scale(.82); opacity: 0; } to { transform: none; opacity: 1; } }
 
     .score-inline {
@@ -2769,9 +2780,30 @@
       { id:"emperor",   name:"황제",     need:2, exact:true, desc:"선택 2장 랭크 +1", apply(sel){ sel.forEach(c=>{ if(c.rank<14) c.rank++; }); } },
       { id:"priestess", name:"여사제",   need:2, desc:"선택 카드 무늬를 왼쪽과 동일하게", apply(sel){ if(sel[0]) sel.forEach(c=>{ c.suit=sel[0].suit; }); } },
       { id:"hanged",    name:"매달린 자", need:2, exact:true, desc:"선택 2장 제거 후 새 카드", apply(sel){ const ids=new Set(sel.map(c=>c.id)); state.hand=state.hand.filter(c=>!ids.has(c.id)); state.selected.clear(); drawToEight(); } },
-      { id:"temperance",name:"절제",     need:0, desc:"조커 판매가 합 획득(최대 $20)", apply(){ const sum=Math.min(20, state.jokers.reduce((s,j)=>s+jokerSellValue(j),0)); state.money=(state.money||0)+sum; } }
+      { id:"temperance",name:"절제",     need:0, desc:"조커 판매가 합 획득(최대 $20)", apply(){ const sum=Math.min(20, state.jokers.reduce((s,j)=>s+jokerSellValue(j),0)); state.money=(state.money||0)+sum; } },
+      // ── 카드 강화 부여 타로 (선택 1장에 enhancement 영구 부여. 덱에 남아 계속 적용) ──
+      { id:"enh_bonus", name:"보너스 인장", need:1, enh:"bonus", desc:"선택 1장 → 보너스 카드(점수 칩 +30)",     apply(sel){ sel.forEach(c=>c.enh="bonus"); } },
+      { id:"enh_mult",  name:"핏빛 인장",   need:1, enh:"mult",  desc:"선택 1장 → 멀티 카드(배수 +4)",          apply(sel){ sel.forEach(c=>c.enh="mult"); } },
+      { id:"enh_stone", name:"탑",          need:1, enh:"stone", desc:"선택 1장 → 스톤 카드(점수 칩 +50)",       apply(sel){ sel.forEach(c=>c.enh="stone"); } },
+      { id:"enh_glass", name:"유리의 연인", need:1, enh:"glass", desc:"선택 1장 → 글래스 카드(배수 ×1.5)",       apply(sel){ sel.forEach(c=>c.enh="glass"); } },
+      { id:"enh_steel", name:"강철 심판",   need:1, enh:"steel", desc:"선택 1장 → 스틸 카드(손에 있으면 배수 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="steel"); } },
+      { id:"enh_gold",  name:"황금 악마",   need:1, enh:"gold",  desc:"선택 1장 → 골드 카드(라운드 끝 보유 시 +$3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } }
     ];
     function consumableCount(){ return (state.planetCards?.length||0) + (state.tarotCards?.length||0); }
+
+    // ── 카드 강화(enhancement) — 발라트로식. 덱 카드(runDeck)에 영구 부여(c.enh). ──
+    // chips: 점수 칩 가산 / multAdd: 배수 가산 / multX: 배수 곱 / heldX: 손에 보유 시 배수 곱 / endCash: 라운드 끝 보유 시 $
+    const ENH = {
+      bonus: { label:"보너스", short:"칩+", chips:30,  color:"#5b8fff", desc:"점수 칩 +30" },
+      mult:  { label:"멀티",   short:"배+", multAdd:4, color:"#ff5a6a", desc:"배수 +4" },
+      stone: { label:"스톤",   short:"石",  chips:50,  color:"#9aa0a6", desc:"점수 칩 +50" },
+      glass: { label:"글래스", short:"◇",  multX:1.5, color:"#5fd6f5", desc:"배수 ×1.5" },
+      steel: { label:"스틸",   short:"鋼",  heldX:1.5, color:"#c3ccd6", desc:"손에 있으면 배수 ×1.5" },
+      gold:  { label:"골드",   short:"$",   endCash:3, color:"#ffcf6d", desc:"라운드 끝 손에 있으면 +$3" }
+    };
+    function enhOf(c){ return c && c.enh ? ENH[c.enh] : null; }
+    function cardScoreChips(c){ return (RANK_CHIPS[c.rank]||0) + (enhOf(c)?.chips||0); }
+    function enhBadgeHTML(card){ const e=enhOf(card); return e ? `<span class="enh-badge" style="background:${e.color}">${e.short}</span>` : ""; }
 
     const jokerGlyphClass = {
       flat50: "joker-bomb",
@@ -3029,14 +3061,20 @@
       };
     }
 
-    function buildDeck(seedText = "") {
-      let id = 0;
+    // 런-영속 덱: 카드 객체가 런 내내 살아남아 enhancement(c.enh)를 영구 보존한다.
+    function buildRunDeck() {
+      let uid = 0;
       const deck = [];
       for (const suit of suits) {
-        for (const rank of rankList) deck.push({ id: id++, suit, rank });
+        for (const rank of rankList) deck.push({ id: uid++, suit, rank, enh: null });
       }
-      // 상점에서 구매해 덱에 추가한 카드(영구)
-      (state.extraCards || []).forEach(c => deck.push({ id: id++, suit: c.suit, rank: c.rank }));
+      state._deckUid = uid;
+      return deck;
+    }
+    // 라운드마다 runDeck을 셔플한 복사본을 플레이용 덱으로(같은 카드 객체 참조 → enh 유지).
+    function dealDeckForRound(seedText = "") {
+      if (!state.runDeck || !state.runDeck.length) state.runDeck = buildRunDeck();
+      const deck = [...state.runDeck];
       const rng = seedText ? mulberry32(hashSeed(seedText)) : Math.random;
       for (let i = deck.length - 1; i > 0; i--) {
         const j = Math.floor(rng() * (i + 1));
@@ -3115,7 +3153,7 @@
     }
 
     function cardInnerHTML(card) {
-      return `
+      return `${enhBadgeHTML(card)}
   <div class="card-corner card-tl">
     <span class="ci-rank">${formatRank(card.rank)}</span>
     <span class="ci-suit">${suitSymbol[card.suit]}</span>
@@ -3130,7 +3168,7 @@
     function buildCardEl(card) {
         const d = document.createElement("div");
         d.dataset.id = String(card.id);
-        d.dataset.sig = card.suit + ":" + card.rank;
+        d.dataset.sig = card.suit + ":" + card.rank + ":" + (card.enh || "");
         d.innerHTML = cardInnerHTML(card);
         d.addEventListener("click", () => {
           if (state.gameEnded) return;
@@ -3185,10 +3223,10 @@
           d.style.transform = "";
           d.style.boxShadow = "";
           // 타로 등으로 무늬/랭크가 바뀐 카드는 내용 갱신(diff 렌더가 DOM 재사용해 안 바뀌던 버그 수정)
-          const sig = card.suit + ":" + card.rank;
+          const sig = card.suit + ":" + card.rank + ":" + (card.enh || "");
           if (d.dataset.sig !== sig) { d.innerHTML = cardInnerHTML(card); d.dataset.sig = sig; }
         }
-        d.className = `card ${suitClass[card.suit]} ${state.selected.has(card.id) ? "selected" : ""}`;
+        d.className = `card ${suitClass[card.suit]} ${card.enh ? "enh-" + card.enh : ""} ${state.selected.has(card.id) ? "selected" : ""}`;
         if (state.lastToggledCardId === card.id) {
           d.classList.add("pick-fx");
           setTimeout(() => d.classList.remove("pick-fx"), 280);
@@ -3229,7 +3267,7 @@
         return;
       }
       const hand = scoreHand(cards);
-      const cardChips = cards.reduce((sum, c) => sum + (RANK_CHIPS[c.rank] || 0), 0);
+      const cardChips = cards.reduce((sum, c) => sum + cardScoreChips(c), 0);
       let chips = hand.chips + cardChips;
       let mult = hand.mult;
       const lvl = (state.handLevels?.[hand.handType] || 1) - 1;
@@ -3924,7 +3962,7 @@
       const map = {};
       cards.forEach((c, i) => {
         const el = document.createElement("div");
-        el.className = `card ps-card ${suitClass[c.suit]} ${scoringIds.has(String(c.id)) ? "scoring-active" : "scoring-dim"}`;
+        el.className = `card ps-card ${suitClass[c.suit]} ${c.enh ? "enh-" + c.enh : ""} ${scoringIds.has(String(c.id)) ? "scoring-active" : "scoring-dim"}`;
         el.style.animationDelay = `${i * 40}ms`;
         el.innerHTML = cardInnerHTML(c);
         row.appendChild(el);
@@ -3943,7 +3981,8 @@
         setRunReadout(c, m);
       };
       const close = () => { stage.classList.remove("show"); setTimeout(() => stage.remove(), 240); };
-      return { stage, row, map, head, readout, setReadout, close };
+      const setHead = (html) => { head.innerHTML = html || ""; };
+      return { stage, row, map, head, readout, setReadout, setHead, close };
     }
 
     async function playSelected() {
@@ -3963,7 +4002,7 @@
       // 점수 기여 카드만 추출(키커 제외) → 그 카드만 강조·칩 가산
       const scoreCards = scoringCards(cards, hand.handType);
       const scoringIds = new Set(scoreCards.map(c => String(c.id)));
-      const cardChips = scoreCards.reduce((sum, c) => sum + (RANK_CHIPS[c.rank] || 0), 0);
+      const cardChips = scoreCards.reduce((sum, c) => sum + cardScoreChips(c), 0);
       let chips = hand.chips + cardChips;
       let mult = hand.mult;
       // 플래닛 레벨 적용
@@ -3995,7 +4034,7 @@
       await wait(380);
       // 1b) 유효 카드만 왼쪽→오른쪽 한 장씩 칩 가산 (스테이지에서 잘림 없이)
       for (const card of scoreCards) {
-        const cc = RANK_CHIPS[card.rank] || 0;
+        const cc = cardScoreChips(card);
         dispChips += cc;
         const cel = ps.map[card.id];
         if (cel) {
@@ -4007,6 +4046,25 @@
         AudioFX.play("select");
         JuiceFX.sfx("chip");
         await wait(300);
+        // 카드 강화: 배수형(멀티/글래스)은 그 카드 채점 직후 즉시 반영
+        const e = enhOf(card);
+        if (e && (e.multAdd || e.multX)) {
+          if (e.multAdd) ctx.mult += e.multAdd;
+          if (e.multX) ctx.mult = Math.round(ctx.mult * e.multX * 100) / 100;
+          ps.setReadout(dispChips, ctx.mult);
+          if (cel) jrFloat(cel, e.multAdd ? `+${e.multAdd}` : `×${e.multX}`, "mult");
+          JuiceFX.sfx("chip");
+          await wait(260);
+        }
+      }
+      // 스틸 카드: 플레이 안 하고 손에 남은 스틸 1장당 배수 ×1.5
+      const _playedSet = new Set(cards.map(c => String(c.id)));
+      const steelHeld = (state.hand || []).filter(c => !_playedSet.has(String(c.id)) && c.enh === "steel").length;
+      if (steelHeld > 0) {
+        for (let i = 0; i < steelHeld; i++) ctx.mult = Math.round(ctx.mult * 1.5 * 100) / 100;
+        ps.setHead(`🔩 스틸 카드 ${steelHeld}장 보유 → 배수 ×${Math.pow(1.5, steelHeld).toFixed(2)}`);
+        ps.setReadout(dispChips, ctx.mult);
+        await wait(420);
       }
       await wait(240);
       // 2) 조커 왼쪽→오른쪽 순차 발동(배수 단계), 기여분은 스테이지 readout 위로 플로팅
@@ -4359,6 +4417,8 @@
                 closeJokerPopup();
                 state.money -= cost;
                 state.extraCards.push({ suit: pc.suit, rank: pc.rank });
+                if (!state.runDeck) state.runDeck = buildRunDeck();
+                state.runDeck.push({ id: state._deckUid++, suit: pc.suit, rank: pc.rank, enh: null });
                 state.shopCards.splice(idx, 1);
                 addLog(`플레이 카드 구매: ${formatRank(pc.rank)}${suitSymbol[pc.suit]} → 덱 추가 (-$${cost})`);
                 renderHUD(); openShop(_shopIsAnteClear);
@@ -4427,7 +4487,7 @@
       state.shopCards = [];
       state.shopStocked = false;
       state.rerollCost = 5;    // 갱신 비용 초기화
-      state.deck = buildDeck(seedText);
+      state.deck = dealDeckForRound(seedText);
       state.hand = [];
       state.selected.clear();
       state.gameEnded = false;
@@ -4462,8 +4522,10 @@
       const handCash = state.handsLeft;                       // 남은 핸드 1 → $1
       const interestCap = hasVoucher("seedMoney") ? 10 : 5;   // 종잣돈 바우처
       const interest = Math.min(interestCap, Math.floor(state.money / 5));
-      const reward = blindBase + handCash + interest;
-      state.lastCashout = { blindBase, handCash, discards: state.discardsLeft, interest, total: reward };
+      const goldHeld = (state.hand || []).filter(c => c.enh === "gold").length;
+      const goldCash = goldHeld * 3;   // 골드 카드: 라운드 끝 손에 있으면 1장당 +$3
+      const reward = blindBase + handCash + interest + goldCash;
+      state.lastCashout = { blindBase, handCash, discards: state.discardsLeft, interest, goldCash, total: reward };
       state.money += reward;
       addLog(`정산: 기본 $${blindBase} + 남은핸드 ${state.handsLeft}×$1 + 이자 $${interest} = +$${reward}`);
       state.gameEnded = true;
@@ -4498,7 +4560,8 @@
           (co.bossGold ? `<div class="co-line co-boss"><span>👑 보스 격파 보상</span><b>+${co.bossGold.toLocaleString()} G</b></div>` : "") +
           `<div class="co-line"><span>블라인드 클리어</span><b>+$${co.blindBase}</b></div>` +
           `<div class="co-line"><span>남은 핸드 ${co.handCash} × $1</span><b>+$${co.handCash}</b></div>` +
-          `<div class="co-line"><span>이자 (자금 $5당 $1)</span><b>+$${co.interest}</b></div>`;
+          `<div class="co-line"><span>이자 (자금 $5당 $1)</span><b>+$${co.interest}</b></div>` +
+          (co.goldCash ? `<div class="co-line"><span>🟡 골드 카드 보유</span><b>+$${co.goldCash}</b></div>` : "");
       }
       const totalEl = $("#cashoutTotal");
       if (totalEl) totalEl.textContent = co.total;
@@ -4542,6 +4605,7 @@
       state.shopTarots = [];
       state.shopCards = [];
       state.extraCards = [];
+      state.runDeck = buildRunDeck();
       state.vouchers = {};
       state.shopVoucher = null;
       state.voucherAnte = 0;
