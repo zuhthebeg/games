@@ -1256,7 +1256,9 @@
       gap: 5px;
       height: 100%;
       min-height: 0;
-      overflow-y: auto;
+      /* 선택 시 카드가 위로 떠올라도(-12px) 잘리지 않게 여유 + 클리핑 해제 */
+      padding-top: 16px;
+      overflow: visible;
     }
 
     .card {
