@@ -1782,7 +1782,7 @@
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 40;
+      z-index: 70;   /* 시작화면(60)보다 위 — 시작화면에서 도움말 모달이 안 뜨던 문제 수정 */
       background: rgba(2, 12, 10, 0.68);
       backdrop-filter: blur(8px);
       padding: 12px;
@@ -2498,7 +2498,6 @@
       <button class="start-continue" id="startContinueBtn" style="display:none">↩️ 이어하기</button>
       <button class="start-play" id="startPlayBtn">▶ 플레이</button>
       <button class="start-help" id="startHelpBtn">＂어떻게 하는 거야?＂ — 도움말</button>
-      <button class="start-help" id="cardSkinBtn" style="margin-top:6px">🎴 카드 스킨: 클래식 트럼프</button>
     </div>
   </div>
 
@@ -3410,7 +3409,7 @@
       }
       const locked = isCardBossDisabled(card) ? `<span class="card-lock" aria-label="봉인됨">🚫</span>` : "";
       // 클래식 스킨: J/Q/K를 오리지널 트럼프 풀카드 이미지로 통째 교체
-      if (FACE_IMG[card.rank] && getCardSkin() === "classic") {
+      if (FACE_IMG[card.rank]) {
         return `${enhBadgeHTML(card)}${locked}<img class="trump-full" src="faces_classic/${FACE_IMG[card.rank]}_${card.suit}.webp?v=2" alt="" draggable="false">`;
       }
       return `${enhBadgeHTML(card)}${locked}
@@ -5299,17 +5298,10 @@
     $("#bgmBtn").addEventListener("click", () => BGM.toggle());
     $("#startPlayBtn").addEventListener("click", beginRun);
     $("#startContinueBtn").addEventListener("click", () => { try { BGM.unlock?.(); } catch (_) {} restoreRun(); });
-    function updateSkinBtn() { const b = $("#cardSkinBtn"); if (b) b.textContent = `🎴 카드 스킨: ${getCardSkin() === "classic" ? "클래식 트럼프" : "판타지 일러스트"}`; }
-    $("#cardSkinBtn").addEventListener("click", () => {
-      setCardSkin(getCardSkin() === "classic" ? "fantasy" : "classic");
-      updateSkinBtn();
-      try { renderCards(); } catch (_) {}
-    });
     $("#ccContinueBtn").addEventListener("click", () => {
       $("#clearConfirmModal").classList.remove("show");
       showCashoutModal(!!state._pendingClearAnte);
     });
-    updateSkinBtn();
     $("#collectionBtn").addEventListener("click", openCollection);
     $("#closeCollectionBtn").addEventListener("click", () => $("#collectionModal").classList.remove("show"));
     document.querySelectorAll(".col-tab").forEach(b => b.addEventListener("click", () => renderCollection(b.dataset.ctab)));
