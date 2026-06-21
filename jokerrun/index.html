@@ -1200,6 +1200,27 @@
       100% { opacity: 0; transform: scaleX(0.02) scaleY(1.12) rotate(360deg); filter: brightness(2.4); }
     }
 
+    /* 행성 사용: 중앙 회전 → 파삭 부서짐 + 레벨업 텍스트 솟구침 */
+    .planet-flash { position: fixed; inset: 0; z-index: 62; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; pointer-events: none; }
+    .pf-card { width: clamp(110px, 34vw, 150px); aspect-ratio: 5/7; border-radius: 14px; border: 3px solid #4a84ff; overflow: hidden; position: relative;
+      background: #0d1530; box-shadow: 0 0 40px rgba(74,132,255,.6); transform-origin: center;
+      opacity: 0; animation: planetUse 1.0s cubic-bezier(.3,.7,.4,1) forwards; }
+    .pf-card img { width: 100%; height: 100%; object-fit: cover; }
+    .pf-level { font-size: 1.3rem; font-weight: 900; color: var(--gold,#ffcf6d); text-shadow: 0 2px 12px rgba(0,0,0,.9), 0 0 18px rgba(255,207,109,.7);
+      opacity: 0; animation: pfLevel 1.2s ease forwards; white-space: nowrap; }
+    @keyframes planetUse {
+      0%   { opacity: 0; transform: scale(.4) rotate(0deg); filter: brightness(1); }
+      16%  { opacity: 1; transform: scale(1) rotate(0deg); }
+      60%  { opacity: 1; transform: scale(1.05) rotate(380deg); }
+      74%  { opacity: 1; transform: scale(1) rotate(360deg); filter: brightness(1.1); }
+      100% { opacity: 0; transform: scale(1.55) rotate(360deg); filter: brightness(2.6) blur(7px); }
+    }
+    @keyframes pfLevel {
+      0%, 45% { opacity: 0; transform: translateY(16px) scale(.6); }
+      62% { opacity: 1; transform: translateY(-6px) scale(1.25); }
+      100% { opacity: 0; transform: translateY(-46px) scale(1); }
+    }
+
     /* 카드 강화(enhancement) 표시 — 손패/스테이지 공통(.card 기반) */
     .enh-badge { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); z-index: 4;
       font-size: .5rem; font-weight: 900; color: #0a0a12; padding: 1px 5px; border-radius: 6px;
@@ -3560,9 +3581,9 @@
       if (planet.special) {
         // 흡수형(특이점)은 족보 선택이 필요하므로 picker를 띄우고 거기서 소비한다.
         if (planet.special === "absorb") { openSingularityPicker(planet); return; }
-        applySpecialPlanet(planet);
+        const txt = applySpecialPlanet(planet);
         state.planetCards.splice(pi, 1);
-        if (anchorEl) showLevelUpPopup(anchorEl);
+        flashPlanetCard(planet, txt);
         renderHUD();
         refreshConsumables();
         return;
@@ -3572,7 +3593,7 @@
       state.handLevels[planet.hand] = newLevel;
       state.planetCards.splice(pi, 1);
       addLog(`${planet.name} 사용: ${handName} Lv.${newLevel}`);
-      if (anchorEl) showLevelUpPopup(anchorEl);
+      flashPlanetCard(planet, `${handName} Lv.${newLevel}`);
       renderHUD();
       refreshConsumables();
     }
@@ -3581,11 +3602,14 @@
       if (planet.special === "all") {
         keys.forEach(k => state.handLevels[k] = (state.handLevels[k] || 1) + planet.amount);
         addLog(`${planet.name}: 모든 족보 레벨 +${planet.amount}`);
+        return `모든 족보 Lv +${planet.amount}`;
       } else if (planet.special === "random") {
         const k = keys[Math.floor(Math.random() * keys.length)];
         state.handLevels[k] = (state.handLevels[k] || 1) + planet.amount;
         addLog(`${planet.name}: ${handBase[k]?.name || k} 레벨 +${planet.amount}`);
+        return `${handBase[k]?.name || k} +${planet.amount}`;
       }
+      return "";
     }
     // 특이점: 모든 족보의 추가 레벨(레벨-1)을 흡수해 선택한 한 족보에 몰빵
     let _singularityPlanet = null;
@@ -3607,7 +3631,7 @@
           if (pi >= 0) state.planetCards.splice(pi, 1);
           addLog(`특이점: 모든 족보 흡수 → ${handBase[h].name} Lv.${1 + total} 몰빵`);
           $("#singularityModal").classList.remove("show");
-          AudioFX.play("win"); JuiceFX.sfx("win");
+          flashPlanetCard(_singularityPlanet, `${handBase[h].name} Lv.${1 + total}`);
           renderHUD(); refreshConsumables();
         });
         body.appendChild(btn);
@@ -4342,6 +4366,17 @@
       document.body.appendChild(wrap);
       try { AudioFX.play("select"); JuiceFX.sfx("chip"); } catch (_) {}
       setTimeout(() => wrap.remove(), 1100);
+    }
+
+    // 행성 사용 시 중앙에서 회전 → 파삭 부서지고 레벨업 텍스트가 솟구치는 연출
+    function flashPlanetCard(planet, levelText) {
+      const wrap = document.createElement("div");
+      wrap.className = "planet-flash";
+      const fb = `<span style=\\'font-size:3rem\\'>${planet.planet || "🪐"}</span>`;
+      wrap.innerHTML = `<div class="pf-card"><img src="planets/${planet.id}.webp" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${planet.name}</div></div><div class="pf-level">${levelText || ""} ▲</div>`;
+      document.body.appendChild(wrap);
+      try { AudioFX.play("win"); JuiceFX.sfx("win"); JuiceFX.shake(6); } catch (_) {}
+      setTimeout(() => wrap.remove(), 1200);
     }
 
     // 점수 계산용 별도 스테이지: 선택 카드를 잘림 없이 크게 띄워 강조
