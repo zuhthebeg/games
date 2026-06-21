@@ -3921,23 +3921,43 @@
     }
 
     function renderDeckModal() {
-      const cards = [...state.deck].sort((a, b) => {
-        const suitDiff = deckOrder[a.suit] - deckOrder[b.suit];
-        if (suitDiff !== 0) return suitDiff;
-        return a.rank - b.rank;
-      });
+      const run = state.runDeck || [];
+      const remainIds = new Set(state.deck.map(c => c.id));   // 덱에 남은(아직 안 뽑힌)
+      const suits4 = ["spade", "heart", "club", "diamond"];
+      const total = { spade: 0, heart: 0, club: 0, diamond: 0 };
+      const remain = { spade: 0, heart: 0, club: 0, diamond: 0 };
+      run.forEach(c => { total[c.suit] = (total[c.suit] || 0) + 1; if (remainIds.has(c.id)) remain[c.suit]++; });
+      const enhanced = run.filter(c => c.enh);
+
+      $("#deckModalTitle").textContent = `덱 ${run.length}장 (남은 ${state.deck.length}장)`;
+      // 무늬별 남은/총
+      $("#deckSuitCounts").innerHTML = suits4.map(s => {
+        const red = s === "heart" || s === "diamond";
+        return `<span style="color:${red ? "#e8546a" : "#cfd6e0"}">${suitSymbol[s]} <b>${remain[s]}</b>/${total[s]}</span>`;
+      }).join("　");
+
       const grid = $("#deckGrid");
       grid.innerHTML = "";
+      // 강화 카드 요약(전체 덱 기준 — 손패/덱 어디 있든 영구 강화)
+      if (enhanced.length) {
+        const eh = document.createElement("div");
+        eh.style.cssText = "grid-column:1/-1;flex-basis:100%;width:100%;font-size:.74rem;line-height:1.7;margin-bottom:6px;padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)";
+        const list = enhanced.sort((a, b) => deckOrder[a.suit] - deckOrder[b.suit] || a.rank - b.rank).map(c => {
+          const e = ENH[c.enh];
+          return `<span style="display:inline-block;margin:1px 4px;padding:1px 6px;border-radius:6px;border:1px solid ${e.color};color:${(c.suit === "heart" || c.suit === "diamond") ? "#e8546a" : "#e8edf3"}">${suitSymbol[c.suit]}${formatRank(c.rank)} <b style="color:${e.color}">${e.label}</b></span>`;
+        }).join("");
+        eh.innerHTML = `✨ <b>강화 카드 ${enhanced.length}장</b><br>${list}`;
+        grid.appendChild(eh);
+      }
+      // 남은 카드 그리드(강화면 테두리색)
+      const cards = [...state.deck].sort((a, b) => (deckOrder[a.suit] - deckOrder[b.suit]) || (a.rank - b.rank));
       cards.forEach(card => {
         const el = document.createElement("div");
         el.className = `deck-card ${card.suit}`;
+        if (card.enh && ENH[card.enh]) { el.style.outline = `2px solid ${ENH[card.enh].color}`; el.style.outlineOffset = "-2px"; el.title = ENH[card.enh].label; }
         el.textContent = `${suitSymbol[card.suit]}${formatRank(card.rank)}`;
         grid.appendChild(el);
       });
-      $("#deckModalTitle").textContent = `남은 카드 (${cards.length}장)`;
-      const counts = { heart: 0, diamond: 0, club: 0, spade: 0 };
-      cards.forEach(card => { counts[card.suit] += 1; });
-      $("#deckSuitCounts").textContent = `♥${counts.heart} ♦${counts.diamond} ♣${counts.club} ♠${counts.spade}`;
     }
 
     function openDeckModal() {
