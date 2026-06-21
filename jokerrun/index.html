@@ -1676,7 +1676,7 @@
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 52;
+      z-index: 80;
       background: rgba(2, 12, 10, 0.75);
       backdrop-filter: blur(10px);
       padding: calc(60px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
@@ -1993,6 +1993,63 @@
     .co-line { display: flex; justify-content: space-between; gap: 12px; padding: 7px 4px; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 0.88rem; color: #d8cda0; }
     .co-line b { color: #ffe9a8; font-weight: 800; }
     .co-total-big { font-size: 1.9rem; font-weight: 900; color: var(--gold,#ffcf6d); text-shadow: 0 2px 14px rgba(255,207,109,.45); margin: 10px 0; }
+
+    /* ── 상점 리뉴얼: 작은 카드형 타일 + 상세 팝업 ── */
+    .shop-toprow { display: flex; justify-content: flex-end; align-items: center; }
+    .reroll-btn-sm { padding: 5px 12px; font-size: 12px; font-weight: 800; border-radius: 8px; background: var(--panel-2, rgba(255,255,255,.06)); border: 1px solid var(--line, rgba(255,255,255,.18)); color: var(--text); cursor: pointer; }
+    .reroll-btn-sm:disabled { opacity: .45; cursor: not-allowed; }
+
+    .shop-tilerow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
+    .shop-tile {
+      width: clamp(66px, 21vw, 86px);
+      padding: 5px 5px 6px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(255,255,255,.18);
+      background: linear-gradient(165deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+      cursor: pointer; color: var(--text);
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      position: relative;
+    }
+    .shop-tile:active { transform: scale(.96); }
+    .tile-art { width: 100%; aspect-ratio: 5/7; border-radius: 7px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.25); }
+    .tile-art img { width: 100%; height: 100%; object-fit: cover; }
+    .tile-art .tile-glyph { font-size: 1.8rem; display: flex; align-items: center; justify-content: center; }
+    .tile-badge { position: absolute; top: 3px; left: 3px; font-size: .56rem; font-weight: 800; color: #fff; padding: 1px 5px; border-radius: 7px; }
+    .tile-name { font-size: .66rem; font-weight: 700; text-align: center; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tile-price { font-size: .72rem; font-weight: 900; color: var(--gold,#ffcf6d); }
+    .tile-price.no-afford { color: #ff7a7a; }
+    .tile-playcard { width: 100%; height: 100%; background: #fefefe; display: flex; align-items: center; justify-content: center; gap: 1px; font-family: "Georgia", serif; font-weight: 900; font-size: 1.15rem; }
+
+    .shop-voucher {
+      display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+      padding: 9px 11px; border-radius: 11px; cursor: pointer; color: var(--text);
+      border: 1.5px solid rgba(255,200,90,.5);
+      background: linear-gradient(150deg, rgba(60,48,18,.55), rgba(34,28,12,.6));
+    }
+    .shop-voucher:active { transform: scale(.98); }
+    .shop-voucher .v-icon { font-size: 1.5rem; }
+    .shop-voucher .v-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    .shop-voucher .v-name { font-weight: 800; font-size: .9rem; color: #ffe9a8; }
+    .shop-voucher .v-desc { font-size: .74rem; color: var(--muted); }
+    .shop-voucher .v-price { font-weight: 900; color: var(--gold,#ffcf6d); }
+    .shop-voucher .v-price.no-afford { color: #ff7a7a; }
+
+    .shop-vouchers-owned { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin: 2px 0 4px; }
+    .shop-vouchers-owned .ov-label { font-size: .68rem; color: var(--muted); font-weight: 700; }
+    .shop-vouchers-owned .ov-chip { font-size: .68rem; font-weight: 700; color: #ffe9a8; background: rgba(255,200,90,.14); border: 1px solid rgba(255,200,90,.3); border-radius: 8px; padding: 1px 7px; }
+
+    .jp-action { background: linear-gradient(120deg, #45f5ff, #8bffe3 55%, #ffd76a); color: #08130f; font-weight: 800; border: 0; }
+    .jp-action:disabled { opacity: .5; cursor: not-allowed; filter: grayscale(.4); }
+    .jp-emoji { font-size: 2.4rem; display: flex; align-items: center; justify-content: center; }
+
+    .shop-owned-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+    .mini-tile { width: clamp(54px, 16vw, 66px); padding: 4px; border-radius: 9px; border: 1.5px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05); cursor: pointer; color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; }
+    .mini-tile:active { transform: scale(.95); }
+    .mini-art { width: 100%; aspect-ratio: 5/7; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.25); }
+    .mini-art img { width: 100%; height: 100%; object-fit: cover; }
+    .mini-art .joker-glyph { font-size: 1.4rem; }
+    .mini-name { font-size: .6rem; font-weight: 700; text-align: center; line-height: 1.05; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mini-dot { position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; }
 
     .shop-item-card { border-color: rgba(255,255,255,0.45) !important; }
     .shop-playcard {
@@ -2418,6 +2475,7 @@
         </div>
       </div>
       <div id="shopCashout" class="shop-cashout" style="display:none"></div>
+      <div id="shopVouchersOwned" class="shop-vouchers-owned" style="display:none"></div>
       <div class="consumable-strip" id="shopConsumableArea" aria-label="보유 소모품(상점에서 사용)" style="margin:6px 0"></div>
       <div class="shop-owned" id="shopOwnedJokers"></div>
       <div class="shop-grid" id="shopGrid"></div>
@@ -2515,6 +2573,7 @@
       <h3 id="jokerPopupName"></h3>
       <p id="jokerPopupDesc"></p>
       <span class="joker-popup-cost" id="jokerPopupCost"></span>
+      <button id="jokerPopupAction" class="jp-action" style="display:none"></button>
       <button onclick="closeJokerPopup()">닫기</button>
     </div>
   </div>
@@ -2622,10 +2681,10 @@
 
     // ── 조커 등급(레어도) 시스템 ── 발라트로식: 등급↑ = 판매가↑·등장확률↓
     const RARITY = {
-      common:    { label:"커먼",     color:"#9aa7b4", weight:100, sellMul:1.0 },
-      uncommon:  { label:"언커먼",   color:"#4f9d69", weight:40,  sellMul:1.4 },
-      rare:      { label:"레어",     color:"#d4574e", weight:12,  sellMul:2.0 },
-      legendary: { label:"레전더리", color:"#b56ad6", weight:3,   sellMul:3.0 }
+      common:    { label:"일반", color:"#9aa7b4", weight:100, sellMul:1.0 },
+      uncommon:  { label:"희귀", color:"#4f9d69", weight:40,  sellMul:1.4 },
+      rare:      { label:"전설", color:"#d4574e", weight:12,  sellMul:2.0 },
+      legendary: { label:"신화", color:"#b56ad6", weight:3,   sellMul:3.0 }
     };
     const JOKER_RARITY = {
       flat50:"common", perCardMult:"common", heartChip:"common", goldDice:"common", diamondMiner:"common",
@@ -2643,17 +2702,39 @@
     const MULT_JOKERS = new Set([..._MULT_SEED, ...jokerPool.filter(j => j.mult).map(j => j.id)]);
     function rarityOf(joker){ return RARITY[joker.rarity || JOKER_RARITY[joker.id] || "common"]; }
     function jokerSellValue(joker){ return Math.max(2, Math.floor((joker.cost / 2) * rarityOf(joker).sellMul)); }
-    // 등급 가중 랜덤 추첨 (등장확률: 등급 높을수록 낮음)
+    // 등급 가중 랜덤 추첨 (등장확률: 등급 높을수록 낮음). 희귀 사냥꾼 바우처면 전설/신화 가중 ↑
+    function rarityWeight(r){
+      const base = RARITY[r]?.weight || 100;
+      if (hasVoucher("rareHunter") && (r === "rare" || r === "legendary")) return base * 5;
+      return base;
+    }
     function weightedSample(pool, n){
       const arr = [...pool]; const out = [];
       while (out.length < n && arr.length) {
-        const total = arr.reduce((s,j)=>s + (RARITY[j.rarity]?.weight || 100), 0);
+        const total = arr.reduce((s,j)=>s + rarityWeight(j.rarity), 0);
         let r = Math.random() * total, idx = 0;
-        for (let i=0;i<arr.length;i++){ r -= (RARITY[arr[i].rarity]?.weight || 100); if (r<=0){ idx=i; break; } }
+        for (let i=0;i<arr.length;i++){ r -= rarityWeight(arr[i].rarity); if (r<=0){ idx=i; break; } }
         out.push(arr.splice(idx,1)[0]);
       }
       return out;
     }
+
+    // ── 바우처(Balatro식): 앤티마다 상점에 1개 랜덤 등장, 구매 시 런 내내 영구 효과 ──
+    const voucherPool = [
+      { id:"clearance",     name:"창고 정리",   cost:10, icon:"🏷️", desc:"상점 전 품목 25% 할인" },
+      { id:"magicTrick",    name:"마술 트릭",   cost:10, icon:"🃏", desc:"상점에 플레이 카드 등장(덱 추가용)" },
+      { id:"rareHunter",    name:"희귀 사냥꾼", cost:12, icon:"🎯", desc:"전설·신화 조커 등장 확률 대폭 증가" },
+      { id:"reroll",        name:"리롤 보조금", cost:10, icon:"🎲", desc:"상점 갱신 비용 -$2" },
+      { id:"tarotMerchant", name:"타로 상인",   cost:10, icon:"🔮", desc:"상점 타로 슬롯 +1" },
+      { id:"overstock",     name:"재고 과잉",   cost:12, icon:"📦", desc:"상점 조커 슬롯 +1" },
+      { id:"seedMoney",     name:"종잣돈",      cost:10, icon:"💰", desc:"이자 상한 $5 → $10" },
+      { id:"grabber",       name:"여분의 손",   cost:12, icon:"✋", desc:"블라인드마다 핸드 +1" },
+      { id:"wasteful",      name:"낭비꾼",      cost:10, icon:"🗑️", desc:"블라인드마다 버리기 +1" }
+    ];
+    function hasVoucher(id){ return !!(state.vouchers && state.vouchers[id]); }
+    function shopDiscount(){ return hasVoucher("clearance") ? 0.25 : 0; }
+    function priceOf(base){ return Math.max(1, Math.ceil(base * (1 - shopDiscount()))); }
+    function effectiveRerollCost(){ return priceOf(Math.max(1, state.rerollCost - (hasVoucher("reroll") ? 2 : 0))); }
 
     const planetPool = [
       { id:"mercury",  name:"수성",  planet:"☿", hand:"PAIR",          chipsBonus:15, multBonus:1 },
@@ -2777,6 +2858,9 @@
       shopTarots: [],
       shopCards: [],
       extraCards: [],
+      vouchers: {},        // 보유 바우처 플래그(영구 효과)
+      shopVoucher: null,   // 이번 앤티에 제시된 바우처
+      voucherAnte: 0,      // 바우처를 생성한 앤티(앤티마다 갱신)
       rerollCost: 5
     };
 
@@ -3367,36 +3451,67 @@
         return;
       }
       const list = document.createElement("div");
-      list.className = "shop-owned-list";
+      list.className = "shop-owned-grid";
       state.jokers.forEach((joker, index) => {
-        const item = document.createElement("div");
-        item.className = "shop-owned-item";
         const _r = rarityOf(joker);
-        item.innerHTML = `
-          <div class="shop-owned-name"><span class="rar-dot" style="background:${_r.color}"></span>${joker.name}</div>
-          <div class="shop-owned-refund">환급 ${jokerSellValue(joker)}골드</div>
-        `;
-        const btn = document.createElement("button");
-        btn.textContent = `팔기 +${jokerSellValue(joker)}`;
-        btn.addEventListener("click", (event) => {
-          event.stopPropagation();
-          sellJoker(index, btn);
+        const tile = document.createElement("button");
+        tile.type = "button";
+        tile.className = "mini-tile";
+        tile.style.borderColor = _r.color + "88";
+        tile.innerHTML = `<div class="mini-art"><img src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>`;
+        tile.addEventListener("click", () => {
+          openDetailPopup({
+            imgSrc: `jokers/${joker.id}.webp`,
+            glyph: jokerGlyphClass[joker.id] || "joker-duo",
+            name: joker.name, badgeLabel: _r.label, badgeColor: _r.color,
+            desc: joker.detail || joker.desc,
+            costLine: `판매 시 +$${jokerSellValue(joker)} 환급`,
+            actionLabel: `팔기 +$${jokerSellValue(joker)}`,
+            actionFn: () => { closeJokerPopup(); sellJoker(index, tile); }
+          });
         });
-        item.appendChild(btn);
-        list.appendChild(item);
+        list.appendChild(tile);
       });
       box.appendChild(list);
     }
 
-    function openJokerPopup(joker) {
-      const glyph = jokerGlyphClass[joker.id] || "joker-duo";
-      $("#jokerPopupIcon").innerHTML = `<img class="joker-popup-art" src="jokers/${joker.id}.webp" alt="" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${glyph}\\'></span>'">`;
-      const _r = rarityOf(joker);
-      $("#jokerPopupName").innerHTML = `${joker.name} <span style="font-size:.7rem;font-weight:800;color:${_r.color};border:1px solid ${_r.color}66;border-radius:10px;padding:1px 7px;margin-left:4px;vertical-align:middle">${_r.label}</span>`;
-      $("#jokerPopupDesc").textContent = joker.detail || joker.desc;
-      $("#jokerPopupCost").textContent = `획득 비용: $${joker.cost} · 판매가: $${jokerSellValue(joker)}`;
+    // 범용 상세 팝업: 아트/글리프/이모지 + 이름 + 등급뱃지 + 설명 + 비용줄 + (선택)액션버튼
+    function openDetailPopup(opts) {
+      const icon = $("#jokerPopupIcon");
+      if (opts.imgSrc) {
+        icon.innerHTML = `<img class="joker-popup-art" src="${opts.imgSrc}" alt="" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${opts.glyph || "joker-duo"}\\'></span>'">`;
+      } else if (opts.emoji) {
+        icon.innerHTML = `<span class="jp-emoji">${opts.emoji}</span>`;
+      } else {
+        icon.innerHTML = `<span class="joker-glyph ${opts.glyph || "joker-duo"}"></span>`;
+      }
+      $("#jokerPopupName").innerHTML = `${opts.name}${opts.badgeLabel ? ` <span style="font-size:.7rem;font-weight:800;color:${opts.badgeColor};border:1px solid ${opts.badgeColor}66;border-radius:10px;padding:1px 7px;margin-left:4px;vertical-align:middle">${opts.badgeLabel}</span>` : ""}`;
+      $("#jokerPopupDesc").textContent = opts.desc || "";
+      $("#jokerPopupCost").textContent = opts.costLine || "";
+      const actBtn = $("#jokerPopupAction");
+      if (opts.actionLabel) {
+        actBtn.style.display = "";
+        actBtn.textContent = opts.actionLabel;
+        actBtn.disabled = !!opts.actionDisabled;
+        actBtn.onclick = () => { if (opts.actionFn) opts.actionFn(); };
+      } else {
+        actBtn.style.display = "none";
+        actBtn.onclick = null;
+      }
       jokerPopup.classList.add("show");
       AudioFX.play("select");
+    }
+
+    function openJokerPopup(joker) {
+      const _r = rarityOf(joker);
+      openDetailPopup({
+        imgSrc: `jokers/${joker.id}.webp`,
+        glyph: jokerGlyphClass[joker.id] || "joker-duo",
+        name: joker.name,
+        badgeLabel: _r.label, badgeColor: _r.color,
+        desc: joker.detail || joker.desc,
+        costLine: `획득 비용: $${joker.cost} · 판매가: $${jokerSellValue(joker)}`
+      });
     }
 
     function pulseJokers(ids) {
@@ -3949,7 +4064,8 @@
     function generateShopJokers() {
       const owned = new Set(state.jokers.map(j => j.id));
       const available = jokerPool.filter(j => !owned.has(j.id));
-      state.shopJokers = weightedSample(available, 3);
+      const slots = 3 + (hasVoucher("overstock") ? 1 : 0);   // 재고 과잉 바우처
+      state.shopJokers = weightedSample(available, slots);
     }
 
     function generateShopPlanets() {
@@ -3959,14 +4075,16 @@
 
     function generateShopTarots() {
       const shuffled = [...tarotPool].sort(() => Math.random() - 0.5);
-      state.shopTarots = shuffled.slice(0, 2);
+      const slots = 2 + (hasVoucher("tarotMerchant") ? 1 : 0);  // 타로 상인 바우처
+      state.shopTarots = shuffled.slice(0, slots);
     }
 
-    // 상점에 가끔 등장하는 플레이 카드(구매 시 덱에 영구 추가)
+    // 플레이 카드는 '마술 트릭' 바우처 보유 시에만 상점에 등장(구매 시 덱에 영구 추가)
     function generateShopCards() {
       const out = [];
+      if (!hasVoucher("magicTrick")) { state.shopCards = out; return; }
       for (let i = 0; i < 2; i++) {
-        if (Math.random() < 0.4) {
+        if (Math.random() < 0.5) {
           const suit = suits[Math.floor(Math.random() * suits.length)];
           const rank = rankList[Math.floor(Math.random() * rankList.length)];
           out.push({ suit, rank });
@@ -3975,8 +4093,68 @@
       state.shopCards = out;
     }
 
+    // 앤티마다 1개 바우처 갱신(이미 보유한 건 제외). 같은 앤티 내에선 유지(리롤로 안 바뀜).
+    function refreshVoucherForAnte() {
+      if (state.voucherAnte === state.ante) return;
+      state.voucherAnte = state.ante;
+      const avail = voucherPool.filter(v => !hasVoucher(v.id));
+      state.shopVoucher = avail.length ? avail[Math.floor(Math.random() * avail.length)] : null;
+    }
+
+    function buyVoucher() {
+      const v = state.shopVoucher;
+      if (!v) return;
+      const cost = priceOf(v.cost);
+      if (state.money < cost) return;
+      state.money -= cost;
+      state.vouchers[v.id] = true;
+      state.shopVoucher = null;
+      addLog(`바우처 구매: ${v.name} (-$${cost})`);
+      AudioFX.play("win");
+      renderHUD();
+      openShop(_shopIsAnteClear); // 슬롯 증가 등은 다음 진열부터, 할인은 즉시 반영
+    }
+
+    function renderOwnedVouchers() {
+      const box = $("#shopVouchersOwned");
+      if (!box) return;
+      const owned = voucherPool.filter(v => hasVoucher(v.id));
+      if (!owned.length) { box.style.display = "none"; box.innerHTML = ""; return; }
+      box.style.display = "";
+      box.innerHTML = `<span class="ov-label">보유 바우처</span>` + owned.map(v =>
+        `<span class="ov-chip" title="${v.name}: ${v.desc}">${v.icon} ${v.name}</span>`).join("");
+    }
+
+    // 카드형 상점 타일(작은 아트 + 이름 + 가격). 클릭 시 상세 팝업.
+    function buildShopTile(o) {
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "shop-tile";
+      if (o.borderColor) tile.style.borderColor = o.borderColor + "99";
+      const art = o.artHTML !== undefined ? o.artHTML
+        : (o.imgSrc
+          ? `<img src="${o.imgSrc}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'tile-glyph ${o.glyph || ""}\\'>${o.emoji || ""}</span>'">`
+          : `<span class="tile-glyph">${o.emoji || ""}</span>`);
+      tile.innerHTML = `<div class="tile-art">${art}</div>${o.badge ? `<span class="tile-badge" style="background:${o.badge.color}">${o.badge.label}</span>` : ""}<div class="tile-name">${o.name}</div><div class="tile-price ${o.afford ? "" : "no-afford"}">$${o.price}</div>`;
+      tile.addEventListener("click", o.onClick);
+      return tile;
+    }
+    function shopSoldout(text) {
+      const s = document.createElement("div");
+      s.className = "shop-soldout";
+      s.textContent = text;
+      return s;
+    }
+    function shopSubtitle(text) {
+      const t = document.createElement("div");
+      t.className = "shop-subtitle";
+      t.textContent = text;
+      return t;
+    }
+
     function openShop(anteClear = false) {
       _shopIsAnteClear = anteClear;
+      refreshVoucherForAnte();
       // 상점은 입장 시 1회만 진열. 구매로 비어도 같은 방문 중엔 재진열 안 함(다음 라운드에 갱신).
       if (!state.shopStocked) {
         generateShopJokers();
@@ -3991,7 +4169,6 @@
       const shopAnte = $("#shopAnte");
       if (shopAnte) shopAnte.textContent = `Ante ${state.ante}`;
       updateGoldLabel();
-      // 정산 내역(이전 블라인드 클리어 보상) 표시
       const coEl = $("#shopCashout");
       if (coEl) {
         const co = state.lastCashout;
@@ -3999,157 +4176,178 @@
           coEl.style.display = "";
           coEl.innerHTML = `💰 정산 완료 <span class="co-total">+$${co.total}</span><br>` +
             `<span class="co-row">블라인드 기본 $${co.blindBase} · 남은 핸드 ${co.handCash}×$1 = $${co.handCash} · 이자 $${co.interest}</span>`;
-        } else {
-          coEl.style.display = "none";
-        }
+        } else { coEl.style.display = "none"; }
       }
+      renderOwnedVouchers();
       renderConsumablesInto($("#shopConsumableArea"));
       renderOwnedJokersInShop();
 
-      // 갱신 버튼
+      // 갱신 버튼(작게, 우측) — 바우처 보조금 반영
+      const topRow = document.createElement("div");
+      topRow.className = "shop-toprow";
       const rerollBtn = document.createElement("button");
-      rerollBtn.className = "reroll-btn";
-      rerollBtn.textContent = `🎲 갱신 $${state.rerollCost}`;
-      rerollBtn.disabled = state.money < state.rerollCost;
-      rerollBtn.style.cssText = "width:100%;padding:8px;margin-bottom:10px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;color:var(--text);cursor:pointer;font-size:13px;";
+      rerollBtn.className = "reroll-btn-sm";
+      const rc = effectiveRerollCost();
+      rerollBtn.textContent = `🎲 갱신 $${rc}`;
+      rerollBtn.disabled = state.money < rc;
       rerollBtn.addEventListener("click", () => {
-        if (state.money < state.rerollCost) return;
-        state.money -= state.rerollCost;
+        const c = effectiveRerollCost();
+        if (state.money < c) return;
+        state.money -= c;
         state.rerollCost += 1;
-        generateShopJokers();
-        generateShopPlanets();
-        generateShopTarots();
+        generateShopJokers(); generateShopPlanets(); generateShopTarots(); generateShopCards();
         openShop(_shopIsAnteClear);
       });
-      grid.appendChild(rerollBtn);
+      topRow.appendChild(rerollBtn);
+      grid.appendChild(topRow);
 
-      state.shopJokers.forEach(joker => {
-        const full = state.jokers.length >= 5;
-        const afford = state.money >= joker.cost;
-        const card = document.createElement("div");
-        card.className = "shop-item";
-        const _r = rarityOf(joker);
-        card.style.borderColor = _r.color + "88";
-        card.innerHTML = `<div class="shop-art-wrap"><img class="shop-art" src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'"><span class="shop-rarity" style="background:${_r.color}">${_r.label}</span></div><div class="name">${joker.name}</div><div class="desc">${joker.desc}</div><div class="price"><span class="coin" aria-hidden="true"></span>$${joker.cost}</div>`;
-        const btn = document.createElement("button");
-        btn.textContent = full ? "슬롯 가득 참" : afford ? "구매" : "자금 부족";
-        btn.disabled = full || !afford;
-        btn.addEventListener("click", () => {
-          state.money -= joker.cost;
-          state.jokers.push({ ...joker, counter: 0 });
-          state.shopJokers = state.shopJokers.filter(j => j.id !== joker.id);
-          addLog(`조커 구매: ${joker.name} (-$${joker.cost})`);
-          renderHUD();
-          openShop(_shopIsAnteClear);
+      // ── 바우처 섹션(앤티당 1개) ──
+      if (state.shopVoucher) {
+        const v = state.shopVoucher;
+        const cost = priceOf(v.cost);
+        grid.appendChild(shopSubtitle("🎟️ 바우처 · 앤티당 1개 · 영구 효과"));
+        const vc = document.createElement("button");
+        vc.type = "button";
+        vc.className = "shop-voucher";
+        vc.innerHTML = `<span class="v-icon">${v.icon}</span><span class="v-text"><span class="v-name">${v.name}</span><span class="v-desc">${v.desc}</span></span><span class="v-price ${state.money >= cost ? "" : "no-afford"}">$${cost}</span>`;
+        vc.addEventListener("click", () => {
+          openDetailPopup({
+            emoji: v.icon, name: v.name, desc: v.desc,
+            costLine: `바우처 · 영구 효과 · 비용 $${cost}`,
+            actionLabel: state.money >= cost ? `구매 $${cost}` : "자금 부족",
+            actionDisabled: state.money < cost,
+            actionFn: buyVoucher
+          });
         });
-        card.appendChild(btn);
-        grid.appendChild(card);
-      });
-      if (state.shopJokers.length === 0) {
-        const s = document.createElement("div");
-        s.className = "shop-soldout";
-        s.textContent = "조커 매진 — 다음 블라인드에 갱신";
-        grid.appendChild(s);
+        grid.appendChild(vc);
       }
 
-      const separator = document.createElement("div");
-      separator.className = "shop-separator";
-      grid.appendChild(separator);
+      // ── 조커 ──
+      grid.appendChild(shopSubtitle("조커"));
+      const jRow = document.createElement("div");
+      jRow.className = "shop-tilerow";
+      state.shopJokers.forEach(joker => {
+        const _r = rarityOf(joker);
+        const cost = priceOf(joker.cost);
+        const full = state.jokers.length >= 5;
+        const afford = state.money >= cost;
+        jRow.appendChild(buildShopTile({
+          imgSrc: `jokers/${joker.id}.webp`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
+          name: joker.name, price: cost, afford, borderColor: _r.color,
+          badge: { label: _r.label, color: _r.color },
+          onClick: () => openDetailPopup({
+            imgSrc: `jokers/${joker.id}.webp`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
+            name: joker.name, badgeLabel: _r.label, badgeColor: _r.color,
+            desc: joker.detail || joker.desc,
+            costLine: `구매 $${cost} · 판매가 $${jokerSellValue(joker)}`,
+            actionLabel: full ? "조커 슬롯 가득 참" : (afford ? `구매 $${cost}` : "자금 부족"),
+            actionDisabled: full || !afford,
+            actionFn: () => {
+              closeJokerPopup();
+              state.money -= cost;
+              state.jokers.push({ ...joker, counter: 0 });
+              state.shopJokers = state.shopJokers.filter(j => j.id !== joker.id);
+              addLog(`조커 구매: ${joker.name} (-$${cost})`);
+              renderHUD(); openShop(_shopIsAnteClear);
+            }
+          })
+        }));
+      });
+      if (!state.shopJokers.length) jRow.appendChild(shopSoldout("조커 매진 — 다음 블라인드에 갱신"));
+      grid.appendChild(jRow);
 
-      const sectionTitle = document.createElement("div");
-      sectionTitle.className = "shop-subtitle";
-      sectionTitle.textContent = "플래닛 카드";
-      grid.appendChild(sectionTitle);
-
+      // ── 플래닛 ──
+      grid.appendChild(shopSubtitle("플래닛 카드"));
+      const pRow = document.createElement("div");
+      pRow.className = "shop-tilerow";
       state.shopPlanets.forEach((planet, idx) => {
-        const afford = state.money >= 3;
+        const cost = priceOf(3);
+        const afford = state.money >= cost;
         const planetFull = consumableCount() >= 2;
         const handName = handBase[planet.hand]?.name || planet.hand;
-        const card = document.createElement("div");
-        card.className = "shop-item shop-item-planet";
-        card.innerHTML = `<div class="name">${planet.planet} ${planet.name}</div><div class="desc">${handName} 영구 강화<br>+${planet.chipsBonus}칩 / +${planet.multBonus}배수</div><div class="price"><span class="coin" aria-hidden="true"></span>$3</div>`;
-        const btn = document.createElement("button");
-        btn.textContent = planetFull ? "슬롯 가득 참" : afford ? "구매" : "자금 부족";
-        btn.disabled = planetFull || !afford;
-        btn.addEventListener("click", () => {
-          state.money -= 3;
-          state.planetCards.push({ ...planet });
-          state.shopPlanets.splice(idx, 1);
-          addLog(`플래닛 구매: ${planet.name} (-$3)`);
-          renderHUD();
-          openShop(_shopIsAnteClear);
-        });
-        card.appendChild(btn);
-        grid.appendChild(card);
+        pRow.appendChild(buildShopTile({
+          emoji: planet.planet, name: planet.name, price: cost, afford, borderColor: "#4a84ff",
+          onClick: () => openDetailPopup({
+            emoji: planet.planet, name: `${planet.planet} ${planet.name}`,
+            desc: `${handName} 족보 영구 강화 (+${planet.chipsBonus}칩 / +${planet.multBonus}배수)`,
+            costLine: `구매 $${cost} · 소모품 슬롯 사용`,
+            actionLabel: planetFull ? "소모품 슬롯 가득 참" : (afford ? `구매 $${cost}` : "자금 부족"),
+            actionDisabled: planetFull || !afford,
+            actionFn: () => {
+              closeJokerPopup();
+              state.money -= cost;
+              state.planetCards.push({ ...planet });
+              state.shopPlanets.splice(idx, 1);
+              addLog(`플래닛 구매: ${planet.name} (-$${cost})`);
+              renderHUD(); openShop(_shopIsAnteClear);
+            }
+          })
+        }));
       });
-      if ((state.shopPlanets || []).length === 0) {
-        const s = document.createElement("div");
-        s.className = "shop-soldout";
-        s.textContent = "플래닛 매진";
-        grid.appendChild(s);
-      }
+      if (!(state.shopPlanets || []).length) pRow.appendChild(shopSoldout("플래닛 매진"));
+      grid.appendChild(pRow);
 
-      const tarotTitle = document.createElement("div");
-      tarotTitle.className = "shop-subtitle";
-      tarotTitle.textContent = "타로 카드";
-      grid.appendChild(tarotTitle);
-
+      // ── 타로 ──
+      grid.appendChild(shopSubtitle("타로 카드"));
+      const tRow = document.createElement("div");
+      tRow.className = "shop-tilerow";
       (state.shopTarots || []).forEach((tarot, idx) => {
-        const afford = state.money >= 4;
+        const cost = priceOf(4);
+        const afford = state.money >= cost;
         const full = consumableCount() >= 2;
-        const card = document.createElement("div");
-        card.className = "shop-item shop-item-tarot";
-        card.style.borderColor = "#b56ad688";
-        card.innerHTML = `<div class="shop-art-wrap"><img class="shop-art" src="tarot/${tarot.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'"><span class="shop-rarity" style="background:#b56ad6">타로</span></div><div class="name">${tarot.name}</div><div class="desc">${tarot.desc}</div><div class="price"><span class="coin" aria-hidden="true"></span>$4</div>`;
-        const btn = document.createElement("button");
-        btn.textContent = full ? "슬롯 가득 참" : afford ? "구매" : "자금 부족";
-        btn.disabled = full || !afford;
-        btn.addEventListener("click", () => {
-          state.money -= 4;
-          state.tarotCards.push({ ...tarot });
-          state.shopTarots.splice(idx, 1);
-          addLog(`타로 구매: ${tarot.name} (-$4)`);
-          renderHUD();
-          openShop(_shopIsAnteClear);
-        });
-        card.appendChild(btn);
-        grid.appendChild(card);
+        tRow.appendChild(buildShopTile({
+          imgSrc: `tarot/${tarot.id}.webp`, name: tarot.name, price: cost, afford, borderColor: "#b56ad6",
+          badge: { label: "타로", color: "#b56ad6" },
+          onClick: () => openDetailPopup({
+            imgSrc: `tarot/${tarot.id}.webp`, name: tarot.name, badgeLabel: "타로", badgeColor: "#b56ad6",
+            desc: tarot.desc + ((tarot.need || 0) > 0 ? ` · 사용 시 카드 정확히 ${tarot.need}장 선택` : " · 즉시 사용"),
+            costLine: `구매 $${cost} · 소모품 슬롯 사용`,
+            actionLabel: full ? "소모품 슬롯 가득 참" : (afford ? `구매 $${cost}` : "자금 부족"),
+            actionDisabled: full || !afford,
+            actionFn: () => {
+              closeJokerPopup();
+              state.money -= cost;
+              state.tarotCards.push({ ...tarot });
+              state.shopTarots.splice(idx, 1);
+              addLog(`타로 구매: ${tarot.name} (-$${cost})`);
+              renderHUD(); openShop(_shopIsAnteClear);
+            }
+          })
+        }));
       });
-      if ((state.shopTarots || []).length === 0) {
-        const s = document.createElement("div");
-        s.className = "shop-soldout";
-        s.textContent = "타로 매진";
-        grid.appendChild(s);
-      }
+      if (!(state.shopTarots || []).length) tRow.appendChild(shopSoldout("타로 매진"));
+      grid.appendChild(tRow);
 
-      // 플레이 카드 (가끔 등장 — 덱에 영구 추가)
+      // ── 플레이 카드 (마술 트릭 바우처 보유 시에만) ──
       if ((state.shopCards || []).length > 0) {
-        const cardTitle = document.createElement("div");
-        cardTitle.className = "shop-subtitle";
-        cardTitle.textContent = "플레이 카드 (덱에 추가)";
-        grid.appendChild(cardTitle);
-
-        const CARD_COST = 4;
+        grid.appendChild(shopSubtitle("플레이 카드 · 덱에 영구 추가"));
+        const cRow = document.createElement("div");
+        cRow.className = "shop-tilerow";
         state.shopCards.forEach((pc, idx) => {
-          const afford = state.money >= CARD_COST;
+          const cost = priceOf(4);
+          const afford = state.money >= cost;
           const isRed = pc.suit === "heart" || pc.suit === "diamond";
-          const card = document.createElement("div");
-          card.className = "shop-item shop-item-card";
-          card.innerHTML = `<div class="shop-playcard" style="color:${isRed ? "#d8243a" : "#15151f"}"><span class="pc-rank">${formatRank(pc.rank)}</span><span class="pc-suit">${suitSymbol[pc.suit]}</span></div><div class="name">${formatRank(pc.rank)} ${suitSymbol[pc.suit]}</div><div class="desc">덱에 영구 추가</div><div class="price"><span class="coin" aria-hidden="true"></span>$${CARD_COST}</div>`;
-          const btn = document.createElement("button");
-          btn.textContent = afford ? "구매" : "자금 부족";
-          btn.disabled = !afford;
-          btn.addEventListener("click", () => {
-            state.money -= CARD_COST;
-            state.extraCards.push({ suit: pc.suit, rank: pc.rank });
-            state.shopCards.splice(idx, 1);
-            addLog(`플레이 카드 구매: ${formatRank(pc.rank)}${suitSymbol[pc.suit]} → 덱 추가 (-$${CARD_COST})`);
-            renderHUD();
-            openShop(_shopIsAnteClear);
-          });
-          card.appendChild(btn);
-          grid.appendChild(card);
+          cRow.appendChild(buildShopTile({
+            artHTML: `<div class="tile-playcard" style="color:${isRed ? "#d8243a" : "#15151f"}">${formatRank(pc.rank)}${suitSymbol[pc.suit]}</div>`,
+            name: `${formatRank(pc.rank)}${suitSymbol[pc.suit]}`, price: cost, afford, borderColor: "#ffffff",
+            onClick: () => openDetailPopup({
+              emoji: suitSymbol[pc.suit], name: `${formatRank(pc.rank)} ${suitSymbol[pc.suit]}`,
+              desc: "이 카드를 덱에 영구히 추가합니다.",
+              costLine: `구매 $${cost}`,
+              actionLabel: afford ? `구매 $${cost}` : "자금 부족",
+              actionDisabled: !afford,
+              actionFn: () => {
+                closeJokerPopup();
+                state.money -= cost;
+                state.extraCards.push({ suit: pc.suit, rank: pc.rank });
+                state.shopCards.splice(idx, 1);
+                addLog(`플레이 카드 구매: ${formatRank(pc.rank)}${suitSymbol[pc.suit]} → 덱 추가 (-$${cost})`);
+                renderHUD(); openShop(_shopIsAnteClear);
+              }
+            })
+          }));
         });
+        grid.appendChild(cRow);
       }
 
       $("#shopContinueBtn").textContent = anteClear
@@ -4200,8 +4398,8 @@
     function startRound(index, seedText = "") {
       state.roundIndex = index;
       state.score = 0;
-      state.handsLeft = 4;
-      state.discardsLeft = 3;
+      state.handsLeft = 4 + (hasVoucher("grabber") ? 1 : 0);    // 여분의 손 바우처
+      state.discardsLeft = 3 + (hasVoucher("wasteful") ? 1 : 0); // 낭비꾼 바우처
       state.bossModifier = null;
       state.lastHandType = null;   // 메아리 조커 콤보는 블라인드 내에서만 유지
       state.shopJokers = [];   // 새 라운드마다 상점 갱신
@@ -4243,7 +4441,8 @@
       // 정산: 블라인드 기본 + 남은 핸드 골드 전환($1/핸드) + 이자($5당 $1, 최대 $5)
       const blindBase = [3, 4, 5][state.roundIndex] ?? 3;
       const handCash = state.handsLeft;                       // 남은 핸드 1 → $1
-      const interest = Math.min(5, Math.floor(state.money / 5));
+      const interestCap = hasVoucher("seedMoney") ? 10 : 5;   // 종잣돈 바우처
+      const interest = Math.min(interestCap, Math.floor(state.money / 5));
       const reward = blindBase + handCash + interest;
       state.lastCashout = { blindBase, handCash, discards: state.discardsLeft, interest, total: reward };
       state.money += reward;
@@ -4315,6 +4514,9 @@
       state.shopTarots = [];
       state.shopCards = [];
       state.extraCards = [];
+      state.vouchers = {};
+      state.shopVoucher = null;
+      state.voucherAnte = 0;
       state.lastCashout = null;
       state.bossModifier = null;
       logEl.innerHTML = "";
