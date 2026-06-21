@@ -1448,7 +1448,7 @@
     .pip.flip { transform: translate(-50%, -50%) rotate(180deg); }
     .pip.big { font-size: clamp(30px, 8.5vw, 46px); }
 
-    .trump-full { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; z-index: 1; }
+    .trump-full { position: absolute; inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px); object-fit: contain; background: #fff; border-radius: 5px; z-index: 1; }
     .card-face.face-img { position: absolute; inset: 6px 5px; padding: 0; border-radius: 6px; overflow: hidden; }
     .card-face.face-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .face-court {
