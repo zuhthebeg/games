@@ -1242,6 +1242,17 @@
     .card-lock { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 5;
       font-size: 1.3rem; filter: drop-shadow(0 1px 3px rgba(0,0,0,.8)); pointer-events: none; }
 
+    /* 스킵 보상 토스트 */
+    .skip-reward-toast { position: fixed; top: 18%; left: 50%; transform: translateX(-50%); z-index: 63;
+      background: linear-gradient(150deg, rgba(40,30,60,.96), rgba(24,18,38,.96)); border: 1.5px solid rgba(255,207,109,.55);
+      border-radius: 14px; padding: 12px 20px; text-align: center; box-shadow: 0 10px 34px rgba(0,0,0,.55);
+      pointer-events: none; animation: srtIn .3s cubic-bezier(.2,1.4,.4,1) both; }
+    .skip-reward-toast.out { animation: srtOut .28s ease forwards; }
+    .skip-reward-toast .srt-head { font-size: .72rem; font-weight: 800; color: var(--muted,#9aa); letter-spacing: 1px; }
+    .skip-reward-toast .srt-main { font-size: 1.02rem; font-weight: 900; color: var(--gold,#ffcf6d); margin-top: 3px; white-space: nowrap; }
+    @keyframes srtIn { from { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(.85); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
+    @keyframes srtOut { to { opacity: 0; transform: translateX(-50%) translateY(-10px); } }
+
     /* 효과 설명 강조: 칩=파랑, 배수=빨강 */
     .fx-chip { color: #5b9dff; font-weight: 900; }
     .fx-mult { color: #ff6b7a; font-weight: 900; }
@@ -4984,7 +4995,7 @@
       $("#bsAnte").textContent = `Ante ${state.ante}`;
       $("#bsBlindName").textContent = blind.label;
       $("#bsTarget").textContent = `목표 점수 ${blind.target.toLocaleString()}`;
-      $("#bsReward").textContent = `클리어 보상 최대 +$${reward} · 스킵 보너스 +$${state.ante}`;
+      $("#bsReward").textContent = `클리어 보상 최대 +$${reward} · 스킵 시 랜덤 보상(자금·조커·타로·강화 등)`;
       $("#blindSelectModal").classList.add("show");
       AudioFX.play("select");
     }
@@ -4994,12 +5005,57 @@
       startRound(index, _pendingSeed);
     }
 
+    // 블라인드 스킵 보상(발라트로 태그식): 랜덤으로 자금/무료 조커·타로·행성/강화 등
+    function applySkipReward() {
+      const ante = state.ante;
+      const pool = [
+        { run() { const m = ante * 4 + 8; state.money += m; return `💰 보너스 자금 +$${m}`; } },
+        { run() { const m = ante * 4 + 8; state.money += m; return `💰 보너스 자금 +$${m}`; } },
+        { run() { const m = ante * 7 + 14; state.money += m; return `💸 한탕 자금 +$${m}`; } },
+        {
+          cond: () => state.jokers.length < 5,
+          run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: 0 }); markDiscovered("joker", j.id); renderHUD(); return `🃏 무료 조커: ${j.name}`; }
+        },
+        {
+          cond: () => consumableCount() < 2,
+          run() { const t = weightedSampleBy(tarotPool, 1, tarotWeight)[0]; state.tarotCards.push({ ...t }); markDiscovered("tarot", t.id); return `🔮 무료 타로: ${t.name}`; }
+        },
+        {
+          cond: () => consumableCount() < 2,
+          run() { const p = weightedSampleBy(planetPool, 1, planetWeight)[0]; state.planetCards.push({ ...p }); markDiscovered("planet", p.id); return `🪐 무료 행성: ${p.name}`; }
+        },
+        {
+          // 덱에서 무작위 카드 1장 강화
+          cond: () => (state.runDeck || []).some(c => !c.enh),
+          run() {
+            const cands = state.runDeck.filter(c => !c.enh);
+            const card = cands[Math.floor(Math.random() * cands.length)];
+            const enhKeys = Object.keys(ENH);
+            card.enh = enhKeys[Math.floor(Math.random() * enhKeys.length)];
+            renderCards();
+            return `✨ 카드 강화: ${suitSymbol[card.suit]}${formatRank(card.rank)} → ${ENH[card.enh].label}`;
+          }
+        }
+      ];
+      const avail = pool.filter(r => !r.cond || r.cond());
+      const r = avail[Math.floor(Math.random() * avail.length)];
+      return r.run();
+    }
+    function showSkipRewardToast(text) {
+      const t = document.createElement("div");
+      t.className = "skip-reward-toast";
+      t.innerHTML = `<div class="srt-head">⏭️ 스킵 보상</div><div class="srt-main">${text}</div>`;
+      document.body.appendChild(t);
+      try { AudioFX.play("win"); JuiceFX.sfx("win"); } catch (_) {}
+      setTimeout(() => { t.classList.add("out"); setTimeout(() => t.remove(), 280); }, 1700);
+    }
     function skipBlind(index) {
       $("#blindSelectModal").classList.remove("show");
-      const bonus = state.ante;
-      state.money += bonus;
-      addLog(`${["스몰", "빅"][index] || "블라인드"} 블라인드 스킵 (+$${bonus}, 상점 없음)`);
+      const rewardText = applySkipReward();
+      addLog(`${["스몰", "빅"][index] || "블라인드"} 블라인드 스킵 — ${rewardText}`);
       AudioFX.play("select");
+      renderHUD();
+      showSkipRewardToast(rewardText);
       beginBlind(index + 1, _pendingSeed);
     }
 
