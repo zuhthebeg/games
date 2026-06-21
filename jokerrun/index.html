@@ -125,6 +125,19 @@
       padding: 0 10px;
     }
 
+    .bgm-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 8px;
+      width: 30px;
+      height: 26px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    .bgm-btn.off { opacity: 0.55; border-color: rgba(255,255,255,0.15); }
+
     .header-left {
       display: flex;
       align-items: center;
@@ -1923,6 +1936,39 @@
       opacity: 0.7;
     }
 
+    .shop-cashout {
+      border-radius: 10px;
+      border: 1px solid rgba(255, 215, 0, 0.35);
+      background: linear-gradient(150deg, rgba(40, 34, 16, 0.7), rgba(24, 20, 10, 0.7));
+      padding: 9px 12px;
+      margin: 4px 0 8px;
+      font-size: 0.8rem;
+      color: #ffe9a8;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .shop-cashout .co-total { color: var(--gold); font-size: 0.95rem; }
+    .shop-cashout .co-row { color: #d8cda0; font-weight: 600; font-size: 0.74rem; }
+
+    .shop-item-card { border-color: rgba(255,255,255,0.45) !important; }
+    .shop-playcard {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: #fefefe;
+      border-radius: 8px;
+      aspect-ratio: 5 / 7;
+      max-height: 70px;
+      margin: 0 auto 6px;
+      width: 70%;
+      box-shadow: inset 0 0 0 1.5px #c8c8c8;
+      font-family: "Georgia", serif;
+      font-weight: 900;
+    }
+    .shop-playcard .pc-rank { font-size: 1.1rem; }
+    .shop-playcard .pc-suit { font-size: 0.95rem; }
+
     .shop-item-planet {
       border-color: rgba(136, 179, 255, 0.5);
       background: linear-gradient(155deg, rgba(8, 27, 60, 0.94), rgba(24, 48, 98, 0.92) 55%, rgba(30, 74, 146, 0.9));
@@ -2272,10 +2318,12 @@
         <span class="target-value" id="targetLabel">0</span>
       </div>
       <div class="header-right">
+        <button id="bgmBtn" type="button" class="bgm-btn" aria-label="배경음악 켜기/끄기" title="배경음악">🎵</button>
         <span class="gold-badge" id="goldLabel">G 0</span>
         <span class="money-badge" id="moneyLabel">$0</span>
       </div>
     </header>
+    <audio id="bgmAudio" src="bgm.mp3?v=1" loop preload="none"></audio>
 
     <section class="top-strip glass">
       <div class="joker-strip" id="jokerArea" aria-label="조커 슬롯"></div>
@@ -2324,6 +2372,8 @@
         </div>
         <div class="tag" id="shopMoney">보유 자금: $0</div>
       </div>
+      <div id="shopCashout" class="shop-cashout" style="display:none"></div>
+      <div class="consumable-strip" id="shopConsumableArea" aria-label="보유 소모품(상점에서 사용)" style="margin:6px 0"></div>
       <div class="shop-owned" id="shopOwnedJokers"></div>
       <div class="shop-grid" id="shopGrid"></div>
       <button id="shopContinueBtn" class="btn-main" style="width:100%;margin-top:12px;padding:12px;font-size:15px;font-weight:700;border-radius:12px;background:linear-gradient(150deg,var(--ok),#3af5a0);color:#062f27;border:none;cursor:pointer;">다음 블라인드로 →</button>
@@ -2612,6 +2662,9 @@
       planetCards: [],
       tarotCards: [],
       shopPlanets: [],
+      shopTarots: [],
+      shopCards: [],
+      extraCards: [],
       rerollCost: 5
     };
 
@@ -2671,6 +2724,34 @@
           default:
             break;
         }
+      }
+    };
+
+    // ── BGM (생성된 카지노풍 재즈 루프) ──
+    const BGM = {
+      el: null,
+      enabled: true,
+      init() {
+        this.el = document.getElementById("bgmAudio");
+        this.enabled = localStorage.getItem("jokerrun_bgm") !== "off";
+        this.syncBtn();
+      },
+      start() {
+        if (!this.el || !this.enabled) return;
+        this.el.volume = 0.4;
+        const p = this.el.play();
+        if (p && p.catch) p.catch(() => {});
+      },
+      toggle() {
+        this.enabled = !this.enabled;
+        localStorage.setItem("jokerrun_bgm", this.enabled ? "on" : "off");
+        if (this.enabled) this.start();
+        else if (this.el) this.el.pause();
+        this.syncBtn();
+      },
+      syncBtn() {
+        const b = document.getElementById("bgmBtn");
+        if (b) { b.textContent = this.enabled ? "🎵" : "🔇"; b.classList.toggle("off", !this.enabled); }
       }
     };
 
@@ -2740,6 +2821,8 @@
       for (const suit of suits) {
         for (const rank of rankList) deck.push({ id: id++, suit, rank });
       }
+      // 상점에서 구매해 덱에 추가한 카드(영구)
+      (state.extraCards || []).forEach(c => deck.push({ id: id++, suit: c.suit, rank: c.rank }));
       const rng = seedText ? mulberry32(hashSeed(seedText)) : Math.random;
       for (let i = deck.length - 1; i > 0; i--) {
         const j = Math.floor(rng() * (i + 1));
@@ -2815,10 +2898,8 @@
       return `<div class="card-face"><span class="pip big" style="left:50%;top:50%">${s}</span></div>`;
     }
 
-    function buildCardEl(card) {
-        const d = document.createElement("div");
-        d.dataset.id = String(card.id);
-        d.innerHTML = `
+    function cardInnerHTML(card) {
+      return `
   <div class="card-corner card-tl">
     <span class="ci-rank">${formatRank(card.rank)}</span>
     <span class="ci-suit">${suitSymbol[card.suit]}</span>
@@ -2828,6 +2909,13 @@
     <span class="ci-rank">${formatRank(card.rank)}</span>
     <span class="ci-suit">${suitSymbol[card.suit]}</span>
   </div>`;
+    }
+
+    function buildCardEl(card) {
+        const d = document.createElement("div");
+        d.dataset.id = String(card.id);
+        d.dataset.sig = card.suit + ":" + card.rank;
+        d.innerHTML = cardInnerHTML(card);
         d.addEventListener("click", () => {
           if (state.gameEnded) return;
           if (state.selected.has(card.id)) {
@@ -2879,6 +2967,9 @@
           d.style.animation = "none"; // 기존 카드는 딜 애니메이션 재생 방지
           d.style.transform = "";
           d.style.boxShadow = "";
+          // 타로 등으로 무늬/랭크가 바뀐 카드는 내용 갱신(diff 렌더가 DOM 재사용해 안 바뀌던 버그 수정)
+          const sig = card.suit + ":" + card.rank;
+          if (d.dataset.sig !== sig) { d.innerHTML = cardInnerHTML(card); d.dataset.sig = sig; }
         }
         d.className = `card ${suitClass[card.suit]} ${state.selected.has(card.id) ? "selected" : ""}`;
         if (state.lastToggledCardId === card.id) {
@@ -2988,7 +3079,14 @@
       const idx = state.tarotCards.indexOf(tarot);
       if (idx < 0) return;
       const need = tarot.need || 0;
+      const inShop = $("#shopModal").classList.contains("show");
       if (need > 0) {
+        if (inShop) {
+          setInfo(`<span style="color:var(--danger)">${tarot.name}</span> — 카드를 고르는 타로는 핸드 화면에서 사용하세요.`);
+          // 상점에선 알림만 — 보드 안내선이 안 보이므로 토스트로
+          showFloatingNote(anchorEl, "핸드 화면에서 사용");
+          return;
+        }
         const sel = selectedCards();
         if (tarot.exact ? sel.length !== need : sel.length < need) {
           setInfo(`<span style="color:var(--danger)">${tarot.name}</span> — 카드를 ${tarot.exact ? "정확히 " : ""}${need}장 선택 후 사용하세요.`);
@@ -3004,12 +3102,31 @@
       if (anchorEl) showLevelUpPopup(anchorEl);
       updateHandPreview();
       renderHUD();
-      if ($("#shopModal").classList.contains("show")) openShop(_shopIsAnteClear);
+      refreshConsumables();
+      if (inShop) $("#shopMoney").textContent = `보유 자금: $${state.money}`;
     }
 
-    function renderPlanetCards() {
-      if (!consumableArea) return;
-      consumableArea.innerHTML = "";
+    function showFloatingNote(anchorEl, text) {
+      if (!anchorEl) return;
+      const rect = anchorEl.getBoundingClientRect();
+      const n = document.createElement("div");
+      n.className = "levelup-popup";
+      n.textContent = text;
+      n.style.left = `${rect.left + rect.width * 0.5}px`;
+      n.style.top = `${rect.top - 8}px`;
+      document.body.appendChild(n);
+      n.style.animation = "floatUp 900ms ease forwards";
+      setTimeout(() => n.remove(), 920);
+    }
+
+    function renderPlanetCards() { renderConsumablesInto(consumableArea); }
+    function refreshConsumables() {
+      renderConsumablesInto(consumableArea);
+      if ($("#shopModal").classList.contains("show")) renderConsumablesInto($("#shopConsumableArea"));
+    }
+    function renderConsumablesInto(container) {
+      if (!container) return;
+      container.innerHTML = "";
       const items = [
         ...state.planetCards.map(p => ({ kind: "planet", data: p })),
         ...state.tarotCards.map(t => ({ kind: "tarot", data: t }))
@@ -3020,7 +3137,7 @@
           const empty = document.createElement("div");
           empty.className = "planet-card-mini empty";
           empty.setAttribute("aria-label", "빈 소모품 슬롯");
-          consumableArea.appendChild(empty);
+          container.appendChild(empty);
           continue;
         }
         const card = document.createElement("button");
@@ -3043,6 +3160,7 @@
             addLog(`${planet.name} 사용: ${handName} Lv.${newLevel}`);
             showLevelUpPopup(card);
             renderHUD();
+            refreshConsumables();
           });
         } else {
           const tarot = it.data;
@@ -3054,7 +3172,7 @@
             <span class="planet-target">타로</span>`;
           card.addEventListener("click", () => useTarot(tarot, card));
         }
-        consumableArea.appendChild(card);
+        container.appendChild(card);
       }
     }
 
@@ -3638,6 +3756,19 @@
       state.shopTarots = shuffled.slice(0, 2);
     }
 
+    // 상점에 가끔 등장하는 플레이 카드(구매 시 덱에 영구 추가)
+    function generateShopCards() {
+      const out = [];
+      for (let i = 0; i < 2; i++) {
+        if (Math.random() < 0.4) {
+          const suit = suits[Math.floor(Math.random() * suits.length)];
+          const rank = rankList[Math.floor(Math.random() * rankList.length)];
+          out.push({ suit, rank });
+        }
+      }
+      state.shopCards = out;
+    }
+
     function openShop(anteClear = false) {
       _shopIsAnteClear = anteClear;
       // 상점은 입장 시 1회만 진열. 구매로 비어도 같은 방문 중엔 재진열 안 함(다음 라운드에 갱신).
@@ -3645,11 +3776,25 @@
         generateShopJokers();
         generateShopPlanets();
         generateShopTarots();
+        generateShopCards();
         state.shopStocked = true;
       }
       const grid = $("#shopGrid");
       grid.innerHTML = "";
       $("#shopMoney").textContent = `보유 자금: $${state.money}`;
+      // 정산 내역(이전 블라인드 클리어 보상) 표시
+      const coEl = $("#shopCashout");
+      if (coEl) {
+        const co = state.lastCashout;
+        if (co) {
+          coEl.style.display = "";
+          coEl.innerHTML = `💰 정산 완료 <span class="co-total">+$${co.total}</span><br>` +
+            `<span class="co-row">블라인드 기본 $${co.blindBase} · 남은 핸드 ${co.handCash}×$1 = $${co.handCash} · 이자 $${co.interest}</span>`;
+        } else {
+          coEl.style.display = "none";
+        }
+      }
+      renderConsumablesInto($("#shopConsumableArea"));
       renderOwnedJokersInShop();
 
       // 갱신 버튼
@@ -3768,6 +3913,36 @@
         grid.appendChild(s);
       }
 
+      // 플레이 카드 (가끔 등장 — 덱에 영구 추가)
+      if ((state.shopCards || []).length > 0) {
+        const cardTitle = document.createElement("div");
+        cardTitle.className = "shop-subtitle";
+        cardTitle.textContent = "플레이 카드 (덱에 추가)";
+        grid.appendChild(cardTitle);
+
+        const CARD_COST = 4;
+        state.shopCards.forEach((pc, idx) => {
+          const afford = state.money >= CARD_COST;
+          const isRed = pc.suit === "heart" || pc.suit === "diamond";
+          const card = document.createElement("div");
+          card.className = "shop-item shop-item-card";
+          card.innerHTML = `<div class="shop-playcard" style="color:${isRed ? "#d8243a" : "#15151f"}"><span class="pc-rank">${formatRank(pc.rank)}</span><span class="pc-suit">${suitSymbol[pc.suit]}</span></div><div class="name">${formatRank(pc.rank)} ${suitSymbol[pc.suit]}</div><div class="desc">덱에 영구 추가</div><div class="price"><span class="coin" aria-hidden="true"></span>$${CARD_COST}</div>`;
+          const btn = document.createElement("button");
+          btn.textContent = afford ? "구매" : "자금 부족";
+          btn.disabled = !afford;
+          btn.addEventListener("click", () => {
+            state.money -= CARD_COST;
+            state.extraCards.push({ suit: pc.suit, rank: pc.rank });
+            state.shopCards.splice(idx, 1);
+            addLog(`플레이 카드 구매: ${formatRank(pc.rank)}${suitSymbol[pc.suit]} → 덱 추가 (-$${CARD_COST})`);
+            renderHUD();
+            openShop(_shopIsAnteClear);
+          });
+          card.appendChild(btn);
+          grid.appendChild(card);
+        });
+      }
+
       $("#shopContinueBtn").textContent = anteClear
         ? `Ante ${state.ante + 1} 시작 →`
         : `블라인드 ${Math.min(3, state.roundIndex + 2)}/3 시작 →`;
@@ -3822,6 +3997,7 @@
       state.shopJokers = [];   // 새 라운드마다 상점 갱신
       state.shopPlanets = [];
       state.shopTarots = [];
+      state.shopCards = [];
       state.shopStocked = false;
       state.rerollCost = 5;    // 갱신 비용 초기화
       state.deck = buildDeck(seedText);
@@ -3853,9 +4029,14 @@
 
     function winRound() {
       if (state.gameEnded) return;
-      const reward = 7 + state.handsLeft * 2 + state.discardsLeft + state.ante * 2;
+      // 정산: 블라인드 기본 + 남은 핸드 골드 전환($1/핸드) + 이자($5당 $1, 최대 $5)
+      const blindBase = [3, 4, 5][state.roundIndex] ?? 3;
+      const handCash = state.handsLeft;                       // 남은 핸드 1 → $1
+      const interest = Math.min(5, Math.floor(state.money / 5));
+      const reward = blindBase + handCash + interest;
+      state.lastCashout = { blindBase, handCash, discards: state.discardsLeft, interest, total: reward };
       state.money += reward;
-      addLog(`블라인드 클리어! 보상 +$${reward}`);
+      addLog(`정산: 기본 $${blindBase} + 남은핸드 ${state.handsLeft}×$1 + 이자 $${interest} = +$${reward}`);
       state.gameEnded = true;
       AudioFX.play("win");
       JuiceFX.sfx("win"); JuiceFX.shake(9);
@@ -3904,6 +4085,9 @@
       state.tarotCards = [];
       state.shopPlanets = [];
       state.shopTarots = [];
+      state.shopCards = [];
+      state.extraCards = [];
+      state.lastCashout = null;
       state.bossModifier = null;
       logEl.innerHTML = "";
       closeShop();
@@ -3978,6 +4162,7 @@
     function unlockAudio() {
       try { if (AudioFX.ctx && AudioFX.ctx.state === "suspended") AudioFX.ctx.resume(); } catch (_) {}
       try { if (typeof zzfxX !== "undefined" && zzfxX.state === "suspended") zzfxX.resume(); } catch (_) {}
+      BGM.start();
     }
     function beginRun() {
       unlockAudio();
@@ -3985,6 +4170,7 @@
       $("#startScreen").classList.remove("show");
       newRun();
     }
+    $("#bgmBtn").addEventListener("click", () => BGM.toggle());
     $("#startPlayBtn").addEventListener("click", beginRun);
     $("#helpStartBtn").addEventListener("click", beginRun);
     $("#startHelpBtn").addEventListener("click", () => $("#helpModal").classList.add("show"));
@@ -3997,6 +4183,7 @@
       }
       updateGoldLabel();
       refreshStartHighScore();
+      BGM.init();
       // 보드는 미리 구성해두되(모달 없이), 시작 화면을 먼저 노출 (온보딩 + 오디오 언락)
       startRound(0);
       $("#startScreen").classList.add("show");
