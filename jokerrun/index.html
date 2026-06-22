@@ -4872,12 +4872,18 @@
     }
 
     // 타로 사용 시 그 타로 카드를 중앙에 띄워 회전 → 잘리며 소멸하는 연출
+    // 모바일 webview(텔레그램 인앱 등)에서 .modal 의 backdrop-filter 가 별도 합성
+    // 레이어로 떠서, body 에 붙인 연출은 z-index 가 아무리 높아도 모달 뒤로 가려진다.
+    // → 열려 있는 모달이 있으면 그 안에 붙여 같은 레이어에서 최상단으로 그린다.
+    function flashMountTarget() {
+      return document.querySelector(".modal.show") || document.body;
+    }
     function flashTarotCard(tarot) {
       const wrap = document.createElement("div");
       wrap.className = "tarot-flash";
       const fb = `<span style=\\'font-size:3rem\\'>🔮</span>`;
       wrap.innerHTML = `<div class="tf-card"><img src="tarot/${tarot.id}.webp?v=2" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${tarot.name}</div></div>`;
-      document.body.appendChild(wrap);
+      flashMountTarget().appendChild(wrap);
       try { AudioFX.play("select"); JuiceFX.sfx("chip"); } catch (_) {}
       setTimeout(() => wrap.remove(), 1100);
     }
@@ -4888,7 +4894,7 @@
       wrap.className = "planet-flash";
       const fb = `<span style=\\'font-size:3rem\\'>${planet.planet || "🪐"}</span>`;
       wrap.innerHTML = `<div class="pf-card"><img src="planets/${planet.id}.webp?v=2" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${planet.name}</div></div><div class="pf-level">${levelText || ""} ▲</div>`;
-      document.body.appendChild(wrap);
+      flashMountTarget().appendChild(wrap);
       try { AudioFX.play("win"); JuiceFX.sfx("win"); JuiceFX.shake(6); } catch (_) {}
       setTimeout(() => wrap.remove(), 1200);
     }
@@ -5935,7 +5941,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-flashz";
+    const JR_BUILD = "2026-06-22-flashz2";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
