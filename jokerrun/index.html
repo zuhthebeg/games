@@ -1258,7 +1258,7 @@
     .jf-name { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,.82)); color: #fff; font-weight: 800; font-size: .76rem; text-align: center; padding: 10px 4px 5px; }
 
     /* 타로 사용: 중앙에서 회전 → 세로로 잘리며 소멸 */
-    .tarot-flash { position: fixed; inset: 0; z-index: 62; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+    .tarot-flash { position: fixed; inset: 0; z-index: 95; display: flex; align-items: center; justify-content: center; pointer-events: none; }
     .tf-card { width: clamp(110px, 34vw, 150px); aspect-ratio: 5/7; border-radius: 14px; border: 3px solid #b56ad6; overflow: hidden; position: relative;
       background: #1a0f24; box-shadow: 0 0 40px rgba(181,106,214,.6); transform-origin: center;
       opacity: 0; animation: tarotUse 1.05s cubic-bezier(.3,.7,.4,1) forwards; }
@@ -1272,7 +1272,7 @@
     }
 
     /* 행성 사용: 중앙 회전 → 파삭 부서짐 + 레벨업 텍스트 솟구침 */
-    .planet-flash { position: fixed; inset: 0; z-index: 62; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; pointer-events: none; }
+    .planet-flash { position: fixed; inset: 0; z-index: 95; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; pointer-events: none; }
     .pf-card { width: clamp(110px, 34vw, 150px); aspect-ratio: 5/7; border-radius: 14px; border: 3px solid #4a84ff; overflow: hidden; position: relative;
       background: #0d1530; box-shadow: 0 0 40px rgba(74,132,255,.6); transform-origin: center;
       opacity: 0; animation: planetUse 1.0s cubic-bezier(.3,.7,.4,1) forwards; }
@@ -5935,7 +5935,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-accum";
+    const JR_BUILD = "2026-06-22-flashz";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
