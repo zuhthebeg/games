@@ -257,6 +257,8 @@
       display: flex;
       gap: 6px;
       flex: 0 0 auto;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .joker-strip::-webkit-scrollbar {
@@ -1102,6 +1104,19 @@
       border-radius: 50%;
       z-index: 3;
       box-shadow: 0 0 6px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.5);
+    }
+    /* 네가티브 조커: 무지갯빛 다크 테두리 + 배지(슬롯 미차지) */
+    .joker.negative {
+      border-color: transparent;
+      background:
+        linear-gradient(155deg, #0a0a14, #11091c) padding-box,
+        linear-gradient(135deg, #00e0d0, #6a5cff 40%, #ff4fc5 70%, #ffcf6d) border-box;
+      border: 2px solid transparent;
+      box-shadow: 0 0 10px rgba(120,90,255,.55), inset 0 0 14px rgba(0,224,208,.18);
+    }
+    .joker-neg-badge {
+      position: absolute; top: 2px; right: 3px; font-size: 11px; z-index: 4;
+      filter: drop-shadow(0 0 3px rgba(120,90,255,.9));
     }
     .rar-dot {
       display: inline-block;
@@ -2716,16 +2731,6 @@
     </div>
   </div>
 
-  <div class="modal" id="skipRewardModal">
-    <div class="mode-sheet">
-      <div style="text-align:center">
-        <div class="subtitle" style="color:var(--gold);font-weight:800">⏭ 블라인드 스킵</div>
-        <div class="title" style="margin-top:2px">보상 선택</div>
-        <div class="subtitle" style="margin-top:4px;color:var(--muted);font-size:.74rem">하나를 골라 다음 블라인드로 넘어갑니다.</div>
-      </div>
-      <div id="skipRewardOptions" style="display:grid;gap:9px;margin-top:10px"></div>
-    </div>
-  </div>
 
   <div class="modal" id="victoryModal">
     <div class="mode-sheet">
@@ -2870,7 +2875,7 @@
       // ── 진짜 곱배수(×) 조커 — 신화/전설급, 빌드를 폭발시키는 핵심 ──
       { id: "fullmoon", name: "만월", cost: 12, rarity: "rare", mult: true, desc: "무조건 배수 ×2.5", detail: "족보·무늬 상관없이 매 핸드 배수 ×2.5. 단순하지만 강력한 곱연산.", apply(ctx) { if (ctx.cards.length) { ctx.mult *= 2.5; ctx.activate("fullmoon"); } } },
       { id: "reaperking", name: "사신왕", cost: 14, rarity: "rare", mult: true, desc: "포카드·스플이면 배수 ×5", detail: "족보가 포카드 또는 스트레이트 플러시면 배수 ×5. 고족보 특화 폭발기.", apply(ctx) { if (ctx.handType === "FOUR" || isFiveHand(ctx.handType) || isStraightFlushHand(ctx.handType)) { ctx.mult *= 5; ctx.activate("reaperking"); } } },
-      { id: "berserk", name: "광폭", cost: 13, rarity: "rare", mult: true, desc: "조커 5칸 가득이면 배수 ×4", detail: "보유 조커가 5개로 가득 차면 배수 ×4. 슬롯을 다 채울수록 보상.", apply(ctx) { if (state.jokers.length >= 5) { ctx.mult *= 4; ctx.activate("berserk"); } } },
+      { id: "berserk", name: "광폭", cost: 13, rarity: "rare", mult: true, desc: "조커 5칸 가득이면 배수 ×4", detail: "보유 조커가 5개로 가득 차면 배수 ×4. 슬롯을 다 채울수록 보상.", apply(ctx) { if (jokerSlotsFull()) { ctx.mult *= 4; ctx.activate("berserk"); } } },
       { id: "bloodmoon", name: "블러드문", cost: 16, rarity: "legendary", mult: true, desc: "K·Q 1장당 배수 ×1.5", detail: "플레이한 킹(K)·퀸(Q) 1장마다 배수 ×1.5 누적(2장이면 ×2.25). 페이스 덱의 끝판왕.", apply(ctx) { const n = ctx.scored.filter(c => c.rank === 12 || c.rank === 13).length; if (n > 0) { ctx.mult *= Math.pow(1.5, n); ctx.activate("bloodmoon"); } } },
       { id: "constellation", name: "성좌", cost: 18, rarity: "legendary", mult: true, desc: "행성 사용 누적마다 배수 ×0.2씩 영구 증가", detail: "지금까지 사용한 행성 카드 1장당 배수 배율이 영구히 +0.2. 행성을 모을수록 곱연산이 무한 확장.", apply(ctx, self) { const used = Object.values(state.handLevels || {}).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0); const m = 1 + used * 0.2; if (m > 1) { ctx.mult *= m; ctx.activate("constellation"); } self.desc = `행성 사용 ${used}회 → 배수 ×${m.toFixed(1)}`; } },
       { id: "vampire", name: "흡혈귀", cost: 17, rarity: "legendary", mult: true, desc: "강화 카드 플레이마다 흡수 → 배수 ×0.25 영구 증가", detail: "플레이한 강화(enhancement) 카드를 흡수해 그 강화를 없애고, 1장당 배수 배율이 영구히 +0.25. 굴릴수록 무한 성장.", apply(ctx, self) { const enh = ctx.scored.filter(c => c.enh).length; if (enh > 0) { self.counter = (self.counter || 0) + enh * 0.25; ctx.scored.forEach(c => { if (c.enh) c.enh = null; }); } const m = 1 + (self.counter || 0); if (m > 1) { ctx.mult *= m; ctx.activate("vampire"); } self.desc = `강화 흡수 누적 → 배수 ×${m.toFixed(2)}`; } },
@@ -3023,6 +3028,11 @@
     function consumableCount(){ return (state.planetCards?.length||0) + (state.tarotCards?.length||0); }
     // 소모품(타로·행성) 보관 슬롯 상한: 기본 3 + 확장 가방 바우처(+1)
     function consumableMax(){ return 3 + (hasVoucher("biggerBag") ? 1 : 0); }
+    // ── 조커 슬롯(발라트로식): 기본 5칸. 네가티브 조커(negative)는 슬롯을 차지하지 않음 ──
+    const JOKER_SLOTS = 5;
+    function jokerSlotUsed(){ return state.jokers.filter(j => !j.negative).length; }
+    function jokerSlotsFull(){ return jokerSlotUsed() >= JOKER_SLOTS; }
+    function jokerNegativeCount(){ return state.jokers.filter(j => j.negative).length; }
 
     // ── 카드 강화(enhancement) — 발라트로식. 덱 카드(runDeck)에 영구 부여(c.enh). ──
     // chips: 점수 칩 가산 / multAdd: 배수 가산 / multX: 배수 곱 / heldX: 손에 보유 시 배수 곱 / endCash: 라운드 끝 보유 시 $
@@ -4110,14 +4120,16 @@
 
     function renderJokers() {
       jokerArea.innerHTML = "";
-      for (let i = 0; i < 5; i++) {
+      // 네가티브 조커는 슬롯을 차지하지 않으므로 기본 5칸 + 네가티브 수만큼 칸을 늘려 모두 보여준다.
+      const slotCount = Math.max(JOKER_SLOTS + jokerNegativeCount(), state.jokers.length);
+      for (let i = 0; i < slotCount; i++) {
         const joker = state.jokers[i];
         const box = document.createElement("div");
         if (!joker) {
           box.className = "joker empty";
           box.setAttribute("aria-label", "빈 슬롯");
         } else {
-          box.className = `joker joker-${joker.id}`;
+          box.className = `joker joker-${joker.id}${joker.negative ? " negative" : ""}`;
           box.dataset.jokerId = joker.id;
           box.dataset.idx = String(i);
           const _r = rarityOf(joker);
@@ -4126,6 +4138,7 @@
             <img class="joker-art" src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
             <span class="joker-grad" aria-hidden="true"></span>
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
+            ${joker.negative ? '<span class="joker-neg-badge" title="네가티브 — 슬롯 미차지">🌑</span>' : ""}
             <span class="joker-name-mini">${joker.name}</span>
             <span class="joker-desc-mini">${colorizeEffect(joker.desc)}</span>
           `;
@@ -4964,7 +4977,7 @@
       state.shopJokers.forEach(joker => {
         const _r = rarityOf(joker);
         const cost = priceOf(joker.cost);
-        const full = state.jokers.length >= 5;
+        const full = jokerSlotsFull();
         const afford = state.money >= cost;
         jRow.appendChild(buildShopTile({
           imgSrc: `jokers/${joker.id}.webp`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
@@ -5149,7 +5162,10 @@
       $("#bsAnte").textContent = `Ante ${state.ante}`;
       $("#bsBlindName").textContent = blind.label;
       $("#bsTarget").textContent = `목표 점수 ${blind.target.toLocaleString()}`;
-      $("#bsReward").textContent = `클리어 보상 최대 +$${reward} · 스킵 시 보상 직접 선택(자금·조커·타로·강화 등)`;
+      // 스킵 보상 1개를 미리 결정해 보여준다. 스킵하면 이 보상을 받고, 플레이하면 무시.
+      state._skipReward = rollSkipReward();
+      const sr = state._skipReward;
+      $("#bsReward").innerHTML = `클리어 보상 최대 +$${reward}<br>⏭️ 스킵 보상: <b style="color:var(--gold)">${sr.icon} ${sr.label}</b> <span style="opacity:.85">— ${sr.detail}</span>`;
       $("#blindSelectModal").classList.add("show");
       AudioFX.play("select");
     }
@@ -5159,18 +5175,18 @@
       startRound(index, _pendingSeed);
     }
 
-    // 블라인드 스킵 보상(발라트로 태그식): 후보를 만들어 플레이어가 직접 고른다.
-    // 각 옵션은 {icon,label,detail,cond?,run()} — run()이 실제 보상을 적용하고 토스트 문구를 반환.
+    // 블라인드 스킵 보상(발라트로 태그식): 블라인드마다 보상 1개를 미리 정해서 보여주고,
+    // 스킵하면 그 보상을 받는다. 안 고르면(플레이) 그냥 플레이. 각 옵션 {icon,label,detail,cond?,run()}.
     function buildSkipRewardPool() {
       const ante = state.ante;
       return [
-        { icon:"💰", label:"보너스 자금", detail:`+$${ante * 4} 즉시 획득`,
-          run() { const m = ante * 4; state.money += m; return `💰 보너스 자금 +$${m}`; } },
         { icon:"💸", label:"한탕 자금", detail:`+$${ante * 5} 즉시 획득`,
           run() { const m = ante * 5; state.money += m; return `💸 한탕 자금 +$${m}`; } },
         { icon:"🃏", label:"랜덤 조커", detail:"무료 조커 1개 획득",
-          cond: () => state.jokers.length < 5,
+          cond: () => !jokerSlotsFull(),
           run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: 0 }); markDiscovered("joker", j.id); renderHUD(); return `🃏 무료 조커: ${j.name}`; } },
+        { icon:"🌑", label:"네가티브 조커", detail:"무작위 조커를 네가티브로 생성 (슬롯 미차지)",
+          run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: 0, negative: true }); markDiscovered("joker", j.id); renderHUD(); return `🌑 네가티브 조커: ${j.name}`; } },
         { icon:"🔮", label:"랜덤 타로", detail:"무료 타로 1장 (슬롯 필요)",
           cond: () => consumableCount() < consumableMax(),
           run() { const t = weightedSampleBy(tarotPool, 1, tarotWeight)[0]; state.tarotCards.push({ ...t }); markDiscovered("tarot", t.id); return `🔮 무료 타로: ${t.name}`; } },
@@ -5189,11 +5205,10 @@
           } }
       ];
     }
-    // 조건 통과 후보 중 서로 다른 3개를 뽑아 선택지로 제시
-    function pickSkipRewardOptions() {
+    // 이 블라인드의 스킵 보상 1개를 결정(조건 통과 후보 중 무작위)
+    function rollSkipReward() {
       const avail = buildSkipRewardPool().filter(r => !r.cond || r.cond());
-      for (let i = avail.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [avail[i], avail[j]] = [avail[j], avail[i]]; }
-      return avail.slice(0, Math.min(3, avail.length));
+      return avail[Math.floor(Math.random() * avail.length)];
     }
     function showSkipRewardToast(text) {
       const t = document.createElement("div");
@@ -5205,31 +5220,14 @@
     }
     function skipBlind(index) {
       $("#blindSelectModal").classList.remove("show");
-      const options = pickSkipRewardOptions();
-      const box = $("#skipRewardOptions");
-      box.innerHTML = "";
-      options.forEach(opt => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.style.cssText = "display:flex;align-items:center;gap:11px;width:100%;padding:13px 14px;border-radius:13px;border:1px solid rgba(255,215,0,.28);background:linear-gradient(150deg,#2a2545,#1a1730);color:#e7defb;cursor:pointer;text-align:left";
-        btn.innerHTML = `<span style="font-size:1.6rem;line-height:1">${opt.icon}</span>`
-          + `<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">`
-          + `<span style="font-weight:800;font-size:.95rem;color:#ffe9a8">${opt.label}</span>`
-          + `<span style="font-size:.74rem;color:var(--muted)">${opt.detail}</span></span>`
-          + `<span style="font-weight:900;color:var(--gold,#ffcf6d)">선택 →</span>`;
-        btn.addEventListener("click", () => {
-          $("#skipRewardModal").classList.remove("show");
-          const rewardText = opt.run();
-          addLog(`${["스몰", "빅"][index] || "블라인드"} 블라인드 스킵 — ${rewardText}`);
-          AudioFX.play("select");
-          renderHUD(); refreshConsumables();
-          showSkipRewardToast(rewardText);
-          beginBlind(index + 1, _pendingSeed);
-        });
-        box.appendChild(btn);
-      });
-      $("#skipRewardModal").classList.add("show");
+      const opt = state._skipReward || rollSkipReward();
+      state._skipReward = null;
+      const rewardText = opt.run();
+      addLog(`${["스몰", "빅"][index] || "블라인드"} 블라인드 스킵 — ${rewardText}`);
       AudioFX.play("select");
+      renderHUD(); refreshConsumables();
+      showSkipRewardToast(rewardText);
+      beginBlind(index + 1, _pendingSeed);
     }
 
     function startRound(index, seedText = "") {
