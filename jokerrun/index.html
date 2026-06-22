@@ -2973,8 +2973,10 @@
       const pool = bossModifiers.length - 1;   // 0번(null) 제외
       return bossModifiers[((ante - 9) % pool) + 1];
     }
+    const EN_BOSS_NAMES = ["Ringmaster", "Gambling King", "Puppeteer", "Heartbreaker", "Timekeeper", "Executioner", "Trickster", "Carnival Lord"];
     function getBossName(ante) {
-      return bossNames[(ante - 1) % bossNames.length] || "보스";
+      const arr = (LANG === "en") ? EN_BOSS_NAMES : bossNames;
+      return arr[(ante - 1) % arr.length] || t("boss");
     }
 
     function getBlindTargets(ante) {
@@ -3129,11 +3131,11 @@
     }
     // ── 누적형 조커: 상세 팝업에 현재까지 쌓인 누적치를 표시 (self = 인벤토리 인스턴스) ──
     const ACCUM_JOKERS = {
-      snowball:      self => `📈 현재 누적: 연격 +${self.counter || 0}`,
-      magnet:        self => `📈 현재 누적: 공격력 +${self.counter || 0}`,
-      compound:      self => `📈 현재 누적: 연격 +${self.counter || 0}`,
-      vampire:       self => `📈 현재 누적: 연격 ×${(1 + (self.counter || 0)).toFixed(2)}`,
-      constellation: () => { const used = Object.values(state.handLevels || {}).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0); return `📈 현재: 행성 ${used}회 → 연격 ×${(1 + used * 0.2).toFixed(1)}`; }
+      snowball:      self => t("accum_combo", { n: self.counter || 0 }),
+      magnet:        self => t("accum_atk", { n: self.counter || 0 }),
+      compound:      self => t("accum_combo", { n: self.counter || 0 }),
+      vampire:       self => t("accum_combo_x", { n: (1 + (self.counter || 0)).toFixed(2) }),
+      constellation: () => { const used = Object.values(state.handLevels || {}).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0); return t("accum_constellation", { used, mult: (1 + used * 0.2).toFixed(1) }); }
     };
     function jokerAccumLine(joker){ const f = joker && ACCUM_JOKERS[joker.id]; return f ? f(joker) : null; }
     // 등급 가중 랜덤 추첨 (등장확률: 등급 높을수록 낮음). 희귀 사냥꾼 바우처면 전설/신화 가중 ↑
@@ -3674,7 +3676,7 @@
       },
       syncBtn() {
         const b = document.getElementById("setSoundBtn");
-        if (b) { b.textContent = this.enabled ? "켜짐" : "꺼짐"; b.classList.toggle("off", !this.enabled); }
+        if (b) { b.textContent = this.enabled ? t("on") : t("off"); b.classList.toggle("off", !this.enabled); }
       }
     };
 
@@ -3712,6 +3714,9 @@
       ko: {
         tagline: "카드를 짜서 적을 공격하고, 조커로 데미지를 폭발시켜라.<br>던전을 격파하는 카드 로그라이크.",
         ui_cashout_title: "💰 정산 완료",
+        accum_combo: "📈 현재 누적: 연격 +{n}", accum_atk: "📈 현재 누적: 공격력 +{n}",
+        accum_combo_x: "📈 현재 누적: 연격 ×{n}", accum_constellation: "📈 현재: 행성 {used}회 → 연격 ×{mult}",
+        tarot_need_use: "{n}장 선택 후 사용", mini_need: "·{n}장",
         help_title: "조커런 가이드", help_start: "바로 시작 →",
         help_b1: "① 데미지 = 공격력 × 연격",
         help_p1: "손패 8장 중 최대 5장을 골라 <em>포커 기술</em>을 만들면 <b>공격력</b>과 <b>연격</b>이 정해진다. 둘을 곱한 값이 데미지. 적 HP를 넘기면 전투 클리어.",
@@ -3866,6 +3871,9 @@
       en: {
         tagline: "Combine cards to strike, then blow up the damage with Jokers.<br>A card roguelike dungeon crawler.",
         ui_cashout_title: "💰 Cashout",
+        accum_combo: "📈 Accumulated: Combo +{n}", accum_atk: "📈 Accumulated: ATK +{n}",
+        accum_combo_x: "📈 Accumulated: Combo ×{n}", accum_constellation: "📈 Now: {used} planets → Combo ×{mult}",
+        tarot_need_use: "Select {n} cards to use", mini_need: "·{n}",
         help_title: "JokerRun Guide", help_start: "Start now →",
         help_b1: "① Damage = ATK × Combo",
         help_p1: "Pick up to 5 of your 8 cards to form a <em>poker skill</em> — that sets <b>ATK</b> and <b>Combo</b>. Their product is damage. Beat the enemy HP to clear the battle.",
@@ -4613,7 +4621,7 @@
             <img class="planet-art" src="tarot/${tarot.id}.webp?v=2" alt="" draggable="false" onerror="this.style.display='none'">
             <span class="planet-grad" aria-hidden="true"></span>
             <span class="planet-glyph">${tarot.name}</span>
-            <span class="planet-target">${t("ui_tarot_mini_label")}${(tarot.need || 0) > 0 ? ` ·${tarot.need}장` : ""}</span>`;
+            <span class="planet-target">${t("ui_tarot_mini_label")}${(tarot.need || 0) > 0 ? ` ${t("mini_need", { n: tarot.need })}` : ""}</span>`;
           card.addEventListener("click", () => openConsumableDetail("tarot", tarot));
         }
         container.appendChild(card);
@@ -4721,7 +4729,7 @@
       } else {
         icon.innerHTML = `<span class="joker-glyph ${opts.glyph || "joker-duo"}"></span>`;
       }
-      const negBadge = opts.negative ? ` <span class="neg-badge-text" title="슬롯을 차지하지 않습니다">🌑 네가티브</span>` : "";
+      const negBadge = opts.negative ? ` <span class="neg-badge-text">${t("ui_negative_badge")}</span>` : "";
       const edBadge = _edp ? ` <span class="ed-badge-text" style="background:linear-gradient(135deg,${_edp.color},#ffffffcc)" title="${_edp.fx}">${_edp.icon} ${_edp.label}</span>` : "";
       $("#jokerPopupName").innerHTML = `${opts.name}${opts.badgeLabel ? ` <span style="font-size:.7rem;font-weight:800;color:${opts.badgeColor};border:1px solid ${opts.badgeColor}66;border-radius:10px;padding:1px 7px;margin-left:4px;vertical-align:middle">${opts.badgeLabel}</span>` : ""}${negBadge}${edBadge}`;
       $("#jokerPopupDesc").innerHTML = colorizeEffect(opts.desc || "")
@@ -5007,7 +5015,7 @@
         tarotPool.map(tc => {
           const owned = ownedCount[tc.id] || 0;
           const needTxt = tc.need > 0
-            ? `<span style="color:#9fd0ff">${tc.exact ? t("ui_tarot_exact") : ""}${tc.need}장 선택 후 사용</span>`
+            ? `<span style="color:#9fd0ff">${tc.exact ? t("ui_tarot_exact") : ""}${t("tarot_need_use", { n: tc.need })}</span>`
             : `<span style="color:#9fd0ff">${t("ui_tarot_instant_txt")}</span>`;
           return `<div style="display:flex;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08)">
             <img src="tarot/${tc.id}.webp?v=2" alt="" loading="lazy" style="width:46px;height:64px;object-fit:cover;border-radius:7px;border:1px solid #b56ad688;flex:0 0 auto;background:#1a0f24" onerror="this.outerHTML='<span style=\\'width:46px;height:64px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex:0 0 auto\\'>🔮</span>'">
@@ -6404,7 +6412,7 @@
       } catch (_) {}
     }
     function showRankRewardPopup(rank, reward) {
-      const medal = ["🥇", "🥈", "🥉"][rank - 1] || `${rank}위`;
+      const medal = ["🥇", "🥈", "🥉"][rank - 1] || t("ui_rank_pos", { n: rank });
       let ov = document.getElementById("rankRewardOverlay");
       if (ov) ov.remove();
       ov = document.createElement("div");
@@ -6425,7 +6433,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-enfull2";
+    const JR_BUILD = "2026-06-22-enaudit";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
