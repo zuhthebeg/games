@@ -412,7 +412,7 @@
       overflow: hidden;
       transition: transform var(--ease), box-shadow var(--ease), filter var(--ease);
       cursor: pointer;
-      padding: 6px 4px 5px;
+      padding: 6px 4px 18px;   /* 하단 그립 핸들 자리 확보 → 이름과 안 겹침 */
       text-align: center;
       color: #f5f8ff;
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -425,10 +425,10 @@
 
     /* 순서 이동 그립(핸들) — 여기서 끌면 즉시 순서이동(touch-action:none), 본체는 스크롤/탭 그대로 */
     .joker-grip {
-      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-      width: 58%; height: 15px; border-radius: 0 0 7px 7px;
+      position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 64%; height: 15px; border-radius: 7px 7px 0 0;
       display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,.5);
+      background: rgba(0,0,0,.6);
       color: rgba(255,255,255,.72); font-size: 8px; letter-spacing: 2px; line-height: 1;
       cursor: grab; touch-action: none; z-index: 7;
     }
@@ -7155,7 +7155,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-23-voucherstock";
+    const JR_BUILD = "2026-06-23-gripbottom";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
