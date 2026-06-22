@@ -3039,6 +3039,34 @@
     function rollEdition(){ const r = Math.random(); if (r < 0.04) return "poly"; if (r < 0.10) return "holo"; if (r < 0.20) return "foil"; return null; }
     // 판매가: 등급별 환급. 네가티브 +$5, 에디션은 등급별 프리미엄 가산.
     function jokerSellValue(joker){ const base = Math.max(2, Math.floor((joker.cost / 2) * rarityOf(joker).sellMul)); const ed = editionOf(joker); return base + (joker.negative ? 5 : 0) + (ed ? ed.premium : 0); }
+    // ── 발라트로식 카드별 발동 조커: 점수에 들어간 카드 1장마다 "그 카드 위에서" 즉시 발동(연출 인터리브) ──
+    // perCard(card, ctx)는 카드 한 장 기여만 적용. 카드 점수 단계에서 발동하므로 독립(×배수) 조커보다 먼저 들어간다(원작 순서).
+    const PER_CARD_JOKERS = {
+      heartChip:    (c, x) => { if (c.suit === "heart") { x.chips += 15; return true; } },
+      diamondMiner: (c, x) => { if (c.suit === "diamond") { x.chips += 12; return true; } },
+      spadeCount:   (c, x) => { if (c.suit === "spade") { x.chips += 12; return true; } },
+      clubLuck:     (c, x) => { if (c.suit === "club") { x.mult += 1; return true; } },
+      spadeAce:     (c, x) => { if (c.suit === "spade") { x.mult += 0.5; return true; } },
+      clubKing:     (c, x) => { if (c.suit === "club" && c.rank >= 11 && c.rank <= 13) { x.mult += 1; return true; } },
+      luckySeven:   (c, x) => { if (c.rank === 7) { x.chips += 77; return true; } },
+      acePower:     (c, x) => { if (c.rank === 14) { x.chips += 30; return true; } },
+      faceCard:     (c, x) => { if (c.rank >= 11 && c.rank <= 13) { x.mult += 0.75; return true; } },
+      theQueen:     (c, x) => { if (c.rank === 12) { x.mult += 1.5; return true; } },
+      evenSteven:   (c, x) => { if (c.rank % 2 === 0 && c.rank <= 10) { x.chips += 8; return true; } },
+      oddOne:       (c, x) => { if (c.rank % 2 === 1 && c.rank <= 9) { x.mult += 0.5; return true; } },
+      lowCard:      (c, x) => { if (c.rank <= 5) { x.chips += 10; return true; } },
+      highCard:     (c, x) => { if (c.rank >= 10) { x.mult += 0.5; return true; } },
+      fibonacci:    (c, x) => { if ([14, 2, 3, 5, 8].includes(c.rank)) { x.mult += 1; return true; } },
+      bloodmoon:    (c, x) => { if (c.rank === 12 || c.rank === 13) { x.mult = Math.round(x.mult * 1.5 * 100) / 100; return true; } }
+    };
+    jokerPool.forEach(j => { if (PER_CARD_JOKERS[j.id]) j.perCard = PER_CARD_JOKERS[j.id]; });
+    const isPerCardJoker = (j) => !!(j && j.perCard);
+    // 청사진/브레인스토밍 복사 대상 해석(점수 루프 공용)
+    function bpResolve(joker){
+      if (joker.id === "blueprint") { const i = state.jokers.indexOf(joker); const t = state.jokers[i + 1]; return (t && t.id !== "blueprint" && t.id !== "brainstorm") ? t : null; }
+      if (joker.id === "brainstorm") { const t = state.jokers.find(j => j.id !== "blueprint" && j.id !== "brainstorm"); return (t && t !== joker) ? t : null; }
+      return null;
+    }
     // 등급 가중 랜덤 추첨 (등장확률: 등급 높을수록 낮음). 희귀 사냥꾼 바우처면 전설/신화 가중 ↑
     function rarityWeight(r){
       const base = RARITY[r]?.weight || 100;
@@ -4871,6 +4899,32 @@
             await wait(240);
           }
         }
+        // ── 이 카드에 반응하는 카드별 조커를 그 자리에서 즉시 발동(왼→오, 청사진 복사 포함) ──
+        for (const joker of state.jokers) {
+          let fn = null, owner = joker, viaBp = false;
+          if (isPerCardJoker(joker)) { fn = joker.perCard; }
+          else if (joker.id === "blueprint" || joker.id === "brainstorm") {
+            const t = bpResolve(joker);
+            if (t && isPerCardJoker(t)) { fn = t.perCard; owner = t; viaBp = true; }
+          }
+          if (!fn) continue;
+          const cb = ctx.chips, mb = ctx.mult;
+          fn(card, ctx);
+          const dc = ctx.chips - cb, dm = ctx.mult - mb;
+          if (dc <= 0.001 && Math.abs(dm) <= 0.001) continue;
+          ctx.activate(joker.id);
+          if (dc > 0.001) dispChips += dc;
+          ps.head.innerHTML = `<b style="color:var(--gold)">${joker.name}</b>${viaBp ? ` <span style="opacity:.75">→ ${owner.name} 복사</span>` : ""} 발동!`;
+          const el = jokerArea.querySelector(`.joker[data-joker-id="${joker.id}"]`);
+          if (el) { el.classList.remove("active"); void el.offsetWidth; el.classList.add("active"); setTimeout(() => el.classList.remove("active"), 500); }
+          if (cel) {
+            if (dc > 0.001) jrFloat(cel, `+${Math.round(dc)}`, "chip");
+            if (dm > 0.001) jrFloat(cel, owner.id === "bloodmoon" ? "×1.5" : `+${Math.round(dm * 100) / 100}`, "mult");
+          }
+          ps.setReadout(dispChips, ctx.mult);
+          AudioFX.play("select"); JuiceFX.sfx("mult");
+          await wait(300);
+        }
       }
       // 스틸 카드: 플레이 안 하고 손에 남은 스틸 1장당 배수 ×1.5
       const _playedSet = new Set(cards.map(c => String(c.id)));
@@ -4882,13 +4936,21 @@
         await wait(420);
       }
       await wait(240);
-      // 2) 조커 왼쪽→오른쪽 순차 발동(배수 단계), 기여분은 스테이지 readout 위로 플로팅
+      // 2) 독립 조커(카드 비종속) 왼쪽→오른쪽 순차 발동. 카드별 조커는 위 카드 루프에서 이미 발동했으므로 제외.
       for (const joker of state.jokers) {
+        if (isPerCardJoker(joker)) continue;   // 카드별 조커 — 카드 루프에서 처리됨
         const cb = ctx.chips, mb = ctx.mult, ab = ctx.activated.length;
-        joker.apply(ctx, joker);
+        let label = joker.name;
+        if (joker.id === "blueprint" || joker.id === "brainstorm") {
+          const t = bpResolve(joker);
+          if (!t || isPerCardJoker(t)) continue;   // 대상이 카드별이면 이미 카드 루프에서 복사 발동됨
+          t.apply(ctx, t); ctx.activate(joker.id); label = `${joker.name} → ${t.name} 복사`;
+        } else {
+          joker.apply(ctx, joker);
+        }
         if (ctx.activated.length > ab) {
           const dc = ctx.chips - cb, dm = ctx.mult - mb;
-          ps.head.innerHTML = `<b style="color:var(--gold)">${joker.name}</b> 발동!`;
+          ps.head.innerHTML = `<b style="color:var(--gold)">${label}</b> 발동!`;
           flashJokerCard(joker, dm > 0.001 && (MULT_JOKERS.has(joker.id) || dm >= 1));
           const el = jokerArea.querySelector(`.joker[data-joker-id="${joker.id}"]`);
           if (el) { el.classList.remove("active"); void el.offsetWidth; el.classList.add("active"); setTimeout(() => el.classList.remove("active"), 600); }
@@ -4899,24 +4961,25 @@
           ps.setReadout(ctx.chips, ctx.mult);
           await wait(430);
         }
-        // ── 에디션 효과(포일/홀로/폴리): 조건 없이 매 핸드 발동, 별도 연출 ──
+      }
+      // 3) 에디션(포일/홀로/폴리): 모든 조커에 대해 마지막에 일괄 발동
+      for (const joker of state.jokers) {
         const _ed = editionOf(joker);
-        if (_ed) {
-          const cbe = ctx.chips, mbe = ctx.mult;
-          if (_ed.chips)   ctx.chips += _ed.chips;
-          if (_ed.multAdd) ctx.mult  += _ed.multAdd;
-          if (_ed.multX)   ctx.mult   = Math.round(ctx.mult * _ed.multX * 100) / 100;
-          const dc = ctx.chips - cbe, dm = ctx.mult - mbe;
-          ps.head.innerHTML = `<b style="color:${_ed.color}">${_ed.icon} ${joker.name}</b> · ${_ed.label}`;
-          const el2 = jokerArea.querySelector(`.joker[data-joker-id="${joker.id}"]`);
-          if (el2) { el2.classList.remove("active"); void el2.offsetWidth; el2.classList.add("active"); setTimeout(() => el2.classList.remove("active"), 600); }
-          if (dc > 0.001) jrFloat(ps.readout, `+${Math.round(dc)} 칩`, "chip");
-          if (dm > 0.001) jrFloat(ps.readout, _ed.multX ? `×${_ed.multX}` : `+${Math.round(dm * 100) / 100} 배수`, "mult");
-          AudioFX.play("select");
-          JuiceFX.sfx("mult");
-          ps.setReadout(ctx.chips, ctx.mult);
-          await wait(380);
-        }
+        if (!_ed) continue;
+        const cbe = ctx.chips, mbe = ctx.mult;
+        if (_ed.chips)   ctx.chips += _ed.chips;
+        if (_ed.multAdd) ctx.mult  += _ed.multAdd;
+        if (_ed.multX)   ctx.mult   = Math.round(ctx.mult * _ed.multX * 100) / 100;
+        const dc = ctx.chips - cbe, dm = ctx.mult - mbe;
+        ps.head.innerHTML = `<b style="color:${_ed.color}">${_ed.icon} ${joker.name}</b> · ${_ed.label}`;
+        const el2 = jokerArea.querySelector(`.joker[data-joker-id="${joker.id}"]`);
+        if (el2) { el2.classList.remove("active"); void el2.offsetWidth; el2.classList.add("active"); setTimeout(() => el2.classList.remove("active"), 600); }
+        if (dc > 0.001) jrFloat(ps.readout, `+${Math.round(dc)} 칩`, "chip");
+        if (dm > 0.001) jrFloat(ps.readout, _ed.multX ? `×${_ed.multX}` : `+${Math.round(dm * 100) / 100} 배수`, "mult");
+        AudioFX.play("select");
+        JuiceFX.sfx("mult");
+        ps.setReadout(ctx.chips, ctx.mult);
+        await wait(380);
       }
       await wait(260);
       ps.close();
@@ -5722,7 +5785,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-editions";
+    const JR_BUILD = "2026-06-22-percard";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
