@@ -2677,6 +2677,7 @@
       <button class="start-continue" id="startContinueBtn" style="display:none" data-i18n="start_continue">↩️ 이어하기</button>
       <button class="start-play" id="startPlayBtn" data-i18n="play">▶ 플레이</button>
       <button class="start-help" id="startHelpBtn" data-i18n="start_help">＂어떻게 하는 거야?＂ — 도움말</button>
+      <button class="start-help" id="startSettingsBtn" data-i18n="settings">⚙️ 설정</button>
     </div>
   </div>
 
@@ -2862,7 +2863,8 @@
         <div class="set-label" data-i18n="language">🌐 언어</div>
         <div id="setLangRow" class="set-seg"></div>
       </div>
-      <button class="btn-main" id="setCloseBtn" data-i18n="close" style="margin-top:16px;padding:11px;border-radius:12px;font-weight:800;width:100%">닫기</button>
+      <button class="btn-warn" id="setQuitBtn" data-i18n="quit_to_menu" style="margin-top:16px;padding:11px;border-radius:12px;font-weight:800;width:100%">🚪 게임 나가기</button>
+      <button class="btn-main" id="setCloseBtn" data-i18n="close" style="margin-top:8px;padding:11px;border-radius:12px;font-weight:800;width:100%">닫기</button>
     </div>
   </div>
 
@@ -4062,7 +4064,7 @@
         mob: "잡몹", elite: "정예", boss: "보스", shortcut: "지름길", skip: "⏭ 지름길",
         bs_hint: "지름길로 가면 정비 없이 다음 전투로. 보스는 우회 불가.",
         skip_reward: "⏭️ 지름길 보상 획득",
-        settings: "⚙️ 설정", sound: "🔊 사운드", speed: "⏱️ 연출 속도",
+        quit_to_menu: "🚪 게임 나가기", settings: "⚙️ 설정", sound: "🔊 사운드", speed: "⏱️ 연출 속도",
         speed_hint: "데미지 연출이 너무 빨리 지나가면 느리게, 답답하면 빠르게 / 즉시.",
         language: "🌐 언어", close: "닫기", on: "켜짐", off: "꺼짐",
         cleared: "🎯 전투 승리!", my_dmg: "내 데미지", continue_run: "↩️ 이어하기 — 마지막 공격 다시",
@@ -4227,7 +4229,7 @@
         mob: "Mob", elite: "Elite", boss: "Boss", shortcut: "Shortcut", skip: "⏭ Shortcut",
         bs_hint: "Take the shortcut to skip straight to the next battle. Bosses can't be bypassed.",
         skip_reward: "⏭️ Shortcut reward",
-        settings: "⚙️ Settings", sound: "🔊 Sound", speed: "⏱️ Anim speed",
+        quit_to_menu: "🚪 Quit to Menu", settings: "⚙️ Settings", sound: "🔊 Sound", speed: "⏱️ Anim speed",
         speed_hint: "If damage animation flies by, set it slower; if it drags, faster / instant.",
         language: "🌐 Language", close: "Close", on: "On", off: "Off",
         cleared: "🎯 Battle won!", my_dmg: "Your damage", continue_run: "↩️ Continue — retry last attack",
@@ -4392,7 +4394,7 @@
         mob: "雜魚", elite: "精英", boss: "王關", shortcut: "捷徑", skip: "⏭ 捷徑",
         bs_hint: "走捷徑可不整備直接進入下一場戰鬥。王關無法繞過。",
         skip_reward: "⏭️ 捷徑獎勵",
-        settings: "⚙️ 設定", sound: "🔊 音效", speed: "⏱️ 演出速度",
+        quit_to_menu: "🚪 退出至主畫面", settings: "⚙️ 設定", sound: "🔊 音效", speed: "⏱️ 演出速度",
         speed_hint: "傷害演出太快就調慢，太拖就調快 / 立即。",
         language: "🌐 語言", close: "關閉", on: "開", off: "關",
         cleared: "🎯 戰鬥勝利！", my_dmg: "我的傷害", continue_run: "↩️ 繼續 — 重試最後一次攻擊",
@@ -4557,7 +4559,7 @@
         mob: "ザコ", elite: "精鋭", boss: "ボス", shortcut: "近道", skip: "⏭ 近道",
         bs_hint: "近道なら整備なしで次の戦闘へ。ボスは回避不可。",
         skip_reward: "⏭️ 近道報酬",
-        settings: "⚙️ 設定", sound: "🔊 サウンド", speed: "⏱️ 演出速度",
+        quit_to_menu: "🚪 メニューに戻る", settings: "⚙️ 設定", sound: "🔊 サウンド", speed: "⏱️ 演出速度",
         speed_hint: "ダメージ演出が速すぎれば遅く、もたつけば速く / 即時。",
         language: "🌐 言語", close: "閉じる", on: "オン", off: "オフ",
         cleared: "🎯 戦闘勝利！", my_dmg: "自分のダメージ", continue_run: "↩️ 続きから — 最後の攻撃をやり直す",
@@ -7176,10 +7178,16 @@
       BGM.syncBtn();
       renderSpeedSeg();
       renderLangSeg();
+      // 시작화면(메인)에서 연 설정엔 '게임 나가기'가 의미 없으므로 숨긴다(이미 메인).
+      const onStart = $("#startScreen").classList.contains("show");
+      const qb = $("#setQuitBtn"); if (qb) qb.style.display = onStart ? "none" : "";
       $("#settingsModal").classList.add("show");
     }
     function closeSettings() { $("#settingsModal").classList.remove("show"); }
     $("#settingsBtn").addEventListener("click", openSettings);
+    $("#startSettingsBtn").addEventListener("click", openSettings);   // 메인(시작화면)에서도 설정 진입
+    // 게임 나가기 → 메인으로(세이브는 남겨 '이어하기' 가능)
+    $("#setQuitBtn").addEventListener("click", () => { closeSettings(); goToStartScreen(); });
     $("#setCloseBtn").addEventListener("click", closeSettings);
     $("#settingsModal").addEventListener("click", (e) => { if (e.target.id === "settingsModal") closeSettings(); });
     $("#setSoundBtn").addEventListener("click", () => BGM.toggle());
