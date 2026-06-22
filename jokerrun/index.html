@@ -2596,10 +2596,10 @@
     <div class="start-card">
       <div class="start-logo">🃏</div>
       <h1 class="start-title">조커런</h1>
-      <p class="start-tagline">포커 핸드를 짜고, 조커로 점수를 폭발시켜라.<br>8앤티를 돌파하는 카드 로그라이크.</p>
+      <p class="start-tagline" data-i18n-html="tagline">카드를 짜서 적을 공격하고, 조커로 데미지를 폭발시켜라.<br>던전을 격파하는 카드 로그라이크.</p>
       <div class="start-hs" id="startHighScore">최고 기록: 0점</div>
       <button class="start-continue" id="startContinueBtn" style="display:none">↩️ 이어하기</button>
-      <button class="start-play" id="startPlayBtn">▶ 플레이</button>
+      <button class="start-play" id="startPlayBtn" data-i18n="play">▶ 플레이</button>
       <button class="start-help" id="startHelpBtn">＂어떻게 하는 거야?＂ — 도움말</button>
     </div>
   </div>
@@ -2643,13 +2643,13 @@
         <span class="round-num" id="roundLabel">1-1</span>
       </div>
       <div class="target-display">
-        <span class="target-label">목표</span>
+        <span class="target-label" data-i18n="enemy_hp">적 HP</span>
         <span class="target-value" id="targetLabel">0</span>
       </div>
       <div class="header-right">
         <button id="settingsBtn" type="button" class="bgm-btn" aria-label="설정" title="설정">⚙️</button>
-        <span class="gold-badge" id="goldLabel">G 0</span>
-        <span class="money-badge" id="moneyLabel">$0</span>
+        <span class="gold-badge" id="goldLabel" style="display:none">G 0</span>
+        <span class="money-badge" id="moneyLabel">🪙0</span>
       </div>
     </header>
     <audio id="bgmAudio" src="bgm.mp3?v=1" loop preload="none"></audio>
@@ -2662,30 +2662,30 @@
     <section class="table glass">
       <div class="boss-banner" id="bossBanner" hidden></div>
       <div class="score-inline">
-        <span class="chips-readout">칩 <b id="chipsLabel">0</b></span>
-        <span class="mult-readout">배수 <b id="multLabel">x1</b></span>
+        <span class="chips-readout"><span data-i18n="atk_power">공격력</span> <b id="chipsLabel">0</b></span>
+        <span class="mult-readout"><span data-i18n="combo">연격</span> <b id="multLabel">x1</b></span>
         <span class="score-total" id="scoreLabel">0</span>
       </div>
-      <div class="hand-preview" id="handPreview">족보명 | 예상: 0점</div>
-      <div class="info-line" id="handResult">핸드를 선택해 플레이하세요.</div>
+      <div class="hand-preview" id="handPreview" data-i18n="combo_preview">기술명 | 예상 데미지: 0</div>
+      <div class="info-line" id="handResult" data-i18n="hand_hint">공격할 카드를 선택하세요.</div>
       <div class="cards-wrap" id="cardsWrap"></div>
       <div class="hand-bottom">
         <div class="info-line" id="handGuide">손패 8장 중 최대 5장을 선택</div>
-        <button id="handsInfoBtn" class="deck-btn" type="button">📊 족보</button>
-        <button id="tarotInfoBtn" class="deck-btn" type="button">🔮 타로</button>
+        <button id="handsInfoBtn" class="deck-btn" type="button" data-i18n="skills">📊 기술</button>
+        <button id="tarotInfoBtn" class="deck-btn" type="button" data-i18n="scrolls">📜 주문서</button>
         <button id="collectionBtn" class="deck-btn" type="button">📖 도감</button>
-        <button id="deckBtn" class="deck-btn" type="button">🃏 덱 (0장)</button>
+        <button id="deckBtn" class="deck-btn" type="button" data-i18n="deck">🃏 덱</button>
       </div>
     </section>
 
     <section class="status-bar glass">
-      <div>남은 핸드 <b id="handsLabel">0</b></div>
-      <div style="text-align:right;">남은 버리기 <b id="discardsLabel">0</b></div>
+      <div><span data-i18n="hands_left">남은 공격</span> <b id="handsLabel">0</b></div>
+      <div style="text-align:right;"><span data-i18n="discards_left">남은 버리기</span> <b id="discardsLabel">0</b></div>
     </section>
 
     <section class="actions">
-      <button class="btn-main" id="playBtn">핸드 플레이</button>
-      <button class="btn-warn" id="discardBtn">카드 버리기</button>
+      <button class="btn-main" id="playBtn" data-i18n="hand_play">⚔️ 공격</button>
+      <button class="btn-warn" id="discardBtn" data-i18n="card_discard">카드 버리기</button>
       <button id="sortBtn" type="button" aria-label="카드 정렬"><span class="sort-ico">⇅</span><span class="sort-lbl" id="sortModeLabel">랭크</span></button>
       <button id="clearBtn" aria-label="선택 해제"></button>
     </section>
@@ -2696,12 +2696,12 @@
   <div class="modal" id="shopModal">
     <div class="shop">
       <div class="shop-stickyhead">
-        <div class="title">상점</div>
+        <div class="title" data-i18n="shop">상점</div>
         <div class="shop-stats">
           <span class="round-label" id="shopAnte">Ante 1</span>
-          <span class="gold-badge" id="shopGold">G 0</span>
-          <span class="money-badge" id="shopMoney">$0</span>
-          <button class="reroll-btn-sm" id="shopReroll" type="button">🎲 갱신</button>
+          <span class="gold-badge" id="shopGold" style="display:none">G 0</span>
+          <span class="money-badge" id="shopMoney">🪙0</span>
+          <button class="reroll-btn-sm" id="shopReroll" type="button" data-i18n="reroll">🎲 갱신</button>
         </div>
       </div>
       <div id="shopCashout" class="shop-cashout" style="display:none"></div>
@@ -2709,7 +2709,7 @@
       <div class="consumable-strip" id="shopConsumableArea" aria-label="보유 소모품(상점에서 사용)" style="margin:6px 0"></div>
       <div class="shop-owned" id="shopOwnedJokers"></div>
       <div class="shop-grid" id="shopGrid"></div>
-      <button id="shopContinueBtn" class="btn-main" style="width:100%;margin-top:12px;padding:12px;font-size:15px;font-weight:700;border-radius:12px;background:linear-gradient(150deg,var(--ok),#3af5a0);color:#062f27;border:none;cursor:pointer;">다음 블라인드로 →</button>
+      <button id="shopContinueBtn" class="btn-main" data-i18n="next_blind" style="width:100%;margin-top:12px;padding:12px;font-size:15px;font-weight:700;border-radius:12px;background:linear-gradient(150deg,var(--ok),#3af5a0);color:#062f27;border:none;cursor:pointer;">다음 전투로 →</button>
     </div>
   </div>
 
@@ -2731,7 +2731,7 @@
   <div class="modal" id="handsModal">
     <div class="deck-modal">
       <div class="deck-title">
-        <div class="title">족보 점수표 — 기본 vs 행성 강화</div>
+        <div class="title" data-i18n="weapon_table">기술 데미지표 — 기본 vs 무기강화</div>
       </div>
       <div id="handsInfoBody" style="overflow-y:auto;max-height:60vh"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px;">
@@ -2742,12 +2742,12 @@
 
   <div class="modal" id="clearConfirmModal">
     <div class="mode-sheet" style="text-align:center">
-      <div class="title">🎯 블라인드 클리어!</div>
-      <div style="margin:10px 0 1px;font-size:.74rem;color:var(--muted)">내 점수</div>
+      <div class="title" data-i18n="cleared">🎯 전투 승리!</div>
+      <div style="margin:10px 0 1px;font-size:.74rem;color:var(--muted)" data-i18n="my_dmg">내 데미지</div>
       <div style="font-size:1.7rem;font-weight:900;color:var(--gold,#ffcf6d);line-height:1.1"><span id="ccScore">0</span></div>
-      <div style="margin-top:7px;font-size:.84rem;color:var(--muted)">목표 점수 <b id="ccTarget" style="color:#fff">0</b> <span style="color:#5fd38a;font-weight:800">달성 ✓</span></div>
+      <div style="margin-top:7px;font-size:.84rem;color:var(--muted)"><span data-i18n="enemy_hp">적 HP</span> <b id="ccTarget" style="color:#fff">0</b> <span style="color:#5fd38a;font-weight:800">✓</span></div>
       <div id="ccBoss" style="display:none;margin-top:8px;font-size:.85rem;color:#ffcf6d"></div>
-      <button class="btn-main" id="ccContinueBtn" style="margin-top:14px;padding:12px;border-radius:12px;font-weight:800">정산 받기 →</button>
+      <button class="btn-main" id="ccContinueBtn" data-i18n="collect" style="margin-top:14px;padding:12px;border-radius:12px;font-weight:800">전리품 받기 →</button>
     </div>
   </div>
 
@@ -2756,23 +2756,27 @@
       <div class="title">💰 정산 완료</div>
       <div id="cashoutBody" style="margin:8px 0 2px"></div>
       <div class="co-total-big">+$<span id="cashoutTotal">0</span></div>
-      <button class="btn-main" id="cashoutContinueBtn" style="padding:12px;border-radius:12px;font-weight:800">상점으로 →</button>
+      <button class="btn-main" id="cashoutContinueBtn" data-i18n="to_shop" style="padding:12px;border-radius:12px;font-weight:800">정비하러 →</button>
     </div>
   </div>
 
   <div class="modal" id="settingsModal">
     <div class="mode-sheet" style="text-align:left;max-width:340px">
-      <div class="title" style="text-align:center">⚙️ 설정</div>
+      <div class="title" style="text-align:center" data-i18n="settings">⚙️ 설정</div>
       <div class="set-row">
-        <div class="set-label">🔊 사운드</div>
+        <div class="set-label" data-i18n="sound">🔊 사운드</div>
         <button id="setSoundBtn" type="button" class="set-toggle">켜짐</button>
       </div>
       <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
-        <div class="set-label">⏱️ 점수 연출 속도</div>
+        <div class="set-label" data-i18n="speed">⏱️ 연출 속도</div>
         <div id="setSpeedRow" class="set-seg"></div>
-        <div class="set-hint">점수가 너무 빨리 지나가면 느리게, 답답하면 빠르게 / 즉시.</div>
+        <div class="set-hint" data-i18n="speed_hint">데미지 연출이 너무 빨리 지나가면 느리게, 답답하면 빠르게 / 즉시.</div>
       </div>
-      <button class="btn-main" id="setCloseBtn" style="margin-top:16px;padding:11px;border-radius:12px;font-weight:800;width:100%">닫기</button>
+      <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div class="set-label" data-i18n="language">🌐 언어</div>
+        <div id="setLangRow" class="set-seg"></div>
+      </div>
+      <button class="btn-main" id="setCloseBtn" data-i18n="close" style="margin-top:16px;padding:11px;border-radius:12px;font-weight:800;width:100%">닫기</button>
     </div>
   </div>
 
@@ -2796,8 +2800,8 @@
       </div>
       <div class="col-tabs">
         <button class="col-tab active" data-ctab="joker" type="button">조커</button>
-        <button class="col-tab" data-ctab="tarot" type="button">타로</button>
-        <button class="col-tab" data-ctab="planet" type="button">행성</button>
+        <button class="col-tab" data-ctab="tarot" type="button" data-i18n="scroll">주문서</button>
+        <button class="col-tab" data-ctab="planet" type="button" data-i18n="weapon_up">무기강화</button>
       </div>
       <div id="collectionBody" style="overflow-y:auto;max-height:60vh"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px;">
@@ -2827,22 +2831,22 @@
         <div class="subtitle" id="bsReward" style="margin-top:2px;color:var(--muted);font-size:.78rem"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
-        <button class="btn-main" id="bsPlayBtn" style="padding:12px;border-radius:12px;font-weight:800">▶ 플레이</button>
-        <button id="bsSkipBtn" style="padding:12px;border-radius:12px;font-weight:800;background:linear-gradient(150deg,#2a2545,#1a1730);color:#e7defb;border:1px solid rgba(255,215,0,.3);cursor:pointer">⏭ 스킵</button>
+        <button class="btn-main" id="bsPlayBtn" data-i18n="attack" style="padding:12px;border-radius:12px;font-weight:800">공격</button>
+        <button id="bsSkipBtn" data-i18n="skip" style="padding:12px;border-radius:12px;font-weight:800;background:linear-gradient(150deg,#2a2545,#1a1730);color:#e7defb;border:1px solid rgba(255,215,0,.3);cursor:pointer">⏭ 지름길</button>
       </div>
-      <div class="subtitle" id="bsHint" style="text-align:center;color:var(--muted);font-size:.72rem;margin-top:2px">스킵 시 상점 없이 다음 블라인드로. 보스는 스킵 불가.</div>
+      <div class="subtitle" id="bsHint" data-i18n="bs_hint" style="text-align:center;color:var(--muted);font-size:.72rem;margin-top:2px">지름길로 가면 정비 없이 다음 전투로. 보스는 우회 불가.</div>
     </div>
   </div>
 
   <div class="modal" id="skipResultModal">
     <div class="mode-sheet">
       <div style="text-align:center">
-        <div class="subtitle" style="color:var(--gold);font-weight:800">⏭️ 스킵 보상 획득</div>
+        <div class="subtitle" data-i18n="skip_reward" style="color:var(--gold);font-weight:800">⏭️ 지름길 보상 획득</div>
         <div id="skipResultIcon" style="font-size:2.6rem;line-height:1;margin:10px 0 6px">🎁</div>
         <div class="title" id="skipResultName" style="margin-top:2px">보상</div>
         <div class="subtitle" id="skipResultDesc" style="margin-top:6px;color:var(--muted);font-size:.8rem"></div>
       </div>
-      <button class="btn-main" id="skipResultBtn" style="width:100%;margin-top:14px;padding:13px;font-weight:800;border-radius:12px">다음 블라인드로 →</button>
+      <button class="btn-main" id="skipResultBtn" data-i18n="next_blind" style="width:100%;margin-top:14px;padding:13px;font-weight:800;border-radius:12px">다음 전투로 →</button>
     </div>
   </div>
 
@@ -2902,7 +2906,7 @@
       <h2 style="color:#ff7f91;font-size:22px;margin-bottom:4px;">게임 오버</h2>
       <p id="gameOverAnteText" style="color:var(--muted);font-size:13px;margin-bottom:16px;"></p>
       <p id="gameOverHighScore" style="color:var(--gold);font-size:13px;margin-bottom:20px;"></p>
-      <button id="gameOverContinueBtn" onclick="restoreRun()" style="display:none;width:100%;padding:12px;margin-bottom:9px;background:linear-gradient(150deg,#2e7d4f,#1f6b3e);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">↩️ 이어하기 — 마지막 핸드 다시</button>
+      <button id="gameOverContinueBtn" onclick="restoreRun()" data-i18n="continue_run" style="display:none;width:100%;padding:12px;margin-bottom:9px;background:linear-gradient(150deg,#2e7d4f,#1f6b3e);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">↩️ 이어하기 — 마지막 공격 다시</button>
       <button onclick="newRun()" style="width:100%;padding:12px;background:linear-gradient(150deg,var(--red-start),var(--red-end));color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">다시 시작</button>
     </div>
   </div>
@@ -3575,6 +3579,77 @@
     };
 
     const $ = sel => document.querySelector(sel);
+
+    // ─────────────────────────────────────────────────────────────
+    // i18n — 던전 테마 + 다국어(ko 기본 / en). ja·zh는 추후.
+    // 콘텐츠(조커/타로/행성 개별 이름·설명)는 아직 ko 인라인 유지(T2).
+    // 여기선 프레임워크/UI 크롬 + 던전 리스킨 용어만 다룬다.
+    // ─────────────────────────────────────────────────────────────
+    const I18N = {
+      ko: {
+        tagline: "카드를 짜서 적을 공격하고, 조커로 데미지를 폭발시켜라.<br>던전을 격파하는 카드 로그라이크.",
+        play: "▶ 플레이", attack: "공격", enemy_hp: "적 HP", dmg: "데미지",
+        atk_power: "공격력", combo: "연격",
+        hands_left: "남은 공격", discards_left: "남은 버리기",
+        hand_play: "⚔️ 공격", card_discard: "카드 버리기",
+        skills: "📊 기술", scrolls: "📜 주문서", deck: "🃏 덱",
+        deck_n: "🃏 덱 ({n}장)", hand_hint: "공격할 카드를 선택하세요.",
+        combo_preview: "기술명 | 예상 데미지: 0",
+        shop: "상점", next_blind: "다음 전투로 →", to_shop: "정비하러 →", collect: "전리품 받기 →",
+        reroll: "🎲 갱신", coins: "주화", sold_out: "매진",
+        weapon_up: "무기강화", scroll: "주문서", joker: "조커",
+        mob: "잡몹", elite: "정예", boss: "보스", shortcut: "지름길", skip: "⏭ 지름길",
+        bs_hint: "지름길로 가면 정비 없이 다음 전투로. 보스는 우회 불가.",
+        skip_reward: "⏭️ 지름길 보상 획득",
+        settings: "⚙️ 설정", sound: "🔊 사운드", speed: "⏱️ 연출 속도",
+        speed_hint: "데미지 연출이 너무 빨리 지나가면 느리게, 답답하면 빠르게 / 즉시.",
+        language: "🌐 언어", close: "닫기", on: "켜짐", off: "꺼짐",
+        cleared: "🎯 전투 승리!", my_dmg: "내 데미지", continue_run: "↩️ 이어하기 — 마지막 공격 다시",
+        victory_text: "보스를 격파했습니다.", weapon_table: "기술 데미지표 — 기본 vs 무기강화",
+        spd_slow: "느리게", spd_normal: "보통", spd_fast: "빠르게", spd_vfast: "매우 빠름", spd_instant: "즉시"
+      },
+      en: {
+        tagline: "Combine cards to strike, then blow up the damage with Jokers.<br>A card roguelike dungeon crawler.",
+        play: "▶ Play", attack: "Attack", enemy_hp: "Enemy HP", dmg: "Damage",
+        atk_power: "ATK", combo: "Combo",
+        hands_left: "Attacks left", discards_left: "Discards left",
+        hand_play: "⚔️ Attack", card_discard: "Discard",
+        skills: "📊 Skills", scrolls: "📜 Scrolls", deck: "🃏 Deck",
+        deck_n: "🃏 Deck ({n})", hand_hint: "Pick cards to attack with.",
+        combo_preview: "Skill | Est. damage: 0",
+        shop: "Shop", next_blind: "Next battle →", to_shop: "Resupply →", collect: "Collect loot →",
+        reroll: "🎲 Reroll", coins: "coins", sold_out: "Sold out",
+        weapon_up: "Weapon", scroll: "Scroll", joker: "Joker",
+        mob: "Mob", elite: "Elite", boss: "Boss", shortcut: "Shortcut", skip: "⏭ Shortcut",
+        bs_hint: "Take the shortcut to skip straight to the next battle. Bosses can't be bypassed.",
+        skip_reward: "⏭️ Shortcut reward",
+        settings: "⚙️ Settings", sound: "🔊 Sound", speed: "⏱️ Anim speed",
+        speed_hint: "If damage animation flies by, set it slower; if it drags, faster / instant.",
+        language: "🌐 Language", close: "Close", on: "On", off: "Off",
+        cleared: "🎯 Battle won!", my_dmg: "Your damage", continue_run: "↩️ Continue — retry last attack",
+        victory_text: "You defeated the boss.", weapon_table: "Skill damage table — base vs weapon",
+        spd_slow: "Slow", spd_normal: "Normal", spd_fast: "Fast", spd_vfast: "Very fast", spd_instant: "Instant"
+      }
+    };
+    let LANG = localStorage.getItem("jokerrun_lang") || (navigator.language || "ko").slice(0, 2).toLowerCase();
+    if (!I18N[LANG]) LANG = "ko";
+    function t(k, p) {
+      let s = (I18N[LANG] && I18N[LANG][k] != null) ? I18N[LANG][k] : (I18N.ko[k] != null ? I18N.ko[k] : k);
+      if (p) for (const key in p) s = s.split("{" + key + "}").join(p[key]);
+      return s;
+    }
+    function applyStaticI18n() {
+      document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.getAttribute("data-i18n")); });
+      document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = t(el.getAttribute("data-i18n-html")); });
+    }
+    function setLang(l) {
+      if (!I18N[l]) l = "ko";
+      LANG = l;
+      try { localStorage.setItem("jokerrun_lang", l); } catch (_) {}
+      applyStaticI18n();
+      try { renderHUD(); refreshConsumables(); } catch (_) {}
+    }
+
     const cardsWrap = $("#cardsWrap");
     const handPreview = $("#handPreview");
     const handResult = $("#handResult");
@@ -3882,7 +3957,7 @@
       const cards = selectedCards();
       if (!cards.length) {
         handPreview.classList.remove("show");
-        handPreview.textContent = "족보명 | 예상: 0점";
+        handPreview.textContent = t("combo_preview");
         return;
       }
       const hand = scoreHand(cards);
@@ -3896,7 +3971,7 @@
       }
       const estimated = Math.floor(chips * mult);
       const nowLevel = state.handLevels?.[hand.handType] || 1;
-      handPreview.textContent = `${hand.name} Lv.${nowLevel} | 예상: ${estimated.toLocaleString()}점`;
+      handPreview.textContent = `${hand.name} Lv.${nowLevel} | ${t("dmg")}: ${estimated.toLocaleString()}`;
       handPreview.classList.add("show");
     }
 
@@ -3980,7 +4055,7 @@
       updateHandPreview();
       renderHUD();
       refreshConsumables();
-      if (inShop) $("#shopMoney").textContent = `보유 자금: $${state.money}`;
+      if (inShop) $("#shopMoney").textContent = `🪙${state.money}`;
     }
 
     function showFloatingNote(anchorEl, text) {
@@ -4401,14 +4476,14 @@
       $("#anteBlindLabel").textContent = `Ante ${state.ante} | Blind ${state.roundIndex + 1}/3`;
       $("#targetLabel").textContent = activeTarget().toLocaleString();
       $("#scoreLabel").textContent = state.score.toLocaleString();
-      $("#moneyLabel").textContent = `$${state.money}`;
+      $("#moneyLabel").textContent = `🪙${state.money}`;
       $("#handsLabel").textContent = String(state.handsLeft);
       $("#discardsLabel").textContent = String(state.discardsLeft);
       $("#chipsLabel").textContent = chips.toLocaleString();
       $("#multLabel").textContent = `x${mult}`;
       $("#playBtn").disabled = state.gameEnded;
       $("#discardBtn").disabled = state.gameEnded;
-      $("#deckBtn").textContent = `🃏 덱 (${state.deck.length}장)`;
+      $("#deckBtn").textContent = t("deck_n", { n: state.deck.length });
       $("#handGuide").textContent = state.bossModifier?.id === "max3cards"
         ? "손패 8장 중 최대 3장을 선택"
         : "손패 8장 중 최대 5장을 선택";
@@ -4913,7 +4988,7 @@
       head.innerHTML = headText || "";
       const readout = document.createElement("div");
       readout.className = "play-stage-readout";
-      readout.innerHTML = `칩 <span class="ps-chips">0</span> <span class="ps-x">×</span> <span class="ps-mult">1</span>`;
+      readout.innerHTML = `${t("atk_power")} <span class="ps-chips">0</span> <span class="ps-x">×</span> <span class="ps-mult">1</span>`;
       const row = document.createElement("div");
       row.className = "play-stage-cards";
       const map = {};
@@ -5285,7 +5360,7 @@
       }
       const grid = $("#shopGrid");
       grid.innerHTML = "";
-      $("#shopMoney").textContent = `$${state.money}`;
+      $("#shopMoney").textContent = `🪙${state.money}`;
       const shopAnte = $("#shopAnte");
       if (shopAnte) shopAnte.textContent = `Ante ${state.ante}`;
       updateGoldLabel();
@@ -5334,7 +5409,7 @@
       }
 
       // ── 조커 ──
-      grid.appendChild(shopSubtitle("조커"));
+      grid.appendChild(shopSubtitle(t("joker")));
       const jRow = document.createElement("div");
       jRow.className = "shop-tilerow";
       state.shopJokers.forEach(joker => {
@@ -5373,7 +5448,7 @@
       grid.appendChild(jRow);
 
       // ── 플래닛 ──
-      grid.appendChild(shopSubtitle("플래닛 카드"));
+      grid.appendChild(shopSubtitle(t("weapon_up")));
       const pRow = document.createElement("div");
       pRow.className = "shop-tilerow";
       state.shopPlanets.forEach((planet, idx) => {
@@ -5429,7 +5504,7 @@
       grid.appendChild(pRow);
 
       // ── 타로 ──
-      grid.appendChild(shopSubtitle("타로 카드"));
+      grid.appendChild(shopSubtitle(t("scroll")));
       const tRow = document.createElement("div");
       tRow.className = "shop-tilerow";
       (state.shopTarots || []).forEach((tarot, idx) => {
@@ -5526,8 +5601,8 @@
       const blindDefs = getBlindTargets(state.ante);
       const blind = blindDefs[index];
       $("#bsAnte").textContent = `Ante ${state.ante}`;
-      $("#bsBlindName").textContent = blind.label;
-      $("#bsTarget").textContent = `목표 점수 ${blind.target.toLocaleString()}`;
+      $("#bsBlindName").textContent = t(blind.id === "small" ? "mob" : blind.id === "big" ? "elite" : "boss");
+      $("#bsTarget").textContent = `${t("enemy_hp")} ${blind.target.toLocaleString()}`;
       // 스킵 보상 1개를 미리 결정해 보여준다. 스킵하면 이 보상을 받고, 플레이하면 무시.
       state._skipReward = rollSkipReward();
       const sr = state._skipReward;
@@ -5861,11 +5936,11 @@
     }
     // ── 설정 모달 ──
     const SPEED_OPTS = [
-      { v: 1.6, label: "느리게" },
-      { v: 1,   label: "보통" },
-      { v: 0.5, label: "빠르게" },
-      { v: 0.25, label: "매우 빠름" },
-      { v: 0,   label: "즉시" }
+      { v: 1.6, key: "spd_slow" },
+      { v: 1,   key: "spd_normal" },
+      { v: 0.5, key: "spd_fast" },
+      { v: 0.25, key: "spd_vfast" },
+      { v: 0,   key: "spd_instant" }
     ];
     function renderSpeedSeg() {
       const row = $("#setSpeedRow");
@@ -5874,15 +5949,30 @@
       SPEED_OPTS.forEach(opt => {
         const b = document.createElement("button");
         b.type = "button";
-        b.textContent = opt.label;
+        b.textContent = t(opt.key);
         if (Math.abs(SCORE_SPEED - opt.v) < 0.001) b.classList.add("active");
         b.addEventListener("click", () => { setScoreSpeed(opt.v); renderSpeedSeg(); });
+        row.appendChild(b);
+      });
+    }
+    const LANG_OPTS = [{ code: "ko", label: "한국어" }, { code: "en", label: "English" }];
+    function renderLangSeg() {
+      const row = $("#setLangRow");
+      if (!row) return;
+      row.innerHTML = "";
+      LANG_OPTS.forEach(opt => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = opt.label;
+        if (LANG === opt.code) b.classList.add("active");
+        b.addEventListener("click", () => { setLang(opt.code); renderLangSeg(); renderSpeedSeg(); });
         row.appendChild(b);
       });
     }
     function openSettings() {
       BGM.syncBtn();
       renderSpeedSeg();
+      renderLangSeg();
       $("#settingsModal").classList.add("show");
     }
     function closeSettings() { $("#settingsModal").classList.remove("show"); }
@@ -5946,7 +6036,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-boss8";
+    const JR_BUILD = "2026-06-22-i18n1";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
@@ -6006,6 +6096,7 @@
       $("#dbgMoney").addEventListener("click", () => { state.money = (state.money || 0) + 50; renderHUD(); setInfo("🐞 자금 +$50"); });
     }
     (async () => {
+      try { applyStaticI18n(); } catch (_) {}   // 감지된 언어로 정적 UI 먼저 로컬라이즈
       if ((typeof SharedWallet !== "undefined" && SharedWallet)) {
         try { await SharedWallet.init(); } catch (_) {}
       }
