@@ -1039,11 +1039,15 @@
     .table {
       position: relative;
       padding: 8px;
-      display: grid;
-      grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+      display: flex;
+      flex-direction: column;
       gap: 6px;
       overflow: hidden;
     }
+    /* boss-banner 유무로 자식 수가 바뀌어도 cards-wrap이 항상 유연한 영역을 갖도록 flex로.
+       (grid 고정 행에서는 보스전에 1fr 행이 밀려 카드 2번째 줄이 아래 칩을 덮었음) */
+    .table > * { flex: 0 0 auto; }
+    .table > .cards-wrap { flex: 1 1 auto; min-height: 0; }
 
     .boss-banner {
       display: flex;
@@ -1454,9 +1458,11 @@
       justify-content: center;
       align-content: start;
       gap: 5px;
-      height: 100%;
+      height: auto;
       min-height: 0;
-      /* 선택 시 카드가 위로 떠올라도(-12px) 잘리지 않게 여유 + 클리핑 해제 */
+      align-content: center;
+      /* 선택 시 카드가 위로 떠올라도(-12px) 잘리지 않게 여유 + 클리핑 해제.
+         flex:1 1 auto 로 가운데 영역을 채우므로 2줄이 들어가도 아래 칩을 안 덮음. */
       padding-top: 16px;
       overflow: visible;
     }
@@ -6782,6 +6788,7 @@
     }
 
     function newRun() {
+      clearSavedRun();   // 새 런 시작 → 이전(죽은) 런 세이브 폐기, 첫 공격에서 새로 저장됨
       state.mode = "single";
       state.ante = 1;
       state.money = 10;
@@ -6896,7 +6903,10 @@
     // 게임 종료(패배/완주) 후 "다시 시작" → 바로 Hunt 1로 가지 말고 메인(시작화면)으로.
     // 함수 선언(호이스팅)으로 둬야 위쪽 victoryConfirmBtn 리스너 등록 시점에도 참조 가능 + inline onclick에서 전역 접근.
     function goToStartScreen() {
-      clearRunActive(); clearSavedRun();   // 죽은 런 폐기 — 시작화면 이어하기 미노출
+      // 자동 복귀는 끄되(리로드 시 강제로 게임 안 끌고 들어가지 않음) 세이브는 남겨
+      // 시작화면에서 "이어하기"로 마지막 공격을 다시 시도할 수 있게 한다.
+      // (완주 시엔 showRunClearModal에서 이미 세이브를 지웠으므로 이어하기 미노출 — 정상)
+      clearRunActive();
       try { closeShop(); closeDeckModal(); closeVictoryModal(); } catch (_) {}
       document.getElementById("gameOverModal").classList.remove("show");
       refreshStartHighScore();             // 최고기록 갱신 + 이어하기 버튼 숨김
@@ -7004,7 +7014,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-23-dragscroll";
+    const JR_BUILD = "2026-06-23-layout-resume";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
