@@ -3494,10 +3494,15 @@
         play1: "bgm-play1.mp3?v=1", play2: "bgm-play2.mp3?v=1", play3: "bgm-play3.mp3?v=1",
         play4: "bgm-play4.mp3?v=1", play5: "bgm-play5.mp3?v=1", play6: "bgm-play6.mp3?v=1",
         play7: "bgm-play7.mp3?v=1", play8: "bgm-play8.mp3?v=1", playDef: "bgm-play-def.mp3?v=1",
+        boss1: "bgm-boss1.mp3?v=1", boss2: "bgm-boss2.mp3?v=1", boss3: "bgm-boss3.mp3?v=1",
+        boss4: "bgm-boss4.mp3?v=1", boss5: "bgm-boss5.mp3?v=1", boss6: "bgm-boss6.mp3?v=1",
+        boss7: "bgm-boss7.mp3?v=1", boss8: "bgm-boss8.mp3?v=1",
         boss: "bgm-boss.mp3?v=3", shop: "bgm-shop.mp3?v=1"
       },
       // 앤티 번호 → 플레이 트랙 키. 1~8은 전용, 9탄부터는 디폴트.
       playKey(ante) { const a = ante || 1; return a >= 1 && a <= 8 ? "play" + a : "playDef"; },
+      // 앤티 번호 → 보스 트랙 키. 9탄+는 보스 아트처럼 boss1~8 순환.
+      bossKey(ante) { const a = ante || 1; return "boss" + (((a - 1) % 8) + 1); },
       volFor(t) { return t === "boss" ? 0.46 : t === "shop" ? 0.34 : 0.38; },
       init() {
         this.el = document.getElementById("bgmAudio");
@@ -4848,7 +4853,7 @@
       closeShop(); closeDeckModal(); closeVictoryModal();
       const ss = document.getElementById("startScreen"); if (ss) ss.classList.remove("show");
       sortHand(); renderCards(); renderBossBanner(); renderHUD(); updateHandPreview();
-      try { BGM.setTrack(state.isBossBlind ? "boss" : BGM.playKey(state.ante)); } catch (_) {}
+      try { BGM.setTrack(state.isBossBlind ? BGM.bossKey(state.ante) : BGM.playKey(state.ante)); } catch (_) {}
       setInfo("↩️ 이어하기 — 마지막 핸드를 다시 시도하세요.");
       markRunActive();   // 리로드돼도 이 런으로 자동 복귀
       return true;
@@ -5637,7 +5642,7 @@
       renderBossBanner();
       renderHUD();
       updateHandPreview();
-      BGM.setTrack(state.isBossBlind ? "boss" : BGM.playKey(state.ante));
+      BGM.setTrack(state.isBossBlind ? BGM.bossKey(state.ante) : BGM.playKey(state.ante));
       setInfo("핸드를 선택해 플레이하세요.");
       if (state.bossModifier) {
         setInfo(`<span style="color:var(--danger)">⚠️ ${state.bossModifier.label}</span> — ${state.bossModifier.desc}`);
@@ -5941,7 +5946,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-flashz2";
+    const JR_BUILD = "2026-06-22-boss8";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
