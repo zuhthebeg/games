@@ -4049,9 +4049,9 @@
         ui_planet_all_flash: "All skills Lv +{n}",
         ui_plays_count: "·{n}×",
         ui_edition_fx: "{icon} {label} edition — each attack {fx}",
-        ui_head_scoring: "<span class=\"hand-tag\">{name}</span>{lv} · <b style=\"color:var(--gold)\">{valid}</b> scoring{kicker}",
+        ui_head_scoring: "<span class=\"hand-tag\">{name}</span>{lv} · <b style=\"color:var(--gold)\">{valid}</b> scoring cards{kicker}",
         ui_head_lv: " <b style=\"color:var(--gold)\">Lv.{lv}</b>",
-        ui_head_kicker: " ({n} kicker{n,plural,=1{}other{s}} excluded)",
+        ui_head_kicker: " ({n} kicker(s) excluded)",
         ui_joker_copy: "{joker} → {target} copy",
         ui_negative_badge: "🌑 Negative",
         sr_windfall_label: "Windfall", sr_windfall_detail: "+🪙{n} immediately",
@@ -6497,7 +6497,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-langlive";
+    const JR_BUILD = "2026-06-22-icufix";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
