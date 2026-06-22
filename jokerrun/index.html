@@ -3062,7 +3062,45 @@
     const EN_BOSS_NAMES = ["Ringmaster", "Gambling King", "Puppeteer", "Heartbreaker", "Timekeeper", "Executioner", "Trickster", "Carnival Lord"];
     const ZH_BOSS_NAMES = ["馬戲團長", "賭王", "操偶師", "碎心者", "時間守衛", "劊子手", "騙術師", "嘉年華領主"];
     const JA_BOSS_NAMES = ["リングマスター", "ギャンブル王", "人形使い", "ハートブレイカー", "時の番人", "処刑人", "トリックスター", "カーニバル君主"];
+    /* 크로스게임 공유: 무기강화(enhance) 게임의 몬스터 아트를 게임 공용 경로 /lib/monsters/ 에서 그대로 가져와
+       엔드리스(9탄+) 보스로 재사용한다. 이미지/이름 모두 공유 — 별도 복사 없이 같은 origin 절대경로 참조. */
+    const ENDLESS_MONSTERS = [
+      { img: "dragon",            ko: "드래곤",         en: "Dragon",            ja: "ドラゴン",           zh: "龍" },
+      { img: "demon",             ko: "데몬",           en: "Demon",             ja: "デーモン",           zh: "惡魔" },
+      { img: "reaper",            ko: "사신",           en: "Reaper",            ja: "死神",               zh: "死神" },
+      { img: "lich",              ko: "리치",           en: "Lich",              ja: "リッチ",             zh: "巫妖" },
+      { img: "hydra",             ko: "히드라",         en: "Hydra",             ja: "ヒュドラ",           zh: "海德拉" },
+      { img: "frost_giant",       ko: "서리거인",       en: "Frost Giant",       ja: "霜の巨人",           zh: "霜巨人" },
+      { img: "balrog",            ko: "발록",           en: "Balrog",            ja: "バルログ",           zh: "炎魔" },
+      { img: "phoenix",           ko: "불사조",         en: "Phoenix",           ja: "フェニックス",       zh: "鳳凰" },
+      { img: "succubus_boss",     ko: "서큐버스",       en: "Succubus",          ja: "サキュバス",         zh: "魅魔" },
+      { img: "ancient_dragon",    ko: "고대용",         en: "Ancient Dragon",    ja: "古代竜",             zh: "古龍" },
+      { img: "primordial_dragon", ko: "태초의 용",      en: "Primordial Dragon", ja: "原初の竜",           zh: "原初之龍" },
+      { img: "demon_lord",        ko: "마왕",           en: "Demon Lord",        ja: "魔王",               zh: "魔王" },
+      { img: "demon_queen",       ko: "여마왕",         en: "Demon Queen",       ja: "魔女王",             zh: "魔女王" },
+      { img: "incubus",           ko: "인큐버스",       en: "Incubus",           ja: "インキュバス",       zh: "夢魔" },
+      { img: "death_knight",      ko: "죽음의 기사",    en: "Death Knight",      ja: "デスナイト",         zh: "死亡騎士" },
+      { img: "valakas",           ko: "화룡 발라카스",  en: "Valakas",           ja: "火龍ヴァラカス",     zh: "火龍瓦拉卡斯" },
+      { img: "antharas",          ko: "지룡 안타라스",  en: "Antharas",          ja: "地龍アンタラス",     zh: "地龍安塔拉斯" },
+      { img: "lindvior",          ko: "풍룡 린드비오르",en: "Lindvior",          ja: "風龍リンドビオル",   zh: "風龍林德比奧" },
+      { img: "fafurion",          ko: "수룡 파푸리온",  en: "Fafurion",          ja: "水龍ファフリオン",   zh: "水龍法弗里溫" },
+      { img: "succubus_queen",    ko: "서큐버스 퀸",    en: "Succubus Queen",    ja: "サキュバスクイーン", zh: "魅魔女王" },
+    ];
+    function endlessMonster(ante) {
+      const n = ENDLESS_MONSTERS.length;
+      return ENDLESS_MONSTERS[(((ante - 9) % n) + n) % n];
+    }
+    /* 보스 아트 경로: 1~8탄은 자체 테마 보스(carnival), 9탄+ 엔드리스는 공유 몬스터 풀 */
+    function bossArtSrc(ante) {
+      return ante >= 9
+        ? `/lib/monsters/${endlessMonster(ante).img}.png`
+        : `bosses/boss${ante}.webp`;
+    }
     function getBossName(ante) {
+      if (ante >= 9) {
+        const mo = endlessMonster(ante);
+        return LANG === "en" ? mo.en : LANG === "zh-Hant" ? mo.zh : LANG === "ja" ? mo.ja : mo.ko;
+      }
       const arr = LANG === "en" ? EN_BOSS_NAMES : LANG === "zh-Hant" ? ZH_BOSS_NAMES : LANG === "ja" ? JA_BOSS_NAMES : bossNames;
       return arr[(ante - 1) % arr.length] || t("boss");
     }
@@ -5306,7 +5344,7 @@
       const rule = mod ? `<span class="boss-rule">⚠️ ${mod.label}</span><span class="boss-desc">${mod.desc}</span>` : `<span class="boss-desc">${t("ui_boss_no_rule")}</span>`;
       banner.hidden = false;
       banner.innerHTML = `
-        <img class="boss-art" src="bosses/boss${((ante - 1) % 8) + 1}.webp" alt="" draggable="false" onerror="this.style.display='none'">
+        <img class="boss-art" src="${bossArtSrc(ante)}" alt="" draggable="false" onerror="this.style.display='none'">
         <div class="boss-info">
           <span class="boss-name">${t("ui_boss_name", {ante, name})}</span>
           ${rule}
