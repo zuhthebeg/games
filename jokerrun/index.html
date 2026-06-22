@@ -2666,7 +2666,7 @@
         <span class="target-value" id="targetLabel">0</span>
       </div>
       <div class="header-right">
-        <button id="settingsBtn" type="button" class="bgm-btn" aria-label="설정" title="설정">⚙️</button>
+        <button id="settingsBtn" type="button" class="bgm-btn" aria-label="설정" title="설정" data-i18n-title="tip_settings">⚙️</button>
         <span class="gold-badge" id="goldLabel" style="display:none">G 0</span>
         <span class="money-badge" id="moneyLabel">🪙0</span>
       </div>
@@ -3757,6 +3757,7 @@
         accum_combo: "📈 현재 누적: 연격 +{n}", accum_atk: "📈 현재 누적: 공격력 +{n}",
         accum_combo_x: "📈 현재 누적: 연격 ×{n}", accum_constellation: "📈 현재: 행성 {used}회 → 연격 ×{mult}",
         tarot_need_use: "{n}장 선택 후 사용", mini_need: "·{n}장",
+        tip_negative: "네가티브 — 슬롯 미차지", tip_settings: "설정",
         help_title: "조커런 가이드", help_start: "바로 시작 →",
         help_b1: "① 데미지 = 공격력 × 연격",
         help_p1: "손패 8장 중 최대 5장을 골라 <em>포커 기술</em>을 만들면 <b>공격력</b>과 <b>연격</b>이 정해진다. 둘을 곱한 값이 데미지. 적 HP를 넘기면 전투 클리어.",
@@ -3914,6 +3915,7 @@
         accum_combo: "📈 Accumulated: Combo +{n}", accum_atk: "📈 Accumulated: ATK +{n}",
         accum_combo_x: "📈 Accumulated: Combo ×{n}", accum_constellation: "📈 Now: {used} planets → Combo ×{mult}",
         tarot_need_use: "Select {n} cards to use", mini_need: "·{n}",
+        tip_negative: "Negative — no slot used", tip_settings: "Settings",
         help_title: "JokerRun Guide", help_start: "Start now →",
         help_b1: "① Damage = ATK × Combo",
         help_p1: "Pick up to 5 of your 8 cards to form a <em>poker skill</em> — that sets <b>ATK</b> and <b>Combo</b>. Their product is damage. Beat the enemy HP to clear the battle.",
@@ -4076,6 +4078,7 @@
     function applyStaticI18n() {
       document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.getAttribute("data-i18n")); });
       document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = t(el.getAttribute("data-i18n-html")); });
+      document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.getAttribute("data-i18n-title")); });
     }
     function setLang(l) {
       if (!I18N[l]) l = "ko";
@@ -4737,7 +4740,7 @@
         const _ed = editionOf(joker);
         tile.className = "mini-tile" + (joker.negative ? " negative" : (_ed ? " ed-" + _ed.key : ""));
         if (!joker.negative && !_ed) tile.style.borderColor = _r.color + "88";
-        tile.innerHTML = `<div class="mini-art"><img src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="네가티브 — 슬롯 미차지">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}`;
+        tile.innerHTML = `<div class="mini-art"><img src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="${t('tip_negative')}">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}`;
         tile.addEventListener("click", () => {
           openDetailPopup({
             imgSrc: `jokers/${joker.id}.webp`,
@@ -4895,7 +4898,7 @@
             <img class="joker-art" src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
             <span class="joker-grad" aria-hidden="true"></span>
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
-            ${joker.negative ? '<span class="joker-neg-badge" title="네가티브 — 슬롯 미차지">🌑</span>' : ""}
+            ${joker.negative ? '<span class="joker-neg-badge" title="${t('tip_negative')}">🌑</span>' : ""}
             ${_ed ? `<span class="joker-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}
             <span class="joker-name-mini">${joker.name}</span>
             <span class="joker-desc-mini">${colorizeEffect(joker.desc)}</span>
@@ -6487,7 +6490,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-rarityen";
+    const JR_BUILD = "2026-06-22-tagsen";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
