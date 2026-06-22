@@ -2715,6 +2715,17 @@
     </div>
   </div>
 
+  <div class="modal" id="skipRewardModal">
+    <div class="mode-sheet">
+      <div style="text-align:center">
+        <div class="subtitle" style="color:var(--gold);font-weight:800">⏭ 블라인드 스킵</div>
+        <div class="title" style="margin-top:2px">보상 선택</div>
+        <div class="subtitle" style="margin-top:4px;color:var(--muted);font-size:.74rem">하나를 골라 다음 블라인드로 넘어갑니다.</div>
+      </div>
+      <div id="skipRewardOptions" style="display:grid;gap:9px;margin-top:10px"></div>
+    </div>
+  </div>
+
   <div class="modal" id="victoryModal">
     <div class="mode-sheet">
       <div>
@@ -2948,7 +2959,8 @@
       { id:"overstock",     name:"재고 과잉",   cost:12, icon:"📦", desc:"상점 조커 슬롯 +1" },
       { id:"seedMoney",     name:"종잣돈",      cost:10, icon:"💰", desc:"이자 상한 $5 → $10" },
       { id:"grabber",       name:"여분의 손",   cost:12, icon:"✋", desc:"블라인드마다 핸드 +1" },
-      { id:"wasteful",      name:"낭비꾼",      cost:10, icon:"🗑️", desc:"블라인드마다 버리기 +1" }
+      { id:"wasteful",      name:"낭비꾼",      cost:10, icon:"🗑️", desc:"블라인드마다 버리기 +1" },
+      { id:"biggerBag",     name:"확장 가방",    cost:14, icon:"🎒", desc:"소모품 슬롯 +1 (타로·행성 보관)" }
     ];
     function hasVoucher(id){ return !!(state.vouchers && state.vouchers[id]); }
     function shopDiscount(){ return hasVoucher("clearance") ? 0.25 : 0; }
@@ -2998,6 +3010,8 @@
       { id:"enh_gold",  name:"황금 악마",   need:1, enh:"gold",  desc:"선택 1장 → 골드 카드(라운드 끝 보유 시 +$3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } }
     ];
     function consumableCount(){ return (state.planetCards?.length||0) + (state.tarotCards?.length||0); }
+    // 소모품(타로·행성) 보관 슬롯 상한: 기본 3 + 확장 가방 바우처(+1)
+    function consumableMax(){ return 3 + (hasVoucher("biggerBag") ? 1 : 0); }
 
     // ── 카드 강화(enhancement) — 발라트로식. 덱 카드(runDeck)에 영구 부여(c.enh). ──
     // chips: 점수 칩 가산 / multAdd: 배수 가산 / multX: 배수 곱 / heldX: 손에 보유 시 배수 곱 / endCash: 라운드 끝 보유 시 $
@@ -3826,7 +3840,7 @@
         ...state.planetCards.map(p => ({ kind: "planet", data: p })),
         ...state.tarotCards.map(t => ({ kind: "tarot", data: t }))
       ];
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < consumableMax(); i++) {
         const it = items[i];
         if (!it) {
           const empty = document.createElement("div");
@@ -4943,7 +4957,7 @@
       state.shopPlanets.forEach((planet, idx) => {
         const cost = priceOf(planet.cost || 3);
         const afford = state.money >= cost;
-        const planetFull = consumableCount() >= 2;
+        const planetFull = consumableCount() >= consumableMax();
         const isSpecial = !!planet.special;
         const handName = isSpecial ? "특수" : (handBase[planet.hand]?.name || planet.hand);
         const tileName = isSpecial ? planet.name : `${planet.name}(${handName})`;
@@ -4999,7 +5013,7 @@
       (state.shopTarots || []).forEach((tarot, idx) => {
         const cost = priceOf(4);
         const afford = state.money >= cost;
-        const full = consumableCount() >= 2;
+        const full = consumableCount() >= consumableMax();
         const instant = (tarot.need || 0) === 0;     // 즉시효과 타로(은둔자/수레바퀴/절제 등)
         // 슬롯 가득이어도 즉시효과 타로는 구매 후 바로 사용 가능(슬롯 안 차지). 카드 선택형만 슬롯 필요.
         const blocked = full && !instant;
@@ -5093,7 +5107,7 @@
       $("#bsAnte").textContent = `Ante ${state.ante}`;
       $("#bsBlindName").textContent = blind.label;
       $("#bsTarget").textContent = `목표 점수 ${blind.target.toLocaleString()}`;
-      $("#bsReward").textContent = `클리어 보상 최대 +$${reward} · 스킵 시 랜덤 보상(자금·조커·타로·강화 등)`;
+      $("#bsReward").textContent = `클리어 보상 최대 +$${reward} · 스킵 시 보상 직접 선택(자금·조커·타로·강화 등)`;
       $("#blindSelectModal").classList.add("show");
       AudioFX.play("select");
     }
@@ -5103,27 +5117,25 @@
       startRound(index, _pendingSeed);
     }
 
-    // 블라인드 스킵 보상(발라트로 태그식): 랜덤으로 자금/무료 조커·타로·행성/강화 등
-    function applySkipReward() {
+    // 블라인드 스킵 보상(발라트로 태그식): 후보를 만들어 플레이어가 직접 고른다.
+    // 각 옵션은 {icon,label,detail,cond?,run()} — run()이 실제 보상을 적용하고 토스트 문구를 반환.
+    function buildSkipRewardPool() {
       const ante = state.ante;
-      const pool = [
-        { run() { const m = ante * 4 + 8; state.money += m; return `💰 보너스 자금 +$${m}`; } },
-        { run() { const m = ante * 4 + 8; state.money += m; return `💰 보너스 자금 +$${m}`; } },
-        { run() { const m = ante * 7 + 14; state.money += m; return `💸 한탕 자금 +$${m}`; } },
-        {
+      return [
+        { icon:"💰", label:"보너스 자금", detail:`+$${ante * 4 + 8} 즉시 획득`,
+          run() { const m = ante * 4 + 8; state.money += m; return `💰 보너스 자금 +$${m}`; } },
+        { icon:"💸", label:"한탕 자금", detail:`+$${ante * 7 + 14} 즉시 획득`,
+          run() { const m = ante * 7 + 14; state.money += m; return `💸 한탕 자금 +$${m}`; } },
+        { icon:"🃏", label:"랜덤 조커", detail:"무료 조커 1개 획득",
           cond: () => state.jokers.length < 5,
-          run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: 0 }); markDiscovered("joker", j.id); renderHUD(); return `🃏 무료 조커: ${j.name}`; }
-        },
-        {
-          cond: () => consumableCount() < 2,
-          run() { const t = weightedSampleBy(tarotPool, 1, tarotWeight)[0]; state.tarotCards.push({ ...t }); markDiscovered("tarot", t.id); return `🔮 무료 타로: ${t.name}`; }
-        },
-        {
-          cond: () => consumableCount() < 2,
-          run() { const p = weightedSampleBy(planetPool, 1, planetWeight)[0]; state.planetCards.push({ ...p }); markDiscovered("planet", p.id); return `🪐 무료 행성: ${p.name}`; }
-        },
-        {
-          // 덱에서 무작위 카드 1장 강화
+          run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: 0 }); markDiscovered("joker", j.id); renderHUD(); return `🃏 무료 조커: ${j.name}`; } },
+        { icon:"🔮", label:"랜덤 타로", detail:"무료 타로 1장 (슬롯 필요)",
+          cond: () => consumableCount() < consumableMax(),
+          run() { const t = weightedSampleBy(tarotPool, 1, tarotWeight)[0]; state.tarotCards.push({ ...t }); markDiscovered("tarot", t.id); return `🔮 무료 타로: ${t.name}`; } },
+        { icon:"🪐", label:"랜덤 행성", detail:"무료 행성 1장 (슬롯 필요)",
+          cond: () => consumableCount() < consumableMax(),
+          run() { const p = weightedSampleBy(planetPool, 1, planetWeight)[0]; state.planetCards.push({ ...p }); markDiscovered("planet", p.id); return `🪐 무료 행성: ${p.name}`; } },
+        { icon:"✨", label:"카드 강화", detail:"덱의 무작위 카드 1장 강화",
           cond: () => (state.runDeck || []).some(c => !c.enh),
           run() {
             const cands = state.runDeck.filter(c => !c.enh);
@@ -5132,12 +5144,14 @@
             card.enh = enhKeys[Math.floor(Math.random() * enhKeys.length)];
             renderCards();
             return `✨ 카드 강화: ${suitSymbol[card.suit]}${formatRank(card.rank)} → ${ENH[card.enh].label}`;
-          }
-        }
+          } }
       ];
-      const avail = pool.filter(r => !r.cond || r.cond());
-      const r = avail[Math.floor(Math.random() * avail.length)];
-      return r.run();
+    }
+    // 조건 통과 후보 중 서로 다른 3개를 뽑아 선택지로 제시
+    function pickSkipRewardOptions() {
+      const avail = buildSkipRewardPool().filter(r => !r.cond || r.cond());
+      for (let i = avail.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [avail[i], avail[j]] = [avail[j], avail[i]]; }
+      return avail.slice(0, Math.min(3, avail.length));
     }
     function showSkipRewardToast(text) {
       const t = document.createElement("div");
@@ -5149,12 +5163,31 @@
     }
     function skipBlind(index) {
       $("#blindSelectModal").classList.remove("show");
-      const rewardText = applySkipReward();
-      addLog(`${["스몰", "빅"][index] || "블라인드"} 블라인드 스킵 — ${rewardText}`);
+      const options = pickSkipRewardOptions();
+      const box = $("#skipRewardOptions");
+      box.innerHTML = "";
+      options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.style.cssText = "display:flex;align-items:center;gap:11px;width:100%;padding:13px 14px;border-radius:13px;border:1px solid rgba(255,215,0,.28);background:linear-gradient(150deg,#2a2545,#1a1730);color:#e7defb;cursor:pointer;text-align:left";
+        btn.innerHTML = `<span style="font-size:1.6rem;line-height:1">${opt.icon}</span>`
+          + `<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">`
+          + `<span style="font-weight:800;font-size:.95rem;color:#ffe9a8">${opt.label}</span>`
+          + `<span style="font-size:.74rem;color:var(--muted)">${opt.detail}</span></span>`
+          + `<span style="font-weight:900;color:var(--gold,#ffcf6d)">선택 →</span>`;
+        btn.addEventListener("click", () => {
+          $("#skipRewardModal").classList.remove("show");
+          const rewardText = opt.run();
+          addLog(`${["스몰", "빅"][index] || "블라인드"} 블라인드 스킵 — ${rewardText}`);
+          AudioFX.play("select");
+          renderHUD(); refreshConsumables();
+          showSkipRewardToast(rewardText);
+          beginBlind(index + 1, _pendingSeed);
+        });
+        box.appendChild(btn);
+      });
+      $("#skipRewardModal").classList.add("show");
       AudioFX.play("select");
-      renderHUD();
-      showSkipRewardToast(rewardText);
-      beginBlind(index + 1, _pendingSeed);
     }
 
     function startRound(index, seedText = "") {
