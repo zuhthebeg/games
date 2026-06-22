@@ -4086,7 +4086,14 @@
       try { localStorage.setItem("jokerrun_lang", l); } catch (_) {}
       applyStaticI18n();
       try { localizeContent(); } catch (_) {}
-      try { renderHUD(); refreshConsumables(); } catch (_) {}
+      // 현재 화면 동적 요소를 즉시 새 언어로 다시 그린다(전환 직후 반영 안 되던 문제).
+      try { renderHUD(); } catch (_) {}
+      try { renderBossBanner(); } catch (_) {}
+      try { renderJokers(); } catch (_) {}
+      try { renderCards(); } catch (_) {}
+      try { updateHandPreview(); } catch (_) {}
+      try { const lbl = $("#sortModeLabel"); if (lbl) lbl.textContent = state.sortMode === "manual" ? t("ui_sort_manual") : state.sortMode === "rank" ? t("ui_sort_rank_label") : t("ui_sort_suit_label"); } catch (_) {}
+      try { refreshConsumables(); } catch (_) {}   // 상점 열려 있으면 openShop 재호출
     }
 
     const cardsWrap = $("#cardsWrap");
@@ -6490,7 +6497,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-tagfix";
+    const JR_BUILD = "2026-06-22-langlive";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
