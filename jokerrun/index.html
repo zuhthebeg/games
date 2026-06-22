@@ -2998,8 +2998,9 @@
     }
     const EN_BOSS_NAMES = ["Ringmaster", "Gambling King", "Puppeteer", "Heartbreaker", "Timekeeper", "Executioner", "Trickster", "Carnival Lord"];
     const ZH_BOSS_NAMES = ["馬戲團長", "賭王", "操偶師", "碎心者", "時間守衛", "劊子手", "騙術師", "嘉年華領主"];
+    const JA_BOSS_NAMES = ["リングマスター", "ギャンブル王", "人形使い", "ハートブレイカー", "時の番人", "処刑人", "トリックスター", "カーニバル君主"];
     function getBossName(ante) {
-      const arr = LANG === "en" ? EN_BOSS_NAMES : LANG === "zh-Hant" ? ZH_BOSS_NAMES : bossNames;
+      const arr = LANG === "en" ? EN_BOSS_NAMES : LANG === "zh-Hant" ? ZH_BOSS_NAMES : LANG === "ja" ? JA_BOSS_NAMES : bossNames;
       return arr[(ante - 1) % arr.length] || t("boss");
     }
 
@@ -3102,6 +3103,7 @@
     // 등급 라벨 영문(표시 의미 기준: 전설=Legendary, 신화=Mythic)
     const EN_RARITY = { common:"Common", uncommon:"Uncommon", rare:"Legendary", legendary:"Mythic" };
     const ZH_RARITY = { common:"普通", uncommon:"罕見", rare:"傳說", legendary:"神話" };
+    const JA_RARITY = { common:"コモン", uncommon:"アンコモン", rare:"レジェンダリー", legendary:"ミシック" };
     const JOKER_RARITY = {
       flat50:"common", perCardMult:"common", heartChip:"common", goldDice:"common", diamondMiner:"common",
       evenSteven:"common", oddOne:"common", lowCard:"common", highCard:"common", faceCard:"common",
@@ -3132,6 +3134,11 @@
       foil: { label: "燙金", fx: "攻擊力 +50" },
       holo: { label: "全息", fx: "連擊 +10" },
       poly: { label: "多彩", fx: "連擊 ×1.5" }
+    };
+    const JA_EDITIONS = {
+      foil: { label: "ホイル", fx: "攻撃力 +50" },
+      holo: { label: "ホログラフィック", fx: "連撃 +10" },
+      poly: { label: "ポリクローム", fx: "連撃 ×1.5" }
     };
     function editionOf(joker){ return joker && joker.edition ? (EDITIONS[joker.edition] || null) : null; }
     // 상점 조커 에디션 추첨: 폴리 4% / 홀로 6% / 포일 10% / 일반 80%
@@ -3330,6 +3337,17 @@
       stone:{label:"石頭",desc:"攻擊力 +50"}, glass:{label:"玻璃",desc:"連擊 ×1.5"},
       steel:{label:"鋼鐵",desc:"持有時連擊 ×1.5"}, gold:{label:"黃金",desc:"回合結束持有 +🪙3"}
     };
+    const JA_HANDS = {
+      HIGH_CARD:"ハイカード", PAIR:"ワンペア", TWO_PAIR:"ツーペア", THREE:"スリーカード",
+      STRAIGHT:"ストレート", FLUSH:"フラッシュ", FULL_HOUSE:"フルハウス", FOUR:"フォーカード",
+      ROYAL_STRAIGHT:"ロイヤルストレート", STRAIGHT_FLUSH:"ストレートフラッシュ", ROYAL_FLUSH:"ロイヤルフラッシュ",
+      FIVE:"ファイブカード", FLUSH_HOUSE:"フラッシュハウス", FLUSH_FIVE:"フラッシュファイブ"
+    };
+    const JA_ENH = {
+      bonus:{label:"ボーナス",desc:"攻撃力 +30"}, mult:{label:"倍率",desc:"連撃 +4"},
+      stone:{label:"ストーン",desc:"攻撃力 +50"}, glass:{label:"グラス",desc:"連撃 ×1.5"},
+      steel:{label:"スチール",desc:"手札にあると連撃 ×1.5"}, gold:{label:"ゴールド",desc:"ラウンド終了時保持で +🪙3"}
+    };
     // id → {name,desc[,detail]} (조커/행성/주문서/바우처/보스규칙 공용)
     const EN_CONTENT = {
       flat50:{name:"ATK Bomb",desc:"ATK +50"}, flushx2:{name:"Wave Joker",desc:"Flush: Combo x2"},
@@ -3455,12 +3473,74 @@
       only2hands:{label:"攻擊限制",desc:"本場戰鬥只能攻擊2次。"},
       max3cards:{label:"最多3張",desc:"本場戰鬥只能出3張以下。"}
     };
-    // 언어별 콘텐츠 오버레이 맵 (en/zh-Hant). ko는 원문(KO_CONTENT) 사용.
-    const CONTENT_BY_LANG = { en: EN_CONTENT, "zh-Hant": ZH_CONTENT };
-    const HANDS_BY_LANG = { en: EN_HANDS, "zh-Hant": ZH_HANDS };
-    const ENH_BY_LANG = { en: EN_ENH, "zh-Hant": ZH_ENH };
-    const RARITY_BY_LANG = { en: EN_RARITY, "zh-Hant": ZH_RARITY };
-    const EDITIONS_BY_LANG = { en: EN_EDITIONS, "zh-Hant": ZH_EDITIONS };
+    const JA_CONTENT = {
+      flat50:{name:"攻撃力ボム",desc:"攻撃力 +50"}, flushx2:{name:"波紋ジョーカー",desc:"フラッシュ：連撃 x2"},
+      perCardMult:{name:"計算機ジョーカー",desc:"カード毎 連撃 +1"}, heartChip:{name:"赤い封印",desc:"ハート1枚毎 攻撃力 +15"},
+      pairBoost:{name:"デュオ増幅器",desc:"ワンペア以上：連撃 +2"}, goldDice:{name:"黄金のダイス",desc:"攻撃毎 攻撃力 +1~50"},
+      spadeAce:{name:"スペードのエース",desc:"スペード1枚毎 連撃 +0.5"}, luckySeven:{name:"ラッキーセブン",desc:"7が1枚毎 攻撃力 +77"},
+      doubleDown:{name:"ダブルダウン",desc:"ツーペア：連撃 x2"}, fullHouseFan:{name:"フルハウス狂",desc:"フルハウス：攻撃力 +100"},
+      straightRunner:{name:"ストレートランナー",desc:"ストレート：連撃 +3"}, diamondMiner:{name:"ダイヤ鉱夫",desc:"ダイヤ1枚毎 攻撃力 +12"},
+      clubKing:{name:"クラブキング",desc:"クラブの絵札毎 連撃 +1"}, allInClown:{name:"オールインの道化",desc:"5枚プレイ：連撃 x1.5"},
+      fourMaster:{name:"フォーカードの達人",desc:"フォーカード：連撃 x4"}, acePower:{name:"エースの力",desc:"エース1枚毎 攻撃力 +30"},
+      faceCard:{name:"絵札",desc:"J/Q/K 1枚毎 連撃 +0.75"}, evenSteven:{name:"偶数の魔術師",desc:"偶数カード毎 攻撃力 +8"},
+      oddOne:{name:"奇数の悪党",desc:"奇数カード毎 連撃 +0.5"}, fourFlush:{name:"4色ジョーカー",desc:"4種のスート使用：連撃 x2"},
+      streakBonus:{name:"連続ボーナス",desc:"ストレート：攻撃力と連撃 +5"}, chipRain:{name:"攻撃力の雨",desc:"攻撃毎 攻撃力 +10~100"},
+      royalFlush:{name:"ロイヤルジョーカー",desc:"ストレートフラッシュ：連撃 x4"}, lowCard:{name:"ローカード",desc:"2~5が1枚毎 攻撃力 +10"},
+      highCard:{name:"ハイカード",desc:"10以上1枚毎 連撃 +0.5"}, trioMult:{name:"トリオ増幅",desc:"スリーカード以上：連撃 x2"},
+      snowball:{name:"雪だるま",desc:"プレイ毎 連撃が永久 +1"}, magnet:{name:"攻撃力マグネット",desc:"プレイ毎 攻撃力が永久 +15"},
+      compound:{name:"複利の道化",desc:"フルハウス以上 プレイ毎 連撃永久 +3"}, legion:{name:"道化の軍団",desc:"所持ジョーカー1個毎 連撃 +1"},
+      tycoon:{name:"資本家",desc:"所持🪙5毎 連撃 +1"}, gambler:{name:"ギャンブラー",desc:"25%の確率で 連撃 x3"},
+      ironclad:{name:"鋼鉄のジョーカー",desc:"出さなかった手札1枚毎 攻撃力 +4"}, sniper:{name:"スナイパー",desc:"ちょうど1枚プレイ：攻撃力 +70"},
+      trinity:{name:"トリニティ",desc:"同スート3枚以上：連撃 +3"}, monochrome:{name:"モノクロジョーカー",desc:"全て同色：攻撃力 +55"},
+      fibonacci:{name:"フィボナッチ",desc:"A/2/3/5/8が1枚毎 連撃 +1"}, patience:{name:"忍耐",desc:"残り捨て札1毎 連撃 +1"},
+      highRoller:{name:"ハイローラー",desc:"🪙20以上：連撃 x2"}, theQueen:{name:"クイーンの加護",desc:"Q1枚毎 連撃 +1.5"},
+      flushBank:{name:"フラッシュ金庫",desc:"フラッシュ：攻撃力 +70"}, allShapes:{name:"万物商",desc:"5枚+4スート：連撃 x2.5"},
+      echo:{name:"エコー",desc:"前回と同じスキル：連撃 x2"}, lowRoller:{name:"ローローラー",desc:"全て5以下：攻撃力 +45"},
+      fullmoon:{name:"満月",desc:"無条件 連撃 ×2.5"}, reaperking:{name:"死神王",desc:"フォーカード・SF：連撃 ×5"},
+      berserk:{name:"バーサーク",desc:"ジョーカー枠が満杯時：連撃 ×4"}, bloodmoon:{name:"ブラッドムーン",desc:"K・Q 1枚毎 連撃 ×1.5"},
+      constellation:{name:"星座",desc:"惑星使用の累積毎 連撃永久 +0.2"}, vampire:{name:"ヴァンパイア",desc:"強化カードプレイ毎に吸収 → 連撃永久 +0.25"},
+      chaos:{name:"カオス",desc:"25%：連撃 ×6 / 失敗 ×0.5"}, blueprint:{name:"設計図",desc:"右隣のジョーカー効果をコピー"},
+      brainstorm:{name:"ブレインストーム",desc:"左端のジョーカー効果をコピー"}, baron:{name:"男爵",desc:"手札のK1枚毎 連撃 ×1.5"},
+      hack:{name:"ハッカー",desc:"プレイした2~5のカード ダメージ再発動"}, sockBuskin:{name:"道化芝居",desc:"プレイしたJ/Q/K ダメージ再発動"},
+      hangingChad:{name:"初撃",desc:"プレイした最初のカード 追加2回発動"}, retriggerAll:{name:"アンコール",desc:"プレイした全カード ダメージ再発動"},
+      spadeCount:{name:"スペード伯爵",desc:"スペード1枚毎 攻撃力 +12"}, clubLuck:{name:"クローバーの幸運",desc:"クラブ1枚毎 連撃 +1"},
+      lowball:{name:"ミニマル",desc:"得点カード全て10以下：攻撃力 +55"}, twins:{name:"双子",desc:"ちょうど2枚プレイ：連撃 x2"},
+      astro:{name:"占星術師",desc:"所持惑星1個毎 連撃 +2"}, coinFlip:{name:"ラッキーコイン",desc:"50%の確率で 攻撃力 +120"},
+      solo:{name:"一匹狼",desc:"ちょうど1枚プレイ：連撃 x4"}, mystic:{name:"神秘学者",desc:"所持巻物1枚毎 連撃 +3"},
+      starfall:{name:"流星群",desc:"ストレートフラッシュ以上：連撃 x5"},
+      mercury:{name:"水星"}, venus:{name:"金星"}, earth:{name:"地球"}, mars:{name:"火星"},
+      jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
+      blackhole:{name:"ブラックホール",desc:"全スキルレベル +1"}, galaxy:{name:"銀河",desc:"全スキルレベル +3"},
+      supernova:{name:"超新星",desc:"ランダムなスキル +5レベル"}, singularity:{name:"特異点",desc:"分散した全スキルレベルを吸収し選んだ1つに集中"},
+      star:{name:"星",desc:"選択カード → ◆ダイヤ"}, moon:{name:"月",desc:"選択カード → ♣クラブ"},
+      sun:{name:"太陽",desc:"選択カード → ♥ハート"}, world:{name:"世界",desc:"選択カード → ♠スペード"},
+      strength:{name:"力",desc:"選択カードのランク +1"}, death:{name:"死神",desc:"ちょうど2枚：右が左をコピー"},
+      hermit:{name:"隠者",desc:"コイン2倍（最大 +🪙20）"}, wheel:{name:"運命の輪",desc:"即時 +🪙12"},
+      magician:{name:"魔術師",desc:"選択カードのランク +2"}, empress:{name:"女帝",desc:"選択カード → A"},
+      emperor:{name:"皇帝",desc:"ランダムな巻物2枚生成（枠内）"}, priestess:{name:"女教皇",desc:"ランダムな惑星2枚生成（枠内）"},
+      hanged:{name:"吊られた男",desc:"選択2枚を除去し新規ドロー"}, temperance:{name:"節制",desc:"ジョーカー売却額の合計を獲得（最大🪙20）"},
+      enh_bonus:{name:"ボーナスの封印",desc:"1枚 → ボーナス（攻撃力 +30）"}, enh_mult:{name:"血の封印",desc:"1枚 → 倍率（連撃 +4）"},
+      enh_stone:{name:"塔",desc:"1枚 → ストーン（攻撃力 +50）"}, enh_glass:{name:"恋人（グラス）",desc:"1枚 → グラス（連撃 ×1.5）"},
+      enh_steel:{name:"鋼鉄の審判",desc:"1枚 → スチール（手札で連撃 ×1.5）"}, enh_gold:{name:"黄金の悪魔",desc:"1枚 → ゴールド（ラウンド終了時保持で +🪙3）"},
+      fool:{name:"愚者",desc:"最後に使った巻物/惑星をコピー（枠内）"}, judgement:{name:"審判",desc:"ランダムなジョーカー1個生成（枠に空きがあれば）"},
+      clearance:{name:"在庫一掃",desc:"ショップ全品25%引き"}, magicTrick:{name:"マジック",desc:"ショップにプレイカード出現（デッキ追加）"},
+      rareHunter:{name:"レアハンター",desc:"レジェンド・ミシックの出現率大幅上昇"}, reroll:{name:"リロール補助",desc:"ショップ更新費用 -🪙2"},
+      tarotMerchant:{name:"巻物商人",desc:"ショップ巻物枠 +1"}, overstock:{name:"過剰在庫",desc:"ショップジョーカー枠 +1"},
+      seedMoney:{name:"元手",desc:"利息上限 🪙5 → 🪙10"}, grabber:{name:"予備の手",desc:"戦闘毎 攻撃 +1"},
+      wasteful:{name:"浪費家",desc:"戦闘毎 捨て札 +1"}, biggerBag:{name:"大型バッグ",desc:"消耗品枠 +1"},
+      telescope:{name:"天体望遠鏡",desc:"よく使うスキルの惑星が出やすくなる"},
+      no_discard:{label:"捨て札禁止",desc:"この戦闘では捨て札を使えません。"},
+      min4cards:{label:"最低4枚",desc:"攻撃毎に最低4枚選ぶ必要があります。"},
+      no_hearts:{label:"ハート封印",desc:"この戦闘ではハートがダメージになりません。"},
+      only2hands:{label:"攻撃制限",desc:"この戦闘は攻撃2回のみ。"},
+      max3cards:{label:"最大3枚",desc:"この戦闘は3枚以下でプレイ。"}
+    };
+    // 언어별 콘텐츠 오버레이 맵 (en/zh-Hant/ja). ko는 원문(KO_CONTENT) 사용.
+    const CONTENT_BY_LANG = { en: EN_CONTENT, "zh-Hant": ZH_CONTENT, ja: JA_CONTENT };
+    const HANDS_BY_LANG = { en: EN_HANDS, "zh-Hant": ZH_HANDS, ja: JA_HANDS };
+    const ENH_BY_LANG = { en: EN_ENH, "zh-Hant": ZH_ENH, ja: JA_ENH };
+    const RARITY_BY_LANG = { en: EN_RARITY, "zh-Hant": ZH_RARITY, ja: JA_RARITY };
+    const EDITIONS_BY_LANG = { en: EN_EDITIONS, "zh-Hant": ZH_EDITIONS, ja: JA_EDITIONS };
     const KO_CONTENT = {}, _KO_HANDS = {};
     function snapshotKo() {
       [jokerPool, planetPool, tarotPool, voucherPool, bossModifiers].forEach(arr => {
@@ -4312,6 +4392,164 @@
         sr_rand_planet_run: "🪐 免費行星：{name}",
         sr_card_enh_label: "卡牌強化", sr_card_enh_detail: "強化牌組中隨機1張卡",
         sr_card_enh_run: "✨ 卡牌已強化：{card} → {enh}"
+      },
+      ja: {
+        tagline: "カードを組んで攻撃し、ジョーカーでダメージを爆発させろ。<br>ダンジョンを攻略するカードローグライク。",
+        ui_cashout_title: "💰 精算",
+        accum_combo: "📈 累積：連撃 +{n}", accum_atk: "📈 累積：攻撃力 +{n}",
+        accum_combo_x: "📈 累積：連撃 ×{n}", accum_constellation: "📈 現在：惑星 {used}回 → 連撃 ×{mult}",
+        tarot_need_use: "{n}枚選んで使用", mini_need: "·{n}",
+        tip_negative: "ネガティブ — 枠を使わない", tip_settings: "設定",
+        help_title: "JokerRun ガイド", help_start: "今すぐ開始 →",
+        help_b1: "① ダメージ = 攻撃力 × 連撃",
+        help_p1: "手札8枚から最大5枚選んで<em>ポーカースキル</em>を作ると<b>攻撃力</b>と<b>連撃</b>が決まる。両者の積がダメージ。敵HPを超えれば戦闘クリア。",
+        help_b2: "② 攻撃と捨て札",
+        help_p2: "戦闘毎に<b>攻撃回数</b>と<b>捨て札回数</b>が制限される。悪い手は捨てて引き直し、より良いスキルを狙え。",
+        help_b3: "③ ジョーカー = ビルドの核",
+        help_p3: "戦闘報酬のコインでショップから<b>ジョーカー</b>を買う。ジョーカーはダメージ計算に介入し攻撃力/連撃を膨らませる。<em>雪だるま・複利</em>のような育つジョーカーを早めに取れば後半が爆発する。枠は5つ。",
+        help_b4: "④ 武器強化",
+        help_p4: "特定のスキルを<b>永久強化</b>する。よく使うスキルに投資すれば同じ手でも高いダメージが出る。",
+        brand_title: "JokerRun", start_continue: "↩️ 続きから", start_help: "「遊び方は？」— ガイド",
+        collection_btn: "📖 図鑑", deck_legend: "明 = デッキに残存 · 暗 = 既に引いた",
+        tarot_collection_title: "🔮 巻物図鑑", collection_title: "📖 図鑑",
+        singularity_title: "⚫ 特異点 — レベル集中",
+        singularity_hint: "集中するスキルを選ぶと、分散した全スキルレベルがその1つに合算される。（他はLv.1にリセット）",
+        cancel: "キャンセル", victory_run_clear: "クリア", victory_new_run: "新しいゲームを開始",
+        game_over: "ゲームオーバー", restart: "リスタート",
+        help_b5: "⑤ ボス戦",
+        help_p5: "各狩りの3戦目は<em>制限（捨て札禁止、スート封印など）</em>付きのボス。ジョーカービルドで正面突破せよ。",
+        play: "▶ プレイ", attack: "攻撃", enemy_hp: "敵HP", dmg: "ダメージ",
+        atk_power: "攻撃力", combo: "連撃",
+        hands_left: "残り攻撃", discards_left: "残り捨て札",
+        hand_play: "⚔️ 攻撃", card_discard: "捨て札",
+        skills: "📊 スキル", scrolls: "📜 巻物", deck: "🃏 デッキ",
+        deck_n: "🃏 デッキ ({n})", hand_hint: "攻撃するカードを選択。",
+        combo_preview: "スキル | 予想ダメージ：0",
+        shop: "ショップ", next_blind: "次の戦闘へ →", to_shop: "整備へ →", collect: "戦利品を受取 →",
+        reroll: "🎲 更新", coins: "コイン", sold_out: "売切",
+        weapon_up: "武器強化", scroll: "巻物", joker: "ジョーカー",
+        mob: "ザコ", elite: "精鋭", boss: "ボス", shortcut: "近道", skip: "⏭ 近道",
+        bs_hint: "近道なら整備なしで次の戦闘へ。ボスは回避不可。",
+        skip_reward: "⏭️ 近道報酬",
+        settings: "⚙️ 設定", sound: "🔊 サウンド", speed: "⏱️ 演出速度",
+        speed_hint: "ダメージ演出が速すぎれば遅く、もたつけば速く / 即時。",
+        language: "🌐 言語", close: "閉じる", on: "オン", off: "オフ",
+        cleared: "🎯 戦闘勝利！", my_dmg: "自分のダメージ", continue_run: "↩️ 続きから — 最後の攻撃をやり直す",
+        victory_text: "ボスを撃破した。", weapon_table: "スキルダメージ表 — 基本 vs 武器強化",
+        spd_slow: "遅い", spd_normal: "普通", spd_fast: "速い", spd_vfast: "非常に速い", spd_instant: "即時",
+        log_use_scroll: "巻物使用：{name}", log_use_planet: "{name} 使用：{hand} Lv.{lv}",
+        log_planet_all: "{name}：全スキルレベル +{n}", log_planet_rand: "{name}：{hand} レベル +{n}",
+        log_singularity: "特異点：全スキル吸収 → {hand} Lv.{lv}",
+        log_sell_consumable: "{name} 売却（+🪙{n}）", log_sell_joker: "ジョーカー売却：{name}（+{n}G）",
+        log_buy_voucher: "バウチャー購入：{name}（-🪙{n}）", log_buy_joker: "ジョーカー購入：{name}（-🪙{n}）",
+        log_instant_planet: "惑星を即時使用：{name}（-🪙{n}）", log_buy_planet: "惑星購入：{name}（-🪙{n}）",
+        log_instant_tarot: "巻物を即時使用：{name}（-🪙{n}）", log_buy_tarot: "巻物購入：{name}（-🪙{n}）",
+        log_buy_card: "カード購入：{card} → デッキ追加（-🪙{n}）",
+        log_skip_blind: "{blind} 戦闘をスキップ — {reward}", log_small: "スモール", log_big: "ビッグ", log_battle: "戦闘",
+        log_round_start: "{round} 開始。目標：{target}",
+        log_cashout: "精算：基本 🪙{base} + 残り攻撃 {hands}×🪙1 + 利息 🪙{interest} = +🪙{total}",
+        log_boss_reward: "ボス撃破！報酬：{n} G", log_game_over: "ゲームオーバー。",
+        log_play_hand: "{hand} プレイ：+{pts} ダメージ（残り攻撃：{left}）",
+        log_discard: "{n}枚捨てた。（残り捨て札：{left}）",
+        info_max_select: "最大{n}枚まで選択できます。",
+        info_tarot_battle_only: "<span style=\"color:var(--danger)\">{name}</span> — カードを指定する巻物は戦闘画面で使用してください。",
+        info_tarot_need_cards: "<span style=\"color:var(--danger)\">{name}</span> — ちょうど{need}枚選んで使用してください。（現在 {cur}）",
+        info_continue: "↩️ 再開 — 最後の攻撃をやり直してください。",
+        info_no_cards: "まず1枚以上選択してください。", info_boss_max3: "この戦闘：最大3枚まで。",
+        info_boss_min4: "この戦闘：最低4枚選択。",
+        info_scoring: "<span class=\"hand-tag\">{name}</span> 計算中...",
+        info_score_result: "<span class=\"hand-tag\">{hand}</span> | {chips} 攻撃力 × {mult} 連撃 = <b>{pts}</b> ダメージ",
+        info_no_discards: "捨て札回数を使い切りました。", info_select_discard: "捨てるカードを選択してください。",
+        info_discarded: "{n}枚捨てた。残り {left}。", info_pick_cards: "攻撃するカードを選択。",
+        info_endless: "🏆 8狩り完走！ここから<b style=\"color:var(--gold,#ffcf6d)\">エンドレス</b> — 行こう！",
+        info_boss_clear: "ボス撃破！+{n} G", info_round_clear: "戦闘勝利！精算 +🪙{n}",
+        info_deselect: "選択を解除しました。",
+        ui_use_in_battle: "戦闘で使用", ui_sort_manual: "手動",
+        ui_sell_gold: "+{n}G", ui_levelup: "+レベルアップ！",
+        ui_hand_guide_3: "手札8枚から最大3枚選択", ui_hand_guide_5: "手札8枚から最大5枚選択",
+        ui_deck_title: "デッキ：{total}枚（残り {rem}枚）",
+        ui_sort_suit: "並替：スート順", ui_sort_rank: "並替：数字順",
+        ui_enhanced_cards: "✨ <b>強化カード {n}枚</b>",
+        ui_hands_intro: "基本ダメージと惑星強化後の現在ダメージの比較。使用で永久上昇。",
+        ui_th_skill: "スキル", ui_th_base: "基本", ui_th_current: "現在",
+        ui_boss_no_rule: "特殊ルールなし — 正面勝負",
+        ui_boss_name: "狩り {ante} ボス · {name}",
+        ui_owned_jokers_title: "所持ジョーカー（売却：等級別返金）", ui_no_jokers: "所持ジョーカーなし。",
+        ui_sort_rank_label: "数字", ui_sort_suit_label: "スート",
+        ui_singularity_total: "吸収可能な追加レベル合計：+{n}",
+        ui_owned_vouchers: "所持バウチャー",
+        ui_voucher_section: "🎟️ バウチャー · 狩り毎に1個 · 永久効果",
+        ui_soldout_joker: "ジョーカー売切 — 次の戦闘で更新", ui_soldout_planet: "惑星売切", ui_soldout_tarot: "巻物売切",
+        ui_playcard_section: "プレイカード · デッキに永久追加",
+        ui_ante_n: "狩り {n}", ui_ante_blind: "狩り {ante} | 戦闘 {blind}/3",
+        ui_start_ante: "狩り {n} 開始 →", ui_start_battle: "戦闘 {n}/3 開始 →",
+        ui_to_ante: "狩り {n} へ →", ui_to_shop: "ショップへ →",
+        ui_atk_label: "攻撃力：", ui_mult_label: "× {n} 連撃",
+        ui_dmg_label: "+<span id=\"dramaticScoreNum\">0</span> ダメージ",
+        ui_victory_default: "ボス戦勝利！最終ダメージ：{n}",
+        ui_new_record: "🏆 新記録：{n}", ui_best_score: "最高：{n}",
+        ui_gameover_ante: "狩り {ante} - {blind} 戦闘で敗北",
+        ui_blind_small: "スモール", ui_blind_big: "ビッグ",
+        ui_new_record_short: "🏆 新記録！{n}",
+        ui_run_clear: "🏆 クリア！全8狩り完走！\n最終ダメージ：{n}{record}",
+        ui_new_record_suffix: " — 新記録！",
+        ui_triggered: "発動！", ui_steel_held: "🔩 スチールカード{n}枚保持 → 連撃 ×{mult}",
+        ui_float_atk: "+{n} 攻撃力", ui_float_combo: "+{n} 連撃",
+        ui_tarot_intro: "巻物セクション（🪙4）で購入。消耗品枠（最大2）を惑星と共有。所持巻物は戦闘で使用。",
+        ui_tarot_exact: "ちょうど ", ui_tarot_instant_txt: "即時使用",
+        ui_tarot_mini_label: "巻物", ui_owned_count: "×{n} 所持", ui_special: "特殊",
+        ui_co_boss: "👑 ボス撃破報酬", ui_co_clear: "戦闘クリア",
+        ui_co_hands: "残り攻撃 {n} × 🪙1", ui_co_interest: "利息（🪙5毎に🪙1）", ui_co_gold: "🟡 ゴールドカード保持",
+        ui_boss_reward_banner: "👑 ボス撃破報酬 <b>+{n} G</b>",
+        ui_rank_title: "ランキング {medal} ランクイン！", ui_rank_sub: "TOP 10 入りボーナス",
+        ui_rank_note: "初回のみ支給 · グローバル財布に反映", ui_confirm: "OK",
+        pop_badge_special_planet: "特殊", pop_badge_planet: "惑星",
+        pop_planet_desc: "{hand} を永久強化（+{chips} 攻撃力 / +{mult} 連撃）",
+        pop_planet_cost_special: "使用：即時発動 · 売却 +🪙{n}", pop_planet_cost_normal: "使用：{hand} レベルアップ · 売却 +🪙{n}",
+        pop_use: "使用", pop_sell: "売却 +🪙{n}", pop_badge_tarot: "巻物",
+        pop_tarot_need: " · {n}枚選んで使用", pop_tarot_instant: " · 即時使用",
+        pop_tarot_locked: "戦闘で使用", pop_tarot_select: "使用（{n}枚選択）",
+        pop_joker_refund: "売却で +🪙{n} 返金",
+        pop_joker_cost: "購入：🪙{cost} · 売値：🪙{sell}",
+        pop_voucher_cost: "バウチャー · 永久効果 · 費用 🪙{n}",
+        pop_buy: "購入 🪙{n}", pop_no_funds: "資金不足",
+        pop_shop_joker_cost: "購入 🪙{cost} · 売値 🪙{sell}", pop_joker_full: "ジョーカー枠が満杯",
+        pop_planet_cost_full: "購入 🪙{n} · 枠満杯 → 即時使用",
+        pop_planet_cost_slot: "購入 🪙{n} · 消耗品枠を使用",
+        pop_buy_instant: "購入して即使用 🪙{n}", pop_consumable_full: "消耗品枠が満杯",
+        pop_tarot_shop_need: " · 使用時ちょうど{n}枚選択",
+        pop_card_deck_desc: "このカードをデッキに永久追加します。",
+        pop_sell_only: "売却 +🪙{n}",
+        dbg_add_joker: "🐞 ジョーカー追加：{name}", dbg_add_tarot: "🐞 巻物追加：{name}",
+        dbg_add_planet: "🐞 惑星追加：{name}", dbg_add_card: "🐞 カード追加：{card}",
+        dbg_add_money: "🐞 資金 +🪙50", dbg_no_enh: "強化なし",
+        ui_collection_count: "{found} / {total} 収集",
+        ui_reroll_btn: "🎲 更新 🪙{n}",
+        ui_skip_reward_label: "⏭️ スキップ報酬：",
+        ui_skip_reward_head: "⏭️ スキップ報酬",
+        ui_reward_fallback: "報酬", ui_reward_none: "報酬なし",
+        ui_reward_error: "{label}（報酬適用エラー — 続行）",
+        ui_rank_pos: "{n}位",
+        ui_planet_all_flash: "全スキル Lv +{n}",
+        ui_plays_count: "·{n}回",
+        ui_edition_fx: "{icon} {label} エディション — 攻撃毎 {fx}",
+        ui_head_scoring: "<span class=\"hand-tag\">{name}</span>{lv} · <b style=\"color:var(--gold)\">{valid}</b> 枚が得点{kicker}",
+        ui_head_lv: " <b style=\"color:var(--gold)\">Lv.{lv}</b>",
+        ui_head_kicker: "（キッカー {n}枚を除外）",
+        ui_joker_copy: "{joker} → {target} コピー",
+        ui_negative_badge: "🌑 ネガティブ",
+        sr_windfall_label: "あぶく銭", sr_windfall_detail: "即時 +🪙{n}",
+        sr_windfall_run: "💸 あぶく銭 +🪙{n}",
+        sr_rand_joker_label: "ランダムジョーカー", sr_rand_joker_detail: "無料ジョーカー1個獲得",
+        sr_rand_joker_run: "🃏 無料ジョーカー：{name}",
+        sr_neg_joker_label: "ネガティブジョーカー", sr_neg_joker_detail: "ランダムジョーカーをネガティブで生成（枠を使わない）",
+        sr_neg_joker_run: "🌑 ネガティブジョーカー：{name}",
+        sr_rand_tarot_label: "ランダム巻物", sr_rand_tarot_detail: "無料巻物1枚（枠が必要）",
+        sr_rand_tarot_run: "🔮 無料巻物：{name}",
+        sr_rand_planet_label: "ランダム惑星", sr_rand_planet_detail: "無料惑星1枚（枠が必要）",
+        sr_rand_planet_run: "🪐 無料惑星：{name}",
+        sr_card_enh_label: "カード強化", sr_card_enh_detail: "デッキのランダムな1枚を強化",
+        sr_card_enh_run: "✨ カード強化：{card} → {enh}"
       }
     };
     let LANG = localStorage.getItem("jokerrun_lang");
@@ -6675,7 +6913,7 @@
         row.appendChild(b);
       });
     }
-    const LANG_OPTS = [{ code: "ko", label: "한국어" }, { code: "en", label: "English" }, { code: "zh-Hant", label: "繁體中文" }];
+    const LANG_OPTS = [{ code: "ko", label: "한국어" }, { code: "en", label: "English" }, { code: "ja", label: "日本語" }, { code: "zh-Hant", label: "繁體中文" }];
     function renderLangSeg() {
       const row = $("#setLangRow");
       if (!row) return;
@@ -6756,7 +6994,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-zhhant";
+    const JR_BUILD = "2026-06-23-ja";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
