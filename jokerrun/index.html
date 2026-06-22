@@ -1214,7 +1214,8 @@
     .ps-card { width: clamp(44px, 16.5vw, 72px) !important; flex: 0 0 auto; cursor: default !important; animation: psDeal .32s cubic-bezier(.2,.9,.3,1) both; }
 
     /* 조커 발동 중앙 카드 플래시 */
-    .joker-flash { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+    /* 조커 발동 카드: 화면 중앙(칩×배수 텍스트)을 가리지 않게 아래쪽으로 내려서 표시 */
+    .joker-flash { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding-top: 30vh; pointer-events: none; }
     .jf-card { width: clamp(110px, 34vw, 150px); aspect-ratio: 5/7; border-radius: 14px; border: 3px solid; overflow: hidden; position: relative;
       background: #14101e; opacity: 0; transform: scale(.55) rotate(-9deg) translateY(10px);
       transition: transform .26s cubic-bezier(.2,1.5,.4,1), opacity .18s ease; }
@@ -2993,7 +2994,8 @@
     const _MULT_SEED = ["flushx2","doubleDown","fourMaster","allInClown","fourFlush","royalFlush","trioMult","gambler"];
     const MULT_JOKERS = new Set([..._MULT_SEED, ...jokerPool.filter(j => j.mult).map(j => j.id)]);
     function rarityOf(joker){ return RARITY[joker.rarity || JOKER_RARITY[joker.id] || "common"]; }
-    function jokerSellValue(joker){ return Math.max(2, Math.floor((joker.cost / 2) * rarityOf(joker).sellMul)); }
+    // 판매가: 등급별 환급. 네가티브 조커는 슬롯 미차지 프리미엄으로 +$5 가산.
+    function jokerSellValue(joker){ const base = Math.max(2, Math.floor((joker.cost / 2) * rarityOf(joker).sellMul)); return base + (joker.negative ? 5 : 0); }
     // 등급 가중 랜덤 추첨 (등장확률: 등급 높을수록 낮음). 희귀 사냥꾼 바우처면 전설/신화 가중 ↑
     function rarityWeight(r){
       const base = RARITY[r]?.weight || 100;
@@ -5648,7 +5650,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-negfx";
+    const JR_BUILD = "2026-06-22-negsell";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
