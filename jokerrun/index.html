@@ -3098,6 +3098,8 @@
       rare:      { label:"전설", color:"#d4574e", weight:22,  sellMul:2.4 },
       legendary: { label:"신화", color:"#b56ad6", weight:8,   sellMul:3.5 }
     };
+    // 등급 라벨 영문(표시 의미 기준: 전설=Legendary, 신화=Mythic)
+    const EN_RARITY = { common:"Common", uncommon:"Uncommon", rare:"Legendary", legendary:"Mythic" };
     const JOKER_RARITY = {
       flat50:"common", perCardMult:"common", heartChip:"common", goldDice:"common", diamondMiner:"common",
       evenSteven:"common", oddOne:"common", lowCard:"common", highCard:"common", faceCard:"common",
@@ -3118,6 +3120,11 @@
       foil: { key: "foil", label: "포일",       icon: "🪙", color: "#3aa0ff", chips: 50,   premium: 3, fx: "공격력 +50" },
       holo: { key: "holo", label: "홀로그래픽", icon: "✨", color: "#ff4fc5", multAdd: 10, premium: 4, fx: "연격 +10" },
       poly: { key: "poly", label: "폴리크롬",   icon: "🌈", color: "#ffd166", multX: 1.5,  premium: 5, fx: "연격 ×1.5" }
+    };
+    const EN_EDITIONS = {
+      foil: { label: "Foil", fx: "ATK +50" },
+      holo: { label: "Holographic", fx: "Combo +10" },
+      poly: { label: "Polychrome", fx: "Combo ×1.5" }
     };
     function editionOf(joker){ return joker && joker.edition ? (EDITIONS[joker.edition] || null) : null; }
     // 상점 조커 에디션 추첨: 폴리 4% / 홀로 6% / 포일 10% / 일반 80%
@@ -3403,6 +3410,16 @@
         const en = (LANG === "en") ? EN_ENH[k] : null;
         ENH[k].label = en ? en.label : ENH[k].__ko.label;
         ENH[k].desc = en ? en.desc : ENH[k].__ko.desc;
+      }
+      for (const k in RARITY) {
+        if (RARITY[k].__ko == null) RARITY[k].__ko = RARITY[k].label;
+        RARITY[k].label = (LANG === "en" && EN_RARITY[k]) ? EN_RARITY[k] : RARITY[k].__ko;
+      }
+      for (const k in EDITIONS) {
+        if (!EDITIONS[k].__ko) EDITIONS[k].__ko = { label: EDITIONS[k].label, fx: EDITIONS[k].fx };
+        const en = (LANG === "en") ? EN_EDITIONS[k] : null;
+        EDITIONS[k].label = en ? en.label : EDITIONS[k].__ko.label;
+        EDITIONS[k].fx = en ? en.fx : EDITIONS[k].__ko.fx;
       }
       try {
         (state.jokers || []).forEach(_applyLoc);
@@ -6470,7 +6487,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-hpbar";
+    const JR_BUILD = "2026-06-22-rarityen";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
