@@ -4740,7 +4740,7 @@
         const _ed = editionOf(joker);
         tile.className = "mini-tile" + (joker.negative ? " negative" : (_ed ? " ed-" + _ed.key : ""));
         if (!joker.negative && !_ed) tile.style.borderColor = _r.color + "88";
-        tile.innerHTML = `<div class="mini-art"><img src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="${t('tip_negative')}">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}`;
+        tile.innerHTML = `<div class="mini-art"><img src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}`;
         tile.addEventListener("click", () => {
           openDetailPopup({
             imgSrc: `jokers/${joker.id}.webp`,
@@ -4898,7 +4898,7 @@
             <img class="joker-art" src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
             <span class="joker-grad" aria-hidden="true"></span>
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
-            ${joker.negative ? '<span class="joker-neg-badge" title="${t('tip_negative')}">🌑</span>' : ""}
+            ${joker.negative ? '<span class="joker-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}
             ${_ed ? `<span class="joker-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}
             <span class="joker-name-mini">${joker.name}</span>
             <span class="joker-desc-mini">${colorizeEffect(joker.desc)}</span>
@@ -6490,7 +6490,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-tagsen";
+    const JR_BUILD = "2026-06-22-tagfix";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
