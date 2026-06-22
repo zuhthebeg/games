@@ -2881,15 +2881,25 @@
       { id: "hack", name: "해커", cost: 8, rarity: "rare", desc: "플레이한 2~5 카드 점수 재발동", detail: "플레이한 2·3·4·5 카드의 점수 계산이 한 번 더 발동(칩·강화 추가).", apply() {} },
       { id: "sockBuskin", name: "광대극", cost: 9, rarity: "rare", desc: "플레이한 J/Q/K 카드 점수 재발동", detail: "플레이한 J·Q·K 카드의 점수 계산이 한 번 더 발동.", apply() {} },
       { id: "hangingChad", name: "첫수", cost: 6, rarity: "uncommon", desc: "플레이한 첫 카드 2회 추가 재발동", detail: "플레이한 첫 번째 카드가 2번 더 점수 처리(총 3회).", apply() {} },
-      { id: "retriggerAll", name: "앙코르", cost: 16, rarity: "legendary", desc: "플레이한 모든 카드 점수 재발동", detail: "플레이한 모든 카드의 점수 계산이 한 번 더 발동. 칩·강화 전부 2배.", apply() {} }
+      { id: "retriggerAll", name: "앙코르", cost: 16, rarity: "legendary", desc: "플레이한 모든 카드 점수 재발동", detail: "플레이한 모든 카드의 점수 계산이 한 번 더 발동. 칩·강화 전부 2배.", apply() {} },
+      // ── 신규 조커(다양성 보강) ── 기존 ctx API만 사용. 등급은 inline rarity.
+      { id: "spadeCount", name: "스페이드 백작", cost: 5, rarity: "common", desc: "스페이드 1장당 칩 +12", detail: "점수에 들어간 ♠스페이드 카드 1장당 칩 +12.", apply(ctx) { const s = ctx.scored.filter(c => c.suit === "spade").length; if (s > 0) { ctx.chips += s * 12; ctx.activate("spadeCount"); } } },
+      { id: "clubLuck", name: "클로버 행운", cost: 5, rarity: "common", desc: "클럽 1장당 배수 +1", detail: "점수에 들어간 ♣클럽 카드 1장당 배수 +1.", apply(ctx) { const n = ctx.scored.filter(c => c.suit === "club").length; if (n > 0) { ctx.mult += n; ctx.activate("clubLuck"); } } },
+      { id: "lowball", name: "미니멀", cost: 6, rarity: "common", desc: "점수 카드 전부 10 이하면 칩 +55", detail: "점수에 들어간 카드가 모두 랭크 10 이하일 때 칩 +55.", apply(ctx) { if (ctx.scored.length && ctx.scored.every(c => c.rank <= 10)) { ctx.chips += 55; ctx.activate("lowball"); } } },
+      { id: "twins", name: "쌍둥이", cost: 7, rarity: "uncommon", mult: true, desc: "정확히 2장 플레이 시 배수 x2", detail: "정확히 2장을 선택해 플레이하면 배수 x2.", apply(ctx) { if (ctx.cards.length === 2) { ctx.mult *= 2; ctx.activate("twins"); } } },
+      { id: "astro", name: "점성술사", cost: 8, rarity: "uncommon", desc: "보유 행성 1개당 배수 +2", detail: "소모품 슬롯에 든 행성 카드 1개당 배수 +2.", apply(ctx) { const n = (state.planetCards?.length || 0); if (n > 0) { ctx.mult += n * 2; ctx.activate("astro"); } } },
+      { id: "coinFlip", name: "럭키 코인", cost: 7, rarity: "uncommon", desc: "50% 확률로 칩 +120", detail: "매 핸드 50% 확률로 칩 +120. 동전 던지기.", apply(ctx) { if (Math.random() < 0.5) { ctx.chips += 120; ctx.activate("coinFlip"); } } },
+      { id: "solo", name: "독고다이", cost: 9, rarity: "rare", mult: true, desc: "정확히 1장 플레이 시 배수 x4", detail: "정확히 1장만 선택해 플레이하면 배수 x4.", apply(ctx) { if (ctx.cards.length === 1) { ctx.mult *= 4; ctx.activate("solo"); } } },
+      { id: "mystic", name: "신비주의자", cost: 9, rarity: "rare", desc: "보유 타로 1개당 배수 +3", detail: "소모품 슬롯에 든 타로 카드 1개당 배수 +3.", apply(ctx) { const n = (state.tarotCards?.length || 0); if (n > 0) { ctx.mult += n * 3; ctx.activate("mystic"); } } },
+      { id: "starfall", name: "유성우", cost: 14, rarity: "legendary", mult: true, desc: "스트레이트 플러시 이상이면 배수 x5", detail: "스트레이트 플러시·로열 플러시·플러시 파이브를 만들면 배수 x5.", apply(ctx) { if (["STRAIGHT_FLUSH", "ROYAL_FLUSH", "FLUSH_FIVE"].includes(ctx.handType)) { ctx.mult *= 5; ctx.activate("starfall"); } } }
     ];
 
     // ── 조커 등급(레어도) 시스템 ── 발라트로식: 등급↑ = 판매가↑·등장확률↓
     const RARITY = {
       common:    { label:"일반", color:"#9aa7b4", weight:100, sellMul:1.0 },
-      uncommon:  { label:"희귀", color:"#4f9d69", weight:34,  sellMul:1.5 },
-      rare:      { label:"전설", color:"#d4574e", weight:7,   sellMul:2.4 },
-      legendary: { label:"신화", color:"#b56ad6", weight:1.6, sellMul:3.5 }
+      uncommon:  { label:"희귀", color:"#4f9d69", weight:55,  sellMul:1.5 },
+      rare:      { label:"전설", color:"#d4574e", weight:22,  sellMul:2.4 },
+      legendary: { label:"신화", color:"#b56ad6", weight:8,   sellMul:3.5 }
     };
     const JOKER_RARITY = {
       flat50:"common", perCardMult:"common", heartChip:"common", goldDice:"common", diamondMiner:"common",
@@ -2997,7 +3007,7 @@
       // ── 확장 타로 (카드 모델 내에서 동작: 무늬/랭크 변경·제거·자금. 도감/상점 자동 노출) ──
       { id:"magician",  name:"마법사",   need:1, desc:"선택 카드 랭크 +2",        apply(sel){ sel.forEach(c=>{ c.rank=Math.min(14, c.rank+2); }); } },
       { id:"empress",   name:"여황제",   need:1, desc:"선택 카드를 A로",          apply(sel){ sel.forEach(c=>{ c.rank=14; }); } },
-      { id:"emperor",   name:"황제",     need:2, exact:true, desc:"선택 2장 랭크 +1", apply(sel){ sel.forEach(c=>{ if(c.rank<14) c.rank++; }); } },
+      { id:"emperor",   name:"황제",     need:0, desc:"무작위 타로 2장 생성(슬롯 한도 내)", apply(){ const room = Math.max(0, consumableMax() - consumableCount()); const n = Math.min(2, room); for(let i=0;i<n;i++){ const t = weightedSampleBy(tarotPool.filter(x=>x.id!=="emperor"), 1, tarotWeight)[0]; if(t){ state.tarotCards.push({ ...t }); markDiscovered("tarot", t.id); } } } },
       { id:"priestess", name:"여사제",   need:2, desc:"선택 카드 무늬를 왼쪽과 동일하게", apply(sel){ if(sel[0]) sel.forEach(c=>{ c.suit=sel[0].suit; }); } },
       { id:"hanged",    name:"매달린 자", need:2, exact:true, desc:"선택 2장 제거 후 새 카드", apply(sel){ const ids=new Set(sel.map(c=>c.id)); state.hand=state.hand.filter(c=>!ids.has(c.id)); state.selected.clear(); drawToEight(); } },
       { id:"temperance",name:"절제",     need:0, desc:"조커 판매가 합 획득(최대 $20)", apply(){ const sum=Math.min(20, state.jokers.reduce((s,j)=>s+jokerSellValue(j),0)); state.money=(state.money||0)+sum; } },
@@ -3124,7 +3134,9 @@
       fullmoon: "joker-double", reaperking: "joker-crown", berserk: "joker-bomb",
       bloodmoon: "joker-crown", constellation: "joker-wave", vampire: "joker-double", chaos: "joker-dice",
       blueprint: "joker-calc", brainstorm: "joker-calc", baron: "joker-crown", hack: "joker-runner",
-      sockBuskin: "joker-crown", hangingChad: "joker-runner", retriggerAll: "joker-wave"
+      sockBuskin: "joker-crown", hangingChad: "joker-runner", retriggerAll: "joker-wave",
+      spadeCount: "joker-double", clubLuck: "joker-wave", lowball: "joker-dice", twins: "joker-double",
+      astro: "joker-wave", coinFlip: "joker-dice", solo: "joker-bomb", mystic: "joker-diamond", starfall: "joker-wave"
     };
 
     // 콘텐츠 무결성 검증 — 잘못된/누락 항목이 있어도 게임이 깨지지 않게 기본값 보정 + 경고.
@@ -4785,9 +4797,19 @@
 
     function generateShopJokers() {
       const owned = new Set(state.jokers.map(j => j.id));
-      const available = jokerPool.filter(j => !owned.has(j.id));
+      const recent = new Set(state._recentShopJokers || []);   // 직전 상점에 나온 조커 = 이번엔 회피
       const slots = 3 + (hasVoucher("overstock") ? 1 : 0);   // 재고 과잉 바우처
-      state.shopJokers = weightedSample(available, slots);
+      // 1차: 보유·직전 등장 제외 풀에서 추첨 → 같은 것만 반복되는 체감 완화
+      let pool = jokerPool.filter(j => !owned.has(j.id) && !recent.has(j.id));
+      let picked = weightedSample(pool, slots);
+      // 후보 부족하면 직전 등장 조커도 허용해서 슬롯 채움
+      if (picked.length < slots) {
+        const have = new Set(picked.map(j => j.id));
+        const fill = jokerPool.filter(j => !owned.has(j.id) && !have.has(j.id));
+        picked = picked.concat(weightedSample(fill, slots - picked.length));
+      }
+      state.shopJokers = picked;
+      state._recentShopJokers = picked.map(j => j.id);   // 다음 상점에서 회피할 목록
     }
 
     function generateShopPlanets() {
