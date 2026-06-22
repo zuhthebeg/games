@@ -4738,14 +4738,26 @@
 
     // 포인터 기반 드래그 재배치(터치+마우스 통일). 짧게 누르면 탭(_suppressClick=false), 끌면 순서 변경.
     function makeDraggable(el, selector, onDrop) {
-      el.style.touchAction = "none";
+      // pan-y: 세로 스크롤은 브라우저(페이지)에 양보하고 가로 제스처만 순서이동으로 캡처.
+      // 조커가 많아져 줄바꿈되면 touch-action:none이 세로 스크롤을 막아 타로/소모품 영역으로
+      // 못 내려가던 버그 수정.
+      el.style.touchAction = "pan-y";
       el.addEventListener("pointerdown", (e) => {
         if (e.pointerType === "mouse" && e.button !== 0) return;
         if (e.target.closest("button")) return;   // 팔기 등 버튼 제외
         const sx = e.clientX, sy = e.clientY;
-        let moved = false;
+        let moved = false, decided = false;
+        const cleanup = () => {
+          document.removeEventListener("pointermove", move);
+          document.removeEventListener("pointerup", up);
+          document.removeEventListener("pointercancel", up);
+        };
         const move = (ev) => {
-          if (!moved && (Math.abs(ev.clientX - sx) > 10 || Math.abs(ev.clientY - sy) > 10)) {
+          const dx = ev.clientX - sx, dy = ev.clientY - sy;
+          if (!decided) {
+            if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+            decided = true;
+            if (Math.abs(dy) > Math.abs(dx)) { cleanup(); return; }  // 세로 의도 → 스크롤에 양보
             moved = true; el.classList.add("dragging"); el.style.transform = ""; el.style.boxShadow = "";
           }
           if (moved) {
@@ -4759,9 +4771,7 @@
           }
         };
         const up = () => {
-          document.removeEventListener("pointermove", move);
-          document.removeEventListener("pointerup", up);
-          document.removeEventListener("pointercancel", up);
+          cleanup();
           if (moved) { el.classList.remove("dragging"); el._suppressClick = true; onDrop(); }
         };
         document.addEventListener("pointermove", move, { passive: false });
@@ -6994,7 +7004,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-23-ja";
+    const JR_BUILD = "2026-06-23-dragscroll";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
