@@ -2731,6 +2731,18 @@
     </div>
   </div>
 
+  <div class="modal" id="skipResultModal">
+    <div class="mode-sheet">
+      <div style="text-align:center">
+        <div class="subtitle" style="color:var(--gold);font-weight:800">⏭️ 스킵 보상 획득</div>
+        <div id="skipResultIcon" style="font-size:2.6rem;line-height:1;margin:10px 0 6px">🎁</div>
+        <div class="title" id="skipResultName" style="margin-top:2px">보상</div>
+        <div class="subtitle" id="skipResultDesc" style="margin-top:6px;color:var(--muted);font-size:.8rem"></div>
+      </div>
+      <button class="btn-main" id="skipResultBtn" style="width:100%;margin-top:14px;padding:13px;font-weight:800;border-radius:12px">다음 블라인드로 →</button>
+    </div>
+  </div>
+
 
   <div class="modal" id="victoryModal">
     <div class="mode-sheet">
@@ -4806,17 +4818,21 @@
 
     let _shopIsAnteClear = false;
 
+    // 초반(Ante 1~2, 2번째 보스 전까지)엔 상위 등급 조커·특수 행성을 상점에서 제외 — 돈도 없는데 등장해봐야 못 삼.
+    function isEarlyGame(){ return state.ante <= 2; }
+    function jokerAllowedNow(j){ return !(isEarlyGame() && (j.rarity === "rare" || j.rarity === "legendary")); }
+
     function generateShopJokers() {
       const owned = new Set(state.jokers.map(j => j.id));
       const recent = new Set(state._recentShopJokers || []);   // 직전 상점에 나온 조커 = 이번엔 회피
       const slots = 3 + (hasVoucher("overstock") ? 1 : 0);   // 재고 과잉 바우처
-      // 1차: 보유·직전 등장 제외 풀에서 추첨 → 같은 것만 반복되는 체감 완화
-      let pool = jokerPool.filter(j => !owned.has(j.id) && !recent.has(j.id));
+      // 1차: 보유·직전 등장·초반 등급제한 제외 풀에서 추첨 → 같은 것만 반복되는 체감 완화
+      let pool = jokerPool.filter(j => !owned.has(j.id) && !recent.has(j.id) && jokerAllowedNow(j));
       let picked = weightedSample(pool, slots);
-      // 후보 부족하면 직전 등장 조커도 허용해서 슬롯 채움
+      // 후보 부족하면 직전 등장 조커도 허용해서 슬롯 채움(등급 제한은 유지)
       if (picked.length < slots) {
         const have = new Set(picked.map(j => j.id));
-        const fill = jokerPool.filter(j => !owned.has(j.id) && !have.has(j.id));
+        const fill = jokerPool.filter(j => !owned.has(j.id) && !have.has(j.id) && jokerAllowedNow(j));
         picked = picked.concat(weightedSample(fill, slots - picked.length));
       }
       state.shopJokers = picked;
@@ -4824,7 +4840,9 @@
     }
 
     function generateShopPlanets() {
-      state.shopPlanets = weightedSampleBy(planetPool, 2, planetWeight);
+      // 초반엔 특수 행성(블랙홀·은하·초신성·특이점) 제외 — 비싸고 강력해서 후반 등장.
+      const pool = planetPool.filter(p => !(isEarlyGame() && p.special));
+      state.shopPlanets = weightedSampleBy(pool, 2, planetWeight);
     }
 
     function generateShopTarots() {
@@ -5224,10 +5242,15 @@
       state._skipReward = null;
       const rewardText = opt.run();
       addLog(`${["스몰", "빅"][index] || "블라인드"} 블라인드 스킵 — ${rewardText}`);
-      AudioFX.play("select");
       renderHUD(); refreshConsumables();
-      showSkipRewardToast(rewardText);
-      beginBlind(index + 1, _pendingSeed);
+      // 무엇을 받았는지 확인창을 띄우고, 확인을 눌러야 다음 블라인드 진입.
+      $("#skipResultIcon").textContent = opt.icon || "🎁";
+      $("#skipResultName").textContent = opt.label || "보상";
+      $("#skipResultDesc").textContent = rewardText;
+      const btn = $("#skipResultBtn");
+      btn.onclick = () => { $("#skipResultModal").classList.remove("show"); beginBlind(index + 1, _pendingSeed); };
+      $("#skipResultModal").classList.add("show");
+      try { AudioFX.play("win"); JuiceFX.sfx("win"); } catch (_) {}
     }
 
     function startRound(index, seedText = "") {
