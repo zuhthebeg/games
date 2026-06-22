@@ -3102,9 +3102,9 @@
     // ── 조커 등급(레어도) 시스템 ── 발라트로식: 등급↑ = 판매가↑·등장확률↓
     const RARITY = {
       common:    { label:"일반", color:"#9aa7b4", weight:100, sellMul:1.0 },
-      uncommon:  { label:"희귀", color:"#4f9d69", weight:55,  sellMul:1.5 },
-      rare:      { label:"전설", color:"#d4574e", weight:22,  sellMul:2.4 },
-      legendary: { label:"신화", color:"#b56ad6", weight:8,   sellMul:3.5 }
+      uncommon:  { label:"희귀", color:"#4f9d69", weight:46,  sellMul:1.5 },
+      rare:      { label:"전설", color:"#d4574e", weight:15,  sellMul:2.4 },
+      legendary: { label:"신화", color:"#b56ad6", weight:4,   sellMul:3.5 }
     };
     // 등급 라벨 영문(표시 의미 기준: 전설=Legendary, 신화=Mythic)
     const EN_RARITY = { common:"Common", uncommon:"Uncommon", rare:"Legendary", legendary:"Mythic" };
@@ -3114,9 +3114,9 @@
       flat50:"common", perCardMult:"common", heartChip:"common", goldDice:"common", diamondMiner:"common",
       evenSteven:"common", oddOne:"common", lowCard:"common", highCard:"common", faceCard:"common",
       flushx2:"uncommon", pairBoost:"uncommon", spadeAce:"uncommon", luckySeven:"uncommon", straightRunner:"uncommon",
-      clubKing:"uncommon", acePower:"uncommon", fourFlush:"uncommon", snowball:"uncommon", magnet:"uncommon",
+      clubKing:"uncommon", acePower:"uncommon", fourFlush:"uncommon", snowball:"rare", magnet:"uncommon",
       gambler:"rare", tycoon:"uncommon", legion:"uncommon",
-      doubleDown:"rare", fullHouseFan:"rare", allInClown:"rare", streakBonus:"rare", chipRain:"rare", trioMult:"rare", compound:"rare",
+      doubleDown:"rare", fullHouseFan:"rare", allInClown:"rare", streakBonus:"uncommon", chipRain:"rare", trioMult:"rare", compound:"rare",
       fourMaster:"legendary", royalFlush:"legendary"
     };
     // 등급: 인라인 rarity 우선 → JOKER_RARITY 맵 → common. 새 조커는 객체에 rarity만 박으면 됨.
@@ -7087,7 +7087,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-23-skiprewards";
+    const JR_BUILD = "2026-06-23-rarity2";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
