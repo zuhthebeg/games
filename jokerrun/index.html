@@ -2964,8 +2964,10 @@
     }
     // 타로 등장 가중치: 돈 버는 타로는 가끔, 카드 강화 타로는 중간, 나머지 일반
     const MONEY_TAROT = new Set(["hermit", "wheel", "temperance"]);
+    const GEN_TAROT = new Set(["priestess", "emperor", "fool", "judgement"]);  // 생성형(행성/타로/조커 생성) — 강력
     function tarotWeight(t){
       if (MONEY_TAROT.has(t.id)) return 3;        // 은둔자·수레바퀴·절제 — 드물게
+      if (GEN_TAROT.has(t.id)) return 4;          // 생성형 타로 — 드물게
       if (String(t.id).startsWith("enh_")) return 6;  // 카드 강화 타로 — 중간
       return 12;                                   // 일반 타로(무늬/랭크 변경 등)
     }
@@ -2988,7 +2990,8 @@
       { id:"seedMoney",     name:"종잣돈",      cost:10, icon:"💰", desc:"이자 상한 $5 → $10" },
       { id:"grabber",       name:"여분의 손",   cost:12, icon:"✋", desc:"블라인드마다 핸드 +1" },
       { id:"wasteful",      name:"낭비꾼",      cost:10, icon:"🗑️", desc:"블라인드마다 버리기 +1" },
-      { id:"biggerBag",     name:"확장 가방",    cost:14, icon:"🎒", desc:"소모품 슬롯 +1 (타로·행성 보관)" }
+      { id:"biggerBag",     name:"확장 가방",    cost:14, icon:"🎒", desc:"소모품 슬롯 +1 (타로·행성 보관)" },
+      { id:"telescope",     name:"천체망원경",   cost:12, icon:"🔭", desc:"자주 쓴 족보의 행성이 상점에 더 잘 등장" }
     ];
     function hasVoucher(id){ return !!(state.vouchers && state.vouchers[id]); }
     function shopDiscount(){ return hasVoucher("clearance") ? 0.25 : 0; }
@@ -3026,7 +3029,7 @@
       { id:"magician",  name:"마법사",   need:1, desc:"선택 카드 랭크 +2",        apply(sel){ sel.forEach(c=>{ c.rank=Math.min(14, c.rank+2); }); } },
       { id:"empress",   name:"여황제",   need:1, desc:"선택 카드를 A로",          apply(sel){ sel.forEach(c=>{ c.rank=14; }); } },
       { id:"emperor",   name:"황제",     need:0, desc:"무작위 타로 2장 생성(슬롯 한도 내)", apply(){ const room = Math.max(0, consumableMax() - consumableCount()); const n = Math.min(2, room); for(let i=0;i<n;i++){ const t = weightedSampleBy(tarotPool.filter(x=>x.id!=="emperor"), 1, tarotWeight)[0]; if(t){ state.tarotCards.push({ ...t }); markDiscovered("tarot", t.id); } } } },
-      { id:"priestess", name:"여사제",   need:2, desc:"선택 카드 무늬를 왼쪽과 동일하게", apply(sel){ if(sel[0]) sel.forEach(c=>{ c.suit=sel[0].suit; }); } },
+      { id:"priestess", name:"여사제",   need:0, desc:"무작위 행성 2장 생성(슬롯 한도)", apply(){ const room=Math.max(0,consumableMax()-consumableCount()); const n=Math.min(2,room); for(let i=0;i<n;i++){ const p=weightedSampleBy(planetPool.filter(x=>!x.special),1,planetWeight)[0]; if(p){ state.planetCards.push({ ...p }); markDiscovered("planet",p.id); } } } },
       { id:"hanged",    name:"매달린 자", need:2, exact:true, desc:"선택 2장 제거 후 새 카드", apply(sel){ const ids=new Set(sel.map(c=>c.id)); state.hand=state.hand.filter(c=>!ids.has(c.id)); state.selected.clear(); drawToEight(); } },
       { id:"temperance",name:"절제",     need:0, desc:"조커 판매가 합 획득(최대 $20)", apply(){ const sum=Math.min(20, state.jokers.reduce((s,j)=>s+jokerSellValue(j),0)); state.money=(state.money||0)+sum; } },
       // ── 카드 강화 부여 타로 (선택 1장에 enhancement 영구 부여. 덱에 남아 계속 적용) ──
@@ -3035,7 +3038,10 @@
       { id:"enh_stone", name:"탑",          need:1, enh:"stone", desc:"선택 1장 → 스톤 카드(점수 칩 +50)",       apply(sel){ sel.forEach(c=>c.enh="stone"); } },
       { id:"enh_glass", name:"유리의 연인", need:1, enh:"glass", desc:"선택 1장 → 글래스 카드(배수 ×1.5)",       apply(sel){ sel.forEach(c=>c.enh="glass"); } },
       { id:"enh_steel", name:"강철 심판",   need:1, enh:"steel", desc:"선택 1장 → 스틸 카드(손에 있으면 배수 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="steel"); } },
-      { id:"enh_gold",  name:"황금 악마",   need:1, enh:"gold",  desc:"선택 1장 → 골드 카드(라운드 끝 보유 시 +$3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } }
+      { id:"enh_gold",  name:"황금 악마",   need:1, enh:"gold",  desc:"선택 1장 → 골드 카드(라운드 끝 보유 시 +$3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
+      // ── 원작 메이저 아르카나 추가 ──
+      { id:"fool",      name:"바보",       need:0, desc:"마지막 사용한 타로/행성 1장 복사(슬롯 한도)", apply(){ const lc=state.lastConsumable; if(!lc||lc.id==="fool") return; if(consumableCount()>=consumableMax()) return; if(lc.kind==="tarot"){ const t=tarotPool.find(x=>x.id===lc.id); if(t){ state.tarotCards.push({ ...t }); markDiscovered("tarot",t.id); } } else { const p=planetPool.find(x=>x.id===lc.id); if(p){ state.planetCards.push({ ...p }); markDiscovered("planet",p.id); } } } },
+      { id:"judgement", name:"심판",       need:0, desc:"무작위 조커 1개 생성(슬롯 여유 시)", apply(){ if(jokerSlotsFull()) return; const j=weightedSample(jokerPool,1)[0]; if(j){ state.jokers.push({ ...j, counter:0 }); markDiscovered("joker",j.id); renderHUD(); } } }
     ];
     function consumableCount(){ return (state.planetCards?.length||0) + (state.tarotCards?.length||0); }
     // 소모품(타로·행성) 보관 슬롯 상한: 기본 3 + 확장 가방 바우처(+1)
@@ -3205,6 +3211,8 @@
       lastToggledCardId: null,
       shopJokers: [],
       handLevels: { HIGH_CARD:1, PAIR:1, TWO_PAIR:1, THREE:1, STRAIGHT:1, FLUSH:1, FULL_HOUSE:1, FOUR:1, ROYAL_STRAIGHT:1, STRAIGHT_FLUSH:1, ROYAL_FLUSH:1, FIVE:1, FLUSH_HOUSE:1, FLUSH_FIVE:1 },
+      handPlays: {},        // 이번 런에서 각 족보를 플레이한 횟수
+      lastConsumable: null, // 마지막으로 사용한 타로/행성(바보 타로가 복사)
       planetCards: [],
       tarotCards: [],
       shopPlanets: [],
@@ -3752,6 +3760,7 @@
       } else {
         tarot.apply();
       }
+      if (tarot.id !== "fool") state.lastConsumable = { kind: "tarot", id: tarot.id };   // 바보 타로 복사용
       state.tarotCards.splice(idx, 1);
       flashTarotCard(tarot);
       addLog(`타로 사용: ${tarot.name}`);
@@ -3787,6 +3796,7 @@
     function usePlanetCard(planet, anchorEl) {
       const pi = state.planetCards.indexOf(planet);
       if (pi < 0) return;
+      state.lastConsumable = { kind: "planet", id: planet.id };   // 바보 타로 복사용
       if (planet.special) {
         // 흡수형(특이점)은 족보 선택이 필요하므로 picker를 띄우고 거기서 소비한다.
         if (planet.special === "absorb") { openSingularityPicker(planet); return; }
@@ -4246,8 +4256,9 @@
         const baseScore = base.chips * base.mult;
         const lvlScore = lc * lm;
         const up = lvl > 1;
+        const plays = (state.handPlays && state.handPlays[h]) || 0;
         rows += `<tr style="border-bottom:1px solid var(--line,rgba(255,255,255,.08))">
-          <td style="padding:7px 6px;font-weight:700">${base.name}${up?` <span style="color:var(--gold);font-size:.72rem">Lv.${lvl}</span>`:""}</td>
+          <td style="padding:7px 6px;font-weight:700">${base.name}${up?` <span style="color:var(--gold);font-size:.72rem">Lv.${lvl}</span>`:""}${plays?` <span style="color:var(--cyan,#30d4af);font-size:.7rem">·${plays}회</span>`:""}</td>
           <td style="padding:7px 6px;text-align:right;color:var(--muted)">${base.chips}×${base.mult}<br><span style="font-size:.72rem">=${baseScore}</span></td>
           <td style="padding:7px 6px;text-align:right;font-weight:800;color:${up?'var(--gold)':'var(--text)'}">${lc}×${lm}<br><span style="font-size:.72rem">=${lvlScore}</span></td>
         </tr>`;
@@ -4525,12 +4536,14 @@
           score: state.score, handsLeft: state.handsLeft, discardsLeft: state.discardsLeft,
           sortMode: state.sortMode, lastHandType: state.lastHandType || null,
           handLevels: { ...state.handLevels },
+          handPlays: { ...(state.handPlays || {}) },
+          lastConsumable: state.lastConsumable ? { ...state.lastConsumable } : null,
           vouchers: { ...state.vouchers }, voucherAnte: state.voucherAnte,
           shopVoucherId: state.shopVoucher ? state.shopVoucher.id : null,
           bossModifier: state.bossModifier ? { ...state.bossModifier } : null,
           isBossBlind: !!state.isBossBlind,
           extraCards: (state.extraCards || []).map(c => ({ suit: c.suit, rank: c.rank })),
-          jokers: state.jokers.map(j => ({ id: j.id, counter: j.counter || 0, desc: j.desc })),
+          jokers: state.jokers.map(j => ({ id: j.id, counter: j.counter || 0, desc: j.desc, negative: !!j.negative })),
           tarotCards: state.tarotCards.map(t => ({ id: t.id })),
           planetCards: state.planetCards.map(p => ({ id: p.id })),
           runDeck: state.runDeck.map(c => ({ id: c.id, suit: c.suit, rank: c.rank, enh: c.enh || null })),
@@ -4553,6 +4566,8 @@
       state.score = snap.score; state.handsLeft = snap.handsLeft; state.discardsLeft = snap.discardsLeft;
       state.sortMode = snap.sortMode || "rank"; state.lastHandType = snap.lastHandType || null;
       state.handLevels = { ...snap.handLevels };
+      state.handPlays = { ...(snap.handPlays || {}) };
+      state.lastConsumable = snap.lastConsumable || null;
       state.vouchers = { ...snap.vouchers }; state.voucherAnte = snap.voucherAnte || 0;
       state.shopVoucher = snap.shopVoucherId ? (voucherPool.find(v => v.id === snap.shopVoucherId) || null) : null;
       state.bossModifier = snap.bossModifier || null;
@@ -4567,7 +4582,7 @@
       // 조커 복원: 풀에서 apply 함수 재연결 + counter/desc 복원
       state.jokers = (snap.jokers || []).map(s => {
         const base = jokerPool.find(j => j.id === s.id); if (!base) return null;
-        const j = { ...base, counter: s.counter || 0 }; if (s.desc) j.desc = s.desc; return j;
+        const j = { ...base, counter: s.counter || 0 }; if (s.desc) j.desc = s.desc; if (s.negative) j.negative = true; return j;
       }).filter(Boolean);
       state.tarotCards = (snap.tarotCards || []).map(s => { const t = tarotPool.find(x => x.id === s.id); return t ? { ...t } : null; }).filter(Boolean);
       state.planetCards = (snap.planetCards || []).map(s => { const p = planetPool.find(x => x.id === s.id); return p ? { ...p } : null; }).filter(Boolean);
@@ -4769,6 +4784,8 @@
       ps.close();
       await wait(180);
       state.lastHandType = hand.handType;   // 메아리 조커 콤보용(다음 플레이가 같은 족보면 발동)
+      state.handPlays = state.handPlays || {};
+      state.handPlays[hand.handType] = (state.handPlays[hand.handType] || 0) + 1;   // 족보 사용 횟수 누적
       chips = Math.max(0, Math.floor(ctx.chips));
       mult = Math.max(1, Math.floor(ctx.mult * 100) / 100);
       const points = Math.floor(chips * mult);
@@ -4842,7 +4859,11 @@
     function generateShopPlanets() {
       // 초반엔 특수 행성(블랙홀·은하·초신성·특이점) 제외 — 비싸고 강력해서 후반 등장.
       const pool = planetPool.filter(p => !(isEarlyGame() && p.special));
-      state.shopPlanets = weightedSampleBy(pool, 2, planetWeight);
+      // 천체망원경 바우처: 자주 플레이한 족보의 행성 등장 가중 ↑ (사용 1회당 가중 +3배)
+      const w = hasVoucher("telescope")
+        ? (p) => planetWeight(p) * (1 + 3 * ((state.handPlays && state.handPlays[p.hand]) || 0))
+        : planetWeight;
+      state.shopPlanets = weightedSampleBy(pool, 2, w);
     }
 
     function generateShopTarots() {
