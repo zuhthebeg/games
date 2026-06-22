@@ -3063,7 +3063,7 @@
       { id: "sniper", name: "저격수", cost: 7, rarity: "uncommon", desc: "정확히 1장 플레이 시 공격력 +70", detail: "카드를 딱 1장만 내면 공격력 +70.", apply(ctx) { if (ctx.cards.length === 1) { ctx.chips += 70; ctx.activate("sniper"); } } },
       { id: "trinity", name: "삼위일체", cost: 8, rarity: "uncommon", desc: "같은 무늬 3장↑이면 연격 +3", detail: "플레이 카드 중 같은 무늬가 3장 이상이면 연격 +3.", apply(ctx) { const m = {}; ctx.scored.forEach(c => m[c.suit] = (m[c.suit] || 0) + 1); if (Math.max(0, ...Object.values(m)) >= 3) { ctx.mult += 3; ctx.activate("trinity"); } } },
       { id: "monochrome", name: "흑백 조커", cost: 7, rarity: "uncommon", desc: "전부 같은 색이면 공격력 +55", detail: "플레이 카드가 모두 빨강(♥♦) 또는 모두 검정(♣♠)이면 공격력 +55.", apply(ctx) { if (!ctx.cards.length) return; const red = c => c.suit === "heart" || c.suit === "diamond"; if (ctx.scored.every(red) || ctx.scored.every(c => !red(c))) { ctx.chips += 55; ctx.activate("monochrome"); } } },
-      { id: "fibonacci", name: "피보나치", cost: 10, rarity: "rare", desc: "A·2·3·5·8 1장당 연격 +1", detail: "플레이 카드 중 A·2·3·5·8 1장마다 연격 +1.", apply(ctx) { const f = new Set([14, 2, 3, 5, 8]); const n = ctx.scored.filter(c => f.has(c.rank)).length; if (n > 0) { ctx.mult += n; ctx.activate("fibonacci"); } } },
+      { id: "fibonacci", name: "피보나치", cost: 10, rarity: "rare", desc: "A·2·3·5·8 1장당 연격 +3", detail: "플레이 카드 중 A·2·3·5·8 1장마다 연격 +3.", apply(ctx) { const f = new Set([14, 2, 3, 5, 8]); const n = ctx.scored.filter(c => f.has(c.rank)).length; if (n > 0) { ctx.mult += n * 3; ctx.activate("fibonacci"); } } },
       { id: "patience", name: "인내", cost: 6, rarity: "common", desc: "남은 버리기 1개당 연격 +1", detail: "데미지 계산 시 남은 버리기 횟수 1개당 연격 +1.", apply(ctx) { const d = state.discardsLeft || 0; if (d > 0) { ctx.mult += d; ctx.activate("patience"); } } },
       { id: "highRoller", name: "하이롤러", cost: 12, rarity: "rare", mult: true, desc: "자금 🪙20↑면 연격 x2", detail: "보유 자금이 🪙20 이상이면 연격 x2.", apply(ctx) { if ((state.money || 0) >= 20) { ctx.mult *= 2; ctx.activate("highRoller"); } } },
       { id: "theQueen", name: "여왕의 가호", cost: 7, rarity: "uncommon", desc: "Q 1장당 연격 +1.5", detail: "플레이한 퀸(Q) 1장마다 연격 +1.5.", apply(ctx) { const n = ctx.scored.filter(c => c.rank === 12).length; if (n > 0) { ctx.mult += n * 1.5; ctx.activate("theQueen"); } } },
@@ -3095,7 +3095,7 @@
       { id: "astro", name: "점성술사", cost: 8, rarity: "uncommon", desc: "보유 행성 1개당 연격 +2", detail: "소모품 슬롯에 든 행성 카드 1개당 연격 +2.", apply(ctx) { const n = (state.planetCards?.length || 0); if (n > 0) { ctx.mult += n * 2; ctx.activate("astro"); } } },
       { id: "coinFlip", name: "럭키 코인", cost: 7, rarity: "uncommon", desc: "50% 확률로 공격력 +120", detail: "매 공격 50% 확률로 공격력 +120. 동전 던지기.", apply(ctx) { if (Math.random() < 0.5) { ctx.chips += 120; ctx.activate("coinFlip"); } } },
       { id: "solo", name: "독고다이", cost: 9, rarity: "rare", mult: true, desc: "정확히 1장 플레이 시 연격 x4", detail: "정확히 1장만 선택해 플레이하면 연격 x4.", apply(ctx) { if (ctx.cards.length === 1) { ctx.mult *= 4; ctx.activate("solo"); } } },
-      { id: "mystic", name: "신비주의자", cost: 9, rarity: "rare", desc: "보유 타로 1개당 연격 +3", detail: "소모품 슬롯에 든 타로 카드 1개당 연격 +3.", apply(ctx) { const n = (state.tarotCards?.length || 0); if (n > 0) { ctx.mult += n * 3; ctx.activate("mystic"); } } },
+      { id: "mystic", name: "신비주의자", cost: 9, rarity: "rare", mult: true, desc: "보유 타로가 있으면 연격 ×3", detail: "소모품 슬롯에 타로 카드가 1장 이상 있으면 연격 ×3.", apply(ctx) { const n = (state.tarotCards?.length || 0); if (n > 0) { ctx.mult *= 3; ctx.activate("mystic"); } } },
       { id: "starfall", name: "유성우", cost: 14, rarity: "legendary", mult: true, desc: "스트레이트 플러시 이상이면 연격 x5", detail: "스트레이트 플러시·로열 플러시·플러시 파이브를 만들면 연격 x5.", apply(ctx) { if (["STRAIGHT_FLUSH", "ROYAL_FLUSH", "FLUSH_FIVE"].includes(ctx.handType)) { ctx.mult *= 5; ctx.activate("starfall"); } } }
     ];
 
@@ -3114,7 +3114,7 @@
       flat50:"common", perCardMult:"common", heartChip:"common", goldDice:"common", diamondMiner:"common",
       evenSteven:"common", oddOne:"common", lowCard:"common", highCard:"common", faceCard:"common",
       flushx2:"uncommon", pairBoost:"uncommon", spadeAce:"uncommon", luckySeven:"uncommon", straightRunner:"uncommon",
-      clubKing:"uncommon", acePower:"uncommon", fourFlush:"uncommon", snowball:"rare", magnet:"uncommon",
+      clubKing:"uncommon", acePower:"uncommon", fourFlush:"uncommon", snowball:"rare", magnet:"rare",
       gambler:"rare", tycoon:"uncommon", legion:"uncommon",
       doubleDown:"rare", fullHouseFan:"rare", allInClown:"rare", streakBonus:"uncommon", chipRain:"rare", trioMult:"rare", compound:"rare",
       fourMaster:"legendary", royalFlush:"legendary"
@@ -3168,7 +3168,7 @@
       oddOne:       (c, x) => { if (c.rank % 2 === 1 && c.rank <= 9) { x.mult += 0.5; return true; } },
       lowCard:      (c, x) => { if (c.rank <= 5) { x.chips += 10; return true; } },
       highCard:     (c, x) => { if (c.rank >= 10) { x.mult += 0.5; return true; } },
-      fibonacci:    (c, x) => { if ([14, 2, 3, 5, 8].includes(c.rank)) { x.mult += 1; return true; } },
+      fibonacci:    (c, x) => { if ([14, 2, 3, 5, 8].includes(c.rank)) { x.mult += 3; return true; } },
       bloodmoon:    (c, x) => { if (c.rank === 12 || c.rank === 13) { x.mult = Math.round(x.mult * 1.5 * 100) / 100; return true; } }
     };
     jokerPool.forEach(j => { if (PER_CARD_JOKERS[j.id]) j.perCard = PER_CARD_JOKERS[j.id]; });
@@ -3374,7 +3374,7 @@
       tycoon:{name:"Tycoon",desc:"Combo +1 per 🪙5 held"}, gambler:{name:"Gambler",desc:"25% chance: Combo x3"},
       ironclad:{name:"Ironclad",desc:"ATK +4 per unplayed card"}, sniper:{name:"Sniper",desc:"Exactly 1 card: ATK +70"},
       trinity:{name:"Trinity",desc:"3+ same suit: Combo +3"}, monochrome:{name:"Monochrome",desc:"All same color: ATK +55"},
-      fibonacci:{name:"Fibonacci",desc:"Combo +1 per A/2/3/5/8"}, patience:{name:"Patience",desc:"Combo +1 per discard left"},
+      fibonacci:{name:"Fibonacci",desc:"Combo +3 per A/2/3/5/8"}, patience:{name:"Patience",desc:"Combo +1 per discard left"},
       highRoller:{name:"High Roller",desc:"🪙20+: Combo x2"}, theQueen:{name:"Queen's Grace",desc:"Combo +1.5 per Q"},
       flushBank:{name:"Flush Bank",desc:"Flush: ATK +70"}, allShapes:{name:"All Shapes",desc:"5 cards & 4 suits: Combo x2.5"},
       echo:{name:"Echo",desc:"Same skill as last: Combo x2"}, lowRoller:{name:"Low Roller",desc:"All 5 or below: ATK +45"},
@@ -3388,7 +3388,7 @@
       spadeCount:{name:"Count Spade",desc:"ATK +12 per spade"}, clubLuck:{name:"Clover Luck",desc:"Combo +1 per club"},
       lowball:{name:"Minimal",desc:"All scoring cards 10 or below: ATK +55"}, twins:{name:"Twins",desc:"Exactly 2 cards: Combo x2"},
       astro:{name:"Astrologer",desc:"Combo +2 per owned planet"}, coinFlip:{name:"Lucky Coin",desc:"50% chance: ATK +120"},
-      solo:{name:"Lone Wolf",desc:"Exactly 1 card: Combo x4"}, mystic:{name:"Mystic",desc:"Combo +3 per owned scroll"},
+      solo:{name:"Lone Wolf",desc:"Exactly 1 card: Combo x4"}, mystic:{name:"Mystic",desc:"Combo ×3 if holding a scroll"},
       starfall:{name:"Meteor Shower",desc:"Straight Flush+: Combo x5"},
       mercury:{name:"Mercury"}, venus:{name:"Venus"}, earth:{name:"Earth"}, mars:{name:"Mars"},
       jupiter:{name:"Jupiter"}, saturn:{name:"Saturn"}, uranus:{name:"Uranus"}, neptune:{name:"Neptune"}, pluto:{name:"Pluto"},
@@ -3436,7 +3436,7 @@
       tycoon:{name:"資本家",desc:"每持有🪙5 連擊 +1"}, gambler:{name:"賭徒",desc:"25%機率 連擊 x3"},
       ironclad:{name:"鋼鐵小丑",desc:"每張未出的手牌 攻擊力 +4"}, sniper:{name:"狙擊手",desc:"正好出1張：攻擊力 +70"},
       trinity:{name:"三位一體",desc:"同花色3張以上：連擊 +3"}, monochrome:{name:"黑白小丑",desc:"全部同色：攻擊力 +55"},
-      fibonacci:{name:"費波那契",desc:"每張A/2/3/5/8 連擊 +1"}, patience:{name:"忍耐",desc:"每剩1次棄牌 連擊 +1"},
+      fibonacci:{name:"費波那契",desc:"每張A/2/3/5/8 連擊 +3"}, patience:{name:"忍耐",desc:"每剩1次棄牌 連擊 +1"},
       highRoller:{name:"豪賭客",desc:"🪙20以上：連擊 x2"}, theQueen:{name:"皇后的守護",desc:"每張Q 連擊 +1.5"},
       flushBank:{name:"同花金庫",desc:"同花：攻擊力 +70"}, allShapes:{name:"萬物商",desc:"5張+4花色：連擊 x2.5"},
       echo:{name:"回聲",desc:"與上次相同技能：連擊 x2"}, lowRoller:{name:"小賭客",desc:"全部5以下：攻擊力 +45"},
@@ -3450,7 +3450,7 @@
       spadeCount:{name:"黑桃伯爵",desc:"每張黑桃 攻擊力 +12"}, clubLuck:{name:"幸運草",desc:"每張梅花 連擊 +1"},
       lowball:{name:"極簡",desc:"計分牌全部10以下：攻擊力 +55"}, twins:{name:"雙胞胎",desc:"正好出2張：連擊 x2"},
       astro:{name:"占星師",desc:"每持有1個行星 連擊 +2"}, coinFlip:{name:"幸運硬幣",desc:"50%機率 攻擊力 +120"},
-      solo:{name:"獨行俠",desc:"正好出1張：連擊 x4"}, mystic:{name:"神秘學者",desc:"每持有1張卷軸 連擊 +3"},
+      solo:{name:"獨行俠",desc:"正好出1張：連擊 x4"}, mystic:{name:"神秘學者",desc:"持有卷軸時 連擊 ×3"},
       starfall:{name:"流星雨",desc:"同花順以上：連擊 x5"},
       mercury:{name:"水星"}, venus:{name:"金星"}, earth:{name:"地球"}, mars:{name:"火星"},
       jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
@@ -3498,7 +3498,7 @@
       tycoon:{name:"資本家",desc:"所持🪙5毎 連撃 +1"}, gambler:{name:"ギャンブラー",desc:"25%の確率で 連撃 x3"},
       ironclad:{name:"鋼鉄のジョーカー",desc:"出さなかった手札1枚毎 攻撃力 +4"}, sniper:{name:"スナイパー",desc:"ちょうど1枚プレイ：攻撃力 +70"},
       trinity:{name:"トリニティ",desc:"同スート3枚以上：連撃 +3"}, monochrome:{name:"モノクロジョーカー",desc:"全て同色：攻撃力 +55"},
-      fibonacci:{name:"フィボナッチ",desc:"A/2/3/5/8が1枚毎 連撃 +1"}, patience:{name:"忍耐",desc:"残り捨て札1毎 連撃 +1"},
+      fibonacci:{name:"フィボナッチ",desc:"A/2/3/5/8が1枚毎 連撃 +3"}, patience:{name:"忍耐",desc:"残り捨て札1毎 連撃 +1"},
       highRoller:{name:"ハイローラー",desc:"🪙20以上：連撃 x2"}, theQueen:{name:"クイーンの加護",desc:"Q1枚毎 連撃 +1.5"},
       flushBank:{name:"フラッシュ金庫",desc:"フラッシュ：攻撃力 +70"}, allShapes:{name:"万物商",desc:"5枚+4スート：連撃 x2.5"},
       echo:{name:"エコー",desc:"前回と同じスキル：連撃 x2"}, lowRoller:{name:"ローローラー",desc:"全て5以下：攻撃力 +45"},
@@ -3512,7 +3512,7 @@
       spadeCount:{name:"スペード伯爵",desc:"スペード1枚毎 攻撃力 +12"}, clubLuck:{name:"クローバーの幸運",desc:"クラブ1枚毎 連撃 +1"},
       lowball:{name:"ミニマル",desc:"得点カード全て10以下：攻撃力 +55"}, twins:{name:"双子",desc:"ちょうど2枚プレイ：連撃 x2"},
       astro:{name:"占星術師",desc:"所持惑星1個毎 連撃 +2"}, coinFlip:{name:"ラッキーコイン",desc:"50%の確率で 攻撃力 +120"},
-      solo:{name:"一匹狼",desc:"ちょうど1枚プレイ：連撃 x4"}, mystic:{name:"神秘学者",desc:"所持巻物1枚毎 連撃 +3"},
+      solo:{name:"一匹狼",desc:"ちょうど1枚プレイ：連撃 x4"}, mystic:{name:"神秘学者",desc:"巻物を所持時 連撃 ×3"},
       starfall:{name:"流星群",desc:"ストレートフラッシュ以上：連撃 x5"},
       mercury:{name:"水星"}, venus:{name:"金星"}, earth:{name:"地球"}, mars:{name:"火星"},
       jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
@@ -7087,7 +7087,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-23-rarity2";
+    const JR_BUILD = "2026-06-23-jokertune";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
