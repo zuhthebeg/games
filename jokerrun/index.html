@@ -3605,7 +3605,7 @@
     function enhOf(c){ return c && c.enh ? ENH[c.enh] : null; }
     // 보스 모디파이어로 무력화된 카드(현재: 하트 봉인). 데미지에 기여하지 않고 흑백으로 표시된다.
     function isCardBossDisabled(c){ return state.bossModifier?.id === "no_hearts" && c.suit === "heart"; }
-    function cardScoreChips(c){ if (isCardBossDisabled(c)) return 0; return (RANK_CHIPS[c.rank]||0) + (enhOf(c)?.chips||0); }
+    function cardScoreChips(c){ if (isCardBossDisabled(c)) return 0; if (c.enh === "stone") return (enhOf(c)?.chips||0); /* 스톤은 랭크 없음 → +50만(원래 랭크 칩 미가산) */ return (RANK_CHIPS[c.rank]||0) + (enhOf(c)?.chips||0); }
     function enhBadgeHTML(card){ const e=enhOf(card); return e ? `<span class="enh-badge" style="background:${e.color}">${e.short}</span>` : ""; }
     // 페이스 카드(J/Q/K) 스킨 — classic: 오리지널 트럼프 풀카드 이미지 / fantasy: 직접 그린 일러스트
     const FACE_IMG = { 11: "jack", 12: "queen", 13: "king" };
@@ -5641,10 +5641,13 @@
     function isStraightFlushHand(ht) { return ht === "STRAIGHT_FLUSH" || ht === "ROYAL_FLUSH"; }
     function scoreHand(cards) {
       if (!cards.length) return { handType: "HIGH_CARD", ...handBase.HIGH_CARD };
-      const ranks = cards.map(c => c.rank).sort((a, b) => a - b);
-      const suitsOnly = cards.map(c => c.suit);
+      // 스톤 카드는 랭크/무늬가 없다(발라트로 규칙) → 족보 판정에서 제외. +50 공격력만 줌.
+      const real = cards.filter(c => c.enh !== "stone");
+      if (!real.length) return { handType: "HIGH_CARD", ...handBase.HIGH_CARD };
+      const ranks = real.map(c => c.rank).sort((a, b) => a - b);
+      const suitsOnly = real.map(c => c.suit);
       const counts = Object.values(ranks.reduce((m, r) => ((m[r] = (m[r] || 0) + 1), m), {})).sort((a, b) => b - a);
-      const isFive = cards.length === 5;
+      const isFive = real.length === 5;
       const isFlush = isFive && new Set(suitsOnly).size === 1;
       let isStraight = false;
       if (isFive) {
@@ -5672,18 +5675,20 @@
     // 발라트로 규칙: 실제 데미지에 기여하는 카드만 반환(키커 제외). 손패 순서 유지.
     function scoringCards(cards, handType) {
       const scoreSet = new Set();
+      // 스톤은 랭크/무늬 없음 → 족보 기여 판정에서 제외(원래 랭크로 페어를 만들지 않음)
+      const real = cards.filter(c => c.enh !== "stone");
       if (["FLUSH", "STRAIGHT", "STRAIGHT_FLUSH", "FULL_HOUSE", "ROYAL_STRAIGHT", "ROYAL_FLUSH", "FIVE", "FLUSH_HOUSE", "FLUSH_FIVE"].includes(handType)) {
-        cards.forEach(c => scoreSet.add(c));
+        real.forEach(c => scoreSet.add(c));
       } else {
         const byRank = {};
-        cards.forEach(c => { (byRank[c.rank] = byRank[c.rank] || []).push(c); });
-        if (handType === "FOUR") cards.forEach(c => { if (byRank[c.rank].length === 4) scoreSet.add(c); });
-        else if (handType === "THREE") cards.forEach(c => { if (byRank[c.rank].length === 3) scoreSet.add(c); });
-        else if (handType === "TWO_PAIR") cards.forEach(c => { if (byRank[c.rank].length === 2) scoreSet.add(c); });
-        else if (handType === "PAIR") cards.forEach(c => { if (byRank[c.rank].length === 2) scoreSet.add(c); });
-        else { const hi = cards.reduce((a, b) => (b.rank > a.rank ? b : a)); scoreSet.add(hi); }
+        real.forEach(c => { (byRank[c.rank] = byRank[c.rank] || []).push(c); });
+        if (handType === "FOUR") real.forEach(c => { if (byRank[c.rank].length === 4) scoreSet.add(c); });
+        else if (handType === "THREE") real.forEach(c => { if (byRank[c.rank].length === 3) scoreSet.add(c); });
+        else if (handType === "TWO_PAIR") real.forEach(c => { if (byRank[c.rank].length === 2) scoreSet.add(c); });
+        else if (handType === "PAIR") real.forEach(c => { if (byRank[c.rank].length === 2) scoreSet.add(c); });
+        else if (real.length) { const hi = real.reduce((a, b) => (b.rank > a.rank ? b : a)); scoreSet.add(hi); }
       }
-      // 스톤 카드는 기술과 무관하게 항상 데미지에 포함(발라트로 규칙) — 키커여도 +50 적용
+      // 스톤 카드는 기술과 무관하게 항상 데미지에 포함(발라트로 규칙) — +50 적용
       cards.forEach(c => { if (c.enh === "stone") scoreSet.add(c); });
       // 플레이한 카드 배치(좌→우) 순서 그대로 반환 — 스톤/특수카드도 "놓은 위치"에서 계산됨.
       // (이전엔 스톤 키커를 배열 끝에 push해서 어디 두든 항상 마지막에 채점되던 버그)
@@ -7015,7 +7020,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-23-scoreorder";
+    const JR_BUILD = "2026-06-23-stonerules";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
