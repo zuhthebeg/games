@@ -6326,6 +6326,40 @@
       state.shopVoucher = avail.length ? avail[Math.floor(Math.random() * avail.length)] : null;
     }
 
+    // 진열대를 늘리는 바우처(재고과잉·타로상인·마술트릭)는 구매 즉시 같은 방문에서 빈 슬롯을
+    // 채워 판매하도록 현재 상점 재고를 보충(top-up). 기존 진열은 건드리지 않고 추가분만 채운다.
+    function topUpShopForVoucher(id) {
+      if (id === "overstock") {
+        const target = 3 + 1;
+        const need = target - (state.shopJokers ? state.shopJokers.length : 0);
+        if (need > 0) {
+          const owned = new Set(state.jokers.map(j => j.id));
+          const have = new Set((state.shopJokers || []).map(j => j.id));
+          const pool = jokerPool.filter(j => !owned.has(j.id) && !have.has(j.id) && jokerAllowedNow(j));
+          weightedSample(pool, need).forEach(j => { const c = { ...j }; const e = rollEdition(); if (e) c.edition = e; state.shopJokers.push(c); });
+        }
+      } else if (id === "tarotMerchant") {
+        const target = 2 + 1;
+        const need = target - (state.shopTarots ? state.shopTarots.length : 0);
+        if (need > 0) {
+          const have = new Set((state.shopTarots || []).map(x => x.id));
+          const pool = tarotPool.filter(x => !have.has(x.id));
+          weightedSampleBy(pool, need, tarotWeight).forEach(x => state.shopTarots.push(x));
+        }
+      } else if (id === "magicTrick") {
+        // 마술 트릭: 보유 전엔 카드칸이 비어있으므로 구매 즉시 2장 진열(다음 라운드부터 정상 50% 추첨)
+        if (!state.shopCards || !state.shopCards.length) {
+          const out = [];
+          for (let i = 0; i < 2; i++) {
+            const suit = suits[Math.floor(Math.random() * suits.length)];
+            const rank = rankList[Math.floor(Math.random() * rankList.length)];
+            out.push({ suit, rank });
+          }
+          state.shopCards = out;
+        }
+      }
+    }
+
     function buyVoucher() {
       const v = state.shopVoucher;
       if (!v) return;
@@ -6337,8 +6371,9 @@
       state.shopVoucher = null;
       addLog(t("log_buy_voucher", {name: v.name, n: cost}));
       AudioFX.play("win");
+      topUpShopForVoucher(v.id);   // 진열 증가 바우처 → 즉시 빈 슬롯 채워 판매(담판부터 아님)
       renderHUD();
-      openShop(_shopIsAnteClear); // 슬롯 증가 등은 다음 진열부터, 할인은 즉시 반영
+      openShop(_shopIsAnteClear); // 할인·보충된 재고가 즉시 반영
     }
 
     function renderOwnedVouchers() {
@@ -7120,7 +7155,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-23-jokername";
+    const JR_BUILD = "2026-06-23-voucherstock";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
