@@ -518,11 +518,14 @@
     }
 
     .joker-name-mini {
-      display: block;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;       /* 설명 제거 → 이름을 2줄까지 크게 노출 */
+      -webkit-box-orient: vertical;
+      overflow: hidden;
       font-weight: 800;
-      font-size: 10px;
-      line-height: 1.15;
-      text-shadow: 0 0 8px rgba(0, 0, 0, 0.55);
+      font-size: 11px;
+      line-height: 1.18;
+      text-shadow: 0 0 8px rgba(0, 0, 0, 0.7), 0 1px 2px rgba(0,0,0,.6);
     }
 
     .joker-desc-mini {
@@ -5467,7 +5470,6 @@
             ${joker.negative ? '<span class="joker-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}
             ${_ed ? `<span class="joker-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}
             <span class="joker-name-mini">${joker.name}</span>
-            <span class="joker-desc-mini">${colorizeEffect(joker.desc)}</span>
             <span class="joker-grip" aria-hidden="true" title="끌어서 순서 이동">⠿⠿⠿</span>
           `;
           makeDraggable(box, ".joker", commitJokerOrder, box.querySelector(".joker-grip"));
@@ -7118,7 +7120,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-23-griphandle";
+    const JR_BUILD = "2026-06-23-jokername";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
