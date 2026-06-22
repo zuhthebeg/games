@@ -5197,14 +5197,13 @@
       state.pendingBlindIndex = index;
       const blindDefs = getBlindTargets(state.ante);
       const blind = blindDefs[index];
-      const reward = 7 + 4 * 2 + 3 + state.ante * 2; // 만점 클리어 시 예상 보상(핸드4·버리기3 기준)
       $("#bsAnte").textContent = `Ante ${state.ante}`;
       $("#bsBlindName").textContent = blind.label;
       $("#bsTarget").textContent = `목표 점수 ${blind.target.toLocaleString()}`;
       // 스킵 보상 1개를 미리 결정해 보여준다. 스킵하면 이 보상을 받고, 플레이하면 무시.
       state._skipReward = rollSkipReward();
       const sr = state._skipReward;
-      $("#bsReward").innerHTML = `클리어 보상 최대 +$${reward}<br>⏭️ 스킵 보상: <b style="color:var(--gold)">${sr.icon} ${sr.label}</b> <span style="opacity:.85">— ${sr.detail}</span>`;
+      $("#bsReward").innerHTML = `⏭️ 스킵 보상: <b style="color:var(--gold)">${sr.icon} ${sr.label}</b> <span style="opacity:.85">— ${sr.detail}</span>`;
       $("#blindSelectModal").classList.add("show");
       AudioFX.play("select");
     }
