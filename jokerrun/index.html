@@ -5164,10 +5164,10 @@
     function buildSkipRewardPool() {
       const ante = state.ante;
       return [
-        { icon:"💰", label:"보너스 자금", detail:`+$${ante * 4 + 8} 즉시 획득`,
-          run() { const m = ante * 4 + 8; state.money += m; return `💰 보너스 자금 +$${m}`; } },
-        { icon:"💸", label:"한탕 자금", detail:`+$${ante * 7 + 14} 즉시 획득`,
-          run() { const m = ante * 7 + 14; state.money += m; return `💸 한탕 자금 +$${m}`; } },
+        { icon:"💰", label:"보너스 자금", detail:`+$${ante * 4} 즉시 획득`,
+          run() { const m = ante * 4; state.money += m; return `💰 보너스 자금 +$${m}`; } },
+        { icon:"💸", label:"한탕 자금", detail:`+$${ante * 5} 즉시 획득`,
+          run() { const m = ante * 5; state.money += m; return `💸 한탕 자금 +$${m}`; } },
         { icon:"🃏", label:"랜덤 조커", detail:"무료 조커 1개 획득",
           cond: () => state.jokers.length < 5,
           run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: 0 }); markDiscovered("joker", j.id); renderHUD(); return `🃏 무료 조커: ${j.name}`; } },
