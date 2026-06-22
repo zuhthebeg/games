@@ -1105,18 +1105,40 @@
       z-index: 3;
       box-shadow: 0 0 6px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.5);
     }
-    /* 네가티브 조커: 무지갯빛 다크 테두리 + 배지(슬롯 미차지) */
-    .joker.negative {
-      border-color: transparent;
+    /* 네가티브 조커: 무지갯빛 테두리가 흐르는 홀로그래픽 효과 (슬롯 미차지) */
+    @keyframes negHolo {
+      0%   { background-position: 0 0, 0% 50%; }
+      100% { background-position: 0 0, 220% 50%; }
+    }
+    .joker.negative, .mini-tile.negative {
+      border-color: transparent !important;
       background:
         linear-gradient(155deg, #0a0a14, #11091c) padding-box,
-        linear-gradient(135deg, #00e0d0, #6a5cff 40%, #ff4fc5 70%, #ffcf6d) border-box;
+        linear-gradient(135deg, #00e0d0, #6a5cff 28%, #ff4fc5 52%, #ffcf6d 72%, #00e0d0) border-box;
+      background-size: 100% 100%, 220% 100%;
       border: 2px solid transparent;
-      box-shadow: 0 0 10px rgba(120,90,255,.55), inset 0 0 14px rgba(0,224,208,.18);
+      box-shadow: 0 0 12px rgba(120,90,255,.6), inset 0 0 16px rgba(0,224,208,.2);
+      animation: negHolo 3.2s linear infinite;
     }
-    .joker-neg-badge {
+    .joker-neg-badge, .mini-neg-badge {
       position: absolute; top: 2px; right: 3px; font-size: 11px; z-index: 4;
       filter: drop-shadow(0 0 3px rgba(120,90,255,.9));
+    }
+    /* 상세 팝업 — 네가티브 아트 홀로 글로우 + 텍스트 배지 */
+    @keyframes negGlow {
+      0%,100% { box-shadow: 0 0 0 2px #00e0d0, 0 0 20px rgba(0,224,208,.6); }
+      50%     { box-shadow: 0 0 0 2px #ff4fc5, 0 0 24px rgba(255,79,197,.7); }
+    }
+    .joker-popup-art.negative {
+      border-radius: 12px;
+      animation: negGlow 2.6s ease-in-out infinite;
+    }
+    .neg-badge-text {
+      display: inline-block; font-size: .64rem; font-weight: 800; vertical-align: middle;
+      margin-left: 5px; padding: 1px 8px; border-radius: 10px; color: #0a0a14;
+      background: linear-gradient(135deg, #00e0d0, #6a5cff 45%, #ff4fc5 80%);
+      background-size: 200% 100%; animation: negHolo 3.2s linear infinite;
+      box-shadow: 0 0 8px rgba(120,90,255,.5);
     }
     .rar-dot {
       display: inline-block;
@@ -4048,14 +4070,15 @@
         const _r = rarityOf(joker);
         const tile = document.createElement("button");
         tile.type = "button";
-        tile.className = "mini-tile";
-        tile.style.borderColor = _r.color + "88";
-        tile.innerHTML = `<div class="mini-art"><img src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>`;
+        tile.className = "mini-tile" + (joker.negative ? " negative" : "");
+        if (!joker.negative) tile.style.borderColor = _r.color + "88";
+        tile.innerHTML = `<div class="mini-art"><img src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="네가티브 — 슬롯 미차지">🌑</span>' : ""}`;
         tile.addEventListener("click", () => {
           openDetailPopup({
             imgSrc: `jokers/${joker.id}.webp`,
             glyph: jokerGlyphClass[joker.id] || "joker-duo",
             name: joker.name, badgeLabel: _r.label, badgeColor: _r.color,
+            negative: !!joker.negative,
             desc: joker.detail || joker.desc,
             costLine: `판매 시 +$${jokerSellValue(joker)} 환급`,
             actionLabel: `팔기 +$${jokerSellValue(joker)}`,
@@ -4070,15 +4093,17 @@
     // 범용 상세 팝업: 아트/글리프/이모지 + 이름 + 등급뱃지 + 설명 + 비용줄 + (선택)액션버튼
     function openDetailPopup(opts) {
       const icon = $("#jokerPopupIcon");
+      const negCls = opts.negative ? " negative" : "";
       if (opts.imgSrc) {
         const fb = opts.emoji ? `<span class=\\'jp-emoji\\'>${opts.emoji}</span>` : `<span class=\\'joker-glyph ${opts.glyph || "joker-duo"}\\'></span>`;
-        icon.innerHTML = `<img class="joker-popup-art" src="${opts.imgSrc}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">`;
+        icon.innerHTML = `<img class="joker-popup-art${negCls}" src="${opts.imgSrc}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">`;
       } else if (opts.emoji) {
         icon.innerHTML = `<span class="jp-emoji">${opts.emoji}</span>`;
       } else {
         icon.innerHTML = `<span class="joker-glyph ${opts.glyph || "joker-duo"}"></span>`;
       }
-      $("#jokerPopupName").innerHTML = `${opts.name}${opts.badgeLabel ? ` <span style="font-size:.7rem;font-weight:800;color:${opts.badgeColor};border:1px solid ${opts.badgeColor}66;border-radius:10px;padding:1px 7px;margin-left:4px;vertical-align:middle">${opts.badgeLabel}</span>` : ""}`;
+      const negBadge = opts.negative ? ` <span class="neg-badge-text" title="슬롯을 차지하지 않습니다">🌑 네가티브</span>` : "";
+      $("#jokerPopupName").innerHTML = `${opts.name}${opts.badgeLabel ? ` <span style="font-size:.7rem;font-weight:800;color:${opts.badgeColor};border:1px solid ${opts.badgeColor}66;border-radius:10px;padding:1px 7px;margin-left:4px;vertical-align:middle">${opts.badgeLabel}</span>` : ""}${negBadge}`;
       $("#jokerPopupDesc").innerHTML = colorizeEffect(opts.desc || "");
       $("#jokerPopupCost").textContent = opts.costLine || "";
       const actBtn = $("#jokerPopupAction");
@@ -4115,6 +4140,7 @@
         glyph: jokerGlyphClass[joker.id] || "joker-duo",
         name: joker.name,
         badgeLabel: _r.label, badgeColor: _r.color,
+        negative: !!joker.negative,
         desc: joker.detail || joker.desc,
         costLine: `획득 비용: $${joker.cost} · 판매가: $${sell}`,
         actionLabel: `팔기 +$${sell}`,
@@ -5622,7 +5648,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-autoresume";
+    const JR_BUILD = "2026-06-22-negfx";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
