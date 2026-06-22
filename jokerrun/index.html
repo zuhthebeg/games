@@ -2320,15 +2320,27 @@
     }
 
     .deck-grid {
-      display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
     }
+    /* 무늬별: 4개 행으로 쌓기 */
+    .deck-grid.by-suit { flex-direction: column; flex-wrap: nowrap; gap: 7px; }
+    .deck-suit-row { display: flex; align-items: center; gap: 7px; }
+    .deck-suit-lbl {
+      flex: 0 0 38px; text-align: center; font-weight: 900; font-size: 1.15rem;
+      line-height: 1; color: #f2f7ff;
+    }
+    .deck-suit-lbl.red { color: #e8546a; }
+    .deck-suit-lbl .dsl-n { display: block; margin-top: 2px; font-size: 0.56rem; font-weight: 700; color: var(--muted); }
+    .deck-suit-cards { display: flex; flex-wrap: wrap; gap: 4px; flex: 1 1 auto; }
 
     .deck-card {
+      flex: 0 0 auto;
+      width: 40px;
       border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.18);
-      min-height: 40px;
+      min-height: 38px;
       padding: 5px 4px;
       display: grid;
       place-items: center;
@@ -2337,6 +2349,12 @@
       letter-spacing: 0.01em;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
     }
+    .deck-card.drawn { opacity: 0.22; filter: grayscale(0.55); }
+    .deck-sort-btn {
+      padding: 5px 11px; border-radius: 9px; font-size: 0.72rem; font-weight: 800; cursor: pointer;
+      border: 1px solid #463a63; background: #15101f; color: #cbbfe4; white-space: nowrap;
+    }
+    .deck-legend { font-size: 0.64rem; color: var(--muted); text-align: center; }
 
     .deck-card.heart,
     .deck-card.diamond {
@@ -2699,9 +2717,11 @@
     <div class="deck-modal">
       <div class="deck-title">
         <div class="title" id="deckModalTitle">남은 카드 (0장)</div>
+        <button class="deck-sort-btn" id="deckSortBtn" type="button">정렬: 무늬별</button>
       </div>
-      <div class="deck-grid" id="deckGrid"></div>
       <div class="suit-counts" id="deckSuitCounts">♥0 ♦0 ♣0 ♠0</div>
+      <div class="deck-grid" id="deckGrid"></div>
+      <div class="deck-legend">밝은 카드 = 덱에 남음 · 흐린 카드 = 이미 뽑힘</div>
       <div class="row" style="justify-content:flex-end;">
         <button class="btn-main" id="closeDeckBtn">닫기</button>
       </div>
@@ -3815,6 +3835,7 @@
     let SCORE_SPEED = parseFloat(localStorage.getItem("jokerrun_scorespeed"));
     if (!(SCORE_SPEED >= 0)) SCORE_SPEED = 1;   // 기본 1배
     let _scoringActive = false;
+    let _deckSort = localStorage.getItem("jokerrun_decksort") || "suit";   // suit | rank
     function setScoreSpeed(v) {
       SCORE_SPEED = (v >= 0) ? v : 1;
       try { localStorage.setItem("jokerrun_scorespeed", String(SCORE_SPEED)); } catch (_) {}
@@ -4394,13 +4415,16 @@
         const red = s === "heart" || s === "diamond";
         return `<span style="color:${red ? "#e8546a" : "#cfd6e0"}">${suitSymbol[s]} <b>${remain[s]}</b>/${total[s]}</span>`;
       }).join("　");
+      const sortBtn = $("#deckSortBtn");
+      if (sortBtn) sortBtn.textContent = _deckSort === "suit" ? "정렬: 무늬별" : "정렬: 숫자별";
 
       const grid = $("#deckGrid");
       grid.innerHTML = "";
+      grid.classList.toggle("by-suit", _deckSort === "suit");
       // 강화 카드 요약(전체 덱 기준 — 손패/덱 어디 있든 영구 강화)
       if (enhanced.length) {
         const eh = document.createElement("div");
-        eh.style.cssText = "grid-column:1/-1;flex-basis:100%;width:100%;font-size:.74rem;line-height:1.7;margin-bottom:6px;padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)";
+        eh.style.cssText = "flex-basis:100%;width:100%;font-size:.74rem;line-height:1.7;margin-bottom:2px;padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)";
         const list = enhanced.sort((a, b) => deckOrder[a.suit] - deckOrder[b.suit] || a.rank - b.rank).map(c => {
           const e = ENH[c.enh];
           return `<span style="display:inline-block;margin:1px 4px;padding:1px 6px;border-radius:6px;border:1px solid ${e.color};color:${(c.suit === "heart" || c.suit === "diamond") ? "#e8546a" : "#e8edf3"}">${suitSymbol[c.suit]}${formatRank(c.rank)} <b style="color:${e.color}">${e.label}</b></span>`;
@@ -4408,15 +4432,38 @@
         eh.innerHTML = `✨ <b>강화 카드 ${enhanced.length}장</b><br>${list}`;
         grid.appendChild(eh);
       }
-      // 남은 카드 그리드(강화면 테두리색)
-      const cards = [...state.deck].sort((a, b) => (deckOrder[a.suit] - deckOrder[b.suit]) || (a.rank - b.rank));
-      cards.forEach(card => {
+      // 카드 1장 엘리먼트(남으면 밝게, 뽑혔으면 흐리게)
+      const mkCard = (card) => {
         const el = document.createElement("div");
-        el.className = `deck-card ${card.suit}`;
+        const drawn = !remainIds.has(card.id);
+        el.className = `deck-card ${card.suit}${drawn ? " drawn" : ""}`;
         if (card.enh && ENH[card.enh]) { el.style.outline = `2px solid ${ENH[card.enh].color}`; el.style.outlineOffset = "-2px"; el.title = ENH[card.enh].label; }
         el.textContent = `${suitSymbol[card.suit]}${formatRank(card.rank)}`;
-        grid.appendChild(el);
-      });
+        return el;
+      };
+      if (_deckSort === "suit") {
+        // 무늬별: 4행, 각 행은 랭크 오름차순. 남은 카드가 한눈에 들어온다.
+        suits4.forEach(s => {
+          const rowCards = run.filter(c => c.suit === s).sort((a, b) => a.rank - b.rank);
+          if (!rowCards.length) return;
+          const row = document.createElement("div");
+          row.className = "deck-suit-row";
+          const red = s === "heart" || s === "diamond";
+          const lbl = document.createElement("div");
+          lbl.className = "deck-suit-lbl" + (red ? " red" : "");
+          lbl.innerHTML = `${suitSymbol[s]}<span class="dsl-n">${remain[s]}/${total[s]}</span>`;
+          row.appendChild(lbl);
+          const wrap = document.createElement("div");
+          wrap.className = "deck-suit-cards";
+          rowCards.forEach(c => wrap.appendChild(mkCard(c)));
+          row.appendChild(wrap);
+          grid.appendChild(row);
+        });
+      } else {
+        // 숫자별: 전체를 랭크 오름차순(같은 랭크는 무늬순)으로 평면 나열
+        const cards = [...run].sort((a, b) => (a.rank - b.rank) || (deckOrder[a.suit] - deckOrder[b.suit]));
+        cards.forEach(c => grid.appendChild(mkCard(c)));
+      }
     }
 
     function openDeckModal() {
@@ -5738,6 +5785,11 @@
       AudioFX.play("select");
     });
     $("#deckBtn").addEventListener("click", openDeckModal);
+    $("#deckSortBtn").addEventListener("click", () => {
+      _deckSort = _deckSort === "suit" ? "rank" : "suit";
+      try { localStorage.setItem("jokerrun_decksort", _deckSort); } catch (_) {}
+      renderDeckModal();
+    });
     $("#closeDeckBtn").addEventListener("click", closeDeckModal);
     $("#handsInfoBtn").addEventListener("click", openHandsModal);
     $("#closeHandsBtn").addEventListener("click", closeHandsModal);
@@ -5870,7 +5922,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-endless-settings";
+    const JR_BUILD = "2026-06-22-deckview";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
