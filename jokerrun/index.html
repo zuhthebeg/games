@@ -2169,8 +2169,8 @@
     .jp-action:disabled { opacity: .5; cursor: not-allowed; filter: grayscale(.4); }
     .jp-emoji { font-size: 2.4rem; display: flex; align-items: center; justify-content: center; }
 
-    .shop-owned-grid { display: flex; flex-wrap: wrap; gap: 7px; }
-    .mini-tile { width: clamp(54px, 16vw, 66px); padding: 4px; border-radius: 9px; border: 1.5px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05); cursor: pointer; color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; }
+    .shop-owned-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; }
+    .mini-tile { width: auto; padding: 4px; border-radius: 9px; border: 1.5px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05); cursor: pointer; color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; }
     .mini-tile:active { transform: scale(.95); }
     .mini-art { width: 100%; aspect-ratio: 5/7; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.25); }
     .mini-art img { width: 100%; height: 100%; object-fit: cover; }
@@ -2601,6 +2601,7 @@
           <span class="round-label" id="shopAnte">Ante 1</span>
           <span class="gold-badge" id="shopGold">G 0</span>
           <span class="money-badge" id="shopMoney">$0</span>
+          <button class="reroll-btn-sm" id="shopReroll" type="button">🎲 갱신</button>
         </div>
       </div>
       <div id="shopCashout" class="shop-cashout" style="display:none"></div>
@@ -4039,13 +4040,16 @@
 
     function openJokerPopup(joker) {
       const _r = rarityOf(joker);
+      const sell = jokerSellValue(joker);
       openDetailPopup({
         imgSrc: `jokers/${joker.id}.webp`,
         glyph: jokerGlyphClass[joker.id] || "joker-duo",
         name: joker.name,
         badgeLabel: _r.label, badgeColor: _r.color,
         desc: joker.detail || joker.desc,
-        costLine: `획득 비용: $${joker.cost} · 판매가: $${jokerSellValue(joker)}`
+        costLine: `획득 비용: $${joker.cost} · 판매가: $${sell}`,
+        actionLabel: `팔기 +$${sell}`,
+        actionFn: () => { const idx = state.jokers.indexOf(joker); closeJokerPopup(); if (idx >= 0) sellJoker(idx, null); }
       });
     }
 
@@ -4113,7 +4117,7 @@
           box.className = "joker empty";
           box.setAttribute("aria-label", "빈 슬롯");
         } else {
-          box.className = `joker joker-${joker.id} has-sell`;
+          box.className = `joker joker-${joker.id}`;
           box.dataset.jokerId = joker.id;
           box.dataset.idx = String(i);
           const _r = rarityOf(joker);
@@ -4124,15 +4128,9 @@
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
             <span class="joker-name-mini">${joker.name}</span>
             <span class="joker-desc-mini">${colorizeEffect(joker.desc)}</span>
-            <button class="joker-sell" type="button">팔기</button>
           `;
           makeDraggable(box, ".joker", commitJokerOrder);
           box.addEventListener("click", () => { if (box._suppressClick) { box._suppressClick = false; return; } openJokerPopup(joker); });
-          const sellBtn = box.querySelector(".joker-sell");
-          sellBtn.addEventListener("click", (event) => {
-            event.stopPropagation();
-            sellJoker(i, sellBtn);
-          });
         }
         jokerArea.appendChild(box);
       }
@@ -4922,24 +4920,21 @@
       renderConsumablesInto($("#shopConsumableArea"));
       renderOwnedJokersInShop();
 
-      // 갱신 버튼(작게, 우측) — 바우처 보조금 반영
-      const topRow = document.createElement("div");
-      topRow.className = "shop-toprow";
-      const rerollBtn = document.createElement("button");
-      rerollBtn.className = "reroll-btn-sm";
-      const rc = effectiveRerollCost();
-      rerollBtn.textContent = `🎲 갱신 $${rc}`;
-      rerollBtn.disabled = state.money < rc;
-      rerollBtn.addEventListener("click", () => {
-        const c = effectiveRerollCost();
-        if (state.money < c) return;
-        state.money -= c;
-        state.rerollCost += 1;
-        generateShopJokers(); generateShopPlanets(); generateShopTarots(); generateShopCards();
-        openShop(_shopIsAnteClear);
-      });
-      topRow.appendChild(rerollBtn);
-      grid.appendChild(topRow);
+      // 갱신 버튼 — 상점 타이틀바(보유 자금 우측)에 배치. 바우처 보조금 반영.
+      const rerollBtn = $("#shopReroll");
+      if (rerollBtn) {
+        const rc = effectiveRerollCost();
+        rerollBtn.textContent = `🎲 갱신 $${rc}`;
+        rerollBtn.disabled = state.money < rc;
+        rerollBtn.onclick = () => {
+          const c = effectiveRerollCost();
+          if (state.money < c) return;
+          state.money -= c;
+          state.rerollCost += 1;
+          generateShopJokers(); generateShopPlanets(); generateShopTarots(); generateShopCards();
+          openShop(_shopIsAnteClear);
+        };
+      }
 
       // ── 바우처 섹션(앤티당 1개) ──
       if (state.shopVoucher) {
