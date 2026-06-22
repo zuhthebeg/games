@@ -3234,9 +3234,9 @@
       { id:"hanged",    name:"매달린 자", need:2, exact:true, desc:"선택 2장 제거 후 새 카드", apply(sel){ const ids=new Set(sel.map(c=>c.id)); state.hand=state.hand.filter(c=>!ids.has(c.id)); state.selected.clear(); drawToEight(); } },
       { id:"temperance",name:"절제",     need:0, desc:"조커 판매가 합 획득(최대 🪙20)", apply(){ const sum=Math.min(20, state.jokers.reduce((s,j)=>s+jokerSellValue(j),0)); state.money=(state.money||0)+sum; } },
       // ── 카드 강화 부여 타로 (선택 1장에 enhancement 영구 부여. 덱에 남아 계속 적용) ──
-      { id:"enh_bonus", name:"보너스 인장", need:1, enh:"bonus", desc:"선택 1장 → 보너스 카드(데미지 공격력 +30)",     apply(sel){ sel.forEach(c=>c.enh="bonus"); } },
+      { id:"enh_bonus", name:"보너스 인장", need:1, enh:"bonus", desc:"선택 1장 → 보너스 카드(공격력 +30)",     apply(sel){ sel.forEach(c=>c.enh="bonus"); } },
       { id:"enh_mult",  name:"핏빛 인장",   need:1, enh:"mult",  desc:"선택 1장 → 멀티 카드(연격 +4)",          apply(sel){ sel.forEach(c=>c.enh="mult"); } },
-      { id:"enh_stone", name:"탑",          need:1, enh:"stone", desc:"선택 1장 → 스톤 카드(데미지 공격력 +50)",       apply(sel){ sel.forEach(c=>c.enh="stone"); } },
+      { id:"enh_stone", name:"탑",          need:1, enh:"stone", desc:"선택 1장 → 스톤 카드(공격력 +50)",       apply(sel){ sel.forEach(c=>c.enh="stone"); } },
       { id:"enh_glass", name:"유리의 연인", need:1, enh:"glass", desc:"선택 1장 → 글래스 카드(연격 ×1.5)",       apply(sel){ sel.forEach(c=>c.enh="glass"); } },
       { id:"enh_steel", name:"강철 심판",   need:1, enh:"steel", desc:"선택 1장 → 스틸 카드(손에 있으면 연격 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="steel"); } },
       { id:"enh_gold",  name:"황금 악마",   need:1, enh:"gold",  desc:"선택 1장 → 골드 카드(라운드 끝 보유 시 +🪙3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
@@ -3254,15 +3254,138 @@
     function jokerNegativeCount(){ return state.jokers.filter(j => j.negative).length; }
 
     // ── 카드 강화(enhancement) — 발라트로식. 덱 카드(runDeck)에 영구 부여(c.enh). ──
-    // chips: 데미지 공격력 가산 / multAdd: 연격 가산 / multX: 연격 곱 / heldX: 손에 보유 시 연격 곱 / endCash: 라운드 끝 보유 시 $
+    // chips: 공격력 가산 / multAdd: 연격 가산 / multX: 연격 곱 / heldX: 손에 보유 시 연격 곱 / endCash: 라운드 끝 보유 시 $
     const ENH = {
-      bonus: { label:"보너스", short:"🔵", chips:30,  color:"#5b8fff", desc:"데미지 공격력 +30" },
+      bonus: { label:"보너스", short:"🔵", chips:30,  color:"#5b8fff", desc:"공격력 +30" },
       mult:  { label:"멀티",   short:"🔴", multAdd:4, color:"#ff5a6a", desc:"연격 +4" },
-      stone: { label:"스톤",   short:"🪨",  chips:50,  color:"#9aa0a6", desc:"데미지 공격력 +50" },
+      stone: { label:"스톤",   short:"🪨",  chips:50,  color:"#9aa0a6", desc:"공격력 +50" },
       glass: { label:"글래스", short:"💎",  multX:1.5, color:"#5fd6f5", desc:"연격 ×1.5" },
       steel: { label:"스틸",   short:"⚙",  heldX:1.5, color:"#c3ccd6", desc:"손에 있으면 연격 ×1.5" },
       gold:  { label:"골드",   short:"🪙",   endCash:3, color:"#ffcf6d", desc:"라운드 끝 손에 있으면 +🪙3" }
     };
+    // ─────────────────────────────────────────────────────────────
+    // 콘텐츠 영문 번역(T2) — 오버레이 방식. ko 원문은 풀에 그대로 두고,
+    // LANG==='en'이면 id 기준으로 name/desc/detail/label을 EN으로 덮어쓴다.
+    // 렌더 사이트를 건드리지 않아도 됨(풀/런 사본 객체 자체를 갱신).
+    // detail 미번역 항목은 en desc로 폴백.
+    // ─────────────────────────────────────────────────────────────
+    const EN_HANDS = {
+      HIGH_CARD:"High Card", PAIR:"Pair", TWO_PAIR:"Two Pair", THREE:"Three of a Kind",
+      STRAIGHT:"Straight", FLUSH:"Flush", FULL_HOUSE:"Full House", FOUR:"Four of a Kind",
+      ROYAL_STRAIGHT:"Royal Straight", STRAIGHT_FLUSH:"Straight Flush", ROYAL_FLUSH:"Royal Flush",
+      FIVE:"Five of a Kind", FLUSH_HOUSE:"Flush House", FLUSH_FIVE:"Flush Five"
+    };
+    const EN_ENH = {
+      bonus:{label:"Bonus",desc:"ATK +30"}, mult:{label:"Mult",desc:"Combo +4"},
+      stone:{label:"Stone",desc:"ATK +50"}, glass:{label:"Glass",desc:"Combo ×1.5"},
+      steel:{label:"Steel",desc:"In hand: Combo ×1.5"}, gold:{label:"Gold",desc:"+🪙3 if held at round end"}
+    };
+    // id → {name,desc[,detail]} (조커/행성/주문서/바우처/보스규칙 공용)
+    const EN_CONTENT = {
+      flat50:{name:"ATK Bomb",desc:"ATK +50"}, flushx2:{name:"Wave Joker",desc:"Flush: Combo x2"},
+      perCardMult:{name:"Calculator",desc:"Combo +1 per card"}, heartChip:{name:"Red Seal",desc:"ATK +15 per heart"},
+      pairBoost:{name:"Duo Amp",desc:"Pair+: Combo +2"}, goldDice:{name:"Gold Dice",desc:"ATK +1~50 each attack"},
+      spadeAce:{name:"Spade Ace",desc:"Combo +0.5 per spade"}, luckySeven:{name:"Lucky Seven",desc:"ATK +77 per 7"},
+      doubleDown:{name:"Double Down",desc:"Two Pair: Combo x2"}, fullHouseFan:{name:"Full House Fan",desc:"Full House: ATK +100"},
+      straightRunner:{name:"Straight Runner",desc:"Straight: Combo +3"}, diamondMiner:{name:"Diamond Miner",desc:"ATK +12 per diamond"},
+      clubKing:{name:"Club King",desc:"Combo +1 per club face"}, allInClown:{name:"All-In Clown",desc:"5 cards: Combo x1.5"},
+      fourMaster:{name:"Quad Master",desc:"Four of a Kind: Combo x4"}, acePower:{name:"Ace Power",desc:"ATK +30 per ace"},
+      faceCard:{name:"Face Card",desc:"Combo +0.75 per J/Q/K"}, evenSteven:{name:"Even Steven",desc:"ATK +8 per even card"},
+      oddOne:{name:"Odd One",desc:"Combo +0.5 per odd card"}, fourFlush:{name:"4-Suit Joker",desc:"All 4 suits: Combo x2"},
+      streakBonus:{name:"Streak Bonus",desc:"Straight: ATK & Combo +5"}, chipRain:{name:"ATK Rain",desc:"ATK +10~100 each attack"},
+      royalFlush:{name:"Royal Joker",desc:"Straight Flush: Combo x4"}, lowCard:{name:"Low Card",desc:"ATK +10 per 2~5"},
+      highCard:{name:"High Card",desc:"Combo +0.5 per 10+"}, trioMult:{name:"Trio Amp",desc:"Three of a Kind+: Combo x2"},
+      snowball:{name:"Snowball",desc:"Combo +1 permanently each attack"}, magnet:{name:"ATK Magnet",desc:"ATK +15 permanently each attack"},
+      compound:{name:"Compound Clown",desc:"Full House+: Combo +3 permanently"}, legion:{name:"Clown Legion",desc:"Combo +1 per owned joker"},
+      tycoon:{name:"Tycoon",desc:"Combo +1 per 🪙5 held"}, gambler:{name:"Gambler",desc:"25% chance: Combo x3"},
+      ironclad:{name:"Ironclad",desc:"ATK +4 per unplayed card"}, sniper:{name:"Sniper",desc:"Exactly 1 card: ATK +70"},
+      trinity:{name:"Trinity",desc:"3+ same suit: Combo +3"}, monochrome:{name:"Monochrome",desc:"All same color: ATK +55"},
+      fibonacci:{name:"Fibonacci",desc:"Combo +1 per A/2/3/5/8"}, patience:{name:"Patience",desc:"Combo +1 per discard left"},
+      highRoller:{name:"High Roller",desc:"🪙20+: Combo x2"}, theQueen:{name:"Queen's Grace",desc:"Combo +1.5 per Q"},
+      flushBank:{name:"Flush Bank",desc:"Flush: ATK +70"}, allShapes:{name:"All Shapes",desc:"5 cards & 4 suits: Combo x2.5"},
+      echo:{name:"Echo",desc:"Same skill as last: Combo x2"}, lowRoller:{name:"Low Roller",desc:"All 5 or below: ATK +45"},
+      fullmoon:{name:"Full Moon",desc:"Always Combo x2.5"}, reaperking:{name:"Reaper King",desc:"Four of a Kind/SF: Combo x5"},
+      berserk:{name:"Berserk",desc:"Joker slots full: Combo x4"}, bloodmoon:{name:"Blood Moon",desc:"Combo x1.5 per K/Q"},
+      constellation:{name:"Constellation",desc:"Combo +0.2 permanently per planet used"}, vampire:{name:"Vampire",desc:"Absorb enhanced cards → Combo +0.25 permanently"},
+      chaos:{name:"Chaos",desc:"25%: Combo x6, else x0.5"}, blueprint:{name:"Blueprint",desc:"Copies the joker to its right"},
+      brainstorm:{name:"Brainstorm",desc:"Copies the leftmost joker"}, baron:{name:"Baron",desc:"Combo x1.5 per K in hand"},
+      hack:{name:"Hacker",desc:"Retrigger played 2~5 cards"}, sockBuskin:{name:"Sock & Buskin",desc:"Retrigger played J/Q/K"},
+      hangingChad:{name:"Hanging Chad",desc:"First played card triggers 2 extra times"}, retriggerAll:{name:"Encore",desc:"Retrigger all played cards"},
+      spadeCount:{name:"Count Spade",desc:"ATK +12 per spade"}, clubLuck:{name:"Clover Luck",desc:"Combo +1 per club"},
+      lowball:{name:"Minimal",desc:"All scoring cards 10 or below: ATK +55"}, twins:{name:"Twins",desc:"Exactly 2 cards: Combo x2"},
+      astro:{name:"Astrologer",desc:"Combo +2 per owned planet"}, coinFlip:{name:"Lucky Coin",desc:"50% chance: ATK +120"},
+      solo:{name:"Lone Wolf",desc:"Exactly 1 card: Combo x4"}, mystic:{name:"Mystic",desc:"Combo +3 per owned scroll"},
+      starfall:{name:"Meteor Shower",desc:"Straight Flush+: Combo x5"},
+      mercury:{name:"Mercury"}, venus:{name:"Venus"}, earth:{name:"Earth"}, mars:{name:"Mars"},
+      jupiter:{name:"Jupiter"}, saturn:{name:"Saturn"}, uranus:{name:"Uranus"}, neptune:{name:"Neptune"}, pluto:{name:"Pluto"},
+      blackhole:{name:"Black Hole",desc:"All skills +1 level"}, galaxy:{name:"Galaxy",desc:"All skills +3 levels"},
+      supernova:{name:"Supernova",desc:"Random skill +5 levels"}, singularity:{name:"Singularity",desc:"Absorb all skill levels into one chosen skill"},
+      star:{name:"Star",desc:"Selected cards → ◆Diamond"}, moon:{name:"Moon",desc:"Selected cards → ♣Club"},
+      sun:{name:"Sun",desc:"Selected cards → ♥Heart"}, world:{name:"World",desc:"Selected cards → ♠Spade"},
+      strength:{name:"Strength",desc:"Selected cards rank +1"}, death:{name:"Death",desc:"Exactly 2: right copies left"},
+      hermit:{name:"Hermit",desc:"Double your coins (max +🪙20)"}, wheel:{name:"Wheel of Fortune",desc:"Instant +🪙12"},
+      magician:{name:"Magician",desc:"Selected cards rank +2"}, empress:{name:"Empress",desc:"Selected cards → A"},
+      emperor:{name:"Emperor",desc:"Create 2 random scrolls (within slots)"}, priestess:{name:"High Priestess",desc:"Create 2 random planets (within slots)"},
+      hanged:{name:"Hanged Man",desc:"Remove 2 selected, draw new"}, temperance:{name:"Temperance",desc:"Gain total joker sell value (max 🪙20)"},
+      enh_bonus:{name:"Bonus Seal",desc:"1 card → Bonus (ATK +30)"}, enh_mult:{name:"Blood Seal",desc:"1 card → Mult (Combo +4)"},
+      enh_stone:{name:"Tower",desc:"1 card → Stone (ATK +50)"}, enh_glass:{name:"The Lovers (Glass)",desc:"1 card → Glass (Combo ×1.5)"},
+      enh_steel:{name:"Steel Judgement",desc:"1 card → Steel (in hand: Combo ×1.5)"}, enh_gold:{name:"Golden Devil",desc:"1 card → Gold (+🪙3 if held at round end)"},
+      fool:{name:"The Fool",desc:"Copy last used scroll/planet (within slots)"}, judgement:{name:"Judgement",desc:"Create 1 random joker (if slot free)"},
+      clearance:{name:"Clearance",desc:"25% off all shop items"}, magicTrick:{name:"Magic Trick",desc:"Playing cards appear in shop (deck add)"},
+      rareHunter:{name:"Rare Hunter",desc:"Greatly boosts legendary/mythic joker odds"}, reroll:{name:"Reroll Subsidy",desc:"Reroll cost -🪙2"},
+      tarotMerchant:{name:"Scroll Merchant",desc:"+1 shop scroll slot"}, overstock:{name:"Overstock",desc:"+1 shop joker slot"},
+      seedMoney:{name:"Seed Money",desc:"Interest cap 🪙5 → 🪙10"}, grabber:{name:"Extra Hand",desc:"+1 attack per battle"},
+      wasteful:{name:"Wasteful",desc:"+1 discard per battle"}, biggerBag:{name:"Bigger Bag",desc:"+1 consumable slot"},
+      telescope:{name:"Telescope",desc:"Frequently used skill's planet appears more often"},
+      no_discard:{label:"No Discard",desc:"You can't discard this battle."},
+      min4cards:{label:"Min 4 Cards",desc:"Each attack must use at least 4 cards."},
+      no_hearts:{label:"Hearts Sealed",desc:"Hearts deal no damage this battle."},
+      only2hands:{label:"Limited Attacks",desc:"Only 2 attacks this battle."},
+      max3cards:{label:"Max 3 Cards",desc:"Play 3 or fewer cards this battle."}
+    };
+    const KO_CONTENT = {}, _KO_HANDS = {};
+    function snapshotKo() {
+      [jokerPool, planetPool, tarotPool, voucherPool, bossModifiers].forEach(arr => {
+        (arr || []).forEach(o => {
+          if (!o || o.id == null || KO_CONTENT[o.id]) return;
+          KO_CONTENT[o.id] = { name: o.name, desc: o.desc, detail: o.detail, label: o.label };
+        });
+      });
+      for (const k in handBase) _KO_HANDS[k] = handBase[k].name;
+    }
+    function _loc(id, field) {
+      const ko = KO_CONTENT[id] || {};
+      if (LANG === "en" && EN_CONTENT[id]) {
+        const en = EN_CONTENT[id];
+        if (en[field] != null) return en[field];
+        if (field === "detail" && en.desc != null) return en.desc;
+      }
+      return ko[field];
+    }
+    function _applyLoc(o) {
+      if (!o || o.id == null || !KO_CONTENT[o.id]) return;
+      const ko = KO_CONTENT[o.id];
+      if (ko.name != null) o.name = _loc(o.id, "name");
+      if (ko.desc != null) o.desc = _loc(o.id, "desc");
+      if (ko.detail != null) o.detail = _loc(o.id, "detail");
+      if (ko.label != null) o.label = _loc(o.id, "label");
+    }
+    function localizeContent() {
+      [jokerPool, planetPool, tarotPool, voucherPool, bossModifiers].forEach(arr => (arr || []).forEach(_applyLoc));
+      for (const k in handBase) handBase[k].name = (LANG === "en" && EN_HANDS[k]) ? EN_HANDS[k] : _KO_HANDS[k];
+      for (const k in ENH) {
+        if (!ENH[k].__ko) ENH[k].__ko = { label: ENH[k].label, desc: ENH[k].desc };
+        const en = (LANG === "en") ? EN_ENH[k] : null;
+        ENH[k].label = en ? en.label : ENH[k].__ko.label;
+        ENH[k].desc = en ? en.desc : ENH[k].__ko.desc;
+      }
+      try {
+        (state.jokers || []).forEach(_applyLoc);
+        (state.planetCards || []).forEach(_applyLoc);
+        (state.tarotCards || []).forEach(_applyLoc);
+      } catch (_) {}
+    }
+
     function enhOf(c){ return c && c.enh ? ENH[c.enh] : null; }
     // 보스 모디파이어로 무력화된 카드(현재: 하트 봉인). 데미지에 기여하지 않고 흑백으로 표시된다.
     function isCardBossDisabled(c){ return state.bossModifier?.id === "no_hearts" && c.suit === "heart"; }
@@ -3647,6 +3770,7 @@
       LANG = l;
       try { localStorage.setItem("jokerrun_lang", l); } catch (_) {}
       applyStaticI18n();
+      try { localizeContent(); } catch (_) {}
       try { renderHUD(); refreshConsumables(); } catch (_) {}
     }
 
@@ -4927,6 +5051,7 @@
       document.getElementById("gameOverModal").classList.remove("show");
       closeShop(); closeDeckModal(); closeVictoryModal();
       const ss = document.getElementById("startScreen"); if (ss) ss.classList.remove("show");
+      try { localizeContent(); } catch (_) {}   // 복원된 사본을 현재 언어로 맞춤
       sortHand(); renderCards(); renderBossBanner(); renderHUD(); updateHandPreview();
       try { BGM.setTrack(state.isBossBlind ? BGM.bossKey(state.ante) : BGM.playKey(state.ante)); } catch (_) {}
       setInfo("↩️ 이어하기 — 마지막 공격을 다시 시도하세요.");
@@ -6036,7 +6161,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-koterms2";
+    const JR_BUILD = "2026-06-22-en1";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
@@ -6097,6 +6222,7 @@
     }
     (async () => {
       try { applyStaticI18n(); } catch (_) {}   // 감지된 언어로 정적 UI 먼저 로컬라이즈
+      try { snapshotKo(); localizeContent(); } catch (_) {}   // 콘텐츠(조커/주문서/무기강화 등) 언어 적용
       if ((typeof SharedWallet !== "undefined" && SharedWallet)) {
         try { await SharedWallet.init(); } catch (_) {}
       }
