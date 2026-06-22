@@ -2997,8 +2997,9 @@
       return bossModifiers[((ante - 9) % pool) + 1];
     }
     const EN_BOSS_NAMES = ["Ringmaster", "Gambling King", "Puppeteer", "Heartbreaker", "Timekeeper", "Executioner", "Trickster", "Carnival Lord"];
+    const ZH_BOSS_NAMES = ["馬戲團長", "賭王", "操偶師", "碎心者", "時間守衛", "劊子手", "騙術師", "嘉年華領主"];
     function getBossName(ante) {
-      const arr = (LANG === "en") ? EN_BOSS_NAMES : bossNames;
+      const arr = LANG === "en" ? EN_BOSS_NAMES : LANG === "zh-Hant" ? ZH_BOSS_NAMES : bossNames;
       return arr[(ante - 1) % arr.length] || t("boss");
     }
 
@@ -3100,6 +3101,7 @@
     };
     // 등급 라벨 영문(표시 의미 기준: 전설=Legendary, 신화=Mythic)
     const EN_RARITY = { common:"Common", uncommon:"Uncommon", rare:"Legendary", legendary:"Mythic" };
+    const ZH_RARITY = { common:"普通", uncommon:"罕見", rare:"傳說", legendary:"神話" };
     const JOKER_RARITY = {
       flat50:"common", perCardMult:"common", heartChip:"common", goldDice:"common", diamondMiner:"common",
       evenSteven:"common", oddOne:"common", lowCard:"common", highCard:"common", faceCard:"common",
@@ -3125,6 +3127,11 @@
       foil: { label: "Foil", fx: "ATK +50" },
       holo: { label: "Holographic", fx: "Combo +10" },
       poly: { label: "Polychrome", fx: "Combo ×1.5" }
+    };
+    const ZH_EDITIONS = {
+      foil: { label: "燙金", fx: "攻擊力 +50" },
+      holo: { label: "全息", fx: "連擊 +10" },
+      poly: { label: "多彩", fx: "連擊 ×1.5" }
     };
     function editionOf(joker){ return joker && joker.edition ? (EDITIONS[joker.edition] || null) : null; }
     // 상점 조커 에디션 추첨: 폴리 4% / 홀로 6% / 포일 10% / 일반 80%
@@ -3312,6 +3319,17 @@
       stone:{label:"Stone",desc:"ATK +50"}, glass:{label:"Glass",desc:"Combo ×1.5"},
       steel:{label:"Steel",desc:"In hand: Combo ×1.5"}, gold:{label:"Gold",desc:"+🪙3 if held at round end"}
     };
+    const ZH_HANDS = {
+      HIGH_CARD:"高牌", PAIR:"一對", TWO_PAIR:"兩對", THREE:"三條",
+      STRAIGHT:"順子", FLUSH:"同花", FULL_HOUSE:"葫蘆", FOUR:"四條",
+      ROYAL_STRAIGHT:"皇家順", STRAIGHT_FLUSH:"同花順", ROYAL_FLUSH:"皇家同花順",
+      FIVE:"五條", FLUSH_HOUSE:"同花葫蘆", FLUSH_FIVE:"同花五條"
+    };
+    const ZH_ENH = {
+      bonus:{label:"獎勵",desc:"攻擊力 +30"}, mult:{label:"倍率",desc:"連擊 +4"},
+      stone:{label:"石頭",desc:"攻擊力 +50"}, glass:{label:"玻璃",desc:"連擊 ×1.5"},
+      steel:{label:"鋼鐵",desc:"持有時連擊 ×1.5"}, gold:{label:"黃金",desc:"回合結束持有 +🪙3"}
+    };
     // id → {name,desc[,detail]} (조커/행성/주문서/바우처/보스규칙 공용)
     const EN_CONTENT = {
       flat50:{name:"ATK Bomb",desc:"ATK +50"}, flushx2:{name:"Wave Joker",desc:"Flush: Combo x2"},
@@ -3375,6 +3393,74 @@
       only2hands:{label:"Limited Attacks",desc:"Only 2 attacks this battle."},
       max3cards:{label:"Max 3 Cards",desc:"Play 3 or fewer cards this battle."}
     };
+    const ZH_CONTENT = {
+      flat50:{name:"攻擊力炸彈",desc:"攻擊力 +50"}, flushx2:{name:"波紋小丑",desc:"同花：連擊 x2"},
+      perCardMult:{name:"計算機小丑",desc:"每張牌 連擊 +1"}, heartChip:{name:"紅色印記",desc:"每張紅心 攻擊力 +15"},
+      pairBoost:{name:"雙人增幅器",desc:"一對以上：連擊 +2"}, goldDice:{name:"黃金骰子",desc:"每次攻擊 攻擊力 +1~50"},
+      spadeAce:{name:"黑桃A",desc:"每張黑桃 連擊 +0.5"}, luckySeven:{name:"幸運七",desc:"每張7 攻擊力 +77"},
+      doubleDown:{name:"加倍",desc:"兩對：連擊 x2"}, fullHouseFan:{name:"葫蘆狂熱",desc:"葫蘆：攻擊力 +100"},
+      straightRunner:{name:"順子奔跑者",desc:"順子：連擊 +3"}, diamondMiner:{name:"鑽石礦工",desc:"每張方塊 攻擊力 +12"},
+      clubKing:{name:"梅花王",desc:"每張梅花人頭 連擊 +1"}, allInClown:{name:"全押小丑",desc:"出5張：連擊 x1.5"},
+      fourMaster:{name:"四條大師",desc:"四條：連擊 x4"}, acePower:{name:"A之力",desc:"每張A 攻擊力 +30"},
+      faceCard:{name:"人頭牌",desc:"每張J/Q/K 連擊 +0.75"}, evenSteven:{name:"偶數法師",desc:"每張偶數牌 攻擊力 +8"},
+      oddOne:{name:"奇數惡徒",desc:"每張奇數牌 連擊 +0.5"}, fourFlush:{name:"四色小丑",desc:"使用4種花色：連擊 x2"},
+      streakBonus:{name:"連續獎勵",desc:"順子：攻擊力與連擊 +5"}, chipRain:{name:"攻擊力之雨",desc:"每次攻擊 攻擊力 +10~100"},
+      royalFlush:{name:"皇家小丑",desc:"同花順：連擊 x4"}, lowCard:{name:"低牌",desc:"每張2~5 攻擊力 +10"},
+      highCard:{name:"高牌",desc:"每張10以上 連擊 +0.5"}, trioMult:{name:"三條增幅",desc:"三條以上：連擊 x2"},
+      snowball:{name:"雪球",desc:"每次出牌 連擊永久 +1"}, magnet:{name:"攻擊力磁鐵",desc:"每次出牌 攻擊力永久 +15"},
+      compound:{name:"複利小丑",desc:"葫蘆以上 每次出牌 連擊永久 +3"}, legion:{name:"小丑軍團",desc:"每持有1個小丑 連擊 +1"},
+      tycoon:{name:"資本家",desc:"每持有🪙5 連擊 +1"}, gambler:{name:"賭徒",desc:"25%機率 連擊 x3"},
+      ironclad:{name:"鋼鐵小丑",desc:"每張未出的手牌 攻擊力 +4"}, sniper:{name:"狙擊手",desc:"正好出1張：攻擊力 +70"},
+      trinity:{name:"三位一體",desc:"同花色3張以上：連擊 +3"}, monochrome:{name:"黑白小丑",desc:"全部同色：攻擊力 +55"},
+      fibonacci:{name:"費波那契",desc:"每張A/2/3/5/8 連擊 +1"}, patience:{name:"忍耐",desc:"每剩1次棄牌 連擊 +1"},
+      highRoller:{name:"豪賭客",desc:"🪙20以上：連擊 x2"}, theQueen:{name:"皇后的守護",desc:"每張Q 連擊 +1.5"},
+      flushBank:{name:"同花金庫",desc:"同花：攻擊力 +70"}, allShapes:{name:"萬物商",desc:"5張+4花色：連擊 x2.5"},
+      echo:{name:"回聲",desc:"與上次相同技能：連擊 x2"}, lowRoller:{name:"小賭客",desc:"全部5以下：攻擊力 +45"},
+      fullmoon:{name:"滿月",desc:"無條件 連擊 ×2.5"}, reaperking:{name:"死神王",desc:"四條·同花順：連擊 ×5"},
+      berserk:{name:"狂暴",desc:"小丑欄位滿時：連擊 ×4"}, bloodmoon:{name:"血月",desc:"每張K·Q 連擊 ×1.5"},
+      constellation:{name:"星座",desc:"每次使用行星累積 連擊永久 +0.2"}, vampire:{name:"吸血鬼",desc:"每次出強化牌吸收 → 連擊永久 +0.25"},
+      chaos:{name:"混沌",desc:"25%：連擊 ×6 / 否則 ×0.5"}, blueprint:{name:"藍圖",desc:"複製右側的小丑效果"},
+      brainstorm:{name:"腦力激盪",desc:"複製最左側的小丑效果"}, baron:{name:"男爵",desc:"每張手中的K 連擊 ×1.5"},
+      hack:{name:"駭客",desc:"已出的2~5牌 傷害再次觸發"}, sockBuskin:{name:"丑角戲",desc:"已出的J/Q/K牌 傷害再次觸發"},
+      hangingChad:{name:"首擊",desc:"已出的第一張牌 額外觸發2次"}, retriggerAll:{name:"安可",desc:"已出的所有牌 傷害再次觸發"},
+      spadeCount:{name:"黑桃伯爵",desc:"每張黑桃 攻擊力 +12"}, clubLuck:{name:"幸運草",desc:"每張梅花 連擊 +1"},
+      lowball:{name:"極簡",desc:"計分牌全部10以下：攻擊力 +55"}, twins:{name:"雙胞胎",desc:"正好出2張：連擊 x2"},
+      astro:{name:"占星師",desc:"每持有1個行星 連擊 +2"}, coinFlip:{name:"幸運硬幣",desc:"50%機率 攻擊力 +120"},
+      solo:{name:"獨行俠",desc:"正好出1張：連擊 x4"}, mystic:{name:"神秘學者",desc:"每持有1張卷軸 連擊 +3"},
+      starfall:{name:"流星雨",desc:"同花順以上：連擊 x5"},
+      mercury:{name:"水星"}, venus:{name:"金星"}, earth:{name:"地球"}, mars:{name:"火星"},
+      jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
+      blackhole:{name:"黑洞",desc:"所有技能 +1級"}, galaxy:{name:"銀河",desc:"所有技能 +3級"},
+      supernova:{name:"超新星",desc:"隨機技能 +5級"}, singularity:{name:"奇點",desc:"吸收所有分散的技能等級，集中到選定的1個技能"},
+      star:{name:"星星",desc:"選擇的牌 → ◆方塊"}, moon:{name:"月亮",desc:"選擇的牌 → ♣梅花"},
+      sun:{name:"太陽",desc:"選擇的牌 → ♥紅心"}, world:{name:"世界",desc:"選擇的牌 → ♠黑桃"},
+      strength:{name:"力量",desc:"選擇的牌 點數 +1"}, death:{name:"死神",desc:"正好2張：右邊複製左邊"},
+      hermit:{name:"隱者",desc:"金幣翻倍（最多 +🪙20）"}, wheel:{name:"命運之輪",desc:"立即 +🪙12"},
+      magician:{name:"魔術師",desc:"選擇的牌 點數 +2"}, empress:{name:"皇后",desc:"選擇的牌 → A"},
+      emperor:{name:"皇帝",desc:"生成2張隨機卷軸（欄位內）"}, priestess:{name:"女祭司",desc:"生成2張隨機行星（欄位內）"},
+      hanged:{name:"倒吊人",desc:"移除選擇的2張後抽新牌"}, temperance:{name:"節制",desc:"獲得小丑售價總和（最多🪙20）"},
+      enh_bonus:{name:"獎勵印記",desc:"1張牌 → 獎勵（攻擊力 +30）"}, enh_mult:{name:"血色印記",desc:"1張牌 → 倍率（連擊 +4）"},
+      enh_stone:{name:"高塔",desc:"1張牌 → 石頭（攻擊力 +50）"}, enh_glass:{name:"戀人（玻璃）",desc:"1張牌 → 玻璃（連擊 ×1.5）"},
+      enh_steel:{name:"鋼鐵審判",desc:"1張牌 → 鋼鐵（手中時連擊 ×1.5）"}, enh_gold:{name:"黃金惡魔",desc:"1張牌 → 黃金（回合結束持有 +🪙3）"},
+      fool:{name:"愚者",desc:"複製最後使用的卷軸/行星（欄位內）"}, judgement:{name:"審判",desc:"生成1個隨機小丑（欄位有空時）"},
+      clearance:{name:"清倉",desc:"商店所有商品25%折扣"}, magicTrick:{name:"魔術",desc:"商店出現遊戲牌（加入牌組）"},
+      rareHunter:{name:"稀有獵人",desc:"大幅提升傳說·神話小丑機率"}, reroll:{name:"重抽補助",desc:"商店刷新費用 -🪙2"},
+      tarotMerchant:{name:"卷軸商人",desc:"商店卷軸欄位 +1"}, overstock:{name:"庫存過剩",desc:"商店小丑欄位 +1"},
+      seedMoney:{name:"種子基金",desc:"利息上限 🪙5 → 🪙10"}, grabber:{name:"額外的手",desc:"每場戰鬥 攻擊 +1"},
+      wasteful:{name:"浪費者",desc:"每場戰鬥 棄牌 +1"}, biggerBag:{name:"加大背包",desc:"消耗品欄位 +1"},
+      telescope:{name:"天文望遠鏡",desc:"常用技能的行星更常出現"},
+      no_discard:{label:"禁止棄牌",desc:"本場戰鬥無法棄牌。"},
+      min4cards:{label:"最少4張",desc:"每次攻擊必須使用至少4張牌。"},
+      no_hearts:{label:"紅心封印",desc:"本場戰鬥紅心不造成傷害。"},
+      only2hands:{label:"攻擊限制",desc:"本場戰鬥只能攻擊2次。"},
+      max3cards:{label:"最多3張",desc:"本場戰鬥只能出3張以下。"}
+    };
+    // 언어별 콘텐츠 오버레이 맵 (en/zh-Hant). ko는 원문(KO_CONTENT) 사용.
+    const CONTENT_BY_LANG = { en: EN_CONTENT, "zh-Hant": ZH_CONTENT };
+    const HANDS_BY_LANG = { en: EN_HANDS, "zh-Hant": ZH_HANDS };
+    const ENH_BY_LANG = { en: EN_ENH, "zh-Hant": ZH_ENH };
+    const RARITY_BY_LANG = { en: EN_RARITY, "zh-Hant": ZH_RARITY };
+    const EDITIONS_BY_LANG = { en: EN_EDITIONS, "zh-Hant": ZH_EDITIONS };
     const KO_CONTENT = {}, _KO_HANDS = {};
     function snapshotKo() {
       [jokerPool, planetPool, tarotPool, voucherPool, bossModifiers].forEach(arr => {
@@ -3387,10 +3473,11 @@
     }
     function _loc(id, field) {
       const ko = KO_CONTENT[id] || {};
-      if (LANG === "en" && EN_CONTENT[id]) {
-        const en = EN_CONTENT[id];
-        if (en[field] != null) return en[field];
-        if (field === "detail" && en.desc != null) return en.desc;
+      const map = CONTENT_BY_LANG[LANG];
+      if (map && map[id]) {
+        const o = map[id];
+        if (o[field] != null) return o[field];
+        if (field === "detail" && o.desc != null) return o.desc;   // detail 미번역 → 해당 언어 desc 폴백
       }
       return ko[field];
     }
@@ -3404,22 +3491,23 @@
     }
     function localizeContent() {
       [jokerPool, planetPool, tarotPool, voucherPool, bossModifiers].forEach(arr => (arr || []).forEach(_applyLoc));
-      for (const k in handBase) handBase[k].name = (LANG === "en" && EN_HANDS[k]) ? EN_HANDS[k] : _KO_HANDS[k];
+      const handsMap = HANDS_BY_LANG[LANG], enhMap = ENH_BY_LANG[LANG], rarMap = RARITY_BY_LANG[LANG], edMap = EDITIONS_BY_LANG[LANG];
+      for (const k in handBase) handBase[k].name = (handsMap && handsMap[k]) ? handsMap[k] : _KO_HANDS[k];
       for (const k in ENH) {
         if (!ENH[k].__ko) ENH[k].__ko = { label: ENH[k].label, desc: ENH[k].desc };
-        const en = (LANG === "en") ? EN_ENH[k] : null;
-        ENH[k].label = en ? en.label : ENH[k].__ko.label;
-        ENH[k].desc = en ? en.desc : ENH[k].__ko.desc;
+        const m = enhMap && enhMap[k];
+        ENH[k].label = m ? m.label : ENH[k].__ko.label;
+        ENH[k].desc = m ? m.desc : ENH[k].__ko.desc;
       }
       for (const k in RARITY) {
         if (RARITY[k].__ko == null) RARITY[k].__ko = RARITY[k].label;
-        RARITY[k].label = (LANG === "en" && EN_RARITY[k]) ? EN_RARITY[k] : RARITY[k].__ko;
+        RARITY[k].label = (rarMap && rarMap[k]) ? rarMap[k] : RARITY[k].__ko;
       }
       for (const k in EDITIONS) {
         if (!EDITIONS[k].__ko) EDITIONS[k].__ko = { label: EDITIONS[k].label, fx: EDITIONS[k].fx };
-        const en = (LANG === "en") ? EN_EDITIONS[k] : null;
-        EDITIONS[k].label = en ? en.label : EDITIONS[k].__ko.label;
-        EDITIONS[k].fx = en ? en.fx : EDITIONS[k].__ko.fx;
+        const m = edMap && edMap[k];
+        EDITIONS[k].label = m ? m.label : EDITIONS[k].__ko.label;
+        EDITIONS[k].fx = m ? m.fx : EDITIONS[k].__ko.fx;
       }
       try {
         (state.jokers || []).forEach(_applyLoc);
@@ -4066,9 +4154,171 @@
         sr_rand_planet_run: "🪐 Free Planet: {name}",
         sr_card_enh_label: "Card Enhance", sr_card_enh_detail: "Enhance 1 random card in deck",
         sr_card_enh_run: "✨ Card enhanced: {card} → {enh}"
+      },
+      "zh-Hant": {
+        tagline: "組合卡牌攻擊，用小丑引爆傷害。<br>擊破地下城的卡牌 Roguelike。",
+        ui_cashout_title: "💰 結算",
+        accum_combo: "📈 累積：連擊 +{n}", accum_atk: "📈 累積：攻擊力 +{n}",
+        accum_combo_x: "📈 累積：連擊 ×{n}", accum_constellation: "📈 目前：行星 {used}次 → 連擊 ×{mult}",
+        tarot_need_use: "選擇 {n} 張後使用", mini_need: "·{n}",
+        tip_negative: "負片 — 不佔欄位", tip_settings: "設定",
+        help_title: "JokerRun 指南", help_start: "立即開始 →",
+        help_b1: "① 傷害 = 攻擊力 × 連擊",
+        help_p1: "從8張手牌中最多選5張組成<em>撲克技能</em>，決定<b>攻擊力</b>與<b>連擊</b>。兩者相乘即為傷害。超過敵人 HP 即可通關。",
+        help_b2: "② 攻擊與棄牌",
+        help_p2: "每場戰鬥限制<b>攻擊次數</b>與<b>棄牌次數</b>。丟掉爛牌重抽，瞄準更好的技能。",
+        help_b3: "③ 小丑 = 構築核心",
+        help_p3: "用戰鬥獎勵金幣在商店購買<b>小丑</b>。小丑會介入傷害計算，灌大攻擊力/連擊。及早拿到<em>雪球·複利</em>這類越滾越大的小丑，後期就會爆發。共5個欄位。",
+        help_b4: "④ 武器強化",
+        help_p4: "永久強化特定技能。投資常用的技能，同樣的牌就能打出越來越高的傷害。",
+        brand_title: "JokerRun", start_continue: "↩️ 繼續", start_help: "「怎麼玩？」— 指南",
+        collection_btn: "📖 圖鑑", deck_legend: "亮 = 牌組剩餘 · 暗 = 已抽出",
+        tarot_collection_title: "🔮 卷軸圖鑑", collection_title: "📖 圖鑑",
+        singularity_title: "⚫ 奇點 — 等級集中",
+        singularity_hint: "選擇要集中的技能，所有分散的技能等級都會合併到它上面。（其餘重置為 Lv.1）",
+        cancel: "取消", victory_run_clear: "通關", victory_new_run: "開始新遊戲",
+        game_over: "遊戲結束", restart: "重新開始",
+        help_b5: "⑤ 王關戰鬥",
+        help_p5: "每場狩獵的第3場戰鬥是帶有<em>限制（禁止棄牌、花色封印等）</em>的王關。用你的小丑構築正面突破。",
+        play: "▶ 開始", attack: "攻擊", enemy_hp: "敵人 HP", dmg: "傷害",
+        atk_power: "攻擊力", combo: "連擊",
+        hands_left: "剩餘攻擊", discards_left: "剩餘棄牌",
+        hand_play: "⚔️ 攻擊", card_discard: "棄牌",
+        skills: "📊 技能", scrolls: "📜 卷軸", deck: "🃏 牌組",
+        deck_n: "🃏 牌組 ({n})", hand_hint: "選擇要攻擊的卡牌。",
+        combo_preview: "技能 | 預估傷害：0",
+        shop: "商店", next_blind: "下一場戰鬥 →", to_shop: "整備 →", collect: "領取戰利品 →",
+        reroll: "🎲 刷新", coins: "金幣", sold_out: "售完",
+        weapon_up: "武器強化", scroll: "卷軸", joker: "小丑",
+        mob: "雜魚", elite: "精英", boss: "王關", shortcut: "捷徑", skip: "⏭ 捷徑",
+        bs_hint: "走捷徑可不整備直接進入下一場戰鬥。王關無法繞過。",
+        skip_reward: "⏭️ 捷徑獎勵",
+        settings: "⚙️ 設定", sound: "🔊 音效", speed: "⏱️ 演出速度",
+        speed_hint: "傷害演出太快就調慢，太拖就調快 / 立即。",
+        language: "🌐 語言", close: "關閉", on: "開", off: "關",
+        cleared: "🎯 戰鬥勝利！", my_dmg: "我的傷害", continue_run: "↩️ 繼續 — 重試最後一次攻擊",
+        victory_text: "你擊敗了王關。", weapon_table: "技能傷害表 — 基礎 vs 武器強化",
+        spd_slow: "慢", spd_normal: "普通", spd_fast: "快", spd_vfast: "非常快", spd_instant: "立即",
+        log_use_scroll: "使用卷軸：{name}", log_use_planet: "{name} 使用：{hand} Lv.{lv}",
+        log_planet_all: "{name}：所有技能等級 +{n}", log_planet_rand: "{name}：{hand} 等級 +{n}",
+        log_singularity: "奇點：吸收所有技能 → {hand} Lv.{lv}",
+        log_sell_consumable: "售出 {name}（+🪙{n}）", log_sell_joker: "售出小丑：{name}（+{n}G）",
+        log_buy_voucher: "購買兌換券：{name}（-🪙{n}）", log_buy_joker: "購買小丑：{name}（-🪙{n}）",
+        log_instant_planet: "立即使用行星：{name}（-🪙{n}）", log_buy_planet: "購買行星：{name}（-🪙{n}）",
+        log_instant_tarot: "立即使用卷軸：{name}（-🪙{n}）", log_buy_tarot: "購買卷軸：{name}（-🪙{n}）",
+        log_buy_card: "購買卡牌：{card} → 加入牌組（-🪙{n}）",
+        log_skip_blind: "{blind} 戰鬥已跳過 — {reward}", log_small: "小", log_big: "大", log_battle: "戰鬥",
+        log_round_start: "{round} 開始。目標：{target}",
+        log_cashout: "結算：基礎 🪙{base} + 剩餘攻擊 {hands}×🪙1 + 利息 🪙{interest} = +🪙{total}",
+        log_boss_reward: "王關擊破！獎勵：{n} G", log_game_over: "遊戲結束。",
+        log_play_hand: "{hand} 出牌：+{pts} 傷害（剩餘攻擊：{left}）",
+        log_discard: "棄掉 {n} 張。（剩餘棄牌：{left}）",
+        info_max_select: "最多只能選擇 {n} 張。",
+        info_tarot_battle_only: "<span style=\"color:var(--danger)\">{name}</span> — 需指定卡牌的卷軸請在戰鬥畫面使用。",
+        info_tarot_need_cards: "<span style=\"color:var(--danger)\">{name}</span> — 請正好選擇 {need} 張後使用。（目前 {cur}）",
+        info_continue: "↩️ 已繼續 — 重試你最後一次攻擊。",
+        info_no_cards: "請先選擇至少1張卡牌。", info_boss_max3: "本場戰鬥：最多可選3張。",
+        info_boss_min4: "本場戰鬥：至少選擇4張。",
+        info_scoring: "<span class=\"hand-tag\">{name}</span> 計分中...",
+        info_score_result: "<span class=\"hand-tag\">{hand}</span> | {chips} 攻擊力 × {mult} 連擊 = <b>{pts}</b> 傷害",
+        info_no_discards: "棄牌次數已用完。", info_select_discard: "請選擇要棄掉的卡牌。",
+        info_discarded: "棄掉 {n} 張。剩 {left}。", info_pick_cards: "選擇要攻擊的卡牌。",
+        info_endless: "🏆 8場狩獵完成！現在進入<b style=\"color:var(--gold,#ffcf6d)\">無盡模式</b> — 衝吧！",
+        info_boss_clear: "王關擊破！+{n} G", info_round_clear: "戰鬥勝利！結算 +🪙{n}",
+        info_deselect: "已取消選擇。",
+        ui_use_in_battle: "在戰鬥中使用", ui_sort_manual: "手動",
+        ui_sell_gold: "+{n}G", ui_levelup: "+升級！",
+        ui_hand_guide_3: "從8張手牌中最多選3張", ui_hand_guide_5: "從8張手牌中最多選5張",
+        ui_deck_title: "牌組：{total} 張（剩 {rem} 張）",
+        ui_sort_suit: "排序：依花色", ui_sort_rank: "排序：依點數",
+        ui_enhanced_cards: "✨ <b>{n} 張強化卡</b>",
+        ui_hands_intro: "基礎傷害與行星強化後的目前傷害比較。使用行星會永久提升。",
+        ui_th_skill: "技能", ui_th_base: "基礎", ui_th_current: "目前",
+        ui_boss_no_rule: "無特殊規則 — 正面對決",
+        ui_boss_name: "狩獵 {ante} 王關 · {name}",
+        ui_owned_jokers_title: "持有小丑（售出依等級退款）", ui_no_jokers: "沒有持有的小丑。",
+        ui_sort_rank_label: "點數", ui_sort_suit_label: "花色",
+        ui_singularity_total: "可吸收的總額外等級：+{n}",
+        ui_owned_vouchers: "持有兌換券",
+        ui_voucher_section: "🎟️ 兌換券 · 每場狩獵1個 · 永久效果",
+        ui_soldout_joker: "小丑售完 — 下一場戰鬥刷新", ui_soldout_planet: "行星售完", ui_soldout_tarot: "卷軸售完",
+        ui_playcard_section: "遊戲牌 · 永久加入牌組",
+        ui_ante_n: "狩獵 {n}", ui_ante_blind: "狩獵 {ante} | 戰鬥 {blind}/3",
+        ui_start_ante: "開始狩獵 {n} →", ui_start_battle: "開始戰鬥 {n}/3 →",
+        ui_to_ante: "前往狩獵 {n} →", ui_to_shop: "前往商店 →",
+        ui_atk_label: "攻擊力：", ui_mult_label: "× {n} 連擊",
+        ui_dmg_label: "+<span id=\"dramaticScoreNum\">0</span> 傷害",
+        ui_victory_default: "王關戰鬥勝利！最終傷害：{n}",
+        ui_new_record: "🏆 新紀錄：{n}", ui_best_score: "最佳：{n}",
+        ui_gameover_ante: "狩獵 {ante} - 於 {blind} 戰鬥落敗",
+        ui_blind_small: "小", ui_blind_big: "大",
+        ui_new_record_short: "🏆 新紀錄！{n}",
+        ui_run_clear: "🏆 通關！完成全部8場狩獵！\n最終傷害：{n}{record}",
+        ui_new_record_suffix: " — 新紀錄！",
+        ui_triggered: "觸發！", ui_steel_held: "🔩 持有 {n} 張鋼鐵卡 → 連擊 ×{mult}",
+        ui_float_atk: "+{n} 攻擊力", ui_float_combo: "+{n} 連擊",
+        ui_tarot_intro: "在卷軸區（🪙4）購買。與行星共用消耗品欄位（最多2格）。持有的卷軸在戰鬥中使用。",
+        ui_tarot_exact: "正好 ", ui_tarot_instant_txt: "立即使用",
+        ui_tarot_mini_label: "卷軸", ui_owned_count: "×{n} 持有", ui_special: "特殊",
+        ui_co_boss: "👑 王關擊破獎勵", ui_co_clear: "戰鬥通關",
+        ui_co_hands: "剩餘攻擊 {n} × 🪙1", ui_co_interest: "利息（每持有🪙5得🪙1）", ui_co_gold: "🟡 持有黃金卡",
+        ui_boss_reward_banner: "👑 王關擊破獎勵 <b>+{n} G</b>",
+        ui_rank_title: "排行榜 {medal} 上榜！", ui_rank_sub: "進入 TOP 10 賀金",
+        ui_rank_note: "僅首次發放 · 計入全域錢包", ui_confirm: "確定",
+        pop_badge_special_planet: "特殊", pop_badge_planet: "行星",
+        pop_planet_desc: "永久強化 {hand}（+{chips} 攻擊力 / +{mult} 連擊）",
+        pop_planet_cost_special: "使用：立即生效 · 售出 +🪙{n}", pop_planet_cost_normal: "使用：{hand} 升級 · 售出 +🪙{n}",
+        pop_use: "使用", pop_sell: "售出 +🪙{n}", pop_badge_tarot: "卷軸",
+        pop_tarot_need: " · 選擇 {n} 張後使用", pop_tarot_instant: " · 立即使用",
+        pop_tarot_locked: "在戰鬥中使用", pop_tarot_select: "使用（選擇 {n} 張）",
+        pop_joker_refund: "售出可退 +🪙{n}",
+        pop_joker_cost: "購買：🪙{cost} · 售價：🪙{sell}",
+        pop_voucher_cost: "兌換券 · 永久效果 · 費用 🪙{n}",
+        pop_buy: "購買 🪙{n}", pop_no_funds: "資金不足",
+        pop_shop_joker_cost: "購買 🪙{cost} · 售價 🪙{sell}", pop_joker_full: "小丑欄位已滿",
+        pop_planet_cost_full: "購買 🪙{n} · 欄位已滿 → 立即使用",
+        pop_planet_cost_slot: "購買 🪙{n} · 佔用消耗品欄位",
+        pop_buy_instant: "購買並立即使用 🪙{n}", pop_consumable_full: "消耗品欄位已滿",
+        pop_tarot_shop_need: " · 使用時正好選擇 {n} 張",
+        pop_card_deck_desc: "將此卡永久加入你的牌組。",
+        pop_sell_only: "售出 +🪙{n}",
+        dbg_add_joker: "🐞 已加入小丑：{name}", dbg_add_tarot: "🐞 已加入卷軸：{name}",
+        dbg_add_planet: "🐞 已加入行星：{name}", dbg_add_card: "🐞 已加入卡牌：{card}",
+        dbg_add_money: "🐞 資金 +🪙50", dbg_no_enh: "無強化",
+        ui_collection_count: "{found} / {total} 收集",
+        ui_reroll_btn: "🎲 刷新 🪙{n}",
+        ui_skip_reward_label: "⏭️ 捷徑獎勵：",
+        ui_skip_reward_head: "⏭️ 捷徑獎勵",
+        ui_reward_fallback: "獎勵", ui_reward_none: "無獎勵",
+        ui_reward_error: "{label}（套用獎勵時發生錯誤 — 繼續進行）",
+        ui_rank_pos: "第{n}名",
+        ui_planet_all_flash: "所有技能 Lv +{n}",
+        ui_plays_count: "·{n}×",
+        ui_edition_fx: "{icon} {label} 版本 — 每次攻擊 {fx}",
+        ui_head_scoring: "<span class=\"hand-tag\">{name}</span>{lv} · <b style=\"color:var(--gold)\">{valid}</b> 張計分牌{kicker}",
+        ui_head_lv: " <b style=\"color:var(--gold)\">Lv.{lv}</b>",
+        ui_head_kicker: "（排除 {n} 張閒牌）",
+        ui_joker_copy: "{joker} → {target} 複製",
+        ui_negative_badge: "🌑 負片",
+        sr_windfall_label: "橫財", sr_windfall_detail: "立即 +🪙{n}",
+        sr_windfall_run: "💸 橫財 +🪙{n}",
+        sr_rand_joker_label: "隨機小丑", sr_rand_joker_detail: "獲得1個免費小丑",
+        sr_rand_joker_run: "🃏 免費小丑：{name}",
+        sr_neg_joker_label: "負片小丑", sr_neg_joker_detail: "隨機小丑變為負片（不佔欄位）",
+        sr_neg_joker_run: "🌑 負片小丑：{name}",
+        sr_rand_tarot_label: "隨機卷軸", sr_rand_tarot_detail: "獲得1張免費卷軸（需欄位）",
+        sr_rand_tarot_run: "🔮 免費卷軸：{name}",
+        sr_rand_planet_label: "隨機行星", sr_rand_planet_detail: "獲得1張免費行星（需欄位）",
+        sr_rand_planet_run: "🪐 免費行星：{name}",
+        sr_card_enh_label: "卡牌強化", sr_card_enh_detail: "強化牌組中隨機1張卡",
+        sr_card_enh_run: "✨ 卡牌已強化：{card} → {enh}"
       }
     };
-    let LANG = localStorage.getItem("jokerrun_lang") || (navigator.language || "ko").slice(0, 2).toLowerCase();
+    let LANG = localStorage.getItem("jokerrun_lang");
+    if (!LANG) {
+      const nav = (navigator.language || "ko").toLowerCase();
+      LANG = nav.startsWith("zh") ? "zh-Hant" : nav.slice(0, 2);   // 중국어는 번체로(현재 번체만 지원)
+    }
     if (!I18N[LANG]) LANG = "ko";
     function t(k, p) {
       let s = (I18N[LANG] && I18N[LANG][k] != null) ? I18N[LANG][k] : (I18N.ko[k] != null ? I18N.ko[k] : k);
@@ -6425,7 +6675,7 @@
         row.appendChild(b);
       });
     }
-    const LANG_OPTS = [{ code: "ko", label: "한국어" }, { code: "en", label: "English" }];
+    const LANG_OPTS = [{ code: "ko", label: "한국어" }, { code: "en", label: "English" }, { code: "zh-Hant", label: "繁體中文" }];
     function renderLangSeg() {
       const row = $("#setLangRow");
       if (!row) return;
@@ -6506,7 +6756,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-restartmain";
+    const JR_BUILD = "2026-06-22-zhhant";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
