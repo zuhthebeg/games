@@ -2559,6 +2559,17 @@
       80% { transform: translate(calc(var(--jr-shake,6px) * 0.6), calc(var(--jr-shake,6px) * -0.3)); }
     }
     .jr-shaking { animation: jrShake 0.24s cubic-bezier(.36,.07,.19,.97); }
+    /* ── 설정 모달 ── */
+    .set-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:14px 2px 0; }
+    .set-label { font-size:.92rem; font-weight:700; color:#e7defb; }
+    .set-toggle { padding:7px 16px; border-radius:10px; font-weight:800; font-size:.84rem; cursor:pointer;
+      border:1px solid #5fd38a88; background:#163021; color:#7df0a8; }
+    .set-toggle.off { border-color:#6b5a7a; background:#241a30; color:#9a8bb0; }
+    .set-seg { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; }
+    .set-seg button { padding:8px 2px; border-radius:9px; font-weight:800; font-size:.72rem; cursor:pointer;
+      border:1px solid #463a63; background:#15101f; color:#cbbfe4; }
+    .set-seg button.active { border-color:var(--gold,#ffcf6d); background:#3a2f12; color:var(--gold,#ffcf6d); }
+    .set-hint { font-size:.68rem; color:var(--muted,#9a8bb0); line-height:1.4; }
   </style>
 </head>
 <body>
@@ -2618,7 +2629,7 @@
         <span class="target-value" id="targetLabel">0</span>
       </div>
       <div class="header-right">
-        <button id="bgmBtn" type="button" class="bgm-btn" aria-label="배경음악 켜기/끄기" title="배경음악">🎵</button>
+        <button id="settingsBtn" type="button" class="bgm-btn" aria-label="설정" title="설정">⚙️</button>
         <span class="gold-badge" id="goldLabel">G 0</span>
         <span class="money-badge" id="moneyLabel">$0</span>
       </div>
@@ -2726,6 +2737,22 @@
       <div id="cashoutBody" style="margin:8px 0 2px"></div>
       <div class="co-total-big">+$<span id="cashoutTotal">0</span></div>
       <button class="btn-main" id="cashoutContinueBtn" style="padding:12px;border-radius:12px;font-weight:800">상점으로 →</button>
+    </div>
+  </div>
+
+  <div class="modal" id="settingsModal">
+    <div class="mode-sheet" style="text-align:left;max-width:340px">
+      <div class="title" style="text-align:center">⚙️ 설정</div>
+      <div class="set-row">
+        <div class="set-label">🔊 사운드</div>
+        <button id="setSoundBtn" type="button" class="set-toggle">켜짐</button>
+      </div>
+      <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div class="set-label">⏱️ 점수 연출 속도</div>
+        <div id="setSpeedRow" class="set-seg"></div>
+        <div class="set-hint">점수가 너무 빨리 지나가면 느리게, 답답하면 빠르게 / 즉시.</div>
+      </div>
+      <button class="btn-main" id="setCloseBtn" style="margin-top:16px;padding:11px;border-radius:12px;font-weight:800;width:100%">닫기</button>
     </div>
   </div>
 
@@ -2917,13 +2944,22 @@
     ];
 
     function getBossModifier(ante) {
-      return bossModifiers[ante - 1] || null;
+      if (ante <= 8) return bossModifiers[ante - 1] || null;
+      // 엔드리스(9탄+): 1~7번 모디파이어를 순환해서 계속 보스 규칙 부여
+      const pool = bossModifiers.length - 1;   // 0번(null) 제외
+      return bossModifiers[((ante - 9) % pool) + 1];
+    }
+    function getBossName(ante) {
+      return bossNames[(ante - 1) % bossNames.length] || "보스";
     }
 
     function getBlindTargets(ante) {
       // 카드 칩값 반영으로 스케일 완화: ×1.6/ante, 시작 타겟 낮춤 (원작 Balatro 참고)
+      // 엔드리스(9탄+)는 8탄까지의 곡선을 유지한 뒤 가속(×1.9/ante)해서 무한히 어려워진다.
       const base = [300, 450, 600];
-      const scale = Math.pow(1.6, ante - 1);
+      const scale = ante <= 8
+        ? Math.pow(1.6, ante - 1)
+        : Math.pow(1.6, 7) * Math.pow(1.9, ante - 8);
       return [
         { id: "small", label: "스몰 블라인드", target: Math.round(base[0] * scale) },
         { id: "big", label: "빅 블라인드", target: Math.round(base[1] * scale) },
@@ -3476,8 +3512,8 @@
         this.syncBtn();
       },
       syncBtn() {
-        const b = document.getElementById("bgmBtn");
-        if (b) { b.textContent = this.enabled ? "🎵" : "🔇"; b.classList.toggle("off", !this.enabled); }
+        const b = document.getElementById("setSoundBtn");
+        if (b) { b.textContent = this.enabled ? "켜짐" : "꺼짐"; b.classList.toggle("off", !this.enabled); }
       }
     };
 
@@ -3775,8 +3811,17 @@
       state.lastToggledCardId = null;
     }
 
+    // ── 점수 연출 속도(설정) — 채점 중 wait()에만 곱해진다. 0이면 즉시(연출 스킵). ──
+    let SCORE_SPEED = parseFloat(localStorage.getItem("jokerrun_scorespeed"));
+    if (!(SCORE_SPEED >= 0)) SCORE_SPEED = 1;   // 기본 1배
+    let _scoringActive = false;
+    function setScoreSpeed(v) {
+      SCORE_SPEED = (v >= 0) ? v : 1;
+      try { localStorage.setItem("jokerrun_scorespeed", String(SCORE_SPEED)); } catch (_) {}
+    }
     function wait(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
+      const d = _scoringActive ? Math.round(ms * SCORE_SPEED) : ms;
+      return new Promise(resolve => setTimeout(resolve, d));
     }
 
     function getCountUpCtor() {
@@ -4098,12 +4143,12 @@
         return;
       }
       const ante = state.ante;
-      const name = bossNames[ante - 1] || "보스";
+      const name = getBossName(ante);
       const mod = state.bossModifier;
       const rule = mod ? `<span class="boss-rule">⚠️ ${mod.label}</span><span class="boss-desc">${mod.desc}</span>` : `<span class="boss-desc">특수 규칙 없음 — 정면 승부</span>`;
       banner.hidden = false;
       banner.innerHTML = `
-        <img class="boss-art" src="bosses/boss${ante}.webp" alt="" draggable="false" onerror="this.style.display='none'">
+        <img class="boss-art" src="bosses/boss${((ante - 1) % 8) + 1}.webp" alt="" draggable="false" onerror="this.style.display='none'">
         <div class="boss-info">
           <span class="boss-name">Ante ${ante} 보스 · ${name}</span>
           ${rule}
@@ -4680,6 +4725,7 @@
         const snap = {
           v: 2, ts: Date.now(),
           ante: state.ante, roundIndex: state.roundIndex, money: state.money,
+          endless: !!state.endless, endlessAnnounced: !!state.endlessAnnounced,
           score: state.score, handsLeft: state.handsLeft, discardsLeft: state.discardsLeft,
           sortMode: state.sortMode, lastHandType: state.lastHandType || null,
           handLevels: { ...state.handLevels },
@@ -4710,6 +4756,7 @@
       if (!snap || !snap.runDeck) return false;
       state.mode = "single";
       state.ante = snap.ante; state.roundIndex = snap.roundIndex; state.money = snap.money;
+      state.endless = !!snap.endless; state.endlessAnnounced = !!snap.endlessAnnounced;
       state.score = snap.score; state.handsLeft = snap.handsLeft; state.discardsLeft = snap.discardsLeft;
       state.sortMode = snap.sortMode || "rank"; state.lastHandType = snap.lastHandType || null;
       state.handLevels = { ...snap.handLevels };
@@ -4825,6 +4872,7 @@
     }
 
     async function playSelected() {
+      _scoringActive = false;   // 방어적 초기화(이전 연출이 비정상 종료했어도 복구)
       if (state.gameEnded) return;
       if (state.handsLeft <= 0) {
         state.handsLeft = 0;
@@ -4864,6 +4912,7 @@
       const kickers = cards.length - scoreCards.length;
       const headText = `<span class="hand-tag">${hand.name}</span>${lvl > 0 ? ` <b style="color:var(--gold)">Lv.${lvl + 1}</b>` : ""} · 유효 <b style="color:var(--gold)">${scoreCards.length}장</b>${kickers > 0 ? ` (키커 ${kickers}장 제외)` : ""}`;
       const ps = buildPlayStage(cards, scoringIds, headText);
+      _scoringActive = true;   // 여기부터 카드/조커 연출 wait()에 속도 배율 적용
       setInfo(`<span class="hand-tag">${hand.name}</span> 채점 중...`);
       await wait(620);
       // 1) 족보 기본 칩(카드 칩 제외) 표시
@@ -4984,6 +5033,7 @@
       await wait(260);
       ps.close();
       await wait(180);
+      _scoringActive = false;   // 카드/조커 연출 끝 — 이후 최종 집계는 일반 속도
       state.lastHandType = hand.handType;   // 메아리 조커 콤보용(다음 플레이가 같은 족보면 발동)
       state.handPlays = state.handPlays || {};
       state.handPlays[hand.handType] = (state.handPlays[hand.handType] || 0) + 1;   // 족보 사용 횟수 누적
@@ -5558,12 +5608,15 @@
       state.lastCashout.bossGold = bossGold;
       renderHUD();
       const isLastBlind = state.roundIndex >= 2;
-      const isLastAnte = state.ante >= 8;
-      if (isLastBlind && isLastAnte) {
-        showRunClearModal();
-        return;
+      // 엔드리스: 8탄 보스를 잡아도 끝나지 않고 9탄·10탄… 무한히 이어진다. 8탄 완주는 1회 축하만.
+      if (isLastBlind && state.ante === 8 && !state.endlessAnnounced) {
+        state.endless = true;
+        state.endlessAnnounced = true;
+        spawnWinConfetti();
+        setInfo(`🏆 8앤티 완주! 지금부터 <b style="color:var(--gold,#ffcf6d)">엔드리스</b> — 끝까지 가보자`);
+      } else {
+        setInfo(bossGold ? `보스 격파! +${bossGold.toLocaleString()} G` : `블라인드 돌파! 정산 +$${reward}`);
       }
-      setInfo(bossGold ? `보스 격파! +${bossGold.toLocaleString()} G` : `블라인드 돌파! 정산 +$${reward}`);
       showClearConfirm(isLastBlind);   // 점수 확인 단계 → 확인 눌러야 정산 팝업
     }
 
@@ -5641,6 +5694,8 @@
       state.voucherAnte = 0;
       state.lastCashout = null;
       state.bossModifier = null;
+      state.endless = false;
+      state.endlessAnnounced = false;
       logEl.innerHTML = "";
       closeShop();
       closeDeckModal();
@@ -5665,7 +5720,7 @@
     window.continueFromShop = function continueFromShop() {
       closeShop();
       if (_shopIsAnteClear) {
-        state.ante = Math.min(8, state.ante + 1);
+        state.ante = state.ante + 1;   // 엔드리스: 상한 없음
         beginBlind(0);
       } else {
         beginBlind(state.roundIndex + 1);
@@ -5728,7 +5783,37 @@
       $("#startScreen").classList.remove("show");
       newRun();
     }
-    $("#bgmBtn").addEventListener("click", () => BGM.toggle());
+    // ── 설정 모달 ──
+    const SPEED_OPTS = [
+      { v: 1.6, label: "느리게" },
+      { v: 1,   label: "보통" },
+      { v: 0.5, label: "빠르게" },
+      { v: 0.25, label: "매우 빠름" },
+      { v: 0,   label: "즉시" }
+    ];
+    function renderSpeedSeg() {
+      const row = $("#setSpeedRow");
+      if (!row) return;
+      row.innerHTML = "";
+      SPEED_OPTS.forEach(opt => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = opt.label;
+        if (Math.abs(SCORE_SPEED - opt.v) < 0.001) b.classList.add("active");
+        b.addEventListener("click", () => { setScoreSpeed(opt.v); renderSpeedSeg(); });
+        row.appendChild(b);
+      });
+    }
+    function openSettings() {
+      BGM.syncBtn();
+      renderSpeedSeg();
+      $("#settingsModal").classList.add("show");
+    }
+    function closeSettings() { $("#settingsModal").classList.remove("show"); }
+    $("#settingsBtn").addEventListener("click", openSettings);
+    $("#setCloseBtn").addEventListener("click", closeSettings);
+    $("#settingsModal").addEventListener("click", (e) => { if (e.target.id === "settingsModal") closeSettings(); });
+    $("#setSoundBtn").addEventListener("click", () => BGM.toggle());
     $("#startPlayBtn").addEventListener("click", beginRun);
     $("#startContinueBtn").addEventListener("click", () => { try { BGM.unlock?.(); } catch (_) {} restoreRun(); });
     $("#ccContinueBtn").addEventListener("click", () => {
@@ -5785,7 +5870,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-percard";
+    const JR_BUILD = "2026-06-22-endless-settings";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
