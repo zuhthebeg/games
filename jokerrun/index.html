@@ -3241,30 +3241,54 @@
       }
     };
 
-    // ── BGM (생성된 카지노풍 재즈 루프) ──
+    // ── BGM (생성된 카지노풍 재즈 루프 + 앤티별 긴장감 트랙) ──
+    // play1~8 = 앤티 1~8 플레이곡(점점 긴장↑), playDef = 9탄+ 디폴트, boss = 보스전, shop = 상점.
+    // 아직 생성 안 된 파일은 onerror 로 기본 bgm.mp3 폴백 → 깨지지 않음.
     const BGM = {
       el: null,
       enabled: true,
-      track: "normal",
-      srcs: { normal: "bgm.mp3?v=1", boss: "bgm-boss.mp3?v=2" },
+      track: "play1",
+      fallback: "bgm.mp3?v=1",
+      srcs: {
+        normal: "bgm.mp3?v=1",
+        play1: "bgm-play1.mp3?v=1", play2: "bgm-play2.mp3?v=1", play3: "bgm-play3.mp3?v=1",
+        play4: "bgm-play4.mp3?v=1", play5: "bgm-play5.mp3?v=1", play6: "bgm-play6.mp3?v=1",
+        play7: "bgm-play7.mp3?v=1", play8: "bgm-play8.mp3?v=1", playDef: "bgm-play-def.mp3?v=1",
+        boss: "bgm-boss.mp3?v=3", shop: "bgm-shop.mp3?v=1"
+      },
+      // 앤티 번호 → 플레이 트랙 키. 1~8은 전용, 9탄부터는 디폴트.
+      playKey(ante) { const a = ante || 1; return a >= 1 && a <= 8 ? "play" + a : "playDef"; },
+      volFor(t) { return t === "boss" ? 0.46 : t === "shop" ? 0.34 : 0.38; },
       init() {
         this.el = document.getElementById("bgmAudio");
         this.enabled = localStorage.getItem("jokerrun_bgm") !== "off";
+        // 생성 안 된 트랙(404 등) → 기본곡으로 자동 폴백
+        if (this.el && !this._errBound) {
+          this._errBound = true;
+          this.el.addEventListener("error", () => {
+            const cur = this.el.getAttribute("src") || "";
+            if (!cur.endsWith(this.fallback)) {
+              this.el.setAttribute("src", this.fallback);
+              if (this.enabled) { const p = this.el.play(); if (p && p.catch) p.catch(() => {}); }
+            }
+          });
+        }
         this.syncBtn();
       },
       apply() {
         if (!this.el) return;
-        const want = this.srcs[this.track] || this.srcs.normal;
+        const want = this.srcs[this.track] || this.fallback;
         if (!this.el.getAttribute("src") || !this.el.getAttribute("src").endsWith(want)) {
           this.el.setAttribute("src", want);
         }
         if (this.enabled) {
-          this.el.volume = this.track === "boss" ? 0.46 : 0.38;
+          this.el.volume = this.volFor(this.track);
           const p = this.el.play();
           if (p && p.catch) p.catch(() => {});
         }
       },
       start() { this.apply(); },
+      stop() { if (this.el) { try { this.el.pause(); } catch (_) {} } },
       setTrack(t) {
         if (this.track !== t) this.track = t;
         this.apply();
@@ -4520,7 +4544,7 @@
       closeShop(); closeDeckModal(); closeVictoryModal();
       const ss = document.getElementById("startScreen"); if (ss) ss.classList.remove("show");
       sortHand(); renderCards(); renderBossBanner(); renderHUD(); updateHandPreview();
-      try { BGM.setTrack(state.isBossBlind ? "boss" : "normal"); } catch (_) {}
+      try { BGM.setTrack(state.isBossBlind ? "boss" : BGM.playKey(state.ante)); } catch (_) {}
       setInfo("↩️ 이어하기 — 마지막 핸드를 다시 시도하세요.");
       return true;
     }
@@ -4853,6 +4877,7 @@
 
     function openShop(anteClear = false) {
       _shopIsAnteClear = anteClear;
+      try { BGM.setTrack("shop"); } catch (_) {}   // 상점 입장 → 상점 음악
       refreshVoucherForAnte(anteClear);
       // 상점은 입장 시 1회만 진열. 구매로 비어도 같은 방문 중엔 재진열 안 함(다음 라운드에 갱신).
       if (!state.shopStocked) {
@@ -5223,7 +5248,7 @@
       renderBossBanner();
       renderHUD();
       updateHandPreview();
-      BGM.setTrack(state.isBossBlind ? "boss" : "normal");
+      BGM.setTrack(state.isBossBlind ? "boss" : BGM.playKey(state.ante));
       setInfo("핸드를 선택해 플레이하세요.");
       if (state.bossModifier) {
         setInfo(`<span style="color:var(--danger)">⚠️ ${state.bossModifier.label}</span> — ${state.bossModifier.desc}`);
@@ -5252,6 +5277,7 @@
       // 보스 격파 보상: 앤티 N 보스 = N × 100만 G (전역 지갑)
       let bossGold = 0;
       if (state.roundIndex === 2) {
+        try { BGM.stop(); } catch (_) {}   // 보스 클리어 → 보스전 음악 즉시 정지(상점 진입 시 상점곡)
         bossGold = state.ante * 1000000;
         try { if ((typeof SharedWallet !== "undefined" && SharedWallet) && SharedWallet._initialized) SharedWallet.addGold(bossGold); } catch (_) {}
         addLog(`보스 격파! 보상 ${bossGold.toLocaleString()} G`);
