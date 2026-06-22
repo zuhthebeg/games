@@ -1375,9 +1375,20 @@
     @keyframes psDeal { from { transform: translateY(18px) scale(.82); opacity: 0; } to { transform: none; opacity: 1; } }
 
     /* 적 HP 바 — 공격할 때마다 깎인다(던전 테마) */
-    .enemy-hp { margin: 2px 0 6px; }
+    /* 보스 영역 + HP를 하나의 패널로 묶어 세로 공간 절약 */
+    .enemy-panel {
+      display: flex; flex-direction: column; gap: 5px;
+      padding: 6px 8px; border-radius: 12px;
+      border: 1px solid rgba(255, 79, 110, 0.3);
+      background: linear-gradient(110deg, rgba(40, 8, 16, 0.5), rgba(18, 14, 30, 0.45));
+    }
+    /* 보스전: 배너가 자체 테두리/배경을 가지므로 패널은 투명 래퍼로 (이중 박스 방지) */
+    .enemy-panel:has(.boss-banner:not([hidden])) {
+      border-color: transparent; background: none; padding: 0; gap: 5px;
+    }
+    .enemy-hp { margin: 0; }
     .enemy-hp-bar {
-      position: relative; height: 14px; border-radius: 8px; overflow: hidden;
+      position: relative; height: 16px; border-radius: 8px; overflow: hidden;
       background: linear-gradient(180deg, #2a1016, #1a0a0e);
       border: 1px solid rgba(255, 90, 110, 0.35); box-shadow: inset 0 1px 3px rgba(0,0,0,.5);
     }
@@ -1389,9 +1400,12 @@
     }
     .enemy-hp-fill.low { background: linear-gradient(90deg, #ff2d4d, #ff5a3c); animation: hpPulse 0.9s ease-in-out infinite; }
     @keyframes hpPulse { 0%,100%{opacity:1} 50%{opacity:.65} }
+    /* HP 숫자를 바 위에 오버레이 → 별도 텍스트 줄 제거(공간 절약) */
     .enemy-hp-num {
-      text-align: center; font-size: .68rem; font-weight: 800; margin-top: 2px;
-      color: #ffb3bd; letter-spacing: .02em; font-variant-numeric: tabular-nums;
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: .66rem; font-weight: 800; color: #fff; letter-spacing: .02em;
+      font-variant-numeric: tabular-nums; pointer-events: none;
+      text-shadow: 0 1px 2px rgba(0,0,0,.9), 0 0 4px rgba(0,0,0,.7);
     }
     .score-inline {
       display: flex;
@@ -1437,13 +1451,11 @@
 
     .hand-bottom {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      min-height: 16px;
+      min-height: 14px;
       padding: 0 4px;
-      margin-top: 8px;   /* 카드와 하단 버튼이 너무 붙지 않게 간격 확보 */
+      margin-top: 6px;   /* 카드와 가이드 텍스트가 너무 붙지 않게 간격 확보 */
     }
 
     .hand-bottom .info-line {
@@ -1484,6 +1496,14 @@
          flex:1 1 auto 로 가운데 영역을 채우므로 2줄이 들어가도 아래 칩을 안 덮음. */
       padding-top: 16px;
       overflow: visible;
+      /* 카드 stacking을 격리 → 카드가 위/아래 텍스트 줄(z-index 위) 위로 못 올라옴 */
+      isolation: isolate;
+      z-index: 0;
+    }
+    /* 기술명/예상 데미지/가이드 텍스트는 항상 카드 위에 떠서 안 가려지게 */
+    .hand-preview, #handResult, #handGuide {
+      position: relative;
+      z-index: 3;
     }
 
     .card {
@@ -1652,15 +1672,24 @@
     .suit { display: none; }
 
     .status-bar {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      display: flex;
+      flex-wrap: nowrap;
       align-items: center;
-      padding: 0 10px;
-      font-size: 0.83rem;
+      gap: 10px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
       color: var(--muted);
       font-weight: 700;
     }
+
+    .status-bar .stat-cell { flex: 0 0 auto; white-space: nowrap; }
+    /* 기술/주문서/도감/덱 버튼을 남은공격·버리기 라인 오른쪽에 합쳐 공간 확보 */
+    .status-bar .util-btns { margin-left: auto; display: flex; gap: 5px; flex: 0 0 auto; }
+    .status-bar .util-btns .deck-btn {
+      min-width: 32px; padding: 0 7px; font-size: 0.82rem;
+      display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+    }
+    .status-bar .util-btns .deck-count { font-size: 0.72rem; }
 
     .status-bar b {
       color: var(--text);
@@ -2704,10 +2733,14 @@
     </section>
 
     <section class="table glass">
-      <div class="boss-banner" id="bossBanner" hidden></div>
-      <div class="enemy-hp" aria-label="enemy hp">
-        <div class="enemy-hp-bar"><div class="enemy-hp-fill" id="enemyHpFill"></div></div>
-        <div class="enemy-hp-num"><span id="enemyHpRemain">0</span> / <span id="enemyHpMax">0</span></div>
+      <div class="enemy-panel" id="enemyPanel">
+        <div class="boss-banner" id="bossBanner" hidden></div>
+        <div class="enemy-hp" aria-label="enemy hp">
+          <div class="enemy-hp-bar">
+            <div class="enemy-hp-fill" id="enemyHpFill"></div>
+            <span class="enemy-hp-num"><span id="enemyHpRemain">0</span> / <span id="enemyHpMax">0</span></span>
+          </div>
+        </div>
       </div>
       <div class="score-inline">
         <span class="chips-readout"><span data-i18n="atk_power">공격력</span> <b id="chipsLabel">0</b></span>
@@ -2719,16 +2752,18 @@
       <div class="cards-wrap" id="cardsWrap"></div>
       <div class="hand-bottom">
         <div class="info-line" id="handGuide" data-i18n="ui_hand_guide_5">손패 8장 중 최대 5장을 선택</div>
-        <button id="handsInfoBtn" class="deck-btn" type="button" data-i18n="skills">📊 기술</button>
-        <button id="tarotInfoBtn" class="deck-btn" type="button" data-i18n="scrolls">📜 주문서</button>
-        <button id="collectionBtn" class="deck-btn" type="button" data-i18n="collection_btn">📖 도감</button>
-        <button id="deckBtn" class="deck-btn" type="button" data-i18n="deck">🃏 덱</button>
       </div>
     </section>
 
     <section class="status-bar glass">
-      <div><span data-i18n="hands_left">남은 공격</span> <b id="handsLabel">0</b></div>
-      <div style="text-align:right;"><span data-i18n="discards_left">남은 버리기</span> <b id="discardsLabel">0</b></div>
+      <div class="stat-cell"><span data-i18n="hands_left">남은 공격</span> <b id="handsLabel">0</b></div>
+      <div class="stat-cell"><span data-i18n="discards_left">남은 버리기</span> <b id="discardsLabel">0</b></div>
+      <div class="util-btns">
+        <button id="handsInfoBtn" class="deck-btn" type="button" data-i18n-title="skills" aria-label="기술">📊</button>
+        <button id="tarotInfoBtn" class="deck-btn" type="button" data-i18n-title="scrolls" aria-label="주문서">📜</button>
+        <button id="collectionBtn" class="deck-btn" type="button" data-i18n-title="collection_btn" aria-label="도감">📖</button>
+        <button id="deckBtn" class="deck-btn deck-count" type="button" data-i18n-title="deck" aria-label="덱">🃏</button>
+      </div>
     </section>
 
     <section class="actions">
@@ -5506,7 +5541,7 @@
       $("#multLabel").textContent = `x${mult}`;
       $("#playBtn").disabled = state.gameEnded;
       $("#discardBtn").disabled = state.gameEnded;
-      $("#deckBtn").textContent = t("deck_n", { n: state.deck.length });
+      $("#deckBtn").textContent = `🃏 ${state.deck.length}`;
       $("#handGuide").textContent = state.bossModifier?.id === "max3cards"
         ? t("ui_hand_guide_3")
         : t("ui_hand_guide_5");
