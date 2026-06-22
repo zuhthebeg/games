@@ -2743,6 +2743,43 @@
     </div>
   </div>
 
+  <!-- ── 디버그 모드 (?debug=1 활성) ── -->
+  <button id="dbgFab" style="display:none;position:fixed;left:10px;bottom:10px;z-index:9998;width:46px;height:46px;border-radius:50%;border:1px solid #ffd76a55;background:linear-gradient(150deg,#2a2545,#1a1730);color:#ffd76a;font-size:1.4rem;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4)" title="디버그">🐞</button>
+  <div class="modal" id="dbgModal">
+    <div class="mode-sheet" style="max-width:380px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="title" style="font-size:1.05rem">🐞 디버그 모드</div>
+        <button id="dbgClose" style="background:none;border:0;color:#9aa;font-size:1.3rem;cursor:pointer">✕</button>
+      </div>
+      <div class="subtitle" style="font-size:.68rem;color:var(--muted);margin-bottom:10px">테스트 전용 — 현재 런에 즉시 추가됩니다.</div>
+
+      <div class="dbg-row" style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+        <span style="width:54px;font-size:.8rem;font-weight:700">🃏 조커</span>
+        <select id="dbgJoker" style="flex:1;min-width:0;padding:7px;border-radius:8px;background:#15101f;color:#e7defb;border:1px solid #463a63"></select>
+        <label style="font-size:.66rem;display:flex;align-items:center;gap:3px;white-space:nowrap"><input type="checkbox" id="dbgJokerNeg">🌑</label>
+        <button id="dbgAddJoker" class="btn-main" style="padding:7px 10px;border-radius:8px;font-weight:800">＋</button>
+      </div>
+      <div class="dbg-row" style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+        <span style="width:54px;font-size:.8rem;font-weight:700">🔮 타로</span>
+        <select id="dbgTarot" style="flex:1;min-width:0;padding:7px;border-radius:8px;background:#15101f;color:#e7defb;border:1px solid #463a63"></select>
+        <button id="dbgAddTarot" class="btn-main" style="padding:7px 10px;border-radius:8px;font-weight:800">＋</button>
+      </div>
+      <div class="dbg-row" style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+        <span style="width:54px;font-size:.8rem;font-weight:700">🪐 행성</span>
+        <select id="dbgPlanet" style="flex:1;min-width:0;padding:7px;border-radius:8px;background:#15101f;color:#e7defb;border:1px solid #463a63"></select>
+        <button id="dbgAddPlanet" class="btn-main" style="padding:7px 10px;border-radius:8px;font-weight:800">＋</button>
+      </div>
+      <div class="dbg-row" style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+        <span style="width:54px;font-size:.8rem;font-weight:700">🂠 카드</span>
+        <select id="dbgRank" style="flex:0 0 56px;padding:7px;border-radius:8px;background:#15101f;color:#e7defb;border:1px solid #463a63"></select>
+        <select id="dbgSuit" style="flex:0 0 52px;padding:7px;border-radius:8px;background:#15101f;color:#e7defb;border:1px solid #463a63"></select>
+        <select id="dbgEnh" style="flex:1;min-width:0;padding:7px;border-radius:8px;background:#15101f;color:#e7defb;border:1px solid #463a63"></select>
+        <button id="dbgAddCard" class="btn-main" style="padding:7px 10px;border-radius:8px;font-weight:800">＋</button>
+      </div>
+      <button id="dbgMoney" style="width:100%;margin-top:6px;padding:9px;border-radius:9px;font-weight:800;background:linear-gradient(150deg,#2a2545,#1a1730);color:#ffd76a;border:1px solid #ffd76a44;cursor:pointer">💰 자금 +$50</button>
+    </div>
+  </div>
+
 
   <div class="modal" id="victoryModal">
     <div class="mode-sheet">
@@ -5576,8 +5613,64 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-skipguard";
+    const JR_BUILD = "2026-06-22-debugmode";
     console.log("[jokerrun] build", JR_BUILD);
+
+    // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
+    // 조커/타로/행성/플레이카드를 현재 런에 즉시 추가. 테스트 전용.
+    function initDebug() {
+      try {
+        const sp = new URL(location.href).searchParams;
+        if (sp.get("debug") === "1") localStorage.setItem("jokerrun_debug", "1");
+        if (sp.get("debug") === "0") localStorage.removeItem("jokerrun_debug");
+      } catch (_) {}
+      let on = false; try { on = localStorage.getItem("jokerrun_debug") === "1"; } catch (_) {}
+      if (!on) return;
+      const fab = $("#dbgFab"); if (!fab) return;
+      fab.style.display = "flex";
+
+      const opt = (v, t) => `<option value="${v}">${t}</option>`;
+      $("#dbgJoker").innerHTML  = jokerPool.map(j => opt(j.id, `${j.name} (${j.id})`)).join("");
+      $("#dbgTarot").innerHTML  = tarotPool.map(t => opt(t.id, `${t.name} (${t.id})`)).join("");
+      $("#dbgPlanet").innerHTML = planetPool.map(p => opt(p.id, `${p.planet || ""} ${p.name}`)).join("");
+      $("#dbgRank").innerHTML   = rankList.map(r => opt(r, formatRank(r))).join("");
+      $("#dbgSuit").innerHTML   = suits.map(s => opt(s, suitSymbol[s])).join("");
+      $("#dbgEnh").innerHTML    = `<option value="">강화없음</option>` + Object.keys(ENH).map(k => opt(k, ENH[k].label)).join("");
+
+      fab.addEventListener("click", () => $("#dbgModal").classList.add("show"));
+      $("#dbgClose").addEventListener("click", () => $("#dbgModal").classList.remove("show"));
+      $("#dbgModal").addEventListener("click", (e) => { if (e.target.id === "dbgModal") $("#dbgModal").classList.remove("show"); });
+
+      $("#dbgAddJoker").addEventListener("click", () => {
+        const j = jokerPool.find(x => x.id === $("#dbgJoker").value); if (!j) return;
+        const neg = $("#dbgJokerNeg").checked;
+        state.jokers.push({ ...j, counter: 0, ...(neg ? { negative: true } : {}) });
+        markDiscovered("joker", j.id); renderHUD();
+        setInfo(`🐞 조커 추가: ${j.name}${neg ? " 🌑" : ""}`);
+      });
+      $("#dbgAddTarot").addEventListener("click", () => {
+        const t = tarotPool.find(x => x.id === $("#dbgTarot").value); if (!t) return;
+        state.tarotCards.push({ ...t }); markDiscovered("tarot", t.id); refreshConsumables();
+        setInfo(`🐞 타로 추가: ${t.name}`);
+      });
+      $("#dbgAddPlanet").addEventListener("click", () => {
+        const p = planetPool.find(x => x.id === $("#dbgPlanet").value); if (!p) return;
+        state.planetCards.push({ ...p }); markDiscovered("planet", p.id); refreshConsumables();
+        setInfo(`🐞 행성 추가: ${p.name}`);
+      });
+      $("#dbgAddCard").addEventListener("click", () => {
+        const rank = parseInt($("#dbgRank").value, 10), suit = $("#dbgSuit").value, enh = $("#dbgEnh").value || null;
+        if (!state.runDeck) state.runDeck = buildRunDeck();
+        state.extraCards = state.extraCards || [];
+        state.extraCards.push({ suit, rank });
+        const cid = state._deckUid++;
+        state.runDeck.push({ id: cid, suit, rank, enh });
+        if (state.deck) state.deck.push({ id: cid, suit, rank, enh });   // 이번 라운드 드로우 더미에도 즉시 추가
+        renderHUD();
+        setInfo(`🐞 카드 추가: ${formatRank(rank)}${suitSymbol[suit]}${enh ? ` [${ENH[enh].label}]` : ""}`);
+      });
+      $("#dbgMoney").addEventListener("click", () => { state.money = (state.money || 0) + 50; renderHUD(); setInfo("🐞 자금 +$50"); });
+    }
     (async () => {
       if ((typeof SharedWallet !== "undefined" && SharedWallet)) {
         try { await SharedWallet.init(); } catch (_) {}
@@ -5589,6 +5682,7 @@
       // 보드는 미리 구성해두되(모달 없이), 시작 화면을 먼저 노출 (온보딩 + 오디오 언락)
       startRound(0);
       $("#startScreen").classList.add("show");
+      initDebug();
     })();
   </script>
     <script src="/lib/site-meta.js"></script>
