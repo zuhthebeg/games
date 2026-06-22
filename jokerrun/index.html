@@ -1354,6 +1354,25 @@
     .sg-pick:active { transform: scale(.98); }
     @keyframes psDeal { from { transform: translateY(18px) scale(.82); opacity: 0; } to { transform: none; opacity: 1; } }
 
+    /* 적 HP 바 — 공격할 때마다 깎인다(던전 테마) */
+    .enemy-hp { margin: 2px 0 6px; }
+    .enemy-hp-bar {
+      position: relative; height: 14px; border-radius: 8px; overflow: hidden;
+      background: linear-gradient(180deg, #2a1016, #1a0a0e);
+      border: 1px solid rgba(255, 90, 110, 0.35); box-shadow: inset 0 1px 3px rgba(0,0,0,.5);
+    }
+    .enemy-hp-fill {
+      height: 100%; width: 100%;
+      background: linear-gradient(90deg, #ff3b5c, #ff6b4a 60%, #ffb24a);
+      box-shadow: 0 0 10px rgba(255, 70, 90, 0.6);
+      transition: width .55s cubic-bezier(.3,.8,.3,1);
+    }
+    .enemy-hp-fill.low { background: linear-gradient(90deg, #ff2d4d, #ff5a3c); animation: hpPulse 0.9s ease-in-out infinite; }
+    @keyframes hpPulse { 0%,100%{opacity:1} 50%{opacity:.65} }
+    .enemy-hp-num {
+      text-align: center; font-size: .68rem; font-weight: 800; margin-top: 2px;
+      color: #ffb3bd; letter-spacing: .02em; font-variant-numeric: tabular-nums;
+    }
     .score-inline {
       display: flex;
       align-items: center;
@@ -2661,6 +2680,10 @@
 
     <section class="table glass">
       <div class="boss-banner" id="bossBanner" hidden></div>
+      <div class="enemy-hp" aria-label="enemy hp">
+        <div class="enemy-hp-bar"><div class="enemy-hp-fill" id="enemyHpFill"></div></div>
+        <div class="enemy-hp-num"><span id="enemyHpRemain">0</span> / <span id="enemyHpMax">0</span></div>
+      </div>
       <div class="score-inline">
         <span class="chips-readout"><span data-i18n="atk_power">공격력</span> <b id="chipsLabel">0</b></span>
         <span class="mult-readout"><span data-i18n="combo">연격</span> <b id="multLabel">x1</b></span>
@@ -4867,11 +4890,24 @@
       }
     }
 
+    // 적 HP 바 갱신 — cur(누적 데미지)만큼 깎인 잔여 HP를 바/숫자로 표시. CSS width 트랜지션으로 부드럽게.
+    function updateEnemyHp(cur) {
+      const target = activeTarget();
+      const score = (cur == null) ? state.score : cur;
+      const remain = Math.max(0, target - Math.floor(score));
+      const pct = target > 0 ? (remain / target) * 100 : 0;
+      const fill = $("#enemyHpFill");
+      if (fill) { fill.style.width = pct + "%"; fill.classList.toggle("low", pct <= 25); }
+      const r = $("#enemyHpRemain"), m = $("#enemyHpMax");
+      if (r) r.textContent = remain.toLocaleString();
+      if (m) m.textContent = target.toLocaleString();
+    }
     function renderHUD(chips = 0, mult = 1) {
       $("#roundLabel").textContent = activeRoundLabel();
       $("#anteBlindLabel").textContent = t("ui_ante_blind", { ante: state.ante, blind: state.roundIndex + 1 });
       $("#targetLabel").textContent = activeTarget().toLocaleString();
       $("#scoreLabel").textContent = state.score.toLocaleString();
+      updateEnemyHp();
       $("#moneyLabel").textContent = `🪙${state.money}`;
       $("#handsLabel").textContent = String(state.handsLeft);
       $("#discardsLabel").textContent = String(state.discardsLeft);
@@ -5221,6 +5257,7 @@
       AudioFX.play("score");
       await runAnime({ targets: finalFx, opacity: [1, 0], translateY: [0, -14], duration: 180, easing: "easeInQuad" });
 
+      updateEnemyHp(nextScore);   // 데미지 카운트업과 동시에 적 HP 바 깎임(0.55s CSS 트랜지션)
       await runCountUp(scoreEl, nextScore, { duration: 0.55, startVal: prevScore });
       const total = $("#scoreLabel");
       total.classList.remove("pulse");
@@ -6433,7 +6470,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-enaudit";
+    const JR_BUILD = "2026-06-22-hpbar";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
