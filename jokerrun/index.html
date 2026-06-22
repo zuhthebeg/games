@@ -2930,7 +2930,7 @@
       <p id="gameOverAnteText" style="color:var(--muted);font-size:13px;margin-bottom:16px;"></p>
       <p id="gameOverHighScore" style="color:var(--gold);font-size:13px;margin-bottom:20px;"></p>
       <button id="gameOverContinueBtn" onclick="restoreRun()" data-i18n="continue_run" style="display:none;width:100%;padding:12px;margin-bottom:9px;background:linear-gradient(150deg,#2e7d4f,#1f6b3e);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">↩️ 이어하기 — 마지막 공격 다시</button>
-      <button onclick="newRun()" style="width:100%;padding:12px;background:linear-gradient(150deg,var(--red-start),var(--red-end));color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;" data-i18n="restart">다시 시작</button>
+      <button onclick="goToStartScreen()" style="width:100%;padding:12px;background:linear-gradient(150deg,var(--red-start),var(--red-end));color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;" data-i18n="restart">다시 시작</button>
     </div>
   </div>
 
@@ -6373,7 +6373,7 @@
     });
     $("#cashoutContinueBtn").addEventListener("click", continueFromCashout);
     $("#shopContinueBtn").addEventListener("click", window.continueFromShop);
-    $("#victoryConfirmBtn").addEventListener("click", newRun);
+    $("#victoryConfirmBtn").addEventListener("click", goToStartScreen);
 
 
     // ── 시작 화면 ──
@@ -6394,6 +6394,15 @@
       $("#helpModal").classList.remove("show");
       $("#startScreen").classList.remove("show");
       newRun();
+    }
+    // 게임 종료(패배/완주) 후 "다시 시작" → 바로 Hunt 1로 가지 말고 메인(시작화면)으로.
+    // 함수 선언(호이스팅)으로 둬야 위쪽 victoryConfirmBtn 리스너 등록 시점에도 참조 가능 + inline onclick에서 전역 접근.
+    function goToStartScreen() {
+      clearRunActive(); clearSavedRun();   // 죽은 런 폐기 — 시작화면 이어하기 미노출
+      try { closeShop(); closeDeckModal(); closeVictoryModal(); } catch (_) {}
+      document.getElementById("gameOverModal").classList.remove("show");
+      refreshStartHighScore();             // 최고기록 갱신 + 이어하기 버튼 숨김
+      $("#startScreen").classList.add("show");
     }
     // ── 설정 모달 ──
     const SPEED_OPTS = [
@@ -6497,7 +6506,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-icufix";
+    const JR_BUILD = "2026-06-22-restartmain";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
