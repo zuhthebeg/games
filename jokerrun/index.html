@@ -4564,6 +4564,12 @@
     // ── 세이브/이어하기 ── localStorage에 "마지막 핸드 차례 시작(템 사용 전)" 스냅샷을 저장.
     // 게임오버 시 이 시점으로 복원 → 마지막 핸드를 다른 카드/템으로 다시 시도(블라인드 전체 부활은 아님).
     const SAVE_KEY = "jokerrun_continue";
+    // 실제 플레이 중인 런 표식: 페이지가 (모바일 웹뷰 백그라운드 복귀/메모리 등으로) 리로드돼도
+    // 시작화면이 아니라 진행 중이던 게임으로 자동 복귀시키기 위한 플래그. init의 사전-스냅샷과 구분용.
+    const ACTIVE_KEY = "jokerrun_active";
+    function markRunActive() { try { localStorage.setItem(ACTIVE_KEY, "1"); } catch (_) {} }
+    function clearRunActive() { try { localStorage.removeItem(ACTIVE_KEY); } catch (_) {} }
+    function isRunActive() { try { return localStorage.getItem(ACTIVE_KEY) === "1"; } catch (_) { return false; } }
     function snapshotRun() {
       try {
         if (!state.runDeck || state.gameEnded) return;
@@ -4633,6 +4639,7 @@
       sortHand(); renderCards(); renderBossBanner(); renderHUD(); updateHandPreview();
       try { BGM.setTrack(state.isBossBlind ? "boss" : BGM.playKey(state.ante)); } catch (_) {}
       setInfo("↩️ 이어하기 — 마지막 핸드를 다시 시도하세요.");
+      markRunActive();   // 리로드돼도 이 런으로 자동 복귀
       return true;
     }
     window.restoreRun = restoreRun;
@@ -5476,6 +5483,7 @@
       closeDeckModal();
       closeVictoryModal();
       document.getElementById("gameOverModal").classList.remove("show");
+      markRunActive();   // 리로드돼도 이 런으로 자동 복귀
       beginBlind(0);
     }
 
@@ -5484,6 +5492,7 @@
       const prev = parseInt(localStorage.getItem("jokerrun_hs") || "0", 10);
       const isNew = totalScore > prev;
       if (isNew) localStorage.setItem("jokerrun_hs", String(totalScore));
+      clearRunActive(); clearSavedRun();   // 런 완주 → 자동 복귀 대상 아님(다음 로드는 시작화면)
       const message = `🏆 런 클리어! 8앤티 완주!\n최종 점수 ${totalScore.toLocaleString()}점${isNew ? " — 신기록!" : ""}`;
       openVictoryModal(message);
       spawnWinConfetti();
@@ -5613,7 +5622,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-debugmode";
+    const JR_BUILD = "2026-06-22-autoresume";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
@@ -5679,9 +5688,18 @@
       updateGoldLabel();
       refreshStartHighScore();
       BGM.init();
-      // 보드는 미리 구성해두되(모달 없이), 시작 화면을 먼저 노출 (온보딩 + 오디오 언락)
-      startRound(0);
-      $("#startScreen").classList.add("show");
+      // 진행 중이던 런이 있으면(=모바일 웹뷰가 게임 도중 리로드한 경우) 시작화면으로 튕기지 않고
+      // 자동으로 그 런으로 복귀한다. 반드시 startRound(0)보다 먼저 — startRound(0)이 세이브를
+      // init 스냅샷으로 덮어쓰기 때문. 신규/완주 후 방문은 ACTIVE 플래그가 없어 정상적으로 시작화면.
+      let _resumed = false;
+      if (isRunActive() && hasSavedRun()) {
+        try { _resumed = restoreRun(); } catch (_) { _resumed = false; }
+      }
+      if (!_resumed) {
+        // 보드는 미리 구성해두되(모달 없이), 시작 화면을 먼저 노출 (온보딩 + 오디오 언락)
+        startRound(0);
+        $("#startScreen").classList.add("show");
+      }
       initDebug();
     })();
   </script>
