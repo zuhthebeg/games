@@ -5258,11 +5258,19 @@
     }
     function skipBlind(index) {
       $("#blindSelectModal").classList.remove("show");
-      const opt = state._skipReward || rollSkipReward();
+      // 방탄: 보상 적용이 어떤 이유로든 throw해도 게임이 멈추거나 메인으로 튕기지 않고
+      // 반드시 다음 블라인드로 진입하게 한다(스킵 보상은 부가효과일 뿐, 진행이 우선).
+      const opt = state._skipReward || rollSkipReward() || { icon: "🎁", label: "보상", run: () => "보상 없음" };
       state._skipReward = null;
-      const rewardText = opt.run();
-      addLog(`${["스몰", "빅"][index] || "블라인드"} 블라인드 스킵 — ${rewardText}`);
-      renderHUD(); refreshConsumables();
+      let rewardText;
+      try {
+        rewardText = opt.run();
+      } catch (e) {
+        console.error("skip reward run failed:", e);
+        rewardText = `${opt.label || "보상"} (적용 중 오류 — 다음 블라인드로 진행)`;
+      }
+      try { addLog(`${["스몰", "빅"][index] || "블라인드"} 블라인드 스킵 — ${rewardText}`); } catch (_) {}
+      try { renderHUD(); refreshConsumables(); } catch (e) { console.error("skip render failed:", e); }
       // 무엇을 받았는지 확인창을 띄우고, 확인을 눌러야 다음 블라인드 진입.
       $("#skipResultIcon").textContent = opt.icon || "🎁";
       $("#skipResultName").textContent = opt.label || "보상";
@@ -5568,6 +5576,8 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
+    const JR_BUILD = "2026-06-22-skipguard";
+    console.log("[jokerrun] build", JR_BUILD);
     (async () => {
       if ((typeof SharedWallet !== "undefined" && SharedWallet)) {
         try { await SharedWallet.init(); } catch (_) {}
