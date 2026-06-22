@@ -2595,44 +2595,44 @@
   <div class="start-screen show" id="startScreen">
     <div class="start-card">
       <div class="start-logo">🃏</div>
-      <h1 class="start-title">조커런</h1>
+      <h1 class="start-title" data-i18n="brand_title">조커런</h1>
       <p class="start-tagline" data-i18n-html="tagline">카드를 짜서 적을 공격하고, 조커로 데미지를 폭발시켜라.<br>던전을 격파하는 카드 로그라이크.</p>
       <div class="start-hs" id="startHighScore">최고 기록: 0점</div>
-      <button class="start-continue" id="startContinueBtn" style="display:none">↩️ 이어하기</button>
+      <button class="start-continue" id="startContinueBtn" style="display:none" data-i18n="start_continue">↩️ 이어하기</button>
       <button class="start-play" id="startPlayBtn" data-i18n="play">▶ 플레이</button>
-      <button class="start-help" id="startHelpBtn">＂어떻게 하는 거야?＂ — 도움말</button>
+      <button class="start-help" id="startHelpBtn" data-i18n="start_help">＂어떻게 하는 거야?＂ — 도움말</button>
     </div>
   </div>
 
   <div class="modal" id="helpModal">
     <div class="help-sheet">
       <div class="help-head">
-        <div class="title">조커런 가이드</div>
+        <div class="title" data-i18n="help_title">조커런 가이드</div>
         <button class="help-close" id="helpCloseBtn" aria-label="닫기">✕</button>
       </div>
       <div class="help-body">
         <div class="help-block">
-          <b>① 데미지 = 공격력 × 연격</b>
-          <p>손패 8장 중 최대 5장을 골라 <em>포커 기술</em>를 만들면 <b>공격력</b>과 <b>연격</b>가 정해진다. 둘을 곱한 값이 데미지. 목표 데미지를 넘기면 전투 클리어.</p>
+          <b data-i18n="help_b1">① 데미지 = 공격력 × 연격</b>
+          <p data-i18n-html="help_p1">손패 8장 중 최대 5장을 골라 <em>포커 기술</em>을 만들면 <b>공격력</b>과 <b>연격</b>이 정해진다. 둘을 곱한 값이 데미지. 적 HP를 넘기면 전투 클리어.</p>
         </div>
         <div class="help-block">
-          <b>② 공격 & 버리기</b>
-          <p>전투마다 <b>플레이 횟수</b>와 <b>버리기 횟수</b>가 제한된다. 별로인 패는 버리고 새로 뽑아 더 좋은 기술를 노려라.</p>
+          <b data-i18n="help_b2">② 공격 & 버리기</b>
+          <p data-i18n-html="help_p2">전투마다 <b>공격 횟수</b>와 <b>버리기 횟수</b>가 제한된다. 별로인 패는 버리고 새로 뽑아 더 좋은 기술을 노려라.</p>
         </div>
         <div class="help-block">
-          <b>③ 조커 = 빌드의 핵심</b>
-          <p>클리어 보상 $로 상점에서 <b>조커</b>를 산다. 조커는 데미지 계산에 끼어들어 공격력·연격를 뻥튀기한다. <em>눈덩이·복리</em>처럼 굴릴수록 커지는 조커를 일찍 잡으면 후반이 폭발한다. 슬롯은 5칸.</p>
+          <b data-i18n="help_b3">③ 조커 = 빌드의 핵심</b>
+          <p data-i18n-html="help_p3">전투 보상 주화로 상점에서 <b>조커</b>를 산다. 조커는 데미지 계산에 끼어들어 공격력·연격을 뻥튀기한다. <em>눈덩이·복리</em>처럼 굴릴수록 커지는 조커를 일찍 잡으면 후반이 폭발한다. 슬롯은 5칸.</p>
         </div>
         <div class="help-block">
-          <b>④ 플래닛 카드</b>
-          <p>특정 기술를 <b>영구 강화</b>한다. 자주 쓰는 기술에 투자하면 같은 패로 점점 높은 데미지가 나온다.</p>
+          <b data-i18n="help_b4">④ 무기강화</b>
+          <p data-i18n-html="help_p4">특정 기술을 <b>영구 강화</b>한다. 자주 쓰는 기술에 투자하면 같은 패로 점점 높은 데미지가 나온다.</p>
         </div>
         <div class="help-block">
-          <b>⑤ 보스 전투</b>
-          <p>각 앤티의 3번째 전투는 <em>제약(버리기 불가·문양 봉인 등)</em>이 걸린 보스다. 조커 빌드로 정면 돌파하라.</p>
+          <b data-i18n="help_b5">⑤ 보스 전투</b>
+          <p data-i18n-html="help_p5">각 사냥의 3번째 전투는 <em>제약(버리기 불가·문양 봉인 등)</em>이 걸린 보스다. 조커 빌드로 정면 돌파하라.</p>
         </div>
       </div>
-      <button class="btn-main help-start" id="helpStartBtn">바로 시작 →</button>
+      <button class="btn-main help-start" id="helpStartBtn" data-i18n="help_start">바로 시작 →</button>
     </div>
   </div>
 
@@ -2670,10 +2670,10 @@
       <div class="info-line" id="handResult" data-i18n="hand_hint">공격할 카드를 선택하세요.</div>
       <div class="cards-wrap" id="cardsWrap"></div>
       <div class="hand-bottom">
-        <div class="info-line" id="handGuide">손패 8장 중 최대 5장을 선택</div>
+        <div class="info-line" id="handGuide" data-i18n="ui_hand_guide_5">손패 8장 중 최대 5장을 선택</div>
         <button id="handsInfoBtn" class="deck-btn" type="button" data-i18n="skills">📊 기술</button>
         <button id="tarotInfoBtn" class="deck-btn" type="button" data-i18n="scrolls">📜 주문서</button>
-        <button id="collectionBtn" class="deck-btn" type="button">📖 도감</button>
+        <button id="collectionBtn" class="deck-btn" type="button" data-i18n="collection_btn">📖 도감</button>
         <button id="deckBtn" class="deck-btn" type="button" data-i18n="deck">🃏 덱</button>
       </div>
     </section>
@@ -2717,13 +2717,13 @@
     <div class="deck-modal">
       <div class="deck-title">
         <div class="title" id="deckModalTitle">남은 카드 (0장)</div>
-        <button class="deck-sort-btn" id="deckSortBtn" type="button">정렬: 무늬별</button>
+        <button class="deck-sort-btn" id="deckSortBtn" type="button" data-i18n="ui_sort_suit">정렬: 무늬별</button>
       </div>
       <div class="suit-counts" id="deckSuitCounts">♥0 ♦0 ♣0 ♠0</div>
       <div class="deck-grid" id="deckGrid"></div>
-      <div class="deck-legend">밝은 카드 = 덱에 남음 · 흐린 카드 = 이미 뽑힘</div>
+      <div class="deck-legend" data-i18n="deck_legend">밝은 카드 = 덱에 남음 · 흐린 카드 = 이미 뽑힘</div>
       <div class="row" style="justify-content:flex-end;">
-        <button class="btn-main" id="closeDeckBtn">닫기</button>
+        <button class="btn-main" id="closeDeckBtn" data-i18n="close">닫기</button>
       </div>
     </div>
   </div>
@@ -2735,7 +2735,7 @@
       </div>
       <div id="handsInfoBody" style="overflow-y:auto;max-height:60vh"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px;">
-        <button class="btn-main" id="closeHandsBtn">닫기</button>
+        <button class="btn-main" id="closeHandsBtn" data-i18n="close">닫기</button>
       </div>
     </div>
   </div>
@@ -2753,7 +2753,7 @@
 
   <div class="modal" id="cashoutModal">
     <div class="mode-sheet" style="text-align:center">
-      <div class="title">💰 정산 완료</div>
+      <div class="title" data-i18n="ui_cashout_title">💰 정산 완료</div>
       <div id="cashoutBody" style="margin:8px 0 2px"></div>
       <div class="co-total-big">+$<span id="cashoutTotal">0</span></div>
       <button class="btn-main" id="cashoutContinueBtn" data-i18n="to_shop" style="padding:12px;border-radius:12px;font-weight:800">정비하러 →</button>
@@ -2783,11 +2783,11 @@
   <div class="modal" id="tarotModal">
     <div class="deck-modal">
       <div class="deck-title">
-        <div class="title">🔮 타로 카드 도감</div>
+        <div class="title" data-i18n="tarot_collection_title">🔮 타로 카드 도감</div>
       </div>
       <div id="tarotCodexBody" style="overflow-y:auto;max-height:64vh"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px;">
-        <button class="btn-main" id="closeTarotBtn">닫기</button>
+        <button class="btn-main" id="closeTarotBtn" data-i18n="close">닫기</button>
       </div>
     </div>
   </div>
@@ -2795,29 +2795,29 @@
   <div class="modal" id="collectionModal">
     <div class="deck-modal">
       <div class="deck-title">
-        <div class="title">📖 도감</div>
+        <div class="title" data-i18n="collection_title">📖 도감</div>
         <div id="collectionCount" style="font-size:.74rem;color:var(--muted)"></div>
       </div>
       <div class="col-tabs">
-        <button class="col-tab active" data-ctab="joker" type="button">조커</button>
+        <button class="col-tab active" data-ctab="joker" type="button" data-i18n="joker">조커</button>
         <button class="col-tab" data-ctab="tarot" type="button" data-i18n="scroll">주문서</button>
         <button class="col-tab" data-ctab="planet" type="button" data-i18n="weapon_up">무기강화</button>
       </div>
       <div id="collectionBody" style="overflow-y:auto;max-height:60vh"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px;">
-        <button class="btn-main" id="closeCollectionBtn">닫기</button>
+        <button class="btn-main" id="closeCollectionBtn" data-i18n="close">닫기</button>
       </div>
     </div>
   </div>
 
   <div class="modal" id="singularityModal">
     <div class="deck-modal">
-      <div class="deck-title"><div class="title">⚫ 특이점 — 레벨 몰빵</div></div>
+      <div class="deck-title"><div class="title" data-i18n="singularity_title">⚫ 특이점 — 레벨 몰빵</div></div>
       <div id="singularityTotal" style="font-weight:800;color:var(--gold);margin:4px 0"></div>
-      <p style="font-size:.76rem;color:var(--muted);margin:0 0 8px">몰빵할 기술를 선택하면 흩어진 모든 기술 레벨이 그 하나로 합쳐집니다. (나머지는 Lv.1로 리셋)</p>
+      <p style="font-size:.76rem;color:var(--muted);margin:0 0 8px" data-i18n="singularity_hint">몰빵할 기술을 선택하면 흩어진 모든 기술 레벨이 그 하나로 합쳐집니다. (나머지는 Lv.1로 리셋)</p>
       <div id="singularityBody" style="display:grid;gap:6px;max-height:52vh;overflow-y:auto"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px;">
-        <button class="btn-main" id="closeSingularityBtn">취소</button>
+        <button class="btn-main" id="closeSingularityBtn" data-i18n="cancel">취소</button>
       </div>
     </div>
   </div>
@@ -2892,22 +2892,22 @@
   <div class="modal" id="victoryModal">
     <div class="mode-sheet">
       <div>
-        <div class="title">런 클리어</div>
+        <div class="title" data-i18n="victory_run_clear">런 클리어</div>
         <div class="subtitle" id="victoryText">보스 전투를 돌파했습니다.</div>
         <div class="subtitle" id="victoryHighScore" style="margin-top:8px;color:var(--gold);">최고 기록: 0점</div>
       </div>
-      <button class="btn-main" id="victoryConfirmBtn">새 런 시작</button>
+      <button class="btn-main" id="victoryConfirmBtn" data-i18n="victory_new_run">새 런 시작</button>
     </div>
   </div>
 
   <div id="gameOverModal" class="modal">
     <div style="background:linear-gradient(150deg,#1a0a0a,#2d1010);border:1px solid rgba(255,100,100,0.3);border-radius:20px;padding:28px 24px;max-width:320px;width:90%;text-align:center;">
       <div style="font-size:48px;margin-bottom:8px;">💀</div>
-      <h2 style="color:#ff7f91;font-size:22px;margin-bottom:4px;">게임 오버</h2>
+      <h2 style="color:#ff7f91;font-size:22px;margin-bottom:4px;" data-i18n="game_over">게임 오버</h2>
       <p id="gameOverAnteText" style="color:var(--muted);font-size:13px;margin-bottom:16px;"></p>
       <p id="gameOverHighScore" style="color:var(--gold);font-size:13px;margin-bottom:20px;"></p>
       <button id="gameOverContinueBtn" onclick="restoreRun()" data-i18n="continue_run" style="display:none;width:100%;padding:12px;margin-bottom:9px;background:linear-gradient(150deg,#2e7d4f,#1f6b3e);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">↩️ 이어하기 — 마지막 공격 다시</button>
-      <button onclick="newRun()" style="width:100%;padding:12px;background:linear-gradient(150deg,var(--red-start),var(--red-end));color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">다시 시작</button>
+      <button onclick="newRun()" style="width:100%;padding:12px;background:linear-gradient(150deg,var(--red-start),var(--red-end));color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;" data-i18n="restart">다시 시작</button>
     </div>
   </div>
 
@@ -2920,7 +2920,7 @@
       <span class="joker-popup-cost" id="jokerPopupCost"></span>
       <button id="jokerPopupAction" class="jp-action" style="display:none"></button>
       <button id="jokerPopupAction2" class="jp-action" style="display:none;background:linear-gradient(120deg,#ffb24a,#ff8f4a);color:#2a1d05"></button>
-      <button onclick="closeJokerPopup()">닫기</button>
+      <button onclick="closeJokerPopup()" data-i18n="close">닫기</button>
     </div>
   </div>
 
@@ -2993,20 +2993,20 @@
 
     const jokerPool = [
       { id: "flat50", name: "공격력 폭탄", cost: 6, desc: "공격력 +50", detail: "공격 데미지 계산 시 고정으로 공격력 +50.", apply(ctx) { ctx.chips += 50; ctx.activate("flat50"); } },
-      { id: "flushx2", name: "물결 조커", cost: 7, desc: "플러시면 연격 x2", detail: "플러시 또는 스트레이트 플러시를 만들면 연격를 두 배로 만듭니다.", apply(ctx) { if (isFlushHand(ctx.handType)) { ctx.mult *= 2; ctx.activate("flushx2"); } } },
+      { id: "flushx2", name: "물결 조커", cost: 7, desc: "플러시면 연격 x2", detail: "플러시 또는 스트레이트 플러시를 만들면 연격을 두 배로 만듭니다.", apply(ctx) { if (isFlushHand(ctx.handType)) { ctx.mult *= 2; ctx.activate("flushx2"); } } },
       { id: "perCardMult", name: "계산기 조커", cost: 5, desc: "카드당 연격 +1", detail: "플레이한 카드 1장마다 연격 +1이 추가됩니다.", apply(ctx) { const add = ctx.cards.length; if (add > 0) { ctx.mult += add; ctx.activate("perCardMult"); } } },
       { id: "heartChip", name: "붉은 인장", cost: 5, desc: "하트당 공격력 +15", detail: "선택한 카드 중 하트 1장당 공격력 +15.", apply(ctx) { const hearts = ctx.scored.filter(c => c.suit === "heart").length; if (hearts > 0) { ctx.chips += hearts * 15; ctx.activate("heartChip"); } } },
       { id: "pairBoost", name: "듀오 증폭기", cost: 8, desc: "원페어 이상 연격 +2", detail: "원페어 이상 기술에서 연격 +2.", apply(ctx) { if (ctx.handType !== "HIGH_CARD") { ctx.mult += 2; ctx.activate("pairBoost"); } } },
       { id: "goldDice", name: "황금 주사위", cost: 6, desc: "공격마다 공격력 +1~50", detail: "매 공격 데미지 계산 시 공격력에 +1~50 랜덤 추가.", apply(ctx) { ctx.chips += Math.floor(Math.random() * 50) + 1; ctx.activate("goldDice"); } },
       { id: "spadeAce", name: "스페이드 에이스", cost: 7, desc: "스페이드당 연격 +0.5", detail: "선택한 카드의 스페이드 1장마다 연격 +0.5.", apply(ctx) { const count = ctx.scored.filter(c => c.suit === "spade").length; if (count > 0) { ctx.mult += count * 0.5; ctx.activate("spadeAce"); } } },
       { id: "luckySeven", name: "럭키 세븐", cost: 8, desc: "7 카드당 공격력 +77", detail: "선택한 카드 중 숫자 7이 포함될 때마다 공격력 +77.", apply(ctx) { const count = ctx.scored.filter(c => c.rank === 7).length; if (count > 0) { ctx.chips += count * 77; ctx.activate("luckySeven"); } } },
-      { id: "doubleDown", name: "더블 다운", cost: 10, desc: "투페어면 연격 x2", detail: "기술가 투페어(TWO_PAIR)일 때 연격 x2.", apply(ctx) { if (ctx.handType === "TWO_PAIR") { ctx.mult *= 2; ctx.activate("doubleDown"); } } },
-      { id: "fullHouseFan", name: "풀하우스 팬", cost: 9, desc: "풀하우스면 공격력 +100", detail: "기술가 풀하우스(FULL_HOUSE)면 공격력 +100.", apply(ctx) { if (isFullHouseHand(ctx.handType)) { ctx.chips += 100; ctx.activate("fullHouseFan"); } } },
-      { id: "straightRunner", name: "스트레이트 러너", cost: 8, desc: "스트레이트면 연격 +3", detail: "기술가 스트레이트(STRAIGHT)일 때 연격 +3.", apply(ctx) { if (isStraightHand(ctx.handType)) { ctx.mult += 3; ctx.activate("straightRunner"); } } },
+      { id: "doubleDown", name: "더블 다운", cost: 10, desc: "투페어면 연격 x2", detail: "기술이 투페어(TWO_PAIR)일 때 연격 x2.", apply(ctx) { if (ctx.handType === "TWO_PAIR") { ctx.mult *= 2; ctx.activate("doubleDown"); } } },
+      { id: "fullHouseFan", name: "풀하우스 팬", cost: 9, desc: "풀하우스면 공격력 +100", detail: "기술이 풀하우스(FULL_HOUSE)면 공격력 +100.", apply(ctx) { if (isFullHouseHand(ctx.handType)) { ctx.chips += 100; ctx.activate("fullHouseFan"); } } },
+      { id: "straightRunner", name: "스트레이트 러너", cost: 8, desc: "스트레이트면 연격 +3", detail: "기술이 스트레이트(STRAIGHT)일 때 연격 +3.", apply(ctx) { if (isStraightHand(ctx.handType)) { ctx.mult += 3; ctx.activate("straightRunner"); } } },
       { id: "diamondMiner", name: "다이아몬드 광부", cost: 6, desc: "다이아당 공격력 +12", detail: "선택한 카드 중 다이아몬드 1장당 공격력 +12.", apply(ctx) { const count = ctx.scored.filter(c => c.suit === "diamond").length; if (count > 0) { ctx.chips += count * 12; ctx.activate("diamondMiner"); } } },
       { id: "clubKing", name: "클럽 킹", cost: 7, desc: "클럽 페이스당 연격 +1", detail: "클럽 문양의 J/Q/K 1장마다 연격 +1.", apply(ctx) { const count = ctx.scored.filter(c => c.suit === "club" && c.rank >= 11 && c.rank <= 13).length; if (count > 0) { ctx.mult += count; ctx.activate("clubKing"); } } },
       { id: "allInClown", name: "올인 광대", cost: 12, desc: "5장 플레이 시 연격 x1.5", detail: "정확히 5장을 선택해 플레이하면 연격 x1.5.", apply(ctx) { if (ctx.cards.length === 5) { ctx.mult *= 1.5; ctx.activate("allInClown"); } } },
-      { id: "fourMaster", name: "포카드 마스터", cost: 15, desc: "포카드면 연격 x4", detail: "기술가 포카드(FOUR)면 연격 x4. 신화 등급.", apply(ctx) { if (ctx.handType === "FOUR" || isFiveHand(ctx.handType)) { ctx.mult *= 4; ctx.activate("fourMaster"); } } },
+      { id: "fourMaster", name: "포카드 마스터", cost: 15, desc: "포카드면 연격 x4", detail: "기술이 포카드(FOUR)면 연격 x4. 신화 등급.", apply(ctx) { if (ctx.handType === "FOUR" || isFiveHand(ctx.handType)) { ctx.mult *= 4; ctx.activate("fourMaster"); } } },
       { id: "acePower", name: "에이스 파워", cost: 9, desc: "에이스당 공격력 +30", detail: "선택한 카드의 에이스(14) 1장당 공격력 +30.", apply(ctx) { const n = ctx.scored.filter(c => c.rank === 14).length; if (n > 0) { ctx.chips += n * 30; ctx.activate("acePower"); } } },
       { id: "faceCard", name: "페이스 카드", cost: 7, desc: "J/Q/K당 연격 +0.75", detail: "J/Q/K 1장당 연격 +0.75.", apply(ctx) { const n = ctx.scored.filter(c => c.rank >= 11 && c.rank <= 13).length; if (n > 0) { ctx.mult += n * 0.75; ctx.activate("faceCard"); } } },
       { id: "evenSteven", name: "짝수 마법사", cost: 6, desc: "짝수 카드당 공격력 +8", detail: "2~10 짝수 카드 1장당 공격력 +8.", apply(ctx) { const n = ctx.scored.filter(c => c.rank % 2 === 0 && c.rank <= 10).length; if (n > 0) { ctx.chips += n * 8; ctx.activate("evenSteven"); } } },
@@ -3014,7 +3014,7 @@
       { id: "fourFlush", name: "4색 조커", cost: 8, desc: "4가지 무늬 사용 시 연격 x2", detail: "선택한 카드의 무늬가 4종 이상이면 연격 x2.", apply(ctx) { if (new Set(ctx.scored.map(c => c.suit)).size >= 4) { ctx.mult *= 2; ctx.activate("fourFlush"); } } },
       { id: "streakBonus", name: "연속 보너스", cost: 10, desc: "스트레이트면 공격력+연격 모두 +5", detail: "스트레이트/스트레이트 플러시일 때 공격력+5, 연격+5.", apply(ctx) { if (isStraightHand(ctx.handType)) { ctx.chips += 5; ctx.mult += 5; ctx.activate("streakBonus"); } } },
       { id: "chipRain", name: "공격력 비", cost: 11, desc: "공격당 랜덤 공격력 +10~100", detail: "매 공격 데미지 계산 시 공격력 +10~100 랜덤 추가.", apply(ctx) { ctx.chips += Math.floor(Math.random() * 91) + 10; ctx.activate("chipRain"); } },
-      { id: "royalFlush", name: "로열 조커", cost: 14, desc: "스트레이트 플러시면 연격 x4", detail: "기술가 스트레이트 플러시이면 연격 x4. 신화 등급.", apply(ctx) { if (isStraightFlushHand(ctx.handType)) { ctx.mult *= 4; ctx.activate("royalFlush"); } } },
+      { id: "royalFlush", name: "로열 조커", cost: 14, desc: "스트레이트 플러시면 연격 x4", detail: "기술이 스트레이트 플러시이면 연격 x4. 신화 등급.", apply(ctx) { if (isStraightFlushHand(ctx.handType)) { ctx.mult *= 4; ctx.activate("royalFlush"); } } },
       { id: "lowCard", name: "로우 카드", cost: 5, desc: "2~5 카드당 공격력 +10", detail: "2~5 카드 1장당 공격력 +10.", apply(ctx) { const n = ctx.scored.filter(c => c.rank <= 5).length; if (n > 0) { ctx.chips += n * 10; ctx.activate("lowCard"); } } },
       { id: "highCard", name: "하이 카드", cost: 5, desc: "10 이상 카드당 연격 +0.5", detail: "10 이상 카드 1장당 연격 +0.5.", apply(ctx) { const n = ctx.scored.filter(c => c.rank >= 10).length; if (n > 0) { ctx.mult += n * 0.5; ctx.activate("highCard"); } } },
       { id: "trioMult", name: "트리오 증폭", cost: 9, desc: "트리플 이상이면 연격 x2", detail: "트리플/풀하우스/포카드면 연격 x2.", apply(ctx) { if (["THREE", "FULL_HOUSE", "FOUR", "FLUSH_HOUSE", "FIVE", "FLUSH_FIVE"].includes(ctx.handType)) { ctx.mult *= 2; ctx.activate("trioMult"); } } },
@@ -3036,11 +3036,11 @@
       { id: "theQueen", name: "여왕의 가호", cost: 7, rarity: "uncommon", desc: "Q 1장당 연격 +1.5", detail: "플레이한 퀸(Q) 1장마다 연격 +1.5.", apply(ctx) { const n = ctx.scored.filter(c => c.rank === 12).length; if (n > 0) { ctx.mult += n * 1.5; ctx.activate("theQueen"); } } },
       { id: "flushBank", name: "플러시 금고", cost: 9, rarity: "uncommon", desc: "플러시면 공격력 +70", detail: "플러시/스트레이트 플러시면 공격력 +70.", apply(ctx) { if (isFlushHand(ctx.handType)) { ctx.chips += 70; ctx.activate("flushBank"); } } },
       { id: "allShapes", name: "만물상", cost: 13, rarity: "rare", mult: true, desc: "5장+4무늬면 연격 x2.5", detail: "5장을 내고 무늬가 4종이면 연격 x2.5.", apply(ctx) { if (ctx.cards.length === 5 && new Set(ctx.scored.map(c => c.suit)).size >= 4) { ctx.mult *= 2.5; ctx.activate("allShapes"); } } },
-      { id: "echo", name: "메아리", cost: 11, rarity: "rare", mult: true, desc: "직전과 같은 기술면 연격 x2", detail: "직전 플레이와 같은 기술를 내면 연격 x2. 연속 콤보.", apply(ctx) { if (state.lastHandType && ctx.handType === state.lastHandType) { ctx.mult *= 2; ctx.activate("echo"); } } },
+      { id: "echo", name: "메아리", cost: 11, rarity: "rare", mult: true, desc: "직전과 같은 기술면 연격 x2", detail: "직전 플레이와 같은 기술을 내면 연격 x2. 연속 콤보.", apply(ctx) { if (state.lastHandType && ctx.handType === state.lastHandType) { ctx.mult *= 2; ctx.activate("echo"); } } },
       { id: "lowRoller", name: "로우롤러", cost: 5, rarity: "common", desc: "전부 5 이하면 공격력 +45", detail: "플레이 카드가 모두 5 이하이면 공격력 +45.", apply(ctx) { if (ctx.cards.length && ctx.scored.every(c => c.rank <= 5)) { ctx.chips += 45; ctx.activate("lowRoller"); } } },
       // ── 진짜 곱연격(×) 조커 — 신화/전설급, 빌드를 폭발시키는 핵심 ──
       { id: "fullmoon", name: "만월", cost: 12, rarity: "rare", mult: true, desc: "무조건 연격 ×2.5", detail: "기술·무늬 상관없이 매 공격 연격 ×2.5. 단순하지만 강력한 곱연산.", apply(ctx) { if (ctx.cards.length) { ctx.mult *= 2.5; ctx.activate("fullmoon"); } } },
-      { id: "reaperking", name: "사신왕", cost: 14, rarity: "rare", mult: true, desc: "포카드·스플이면 연격 ×5", detail: "기술가 포카드 또는 스트레이트 플러시면 연격 ×5. 고기술 특화 폭발기.", apply(ctx) { if (ctx.handType === "FOUR" || isFiveHand(ctx.handType) || isStraightFlushHand(ctx.handType)) { ctx.mult *= 5; ctx.activate("reaperking"); } } },
+      { id: "reaperking", name: "사신왕", cost: 14, rarity: "rare", mult: true, desc: "포카드·스플이면 연격 ×5", detail: "기술이 포카드 또는 스트레이트 플러시면 연격 ×5. 고기술 특화 폭발기.", apply(ctx) { if (ctx.handType === "FOUR" || isFiveHand(ctx.handType) || isStraightFlushHand(ctx.handType)) { ctx.mult *= 5; ctx.activate("reaperking"); } } },
       { id: "berserk", name: "광폭", cost: 13, rarity: "rare", mult: true, desc: "조커 5칸 가득이면 연격 ×4", detail: "보유 조커가 5개로 가득 차면 연격 ×4. 슬롯을 다 채울수록 보상.", apply(ctx) { if (jokerSlotsFull()) { ctx.mult *= 4; ctx.activate("berserk"); } } },
       { id: "bloodmoon", name: "블러드문", cost: 16, rarity: "legendary", mult: true, desc: "K·Q 1장당 연격 ×1.5", detail: "플레이한 킹(K)·퀸(Q) 1장마다 연격 ×1.5 누적(2장이면 ×2.25). 페이스 덱의 끝판왕.", apply(ctx) { const n = ctx.scored.filter(c => c.rank === 12 || c.rank === 13).length; if (n > 0) { ctx.mult *= Math.pow(1.5, n); ctx.activate("bloodmoon"); } } },
       { id: "constellation", name: "성좌", cost: 18, rarity: "legendary", mult: true, desc: "행성 사용 누적마다 연격 ×0.2씩 영구 증가", detail: "지금까지 사용한 행성 카드 1장당 연격 배율이 영구히 +0.2. 행성을 모을수록 곱연산이 무한 확장.", apply(ctx, self) { const used = Object.values(state.handLevels || {}).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0); const m = 1 + used * 0.2; if (m > 1) { ctx.mult *= m; ctx.activate("constellation"); } self.desc = `행성 사용 ${used}회 → 연격 ×${m.toFixed(1)}`; } },
@@ -3084,7 +3084,7 @@
     };
     // 등급: 인라인 rarity 우선 → JOKER_RARITY 맵 → common. 새 조커는 객체에 rarity만 박으면 됨.
     jokerPool.forEach(j => { j.rarity = j.rarity || JOKER_RARITY[j.id] || "common"; });
-    // 데미지 표시용: 연격를 곱하는 조커(× 표기). 새 조커는 정의에 mult:true만 추가하면 자동 포함.
+    // 데미지 표시용: 연격을 곱하는 조커(× 표기). 새 조커는 정의에 mult:true만 추가하면 자동 포함.
     const _MULT_SEED = ["flushx2","doubleDown","fourMaster","allInClown","fourFlush","royalFlush","trioMult","gambler"];
     const MULT_JOKERS = new Set([..._MULT_SEED, ...jokerPool.filter(j => j.mult).map(j => j.id)]);
     function rarityOf(joker){ return RARITY[joker.rarity || JOKER_RARITY[joker.id] || "common"]; }
@@ -3424,7 +3424,7 @@
       document.querySelectorAll(".col-tab").forEach(b => b.classList.toggle("active", b.dataset.ctab === kind));
       const items = collectionData(kind);
       const found = items.filter(it => isDiscovered(kind, it.id)).length;
-      $("#collectionCount").textContent = `${found} / ${items.length} 수집`;
+      $("#collectionCount").textContent = t("ui_collection_count", {found, total: items.length});
       const body = $("#collectionBody");
       body.innerHTML = "";
       const grid = document.createElement("div");
@@ -3535,7 +3535,7 @@
       lastToggledCardId: null,
       shopJokers: [],
       handLevels: { HIGH_CARD:1, PAIR:1, TWO_PAIR:1, THREE:1, STRAIGHT:1, FLUSH:1, FULL_HOUSE:1, FOUR:1, ROYAL_STRAIGHT:1, STRAIGHT_FLUSH:1, ROYAL_FLUSH:1, FIVE:1, FLUSH_HOUSE:1, FLUSH_FIVE:1 },
-      handPlays: {},        // 이번 런에서 각 기술를 플레이한 횟수
+      handPlays: {},        // 이번 런에서 각 기술을 플레이한 횟수
       lastConsumable: null, // 마지막으로 사용한 타로/행성(바보 타로가 복사)
       planetCards: [],
       tarotCards: [],
@@ -3711,6 +3711,25 @@
     const I18N = {
       ko: {
         tagline: "카드를 짜서 적을 공격하고, 조커로 데미지를 폭발시켜라.<br>던전을 격파하는 카드 로그라이크.",
+        ui_cashout_title: "💰 정산 완료",
+        help_title: "조커런 가이드", help_start: "바로 시작 →",
+        help_b1: "① 데미지 = 공격력 × 연격",
+        help_p1: "손패 8장 중 최대 5장을 골라 <em>포커 기술</em>을 만들면 <b>공격력</b>과 <b>연격</b>이 정해진다. 둘을 곱한 값이 데미지. 적 HP를 넘기면 전투 클리어.",
+        help_b2: "② 공격 & 버리기",
+        help_p2: "전투마다 <b>공격 횟수</b>와 <b>버리기 횟수</b>가 제한된다. 별로인 패는 버리고 새로 뽑아 더 좋은 기술을 노려라.",
+        help_b3: "③ 조커 = 빌드의 핵심",
+        help_p3: "전투 보상 주화로 상점에서 <b>조커</b>를 산다. 조커는 데미지 계산에 끼어들어 공격력·연격을 뻥튀기한다. <em>눈덩이·복리</em>처럼 굴릴수록 커지는 조커를 일찍 잡으면 후반이 폭발한다. 슬롯은 5칸.",
+        help_b4: "④ 무기강화",
+        help_p4: "특정 기술을 <b>영구 강화</b>한다. 자주 쓰는 기술에 투자하면 같은 패로 점점 높은 데미지가 나온다.",
+        help_b5: "⑤ 보스 전투",
+        help_p5: "각 사냥의 3번째 전투는 <em>제약(버리기 불가·문양 봉인 등)</em>이 걸린 보스다. 조커 빌드로 정면 돌파하라.",
+        brand_title: "조커런", start_continue: "↩️ 이어하기", start_help: "＂어떻게 하는 거야?＂ — 도움말",
+        collection_btn: "📖 도감", deck_legend: "밝은 카드 = 덱에 남음 · 흐린 카드 = 이미 뽑힘",
+        tarot_collection_title: "🔮 주문서 도감", collection_title: "📖 도감",
+        singularity_title: "⚫ 특이점 — 레벨 몰빵",
+        singularity_hint: "몰빵할 기술을 선택하면 흩어진 모든 기술 레벨이 그 하나로 합쳐집니다. (나머지는 Lv.1로 리셋)",
+        cancel: "취소", victory_run_clear: "런 클리어", victory_new_run: "새 런 시작",
+        game_over: "게임 오버", restart: "다시 시작",
         play: "▶ 플레이", attack: "공격", enemy_hp: "적 HP", dmg: "데미지",
         atk_power: "공격력", combo: "연격",
         hands_left: "남은 공격", discards_left: "남은 버리기",
@@ -3729,10 +3748,142 @@
         language: "🌐 언어", close: "닫기", on: "켜짐", off: "꺼짐",
         cleared: "🎯 전투 승리!", my_dmg: "내 데미지", continue_run: "↩️ 이어하기 — 마지막 공격 다시",
         victory_text: "보스를 격파했습니다.", weapon_table: "기술 데미지표 — 기본 vs 무기강화",
-        spd_slow: "느리게", spd_normal: "보통", spd_fast: "빠르게", spd_vfast: "매우 빠름", spd_instant: "즉시"
+        spd_slow: "느리게", spd_normal: "보통", spd_fast: "빠르게", spd_vfast: "매우 빠름", spd_instant: "즉시",
+        log_use_scroll: "주문서 사용: {name}", log_use_planet: "{name} 사용: {hand} Lv.{lv}",
+        log_planet_all: "{name}: 모든 기술 레벨 +{n}", log_planet_rand: "{name}: {hand} 레벨 +{n}",
+        log_singularity: "특이점: 모든 기술 흡수 → {hand} Lv.{lv} 몰빵",
+        log_sell_consumable: "{name} 판매 (+🪙{n})", log_sell_joker: "조커 판매: {name} (+{n}골드)",
+        log_buy_voucher: "바우처 구매: {name} (-🪙{n})", log_buy_joker: "조커 구매: {name} (-🪙{n})",
+        log_instant_planet: "행성 즉시 사용: {name} (-🪙{n})", log_buy_planet: "플래닛 구매: {name} (-🪙{n})",
+        log_instant_tarot: "타로 즉시 사용: {name} (-🪙{n})", log_buy_tarot: "타로 구매: {name} (-🪙{n})",
+        log_buy_card: "플레이 카드 구매: {card} → 덱 추가 (-🪙{n})",
+        log_skip_blind: "{blind} 전투 스킵 — {reward}", log_small: "스몰", log_big: "빅", log_battle: "전투",
+        log_round_start: "{round} 시작. 목표 {target}점",
+        log_cashout: "정산: 기본 🪙{base} + 남은 공격 {hands}×🪙1 + 이자 🪙{interest} = +🪙{total}",
+        log_boss_reward: "보스 격파! 보상 {n} G", log_game_over: "게임 오버.",
+        log_play_hand: "{hand} 플레이: +{pts}데미지 (남은 공격 {left})",
+        log_discard: "{n}장 버림. (남은 버리기 {left})",
+        info_max_select: "최대 {n}장까지만 선택 가능합니다.",
+        info_tarot_battle_only: "<span style=\"color:var(--danger)\">{name}</span> — 카드를 고르는 타로는 전투 화면에서 사용하세요.",
+        info_tarot_need_cards: "<span style=\"color:var(--danger)\">{name}</span> — 카드를 정확히 {need}장 선택 후 사용하세요. (현재 {cur}장)",
+        info_continue: "↩️ 이어하기 — 마지막 공격을 다시 시도하세요.",
+        info_no_cards: "먼저 카드를 1장 이상 선택하세요.", info_boss_max3: "이번 전투는 최대 3장까지만 선택 가능합니다.",
+        info_boss_min4: "이번 전투는 최소 4장을 선택해야 합니다.",
+        info_scoring: "<span class=\"hand-tag\">{name}</span> 채점 중...",
+        info_score_result: "<span class=\"hand-tag\">{hand}</span> | {chips}공격력 × {mult}연격 = <b>{pts}</b>데미지",
+        info_no_discards: "버리기 횟수를 모두 사용했습니다.", info_select_discard: "버릴 카드를 선택하세요.",
+        info_discarded: "{n}장 버림 완료. 남은 버리기 {left}", info_pick_cards: "공격할 카드를 선택하세요.",
+        info_endless: "🏆 사냥 8회 완주! 지금부터 <b style=\"color:var(--gold,#ffcf6d)\">엔드리스</b> — 끝까지 가보자",
+        info_boss_clear: "보스 격파! +{n} G", info_round_clear: "전투 돌파! 정산 +🪙{n}",
+        info_deselect: "선택을 해제했습니다.",
+        ui_use_in_battle: "전투 화면에서 사용", ui_sort_manual: "수동",
+        ui_sell_gold: "+{n}골드", ui_levelup: "+레벨업!",
+        ui_hand_guide_3: "손패 8장 중 최대 3장을 선택", ui_hand_guide_5: "손패 8장 중 최대 5장을 선택",
+        ui_deck_title: "덱 {total}장 (남은 {rem}장)",
+        ui_sort_suit: "정렬: 무늬별", ui_sort_rank: "정렬: 숫자별",
+        ui_enhanced_cards: "✨ <b>강화 카드 {n}장</b>",
+        ui_hands_intro: "기본 데미지(공격력×연격)와 행성 카드로 레벨업한 현재 데미지 비교. 행성 사용 시 영구 상승.",
+        ui_th_skill: "기술", ui_th_base: "기본", ui_th_current: "현재(강화)",
+        ui_boss_no_rule: "특수 규칙 없음 — 정면 승부",
+        ui_boss_name: "사냥 {ante} 보스 · {name}",
+        ui_owned_jokers_title: "보유 조커 (판매: 등급별 환급)", ui_no_jokers: "보유 중인 조커가 없습니다.",
+        ui_sort_rank_label: "랭크", ui_sort_suit_label: "무늬",
+        ui_singularity_total: "흡수 가능한 총 추가 레벨: +{n}",
+        ui_owned_vouchers: "보유 바우처",
+        ui_voucher_section: "🎟️ 바우처 · 사냥당 1개 · 영구 효과",
+        ui_soldout_joker: "조커 매진 — 다음 전투에 갱신", ui_soldout_planet: "플래닛 매진", ui_soldout_tarot: "타로 매진",
+        ui_playcard_section: "플레이 카드 · 덱에 영구 추가",
+        ui_ante_n: "사냥 {n}", ui_ante_blind: "사냥 {ante} | 전투 {blind}/3",
+        ui_start_ante: "사냥 {n} 시작 →", ui_start_battle: "전투 {n}/3 시작 →",
+        ui_to_ante: "사냥 {n}로 →", ui_to_shop: "상점으로 →",
+        ui_atk_label: "공격력:", ui_mult_label: "× {n}연격",
+        ui_dmg_label: "+<span id=\"dramaticScoreNum\">0</span>데미지",
+        ui_victory_default: "보스 전투 격파! 최종 데미지 {n}데미지",
+        ui_new_record: "🏆 신기록: {n}데미지", ui_best_score: "최고 기록: {n}데미지",
+        ui_gameover_ante: "사냥 {ante} - {blind} 전투에서 탈락",
+        ui_blind_small: "스몰", ui_blind_big: "빅",
+        ui_new_record_short: "🏆 신기록! {n}데미지",
+        ui_run_clear: "🏆 런 클리어! 사냥 8회 완주!\n최종 데미지 {n}데미지{record}",
+        ui_new_record_suffix: " — 신기록!",
+        ui_triggered: "발동!", ui_steel_held: "🔩 스틸 카드 {n}장 보유 → 연격 ×{mult}",
+        ui_float_atk: "+{n} 공격력", ui_float_combo: "+{n} 연격",
+        ui_tarot_intro: "상점 타로 섹션(🪙4)에서 구매. 소모품 슬롯(최대 2칸)을 플래닛과 공유. 보유한 타로는 전투 화면에서 사용.",
+        ui_tarot_exact: "정확히 ", ui_tarot_instant_txt: "즉시 사용",
+        ui_tarot_mini_label: "타로", ui_owned_count: "×{n} 보유", ui_special: "특수",
+        ui_co_boss: "👑 보스 격파 보상", ui_co_clear: "전투 클리어",
+        ui_co_hands: "남은 공격 {n} × 🪙1", ui_co_interest: "이자 (자금 🪙5당 🪙1)", ui_co_gold: "🟡 골드 카드 보유",
+        ui_boss_reward_banner: "👑 보스 격파 보상 <b>+{n} G</b>",
+        ui_rank_title: "랭킹 {medal} 등재!", ui_rank_sub: "TOP 10 진입 축하금",
+        ui_rank_note: "최초 1회 지급 · 전역 지갑 반영", ui_confirm: "확인",
+        pop_badge_special_planet: "특수 행성", pop_badge_planet: "행성",
+        pop_planet_desc: "{hand} 기술 영구 강화 (+{chips}공격력 / +{mult}연격)",
+        pop_planet_cost_special: "사용 즉시 발동 · 판매 +🪙{n}", pop_planet_cost_normal: "사용 시 {hand} 레벨업 · 판매 +🪙{n}",
+        pop_use: "사용", pop_sell: "팔기 +🪙{n}", pop_badge_tarot: "타로",
+        pop_tarot_need: " · 카드 {n}장 선택 후 사용", pop_tarot_instant: " · 즉시 사용",
+        pop_tarot_locked: "전투 화면에서 사용", pop_tarot_select: "사용 (카드 {n}장 선택)",
+        pop_joker_refund: "판매 시 +🪙{n} 환급",
+        pop_joker_cost: "획득 비용: 🪙{cost} · 판매가: 🪙{sell}",
+        pop_voucher_cost: "바우처 · 영구 효과 · 비용 🪙{n}",
+        pop_buy: "구매 🪙{n}", pop_no_funds: "자금 부족",
+        pop_shop_joker_cost: "구매 🪙{cost} · 판매가 🪙{sell}", pop_joker_full: "조커 슬롯 가득 참",
+        pop_planet_cost_full: "구매 🪙{n} · 슬롯 가득 → 구매 즉시 사용",
+        pop_planet_cost_slot: "구매 🪙{n} · 소모품 슬롯 사용",
+        pop_buy_instant: "구매 후 바로 사용 🪙{n}", pop_consumable_full: "소모품 슬롯 가득 참",
+        pop_tarot_shop_need: " · 사용 시 카드 정확히 {n}장 선택",
+        pop_card_deck_desc: "이 카드를 덱에 영구히 추가합니다.",
+        pop_sell_only: "판매 +🪙{n}",
+        dbg_add_joker: "🐞 조커 추가: {name}", dbg_add_tarot: "🐞 타로 추가: {name}",
+        dbg_add_planet: "🐞 행성 추가: {name}", dbg_add_card: "🐞 카드 추가: {card}",
+        dbg_add_money: "🐞 자금 +🪙50", dbg_no_enh: "강화없음",
+        ui_collection_count: "{found} / {total} 수집",
+        ui_reroll_btn: "🎲 갱신 🪙{n}",
+        ui_skip_reward_label: "⏭️ 스킵 보상:",
+        ui_skip_reward_head: "⏭️ 스킵 보상",
+        ui_reward_fallback: "보상", ui_reward_none: "보상 없음",
+        ui_reward_error: "{label} (적용 중 오류 — 다음 전투로 진행)",
+        ui_rank_pos: "{n}위",
+        ui_planet_all_flash: "모든 기술 Lv +{n}",
+        ui_plays_count: "·{n}회",
+        ui_edition_fx: "{icon} {label} 에디션 — 매 공격 {fx}",
+        ui_head_scoring: "<span class=\"hand-tag\">{name}</span>{lv} · 유효 <b style=\"color:var(--gold)\">{valid}장</b>{kicker}",
+        ui_head_lv: " <b style=\"color:var(--gold)\">Lv.{lv}</b>",
+        ui_head_kicker: " (키커 {n}장 제외)",
+        ui_joker_copy: "{joker} → {target} 복사",
+        ui_negative_badge: "🌑 네가티브",
+        sr_windfall_label: "한탕 자금", sr_windfall_detail: "+🪙{n} 즉시 획득",
+        sr_windfall_run: "💸 한탕 자금 +🪙{n}",
+        sr_rand_joker_label: "랜덤 조커", sr_rand_joker_detail: "무료 조커 1개 획득",
+        sr_rand_joker_run: "🃏 무료 조커: {name}",
+        sr_neg_joker_label: "네가티브 조커", sr_neg_joker_detail: "무작위 조커를 네가티브로 생성 (슬롯 미차지)",
+        sr_neg_joker_run: "🌑 네가티브 조커: {name}",
+        sr_rand_tarot_label: "랜덤 타로", sr_rand_tarot_detail: "무료 타로 1장 (슬롯 필요)",
+        sr_rand_tarot_run: "🔮 무료 타로: {name}",
+        sr_rand_planet_label: "랜덤 행성", sr_rand_planet_detail: "무료 행성 1장 (슬롯 필요)",
+        sr_rand_planet_run: "🪐 무료 행성: {name}",
+        sr_card_enh_label: "카드 강화", sr_card_enh_detail: "덱의 무작위 카드 1장 강화",
+        sr_card_enh_run: "✨ 카드 강화: {card} → {enh}"
       },
       en: {
         tagline: "Combine cards to strike, then blow up the damage with Jokers.<br>A card roguelike dungeon crawler.",
+        ui_cashout_title: "💰 Cashout",
+        help_title: "JokerRun Guide", help_start: "Start now →",
+        help_b1: "① Damage = ATK × Combo",
+        help_p1: "Pick up to 5 of your 8 cards to form a <em>poker skill</em> — that sets <b>ATK</b> and <b>Combo</b>. Their product is damage. Beat the enemy HP to clear the battle.",
+        help_b2: "② Attack & Discard",
+        help_p2: "Each battle limits your <b>attacks</b> and <b>discards</b>. Toss weak cards, redraw, and aim for a better skill.",
+        help_b3: "③ Jokers = your build",
+        help_p3: "Spend battle-reward coins on <b>Jokers</b> in the shop. Jokers hook into damage scoring and inflate ATK/Combo. Grab scaling jokers like <em>Snowball/Compound</em> early and the late game explodes. 5 slots.",
+        help_b4: "④ Weapon Upgrades",
+        help_p4: "Permanently upgrade a specific skill. Invest in skills you use often to deal more damage with the same hand.",
+        brand_title: "JokerRun", start_continue: "↩️ Continue", start_help: "“How do I play?” — Guide",
+        collection_btn: "📖 Collection", deck_legend: "Bright = left in deck · Dim = already drawn",
+        tarot_collection_title: "🔮 Scroll Collection", collection_title: "📖 Collection",
+        singularity_title: "⚫ Singularity — Level Dump",
+        singularity_hint: "Pick a skill to dump into; all scattered skill levels merge into it. (Others reset to Lv.1)",
+        cancel: "Cancel", victory_run_clear: "Run Clear", victory_new_run: "Start New Run",
+        game_over: "Game Over", restart: "Restart",
+        help_b5: "⑤ Boss Battles",
+        help_p5: "The 3rd battle of each hunt is a boss with a <em>restriction (no discard, suit seal, etc.)</em>. Break through with your joker build.",
         play: "▶ Play", attack: "Attack", enemy_hp: "Enemy HP", dmg: "Damage",
         atk_power: "ATK", combo: "Combo",
         hands_left: "Attacks left", discards_left: "Discards left",
@@ -3751,7 +3902,120 @@
         language: "🌐 Language", close: "Close", on: "On", off: "Off",
         cleared: "🎯 Battle won!", my_dmg: "Your damage", continue_run: "↩️ Continue — retry last attack",
         victory_text: "You defeated the boss.", weapon_table: "Skill damage table — base vs weapon",
-        spd_slow: "Slow", spd_normal: "Normal", spd_fast: "Fast", spd_vfast: "Very fast", spd_instant: "Instant"
+        spd_slow: "Slow", spd_normal: "Normal", spd_fast: "Fast", spd_vfast: "Very fast", spd_instant: "Instant",
+        log_use_scroll: "Used scroll: {name}", log_use_planet: "{name} used: {hand} Lv.{lv}",
+        log_planet_all: "{name}: all skill levels +{n}", log_planet_rand: "{name}: {hand} level +{n}",
+        log_singularity: "Singularity: absorbed all skills → {hand} Lv.{lv}",
+        log_sell_consumable: "Sold {name} (+🪙{n})", log_sell_joker: "Sold Joker: {name} (+{n}G)",
+        log_buy_voucher: "Bought voucher: {name} (-🪙{n})", log_buy_joker: "Bought Joker: {name} (-🪙{n})",
+        log_instant_planet: "Planet used instantly: {name} (-🪙{n})", log_buy_planet: "Bought planet: {name} (-🪙{n})",
+        log_instant_tarot: "Scroll used instantly: {name} (-🪙{n})", log_buy_tarot: "Bought scroll: {name} (-🪙{n})",
+        log_buy_card: "Bought card: {card} → added to deck (-🪙{n})",
+        log_skip_blind: "{blind} battle skipped — {reward}", log_small: "Small", log_big: "Big", log_battle: "Battle",
+        log_round_start: "{round} started. Target: {target}",
+        log_cashout: "Payout: base 🪙{base} + attacks left {hands}×🪙1 + interest 🪙{interest} = +🪙{total}",
+        log_boss_reward: "Boss defeated! Reward: {n} G", log_game_over: "Game Over.",
+        log_play_hand: "{hand} played: +{pts} dmg (attacks left: {left})",
+        log_discard: "Discarded {n} cards. (discards left: {left})",
+        info_max_select: "You can only select up to {n} cards.",
+        info_tarot_battle_only: "<span style=\"color:var(--danger)\">{name}</span> — Card-targeting scrolls must be used in battle.",
+        info_tarot_need_cards: "<span style=\"color:var(--danger)\">{name}</span> — Select exactly {need} cards to use. (currently {cur})",
+        info_continue: "↩️ Resumed — retry your last attack.",
+        info_no_cards: "Select at least 1 card first.", info_boss_max3: "This battle: max 3 cards allowed.",
+        info_boss_min4: "This battle: select at least 4 cards.",
+        info_scoring: "<span class=\"hand-tag\">{name}</span> scoring...",
+        info_score_result: "<span class=\"hand-tag\">{hand}</span> | {chips} ATK × {mult} Combo = <b>{pts}</b> DMG",
+        info_no_discards: "No discards remaining.", info_select_discard: "Select cards to discard.",
+        info_discarded: "Discarded {n} cards. {left} left.", info_pick_cards: "Pick cards to attack with.",
+        info_endless: "🏆 8 Hunts cleared! Now entering <b style=\"color:var(--gold,#ffcf6d)\">Endless</b> — let's go!",
+        info_boss_clear: "Boss defeated! +{n} G", info_round_clear: "Battle won! Payout +🪙{n}",
+        info_deselect: "Selection cleared.",
+        ui_use_in_battle: "Use in battle", ui_sort_manual: "Manual",
+        ui_sell_gold: "+{n}G", ui_levelup: "+Level Up!",
+        ui_hand_guide_3: "Select up to 3 from 8 cards", ui_hand_guide_5: "Select up to 5 from 8 cards",
+        ui_deck_title: "Deck: {total} cards ({rem} remaining)",
+        ui_sort_suit: "Sort: by suit", ui_sort_rank: "Sort: by rank",
+        ui_enhanced_cards: "✨ <b>{n} Enhanced cards</b>",
+        ui_hands_intro: "Base vs. current damage after planet upgrades. Permanent on use.",
+        ui_th_skill: "Skill", ui_th_base: "Base", ui_th_current: "Current",
+        ui_boss_no_rule: "No special rule — straight fight",
+        ui_boss_name: "Hunt {ante} Boss · {name}",
+        ui_owned_jokers_title: "Owned Jokers (sell for grade refund)", ui_no_jokers: "No jokers owned.",
+        ui_sort_rank_label: "Rank", ui_sort_suit_label: "Suit",
+        ui_singularity_total: "Total absorbable levels: +{n}",
+        ui_owned_vouchers: "Owned Vouchers",
+        ui_voucher_section: "🎟️ Voucher · 1 per ante · Permanent effect",
+        ui_soldout_joker: "Jokers sold out — refreshes next battle", ui_soldout_planet: "Planets sold out", ui_soldout_tarot: "Scrolls sold out",
+        ui_playcard_section: "Play Cards · Permanent deck addition",
+        ui_ante_n: "Hunt {n}", ui_ante_blind: "Hunt {ante} | Battle {blind}/3",
+        ui_start_ante: "Start Hunt {n} →", ui_start_battle: "Start Battle {n}/3 →",
+        ui_to_ante: "To Hunt {n} →", ui_to_shop: "To Shop →",
+        ui_atk_label: "ATK:", ui_mult_label: "× {n} Combo",
+        ui_dmg_label: "+<span id=\"dramaticScoreNum\">0</span> DMG",
+        ui_victory_default: "Boss battle won! Final damage: {n}",
+        ui_new_record: "🏆 New record: {n}", ui_best_score: "Best: {n}",
+        ui_gameover_ante: "Hunt {ante} - defeated in {blind} battle",
+        ui_blind_small: "Small", ui_blind_big: "Big",
+        ui_new_record_short: "🏆 New Record! {n}",
+        ui_run_clear: "🏆 Run Clear! All 8 Hunts done!\nFinal damage: {n}{record}",
+        ui_new_record_suffix: " — New Record!",
+        ui_triggered: "Triggered!", ui_steel_held: "🔩 {n} steel card(s) held → Combo ×{mult}",
+        ui_float_atk: "+{n} ATK", ui_float_combo: "+{n} Combo",
+        ui_tarot_intro: "Buy from the scroll section (🪙4). Shares consumable slots (max 2) with planets. Use owned scrolls in battle.",
+        ui_tarot_exact: "exactly ", ui_tarot_instant_txt: "instant use",
+        ui_tarot_mini_label: "Scroll", ui_owned_count: "×{n} owned", ui_special: "Special",
+        ui_co_boss: "👑 Boss defeat reward", ui_co_clear: "Battle clear",
+        ui_co_hands: "Attacks left {n} × 🪙1", ui_co_interest: "Interest (🪙1 per 🪙5 held)", ui_co_gold: "🟡 Gold card held",
+        ui_boss_reward_banner: "👑 Boss defeat reward <b>+{n} G</b>",
+        ui_rank_title: "Ranked {medal}!", ui_rank_sub: "TOP 10 entry bonus",
+        ui_rank_note: "One-time reward · added to global wallet", ui_confirm: "OK",
+        pop_badge_special_planet: "Special", pop_badge_planet: "Planet",
+        pop_planet_desc: "Permanently upgrades {hand} (+{chips} ATK / +{mult} Combo)",
+        pop_planet_cost_special: "Use: instant effect · Sell +🪙{n}", pop_planet_cost_normal: "Use: {hand} levels up · Sell +🪙{n}",
+        pop_use: "Use", pop_sell: "Sell +🪙{n}", pop_badge_tarot: "Scroll",
+        pop_tarot_need: " · Select {n} cards to use", pop_tarot_instant: " · Instant use",
+        pop_tarot_locked: "Use in battle", pop_tarot_select: "Use (select {n} cards)",
+        pop_joker_refund: "Sell for +🪙{n} refund",
+        pop_joker_cost: "Purchase: 🪙{cost} · Sell: 🪙{sell}",
+        pop_voucher_cost: "Voucher · Permanent · Cost 🪙{n}",
+        pop_buy: "Buy 🪙{n}", pop_no_funds: "Insufficient funds",
+        pop_shop_joker_cost: "Buy 🪙{cost} · Sell 🪙{sell}", pop_joker_full: "Joker slots full",
+        pop_planet_cost_full: "Buy 🪙{n} · Slots full → use immediately",
+        pop_planet_cost_slot: "Buy 🪙{n} · Uses consumable slot",
+        pop_buy_instant: "Buy & use now 🪙{n}", pop_consumable_full: "Consumable slots full",
+        pop_tarot_shop_need: " · Select exactly {n} cards on use",
+        pop_card_deck_desc: "Permanently adds this card to your deck.",
+        pop_sell_only: "Sell +🪙{n}",
+        dbg_add_joker: "🐞 Joker added: {name}", dbg_add_tarot: "🐞 Scroll added: {name}",
+        dbg_add_planet: "🐞 Planet added: {name}", dbg_add_card: "🐞 Card added: {card}",
+        dbg_add_money: "🐞 Funds +🪙50", dbg_no_enh: "No enhance",
+        ui_collection_count: "{found} / {total} collected",
+        ui_reroll_btn: "🎲 Reroll 🪙{n}",
+        ui_skip_reward_label: "⏭️ Skip reward:",
+        ui_skip_reward_head: "⏭️ Skip Reward",
+        ui_reward_fallback: "Reward", ui_reward_none: "No reward",
+        ui_reward_error: "{label} (error applying reward — proceeding)",
+        ui_rank_pos: "#{n}",
+        ui_planet_all_flash: "All skills Lv +{n}",
+        ui_plays_count: "·{n}×",
+        ui_edition_fx: "{icon} {label} edition — each attack {fx}",
+        ui_head_scoring: "<span class=\"hand-tag\">{name}</span>{lv} · <b style=\"color:var(--gold)\">{valid}</b> scoring{kicker}",
+        ui_head_lv: " <b style=\"color:var(--gold)\">Lv.{lv}</b>",
+        ui_head_kicker: " ({n} kicker{n,plural,=1{}other{s}} excluded)",
+        ui_joker_copy: "{joker} → {target} copy",
+        ui_negative_badge: "🌑 Negative",
+        sr_windfall_label: "Windfall", sr_windfall_detail: "+🪙{n} immediately",
+        sr_windfall_run: "💸 Windfall +🪙{n}",
+        sr_rand_joker_label: "Random Joker", sr_rand_joker_detail: "Get 1 free Joker",
+        sr_rand_joker_run: "🃏 Free Joker: {name}",
+        sr_neg_joker_label: "Negative Joker", sr_neg_joker_detail: "Random Joker as Negative (no slot cost)",
+        sr_neg_joker_run: "🌑 Negative Joker: {name}",
+        sr_rand_tarot_label: "Random Scroll", sr_rand_tarot_detail: "Get 1 free Scroll (slot needed)",
+        sr_rand_tarot_run: "🔮 Free Scroll: {name}",
+        sr_rand_planet_label: "Random Planet", sr_rand_planet_detail: "Get 1 free Planet (slot needed)",
+        sr_rand_planet_run: "🪐 Free Planet: {name}",
+        sr_card_enh_label: "Card Enhance", sr_card_enh_detail: "Enhance 1 random card in deck",
+        sr_card_enh_run: "✨ Card enhanced: {card} → {enh}"
       }
     };
     let LANG = localStorage.getItem("jokerrun_lang") || (navigator.language || "ko").slice(0, 2).toLowerCase();
@@ -3963,7 +4227,7 @@
       const order = [...cardsWrap.querySelectorAll(".card[data-id]")].map(e => e.dataset.id);
       state.hand.sort((a, b) => order.indexOf(String(a.id)) - order.indexOf(String(b.id)));
       state.sortMode = "manual";   // 수동 배치 → 자동 정렬 해제
-      const lbl = $("#sortModeLabel"); if (lbl) lbl.textContent = "수동";
+      const lbl = $("#sortModeLabel"); if (lbl) lbl.textContent = t("ui_sort_manual");
       renderCards();
     }
     function commitJokerOrder() {
@@ -3984,7 +4248,7 @@
             state.selected.delete(card.id);
           } else {
             const maxSelectable = state.bossModifier?.id === "max3cards" ? 3 : 5;
-            if (state.selected.size >= maxSelectable) return setInfo(`최대 ${maxSelectable}장까지만 선택 가능합니다.`);
+            if (state.selected.size >= maxSelectable) return setInfo(t("info_max_select", {n: maxSelectable}));
             state.selected.add(card.id);
           }
           // 전체 재렌더 없이 해당 카드만 업데이트
@@ -4103,7 +4367,7 @@
       const rect = anchorEl.getBoundingClientRect();
       const popup = document.createElement("div");
       popup.className = "sell-popup";
-      popup.textContent = `+${amount}골드`;
+      popup.textContent = t("ui_sell_gold", {n: amount});
       popup.style.left = `${rect.left + rect.width * 0.5}px`;
       popup.style.top = `${rect.top - 6}px`;
       document.body.appendChild(popup);
@@ -4128,7 +4392,7 @@
       const rect = anchorEl.getBoundingClientRect();
       const popup = document.createElement("div");
       popup.className = "levelup-popup";
-      popup.textContent = "+레벨업!";
+      popup.textContent = t("ui_levelup");
       popup.style.left = `${rect.left + rect.width * 0.5}px`;
       popup.style.top = `${rect.top - 8}px`;
       document.body.appendChild(popup);
@@ -4155,15 +4419,15 @@
       const inShop = $("#shopModal").classList.contains("show");
       if (need > 0) {
         if (inShop) {
-          setInfo(`<span style="color:var(--danger)">${tarot.name}</span> — 카드를 고르는 타로는 전투 화면에서 사용하세요.`);
+          setInfo(t("info_tarot_battle_only", {name: tarot.name}));
           // 상점에선 알림만 — 보드 안내선이 안 보이므로 토스트로
-          showFloatingNote(anchorEl, "전투 화면에서 사용");
+          showFloatingNote(anchorEl, t("ui_use_in_battle"));
           return;
         }
         const sel = selectedCards();
         // need장과 정확히 일치해야 사용 가능(1장짜리에 2장 선택 시 적용되던 버그 수정)
         if (sel.length !== need) {
-          setInfo(`<span style="color:var(--danger)">${tarot.name}</span> — 카드를 정확히 ${need}장 선택 후 사용하세요. (현재 ${sel.length}장)`);
+          setInfo(t("info_tarot_need_cards", {name: tarot.name, need, cur: sel.length}));
           return;
         }
         tarot.apply(sel);
@@ -4174,7 +4438,7 @@
       if (tarot.id !== "fool") state.lastConsumable = { kind: "tarot", id: tarot.id };   // 바보 타로 복사용
       state.tarotCards.splice(idx, 1);
       flashTarotCard(tarot);
-      addLog(`타로 사용: ${tarot.name}`);
+      addLog(t("log_use_scroll", {name: tarot.name}));
       if (anchorEl) showLevelUpPopup(anchorEl);
       updateHandPreview();
       renderHUD();
@@ -4222,7 +4486,7 @@
       const newLevel = (state.handLevels?.[planet.hand] || 1) + 1;
       state.handLevels[planet.hand] = newLevel;
       state.planetCards.splice(pi, 1);
-      addLog(`${planet.name} 사용: ${handName} Lv.${newLevel}`);
+      addLog(t("log_use_planet", {name: planet.name, hand: handName, lv: newLevel}));
       flashPlanetCard(planet, `${handName} Lv.${newLevel}`);
       renderHUD();
       refreshConsumables();
@@ -4231,12 +4495,12 @@
       const keys = Object.keys(state.handLevels);
       if (planet.special === "all") {
         keys.forEach(k => state.handLevels[k] = (state.handLevels[k] || 1) + planet.amount);
-        addLog(`${planet.name}: 모든 기술 레벨 +${planet.amount}`);
-        return `모든 기술 Lv +${planet.amount}`;
+        addLog(t("log_planet_all", {name: planet.name, n: planet.amount}));
+        return t("ui_planet_all_flash", {n: planet.amount});
       } else if (planet.special === "random") {
         const k = keys[Math.floor(Math.random() * keys.length)];
         state.handLevels[k] = (state.handLevels[k] || 1) + planet.amount;
-        addLog(`${planet.name}: ${handBase[k]?.name || k} 레벨 +${planet.amount}`);
+        addLog(t("log_planet_rand", {name: planet.name, hand: handBase[k]?.name || k, n: planet.amount}));
         return `${handBase[k]?.name || k} +${planet.amount}`;
       }
       return "";
@@ -4247,7 +4511,7 @@
       _singularityPlanet = planet;
       const total = Object.values(state.handLevels).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0);
       const body = $("#singularityBody");
-      $("#singularityTotal").textContent = `흡수 가능한 총 추가 레벨: +${total}`;
+      $("#singularityTotal").textContent = t("ui_singularity_total", {n: total});
       body.innerHTML = "";
       HAND_ORDER.forEach(h => {
         const btn = document.createElement("button");
@@ -4259,7 +4523,7 @@
           state.handLevels[h] = 1 + total;
           const pi = state.planetCards.indexOf(_singularityPlanet);
           if (pi >= 0) state.planetCards.splice(pi, 1);
-          addLog(`특이점: 모든 기술 흡수 → ${handBase[h].name} Lv.${1 + total} 몰빵`);
+          addLog(t("log_singularity", {hand: handBase[h].name, lv: 1 + total}));
           $("#singularityModal").classList.remove("show");
           flashPlanetCard(_singularityPlanet, `${handBase[h].name} Lv.${1 + total}`);
           renderHUD(); refreshConsumables();
@@ -4277,7 +4541,7 @@
       const refund = consumableSellValue(kind);
       arr.splice(i, 1);
       state.money += refund;
-      addLog(`${item.name} 판매 (+🪙${refund})`);
+      addLog(t("log_sell_consumable", {name: item.name, n: refund}));
       if (anchorEl) showSellPopup(refund, anchorEl);
       renderHUD();
       refreshConsumables();
@@ -4287,14 +4551,14 @@
       const sell = consumableSellValue(kind);
       if (kind === "planet") {
         const isSpecial = !!item.special;
-        const hn = isSpecial ? "특수" : (handBase[item.hand]?.name || item.hand);
+        const hn = isSpecial ? t("ui_special") : (handBase[item.hand]?.name || item.hand);
         openDetailPopup({
           imgSrc: `planets/${item.id}.webp?v=2`, emoji: item.planet,
-          name: `${item.planet} ${item.name}`, badgeLabel: isSpecial ? "특수 행성" : "행성", badgeColor: isSpecial ? "#a06bff" : "#4a84ff",
-          desc: isSpecial ? item.desc : `${hn} 기술 영구 강화 (+${item.chipsBonus}공격력 / +${item.multBonus}연격)`,
-          costLine: isSpecial ? `사용 즉시 발동 · 판매 +🪙${sell}` : `사용 시 ${hn} 레벨업 · 판매 +🪙${sell}`,
-          actionLabel: "사용", actionFn: () => { closeJokerPopup(); usePlanetCard(item, null); },
-          action2Label: `팔기 +🪙${sell}`, action2Fn: () => { closeJokerPopup(); sellConsumable("planet", item); }
+          name: `${item.planet} ${item.name}`, badgeLabel: isSpecial ? t("pop_badge_special_planet") : t("pop_badge_planet"), badgeColor: isSpecial ? "#a06bff" : "#4a84ff",
+          desc: isSpecial ? item.desc : t("pop_planet_desc", {hand: hn, chips: item.chipsBonus, mult: item.multBonus}),
+          costLine: isSpecial ? t("pop_planet_cost_special", {n: sell}) : t("pop_planet_cost_normal", {hand: hn, n: sell}),
+          actionLabel: t("pop_use"), actionFn: () => { closeJokerPopup(); usePlanetCard(item, null); },
+          action2Label: t("pop_sell", {n: sell}), action2Fn: () => { closeJokerPopup(); sellConsumable("planet", item); }
         });
       } else {
         const inShop = $("#shopModal").classList.contains("show");
@@ -4302,13 +4566,13 @@
         const cardLocked = need > 0 && inShop;   // 카드 선택형은 상점에선 사용 불가(손패 없음)
         openDetailPopup({
           imgSrc: `tarot/${item.id}.webp?v=2`, emoji: "🔮",
-          name: item.name, badgeLabel: "타로", badgeColor: "#b56ad6",
-          desc: (item.desc || "") + (need > 0 ? ` · 카드 ${item.need}장 선택 후 사용` : " · 즉시 사용"),
-          costLine: `판매 +🪙${sell}`,
-          actionLabel: cardLocked ? "전투 화면에서 사용" : (need > 0 ? `사용 (카드 ${need}장 선택)` : "사용"),
+          name: item.name, badgeLabel: t("pop_badge_tarot"), badgeColor: "#b56ad6",
+          desc: (item.desc || "") + (need > 0 ? t("pop_tarot_need", {n: item.need}) : t("pop_tarot_instant")),
+          costLine: t("pop_sell", {n: sell}),
+          actionLabel: cardLocked ? t("pop_tarot_locked") : (need > 0 ? t("pop_tarot_select", {n: need}) : t("pop_use")),
           actionDisabled: cardLocked,
           actionFn: () => { closeJokerPopup(); useTarot(item, null); },
-          action2Label: `팔기 +🪙${sell}`, action2Fn: () => { closeJokerPopup(); sellConsumable("tarot", item); }
+          action2Label: t("pop_sell", {n: sell}), action2Fn: () => { closeJokerPopup(); sellConsumable("tarot", item); }
         });
       }
     }
@@ -4334,7 +4598,7 @@
         card.className = "planet-card-mini";
         if (it.kind === "planet") {
           const planet = it.data;
-          const sub = planet.special ? "특수 행성" : `${handBase[planet.hand]?.name || planet.hand} Lv.${state.handLevels?.[planet.hand] || 1}`;
+          const sub = planet.special ? t("pop_badge_special_planet") : `${handBase[planet.hand]?.name || planet.hand} Lv.${state.handLevels?.[planet.hand] || 1}`;
           card.innerHTML = `
             <img class="planet-art" src="planets/${planet.id}.webp?v=2" alt="" draggable="false" onerror="this.style.display='none'">
             <span class="planet-grad" aria-hidden="true"></span>
@@ -4349,7 +4613,7 @@
             <img class="planet-art" src="tarot/${tarot.id}.webp?v=2" alt="" draggable="false" onerror="this.style.display='none'">
             <span class="planet-grad" aria-hidden="true"></span>
             <span class="planet-glyph">${tarot.name}</span>
-            <span class="planet-target">타로${(tarot.need || 0) > 0 ? ` ·${tarot.need}장` : ""}</span>`;
+            <span class="planet-target">${t("ui_tarot_mini_label")}${(tarot.need || 0) > 0 ? ` ·${tarot.need}장` : ""}</span>`;
           card.addEventListener("click", () => openConsumableDetail("tarot", tarot));
         }
         container.appendChild(card);
@@ -4379,12 +4643,12 @@
       const ante = state.ante;
       const name = getBossName(ante);
       const mod = state.bossModifier;
-      const rule = mod ? `<span class="boss-rule">⚠️ ${mod.label}</span><span class="boss-desc">${mod.desc}</span>` : `<span class="boss-desc">특수 규칙 없음 — 정면 승부</span>`;
+      const rule = mod ? `<span class="boss-rule">⚠️ ${mod.label}</span><span class="boss-desc">${mod.desc}</span>` : `<span class="boss-desc">${t("ui_boss_no_rule")}</span>`;
       banner.hidden = false;
       banner.innerHTML = `
         <img class="boss-art" src="bosses/boss${((ante - 1) % 8) + 1}.webp" alt="" draggable="false" onerror="this.style.display='none'">
         <div class="boss-info">
-          <span class="boss-name">Ante ${ante} 보스 · ${name}</span>
+          <span class="boss-name">${t("ui_boss_name", {ante, name})}</span>
           ${rule}
         </div>`;
     }
@@ -4395,7 +4659,7 @@
       const refund = jokerSellValue(joker);
       state.jokers.splice(index, 1);
       state.money += refund;
-      addLog(`조커 판매: ${joker.name} (+${refund}골드)`);
+      addLog(t("log_sell_joker", {name: joker.name, n: refund}));
       if (anchorEl) showSellPopup(refund, anchorEl);
       renderHUD();
       if ($("#shopModal").classList.contains("show")) openShop(_shopIsAnteClear);
@@ -4407,12 +4671,12 @@
       box.innerHTML = "";
       const title = document.createElement("div");
       title.className = "subtitle";
-      title.textContent = "보유 조커 (판매: 등급별 환급)";
+      title.textContent = t("ui_owned_jokers_title");
       box.appendChild(title);
       if (!state.jokers.length) {
         const empty = document.createElement("div");
         empty.className = "shop-owned-empty";
-        empty.textContent = "보유 중인 조커가 없습니다.";
+        empty.textContent = t("ui_no_jokers");
         box.appendChild(empty);
         return;
       }
@@ -4434,8 +4698,8 @@
             negative: !!joker.negative, edition: joker.edition,
             desc: joker.detail || joker.desc,
             accumLine: jokerAccumLine(joker),
-            costLine: `판매 시 +🪙${jokerSellValue(joker)} 환급`,
-            actionLabel: `팔기 +🪙${jokerSellValue(joker)}`,
+            costLine: t("pop_joker_refund", {n: jokerSellValue(joker)}),
+            actionLabel: t("pop_sell", {n: jokerSellValue(joker)}),
             actionFn: () => { closeJokerPopup(); sellJoker(index, tile); }
           });
         });
@@ -4462,7 +4726,7 @@
       $("#jokerPopupName").innerHTML = `${opts.name}${opts.badgeLabel ? ` <span style="font-size:.7rem;font-weight:800;color:${opts.badgeColor};border:1px solid ${opts.badgeColor}66;border-radius:10px;padding:1px 7px;margin-left:4px;vertical-align:middle">${opts.badgeLabel}</span>` : ""}${negBadge}${edBadge}`;
       $("#jokerPopupDesc").innerHTML = colorizeEffect(opts.desc || "")
         + (opts.accumLine ? `<div style="margin-top:7px;font-size:.84rem;color:var(--gold,#ffcf6d);font-weight:800;padding:5px 8px;border-radius:8px;background:rgba(255,207,109,.1);border:1px solid rgba(255,207,109,.3)">${opts.accumLine}</div>` : "")
-        + (_edp ? `<div style="margin-top:6px;font-size:.78rem;color:${_edp.color};font-weight:700">${_edp.icon} ${_edp.label} 에디션 — 매 공격 ${_edp.fx}</div>` : "");
+        + (_edp ? `<div style="margin-top:6px;font-size:.78rem;color:${_edp.color};font-weight:700">${t("ui_edition_fx", {icon: _edp.icon, label: _edp.label, fx: _edp.fx})}</div>` : "");
       $("#jokerPopupCost").textContent = opts.costLine || "";
       const actBtn = $("#jokerPopupAction");
       if (opts.actionLabel) {
@@ -4501,8 +4765,8 @@
         negative: !!joker.negative, edition: joker.edition,
         desc: joker.detail || joker.desc,
         accumLine: jokerAccumLine(joker),
-        costLine: `획득 비용: 🪙${joker.cost} · 판매가: 🪙${sell}`,
-        actionLabel: `팔기 +🪙${sell}`,
+        costLine: t("pop_joker_cost", {cost: joker.cost, sell}),
+        actionLabel: t("pop_sell", {n: sell}),
         actionFn: () => { const idx = state.jokers.indexOf(joker); closeJokerPopup(); if (idx >= 0) sellJoker(idx, null); }
       });
     }
@@ -4597,7 +4861,7 @@
 
     function renderHUD(chips = 0, mult = 1) {
       $("#roundLabel").textContent = activeRoundLabel();
-      $("#anteBlindLabel").textContent = `Ante ${state.ante} | Blind ${state.roundIndex + 1}/3`;
+      $("#anteBlindLabel").textContent = t("ui_ante_blind", { ante: state.ante, blind: state.roundIndex + 1 });
       $("#targetLabel").textContent = activeTarget().toLocaleString();
       $("#scoreLabel").textContent = state.score.toLocaleString();
       $("#moneyLabel").textContent = `🪙${state.money}`;
@@ -4609,8 +4873,8 @@
       $("#discardBtn").disabled = state.gameEnded;
       $("#deckBtn").textContent = t("deck_n", { n: state.deck.length });
       $("#handGuide").textContent = state.bossModifier?.id === "max3cards"
-        ? "손패 8장 중 최대 3장을 선택"
-        : "손패 8장 중 최대 5장을 선택";
+        ? t("ui_hand_guide_3")
+        : t("ui_hand_guide_5");
       renderJokers();
       renderPlanetCards();
       updateHandPreview();
@@ -4626,14 +4890,14 @@
       run.forEach(c => { total[c.suit] = (total[c.suit] || 0) + 1; if (remainIds.has(c.id)) remain[c.suit]++; });
       const enhanced = run.filter(c => c.enh);
 
-      $("#deckModalTitle").textContent = `덱 ${run.length}장 (남은 ${state.deck.length}장)`;
+      $("#deckModalTitle").textContent = t("ui_deck_title", {total: run.length, rem: state.deck.length});
       // 무늬별 남은/총
       $("#deckSuitCounts").innerHTML = suits4.map(s => {
         const red = s === "heart" || s === "diamond";
         return `<span style="color:${red ? "#e8546a" : "#cfd6e0"}">${suitSymbol[s]} <b>${remain[s]}</b>/${total[s]}</span>`;
       }).join("　");
       const sortBtn = $("#deckSortBtn");
-      if (sortBtn) sortBtn.textContent = _deckSort === "suit" ? "정렬: 무늬별" : "정렬: 숫자별";
+      if (sortBtn) sortBtn.textContent = _deckSort === "suit" ? t("ui_sort_suit") : t("ui_sort_rank");
 
       const grid = $("#deckGrid");
       grid.innerHTML = "";
@@ -4646,7 +4910,7 @@
           const e = ENH[c.enh];
           return `<span style="display:inline-block;margin:1px 4px;padding:1px 6px;border-radius:6px;border:1px solid ${e.color};color:${(c.suit === "heart" || c.suit === "diamond") ? "#e8546a" : "#e8edf3"}">${suitSymbol[c.suit]}${formatRank(c.rank)} <b style="color:${e.color}">${e.label}</b></span>`;
         }).join("");
-        eh.innerHTML = `✨ <b>강화 카드 ${enhanced.length}장</b><br>${list}`;
+        eh.innerHTML = t("ui_enhanced_cards", {n: enhanced.length}) + `<br>${list}`;
         grid.appendChild(eh);
       }
       // 카드 1장 엘리먼트(남으면 밝게, 뽑혔으면 흐리게)
@@ -4708,18 +4972,18 @@
         const up = lvl > 1;
         const plays = (state.handPlays && state.handPlays[h]) || 0;
         rows += `<tr style="border-bottom:1px solid var(--line,rgba(255,255,255,.08))">
-          <td style="padding:7px 6px;font-weight:700">${base.name}${up?` <span style="color:var(--gold);font-size:.72rem">Lv.${lvl}</span>`:""}${plays?` <span style="color:var(--cyan,#30d4af);font-size:.7rem">·${plays}회</span>`:""}</td>
+          <td style="padding:7px 6px;font-weight:700">${base.name}${up?` <span style="color:var(--gold);font-size:.72rem">Lv.${lvl}</span>`:""}${plays?` <span style="color:var(--cyan,#30d4af);font-size:.7rem">${t("ui_plays_count", {n: plays})}</span>`:""}</td>
           <td style="padding:7px 6px;text-align:right;color:var(--muted)">${base.chips}×${base.mult}<br><span style="font-size:.72rem">=${baseScore}</span></td>
           <td style="padding:7px 6px;text-align:right;font-weight:800;color:${up?'var(--gold)':'var(--text)'}">${lc}×${lm}<br><span style="font-size:.72rem">=${lvlScore}</span></td>
         </tr>`;
       });
       body.innerHTML = `
-        <p style="font-size:.78rem;color:var(--muted);margin:2px 0 8px">기본 데미지(공격력×연격)와 행성 카드로 레벨업한 현재 데미지 비교. 행성 사용 시 영구 상승.</p>
+        <p style="font-size:.78rem;color:var(--muted);margin:2px 0 8px">${t("ui_hands_intro")}</p>
         <table style="width:100%;border-collapse:collapse;font-size:.86rem">
           <thead><tr style="border-bottom:1px solid var(--line,rgba(255,255,255,.15))">
-            <th style="text-align:left;padding:5px 6px;color:var(--muted);font-size:.7rem">기술</th>
-            <th style="text-align:right;padding:5px 6px;color:var(--muted);font-size:.7rem">기본</th>
-            <th style="text-align:right;padding:5px 6px;color:var(--muted);font-size:.7rem">현재(강화)</th>
+            <th style="text-align:left;padding:5px 6px;color:var(--muted);font-size:.7rem">${t("ui_th_skill")}</th>
+            <th style="text-align:right;padding:5px 6px;color:var(--muted);font-size:.7rem">${t("ui_th_base")}</th>
+            <th style="text-align:right;padding:5px 6px;color:var(--muted);font-size:.7rem">${t("ui_th_current")}</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>`;
@@ -4739,17 +5003,17 @@
       const ownedCount = {};
       (state.tarotCards || []).forEach(t => { ownedCount[t.id] = (ownedCount[t.id] || 0) + 1; });
       body.innerHTML =
-        `<p style="font-size:.78rem;color:var(--muted);margin:2px 0 10px">상점 타로 섹션(🪙4)에서 구매. 소모품 슬롯(최대 2칸)을 플래닛과 공유. 보유한 타로는 전투 화면에서 사용.</p>` +
-        tarotPool.map(t => {
-          const owned = ownedCount[t.id] || 0;
-          const needTxt = t.need > 0
-            ? `<span style="color:#9fd0ff">${t.exact ? "정확히 " : ""}${t.need}장 선택 후 사용</span>`
-            : `<span style="color:#9fd0ff">즉시 사용</span>`;
+        `<p style="font-size:.78rem;color:var(--muted);margin:2px 0 10px">${t("ui_tarot_intro")}</p>` +
+        tarotPool.map(tc => {
+          const owned = ownedCount[tc.id] || 0;
+          const needTxt = tc.need > 0
+            ? `<span style="color:#9fd0ff">${tc.exact ? t("ui_tarot_exact") : ""}${tc.need}장 선택 후 사용</span>`
+            : `<span style="color:#9fd0ff">${t("ui_tarot_instant_txt")}</span>`;
           return `<div style="display:flex;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08)">
-            <img src="tarot/${t.id}.webp?v=2" alt="" loading="lazy" style="width:46px;height:64px;object-fit:cover;border-radius:7px;border:1px solid #b56ad688;flex:0 0 auto;background:#1a0f24" onerror="this.outerHTML='<span style=\\'width:46px;height:64px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex:0 0 auto\\'>🔮</span>'">
+            <img src="tarot/${tc.id}.webp?v=2" alt="" loading="lazy" style="width:46px;height:64px;object-fit:cover;border-radius:7px;border:1px solid #b56ad688;flex:0 0 auto;background:#1a0f24" onerror="this.outerHTML='<span style=\\'width:46px;height:64px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex:0 0 auto\\'>🔮</span>'">
             <div style="flex:1;min-width:0">
-              <div style="font-weight:800;color:#e7defb">${t.name}${owned ? ` <span style="color:var(--gold);font-size:.72rem">×${owned} 보유</span>` : ""}</div>
-              <div style="font-size:.82rem;color:var(--text);margin:2px 0">${t.desc}</div>
+              <div style="font-weight:800;color:#e7defb">${tc.name}${owned ? ` <span style="color:var(--gold);font-size:.72rem">${t("ui_owned_count", {n: owned})}</span>` : ""}</div>
+              <div style="font-size:.82rem;color:var(--text);margin:2px 0">${tc.desc}</div>
               <div style="font-size:.7rem">${needTxt}</div>
             </div>
           </div>`;
@@ -4770,8 +5034,8 @@
       const isNew = totalScore > prev;
       if (isNew) localStorage.setItem("jokerrun_hs", String(totalScore));
       const best = Math.max(prev, totalScore);
-      $("#victoryText").textContent = message || `보스 전투 격파! 최종 데미지 ${totalScore.toLocaleString()}점`;
-      $("#victoryHighScore").textContent = isNew ? `🏆 신기록: ${totalScore.toLocaleString()}점` : `최고 기록: ${best.toLocaleString()}점`;
+      $("#victoryText").textContent = message || t("ui_victory_default", {n: totalScore.toLocaleString()});
+      $("#victoryHighScore").textContent = isNew ? t("ui_new_record", {n: totalScore.toLocaleString()}) : t("ui_best_score", {n: best.toLocaleString()});
       $("#victoryModal").classList.add("show");
     }
 
@@ -4844,7 +5108,7 @@
         else if (handType === "PAIR") base = cards.filter(c => byRank[c.rank].length === 2);
         else { const hi = cards.reduce((a, b) => (b.rank > a.rank ? b : a)); base = [hi]; }
       }
-      // 스톤 카드는 기술와 무관하게 항상 데미지에 포함(발라트로 규칙) — 키커여도 +50 적용
+      // 스톤 카드는 기술과 무관하게 항상 데미지에 포함(발라트로 규칙) — 키커여도 +50 적용
       const baseSet = new Set(base);
       cards.forEach(c => { if (c.enh === "stone" && !baseSet.has(c)) base.push(c); });
       return base;
@@ -4904,7 +5168,7 @@
 
       const chipCard = document.createElement("div");
       chipCard.className = "dramatic-card dramatic-chip";
-      chipCard.innerHTML = `공격력: <span id="dramaticChipNum">0</span>`;
+      chipCard.innerHTML = `${t("atk_power")}: <span id="dramaticChipNum">0</span>`;
       layer.appendChild(chipCard);
       await runAnime({
         targets: chipCard,
@@ -4921,7 +5185,7 @@
 
       const multFx = document.createElement("div");
       multFx.className = "dramatic-mult";
-      multFx.textContent = `× ${mult}배`;
+      multFx.textContent = t("ui_mult_label", {n: mult});
       layer.appendChild(multFx);
       await runAnime({
         targets: multFx,
@@ -4935,7 +5199,7 @@
 
       const finalFx = document.createElement("div");
       finalFx.className = "dramatic-final";
-      finalFx.innerHTML = `+<span id="dramaticScoreNum">0</span>점`;
+      finalFx.innerHTML = t("ui_dmg_label");
       layer.appendChild(finalFx);
       if (window.party && typeof window.party.confetti === "function") {
         try {
@@ -5054,7 +5318,7 @@
       try { localizeContent(); } catch (_) {}   // 복원된 사본을 현재 언어로 맞춤
       sortHand(); renderCards(); renderBossBanner(); renderHUD(); updateHandPreview();
       try { BGM.setTrack(state.isBossBlind ? BGM.bossKey(state.ante) : BGM.playKey(state.ante)); } catch (_) {}
-      setInfo("↩️ 이어하기 — 마지막 공격을 다시 시도하세요.");
+      setInfo(t("info_continue"));
       markRunActive();   // 리로드돼도 이 런으로 자동 복귀
       return true;
     }
@@ -5068,7 +5332,7 @@
       const fb = `<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\' style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem\\'></span>`;
       wrap.innerHTML = `<div class="jf-card" style="border-color:${r.color};box-shadow:0 0 36px ${r.color}99">
         <img src="jokers/${joker.id}.webp" alt="" draggable="false" onerror="this.outerHTML='${fb}'">
-        <div class="jf-tag" style="color:${isMult ? "#ff8a98" : "#8fd6ff"}">발동!</div>
+        <div class="jf-tag" style="color:${isMult ? "#ff8a98" : "#8fd6ff"}">${t("ui_triggered")}</div>
         <div class="jf-name">${joker.name}</div>
       </div>`;
       document.body.appendChild(wrap);
@@ -5152,9 +5416,9 @@
         return;
       }
       const cards = selectedCards();
-      if (!cards.length) return setInfo("먼저 카드를 1장 이상 선택하세요.");
-      if (state.bossModifier?.id === "max3cards" && cards.length > 3) return setInfo("이번 전투는 최대 3장까지만 선택 가능합니다.");
-      if (state.bossModifier?.id === "min4cards" && cards.length < 4) return setInfo("이번 전투는 최소 4장을 선택해야 합니다.");
+      if (!cards.length) return setInfo(t("info_no_cards"));
+      if (state.bossModifier?.id === "max3cards" && cards.length > 3) return setInfo(t("info_boss_max3"));
+      if (state.bossModifier?.id === "min4cards" && cards.length < 4) return setInfo(t("info_boss_min4"));
       AudioFX.play("play");
       const hand = scoreHand(cards);
       // 데미지 기여 카드만 추출(키커 제외) → 그 카드만 강조·공격력 가산
@@ -5181,10 +5445,10 @@
       // 하트 봉인 보스: cardScoreChips가 하트 카드 공격력을 0으로 처리(별도 페널티 불필요).
       // ── 발라트로식 순차 데미지 연출 (별도 스테이지 팝업) ──
       const kickers = cards.length - scoreCards.length;
-      const headText = `<span class="hand-tag">${hand.name}</span>${lvl > 0 ? ` <b style="color:var(--gold)">Lv.${lvl + 1}</b>` : ""} · 유효 <b style="color:var(--gold)">${scoreCards.length}장</b>${kickers > 0 ? ` (키커 ${kickers}장 제외)` : ""}`;
+      const headText = t("ui_head_scoring", {name: hand.name, lv: lvl > 0 ? t("ui_head_lv", {lv: lvl + 1}) : "", valid: scoreCards.length, kicker: kickers > 0 ? t("ui_head_kicker", {n: kickers}) : ""});
       const ps = buildPlayStage(cards, scoringIds, headText);
       _scoringActive = true;   // 여기부터 카드/조커 연출 wait()에 속도 배율 적용
-      setInfo(`<span class="hand-tag">${hand.name}</span> 채점 중...`);
+      setInfo(t("info_scoring", {name: hand.name}));
       await wait(620);
       // 1) 기술 기본 공격력(카드 공격력 제외) 표시
       let dispChips = Math.max(0, ctx.chips - cardChips);
@@ -5234,7 +5498,7 @@
           if (dc <= 0.001 && Math.abs(dm) <= 0.001) continue;
           ctx.activate(joker.id);
           if (dc > 0.001) dispChips += dc;
-          ps.head.innerHTML = `<b style="color:var(--gold)">${joker.name}</b>${viaBp ? ` <span style="opacity:.75">→ ${owner.name} 복사</span>` : ""} 발동!`;
+          ps.head.innerHTML = `<b style="color:var(--gold)">${joker.name}</b>${viaBp ? ` <span style="opacity:.75">→ ${owner.name} 복사</span>` : ""} ${t("ui_triggered")}`;
           const el = jokerArea.querySelector(`.joker[data-joker-id="${joker.id}"]`);
           if (el) { el.classList.remove("active"); void el.offsetWidth; el.classList.add("active"); setTimeout(() => el.classList.remove("active"), 500); }
           if (cel) {
@@ -5251,7 +5515,7 @@
       const steelHeld = (state.hand || []).filter(c => !_playedSet.has(String(c.id)) && c.enh === "steel").length;
       if (steelHeld > 0) {
         for (let i = 0; i < steelHeld; i++) ctx.mult = Math.round(ctx.mult * 1.5 * 100) / 100;
-        ps.setHead(`🔩 스틸 카드 ${steelHeld}장 보유 → 연격 ×${Math.pow(1.5, steelHeld).toFixed(2)}`);
+        ps.setHead(t("ui_steel_held", {n: steelHeld, mult: Math.pow(1.5, steelHeld).toFixed(2)}));
         ps.setReadout(dispChips, ctx.mult);
         await wait(420);
       }
@@ -5262,20 +5526,20 @@
         const cb = ctx.chips, mb = ctx.mult, ab = ctx.activated.length;
         let label = joker.name;
         if (joker.id === "blueprint" || joker.id === "brainstorm") {
-          const t = bpResolve(joker);
-          if (!t || isPerCardJoker(t)) continue;   // 대상이 카드별이면 이미 카드 루프에서 복사 발동됨
-          t.apply(ctx, t); ctx.activate(joker.id); label = `${joker.name} → ${t.name} 복사`;
+          const bpTarget = bpResolve(joker);
+          if (!bpTarget || isPerCardJoker(bpTarget)) continue;   // 대상이 카드별이면 이미 카드 루프에서 복사 발동됨
+          bpTarget.apply(ctx, bpTarget); ctx.activate(joker.id); label = t("ui_joker_copy", {joker: joker.name, target: bpTarget.name});
         } else {
           joker.apply(ctx, joker);
         }
         if (ctx.activated.length > ab) {
           const dc = ctx.chips - cb, dm = ctx.mult - mb;
-          ps.head.innerHTML = `<b style="color:var(--gold)">${label}</b> 발동!`;
+          ps.head.innerHTML = `<b style="color:var(--gold)">${label}</b> ${t("ui_triggered")}`;
           flashJokerCard(joker, dm > 0.001 && (MULT_JOKERS.has(joker.id) || dm >= 1));
           const el = jokerArea.querySelector(`.joker[data-joker-id="${joker.id}"]`);
           if (el) { el.classList.remove("active"); void el.offsetWidth; el.classList.add("active"); setTimeout(() => el.classList.remove("active"), 600); }
-          if (dc > 0.001) jrFloat(ps.readout, `+${Math.round(dc)} 공격력`, "chip");
-          if (dm > 0.001) jrFloat(ps.readout, MULT_JOKERS.has(joker.id) && mb > 0 ? `×${Math.round((ctx.mult / mb) * 100) / 100}` : `+${Math.round(dm * 100) / 100} 연격`, "mult");
+          if (dc > 0.001) jrFloat(ps.readout, t("ui_float_atk", {n: Math.round(dc)}), "chip");
+          if (dm > 0.001) jrFloat(ps.readout, MULT_JOKERS.has(joker.id) && mb > 0 ? `×${Math.round((ctx.mult / mb) * 100) / 100}` : t("ui_float_combo", {n: Math.round(dm * 100) / 100}), "mult");
           AudioFX.play("select");
           JuiceFX.sfx("mult");
           ps.setReadout(ctx.chips, ctx.mult);
@@ -5294,8 +5558,8 @@
         ps.head.innerHTML = `<b style="color:${_ed.color}">${_ed.icon} ${joker.name}</b> · ${_ed.label}`;
         const el2 = jokerArea.querySelector(`.joker[data-joker-id="${joker.id}"]`);
         if (el2) { el2.classList.remove("active"); void el2.offsetWidth; el2.classList.add("active"); setTimeout(() => el2.classList.remove("active"), 600); }
-        if (dc > 0.001) jrFloat(ps.readout, `+${Math.round(dc)} 공격력`, "chip");
-        if (dm > 0.001) jrFloat(ps.readout, _ed.multX ? `×${_ed.multX}` : `+${Math.round(dm * 100) / 100} 연격`, "mult");
+        if (dc > 0.001) jrFloat(ps.readout, t("ui_float_atk", {n: Math.round(dc)}), "chip");
+        if (dm > 0.001) jrFloat(ps.readout, _ed.multX ? `×${_ed.multX}` : t("ui_float_combo", {n: Math.round(dm * 100) / 100}), "mult");
         AudioFX.play("select");
         JuiceFX.sfx("mult");
         ps.setReadout(ctx.chips, ctx.mult);
@@ -5326,8 +5590,8 @@
         })();
       }
       await animateScore(hand.name, chips, points, mult, prevScore, state.score);
-      setInfo(`<span class="hand-tag">${hand.name}</span> | ${chips}공격력 × ${mult}배 = <b>${points.toLocaleString()}</b>점`);
-      addLog(`${hand.name} 플레이: +${points}점 (남은 공격 ${state.handsLeft})`);
+      setInfo(t("info_score_result", {hand: hand.name, chips, mult, pts: points.toLocaleString()}));
+      addLog(t("log_play_hand", {hand: hand.name, pts: points.toLocaleString(), left: state.handsLeft}));
       consumeSelectedCards();
       renderHUD(chips, mult);
       const shouldContinue = canContinue();
@@ -5340,17 +5604,17 @@
       if (state.discardsLeft <= 0) {
         state.discardsLeft = 0;
         renderHUD();
-        return setInfo("버리기 횟수를 모두 사용했습니다.");
+        return setInfo(t("info_no_discards"));
       }
       const cards = selectedCards();
-      if (!cards.length) return setInfo("버릴 카드를 선택하세요.");
+      if (!cards.length) return setInfo(t("info_select_discard"));
       AudioFX.play("select");
       state.discardsLeft = Math.max(0, state.discardsLeft - 1);
       const discardEls = Array.from(cardsWrap.querySelectorAll('.card.selected'));
       discardEls.forEach(el => el.classList.add('discarding-out'));
       setTimeout(() => consumeSelectedCards(), 280);
-      setInfo(`${cards.length}장 버림 완료. 남은 버리기 ${state.discardsLeft}`);
-      addLog(`${cards.length}장 버림. (남은 버리기 ${state.discardsLeft})`);
+      setInfo(t("info_discarded", {n: cards.length, left: state.discardsLeft}));
+      addLog(t("log_discard", {n: cards.length, left: state.discardsLeft}));
       renderHUD();
       updateHandPreview();
     }
@@ -5427,7 +5691,7 @@
       state.money -= cost;
       state.vouchers[v.id] = true;
       state.shopVoucher = null;
-      addLog(`바우처 구매: ${v.name} (-🪙${cost})`);
+      addLog(t("log_buy_voucher", {name: v.name, n: cost}));
       AudioFX.play("win");
       renderHUD();
       openShop(_shopIsAnteClear); // 슬롯 증가 등은 다음 진열부터, 할인은 즉시 반영
@@ -5439,7 +5703,7 @@
       const owned = voucherPool.filter(v => hasVoucher(v.id));
       if (!owned.length) { box.style.display = "none"; box.innerHTML = ""; return; }
       box.style.display = "";
-      box.innerHTML = `<span class="ov-label">보유 바우처</span>` + owned.map(v =>
+      box.innerHTML = `<span class="ov-label">${t("ui_owned_vouchers")}</span>` + owned.map(v =>
         `<span class="ov-chip" title="${v.name}: ${v.desc}">${v.icon} ${v.name}</span>`).join("");
     }
 
@@ -5487,7 +5751,7 @@
       grid.innerHTML = "";
       $("#shopMoney").textContent = `🪙${state.money}`;
       const shopAnte = $("#shopAnte");
-      if (shopAnte) shopAnte.textContent = `Ante ${state.ante}`;
+      if (shopAnte) shopAnte.textContent = t("ui_ante_n", { n: state.ante });
       updateGoldLabel();
       // 정산 내역은 전투 클리어 시 별도 팝업(cashoutModal)에서 이미 보여주므로 상점 배너는 숨김(공간 절약)
       const coEl = $("#shopCashout");
@@ -5500,7 +5764,7 @@
       const rerollBtn = $("#shopReroll");
       if (rerollBtn) {
         const rc = effectiveRerollCost();
-        rerollBtn.textContent = `🎲 갱신 🪙${rc}`;
+        rerollBtn.textContent = t("ui_reroll_btn", {n: rc});
         rerollBtn.disabled = state.money < rc;
         rerollBtn.onclick = () => {
           const c = effectiveRerollCost();
@@ -5516,7 +5780,7 @@
       if (state.shopVoucher) {
         const v = state.shopVoucher;
         const cost = priceOf(v.cost);
-        grid.appendChild(shopSubtitle("🎟️ 바우처 · 앤티당 1개 · 영구 효과"));
+        grid.appendChild(shopSubtitle(t("ui_voucher_section")));
         const vc = document.createElement("button");
         vc.type = "button";
         vc.className = "shop-voucher";
@@ -5524,8 +5788,8 @@
         vc.addEventListener("click", () => {
           openDetailPopup({
             emoji: v.icon, name: v.name, desc: v.desc,
-            costLine: `바우처 · 영구 효과 · 비용 🪙${cost}`,
-            actionLabel: state.money >= cost ? `구매 🪙${cost}` : "자금 부족",
+            costLine: t("pop_voucher_cost", {n: cost}),
+            actionLabel: state.money >= cost ? t("pop_buy", {n: cost}) : t("pop_no_funds"),
             actionDisabled: state.money < cost,
             actionFn: buyVoucher
           });
@@ -5554,8 +5818,8 @@
             imgSrc: `jokers/${joker.id}.webp`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
             name: joker.name, badgeLabel: _r.label, badgeColor: _r.color, edition: joker.edition,
             desc: joker.detail || joker.desc,
-            costLine: `구매 🪙${cost} · 판매가 🪙${jokerSellValue(joker)}`,
-            actionLabel: full ? "조커 슬롯 가득 참" : (afford ? `구매 🪙${cost}` : "자금 부족"),
+            costLine: t("pop_shop_joker_cost", {cost, sell: jokerSellValue(joker)}),
+            actionLabel: full ? t("pop_joker_full") : (afford ? t("pop_buy", {n: cost}) : t("pop_no_funds")),
             actionDisabled: full || !afford,
             actionFn: () => {
               closeJokerPopup();
@@ -5563,13 +5827,13 @@
               state.jokers.push({ ...joker, counter: 0 });
               markDiscovered("joker", joker.id);
               state.shopJokers = state.shopJokers.filter(j => j.id !== joker.id);
-              addLog(`조커 구매: ${joker.name} (-🪙${cost})`);
+              addLog(t("log_buy_joker", {name: joker.name, n: cost}));
               renderHUD(); openShop(_shopIsAnteClear);
             }
           })
         }));
       });
-      if (!state.shopJokers.length) jRow.appendChild(shopSoldout("조커 매진 — 다음 전투에 갱신"));
+      if (!state.shopJokers.length) jRow.appendChild(shopSoldout(t("ui_soldout_joker")));
       grid.appendChild(jRow);
 
       // ── 플래닛 ──
@@ -5581,18 +5845,18 @@
         const afford = state.money >= cost;
         const planetFull = consumableCount() >= consumableMax();
         const isSpecial = !!planet.special;
-        const handName = isSpecial ? "특수" : (handBase[planet.hand]?.name || planet.hand);
+        const handName = isSpecial ? t("ui_special") : (handBase[planet.hand]?.name || planet.hand);
         const tileName = isSpecial ? planet.name : `${planet.name}(${handName})`;
-        const desc = isSpecial ? planet.desc : `${handName} 기술 영구 강화 (+${planet.chipsBonus}공격력 / +${planet.multBonus}연격)`;
+        const desc = isSpecial ? planet.desc : t("pop_planet_desc", {hand: handName, chips: planet.chipsBonus, mult: planet.multBonus});
         pRow.appendChild(buildShopTile({
           imgSrc: `planets/${planet.id}.webp?v=2`, emoji: planet.planet, name: tileName, price: cost, afford, borderColor: isSpecial ? "#a06bff" : "#4a84ff",
-          badge: isSpecial ? { label: "특수", color: "#a06bff" } : null,
+          badge: isSpecial ? { label: t("ui_special"), color: "#a06bff" } : null,
           onClick: () => openDetailPopup({
             imgSrc: `planets/${planet.id}.webp?v=2`, emoji: planet.planet, name: `${planet.planet} ${planet.name}${isSpecial ? "" : " · " + handName}`,
-            badgeLabel: isSpecial ? "특수 행성" : null, badgeColor: "#a06bff",
+            badgeLabel: isSpecial ? t("pop_badge_special_planet") : null, badgeColor: "#a06bff",
             desc,
-            costLine: planetFull ? `구매 🪙${cost} · 슬롯 가득 → 구매 즉시 사용` : `구매 🪙${cost} · 소모품 슬롯 사용`,
-            actionLabel: !afford ? "자금 부족" : (planetFull ? `구매 후 바로 사용 🪙${cost}` : `구매 🪙${cost}`),
+            costLine: planetFull ? t("pop_planet_cost_full", {n: cost}) : t("pop_planet_cost_slot", {n: cost}),
+            actionLabel: !afford ? t("pop_no_funds") : (planetFull ? t("pop_buy_instant", {n: cost}) : t("pop_buy", {n: cost})),
             actionDisabled: !afford,
             actionFn: () => {
               closeJokerPopup();
@@ -5602,7 +5866,7 @@
               if (planetFull) {
                 // 슬롯 가득 → 슬롯에 안 넣고 즉시 사용
                 if (planet.special === "absorb") {
-                  addLog(`행성 즉시 사용: ${planet.name} (-🪙${cost})`);
+                  addLog(t("log_instant_planet", {name: planet.name, n: cost}));
                   renderHUD();
                   openSingularityPicker({ ...planet });   // picker 콜백이 refreshConsumables→상점 갱신
                   return;
@@ -5615,17 +5879,17 @@
                   state.handLevels[planet.hand] = nl;
                   flashPlanetCard(planet, `${hn} Lv.${nl}`);
                 }
-                addLog(`행성 즉시 사용: ${planet.name} (-🪙${cost})`);
+                addLog(t("log_instant_planet", {name: planet.name, n: cost}));
               } else {
                 state.planetCards.push({ ...planet });
-                addLog(`플래닛 구매: ${planet.name} (-🪙${cost})`);
+                addLog(t("log_buy_planet", {name: planet.name, n: cost}));
               }
               renderHUD(); openShop(_shopIsAnteClear);
             }
           })
         }));
       });
-      if (!(state.shopPlanets || []).length) pRow.appendChild(shopSoldout("플래닛 매진"));
+      if (!(state.shopPlanets || []).length) pRow.appendChild(shopSoldout(t("ui_soldout_planet")));
       grid.appendChild(pRow);
 
       // ── 타로 ──
@@ -5641,12 +5905,12 @@
         const blocked = full && !instant;
         tRow.appendChild(buildShopTile({
           imgSrc: `tarot/${tarot.id}.webp?v=2`, emoji: "🔮", name: tarot.name, price: cost, afford, borderColor: "#b56ad6",
-          badge: { label: "타로", color: "#b56ad6" },
+          badge: { label: t("pop_badge_tarot"), color: "#b56ad6" },
           onClick: () => openDetailPopup({
-            imgSrc: `tarot/${tarot.id}.webp?v=2`, emoji: "🔮", name: tarot.name, badgeLabel: "타로", badgeColor: "#b56ad6",
-            desc: tarot.desc + (instant ? " · 즉시 사용" : ` · 사용 시 카드 정확히 ${tarot.need}장 선택`),
-            costLine: (full && instant) ? `구매 🪙${cost} · 슬롯 가득 → 구매 즉시 사용` : `구매 🪙${cost} · 소모품 슬롯 사용`,
-            actionLabel: blocked ? "소모품 슬롯 가득 참" : (!afford ? "자금 부족" : ((full && instant) ? `구매 후 바로 사용 🪙${cost}` : `구매 🪙${cost}`)),
+            imgSrc: `tarot/${tarot.id}.webp?v=2`, emoji: "🔮", name: tarot.name, badgeLabel: t("pop_badge_tarot"), badgeColor: "#b56ad6",
+            desc: tarot.desc + (instant ? t("pop_tarot_instant") : t("pop_tarot_shop_need", {n: tarot.need})),
+            costLine: (full && instant) ? t("pop_planet_cost_full", {n: cost}) : t("pop_planet_cost_slot", {n: cost}),
+            actionLabel: blocked ? t("pop_consumable_full") : (!afford ? t("pop_no_funds") : ((full && instant) ? t("pop_buy_instant", {n: cost}) : t("pop_buy", {n: cost}))),
             actionDisabled: blocked || !afford,
             actionFn: () => {
               closeJokerPopup();
@@ -5656,22 +5920,22 @@
               if (full && instant) {
                 tarot.apply();   // 슬롯 가득 → 즉시 효과 발동, 슬롯 안 차지
                 flashTarotCard(tarot);
-                addLog(`타로 즉시 사용: ${tarot.name} (-🪙${cost})`);
+                addLog(t("log_instant_tarot", {name: tarot.name, n: cost}));
               } else {
                 state.tarotCards.push({ ...tarot });
-                addLog(`타로 구매: ${tarot.name} (-🪙${cost})`);
+                addLog(t("log_buy_tarot", {name: tarot.name, n: cost}));
               }
               renderHUD(); openShop(_shopIsAnteClear);
             }
           })
         }));
       });
-      if (!(state.shopTarots || []).length) tRow.appendChild(shopSoldout("타로 매진"));
+      if (!(state.shopTarots || []).length) tRow.appendChild(shopSoldout(t("ui_soldout_tarot")));
       grid.appendChild(tRow);
 
       // ── 플레이 카드 (마술 트릭 바우처 보유 시에만) ──
       if ((state.shopCards || []).length > 0) {
-        grid.appendChild(shopSubtitle("플레이 카드 · 덱에 영구 추가"));
+        grid.appendChild(shopSubtitle(t("ui_playcard_section")));
         const cRow = document.createElement("div");
         cRow.className = "shop-tilerow";
         state.shopCards.forEach((pc, idx) => {
@@ -5683,9 +5947,9 @@
             name: `${formatRank(pc.rank)}${suitSymbol[pc.suit]}`, price: cost, afford, borderColor: "#ffffff",
             onClick: () => openDetailPopup({
               emoji: suitSymbol[pc.suit], name: `${formatRank(pc.rank)} ${suitSymbol[pc.suit]}`,
-              desc: "이 카드를 덱에 영구히 추가합니다.",
-              costLine: `구매 🪙${cost}`,
-              actionLabel: afford ? `구매 🪙${cost}` : "자금 부족",
+              desc: t("pop_card_deck_desc"),
+              costLine: t("pop_buy", {n: cost}),
+              actionLabel: afford ? t("pop_buy", {n: cost}) : t("pop_no_funds"),
               actionDisabled: !afford,
               actionFn: () => {
                 closeJokerPopup();
@@ -5694,7 +5958,7 @@
                 if (!state.runDeck) state.runDeck = buildRunDeck();
                 state.runDeck.push({ id: state._deckUid++, suit: pc.suit, rank: pc.rank, enh: null });
                 state.shopCards.splice(idx, 1);
-                addLog(`플레이 카드 구매: ${formatRank(pc.rank)}${suitSymbol[pc.suit]} → 덱 추가 (-🪙${cost})`);
+                addLog(t("log_buy_card", {card: `${formatRank(pc.rank)}${suitSymbol[pc.suit]}`, n: cost}));
                 renderHUD(); openShop(_shopIsAnteClear);
               }
             })
@@ -5704,8 +5968,8 @@
       }
 
       $("#shopContinueBtn").textContent = anteClear
-        ? `Ante ${state.ante + 1} 시작 →`
-        : `전투 ${Math.min(3, state.roundIndex + 2)}/3 시작 →`;
+        ? t("ui_start_ante", {n: state.ante + 1})
+        : t("ui_start_battle", {n: Math.min(3, state.roundIndex + 2)});
       $("#shopModal").classList.add("show");
     }
 
@@ -5725,13 +5989,13 @@
       state.pendingBlindIndex = index;
       const blindDefs = getBlindTargets(state.ante);
       const blind = blindDefs[index];
-      $("#bsAnte").textContent = `Ante ${state.ante}`;
+      $("#bsAnte").textContent = t("ui_ante_n", { n: state.ante });
       $("#bsBlindName").textContent = t(blind.id === "small" ? "mob" : blind.id === "big" ? "elite" : "boss");
       $("#bsTarget").textContent = `${t("enemy_hp")} ${blind.target.toLocaleString()}`;
       // 스킵 보상 1개를 미리 결정해 보여준다. 스킵하면 이 보상을 받고, 플레이하면 무시.
       state._skipReward = rollSkipReward();
       const sr = state._skipReward;
-      $("#bsReward").innerHTML = `⏭️ 스킵 보상: <b style="color:var(--gold)">${sr.icon} ${sr.label}</b> <span style="opacity:.85">— ${sr.detail}</span>`;
+      $("#bsReward").innerHTML = `${t("ui_skip_reward_label")} <b style="color:var(--gold)">${sr.icon} ${sr.label}</b> <span style="opacity:.85">— ${sr.detail}</span>`;
       $("#blindSelectModal").classList.add("show");
       AudioFX.play("select");
     }
@@ -5746,20 +6010,20 @@
     function buildSkipRewardPool() {
       const ante = state.ante;
       return [
-        { icon:"💸", label:"한탕 자금", detail:`+🪙${ante * 5} 즉시 획득`,
-          run() { const m = ante * 5; state.money += m; return `💸 한탕 자금 +🪙${m}`; } },
-        { icon:"🃏", label:"랜덤 조커", detail:"무료 조커 1개 획득",
+        { icon:"💸", label: t("sr_windfall_label"), detail: t("sr_windfall_detail", {n: ante * 5}),
+          run() { const m = ante * 5; state.money += m; return t("sr_windfall_run", {n: m}); } },
+        { icon:"🃏", label: t("sr_rand_joker_label"), detail: t("sr_rand_joker_detail"),
           cond: () => !jokerSlotsFull(),
-          run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: 0 }); markDiscovered("joker", j.id); renderHUD(); return `🃏 무료 조커: ${j.name}`; } },
-        { icon:"🌑", label:"네가티브 조커", detail:"무작위 조커를 네가티브로 생성 (슬롯 미차지)",
-          run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: 0, negative: true }); markDiscovered("joker", j.id); renderHUD(); return `🌑 네가티브 조커: ${j.name}`; } },
-        { icon:"🔮", label:"랜덤 타로", detail:"무료 타로 1장 (슬롯 필요)",
+          run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: 0 }); markDiscovered("joker", j.id); renderHUD(); return t("sr_rand_joker_run", {name: j.name}); } },
+        { icon:"🌑", label: t("sr_neg_joker_label"), detail: t("sr_neg_joker_detail"),
+          run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: 0, negative: true }); markDiscovered("joker", j.id); renderHUD(); return t("sr_neg_joker_run", {name: j.name}); } },
+        { icon:"🔮", label: t("sr_rand_tarot_label"), detail: t("sr_rand_tarot_detail"),
           cond: () => consumableCount() < consumableMax(),
-          run() { const t = weightedSampleBy(tarotPool, 1, tarotWeight)[0]; state.tarotCards.push({ ...t }); markDiscovered("tarot", t.id); return `🔮 무료 타로: ${t.name}`; } },
-        { icon:"🪐", label:"랜덤 행성", detail:"무료 행성 1장 (슬롯 필요)",
+          run() { const sr_t = weightedSampleBy(tarotPool, 1, tarotWeight)[0]; state.tarotCards.push({ ...sr_t }); markDiscovered("tarot", sr_t.id); return t("sr_rand_tarot_run", {name: sr_t.name}); } },
+        { icon:"🪐", label: t("sr_rand_planet_label"), detail: t("sr_rand_planet_detail"),
           cond: () => consumableCount() < consumableMax(),
-          run() { const p = weightedSampleBy(planetPool, 1, planetWeight)[0]; state.planetCards.push({ ...p }); markDiscovered("planet", p.id); return `🪐 무료 행성: ${p.name}`; } },
-        { icon:"✨", label:"카드 강화", detail:"덱의 무작위 카드 1장 강화",
+          run() { const p = weightedSampleBy(planetPool, 1, planetWeight)[0]; state.planetCards.push({ ...p }); markDiscovered("planet", p.id); return t("sr_rand_planet_run", {name: p.name}); } },
+        { icon:"✨", label: t("sr_card_enh_label"), detail: t("sr_card_enh_detail"),
           cond: () => (state.runDeck || []).some(c => !c.enh),
           run() {
             const cands = state.runDeck.filter(c => !c.enh);
@@ -5767,7 +6031,7 @@
             const enhKeys = Object.keys(ENH);
             card.enh = enhKeys[Math.floor(Math.random() * enhKeys.length)];
             renderCards();
-            return `✨ 카드 강화: ${suitSymbol[card.suit]}${formatRank(card.rank)} → ${ENH[card.enh].label}`;
+            return t("sr_card_enh_run", {card: `${suitSymbol[card.suit]}${formatRank(card.rank)}`, enh: ENH[card.enh].label});
           } }
       ];
     }
@@ -5777,31 +6041,31 @@
       return avail[Math.floor(Math.random() * avail.length)];
     }
     function showSkipRewardToast(text) {
-      const t = document.createElement("div");
-      t.className = "skip-reward-toast";
-      t.innerHTML = `<div class="srt-head">⏭️ 스킵 보상</div><div class="srt-main">${text}</div>`;
-      document.body.appendChild(t);
+      const toastEl = document.createElement("div");
+      toastEl.className = "skip-reward-toast";
+      toastEl.innerHTML = `<div class="srt-head">${t("ui_skip_reward_head")}</div><div class="srt-main">${text}</div>`;
+      document.body.appendChild(toastEl);
       try { AudioFX.play("win"); JuiceFX.sfx("win"); } catch (_) {}
-      setTimeout(() => { t.classList.add("out"); setTimeout(() => t.remove(), 280); }, 1700);
+      setTimeout(() => { toastEl.classList.add("out"); setTimeout(() => toastEl.remove(), 280); }, 1700);
     }
     function skipBlind(index) {
       $("#blindSelectModal").classList.remove("show");
       // 방탄: 보상 적용이 어떤 이유로든 throw해도 게임이 멈추거나 메인으로 튕기지 않고
       // 반드시 다음 전투로 진입하게 한다(스킵 보상은 부가효과일 뿐, 진행이 우선).
-      const opt = state._skipReward || rollSkipReward() || { icon: "🎁", label: "보상", run: () => "보상 없음" };
+      const opt = state._skipReward || rollSkipReward() || { icon: "🎁", label: t("ui_reward_fallback"), run: () => t("ui_reward_none") };
       state._skipReward = null;
       let rewardText;
       try {
         rewardText = opt.run();
       } catch (e) {
         console.error("skip reward run failed:", e);
-        rewardText = `${opt.label || "보상"} (적용 중 오류 — 다음 전투로 진행)`;
+        rewardText = t("ui_reward_error", {label: opt.label || t("ui_reward_fallback")});
       }
-      try { addLog(`${["스몰", "빅"][index] || "전투"} 전투 스킵 — ${rewardText}`); } catch (_) {}
+      try { addLog(t("log_skip_blind", {blind: [t("log_small"), t("log_big")][index] || t("log_battle"), reward: rewardText})); } catch (_) {}
       try { renderHUD(); refreshConsumables(); } catch (e) { console.error("skip render failed:", e); }
       // 무엇을 받았는지 확인창을 띄우고, 확인을 눌러야 다음 전투 진입.
       $("#skipResultIcon").textContent = opt.icon || "🎁";
-      $("#skipResultName").textContent = opt.label || "보상";
+      $("#skipResultName").textContent = opt.label || t("ui_reward_fallback");
       $("#skipResultDesc").textContent = rewardText;
       const btn = $("#skipResultBtn");
       btn.onclick = () => { $("#skipResultModal").classList.remove("show"); beginBlind(index + 1, _pendingSeed); };
@@ -5843,11 +6107,11 @@
       renderHUD();
       updateHandPreview();
       BGM.setTrack(state.isBossBlind ? BGM.bossKey(state.ante) : BGM.playKey(state.ante));
-      setInfo("공격할 카드를 선택하세요.");
+      setInfo(t("info_pick_cards"));
       if (state.bossModifier) {
         setInfo(`<span style="color:var(--danger)">⚠️ ${state.bossModifier.label}</span> — ${state.bossModifier.desc}`);
       }
-      addLog(`${activeRoundLabel()} 시작. 목표 ${activeTarget()}점`);
+      addLog(t("log_round_start", {round: activeRoundLabel(), target: activeTarget().toLocaleString()}));
       snapshotRun();   // 전투 첫 공격 차례 시작 — 세이브/컨티뉴 스냅샷
     }
 
@@ -5863,7 +6127,7 @@
       const reward = blindBase + handCash + interest + goldCash;
       state.lastCashout = { blindBase, handCash, discards: state.discardsLeft, interest, goldCash, total: reward };
       state.money += reward;
-      addLog(`정산: 기본 🪙${blindBase} + 남은 공격 ${state.handsLeft}×🪙1 + 이자 🪙${interest} = +🪙${reward}`);
+      addLog(t("log_cashout", {base: blindBase, hands: state.handsLeft, interest, total: reward}));
       state.gameEnded = true;
       AudioFX.play("win");
       JuiceFX.sfx("win"); JuiceFX.shake(9);
@@ -5874,7 +6138,7 @@
         try { BGM.stop(); } catch (_) {}   // 보스 클리어 → 보스전 음악 즉시 정지(상점 진입 시 상점곡)
         bossGold = state.ante * 1000000;
         try { if ((typeof SharedWallet !== "undefined" && SharedWallet) && SharedWallet._initialized) SharedWallet.addGold(bossGold); } catch (_) {}
-        addLog(`보스 격파! 보상 ${bossGold.toLocaleString()} G`);
+        addLog(t("log_boss_reward", {n: bossGold.toLocaleString()}));
       }
       state.lastCashout.bossGold = bossGold;
       renderHUD();
@@ -5884,9 +6148,9 @@
         state.endless = true;
         state.endlessAnnounced = true;
         spawnWinConfetti();
-        setInfo(`🏆 8앤티 완주! 지금부터 <b style="color:var(--gold,#ffcf6d)">엔드리스</b> — 끝까지 가보자`);
+        setInfo(t("info_endless"));
       } else {
-        setInfo(bossGold ? `보스 격파! +${bossGold.toLocaleString()} G` : `전투 돌파! 정산 +🪙${reward}`);
+        setInfo(bossGold ? t("info_boss_clear", {n: bossGold.toLocaleString()}) : t("info_round_clear", {n: reward}));
       }
       showClearConfirm(isLastBlind);   // 데미지 확인 단계 → 확인 눌러야 정산 팝업
     }
@@ -5899,7 +6163,7 @@
       if (tg) tg.textContent = activeTarget().toLocaleString();
       const bossGold = state.lastCashout?.bossGold || 0;
       if (bg) bg.style.display = bossGold ? "" : "none";
-      if (bg && bossGold) bg.innerHTML = `👑 보스 격파 보상 <b>+${bossGold.toLocaleString()} G</b>`;
+      if (bg && bossGold) bg.innerHTML = t("ui_boss_reward_banner", {n: bossGold.toLocaleString()});
       $("#clearConfirmModal").classList.add("show");
     }
 
@@ -5909,16 +6173,16 @@
       const body = $("#cashoutBody");
       if (body) {
         body.innerHTML =
-          (co.bossGold ? `<div class="co-line co-boss"><span>👑 보스 격파 보상</span><b>+${co.bossGold.toLocaleString()} G</b></div>` : "") +
-          `<div class="co-line"><span>전투 클리어</span><b>+🪙${co.blindBase}</b></div>` +
-          `<div class="co-line"><span>남은 공격 ${co.handCash} × 🪙1</span><b>+🪙${co.handCash}</b></div>` +
-          `<div class="co-line"><span>이자 (자금 🪙5당 🪙1)</span><b>+🪙${co.interest}</b></div>` +
-          (co.goldCash ? `<div class="co-line"><span>🟡 골드 카드 보유</span><b>+🪙${co.goldCash}</b></div>` : "");
+          (co.bossGold ? `<div class="co-line co-boss"><span>${t("ui_co_boss")}</span><b>+${co.bossGold.toLocaleString()} G</b></div>` : "") +
+          `<div class="co-line"><span>${t("ui_co_clear")}</span><b>+🪙${co.blindBase}</b></div>` +
+          `<div class="co-line"><span>${t("ui_co_hands", {n: co.handCash})}</span><b>+🪙${co.handCash}</b></div>` +
+          `<div class="co-line"><span>${t("ui_co_interest")}</span><b>+🪙${co.interest}</b></div>` +
+          (co.goldCash ? `<div class="co-line"><span>${t("ui_co_gold")}</span><b>+🪙${co.goldCash}</b></div>` : "");
       }
       const totalEl = $("#cashoutTotal");
       if (totalEl) totalEl.textContent = co.total;
       const btn = $("#cashoutContinueBtn");
-      if (btn) btn.textContent = anteClear ? `Ante ${state.ante + 1}로 →` : "상점으로 →";
+      if (btn) btn.textContent = anteClear ? t("ui_to_ante", {n: state.ante + 1}) : t("ui_to_shop");
       $("#cashoutModal").classList.add("show");
     }
 
@@ -5933,18 +6197,18 @@
       AudioFX.play("lose");
       JuiceFX.sfx("lose"); JuiceFX.shake(12);
       renderHUD();
-      const anteText = `Ante ${state.ante} - ${["스몰", "빅", "보스"][state.roundIndex]} 전투에서 탈락`;
+      const anteText = t("ui_gameover_ante", {ante: state.ante, blind: [t("ui_blind_small"), t("ui_blind_big"), t("boss")][state.roundIndex]});
       const totalScore = state.score;
       const prev = parseInt(localStorage.getItem("jokerrun_hs") || "0", 10);
       const isNew = totalScore > prev;
       if (isNew) localStorage.setItem("jokerrun_hs", String(totalScore));
-      const hsText = isNew ? `🏆 신기록! ${totalScore.toLocaleString()}점` : `최고 기록: ${prev.toLocaleString()}점`;
+      const hsText = isNew ? t("ui_new_record_short", {n: totalScore.toLocaleString()}) : t("ui_best_score", {n: prev.toLocaleString()});
       document.getElementById("gameOverAnteText").textContent = anteText;
       document.getElementById("gameOverHighScore").textContent = hsText;
       const contBtn = document.getElementById("gameOverContinueBtn");
       if (contBtn) contBtn.style.display = hasSavedRun() ? "" : "none";
       document.getElementById("gameOverModal").classList.add("show");
-      addLog("게임 오버.");
+      addLog(t("log_game_over"));
     }
 
     function newRun() {
@@ -5982,7 +6246,7 @@
       const isNew = totalScore > prev;
       if (isNew) localStorage.setItem("jokerrun_hs", String(totalScore));
       clearRunActive(); clearSavedRun();   // 런 완주 → 자동 복귀 대상 아님(다음 로드는 시작화면)
-      const message = `🏆 런 클리어! 8앤티 완주!\n최종 데미지 ${totalScore.toLocaleString()}점${isNew ? " — 신기록!" : ""}`;
+      const message = t("ui_run_clear", {n: totalScore.toLocaleString(), record: isNew ? t("ui_new_record_suffix") : ""});
       openVictoryModal(message);
       spawnWinConfetti();
       AudioFX.play("win");
@@ -6003,7 +6267,7 @@
     $("#sortBtn").addEventListener("click", () => {
       state.sortMode = state.sortMode === "rank" ? "suit" : "rank";
       const lbl = $("#sortModeLabel");
-      if (lbl) lbl.textContent = state.sortMode === "rank" ? "랭크" : "무늬";
+      if (lbl) lbl.textContent = state.sortMode === "rank" ? t("ui_sort_rank_label") : t("ui_sort_suit_label");
       sortHand();
       renderCards();
       AudioFX.play("select");
@@ -6033,7 +6297,7 @@
       renderCards();
       updateHandPreview();
       updateConsumableUsability();
-      setInfo("선택을 해제했습니다.");
+      setInfo(t("info_deselect"));
     });
     $("#cashoutContinueBtn").addEventListener("click", continueFromCashout);
     $("#shopContinueBtn").addEventListener("click", window.continueFromShop);
@@ -6044,7 +6308,7 @@
     function refreshStartHighScore() {
       const hs = parseInt(localStorage.getItem("jokerrun_hs") || "0", 10);
       const el = $("#startHighScore");
-      if (el) el.textContent = `최고 기록: ${hs.toLocaleString()}점`;
+      if (el) el.textContent = t("ui_best_score", {n: hs.toLocaleString()});
       const cb = $("#startContinueBtn");
       if (cb) cb.style.display = hasSavedRun() ? "" : "none";   // 진행 중이던 게임 있으면 이어하기 노출
     }
@@ -6149,11 +6413,11 @@
       ov.innerHTML =
         `<div style="background:linear-gradient(160deg,#241a2e,#16131f);border:1.5px solid rgba(255,207,109,.55);border-radius:18px;max-width:340px;width:100%;padding:24px 22px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.6)">
           <div style="font-size:2.6rem;line-height:1">🏆</div>
-          <div style="font-size:1.15rem;font-weight:900;color:#ffe9a8;margin:8px 0 2px">랭킹 ${medal} 등재!</div>
-          <div style="font-size:.82rem;color:var(--muted,#9aa)">TOP 10 진입 축하금</div>
+          <div style="font-size:1.15rem;font-weight:900;color:#ffe9a8;margin:8px 0 2px">${t("ui_rank_title", {medal})}</div>
+          <div style="font-size:.82rem;color:var(--muted,#9aa)">${t("ui_rank_sub")}</div>
           <div style="font-size:1.9rem;font-weight:900;color:#ffcf6d;margin:12px 0">+${reward.toLocaleString()} G</div>
-          <div style="font-size:.7rem;color:var(--muted,#9aa);margin-bottom:14px">최초 1회 지급 · 전역 지갑 반영</div>
-          <button id="rankRewardClose" style="width:100%;padding:11px;border-radius:11px;border:0;font-weight:800;background:linear-gradient(120deg,#ffd76a,#ffb24a);color:#2a1d05;cursor:pointer">확인</button>
+          <div style="font-size:.7rem;color:var(--muted,#9aa);margin-bottom:14px">${t("ui_rank_note")}</div>
+          <button id="rankRewardClose" style="width:100%;padding:11px;border-radius:11px;border:0;font-weight:800;background:linear-gradient(120deg,#ffd76a,#ffb24a);color:#2a1d05;cursor:pointer">${t("ui_confirm")}</button>
         </div>`;
       document.body.appendChild(ov);
       const close = () => ov.remove();
@@ -6161,7 +6425,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-en1";
+    const JR_BUILD = "2026-06-22-en-full";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
@@ -6183,7 +6447,7 @@
       $("#dbgPlanet").innerHTML = planetPool.map(p => opt(p.id, `${p.planet || ""} ${p.name}`)).join("");
       $("#dbgRank").innerHTML   = rankList.map(r => opt(r, formatRank(r))).join("");
       $("#dbgSuit").innerHTML   = suits.map(s => opt(s, suitSymbol[s])).join("");
-      $("#dbgEnh").innerHTML    = `<option value="">강화없음</option>` + Object.keys(ENH).map(k => opt(k, ENH[k].label)).join("");
+      $("#dbgEnh").innerHTML    = `<option value="">${t("dbg_no_enh")}</option>` + Object.keys(ENH).map(k => opt(k, ENH[k].label)).join("");
 
       fab.addEventListener("click", () => $("#dbgModal").classList.add("show"));
       $("#dbgClose").addEventListener("click", () => $("#dbgModal").classList.remove("show"));
@@ -6195,17 +6459,17 @@
         const ed = $("#dbgJokerEd") ? $("#dbgJokerEd").value : "";
         state.jokers.push({ ...j, counter: 0, ...(neg ? { negative: true } : {}), ...(ed && EDITIONS[ed] ? { edition: ed } : {}) });
         markDiscovered("joker", j.id); renderHUD();
-        setInfo(`🐞 조커 추가: ${j.name}${neg ? " 🌑" : ""}${ed && EDITIONS[ed] ? " " + EDITIONS[ed].icon : ""}`);
+        setInfo(t("dbg_add_joker", {name: `${j.name}${neg ? " 🌑" : ""}${ed && EDITIONS[ed] ? " " + EDITIONS[ed].icon : ""}`}));
       });
       $("#dbgAddTarot").addEventListener("click", () => {
-        const t = tarotPool.find(x => x.id === $("#dbgTarot").value); if (!t) return;
-        state.tarotCards.push({ ...t }); markDiscovered("tarot", t.id); refreshConsumables();
-        setInfo(`🐞 타로 추가: ${t.name}`);
+        const tarotItem = tarotPool.find(x => x.id === $("#dbgTarot").value); if (!tarotItem) return;
+        state.tarotCards.push({ ...tarotItem }); markDiscovered("tarot", tarotItem.id); refreshConsumables();
+        setInfo(t("dbg_add_tarot", {name: tarotItem.name}));
       });
       $("#dbgAddPlanet").addEventListener("click", () => {
         const p = planetPool.find(x => x.id === $("#dbgPlanet").value); if (!p) return;
         state.planetCards.push({ ...p }); markDiscovered("planet", p.id); refreshConsumables();
-        setInfo(`🐞 행성 추가: ${p.name}`);
+        setInfo(t("dbg_add_planet", {name: p.name}));
       });
       $("#dbgAddCard").addEventListener("click", () => {
         const rank = parseInt($("#dbgRank").value, 10), suit = $("#dbgSuit").value, enh = $("#dbgEnh").value || null;
@@ -6216,9 +6480,9 @@
         state.runDeck.push({ id: cid, suit, rank, enh });
         if (state.deck) state.deck.push({ id: cid, suit, rank, enh });   // 이번 라운드 드로우 더미에도 즉시 추가
         renderHUD();
-        setInfo(`🐞 카드 추가: ${formatRank(rank)}${suitSymbol[suit]}${enh ? ` [${ENH[enh].label}]` : ""}`);
+        setInfo(t("dbg_add_card", {card: `${formatRank(rank)}${suitSymbol[suit]}${enh ? ` [${ENH[enh].label}]` : ""}`}));
       });
-      $("#dbgMoney").addEventListener("click", () => { state.money = (state.money || 0) + 50; renderHUD(); setInfo("🐞 자금 +🪙50"); });
+      $("#dbgMoney").addEventListener("click", () => { state.money = (state.money || 0) + 50; renderHUD(); setInfo(t("dbg_add_money")); });
     }
     (async () => {
       try { applyStaticI18n(); } catch (_) {}   // 감지된 언어로 정적 UI 먼저 로컬라이즈
