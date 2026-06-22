@@ -3123,6 +3123,15 @@
       if (joker.id === "brainstorm") { const t = state.jokers.find(j => j.id !== "blueprint" && j.id !== "brainstorm"); return (t && t !== joker) ? t : null; }
       return null;
     }
+    // ── 누적형 조커: 상세 팝업에 현재까지 쌓인 누적치를 표시 (self = 인벤토리 인스턴스) ──
+    const ACCUM_JOKERS = {
+      snowball:      self => `📈 현재 누적: 배수 +${self.counter || 0}`,
+      magnet:        self => `📈 현재 누적: 칩 +${self.counter || 0}`,
+      compound:      self => `📈 현재 누적: 배수 +${self.counter || 0}`,
+      vampire:       self => `📈 현재 누적: 배수 ×${(1 + (self.counter || 0)).toFixed(2)}`,
+      constellation: () => { const used = Object.values(state.handLevels || {}).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0); return `📈 현재: 행성 ${used}회 → 배수 ×${(1 + used * 0.2).toFixed(1)}`; }
+    };
+    function jokerAccumLine(joker){ const f = joker && ACCUM_JOKERS[joker.id]; return f ? f(joker) : null; }
     // 등급 가중 랜덤 추첨 (등장확률: 등급 높을수록 낮음). 희귀 사냥꾼 바우처면 전설/신화 가중 ↑
     function rarityWeight(r){
       const base = RARITY[r]?.weight || 100;
@@ -4220,6 +4229,7 @@
             name: joker.name, badgeLabel: _r.label, badgeColor: _r.color,
             negative: !!joker.negative, edition: joker.edition,
             desc: joker.detail || joker.desc,
+            accumLine: jokerAccumLine(joker),
             costLine: `판매 시 +$${jokerSellValue(joker)} 환급`,
             actionLabel: `팔기 +$${jokerSellValue(joker)}`,
             actionFn: () => { closeJokerPopup(); sellJoker(index, tile); }
@@ -4246,7 +4256,9 @@
       const negBadge = opts.negative ? ` <span class="neg-badge-text" title="슬롯을 차지하지 않습니다">🌑 네가티브</span>` : "";
       const edBadge = _edp ? ` <span class="ed-badge-text" style="background:linear-gradient(135deg,${_edp.color},#ffffffcc)" title="${_edp.fx}">${_edp.icon} ${_edp.label}</span>` : "";
       $("#jokerPopupName").innerHTML = `${opts.name}${opts.badgeLabel ? ` <span style="font-size:.7rem;font-weight:800;color:${opts.badgeColor};border:1px solid ${opts.badgeColor}66;border-radius:10px;padding:1px 7px;margin-left:4px;vertical-align:middle">${opts.badgeLabel}</span>` : ""}${negBadge}${edBadge}`;
-      $("#jokerPopupDesc").innerHTML = colorizeEffect(opts.desc || "") + (_edp ? `<div style="margin-top:6px;font-size:.78rem;color:${_edp.color};font-weight:700">${_edp.icon} ${_edp.label} 에디션 — 매 핸드 ${_edp.fx}</div>` : "");
+      $("#jokerPopupDesc").innerHTML = colorizeEffect(opts.desc || "")
+        + (opts.accumLine ? `<div style="margin-top:7px;font-size:.84rem;color:var(--gold,#ffcf6d);font-weight:800;padding:5px 8px;border-radius:8px;background:rgba(255,207,109,.1);border:1px solid rgba(255,207,109,.3)">${opts.accumLine}</div>` : "")
+        + (_edp ? `<div style="margin-top:6px;font-size:.78rem;color:${_edp.color};font-weight:700">${_edp.icon} ${_edp.label} 에디션 — 매 핸드 ${_edp.fx}</div>` : "");
       $("#jokerPopupCost").textContent = opts.costLine || "";
       const actBtn = $("#jokerPopupAction");
       if (opts.actionLabel) {
@@ -4284,6 +4296,7 @@
         badgeLabel: _r.label, badgeColor: _r.color,
         negative: !!joker.negative, edition: joker.edition,
         desc: joker.detail || joker.desc,
+        accumLine: jokerAccumLine(joker),
         costLine: `획득 비용: $${joker.cost} · 판매가: $${sell}`,
         actionLabel: `팔기 +$${sell}`,
         actionFn: () => { const idx = state.jokers.indexOf(joker); closeJokerPopup(); if (idx >= 0) sellJoker(idx, null); }
@@ -5922,7 +5935,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-deckview";
+    const JR_BUILD = "2026-06-22-accum";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
