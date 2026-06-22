@@ -1140,6 +1140,39 @@
       background-size: 200% 100%; animation: negHolo 3.2s linear infinite;
       box-shadow: 0 0 8px rgba(120,90,255,.5);
     }
+    /* ── 조커 에디션(포일/홀로/폴리): 발라트로식 점수 에디션. 테두리 시머 + 코너 배지 ── */
+    @keyframes edShimmer { 0% { background-position: 0 0, 0% 50%; } 100% { background-position: 0 0, 240% 50%; } }
+    .joker.ed-foil, .mini-tile.ed-foil, .shop-tile.ed-foil {
+      border-color: transparent !important;
+      background: linear-gradient(155deg,#0a0a14,#0a1622) padding-box, linear-gradient(135deg,#bdeeff,#3aa0ff 50%,#bdeeff) border-box;
+      background-size: 100% 100%, 240% 100%; border: 2px solid transparent;
+      box-shadow: 0 0 10px rgba(60,160,255,.5); animation: edShimmer 3.4s linear infinite;
+    }
+    .joker.ed-holo, .mini-tile.ed-holo, .shop-tile.ed-holo {
+      border-color: transparent !important;
+      background: linear-gradient(155deg,#140a16,#1c0a18) padding-box, linear-gradient(135deg,#ffc6ef,#ff4fc5 50%,#ffc6ef) border-box;
+      background-size: 100% 100%, 240% 100%; border: 2px solid transparent;
+      box-shadow: 0 0 10px rgba(255,79,197,.5); animation: edShimmer 3.4s linear infinite;
+    }
+    .joker.ed-poly, .mini-tile.ed-poly, .shop-tile.ed-poly {
+      border-color: transparent !important;
+      background: linear-gradient(155deg,#0a0a14,#181206) padding-box, linear-gradient(120deg,#ff5d73,#ffd166 28%,#5dff9e 52%,#5db8ff 74%,#c77dff) border-box;
+      background-size: 100% 100%, 280% 100%; border: 2px solid transparent;
+      box-shadow: 0 0 12px rgba(255,209,102,.45); animation: edShimmer 3s linear infinite;
+    }
+    .joker-ed-badge, .mini-ed-badge, .tile-ed-badge {
+      position: absolute; top: 2px; left: 3px; font-size: 11px; z-index: 4;
+      filter: drop-shadow(0 0 3px rgba(0,0,0,.85));
+    }
+    .tile-ed-badge { top: 3px; left: 4px; font-size: 13px; }
+    .ed-badge-text {
+      display: inline-block; font-size: .64rem; font-weight: 800; vertical-align: middle;
+      margin-left: 5px; padding: 1px 8px; border-radius: 10px; color: #0a0a14;
+      box-shadow: 0 0 8px rgba(0,0,0,.4);
+    }
+    .joker-popup-art.ed-foil { border-radius: 12px; box-shadow: 0 0 0 2px #3aa0ff, 0 0 22px rgba(60,160,255,.6); }
+    .joker-popup-art.ed-holo { border-radius: 12px; box-shadow: 0 0 0 2px #ff4fc5, 0 0 22px rgba(255,79,197,.6); }
+    .joker-popup-art.ed-poly { border-radius: 12px; box-shadow: 0 0 0 2px #ffd166, 0 0 24px rgba(255,209,102,.6); }
     .rar-dot {
       display: inline-block;
       width: 7px; height: 7px;
@@ -2780,6 +2813,7 @@
         <span style="width:54px;font-size:.8rem;font-weight:700">🃏 조커</span>
         <select id="dbgJoker" style="flex:1;min-width:0;padding:7px;border-radius:8px;background:#15101f;color:#e7defb;border:1px solid #463a63"></select>
         <label style="font-size:.66rem;display:flex;align-items:center;gap:3px;white-space:nowrap"><input type="checkbox" id="dbgJokerNeg">🌑</label>
+        <select id="dbgJokerEd" style="font-size:.66rem;padding:5px;border-radius:8px;background:#15101f;color:#e7defb;border:1px solid #463a63"><option value="">기본</option><option value="foil">🪙포일</option><option value="holo">✨홀로</option><option value="poly">🌈폴리</option></select>
         <button id="dbgAddJoker" class="btn-main" style="padding:7px 10px;border-radius:8px;font-weight:800">＋</button>
       </div>
       <div class="dbg-row" style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
@@ -2994,8 +3028,17 @@
     const _MULT_SEED = ["flushx2","doubleDown","fourMaster","allInClown","fourFlush","royalFlush","trioMult","gambler"];
     const MULT_JOKERS = new Set([..._MULT_SEED, ...jokerPool.filter(j => j.mult).map(j => j.id)]);
     function rarityOf(joker){ return RARITY[joker.rarity || JOKER_RARITY[joker.id] || "common"]; }
-    // 판매가: 등급별 환급. 네가티브 조커는 슬롯 미차지 프리미엄으로 +$5 가산.
-    function jokerSellValue(joker){ const base = Math.max(2, Math.floor((joker.cost / 2) * rarityOf(joker).sellMul)); return base + (joker.negative ? 5 : 0); }
+    // ── 조커 에디션(발라트로식): 네가티브(슬롯 미차지) 외 점수 보너스 에디션. 매매가 프리미엄 부여 ──
+    const EDITIONS = {
+      foil: { key: "foil", label: "포일",       icon: "🪙", color: "#3aa0ff", chips: 50,   premium: 3, fx: "칩 +50" },
+      holo: { key: "holo", label: "홀로그래픽", icon: "✨", color: "#ff4fc5", multAdd: 10, premium: 4, fx: "배수 +10" },
+      poly: { key: "poly", label: "폴리크롬",   icon: "🌈", color: "#ffd166", multX: 1.5,  premium: 5, fx: "배수 ×1.5" }
+    };
+    function editionOf(joker){ return joker && joker.edition ? (EDITIONS[joker.edition] || null) : null; }
+    // 상점 조커 에디션 추첨: 폴리 4% / 홀로 6% / 포일 10% / 일반 80%
+    function rollEdition(){ const r = Math.random(); if (r < 0.04) return "poly"; if (r < 0.10) return "holo"; if (r < 0.20) return "foil"; return null; }
+    // 판매가: 등급별 환급. 네가티브 +$5, 에디션은 등급별 프리미엄 가산.
+    function jokerSellValue(joker){ const base = Math.max(2, Math.floor((joker.cost / 2) * rarityOf(joker).sellMul)); const ed = editionOf(joker); return base + (joker.negative ? 5 : 0) + (ed ? ed.premium : 0); }
     // 등급 가중 랜덤 추첨 (등장확률: 등급 높을수록 낮음). 희귀 사냥꾼 바우처면 전설/신화 가중 ↑
     function rarityWeight(r){
       const base = RARITY[r]?.weight || 100;
@@ -4072,15 +4115,16 @@
         const _r = rarityOf(joker);
         const tile = document.createElement("button");
         tile.type = "button";
-        tile.className = "mini-tile" + (joker.negative ? " negative" : "");
-        if (!joker.negative) tile.style.borderColor = _r.color + "88";
-        tile.innerHTML = `<div class="mini-art"><img src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="네가티브 — 슬롯 미차지">🌑</span>' : ""}`;
+        const _ed = editionOf(joker);
+        tile.className = "mini-tile" + (joker.negative ? " negative" : (_ed ? " ed-" + _ed.key : ""));
+        if (!joker.negative && !_ed) tile.style.borderColor = _r.color + "88";
+        tile.innerHTML = `<div class="mini-art"><img src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="네가티브 — 슬롯 미차지">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}`;
         tile.addEventListener("click", () => {
           openDetailPopup({
             imgSrc: `jokers/${joker.id}.webp`,
             glyph: jokerGlyphClass[joker.id] || "joker-duo",
             name: joker.name, badgeLabel: _r.label, badgeColor: _r.color,
-            negative: !!joker.negative,
+            negative: !!joker.negative, edition: joker.edition,
             desc: joker.detail || joker.desc,
             costLine: `판매 시 +$${jokerSellValue(joker)} 환급`,
             actionLabel: `팔기 +$${jokerSellValue(joker)}`,
@@ -4095,7 +4139,8 @@
     // 범용 상세 팝업: 아트/글리프/이모지 + 이름 + 등급뱃지 + 설명 + 비용줄 + (선택)액션버튼
     function openDetailPopup(opts) {
       const icon = $("#jokerPopupIcon");
-      const negCls = opts.negative ? " negative" : "";
+      const _edp = opts.edition ? (EDITIONS[opts.edition] || null) : null;
+      const negCls = opts.negative ? " negative" : (_edp ? " ed-" + _edp.key : "");
       if (opts.imgSrc) {
         const fb = opts.emoji ? `<span class=\\'jp-emoji\\'>${opts.emoji}</span>` : `<span class=\\'joker-glyph ${opts.glyph || "joker-duo"}\\'></span>`;
         icon.innerHTML = `<img class="joker-popup-art${negCls}" src="${opts.imgSrc}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">`;
@@ -4105,8 +4150,9 @@
         icon.innerHTML = `<span class="joker-glyph ${opts.glyph || "joker-duo"}"></span>`;
       }
       const negBadge = opts.negative ? ` <span class="neg-badge-text" title="슬롯을 차지하지 않습니다">🌑 네가티브</span>` : "";
-      $("#jokerPopupName").innerHTML = `${opts.name}${opts.badgeLabel ? ` <span style="font-size:.7rem;font-weight:800;color:${opts.badgeColor};border:1px solid ${opts.badgeColor}66;border-radius:10px;padding:1px 7px;margin-left:4px;vertical-align:middle">${opts.badgeLabel}</span>` : ""}${negBadge}`;
-      $("#jokerPopupDesc").innerHTML = colorizeEffect(opts.desc || "");
+      const edBadge = _edp ? ` <span class="ed-badge-text" style="background:linear-gradient(135deg,${_edp.color},#ffffffcc)" title="${_edp.fx}">${_edp.icon} ${_edp.label}</span>` : "";
+      $("#jokerPopupName").innerHTML = `${opts.name}${opts.badgeLabel ? ` <span style="font-size:.7rem;font-weight:800;color:${opts.badgeColor};border:1px solid ${opts.badgeColor}66;border-radius:10px;padding:1px 7px;margin-left:4px;vertical-align:middle">${opts.badgeLabel}</span>` : ""}${negBadge}${edBadge}`;
+      $("#jokerPopupDesc").innerHTML = colorizeEffect(opts.desc || "") + (_edp ? `<div style="margin-top:6px;font-size:.78rem;color:${_edp.color};font-weight:700">${_edp.icon} ${_edp.label} 에디션 — 매 핸드 ${_edp.fx}</div>` : "");
       $("#jokerPopupCost").textContent = opts.costLine || "";
       const actBtn = $("#jokerPopupAction");
       if (opts.actionLabel) {
@@ -4142,7 +4188,7 @@
         glyph: jokerGlyphClass[joker.id] || "joker-duo",
         name: joker.name,
         badgeLabel: _r.label, badgeColor: _r.color,
-        negative: !!joker.negative,
+        negative: !!joker.negative, edition: joker.edition,
         desc: joker.detail || joker.desc,
         costLine: `획득 비용: $${joker.cost} · 판매가: $${sell}`,
         actionLabel: `팔기 +$${sell}`,
@@ -4216,7 +4262,8 @@
           box.className = "joker empty";
           box.setAttribute("aria-label", "빈 슬롯");
         } else {
-          box.className = `joker joker-${joker.id}${joker.negative ? " negative" : ""}`;
+          const _ed = editionOf(joker);
+          box.className = `joker joker-${joker.id}${joker.negative ? " negative" : (_ed ? " ed-" + _ed.key : "")}`;
           box.dataset.jokerId = joker.id;
           box.dataset.idx = String(i);
           const _r = rarityOf(joker);
@@ -4226,6 +4273,7 @@
             <span class="joker-grad" aria-hidden="true"></span>
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
             ${joker.negative ? '<span class="joker-neg-badge" title="네가티브 — 슬롯 미차지">🌑</span>' : ""}
+            ${_ed ? `<span class="joker-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}
             <span class="joker-name-mini">${joker.name}</span>
             <span class="joker-desc-mini">${colorizeEffect(joker.desc)}</span>
           `;
@@ -4614,7 +4662,7 @@
           bossModifier: state.bossModifier ? { ...state.bossModifier } : null,
           isBossBlind: !!state.isBossBlind,
           extraCards: (state.extraCards || []).map(c => ({ suit: c.suit, rank: c.rank })),
-          jokers: state.jokers.map(j => ({ id: j.id, counter: j.counter || 0, desc: j.desc, negative: !!j.negative })),
+          jokers: state.jokers.map(j => ({ id: j.id, counter: j.counter || 0, desc: j.desc, negative: !!j.negative, edition: j.edition || null })),
           tarotCards: state.tarotCards.map(t => ({ id: t.id })),
           planetCards: state.planetCards.map(p => ({ id: p.id })),
           runDeck: state.runDeck.map(c => ({ id: c.id, suit: c.suit, rank: c.rank, enh: c.enh || null })),
@@ -4653,7 +4701,7 @@
       // 조커 복원: 풀에서 apply 함수 재연결 + counter/desc 복원
       state.jokers = (snap.jokers || []).map(s => {
         const base = jokerPool.find(j => j.id === s.id); if (!base) return null;
-        const j = { ...base, counter: s.counter || 0 }; if (s.desc) j.desc = s.desc; if (s.negative) j.negative = true; return j;
+        const j = { ...base, counter: s.counter || 0 }; if (s.desc) j.desc = s.desc; if (s.negative) j.negative = true; if (s.edition && EDITIONS[s.edition]) j.edition = s.edition; return j;
       }).filter(Boolean);
       state.tarotCards = (snap.tarotCards || []).map(s => { const t = tarotPool.find(x => x.id === s.id); return t ? { ...t } : null; }).filter(Boolean);
       state.planetCards = (snap.planetCards || []).map(s => { const p = planetPool.find(x => x.id === s.id); return p ? { ...p } : null; }).filter(Boolean);
@@ -4851,6 +4899,24 @@
           ps.setReadout(ctx.chips, ctx.mult);
           await wait(430);
         }
+        // ── 에디션 효과(포일/홀로/폴리): 조건 없이 매 핸드 발동, 별도 연출 ──
+        const _ed = editionOf(joker);
+        if (_ed) {
+          const cbe = ctx.chips, mbe = ctx.mult;
+          if (_ed.chips)   ctx.chips += _ed.chips;
+          if (_ed.multAdd) ctx.mult  += _ed.multAdd;
+          if (_ed.multX)   ctx.mult   = Math.round(ctx.mult * _ed.multX * 100) / 100;
+          const dc = ctx.chips - cbe, dm = ctx.mult - mbe;
+          ps.head.innerHTML = `<b style="color:${_ed.color}">${_ed.icon} ${joker.name}</b> · ${_ed.label}`;
+          const el2 = jokerArea.querySelector(`.joker[data-joker-id="${joker.id}"]`);
+          if (el2) { el2.classList.remove("active"); void el2.offsetWidth; el2.classList.add("active"); setTimeout(() => el2.classList.remove("active"), 600); }
+          if (dc > 0.001) jrFloat(ps.readout, `+${Math.round(dc)} 칩`, "chip");
+          if (dm > 0.001) jrFloat(ps.readout, _ed.multX ? `×${_ed.multX}` : `+${Math.round(dm * 100) / 100} 배수`, "mult");
+          AudioFX.play("select");
+          JuiceFX.sfx("mult");
+          ps.setReadout(ctx.chips, ctx.mult);
+          await wait(380);
+        }
       }
       await wait(260);
       ps.close();
@@ -4924,7 +4990,8 @@
         const fill = jokerPool.filter(j => !owned.has(j.id) && !have.has(j.id) && jokerAllowedNow(j));
         picked = picked.concat(weightedSample(fill, slots - picked.length));
       }
-      state.shopJokers = picked;
+      // 풀 객체를 직접 변형하지 않도록 사본으로 만들고, 일부에 에디션(포일/홀로/폴리) 부여
+      state.shopJokers = picked.map(j => { const c = { ...j }; const e = rollEdition(); if (e) c.edition = e; return c; });
       state._recentShopJokers = picked.map(j => j.id);   // 다음 상점에서 회피할 목록
     }
 
@@ -5002,7 +5069,8 @@
         : (o.imgSrc
           ? `<img src="${o.imgSrc}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'tile-glyph ${o.glyph || ""}\\'>${o.emoji || ""}</span>'">`
           : `<span class="tile-glyph">${o.emoji || ""}</span>`);
-      tile.innerHTML = `<div class="tile-art">${art}</div>${o.badge ? `<span class="tile-badge" style="background:${o.badge.color}">${o.badge.label}</span>` : ""}<div class="tile-name">${o.name}</div><div class="tile-price ${o.afford ? "" : "no-afford"}">$${o.price}</div>`;
+      if (o.edClass) tile.classList.add(o.edClass);
+      tile.innerHTML = `<div class="tile-art">${art}</div>${o.cornerIcon ? `<span class="tile-ed-badge" title="${o.cornerTitle || ""}">${o.cornerIcon}</span>` : ""}${o.badge ? `<span class="tile-badge" style="background:${o.badge.color}">${o.badge.label}</span>` : ""}<div class="tile-name">${o.name}</div><div class="tile-price ${o.afford ? "" : "no-afford"}">$${o.price}</div>`;
       tile.addEventListener("click", o.onClick);
       return tile;
     }
@@ -5087,16 +5155,20 @@
       jRow.className = "shop-tilerow";
       state.shopJokers.forEach(joker => {
         const _r = rarityOf(joker);
+        const _ed = editionOf(joker);
         const cost = priceOf(joker.cost);
         const full = jokerSlotsFull();
         const afford = state.money >= cost;
         jRow.appendChild(buildShopTile({
           imgSrc: `jokers/${joker.id}.webp`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
-          name: joker.name, price: cost, afford, borderColor: _r.color,
+          name: (_ed ? _ed.icon + " " : "") + joker.name, price: cost, afford,
+          borderColor: _ed ? _ed.color : _r.color,
+          edClass: _ed ? "ed-" + _ed.key : null,
+          cornerIcon: _ed ? _ed.icon : null, cornerTitle: _ed ? `${_ed.label} — ${_ed.fx}` : null,
           badge: { label: _r.label, color: _r.color },
           onClick: () => openDetailPopup({
             imgSrc: `jokers/${joker.id}.webp`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
-            name: joker.name, badgeLabel: _r.label, badgeColor: _r.color,
+            name: joker.name, badgeLabel: _r.label, badgeColor: _r.color, edition: joker.edition,
             desc: joker.detail || joker.desc,
             costLine: `구매 $${cost} · 판매가 $${jokerSellValue(joker)}`,
             actionLabel: full ? "조커 슬롯 가득 참" : (afford ? `구매 $${cost}` : "자금 부족"),
@@ -5650,7 +5722,7 @@
       ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     }
 
-    const JR_BUILD = "2026-06-22-negsell";
+    const JR_BUILD = "2026-06-22-editions";
     console.log("[jokerrun] build", JR_BUILD);
 
     // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
@@ -5681,9 +5753,10 @@
       $("#dbgAddJoker").addEventListener("click", () => {
         const j = jokerPool.find(x => x.id === $("#dbgJoker").value); if (!j) return;
         const neg = $("#dbgJokerNeg").checked;
-        state.jokers.push({ ...j, counter: 0, ...(neg ? { negative: true } : {}) });
+        const ed = $("#dbgJokerEd") ? $("#dbgJokerEd").value : "";
+        state.jokers.push({ ...j, counter: 0, ...(neg ? { negative: true } : {}), ...(ed && EDITIONS[ed] ? { edition: ed } : {}) });
         markDiscovered("joker", j.id); renderHUD();
-        setInfo(`🐞 조커 추가: ${j.name}${neg ? " 🌑" : ""}`);
+        setInfo(`🐞 조커 추가: ${j.name}${neg ? " 🌑" : ""}${ed && EDITIONS[ed] ? " " + EDITIONS[ed].icon : ""}`);
       });
       $("#dbgAddTarot").addEventListener("click", () => {
         const t = tarotPool.find(x => x.id === $("#dbgTarot").value); if (!t) return;
