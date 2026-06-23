@@ -1335,6 +1335,8 @@
     .stone-rock { font-size: 1.8rem; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
     .stone-chip { font-size: .58rem; font-weight: 900; color: #d6e6ff; }
     .card.enh-glass { outline: 2px solid #5fd6f5; outline-offset: -2px; background: linear-gradient(162deg, #ecffff 0%, #d2f6ff 58%, #b3e9ff 100%) !important; box-shadow: inset 0 2px 10px rgba(255,255,255,.7), inset 0 -6px 14px rgba(95,214,245,.35), 0 0 12px rgba(95,214,245,.5); }
+    @keyframes cardShatter { 0%{transform:scale(1) rotate(0);opacity:1;filter:brightness(1)} 45%{transform:scale(1.18) rotate(-5deg);filter:brightness(1.9)} 100%{transform:scale(.22) rotate(15deg);opacity:0;filter:brightness(2.4)} }
+    .ps-card.shatter { animation: cardShatter .5s cubic-bezier(.5,0,.9,.4) forwards; z-index: 20; }
     .card.enh-steel { outline: 2px solid #c3ccd6; outline-offset: -2px; background: linear-gradient(162deg, #f3f5f8 0%, #d8dde4 52%, #b3bbc7 100%) !important; }
     .card.enh-gold  { outline: 2px solid #ffcf6d; outline-offset: -2px; background: linear-gradient(162deg, #fff8de 0%, #ffe9a2 58%, #f3cc63 100%) !important; box-shadow: inset 0 0 12px rgba(255,210,90,.45), 0 0 12px rgba(255,207,109,.5); }
 
@@ -4114,7 +4116,7 @@
         hands_left: "남은 공격", discards_left: "남은 버리기",
         hand_play: "⚔️ 공격", card_discard: "카드 버리기",
         skills: "📊 기술", scrolls: "📜 주문서", deck: "🃏 덱",
-        deck_n: "🃏 덱 ({n}장)", log_joker_expired: "{name}이(가) 소멸했다", hand_hint: "공격할 카드를 선택하세요.",
+        deck_n: "🃏 덱 ({n}장)", log_joker_expired: "{name}이(가) 소멸했다", log_glass_break: "💎 유리 카드가 깨졌다", hand_hint: "공격할 카드를 선택하세요.",
         combo_preview: "기술명 | 예상 데미지: 0",
         shop: "상점", next_blind: "다음 전투로 →", to_shop: "정비하러 →", collect: "전리품 받기 →",
         reroll: "🎲 갱신", coins: "주화", sold_out: "매진",
@@ -4279,7 +4281,7 @@
         hands_left: "Attacks left", discards_left: "Discards left",
         hand_play: "⚔️ Attack", card_discard: "Discard",
         skills: "📊 Skills", scrolls: "📜 Scrolls", deck: "🃏 Deck",
-        deck_n: "🃏 Deck ({n})", log_joker_expired: "{name} faded away", hand_hint: "Pick cards to attack with.",
+        deck_n: "🃏 Deck ({n})", log_joker_expired: "{name} faded away", log_glass_break: "💎 A Glass card shattered", hand_hint: "Pick cards to attack with.",
         combo_preview: "Skill | Est. damage: 0",
         shop: "Shop", next_blind: "Next battle →", to_shop: "Resupply →", collect: "Collect loot →",
         reroll: "🎲 Reroll", coins: "coins", sold_out: "Sold out",
@@ -4444,7 +4446,7 @@
         hands_left: "剩餘攻擊", discards_left: "剩餘棄牌",
         hand_play: "⚔️ 攻擊", card_discard: "棄牌",
         skills: "📊 技能", scrolls: "📜 卷軸", deck: "🃏 牌組",
-        deck_n: "🃏 牌組 ({n})", log_joker_expired: "{name} 消失了", hand_hint: "選擇要攻擊的卡牌。",
+        deck_n: "🃏 牌組 ({n})", log_joker_expired: "{name} 消失了", log_glass_break: "💎 玻璃卡牌碎裂了", hand_hint: "選擇要攻擊的卡牌。",
         combo_preview: "技能 | 預估傷害：0",
         shop: "商店", next_blind: "下一場戰鬥 →", to_shop: "整備 →", collect: "領取戰利品 →",
         reroll: "🎲 刷新", coins: "金幣", sold_out: "售完",
@@ -4609,7 +4611,7 @@
         hands_left: "残り攻撃", discards_left: "残り捨て札",
         hand_play: "⚔️ 攻撃", card_discard: "捨て札",
         skills: "📊 スキル", scrolls: "📜 巻物", deck: "🃏 デッキ",
-        deck_n: "🃏 デッキ ({n})", log_joker_expired: "{name} が消滅した", hand_hint: "攻撃するカードを選択。",
+        deck_n: "🃏 デッキ ({n})", log_joker_expired: "{name} が消滅した", log_glass_break: "💎 グラスカードが砕けた", hand_hint: "攻撃するカードを選択。",
         combo_preview: "スキル | 予想ダメージ：0",
         shop: "ショップ", next_blind: "次の戦闘へ →", to_shop: "整備へ →", collect: "戦利品を受取 →",
         reroll: "🎲 更新", coins: "コイン", sold_out: "売切",
@@ -5830,13 +5832,19 @@
     function isFullHouseHand(ht) { return ht === "FULL_HOUSE" || ht === "FLUSH_HOUSE"; }
     function isFiveHand(ht) { return ht === "FIVE" || ht === "FLUSH_FIVE"; }
     // 카드 재발동(리트리거) 횟수 — 보유 조커가 이 카드를 추가로 몇 번 더 데미지 처리하는지
+    function retrigOf(jid, card, idx) {
+      if (jid === "hack" && card.rank >= 2 && card.rank <= 5) return 1;             // 해커: 2~5
+      if (jid === "sockBuskin" && card.rank >= 11 && card.rank <= 13) return 1;     // 광대극: J/Q/K
+      if (jid === "hangingChad" && idx === 0) return 2;                             // 첫수: 첫 카드 +2
+      if (jid === "retriggerAll") return 1;                                         // 앙코르: 전체 +1
+      return 0;
+    }
     function cardRetriggers(card, idx) {
       let n = 0;
       for (const j of state.jokers) {
-        if (j.id === "hack" && card.rank >= 2 && card.rank <= 5) n++;             // 해커: 2~5 재발동
-        else if (j.id === "sockBuskin" && card.rank >= 11 && card.rank <= 13) n++; // 광대극: J/Q/K 재발동
-        else if (j.id === "hangingChad" && idx === 0) n += 2;                      // 첫수: 첫 카드 2회 추가
-        else if (j.id === "retriggerAll") n++;                                     // 만능 재발동: 모든 카드 1회 추가
+        let jid = j.id;
+        if (jid === "blueprint" || jid === "brainstorm") { const tgt = bpResolve(j); jid = tgt ? tgt.id : null; }   // 모사/오마주: 복사 대상의 재발동도 합산
+        if (jid) n += retrigOf(jid, card, idx);
       }
       return n;
     }
@@ -6354,6 +6362,16 @@
         await wait(380);
       }
       await wait(260);
+      // 유리 카드 깨짐: 플레이한 글래스 카드가 25% 확률로 깨져 덱에서 영구 삭제 + 깨짐 연출
+      const _broken = scoreCards.filter(c => c.enh === "glass" && Math.random() < 0.25);
+      if (_broken.length) {
+        const _bset = new Set(_broken.map(c => String(c.id)));
+        _broken.forEach(c => { const cel = ps.map[c.id]; if (cel) { cel.classList.add("shatter"); jrFloat(cel, "💥", "mult"); } });
+        try { AudioFX.play("select"); JuiceFX.sfx("mult"); } catch (_) {}
+        await wait(520);
+        state.runDeck = (state.runDeck || []).filter(c => !_bset.has(String(c.id)));
+        _broken.forEach(() => addLog(t("log_glass_break")));
+      }
       ps.close();
       await wait(180);
       _scoringActive = false;   // 카드/조커 연출 끝 — 이후 최종 집계는 일반 속도
