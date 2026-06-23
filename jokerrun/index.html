@@ -3213,6 +3213,10 @@
       { id: "freeReroll", name: "멀리건", cost: 8, rarity: "rare", desc: "보유 시 상점 리롤 비용 🪙0", detail: "이 조커를 들고 있으면 상점 갱신(리롤)이 공짜가 된다. 원하는 조커가 나올 때까지 무한 리롤.", apply() {} },
       { id: "burstOnce", name: "폭심", cost: 7, rarity: "rare", mult: true, desc: "다음 공격 1회 연격 ×4 후 소멸", detail: "장착 후 첫 공격에서 연격을 ×4로 폭발시키고 바로 사라지는 1회용 조커.", apply(ctx, self) { ctx.mult *= 4; ctx.activate("burstOnce"); self.expired = true; } },
       { id: "usurer", name: "고리대금", cost: 7, rarity: "rare", desc: "라운드 정산 이자 한도 +🪙5", detail: "전투 클리어 시 받는 이자 보너스 한도가 🪙5 늘어난다(기본 5 → 10). 골드를 쌓을수록 강해진다.", apply() {} },
+      { id: "bossGuard", name: "수호 부적", cost: 12, rarity: "legendary", desc: "보스의 특수 규칙을 무효화", detail: "이 조커를 들고 있으면 보스 전투의 제약(버리기 불가·문양 봉인·최대 3장 등)이 모두 사라진다.", apply() {} },
+      { id: "luckCharm", name: "행운의 부적", cost: 10, rarity: "rare", desc: "상점에 전설·신화 조커 등장률 대폭 증가", detail: "이 조커를 들고 있는 동안 상점에 전설·신화 등급 조커가 훨씬 자주 등장한다.", apply() {} },
+      { id: "cull", name: "단두대", cost: 14, rarity: "legendary", mult: true, desc: "전투 첫 공격에 낸 카드를 덱에서 삭제, 1장당 연격 ×0.5 영구 누적", detail: "각 전투의 첫 공격에서 플레이한 카드를 덱에서 영구 제거하고, 제거한 1장당 연격 배율이 영구히 +0.5씩 쌓인다. 덱을 깎아 곱연산을 키우는 신화 조커.", apply(ctx, self) { self.counter = self.counter || 0; if (state.handsLeft === state._startHands && ctx.scored.length) { const ids = new Set(ctx.scored.map(c => String(c.id))); state.runDeck = (state.runDeck || []).filter(c => !ids.has(String(c.id))); self.counter += 0.5 * ctx.scored.length; } if (self.counter > 0) { ctx.mult *= (1 + self.counter); ctx.activate("cull"); } self.desc = "연격 ×" + (1 + self.counter).toFixed(1) + " (첫 공격마다 카드 삭제 +0.5/장)"; } },
+      { id: "risky3x", name: "시한폭탄", cost: 10, rarity: "legendary", mult: true, desc: "연격 ×3, 단 발동 시 20% 확률로 소멸", detail: "공격할 때마다 연격 ×3. 하지만 발동할 때마다 20% 확률로 터져 사라진다. 고위험 고수익.", apply(ctx, self) { ctx.mult *= 3; ctx.activate("risky3x"); if (Math.random() < 0.2) self.expired = true; } },
     ];
 
     // ── 조커 등급(레어도) 시스템 ── 발라트로식: 등급↑ = 판매가↑·등장확률↓
@@ -3309,7 +3313,7 @@
     // 등급 가중 랜덤 추첨 (등장확률: 등급 높을수록 낮음). 희귀 사냥꾼 바우처면 전설/신화 가중 ↑
     function rarityWeight(r){
       const base = RARITY[r]?.weight || 100;
-      if (hasVoucher("rareHunter") && (r === "rare" || r === "legendary")) return base * 5;
+      if ((hasVoucher("rareHunter") || (state.jokers || []).some(j => j.id === "luckCharm")) && (r === "rare" || r === "legendary")) return base * 5;
       return base;
     }
     function weightedSample(pool, n){
@@ -3516,6 +3520,10 @@
       freeReroll:{name:"Mulligan",desc:"Shop reroll is free while held"},
       burstOnce:{name:"Ground Zero",desc:"Next play Combo ×4, then vanishes"},
       usurer:{name:"Usurer",desc:"Cashout interest cap +🪙5"},
+      bossGuard:{name:"Aegis",desc:"Nullifies boss special rules"},
+      luckCharm:{name:"Lucky Charm",desc:"Greatly boosts legendary/mythic shop odds"},
+      cull:{name:"Guillotine",desc:"1st play: delete cards, +×0.5 Combo each (permanent)"},
+      risky3x:{name:"Time Bomb",desc:"Combo ×3, but 20% to vanish on trigger"},
       mercury:{name:"Mercury"}, venus:{name:"Venus"}, earth:{name:"Earth"}, mars:{name:"Mars"},
       jupiter:{name:"Jupiter"}, saturn:{name:"Saturn"}, uranus:{name:"Uranus"}, neptune:{name:"Neptune"}, pluto:{name:"Pluto"},
       blackhole:{name:"Black Hole",desc:"All skills +1 level"}, galaxy:{name:"Galaxy",desc:"All skills +3 levels"},
@@ -3586,6 +3594,10 @@
       freeReroll:{name:"調度牌",desc:"持有時商店刷新免費"},
       burstOnce:{name:"爆心",desc:"下次出牌連擊×4後消失"},
       usurer:{name:"放貸人",desc:"結算利息上限+🪙5"},
+      bossGuard:{name:"守護符",desc:"無效化首領特殊規則"},
+      luckCharm:{name:"幸運符",desc:"大幅提升商店傳說·神話機率"},
+      cull:{name:"斷頭台",desc:"首攻：刪除卡牌，每張連擊×0.5永久累積"},
+      risky3x:{name:"定時炸彈",desc:"連擊×3，但發動時20%消失"},
       mercury:{name:"水星"}, venus:{name:"金星"}, earth:{name:"地球"}, mars:{name:"火星"},
       jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
       blackhole:{name:"黑洞",desc:"所有技能 +1級"}, galaxy:{name:"銀河",desc:"所有技能 +3級"},
@@ -3656,6 +3668,10 @@
       freeReroll:{name:"マリガン",desc:"所持中 ショップ更新が無料"},
       burstOnce:{name:"爆心地",desc:"次プレイ 連撃×4後 消滅"},
       usurer:{name:"高利貸し",desc:"精算の利子上限+🪙5"},
+      bossGuard:{name:"守護のお守り",desc:"ボスの特殊ルールを無効化"},
+      luckCharm:{name:"幸運のお守り",desc:"ショップのレジェンド·ミシック率 大幅上昇"},
+      cull:{name:"ギロチン",desc:"初撃：カード削除、1枚毎 連撃×0.5永久累積"},
+      risky3x:{name:"時限爆弾",desc:"連撃×3、但し発動時20%で消滅"},
       mercury:{name:"水星"}, venus:{name:"金星"}, earth:{name:"地球"}, mars:{name:"火星"},
       jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
       blackhole:{name:"ブラックホール",desc:"全スキルレベル +1"}, galaxy:{name:"銀河",desc:"全スキルレベル +3"},
@@ -3804,7 +3820,7 @@
     function openCollection() { renderCollection(_collectionTab); $("#collectionModal").classList.add("show"); }
 
     const jokerGlyphClass = {
-      fader: "joker-bomb", charger: "joker-dice", decayX: "joker-wave", eggBoss: "joker-diamond", collector: "joker-diamond", freeReroll: "joker-dice", burstOnce: "joker-bomb", usurer: "joker-diamond",
+      fader: "joker-bomb", charger: "joker-dice", decayX: "joker-wave", eggBoss: "joker-diamond", collector: "joker-diamond", freeReroll: "joker-dice", burstOnce: "joker-bomb", usurer: "joker-diamond", bossGuard: "joker-diamond", luckCharm: "joker-dice", cull: "joker-bomb", risky3x: "joker-bomb",
       flat50: "joker-bomb",
       flushx2: "joker-wave",
       perCardMult: "joker-calc",
@@ -6925,6 +6941,7 @@
       const blind = blindDefs[index];
       state.bossModifier = (index === 2 && blind && blind.modifier) ? blind.modifier : null;
       state.isBossBlind = (index === 2);
+      if (state.bossModifier && (state.jokers || []).some(j => j.id === "bossGuard")) state.bossModifier = null;   // 수호 부적: 보스 규칙 무효
       // 스킵 보상 "보스 약점": 특수 규칙 있는 보스를 만나면 그 규칙을 무효화하고 소모
       if (state.isBossBlind && state.bossNerfNext && state.bossModifier) {
         state._bossNerfedLabel = state.bossModifier.label;
@@ -6936,6 +6953,7 @@
         if (state.bossModifier.id === "only2hands") state.handsLeft = 2;
         if (state.ante === 8 && index === 2) state.discardsLeft = 0;
       }
+      state._startHands = state.handsLeft;   // 라운드 첫 공격 판정(단두대)
       closeDeckModal();
       closeVictoryModal();
       drawToEight();
