@@ -4194,7 +4194,7 @@
         ui_new_record_short: "🏆 신기록! {n}데미지",
         ui_run_clear: "🏆 런 클리어! 사냥 8회 완주!\n최종 데미지 {n}데미지{record}",
         ui_new_record_suffix: " — 신기록!",
-        ui_triggered: "발동!", ui_steel_held: "🔩 스틸 카드 {n}장 보유 → 연격 ×{mult}",
+        ui_triggered: "발동!", ui_steel_held: "🔩 스틸 카드 {n}장 보유 → 연격 ×{mult}", ui_steel_held_one: "🔩 스틸 ×1.5 ({i}/{n}) → 연격 {mult}",
         ui_float_atk: "+{n} 공격력", ui_float_combo: "+{n} 연격",
         ui_tarot_intro: "상점 타로 섹션(🪙4)에서 구매. 소모품 슬롯(최대 2칸)을 플래닛과 공유. 보유한 타로는 전투 화면에서 사용.",
         ui_tarot_exact: "정확히 ", ui_tarot_instant_txt: "즉시 사용",
@@ -4359,7 +4359,7 @@
         ui_new_record_short: "🏆 New Record! {n}",
         ui_run_clear: "🏆 Run Clear! All 8 Hunts done!\nFinal damage: {n}{record}",
         ui_new_record_suffix: " — New Record!",
-        ui_triggered: "Triggered!", ui_steel_held: "🔩 {n} steel card(s) held → Combo ×{mult}",
+        ui_triggered: "Triggered!", ui_steel_held: "🔩 {n} steel card(s) held → Combo ×{mult}", ui_steel_held_one: "🔩 Steel ×1.5 ({i}/{n}) → Combo {mult}",
         ui_float_atk: "+{n} ATK", ui_float_combo: "+{n} Combo",
         ui_tarot_intro: "Buy from the scroll section (🪙4). Shares consumable slots (max 2) with planets. Use owned scrolls in battle.",
         ui_tarot_exact: "exactly ", ui_tarot_instant_txt: "instant use",
@@ -4524,7 +4524,7 @@
         ui_new_record_short: "🏆 新紀錄！{n}",
         ui_run_clear: "🏆 通關！完成全部8場狩獵！\n最終傷害：{n}{record}",
         ui_new_record_suffix: " — 新紀錄！",
-        ui_triggered: "觸發！", ui_steel_held: "🔩 持有 {n} 張鋼鐵卡 → 連擊 ×{mult}",
+        ui_triggered: "觸發！", ui_steel_held: "🔩 持有 {n} 張鋼鐵卡 → 連擊 ×{mult}", ui_steel_held_one: "🔩 鋼鐵 ×1.5 ({i}/{n}) → 連擊 {mult}",
         ui_float_atk: "+{n} 攻擊力", ui_float_combo: "+{n} 連擊",
         ui_tarot_intro: "在卷軸區（🪙4）購買。與行星共用消耗品欄位（最多2格）。持有的卷軸在戰鬥中使用。",
         ui_tarot_exact: "正好 ", ui_tarot_instant_txt: "立即使用",
@@ -4689,7 +4689,7 @@
         ui_new_record_short: "🏆 新記録！{n}",
         ui_run_clear: "🏆 クリア！全8狩り完走！\n最終ダメージ：{n}{record}",
         ui_new_record_suffix: " — 新記録！",
-        ui_triggered: "発動！", ui_steel_held: "🔩 スチールカード{n}枚保持 → 連撃 ×{mult}",
+        ui_triggered: "発動！", ui_steel_held: "🔩 スチールカード{n}枚保持 → 連撃 ×{mult}", ui_steel_held_one: "🔩 スチール ×1.5 ({i}/{n}) → 連撃 {mult}",
         ui_float_atk: "+{n} 攻撃力", ui_float_combo: "+{n} 連撃",
         ui_tarot_intro: "巻物セクション（🪙4）で購入。消耗品枠（最大2）を惑星と共有。所持巻物は戦闘で使用。",
         ui_tarot_exact: "ちょうど ", ui_tarot_instant_txt: "即時使用",
@@ -6316,12 +6316,19 @@
       }
       // 스틸 카드: 플레이 안 하고 손에 남은 스틸 1장당 연격 ×1.5
       const _playedSet = new Set(cards.map(c => String(c.id)));
-      const steelHeld = (state.hand || []).filter(c => !_playedSet.has(String(c.id)) && c.enh === "steel").length;
-      if (steelHeld > 0) {
-        for (let i = 0; i < steelHeld; i++) ctx.mult = Math.round(ctx.mult * 1.5 * 100) / 100;
-        ps.setHead(t("ui_steel_held", {n: steelHeld, mult: Math.pow(1.5, steelHeld).toFixed(2)}));
-        ps.setReadout(dispChips, ctx.mult);
-        await wait(420);
+      const steelCards = (state.hand || []).filter(c => !_playedSet.has(String(c.id)) && c.enh === "steel");
+      if (steelCards.length > 0) {
+        let _sdone = 0;
+        for (const sc of steelCards) {
+          _sdone++;
+          ctx.mult = Math.round(ctx.mult * 1.5 * 100) / 100;
+          const hel = cardsWrap.querySelector(`.card[data-id="${sc.id}"]`);   // 손패의 해당 스틸 카드 강조
+          if (hel) { hel.classList.add("scoring-pop"); jrFloat(hel, "×1.5", "mult"); setTimeout(() => hel.classList.remove("scoring-pop"), 360); }
+          ps.setHead(t("ui_steel_held_one", { i: _sdone, n: steelCards.length, mult: ctx.mult }));
+          ps.setReadout(dispChips, ctx.mult);
+          try { AudioFX.play("select"); JuiceFX.sfx("mult"); } catch (_) {}
+          await wait(360);
+        }
       }
       await wait(240);
       // 2) 독립 조커(카드 비종속) 왼쪽→오른쪽 순차 발동. 카드별 조커는 위 카드 루프에서 이미 발동했으므로 제외.
