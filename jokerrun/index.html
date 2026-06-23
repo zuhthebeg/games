@@ -2675,6 +2675,14 @@
       border:1px solid #463a63; background:#15101f; color:#cbbfe4; }
     .set-seg button.active { border-color:var(--gold,#ffcf6d); background:#3a2f12; color:var(--gold,#ffcf6d); }
     .set-hint { font-size:.68rem; color:var(--muted,#9a8bb0); line-height:1.4; }
+    /* 디버그 패널 — 가로 넘침 방지(라벨 윗줄, 컨트롤 줄바꿈) */
+    #dbgModal .mode-sheet { width: min(400px, 94vw); box-sizing: border-box; overflow-x: hidden; }
+    #dbgModal .dbg-row { flex-wrap: wrap; }
+    #dbgModal .dbg-row > span:first-child { flex: 0 0 100%; width: auto; margin-bottom: 1px; }
+    #dbgModal .dbg-row > select, #dbgModal .dbg-row > label { min-width: 0; }
+    #dbgModal .dbg-row > #dbgJoker, #dbgModal .dbg-row > #dbgTarot,
+    #dbgModal .dbg-row > #dbgPlanet, #dbgModal .dbg-row > #dbgEnh { flex: 1 1 90px; }
+    #dbgModal .dbg-row > .btn-main { flex: 0 0 auto; }
   </style>
 </head>
 <body>
