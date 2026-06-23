@@ -3227,6 +3227,16 @@
       { id: "luckCharm", name: "행운의 부적", cost: 10, rarity: "rare", desc: "상점에 전설·신화 조커 등장률 대폭 증가", detail: "이 조커를 들고 있는 동안 상점에 전설·신화 등급 조커가 훨씬 자주 등장한다.", apply() {} },
       { id: "cull", name: "단두대", cost: 14, rarity: "legendary", mult: true, desc: "전투 첫 공격에 낸 카드를 덱에서 삭제, 1장당 연격 ×0.5 영구 누적", detail: "각 전투의 첫 공격에서 플레이한 카드를 덱에서 영구 제거하고, 제거한 1장당 연격 배율이 영구히 +0.5씩 쌓인다. 덱을 깎아 곱연산을 키우는 신화 조커.", apply(ctx, self) { self.counter = self.counter || 0; if (state.handsLeft === state._startHands && ctx.scored.length) { const ids = new Set(ctx.scored.map(c => String(c.id))); state.runDeck = (state.runDeck || []).filter(c => !ids.has(String(c.id))); self.counter += 0.5 * ctx.scored.length; } if (self.counter > 0) { ctx.mult *= (1 + self.counter); ctx.activate("cull"); } self.desc = "연격 ×" + (1 + self.counter).toFixed(1) + " (첫 공격마다 카드 삭제 +0.5/장)"; } },
       { id: "risky3x", name: "시한폭탄", cost: 10, rarity: "legendary", mult: true, desc: "연격 ×3, 단 발동 시 20% 확률로 소멸", detail: "공격할 때마다 연격 ×3. 하지만 발동할 때마다 20% 확률로 터져 사라진다. 고위험 고수익.", apply(ctx, self) { ctx.mult *= 3; ctx.activate("risky3x"); if (Math.random() < 0.2) self.expired = true; } },
+      { id: "extraHands", name: "곡예사", cost: 7, rarity: "uncommon", desc: "전투 시작 시 공격 횟수 +2", detail: "각 전투를 시작할 때 공격(핸드) 횟수가 2회 늘어난다.", apply() {} },
+      { id: "extraDiscards", name: "재정비", cost: 6, rarity: "uncommon", desc: "전투 시작 시 버리기 +2", detail: "각 전투를 시작할 때 버리기 횟수가 2회 늘어난다.", apply() {} },
+      { id: "twoPairMaster", name: "쌍둥이 장인", cost: 14, rarity: "legendary", desc: "공격 2회로 고정, 대신 투페어 레벨 10 보장", detail: "전투 시작 시 공격 횟수가 2회로 고정되는 대신, 투페어 기술 레벨이 항상 10 이상으로 유지된다. 투페어 올인 빌드의 핵심.", apply() {} },
+      { id: "anteLevel", name: "운석우", cost: 12, rarity: "rare", desc: "사냥 시작마다 무작위 기술 레벨 +5", detail: "각 사냥(앤티)의 첫 전투를 시작할 때 무작위 포커 기술 1개의 레벨이 +5 오른다.", apply() {} },
+      { id: "hahoe", name: "하회탈", cost: 7, rarity: "uncommon", desc: "공격마다 50% 연격 +6 / 50% 공격력 +60", detail: "변덕스러운 탈. 매 공격 동전을 던져 연격 +6 또는 공격력 +60 중 하나가 발동한다.", apply(ctx) { if (Math.random() < 0.5) ctx.mult += 6; else ctx.chips += 60; ctx.activate("hahoe"); } },
+      { id: "handsome", name: "미남", cost: 7, rarity: "uncommon", desc: "J/Q/K 1장당 공격력 +30", detail: "플레이한 J·Q·K 카드 1장마다 공격력 +30. 페이스 카드를 모을수록 강해진다.", apply(ctx) { const n = ctx.scored.filter(c => c.rank >= 11 && c.rank <= 13).length; if (n > 0) { ctx.chips += n * 30; ctx.activate("handsome"); } } },
+      { id: "firstMove", name: "선공", cost: 9, rarity: "rare", mult: true, desc: "전투 첫 공격이면 연격 ×3", detail: "각 전투의 첫 번째 공격에서 연격 ×3. 강한 패를 첫 턴에 몰아치는 빌드용.", apply(ctx) { if (state.handsLeft === state._startHands) { ctx.mult *= 3; ctx.activate("firstMove"); } } },
+      { id: "lastStand", name: "배수진", cost: 9, rarity: "rare", mult: true, desc: "덱에 10장 이하 남으면 연격 ×2.5", detail: "이번 전투 덱에 남은 카드가 10장 이하일 때 연격 ×2.5. 덱을 끝까지 짜낼수록 폭발.", apply(ctx) { if ((state.deck ? state.deck.length : 0) <= 10) { ctx.mult *= 2.5; ctx.activate("lastStand"); } } },
+      { id: "allIn", name: "몰빵", cost: 8, rarity: "uncommon", mult: true, desc: "정확히 5장 플레이면 연격 ×2.5", detail: "카드를 정확히 5장 내면 연격 ×2.5. 풀 핸드 플레이 보상.", apply(ctx) { if (ctx.cards.length >= 5) { ctx.mult *= 2.5; ctx.activate("allIn"); } } },
+      { id: "pairPlus", name: "짝의 미학", cost: 6, rarity: "uncommon", desc: "원페어 이상이면 공격력 +80", detail: "기술이 원페어 이상(하이카드 제외)이면 공격력 +80.", apply(ctx) { if (ctx.handType !== "HIGH_CARD") { ctx.chips += 80; ctx.activate("pairPlus"); } } },
     ];
 
     // ── 조커 등급(레어도) 시스템 ── 발라트로식: 등급↑ = 판매가↑·등장확률↓
@@ -3534,6 +3544,16 @@
       luckCharm:{name:"Lucky Charm",desc:"Greatly boosts legendary/mythic shop odds"},
       cull:{name:"Guillotine",desc:"1st play: delete cards, +×0.5 Combo each (permanent)"},
       risky3x:{name:"Time Bomb",desc:"Combo ×3, but 20% to vanish on trigger"},
+      extraHands:{name:"Juggler",desc:"+2 hands at combat start"},
+      extraDiscards:{name:"Recycler",desc:"+2 discards at combat start"},
+      twoPairMaster:{name:"Pair Savant",desc:"Hands fixed to 2, Two Pair always lv10+"},
+      anteLevel:{name:"Stargazer",desc:"+5 random hand level each hunt"},
+      hahoe:{name:"Hahoe Mask",desc:"Each attack 50% Combo +6 / 50% ATK +60"},
+      handsome:{name:"Charmer",desc:"ATK +30 per J/Q/K"},
+      firstMove:{name:"First Move",desc:"First attack of combat: Combo ×3"},
+      lastStand:{name:"Last Stand",desc:"Deck ≤10 cards: Combo ×2.5"},
+      allIn:{name:"All or Nothing",desc:"Exactly 5 cards: Combo ×2.5"},
+      pairPlus:{name:"Pair Bonus",desc:"Pair or better: ATK +80"},
       mercury:{name:"Mercury"}, venus:{name:"Venus"}, earth:{name:"Earth"}, mars:{name:"Mars"},
       jupiter:{name:"Jupiter"}, saturn:{name:"Saturn"}, uranus:{name:"Uranus"}, neptune:{name:"Neptune"}, pluto:{name:"Pluto"},
       blackhole:{name:"Black Hole",desc:"All skills +1 level"}, galaxy:{name:"Galaxy",desc:"All skills +3 levels"},
@@ -3608,6 +3628,16 @@
       luckCharm:{name:"幸運符",desc:"大幅提升商店傳說·神話機率"},
       cull:{name:"斷頭台",desc:"首攻：刪除卡牌，每張連擊×0.5永久累積"},
       risky3x:{name:"定時炸彈",desc:"連擊×3，但發動時20%消失"},
+      extraHands:{name:"雜耍藝人",desc:"戰鬥開始時 +2出牌"},
+      extraDiscards:{name:"整備員",desc:"戰鬥開始時 +2棄牌"},
+      twoPairMaster:{name:"雙對宗師",desc:"出牌固定2，兩對等級恆10+"},
+      anteLevel:{name:"觀星者",desc:"每場狩獵 隨機技能+5級"},
+      hahoe:{name:"河回面具",desc:"每次攻擊 50%連擊+6/50%攻擊力+60"},
+      handsome:{name:"美男",desc:"每張J/Q/K 攻擊力+30"},
+      firstMove:{name:"先攻",desc:"戰鬥首攻：連擊×3"},
+      lastStand:{name:"背水一戰",desc:"牌庫≤10張：連擊×2.5"},
+      allIn:{name:"孤注一擲",desc:"正好5張：連擊×2.5"},
+      pairPlus:{name:"對子美學",desc:"一對以上：攻擊力+80"},
       mercury:{name:"水星"}, venus:{name:"金星"}, earth:{name:"地球"}, mars:{name:"火星"},
       jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
       blackhole:{name:"黑洞",desc:"所有技能 +1級"}, galaxy:{name:"銀河",desc:"所有技能 +3級"},
@@ -3682,6 +3712,16 @@
       luckCharm:{name:"幸運のお守り",desc:"ショップのレジェンド·ミシック率 大幅上昇"},
       cull:{name:"ギロチン",desc:"初撃：カード削除、1枚毎 連撃×0.5永久累積"},
       risky3x:{name:"時限爆弾",desc:"連撃×3、但し発動時20%で消滅"},
+      extraHands:{name:"曲芸師",desc:"戦闘開始時 プレイ+2"},
+      extraDiscards:{name:"整備員",desc:"戦闘開始時 捨て+2"},
+      twoPairMaster:{name:"ツーペアの達人",desc:"プレイ2固定、ツーペアLv10+保証"},
+      anteLevel:{name:"星詠み",desc:"狩り毎 ランダム技+5"},
+      hahoe:{name:"河回仮面",desc:"攻撃毎 50%連撃+6/50%攻撃力+60"},
+      handsome:{name:"美男",desc:"J/Q/K1枚毎 攻撃力+30"},
+      firstMove:{name:"先制",desc:"戦闘初撃：連撃×3"},
+      lastStand:{name:"背水の陣",desc:"山札≤10枚：連撃×2.5"},
+      allIn:{name:"オールイン",desc:"ちょうど5枚：連撃×2.5"},
+      pairPlus:{name:"ペアの美学",desc:"ワンペア以上：攻撃力+80"},
       mercury:{name:"水星"}, venus:{name:"金星"}, earth:{name:"地球"}, mars:{name:"火星"},
       jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
       blackhole:{name:"ブラックホール",desc:"全スキルレベル +1"}, galaxy:{name:"銀河",desc:"全スキルレベル +3"},
@@ -3830,7 +3870,7 @@
     function openCollection() { renderCollection(_collectionTab); $("#collectionModal").classList.add("show"); }
 
     const jokerGlyphClass = {
-      fader: "joker-bomb", charger: "joker-dice", decayX: "joker-wave", eggBoss: "joker-diamond", collector: "joker-diamond", freeReroll: "joker-dice", burstOnce: "joker-bomb", usurer: "joker-diamond", bossGuard: "joker-diamond", luckCharm: "joker-dice", cull: "joker-bomb", risky3x: "joker-bomb",
+      fader: "joker-bomb", charger: "joker-dice", decayX: "joker-wave", eggBoss: "joker-diamond", collector: "joker-diamond", freeReroll: "joker-dice", burstOnce: "joker-bomb", usurer: "joker-diamond", bossGuard: "joker-diamond", luckCharm: "joker-dice", cull: "joker-bomb", risky3x: "joker-bomb", extraHands: "joker-runner", extraDiscards: "joker-dice", twoPairMaster: "joker-crown", anteLevel: "joker-wave", hahoe: "joker-duo", handsome: "joker-diamond", firstMove: "joker-bomb", lastStand: "joker-spade", allIn: "joker-dice", pairPlus: "joker-duo",
       flat50: "joker-bomb",
       flushx2: "joker-wave",
       perCardMult: "joker-calc",
@@ -6986,6 +7026,16 @@
         if (state.bossModifier.id === "no_discard") state.discardsLeft = 0;
         if (state.bossModifier.id === "only2hands") state.handsLeft = 2;
         if (state.ante === 8 && index === 2) state.discardsLeft = 0;
+      }
+      // 라운드 시작 패시브 조커
+      (state.jokers || []).forEach(j => {
+        if (j.id === "extraHands") state.handsLeft += 2;
+        else if (j.id === "extraDiscards") state.discardsLeft += 2;
+        else if (j.id === "twoPairMaster") { state.handsLeft = 2; state.handLevels.TWO_PAIR = Math.max(10, state.handLevels.TWO_PAIR || 1); }
+      });
+      if (index === 0) {   // 사냥 첫 전투 → 운석우: 무작위 기술 레벨 +5
+        const _akeys = ["HIGH_CARD","PAIR","TWO_PAIR","THREE","STRAIGHT","FLUSH","FULL_HOUSE","FOUR","STRAIGHT_FLUSH"];
+        (state.jokers || []).forEach(j => { if (j.id === "anteLevel") { const k = _akeys[Math.floor(Math.random() * _akeys.length)]; state.handLevels[k] = (state.handLevels[k] || 1) + 5; } });
       }
       state._startHands = state.handsLeft;   // 라운드 첫 공격 판정(단두대)
       closeDeckModal();
