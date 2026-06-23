@@ -3215,9 +3215,9 @@
       { id: "solo", name: "독고다이", cost: 13, rarity: "legendary", desc: "정확히 1장 플레이 시 공격력 +1000", detail: "정확히 1장만 선택해 플레이하면 공격력 +1000. 한 장 올인 빌드의 핵심.", apply(ctx) { if (ctx.cards.length === 1) { ctx.chips += 1000; ctx.activate("solo"); } } },
       { id: "mystic", name: "신비주의자", cost: 9, rarity: "rare", mult: true, desc: "보유 타로 1장당 연격 ×1.5", detail: "소모품 슬롯의 타로 카드 1장당 연격 ×1.5(곱연산).", apply(ctx) { const n = (state.tarotCards?.length || 0); if (n > 0) { ctx.mult *= Math.pow(1.5, n); ctx.activate("mystic"); } } },
       { id: "starfall", name: "유성우", cost: 14, rarity: "legendary", mult: true, desc: "스트레이트 플러시 이상이면 연격 x5", detail: "스트레이트 플러시·로열 플러시·플러시 파이브를 만들면 연격 x5.", apply(ctx) { if (["STRAIGHT_FLUSH", "ROYAL_FLUSH", "FLUSH_FIVE"].includes(ctx.handType)) { ctx.mult *= 5; ctx.activate("starfall"); } } },
-      { id: "fader", name: "소이탄", cost: 6, rarity: "rare", desc: "연격 +30 시작, 공격마다 -2 → 0이면 소멸", detail: "장착 시 연격 +30. 공격할 때마다 2씩 줄고 0이 되면 사라진다. 초반 한방용.", apply(ctx, self) { if (self.counter == null) self.counter = 30; if (self.counter > 0) { ctx.mult += self.counter; ctx.activate("fader"); } self.counter -= 2; if (self.counter <= 0) self.expired = true; self.desc = "연격 +" + Math.max(0, self.counter) + " (공격마다 -2)"; } },
-      { id: "charger", name: "방전 전지", cost: 6, rarity: "rare", desc: "공격력 +100 시작, 공격마다 -5 → 0이면 소멸", detail: "장착 시 공격력 +100. 공격할 때마다 5씩 줄고 0이 되면 사라진다.", apply(ctx, self) { if (self.counter == null) self.counter = 100; if (self.counter > 0) { ctx.chips += self.counter; ctx.activate("charger"); } self.counter -= 5; if (self.counter <= 0) self.expired = true; self.desc = "공격력 +" + Math.max(0, self.counter) + " (공격마다 -5)"; } },
-      { id: "decayX", name: "초신성", cost: 8, rarity: "legendary", mult: true, desc: "연격 ×3 시작, 공격마다 -0.1배 → ×1이면 소멸", detail: "장착 시 연격 ×3. 공격할 때마다 배율이 0.1씩 줄고 ×1이 되면 사라진다. 폭발적이지만 수명이 짧다.", apply(ctx, self) { if (self.counter == null) self.counter = 3; if (self.counter > 1) { ctx.mult *= self.counter; ctx.activate("decayX"); } self.counter = Math.round((self.counter - 0.1) * 10) / 10; if (self.counter <= 1) self.expired = true; self.desc = "연격 ×" + Math.max(1, self.counter).toFixed(1) + " (공격마다 -0.1)"; } },
+      { id: "fader", name: "소이탄", cost: 6, rarity: "rare", initCounter: 30, desc: "연격 +30 시작, 공격마다 -2 → 0이면 소멸", detail: "장착 시 연격 +30. 공격할 때마다 2씩 줄고 0이 되면 사라진다. 초반 한방용.", apply(ctx, self) { if (self.counter == null) self.counter = 30; if (self.counter > 0) { ctx.mult += self.counter; ctx.activate("fader"); } self.counter -= 2; if (self.counter <= 0) self.expired = true; self.desc = "연격 +" + Math.max(0, self.counter) + " (공격마다 -2)"; } },
+      { id: "charger", name: "방전 전지", cost: 6, rarity: "rare", initCounter: 100, desc: "공격력 +100 시작, 공격마다 -5 → 0이면 소멸", detail: "장착 시 공격력 +100. 공격할 때마다 5씩 줄고 0이 되면 사라진다.", apply(ctx, self) { if (self.counter == null) self.counter = 100; if (self.counter > 0) { ctx.chips += self.counter; ctx.activate("charger"); } self.counter -= 5; if (self.counter <= 0) self.expired = true; self.desc = "공격력 +" + Math.max(0, self.counter) + " (공격마다 -5)"; } },
+      { id: "decayX", name: "초신성", cost: 8, rarity: "legendary", mult: true, initCounter: 3, desc: "연격 ×3 시작, 공격마다 -0.1배 → ×1이면 소멸", detail: "장착 시 연격 ×3. 공격할 때마다 배율이 0.1씩 줄고 ×1이 되면 사라진다. 폭발적이지만 수명이 짧다.", apply(ctx, self) { if (self.counter == null) self.counter = 3; if (self.counter > 1) { ctx.mult *= self.counter; ctx.activate("decayX"); } self.counter = Math.round((self.counter - 0.1) * 10) / 10; if (self.counter <= 1) self.expired = true; self.desc = "연격 ×" + Math.max(1, self.counter).toFixed(1) + " (공격마다 -0.1)"; } },
       { id: "eggBoss", name: "황금알", cost: 5, rarity: "uncommon", desc: "보스를 잡을 때마다 판매가 +🪙10", detail: "전투 효과는 없다. 보스를 격파할 때마다 판매 금액이 영구히 🪙10씩 오른다. 오래 들고 비싸게 판다.", apply() {} },
       { id: "collector", name: "수집가", cost: 6, rarity: "uncommon", desc: "보유 시 모든 조커 판매가 +🪙1", detail: "들고 있는 동안 보유한 모든 조커(자신 포함)의 판매 금액이 🪙1씩 오른다.", apply() {} },
       { id: "freeReroll", name: "멀리건", cost: 8, rarity: "rare", desc: "보유 시 상점 리롤 비용 🪙0", detail: "이 조커를 들고 있으면 상점 갱신(리롤)이 공짜가 된다. 원하는 조커가 나올 때까지 무한 리롤.", apply() {} },
@@ -3426,7 +3426,7 @@
       { id:"enh_gold",  name:"황금 악마",   need:1, enh:"gold",  desc:"선택 1장 → 골드 카드(라운드 끝 보유 시 +🪙3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
       // ── 원작 메이저 아르카나 추가 ──
       { id:"fool",      name:"바보",       need:0, desc:"마지막 사용한 타로/행성 1장 복사(슬롯 한도)", apply(){ const lc=state.lastConsumable; if(!lc||lc.id==="fool") return; if(consumableCount()>=consumableMax()) return; if(lc.kind==="tarot"){ const t=tarotPool.find(x=>x.id===lc.id); if(t){ state.tarotCards.push({ ...t }); markDiscovered("tarot",t.id); } } else { const p=planetPool.find(x=>x.id===lc.id); if(p){ state.planetCards.push({ ...p }); markDiscovered("planet",p.id); } } } },
-      { id:"judgement", name:"심판",       need:0, desc:"무작위 조커 1개 생성(슬롯 여유 시)", apply(){ if(jokerSlotsFull()) return; const j=weightedSample(jokerPool,1)[0]; if(j){ state.jokers.push({ ...j, counter:0 }); markDiscovered("joker",j.id); renderHUD(); } } }
+      { id:"judgement", name:"심판",       need:0, desc:"무작위 조커 1개 생성(슬롯 여유 시)", apply(){ if(jokerSlotsFull()) return; const j=weightedSample(jokerPool,1)[0]; if(j){ state.jokers.push({ ...j, counter: j.initCounter ?? 0 }); markDiscovered("joker",j.id); renderHUD(); } } }
     ];
     function consumableCount(){ return (state.planetCards?.length||0) + (state.tarotCards?.length||0); }
     // 소모품(타로·행성) 보관 슬롯 상한: 기본 3 + 확장 가방 바우처(+1)
@@ -6683,7 +6683,7 @@
             actionFn: () => {
               closeJokerPopup();
               state.money -= cost;
-              state.jokers.push({ ...joker, counter: 0 });
+              state.jokers.push({ ...joker, counter: joker.initCounter ?? 0 });
               markDiscovered("joker", joker.id);
               state.shopJokers = state.shopJokers.filter(j => j.id !== joker.id);
               addLog(t("log_buy_joker", {name: joker.name, n: cost}));
@@ -6873,11 +6873,11 @@
           run() { const m = ante * 5; state.money += m; return t("sr_windfall_run", {n: m}); } },
         { icon:"🃏", weight: 12, label: t("sr_rand_joker_label"), detail: t("sr_rand_joker_detail"),
           cond: () => !jokerSlotsFull(),
-          run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: 0 }); markDiscovered("joker", j.id); renderHUD(); return t("sr_rand_joker_run", {name: j.name}); } },
+          run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: j.initCounter ?? 0 }); markDiscovered("joker", j.id); renderHUD(); return t("sr_rand_joker_run", {name: j.name}); } },
         // 네가티브 조커: 밸런스 영향 큰 강보상 → 가중치 낮추고 초반(1~2탄) 제외
         { icon:"🌑", weight: 3, label: t("sr_neg_joker_label"), detail: t("sr_neg_joker_detail"),
           cond: () => state.ante >= 3,
-          run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: 0, negative: true }); markDiscovered("joker", j.id); renderHUD(); return t("sr_neg_joker_run", {name: j.name}); } },
+          run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: j.initCounter ?? 0, negative: true }); markDiscovered("joker", j.id); renderHUD(); return t("sr_neg_joker_run", {name: j.name}); } },
         { icon:"🔮", weight: 10, label: t("sr_rand_tarot_label"), detail: t("sr_rand_tarot_detail"),
           cond: () => consumableCount() < consumableMax(),
           run() { const sr_t = weightedSampleBy(tarotPool, 1, tarotWeight)[0]; state.tarotCards.push({ ...sr_t }); markDiscovered("tarot", sr_t.id); return t("sr_rand_tarot_run", {name: sr_t.name}); } },
@@ -7377,7 +7377,7 @@
         const j = jokerPool.find(x => x.id === $("#dbgJoker").value); if (!j) return;
         const neg = $("#dbgJokerNeg").checked;
         const ed = $("#dbgJokerEd") ? $("#dbgJokerEd").value : "";
-        state.jokers.push({ ...j, counter: 0, ...(neg ? { negative: true } : {}), ...(ed && EDITIONS[ed] ? { edition: ed } : {}) });
+        state.jokers.push({ ...j, counter: j.initCounter ?? 0, ...(neg ? { negative: true } : {}), ...(ed && EDITIONS[ed] ? { edition: ed } : {}) });
         markDiscovered("joker", j.id); renderHUD();
         setInfo(t("dbg_add_joker", {name: `${j.name}${neg ? " 🌑" : ""}${ed && EDITIONS[ed] ? " " + EDITIONS[ed].icon : ""}`}));
       });
