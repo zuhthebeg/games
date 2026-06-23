@@ -6439,7 +6439,8 @@
 
     // 초반(Ante 1~2, 2번째 보스 전까지)엔 상위 등급 조커·특수 행성을 상점에서 제외 — 돈도 없는데 등장해봐야 못 삼.
     function isEarlyGame(){ return state.ante <= 2; }
-    function jokerAllowedNow(j){ return !(isEarlyGame() && (j.rarity === "rare" || j.rarity === "legendary")); }
+    function isDebugOn(){ try { return localStorage.getItem("jokerrun_debug") === "1"; } catch (_) { return false; } }
+    function jokerAllowedNow(j){ if (isDebugOn()) return true; return !(isEarlyGame() && (j.rarity === "rare" || j.rarity === "legendary")); }
 
     function generateShopJokers() {
       const owned = new Set(state.jokers.map(j => j.id));
