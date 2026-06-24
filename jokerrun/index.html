@@ -5068,7 +5068,7 @@
     function buildCardEl(card) {
         const d = document.createElement("div");
         d.dataset.id = String(card.id);
-        d.dataset.sig = card.suit + ":" + card.rank + ":" + (card.enh || "");
+        d.dataset.sig = card.suit + ":" + card.rank + ":" + (card.enh || "") + ":" + (IMG_OFF ? "1" : "0");
         d.innerHTML = cardInnerHTML(card);
         makeDraggable(d, ".card", commitHandOrder);
         d.addEventListener("click", () => {
@@ -5125,7 +5125,7 @@
           d.style.transform = "";
           d.style.boxShadow = "";
           // 타로 등으로 무늬/랭크가 바뀐 카드는 내용 갱신(diff 렌더가 DOM 재사용해 안 바뀌던 버그 수정)
-          const sig = card.suit + ":" + card.rank + ":" + (card.enh || "");
+          const sig = card.suit + ":" + card.rank + ":" + (card.enh || "") + ":" + (IMG_OFF ? "1" : "0");
           if (d.dataset.sig !== sig) { d.innerHTML = cardInnerHTML(card); d.dataset.sig = sig; }
         }
         d.className = `card ${suitClass[card.suit]} ${card.enh ? "enh-" + card.enh : ""} ${isCardBossDisabled(card) ? "boss-disabled" : ""} ${state.selected.has(card.id) ? "selected" : ""}`;
