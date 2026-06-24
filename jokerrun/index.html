@@ -2873,6 +2873,11 @@
         <div class="set-label" data-i18n="sound">🔊 사운드</div>
         <button id="setSoundBtn" type="button" class="set-toggle">켜짐</button>
       </div>
+      <div class="set-row">
+        <div class="set-label" data-i18n="card_art">🖼️ 카드 아트</div>
+        <button id="setArtBtn" type="button" class="set-toggle">켜짐</button>
+      </div>
+      <div class="set-hint" data-i18n="card_art_hint" style="margin-top:-4px">끄면 일러스트 대신 기호로 표시됩니다.</div>
       <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
         <div class="set-label" data-i18n="speed">⏱️ 연출 속도</div>
         <div id="setSpeedRow" class="set-seg"></div>
@@ -3832,6 +3837,11 @@
     const FACE_IMG = { 11: "jack", 12: "queen", 13: "king" };
     function getCardSkin(){ try { return localStorage.getItem("jokerrun_card_skin") || "classic"; } catch (_) { return "classic"; } }
     function setCardSkin(s){ try { localStorage.setItem("jokerrun_card_skin", s); } catch (_) {} }
+    // ── 아트 표시 설정: 끄면 모든 카드 일러스트를 글리프/이모지/텍스트 폴백으로 렌더(수위 민감 사용자용) ──
+    let IMG_OFF = (() => { try { return localStorage.getItem("jokerrun_img_off") === "1"; } catch (_) { return false; } })();
+    function setImgOff(v){ IMG_OFF = !!v; try { localStorage.setItem("jokerrun_img_off", v ? "1" : "0"); } catch (_) {} }
+    // 아트 src 래퍼: 끄면 깨진 data URI를 반환해 기존 onerror 폴백(글리프/이모지/텍스트)을 즉시 발동시킨다.
+    function aimg(src){ return IMG_OFF ? "data:," : src; }
     // 조커/효과 설명에서 '공격력'은 파랑, '연격'는 빨강으로 눈에 띄게 강조(내부 정의 문자열만 사용 → 안전)
     function colorizeEffect(text){
       if (text == null) return "";
@@ -3852,9 +3862,9 @@
 
     let _collectionTab = "joker";
     function collectionData(kind) {
-      if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: `tarot/${t.id}.webp?v=2`, badge: { label: "타로", color: "#b56ad6" } }));
-      if (kind === "planet") return planetPool.map(p => { if (p.special) return { id: p.id, name: p.name, desc: p.desc, img: `planets/${p.id}.webp?v=2`, badge: { label: "특수", color: "#a06bff" } }; const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 기술 영구 강화 (+${p.chipsBonus}공격력 / +${p.multBonus}연격)`, img: `planets/${p.id}.webp?v=2`, badge: { label: "행성", color: "#4a84ff" } }; });
-      return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: `jokers/${j.id}.webp`, glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
+      if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: aimg(`tarot/${t.id}.webp?v=2`), badge: { label: "타로", color: "#b56ad6" } }));
+      if (kind === "planet") return planetPool.map(p => { if (p.special) return { id: p.id, name: p.name, desc: p.desc, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "특수", color: "#a06bff" } }; const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 기술 영구 강화 (+${p.chipsBonus}공격력 / +${p.multBonus}연격)`, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "행성", color: "#4a84ff" } }; });
+      return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: aimg(`jokers/${j.id}.webp`), glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
     }
     function renderCollection(kind) {
       _collectionTab = kind;
@@ -4185,7 +4195,7 @@
         mob: "잡몹", elite: "정예", boss: "보스", shortcut: "지름길", skip: "⏭ 지름길",
         bs_hint: "지름길로 가면 정비 없이 다음 전투로. 보스는 우회 불가.",
         skip_reward: "⏭️ 지름길 보상 획득",
-        quit_to_menu: "🚪 게임 나가기", settings: "⚙️ 설정", sound: "🔊 사운드", speed: "⏱️ 연출 속도",
+        quit_to_menu: "🚪 게임 나가기", settings: "⚙️ 설정", sound: "🔊 사운드", card_art: "🖼️ 카드 아트", card_art_hint: "끄면 일러스트 대신 기호로 표시됩니다.", speed: "⏱️ 연출 속도",
         speed_hint: "데미지 연출이 너무 빨리 지나가면 느리게, 답답하면 빠르게 / 즉시.",
         language: "🌐 언어", close: "닫기", on: "켜짐", off: "꺼짐",
         cleared: "🎯 전투 승리!", my_dmg: "내 데미지", continue_run: "↩️ 이어하기 — 마지막 공격 다시",
@@ -4350,7 +4360,7 @@
         mob: "Mob", elite: "Elite", boss: "Boss", shortcut: "Shortcut", skip: "⏭ Shortcut",
         bs_hint: "Take the shortcut to skip straight to the next battle. Bosses can't be bypassed.",
         skip_reward: "⏭️ Shortcut reward",
-        quit_to_menu: "🚪 Quit to Menu", settings: "⚙️ Settings", sound: "🔊 Sound", speed: "⏱️ Anim speed",
+        quit_to_menu: "🚪 Quit to Menu", settings: "⚙️ Settings", sound: "🔊 Sound", card_art: "🖼️ Card Art", card_art_hint: "When off, cards show symbols instead of illustrations.", speed: "⏱️ Anim speed",
         speed_hint: "If damage animation flies by, set it slower; if it drags, faster / instant.",
         language: "🌐 Language", close: "Close", on: "On", off: "Off",
         cleared: "🎯 Battle won!", my_dmg: "Your damage", continue_run: "↩️ Continue — retry last attack",
@@ -4515,7 +4525,7 @@
         mob: "雜魚", elite: "精英", boss: "王關", shortcut: "捷徑", skip: "⏭ 捷徑",
         bs_hint: "走捷徑可不整備直接進入下一場戰鬥。王關無法繞過。",
         skip_reward: "⏭️ 捷徑獎勵",
-        quit_to_menu: "🚪 退出至主畫面", settings: "⚙️ 設定", sound: "🔊 音效", speed: "⏱️ 演出速度",
+        quit_to_menu: "🚪 退出至主畫面", settings: "⚙️ 設定", sound: "🔊 音效", card_art: "🖼️ 卡牌插畫", card_art_hint: "關閉後將以符號取代插畫顯示。", speed: "⏱️ 演出速度",
         speed_hint: "傷害演出太快就調慢，太拖就調快 / 立即。",
         language: "🌐 語言", close: "關閉", on: "開", off: "關",
         cleared: "🎯 戰鬥勝利！", my_dmg: "我的傷害", continue_run: "↩️ 繼續 — 重試最後一次攻擊",
@@ -4680,7 +4690,7 @@
         mob: "ザコ", elite: "精鋭", boss: "ボス", shortcut: "近道", skip: "⏭ 近道",
         bs_hint: "近道なら整備なしで次の戦闘へ。ボスは回避不可。",
         skip_reward: "⏭️ 近道報酬",
-        quit_to_menu: "🚪 メニューに戻る", settings: "⚙️ 設定", sound: "🔊 サウンド", speed: "⏱️ 演出速度",
+        quit_to_menu: "🚪 メニューに戻る", settings: "⚙️ 設定", sound: "🔊 サウンド", card_art: "🖼️ カードアート", card_art_hint: "オフにするとイラストの代わりに記号で表示されます。", speed: "⏱️ 演出速度",
         speed_hint: "ダメージ演出が速すぎれば遅く、もたつけば速く / 即時。",
         language: "🌐 言語", close: "閉じる", on: "オン", off: "オフ",
         cleared: "🎯 戦闘勝利！", my_dmg: "自分のダメージ", continue_run: "↩️ 続きから — 最後の攻撃をやり直す",
@@ -4964,7 +4974,7 @@
       const s = suitSymbol[card.suit];
       if (FACE_IMG[card.rank]) {
         const fallback = `<div class=face-court><span class=face-letter>${rankLabel[card.rank]}</span><span class=fc-suit>${s}</span></div>`;
-        return `<div class="card-face face-img"><img src="faces/${FACE_IMG[card.rank]}.webp" alt="" draggable="false" onerror="this.parentNode.innerHTML='${fallback}'"></div>`;
+        return `<div class="card-face face-img"><img src="${aimg(`faces/${FACE_IMG[card.rank]}.webp`)}" alt="" draggable="false" onerror="this.parentNode.innerHTML='${fallback}'"></div>`;
       }
       return `<div class="card-face"><span class="pip big" style="left:50%;top:50%">${s}</span></div>`;
     }
@@ -4976,8 +4986,8 @@
           <div class="stone-face"><span class="stone-rock">🪨</span><span class="stone-chip">+50</span></div>`;
       }
       const locked = isCardBossDisabled(card) ? `<span class="card-lock" aria-label="봉인됨">🚫</span>` : "";
-      // 클래식 스킨: J/Q/K를 오리지널 트럼프 풀카드 이미지로 통째 교체
-      if (FACE_IMG[card.rank]) {
+      // 클래식 스킨: J/Q/K를 오리지널 트럼프 풀카드 이미지로 통째 교체 (아트 OFF면 텍스트 코트 레이아웃으로 폴백)
+      if (FACE_IMG[card.rank] && !IMG_OFF) {
         return `${enhBadgeHTML(card)}${locked}<img class="trump-full" src="faces_classic/${FACE_IMG[card.rank]}_${card.suit}.webp?v=2" alt="" draggable="false">`;
       }
       return `${enhBadgeHTML(card)}${locked}
@@ -5427,7 +5437,7 @@
           const planet = it.data;
           const sub = planet.special ? t("pop_badge_special_planet") : `${handBase[planet.hand]?.name || planet.hand} Lv.${state.handLevels?.[planet.hand] || 1}`;
           card.innerHTML = `
-            <img class="planet-art" src="planets/${planet.id}.webp?v=2" alt="" draggable="false" onerror="this.style.display='none'">
+            <img class="planet-art" src="${aimg(`planets/${planet.id}.webp?v=2`)}" alt="" draggable="false" onerror="this.style.display='none'">
             <span class="planet-grad" aria-hidden="true"></span>
             <span class="planet-glyph">${planet.name}</span>
             <span class="planet-target">${sub}</span>`;
@@ -5437,7 +5447,7 @@
           card.classList.add("tarot-mini");
           card.dataset.need = String(tarot.need || 0);
           card.innerHTML = `
-            <img class="planet-art" src="tarot/${tarot.id}.webp?v=2" alt="" draggable="false" onerror="this.style.display='none'">
+            <img class="planet-art" src="${aimg(`tarot/${tarot.id}.webp?v=2`)}" alt="" draggable="false" onerror="this.style.display='none'">
             <span class="planet-grad" aria-hidden="true"></span>
             <span class="planet-glyph">${tarot.name}</span>
             <span class="planet-target">${t("ui_tarot_mini_label")}${(tarot.need || 0) > 0 ? ` ${t("mini_need", { n: tarot.need })}` : ""}</span>`;
@@ -5473,7 +5483,7 @@
       const rule = mod ? `<span class="boss-rule">⚠️ ${mod.label}</span><span class="boss-desc">${mod.desc}</span>` : `<span class="boss-desc">${t("ui_boss_no_rule")}</span>`;
       banner.hidden = false;
       banner.innerHTML = `
-        <img class="boss-art" src="${bossArtSrc(ante)}" alt="" draggable="false" onerror="this.style.display='none'">
+        <img class="boss-art" src="${aimg(bossArtSrc(ante))}" alt="" draggable="false" onerror="this.style.display='none'">
         <div class="boss-info">
           <span class="boss-name">${t("ui_boss_name", {ante, name})}</span>
           ${rule}
@@ -5516,7 +5526,7 @@
         const _ed = editionOf(joker);
         tile.className = "mini-tile" + (joker.negative ? " negative" : (_ed ? " ed-" + _ed.key : ""));
         if (!joker.negative && !_ed) tile.style.borderColor = _r.color + "88";
-        tile.innerHTML = `<div class="mini-art"><img src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}`;
+        tile.innerHTML = `<div class="mini-art"><img src="${aimg(`jokers/${joker.id}.webp`)}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}`;
         tile.addEventListener("click", () => {
           openDetailPopup({
             imgSrc: `jokers/${joker.id}.webp`,
@@ -5542,7 +5552,7 @@
       const negCls = opts.negative ? " negative" : (_edp ? " ed-" + _edp.key : "");
       if (opts.imgSrc) {
         const fb = opts.emoji ? `<span class=\\'jp-emoji\\'>${opts.emoji}</span>` : `<span class=\\'joker-glyph ${opts.glyph || "joker-duo"}\\'></span>`;
-        icon.innerHTML = `<img class="joker-popup-art${negCls}" src="${opts.imgSrc}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">`;
+        icon.innerHTML = `<img class="joker-popup-art${negCls}" src="${aimg(opts.imgSrc)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">`;
       } else if (opts.emoji) {
         icon.innerHTML = `<span class="jp-emoji">${opts.emoji}</span>`;
       } else {
@@ -5671,7 +5681,7 @@
           const _r = rarityOf(joker);
           box.style.setProperty("--rar", _r.color);
           box.innerHTML = `
-            <img class="joker-art" src="jokers/${joker.id}.webp" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
+            <img class="joker-art" src="${aimg(`jokers/${joker.id}.webp`)}" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
             <span class="joker-grad" aria-hidden="true"></span>
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
             ${joker.negative ? '<span class="joker-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}
@@ -5850,7 +5860,7 @@
             ? `<span style="color:#9fd0ff">${tc.exact ? t("ui_tarot_exact") : ""}${t("tarot_need_use", { n: tc.need })}</span>`
             : `<span style="color:#9fd0ff">${t("ui_tarot_instant_txt")}</span>`;
           return `<div style="display:flex;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08)">
-            <img src="tarot/${tc.id}.webp?v=2" alt="" loading="lazy" style="width:46px;height:64px;object-fit:cover;border-radius:7px;border:1px solid #b56ad688;flex:0 0 auto;background:#1a0f24" onerror="this.outerHTML='<span style=\\'width:46px;height:64px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex:0 0 auto\\'>🔮</span>'">
+            <img src="${aimg(`tarot/${tc.id}.webp?v=2`)}" alt="" loading="lazy" style="width:46px;height:64px;object-fit:cover;border-radius:7px;border:1px solid #b56ad688;flex:0 0 auto;background:#1a0f24" onerror="this.outerHTML='<span style=\\'width:46px;height:64px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex:0 0 auto\\'>🔮</span>'">
             <div style="flex:1;min-width:0">
               <div style="font-weight:800;color:#e7defb">${tc.name}${owned ? ` <span style="color:var(--gold);font-size:.72rem">${t("ui_owned_count", {n: owned})}</span>` : ""}</div>
               <div style="font-size:.82rem;color:var(--text);margin:2px 0">${tc.desc}</div>
@@ -6188,7 +6198,7 @@
       wrap.className = "joker-flash";
       const fb = `<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\' style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem\\'></span>`;
       wrap.innerHTML = `<div class="jf-card" style="border-color:${r.color};box-shadow:0 0 36px ${r.color}99">
-        <img src="jokers/${joker.id}.webp" alt="" draggable="false" onerror="this.outerHTML='${fb}'">
+        <img src="${aimg(`jokers/${joker.id}.webp`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">
         <div class="jf-tag" style="color:${isMult ? "#ff8a98" : "#8fd6ff"}">${t("ui_triggered")}</div>
         <div class="jf-name">${joker.name}</div>
       </div>`;
@@ -6208,7 +6218,7 @@
       const wrap = document.createElement("div");
       wrap.className = "tarot-flash";
       const fb = `<span style=\\'font-size:3rem\\'>🔮</span>`;
-      wrap.innerHTML = `<div class="tf-card"><img src="tarot/${tarot.id}.webp?v=2" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${tarot.name}</div></div>`;
+      wrap.innerHTML = `<div class="tf-card"><img src="${aimg(`tarot/${tarot.id}.webp?v=2`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${tarot.name}</div></div>`;
       flashMountTarget().appendChild(wrap);
       try { AudioFX.play("select"); JuiceFX.sfx("chip"); } catch (_) {}
       setTimeout(() => wrap.remove(), 1100);
@@ -6219,7 +6229,7 @@
       const wrap = document.createElement("div");
       wrap.className = "planet-flash";
       const fb = `<span style=\\'font-size:3rem\\'>${planet.planet || "🪐"}</span>`;
-      wrap.innerHTML = `<div class="pf-card"><img src="planets/${planet.id}.webp?v=2" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${planet.name}</div></div><div class="pf-level">${levelText || ""} ▲</div>`;
+      wrap.innerHTML = `<div class="pf-card"><img src="${aimg(`planets/${planet.id}.webp?v=2`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${planet.name}</div></div><div class="pf-level">${levelText || ""} ▲</div>`;
       flashMountTarget().appendChild(wrap);
       try { AudioFX.play("win"); JuiceFX.sfx("win"); JuiceFX.shake(6); } catch (_) {}
       setTimeout(() => wrap.remove(), 1200);
@@ -6627,7 +6637,7 @@
       if (o.borderColor) tile.style.borderColor = o.borderColor + "99";
       const art = o.artHTML !== undefined ? o.artHTML
         : (o.imgSrc
-          ? `<img src="${o.imgSrc}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'tile-glyph ${o.glyph || ""}\\'>${o.emoji || ""}</span>'">`
+          ? `<img src="${aimg(o.imgSrc)}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'tile-glyph ${o.glyph || ""}\\'>${o.emoji || ""}</span>'">`
           : `<span class="tile-glyph">${o.emoji || ""}</span>`);
       if (o.edClass) tile.classList.add(o.edClass);
       tile.innerHTML = `<div class="tile-art">${art}</div>${o.cornerIcon ? `<span class="tile-ed-badge" title="${o.cornerTitle || ""}">${o.cornerIcon}</span>` : ""}${o.badge ? `<span class="tile-badge" style="background:${o.badge.color}">${o.badge.label}</span>` : ""}<div class="tile-name">${o.name}</div><div class="tile-price ${o.afford ? "" : "no-afford"}">🪙${o.price}</div>`;
@@ -7335,8 +7345,26 @@
         row.appendChild(b);
       });
     }
+    function syncArtBtn() {
+      const b = $("#setArtBtn");
+      if (!b) return;
+      b.textContent = IMG_OFF ? t("off") : t("on");
+      b.classList.toggle("off", IMG_OFF);
+    }
+    function toggleArt() {
+      setImgOff(!IMG_OFF);
+      syncArtBtn();
+      // 현재 화면 동적 요소를 즉시 다시 그린다(setLang 재렌더와 동일).
+      try { renderHUD(); } catch (_) {}
+      try { renderBossBanner(); } catch (_) {}
+      try { renderJokers(); } catch (_) {}
+      try { renderCards(); } catch (_) {}
+      try { updateHandPreview(); } catch (_) {}
+      try { refreshConsumables(); } catch (_) {}
+    }
     function openSettings() {
       BGM.syncBtn();
+      syncArtBtn();
       renderSpeedSeg();
       renderLangSeg();
       // 시작화면(메인)에서 연 설정엔 '게임 나가기'가 의미 없으므로 숨긴다(이미 메인).
@@ -7352,6 +7380,7 @@
     $("#setCloseBtn").addEventListener("click", closeSettings);
     $("#settingsModal").addEventListener("click", (e) => { if (e.target.id === "settingsModal") closeSettings(); });
     $("#setSoundBtn").addEventListener("click", () => BGM.toggle());
+    $("#setArtBtn").addEventListener("click", toggleArt);
     $("#startPlayBtn").addEventListener("click", beginRun);
     $("#startContinueBtn").addEventListener("click", () => { try { BGM.unlock?.(); } catch (_) {} restoreRun(); });
     $("#ccContinueBtn").addEventListener("click", () => {
