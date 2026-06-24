@@ -6110,11 +6110,15 @@
     function markRunActive() { try { localStorage.setItem(ACTIVE_KEY, "1"); } catch (_) {} }
     function clearRunActive() { try { localStorage.removeItem(ACTIVE_KEY); } catch (_) {} }
     function isRunActive() { try { return localStorage.getItem(ACTIVE_KEY) === "1"; } catch (_) { return false; } }
-    function snapshotRun() {
+    function snapshotRun(opts) {
       try {
-        if (!state.runDeck || state.gameEnded) return;
+        const _phase = (opts && opts.phase) || "combat";
+        if (!state.runDeck) return;
+        if (_phase === "combat" && state.gameEnded) return;   // 게임오버 후 전투 스냅샷 금지(블라인드 선택 단계는 허용)
         const snap = {
           v: 2, ts: Date.now(),
+          phase: _phase,
+          pendingBlindIndex: (opts && typeof opts.blindIndex === "number") ? opts.blindIndex : null,
           ante: state.ante, roundIndex: state.roundIndex, money: state.money,
           endless: !!state.endless, endlessAnnounced: !!state.endlessAnnounced,
           score: state.score, handsLeft: state.handsLeft, discardsLeft: state.discardsLeft,
@@ -6183,6 +6187,15 @@
       closeShop(); closeDeckModal(); closeVictoryModal();
       const ss = document.getElementById("startScreen"); if (ss) ss.classList.remove("show");
       try { localizeContent(); } catch (_) {}   // 복원된 사본을 현재 언어로 맞춤
+      // 블라인드 선택/스킵 단계에서 리로드된 경우: 전투 보드 대신 블라인드 선택을 다시 띄워 복귀.
+      if (snap.phase === "blindSelect") {
+        markRunActive();
+        try { renderHUD(); renderBossBanner(); } catch (_) {}
+        try { BGM.setTrack(BGM.playKey(state.ante)); } catch (_) {}
+        const _bi = (typeof snap.pendingBlindIndex === "number") ? snap.pendingBlindIndex : 0;
+        beginBlind(_bi);
+        return true;
+      }
       sortHand(); renderCards(); renderBossBanner(); renderHUD(); updateHandPreview();
       try { BGM.setTrack(state.isBossBlind ? BGM.bossKey(state.ante) : BGM.playKey(state.ante)); } catch (_) {}
       setInfo(t("info_continue"));
@@ -6920,6 +6933,9 @@
       $("#bsReward").innerHTML = `${t("ui_skip_reward_label")} <b style="color:var(--gold)">${sr.icon} ${sr.label}</b> <span style="opacity:.85">— ${sr.detail}</span>`;
       $("#blindSelectModal").classList.add("show");
       AudioFX.play("select");
+      // 블라인드 선택/스킵 단계에서도 스냅샷을 남긴다 — 첫 공격 전(스킵만 한 상태)에
+      // 모바일 웹뷰가 리로드되면 복원할 게 없어 시작화면으로 튕기고 런이 소실되던 버그 수정.
+      try { snapshotRun({ phase: "blindSelect", blindIndex: index }); } catch (_) {}
     }
 
     function playPendingBlind(index) {
