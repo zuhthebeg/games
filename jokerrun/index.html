@@ -2873,11 +2873,11 @@
         <div class="set-label" data-i18n="sound">🔊 사운드</div>
         <button id="setSoundBtn" type="button" class="set-toggle">켜짐</button>
       </div>
-      <div class="set-row">
-        <div class="set-label" data-i18n="card_art">🖼️ 카드 아트</div>
-        <button id="setArtBtn" type="button" class="set-toggle">켜짐</button>
+      <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div class="set-label" data-i18n="card_art">🃏 조커 아트</div>
+        <div id="setArtRow" class="set-seg"></div>
+        <div class="set-hint" data-i18n="card_art_hint">고양이(건전) / 클래식(기존) / 끄기(기호). 타로·행성 등 다른 아트는 항상 표시됩니다.</div>
       </div>
-      <div class="set-hint" data-i18n="card_art_hint" style="margin-top:-4px">끄면 일러스트 대신 기호로 표시됩니다.</div>
       <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
         <div class="set-label" data-i18n="speed">⏱️ 연출 속도</div>
         <div id="setSpeedRow" class="set-seg"></div>
@@ -3837,13 +3837,27 @@
     const FACE_IMG = { 11: "jack", 12: "queen", 13: "king" };
     function getCardSkin(){ try { return localStorage.getItem("jokerrun_card_skin") || "classic"; } catch (_) { return "classic"; } }
     function setCardSkin(s){ try { localStorage.setItem("jokerrun_card_skin", s); } catch (_) {} }
-    // ── 조커 아트 표시 설정: 끄면 조커 일러스트만 글리프 폴백으로 렌더(수위 민감 사용자용).
-    //    타로·행성·페이스·보스 아트는 수위 이슈 없어 항상 표시(토글 영향 제외). ──
-    let IMG_OFF = (() => { try { return localStorage.getItem("jokerrun_img_off") === "1"; } catch (_) { return false; } })();
-    function setImgOff(v){ IMG_OFF = !!v; try { localStorage.setItem("jokerrun_img_off", v ? "1" : "0"); } catch (_) {} }
-    // 아트 src 래퍼: 끄면 조커 이미지(경로에 "jokers/")만 깨진 data URI로 바꿔 기존 onerror 글리프 폴백을 발동.
-    // 타로/행성/페이스/보스 경로는 그대로 통과 → 토글과 무관하게 항상 표시.
-    function aimg(src){ return (IMG_OFF && typeof src === "string" && src.indexOf("jokers/") !== -1) ? "data:," : src; }
+    // ── 조커 아트 스킨 설정: cat(고양이·건전·기본) / classic(기존 일러스트) / off(글리프).
+    //    타로·행성·페이스·보스 아트는 수위 이슈 없어 스킨과 무관하게 항상 표시. ──
+    let JOKER_ART = (() => {
+      try {
+        const v = localStorage.getItem("jokerrun_joker_art");
+        if (v === "cat" || v === "classic" || v === "off") return v;
+        // 구버전 호환: 예전 '이미지 끄기'가 켜져 있던 사용자는 off로 승계
+        if (localStorage.getItem("jokerrun_img_off") === "1") return "off";
+      } catch (_) {}
+      return "cat";
+    })();
+    function setJokerArt(v){ JOKER_ART = v; try { localStorage.setItem("jokerrun_joker_art", v); } catch (_) {} }
+    // 아트 src 래퍼 = 조커 스킨 라우터. 조커 경로("jokers/")만 스킨에 맞게 변환:
+    //   cat → jokers_cat/ , classic → jokers/ , off → 깨진 data URI(기존 onerror 글리프 폴백 발동).
+    //   조커 외(타로/행성/페이스/보스)는 그대로 통과 → 항상 표시.
+    function aimg(src){
+      if (typeof src !== "string" || src.indexOf("jokers/") === -1) return src;
+      if (JOKER_ART === "off") return "data:,";
+      if (JOKER_ART === "cat") return src.replace("jokers/", "jokers_cat/");
+      return src;   // classic
+    }
     // 조커/효과 설명에서 '공격력'은 파랑, '연격'는 빨강으로 눈에 띄게 강조(내부 정의 문자열만 사용 → 안전)
     function colorizeEffect(text){
       if (text == null) return "";
@@ -4197,7 +4211,7 @@
         mob: "잡몹", elite: "정예", boss: "보스", shortcut: "지름길", skip: "⏭ 지름길",
         bs_hint: "지름길로 가면 정비 없이 다음 전투로. 보스는 우회 불가.",
         skip_reward: "⏭️ 지름길 보상 획득",
-        quit_to_menu: "🚪 게임 나가기", settings: "⚙️ 설정", sound: "🔊 사운드", card_art: "🃏 조커 아트", card_art_hint: "끄면 조커 일러스트만 기호로 표시됩니다.", speed: "⏱️ 연출 속도",
+        quit_to_menu: "🚪 게임 나가기", settings: "⚙️ 설정", sound: "🔊 사운드", card_art: "🃏 조커 아트", card_art_hint: "고양이(건전) / 클래식(기존) / 끄기(기호). 다른 카드 아트는 항상 표시.", art_cat: "🐱 고양이", art_classic: "🎴 클래식", art_off: "🔣 끄기", speed: "⏱️ 연출 속도",
         speed_hint: "데미지 연출이 너무 빨리 지나가면 느리게, 답답하면 빠르게 / 즉시.",
         language: "🌐 언어", close: "닫기", on: "켜짐", off: "꺼짐",
         cleared: "🎯 전투 승리!", my_dmg: "내 데미지", continue_run: "↩️ 이어하기 — 마지막 공격 다시",
@@ -4362,7 +4376,7 @@
         mob: "Mob", elite: "Elite", boss: "Boss", shortcut: "Shortcut", skip: "⏭ Shortcut",
         bs_hint: "Take the shortcut to skip straight to the next battle. Bosses can't be bypassed.",
         skip_reward: "⏭️ Shortcut reward",
-        quit_to_menu: "🚪 Quit to Menu", settings: "⚙️ Settings", sound: "🔊 Sound", card_art: "🃏 Joker Art", card_art_hint: "When off, only Joker illustrations show as symbols.", speed: "⏱️ Anim speed",
+        quit_to_menu: "🚪 Quit to Menu", settings: "⚙️ Settings", sound: "🔊 Sound", card_art: "🃏 Joker Art", card_art_hint: "Cat (wholesome) / Classic / Off (symbols). Other card art always shows.", art_cat: "🐱 Cat", art_classic: "🎴 Classic", art_off: "🔣 Off", speed: "⏱️ Anim speed",
         speed_hint: "If damage animation flies by, set it slower; if it drags, faster / instant.",
         language: "🌐 Language", close: "Close", on: "On", off: "Off",
         cleared: "🎯 Battle won!", my_dmg: "Your damage", continue_run: "↩️ Continue — retry last attack",
@@ -4527,7 +4541,7 @@
         mob: "雜魚", elite: "精英", boss: "王關", shortcut: "捷徑", skip: "⏭ 捷徑",
         bs_hint: "走捷徑可不整備直接進入下一場戰鬥。王關無法繞過。",
         skip_reward: "⏭️ 捷徑獎勵",
-        quit_to_menu: "🚪 退出至主畫面", settings: "⚙️ 設定", sound: "🔊 音效", card_art: "🃏 小丑插畫", card_art_hint: "關閉後僅小丑插畫以符號顯示。", speed: "⏱️ 演出速度",
+        quit_to_menu: "🚪 退出至主畫面", settings: "⚙️ 設定", sound: "🔊 音效", card_art: "🃏 小丑插畫", card_art_hint: "貓咪(健全) / 經典(原版) / 關閉(符號)。其他卡牌插畫一律顯示。", art_cat: "🐱 貓咪", art_classic: "🎴 經典", art_off: "🔣 關閉", speed: "⏱️ 演出速度",
         speed_hint: "傷害演出太快就調慢，太拖就調快 / 立即。",
         language: "🌐 語言", close: "關閉", on: "開", off: "關",
         cleared: "🎯 戰鬥勝利！", my_dmg: "我的傷害", continue_run: "↩️ 繼續 — 重試最後一次攻擊",
@@ -4692,7 +4706,7 @@
         mob: "ザコ", elite: "精鋭", boss: "ボス", shortcut: "近道", skip: "⏭ 近道",
         bs_hint: "近道なら整備なしで次の戦闘へ。ボスは回避不可。",
         skip_reward: "⏭️ 近道報酬",
-        quit_to_menu: "🚪 メニューに戻る", settings: "⚙️ 設定", sound: "🔊 サウンド", card_art: "🃏 ジョーカーアート", card_art_hint: "オフにするとジョーカーの絵柄のみ記号で表示されます。", speed: "⏱️ 演出速度",
+        quit_to_menu: "🚪 メニューに戻る", settings: "⚙️ 設定", sound: "🔊 サウンド", card_art: "🃏 ジョーカーアート", card_art_hint: "猫(健全) / クラシック(従来) / オフ(記号)。他のカードアートは常に表示。", art_cat: "🐱 猫", art_classic: "🎴 クラシック", art_off: "🔣 オフ", speed: "⏱️ 演出速度",
         speed_hint: "ダメージ演出が速すぎれば遅く、もたつけば速く / 即時。",
         language: "🌐 言語", close: "閉じる", on: "オン", off: "オフ",
         cleared: "🎯 戦闘勝利！", my_dmg: "自分のダメージ", continue_run: "↩️ 続きから — 最後の攻撃をやり直す",
@@ -5070,7 +5084,7 @@
     function buildCardEl(card) {
         const d = document.createElement("div");
         d.dataset.id = String(card.id);
-        d.dataset.sig = card.suit + ":" + card.rank + ":" + (card.enh || "") + ":" + (IMG_OFF ? "1" : "0");
+        d.dataset.sig = card.suit + ":" + card.rank + ":" + (card.enh || "");
         d.innerHTML = cardInnerHTML(card);
         makeDraggable(d, ".card", commitHandOrder);
         d.addEventListener("click", () => {
@@ -5127,7 +5141,7 @@
           d.style.transform = "";
           d.style.boxShadow = "";
           // 타로 등으로 무늬/랭크가 바뀐 카드는 내용 갱신(diff 렌더가 DOM 재사용해 안 바뀌던 버그 수정)
-          const sig = card.suit + ":" + card.rank + ":" + (card.enh || "") + ":" + (IMG_OFF ? "1" : "0");
+          const sig = card.suit + ":" + card.rank + ":" + (card.enh || "");
           if (d.dataset.sig !== sig) { d.innerHTML = cardInnerHTML(card); d.dataset.sig = sig; }
         }
         d.className = `card ${suitClass[card.suit]} ${card.enh ? "enh-" + card.enh : ""} ${isCardBossDisabled(card) ? "boss-disabled" : ""} ${state.selected.has(card.id) ? "selected" : ""}`;
@@ -7363,26 +7377,31 @@
         row.appendChild(b);
       });
     }
-    function syncArtBtn() {
-      const b = $("#setArtBtn");
-      if (!b) return;
-      b.textContent = IMG_OFF ? t("off") : t("on");
-      b.classList.toggle("off", IMG_OFF);
-    }
-    function toggleArt() {
-      setImgOff(!IMG_OFF);
-      syncArtBtn();
-      // 현재 화면 동적 요소를 즉시 다시 그린다(setLang 재렌더와 동일).
-      try { renderHUD(); } catch (_) {}
-      try { renderBossBanner(); } catch (_) {}
-      try { renderJokers(); } catch (_) {}
-      try { renderCards(); } catch (_) {}
-      try { updateHandPreview(); } catch (_) {}
-      try { refreshConsumables(); } catch (_) {}
+    const JOKER_ART_OPTS = [{ v: "cat", key: "art_cat" }, { v: "classic", key: "art_classic" }, { v: "off", key: "art_off" }];
+    function renderJokerArtSeg() {
+      const row = $("#setArtRow");
+      if (!row) return;
+      row.innerHTML = "";
+      JOKER_ART_OPTS.forEach(opt => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = t(opt.key);
+        if (JOKER_ART === opt.v) b.classList.add("active");
+        b.addEventListener("click", () => {
+          setJokerArt(opt.v);
+          renderJokerArtSeg();
+          // 조커 아트 즉시 반영(setLang 재렌더와 동일 경로).
+          try { renderJokers(); } catch (_) {}
+          try { renderHUD(); } catch (_) {}
+          try { refreshConsumables(); } catch (_) {}
+          try { AudioFX.play("select"); } catch (_) {}
+        });
+        row.appendChild(b);
+      });
     }
     function openSettings() {
       BGM.syncBtn();
-      syncArtBtn();
+      renderJokerArtSeg();
       renderSpeedSeg();
       renderLangSeg();
       // 시작화면(메인)에서 연 설정엔 '게임 나가기'가 의미 없으므로 숨긴다(이미 메인).
@@ -7398,7 +7417,6 @@
     $("#setCloseBtn").addEventListener("click", closeSettings);
     $("#settingsModal").addEventListener("click", (e) => { if (e.target.id === "settingsModal") closeSettings(); });
     $("#setSoundBtn").addEventListener("click", () => BGM.toggle());
-    $("#setArtBtn").addEventListener("click", toggleArt);
     $("#startPlayBtn").addEventListener("click", beginRun);
     $("#startContinueBtn").addEventListener("click", () => { try { BGM.unlock?.(); } catch (_) {} restoreRun(); });
     $("#ccContinueBtn").addEventListener("click", () => {
