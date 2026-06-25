@@ -1959,7 +1959,7 @@
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 80;
+      z-index: 110;
       background: rgba(2, 12, 10, 0.75);
       backdrop-filter: blur(10px);
       padding: calc(60px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
@@ -2693,7 +2693,7 @@
     /* 이어하기 아이콘 */
     #startContinueBtn { background-image:url("ui/ic_continue.webp"); background-repeat:no-repeat; background-position:14px center; background-size:24px auto; padding-left:46px; }
     /* 글로벌 유틸바 (상점/스킵 등 모달 위에서 정보·설정 접근) */
-    .global-util-bar { position:fixed; top:calc(58px + env(safe-area-inset-top)); right:8px; display:flex; gap:6px; z-index:90; }
+    .global-util-bar { position:fixed; top:50%; right:5px; transform:translateY(-50%); display:flex; flex-direction:column; gap:6px; z-index:90; }
     .global-util-bar .gu-btn {
       width:44px; height:44px; padding:0; border-radius:10px;
       background:rgba(16,16,24,0.85); border:1px solid rgba(212,175,55,0.5);
@@ -2728,7 +2728,6 @@
   <div class="global-util-bar" id="globalUtilBar" style="display:none">
     <button id="guSettings" class="gu-btn" type="button" aria-label="설정" title="설정">⚙️</button>
     <button id="guHands" class="gu-btn ic-hands" type="button" aria-label="기술" data-i18n-title="skills"></button>
-    <button id="guScrolls" class="gu-btn ic-scroll" type="button" aria-label="주문서" data-i18n-title="scrolls"></button>
     <button id="guCodex" class="gu-btn ic-codex" type="button" aria-label="도감" data-i18n-title="collection_btn"></button>
     <button id="guDeck" class="gu-btn ic-deck gu-deck" type="button" aria-label="덱" data-i18n-title="deck"></button>
   </div>
@@ -2816,7 +2815,6 @@
       <div class="stat-cell"><span data-i18n="discards_left">남은 버리기</span> <b id="discardsLabel">0</b></div>
       <div class="util-btns">
         <button id="handsInfoBtn" class="deck-btn ic" type="button" data-i18n-title="skills" aria-label="기술"></button>
-        <button id="tarotInfoBtn" class="deck-btn ic" type="button" data-i18n-title="scrolls" aria-label="주문서"></button>
         <button id="collectionBtn" class="deck-btn ic" type="button" data-i18n-title="collection_btn" aria-label="도감"></button>
         <button id="deckBtn" class="deck-btn deck-count ic" type="button" data-i18n-title="deck" aria-label="덱"></button>
       </div>
@@ -2945,8 +2943,8 @@
       </div>
       <div class="col-tabs">
         <button class="col-tab active" data-ctab="joker" type="button" data-i18n="joker">조커</button>
-        <button class="col-tab" data-ctab="tarot" type="button" data-i18n="scroll">주문서</button>
-        <button class="col-tab" data-ctab="planet" type="button" data-i18n="weapon_up">무기강화</button>
+        <button class="col-tab" data-ctab="tarot" type="button" data-i18n="scroll">타로</button>
+        <button class="col-tab" data-ctab="planet" type="button" data-i18n="weapon_up">무기</button>
       </div>
       <div id="collectionBody" style="overflow-y:auto;max-height:60vh"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px;">
@@ -4248,7 +4246,7 @@
         combo_preview: "기술명 | 예상 데미지: 0",
         shop: "상점", next_blind: "다음 전투로 →", to_shop: "정비하러 →", collect: "전리품 받기 →",
         reroll: "🎲 갱신", coins: "주화", sold_out: "매진",
-        weapon_up: "무기강화", scroll: "주문서", joker: "조커",
+        weapon_up: "무기", scroll: "타로", joker: "조커",
         mob: "잡몹", elite: "정예", boss: "보스", shortcut: "지름길", skip: "⏭ 지름길",
         bs_hint: "지름길로 가면 정비 없이 다음 전투로. 보스는 우회 불가.",
         skip_reward: "⏭️ 지름길 보상 획득",
@@ -4413,7 +4411,7 @@
         combo_preview: "Skill | Est. damage: 0",
         shop: "Shop", next_blind: "Next battle →", to_shop: "Resupply →", collect: "Collect loot →",
         reroll: "🎲 Reroll", coins: "coins", sold_out: "Sold out",
-        weapon_up: "Weapon", scroll: "Scroll", joker: "Joker",
+        weapon_up: "Weapon", scroll: "Tarot", joker: "Joker",
         mob: "Mob", elite: "Elite", boss: "Boss", shortcut: "Shortcut", skip: "⏭ Shortcut",
         bs_hint: "Take the shortcut to skip straight to the next battle. Bosses can't be bypassed.",
         skip_reward: "⏭️ Shortcut reward",
@@ -4578,7 +4576,7 @@
         combo_preview: "技能 | 預估傷害：0",
         shop: "商店", next_blind: "下一場戰鬥 →", to_shop: "整備 →", collect: "領取戰利品 →",
         reroll: "🎲 刷新", coins: "金幣", sold_out: "售完",
-        weapon_up: "武器強化", scroll: "卷軸", joker: "小丑",
+        weapon_up: "武器", scroll: "塔羅", joker: "小丑",
         mob: "雜魚", elite: "精英", boss: "王關", shortcut: "捷徑", skip: "⏭ 捷徑",
         bs_hint: "走捷徑可不整備直接進入下一場戰鬥。王關無法繞過。",
         skip_reward: "⏭️ 捷徑獎勵",
@@ -4743,7 +4741,7 @@
         combo_preview: "スキル | 予想ダメージ：0",
         shop: "ショップ", next_blind: "次の戦闘へ →", to_shop: "整備へ →", collect: "戦利品を受取 →",
         reroll: "🎲 更新", coins: "コイン", sold_out: "売切",
-        weapon_up: "武器強化", scroll: "巻物", joker: "ジョーカー",
+        weapon_up: "武器", scroll: "タロット", joker: "ジョーカー",
         mob: "ザコ", elite: "精鋭", boss: "ボス", shortcut: "近道", skip: "⏭ 近道",
         bs_hint: "近道なら整備なしで次の戦闘へ。ボスは回避不可。",
         skip_reward: "⏭️ 近道報酬",
@@ -7333,7 +7331,7 @@
     // 글로벌 유틸바: 상점/스킵 등 모달 위에서도 설정·정보 버튼 접근
     (function () {
       const gb = (id, fn) => { const e = document.getElementById(id); if (e) e.addEventListener("click", fn); };
-      gb("guSettings", openSettings); gb("guHands", openHandsModal); gb("guScrolls", openTarotModal);
+      gb("guSettings", openSettings); gb("guHands", openHandsModal);
       gb("guCodex", openCollection); gb("guDeck", openDeckModal);
       window.syncGlobalBar = function () {
         const bar = document.getElementById("globalUtilBar"); if (!bar) return;
@@ -7353,7 +7351,7 @@
     $("#closeDeckBtn").addEventListener("click", closeDeckModal);
     $("#handsInfoBtn").addEventListener("click", openHandsModal);
     $("#closeHandsBtn").addEventListener("click", closeHandsModal);
-    $("#tarotInfoBtn").addEventListener("click", openTarotModal);
+    /* tarotInfoBtn 제거 — 도감 '타로' 탭으로 일원화 */
     $("#closeTarotBtn").addEventListener("click", closeTarotModal);
     $("#tarotModal").addEventListener("click", (event) => {
       if (event.target === $("#tarotModal")) closeTarotModal();
