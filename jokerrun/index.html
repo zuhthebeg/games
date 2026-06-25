@@ -2708,6 +2708,19 @@
     #guDeck { background-image:url("ui/ic_deck.webp"); background-size:60%; background-position:center 38%; align-items:flex-end; padding-bottom:3px; font-size:0.66rem; font-weight:800; text-shadow:0 1px 2px #000; }
     /* 정보 모달은 글로벌바 위로 */
     #deckModal, #handsModal, #tarotModal, #collectionModal, #settingsModal { z-index:100; }
+    /* 막타 무기 베기 연출 */
+    .weapon-strike {
+      position: fixed; left: 50%; top: 42%; width: 200px; height: 200px;
+      z-index: 120; pointer-events: none; object-fit: contain;
+      filter: drop-shadow(0 0 24px #ffd166);
+      animation: weaponStrike 0.72s cubic-bezier(.2,.85,.3,1) forwards;
+    }
+    @keyframes weaponStrike {
+      0%   { opacity: 0; transform: translate(-180%, -185%) rotate(-90deg) scale(0.5); }
+      35%  { opacity: 1; transform: translate(-50%, -50%) rotate(-25deg) scale(1.15); }
+      60%  { opacity: 1; transform: translate(-50%, -50%) rotate(-18deg) scale(1.0); }
+      100% { opacity: 0; transform: translate(30%, 45%) rotate(12deg) scale(0.85); }
+    }
   </style>
 </head>
 <body>
@@ -3921,6 +3934,16 @@
     function isDiscovered(kind, id) { return !!(_collection[kind] && _collection[kind][id]); }
     // 카드 파괴 이벤트 → 파쇄광(cullStack) 조커에 파괴 횟수 누적
     function destroyedCards(n) { if (!n) return; (state.jokers || []).forEach(j => { if (j.id === "cullStack") j.counter = (j.counter || 0) + n; }); }
+    // 막타 무기 연출: 마지막 친 족보의 무기 이미지로 베는 애니메이션
+    function playWeaponStrike(handType) {
+      try {
+        const w = HAND_WEAPON[handType]; if (!w) return;
+        const el = document.createElement("img");
+        el.src = `ui/weapons/${w}.webp`; el.className = "weapon-strike"; el.alt = "";
+        document.body.appendChild(el);
+        setTimeout(() => { try { el.remove(); } catch (_) {} }, 760);
+      } catch (_) {}
+    }
 
     let _collectionTab = "joker";
     function collectionData(kind) {
@@ -5539,8 +5562,15 @@
       const banner = document.getElementById("bossBanner");
       if (!banner) return;
       if (!state.isBossBlind) {
-        banner.hidden = true;
-        banner.innerHTML = "";
+        // 잡몹/정예: 무기강화(planet) 몬스터 아트를 ante+라운드 기준 결정론으로 표시
+        const _ri = state.roundIndex || 0;
+        const _mon = planetPool[(state.ante * 3 + _ri) % planetPool.length];
+        const _art = `planets/${_mon.id}.webp?v=2`;
+        const _el = t(_ri === 0 ? "mob" : "elite");
+        banner.hidden = false;
+        banner.innerHTML = `
+          <img class="boss-art" src="${_art}" alt="" draggable="false" onerror="this.style.display='none'">
+          <div class="boss-info"><span class="boss-name">${_el}</span></div>`;
         return;
       }
       const ante = state.ante;
@@ -7217,6 +7247,7 @@
       if (bountyDoubled) addLog(t("ui_boss_bounty_paid"));
       state.gameEnded = true;
       AudioFX.play("win");
+      playWeaponStrike(state.lastHandType);   // 막타 무기 베기 연출
       JuiceFX.sfx("win"); JuiceFX.shake(9);
       spawnWinConfetti();
       // 보스 격파 보상: 앤티 N 보스 = N × 100만 G (전역 지갑)
