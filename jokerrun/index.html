@@ -3853,7 +3853,7 @@
         // 구버전 호환: 예전 '이미지 끄기'가 켜져 있던 사용자는 off로 승계
         if (localStorage.getItem("jokerrun_img_off") === "1") return "off";
       } catch (_) {}
-      return "cat";
+      return "original";
     })();
     function setJokerArt(v){ JOKER_ART = v; try { localStorage.setItem("jokerrun_joker_art", v); } catch (_) {} }
     // 아트 src 래퍼 = 조커 스킨 라우터. 조커 경로("jokers/")만 스킨에 맞게 변환:
