@@ -5778,8 +5778,9 @@
       $("#multLabel").textContent = `x${mult}`;
       $("#playBtn").disabled = state.gameEnded;
       $("#discardBtn").disabled = state.gameEnded;
-      $("#deckBtn").textContent = state.deck.length;
-      { const gd = document.getElementById("guDeck"); if (gd) gd.textContent = state.deck.length; }
+      const _deckShown = state.gameEnded ? ((state.runDeck || state.deck || []).length) : state.deck.length;
+      $("#deckBtn").textContent = _deckShown;
+      { const gd = document.getElementById("guDeck"); if (gd) gd.textContent = _deckShown; }
       $("#handGuide").textContent = state.bossModifier?.id === "max3cards"
         ? t("ui_hand_guide_3")
         : t("ui_hand_guide_5");
@@ -5791,14 +5792,14 @@
 
     function renderDeckModal() {
       const run = state.runDeck || [];
-      const remainIds = new Set(state.deck.map(c => c.id));   // 덱에 남은(아직 안 뽑힌)
+      const remainIds = state.gameEnded ? new Set(run.map(c => c.id)) : new Set(state.deck.map(c => c.id));   // 전투 중=남은 카드, 상점/종료=전체 덱
       const suits4 = ["spade", "heart", "club", "diamond"];
       const total = { spade: 0, heart: 0, club: 0, diamond: 0 };
       const remain = { spade: 0, heart: 0, club: 0, diamond: 0 };
       run.forEach(c => { total[c.suit] = (total[c.suit] || 0) + 1; if (remainIds.has(c.id)) remain[c.suit]++; });
       const enhanced = run.filter(c => c.enh);
 
-      $("#deckModalTitle").textContent = t("ui_deck_title", {total: run.length, rem: state.deck.length});
+      $("#deckModalTitle").textContent = t("ui_deck_title", {total: run.length, rem: state.gameEnded ? run.length : state.deck.length});
       // 무늬별 남은/총
       $("#deckSuitCounts").innerHTML = suits4.map(s => {
         const red = s === "heart" || s === "diamond";
