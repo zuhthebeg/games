@@ -3468,8 +3468,8 @@
       // ── 확장 타로 (카드 모델 내에서 동작: 무늬/랭크 변경·제거·자금. 도감/상점 자동 노출) ──
       { id:"magician",  name:"마법사",   need:1, desc:"선택 카드 랭크 +2",        apply(sel){ sel.forEach(c=>{ c.rank=Math.min(14, c.rank+2); }); } },
       { id:"empress",   name:"여황제",   need:1, desc:"선택 카드를 A로",          apply(sel){ sel.forEach(c=>{ c.rank=14; }); } },
-      { id:"emperor",   name:"황제",     need:0, desc:"무작위 타로 2장 생성(슬롯 한도 내)", apply(){ const room = Math.max(0, consumableMax() - consumableCount()); const n = Math.min(2, room); for(let i=0;i<n;i++){ const t = weightedSampleBy(tarotPool.filter(x=>x.id!=="emperor"), 1, tarotWeight)[0]; if(t){ state.tarotCards.push({ ...t }); markDiscovered("tarot", t.id); } } } },
-      { id:"priestess", name:"여사제",   need:0, desc:"무작위 행성 2장 생성(슬롯 한도)", apply(){ const room=Math.max(0,consumableMax()-consumableCount()); const n=Math.min(2,room); for(let i=0;i<n;i++){ const p=weightedSampleBy(planetPool.filter(x=>!x.special),1,planetWeight)[0]; if(p){ state.planetCards.push({ ...p }); markDiscovered("planet",p.id); } } } },
+      { id:"emperor",   name:"황제",     need:0, desc:"무작위 타로 2장 생성(슬롯 한도 내)", apply(){ const room = Math.max(0, consumableMax() - consumableCount()); const n = Math.min(2, room); for(let i=0;i<n;i++){ const t = weightedSampleBy(tarotPool.filter(x=>x.id!=="emperor"), 1, tarotWeight)[0]; if(t){ state.tarotCards.push({ ...t }); } } } },
+      { id:"priestess", name:"여사제",   need:0, desc:"무작위 행성 2장 생성(슬롯 한도)", apply(){ const room=Math.max(0,consumableMax()-consumableCount()); const n=Math.min(2,room); for(let i=0;i<n;i++){ const p=weightedSampleBy(planetPool.filter(x=>!x.special),1,planetWeight)[0]; if(p){ state.planetCards.push({ ...p }); } } } },
       { id:"hanged",    name:"매달린 자", need:2, exact:true, desc:"선택 2장 제거 후 새 카드", apply(sel){ const ids=new Set(sel.map(c=>c.id)); state.hand=state.hand.filter(c=>!ids.has(c.id)); state.selected.clear(); drawToEight(); } },
       { id:"temperance",name:"절제",     need:0, desc:"조커 판매가 합 획득(최대 🪙20)", apply(){ const sum=Math.min(20, state.jokers.reduce((s,j)=>s+jokerSellValue(j),0)); state.money=(state.money||0)+sum; } },
       // ── 카드 강화 부여 타로 (선택 1장에 enhancement 영구 부여. 덱에 남아 계속 적용) ──
@@ -3480,7 +3480,7 @@
       { id:"enh_steel", name:"강철 심판",   need:1, enh:"steel", desc:"선택 1장 → 스틸 카드(손에 있으면 연격 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="steel"); } },
       { id:"enh_gold",  name:"황금 악마",   need:1, enh:"gold",  desc:"선택 1장 → 골드 카드(라운드 끝 보유 시 +🪙3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
       // ── 원작 메이저 아르카나 추가 ──
-      { id:"fool",      name:"바보",       need:0, desc:"마지막 사용한 타로/행성 1장 복사(슬롯 한도)", apply(){ const lc=state.lastConsumable; if(!lc||lc.id==="fool") return; if(consumableCount()>=consumableMax()) return; if(lc.kind==="tarot"){ const t=tarotPool.find(x=>x.id===lc.id); if(t){ state.tarotCards.push({ ...t }); markDiscovered("tarot",t.id); } } else { const p=planetPool.find(x=>x.id===lc.id); if(p){ state.planetCards.push({ ...p }); markDiscovered("planet",p.id); } } } },
+      { id:"fool",      name:"바보",       need:0, desc:"마지막 사용한 타로/행성 1장 복사(슬롯 한도)", apply(){ const lc=state.lastConsumable; if(!lc||lc.id==="fool") return; if(consumableCount()>=consumableMax()) return; if(lc.kind==="tarot"){ const t=tarotPool.find(x=>x.id===lc.id); if(t){ state.tarotCards.push({ ...t }); } } else { const p=planetPool.find(x=>x.id===lc.id); if(p){ state.planetCards.push({ ...p }); } } } },
       { id:"judgement", name:"심판",       need:0, desc:"무작위 조커 1개 생성(슬롯 여유 시)", apply(){ if(jokerSlotsFull()) return; const j=weightedSample(jokerPool,1)[0]; if(j){ state.jokers.push({ ...j, counter: j.initCounter ?? 0 }); markDiscovered("joker",j.id); renderHUD(); } } },
       { id:"hierophant", name:"교황",       need:2, exact:true, desc:"선택 2장 → 보너스 카드(공격력 +30)", apply(sel){ sel.forEach(c=>c.enh="bonus"); } },
       { id:"chariot",    name:"전차",       need:2, exact:true, desc:"선택 2장 → 스틸 카드(손에 있으면 연격 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="steel"); } },
@@ -3490,7 +3490,7 @@
       { id:"fortune",    name:"운명의 인장", need:1, desc:"선택 1장 → 무작위 강화", apply(sel){ const ks=Object.keys(ENH); const k=ks[Math.floor(Math.random()*ks.length)]; sel.forEach(c=>c.enh=k); } },
       { id:"alchemy",    name:"연금술사",   need:1, desc:"선택 1장 → 골드 카드 + 즉시 +🪙8", apply(sel){ sel.forEach(c=>c.enh="gold"); state.money=(state.money||0)+8; } },
       { id:"usury",      name:"사채업자",   need:0, desc:"보유 자금의 20% 즉시 획득(최대 +🪙15)", apply(){ const g=Math.min(15, Math.floor((state.money||0)*0.2)); state.money=(state.money||0)+g; } },
-      { id:"astrology",  name:"점성술",     need:0, desc:"무작위 행성 1장 + 타로 1장 생성(슬롯 한도)", apply(){ if(consumableCount()<consumableMax()){ const p=weightedSampleBy(planetPool.filter(x=>!x.special),1,planetWeight)[0]; if(p){ state.planetCards.push({ ...p }); markDiscovered("planet",p.id); } } if(consumableCount()<consumableMax()){ const tt=weightedSampleBy(tarotPool.filter(x=>x.id!=="astrology"),1,tarotWeight)[0]; if(tt){ state.tarotCards.push({ ...tt }); markDiscovered("tarot",tt.id); } } } },
+      { id:"astrology",  name:"점성술",     need:0, desc:"무작위 행성 1장 + 타로 1장 생성(슬롯 한도)", apply(){ if(consumableCount()<consumableMax()){ const p=weightedSampleBy(planetPool.filter(x=>!x.special),1,planetWeight)[0]; if(p){ state.planetCards.push({ ...p }); } } if(consumableCount()<consumableMax()){ const tt=weightedSampleBy(tarotPool.filter(x=>x.id!=="astrology"),1,tarotWeight)[0]; if(tt){ state.tarotCards.push({ ...tt }); } } } },
       { id:"coronation", name:"대관식",     need:1, desc:"선택 1장을 K로", apply(sel){ sel.forEach(c=>c.rank=13); } },
     ];
     function consumableCount(){ return (state.planetCards?.length||0) + (state.tarotCards?.length||0); }
@@ -5302,6 +5302,7 @@
     }
 
     function useTarot(tarot, anchorEl) {
+      markDiscovered("tarot", tarot.id);   // 사용집계: 실제 사용 시 도감 발견
       const idx = state.tarotCards.indexOf(tarot);
       if (idx < 0) return;
       const need = tarot.need || 0;
@@ -5366,6 +5367,7 @@
       }
     }
     function usePlanetCard(planet, anchorEl) {
+      markDiscovered("planet", planet.id);   // 사용집계: 실제 사용 시 도감 발견
       const pi = state.planetCards.indexOf(planet);
       if (pi < 0) return;
       state.lastConsumable = { kind: "planet", id: planet.id };   // 바보 타로 복사용
@@ -6892,7 +6894,7 @@
             actionFn: () => {
               closeJokerPopup();
               state.money -= cost;
-              markDiscovered("planet", planet.id);
+              
               state.shopPlanets.splice(idx, 1);
               if (planetFull) {
                 // 슬롯 가득 → 슬롯에 안 넣고 즉시 사용
@@ -6946,7 +6948,7 @@
             actionFn: () => {
               closeJokerPopup();
               state.money -= cost;
-              markDiscovered("tarot", tarot.id);
+              
               state.shopTarots.splice(idx, 1);
               if (full && instant) {
                 tarot.apply();   // 슬롯 가득 → 즉시 효과 발동, 슬롯 안 차지
@@ -7056,10 +7058,10 @@
           run() { const j = weightedSample(jokerPool, 1)[0]; state.jokers.push({ ...j, counter: j.initCounter ?? 0, negative: true }); markDiscovered("joker", j.id); renderHUD(); return t("sr_neg_joker_run", {name: j.name}); } },
         { icon:"🔮", weight: 10, label: t("sr_rand_tarot_label"), detail: t("sr_rand_tarot_detail"),
           cond: () => consumableCount() < consumableMax(),
-          run() { const sr_t = weightedSampleBy(tarotPool, 1, tarotWeight)[0]; state.tarotCards.push({ ...sr_t }); markDiscovered("tarot", sr_t.id); return t("sr_rand_tarot_run", {name: sr_t.name}); } },
+          run() { const sr_t = weightedSampleBy(tarotPool, 1, tarotWeight)[0]; state.tarotCards.push({ ...sr_t }); return t("sr_rand_tarot_run", {name: sr_t.name}); } },
         { icon:"🪐", weight: 10, label: t("sr_rand_planet_label"), detail: t("sr_rand_planet_detail"),
           cond: () => consumableCount() < consumableMax(),
-          run() { const p = weightedSampleBy(planetPool, 1, planetWeight)[0]; state.planetCards.push({ ...p }); markDiscovered("planet", p.id); return t("sr_rand_planet_run", {name: p.name}); } },
+          run() { const p = weightedSampleBy(planetPool, 1, planetWeight)[0]; state.planetCards.push({ ...p }); return t("sr_rand_planet_run", {name: p.name}); } },
         { icon:"✨", weight: 9, label: t("sr_card_enh_label"), detail: t("sr_card_enh_detail"),
           cond: () => (state.runDeck || []).some(c => !c.enh),
           run() {
@@ -7605,12 +7607,12 @@
       });
       $("#dbgAddTarot").addEventListener("click", () => {
         const tarotItem = tarotPool.find(x => x.id === $("#dbgTarot").value); if (!tarotItem) return;
-        state.tarotCards.push({ ...tarotItem }); markDiscovered("tarot", tarotItem.id); refreshConsumables();
+        state.tarotCards.push({ ...tarotItem }); refreshConsumables();
         setInfo(t("dbg_add_tarot", {name: tarotItem.name}));
       });
       $("#dbgAddPlanet").addEventListener("click", () => {
         const p = planetPool.find(x => x.id === $("#dbgPlanet").value); if (!p) return;
-        state.planetCards.push({ ...p }); markDiscovered("planet", p.id); refreshConsumables();
+        state.planetCards.push({ ...p }); refreshConsumables();
         setInfo(t("dbg_add_planet", {name: p.name}));
       });
       $("#dbgAddCard").addEventListener("click", () => {
