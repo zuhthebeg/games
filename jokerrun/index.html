@@ -3849,7 +3849,7 @@
     let JOKER_ART = (() => {
       try {
         const v = localStorage.getItem("jokerrun_joker_art");
-        if (v === "cat" || v === "classic" || v === "original" || v === "man" || v === "off") return v === "man" ? "original" : v;
+        if (v === "cat" || v === "classic" || v === "off") return v;
         // 구버전 호환: 예전 '이미지 끄기'가 켜져 있던 사용자는 off로 승계
         if (localStorage.getItem("jokerrun_img_off") === "1") return "off";
       } catch (_) {}
@@ -3863,7 +3863,6 @@
       if (typeof src !== "string" || src.indexOf("jokers/") === -1) return src;
       if (JOKER_ART === "off") return "data:,";
       if (JOKER_ART === "cat") return src.replace("jokers/", "jokers_cat/");
-      if (JOKER_ART === "original" || JOKER_ART === "man") return src.replace("jokers/", "jokers_original/");
       return src;   // classic
     }
     // 조커/효과 설명에서 '공격력'은 파랑, '연격'는 빨강으로 눈에 띄게 강조(내부 정의 문자열만 사용 → 안전)
@@ -4219,7 +4218,7 @@
         mob: "잡몹", elite: "정예", boss: "보스", shortcut: "지름길", skip: "⏭ 지름길",
         bs_hint: "지름길로 가면 정비 없이 다음 전투로. 보스는 우회 불가.",
         skip_reward: "⏭️ 지름길 보상 획득",
-        quit_to_menu: "🚪 게임 나가기", settings: "⚙️ 설정", sound: "🔊 사운드", card_art: "🃏 조커 아트", card_art_hint: "고양이(건전) / 클래식·오리지날(스파이시) / 끄기(기호). 다른 카드 아트는 항상 표시.", art_cat: "🐱 고양이", art_classic: "🎴 클래식", art_original: "🕴️ 오리지날", art_off: "🔣 끄기", speed: "⏱️ 연출 속도",
+        quit_to_menu: "🚪 게임 나가기", settings: "⚙️ 설정", sound: "🔊 사운드", card_art: "🃏 조커 아트", card_art_hint: "고양이(건전) / 클래식(기존) / 끄기(기호). 다른 카드 아트는 항상 표시.", art_cat: "🐱 고양이", art_classic: "🎴 클래식", art_off: "🔣 끄기", speed: "⏱️ 연출 속도",
         speed_hint: "데미지 연출이 너무 빨리 지나가면 느리게, 답답하면 빠르게 / 즉시.",
         language: "🌐 언어", close: "닫기", on: "켜짐", off: "꺼짐",
         cleared: "🎯 전투 승리!", my_dmg: "내 데미지", continue_run: "↩️ 이어하기 — 마지막 공격 다시",
@@ -4384,7 +4383,7 @@
         mob: "Mob", elite: "Elite", boss: "Boss", shortcut: "Shortcut", skip: "⏭ Shortcut",
         bs_hint: "Take the shortcut to skip straight to the next battle. Bosses can't be bypassed.",
         skip_reward: "⏭️ Shortcut reward",
-        quit_to_menu: "🚪 Quit to Menu", settings: "⚙️ Settings", sound: "🔊 Sound", card_art: "🃏 Joker Art", card_art_hint: "Cat (wholesome) / Classic & Original (spicy) / Off (symbols). Other card art always shows.", art_cat: "🐱 Cat", art_classic: "🎴 Classic", art_original: "🕴️ Original", art_off: "🔣 Off", speed: "⏱️ Anim speed",
+        quit_to_menu: "🚪 Quit to Menu", settings: "⚙️ Settings", sound: "🔊 Sound", card_art: "🃏 Joker Art", card_art_hint: "Cat (wholesome) / Classic / Off (symbols). Other card art always shows.", art_cat: "🐱 Cat", art_classic: "🎴 Classic", art_off: "🔣 Off", speed: "⏱️ Anim speed",
         speed_hint: "If damage animation flies by, set it slower; if it drags, faster / instant.",
         language: "🌐 Language", close: "Close", on: "On", off: "Off",
         cleared: "🎯 Battle won!", my_dmg: "Your damage", continue_run: "↩️ Continue — retry last attack",
@@ -4549,7 +4548,7 @@
         mob: "雜魚", elite: "精英", boss: "王關", shortcut: "捷徑", skip: "⏭ 捷徑",
         bs_hint: "走捷徑可不整備直接進入下一場戰鬥。王關無法繞過。",
         skip_reward: "⏭️ 捷徑獎勵",
-        quit_to_menu: "🚪 退出至主畫面", settings: "⚙️ 設定", sound: "🔊 音效", card_art: "🃏 小丑插畫", card_art_hint: "貓咪(健全) / 經典·原創(辣) / 關閉(符號)。其他卡牌插畫一律顯示。", art_cat: "🐱 貓咪", art_classic: "🎴 經典", art_original: "🕴️ 原創", art_off: "🔣 關閉", speed: "⏱️ 演出速度",
+        quit_to_menu: "🚪 退出至主畫面", settings: "⚙️ 設定", sound: "🔊 音效", card_art: "🃏 小丑插畫", card_art_hint: "貓咪(健全) / 經典(原版) / 關閉(符號)。其他卡牌插畫一律顯示。", art_cat: "🐱 貓咪", art_classic: "🎴 經典", art_off: "🔣 關閉", speed: "⏱️ 演出速度",
         speed_hint: "傷害演出太快就調慢，太拖就調快 / 立即。",
         language: "🌐 語言", close: "關閉", on: "開", off: "關",
         cleared: "🎯 戰鬥勝利！", my_dmg: "我的傷害", continue_run: "↩️ 繼續 — 重試最後一次攻擊",
@@ -4714,7 +4713,7 @@
         mob: "ザコ", elite: "精鋭", boss: "ボス", shortcut: "近道", skip: "⏭ 近道",
         bs_hint: "近道なら整備なしで次の戦闘へ。ボスは回避不可。",
         skip_reward: "⏭️ 近道報酬",
-        quit_to_menu: "🚪 メニューに戻る", settings: "⚙️ 設定", sound: "🔊 サウンド", card_art: "🃏 ジョーカーアート", card_art_hint: "猫(健全) / クラシック·オリジナル(スパイシー) / オフ(記号)。他のカードアートは常に表示。", art_cat: "🐱 猫", art_classic: "🎴 クラシック", art_original: "🕴️ オリジナル", art_off: "🔣 オフ", speed: "⏱️ 演出速度",
+        quit_to_menu: "🚪 メニューに戻る", settings: "⚙️ 設定", sound: "🔊 サウンド", card_art: "🃏 ジョーカーアート", card_art_hint: "猫(健全) / クラシック(従来) / オフ(記号)。他のカードアートは常に表示。", art_cat: "🐱 猫", art_classic: "🎴 クラシック", art_off: "🔣 オフ", speed: "⏱️ 演出速度",
         speed_hint: "ダメージ演出が速すぎれば遅く、もたつけば速く / 即時。",
         language: "🌐 言語", close: "閉じる", on: "オン", off: "オフ",
         cleared: "🎯 戦闘勝利！", my_dmg: "自分のダメージ", continue_run: "↩️ 続きから — 最後の攻撃をやり直す",
@@ -7393,7 +7392,7 @@
         row.appendChild(b);
       });
     }
-    const JOKER_ART_OPTS = [{ v: "cat", key: "art_cat" }, { v: "classic", key: "art_classic" }, { v: "original", key: "art_original" }, { v: "off", key: "art_off" }];
+    const JOKER_ART_OPTS = [{ v: "cat", key: "art_cat" }, { v: "classic", key: "art_classic" }, { v: "off", key: "art_off" }];
     function renderJokerArtSeg() {
       const row = $("#setArtRow");
       if (!row) return;
