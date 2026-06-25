@@ -6443,6 +6443,8 @@
       const kickers = cards.length - scoreCards.length;
       const headText = t("ui_head_scoring", {name: hand.name, lv: lvl > 0 ? t("ui_head_lv", {lv: lvl + 1}) : "", valid: scoreCards.length, kicker: kickers > 0 ? t("ui_head_kicker", {n: kickers}) : ""});
       const ps = buildPlayStage(cards, scoringIds, headText);
+      // 막타 예측: 이번 공격 기본 데미지만으로 처치 확정이면 무기를 먼저 띄우고 카드 연출 시작
+      if ((state.score || 0) + ctx.chips * ctx.mult >= activeTarget()) playWeaponStrike(hand.handType);
       _scoringActive = true;   // 여기부터 카드/조커 연출 wait()에 속도 배율 적용
       setInfo(t("info_scoring", {name: hand.name}));
       await wait(620);
@@ -7248,7 +7250,6 @@
       if (bountyDoubled) addLog(t("ui_boss_bounty_paid"));
       state.gameEnded = true;
       AudioFX.play("win");
-      playWeaponStrike(state.lastHandType);   // 막타 무기 베기 연출
       JuiceFX.sfx("win"); JuiceFX.shake(9);
       spawnWinConfetti();
       // 보스 격파 보상: 앤티 N 보스 = N × 100만 G (전역 지갑)
