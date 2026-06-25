@@ -2757,7 +2757,7 @@
         </div>
         <div class="help-block">
           <b data-i18n="help_b5">⑤ 보스 전투</b>
-          <p data-i18n-html="help_p5">각 사냥의 3번째 전투는 <em>제약(버리기 불가·문양 봉인 등)</em>이 걸린 보스다. 조커 빌드로 정면 돌파하라.</p>
+          <p data-i18n-html="help_p5">각 스테이지의3번째 전투는 <em>제약(버리기 불가·문양 봉인 등)</em>이 걸린 보스다. 조커 빌드로 정면 돌파하라.</p>
         </div>
       </div>
       <button class="btn-main help-start" id="helpStartBtn" data-i18n="help_start">바로 시작 →</button>
@@ -3266,7 +3266,7 @@
       { id: "extraHands", name: "곡예사", cost: 7, rarity: "uncommon", desc: "전투 시작 시 공격 횟수 +2", detail: "각 전투를 시작할 때 공격(핸드) 횟수가 2회 늘어난다.", apply() {} },
       { id: "extraDiscards", name: "재정비", cost: 6, rarity: "uncommon", desc: "전투 시작 시 버리기 +2", detail: "각 전투를 시작할 때 버리기 횟수가 2회 늘어난다.", apply() {} },
       { id: "twoPairMaster", name: "쌍둥이 장인", cost: 14, rarity: "legendary", desc: "공격 2회로 고정, 대신 투페어 레벨 10 보장", detail: "전투 시작 시 공격 횟수가 2회로 고정되는 대신, 투페어 기술 레벨이 항상 10 이상으로 유지된다. 투페어 올인 빌드의 핵심.", apply() {} },
-      { id: "anteLevel", name: "운석우", cost: 12, rarity: "rare", desc: "앤티 첫 플레이 기술 레벨 +1", detail: "각 사냥(앤티)에서 처음 플레이한 포커 기술의 레벨이 +1 오른다(앤티당 1회).", apply() {} },
+      { id: "anteLevel", name: "운석우", cost: 12, rarity: "rare", desc: "앤티 첫 플레이 기술 레벨 +1", detail: "각 스테이지(앤티)에서 처음 플레이한 포커 기술의 레벨이 +1 오른다(앤티당 1회).", apply() {} },
       { id: "hahoe", name: "야누스", cost: 7, rarity: "uncommon", desc: "공격마다 50% 연격 +6 / 50% 공격력 +60", detail: "변덕스러운 탈. 매 공격 동전을 던져 연격 +6 또는 공격력 +60 중 하나가 발동한다.", apply(ctx) { if (Math.random() < 0.5) ctx.mult += 6; else ctx.chips += 60; ctx.activate("hahoe"); } },
       { id: "handsome", name: "미남", cost: 7, rarity: "uncommon", desc: "J/Q/K 1장당 공격력 +30", detail: "플레이한 J·Q·K 카드 1장마다 공격력 +30. 페이스 카드를 모을수록 강해진다.", apply(ctx) { const n = ctx.scored.filter(c => c.rank >= 11 && c.rank <= 13).length; if (n > 0) { ctx.chips += n * 30; ctx.activate("handsome"); } } },
       { id: "firstMove", name: "선공", cost: 9, rarity: "rare", mult: true, desc: "전투 첫 공격이면 연격 ×3", detail: "각 전투의 첫 번째 공격에서 연격 ×3. 강한 패를 첫 턴에 몰아치는 빌드용.", apply(ctx) { if (state.handsLeft === state._startHands) { ctx.mult *= 3; ctx.activate("firstMove"); } } },
@@ -4229,7 +4229,7 @@
         help_b4: "④ 무기강화",
         help_p4: "특정 기술을 <b>영구 강화</b>한다. 자주 쓰는 기술에 투자하면 같은 패로 점점 높은 데미지가 나온다.",
         help_b5: "⑤ 보스 전투",
-        help_p5: "각 사냥의 3번째 전투는 <em>제약(버리기 불가·문양 봉인 등)</em>이 걸린 보스다. 조커 빌드로 정면 돌파하라.",
+        help_p5: "각 스테이지의3번째 전투는 <em>제약(버리기 불가·문양 봉인 등)</em>이 걸린 보스다. 조커 빌드로 정면 돌파하라.",
         brand_title: "조커런", start_continue: "이어하기", start_help: "＂어떻게 하는 거야?＂ — 도움말",
         collection_btn: "📖 도감", deck_legend: "밝은 카드 = 덱에 남음 · 흐린 카드 = 이미 뽑힘",
         tarot_collection_title: "🔮 주문서 도감", collection_title: "📖 도감",
@@ -4280,7 +4280,7 @@
         info_score_result: "<span class=\"hand-tag\">{hand}</span> | {chips}공격력 × {mult}연격 = <b>{pts}</b>데미지",
         info_no_discards: "버리기 횟수를 모두 사용했습니다.", info_select_discard: "버릴 카드를 선택하세요.",
         info_discarded: "{n}장 버림 완료. 남은 버리기 {left}", info_pick_cards: "공격할 카드를 선택하세요.",
-        info_endless: "🏆 사냥 8회 완주! 지금부터 <b style=\"color:var(--gold,#ffcf6d)\">엔드리스</b> — 끝까지 가보자",
+        info_endless: "🏆 스테이지 8회 완주! 지금부터 <b style=\"color:var(--gold,#ffcf6d)\">엔드리스</b> — 끝까지 가보자",
         info_boss_clear: "보스 격파! +{n} G", info_round_clear: "전투 돌파! 정산 +🪙{n}",
         info_deselect: "선택을 해제했습니다.",
         ui_use_in_battle: "전투 화면에서 사용", ui_sort_manual: "수동",
@@ -4292,25 +4292,25 @@
         ui_hands_intro: "기본 데미지(공격력×연격)와 행성 카드로 레벨업한 현재 데미지 비교. 행성 사용 시 영구 상승.",
         ui_th_skill: "기술", ui_th_base: "기본", ui_th_current: "현재(강화)",
         ui_boss_no_rule: "특수 규칙 없음 — 정면 승부",
-        ui_boss_name: "사냥 {ante} 보스 · {name}",
+        ui_boss_name: "스테이지 {ante} 보스 · {name}",
         ui_owned_jokers_title: "보유 조커 (판매: 등급별 환급)", ui_no_jokers: "보유 중인 조커가 없습니다.",
         ui_sort_rank_label: "랭크", ui_sort_suit_label: "무늬",
         ui_singularity_total: "흡수 가능한 총 추가 레벨: +{n}",
         ui_owned_vouchers: "보유 바우처",
-        ui_voucher_section: "🎟️ 바우처 · 사냥당 1개 · 영구 효과",
+        ui_voucher_section: "🎟️ 바우처 · 스테이지당1개 · 영구 효과",
         ui_soldout_joker: "조커 매진 — 다음 전투에 갱신", ui_soldout_planet: "플래닛 매진", ui_soldout_tarot: "타로 매진",
         ui_playcard_section: "플레이 카드 · 덱에 영구 추가",
-        ui_ante_n: "사냥 {n}", ui_ante_blind: "사냥 {ante} | 전투 {blind}/3",
-        ui_start_ante: "사냥 {n} 시작 →", ui_start_battle: "전투 {n}/3 시작 →",
-        ui_to_ante: "사냥 {n}로 →", ui_to_shop: "상점으로 →",
+        ui_ante_n: "스테이지 {n}", ui_ante_blind: "스테이지 {ante} | 전투 {blind}/3",
+        ui_start_ante: "스테이지 {n} 시작 →", ui_start_battle: "전투 {n}/3 시작 →",
+        ui_to_ante: "스테이지 {n}로 →", ui_to_shop: "상점으로 →",
         ui_atk_label: "공격력:", ui_mult_label: "× {n}연격",
         ui_dmg_label: "+<span id=\"dramaticScoreNum\">0</span>데미지",
         ui_victory_default: "보스 전투 격파! 최종 데미지 {n}데미지",
         ui_new_record: "🏆 신기록: {n}데미지", ui_best_score: "최고 기록: {n}데미지",
-        ui_gameover_ante: "사냥 {ante} - {blind} 전투에서 탈락",
+        ui_gameover_ante: "스테이지 {ante} - {blind} 전투에서 탈락",
         ui_blind_small: "스몰", ui_blind_big: "빅",
         ui_new_record_short: "🏆 신기록! {n}데미지",
-        ui_run_clear: "🏆 런 클리어! 사냥 8회 완주!\n최종 데미지 {n}데미지{record}",
+        ui_run_clear: "🏆 런 클리어! 스테이지 8회 완주!\n최종 데미지 {n}데미지{record}",
         ui_new_record_suffix: " — 신기록!",
         ui_triggered: "발동!", ui_steel_held: "🔩 스틸 카드 {n}장 보유 → 연격 ×{mult}", ui_steel_held_one: "🔩 스틸 ×1.5 ({i}/{n}) → 연격 {mult}",
         ui_float_atk: "+{n} 공격력", ui_float_combo: "+{n} 연격",
