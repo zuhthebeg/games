@@ -3919,7 +3919,7 @@
     function collectionData(kind) {
       if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: aimg(`tarot/${t.id}.webp?v=2`), badge: { label: "타로", color: "#b56ad6" } }));
       if (kind === "planet") return planetPool.map(p => { if (p.special) return { id: p.id, name: p.name, desc: p.desc, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "특수", color: "#a06bff" } }; const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 기술 영구 강화 (+${p.chipsBonus}공격력 / +${p.multBonus}연격)`, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "행성", color: "#4a84ff" } }; });
-      return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: aimg(`jokers/${j.id}.webp`), glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
+      return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: aimg(`jokers/${j.id}.webp?v=2`), glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
     }
     function renderCollection(kind) {
       _collectionTab = kind;
@@ -5583,10 +5583,10 @@
         const _ed = editionOf(joker);
         tile.className = "mini-tile" + (joker.negative ? " negative" : (_ed ? " ed-" + _ed.key : ""));
         if (!joker.negative && !_ed) tile.style.borderColor = _r.color + "88";
-        tile.innerHTML = `<div class="mini-art"><img src="${aimg(`jokers/${joker.id}.webp`)}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}`;
+        tile.innerHTML = `<div class="mini-art"><img src="${aimg(`jokers/${joker.id}.webp?v=2`)}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}`;
         tile.addEventListener("click", () => {
           openDetailPopup({
-            imgSrc: `jokers/${joker.id}.webp`,
+            imgSrc: `jokers/${joker.id}.webp?v=2`,
             glyph: jokerGlyphClass[joker.id] || "joker-duo",
             name: joker.name, badgeLabel: _r.label, badgeColor: _r.color,
             negative: !!joker.negative, edition: joker.edition,
@@ -5652,7 +5652,7 @@
       const _r = rarityOf(joker);
       const sell = jokerSellValue(joker);
       openDetailPopup({
-        imgSrc: `jokers/${joker.id}.webp`,
+        imgSrc: `jokers/${joker.id}.webp?v=2`,
         glyph: jokerGlyphClass[joker.id] || "joker-duo",
         name: joker.name,
         badgeLabel: _r.label, badgeColor: _r.color,
@@ -5738,7 +5738,7 @@
           const _r = rarityOf(joker);
           box.style.setProperty("--rar", _r.color);
           box.innerHTML = `
-            <img class="joker-art" src="${aimg(`jokers/${joker.id}.webp`)}" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
+            <img class="joker-art" src="${aimg(`jokers/${joker.id}.webp?v=2`)}" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
             <span class="joker-grad" aria-hidden="true"></span>
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
             ${joker.negative ? '<span class="joker-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}
@@ -6282,7 +6282,7 @@
       wrap.className = "joker-flash";
       const fb = `<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\' style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem\\'></span>`;
       wrap.innerHTML = `<div class="jf-card" style="border-color:${r.color};box-shadow:0 0 36px ${r.color}99">
-        <img src="${aimg(`jokers/${joker.id}.webp`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">
+        <img src="${aimg(`jokers/${joker.id}.webp?v=2`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">
         <div class="jf-tag" style="color:${isMult ? "#ff8a98" : "#8fd6ff"}">${t("ui_triggered")}</div>
         <div class="jf-name">${joker.name}</div>
       </div>`;
@@ -6823,14 +6823,14 @@
         const full = jokerSlotsFull();
         const afford = state.money >= cost;
         jRow.appendChild(buildShopTile({
-          imgSrc: `jokers/${joker.id}.webp`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
+          imgSrc: `jokers/${joker.id}.webp?v=2`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
           name: (_ed ? _ed.icon + " " : "") + joker.name, price: cost, afford,
           borderColor: _ed ? _ed.color : _r.color,
           edClass: _ed ? "ed-" + _ed.key : null,
           cornerIcon: _ed ? _ed.icon : null, cornerTitle: _ed ? `${_ed.label} — ${_ed.fx}` : null,
           badge: { label: _r.label, color: _r.color },
           onClick: () => openDetailPopup({
-            imgSrc: `jokers/${joker.id}.webp`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
+            imgSrc: `jokers/${joker.id}.webp?v=2`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
             name: joker.name, badgeLabel: _r.label, badgeColor: _r.color, edition: joker.edition,
             desc: joker.detail || joker.desc,
             costLine: t("pop_shop_joker_cost", {cost, sell: jokerSellValue(joker)}),
