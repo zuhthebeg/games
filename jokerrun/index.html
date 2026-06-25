@@ -6653,11 +6653,14 @@
     function generateShopCards() {
       const out = [];
       if (!hasVoucher("magicTrick")) { state.shopCards = out; return; }
+      const _enhKeys = ["bonus", "mult", "glass", "steel", "gold", "stone"];
       for (let i = 0; i < 2; i++) {
         if (Math.random() < 0.5) {
           const suit = suits[Math.floor(Math.random() * suits.length)];
           const rank = rankList[Math.floor(Math.random() * rankList.length)];
-          out.push({ suit, rank });
+          // 가끔(35%) 강화된 카드 등장
+          const enh = Math.random() < 0.35 ? _enhKeys[Math.floor(Math.random() * _enhKeys.length)] : null;
+          out.push({ suit, rank, enh });
         }
       }
       state.shopCards = out;
@@ -6967,24 +6970,25 @@
         const cRow = document.createElement("div");
         cRow.className = "shop-tilerow";
         state.shopCards.forEach((pc, idx) => {
-          const cost = priceOf(4);
+          const _ce = pc.enh ? ENH[pc.enh] : null;
+          const cost = priceOf(_ce ? 6 : 4);
           const afford = state.money >= cost;
           const isRed = pc.suit === "heart" || pc.suit === "diamond";
           cRow.appendChild(buildShopTile({
-            artHTML: `<div class="tile-playcard" style="color:${isRed ? "#d8243a" : "#15151f"}">${formatRank(pc.rank)}${suitSymbol[pc.suit]}</div>`,
-            name: `${formatRank(pc.rank)}${suitSymbol[pc.suit]}`, price: cost, afford, borderColor: "#ffffff",
+            artHTML: `<div class="tile-playcard" style="color:${isRed ? "#d8243a" : "#15151f"};${_ce ? `box-shadow:inset 0 0 0 2px ${_ce.color}, 0 0 8px ${_ce.color}` : ""}">${formatRank(pc.rank)}${suitSymbol[pc.suit]}${_ce ? ` ${_ce.short}` : ""}</div>`,
+            name: `${formatRank(pc.rank)}${suitSymbol[pc.suit]}${_ce ? ` ${_ce.label}` : ""}`, price: cost, afford, borderColor: _ce ? _ce.color : "#ffffff",
             onClick: () => openDetailPopup({
-              emoji: suitSymbol[pc.suit], name: `${formatRank(pc.rank)} ${suitSymbol[pc.suit]}`,
-              desc: t("pop_card_deck_desc"),
+              emoji: suitSymbol[pc.suit], name: `${formatRank(pc.rank)} ${suitSymbol[pc.suit]}${_ce ? ` · ${_ce.label}` : ""}`,
+              desc: _ce ? `${t("pop_card_deck_desc")} · ${_ce.label}: ${_ce.desc}` : t("pop_card_deck_desc"),
               costLine: t("pop_buy", {n: cost}),
               actionLabel: afford ? t("pop_buy", {n: cost}) : t("pop_no_funds"),
               actionDisabled: !afford,
               actionFn: () => {
                 closeJokerPopup();
                 state.money -= cost;
-                state.extraCards.push({ suit: pc.suit, rank: pc.rank });
+                state.extraCards.push({ suit: pc.suit, rank: pc.rank, enh: pc.enh || null });
                 if (!state.runDeck) state.runDeck = buildRunDeck();
-                state.runDeck.push({ id: state._deckUid++, suit: pc.suit, rank: pc.rank, enh: null });
+                state.runDeck.push({ id: state._deckUid++, suit: pc.suit, rank: pc.rank, enh: pc.enh || null });
                 state.shopCards.splice(idx, 1);
                 addLog(t("log_buy_card", {card: `${formatRank(pc.rank)}${suitSymbol[pc.suit]}`, n: cost}));
                 renderHUD(); openShop(_shopIsAnteClear);
