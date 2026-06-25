@@ -3261,7 +3261,7 @@
       { id: "usurer", name: "고리대금", cost: 7, rarity: "rare", desc: "라운드 정산 이자 한도 +🪙5", detail: "전투 클리어 시 받는 이자 보너스 한도가 🪙5 늘어난다(기본 5 → 10). 골드를 쌓을수록 강해진다.", apply() {} },
       { id: "bossGuard", name: "수호 부적", cost: 12, rarity: "legendary", desc: "보스의 특수 규칙을 무효화", detail: "이 조커를 들고 있으면 보스 전투의 제약(버리기 불가·문양 봉인·최대 3장 등)이 모두 사라진다.", apply() {} },
       { id: "luckCharm", name: "행운의 부적", cost: 10, rarity: "rare", desc: "상점에 전설·신화 조커 등장률 대폭 증가", detail: "이 조커를 들고 있는 동안 상점에 전설·신화 등급 조커가 훨씬 자주 등장한다.", apply() {} },
-      { id: "cull", name: "단두대", cost: 14, rarity: "legendary", mult: true, desc: "전투 첫 공격에 낸 카드를 덱에서 삭제, 1장당 연격 ×0.5 영구 누적", detail: "각 전투의 첫 공격에서 플레이한 카드를 덱에서 영구 제거하고, 제거한 1장당 연격 배율이 영구히 +0.5씩 쌓인다. 덱을 깎아 곱연산을 키우는 신화 조커.", apply(ctx, self) { self.counter = self.counter || 0; if (state.handsLeft === state._startHands && ctx.scored.length) { const ids = new Set(ctx.scored.map(c => String(c.id))); state.runDeck = (state.runDeck || []).filter(c => !ids.has(String(c.id))); self.counter += 0.5 * ctx.scored.length; destroyedCards(ctx.scored.length); } if (self.counter > 0) { ctx.mult *= (1 + self.counter); ctx.activate("cull"); } self.desc = "연격 ×" + (1 + self.counter).toFixed(1) + " (첫 공격마다 카드 삭제 +0.5/장)"; } },
+      { id: "cull", name: "단두대", cost: 14, rarity: "legendary", mult: true, desc: "전투 첫 공격 카드를 덱에서 삭제 · 공격력 +(삭제 장수) · 연격 +0.5 영구 누적", detail: "각 전투의 첫 공격에서 플레이한 카드를 덱에서 영구 제거한다. 제거할 때마다 공격력이 (삭제한 장수)만큼 영구 누적되고, 연격 배율은 한 번에 +0.5씩 영구히 쌓인다.", apply(ctx, self) { self.counter = self.counter || 0; self.chipCounter = self.chipCounter || 0; if (state.handsLeft === state._startHands && ctx.scored.length) { const ids = new Set(ctx.scored.map(c => String(c.id))); state.runDeck = (state.runDeck || []).filter(c => !ids.has(String(c.id))); self.counter += 0.5; self.chipCounter += ctx.scored.length; destroyedCards(ctx.scored.length); } if (self.chipCounter > 0) ctx.chips += self.chipCounter; if (self.counter > 0) { ctx.mult *= (1 + self.counter); ctx.activate("cull"); } self.desc = `공격력 +${self.chipCounter} · 연격 ×${(1 + self.counter).toFixed(1)}`; } },
       { id: "risky3x", name: "시한폭탄", cost: 10, rarity: "legendary", mult: true, desc: "연격 ×3, 단 발동 시 20% 확률로 소멸", detail: "공격할 때마다 연격 ×3. 하지만 발동할 때마다 20% 확률로 터져 사라진다. 고위험 고수익.", apply(ctx, self) { ctx.mult *= 3; ctx.activate("risky3x"); if (Math.random() < 0.2) self.expired = true; } },
       { id: "extraHands", name: "곡예사", cost: 7, rarity: "uncommon", desc: "전투 시작 시 공격 횟수 +2", detail: "각 전투를 시작할 때 공격(핸드) 횟수가 2회 늘어난다.", apply() {} },
       { id: "extraDiscards", name: "재정비", cost: 6, rarity: "uncommon", desc: "전투 시작 시 버리기 +2", detail: "각 전투를 시작할 때 버리기 횟수가 2회 늘어난다.", apply() {} },
@@ -3372,7 +3372,10 @@
       diviner:       () => { const used = state.tarotsUsed || 0; return t("accum_diviner", { used, mult: (1 + used * 0.3).toFixed(1) }); },
       rerollMult:    self => t("accum_combo", { n: ((self.counter || 0) * 0.5).toFixed(1) }),
       tarotMult:     self => t("accum_combo", { n: self.counter || 0 }),
-      planetChip:    self => t("accum_atk", { n: (self.counter || 0) * 10 })
+      planetChip:    self => t("accum_atk", { n: (self.counter || 0) * 10 }),
+      cull:          self => `⚔ +${self.chipCounter || 0} · 연격 ×${(1 + (self.counter || 0)).toFixed(1)}`,
+      cullStack:     self => `연격 +${((self.counter || 0) * 0.1).toFixed(1)}`,
+      discardCull:   self => `⚔ +${self.counter || 0}`
     };
     function jokerAccumLine(joker){ const f = joker && ACCUM_JOKERS[joker.id]; return f ? f(joker) : null; }
     // 등급 가중 랜덤 추첨 (등장확률: 등급 높을수록 낮음). 희귀 사냥꾼 바우처면 전설/신화 가중 ↑
@@ -3597,7 +3600,7 @@
       usurer:{name:"Usurer",desc:"Cashout interest cap +🪙5"},
       bossGuard:{name:"Aegis",desc:"Nullifies boss special rules"},
       luckCharm:{name:"Lucky Charm",desc:"Greatly boosts legendary/mythic shop odds"},
-      cull:{name:"Guillotine",desc:"1st play: delete cards, +×0.5 Combo each (permanent)"}, cullStack:{name:"Shredder",desc:"Combo +0.1 permanently per card destroyed"}, discardCull:{name:"Executioner",desc:"Discarded cards are destroyed; ATK +10 each (permanent)"},
+      cull:{name:"Guillotine",desc:"1st play: delete cards · ATK +(count) · Combo +0.5 (permanent)"}, cullStack:{name:"Shredder",desc:"Combo +0.1 permanently per card destroyed"}, discardCull:{name:"Executioner",desc:"Discarded cards are destroyed; ATK +10 each (permanent)"},
       risky3x:{name:"Time Bomb",desc:"Combo ×3, but 20% to vanish on trigger"},
       extraHands:{name:"Juggler",desc:"+2 hands at combat start"},
       extraDiscards:{name:"Recycler",desc:"+2 discards at combat start"},
@@ -3682,7 +3685,7 @@
       usurer:{name:"放貸人",desc:"結算利息上限+🪙5"},
       bossGuard:{name:"守護符",desc:"無效化首領特殊規則"},
       luckCharm:{name:"幸運符",desc:"大幅提升商店傳說·神話機率"},
-      cull:{name:"斷頭台",desc:"首攻：刪除卡牌，每張連擊×0.5永久累積"}, cullStack:{name:"粉碎者",desc:"每張卡牌被破壞 連擊永久+0.1"}, discardCull:{name:"劊子手",desc:"棄牌全部破壞，每張攻擊力永久+10"},
+      cull:{name:"斷頭台",desc:"首攻：刪除卡牌 · 攻擊力+張數 · 連擊+0.5永久"}, cullStack:{name:"粉碎者",desc:"每張卡牌被破壞 連擊永久+0.1"}, discardCull:{name:"劊子手",desc:"棄牌全部破壞，每張攻擊力永久+10"},
       risky3x:{name:"定時炸彈",desc:"連擊×3，但發動時20%消失"},
       extraHands:{name:"雜耍藝人",desc:"戰鬥開始時 +2出牌"},
       extraDiscards:{name:"整備員",desc:"戰鬥開始時 +2棄牌"},
@@ -3767,7 +3770,7 @@
       usurer:{name:"高利貸し",desc:"精算の利子上限+🪙5"},
       bossGuard:{name:"守護のお守り",desc:"ボスの特殊ルールを無効化"},
       luckCharm:{name:"幸運のお守り",desc:"ショップのレジェンド·ミシック率 大幅上昇"},
-      cull:{name:"ギロチン",desc:"初撃：カード削除、1枚毎 連撃×0.5永久累積"}, cullStack:{name:"破砕者",desc:"カード破壊毎 連撃永久+0.1"}, discardCull:{name:"処刑人",desc:"捨て札を全破壊、1枚毎 攻撃力永久+10"},
+      cull:{name:"ギロチン",desc:"初撃：カード削除 · 攻撃力+枚数 · 連撃+0.5永久"}, cullStack:{name:"破砕者",desc:"カード破壊毎 連撃永久+0.1"}, discardCull:{name:"処刑人",desc:"捨て札を全破壊、1枚毎 攻撃力永久+10"},
       risky3x:{name:"時限爆弾",desc:"連撃×3、但し発動時20%で消滅"},
       extraHands:{name:"曲芸師",desc:"戦闘開始時 プレイ+2"},
       extraDiscards:{name:"整備員",desc:"戦闘開始時 捨て+2"},
