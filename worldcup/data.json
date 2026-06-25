@@ -1,46 +1,46 @@
 {
-  "updated": "2026-06-20T11:02:00Z",
+  "updated": "2026-06-25T03:08:00Z",
   "group": "A",
   "standings": [
     {
       "team": "멕시코",
       "flag": "🇲🇽",
-      "mp": 2,
-      "w": 2,
+      "mp": 3,
+      "w": 3,
       "d": 0,
       "l": 0,
-      "gd": 3,
-      "pts": 6
+      "gd": 6,
+      "pts": 9
+    },
+    {
+      "team": "남아공",
+      "flag": "🇿🇦",
+      "mp": 3,
+      "w": 1,
+      "d": 1,
+      "l": 1,
+      "gd": -1,
+      "pts": 4
     },
     {
       "team": "대한민국",
       "flag": "🇰🇷",
       "kr": true,
-      "mp": 2,
+      "mp": 3,
       "w": 1,
       "d": 0,
-      "l": 1,
-      "gd": 0,
+      "l": 2,
+      "gd": -1,
       "pts": 3
     },
     {
       "team": "체코",
       "flag": "🇨🇿",
-      "mp": 2,
+      "mp": 3,
       "w": 0,
       "d": 1,
-      "l": 1,
-      "gd": -1,
-      "pts": 1
-    },
-    {
-      "team": "남아공",
-      "flag": "🇿🇦",
-      "mp": 2,
-      "w": 0,
-      "d": 1,
-      "l": 1,
-      "gd": -2,
+      "l": 2,
+      "gd": -4,
       "pts": 1
     }
   ],
@@ -59,13 +59,13 @@
     },
     {
       "opp": "남아공",
-      "status": "scheduled",
-      "krGoals": null,
-      "oppGoals": null
+      "status": "finished",
+      "krGoals": 0,
+      "oppGoals": 1
     }
   ],
   "summary": {
-    "ko": "한국 2:1 체코 — 황인범·오현규 골로 첫 경기 역전승(6/11)\n한국 0:1 멕시코 — 로모 결승골로 패배(6/18)\n체코 1:1 남아공 무승부(6/18) | 멕시코 1위(6pts), 한국 2위(3pts), 체코·남아공 각 1pt",
-    "en": "Korea 2:1 Czechia — comeback win in opener (Jun 11)\nKorea 0:1 Mexico — Romo winner in second half (Jun 18)\nCzechia 1:1 South Africa draw (Jun 18) | Mexico 1st (6pts), Korea 2nd (3pts)"
+    "ko": "한국 2:1 체코(6/11), 0:1 멕시코(6/18), 0:1 남아공(6/24) — 1승2패 조 3위 탈락\n멕시코 9pts 1위·남아공 4pts 2위 16강 진출 | 체코 1pt 최하위",
+    "en": "Korea 2:1 Czechia (Jun 11), 0:1 Mexico (Jun 18), 0:1 South Africa (Jun 24) — 1W 2L eliminated 3rd\nMexico 9pts 1st, South Africa 4pts 2nd advance | Czechia 1pt bottom"
   }
 }
