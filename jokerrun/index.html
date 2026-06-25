@@ -5865,12 +5865,16 @@
     }
 
     const HAND_ORDER = ["HIGH_CARD","PAIR","TWO_PAIR","THREE","STRAIGHT","FLUSH","FULL_HOUSE","FOUR","ROYAL_STRAIGHT","STRAIGHT_FLUSH","ROYAL_FLUSH","FIVE","FLUSH_HOUSE","FLUSH_FIVE"];
+    // 기본 공개 족보(표준 포커) — 나머지 고급 족보는 실제 달성해야 도감 공개
+    const BASIC_HANDS = new Set(["HIGH_CARD","PAIR","TWO_PAIR","THREE","STRAIGHT","FLUSH","FULL_HOUSE","FOUR"]);
+    const HAND_WEAPON = { HIGH_CARD:"w_highcard", PAIR:"w_pair", TWO_PAIR:"w_twopair", THREE:"w_three", STRAIGHT:"w_straight", FLUSH:"w_flush", FULL_HOUSE:"w_fullhouse", FOUR:"w_four", ROYAL_STRAIGHT:"w_rstraight", STRAIGHT_FLUSH:"w_sflush", ROYAL_FLUSH:"w_rflush", FIVE:"w_five", FLUSH_HOUSE:"w_flushhouse", FLUSH_FIVE:"w_flushfive" };
     function renderHandsInfo() {
       const body = $("#handsInfoBody");
       if (!body) return;
       let rows = "";
       HAND_ORDER.forEach(h => {
         const base = handBase[h];
+        const known = BASIC_HANDS.has(h) || isDiscovered("hand", h);
         const lvl = state.handLevels?.[h] || 1;
         const planet = planetPool.find(p => p.hand === h);
         const lc = base.chips + (planet ? planet.chipsBonus * (lvl - 1) : 0);
@@ -5879,10 +5883,18 @@
         const lvlScore = lc * lm;
         const up = lvl > 1;
         const plays = (state.handPlays && state.handPlays[h]) || 0;
+        const icon = known
+          ? `<img src="ui/weapons/${HAND_WEAPON[h]}.webp" alt="" loading="lazy" style="width:38px;height:38px;border-radius:7px;flex:0 0 auto">`
+          : `<span style="display:inline-flex;width:38px;height:38px;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border:1px solid var(--line,rgba(255,255,255,.12));border-radius:7px;font-weight:800;font-size:1.1rem;color:var(--muted);flex:0 0 auto">?</span>`;
+        const nameHtml = known
+          ? `${base.name}${up?` <span style="color:var(--gold);font-size:.72rem">Lv.${lvl}</span>`:""}${plays?` <span style="color:var(--cyan,#30d4af);font-size:.7rem">${t("ui_plays_count", {n: plays})}</span>`:""}`
+          : `<span style="color:var(--muted)">???</span>`;
+        const baseCell = known ? `${base.chips}×${base.mult}<br><span style="font-size:.72rem">=${baseScore}</span>` : `<span style="color:var(--muted)">?</span>`;
+        const curCell = known ? `${lc}×${lm}<br><span style="font-size:.72rem">=${lvlScore}</span>` : `<span style="color:var(--muted)">?</span>`;
         rows += `<tr style="border-bottom:1px solid var(--line,rgba(255,255,255,.08))">
-          <td style="padding:7px 6px;font-weight:700">${base.name}${up?` <span style="color:var(--gold);font-size:.72rem">Lv.${lvl}</span>`:""}${plays?` <span style="color:var(--cyan,#30d4af);font-size:.7rem">${t("ui_plays_count", {n: plays})}</span>`:""}</td>
-          <td style="padding:7px 6px;text-align:right;color:var(--muted)">${base.chips}×${base.mult}<br><span style="font-size:.72rem">=${baseScore}</span></td>
-          <td style="padding:7px 6px;text-align:right;font-weight:800;color:${up?'var(--gold)':'var(--text)'}">${lc}×${lm}<br><span style="font-size:.72rem">=${lvlScore}</span></td>
+          <td style="padding:7px 6px;font-weight:700"><span style="display:inline-flex;align-items:center;gap:9px">${icon}<span>${nameHtml}</span></span></td>
+          <td style="padding:7px 6px;text-align:right;color:var(--muted)">${baseCell}</td>
+          <td style="padding:7px 6px;text-align:right;font-weight:800;color:${up?'var(--gold)':'var(--text)'}">${curCell}</td>
         </tr>`;
       });
       body.innerHTML = `
@@ -6533,6 +6545,7 @@
       state.lastHandType = hand.handType;   // 메아리 조커 콤보용(다음 플레이가 같은 기술면 발동)
       state.handPlays = state.handPlays || {};
       state.handPlays[hand.handType] = (state.handPlays[hand.handType] || 0) + 1;   // 기술 사용 횟수 누적
+      markDiscovered("hand", hand.handType);   // 기술도감: 실제 달성(사용) 시 발견 기록
       chips = Math.max(0, Math.floor(ctx.chips));
       mult = Math.max(1, Math.floor(ctx.mult * 100) / 100);
       const points = Math.floor(chips * mult);
