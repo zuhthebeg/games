@@ -2716,10 +2716,10 @@
       animation: weaponStrike 0.72s cubic-bezier(.2,.85,.3,1) forwards;
     }
     @keyframes weaponStrike {
-      0%   { opacity: 0; transform: translate(-180%, -185%) rotate(-90deg) scale(0.5); }
-      35%  { opacity: 1; transform: translate(-50%, -50%) rotate(-25deg) scale(1.15); }
-      60%  { opacity: 1; transform: translate(-50%, -50%) rotate(-18deg) scale(1.0); }
-      100% { opacity: 0; transform: translate(30%, 45%) rotate(12deg) scale(0.85); }
+      0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+      20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+      75%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
     }
   </style>
 </head>
@@ -3274,7 +3274,7 @@
       { id: "usurer", name: "고리대금", cost: 7, rarity: "rare", desc: "라운드 정산 이자 한도 +🪙5", detail: "전투 클리어 시 받는 이자 보너스 한도가 🪙5 늘어난다(기본 5 → 10). 골드를 쌓을수록 강해진다.", apply() {} },
       { id: "bossGuard", name: "수호 부적", cost: 12, rarity: "legendary", desc: "보스의 특수 규칙을 무효화", detail: "이 조커를 들고 있으면 보스 전투의 제약(버리기 불가·문양 봉인·최대 3장 등)이 모두 사라진다.", apply() {} },
       { id: "luckCharm", name: "행운의 부적", cost: 10, rarity: "rare", desc: "상점에 전설·신화 조커 등장률 대폭 증가", detail: "이 조커를 들고 있는 동안 상점에 전설·신화 등급 조커가 훨씬 자주 등장한다.", apply() {} },
-      { id: "cull", name: "단두대", cost: 14, rarity: "legendary", mult: true, desc: "전투 첫 공격 카드를 덱에서 삭제 · 공격력 +(삭제 장수) · 연격 +0.5 영구 누적", detail: "각 전투의 첫 공격에서 플레이한 카드를 덱에서 영구 제거한다. 제거할 때마다 공격력이 (삭제한 장수)만큼 영구 누적되고, 연격 배율은 한 번에 +0.5씩 영구히 쌓인다.", apply(ctx, self) { self.counter = self.counter || 0; self.chipCounter = self.chipCounter || 0; if (state.handsLeft === state._startHands && ctx.scored.length) { const ids = new Set(ctx.scored.map(c => String(c.id))); state.runDeck = (state.runDeck || []).filter(c => !ids.has(String(c.id))); self.counter += 0.5; self.chipCounter += ctx.scored.length; destroyedCards(ctx.scored.length); } if (self.chipCounter > 0) ctx.chips += self.chipCounter; if (self.counter > 0) { ctx.mult *= (1 + self.counter); ctx.activate("cull"); } self.desc = `공격력 +${self.chipCounter} · 연격 ×${(1 + self.counter).toFixed(1)}`; } },
+      { id: "cull", name: "단두대", cost: 14, rarity: "legendary", mult: true, desc: "전투 첫 공격 카드를 덱에서 삭제 · 공격력 +(삭제 장수) · 연격 +0.5 영구 누적", detail: "각 전투의 첫 공격에서 플레이한 카드를 덱에서 영구 제거한다. 제거할 때마다 공격력이 (삭제한 장수)만큼 영구 누적되고, 연격 배율은 한 번에 +0.5씩 영구히 쌓인다.", apply(ctx, self) { self.counter = self.counter || 0; self.chipCounter = self.chipCounter || 0; if (state.handsLeft === state._startHands && ctx.scored.length) { const ids = new Set(ctx.scored.map(c => String(c.id))); state.runDeck = (state.runDeck || []).filter(c => !ids.has(String(c.id))); self.counter += 0.5; self.chipCounter += ctx.scored.length; destroyedCards(ctx.scored.length); self._cullAnim = ctx.scored.map(c => String(c.id)); } if (self.chipCounter > 0) ctx.chips += self.chipCounter; if (self.counter > 0) { ctx.mult *= (1 + self.counter); ctx.activate("cull"); } self.desc = `공격력 +${self.chipCounter} · 연격 ×${(1 + self.counter).toFixed(1)}`; } },
       { id: "risky3x", name: "시한폭탄", cost: 10, rarity: "legendary", mult: true, desc: "연격 ×3, 단 발동 시 20% 확률로 소멸", detail: "공격할 때마다 연격 ×3. 하지만 발동할 때마다 20% 확률로 터져 사라진다. 고위험 고수익.", apply(ctx, self) { ctx.mult *= 3; ctx.activate("risky3x"); if (Math.random() < 0.2) self.expired = true; } },
       { id: "extraHands", name: "곡예사", cost: 7, rarity: "uncommon", desc: "전투 시작 시 공격 횟수 +2", detail: "각 전투를 시작할 때 공격(핸드) 횟수가 2회 늘어난다.", apply() {} },
       { id: "extraDiscards", name: "재정비", cost: 6, rarity: "uncommon", desc: "전투 시작 시 버리기 +2", detail: "각 전투를 시작할 때 버리기 횟수가 2회 늘어난다.", apply() {} },
@@ -3466,7 +3466,7 @@
       { id:"pluto",    name:"명왕성",planet:"⯓", hand:"HIGH_CARD",     chipsBonus:15, multBonus:1 },
       // ── 특수 행성(전체/무작위/흡수). hand 대신 special로 동작. 강력해서 비싸고 후반에 등장 ──
       { id:"blackhole",   name:"블랙홀", planet:"🕳️", special:"all",    amount:1, cost:8,  desc:"모든 기술 레벨 +1" },
-      { id:"galaxy",      name:"은하",   planet:"🌌", special:"all",    amount:3, cost:16, desc:"모든 기술 레벨 +3 (올 5업 대박)" },
+      { id:"galaxy",      name:"은하",   planet:"🌌", special:"all",    amount:3, cost:16, desc:"모든 기술 레벨 +3" },
       { id:"supernova",   name:"초신성", planet:"💥", special:"random", amount:5, cost:10, desc:"무작위 기술 1개 레벨 +5" },
       { id:"singularity", name:"특이점", planet:"⚫", special:"absorb",           cost:12, desc:"흩어진 모든 기술 레벨을 흡수해 선택한 1개 기술에 몰빵" },
     ];
@@ -6535,6 +6535,7 @@
         } else {
           joker.apply(ctx, joker);
         }
+        if (joker.id === "cull" && joker._cullAnim) { joker._cullAnim.forEach(id => { const cel = ps.map && ps.map[id]; if (cel) cel.classList.add("shatter"); }); joker._cullAnim = null; }
         if (ctx.activated.length > ab) {
           const dc = ctx.chips - cb, dm = ctx.mult - mb;
           ps.head.innerHTML = `<b style="color:var(--gold)">${label}</b> ${t("ui_triggered")}`;
