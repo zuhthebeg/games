@@ -2683,6 +2683,31 @@
     #dbgModal .dbg-row > #dbgJoker, #dbgModal .dbg-row > #dbgTarot,
     #dbgModal .dbg-row > #dbgPlanet, #dbgModal .dbg-row > #dbgEnh { flex: 1 1 90px; }
     #dbgModal .dbg-row > .btn-main { flex: 0 0 auto; }
+    /* === 이미지 아이콘 버튼 (FLUX 생성) === */
+    .deck-btn.ic { background-repeat:no-repeat; background-position:center; background-size:78%; min-width:36px; color:#ffd86b; }
+    #handsInfoBtn.ic { background-image:url("ui/ic_hands.webp"); }
+    #tarotInfoBtn.ic { background-image:url("ui/ic_scroll.webp"); }
+    #collectionBtn.ic { background-image:url("ui/ic_codex.webp"); }
+    #deckBtn.ic { background-image:url("ui/ic_deck.webp"); background-size:56%; background-position:center 40%; }
+    .deck-btn.deck-count.ic { font-size:0.66rem; align-items:flex-end; padding-bottom:2px; text-shadow:0 1px 2px #000; font-weight:800; }
+    /* 이어하기 아이콘 */
+    #startContinueBtn { background-image:url("ui/ic_continue.webp"); background-repeat:no-repeat; background-position:14px center; background-size:24px auto; padding-left:46px; }
+    /* 글로벌 유틸바 (상점/스킵 등 모달 위에서 정보·설정 접근) */
+    .global-util-bar { position:fixed; top:10px; right:10px; display:flex; gap:6px; z-index:90; }
+    .global-util-bar .gu-btn {
+      width:44px; height:44px; padding:0; border-radius:10px;
+      background:rgba(16,16,24,0.85); border:1px solid rgba(212,175,55,0.5);
+      background-repeat:no-repeat; background-position:center; background-size:80%;
+      box-shadow:0 2px 8px rgba(0,0,0,0.55); cursor:pointer; color:#ffd86b;
+      font-size:1.15rem; display:flex; align-items:center; justify-content:center;
+    }
+    .global-util-bar .gu-btn:active { transform:scale(0.93); }
+    #guHands { background-image:url("ui/ic_hands.webp"); }
+    #guScrolls { background-image:url("ui/ic_scroll.webp"); }
+    #guCodex { background-image:url("ui/ic_codex.webp"); }
+    #guDeck { background-image:url("ui/ic_deck.webp"); background-size:60%; background-position:center 38%; align-items:flex-end; padding-bottom:3px; font-size:0.66rem; font-weight:800; text-shadow:0 1px 2px #000; }
+    /* 정보 모달은 글로벌바 위로 */
+    #deckModal, #handsModal, #tarotModal, #collectionModal, #settingsModal { z-index:100; }
   </style>
 </head>
 <body>
@@ -2698,6 +2723,14 @@
       <button class="start-help" id="startHelpBtn" data-i18n="start_help">＂어떻게 하는 거야?＂ — 도움말</button>
       <button class="start-help" id="startSettingsBtn" data-i18n="settings">⚙️ 설정</button>
     </div>
+  </div>
+
+  <div class="global-util-bar" id="globalUtilBar" style="display:none">
+    <button id="guSettings" class="gu-btn" type="button" aria-label="설정" title="설정">⚙️</button>
+    <button id="guHands" class="gu-btn ic-hands" type="button" aria-label="기술" data-i18n-title="skills"></button>
+    <button id="guScrolls" class="gu-btn ic-scroll" type="button" aria-label="주문서" data-i18n-title="scrolls"></button>
+    <button id="guCodex" class="gu-btn ic-codex" type="button" aria-label="도감" data-i18n-title="collection_btn"></button>
+    <button id="guDeck" class="gu-btn ic-deck gu-deck" type="button" aria-label="덱" data-i18n-title="deck"></button>
   </div>
 
   <div class="modal" id="helpModal">
@@ -2782,10 +2815,10 @@
       <div class="stat-cell"><span data-i18n="hands_left">남은 공격</span> <b id="handsLabel">0</b></div>
       <div class="stat-cell"><span data-i18n="discards_left">남은 버리기</span> <b id="discardsLabel">0</b></div>
       <div class="util-btns">
-        <button id="handsInfoBtn" class="deck-btn" type="button" data-i18n-title="skills" aria-label="기술">📊</button>
-        <button id="tarotInfoBtn" class="deck-btn" type="button" data-i18n-title="scrolls" aria-label="주문서">📜</button>
-        <button id="collectionBtn" class="deck-btn" type="button" data-i18n-title="collection_btn" aria-label="도감">📖</button>
-        <button id="deckBtn" class="deck-btn deck-count" type="button" data-i18n-title="deck" aria-label="덱">🃏</button>
+        <button id="handsInfoBtn" class="deck-btn ic" type="button" data-i18n-title="skills" aria-label="기술"></button>
+        <button id="tarotInfoBtn" class="deck-btn ic" type="button" data-i18n-title="scrolls" aria-label="주문서"></button>
+        <button id="collectionBtn" class="deck-btn ic" type="button" data-i18n-title="collection_btn" aria-label="도감"></button>
+        <button id="deckBtn" class="deck-btn deck-count ic" type="button" data-i18n-title="deck" aria-label="덱"></button>
       </div>
     </section>
 
@@ -4199,7 +4232,7 @@
         help_p4: "특정 기술을 <b>영구 강화</b>한다. 자주 쓰는 기술에 투자하면 같은 패로 점점 높은 데미지가 나온다.",
         help_b5: "⑤ 보스 전투",
         help_p5: "각 사냥의 3번째 전투는 <em>제약(버리기 불가·문양 봉인 등)</em>이 걸린 보스다. 조커 빌드로 정면 돌파하라.",
-        brand_title: "조커런", start_continue: "↩️ 이어하기", start_help: "＂어떻게 하는 거야?＂ — 도움말",
+        brand_title: "조커런", start_continue: "이어하기", start_help: "＂어떻게 하는 거야?＂ — 도움말",
         collection_btn: "📖 도감", deck_legend: "밝은 카드 = 덱에 남음 · 흐린 카드 = 이미 뽑힘",
         tarot_collection_title: "🔮 주문서 도감", collection_title: "📖 도감",
         singularity_title: "⚫ 특이점 — 레벨 몰빵",
@@ -4362,7 +4395,7 @@
         help_p3: "Spend battle-reward coins on <b>Jokers</b> in the shop. Jokers hook into damage scoring and inflate ATK/Combo. Grab scaling jokers like <em>Snowball/Compound</em> early and the late game explodes. 5 slots.",
         help_b4: "④ Weapon Upgrades",
         help_p4: "Permanently upgrade a specific skill. Invest in skills you use often to deal more damage with the same hand.",
-        brand_title: "JokerRun", start_continue: "↩️ Continue", start_help: "“How do I play?” — Guide",
+        brand_title: "JokerRun", start_continue: "Continue", start_help: "“How do I play?” — Guide",
         collection_btn: "📖 Collection", deck_legend: "Bright = left in deck · Dim = already drawn",
         tarot_collection_title: "🔮 Scroll Collection", collection_title: "📖 Collection",
         singularity_title: "⚫ Singularity — Level Dump",
@@ -4527,7 +4560,7 @@
         help_p3: "用戰鬥獎勵金幣在商店購買<b>小丑</b>。小丑會介入傷害計算，灌大攻擊力/連擊。及早拿到<em>雪球·複利</em>這類越滾越大的小丑，後期就會爆發。共5個欄位。",
         help_b4: "④ 武器強化",
         help_p4: "永久強化特定技能。投資常用的技能，同樣的牌就能打出越來越高的傷害。",
-        brand_title: "JokerRun", start_continue: "↩️ 繼續", start_help: "「怎麼玩？」— 指南",
+        brand_title: "JokerRun", start_continue: "繼續", start_help: "「怎麼玩？」— 指南",
         collection_btn: "📖 圖鑑", deck_legend: "亮 = 牌組剩餘 · 暗 = 已抽出",
         tarot_collection_title: "🔮 卷軸圖鑑", collection_title: "📖 圖鑑",
         singularity_title: "⚫ 奇點 — 等級集中",
@@ -4692,7 +4725,7 @@
         help_p3: "戦闘報酬のコインでショップから<b>ジョーカー</b>を買う。ジョーカーはダメージ計算に介入し攻撃力/連撃を膨らませる。<em>雪だるま・複利</em>のような育つジョーカーを早めに取れば後半が爆発する。枠は5つ。",
         help_b4: "④ 武器強化",
         help_p4: "特定のスキルを<b>永久強化</b>する。よく使うスキルに投資すれば同じ手でも高いダメージが出る。",
-        brand_title: "JokerRun", start_continue: "↩️ 続きから", start_help: "「遊び方は？」— ガイド",
+        brand_title: "JokerRun", start_continue: "続きから", start_help: "「遊び方は？」— ガイド",
         collection_btn: "📖 図鑑", deck_legend: "明 = デッキに残存 · 暗 = 既に引いた",
         tarot_collection_title: "🔮 巻物図鑑", collection_title: "📖 図鑑",
         singularity_title: "⚫ 特異点 — レベル集中",
@@ -5747,7 +5780,8 @@
       $("#multLabel").textContent = `x${mult}`;
       $("#playBtn").disabled = state.gameEnded;
       $("#discardBtn").disabled = state.gameEnded;
-      $("#deckBtn").textContent = `🃏 ${state.deck.length}`;
+      $("#deckBtn").textContent = state.deck.length;
+      { const gd = document.getElementById("guDeck"); if (gd) gd.textContent = state.deck.length; }
       $("#handGuide").textContent = state.bossModifier?.id === "max3cards"
         ? t("ui_hand_guide_3")
         : t("ui_hand_guide_5");
@@ -7296,6 +7330,21 @@
       AudioFX.play("select");
     });
     $("#deckBtn").addEventListener("click", openDeckModal);
+    // 글로벌 유틸바: 상점/스킵 등 모달 위에서도 설정·정보 버튼 접근
+    (function () {
+      const gb = (id, fn) => { const e = document.getElementById(id); if (e) e.addEventListener("click", fn); };
+      gb("guSettings", openSettings); gb("guHands", openHandsModal); gb("guScrolls", openTarotModal);
+      gb("guCodex", openCollection); gb("guDeck", openDeckModal);
+      window.syncGlobalBar = function () {
+        const bar = document.getElementById("globalUtilBar"); if (!bar) return;
+        const on = ["shopModal", "blindSelectModal", "skipResultModal"].some(id => {
+          const m = document.getElementById(id); return m && m.classList.contains("show");
+        });
+        bar.style.display = on ? "flex" : "none";
+      };
+      try { new MutationObserver(window.syncGlobalBar).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] }); } catch (_) {}
+      window.syncGlobalBar();
+    })();
     $("#deckSortBtn").addEventListener("click", () => {
       _deckSort = _deckSort === "suit" ? "rank" : "suit";
       try { localStorage.setItem("jokerrun_decksort", _deckSort); } catch (_) {}
