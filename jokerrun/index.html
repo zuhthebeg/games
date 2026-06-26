@@ -5325,15 +5325,28 @@
     }
 
     let _hintTimer = null;
+    let _hintCards = null;   // 현재 떠있는 힌트가 가리키는 추천 카드(객체 참조) — 재클릭 제출용
     function clearHintCards() {
       cardsWrap.querySelectorAll(".card.hint").forEach(el => el.classList.remove("hint"));
       if (_hintTimer) { clearTimeout(_hintTimer); _hintTimer = null; }
     }
     function showBestHint() {
       if (state.gameEnded) return;
-      if (cardsWrap.querySelector(".card.hint")) { clearHintCards(); return; } // 토글: 떠있으면 끔
+      // 힌트가 떠있는 동안 다시 누르면(손패가 그대로면) 추천 패를 선택하고 바로 공격 제출
+      if (cardsWrap.querySelector(".card.hint") && _hintCards && _hintCards.length && _hintCards.every(c => state.hand.includes(c))) {
+        clearHintCards();
+        state.selected.clear();
+        _hintCards.forEach(c => state.selected.add(c.id));
+        _hintCards = null;
+        renderCards();
+        updateHandPreview();
+        playSelected();   // 공격 제출
+        return;
+      }
+      clearHintCards();
       const combo = bestHintCombo();
-      if (!combo.length) return;
+      if (!combo.length) { _hintCards = null; return; }
+      _hintCards = combo;
       const ids = new Set(combo.map(c => String(c.id)));
       Array.from(cardsWrap.children).forEach(el => { if (ids.has(el.dataset.id)) el.classList.add("hint"); });
       AudioFX.play("select");
