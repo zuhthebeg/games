@@ -1336,7 +1336,11 @@
     .stone-chip { font-size: .58rem; font-weight: 900; color: #d6e6ff; }
     .card.enh-glass { outline: 2px solid #5fd6f5; outline-offset: -2px; background: linear-gradient(162deg, #ecffff 0%, #d2f6ff 58%, #b3e9ff 100%) !important; box-shadow: inset 0 2px 10px rgba(255,255,255,.7), inset 0 -6px 14px rgba(95,214,245,.35), 0 0 12px rgba(95,214,245,.5); }
     @keyframes cardShatter { 0%{transform:scale(1) rotate(0);opacity:1;filter:brightness(1)} 45%{transform:scale(1.18) rotate(-5deg);filter:brightness(1.9)} 100%{transform:scale(.22) rotate(15deg);opacity:0;filter:brightness(2.4)} }
-    .ps-card.shatter, .card.shatter { animation: cardShatter .5s cubic-bezier(.5,0,.9,.4) forwards !important; z-index: 20; }
+    .ps-card.shatter, .card.shatter, .joker.shatter { animation: cardShatter .5s cubic-bezier(.5,0,.9,.4) forwards !important; z-index: 20; }
+    .finisher-box { background: linear-gradient(160deg,#1c1330,#0c0a14); border: 2px solid #ff5577; border-radius: 16px; padding: 24px 20px; max-width: 340px; width: 86%; text-align: center; box-shadow: 0 0 44px rgba(255,60,90,.55); animation: cardDeal .35s cubic-bezier(.2,.8,.2,1) both; }
+    .finisher-box .finisher-title { font-size: 1.25rem; font-weight: 900; color: #ff7a93; margin-bottom: 10px; text-shadow: 0 0 12px rgba(255,60,90,.6); }
+    .finisher-box .finisher-desc { font-size: 0.92rem; line-height: 1.5; color: #f0e8f5; margin-bottom: 18px; }
+    .finisher-box .finisher-btns { display: flex; flex-direction: column; gap: 9px; }
     .card.enh-steel { outline: 2px solid #c3ccd6; outline-offset: -2px; background: linear-gradient(162deg, #f3f5f8 0%, #d8dde4 52%, #b3bbc7 100%) !important; }
     .card.enh-gold  { outline: 2px solid #ffcf6d; outline-offset: -2px; background: linear-gradient(162deg, #fff8de 0%, #ffe9a2 58%, #f3cc63 100%) !important; box-shadow: inset 0 0 12px rgba(255,210,90,.45), 0 0 12px rgba(255,207,109,.5); }
 
@@ -4283,6 +4287,7 @@
         hands_left: "남은 공격", discards_left: "남은 버리기",
         hand_play: "⚔️ 공격", card_discard: "카드 버리기",
         hint_btn: "추천 패", skills: "📊 기술", scrolls: "📜 주문서", deck: "🃏 덱",
+        fin_title: "최후의 일격", fin_desc: "낼 카드가 없다! 보유 조커 {n}개를 모두 폭발시켜 적을 즉사시킨다.", fin_go: "💥 필살기 발동", fin_no: "포기 (게임 오버)", fin_log: "💥 조커를 모두 폭발시켜 적을 즉사시켰다!",
         deck_n: "🃏 덱 ({n}장)", log_joker_expired: "{name}이(가) 소멸했다", log_glass_break: "💎 유리 카드가 깨졌다", hand_hint: "공격할 카드를 선택하세요.",
         combo_preview: "기술명 | 예상 데미지: 0",
         shop: "상점", next_blind: "다음 전투로 →", to_shop: "정비하러 →", collect: "전리품 받기 →",
@@ -4448,6 +4453,7 @@
         hands_left: "Attacks left", discards_left: "Discards left",
         hand_play: "⚔️ Attack", card_discard: "Discard",
         hint_btn: "Best Hand", skills: "📊 Skills", scrolls: "📜 Scrolls", deck: "🃏 Deck",
+        fin_title: "Last Resort", fin_desc: "No cards left! Detonate all {n} Jokers to instantly destroy the enemy.", fin_go: "💥 Unleash", fin_no: "Give up (Game Over)", fin_log: "💥 All Jokers detonated — enemy obliterated!",
         deck_n: "🃏 Deck ({n})", log_joker_expired: "{name} faded away", log_glass_break: "💎 A Glass card shattered", hand_hint: "Pick cards to attack with.",
         combo_preview: "Skill | Est. damage: 0",
         shop: "Shop", next_blind: "Next battle →", to_shop: "Resupply →", collect: "Collect loot →",
@@ -4613,6 +4619,7 @@
         hands_left: "剩餘攻擊", discards_left: "剩餘棄牌",
         hand_play: "⚔️ 攻擊", card_discard: "棄牌",
         hint_btn: "推薦牌", skills: "📊 技能", scrolls: "📜 卷軸", deck: "🃏 牌組",
+        fin_title: "最後一擊", fin_desc: "沒有牌可出了！引爆全部 {n} 張小丑牌，瞬間秒殺敵人。", fin_go: "💥 釋放必殺", fin_no: "放棄（遊戲結束）", fin_log: "💥 引爆所有小丑牌，秒殺敵人！",
         deck_n: "🃏 牌組 ({n})", log_joker_expired: "{name} 消失了", log_glass_break: "💎 玻璃卡牌碎裂了", hand_hint: "選擇要攻擊的卡牌。",
         combo_preview: "技能 | 預估傷害：0",
         shop: "商店", next_blind: "下一場戰鬥 →", to_shop: "整備 →", collect: "領取戰利品 →",
@@ -4778,6 +4785,7 @@
         hands_left: "残り攻撃", discards_left: "残り捨て札",
         hand_play: "⚔️ 攻撃", card_discard: "捨て札",
         hint_btn: "おすすめ", skills: "📊 スキル", scrolls: "📜 巻物", deck: "🃏 デッキ",
+        fin_title: "最後の一撃", fin_desc: "出せるカードがない！所持ジョーカー{n}個を全て爆発させ、敵を即死させる。", fin_go: "💥 必殺発動", fin_no: "あきらめる（ゲームオーバー）", fin_log: "💥 ジョーカーを全爆発させ敵を即死させた！",
         deck_n: "🃏 デッキ ({n})", log_joker_expired: "{name} が消滅した", log_glass_break: "💎 グラスカードが砕けた", hand_hint: "攻撃するカードを選択。",
         combo_preview: "スキル | 予想ダメージ：0",
         shop: "ショップ", next_blind: "次の戦闘へ →", to_shop: "整備へ →", collect: "戦利品を受取 →",
@@ -6277,12 +6285,25 @@
       renderCards();
       renderHUD();          // 덱(남은 카드) 카운트 즉시 갱신 — drawToEight 후 deckBtn 반영
       updateHandPreview();
+      checkOutOfCards();    // 버리기 등으로 손패+덱 소진 시 최후의 일격/패배 처리
+    }
+
+    // 낼 카드가 없음(손패+덱 소진) & 적 생존 → 조커 보유 시 최후의 일격 기회, 없으면 패배
+    function checkOutOfCards() {
+      if (state.gameEnded) return false;
+      if (state.hand.length === 0 && state.deck.length === 0 && state.score < activeTarget()) {
+        if ((state.jokers || []).length > 0) offerFinisher();
+        else loseRun();
+        return true;
+      }
+      return false;
     }
 
     function canContinue() {
       if (state.gameEnded) return false;
       const target = activeTarget();
       if (state.score >= target) { winRound(); return false; }
+      if (checkOutOfCards()) return false;
       if (state.handsLeft <= 0) { loseRun(); return false; }
       return true;
     }
@@ -7253,6 +7274,7 @@
     function startRound(index, seedText = "") {
       state.roundIndex = index;
       state.score = 0;
+      _finisherFired = false;   // 라운드마다 최후의 일격 1회 가능
       state.handsLeft = 4 + (hasVoucher("grabber") ? 1 : 0);    // 여분의 손 바우처
       state.discardsLeft = 3 + (hasVoucher("wasteful") ? 1 : 0); // 낭비꾼 바우처
       state.bossModifier = null;
@@ -7309,6 +7331,47 @@
       }
       addLog(t("log_round_start", {round: activeRoundLabel(), target: activeTarget().toLocaleString()}));
       snapshotRun();   // 전투 첫 공격 차례 시작 — 세이브/컨티뉴 스냅샷
+    }
+
+    // 최후의 일격: 낼 카드가 없을 때 보유 조커를 모두 폭발시켜 적을 즉사시키는 이벤트.
+    let _finisherFired = false;
+    function offerFinisher() {
+      if (state.gameEnded || _finisherFired) return;
+      if (document.getElementById("finisherModal")) return;   // 중복 방지
+      const n = (state.jokers || []).length;
+      if (n <= 0) { loseRun(); return; }
+      const ov = document.createElement("div");
+      ov.id = "finisherModal";
+      ov.className = "modal show";
+      ov.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.8);";
+      ov.innerHTML = `
+        <div class="finisher-box">
+          <div class="finisher-title">💥 ${t("fin_title")}</div>
+          <div class="finisher-desc">${t("fin_desc", { n })}</div>
+          <div class="finisher-btns">
+            <button id="finisherGo" class="btn-main">${t("fin_go")}</button>
+            <button id="finisherNo" class="btn-warn">${t("fin_no")}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(ov);
+      ov.querySelector("#finisherGo").addEventListener("click", () => { ov.remove(); unleashFinisher(); });
+      ov.querySelector("#finisherNo").addEventListener("click", () => { ov.remove(); loseRun(); });
+    }
+
+    function unleashFinisher() {
+      if (state.gameEnded || _finisherFired) return;
+      _finisherFired = true;
+      AudioFX.play("play");
+      try { JuiceFX.sfx("win"); JuiceFX.shake(14); } catch (_) {}
+      addLog(t("fin_log"));
+      // 조커 박스 순차 폭발(shatter) 연출
+      const boxes = Array.from(jokerArea.querySelectorAll(".joker")).filter(b => !b.classList.contains("empty"));
+      boxes.forEach((b, i) => setTimeout(() => { b.classList.add("shatter"); try { jrFloat(b, "💥", "mult"); } catch (_) {} }, i * 90));
+      // 조커 전부 소멸 + 적 즉사(점수를 목표 이상으로 강제)
+      state.jokers = [];
+      state.score = activeTarget();
+      const wait = boxes.length * 90 + 620;
+      setTimeout(() => { if (state.gameEnded) return; renderJokers(); winRound(); }, wait);
     }
 
     function winRound() {
