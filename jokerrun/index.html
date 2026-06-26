@@ -1336,7 +1336,7 @@
     .stone-chip { font-size: .58rem; font-weight: 900; color: #d6e6ff; }
     .card.enh-glass { outline: 2px solid #5fd6f5; outline-offset: -2px; background: linear-gradient(162deg, #ecffff 0%, #d2f6ff 58%, #b3e9ff 100%) !important; box-shadow: inset 0 2px 10px rgba(255,255,255,.7), inset 0 -6px 14px rgba(95,214,245,.35), 0 0 12px rgba(95,214,245,.5); }
     @keyframes cardShatter { 0%{transform:scale(1) rotate(0);opacity:1;filter:brightness(1)} 45%{transform:scale(1.18) rotate(-5deg);filter:brightness(1.9)} 100%{transform:scale(.22) rotate(15deg);opacity:0;filter:brightness(2.4)} }
-    .ps-card.shatter { animation: cardShatter .5s cubic-bezier(.5,0,.9,.4) forwards; z-index: 20; }
+    .ps-card.shatter, .card.shatter { animation: cardShatter .5s cubic-bezier(.5,0,.9,.4) forwards !important; z-index: 20; }
     .card.enh-steel { outline: 2px solid #c3ccd6; outline-offset: -2px; background: linear-gradient(162deg, #f3f5f8 0%, #d8dde4 52%, #b3bbc7 100%) !important; }
     .card.enh-gold  { outline: 2px solid #ffcf6d; outline-offset: -2px; background: linear-gradient(162deg, #fff8de 0%, #ffe9a2 58%, #f3cc63 100%) !important; box-shadow: inset 0 0 12px rgba(255,210,90,.45), 0 0 12px rgba(255,207,109,.5); }
 
@@ -5319,7 +5319,9 @@
         const dmg = estimateHandDamage(sub);
         if (dmg > bestDmg) { bestDmg = dmg; best = sub; }
       }
-      return best;
+      // 족보에 실제 기여하는 카드만 하이라이트(키커 제외) — 페어면 2장, 하이카드면 1장만
+      if (!best.length) return best;
+      return scoringCards(best, scoreHand(best).handType);
     }
 
     let _hintTimer = null;
@@ -6260,6 +6262,7 @@
       state.selected.clear();
       drawToEight();
       renderCards();
+      renderHUD();          // 덱(남은 카드) 카운트 즉시 갱신 — drawToEight 후 deckBtn 반영
       updateHandPreview();
     }
 
@@ -6699,8 +6702,14 @@
       AudioFX.play("select");
       state.discardsLeft = Math.max(0, state.discardsLeft - 1);
       const discardEls = Array.from(cardsWrap.querySelectorAll('.card.selected'));
-      discardEls.forEach(el => el.classList.add('discarding-out'));
-      setTimeout(() => consumeSelectedCards(), 280);
+      if (_exec) {
+        // 처형인: 버린 카드를 파괴 → 부서지는(shatter) 연출 + 💥 (selected 황금 애니가 덮지 않게 클래스/인라인 정리)
+        discardEls.forEach(el => { el.style.transform = ''; el.style.boxShadow = ''; el.classList.remove('selected'); el.classList.add('shatter'); jrFloat(el, "💥", "mult"); });
+        setTimeout(() => consumeSelectedCards(), 500);
+      } else {
+        discardEls.forEach(el => el.classList.add('discarding-out'));
+        setTimeout(() => consumeSelectedCards(), 280);
+      }
       setInfo(t("info_discarded", {n: cards.length, left: state.discardsLeft}));
       addLog(t("log_discard", {n: cards.length, left: state.discardsLeft}));
       renderHUD();
