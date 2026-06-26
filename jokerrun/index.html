@@ -3493,7 +3493,7 @@
       { id:"sun",      name:"태양",          need:1, desc:"선택 카드 → ♥하트",   apply(sel){ sel.forEach(c=>c.suit="heart"); } },
       { id:"world",    name:"세계",          need:1, desc:"선택 카드 → ♠스페이드", apply(sel){ sel.forEach(c=>c.suit="spade"); } },
       { id:"strength", name:"힘",            need:1, desc:"선택 카드 랭크 +1",   apply(sel){ sel.forEach(c=>{ if(c.rank<14) c.rank++; }); } },
-      { id:"death",    name:"죽음",          need:2, exact:true, desc:"정확히 2장: 오른쪽=왼쪽 복제", apply(sel){ const a=sel[0], b=sel[1]; if(a&&b){ b.rank=a.rank; b.suit=a.suit; } } },
+      { id:"death",    name:"죽음",          need:2, exact:true, desc:"정확히 2장: 오른쪽=왼쪽 복제(강화 포함)", apply(sel){ const a=sel[0], b=sel[1]; if(a&&b){ b.rank=a.rank; b.suit=a.suit; b.enh=a.enh; } } },
       { id:"hermit",   name:"은둔자",        need:0, desc:"보유 자금 2배(최대 +🪙20)", apply(){ const add=Math.min(20, state.money||0); state.money=(state.money||0)+add; } },
       { id:"wheel",    name:"운명의 수레바퀴", need:0, desc:"즉시 +🪙12",          apply(){ state.money=(state.money||0)+12; } },
       // ── 확장 타로 (카드 모델 내에서 동작: 무늬/랭크 변경·제거·자금. 도감/상점 자동 노출) ──
@@ -3515,7 +3515,7 @@
       { id:"fool",      name:"바보",       need:0, desc:"마지막 사용한 타로/행성 1장 복사(슬롯 한도)", apply(){ const lc=state.lastConsumable; if(!lc||lc.id==="fool") return; if(consumableCount()>=consumableMax()) return; if(lc.kind==="tarot"){ const t=tarotPool.find(x=>x.id===lc.id); if(t){ state.tarotCards.push({ ...t }); } } else { const p=planetPool.find(x=>x.id===lc.id); if(p){ state.planetCards.push({ ...p }); } } } },
       { id:"judgement", name:"심판",       need:0, desc:"무작위 조커 1개 생성(슬롯 여유 시)", apply(){ if(jokerSlotsFull()) return; const j=randomUnownedJoker(); if(j){ state.jokers.push({ ...j, counter: j.initCounter ?? 0 }); markDiscovered("joker",j.id); renderHUD(); } } },
       { id:"hierophant", name:"교황",       need:2, exact:true, desc:"선택 2장 → 보너스 카드(공격력 +30)", apply(sel){ sel.forEach(c=>c.enh="bonus"); } },
-      { id:"chariot",    name:"전차",       need:2, exact:true, desc:"선택 2장 → 스틸 카드(손에 있으면 연격 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="steel"); } },
+      { id:"chariot",    name:"전차",       need:2, exact:true, desc:"선택 2장 → 멀티 카드(연격 +4)", apply(sel){ sel.forEach(c=>c.enh="mult"); } },
       { id:"justice",    name:"정의",       need:2, exact:true, desc:"선택 2장 → 글래스 카드(연격 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="glass"); } },
       { id:"devil",      name:"악마",       need:2, exact:true, desc:"선택 2장 → 골드 카드(라운드 끝 보유 시 +🪙3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
       { id:"tailor",     name:"재단사",     need:2, exact:true, desc:"선택 2장 문양 통일(오른쪽=왼쪽)", apply(sel){ if(sel.length>=2) sel[1].suit=sel[0].suit; } },
@@ -3649,11 +3649,11 @@
       supernova:{name:"Supernova",desc:"Random skill +5 levels"}, singularity:{name:"Singularity",desc:"Absorb all skill levels into one chosen skill"},
       star:{name:"Star",desc:"Selected cards → ◆Diamond"}, moon:{name:"Moon",desc:"Selected cards → ♣Club"},
       sun:{name:"Sun",desc:"Selected cards → ♥Heart"}, world:{name:"World",desc:"Selected cards → ♠Spade"},
-      strength:{name:"Strength",desc:"Selected cards rank +1"}, death:{name:"Death",desc:"Exactly 2: right copies left"},
+      strength:{name:"Strength",desc:"Selected cards rank +1"}, death:{name:"Death",desc:"Exactly 2: right copies left (incl. enhancement)"},
       hermit:{name:"Hermit",desc:"Double your coins (max +🪙20)"}, wheel:{name:"Wheel of Fortune",desc:"Instant +🪙12"},
       magician:{name:"Magician",desc:"Selected cards rank +2"}, empress:{name:"Empress",desc:"Selected cards → A"},
       emperor:{name:"Emperor",desc:"Create 2 random scrolls (within slots)"},
-      hierophant:{name:"Hierophant",desc:"2 cards → Bonus (ATK +30)"}, chariot:{name:"Chariot",desc:"2 cards → Steel (in-hand Combo ×1.5)"}, justice:{name:"Justice",desc:"2 cards → Glass (Combo ×1.5)"}, devil:{name:"Devil",desc:"2 cards → Gold (+🪙3 if held at round end)"}, tailor:{name:"Tailor",desc:"2 cards same suit (right=left)"}, fortune:{name:"Wheel Seal",desc:"1 card → random enhancement"}, alchemy:{name:"Alchemist",desc:"1 card → Gold + 🪙8 now"}, usury:{name:"Loan Shark",desc:"Gain 20% of held gold (max 🪙15)"}, astrology:{name:"Astrology",desc:"Create 1 planet + 1 scroll (within slots)"}, coronation:{name:"Coronation",desc:"Selected card → King"}, priestess:{name:"High Priestess",desc:"Create 2 random planets (within slots)"},
+      hierophant:{name:"Hierophant",desc:"2 cards → Bonus (ATK +30)"}, chariot:{name:"Chariot",desc:"2 cards → Mult (Combo +4)"}, justice:{name:"Justice",desc:"2 cards → Glass (Combo ×1.5)"}, devil:{name:"Devil",desc:"2 cards → Gold (+🪙3 if held at round end)"}, tailor:{name:"Tailor",desc:"2 cards same suit (right=left)"}, fortune:{name:"Wheel Seal",desc:"1 card → random enhancement"}, alchemy:{name:"Alchemist",desc:"1 card → Gold + 🪙8 now"}, usury:{name:"Loan Shark",desc:"Gain 20% of held gold (max 🪙15)"}, astrology:{name:"Astrology",desc:"Create 1 planet + 1 scroll (within slots)"}, coronation:{name:"Coronation",desc:"Selected card → King"}, priestess:{name:"High Priestess",desc:"Create 2 random planets (within slots)"},
       hanged:{name:"Hanged Man",desc:"Remove 2 selected, draw new"}, temperance:{name:"Temperance",desc:"Gain total joker sell value (max 🪙20)"},
       enh_bonus:{name:"Bonus Seal",desc:"1 card → Bonus (ATK +30)"}, enh_mult:{name:"Blood Seal",desc:"1 card → Mult (Combo +4)"},
       enh_stone:{name:"Tower",desc:"1 card → Stone (ATK +50)"}, enh_glass:{name:"The Lovers (Glass)",desc:"1 card → Glass (Combo ×1.5)"},
@@ -3735,11 +3735,11 @@
       supernova:{name:"超新星",desc:"隨機技能 +5級"}, singularity:{name:"奇點",desc:"吸收所有分散的技能等級，集中到選定的1個技能"},
       star:{name:"星星",desc:"選擇的牌 → ◆方塊"}, moon:{name:"月亮",desc:"選擇的牌 → ♣梅花"},
       sun:{name:"太陽",desc:"選擇的牌 → ♥紅心"}, world:{name:"世界",desc:"選擇的牌 → ♠黑桃"},
-      strength:{name:"力量",desc:"選擇的牌 點數 +1"}, death:{name:"死神",desc:"正好2張：右邊複製左邊"},
+      strength:{name:"力量",desc:"選擇的牌 點數 +1"}, death:{name:"死神",desc:"正好2張：右邊複製左邊（含強化）"},
       hermit:{name:"隱者",desc:"金幣翻倍（最多 +🪙20）"}, wheel:{name:"命運之輪",desc:"立即 +🪙12"},
       magician:{name:"魔術師",desc:"選擇的牌 點數 +2"}, empress:{name:"皇后",desc:"選擇的牌 → A"},
       emperor:{name:"皇帝",desc:"生成2張隨機卷軸（欄位內）"},
-      hierophant:{name:"教皇",desc:"2張→獎勵卡(攻擊力+30)"}, chariot:{name:"戰車",desc:"2張→鋼鐵卡(持有連擊×1.5)"}, justice:{name:"正義",desc:"2張→玻璃卡(連擊×1.5)"}, devil:{name:"惡魔",desc:"2張→黃金卡(回合結束持有+🪙3)"}, tailor:{name:"裁縫師",desc:"2張花色統一(右=左)"}, fortune:{name:"命運印記",desc:"1張→隨機強化"}, alchemy:{name:"鍊金術士",desc:"1張→黃金卡+立即🪙8"}, usury:{name:"放高利貸",desc:"獲得持有資金20%(最多🪙15)"}, astrology:{name:"占星術",desc:"生成1行星+1卷軸(欄位內)"}, coronation:{name:"加冕",desc:"所選卡牌→K"}, priestess:{name:"女祭司",desc:"生成2張隨機行星（欄位內）"},
+      hierophant:{name:"教皇",desc:"2張→獎勵卡(攻擊力+30)"}, chariot:{name:"戰車",desc:"2張→倍率卡(連擊+4)"}, justice:{name:"正義",desc:"2張→玻璃卡(連擊×1.5)"}, devil:{name:"惡魔",desc:"2張→黃金卡(回合結束持有+🪙3)"}, tailor:{name:"裁縫師",desc:"2張花色統一(右=左)"}, fortune:{name:"命運印記",desc:"1張→隨機強化"}, alchemy:{name:"鍊金術士",desc:"1張→黃金卡+立即🪙8"}, usury:{name:"放高利貸",desc:"獲得持有資金20%(最多🪙15)"}, astrology:{name:"占星術",desc:"生成1行星+1卷軸(欄位內)"}, coronation:{name:"加冕",desc:"所選卡牌→K"}, priestess:{name:"女祭司",desc:"生成2張隨機行星（欄位內）"},
       hanged:{name:"倒吊人",desc:"移除選擇的2張後抽新牌"}, temperance:{name:"節制",desc:"獲得小丑售價總和（最多🪙20）"},
       enh_bonus:{name:"獎勵印記",desc:"1張牌 → 獎勵（攻擊力 +30）"}, enh_mult:{name:"血色印記",desc:"1張牌 → 倍率（連擊 +4）"},
       enh_stone:{name:"高塔",desc:"1張牌 → 石頭（攻擊力 +50）"}, enh_glass:{name:"戀人（玻璃）",desc:"1張牌 → 玻璃（連擊 ×1.5）"},
@@ -3821,11 +3821,11 @@
       supernova:{name:"超新星",desc:"ランダムなスキル +5レベル"}, singularity:{name:"特異点",desc:"分散した全スキルレベルを吸収し選んだ1つに集中"},
       star:{name:"星",desc:"選択カード → ◆ダイヤ"}, moon:{name:"月",desc:"選択カード → ♣クラブ"},
       sun:{name:"太陽",desc:"選択カード → ♥ハート"}, world:{name:"世界",desc:"選択カード → ♠スペード"},
-      strength:{name:"力",desc:"選択カードのランク +1"}, death:{name:"死神",desc:"ちょうど2枚：右が左をコピー"},
+      strength:{name:"力",desc:"選択カードのランク +1"}, death:{name:"死神",desc:"ちょうど2枚：右が左をコピー（強化込み）"},
       hermit:{name:"隠者",desc:"コイン2倍（最大 +🪙20）"}, wheel:{name:"運命の輪",desc:"即時 +🪙12"},
       magician:{name:"魔術師",desc:"選択カードのランク +2"}, empress:{name:"女帝",desc:"選択カード → A"},
       emperor:{name:"皇帝",desc:"ランダムな巻物2枚生成（枠内）"},
-      hierophant:{name:"教皇",desc:"2枚→ボーナス(攻撃力+30)"}, chariot:{name:"戦車",desc:"2枚→スチール(手札連撃×1.5)"}, justice:{name:"正義",desc:"2枚→グラス(連撃×1.5)"}, devil:{name:"悪魔",desc:"2枚→ゴールド(終了時保持+🪙3)"}, tailor:{name:"仕立て屋",desc:"2枚 スート統一(右=左)"}, fortune:{name:"運命の封印",desc:"1枚→ランダム強化"}, alchemy:{name:"錬金術師",desc:"1枚→ゴールド+即🪙8"}, usury:{name:"金貸し",desc:"所持資金の20%獲得(最大🪙15)"}, astrology:{name:"占星術",desc:"惑星1+巻物1生成(枠内)"}, coronation:{name:"戴冠",desc:"選択カード→K"}, priestess:{name:"女教皇",desc:"ランダムな惑星2枚生成（枠内）"},
+      hierophant:{name:"教皇",desc:"2枚→ボーナス(攻撃力+30)"}, chariot:{name:"戦車",desc:"2枚→倍率(連撃+4)"}, justice:{name:"正義",desc:"2枚→グラス(連撃×1.5)"}, devil:{name:"悪魔",desc:"2枚→ゴールド(終了時保持+🪙3)"}, tailor:{name:"仕立て屋",desc:"2枚 スート統一(右=左)"}, fortune:{name:"運命の封印",desc:"1枚→ランダム強化"}, alchemy:{name:"錬金術師",desc:"1枚→ゴールド+即🪙8"}, usury:{name:"金貸し",desc:"所持資金の20%獲得(最大🪙15)"}, astrology:{name:"占星術",desc:"惑星1+巻物1生成(枠内)"}, coronation:{name:"戴冠",desc:"選択カード→K"}, priestess:{name:"女教皇",desc:"ランダムな惑星2枚生成（枠内）"},
       hanged:{name:"吊られた男",desc:"選択2枚を除去し新規ドロー"}, temperance:{name:"節制",desc:"ジョーカー売却額の合計を獲得（最大🪙20）"},
       enh_bonus:{name:"ボーナスの封印",desc:"1枚 → ボーナス（攻撃力 +30）"}, enh_mult:{name:"血の封印",desc:"1枚 → 倍率（連撃 +4）"},
       enh_stone:{name:"塔",desc:"1枚 → ストーン（攻撃力 +50）"}, enh_glass:{name:"恋人（グラス）",desc:"1枚 → グラス（連撃 ×1.5）"},
@@ -5272,7 +5272,7 @@
       const CountCtor = getCountUpCtor();
       if (!target) return;
       if (!CountCtor) {
-        target.textContent = Number(endVal).toLocaleString();
+        target.textContent = fmtNum(endVal);
         return;
       }
       const instance = new CountCtor(target, endVal, { duration: 0.6, separator: ",", ...options });
@@ -5299,7 +5299,7 @@
       }
       const estimated = Math.floor(chips * mult);
       const nowLevel = state.handLevels?.[hand.handType] || 1;
-      handPreview.textContent = `${hand.name} Lv.${nowLevel} | ${t("dmg")}: ${estimated.toLocaleString()}`;
+      handPreview.textContent = `${hand.name} Lv.${nowLevel} | ${t("dmg")}: ${fmtNum(estimated)}`;
       handPreview.classList.add("show");
     }
 
@@ -5827,7 +5827,7 @@
     // 데미지계산 중 공격력/연격 러닝 표시 갱신
     function setRunReadout(c, m) {
       const cl = $("#chipsLabel"), ml = $("#multLabel");
-      if (cl) { cl.textContent = Math.floor(c).toLocaleString(); cl.classList.remove("score-bump"); void cl.offsetWidth; cl.classList.add("score-bump"); }
+      if (cl) { cl.textContent = fmtNum(c); cl.classList.remove("score-bump"); void cl.offsetWidth; cl.classList.add("score-bump"); }
       if (ml) { ml.textContent = "x" + (Math.round(m * 100) / 100); ml.classList.remove("score-bump"); void ml.offsetWidth; ml.classList.add("score-bump"); }
     }
 
@@ -5882,6 +5882,8 @@
     }
 
     // 적 HP 바 갱신 — cur(누적 데미지)만큼 깎인 잔여 HP를 바/숫자로 표시. CSS width 트랜지션으로 부드럽게.
+    // 큰 숫자 축약(1.2M / 3.4B / 5T). 100만 미만은 콤마 그대로.
+    function fmtNum(n){ n = Math.floor(Number(n) || 0); const a = Math.abs(n); if (a >= 1e12) return (n/1e12).toFixed(2).replace(/\.?0+$/,'') + "T"; if (a >= 1e9) return (n/1e9).toFixed(2).replace(/\.?0+$/,'') + "B"; if (a >= 1e6) return (n/1e6).toFixed(2).replace(/\.?0+$/,'') + "M"; return n.toLocaleString(); }
     function updateEnemyHp(cur) {
       const target = activeTarget();
       const score = (cur == null) ? state.score : cur;
@@ -5890,19 +5892,19 @@
       const fill = $("#enemyHpFill");
       if (fill) { fill.style.width = pct + "%"; fill.classList.toggle("low", pct <= 25); }
       const r = $("#enemyHpRemain"), m = $("#enemyHpMax");
-      if (r) r.textContent = remain.toLocaleString();
-      if (m) m.textContent = target.toLocaleString();
+      if (r) r.textContent = fmtNum(remain);
+      if (m) m.textContent = fmtNum(target);
     }
     function renderHUD(chips = 0, mult = 1) {
       $("#roundLabel").textContent = activeRoundLabel();
       $("#anteBlindLabel").textContent = t("ui_ante_blind", { ante: state.ante, blind: state.roundIndex + 1 });
-      $("#targetLabel").textContent = activeTarget().toLocaleString();
-      $("#scoreLabel").textContent = state.score.toLocaleString();
+      $("#targetLabel").textContent = fmtNum(activeTarget());
+      $("#scoreLabel").textContent = fmtNum(state.score);
       updateEnemyHp();
       $("#moneyLabel").textContent = `🪙${state.money}`;
       $("#handsLabel").textContent = String(state.handsLeft);
       $("#discardsLabel").textContent = String(state.discardsLeft);
-      $("#chipsLabel").textContent = chips.toLocaleString();
+      $("#chipsLabel").textContent = fmtNum(chips);
       $("#multLabel").textContent = `x${mult}`;
       $("#playBtn").disabled = state.gameEnded;
       $("#discardBtn").disabled = state.gameEnded;
@@ -6240,7 +6242,7 @@
         easing: "easeOutQuad"
       });
       await runCountUp(chipCard.querySelector("#dramaticChipNum"), chips, { duration: 0.6 });
-      chipsLabel.textContent = Number(chips).toLocaleString();
+      chipsLabel.textContent = fmtNum(chips);
       await runAnime({ targets: chipCard, opacity: [1, 0], translateY: [0, -10], duration: 150, easing: "easeInQuad" });
       chipCard.remove();
 
@@ -6490,7 +6492,7 @@
       const chipsEl = readout.querySelector(".ps-chips");
       const multEl = readout.querySelector(".ps-mult");
       const setReadout = (c, m) => {
-        if (chipsEl) { chipsEl.textContent = Math.floor(c).toLocaleString(); chipsEl.classList.remove("score-bump"); void chipsEl.offsetWidth; chipsEl.classList.add("score-bump"); }
+        if (chipsEl) { chipsEl.textContent = fmtNum(c); chipsEl.classList.remove("score-bump"); void chipsEl.offsetWidth; chipsEl.classList.add("score-bump"); }
         if (multEl) { multEl.textContent = Math.round(m * 100) / 100; multEl.classList.remove("score-bump"); void multEl.offsetWidth; multEl.classList.add("score-bump"); }
         setRunReadout(c, m);
       };
@@ -7170,7 +7172,7 @@
       const blind = blindDefs[index];
       $("#bsAnte").textContent = t("ui_ante_n", { n: state.ante });
       $("#bsBlindName").textContent = t(blind.id === "small" ? "mob" : blind.id === "big" ? "elite" : "boss");
-      $("#bsTarget").textContent = `${t("enemy_hp")} ${blind.target.toLocaleString()}`;
+      $("#bsTarget").textContent = `${t("enemy_hp")} ${fmtNum(blind.target)}`;
       // 스킵 보상 1개를 미리 결정해 보여준다. 스킵하면 이 보상을 받고, 플레이하면 무시.
       state._skipReward = rollSkipReward();
       const sr = state._skipReward;
@@ -7192,8 +7194,8 @@
     function buildSkipRewardPool() {
       const ante = state.ante;
       return [
-        { icon:"💸", weight: 11, label: t("sr_windfall_label"), detail: t("sr_windfall_detail", {n: ante * 5}),
-          run() { const m = ante * 5; state.money += m; return t("sr_windfall_run", {n: m}); } },
+        { icon:"💸", weight: 11, label: t("sr_windfall_label"), detail: t("sr_windfall_detail", {n: Math.floor(ante * 5 / 2)}),
+          run() { const m = Math.floor(ante * 5 / 2); state.money += m; return t("sr_windfall_run", {n: m}); } },
         { icon:"🃏", weight: 12, label: t("sr_rand_joker_label"), detail: t("sr_rand_joker_detail"),
           cond: () => !jokerSlotsFull(),
           run() { const j = randomUnownedJoker(); state.jokers.push({ ...j, counter: j.initCounter ?? 0 }); markDiscovered("joker", j.id); renderHUD(); return t("sr_rand_joker_run", {name: j.name}); } },
@@ -7212,7 +7214,7 @@
           run() {
             const cands = state.runDeck.filter(c => !c.enh);
             const card = cands[Math.floor(Math.random() * cands.length)];
-            const enhKeys = Object.keys(ENH);
+            const enhKeys = Object.keys(ENH).filter(k => k !== "stone");   // 스킵 보상 랜덤 강화에서 스톤 제외(랭크/무늬 사라져 손해)
             card.enh = enhKeys[Math.floor(Math.random() * enhKeys.length)];
             renderCards();
             return t("sr_card_enh_run", {card: `${suitSymbol[card.suit]}${formatRank(card.rank)}`, enh: ENH[card.enh].label});
@@ -7430,8 +7432,8 @@
     function showClearConfirm(anteClear) {
       state._pendingClearAnte = anteClear;
       const sc = $("#ccScore"), tg = $("#ccTarget"), bg = $("#ccBoss");
-      if (sc) sc.textContent = Math.floor(state.score).toLocaleString();
-      if (tg) tg.textContent = activeTarget().toLocaleString();
+      if (sc) sc.textContent = fmtNum(state.score);
+      if (tg) tg.textContent = fmtNum(activeTarget());
       const bossGold = state.lastCashout?.bossGold || 0;
       if (bg) bg.style.display = bossGold ? "" : "none";
       if (bg && bossGold) bg.innerHTML = t("ui_boss_reward_banner", {n: bossGold.toLocaleString()});
