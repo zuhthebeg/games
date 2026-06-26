@@ -1668,6 +1668,16 @@
       z-index: 2;
     }
 
+    .card.hint:not(.selected) {
+      border-color: #34e0c8;
+      animation: hintPulse 1s ease-in-out infinite !important;
+      z-index: 1;
+    }
+    @keyframes hintPulse {
+      0%,100% { box-shadow: 0 0 0 2px #34e0c8, 0 0 10px rgba(52,224,200,0.5), 0 10px 22px rgba(0,0,0,0.45); }
+      50% { box-shadow: 0 0 0 2px #5cffe6, 0 0 22px rgba(52,224,200,0.95), 0 10px 22px rgba(0,0,0,0.45); }
+    }
+
     .card.pick-fx {
       animation: pickFlash 260ms ease !important;
     }
@@ -2827,6 +2837,7 @@
       <div class="stat-cell"><span data-i18n="hands_left">남은 공격</span> <b id="handsLabel">0</b></div>
       <div class="stat-cell"><span data-i18n="discards_left">남은 버리기</span> <b id="discardsLabel">0</b></div>
       <div class="util-btns">
+        <button id="hintBtn" class="deck-btn ic" type="button" data-i18n-title="hint_btn" aria-label="추천 패" title="추천 패">💡</button>
         <button id="handsInfoBtn" class="deck-btn ic" type="button" data-i18n-title="skills" aria-label="기술"></button>
         <button id="collectionBtn" class="deck-btn ic" type="button" data-i18n-title="collection_btn" aria-label="도감"></button>
         <button id="deckBtn" class="deck-btn deck-count ic" type="button" data-i18n-title="deck" aria-label="덱"></button>
@@ -4271,7 +4282,7 @@
         atk_power: "공격력", combo: "연격",
         hands_left: "남은 공격", discards_left: "남은 버리기",
         hand_play: "⚔️ 공격", card_discard: "카드 버리기",
-        skills: "📊 기술", scrolls: "📜 주문서", deck: "🃏 덱",
+        hint_btn: "추천 패", skills: "📊 기술", scrolls: "📜 주문서", deck: "🃏 덱",
         deck_n: "🃏 덱 ({n}장)", log_joker_expired: "{name}이(가) 소멸했다", log_glass_break: "💎 유리 카드가 깨졌다", hand_hint: "공격할 카드를 선택하세요.",
         combo_preview: "기술명 | 예상 데미지: 0",
         shop: "상점", next_blind: "다음 전투로 →", to_shop: "정비하러 →", collect: "전리품 받기 →",
@@ -4436,7 +4447,7 @@
         atk_power: "ATK", combo: "Combo",
         hands_left: "Attacks left", discards_left: "Discards left",
         hand_play: "⚔️ Attack", card_discard: "Discard",
-        skills: "📊 Skills", scrolls: "📜 Scrolls", deck: "🃏 Deck",
+        hint_btn: "Best Hand", skills: "📊 Skills", scrolls: "📜 Scrolls", deck: "🃏 Deck",
         deck_n: "🃏 Deck ({n})", log_joker_expired: "{name} faded away", log_glass_break: "💎 A Glass card shattered", hand_hint: "Pick cards to attack with.",
         combo_preview: "Skill | Est. damage: 0",
         shop: "Shop", next_blind: "Next battle →", to_shop: "Resupply →", collect: "Collect loot →",
@@ -4601,7 +4612,7 @@
         atk_power: "攻擊力", combo: "連擊",
         hands_left: "剩餘攻擊", discards_left: "剩餘棄牌",
         hand_play: "⚔️ 攻擊", card_discard: "棄牌",
-        skills: "📊 技能", scrolls: "📜 卷軸", deck: "🃏 牌組",
+        hint_btn: "推薦牌", skills: "📊 技能", scrolls: "📜 卷軸", deck: "🃏 牌組",
         deck_n: "🃏 牌組 ({n})", log_joker_expired: "{name} 消失了", log_glass_break: "💎 玻璃卡牌碎裂了", hand_hint: "選擇要攻擊的卡牌。",
         combo_preview: "技能 | 預估傷害：0",
         shop: "商店", next_blind: "下一場戰鬥 →", to_shop: "整備 →", collect: "領取戰利品 →",
@@ -4766,7 +4777,7 @@
         atk_power: "攻撃力", combo: "連撃",
         hands_left: "残り攻撃", discards_left: "残り捨て札",
         hand_play: "⚔️ 攻撃", card_discard: "捨て札",
-        skills: "📊 スキル", scrolls: "📜 巻物", deck: "🃏 デッキ",
+        hint_btn: "おすすめ", skills: "📊 スキル", scrolls: "📜 巻物", deck: "🃏 デッキ",
         deck_n: "🃏 デッキ ({n})", log_joker_expired: "{name} が消滅した", log_glass_break: "💎 グラスカードが砕けた", hand_hint: "攻撃するカードを選択。",
         combo_preview: "スキル | 予想ダメージ：0",
         shop: "ショップ", next_blind: "次の戦闘へ →", to_shop: "整備へ →", collect: "戦利品を受取 →",
@@ -5276,6 +5287,55 @@
       const nowLevel = state.handLevels?.[hand.handType] || 1;
       handPreview.textContent = `${hand.name} Lv.${nowLevel} | ${t("dmg")}: ${estimated.toLocaleString()}`;
       handPreview.classList.add("show");
+    }
+
+    // 카드 묶음의 예상 데미지(기본 족보+카드칩+플래닛 레벨 보너스 기준, 조커는 제외)
+    function estimateHandDamage(cards) {
+      if (!cards.length) return 0;
+      const hand = scoreHand(cards);
+      const cardChips = cards.reduce((sum, c) => sum + cardScoreChips(c), 0);
+      let chips = hand.chips + cardChips;
+      let mult = hand.mult;
+      const lvl = (state.handLevels?.[hand.handType] || 1) - 1;
+      if (lvl > 0) {
+        const planet = planetPool.find(p => p.hand === hand.handType);
+        if (planet) { chips += planet.chipsBonus * lvl; mult += planet.multBonus * lvl; }
+      }
+      return Math.floor(chips * mult);
+    }
+
+    // 현재 손패에서 만들 수 있는 최고 데미지 조합(최대 선택 장수 이내)을 찾는다. 8장 이하라 전수탐색.
+    function bestHintCombo() {
+      const pool = state.hand.filter(c => !isCardBossDisabled(c));
+      const max = state.bossModifier?.id === "max3cards" ? 3 : 5;
+      const n = pool.length;
+      let best = [], bestDmg = -1;
+      for (let mask = 1; mask < (1 << n); mask++) {
+        let cnt = 0;
+        for (let i = 0; i < n; i++) if (mask & (1 << i)) cnt++;
+        if (cnt > max) continue;
+        const sub = [];
+        for (let i = 0; i < n; i++) if (mask & (1 << i)) sub.push(pool[i]);
+        const dmg = estimateHandDamage(sub);
+        if (dmg > bestDmg) { bestDmg = dmg; best = sub; }
+      }
+      return best;
+    }
+
+    let _hintTimer = null;
+    function clearHintCards() {
+      cardsWrap.querySelectorAll(".card.hint").forEach(el => el.classList.remove("hint"));
+      if (_hintTimer) { clearTimeout(_hintTimer); _hintTimer = null; }
+    }
+    function showBestHint() {
+      if (state.gameEnded) return;
+      if (cardsWrap.querySelector(".card.hint")) { clearHintCards(); return; } // 토글: 떠있으면 끔
+      const combo = bestHintCombo();
+      if (!combo.length) return;
+      const ids = new Set(combo.map(c => String(c.id)));
+      Array.from(cardsWrap.children).forEach(el => { if (ids.has(el.dataset.id)) el.classList.add("hint"); });
+      AudioFX.play("select");
+      _hintTimer = setTimeout(clearHintCards, 3500); // 잠깐 보조 — 핵심 판단은 플레이어 몫
     }
 
     function showSellPopup(amount, anchorEl) {
@@ -7418,6 +7478,7 @@
       renderDeckModal();
     });
     $("#closeDeckBtn").addEventListener("click", closeDeckModal);
+    $("#hintBtn").addEventListener("click", showBestHint);
     $("#handsInfoBtn").addEventListener("click", openHandsModal);
     $("#closeHandsBtn").addEventListener("click", closeHandsModal);
     /* tarotInfoBtn 제거 — 도감 '타로' 탭으로 일원화 */
