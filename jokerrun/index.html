@@ -5493,6 +5493,7 @@
         if (planet.special === "absorb") { openSingularityPicker(planet); return; }
         const txt = applySpecialPlanet(planet);
         state.planetCards.splice(pi, 1);
+        (state.jokers || []).forEach(j => { if (j.id === "planetChip") j.counter = (j.counter || 0) + 1; });   // 행성 수호자: 특수 행성도 누적(이 분기 빠져 누락되던 버그)
         flashPlanetCard(planet, txt);
         renderHUD();
         refreshConsumables();
