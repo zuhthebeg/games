@@ -5657,15 +5657,16 @@
       const banner = document.getElementById("bossBanner");
       if (!banner) return;
       if (!state.isBossBlind) {
-        // 잡몹/정예: 무기강화(planet) 몬스터 아트를 ante+라운드 기준 결정론으로 표시
+        // 잡몹/정예: 공용 몬스터 아트(/lib/monsters)를 ante+라운드 기준 결정론으로 표시
         const _ri = state.roundIndex || 0;
-        const _mon = planetPool[(state.ante * 3 + _ri) % planetPool.length];
-        const _art = `planets/${_mon.id}.webp?v=2`;
+        const _mon = ENDLESS_MONSTERS[(state.ante * 3 + _ri) % ENDLESS_MONSTERS.length];
+        const _art = `/lib/monsters/${_mon.img}.png`;
+        const _mname = LANG === "en" ? _mon.en : LANG === "zh-Hant" ? _mon.zh : LANG === "ja" ? _mon.ja : _mon.ko;
         const _el = t(_ri === 0 ? "mob" : "elite");
         banner.hidden = false;
         banner.innerHTML = `
           <img class="boss-art" src="${_art}" alt="" draggable="false" onerror="this.style.display='none'">
-          <div class="boss-info"><span class="boss-name">${_el}</span></div>`;
+          <div class="boss-info"><span class="boss-name">${_el} · ${_mname}</span></div>`;
         return;
       }
       const ante = state.ante;
