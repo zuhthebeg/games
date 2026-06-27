@@ -3259,7 +3259,7 @@
       // ── 진짜 곱연격(×) 조커 — 신화/전설급, 빌드를 폭발시키는 핵심 ──
       { id: "fullmoon", name: "만월", cost: 12, rarity: "rare", mult: true, desc: "무조건 연격 ×2.5", detail: "기술·무늬 상관없이 매 공격 연격 ×2.5. 단순하지만 강력한 곱연산.", apply(ctx) { if (ctx.cards.length) { ctx.mult *= 2.5; ctx.activate("fullmoon"); } } },
       { id: "reaperking", name: "사신왕", cost: 14, rarity: "rare", mult: true, desc: "포카드·스플이면 연격 ×5", detail: "기술이 포카드 또는 스트레이트 플러시면 연격 ×5. 고기술 특화 폭발기.", apply(ctx) { if (ctx.handType === "FOUR" || isFiveHand(ctx.handType) || isStraightFlushHand(ctx.handType)) { ctx.mult *= 5; ctx.activate("reaperking"); } } },
-      { id: "berserk", name: "광폭", cost: 13, rarity: "rare", mult: true, desc: "조커 5칸 가득이면 연격 ×4", detail: "보유 조커가 5개로 가득 차면 연격 ×4. 슬롯을 다 채울수록 보상.", apply(ctx) { if (jokerSlotsFull()) { ctx.mult *= 4; ctx.activate("berserk"); } } },
+      { id: "berserk", name: "광폭", cost: 13, rarity: "rare", mult: true, desc: "조커 5칸 가득이면 연격 ×4 (발동 후 5% 확률로 조커 1장 폭파)", detail: "보유 조커가 5개로 가득 차면 연격 ×4. 단, 발동할 때마다 5% 확률로 보유 조커 1장이 무작위로 폭파된다(광폭 자신 포함).", apply(ctx) { if (jokerSlotsFull()) { ctx.mult *= 4; ctx.activate("berserk"); if (Math.random() < 0.05) ctx.berserkBlow = true; } } },
       { id: "bloodmoon", name: "블러드문", cost: 16, rarity: "legendary", mult: true, desc: "K·Q 1장당 연격 ×1.5", detail: "플레이한 킹(K)·퀸(Q) 1장마다 연격 ×1.5 누적(2장이면 ×2.25). 페이스 덱의 끝판왕.", apply(ctx) { const n = ctx.scored.filter(c => c.rank === 12 || c.rank === 13).length; if (n > 0) { ctx.mult *= Math.pow(1.5, n); ctx.activate("bloodmoon"); } } },
       { id: "heartbreaker", name: "하트브레이커", cost: 11, rarity: "rare", desc: "하트 카드 1장당 연격 +5", detail: "채점한 하트(♥) 카드 1장마다 연격 +5. 하트 플러시 빌드의 핵심.", apply(ctx) { const n = ctx.scored.filter(c => c.suit === "heart").length; if (n > 0) { ctx.mult += n * 5; ctx.activate("heartbreaker"); } } },
       { id: "constellation", name: "은하", cost: 18, rarity: "legendary", mult: true, desc: "행성 사용 누적마다 연격 ×0.2씩 영구 증가", detail: "지금까지 사용한 행성 카드 1장당 연격 배율이 영구히 +0.2. 행성을 모을수록 곱연산이 무한 확장.", apply(ctx, self) { const used = Object.values(state.handLevels || {}).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0); const m = 1 + used * 0.2; if (m > 1) { ctx.mult *= m; ctx.activate("constellation"); } self.desc = `행성 사용 ${used}회 → 연격 ×${m.toFixed(1)}`; } },
@@ -3270,7 +3270,7 @@
       { id: "blueprint", name: "모사", cost: 10, rarity: "legendary", desc: "바로 오른쪽 조커 효과 복사", detail: "데미지 계산 시 바로 오른쪽에 있는 조커의 효과를 한 번 더 발동(복사). 강한 조커 왼쪽에 두면 2배 빌드.", apply(ctx, self) { const idx = state.jokers.indexOf(self); const t = state.jokers[idx + 1]; if (t && t.id !== "blueprint" && t.id !== "brainstorm") { t.apply(ctx, t); ctx.activate("blueprint"); } } },
       { id: "brainstorm", name: "오마주", cost: 10, rarity: "legendary", desc: "맨 왼쪽 조커 효과 복사", detail: "데미지 계산 시 맨 왼쪽 조커의 효과를 한 번 더 발동(복사).", apply(ctx, self) { const t = state.jokers.find(j => j.id !== "blueprint" && j.id !== "brainstorm"); if (t && t !== self) { t.apply(ctx, t); ctx.activate("brainstorm"); } } },
       { id: "baron", name: "섭정", cost: 12, rarity: "legendary", mult: true, desc: "손에 든 K 1장당 연격 ×1.5", detail: "데미지 계산 시 플레이 안 하고 손에 남은 킹(K) 1장당 연격 ×1.5. 손에 K를 쥘수록 폭발.", apply(ctx) { const played = new Set(ctx.scored.map(c => String(c.id))); const heldK = (state.hand || []).filter(c => !played.has(String(c.id)) && c.rank === 13).length; if (heldK > 0) { ctx.mult = Math.round(ctx.mult * Math.pow(1.5, heldK) * 100) / 100; ctx.activate("baron"); } } },
-      { id: "hack", name: "해커", cost: 8, rarity: "rare", desc: "플레이한 2~5 카드 데미지 재발동", detail: "플레이한 2·3·4·5 카드의 데미지 계산이 한 번 더 발동(공격력·강화 추가).", apply() {} },
+      { id: "hack", name: "해커", cost: 8, rarity: "rare", desc: "플레이한 2·3·4·5 숫자 카드를 한 번 더 트리거", detail: "플레이한 카드 중 2·3·4·5 숫자 카드는 데미지 계산이 한 번 더 발동된다 — 그 카드의 공격력과 강화 효과가 두 번씩 적용된다.", apply() {} },
       { id: "sockBuskin", name: "광대극", cost: 9, rarity: "rare", desc: "플레이한 J/Q/K 카드 데미지 재발동", detail: "플레이한 J·Q·K 카드의 데미지 계산이 한 번 더 발동.", apply() {} },
       { id: "hangingChad", name: "첫수", cost: 6, rarity: "uncommon", desc: "플레이한 첫 카드 2회 추가 재발동", detail: "플레이한 첫 번째 카드가 2번 더 데미지 처리(총 3회).", apply() {} },
       { id: "retriggerAll", name: "앙코르", cost: 16, rarity: "legendary", desc: "플레이한 모든 카드 데미지 재발동", detail: "플레이한 모든 카드의 데미지 계산이 한 번 더 발동. 공격력·강화 전부 2배.", apply() {} },
@@ -3282,7 +3282,7 @@
       { id: "astro", name: "점성술사", cost: 8, rarity: "uncommon", desc: "보유 행성 1개당 연격 +2", detail: "소모품 슬롯에 든 행성 카드 1개당 연격 +2.", apply(ctx) { const n = (state.planetCards?.length || 0); if (n > 0) { ctx.mult += n * 2; ctx.activate("astro"); } } },
       { id: "coinFlip", name: "럭키 코인", cost: 7, rarity: "uncommon", desc: "50% 확률로 공격력 +120", detail: "매 공격 50% 확률로 공격력 +120. 동전 던지기.", apply(ctx) { if (Math.random() < 0.5) { ctx.chips += 120; ctx.activate("coinFlip"); } } },
       { id: "solo", name: "독고다이", cost: 13, rarity: "legendary", desc: "정확히 1장 플레이 시 공격력 +1000", detail: "정확히 1장만 선택해 플레이하면 공격력 +1000. 한 장 올인 빌드의 핵심.", apply(ctx) { if (ctx.cards.length === 1) { ctx.chips += 1000; ctx.activate("solo"); } } },
-      { id: "mystic", name: "신비주의자", cost: 9, rarity: "rare", mult: true, desc: "보유 타로 1장당 연격 ×1.5", detail: "소모품 슬롯의 타로 카드 1장당 연격 ×1.5(곱연산).", apply(ctx) { const n = (state.tarotCards?.length || 0); if (n > 0) { ctx.mult *= Math.pow(1.5, n); ctx.activate("mystic"); } } },
+      { id: "mystic", name: "신비주의자", cost: 12, rarity: "legendary", mult: true, desc: "보유 타로 1장당 연격 ×1.5", detail: "소모품 슬롯의 타로 카드 1장당 연격 ×1.5(곱연산). 타로를 하나씩 흔들며 누적된다.", apply(ctx) { /* 연출은 playSelected에서 타로 1장씩 ×1.5 처리(아래 mystic 전용 블록) */ } },
       { id: "starfall", name: "유성우", cost: 14, rarity: "legendary", mult: true, desc: "스트레이트 플러시 이상이면 연격 x5", detail: "스트레이트 플러시·로열 플러시·플러시 파이브를 만들면 연격 x5.", apply(ctx) { if (["STRAIGHT_FLUSH", "ROYAL_FLUSH", "FLUSH_FIVE"].includes(ctx.handType)) { ctx.mult *= 5; ctx.activate("starfall"); } } },
       { id: "fader", name: "소이탄", cost: 6, rarity: "uncommon", initCounter: 30, desc: "연격 +30 시작, 공격마다 -2 → 0이면 소멸", detail: "장착 시 연격 +30. 공격할 때마다 2씩 줄고 0이 되면 사라진다. 초반 한방용.", apply(ctx, self) { if (self.counter == null) self.counter = 30; if (self.counter > 0) { ctx.mult += self.counter; ctx.activate("fader"); } self.counter -= 2; if (self.counter <= 0) self.expired = true; self.desc = "연격 +" + Math.max(0, self.counter) + " (공격마다 -2)"; } },
       { id: "charger", name: "방전 전지", cost: 6, rarity: "uncommon", initCounter: 100, desc: "공격력 +100 시작, 공격마다 -5 → 0이면 소멸", detail: "장착 시 공격력 +100. 공격할 때마다 5씩 줄고 0이 되면 사라진다.", apply(ctx, self) { if (self.counter == null) self.counter = 100; if (self.counter > 0) { ctx.chips += self.counter; ctx.activate("charger"); } self.counter -= 5; if (self.counter <= 0) self.expired = true; self.desc = "공격력 +" + Math.max(0, self.counter) + " (공격마다 -5)"; } },
@@ -3615,11 +3615,11 @@
       flushBank:{name:"Flush Bank",desc:"Flush: ATK +70"}, allShapes:{name:"All Shapes",desc:"5 cards & 4 suits: Combo x2.5"},
       echo:{name:"Echo",desc:"Same skill as last: Combo x2"}, lowRoller:{name:"Low Roller",desc:"All 5 or below: ATK +45"},
       fullmoon:{name:"Full Moon",desc:"Always Combo x2.5"}, reaperking:{name:"Reaper King",desc:"Four of a Kind/SF: Combo x5"},
-      berserk:{name:"Berserk",desc:"Joker slots full: Combo x4"}, bloodmoon:{name:"Blood Moon",desc:"Combo x1.5 per K/Q"}, heartbreaker:{name:"Heartbreaker",desc:"Combo +5 per heart"}, onslaught:{name:"Onslaught",desc:"Combo +10 per attack left"}, ascetic:{name:"Ascetic",desc:"Combo × discards remaining"},
+      berserk:{name:"Berserk",desc:"Joker slots full: Combo x4 (5% chance to destroy a joker on trigger)"}, bloodmoon:{name:"Blood Moon",desc:"Combo x1.5 per K/Q"}, heartbreaker:{name:"Heartbreaker",desc:"Combo +5 per heart"}, onslaught:{name:"Onslaught",desc:"Combo +10 per attack left"}, ascetic:{name:"Ascetic",desc:"Combo × discards remaining"},
       constellation:{name:"Galaxy",desc:"Combo +0.2 permanently per planet used"}, diviner:{name:"Diviner",desc:"Combo +0.3 permanently per scroll used"}, vampire:{name:"Devourer",desc:"Absorb enhanced cards → Combo +0.25 permanently"},
       chaos:{name:"Chaos",desc:"25%: Combo x6, else x0.5"}, blueprint:{name:"Tracing",desc:"Copies the joker to its right"},
       brainstorm:{name:"Homage",desc:"Copies the leftmost joker"}, baron:{name:"Regent",desc:"Combo x1.5 per K in hand"},
-      hack:{name:"Hacker",desc:"Retrigger played 2~5 cards"}, sockBuskin:{name:"Curtain Call",desc:"Retrigger played J/Q/K"},
+      hack:{name:"Hacker",desc:"Played 2·3·4·5 cards trigger one extra time (ATK & enhancement count twice)"}, sockBuskin:{name:"Curtain Call",desc:"Retrigger played J/Q/K"},
       hangingChad:{name:"First Strike",desc:"First played card triggers 2 extra times"}, retriggerAll:{name:"Encore",desc:"Retrigger all played cards"},
       spadeCount:{name:"Count Spade",desc:"ATK +12 per spade"}, clubLuck:{name:"Clover Luck",desc:"Combo +1 per club"},
       lowball:{name:"Minimal",desc:"All scoring cards 10 or below: ATK +55"}, twins:{name:"Twins",desc:"Exactly 2 cards: Combo x2"},
@@ -3701,11 +3701,11 @@
       flushBank:{name:"同花金庫",desc:"同花：攻擊力 +70"}, allShapes:{name:"萬物商",desc:"5張+4花色：連擊 x2.5"},
       echo:{name:"回聲",desc:"與上次相同技能：連擊 x2"}, lowRoller:{name:"小賭客",desc:"全部5以下：攻擊力 +45"},
       fullmoon:{name:"滿月",desc:"無條件 連擊 ×2.5"}, reaperking:{name:"死神王",desc:"四條·同花順：連擊 ×5"},
-      berserk:{name:"狂暴",desc:"小丑欄位滿時：連擊 ×4"}, bloodmoon:{name:"血月",desc:"每張K·Q 連擊 ×1.5"}, heartbreaker:{name:"碎心者",desc:"每張紅心 連擊 +5"}, onslaught:{name:"總攻",desc:"每剩餘1次攻擊 連擊+10"}, ascetic:{name:"禁慾者",desc:"連擊×剩餘棄牌數"},
+      berserk:{name:"狂暴",desc:"小丑欄位滿時：連擊 ×4（發動後5%機率炸毀1個小丑）"}, bloodmoon:{name:"血月",desc:"每張K·Q 連擊 ×1.5"}, heartbreaker:{name:"碎心者",desc:"每張紅心 連擊 +5"}, onslaught:{name:"總攻",desc:"每剩餘1次攻擊 連擊+10"}, ascetic:{name:"禁慾者",desc:"連擊×剩餘棄牌數"},
       constellation:{name:"銀河",desc:"每次使用行星累積 連擊永久 +0.2"}, diviner:{name:"占卜師",desc:"每次使用卷軸累積 連擊永久 +0.3"}, vampire:{name:"吞噬者",desc:"每次出強化牌吸收 → 連擊永久 +0.25"},
       chaos:{name:"混沌",desc:"25%：連擊 ×6 / 否則 ×0.5"}, blueprint:{name:"臨摹",desc:"複製右側的小丑效果"},
       brainstorm:{name:"致敬",desc:"複製最左側的小丑效果"}, baron:{name:"攝政",desc:"每張手中的K 連擊 ×1.5"},
-      hack:{name:"駭客",desc:"已出的2~5牌 傷害再次觸發"}, sockBuskin:{name:"丑角戲",desc:"已出的J/Q/K牌 傷害再次觸發"},
+      hack:{name:"駭客",desc:"已出的2·3·4·5數字牌 再觸發一次（攻擊力與強化各計算兩次）"}, sockBuskin:{name:"丑角戲",desc:"已出的J/Q/K牌 傷害再次觸發"},
       hangingChad:{name:"首擊",desc:"已出的第一張牌 額外觸發2次"}, retriggerAll:{name:"安可",desc:"已出的所有牌 傷害再次觸發"},
       spadeCount:{name:"黑桃伯爵",desc:"每張黑桃 攻擊力 +12"}, clubLuck:{name:"幸運草",desc:"每張梅花 連擊 +1"},
       lowball:{name:"極簡",desc:"計分牌全部10以下：攻擊力 +55"}, twins:{name:"雙胞胎",desc:"正好出2張：連擊 x2"},
@@ -3787,11 +3787,11 @@
       flushBank:{name:"フラッシュ金庫",desc:"フラッシュ：攻撃力 +70"}, allShapes:{name:"万物商",desc:"5枚+4スート：連撃 x2.5"},
       echo:{name:"エコー",desc:"前回と同じスキル：連撃 x2"}, lowRoller:{name:"ローローラー",desc:"全て5以下：攻撃力 +45"},
       fullmoon:{name:"満月",desc:"無条件 連撃 ×2.5"}, reaperking:{name:"死神王",desc:"フォーカード・SF：連撃 ×5"},
-      berserk:{name:"バーサーク",desc:"ジョーカー枠が満杯時：連撃 ×4"}, bloodmoon:{name:"ブラッドムーン",desc:"K・Q 1枚毎 連撃 ×1.5"}, heartbreaker:{name:"ハートブレイカー",desc:"ハート1枚毎 連撃 +5"}, onslaught:{name:"総攻撃",desc:"残り攻撃1回ごと連撃+10"}, ascetic:{name:"禁欲者",desc:"連撃×残り捨て札数"},
+      berserk:{name:"バーサーク",desc:"ジョーカー枠が満杯時：連撃 ×4（発動後5%でジョーカー1枚を破壊）"}, bloodmoon:{name:"ブラッドムーン",desc:"K・Q 1枚毎 連撃 ×1.5"}, heartbreaker:{name:"ハートブレイカー",desc:"ハート1枚毎 連撃 +5"}, onslaught:{name:"総攻撃",desc:"残り攻撃1回ごと連撃+10"}, ascetic:{name:"禁欲者",desc:"連撃×残り捨て札数"},
       constellation:{name:"銀河",desc:"惑星使用の累積毎 連撃永久 +0.2"}, diviner:{name:"占い師",desc:"巻物使用の累積毎 連撃永久 +0.3"}, vampire:{name:"貪食鬼",desc:"強化カードプレイ毎に吸収 → 連撃永久 +0.25"},
       chaos:{name:"カオス",desc:"25%：連撃 ×6 / 失敗 ×0.5"}, blueprint:{name:"トレース",desc:"右隣のジョーカー効果をコピー"},
       brainstorm:{name:"オマージュ",desc:"左端のジョーカー効果をコピー"}, baron:{name:"摂政",desc:"手札のK1枚毎 連撃 ×1.5"},
-      hack:{name:"ハッカー",desc:"プレイした2~5のカード ダメージ再発動"}, sockBuskin:{name:"道化芝居",desc:"プレイしたJ/Q/K ダメージ再発動"},
+      hack:{name:"ハッカー",desc:"プレイした2・3・4・5の数字カードをもう一度発動（攻撃力・強化が2回）"}, sockBuskin:{name:"道化芝居",desc:"プレイしたJ/Q/K ダメージ再発動"},
       hangingChad:{name:"初撃",desc:"プレイした最初のカード 追加2回発動"}, retriggerAll:{name:"アンコール",desc:"プレイした全カード ダメージ再発動"},
       spadeCount:{name:"スペード伯爵",desc:"スペード1枚毎 攻撃力 +12"}, clubLuck:{name:"クローバーの幸運",desc:"クラブ1枚毎 連撃 +1"},
       lowball:{name:"ミニマル",desc:"得点カード全て10以下：攻撃力 +55"}, twins:{name:"双子",desc:"ちょうど2枚プレイ：連撃 x2"},
@@ -3975,7 +3975,7 @@
     function collectionData(kind) {
       if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: aimg(`tarot/${t.id}.webp?v=5`), badge: { label: "타로", color: "#b56ad6" } }));
       if (kind === "planet") return planetPool.map(p => { if (p.special) return { id: p.id, name: p.name, desc: p.desc, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "특수", color: "#a06bff" } }; const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 기술 영구 강화 (+${p.chipsBonus}공격력 / +${p.multBonus}연격)`, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "행성", color: "#4a84ff" } }; });
-      return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: aimg(`jokers/${j.id}.webp?v=2`), glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
+      return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: aimg(`jokers/${j.id}.webp?v=3`), glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
     }
     function renderCollection(kind) {
       _collectionTab = kind;
@@ -5240,7 +5240,7 @@
           d.style.transform = "";
           d.style.boxShadow = "";
           // 타로 등으로 무늬/랭크가 바뀐 카드는 내용 갱신(diff 렌더가 DOM 재사용해 안 바뀌던 버그 수정)
-          const sig = card.suit + ":" + card.rank + ":" + (card.enh || "");
+          const sig = card.suit + ":" + card.rank + ":" + (card.enh || "") + ":" + (isCardBossDisabled(card) ? "L" : "");
           if (d.dataset.sig !== sig) { d.innerHTML = cardInnerHTML(card); d.dataset.sig = sig; }
         }
         d.className = `card ${suitClass[card.suit]} ${card.enh ? "enh-" + card.enh : ""} ${isCardBossDisabled(card) ? "boss-disabled" : ""} ${state.selected.has(card.id) ? "selected" : ""}`;
@@ -5718,10 +5718,10 @@
         const _ed = editionOf(joker);
         tile.className = "mini-tile" + (joker.negative ? " negative" : (_ed ? " ed-" + _ed.key : ""));
         if (!joker.negative && !_ed) tile.style.borderColor = _r.color + "88";
-        tile.innerHTML = `<div class="mini-art"><img src="${aimg(`jokers/${joker.id}.webp?v=2`)}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}`;
+        tile.innerHTML = `<div class="mini-art"><img src="${aimg(`jokers/${joker.id}.webp?v=3`)}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}`;
         tile.addEventListener("click", () => {
           openDetailPopup({
-            imgSrc: `jokers/${joker.id}.webp?v=2`,
+            imgSrc: `jokers/${joker.id}.webp?v=3`,
             glyph: jokerGlyphClass[joker.id] || "joker-duo",
             name: joker.name, badgeLabel: _r.label, badgeColor: _r.color,
             negative: !!joker.negative, edition: joker.edition,
@@ -5787,7 +5787,7 @@
       const _r = rarityOf(joker);
       const sell = jokerSellValue(joker);
       openDetailPopup({
-        imgSrc: `jokers/${joker.id}.webp?v=2`,
+        imgSrc: `jokers/${joker.id}.webp?v=3`,
         glyph: jokerGlyphClass[joker.id] || "joker-duo",
         name: joker.name,
         badgeLabel: _r.label, badgeColor: _r.color,
@@ -5873,7 +5873,7 @@
           const _r = rarityOf(joker);
           box.style.setProperty("--rar", _r.color);
           box.innerHTML = `
-            <img class="joker-art" src="${aimg(`jokers/${joker.id}.webp?v=2`)}" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
+            <img class="joker-art" src="${aimg(`jokers/${joker.id}.webp?v=3`)}" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
             <span class="joker-grad" aria-hidden="true"></span>
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
             ${joker.negative ? '<span class="joker-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}
@@ -6433,7 +6433,7 @@
       wrap.className = "joker-flash";
       const fb = `<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\' style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem\\'></span>`;
       wrap.innerHTML = `<div class="jf-card" style="border-color:${r.color};box-shadow:0 0 36px ${r.color}99">
-        <img src="${aimg(`jokers/${joker.id}.webp?v=2`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">
+        <img src="${aimg(`jokers/${joker.id}.webp?v=3`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">
         <div class="jf-tag" style="color:${isMult ? "#ff8a98" : "#8fd6ff"}">${t("ui_triggered")}</div>
         <div class="jf-name">${joker.name}</div>
       </div>`;
@@ -6656,6 +6656,26 @@
             const bpTarget = bpResolve(joker);
             if (!bpTarget || isPerCardJoker(bpTarget)) { _skip = true; }   // 대상이 카드별이면 카드 루프에서 복사 발동됨 → 효과 스킵(에디션은 아래서)
             else { bpTarget.apply(ctx, bpTarget); ctx.activate(joker.id); label = t("ui_joker_copy", {joker: joker.name, target: bpTarget.name}); }
+          } else if (joker.id === "mystic") {
+            // 신비주의자: 보유 타로를 1장씩 흔들며 연격 ×1.5 누적 연출
+            _skip = true;
+            const _tcs = state.tarotCards || [];
+            if (_tcs.length > 0) {
+              const _tels = Array.from(document.querySelectorAll(".planet-card-mini.tarot-mini"));
+              const _jel = jokerArea.querySelector(`.joker[data-joker-id="${joker.id}"]`);
+              for (let _mi = 0; _mi < _tcs.length; _mi++) {
+                ctx.mult = Math.round(ctx.mult * 1.5 * 100) / 100;
+                const _tel = _tels[_mi];
+                if (_tel) { _tel.classList.add("scoring-pop"); jrFloat(_tel, "×1.5", "mult"); setTimeout(() => _tel.classList.remove("scoring-pop"), 360); }
+                if (_jel) { _jel.classList.remove("active"); void _jel.offsetWidth; _jel.classList.add("active"); }
+                ps.head.innerHTML = `<b style="color:var(--gold)">${joker.name}</b> · ${_mi + 1}/${_tcs.length} ×1.5`;
+                ps.setReadout(ctx.chips, ctx.mult);
+                try { AudioFX.play("select"); JuiceFX.sfx("mult"); } catch (_) {}
+                await wait(360);
+              }
+              if (_jel) setTimeout(() => _jel.classList.remove("active"), 500);
+              ctx.activate("mystic");
+            }
           } else {
             joker.apply(ctx, joker);
           }
@@ -6694,6 +6714,18 @@
         }
       }
       await wait(260);
+      // 광폭: 발동 시 5% 확률로 보유 조커 1장 무작위 폭파(자신 포함)
+      if (ctx.berserkBlow && (state.jokers || []).length > 0) {
+        const _bi = Math.floor(Math.random() * state.jokers.length);
+        const _victim = state.jokers[_bi];
+        const _vel = jokerArea.querySelector(`.joker[data-joker-id="${_victim.id}"]`);
+        if (_vel) { _vel.classList.add("shatter"); jrFloat(_vel, "💥", "mult"); }
+        try { AudioFX.play("select"); JuiceFX.sfx("slam"); JuiceFX.shake(10); } catch (_) {}
+        await wait(560);
+        state.jokers.splice(_bi, 1);
+        addLog("💥 " + _victim.name);
+        renderJokers();
+      }
       // 유리 카드 깨짐: 플레이한 글래스 카드가 25% 확률로 깨져 덱에서 영구 삭제 + 깨짐 연출
       const _broken = scoreCards.filter(c => c.enh === "glass" && Math.random() < 0.25);
       if (_broken.length) {
@@ -7005,14 +7037,14 @@
         const full = jokerSlotsFull();
         const afford = state.money >= cost;
         jRow.appendChild(buildShopTile({
-          imgSrc: `jokers/${joker.id}.webp?v=2`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
+          imgSrc: `jokers/${joker.id}.webp?v=3`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
           name: (_ed ? _ed.icon + " " : "") + joker.name, price: cost, afford,
           borderColor: _ed ? _ed.color : _r.color,
           edClass: _ed ? "ed-" + _ed.key : null,
           cornerIcon: _ed ? _ed.icon : null, cornerTitle: _ed ? `${_ed.label} — ${_ed.fx}` : null,
           badge: { label: _r.label, color: _r.color },
           onClick: () => openDetailPopup({
-            imgSrc: `jokers/${joker.id}.webp?v=2`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
+            imgSrc: `jokers/${joker.id}.webp?v=3`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
             name: joker.name, badgeLabel: _r.label, badgeColor: _r.color, edition: joker.edition,
             desc: joker.detail || joker.desc,
             costLine: t("pop_shop_joker_cost", {cost, sell: jokerSellValue(joker)}),
