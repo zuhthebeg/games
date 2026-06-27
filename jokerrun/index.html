@@ -537,6 +537,16 @@
       text-shadow: 0 0 8px rgba(0, 0, 0, 0.7), 0 1px 2px rgba(0,0,0,.6);
     }
 
+    /* 누적형 조커: 현재 누적값을 카드 상단에 컴팩트 배지로 표시(눈덩이·처형인·단두대 등) */
+    .joker-accum {
+      position: absolute; top: 2px; left: 2px; right: 2px; z-index: 3;
+      font-size: 9px; font-weight: 900; line-height: 1.25; color: #fff;
+      background: linear-gradient(180deg, rgba(255,150,40,.95), rgba(190,70,20,.95));
+      border-radius: 5px; padding: 1px 3px; text-align: center;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,.5);
+    }
+
     .joker-desc-mini {
       display: block;
       font-size: 8px;
@@ -3411,6 +3421,24 @@
       discardCull:   self => `⚔ +${self.counter || 0}`
     };
     function jokerAccumLine(joker){ const f = joker && ACCUM_JOKERS[joker.id]; return f ? f(joker) : null; }
+    // 카드 상단 컴팩트 누적 배지(누적값 0이면 표시 안 함) — 누적형 조커의 현재치를 한눈에
+    function jokerCardAccum(joker){
+      if (!joker) return null;
+      const c = joker.counter || 0;
+      switch (joker.id) {
+        case "snowball": case "compound": case "tarotMult": return c > 0 ? `⚡+${c}` : null;
+        case "rerollMult": return c > 0 ? `⚡+${(c * 0.5).toFixed(1)}` : null;
+        case "cullStack":  return c > 0 ? `⚡+${(c * 0.1).toFixed(1)}` : null;
+        case "magnet":     return c > 0 ? `⚔+${c}` : null;
+        case "planetChip": return c > 0 ? `⚔+${c * 10}` : null;
+        case "discardCull":return c > 0 ? `⚔+${c}` : null;
+        case "vampire":    return c > 0 ? `×${(1 + c).toFixed(2)}` : null;
+        case "cull": { const ch = joker.chipCounter || 0; return (ch > 0 || c > 0) ? `⚔+${ch} ×${(1 + c).toFixed(1)}` : null; }
+        case "constellation": { const u = Object.values(state.handLevels || {}).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0); return u > 0 ? `×${(1 + u * 0.2).toFixed(1)}` : null; }
+        case "diviner": { const u = state.tarotsUsed || 0; return u > 0 ? `×${(1 + u * 0.3).toFixed(1)}` : null; }
+      }
+      return null;
+    }
     // 등급 가중 랜덤 추첨 (등장확률: 등급 높을수록 낮음). 희귀 사냥꾼 바우처면 전설/신화 가중 ↑
     function rarityWeight(r){
       const base = RARITY[r]?.weight || 100;
@@ -5880,6 +5908,7 @@
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
             ${joker.negative ? '<span class="joker-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}
             ${_ed ? `<span class="joker-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}
+            ${(() => { const _a = jokerCardAccum(joker); return _a ? `<span class="joker-accum">${_a}</span>` : ""; })()}
             <span class="joker-name-mini">${joker.name}</span>
             <span class="joker-grip" aria-hidden="true" title="끌어서 순서 이동">⠿⠿⠿</span>
           `;
