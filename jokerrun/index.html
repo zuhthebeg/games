@@ -6548,7 +6548,7 @@
       }
       const ctx = {
         cards,
-        scored: scoreCards,   // 데미지에 실제 기여하는 카드(키커 제외) — 무늬/랭크 조건 조커는 이걸 본다
+        scored: scoreCards.filter(c => !isCardBossDisabled(c)),   // 데미지에 실제 기여하는 카드(키커·봉인 제외) — 무늬/랭크 조건 조커는 이걸 본다(봉인 카드는 조커 트리거 X)
         handType: hand.handType,
         chips,
         mult,
@@ -6572,6 +6572,7 @@
       // 1b) 유효 카드만 왼쪽→오른쪽 한 장씩 공격력 가산. 재발동(리트리거) 조커가 있으면 그 카드를 추가로 더 처리.
       for (let ci = 0; ci < scoreCards.length; ci++) {
         const card = scoreCards[ci];
+        if (isCardBossDisabled(card)) continue;   // 보스 봉인 카드: 점수·강화·카드별 조커 전부 발동 안 함(발라트로식)
         const retrig = cardRetriggers(card, ci);   // 추가 발동 횟수
         const cel = ps.map[card.id];
         for (let t = 0; t <= retrig; t++) {
@@ -6635,7 +6636,7 @@
       }
       // 스틸 카드: 플레이 안 하고 손에 남은 스틸 1장당 연격 ×1.5
       const _playedSet = new Set(cards.map(c => String(c.id)));
-      const steelCards = (state.hand || []).filter(c => !_playedSet.has(String(c.id)) && c.enh === "steel");
+      const steelCards = (state.hand || []).filter(c => !_playedSet.has(String(c.id)) && c.enh === "steel" && !isCardBossDisabled(c));
       if (steelCards.length > 0) {
         let _sdone = 0;
         for (const sc of steelCards) {
