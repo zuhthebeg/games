@@ -3493,42 +3493,42 @@
 
     // ── 타로 카드 (소모품, 행성과 슬롯 공유) ── 발라트로식
     const tarotPool = [
-      { id:"star",     name:"별",            need:1, desc:"선택 카드 → ◆다이아", apply(sel){ sel.forEach(c=>c.suit="diamond"); } },
-      { id:"moon",     name:"달",            need:1, desc:"선택 카드 → ♣클럽",   apply(sel){ sel.forEach(c=>c.suit="club"); } },
-      { id:"sun",      name:"태양",          need:1, desc:"선택 카드 → ♥하트",   apply(sel){ sel.forEach(c=>c.suit="heart"); } },
-      { id:"world",    name:"세계",          need:1, desc:"선택 카드 → ♠스페이드", apply(sel){ sel.forEach(c=>c.suit="spade"); } },
-      { id:"strength", name:"힘",            need:1, desc:"선택 카드 랭크 +1",   apply(sel){ sel.forEach(c=>{ if(c.rank<14) c.rank++; }); } },
-      { id:"death",    name:"죽음",          need:2, exact:true, desc:"정확히 2장: 오른쪽=왼쪽 복제(강화 포함)", apply(sel){ const a=sel[0], b=sel[1]; if(a&&b){ b.rank=a.rank; b.suit=a.suit; b.enh=a.enh; } } },
-      { id:"hermit",   name:"은둔자",        need:0, desc:"보유 자금 2배(최대 +🪙20)", apply(){ const add=Math.min(20, state.money||0); state.money=(state.money||0)+add; } },
-      { id:"wheel",    name:"운명의 수레바퀴", need:0, desc:"즉시 +🪙12",          apply(){ state.money=(state.money||0)+12; } },
+      { id:"star",     name:"별",            need:1, desc:"선택한 카드를 ◆다이아로 바꾼다", apply(sel){ sel.forEach(c=>c.suit="diamond"); } },
+      { id:"moon",     name:"달",            need:1, desc:"선택한 카드를 ♣클럽으로 바꾼다",   apply(sel){ sel.forEach(c=>c.suit="club"); } },
+      { id:"sun",      name:"태양",          need:1, desc:"선택한 카드를 ♥하트로 바꾼다",   apply(sel){ sel.forEach(c=>c.suit="heart"); } },
+      { id:"world",    name:"세계",          need:1, desc:"선택한 카드를 ♠스페이드로 바꾼다", apply(sel){ sel.forEach(c=>c.suit="spade"); } },
+      { id:"strength", name:"힘",            need:1, desc:"선택한 카드의 숫자를 1 올린다",   apply(sel){ sel.forEach(c=>{ if(c.rank<14) c.rank++; }); } },
+      { id:"death",    name:"죽음",          need:2, exact:true, desc:"2장 선택 — 오른쪽 카드가 왼쪽 카드를 복제한다(강화 포함)", apply(sel){ const a=sel[0], b=sel[1]; if(a&&b){ b.rank=a.rank; b.suit=a.suit; b.enh=a.enh; } } },
+      { id:"hermit",   name:"은둔자",        need:0, desc:"보유 자금을 2배로 늘린다(최대 +🪙20)", apply(){ const add=Math.min(20, state.money||0); state.money=(state.money||0)+add; } },
+      { id:"wheel",    name:"운명의 수레바퀴", need:0, desc:"즉시 🪙12를 얻는다",          apply(){ state.money=(state.money||0)+12; } },
       // ── 확장 타로 (카드 모델 내에서 동작: 무늬/랭크 변경·제거·자금. 도감/상점 자동 노출) ──
-      { id:"magician",  name:"마법사",   need:1, desc:"선택 카드 랭크 +2",        apply(sel){ sel.forEach(c=>{ c.rank=Math.min(14, c.rank+2); }); } },
-      { id:"empress",   name:"여황제",   need:1, desc:"선택 카드를 A로",          apply(sel){ sel.forEach(c=>{ c.rank=14; }); } },
-      { id:"emperor",   name:"황제",     need:0, desc:"무작위 타로 2장 생성(슬롯 한도 내)", apply(){ const room = Math.max(0, consumableMax() - consumableCount()); const n = Math.min(2, room); for(let i=0;i<n;i++){ const t = weightedSampleBy(tarotPool.filter(x=>x.id!=="emperor"), 1, tarotWeight)[0]; if(t){ state.tarotCards.push({ ...t }); } } } },
-      { id:"priestess", name:"여사제",   need:0, desc:"무작위 행성 2장 생성(슬롯 한도)", apply(){ const room=Math.max(0,consumableMax()-consumableCount()); const n=Math.min(2,room); for(let i=0;i<n;i++){ const p=weightedSampleBy(planetPool.filter(x=>!x.special),1,planetWeight)[0]; if(p){ state.planetCards.push({ ...p }); } } } },
-      { id:"hanged",    name:"매달린 자", need:2, exact:true, desc:"선택 2장 제거 후 새 카드", apply(sel){ const ids=new Set(sel.map(c=>c.id)); state.hand=state.hand.filter(c=>!ids.has(c.id)); state.selected.clear(); drawToEight(); } },
-      { id:"temperance",name:"절제",     need:0, desc:"조커 판매가 합 획득(최대 🪙20)", apply(){ const sum=Math.min(20, state.jokers.reduce((s,j)=>s+jokerSellValue(j),0)); state.money=(state.money||0)+sum; } },
+      { id:"magician",  name:"마법사",   need:1, desc:"선택한 카드의 숫자를 2 올린다",        apply(sel){ sel.forEach(c=>{ c.rank=Math.min(14, c.rank+2); }); } },
+      { id:"empress",   name:"여황제",   need:1, desc:"선택한 카드를 A로 만든다",          apply(sel){ sel.forEach(c=>{ c.rank=14; }); } },
+      { id:"emperor",   name:"황제",     need:0, desc:"무작위 타로 2장을 만든다(슬롯 빈자리만큼)", apply(){ const room = Math.max(0, consumableMax() - consumableCount()); const n = Math.min(2, room); for(let i=0;i<n;i++){ const t = weightedSampleBy(tarotPool.filter(x=>x.id!=="emperor"), 1, tarotWeight)[0]; if(t){ state.tarotCards.push({ ...t }); } } } },
+      { id:"priestess", name:"여사제",   need:0, desc:"무작위 행성 2장을 만든다(슬롯 빈자리만큼)", apply(){ const room=Math.max(0,consumableMax()-consumableCount()); const n=Math.min(2,room); for(let i=0;i<n;i++){ const p=weightedSampleBy(planetPool.filter(x=>!x.special),1,planetWeight)[0]; if(p){ state.planetCards.push({ ...p }); } } } },
+      { id:"hanged",    name:"매달린 자", need:2, exact:true, desc:"선택한 2장을 버리고 새 카드를 뽑는다", apply(sel){ const ids=new Set(sel.map(c=>c.id)); state.hand=state.hand.filter(c=>!ids.has(c.id)); state.selected.clear(); drawToEight(); } },
+      { id:"temperance",name:"절제",     need:0, desc:"보유 조커들의 판매가 합계만큼 자금을 얻는다(최대 🪙20)", apply(){ const sum=Math.min(20, state.jokers.reduce((s,j)=>s+jokerSellValue(j),0)); state.money=(state.money||0)+sum; } },
       // ── 카드 강화 부여 타로 (선택 1장에 enhancement 영구 부여. 덱에 남아 계속 적용) ──
-      { id:"enh_bonus", name:"보너스 인장", need:1, enh:"bonus", desc:"선택 1장 → 보너스 카드(공격력 +30)",     apply(sel){ sel.forEach(c=>c.enh="bonus"); } },
-      { id:"enh_mult",  name:"핏빛 인장",   need:1, enh:"mult",  desc:"선택 1장 → 멀티 카드(연격 +4)",          apply(sel){ sel.forEach(c=>c.enh="mult"); } },
-      { id:"enh_stone", name:"탑",          need:1, enh:"stone", desc:"선택 1장 → 스톤 카드(공격력 +50)",       apply(sel){ sel.forEach(c=>c.enh="stone"); } },
-      { id:"enh_glass", name:"유리의 연인", need:1, enh:"glass", desc:"선택 1장 → 글래스 카드(연격 ×1.5)",       apply(sel){ sel.forEach(c=>c.enh="glass"); } },
-      { id:"enh_steel", name:"강철 심판",   need:1, enh:"steel", desc:"선택 1장 → 스틸 카드(손에 있으면 연격 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="steel"); } },
-      { id:"enh_gold",  name:"황금 악마",   need:1, enh:"gold",  desc:"선택 1장 → 골드 카드(점수 낼 때 +🪙3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
-      { id:"enh_random", name:"운명의 인장", need:0, desc:"무작위 강화 플레이카드 1장을 덱에 추가", apply(){ const suits=["spade","heart","club","diamond"]; const opts=["bonus","mult","stone","glass","steel","gold"]; const suit=suits[Math.floor(Math.random()*4)]; const rank=2+Math.floor(Math.random()*13); const enh=opts[Math.floor(Math.random()*opts.length)]; state.extraCards=state.extraCards||[]; state.extraCards.push({ suit, rank }); if(!state.runDeck) state.runDeck=buildRunDeck(); const cid=state._deckUid++; state.runDeck.push({ id:cid, suit, rank, enh }); if(state.deck) state.deck.push({ id:cid, suit, rank, enh }); if(typeof renderHUD==="function") renderHUD(); } },
+      { id:"enh_bonus", name:"보너스 인장", need:1, enh:"bonus", desc:"선택한 카드를 보너스 카드로 만든다(공격력 +30)",     apply(sel){ sel.forEach(c=>c.enh="bonus"); } },
+      { id:"enh_mult",  name:"핏빛 인장",   need:1, enh:"mult",  desc:"선택한 카드를 멀티 카드로 만든다(연격 +4)",          apply(sel){ sel.forEach(c=>c.enh="mult"); } },
+      { id:"enh_stone", name:"탑",          need:1, enh:"stone", desc:"선택한 카드를 스톤 카드로 만든다(공격력 +50)",       apply(sel){ sel.forEach(c=>c.enh="stone"); } },
+      { id:"enh_glass", name:"유리의 연인", need:1, enh:"glass", desc:"선택한 카드를 글래스 카드로 만든다(연격 ×1.5)",       apply(sel){ sel.forEach(c=>c.enh="glass"); } },
+      { id:"enh_steel", name:"강철 심판",   need:1, enh:"steel", desc:"선택한 카드를 스틸 카드로 만든다(손에 들고 있으면 연격 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="steel"); } },
+      { id:"enh_gold",  name:"황금 악마",   need:1, enh:"gold",  desc:"선택한 카드를 골드 카드로 만든다(점수 낼 때 +🪙3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
+      { id:"enh_random", name:"운명의 인장", need:0, desc:"무작위로 강화된 카드 1장을 덱에 추가한다", apply(){ const suits=["spade","heart","club","diamond"]; const opts=["bonus","mult","stone","glass","steel","gold"]; const suit=suits[Math.floor(Math.random()*4)]; const rank=2+Math.floor(Math.random()*13); const enh=opts[Math.floor(Math.random()*opts.length)]; state.extraCards=state.extraCards||[]; state.extraCards.push({ suit, rank }); if(!state.runDeck) state.runDeck=buildRunDeck(); const cid=state._deckUid++; state.runDeck.push({ id:cid, suit, rank, enh }); if(state.deck) state.deck.push({ id:cid, suit, rank, enh }); if(typeof renderHUD==="function") renderHUD(); } },
       // ── 원작 메이저 아르카나 추가 ──
-      { id:"fool",      name:"바보",       need:0, desc:"마지막 사용한 타로/행성 1장 복사(슬롯 한도)", apply(){ const lc=state.lastConsumable; if(!lc||lc.id==="fool") return; if(consumableCount()>=consumableMax()) return; if(lc.kind==="tarot"){ const t=tarotPool.find(x=>x.id===lc.id); if(t){ state.tarotCards.push({ ...t }); } } else { const p=planetPool.find(x=>x.id===lc.id); if(p){ state.planetCards.push({ ...p }); } } } },
-      { id:"judgement", name:"심판",       need:0, desc:"무작위 조커 1개 생성(슬롯 여유 시)", apply(){ if(jokerSlotsFull()) return; const j=randomUnownedJoker(); if(j){ state.jokers.push({ ...j, counter: j.initCounter ?? 0 }); markDiscovered("joker",j.id); renderHUD(); } } },
-      { id:"hierophant", name:"교황",       need:2, exact:true, desc:"선택 2장 → 보너스 카드(공격력 +30)", apply(sel){ sel.forEach(c=>c.enh="bonus"); } },
-      { id:"chariot",    name:"전차",       need:2, exact:true, desc:"선택 2장 → 멀티 카드(연격 +4)", apply(sel){ sel.forEach(c=>c.enh="mult"); } },
-      { id:"justice",    name:"정의",       need:2, exact:true, desc:"선택 2장 → 글래스 카드(연격 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="glass"); } },
-      { id:"devil",      name:"악마",       need:2, exact:true, desc:"선택 2장 → 골드 카드(점수 낼 때 +🪙3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
-      { id:"tailor",     name:"재단사",     need:2, exact:true, desc:"선택 2장 문양 통일(오른쪽=왼쪽)", apply(sel){ if(sel.length>=2) sel[1].suit=sel[0].suit; } },
-      { id:"fortune",    name:"운명의 인장", need:1, desc:"선택 1장 → 무작위 강화", apply(sel){ const ks=Object.keys(ENH); const k=ks[Math.floor(Math.random()*ks.length)]; sel.forEach(c=>c.enh=k); } },
-      { id:"alchemy",    name:"연금술사",   need:1, desc:"선택 1장 → 골드 카드 + 즉시 +🪙8", apply(sel){ sel.forEach(c=>c.enh="gold"); state.money=(state.money||0)+8; } },
-      { id:"usury",      name:"사채업자",   need:0, desc:"보유 자금의 20% 즉시 획득(최대 +🪙15)", apply(){ const g=Math.min(15, Math.floor((state.money||0)*0.2)); state.money=(state.money||0)+g; } },
-      { id:"astrology",  name:"점성술",     need:0, desc:"무작위 행성 1장 + 타로 1장 생성(슬롯 한도)", apply(){ if(consumableCount()<consumableMax()){ const p=weightedSampleBy(planetPool.filter(x=>!x.special),1,planetWeight)[0]; if(p){ state.planetCards.push({ ...p }); } } if(consumableCount()<consumableMax()){ const tt=weightedSampleBy(tarotPool.filter(x=>x.id!=="astrology"),1,tarotWeight)[0]; if(tt){ state.tarotCards.push({ ...tt }); } } } },
-      { id:"coronation", name:"대관식",     need:1, desc:"선택 1장을 K로", apply(sel){ sel.forEach(c=>c.rank=13); } },
+      { id:"fool",      name:"바보",       need:0, desc:"마지막에 사용한 타로/행성 1장을 복사한다(슬롯 빈자리만큼)", apply(){ const lc=state.lastConsumable; if(!lc||lc.id==="fool") return; if(consumableCount()>=consumableMax()) return; if(lc.kind==="tarot"){ const t=tarotPool.find(x=>x.id===lc.id); if(t){ state.tarotCards.push({ ...t }); } } else { const p=planetPool.find(x=>x.id===lc.id); if(p){ state.planetCards.push({ ...p }); } } } },
+      { id:"judgement", name:"심판",       need:0, desc:"무작위 조커 1개를 만든다(조커 슬롯이 비어 있을 때)", apply(){ if(jokerSlotsFull()) return; const j=randomUnownedJoker(); if(j){ state.jokers.push({ ...j, counter: j.initCounter ?? 0 }); markDiscovered("joker",j.id); renderHUD(); } } },
+      { id:"hierophant", name:"교황",       need:2, exact:true, desc:"선택한 2장을 보너스 카드로 만든다(공격력 +30)", apply(sel){ sel.forEach(c=>c.enh="bonus"); } },
+      { id:"chariot",    name:"전차",       need:2, exact:true, desc:"선택한 2장을 멀티 카드로 만든다(연격 +4)", apply(sel){ sel.forEach(c=>c.enh="mult"); } },
+      { id:"justice",    name:"정의",       need:2, exact:true, desc:"선택한 2장을 글래스 카드로 만든다(연격 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="glass"); } },
+      { id:"devil",      name:"악마",       need:2, exact:true, desc:"선택한 2장을 골드 카드로 만든다(점수 낼 때 +🪙3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
+      { id:"tailor",     name:"재단사",     need:2, exact:true, desc:"선택한 2장의 문양을 같게 만든다(오른쪽=왼쪽)", apply(sel){ if(sel.length>=2) sel[1].suit=sel[0].suit; } },
+      { id:"fortune",    name:"운명의 인장", need:1, desc:"선택한 카드를 무작위로 강화한다", apply(sel){ const ks=Object.keys(ENH); const k=ks[Math.floor(Math.random()*ks.length)]; sel.forEach(c=>c.enh=k); } },
+      { id:"alchemy",    name:"연금술사",   need:1, desc:"선택한 카드를 골드 카드로 만들고 즉시 🪙8을 얻는다", apply(sel){ sel.forEach(c=>c.enh="gold"); state.money=(state.money||0)+8; } },
+      { id:"usury",      name:"사채업자",   need:0, desc:"보유 자금의 20%를 즉시 얻는다(최대 +🪙15)", apply(){ const g=Math.min(15, Math.floor((state.money||0)*0.2)); state.money=(state.money||0)+g; } },
+      { id:"astrology",  name:"점성술",     need:0, desc:"무작위 행성 1장과 타로 1장을 만든다(슬롯 빈자리만큼)", apply(){ if(consumableCount()<consumableMax()){ const p=weightedSampleBy(planetPool.filter(x=>!x.special),1,planetWeight)[0]; if(p){ state.planetCards.push({ ...p }); } } if(consumableCount()<consumableMax()){ const tt=weightedSampleBy(tarotPool.filter(x=>x.id!=="astrology"),1,tarotWeight)[0]; if(tt){ state.tarotCards.push({ ...tt }); } } } },
+      { id:"coronation", name:"대관식",     need:1, desc:"선택한 카드를 K로 만든다", apply(sel){ sel.forEach(c=>c.rank=13); } },
     ];
     function consumableCount(){ return (state.planetCards?.length||0) + (state.tarotCards?.length||0); }
     // 소모품(타로·행성) 보관 슬롯 상한: 기본 3 + 확장 가방 바우처(+1)
@@ -3652,19 +3652,19 @@
       jupiter:{name:"Jupiter"}, saturn:{name:"Saturn"}, uranus:{name:"Uranus"}, neptune:{name:"Neptune"}, pluto:{name:"Pluto"},
       blackhole:{name:"Black Hole",desc:"All skills +1 level"}, galaxy:{name:"Galaxy",desc:"All skills +3 levels"},
       supernova:{name:"Supernova",desc:"Random skill +5 levels"}, singularity:{name:"Singularity",desc:"Absorb all skill levels into one chosen skill"},
-      star:{name:"Star",desc:"Selected cards → ◆Diamond"}, moon:{name:"Moon",desc:"Selected cards → ♣Club"},
-      sun:{name:"Sun",desc:"Selected cards → ♥Heart"}, world:{name:"World",desc:"Selected cards → ♠Spade"},
-      strength:{name:"Strength",desc:"Selected cards rank +1"}, death:{name:"Death",desc:"Exactly 2: right copies left (incl. enhancement)"},
-      hermit:{name:"Hermit",desc:"Double your coins (max +🪙20)"}, wheel:{name:"Wheel of Fortune",desc:"Instant +🪙12"},
-      magician:{name:"Magician",desc:"Selected cards rank +2"}, empress:{name:"Empress",desc:"Selected cards → A"},
-      emperor:{name:"Emperor",desc:"Create 2 random scrolls (within slots)"},
-      hierophant:{name:"Hierophant",desc:"2 cards → Bonus (ATK +30)"}, chariot:{name:"Chariot",desc:"2 cards → Mult (Combo +4)"}, justice:{name:"Justice",desc:"2 cards → Glass (Combo ×1.5)"}, devil:{name:"Devil",desc:"2 cards → Gold (+🪙3 if held at round end)"}, tailor:{name:"Tailor",desc:"2 cards same suit (right=left)"}, fortune:{name:"Wheel Seal",desc:"1 card → random enhancement"}, alchemy:{name:"Alchemist",desc:"1 card → Gold + 🪙8 now"}, usury:{name:"Loan Shark",desc:"Gain 20% of held gold (max 🪙15)"}, astrology:{name:"Astrology",desc:"Create 1 planet + 1 scroll (within slots)"}, coronation:{name:"Coronation",desc:"Selected card → King"}, priestess:{name:"High Priestess",desc:"Create 2 random planets (within slots)"},
-      hanged:{name:"Hanged Man",desc:"Remove 2 selected, draw new"}, temperance:{name:"Temperance",desc:"Gain total joker sell value (max 🪙20)"},
-      enh_bonus:{name:"Bonus Seal",desc:"1 card → Bonus (ATK +30)"}, enh_mult:{name:"Blood Seal",desc:"1 card → Mult (Combo +4)"},
-      enh_stone:{name:"Tower",desc:"1 card → Stone (ATK +50)"}, enh_glass:{name:"The Lovers (Glass)",desc:"1 card → Glass (Combo ×1.5)"},
-      enh_steel:{name:"Steel Judgement",desc:"1 card → Steel (in hand: Combo ×1.5)"}, enh_gold:{name:"Golden Devil",desc:"1 card → Gold (+🪙3 if held at round end)"},
-      enh_random:{name:"Fate Seal",desc:"Add 1 random-enhanced card to your deck"},
-      fool:{name:"The Fool",desc:"Copy last used scroll/planet (within slots)"}, judgement:{name:"Judgement",desc:"Create 1 random joker (if slot free)"},
+      star:{name:"Star",desc:"Turn selected cards into ◆Diamonds"}, moon:{name:"Moon",desc:"Turn selected cards into ♣Clubs"},
+      sun:{name:"Sun",desc:"Turn selected cards into ♥Hearts"}, world:{name:"World",desc:"Turn selected cards into ♠Spades"},
+      strength:{name:"Strength",desc:"Raise selected cards' rank by 1"}, death:{name:"Death",desc:"Pick 2 — the right card copies the left (incl. enhancement)"},
+      hermit:{name:"Hermit",desc:"Double your coins (up to +🪙20)"}, wheel:{name:"Wheel of Fortune",desc:"Gain 🪙12 instantly"},
+      magician:{name:"Magician",desc:"Raise selected cards' rank by 2"}, empress:{name:"Empress",desc:"Turn selected cards into Aces"},
+      emperor:{name:"Emperor",desc:"Create 2 random Tarot cards (if slots free)"},
+      hierophant:{name:"Hierophant",desc:"Turn 2 selected cards into Bonus cards (ATK +30)"}, chariot:{name:"Chariot",desc:"Turn 2 selected cards into Mult cards (Combo +4)"}, justice:{name:"Justice",desc:"Turn 2 selected cards into Glass cards (Combo ×1.5)"}, devil:{name:"Devil",desc:"Turn 2 selected cards into Gold cards (+🪙3 when scored)"}, tailor:{name:"Tailor",desc:"Make 2 cards share a suit (right takes left)"}, fortune:{name:"Wheel Seal",desc:"Give the selected card a random enhancement"}, alchemy:{name:"Alchemist",desc:"Turn the selected card into a Gold card and gain 🪙8 now"}, usury:{name:"Loan Shark",desc:"Gain 20% of your coins (up to 🪙15)"}, astrology:{name:"Astrology",desc:"Create 1 random Planet + 1 Tarot card (if slots free)"}, coronation:{name:"Coronation",desc:"Turn the selected card into a King"}, priestess:{name:"High Priestess",desc:"Create 2 random Planet cards (if slots free)"},
+      hanged:{name:"Hanged Man",desc:"Discard the 2 selected cards and draw new ones"}, temperance:{name:"Temperance",desc:"Gain coins equal to your jokers' total sell value (up to 🪙20)"},
+      enh_bonus:{name:"Bonus Seal",desc:"Turn the selected card into a Bonus card (ATK +30)"}, enh_mult:{name:"Blood Seal",desc:"Turn the selected card into a Mult card (Combo +4)"},
+      enh_stone:{name:"Tower",desc:"Turn the selected card into a Stone card (ATK +50)"}, enh_glass:{name:"The Lovers (Glass)",desc:"Turn the selected card into a Glass card (Combo ×1.5)"},
+      enh_steel:{name:"Steel Judgement",desc:"Turn the selected card into a Steel card (Combo ×1.5 while in hand)"}, enh_gold:{name:"Golden Devil",desc:"Turn the selected card into a Gold card (+🪙3 when scored)"},
+      enh_random:{name:"Fate Seal",desc:"Add 1 randomly-enhanced card to your deck"},
+      fool:{name:"The Fool",desc:"Copy the last Tarot/Planet you used (if slots free)"}, judgement:{name:"Judgement",desc:"Create 1 random Joker (if a slot is free)"},
       clearance:{name:"Clearance",desc:"25% off all shop items"}, magicTrick:{name:"Magic Trick",desc:"Playing cards appear in shop (deck add)"},
       rareHunter:{name:"Rare Hunter",desc:"Greatly boosts legendary/mythic joker odds"}, reroll:{name:"Reroll Subsidy",desc:"Reroll cost -🪙2"},
       tarotMerchant:{name:"Scroll Merchant",desc:"+1 shop scroll slot"}, overstock:{name:"Overstock",desc:"+1 shop joker slot"},
@@ -3738,19 +3738,19 @@
       jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
       blackhole:{name:"黑洞",desc:"所有技能 +1級"}, galaxy:{name:"銀河",desc:"所有技能 +3級"},
       supernova:{name:"超新星",desc:"隨機技能 +5級"}, singularity:{name:"奇點",desc:"吸收所有分散的技能等級，集中到選定的1個技能"},
-      star:{name:"星星",desc:"選擇的牌 → ◆方塊"}, moon:{name:"月亮",desc:"選擇的牌 → ♣梅花"},
-      sun:{name:"太陽",desc:"選擇的牌 → ♥紅心"}, world:{name:"世界",desc:"選擇的牌 → ♠黑桃"},
-      strength:{name:"力量",desc:"選擇的牌 點數 +1"}, death:{name:"死神",desc:"正好2張：右邊複製左邊（含強化）"},
-      hermit:{name:"隱者",desc:"金幣翻倍（最多 +🪙20）"}, wheel:{name:"命運之輪",desc:"立即 +🪙12"},
-      magician:{name:"魔術師",desc:"選擇的牌 點數 +2"}, empress:{name:"皇后",desc:"選擇的牌 → A"},
-      emperor:{name:"皇帝",desc:"生成2張隨機卷軸（欄位內）"},
-      hierophant:{name:"教皇",desc:"2張→獎勵卡(攻擊力+30)"}, chariot:{name:"戰車",desc:"2張→倍率卡(連擊+4)"}, justice:{name:"正義",desc:"2張→玻璃卡(連擊×1.5)"}, devil:{name:"惡魔",desc:"2張→黃金卡(回合結束持有+🪙3)"}, tailor:{name:"裁縫師",desc:"2張花色統一(右=左)"}, fortune:{name:"命運印記",desc:"1張→隨機強化"}, alchemy:{name:"鍊金術士",desc:"1張→黃金卡+立即🪙8"}, usury:{name:"放高利貸",desc:"獲得持有資金20%(最多🪙15)"}, astrology:{name:"占星術",desc:"生成1行星+1卷軸(欄位內)"}, coronation:{name:"加冕",desc:"所選卡牌→K"}, priestess:{name:"女祭司",desc:"生成2張隨機行星（欄位內）"},
-      hanged:{name:"倒吊人",desc:"移除選擇的2張後抽新牌"}, temperance:{name:"節制",desc:"獲得小丑售價總和（最多🪙20）"},
-      enh_bonus:{name:"獎勵印記",desc:"1張牌 → 獎勵（攻擊力 +30）"}, enh_mult:{name:"血色印記",desc:"1張牌 → 倍率（連擊 +4）"},
-      enh_stone:{name:"高塔",desc:"1張牌 → 石頭（攻擊力 +50）"}, enh_glass:{name:"戀人（玻璃）",desc:"1張牌 → 玻璃（連擊 ×1.5）"},
-      enh_steel:{name:"鋼鐵審判",desc:"1張牌 → 鋼鐵（手中時連擊 ×1.5）"}, enh_gold:{name:"黃金惡魔",desc:"1張牌 → 黃金（回合結束持有 +🪙3）"},
-      enh_random:{name:"命運印記",desc:"將1張隨機強化的牌加入牌組"},
-      fool:{name:"愚者",desc:"複製最後使用的卷軸/行星（欄位內）"}, judgement:{name:"審判",desc:"生成1個隨機小丑（欄位有空時）"},
+      star:{name:"星星",desc:"把選擇的牌變成◆方塊"}, moon:{name:"月亮",desc:"把選擇的牌變成♣梅花"},
+      sun:{name:"太陽",desc:"把選擇的牌變成♥紅心"}, world:{name:"世界",desc:"把選擇的牌變成♠黑桃"},
+      strength:{name:"力量",desc:"讓選擇的牌點數 +1"}, death:{name:"死神",desc:"選2張：右邊的牌複製左邊（含強化）"},
+      hermit:{name:"隱者",desc:"讓金幣翻倍（最多 +🪙20）"}, wheel:{name:"命運之輪",desc:"立即獲得 🪙12"},
+      magician:{name:"魔術師",desc:"讓選擇的牌點數 +2"}, empress:{name:"皇后",desc:"把選擇的牌變成 A"},
+      emperor:{name:"皇帝",desc:"生成2張隨機塔羅牌（欄位有空時）"},
+      hierophant:{name:"教皇",desc:"把選擇的2張變成獎勵卡（攻擊力+30）"}, chariot:{name:"戰車",desc:"把選擇的2張變成倍率卡（連擊+4）"}, justice:{name:"正義",desc:"把選擇的2張變成玻璃卡（連擊×1.5）"}, devil:{name:"惡魔",desc:"把選擇的2張變成黃金卡（計分時+🪙3）"}, tailor:{name:"裁縫師",desc:"讓2張牌花色統一（右邊跟左邊）"}, fortune:{name:"命運印記",desc:"給選擇的牌隨機強化"}, alchemy:{name:"鍊金術士",desc:"把選擇的牌變成黃金卡，並立即獲得🪙8"}, usury:{name:"放高利貸",desc:"立即獲得持有金幣的20%（最多🪙15）"}, astrology:{name:"占星術",desc:"生成1張隨機行星+1張塔羅牌（欄位有空時）"}, coronation:{name:"加冕",desc:"把選擇的牌變成 K"}, priestess:{name:"女祭司",desc:"生成2張隨機行星牌（欄位有空時）"},
+      hanged:{name:"倒吊人",desc:"棄掉選擇的2張，再抽新牌"}, temperance:{name:"節制",desc:"獲得所有小丑售價總和的金幣（最多🪙20）"},
+      enh_bonus:{name:"獎勵印記",desc:"把選擇的牌變成獎勵卡（攻擊力+30）"}, enh_mult:{name:"血色印記",desc:"把選擇的牌變成倍率卡（連擊+4）"},
+      enh_stone:{name:"高塔",desc:"把選擇的牌變成石頭卡（攻擊力+50）"}, enh_glass:{name:"戀人（玻璃）",desc:"把選擇的牌變成玻璃卡（連擊×1.5）"},
+      enh_steel:{name:"鋼鐵審判",desc:"把選擇的牌變成鋼鐵卡（在手中時連擊×1.5）"}, enh_gold:{name:"黃金惡魔",desc:"把選擇的牌變成黃金卡（計分時+🪙3）"},
+      enh_random:{name:"命運印記",desc:"把1張隨機強化的牌加入牌組"},
+      fool:{name:"愚者",desc:"複製最後使用的塔羅/行星（欄位有空時）"}, judgement:{name:"審判",desc:"生成1個隨機小丑（小丑欄有空時）"},
       clearance:{name:"清倉",desc:"商店所有商品25%折扣"}, magicTrick:{name:"魔術",desc:"商店出現遊戲牌（加入牌組）"},
       rareHunter:{name:"稀有獵人",desc:"大幅提升傳說·神話小丑機率"}, reroll:{name:"重抽補助",desc:"商店刷新費用 -🪙2"},
       tarotMerchant:{name:"卷軸商人",desc:"商店卷軸欄位 +1"}, overstock:{name:"庫存過剩",desc:"商店小丑欄位 +1"},
@@ -3824,19 +3824,19 @@
       jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
       blackhole:{name:"ブラックホール",desc:"全スキルレベル +1"}, galaxy:{name:"銀河",desc:"全スキルレベル +3"},
       supernova:{name:"超新星",desc:"ランダムなスキル +5レベル"}, singularity:{name:"特異点",desc:"分散した全スキルレベルを吸収し選んだ1つに集中"},
-      star:{name:"星",desc:"選択カード → ◆ダイヤ"}, moon:{name:"月",desc:"選択カード → ♣クラブ"},
-      sun:{name:"太陽",desc:"選択カード → ♥ハート"}, world:{name:"世界",desc:"選択カード → ♠スペード"},
-      strength:{name:"力",desc:"選択カードのランク +1"}, death:{name:"死神",desc:"ちょうど2枚：右が左をコピー（強化込み）"},
-      hermit:{name:"隠者",desc:"コイン2倍（最大 +🪙20）"}, wheel:{name:"運命の輪",desc:"即時 +🪙12"},
-      magician:{name:"魔術師",desc:"選択カードのランク +2"}, empress:{name:"女帝",desc:"選択カード → A"},
-      emperor:{name:"皇帝",desc:"ランダムな巻物2枚生成（枠内）"},
-      hierophant:{name:"教皇",desc:"2枚→ボーナス(攻撃力+30)"}, chariot:{name:"戦車",desc:"2枚→倍率(連撃+4)"}, justice:{name:"正義",desc:"2枚→グラス(連撃×1.5)"}, devil:{name:"悪魔",desc:"2枚→ゴールド(終了時保持+🪙3)"}, tailor:{name:"仕立て屋",desc:"2枚 スート統一(右=左)"}, fortune:{name:"運命の封印",desc:"1枚→ランダム強化"}, alchemy:{name:"錬金術師",desc:"1枚→ゴールド+即🪙8"}, usury:{name:"金貸し",desc:"所持資金の20%獲得(最大🪙15)"}, astrology:{name:"占星術",desc:"惑星1+巻物1生成(枠内)"}, coronation:{name:"戴冠",desc:"選択カード→K"}, priestess:{name:"女教皇",desc:"ランダムな惑星2枚生成（枠内）"},
-      hanged:{name:"吊られた男",desc:"選択2枚を除去し新規ドロー"}, temperance:{name:"節制",desc:"ジョーカー売却額の合計を獲得（最大🪙20）"},
-      enh_bonus:{name:"ボーナスの封印",desc:"1枚 → ボーナス（攻撃力 +30）"}, enh_mult:{name:"血の封印",desc:"1枚 → 倍率（連撃 +4）"},
-      enh_stone:{name:"塔",desc:"1枚 → ストーン（攻撃力 +50）"}, enh_glass:{name:"恋人（グラス）",desc:"1枚 → グラス（連撃 ×1.5）"},
-      enh_steel:{name:"鋼鉄の審判",desc:"1枚 → スチール（手札で連撃 ×1.5）"}, enh_gold:{name:"黄金の悪魔",desc:"1枚 → ゴールド（ラウンド終了時保持で +🪙3）"},
-      enh_random:{name:"運命の封印",desc:"ランダム強化されたカード1枚をデッキに追加"},
-      fool:{name:"愚者",desc:"最後に使った巻物/惑星をコピー（枠内）"}, judgement:{name:"審判",desc:"ランダムなジョーカー1個生成（枠に空きがあれば）"},
+      star:{name:"星",desc:"選んだカードを◆ダイヤに変える"}, moon:{name:"月",desc:"選んだカードを♣クラブに変える"},
+      sun:{name:"太陽",desc:"選んだカードを♥ハートに変える"}, world:{name:"世界",desc:"選んだカードを♠スペードに変える"},
+      strength:{name:"力",desc:"選んだカードのランクを1上げる"}, death:{name:"死神",desc:"2枚選ぶ：右のカードが左をコピー（強化込み）"},
+      hermit:{name:"隠者",desc:"所持コインを2倍にする（最大 +🪙20）"}, wheel:{name:"運命の輪",desc:"即座に🪙12を得る"},
+      magician:{name:"魔術師",desc:"選んだカードのランクを2上げる"}, empress:{name:"女帝",desc:"選んだカードをAに変える"},
+      emperor:{name:"皇帝",desc:"ランダムなタロット2枚を生成（枠に空きがあれば）"},
+      hierophant:{name:"教皇",desc:"選んだ2枚をボーナスカードにする（攻撃力+30）"}, chariot:{name:"戦車",desc:"選んだ2枚を倍率カードにする（連撃+4）"}, justice:{name:"正義",desc:"選んだ2枚をグラスカードにする（連撃×1.5）"}, devil:{name:"悪魔",desc:"選んだ2枚をゴールドカードにする（得点時+🪙3）"}, tailor:{name:"仕立て屋",desc:"2枚のスートを揃える（右を左に合わせる）"}, fortune:{name:"運命の封印",desc:"選んだカードをランダムに強化する"}, alchemy:{name:"錬金術師",desc:"選んだカードをゴールドカードにして、即🪙8を得る"}, usury:{name:"金貸し",desc:"所持コインの20%を即座に得る（最大🪙15）"}, astrology:{name:"占星術",desc:"ランダムな惑星1枚+タロット1枚を生成（枠に空きがあれば）"}, coronation:{name:"戴冠",desc:"選んだカードをKに変える"}, priestess:{name:"女教皇",desc:"ランダムな惑星カード2枚を生成（枠に空きがあれば）"},
+      hanged:{name:"吊られた男",desc:"選んだ2枚を捨てて、新しく引き直す"}, temperance:{name:"節制",desc:"手持ちジョーカーの売却額の合計を得る（最大🪙20）"},
+      enh_bonus:{name:"ボーナスの封印",desc:"選んだカードをボーナスカードにする（攻撃力+30）"}, enh_mult:{name:"血の封印",desc:"選んだカードを倍率カードにする（連撃+4）"},
+      enh_stone:{name:"塔",desc:"選んだカードをストーンカードにする（攻撃力+50）"}, enh_glass:{name:"恋人（グラス）",desc:"選んだカードをグラスカードにする（連撃×1.5）"},
+      enh_steel:{name:"鋼鉄の審判",desc:"選んだカードをスチールカードにする（手札にある間 連撃×1.5）"}, enh_gold:{name:"黄金の悪魔",desc:"選んだカードをゴールドカードにする（得点時+🪙3）"},
+      enh_random:{name:"運命の封印",desc:"ランダムに強化されたカード1枚をデッキに加える"},
+      fool:{name:"愚者",desc:"最後に使ったタロット/惑星をコピー（枠に空きがあれば）"}, judgement:{name:"審判",desc:"ランダムなジョーカーを1個生成（ジョーカー枠に空きがあれば）"},
       clearance:{name:"在庫一掃",desc:"ショップ全品25%引き"}, magicTrick:{name:"マジック",desc:"ショップにプレイカード出現（デッキ追加）"},
       rareHunter:{name:"レアハンター",desc:"レジェンド・ミシックの出現率大幅上昇"}, reroll:{name:"リロール補助",desc:"ショップ更新費用 -🪙2"},
       tarotMerchant:{name:"巻物商人",desc:"ショップ巻物枠 +1"}, overstock:{name:"過剰在庫",desc:"ショップジョーカー枠 +1"},
@@ -3973,7 +3973,7 @@
 
     let _collectionTab = "joker";
     function collectionData(kind) {
-      if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: aimg(`tarot/${t.id}.webp?v=3`), badge: { label: "타로", color: "#b56ad6" } }));
+      if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: aimg(`tarot/${t.id}.webp?v=4`), badge: { label: "타로", color: "#b56ad6" } }));
       if (kind === "planet") return planetPool.map(p => { if (p.special) return { id: p.id, name: p.name, desc: p.desc, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "특수", color: "#a06bff" } }; const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 기술 영구 강화 (+${p.chipsBonus}공격력 / +${p.multBonus}연격)`, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "행성", color: "#4a84ff" } }; });
       return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: aimg(`jokers/${j.id}.webp?v=2`), glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
     }
@@ -5586,7 +5586,7 @@
         const need = item.need || 0;
         const cardLocked = need > 0 && inShop;   // 카드 선택형은 상점에선 사용 불가(손패 없음)
         openDetailPopup({
-          imgSrc: `tarot/${item.id}.webp?v=3`, emoji: "🔮",
+          imgSrc: `tarot/${item.id}.webp?v=4`, emoji: "🔮",
           name: item.name, badgeLabel: t("pop_badge_tarot"), badgeColor: "#b56ad6",
           desc: (item.desc || "") + (need > 0 ? t("pop_tarot_need", {n: item.need}) : t("pop_tarot_instant")),
           costLine: t("pop_sell", {n: sell}),
@@ -5631,7 +5631,7 @@
           card.classList.add("tarot-mini");
           card.dataset.need = String(tarot.need || 0);
           card.innerHTML = `
-            <img class="planet-art" src="${aimg(`tarot/${tarot.id}.webp?v=3`)}" alt="" draggable="false" onerror="this.style.display='none'">
+            <img class="planet-art" src="${aimg(`tarot/${tarot.id}.webp?v=4`)}" alt="" draggable="false" onerror="this.style.display='none'">
             <span class="planet-grad" aria-hidden="true"></span>
             <span class="planet-glyph">${tarot.name}</span>
             <span class="planet-target">${t("ui_tarot_mini_label")}${(tarot.need || 0) > 0 ? ` ${t("mini_need", { n: tarot.need })}` : ""}</span>`;
@@ -6067,7 +6067,7 @@
             ? `<span style="color:#9fd0ff">${tc.exact ? t("ui_tarot_exact") : ""}${t("tarot_need_use", { n: tc.need })}</span>`
             : `<span style="color:#9fd0ff">${t("ui_tarot_instant_txt")}</span>`;
           return `<div style="display:flex;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08)">
-            <img src="${aimg(`tarot/${tc.id}.webp?v=3`)}" alt="" loading="lazy" style="width:46px;height:64px;object-fit:cover;border-radius:7px;border:1px solid #b56ad688;flex:0 0 auto;background:#1a0f24" onerror="this.outerHTML='<span style=\\'width:46px;height:64px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex:0 0 auto\\'>🔮</span>'">
+            <img src="${aimg(`tarot/${tc.id}.webp?v=4`)}" alt="" loading="lazy" style="width:46px;height:64px;object-fit:cover;border-radius:7px;border:1px solid #b56ad688;flex:0 0 auto;background:#1a0f24" onerror="this.outerHTML='<span style=\\'width:46px;height:64px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex:0 0 auto\\'>🔮</span>'">
             <div style="flex:1;min-width:0">
               <div style="font-weight:800;color:#e7defb">${tc.name}${owned ? ` <span style="color:var(--gold);font-size:.72rem">${t("ui_owned_count", {n: owned})}</span>` : ""}</div>
               <div style="font-size:.82rem;color:var(--text);margin:2px 0">${tc.desc}</div>
@@ -6452,7 +6452,7 @@
       const wrap = document.createElement("div");
       wrap.className = "tarot-flash";
       const fb = `<span style=\\'font-size:3rem\\'>🔮</span>`;
-      wrap.innerHTML = `<div class="tf-card"><img src="${aimg(`tarot/${tarot.id}.webp?v=3`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${tarot.name}</div></div>`;
+      wrap.innerHTML = `<div class="tf-card"><img src="${aimg(`tarot/${tarot.id}.webp?v=4`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${tarot.name}</div></div>`;
       flashMountTarget().appendChild(wrap);
       try { AudioFX.play("select"); JuiceFX.sfx("chip"); } catch (_) {}
       setTimeout(() => wrap.remove(), 1100);
@@ -7100,10 +7100,10 @@
         // 슬롯 가득이어도 즉시효과 타로는 구매 후 바로 사용 가능(슬롯 안 차지). 카드 선택형만 슬롯 필요.
         const blocked = full && !instant;
         tRow.appendChild(buildShopTile({
-          imgSrc: `tarot/${tarot.id}.webp?v=3`, emoji: "🔮", name: tarot.name, price: cost, afford, borderColor: "#b56ad6",
+          imgSrc: `tarot/${tarot.id}.webp?v=4`, emoji: "🔮", name: tarot.name, price: cost, afford, borderColor: "#b56ad6",
           badge: { label: t("pop_badge_tarot"), color: "#b56ad6" },
           onClick: () => openDetailPopup({
-            imgSrc: `tarot/${tarot.id}.webp?v=3`, emoji: "🔮", name: tarot.name, badgeLabel: t("pop_badge_tarot"), badgeColor: "#b56ad6",
+            imgSrc: `tarot/${tarot.id}.webp?v=4`, emoji: "🔮", name: tarot.name, badgeLabel: t("pop_badge_tarot"), badgeColor: "#b56ad6",
             desc: tarot.desc + (instant ? t("pop_tarot_instant") : t("pop_tarot_shop_need", {n: tarot.need})),
             costLine: (full && instant) ? t("pop_planet_cost_full", {n: cost}) : t("pop_planet_cost_slot", {n: cost}),
             actionLabel: blocked ? t("pop_consumable_full") : (!afford ? t("pop_no_funds") : ((full && instant) ? t("pop_buy_instant", {n: cost}) : t("pop_buy", {n: cost}))),
