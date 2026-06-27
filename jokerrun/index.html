@@ -4349,7 +4349,7 @@
         ui_sort_suit: "정렬: 무늬별", ui_sort_rank: "정렬: 숫자별",
         ui_enhanced_cards: "✨ <b>강화 카드 {n}장</b>",
         ui_hands_intro: "기본 데미지(공격력×연격)와 행성 카드로 레벨업한 현재 데미지 비교. 행성 사용 시 영구 상승.",
-        ui_th_skill: "기술", ui_th_base: "기본", ui_th_current: "현재(강화)",
+        ui_th_skill: "기술", ui_th_base: "기본", ui_th_current: "현재(강화)", ui_th_plays: "사용",
         ui_boss_no_rule: "특수 규칙 없음 — 정면 승부",
         ui_boss_name: "스테이지 {ante} 보스 · {name}",
         ui_owned_jokers_title: "보유 조커 (판매: 등급별 환급)", ui_no_jokers: "보유 중인 조커가 없습니다.",
@@ -4515,7 +4515,7 @@
         ui_sort_suit: "Sort: by suit", ui_sort_rank: "Sort: by rank",
         ui_enhanced_cards: "✨ <b>{n} Enhanced cards</b>",
         ui_hands_intro: "Base vs. current damage after planet upgrades. Permanent on use.",
-        ui_th_skill: "Skill", ui_th_base: "Base", ui_th_current: "Current",
+        ui_th_skill: "Skill", ui_th_base: "Base", ui_th_current: "Current", ui_th_plays: "Plays",
         ui_boss_no_rule: "No special rule — straight fight",
         ui_boss_name: "Hunt {ante} Boss · {name}",
         ui_owned_jokers_title: "Owned Jokers (sell for grade refund)", ui_no_jokers: "No jokers owned.",
@@ -4681,7 +4681,7 @@
         ui_sort_suit: "排序：依花色", ui_sort_rank: "排序：依點數",
         ui_enhanced_cards: "✨ <b>{n} 張強化卡</b>",
         ui_hands_intro: "基礎傷害與行星強化後的目前傷害比較。使用行星會永久提升。",
-        ui_th_skill: "技能", ui_th_base: "基礎", ui_th_current: "目前",
+        ui_th_skill: "技能", ui_th_base: "基礎", ui_th_current: "目前", ui_th_plays: "次數",
         ui_boss_no_rule: "無特殊規則 — 正面對決",
         ui_boss_name: "狩獵 {ante} 王關 · {name}",
         ui_owned_jokers_title: "持有小丑（售出依等級退款）", ui_no_jokers: "沒有持有的小丑。",
@@ -4847,7 +4847,7 @@
         ui_sort_suit: "並替：スート順", ui_sort_rank: "並替：数字順",
         ui_enhanced_cards: "✨ <b>強化カード {n}枚</b>",
         ui_hands_intro: "基本ダメージと惑星強化後の現在ダメージの比較。使用で永久上昇。",
-        ui_th_skill: "スキル", ui_th_base: "基本", ui_th_current: "現在",
+        ui_th_skill: "スキル", ui_th_base: "基本", ui_th_current: "現在", ui_th_plays: "回数",
         ui_boss_no_rule: "特殊ルールなし — 正面勝負",
         ui_boss_name: "狩り {ante} ボス · {name}",
         ui_owned_jokers_title: "所持ジョーカー（売却：等級別返金）", ui_no_jokers: "所持ジョーカーなし。",
@@ -6027,14 +6027,16 @@
           ? `<img src="ui/weapons/${HAND_WEAPON[h]}.webp" alt="" loading="lazy" style="width:38px;height:38px;border-radius:7px;flex:0 0 auto">`
           : `<span style="display:inline-flex;width:38px;height:38px;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border:1px solid var(--line,rgba(255,255,255,.12));border-radius:7px;font-weight:800;font-size:1.1rem;color:var(--muted);flex:0 0 auto">?</span>`;
         const nameHtml = known
-          ? `${base.name}${up?` <span style="color:var(--gold);font-size:.72rem">Lv.${lvl}</span>`:""}${plays?` <span style="color:var(--cyan,#30d4af);font-size:.7rem">${t("ui_plays_count", {n: plays})}</span>`:""}`
+          ? `${base.name}${up?` <span style="color:var(--gold);font-size:.72rem">Lv.${lvl}</span>`:""}`
           : `<span style="color:var(--muted)">???</span>`;
         const baseCell = known ? `${base.chips}×${base.mult}<br><span style="font-size:.72rem">=${baseScore}</span>` : `<span style="color:var(--muted)">?</span>`;
         const curCell = known ? `${lc}×${lm}<br><span style="font-size:.72rem">=${lvlScore}</span>` : `<span style="color:var(--muted)">?</span>`;
+        const playsCell = known ? `<span style="color:${plays?'var(--cyan,#30d4af)':'var(--muted)'};font-weight:800">${plays}</span>` : `<span style="color:var(--muted)">-</span>`;
         rows += `<tr style="border-bottom:1px solid var(--line,rgba(255,255,255,.08))">
           <td style="padding:7px 6px;font-weight:700"><span style="display:inline-flex;align-items:center;gap:9px">${icon}<span>${nameHtml}</span></span></td>
           <td style="padding:7px 6px;text-align:right;color:var(--muted)">${baseCell}</td>
           <td style="padding:7px 6px;text-align:right;font-weight:800;color:${up?'var(--gold)':'var(--text)'}">${curCell}</td>
+          <td style="padding:7px 6px;text-align:center">${playsCell}</td>
         </tr>`;
       });
       body.innerHTML = `
@@ -6044,6 +6046,7 @@
             <th style="text-align:left;padding:5px 6px;color:var(--muted);font-size:.7rem">${t("ui_th_skill")}</th>
             <th style="text-align:right;padding:5px 6px;color:var(--muted);font-size:.7rem">${t("ui_th_base")}</th>
             <th style="text-align:right;padding:5px 6px;color:var(--muted);font-size:.7rem">${t("ui_th_current")}</th>
+            <th style="text-align:center;padding:5px 6px;color:var(--muted);font-size:.7rem">${t("ui_th_plays")}</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>`;
