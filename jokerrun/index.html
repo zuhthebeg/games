@@ -2450,6 +2450,7 @@
     .deck-suit-cards { display: flex; flex-wrap: wrap; gap: 4px; flex: 1 1 auto; }
 
     .deck-card {
+      position: relative;
       flex: 0 0 auto;
       width: 40px;
       border-radius: 8px;
@@ -2488,6 +2489,21 @@
       font-weight: 800;
       letter-spacing: 0.02em;
     }
+    /* 덱 팝업 강화 필터 칩 */
+    .deck-filters { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 4px; }
+    .deck-filter-chip {
+      display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+      font-size: 0.7rem; font-weight: 800; line-height: 1; padding: 5px 9px; border-radius: 999px;
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.16); color: var(--muted);
+      transition: background .12s, border-color .12s, color .12s; user-select: none; white-space: nowrap;
+    }
+    .deck-filter-chip .dfc-n { font-weight: 900; opacity: .85; }
+    .deck-filter-chip:hover { background: rgba(255,255,255,.1); }
+    .deck-filter-chip.active { background: rgba(255,207,109,.16); border-color: var(--accent, currentColor); color: #fff; box-shadow: 0 0 0 1px var(--accent, transparent) inset; }
+    /* 필터 적용 시 비매칭 카드 흐리게(분포 한눈에) */
+    .deck-card.dimmed { opacity: 0.14; }
+    .deck-card.enh-hit { box-shadow: 0 0 8px 1px currentColor; }
+    .deck-card-enh { position: absolute; top: -3px; right: -3px; font-size: 8px; line-height: 1; pointer-events: none; filter: drop-shadow(0 1px 1px rgba(0,0,0,.7)); }
 
     @keyframes dealIn {
       from { opacity: 0; transform: translateY(10px) scale(0.96); }
@@ -2898,6 +2914,7 @@
         <button class="deck-sort-btn" id="deckSortBtn" type="button" data-i18n="ui_sort_suit">정렬: 무늬별</button>
       </div>
       <div class="suit-counts" id="deckSuitCounts">♥0 ♦0 ♣0 ♠0</div>
+      <div class="deck-filters" id="deckFilters"></div>
       <div class="deck-grid" id="deckGrid"></div>
       <div class="deck-legend" data-i18n="deck_legend">밝은 카드 = 덱에 남음 · 흐린 카드 = 이미 뽑힘</div>
       <div class="row" style="justify-content:flex-end;">
@@ -4375,7 +4392,7 @@
         ui_hand_guide_3: "손패 8장 중 최대 3장을 선택", ui_hand_guide_5: "손패 8장 중 최대 5장을 선택",
         ui_deck_title: "덱 {total}장 (남은 {rem}장)",
         ui_sort_suit: "정렬: 무늬별", ui_sort_rank: "정렬: 숫자별",
-        ui_enhanced_cards: "✨ <b>강화 카드 {n}장</b>",
+        ui_enhanced_cards: "✨ <b>강화 카드 {n}장</b>", ui_deck_all: "전체", ui_deck_enh: "✨강화", ui_deck_filter_empty: "해당 강화 카드가 없습니다",
         ui_hands_intro: "기본 데미지(공격력×연격)와 행성 카드로 레벨업한 현재 데미지 비교. 행성 사용 시 영구 상승.",
         ui_th_skill: "기술", ui_th_base: "기본", ui_th_current: "현재(강화)", ui_th_plays: "사용",
         ui_boss_no_rule: "특수 규칙 없음 — 정면 승부",
@@ -4541,7 +4558,7 @@
         ui_hand_guide_3: "Select up to 3 from 8 cards", ui_hand_guide_5: "Select up to 5 from 8 cards",
         ui_deck_title: "Deck: {total} cards ({rem} remaining)",
         ui_sort_suit: "Sort: by suit", ui_sort_rank: "Sort: by rank",
-        ui_enhanced_cards: "✨ <b>{n} Enhanced cards</b>",
+        ui_enhanced_cards: "✨ <b>{n} Enhanced cards</b>", ui_deck_all: "All", ui_deck_enh: "✨Enhanced", ui_deck_filter_empty: "No cards with this enhancement",
         ui_hands_intro: "Base vs. current damage after planet upgrades. Permanent on use.",
         ui_th_skill: "Skill", ui_th_base: "Base", ui_th_current: "Current", ui_th_plays: "Plays",
         ui_boss_no_rule: "No special rule — straight fight",
@@ -4707,7 +4724,7 @@
         ui_hand_guide_3: "從8張手牌中最多選3張", ui_hand_guide_5: "從8張手牌中最多選5張",
         ui_deck_title: "牌組：{total} 張（剩 {rem} 張）",
         ui_sort_suit: "排序：依花色", ui_sort_rank: "排序：依點數",
-        ui_enhanced_cards: "✨ <b>{n} 張強化卡</b>",
+        ui_enhanced_cards: "✨ <b>{n} 張強化卡</b>", ui_deck_all: "全部", ui_deck_enh: "✨強化", ui_deck_filter_empty: "沒有此強化的卡牌",
         ui_hands_intro: "基礎傷害與行星強化後的目前傷害比較。使用行星會永久提升。",
         ui_th_skill: "技能", ui_th_base: "基礎", ui_th_current: "目前", ui_th_plays: "次數",
         ui_boss_no_rule: "無特殊規則 — 正面對決",
@@ -4873,7 +4890,7 @@
         ui_hand_guide_3: "手札8枚から最大3枚選択", ui_hand_guide_5: "手札8枚から最大5枚選択",
         ui_deck_title: "デッキ：{total}枚（残り {rem}枚）",
         ui_sort_suit: "並替：スート順", ui_sort_rank: "並替：数字順",
-        ui_enhanced_cards: "✨ <b>強化カード {n}枚</b>",
+        ui_enhanced_cards: "✨ <b>強化カード {n}枚</b>", ui_deck_all: "全部", ui_deck_enh: "✨強化", ui_deck_filter_empty: "この強化のカードはありません",
         ui_hands_intro: "基本ダメージと惑星強化後の現在ダメージの比較。使用で永久上昇。",
         ui_th_skill: "スキル", ui_th_base: "基本", ui_th_current: "現在", ui_th_plays: "回数",
         ui_boss_no_rule: "特殊ルールなし — 正面勝負",
@@ -5288,6 +5305,7 @@
     if (!(SCORE_SPEED >= 0)) SCORE_SPEED = 1;   // 기본 1배
     let _scoringActive = false;
     let _deckSort = localStorage.getItem("jokerrun_decksort") || "suit";   // suit | rank
+    let _deckFilter = "all";   // all | enh | (강화 키: bonus/mult/stone/glass/steel/gold)
     function setScoreSpeed(v) {
       SCORE_SPEED = (v >= 0) ? v : 1;
       try { localStorage.setItem("jokerrun_scorespeed", String(SCORE_SPEED)); } catch (_) {}
@@ -5988,40 +6006,62 @@
       const sortBtn = $("#deckSortBtn");
       if (sortBtn) sortBtn.textContent = _deckSort === "suit" ? t("ui_sort_suit") : t("ui_sort_rank");
 
+      // ── 강화 필터 칩: 전체 / 강화(전체) / 강화 타입별(덱에 존재하는 것만), 각 카운트 표시 ──
+      const ENH_ORDER = ["bonus", "mult", "stone", "glass", "steel", "gold"];
+      const enhCounts = {}; enhanced.forEach(c => { enhCounts[c.enh] = (enhCounts[c.enh] || 0) + 1; });
+      // 현재 필터가 더 이상 존재하지 않는 타입이면 전체로 폴백
+      if (_deckFilter !== "all" && _deckFilter !== "enh" && !enhCounts[_deckFilter]) _deckFilter = "all";
+      if (_deckFilter === "enh" && !enhanced.length) _deckFilter = "all";
+      const filtersEl = $("#deckFilters");
+      if (filtersEl) {
+        const chips = [];
+        chips.push({ key: "all", label: t("ui_deck_all"), n: run.length, color: "#cfd6e0" });
+        if (enhanced.length) chips.push({ key: "enh", label: t("ui_deck_enh"), n: enhanced.length, color: "#ffcf6d" });
+        ENH_ORDER.forEach(k => { if (enhCounts[k]) chips.push({ key: k, label: ENH[k].label, n: enhCounts[k], color: ENH[k].color, glyph: ENH[k].short }); });
+        filtersEl.innerHTML = "";
+        chips.forEach(ch => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "deck-filter-chip" + (_deckFilter === ch.key ? " active" : "");
+          b.style.setProperty("--accent", ch.color);
+          b.innerHTML = `${ch.glyph ? ch.glyph + " " : ""}<span>${ch.label}</span> <span class="dfc-n" style="color:${ch.color}">${ch.n}</span>`;
+          b.addEventListener("click", () => { _deckFilter = ch.key; renderDeckModal(); });
+          filtersEl.appendChild(b);
+        });
+      }
+      // 필터 매칭 판정
+      const matches = (c) => _deckFilter === "all" ? true : _deckFilter === "enh" ? !!c.enh : c.enh === _deckFilter;
+      const filtering = _deckFilter !== "all";
+
       const grid = $("#deckGrid");
       grid.innerHTML = "";
       grid.classList.toggle("by-suit", _deckSort === "suit");
-      // 강화 카드 요약(전체 덱 기준 — 손패/덱 어디 있든 영구 강화)
-      if (enhanced.length) {
-        const eh = document.createElement("div");
-        eh.style.cssText = "flex-basis:100%;width:100%;font-size:.74rem;line-height:1.7;margin-bottom:2px;padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)";
-        const list = enhanced.sort((a, b) => deckOrder[a.suit] - deckOrder[b.suit] || a.rank - b.rank).map(c => {
-          const e = ENH[c.enh];
-          return `<span style="display:inline-block;margin:1px 4px;padding:1px 6px;border-radius:6px;border:1px solid ${e.color};color:${(c.suit === "heart" || c.suit === "diamond") ? "#e8546a" : "#e8edf3"}">${suitSymbol[c.suit]}${formatRank(c.rank)} <b style="color:${e.color}">${e.label}</b></span>`;
-        }).join("");
-        eh.innerHTML = t("ui_enhanced_cards", {n: enhanced.length}) + `<br>${list}`;
-        grid.appendChild(eh);
-      }
-      // 카드 1장 엘리먼트(남으면 밝게, 뽑혔으면 흐리게)
+      // 카드 1장 엘리먼트(남으면 밝게, 뽑혔으면 흐리게 / 필터 비매칭은 더 흐리게 + 강화 코너 글리프)
       const mkCard = (card) => {
         const el = document.createElement("div");
         const drawn = !remainIds.has(card.id);
-        el.className = `deck-card ${card.suit}${drawn ? " drawn" : ""}`;
-        if (card.enh && ENH[card.enh]) { el.style.outline = `2px solid ${ENH[card.enh].color}`; el.style.outlineOffset = "-2px"; el.title = ENH[card.enh].label; }
-        el.textContent = `${suitSymbol[card.suit]}${formatRank(card.rank)}`;
+        const hit = matches(card);
+        el.className = `deck-card ${card.suit}${drawn ? " drawn" : ""}${(filtering && !hit) ? " dimmed" : ""}${(filtering && hit && card.enh) ? " enh-hit" : ""}`;
+        if (card.enh && ENH[card.enh]) {
+          const e = ENH[card.enh];
+          el.style.outline = `2px solid ${e.color}`; el.style.outlineOffset = "-2px"; el.style.color = e.color; el.title = e.label;
+          const g = document.createElement("span"); g.className = "deck-card-enh"; g.textContent = e.short; el.appendChild(g);
+        }
+        el.appendChild(document.createTextNode(`${suitSymbol[card.suit]}${formatRank(card.rank)}`));
         return el;
       };
       if (_deckSort === "suit") {
-        // 무늬별: 4행, 각 행은 랭크 오름차순. 남은 카드가 한눈에 들어온다.
+        // 무늬별: 4행, 각 행은 랭크 오름차순. 필터 시 매칭 0인 행은 숨김.
         suits4.forEach(s => {
-          const rowCards = run.filter(c => c.suit === s).sort((a, b) => a.rank - b.rank);
+          let rowCards = run.filter(c => c.suit === s).sort((a, b) => a.rank - b.rank);
+          if (filtering) rowCards = rowCards.filter(matches);
           if (!rowCards.length) return;
           const row = document.createElement("div");
           row.className = "deck-suit-row";
           const red = s === "heart" || s === "diamond";
           const lbl = document.createElement("div");
           lbl.className = "deck-suit-lbl" + (red ? " red" : "");
-          lbl.innerHTML = `${suitSymbol[s]}<span class="dsl-n">${remain[s]}/${total[s]}</span>`;
+          lbl.innerHTML = `${suitSymbol[s]}<span class="dsl-n">${filtering ? rowCards.length : (remain[s] + "/" + total[s])}</span>`;
           row.appendChild(lbl);
           const wrap = document.createElement("div");
           wrap.className = "deck-suit-cards";
@@ -6030,9 +6070,16 @@
           grid.appendChild(row);
         });
       } else {
-        // 숫자별: 전체를 랭크 오름차순(같은 랭크는 무늬순)으로 평면 나열
-        const cards = [...run].sort((a, b) => (a.rank - b.rank) || (deckOrder[a.suit] - deckOrder[b.suit]));
+        // 숫자별: 랭크 오름차순(같은 랭크는 무늬순). 필터 시 매칭만.
+        let cards = [...run].sort((a, b) => (a.rank - b.rank) || (deckOrder[a.suit] - deckOrder[b.suit]));
+        if (filtering) cards = cards.filter(matches);
         cards.forEach(c => grid.appendChild(mkCard(c)));
+      }
+      if (!grid.children.length) {
+        const empty = document.createElement("div");
+        empty.style.cssText = "width:100%;text-align:center;color:var(--muted);font-size:.8rem;padding:18px 0";
+        empty.textContent = t("ui_deck_filter_empty");
+        grid.appendChild(empty);
       }
     }
 
