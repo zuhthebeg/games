@@ -5542,6 +5542,18 @@
       renderHUD();
       refreshConsumables();
     }
+    // 소모품 '사용' 공통 정산(누적 조커·바보 복사·도감) — 인벤 사용/상점 즉시사용 양쪽에서 일관 적용
+    function accrueTarotUse(tarot){
+      markDiscovered("tarot", tarot.id);
+      if (tarot.id !== "fool") state.lastConsumable = { kind: "tarot", id: tarot.id };
+      state.tarotsUsed = (state.tarotsUsed || 0) + 1;   // 점술가
+      (state.jokers || []).forEach(j => { if (j.id === "tarotMult") j.counter = (j.counter || 0) + 3; });   // 타로술사
+    }
+    function accruePlanetUse(planet){
+      markDiscovered("planet", planet.id);
+      state.lastConsumable = { kind: "planet", id: planet.id };
+      (state.jokers || []).forEach(j => { if (j.id === "planetChip") j.counter = (j.counter || 0) + 1; });   // 행성 수호자
+    }
     function applySpecialPlanet(planet) {
       const keys = Object.keys(state.handLevels);
       if (planet.special === "all") {
@@ -7128,7 +7140,8 @@
               
               state.shopPlanets.splice(idx, 1);
               if (planetFull) {
-                // 슬롯 가득 → 슬롯에 안 넣고 즉시 사용
+                // 슬롯 가득 → 슬롯에 안 넣고 즉시 사용 (인벤 사용과 동일하게 누적 정산)
+                accruePlanetUse(planet);
                 if (planet.special === "absorb") {
                   addLog(t("log_instant_planet", {name: planet.name, n: cost}));
                   renderHUD();
@@ -7183,6 +7196,7 @@
               state.shopTarots.splice(idx, 1);
               if (full && instant) {
                 tarot.apply();   // 슬롯 가득 → 즉시 효과 발동, 슬롯 안 차지
+                accrueTarotUse(tarot);   // 인벤 사용과 동일하게 누적 정산(타로술사/점술가/바보)
                 flashTarotCard(tarot);
                 addLog(t("log_instant_tarot", {name: tarot.name, n: cost}));
               } else {
