@@ -7253,8 +7253,8 @@
           run() { const m = Math.floor(ante * 5 / 2); state.money += m; return t("sr_windfall_run", {n: m}); } },
         { icon:"🃏", weight: 12, label: t("sr_rand_joker_label"), detail: t("sr_rand_joker_detail"),
           cond: () => !jokerSlotsFull(),
-          // 슬롯이 가득이면(미리 롤/복원 타이밍 등) 일반 조커는 슬롯을 넘겨 추가하지 않고 네가티브(슬롯 미차지)로 지급
-          run() { const full = jokerSlotsFull(); const j = randomUnownedJoker(); state.jokers.push({ ...j, counter: j.initCounter ?? 0, negative: full }); markDiscovered("joker", j.id); renderHUD(); return t(full ? "sr_neg_joker_run" : "sr_rand_joker_run", {name: j.name}); } },
+          // 슬롯이 가득이면(미리 롤/복원 타이밍 등) 조커를 추가하지 않는다(기존 조커도 절대 건드리지 않음) → 골드로 대체 지급
+          run() { if (jokerSlotsFull()) { const m = Math.floor(ante * 5 / 2); state.money += m; renderHUD(); return t("sr_windfall_run", {n: m}); } const j = randomUnownedJoker(); state.jokers.push({ ...j, counter: j.initCounter ?? 0 }); markDiscovered("joker", j.id); renderHUD(); return t("sr_rand_joker_run", {name: j.name}); } },
         // 네가티브 조커: 밸런스 영향 큰 강보상 → 가중치 낮추고 초반(1~2탄) 제외
         { icon:"🌑", weight: 3, label: t("sr_neg_joker_label"), detail: t("sr_neg_joker_detail"),
           cond: () => state.ante >= 3,
