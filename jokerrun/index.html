@@ -1326,8 +1326,11 @@
 
     /* 카드 강화(enhancement) 표시 — 손패/스테이지 공통(.card 기반) */
     .enh-badge { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); z-index: 4;
-      font-size: .5rem; font-weight: 900; color: #0a0a12; padding: 1px 5px; border-radius: 6px;
-      line-height: 1.35; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.55); pointer-events: none; }
+      width: 21px; height: 21px; border-radius: 50%; overflow: hidden; background: #14101c;
+      display: flex; align-items: center; justify-content: center; font-size: .62rem; font-weight: 900;
+      color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.32); pointer-events: none; }
+    .enh-ico { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+    .stone-img { width: 62%; max-width: 62px; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
     .card.enh-bonus { outline: 2px solid #5b8fff; outline-offset: -2px; background: linear-gradient(162deg, #eef3ff 0%, #d3e3ff 60%, #b6d0ff 100%) !important; }
     .card.enh-mult  { outline: 2px solid #ff5a6a; outline-offset: -2px; background: linear-gradient(162deg, #fff0f3 0%, #ffd4dd 60%, #ffb9c6 100%) !important; }
     .card.enh-stone { outline: 2px solid #9aa0a6; outline-offset: -2px; background: linear-gradient(160deg, #71757d 0%, #4a4d54 55%, #34363c 100%) !important; }
@@ -3911,7 +3914,7 @@
     // 보스 모디파이어로 무력화된 카드(현재: 하트 봉인). 데미지에 기여하지 않고 흑백으로 표시된다.
     function isCardBossDisabled(c){ return state.bossModifier?.id === "no_hearts" && c.suit === "heart"; }
     function cardScoreChips(c){ if (isCardBossDisabled(c)) return 0; if (c.enh === "stone") return (enhOf(c)?.chips||0); /* 스톤은 랭크 없음 → +50만(원래 랭크 칩 미가산) */ return (RANK_CHIPS[c.rank]||0) + (enhOf(c)?.chips||0); }
-    function enhBadgeHTML(card){ const e=enhOf(card); return e ? `<span class="enh-badge" style="background:${e.color}">${e.short}</span>` : ""; }
+    function enhBadgeHTML(card){ const e=enhOf(card); if(!e) return ""; return `<span class="enh-badge"><span class="enh-emoji">${e.short}</span><img class="enh-ico" src="enh/${card.enh}.webp?v=1" alt="" draggable="false" onerror="this.remove()"></span>`; }
     // 페이스 카드(J/Q/K) 스킨 — classic: 오리지널 트럼프 풀카드 이미지 / fantasy: 직접 그린 일러스트
     const FACE_IMG = { 11: "jack", 12: "queen", 13: "king" };
     function getCardSkin(){ try { return localStorage.getItem("jokerrun_card_skin") || "classic"; } catch (_) { return "classic"; } }
@@ -3970,7 +3973,7 @@
 
     let _collectionTab = "joker";
     function collectionData(kind) {
-      if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: aimg(`tarot/${t.id}.webp?v=2`), badge: { label: "타로", color: "#b56ad6" } }));
+      if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: aimg(`tarot/${t.id}.webp?v=3`), badge: { label: "타로", color: "#b56ad6" } }));
       if (kind === "planet") return planetPool.map(p => { if (p.special) return { id: p.id, name: p.name, desc: p.desc, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "특수", color: "#a06bff" } }; const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 기술 영구 강화 (+${p.chipsBonus}공격력 / +${p.multBonus}연격)`, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "행성", color: "#4a84ff" } }; });
       return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: aimg(`jokers/${j.id}.webp?v=2`), glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
     }
@@ -5094,8 +5097,8 @@
     function cardInnerHTML(card) {
       if (card.enh === "stone") {
         // 스톤 카드: 무늬/랭크 숨기고 돌맹이로 표현 (+50공격력)
-        return `<span class="enh-badge" style="background:#9aa0a6">石</span>
-          <div class="stone-face"><span class="stone-rock">🪨</span><span class="stone-chip">+50</span></div>`;
+        return `${enhBadgeHTML(card)}
+          <div class="stone-face"><img class="stone-img" src="enh/stone.webp?v=1" alt="" draggable="false" onerror="this.outerHTML='<span class=&quot;stone-rock&quot;>🪨</span>'"><span class="stone-chip">+50</span></div>`;
       }
       const locked = isCardBossDisabled(card) ? `<span class="card-lock" aria-label="봉인됨">🚫</span>` : "";
       // 클래식 스킨: J/Q/K를 오리지널 트럼프 풀카드 이미지로 통째 교체 (페이스는 수위 무관 → 항상 표시)
@@ -5583,7 +5586,7 @@
         const need = item.need || 0;
         const cardLocked = need > 0 && inShop;   // 카드 선택형은 상점에선 사용 불가(손패 없음)
         openDetailPopup({
-          imgSrc: `tarot/${item.id}.webp?v=2`, emoji: "🔮",
+          imgSrc: `tarot/${item.id}.webp?v=3`, emoji: "🔮",
           name: item.name, badgeLabel: t("pop_badge_tarot"), badgeColor: "#b56ad6",
           desc: (item.desc || "") + (need > 0 ? t("pop_tarot_need", {n: item.need}) : t("pop_tarot_instant")),
           costLine: t("pop_sell", {n: sell}),
@@ -5628,7 +5631,7 @@
           card.classList.add("tarot-mini");
           card.dataset.need = String(tarot.need || 0);
           card.innerHTML = `
-            <img class="planet-art" src="${aimg(`tarot/${tarot.id}.webp?v=2`)}" alt="" draggable="false" onerror="this.style.display='none'">
+            <img class="planet-art" src="${aimg(`tarot/${tarot.id}.webp?v=3`)}" alt="" draggable="false" onerror="this.style.display='none'">
             <span class="planet-grad" aria-hidden="true"></span>
             <span class="planet-glyph">${tarot.name}</span>
             <span class="planet-target">${t("ui_tarot_mini_label")}${(tarot.need || 0) > 0 ? ` ${t("mini_need", { n: tarot.need })}` : ""}</span>`;
@@ -6064,7 +6067,7 @@
             ? `<span style="color:#9fd0ff">${tc.exact ? t("ui_tarot_exact") : ""}${t("tarot_need_use", { n: tc.need })}</span>`
             : `<span style="color:#9fd0ff">${t("ui_tarot_instant_txt")}</span>`;
           return `<div style="display:flex;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.08)">
-            <img src="${aimg(`tarot/${tc.id}.webp?v=2`)}" alt="" loading="lazy" style="width:46px;height:64px;object-fit:cover;border-radius:7px;border:1px solid #b56ad688;flex:0 0 auto;background:#1a0f24" onerror="this.outerHTML='<span style=\\'width:46px;height:64px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex:0 0 auto\\'>🔮</span>'">
+            <img src="${aimg(`tarot/${tc.id}.webp?v=3`)}" alt="" loading="lazy" style="width:46px;height:64px;object-fit:cover;border-radius:7px;border:1px solid #b56ad688;flex:0 0 auto;background:#1a0f24" onerror="this.outerHTML='<span style=\\'width:46px;height:64px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex:0 0 auto\\'>🔮</span>'">
             <div style="flex:1;min-width:0">
               <div style="font-weight:800;color:#e7defb">${tc.name}${owned ? ` <span style="color:var(--gold);font-size:.72rem">${t("ui_owned_count", {n: owned})}</span>` : ""}</div>
               <div style="font-size:.82rem;color:var(--text);margin:2px 0">${tc.desc}</div>
@@ -6449,7 +6452,7 @@
       const wrap = document.createElement("div");
       wrap.className = "tarot-flash";
       const fb = `<span style=\\'font-size:3rem\\'>🔮</span>`;
-      wrap.innerHTML = `<div class="tf-card"><img src="${aimg(`tarot/${tarot.id}.webp?v=2`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${tarot.name}</div></div>`;
+      wrap.innerHTML = `<div class="tf-card"><img src="${aimg(`tarot/${tarot.id}.webp?v=3`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'"><div class="jf-name">${tarot.name}</div></div>`;
       flashMountTarget().appendChild(wrap);
       try { AudioFX.play("select"); JuiceFX.sfx("chip"); } catch (_) {}
       setTimeout(() => wrap.remove(), 1100);
@@ -7097,10 +7100,10 @@
         // 슬롯 가득이어도 즉시효과 타로는 구매 후 바로 사용 가능(슬롯 안 차지). 카드 선택형만 슬롯 필요.
         const blocked = full && !instant;
         tRow.appendChild(buildShopTile({
-          imgSrc: `tarot/${tarot.id}.webp?v=2`, emoji: "🔮", name: tarot.name, price: cost, afford, borderColor: "#b56ad6",
+          imgSrc: `tarot/${tarot.id}.webp?v=3`, emoji: "🔮", name: tarot.name, price: cost, afford, borderColor: "#b56ad6",
           badge: { label: t("pop_badge_tarot"), color: "#b56ad6" },
           onClick: () => openDetailPopup({
-            imgSrc: `tarot/${tarot.id}.webp?v=2`, emoji: "🔮", name: tarot.name, badgeLabel: t("pop_badge_tarot"), badgeColor: "#b56ad6",
+            imgSrc: `tarot/${tarot.id}.webp?v=3`, emoji: "🔮", name: tarot.name, badgeLabel: t("pop_badge_tarot"), badgeColor: "#b56ad6",
             desc: tarot.desc + (instant ? t("pop_tarot_instant") : t("pop_tarot_shop_need", {n: tarot.need})),
             costLine: (full && instant) ? t("pop_planet_cost_full", {n: cost}) : t("pop_planet_cost_slot", {n: cost}),
             actionLabel: blocked ? t("pop_consumable_full") : (!afford ? t("pop_no_funds") : ((full && instant) ? t("pop_buy_instant", {n: cost}) : t("pop_buy", {n: cost}))),
