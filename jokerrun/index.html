@@ -3299,7 +3299,7 @@
       { id: "extraHands", name: "곡예사", cost: 7, rarity: "uncommon", desc: "전투 시작 시 공격 횟수 +2", detail: "각 전투를 시작할 때 공격(핸드) 횟수가 2회 늘어난다.", apply() {} },
       { id: "extraDiscards", name: "재정비", cost: 6, rarity: "uncommon", desc: "전투 시작 시 버리기 +2", detail: "각 전투를 시작할 때 버리기 횟수가 2회 늘어난다.", apply() {} },
       { id: "twoPairMaster", name: "쌍둥이 장인", cost: 14, rarity: "legendary", desc: "공격 2회로 고정, 대신 투페어 레벨 10 보장", detail: "전투 시작 시 공격 횟수가 2회로 고정되는 대신, 투페어 기술 레벨이 항상 10 이상으로 유지된다. 투페어 올인 빌드의 핵심.", apply() {} },
-      { id: "anteLevel", name: "운석우", cost: 12, rarity: "rare", desc: "앤티 첫 플레이 기술 레벨 +1", detail: "각 스테이지(앤티)에서 처음 플레이한 포커 기술의 레벨이 +1 오른다(앤티당 1회).", apply() {} },
+      { id: "anteLevel", name: "운석우", cost: 12, rarity: "rare", desc: "전투 첫 플레이 기술 레벨 +1", detail: "각 전투에서 처음 플레이한 포커 기술의 레벨이 +1 오른다(전투당 1회). 전투마다 누적되므로 자주 쓰는 기술이 쭉쭉 큰다.", apply() {} },
       { id: "hahoe", name: "야누스", cost: 7, rarity: "uncommon", desc: "공격마다 50% 연격 +6 / 50% 공격력 +60", detail: "변덕스러운 탈. 매 공격 동전을 던져 연격 +6 또는 공격력 +60 중 하나가 발동한다.", apply(ctx) { if (Math.random() < 0.5) ctx.mult += 6; else ctx.chips += 60; ctx.activate("hahoe"); } },
       { id: "handsome", name: "미남", cost: 7, rarity: "uncommon", desc: "J/Q/K 1장당 공격력 +30", detail: "플레이한 J·Q·K 카드 1장마다 공격력 +30. 페이스 카드를 모을수록 강해진다.", apply(ctx) { const n = ctx.scored.filter(c => c.rank >= 11 && c.rank <= 13).length; if (n > 0) { ctx.chips += n * 30; ctx.activate("handsome"); } } },
       { id: "firstMove", name: "선공", cost: 9, rarity: "rare", mult: true, desc: "전투 첫 공격이면 연격 ×3", detail: "각 전투의 첫 번째 공격에서 연격 ×3. 강한 패를 첫 턴에 몰아치는 빌드용.", apply(ctx) { if (state.handsLeft === state._startHands) { ctx.mult *= 3; ctx.activate("firstMove"); } } },
@@ -3643,7 +3643,7 @@
       extraHands:{name:"Juggler",desc:"+2 hands at combat start"},
       extraDiscards:{name:"Recycler",desc:"+2 discards at combat start"},
       twoPairMaster:{name:"Pair Savant",desc:"Hands fixed to 2, Two Pair always lv10+"},
-      anteLevel:{name:"Stargazer",desc:"First hand played each ante +1 level"},
+      anteLevel:{name:"Stargazer",desc:"First hand played each battle +1 level"},
       hahoe:{name:"Janus",desc:"Each attack 50% Combo +6 / 50% ATK +60"},
       handsome:{name:"Charmer",desc:"ATK +30 per J/Q/K"},
       firstMove:{name:"First Move",desc:"First attack of combat: Combo ×3"},
@@ -3729,7 +3729,7 @@
       extraHands:{name:"雜耍藝人",desc:"戰鬥開始時 +2出牌"},
       extraDiscards:{name:"整備員",desc:"戰鬥開始時 +2棄牌"},
       twoPairMaster:{name:"雙對宗師",desc:"出牌固定2，兩對等級恆10+"},
-      anteLevel:{name:"觀星者",desc:"每場狩獵首次出牌技能+1級"},
+      anteLevel:{name:"觀星者",desc:"每場戰鬥首次出牌技能+1級"},
       hahoe:{name:"雅努斯",desc:"每次攻擊 50%連擊+6/50%攻擊力+60"},
       handsome:{name:"美男",desc:"每張J/Q/K 攻擊力+30"},
       firstMove:{name:"先攻",desc:"戰鬥首攻：連擊×3"},
@@ -3815,7 +3815,7 @@
       extraHands:{name:"曲芸師",desc:"戦闘開始時 プレイ+2"},
       extraDiscards:{name:"整備員",desc:"戦闘開始時 捨て+2"},
       twoPairMaster:{name:"ツーペアの達人",desc:"プレイ2固定、ツーペアLv10+保証"},
-      anteLevel:{name:"星詠み",desc:"狩り毎 最初に出した役+1レベル"},
+      anteLevel:{name:"星詠み",desc:"戦闘毎 最初に出した役+1レベル"},
       hahoe:{name:"ヤヌス",desc:"攻撃毎 50%連撃+6/50%攻撃力+60"},
       handsome:{name:"美男",desc:"J/Q/K1枚毎 攻撃力+30"},
       firstMove:{name:"先制",desc:"戦闘初撃：連撃×3"},
@@ -6528,7 +6528,7 @@
       if (state.bossModifier?.id === "min4cards" && cards.length < 4) return setInfo(t("info_boss_min4"));
       AudioFX.play("play");
       const hand = scoreHand(cards);
-      // 운석우(anteLevel): 이 앤티에서 처음 플레이한 포커 기술의 레벨 +1 (앤티당 1회, 이번 플레이부터 반영)
+      // 운석우(anteLevel): 이 전투에서 처음 플레이한 포커 기술의 레벨 +1 (전투당 1회, 이번 플레이부터 반영)
       if (!state._anteFirstHandLeveled && (state.jokers || []).some(j => j.id === "anteLevel")) {
         state.handLevels[hand.handType] = (state.handLevels[hand.handType] || 1) + 1;
         state._anteFirstHandLeveled = true;
@@ -7376,7 +7376,7 @@
         else if (j.id === "extraDiscards") state.discardsLeft += 2;
         else if (j.id === "twoPairMaster") { state.handsLeft = 2; state.handLevels.TWO_PAIR = Math.max(10, state.handLevels.TWO_PAIR || 1); }
       });
-      if (index === 0) state._anteFirstHandLeveled = false;   // 운석우: 앤티 첫 플레이 기술 +1 (앤티 시작 시 리셋)
+      state._anteFirstHandLeveled = false;   // 운석우: 전투마다 첫 플레이 기술 +1 (매 전투 시작 시 리셋)
       state._startHands = state.handsLeft;   // 라운드 첫 공격 판정(단두대)
       closeDeckModal();
       closeVictoryModal();
