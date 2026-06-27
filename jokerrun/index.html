@@ -3319,7 +3319,7 @@
       common:    { label:"일반", color:"#9aa7b4", weight:100, sellMul:1.0 },
       uncommon:  { label:"희귀", color:"#4f9d69", weight:46,  sellMul:1.5 },
       rare:      { label:"전설", color:"#d4574e", weight:15,  sellMul:2.4 },
-      legendary: { label:"신화", color:"#b56ad6", weight:4,   sellMul:3.5 }
+      legendary: { label:"신화", color:"#b56ad6", weight:2,   sellMul:3.5 }
     };
     // 등급 라벨 영문(표시 의미 기준: 전설=Legendary, 신화=Mythic)
     const EN_RARITY = { common:"Common", uncommon:"Uncommon", rare:"Legendary", legendary:"Mythic" };
@@ -3442,17 +3442,18 @@
     const MONEY_TAROT = new Set(["hermit", "wheel", "temperance"]);
     const GEN_TAROT = new Set(["priestess", "emperor", "fool", "judgement"]);  // 생성형(행성/타로/조커 생성) — 강력
     function tarotWeight(t){
+      if (t.id === "enchant") return 1.5;         // 각인(조커 에디션 부여) — 매우 희귀
       if (MONEY_TAROT.has(t.id)) return 3;        // 은둔자·수레바퀴·절제 — 드물게
       if (GEN_TAROT.has(t.id)) return 4;          // 생성형 타로 — 드물게
       if (String(t.id).startsWith("enh_")) return 6;  // 카드 강화 타로 — 중간
       return 12;                                   // 일반 타로(무늬/랭크 변경 등)
     }
-    // 행성 등장 가중치: 특수 행성(전체/흡수)은 드물게, 은하(올업 대박)는 가장 희귀
+    // 행성 등장 가중치: 특수 행성(전체/흡수)은 희귀, 은하(올업 대박)는 가장 희귀
     function planetWeight(p){
       if (!p.special) return 12;
-      if (p.id === "galaxy") return 2;
-      if (p.id === "blackhole") return 4;
-      return 3;                                    // 초신성·특이점
+      if (p.id === "galaxy") return 1;             // 은하 — 최고 희귀
+      if (p.id === "blackhole") return 2;          // 블랙홀
+      return 1.5;                                  // 초신성·특이점
     }
 
     // ── 바우처(Balatro식): 앤티마다 상점에 1개 랜덤 등장, 구매 시 런 내내 영구 효과 ──
@@ -3529,6 +3530,7 @@
       { id:"usury",      name:"사채업자",   need:0, desc:"보유 자금의 20%를 즉시 얻는다(최대 +🪙15)", apply(){ const g=Math.min(15, Math.floor((state.money||0)*0.2)); state.money=(state.money||0)+g; } },
       { id:"astrology",  name:"점성술",     need:0, desc:"무작위 행성 1장과 타로 1장을 만든다(슬롯 빈자리만큼)", apply(){ if(consumableCount()<consumableMax()){ const p=weightedSampleBy(planetPool.filter(x=>!x.special),1,planetWeight)[0]; if(p){ state.planetCards.push({ ...p }); } } if(consumableCount()<consumableMax()){ const tt=weightedSampleBy(tarotPool.filter(x=>x.id!=="astrology"),1,tarotWeight)[0]; if(tt){ state.tarotCards.push({ ...tt }); } } } },
       { id:"coronation", name:"대관식",     need:1, desc:"선택한 카드를 K로 만든다", apply(sel){ sel.forEach(c=>c.rank=13); } },
+      { id:"enchant",    name:"각인",       need:0, desc:"보유 조커 1개에 무작위 에디션(포일/홀로/폴리)을 부여한다", apply(){ const cands=(state.jokers||[]).filter(j=>!j.edition&&!j.negative); if(!cands.length) return; const j=cands[Math.floor(Math.random()*cands.length)]; const ek=Object.keys(EDITIONS); j.edition=ek[Math.floor(Math.random()*ek.length)]; if(typeof renderHUD==="function") renderHUD(); } },
     ];
     function consumableCount(){ return (state.planetCards?.length||0) + (state.tarotCards?.length||0); }
     // 소모품(타로·행성) 보관 슬롯 상한: 기본 3 + 확장 가방 바우처(+1)
@@ -3658,7 +3660,7 @@
       hermit:{name:"Hermit",desc:"Double your coins (up to +🪙20)"}, wheel:{name:"Wheel of Fortune",desc:"Gain 🪙12 instantly"},
       magician:{name:"Magician",desc:"Raise selected cards' rank by 2"}, empress:{name:"Empress",desc:"Turn selected cards into Aces"},
       emperor:{name:"Emperor",desc:"Create 2 random Tarot cards (if slots free)"},
-      hierophant:{name:"Hierophant",desc:"Turn 2 selected cards into Bonus cards (ATK +30)"}, chariot:{name:"Chariot",desc:"Turn 2 selected cards into Mult cards (Combo +4)"}, justice:{name:"Justice",desc:"Turn 2 selected cards into Glass cards (Combo ×1.5)"}, devil:{name:"Devil",desc:"Turn 2 selected cards into Gold cards (+🪙3 when scored)"}, tailor:{name:"Tailor",desc:"Make 2 cards share a suit (right takes left)"}, fortune:{name:"Wheel Seal",desc:"Give the selected card a random enhancement"}, alchemy:{name:"Alchemist",desc:"Turn the selected card into a Gold card and gain 🪙8 now"}, usury:{name:"Loan Shark",desc:"Gain 20% of your coins (up to 🪙15)"}, astrology:{name:"Astrology",desc:"Create 1 random Planet + 1 Tarot card (if slots free)"}, coronation:{name:"Coronation",desc:"Turn the selected card into a King"}, priestess:{name:"High Priestess",desc:"Create 2 random Planet cards (if slots free)"},
+      hierophant:{name:"Hierophant",desc:"Turn 2 selected cards into Bonus cards (ATK +30)"}, chariot:{name:"Chariot",desc:"Turn 2 selected cards into Mult cards (Combo +4)"}, justice:{name:"Justice",desc:"Turn 2 selected cards into Glass cards (Combo ×1.5)"}, devil:{name:"Devil",desc:"Turn 2 selected cards into Gold cards (+🪙3 when scored)"}, tailor:{name:"Tailor",desc:"Make 2 cards share a suit (right takes left)"}, fortune:{name:"Wheel Seal",desc:"Give the selected card a random enhancement"}, alchemy:{name:"Alchemist",desc:"Turn the selected card into a Gold card and gain 🪙8 now"}, usury:{name:"Loan Shark",desc:"Gain 20% of your coins (up to 🪙15)"}, astrology:{name:"Astrology",desc:"Create 1 random Planet + 1 Tarot card (if slots free)"}, coronation:{name:"Coronation",desc:"Turn the selected card into a King"}, priestess:{name:"High Priestess",desc:"Create 2 random Planet cards (if slots free)"}, enchant:{name:"Enchant",desc:"Give one of your jokers a random edition (Foil/Holo/Poly)"},
       hanged:{name:"Hanged Man",desc:"Discard the 2 selected cards and draw new ones"}, temperance:{name:"Temperance",desc:"Gain coins equal to your jokers' total sell value (up to 🪙20)"},
       enh_bonus:{name:"Bonus Seal",desc:"Turn the selected card into a Bonus card (ATK +30)"}, enh_mult:{name:"Blood Seal",desc:"Turn the selected card into a Mult card (Combo +4)"},
       enh_stone:{name:"Tower",desc:"Turn the selected card into a Stone card (ATK +50)"}, enh_glass:{name:"The Lovers (Glass)",desc:"Turn the selected card into a Glass card (Combo ×1.5)"},
@@ -3744,7 +3746,7 @@
       hermit:{name:"隱者",desc:"讓金幣翻倍（最多 +🪙20）"}, wheel:{name:"命運之輪",desc:"立即獲得 🪙12"},
       magician:{name:"魔術師",desc:"讓選擇的牌點數 +2"}, empress:{name:"皇后",desc:"把選擇的牌變成 A"},
       emperor:{name:"皇帝",desc:"生成2張隨機塔羅牌（欄位有空時）"},
-      hierophant:{name:"教皇",desc:"把選擇的2張變成獎勵卡（攻擊力+30）"}, chariot:{name:"戰車",desc:"把選擇的2張變成倍率卡（連擊+4）"}, justice:{name:"正義",desc:"把選擇的2張變成玻璃卡（連擊×1.5）"}, devil:{name:"惡魔",desc:"把選擇的2張變成黃金卡（計分時+🪙3）"}, tailor:{name:"裁縫師",desc:"讓2張牌花色統一（右邊跟左邊）"}, fortune:{name:"命運印記",desc:"給選擇的牌隨機強化"}, alchemy:{name:"鍊金術士",desc:"把選擇的牌變成黃金卡，並立即獲得🪙8"}, usury:{name:"放高利貸",desc:"立即獲得持有金幣的20%（最多🪙15）"}, astrology:{name:"占星術",desc:"生成1張隨機行星+1張塔羅牌（欄位有空時）"}, coronation:{name:"加冕",desc:"把選擇的牌變成 K"}, priestess:{name:"女祭司",desc:"生成2張隨機行星牌（欄位有空時）"},
+      hierophant:{name:"教皇",desc:"把選擇的2張變成獎勵卡（攻擊力+30）"}, chariot:{name:"戰車",desc:"把選擇的2張變成倍率卡（連擊+4）"}, justice:{name:"正義",desc:"把選擇的2張變成玻璃卡（連擊×1.5）"}, devil:{name:"惡魔",desc:"把選擇的2張變成黃金卡（計分時+🪙3）"}, tailor:{name:"裁縫師",desc:"讓2張牌花色統一（右邊跟左邊）"}, fortune:{name:"命運印記",desc:"給選擇的牌隨機強化"}, alchemy:{name:"鍊金術士",desc:"把選擇的牌變成黃金卡，並立即獲得🪙8"}, usury:{name:"放高利貸",desc:"立即獲得持有金幣的20%（最多🪙15）"}, astrology:{name:"占星術",desc:"生成1張隨機行星+1張塔羅牌（欄位有空時）"}, coronation:{name:"加冕",desc:"把選擇的牌變成 K"}, priestess:{name:"女祭司",desc:"生成2張隨機行星牌（欄位有空時）"}, enchant:{name:"刻印",desc:"為持有的1個小丑賦予隨機版本（閃箔/全息/虹彩）"},
       hanged:{name:"倒吊人",desc:"棄掉選擇的2張，再抽新牌"}, temperance:{name:"節制",desc:"獲得所有小丑售價總和的金幣（最多🪙20）"},
       enh_bonus:{name:"獎勵印記",desc:"把選擇的牌變成獎勵卡（攻擊力+30）"}, enh_mult:{name:"血色印記",desc:"把選擇的牌變成倍率卡（連擊+4）"},
       enh_stone:{name:"高塔",desc:"把選擇的牌變成石頭卡（攻擊力+50）"}, enh_glass:{name:"戀人（玻璃）",desc:"把選擇的牌變成玻璃卡（連擊×1.5）"},
@@ -3830,7 +3832,7 @@
       hermit:{name:"隠者",desc:"所持コインを2倍にする（最大 +🪙20）"}, wheel:{name:"運命の輪",desc:"即座に🪙12を得る"},
       magician:{name:"魔術師",desc:"選んだカードのランクを2上げる"}, empress:{name:"女帝",desc:"選んだカードをAに変える"},
       emperor:{name:"皇帝",desc:"ランダムなタロット2枚を生成（枠に空きがあれば）"},
-      hierophant:{name:"教皇",desc:"選んだ2枚をボーナスカードにする（攻撃力+30）"}, chariot:{name:"戦車",desc:"選んだ2枚を倍率カードにする（連撃+4）"}, justice:{name:"正義",desc:"選んだ2枚をグラスカードにする（連撃×1.5）"}, devil:{name:"悪魔",desc:"選んだ2枚をゴールドカードにする（得点時+🪙3）"}, tailor:{name:"仕立て屋",desc:"2枚のスートを揃える（右を左に合わせる）"}, fortune:{name:"運命の封印",desc:"選んだカードをランダムに強化する"}, alchemy:{name:"錬金術師",desc:"選んだカードをゴールドカードにして、即🪙8を得る"}, usury:{name:"金貸し",desc:"所持コインの20%を即座に得る（最大🪙15）"}, astrology:{name:"占星術",desc:"ランダムな惑星1枚+タロット1枚を生成（枠に空きがあれば）"}, coronation:{name:"戴冠",desc:"選んだカードをKに変える"}, priestess:{name:"女教皇",desc:"ランダムな惑星カード2枚を生成（枠に空きがあれば）"},
+      hierophant:{name:"教皇",desc:"選んだ2枚をボーナスカードにする（攻撃力+30）"}, chariot:{name:"戦車",desc:"選んだ2枚を倍率カードにする（連撃+4）"}, justice:{name:"正義",desc:"選んだ2枚をグラスカードにする（連撃×1.5）"}, devil:{name:"悪魔",desc:"選んだ2枚をゴールドカードにする（得点時+🪙3）"}, tailor:{name:"仕立て屋",desc:"2枚のスートを揃える（右を左に合わせる）"}, fortune:{name:"運命の封印",desc:"選んだカードをランダムに強化する"}, alchemy:{name:"錬金術師",desc:"選んだカードをゴールドカードにして、即🪙8を得る"}, usury:{name:"金貸し",desc:"所持コインの20%を即座に得る（最大🪙15）"}, astrology:{name:"占星術",desc:"ランダムな惑星1枚+タロット1枚を生成（枠に空きがあれば）"}, coronation:{name:"戴冠",desc:"選んだカードをKに変える"}, priestess:{name:"女教皇",desc:"ランダムな惑星カード2枚を生成（枠に空きがあれば）"}, enchant:{name:"刻印",desc:"所持ジョーカー1体にランダムな版（フォイル/ホロ/ポリ）を付与"},
       hanged:{name:"吊られた男",desc:"選んだ2枚を捨てて、新しく引き直す"}, temperance:{name:"節制",desc:"手持ちジョーカーの売却額の合計を得る（最大🪙20）"},
       enh_bonus:{name:"ボーナスの封印",desc:"選んだカードをボーナスカードにする（攻撃力+30）"}, enh_mult:{name:"血の封印",desc:"選んだカードを倍率カードにする（連撃+4）"},
       enh_stone:{name:"塔",desc:"選んだカードをストーンカードにする（攻撃力+50）"}, enh_glass:{name:"恋人（グラス）",desc:"選んだカードをグラスカードにする（連撃×1.5）"},
