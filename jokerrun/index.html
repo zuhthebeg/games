@@ -3511,7 +3511,7 @@
       { id:"enh_stone", name:"탑",          need:1, enh:"stone", desc:"선택 1장 → 스톤 카드(공격력 +50)",       apply(sel){ sel.forEach(c=>c.enh="stone"); } },
       { id:"enh_glass", name:"유리의 연인", need:1, enh:"glass", desc:"선택 1장 → 글래스 카드(연격 ×1.5)",       apply(sel){ sel.forEach(c=>c.enh="glass"); } },
       { id:"enh_steel", name:"강철 심판",   need:1, enh:"steel", desc:"선택 1장 → 스틸 카드(손에 있으면 연격 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="steel"); } },
-      { id:"enh_gold",  name:"황금 악마",   need:1, enh:"gold",  desc:"선택 1장 → 골드 카드(라운드 끝 보유 시 +🪙3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
+      { id:"enh_gold",  name:"황금 악마",   need:1, enh:"gold",  desc:"선택 1장 → 골드 카드(점수 낼 때 +🪙3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
       { id:"enh_random", name:"운명의 인장", need:0, desc:"무작위 강화 플레이카드 1장을 덱에 추가", apply(){ const suits=["spade","heart","club","diamond"]; const opts=["bonus","mult","stone","glass","steel","gold"]; const suit=suits[Math.floor(Math.random()*4)]; const rank=2+Math.floor(Math.random()*13); const enh=opts[Math.floor(Math.random()*opts.length)]; state.extraCards=state.extraCards||[]; state.extraCards.push({ suit, rank }); if(!state.runDeck) state.runDeck=buildRunDeck(); const cid=state._deckUid++; state.runDeck.push({ id:cid, suit, rank, enh }); if(state.deck) state.deck.push({ id:cid, suit, rank, enh }); if(typeof renderHUD==="function") renderHUD(); } },
       // ── 원작 메이저 아르카나 추가 ──
       { id:"fool",      name:"바보",       need:0, desc:"마지막 사용한 타로/행성 1장 복사(슬롯 한도)", apply(){ const lc=state.lastConsumable; if(!lc||lc.id==="fool") return; if(consumableCount()>=consumableMax()) return; if(lc.kind==="tarot"){ const t=tarotPool.find(x=>x.id===lc.id); if(t){ state.tarotCards.push({ ...t }); } } else { const p=planetPool.find(x=>x.id===lc.id); if(p){ state.planetCards.push({ ...p }); } } } },
@@ -3519,7 +3519,7 @@
       { id:"hierophant", name:"교황",       need:2, exact:true, desc:"선택 2장 → 보너스 카드(공격력 +30)", apply(sel){ sel.forEach(c=>c.enh="bonus"); } },
       { id:"chariot",    name:"전차",       need:2, exact:true, desc:"선택 2장 → 멀티 카드(연격 +4)", apply(sel){ sel.forEach(c=>c.enh="mult"); } },
       { id:"justice",    name:"정의",       need:2, exact:true, desc:"선택 2장 → 글래스 카드(연격 ×1.5)", apply(sel){ sel.forEach(c=>c.enh="glass"); } },
-      { id:"devil",      name:"악마",       need:2, exact:true, desc:"선택 2장 → 골드 카드(라운드 끝 보유 시 +🪙3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
+      { id:"devil",      name:"악마",       need:2, exact:true, desc:"선택 2장 → 골드 카드(점수 낼 때 +🪙3)", apply(sel){ sel.forEach(c=>c.enh="gold"); } },
       { id:"tailor",     name:"재단사",     need:2, exact:true, desc:"선택 2장 문양 통일(오른쪽=왼쪽)", apply(sel){ if(sel.length>=2) sel[1].suit=sel[0].suit; } },
       { id:"fortune",    name:"운명의 인장", need:1, desc:"선택 1장 → 무작위 강화", apply(sel){ const ks=Object.keys(ENH); const k=ks[Math.floor(Math.random()*ks.length)]; sel.forEach(c=>c.enh=k); } },
       { id:"alchemy",    name:"연금술사",   need:1, desc:"선택 1장 → 골드 카드 + 즉시 +🪙8", apply(sel){ sel.forEach(c=>c.enh="gold"); state.money=(state.money||0)+8; } },
@@ -3546,7 +3546,7 @@
       stone: { label:"스톤",   short:"🪨",  chips:50,  color:"#9aa0a6", desc:"공격력 +50" },
       glass: { label:"글래스", short:"💎",  multX:1.5, color:"#5fd6f5", desc:"연격 ×1.5" },
       steel: { label:"스틸",   short:"⚙",  heldX:1.5, color:"#c3ccd6", desc:"손에 있으면 연격 ×1.5" },
-      gold:  { label:"골드",   short:"🪙",   endCash:3, color:"#ffcf6d", desc:"라운드 끝 손에 있으면 +🪙3" }
+      gold:  { label:"골드",   short:"🪙",   endCash:3, color:"#ffcf6d", desc:"점수 낼 때 +🪙3 (또는 라운드 끝 보유 시 +🪙3)" }
     };
     // ─────────────────────────────────────────────────────────────
     // 콘텐츠 영문 번역(T2) — 오버레이 방식. ko 원문은 풀에 그대로 두고,
@@ -3563,7 +3563,7 @@
     const EN_ENH = {
       bonus:{label:"Bonus",desc:"ATK +30"}, mult:{label:"Mult",desc:"Combo +4"},
       stone:{label:"Stone",desc:"ATK +50"}, glass:{label:"Glass",desc:"Combo ×1.5"},
-      steel:{label:"Steel",desc:"In hand: Combo ×1.5"}, gold:{label:"Gold",desc:"+🪙3 if held at round end"}
+      steel:{label:"Steel",desc:"In hand: Combo ×1.5"}, gold:{label:"Gold",desc:"+🪙3 when scored (or +🪙3 if held at round end)"}
     };
     const ZH_HANDS = {
       HIGH_CARD:"高牌", PAIR:"一對", TWO_PAIR:"兩對", THREE:"三條",
@@ -3574,7 +3574,7 @@
     const ZH_ENH = {
       bonus:{label:"獎勵",desc:"攻擊力 +30"}, mult:{label:"倍率",desc:"連擊 +4"},
       stone:{label:"石頭",desc:"攻擊力 +50"}, glass:{label:"玻璃",desc:"連擊 ×1.5"},
-      steel:{label:"鋼鐵",desc:"持有時連擊 ×1.5"}, gold:{label:"黃金",desc:"回合結束持有 +🪙3"}
+      steel:{label:"鋼鐵",desc:"持有時連擊 ×1.5"}, gold:{label:"黃金",desc:"計分時 +🪙3（或回合結束持有 +🪙3）"}
     };
     const JA_HANDS = {
       HIGH_CARD:"ハイカード", PAIR:"ワンペア", TWO_PAIR:"ツーペア", THREE:"スリーカード",
@@ -3585,7 +3585,7 @@
     const JA_ENH = {
       bonus:{label:"ボーナス",desc:"攻撃力 +30"}, mult:{label:"倍率",desc:"連撃 +4"},
       stone:{label:"ストーン",desc:"攻撃力 +50"}, glass:{label:"グラス",desc:"連撃 ×1.5"},
-      steel:{label:"スチール",desc:"手札にあると連撃 ×1.5"}, gold:{label:"ゴールド",desc:"ラウンド終了時保持で +🪙3"}
+      steel:{label:"スチール",desc:"手札にあると連撃 ×1.5"}, gold:{label:"ゴールド",desc:"得点時 +🪙3（またはラウンド終了時保持で +🪙3）"}
     };
     // id → {name,desc[,detail]} (조커/행성/주문서/바우처/보스규칙 공용)
     const EN_CONTENT = {
@@ -6588,6 +6588,14 @@
             JuiceFX.sfx("chip");
             await wait(240);
           }
+        }
+        // 골드 카드: 점수에 기여(플레이)하면 즉시 +🪙3 (HUD 갱신 + 코인 연출)
+        if (card.enh === "gold") {
+          state.money = (state.money || 0) + 3;
+          if (cel) jrFloat(cel, "+🪙3", "chip");
+          const _ml = document.getElementById("moneyLabel"); if (_ml) _ml.textContent = `🪙${state.money}`;
+          try { AudioFX.play("select"); JuiceFX.sfx("chip"); } catch (_) {}
+          await wait(240);
         }
         // ── 이 카드에 반응하는 카드별 조커를 그 자리에서 즉시 발동(왼→오, 모사 복사 포함) ──
         for (const joker of state.jokers) {
