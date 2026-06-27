@@ -45,7 +45,7 @@
       --ok: #7af5b8;
       --danger: #ff7f91;
       --shadow: 0 14px 36px rgba(0, 0, 0, 0.48);
-      --blur: blur(12px);
+      --blur: none;   /* 모바일 발열 방지: 항상 떠있는 .app/.glass의 backdrop-blur 제거(매 프레임 GPU 블러 합성이 발열 주범) */
       --ease: 260ms cubic-bezier(0.22, 1, 0.36, 1);
       --phone-w: min(100vw, 460px);
       --header-h: 44px;
