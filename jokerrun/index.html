@@ -7638,6 +7638,7 @@
       state.money = 10;
       state.jokers = [];
       state.handLevels = { HIGH_CARD:1, PAIR:1, TWO_PAIR:1, THREE:1, STRAIGHT:1, FLUSH:1, FULL_HOUSE:1, FOUR:1, ROYAL_STRAIGHT:1, STRAIGHT_FLUSH:1, ROYAL_FLUSH:1, FIVE:1, FLUSH_HOUSE:1, FLUSH_FIVE:1 };
+      state.handPlays = {};   // 런마다 기술 '사용' 횟수 초기화 (재시작 시 누적되던 버그 수정)
       state.planetCards = [];
       state.tarotCards = [];
       state.shopPlanets = [];
