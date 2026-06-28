@@ -3537,6 +3537,24 @@
       { id:"singularity", name:"특이점", planet:"⚫", special:"absorb",           cost:12, desc:"흩어진 모든 기술 레벨을 흡수해 선택한 1개 기술에 몰빵" },
     ];
 
+    // 핸드 레벨업 보너스(레벨당). 전용 행성이 있는 핸드는 그 행성 값을 쓰고,
+    // 전용 행성이 없는 상위 핸드(로열스트레이트/로열플러시/파이브/플러시하우스/플러시파이브)도
+    // 특수 행성(블랙홀/은하/초신성)으로 레벨업 시 데미지가 실제로 오르도록 기본값을 정의한다.
+    // (이전: planetPool.find 매칭 실패 → 레벨만 오르고 데미지 그대로이던 버그 수정)
+    const HAND_LEVEL_BONUS = (() => {
+      const m = {};
+      planetPool.forEach(p => { if (!p.special && p.hand) m[p.hand] = { chips: p.chipsBonus, mult: p.multBonus }; });
+      Object.assign(m, {
+        ROYAL_STRAIGHT: { chips: 35, mult: 4 },
+        ROYAL_FLUSH:    { chips: 50, mult: 5 },
+        FIVE:           { chips: 45, mult: 5 },
+        FLUSH_HOUSE:    { chips: 50, mult: 6 },
+        FLUSH_FIVE:     { chips: 55, mult: 6 },
+      });
+      return m;
+    })();
+    function handLevelBonus(handType) { return HAND_LEVEL_BONUS[handType] || null; }
+
     // ── 타로 카드 (소모품, 행성과 슬롯 공유) ── 발라트로식
     const tarotPool = [
       { id:"star",     name:"별",            need:1, desc:"선택한 카드를 ◆다이아로 바꾼다", apply(sel){ sel.forEach(c=>c.suit="diamond"); } },
@@ -5347,8 +5365,8 @@
       let mult = hand.mult;
       const lvl = (state.handLevels?.[hand.handType] || 1) - 1;
       if (lvl > 0) {
-        const planet = planetPool.find(p => p.hand === hand.handType);
-        if (planet) { chips += planet.chipsBonus * lvl; mult += planet.multBonus * lvl; }
+        const lb = handLevelBonus(hand.handType);
+        if (lb) { chips += lb.chips * lvl; mult += lb.mult * lvl; }
       }
       const estimated = Math.floor(chips * mult);
       const nowLevel = state.handLevels?.[hand.handType] || 1;
@@ -5365,8 +5383,8 @@
       let mult = hand.mult;
       const lvl = (state.handLevels?.[hand.handType] || 1) - 1;
       if (lvl > 0) {
-        const planet = planetPool.find(p => p.hand === hand.handType);
-        if (planet) { chips += planet.chipsBonus * lvl; mult += planet.multBonus * lvl; }
+        const lb = handLevelBonus(hand.handType);
+        if (lb) { chips += lb.chips * lvl; mult += lb.mult * lvl; }
       }
       return Math.floor(chips * mult);
     }
@@ -5665,6 +5683,9 @@
         ...state.planetCards.map(p => ({ kind: "planet", data: p })),
         ...state.tarotCards.map(t => ({ kind: "tarot", data: t }))
       ];
+      // 보유만 해도 도감 등록(구매·생성·복사 포함) — 사용 전이라도 발견 처리. (조커와 동일 정책)
+      state.planetCards.forEach(p => markDiscovered("planet", p.id));
+      state.tarotCards.forEach(t => markDiscovered("tarot", t.id));
       for (let i = 0; i < consumableMax(); i++) {
         const it = items[i];
         if (!it) {
@@ -6104,9 +6125,9 @@
         const base = handBase[h];
         const known = BASIC_HANDS.has(h) || isDiscovered("hand", h);
         const lvl = state.handLevels?.[h] || 1;
-        const planet = planetPool.find(p => p.hand === h);
-        const lc = base.chips + (planet ? planet.chipsBonus * (lvl - 1) : 0);
-        const lm = base.mult + (planet ? planet.multBonus * (lvl - 1) : 0);
+        const lb = handLevelBonus(h);
+        const lc = base.chips + (lb ? lb.chips * (lvl - 1) : 0);
+        const lm = base.mult + (lb ? lb.mult * (lvl - 1) : 0);
         const baseScore = base.chips * base.mult;
         const lvlScore = lc * lm;
         const up = lvl > 1;
@@ -6631,8 +6652,8 @@
       // 플래닛 레벨 적용
       const lvl = (state.handLevels?.[hand.handType] || 1) - 1;
       if (lvl > 0) {
-        const planet = planetPool.find(p => p.hand === hand.handType);
-        if (planet) { chips += planet.chipsBonus * lvl; mult += planet.multBonus * lvl; }
+        const lb = handLevelBonus(hand.handType);
+        if (lb) { chips += lb.chips * lvl; mult += lb.mult * lvl; }
       }
       const ctx = {
         cards,
