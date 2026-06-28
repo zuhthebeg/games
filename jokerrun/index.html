@@ -3051,6 +3051,21 @@
     </div>
   </div>
 
+  <!-- ── 공용 확인 다이얼로그 (강화 덮어쓰기 경고 등) ── -->
+  <div class="modal" id="confirmModal" style="z-index:90">
+    <div class="mode-sheet" style="max-width:340px">
+      <div style="text-align:center">
+        <div id="confirmIcon" style="font-size:2.2rem;line-height:1;margin-bottom:6px">⚠️</div>
+        <div class="title" id="confirmTitle" style="font-size:1.05rem">확인</div>
+        <div class="subtitle" id="confirmBody" style="margin-top:10px;color:var(--muted);font-size:.82rem;line-height:1.5"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+        <button id="confirmCancelBtn" style="padding:12px;border-radius:12px;font-weight:800;background:linear-gradient(150deg,#2a2545,#1a1730);color:#e7defb;border:1px solid rgba(255,255,255,.12);cursor:pointer">취소</button>
+        <button class="btn-main" id="confirmOkBtn" style="padding:12px;border-radius:12px;font-weight:800">확인</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── 디버그 모드 (?debug=1 활성) ── -->
   <button id="dbgFab" style="display:none;position:fixed;left:10px;bottom:10px;z-index:9998;width:46px;height:46px;border-radius:50%;border:1px solid #ffd76a55;background:linear-gradient(150deg,#2a2545,#1a1730);color:#ffd76a;font-size:1.4rem;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4)" title="디버그">🐞</button>
   <div class="modal" id="dbgModal">
@@ -3593,7 +3608,7 @@
       { id:"usury",      name:"사채업자",   need:0, desc:"보유 자금의 20%를 즉시 얻는다(최대 +🪙15)", apply(){ const g=Math.min(15, Math.floor((state.money||0)*0.2)); state.money=(state.money||0)+g; } },
       { id:"astrology",  name:"점성술",     need:0, desc:"무작위 행성 1장과 타로 1장을 만든다(슬롯 빈자리만큼)", apply(){ if(consumableCount()<consumableMax()){ const p=weightedSampleBy(planetPool.filter(x=>!x.special),1,planetWeight)[0]; if(p){ state.planetCards.push({ ...p }); } } if(consumableCount()<consumableMax()){ const tt=weightedSampleBy(tarotPool.filter(x=>x.id!=="astrology"),1,tarotWeight)[0]; if(tt){ state.tarotCards.push({ ...tt }); } } } },
       { id:"coronation", name:"대관식",     need:1, desc:"선택한 카드를 K로 만든다", apply(sel){ sel.forEach(c=>c.rank=13); } },
-      { id:"enchant",    name:"각인",       need:0, desc:"보유 조커 1개에 무작위 에디션(포일/홀로/폴리)을 부여한다", apply(){ const cands=(state.jokers||[]).filter(j=>!j.edition&&!j.negative); if(!cands.length) return; const j=cands[Math.floor(Math.random()*cands.length)]; const ek=Object.keys(EDITIONS); j.edition=ek[Math.floor(Math.random()*ek.length)]; if(typeof renderHUD==="function") renderHUD(); } },
+      { id:"enchant",    name:"각인",       need:0, desc:"보유 조커 1개에 무작위 에디션(포일/홀로/폴리)을 부여한다", apply(){ const ow=!!this._overwrite; this._overwrite=false; const msg=grantRandomJokerEdition({ overwrite: ow }); if(msg){ addLog(msg); setInfo(msg); } } },
     ];
     function consumableCount(){ return (state.planetCards?.length||0) + (state.tarotCards?.length||0); }
     // 소모품(타로·행성) 보관 슬롯 상한: 기본 3 + 확장 가방 바우처(+1)
@@ -4493,6 +4508,11 @@
         sr_card_enh_run: "✨ 카드 강화: {card} → {enh}",
         sr_joker_edition_label: "조커 강화", sr_joker_edition_detail: "보유 조커 1개에 무작위 에디션 부여",
         sr_joker_edition_run: "🎴 조커 강화: {name} → {ed}",
+        enchant_applied: "🎴 각인: {name} → {ed} 강화",
+        enchant_overwrite: "🎴 각인(덮어쓰기): {name} {prev} → {ed}",
+        enchant_none: "강화할 조커가 없습니다",
+        enchant_confirm_title: "이미 모두 강화됨",
+        enchant_confirm_body: "보유 조커가 모두 강화되어 있습니다. 확인하면 무작위 1개의 강화를 새 강화로 덮어씁니다. (네거티브 제외)",
         sr_boss_nerf_label: "보스 약점", sr_boss_nerf_detail: "다음 보스 특수 규칙 무효화",
         sr_boss_nerf_run: "🛡️ 다음 보스 약점 노출 — 특수 규칙 무효화",
         sr_boss_bounty_label: "보스 현상금", sr_boss_bounty_detail: "다음 보스 격파 시 정산 보상 2배",
@@ -4659,6 +4679,11 @@
         sr_card_enh_run: "✨ Card enhanced: {card} → {enh}",
         sr_joker_edition_label: "Joker Upgrade", sr_joker_edition_detail: "Give an owned Joker a random edition",
         sr_joker_edition_run: "🎴 Joker upgraded: {name} → {ed}",
+        enchant_applied: "🎴 Enchant: {name} → {ed}",
+        enchant_overwrite: "🎴 Enchant (overwrite): {name} {prev} → {ed}",
+        enchant_none: "No joker to enchant",
+        enchant_confirm_title: "All jokers already enhanced",
+        enchant_confirm_body: "All your jokers are already enhanced. Confirm to overwrite one random edition with a new one. (Negative excluded)",
         sr_boss_nerf_label: "Boss Weakness", sr_boss_nerf_detail: "Negate the next boss's special rule",
         sr_boss_nerf_run: "🛡️ Next boss weakened — special rule negated",
         sr_boss_bounty_label: "Boss Bounty", sr_boss_bounty_detail: "Double the cashout when you beat the next boss",
@@ -4825,6 +4850,11 @@
         sr_card_enh_run: "✨ 卡牌已強化：{card} → {enh}",
         sr_joker_edition_label: "小丑強化", sr_joker_edition_detail: "為持有的1個小丑賦予隨機版本",
         sr_joker_edition_run: "🎴 小丑強化：{name} → {ed}",
+        enchant_applied: "🎴 刻印：{name} → {ed}",
+        enchant_overwrite: "🎴 刻印（覆寫）：{name} {prev} → {ed}",
+        enchant_none: "沒有可強化的小丑",
+        enchant_confirm_title: "所有小丑都已強化",
+        enchant_confirm_body: "你持有的小丑都已強化。確認後將隨機覆寫其中1個的版本。（負片除外）",
         sr_boss_nerf_label: "王關弱點", sr_boss_nerf_detail: "使下個王關特殊規則失效",
         sr_boss_nerf_run: "🛡️ 下個王關被削弱 — 特殊規則失效",
         sr_boss_bounty_label: "王關懸賞", sr_boss_bounty_detail: "擊敗下個王關時結算獎勵加倍",
@@ -4991,6 +5021,11 @@
         sr_card_enh_run: "✨ カード強化：{card} → {enh}",
         sr_joker_edition_label: "ジョーカー強化", sr_joker_edition_detail: "所持ジョーカー1個にランダムなエディション付与",
         sr_joker_edition_run: "🎴 ジョーカー強化：{name} → {ed}",
+        enchant_applied: "🎴 刻印：{name} → {ed}",
+        enchant_overwrite: "🎴 刻印（上書き）：{name} {prev} → {ed}",
+        enchant_none: "強化できるジョーカーがいません",
+        enchant_confirm_title: "全ジョーカー強化済み",
+        enchant_confirm_body: "所持ジョーカーはすべて強化済みです。確認するとランダムに1体の版を新しい版で上書きします。（ネガティブ除く）",
         sr_boss_nerf_label: "ボスの弱点", sr_boss_nerf_detail: "次のボスの特殊ルールを無効化",
         sr_boss_nerf_run: "🛡️ 次のボスを弱体化 — 特殊ルール無効",
         sr_boss_bounty_label: "ボス懸賞金", sr_boss_bounty_detail: "次のボス撃破時の精算報酬が2倍",
@@ -5487,6 +5522,70 @@
       }
     }
 
+    // ── 공용 확인 다이얼로그 ── (제목/본문/확인·취소 콜백)
+    function showConfirm({ title, body, icon, confirmLabel, cancelLabel, onConfirm, onCancel } = {}) {
+      const m = $("#confirmModal");
+      $("#confirmIcon").textContent = icon || "⚠️";
+      $("#confirmTitle").textContent = title || t("ui_confirm");
+      $("#confirmBody").textContent = body || "";
+      const ok = $("#confirmOkBtn"), cancel = $("#confirmCancelBtn");
+      ok.textContent = confirmLabel || t("ui_confirm");
+      cancel.textContent = cancelLabel || t("cancel");
+      const close = () => { m.classList.remove("show"); ok.onclick = null; cancel.onclick = null; };
+      ok.onclick = () => { close(); try { onConfirm && onConfirm(); } catch (e) { console.error("confirm onConfirm failed:", e); } };
+      cancel.onclick = () => { close(); try { onCancel && onCancel(); } catch (_) {} };
+      m.classList.add("show");
+    }
+
+    // ── 강화(에디션) 부여 대상 상태: 네가티브는 항상 제외 ──
+    function jokerEditionState() {
+      const nonNeg = (state.jokers || []).filter(j => !j.negative);
+      return { any: nonNeg.length > 0, fresh: nonNeg.some(j => !j.edition) };
+    }
+    // ── 무작위 조커에 강화 부여. 네가티브 제외. overwrite=true면 모두 강화 상태에서 무작위 1개 덮어쓰기 ──
+    // 반환: 사용자에게 보여줄 결과 메시지(string) | null(부여 대상 없음)
+    function grantRandomJokerEdition({ overwrite = false } = {}) {
+      const nonNeg = (state.jokers || []).filter(j => !j.negative);
+      if (!nonNeg.length) return null;
+      const fresh = nonNeg.filter(j => !j.edition);
+      const pool = fresh.length ? fresh : (overwrite ? nonNeg : null);
+      if (!pool) return null;
+      const j = pool[Math.floor(Math.random() * pool.length)];
+      const prev = j.edition || null;
+      let keys = Object.keys(EDITIONS);
+      if (prev && keys.length > 1) keys = keys.filter(k => k !== prev);   // 덮어쓰기 시 기존과 다른 강화로
+      j.edition = keys[Math.floor(Math.random() * keys.length)];
+      const edLabel = editionOf(j)?.label || j.edition;
+      try { renderHUD(); flashJokerCard(j, false); } catch (_) {}
+      return prev
+        ? t("enchant_overwrite", { name: j.name, prev: (EDITIONS[prev]?.label || prev), ed: edLabel })
+        : t("enchant_applied", { name: j.name, ed: edLabel });
+    }
+
+    // 타로 소모 + 효과 + 공통 후처리(인벤 사용/상점/확인후 재진입 공용)
+    function finalizeTarotUse(tarot, sel, anchorEl, inShop) {
+      const i = state.tarotCards.indexOf(tarot);
+      if (i < 0) return;
+      // 사용 확정 → 효과 계산 '전에' 슬롯에서 먼저 제거한다(생성형이 자기 칸까지 빈 슬롯으로 세도록).
+      state.tarotCards.splice(i, 1);
+      if ((tarot.need || 0) > 0) {
+        tarot.apply(sel);
+        renderCards();
+      } else {
+        tarot.apply();
+      }
+      if (tarot.id !== "fool") state.lastConsumable = { kind: "tarot", id: tarot.id };   // 바보 타로 복사용
+      state.tarotsUsed = (state.tarotsUsed || 0) + 1;   // 점술가 조커: 런 내 타로 사용 누적
+      (state.jokers || []).forEach(j => { if (j.id === "tarotMult") j.counter = (j.counter || 0) + 3; });   // 타로술사 누적 조커
+      flashTarotCard(tarot);
+      addLog(t("log_use_scroll", {name: tarot.name}));
+      if (anchorEl) showLevelUpPopup(anchorEl);
+      updateHandPreview();
+      renderHUD();
+      refreshConsumables();
+      if (inShop) $("#shopMoney").textContent = `🪙${state.money}`;
+    }
+
     function useTarot(tarot, anchorEl) {
       markDiscovered("tarot", tarot.id);   // 사용집계: 실제 사용 시 도감 발견
       const idx = state.tarotCards.indexOf(tarot);
@@ -5508,26 +5607,24 @@
           return;
         }
       }
-      // 사용 확정 → 효과 계산 '전에' 슬롯에서 먼저 제거한다.
-      // 생성형(황제 2장/여사제 2장/바보 복사)이 자기가 비우는 칸까지 빈 슬롯으로 세야
-      // 한도 내 정확한 수량을 생성한다(예: 3칸·2장 보유 시 황제 → 2장 생성 → 3장).
-      state.tarotCards.splice(idx, 1);
-      if (need > 0) {
-        tarot.apply(sel);
-        renderCards();
-      } else {
-        tarot.apply();
+      // 각인(조커 강화 부여): 대상 사전 점검 — 소모 '전에' 막아야 낭비 안 됨
+      if (tarot.id === "enchant") {
+        const est = jokerEditionState();
+        if (!est.any) {   // 강화 가능한(비네거티브) 조커가 없음 → 소모하지 않고 알림
+          setInfo(t("enchant_none"));
+          showFloatingNote(anchorEl, t("enchant_none"));
+          return;
+        }
+        if (!est.fresh) {   // 모두 강화됨 → 덮어쓰기 경고 후 확인 시에만 부여(네가티브 제외)
+          showConfirm({
+            title: t("enchant_confirm_title"),
+            body: t("enchant_confirm_body"),
+            onConfirm: () => { tarot._overwrite = true; finalizeTarotUse(tarot, sel, anchorEl, inShop); }
+          });
+          return;
+        }
       }
-      if (tarot.id !== "fool") state.lastConsumable = { kind: "tarot", id: tarot.id };   // 바보 타로 복사용
-      state.tarotsUsed = (state.tarotsUsed || 0) + 1;   // 점술가 조커: 런 내 타로 사용 누적
-      (state.jokers || []).forEach(j => { if (j.id === "tarotMult") j.counter = (j.counter || 0) + 3; });   // 타로술사 누적 조커
-      flashTarotCard(tarot);
-      addLog(t("log_use_scroll", {name: tarot.name}));
-      if (anchorEl) showLevelUpPopup(anchorEl);
-      updateHandPreview();
-      renderHUD();
-      refreshConsumables();
-      if (inShop) $("#shopMoney").textContent = `🪙${state.money}`;
+      finalizeTarotUse(tarot, sel, anchorEl, inShop);
     }
 
     function showFloatingNote(anchorEl, text) {
@@ -7388,14 +7485,12 @@
           } },
         // ── 신규: 보유 조커 1개에 무작위 에디션(포일/홀로/폴리) 부여 ──
         { icon:"🎴", weight: 8, label: t("sr_joker_edition_label"), detail: t("sr_joker_edition_detail"),
-          cond: () => state.jokers.some(j => !j.edition && !j.negative),
+          // 비네거티브 조커가 하나라도 있으면 제공(모두 강화 상태여도 덮어쓰기로 제공). 네가티브는 대상 제외.
+          cond: () => state.jokers.some(j => !j.negative),
           run() {
-            const cands = state.jokers.filter(j => !j.edition && !j.negative);
-            const j = cands[Math.floor(Math.random() * cands.length)];
-            const edKeys = Object.keys(EDITIONS);
-            j.edition = edKeys[Math.floor(Math.random() * edKeys.length)];
-            renderHUD();
-            return t("sr_joker_edition_run", {name: j.name, ed: (editionOf(j)?.label || j.edition)});
+            const fresh = state.jokers.some(j => !j.negative && !j.edition);
+            const msg = grantRandomJokerEdition({ overwrite: !fresh });   // 모두 강화면 덮어쓰기
+            return msg || t("sr_joker_edition_detail");
           } },
         // ── 신규: 다음 보스 특수 규칙 무효화 ──
         { icon:"🛡️", weight: 6, label: t("sr_boss_nerf_label"), detail: t("sr_boss_nerf_detail"),
