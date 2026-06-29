@@ -4273,14 +4273,15 @@
         play1: "bgm-play1.mp3?v=1", play2: "bgm-play2.mp3?v=1", play3: "bgm-play3.mp3?v=1",
         play4: "bgm-play4.mp3?v=1", play5: "bgm-play5.mp3?v=1", play6: "bgm-play6.mp3?v=1",
         play7: "bgm-play7.mp3?v=1", play8: "bgm-play8.mp3?v=1", playDef: "bgm-play-def.mp3?v=1",
+        playA: "bgm-play-a.mp3?v=1", playB: "bgm-play-b.mp3?v=1", playC: "bgm-play-c.mp3?v=1",
         boss1: "bgm-boss1.mp3?v=1", boss2: "bgm-boss2.mp3?v=1", boss3: "bgm-boss3.mp3?v=1",
         boss4: "bgm-boss4.mp3?v=1", boss5: "bgm-boss5.mp3?v=1", boss6: "bgm-boss6.mp3?v=1",
         boss7: "bgm-boss7.mp3?v=1", boss8: "bgm-boss8.mp3?v=1",
         bossA: "bgm-boss-a.mp3?v=1", bossB: "bgm-boss-b.mp3?v=1",
         boss: "bgm-boss.mp3?v=3", shop: "bgm-shop.mp3?v=1"
       },
-      // 앤티 번호 → 플레이 트랙 키. 1~8은 전용, 9탄부터는 디폴트.
-      playKey(ante) { const a = ante || 1; return a >= 1 && a <= 8 ? "play" + a : "playDef"; },
+      // 평상시 트랙: Stable Audio 3 medium 생성 에픽 오케스트라(해적풍) 3곡 랜덤. 라운드 진입 시 1곡 선택(전투 중엔 고정).
+      playKey(ante) { const ks = ["playA", "playB", "playC"]; return ks[Math.floor(Math.random() * ks.length)]; },
       // 앤티 번호 → 보스 트랙 키. 1~8탄 = bossA, 9탄+ = bossB (Stable Audio 3 medium 생성).
       bossKey(ante) { return (ante || 1) <= 8 ? "bossA" : "bossB"; },
       volFor(t) { return (t === "boss" || t === "bossA" || t === "bossB") ? 0.46 : t === "shop" ? 0.34 : 0.38; },
