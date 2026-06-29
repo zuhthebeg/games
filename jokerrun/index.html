@@ -2369,6 +2369,10 @@
     .mini-art .joker-glyph { font-size: 1.4rem; }
     .mini-name { font-size: .6rem; font-weight: 700; text-align: center; line-height: 1.05; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .mini-dot { position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; }
+    .mini-grip { position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%); font-size: .7rem; line-height: 1; color: rgba(255,255,255,.5); cursor: grab; touch-action: none; padding: 2px 6px; }
+    .mini-grip:active { cursor: grabbing; color: #fff; }
+    .mini-tile.dragging { opacity: .85; outline: 2px dashed rgba(255,255,255,.5); z-index: 5; }
+    .shop-owned-grid .mini-tile { padding-bottom: 13px; }
 
     .shop-item-card { border-color: rgba(255,255,255,0.45) !important; }
     .shop-playcard {
@@ -4454,7 +4458,7 @@
         ui_th_skill: "기술", ui_th_base: "기본", ui_th_current: "현재(강화)", ui_th_plays: "사용",
         ui_boss_no_rule: "특수 규칙 없음 — 정면 승부",
         ui_boss_name: "스테이지 {ante} 보스 · {name}",
-        ui_owned_jokers_title: "보유 조커 (판매: 등급별 환급)", ui_no_jokers: "보유 중인 조커가 없습니다.",
+        ui_owned_jokers_title: "보유 조커 (판매: 등급별 환급 · 끌어서 순서 변경)", ui_no_jokers: "보유 중인 조커가 없습니다.", ui_drag_reorder: "끌어서 순서 이동",
         ui_sort_rank_label: "랭크", ui_sort_suit_label: "무늬",
         ui_singularity_total: "흡수 가능한 총 추가 레벨: +{n}",
         ui_owned_vouchers: "보유 바우처",
@@ -4626,7 +4630,7 @@
         ui_th_skill: "Skill", ui_th_base: "Base", ui_th_current: "Current", ui_th_plays: "Plays",
         ui_boss_no_rule: "No special rule — straight fight",
         ui_boss_name: "Hunt {ante} Boss · {name}",
-        ui_owned_jokers_title: "Owned Jokers (sell for grade refund)", ui_no_jokers: "No jokers owned.",
+        ui_owned_jokers_title: "Owned Jokers (sell for refund · drag to reorder)", ui_no_jokers: "No jokers owned.", ui_drag_reorder: "Drag to reorder",
         ui_sort_rank_label: "Rank", ui_sort_suit_label: "Suit",
         ui_singularity_total: "Total absorbable levels: +{n}",
         ui_owned_vouchers: "Owned Vouchers",
@@ -4798,7 +4802,7 @@
         ui_th_skill: "技能", ui_th_base: "基礎", ui_th_current: "目前", ui_th_plays: "次數",
         ui_boss_no_rule: "無特殊規則 — 正面對決",
         ui_boss_name: "狩獵 {ante} 王關 · {name}",
-        ui_owned_jokers_title: "持有小丑（售出依等級退款）", ui_no_jokers: "沒有持有的小丑。",
+        ui_owned_jokers_title: "持有小丑（售出退款 · 拖曳調整順序）", ui_no_jokers: "沒有持有的小丑。", ui_drag_reorder: "拖曳調整順序",
         ui_sort_rank_label: "點數", ui_sort_suit_label: "花色",
         ui_singularity_total: "可吸收的總額外等級：+{n}",
         ui_owned_vouchers: "持有兌換券",
@@ -4970,7 +4974,7 @@
         ui_th_skill: "スキル", ui_th_base: "基本", ui_th_current: "現在", ui_th_plays: "回数",
         ui_boss_no_rule: "特殊ルールなし — 正面勝負",
         ui_boss_name: "狩り {ante} ボス · {name}",
-        ui_owned_jokers_title: "所持ジョーカー（売却：等級別返金）", ui_no_jokers: "所持ジョーカーなし。",
+        ui_owned_jokers_title: "所持ジョーカー（売却：等級別返金 · ドラッグで並べ替え）", ui_no_jokers: "所持ジョーカーなし。", ui_drag_reorder: "ドラッグで並べ替え",
         ui_sort_rank_label: "数字", ui_sort_suit_label: "スート",
         ui_singularity_total: "吸収可能な追加レベル合計：+{n}",
         ui_owned_vouchers: "所持バウチャー",
@@ -5930,9 +5934,11 @@
         tile.type = "button";
         const _ed = editionOf(joker);
         tile.className = "mini-tile" + (joker.negative ? " negative" : (_ed ? " ed-" + _ed.key : ""));
+        tile.dataset.idx = String(index);
         if (!joker.negative && !_ed) tile.style.borderColor = _r.color + "88";
-        tile.innerHTML = `<div class="mini-art"><img src="${aimg(`jokers/${joker.id}.webp?v=4`)}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}`;
+        tile.innerHTML = `<div class="mini-art"><img src="${aimg(`jokers/${joker.id}.webp?v=4`)}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}<span class="mini-grip" aria-hidden="true" title="${t("ui_drag_reorder")}">⠿</span>`;
         tile.addEventListener("click", () => {
+          if (tile._suppressClick) { tile._suppressClick = false; return; }   // 드래그였으면 팝업 무시
           openDetailPopup({
             imgSrc: `jokers/${joker.id}.webp?v=4`,
             glyph: jokerGlyphClass[joker.id] || "joker-duo",
@@ -5945,9 +5951,19 @@
             actionFn: () => { closeJokerPopup(); sellJoker(index, tile); }
           });
         });
+        makeDraggable(tile, ".mini-tile", commitShopJokerOrder, tile.querySelector(".mini-grip"));
         list.appendChild(tile);
       });
       box.appendChild(list);
+    }
+    // 상점 보유 조커 그리드의 DOM 순서를 state.jokers에 반영(메인 영역도 동기화)
+    function commitShopJokerOrder() {
+      const grid = document.querySelector("#shopOwnedJokers .shop-owned-grid");
+      if (!grid) return;
+      const order = [...grid.querySelectorAll(".mini-tile[data-idx]")].map(e => +e.dataset.idx);
+      state.jokers = order.map(i => state.jokers[i]).filter(Boolean);
+      renderJokers();
+      renderOwnedJokersInShop();
     }
 
     // 범용 상세 팝업: 아트/글리프/이모지 + 이름 + 등급뱃지 + 설명 + 비용줄 + (선택)액션버튼
