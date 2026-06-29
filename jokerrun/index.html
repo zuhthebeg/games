@@ -4280,10 +4280,12 @@
         bossA: "bgm-boss-a.mp3?v=1", bossB: "bgm-boss-b.mp3?v=1",
         boss: "bgm-boss.mp3?v=3", shop: "bgm-shop.mp3?v=1"
       },
-      // 평상시 트랙: Stable Audio 3 medium 생성 에픽 오케스트라(해적풍) 3곡 랜덤. 라운드 진입 시 1곡 선택(전투 중엔 고정).
+      // 평상시 트랙(레거시 폴백): 해적풍 3곡 중 랜덤.
       playKey(ante) { const ks = ["playA", "playB", "playC"]; return ks[Math.floor(Math.random() * ks.length)]; },
-      // 앤티 번호 → 보스 트랙 키. 1~8탄 = bossA, 9탄+ = bossB (Stable Audio 3 medium 생성).
+      // 앤티 번호 → 보스 트랙 키(레거시). 1~8탄 = bossA, 9탄+ = bossB.
       bossKey(ante) { return (ante || 1) <= 8 ? "bossA" : "bossB"; },
+      // blind 등급별 트랙: 0=잡몹(스몰)→playC, 1=정예몹(빅)→playB, 2=보스→playA (해적풍 150초, Stable Audio 3 medium).
+      trackForBlind(i) { return i === 2 ? "playA" : i === 1 ? "playB" : "playC"; },
       volFor(t) { return (t === "boss" || t === "bossA" || t === "bossB") ? 0.46 : t === "shop" ? 0.34 : 0.38; },
       init() {
         this.el = document.getElementById("bgmAudio");
@@ -6647,13 +6649,14 @@
       if (snap.phase === "blindSelect") {
         markRunActive();
         try { renderHUD(); renderBossBanner(); } catch (_) {}
-        try { BGM.setTrack(BGM.playKey(state.ante)); } catch (_) {}
+        const _bi0 = (typeof snap.pendingBlindIndex === "number") ? snap.pendingBlindIndex : 0;
+        try { BGM.setTrack(BGM.trackForBlind(_bi0)); } catch (_) {}
         const _bi = (typeof snap.pendingBlindIndex === "number") ? snap.pendingBlindIndex : 0;
         beginBlind(_bi);
         return true;
       }
       sortHand(); renderCards(); renderBossBanner(); renderHUD(); updateHandPreview();
-      try { BGM.setTrack(state.isBossBlind ? BGM.bossKey(state.ante) : BGM.playKey(state.ante)); } catch (_) {}
+      try { BGM.setTrack(BGM.trackForBlind(state.roundIndex || 0)); } catch (_) {}
       setInfo(t("info_continue"));
       markRunActive();   // 리로드돼도 이 런으로 자동 복귀
       return true;
@@ -7623,7 +7626,7 @@
       renderBossBanner();
       renderHUD();
       updateHandPreview();
-      BGM.setTrack(state.isBossBlind ? BGM.bossKey(state.ante) : BGM.playKey(state.ante));
+      BGM.setTrack(BGM.trackForBlind(index));
       setInfo(t("info_pick_cards"));
       if (state.bossModifier) {
         let _bdesc = state.bossModifier.desc;
