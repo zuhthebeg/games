@@ -5864,10 +5864,9 @@
       if (!state.isBossBlind) {
         const _ri = state.roundIndex || 0;
         const _el = t(_ri === 0 ? "mob" : "elite");
-        // 1~8탄: 카니발 테마 전용 잡몹/정예 아트(2종을 ante별로 번갈아). 9탄+: 공용 몬스터 풀.
+        // 1~8탄: 각 탄 보스 테마에 맞춘 전용 잡몹/정예 아트(탄별 고유). 9탄+: 공용 몬스터 풀.
         if (state.ante <= 8) {
-          const _v = ((state.ante - 1) % 2) + 1;   // 1 또는 2
-          const _art = `mobs/${_ri === 0 ? "mob" : "elite"}${_v}.webp?v=1`;
+          const _art = `mobs/${_ri === 0 ? "mob" : "elite"}${state.ante}.webp?v=1`;
           banner.hidden = false;
           banner.innerHTML = `
             <img class="boss-art" src="${_art}" alt="" draggable="false" onerror="this.style.display='none'">
