@@ -3457,7 +3457,10 @@
       planetChip:    self => t("accum_atk", { n: (self.counter || 0) * 10 }),
       cull:          self => `⚔ +${self.chipCounter || 0} · 연격 ×${(1 + (self.counter || 0)).toFixed(1)}`,
       cullStack:     self => `연격 +${((self.counter || 0) * 0.1).toFixed(1)}`,
-      discardCull:   self => `⚔ +${self.counter || 0}`
+      discardCull:   self => `⚔ +${self.counter || 0}`,
+      charger:       self => t("accum_atk", { n: self.counter || 0 }),
+      fader:         self => t("accum_combo", { n: self.counter || 0 }),
+      decayX:        self => t("accum_combo_x", { n: Math.max(1, self.counter || 1).toFixed(1) })
     };
     function jokerAccumLine(joker){ const f = joker && ACCUM_JOKERS[joker.id]; return f ? f(joker) : null; }
     // 카드 상단 컴팩트 누적 배지(누적값 0이면 표시 안 함) — 누적형 조커의 현재치를 한눈에
@@ -3472,6 +3475,9 @@
         case "planetChip": return c > 0 ? `⚔+${c * 10}` : null;
         case "discardCull":return c > 0 ? `⚔+${c}` : null;
         case "vampire":    return c > 0 ? `×${(1 + c).toFixed(2)}` : null;
+        case "charger":    return c > 0 ? `⚔+${c}` : null;
+        case "fader":      return c > 0 ? `⚡+${c}` : null;
+        case "decayX":     return c > 1 ? `×${c.toFixed(1)}` : null;
         case "cull": { const ch = joker.chipCounter || 0; return (ch > 0 || c > 0) ? `⚔+${ch} ×${(1 + c).toFixed(1)}` : null; }
         case "constellation": { const u = Object.values(state.handLevels || {}).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0); return u > 0 ? `×${(1 + u * 0.2).toFixed(1)}` : null; }
         case "diviner": { const u = state.tarotsUsed || 0; return u > 0 ? `×${(1 + u * 0.3).toFixed(1)}` : null; }
