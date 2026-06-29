@@ -1166,6 +1166,13 @@
       position: absolute; top: 2px; right: 3px; font-size: 11px; z-index: 4;
       filter: drop-shadow(0 0 3px rgba(120,90,255,.9));
     }
+    /* 보스 모디파이어 "조커 봉인" — 비활성화된 조커는 흑백 + 🚫 배지 */
+    .joker.boss-disabled { filter: grayscale(1) brightness(.55); }
+    .joker.boss-disabled .joker-art { opacity: .5; }
+    .joker-disabled-badge {
+      position: absolute; top: 2px; left: 3px; font-size: 13px; z-index: 5;
+      filter: drop-shadow(0 0 3px rgba(255,60,60,.95));
+    }
     /* 상세 팝업 — 네가티브 아트 홀로 글로우 + 텍스트 배지 */
     @keyframes negGlow {
       0%,100% { box-shadow: 0 0 0 2px #00e0d0, 0 0 20px rgba(0,224,208,.6); }
@@ -3173,7 +3180,7 @@
       { id: "min4cards", label: "최소 4장 플레이", desc: "매 공격마다 최소 4장을 선택해야 합니다." },
       { id: "no_hearts", label: "하트 봉인", desc: "하트 카드는 이번 전투에서 데미지에 기여하지 않습니다." },
       { id: "only2hands", label: "공격 제한", desc: "이번 전투는 공격 2번만 사용 가능합니다." },
-      { id: "no_discard", label: "버리기 불가", desc: "이번 전투는 버리기를 사용할 수 없습니다." },
+      { id: "disable_joker", label: "조커 봉인", desc: "이번 전투에서 보유 조커 1개가 무작위로 비활성화됩니다." },
       { id: "max3cards", label: "최대 3장 선택", desc: "이번 전투는 3장 이하로만 플레이할 수 있습니다." },
       { id: "min4cards", label: "최소 4장 + 버리기 불가", desc: "최소 4장 필수, 버리기 불가. 최후의 전투!" }
     ];
@@ -3307,7 +3314,7 @@
       { id: "constellation", name: "은하", cost: 18, rarity: "legendary", mult: true, desc: "행성 사용 누적마다 연격 ×0.2씩 영구 증가", detail: "지금까지 사용한 행성 카드 1장당 연격 배율이 영구히 +0.2. 행성을 모을수록 곱연산이 무한 확장.", apply(ctx, self) { const used = Object.values(state.handLevels || {}).reduce((s, l) => s + Math.max(0, (l || 1) - 1), 0); const m = 1 + used * 0.2; if (m > 1) { ctx.mult *= m; ctx.activate("constellation"); } self.desc = `행성 사용 ${used}회 → 연격 ×${m.toFixed(1)}`; } },
       { id: "diviner", name: "점술가", cost: 18, rarity: "legendary", mult: true, desc: "타로 사용 누적마다 연격 ×0.3씩 영구 증가", detail: "이번 런에서 사용한 타로(주문서) 1장당 연격 배율이 영구히 +0.3. 타로를 많이 쓸수록 곱연산이 무한 확장.", apply(ctx, self) { const used = state.tarotsUsed || 0; const m = 1 + used * 0.3; if (m > 1) { ctx.mult *= m; ctx.activate("diviner"); } self.desc = `타로 사용 ${used}회 → 연격 ×${m.toFixed(1)}`; } },
       { id: "vampire", name: "탐식귀", cost: 17, rarity: "legendary", mult: true, desc: "강화 카드 플레이마다 흡수 → 연격 ×0.5 영구 증가", detail: "플레이한 강화(enhancement) 카드를 흡수해 그 강화를 없애고, 1장당 연격 배율이 영구히 +0.5. 굴릴수록 무한 성장.", apply(ctx, self) { const enh = ctx.scored.filter(c => c.enh).length; if (enh > 0) { self.counter = (self.counter || 0) + enh * 0.5; ctx.scored.forEach(c => { if (c.enh) c.enh = null; }); } const m = 1 + (self.counter || 0); if (m > 1) { ctx.mult *= m; ctx.activate("vampire"); } self.desc = `강화 흡수 누적 → 연격 ×${m.toFixed(2)}`; } },
-      { id: "chaos", name: "혼돈", cost: 13, rarity: "legendary", mult: true, desc: "25% 연격 ×6 / 아니면 ×0.5", detail: "도박. 25% 확률로 연격 ×6, 실패하면 ×0.5. 한 방을 노리는 신화 조커.", apply(ctx) { if (Math.random() < 0.25) { ctx.mult *= 6; ctx.activate("chaos"); } else { ctx.mult *= 0.5; ctx.activate("chaos"); } } },
+      { id: "chaos", name: "혼돈", cost: 13, rarity: "legendary", mult: true, desc: "25% 연격 ×6 / 75% ×1.5", detail: "도박. 25% 확률로 연격 ×6, 75% 확률로 ×1.5. 어느 쪽이든 손해는 없는 신화 조커.", apply(ctx) { if (Math.random() < 0.25) { ctx.mult *= 6; ctx.activate("chaos"); } else { ctx.mult *= 1.5; ctx.activate("chaos"); } } },
       // ── 발라트로식 빌드 조커: 능력 복사 / 카드 재발동 / 손패 기반 ──
       { id: "blueprint", name: "모사", cost: 10, rarity: "legendary", desc: "바로 오른쪽 조커 효과 복사", detail: "데미지 계산 시 바로 오른쪽에 있는 조커의 효과를 한 번 더 발동(복사). 강한 조커 왼쪽에 두면 2배 빌드.", apply(ctx, self) { const idx = state.jokers.indexOf(self); const t = state.jokers[idx + 1]; if (t && t.id !== "blueprint" && t.id !== "brainstorm") { t.apply(ctx, t); ctx.activate("blueprint"); } } },
       { id: "brainstorm", name: "오마주", cost: 10, rarity: "legendary", desc: "맨 왼쪽 조커 효과 복사", detail: "데미지 계산 시 맨 왼쪽 조커의 효과를 한 번 더 발동(복사).", apply(ctx, self) { const t = state.jokers.find(j => j.id !== "blueprint" && j.id !== "brainstorm"); if (t && t !== self) { t.apply(ctx, t); ctx.activate("brainstorm"); } } },
@@ -3697,7 +3704,7 @@
       fullmoon:{name:"Full Moon",desc:"Always Combo x2.5"}, reaperking:{name:"Reaper King",desc:"Four of a Kind/SF: Combo x5"},
       berserk:{name:"Berserk",desc:"Joker slots full: Combo x4 (5% chance to destroy a joker on trigger)"}, bloodmoon:{name:"Blood Moon",desc:"Combo x1.5 per K/Q"}, heartbreaker:{name:"Heartbreaker",desc:"Combo +5 per heart"}, onslaught:{name:"Onslaught",desc:"Combo +10 per attack left"}, ascetic:{name:"Ascetic",desc:"Combo × discards remaining"},
       constellation:{name:"Galaxy",desc:"Combo +0.2 permanently per planet used"}, diviner:{name:"Diviner",desc:"Combo +0.3 permanently per scroll used"}, vampire:{name:"Devourer",desc:"Absorb enhanced cards → Combo +0.5 permanently"},
-      chaos:{name:"Chaos",desc:"25%: Combo x6, else x0.5"}, blueprint:{name:"Tracing",desc:"Copies the joker to its right"},
+      chaos:{name:"Chaos",desc:"25%: Combo x6 / 75%: x1.5"}, blueprint:{name:"Tracing",desc:"Copies the joker to its right"},
       brainstorm:{name:"Homage",desc:"Copies the leftmost joker"}, baron:{name:"Regent",desc:"Combo x1.5 per K in hand"},
       hack:{name:"Hacker",desc:"Played 2·3·4·5 cards trigger one extra time (ATK & enhancement count twice)"}, sockBuskin:{name:"Curtain Call",desc:"Retrigger played J/Q/K"},
       hangingChad:{name:"First Strike",desc:"First played card triggers 2 extra times"}, retriggerAll:{name:"Encore",desc:"Retrigger all played cards"},
@@ -3755,6 +3762,7 @@
       min4cards:{label:"Min 4 Cards",desc:"Each attack must use at least 4 cards."},
       no_hearts:{label:"Hearts Sealed",desc:"Hearts deal no damage this battle."},
       only2hands:{label:"Limited Attacks",desc:"Only 2 attacks this battle."},
+      disable_joker:{label:"Joker Sealed",desc:"One of your jokers is randomly disabled this battle."},
       max3cards:{label:"Max 3 Cards",desc:"Play 3 or fewer cards this battle."}
     };
     const ZH_CONTENT = {
@@ -3783,7 +3791,7 @@
       fullmoon:{name:"滿月",desc:"無條件 連擊 ×2.5"}, reaperking:{name:"死神王",desc:"四條·同花順：連擊 ×5"},
       berserk:{name:"狂暴",desc:"小丑欄位滿時：連擊 ×4（發動後5%機率炸毀1個小丑）"}, bloodmoon:{name:"血月",desc:"每張K·Q 連擊 ×1.5"}, heartbreaker:{name:"碎心者",desc:"每張紅心 連擊 +5"}, onslaught:{name:"總攻",desc:"每剩餘1次攻擊 連擊+10"}, ascetic:{name:"禁慾者",desc:"連擊×剩餘棄牌數"},
       constellation:{name:"銀河",desc:"每次使用行星累積 連擊永久 +0.2"}, diviner:{name:"占卜師",desc:"每次使用卷軸累積 連擊永久 +0.3"}, vampire:{name:"吞噬者",desc:"每次出強化牌吸收 → 連擊永久 +0.5"},
-      chaos:{name:"混沌",desc:"25%：連擊 ×6 / 否則 ×0.5"}, blueprint:{name:"臨摹",desc:"複製右側的小丑效果"},
+      chaos:{name:"混沌",desc:"25%：連擊 ×6 / 75%：×1.5"}, blueprint:{name:"臨摹",desc:"複製右側的小丑效果"},
       brainstorm:{name:"致敬",desc:"複製最左側的小丑效果"}, baron:{name:"攝政",desc:"每張手中的K 連擊 ×1.5"},
       hack:{name:"駭客",desc:"已出的2·3·4·5數字牌 再觸發一次（攻擊力與強化各計算兩次）"}, sockBuskin:{name:"丑角戲",desc:"已出的J/Q/K牌 傷害再次觸發"},
       hangingChad:{name:"首擊",desc:"已出的第一張牌 額外觸發2次"}, retriggerAll:{name:"安可",desc:"已出的所有牌 傷害再次觸發"},
@@ -3841,6 +3849,7 @@
       min4cards:{label:"最少4張",desc:"每次攻擊必須使用至少4張牌。"},
       no_hearts:{label:"紅心封印",desc:"本場戰鬥紅心不造成傷害。"},
       only2hands:{label:"攻擊限制",desc:"本場戰鬥只能攻擊2次。"},
+      disable_joker:{label:"小丑封印",desc:"本場戰鬥隨機封印你的一個小丑。"},
       max3cards:{label:"最多3張",desc:"本場戰鬥只能出3張以下。"}
     };
     const JA_CONTENT = {
@@ -3869,7 +3878,7 @@
       fullmoon:{name:"満月",desc:"無条件 連撃 ×2.5"}, reaperking:{name:"死神王",desc:"フォーカード・SF：連撃 ×5"},
       berserk:{name:"バーサーク",desc:"ジョーカー枠が満杯時：連撃 ×4（発動後5%でジョーカー1枚を破壊）"}, bloodmoon:{name:"ブラッドムーン",desc:"K・Q 1枚毎 連撃 ×1.5"}, heartbreaker:{name:"ハートブレイカー",desc:"ハート1枚毎 連撃 +5"}, onslaught:{name:"総攻撃",desc:"残り攻撃1回ごと連撃+10"}, ascetic:{name:"禁欲者",desc:"連撃×残り捨て札数"},
       constellation:{name:"銀河",desc:"惑星使用の累積毎 連撃永久 +0.2"}, diviner:{name:"占い師",desc:"巻物使用の累積毎 連撃永久 +0.3"}, vampire:{name:"貪食鬼",desc:"強化カードプレイ毎に吸収 → 連撃永久 +0.5"},
-      chaos:{name:"カオス",desc:"25%：連撃 ×6 / 失敗 ×0.5"}, blueprint:{name:"トレース",desc:"右隣のジョーカー効果をコピー"},
+      chaos:{name:"カオス",desc:"25%：連撃 ×6 / 75%：×1.5"}, blueprint:{name:"トレース",desc:"右隣のジョーカー効果をコピー"},
       brainstorm:{name:"オマージュ",desc:"左端のジョーカー効果をコピー"}, baron:{name:"摂政",desc:"手札のK1枚毎 連撃 ×1.5"},
       hack:{name:"ハッカー",desc:"プレイした2・3・4・5の数字カードをもう一度発動（攻撃力・強化が2回）"}, sockBuskin:{name:"道化芝居",desc:"プレイしたJ/Q/K ダメージ再発動"},
       hangingChad:{name:"初撃",desc:"プレイした最初のカード 追加2回発動"}, retriggerAll:{name:"アンコール",desc:"プレイした全カード ダメージ再発動"},
@@ -3927,6 +3936,7 @@
       min4cards:{label:"最低4枚",desc:"攻撃毎に最低4枚選ぶ必要があります。"},
       no_hearts:{label:"ハート封印",desc:"この戦闘ではハートがダメージになりません。"},
       only2hands:{label:"攻撃制限",desc:"この戦闘は攻撃2回のみ。"},
+      disable_joker:{label:"ジョーカー封印",desc:"この戦闘では所持ジョーカー1枚がランダムで無効化されます。"},
       max3cards:{label:"最大3枚",desc:"この戦闘は3枚以下でプレイ。"}
     };
     // 언어별 콘텐츠 오버레이 맵 (en/zh-Hant/ja). ko는 원문(KO_CONTENT) 사용.
@@ -3993,6 +4003,8 @@
     function enhOf(c){ return c && c.enh ? ENH[c.enh] : null; }
     // 보스 모디파이어로 무력화된 카드(현재: 하트 봉인). 데미지에 기여하지 않고 흑백으로 표시된다.
     function isCardBossDisabled(c){ return state.bossModifier?.id === "no_hearts" && c.suit === "heart"; }
+    // 보스 모디파이어 "조커 봉인": 이번 전투에서 비활성화된 조커는 모든 효과/패시브/재발동이 무효.
+    function isJokerBossDisabled(j){ return !!(j && state.bossModifier?.id === "disable_joker" && state.bossDisabledJoker && j.id === state.bossDisabledJoker); }
     function cardScoreChips(c){ if (isCardBossDisabled(c)) return 0; if (c.enh === "stone") return (enhOf(c)?.chips||0); /* 스톤은 랭크 없음 → +50만(원래 랭크 칩 미가산) */ return (RANK_CHIPS[c.rank]||0) + (enhOf(c)?.chips||0); }
     function enhBadgeHTML(card){ const e=enhOf(card); if(!e) return ""; return `<span class="enh-badge"><span class="enh-emoji">${e.short}</span><img class="enh-ico" src="enh/${card.enh}.webp?v=1" alt="" draggable="false" onerror="this.remove()"></span>`; }
     // 페이스 카드(J/Q/K) 스킨 — classic: 오리지널 트럼프 풀카드 이미지 / fantasy: 직접 그린 일러스트
@@ -4170,6 +4182,7 @@
       selected: new Set(),
       jokers: [],
       bossModifier: null,
+      bossDisabledJoker: null,
       gameEnded: false,
       lastToggledCardId: null,
       shopJokers: [],
@@ -4413,6 +4426,7 @@
         info_continue: "↩️ 이어하기 — 마지막 공격을 다시 시도하세요.",
         info_no_cards: "먼저 카드를 1장 이상 선택하세요.", info_boss_max3: "이번 전투는 최대 3장까지만 선택 가능합니다.",
         info_boss_min4: "이번 전투는 최소 4장을 선택해야 합니다.",
+        info_boss_disable_joker: "이번 전투에서 '{joker}' 조커가 봉인되었습니다.", info_boss_disable_joker_none: "봉인할 조커가 없습니다.",
         info_scoring: "<span class=\"hand-tag\">{name}</span> 채점 중...",
         info_score_result: "<span class=\"hand-tag\">{hand}</span> | {chips}공격력 × {mult}연격 = <b>{pts}</b>데미지",
         info_no_discards: "버리기 횟수를 모두 사용했습니다.", info_select_discard: "버릴 카드를 선택하세요.",
@@ -4584,6 +4598,7 @@
         info_continue: "↩️ Resumed — retry your last attack.",
         info_no_cards: "Select at least 1 card first.", info_boss_max3: "This battle: max 3 cards allowed.",
         info_boss_min4: "This battle: select at least 4 cards.",
+        info_boss_disable_joker: "Joker '{joker}' is sealed this battle.", info_boss_disable_joker_none: "No joker to seal.",
         info_scoring: "<span class=\"hand-tag\">{name}</span> scoring...",
         info_score_result: "<span class=\"hand-tag\">{hand}</span> | {chips} ATK × {mult} Combo = <b>{pts}</b> DMG",
         info_no_discards: "No discards remaining.", info_select_discard: "Select cards to discard.",
@@ -4755,6 +4770,7 @@
         info_continue: "↩️ 已繼續 — 重試你最後一次攻擊。",
         info_no_cards: "請先選擇至少1張卡牌。", info_boss_max3: "本場戰鬥：最多可選3張。",
         info_boss_min4: "本場戰鬥：至少選擇4張。",
+        info_boss_disable_joker: "本場戰鬥小丑「{joker}」已被封印。", info_boss_disable_joker_none: "沒有可封印的小丑。",
         info_scoring: "<span class=\"hand-tag\">{name}</span> 計分中...",
         info_score_result: "<span class=\"hand-tag\">{hand}</span> | {chips} 攻擊力 × {mult} 連擊 = <b>{pts}</b> 傷害",
         info_no_discards: "棄牌次數已用完。", info_select_discard: "請選擇要棄掉的卡牌。",
@@ -4926,6 +4942,7 @@
         info_continue: "↩️ 再開 — 最後の攻撃をやり直してください。",
         info_no_cards: "まず1枚以上選択してください。", info_boss_max3: "この戦闘：最大3枚まで。",
         info_boss_min4: "この戦闘：最低4枚選択。",
+        info_boss_disable_joker: "この戦闘ではジョーカー「{joker}」が封印されました。", info_boss_disable_joker_none: "封印できるジョーカーがありません。",
         info_scoring: "<span class=\"hand-tag\">{name}</span> 計算中...",
         info_score_result: "<span class=\"hand-tag\">{hand}</span> | {chips} 攻撃力 × {mult} 連撃 = <b>{pts}</b> ダメージ",
         info_no_discards: "捨て札回数を使い切りました。", info_select_discard: "捨てるカードを選択してください。",
@@ -6045,7 +6062,7 @@
           box.setAttribute("aria-label", "빈 슬롯");
         } else {
           const _ed = editionOf(joker);
-          box.className = `joker joker-${joker.id}${joker.negative ? " negative" : (_ed ? " ed-" + _ed.key : "")}`;
+          box.className = `joker joker-${joker.id}${joker.negative ? " negative" : (_ed ? " ed-" + _ed.key : "")}${isJokerBossDisabled(joker) ? " boss-disabled" : ""}`;
           box.dataset.jokerId = joker.id;
           box.dataset.idx = String(i);
           const _r = rarityOf(joker);
@@ -6056,6 +6073,7 @@
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
             ${joker.negative ? '<span class="joker-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}
             ${_ed ? `<span class="joker-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}
+            ${isJokerBossDisabled(joker) ? '<span class="joker-disabled-badge" title="' + t("info_boss_disable_joker", {joker: joker.name}) + '">🚫</span>' : ""}
             ${(() => { const _a = jokerCardAccum(joker); return _a ? `<span class="joker-accum">${_a}</span>` : ""; })()}
             <span class="joker-name-mini">${joker.name}</span>
             <span class="joker-grip" aria-hidden="true" title="끌어서 순서 이동">⠿⠿⠿</span>
@@ -6332,8 +6350,9 @@
     function cardRetriggers(card, idx) {
       let n = 0;
       for (const j of state.jokers) {
+        if (isJokerBossDisabled(j)) continue;   // 조커 봉인: 비활성화된 조커는 재발동 기여 없음
         let jid = j.id;
-        if (jid === "blueprint" || jid === "brainstorm") { const tgt = bpResolve(j); jid = tgt ? tgt.id : null; }   // 모사/오마주: 복사 대상의 재발동도 합산
+        if (jid === "blueprint" || jid === "brainstorm") { const tgt = bpResolve(j); jid = (tgt && !isJokerBossDisabled(tgt)) ? tgt.id : null; }   // 모사/오마주: 복사 대상의 재발동도 합산(봉인된 대상은 제외)
         if (jid) n += retrigOf(jid, card, idx);
       }
       return n;
@@ -6562,6 +6581,7 @@
           vouchers: { ...state.vouchers }, voucherAnte: state.voucherAnte,
           shopVoucherId: state.shopVoucher ? state.shopVoucher.id : null,
           bossModifier: state.bossModifier ? { ...state.bossModifier } : null,
+          bossDisabledJoker: state.bossDisabledJoker || null,
           isBossBlind: !!state.isBossBlind,
           bossNerfNext: !!state.bossNerfNext, bossBountyNext: !!state.bossBountyNext,
           tarotsUsed: state.tarotsUsed || 0,
@@ -6595,6 +6615,7 @@
       state.vouchers = { ...snap.vouchers }; state.voucherAnte = snap.voucherAnte || 0;
       state.shopVoucher = snap.shopVoucherId ? (voucherPool.find(v => v.id === snap.shopVoucherId) || null) : null;
       state.bossModifier = snap.bossModifier || null;
+      state.bossDisabledJoker = snap.bossDisabledJoker || null;
       state.isBossBlind = !!snap.isBossBlind;
       state.bossNerfNext = !!snap.bossNerfNext; state.bossBountyNext = !!snap.bossBountyNext;
       state.tarotsUsed = snap.tarotsUsed || 0;
@@ -6815,6 +6836,7 @@
         }
         // ── 이 카드에 반응하는 카드별 조커를 그 자리에서 즉시 발동(왼→오, 모사 복사 포함) ──
         for (const joker of state.jokers) {
+          if (isJokerBossDisabled(joker)) continue;   // 조커 봉인: 비활성화된 조커는 카드별 효과 무효
           let fn = null, owner = joker, viaBp = false;
           if (isPerCardJoker(joker)) { fn = joker.perCard; }
           else if (joker.id === "blueprint" || joker.id === "brainstorm") {
@@ -6860,13 +6882,14 @@
       // 2+3) 조커 왼→오: 독립 조커 효과 + 각 조커의 에디션을 "그 조커 자리"에서 인라인 적용
       // (발라트로 동일 — 폴리 ×1.5가 맨 끝에 몰리지 않음). 카드별 조커 효과는 위 카드 루프에서 이미 발동했고, 여기선 에디션만 제 슬롯 위치에서 처리.
       for (const joker of state.jokers) {
+        if (isJokerBossDisabled(joker)) continue;   // 조커 봉인: 효과·에디션 모두 무효
         if (!isPerCardJoker(joker)) {
           const cb = ctx.chips, mb = ctx.mult, ab = ctx.activated.length;
           let label = joker.name;
           let _skip = false;
           if (joker.id === "blueprint" || joker.id === "brainstorm") {
             const bpTarget = bpResolve(joker);
-            if (!bpTarget || isPerCardJoker(bpTarget)) { _skip = true; }   // 대상이 카드별이면 카드 루프에서 복사 발동됨 → 효과 스킵(에디션은 아래서)
+            if (!bpTarget || isPerCardJoker(bpTarget) || isJokerBossDisabled(bpTarget)) { _skip = true; }   // 대상이 카드별이면 카드 루프에서 복사 발동됨 → 효과 스킵 / 봉인된 대상도 복사 불가
             else { bpTarget.apply(ctx, bpTarget); ctx.activate(joker.id); label = t("ui_joker_copy", {joker: joker.name, target: bpTarget.name}); }
           } else if (joker.id === "mystic") {
             // 신비주의자: 보유 타로를 1장씩 흔들며 연격 ×1.5 누적 연출
@@ -7571,13 +7594,20 @@
         state.bossModifier = null;
         state.bossNerfNext = false;
       }
+      // 조커 봉인: 이번 전투에서 비활성화할 조커 1개를 무작위 선정(보유 조커 중에서)
+      state.bossDisabledJoker = null;
+      if (state.bossModifier && state.bossModifier.id === "disable_joker") {
+        const pool = (state.jokers || []);
+        if (pool.length) state.bossDisabledJoker = pool[Math.floor(Math.random() * pool.length)].id;
+      }
       if (state.bossModifier) {
         if (state.bossModifier.id === "no_discard") state.discardsLeft = 0;
         if (state.bossModifier.id === "only2hands") state.handsLeft = 2;
         if (state.ante === 8 && index === 2) state.discardsLeft = 0;
       }
-      // 라운드 시작 패시브 조커
+      // 라운드 시작 패시브 조커 (봉인된 조커는 패시브도 무효)
       (state.jokers || []).forEach(j => {
+        if (isJokerBossDisabled(j)) return;
         if (j.id === "extraHands") state.handsLeft += 2;
         else if (j.id === "extraDiscards") state.discardsLeft += 2;
         else if (j.id === "twoPairMaster") { state.handsLeft = 2; state.handLevels.TWO_PAIR = Math.max(10, state.handLevels.TWO_PAIR || 1); }
@@ -7594,7 +7624,12 @@
       BGM.setTrack(state.isBossBlind ? BGM.bossKey(state.ante) : BGM.playKey(state.ante));
       setInfo(t("info_pick_cards"));
       if (state.bossModifier) {
-        setInfo(`<span style="color:var(--danger)">⚠️ ${state.bossModifier.label}</span> — ${state.bossModifier.desc}`);
+        let _bdesc = state.bossModifier.desc;
+        if (state.bossModifier.id === "disable_joker") {
+          const _dj = (state.jokers || []).find(j => j.id === state.bossDisabledJoker);
+          _bdesc = _dj ? t("info_boss_disable_joker", {joker: _dj.name}) : t("info_boss_disable_joker_none");
+        }
+        setInfo(`<span style="color:var(--danger)">⚠️ ${state.bossModifier.label}</span> — ${_bdesc}`);
       } else if (state.isBossBlind && state._bossNerfedLabel) {
         setInfo(`<span style="color:#5fd6f5">🛡️ ${t("ui_boss_nerfed", {rule: state._bossNerfedLabel})}</span>`);
         state._bossNerfedLabel = null;
