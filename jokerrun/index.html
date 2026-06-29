@@ -3274,7 +3274,7 @@
       { id: "straightRunner", name: "스트레이트 러너", cost: 8, desc: "스트레이트면 연격 +3", detail: "기술이 스트레이트(STRAIGHT)일 때 연격 +3.", apply(ctx) { if (isStraightHand(ctx.handType)) { ctx.mult += 3; ctx.activate("straightRunner"); } } },
       { id: "diamondMiner", name: "다이아몬드 광부", cost: 6, desc: "다이아당 공격력 +16", detail: "선택한 카드 중 다이아몬드 1장당 공격력 +16.", apply(ctx) { const count = ctx.scored.filter(c => c.suit === "diamond").length; if (count > 0) { ctx.chips += count * 16; ctx.activate("diamondMiner"); } } },
       { id: "clubKing", name: "클럽 킹", cost: 7, desc: "클럽 페이스당 연격 +1", detail: "클럽 문양의 J/Q/K 1장마다 연격 +1.", apply(ctx) { const count = ctx.scored.filter(c => c.suit === "club" && c.rank >= 11 && c.rank <= 13).length; if (count > 0) { ctx.mult += count; ctx.activate("clubKing"); } } },
-      { id: "allInClown", name: "올인 광대", cost: 12, desc: "5장 플레이 시 연격 x1.5", detail: "정확히 5장을 선택해 플레이하면 연격 x1.5.", apply(ctx) { if (ctx.cards.length === 5) { ctx.mult *= 1.5; ctx.activate("allInClown"); } } },
+      { id: "allInClown", name: "막판 광대", cost: 12, rarity: "rare", mult: true, desc: "이번 전투 마지막 공격이면 연격 ×3", detail: "이번 전투의 마지막 공격(남은 공격 1회)일 때 연격 ×3. 끝까지 아껴 한 방에 거는 빌드용. ('선공'의 정반대)", apply(ctx) { if (state.handsLeft === 1) { ctx.mult *= 3; ctx.activate("allInClown"); } } },
       { id: "fourMaster", name: "포카드 마스터", cost: 15, desc: "포카드면 연격 x4", detail: "기술이 포카드(FOUR)면 연격 x4. 신화 등급.", apply(ctx) { if (ctx.handType === "FOUR" || isFiveHand(ctx.handType)) { ctx.mult *= 4; ctx.activate("fourMaster"); } } },
       { id: "acePower", name: "에이스 파워", cost: 9, desc: "에이스당 공격력 +30", detail: "선택한 카드의 에이스(14) 1장당 공격력 +30.", apply(ctx) { const n = ctx.scored.filter(c => c.rank === 14).length; if (n > 0) { ctx.chips += n * 30; ctx.activate("acePower"); } } },
       { id: "faceCard", name: "페이스 카드", cost: 7, desc: "J/Q/K당 연격 +1", detail: "J/Q/K 1장당 연격 +1.", apply(ctx) { const n = ctx.scored.filter(c => c.rank >= 11 && c.rank <= 13).length; if (n > 0) { ctx.mult += n * 1; ctx.activate("faceCard"); } } },
@@ -3357,7 +3357,7 @@
       { id: "handsome", name: "미남", cost: 7, rarity: "uncommon", desc: "J/Q/K 1장당 공격력 +30", detail: "플레이한 J·Q·K 카드 1장마다 공격력 +30. 페이스 카드를 모을수록 강해진다.", apply(ctx) { const n = ctx.scored.filter(c => c.rank >= 11 && c.rank <= 13).length; if (n > 0) { ctx.chips += n * 30; ctx.activate("handsome"); } } },
       { id: "firstMove", name: "선공", cost: 9, rarity: "rare", mult: true, desc: "전투 첫 공격이면 연격 ×3", detail: "각 전투의 첫 번째 공격에서 연격 ×3. 강한 패를 첫 턴에 몰아치는 빌드용.", apply(ctx) { if (state.handsLeft === state._startHands) { ctx.mult *= 3; ctx.activate("firstMove"); } } },
       { id: "lastStand", name: "배수진", cost: 14, rarity: "legendary", mult: true, desc: "덱이 적게 남을수록 연격 폭증 (10장 ×1 → 2장 ×2 → 1장 ×10)", detail: "이번 전투 덱에 남은 카드가 적을수록 연격 배율이 커진다. 10장이면 ×1(효과 없음), 줄어들수록 올라 2장이면 ×2, 마지막 1장이면 ×10. 덱을 끝까지 짜낼수록 폭발하는 신화 조커.", apply(ctx) { const r = state.deck ? state.deck.length : 0; let m = 1; if (r <= 1) m = 10; else if (r <= 9) m = 1 + (10 - r) / 8; if (m > 1) { ctx.mult *= m; ctx.activate("lastStand"); } } },
-      { id: "allIn", name: "몰빵", cost: 8, rarity: "uncommon", mult: true, desc: "정확히 5장 플레이면 연격 ×2.5", detail: "카드를 정확히 5장 내면 연격 ×2.5. 풀 핸드 플레이 보상.", apply(ctx) { if (ctx.cards.length >= 5) { ctx.mult *= 2.5; ctx.activate("allIn"); } } },
+      { id: "allIn", name: "몰빵", cost: 12, rarity: "legendary", mult: true, desc: "정확히 5장 플레이면 연격 ×3", detail: "카드를 정확히 5장 내면 연격 ×3. 풀 핸드 플레이 보상.", apply(ctx) { if (ctx.cards.length >= 5) { ctx.mult *= 3; ctx.activate("allIn"); } } },
       { id: "pairPlus", name: "짝의 미학", cost: 6, rarity: "uncommon", desc: "원페어 이상이면 공격력 +80", detail: "기술이 원페어 이상(하이카드 제외)이면 공격력 +80.", apply(ctx) { if (ctx.handType !== "HIGH_CARD") { ctx.chips += 80; ctx.activate("pairPlus"); } } },
       // ── 누적 시너지 조커(리롤/타로/행성 사용량에 비례해 영구 성장) ──
       { id: "rerollMult", name: "갱신의 대가", cost: 9, rarity: "rare", desc: "리롤할 때마다 연격 영구 +0.5", detail: "상점에서 갱신(리롤)할 때마다 연격 보너스가 영구히 +0.5씩 쌓입니다. 멀리건·리롤 바우처와 시너지.", apply(ctx, self) { if ((self.counter || 0) > 0) { ctx.mult += self.counter * 0.5; ctx.activate("rerollMult"); } self.desc = `리롤마다 연격 영구 +0.5 (현재 +${((self.counter || 0) * 0.5).toFixed(1)})`; } },
@@ -3418,7 +3418,7 @@
     // 상점 조커 에디션 추첨: 폴리 4% / 홀로 6% / 포일 10% / 일반 80%
     function rollEdition(){ const r = Math.random(); if (r < 0.04) return "poly"; if (r < 0.10) return "holo"; if (r < 0.20) return "foil"; return null; }
     // 판매가: 등급별 환급. 네가티브 +🪙5, 에디션은 등급별 프리미엄 가산.
-    function jokerSellValue(joker){ const base = Math.max(2, Math.floor((joker.cost / 2) * rarityOf(joker).sellMul)); const ed = editionOf(joker); const bonus = joker.sellBonus || 0; const _col = (state.jokers || []).find(j => j.id === "collector"); const collect = _col ? (_col.counter || 0) : 0; return base + (joker.negative ? 5 : 0) + (ed ? ed.premium : 0) + bonus + collect; }
+    function jokerSellValue(joker){ const base = Math.min(joker.cost, Math.max(2, Math.floor((joker.cost / 2) * rarityOf(joker).sellMul))); const ed = editionOf(joker); const bonus = joker.sellBonus || 0; const _col = (state.jokers || []).find(j => j.id === "collector"); const collect = _col ? (_col.counter || 0) : 0; return base + (joker.negative ? 5 : 0) + (ed ? ed.premium : 0) + bonus + collect; }
     // ── 발라트로식 카드별 발동 조커: 데미지에 들어간 카드 1장마다 "그 카드 위에서" 즉시 발동(연출 인터리브) ──
     // perCard(card, ctx)는 카드 한 장 기여만 적용. 카드 데미지 단계에서 발동하므로 독립(×연격) 조커보다 먼저 들어간다(원작 순서).
     const PER_CARD_JOKERS = {
@@ -3695,7 +3695,7 @@
       spadeAce:{name:"Spade Ace",desc:"Combo +0.5 per spade"}, luckySeven:{name:"Lucky Seven",desc:"ATK +77 per 7"},
       doubleDown:{name:"Double Down",desc:"Two Pair: Combo x2"}, fullHouseFan:{name:"Full House Fan",desc:"Full House: ATK +100"},
       straightRunner:{name:"Straight Runner",desc:"Straight: Combo +3"}, diamondMiner:{name:"Diamond Miner",desc:"ATK +16 per diamond"},
-      clubKing:{name:"Club King",desc:"Combo +1 per club face"}, allInClown:{name:"All-In Clown",desc:"5 cards: Combo x1.5"},
+      clubKing:{name:"Club King",desc:"Combo +1 per club face"}, allInClown:{name:"Last-Ditch Clown",desc:"Last attack of the battle: Combo ×3"},
       fourMaster:{name:"Quad Master",desc:"Four of a Kind: Combo x4"}, acePower:{name:"Ace Power",desc:"ATK +30 per ace"},
       faceCard:{name:"Face Card",desc:"Combo +1 per J/Q/K"}, evenSteven:{name:"Even Sage",desc:"ATK +12 per even card"},
       oddOne:{name:"Odd One",desc:"Combo +0.75 per odd card"}, fourFlush:{name:"4-Suit Joker",desc:"All 4 suits: Combo x2"},
@@ -3743,7 +3743,7 @@
       handsome:{name:"Charmer",desc:"ATK +30 per J/Q/K"},
       firstMove:{name:"First Move",desc:"First attack of combat: Combo ×3"},
       lastStand:{name:"Last Stand",desc:"Fewer deck cards → bigger Combo (10:×1 → 2:×2 → 1:×10)"},
-      allIn:{name:"All or Nothing",desc:"Exactly 5 cards: Combo ×2.5"},
+      allIn:{name:"All or Nothing",desc:"Exactly 5 cards: Combo ×3"},
       pairPlus:{name:"Pair Bonus",desc:"Pair or better: ATK +80"}, rerollMult:{name:"Reroll Master",desc:"Combo +0.5 permanently per reroll"}, tarotMult:{name:"Tarot Adept",desc:"Combo +3 permanently per tarot used"}, planetChip:{name:"Planet Keeper",desc:"ATK +10 permanently per planet used"},
       mercury:{name:"Mercury"}, venus:{name:"Venus"}, earth:{name:"Earth"}, mars:{name:"Mars"},
       jupiter:{name:"Jupiter"}, saturn:{name:"Saturn"}, uranus:{name:"Uranus"}, neptune:{name:"Neptune"}, pluto:{name:"Pluto"},
@@ -3782,7 +3782,7 @@
       spadeAce:{name:"黑桃A",desc:"每張黑桃 連擊 +0.5"}, luckySeven:{name:"幸運七",desc:"每張7 攻擊力 +77"},
       doubleDown:{name:"加倍",desc:"兩對：連擊 x2"}, fullHouseFan:{name:"葫蘆狂熱",desc:"葫蘆：攻擊力 +100"},
       straightRunner:{name:"順子奔跑者",desc:"順子：連擊 +3"}, diamondMiner:{name:"鑽石礦工",desc:"每張方塊 攻擊力 +16"},
-      clubKing:{name:"梅花王",desc:"每張梅花人頭 連擊 +1"}, allInClown:{name:"全押小丑",desc:"出5張：連擊 x1.5"},
+      clubKing:{name:"梅花王",desc:"每張梅花人頭 連擊 +1"}, allInClown:{name:"背水小丑",desc:"本場最後一次攻擊：連擊 ×3"},
       fourMaster:{name:"四條大師",desc:"四條：連擊 x4"}, acePower:{name:"A之力",desc:"每張A 攻擊力 +30"},
       faceCard:{name:"人頭牌",desc:"每張J/Q/K 連擊 +1"}, evenSteven:{name:"偶數法師",desc:"每張偶數牌 攻擊力 +12"},
       oddOne:{name:"奇數惡徒",desc:"每張奇數牌 連擊 +0.75"}, fourFlush:{name:"四色小丑",desc:"使用4種花色：連擊 x2"},
@@ -3830,7 +3830,7 @@
       handsome:{name:"美男",desc:"每張J/Q/K 攻擊力+30"},
       firstMove:{name:"先攻",desc:"戰鬥首攻：連擊×3"},
       lastStand:{name:"背水一戰",desc:"牌庫越少 連擊越高（10張×1 → 2張×2 → 1張×10）"},
-      allIn:{name:"孤注一擲",desc:"正好5張：連擊×2.5"},
+      allIn:{name:"孤注一擲",desc:"正好5張：連擊×3"},
       pairPlus:{name:"對子美學",desc:"一對以上：攻擊力+80"}, rerollMult:{name:"刷新大師",desc:"每次刷新 連擊永久+0.5"}, tarotMult:{name:"塔羅術士",desc:"每用塔羅 連擊永久+3"}, planetChip:{name:"行星守護者",desc:"每用行星 攻擊力永久+10"},
       mercury:{name:"水星"}, venus:{name:"金星"}, earth:{name:"地球"}, mars:{name:"火星"},
       jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
@@ -3869,7 +3869,7 @@
       spadeAce:{name:"スペードのエース",desc:"スペード1枚毎 連撃 +0.5"}, luckySeven:{name:"ラッキーセブン",desc:"7が1枚毎 攻撃力 +77"},
       doubleDown:{name:"ダブルダウン",desc:"ツーペア：連撃 x2"}, fullHouseFan:{name:"フルハウス狂",desc:"フルハウス：攻撃力 +100"},
       straightRunner:{name:"ストレートランナー",desc:"ストレート：連撃 +3"}, diamondMiner:{name:"ダイヤ鉱夫",desc:"ダイヤ1枚毎 攻撃力 +16"},
-      clubKing:{name:"クラブキング",desc:"クラブの絵札毎 連撃 +1"}, allInClown:{name:"オールインの道化",desc:"5枚プレイ：連撃 x1.5"},
+      clubKing:{name:"クラブキング",desc:"クラブの絵札毎 連撃 +1"}, allInClown:{name:"背水の道化",desc:"この戦闘の最後の攻撃：連撃 ×3"},
       fourMaster:{name:"フォーカードの達人",desc:"フォーカード：連撃 x4"}, acePower:{name:"エースの力",desc:"エース1枚毎 攻撃力 +30"},
       faceCard:{name:"絵札",desc:"J/Q/K 1枚毎 連撃 +1"}, evenSteven:{name:"偶数の魔術師",desc:"偶数カード毎 攻撃力 +12"},
       oddOne:{name:"奇数の悪党",desc:"奇数カード毎 連撃 +0.75"}, fourFlush:{name:"4色ジョーカー",desc:"4種のスート使用：連撃 x2"},
@@ -3917,7 +3917,7 @@
       handsome:{name:"美男",desc:"J/Q/K1枚毎 攻撃力+30"},
       firstMove:{name:"先制",desc:"戦闘初撃：連撃×3"},
       lastStand:{name:"背水の陣",desc:"山札が少ないほど連撃UP（10枚×1 → 2枚×2 → 1枚×10）"},
-      allIn:{name:"オールイン",desc:"ちょうど5枚：連撃×2.5"},
+      allIn:{name:"オールイン",desc:"ちょうど5枚：連撃×3"},
       pairPlus:{name:"ペアの美学",desc:"ワンペア以上：攻撃力+80"}, rerollMult:{name:"リロールの達人",desc:"更新毎 連撃永久+0.5"}, tarotMult:{name:"タロット術師",desc:"タロット使用毎 連撃永久+3"}, planetChip:{name:"惑星の番人",desc:"惑星使用毎 攻撃力永久+10"},
       mercury:{name:"水星"}, venus:{name:"金星"}, earth:{name:"地球"}, mars:{name:"火星"},
       jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
