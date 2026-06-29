@@ -7097,6 +7097,19 @@
         const fill = jokerPool.filter(j => !owned.has(j.id) && !have.has(j.id) && jokerAllowedNow(j));
         picked = picked.concat(weightedSample(fill, slots - picked.length));
       }
+      // 전설(rare)·신화(legendary) 등급은 한 상점에 1개까지 — 초과분은 일반/희귀로 교체
+      {
+        const isHigh = j => j && (j.rarity === "rare" || j.rarity === "legendary");
+        const usedIds = new Set(picked.map(j => j.id));
+        let highSeen = 0;
+        picked = picked.map(j => {
+          if (!isHigh(j)) return j;
+          if (highSeen === 0) { highSeen++; return j; }
+          const repl = weightedSample(jokerPool.filter(x => !owned.has(x.id) && !usedIds.has(x.id) && jokerAllowedNow(x) && !isHigh(x)), 1)[0];
+          if (repl) { usedIds.add(repl.id); return repl; }
+          return j;   // 교체할 일반/희귀가 없으면 부득이 유지
+        });
+      }
       // 풀 객체를 직접 변형하지 않도록 사본으로 만들고, 일부에 에디션(포일/홀로/폴리) 부여
       state.shopJokers = picked.map(j => { const c = { ...j }; const e = rollEdition(); if (e) c.edition = e; return c; });
       state._recentShopJokers = picked.map(j => j.id);   // 다음 상점에서 회피할 목록
@@ -7153,7 +7166,9 @@
         if (need > 0) {
           const owned = new Set(state.jokers.map(j => j.id));
           const have = new Set((state.shopJokers || []).map(j => j.id));
-          const pool = jokerPool.filter(j => !owned.has(j.id) && !have.has(j.id) && jokerAllowedNow(j));
+          const isHigh = j => j && (j.rarity === "rare" || j.rarity === "legendary");
+          const hasHigh = (state.shopJokers || []).some(isHigh);   // 이미 전설/신화 있으면 top-up은 일반/희귀만
+          const pool = jokerPool.filter(j => !owned.has(j.id) && !have.has(j.id) && jokerAllowedNow(j) && !(hasHigh && isHigh(j)));
           weightedSample(pool, need).forEach(j => { const c = { ...j }; const e = rollEdition(); if (e) c.edition = e; state.shopJokers.push(c); });
         }
       } else if (id === "tarotMerchant") {
