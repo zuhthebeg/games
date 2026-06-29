@@ -5862,12 +5862,21 @@
       const banner = document.getElementById("bossBanner");
       if (!banner) return;
       if (!state.isBossBlind) {
-        // 잡몹/정예: 공용 몬스터 아트(/lib/monsters)를 ante+라운드 기준 결정론으로 표시
         const _ri = state.roundIndex || 0;
+        const _el = t(_ri === 0 ? "mob" : "elite");
+        // 1~8탄: 카니발 테마 전용 잡몹/정예 아트(2종을 ante별로 번갈아). 9탄+: 공용 몬스터 풀.
+        if (state.ante <= 8) {
+          const _v = ((state.ante - 1) % 2) + 1;   // 1 또는 2
+          const _art = `mobs/${_ri === 0 ? "mob" : "elite"}${_v}.webp?v=1`;
+          banner.hidden = false;
+          banner.innerHTML = `
+            <img class="boss-art" src="${_art}" alt="" draggable="false" onerror="this.style.display='none'">
+            <div class="boss-info"><span class="boss-name">${_el}</span></div>`;
+          return;
+        }
         const _mon = ENDLESS_MONSTERS[(state.ante * 3 + _ri) % ENDLESS_MONSTERS.length];
         const _art = `/lib/monsters/${_mon.img}.png`;
         const _mname = LANG === "en" ? _mon.en : LANG === "zh-Hant" ? _mon.zh : LANG === "ja" ? _mon.ja : _mon.ko;
-        const _el = t(_ri === 0 ? "mob" : "elite");
         banner.hidden = false;
         banner.innerHTML = `
           <img class="boss-art" src="${_art}" alt="" draggable="false" onerror="this.style.display='none'">
