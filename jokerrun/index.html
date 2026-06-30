@@ -1800,6 +1800,52 @@
       box-shadow: 0 0 16px rgba(255, 128, 203, 0.34);
     }
 
+    /* === 도감 톤 액션 버튼 (금장 프레임 + 코너 브래킷) — 플로우 버튼 전용 === */
+    .btn-codex {
+      position: relative;
+      color: #ffe7b0 !important;
+      text-transform: uppercase;
+      border: 1px solid rgba(255, 207, 109, 0.6) !important;
+      background: linear-gradient(160deg, #4a0f1c, #2a0a14 55%, #160810) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 228, 168, 0.22),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.35),
+        inset 0 -7px 13px rgba(0, 0, 0, 0.45),
+        0 4px 14px rgba(0, 0, 0, 0.5),
+        0 0 14px rgba(220, 60, 84, 0.22) !important;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+    }
+    .btn-codex.warn {
+      color: #e9ddff !important;
+      border-color: rgba(186, 186, 210, 0.45) !important;
+      background: linear-gradient(160deg, #2c2533, #1b1726 60%, #120f1a) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(220, 220, 240, 0.16),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.35),
+        inset 0 -7px 13px rgba(0, 0, 0, 0.45),
+        0 4px 14px rgba(0, 0, 0, 0.5) !important;
+    }
+    /* 금장 코너 브래킷 (도감 카드 느낌) */
+    .btn-codex::after {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border-radius: 7px;
+      pointer-events: none;
+      opacity: 0.92;
+      background:
+        linear-gradient(#ffd76a, #ffd76a) left 1px top 1px / 11px 2px no-repeat,
+        linear-gradient(#ffd76a, #ffd76a) left 1px top 1px / 2px 11px no-repeat,
+        linear-gradient(#ffd76a, #ffd76a) right 1px top 1px / 11px 2px no-repeat,
+        linear-gradient(#ffd76a, #ffd76a) right 1px top 1px / 2px 11px no-repeat,
+        linear-gradient(#ffd76a, #ffd76a) left 1px bottom 1px / 11px 2px no-repeat,
+        linear-gradient(#ffd76a, #ffd76a) left 1px bottom 1px / 2px 11px no-repeat,
+        linear-gradient(#ffd76a, #ffd76a) right 1px bottom 1px / 11px 2px no-repeat,
+        linear-gradient(#ffd76a, #ffd76a) right 1px bottom 1px / 2px 11px no-repeat;
+    }
+    .btn-codex.warn::after { opacity: 0.6; }
+    .btn-codex:active { transform: scale(0.97); }
+
     #clearBtn {
       font-size: 0;
       padding: 0;
@@ -2752,6 +2798,13 @@
     #tarotInfoBtn.ic { background-image:url("ui/ic_scroll.webp"); }
     #collectionBtn.ic { background-image:url("ui/ic_codex.webp"); }
     #deckBtn.ic { background-image:url("ui/ic_deck.webp"); background-size:56%; background-position:center 40%; }
+    /* 힌트 = 통찰의 단검 아이콘(이모지 대체) + 테두리만 도드라지게 */
+    #hintBtn.ic { background-image:url("ui/ic_hint.webp"); background-size:82%; font-size:0; }
+    #hintBtn { border:1.5px solid rgba(255,215,120,0.9); box-shadow:0 0 10px rgba(255,200,90,0.55), inset 0 0 8px rgba(255,190,80,0.25); animation:hintPulse 1.8s ease-in-out infinite; }
+    @keyframes hintPulse {
+      0%,100% { box-shadow:0 0 8px rgba(255,200,90,0.45), inset 0 0 7px rgba(255,190,80,0.22); border-color:rgba(255,215,120,0.85); }
+      50%     { box-shadow:0 0 15px rgba(255,210,110,0.85), inset 0 0 10px rgba(255,200,90,0.35); border-color:rgba(255,230,150,1); }
+    }
     .deck-btn.deck-count.ic { font-size:0.66rem; align-items:flex-end; padding-bottom:2px; text-shadow:0 1px 2px #000; font-weight:800; }
     /* 이어하기 아이콘 */
     #startContinueBtn { background-image:url("ui/ic_continue.webp"); background-repeat:no-repeat; background-position:14px center; background-size:24px auto; padding-left:46px; }
@@ -2890,7 +2943,7 @@
       <div class="stat-cell"><span data-i18n="hands_left">남은 공격</span> <b id="handsLabel">0</b></div>
       <div class="stat-cell"><span data-i18n="discards_left">남은 버리기</span> <b id="discardsLabel">0</b></div>
       <div class="util-btns">
-        <button id="hintBtn" class="deck-btn ic" type="button" data-i18n-title="hint_btn" aria-label="추천 패" title="추천 패">💡</button>
+        <button id="hintBtn" class="deck-btn ic" type="button" data-i18n-title="hint_btn" aria-label="추천 패" title="추천 패"></button>
         <button id="handsInfoBtn" class="deck-btn ic" type="button" data-i18n-title="skills" aria-label="기술"></button>
         <button id="collectionBtn" class="deck-btn ic" type="button" data-i18n-title="collection_btn" aria-label="도감"></button>
         <button id="deckBtn" class="deck-btn deck-count ic" type="button" data-i18n-title="deck" aria-label="덱"></button>
@@ -2898,8 +2951,8 @@
     </section>
 
     <section class="actions">
-      <button class="btn-main" id="playBtn" data-i18n="hand_play">⚔️ 공격</button>
-      <button class="btn-warn" id="discardBtn" data-i18n="card_discard">카드 버리기</button>
+      <button class="btn-main btn-codex" id="playBtn" data-i18n="hand_play">⚔️ 공격</button>
+      <button class="btn-warn btn-codex warn" id="discardBtn" data-i18n="card_discard">카드 버리기</button>
       <button id="sortBtn" type="button" aria-label="카드 정렬"><span class="sort-ico">⇅</span><span class="sort-lbl" id="sortModeLabel">랭크</span></button>
       <button id="clearBtn" aria-label="선택 해제"></button>
     </section>
@@ -2923,7 +2976,7 @@
       <div class="consumable-strip" id="shopConsumableArea" aria-label="보유 소모품(상점에서 사용)" style="margin:6px 0"></div>
       <div class="shop-owned" id="shopOwnedJokers"></div>
       <div class="shop-grid" id="shopGrid"></div>
-      <button id="shopContinueBtn" class="btn-main" data-i18n="next_blind" style="width:100%;margin-top:12px;padding:12px;font-size:15px;font-weight:700;border-radius:12px;background:linear-gradient(150deg,var(--ok),#3af5a0);color:#062f27;border:none;cursor:pointer;">다음 전투로 →</button>
+      <button id="shopContinueBtn" class="btn-main btn-codex" data-i18n="next_blind" style="width:100%;margin-top:12px;padding:12px;font-size:15px;font-weight:700;border-radius:12px;cursor:pointer;">다음 전투로 →</button>
     </div>
   </div>
 
@@ -2962,7 +3015,7 @@
       <div style="font-size:1.7rem;font-weight:900;color:var(--gold,#ffcf6d);line-height:1.1"><span id="ccScore">0</span></div>
       <div style="margin-top:7px;font-size:.84rem;color:var(--muted)"><span data-i18n="enemy_hp">적 HP</span> <b id="ccTarget" style="color:#fff">0</b> <span style="color:#5fd38a;font-weight:800">✓</span></div>
       <div id="ccBoss" style="display:none;margin-top:8px;font-size:.85rem;color:#ffcf6d"></div>
-      <button class="btn-main" id="ccContinueBtn" data-i18n="collect" style="margin-top:14px;padding:12px;border-radius:12px;font-weight:800">전리품 받기 →</button>
+      <button class="btn-main btn-codex" id="ccContinueBtn" data-i18n="collect" style="margin-top:14px;padding:12px;border-radius:12px;font-weight:800">전리품 받기 →</button>
     </div>
   </div>
 
@@ -2971,7 +3024,7 @@
       <div class="title" data-i18n="ui_cashout_title">💰 정산 완료</div>
       <div id="cashoutBody" style="margin:8px 0 2px"></div>
       <div class="co-total-big">+$<span id="cashoutTotal">0</span></div>
-      <button class="btn-main" id="cashoutContinueBtn" data-i18n="to_shop" style="padding:12px;border-radius:12px;font-weight:800">정비하러 →</button>
+      <button class="btn-main btn-codex" id="cashoutContinueBtn" data-i18n="to_shop" style="padding:12px;border-radius:12px;font-weight:800">정비하러 →</button>
     </div>
   </div>
 
@@ -3052,7 +3105,7 @@
         <div class="subtitle" id="bsReward" style="margin-top:2px;color:var(--muted);font-size:.78rem"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
-        <button class="btn-main" id="bsPlayBtn" data-i18n="attack" style="padding:12px;border-radius:12px;font-weight:800">공격</button>
+        <button class="btn-main btn-codex" id="bsPlayBtn" data-i18n="attack" style="padding:12px;border-radius:12px;font-weight:800">공격</button>
         <button id="bsSkipBtn" data-i18n="skip" style="padding:12px;border-radius:12px;font-weight:800;background:linear-gradient(150deg,#2a2545,#1a1730);color:#e7defb;border:1px solid rgba(255,215,0,.3);cursor:pointer">⏭ 지름길</button>
       </div>
       <div class="subtitle" id="bsHint" data-i18n="bs_hint" style="text-align:center;color:var(--muted);font-size:.72rem;margin-top:2px">지름길로 가면 정비 없이 다음 전투로. 보스는 우회 불가.</div>
@@ -3067,7 +3120,7 @@
         <div class="title" id="skipResultName" style="margin-top:2px">보상</div>
         <div class="subtitle" id="skipResultDesc" style="margin-top:6px;color:var(--muted);font-size:.8rem"></div>
       </div>
-      <button class="btn-main" id="skipResultBtn" data-i18n="next_blind" style="width:100%;margin-top:14px;padding:13px;font-weight:800;border-radius:12px">다음 전투로 →</button>
+      <button class="btn-main btn-codex" id="skipResultBtn" data-i18n="next_blind" style="width:100%;margin-top:14px;padding:13px;font-weight:800;border-radius:12px">다음 전투로 →</button>
     </div>
   </div>
 
@@ -3132,7 +3185,7 @@
         <div class="subtitle" id="victoryText">보스 전투를 돌파했습니다.</div>
         <div class="subtitle" id="victoryHighScore" style="margin-top:8px;color:var(--gold);">최고 기록: 0점</div>
       </div>
-      <button class="btn-main" id="victoryConfirmBtn" data-i18n="victory_new_run">새 런 시작</button>
+      <button class="btn-main btn-codex" id="victoryConfirmBtn" data-i18n="victory_new_run">새 런 시작</button>
     </div>
   </div>
 
@@ -7730,8 +7783,8 @@
           <div class="finisher-title">💥 ${t("fin_title")}</div>
           <div class="finisher-desc">${t("fin_desc", { n })}</div>
           <div class="finisher-btns">
-            <button id="finisherGo" class="btn-main">${t("fin_go")}</button>
-            <button id="finisherNo" class="btn-warn">${t("fin_no")}</button>
+            <button id="finisherGo" class="btn-main btn-codex">${t("fin_go")}</button>
+            <button id="finisherNo" class="btn-warn btn-codex warn">${t("fin_no")}</button>
           </div>
         </div>`;
       document.body.appendChild(ov);
