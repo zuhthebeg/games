@@ -1109,15 +1109,6 @@
       border-radius: 8px;
       border: 1px solid rgba(255, 207, 109, 0.45);
     }
-    /* 9탄+ 엔드리스 몬스터는 프레임 없는 정사각 일러스트(흰/투명 배경) — 1~8탄 카드 프레임과
-       톤을 맞추려고 어두운 배경을 깔고 가운데를 채워서(cover) 카드처럼 보이게 한다. */
-    .boss-art.endless-art {
-      object-position: center;
-      background:
-        radial-gradient(120% 90% at 50% 22%, rgba(60, 14, 26, 0.55), rgba(10, 7, 16, 0.96) 78%),
-        linear-gradient(160deg, #1c0a16, #0b0712);
-      box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.65), inset 0 0 0 1px rgba(255, 207, 109, 0.12);
-    }
 
     .boss-info {
       display: flex;
@@ -5951,7 +5942,7 @@
         const _mname = LANG === "en" ? _mon.en : LANG === "zh-Hant" ? _mon.zh : LANG === "ja" ? _mon.ja : _mon.ko;
         banner.hidden = false;
         banner.innerHTML = `
-          <img class="boss-art endless-art" src="${_art}" alt="" draggable="false" onerror="this.style.display='none'">
+          <img class="boss-art" src="${_art}" alt="" draggable="false" onerror="this.style.display='none'">
           <div class="boss-info"><span class="boss-name">${_el} · ${_mname}</span></div>`;
         return;
       }
@@ -5961,7 +5952,7 @@
       const rule = mod ? `<span class="boss-rule">⚠️ ${mod.label}</span><span class="boss-desc">${mod.desc}</span>` : `<span class="boss-desc">${t("ui_boss_no_rule")}</span>`;
       banner.hidden = false;
       banner.innerHTML = `
-        <img class="boss-art${ante >= 9 ? " endless-art" : ""}" src="${aimg(bossArtSrc(ante))}" alt="" draggable="false" onerror="if(/_hp(30|60)/.test(this.src)){this.dataset.hpsrc='';this.src=this.src.replace(/_hp(30|60)/,'')}else{this.style.display='none'}">
+        <img class="boss-art" src="${aimg(bossArtSrc(ante))}" alt="" draggable="false" onerror="if(/_hp(30|60)/.test(this.src)){this.dataset.hpsrc='';this.src=this.src.replace(/_hp(30|60)/,'')}else{this.style.display='none'}">
         <div class="boss-info">
           <span class="boss-name">${t("ui_boss_name", {ante, name})}</span>
           ${rule}
