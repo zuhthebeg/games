@@ -6139,9 +6139,9 @@
       const r = $("#enemyHpRemain"), m = $("#enemyHpMax");
       if (r) r.textContent = fmtNum(remain);
       if (m) m.textContent = fmtNum(target);
-      // 보스 HP 단계별 아트 스왑(1~8탄): 60%/30% 임계 넘으면 손상 스프라이트로 교체
+      // 보스 HP 단계별 아트 스왑: 진짜 보스 라운드(isBossBlind)·1~8탄에서만. 잡몹/정예 라운드는 제외.
       const art = document.querySelector(".boss-art");
-      if (art && (state.ante || 0) < 9) {
+      if (art && state.isBossBlind && (state.ante || 0) < 9) {
         const want = aimg(bossArtSrcForHp(state.ante, pct));
         if (art.dataset.hpsrc !== want) {
           art.dataset.hpsrc = want;
