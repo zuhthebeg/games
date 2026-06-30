@@ -3237,6 +3237,13 @@
         ? `/lib/monsters/${endlessMonster(ante).img}.png`
         : `bosses/boss${ante}.webp`;
     }
+    // HP 비율(%)에 따른 보스 아트: 1~8탄만 60%/30% 손상 변형, 엔드리스는 기본
+    function bossArtSrcForHp(ante, pct) {
+      if (ante >= 9) return bossArtSrc(ante);
+      if (pct <= 30) return `bosses/boss${ante}_hp30.webp`;
+      if (pct <= 60) return `bosses/boss${ante}_hp60.webp`;
+      return `bosses/boss${ante}.webp`;
+    }
     function getBossName(ante) {
       if (ante >= 9) {
         const mo = endlessMonster(ante);
@@ -5892,7 +5899,7 @@
       const rule = mod ? `<span class="boss-rule">⚠️ ${mod.label}</span><span class="boss-desc">${mod.desc}</span>` : `<span class="boss-desc">${t("ui_boss_no_rule")}</span>`;
       banner.hidden = false;
       banner.innerHTML = `
-        <img class="boss-art" src="${aimg(bossArtSrc(ante))}" alt="" draggable="false" onerror="this.style.display='none'">
+        <img class="boss-art" src="${aimg(bossArtSrc(ante))}" alt="" draggable="false" onerror="if(/_hp(30|60)/.test(this.src)){this.dataset.hpsrc='';this.src=this.src.replace(/_hp(30|60)/,'')}else{this.style.display='none'}">
         <div class="boss-info">
           <span class="boss-name">${t("ui_boss_name", {ante, name})}</span>
           ${rule}
@@ -6132,6 +6139,16 @@
       const r = $("#enemyHpRemain"), m = $("#enemyHpMax");
       if (r) r.textContent = fmtNum(remain);
       if (m) m.textContent = fmtNum(target);
+      // 보스 HP 단계별 아트 스왑(1~8탄): 60%/30% 임계 넘으면 손상 스프라이트로 교체
+      const art = document.querySelector(".boss-art");
+      if (art && (state.ante || 0) < 9) {
+        const want = aimg(bossArtSrcForHp(state.ante, pct));
+        if (art.dataset.hpsrc !== want) {
+          art.dataset.hpsrc = want;
+          art.src = want;
+          art.style.display = "";
+        }
+      }
     }
     function renderHUD(chips = 0, mult = 1) {
       $("#roundLabel").textContent = activeRoundLabel();
