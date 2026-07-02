@@ -1545,6 +1545,7 @@
     }
 
     .card {
+      position: relative;
       width: clamp(48px, 15.5vw, 60px);
       flex: 0 0 auto;
       border-radius: 10px;
@@ -1682,24 +1683,57 @@
     }
 
     .card.selected {
-      border-color: #ffd700;
+      border-color: #ffd700 !important;
       box-shadow:
-        0 0 0 2px #ffd700,
-        0 0 18px rgba(255,215,0,0.6),
-        0 16px 32px rgba(0,0,0,0.5);
-      transform: translateY(-12px) scale(1.04) !important;
+        0 0 0 3px #ffe86b,
+        0 0 0 6px rgba(20,14,0,0.65),
+        0 0 22px rgba(255,205,0,0.85),
+        0 16px 32px rgba(0,0,0,0.55);
+      transform: translateY(-14px) scale(1.05) !important;
       animation: selectedFloat 2s ease-in-out infinite !important;
-      z-index: 2;
+      z-index: 3;
+    }
+    /* 선택 표시 — 오른쪽 위 체크 배지로 "선택됨"을 확실하게 */
+    .card.selected::after {
+      content: "✓";
+      position: absolute;
+      top: -9px; right: -9px;
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 900; line-height: 1;
+      color: #241a00;
+      background: linear-gradient(150deg,#ffe86b,#ffb300);
+      border: 2px solid #4a3400;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      z-index: 4;
+      pointer-events: none;
     }
 
     .card.hint:not(.selected) {
-      border-color: #34e0c8;
-      animation: hintPulse 1s ease-in-out infinite !important;
+      border-color: #34e0c8 !important;
+      animation: hintCardPulse 1s ease-in-out infinite !important;
       z-index: 1;
     }
-    @keyframes hintPulse {
-      0%,100% { box-shadow: 0 0 0 2px #34e0c8, 0 0 10px rgba(52,224,200,0.5), 0 10px 22px rgba(0,0,0,0.45); }
-      50% { box-shadow: 0 0 0 2px #5cffe6, 0 0 22px rgba(52,224,200,0.95), 0 10px 22px rgba(0,0,0,0.45); }
+    /* 추천 표시 — 왼쪽 위 별 배지로 힌트 카드를 명확히 */
+    .card.hint:not(.selected)::before {
+      content: "★";
+      position: absolute;
+      top: -8px; left: -8px;
+      width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; line-height: 1;
+      color: #062622;
+      background: linear-gradient(150deg,#7cffe6,#1ec8ac);
+      border: 2px solid #063e37;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      z-index: 4;
+      pointer-events: none;
+    }
+    @keyframes hintCardPulse {
+      0%,100% { box-shadow: 0 0 0 3px #34e0c8, 0 0 12px rgba(52,224,200,0.6), 0 10px 22px rgba(0,0,0,0.45); }
+      50% { box-shadow: 0 0 0 3px #5cffe6, 0 0 26px rgba(52,224,200,1), 0 10px 22px rgba(0,0,0,0.45); }
     }
 
     .card.pick-fx {
@@ -2791,7 +2825,9 @@
     #deckBtn.ic { background-image:url("ui/ic_deck.webp"); background-size:56%; background-position:center 40%; }
     /* 힌트 = 통찰의 단검 아이콘(이모지 대체) + 테두리만 도드라지게 */
     #hintBtn.ic { background-image:url("ui/ic_hint.webp"); background-size:82%; font-size:0; }
-    #hintBtn { border:1.5px solid rgba(255,215,120,0.9); box-shadow:0 0 10px rgba(255,200,90,0.55), inset 0 0 8px rgba(255,190,80,0.25); animation:hintPulse 1.8s ease-in-out infinite; }
+    #hintBtn { border:1.5px solid rgba(255,215,120,0.9); box-shadow:0 0 10px rgba(255,200,90,0.55), inset 0 0 8px rgba(255,190,80,0.25); animation:hintPulse 1.8s ease-in-out infinite; transition:background-image .12s, border-color .18s, box-shadow .18s; }
+    /* 힌트 활성 시: 추천 기술의 무기 아이콘으로 전환(배경은 JS 인라인) */
+    #hintBtn.wpn { background-size:70%; border-color:rgba(120,230,255,0.95); box-shadow:0 0 13px rgba(60,205,235,0.75), inset 0 0 9px rgba(60,205,235,0.3); animation:none; }
     @keyframes hintPulse {
       0%,100% { box-shadow:0 0 8px rgba(255,200,90,0.45), inset 0 0 7px rgba(255,190,80,0.22); border-color:rgba(255,215,120,0.85); }
       50%     { box-shadow:0 0 15px rgba(255,210,110,0.85), inset 0 0 10px rgba(255,200,90,0.35); border-color:rgba(255,230,150,1); }
@@ -5537,9 +5573,23 @@
 
     let _hintTimer = null;
     let _hintCards = null;   // 현재 떠있는 힌트가 가리키는 추천 카드(객체 참조) — 재클릭 제출용
+    // 힌트 버튼: 기본은 힌트 아이콘, 힌트 활성 시 추천 기술의 무기 아이콘으로 전환
+    function setHintBtnWeapon(handType) {
+      const btn = $("#hintBtn"); if (!btn) return;
+      const w = HAND_WEAPON[handType];
+      if (!w) { resetHintBtn(); return; }
+      btn.classList.add("wpn");
+      btn.style.backgroundImage = `url("ui/weapons/${w}.webp")`;
+    }
+    function resetHintBtn() {
+      const btn = $("#hintBtn"); if (!btn) return;
+      btn.classList.remove("wpn");
+      btn.style.backgroundImage = "";   // 인라인 제거 → 스타일시트의 ic_hint 아이콘으로 복귀
+    }
     function clearHintCards() {
       cardsWrap.querySelectorAll(".card.hint").forEach(el => el.classList.remove("hint"));
       if (_hintTimer) { clearTimeout(_hintTimer); _hintTimer = null; }
+      resetHintBtn();
     }
     function showBestHint() {
       if (state.gameEnded) return;
@@ -5560,6 +5610,7 @@
       _hintCards = combo;
       const ids = new Set(combo.map(c => String(c.id)));
       Array.from(cardsWrap.children).forEach(el => { if (ids.has(el.dataset.id)) el.classList.add("hint"); });
+      setHintBtnWeapon(scoreHand(combo).handType);   // 힌트 아이콘 → 추천 기술 무기 아이콘
       AudioFX.play("select");
       _hintTimer = setTimeout(clearHintCards, 3500); // 잠깐 보조 — 핵심 판단은 플레이어 몫
     }
