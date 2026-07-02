@@ -8,16 +8,25 @@ var PHYSICS = {
   TABLE_H_LARGE: 1420,
   TABLE_W_MEDIUM: 2540,
   TABLE_H_MEDIUM: 1270,
-  CUSHION_RESTITUTION: 0.90,   // 3구대 쿠션 살아있게(여러 쿠션 가능)
   BALL_RESTITUTION: 0.95,
   ROLLING_FRICTION: 0.011,     // 구름저항(슬라이딩 손실 별도라 낮춤)
   SLIDING_FRICTION: 0.2,       // 미끄럼 운동마찰(follow/draw 전이)
-  CUSHION_SIDE_FACTOR: 0.1,
-  THROW_FRICTION: 0.04,
   GRAVITY: 9800,              // mm/s²
-  STOP_VELOCITY: 18,          // mm/s (느린 꼬리 컷)
+  STOP_VELOCITY: 12,          // mm/s (느린 꼬리 컷 — 냅 램프가 자연 감쇠 담당)
   DT: 1 / 240,
   MAX_STEPS: 72000,           // 300s @ 240hz 상한
+  // ── v2 쿠션(임펄스 모델) 기본값 ──
+  RAIL_E0: 0.87,              // 저속 법선 복원계수(3구대 쿠션 살아있게)
+  RAIL_EK: 0.030,             // 법선속도 1m/s당 복원 감소(빠른 샷은 더 죽음)
+  RAIL_E_MIN: 0.65,           // 복원 하한
+  RAIL_MU: 0.26,              // 레일 접선 마찰(자연각 단축·잉글리시 반응·스핀 소모 전부 여기서)
+  // ── v2 공-공 throw(속도의존 마찰) ──
+  THROW_MIN: 0.015,           // 고속 상대표면속도에서의 마찰 하한
+  THROW_REF: 1400,            // mm/s, 마찰 감쇠 기준 표면속도
+  // ── v2 스핀·정지 ──
+  SPIN_MU: 0.018,             // 수직축 스핀(wz) 천 마찰 감쇠계수
+  NAP_V: 140,                 // mm/s, 이 이하에서 냅(보풀) 저항 램프 시작
+  NAP_GAIN: 2.0,              // 냅 램프 최대 배율(=1+GAIN)
 };
 
 // ── 벡터 유틸 ──────────────────────────────────────────────
@@ -52,35 +61,38 @@ function simulate(shot) {
   const mu_s = PHYSICS.SLIDING_FRICTION;
   const g = PHYSICS.GRAVITY;
   const dt = PHYSICS.DT;
-  const e_cush = num(T.cushE, PHYSICS.CUSHION_RESTITUTION);
   const e_ball = PHYSICS.BALL_RESTITUTION;
-  const k_side = PHYSICS.CUSHION_SIDE_FACTOR;
-  const mu_throw = PHYSICS.THROW_FRICTION;
-  const mu_throw_ball = num(T.throw, 0.045);  // 공-공 throw 상한
-  const K_CUSH_SIDE = num(T.cushSide, 0.65);  // 쿠션 사이드스핀 반사각/회전력(접시·잉글리시)
-  const CUSH_WZ_KEEP = num(T.cushWzKeep, 0.3); // 쿠션 후 사이드스핀 잔존(실제 ~0.6, 클래식 0.3)
-  const DRAW_FIX = num(T.drawFix, 0);          // 1이면 하단당점(끌기)은 스트로크 감쇠 미적용(끊어+하단=전진 모순 방지)
-  const CUSH_NORM_E = num(T.cushNormE, 0);     // >0이면 쿠션 법선/접선 분리 복원(법선만 죽음, 실제 ~0.7). 0=클래식(통속도 스케일)
-  const CUSH_TAN_E = num(T.cushTanE, 0.95);    // 분리 모델의 접선 보존율
+  const DRAW_FIX = num(T.drawFix, 1);          // 1이면 하단당점(끌기)은 스트로크 감쇠 미적용(끊어+하단=전진 모순 방지)
+  // ── v2 쿠션(법선 복원 + 접선 마찰 임펄스) ──
+  const RAIL_E0 = num(T.cushE, PHYSICS.RAIL_E0);      // 저속 법선 복원
+  const RAIL_EK = num(T.cushEk, PHYSICS.RAIL_EK);     // 속도의존 감소율(/m/s)
+  const RAIL_MU = num(T.railMu, PHYSICS.RAIL_MU);     // 레일 마찰
+  const RAIL_E_MIN = PHYSICS.RAIL_E_MIN;
+  // ── v2 공-공 throw: μ가 상대표면속도에 따라 감소(느린 샷=많이 밀림) ──
+  const THROW_AMP = num(T.throw, 0.055);
+  const THROW_MIN = PHYSICS.THROW_MIN;
+  const THROW_REF = PHYSICS.THROW_REF;
+  // ── v2 수직축 스핀 감쇠(시간 기반, 천 마찰 토크) ──
+  const SPIN_MU = num(T.spinDecay, PHYSICS.SPIN_MU);
 
   // ── 스트로크(타격) 종류 ─────────────────────────────────────
-  // 끊어치기(stun): 짧게 끊어 follow를 죽임 → 충돌 후 수구가 분리각으로 깔끔히 정지/분리, 회전 빨리 소멸
+  // 끊어치기(stun): 짧게 끊어 follow를 죽임 → 회전 빨리 소멸(감쇠 배율↑)
   // 기본(normal): 표준
-  // 밀어치기(follow): 길게 밀어 follow 회전을 유지·증폭 → 충돌 후 수구가 적구를 따라 더 전진, 회전 오래
-  // follow=상하스핀(밀어/끌어) 강도 배율, keep=사이드스핀(wz) 스텝당 감쇠 유지율
+  // 밀어치기(follow): 길게 밀어 follow 회전을 유지·증폭 → 회전 오래(감쇠 배율↓)
+  // follow=상하스핀 강도 배율, decay=사이드스핀(wz) 시간감쇠 배율
   const STROKE_TABLE = {
-    stun:   { follow: 0.30, keep: 0.9968 },
-    normal: { follow: 1.00, keep: 0.9992 },
-    follow: { follow: 1.45, keep: 0.9996 },
+    stun:   { follow: 0.30, decay: 2.6 },
+    normal: { follow: 1.00, decay: 1.0 },
+    follow: { follow: 1.45, decay: 0.55 },
   };
   const stroke = STROKE_TABLE[shot.stroke] || STROKE_TABLE.normal;
-  const WZ_KEEP_RATE = stroke.keep;
+  // wz 선형 감쇠율(rad/s²): 천 마찰 토크 ≈ (5/2)·μ_sp·g/r, 스트로크가 배율
+  const WZ_DECAY = 2.5 * SPIN_MU * g / r * stroke.decay;
   // 잉글리시 비선형 응답: 저당점=둔감(살짝만 꺾임), 고당점=풀 효과(시스템 유지)
   // engResp(±SPIN_REF)=±SPIN_REF 로 끝값은 보존, 중간은 약화
   const ENG_EXP = num(T.engExp, 1.7);
   const SPIN_REF = 0.9;   // 당점 입력영역 확대(0.6→0.9): 같은 피크를 넓은 영역에 펼쳐 응답 둔감화
   const engResp = s => { const a = Math.min(Math.abs(s), SPIN_REF); return Math.sign(s) * Math.pow(a / SPIN_REF, ENG_EXP) * SPIN_REF; };
-  const CONTACT_WZ_KEEP = num(T.contactWz, 0.6);  // 공-공 충돌 후 사이드스핀 잔존(밀림 완화)
 
   // 각속도 초기화: 모든 공 wx,wy(구름축)·wz(수직축=좌우스핀) = 0
   for (const b of balls) { b.wx = b.wx || 0; b.wy = b.wy || 0; b.wz = b.wz || 0; }
@@ -93,7 +105,7 @@ function simulate(shot) {
         let dx = cb.vx / sp, dy = cb.vy / sp;
         const base = sp / r;                       // 자연 구름 각속도
         const FOLLOW_GAIN = num(T.follow, 1.0);    // 밀어/끌어 강도(과민 줄여 1.3→1.0)
-        const SIDE_GAIN = num(T.side, 1.4);        // 좌우 스핀 강도
+        const SIDE_GAIN = num(T.side, 1.0);        // 좌우 스핀 강도(v2: 쿠션이 물리로 소모하므로 1.0)
         const sx = cb.spinX || 0, sy = cb.spinY || 0;
         // 스쿼트(squirt): 사이드를 주면 출발 방향이 반대쪽으로 아주 살짝 빗나감(실제 1~3°)
         const SQUIRT = num(T.squirt, 0.045);       // 최대 당점에서 rad(≈2.6°)
@@ -185,29 +197,56 @@ function simulate(shot) {
               events.push({ t, type: 'ball-ball', ball1: a.id, ball2: b.id, speed: relSp });
               if (a.id === cueId) registerCueHit(b.id);
               if (b.id === cueId) registerCueHit(a.id);
-              // 충돌 후 사이드스핀 감쇠 — 공 맞고 쿠션 때 과한 밀림 완화
-              a.wz *= CONTACT_WZ_KEEP; b.wz *= CONTACT_WZ_KEEP;
             }
           }
           // 운동량/위치 해소는 실제 겹쳐있을 때
           if (dist < minDist && dist > 1e-9) {
-            const [nx, ny] = vNorm(dx, dy);
-            const overlap = minDist - dist;
-            a.x -= nx * overlap * 0.5; a.y -= ny * overlap * 0.5;
-            b.x += nx * overlap * 0.5; b.y += ny * overlap * 0.5;
+            // CCD 역투영: 상대속도를 따라 되감아 '정확한 접촉 시점'의 배치 복원
+            // (빠른 샷이 깊게 겹친 채 해소되면 중심선이 돌아가 얇은 히트 각도가 틀어짐)
+            const rvfx = b.vx - a.vx, rvfy = b.vy - a.vy;
+            const rv2 = rvfx * rvfx + rvfy * rvfy;
+            let backed = false;
+            if (rv2 > 1e-9) {
+              // |d - rv·τ| = 2r 의 최소 양근 τ (한 스텝 이내만 신뢰)
+              const bq = -(dx * rvfx + dy * rvfy);
+              const cq = dist * dist - minDist * minDist;
+              const disc = bq * bq - rv2 * cq;
+              if (disc >= 0) {
+                const tau = (-bq + Math.sqrt(disc)) / rv2;   // cq<0 → 양근 하나
+                if (tau > 0 && tau < dt * 1.5) {
+                  a.x -= a.vx * tau; a.y -= a.vy * tau;
+                  b.x -= b.vx * tau; b.y -= b.vy * tau;
+                  backed = true;
+                }
+              }
+            }
+            const ndx = b.x - a.x, ndy = b.y - a.y;
+            const [nx, ny] = vNorm(ndx, ndy);
+            if (!backed) {
+              const overlap = minDist - Math.hypot(ndx, ndy);
+              a.x -= nx * overlap * 0.5; a.y -= ny * overlap * 0.5;
+              b.x += nx * overlap * 0.5; b.y += ny * overlap * 0.5;
+            }
             const dvx = a.vx - b.vx, dvy = a.vy - b.vy;
             const vRel = vDot(dvx, dvy, nx, ny);
             if (vRel > 0) {
               const J = (1 + e_ball) * vRel * 0.5;
               a.vx -= J * nx; a.vy -= J * ny;
               b.vx += J * nx; b.vy += J * ny;
+              // v2 throw: 접촉점 상대표면속도 uT에 대해 마찰 임펄스.
+              // μ는 표면속도가 느릴수록 큼(실물: 느린 컷샷이 더 많이 밀림) — Dr.Dave throw 곡선 근사
               const tx = -ny, ty = nx;
               const uT = vDot(dvx, dvy, tx, ty) + (a.wz + b.wz) * r;
               if (Math.abs(uT) > 1e-3) {
+                const muBB = THROW_MIN + THROW_AMP * Math.exp(-Math.abs(uT) / THROW_REF);
                 const sgn = Math.sign(uT);
-                const Jt = sgn * Math.min(Math.abs(uT) * 0.5, mu_throw_ball * Math.abs(J));
+                // 슬립 정지 임펄스: Δu = -7·Jt (양쪽 속도 2 + 양쪽 회전 5) → uT/7이면 그립
+                const Jt = sgn * Math.min(Math.abs(uT) / 7, muBB * Math.abs(J));
                 a.vx -= Jt * tx; a.vy -= Jt * ty;
                 b.vx += Jt * tx; b.vy += Jt * ty;
+                // 마찰 토크 → 양쪽 wz 변경(스핀 소모/전달이 물리로 발생, 하드컷 제거)
+                a.wz -= (2.5 / r) * Jt;
+                b.wz -= (2.5 / r) * Jt;
               }
             }
           }
@@ -217,32 +256,25 @@ function simulate(shot) {
       }
     }
 
-    // ── 공-쿠션 충돌 (각도/속도/잉글리시 분리 모델) ──────────────
-    // 다이아몬드 시스템(파이브앤하프) 재현을 위해:
-    //  · 반사각 = 기하반사 × ANGLE_KEEP(자연각, 1=완전반사 <1=짧아짐) — 잉글리시 없으면 살짝 짧게(실제 쿠션)
-    //  · 속도   = SPEED_REST 배율로만 감소(이동거리·에너지) → 각도와 분리(잉글리시 줘도 안 늘어지게)
-    //  · 잉글리시 = 접선방향 회전(러닝=길어짐/역=짧아짐). 속도엔 거의 영향 없음
-    const ANGLE_KEEP = num(T.cushAngle, 0.95);
-    const SPEED_REST = num(T.cushE, 0.86);
+    // ── 공-쿠션 충돌 v2 (법선 복원 + 접선 마찰 임펄스) ──────────────
+    // 보정계수 대신 물리에서 자연 발생:
+    //  · 법선: 속도의존 복원 e(vN) — 빠른 샷일수록 더 죽음(실제 쿠션)
+    //  · 접선: 접촉점 슬립(vT − engSign·wz·r)에 레일 마찰 임펄스 → 자연각 단축,
+    //    러닝 잉글리시=길어짐+스핀 소모, 역 잉글리시=짧아짐, 무회전=레일 문지름으로 스핀 획득
+    //  · 얕은 입사(vN 작음)는 법선 임펄스가 작아 마찰 캡이 작음 → 덜 잡힘(미끄러짐) — 실물과 동일
     for (const b of balls) {
       let cushionHit = false;
       let side = null;
-      const wzSurf = b.wz * r;   // 사이드스핀 표면속도
-      // 한 쿠션 반사 처리: 법선축(반사) + 접선축(자연각×잉글리시) → 전체 속도는 SPEED_REST로 스케일
       function bounce(normalAxis, normalSign, vN, vT, engSign) {
-        if (CUSH_NORM_E > 0) {
-          // 리얼 모델: 법선 성분만 크게 죽고(e≈0.7) 접선은 거의 보존 → 수직 입사는 죽고 얕은 입사는 살아나옴
-          const nvn = Math.abs(vN) * CUSH_NORM_E;
-          const nvt = (vT * ANGLE_KEEP + engSign * wzSurf * K_CUSH_SIDE) * CUSH_TAN_E;
-          b.wz *= CUSH_WZ_KEEP;
-          return { n: normalSign * nvn, t: nvt };
-        }
-        const nvn = Math.abs(vN);                              // 법선 성분(반사 후 크기)
-        const nvt = vT * ANGLE_KEEP + engSign * wzSurf * K_CUSH_SIDE; // 접선: 자연각 + 잉글리시
-        const sIn = Math.hypot(vN, vT), sRaw = Math.hypot(nvn, nvt);
-        const k = sRaw > 1e-6 ? (sIn * SPEED_REST) / sRaw : 0;
-        b.wz *= CUSH_WZ_KEEP;
-        return { n: normalSign * nvn * k, t: nvt * k };
+        const speedIn = Math.abs(vN);
+        const eN = Math.max(RAIL_E_MIN, RAIL_E0 - RAIL_EK * speedIn / 1000);
+        const Jn = (1 + eN) * speedIn;                    // 단위질량 법선 임펄스
+        // 접촉점 슬립: 표면속도 규약은 기존 engSign과 일치(wz>0·engSign+ → +t 추진)
+        const slip = vT - engSign * b.wz * r;
+        // 슬립 정지 임펄스 Δslip = -(7/2)·Jt → slip·2/7이면 그립. 캡 = μ·Jn
+        const Jt = Math.sign(slip) * Math.min(Math.abs(slip) * 2 / 7, RAIL_MU * Jn);
+        b.wz += engSign * (2.5 / r) * Jt;                 // 마찰 토크 → 스핀 소모/획득
+        return { n: normalSign * speedIn * eN, t: vT - Jt };
       }
       // 좌 쿠션 (법선 +x, 접선 y, 우회전 +y)
       if (b.x - r < 0) {
@@ -291,10 +323,12 @@ function simulate(shot) {
         b.wy += -KW * a * fx;
       } else {
         // 구름: ω를 v에 정합시키고 구름저항으로 감속
+        // 저속에선 냅(보풀) 저항 램프 → 마지막 구간이 부드럽게 죽으며 정지(뚝 끊김 제거)
         b.wy = b.vx / r; b.wx = -b.vy / r;
         const spd = vLen(b.vx, b.vy);
         if (spd > PHYSICS.STOP_VELOCITY) {
-          const ratio = Math.max(0, spd - mu_r * g * dt) / spd;
+          const nap = spd < PHYSICS.NAP_V ? 1 + PHYSICS.NAP_GAIN * (1 - spd / PHYSICS.NAP_V) : 1;
+          const ratio = Math.max(0, spd - mu_r * nap * g * dt) / spd;
           b.vx *= ratio; b.vy *= ratio;
           b.wx *= ratio; b.wy *= ratio;
         }
@@ -305,8 +339,11 @@ function simulate(shot) {
           Math.hypot(b.vx - b.wy * r, b.vy + b.wx * r) < SLIP_EPS) {
         b.vx = 0; b.vy = 0; b.wx = 0; b.wy = 0;
       }
-      // 사이드스핀 마찰 감쇠(천에 의해 점차 죽음) — 스트로크별 유지율(끊어=빨리 죽음, 밀어=오래)
-      b.wz *= WZ_KEEP_RATE;   // 이동 중엔 거의 유지(첫 쿠션에 풀로 먹게), 쿠션·충돌에서만 크게 소진
+      // 사이드스핀 감쇠: 천 마찰 토크에 의한 선형(시간 기반) 감쇠 — 스트로크가 배율
+      if (b.wz) {
+        const dw = WZ_DECAY * dt;
+        b.wz = Math.abs(b.wz) <= dw ? 0 : b.wz - Math.sign(b.wz) * dw;
+      }
     }
 
     // ── 위치 업데이트 ──────────────────────────────────────────
@@ -419,25 +456,26 @@ function runTests() {
     assert('3구 시뮬: 프레임 배열 존재', res.frames.length > 0);
   }
 
-  // Test 3b: 3구 순서 판정 — 적구 둘 먼저 맞고(쿠션0) 나중에 쿠션 채우면 무효
+  // Test 3b: 3구 순서 판정 — 쿠션 없이 두 적구를 맞히면(끌어치기 1D 캐롬) 무효
+  //   수구가 b1 정면 타격 후 백스핀으로 후퇴 → 뒤의 b2 접촉. 경로 비의존(직선상).
   {
     const shot = makeShotInput('3ball', [
-      { id: 0, x: 500, y: 710, vx: 6500, vy: 0, spinX: 0, spinY: 0 },
-      { id: 1, x: 760, y: 720, vx: 0, vy: 0, spinX: 0, spinY: 0 },
-      { id: 2, x: 1000, y: 740, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 0, x: 700, y: 710, vx: 5000, vy: 0, spinX: 0, spinY: -0.9 },
+      { id: 1, x: 1100, y: 710, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 2, x: 250, y: 710, vx: 0, vy: 0, spinX: 0, spinY: 0 },
     ]);
     const res = simulate(shot);
     assert('3구 순서: 두 적구 모두 히트', res.hitIds.includes(1) && res.hitIds.includes(2));
-    assert('3구 순서: 총 쿠션 3회 이상', res.cushionCount >= 3);
+    assert('3구 순서: 2적구 시점 쿠션 0', res.cushBeforeSecond === 0);
     assert('3구 순서: 2적구 전 쿠션 부족 → score 0', res.score === 0);
   }
 
-  // Test 4: 4구 득점 — 빨강1 얇게 쳐서 빨강2까지 (캐롬)
+  // Test 4: 4구 득점 — 빨강1 정면 후 끌어치기로 후퇴, 뒤의 빨강2 캐롬(1D, 경로 비의존)
   {
     const shot = makeShotInput('4ball', [
-      { id: 0, x: 500, y: 635, vx: 6000, vy: 0, spinX: 0, spinY: 0 },
-      { id: 1, x: 850, y: 695, vx: 0, vy: 0, spinX: 0, spinY: 0 },   // 살짝 위(얇은 히트)
-      { id: 2, x: 1250, y: 650, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 0, x: 700, y: 635, vx: 5000, vy: 0, spinX: 0, spinY: -0.9 },
+      { id: 1, x: 1100, y: 635, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 2, x: 300, y: 635, vx: 0, vy: 0, spinX: 0, spinY: 0 },
       { id: 3, x: 2300, y: 1100, vx: 0, vy: 0, spinX: 0, spinY: 0 },
     ]);
     const res = simulate(shot);
@@ -445,13 +483,13 @@ function runTests() {
     assert('4구: score 1', res.score === 1);
   }
 
-  // Test 4b: 4구 파울 — 빨강 둘 다 맞아도 상대공 맞으면 득점 무효
+  // Test 4b: 4구 파울 — 상대공 접촉 시 득점 무효(수구 직선 경로에 상대공 배치, 경로 비의존)
   {
     const shot = makeShotInput('4ball', [
-      { id: 0, x: 500, y: 635, vx: 6500, vy: 0, spinX: 0, spinY: 0 },
-      { id: 1, x: 850, y: 700, vx: 0, vy: 0, spinX: 0, spinY: 0 },
-      { id: 2, x: 1600, y: 650, vx: 0, vy: 0, spinX: 0, spinY: 0 },
-      { id: 3, x: 2300, y: 400, vx: 0, vy: 0, spinX: 0, spinY: 0 }, // 캐롬 경로상 상대공
+      { id: 0, x: 500, y: 650, vx: 6500, vy: 0, spinX: 0, spinY: 0 },
+      { id: 1, x: 1500, y: 300, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 2, x: 1500, y: 1000, vx: 0, vy: 0, spinX: 0, spinY: 0 },
+      { id: 3, x: 900, y: 650, vx: 0, vy: 0, spinX: 0, spinY: 0 },  // 수구 정면 = 확정 파울
     ]);
     const res = simulate(shot);
     assert('4구 파울: 상대공 맞음', res.hitIds.includes(3));
