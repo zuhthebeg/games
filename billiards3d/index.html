@@ -189,14 +189,14 @@ let game=new GameState(MODE);
 // 물리 튜닝 (설정에서 조정, physics.js가 window.BIL_TUNE 읽음)
 // v2 엔진: 쿠션=법선 복원(속도의존)+접선 마찰 임펄스, 공-공=속도의존 스로우+스핀 전달.
 // 반사각·잉글리시·스핀 소모가 전부 마찰 물리에서 자연 발생 — 보정계수 슬라이더 제거됨.
-const TUNE_DEF={ maxpow:8600, cushE:0.87, cushEk:0.030, railMu:0.26, roll:0.011, follow:1.0, side:1.0, engExp:1.7, throw:0.055, squirt:0.045, spinDecay:0.018, drawFix:1 };
+const TUNE_DEF={ maxpow:8600, cushE:0.85, railMu:0.28, railH:0.29, roll:0.011, follow:1.0, side:1.0, engExp:1.7, throw:0.055, squirt:0.045, spinDecay:0.018, drawFix:1 };
 const PHYS_PRESETS={
   real:{},
-  classic:{ railMu:0.16, cushE:0.91, spinDecay:0.010 },   // 옛 감성: 쿠션 덜 잡고 스핀 오래
+  classic:{ railMu:0.18, cushE:0.90, spinDecay:0.010 },   // 옛 감성: 쿠션 덜 잡고 스핀 오래
 };
 window.BIL_TUNE=Object.assign({},TUNE_DEF);
 // 물리 재캘리브레이션(v2): 옛 커스텀 튜닝 1회 초기화 → 모두 새 기본값 적용
-const TUNE_VER='9'; // v9: 엔진 v2(쿠션 임펄스 모델·CCD·속도의존 스로우) — 옛 튜닝 초기화
+const TUNE_VER='10'; // v10: 엔진 v3 — 쿠션을 Han(2005) 레퍼런스 모델로 교체(pooltool 포팅)
 try{
   if(localStorage.getItem('b3d_tune_v')!==TUNE_VER){ localStorage.removeItem('b3d_tune'); localStorage.setItem('b3d_tune_v',TUNE_VER); }
   const saved=JSON.parse(localStorage.getItem('b3d_tune')||'{}'); Object.assign(window.BIL_TUNE,saved);
@@ -212,14 +212,14 @@ let practiceScore=0, practiceTries=0;
 // 득점 시 보여줄 리워드 이미지 풀 (나중에 reward_02.png… 추가하면 랜덤 출력)
 const REWARDS=['reward_01.png','reward_02.png','reward_03.png'];
 // 기본 연습 패턴 (테이블 비율 좌표 fx,fy: 0~1) — 수구=노랑(id0)
-// sol = 실제 득점 해법 {aim(deg), pow(%), spinX, spinY} (엔진 v2 기준 시뮬 재탐색·12/12 검증, 2026-07-02)
+// sol = 실제 득점 해법 {aim(deg), pow(%), spinX, spinY} (엔진 v3(Han 2005) 기준 시뮬 재탐색·12/12 검증, 2026-07-02)
 const PRESETS=[
-  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:166,pow:88,sx:0.2,sy:0,stroke:'follow'},      solM:{aim:171.8,pow:55,sx:0.5,sy:-0.2,stroke:'follow'}},
-  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:160.4,pow:82,sx:0,sy:0.2,stroke:'normal'},    solM:{aim:154.9,pow:77,sx:0.3,sy:0.2,stroke:'normal'}},
-  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:176.6,pow:93,sx:-0.3,sy:-0.1,stroke:'normal'},solM:{aim:177,pow:82,sx:-0.3,sy:0,stroke:'normal'}},
-  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:175.2,pow:88,sx:0.1,sy:0,stroke:'normal'},    solM:{aim:171.6,pow:84,sx:0.3,sy:0.2,stroke:'normal'}},
-  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:158.8,pow:85,sx:0.2,sy:0,stroke:'normal'},    solM:{aim:166.4,pow:85,sx:0.3,sy:0.2,stroke:'normal'}},
-  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:-159.1,pow:80,sx:-0.2,sy:0,stroke:'normal'},  solM:{aim:-152.5,pow:79,sx:0,sy:0,stroke:'normal'}},
+  {n:'초구',     b:[[0,.75,.37],[1,.75,.50],[2,.25,.50]], sol:{aim:164,pow:84,sx:0.2,sy:0,stroke:'follow'},      solM:{aim:171.4,pow:55,sx:0.5,sy:-0.2,stroke:'follow'}},
+  {n:'옆돌리기',  b:[[0,.80,.30],[2,.55,.50],[1,.30,.70]], sol:{aim:162,pow:82,sx:0,sy:0.2,stroke:'normal'},      solM:{aim:146.5,pow:77,sx:0.3,sy:0.2,stroke:'normal'}},
+  {n:'뒤돌리기',  b:[[0,.85,.22],[2,.55,.50],[1,.28,.30]], sol:{aim:186.2,pow:85,sx:-0.3,sy:-0.1,stroke:'normal'},solM:{aim:173.4,pow:82,sx:-0.3,sy:0,stroke:'normal'}},
+  {n:'앞돌리기',  b:[[0,.82,.50],[2,.50,.32],[1,.40,.68]], sol:{aim:170.8,pow:80,sx:0.1,sy:0,stroke:'normal'},    solM:{aim:161.2,pow:80,sx:0.3,sy:0.2,stroke:'normal'}},
+  {n:'제각돌리기',b:[[0,.75,.20],[2,.45,.40],[1,.62,.66]], sol:{aim:165.2,pow:85,sx:0.2,sy:0,stroke:'normal'},    solM:{aim:164.4,pow:85,sx:0.3,sy:0.2,stroke:'normal'}},
+  {n:'횡단',     b:[[0,.85,.50],[2,.50,.18],[1,.50,.82]], sol:{aim:-158.3,pow:80,sx:0,sy:-0.2,stroke:'normal'},  solM:{aim:-166.1,pow:75,sx:0,sy:0,stroke:'normal'}},
 ];
 // 사용자가 직접 등록한 해법(localStorage) → 기본 sol 덮어씀 (aim 라디안, thick 포함)
 const SOLKEY='b3d_presetsol';
@@ -971,9 +971,9 @@ document.getElementById('setImport').onclick=()=>{
 // 물리 세부설정 슬라이더
 const TUNE_META=[
   ['maxpow','파워 최대',5000,11000,100,0],
-  ['cushE','쿠션 반발(저속)',0.75,0.95,0.01,2],
-  ['cushEk','쿠션 반발 속도감소',0.0,0.06,0.005,3],
+  ['cushE','쿠션 반발',0.75,0.95,0.01,2],
   ['railMu','쿠션 그립(잉글리시·자연각)',0.10,0.40,0.01,2],
+  ['railH','쿠션 노즈높이(sinθ)',0.10,0.40,0.01,2],
   ['roll','구름 마찰',0.005,0.03,0.001,3],
   ['follow','밀어/끌어',0.5,2.0,0.1,1],
   ['side','좌우 스핀',0.5,2.0,0.1,1],

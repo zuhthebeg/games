@@ -15,11 +15,12 @@ var PHYSICS = {
   STOP_VELOCITY: 12,          // mm/s (느린 꼬리 컷 — 냅 램프가 자연 감쇠 담당)
   DT: 1 / 240,
   MAX_STEPS: 72000,           // 300s @ 240hz 상한
-  // ── v2 쿠션(임펄스 모델) 기본값 ──
-  RAIL_E0: 0.87,              // 저속 법선 복원계수(3구대 쿠션 살아있게)
-  RAIL_EK: 0.030,             // 법선속도 1m/s당 복원 감소(빠른 샷은 더 죽음)
-  RAIL_E_MIN: 0.65,           // 복원 하한
-  RAIL_MU: 0.26,              // 레일 접선 마찰(자연각 단축·잉글리시 반응·스핀 소모 전부 여기서)
+  // ── v3 쿠션: Han(2005) 'Dynamics in Carom and Three Cushion Billiards' ──
+  // pooltool(han_2005) 포팅. 접촉점이 공 중심보다 위(ε=sinθ·R) → 토프스핀·사이드스핀이
+  // 리바운드에 3D 임펄스로 결합. 기본계수는 pooltool 레퍼런스 값.
+  RAIL_E: 0.85,               // 쿠션 복원계수 e_c (van Balen 실측 0.85)
+  RAIL_MU: 0.28,              // 쿠션 마찰 f_c (Han 원논문 μ=0.14~0.4 각도의존 — 캐롬 레일 그립 상단값)
+  RAIL_SIN: 0.29,             // sinθ = h/R−1 (레일 노즈높이 ≈ 공지름의 64~65%)
   // ── v2 공-공 throw(속도의존 마찰) ──
   THROW_MIN: 0.015,           // 고속 상대표면속도에서의 마찰 하한
   THROW_REF: 1400,            // mm/s, 마찰 감쇠 기준 표면속도
@@ -63,11 +64,11 @@ function simulate(shot) {
   const dt = PHYSICS.DT;
   const e_ball = PHYSICS.BALL_RESTITUTION;
   const DRAW_FIX = num(T.drawFix, 1);          // 1이면 하단당점(끌기)은 스트로크 감쇠 미적용(끊어+하단=전진 모순 방지)
-  // ── v2 쿠션(법선 복원 + 접선 마찰 임펄스) ──
-  const RAIL_E0 = num(T.cushE, PHYSICS.RAIL_E0);      // 저속 법선 복원
-  const RAIL_EK = num(T.cushEk, PHYSICS.RAIL_EK);     // 속도의존 감소율(/m/s)
-  const RAIL_MU = num(T.railMu, PHYSICS.RAIL_MU);     // 레일 마찰
-  const RAIL_E_MIN = PHYSICS.RAIL_E_MIN;
+  // ── v3 쿠션(Han 2005) ──
+  const RAIL_E = num(T.cushE, PHYSICS.RAIL_E);        // 복원계수 e_c
+  const RAIL_MU = num(T.railMu, PHYSICS.RAIL_MU);     // 마찰 f_c
+  const RAIL_SIN = num(T.railH, PHYSICS.RAIL_SIN);    // 접촉높이 sinθ
+  const RAIL_COS = Math.sqrt(1 - RAIL_SIN * RAIL_SIN);
   // ── v2 공-공 throw: μ가 상대표면속도에 따라 감소(느린 샷=많이 밀림) ──
   const THROW_AMP = num(T.throw, 0.055);
   const THROW_MIN = PHYSICS.THROW_MIN;
@@ -256,45 +257,64 @@ function simulate(shot) {
       }
     }
 
-    // ── 공-쿠션 충돌 v2 (법선 복원 + 접선 마찰 임펄스) ──────────────
-    // 보정계수 대신 물리에서 자연 발생:
-    //  · 법선: 속도의존 복원 e(vN) — 빠른 샷일수록 더 죽음(실제 쿠션)
-    //  · 접선: 접촉점 슬립(vT − engSign·wz·r)에 레일 마찰 임펄스 → 자연각 단축,
-    //    러닝 잉글리시=길어짐+스핀 소모, 역 잉글리시=짧아짐, 무회전=레일 문지름으로 스핀 획득
-    //  · 얕은 입사(vN 작음)는 법선 임펄스가 작아 마찰 캡이 작음 → 덜 잡힘(미끄러짐) — 실물과 동일
+    // ── 공-쿠션 충돌 v3: Han(2005) 임펄스 모델 (pooltool han_2005 포팅) ──────
+    // 쿠션 프레임(+x = 쿠션으로 들어가는 방향)으로 회전 → 접촉높이 θ에서
+    // 슬립 (sx,sy) 계산 → 스틱/슬라이드 판정 → 임펄스 (PX,PY,PZ) → 속도·스핀 동시 갱신.
+    // 자연각 단축, 잉글리시 길어짐/짧아짐, 토프스핀 소모(쿠션이 회전을 먹음),
+    // 구름/미끄럼 상태별 리바운드 차이가 전부 이 한 모델에서 나옴.
+    function hanBounce(b) {
+      // 쿠션 프레임 성분 (vx=법선 into-cushion, vy=레일 접선)
+      const vx = b._cvx, vy = b._cvy, wx = b._cwx, wy = b._cwy, wz = b.wz;
+      if (vx <= 0) return false;                       // 멀어지는 중이면 스킵
+      const sinT = RAIL_SIN, cosT = RAIL_COS;
+      // Han Eqs 14 (2D 테이블: vz=0)
+      const sx = vx * sinT + r * wy;
+      const sy = -vy - r * wz * cosT + r * wx * sinT;
+      const cc = -vx * cosT;
+      // Eqs 16~20 (단위질량: A=7/2, B=1)
+      const PzE = -(1 + RAIL_E) * cc;                  // = (1+e)·vx·cosθ > 0
+      const s0 = Math.hypot(sx, sy);
+      const PzS = s0 * 2 / 7;
+      let PxE, PyE;
+      if (PzS <= RAIL_MU * PzE) { PxE = sx * 2 / 7; PyE = sy * 2 / 7; }   // 스틱(그립)
+      else { PxE = RAIL_MU * PzE * sx / s0; PyE = RAIL_MU * PzE * sy / s0; } // 슬라이딩
+      // Eqs 21~23: 접촉프레임 → 레일프레임 임펄스, 속도·각속도 갱신
+      const PX = -PxE * sinT - PzE * cosT;
+      const PY = PyE;
+      const PZ = PxE * cosT - PzE * sinT;
+      const RI = 2.5 / r;                              // R/I (단위질량, I=2/5·r²)
+      b._cvx = vx + PX;
+      b._cvy = vy + PY;
+      b._cwx = wx - RI * PY * sinT;
+      b._cwy = wy + RI * (PX * sinT - PZ * cosT);
+      b.wz = wz + RI * PY * cosT;
+      return true;
+    }
+    // 레일별 프레임 회전(90° 단위 정확 스왑 — 부동소수 회전오차 없음)
+    // in: 테이블 (vx,vy,wx,wy) → 쿠션프레임 (_cvx.._cwy), out: 역변환
+    const RAILS = [
+      { side: 'left',   pen: b => b.x - r < 0,      clamp: b => { b.x = r; },
+        in: b => { b._cvx = -b.vx; b._cvy = -b.vy; b._cwx = -b.wx; b._cwy = -b.wy; },
+        out: b => { b.vx = -b._cvx; b.vy = -b._cvy; b.wx = -b._cwx; b.wy = -b._cwy; } },
+      { side: 'right',  pen: b => b.x + r > tableW, clamp: b => { b.x = tableW - r; },
+        in: b => { b._cvx = b.vx; b._cvy = b.vy; b._cwx = b.wx; b._cwy = b.wy; },
+        out: b => { b.vx = b._cvx; b.vy = b._cvy; b.wx = b._cwx; b.wy = b._cwy; } },
+      { side: 'top',    pen: b => b.y - r < 0,      clamp: b => { b.y = r; },
+        in: b => { b._cvx = -b.vy; b._cvy = b.vx; b._cwx = -b.wy; b._cwy = b.wx; },
+        out: b => { b.vx = b._cvy; b.vy = -b._cvx; b.wx = b._cwy; b.wy = -b._cwx; } },
+      { side: 'bottom', pen: b => b.y + r > tableH, clamp: b => { b.y = tableH - r; },
+        in: b => { b._cvx = b.vy; b._cvy = -b.vx; b._cwx = b.wy; b._cwy = -b.wx; },
+        out: b => { b.vx = -b._cvy; b.vy = b._cvx; b.wx = -b._cwy; b.wy = b._cwx; } },
+    ];
     for (const b of balls) {
       let cushionHit = false;
       let side = null;
-      function bounce(normalAxis, normalSign, vN, vT, engSign) {
-        const speedIn = Math.abs(vN);
-        const eN = Math.max(RAIL_E_MIN, RAIL_E0 - RAIL_EK * speedIn / 1000);
-        const Jn = (1 + eN) * speedIn;                    // 단위질량 법선 임펄스
-        // 접촉점 슬립: 표면속도 규약은 기존 engSign과 일치(wz>0·engSign+ → +t 추진)
-        const slip = vT - engSign * b.wz * r;
-        // 슬립 정지 임펄스 Δslip = -(7/2)·Jt → slip·2/7이면 그립. 캡 = μ·Jn
-        const Jt = Math.sign(slip) * Math.min(Math.abs(slip) * 2 / 7, RAIL_MU * Jn);
-        b.wz += engSign * (2.5 / r) * Jt;                 // 마찰 토크 → 스핀 소모/획득
-        return { n: normalSign * speedIn * eN, t: vT - Jt };
-      }
-      // 좌 쿠션 (법선 +x, 접선 y, 우회전 +y)
-      if (b.x - r < 0) {
-        b.x = r; const o = bounce('x', +1, b.vx, b.vy, +1); b.vx = o.n; b.vy = o.t;
-        cushionHit = true; side = 'left';
-      }
-      // 우 쿠션 (법선 −x)
-      if (b.x + r > tableW) {
-        b.x = tableW - r; const o = bounce('x', -1, b.vx, b.vy, -1); b.vx = o.n; b.vy = o.t;
-        cushionHit = true; side = 'right';
-      }
-      // 상 쿠션 (법선 +y, 접선 x)
-      if (b.y - r < 0) {
-        b.y = r; const o = bounce('y', +1, b.vy, b.vx, -1); b.vy = o.n; b.vx = o.t;
-        cushionHit = true; side = 'top';
-      }
-      // 하 쿠션 (법선 −y)
-      if (b.y + r > tableH) {
-        b.y = tableH - r; const o = bounce('y', -1, b.vy, b.vx, +1); b.vy = o.n; b.vx = o.t;
-        cushionHit = true; side = 'bottom';
+      for (const rail of RAILS) {
+        if (!rail.pen(b)) continue;
+        rail.clamp(b);
+        rail.in(b);
+        const bounced = hanBounce(b);
+        if (bounced) { rail.out(b); cushionHit = true; side = rail.side; }
       }
 
       if (cushionHit) {
