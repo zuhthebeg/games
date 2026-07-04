@@ -22,6 +22,10 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://game.cocy.io/jokerrun/">
 <meta property="og:image" content="https://game.cocy.io/jokerrun/og.png">
+<meta property="og:video" content="https://game.cocy.io/jokerrun/preview.mp4">
+<meta property="og:video:type" content="video/mp4">
+<meta property="og:video:width" content="1920">
+<meta property="og:video:height" content="1080">
 <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <style>
@@ -1981,6 +1985,16 @@
       filter: drop-shadow(0 6px 16px rgba(255, 79, 197, 0.4));
       animation: logoFloat 3.2s ease-in-out infinite;
     }
+    .start-hero {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      margin-bottom: 4px;
+      background: #0a0f1a;
+    }
     @keyframes logoFloat { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-8px) rotate(4deg); } }
     .start-title {
       margin: 12px 0 4px;
@@ -2870,7 +2884,7 @@
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="start-screen show" id="startScreen">
     <div class="start-card">
-      <div class="start-logo">🃏</div>
+      <video class="start-hero" src="preview.mp4" poster="cover-banner.webp" muted loop autoplay playsinline preload="metadata" aria-hidden="true"></video>
       <h1 class="start-title" data-i18n="brand_title">조커런</h1>
       <p class="start-tagline" data-i18n-html="tagline">카드를 짜서 적을 공격하고, 조커로 데미지를 폭발시켜라.<br>던전을 격파하는 카드 로그라이크.</p>
       <div class="start-hs" id="startHighScore">최고 기록: 0점</div>
