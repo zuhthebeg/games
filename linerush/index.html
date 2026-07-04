@@ -653,7 +653,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     ['char1', 'char2', 'char4'].forEach((n) => k.loadSprite(n, `/linerush/img/${n}.jpg`));
     for (let i = 1; i <= STAGE_COUNT; i++) k.loadSprite(`bg${i}`, `/linerush/img/bg${i}.jpg`);
     for (let i = 11; i <= STAGE_COUNT; i++) k.loadSprite(`char${i}`, `/linerush/img/char${i}.jpg`);
-    for (let i = 1; i <= 27; i++) k.loadSprite(`boss${i}`, `/lib/monsters/boss${i}.png`);
+    for (let i = 1; i <= 27; i++) k.loadSprite(`boss${i}`, `/lib/monsters/boss${i}.webp`);
   }
 
   k.onLoad(() => { assetsReady = true; });

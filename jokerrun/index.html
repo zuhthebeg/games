@@ -3323,7 +3323,7 @@
     /* 보스 아트 경로: 1~8탄은 자체 테마 보스(carnival), 9탄+ 엔드리스는 공유 몬스터 풀 */
     function bossArtSrc(ante) {
       return ante >= 9
-        ? `/lib/monsters/${endlessMonster(ante).img}.png`
+        ? `/lib/monsters/${endlessMonster(ante).img}.webp`
         : `bosses/boss${ante}.webp`;
     }
     // HP 비율(%)에 따른 보스 아트: 1~8탄만 60%/30% 손상 변형, 엔드리스는 기본
@@ -5989,7 +5989,7 @@
           return;
         }
         const _mon = ENDLESS_MONSTERS[(state.ante * 3 + _ri) % ENDLESS_MONSTERS.length];
-        const _art = `/lib/monsters/${_mon.img}.png`;
+        const _art = `/lib/monsters/${_mon.img}.webp`;
         const _mname = LANG === "en" ? _mon.en : LANG === "zh-Hant" ? _mon.zh : LANG === "ja" ? _mon.ja : _mon.ko;
         banner.hidden = false;
         banner.innerHTML = `
