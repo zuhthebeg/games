@@ -188,6 +188,26 @@
         .badge-new { background: var(--primary); }
         .badge-hot { background: var(--accent); }
 
+        /* 호버 시 게임플레이 프리뷰 영상 (video 필드 있는 앱만, 데스크톱 전용) */
+        .card-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.25s;
+            pointer-events: none;
+        }
+        .card.video-playing .card-video { opacity: 1; }
+        .card.video-playing .card-title,
+        .card.video-playing .card-badge {
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+        }
+        .card.video-playing .card-icon, .card.video-playing .card-desc { visibility: hidden; }
+
         .card-desc {
             font-size: 0.75rem;
             color: var(--text-secondary);
@@ -394,12 +414,33 @@
                 const delay = (-(i * 0.37) % 3.2).toFixed(2);
                 return `
                 <a href="${app.url}" class="card">
+                    ${app.video ? `<video class="card-video" src="${app.video}" muted loop playsinline preload="none"></video>` : ''}
                     ${app.badge ? `<span class="card-badge badge-${app.badge.toLowerCase()}">${app.badge}</span>` : ''}
                     <img class="card-icon" style="animation-delay:${delay}s" src="${app.icon}" alt="" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🎮</text></svg>'">
                     <div class="card-title">${txt.title}</div>
                     <div class="card-desc">${txt.desc}</div>
                 </a>`;
             }).join('');
+            bindVideoPreviews(grid);
+        }
+
+        // 호버 프리뷰: hover 가능한 기기에서만, 마우스 올리면 재생/벗어나면 리셋
+        function bindVideoPreviews(grid) {
+            if (!window.matchMedia('(hover: hover)').matches) return;
+            grid.querySelectorAll('.card').forEach(card => {
+                const v = card.querySelector('.card-video');
+                if (!v) return;
+                card.addEventListener('mouseenter', () => {
+                    card.classList.add('video-playing');
+                    const p = v.play();
+                    if (p && p.catch) p.catch(() => card.classList.remove('video-playing'));
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.classList.remove('video-playing');
+                    v.pause();
+                    v.currentTime = 0;
+                });
+            });
         }
 
         // SharedWallet 연동 인증
