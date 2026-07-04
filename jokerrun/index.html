@@ -3343,7 +3343,7 @@
     }
 
     function getBlindTargets(ante) {
-      // 카드 공격력값 반영으로 스케일 완화: ×1.6/ante, 시작 타겟 낮춤 (원작 Balatro 참고)
+      // 카드 공격력값 반영으로 스케일 완화: ×1.6/ante, 시작 타겟 낮춤
       // 엔드리스(9탄+)는 8탄까지의 곡선을 유지한 뒤 가속(×1.9/ante)해서 무한히 어려워진다.
       const base = [300, 450, 600];
       const scale = ante <= 8
@@ -3629,7 +3629,7 @@
       return 1.5;                                  // 초신성·특이점
     }
 
-    // ── 바우처(Balatro식): 앤티마다 상점에 1개 랜덤 등장, 구매 시 런 내내 영구 효과 ──
+    // ── 바우처: 앤티마다 상점에 1개 랜덤 등장, 구매 시 런 내내 영구 효과 ──
     const voucherPool = [
       { id:"clearance",     name:"창고 정리",   cost:10, icon:"🏷️", desc:"상점 전 품목 25% 할인" },
       { id:"magicTrick",    name:"마술 트릭",   cost:10, icon:"🃏", desc:"상점에 플레이 카드 등장(덱 추가용)" },
