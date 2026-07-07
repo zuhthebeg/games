@@ -4351,10 +4351,11 @@
         score: "sfx-score.mp3?v=1", mult: "sfx-mult.mp3?v=2", slam: "sfx-slam.mp3?v=1",
         win: "sfx-win.mp3?v=1", lose: "sfx-lose.mp3?v=1",
         attack1: "sfx-attack1.mp3?v=1", attack2: "sfx-attack2.mp3?v=1",
-        attack3: "sfx-attack3.mp3?v=1", attack4: "sfx-attack4.mp3?v=1"
+        attack3: "sfx-attack3.mp3?v=1", attack4: "sfx-attack4.mp3?v=1",
+        skip: "sfx-skip.mp3?v=1"
       },
       vols: { select: .5, play: .75, chip: .6, score: .7, mult: .45, slam: .95, win: .8, lose: .75,
-              attack1: .6, attack2: .7, attack3: .8, attack4: .9 },
+              attack1: .6, attack2: .7, attack3: .8, attack4: .9, skip: .55 },
       init() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       },
@@ -4397,6 +4398,7 @@
       },
       _beep(type) {
         if (/^attack/.test(type)) type = "play";   // 샘플 미로딩 시 공격음은 기존 비프로
+        if (type === "skip") type = "score";       // 스킵 픽업음 폴백
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
@@ -7828,7 +7830,7 @@
       toastEl.className = "skip-reward-toast";
       toastEl.innerHTML = `<div class="srt-head">${t("ui_skip_reward_head")}</div><div class="srt-main">${text}</div>`;
       document.body.appendChild(toastEl);
-      try { AudioFX.play("win"); JuiceFX.sfx("win"); } catch (_) {}
+      try { AudioFX.play("skip"); } catch (_) {}   // 스킵 보상 = 심플 픽업음(승리 팬페어 아님)
       setTimeout(() => { toastEl.classList.add("out"); setTimeout(() => toastEl.remove(), 280); }, 1700);
     }
     function skipBlind(index) {
@@ -7853,7 +7855,7 @@
       const btn = $("#skipResultBtn");
       btn.onclick = () => { $("#skipResultModal").classList.remove("show"); beginBlind(index + 1, _pendingSeed); };
       $("#skipResultModal").classList.add("show");
-      try { AudioFX.play("win"); JuiceFX.sfx("win"); } catch (_) {}
+      try { AudioFX.play("skip"); } catch (_) {}   // 스킵 보상 = 심플 픽업음(승리 팬페어 아님)
     }
 
     function startRound(index, seedText = "") {
