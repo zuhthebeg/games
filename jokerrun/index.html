@@ -1273,6 +1273,15 @@
     }
     .jr-fx.chip { color: #5cc8ff; }
     .jr-fx.mult { color: #ff5d73; }
+    .jr-fx.dmg { color: #ffd75e; font-size: 1.45rem; -webkit-text-stroke: 1px rgba(120,20,20,.55); }
+    /* 적 피격 리액션: 플래시 + 넉백(티어 비례) */
+    .boss-art.hit { animation: enemyHit .38s cubic-bezier(.22,.9,.3,1); }
+    @keyframes enemyHit {
+      0% { transform: translateX(0) scale(1); filter: brightness(1); }
+      15% { transform: translateX(var(--hit-kb, 6px)) scale(1.05); filter: brightness(2.1) saturate(.5); }
+      45% { transform: translateX(calc(var(--hit-kb, 6px) * -0.4)); filter: brightness(1.3); }
+      100% { transform: translateX(0) scale(1); filter: brightness(1); }
+    }
     .score-inline b { display: inline-block; }
     .score-bump { animation: scoreBump 280ms ease; }
     @keyframes scoreBump { 0%{transform:scale(1)} 40%{transform:scale(1.28)} 100%{transform:scale(1)} }
@@ -4390,12 +4399,7 @@
         this._beep(type);
       },
       // 족보 등급 → 공격음 티어 (어려운 기술일수록 고급스러운 사운드)
-      attackFor(handType) {
-        const tier = { HIGH_CARD: 1, PAIR: 1, TWO_PAIR: 2, THREE: 2,
-          STRAIGHT: 3, FLUSH: 3, FULL_HOUSE: 3, FLUSH_HOUSE: 3,
-          FOUR: 4, FIVE: 4, STRAIGHT_FLUSH: 4, ROYAL_FLUSH: 4, FLUSH_FIVE: 4 }[handType] || 1;
-        this.play("attack" + tier);
-      },
+      attackFor(handType) { this.play("attack" + handTier(handType)); },
       _beep(type) {
         if (/^attack/.test(type)) type = "play";   // 샘플 미로딩 시 공격음은 기존 비프로
         if (type === "skip") type = "score";       // 스킵 픽업음 폴백
@@ -6276,6 +6280,27 @@
     }
 
     // 데미지 기여 플로팅 효과 (요소 위로 +공격력/×연격 띄움)
+    // 족보 → 연출 티어 (1=하이카드·페어 ~ 4=포카드·스플+). 사운드/피격 연출 공용.
+    function handTier(handType) {
+      return { HIGH_CARD: 1, PAIR: 1, TWO_PAIR: 2, THREE: 2,
+        STRAIGHT: 3, FLUSH: 3, FULL_HOUSE: 3, FLUSH_HOUSE: 3,
+        FOUR: 4, FIVE: 4, STRAIGHT_FLUSH: 4, ROYAL_FLUSH: 4, FLUSH_FIVE: 4 }[handType] || 1;
+    }
+
+    // 적 피격 리액션: 아트 플래시+넉백(티어 비례) + 데미지 숫자 플로팅
+    function enemyHitFx(points, tier) {
+      try {
+        const art = document.querySelector("#bossBanner .boss-art");
+        const anchor = (art && art.style.display !== "none") ? art : document.getElementById("enemyPanel");
+        if (art && art.style.display !== "none") {
+          art.style.setProperty("--hit-kb", (4 + (tier || 1) * 3) + "px");
+          art.classList.remove("hit"); void art.offsetWidth; art.classList.add("hit");
+          setTimeout(() => art.classList.remove("hit"), 420);
+        }
+        if (anchor) jrFloat(anchor, "-" + Number(points || 0).toLocaleString(), "dmg");
+      } catch (_) {}
+    }
+
     function jrFloat(el, text, type) {
       try {
         const r = el.getBoundingClientRect();
@@ -7277,6 +7302,7 @@
           } catch (_) {}
         })();
       }
+      enemyHitFx(points, handTier(hand.handType));   // 적 피격 연출(플래시+넉백+데미지 숫자)
       await animateScore(hand.name, chips, points, mult, prevScore, state.score);
       setInfo(t("info_score_result", {hand: hand.name, chips, mult, pts: points.toLocaleString()}));
       addLog(t("log_play_hand", {hand: hand.name, pts: points.toLocaleString(), left: state.handsLeft}));
