@@ -4342,14 +4342,50 @@
       rerollCost: 5
     };
 
+    // 생성 샘플 SFX (Stable Audio 3, 상업 OK). 로딩 전/실패 시엔 기존 합성음(비프/ZzFX)으로 폴백.
     const AudioFX = {
       ctx: null,
+      buffers: {},
+      srcs: {
+        select: "sfx-select.mp3?v=1", play: "sfx-play.mp3?v=1", chip: "sfx-chip.mp3?v=1",
+        score: "sfx-score.mp3?v=1", mult: "sfx-mult.mp3?v=1", slam: "sfx-slam.mp3?v=1",
+        win: "sfx-win.mp3?v=1", lose: "sfx-lose.mp3?v=1"
+      },
+      vols: { select: .5, play: .75, chip: .6, score: .7, mult: .65, slam: .95, win: .8, lose: .75 },
       init() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      },
+      preload() {
+        if (!this.ctx) this.init();
+        for (const k in this.srcs) {
+          if (k in this.buffers) continue;
+          this.buffers[k] = null;   // 로딩 중 마커(중복 fetch 방지)
+          fetch(this.srcs[k])
+            .then(r => r.ok ? r.arrayBuffer() : Promise.reject(r.status))
+            .then(ab => this.ctx.decodeAudioData(ab))
+            .then(buf => { this.buffers[k] = buf; })
+            .catch(() => { this.buffers[k] = false; });   // 실패 확정 → 합성음 폴백
+        }
       },
       play(type) {
         if (!this.ctx) this.init();
         if (this.ctx.state === "suspended") this.ctx.resume();
+        const buf = this.buffers[type];
+        if (buf) {
+          try {
+            const src = this.ctx.createBufferSource();
+            const gain = this.ctx.createGain();
+            src.buffer = buf;
+            gain.gain.value = this.vols[type] || 0.7;
+            src.connect(gain);
+            gain.connect(this.ctx.destination);
+            src.start();
+            return;
+          } catch (_) { /* 합성음 폴백 */ }
+        }
+        this._beep(type);
+      },
+      _beep(type) {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
@@ -4491,7 +4527,7 @@
       select:[.8,.05,720,,.01,.04,1,2,,,,,,,,,,.5],
     };
     const JuiceFX = {
-      sfx(name){ try{ const p=JUICE_SOUNDS[name]; if(p&&zzfx) zzfx(...p); }catch(e){} },
+      sfx(name){ try{ if (AudioFX.buffers[name]) { AudioFX.play(name); return; } const p=JUICE_SOUNDS[name]; if(p&&zzfx) zzfx(...p); }catch(e){} },
       shake(power=6, dur=240){
         const el=document.getElementById("tablePanel")||document.body;
         try{ el.style.setProperty("--jr-shake", power+"px"); el.classList.remove("jr-shaking"); void el.offsetWidth; el.classList.add("jr-shaking"); setTimeout(()=>el.classList.remove("jr-shaking"), dur); }catch(e){}
@@ -8375,6 +8411,7 @@
       }
       // 지갑바(#sw-bar)가 없는 빌드(CrazyGames/itch 등)는 상단 예약 공간 제거
       try { if (!document.getElementById("sw-bar")) document.body.classList.add("no-swbar"); } catch (_) {}
+      try { AudioFX.preload(); } catch (_) {}   // 샘플 SFX 프리로드(로딩 전엔 합성음 폴백)
       try { if (window.GameRankings) GameRankings.injectNavButton("jokerrun"); } catch (_) {}
       updateGoldLabel();
       refreshStartHighScore();
