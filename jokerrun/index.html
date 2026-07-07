@@ -31,6 +31,7 @@
   <style>
     :root {
       color-scheme: dark;
+      --swbar-h: 48px;   /* SharedWallet 고정바 높이. 바가 없는 빌드(CG 등)는 body.no-swbar로 0 */
       --felt-1: #171327;
       --felt-2: #0a0810;
       --felt-3: #201835;
@@ -85,9 +86,10 @@
         linear-gradient(165deg, var(--felt-3), var(--felt-1) 45%, var(--felt-2));
       display: grid;
       place-items: center;
-      padding: calc(48px + max(8px, env(safe-area-inset-top))) 8px max(8px, env(safe-area-inset-bottom)); /* 48px for SharedWallet bar */
+      padding: calc(var(--swbar-h) + max(8px, env(safe-area-inset-top))) 8px max(8px, env(safe-area-inset-bottom)); /* SharedWallet bar */
       position: relative;
     }
+    body.no-swbar { --swbar-h: 0px; }
 
     body::before {
       content: "";
@@ -106,7 +108,7 @@
 
     .app {
       width: var(--phone-w);
-      height: calc(100dvh - 48px - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)) - 8px); /* 48px for SharedWallet bar */
+      height: calc(100dvh - var(--swbar-h) - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)) - 8px); /* SharedWallet bar */
       max-height: 100dvh;
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 20px;
@@ -1954,6 +1956,25 @@
     }
 
     /* ── 시작 화면 ── */
+    /* ── 첫 판 온보딩 코치마크 ── */
+    .coach-tip {
+      position: fixed; z-index: 80; max-width: 270px; padding: 10px 14px;
+      border-radius: 12px; background: linear-gradient(160deg, #2a2140, #151024);
+      border: 1.5px solid var(--gold); color: #ffe9bd;
+      font-size: 14px; font-weight: 700; text-align: center; line-height: 1.45;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, .55), 0 0 18px rgba(255, 207, 109, .25);
+      pointer-events: none; opacity: 0;
+      transition: opacity .25s ease;
+    }
+    .coach-tip.show { opacity: 1; animation: coachBob 1.6s ease-in-out infinite; }
+    .coach-tip::after {
+      content: ""; position: absolute; left: 50%; bottom: -7px; width: 12px; height: 12px;
+      transform: translateX(-50%) rotate(45deg); background: #151024;
+      border-right: 1.5px solid var(--gold); border-bottom: 1.5px solid var(--gold);
+    }
+    .coach-tip.below::after { bottom: auto; top: -7px; transform: translateX(-50%) rotate(225deg); }
+    @keyframes coachBob { 0%, 100% { margin-top: 0; } 50% { margin-top: -6px; } }
+
     .start-screen {
       position: fixed;
       inset: 0;
@@ -1961,7 +1982,7 @@
       display: none;
       align-items: center;
       justify-content: center;
-      padding: calc(48px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+      padding: calc(var(--swbar-h) + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
       background:
         radial-gradient(120% 120% at 50% 0%, rgba(255, 79, 197, 0.18), transparent 50%),
         radial-gradient(120% 120% at 50% 100%, rgba(69, 245, 255, 0.16), transparent 55%),
@@ -4477,6 +4498,37 @@
       }
     };
 
+    // ── 첫 판 온보딩 코치마크: 카드 선택 → 공격 2단계만 짚어주고 끝. 1회성(localStorage). ──
+    const Coach = {
+      _el: null, step: 0,
+      done() { try { return localStorage.getItem("jokerrun_coach") === "1"; } catch (_) { return true; } },
+      finish() { this.step = 0; this._hide(); try { localStorage.setItem("jokerrun_coach", "1"); } catch (_) {} },
+      abort() { this.step = 0; this._hide(); },
+      _hide() { if (this._el) this._el.classList.remove("show"); },
+      el() {
+        if (!this._el) { const d = document.createElement("div"); d.className = "coach-tip"; document.body.appendChild(d); this._el = d; }
+        return this._el;
+      },
+      show(step, anchorSel, key) {
+        const a = document.querySelector(anchorSel); if (!a) return;
+        const el = this.el(); this.step = step;
+        el.textContent = t(key);
+        el.classList.remove("show");
+        requestAnimationFrame(() => {
+          const r = a.getBoundingClientRect();
+          if (!r.width && !r.height) return;
+          const w = el.offsetWidth, h = el.offsetHeight;
+          let x = r.left + r.width / 2 - w / 2;
+          x = Math.max(8, Math.min(x, window.innerWidth - w - 8));
+          let y = r.top - h - 12, below = false;
+          if (y < 8) { y = r.bottom + 12; below = true; }
+          el.style.left = x + "px"; el.style.top = y + "px";
+          el.classList.toggle("below", below);
+          el.classList.add("show");
+        });
+      }
+    };
+
     const $ = sel => document.querySelector(sel);
 
     // ─────────────────────────────────────────────────────────────
@@ -4514,6 +4566,7 @@
         atk_power: "공격력", combo: "연격",
         hands_left: "남은 공격", discards_left: "남은 버리기",
         hand_play: "⚔️ 공격", card_discard: "카드 버리기",
+        coach_pick: "카드를 눌러 조합을 만들어봐! (최대 5장)", coach_attack: "이제 공격! 데미지 = 공격력 × 콤보",
         hint_btn: "추천 패", skills: "📊 기술", scrolls: "📜 주문서", deck: "🃏 덱",
         fin_title: "최후의 일격", fin_desc: "낼 카드가 없다! 보유 조커 {n}개를 모두 폭발시켜 적을 즉사시킨다.", fin_go: "💥 필살기 발동", fin_no: "포기 (게임 오버)", fin_log: "💥 조커를 모두 폭발시켜 적을 즉사시켰다!",
         deck_n: "🃏 덱 ({n}장)", log_joker_expired: "{name}이(가) 소멸했다", log_glass_break: "💎 유리 카드가 깨졌다", hand_hint: "공격할 카드를 선택하세요.",
@@ -4686,6 +4739,7 @@
         atk_power: "ATK", combo: "Combo",
         hands_left: "Attacks left", discards_left: "Discards left",
         hand_play: "⚔️ Attack", card_discard: "Discard",
+        coach_pick: "Tap cards to build a hand! (up to 5)", coach_attack: "Now attack! Damage = ATK × Combo",
         hint_btn: "Best Hand", skills: "📊 Skills", scrolls: "📜 Scrolls", deck: "🃏 Deck",
         fin_title: "Last Resort", fin_desc: "No cards left! Detonate all {n} Jokers to instantly destroy the enemy.", fin_go: "💥 Unleash", fin_no: "Give up (Game Over)", fin_log: "💥 All Jokers detonated — enemy obliterated!",
         deck_n: "🃏 Deck ({n})", log_joker_expired: "{name} faded away", log_glass_break: "💎 A Glass card shattered", hand_hint: "Pick cards to attack with.",
@@ -4858,6 +4912,7 @@
         atk_power: "攻擊力", combo: "連擊",
         hands_left: "剩餘攻擊", discards_left: "剩餘棄牌",
         hand_play: "⚔️ 攻擊", card_discard: "棄牌",
+        coach_pick: "點擊卡片組成牌型!(最多5張)", coach_attack: "出擊!傷害 = 攻擊力 × 連擊",
         hint_btn: "推薦牌", skills: "📊 技能", scrolls: "📜 卷軸", deck: "🃏 牌組",
         fin_title: "最後一擊", fin_desc: "沒有牌可出了！引爆全部 {n} 張小丑牌，瞬間秒殺敵人。", fin_go: "💥 釋放必殺", fin_no: "放棄（遊戲結束）", fin_log: "💥 引爆所有小丑牌，秒殺敵人！",
         deck_n: "🃏 牌組 ({n})", log_joker_expired: "{name} 消失了", log_glass_break: "💎 玻璃卡牌碎裂了", hand_hint: "選擇要攻擊的卡牌。",
@@ -5030,6 +5085,7 @@
         atk_power: "攻撃力", combo: "連撃",
         hands_left: "残り攻撃", discards_left: "残り捨て札",
         hand_play: "⚔️ 攻撃", card_discard: "捨て札",
+        coach_pick: "カードをタップして役を作ろう!(最大5枚)", coach_attack: "攻撃だ!ダメージ = 攻撃力 × コンボ",
         hint_btn: "おすすめ", skills: "📊 スキル", scrolls: "📜 巻物", deck: "🃏 デッキ",
         fin_title: "最後の一撃", fin_desc: "出せるカードがない！所持ジョーカー{n}個を全て爆発させ、敵を即死させる。", fin_go: "💥 必殺発動", fin_no: "あきらめる（ゲームオーバー）", fin_log: "💥 ジョーカーを全爆発させ敵を即死させた！",
         deck_n: "🃏 デッキ ({n})", log_joker_expired: "{name} が消滅した", log_glass_break: "💎 グラスカードが砕けた", hand_hint: "攻撃するカードを選択。",
@@ -5179,13 +5235,14 @@
       const nav = (navigator.language || "ko").toLowerCase();
       LANG = nav.startsWith("zh") ? "zh-Hant" : nav.slice(0, 2);   // 중국어는 번체로(현재 번체만 지원)
     }
-    if (!I18N[LANG]) LANG = "ko";
+    if (!I18N[LANG]) LANG = "en";   // 미지원 언어는 영어로(해외 포탈 심사·글로벌 기본). 한국어는 nav=ko일 때만.
     function t(k, p) {
       let s = (I18N[LANG] && I18N[LANG][k] != null) ? I18N[LANG][k] : (I18N.ko[k] != null ? I18N.ko[k] : k);
       if (p) for (const key in p) s = s.split("{" + key + "}").join(p[key]);
       return s;
     }
     function applyStaticI18n() {
+      try { document.documentElement.lang = LANG; document.title = t("brand_title"); } catch (_) {}
       document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.getAttribute("data-i18n")); });
       document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = t(el.getAttribute("data-i18n-html")); });
       document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.getAttribute("data-i18n-title")); });
@@ -5444,6 +5501,8 @@
           AudioFX.play("select");
           updateHandPreview();
           updateConsumableUsability();
+          if (Coach.step === 1 && state.selected.size >= 1) Coach.show(2, "#playBtn", "coach_attack");
+          else if (Coach.step === 2 && !state.selected.size) Coach.show(1, "#cardsWrap", "coach_pick");
         });
         d.addEventListener('mousemove', (e) => {
           if (state.selected.has(card.id) || d.classList.contains("dragging")) return;
@@ -6913,6 +6972,7 @@
     async function playSelected() {
       _scoringActive = false;   // 방어적 초기화(이전 연출이 비정상 종료했어도 복구)
       if (state.gameEnded) return;
+      if (Coach.step) Coach.finish();   // 첫 공격 성공 = 온보딩 끝
       if (state.handsLeft <= 0) {
         state.handsLeft = 0;
         renderHUD();
@@ -7821,6 +7881,11 @@
       }
       addLog(t("log_round_start", {round: activeRoundLabel(), target: activeTarget().toLocaleString()}));
       snapshotRun();   // 전투 첫 공격 차례 시작 — 세이브/컨티뉴 스냅샷
+      // 완전 첫 판(앤티1 첫 전투, 코치 미완료)에만 온보딩 안내
+      if (!Coach.done() && state.ante === 1 && index === 0) setTimeout(() => {
+        const onStart = document.getElementById("startScreen")?.classList.contains("show");   // 부팅 시 미리 깐 보드에는 안 띄움
+        if (!Coach.done() && !onStart && !state.selected.size && !state.gameEnded) Coach.show(1, "#cardsWrap", "coach_pick");
+      }, 700);
     }
 
     // 최후의 일격: 낼 카드가 없을 때 보유 조커를 모두 폭발시켜 적을 즉사시키는 이벤트.
@@ -8308,6 +8373,8 @@
       if ((typeof SharedWallet !== "undefined" && SharedWallet)) {
         try { await SharedWallet.init(); } catch (_) {}
       }
+      // 지갑바(#sw-bar)가 없는 빌드(CrazyGames/itch 등)는 상단 예약 공간 제거
+      try { if (!document.getElementById("sw-bar")) document.body.classList.add("no-swbar"); } catch (_) {}
       try { if (window.GameRankings) GameRankings.injectNavButton("jokerrun"); } catch (_) {}
       updateGoldLabel();
       refreshStartHighScore();
