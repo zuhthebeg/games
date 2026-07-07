@@ -6001,6 +6001,7 @@
       const refund = consumableSellValue(kind);
       arr.splice(i, 1);
       state.money += refund;
+      try { AudioFX.play("skip"); } catch (_) {}   // 판매음
       addLog(t("log_sell_consumable", {name: item.name, n: refund}));
       if (anchorEl) showSellPopup(refund, anchorEl);
       renderHUD();
@@ -6138,6 +6139,7 @@
       const refund = jokerSellValue(joker);
       state.jokers.splice(index, 1);
       state.money += refund;
+      try { AudioFX.play("skip"); } catch (_) {}   // 판매음
       addLog(t("log_sell_joker", {name: joker.name, n: refund}));
       if (anchorEl) showSellPopup(refund, anchorEl);
       renderHUD();
@@ -7447,7 +7449,7 @@
       state.vouchers[v.id] = true;
       state.shopVoucher = null;
       addLog(t("log_buy_voucher", {name: v.name, n: cost}));
-      AudioFX.play("win");
+      AudioFX.play("skip");   // 구매음(팬페어 아님)
       topUpShopForVoucher(v.id);   // 진열 증가 바우처 → 즉시 빈 슬롯 채워 판매(담판부터 아님)
       renderHUD();
       openShop(_shopIsAnteClear); // 할인·보충된 재고가 즉시 반영
@@ -7526,6 +7528,7 @@
           const c = effectiveRerollCost();
           if (state.money < c) return;
           state.money -= c;
+          try { AudioFX.play("chip"); } catch (_) {}   // 리롤음
           if (c === 0) state.freeRerollsUsed = (state.freeRerollsUsed || 0) + 1;   // 멀리건 무료 리롤 소진(상점당 2회)
           state.rerollCost += 1;
           (state.jokers || []).forEach(j => { if (j.id === "rerollMult") j.counter = (j.counter || 0) + 1; });   // 리롤 누적 조커
@@ -7582,6 +7585,7 @@
             actionFn: () => {
               closeJokerPopup();
               state.money -= cost;
+              try { AudioFX.play("skip"); } catch (_) {}   // 구매음
               state.jokers.push({ ...joker, counter: joker.initCounter ?? 0 });
               markDiscovered("joker", joker.id);
               state.shopJokers = state.shopJokers.filter(j => j.id !== joker.id);
@@ -7619,6 +7623,7 @@
             actionFn: () => {
               closeJokerPopup();
               state.money -= cost;
+              try { AudioFX.play("skip"); } catch (_) {}   // 구매음
               
               state.shopPlanets.splice(idx, 1);
               if (planetFull) {
@@ -7674,6 +7679,7 @@
             actionFn: () => {
               closeJokerPopup();
               state.money -= cost;
+              try { AudioFX.play("skip"); } catch (_) {}   // 구매음
               
               state.shopTarots.splice(idx, 1);
               if (full && instant) {
@@ -7715,6 +7721,7 @@
               actionFn: () => {
                 closeJokerPopup();
                 state.money -= cost;
+                try { AudioFX.play("skip"); } catch (_) {}   // 구매음
                 state.extraCards.push({ suit: pc.suit, rank: pc.rank, enh: pc.enh || null });
                 if (!state.runDeck) state.runDeck = buildRunDeck();
                 state.runDeck.push({ id: state._deckUid++, suit: pc.suit, rank: pc.rank, enh: pc.enh || null });
