@@ -4348,10 +4348,13 @@
       buffers: {},
       srcs: {
         select: "sfx-select.mp3?v=1", play: "sfx-play.mp3?v=1", chip: "sfx-chip.mp3?v=1",
-        score: "sfx-score.mp3?v=1", mult: "sfx-mult.mp3?v=1", slam: "sfx-slam.mp3?v=1",
-        win: "sfx-win.mp3?v=1", lose: "sfx-lose.mp3?v=1"
+        score: "sfx-score.mp3?v=1", mult: "sfx-mult.mp3?v=2", slam: "sfx-slam.mp3?v=1",
+        win: "sfx-win.mp3?v=1", lose: "sfx-lose.mp3?v=1",
+        attack1: "sfx-attack1.mp3?v=1", attack2: "sfx-attack2.mp3?v=1",
+        attack3: "sfx-attack3.mp3?v=1", attack4: "sfx-attack4.mp3?v=1"
       },
-      vols: { select: .5, play: .75, chip: .6, score: .7, mult: .65, slam: .95, win: .8, lose: .75 },
+      vols: { select: .5, play: .75, chip: .6, score: .7, mult: .45, slam: .95, win: .8, lose: .75,
+              attack1: .6, attack2: .7, attack3: .8, attack4: .9 },
       init() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       },
@@ -4385,7 +4388,15 @@
         }
         this._beep(type);
       },
+      // 족보 등급 → 공격음 티어 (어려운 기술일수록 고급스러운 사운드)
+      attackFor(handType) {
+        const tier = { HIGH_CARD: 1, PAIR: 1, TWO_PAIR: 2, THREE: 2,
+          STRAIGHT: 3, FLUSH: 3, FULL_HOUSE: 3, FLUSH_HOUSE: 3,
+          FOUR: 4, FIVE: 4, STRAIGHT_FLUSH: 4, ROYAL_FLUSH: 4, FLUSH_FIVE: 4 }[handType] || 1;
+        this.play("attack" + tier);
+      },
       _beep(type) {
+        if (/^attack/.test(type)) type = "play";   // 샘플 미로딩 시 공격음은 기존 비프로
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
@@ -7019,8 +7030,8 @@
       if (!cards.length) return setInfo(t("info_no_cards"));
       if (state.bossModifier?.id === "max3cards" && cards.length > 3) return setInfo(t("info_boss_max3"));
       if (state.bossModifier?.id === "min4cards" && cards.length < 4) return setInfo(t("info_boss_min4"));
-      AudioFX.play("play");
       const hand = scoreHand(cards);
+      AudioFX.attackFor(hand.handType);   // 족보 등급별 공격음
       // 운석우(anteLevel): 이 전투에서 처음 플레이한 포커 기술의 레벨 +1 (전투당 1회, 이번 플레이부터 반영)
       if (!state._anteFirstHandLeveled && (state.jokers || []).some(j => j.id === "anteLevel")) {
         state.handLevels[hand.handType] = (state.handLevels[hand.handType] || 1) + 1;
@@ -7952,7 +7963,7 @@
     function unleashFinisher() {
       if (state.gameEnded || _finisherFired) return;
       _finisherFired = true;
-      AudioFX.play("play");
+      AudioFX.play("attack4");   // 최후의 일격 = 최고 티어 공격음
       try { JuiceFX.sfx("win"); JuiceFX.shake(14); } catch (_) {}
       addLog(t("fin_log"));
       // 조커 박스 순차 폭발(shatter) 연출
