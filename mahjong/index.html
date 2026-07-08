@@ -198,6 +198,33 @@ body.mj-fs #sw-bar{display:none !important;}
 @keyframes claimPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-10deg);}22%{opacity:1;transform:translate(-50%,-50%) scale(1.2) rotate(4deg);}38%{transform:translate(-50%,-50%) scale(1) rotate(0);}80%{opacity:1;transform:translate(-50%,-50%) scale(1);}100%{opacity:0;transform:translate(-50%,-58%) scale(1);}}
 .tile-sm.disc-last{background:rgba(255,55,55,.5);border-radius:5px;outline:2.5px solid #ff3b3b;outline-offset:-1px;box-shadow:0 0 14px 3px rgba(255,55,55,.9);}
 .tile-sm.disc-match{outline:2px solid #38bdf8;outline-offset:-1px;border-radius:5px;}
+/* ── 레벨/XP/역 도감/테이블 테마 ── */
+#lv-line{display:flex;align-items:center;gap:8px;}
+.lv-badge{background:linear-gradient(135deg,#ffd700,#b8860b);color:#0a0f1a;font-weight:900;border-radius:8px;padding:2px 10px;font-size:.85rem;flex-shrink:0;}
+.xp-wrap{width:170px;height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;border:1px solid var(--line);}
+.xp-fill{height:100%;background:linear-gradient(90deg,#ffd700,#ffb700);border-radius:4px;transition:width .5s;}
+#meta-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:10001;overflow-y:auto;padding:20px;padding-top:calc(20px + env(safe-area-inset-top));}
+.theme-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.theme-card{border:2px solid var(--line);border-radius:10px;padding:9px;cursor:pointer;background:var(--panel);}
+.theme-card.on{border-color:var(--accent);}
+.theme-card.locked{opacity:.45;cursor:default;}
+.theme-sw{display:flex;gap:3px;margin-bottom:5px;}
+.theme-sw span{width:22px;height:22px;border-radius:5px;display:inline-block;border:1px solid rgba(255,255,255,.15);}
+.theme-name{font-size:.8rem;font-weight:700;}
+.theme-lock{font-size:.68rem;color:var(--muted);min-height:.9em;}
+.yaku-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+.yaku-cell{background:var(--panel);border-radius:8px;padding:7px 9px;font-size:.78rem;display:flex;justify-content:space-between;align-items:center;gap:4px;}
+.yaku-cell.no{opacity:.38;}
+.yaku-cnt{color:var(--accent);font-weight:800;font-size:.72rem;white-space:nowrap;}
+#xp-result{margin-top:8px;font-size:.85rem;color:#ffd700;font-weight:700;}
+.lvup-pop{font-size:1.05rem;color:#ffd700;font-weight:900;animation:winPop .5s ease-out;}
+/* 테이블 테마: 레벨 보상 (CSS 변수 오버라이드 + 센터 펠트) */
+body.mjt-jade{--bg:#07130d;--panel:#0d2114;--panel2:#14532d;--line:#1e5c38;}
+body.mjt-jade #center-area{background:radial-gradient(ellipse at center,#17603a 0%,#0e4123 100%);}
+body.mjt-gold{--bg:#150e05;--panel:#251808;--panel2:#3a2a12;--line:#6b5423;}
+body.mjt-gold #center-area{background:radial-gradient(ellipse at center,#4d370f 0%,#2b1e08 100%);}
+body.mjt-sakura{--bg:#160a11;--panel:#26101e;--panel2:#41203a;--line:#6b3a58;}
+body.mjt-sakura #center-area{background:radial-gradient(ellipse at center,#6d2c55 0%,#3b1330 100%);}
 </style>
 </head>
 <body>
@@ -208,8 +235,10 @@ body.mj-fs #sw-bar{display:none !important;}
   <button class="big-btn" onclick="startGame()" data-i18n="start">게임 시작</button>
   <button class="big-btn" onclick="openMultiplayer()" style="background:var(--green);color:#0a0f1a;" data-i18n="multiplayer">👥 멀티플레이</button>
   <button class="big-btn" onclick="document.getElementById('howto-overlay').style.display='block'" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);" data-i18n="howto">플레이 방법</button>
+  <button class="big-btn" onclick="openMetaOv()" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);" data-i18n="metaBtn">📖 도감 · 레벨</button>
   <button class="big-btn" onclick="openSettings()" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);" data-i18n="settings">⚙ 설정</button>
-  <div id="sw-gold" style="color:var(--accent);font-size:.85rem;margin-top:4px;"></div>
+  <div id="lv-line" style="margin-top:4px;"></div>
+  <div id="sw-gold" style="color:var(--accent);font-size:.85rem;"></div>
 </div>
 
 <div id="howto-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:10001;overflow-y:auto;padding:20px;padding-top:calc(20px + env(safe-area-inset-top));">
@@ -348,6 +377,20 @@ body.mj-fs #sw-bar{display:none !important;}
   <button onclick="resetAllVoices()" data-i18n="voiceResetAll" style="background:var(--panel);border:1px solid var(--red);color:#fca5a5;border-radius:8px;padding:7px;cursor:pointer;margin-bottom:8px;font-size:.82rem">전체 기본음으로 초기화</button>
   <div id="voice-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
 </div>
+<div id="meta-overlay">
+ <div style="max-width:430px;margin:0 auto;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;position:sticky;top:0;background:rgba(0,0,0,.94);padding:10px 0;z-index:1;">
+    <span style="font-size:1.2rem;font-weight:800;" data-i18n="metaTitle">📖 진행 · 도감</span>
+    <button onclick="closeMetaOv()" class="fs-btn" style="padding:6px 16px;font-size:.9rem;" data-i18n="close">닫기</button>
+  </div>
+  <div id="meta-level" style="background:var(--panel);border-radius:10px;padding:14px;margin-bottom:12px;"></div>
+  <div style="font-weight:800;color:var(--accent);margin:12px 0 6px;" data-i18n="themeL">🎨 테이블 테마</div>
+  <div class="theme-grid" id="theme-grid"></div>
+  <div style="font-weight:800;color:var(--accent);margin:14px 0 6px;" data-i18n="collectionL">🀄 역 도감</div>
+  <div id="yaku-sum" style="font-size:.75rem;color:var(--muted);margin-bottom:6px;"></div>
+  <div class="yaku-grid" id="yaku-grid"></div>
+ </div>
+</div>
 <div id="mp-lobby" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));"></div>
 <div id="claim-pop"></div>
 <div id="msg-toast"></div>
@@ -371,7 +414,8 @@ const I18N={
    kuk:'국',remain:'잔여',honbaL:'본장',flowersL:'화패',noFunds:'골드 부족 — 판돈만큼 필요',tenpai:'팅(聽)',baseBet:'💵 기본판돈',gain:'획득',
    vSaved:'🎙 저장됨: ',micNeed:'🎤 마이크 권한이 필요합니다',vResetConfirm:'내가 녹음한 목소리를 모두 지우고 기본 음성으로 되돌릴까요?',vResetDone:'기본 음성으로 초기화됨',tileSize:'🔍 패 크기 ',noTile:'패 없음',noFlowerDiscard:'화패는 버릴 수 없습니다',mpLoadFail:'멀티 모듈 로드 실패',serverReject:'서버 거절',sendFail:'전송 실패',restartFail:'재시작 실패',
    dealInTag:'(독박)',tsumoAllPay:'자모(전원 지급)',dealerX2:'× 2(장가)',balance:'잔액',baseYaku:'기본5 + 역',betLabel:'판돈',myGold:'보유 골드',drawSpoken:'유국, 무승부입니다',
-   cpuS:'CPU 남',cpuW:'CPU 서',cpuN:'CPU 북',titleSmaller:'패 작게',titleBigger:'패 크게',titleSettings:'설정',titleFs:'가로 전체화면 전환',voiceDesc:'🎤 누르고 말한 뒤 다시 눌러 정지하면 그 소리가 내 목소리로 바뀝니다. ↺는 기본음으로 되돌리기. 저장은 이 브라우저에만 됩니다.',voiceResetAll:'전체 기본음으로 초기화',recStop:'⏹ 정지',bet1k:'1천',bet10k:'1만',bet100k:'10만'},
+   cpuS:'CPU 남',cpuW:'CPU 서',cpuN:'CPU 북',titleSmaller:'패 작게',titleBigger:'패 크게',titleSettings:'설정',titleFs:'가로 전체화면 전환',voiceDesc:'🎤 누르고 말한 뒤 다시 눌러 정지하면 그 소리가 내 목소리로 바뀝니다. ↺는 기본음으로 되돌리기. 저장은 이 브라우저에만 됩니다.',voiceResetAll:'전체 기본음으로 초기화',recStop:'⏹ 정지',bet1k:'1천',bet10k:'1만',bet100k:'10만',
+   metaBtn:'📖 도감 · 레벨',metaTitle:'📖 진행 · 도감',themeL:'🎨 테이블 테마',collectionL:'🀄 역 도감',lvUnlock:'해금',levelUpT:'🎉 레벨 업!',dailyB:'일일 첫 승 +50',winsL:'승리',handsL:'판수',collectedL:'수집',themeUnlocked:'새 테마 해금!',maxLv:'MAX'},
  'zh-TW':{title:'🀄 台灣麻將',subtitle:'1位玩家 + 3位電腦<br>16張手牌 · 台灣規則',start:'開始遊戲',howto:'玩法說明',settings:'⚙ 設定',close:'關閉',
    kan:'槓',tsumo:'自摸',discard:'打牌',ron:'胡',pon:'碰',chi:'吃',pass:'過',
    myTurn:'輪到你',selectDiscard:'請選擇要打出的牌',timeUp:'超時 — 自動打牌',
@@ -381,7 +425,8 @@ const I18N={
    kuk:'局',remain:'剩餘',honbaL:'本場',flowersL:'花牌',noFunds:'金幣不足 — 需要至少底注金額',tenpai:'聽牌',baseBet:'💵 底注',gain:'獲得',
    vSaved:'🎙 已儲存: ',micNeed:'🎤 需要麥克風權限',vResetConfirm:'要刪除你錄製的所有語音並還原為預設嗎？',vResetDone:'已還原為預設語音',tileSize:'🔍 牌大小 ',noTile:'沒有這張牌',noFlowerDiscard:'花牌不能打出',mpLoadFail:'多人模組載入失敗',serverReject:'伺服器拒絕',sendFail:'傳送失敗',restartFail:'重啟失敗',
    dealInTag:'（放槍）',tsumoAllPay:'自摸（全員支付）',dealerX2:'× 2（莊家）',balance:'餘額',baseYaku:'基本5 + 役',betLabel:'底注',myGold:'持有金幣',drawSpoken:'流局，平手',
-   cpuS:'電腦 南',cpuW:'電腦 西',cpuN:'電腦 北',titleSmaller:'牌縮小',titleBigger:'牌放大',titleSettings:'設定',titleFs:'橫向全螢幕',voiceDesc:'🎤 按下說話，再按一次停止，該音效就會換成你的聲音。↺ 還原預設。僅儲存在此瀏覽器。',voiceResetAll:'全部還原為預設音',recStop:'⏹ 停止',bet1k:'1千',bet10k:'1萬',bet100k:'10萬'},
+   cpuS:'電腦 南',cpuW:'電腦 西',cpuN:'電腦 北',titleSmaller:'牌縮小',titleBigger:'牌放大',titleSettings:'設定',titleFs:'橫向全螢幕',voiceDesc:'🎤 按下說話，再按一次停止，該音效就會換成你的聲音。↺ 還原預設。僅儲存在此瀏覽器。',voiceResetAll:'全部還原為預設音',recStop:'⏹ 停止',bet1k:'1千',bet10k:'1萬',bet100k:'10萬',
+   metaBtn:'📖 圖鑑 · 等級',metaTitle:'📖 進度 · 圖鑑',themeL:'🎨 桌面主題',collectionL:'🀄 役種圖鑑',lvUnlock:'解鎖',levelUpT:'🎉 升級！',dailyB:'每日首勝 +50',winsL:'勝場',handsL:'局數',collectedL:'已收集',themeUnlocked:'新主題解鎖！',maxLv:'MAX'},
  en:{title:'🀄 Taiwanese Mahjong',subtitle:'1 Player + 3 CPU<br>16-tile hand · Taiwanese rules',start:'Start Game',howto:'How to Play',settings:'⚙ Settings',close:'Close',
    kan:'Kong',tsumo:'Self-draw',discard:'Discard',ron:'Ron',pon:'Pong',chi:'Chi',pass:'Pass',
    myTurn:'Your turn',selectDiscard:'Select a tile to discard',timeUp:'Time out — auto discard',
@@ -391,7 +436,8 @@ const I18N={
    kuk:'Round',remain:'Wall',honbaL:'Honba',flowersL:'Flowers',noFunds:'Not enough gold — need the base bet',tenpai:'Ready (聽)',baseBet:'💵 Base bet',gain:'Gain',
    vSaved:'🎙 Saved: ',micNeed:'🎤 Microphone permission required',vResetConfirm:'Delete all your recorded voices and reset to default?',vResetDone:'Reset to default voices',tileSize:'🔍 Tile size ',noTile:'No such tile',noFlowerDiscard:"Flowers can't be discarded",mpLoadFail:'Failed to load multiplayer',serverReject:'Rejected by server',sendFail:'Send failed',restartFail:'Restart failed',
    dealInTag:'(deal-in)',tsumoAllPay:'Self-draw — all pay',dealerX2:'× 2 (dealer)',balance:'Bal',baseYaku:'base 5 + yaku ',betLabel:'Bet',myGold:'Gold',drawSpoken:'Draw — no winner',
-   cpuS:'CPU S',cpuW:'CPU W',cpuN:'CPU N',titleSmaller:'Smaller tiles',titleBigger:'Bigger tiles',titleSettings:'Settings',titleFs:'Landscape fullscreen',voiceDesc:'🎤 Tap to record, tap again to stop — that sound becomes your voice. ↺ resets to default. Saved only in this browser.',voiceResetAll:'Reset all to default',recStop:'⏹ Stop',bet1k:'1K',bet10k:'10K',bet100k:'100K'}
+   cpuS:'CPU S',cpuW:'CPU W',cpuN:'CPU N',titleSmaller:'Smaller tiles',titleBigger:'Bigger tiles',titleSettings:'Settings',titleFs:'Landscape fullscreen',voiceDesc:'🎤 Tap to record, tap again to stop — that sound becomes your voice. ↺ resets to default. Saved only in this browser.',voiceResetAll:'Reset all to default',recStop:'⏹ Stop',bet1k:'1K',bet10k:'10K',bet100k:'100K',
+   metaBtn:'📖 Collection · Level',metaTitle:'📖 Progress · Collection',themeL:'🎨 Table themes',collectionL:'🀄 Yaku collection',lvUnlock:'unlock',levelUpT:'🎉 LEVEL UP!',dailyB:'Daily first win +50',winsL:'Wins',handsL:'Hands',collectedL:'Collected',themeUnlocked:'New theme unlocked!',maxLv:'MAX'}
 };
 let LANG=(function(){try{const s=localStorage.getItem('mahjong_lang');if(s)return s;}catch(_){}const n=(navigator.language||'').toLowerCase();return n.startsWith('zh')?'zh-TW':n.startsWith('ko')?'ko':'en';})();
 function t(k){return (I18N[LANG]&&I18N[LANG][k]!=null)?I18N[LANG][k]:(I18N.ko[k]!=null?I18N.ko[k]:k);}
@@ -441,7 +487,7 @@ function renderHowto(){
   const cards=HOWTO.map(s=>'<div style="background:var(--panel);border-radius:8px;padding:12px;margin-bottom:10px;"><div style="color:'+s.c+';font-weight:700;margin-bottom:5px;">'+s.t[L]+'</div>'+s.b[L]+'</div>').join('');
   body.innerHTML=cards+'<div style="font-size:.62rem;color:var(--muted);text-align:center;margin-top:6px;line-height:1.5;">Tiles: <a href="https://commons.wikimedia.org/wiki/Category:SVG_Mahjong_tiles" target="_blank" rel="noopener" style="color:var(--muted);">Wikimedia Commons</a> · CC BY-SA 4.0</div>';
 }
-function setLang(l){LANG=l;try{localStorage.setItem('mahjong_lang',l);}catch(_){}applyLang();if(typeof renderSettings==='function')renderSettings();if(typeof G!=='undefined'&&G)render();}
+function setLang(l){LANG=l;try{localStorage.setItem('mahjong_lang',l);}catch(_){}applyLang();if(typeof renderSettings==='function')renderSettings();if(typeof renderStartMeta==='function')renderStartMeta();if(typeof G!=='undefined'&&G)render();}
 function suit(id){return id[0];}
 function num(id){return parseInt(id.slice(1));}
 function isFlower(id){return id[0]==='f';}
@@ -594,6 +640,67 @@ const DEF_SET={turnTime:15,claimTime:8,sfx:true,bgm:false,tilecall:true,seatPitc
 function curBet(){return (MP.active&&MP.gs&&MP.gs.config&&MP.gs.config.bet)?MP.gs.config.bet:(SET.bet||100000);}
 let SET=(function(){try{return Object.assign({},DEF_SET,JSON.parse(localStorage.getItem('mahjong_set')||'{}'));}catch(_){return Object.assign({},DEF_SET);}})();
 function saveSet(){try{localStorage.setItem('mahjong_set',JSON.stringify(SET));}catch(_){}}
+
+// ── 레벨/XP/역 도감/테이블 테마 (로컬 메타 진행 — 브라우저별 저장) ──
+const META_KEY='mahjong_meta';
+let META=(function(){const d={xp:0,theme:'classic',yaku:{},wins:0,hands:0,lastWinDay:''};try{return Object.assign(d,JSON.parse(localStorage.getItem(META_KEY)||'{}'));}catch(_){return d;}})();
+function saveMeta(){try{localStorage.setItem(META_KEY,JSON.stringify(META));}catch(_){}}
+const MAX_LV=20;
+function xpNeed(l){return 60+(l-1)*30;}  // 레벨 l → l+1 필요 XP (선형 증가, Lv20 총 ~6270XP)
+function levelInfo(xp){let l=1,rem=Math.max(0,xp||0);while(l<MAX_LV&&rem>=xpNeed(l)){rem-=xpNeed(l);l++;}return{level:l,cur:rem,need:xpNeed(l),max:l>=MAX_LV};}
+const THEMES=[
+ {id:'classic',lv:1,name:{ko:'클래식',zhTW:'經典',en:'Classic'},sw:['#0a0f1a','#1f2937','#ffd700']},
+ {id:'jade',lv:5,name:{ko:'비취 펠트',zhTW:'翡翠絨',en:'Jade Felt'},sw:['#07130d','#17603a','#4ecca3']},
+ {id:'gold',lv:10,name:{ko:'골드 라운지',zhTW:'金色沙龍',en:'Gold Lounge'},sw:['#150e05','#4d370f','#ffd700']},
+ {id:'sakura',lv:15,name:{ko:'사쿠라 나이트',zhTW:'櫻夜',en:'Sakura Night'},sw:['#160a11','#6d2c55','#ec4899']},
+];
+function applyTheme(){document.body.classList.remove('mjt-jade','mjt-gold','mjt-sakura');if(META.theme&&META.theme!=='classic')document.body.classList.add('mjt-'+META.theme);}
+function pickTheme(id){const th=THEMES.find(x=>x.id===id);if(!th||levelInfo(META.xp).level<th.lv)return;META.theme=id;saveMeta();applyTheme();renderMetaOv();}
+// 역 도감 카탈로그 [내부키, 台] — 상황역(친장가/본장)은 수집 대상 제외
+const YCAT=[['츠모',1],['멘젠',1],['멘젠츠모',3],['핑후',2],['단기대기',1],['전구인',2],['역패',1],['정화',2],['무자무화',2],['안깡',2],['명깡',1],['영상개화',1],['해저',1],['퐁퐁후',4],['삼안커',2],['일기통관',2],['혼일색',4],['춘하추동',2],['매난국죽',2],['사안커',7],['소삼원',7],['소사희',7],['청일색',8],['대삼원',14],['대사희',14],['오안커',14],['화만관',14],['천화',14],['지화',14]];
+const YNAME={'츠모':{zhTW:'自摸',en:'Self-draw'},'멘젠':{zhTW:'門前清',en:'Concealed'},'멘젠츠모':{zhTW:'門清自摸',en:'Concealed tsumo'},'핑후':{zhTW:'平胡',en:'Pinhu'},'단기대기':{zhTW:'獨聽',en:'Single wait'},'전구인':{zhTW:'全求人',en:'All melds'},'역패':{zhTW:'役牌',en:'Value tile'},'정화':{zhTW:'正花',en:'Seat flower'},'무자무화':{zhTW:'無字無花',en:'No honors/flowers'},'안깡':{zhTW:'暗槓',en:'Concealed kong'},'명깡':{zhTW:'明槓',en:'Open kong'},'영상개화':{zhTW:'嶺上開花',en:'After-kong win'},'해저':{zhTW:'海底撈月',en:'Last tile'},'퐁퐁후':{zhTW:'碰碰胡',en:'All triplets'},'삼안커':{zhTW:'三暗刻',en:'3 conc. triplets'},'일기통관':{zhTW:'一氣通貫',en:'Pure straight'},'혼일색':{zhTW:'混一色',en:'Half flush'},'춘하추동':{zhTW:'春夏秋冬',en:'Four seasons'},'매난국죽':{zhTW:'梅蘭菊竹',en:'Four plants'},'사안커':{zhTW:'四暗刻',en:'4 conc. triplets'},'소삼원':{zhTW:'小三元',en:'Small dragons'},'소사희':{zhTW:'小四喜',en:'Small winds'},'청일색':{zhTW:'清一色',en:'Full flush'},'대삼원':{zhTW:'大三元',en:'Big dragons'},'대사희':{zhTW:'大四喜',en:'Big winds'},'오안커':{zhTW:'五暗刻',en:'5 conc. triplets'},'화만관':{zhTW:'八仙過海',en:'All 8 flowers'},'천화':{zhTW:'天胡',en:'Heavenly hand'},'지화':{zhTW:'地胡',en:'Earthly hand'}};
+function yName(k){const L=_LK();return L==='ko'?k:((YNAME[k]&&YNAME[k][L])||k);}
+function yakuNormKey(name){return String(name||'').replace(/\(.*\)$/,'').replace(/×\d+$/,'');}  // '역패(中)'→'역패', '안깡×2'→'안깡'
+// 판 종료 시 XP 지급 + (화료 시) 역 수집. 솔로 showWin/endRound·멀티 mpShowResult 공용
+function awardXP(won,tai,yaku){
+  META.hands++;let gain=5,daily=false;  // 참여 XP 5
+  if(won){META.wins++;gain=20+(Number(tai)||0)*5;
+    const day=new Date().toISOString().slice(0,10);
+    if(META.lastWinDay!==day){META.lastWinDay=day;gain+=50;daily=true;}
+    for(const y of(yaku||[])){const k=yakuNormKey(y&&y.name);if(k)META.yaku[k]=(META.yaku[k]||0)+1;}
+  }
+  const before=levelInfo(META.xp).level;META.xp+=gain;const li=levelInfo(META.xp);saveMeta();
+  const unlocked=THEMES.filter(th=>th.lv>before&&th.lv<=li.level);
+  renderStartMeta();
+  return{gain,daily,levelUp:li.level>before,level:li.level,unlocked};
+}
+function xpLineHTML(xr){
+  let h='<div id="xp-result">+'+xr.gain+' XP'+(xr.daily?' <span style="font-size:.72rem;color:var(--muted)">('+t('dailyB')+')</span>':'')+'</div>';
+  if(xr.levelUp)h+='<div class="lvup-pop">'+t('levelUpT')+' Lv.'+xr.level+(xr.unlocked.length?' · '+t('themeUnlocked'):'')+'</div>';
+  return h;
+}
+function renderStartMeta(){
+  const el=document.getElementById('lv-line');if(!el)return;const li=levelInfo(META.xp);
+  const pct=li.max?100:Math.round(li.cur/li.need*100);
+  el.innerHTML='<span class="lv-badge">Lv.'+li.level+'</span><div class="xp-wrap"><div class="xp-fill" style="width:'+pct+'%"></div></div><span style="font-size:.72rem;color:var(--muted)">'+(li.max?t('maxLv'):li.cur+'/'+li.need)+'</span>';
+}
+function openMetaOv(){renderMetaOv();document.getElementById('meta-overlay').style.display='block';}
+function closeMetaOv(){document.getElementById('meta-overlay').style.display='none';renderStartMeta();}
+function renderMetaOv(){
+  const li=levelInfo(META.xp);const L=_LK();
+  const pct=li.max?100:Math.round(li.cur/li.need*100);
+  document.getElementById('meta-level').innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span class="lv-badge" style="font-size:1.05rem;padding:4px 14px;">Lv.'+li.level+'</span><div class="xp-wrap" style="flex:1;width:auto;"><div class="xp-fill" style="width:'+pct+'%"></div></div><span style="font-size:.75rem;color:var(--muted)">'+(li.max?t('maxLv'):li.cur+'/'+li.need+' XP')+'</span></div><div style="font-size:.76rem;color:var(--muted)">'+t('winsL')+' '+META.wins+' · '+t('handsL')+' '+META.hands+' · '+t('dailyB')+'</div>';
+  const tg=document.getElementById('theme-grid');tg.innerHTML='';
+  for(const th of THEMES){const un=li.level>=th.lv;const on=(META.theme||'classic')===th.id;
+    const d=document.createElement('div');d.className='theme-card'+(on?' on':'')+(un?'':' locked');
+    d.innerHTML='<div class="theme-sw">'+th.sw.map(c=>'<span style="background:'+c+'"></span>').join('')+'</div><div class="theme-name">'+(th.name[L]||th.name.ko)+'</div><div class="theme-lock">'+(un?(on?'✓':''):'🔒 Lv.'+th.lv+' '+t('lvUnlock'))+'</div>';
+    if(un)d.onclick=()=>pickTheme(th.id);
+    tg.appendChild(d);}
+  const got=YCAT.filter(c=>META.yaku[c[0]]).length;
+  document.getElementById('yaku-sum').textContent=t('collectedL')+' '+got+' / '+YCAT.length;
+  const yg=document.getElementById('yaku-grid');yg.innerHTML='';
+  for(const[k,tai]of YCAT){const n=META.yaku[k]||0;const d=document.createElement('div');d.className='yaku-cell'+(n?'':' no');d.innerHTML='<span>'+(n?'':'🔒 ')+yName(k)+' <span style="color:var(--muted);font-size:.68rem">'+tai+'台</span></span>'+(n?'<span class="yaku-cnt">×'+n+'</span>':'');yg.appendChild(d);}
+}
 // ── 사운드 (실제 오디오는 후속 단계, 지금은 토글만 동작) ──
 const SFX_SRC={discard:'sounds/tile.mp3',claim:'sounds/claim.mp3',win:'sounds/win.mp3'};
 const _sfxCache={};
@@ -960,12 +1067,13 @@ function showWin(winnerIdx,discarderIdx,winTile,result){
   else{const m=(isDW||G.players[discarderIdx].seatWind===0)?2:1;calc=t('ronWin')+' · <b style="color:var(--red)">'+G.players[discarderIdx].name+' '+t('dealInTag')+'</b><br>'+t('betLabel')+' '+bet.toLocaleString()+' + '+tai+'台×'+U.toLocaleString()+(m===2?' '+t('dealerX2'):'')+' = '+winGain.toLocaleString()+'G';}
   const gc=myDelta>=0?'var(--green)':'var(--red)';const gainStr=(myDelta>=0?'+':'')+myDelta.toLocaleString()+'G';
   const breakdown=G.players.map((p,i)=>{const d=p.score-pre[i];const col=d>0?'var(--green)':d<0?'var(--red)':'var(--muted)';const tag=(i===winnerIdx)?' 🏆':(i===discarderIdx?' <span style="color:var(--red)">'+t('dealInTag')+'</span>':'');return p.name+tag+': <b style="color:'+col+'">'+(d>0?'+':'')+d.toLocaleString()+'G</b>';}).join('<br>');
+  const xr=awardXP(winnerIdx===0,tai,result.yaku);
   document.getElementById('result-detail').innerHTML=
     '<b>'+tai+'台</b> · '+t('gain')+' <b style="color:'+gc+'">'+gainStr+'</b>'+
     '<br><span style="font-size:.8rem;color:var(--muted)">'+result.yaku.map(y=>y.name+' '+y.tai+'台').join(' / ')+'</span>'+
     '<br><span style="font-size:.78rem;color:#94a3b8">'+t('betLabel')+' '+bet.toLocaleString()+' · 1台 = '+U.toLocaleString()+'G</span>'+
     '<br><span style="font-size:.78rem;color:#94a3b8">'+calc+'</span>'+
-    '<br><br>'+breakdown;
+    '<br><br>'+breakdown+xpLineHTML(xr);
   document.getElementById('result-next').textContent=isDW?t('extendRound'):t('nextRound');
   document.getElementById('result-overlay').classList.add('on','win-fanfare');spawnConfetti(true);render();
   // 점수 해설 TTS(짧게): 왜 그 점수가 붙었는지 초보자용
@@ -974,7 +1082,7 @@ function showWin(winnerIdx,discarderIdx,winTile,result){
 function endRound(reason){
   if(cpuTimer)clearTimeout(cpuTimer);if(claimTimer)clearTimeout(claimTimer);clearTurnTimer();clearClaimVisual();G.phase='roundEnd';
   document.getElementById('result-title').textContent=t('draw');
-  document.getElementById('result-detail').innerHTML=G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>');
+  document.getElementById('result-detail').innerHTML=G.players.map(p=>p.name+': '+p.score.toLocaleString()+'G').join('<br>')+xpLineHTML(awardXP(false,0,null));
   document.getElementById('result-next').textContent=t('nextRound');
   document.getElementById('result-overlay').classList.remove('win-fanfare');spawnConfetti(false);
   document.getElementById('result-overlay').classList.add('on');render();
@@ -1369,6 +1477,7 @@ function mpShowResult(gs){
   if(r.yaku)detail+='<span style="font-size:.8rem;color:var(--muted)">'+r.yaku.map(y=>y.name+' '+y.tai+'台').join(' / ')+'</span><br>';
   {const bet=(MP.gs&&MP.gs.config&&MP.gs.config.bet)||100000;const U=Math.round(bet/5);const wt=r.winType==='tsumo'?t('tsumoAllPay'):(t('ronWin')+' · <b style="color:var(--red)">'+(dealer||'?')+' '+t('dealInTag')+'</b>');detail+='<span style="font-size:.78rem;color:#94a3b8">'+t('betLabel')+' '+bet.toLocaleString()+' · 1台 = '+U.toLocaleString()+'G · '+wt+'</span><br><br>';}
   detail+=gs.players.map(p=>{const d=(r.deltas&&typeof r.deltas[p.id]==='number')?r.deltas[p.id]:0;const col=d>0?'var(--green)':d<0?'var(--red)':'var(--muted)';const tag=(win&&p.id===win.id)?' 🏆':(r.discarderId&&p.id===r.discarderId?' <span style="color:var(--red)">'+t('dealInTag')+'</span>':'');return (p.nickname||'-')+tag+': <b style="color:'+col+'">'+(d>0?'+':'')+d.toLocaleString()+'G</b>';}).join('<br>');
+  detail+=xpLineHTML(awardXP(!!(win&&win.id===MP.myUserId),r.tai||0,r.yaku));  // 멀티도 동일 XP/도감 적립(_resultShown 가드로 판당 1회)
   document.getElementById('result-detail').innerHTML=detail;
   const nb=document.getElementById('result-next');nb.textContent=t('mpNewHand');nb.onclick=mpRematch;
   // DO 멀티 골드 정산: 서버가 권위적으로 계산한 제로섬 델타(r.deltas[myId], 승자+/방총자−)를 내 지갑에 1회 반영.
@@ -1394,6 +1503,7 @@ async function mpLeave(){MP.active=false;try{if(MP.client)await MP.client.leaveR
 window.addEventListener('load',()=>{
   applyLang();
   try{applyZoom();}catch(_){}
+  try{applyTheme();renderStartMeta();}catch(_){}
   try{loadCustomVoices();}catch(_){}
   if(typeof GameRankings!=='undefined')try{GameRankings.injectNavButton('mahjong');}catch(_){}
   if(typeof SharedWallet!=='undefined'){try{const g=SharedWallet.gold;if(g!=null)document.getElementById('sw-gold').textContent=t('myGold')+': '+Number(g).toLocaleString()+'G';}catch(_){}}
