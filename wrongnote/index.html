@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>틀린 음 찾기</title>
+<meta name="description" content="오디오판 틀린그림찾기 — 듣고, 탭하고, 내 귀를 진단받는다.">
+<meta property="og:title" content="틀린 음 찾기">
+<meta property="og:description" content="퍼블릭 도메인 멜로디 속 틀린 음을 찾아보세요. 매일 5문제, 내 귀 나이 진단까지.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f3ead9">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <section id="screen-intro" class="wn-screen active"></section>
+    <section id="screen-play" class="wn-screen"></section>
+    <section id="screen-reveal" class="wn-screen"></section>
+    <section id="screen-final" class="wn-screen"></section>
+  </div>
+
+  <!-- Tone.js: 클라 결정론 피아노 합성. 오디오 파일 전송 없이 노트 데이터만으로 재생. -->
+  <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
+  <script src="js/prng.js"></script>
+  <script src="js/music-theory.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/puzzle-gen.js"></script>
+  <script src="js/audio-engine.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
