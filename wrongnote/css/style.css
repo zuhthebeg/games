@@ -196,3 +196,25 @@ h1, h2, h3, .wn-title, .wn-song-title, .wn-ear-age {
 @media (min-width: 480px) {
   #app { border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 }
+
+/* M2: 언어 토글 + 골드 획득 라인 */
+.wn-lang-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  padding: 6px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 700 0.8rem 'Noto Sans KR', sans-serif;
+  box-shadow: 0 2px 0 var(--ink);
+  cursor: pointer;
+}
+.wn-lang-btn:active { transform: translateY(2px); box-shadow: none; }
+#screen-intro { position: relative; }
+.wn-gold-line {
+  margin: 10px 0 0;
+  font: 900 1.05rem 'Jua', 'Noto Sans KR', sans-serif;
+  color: var(--coral);
+}

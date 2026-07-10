@@ -21,6 +21,8 @@
   var markerSeq = 0;
 
   function qs(id) { return document.getElementById(id); }
+  function T(key, params) { return global.WN.i18n.t(key, params); }
+  function songTitle(song) { return global.WN.i18n.songTitle(song); }
 
   function fmtTime(sec) {
     if (!isFinite(sec) || sec < 0) sec = 0;
@@ -73,37 +75,39 @@
     var todayResult = storage.getTodayResult();
 
     var html = '';
-    html += '<h1 class="wn-title">틀린 음 찾기</h1>';
-    html += '<p class="wn-sub">오디오판 틀린그림찾기 — 듣고, 탭하고, 내 귀를 진단받는다</p>';
+    html += '<button id="btn-lang" class="wn-lang-btn">\uD83C\uDF10 ' + global.WN.i18n.label() + '</button>';
+    html += '<h1 class="wn-title">' + T('title') + '</h1>';
+    html += '<p class="wn-sub">' + T('sub') + '</p>';
     html += '<div class="wn-stat-row">';
-    html += '<div class="wn-stat"><span class="wn-stat-num">' + streak.count + '</span><span class="wn-stat-label">연속 출석</span></div>';
-    html += '<div class="wn-stat"><span class="wn-stat-num">' + best + '</span><span class="wn-stat-label">최고 점수</span></div>';
+    html += '<div class="wn-stat"><span class="wn-stat-num">' + streak.count + '</span><span class="wn-stat-label">' + T('statStreak') + '</span></div>';
+    html += '<div class="wn-stat"><span class="wn-stat-num">' + best + '</span><span class="wn-stat-label">' + T('statBest') + '</span></div>';
     html += '</div>';
 
     if (already && todayResult) {
-      html += '<p class="wn-note">오늘 문제는 이미 풀었어요. 다시 도전해도 기록은 갱신되지 않아요.</p>';
-      html += '<button id="btn-view-result" class="wn-btn wn-btn-secondary">오늘 결과 다시 보기</button>';
+      html += '<p class="wn-note">' + T('doneToday') + '</p>';
+      html += '<button id="btn-view-result" class="wn-btn wn-btn-secondary">' + T('viewResult') + '</button>';
     }
-    html += '<button id="btn-start" class="wn-btn wn-btn-primary">오늘의 5문제 시작하기</button>';
+    html += '<button id="btn-start" class="wn-btn wn-btn-primary">' + T('start') + '</button>';
 
     if (isDebugMode()) {
       html += '<div class="wn-card" id="wn-debug-panel" style="margin-top:24px;text-align:left">';
-      html += '<h3 style="margin:0 0 10px">🔧 디버그: 곡 원본 듣기</h3>';
+      html += '<h3 style="margin:0 0 10px">' + T('debugTitle') + '</h3>';
       html += '<select id="debug-song-select" style="width:100%;padding:10px;border:2px solid var(--line);border-radius:10px;font:inherit;background:var(--surface)">';
       global.WN.songs.forEach(function (s) {
-        html += '<option value="' + s.id + '">' + s.title_ko + ' (' + s.id + ')</option>';
+        html += '<option value="' + s.id + '">' + songTitle(s) + ' (' + s.id + ')</option>';
       });
       html += '</select>';
       html += '<div style="display:flex;gap:8px;margin-top:10px">';
-      html += '<button id="debug-play" class="wn-btn wn-btn-secondary" style="flex:1">▶ 원곡 재생</button>';
-      html += '<button id="debug-stop" class="wn-btn wn-btn-secondary" style="flex:1">⏹ 정지</button>';
+      html += '<button id="debug-play" class="wn-btn wn-btn-secondary" style="flex:1">' + T('debugPlay') + '</button>';
+      html += '<button id="debug-stop" class="wn-btn wn-btn-secondary" style="flex:1">' + T('debugStop') + '</button>';
       html += '</div>';
-      html += '<p class="wn-note" style="margin:8px 0 0;font-size:0.8rem">이탈 없는 원본 멜로디. 재생 횟수 제한 없음.</p>';
+      html += '<p class="wn-note" style="margin:8px 0 0;font-size:0.8rem">' + T('debugNote') + '</p>';
       html += '</div>';
     }
 
     qs('screen-intro').innerHTML = html;
     qs('btn-start').addEventListener('click', startDaily);
+    qs('btn-lang').addEventListener('click', function () { global.WN.i18n.cycle(); renderIntro(); });
     var viewBtn = qs('btn-view-result');
     if (viewBtn) viewBtn.addEventListener('click', function () { showFinalFromSaved(todayResult); });
     if (isDebugMode()) bindDebugPanel();
@@ -138,14 +142,14 @@
     var puzzle = state.puzzles[state.currentIndex];
     var html = '';
     html += '<div class="wn-play-header">';
-    html += '<span class="wn-pill">문제 ' + (state.currentIndex + 1) + ' / 5</span>';
-    html += '<span class="wn-pill wn-pill-alt" id="plays-remaining">재생 ' + engine.playsRemaining() + '/3</span>';
+    html += '<span class="wn-pill">' + T('pillPuzzle', {n: state.currentIndex + 1}) + '</span>';
+    html += '<span class="wn-pill wn-pill-alt" id="plays-remaining">' + T('pillPlays', {n: engine.playsRemaining()}) + '</span>';
     html += '</div>';
     html += '<h2 class="wn-song-title">' + puzzle.song.title_ko + '</h2>';
 
-    html += '<div class="wn-stage" id="wn-stage" aria-label="여기를 탭해서 틀린 부분을 표시하세요">';
+    html += '<div class="wn-stage" id="wn-stage" aria-label="' + T('stageAria') + '">';
     html += '<div class="wn-stage-icon" id="wn-stage-icon">🎵</div>';
-    html += '<div class="wn-stage-hint">재생 중 이상하다 싶은 순간에 탭!</div>';
+    html += '<div class="wn-stage-hint">' + T('stageHint') + '</div>';
     html += '</div>';
 
     html += '<div class="wn-ruler-wrap">';
@@ -162,23 +166,23 @@
     html += '<div class="wn-transport">';
     html += '<button id="btn-playpause" class="wn-btn wn-btn-round">▶</button>';
     html += '<button id="btn-stop" class="wn-btn wn-btn-round wn-btn-ghost">⏮</button>';
-    html += '<button id="btn-loop-mark-start" class="wn-btn wn-btn-small">구간 시작</button>';
-    html += '<button id="btn-loop-mark-end" class="wn-btn wn-btn-small">구간 끝·반복</button>';
-    html += '<button id="btn-loop-clear" class="wn-btn wn-btn-small wn-btn-ghost">반복 해제</button>';
+    html += '<button id="btn-loop-mark-start" class="wn-btn wn-btn-small">' + T('loopStart') + '</button>';
+    html += '<button id="btn-loop-mark-end" class="wn-btn wn-btn-small">' + T('loopEnd') + '</button>';
+    html += '<button id="btn-loop-clear" class="wn-btn wn-btn-small wn-btn-ghost">' + T('loopClear') + '</button>';
     html += '</div>';
 
     html += '<div class="wn-marker-popover" id="wn-marker-popover" hidden>';
-    html += '<p class="wn-popover-title">이 마커, 어떻게 틀렸나요? (선택사항)</p>';
+    html += '<p class="wn-popover-title">' + T('popTitle') + '</p>';
     html += '<div class="wn-popover-grid">';
-    html += '<button class="wn-corr-btn" data-corr="higher">음 높음 ↑</button>';
-    html += '<button class="wn-corr-btn" data-corr="lower">음 낮음 ↓</button>';
-    html += '<button class="wn-corr-btn" data-corr="early">박자 빠름 «</button>';
-    html += '<button class="wn-corr-btn" data-corr="late">박자 느림 »</button>';
+    html += '<button class="wn-corr-btn" data-corr="higher">' + T('corrHigher') + '</button>';
+    html += '<button class="wn-corr-btn" data-corr="lower">' + T('corrLower') + '</button>';
+    html += '<button class="wn-corr-btn" data-corr="early">' + T('corrEarly') + '</button>';
+    html += '<button class="wn-corr-btn" data-corr="late">' + T('corrLate') + '</button>';
     html += '</div>';
-    html += '<div class="wn-popover-actions"><button id="btn-marker-delete" class="wn-btn wn-btn-small wn-btn-ghost">마커 삭제</button><button id="btn-marker-close" class="wn-btn wn-btn-small">닫기</button></div>';
+    html += '<div class="wn-popover-actions"><button id="btn-marker-delete" class="wn-btn wn-btn-small wn-btn-ghost">' + T('markerDelete') + '</button><button id="btn-marker-close" class="wn-btn wn-btn-small">' + T('markerClose') + '</button></div>';
     html += '</div>';
 
-    html += '<button id="btn-submit" class="wn-btn wn-btn-primary wn-btn-wide">제출하고 채점하기</button>';
+    html += '<button id="btn-submit" class="wn-btn wn-btn-primary wn-btn-wide">' + T('submit') + '</button>';
 
     qs('screen-play').innerHTML = html;
     wirePlayScreen();
@@ -206,10 +210,10 @@
     qs('wn-ruler').addEventListener('pointerdown', onRulerScrubStart);
     qs('btn-loop-mark-start').addEventListener('click', function () {
       state.loopStartSec = engine.currentTime();
-      flashHint('구간 시작 지정: ' + fmtTime(state.loopStartSec));
+      flashHint(T('hintLoopStart', {t: fmtTime(state.loopStartSec)}));
     });
     qs('btn-loop-mark-end').addEventListener('click', function () {
-      if (state.loopStartSec == null) { flashHint('먼저 "구간 시작"을 눌러주세요'); return; }
+      if (state.loopStartSec == null) { flashHint(T('hintLoopFirst')); return; }
       var endSec = engine.currentTime();
       if (endSec <= state.loopStartSec) endSec = state.loopStartSec + 1;
       engine.setLoopRegion(state.loopStartSec, endSec);
@@ -251,13 +255,13 @@
       qs('btn-playpause').textContent = '▶';
     } else {
       if (engine.playsRemaining() <= 0 && engine.currentTime() <= 0.001) {
-        flashHint('재생 3회를 모두 사용했어요. 지금까지 들은 걸로 승부!');
+        flashHint(T('hintNoPlays'));
         return;
       }
       engine.play().then(function (ok) {
         if (ok) {
           qs('btn-playpause').textContent = '⏸';
-          qs('plays-remaining').textContent = '재생 ' + engine.playsRemaining() + '/3';
+          qs('plays-remaining').textContent = T('pillPlays', {n: engine.playsRemaining()});
         }
       });
     }
@@ -270,7 +274,7 @@
 
   function onStageTap() {
     if (!engine.isPlaying()) {
-      flashHint('재생 중에 탭해야 마커가 찍혀요');
+      flashHint(T('hintTapWhilePlaying'));
       return;
     }
     var t = engine.currentTime();
@@ -408,16 +412,17 @@
   function renderReveal(puzzle, result) {
     var isLast = state.currentIndex === state.puzzles.length - 1;
     var html = '';
-    html += '<h2 class="wn-song-title">정답 공개 · ' + puzzle.song.title_ko + '</h2>';
-    html += '<p class="wn-reveal-score">발견 ' + result.found.length + '/' + puzzle.deviations.length
-      + ' · 교정보너스 ' + result.found.filter(function (f) { return f.correctionCorrect; }).length
-      + ' · 오탐 ' + result.falsePositives.length
-      + ' · <strong>+' + result.score + '점</strong></p>';
+    html += '<h2 class="wn-song-title">' + T('revealTitle', {title: songTitle(puzzle.song)}) + '</h2>';
+    html += '<p class="wn-reveal-score">' + T('revealScore', {
+      found: result.found.length, total: puzzle.deviations.length,
+      corr: result.found.filter(function (f) { return f.correctionCorrect; }).length,
+      fp: result.falsePositives.length, score: result.score
+    }) + '</p>';
 
     html += '<div class="wn-ab-toggle">';
-    html += '<button id="btn-ab-performed" class="wn-btn wn-btn-small wn-btn-active">출제본 듣기</button>';
-    html += '<button id="btn-ab-original" class="wn-btn wn-btn-small">원곡 듣기</button>';
-    html += '<button id="btn-ab-play" class="wn-btn wn-btn-small wn-btn-primary">▶ 재생</button>';
+    html += '<button id="btn-ab-performed" class="wn-btn wn-btn-small wn-btn-active">' + T('abPerformed') + '</button>';
+    html += '<button id="btn-ab-original" class="wn-btn wn-btn-small">' + T('abOriginal') + '</button>';
+    html += '<button id="btn-ab-play" class="wn-btn wn-btn-small wn-btn-primary">' + T('abPlay') + '</button>';
     html += '</div>';
 
     html += '<div class="wn-ruler-wrap"><div class="wn-ruler wn-ruler-reveal" id="wn-reveal-ruler">';
@@ -439,16 +444,16 @@
     html += '<ul class="wn-dev-list">';
     puzzle.deviations.forEach(function (dev, i) {
       var f = result.found.find(function (x) { return x.deviation === dev; });
-      var label = dev.type === 'pitch' ? (dev.direction === 1 ? '음이 높아짐' : '음이 낮아짐') : (dev.direction === 1 ? '박자가 늦어짐' : '박자가 빨라짐');
-      var status = f ? (f.correctionCorrect ? '정확히 발견+교정!' : '발견 (교정 미스)') : '놓침';
-      html += '<li class="wn-dev-item ' + (f ? 'wn-dev-found' : 'wn-dev-missed') + '">' + (i + 1) + '번 이탈 · ' + label + ' · ' + status + '</li>';
+      var label = dev.type === 'pitch' ? (dev.direction === 1 ? T('devPitchUp') : T('devPitchDown')) : (dev.direction === 1 ? T('devLate') : T('devEarly'));
+      var status = f ? (f.correctionCorrect ? T('statusFoundCorr') : T('statusFound')) : T('statusMissed');
+      html += '<li class="wn-dev-item ' + (f ? 'wn-dev-found' : 'wn-dev-missed') + '">' + T('devItem', {n: i + 1, label: label, status: status}) + '</li>';
     });
     if (result.falsePositives.length) {
-      html += '<li class="wn-dev-item wn-dev-fp">오탐 마커 ' + result.falsePositives.length + '개 (실제 이탈이 없는 곳을 표시함)</li>';
+      html += '<li class="wn-dev-item wn-dev-fp">' + T('fpItem', {n: result.falsePositives.length}) + '</li>';
     }
     html += '</ul>';
 
-    html += '<button id="btn-next-puzzle" class="wn-btn wn-btn-primary wn-btn-wide">' + (isLast ? '최종 결과 보기' : '다음 문제 ▶') + '</button>';
+    html += '<button id="btn-next-puzzle" class="wn-btn wn-btn-primary wn-btn-wide">' + (isLast ? T('finalResultBtn') : T('nextPuzzle')) + '</button>';
 
     qs('screen-reveal').innerHTML = html;
 
@@ -494,6 +499,7 @@
     var emojiGrid = scoring.buildEmojiGrid(state.results);
     var totalScore = state.results.reduce(function (s, r) { return s + r.score; }, 0);
 
+    var firstToday = !storage.hasPlayedToday();
     var streak = storage.saveTodayResult({
       totalScore: totalScore,
       ratio: ratio,
@@ -503,7 +509,15 @@
       puzzleResults: state.results.map(function (r) { return { score: r.score, maxScore: r.maxScore }; })
     });
 
-    renderFinal({ totalScore: totalScore, ratio: ratio, earAge: earAge, percentile: percentile, emojiGrid: emojiGrid, streak: streak.count });
+    // 골드: 하루 첫 완주에만 지급 (재도전 파밍 방지)
+    var gold = 0;
+    if (firstToday) {
+      gold = 10 + Math.round(ratio * 50);
+      try { if (typeof SharedWallet !== 'undefined' && SharedWallet._initialized) SharedWallet.addGold(gold); } catch (e) {}
+    }
+    try { if (typeof GameRankings !== 'undefined') GameRankings.submit('wrongnote', { score: totalScore }); } catch (e) {}
+
+    renderFinal({ totalScore: totalScore, ratio: ratio, earAge: earAge, percentile: percentile, emojiGrid: emojiGrid, streak: streak.count, gold: gold });
     showScreen('final');
   }
 
@@ -518,16 +532,17 @@
 
   function renderFinal(data) {
     var html = '';
-    html += '<h2 class="wn-song-title">오늘의 귀 진단</h2>';
+    html += '<h2 class="wn-song-title">' + T('finalTitle') + '</h2>';
     html += '<div class="wn-diagnosis-card">';
-    html += '<div class="wn-ear-age">' + data.earAge + '<span class="wn-ear-age-unit">세</span></div>';
-    html += '<p class="wn-percentile">상위 ' + data.percentile + '% 귀 (재미용 추정치)</p>';
+    html += '<div class="wn-ear-age">' + data.earAge + '<span class="wn-ear-age-unit">' + T('earAgeUnit') + '</span></div>';
+    html += '<p class="wn-percentile">' + T('percentileLine', {n: data.percentile}) + '</p>';
     // split('')는 서로게이트 페어(🟡 등 BMP 밖 이모지)를 반쪽씩 잘라 깨뜨리므로 Array.from으로 코드포인트 단위 분리
     html += '<div class="wn-emoji-grid">' + Array.from(data.emojiGrid).join(' ') + '</div>';
-    html += '<p class="wn-total-score">총점 ' + data.totalScore + '점 · 연속 출석 ' + data.streak + '일</p>';
+    html += '<p class="wn-total-score">' + T('totalLine', {score: data.totalScore, streak: data.streak}) + '</p>';
+    if (data.gold) html += '<p class="wn-gold-line">' + T('goldLine', {n: data.gold}) + '</p>';
     html += '</div>';
-    html += '<button id="btn-share" class="wn-btn wn-btn-primary wn-btn-wide">결과 공유하기</button>';
-    html += '<button id="btn-home" class="wn-btn wn-btn-secondary wn-btn-wide">처음으로</button>';
+    html += '<button id="btn-share" class="wn-btn wn-btn-primary wn-btn-wide">' + T('share') + '</button>';
+    html += '<button id="btn-home" class="wn-btn wn-btn-secondary wn-btn-wide">' + T('home') + '</button>';
     html += '<p class="wn-share-status" id="wn-share-status"></p>';
 
     qs('screen-final').innerHTML = html;
@@ -559,7 +574,7 @@
   function copyToClipboard(text, status) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(function () {
-        if (status) status.textContent = '클립보드에 복사됐어요!';
+        if (status) status.textContent = T('copied');
       }).catch(function () {
         if (status) status.textContent = text;
       });
@@ -570,12 +585,14 @@
 
   // ---------- 부트스트랩 ----------
   function boot() {
+    try { if (typeof SharedWallet !== 'undefined' && SharedWallet.init && !SharedWallet._initialized) SharedWallet.init(); } catch (e) {}
+    try { if (typeof GameRankings !== 'undefined') GameRankings.injectNavButton('wrongnote'); } catch (e) {}
     fetch('data/songs.json').then(function (r) { return r.json(); }).then(function (songs) {
       global.WN.songs = songs;
       renderIntro();
       showScreen('intro');
     }).catch(function (err) {
-      qs('screen-intro').innerHTML = '<p class="wn-note">곡 데이터를 불러오지 못했어요. 새로고침 해보세요.</p>';
+      qs('screen-intro').innerHTML = '<p class="wn-note">' + T('loadFail') + '</p>';
       console.error('songs.json load failed', err);
     });
   }

@@ -113,9 +113,10 @@
 
   function buildShareText(opts) {
     // opts: { dateStr, earAge, percentile, emojiGrid, url }
+    var i18n = global.WN.i18n;
     var lines = [
-      '틀린 음 찾기 ' + opts.dateStr,
-      '🎵 오늘의 귀 나이: ' + opts.earAge + '세 (상위 ' + opts.percentile + '%)',
+      i18n.t('shareGame') + ' ' + opts.dateStr,
+      i18n.t('shareEarAge', {age: opts.earAge, pct: opts.percentile}),
       opts.emojiGrid,
       opts.url || 'https://game.cocy.io/wrongnote/'
     ];

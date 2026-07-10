@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="22" fill="#f3ead9"/>
+  <rect x="4" y="4" width="92" height="92" rx="18" fill="none" stroke="#33291f" stroke-width="3"/>
+  <!-- 정상 음표 (잉크) -->
+  <g fill="#33291f">
+    <ellipse cx="30" cy="66" rx="9" ry="7" transform="rotate(-18 30 66)"/>
+    <rect x="36.5" y="28" width="4.5" height="38" rx="2"/>
+    <path d="M41 28 q14 4 14 16 q-6 -8 -14 -8 z"/>
+  </g>
+  <!-- 틀린 음표 (코랄, 삐딱하게) -->
+  <g fill="#ff6b4a" transform="rotate(14 68 58)">
+    <ellipse cx="66" cy="62" rx="9" ry="7" transform="rotate(-18 66 62)"/>
+    <rect x="72.5" y="24" width="4.5" height="38" rx="2"/>
+  </g>
+  <!-- 틀림 표시 -->
+  <g stroke="#e5484d" stroke-width="4" stroke-linecap="round">
+    <line x1="56" y1="20" x2="88" y2="46"/>
+    <line x1="88" y1="20" x2="56" y2="46"/>
+  </g>
+</svg>

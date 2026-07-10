@@ -1,20 +1,60 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
+<!-- End Google Tag Manager -->
+<!-- AdSense: managed via GTM auto-ads (ca-pub-6634731722045607) -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>틀린 음 찾기</title>
-<meta name="description" content="오디오판 틀린그림찾기 — 듣고, 탭하고, 내 귀를 진단받는다.">
-<meta property="og:title" content="틀린 음 찾기">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>틀린 음 찾기 — 오디오판 틀린그림찾기 | COCY Games</title>
+<meta name="description" content="오디오판 틀린그림찾기 — 듣고, 탭하고, 내 귀를 진단받는다. 매일 5문제, 귀 나이 진단과 이모지 공유까지. 무료 웹 음감 게임.">
+<meta name="keywords" content="틀린 음 찾기, 음감 게임, 귀 나이 테스트, 청음 훈련, 음감 테스트, find the wrong note, ear training game">
+<link rel="canonical" href="https://game.cocy.io/wrongnote/">
+<meta property="og:title" content="틀린 음 찾기 — 오디오판 틀린그림찾기">
 <meta property="og:description" content="퍼블릭 도메인 멜로디 속 틀린 음을 찾아보세요. 매일 5문제, 내 귀 나이 진단까지.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://game.cocy.io/wrongnote/">
+<meta property="og:image" content="https://game.cocy.io/wrongnote/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="틀린 음 찾기 — 오디오판 틀린그림찾기">
+<meta name="twitter:description" content="매일 5문제, 내 귀 나이 진단. 오디오판 틀린그림찾기.">
+<meta name="twitter:image" content="https://game.cocy.io/wrongnote/og.png">
 <meta name="theme-color" content="#f3ead9">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "틀린 음 찾기",
+  "alternateName": ["Find the Wrong Note", "まちがい音さがし"],
+  "url": "https://game.cocy.io/wrongnote/",
+  "description": "오디오판 틀린그림찾기 — 퍼블릭 도메인 멜로디 속 틀린 음을 찾고 귀 나이를 진단받는 데일리 음감 게임.",
+  "genre": ["Music", "Puzzle"],
+  "gamePlatform": "Web Browser",
+  "applicationCategory": "Game",
+  "inLanguage": ["ko", "en", "ja"],
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" },
+  "publisher": { "@type": "Organization", "name": "COCY", "url": "https://cocy.io" }
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
   <div id="app">
     <section id="screen-intro" class="wn-screen active"></section>
     <section id="screen-play" class="wn-screen"></section>
@@ -22,14 +62,18 @@
     <section id="screen-final" class="wn-screen"></section>
   </div>
 
+  <script>window.SharedWalletConfig = window.SharedWalletConfig || { autoGuest: true };</script>
+  <script src="/lib/shared-wallet.js?v=20260705b2a"></script>
+  <script src="/lib/game-rankings.js?v=20260711"></script>
   <!-- Tone.js: 클라 결정론 피아노 합성. 오디오 파일 전송 없이 노트 데이터만으로 재생. -->
   <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
-  <script src="js/prng.js?v=3"></script>
-  <script src="js/music-theory.js?v=3"></script>
-  <script src="js/storage.js?v=3"></script>
-  <script src="js/scoring.js?v=3"></script>
-  <script src="js/puzzle-gen.js?v=3"></script>
-  <script src="js/audio-engine.js?v=3"></script>
-  <script src="js/game.js?v=3"></script>
+  <script src="js/prng.js?v=4"></script>
+  <script src="js/i18n.js?v=4"></script>
+  <script src="js/music-theory.js?v=4"></script>
+  <script src="js/storage.js?v=4"></script>
+  <script src="js/scoring.js?v=4"></script>
+  <script src="js/puzzle-gen.js?v=4"></script>
+  <script src="js/audio-engine.js?v=4"></script>
+  <script src="js/game.js?v=4"></script>
 </body>
 </html>

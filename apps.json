@@ -1,5 +1,21 @@
 [
   {
+    "title": "틀린 음 찾기",
+    "icon": "https://game.cocy.io/wrongnote/icon.svg",
+    "url": "https://game.cocy.io/wrongnote/",
+    "desc": "오디오판 틀린그림찾기! 매일 5문제, 귀 나이 진단·이모지 공유. 한국어/English/日本語",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko",
+      "en",
+      "ja"
+    ],
+    "category": "puzzle"
+  },
+  {
     "title": "팝매치",
     "icon": "https://game.cocy.io/match3/icon.svg",
     "url": "https://game.cocy.io/match3/",
