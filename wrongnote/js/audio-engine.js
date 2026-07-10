@@ -1,6 +1,7 @@
-// 틀린 음 찾기 — Tone.js 기반 피아노 합성 재생 엔진
+// 틀린 음 찾기 — Tone.js 기반 피아노 재생 엔진
 // 재생/일시정지/스크럽/구간반복 + 최대 3회 재생 카운트.
-// 노트 데이터만으로 클라 결정론 합성 (오디오 파일 전송 없음).
+// 음원: Salamander Grand Piano 샘플(assets/piano/, 자체 서빙 — 외부 CDN 핫링크 금지).
+// 샘플 로딩 전/실패 시에는 신스 폴백으로 즉시 재생 가능.
 (function (global) {
   'use strict';
 
@@ -8,6 +9,7 @@
 
   function WNAudioEngine() {
     this._synth = null;
+    this._sampler = null;
     this._puzzle = null;
     this._totalDurationSec = 0;
     this._playsRemaining = MAX_PLAYS;
@@ -18,12 +20,29 @@
 
   WNAudioEngine.prototype._ensureSynth = function () {
     if (this._synth) return;
-    // 피아노 느낌의 톤: 삼각파 + 짧은 릴리즈. 샘플 로딩 없이 즉시 재생 가능(네트워크 의존 최소화).
     this._synth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: 'triangle' },
       envelope: { attack: 0.005, decay: 0.25, sustain: 0.15, release: 0.4 }
     }).toDestination();
     this._synth.volume.value = -6;
+
+    var self = this;
+    var sampler = new Tone.Sampler({
+      urls: {
+        'F#3': 'Fs3.mp3', 'A3': 'A3.mp3', 'C4': 'C4.mp3', 'D#4': 'Ds4.mp3',
+        'F#4': 'Fs4.mp3', 'A4': 'A4.mp3', 'C5': 'C5.mp3', 'D#5': 'Ds5.mp3', 'F#5': 'Fs5.mp3'
+      },
+      baseUrl: 'assets/piano/',
+      release: 1.2,
+      onload: function () { self._sampler = sampler; },
+      onerror: function (e) { console.warn('피아노 샘플 로딩 실패, 신스 폴백 사용', e); }
+    }).toDestination();
+    sampler.volume.value = -2;
+  };
+
+  // 스케줄 시점이 아니라 발음 시점에 고른다 — 재생 중 샘플 로딩이 끝나면 다음 음부터 피아노로 전환
+  WNAudioEngine.prototype._instrument = function () {
+    return this._sampler || this._synth;
   };
 
   // puzzle.performedNotes: [{pitch,dur,startSec,offsetMs,...}]
@@ -41,11 +60,11 @@
     this._playsRemaining = MAX_PLAYS;
     this._hasStartedThisPlay = false;
 
-    var synth = this._synth;
+    var self = this;
     puzzle.performedNotes.forEach(function (note) {
       var noteDurSec = Math.max(0.08, note.dur * secPerBeat * 0.92);
       Tone.Transport.schedule(function (time) {
-        synth.triggerAttackRelease(note.pitch, noteDurSec, time);
+        self._instrument().triggerAttackRelease(note.pitch, noteDurSec, time);
       }, Math.max(0, note.startSec));
     });
 
@@ -114,6 +133,7 @@
     Tone.Transport.stop();
     Tone.Transport.cancel();
     if (this._synth) { this._synth.dispose(); this._synth = null; }
+    if (this._sampler) { this._sampler.dispose(); this._sampler = null; }
   };
 
   global.WN = global.WN || {};

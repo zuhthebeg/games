@@ -36,6 +36,36 @@
   }
 
   // ---------- 인트로 ----------
+  function isDebugMode() {
+    return /[?&]debug=1/.test(global.location.search);
+  }
+
+  // 디버그: 이탈 없는 원본 멜로디를 의사-퍼즐로 만들어 재생 (매 재생마다 로드 → 횟수 제한 우회)
+  function debugPlaySong(songId) {
+    var song = null;
+    global.WN.songs.forEach(function (s) { if (s.id === songId) song = s; });
+    if (!song) return;
+    var secPerBeat = 60 / song.bpm;
+    var acc = 0;
+    var performed = song.notes.map(function (n, i) {
+      var out = { index: i, pitch: n[0], dur: n[1], startBeat: acc, startSec: acc * secPerBeat, offsetMs: 0 };
+      acc += n[1];
+      return out;
+    });
+    engine = engine || new global.WN.AudioEngine();
+    engine.loadPuzzle({ song: { id: song.id, bpm: song.bpm }, performedNotes: performed, deviations: [] });
+    engine.play();
+  }
+
+  function bindDebugPanel() {
+    qs('debug-play').addEventListener('click', function () {
+      debugPlaySong(qs('debug-song-select').value);
+    });
+    qs('debug-stop').addEventListener('click', function () {
+      if (engine) engine.stop();
+    });
+  }
+
   function renderIntro() {
     var streak = storage.getStreak();
     var already = storage.hasPlayedToday();
@@ -56,10 +86,27 @@
     }
     html += '<button id="btn-start" class="wn-btn wn-btn-primary">오늘의 5문제 시작하기</button>';
 
+    if (isDebugMode()) {
+      html += '<div class="wn-card" id="wn-debug-panel" style="margin-top:24px;text-align:left">';
+      html += '<h3 style="margin:0 0 10px">🔧 디버그: 곡 원본 듣기</h3>';
+      html += '<select id="debug-song-select" style="width:100%;padding:10px;border:2px solid var(--line);border-radius:10px;font:inherit;background:var(--surface)">';
+      global.WN.songs.forEach(function (s) {
+        html += '<option value="' + s.id + '">' + s.title_ko + ' (' + s.id + ')</option>';
+      });
+      html += '</select>';
+      html += '<div style="display:flex;gap:8px;margin-top:10px">';
+      html += '<button id="debug-play" class="wn-btn wn-btn-secondary" style="flex:1">▶ 원곡 재생</button>';
+      html += '<button id="debug-stop" class="wn-btn wn-btn-secondary" style="flex:1">⏹ 정지</button>';
+      html += '</div>';
+      html += '<p class="wn-note" style="margin:8px 0 0;font-size:0.8rem">이탈 없는 원본 멜로디. 재생 횟수 제한 없음.</p>';
+      html += '</div>';
+    }
+
     qs('screen-intro').innerHTML = html;
     qs('btn-start').addEventListener('click', startDaily);
     var viewBtn = qs('btn-view-result');
     if (viewBtn) viewBtn.addEventListener('click', function () { showFinalFromSaved(todayResult); });
+    if (isDebugMode()) bindDebugPanel();
   }
 
   function startDaily() {

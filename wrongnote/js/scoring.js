@@ -5,7 +5,9 @@
   var FOUND_POINTS = 10;
   var CORRECTION_BONUS = 5;
   var FALSE_POSITIVE_PENALTY = -3;
-  var MATCH_TOLERANCE_SEC = 0.6; // 마커-이탈 노트 매칭 허용 오차(순발력 무관, 넉넉하게)
+  // 마커-이탈 매칭 허용 윈도우 (비대칭): 사람은 이상함을 인지한 "후" 탭하므로 늦은 쪽에 관대하게.
+  var MATCH_EARLY_SEC = 0.6;  // 이탈 음보다 먼저 찍은 경우
+  var MATCH_LATE_SEC = 1.3;   // 이탈 음보다 늦게 찍은 경우 (반응 지연 허용)
 
   function expectedLabel(dev) {
     if (dev.type === 'pitch') return dev.direction === 1 ? 'higher' : 'lower';
@@ -24,8 +26,10 @@
       var bestIdx = -1, bestDist = Infinity;
       markers.forEach(function (mk, i) {
         if (usedMarker[i]) return;
-        var dist = Math.abs(mk.timeSec - noteTime);
-        if (dist <= MATCH_TOLERANCE_SEC && dist < bestDist) { bestDist = dist; bestIdx = i; }
+        var delta = mk.timeSec - noteTime; // 양수 = 늦게 찍음
+        if (delta < -MATCH_EARLY_SEC || delta > MATCH_LATE_SEC) return;
+        var dist = Math.abs(delta);
+        if (dist < bestDist) { bestDist = dist; bestIdx = i; }
       });
       if (bestIdx >= 0) {
         usedMarker[bestIdx] = true;
