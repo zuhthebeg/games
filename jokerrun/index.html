@@ -7359,7 +7359,7 @@
 
     // 초반(Ante 1~2, 2번째 보스 전까지)엔 상위 등급 조커·특수 행성을 상점에서 제외 — 돈도 없는데 등장해봐야 못 삼.
     function isEarlyGame(){ return state.ante <= 2; }
-    function isDebugOn(){ try { return localStorage.getItem("jokerrun_debug") === "1"; } catch (_) { return false; } }
+    function isDebugOn(){ try { return new URL(location.href).searchParams.get("debug") === "1"; } catch (_) { return false; } }
     function jokerAllowedNow(j){ if (isDebugOn()) return true; return !(isEarlyGame() && (j.rarity === "rare" || j.rarity === "legendary")); }
 
     function generateShopJokers() {
@@ -8399,15 +8399,13 @@
     const JR_BUILD = "2026-06-23-heartbreaker";
     console.log("[jokerrun] build", JR_BUILD);
 
-    // ── 디버그 모드 ── ?debug=1 로 켜고(localStorage에 기억), ?debug=0 으로 끔.
+    // ── 디버그 모드 ── URL에 ?debug=1 이 있을 때만 활성 (영구 기억 없음).
     // 조커/타로/행성/플레이카드를 현재 런에 즉시 추가. 테스트 전용.
     function initDebug() {
-      try {
-        const sp = new URL(location.href).searchParams;
-        if (sp.get("debug") === "1") localStorage.setItem("jokerrun_debug", "1");
-        if (sp.get("debug") === "0") localStorage.removeItem("jokerrun_debug");
-      } catch (_) {}
-      let on = false; try { on = localStorage.getItem("jokerrun_debug") === "1"; } catch (_) {}
+      // ?debug=1 이 붙어 있을 때만 활성. (구버전의 localStorage 영구 기억은 제거 — 잔재도 정리)
+      let on = false;
+      try { on = new URL(location.href).searchParams.get("debug") === "1"; } catch (_) {}
+      try { localStorage.removeItem("jokerrun_debug"); } catch (_) {}
       if (!on) return;
       const fab = $("#dbgFab"); if (!fab) return;
       fab.style.display = "flex";
