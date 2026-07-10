@@ -1,0 +1,244 @@
+% 틀린 음 찾기 — 곡 정본 소스 (ABC 서브셋)
+% build_songs.py가 이 파일을 파싱해 ../songs.json을 생성한다.
+% 규칙: 모든 곡은 실제 악보 출처 기반. 마디 합계는 빌드 시 박자표 대비 기계 검증됨.
+% 지원 문법: M/L/K/%%bpm 헤더, 음표+길이(분수), z(쉼표, 직전 음에 흡수), -(붙임줄), (3셋잇단, >< 부점쌍, ^_= 임시표(마디 내 지속)
+
+X:1
+%%id twinkle
+%%ko 반짝반짝 작은 별
+%%en Twinkle, Twinkle, Little Star
+%%ja きらきら星
+%%src 프랑스 민요 "Ah! vous dirai-je, maman" (1761), Wikipedia 악보
+%%bpm 100
+M:4/4
+L:1/4
+K:C
+C C G G | A A G2 | F F E E | D D C2 | G G F F | E E D2 | G G F F | E E D2 | C C G G | A A G2 | F F E E | D D C2 |]
+
+X:2
+%%id mary-lamb
+%%ko 메리의 어린 양
+%%en Mary Had a Little Lamb
+%%ja メリーさんのひつじ
+%%src 미국 동요 (Lowell Mason, 1830s), 퍼블릭 도메인
+%%bpm 104
+M:4/4
+L:1/4
+K:C
+E D C D | E E E2 | D D D2 | E G G2 | E D C D | E E E E | D D E D | C4 |]
+
+X:3
+%%id row-row
+%%ko 노를 저어라
+%%en Row, Row, Row Your Boat
+%%ja こげこげボート
+%%src 미국 전래 동요 (1852), Wikipedia 악보
+%%bpm 100
+M:6/8
+L:1/8
+K:C
+C3 C3 | C2D E3 | E2D E2F | G6 | ccc GGG | EEE CCC | G2F E2D | C6 |]
+
+X:4
+%%id frere-jacques
+%%ko 프레르 자크
+%%en Frère Jacques
+%%ja フレール・ジャック
+%%src 프랑스 전래 동요 (18세기), 퍼블릭 도메인
+%%bpm 104
+M:4/4
+L:1/4
+K:C
+C D E C | C D E C | E F G2 | E F G2 | G/A/G/F/ E C | G/A/G/F/ E C | C G, C2 | C G, C2 |]
+
+X:5
+%%id hot-cross-buns
+%%ko 핫 크로스 번
+%%en Hot Cross Buns
+%%ja ホット・クロス・バンズ
+%%src 영국 전래 동요 (18세기), Wikipedia 악보
+%%bpm 104
+M:4/4
+L:1/8
+K:G
+B2 A2 G4 | B2 A2 G4 | GGGG AAAA | B2 A2 G4 |]
+
+X:6
+%%id london-bridge
+%%ko 런던 다리
+%%en London Bridge Is Falling Down
+%%ja ロンドン橋
+%%src 영국 전래 동요, Wikipedia 악보 (D장조)
+%%bpm 100
+M:2/4
+L:1/16
+K:D
+A3B A2G2 | F2G2 A4 | E2F2 G4 | F2G2 A4 | A3B A2G2 | F2G2 A4 | E4 A4 | F2 D6 |]
+
+X:7
+%%id old-macdonald
+%%ko 맥도날드 아저씨네 농장
+%%en Old MacDonald Had a Farm
+%%ja ゆかいな牧場
+%%src 미국 전래 동요 (1917 채보), 퍼블릭 도메인
+%%bpm 108
+M:4/4
+L:1/4
+K:G
+G G G D | E E D2 | B B A A | G3 D | G G G D | E E D2 | B B A A | G4 |]
+
+X:8
+%%id ode-to-joy
+%%ko 환희의 송가
+%%en Ode to Joy
+%%ja 歓喜の歌
+%%src 베토벤 교향곡 9번 (1824), Wikipedia 악보 (G장조)
+%%bpm 108
+M:4/4
+L:1/4
+K:G
+B B c d | d c B A | G G A B | B3/2 A/2 A2 | B B c d | d c B A | G G A B | A3/2 G/2 G2 | A A B G | A B/c/ B G | A B/c/ B A | G A D B- | B B c d | d c B A | G G A B | A3/2 G/2 G2 |]
+
+X:9
+%%id fur-elise
+%%ko 엘리제를 위하여
+%%en Für Elise
+%%ja エリーゼのために
+%%src 베토벤 (1810), 주제부, 퍼블릭 도메인
+%%bpm 80
+M:3/8
+L:1/16
+K:Am
+e^d | e^d eB =dc | A3 C E A | B3 E ^G B | c3 E e^d | e^d eB =dc | A3 C E A | B3 E c B | A6 |]
+
+X:10
+%%id auld-lang-syne
+%%ko 올드 랭 사인 (석별의 정)
+%%en Auld Lang Syne
+%%ja 蛍の光
+%%src 스코틀랜드 민요 (Robert Burns, 1788), Wikipedia 악보 (F장조)
+%%bpm 84
+M:4/4
+L:1/8
+K:F
+C2 | F3F F2A2 | G3F G2A2 | F3F A2c2 | d6 d2 | c3A A2F2 | G3F G2A2 | F3D D2C2 | F6 d2 | c3A A2F2 | G3F G2d2 | c3A A2c2 | d6 d2 | c3A A2F2 | G3F G2A2 | F3D D2C2 | F6 |]
+
+X:11
+%%id amazing-grace
+%%ko 어메이징 그레이스
+%%en Amazing Grace
+%%ja アメイジング・グレイス
+%%src 찬송가 New Britain (1779/1835), thesession.org #2749 setting 43562
+%%bpm 84
+M:3/4
+L:1/8
+K:G
+D2 | G4 (3BAG | B4 A2 | G4 E2 | D4 D2 | G4 (3BAG | B4 AB | d6- | d4 B2 | d4 (3BAG | B4 A2 | G4 E2 | D4 D2 | G4 (3BAG | B4 A2 | G6- | G4 |]
+
+X:12
+%%id yankee-doodle
+%%ko 양키 두들
+%%en Yankee Doodle
+%%ja ヤンキードゥードゥル
+%%src 미국 전래 민요 (18세기), thesession.org #10574
+%%bpm 108
+M:2/4
+L:1/8
+K:G
+GG AB | GB AD | GG AB | G2 F2 | GG AB | cB AG | FD EF | G2 G2 | E3/2F/ ED | EF G2 | D3/2E/ DC | B,2 D2 | E3/2F/ ED | EF GE | DG FA | G2 G2 |]
+
+X:13
+%%id oh-susanna
+%%ko 오 수재너
+%%en Oh! Susanna
+%%ja おおスザンナ
+%%src Stephen Foster (1847, 사후 70년+), Paul Hardy's Session Tunebook
+%%bpm 112
+M:4/4
+L:1/4
+K:G
+G/A/ | Bd d>e | dB G>A | BB AG | A3 G/A/ | Bd d>e | dB G>A | BB AA | G3 G | c2c2 | ee2e | dd BG | A3 G/A/ | Bd d>e | dB G>A | BB AA | G3 |]
+
+X:14
+%%id saints
+%%ko 성자의 행진
+%%en When the Saints Go Marching In
+%%ja 聖者の行進
+%%src 미국 흑인영가 (전래), abc.musicaviva.com 채보
+%%bpm 116
+M:4/4
+L:1/4
+K:C
+CEF | G4 | z CEF | G4 | z CEF | G2E2 | C2E2 | D4 | z EED | C4 | E2G2 | GF3 | z2 EF | G2E2 | C2D2 | C4 |]
+
+X:15
+%%id scarborough-fair
+%%ko 스카버러 페어
+%%en Scarborough Fair
+%%ja スカボロー・フェア
+%%src 영국 전래 발라드 (E도리안), thesession.org #7522
+%%bpm 90
+M:3/4
+L:1/8
+K:Edor
+E4E2 | B4B2 | F3GF2 | E6- | E2 B2d2 | e4d2 | B2c2A2 | B6- | B4e2 | e4e2 | d4B2 | B2A2G2 | F2D4- | D6 | E4B2 | A4G2 | F2E2D2 | E6- | E6 |]
+
+X:16
+%%id greensleeves
+%%ko 그린슬리브스
+%%en Greensleeves
+%%ja グリーンスリーブス
+%%src 영국 전래 (16세기), thesession.org #1598
+%%bpm 100
+M:6/8
+L:1/8
+K:Em
+E | G2A B3/2c/B | A2F D3/2E/F | G2E E3/2^D/E | F2^D B,2E | G2A B3/2c/B | A2F D3/2E/F | G3/2F/E ^D3/2^C/D | E3 E2z | d3 d3/2^c/B | A2F D3/2E/F | G2E E3/2^D/E | F2^D B,3 | d3 d3/2^c/B | A2F D3/2E/F | G3/2F/E ^D3/2^C/D | E3 E2z |]
+
+X:17
+%%id arirang
+%%ko 아리랑
+%%en Arirang
+%%ja アリラン
+%%src 한국 전래 민요 (경기아리랑), Wikipedia 악보 (F장조 9/8 세마치)
+%%bpm 90
+M:9/8
+L:1/8
+K:F
+C5 D C2 D | F5 G F2 G | A3 G A G F2 D | C5 D C D2 | F5 G F2 G | A2 G F2 D C2 D | F5 G F3 | F9 | c6 c3 | c3 A3 G3 | A3 G2 A F2 D | C5 D C D2 | F5 G F2 G | A2 G F2 D C2 D | F5 G F3 | F9 |]
+
+X:18
+%%id jingle-bells
+%%ko 징글벨
+%%en Jingle Bells
+%%ja ジングルベル
+%%src James Lord Pierpont (1857), Paul Hardy's Xmas Tunebook (후렴)
+%%bpm 120
+M:4/4
+L:1/4
+K:G
+BB B2 | BB B2 | Bd G3/2A/2 | B4 | cc c3/2c/2 | cB BB/2B/2 | BA AB | A2 d2 | BB B2 | BB B2 | Bd G3/2A/2 | B4 | cc c3/2c/2 | cB BB/2B/2 | dd cA | G4 |]
+
+X:19
+%%id happy-birthday
+%%ko 생일 축하 노래
+%%en Happy Birthday to You
+%%ja ハッピーバースデー
+%%src Good Morning to All (Hill 자매, 1893), 멜로디 퍼블릭 도메인 확정(2016)
+%%bpm 96
+M:3/4
+L:1/8
+K:G
+D>D | E2 D2 G2 | F4 D>D | E2 D2 A2 | G4 D>D | d2 B2 G2 | F2 E2 c>c | B2 G2 A2 | G4 |]
+
+X:20
+%%id silent-night
+%%ko 고요한 밤 거룩한 밤
+%%en Silent Night
+%%ja きよしこの夜
+%%src Franz Xaver Gruber (1818), Paul Hardy's Xmas Tunebook
+%%bpm 90
+M:6/8
+L:1/8
+K:C
+G>A G E3 | G>A G E2z | d2 d B3 | c2 c G2z | A2 A c>B A | G>A G E2z | A2 A c>B A | G>A G E2z | d2 d f>d B | c3 e2z | cGE G>F D | C6 |]
