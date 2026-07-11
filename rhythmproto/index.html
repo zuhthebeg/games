@@ -24,7 +24,7 @@
   button.primary { background:linear-gradient(90deg,#ff5fa2,#7f7fff); }
   button:active { transform:scale(.96); }
   #songs button { padding:10px 14px; font-size:14px; line-height:1.3; }
-  #songs button small { display:block; font-weight:400; font-size:11px; color:#aab; }
+  button small { display:block; font-weight:400; font-size:11px; color:#aab; }
   #hud { position:absolute; top:0; left:0; right:0; display:flex;
     justify-content:space-between; padding:10px 14px; font-weight:700;
     font-size:14px; z-index:5; pointer-events:none; text-shadow:0 1px 4px #000; }
@@ -59,8 +59,9 @@
       <button data-lv="easy">EASY</button>
       <button data-lv="normal" class="primary">NORMAL</button>
       <button data-lv="hard">HARD</button>
+      <button data-lv="expert">EXPERT<br><small>6키</small></button>
     </div>
-    <div class="sub">곡 고르고 난이도 탭 · 레인을 탭 (PC: D F J K) · 긴 노트는 꾹 눌러서 유지</div>
+    <div class="sub">곡 고르고 난이도 탭 · 긴 노트는 꾹 눌러서 유지<br>PC 4키: D F J K · 6키: S D F J K L</div>
   </div>
 
   <div class="overlay hidden" id="result">
@@ -73,25 +74,30 @@
 </div>
 
 <script>
-const LANES = 4, APPROACH = 1.8; // 노트 낙하 시간(초)
+let LANES = 4, APPROACH = 1.8; // 노트 낙하 시간(초) — EXPERT에서 6키/1.45초
 const PERFECT = 0.10, GOOD = 0.19;
-const LANE_COLORS = ['#ff5fa2','#ffd75f','#5fd4ff','#7f7fff'];
-const KEYS = { KeyD:0, KeyF:1, KeyJ:2, KeyK:3 };
+const LANE_COLORS = ['#ff5fa2','#ffd75f','#5fd4ff','#7f7fff','#5fff9f','#ff8f5f'];
+const KEYMAPS = {
+  4: { KeyD:0, KeyF:1, KeyJ:2, KeyK:3 },
+  6: { KeyS:0, KeyD:1, KeyF:2, KeyJ:3, KeyK:4, KeyL:5 }
+};
+let KEYS = KEYMAPS[4];
 
 let chart=null, notes=[], audio=null, playing=false;
 let score=0, combo=0, maxCombo=0, counts={perfect:0,good:0,miss:0};
+let endedAt=0, lastNoteT=0;     // 오디오 종료 후에도 남은 노트 판정용
 let cv=document.getElementById('cv'), ctx=cv.getContext('2d');
 let W=0,H=0,hitY=0;
 let flashes=[];          // 레인 탭 이펙트
 let particles=[];        // 타격 파티클
 let rings=[];            // 타격 링
 let lineGlow=0;          // 판정선 펄스
-const laneHeld=[0,0,0,0];       // 레인별 눌림 카운트 (멀티터치)
+let laneHeld=[0,0,0,0];         // 레인별 눌림 카운트 (멀티터치)
 const pointerLane=new Map();    // pointerId → lane
 
-// 배경: chart.bgs가 있으면 로드해서 크로스페이드, 없으면 다크 배경 유지
-let bgImgs=[], bgIdx=0, bgFade=0, bgLast=0;
-const BG_SWITCH=25; // 초
+// 배경: chart.bgs가 있으면 로드, 곡 구조(sections) 경계에서 크로스페이드
+let bgImgs=[], bgIdx=0, bgPrev=0, bgFade=0, bgLast=0, curSec=-1;
+const BG_SWITCH=25; // sections 없을 때 폴백 주기(초)
 
 function resize(){
   const r=cv.parentElement.getBoundingClientRect();
@@ -108,16 +114,16 @@ function loadSong(id){
     b.classList.toggle('primary', b.dataset.song===id));
   chart=chartCache[id]||null;
   if(chart){ loadBgs(chart); return; }
-  fetch(`chart-${id}.json?v=3`).then(r=>r.json()).then(c=>{
+  fetch(`chart-${id}.json?v=4`).then(r=>r.json()).then(c=>{
     chartCache[id]=c;
     if(curSong===id){ chart=c; loadBgs(c); }
   });
 }
 function loadBgs(c){
-  bgImgs=[]; bgIdx=0; bgFade=0; bgLast=0;
-  if(Array.isArray(c.bgs)) c.bgs.forEach(src=>{
+  bgImgs=[]; bgIdx=0; bgPrev=0; bgFade=0; bgLast=0; curSec=-1;
+  if(Array.isArray(c.bgs)) c.bgs.forEach((src,i)=>{
     const im=new Image(); im.src=src+'?v=1';
-    im.onload=()=>bgImgs.push(im);
+    im.onload=()=>{ bgImgs[i]=im; }; // 순서 고정 (로드 완료 순서와 무관)
   });
 }
 document.querySelectorAll('#songs button').forEach(b=>{
@@ -131,20 +137,30 @@ document.querySelectorAll('#intro button[data-lv]').forEach(b=>{
 
 function start(lv){
   if(!chart) return;
-  const cut=chart.levels[lv];
+  const expert=lv==='expert';
+  LANES=expert?6:4; APPROACH=expert?1.45:1.8; KEYS=KEYMAPS[LANES];
+  laneHeld=new Array(LANES).fill(0);
+  const cut=expert?0:chart.levels[lv];
   notes=chart.notes.filter(n=>n.s>=cut).map(n=>({
-    t:n.t+0.5, lane:n.lane, d:n.d||0,
+    t:n.t+0.5, lane:expert?(n.l6??n.lane):n.lane, d:n.d||0,
     hit:false, missed:false, holding:false, holdDone:false, holdBroke:false}));
+  lastNoteT=notes.reduce((m,n)=>Math.max(m,n.t+n.d),0);
+  endedAt=0; curSec=-1;
   audio=new Audio(chart.audio+'?v=1');
   audio.play().then(()=>{
     document.getElementById('intro').classList.add('hidden');
     playing=true;
-    audio.onended=finish;
+    // 곡이 끝나도 낙하 중인 마지막 노트 판정이 남아 있을 수 있어 클럭을 이어간다
+    audio.onended=()=>{ endedAt=performance.now(); };
     requestAnimationFrame(loop);
   });
 }
 
-function now(){ return audio? audio.currentTime : 0; }
+function now(){
+  if(!audio) return 0;
+  if(endedAt) return (audio.duration||0)+(performance.now()-endedAt)/1000;
+  return audio.currentTime;
+}
 
 function laneX(lane){ return (lane+0.5)*(W/LANES); }
 
@@ -217,8 +233,17 @@ function updateHud(){
 
 function drawBg(t){
   if(!bgImgs.length){ return; }
-  if(t-bgLast>BG_SWITCH && bgImgs.length>1){ bgLast=t; bgIdx=(bgIdx+1)%bgImgs.length; bgFade=1; }
-  if(bgFade>0) bgFade=Math.max(0,bgFade-0.02);
+  // 곡 구조 경계에서 전환, sections 없으면 주기 로테이션
+  let want=bgIdx;
+  if(Array.isArray(chart.sections) && chart.sections.length){
+    let si=0;
+    for(const s of chart.sections){ if(t>=s+0.5) si++; }
+    if(si!==curSec){ curSec=si; want=si%bgImgs.length; }
+  } else if(t-bgLast>BG_SWITCH && bgImgs.length>1){
+    bgLast=t; want=(bgIdx+1)%bgImgs.length;
+  }
+  if(want!==bgIdx){ bgPrev=bgIdx; bgIdx=want; bgFade=1; }
+  if(bgFade>0) bgFade=Math.max(0,bgFade-0.016);
   const draw=(im,alpha)=>{
     if(!im) return;
     const s=Math.max(W/im.width,H/im.height);
@@ -227,7 +252,7 @@ function drawBg(t){
     ctx.globalAlpha=1;
   };
   draw(bgImgs[bgIdx],1);
-  if(bgFade>0) draw(bgImgs[(bgIdx+bgImgs.length-1)%bgImgs.length],bgFade);
+  if(bgFade>0) draw(bgImgs[bgPrev],bgFade);
   ctx.fillStyle='rgba(8,8,22,.62)'; // 노트 가독성용 다크 오버레이
   ctx.fillRect(0,0,W,H);
 }
@@ -329,6 +354,7 @@ function loop(){
     ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.stroke();
   }
   ctx.globalAlpha=1;
+  if(endedAt && t>lastNoteT+0.6){ finish(); return; }
   requestAnimationFrame(loop);
 }
 
