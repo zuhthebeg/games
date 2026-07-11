@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="24" fill="#f3ead9"/>
+  <!-- 에코 파형 -->
+  <path d="M14 44 q8 -18 16 0 q8 18 16 0 q8 -18 16 0" fill="none" stroke="#ff6b4a" stroke-width="6" stroke-linecap="round"/>
+  <path d="M70 44 q8 -14 16 0 q8 14 16 0" fill="none" stroke="#2bb3a3" stroke-width="6" stroke-linecap="round" opacity="0.75"/>
+  <!-- 건반 -->
+  <g>
+    <rect x="16" y="62" width="96" height="50" rx="10" fill="#fffdf7" stroke="#33291f" stroke-width="5"/>
+    <line x1="40" y1="64" x2="40" y2="110" stroke="#33291f" stroke-width="3"/>
+    <line x1="64" y1="64" x2="64" y2="110" stroke="#33291f" stroke-width="3"/>
+    <line x1="88" y1="64" x2="88" y2="110" stroke="#33291f" stroke-width="3"/>
+    <rect x="32" y="62" width="16" height="28" rx="3" fill="#33291f"/>
+    <rect x="56" y="62" width="16" height="28" rx="3" fill="#33291f"/>
+    <rect x="80" y="62" width="16" height="28" rx="3" fill="#ff6b4a" stroke="#33291f" stroke-width="3"/>
+  </g>
+</svg>

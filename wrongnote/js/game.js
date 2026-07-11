@@ -88,6 +88,7 @@
       html += '<button id="btn-view-result" class="wn-btn wn-btn-secondary">' + T('viewResult') + '</button>';
     }
     html += '<button id="btn-start" class="wn-btn wn-btn-primary">' + T('start') + '</button>';
+    html += '<p class="wn-sub" style="text-align:center;margin-top:4px">' + T('seriesLink') + '</p>';
 
     if (isDebugMode()) {
       html += '<div class="wn-card" id="wn-debug-panel" style="margin-top:24px;text-align:left">';

@@ -58,6 +58,7 @@
       share: '결과 공유하기',
       home: '처음으로',
       copied: '클립보드에 복사됐어요!',
+      seriesLink: '\uD83C\uDFB9 \uC74C\uAC10 \uC2DC\uB9AC\uC988 2\uD0C4 <a href="/melodyecho/">\uBA5C\uB85C\uB514 \uC5D0\uCF54</a>\uB3C4 \uD574\uBCF4\uC138\uC694',
       loadFail: '곡 데이터를 불러오지 못했어요. 새로고침 해보세요.',
       shareGame: '틀린 음 찾기',
       shareEarAge: '🎵 오늘의 귀 나이: {age}세 (상위 {pct}%)'
@@ -117,6 +118,7 @@
       share: 'Share result',
       home: 'Home',
       copied: 'Copied to clipboard!',
+      seriesLink: '\uD83C\uDFB9 Also try #2 <a href="/melodyecho/">Melody Echo</a>',
       loadFail: 'Failed to load song data. Try refreshing.',
       shareGame: 'Find the Wrong Note',
       shareEarAge: '🎵 My ear age today: {age} (top {pct}%)'
@@ -176,6 +178,7 @@
       share: '結果をシェア',
       home: 'ホームへ',
       copied: 'クリップボードにコピーしました!',
+      seriesLink: '\uD83C\uDFB9 \u97F3\u611F\u30B7\u30EA\u30FC\u30BA\u7B2C2\u5F3E <a href="/melodyecho/">\u30E1\u30ED\u30C7\u30A3\u30FC\u30A8\u30B3\u30FC</a> \u3082\u3069\u3046\u305E',
       loadFail: '曲データを読み込めませんでした。再読み込みしてください。',
       shareGame: 'まちがい音さがし',
       shareEarAge: '🎵 今日の耳年齢: {age}歳(上位 {pct}%)'

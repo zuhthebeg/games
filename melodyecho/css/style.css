@@ -1,0 +1,208 @@
+/* 멜로디 에코 — 음감 시리즈 공통 톤: 종이+잉크+코랄 (wrongnote 확정 목업 계승) */
+
+:root {
+  --ink: #33291f;
+  --ink-soft: #7a6c5b;
+  --paper: #f3ead9;
+  --surface: #fffdf7;
+  --card: #fff;
+  --line: #e9ddc6;
+  --coral: #ff6b4a;
+  --coral-soft: #ffe4db;
+  --teal: #2bb3a3;
+  --teal-soft: #d8f2ee;
+  --yellow: #ffc93c;
+  --yellow-soft: #fff1c9;
+  --green: #2f9e5f;
+  --green-soft: #dcf2e4;
+  --red: #e5484d;
+  --red-soft: #fde2e3;
+  --radius: 18px;
+  --shadow: 0 3px 0 var(--ink);
+  --wallet-bar-h: 56px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Noto Sans KR', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  padding-top: calc(var(--wallet-bar-h) + env(safe-area-inset-top));
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+
+#app {
+  width: 100%;
+  max-width: 460px;
+  min-height: 100vh;
+  padding: 16px 16px calc(32px + env(safe-area-inset-bottom));
+}
+
+h1, h2, .me-title, .me-title-sm, .me-stat-num, .me-profile-title, .me-btn, .me-pad, .me-count {
+  font-family: 'Jua', 'Noto Sans KR', sans-serif;
+  font-weight: 400;
+}
+
+.me-screen { display: none; flex-direction: column; gap: 14px; }
+.me-screen.active { display: flex; }
+
+.me-topbar { display: flex; justify-content: flex-end; }
+.me-lang {
+  background: var(--card); border: 2px solid var(--ink); border-radius: 12px;
+  padding: 4px 10px; font-size: 13px; cursor: pointer; box-shadow: var(--shadow);
+}
+
+.me-title { font-size: 30px; margin: 4px 0 0; }
+.me-title-sm { font-size: 24px; margin: 8px 0 0; }
+.me-sub { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.5; }
+.me-note {
+  background: var(--yellow-soft); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 10px 14px; font-size: 13px; margin: 0;
+}
+.me-note-done { background: var(--teal-soft); }
+.me-series { font-size: 13px; color: var(--ink-soft); text-align: center; margin: 4px 0 0; }
+.me-series a { color: var(--teal); font-weight: 700; }
+
+.me-stat-row { display: flex; gap: 12px; margin: 2px 0; }
+.me-stat {
+  flex: 1; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+  border: 1px solid var(--line); padding: 12px; text-align: center;
+}
+.me-stat-num { display: block; font-size: 26px; color: var(--coral); }
+.me-stat-label { display: block; font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+.me-btn {
+  font-size: 16px; border: 2px solid var(--ink); border-radius: var(--radius);
+  padding: 12px 18px; cursor: pointer; box-shadow: var(--shadow);
+  background: var(--card); color: var(--ink);
+  transition: transform .06s ease;
+}
+.me-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.me-btn:disabled { opacity: .45; cursor: default; }
+.me-btn-primary { background: var(--coral); color: #fff; }
+.me-btn-secondary { background: var(--teal-soft); }
+.me-btn-ghost { background: transparent; box-shadow: none; border-color: var(--ink-soft); color: var(--ink-soft); }
+.me-btn-wide { width: 100%; }
+
+.me-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.me-pill {
+  background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  padding: 5px 12px; font-size: 13px;
+}
+.me-pill-phase { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.me-pill-lv { background: var(--yellow); border-color: var(--ink); font-weight: 700; }
+
+.me-status { min-height: 22px; margin: 0; font-size: 15px; font-weight: 700; }
+.me-practice-tag { margin: 0; font-size: 12px; color: var(--ink-soft); }
+
+/* ---------- 멜로디: 입력 슬롯 ---------- */
+.me-slots { display: flex; gap: 6px; flex-wrap: wrap; min-height: 46px; }
+.me-slot {
+  width: 46px; height: 42px; border: 2px dashed var(--ink-soft); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; background: var(--surface);
+}
+.me-slot.filled { border-style: solid; border-color: var(--ink); background: var(--card); box-shadow: 0 2px 0 var(--ink); }
+.me-slot.given { background: var(--yellow-soft); }
+.me-slot.playing { border-color: var(--coral); background: var(--coral-soft); }
+.me-slot.good { background: var(--green-soft); border-color: var(--green); }
+.me-slot.bad { background: var(--red-soft); border-color: var(--red); }
+
+.me-answer-row { min-height: 18px; font-size: 13px; color: var(--ink-soft); }
+.me-answer-label { font-weight: 700; color: var(--ink); }
+
+/* ---------- 건반 ---------- */
+.me-kb-wrap { margin-top: 2px; }
+.me-keyboard {
+  position: relative; display: flex; height: 170px;
+  border: 2px solid var(--ink); border-radius: 12px; overflow: hidden;
+  background: var(--card); box-shadow: var(--shadow);
+  touch-action: manipulation;
+}
+.me-keyboard.disabled { opacity: .55; pointer-events: none; }
+.me-key { border: none; padding: 0; cursor: pointer; -webkit-user-select: none; user-select: none; }
+.me-key-white {
+  flex: 1; background: #fffdf7; border-right: 1px solid var(--line);
+  position: relative; display: flex; align-items: flex-end; justify-content: center;
+}
+.me-key-white:last-child { border-right: none; }
+.me-key-white.pressed, .me-key-white.hint { background: var(--yellow-soft); }
+.me-key-white.good { background: var(--green-soft); }
+.me-key-white.bad { background: var(--red-soft); }
+.me-key-black {
+  position: absolute; top: 0; height: 58%; background: var(--ink);
+  border-radius: 0 0 6px 6px; z-index: 2;
+}
+.me-key-black.pressed, .me-key-black.hint { background: var(--coral); }
+.me-key-black.good { background: var(--green); }
+.me-key-black.bad { background: var(--red); }
+.me-key-label {
+  font-size: 10px; color: var(--ink-soft); margin-bottom: 6px; pointer-events: none;
+}
+
+.me-actions { display: flex; gap: 10px; }
+.me-actions .me-btn { flex: 1; font-size: 14px; padding: 10px 8px; }
+
+.me-roundresult { display: flex; flex-direction: column; gap: 10px; }
+.me-scoreline { font-size: 15px; font-weight: 700; text-align: center; }
+
+/* ---------- 리듬 ---------- */
+.me-rhythm-grid { margin-top: 4px; }
+.me-rtrack {
+  position: relative; height: 64px; border: 2px solid var(--ink); border-radius: 12px;
+  background: var(--card); box-shadow: var(--shadow); display: flex; overflow: hidden;
+}
+.me-rbeat { flex: 1; border-right: 1px dashed var(--line); }
+.me-rbeat.bar { border-left: 2px solid var(--line); }
+.me-rbeat:last-child { border-right: none; }
+.me-ronset {
+  position: absolute; top: 10px; width: 14px; height: 14px; margin-left: -7px;
+  border-radius: 50%; background: var(--coral); border: 2px solid var(--ink);
+  transition: transform .1s ease;
+}
+.me-ronset.on { transform: scale(1.6); background: var(--yellow); }
+.me-rtaps { position: absolute; left: 0; right: 0; bottom: 8px; height: 14px; }
+.me-rtap {
+  position: absolute; width: 10px; height: 10px; margin-left: -5px;
+  border-radius: 50%; background: var(--teal); border: 2px solid var(--ink);
+}
+
+.me-count { min-height: 34px; font-size: 28px; text-align: center; color: var(--coral); }
+
+.me-pad-wrap { display: flex; justify-content: center; }
+.me-pad {
+  width: 190px; height: 190px; border-radius: 50%;
+  border: 3px solid var(--ink); background: var(--teal); color: #fff;
+  font-size: 30px; letter-spacing: 2px; cursor: pointer;
+  box-shadow: 0 5px 0 var(--ink);
+  -webkit-user-select: none; user-select: none; touch-action: manipulation;
+}
+.me-pad:disabled { opacity: .45; }
+.me-pad.hit { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); background: var(--coral); }
+.me-pad.pulse { background: var(--yellow); color: var(--ink); }
+
+/* ---------- 최종 ---------- */
+.me-profile-title { font-size: 26px; text-align: center; margin: 4px 0; }
+.me-final-line { margin: 0; text-align: center; font-size: 14px; }
+.me-grid {
+  font-family: inherit; font-size: 18px; line-height: 1.5; text-align: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 10px; margin: 0; white-space: pre-wrap;
+}
+.me-gold { margin: 0; text-align: center; font-size: 16px; font-weight: 700; color: #a06b00; }
+.me-share-status { min-height: 16px; margin: 0; text-align: center; font-size: 13px; color: var(--teal); }
+
+@media (max-width: 380px) {
+  .me-keyboard { height: 150px; }
+  .me-pad { width: 160px; height: 160px; }
+  .me-slot { width: 40px; height: 38px; font-size: 12px; }
+}
