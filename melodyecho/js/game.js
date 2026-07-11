@@ -191,6 +191,9 @@
 
   function onMelodyInput(midi) {
     if (S.inputs.length >= S.answer.notes.length) return;
+    // 선입력된 첫 음을 다시 쳐보는 건 오답이 아니다(앵커 확인용) — 입력으로 넣지 않는다.
+    // 단, 정답 2번째 음이 첫 음과 같은 멜로디면 그대로 정상 입력으로 받는다.
+    if (S.inputs.length === 1 && midi === S.answer.notes[0] && S.answer.notes[1] !== S.answer.notes[0]) return;
     S.inputs.push(midi);
     renderSlots();
     if (S.inputs.length === S.answer.notes.length) {
