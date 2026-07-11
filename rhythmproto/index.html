@@ -32,6 +32,8 @@
   #combo { position:absolute; top:28%; left:0; right:0; text-align:center;
     font-size:20px; font-weight:700; color:#ffd75f; z-index:5; pointer-events:none;
     text-shadow:0 1px 6px #000; }
+  #combo.pop { animation:cpop .18s ease-out; }
+  @keyframes cpop { 0%{transform:scale(1.45)} 100%{transform:scale(1)} }
   .stat { font-size:15px; line-height:2; }
   .stat b { color:#5fd4ff; }
 </style>
@@ -46,13 +48,13 @@
   <div class="overlay" id="intro">
     <h1>🎵 Rhythm Proto</h1>
     <div class="sub">AI 생성곡(HeartMuLa 3B) + 자동 채보 파이프라인 검증용 프로토타입<br>
-      곡: 애니송 오프닝풍 · 119초 · 채보 자동생성(온셋 분석)</div>
+      곡: 애니송 오프닝풍 · 119초 · 채보 자동생성(온셋+지속음 분석)</div>
     <div class="btns">
       <button data-lv="easy">EASY</button>
       <button data-lv="normal" class="primary">NORMAL</button>
       <button data-lv="hard">HARD</button>
     </div>
-    <div class="sub">레인을 탭 (PC: D F J K)</div>
+    <div class="sub">레인을 탭 (PC: D F J K) · 긴 노트는 꾹 눌러서 유지</div>
   </div>
 
   <div class="overlay hidden" id="result">
@@ -74,7 +76,16 @@ let chart=null, notes=[], audio=null, playing=false;
 let score=0, combo=0, maxCombo=0, counts={perfect:0,good:0,miss:0};
 let cv=document.getElementById('cv'), ctx=cv.getContext('2d');
 let W=0,H=0,hitY=0;
-let flashes=[]; // 레인 탭 이펙트
+let flashes=[];          // 레인 탭 이펙트
+let particles=[];        // 타격 파티클
+let rings=[];            // 타격 링
+let lineGlow=0;          // 판정선 펄스
+const laneHeld=[0,0,0,0];       // 레인별 눌림 카운트 (멀티터치)
+const pointerLane=new Map();    // pointerId → lane
+
+// 배경: chart.bgs가 있으면 로드해서 크로스페이드, 없으면 다크 배경 유지
+let bgImgs=[], bgIdx=0, bgFade=0, bgLast=0;
+const BG_SWITCH=25; // 초
 
 function resize(){
   const r=cv.parentElement.getBoundingClientRect();
@@ -83,7 +94,13 @@ function resize(){
 }
 window.addEventListener('resize',resize); resize();
 
-fetch('chart-03.json?v=1').then(r=>r.json()).then(c=>{ chart=c; });
+fetch('chart-03.json?v=2').then(r=>r.json()).then(c=>{
+  chart=c;
+  if(Array.isArray(c.bgs)) c.bgs.forEach(src=>{
+    const im=new Image(); im.src=src+'?v=1';
+    im.onload=()=>bgImgs.push(im);
+  });
+});
 
 document.querySelectorAll('#intro button').forEach(b=>{
   b.onclick=()=>start(b.dataset.lv);
@@ -92,7 +109,9 @@ document.querySelectorAll('#intro button').forEach(b=>{
 function start(lv){
   if(!chart) return;
   const cut=chart.levels[lv];
-  notes=chart.notes.filter(n=>n.s>=cut).map(n=>({t:n.t+0.5, lane:n.lane, hit:false, missed:false}));
+  notes=chart.notes.filter(n=>n.s>=cut).map(n=>({
+    t:n.t+0.5, lane:n.lane, d:n.d||0,
+    hit:false, missed:false, holding:false, holdDone:false, holdBroke:false}));
   audio=new Audio(chart.audio+'?v=1');
   audio.play().then(()=>{
     document.getElementById('intro').classList.add('hidden');
@@ -103,6 +122,20 @@ function start(lv){
 }
 
 function now(){ return audio? audio.currentTime : 0; }
+
+function laneX(lane){ return (lane+0.5)*(W/LANES); }
+
+function burst(lane, y, color, big){
+  const x=laneX(lane);
+  const n=big?16:9;
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, sp=(1.5+Math.random()*3.5)*(big?1.4:1)*devicePixelRatio;
+    particles.push({x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-1.2*devicePixelRatio,
+      life:1, decay:0.03+Math.random()*0.03, r:(2+Math.random()*2.5)*devicePixelRatio, color});
+  }
+  rings.push({x, y, r:8*devicePixelRatio, life:1, color, big});
+  lineGlow=1;
+}
 
 function judge(lane){
   if(!playing) return;
@@ -117,17 +150,39 @@ function judge(lane){
   }
   if(!best) return;
   best.hit=true;
-  if(bd<=PERFECT){ counts.perfect++; score+=100; combo++; showJudge('PERFECT','#5fd4ff'); }
+  const perfect=bd<=PERFECT;
+  if(perfect){ counts.perfect++; score+=100; combo++; showJudge('PERFECT','#5fd4ff'); }
   else { counts.good++; score+=60; combo++; showJudge('GOOD','#ffd75f'); }
+  burst(lane, hitY, perfect?'#aef3ff':LANE_COLORS[lane], perfect);
+  if(best.d>0) best.holding=true;
   maxCombo=Math.max(maxCombo,combo);
   updateHud();
+}
+
+function release(lane){
+  if(!playing) return;
+  const t=now();
+  for(const n of notes){
+    if(n.holding && !n.holdDone && n.lane===lane){
+      if(n.t+n.d-t > 0.18){ // 너무 일찍 뗌 → 홀드 실패
+        n.holding=false; n.holdBroke=true; combo=0;
+        showJudge('BREAK','#ff9f5f'); updateHud();
+      } else {
+        n.holding=false; n.holdDone=true; score+=50;
+        burst(lane, hitY, LANE_COLORS[lane], false);
+        updateHud();
+      }
+    }
+  }
 }
 
 function showJudge(txt,color){
   const j=document.getElementById('judge');
   j.textContent=txt; j.style.color=color; j.style.opacity=1;
   clearTimeout(j._t); j._t=setTimeout(()=>j.style.opacity=0,220);
-  document.getElementById('combo').textContent=combo>=5? combo+' COMBO':'';
+  const c=document.getElementById('combo');
+  c.textContent=combo>=5? combo+' COMBO':'';
+  c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop');
 }
 
 function updateHud(){
@@ -137,12 +192,30 @@ function updateHud(){
     Math.round((counts.perfect+counts.good*0.6)/total*100)+'%';
 }
 
+function drawBg(t){
+  if(!bgImgs.length){ return; }
+  if(t-bgLast>BG_SWITCH && bgImgs.length>1){ bgLast=t; bgIdx=(bgIdx+1)%bgImgs.length; bgFade=1; }
+  if(bgFade>0) bgFade=Math.max(0,bgFade-0.02);
+  const draw=(im,alpha)=>{
+    if(!im) return;
+    const s=Math.max(W/im.width,H/im.height);
+    ctx.globalAlpha=alpha;
+    ctx.drawImage(im,(W-im.width*s)/2,(H-im.height*s)/2,im.width*s,im.height*s);
+    ctx.globalAlpha=1;
+  };
+  draw(bgImgs[bgIdx],1);
+  if(bgFade>0) draw(bgImgs[(bgIdx+bgImgs.length-1)%bgImgs.length],bgFade);
+  ctx.fillStyle='rgba(8,8,22,.62)'; // 노트 가독성용 다크 오버레이
+  ctx.fillRect(0,0,W,H);
+}
+
 function loop(){
   if(!playing) return;
   const t=now();
   ctx.clearRect(0,0,W,H);
+  drawBg(t);
   const lw=W/LANES;
-  // 레인 & 판정선
+  // 레인
   for(let i=0;i<LANES;i++){
     ctx.fillStyle=i%2? 'rgba(255,255,255,.03)':'rgba(255,255,255,.015)';
     ctx.fillRect(i*lw,0,lw,H);
@@ -155,9 +228,14 @@ function loop(){
     ctx.fillStyle=LANE_COLORS[f.lane]+Math.floor(a*40).toString(16).padStart(2,'0');
     ctx.fillRect(f.lane*lw,0,lw,H);
   }
-  ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=3*devicePixelRatio;
+  // 판정선 (타격 시 펄스)
+  lineGlow=Math.max(0,lineGlow-0.06);
+  ctx.strokeStyle=`rgba(255,255,255,${0.5+lineGlow*0.5})`;
+  ctx.lineWidth=(3+lineGlow*4)*devicePixelRatio;
+  if(lineGlow>0){ ctx.shadowColor='#fff'; ctx.shadowBlur=lineGlow*18*devicePixelRatio; }
   ctx.beginPath(); ctx.moveTo(0,hitY); ctx.lineTo(W,hitY); ctx.stroke();
-  // 비트 가이드라인 (얇게)
+  ctx.shadowBlur=0;
+  // 비트 가이드라인
   ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1*devicePixelRatio;
   for(const b of chart.beats){
     const bt=b+0.5;
@@ -167,19 +245,67 @@ function loop(){
   }
   // 노트
   const nh=14*devicePixelRatio;
+  const yOf=tt=>hitY*(1-(tt-t)/APPROACH);
   for(const n of notes){
-    if(n.hit) continue;
-    if(!n.missed && n.t-t < -GOOD){
+    // 홀드 완주 체크 (누른 채 끝까지)
+    if(n.holding && !n.holdDone && t>=n.t+n.d){
+      if(laneHeld[n.lane]>0){
+        n.holding=false; n.holdDone=true; score+=50;
+        burst(n.lane, hitY, LANE_COLORS[n.lane], false); updateHud();
+      } else { n.holding=false; n.holdBroke=true; combo=0; updateHud(); }
+    }
+    if(n.hit && (!n.d || n.holdDone || n.holdBroke) && !n.holding) continue;
+    if(!n.hit && !n.missed && n.t-t < -GOOD){
       n.missed=true; counts.miss++; combo=0;
       showJudge('MISS','#ff5f5f'); updateHud();
     }
-    if(n.t<t-0.3||n.t>t+APPROACH) continue;
-    const y=hitY*(1-(n.t-t)/APPROACH);
-    ctx.fillStyle=n.missed? 'rgba(255,95,95,.3)':LANE_COLORS[n.lane];
-    ctx.beginPath();
-    ctx.roundRect(n.lane*lw+lw*0.08, y-nh/2, lw*0.84, nh, 7*devicePixelRatio);
-    ctx.fill();
+    const tail=n.t+(n.d||0);
+    if(tail<t-0.3||n.t>t+APPROACH) continue;
+    const col=LANE_COLORS[n.lane];
+    // 홀드 몸통
+    if(n.d>0){
+      const hy=n.holding? hitY : yOf(n.t);
+      const ty=Math.max(0,yOf(tail));
+      ctx.fillStyle=n.holdBroke? 'rgba(255,95,95,.15)'
+        : n.holding? col+'88' : col+'44';
+      const bw=lw*0.5;
+      ctx.beginPath();
+      ctx.roundRect(n.lane*lw+(lw-bw)/2, ty, bw, Math.max(0,hy-ty), 8*devicePixelRatio);
+      ctx.fill();
+      if(n.holding){ // 유지 중 글로우 + 파티클
+        ctx.shadowColor=col; ctx.shadowBlur=14*devicePixelRatio;
+        ctx.fill(); ctx.shadowBlur=0;
+        if(Math.random()<0.35) particles.push({x:laneX(n.lane)+(Math.random()-.5)*bw, y:hitY,
+          vx:(Math.random()-.5)*devicePixelRatio, vy:-(1+Math.random()*2)*devicePixelRatio,
+          life:0.8, decay:0.04, r:2*devicePixelRatio, color:col});
+      }
+    }
+    // 헤드
+    if(!n.hit || n.holding){
+      const y=n.holding? hitY : yOf(n.t);
+      ctx.fillStyle=n.missed? 'rgba(255,95,95,.3)':col;
+      ctx.beginPath();
+      ctx.roundRect(n.lane*lw+lw*0.08, y-nh/2, lw*0.84, nh, 7*devicePixelRatio);
+      ctx.fill();
+    }
   }
+  // 파티클 & 링
+  particles=particles.filter(p=>p.life>0);
+  for(const p of particles){
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.15*devicePixelRatio; p.life-=p.decay;
+    ctx.globalAlpha=Math.max(0,p.life);
+    ctx.fillStyle=p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  rings=rings.filter(r=>r.life>0);
+  for(const r of rings){
+    r.r+=(r.big?4:2.6)*devicePixelRatio; r.life-=0.07;
+    ctx.globalAlpha=Math.max(0,r.life)*0.8;
+    ctx.strokeStyle=r.color; ctx.lineWidth=(r.big?4:2.5)*devicePixelRatio*r.life;
+    ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.stroke();
+  }
+  ctx.globalAlpha=1;
   requestAnimationFrame(loop);
 }
 
@@ -194,15 +320,29 @@ function finish(){
   document.getElementById('result').classList.remove('hidden');
 }
 
-// 입력
+// 입력 (홀드 지원: down=judge, up=release)
 window.addEventListener('keydown',e=>{
   if(e.repeat) return;
-  if(e.code in KEYS) judge(KEYS[e.code]);
+  if(e.code in KEYS){ laneHeld[KEYS[e.code]]++; judge(KEYS[e.code]); }
+});
+window.addEventListener('keyup',e=>{
+  if(e.code in KEYS){ const l=KEYS[e.code]; laneHeld[l]=Math.max(0,laneHeld[l]-1); release(l); }
 });
 cv.addEventListener('pointerdown',e=>{
   const r=cv.getBoundingClientRect();
-  judge(Math.min(LANES-1, Math.floor((e.clientX-r.left)/r.width*LANES)));
+  const lane=Math.min(LANES-1, Math.floor((e.clientX-r.left)/r.width*LANES));
+  pointerLane.set(e.pointerId,lane); laneHeld[lane]++;
+  judge(lane);
 });
+function pointerEnd(e){
+  const lane=pointerLane.get(e.pointerId);
+  if(lane===undefined) return;
+  pointerLane.delete(e.pointerId);
+  laneHeld[lane]=Math.max(0,laneHeld[lane]-1);
+  release(lane);
+}
+cv.addEventListener('pointerup',pointerEnd);
+cv.addEventListener('pointercancel',pointerEnd);
 </script>
 </body>
 </html>
