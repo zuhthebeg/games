@@ -182,6 +182,66 @@
       shareText: '🎹 メロディーエコー — 耳プロフィール\n{title}\nメロディーLv {mlv} · リズムLv {rlv} · 合計 {score}\n上位{pct}%\n{grid}\nhttps://game.cocy.io/melodyecho/',
       practiceNote: '自由練習 — 記録・ゴールド・ランキング対象外',
       loading: '準備中…'
+    },
+    tw: {
+      title: '旋律回聲',
+      sub: '聽、彈回來，診斷你的聽力等級 — 音感系列第2彈',
+      statBestMelody: '旋律最高Lv',
+      statBestRhythm: '節奏最高Lv',
+      statStreak: '連續出席',
+      startDaily: '開始今日診斷',
+      startPractice: '自由練習（不留紀錄）',
+      doneToday: '今日診斷已完成！自由練習不限次數。',
+      viewResult: '查看今日結果',
+      introHow: '🎹 旋律8回合 + 🥁 節奏6回合。答對升級、答錯降級。最終等級就是你的聽力等級！',
+      seriesLink: '🎵 也試試第1彈 <a href="/wrongnote/">找錯音</a>',
+      phaseMelody: '旋律回聲',
+      phaseRhythm: '節奏回聲',
+      roundPill: '回合 {n} / {total}',
+      levelPill: 'Lv {n}',
+      listenFirst: '仔細聽…',
+      yourTurn: '換你了！第一個音已填好。',
+      replayBtn: '🔁 再聽一次（剩{n}次）',
+      undoBtn: '⌫ 刪除',
+      listenRhythm: '仔細聽節奏模式…',
+      tapTurn: '數拍結束後，點擊圓墊重現節奏！',
+      tapPad: 'TAP',
+      countIn: '準備… {n}',
+      calibTitle: '🎧 裝置校正（僅首次）',
+      calibDesc: '每台裝置的聲音與觸控延遲都不同。跟著8次喀噠聲點擊，判定會更準確。',
+      calibStart: '開始校正',
+      calibTapAlong: '跟著喀噠聲點擊！',
+      calibDone: '校正完成: {ms}ms — 已套用到判定',
+      calibRedo: '🎧 重新校正',
+      calibSkip: '跳過（不校正）',
+      calibFail: '點擊次數不足。再試一次？',
+      resultPerfect: '完美！🎉',
+      resultGood: '成功！',
+      resultFail: '好可惜…',
+      melodyYou: '你的輸入',
+      melodyAnswer: '正解',
+      rhythmHits: '完美 {p} · 不錯 {g} · 失誤 {m} · 多餘 {e}',
+      nextRound: '下一回合 ▶',
+      toRhythm: '進入節奏階段 ▶',
+      toFinal: '看結果 ▶',
+      finalTitle: '聽力檔案',
+      melodyLv: '旋律Lv',
+      rhythmLv: '節奏Lv',
+      totalScore: '總分 {n}分',
+      percentileLine: '前{n}%的耳朵（趣味推估）',
+      goldLine: '🪙 獲得 +{n} 金幣！',
+      streakLine: '連續出席 {n}天',
+      titleMaestro: '🏆 大師之耳',
+      titleGolden: '✨ 黃金之耳',
+      titleTuned: '🎯 調律之耳',
+      titleGrowing: '🌿 成長之耳',
+      titleSprout: '🌱 新芽之耳',
+      share: '分享結果',
+      home: '回首頁',
+      copied: '已複製到剪貼簿！',
+      shareText: '🎹 旋律回聲 — 我的聽力檔案\n{title}\n旋律 Lv {mlv} · 節奏 Lv {rlv} · 總分 {score}\n前{pct}%\n{grid}\nhttps://game.cocy.io/melodyecho/',
+      practiceNote: '自由練習 — 不計紀錄・金幣・排行榜',
+      loading: '準備中…'
     }
   };
 
@@ -196,6 +256,7 @@
     var nav = (navigator.language || 'ko').toLowerCase();
     if (nav.indexOf('ja') === 0) return 'ja';
     if (nav.indexOf('ko') === 0) return 'ko';
+    if (nav.indexOf('zh') === 0) return 'tw';
     return 'en';
   }
 
@@ -208,11 +269,11 @@
     if (!DICTS[l]) return;
     current = l;
     try { localStorage.setItem(KEY, l); } catch (e) {}
-    document.documentElement.lang = l;
+    document.documentElement.lang = l === 'tw' ? 'zh-TW' : l;
   }
 
   function cycle() {
-    var order = ['ko', 'en', 'ja'];
+    var order = ['ko', 'en', 'ja', 'tw'];
     setLang(order[(order.indexOf(lang()) + 1) % order.length]);
   }
 

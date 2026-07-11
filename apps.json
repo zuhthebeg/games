@@ -3,7 +3,7 @@
 "title": "멜로디 에코",
 "icon": "https://game.cocy.io/melodyecho/icon.svg",
 "url": "https://game.cocy.io/melodyecho/",
-"desc": "듣고 건반으로 따라 치고, 리듬을 탭으로 재현! 적응형 청음 레벨 진단. 한국어/English/日本語",
+"desc": "듣고 건반으로 따라 치고, 리듬을 탭으로 재현! 적응형 청음 레벨 진단. 한국어/English/日本語/繁體中文",
 "badge": "NEW",
 "platforms": [
 "WEB"
@@ -11,7 +11,8 @@
 "languages": [
 "ko",
 "en",
-"ja"
+"ja",
+"zh-TW"
 ],
 "category": "puzzle"
 },
