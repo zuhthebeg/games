@@ -23,6 +23,8 @@
     background:#22224a; color:#eee; cursor:pointer; font-weight:700; }
   button.primary { background:linear-gradient(90deg,#ff5fa2,#7f7fff); }
   button:active { transform:scale(.96); }
+  #songs button { padding:10px 14px; font-size:14px; line-height:1.3; }
+  #songs button small { display:block; font-weight:400; font-size:11px; color:#aab; }
   #hud { position:absolute; top:0; left:0; right:0; display:flex;
     justify-content:space-between; padding:10px 14px; font-weight:700;
     font-size:14px; z-index:5; pointer-events:none; text-shadow:0 1px 4px #000; }
@@ -47,14 +49,18 @@
 
   <div class="overlay" id="intro">
     <h1>🎵 Rhythm Proto</h1>
-    <div class="sub">AI 생성곡(HeartMuLa 3B) + 자동 채보 파이프라인 검증용 프로토타입<br>
-      곡: 애니송 오프닝풍 · 119초 · 채보 자동생성(온셋+지속음 분석)</div>
+    <div class="sub">AI 생성곡(HeartMuLa 3B) + 자동 채보 파이프라인 검증용 프로토타입</div>
+    <div class="btns" id="songs">
+      <button data-song="01">🔥 We Ignite<br><small>댄스팝 118bpm</small></button>
+      <button data-song="02">🌃 Go Harder<br><small>힙합·트랩 112bpm</small></button>
+      <button data-song="03">☀️ 날아올라 Higher<br><small>애니송 108bpm</small></button>
+    </div>
     <div class="btns">
       <button data-lv="easy">EASY</button>
       <button data-lv="normal" class="primary">NORMAL</button>
       <button data-lv="hard">HARD</button>
     </div>
-    <div class="sub">레인을 탭 (PC: D F J K) · 긴 노트는 꾹 눌러서 유지</div>
+    <div class="sub">곡 고르고 난이도 탭 · 레인을 탭 (PC: D F J K) · 긴 노트는 꾹 눌러서 유지</div>
   </div>
 
   <div class="overlay hidden" id="result">
@@ -94,15 +100,32 @@ function resize(){
 }
 window.addEventListener('resize',resize); resize();
 
-fetch('chart-03.json?v=2').then(r=>r.json()).then(c=>{
-  chart=c;
+let curSong='01';
+const chartCache={};
+function loadSong(id){
+  curSong=id;
+  document.querySelectorAll('#songs button').forEach(b=>
+    b.classList.toggle('primary', b.dataset.song===id));
+  chart=chartCache[id]||null;
+  if(chart){ loadBgs(chart); return; }
+  fetch(`chart-${id}.json?v=3`).then(r=>r.json()).then(c=>{
+    chartCache[id]=c;
+    if(curSong===id){ chart=c; loadBgs(c); }
+  });
+}
+function loadBgs(c){
+  bgImgs=[]; bgIdx=0; bgFade=0; bgLast=0;
   if(Array.isArray(c.bgs)) c.bgs.forEach(src=>{
     const im=new Image(); im.src=src+'?v=1';
     im.onload=()=>bgImgs.push(im);
   });
+}
+document.querySelectorAll('#songs button').forEach(b=>{
+  b.onclick=()=>loadSong(b.dataset.song);
 });
+loadSong('01');
 
-document.querySelectorAll('#intro button').forEach(b=>{
+document.querySelectorAll('#intro button[data-lv]').forEach(b=>{
   b.onclick=()=>start(b.dataset.lv);
 });
 
@@ -295,7 +318,7 @@ function loop(){
     p.x+=p.vx; p.y+=p.vy; p.vy+=0.15*devicePixelRatio; p.life-=p.decay;
     ctx.globalAlpha=Math.max(0,p.life);
     ctx.fillStyle=p.color;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(0.01,p.r*p.life),0,Math.PI*2); ctx.fill();
   }
   ctx.globalAlpha=1;
   rings=rings.filter(r=>r.life>0);
