@@ -126,10 +126,11 @@
 
     renderSlots();
 
-    var includeBlack = S.answer.notes.some(function (m) { return ME.gen.isBlackKey(m); }) || S.level >= 7;
+    // 검은건반은 항상 렌더 — 안 그리면 저레벨(다이어토닉) 건반이 흰 박스 나열로만 보인다.
+    // 다이어토닉 멜로디에서 검은건반 탭 = 그냥 오답 입력 (실제 피아노와 동일).
     S.kb = ME.keyboard.render(qs('me-kb'), {
       notes: S.answer.notes,
-      includeBlack: includeBlack,
+      includeBlack: true,
       disabled: true,
       onInput: onMelodyInput
     });
