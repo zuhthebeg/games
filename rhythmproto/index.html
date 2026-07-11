@@ -68,7 +68,8 @@
     <h1 id="rGrade">A</h1>
     <div class="stat" id="rStats"></div>
     <div class="btns">
-      <button class="primary" onclick="location.reload()">다시하기</button>
+      <button class="primary" id="btnRetry">🔄 다시하기</button>
+      <button id="btnLobby">🏠 로비로</button>
     </div>
   </div>
 </div>
@@ -135,8 +136,17 @@ document.querySelectorAll('#intro button[data-lv]').forEach(b=>{
   b.onclick=()=>start(b.dataset.lv);
 });
 
+let lastLv='normal';
 function start(lv){
   if(!chart) return;
+  lastLv=lv;
+  // 라운드 상태 리셋 (로비/다시하기 재진입 대응)
+  if(audio){ audio.onended=null; audio.pause(); }
+  score=0; combo=0; maxCombo=0; counts={perfect:0,good:0,miss:0};
+  particles=[]; rings=[]; flashes=[]; lineGlow=0;
+  document.getElementById('score').textContent='0';
+  document.getElementById('acc').textContent='';
+  document.getElementById('combo').textContent='';
   const expert=lv==='expert';
   LANES=expert?6:4; APPROACH=expert?1.45:1.8; KEYS=KEYMAPS[LANES];
   laneHeld=new Array(LANES).fill(0);
@@ -392,6 +402,16 @@ function pointerEnd(e){
 }
 cv.addEventListener('pointerup',pointerEnd);
 cv.addEventListener('pointercancel',pointerEnd);
+
+// 결과 화면 → 다시하기 / 로비
+document.getElementById('btnRetry').onclick=()=>{
+  document.getElementById('result').classList.add('hidden');
+  start(lastLv);
+};
+document.getElementById('btnLobby').onclick=()=>{
+  document.getElementById('result').classList.add('hidden');
+  document.getElementById('intro').classList.remove('hidden');
+};
 </script>
 </body>
 </html>
