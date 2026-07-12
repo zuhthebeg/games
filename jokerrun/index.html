@@ -2923,6 +2923,67 @@
   #jrLegendFx .lgd-slash { position:absolute; width:min(60vw,300px); height:min(60vw,300px); opacity:0; }
   #jrLegendFx .lgd-spark { position:absolute; width:7px; height:7px; border-radius:50%;
     background:radial-gradient(circle,#fff,#ffb84d); }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     전투 레이아웃 스킨: 무대(Stage) — 설정에서 선택 시에만 body.layout-stage.
+     클래식 규칙은 절대 수정하지 않고, 전부 .layout-stage 하위 셀렉터로만 추가한다.
+     ══════════════════════════════════════════════════════════════════════ */
+
+  /* 손패: 한 줄 오버랩 팬. gap은 0으로 눌러 negative margin(--card-overlap)만으로 간격 제어. */
+  .layout-stage .cards-wrap { flex-wrap: nowrap; gap: 0; padding-top: 30px; }
+  .layout-stage .cards-wrap .card:not(:first-child) { margin-left: calc(-1 * var(--card-overlap, 0px)); }
+
+  /* 선택 카드 22px 상승 — 글로우/테두리는 기존 .card.selected 재활용, float 폭만 확대 */
+  @keyframes selectedFloatStage {
+    0%   { transform: translateY(-20px); }
+    50%  { transform: translateY(-24px); }
+    100% { transform: translateY(-20px); }
+  }
+  .layout-stage .card.selected { animation: selectedFloatStage 2s ease-in-out infinite !important; }
+
+  /* 보스 무대: 중앙 확대. enemy-panel을 포지셔닝 컨텍스트로 삼아 보스아트/이름/HP바를 오버레이 배치 */
+  .layout-stage .enemy-panel {
+    position: relative;
+    min-height: 250px;
+    padding: 6px 8px 10px;
+    overflow: hidden;
+    border-radius: 16px !important;
+    border: 1px solid rgba(255,79,110,.38) !important;
+    background:
+      radial-gradient(90% 70% at 50% 40%, rgba(124,54,190,.28), transparent 70%),
+      radial-gradient(120% 90% at 50% 108%, rgba(255,65,108,.22), transparent 55%),
+      linear-gradient(110deg, rgba(40,8,16,.6), rgba(18,14,30,.72)) !important;
+    box-shadow: 0 0 18px rgba(255,65,108,.22), inset 0 0 0 1px rgba(255,255,255,.04);
+  }
+  .layout-stage .boss-banner {
+    position: static; display: block !important;
+    background: none !important; border: none !important; box-shadow: none !important; padding: 0 !important;
+  }
+  .layout-stage .boss-banner[hidden] { display: none !important; }
+  .layout-stage .boss-info {
+    position: absolute; top: 6px; left: 10px; right: 10px; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
+  }
+  .layout-stage .boss-art {
+    position: absolute; left: 0; right: 0; margin: 0 auto; bottom: 12px; z-index: 1;
+    width: auto; max-width: 175px; height: 200px; max-height: 256px;
+    object-fit: contain; border-radius: 11px;
+    border: 1px solid rgba(255,207,109,.4);
+    box-shadow: 0 14px 30px rgba(0,0,0,.66), 0 0 30px rgba(160,60,255,.32);
+  }
+  .layout-stage .enemy-hp { position: absolute; top: 84px; left: 12px; right: 12px; margin: 0; z-index: 2; }
+
+  /* 소모품(타로/행성) 세로 레일 — 무대 좌측 오버레이. JS가 #consumableArea를 #enemyPanel 안으로 옮긴다.
+     #consumableArea로 한정 — .consumable-strip 클래스는 상점(#shopConsumableArea)도 쓰므로 클래스로 걸면 오염됨 */
+  .layout-stage #consumableArea {
+    position: absolute; left: 8px; top: 108px; z-index: 3;
+    flex-direction: column; padding-left: 0; border-left: none; max-width: 46px;
+  }
+  .layout-stage #consumableArea .planet-card-mini { width: 42px; height: 58px; }
+
+  /* HUD 한 줄 압축: 족보/공격력×연격/예상데미지 줄과 그 아래 손패 안내 줄 간격을 좁혀 손패 위에 붙인다 */
+  .layout-stage .score-inline { padding-bottom: 0; }
+  .layout-stage .hand-preview.show { padding-top: 2px; padding-bottom: 2px; }
 </style>
 <link rel="canonical" href="https://game.cocy.io/jokerrun/">
 <meta name="description" content="포커 로그라이크! 핸드 조합하고 조커로 점수 폭발">
@@ -3128,6 +3189,10 @@
         <div class="set-label" data-i18n="card_art">🃏 조커 아트</div>
         <div id="setArtRow" class="set-seg"></div>
         <div class="set-hint" data-i18n="card_art_hint">고양이(건전) / 클래식(기존) / 끄기(기호). 타로·행성 등 다른 아트는 항상 표시됩니다.</div>
+      </div>
+      <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div class="set-label" data-i18n="battle_layout">🃟 전투 레이아웃</div>
+        <div id="setLayoutRow" class="set-seg"></div>
       </div>
       <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
         <div class="set-label" data-i18n="speed">⏱️ 연출 속도</div>
@@ -4199,6 +4264,14 @@
       return "original";
     })();
     function setJokerArt(v){ JOKER_ART = v; try { localStorage.setItem("jokerrun_joker_art", v); } catch (_) {} }
+    // ── 전투 레이아웃 스킨: classic(기존) / stage(무대 오버랩 팬 + 보스 대형화). ──
+    function getBattleLayout(){ try { const v = localStorage.getItem("jokerrun_battle_layout"); return v === "stage" ? "stage" : "classic"; } catch (_) { return "classic"; } }
+    function setBattleLayout(v){
+      try { localStorage.setItem("jokerrun_battle_layout", v); } catch (_) {}
+      document.body.classList.toggle("layout-stage", v === "stage");
+      try { updateStageDom(); } catch (_) {}
+      try { updateStageHandFan(); } catch (_) {}
+    }
     // 아트 src 래퍼 = 조커 스킨 라우터. 조커 경로("jokers/")만 스킨에 맞게 변환:
     //   cat → jokers_cat/ , classic → jokers/ , off → 깨진 data URI(기존 onerror 글리프 폴백 발동).
     //   조커 외(타로/행성/페이스/보스)는 그대로 통과 → 항상 표시.
@@ -4693,6 +4766,7 @@
         bs_hint: "지름길로 가면 정비 없이 다음 전투로. 보스는 우회 불가.",
         skip_reward: "⏭️ 지름길 보상 획득",
         quit_to_menu: "🚪 게임 나가기", settings: "⚙️ 설정", sound: "🔊 사운드", card_art: "🃏 조커 아트", card_art_hint: "고양이(건전) / 클래식·오리지날 / 끄기(기호). 다른 카드 아트는 항상 표시.", art_cat: "🐱 고양이", art_classic: "🎴 클래식", art_original: "🃏 오리지날", art_off: "🔣 끄기", speed: "⏱️ 연출 속도",
+        battle_layout: "🃟 전투 레이아웃", layout_classic: "클래식", layout_stage: "무대",
         speed_hint: "데미지 연출이 너무 빨리 지나가면 느리게, 답답하면 빠르게 / 즉시.",
         language: "🌐 언어", close: "닫기", on: "켜짐", off: "꺼짐",
         cleared: "🎯 전투 승리!", my_dmg: "내 데미지", continue_run: "↩️ 이어하기 — 마지막 공격 다시",
@@ -4867,6 +4941,7 @@
         bs_hint: "Take the shortcut to skip straight to the next battle. Bosses can't be bypassed.",
         skip_reward: "⏭️ Shortcut reward",
         quit_to_menu: "🚪 Quit to Menu", settings: "⚙️ Settings", sound: "🔊 Sound", card_art: "🃏 Joker Art", card_art_hint: "Cat (wholesome) / Classic & Original / Off (symbols). Other card art always shows.", art_cat: "🐱 Cat", art_classic: "🎴 Classic", art_original: "🃏 Original", art_off: "🔣 Off", speed: "⏱️ Anim speed",
+        battle_layout: "🃟 Battle Layout", layout_classic: "Classic", layout_stage: "Stage",
         speed_hint: "If damage animation flies by, set it slower; if it drags, faster / instant.",
         language: "🌐 Language", close: "Close", on: "On", off: "Off",
         cleared: "🎯 Battle won!", my_dmg: "Your damage", continue_run: "↩️ Continue — retry last attack",
@@ -5041,6 +5116,7 @@
         bs_hint: "走捷徑可不整備直接進入下一場戰鬥。王關無法繞過。",
         skip_reward: "⏭️ 捷徑獎勵",
         quit_to_menu: "🚪 退出至主畫面", settings: "⚙️ 設定", sound: "🔊 音效", card_art: "🃏 小丑插畫", card_art_hint: "貓咪(健全) / 經典·原創 / 關閉(符號)。其他卡牌插畫一律顯示。", art_cat: "🐱 貓咪", art_classic: "🎴 經典", art_original: "🃏 原創", art_off: "🔣 關閉", speed: "⏱️ 演出速度",
+        battle_layout: "🃟 戰鬥版面", layout_classic: "經典", layout_stage: "舞台",
         speed_hint: "傷害演出太快就調慢，太拖就調快 / 立即。",
         language: "🌐 語言", close: "關閉", on: "開", off: "關",
         cleared: "🎯 戰鬥勝利！", my_dmg: "我的傷害", continue_run: "↩️ 繼續 — 重試最後一次攻擊",
@@ -5215,6 +5291,7 @@
         bs_hint: "近道なら整備なしで次の戦闘へ。ボスは回避不可。",
         skip_reward: "⏭️ 近道報酬",
         quit_to_menu: "🚪 メニューに戻る", settings: "⚙️ 設定", sound: "🔊 サウンド", card_art: "🃏 ジョーカーアート", card_art_hint: "猫(健全) / クラシック·オリジナル / オフ(記号)。他のカードアートは常に表示。", art_cat: "🐱 猫", art_classic: "🎴 クラシック", art_original: "🃏 オリジナル", art_off: "🔣 オフ", speed: "⏱️ 演出速度",
+        battle_layout: "🃟 バトルレイアウト", layout_classic: "クラシック", layout_stage: "ステージ",
         speed_hint: "ダメージ演出が速すぎれば遅く、もたつけば速く / 即時。",
         language: "🌐 言語", close: "閉じる", on: "オン", off: "オフ",
         cleared: "🎯 戦闘勝利！", my_dmg: "自分のダメージ", continue_run: "↩️ 続きから — 最後の攻撃をやり直す",
@@ -5763,6 +5840,29 @@
         cardsWrap.appendChild(d); // 순서 유지(기존 노드 재배치는 애니메이션 재생 안 함)
       });
       state.lastToggledCardId = null;
+      updateStageHandFan();
+    }
+    // 무대 레이아웃: 손패 장수 기반 오버랩 폭 계산(8장 기준 노출폭 ~40px, 최소 34px 보장)
+    function updateStageHandFan() {
+      if (!document.body.classList.contains("layout-stage")) return;
+      const cards = cardsWrap.querySelectorAll(".card");
+      const n = cards.length;
+      if (n < 2) { cardsWrap.style.setProperty("--card-overlap", "0px"); return; }
+      const wrapWidth = cardsWrap.clientWidth || 360;
+      const cardWidth = cards[0].getBoundingClientRect().width || 60;
+      const exposed = Math.max(34, Math.min(cardWidth, (wrapWidth - cardWidth) / (n - 1)));
+      cardsWrap.style.setProperty("--card-overlap", Math.max(0, cardWidth - exposed).toFixed(1) + "px");
+    }
+    // 무대 레이아웃: 소모품 세로 레일을 보스 무대(enemyPanel) 위로 옮기고, 클래식 복귀 시 원위치(top-strip)로 되돌린다
+    function updateStageDom() {
+      const stage = document.body.classList.contains("layout-stage");
+      const enemyPanel = $("#enemyPanel");
+      if (!enemyPanel) return;
+      if (stage) {
+        if (consumableArea.parentElement !== enemyPanel) enemyPanel.appendChild(consumableArea);
+      } else if (jokerArea.parentElement && consumableArea.parentElement !== jokerArea.parentElement) {
+        jokerArea.parentElement.appendChild(consumableArea);
+      }
     }
 
     // ── 데미지 연출 속도(설정) — 채점 중 wait()에만 곱해진다. 0이면 즉시(연출 스킵). ──
@@ -8520,11 +8620,31 @@
         row.appendChild(b);
       });
     }
+    const BATTLE_LAYOUT_OPTS = [{ v: "classic", key: "layout_classic" }, { v: "stage", key: "layout_stage" }];
+    function renderBattleLayoutSeg() {
+      const row = $("#setLayoutRow");
+      if (!row) return;
+      row.innerHTML = "";
+      const cur = getBattleLayout();
+      BATTLE_LAYOUT_OPTS.forEach(opt => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = t(opt.key);
+        if (cur === opt.v) b.classList.add("active");
+        b.addEventListener("click", () => {
+          setBattleLayout(opt.v);
+          renderBattleLayoutSeg();
+          try { AudioFX.play("select"); } catch (_) {}
+        });
+        row.appendChild(b);
+      });
+    }
     function openSettings() {
       BGM.syncBtn();
       renderJokerArtSeg();
       renderSpeedSeg();
       renderLangSeg();
+      renderBattleLayoutSeg();
       // 시작화면(메인)에서 연 설정엔 '게임 나가기'가 의미 없으므로 숨긴다(이미 메인).
       const onStart = $("#startScreen").classList.contains("show");
       const qb = $("#setQuitBtn"); if (qb) qb.style.display = onStart ? "none" : "";
@@ -8652,6 +8772,7 @@
       $("#dbgMoney").addEventListener("click", () => { state.money = (state.money || 0) + 50; renderHUD(); setInfo(t("dbg_add_money")); });
     }
     (async () => {
+      try { document.body.classList.toggle("layout-stage", getBattleLayout() === "stage"); updateStageDom(); } catch (_) {}
       try { applyStaticI18n(); } catch (_) {}   // 감지된 언어로 정적 UI 먼저 로컬라이즈
       try { snapshotKo(); localizeContent(); } catch (_) {}   // 콘텐츠(조커/주문서/무기강화 등) 언어 적용
       if ((typeof SharedWallet !== "undefined" && SharedWallet)) {
