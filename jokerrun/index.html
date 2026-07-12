@@ -2911,7 +2911,19 @@
       75%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
       100% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
     }
-  </style>
+  
+  /* ── 전설 조커 발동 연출 (클래식 스킨 전용) ── */
+  #jrLegendFx { position:fixed; inset:0; z-index:340; pointer-events:none; overflow:hidden; }
+  #jrLegendFx .lgd-char { position:absolute; width:min(46vw,240px); aspect-ratio:512/748;
+    transform-origin:50% 88%; will-change:transform,opacity; opacity:0;
+    filter:drop-shadow(0 8px 26px rgba(255,190,80,.45)); }
+  #jrLegendFx .lgd-char img { position:absolute; inset:0; width:100%; height:100%;
+    object-fit:contain; opacity:0; }
+  #jrLegendFx .lgd-char img.on { opacity:1; }
+  #jrLegendFx .lgd-slash { position:absolute; width:min(60vw,300px); height:min(60vw,300px); opacity:0; }
+  #jrLegendFx .lgd-spark { position:absolute; width:7px; height:7px; border-radius:50%;
+    background:radial-gradient(circle,#fff,#ffb84d); }
+</style>
 <link rel="canonical" href="https://game.cocy.io/jokerrun/">
 <meta name="description" content="포커 로그라이크! 핸드 조합하고 조커로 점수 폭발">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "VideoGame", "name": "조커런", "description": "포커 로그라이크! 핸드 조합하고 조커로 점수 폭발", "url": "https://game.cocy.io/jokerrun/", "inLanguage": ["ko", "en"], "author": {"@type": "Person", "name": "cocy", "url": "https://cocy.io"}, "publisher": {"@type": "Organization", "name": "cocy.io", "url": "https://cocy.io"}, "isAccessibleForFree": true, "image": "https://game.cocy.io/jokerrun/icon.svg?v=2", "gamePlatform": ["Web browser", "Mobile web"], "applicationCategory": "Game", "genre": "card", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "KRW"}}</script>
@@ -5375,6 +5387,99 @@
     const handResult = $("#handResult");
     const logEl = $("#log");
     const jokerArea = $("#jokerArea");
+
+    // ── 전설 조커 발동 연출: 카드에서 캐릭터가 튀어나와 적을 벤다 (클래식 스킨 전용) ──
+    const LEGEND_FX_IDS = new Set(["ascetic","bloodmoon","constellation","diviner","vampire","chaos",
+      "blueprint","brainstorm","baron","retriggerAll","solo","mystic","starfall","bossGuard",
+      "cull","twoPairMaster","lastStand","allIn"]);
+    let _legendFxPlayed = false;
+    const _legendImgCache = {};   // id → {idle,atk} HTMLImageElement | "missing"
+    function _legendLoad(jid) {
+      if (_legendImgCache[jid]) return _legendImgCache[jid];
+      const mk = (suffix) => { const im = new Image(); im.src = `jokers_fx/${jid}${suffix}.webp?v=1`; return im; };
+      const entry = { idle: mk(""), atk: mk("_atk") };
+      entry.idle.onerror = entry.atk.onerror = () => { _legendImgCache[jid] = "missing"; };
+      _legendImgCache[jid] = entry;
+      return entry;
+    }
+    function playLegendaryFx(joker, jel) {
+      if (JOKER_ART !== "classic") return;          // 클래식 스킨에서만
+      if (_legendFxPlayed) return;                  // 공격당 1회
+      if (SCORE_SPEED <= 0.26) return;              // 연출 스킵/최고속 모드면 생략
+      const assets = _legendLoad(joker.id);
+      if (assets === "missing" || !assets.idle.complete || !assets.idle.naturalWidth) {
+        if (assets !== "missing" && !assets.idle.complete) return; // 아직 로딩 중 → 이번엔 생략(캐시됨)
+        if (assets === "missing") return;
+      }
+      const target = document.querySelector("#bossBanner .boss-art") || $("#enemyPanel");
+      if (!jel || !target) return;
+      _legendFxPlayed = true;
+
+      let fx = $("#jrLegendFx");
+      if (!fx) { fx = document.createElement("div"); fx.id = "jrLegendFx"; document.body.appendChild(fx); }
+      fx.innerHTML = "";
+      const jr = jel.getBoundingClientRect(), tr = target.getBoundingClientRect();
+      const ch = document.createElement("div"); ch.className = "lgd-char";
+      const imIdle = document.createElement("img"); imIdle.src = assets.idle.src; imIdle.className = "on";
+      const imAtk = document.createElement("img"); imAtk.src = assets.atk.src;
+      ch.appendChild(imIdle); ch.appendChild(imAtk);
+      fx.appendChild(ch);
+      const cw = Math.min(window.innerWidth * 0.46, 240), chH = cw * 748 / 512;
+      const startX = jr.left + jr.width / 2 - cw / 2;
+      const startY = jr.top + jr.height / 2 - chH * 0.7;
+      const endX = tr.left + tr.width / 2 - cw / 2;
+      const endY = tr.top + tr.height / 2 - chH * 0.42;
+      ch.style.left = startX + "px"; ch.style.top = startY + "px";
+      ch.style.opacity = "1";
+      // 팝아웃 → 돌진 → 베기 → 소멸 (총 ~1.05s)
+      const pop = ch.animate([
+        { transform: "translate(0,60px) scale(.16)", opacity: 0 },
+        { transform: "translate(0,-14px) scale(1.08)", opacity: 1, offset: .72 },
+        { transform: "translate(0,0) scale(1)", opacity: 1 }
+      ], { duration: 300, easing: "cubic-bezier(.2,1.35,.4,1)", fill: "forwards" });
+      pop.onfinish = () => {
+        imIdle.classList.remove("on"); imAtk.classList.add("on");
+        const dx = endX - startX, dy = endY - startY;
+        ch.animate([
+          { transform: "translate(0,0) scale(1)" },
+          { transform: `translate(${dx}px,${dy}px) scale(1.04) rotate(2deg)` }
+        ], { duration: 190, easing: "cubic-bezier(.35,0,.25,1)", fill: "forwards" }).onfinish = () => {
+          // 슬래시 + 적 히트 플래시 + 셰이크
+          const sl = document.createElement("div"); sl.className = "lgd-slash";
+          sl.innerHTML = `<svg viewBox="0 0 100 100"><path d="M 10 76 Q 50 10 90 32" fill="none" stroke="url(#jrlg)" stroke-width="10" stroke-linecap="round"/><path d="M 16 82 Q 52 24 88 44" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".9"/><defs><linearGradient id="jrlg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ff5f2a" stop-opacity="0"/><stop offset=".45" stop-color="#ffb84d"/><stop offset="1" stop-color="#fff6d8"/></linearGradient></defs></svg>`;
+          const sw = Math.min(window.innerWidth * 0.6, 300);
+          sl.style.left = (tr.left + tr.width / 2 - sw / 2) + "px";
+          sl.style.top = (tr.top + tr.height / 2 - sw / 2) + "px";
+          fx.appendChild(sl);
+          sl.animate([
+            { opacity: 0, transform: "scale(.5) rotate(-22deg)" },
+            { opacity: 1, transform: "scale(1.05) rotate(0deg)", offset: .35 },
+            { opacity: 0, transform: "scale(1.22) rotate(9deg)" }
+          ], { duration: 300, easing: "ease-out" }).onfinish = () => sl.remove();
+          target.animate([
+            { filter: "brightness(1)" }, { filter: "brightness(2.6) saturate(1.4)" }, { filter: "brightness(1)" }
+          ], { duration: 240 });
+          try { JuiceFX.shake && JuiceFX.shake(); } catch (_) {}
+          for (let i = 0; i < 12; i++) {
+            const s = document.createElement("div"); s.className = "lgd-spark";
+            s.style.left = (tr.left + tr.width / 2) + "px"; s.style.top = (tr.top + tr.height / 2) + "px";
+            fx.appendChild(s);
+            const a = Math.random() * Math.PI * 2, d = 26 + Math.random() * 80;
+            s.animate([
+              { transform: "translate(0,0) scale(1)", opacity: 1 },
+              { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d}px) scale(.2)`, opacity: 0 }
+            ], { duration: 380 + Math.random() * 200, easing: "cubic-bezier(.1,.7,.3,1)" }).onfinish = () => s.remove();
+          }
+          // 소멸
+          setTimeout(() => {
+            ch.animate([
+              { opacity: 1, transform: `translate(${dx}px,${dy}px) scale(1.04)` },
+              { opacity: 0, transform: `translate(${dx}px,${dy + 40}px) scale(.5)` }
+            ], { duration: 260, easing: "ease-in", fill: "forwards" }).onfinish = () => ch.remove();
+          }, 200);
+        };
+      };
+    }
     const consumableArea = $("#consumableArea");
     const tablePanel = $("#tablePanel");
     const jokerPopup = $("#jokerPopup");
@@ -6424,6 +6529,8 @@
     }
 
     function renderJokers() {
+      // 전설 조커 발동 연출용 컷아웃 프리로드 (클래식 스킨)
+      try { (state.jokers || []).forEach(j => { if (LEGEND_FX_IDS.has(j.id) && JOKER_ART === "classic") _legendLoad(j.id); }); } catch (_) {}
       jokerArea.innerHTML = "";
       // 네가티브 조커는 슬롯을 차지하지 않으므로 기본 5칸 + 네가티브 수만큼 칸을 늘려 모두 보여준다.
       const slotCount = Math.max(JOKER_SLOTS + jokerNegativeCount(), state.jokers.length);
@@ -7167,6 +7274,7 @@
         activated: [],
         activate(id) { this.activated.push(id); }
       };
+      _legendFxPlayed = false;   // 전설 조커 발동 연출: 공격 1회당 1번만
       // 하트 봉인 보스: cardScoreChips가 하트 카드 공격력을 0으로 처리(별도 페널티 불필요).
       // ── 발라트로식 순차 데미지 연출 (별도 스테이지 팝업) ──
       const kickers = cards.length - scoreCards.length;
@@ -7306,6 +7414,7 @@
             flashJokerCard(joker, dm > 0.001 && (MULT_JOKERS.has(joker.id) || dm >= 1));
             const el = jokerArea.querySelector(`.joker[data-joker-id="${joker.id}"]`);
             if (el) { el.classList.remove("active"); void el.offsetWidth; el.classList.add("active"); setTimeout(() => el.classList.remove("active"), 600); }
+            if (LEGEND_FX_IDS.has(joker.id)) { try { playLegendaryFx(joker, el); } catch (_) {} }
             if (dc > 0.001) jrFloat(ps.readout, t("ui_float_atk", {n: Math.round(dc)}), "chip");
             if (dm > 0.001) jrFloat(ps.readout, MULT_JOKERS.has(joker.id) && mb > 0 ? `×${Math.round((ctx.mult / mb) * 100) / 100}` : t("ui_float_combo", {n: Math.round(dm * 100) / 100}), "mult");
             AudioFX.play("select");
