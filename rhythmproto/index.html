@@ -2,29 +2,58 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="robots" content="noindex">
-<title>Rhythm Proto — AI 생성곡 리듬게임 프로토타입</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Beat Drop — AI K-pop Rhythm Game</title>
+<meta name="description" content="AI가 만든 케이팝 20곡으로 즐기는 리듬게임. AI-generated K-pop rhythm game with 20 original tracks.">
+<script src="/lib/shared-wallet.js?v=20260705b2a"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root { --wallet-bar-h:56px; --top:calc(var(--wallet-bar-h) + env(safe-area-inset-top)); }
   html, body { height:100%; overflow:hidden; background:#0a0a1a; color:#eee;
     font-family:'Segoe UI', system-ui, sans-serif; touch-action:none; }
+  body { padding-top:var(--top); }
   #wrap { position:relative; height:100%; max-width:520px; margin:0 auto; }
   canvas { display:block; width:100%; height:100%; }
   .overlay { position:absolute; inset:0; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:18px; background:rgba(10,10,26,.92);
-    z-index:10; text-align:center; padding:24px; }
+    background:linear-gradient(180deg,#0d0d24 0%,#0a0a1a 55%,#11091f 100%);
+    z-index:10; padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+    overflow:hidden; }
   .overlay.hidden { display:none; }
-  h1 { font-size:26px; background:linear-gradient(90deg,#ff5fa2,#7f7fff,#5fd4ff);
+  h1 { font-size:26px; letter-spacing:1px;
+    background:linear-gradient(90deg,#ff5fa2,#7f7fff,#5fd4ff);
     -webkit-background-clip:text; background-clip:text; color:transparent; }
-  .sub { color:#8888aa; font-size:13px; line-height:1.6; }
-  .btns { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
-  button { padding:14px 26px; font-size:16px; border:none; border-radius:12px;
-    background:#22224a; color:#eee; cursor:pointer; font-weight:700; }
-  button.primary { background:linear-gradient(90deg,#ff5fa2,#7f7fff); }
-  button:active { transform:scale(.96); }
-  #songs button { padding:10px 14px; font-size:14px; line-height:1.3; }
-  button small { display:block; font-weight:400; font-size:11px; color:#aab; }
+  .sub { color:#8888aa; font-size:12.5px; line-height:1.5; }
+
+  /* ── 로비 ── */
+  #lobbyHead { display:flex; align-items:center; justify-content:space-between; padding:2px 2px 8px; }
+  #langBtn { background:#1a1a38; border:1px solid #2e2e5a; border-radius:20px;
+    color:#aab; font-size:13px; padding:7px 12px; cursor:pointer; font-weight:700; }
+  #diffs { display:flex; gap:6px; padding:10px 0 12px; }
+  #diffs button { flex:1; padding:10px 4px; font-size:13px; font-weight:800; border:none;
+    border-radius:10px; background:#191936; color:#9a9ac0; cursor:pointer; }
+  #diffs button small { display:block; font-weight:500; font-size:10px; opacity:.75; }
+  #diffs button.on { background:linear-gradient(90deg,#ff5fa2,#7f7fff); color:#fff; }
+  #songList { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    display:flex; flex-direction:column; gap:8px; padding:2px 2px 8px;
+    touch-action:pan-y; overscroll-behavior:contain; }
+  .song { display:flex; align-items:center; gap:12px; padding:11px 12px;
+    background:#14142e; border:1px solid #23234a; border-radius:14px; cursor:pointer;
+    transition:transform .08s; }
+  .song:active { transform:scale(.98); }
+  .song .emo { width:44px; height:44px; border-radius:11px; display:flex; align-items:center;
+    justify-content:center; font-size:23px; background:#1d1d40; flex-shrink:0; }
+  .song .info { flex:1; min-width:0; }
+  .song .name { font-weight:800; font-size:15px; white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis; }
+  .song .meta { font-size:11px; color:#7d7da5; margin-top:2px; }
+  .song .badge { flex-shrink:0; min-width:38px; text-align:center; font-weight:900;
+    font-size:16px; padding:5px 7px; border-radius:9px; background:#1d1d40; color:#5fd4ff; }
+  .song .badge.none { color:#44446a; font-weight:600; font-size:12px; }
+  .song.soon { opacity:.42; }
+  .song.soon .badge { font-size:10.5px; color:#8a8ab0; font-weight:700; }
+  .hint { color:#66668f; font-size:11px; text-align:center; padding-top:8px; line-height:1.5; }
+
+  /* ── 게임 HUD ── */
   #hud { position:absolute; top:0; left:0; right:0; display:flex;
     justify-content:space-between; padding:10px 14px; font-weight:700;
     font-size:14px; z-index:5; pointer-events:none; text-shadow:0 1px 4px #000; }
@@ -36,8 +65,20 @@
     text-shadow:0 1px 6px #000; }
   #combo.pop { animation:cpop .18s ease-out; }
   @keyframes cpop { 0%{transform:scale(1.45)} 100%{transform:scale(1)} }
+
+  /* ── 결과 ── */
+  #result { align-items:center; justify-content:center; gap:16px; text-align:center; }
+  #result h1 { font-size:44px; }
+  #rSong { color:#9a9ac0; font-size:14px; font-weight:700; }
+  #rNew { color:#ffd75f; font-weight:900; font-size:15px; }
+  #rGold { color:#ffd75f; font-size:14px; font-weight:700; }
   .stat { font-size:15px; line-height:2; }
   .stat b { color:#5fd4ff; }
+  .btns { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .btns button { padding:14px 26px; font-size:16px; border:none; border-radius:12px;
+    background:#22224a; color:#eee; cursor:pointer; font-weight:700; }
+  .btns button.primary { background:linear-gradient(90deg,#ff5fa2,#7f7fff); }
+  .btns button:active { transform:scale(.96); }
 </style>
 </head>
 <body>
@@ -47,34 +88,146 @@
   <div id="combo"></div>
   <div id="judge"></div>
 
-  <div class="overlay" id="intro">
-    <h1>🎵 Rhythm Proto</h1>
-    <div class="sub">AI 생성곡(HeartMuLa 3B) + 자동 채보 파이프라인 검증용 프로토타입</div>
-    <div class="btns" id="songs">
-      <button data-song="01">🔥 We Ignite<br><small>댄스팝 118bpm</small></button>
-      <button data-song="02">🌃 Go Harder<br><small>힙합·트랩 112bpm</small></button>
-      <button data-song="03">☀️ 날아올라 Higher<br><small>애니송 108bpm</small></button>
+  <div class="overlay" id="lobby">
+    <div id="lobbyHead">
+      <h1>BEAT DROP</h1>
+      <button id="langBtn">🌐 한국어</button>
     </div>
-    <div class="btns">
+    <div class="sub" data-i18n="tagline"></div>
+    <div id="diffs">
       <button data-lv="easy">EASY</button>
-      <button data-lv="normal" class="primary">NORMAL</button>
+      <button data-lv="normal" class="on">NORMAL</button>
       <button data-lv="hard">HARD</button>
-      <button data-lv="expert">EXPERT<br><small>6키</small></button>
+      <button data-lv="expert">EXPERT<small data-i18n="sixkeys"></small></button>
     </div>
-    <div class="sub">곡 고르고 난이도 탭 · 긴 노트는 꾹 눌러서 유지<br>PC 4키: D F J K · 6키: S D F J K L</div>
+    <div id="songList"></div>
+    <div class="hint"><span data-i18n="hint"></span><br>PC · 4K: D F J K / 6K: S D F J K L</div>
   </div>
 
   <div class="overlay hidden" id="result">
+    <div id="rSong"></div>
     <h1 id="rGrade">A</h1>
+    <div id="rNew"></div>
     <div class="stat" id="rStats"></div>
+    <div id="rGold"></div>
     <div class="btns">
-      <button class="primary" id="btnRetry">🔄 다시하기</button>
-      <button id="btnLobby">🏠 로비로</button>
+      <button class="primary" id="btnRetry" data-i18n="retry">🔄 다시하기</button>
+      <button id="btnLobby" data-i18n="lobby">🏠 로비로</button>
     </div>
   </div>
 </div>
 
 <script>
+/* ════ i18n ════ */
+const I18N = {
+  ko: { tagline:'AI가 만든 케이팝 20곡 리듬게임 — 곡을 탭하면 시작!',
+    sixkeys:'6키', hint:'긴 노트는 꾹 눌러서 유지 · 난이도를 고르고 곡을 탭',
+    retry:'🔄 다시하기', lobby:'🏠 로비로', soon:'준비중', newBest:'🏆 신기록!',
+    gold:'골드', langName:'한국어' },
+  en: { tagline:'AI-generated K-pop rhythm game, 20 tracks — tap a song to play!',
+    sixkeys:'6 keys', hint:'Hold long notes · pick a difficulty, tap a song',
+    retry:'🔄 Retry', lobby:'🏠 Lobby', soon:'Soon', newBest:'🏆 NEW BEST!',
+    gold:'Gold', langName:'English' },
+  'zh-TW': { tagline:'AI 打造的 K-POP 節奏遊戲，共 20 首 — 點擊歌曲開始！',
+    sixkeys:'6鍵', hint:'長按長音符 · 選擇難度後點擊歌曲',
+    retry:'🔄 再來一次', lobby:'🏠 返回大廳', soon:'即將推出', newBest:'🏆 新紀錄！',
+    gold:'金幣', langName:'繁體中文' },
+  ja: { tagline:'AIが作ったK-POPリズムゲーム全20曲 — 曲をタップしてスタート！',
+    sixkeys:'6キー', hint:'ロングノーツは長押し · 難易度を選んで曲をタップ',
+    retry:'🔄 もう一度', lobby:'🏠 ロビーへ', soon:'準備中', newBest:'🏆 新記録！',
+    gold:'ゴールド', langName:'日本語' },
+};
+const LANGS = ['ko','en','zh-TW','ja'];
+let lang = localStorage.getItem('rp_lang');
+if (!LANGS.includes(lang)) {
+  const nav = (navigator.language||'en').toLowerCase();
+  lang = nav.startsWith('ko')?'ko' : nav.startsWith('ja')?'ja'
+    : (nav==='zh-tw'||nav==='zh-hant'||nav.startsWith('zh'))?'zh-TW' : 'en';
+}
+function t(k){ return (I18N[lang]&&I18N[lang][k]) || I18N.en[k] || k; }
+function applyI18n(){
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.dataset.i18n); });
+  document.getElementById('langBtn').textContent = '🌐 ' + t('langName');
+  renderSongs();
+}
+document.getElementById('langBtn').onclick = ()=>{
+  lang = LANGS[(LANGS.indexOf(lang)+1)%LANGS.length];
+  localStorage.setItem('rp_lang', lang);
+  applyI18n();
+};
+
+/* ════ 곡 목록 ════ */
+const SONGS = [
+  { id:'01', title:'We Ignite',        emoji:'🔥', genre:'Dance Pop',    bpm:118 },
+  { id:'02', title:'Go Harder',        emoji:'🌃', genre:'Hip-hop',      bpm:112 },
+  { id:'03', title:'날아올라 Higher',   emoji:'☀️', genre:'Anime Pop',    bpm:108 },
+  { id:'04', title:'Lemon Soda Kiss',  emoji:'🍋', genre:'Hyperpop',     bpm:118 },
+  { id:'05', title:'다시 만난 여름',    emoji:'🌅', genre:'Retro Synth',  bpm:112 },
+  { id:'06', title:'Break the Frame',  emoji:'🧱', genre:'Alt Hip-hop',  bpm:123 },
+  { id:'07', title:'Skyline',          emoji:'🌌', genre:'Drum & Bass',  bpm:118 },
+  { id:'08', title:'Funky Alarm',      emoji:'🪩', genre:'Funk Disco',   bpm:108 },
+  { id:'09', title:'Gravity Zero',     emoji:'🚀', genre:'EDM Anthem',   bpm:123 },
+  { id:'10', title:'Midnight Drive',   emoji:'🌙', genre:'City Pop',     bpm:123 },
+  { id:'11', title:'Cherry Pop!',      emoji:'🍒', genre:'Bubblegum',    bpm:129 },
+  { id:'12', title:'Move Like That',   emoji:'🕺', genre:'New Jack Swing', bpm:99 },
+  { id:'13', title:'바람의 정원',       emoji:'🌿', genre:'Acoustic Pop', bpm:112 },
+  { id:'14', title:'VENOM',            emoji:'🐍', genre:'Girl Crush',   bpm:108 },
+  { id:'15', title:'청춘 로켓',         emoji:'🎸', genre:'Pop Rock',     bpm:129 },
+  { id:'16', title:'Rise Again',       emoji:'🌟', genre:'Epic Anthem',  bpm:118 },
+  { id:'17', title:'Crown of Thorns',  emoji:'👑', genre:'Dark R&B',     bpm:136 },
+  { id:'18', title:'Fizzy Love',       emoji:'🥤', genre:'Boy Band',     bpm:118 },
+  { id:'19', title:'Knockout',         emoji:'⚔️', genre:'Battle Pop',   bpm:120, soon:true },
+  { id:'20', title:'Level Up',         emoji:'💎', genre:'Swagger',      bpm:120, soon:true },
+];
+
+let curLv = localStorage.getItem('rp_lv') || 'normal';
+if (!['easy','normal','hard','expert'].includes(curLv)) curLv = 'normal';
+const BEST_KEY = 'rp_best';
+function loadBest(){ try { return JSON.parse(localStorage.getItem(BEST_KEY))||{}; } catch(e){ return {}; } }
+function saveBest(b){ localStorage.setItem(BEST_KEY, JSON.stringify(b)); }
+
+function renderSongs(){
+  const best = loadBest();
+  const list = document.getElementById('songList');
+  list.innerHTML = '';
+  for (const s of SONGS) {
+    const div = document.createElement('div');
+    div.className = 'song' + (s.soon?' soon':'');
+    const b = best[s.id] && best[s.id][curLv];
+    const badge = s.soon ? `<div class="badge">${t('soon')}</div>`
+      : b ? `<div class="badge">${b.grade}</div>`
+          : `<div class="badge none">—</div>`;
+    div.innerHTML = `<div class="emo">${s.emoji}</div>
+      <div class="info"><div class="name">${s.title}</div>
+      <div class="meta">${s.genre} · ${s.bpm}bpm</div></div>${badge}`;
+    if (!s.soon) div.onclick = ()=>pickSong(s);
+    list.appendChild(div);
+  }
+}
+document.querySelectorAll('#diffs button').forEach(b=>{
+  b.classList.toggle('on', b.dataset.lv===curLv);
+  b.onclick = ()=>{
+    curLv = b.dataset.lv;
+    localStorage.setItem('rp_lv', curLv);
+    document.querySelectorAll('#diffs button').forEach(x=>
+      x.classList.toggle('on', x===b));
+    renderSongs();
+  };
+});
+
+const chartCache = {};
+let curSong = null;
+function pickSong(s){
+  curSong = s;
+  if (chartCache[s.id]) { chart = chartCache[s.id]; loadBgs(chart); start(curLv); return; }
+  fetch(`chart-${s.id}.json?v=5`).then(r=>r.json()).then(c=>{
+    chartCache[s.id] = c;
+    if (curSong===s) { chart = c; loadBgs(c); start(curLv); }
+  });
+}
+
+/* ════ 게임 엔진 ════ */
 let LANES = 4, APPROACH = 1.8; // 노트 낙하 시간(초) — EXPERT에서 6키/1.45초
 const PERFECT = 0.10, GOOD = 0.19;
 const LANE_COLORS = ['#ff5fa2','#ffd75f','#5fd4ff','#7f7fff','#5fff9f','#ff8f5f'];
@@ -107,19 +260,6 @@ function resize(){
 }
 window.addEventListener('resize',resize); resize();
 
-let curSong='01';
-const chartCache={};
-function loadSong(id){
-  curSong=id;
-  document.querySelectorAll('#songs button').forEach(b=>
-    b.classList.toggle('primary', b.dataset.song===id));
-  chart=chartCache[id]||null;
-  if(chart){ loadBgs(chart); return; }
-  fetch(`chart-${id}.json?v=4`).then(r=>r.json()).then(c=>{
-    chartCache[id]=c;
-    if(curSong===id){ chart=c; loadBgs(c); }
-  });
-}
 function loadBgs(c){
   bgImgs=[]; bgIdx=0; bgPrev=0; bgFade=0; bgLast=0; curSec=-1;
   if(Array.isArray(c.bgs)) c.bgs.forEach((src,i)=>{
@@ -127,14 +267,6 @@ function loadBgs(c){
     im.onload=()=>{ bgImgs[i]=im; }; // 순서 고정 (로드 완료 순서와 무관)
   });
 }
-document.querySelectorAll('#songs button').forEach(b=>{
-  b.onclick=()=>loadSong(b.dataset.song);
-});
-loadSong('01');
-
-document.querySelectorAll('#intro button[data-lv]').forEach(b=>{
-  b.onclick=()=>start(b.dataset.lv);
-});
 
 let lastLv='normal';
 function start(lv){
@@ -158,7 +290,8 @@ function start(lv){
   endedAt=0; curSec=-1;
   audio=new Audio(chart.audio+'?v=1');
   audio.play().then(()=>{
-    document.getElementById('intro').classList.add('hidden');
+    document.getElementById('lobby').classList.add('hidden');
+    document.getElementById('result').classList.add('hidden');
     playing=true;
     // 곡이 끝나도 낙하 중인 마지막 노트 판정이 남아 있을 수 있어 클럭을 이어간다
     audio.onended=()=>{ endedAt=performance.now(); };
@@ -368,14 +501,39 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
+const GOLD_BY_GRADE = { S:40, A:25, B:15, C:8, D:3 };
 function finish(){
   playing=false;
   const total=counts.perfect+counts.good+counts.miss;
   const acc=total? (counts.perfect+counts.good*0.6)/total*100:0;
   const grade=acc>=95?'S':acc>=85?'A':acc>=70?'B':acc>=50?'C':'D';
+  document.getElementById('rSong').textContent=
+    curSong? `${curSong.emoji} ${curSong.title} · ${lastLv.toUpperCase()}`:'';
   document.getElementById('rGrade').textContent=grade+' · '+Math.round(acc)+'%';
   document.getElementById('rStats').innerHTML=
     `SCORE <b>${score}</b><br>PERFECT <b>${counts.perfect}</b> · GOOD <b>${counts.good}</b> · MISS <b>${counts.miss}</b><br>MAX COMBO <b>${maxCombo}</b>`;
+  // 신기록 저장
+  let isNew=false;
+  if(curSong){
+    const best=loadBest();
+    const prev=(best[curSong.id]||{})[lastLv];
+    if(!prev || score>prev.score){
+      isNew=!!prev || acc>0;
+      best[curSong.id]=best[curSong.id]||{};
+      best[curSong.id][lastLv]={score, grade, acc:Math.round(acc)};
+      saveBest(best);
+    }
+  }
+  document.getElementById('rNew').textContent=isNew? t('newBest'):'';
+  // 골드 지급 (글로벌 지갑)
+  let goldTxt='';
+  try {
+    if(typeof SharedWallet!=='undefined'){
+      const g=GOLD_BY_GRADE[grade]||0;
+      if(g>0){ SharedWallet.addGold(g); goldTxt=`+${g} ${t('gold')} 💰`; }
+    }
+  } catch(e){}
+  document.getElementById('rGold').textContent=goldTxt;
   document.getElementById('result').classList.remove('hidden');
 }
 
@@ -410,8 +568,11 @@ document.getElementById('btnRetry').onclick=()=>{
 };
 document.getElementById('btnLobby').onclick=()=>{
   document.getElementById('result').classList.add('hidden');
-  document.getElementById('intro').classList.remove('hidden');
+  document.getElementById('lobby').classList.remove('hidden');
+  renderSongs(); // 신기록 배지 갱신
 };
+
+applyI18n();
 </script>
 </body>
 </html>
