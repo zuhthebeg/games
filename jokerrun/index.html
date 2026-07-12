@@ -2965,20 +2965,26 @@
   }
   .layout-stage .boss-banner:not([hidden]) { display: contents; }
   .layout-stage .boss-banner[hidden] { display: none !important; }
-  /* 적 이름 줄을 없애고 HP바 "안"에 합쳐 세로 공간 절약: boss-info도 contents로 풀어서
-     이름만 바 위에 좌측 오버레이(바는 패널 최상단 고정: padding 6 + margin 2 = top 8),
-     HP 숫자는 우측 정렬로 비켜준다. 보스 룰/설명 줄만 바 아래 플로우 유지. */
-  .layout-stage .boss-info { display: contents; }
+  /* 적 이름 + 보스 룰명을 HP바 안 한 줄로 통합(바는 패널 최상단 고정: padding 6 + margin 2 = top 8).
+     룰 설명문은 하단 인스턴트 안내와 중복이라 무대에선 숨김 — 절약된 줄은 전부 보스 아트가 흡수.
+     HP 숫자는 우측 정렬로 비켜준다(이름·룰과 충돌 방지, right:96px 예약). */
   .layout-stage .enemy-hp { order: 1; position: static; z-index: 2; margin: 2px 4px 0; }
+  .layout-stage .boss-info {
+    position: absolute; top: 9px; left: 16px; right: 96px; z-index: 3; pointer-events: none;
+    display: flex; flex-direction: row; align-items: center; gap: 8px;
+    overflow: hidden; white-space: nowrap;
+  }
   .layout-stage .boss-name {
-    position: absolute; top: 9px; left: 16px; z-index: 3; pointer-events: none;
-    display: block; line-height: 16px; font-size: .7rem; max-width: 55%;
-    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    display: block; line-height: 16px; font-size: .7rem; flex: 0 1 auto;
+    overflow: hidden; text-overflow: ellipsis;
     text-shadow: 0 1px 2px rgba(0,0,0,.9), 0 0 6px rgba(0,0,0,.6);
   }
+  .layout-stage .boss-rule {
+    display: block; line-height: 16px; font-size: .64rem; flex: 0 0 auto;
+    color: #ffe9a8; text-shadow: 0 1px 2px rgba(0,0,0,.9);
+  }
+  .layout-stage .boss-desc { display: none; }
   .layout-stage .enemy-hp-num { justify-content: flex-end; padding-right: 8px; }
-  .layout-stage .boss-rule { order: 2; align-self: center; text-align: center; padding: 0 6px; z-index: 2; }
-  .layout-stage .boss-desc { order: 3; align-self: center; text-align: center; padding: 0 6px; z-index: 2; }
   .layout-stage .boss-art {
     order: 4; position: static;
     flex: 1 1 0; min-height: 90px; max-height: 256px;
