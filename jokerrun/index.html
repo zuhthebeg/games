@@ -4295,7 +4295,7 @@
     })();
     function setJokerArt(v){ JOKER_ART = v; try { localStorage.setItem("jokerrun_joker_art", v); } catch (_) {} }
     // ── 전투 레이아웃 스킨: classic(기존) / stage(무대 오버랩 팬 + 보스 대형화). ──
-    function getBattleLayout(){ try { const v = localStorage.getItem("jokerrun_battle_layout"); return v === "stage" ? "stage" : "classic"; } catch (_) { return "classic"; } }
+    function getBattleLayout(){ try { const v = localStorage.getItem("jokerrun_battle_layout"); return v === "classic" ? "classic" : "stage"; } catch (_) { return "stage"; } }
     function setBattleLayout(v){
       try { localStorage.setItem("jokerrun_battle_layout", v); } catch (_) {}
       document.body.classList.toggle("layout-stage", v === "stage");
