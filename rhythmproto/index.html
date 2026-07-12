@@ -6,6 +6,7 @@
 <title>Beat Drop — AI K-pop Rhythm Game</title>
 <meta name="description" content="AI가 만든 케이팝 20곡으로 즐기는 리듬게임. AI-generated K-pop rhythm game with 20 original tracks.">
 <script src="/lib/shared-wallet.js?v=20260705b2a"></script>
+<script src="/lib/game-rankings.js?v=20260712bd"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   :root { --wallet-bar-h:56px; --top:calc(var(--wallet-bar-h) + env(safe-area-inset-top)); }
@@ -26,7 +27,7 @@
 
   /* ── 로비 ── */
   #lobbyHead { display:flex; align-items:center; justify-content:space-between; padding:2px 2px 8px; }
-  #langBtn { background:#1a1a38; border:1px solid #2e2e5a; border-radius:20px;
+  .hbtn { background:#1a1a38; border:1px solid #2e2e5a; border-radius:20px;
     color:#aab; font-size:13px; padding:7px 12px; cursor:pointer; font-weight:700; }
   #diffs { display:flex; gap:6px; padding:10px 0 12px; }
   #diffs button { flex:1; padding:10px 4px; font-size:13px; font-weight:800; border:none;
@@ -91,7 +92,10 @@
   <div class="overlay" id="lobby">
     <div id="lobbyHead">
       <h1>BEAT DROP</h1>
-      <button id="langBtn">🌐 한국어</button>
+      <div style="display:flex;gap:6px">
+        <button id="rankBtn" class="hbtn">🏆</button>
+        <button id="langBtn" class="hbtn">🌐 한국어</button>
+      </div>
     </div>
     <div class="sub" data-i18n="tagline"></div>
     <div id="diffs">
@@ -156,6 +160,9 @@ document.getElementById('langBtn').onclick = ()=>{
   localStorage.setItem('rp_lang', lang);
   applyI18n();
 };
+document.getElementById('rankBtn').onclick = ()=>{
+  if(typeof GameRankings!=='undefined') GameRankings.showModal('beatdrop');
+};
 
 /* ════ 곡 목록 ════ */
 const SONGS = [
@@ -178,7 +185,7 @@ const SONGS = [
   { id:'17', title:'Crown of Thorns',  emoji:'👑', genre:'Dark R&B',     bpm:136 },
   { id:'18', title:'Fizzy Love',       emoji:'🥤', genre:'Boy Band',     bpm:118 },
   { id:'19', title:'Knockout',         emoji:'⚔️', genre:'Battle Pop',   bpm:92 },
-  { id:'20', title:'Level Up',         emoji:'💎', genre:'Swagger',      bpm:120, soon:true },
+  { id:'20', title:'Level Up',         emoji:'💎', genre:'Swagger',      bpm:108 },
 ];
 
 let curLv = localStorage.getItem('rp_lv') || 'normal';
@@ -534,6 +541,10 @@ function finish(){
     }
   } catch(e){}
   document.getElementById('rGold').textContent=goldTxt;
+  // 랭킹 제출 (서버가 최고점만 갱신)
+  try {
+    if(typeof GameRankings!=='undefined' && score>0) GameRankings.submit('beatdrop',{score});
+  } catch(e){}
   document.getElementById('result').classList.remove('hidden');
 }
 
