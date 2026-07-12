@@ -66,6 +66,16 @@
     text-shadow:0 1px 6px #000; }
   #combo.pop { animation:cpop .18s ease-out; }
   @keyframes cpop { 0%{transform:scale(1.45)} 100%{transform:scale(1)} }
+  #count { position:absolute; top:32%; left:0; right:0; text-align:center;
+    font-size:64px; font-weight:900; z-index:6; pointer-events:none;
+    text-shadow:0 3px 16px #000; color:#fff; }
+  #count.go { background:linear-gradient(90deg,#ff5fa2,#7f7fff,#5fd4ff);
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #pauseBtn { position:absolute; top:8px; right:10px; z-index:7; display:none;
+    background:rgba(20,20,46,.72); border:1px solid #2e2e5a; color:#eee;
+    border-radius:10px; padding:6px 13px; font-size:16px; cursor:pointer; }
+  #pause { align-items:center; justify-content:center; gap:16px; text-align:center;
+    background:rgba(10,10,26,.9); }
 
   /* ── 결과 ── */
   #result { align-items:center; justify-content:center; gap:16px; text-align:center; }
@@ -88,6 +98,8 @@
   <div id="hud"><span id="score">0</span><span id="acc"></span></div>
   <div id="combo"></div>
   <div id="judge"></div>
+  <div id="count"></div>
+  <button id="pauseBtn">⏸</button>
 
   <div class="overlay" id="lobby">
     <div id="lobbyHead">
@@ -106,6 +118,15 @@
     </div>
     <div id="songList"></div>
     <div class="hint"><span data-i18n="hint"></span><br>PC · 4K: D F J K / 6K: S D F J K L</div>
+  </div>
+
+  <div class="overlay hidden" id="pause">
+    <h1 data-i18n="paused">일시정지</h1>
+    <div class="btns">
+      <button class="primary" id="btnResume" data-i18n="resume">▶ 계속</button>
+      <button id="btnPRetry" data-i18n="retry">🔄 다시하기</button>
+      <button id="btnPLobby" data-i18n="lobby">🏠 로비로</button>
+    </div>
   </div>
 
   <div class="overlay hidden" id="result">
@@ -127,19 +148,19 @@ const I18N = {
   ko: { tagline:'AI가 만든 케이팝 20곡 리듬게임 — 곡을 탭하면 시작!',
     sixkeys:'6키', hint:'긴 노트는 꾹 눌러서 유지 · 난이도를 고르고 곡을 탭',
     retry:'🔄 다시하기', lobby:'🏠 로비로', soon:'준비중', newBest:'🏆 신기록!',
-    gold:'골드', langName:'한국어' },
+    gold:'골드', langName:'한국어', paused:'일시정지', resume:'▶ 계속' },
   en: { tagline:'AI-generated K-pop rhythm game, 20 tracks — tap a song to play!',
     sixkeys:'6 keys', hint:'Hold long notes · pick a difficulty, tap a song',
     retry:'🔄 Retry', lobby:'🏠 Lobby', soon:'Soon', newBest:'🏆 NEW BEST!',
-    gold:'Gold', langName:'English' },
+    gold:'Gold', langName:'English', paused:'PAUSED', resume:'▶ Resume' },
   'zh-TW': { tagline:'AI 打造的 K-POP 節奏遊戲，共 20 首 — 點擊歌曲開始！',
     sixkeys:'6鍵', hint:'長按長音符 · 選擇難度後點擊歌曲',
     retry:'🔄 再來一次', lobby:'🏠 返回大廳', soon:'即將推出', newBest:'🏆 新紀錄！',
-    gold:'金幣', langName:'繁體中文' },
+    gold:'金幣', langName:'繁體中文', paused:'暫停', resume:'▶ 繼續' },
   ja: { tagline:'AIが作ったK-POPリズムゲーム全20曲 — 曲をタップしてスタート！',
     sixkeys:'6キー', hint:'ロングノーツは長押し · 難易度を選んで曲をタップ',
     retry:'🔄 もう一度', lobby:'🏠 ロビーへ', soon:'準備中', newBest:'🏆 新記録！',
-    gold:'ゴールド', langName:'日本語' },
+    gold:'ゴールド', langName:'日本語', paused:'一時停止', resume:'▶ 再開' },
 };
 const LANGS = ['ko','en','zh-TW','ja'];
 let lang = localStorage.getItem('rp_lang');
@@ -247,6 +268,9 @@ let KEYS = KEYMAPS[4];
 let chart=null, notes=[], audio=null, playing=false;
 let score=0, combo=0, maxCombo=0, counts={perfect:0,good:0,miss:0};
 let endedAt=0, lastNoteT=0;     // 오디오 종료 후에도 남은 노트 판정용
+const PREROLL=5;                // 곡 시작 전 카운트다운(초)
+let preStart=0, audioStarted=false, audioPending=false;
+let paused=false, pausedAt=0;
 let cv=document.getElementById('cv'), ctx=cv.getContext('2d');
 let W=0,H=0,hitY=0;
 let flashes=[];          // 레인 탭 이펙트
@@ -295,21 +319,68 @@ function start(lv){
     hit:false, missed:false, holding:false, holdDone:false, holdBroke:false}));
   lastNoteT=notes.reduce((m,n)=>Math.max(m,n.t+n.d),0);
   endedAt=0; curSec=-1;
+  audioStarted=false; audioPending=false; paused=false;
+  document.getElementById('pause').classList.add('hidden');
   audio=new Audio(chart.audio+'?v=1');
-  audio.play().then(()=>{
-    document.getElementById('lobby').classList.add('hidden');
-    document.getElementById('result').classList.add('hidden');
-    playing=true;
-    // 곡이 끝나도 낙하 중인 마지막 노트 판정이 남아 있을 수 있어 클럭을 이어간다
-    audio.onended=()=>{ endedAt=performance.now(); };
-    requestAnimationFrame(loop);
-  });
+  audio.preload='auto';
+  // 사용자 제스처 컨텍스트에서 재생 권한 언락 (실제 재생은 카운트다운 후)
+  audio.play().then(()=>{ audio.pause(); audio.currentTime=0; }).catch(()=>{});
+  document.getElementById('lobby').classList.add('hidden');
+  document.getElementById('result').classList.add('hidden');
+  document.getElementById('pauseBtn').style.display='block';
+  playing=true;
+  preStart=performance.now();
+  requestAnimationFrame(loop);
 }
 
 function now(){
-  if(!audio) return 0;
+  if(!audioStarted) return (performance.now()-preStart)/1000 - PREROLL;
   if(endedAt) return (audio.duration||0)+(performance.now()-endedAt)/1000;
   return audio.currentTime;
+}
+
+function startAudio(){
+  audioPending=true;
+  audio.play().then(()=>{
+    audioStarted=true;
+    // 곡이 끝나도 낙하 중인 마지막 노트 판정이 남아 있을 수 있어 클럭을 이어간다
+    audio.onended=()=>{ endedAt=performance.now(); };
+  }).catch(()=>{ exitToLobby(); }); // 재생 차단 시 로비 복귀
+}
+
+function updateCountdown(t){
+  const cd=document.getElementById('count');
+  if(t<0){ cd.classList.remove('go'); cd.textContent=Math.ceil(-t); }
+  else if(t<0.7){ cd.classList.add('go'); cd.textContent='START!'; }
+  else if(cd.textContent) cd.textContent='';
+}
+
+function setPause(on){
+  if(!playing) return;
+  if(on && !paused){
+    paused=true; pausedAt=performance.now();
+    if(audioStarted && !endedAt) audio.pause();
+    document.getElementById('pause').classList.remove('hidden');
+  } else if(!on && paused){
+    const dt=performance.now()-pausedAt;
+    if(!audioStarted) preStart+=dt;
+    else if(endedAt) endedAt+=dt;
+    paused=false;
+    document.getElementById('pause').classList.add('hidden');
+    if(audioStarted && !endedAt) audio.play();
+    requestAnimationFrame(loop);
+  }
+}
+
+function exitToLobby(){
+  playing=false; paused=false;
+  if(audio){ audio.onended=null; audio.pause(); }
+  document.getElementById('pause').classList.add('hidden');
+  document.getElementById('result').classList.add('hidden');
+  document.getElementById('pauseBtn').style.display='none';
+  document.getElementById('count').textContent='';
+  document.getElementById('lobby').classList.remove('hidden');
+  renderSongs();
 }
 
 function laneX(lane){ return (lane+0.5)*(W/LANES); }
@@ -327,7 +398,7 @@ function burst(lane, y, color, big){
 }
 
 function judge(lane){
-  if(!playing) return;
+  if(!playing || paused) return;
   flashes.push({lane, at:performance.now()});
   const t=now();
   let best=null, bd=GOOD;
@@ -349,7 +420,7 @@ function judge(lane){
 }
 
 function release(lane){
-  if(!playing) return;
+  if(!playing || paused) return;
   const t=now();
   for(const n of notes){
     if(n.holding && !n.holdDone && n.lane===lane){
@@ -408,10 +479,12 @@ function drawBg(t){
 }
 
 function loop(){
-  if(!playing) return;
+  if(!playing || paused) return;
   const t=now();
+  if(!audioStarted && !audioPending && t>=-0.08) startAudio();
+  updateCountdown(t);
   ctx.clearRect(0,0,W,H);
-  drawBg(t);
+  drawBg(Math.max(0,t));
   const lw=W/LANES;
   // 레인
   for(let i=0;i<LANES;i++){
@@ -511,6 +584,8 @@ function loop(){
 const GOLD_BY_GRADE = { S:40, A:25, B:15, C:8, D:3 };
 function finish(){
   playing=false;
+  document.getElementById('pauseBtn').style.display='none';
+  document.getElementById('count').textContent='';
   const total=counts.perfect+counts.good+counts.miss;
   const acc=total? (counts.perfect+counts.good*0.6)/total*100:0;
   const grade=acc>=95?'S':acc>=85?'A':acc>=70?'B':acc>=50?'C':'D';
@@ -577,11 +652,17 @@ document.getElementById('btnRetry').onclick=()=>{
   document.getElementById('result').classList.add('hidden');
   start(lastLv);
 };
-document.getElementById('btnLobby').onclick=()=>{
-  document.getElementById('result').classList.add('hidden');
-  document.getElementById('lobby').classList.remove('hidden');
-  renderSongs(); // 신기록 배지 갱신
-};
+document.getElementById('btnLobby').onclick=exitToLobby;
+
+// 일시정지: ⏸ 버튼 / ESC 토글
+document.getElementById('pauseBtn').onclick=()=>setPause(true);
+document.getElementById('btnResume').onclick=()=>setPause(false);
+document.getElementById('btnPRetry').onclick=()=>{ paused=false;
+  document.getElementById('pause').classList.add('hidden'); start(lastLv); };
+document.getElementById('btnPLobby').onclick=exitToLobby;
+window.addEventListener('keydown',e=>{
+  if(e.code==='Escape' && playing) setPause(!paused);
+});
 
 applyI18n();
 </script>
