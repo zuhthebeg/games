@@ -452,7 +452,7 @@ let curSong = null;
 function pickSong(s){
   curSong = s;
   if (chartCache[s.id]) { chart = chartCache[s.id]; loadBgs(chart); start(curLv); return; }
-  fetch(`chart-${s.id}.json?v=5`).then(r=>r.json()).then(c=>{
+  fetch(`chart-${s.id}.json?v=6`).then(r=>r.json()).then(c=>{
     chartCache[s.id] = c;
     if (curSong===s) { chart = c; loadBgs(c); start(curLv); }
   });
