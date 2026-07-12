@@ -2965,14 +2965,22 @@
   }
   .layout-stage .boss-banner:not([hidden]) { display: contents; }
   .layout-stage .boss-banner[hidden] { display: none !important; }
-  .layout-stage .boss-info {
-    order: 1; position: static; z-index: 2;
-    display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
-    padding: 0 4px;
+  /* 적 이름 줄을 없애고 HP바 "안"에 합쳐 세로 공간 절약: boss-info도 contents로 풀어서
+     이름만 바 위에 좌측 오버레이(바는 패널 최상단 고정: padding 6 + margin 2 = top 8),
+     HP 숫자는 우측 정렬로 비켜준다. 보스 룰/설명 줄만 바 아래 플로우 유지. */
+  .layout-stage .boss-info { display: contents; }
+  .layout-stage .enemy-hp { order: 1; position: static; z-index: 2; margin: 2px 4px 0; }
+  .layout-stage .boss-name {
+    position: absolute; top: 9px; left: 16px; z-index: 3; pointer-events: none;
+    display: block; line-height: 16px; font-size: .7rem; max-width: 55%;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0,0,0,.9), 0 0 6px rgba(0,0,0,.6);
   }
-  .layout-stage .enemy-hp { order: 2; position: static; z-index: 2; margin: 2px 4px 0; }
+  .layout-stage .enemy-hp-num { justify-content: flex-end; padding-right: 8px; }
+  .layout-stage .boss-rule { order: 2; align-self: center; text-align: center; padding: 0 6px; z-index: 2; }
+  .layout-stage .boss-desc { order: 3; align-self: center; text-align: center; padding: 0 6px; z-index: 2; }
   .layout-stage .boss-art {
-    order: 3; position: static;
+    order: 4; position: static;
     flex: 1 1 0; min-height: 90px; max-height: 256px;
     width: auto; max-width: 175px; align-self: center;
     object-fit: contain; border-radius: 11px; margin: 4px 0 2px;
@@ -2980,16 +2988,20 @@
     box-shadow: 0 14px 30px rgba(0,0,0,.66), 0 0 30px rgba(160,60,255,.32);
   }
 
-  /* 소모품(타로/행성) 세로 레일 — 무대 좌하단 앵커(상단 앵커는 룰 텍스트 길이 따라 HP바와 충돌).
-     패널 overflow:hidden에 잘리지 않게 bottom 기준 + 넘치면 레일 자체 스크롤.
+  /* 소모품(타로/행성) 세로 레일 — 좌하단 세로 2장 보장, 3장째부터는 column wrap이 다음 컬럼을
+     만들고 align-content:space-between이 그 컬럼을 패널 우측 끝으로 보낸다(좌/우 레일 자동 분배).
+     컨테이너는 패널 전폭이므로 pointer-events:none으로 뚫고 카드에만 클릭 복원.
      #consumableArea로 한정 — .consumable-strip 클래스는 상점(#shopConsumableArea)도 쓰므로 클래스로 걸면 오염됨 */
   .layout-stage #consumableArea {
-    position: absolute; left: 8px; bottom: 8px; top: auto; z-index: 3;
-    flex-direction: column; gap: 4px; padding-left: 0; border-left: none; max-width: 46px;
-    max-height: calc(100% - 76px); overflow-y: auto; scrollbar-width: none;
+    position: absolute; left: 8px; right: 8px; bottom: 8px; top: auto; z-index: 3;
+    display: flex; flex-flow: column wrap; align-content: space-between; gap: 4px;
+    /* 112 = 미니카드 54×2 + gap 4 — 최소 패널 높이(150)에서도 좌측 세로 2장 보장 */
+    height: 112px; max-height: calc(100% - 34px);
+    padding-left: 0; border-left: none; max-width: none; overflow: visible;
+    pointer-events: none;
   }
-  .layout-stage #consumableArea::-webkit-scrollbar { display: none; }
-  .layout-stage #consumableArea .planet-card-mini { width: 42px; height: 58px; flex: 0 0 auto; }
+  .layout-stage #consumableArea > * { pointer-events: auto; }
+  .layout-stage #consumableArea .planet-card-mini { width: 40px; height: 54px; flex: 0 0 auto; }
   /* 42px 폭에선 대상 라벨("원페어 L..")이 어차피 잘려 노이즈만 됨 — 레일에서는 이름만 표시 */
   .layout-stage #consumableArea .planet-target { display: none; }
 
