@@ -285,7 +285,7 @@ document.getElementById('rngOffset').oninput = e=>{
 
 /* 기본값 복원 */
 document.getElementById('btnSetReset').onclick = ()=>{
-  settings.vib=true; settings.sfx=true; settings.speed=1.8; settings.offset=0;
+  settings.vib=true; settings.sfx=false; settings.speed=1.8; settings.offset=0;
   saveSettings(); syncSettingsUI(); buzz(15);
 };
 
@@ -398,7 +398,7 @@ document.querySelectorAll('#diffs button').forEach(b=>{
 /* ════ 설정 (진동·히트음·속도·오프셋) ════ */
 const settings = {
   vib: localStorage.getItem('rp_vib') !== '0',
-  sfx: localStorage.getItem('rp_sfx') !== '0',
+  sfx: localStorage.getItem('rp_sfx') === '1', // 기본 OFF — 히트음이 곡을 해치지 않게
   speed: parseFloat(localStorage.getItem('rp_speed')) || 1.8,
   offset: parseInt(localStorage.getItem('rp_offset')) || 0, // ms, +면 늦게 치는 편
 };
