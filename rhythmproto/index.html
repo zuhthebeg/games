@@ -141,6 +141,8 @@
 
   <div class="overlay hidden" id="settings">
     <h1 data-i18n="settings">설정</h1>
+    <div class="srow"><span data-i18n="skin">스킨</span>
+      <div class="sctl" id="skinBtns"></div></div>
     <div class="srow"><span data-i18n="vib">진동</span>
       <div class="sctl"><button class="tgl" id="tglVib">ON</button></div></div>
     <div class="srow"><span data-i18n="hitSound">히트음</span>
@@ -199,6 +201,8 @@ const I18N = {
     retry:'🔄 다시하기', lobby:'🏠 로비로', soon:'준비중', newBest:'🏆 신기록!',
     gold:'골드', langName:'한국어', paused:'일시정지', resume:'▶ 계속',
     start:'▶ 시작', reset:'↺ 기본값',
+    skin:'스킨', skin_neon:'네온', skin_piano:'피아노', skin_drum:'드럼', skin_price:'500만G',
+    skin_unlock_ask:'{n} 골드로 해금할까요?', not_enough_gold:'골드가 부족해요',
     settings:'설정', vib:'진동', hitSound:'히트음', speed:'노트 속도',
     offset:'판정 오프셋', calibrate:'자동 보정', close:'닫기',
     calibDesc:'비트에 맞춰 화면을 탭하세요 (8회)' },
@@ -207,6 +211,8 @@ const I18N = {
     retry:'🔄 Retry', lobby:'🏠 Lobby', soon:'Soon', newBest:'🏆 NEW BEST!',
     gold:'Gold', langName:'English', paused:'PAUSED', resume:'▶ Resume',
     start:'▶ Start', reset:'↺ Defaults',
+    skin:'Skin', skin_neon:'Neon', skin_piano:'Piano', skin_drum:'Drum', skin_price:'5M G',
+    skin_unlock_ask:'Unlock for {n} gold?', not_enough_gold:'Not enough gold',
     settings:'Settings', vib:'Vibration', hitSound:'Hit sound', speed:'Note speed',
     offset:'Judge offset', calibrate:'Auto calibrate', close:'Close',
     calibDesc:'Tap the screen on each beat (8 taps)' },
@@ -215,6 +221,8 @@ const I18N = {
     retry:'🔄 再來一次', lobby:'🏠 返回大廳', soon:'即將推出', newBest:'🏆 新紀錄！',
     gold:'金幣', langName:'繁體中文', paused:'暫停', resume:'▶ 繼續',
     start:'▶ 開始', reset:'↺ 預設值',
+    skin:'外觀', skin_neon:'霓虹', skin_piano:'鋼琴', skin_drum:'鼓組', skin_price:'500萬G',
+    skin_unlock_ask:'花費 {n} 金幣解鎖？', not_enough_gold:'金幣不足',
     settings:'設定', vib:'震動', hitSound:'打擊音', speed:'音符速度',
     offset:'判定偏移', calibrate:'自動校正', close:'關閉',
     calibDesc:'跟著節拍點擊螢幕（8次）' },
@@ -223,6 +231,8 @@ const I18N = {
     retry:'🔄 もう一度', lobby:'🏠 ロビーへ', soon:'準備中', newBest:'🏆 新記録！',
     gold:'ゴールド', langName:'日本語', paused:'一時停止', resume:'▶ 再開',
     start:'▶ スタート', reset:'↺ デフォルト',
+    skin:'スキン', skin_neon:'ネオン', skin_piano:'ピアノ', skin_drum:'ドラム', skin_price:'500万G',
+    skin_unlock_ask:'{n} ゴールドで解放しますか？', not_enough_gold:'ゴールドが足りません',
     settings:'設定', vib:'バイブ', hitSound:'ヒット音', speed:'ノーツ速度',
     offset:'判定オフセット', calibrate:'自動調整', close:'閉じる',
     calibDesc:'ビートに合わせて画面をタップ（8回）' },
@@ -251,7 +261,32 @@ document.getElementById('rankBtn').onclick = ()=>{
 };
 
 /* ════ 설정 모달 ════ */
+const SKIN_META = { neon:{emoji:'💠'}, piano:{emoji:'🎹'}, drum:{emoji:'🥁'} };
+function renderSkinBtns(){
+  const box=document.getElementById('skinBtns');
+  box.innerHTML='';
+  for(const id of ['neon','piano','drum']){
+    const owned=skinsOwned.includes(id);
+    const b=document.createElement('button');
+    b.className='tgl'+(curSkin===id?' on':'');
+    b.style.minWidth='0'; b.style.padding='8px 10px';
+    b.textContent = owned? `${SKIN_META[id].emoji} ${t('skin_'+id)}`
+                         : `🔒 ${SKIN_META[id].emoji} ${t('skin_price')}`;
+    b.onclick=()=>{
+      if(owned){ setSkin(id); renderSkinBtns(); if(settings.sfx) sfx('perfect',1); return; }
+      const price=SKIN_PRICE[id];
+      if(typeof SharedWallet==='undefined') return;
+      if(!confirm(t('skin_unlock_ask').replace('{n}', price.toLocaleString()))) return;
+      if(SharedWallet.spendGold(price)===false){ alert(t('not_enough_gold')); return; }
+      skinsOwned.push(id);
+      localStorage.setItem('rp_skins', JSON.stringify(skinsOwned));
+      setSkin(id); renderSkinBtns();
+    };
+    box.appendChild(b);
+  }
+}
 function syncSettingsUI(){
+  renderSkinBtns();
   document.getElementById('tglVib').classList.toggle('on', settings.vib);
   document.getElementById('tglVib').textContent = settings.vib?'ON':'OFF';
   document.getElementById('tglSfx').classList.toggle('on', settings.sfx);
@@ -436,9 +471,34 @@ function noise(vol){
   s.buffer=noiseBuf; g.gain.value=vol;
   s.connect(g); g.connect(c.destination); s.start();
 }
-function sfx(kind){
+function drumHit(lane, strong){
+  const c=ac(), t0=c.currentTime;
+  const roles = LANES===6? ['kick','snare','hat','tom','hat','snare'] : ['kick','snare','hat','tom'];
+  const role=roles[lane]||'tom';
+  if(role==='kick'){
+    const o=c.createOscillator(), g=c.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(150,t0);
+    o.frequency.exponentialRampToValueAtTime(45,t0+0.12);
+    g.gain.setValueAtTime(strong?0.5:0.35,t0); g.gain.exponentialRampToValueAtTime(0.001,t0+0.16);
+    o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0+0.18);
+  } else if(role==='snare'){ noise(strong?0.25:0.18); tone(190,0.08,0.12,'triangle'); }
+  else if(role==='hat'){ noise(strong?0.12:0.08); }
+  else { tone(165,0.14,strong?0.2:0.14,'sine'); tone(120,0.16,0.07,'sine'); }
+}
+function sfx(kind, lane){
   if(!settings.sfx) return;
   try {
+    const hitKind = kind==='perfect'||kind==='good'||kind==='hold';
+    if(hitKind && curSkin==='piano'){
+      // 레인별 음계 — 치는 대로 화음 (4키 C-E-G-B, 6키 펜타토닉+옥타브)
+      const freqs = LANES===6? [261.63,293.66,329.63,392.00,440.00,523.25]
+                             : [261.63,329.63,392.00,493.88];
+      const f=freqs[lane??0]||329.63;
+      tone(f, 0.30, kind==='perfect'?0.16:0.11, 'triangle');
+      tone(f*2, 0.18, 0.05, 'sine');
+      return;
+    }
+    if(hitKind && curSkin==='drum'){ drumHit(lane??0, kind==='perfect'); return; }
     if(kind==='perfect'){ tone(1560,0.07,0.14); tone(2340,0.05,0.05); noise(0.05); }
     else if(kind==='good'){ tone(980,0.06,0.11); noise(0.04); }
     else if(kind==='hold'){ tone(880,0.05,0.08); tone(1320,0.09,0.08); }
@@ -461,7 +521,22 @@ function pickSong(s){
 /* ════ 게임 엔진 ════ */
 let LANES = 4, APPROACH = 1.8; // 노트 낙하 시간(초) — EXPERT에서 6키/1.45초
 const PERFECT = 0.10, GOOD = 0.19;
-const LANE_COLORS = ['#ff5fa2','#ffd75f','#5fd4ff','#7f7fff','#5fff9f','#ff8f5f'];
+/* 스킨: 네온(기본) / 피아노 / 드럼 — 골드로 해금 */
+const SKIN_PRICE = { piano:5000000, drum:5000000 };
+const SKIN_COLORS = {
+  neon:  ['#ff5fa2','#ffd75f','#5fd4ff','#7f7fff','#5fff9f','#ff8f5f'],
+  piano: ['#fff3d6','#ffe4a8','#fff3d6','#ffe4a8','#fff3d6','#ffe4a8'],
+  drum:  ['#ff6b4a','#ffd75f','#5fd4ff','#b07fff','#5fff9f','#ff8f5f'],
+};
+let skinsOwned = (()=>{ try{ const s=JSON.parse(localStorage.getItem('rp_skins')); return Array.isArray(s)?s:['neon'] }catch(e){ return ['neon'] } })();
+if(!skinsOwned.includes('neon')) skinsOwned.unshift('neon');
+let curSkin = localStorage.getItem('rp_skin')||'neon';
+if(!skinsOwned.includes(curSkin)) curSkin='neon';
+let LANE_COLORS = SKIN_COLORS[curSkin];
+function setSkin(id){
+  curSkin=id; LANE_COLORS=SKIN_COLORS[id];
+  localStorage.setItem('rp_skin', id);
+}
 const KEYMAPS = {
   4: { KeyD:0, KeyF:1, KeyJ:2, KeyK:3 },
   6: { KeyS:0, KeyD:1, KeyF:2, KeyJ:3, KeyK:4, KeyL:5 }
@@ -620,8 +695,8 @@ function judge(lane){
   if(!best) return;
   best.hit=true;
   const perfect=bd<=PERFECT;
-  if(perfect){ counts.perfect++; score+=100; combo++; showJudge('PERFECT','#5fd4ff'); sfx('perfect'); buzz(8); }
-  else { counts.good++; score+=60; combo++; showJudge('GOOD','#ffd75f'); sfx('good'); buzz(4); }
+  if(perfect){ counts.perfect++; score+=100; combo++; showJudge('PERFECT','#5fd4ff'); sfx('perfect',lane); buzz(8); }
+  else { counts.good++; score+=60; combo++; showJudge('GOOD','#ffd75f'); sfx('good',lane); buzz(4); }
   burst(lane, hitY, perfect?'#aef3ff':LANE_COLORS[lane], perfect);
   pops.push({lane, at:performance.now(), color:LANE_COLORS[lane], perfect});
   if(combo>0 && combo%50===0){ sfx('milestone'); buzz([10,40,14]); }
@@ -642,7 +717,7 @@ function release(lane){
       } else {
         n.holding=false; n.holdDone=true; score+=50;
         burst(lane, hitY, LANE_COLORS[lane], false);
-        sfx('hold'); buzz([6,30,6]);
+        sfx('hold',lane); buzz([6,30,6]);
         updateHud();
       }
     }
@@ -694,6 +769,36 @@ function drawBg(t){
   ctx.fillRect(0,0,W,H);
 }
 
+// 판정선 아래 영역: 피아노=건반, 드럼=패드 (눌림 상태 반영)
+function drawSkinBottom(){
+  if(curSkin==='neon') return;
+  const bh=H-hitY, lw=W/LANES, dp=devicePixelRatio;
+  if(curSkin==='piano'){
+    for(let i=0;i<LANES;i++){
+      const pressed=laneHeld[i]>0;
+      const x=i*lw+2*dp, y=hitY+3*dp+(pressed?3*dp:0);
+      ctx.fillStyle=pressed?'#e5d49a':'#f7f0dc';
+      ctx.strokeStyle='#161628'; ctx.lineWidth=2*dp;
+      ctx.beginPath();
+      ctx.roundRect(x, y, lw-4*dp, bh-8*dp, 5*dp);
+      ctx.fill(); ctx.stroke();
+      if(pressed){ ctx.fillStyle='rgba(0,0,0,.08)'; ctx.fillRect(x, y, lw-4*dp, 6*dp); }
+    }
+  } else if(curSkin==='drum'){
+    for(let i=0;i<LANES;i++){
+      const pressed=laneHeld[i]>0;
+      const r=Math.min(lw*0.36, bh*0.38)*(pressed?1.12:1);
+      const x=laneX(i), y=hitY+bh*0.48;
+      ctx.fillStyle=pressed? LANE_COLORS[i]+'55':'rgba(255,255,255,.05)';
+      ctx.strokeStyle=LANE_COLORS[i]; ctx.lineWidth=3*dp;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.globalAlpha=.45;
+      ctx.beginPath(); ctx.arc(x,y,r*0.6,0,Math.PI*2); ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+  }
+}
+
 function loop(){
   if(!playing || paused) return;
   const t=now();
@@ -735,6 +840,7 @@ function loop(){
   ctx.lineWidth=(3+lineGlow*4)*devicePixelRatio;
   ctx.beginPath(); ctx.moveTo(0,hitY); ctx.lineTo(W,hitY); ctx.stroke();
   ctx.shadowBlur=0;
+  drawSkinBottom();
   // 비트 가이드라인
   ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1*devicePixelRatio;
   for(const b of chart.beats){
@@ -751,7 +857,7 @@ function loop(){
     if(n.holding && !n.holdDone && t>=n.t+n.d){
       if(laneHeld[n.lane]>0){
         n.holding=false; n.holdDone=true; score+=50;
-        sfx('hold'); buzz([6,30,6]);
+        sfx('hold',n.lane); buzz([6,30,6]);
         burst(n.lane, hitY, LANE_COLORS[n.lane], false); updateHud();
       } else { n.holding=false; n.holdBroke=true; combo=0; fever=false; updateHud(); }
     }
@@ -781,13 +887,21 @@ function loop(){
           life:0.8, decay:0.04, r:2*devicePixelRatio, color:col});
       }
     }
-    // 헤드
+    // 헤드 (스킨별 모양: 네온/피아노=바, 드럼=원형)
     if(!n.hit || n.holding){
       const y=n.holding? hitY : yOf(n.t);
       ctx.fillStyle=n.missed? 'rgba(255,95,95,.3)':col;
       ctx.beginPath();
-      ctx.roundRect(n.lane*lw+lw*0.08, y-nh/2, lw*0.84, nh, 7*devicePixelRatio);
-      ctx.fill();
+      if(curSkin==='drum'){
+        ctx.arc(laneX(n.lane), y, Math.min(lw*0.30, nh*1.6), 0, Math.PI*2);
+        ctx.fill();
+      } else {
+        ctx.roundRect(n.lane*lw+lw*0.08, y-nh/2, lw*0.84, nh, 7*devicePixelRatio);
+        ctx.fill();
+        if(curSkin==='piano' && !n.missed){
+          ctx.strokeStyle='#161628'; ctx.lineWidth=1.5*devicePixelRatio; ctx.stroke();
+        }
+      }
     }
   }
   // 파티클 & 링
@@ -831,7 +945,9 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-const GOLD_BY_GRADE = { S:40, A:25, B:15, C:8, D:3 };
+// 첫 클리어(곡×난이도) 전액, 반복 클리어는 10% (파밍 방지)
+const GOLD_BY_GRADE = { S:1500000, A:1000000, B:800000, C:500000, D:200000 };
+const ALLCLEAR_BONUS = 10000000;
 function finish(){
   playing=false;
   document.getElementById('pauseBtn').style.display='none';
@@ -844,11 +960,12 @@ function finish(){
   document.getElementById('rGrade').textContent=grade+' · '+Math.round(acc)+'%';
   document.getElementById('rStats').innerHTML=
     `SCORE <b>${score}</b><br>PERFECT <b>${counts.perfect}</b> · GOOD <b>${counts.good}</b> · MISS <b>${counts.miss}</b><br>MAX COMBO <b>${maxCombo}</b>`;
-  // 신기록 저장
-  let isNew=false;
+  // 신기록 저장 + 첫 클리어 판정
+  let isNew=false, firstClear=false;
   if(curSong){
     const best=loadBest();
     const prev=(best[curSong.id]||{})[lastLv];
+    firstClear=!prev;
     if(!prev || score>prev.score){
       isNew=!!prev || acc>0;
       best[curSong.id]=best[curSong.id]||{};
@@ -857,12 +974,22 @@ function finish(){
     }
   }
   document.getElementById('rNew').textContent=isNew? t('newBest'):'';
-  // 골드 지급 (글로벌 지갑)
+  // 골드 지급 (글로벌 지갑) — 첫 클리어 전액, 반복 10%
   let goldTxt='';
   try {
     if(typeof SharedWallet!=='undefined'){
-      const g=GOLD_BY_GRADE[grade]||0;
-      if(g>0){ SharedWallet.addGold(g); goldTxt=`+${g} ${t('gold')} 💰`; }
+      const full=GOLD_BY_GRADE[grade]||0;
+      const g=firstClear? full : Math.round(full*0.1);
+      if(g>0){ SharedWallet.addGold(g); goldTxt=`+${g.toLocaleString()} ${t('gold')} 💰`; }
+      // 20곡 올클리어 보너스 (1회성, 난이도 무관)
+      if(!localStorage.getItem('rp_allclear')){
+        const best=loadBest();
+        if(SONGS.every(s=>best[s.id] && Object.keys(best[s.id]).length)){
+          localStorage.setItem('rp_allclear','1');
+          SharedWallet.addGold(ALLCLEAR_BONUS);
+          goldTxt+=` · 🎉 ALL CLEAR +${ALLCLEAR_BONUS.toLocaleString()}`;
+        }
+      }
     }
   } catch(e){}
   document.getElementById('rGold').textContent=goldTxt;
