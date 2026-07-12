@@ -153,13 +153,20 @@
       <span class="sval" id="valOffset"></span></div></div>
     <div class="srow"><span data-i18n="calibrate">자동 보정</span>
       <div class="sctl"><button class="sbtn" id="btnCalib">🎯 GO</button></div></div>
-    <div class="btns"><button class="primary" id="btnSetClose" data-i18n="close">닫기</button></div>
+    <div class="btns">
+      <button id="btnSetReset" data-i18n="reset">↺ 기본값</button>
+      <button class="primary" id="btnSetClose" data-i18n="close">닫기</button>
+    </div>
   </div>
 
   <div class="overlay hidden" id="calib">
     <h1 data-i18n="calibrate">자동 보정</h1>
     <div class="sub" data-i18n="calibDesc">비트에 맞춰 화면을 탭하세요</div>
     <div id="calibCount">8</div>
+    <div class="btns" id="calibBtns">
+      <button class="primary" id="btnCalibStart" data-i18n="start">▶ 시작</button>
+      <button id="btnCalibClose" data-i18n="close">닫기</button>
+    </div>
   </div>
 
   <div class="overlay hidden" id="pause">
@@ -191,6 +198,7 @@ const I18N = {
     sixkeys:'6키', hint:'긴 노트는 꾹 눌러서 유지 · 난이도를 고르고 곡을 탭',
     retry:'🔄 다시하기', lobby:'🏠 로비로', soon:'준비중', newBest:'🏆 신기록!',
     gold:'골드', langName:'한국어', paused:'일시정지', resume:'▶ 계속',
+    start:'▶ 시작', reset:'↺ 기본값',
     settings:'설정', vib:'진동', hitSound:'히트음', speed:'노트 속도',
     offset:'판정 오프셋', calibrate:'자동 보정', close:'닫기',
     calibDesc:'비트에 맞춰 화면을 탭하세요 (8회)' },
@@ -198,6 +206,7 @@ const I18N = {
     sixkeys:'6 keys', hint:'Hold long notes · pick a difficulty, tap a song',
     retry:'🔄 Retry', lobby:'🏠 Lobby', soon:'Soon', newBest:'🏆 NEW BEST!',
     gold:'Gold', langName:'English', paused:'PAUSED', resume:'▶ Resume',
+    start:'▶ Start', reset:'↺ Defaults',
     settings:'Settings', vib:'Vibration', hitSound:'Hit sound', speed:'Note speed',
     offset:'Judge offset', calibrate:'Auto calibrate', close:'Close',
     calibDesc:'Tap the screen on each beat (8 taps)' },
@@ -205,6 +214,7 @@ const I18N = {
     sixkeys:'6鍵', hint:'長按長音符 · 選擇難度後點擊歌曲',
     retry:'🔄 再來一次', lobby:'🏠 返回大廳', soon:'即將推出', newBest:'🏆 新紀錄！',
     gold:'金幣', langName:'繁體中文', paused:'暫停', resume:'▶ 繼續',
+    start:'▶ 開始', reset:'↺ 預設值',
     settings:'設定', vib:'震動', hitSound:'打擊音', speed:'音符速度',
     offset:'判定偏移', calibrate:'自動校正', close:'關閉',
     calibDesc:'跟著節拍點擊螢幕（8次）' },
@@ -212,6 +222,7 @@ const I18N = {
     sixkeys:'6キー', hint:'ロングノーツは長押し · 難易度を選んで曲をタップ',
     retry:'🔄 もう一度', lobby:'🏠 ロビーへ', soon:'準備中', newBest:'🏆 新記録！',
     gold:'ゴールド', langName:'日本語', paused:'一時停止', resume:'▶ 再開',
+    start:'▶ スタート', reset:'↺ デフォルト',
     settings:'設定', vib:'バイブ', hitSound:'ヒット音', speed:'ノーツ速度',
     offset:'判定オフセット', calibrate:'自動調整', close:'閉じる',
     calibDesc:'ビートに合わせて画面をタップ（8回）' },
@@ -272,14 +283,32 @@ document.getElementById('rngOffset').oninput = e=>{
   settings.offset=parseInt(e.target.value); saveSettings(); syncSettingsUI();
 };
 
-/* 자동 보정: 메트로놈 8틱에 맞춰 탭 → 중앙값 오프셋 */
+/* 기본값 복원 */
+document.getElementById('btnSetReset').onclick = ()=>{
+  settings.vib=true; settings.sfx=true; settings.speed=1.8; settings.offset=0;
+  saveSettings(); syncSettingsUI(); buzz(15);
+};
+
+/* 자동 보정: [시작] 누르면 메트로놈 8틱 → 탭 중앙값으로 오프셋 */
+const calibEl=document.getElementById('calib');
+const calibBackToSettings=()=>{
+  calibEl.classList.add('hidden');
+  syncSettingsUI();
+  document.getElementById('settings').classList.remove('hidden');
+};
 document.getElementById('btnCalib').onclick = ()=>{
-  const c=ac();
-  const overlay=document.getElementById('calib');
-  const cnt=document.getElementById('calibCount');
   document.getElementById('settings').classList.add('hidden');
-  overlay.classList.remove('hidden');
-  const INTERVAL=0.6, N=8, t0=c.currentTime+1.0;
+  document.getElementById('calibCount').textContent='8';
+  document.getElementById('calibBtns').style.display='flex';
+  calibEl.classList.remove('hidden');
+};
+document.getElementById('btnCalibClose').onclick = calibBackToSettings;
+document.getElementById('btnCalibStart').onclick = (e)=>{
+  e.stopPropagation();
+  document.getElementById('calibBtns').style.display='none';
+  const c=ac();
+  const cnt=document.getElementById('calibCount');
+  const INTERVAL=0.6, N=8, t0=c.currentTime+1.2;
   const ticks=[];
   for(let i=0;i<N;i++){ const tt=t0+i*INTERVAL; ticks.push(tt); tone(1200,0.05,0.25,'square',tt); }
   const deltas=[];
@@ -293,20 +322,18 @@ document.getElementById('btnCalib').onclick = ()=>{
     if(deltas.length>=N) done();
   };
   const done=()=>{
-    overlay.removeEventListener('pointerdown', onTap);
+    calibEl.removeEventListener('pointerdown', onTap);
     clearTimeout(guard);
-    overlay.classList.add('hidden');
     if(deltas.length>=4){
       deltas.sort((a,b)=>a-b);
       const med=deltas[Math.floor(deltas.length/2)];
       settings.offset=Math.max(-150, Math.min(150, Math.round(med*1000/5)*5));
       saveSettings();
     }
-    syncSettingsUI();
-    document.getElementById('settings').classList.remove('hidden');
+    calibBackToSettings();
   };
-  overlay.addEventListener('pointerdown', onTap);
-  const guard=setTimeout(done, (N*INTERVAL+3)*1000); // 안 치고 방치 시 종료
+  calibEl.addEventListener('pointerdown', onTap);
+  const guard=setTimeout(done, (N*INTERVAL+4)*1000); // 방치 시 자동 종료
 };
 
 /* ════ 곡 목록 ════ */
@@ -444,7 +471,7 @@ let KEYS = KEYMAPS[4];
 let chart=null, notes=[], audio=null, playing=false;
 let score=0, combo=0, maxCombo=0, counts={perfect:0,good:0,miss:0};
 let endedAt=0, lastNoteT=0;     // 오디오 종료 후에도 남은 노트 판정용
-const PREROLL=5;                // 곡 시작 전 카운트다운(초)
+const PREROLL=3;                // 곡 시작 전 카운트다운(초)
 let preStart=0, audioStarted=false, audioPending=false;
 let paused=false, pausedAt=0;
 let cv=document.getElementById('cv'), ctx=cv.getContext('2d');
@@ -792,13 +819,13 @@ function loop(){
     ctx.fill();
   }
   ctx.globalAlpha=1;
-  // 미스 데새추레이션 (0.2초)
+  // 미스 데새추레이션 — 광자극 우려로 은은하게 (저채도 0.35, 완만한 감쇠)
   if(missFx>0){
     ctx.globalCompositeOperation='saturation';
-    ctx.fillStyle=`rgba(128,128,128,${(missFx*0.85).toFixed(2)})`;
+    ctx.fillStyle=`rgba(128,128,128,${(missFx*0.35).toFixed(2)})`;
     ctx.fillRect(0,0,W,H);
     ctx.globalCompositeOperation='source-over';
-    missFx=Math.max(0,missFx-0.09);
+    missFx=Math.max(0,missFx-0.06);
   }
   if(endedAt && t>lastNoteT+0.6){ finish(); return; }
   requestAnimationFrame(loop);
