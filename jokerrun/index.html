@@ -2932,6 +2932,11 @@
   /* 손패: 한 줄 오버랩 팬. gap은 0으로 눌러 negative margin(--card-overlap)만으로 간격 제어. */
   .layout-stage .cards-wrap { flex-wrap: nowrap; gap: 0; padding-top: 30px; }
   .layout-stage .cards-wrap .card:not(:first-child) { margin-left: calc(-1 * var(--card-overlap, 0px)); }
+  /* 손패 붕괴 방지: 클래식의 .table>.cards-wrap flex:1 1 auto(+.card max-height:100%)는 보스 무대가
+     세로 공간을 먹으면 카드 높이를 0 근처로 눌러버린다(화면 비율 따라 재현). 무대에서는 손패가
+     항상 자연 높이(카드 원 크기)를 갖고, 남는 공간은 보스 무대(flex:1)가 흡수한다. */
+  .layout-stage .table > .cards-wrap { flex: 0 0 auto; min-height: calc(clamp(48px, 15.5vw, 60px) * 1.4 + 34px); }
+  .layout-stage .table > .enemy-panel { flex: 1 1 auto; }
 
   /* 선택 카드 22px 상승 — 글로우/테두리는 기존 .card.selected 재활용, float 폭만 확대 */
   @keyframes selectedFloatStage {
@@ -2941,11 +2946,14 @@
   }
   .layout-stage .card.selected { animation: selectedFloatStage 2s ease-in-out infinite !important; }
 
-  /* 보스 무대: 중앙 확대. enemy-panel을 포지셔닝 컨텍스트로 삼아 보스아트/이름/HP바를 오버레이 배치 */
+  /* 보스 무대: 중앙 확대. 절대좌표를 쓰지 않는다 — top:84px 같은 고정 오프셋은 보스 룰 텍스트
+     길이·화면 비율에 따라 HP바/레일이 어긋났다. banner를 display:contents로 투명화해서
+     이름/룰 → HP바 → 아트를 패널의 flex column 플로우로 배열하고, 아트가 남는 높이를 흡수한다. */
   .layout-stage .enemy-panel {
     position: relative;
-    min-height: 250px;
-    padding: 6px 8px 10px;
+    display: flex; flex-direction: column; gap: 4px;
+    min-height: 150px;
+    padding: 6px 8px 8px !important;
     overflow: hidden;
     border-radius: 16px !important;
     border: 1px solid rgba(255,79,110,.38) !important;
@@ -2955,31 +2963,35 @@
       linear-gradient(110deg, rgba(40,8,16,.6), rgba(18,14,30,.72)) !important;
     box-shadow: 0 0 18px rgba(255,65,108,.22), inset 0 0 0 1px rgba(255,255,255,.04);
   }
-  .layout-stage .boss-banner {
-    position: static; display: block !important;
-    background: none !important; border: none !important; box-shadow: none !important; padding: 0 !important;
-  }
+  .layout-stage .boss-banner:not([hidden]) { display: contents; }
   .layout-stage .boss-banner[hidden] { display: none !important; }
   .layout-stage .boss-info {
-    position: absolute; top: 6px; left: 10px; right: 10px; z-index: 2;
+    order: 1; position: static; z-index: 2;
     display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
+    padding: 0 4px;
   }
+  .layout-stage .enemy-hp { order: 2; position: static; z-index: 2; margin: 2px 4px 0; }
   .layout-stage .boss-art {
-    position: absolute; left: 0; right: 0; margin: 0 auto; bottom: 12px; z-index: 1;
-    width: auto; max-width: 175px; height: 200px; max-height: 256px;
-    object-fit: contain; border-radius: 11px;
+    order: 3; position: static;
+    flex: 1 1 0; min-height: 90px; max-height: 256px;
+    width: auto; max-width: 175px; align-self: center;
+    object-fit: contain; border-radius: 11px; margin: 4px 0 2px;
     border: 1px solid rgba(255,207,109,.4);
     box-shadow: 0 14px 30px rgba(0,0,0,.66), 0 0 30px rgba(160,60,255,.32);
   }
-  .layout-stage .enemy-hp { position: absolute; top: 84px; left: 12px; right: 12px; margin: 0; z-index: 2; }
 
-  /* 소모품(타로/행성) 세로 레일 — 무대 좌측 오버레이. JS가 #consumableArea를 #enemyPanel 안으로 옮긴다.
+  /* 소모품(타로/행성) 세로 레일 — 무대 좌하단 앵커(상단 앵커는 룰 텍스트 길이 따라 HP바와 충돌).
+     패널 overflow:hidden에 잘리지 않게 bottom 기준 + 넘치면 레일 자체 스크롤.
      #consumableArea로 한정 — .consumable-strip 클래스는 상점(#shopConsumableArea)도 쓰므로 클래스로 걸면 오염됨 */
   .layout-stage #consumableArea {
-    position: absolute; left: 8px; top: 108px; z-index: 3;
-    flex-direction: column; padding-left: 0; border-left: none; max-width: 46px;
+    position: absolute; left: 8px; bottom: 8px; top: auto; z-index: 3;
+    flex-direction: column; gap: 4px; padding-left: 0; border-left: none; max-width: 46px;
+    max-height: calc(100% - 76px); overflow-y: auto; scrollbar-width: none;
   }
-  .layout-stage #consumableArea .planet-card-mini { width: 42px; height: 58px; }
+  .layout-stage #consumableArea::-webkit-scrollbar { display: none; }
+  .layout-stage #consumableArea .planet-card-mini { width: 42px; height: 58px; flex: 0 0 auto; }
+  /* 42px 폭에선 대상 라벨("원페어 L..")이 어차피 잘려 노이즈만 됨 — 레일에서는 이름만 표시 */
+  .layout-stage #consumableArea .planet-target { display: none; }
 
   /* HUD 한 줄 압축: 족보/공격력×연격/예상데미지 줄과 그 아래 손패 안내 줄 간격을 좁혀 손패 위에 붙인다 */
   .layout-stage .score-inline { padding-bottom: 0; }
