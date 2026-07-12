@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Beat Drop — AI K-pop Rhythm Game</title>
 <meta name="description" content="AI가 만든 케이팝 20곡으로 즐기는 리듬게임. AI-generated K-pop rhythm game with 20 original tracks.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <script src="/lib/shared-wallet.js?v=20260705b2a"></script>
 <script src="/lib/game-rankings.js?v=20260712bd"></script>
 <style>
@@ -20,35 +23,56 @@
     z-index:10; padding:14px 16px calc(14px + env(safe-area-inset-bottom));
     overflow:hidden; }
   .overlay.hidden { display:none; }
-  h1 { font-size:26px; letter-spacing:1px;
+  #lobby { background:
+    linear-gradient(180deg, rgba(8,8,20,.30) 0%, rgba(8,8,22,.86) 46%, rgba(7,7,18,.97) 100%),
+    url('ui-lobby.webp?v=1') center top / cover no-repeat #0a0a1a; }
+  #result { background:
+    linear-gradient(180deg, rgba(8,8,20,.42) 0%, rgba(8,8,22,.88) 62%, rgba(7,7,18,.97) 100%),
+    url('ui-result.webp?v=1') center top / cover no-repeat #0a0a1a; }
+  #pause { background:
+    linear-gradient(180deg, rgba(8,8,20,.72) 0%, rgba(7,7,18,.94) 100%),
+    url('ui-pause.webp?v=1') center / cover no-repeat #0a0a1a !important; }
+  h1 { font-family:'Orbitron','Segoe UI',sans-serif; font-size:24px; letter-spacing:2.5px;
     background:linear-gradient(90deg,#ff5fa2,#7f7fff,#5fd4ff);
-    -webkit-background-clip:text; background-clip:text; color:transparent; }
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 0 12px rgba(127,127,255,.45)); }
   .sub { color:#8888aa; font-size:12.5px; line-height:1.5; }
 
   /* ── 로비 ── */
   #lobbyHead { display:flex; align-items:center; justify-content:space-between; padding:2px 2px 8px; }
-  .hbtn { background:#1a1a38; border:1px solid #2e2e5a; border-radius:20px;
-    color:#aab; font-size:13px; padding:7px 12px; cursor:pointer; font-weight:700; }
+  .hbtn { background:rgba(24,24,54,.62); border:1px solid rgba(127,127,255,.28);
+    border-radius:20px; color:#c6c6e8; font-size:13px; padding:7px 12px; cursor:pointer;
+    font-weight:700; box-shadow:0 2px 10px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.07); }
   #diffs { display:flex; gap:6px; padding:10px 0 12px; }
-  #diffs button { flex:1; padding:10px 4px; font-size:13px; font-weight:800; border:none;
-    border-radius:10px; background:#191936; color:#9a9ac0; cursor:pointer; }
+  #diffs button { flex:1; padding:10px 4px; font-size:13px; font-weight:800;
+    border:1px solid rgba(127,127,255,.16); border-radius:10px;
+    background:rgba(22,22,50,.6); color:#9a9ac0; cursor:pointer;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05); }
   #diffs button small { display:block; font-weight:500; font-size:10px; opacity:.75; }
-  #diffs button.on { background:linear-gradient(90deg,#ff5fa2,#7f7fff); color:#fff; }
+  #diffs button.on { background:linear-gradient(135deg,#ff5fa2,#7f7fff); color:#fff;
+    border-color:transparent; box-shadow:0 3px 16px rgba(127,95,255,.5), inset 0 1px 0 rgba(255,255,255,.25); }
   #songList { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
     display:flex; flex-direction:column; gap:8px; padding:2px 2px 8px;
     touch-action:pan-y; overscroll-behavior:contain; }
   .song { display:flex; align-items:center; gap:12px; padding:11px 12px;
-    background:#14142e; border:1px solid #23234a; border-radius:14px; cursor:pointer;
-    transition:transform .08s; }
-  .song:active { transform:scale(.98); }
+    background:linear-gradient(135deg, rgba(26,26,60,.72), rgba(16,16,38,.78));
+    border:1px solid rgba(127,127,255,.20); border-radius:14px; cursor:pointer;
+    transition:transform .08s;
+    box-shadow:0 4px 14px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06); }
+  .song:active { transform:scale(.98); box-shadow:0 2px 8px rgba(0,0,0,.4); }
   .song .emo { width:44px; height:44px; border-radius:11px; display:flex; align-items:center;
-    justify-content:center; font-size:23px; background:#1d1d40; flex-shrink:0; }
+    justify-content:center; font-size:23px; flex-shrink:0;
+    background:linear-gradient(145deg,#26265c,#171736);
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.10), 0 2px 6px rgba(0,0,0,.3); }
   .song .info { flex:1; min-width:0; }
   .song .name { font-weight:800; font-size:15px; white-space:nowrap; overflow:hidden;
     text-overflow:ellipsis; }
   .song .meta { font-size:11px; color:#7d7da5; margin-top:2px; }
   .song .badge { flex-shrink:0; min-width:38px; text-align:center; font-weight:900;
-    font-size:16px; padding:5px 7px; border-radius:9px; background:#1d1d40; color:#5fd4ff; }
+    font-size:16px; padding:5px 7px; border-radius:9px; color:#5fd4ff;
+    font-family:'Orbitron',sans-serif;
+    background:rgba(24,24,58,.75); border:1px solid rgba(95,212,255,.25);
+    text-shadow:0 0 8px rgba(95,212,255,.5); }
   .song .badge.none { color:#44446a; font-weight:600; font-size:12px; }
   .song.soon { opacity:.42; }
   .song.soon .badge { font-size:10.5px; color:#8a8ab0; font-weight:700; }
@@ -69,8 +93,9 @@
   #combo.pop { animation:cpop .18s ease-out; }
   @keyframes cpop { 0%{transform:scale(1.45)} 100%{transform:scale(1)} }
   #count { position:absolute; top:32%; left:0; right:0; text-align:center;
+    font-family:'Orbitron',sans-serif;
     font-size:64px; font-weight:900; z-index:6; pointer-events:none;
-    text-shadow:0 3px 16px #000; color:#fff; }
+    text-shadow:0 3px 16px #000, 0 0 26px rgba(127,127,255,.55); color:#fff; }
   #count.go { background:linear-gradient(90deg,#ff5fa2,#7f7fff,#5fd4ff);
     -webkit-background-clip:text; background-clip:text; color:transparent; }
   #pauseBtn { position:absolute; top:8px; right:10px; z-index:7; display:none;
@@ -97,16 +122,21 @@
 
   /* ── 결과 ── */
   #result { align-items:center; justify-content:center; gap:16px; text-align:center; }
-  #result h1 { font-size:44px; }
+  #result h1 { font-size:46px; letter-spacing:1px;
+    filter:drop-shadow(0 0 18px rgba(255,180,95,.55)); }
   #rSong { color:#9a9ac0; font-size:14px; font-weight:700; }
   #rNew { color:#ffd75f; font-weight:900; font-size:15px; }
   #rGold { color:#ffd75f; font-size:14px; font-weight:700; }
   .stat { font-size:15px; line-height:2; }
   .stat b { color:#5fd4ff; }
   .btns { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
-  .btns button { padding:14px 26px; font-size:16px; border:none; border-radius:12px;
-    background:#22224a; color:#eee; cursor:pointer; font-weight:700; }
-  .btns button.primary { background:linear-gradient(90deg,#ff5fa2,#7f7fff); }
+  .btns button { padding:14px 26px; font-size:16px; border-radius:12px;
+    border:1px solid rgba(127,127,255,.22);
+    background:rgba(30,30,68,.72); color:#eee; cursor:pointer; font-weight:700;
+    box-shadow:0 3px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.07); }
+  .btns button.primary { background:linear-gradient(135deg,#ff5fa2,#7f7fff);
+    border-color:transparent;
+    box-shadow:0 4px 20px rgba(255,95,162,.4), inset 0 1px 0 rgba(255,255,255,.28); }
   .btns button:active { transform:scale(.96); }
 </style>
 </head>
@@ -549,7 +579,8 @@ let endedAt=0, lastNoteT=0;     // 오디오 종료 후에도 남은 노트 판�
 const PREROLL=3;                // 곡 시작 전 카운트다운(초)
 let preStart=0, audioStarted=false, audioPending=false;
 let paused=false, pausedAt=0;
-let cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+let cv=document.getElementById('cv'), ctx=cv.getContext('2d',{alpha:false});
+const DPR=Math.min(window.devicePixelRatio||1, 2); // 3x폰 픽셀폭주 방지 (렉 최적화)
 let W=0,H=0,hitY=0;
 let flashes=[];          // 레인 탭 이펙트
 let particles=[];        // 타격 파티클
@@ -565,11 +596,14 @@ let pops=[];        // 노트 폭발 잔상
 let missFx=0;       // 미스 데새추레이션 타이머
 let fever=false;    // 20콤보+ 필버스트
 let beatPtr=0, lastBeatT=-9; // 비트 동기 펄스
+let gIdx=0, nStart=0;        // 가이드라인/노트 순회 시작 인덱스 (렉 최적화)
 
+let feverGrad=null; // 매 프레임 생성 비용 제거
 function resize(){
   const r=cv.parentElement.getBoundingClientRect();
-  cv.width=W=r.width*devicePixelRatio; cv.height=H=r.height*devicePixelRatio;
+  cv.width=W=r.width*DPR; cv.height=H=r.height*DPR;
   hitY=H*0.82;
+  feverGrad=null;
 }
 window.addEventListener('resize',resize); resize();
 
@@ -601,7 +635,7 @@ function start(lv){
     hit:false, missed:false, holding:false, holdDone:false, holdBroke:false}));
   lastNoteT=notes.reduce((m,n)=>Math.max(m,n.t+n.d),0);
   endedAt=0; curSec=-1;
-  pops=[]; missFx=0; fever=false; beatPtr=0; lastBeatT=-9;
+  pops=[]; missFx=0; fever=false; beatPtr=0; lastBeatT=-9; gIdx=0; nStart=0;
   ac(); // 제스처 컨텍스트에서 오디오 컨텍스트 활성화
   audioStarted=false; audioPending=false; paused=false;
   document.getElementById('pause').classList.add('hidden');
@@ -673,11 +707,11 @@ function burst(lane, y, color, big){
   const x=laneX(lane);
   const n=big?16:9;
   for(let i=0;i<n;i++){
-    const a=Math.random()*Math.PI*2, sp=(1.5+Math.random()*3.5)*(big?1.4:1)*devicePixelRatio;
-    particles.push({x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-1.2*devicePixelRatio,
-      life:1, decay:0.03+Math.random()*0.03, r:(2+Math.random()*2.5)*devicePixelRatio, color});
+    const a=Math.random()*Math.PI*2, sp=(1.5+Math.random()*3.5)*(big?1.4:1)*DPR;
+    particles.push({x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-1.2*DPR,
+      life:1, decay:0.03+Math.random()*0.03, r:(2+Math.random()*2.5)*DPR, color});
   }
-  rings.push({x, y, r:8*devicePixelRatio, life:1, color, big});
+  rings.push({x, y, r:8*DPR, life:1, color, big});
   lineGlow=1;
 }
 
@@ -809,7 +843,7 @@ function loop(){
     lastBeatT=chart.beats[beatPtr]+0.5; beatPtr++;
   }
   const beatPulse=Math.max(0, 1-(t-lastBeatT)*5);
-  ctx.clearRect(0,0,W,H);
+  if(!bgImgs.length){ ctx.fillStyle='#0a0a1a'; ctx.fillRect(0,0,W,H); }
   drawBg(Math.max(0,t));
   const lw=W/LANES;
   // 레인 (비트에 맞춰 미세 펄스)
@@ -829,30 +863,40 @@ function loop(){
   // 판정선 (타격 시 펄스, 필버스트 시 네온 그라디언트)
   lineGlow=Math.max(0,lineGlow-0.06);
   if(fever){
-    const grad=ctx.createLinearGradient(0,0,W,0);
-    grad.addColorStop(0,'#ff5fa2'); grad.addColorStop(.5,'#7f7fff'); grad.addColorStop(1,'#5fd4ff');
-    ctx.strokeStyle=grad;
-    ctx.shadowColor='#7f7fff'; ctx.shadowBlur=(8+lineGlow*14)*devicePixelRatio;
+    if(!feverGrad){
+      feverGrad=ctx.createLinearGradient(0,0,W,0);
+      feverGrad.addColorStop(0,'#ff5fa2'); feverGrad.addColorStop(.5,'#7f7fff'); feverGrad.addColorStop(1,'#5fd4ff');
+    }
+    ctx.strokeStyle=feverGrad;
+    ctx.shadowColor='#7f7fff'; ctx.shadowBlur=(8+lineGlow*14)*DPR;
   } else {
     ctx.strokeStyle=`rgba(255,255,255,${0.5+lineGlow*0.5})`;
-    if(lineGlow>0){ ctx.shadowColor='#fff'; ctx.shadowBlur=lineGlow*18*devicePixelRatio; }
+    if(lineGlow>0){ ctx.shadowColor='#fff'; ctx.shadowBlur=lineGlow*18*DPR; }
   }
-  ctx.lineWidth=(3+lineGlow*4)*devicePixelRatio;
+  ctx.lineWidth=(3+lineGlow*4)*DPR;
   ctx.beginPath(); ctx.moveTo(0,hitY); ctx.lineTo(W,hitY); ctx.stroke();
   ctx.shadowBlur=0;
   drawSkinBottom();
   // 비트 가이드라인
-  ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1*devicePixelRatio;
-  for(const b of chart.beats){
-    const bt=b+0.5;
-    if(bt<t||bt>t+APPROACH) continue;
+  ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1*DPR;
+  while(gIdx<chart.beats.length && chart.beats[gIdx]+0.5<t) gIdx++;
+  for(let bi=gIdx;bi<chart.beats.length;bi++){
+    const bt=chart.beats[bi]+0.5;
+    if(bt>t+APPROACH) break;
     const y=hitY*(1-(bt-t)/APPROACH);
     ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
   }
   // 노트
-  const nh=14*devicePixelRatio;
+  const nh=14*DPR;
   const yOf=tt=>hitY*(1-(tt-t)/APPROACH);
-  for(const n of notes){
+  while(nStart<notes.length){
+    const n0=notes[nStart];
+    const done=(n0.hit&&(!n0.d||n0.holdDone||n0.holdBroke)&&!n0.holding)||(n0.missed&&n0.t+(n0.d||0)<t-0.35);
+    if(done) nStart++; else break;
+  }
+  for(let ni=nStart;ni<notes.length;ni++){
+    const n=notes[ni];
+    if(n.t>t+APPROACH) break;
     // 홀드 완주 체크 (누른 채 끝까지)
     if(n.holding && !n.holdDone && t>=n.t+n.d){
       if(laneHeld[n.lane]>0){
@@ -877,14 +921,14 @@ function loop(){
         : n.holding? col+'88' : col+'44';
       const bw=lw*0.5;
       ctx.beginPath();
-      ctx.roundRect(n.lane*lw+(lw-bw)/2, ty, bw, Math.max(0,hy-ty), 8*devicePixelRatio);
+      ctx.roundRect(n.lane*lw+(lw-bw)/2, ty, bw, Math.max(0,hy-ty), 8*DPR);
       ctx.fill();
       if(n.holding){ // 유지 중 글로우 + 파티클
-        ctx.shadowColor=col; ctx.shadowBlur=14*devicePixelRatio;
+        ctx.shadowColor=col; ctx.shadowBlur=9*DPR;
         ctx.fill(); ctx.shadowBlur=0;
         if(Math.random()<0.35) particles.push({x:laneX(n.lane)+(Math.random()-.5)*bw, y:hitY,
-          vx:(Math.random()-.5)*devicePixelRatio, vy:-(1+Math.random()*2)*devicePixelRatio,
-          life:0.8, decay:0.04, r:2*devicePixelRatio, color:col});
+          vx:(Math.random()-.5)*DPR, vy:-(1+Math.random()*2)*DPR,
+          life:0.8, decay:0.04, r:2*DPR, color:col});
       }
     }
     // 헤드 (스킨별 모양: 네온/피아노=바, 드럼=원형)
@@ -896,10 +940,10 @@ function loop(){
         ctx.arc(laneX(n.lane), y, Math.min(lw*0.30, nh*1.6), 0, Math.PI*2);
         ctx.fill();
       } else {
-        ctx.roundRect(n.lane*lw+lw*0.08, y-nh/2, lw*0.84, nh, 7*devicePixelRatio);
+        ctx.roundRect(n.lane*lw+lw*0.08, y-nh/2, lw*0.84, nh, 7*DPR);
         ctx.fill();
         if(curSkin==='piano' && !n.missed){
-          ctx.strokeStyle='#161628'; ctx.lineWidth=1.5*devicePixelRatio; ctx.stroke();
+          ctx.strokeStyle='#161628'; ctx.lineWidth=1.5*DPR; ctx.stroke();
         }
       }
     }
@@ -907,7 +951,7 @@ function loop(){
   // 파티클 & 링
   particles=particles.filter(p=>p.life>0);
   for(const p of particles){
-    p.x+=p.vx; p.y+=p.vy; p.vy+=0.15*devicePixelRatio; p.life-=p.decay;
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.15*DPR; p.life-=p.decay;
     ctx.globalAlpha=Math.max(0,p.life);
     ctx.fillStyle=p.color;
     ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(0.01,p.r*p.life),0,Math.PI*2); ctx.fill();
@@ -915,9 +959,9 @@ function loop(){
   ctx.globalAlpha=1;
   rings=rings.filter(r=>r.life>0);
   for(const r of rings){
-    r.r+=(r.big?4:2.6)*devicePixelRatio; r.life-=0.07;
+    r.r+=(r.big?4:2.6)*DPR; r.life-=0.07;
     ctx.globalAlpha=Math.max(0,r.life)*0.8;
-    ctx.strokeStyle=r.color; ctx.lineWidth=(r.big?4:2.5)*devicePixelRatio*r.life;
+    ctx.strokeStyle=r.color; ctx.lineWidth=(r.big?4:2.5)*DPR*r.life;
     ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.stroke();
   }
   ctx.globalAlpha=1;
@@ -925,11 +969,11 @@ function loop(){
   pops=pops.filter(p=>pn-p.at<180);
   for(const p of pops){
     const k=(pn-p.at)/180, ex=1+k*(p.perfect?0.9:0.5);
-    const bw=lw*0.84*ex, bh=14*devicePixelRatio*ex;
+    const bw=lw*0.84*ex, bh=14*DPR*ex;
     ctx.globalAlpha=(1-k)*0.85;
     ctx.fillStyle=k<0.25? '#ffffff' : p.color;
     ctx.beginPath();
-    ctx.roundRect(laneX(p.lane)-bw/2, hitY-bh/2, bw, bh, 7*devicePixelRatio);
+    ctx.roundRect(laneX(p.lane)-bw/2, hitY-bh/2, bw, bh, 7*DPR);
     ctx.fill();
   }
   ctx.globalAlpha=1;
