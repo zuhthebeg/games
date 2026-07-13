@@ -6016,7 +6016,7 @@
         _hintCards = null;
         renderCards();
         updateHandPreview();
-        playSelected();   // 공격 제출
+        guardedAction(playSelected);   // 공격 제출 (재진입 가드 경유)
         return;
       }
       clearHintCards();
@@ -8502,8 +8502,16 @@
       }
     };
 
-    $("#playBtn").addEventListener("click", playSelected);
-    $("#discardBtn").addEventListener("click", discardSelected);
+    // 공격/버리기 재진입 가드 — 연출(await) 중 따닥 탭이 두 번 실행되는 버그 방지.
+    // play↔discard 상호 배제까지 겸한다 (공격 연출 중 버리기도 차단).
+    let _actionBusy = false;
+    async function guardedAction(fn) {
+      if (_actionBusy) return;
+      _actionBusy = true;
+      try { await fn(); } finally { _actionBusy = false; }
+    }
+    $("#playBtn").addEventListener("click", () => guardedAction(playSelected));
+    $("#discardBtn").addEventListener("click", () => guardedAction(discardSelected));
     $("#sortBtn").addEventListener("click", () => {
       state.sortMode = state.sortMode === "rank" ? "suit" : "rank";
       const lbl = $("#sortModeLabel");
