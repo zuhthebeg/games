@@ -8767,7 +8767,12 @@
       fab.style.display = "flex";
 
       const opt = (v, t) => `<option value="${v}">${t}</option>`;
-      $("#dbgJoker").innerHTML  = jokerPool.map(j => opt(j.id, `${j.name} (${j.id})`)).join("");
+      const RDOT = { common:"⚪", uncommon:"🟢", rare:"🔴", legendary:"🟣" };
+      const RORD = { legendary:0, rare:1, uncommon:2, common:3 };
+      const rkOf = j => j.rarity || JOKER_RARITY[j.id] || "common";
+      $("#dbgJoker").innerHTML  = jokerPool.slice()
+        .sort((a,b) => (RORD[rkOf(a)] - RORD[rkOf(b)]) || a.name.localeCompare(b.name))
+        .map(j => { const rk = rkOf(j); return opt(j.id, `${RDOT[rk]||""} [${RARITY[rk]?.label||rk}] ${j.name} (${j.id})`); }).join("");
       $("#dbgTarot").innerHTML  = tarotPool.map(t => opt(t.id, `${t.name} (${t.id})`)).join("");
       $("#dbgPlanet").innerHTML = planetPool.map(p => opt(p.id, `${p.planet || ""} ${p.name}`)).join("");
       $("#dbgRank").innerHTML   = rankList.map(r => opt(r, formatRank(r))).join("");
