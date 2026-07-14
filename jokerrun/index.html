@@ -3606,7 +3606,7 @@
       { id: "risky3x", name: "시한폭탄", cost: 13, rarity: "legendary", mult: true, desc: "연격 ×3, 단 발동 시 20% 확률로 소멸", detail: "공격할 때마다 연격 ×3. 하지만 발동할 때마다 20% 확률로 터져 사라진다. 고위험 고수익.", apply(ctx, self) { ctx.mult *= 3; ctx.activate("risky3x"); if (Math.random() < 0.2) self.expired = true; } },
       { id: "extraHands", name: "곡예사", cost: 9, rarity: "uncommon", desc: "전투 시작 시 공격 횟수 +2", detail: "각 전투를 시작할 때 공격(핸드) 횟수가 2회 늘어난다.", apply() {} },
       { id: "extraDiscards", name: "재정비", cost: 8, rarity: "uncommon", desc: "전투 시작 시 버리기 +2", detail: "각 전투를 시작할 때 버리기 횟수가 2회 늘어난다.", apply() {} },
-      { id: "twoPairMaster", name: "쌍둥이 장인", cost: 18, rarity: "legendary", mult: true, desc: "페어 포함 x2 · 투페어 x4 · 포카드 포함 x8", detail: "페어를 포함한 기술이면 연격 x2, 투페어면 x4, 포카드(같은 랭크 4장) 이상이면 x8. 셋 중 가장 높은 배율만 적용된다. 신화 등급.", apply(ctx) { const ht = ctx.handType; let mx = 1; if (ht === "FOUR" || ht === "FIVE" || ht === "FLUSH_FIVE") mx = 8; else if (ht === "TWO_PAIR") mx = 4; else if (ht === "PAIR" || ht === "THREE" || ht === "FULL_HOUSE" || ht === "FLUSH_HOUSE") mx = 2; if (mx > 1) { ctx.mult *= mx; ctx.activate("twoPairMaster"); } } },
+      { id: "twoPairMaster", name: "올인", cost: 18, rarity: "legendary", desc: "보유 자금 전부 소비 · 소비액 절반만큼 연격 추가", detail: "공격 시 보유 자금(🪙)을 전부 소비하고, 소비한 금액의 절반만큼 연격을 더한다. 자금이 0이 되므로 사실상 전투 첫 공격에 한 방. 판돈을 전부 거는 올인 조커. 신화 등급.", apply(ctx) { const gold = Math.floor(state.money || 0); if (gold > 0) { ctx.mult += Math.floor(gold * 0.5); state.money = 0; const _ml = document.getElementById("moneyLabel"); if (_ml) _ml.textContent = `🪙${state.money}`; ctx.activate("twoPairMaster"); } } },
       { id: "anteLevel", name: "운석우", cost: 16, rarity: "rare", desc: "전투 첫 플레이 기술 레벨 +1", detail: "각 전투에서 처음 플레이한 포커 기술의 레벨이 +1 오른다(전투당 1회). 전투마다 누적되므로 자주 쓰는 기술이 쭉쭉 큰다.", apply() {} },
       { id: "hahoe", name: "야누스", cost: 9, rarity: "uncommon", desc: "공격마다 50% 연격 +6 / 50% 공격력 +60", detail: "변덕스러운 탈. 매 공격 동전을 던져 연격 +6 또는 공격력 +60 중 하나가 발동한다.", apply(ctx) { if (Math.random() < 0.5) ctx.mult += 6; else ctx.chips += 60; ctx.activate("hahoe"); } },
       { id: "handsome", name: "미남", cost: 9, rarity: "uncommon", desc: "J/Q/K 1장당 공격력 +30", detail: "플레이한 J·Q·K 카드 1장마다 공격력 +30. 페이스 카드를 모을수록 강해진다.", apply(ctx) { const n = ctx.scored.filter(c => c.rank >= 11 && c.rank <= 13).length; if (n > 0) { ctx.chips += n * 30; ctx.activate("handsome"); } } },
@@ -3992,7 +3992,7 @@
       risky3x:{name:"Time Bomb",desc:"Combo ×3, but 20% to vanish on trigger"},
       extraHands:{name:"Juggler",desc:"+2 hands at combat start"},
       extraDiscards:{name:"Recycler",desc:"+2 discards at combat start"},
-      twoPairMaster:{name:"Pair Savant",desc:"Pair x2 · Two Pair x4 · Four+ x8"},
+      twoPairMaster:{name:"All-In",desc:"Spend all your cash · Combo +half the spent amount"},
       anteLevel:{name:"Stargazer",desc:"First hand played each battle +1 level"},
       hahoe:{name:"Janus",desc:"Each attack 50% Combo +6 / 50% ATK +60"},
       handsome:{name:"Charmer",desc:"ATK +30 per J/Q/K"},
@@ -4081,7 +4081,7 @@
       risky3x:{name:"定時炸彈",desc:"連擊×3，但發動時20%消失"},
       extraHands:{name:"雜耍藝人",desc:"戰鬥開始時 +2出牌"},
       extraDiscards:{name:"整備員",desc:"戰鬥開始時 +2棄牌"},
-      twoPairMaster:{name:"雙對宗師",desc:"含對子 x2 · 兩對 x4 · 四條以上 x8"},
+      twoPairMaster:{name:"全押",desc:"消耗全部資金 · 連擊 +消耗額的一半"},
       anteLevel:{name:"觀星者",desc:"每場戰鬥首次出牌技能+1級"},
       hahoe:{name:"雅努斯",desc:"每次攻擊 50%連擊+6/50%攻擊力+60"},
       handsome:{name:"美男",desc:"每張J/Q/K 攻擊力+30"},
@@ -4170,7 +4170,7 @@
       risky3x:{name:"時限爆弾",desc:"連撃×3、但し発動時20%で消滅"},
       extraHands:{name:"曲芸師",desc:"戦闘開始時 プレイ+2"},
       extraDiscards:{name:"整備員",desc:"戦闘開始時 捨て+2"},
-      twoPairMaster:{name:"ツーペアの達人",desc:"ペア含む x2 · ツーペア x4 · フォーカード以上 x8"},
+      twoPairMaster:{name:"オールイン",desc:"所持金を全消費 · 消費額の半分だけ連撃追加"},
       anteLevel:{name:"星詠み",desc:"戦闘毎 最初に出した役+1レベル"},
       hahoe:{name:"ヤヌス",desc:"攻撃毎 50%連撃+6/50%攻撃力+60"},
       handsome:{name:"美男",desc:"J/Q/K1枚毎 攻撃力+30"},
@@ -4346,7 +4346,7 @@
     function collectionData(kind) {
       if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: aimg(`tarot/${t.id}.webp?v=5`), badge: { label: "타로", color: "#b56ad6" } }));
       if (kind === "planet") return planetPool.map(p => { if (p.special) return { id: p.id, name: p.name, desc: p.desc, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "특수", color: "#a06bff" } }; const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 기술 영구 강화 (+${p.chipsBonus}공격력 / +${p.multBonus}연격)`, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "행성", color: "#4a84ff" } }; });
-      return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: aimg(`jokers/${j.id}.webp?v=4`), glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
+      return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: aimg(`jokers/${j.id}.webp?v=5`), glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
     }
     function renderCollection(kind) {
       _collectionTab = kind;
@@ -5503,7 +5503,7 @@
     const _legendImgCache = {};   // id → {idle,atk} HTMLImageElement | "missing"
     function _legendLoad(jid) {
       if (_legendImgCache[jid]) return _legendImgCache[jid];
-      const mk = (suffix) => { const im = new Image(); im.src = `jokers_fx/${jid}${suffix}.webp?v=1`; return im; };
+      const mk = (suffix) => { const im = new Image(); im.src = `jokers_fx/${jid}${suffix}.webp?v=2`; return im; };
       const entry = { idle: mk(""), atk: mk("_atk") };
       entry.idle.onerror = entry.atk.onerror = () => { _legendImgCache[jid] = "missing"; };
       _legendImgCache[jid] = entry;
@@ -6493,11 +6493,11 @@
         tile.className = "mini-tile" + (joker.negative ? " negative" : (_ed ? " ed-" + _ed.key : ""));
         tile.dataset.idx = String(index);
         if (!joker.negative && !_ed) tile.style.borderColor = _r.color + "88";
-        tile.innerHTML = `<div class="mini-art"><img src="${aimg(`jokers/${joker.id}.webp?v=4`)}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}<span class="mini-grip" aria-hidden="true" title="${t("ui_drag_reorder")}">⠿</span>`;
+        tile.innerHTML = `<div class="mini-art"><img src="${aimg(`jokers/${joker.id}.webp?v=5`)}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}<span class="mini-grip" aria-hidden="true" title="${t("ui_drag_reorder")}">⠿</span>`;
         tile.addEventListener("click", () => {
           if (tile._suppressClick) { tile._suppressClick = false; return; }   // 드래그였으면 팝업 무시
           openDetailPopup({
-            imgSrc: `jokers/${joker.id}.webp?v=4`,
+            imgSrc: `jokers/${joker.id}.webp?v=5`,
             glyph: jokerGlyphClass[joker.id] || "joker-duo",
             name: joker.name, badgeLabel: _r.label, badgeColor: _r.color,
             negative: !!joker.negative, edition: joker.edition,
@@ -6573,7 +6573,7 @@
       const _r = rarityOf(joker);
       const sell = jokerSellValue(joker);
       openDetailPopup({
-        imgSrc: `jokers/${joker.id}.webp?v=4`,
+        imgSrc: `jokers/${joker.id}.webp?v=5`,
         glyph: jokerGlyphClass[joker.id] || "joker-duo",
         name: joker.name,
         badgeLabel: _r.label, badgeColor: _r.color,
@@ -6682,7 +6682,7 @@
           const _r = rarityOf(joker);
           box.style.setProperty("--rar", _r.color);
           box.innerHTML = `
-            <img class="joker-art" src="${aimg(`jokers/${joker.id}.webp?v=4`)}" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
+            <img class="joker-art" src="${aimg(`jokers/${joker.id}.webp?v=5`)}" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
             <span class="joker-grad" aria-hidden="true"></span>
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
             ${joker.negative ? '<span class="joker-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}
@@ -7290,7 +7290,7 @@
       wrap.className = "joker-flash";
       const fb = `<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\' style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem\\'></span>`;
       wrap.innerHTML = `<div class="jf-card" style="border-color:${r.color};box-shadow:0 0 36px ${r.color}99">
-        <img src="${aimg(`jokers/${joker.id}.webp?v=4`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">
+        <img src="${aimg(`jokers/${joker.id}.webp?v=5`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">
         <div class="jf-tag" style="color:${isMult ? "#ff8a98" : "#8fd6ff"}">${t("ui_triggered")}</div>
         <div class="jf-name">${joker.name}</div>
       </div>`;
@@ -7917,14 +7917,14 @@
         const full = jokerSlotsFull();
         const afford = state.money >= cost;
         jRow.appendChild(buildShopTile({
-          imgSrc: `jokers/${joker.id}.webp?v=4`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
+          imgSrc: `jokers/${joker.id}.webp?v=5`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
           name: (_ed ? _ed.icon + " " : "") + joker.name, price: cost, afford,
           borderColor: _ed ? _ed.color : _r.color,
           edClass: _ed ? "ed-" + _ed.key : null,
           cornerIcon: _ed ? _ed.icon : null, cornerTitle: _ed ? `${_ed.label} — ${_ed.fx}` : null,
           badge: { label: _r.label, color: _r.color },
           onClick: () => openDetailPopup({
-            imgSrc: `jokers/${joker.id}.webp?v=4`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
+            imgSrc: `jokers/${joker.id}.webp?v=5`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
             name: joker.name, badgeLabel: _r.label, badgeColor: _r.color, edition: joker.edition,
             desc: joker.detail || joker.desc,
             costLine: t("pop_shop_joker_cost", {cost, sell: jokerSellValue(joker)}),
