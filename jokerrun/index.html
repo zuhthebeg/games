@@ -3606,13 +3606,13 @@
       { id: "risky3x", name: "시한폭탄", cost: 13, rarity: "legendary", mult: true, desc: "연격 ×3, 단 발동 시 20% 확률로 소멸", detail: "공격할 때마다 연격 ×3. 하지만 발동할 때마다 20% 확률로 터져 사라진다. 고위험 고수익.", apply(ctx, self) { ctx.mult *= 3; ctx.activate("risky3x"); if (Math.random() < 0.2) self.expired = true; } },
       { id: "extraHands", name: "곡예사", cost: 9, rarity: "uncommon", desc: "전투 시작 시 공격 횟수 +2", detail: "각 전투를 시작할 때 공격(핸드) 횟수가 2회 늘어난다.", apply() {} },
       { id: "extraDiscards", name: "재정비", cost: 8, rarity: "uncommon", desc: "전투 시작 시 버리기 +2", detail: "각 전투를 시작할 때 버리기 횟수가 2회 늘어난다.", apply() {} },
-      { id: "twoPairMaster", name: "올인", cost: 18, rarity: "legendary", desc: "보유 자금 전부 소비 · 소비액 절반만큼 연격 추가", detail: "공격 시 보유 자금(🪙)을 전부 소비하고, 소비한 금액의 절반만큼 연격을 더한다. 자금이 0이 되므로 사실상 전투 첫 공격에 한 방. 판돈을 전부 거는 올인 조커. 신화 등급.", apply(ctx) { const gold = Math.floor(state.money || 0); if (gold > 0) { ctx.mult += Math.floor(gold * 0.5); state.money = 0; const _ml = document.getElementById("moneyLabel"); if (_ml) _ml.textContent = `🪙${state.money}`; ctx.activate("twoPairMaster"); } } },
+      { id: "twoPairMaster", name: "쌍둥이 장인", cost: 18, rarity: "legendary", mult: true, desc: "페어 포함 x2 · 투페어 x4 · 포카드 포함 x8", detail: "페어를 포함한 기술이면 연격 x2, 투페어면 x4, 포카드(같은 랭크 4장) 이상이면 x8. 셋 중 가장 높은 배율만 적용된다. 신화 등급.", apply(ctx) { const ht = ctx.handType; let mx = 1; if (ht === "FOUR" || ht === "FIVE" || ht === "FLUSH_FIVE") mx = 8; else if (ht === "TWO_PAIR") mx = 4; else if (ht === "PAIR" || ht === "THREE" || ht === "FULL_HOUSE" || ht === "FLUSH_HOUSE") mx = 2; if (mx > 1) { ctx.mult *= mx; ctx.activate("twoPairMaster"); } } },
       { id: "anteLevel", name: "운석우", cost: 16, rarity: "rare", desc: "전투 첫 플레이 기술 레벨 +1", detail: "각 전투에서 처음 플레이한 포커 기술의 레벨이 +1 오른다(전투당 1회). 전투마다 누적되므로 자주 쓰는 기술이 쭉쭉 큰다.", apply() {} },
       { id: "hahoe", name: "야누스", cost: 9, rarity: "uncommon", desc: "공격마다 50% 연격 +6 / 50% 공격력 +60", detail: "변덕스러운 탈. 매 공격 동전을 던져 연격 +6 또는 공격력 +60 중 하나가 발동한다.", apply(ctx) { if (Math.random() < 0.5) ctx.mult += 6; else ctx.chips += 60; ctx.activate("hahoe"); } },
       { id: "handsome", name: "미남", cost: 9, rarity: "uncommon", desc: "J/Q/K 1장당 공격력 +30", detail: "플레이한 J·Q·K 카드 1장마다 공격력 +30. 페이스 카드를 모을수록 강해진다.", apply(ctx) { const n = ctx.scored.filter(c => c.rank >= 11 && c.rank <= 13).length; if (n > 0) { ctx.chips += n * 30; ctx.activate("handsome"); } } },
       { id: "firstMove", name: "선공", cost: 12, rarity: "rare", mult: true, desc: "전투 첫 공격이면 연격 ×3", detail: "각 전투의 첫 번째 공격에서 연격 ×3. 강한 패를 첫 턴에 몰아치는 빌드용.", apply(ctx) { if (state.handsLeft === state._startHands) { ctx.mult *= 3; ctx.activate("firstMove"); } } },
       { id: "lastStand", name: "배수진", cost: 18, rarity: "legendary", mult: true, desc: "덱이 적게 남을수록 연격 폭증 (10장 ×1 → 2장 ×2 → 1장 ×10)", detail: "이번 전투 덱에 남은 카드가 적을수록 연격 배율이 커진다. 10장이면 ×1(효과 없음), 줄어들수록 올라 2장이면 ×2, 마지막 1장이면 ×10. 덱을 끝까지 짜낼수록 폭발하는 신화 조커.", apply(ctx) { const r = state.deck ? state.deck.length : 0; let m = 1; if (r <= 1) m = 10; else if (r <= 9) m = 1 + (10 - r) / 8; if (m > 1) { ctx.mult *= m; ctx.activate("lastStand"); } } },
-      { id: "allIn", name: "몰빵", cost: 16, rarity: "legendary", mult: true, desc: "정확히 5장 플레이면 연격 ×3", detail: "카드를 정확히 5장 내면 연격 ×3. 풀 핸드 플레이 보상.", apply(ctx) { if (ctx.cards.length >= 5) { ctx.mult *= 3; ctx.activate("allIn"); } } },
+      { id: "allIn", name: "몰빵", cost: 16, rarity: "legendary", mult: true, desc: "보유 자금 전부 걸고 연격 ×(자금÷10) · 쓰면 소멸", detail: "공격 시 보유 자금(🪙)을 전부 건다. 연격 ×(자금÷10, 최소 ×2). 자금은 0이 되고 조커도 그 자리에서 소멸한다. 판돈을 한 방에 전부 거는 일회용 신화.", apply(ctx, self) { const gold = Math.floor(state.money || 0); if (gold > 0) { ctx.mult *= Math.max(2, gold / 10); state.money = 0; const _ml = document.getElementById("moneyLabel"); if (_ml) _ml.textContent = `🪙${state.money}`; ctx.activate("allIn"); } self.expired = true; } },
       { id: "pairPlus", name: "짝의 미학", cost: 8, rarity: "uncommon", desc: "원페어 이상이면 공격력 +80", detail: "기술이 원페어 이상(하이카드 제외)이면 공격력 +80.", apply(ctx) { if (ctx.handType !== "HIGH_CARD") { ctx.chips += 80; ctx.activate("pairPlus"); } } },
       // ── 누적 시너지 조커(리롤/타로/행성 사용량에 비례해 영구 성장) ──
       { id: "rerollMult", name: "갱신의 대가", cost: 12, rarity: "rare", desc: "리롤할 때마다 연격 영구 +0.5", detail: "상점에서 갱신(리롤)할 때마다 연격 보너스가 영구히 +0.5씩 쌓입니다. 멀리건·리롤 바우처와 시너지.", apply(ctx, self) { if ((self.counter || 0) > 0) { ctx.mult += self.counter * 0.5; ctx.activate("rerollMult"); } self.desc = `리롤마다 연격 영구 +0.5 (현재 +${((self.counter || 0) * 0.5).toFixed(1)})`; } },
@@ -3992,13 +3992,13 @@
       risky3x:{name:"Time Bomb",desc:"Combo ×3, but 20% to vanish on trigger"},
       extraHands:{name:"Juggler",desc:"+2 hands at combat start"},
       extraDiscards:{name:"Recycler",desc:"+2 discards at combat start"},
-      twoPairMaster:{name:"All-In",desc:"Spend all your cash · Combo +half the spent amount"},
+      twoPairMaster:{name:"Pair Savant",desc:"Pair x2 · Two Pair x4 · Four+ x8"},
       anteLevel:{name:"Stargazer",desc:"First hand played each battle +1 level"},
       hahoe:{name:"Janus",desc:"Each attack 50% Combo +6 / 50% ATK +60"},
       handsome:{name:"Charmer",desc:"ATK +30 per J/Q/K"},
       firstMove:{name:"First Move",desc:"First attack of combat: Combo ×3"},
       lastStand:{name:"Last Stand",desc:"Fewer deck cards → bigger Combo (10:×1 → 2:×2 → 1:×10)"},
-      allIn:{name:"All or Nothing",desc:"Exactly 5 cards: Combo ×3"},
+      allIn:{name:"All or Nothing",desc:"Bet all cash · Combo ×(cash÷10) · consumed on use"},
       pairPlus:{name:"Pair Bonus",desc:"Pair or better: ATK +80"}, rerollMult:{name:"Reroll Master",desc:"Combo +0.5 permanently per reroll"}, tarotMult:{name:"Tarot Adept",desc:"Combo +3 permanently per tarot used"}, planetChip:{name:"Planet Keeper",desc:"ATK +10 permanently per planet used"},
       mercury:{name:"Mercury"}, venus:{name:"Venus"}, earth:{name:"Earth"}, mars:{name:"Mars"},
       jupiter:{name:"Jupiter"}, saturn:{name:"Saturn"}, uranus:{name:"Uranus"}, neptune:{name:"Neptune"}, pluto:{name:"Pluto"},
@@ -4081,13 +4081,13 @@
       risky3x:{name:"定時炸彈",desc:"連擊×3，但發動時20%消失"},
       extraHands:{name:"雜耍藝人",desc:"戰鬥開始時 +2出牌"},
       extraDiscards:{name:"整備員",desc:"戰鬥開始時 +2棄牌"},
-      twoPairMaster:{name:"全押",desc:"消耗全部資金 · 連擊 +消耗額的一半"},
+      twoPairMaster:{name:"雙對宗師",desc:"含對子 x2 · 兩對 x4 · 四條以上 x8"},
       anteLevel:{name:"觀星者",desc:"每場戰鬥首次出牌技能+1級"},
       hahoe:{name:"雅努斯",desc:"每次攻擊 50%連擊+6/50%攻擊力+60"},
       handsome:{name:"美男",desc:"每張J/Q/K 攻擊力+30"},
       firstMove:{name:"先攻",desc:"戰鬥首攻：連擊×3"},
       lastStand:{name:"背水一戰",desc:"牌庫越少 連擊越高（10張×1 → 2張×2 → 1張×10）"},
-      allIn:{name:"孤注一擲",desc:"正好5張：連擊×3"},
+      allIn:{name:"孤注一擲",desc:"押上全部資金 · 連擊×(資金÷10) · 使用後消失"},
       pairPlus:{name:"對子美學",desc:"一對以上：攻擊力+80"}, rerollMult:{name:"刷新大師",desc:"每次刷新 連擊永久+0.5"}, tarotMult:{name:"塔羅術士",desc:"每用塔羅 連擊永久+3"}, planetChip:{name:"行星守護者",desc:"每用行星 攻擊力永久+10"},
       mercury:{name:"水星"}, venus:{name:"金星"}, earth:{name:"地球"}, mars:{name:"火星"},
       jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
@@ -4170,13 +4170,13 @@
       risky3x:{name:"時限爆弾",desc:"連撃×3、但し発動時20%で消滅"},
       extraHands:{name:"曲芸師",desc:"戦闘開始時 プレイ+2"},
       extraDiscards:{name:"整備員",desc:"戦闘開始時 捨て+2"},
-      twoPairMaster:{name:"オールイン",desc:"所持金を全消費 · 消費額の半分だけ連撃追加"},
+      twoPairMaster:{name:"ツーペアの達人",desc:"ペア含む x2 · ツーペア x4 · フォーカード以上 x8"},
       anteLevel:{name:"星詠み",desc:"戦闘毎 最初に出した役+1レベル"},
       hahoe:{name:"ヤヌス",desc:"攻撃毎 50%連撃+6/50%攻撃力+60"},
       handsome:{name:"美男",desc:"J/Q/K1枚毎 攻撃力+30"},
       firstMove:{name:"先制",desc:"戦闘初撃：連撃×3"},
       lastStand:{name:"背水の陣",desc:"山札が少ないほど連撃UP（10枚×1 → 2枚×2 → 1枚×10）"},
-      allIn:{name:"オールイン",desc:"ちょうど5枚：連撃×3"},
+      allIn:{name:"オールイン",desc:"所持金を全額賭ける · 連撃×(所持金÷10) · 使用後消滅"},
       pairPlus:{name:"ペアの美学",desc:"ワンペア以上：攻撃力+80"}, rerollMult:{name:"リロールの達人",desc:"更新毎 連撃永久+0.5"}, tarotMult:{name:"タロット術師",desc:"タロット使用毎 連撃永久+3"}, planetChip:{name:"惑星の番人",desc:"惑星使用毎 攻撃力永久+10"},
       mercury:{name:"水星"}, venus:{name:"金星"}, earth:{name:"地球"}, mars:{name:"火星"},
       jupiter:{name:"木星"}, saturn:{name:"土星"}, uranus:{name:"天王星"}, neptune:{name:"海王星"}, pluto:{name:"冥王星"},
@@ -4346,7 +4346,7 @@
     function collectionData(kind) {
       if (kind === "tarot") return tarotPool.map(t => ({ id: t.id, name: t.name, desc: (t.desc || "") + ((t.need || 0) > 0 ? ` · 카드 ${t.need}장 선택` : " · 즉시 사용"), img: aimg(`tarot/${t.id}.webp?v=5`), badge: { label: "타로", color: "#b56ad6" } }));
       if (kind === "planet") return planetPool.map(p => { if (p.special) return { id: p.id, name: p.name, desc: p.desc, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "특수", color: "#a06bff" } }; const hn = handBase[p.hand]?.name || p.hand; return { id: p.id, name: `${p.name}(${hn})`, desc: `${hn} 기술 영구 강화 (+${p.chipsBonus}공격력 / +${p.multBonus}연격)`, img: aimg(`planets/${p.id}.webp?v=2`), badge: { label: "행성", color: "#4a84ff" } }; });
-      return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: aimg(`jokers/${j.id}.webp?v=5`), glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
+      return jokerPool.map(j => { const r = rarityOf(j); return { id: j.id, name: j.name, desc: j.detail || j.desc, img: aimg(`jokers/${j.id}.webp?v=6`), glyph: jokerGlyphClass[j.id] || "joker-duo", badge: { label: r.label, color: r.color } }; });
     }
     function renderCollection(kind) {
       _collectionTab = kind;
@@ -5503,7 +5503,7 @@
     const _legendImgCache = {};   // id → {idle,atk} HTMLImageElement | "missing"
     function _legendLoad(jid) {
       if (_legendImgCache[jid]) return _legendImgCache[jid];
-      const mk = (suffix) => { const im = new Image(); im.src = `jokers_fx/${jid}${suffix}.webp?v=2`; return im; };
+      const mk = (suffix) => { const im = new Image(); im.src = `jokers_fx/${jid}${suffix}.webp?v=3`; return im; };
       const entry = { idle: mk(""), atk: mk("_atk") };
       entry.idle.onerror = entry.atk.onerror = () => { _legendImgCache[jid] = "missing"; };
       _legendImgCache[jid] = entry;
@@ -6493,11 +6493,11 @@
         tile.className = "mini-tile" + (joker.negative ? " negative" : (_ed ? " ed-" + _ed.key : ""));
         tile.dataset.idx = String(index);
         if (!joker.negative && !_ed) tile.style.borderColor = _r.color + "88";
-        tile.innerHTML = `<div class="mini-art"><img src="${aimg(`jokers/${joker.id}.webp?v=5`)}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}<span class="mini-grip" aria-hidden="true" title="${t("ui_drag_reorder")}">⠿</span>`;
+        tile.innerHTML = `<div class="mini-art"><img src="${aimg(`jokers/${joker.id}.webp?v=6`)}" alt="" loading="lazy" draggable="false" onerror="this.outerHTML='<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\'></span>'"></div><div class="mini-name">${joker.name}</div><span class="mini-dot" style="background:${_r.color}"></span>${joker.negative ? '<span class="mini-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}${_ed ? `<span class="mini-ed-badge" title="${_ed.label} — ${_ed.fx}">${_ed.icon}</span>` : ""}<span class="mini-grip" aria-hidden="true" title="${t("ui_drag_reorder")}">⠿</span>`;
         tile.addEventListener("click", () => {
           if (tile._suppressClick) { tile._suppressClick = false; return; }   // 드래그였으면 팝업 무시
           openDetailPopup({
-            imgSrc: `jokers/${joker.id}.webp?v=5`,
+            imgSrc: `jokers/${joker.id}.webp?v=6`,
             glyph: jokerGlyphClass[joker.id] || "joker-duo",
             name: joker.name, badgeLabel: _r.label, badgeColor: _r.color,
             negative: !!joker.negative, edition: joker.edition,
@@ -6573,7 +6573,7 @@
       const _r = rarityOf(joker);
       const sell = jokerSellValue(joker);
       openDetailPopup({
-        imgSrc: `jokers/${joker.id}.webp?v=5`,
+        imgSrc: `jokers/${joker.id}.webp?v=6`,
         glyph: jokerGlyphClass[joker.id] || "joker-duo",
         name: joker.name,
         badgeLabel: _r.label, badgeColor: _r.color,
@@ -6682,7 +6682,7 @@
           const _r = rarityOf(joker);
           box.style.setProperty("--rar", _r.color);
           box.innerHTML = `
-            <img class="joker-art" src="${aimg(`jokers/${joker.id}.webp?v=5`)}" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
+            <img class="joker-art" src="${aimg(`jokers/${joker.id}.webp?v=6`)}" alt="" loading="lazy" draggable="false" onerror="this.style.display='none'">
             <span class="joker-grad" aria-hidden="true"></span>
             <span class="joker-rar" style="background:${_r.color}" title="${_r.label}"></span>
             ${joker.negative ? '<span class="joker-neg-badge" title="' + t("tip_negative") + '">🌑</span>' : ""}
@@ -7290,7 +7290,7 @@
       wrap.className = "joker-flash";
       const fb = `<span class=\\'joker-glyph ${jokerGlyphClass[joker.id] || "joker-duo"}\\' style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem\\'></span>`;
       wrap.innerHTML = `<div class="jf-card" style="border-color:${r.color};box-shadow:0 0 36px ${r.color}99">
-        <img src="${aimg(`jokers/${joker.id}.webp?v=5`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">
+        <img src="${aimg(`jokers/${joker.id}.webp?v=6`)}" alt="" draggable="false" onerror="this.outerHTML='${fb}'">
         <div class="jf-tag" style="color:${isMult ? "#ff8a98" : "#8fd6ff"}">${t("ui_triggered")}</div>
         <div class="jf-name">${joker.name}</div>
       </div>`;
@@ -7917,14 +7917,14 @@
         const full = jokerSlotsFull();
         const afford = state.money >= cost;
         jRow.appendChild(buildShopTile({
-          imgSrc: `jokers/${joker.id}.webp?v=5`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
+          imgSrc: `jokers/${joker.id}.webp?v=6`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
           name: (_ed ? _ed.icon + " " : "") + joker.name, price: cost, afford,
           borderColor: _ed ? _ed.color : _r.color,
           edClass: _ed ? "ed-" + _ed.key : null,
           cornerIcon: _ed ? _ed.icon : null, cornerTitle: _ed ? `${_ed.label} — ${_ed.fx}` : null,
           badge: { label: _r.label, color: _r.color },
           onClick: () => openDetailPopup({
-            imgSrc: `jokers/${joker.id}.webp?v=5`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
+            imgSrc: `jokers/${joker.id}.webp?v=6`, glyph: jokerGlyphClass[joker.id] || "joker-duo",
             name: joker.name, badgeLabel: _r.label, badgeColor: _r.color, edition: joker.edition,
             desc: joker.detail || joker.desc,
             costLine: t("pop_shop_joker_cost", {cost, sell: jokerSellValue(joker)}),
