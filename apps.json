@@ -1,385 +1,399 @@
 [
- {
-  "title": "비트드롭 BEAT DROP",
-  "icon": "https://game.cocy.io/rhythmproto/icon.svg",
-  "url": "https://game.cocy.io/rhythmproto/",
-  "desc": "AI가 만든 케이팝 20곡 리듬게임! 4키·6키 낙하 노트, 난이도 4단계, 골드·랭킹. 한국어/English/日本語/繁體中文",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "ko",
-   "en",
-   "ja",
-   "zh-TW"
-  ],
-  "category": "arcade"
- },
- {
-  "title": "멜로디 에코",
-  "icon": "https://game.cocy.io/melodyecho/icon.svg",
-  "url": "https://game.cocy.io/melodyecho/",
-  "desc": "듣고 건반으로 따라 치고, 리듬을 탭으로 재현! 적응형 청음 레벨 진단. 한국어/English/日本語/繁體中文",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "ko",
-   "en",
-   "ja",
-   "zh-TW"
-  ],
-  "category": "puzzle"
- },
- {
-  "title": "틀린 음 찾기",
-  "icon": "https://game.cocy.io/wrongnote/icon.svg",
-  "url": "https://game.cocy.io/wrongnote/",
-  "desc": "오디오판 틀린그림찾기! 매일 5문제, 귀 나이 진단·이모지 공유. 한국어/English/日本語",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "ko",
-   "en",
-   "ja"
-  ],
-  "category": "puzzle"
- },
- {
-  "title": "팝매치",
-  "icon": "https://game.cocy.io/match3/icon.svg",
-  "url": "https://game.cocy.io/match3/",
-  "desc": "애니팡식 매치-3! 60초 시간제·콤보 폭발·골드 보상·랭킹, 한국어/繁體中文/English",
-  "badge": "HOT",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "ko",
-   "zhTW",
-   "en"
-  ],
-  "category": "puzzle"
- },
- {
-  "title": "스도쿠",
-  "icon": "https://game.cocy.io/sudoku/icon.svg",
-  "url": "https://game.cocy.io/sudoku/",
-  "desc": "스도쿠 (數獨) - 쉬움·보통·어려움, 골드 보상·랭킹, 한국어/繁體中文/English",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "ko",
-   "zhTW",
-   "en"
-  ],
-  "category": "puzzle"
- },
- {
-  "title": "대만 마작",
-  "icon": "https://game.cocy.io/mahjong/icon.svg",
-  "url": "https://game.cocy.io/mahjong/",
-  "desc": "대만 마작 (台灣麻將) - 16타일 핸드, 4인 플레이, 타이 × 10만G 보상",
-  "badge": "HOT",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "ko"
-  ],
-  "category": "classic",
-  "video": "https://game.cocy.io/mahjong/preview.mp4"
- },
- {
-  "title": "맞고 (화투)",
-  "icon": "https://game.cocy.io/gostop/icon.svg",
-  "url": "https://game.cocy.io/gostop/",
-  "desc": "화투 2인 맞고 - 광·띠·끗·피·고도리·고스톱·피박, CPU 대전",
-  "badge": "HOT",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "ko"
-  ],
-  "category": "classic"
- },
- {
-  "title": "블랙잭",
-  "icon": "https://game.cocy.io/blackjack/icon.svg",
-  "url": "https://game.cocy.io/blackjack/",
-  "desc": "딜러와 1:1 블랙잭! 골드 베팅, 3:2 배당, 연승 보너스",
-  "badge": "HOT",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🇰🇷"
-  ],
-  "category": "card"
- },
- {
-  "title": "D2R 룬워드 조합기",
-  "icon": "https://game.cocy.io/d2r-runewords/icon.svg",
-  "url": "https://game.cocy.io/d2r-runewords/",
-  "desc": "룬 순서 선택 → 룬워드 검색. 장비/직업/레벨 필터",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🇰🇷"
-  ],
-  "category": "game"
- },
- {
-  "title": "조커런",
-  "icon": "https://game.cocy.io/jokerrun/icon.svg?v=2",
-  "url": "https://game.cocy.io/jokerrun/",
-  "desc": "포커 로그라이크! 핸드 조합하고 조커로 점수 폭발",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🌍"
-  ],
-  "category": "card",
-  "video": "https://game.cocy.io/jokerrun/preview.mp4"
- },
- {
-  "title": "무기 강화 & 배틀",
-  "icon": "https://game.cocy.io/enhance/icon.svg",
-  "url": "https://game.cocy.io/enhance/",
-  "desc": "디아블로 스타일 등급 시스템! 강화하고 배틀해서 돈을 벌어라",
-  "badge": "HOT",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🌍"
-  ],
-  "category": "game"
- },
- {
-  "title": "삥탄",
-  "icon": "https://game.cocy.io/pingtan/icon.svg",
-  "url": "https://game.cocy.io/pingtan/index.html",
-  "desc": "3-4인 전략 보드게임 - 자원, 건설, 거래",
-  "badge": "HOT",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🌍"
-  ],
-  "category": "game"
- },
- {
-  "title": "삥패",
-  "icon": "https://game.cocy.io/ppingpae/icon.svg",
-  "url": "https://game.cocy.io/ppingpae/index.html",
-  "desc": "타일 정리 보드게임 - 런/그룹/조커 활용",
-  "badge": "HOT",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🇰🇷"
-  ],
-  "category": "game"
- },
- {
-  "title": "삼인 사목",
-  "icon": "https://game.cocy.io/connect4/icon.svg",
-  "url": "https://game.cocy.io/connect4/",
-  "desc": "3인 실시간 사목 대결",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🌍"
-  ],
-  "category": "game"
- },
- {
-  "title": "오목",
-  "icon": "https://game.cocy.io/gomoku/icon.svg",
-  "url": "https://game.cocy.io/gomoku/",
-  "desc": "실시간 1:1 오목 대결",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🌍"
-  ],
-  "category": "game"
- },
- {
-  "title": "타일 슬라이더",
-  "icon": "https://game.cocy.io/tileslider/icons/icon.svg",
-  "url": "https://game.cocy.io/tileslider/",
-  "desc": "슬라이딩 숫자/이미지 퍼즐",
-  "badge": "HOT",
-  "platforms": [
-   "PWA",
-   "TWA"
-  ],
-  "languages": [
-   "🌍"
-  ],
-  "category": "game"
- },
- {
-  "title": "블럭 퍼즐",
-  "icon": "https://game.cocy.io/blockpuzzle/icons/icon.svg",
-  "url": "https://game.cocy.io/blockpuzzle/",
-  "desc": "블럭 조합 퍼즐",
-  "badge": "NEW",
-  "platforms": [
-   "PWA"
-  ],
-  "languages": [
-   "🌍"
-  ],
-  "category": "game"
- },
- {
-  "title": "피크민 트래커",
-  "icon": "https://game.cocy.io/pikmin/favicon.svg",
-  "url": "https://game.cocy.io/pikmin/",
-  "desc": "피크민 수집 관리",
-  "badge": "NEW",
-  "platforms": [
-   "PWA"
-  ],
-  "languages": [
-   "한국어",
-   "日本語",
-   "中文(简体)",
-   "中文(繁體)",
-   "English"
-  ],
-  "category": "game"
- },
- {
-  "title": "🐍 스네이크",
-  "icon": "https://game.cocy.io/snake/icon.svg",
-  "url": "https://game.cocy.io/snake/",
-  "desc": "먹이 하나당 +100G! 로그인해서 골드 모으기",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🌍"
-  ],
-  "category": "game"
- },
- {
-  "title": "💣 지뢰찾기",
-  "icon": "https://game.cocy.io/minesweeper/icon.svg",
-  "url": "https://game.cocy.io/minesweeper/",
-  "desc": "난이도별 골드 보상! 클리어 보너스 + 시간 보너스",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🌍"
-  ],
-  "category": "game"
- },
- {
-  "title": "벽돌깨기",
-  "icon": "https://game.cocy.io/breakout/icon.svg",
-  "url": "https://game.cocy.io/breakout/",
-  "desc": "클래식 벽돌깨기 게임",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🌍"
-  ],
-  "category": "game"
- },
- {
-  "title": "3D 당구 · 3구",
-  "icon": "https://game.cocy.io/billiards3d/icon.svg",
-  "url": "https://game.cocy.io/billiards3d/",
-  "desc": "3D 쓰리쿠션 당구 - 당점·두께·잉글리시 물리, 파이브앤하프 다이아몬드 시스템·끊어/밀어 스트로크",
-  "badge": "HOT",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "ko"
-  ],
-  "category": "arcade"
- },
- {
-  "title": "D2R 가이드 (Diablo 2)",
-  "icon": "https://game.cocy.io/d2r/icon.svg",
-  "url": "https://game.cocy.io/d2r/",
-  "desc": "디아블로2 레저렉션 레벨업 가이드 & 악마술사 빌드",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🇰🇷"
-  ],
-  "category": "game"
- },
- {
-  "title": "라인러시 / Line Rush",
-  "icon": "https://game.cocy.io/linerush/icon.svg",
-  "url": "https://game.cocy.io/linerush/",
-  "desc": "라인을 그어 영역을 확보하고 배경을 해방하는 터치 아케이드",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🌍"
-  ],
-  "category": "game"
- },
- {
-  "title": "사다리 게임 Ladder",
-  "icon": "https://game.cocy.io/ladder/icon.svg",
-  "url": "https://game.cocy.io/ladder/",
-  "desc": "사다리 타기 게임",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🇰🇷"
-  ],
-  "category": "game"
- },
- {
-  "title": "블록 블라스트 Block Blast",
-  "icon": "https://game.cocy.io/blockblast/icon.svg",
-  "url": "https://game.cocy.io/blockblast/",
-  "desc": "8x8 블록 퍼즐! 콤보로 팡팡 터트려라",
-  "badge": "NEW",
-  "platforms": [
-   "WEB"
-  ],
-  "languages": [
-   "🌍"
-  ],
-  "category": "game"
- }
+  {
+    "title": "점수판 SCOREBOARD",
+    "icon": "https://game.cocy.io/scoreboard/icon.svg",
+    "url": "https://game.cocy.io/scoreboard/",
+    "desc": "1~4조 조별 점수판. 10점 단위로 기록하고 순위 자동 표시. 되돌리기·초기화 지원, 새로고침해도 유지.",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko"
+    ],
+    "category": "tool"
+  },
+  {
+    "title": "비트드롭 BEAT DROP",
+    "icon": "https://game.cocy.io/rhythmproto/icon.svg",
+    "url": "https://game.cocy.io/rhythmproto/",
+    "desc": "AI가 만든 케이팝 20곡 리듬게임! 4키·6키 낙하 노트, 난이도 4단계, 골드·랭킹. 한국어/English/日本語/繁體中文",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko",
+      "en",
+      "ja",
+      "zh-TW"
+    ],
+    "category": "arcade"
+  },
+  {
+    "title": "멜로디 에코",
+    "icon": "https://game.cocy.io/melodyecho/icon.svg",
+    "url": "https://game.cocy.io/melodyecho/",
+    "desc": "듣고 건반으로 따라 치고, 리듬을 탭으로 재현! 적응형 청음 레벨 진단. 한국어/English/日本語/繁體中文",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko",
+      "en",
+      "ja",
+      "zh-TW"
+    ],
+    "category": "puzzle"
+  },
+  {
+    "title": "틀린 음 찾기",
+    "icon": "https://game.cocy.io/wrongnote/icon.svg",
+    "url": "https://game.cocy.io/wrongnote/",
+    "desc": "오디오판 틀린그림찾기! 매일 5문제, 귀 나이 진단·이모지 공유. 한국어/English/日本語",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko",
+      "en",
+      "ja"
+    ],
+    "category": "puzzle"
+  },
+  {
+    "title": "팝매치",
+    "icon": "https://game.cocy.io/match3/icon.svg",
+    "url": "https://game.cocy.io/match3/",
+    "desc": "애니팡식 매치-3! 60초 시간제·콤보 폭발·골드 보상·랭킹, 한국어/繁體中文/English",
+    "badge": "HOT",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko",
+      "zhTW",
+      "en"
+    ],
+    "category": "puzzle"
+  },
+  {
+    "title": "스도쿠",
+    "icon": "https://game.cocy.io/sudoku/icon.svg",
+    "url": "https://game.cocy.io/sudoku/",
+    "desc": "스도쿠 (數獨) - 쉬움·보통·어려움, 골드 보상·랭킹, 한국어/繁體中文/English",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko",
+      "zhTW",
+      "en"
+    ],
+    "category": "puzzle"
+  },
+  {
+    "title": "대만 마작",
+    "icon": "https://game.cocy.io/mahjong/icon.svg",
+    "url": "https://game.cocy.io/mahjong/",
+    "desc": "대만 마작 (台灣麻將) - 16타일 핸드, 4인 플레이, 타이 × 10만G 보상",
+    "badge": "HOT",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko"
+    ],
+    "category": "classic",
+    "video": "https://game.cocy.io/mahjong/preview.mp4"
+  },
+  {
+    "title": "맞고 (화투)",
+    "icon": "https://game.cocy.io/gostop/icon.svg",
+    "url": "https://game.cocy.io/gostop/",
+    "desc": "화투 2인 맞고 - 광·띠·끗·피·고도리·고스톱·피박, CPU 대전",
+    "badge": "HOT",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko"
+    ],
+    "category": "classic"
+  },
+  {
+    "title": "블랙잭",
+    "icon": "https://game.cocy.io/blackjack/icon.svg",
+    "url": "https://game.cocy.io/blackjack/",
+    "desc": "딜러와 1:1 블랙잭! 골드 베팅, 3:2 배당, 연승 보너스",
+    "badge": "HOT",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🇰🇷"
+    ],
+    "category": "card"
+  },
+  {
+    "title": "D2R 룬워드 조합기",
+    "icon": "https://game.cocy.io/d2r-runewords/icon.svg",
+    "url": "https://game.cocy.io/d2r-runewords/",
+    "desc": "룬 순서 선택 → 룬워드 검색. 장비/직업/레벨 필터",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🇰🇷"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "조커런",
+    "icon": "https://game.cocy.io/jokerrun/icon.svg?v=2",
+    "url": "https://game.cocy.io/jokerrun/",
+    "desc": "포커 로그라이크! 핸드 조합하고 조커로 점수 폭발",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "card",
+    "video": "https://game.cocy.io/jokerrun/preview.mp4"
+  },
+  {
+    "title": "무기 강화 & 배틀",
+    "icon": "https://game.cocy.io/enhance/icon.svg",
+    "url": "https://game.cocy.io/enhance/",
+    "desc": "디아블로 스타일 등급 시스템! 강화하고 배틀해서 돈을 벌어라",
+    "badge": "HOT",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "삥탄",
+    "icon": "https://game.cocy.io/pingtan/icon.svg",
+    "url": "https://game.cocy.io/pingtan/index.html",
+    "desc": "3-4인 전략 보드게임 - 자원, 건설, 거래",
+    "badge": "HOT",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "삥패",
+    "icon": "https://game.cocy.io/ppingpae/icon.svg",
+    "url": "https://game.cocy.io/ppingpae/index.html",
+    "desc": "타일 정리 보드게임 - 런/그룹/조커 활용",
+    "badge": "HOT",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🇰🇷"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "삼인 사목",
+    "icon": "https://game.cocy.io/connect4/icon.svg",
+    "url": "https://game.cocy.io/connect4/",
+    "desc": "3인 실시간 사목 대결",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "오목",
+    "icon": "https://game.cocy.io/gomoku/icon.svg",
+    "url": "https://game.cocy.io/gomoku/",
+    "desc": "실시간 1:1 오목 대결",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "타일 슬라이더",
+    "icon": "https://game.cocy.io/tileslider/icons/icon.svg",
+    "url": "https://game.cocy.io/tileslider/",
+    "desc": "슬라이딩 숫자/이미지 퍼즐",
+    "badge": "HOT",
+    "platforms": [
+      "PWA",
+      "TWA"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "블럭 퍼즐",
+    "icon": "https://game.cocy.io/blockpuzzle/icons/icon.svg",
+    "url": "https://game.cocy.io/blockpuzzle/",
+    "desc": "블럭 조합 퍼즐",
+    "badge": "NEW",
+    "platforms": [
+      "PWA"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "피크민 트래커",
+    "icon": "https://game.cocy.io/pikmin/favicon.svg",
+    "url": "https://game.cocy.io/pikmin/",
+    "desc": "피크민 수집 관리",
+    "badge": "NEW",
+    "platforms": [
+      "PWA"
+    ],
+    "languages": [
+      "한국어",
+      "日本語",
+      "中文(简体)",
+      "中文(繁體)",
+      "English"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "🐍 스네이크",
+    "icon": "https://game.cocy.io/snake/icon.svg",
+    "url": "https://game.cocy.io/snake/",
+    "desc": "먹이 하나당 +100G! 로그인해서 골드 모으기",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "💣 지뢰찾기",
+    "icon": "https://game.cocy.io/minesweeper/icon.svg",
+    "url": "https://game.cocy.io/minesweeper/",
+    "desc": "난이도별 골드 보상! 클리어 보너스 + 시간 보너스",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "벽돌깨기",
+    "icon": "https://game.cocy.io/breakout/icon.svg",
+    "url": "https://game.cocy.io/breakout/",
+    "desc": "클래식 벽돌깨기 게임",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "3D 당구 · 3구",
+    "icon": "https://game.cocy.io/billiards3d/icon.svg",
+    "url": "https://game.cocy.io/billiards3d/",
+    "desc": "3D 쓰리쿠션 당구 - 당점·두께·잉글리시 물리, 파이브앤하프 다이아몬드 시스템·끊어/밀어 스트로크",
+    "badge": "HOT",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko"
+    ],
+    "category": "arcade"
+  },
+  {
+    "title": "D2R 가이드 (Diablo 2)",
+    "icon": "https://game.cocy.io/d2r/icon.svg",
+    "url": "https://game.cocy.io/d2r/",
+    "desc": "디아블로2 레저렉션 레벨업 가이드 & 악마술사 빌드",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🇰🇷"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "라인러시 / Line Rush",
+    "icon": "https://game.cocy.io/linerush/icon.svg",
+    "url": "https://game.cocy.io/linerush/",
+    "desc": "라인을 그어 영역을 확보하고 배경을 해방하는 터치 아케이드",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "사다리 게임 Ladder",
+    "icon": "https://game.cocy.io/ladder/icon.svg",
+    "url": "https://game.cocy.io/ladder/",
+    "desc": "사다리 타기 게임",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🇰🇷"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "블록 블라스트 Block Blast",
+    "icon": "https://game.cocy.io/blockblast/icon.svg",
+    "url": "https://game.cocy.io/blockblast/",
+    "desc": "8x8 블록 퍼즐! 콤보로 팡팡 터트려라",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  }
 ]
