@@ -223,7 +223,7 @@ function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('singers.json?v=20260719b').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
+      fetch('singers.json?v=20260719c').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
       (async()=>{
         const r=await fetch('ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
