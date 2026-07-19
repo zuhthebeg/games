@@ -1,19 +1,5 @@
 [
   {
-    "title": "점수판 SCOREBOARD",
-    "icon": "https://game.cocy.io/scoreboard/icon.svg",
-    "url": "https://game.cocy.io/scoreboard/",
-    "desc": "1~4조 조별 점수판. 10점 단위로 기록하고 순위 자동 표시. 되돌리기·초기화 지원, 새로고침해도 유지.",
-    "badge": "NEW",
-    "platforms": [
-      "WEB"
-    ],
-    "languages": [
-      "ko"
-    ],
-    "category": "tool"
-  },
-  {
     "title": "비트드롭 BEAT DROP",
     "icon": "https://game.cocy.io/rhythmproto/icon.svg",
     "url": "https://game.cocy.io/rhythmproto/",
