@@ -1,0 +1,140 @@
+/* 보이스 노래방 i18n — ko/en/ja/es + 가수 로마자명 + 장르 번역 */
+const I18N = {
+  ko: {
+    title: '목소리 노래방', room: 'NO.',
+    hero: '내 목소리, <br>누구 <em>닮았을까?</em>',
+    heroSub: '10초만 불러보세요.<br>AI가 목소리 결이 닮은 가수를 찾아드립니다.',
+    start: '노 래 시 작', stop: '그만 부르기',
+    tipIntro: '마이크는 <b>이 폰</b> · 녹음은 폰 밖으로 안 나갑니다<br>조용한 곳에서, 반주 없이 목소리만!',
+    nowSinging: 'NOW SINGING', sec: '초', lyric: '가장 자신 있는 <b>한 소절</b>이면 충분해요',
+    judging: '심사위원 입장 중…', judging2: '심사 중…', analyzeSub: '목소리 결 분석',
+    dlLabel: 'AI 심사위원 다운로드', tipFirst: '첫 실행만 모델 다운로드(22MB)가 있어요. 다음부턴 바로!',
+    pts: '점', judge: '당신의 18번 가수는', rankN: '위', reco: '추천곡',
+    share: '결과 카드 공유', save: '카드 저장', retry: '다시', more: '게임 더보기',
+    tipResult: '재미로 보는 목소리 결 분석입니다 · 녹음은 저장되지 않아요',
+    cardTitle: '🎤 목소리 노래방', cardJudge: '나의 18번 가수는', cardFoot: 'game.cocy.io/voicematch — 넌 누구 닮았어?',
+    shareText: (n, p) => `내 18번 가수는 ${n} (${p}점) 🎤 넌 누구 닮았어?`,
+    errMic: '마이크 권한이 필요해요 🎤<br>브라우저 설정에서 마이크를 허용해주세요.',
+    errShort: '녹음이 너무 짧아요.<br>3초 이상 불러주세요!',
+    errSilent: '목소리가 안 들렸어요 🔇<br>조금 더 크게 불러주세요!',
+    errAnalyze: '분석 중 문제가 생겼어요.', restart: '처음부터',
+    c_M_솔로: '감성 짙은 보이스', c_M_그룹: '무대 체질 보이스', c_M_밴드: '라이브 체질 보이스',
+    c_F_솔로: '맑고 단단한 보이스', c_F_그룹: '청량 톤 보이스', c_F_밴드: '라이브 체질 보이스',
+  },
+  en: {
+    title: 'K-pop Voice Karaoke', room: 'NO.',
+    hero: 'Which K-pop artist is<br>your <em>voice twin?</em>',
+    heroSub: 'Sing for just 10 seconds.<br>AI finds the Korean artist whose voice matches yours.',
+    start: 'START SINGING', stop: 'Stop',
+    tipIntro: 'Mic = <b>this phone</b> · your voice never leaves your device<br>Quiet room, no backing track — just your voice!',
+    nowSinging: 'NOW SINGING', sec: 's', lyric: 'One line of <b>any song</b> is enough — any language!',
+    judging: 'Judges entering…', judging2: 'Judging…', analyzeSub: 'Analyzing your voice tone',
+    dlLabel: 'Downloading AI judge', tipFirst: 'First run downloads the model (22MB). Instant next time!',
+    pts: '', judge: 'Your K-pop voice twin is', rankN: '', reco: 'Try singing',
+    share: 'Share result card', save: 'Save card', retry: 'Retry', more: 'More games',
+    cardTitle: '🎤 K-pop Voice Karaoke', cardJudge: 'My K-pop voice twin is', cardFoot: 'game.cocy.io/voicematch — who\'s your voice twin?',
+    tipResult: 'Just-for-fun voice tone analysis · recordings are never stored',
+    shareText: (n, p) => `My K-pop voice twin is ${n} (${p}%) 🎤 Who's yours?`,
+    errMic: 'Microphone permission needed 🎤<br>Please allow mic access in your browser.',
+    errShort: 'Recording too short.<br>Please sing for at least 3 seconds!',
+    errSilent: 'Couldn\'t hear your voice 🔇<br>Please sing a bit louder!',
+    errAnalyze: 'Something went wrong during analysis.', restart: 'Start over',
+    c_M_솔로: 'deep emotional voice', c_M_그룹: 'stage-ready voice', c_M_밴드: 'live-session voice',
+    c_F_솔로: 'clear & solid voice', c_F_그룹: 'fresh bright voice', c_F_밴드: 'live-session voice',
+  },
+  ja: {
+    title: '声のカラオケ', room: 'NO.',
+    hero: 'わたしの声、<br>どのK-POP歌手に<em>似てる?</em>',
+    heroSub: '10秒歌うだけ。<br>AIが声質の似ている韓国歌手を探します。',
+    start: '歌 い 始 め る', stop: 'やめる',
+    tipIntro: 'マイクは<b>このスマホ</b> · 録音は端末の外に出ません<br>静かな場所で、伴奏なしの声だけで!',
+    nowSinging: 'NOW SINGING', sec: '秒', lyric: '得意な<b>ワンフレーズ</b>で十分です — 日本語でもOK!',
+    judging: '審査員入場中…', judging2: '審査中…', analyzeSub: '声質を分析中',
+    dlLabel: 'AI審査員をダウンロード', tipFirst: '初回のみモデルのダウンロード(22MB)があります。次回からすぐ!',
+    pts: '点', judge: 'あなたの十八番歌手は', rankN: '位', reco: 'おすすめ曲',
+    share: '結果カードを共有', save: 'カード保存', retry: 'もう一回', more: '他のゲーム',
+    cardTitle: '🎤 声のカラオケ', cardJudge: '私の十八番歌手は', cardFoot: 'game.cocy.io/voicematch — あなたは誰似?',
+    tipResult: 'お楽しみ用の声質分析です · 録音は保存されません',
+    shareText: (n, p) => `私の十八番歌手は${n} (${p}点) 🎤 あなたは誰似?`,
+    errMic: 'マイクの許可が必要です 🎤<br>ブラウザ設定でマイクを許可してください。',
+    errShort: '録音が短すぎます。<br>3秒以上歌ってください!',
+    errSilent: '声が聞こえませんでした 🔇<br>もう少し大きく歌ってください!',
+    errAnalyze: '分析中に問題が発生しました。', restart: '最初から',
+    c_M_솔로: '感情豊かなボイス', c_M_그룹: 'ステージ体質ボイス', c_M_밴드: 'ライブ体質ボイス',
+    c_F_솔로: '澄んだ芯のあるボイス', c_F_그룹: '爽やかトーンボイス', c_F_밴드: 'ライブ体質ボイス',
+  },
+  es: {
+    title: 'Karaoke de Voz K-pop', room: 'NO.',
+    hero: '¿Qué artista de K-pop es<br>tu <em>gemelo vocal?</em>',
+    heroSub: 'Canta solo 10 segundos.<br>La IA encuentra al artista coreano con tu tono de voz.',
+    start: 'EMPEZAR A CANTAR', stop: 'Parar',
+    tipIntro: 'Mic = <b>este teléfono</b> · tu voz nunca sale de tu dispositivo<br>Lugar silencioso, sin pista — ¡solo tu voz!',
+    nowSinging: 'NOW SINGING', sec: 's', lyric: 'Con <b>una línea</b> de cualquier canción basta — ¡en tu idioma!',
+    judging: 'Entran los jueces…', judging2: 'Evaluando…', analyzeSub: 'Analizando tu tono de voz',
+    dlLabel: 'Descargando juez IA', tipFirst: 'Solo la primera vez descarga el modelo (22MB). ¡Luego instantáneo!',
+    pts: '', judge: 'Tu gemelo vocal de K-pop es', rankN: '', reco: 'Canta',
+    share: 'Compartir tarjeta', save: 'Guardar tarjeta', retry: 'Otra vez', more: 'Más juegos',
+    cardTitle: '🎤 Karaoke de Voz K-pop', cardJudge: 'Mi gemelo vocal de K-pop es', cardFoot: 'game.cocy.io/voicematch — ¿quién es tu gemelo vocal?',
+    tipResult: 'Análisis de voz solo por diversión · las grabaciones no se guardan',
+    shareText: (n, p) => `Mi gemelo vocal de K-pop es ${n} (${p}%) 🎤 ¿Quién es el tuyo?`,
+    errMic: 'Se necesita permiso del micrófono 🎤<br>Permite el acceso en tu navegador.',
+    errShort: 'Grabación demasiado corta.<br>¡Canta al menos 3 segundos!',
+    errSilent: 'No se escuchó tu voz 🔇<br>¡Canta un poco más fuerte!',
+    errAnalyze: 'Algo salió mal durante el análisis.', restart: 'Reiniciar',
+    c_M_솔로: 'voz profunda y emotiva', c_M_그룹: 'voz de escenario', c_M_밴드: 'voz de directo',
+    c_F_솔로: 'voz clara y firme', c_F_그룹: 'voz fresca y brillante', c_F_밴드: 'voz de directo',
+  },
+};
+
+const EN_NAMES = {
+  iu:'IU',taeyeon:'Taeyeon',heize:'Heize',yerin:'Yerin Baek',bol4:'BOL4',chungha:'CHUNG HA',
+  sunmi:'SUNMI',hwasa:'Hwasa',jennie:'JENNIE',rose:'ROSÉ',lisa:'LISA',aileen:'Ailee',ben:'Ben',
+  gyeongseo:'Gyeongseo',lee_suhyun:'Lee Suhyun',parkjunghyun:'Lena Park',newjeans:'NewJeans',
+  ive:'IVE',aespa:'aespa',lesserafim:'LE SSERAFIM',blackpink:'BLACKPINK',twice:'TWICE',
+  redvelvet:'Red Velvet',gidle:'(G)I-DLE',illit:'ILLIT',babymonster:'BABYMONSTER',
+  kissoflife:'KISS OF LIFE',davichi:'Davichi',paulkim:'Paul Kim',kimbumsoo:'Kim Bum Soo',
+  parkhyoshin:'Park Hyo Shin',sungsikyung:'Sung Si Kyung',limyoungwoong:'Lim Young Woong',
+  jungkook:'Jung Kook',v_bts:'V (BTS)',jimin:'Jimin',taeyang:'TAEYANG',baekhyun:'BAEKHYUN',
+  do_exo:'D.O.',leemujin:'Lee Mujin',melomance:'MeloMance',jannabi:'JANNABI',
+  lee_chanhyuk:'Lee Chanhyuk',tencm:'10CM',crush:'Crush',dean:'DEAN',zion_t:'Zion.T',
+  jaypark:'Jay Park',roykim:'Roy Kim',jungseunghwan:'Jung Seung Hwan',bts:'BTS',
+  seventeen:'SEVENTEEN',straykids:'Stray Kids',txt:'TXT',enhypen:'ENHYPEN',riize:'RIIZE',
+  boynextdoor:'BOYNEXTDOOR',day6:'DAY6',exo:'EXO',bigbang:'BIGBANG',
+  gummy:'Gummy',lyn:'LYn',baekjiyoung:'Baek Ji Young',sohyang:'Sohyang',leehi:'LeeHi',
+  leesunhee:'Lee Sun Hee',jaurim:'Jaurim',mamamoo:'MAMAMOO',stayc:'STAYC',nmixx:'NMIXX',
+  kepler:'Kep1er',itzy:'ITZY',songgain:'Song Ga In',jangyoonjeong:'Jang Yoon Jeong',
+  kimdongryul:'Kim Dong Ryul',naul:'Naul',parkwon:'Park Won',kwill:'K.Will',
+  hwangchiyeul:'Hwang Chi Yeul',kimyeonwoo:'Kim Yeon Woo',shinseunghun:'Shin Seung Hun',
+  leeseungchul:'Lee Seung Chul',leemoonsae:'Lee Moon Sae',kimkwangseok:'Kim Kwang Seok',
+  leeseunghwan:'Lee Seung Hwan',hahyunwoo:'Ha Hyun Woo',yoondohyun:'Yoon Do Hyun',
+  kimkyungho:'Kim Kyung Ho',imhanbyul:'Im Han Byul',maktub:'MAKTUB',zico:'ZICO',beo:"BE'O",
+  taemin:'TAEMIN',shinee:'SHINee',nctdream:'NCT DREAM',buzz:'Buzz',mcthemax:'M.C the MAX',
+  sgwannabe:'SG Wannabe',youngtak:'Young Tak',leechanwon:'Lee Chan Won',kimhojoong:'Kim Ho Joong',
+};
+
+const GENRE_MAP = {
+  en: {'발라드':'Ballad','팝':'Pop','댄스팝':'Dance Pop','댄스':'Dance','힙합':'Hip-hop','트로트':'Trot',
+       '인디팝':'Indie Pop','록':'Rock','록발라드':'Rock Ballad','포크':'Folk','밴드':'Band','레트로':'Retro',
+       '재즈팝':'Jazz Pop','성악':'Classical','CCM':'CCM','R&B':'R&B'},
+  ja: {'발라드':'バラード','팝':'ポップ','댄스팝':'ダンスポップ','댄스':'ダンス','힙합':'ヒップホップ','트로트':'トロット',
+       '인디팝':'インディーポップ','록':'ロック','록발라드':'ロックバラード','포크':'フォーク','밴드':'バンド','레트로':'レトロ',
+       '재즈팝':'ジャズポップ','성악':'クラシック','CCM':'CCM','R&B':'R&B'},
+  es: {'발라드':'Balada','팝':'Pop','댄스팝':'Dance Pop','댄스':'Dance','힙합':'Hip-hop','트로트':'Trot',
+       '인디팝':'Indie Pop','록':'Rock','록발라드':'Rock Ballad','포크':'Folk','밴드':'Banda','레트로':'Retro',
+       '재즈팝':'Jazz Pop','성악':'Clásica','CCM':'CCM','R&B':'R&B'},
+};
+
+function detectLang() {
+  const q = new URLSearchParams(location.search).get('lang');
+  if (q && I18N[q]) return q;
+  const saved = localStorage.getItem('vm_lang');
+  if (saved && I18N[saved]) return saved;
+  const nav = (navigator.language || 'ko').slice(0, 2);
+  return I18N[nav] ? nav : 'en';
+}
+function singerName(s, lang) { return lang === 'ko' ? s.name : (EN_NAMES[s.slug] || s.name); }
+function genreLabel(genre, lang) {
+  if (lang === 'ko') return genre;
+  const m = GENRE_MAP[lang] || GENRE_MAP.en;
+  return genre.split('·').map(t => m[t.trim()] || t.trim()).join(' · ');
+}
