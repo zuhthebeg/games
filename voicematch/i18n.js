@@ -1,6 +1,10 @@
 /* 보이스 노래방 i18n — ko/en/ja/es + 가수 로마자명 + 장르 번역 */
 const I18N = {
   ko: {
+    lb_btn: '🏆 닮은꼴 랭킹', lb_title: n => `${n} 닮은꼴 TOP 10`,
+    lb_myrank: n => `🏆 닮은꼴 전국 ${n}위!`, lb_login: '로그인하면 랭킹에 이름을 남길 수 있어요',
+    lb_loginBtn: '로그인하고 랭킹 도전', lb_empty: '아직 도전자가 없어요 — 1호가 되어보세요!',
+    lb_me: '나', lb_close: '닫기',
     title: '목소리 노래방', room: 'NO.',
     hero: '내 목소리, <br>누구 <em>닮았을까?</em>',
     heroSub: '10초만 불러보세요.<br>AI가 목소리 결이 닮은 가수를 찾아드립니다.',
@@ -22,6 +26,10 @@ const I18N = {
     c_F_솔로: '맑고 단단한 보이스', c_F_그룹: '청량 톤 보이스', c_F_밴드: '라이브 체질 보이스',
   },
   en: {
+    lb_btn: '🏆 Leaderboard', lb_title: n => `${n} Voice Twin TOP 10`,
+    lb_myrank: n => `🏆 Ranked #${n} nationwide!`, lb_login: 'Log in to enter the leaderboard',
+    lb_loginBtn: 'Log in & join ranking', lb_empty: 'No challengers yet — be the first!',
+    lb_me: 'me', lb_close: 'Close',
     title: 'K-pop Voice Karaoke', room: 'NO.',
     hero: 'Which K-pop artist is<br>your <em>voice twin?</em>',
     heroSub: 'Sing for just 10 seconds.<br>AI finds the Korean artist whose voice matches yours.',
@@ -43,6 +51,10 @@ const I18N = {
     c_F_솔로: 'clear & solid voice', c_F_그룹: 'fresh bright voice', c_F_밴드: 'live-session voice',
   },
   ja: {
+    lb_btn: '🏆 そっくりランキング', lb_title: n => `${n} そっくり TOP 10`,
+    lb_myrank: n => `🏆 そっくり全国${n}位!`, lb_login: 'ログインするとランキングに参加できます',
+    lb_loginBtn: 'ログインして挑戦', lb_empty: 'まだ挑戦者がいません — 1号になろう!',
+    lb_me: '私', lb_close: '閉じる',
     title: '声のカラオケ', room: 'NO.',
     hero: 'わたしの声、<br>どのK-POP歌手に<em>似てる?</em>',
     heroSub: '10秒歌うだけ。<br>AIが声質の似ている韓国歌手を探します。',
@@ -64,6 +76,10 @@ const I18N = {
     c_F_솔로: '澄んだ芯のあるボイス', c_F_그룹: '爽やかトーンボイス', c_F_밴드: 'ライブ体質ボイス',
   },
   es: {
+    lb_btn: '🏆 Ranking', lb_title: n => `TOP 10 gemelos de ${n}`,
+    lb_myrank: n => `🏆 ¡Puesto #${n}!`, lb_login: 'Inicia sesión para entrar al ranking',
+    lb_loginBtn: 'Iniciar sesión y competir', lb_empty: 'Aún no hay retadores — ¡sé el primero!',
+    lb_me: 'yo', lb_close: 'Cerrar',
     title: 'Karaoke de Voz K-pop', room: 'NO.',
     hero: '¿Qué artista de K-pop es<br>tu <em>gemelo vocal?</em>',
     heroSub: 'Canta solo 10 segundos.<br>La IA encuentra al artista coreano con tu tono de voz.',

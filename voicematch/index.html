@@ -16,6 +16,7 @@
 <meta property="og:url" content="https://game.cocy.io/voicematch/">
 <meta property="og:image" content="https://game.cocy.io/voicematch/og.png">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<script src="/lib/shared-wallet.js?v=20260705b2b"></script>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
 <script type="application/ld+json">
@@ -23,6 +24,7 @@
 </script>
 <style>
 :root{
+  --wallet-bar-h:56px;
   --room:oklch(0.27 0.05 300);
   --panel:oklch(0.33 0.06 295);
   --panel2:oklch(0.42 0.07 295);
@@ -36,9 +38,10 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
+  padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));
   background-image:radial-gradient(circle at 80% -10%,oklch(0.72 0.19 350/.18),transparent 55%),
                    radial-gradient(circle at 5% 110%,oklch(0.85 0.19 130/.12),transparent 45%)}
-.wrap{max-width:430px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 18px 40px;min-height:100%}
+.wrap{max-width:430px;margin:0 auto;padding:16px 18px 40px;min-height:100%}
 .marq{font-family:'Black Han Sans';font-size:19px;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .marq .no{font-size:11px;font-family:Pretendard;font-weight:600;color:var(--amber);border:1px solid var(--amber);padding:3px 9px;border-radius:3px;letter-spacing:2px;white-space:nowrap}
 .langs{display:flex;gap:4px;margin-top:10px}
@@ -91,6 +94,19 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .rk b{display:block;font-size:13px;font-family:'Black Han Sans';color:var(--txt);letter-spacing:.3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rk .p{color:var(--amber);font-size:11px;font-weight:700}
 .err{color:var(--amber);text-align:center;font-size:13px;line-height:1.7;padding:8px 0}
+#r-rankline{text-align:center;margin-top:12px;font-size:14px;font-weight:800;color:var(--amber);min-height:20px}
+#r-rankline button{border:none;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;
+  background:var(--amber);color:oklch(0.3 0.06 85);margin-top:6px}
+#lb-modal{position:fixed;inset:0;background:rgba(10,6,16,.82);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+#lb-box{width:100%;max-width:360px;background:oklch(0.2 0.04 295);border:2px solid oklch(0.5 0.1 300/.6);border-radius:14px;padding:18px;max-height:80vh;overflow-y:auto}
+#lb-box h3{font-family:'Black Han Sans';font-size:19px;text-align:center;margin-bottom:12px;color:var(--amber)}
+.lb-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;font-size:13px}
+.lb-row.me{background:oklch(0.72 0.19 350/.18);border:1px solid var(--pink)}
+.lb-row .rk-no{width:26px;font-family:'Black Han Sans';color:var(--mut)}
+.lb-row .rk-no.top{color:var(--amber)}
+.lb-row .nick{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-row .pct{font-weight:800;color:var(--lime)}
+#lb-close{width:100%;margin-top:12px;border:none;border-radius:9px;padding:11px 0;font-weight:800;background:var(--panel2);color:var(--txt);cursor:pointer}
 canvas{display:none}
 </style>
 </head>
@@ -146,6 +162,7 @@ canvas{display:none}
       <div class="judge" id="r-judge"></div>
       <div class="sub" id="r-sub"></div>
       <div class="rank" id="r-rank"></div>
+      <div id="r-rankline"></div>
     </div>
     <div class="remote">
       <button class="key start" id="btn-share"></button>
@@ -206,7 +223,7 @@ function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('singers.json?v=20260719b').then(r=>r.json()),
+      fetch('singers.json?v=20260719b').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
       (async()=>{
         const r=await fetch('ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
@@ -298,6 +315,58 @@ async function analyzePcm(pcm,rate){
   }
 }
 
+/* ---- 랭킹 ---- */
+const RANK_API='https://relay.cocy.io/api/rankings/voicematch';
+function authUser(){
+  try{
+    const tk=localStorage.getItem('cocy_auth_token');if(!tk)return null;
+    const b=atob(tk.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'));
+    const p=JSON.parse(decodeURIComponent(Array.from(b,c=>'%'+c.charCodeAt(0).toString(16).padStart(2,'0')).join('')));
+    const uid=p.sub||p.userId||p.user_id;if(!uid)return null;
+    return {userId:uid,nickname:p.nickname||null,registered:!p.isAnonymous};
+  }catch(e){return null;}
+}
+async function rankFlow(top){
+  const line=$('r-rankline');line.innerHTML='';
+  const u=authUser();
+  if(u&&u.registered){
+    try{
+      const r=await fetch(RANK_API,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({userId:u.userId,nickname:u.nickname,artist:top.slug,pct:top.pct})}).then(x=>x.json());
+      if(r.success&&r.myRank){
+        lastRank=r.myRank;
+        line.innerHTML=`<div>${t('lb_myrank')(r.myRank)}</div><button onclick="showBoard('${top.slug}')">${t('lb_btn')}</button>`;
+        return;
+      }
+    }catch(e){}
+    line.innerHTML=`<button onclick="showBoard('${top.slug}')">${t('lb_btn')}</button>`;
+  }else{
+    line.innerHTML=`<div style="font-size:12px;color:var(--mut);font-weight:600">${t('lb_login')}</div>
+      <button onclick="try{SharedWallet.showLogin()}catch(e){}">${t('lb_loginBtn')}</button>
+      <button onclick="showBoard('${top.slug}')" style="background:var(--panel2);color:var(--txt)">${t('lb_btn')}</button>`;
+  }
+}
+let lastRank=null;
+async function showBoard(slug){
+  const u=authUser();
+  const s=(window._singersCache||[]).find(x=>x.slug===slug)||{slug,name:slug};
+  let html=`<h3>${t('lb_title')(singerName(s,LANG))}</h3>`;
+  try{
+    const q=u?`&me=${encodeURIComponent(u.userId)}`:'';
+    const r=await fetch(`${RANK_API}?artist=${slug}${q}`).then(x=>x.json());
+    const rows=r.rankings||[];
+    if(!rows.length)html+=`<div style="text-align:center;color:var(--mut);font-size:13px;padding:14px 0">${t('lb_empty')}</div>`;
+    rows.forEach((row,i)=>{
+      const me=u&&row.user_id===u.userId;
+      html+=`<div class="lb-row${me?' me':''}"><span class="rk-no${i<3?' top':''}">${i+1}</span><span class="nick">${row.nickname}${me?' ('+t('lb_me')+')':''}</span><span class="pct">${row.pct}%</span></div>`;
+    });
+    if(r.myRank&&r.myRank>rows.length)html+=`<div class="lb-row me"><span class="rk-no">${r.myRank}</span><span class="nick">${t('lb_me')}</span><span class="pct">${r.myPct}%</span></div>`;
+  }catch(e){html+=`<div style="text-align:center;color:var(--mut);font-size:12px">…</div>`;}
+  html+=`<button id="lb-close" onclick="document.getElementById('lb-modal').remove()">${t('lb_close')}</button>`;
+  const m=document.createElement('div');m.id='lb-modal';m.innerHTML=`<div id="lb-box">${html}</div>`;
+  m.onclick=e=>{if(e.target===m)m.remove();};
+  document.body.appendChild(m);
+}
 /* ---- 결과 ---- */
 function comment(s){return t('c_'+s.g+'_'+s.kind)||'';}
 function renderResult(rank){
@@ -309,6 +378,8 @@ function renderResult(rank){
   $('r-rank').innerHTML=rank.slice(1,4).map((s,i)=>
     `<div class="rk">${t('rankN')?(i+2)+t('rankN'):'#'+(i+2)}<b>${singerName(s,LANG)}</b><span class="p">${s.pct}%</span></div>`).join('');
   show('s-result');
+  lastRank=null;
+  rankFlow(top);
 }
 $('btn-start').onclick=startRec;
 $('btn-stop').onclick=stopRec;
@@ -330,6 +401,7 @@ function drawCard(){
   x.fillStyle='#f06eaa';
   x.font=(name.length>10?"58px":"80px")+" 'Black Han Sans'";x.fillText(name,W/2,540);
   x.fillStyle='#cdbcdd';x.font='500 26px Pretendard';x.fillText(genreLabel(top.genre,LANG)+' · '+comment(top),W/2,600);
+  if(lastRank){x.fillStyle='#e8c66a';x.font="700 30px Pretendard";x.fillText(t('lb_myrank')(lastRank),W/2,646);}
   x.strokeStyle='rgba(190,150,220,.4)';x.setLineDash([6,8]);x.beginPath();x.moveTo(80,650);x.lineTo(W-80,650);x.stroke();x.setLineDash([]);
   x.fillStyle='#f5eefb';x.font='700 30px Pretendard';
   lastResult.slice(1,4).forEach((s,i)=>{x.fillText(`${i+2}. ${singerName(s,LANG)}  ${s.pct}%`,W/2,712+i*46);});
@@ -349,8 +421,10 @@ $('btn-share').onclick=async()=>{
   else $('btn-save').click();
 };
 
+try{if(typeof SharedWallet!=='undefined'&&SharedWallet.init&&!SharedWallet._initialized)SharedWallet.init();}catch(e){}
 applyLang();drawLineup();
-document.querySelectorAll('.lg').forEach(b=>{const old=b.onclick;b.onclick=()=>{LANG=b.dataset.l;localStorage.setItem('vm_lang',LANG);applyLang();drawLineup();};});
+document.querySelectorAll('.lg').forEach(b=>{const old=b.onclick;b.onclick=()=>{LANG=b.dataset.l;localStorage.setItem('vm_lang',LANG);try{if(typeof SharedWallet!=='undefined'&&SharedWallet.init&&!SharedWallet._initialized)SharedWallet.init();}catch(e){}
+applyLang();drawLineup();};});
 
 /* 디버그: ?debug=1 → 파일 업로드 분석 */
 if(new URLSearchParams(location.search).get('debug')){
