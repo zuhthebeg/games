@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>목소리 노래방 — 내 목소리 닮은 가수 찾기</title>
+<meta name="description" content="10초만 불러보세요. 내 목소리와 가장 닮은 K-POP 가수를 AI가 찾아드립니다. 녹음은 폰 밖으로 나가지 않습니다.">
+<link rel="canonical" href="https://game.cocy.io/voicematch/">
+<meta property="og:title" content="목소리 노래방 — 당신의 18번 가수는?">
+<meta property="og:description" content="10초 녹음으로 내 목소리 닮은 가수 찾기. 뉴진스부터 임영웅까지 60팀.">
+<meta property="og:url" content="https://game.cocy.io/voicematch/">
+<meta property="og:image" content="https://game.cocy.io/voicematch/og.png">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"목소리 노래방","url":"https://game.cocy.io/voicematch/","applicationCategory":"EntertainmentApplication","description":"브라우저 로컬 AI로 내 목소리와 닮은 K-POP 가수를 찾는 서비스","operatingSystem":"Web","offers":{"@type":"Offer","price":"0"}}
+</script>
+<style>
+:root{
+  --room:oklch(0.27 0.05 300);
+  --panel:oklch(0.33 0.06 295);
+  --panel2:oklch(0.42 0.07 295);
+  --pink:oklch(0.72 0.19 350);
+  --pink-d:oklch(0.5 0.15 350);
+  --lime:oklch(0.85 0.19 130);
+  --amber:oklch(0.83 0.14 85);
+  --txt:oklch(0.95 0.02 300);
+  --mut:oklch(0.72 0.04 300);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
+  background-image:radial-gradient(circle at 80% -10%,oklch(0.72 0.19 350/.18),transparent 55%),
+                   radial-gradient(circle at 5% 110%,oklch(0.85 0.19 130/.12),transparent 45%)}
+.wrap{max-width:430px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 18px 40px;min-height:100%}
+.marq{font-family:'Black Han Sans';font-size:20px;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center}
+.marq .no{font-size:11px;font-family:Pretendard;font-weight:600;color:var(--amber);border:1px solid var(--amber);padding:3px 9px;border-radius:3px;letter-spacing:2px}
+.screen{margin-top:16px;background:oklch(0.16 0.03 290);border-radius:10px;padding:22px 20px 20px;position:relative;
+  box-shadow:inset 0 0 0 2px oklch(0.5 0.1 300/.5), inset 0 0 40px oklch(0.1 0.02 290), 0 16px 34px -16px oklch(0 0 0/.8)}
+.badge{position:absolute;top:-8px;left:18px;background:var(--pink);color:oklch(0.2 0.05 350);font-size:10px;font-weight:800;letter-spacing:2px;padding:3px 10px;border-radius:3px}
+.remote{margin-top:22px;background:var(--panel);border-radius:14px;padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;
+  box-shadow:0 10px 24px -14px oklch(0 0 0/.7), inset 0 1px 0 oklch(0.6 0.06 300/.4)}
+.key{border:none;border-radius:9px;padding:13px 0;font-size:13px;font-weight:800;color:var(--txt);background:var(--panel2);
+  box-shadow:0 3px 0 oklch(0.22 0.04 295);cursor:pointer;font-family:Pretendard}
+.key:active{transform:translateY(2px);box-shadow:0 1px 0 oklch(0.22 0.04 295)}
+.key.start{grid-column:1/4;background:var(--pink);color:oklch(0.18 0.06 350);font-size:16px;letter-spacing:4px;padding:16px 0;box-shadow:0 4px 0 var(--pink-d)}
+.key.start:active{box-shadow:0 1px 0 var(--pink-d)}
+.key:disabled{opacity:.45;cursor:default}
+.tip{margin-top:14px;text-align:center;font-size:11.5px;color:var(--mut);line-height:1.7}
+.tip b{color:var(--lime)}
+.hidden{display:none!important}
+
+/* intro */
+.hero-t{font-family:'Black Han Sans';font-size:34px;line-height:1.25;text-align:center;margin-top:6px}
+.hero-t em{font-style:normal;color:var(--pink)}
+.hero-s{text-align:center;color:var(--mut);font-size:13px;margin-top:10px;line-height:1.7}
+.lineup{margin-top:16px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.lu{font-size:11px;background:oklch(0.24 0.04 295);border:1px solid oklch(0.45 0.07 295);border-radius:999px;padding:4px 10px;color:var(--mut)}
+
+/* recording */
+.count{font-family:'Black Han Sans';font-size:80px;text-align:center;color:var(--lime);line-height:1;text-shadow:0 0 22px oklch(0.85 0.19 130/.5)}
+.count small{font-size:24px}
+.lyric{text-align:center;font-size:15px;margin-top:10px;color:var(--txt)}
+.lyric b{color:var(--amber)}
+.eq{display:flex;gap:4px;align-items:flex-end;justify-content:center;height:56px;margin-top:18px}
+.eq i{width:9px;background:var(--pink);border-radius:3px 3px 0 0;height:8px;transition:height .09s}
+.eq i:nth-child(2n){background:var(--lime)} .eq i:nth-child(3n){background:var(--amber)}
+
+/* analyzing */
+.load-t{font-family:'Black Han Sans';font-size:24px;text-align:center}
+.load-s{text-align:center;font-size:12px;color:var(--mut);margin-top:8px;min-height:18px}
+.bar{margin:18px auto 4px;height:14px;background:oklch(0.24 0.04 295);border-radius:999px;overflow:hidden;border:1px solid oklch(0.5 0.08 300/.5)}
+.bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--pink),var(--amber));transition:width .25s}
+.spin{margin:14px auto 0;width:54px;height:54px;border-radius:50%;border:5px solid oklch(0.35 0.05 295);border-top-color:var(--pink);animation:sp 0.9s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* result */
+.score{font-family:'Black Han Sans';font-size:92px;line-height:1;text-align:center;color:var(--lime);text-shadow:0 0 22px oklch(0.85 0.19 130/.5)}
+.score small{font-size:30px}
+.judge{text-align:center;font-family:'Black Han Sans';font-size:25px;margin-top:2px}
+.judge em{font-style:normal;color:var(--pink)}
+.sub{color:var(--mut);text-align:center;font-size:12px;margin-top:8px;letter-spacing:.5px}
+.rank{margin-top:16px;border-top:1px dashed oklch(0.5 0.08 300/.6);padding-top:12px;display:flex;gap:8px}
+.rk{flex:1;background:var(--panel);border-radius:8px;text-align:center;padding:10px 4px 9px;font-size:11px;color:var(--mut)}
+.rk b{display:block;font-size:14px;font-family:'Black Han Sans';color:var(--txt);letter-spacing:.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rk .p{color:var(--amber);font-size:11px;font-weight:700}
+.err{color:var(--amber);text-align:center;font-size:13px;line-height:1.7;padding:8px 0}
+canvas{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="marq">🎤 목소리 노래방 <span class="no" id="roomno">NO. ----</span></div>
+
+  <!-- 인트로 -->
+  <section id="s-intro">
+    <div class="screen" style="margin-top:24px;padding:30px 20px">
+      <div class="badge">VOICE MATCH</div>
+      <h1 class="hero-t">내 목소리, <br>누구 <em>닮았을까?</em></h1>
+      <p class="hero-s">10초만 불러보세요.<br>AI가 목소리 결이 닮은 가수를 찾아드립니다.</p>
+      <div class="lineup" id="lineup"></div>
+    </div>
+    <div class="remote">
+      <button class="key start" id="btn-start">노 래 시 작</button>
+    </div>
+    <p class="tip">마이크는 <b>이 폰</b> · 녹음은 폰 밖으로 안 나갑니다<br>조용한 곳에서, 반주 없이 목소리만!</p>
+  </section>
+
+  <!-- 녹음 -->
+  <section id="s-rec" class="hidden">
+    <div class="screen" style="margin-top:24px;padding:30px 20px 24px">
+      <div class="badge" style="background:var(--lime);color:oklch(0.25 0.06 130)">NOW SINGING</div>
+      <div class="count" id="count">10<small>초</small></div>
+      <div class="lyric">가장 자신 있는 <b>한 소절</b>이면 충분해요</div>
+      <div class="eq" id="eq"></div>
+    </div>
+    <div class="remote">
+      <button class="key start" id="btn-stop" style="background:var(--amber);box-shadow:0 4px 0 oklch(0.55 0.1 85)">그만 부르기</button>
+    </div>
+  </section>
+
+  <!-- 분석 -->
+  <section id="s-ana" class="hidden">
+    <div class="screen" style="margin-top:24px;padding:34px 20px">
+      <div class="badge">JUDGING</div>
+      <div class="load-t" id="ana-t">심사위원 입장 중…</div>
+      <div class="bar"><i id="ana-bar"></i></div>
+      <div class="load-s" id="ana-s"></div>
+      <div class="spin"></div>
+    </div>
+    <p class="tip">첫 실행만 모델 다운로드(22MB)가 있어요. 다음부턴 바로!</p>
+  </section>
+
+  <!-- 결과 -->
+  <section id="s-result" class="hidden">
+    <div class="screen">
+      <div class="badge">RESULT</div>
+      <div class="score" id="r-score">--<small>점</small></div>
+      <div class="judge">당신의 18번 가수는 <em id="r-top">?</em></div>
+      <div class="sub" id="r-sub"></div>
+      <div class="rank" id="r-rank"></div>
+    </div>
+    <div class="remote">
+      <button class="key start" id="btn-share">결과 카드 공유</button>
+      <button class="key" id="btn-save">카드 저장</button>
+      <button class="key" id="btn-retry">다시</button>
+      <button class="key" onclick="location.href='https://game.cocy.io/'">게임 더보기</button>
+    </div>
+    <p class="tip" id="r-tip"></p>
+  </section>
+
+  <section id="s-err" class="hidden">
+    <div class="screen" style="margin-top:24px;padding:26px 20px"><div class="err" id="err-t"></div></div>
+    <div class="remote"><button class="key start" onclick="location.reload()">처음부터</button></div>
+  </section>
+</div>
+<canvas id="card" width="720" height="900"></canvas>
+<script>
+const $=id=>document.getElementById(id);
+const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
+$('roomno').textContent='NO. '+String(Math.floor(1000+Math.random()*9000));
+
+/* 인트로 라인업 칩 */
+const PREVIEW=['뉴진스','아이유','정국','임영웅','에스파','폴킴','블랙핑크','박효신','아이브','+51팀'];
+$('lineup').innerHTML=PREVIEW.map(n=>`<span class="lu">${n}</span>`).join('');
+for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
+
+const worker=new Worker('analyzer.js?v=20260719a');
+let workerReady=false, modelLoading=null, lastResult=null;
+
+function loadModel(){
+  if(modelLoading) return modelLoading;
+  modelLoading=(async()=>{
+    const [sj,mb]=await Promise.all([
+      fetch('singers.json?v=20260719a').then(r=>r.json()),
+      (async()=>{
+        const r=await fetch('ecapa_int8.onnx?v=20260719a');
+        const total=+r.headers.get('Content-Length')||21664162;
+        const reader=r.body.getReader();const chunks=[];let got=0;
+        while(true){const{done,value}=await reader.read();if(done)break;chunks.push(value);got+=value.length;
+          $('ana-bar').style.width=Math.round(got/total*70)+'%';
+          $('ana-s').textContent='AI 심사위원 다운로드 '+Math.round(got/total*100)+'%';}
+        const buf=new Uint8Array(got);let o=0;for(const c of chunks){buf.set(c,o);o+=c.length;}
+        return buf.buffer;
+      })()
+    ]);
+    worker.postMessage({type:'init',singers:sj,model:mb},[mb]);
+    await new Promise((res,rej)=>{
+      const h=ev=>{if(ev.data.type==='ready'){worker.removeEventListener('message',h);workerReady=true;res();}
+        if(ev.data.type==='error'){worker.removeEventListener('message',h);rej(new Error(ev.data.message));}};
+      worker.addEventListener('message',h);
+    });
+  })();
+  return modelLoading;
+}
+
+/* ---- 녹음 ---- */
+let audioCtx,stream,proc,pcmChunks,recRate,recTimer,recLeft;
+async function startRec(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:{
+      echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
+  }catch(e){
+    $('err-t').innerHTML='마이크 권한이 필요해요 🎤<br>브라우저 설정에서 마이크를 허용해주세요.';show('s-err');return;
+  }
+  show('s-rec');
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  recRate=audioCtx.sampleRate;
+  const src=audioCtx.createMediaStreamSource(stream);
+  proc=audioCtx.createScriptProcessor(4096,1,1);
+  pcmChunks=[];
+  const bars=$('eq').children;
+  proc.onaudioprocess=e=>{
+    const d=e.inputBuffer.getChannelData(0);
+    pcmChunks.push(new Float32Array(d));
+    let q=0;for(let i=0;i<d.length;i+=16)q+=d[i]*d[i];
+    const lv=Math.min(1,Math.sqrt(q/(d.length/16))*9);
+    for(let i=0;i<bars.length;i++)bars[i].style.height=(6+lv*(18+Math.random()*32))+'px';
+  };
+  src.connect(proc);proc.connect(audioCtx.destination);
+  recLeft=10;$('count').innerHTML=recLeft+'<small>초</small>';
+  recTimer=setInterval(()=>{recLeft--;
+    if(recLeft<=0){stopRec();return;}
+    $('count').innerHTML=recLeft+'<small>초</small>';},1000);
+  loadModel().catch(()=>{}); // 녹음하는 동안 미리 다운로드
+}
+async function stopRec(){
+  clearInterval(recTimer);
+  try{proc.disconnect();}catch(e){}
+  stream.getTracks().forEach(t=>t.stop());
+  const total=pcmChunks.reduce((a,c)=>a+c.length,0);
+  if(total<recRate*2.5){$('err-t').innerHTML='녹음이 너무 짧아요.<br>3초 이상 불러주세요!';show('s-err');return;}
+  const pcm=new Float32Array(total);let o=0;for(const c of pcmChunks){pcm.set(c,o);o+=c.length;}
+  show('s-ana');$('ana-t').textContent='심사위원 입장 중…';
+  await analyzePcm(pcm,recRate);
+}
+async function resampleTo16k(pcm,rate){
+  if(rate===16000)return pcm;
+  const len=Math.floor(pcm.length*16000/rate);
+  const oc=new OfflineAudioContext(1,len,16000);
+  const buf=oc.createBuffer(1,pcm.length,rate);
+  buf.copyToChannel(pcm,0);
+  const s=oc.createBufferSource();s.buffer=buf;s.connect(oc.destination);s.start();
+  return (await oc.startRendering()).getChannelData(0);
+}
+async function analyzePcm(pcm,rate){
+  try{
+    await loadModel();
+    $('ana-bar').style.width='75%';$('ana-t').textContent='심사 중…';$('ana-s').textContent='목소리 결 분석';
+    const p16=await resampleTo16k(pcm,rate);
+    const done=await new Promise((res,rej)=>{
+      const h=ev=>{const m=ev.data;
+        if(m.type==='progress'){$('ana-bar').style.width=Math.min(95,75+m.done*6)+'%';}
+        if(m.type==='result'){worker.removeEventListener('message',h);res(m);}
+        if(m.type==='error'){worker.removeEventListener('message',h);rej(new Error(m.message));}};
+      worker.addEventListener('message',h);
+      const cp=new Float32Array(p16); // OfflineAudioContext 버퍼는 detach 불가할 수 있어 복사
+      worker.postMessage({type:'analyze',pcm:cp},[cp.buffer]);
+    });
+    if(done.error==='silent'){$('err-t').innerHTML='목소리가 안 들렸어요 🔇<br>조금 더 크게 불러주세요!';show('s-err');return;}
+    renderResult(done.rank);
+  }catch(e){
+    $('err-t').innerHTML='분석 중 문제가 생겼어요.<br><span style="font-size:11px;opacity:.7">'+String(e.message||e).slice(0,120)+'</span>';show('s-err');
+  }
+}
+
+/* ---- 결과 ---- */
+const GCOMMENT={M:{'솔로':'감성 짙은 보이스','그룹':'무대 체질 보이스','밴드':'라이브 체질 보이스'},
+                F:{'솔로':'맑고 단단한 보이스','그룹':'청량 톤 보이스','밴드':'라이브 체질 보이스'}};
+function renderResult(rank){
+  lastResult=rank;
+  const top=rank[0];
+  $('r-score').innerHTML=top.pct+'<small>점</small>';
+  $('r-top').textContent=top.name;
+  $('r-sub').textContent=`${GCOMMENT[top.g][top.kind]||'개성 있는 보이스'} · ${top.genre} · 추천곡 "${top.song}"`;
+  $('r-rank').innerHTML=rank.slice(1,4).map((s,i)=>
+    `<div class="rk">${i+2}위<b>${s.name}</b><span class="p">${s.pct}%</span></div>`).join('');
+  $('r-tip').innerHTML='재미로 보는 목소리 결 분석입니다 · 녹음은 저장되지 않아요';
+  show('s-result');
+}
+$('btn-start').onclick=startRec;
+$('btn-stop').onclick=stopRec;
+$('btn-retry').onclick=()=>show('s-intro');
+
+/* ---- 공유 카드 ---- */
+function drawCard(){
+  const c=$('card'),x=c.getContext('2d'),W=720,H=900,top=lastResult[0];
+  x.fillStyle='#1d1526';x.fillRect(0,0,W,H);
+  const g=x.createRadialGradient(W*.85,0,10,W*.85,0,500);g.addColorStop(0,'rgba(240,110,170,.25)');g.addColorStop(1,'transparent');
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.strokeStyle='rgba(190,150,220,.5)';x.lineWidth=3;x.strokeRect(24,24,W-48,H-48);
+  x.textAlign='center';
+  x.fillStyle='#e8c66a';x.font='700 26px Pretendard';x.fillText('🎤 목소리 노래방',W/2,96);
+  x.fillStyle='#b9f455';x.font="180px 'Black Han Sans'";x.fillText(top.pct,W/2,330);
+  x.font="60px 'Black Han Sans'";x.fillText('점',W/2+130,330);
+  x.fillStyle='#f5eefb';x.font="44px 'Black Han Sans'";x.fillText('나의 18번 가수는',W/2,430);
+  x.fillStyle='#f06eaa';x.font="86px 'Black Han Sans'";x.fillText(top.name,W/2,540);
+  x.fillStyle='#cdbcdd';x.font='500 26px Pretendard';x.fillText(top.genre+' · '+(GCOMMENT[top.g][top.kind]||''),W/2,600);
+  x.strokeStyle='rgba(190,150,220,.4)';x.setLineDash([6,8]);x.beginPath();x.moveTo(80,650);x.lineTo(W-80,650);x.stroke();x.setLineDash([]);
+  x.fillStyle='#f5eefb';x.font='700 30px Pretendard';
+  lastResult.slice(1,4).forEach((s,i)=>{x.fillText(`${i+2}위  ${s.name}  ${s.pct}%`,W/2,712+i*46);});
+  x.fillStyle='#8f7fa3';x.font='500 22px Pretendard';x.fillText('game.cocy.io/voicematch — 넌 누구 닮았어?',W/2,H-56);
+  return c;
+}
+async function cardBlob(){await document.fonts.load("40px 'Black Han Sans'");drawCard();
+  return new Promise(r=>$('card').toBlob(r,'image/png'));}
+$('btn-save').onclick=async()=>{const b=await cardBlob();const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='voicematch.png';a.click();};
+$('btn-share').onclick=async()=>{
+  const b=await cardBlob();const f=new File([b],'voicematch.png',{type:'image/png'});
+  const top=lastResult[0];
+  const data={files:[f],title:'목소리 노래방',text:`내 18번 가수는 ${top.name} (${top.pct}점) 🎤 넌 누구 닮았어? https://game.cocy.io/voicematch/`};
+  if(navigator.canShare&&navigator.canShare(data)){try{await navigator.share(data);}catch(e){}}
+  else $('btn-save').click();
+};
+
+/* 디버그: ?debug=1 → 파일 업로드 분석 */
+if(new URLSearchParams(location.search).get('debug')){
+  const inp=document.createElement('input');inp.type='file';inp.accept='audio/*';inp.id='dbg-file';
+  inp.style.cssText='position:fixed;left:10px;bottom:10px;z-index:99;color:#fff;font-size:11px';
+  document.body.appendChild(inp);
+  inp.onchange=async()=>{
+    show('s-ana');
+    const ab=await inp.files[0].arrayBuffer();
+    const ac=new (window.AudioContext||window.webkitAudioContext)();
+    const buf=await ac.decodeAudioData(ab);
+    await analyzePcm(buf.getChannelData(0),buf.sampleRate);
+  };
+}
+</script>
+</body>
+</html>
