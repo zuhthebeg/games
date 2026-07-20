@@ -145,6 +145,8 @@ const EN_NAMES = {
   jungjoonil:'Jung Joon Il',jaja:'Jaja',postmen:'Postmen',yena:'YENA',
   hearts2hearts:'Hearts2Hearts',zia:'Zia',handonggeun:'Han Dong Geun',soonsoonhee:'Soonsoonhee',
   position:'Position',spapa:'SPAPA',hamo:'hamo',
+  huntrx:'HUNTR/X',sajaboys:'Saja Boys',frozen_elsa:'Elsa (Frozen)',moana:'Moana',
+  aladdin:'Aladdin',littlemermaid:'The Little Mermaid',encanto:'Encanto',lionking:'The Lion King',
 };
 
 const GENRE_MAP = {
