@@ -31,9 +31,13 @@ async function analyze(pcm16k) {
   for (const e of embs) for (let i = 0; i < d; i++) mean[i] += e[i] / embs.length;
   const q = l2norm(mean);
 
+  // hub 보정: 갤러리 중심에 있는 가수(모든 쿼리와 비슷하게 나오는 허브)의 쏠림 제거.
+  // hub = 자기 제외 평균 코사인(센터링, 오프라인 계산). alpha=0.45는 보컬 20트랙 검증값
+  // (self-top1 19/20 유지, 허브 top3 독식 4→0, 역쏠림 없음).
+  const HUB_ALPHA = 0.45;
   const scored = singers.map(s => {
     let c = 0; for (let i = 0; i < d; i++) c += q[i] * s.emb[i];
-    return { ...s, cos: c };
+    return { ...s, cos: c - HUB_ALPHA * (s.hub || 0) };
   });
   const cs = scored.map(s => s.cos);
   const mu = cs.reduce((a, b) => a + b) / cs.length;

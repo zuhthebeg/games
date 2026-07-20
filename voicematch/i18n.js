@@ -130,6 +130,21 @@ const EN_NAMES = {
   kimkyungho:'Kim Kyung Ho',imhanbyul:'Im Han Byul',maktub:'MAKTUB',zico:'ZICO',beo:"BE'O",
   taemin:'TAEMIN',shinee:'SHINee',nctdream:'NCT DREAM',buzz:'Buzz',mcthemax:'M.C the MAX',
   sgwannabe:'SG Wannabe',youngtak:'Young Tak',leechanwon:'Lee Chan Won',kimhojoong:'Kim Ho Joong',
+  younha:'Younha',imjaebum:'Yim Jae Beum',huhgak:'Huh Gak',parkjaejung:'Parc Jae Jung',
+  imchangjung:'Im Chang Jung',snsd:"Girls' Generation",akmu:'AKMU',hyukoh:'HYUKOH',
+  bigmama:'Big Mama',sochanwhee:'So Chan Whee',kimgunmo:'Kim Gun Mo',hanroro:'Hanroro',
+  woodz:'WOODZ',yoonjongshin:'Yoon Jong Shin',cherryfilter:'Cherry Filter',iru:'Eru',
+  leeseunggi:'Lee Seung Gi',ss501:'SS501',nayoonkwon:'Na Yoon Kwon',leechangsub:'Lee Chang Sub',
+  cool_kpop:'COOL',geobugi:'Turtles',thenuts:'The Nuts',nerdconnection:'Nerd Connection',
+  cortis:'CORTIS',yada:'YADA',jojazz:'Jo Jazz',jeonsangkeun:'Jeon Sang Keun',
+  standingegg:'Standing Egg',dynamicduo:'Dynamic Duo',bank_kpop:'BANK',seoinguk:'Seo In Guk',
+  jeongeunji:'Jeong Eun Ji',woody_kpop:'WOODY',kimfeel:'Kim Feel',hwanginwook:'Hwang In Wook',
+  jojungsuk:'Jo Jung Suk',december:'December',tim_kpop:'Tim',nflying:'N.Flying',
+  nilo:'Nilo',eclipse_kr:'ECLIPSE',hwanggaram:'Hwang Ga Ram',kimnayoung:'Kim Na Young',
+  browneyes:'Brown Eyes',jojanghyuk:'Jo Jang Hyuk',byunjinsub:'Byun Jin Sub',norazo:'Norazo',
+  jungjoonil:'Jung Joon Il',jaja:'Jaja',postmen:'Postmen',yena:'YENA',
+  hearts2hearts:'Hearts2Hearts',zia:'Zia',handonggeun:'Han Dong Geun',soonsoonhee:'Soonsoonhee',
+  position:'Position',spapa:'SPAPA',hamo:'hamo',
 };
 
 const GENRE_MAP = {

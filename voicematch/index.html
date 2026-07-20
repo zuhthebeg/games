@@ -238,18 +238,18 @@ const LANGS=['ko','en','ja','es'];
 $('langs').innerHTML=LANGS.map(l=>`<button class="lg" data-l="${l}">${l.toUpperCase()}</button>`).join('');
 document.querySelectorAll('.lg').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;localStorage.setItem('vm_lang',LANG);applyLang();});
 
-const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅|Lim Young Woong','에스파|aespa','폴킴|Paul Kim','블랙핑크|BLACKPINK','박효신|Park Hyo Shin','아이브|IVE','+90'];
+const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅|Lim Young Woong','에스파|aespa','폴킴|Paul Kim','블랙핑크|BLACKPINK','박효신|Park Hyo Shin','아이브|IVE','+150'];
 function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
 for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
 
-const worker=new Worker('analyzer.js?v=20260719b');
+const worker=new Worker('analyzer.js?v=20260720b');
 let workerReady=false, modelLoading=null, lastResult=null;
 
 function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('singers.json?v=20260719c').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
+      fetch('singers.json?v=20260720b').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
       (async()=>{
         const r=await fetch('ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
