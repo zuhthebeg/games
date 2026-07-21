@@ -109,6 +109,14 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .rk .p{color:var(--amber);font-size:11px;font-weight:700}
 .err{color:var(--amber);text-align:center;font-size:13px;line-height:1.7;padding:8px 0}
 #r-rankline{text-align:center;margin-top:12px;font-size:14px;font-weight:800;color:var(--amber);min-height:20px}
+#r-gaxis{margin-top:14px;border-top:1px dashed oklch(0.5 0.08 300/.6);padding-top:12px}
+#r-gaxis .ga-t{font-size:12px;font-weight:800;color:var(--lime);letter-spacing:.5px;text-align:center;margin-bottom:4px}
+#r-gaxis .ga-type{font-size:13.5px;font-weight:800;text-align:center;margin-bottom:9px}
+#r-gaxis .ga-row{display:grid;grid-template-columns:74px 1fr 30px;gap:8px;align-items:center;margin:5px 0}
+#r-gaxis .ga-nm{font-size:11.5px;font-weight:700;text-align:right;color:var(--mut)}
+#r-gaxis .ga-tr{height:9px;background:oklch(0.3 0.05 300);border-radius:99px;overflow:hidden}
+#r-gaxis .ga-tr i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,oklch(0.7 0.14 300),var(--lime));width:0;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+#r-gaxis .ga-p{font-size:11px;font-weight:800;color:var(--mut)}
 #r-setlist{margin-top:14px;border-top:1px dashed oklch(0.5 0.08 300/.6);padding-top:12px}
 #r-setlist .sl-t{font-size:12px;font-weight:800;color:var(--lime);letter-spacing:.5px;margin-bottom:8px;text-align:center}
 .sl-row{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:8px;padding:8px 10px;margin-top:5px;
@@ -187,6 +195,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="judge" id="r-judge"></div>
       <div class="sub" id="r-sub"></div>
       <div class="rank" id="r-rank"></div>
+      <div id="r-gaxis" class="hidden"></div>
       <div id="r-rankline"></div>
       <div id="r-setlist" class="hidden"></div>
     </div>
@@ -205,7 +214,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260721b"></script>
+<script src="i18n.js?v=20260721c"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -242,7 +251,7 @@ const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅
 function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
 for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
 
-const worker=new Worker('analyzer.js?v=20260720b');
+const worker=new Worker('analyzer.js?v=20260721c');
 let workerReady=false, modelLoading=null, lastResult=null;
 
 function loadModel(){
@@ -335,7 +344,7 @@ async function analyzePcm(pcm,rate){
       worker.postMessage({type:'analyze',pcm:cp},[cp.buffer]);
     });
     if(done.error==='silent'){$('err-t').innerHTML=t('errSilent');show('s-err');return;}
-    renderResult(done.rank);
+    renderResult(done.rank,done.genres);
   }catch(e){
     $('err-t').innerHTML=t('errAnalyze')+'<br><span style="font-size:11px;opacity:.7">'+String(e.message||e).slice(0,120)+'</span>';show('s-err');
   }
@@ -378,7 +387,7 @@ async function rankFlow(top){
       <button onclick="showBoard('${top.slug}')" style="background:var(--panel2);color:var(--txt)">${t('lb_btn')}</button>`;
   }
 }
-let lastRank=null;
+let lastRank=null;let lastGenres=null;
 async function showBoard(slug){
   const u=authUser();
   const s=(window._singersCache||[]).find(x=>x.slug===slug)||{slug,name:slug};
@@ -401,8 +410,20 @@ async function showBoard(slug){
 }
 /* ---- 결과 ---- */
 function comment(s){return t('c_'+s.g+'_'+s.kind)||'';}
-function renderResult(rank){
+function renderGaxis(genres){
+  const box=$('r-gaxis');
+  if(!genres||genres.length<3){box.classList.add('hidden');return;}
+  box.innerHTML=`<div class="ga-t">${t('gaxis')}</div>
+    <div class="ga-type">${t('gaxisType')(axisLabel(genres[0].key,LANG))}</div>`+
+    genres.slice(0,4).map(g=>`<div class="ga-row"><span class="ga-nm">${axisLabel(g.key,LANG)}</span>
+      <div class="ga-tr"><i data-w="${g.pct}"></i></div><span class="ga-p">${g.pct}</span></div>`).join('');
+  box.classList.remove('hidden');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    box.querySelectorAll('.ga-tr i').forEach(b=>b.style.width=b.dataset.w+'%');}));
+}
+function renderResult(rank,genres){
   lastResult=rank;
+  lastGenres=genres||null;
   const top=rank[0];
   $('r-score').innerHTML=top.pct+'<small>'+(t('pts')||'%')+'</small>';
   $('r-judge').innerHTML=t('judge')+' <em>'+singerName(top,LANG)+'</em>';
@@ -411,6 +432,7 @@ function renderResult(rank){
     `<div class="rk">${t('rankN')?(i+2)+t('rankN'):'#'+(i+2)}<b>${singerName(s,LANG)}</b><span class="p">${s.pct}%</span></div>`).join('');
   show('s-result');
   lastRank=null;
+  renderGaxis(genres);
   rankFlow(top);
   renderSetlist(rank);
 }

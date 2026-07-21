@@ -46,7 +46,35 @@ async function analyze(pcm16k) {
   scored.sort((a, b) => b.cos - a.cos);
   for (let i = 1; i < scored.length; i++)
     scored[i].pct = Math.max(5, Math.min(scored[i].pct, scored[i - 1].pct - 2));
-  return { rank: scored.slice(0, 8).map(({ emb, ...r }) => r) };
+
+  // 장르 축: 매크로 장르별 top-5 평균 cos → 상대 스케일. 순서 중요(록발라드→rock, R&B·발라드→rnb, 힙합R&B→hiphop)
+  const AXES = [
+    ['trot', /트로트|국악/], ['jazz', /재즈|스탠더드/], ['hiphop', /힙합/],
+    ['rnb', /R&B|소울/], ['rock', /록|그런지|펑크|밴드/], ['dance', /댄스|케이팝/],
+    ['indie', /인디|포크|컨트리|어쿠스틱/], ['ballad', /발라드|뮤지컬/],
+  ];
+  const groups = {};
+  scored.forEach(s => {
+    const g = s.genre || '';
+    let k = 'pop';
+    for (const [key, re] of AXES) if (re.test(g)) { k = key; break; }
+    (groups[k] = groups[k] || []).push(s.cos);
+  });
+  const gs = [];
+  for (const k in groups) {
+    const arr = groups[k].sort((a, b) => b - a);
+    if (arr.length < 4) continue;
+    const top = arr.slice(0, 5);
+    gs.push({ key: k, raw: top.reduce((a, b) => a + b) / top.length });
+  }
+  let genres = [];
+  if (gs.length >= 3) {
+    const lo = Math.min(...gs.map(g => g.raw)), hi = Math.max(...gs.map(g => g.raw));
+    gs.forEach(g => { g.pct = hi > lo ? Math.round(20 + 80 * (g.raw - lo) / (hi - lo)) : 60; });
+    gs.sort((a, b) => b.raw - a.raw);
+    genres = gs.map(({ raw, ...g }) => g);
+  }
+  return { rank: scored.slice(0, 8).map(({ emb, ...r }) => r), genres };
 }
 
 onmessage = async (ev) => {

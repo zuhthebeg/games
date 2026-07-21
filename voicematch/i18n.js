@@ -1,6 +1,7 @@
 /* 보이스 노래방 i18n — ko/en/ja/es + 가수 로마자명 + 장르 번역 */
 const I18N = {
   ko: {
+    gaxis:'🧬 보컬 DNA', gaxisType:g=>`${g} 성향 보이스`,
     lb_btn: '🏆 닮은꼴 랭킹', lb_title: n => `${n} 닮은꼴 TOP 10`,
     lb_myrank: n => `🏆 닮은꼴 전국 ${n}위!`, lb_login: '로그인하면 랭킹에 이름을 남길 수 있어요',
     lb_loginBtn: '로그인하고 랭킹 도전', lb_empty: '아직 도전자가 없어요 — 1호가 되어보세요!',
@@ -27,6 +28,7 @@ const I18N = {
     c_F_솔로: '맑고 단단한 보이스', c_F_그룹: '청량 톤 보이스', c_F_밴드: '라이브 체질 보이스',
   },
   en: {
+    gaxis:'🧬 Vocal DNA', gaxisType:g=>`Your voice leans ${g}`,
     lb_btn: '🏆 Leaderboard', lb_title: n => `${n} Voice Twin TOP 10`,
     lb_myrank: n => `🏆 Ranked #${n} nationwide!`, lb_login: 'Log in to enter the leaderboard',
     lb_loginBtn: 'Log in & join ranking', lb_empty: 'No challengers yet — be the first!',
@@ -53,6 +55,7 @@ const I18N = {
     c_F_솔로: 'clear & solid voice', c_F_그룹: 'fresh bright voice', c_F_밴드: 'live-session voice',
   },
   ja: {
+    gaxis:'🧬 ボーカルDNA', gaxisType:g=>`${g}系ボイス`,
     lb_btn: '🏆 そっくりランキング', lb_title: n => `${n} そっくり TOP 10`,
     lb_myrank: n => `🏆 そっくり全国${n}位!`, lb_login: 'ログインするとランキングに参加できます',
     lb_loginBtn: 'ログインして挑戦', lb_empty: 'まだ挑戦者がいません — 1号になろう!',
@@ -79,6 +82,7 @@ const I18N = {
     c_F_솔로: '澄んだ芯のあるボイス', c_F_그룹: '爽やかトーンボイス', c_F_밴드: 'ライブ体質ボイス',
   },
   es: {
+    gaxis:'🧬 ADN Vocal', gaxisType:g=>`Voz tipo ${g}`,
     lb_btn: '🏆 Ranking', lb_title: n => `TOP 10 gemelos de ${n}`,
     lb_myrank: n => `🏆 ¡Puesto #${n}!`, lb_login: 'Inicia sesión para entrar al ranking',
     lb_loginBtn: 'Iniciar sesión y competir', lb_empty: 'Aún no hay retadores — ¡sé el primero!',
@@ -316,6 +320,14 @@ const GENRE_MAP = {
        '인디팝':'Indie Pop','록':'Rock','록발라드':'Rock Ballad','포크':'Folk','밴드':'Banda','레트로':'Retro',
        '재즈팝':'Jazz Pop','성악':'Clásica','CCM':'CCM','R&B':'R&B'},
 };
+
+const AXIS_LABELS = {
+  ko: {ballad:'발라드',dance:'댄스팝',rock:'록',rnb:'R&B·소울',hiphop:'힙합',trot:'트로트',jazz:'재즈',indie:'인디·포크',pop:'팝'},
+  en: {ballad:'Ballad',dance:'Dance Pop',rock:'Rock',rnb:'R&B/Soul',hiphop:'Hip-hop',trot:'Trot',jazz:'Jazz',indie:'Indie/Folk',pop:'Pop'},
+  ja: {ballad:'バラード',dance:'ダンスポップ',rock:'ロック',rnb:'R&B・ソウル',hiphop:'ヒップホップ',trot:'トロット',jazz:'ジャズ',indie:'インディー・フォーク',pop:'ポップ'},
+  es: {ballad:'Balada',dance:'Dance Pop',rock:'Rock',rnb:'R&B/Soul',hiphop:'Hip-hop',trot:'Trot',jazz:'Jazz',indie:'Indie/Folk',pop:'Pop'},
+};
+function axisLabel(key, lang) { return (AXIS_LABELS[lang] || AXIS_LABELS.en)[key] || key; }
 
 function detectLang() {
   const q = new URLSearchParams(location.search).get('lang');
