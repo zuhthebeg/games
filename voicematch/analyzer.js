@@ -39,13 +39,19 @@ async function analyze(pcm16k) {
     let c = 0; for (let i = 0; i < d; i++) c += q[i] * s.emb[i];
     return { ...s, cos: c - HUB_ALPHA * (s.hub || 0) };
   });
-  const cs = scored.map(s => s.cos);
-  const mu = cs.reduce((a, b) => a + b) / cs.length;
-  const sd = Math.sqrt(cs.reduce((a, b) => a + (b - mu) ** 2, 0) / cs.length) || 1;
-  scored.forEach(s => { s.pct = Math.max(5, Math.min(99, Math.round(100 * (0.55 + 0.45 * Math.tanh((s.cos - mu) / (2 * sd)))))); });
-  scored.sort((a, b) => b.cos - a.cos);
-  for (let i = 1; i < scored.length; i++)
-    scored[i].pct = Math.max(5, Math.min(scored[i].pct, scored[i - 1].pct - 2));
+  // 풀별 랭킹: 기본 K-pop·가요(intl 제외), 옵션 전체. pct 상대 스케일도 풀 안에서 계산
+  function topRank(pool) {
+    const cs = pool.map(s => s.cos);
+    const mu = cs.reduce((a, b) => a + b) / cs.length;
+    const sd = Math.sqrt(cs.reduce((a, b) => a + (b - mu) ** 2, 0) / cs.length) || 1;
+    const arr = pool.map(s => ({ ...s, pct: Math.max(5, Math.min(99, Math.round(100 * (0.55 + 0.45 * Math.tanh((s.cos - mu) / (2 * sd)))))) }))
+      .sort((a, b) => b.cos - a.cos);
+    for (let i = 1; i < arr.length; i++)
+      arr[i].pct = Math.max(5, Math.min(arr[i].pct, arr[i - 1].pct - 2));
+    return arr.slice(0, 8).map(({ emb, ...r }) => r);
+  }
+  const rankKr = topRank(scored.filter(s => !s.intl));
+  const rankAll = topRank(scored);
 
   // 장르 축: 매크로 장르별 top-5 평균 cos → 상대 스케일. 순서 중요(록발라드→rock, R&B·발라드→rnb, 힙합R&B→hiphop)
   const AXES = [
@@ -54,6 +60,7 @@ async function analyze(pcm16k) {
     ['indie', /인디|포크|컨트리|어쿠스틱/], ['ballad', /발라드|뮤지컬/],
   ];
   const groups = {};
+  scored.sort((a, b) => b.cos - a.cos);
   scored.forEach(s => {
     const g = s.genre || '';
     let k = 'pop';
@@ -74,7 +81,7 @@ async function analyze(pcm16k) {
     gs.sort((a, b) => b.raw - a.raw);
     genres = gs.map(({ raw, ...g }) => g);
   }
-  return { rank: scored.slice(0, 8).map(({ emb, ...r }) => r), genres };
+  return { rank: rankKr, rankAll, genres };
 }
 
 onmessage = async (ev) => {

@@ -109,6 +109,9 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .rk .p{color:var(--amber);font-size:11px;font-weight:700}
 .err{color:var(--amber);text-align:center;font-size:13px;line-height:1.7;padding:8px 0}
 #r-rankline{text-align:center;margin-top:12px;font-size:14px;font-weight:800;color:var(--amber);min-height:20px}
+#btn-pool{display:block;width:100%;margin-top:12px;border:1px dashed oklch(0.5 0.08 300/.8);background:oklch(0.22 0.04 295);
+  color:var(--mut);font-family:Pretendard;font-size:12px;font-weight:800;border-radius:8px;padding:9px 8px;cursor:pointer;letter-spacing:.3px}
+#btn-pool:active{background:oklch(0.28 0.05 295)}
 #r-gaxis{margin-top:14px;border-top:1px dashed oklch(0.5 0.08 300/.6);padding-top:12px}
 #r-gaxis .ga-t{font-size:12px;font-weight:800;color:var(--lime);letter-spacing:.5px;text-align:center;margin-bottom:4px}
 #r-gaxis .ga-type{font-size:13.5px;font-weight:800;text-align:center;margin-bottom:9px}
@@ -195,6 +198,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="judge" id="r-judge"></div>
       <div class="sub" id="r-sub"></div>
       <div class="rank" id="r-rank"></div>
+      <button id="btn-pool" class="hidden"></button>
       <div id="r-gaxis" class="hidden"></div>
       <div id="r-rankline"></div>
       <div id="r-setlist" class="hidden"></div>
@@ -214,7 +218,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260721c"></script>
+<script src="i18n.js?v=20260721d"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -251,14 +255,14 @@ const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅
 function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
 for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
 
-const worker=new Worker('analyzer.js?v=20260721c');
+const worker=new Worker('analyzer.js?v=20260721d');
 let workerReady=false, modelLoading=null, lastResult=null;
 
 function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('singers.json?v=20260721b').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
+      fetch('singers.json?v=20260721d').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
       (async()=>{
         const r=await fetch('ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
@@ -344,7 +348,7 @@ async function analyzePcm(pcm,rate){
       worker.postMessage({type:'analyze',pcm:cp},[cp.buffer]);
     });
     if(done.error==='silent'){$('err-t').innerHTML=t('errSilent');show('s-err');return;}
-    renderResult(done.rank,done.genres);
+    renderResult(done.rank,done.rankAll,done.genres);
   }catch(e){
     $('err-t').innerHTML=t('errAnalyze')+'<br><span style="font-size:11px;opacity:.7">'+String(e.message||e).slice(0,120)+'</span>';show('s-err');
   }
@@ -421,20 +425,37 @@ function renderGaxis(genres){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     box.querySelectorAll('.ga-tr i').forEach(b=>b.style.width=b.dataset.w+'%');}));
 }
-function renderResult(rank,genres){
+let lastRankKr=null,lastRankAll=null,vmView='kr';
+function applyRank(rank){
   lastResult=rank;
-  lastGenres=genres||null;
   const top=rank[0];
   $('r-score').innerHTML=top.pct+'<small>'+(t('pts')||'%')+'</small>';
   $('r-judge').innerHTML=t('judge')+' <em>'+singerName(top,LANG)+'</em>';
   $('r-sub').textContent=`${comment(top)} · ${genreLabel(top.genre,LANG)} · ${t('reco')} "${top.song}"`;
   $('r-rank').innerHTML=rank.slice(1,4).map((s,i)=>
     `<div class="rk">${t('rankN')?(i+2)+t('rankN'):'#'+(i+2)}<b>${singerName(s,LANG)}</b><span class="p">${s.pct}%</span></div>`).join('');
+  renderSetlist(rank);
+}
+function updatePoolBtn(){
+  const b=$('btn-pool');
+  if(!lastRankAll){b.classList.add('hidden');return;}
+  b.textContent=vmView==='kr'?t('poolAll'):t('poolKr');
+  b.classList.remove('hidden');
+}
+$('btn-pool').onclick=()=>{
+  vmView=vmView==='kr'?'all':'kr';
+  applyRank(vmView==='kr'?lastRankKr:lastRankAll);
+  updatePoolBtn();
+};
+function renderResult(rank,rankAll,genres){
+  lastRankKr=rank;lastRankAll=rankAll||null;vmView='kr';
+  lastGenres=genres||null;
+  applyRank(rank);
   show('s-result');
   lastRank=null;
+  updatePoolBtn();
   renderGaxis(genres);
-  rankFlow(top);
-  renderSetlist(rank);
+  rankFlow(rank[0]);
 }
 
 /* ---- 2단계: 선곡 추천 (top3 가수의 검증곡 → 노래방 셋리스트) ---- */

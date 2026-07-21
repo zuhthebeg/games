@@ -1,6 +1,7 @@
 /* 보이스 노래방 i18n — ko/en/ja/es + 가수 로마자명 + 장르 번역 */
 const I18N = {
   ko: {
+    poolAll:'🌍 전체 아티스트에서 다시 찾기 (팝·록·J-POP 포함)', poolKr:'🎤 K-POP·가요에서 찾기',
     gaxis:'🧬 보컬 DNA', gaxisType:g=>`${g} 성향 보이스`,
     lb_btn: '🏆 닮은꼴 랭킹', lb_title: n => `${n} 닮은꼴 TOP 10`,
     lb_myrank: n => `🏆 닮은꼴 전국 ${n}위!`, lb_login: '로그인하면 랭킹에 이름을 남길 수 있어요',
@@ -28,6 +29,7 @@ const I18N = {
     c_F_솔로: '맑고 단단한 보이스', c_F_그룹: '청량 톤 보이스', c_F_밴드: '라이브 체질 보이스',
   },
   en: {
+    poolAll:'🌍 Search all artists (Pop·Rock·J-POP)', poolKr:'🎤 K-pop only',
     gaxis:'🧬 Vocal DNA', gaxisType:g=>`Your voice leans ${g}`,
     lb_btn: '🏆 Leaderboard', lb_title: n => `${n} Voice Twin TOP 10`,
     lb_myrank: n => `🏆 Ranked #${n} nationwide!`, lb_login: 'Log in to enter the leaderboard',
@@ -55,6 +57,7 @@ const I18N = {
     c_F_솔로: 'clear & solid voice', c_F_그룹: 'fresh bright voice', c_F_밴드: 'live-session voice',
   },
   ja: {
+    poolAll:'🌍 全アーティストから探す (Pop·Rock·J-POP)', poolKr:'🎤 K-POPのみ',
     gaxis:'🧬 ボーカルDNA', gaxisType:g=>`${g}系ボイス`,
     lb_btn: '🏆 そっくりランキング', lb_title: n => `${n} そっくり TOP 10`,
     lb_myrank: n => `🏆 そっくり全国${n}位!`, lb_login: 'ログインするとランキングに参加できます',
@@ -82,6 +85,7 @@ const I18N = {
     c_F_솔로: '澄んだ芯のあるボイス', c_F_그룹: '爽やかトーンボイス', c_F_밴드: 'ライブ体質ボイス',
   },
   es: {
+    poolAll:'🌍 Buscar en todos (Pop·Rock·J-POP)', poolKr:'🎤 Solo K-pop',
     gaxis:'🧬 ADN Vocal', gaxisType:g=>`Voz tipo ${g}`,
     lb_btn: '🏆 Ranking', lb_title: n => `TOP 10 gemelos de ${n}`,
     lb_myrank: n => `🏆 ¡Puesto #${n}!`, lb_login: 'Inicia sesión para entrar al ranking',
