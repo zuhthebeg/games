@@ -1,0 +1,12 @@
+{
+  "name": "games-svg-converter",
+  "version": "1.0.0",
+  "description": "Convert SVG icons to PNG for OG images",
+  "type": "module",
+  "scripts": {
+    "svg-to-png": "node svg-to-png.js"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
+  }
+}
