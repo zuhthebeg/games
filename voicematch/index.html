@@ -18,6 +18,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <link rel="alternate" hreflang="en" href="https://game.cocy.io/voicematch/?lang=en">
 <link rel="alternate" hreflang="ja" href="https://game.cocy.io/voicematch/?lang=ja">
 <link rel="alternate" hreflang="es" href="https://game.cocy.io/voicematch/?lang=es">
+<link rel="alternate" hreflang="zh-Hant" href="https://game.cocy.io/voicematch/?lang=tw">
 <link rel="alternate" hreflang="x-default" href="https://game.cocy.io/voicematch/">
 <meta property="og:title" content="목소리 노래방 — 당신의 18번 가수는? | Find Your K-pop Voice Twin">
 <meta property="og:description" content="10초 녹음으로 내 목소리 닮은 K-POP 가수 찾기. Sing 10s, find your K-pop voice twin. 100+ artists.">
@@ -218,7 +219,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260721d"></script>
+<script src="i18n.js?v=20260730tw"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -247,7 +248,7 @@ function applyLang(){
   document.querySelectorAll('.lg').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
   if(lastResult)renderResult(lastResult);
 }
-const LANGS=['ko','en','ja','es'];
+const LANGS=['ko','en','ja','es','tw'];
 $('langs').innerHTML=LANGS.map(l=>`<button class="lg" data-l="${l}">${l.toUpperCase()}</button>`).join('');
 document.querySelectorAll('.lg').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;localStorage.setItem('vm_lang',LANG);applyLang();});
 

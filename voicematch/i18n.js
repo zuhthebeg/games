@@ -112,6 +112,34 @@ const I18N = {
     c_M_솔로: 'voz profunda y emotiva', c_M_그룹: 'voz de escenario', c_M_밴드: 'voz de directo',
     c_F_솔로: 'voz clara y firme', c_F_그룹: 'voz fresca y brillante', c_F_밴드: 'voz de directo',
   },
+  tw: {
+    poolAll:'🌍 從所有藝人中尋找 (流行·搖滾·J-POP)', poolKr:'🎤 只看K-POP',
+    gaxis:'🧬 聲音DNA', gaxisType:g=>`偏向${g}的嗓音`,
+    lb_btn: '🏆 分身排行榜', lb_title: n => `${n} 聲音分身 TOP 10`,
+    lb_myrank: n => `🏆 全國排名第${n}名!`, lb_login: '登入即可參加排行榜',
+    lb_loginBtn: '登入並挑戰排行榜', lb_empty: '還沒有人挑戰 — 成為第一人吧!',
+    lb_me: '我', lb_close: '關閉',
+    title: '聲音KTV', room: 'NO.',
+    hero: '我的聲音，<br>像哪位<em>K-pop歌手?</em>',
+    heroSub: '只要唱10秒。<br>AI會找出音色最像你的韓國歌手。',
+    start: '開 始 唱 歌', stop: '停止',
+    tipIntro: '麥克風只用<b>這支手機</b> · 你的聲音不會離開裝置<br>安靜的地方，不加伴奏 — 只要你的聲音!',
+    nowSinging: 'NOW SINGING', sec: '秒', lyric: '唱<b>一句歌詞</b>就夠了 — 任何語言都可以!',
+    judging: '評審入場中…', judging2: '評分中…', analyzeSub: '正在分析你的音色',
+    dlLabel: '下載AI評審', tipFirst: '第一次啟動需下載模型(22MB)。之後就會秒開!',
+    pts: '分', judge: '你的K-pop聲音分身是', rankN: '名', reco: '推薦你唱',
+    setlist: '🎤 適合你聲音的歌曲',
+    share: '分享結果卡片', save: '儲存卡片', retry: '再試一次', more: '更多遊戲',
+    cardTitle: '🎤 聲音KTV', cardJudge: '我的K-pop聲音分身是', cardFoot: 'game.cocy.io/voicematch — 你的聲音分身是誰?',
+    tipResult: '純粹好玩的音色分析 · 錄音不會被儲存',
+    shareText: (n, p) => `我的K-pop聲音分身是${n} (${p}分) 🎤 你的是誰?`,
+    errMic: '需要麥克風權限 🎤<br>請在瀏覽器設定中允許使用麥克風。',
+    errShort: '錄音太短了。<br>請至少唱3秒以上!',
+    errSilent: '沒有聽到你的聲音 🔇<br>請再大聲一點!',
+    errAnalyze: '分析時發生問題。', restart: '重新開始',
+    c_M_솔로: '深情嗓音', c_M_그룹: '舞台型嗓音', c_M_밴드: '現場演出型嗓音',
+    c_F_솔로: '清亮扎實嗓音', c_F_그룹: '清新音色嗓音', c_F_밴드: '現場演出型嗓音',
+  },
 };
 
 const EN_NAMES = {
@@ -323,6 +351,9 @@ const GENRE_MAP = {
   es: {'발라드':'Balada','팝':'Pop','댄스팝':'Dance Pop','댄스':'Dance','힙합':'Hip-hop','트로트':'Trot',
        '인디팝':'Indie Pop','록':'Rock','록발라드':'Rock Ballad','포크':'Folk','밴드':'Banda','레트로':'Retro',
        '재즈팝':'Jazz Pop','성악':'Clásica','CCM':'CCM','R&B':'R&B'},
+  tw: {'발라드':'抒情歌','팝':'流行','댄스팝':'舞曲流行','댄스':'舞曲','힙합':'嘻哈','트로트':'Trot',
+       '인디팝':'獨立流行','록':'搖滾','록발라드':'搖滾抒情曲','포크':'民謠','밴드':'樂團','레트로':'復古',
+       '재즈팝':'爵士流行','성악':'古典聲樂','CCM':'CCM','R&B':'R&B'},
 };
 
 const AXIS_LABELS = {
@@ -330,6 +361,7 @@ const AXIS_LABELS = {
   en: {ballad:'Ballad',dance:'Dance Pop',rock:'Rock',rnb:'R&B/Soul',hiphop:'Hip-hop',trot:'Trot',jazz:'Jazz',indie:'Indie/Folk',pop:'Pop'},
   ja: {ballad:'バラード',dance:'ダンスポップ',rock:'ロック',rnb:'R&B・ソウル',hiphop:'ヒップホップ',trot:'トロット',jazz:'ジャズ',indie:'インディー・フォーク',pop:'ポップ'},
   es: {ballad:'Balada',dance:'Dance Pop',rock:'Rock',rnb:'R&B/Soul',hiphop:'Hip-hop',trot:'Trot',jazz:'Jazz',indie:'Indie/Folk',pop:'Pop'},
+  tw: {ballad:'抒情歌',dance:'舞曲流行',rock:'搖滾',rnb:'R&B·靈魂樂',hiphop:'嘻哈',trot:'Trot',jazz:'爵士',indie:'獨立·民謠',pop:'流行'},
 };
 function axisLabel(key, lang) { return (AXIS_LABELS[lang] || AXIS_LABELS.en)[key] || key; }
 
@@ -338,7 +370,9 @@ function detectLang() {
   if (q && I18N[q]) return q;
   const saved = localStorage.getItem('vm_lang');
   if (saved && I18N[saved]) return saved;
-  const nav = (navigator.language || 'ko').slice(0, 2);
+  const navFull = (navigator.language || 'ko').toLowerCase();
+  if (navFull.startsWith('zh')) return 'tw';
+  const nav = navFull.slice(0, 2);
   return I18N[nav] ? nav : 'en';
 }
 function singerName(s, lang) { return lang === 'ko' ? s.name : (EN_NAMES[s.slug] || s.name); }
