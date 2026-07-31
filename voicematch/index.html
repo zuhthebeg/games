@@ -111,9 +111,9 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .rk .p{color:var(--amber);font-size:11px;font-weight:700}
 .err{color:var(--amber);text-align:center;font-size:13px;line-height:1.7;padding:8px 0}
 #r-rankline{text-align:center;margin-top:12px;font-size:14px;font-weight:800;color:var(--amber);min-height:20px}
-#btn-pool{display:block;width:100%;margin-top:12px;border:1px dashed oklch(0.5 0.08 300/.8);background:oklch(0.22 0.04 295);
+.pool-toggle{display:block;width:100%;margin-top:12px;border:1px dashed oklch(0.5 0.08 300/.8);background:oklch(0.22 0.04 295);
   color:var(--mut);font-family:Pretendard;font-size:12px;font-weight:800;border-radius:8px;padding:9px 8px;cursor:pointer;letter-spacing:.3px}
-#btn-pool:active{background:oklch(0.28 0.05 295)}
+.pool-toggle:active{background:oklch(0.28 0.05 295)}
 #r-gaxis{margin-top:14px;border-top:1px dashed oklch(0.5 0.08 300/.6);padding-top:12px}
 #r-gaxis .ga-t{font-size:12px;font-weight:800;color:var(--lime);letter-spacing:.5px;text-align:center;margin-bottom:4px}
 #r-gaxis .ga-type{font-size:13.5px;font-weight:800;text-align:center;margin-bottom:9px}
@@ -160,6 +160,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <h1 class="hero-t" id="t-hero"></h1>
       <p class="hero-s" id="t-herosub"></p>
       <div class="lineup" id="lineup"></div>
+      <button id="btn-pool-intro" class="pool-toggle"></button>
     </div>
     <div class="remote">
       <button class="key start" id="btn-start"></button>
@@ -200,7 +201,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="judge" id="r-judge"></div>
       <div class="sub" id="r-sub"></div>
       <div class="rank" id="r-rank"></div>
-      <button id="btn-pool" class="hidden"></button>
+      <button id="btn-pool" class="pool-toggle hidden"></button>
       <div id="r-gaxis" class="hidden"></div>
       <div id="r-rankline"></div>
       <div id="r-setlist" class="hidden"></div>
@@ -247,11 +248,16 @@ function applyLang(){
   $('btn-restart').textContent=t('restart');
   $('r-tip').textContent=t('tipResult');
   document.querySelectorAll('.lg').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
+  updateIntroPoolBtn();
   if(lastResult)renderResult(lastResult);
 }
 const LANGS=['ko','en','ja','es','tw','id'];
 $('langs').innerHTML=LANGS.map(l=>`<button class="lg" data-l="${l}">${l.toUpperCase()}</button>`).join('');
 document.querySelectorAll('.lg').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;localStorage.setItem('vm_lang',LANG);applyLang();});
+
+let poolPref=localStorage.getItem('vm_poolpref')||'kr';
+function updateIntroPoolBtn(){$('btn-pool-intro').textContent=poolPref==='kr'?t('poolAll'):t('poolKr');}
+$('btn-pool-intro').onclick=()=>{poolPref=poolPref==='kr'?'all':'kr';localStorage.setItem('vm_poolpref',poolPref);updateIntroPoolBtn();};
 
 const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅|Lim Young Woong','에스파|aespa','폴킴|Paul Kim','블랙핑크|BLACKPINK','박효신|Park Hyo Shin','아이브|IVE','헌트릭스|HUNTR/X','엘사|Elsa','지드래곤|G-DRAGON','테일러스위프트|Taylor Swift','조용필|Cho Yong-pil','린킨파크|Linkin Park','+304'];
 function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
@@ -450,9 +456,10 @@ $('btn-pool').onclick=()=>{
   updatePoolBtn();
 };
 function renderResult(rank,rankAll,genres){
-  lastRankKr=rank;lastRankAll=rankAll||null;vmView='kr';
+  lastRankKr=rank;lastRankAll=rankAll||null;
+  vmView=(poolPref==='all'&&lastRankAll)?'all':'kr';
   lastGenres=genres||null;
-  applyRank(rank);
+  applyRank(vmView==='all'?lastRankAll:rank);
   show('s-result');
   lastRank=null;
   updatePoolBtn();
