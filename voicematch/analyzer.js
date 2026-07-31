@@ -3,7 +3,7 @@ importScripts('https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/ort.min.
 ort.env.wasm.numThreads = 1; // GitHub Pages: COOP/COEP 불가 → 싱글스레드
 ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/';
 
-let session = null, singers = null;
+let session = null, singers = null, lang = 'ko';
 
 const WIN = 3 * 16000, RMS_TH = 0.008;
 
@@ -40,6 +40,8 @@ async function analyze(pcm16k) {
     return { ...s, cos: c - HUB_ALPHA * (s.hub || 0) };
   });
   // 풀별 랭킹: 기본 K-pop·가요(intl 제외), 옵션 전체. pct 상대 스케일도 풀 안에서 계산
+  // 트로트는 해외(대만 등)에서 인지도가 없어 non-ko 로케일의 K-pop 풀에서는 제외
+  const isTrot = s => /트로트/.test(s.genre || '');
   function topRank(pool) {
     const cs = pool.map(s => s.cos);
     const mu = cs.reduce((a, b) => a + b) / cs.length;
@@ -50,7 +52,7 @@ async function analyze(pcm16k) {
       arr[i].pct = Math.max(5, Math.min(arr[i].pct, arr[i - 1].pct - 2));
     return arr.slice(0, 8).map(({ emb, ...r }) => r);
   }
-  const rankKr = topRank(scored.filter(s => !s.intl));
+  const rankKr = topRank(scored.filter(s => !s.intl && (lang === 'ko' || !isTrot(s))));
   const rankAll = topRank(scored);
 
   // 장르 축: 매크로 장르별 top-5 평균 cos → 상대 스케일. 순서 중요(록발라드→rock, R&B·발라드→rnb, 힙합R&B→hiphop)
@@ -89,8 +91,11 @@ onmessage = async (ev) => {
   try {
     if (m.type === 'init') {
       singers = m.singers;
+      lang = m.lang || 'ko';
       session = await ort.InferenceSession.create(m.model, { executionProviders: ['wasm'] });
       postMessage({ type: 'ready' });
+    } else if (m.type === 'lang') {
+      lang = m.lang || 'ko';
     } else if (m.type === 'analyze') {
       const r = await analyze(m.pcm);
       postMessage({ type: 'result', ...r });
