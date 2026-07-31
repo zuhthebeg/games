@@ -140,6 +140,34 @@ const I18N = {
     c_M_솔로: '深情嗓音', c_M_그룹: '舞台型嗓音', c_M_밴드: '現場演出型嗓音',
     c_F_솔로: '清亮扎實嗓音', c_F_그룹: '清新音色嗓音', c_F_밴드: '現場演出型嗓音',
   },
+  id: {
+    poolAll:'🌍 Cari dari semua artis (Pop·Rock·J-POP)', poolKr:'🎤 Khusus K-pop',
+    gaxis:'🧬 DNA Vokal', gaxisType:g=>`Suaramu condong ke ${g}`,
+    lb_btn: '🏆 Papan Peringkat', lb_title: n => `TOP 10 Mirip ${n}`,
+    lb_myrank: n => `🏆 Peringkat #${n} nasional!`, lb_login: 'Masuk untuk ikut papan peringkat',
+    lb_loginBtn: 'Masuk & ikut peringkat', lb_empty: 'Belum ada penantang — jadilah yang pertama!',
+    lb_me: 'saya', lb_close: 'Tutup',
+    title: 'Karaoke Suara K-pop', room: 'NO.',
+    hero: 'Suaramu mirip<br>penyanyi <em>K-pop</em> siapa?',
+    heroSub: 'Nyanyi cuma 10 detik.<br>AI akan cari penyanyi Korea dengan warna suara paling mirip.',
+    start: 'MULAI BERNYANYI', stop: 'Berhenti',
+    tipIntro: 'Mic cuma pakai <b>HP ini</b> · suaramu tidak keluar dari perangkat<br>Cari tempat sepi, tanpa musik — cukup suaramu!',
+    nowSinging: 'NOW SINGING', sec: 'dtk', lyric: 'Satu baris lagu apa pun <b>sudah cukup</b> — bahasa apa saja!',
+    judging: 'Juri sedang masuk…', judging2: 'Sedang menilai…', analyzeSub: 'Menganalisis warna suaramu',
+    dlLabel: 'Mengunduh juri AI', tipFirst: 'Model diunduh (22MB) cuma sekali di awal. Setelah itu langsung jalan!',
+    pts: '', judge: 'Kembaran suara K-popmu adalah', rankN: '', reco: 'Coba nyanyikan',
+    setlist: '🎤 Lagu yang cocok dengan suaramu',
+    share: 'Bagikan kartu hasil', save: 'Simpan kartu', retry: 'Coba lagi', more: 'Game lainnya',
+    cardTitle: '🎤 Karaoke Suara K-pop', cardJudge: 'Kembaran suara K-popku adalah', cardFoot: 'game.cocy.io/voicematch — siapa kembaran suaramu?',
+    tipResult: 'Analisis suara cuma untuk hiburan · rekaman tidak disimpan',
+    shareText: (n, p) => `Kembaran suara K-popku adalah ${n} (${p}%) 🎤 Punyamu siapa?`,
+    errMic: 'Perlu izin mikrofon 🎤<br>Aktifkan akses mic di pengaturan browser.',
+    errShort: 'Rekaman terlalu pendek.<br>Nyanyi minimal 3 detik!',
+    errSilent: 'Suaramu tidak terdengar 🔇<br>Nyanyi sedikit lebih keras ya!',
+    errAnalyze: 'Terjadi masalah saat menganalisis.', restart: 'Ulangi dari awal',
+    c_M_솔로: 'suara emosional yang dalam', c_M_그룹: 'suara panggung', c_M_밴드: 'suara live session',
+    c_F_솔로: 'suara jernih dan kuat', c_F_그룹: 'suara segar dan cerah', c_F_밴드: 'suara live session',
+  },
 };
 
 const EN_NAMES = {
@@ -339,6 +367,13 @@ const EN_NAMES = {
   'yoonmirae': 'Yoon Mirae',
   'zachbryan': 'Zach Bryan',
 
+  // 2026-07-31 id-pop batch
+  'raisa': 'Raisa',
+  'tulus': 'Tulus',
+  'isyanasarasvati': 'Isyana Sarasvati',
+  'rossa': 'Rossa',
+  'noah_id': 'NOAH',
+  'viavallen': 'Via Vallen',
 };
 
 const GENRE_MAP = {
@@ -354,6 +389,9 @@ const GENRE_MAP = {
   tw: {'발라드':'抒情歌','팝':'流行','댄스팝':'舞曲流行','댄스':'舞曲','힙합':'嘻哈','트로트':'Trot',
        '인디팝':'獨立流行','록':'搖滾','록발라드':'搖滾抒情曲','포크':'民謠','밴드':'樂團','레트로':'復古',
        '재즈팝':'爵士流行','성악':'古典聲樂','CCM':'CCM','R&B':'R&B'},
+  id: {'발라드':'Balada','팝':'Pop','댄스팝':'Dance Pop','댄스':'Dance','힙합':'Hip-hop','트로트':'Dangdut',
+       '인디팝':'Indie Pop','록':'Rock','록발라드':'Rock Balada','포크':'Folk','밴드':'Band','레트로':'Retro',
+       '재즈팝':'Jazz Pop','성악':'Klasik','CCM':'CCM','R&B':'R&B'},
 };
 
 const AXIS_LABELS = {
@@ -362,6 +400,7 @@ const AXIS_LABELS = {
   ja: {ballad:'バラード',dance:'ダンスポップ',rock:'ロック',rnb:'R&B・ソウル',hiphop:'ヒップホップ',trot:'トロット',jazz:'ジャズ',indie:'インディー・フォーク',pop:'ポップ'},
   es: {ballad:'Balada',dance:'Dance Pop',rock:'Rock',rnb:'R&B/Soul',hiphop:'Hip-hop',trot:'Trot',jazz:'Jazz',indie:'Indie/Folk',pop:'Pop'},
   tw: {ballad:'抒情歌',dance:'舞曲流行',rock:'搖滾',rnb:'R&B·靈魂樂',hiphop:'嘻哈',trot:'Trot',jazz:'爵士',indie:'獨立·民謠',pop:'流行'},
+  id: {ballad:'Balada',dance:'Dance Pop',rock:'Rock',rnb:'R&B/Soul',hiphop:'Hip-hop',trot:'Dangdut',jazz:'Jazz',indie:'Indie/Folk',pop:'Pop'},
 };
 function axisLabel(key, lang) { return (AXIS_LABELS[lang] || AXIS_LABELS.en)[key] || key; }
 

@@ -19,6 +19,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <link rel="alternate" hreflang="ja" href="https://game.cocy.io/voicematch/?lang=ja">
 <link rel="alternate" hreflang="es" href="https://game.cocy.io/voicematch/?lang=es">
 <link rel="alternate" hreflang="zh-Hant" href="https://game.cocy.io/voicematch/?lang=tw">
+<link rel="alternate" hreflang="id" href="https://game.cocy.io/voicematch/?lang=id">
 <link rel="alternate" hreflang="x-default" href="https://game.cocy.io/voicematch/">
 <meta property="og:title" content="목소리 노래방 — 당신의 18번 가수는? | Find Your K-pop Voice Twin">
 <meta property="og:description" content="10초 녹음으로 내 목소리 닮은 K-POP 가수 찾기. Sing 10s, find your K-pop voice twin. 100+ artists.">
@@ -35,7 +36,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebApplication","name":"목소리 노래방 K-pop Voice Twin","url":"https://game.cocy.io/voicematch/","applicationCategory":"EntertainmentApplication","description":"브라우저 로컬 AI로 내 목소리와 닮은 K-POP 가수를 찾는 서비스 — on-device AI K-pop voice twin finder","operatingSystem":"Web","offers":{"@type":"Offer","price":"0"},"inLanguage":["ko","en","ja","es"]}
+{"@context":"https://schema.org","@type":"WebApplication","name":"목소리 노래방 K-pop Voice Twin","url":"https://game.cocy.io/voicematch/","applicationCategory":"EntertainmentApplication","description":"브라우저 로컬 AI로 내 목소리와 닮은 K-POP 가수를 찾는 서비스 — on-device AI K-pop voice twin finder","operatingSystem":"Web","offers":{"@type":"Offer","price":"0"},"inLanguage":["ko","en","ja","es","zh-Hant","id"]}
 </script>
 <style>
 :root{
@@ -219,7 +220,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260730tw"></script>
+<script src="i18n.js?v=20260731id"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -248,7 +249,7 @@ function applyLang(){
   document.querySelectorAll('.lg').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
   if(lastResult)renderResult(lastResult);
 }
-const LANGS=['ko','en','ja','es','tw'];
+const LANGS=['ko','en','ja','es','tw','id'];
 $('langs').innerHTML=LANGS.map(l=>`<button class="lg" data-l="${l}">${l.toUpperCase()}</button>`).join('');
 document.querySelectorAll('.lg').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;localStorage.setItem('vm_lang',LANG);applyLang();});
 
@@ -263,7 +264,7 @@ function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('singers.json?v=20260721d').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
+      fetch('singers.json?v=20260731id').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
       (async()=>{
         const r=await fetch('ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
@@ -464,7 +465,7 @@ let catalogCache=null;
 async function renderSetlist(rank){
   const box=$('r-setlist');
   try{
-    if(!catalogCache)catalogCache=await fetch('catalog.json?v=20260721b').then(r=>r.json());
+    if(!catalogCache)catalogCache=await fetch('catalog.json?v=20260731id').then(r=>r.json());
     const bySlug={};catalogCache.artists.forEach(a=>bySlug[a.slug]=a);
     const picks=[];
     rank.slice(0,3).forEach((s,i)=>{
