@@ -374,17 +374,18 @@ async function analyzePcm(pcm,rate){
 
 /* ---- 랭킹 ---- */
 const RANK_API='https://relay.cocy.io/api/rankings/voicematch';
-const TOP10_REWARD=500;
-function claimTop10Reward(slug){
+function rewardForRank(rank){return Math.max(0,(11-rank))*100000;}
+function claimTop10Reward(slug,rank){
   const key='vm_claimed_'+slug;
   if(localStorage.getItem(key))return;
   localStorage.setItem(key,'1');
-  try{if(typeof SharedWallet!=='undefined'&&SharedWallet.addGold)SharedWallet.addGold(TOP10_REWARD);}catch(e){}
+  const amount=rewardForRank(rank);
+  try{if(typeof SharedWallet!=='undefined'&&SharedWallet.addGold)SharedWallet.addGold(amount);}catch(e){}
   const btn=document.querySelector('.reward-claim');if(btn)btn.remove();
   const m=document.createElement('div');m.id='reward-modal';
   m.innerHTML=`<div id="reward-box">
     <div class="reward-emoji">🎁</div>
-    <div class="reward-title">${t('rewardGot')(TOP10_REWARD)}</div>
+    <div class="reward-title">${t('rewardGot')(amount.toLocaleString())}</div>
     <div class="reward-sub">${t('rewardSub')}</div>
     <a class="reward-btn" href="https://game.cocy.io/">${t('rewardBtn')}</a>
     <button class="reward-close" onclick="document.getElementById('reward-modal').remove()">${t('lb_close')}</button>
@@ -412,7 +413,7 @@ async function rankFlow(top){
       if(r.success&&r.myRank){
         lastRank=r.myRank;
         const claimed=localStorage.getItem('vm_claimed_'+top.slug);
-        const rewardBtn=(r.myRank<=10&&!claimed)?`<button class="reward-claim" onclick="claimTop10Reward('${top.slug}')">${t('rewardClaimBtn')(TOP10_REWARD)}</button>`:'';
+        const rewardBtn=(r.myRank<=10&&!claimed)?`<button class="reward-claim" onclick="claimTop10Reward('${top.slug}',${r.myRank})">${t('rewardClaimBtn')(rewardForRank(r.myRank).toLocaleString())}</button>`:'';
         line.innerHTML=`<div>${t('lb_myrank')(r.myRank)}</div><button onclick="showBoard('${top.slug}')">${t('lb_btn')}</button>${rewardBtn}`;
         return;
       }
