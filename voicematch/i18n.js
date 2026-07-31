@@ -400,6 +400,9 @@ const EN_NAMES = {
   'seolundo': 'Seol Un-do', 'ses_kpop': 'S.E.S.', 'shinhwa': 'Shinhwa', 'sistar': 'SISTAR',
   'songdaegwan': 'Song Dae-kwan', 'suming': 'Suming', 'superjunior': 'Super Junior', 'taejina': 'Tae Jin-ah',
   'tara': 'T-ara', 'tvxq': 'TVXQ', 'winner_kpop': 'WINNER', 'wondergirls': 'Wonder Girls',
+
+  // 2026-07-31 대만 바이럴 픽 (대만 출신 멤버 포함)
+  'genblue': 'GENBLUE', 'wayv': 'WayV', 'treasure': 'TREASURE',
 };
 
 const GENRE_MAP = {
