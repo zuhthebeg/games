@@ -288,9 +288,10 @@
         function tt(k){ return (PORTAL_I18N[LANG]||PORTAL_I18N.ko)[k]; }
         // 게임 카드 번체중국어 번역(gameId 기준). 없으면 apps.json 한국어 폴백.
         const GAME_TW = {
+            voicematch:{title:'聲音KTV VOICE MATCH',desc:'唱10秒就好！AI幫你找出音色最像的歌手。從NewJeans到Lim Young-woong共376組，錄音絕不離開手機。支援 繁體中文/한국어/English/日本語/Español/Indonesia'},
             rhythmproto:{title:'節奏爆發 BEAT DROP',desc:'AI 打造的 K-POP 20 首節奏遊戲！4鍵·6鍵下落音符，4種難度，金幣·排行榜，支援 繁體中文/한국어/English/日本語'},
             melodyecho:{title:'旋律回聲',desc:'聽旋律用琴鍵彈回來，節奏用點擊重現！自適應聽力等級診斷，支援 繁體中文/한국어/English/日本語'},
-            wrongnote:{title:'找錯音',desc:'耳朵版找不同！每日5題，耳朵年齡診斷·表情符號分享，支援 한국어/English/日本語'},
+            wrongnote:{title:'找錯音',desc:'耳朵版找不同！每日5題，耳朵年齡診斷·表情符號分享，支援 繁體中文/한국어/English/日本語'},
             match3:{title:'啵啵消',desc:'消消樂式 Match-3！60秒限時·連擊爆發·金幣獎勵·排行榜，支援 한국어/繁體中文/English'},
             sudoku:{title:'數獨',desc:'數獨 (Sudoku) - 簡單·普通·困難，金幣獎勵·排行榜，支援 한국어/繁體中文/English'},
             mahjong:{title:'台灣麻將',desc:'台灣麻將 - 16張手牌，4人遊戲，台 ×10萬G獎勵'},
@@ -299,8 +300,8 @@
             'd2r-runewords':{title:'D2R 符文之語組合器',desc:'選擇符文順序 → 搜尋符文之語。裝備/職業/等級篩選'},
             jokerrun:{title:'小丑跑',desc:'撲克 Roguelike！組合牌型，用小丑讓分數爆發'},
             enhance:{title:'武器強化 & 對戰',desc:'暗黑風格等級系統！強化武器對戰賺金幣'},
-            pingtan:{title:'拼蛋',desc:'3-4人策略桌遊 - 資源、建設、交易'},
-            ppingpae:{title:'拼牌',desc:'理牌桌遊 - 順子/刻子/鬼牌運用'},
+            pingtan:{title:'拼蛋',desc:'3-4人策略桌遊(卡坦風) - 資源、建設、交易'},
+            ppingpae:{title:'拼牌',desc:'理牌桌遊(拉密風) - 順子/刻子/鬼牌運用'},
             connect4:{title:'三人四子棋',desc:'3人即時四子棋對決'},
             gomoku:{title:'五子棋',desc:'即時1:1五子棋對決'},
             tileslider:{title:'滑動拼圖',desc:'滑動數字/圖片拼圖'},
@@ -317,6 +318,7 @@
         };
         // 게임 카드 영어 번역(gameId 기준). 없으면 apps.json 한국어 폴백.
         const GAME_EN = {
+            voicematch:{title:'Voice Match',desc:'Sing 10 seconds — AI finds the singer whose voice matches yours. 376 artists from NewJeans to Lim Young-woong. Recording never leaves your phone.'},
             rhythmproto:{title:'Beat Drop',desc:'AI-generated K-pop rhythm game, 20 tracks! 4/6-key falling notes, 4 difficulties, gold & rankings'},
             match3:{title:'Pop Match',desc:'Anipang-style Match-3! 60-sec timer, combo blasts, gold rewards, ranking'},
             sudoku:{title:'Sudoku',desc:'Sudoku - Easy/Normal/Hard, gold rewards & ranking'},
@@ -326,8 +328,8 @@
             'd2r-runewords':{title:'D2R Runeword Builder',desc:'Pick rune order → search runewords. Filter by gear/class/level'},
             jokerrun:{title:'Joker Run',desc:'Poker roguelike! Build hands and blow up your score with jokers'},
             enhance:{title:'Weapon Enhance & Battle',desc:'Diablo-style tier system! Enhance weapons, battle, and earn gold'},
-            pingtan:{title:'Pingtan',desc:'3-4 player strategy board game - resources, building, trading'},
-            ppingpae:{title:'Ppingpae',desc:'Tile-melding board game - runs/groups/joker play'},
+            pingtan:{title:'Pingtan',desc:'3-4 player strategy board game (Catan-like) - resources, building, trading'},
+            ppingpae:{title:'Ppingpae',desc:'Tile-melding board game (Rummikub-like) - runs/groups/joker play'},
             connect4:{title:'3-Player Connect Four',desc:'Real-time 3-player Connect Four'},
             gomoku:{title:'Gomoku',desc:'Real-time 1:1 Gomoku (Five in a Row)'},
             tileslider:{title:'Tile Slider',desc:'Sliding number/image puzzle'},

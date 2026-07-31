@@ -4,6 +4,7 @@
   "title_ko": "반짝반짝 작은 별",
   "title_en": "Twinkle, Twinkle, Little Star",
   "title_ja": "きらきら星",
+  "title_tw": "一閃一閃亮晶晶",
   "source": "프랑스 민요 \"Ah! vous dirai-je, maman\" (1761), Wikipedia 악보",
   "bpm": 100,
   "notes": [
@@ -182,6 +183,7 @@
   "title_ko": "메리의 어린 양",
   "title_en": "Mary Had a Little Lamb",
   "title_ja": "メリーさんのひつじ",
+  "title_tw": "瑪莉有隻小綿羊",
   "source": "미국 동요 (Lowell Mason, 1830s), 퍼블릭 도메인",
   "bpm": 104,
   "notes": [
@@ -296,6 +298,7 @@
   "title_ko": "노를 저어라",
   "title_en": "Row, Row, Row Your Boat",
   "title_ja": "こげこげボート",
+  "title_tw": "划呀划小船",
   "source": "미국 전래 동요 (1852), Wikipedia 악보",
   "bpm": 100,
   "notes": [
@@ -414,6 +417,7 @@
   "title_ko": "프레르 자크",
   "title_en": "Frère Jacques",
   "title_ja": "フレール・ジャック",
+  "title_tw": "兩隻老虎（雅克兄弟）",
   "source": "프랑스 전래 동요 (18세기), 퍼블릭 도메인",
   "bpm": 104,
   "notes": [
@@ -552,6 +556,7 @@
   "title_ko": "핫 크로스 번",
   "title_en": "Hot Cross Buns",
   "title_ja": "ホット・クロス・バンズ",
+  "title_tw": "熱十字包",
   "source": "영국 전래 동요 (18세기), Wikipedia 악보",
   "bpm": 104,
   "notes": [
@@ -630,6 +635,7 @@
   "title_ko": "런던 다리",
   "title_en": "London Bridge Is Falling Down",
   "title_ja": "ロンドン橋",
+  "title_tw": "倫敦鐵橋垮下來",
   "source": "영국 전래 동요, Wikipedia 악보 (D장조)",
   "bpm": 100,
   "notes": [
@@ -736,6 +742,7 @@
   "title_ko": "맥도날드 아저씨네 농장",
   "title_en": "Old MacDonald Had a Farm",
   "title_ja": "ゆかいな牧場",
+  "title_tw": "王老先生有塊地",
   "source": "미국 전래 동요 (1917 채보), 퍼블릭 도메인",
   "bpm": 108,
   "notes": [
@@ -846,6 +853,7 @@
   "title_ko": "환희의 송가",
   "title_en": "Ode to Joy",
   "title_ja": "歓喜の歌",
+  "title_tw": "歡樂頌",
   "source": "베토벤 교향곡 9번 (1824), Wikipedia 악보 (G장조)",
   "bpm": 108,
   "notes": [
@@ -1104,6 +1112,7 @@
   "title_ko": "엘리제를 위하여",
   "title_en": "Für Elise",
   "title_ja": "エリーゼのために",
+  "title_tw": "給愛麗絲",
   "source": "베토벤 (1810), 주제부, 퍼블릭 도메인",
   "bpm": 80,
   "notes": [
@@ -1254,6 +1263,7 @@
   "title_ko": "올드 랭 사인 (석별의 정)",
   "title_en": "Auld Lang Syne",
   "title_ja": "蛍の光",
+  "title_tw": "友誼萬歲",
   "source": "스코틀랜드 민요 (Robert Burns, 1788), Wikipedia 악보 (F장조)",
   "bpm": 84,
   "notes": [
@@ -1488,6 +1498,7 @@
   "title_ko": "어메이징 그레이스",
   "title_en": "Amazing Grace",
   "title_ja": "アメイジング・グレイス",
+  "title_tw": "奇異恩典",
   "source": "찬송가 New Britain (1779/1835), thesession.org #2749 setting 43562",
   "bpm": 84,
   "notes": [
@@ -1646,6 +1657,7 @@
   "title_ko": "양키 두들",
   "title_en": "Yankee Doodle",
   "title_ja": "ヤンキードゥードゥル",
+  "title_tw": "洋基歌",
   "source": "미국 전래 민요 (18세기), thesession.org #10574",
   "bpm": 108,
   "notes": [
@@ -1876,6 +1888,7 @@
   "title_ko": "오 수재너",
   "title_en": "Oh! Susanna",
   "title_ja": "おおスザンナ",
+  "title_tw": "蘇珊娜",
   "source": "Stephen Foster (1847, 사후 70년+), Paul Hardy's Session Tunebook",
   "bpm": 112,
   "notes": [
@@ -2110,6 +2123,7 @@
   "title_ko": "성자의 행진",
   "title_en": "When the Saints Go Marching In",
   "title_ja": "聖者の行進",
+  "title_tw": "聖徒進行曲",
   "source": "미국 흑인영가 (전래), abc.musicaviva.com 채보",
   "bpm": 116,
   "notes": [
@@ -2244,6 +2258,7 @@
   "title_ko": "스카버러 페어",
   "title_en": "Scarborough Fair",
   "title_ja": "スカボロー・フェア",
+  "title_tw": "史卡波羅市集",
   "source": "영국 전래 발라드 (E도리안), thesession.org #7522",
   "bpm": 90,
   "notes": [
@@ -2390,6 +2405,7 @@
   "title_ko": "그린슬리브스",
   "title_en": "Greensleeves",
   "title_ja": "グリーンスリーブス",
+  "title_tw": "綠袖子",
   "source": "영국 전래 (16세기), thesession.org #1598",
   "bpm": 100,
   "notes": [
@@ -2688,6 +2704,7 @@
   "title_ko": "아리랑",
   "title_en": "Arirang",
   "title_ja": "アリラン",
+  "title_tw": "阿里郎",
   "source": "한국 전래 민요 (경기아리랑), Wikipedia 악보 (F장조 9/8 세마치)",
   "bpm": 90,
   "notes": [
@@ -2938,6 +2955,7 @@
   "title_ko": "징글벨",
   "title_en": "Jingle Bells",
   "title_ja": "ジングルベル",
+  "title_tw": "鈴兒響叮噹",
   "source": "James Lord Pierpont (1857), Paul Hardy's Xmas Tunebook (후렴)",
   "bpm": 120,
   "notes": [
@@ -3152,6 +3170,7 @@
   "title_ko": "생일 축하 노래",
   "title_en": "Happy Birthday to You",
   "title_ja": "ハッピーバースデー",
+  "title_tw": "生日快樂歌",
   "source": "Good Morning to All (Hill 자매, 1893), 멜로디 퍼블릭 도메인 확정(2016)",
   "bpm": 96,
   "notes": [
@@ -3262,6 +3281,7 @@
   "title_ko": "고요한 밤 거룩한 밤",
   "title_en": "Silent Night",
   "title_ja": "きよしこの夜",
+  "title_tw": "平安夜",
   "source": "Franz Xaver Gruber (1818), Paul Hardy's Xmas Tunebook",
   "bpm": 90,
   "notes": [

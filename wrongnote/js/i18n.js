@@ -182,10 +182,70 @@
       loadFail: '曲データを読み込めませんでした。再読み込みしてください。',
       shareGame: 'まちがい音さがし',
       shareEarAge: '🎵 今日の耳年齢: {age}歳(上位 {pct}%)'
+    },
+    tw: {
+      title: '找錯音',
+      sub: '耳朵版找不同 — 聽、點、診斷你的耳朵',
+      statStreak: '連續出席',
+      statBest: '最高分',
+      doneToday: '今天的題目已經完成囉。再挑戰一次也不會更新紀錄。',
+      viewResult: '再看一次今天的結果',
+      start: '開始今天的5道題目',
+      debugTitle: '🔧 除錯：聽原曲',
+      debugPlay: '▶ 播放原曲',
+      debugStop: '⏹ 停止',
+      debugNote: '沒有走音的原始旋律。播放次數不限。',
+      pillPuzzle: '第 {n} / 5 題',
+      pillPlays: '播放 {n}/3',
+      stageAria: '點這裡標記走音的地方',
+      stageHint: '播放中覺得怪怪的瞬間就點一下!',
+      loopStart: '區間開始',
+      loopEnd: '區間結束·重複',
+      loopClear: '取消重複',
+      popTitle: '這個標記哪裡走音了?(可選)',
+      corrHigher: '音太高 ↑',
+      corrLower: '音太低 ↓',
+      corrEarly: '節奏太快 «',
+      corrLate: '節奏太慢 »',
+      markerDelete: '刪除標記',
+      markerClose: '關閉',
+      submit: '提交並評分',
+      hintLoopStart: '區間開始設定: {t}',
+      hintLoopFirst: '請先按「區間開始」',
+      hintNoPlays: '3次播放都用完了。就用聽到的來決勝負吧!',
+      hintTapWhilePlaying: '播放中點擊才能標記',
+      revealTitle: '公布答案 · {title}',
+      revealScore: '找到 {found}/{total} · 校正加分 {corr} · 誤判 {fp} · <strong>+{score}分</strong>',
+      abPerformed: '聽出題版',
+      abOriginal: '聽原曲',
+      abPlay: '▶ 播放',
+      devPitchUp: '音變高了',
+      devPitchDown: '音變低了',
+      devLate: '節奏變慢了',
+      devEarly: '節奏變快了',
+      devItem: '第{n}處走音 · {label} · {status}',
+      statusFoundCorr: '準確發現+校正!',
+      statusFound: '發現(校正錯誤)',
+      statusMissed: '錯過',
+      fpItem: '{n}個誤判標記(標記了沒有走音的地方)',
+      nextPuzzle: '下一題 ▶',
+      finalResultBtn: '查看最終結果',
+      finalTitle: '今日耳朵診斷',
+      earAgeUnit: '歲',
+      percentileLine: '前 {n}% 的耳朵(僅供娛樂參考)',
+      totalLine: '總分 {score}分 · 連續出席 {streak}天',
+      goldLine: '🪙 獲得 +{n} 金幣!',
+      share: '分享結果',
+      home: '回首頁',
+      copied: '已複製到剪貼簿!',
+      seriesLink: '🎹 音感系列第2彈 <a href="/melodyecho/">旋律回聲</a> 也玩玩看',
+      loadFail: '無法載入歌曲資料。請重新整理看看。',
+      shareGame: '找錯音',
+      shareEarAge: '🎵 今天的耳朵年齡: {age}歲(前 {pct}%)'
     }
   };
 
-  var LANGS = ['ko', 'en', 'ja'];
+  var LANGS = ['ko', 'en', 'ja', 'tw'];
   var KEY = 'wn_lang';
 
   function detect() {
@@ -194,6 +254,7 @@
       if (saved && DICTS[saved]) return saved;
     } catch (e) {}
     var nav = (navigator.language || 'ko').toLowerCase();
+    if (nav.indexOf('zh') === 0) return 'tw';
     if (nav.indexOf('ja') === 0) return 'ja';
     if (nav.indexOf('ko') === 0) return 'ko';
     return 'en';
@@ -229,6 +290,6 @@
     songTitle: songTitle,
     cycle: cycle,
     lang: function () { return current; },
-    label: function () { return { ko: '한국어', en: 'EN', ja: '日本語' }[current]; }
+    label: function () { return { ko: '한국어', en: 'EN', ja: '日本語', tw: '繁體中文' }[current]; }
   };
 })(window);

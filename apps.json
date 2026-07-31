@@ -53,10 +53,68 @@
     "category": "puzzle"
   },
   {
+    "title": "대만 마작",
+    "icon": "https://game.cocy.io/mahjong/icon.svg",
+    "url": "https://game.cocy.io/mahjong/",
+    "desc": "대만 마작 (台灣麻將) - 16타일 핸드, 4인 플레이, 타이 × 10만G 보상",
+    "badge": "HOT",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "ko"
+    ],
+    "category": "classic",
+    "video": "https://game.cocy.io/mahjong/preview.mp4"
+  },
+  {
+    "title": "조커런",
+    "icon": "https://game.cocy.io/jokerrun/icon.svg?v=2",
+    "url": "https://game.cocy.io/jokerrun/",
+    "desc": "포커 로그라이크! 핸드 조합하고 조커로 점수 폭발",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "card",
+    "video": "https://game.cocy.io/jokerrun/preview.mp4"
+  },
+  {
+    "title": "삥탄",
+    "icon": "https://game.cocy.io/pingtan/icon.svg",
+    "url": "https://game.cocy.io/pingtan/index.html",
+    "desc": "3-4인 전략 보드게임(카탄 라이크) - 자원, 건설, 거래",
+    "badge": "HOT",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🌍"
+    ],
+    "category": "game"
+  },
+  {
+    "title": "삥패",
+    "icon": "https://game.cocy.io/ppingpae/icon.svg",
+    "url": "https://game.cocy.io/ppingpae/index.html",
+    "desc": "타일 정리 보드게임(루미큐브 라이크) - 런/그룹/조커 활용",
+    "badge": "HOT",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🇰🇷"
+    ],
+    "category": "game"
+  },
+  {
     "title": "틀린 음 찾기",
     "icon": "https://game.cocy.io/wrongnote/icon.svg",
     "url": "https://game.cocy.io/wrongnote/",
-    "desc": "오디오판 틀린그림찾기! 매일 5문제, 귀 나이 진단·이모지 공유. 한국어/English/日本語",
+    "desc": "오디오판 틀린그림찾기! 매일 5문제, 귀 나이 진단·이모지 공유. 한국어/English/日本語/繁體中文",
     "badge": "NEW",
     "platforms": [
       "WEB"
@@ -64,7 +122,8 @@
     "languages": [
       "ko",
       "en",
-      "ja"
+      "ja",
+      "zh-TW"
     ],
     "category": "puzzle"
   },
@@ -99,21 +158,6 @@
       "en"
     ],
     "category": "puzzle"
-  },
-  {
-    "title": "대만 마작",
-    "icon": "https://game.cocy.io/mahjong/icon.svg",
-    "url": "https://game.cocy.io/mahjong/",
-    "desc": "대만 마작 (台灣麻將) - 16타일 핸드, 4인 플레이, 타이 × 10만G 보상",
-    "badge": "HOT",
-    "platforms": [
-      "WEB"
-    ],
-    "languages": [
-      "ko"
-    ],
-    "category": "classic",
-    "video": "https://game.cocy.io/mahjong/preview.mp4"
   },
   {
     "title": "맞고 (화투)",
@@ -158,21 +202,6 @@
     "category": "game"
   },
   {
-    "title": "조커런",
-    "icon": "https://game.cocy.io/jokerrun/icon.svg?v=2",
-    "url": "https://game.cocy.io/jokerrun/",
-    "desc": "포커 로그라이크! 핸드 조합하고 조커로 점수 폭발",
-    "badge": "NEW",
-    "platforms": [
-      "WEB"
-    ],
-    "languages": [
-      "🌍"
-    ],
-    "category": "card",
-    "video": "https://game.cocy.io/jokerrun/preview.mp4"
-  },
-  {
     "title": "무기 강화 & 배틀",
     "icon": "https://game.cocy.io/enhance/icon.svg",
     "url": "https://game.cocy.io/enhance/",
@@ -183,34 +212,6 @@
     ],
     "languages": [
       "🌍"
-    ],
-    "category": "game"
-  },
-  {
-    "title": "삥탄",
-    "icon": "https://game.cocy.io/pingtan/icon.svg",
-    "url": "https://game.cocy.io/pingtan/index.html",
-    "desc": "3-4인 전략 보드게임 - 자원, 건설, 거래",
-    "badge": "HOT",
-    "platforms": [
-      "WEB"
-    ],
-    "languages": [
-      "🌍"
-    ],
-    "category": "game"
-  },
-  {
-    "title": "삥패",
-    "icon": "https://game.cocy.io/ppingpae/icon.svg",
-    "url": "https://game.cocy.io/ppingpae/index.html",
-    "desc": "타일 정리 보드게임 - 런/그룹/조커 활용",
-    "badge": "HOT",
-    "platforms": [
-      "WEB"
-    ],
-    "languages": [
-      "🇰🇷"
     ],
     "category": "game"
   },
