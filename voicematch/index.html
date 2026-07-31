@@ -141,6 +141,16 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .lb-row .nick{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lb-row .pct{font-weight:800;color:var(--lime)}
 #lb-close{width:100%;margin-top:12px;border:none;border-radius:9px;padding:11px 0;font-weight:800;background:var(--panel2);color:var(--txt);cursor:pointer}
+.reward-claim{border:none;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;
+  background:var(--lime);color:oklch(0.25 0.06 130);margin-top:6px;margin-left:6px;animation:rewpulse 1.4s ease-in-out infinite}
+@keyframes rewpulse{0%,100%{box-shadow:0 0 0 0 oklch(0.85 0.19 130/.5)}50%{box-shadow:0 0 0 7px oklch(0.85 0.19 130/0)}}
+#reward-modal{position:fixed;inset:0;background:rgba(10,6,16,.82);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+#reward-box{width:100%;max-width:320px;background:oklch(0.2 0.04 295);border:2px solid oklch(0.85 0.19 130/.6);border-radius:14px;padding:26px 20px;text-align:center}
+.reward-emoji{font-size:44px;line-height:1}
+.reward-title{font-family:'Black Han Sans';font-size:20px;margin-top:8px;color:var(--lime)}
+.reward-sub{font-size:13px;color:var(--mut);margin-top:6px}
+.reward-btn{display:block;margin-top:16px;border:none;border-radius:9px;padding:12px 0;font-weight:800;background:var(--pink);color:oklch(0.18 0.06 350);cursor:pointer;text-decoration:none}
+.reward-close{width:100%;margin-top:8px;border:none;border-radius:9px;padding:10px 0;font-weight:700;background:var(--panel2);color:var(--txt);cursor:pointer;font-size:12px}
 canvas{display:none}
 </style>
 </head>
@@ -221,7 +231,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260731id"></script>
+<script src="i18n.js?v=20260731reward"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -364,6 +374,24 @@ async function analyzePcm(pcm,rate){
 
 /* ---- 랭킹 ---- */
 const RANK_API='https://relay.cocy.io/api/rankings/voicematch';
+const TOP10_REWARD=500;
+function claimTop10Reward(slug){
+  const key='vm_claimed_'+slug;
+  if(localStorage.getItem(key))return;
+  localStorage.setItem(key,'1');
+  try{if(typeof SharedWallet!=='undefined'&&SharedWallet.addGold)SharedWallet.addGold(TOP10_REWARD);}catch(e){}
+  const btn=document.querySelector('.reward-claim');if(btn)btn.remove();
+  const m=document.createElement('div');m.id='reward-modal';
+  m.innerHTML=`<div id="reward-box">
+    <div class="reward-emoji">🎁</div>
+    <div class="reward-title">${t('rewardGot')(TOP10_REWARD)}</div>
+    <div class="reward-sub">${t('rewardSub')}</div>
+    <a class="reward-btn" href="https://game.cocy.io/">${t('rewardBtn')}</a>
+    <button class="reward-close" onclick="document.getElementById('reward-modal').remove()">${t('lb_close')}</button>
+  </div>`;
+  m.onclick=e=>{if(e.target===m)m.remove();};
+  document.body.appendChild(m);
+}
 function authUser(){
   try{
     const tk=localStorage.getItem('cocy_auth_token');if(!tk)return null;
@@ -383,7 +411,9 @@ async function rankFlow(top){
         body:JSON.stringify({userId:u.userId,nickname:u.nickname,artist:top.slug,pct:top.pct})}).then(x=>x.json());
       if(r.success&&r.myRank){
         lastRank=r.myRank;
-        line.innerHTML=`<div>${t('lb_myrank')(r.myRank)}</div><button onclick="showBoard('${top.slug}')">${t('lb_btn')}</button>`;
+        const claimed=localStorage.getItem('vm_claimed_'+top.slug);
+        const rewardBtn=(r.myRank<=10&&!claimed)?`<button class="reward-claim" onclick="claimTop10Reward('${top.slug}')">${t('rewardClaimBtn')(TOP10_REWARD)}</button>`:'';
+        line.innerHTML=`<div>${t('lb_myrank')(r.myRank)}</div><button onclick="showBoard('${top.slug}')">${t('lb_btn')}</button>${rewardBtn}`;
         return;
       }
       needLogin=(r.error==='need_login');
