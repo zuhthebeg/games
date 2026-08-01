@@ -429,6 +429,7 @@ const TW_NAMES = {
   'a_mei':'張惠妹', 'abao':'阿爆', 'suming':'舒米恩', 'samingad':'紀曉君', 'sangpuy':'桑布伊',
   'bts':'防彈少年團', 'v_bts':'V', 'jin':'Jin', 'jimin':'Jimin', 'jungkook':'柾國',
   'jhope':'j-hope', 'gdragon':'G-DRAGON', 'taeyang':'太陽', 'jaypark':'朴載範', 'zico':'ZICO',
+  'jeongeunji':'鄭恩地',
   'shinhwa':'神話', 'snsd':'少女時代', 'tvxq':'東方神起', 'kara':'KARA', 'finkl':'FIN.K.L',
   'sechskies':'SECHSKIES', 'superjunior':'Super Junior', 'shinee':'SHINee', 'sistar':'SISTAR', '2ne1':'2NE1',
   'wayv':'威神V', 'nct127':'NCT 127', 'nctdream':'NCT DREAM', 'aoa':'AOA', 'apink':'Apink',
