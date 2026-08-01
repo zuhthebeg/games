@@ -111,7 +111,7 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .sub{color:var(--mut);text-align:center;font-size:12px;margin-top:8px;letter-spacing:.5px}
 .rank{margin-top:16px;border-top:1px dashed oklch(0.5 0.08 300/.6);padding-top:12px;display:flex;gap:8px}
 .rk{flex:1;background:var(--panel);border-radius:8px;text-align:center;padding:10px 4px 9px;font-size:11px;color:var(--mut);min-width:0}
-.rk b{display:block;font-size:13px;font-family:'Black Han Sans';color:var(--txt);letter-spacing:.3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rk b{display:block;font-size:12px;font-family:'Black Han Sans';color:var(--txt);letter-spacing:.2px;margin-top:2px;white-space:normal;overflow-wrap:break-word;line-height:1.25}
 .rk .p{color:var(--amber);font-size:11px;font-weight:700}
 .err{color:var(--amber);text-align:center;font-size:13px;line-height:1.7;padding:8px 0}
 #r-rankline{text-align:center;margin-top:12px;font-size:14px;font-weight:800;color:var(--amber);min-height:20px}
@@ -250,7 +250,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260801grp2"></script>
+<script src="i18n.js?v=20260801tw3"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};

@@ -434,12 +434,12 @@ const TW_NAMES = {
   'sechskies':'SECHSKIES', 'superjunior':'Super Junior', 'shinee':'SHINee', 'sistar':'SISTAR', '2ne1':'2NE1',
   'wayv':'威神V', 'nct127':'NCT 127', 'nctdream':'NCT DREAM', 'aoa':'AOA', 'apink':'Apink',
   'ateez':'ATEEZ', 'browneyedgirls':'Brown Eyed Girls', 'chungha':'請夏', 'cnblue':'CNBLUE', 'dreamcatcher':'Dreamcatcher',
-  'everglow':'EVERGLOW', 'fiftyfifty':'FIFTY FIFTY', 'fromis9':'fromis 9', 'ftisland':'FTIsland', 'girlsday':'Girl\'s Day',
+  'everglow':'EVERGLOW', 'fiftyfifty':'FIFTY FIFTY', 'fromis9':'fromis_9', 'ftisland':'FTIsland', 'girlsday':'Girl\'s Day',
   'highlight_kpop':'Highlight', 'hyolyn':'孝琳', 'hwasa':'華莎', 'hyuna':'金泫雅', 'kai':'Kai',
-  'kimjunsu':'金俊秀', 'kimsejeong':'金世正', 'kwoneunbi':'權恩妃', 'lee_suhyun':'李遐怡', 'leeyoungji':'李泳知',
+  'kimjunsu':'金俊秀', 'kimsejeong':'金世正', 'kwoneunbi':'權恩妃', 'lee_suhyun':'李秀賢', 'leeyoungji':'李泳知',
   'monstax':'MONSTA X', 'ohmygirl':'OH MY GIRL', 'p1harmony':'P1Harmony', 'seulgi':'瑟琪', 'somi':'全昭彌',
   'sunmi':'宣美', 'taemin':'泰民', 'theboyz':'THE BOYZ', 'treasure':'TREASURE', 'tws':'TWS',
-  'winner_kpop':'WINNER', 'huntrx':'Kpop 獵魔女團', 'younha':'高潤荷', 'lionking':'獅子王', 'moana':'海洋奇緣',
+  'winner_kpop':'WINNER', 'huntrx':'HUNTR/X', 'younha':'高潤荷', 'lionking':'獅子王', 'moana':'海洋奇緣',
 };
 
 const GENRE_MAP = {
