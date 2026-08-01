@@ -3,6 +3,7 @@ const I18N = {
   ko: {
     poolAll:'🌍 전체 아티스트에서 다시 찾기 (팝·록·J-POP 포함)', poolKr:'🎤 K-POP·가요에서 찾기',
     lowScoreHint:'K-POP 풀에선 매치가 약해요 — 전체로 넓혀서 찾아볼까요?',
+    navLogin:'로그인', navLogout:'로그아웃',
     gaxis:'🧬 보컬 DNA', gaxisType:g=>`${g} 성향 보이스`,
     lb_btn: '🏆 닮은꼴 랭킹', lb_title: n => `${n} 닮은꼴 TOP 10`,
     lb_myrank: n => `🏆 닮은꼴 전세계 ${n}위!`, lb_login: '로그인하면 랭킹에 이름을 남길 수 있어요',
@@ -34,6 +35,7 @@ const I18N = {
   en: {
     poolAll:'🌍 Search all artists (Pop·Rock·J-POP)', poolKr:'🎤 K-pop only',
     lowScoreHint:'Weak match in the K-pop pool — try searching all artists?',
+    navLogin:'Login', navLogout:'Logout',
     gaxis:'🧬 Vocal DNA', gaxisType:g=>`Your voice leans ${g}`,
     lb_btn: '🏆 Leaderboard', lb_title: n => `${n} Voice Twin TOP 10`,
     lb_myrank: n => `🏆 Ranked #${n} worldwide!`, lb_login: 'Log in to enter the leaderboard',
@@ -65,6 +67,7 @@ const I18N = {
   ja: {
     poolAll:'🌍 全アーティストから探す (Pop·Rock·J-POP)', poolKr:'🎤 K-POPのみ',
     lowScoreHint:'K-POPプールではマッチが弱いです — 全体で探してみますか?',
+    navLogin:'ログイン', navLogout:'ログアウト',
     gaxis:'🧬 ボーカルDNA', gaxisType:g=>`${g}系ボイス`,
     lb_btn: '🏆 そっくりランキング', lb_title: n => `${n} そっくり TOP 10`,
     lb_myrank: n => `🏆 そっくり世界${n}位!`, lb_login: 'ログインするとランキングに参加できます',
@@ -96,6 +99,7 @@ const I18N = {
   es: {
     poolAll:'🌍 Buscar en todos (Pop·Rock·J-POP)', poolKr:'🎤 Solo K-pop',
     lowScoreHint:'Match débil en el grupo K-pop — ¿buscamos en todos los artistas?',
+    navLogin:'Iniciar sesión', navLogout:'Cerrar sesión',
     gaxis:'🧬 ADN Vocal', gaxisType:g=>`Voz tipo ${g}`,
     lb_btn: '🏆 Ranking', lb_title: n => `TOP 10 gemelos de ${n}`,
     lb_myrank: n => `🏆 ¡Puesto #${n} mundial!`, lb_login: 'Inicia sesión para entrar al ranking',
@@ -127,6 +131,7 @@ const I18N = {
   tw: {
     poolAll:'🌍 從所有藝人中尋找 (流行·搖滾·J-POP)', poolKr:'🎤 只看K-POP',
     lowScoreHint:'K-POP範圍內配對較弱 — 要擴大到全部藝人找找看嗎?',
+    navLogin:'登入', navLogout:'登出',
     gaxis:'🧬 聲音DNA', gaxisType:g=>`偏向${g}的嗓音`,
     lb_btn: '🏆 分身排行榜', lb_title: n => `${n} 聲音分身 TOP 10`,
     lb_myrank: n => `🏆 全球排名第${n}名!`, lb_login: '登入即可參加排行榜',
@@ -158,6 +163,7 @@ const I18N = {
   id: {
     poolAll:'🌍 Cari dari semua artis (Pop·Rock·J-POP)', poolKr:'🎤 Khusus K-pop',
     lowScoreHint:'Kecocokan lemah di pool K-pop — coba cari di semua artis?',
+    navLogin:'Masuk', navLogout:'Keluar',
     gaxis:'🧬 DNA Vokal', gaxisType:g=>`Suaramu condong ke ${g}`,
     lb_btn: '🏆 Papan Peringkat', lb_title: n => `TOP 10 Mirip ${n}`,
     lb_myrank: n => `🏆 Peringkat #${n} dunia!`, lb_login: 'Masuk untuk ikut papan peringkat',
@@ -411,6 +417,24 @@ const EN_NAMES = {
   'genblue': 'GENBLUE', 'wayv': 'WayV', 'treasure': 'TREASURE',
 };
 
+// 대만(tw) 로케일 전용 — 대만에서 실제 통용되는 정체(번체) 표기만 수동 검증해서 반영.
+// 중국 간체/대륙 표기 절대 금지, 불확실한 건 EN_NAMES 폴백(원문 로마자) 유지.
+const TW_NAMES = {
+  'a_mei':'張惠妹', 'abao':'阿爆', 'suming':'舒米恩', 'samingad':'紀曉君', 'sangpuy':'桑布伊',
+  'bts':'防彈少年團', 'v_bts':'V', 'jin':'Jin', 'jimin':'Jimin', 'jungkook':'柾國',
+  'jhope':'j-hope', 'gdragon':'G-DRAGON', 'taeyang':'太陽', 'jaypark':'朴載範', 'zico':'ZICO',
+  'shinhwa':'神話', 'snsd':'少女時代', 'tvxq':'東方神起', 'kara':'KARA', 'finkl':'FIN.K.L',
+  'sechskies':'SECHSKIES', 'superjunior':'Super Junior', 'shinee':'SHINee', 'sistar':'SISTAR', '2ne1':'2NE1',
+  'wayv':'威神V', 'nct127':'NCT 127', 'nctdream':'NCT DREAM', 'aoa':'AOA', 'apink':'Apink',
+  'ateez':'ATEEZ', 'browneyedgirls':'Brown Eyed Girls', 'chungha':'請夏', 'cnblue':'CNBLUE', 'dreamcatcher':'Dreamcatcher',
+  'everglow':'EVERGLOW', 'fiftyfifty':'FIFTY FIFTY', 'fromis9':'fromis 9', 'ftisland':'FTIsland', 'girlsday':'Girl\'s Day',
+  'highlight_kpop':'Highlight', 'hyolyn':'孝琳', 'hwasa':'華莎', 'hyuna':'金泫雅', 'kai':'Kai',
+  'kimjunsu':'金俊秀', 'kimsejeong':'金世正', 'kwoneunbi':'權恩妃', 'lee_suhyun':'李遐怡', 'leeyoungji':'李泳知',
+  'monstax':'MONSTA X', 'ohmygirl':'OH MY GIRL', 'p1harmony':'P1Harmony', 'seulgi':'瑟琪', 'somi':'全昭彌',
+  'sunmi':'宣美', 'taemin':'泰民', 'theboyz':'THE BOYZ', 'treasure':'TREASURE', 'tws':'TWS',
+  'winner_kpop':'WINNER', 'huntrx':'Kpop 獵魔女團', 'younha':'高潤荷', 'lionking':'獅子王', 'moana':'海洋奇緣',
+};
+
 const GENRE_MAP = {
   en: {'발라드':'Ballad','팝':'Pop','댄스팝':'Dance Pop','댄스':'Dance','힙합':'Hip-hop','트로트':'Trot',
        '인디팝':'Indie Pop','록':'Rock','록발라드':'Rock Ballad','포크':'Folk','밴드':'Band','레트로':'Retro',
@@ -499,7 +523,11 @@ function detectLang() {
   const nav = navFull.slice(0, 2);
   return I18N[nav] ? nav : 'en';
 }
-function singerName(s, lang) { return lang === 'ko' ? s.name : (EN_NAMES[s.slug] || s.name); }
+function singerName(s, lang) {
+  if (lang === 'ko') return s.name;
+  if (lang === 'tw' && TW_NAMES[s.slug]) return TW_NAMES[s.slug];
+  return EN_NAMES[s.slug] || s.name;
+}
 function genreLabel(genre, lang) {
   if (lang === 'ko') return genre;
   const m = GENRE_MAP[lang] || GENRE_MAP.en;
