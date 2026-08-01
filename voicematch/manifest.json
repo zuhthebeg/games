@@ -1,0 +1,17 @@
+{
+  "name": "목소리 노래방 — Find Your K-pop Voice Twin",
+  "short_name": "보이스매치",
+  "description": "10초만 불러보세요. 내 목소리와 가장 닮은 K-POP 가수를 AI가 찾아드립니다.",
+  "id": "/voicematch/",
+  "start_url": "/voicematch/",
+  "scope": "/voicematch/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#2a2135",
+  "theme_color": "#2a2135",
+  "lang": "ko",
+  "categories": ["entertainment", "music", "games"],
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
