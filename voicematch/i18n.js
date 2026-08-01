@@ -531,8 +531,12 @@ function detectLang() {
 }
 function singerName(s, lang) {
   if (lang === 'ko') return s.name;
-  if (lang === 'tw' && TW_NAMES[s.slug]) return TW_NAMES[s.slug];
-  return EN_NAMES[s.slug] || s.name;
+  const base = (lang === 'tw' && TW_NAMES[s.slug]) ? TW_NAMES[s.slug] : (EN_NAMES[s.slug] || s.name);
+  if (lang === 'tw' && s.group && window._singersCache) {
+    const g = window._singersCache.find(x => x.slug === s.group);
+    if (g) return `${base}（${singerName(g, lang)}）`;
+  }
+  return base;
 }
 function genreLabel(genre, lang) {
   if (lang === 'ko') return genre;
