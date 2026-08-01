@@ -2,6 +2,7 @@
 const I18N = {
   ko: {
     poolAll:'🌍 전체 아티스트에서 다시 찾기 (팝·록·J-POP 포함)', poolKr:'🎤 K-POP·가요에서 찾기',
+    lowScoreHint:'K-POP 풀에선 매치가 약해요 — 전체로 넓혀서 찾아볼까요?',
     gaxis:'🧬 보컬 DNA', gaxisType:g=>`${g} 성향 보이스`,
     lb_btn: '🏆 닮은꼴 랭킹', lb_title: n => `${n} 닮은꼴 TOP 10`,
     lb_myrank: n => `🏆 닮은꼴 전세계 ${n}위!`, lb_login: '로그인하면 랭킹에 이름을 남길 수 있어요',
@@ -32,6 +33,7 @@ const I18N = {
   },
   en: {
     poolAll:'🌍 Search all artists (Pop·Rock·J-POP)', poolKr:'🎤 K-pop only',
+    lowScoreHint:'Weak match in the K-pop pool — try searching all artists?',
     gaxis:'🧬 Vocal DNA', gaxisType:g=>`Your voice leans ${g}`,
     lb_btn: '🏆 Leaderboard', lb_title: n => `${n} Voice Twin TOP 10`,
     lb_myrank: n => `🏆 Ranked #${n} worldwide!`, lb_login: 'Log in to enter the leaderboard',
@@ -62,6 +64,7 @@ const I18N = {
   },
   ja: {
     poolAll:'🌍 全アーティストから探す (Pop·Rock·J-POP)', poolKr:'🎤 K-POPのみ',
+    lowScoreHint:'K-POPプールではマッチが弱いです — 全体で探してみますか?',
     gaxis:'🧬 ボーカルDNA', gaxisType:g=>`${g}系ボイス`,
     lb_btn: '🏆 そっくりランキング', lb_title: n => `${n} そっくり TOP 10`,
     lb_myrank: n => `🏆 そっくり世界${n}位!`, lb_login: 'ログインするとランキングに参加できます',
@@ -92,6 +95,7 @@ const I18N = {
   },
   es: {
     poolAll:'🌍 Buscar en todos (Pop·Rock·J-POP)', poolKr:'🎤 Solo K-pop',
+    lowScoreHint:'Match débil en el grupo K-pop — ¿buscamos en todos los artistas?',
     gaxis:'🧬 ADN Vocal', gaxisType:g=>`Voz tipo ${g}`,
     lb_btn: '🏆 Ranking', lb_title: n => `TOP 10 gemelos de ${n}`,
     lb_myrank: n => `🏆 ¡Puesto #${n} mundial!`, lb_login: 'Inicia sesión para entrar al ranking',
@@ -122,6 +126,7 @@ const I18N = {
   },
   tw: {
     poolAll:'🌍 從所有藝人中尋找 (流行·搖滾·J-POP)', poolKr:'🎤 只看K-POP',
+    lowScoreHint:'K-POP範圍內配對較弱 — 要擴大到全部藝人找找看嗎?',
     gaxis:'🧬 聲音DNA', gaxisType:g=>`偏向${g}的嗓音`,
     lb_btn: '🏆 分身排行榜', lb_title: n => `${n} 聲音分身 TOP 10`,
     lb_myrank: n => `🏆 全球排名第${n}名!`, lb_login: '登入即可參加排行榜',
@@ -152,6 +157,7 @@ const I18N = {
   },
   id: {
     poolAll:'🌍 Cari dari semua artis (Pop·Rock·J-POP)', poolKr:'🎤 Khusus K-pop',
+    lowScoreHint:'Kecocokan lemah di pool K-pop — coba cari di semua artis?',
     gaxis:'🧬 DNA Vokal', gaxisType:g=>`Suaramu condong ke ${g}`,
     lb_btn: '🏆 Papan Peringkat', lb_title: n => `TOP 10 Mirip ${n}`,
     lb_myrank: n => `🏆 Peringkat #${n} dunia!`, lb_login: 'Masuk untuk ikut papan peringkat',

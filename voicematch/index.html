@@ -114,6 +114,9 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .pool-toggle{display:block;width:100%;margin-top:12px;border:1px dashed oklch(0.5 0.08 300/.8);background:oklch(0.22 0.04 295);
   color:var(--mut);font-family:Pretendard;font-size:12px;font-weight:800;border-radius:8px;padding:9px 8px;cursor:pointer;letter-spacing:.3px}
 .pool-toggle:active{background:oklch(0.28 0.05 295)}
+.pool-hint{margin-top:12px;text-align:center;font-size:12px;font-weight:700;color:var(--amber)}
+.pool-toggle.hint{border:1px solid var(--amber);background:oklch(0.26 0.06 70/.35);color:var(--amber);margin-top:6px;animation:hintPulse 1.6s ease-in-out infinite}
+@keyframes hintPulse{0%,100%{box-shadow:0 0 0 0 oklch(0.7 0.15 70/.35)}50%{box-shadow:0 0 0 6px oklch(0.7 0.15 70/0)}}
 #r-gaxis{margin-top:14px;border-top:1px dashed oklch(0.5 0.08 300/.6);padding-top:12px}
 #r-gaxis .ga-t{font-size:12px;font-weight:800;color:var(--lime);letter-spacing:.5px;text-align:center;margin-bottom:4px}
 #r-gaxis .ga-type{font-size:13.5px;font-weight:800;text-align:center;margin-bottom:9px}
@@ -211,6 +214,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="judge" id="r-judge"></div>
       <div class="sub" id="r-sub"></div>
       <div class="rank" id="r-rank"></div>
+      <div id="r-poolhint" class="pool-hint hidden"></div>
       <button id="btn-pool" class="pool-toggle hidden"></button>
       <div id="r-gaxis" class="hidden"></div>
       <div id="r-rankline"></div>
@@ -231,7 +235,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260731i18n3"></script>
+<script src="i18n.js?v=20260801hint"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -482,10 +486,14 @@ function applyRank(rank){
   renderSetlist(rank);
 }
 function updatePoolBtn(){
-  const b=$('btn-pool');
-  if(!lastRankAll){b.classList.add('hidden');return;}
+  const b=$('btn-pool'),hint=$('r-poolhint');
+  if(!lastRankAll){b.classList.add('hidden');hint.classList.add('hidden');return;}
   b.textContent=vmView==='kr'?t('poolAll'):t('poolKr');
   b.classList.remove('hidden');
+  const lowScore=vmView==='kr'&&lastRankKr&&lastRankKr[0].pct<80;
+  b.classList.toggle('hint',lowScore);
+  hint.textContent=t('lowScoreHint');
+  hint.classList.toggle('hidden',!lowScore);
 }
 $('btn-pool').onclick=()=>{
   vmView=vmView==='kr'?'all':'kr';
