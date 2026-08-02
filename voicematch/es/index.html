@@ -321,7 +321,7 @@ const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅
 function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
 for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
 
-const worker=new Worker('/voicematch/analyzer.js?v=20260803fix?v=20260801gk');
+const worker=new Worker('/voicematch/analyzer.js?v=20260803fix');
 let workerReady=false, modelLoading=null, lastResult=null;
 
 function loadModel(){
