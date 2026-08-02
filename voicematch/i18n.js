@@ -164,7 +164,7 @@ const I18N = {
     setlist: '🎤 適合你聲音的歌曲',
     share: '分享結果卡片', save: '儲存卡片', retry: '再試一次', more: '更多遊戲',
     ftModalQ: '想知道這位歌手是誰嗎?', ftModalDesc: '節目、專輯、演唱會都整理在一起了。', ftModalGo: '看他的活動', ftModalClose: '關閉',
-    ftCta: n=>`看看 ${n} 的近況`, ftHint: '節目、專輯、演唱會一次看完 — FanTrack',
+    ftCta: n=>`看看 ${n} 的活動`, ftHint: '節目、專輯、演唱會一次看完 — FanTrack',
     cardTitle: '🎤 聲音KTV', cardJudge: '我的K-pop聲音分身是', cardFoot: 'game.cocy.io/voicematch — 你的聲音分身是誰?',
     tipResult: '純粹好玩的音色分析 · 錄音不會被儲存',
     shareText: (n, p) => `我的K-pop聲音分身是${n} (${p}分) 🎤 你的是誰?`,
