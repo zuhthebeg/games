@@ -43,6 +43,9 @@ async function analyze(pcm16k) {
   // non-ko 로케일 K-pop 풀은 gk(해외에서도 알려진 아이돌/그룹)만 포함 — 국내 전용
   // 트로트·발라드·인디밴드·뮤지컬 등은 제외해야 "모르는 가수만 나온다"는 이탈을 막음
   function topRank(pool) {
+    // 풀이 비면 reduce가 "Reduce of empty array"로 터진다.
+    // gk 플래그가 날아갔을 때 실제로 비한국어 화면이 전부 죽었다(2026-08-03).
+    if (!pool || !pool.length) return null;
     const cs = pool.map(s => s.cos);
     const mu = cs.reduce((a, b) => a + b) / cs.length;
     const sd = Math.sqrt(cs.reduce((a, b) => a + (b - mu) ** 2, 0) / cs.length) || 1;
@@ -52,8 +55,10 @@ async function analyze(pcm16k) {
       arr[i].pct = Math.max(5, Math.min(arr[i].pct, arr[i - 1].pct - 2));
     return arr.slice(0, 8).map(({ emb, ...r }) => r);
   }
-  const rankKr = topRank(scored.filter(s => !s.intl && (lang === 'ko' || s.gk)));
   const rankAll = topRank(scored);
+  // 로케일 필터로 풀이 비면 전체 풀로 폴백한다 — 화면이 죽는 것보다 낫다
+  const rankKr = topRank(scored.filter(s => !s.intl && (lang === 'ko' || s.gk)))
+    || topRank(scored.filter(s => !s.intl)) || rankAll;
 
   // 장르 축: 매크로 장르별 top-5 평균 cos → 상대 스케일. 순서 중요(록발라드→rock, R&B·발라드→rnb, 힙합R&B→hiphop)
   const AXES = [
