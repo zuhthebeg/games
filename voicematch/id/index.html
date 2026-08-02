@@ -163,6 +163,17 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .reward-btn{display:block;margin-top:16px;border:none;border-radius:9px;padding:12px 0;font-weight:800;background:var(--pink);color:oklch(0.18 0.06 350);cursor:pointer;text-decoration:none}
 .reward-close{width:100%;margin-top:8px;border:none;border-radius:9px;padding:10px 0;font-weight:700;background:var(--panel2);color:var(--txt);cursor:pointer;font-size:12px}
 canvas{display:none}
+.rk-go{cursor:pointer;position:relative}
+.rk-go::after{content:'›';position:absolute;top:6px;right:7px;font-size:13px;color:#e8c66a;font-weight:900}
+.rk-go:active{transform:translateY(1px)}
+.ft-modal{position:fixed;inset:0;background:rgba(10,9,20,.8);display:flex;align-items:center;justify-content:center;z-index:80;padding:20px}
+.ft-modal.hidden{display:none}
+.ft-box{background:#1e1b30;border:1px solid #e8c66a;border-radius:16px;padding:22px 18px;max-width:330px;width:100%;text-align:center}
+.ft-q{font-size:12.5px;color:#8f7fa3;font-weight:700}
+.ft-name{font-size:21px;font-weight:800;color:#e8c66a;margin:6px 0 8px}
+.ft-desc{font-size:12px;color:#a8a3c4;line-height:1.5;margin-bottom:16px}
+.ft-go{display:block;background:#e8c66a;color:#1a1020;border-radius:10px;padding:13px;font-size:14px;font-weight:800;text-decoration:none}
+.ft-close{display:block;width:100%;background:none;border:none;color:#8f7fa3;font-size:12px;margin-top:10px;padding:6px;cursor:pointer}
 .ft-cta{display:block;margin:14px auto 0;max-width:420px;padding:12px 14px;border-radius:12px;
   background:linear-gradient(135deg,#2a1f3d,#1e1b30);border:1px solid #e8c66a;text-decoration:none;color:#f5eefb}
 .ft-cta .ft-t{display:block;font-size:13.5px;font-weight:800;color:#e8c66a}
@@ -222,6 +233,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 
   <!-- 결과 -->
+  <div class="ft-modal hidden" id="ft-modal">
+    <div class="ft-box">
+      <div class="ft-q" id="ft-q"></div>
+      <div class="ft-name" id="ft-name"></div>
+      <div class="ft-desc" id="ft-desc"></div>
+      <a class="ft-go" id="ft-go" target="_blank" rel="noreferrer"></a>
+      <button class="ft-close" id="ft-close"></button>
+    </div>
+  </div>
+
   <section id="s-result" class="hidden">
     <div class="screen">
       <div class="badge">RESULT</div>
@@ -254,7 +275,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260803b15"></script>
+<script src="/voicematch/i18n.js?v=20260803m1"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -505,7 +526,10 @@ function applyRank(rank){
   $('r-judge').innerHTML=t('judge')+' <em>'+singerName(top,LANG)+'</em>';
   $('r-sub').textContent=`${comment(top)} · ${genreLabel(top.genre,LANG)} · ${t('reco')} "${top.song}"`;
   $('r-rank').innerHTML=rank.slice(1,4).map((s,i)=>
-    `<div class="rk">${t('rankN')?(i+2)+t('rankN'):'#'+(i+2)}<b>${singerName(s,LANG)}</b><span class="p">${s.pct}%</span></div>`).join('');
+    `<div class="rk${s.intl?'':' rk-go'}"${s.intl?'':` data-slug="${s.slug}"`}>${t('rankN')?(i+2)+t('rankN'):'#'+(i+2)}<b>${singerName(s,LANG)}</b><span class="p">${s.pct}%</span></div>`).join('');
+  $('r-rank').querySelectorAll('.rk-go').forEach(el=>{
+    el.onclick=()=>{ const s=rank.find(x=>x.slug===el.dataset.slug); if(s) openFtModal(s); };
+  });
   renderFanTrack(top);
   renderSetlist(rank);
 }
@@ -513,6 +537,27 @@ function applyRank(rank){
 // FanTrack 연결 — 매칭된 가수의 활동을 보러 갈 수 있게. 국내 가수만(해외는 FanTrack에 없음).
 // 언어는 그대로 넘긴다. FanTrack은 ko/en/tw/es만 있어서 ja/id는 en으로 보낸다.
 function ftLang(){ return ({ko:'ko',en:'en',tw:'tw',es:'es'})[LANG] || 'en'; }
+// 2~4위도 눌러서 그 가수를 알아볼 수 있게. 해외 가수는 FanTrack에 없으니 제외.
+function ftUrlFor(slug){
+  const l=ftLang();
+  return 'https://page.cocy.io/fantrack/c/'+slug+(l==='ko'?'/':'/'+l+'/')
+    +'?utm_source=voicematch&utm_medium=rank&utm_campaign=voicetwin';
+}
+function openFtModal(s){
+  $('ft-q').textContent=t('ftModalQ');
+  $('ft-name').textContent=singerName(s,LANG);
+  $('ft-desc').textContent=t('ftModalDesc');
+  const go=$('ft-go'); go.textContent=t('ftModalGo'); go.href=ftUrlFor(s.slug);
+  $('ft-close').textContent=t('ftModalClose');
+  $('ft-modal').classList.remove('hidden');
+}
+function closeFtModal(){ $('ft-modal').classList.add('hidden'); }
+document.addEventListener('DOMContentLoaded',()=>{
+  const m=$('ft-modal'); if(!m) return;
+  $('ft-close').onclick=closeFtModal;
+  m.onclick=e=>{ if(e.target===m) closeFtModal(); };   // 배경 탭으로 닫기
+});
+
 function renderFanTrack(top){
   const box=$('r-fantrack');
   if(!box) return;
@@ -520,7 +565,7 @@ function renderFanTrack(top){
   const l=ftLang();
   const url='https://page.cocy.io/fantrack/c/'+top.slug+(l==='ko'?'/':'/'+l+'/')
     +'?utm_source=voicematch&utm_medium=result&utm_campaign=voicetwin';
-  box.innerHTML='<a class="ft-cta" href="'+url+'" target="_blank" rel="noreferrer">'
+  box.innerHTML='<a class="ft-cta" href="'+url+'" target="_blank" rel="noreferrer" data-ft="1">'
     +'<span class="ft-t">'+t('ftCta')(singerName(top,LANG))+'</span>'
     +'<span class="ft-s">'+t('ftHint')+'</span></a>';
   box.classList.remove('hidden');
