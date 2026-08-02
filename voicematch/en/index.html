@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -11,31 +11,30 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <!-- AdSense: managed via GTM auto-ads (ca-pub-6634731722045607) -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>목소리 노래방 — Find Your K-pop Voice Twin</title>
+<title>Find Your K-pop Voice Twin</title>
 <meta name="description" content="10초만 불러보세요. 내 목소리와 가장 닮은 K-POP 가수를 AI가 찾아드립니다. Sing 10 seconds and AI finds your K-pop voice twin. 녹음은 폰 밖으로 나가지 않습니다.">
 <meta name="theme-color" content="#2a2135">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon.svg">
-<script>if('serviceWorker'in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});</script>
-<link rel="canonical" href="https://game.cocy.io/voicematch/">
+<link rel="manifest" href="/voicematch/manifest.json">
+<link rel="apple-touch-icon" href="/voicematch/icon.svg">
+<script>if('serviceWorker'in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('/voicematch/sw.js').catch(()=>{});});</script>
+<link rel="canonical" href="https://game.cocy.io/voicematch/en/">
 <link rel="alternate" hreflang="ko" href="https://game.cocy.io/voicematch/ko/">
 <link rel="alternate" hreflang="en" href="https://game.cocy.io/voicematch/en/">
-<link rel="alternate" hreflang="ja" href="https://game.cocy.io/voicematch/ja/">
 <link rel="alternate" hreflang="es" href="https://game.cocy.io/voicematch/es/">
+<link rel="alternate" hreflang="ja" href="https://game.cocy.io/voicematch/ja/">
 <link rel="alternate" hreflang="zh-Hant" href="https://game.cocy.io/voicematch/tw/">
 <link rel="alternate" hreflang="id" href="https://game.cocy.io/voicematch/id/">
 <link rel="alternate" hreflang="x-default" href="https://game.cocy.io/voicematch/">
-<meta property="og:title" content="목소리 노래방 — 당신의 18번 가수는? | Find Your K-pop Voice Twin">
-<meta property="og:description" content="10초 녹음으로 내 목소리 닮은 K-POP 가수 찾기. Sing 10s, find your K-pop voice twin. 100+ artists.">
-<meta property="og:url" content="https://game.cocy.io/voicematch/">
-<meta property="og:image" content="https://game.cocy.io/voicematch/og-ko.png">
+<meta property="og:title" content="Find Your K-pop Voice Twin">
+<meta property="og:description" content="Sing for 10 seconds and AI finds the K-pop artist whose voice matches yours. Runs in your browser — your voice never leaves the device.">
+<meta property="og:url" content="https://game.cocy.io/voicematch/en/">
+<meta property="og:image" content="https://game.cocy.io/voicematch/og-en.png">
 <meta property="og:type" content="website">
-<meta name="keywords" content="목소리 테스트, 닮은 가수, K-POP voice twin, voice match, AI 음색 분석, 노래방, kpop singer voice test">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="목소리 노래방 — 당신의 18번 가수는? | Find Your K-pop Voice Twin">
-<meta name="twitter:description" content="10초 녹음으로 내 목소리 닮은 K-POP 가수 찾기. Sing 10s, find your K-pop voice twin. 100+ artists.">
-<meta name="twitter:image" content="https://game.cocy.io/voicematch/og-ko.png">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="twitter:title" content="Find Your K-pop Voice Twin">
+<meta name="twitter:description" content="Sing for 10 seconds and AI finds the K-pop artist whose voice matches yours. Runs in your browser — your voice never leaves the device.">
+<meta name="twitter:image" content="https://game.cocy.io/voicematch/og-en.png">
+<link rel="icon" href="/voicematch/icon.svg" type="image/svg+xml">
 <script src="/lib/shared-wallet.js?v=20260705b2b"></script>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
@@ -250,7 +249,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260802es"></script>
+<script src="/voicematch/i18n.js?v=20260802es"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -295,16 +294,16 @@ const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅
 function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
 for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
 
-const worker=new Worker('analyzer.js?v=20260801gk');
+const worker=new Worker('/voicematch/analyzer.js?v=20260801gk');
 let workerReady=false, modelLoading=null, lastResult=null;
 
 function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('singers.json?v=20260801grp2').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
+      fetch('/voicematch/singers.json?v=20260801grp2').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
       (async()=>{
-        const r=await fetch('ecapa_int8.onnx?v=20260719a');
+        const r=await fetch('/voicematch/ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
         const reader=r.body.getReader();const chunks=[];let got=0;
         while(true){const{done,value}=await reader.read();if(done)break;chunks.push(value);got+=value.length;
@@ -536,7 +535,7 @@ let catalogCache=null;
 async function renderSetlist(rank){
   const box=$('r-setlist');
   try{
-    if(!catalogCache)catalogCache=await fetch('catalog.json?v=20260731tw3').then(r=>r.json());
+    if(!catalogCache)catalogCache=await fetch('/voicematch/catalog.json?v=20260731tw3').then(r=>r.json());
     const bySlug={};catalogCache.artists.forEach(a=>bySlug[a.slug]=a);
     const picks=[];
     rank.slice(0,3).forEach((s,i)=>{

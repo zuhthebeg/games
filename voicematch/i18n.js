@@ -523,6 +523,9 @@ function axisLabel(key, lang) { return (AXIS_LABELS[lang] || AXIS_LABELS.en)[key
 function detectLang() {
   const q = new URLSearchParams(location.search).get('lang');
   if (q && I18N[q]) return q;
+  // /voicematch/es/ 같은 경로형 진입(OG 메타를 언어별로 주기 위한 페이지)
+  const p = location.pathname.match(/\/voicematch\/([a-z]{2})\/?$/);
+  if (p && I18N[p[1]]) return p[1];
   const saved = localStorage.getItem('vm_lang');
   if (saved && I18N[saved]) return saved;
   const navFull = (navigator.language || 'ko').toLowerCase();
