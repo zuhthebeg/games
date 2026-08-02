@@ -637,6 +637,7 @@ const EN_NAMES = {
   yoonmirae:"Yoon Mi-rae",
   zachbryan:"Zach Bryan",
   zerobaseone:"ZEROBASEONE",
+  rescene:"RESCENE",
 };
 
 // 대만(tw) 로케일 전용 — 대만에서 실제 통용되는 정체(번체) 표기만 수동 검증해서 반영.
@@ -717,6 +718,7 @@ const TW_NAMES = {
   'yoondohyun':'尹度玹',
   'yoonjongshin':'尹鍾信',
   'yoonmirae':'尹未來',
+  'rescene':'RESCENE',
 };
 
 const GENRE_MAP = {

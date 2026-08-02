@@ -255,7 +255,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260802ft1"></script>
+<script src="i18n.js?v=20260803r1"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -308,7 +308,7 @@ function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('singers.json?v=20260801grp2').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
+      fetch('singers.json?v=20260803r1').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
       (async()=>{
         const r=await fetch('ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
@@ -559,7 +559,7 @@ let catalogCache=null;
 async function renderSetlist(rank){
   const box=$('r-setlist');
   try{
-    if(!catalogCache)catalogCache=await fetch('catalog.json?v=20260731tw3').then(r=>r.json());
+    if(!catalogCache)catalogCache=await fetch('catalog.json?v=20260803r1').then(r=>r.json());
     const bySlug={};catalogCache.artists.forEach(a=>bySlug[a.slug]=a);
     const picks=[];
     rank.slice(0,3).forEach((s,i)=>{
