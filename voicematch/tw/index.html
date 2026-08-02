@@ -163,6 +163,10 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .reward-btn{display:block;margin-top:16px;border:none;border-radius:9px;padding:12px 0;font-weight:800;background:var(--pink);color:oklch(0.18 0.06 350);cursor:pointer;text-decoration:none}
 .reward-close{width:100%;margin-top:8px;border:none;border-radius:9px;padding:10px 0;font-weight:700;background:var(--panel2);color:var(--txt);cursor:pointer;font-size:12px}
 canvas{display:none}
+.ft-cta{display:block;margin:14px auto 0;max-width:420px;padding:12px 14px;border-radius:12px;
+  background:linear-gradient(135deg,#2a1f3d,#1e1b30);border:1px solid #e8c66a;text-decoration:none;color:#f5eefb}
+.ft-cta .ft-t{display:block;font-size:13.5px;font-weight:800;color:#e8c66a}
+.ft-cta .ft-s{display:block;font-size:11px;color:#8f7fa3;margin-top:3px}
 </style>
 </head>
 <body>
@@ -232,6 +236,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
       <div id="r-gaxis" class="hidden"></div>
       <div id="r-rankline"></div>
+      <div id="r-fantrack" class="hidden"></div>
       <div id="r-setlist" class="hidden"></div>
     </div>
     <div class="remote">
@@ -249,14 +254,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260802tw4"></script>
+<script src="/voicematch/i18n.js?v=20260802ft1"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
 $('roomno').textContent='NO. '+String(Math.floor(1000+Math.random()*9000));
 
 let LANG=detectLang();
-const t=k=>I18N[LANG][k];
+// 로케일에 키가 없으면 en으로 폴백한다(없는 키를 함수처럼 호출하면 터진다).
+const t=k=>{const v=I18N[LANG][k];return v===undefined?I18N.en[k]:v;};
 
 function applyLang(){
   document.documentElement.lang=LANG;
@@ -500,7 +506,24 @@ function applyRank(rank){
   $('r-sub').textContent=`${comment(top)} · ${genreLabel(top.genre,LANG)} · ${t('reco')} "${top.song}"`;
   $('r-rank').innerHTML=rank.slice(1,4).map((s,i)=>
     `<div class="rk">${t('rankN')?(i+2)+t('rankN'):'#'+(i+2)}<b>${singerName(s,LANG)}</b><span class="p">${s.pct}%</span></div>`).join('');
+  renderFanTrack(top);
   renderSetlist(rank);
+}
+
+// FanTrack 연결 — 매칭된 가수의 활동을 보러 갈 수 있게. 국내 가수만(해외는 FanTrack에 없음).
+// 언어는 그대로 넘긴다. FanTrack은 ko/en/tw/es만 있어서 ja/id는 en으로 보낸다.
+function ftLang(){ return ({ko:'ko',en:'en',tw:'tw',es:'es'})[LANG] || 'en'; }
+function renderFanTrack(top){
+  const box=$('r-fantrack');
+  if(!box) return;
+  if(!top || top.intl){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  const l=ftLang();
+  const url='https://page.cocy.io/fantrack/c/'+top.slug+(l==='ko'?'/':'/'+l+'/')
+    +'?utm_source=voicematch&utm_medium=result&utm_campaign=voicetwin';
+  box.innerHTML='<a class="ft-cta" href="'+url+'" target="_blank" rel="noreferrer">'
+    +'<span class="ft-t">'+t('ftCta')(singerName(top,LANG))+'</span>'
+    +'<span class="ft-s">'+t('ftHint')+'</span></a>';
+  box.classList.remove('hidden');
 }
 function updatePoolBtn(){
   const b=$('btn-pool'),hint=$('r-poolhint'),unit=$('mode-unit-result'),badge=$('mode-badge-result');
