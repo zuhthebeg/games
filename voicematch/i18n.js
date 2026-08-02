@@ -638,6 +638,20 @@ const EN_NAMES = {
   zachbryan:"Zach Bryan",
   zerobaseone:"ZEROBASEONE",
   rescene:"RESCENE",
+  xlove:"X:LOVE",
+  nexz:"NEXZ",
+  bbgirls:"BBGIRLS",
+  meovv:"MEOVV",
+  liberante:"LIBELANTE",
+  alphadrive_one:"ALPHA DRIVE ONE",
+  idntt:"IDNTT",
+  alldayproject:"ALLDAY PROJECT",
+  ahof:"AHOF",
+  izna:"izna",
+  nctwish:"NCT WISH",
+  youngposse:"YOUNG POSSE",
+  kiiikiii:"KiiiKiii",
+  kickflip:"KickFlip",
 };
 
 // 대만(tw) 로케일 전용 — 대만에서 실제 통용되는 정체(번체) 표기만 수동 검증해서 반영.
