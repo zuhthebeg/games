@@ -1,6 +1,7 @@
 /* 보이스 노래방 i18n — ko/en/ja/es + 가수 로마자명 + 장르 번역 */
 const I18N = {
   ko: {
+    micPrimeT: '마이크를 켜야 시작할 수 있어요 🎤', micPrimeB: '다음 화면에서 브라우저가 <b>마이크 권한</b>을 물어봐요.<br>녹음은 <b>이 기기 안에서만</b> 분석되고 어디로도 전송되지 않아요.', micPrimeGo: '허용하고 시작하기', micPrimeNo: '나중에', micHelpIOS: '아이폰 사파리: 주소창 왼쪽 <b>ᴀA</b> → 웹사이트 설정 → 마이크 → 허용', micHelpAOS: '안드로이드 크롬: 주소창 왼쪽 <b>자물쇠</b> → 권한 → 마이크 → 허용', micHelpPC: '주소창 왼쪽 <b>자물쇠</b> 아이콘 → 마이크 → 허용으로 바꾼 뒤 다시 시도', micRetry: '다시 시도',
     poolAll:'🌍 전체 아티스트에서 다시 찾기 (팝·록·J-POP 포함)', poolKr:'🎤 K-POP·가요에서 찾기',
     lowScoreHint:'K-POP 풀에선 매치가 약해요 — 전체로 넓혀서 찾아볼까요?',
     navLogin:'로그인', navLogout:'로그아웃',
@@ -36,6 +37,7 @@ const I18N = {
     c_F_솔로: '맑고 단단한 보이스', c_F_그룹: '청량 톤 보이스', c_F_밴드: '라이브 체질 보이스',
   },
   en: {
+    micPrimeT: 'We need your mic to start 🎤', micPrimeB: 'Your browser will ask for <b>microphone permission</b> next.<br>The recording is analyzed <b>on this device only</b> and is never uploaded.', micPrimeGo: 'Allow and start', micPrimeNo: 'Later', micHelpIOS: 'iPhone Safari: tap <b>ᴀA</b> at the left of the address bar → Website Settings → Microphone → Allow', micHelpAOS: 'Android Chrome: tap the <b>lock</b> icon → Permissions → Microphone → Allow', micHelpPC: 'Click the <b>lock</b> icon in the address bar → Microphone → Allow, then try again', micRetry: 'Try again',
     poolAll:'🌍 Search all artists (Pop·Rock·J-POP)', poolKr:'🎤 K-pop only',
     lowScoreHint:'Weak match in the K-pop pool — try searching all artists?',
     navLogin:'Login', navLogout:'Logout',
@@ -71,6 +73,7 @@ const I18N = {
     c_F_솔로: 'clear & solid voice', c_F_그룹: 'fresh bright voice', c_F_밴드: 'live-session voice',
   },
   ja: {
+    micPrimeT: 'マイクをオンにすると始められます 🎤', micPrimeB: '次にブラウザが<b>マイクの許可</b>を尋ねます。<br>録音は<b>この端末の中だけ</b>で解析され、どこにも送信されません。', micPrimeGo: '許可して始める', micPrimeNo: 'あとで', micHelpIOS: 'iPhone Safari：アドレスバー左の <b>ᴀA</b> → Webサイトの設定 → マイク → 許可', micHelpAOS: 'Android Chrome：<b>鍵</b>アイコン → 権限 → マイク → 許可', micHelpPC: 'アドレスバー左の<b>鍵</b>アイコン → マイク → 許可に変えてもう一度', micRetry: 'もう一度',
     poolAll:'🌍 全アーティストから探す (Pop·Rock·J-POP)', poolKr:'🎤 K-POPのみ',
     lowScoreHint:'K-POPプールではマッチが弱いです — 全体で探してみますか?',
     navLogin:'ログイン', navLogout:'ログアウト',
@@ -106,6 +109,7 @@ const I18N = {
     c_F_솔로: '澄んだ芯のあるボイス', c_F_그룹: '爽やかトーンボイス', c_F_밴드: 'ライブ体質ボイス',
   },
   es: {
+    micPrimeT: 'Necesitamos tu micrófono para empezar 🎤', micPrimeB: 'El navegador te pedirá <b>permiso del micrófono</b>.<br>La grabación se analiza <b>solo en este dispositivo</b> y nunca se sube.', micPrimeGo: 'Permitir y empezar', micPrimeNo: 'Más tarde', micHelpIOS: 'iPhone Safari: toca <b>ᴀA</b> a la izquierda de la barra → Ajustes del sitio → Micrófono → Permitir', micHelpAOS: 'Android Chrome: toca el <b>candado</b> → Permisos → Micrófono → Permitir', micHelpPC: 'Haz clic en el <b>candado</b> de la barra → Micrófono → Permitir, y vuelve a intentar', micRetry: 'Reintentar',
     poolAll:'🌍 Buscar en todos (Pop·Rock·J-POP)', poolKr:'🎤 Solo K-pop',
     lowScoreHint:'Match débil en el grupo K-pop — ¿buscamos en todos los artistas?',
     navLogin:'Iniciar sesión', navLogout:'Cerrar sesión',
@@ -141,6 +145,7 @@ const I18N = {
     c_F_솔로: 'voz clara y firme', c_F_그룹: 'voz fresca y brillante', c_F_밴드: 'voz de directo',
   },
   tw: {
+    micPrimeT: '需要開啟麥克風才能開始 🎤', micPrimeB: '下一步瀏覽器會詢問<b>麥克風權限</b>。<br>錄音只在<b>這台裝置上</b>分析，不會傳送到任何地方。', micPrimeGo: '允許並開始', micPrimeNo: '稍後再說', micHelpIOS: 'iPhone Safari：網址列左邊 <b>ᴀA</b> → 網站設定 → 麥克風 → 允許', micHelpAOS: 'Android Chrome：網址列左邊<b>鎖頭</b> → 權限 → 麥克風 → 允許', micHelpPC: '點網址列左邊的<b>鎖頭</b>圖示 → 麥克風 → 改成允許後再試一次', micRetry: '再試一次',
     poolAll:'🌍 從所有藝人中尋找 (流行·搖滾·J-POP)', poolKr:'🎤 只看K-POP',
     lowScoreHint:'K-POP範圍內配對較弱 — 要擴大到全部藝人找找看嗎?',
     navLogin:'登入', navLogout:'登出',
@@ -176,6 +181,7 @@ const I18N = {
     c_F_솔로: '清亮扎實嗓音', c_F_그룹: '清新音色嗓音', c_F_밴드: '現場演出型嗓音',
   },
   id: {
+    micPrimeT: 'Butuh mikrofon untuk mulai 🎤', micPrimeB: 'Browser akan meminta <b>izin mikrofon</b> berikutnya.<br>Rekaman dianalisis <b>hanya di perangkat ini</b> dan tidak pernah diunggah.', micPrimeGo: 'Izinkan dan mulai', micPrimeNo: 'Nanti saja', micHelpIOS: 'iPhone Safari: ketuk <b>ᴀA</b> di kiri address bar → Pengaturan Situs → Mikrofon → Izinkan', micHelpAOS: 'Android Chrome: ketuk ikon <b>gembok</b> → Izin → Mikrofon → Izinkan', micHelpPC: 'Klik ikon <b>gembok</b> di address bar → Mikrofon → Izinkan, lalu coba lagi', micRetry: 'Coba lagi',
     poolAll:'🌍 Cari dari semua artis (Pop·Rock·J-POP)', poolKr:'🎤 Khusus K-pop',
     lowScoreHint:'Kecocokan lemah di pool K-pop — coba cari di semua artis?',
     navLogin:'Masuk', navLogout:'Keluar',

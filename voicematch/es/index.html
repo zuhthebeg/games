@@ -12,7 +12,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>¿A qué artista de K-pop se parece tu voz?</title>
-<meta name="description" content="10초만 불러보세요. 내 목소리와 가장 닮은 K-POP 가수를 AI가 찾아드립니다. Sing 10 seconds and AI finds your K-pop voice twin. 녹음은 폰 밖으로 나가지 않습니다.">
+<meta name="description" content="Canta 10 segundos y la IA encuentra al artista de K-pop con la voz más parecida a la tuya. Todo funciona en tu navegador; la grabación nunca sale de tu dispositivo.">
+<meta name="keywords" content="test de voz, voz parecida, K-pop, análisis de voz con IA, cantante coreano">
 <meta name="theme-color" content="#2a2135">
 <link rel="manifest" href="/voicematch/manifest.json">
 <link rel="apple-touch-icon" href="/voicematch/icon.svg">
@@ -233,6 +234,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 
   <!-- 결과 -->
+  <!-- 마이크 권한 사전 안내: 브라우저 팝업이 뜨기 전에 왜 필요한지·어디로도 안 나간다는 걸 먼저 말한다.
+       한번 거부당하면 iOS는 설정에 들어가야 복구돼서 사실상 영구 이탈이라, 거부 자체를 줄이는 게 목적. -->
+  <div class="ft-modal hidden" id="mic-sheet">
+    <div class="ft-box">
+      <div class="ft-name" id="mic-t"></div>
+      <div class="ft-desc" id="mic-b"></div>
+      <button class="ft-go" id="mic-go" style="border:0;width:100%;cursor:pointer;font-family:inherit"></button>
+      <button class="ft-close" id="mic-no"></button>
+    </div>
+  </div>
+
   <div class="ft-modal hidden" id="ft-modal">
     <div class="ft-box">
       <div class="ft-q" id="ft-q"></div>
@@ -275,7 +287,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260803m3"></script>
+<script src="/voicematch/i18n.js?v=20260803micux"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -286,7 +298,8 @@ let LANG=detectLang();
 const t=k=>{const v=I18N[LANG][k];return v===undefined?I18N.en[k]:v;};
 
 function applyLang(){
-  document.documentElement.lang=LANG;
+  // 내부 코드 tw는 BCP-47이 아니다(tw=트위어). 크롤러·광고 타게팅이 언어를 오판하므로 정식 태그로 바꾼다.
+  document.documentElement.lang=({tw:'zh-Hant'})[LANG]||LANG;
   $('t-title').textContent=t('title');
   $('t-hero').innerHTML=t('hero');
   $('t-herosub').innerHTML=t('heroSub');
@@ -352,15 +365,63 @@ function loadModel(){
 
 /* ---- 녹음 ---- */
 let audioCtx,stream,proc,pcmChunks,recRate,recTimer,recLeft;
-async function startRec(){
+/* ---- 마이크 권한 ---- */
+// 이미 허용된 브라우저에는 안내를 띄우지 않는다(Permissions API 없는 사파리는 localStorage로 대체).
+async function micAlreadyOk(){
+  if(localStorage.getItem('vm_mic_primed'))return true;
+  try{
+    const st=await navigator.permissions.query({name:'microphone'});
+    return st.state==='granted';
+  }catch(e){ return false; }
+}
+function micHelpHtml(){
+  const ua=navigator.userAgent;
+  if(/iPad|iPhone|iPod/.test(ua))return t('micHelpIOS');
+  if(/Android/.test(ua))return t('micHelpAOS');
+  return t('micHelpPC');
+}
+// 마이크 거부 화면에서 버튼을 "다시 시도"로 바꾸므로, 다른 오류 화면에서는 원래대로 되돌린다.
+function resetErrBtn(){
+  $('btn-restart').textContent=t('restart');
+  $('btn-restart').onclick=()=>location.reload();
+}
+function showMicSheet(){
+  $('mic-t').textContent=t('micPrimeT');
+  $('mic-b').innerHTML=t('micPrimeB');
+  $('mic-go').textContent=t('micPrimeGo');
+  $('mic-no').textContent=t('micPrimeNo');
+  $('mic-sheet').classList.remove('hidden');
+  try{dataLayer.push({event:'vm_mic_prime_shown'});}catch(e){}
+}
+function hideMicSheet(){ $('mic-sheet').classList.add('hidden'); }
+document.addEventListener('DOMContentLoaded',()=>{
+  const sheet=$('mic-sheet'); if(!sheet)return;
+  $('mic-go').onclick=()=>{
+    localStorage.setItem('vm_mic_primed','1');
+    hideMicSheet();
+    try{dataLayer.push({event:'vm_mic_prime_accept'});}catch(e){}
+    startRec(true);
+  };
+  $('mic-no').onclick=()=>{ hideMicSheet(); try{dataLayer.push({event:'vm_mic_prime_dismiss'});}catch(e){} };
+  sheet.onclick=e=>{ if(e.target===sheet) $('mic-no').onclick(); };
+});
+
+async function startRec(primed){
   try{window.dataLayer=window.dataLayer||[];dataLayer.push({event:'vm_start_click'});}catch(e){}
+  if(!primed && !(await micAlreadyOk())){ showMicSheet(); return; }
   try{
     stream=await navigator.mediaDevices.getUserMedia({audio:{
       echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
   }catch(e){
     try{dataLayer.push({event:'vm_mic_denied'});}catch(e2){}
-    $('err-t').innerHTML=t('errMic');show('s-err');return;
+    // 거부돼도 막다른 길로 두지 않는다 — 브라우저별 복구 방법 + 재시도 버튼
+    $('err-t').innerHTML=t('errMic')+'<div style="margin-top:12px;font-size:11.5px;line-height:1.7;opacity:.85">'
+      +micHelpHtml()+'</div>';
+    $('btn-restart').textContent=t('micRetry');
+    $('btn-restart').onclick=()=>{ show('s-intro'); startRec(true); };
+    show('s-err');return;
   }
+  localStorage.setItem('vm_mic_primed','1');
   try{dataLayer.push({event:'vm_record_start'});}catch(e){}
   show('s-rec');
   audioCtx=new (window.AudioContext||window.webkitAudioContext)();
@@ -388,7 +449,7 @@ async function stopRec(){
   try{proc.disconnect();}catch(e){}
   stream.getTracks().forEach(tk=>tk.stop());
   const total=pcmChunks.reduce((a,c)=>a+c.length,0);
-  if(total<recRate*2.5){try{dataLayer.push({event:'vm_too_short'});}catch(e){}$('err-t').innerHTML=t('errShort');show('s-err');return;}
+  if(total<recRate*2.5){try{dataLayer.push({event:'vm_too_short'});}catch(e){}$('err-t').innerHTML=t('errShort');resetErrBtn();show('s-err');return;}
   try{dataLayer.push({event:'vm_record_done'});}catch(e){}
   const pcm=new Float32Array(total);let o=0;for(const c of pcmChunks){pcm.set(c,o);o+=c.length;}
   show('s-ana');$('ana-t').textContent=t('judging');
@@ -417,11 +478,11 @@ async function analyzePcm(pcm,rate){
       const cp=new Float32Array(p16);
       worker.postMessage({type:'analyze',pcm:cp},[cp.buffer]);
     });
-    if(done.error==='silent'){try{dataLayer.push({event:'vm_silent'});}catch(e){}$('err-t').innerHTML=t('errSilent');show('s-err');return;}
+    if(done.error==='silent'){try{dataLayer.push({event:'vm_silent'});}catch(e){}$('err-t').innerHTML=t('errSilent');resetErrBtn();show('s-err');return;}
     try{dataLayer.push({event:'vm_result_shown'});}catch(e){}
     renderResult(done.rank,done.rankAll,done.genres);
   }catch(e){
-    $('err-t').innerHTML=t('errAnalyze')+'<br><span style="font-size:11px;opacity:.7">'+String(e.message||e).slice(0,120)+'</span>';show('s-err');
+    $('err-t').innerHTML=t('errAnalyze')+'<br><span style="font-size:11px;opacity:.7">'+String(e.message||e).slice(0,120)+'</span>';resetErrBtn();show('s-err');
   }
 }
 
@@ -619,7 +680,7 @@ async function renderSetlist(rank){
     box.classList.remove('hidden');
   }catch(e){box.classList.add('hidden');}
 }
-$('btn-start').onclick=startRec;
+$('btn-start').onclick=()=>startRec();  // 이벤트 객체가 primed 인자로 들어가면 안내 시트를 건너뛴다
 $('btn-stop').onclick=stopRec;
 $('btn-retry').onclick=()=>show('s-intro');
 
