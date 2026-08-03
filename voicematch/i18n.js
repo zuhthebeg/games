@@ -1,7 +1,7 @@
 /* 보이스 노래방 i18n — ko/en/ja/es + 가수 로마자명 + 장르 번역 */
 const I18N = {
   ko: {
-    inappBanner: '앱 안의 브라우저에서는 마이크가 막혀 있을 수 있어요 — <b>브라우저에서 열기</b>를 눌러주세요', inappT: '브라우저에서 열어주세요 🌐', inappB: '지금 <b>앱 안의 브라우저</b>로 보고 있어요. 여기서는 마이크 권한이 막혀 있어서 설정에도 마이크 항목이 안 나와요.<br>오른쪽 위 <b>⋯</b> → <b>브라우저에서 열기</b>를 누르면 바로 돼요.', inappCopy: '주소 복사하기', inappCopied: '복사했어요 — 브라우저에 붙여넣기', inappTry: '그래도 해보기',
+    inappBanner: '앱 안의 브라우저라 마이크가 막혀요 — 오른쪽 위 <b>⋯</b> → <b>외부 브라우저에서 열기</b>', inappT: '브라우저에서 열어주세요 🌐', inappB: '지금 <b>앱 안의 브라우저</b>로 보고 있어요. 여기서는 마이크가 막혀 있어서 설정에도 마이크 항목이 안 나와요.<br>① 오른쪽 위 <b>⋯</b> 버튼<br>② <b>외부 브라우저에서 열기</b> 선택<br>(안 보이면 <b>링크 복사</b> 후 브라우저에 붙여넣기)', inappCopy: '주소 복사하기', inappCopied: '복사했어요 — 브라우저에 붙여넣기', inappTry: '그래도 해보기',
     micPrimeT: '마이크를 켜야 시작할 수 있어요 🎤', micPrimeB: '다음 화면에서 브라우저가 <b>마이크 권한</b>을 물어봐요.<br>녹음은 <b>이 기기 안에서만</b> 분석되고 어디로도 전송되지 않아요.', micPrimeGo: '허용하고 시작하기', micPrimeNo: '나중에', micHelpIOS: '아이폰 사파리: 주소창 왼쪽 <b>ᴀA</b> → 웹사이트 설정 → 마이크 → 허용', micHelpAOS: '안드로이드 크롬: 주소창 왼쪽 <b>자물쇠</b> → 권한 → 마이크 → 허용', micHelpPC: '주소창 왼쪽 <b>자물쇠</b> 아이콘 → 마이크 → 허용으로 바꾼 뒤 다시 시도', micRetry: '다시 시도',
     poolAll:'🌍 전체 아티스트에서 다시 찾기 (팝·록·J-POP 포함)', poolKr:'🎤 K-POP·가요에서 찾기',
     lowScoreHint:'K-POP 풀에선 매치가 약해요 — 전체로 넓혀서 찾아볼까요?',
@@ -38,7 +38,7 @@ const I18N = {
     c_F_솔로: '맑고 단단한 보이스', c_F_그룹: '청량 톤 보이스', c_F_밴드: '라이브 체질 보이스',
   },
   en: {
-    inappBanner: 'In-app browsers often block the mic — tap <b>Open in browser</b>', inappT: 'Please open in a real browser 🌐', inappB: 'You\'re viewing this in an <b>in-app browser</b>. Microphone access is blocked here, which is why there\'s no mic option in settings.<br>Tap <b>⋯</b> at the top right → <b>Open in browser</b> and it will work.', inappCopy: 'Copy link', inappCopied: 'Copied — paste it in your browser', inappTry: 'Try anyway',
+    inappBanner: 'In-app browser blocks the mic — tap <b>⋯</b> (top right) → <b>Open in external browser</b>', inappT: 'Please open in a real browser 🌐', inappB: 'You\'re in an <b>in-app browser</b>. The mic is blocked here, which is why there\'s no mic option in settings.<br>① Tap <b>⋯</b> at the top right<br>② Choose <b>Open in external browser</b><br>(If you can\'t find it, use <b>Copy link</b> and paste it in your browser)', inappCopy: 'Copy link', inappCopied: 'Copied — paste it in your browser', inappTry: 'Try anyway',
     micPrimeT: 'We need your mic to start 🎤', micPrimeB: 'Your browser will ask for <b>microphone permission</b> next.<br>The recording is analyzed <b>on this device only</b> and is never uploaded.', micPrimeGo: 'Allow and start', micPrimeNo: 'Later', micHelpIOS: 'iPhone Safari: tap <b>ᴀA</b> at the left of the address bar → Website Settings → Microphone → Allow', micHelpAOS: 'Android Chrome: tap the <b>lock</b> icon → Permissions → Microphone → Allow', micHelpPC: 'Click the <b>lock</b> icon in the address bar → Microphone → Allow, then try again', micRetry: 'Try again',
     poolAll:'🌍 Search all artists (Pop·Rock·J-POP)', poolKr:'🎤 K-pop only',
     lowScoreHint:'Weak match in the K-pop pool — try searching all artists?',
@@ -75,7 +75,7 @@ const I18N = {
     c_F_솔로: 'clear & solid voice', c_F_그룹: 'fresh bright voice', c_F_밴드: 'live-session voice',
   },
   ja: {
-    inappBanner: 'アプリ内ブラウザではマイクが使えないことがあります — <b>ブラウザで開く</b>', inappT: 'ブラウザで開いてください 🌐', inappB: 'いま<b>アプリ内ブラウザ</b>で表示しています。ここではマイクの権限がブロックされていて、設定にもマイク項目が出ません。<br>右上の <b>⋯</b> → <b>ブラウザで開く</b> を押せば使えます。', inappCopy: 'URLをコピー', inappCopied: 'コピーしました — ブラウザに貼り付け', inappTry: 'それでも試す',
+    inappBanner: 'アプリ内ブラウザではマイクが使えません — 右上の <b>⋯</b> → <b>外部ブラウザで開く</b>', inappT: 'ブラウザで開いてください 🌐', inappB: 'いま<b>アプリ内ブラウザ</b>で表示しています。ここではマイクがブロックされていて、設定にもマイク項目が出ません。<br>① 右上の <b>⋯</b> をタップ<br>② <b>外部ブラウザで開く</b> を選択<br>(見つからなければ <b>リンクをコピー</b> してブラウザに貼り付け)', inappCopy: 'URLをコピー', inappCopied: 'コピーしました — ブラウザに貼り付け', inappTry: 'それでも試す',
     micPrimeT: 'マイクをオンにすると始められます 🎤', micPrimeB: '次にブラウザが<b>マイクの許可</b>を尋ねます。<br>録音は<b>この端末の中だけ</b>で解析され、どこにも送信されません。', micPrimeGo: '許可して始める', micPrimeNo: 'あとで', micHelpIOS: 'iPhone Safari：アドレスバー左の <b>ᴀA</b> → Webサイトの設定 → マイク → 許可', micHelpAOS: 'Android Chrome：<b>鍵</b>アイコン → 権限 → マイク → 許可', micHelpPC: 'アドレスバー左の<b>鍵</b>アイコン → マイク → 許可に変えてもう一度', micRetry: 'もう一度',
     poolAll:'🌍 全アーティストから探す (Pop·Rock·J-POP)', poolKr:'🎤 K-POPのみ',
     lowScoreHint:'K-POPプールではマッチが弱いです — 全体で探してみますか?',
@@ -112,7 +112,7 @@ const I18N = {
     c_F_솔로: '澄んだ芯のあるボイス', c_F_그룹: '爽やかトーンボイス', c_F_밴드: 'ライブ体質ボイス',
   },
   es: {
-    inappBanner: 'Los navegadores dentro de apps suelen bloquear el micro — pulsa <b>Abrir en el navegador</b>', inappT: 'Ábrelo en un navegador 🌐', inappB: 'Estás viendo esto en un <b>navegador dentro de la app</b>. Aquí el micrófono está bloqueado, por eso no aparece la opción en los ajustes.<br>Pulsa <b>⋯</b> arriba a la derecha → <b>Abrir en el navegador</b>.', inappCopy: 'Copiar enlace', inappCopied: 'Copiado — pégalo en tu navegador', inappTry: 'Intentar igualmente',
+    inappBanner: 'El navegador de la app bloquea el micro — <b>⋯</b> arriba a la derecha → <b>Abrir en el navegador externo</b>', inappT: 'Ábrelo en un navegador 🌐', inappB: 'Estás en un <b>navegador dentro de la app</b>. Aquí el micrófono está bloqueado, por eso no aparece en los ajustes.<br>① Pulsa <b>⋯</b> arriba a la derecha<br>② Elige <b>Abrir en el navegador externo</b><br>(Si no lo ves, usa <b>Copiar enlace</b> y pégalo en tu navegador)', inappCopy: 'Copiar enlace', inappCopied: 'Copiado — pégalo en tu navegador', inappTry: 'Intentar igualmente',
     micPrimeT: 'Necesitamos tu micrófono para empezar 🎤', micPrimeB: 'El navegador te pedirá <b>permiso del micrófono</b>.<br>La grabación se analiza <b>solo en este dispositivo</b> y nunca se sube.', micPrimeGo: 'Permitir y empezar', micPrimeNo: 'Más tarde', micHelpIOS: 'iPhone Safari: toca <b>ᴀA</b> a la izquierda de la barra → Ajustes del sitio → Micrófono → Permitir', micHelpAOS: 'Android Chrome: toca el <b>candado</b> → Permisos → Micrófono → Permitir', micHelpPC: 'Haz clic en el <b>candado</b> de la barra → Micrófono → Permitir, y vuelve a intentar', micRetry: 'Reintentar',
     poolAll:'🌍 Buscar en todos (Pop·Rock·J-POP)', poolKr:'🎤 Solo K-pop',
     lowScoreHint:'Match débil en el grupo K-pop — ¿buscamos en todos los artistas?',
@@ -149,7 +149,7 @@ const I18N = {
     c_F_솔로: 'voz clara y firme', c_F_그룹: 'voz fresca y brillante', c_F_밴드: 'voz de directo',
   },
   tw: {
-    inappBanner: '在 App 內建瀏覽器可能無法使用麥克風 — 請點<b>「在瀏覽器中開啟」</b>', inappT: '請用瀏覽器開啟 🌐', inappB: '你現在是用<b>App 內建的瀏覽器</b>在看。這裡的麥克風權限被擋住，所以設定裡也不會出現麥克風選項。<br>點右上角的 <b>⋯</b> → <b>在瀏覽器中開啟</b>，就可以正常錄音了。', inappCopy: '複製網址', inappCopied: '已複製 — 貼到瀏覽器打開', inappTry: '還是想試試看',
+    inappBanner: 'App 內建瀏覽器無法使用麥克風 — 右上角 <b>⋯</b> → <b>在外部瀏覽器中開啟</b>', inappT: '請用瀏覽器開啟 🌐', inappB: '你現在是用<b>App 內建的瀏覽器</b>在看。這裡的麥克風被擋住，所以設定裡也不會出現麥克風選項。<br>① 點右上角的 <b>⋯</b><br>② 選<b>「在外部瀏覽器中開啟」</b><br>(找不到的話，選<b>「複製連結」</b>再貼到瀏覽器)', inappCopy: '複製網址', inappCopied: '已複製 — 貼到瀏覽器打開', inappTry: '還是想試試看',
     micPrimeT: '需要開啟麥克風才能開始 🎤', micPrimeB: '下一步瀏覽器會詢問<b>麥克風權限</b>。<br>錄音只在<b>這台裝置上</b>分析，不會傳送到任何地方。', micPrimeGo: '允許並開始', micPrimeNo: '稍後再說', micHelpIOS: 'iPhone Safari：網址列左邊 <b>ᴀA</b> → 網站設定 → 麥克風 → 允許', micHelpAOS: 'Android Chrome：網址列左邊<b>鎖頭</b> → 權限 → 麥克風 → 允許', micHelpPC: '點網址列左邊的<b>鎖頭</b>圖示 → 麥克風 → 改成允許後再試一次', micRetry: '再試一次',
     poolAll:'🌍 從所有藝人中尋找 (流行·搖滾·J-POP)', poolKr:'🎤 只看K-POP',
     lowScoreHint:'K-POP範圍內配對較弱 — 要擴大到全部藝人找找看嗎?',
@@ -186,7 +186,7 @@ const I18N = {
     c_F_솔로: '清亮扎實嗓音', c_F_그룹: '清新音色嗓音', c_F_밴드: '現場演出型嗓音',
   },
   id: {
-    inappBanner: 'Browser dalam aplikasi sering memblokir mik — ketuk <b>Buka di browser</b>', inappT: 'Buka di browser ya 🌐', inappB: 'Kamu sedang membuka ini di <b>browser dalam aplikasi</b>. Mikrofon diblokir di sini, makanya opsi mik tidak muncul di pengaturan.<br>Ketuk <b>⋯</b> di kanan atas → <b>Buka di browser</b>.', inappCopy: 'Salin tautan', inappCopied: 'Tersalin — tempel di browser', inappTry: 'Coba saja',
+    inappBanner: 'Browser dalam aplikasi memblokir mik — ketuk <b>⋯</b> (kanan atas) → <b>Buka di browser eksternal</b>', inappT: 'Buka di browser ya 🌐', inappB: 'Kamu sedang di <b>browser dalam aplikasi</b>. Mikrofon diblokir di sini, makanya opsi mik tidak muncul di pengaturan.<br>① Ketuk <b>⋯</b> di kanan atas<br>② Pilih <b>Buka di browser eksternal</b><br>(Kalau tidak ada, pakai <b>Salin tautan</b> lalu tempel di browser)', inappCopy: 'Salin tautan', inappCopied: 'Tersalin — tempel di browser', inappTry: 'Coba saja',
     micPrimeT: 'Butuh mikrofon untuk mulai 🎤', micPrimeB: 'Browser akan meminta <b>izin mikrofon</b> berikutnya.<br>Rekaman dianalisis <b>hanya di perangkat ini</b> dan tidak pernah diunggah.', micPrimeGo: 'Izinkan dan mulai', micPrimeNo: 'Nanti saja', micHelpIOS: 'iPhone Safari: ketuk <b>ᴀA</b> di kiri address bar → Pengaturan Situs → Mikrofon → Izinkan', micHelpAOS: 'Android Chrome: ketuk ikon <b>gembok</b> → Izin → Mikrofon → Izinkan', micHelpPC: 'Klik ikon <b>gembok</b> di address bar → Mikrofon → Izinkan, lalu coba lagi', micRetry: 'Coba lagi',
     poolAll:'🌍 Cari dari semua artis (Pop·Rock·J-POP)', poolKr:'🎤 Khusus K-pop',
     lowScoreHint:'Kecocokan lemah di pool K-pop — coba cari di semua artis?',
