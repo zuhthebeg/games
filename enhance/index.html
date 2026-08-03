@@ -26,7 +26,7 @@
     <script src="/lib/mp-lobby.js?v=20260620A"></script>
     <script src="/lib/multiplayer-ui.js?v=20260310d"></script>
     <script>window.SharedWalletConfig = { autoGuest: true };</script>
-    <script src="i18n-ui.js?v=20260803a"></script>
+    <script src="i18n-ui.js?v=20260803b"></script>
 <script src="/lib/shared-wallet.js?v=20260705b2a"></script>
     <style>
         :root {
@@ -4068,7 +4068,7 @@
 
                     <div class="enhance-panel">
                         <div class="enhance-row">
-                            <span class="enhance-label">🎯 성공</span>
+                            <span class="enhance-label">🎯 ${T('rate_success')}</span>
                             ${(() => {
                                 const base = isWoodenStick(weapon) ? 99 : getBaseEnhanceRates(weapon.level).success;
                                 const cursed = isCursed(weapon);
@@ -4080,9 +4080,9 @@
                                 if (!hasModifiers) {
                                     return `<span class="enhance-value ${colorClass}">${finalRate}%</span>`;
                                 }
-                                let breakdown = `기본 ${base}%`;
+                                let breakdown = `${T('base_rate')} ${base}%`;
                                 if (cursed) breakdown += ` 👿×2`;
-                                if (blessed) breakdown += ` <span style="color:#ffd700">✨파괴-50%</span>`;
+                                if (blessed) breakdown += ` <span style="color:#ffd700">✨${T('destroy_minus')}-50%</span>`;
                                 if (bossBonus) breakdown += ` 🐉+${bossBonus}%`;
                                 return `<span class="enhance-value ${colorClass}" style="line-height:1.2;display:inline-block;">
                                     <span style="font-size:1.05em;font-weight:700;">${finalRate}%</span>
@@ -4091,11 +4091,11 @@
                             })()}
                         </div>
                         <div class="enhance-row">
-                            <span class="enhance-label">${rates.destroy >= 50 ? '💀' : rates.destroy > 0 ? '⚠️' : '✅'} 파괴</span>
-                            <span class="enhance-value ${rates.destroy >= 50 ? 'danger' : rates.destroy > 0 ? 'warning' : 'safe'}">${rates.destroy > 0 ? rates.destroy + '%' : '없음'}${isBlessed(weapon) && getBaseEnhanceRates(weapon.level).destroy > 0 ? ' <span style="color:#ffd700;font-size:0.7em;">✨-50%</span>' : ''}</span>
+                            <span class="enhance-label">${rates.destroy >= 50 ? '💀' : rates.destroy > 0 ? '⚠️' : '✅'} ${T('rate_destroy')}</span>
+                            <span class="enhance-value ${rates.destroy >= 50 ? 'danger' : rates.destroy > 0 ? 'warning' : 'safe'}">${rates.destroy > 0 ? rates.destroy + '%' : T('rate_none')}${isBlessed(weapon) && getBaseEnhanceRates(weapon.level).destroy > 0 ? ' <span style="color:#ffd700;font-size:0.7em;">✨-50%</span>' : ''}</span>
                         </div>
                         <div class="enhance-row">
-                            <span class="enhance-label">💰 비용</span>
+                            <span class="enhance-label">💰 ${T('cost')}</span>
                             <span class="enhance-value gold">${rates.cost.toLocaleString()} G</span>
                         </div>
                     </div>
@@ -4113,7 +4113,7 @@
 
                     ${(() => { const btk = state.bossTypeKills || {}; const any = (btk.dragon||0)+(btk.demon||0)+(btk.undead||0)+(btk.elemental||0); return any > 0 ? `
                     <div style="background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.3);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:0.8rem;">
-                        <div style="color:#ff8c00;font-weight:600;margin-bottom:4px;">🏆 보스킬 보너스</div>
+                        <div style="color:#ff8c00;font-weight:600;margin-bottom:4px;">🏆 ${T('boss_bonus')}</div>
                         ${btk.dragon ? `<div>🐉 드래곤 x${btk.dragon} → 공격력 +${btk.dragon*2}%</div>` : ''}
                         ${btk.demon ? `<div>😈 악마 x${btk.demon} → 크리티컬 +${btk.demon}%</div>` : ''}
                         ${btk.undead ? `<div>💀 언데드 x${btk.undead} → 골드 +${btk.undead*5}%</div>` : ''}
@@ -4122,7 +4122,7 @@
 
                     ${showProtection ? `
                     <div class="protection-toggle">
-                        <span>🛡️ 파괴 방지 (${weapon.protectionScrolls || 0}개)</span>
+                        <span>🛡️ ${T('protect_scroll')} (${weapon.protectionScrolls || 0}${T('count_unit')})</span>
                         <div style="display:flex;gap:8px;align-items:center;">
                             <button class="toggle-btn ${state.useProtection ? 'on' : 'off'}" onclick="toggleProtection()" id="protectionBtn">
                                 ${state.useProtection ? 'ON' : 'OFF'}
@@ -4135,7 +4135,7 @@
                     ` : ''}
                     ${isCursed(weapon) ? `
                     <div class="protection-toggle" style="border:1px solid rgba(139,0,255,0.4);background:rgba(139,0,255,0.08);">
-                        <span style="color:#bb77ff;">🔮 저주 해제 주문서</span>
+                        <span style="color:#bb77ff;">🔮 ${T('uncurse_scroll')}</span>
                         <button onclick="buyCurseRemoval()" style="padding:4px 10px;background:linear-gradient(135deg,#8b00ff,#5500aa);border:none;border-radius:8px;color:#fff;font-size:0.75rem;font-weight:600;cursor:pointer;white-space:nowrap;">
                             구매 (100,000,000G)
                         </button>
@@ -4145,7 +4145,7 @@
                     <div class="btn-row">
                         <button class="btn btn-secondary" onclick="sellWeapon()">💰 ${T('sell')}</button>
                         <button class="btn btn-enhance" onclick="enhance()" ${!canEnhance ? 'disabled' : ''}>
-                            ${weapon.level >= MAX_ENHANCE_LEVEL ? '🏆 MAX' : `⚡ 강화 (${rates.cost.toLocaleString()}G)`}
+                            ${weapon.level >= MAX_ENHANCE_LEVEL ? `🏆 ${T('max_level')}` : `⚡ ${T('do_enhance')} (${rates.cost.toLocaleString()}G)`}
                         </button>
                         <button class="btn btn-home" onclick="showMain()">${T('home')}</button>
                     </div>
@@ -4303,7 +4303,7 @@
                 <div style="font-size:0.85rem;color:#aaa;line-height:1.6;">
                     🛡️ 강화 파괴 확률 <span style="color:var(--success)">-50%</span><br>
                     💰 사냥 골드 <span style="color:var(--success)">+50%</span><br>
-                    🔧 내구도 소모 <span style="color:var(--success)">없음</span>
+                    🔧 ${T('dura_cost_label')} <span style="color:var(--success)">${T('dura_none')}</span>
                 </div>
             `;
             document.getElementById('newWeaponPreview').style.display = 'none';
@@ -4923,7 +4923,7 @@
                         
                         <div style="margin-top:16px;">
                             <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                                <span>🔧 내구도</span>
+                                <span>🔧 ${T('durability')}</span>
                                 <span class="${durability < 30 ? 'danger' : ''}">${durability}%</span>
                             </div>
                             <div class="durability-bar">
@@ -4934,70 +4934,70 @@
                         
                         ${isCursed(weapon) ? `
                         <div style="text-align:center;padding:20px;color:#8b00ff;">
-                            👿 저주받은 무기는 수리할 수 없습니다!<br>
+                            👿 ${T('cursed_no_repair')}<br>
                             <span style="font-size:0.85rem;color:#aaa;margin-top:8px;display:block;">
                                 내구도 파괴 시 적 즉사 효과 발동
                             </span>
                         </div>
                         ` : isBlessed(weapon) ? `
                         <div style="background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.35);border-radius:12px;padding:16px;margin-top:8px;">
-                            <div style="color:#ffd700;font-weight:700;margin-bottom:8px;text-align:center;">✨ 축복받은 무기</div>
+                            <div style="color:#ffd700;font-weight:700;margin-bottom:8px;text-align:center;">✨ ${T('blessed_weapon')}</div>
                             <div style="font-size:0.85rem;color:#ffe066;line-height:1.8;">
                                 🛡️ 강화 파괴 확률 <b>-50%</b><br>
                                 💰 사냥 골드 <b>+50%</b><br>
-                                🔧 내구도 소모 <b>없음</b>
+                                🔧 ${T('dura_cost_label')} <b>${T('dura_none')}</b>
                             </div>
                             ${durability < MAX_DURABILITY ? `
                             <div style="margin-top:12px;border-top:1px solid rgba(255,215,0,0.2);padding-top:12px;">
-                                <div class="enhance-row"><span>수리 비용</span><span class="gold">${repairCost.toLocaleString()} G</span></div>
+                                <div class="enhance-row"><span>${T('repair_cost')}</span><span class="gold">${repairCost.toLocaleString()} G</span></div>
                                 <button class="btn btn-enhance" onclick="repairWeapon()" ${state.gold < repairCost ? 'disabled' : ''} style="margin-top:10px;width:100%;">
-                                    ${state.gold < repairCost ? '💰 골드 부족' : '🔧 수리하기'}
+                                    ${state.gold < repairCost ? `💰 ${T('no_gold')}` : `🔧 ${T('do_repair')}`}
                                 </button>
-                            </div>` : `<div style="text-align:center;margin-top:10px;color:var(--success);font-size:0.85rem;">✅ 완벽한 상태</div>`}
+                            </div>` : `<div style="text-align:center;margin-top:10px;color:var(--success);font-size:0.85rem;">✅ ${T('perfect_state')}</div>`}
                         </div>
                         ` : durability < MAX_DURABILITY ? `
                         <div class="enhance-panel" style="margin-top:16px;">
                             <div class="enhance-row">
-                                <span>수리 비용</span>
+                                <span>${T('repair_cost')}</span>
                                 <span class="gold">${repairCost.toLocaleString()} G</span>
                             </div>
                             <div class="enhance-row">
-                                <span>수리 후 내구도</span>
+                                <span>${T('repair_after')}</span>
                                 <span style="color:var(--success)">100%</span>
                             </div>
                         </div>
                         
                         <button class="btn btn-enhance" onclick="repairWeapon()" ${!canRepair ? 'disabled' : ''} style="margin-top:16px;">
-                            ${state.gold < repairCost ? '💰 골드 부족' : '🔧 수리하기'}
+                            ${state.gold < repairCost ? `💰 ${T('no_gold')}` : `🔧 ${T('do_repair')}`}
                         </button>
                         ` : `
                         <div style="text-align:center;padding:20px;color:var(--success);">
-                            ✅ 무기가 완벽한 상태입니다!
+                            ✅ ${T('perfect_msg')}
                         </div>
                         `}
                     </div>
                     
                     <div class="enhance-panel" style="color:#fff;">
-                        <h3 style="margin-bottom:12px;color:#fff;">⚠️ 내구도 안내</h3>
+                        <h3 style="margin-bottom:12px;color:#fff;">⚠️ ${T('dura_note')}</h3>
                         <p style="color:#ccc;font-size:0.9rem;line-height:1.5;">
-                            • 전투 시 내구도가 감소합니다<br>
-                            • 내구도 0에서 전투 시 <span style="color:var(--fail)">무기 파괴 위험!</span><br>
-                            • 파괴 시 양쪽에 큰 데미지
+                            • ${T('dura_n1')}<br>
+                            • ${T('dura_n2')} <span style="color:var(--fail)">${T('dura_n3')}</span><br>
+                            • ${T('dura_n4')}
                         </p>
                     </div>
                     
                     <div class="enhance-panel" style="color:#fff;">
-                        <h3 style="margin-bottom:12px;color:#fff;">⭐ 숙련도</h3>
+                        <h3 style="margin-bottom:12px;color:#fff;">⭐ ${T('mastery_title')}</h3>
                         <div class="enhance-row">
-                            <span>총 공격 횟수</span>
-                            <span>${state.mastery.attacks}회</span>
+                            <span>${T('total_attacks')}</span>
+                            <span>${state.mastery.attacks}${T('unit_times')}</span>
                         </div>
                         <div class="enhance-row">
-                            <span>총 처치 수</span>
-                            <span>${state.mastery.kills}마리</span>
+                            <span>${T('total_kills')}</span>
+                            <span>${state.mastery.kills}${T('unit_kills')}</span>
                         </div>
                         <div class="enhance-row">
-                            <span>공격력 보너스</span>
+                            <span>${T('atk_bonus')}</span>
                             <span style="color:var(--success)">+${getMasteryBonus()}%</span>
                         </div>
                     </div>
@@ -5601,13 +5601,13 @@
             overlay.innerHTML = `
                 <div class="turn-result-actions" style="animation: actionReveal 0.5s ease-out;">
                     <div style="text-align:center;animation: slideInLeft 0.4s ease-out;">
-                        <div style="font-size:0.9rem;color:#4ecca3;margin-bottom:8px;font-weight:bold;">👤 나</div>
+                        <div style="font-size:0.9rem;color:#4ecca3;margin-bottom:8px;font-weight:bold;">👤 ${T('pvp_me')}</div>
                         <div style="font-size:4rem;animation: actionBounce 0.3s ease-out 0.2s both;">${actionEmoji[myAction] || '❓'}</div>
                         <div style="font-size:1rem;margin-top:8px;">${actionName[myAction] || myAction}</div>
                     </div>
                     <div class="turn-result-vs" style="animation: vsPulse 0.6s ease-in-out infinite;">⚡VS⚡</div>
                     <div style="text-align:center;animation: slideInRight 0.4s ease-out;">
-                        <div style="font-size:0.9rem;color:#ff6b6b;margin-bottom:8px;font-weight:bold;">👾 상대</div>
+                        <div style="font-size:0.9rem;color:#ff6b6b;margin-bottom:8px;font-weight:bold;">👾 ${T('pvp_opp')}</div>
                         <div style="font-size:4rem;animation: actionBounce 0.3s ease-out 0.3s both;">${actionEmoji[enemyAction] || '❓'}</div>
                         <div style="font-size:1rem;margin-top:8px;">${actionName[enemyAction] || enemyAction}</div>
                     </div>
@@ -5674,7 +5674,7 @@
                     <div style="font-size:${myCrit ? '3.5rem' : '2.5rem'};font-weight:bold;margin-top:10px;color:${myCrit ? '#ff4500' : '#ffd700'};animation: actionBounce 0.3s ease-out 0.2s both;text-shadow:${myCrit ? '0 0 20px #ff4500' : 'none'};">
                         -${enemyDamage}
                     </div>
-                    <div style="font-size:0.9rem;color:var(--muted);margin-top:5px;">상대에게 데미지!</div>
+                    <div style="font-size:0.9rem;color:var(--muted);margin-top:5px;">${T('pvp_dmg_opp')}</div>
                 `;
                 
                 document.body.style.animation = 'none';
@@ -5703,7 +5703,7 @@
                     <div style="font-size:${enemyCrit ? '3.5rem' : '2.5rem'};font-weight:bold;margin-top:10px;color:${enemyCrit ? '#ff0000' : '#ff6b6b'};animation: damageShake 0.3s ease-in-out ${enemyCrit ? 5 : 3};text-shadow:${enemyCrit ? '0 0 20px #ff0000' : 'none'};">
                         -${myDamage}
                     </div>
-                    <div style="font-size:0.9rem;color:var(--muted);margin-top:5px;">나에게 데미지!</div>
+                    <div style="font-size:0.9rem;color:var(--muted);margin-top:5px;">${T('pvp_dmg_me')}</div>
                 `;
                 
                 document.body.classList.add('screen-shake');
@@ -5722,7 +5722,7 @@
                     
                     resultText.innerHTML = `
                         <div style="animation: resultAppear 0.4s ease-out;">
-                            <span style="font-size:2rem;color:#9b59b6;">🔮💥 스킬 충돌! 💥🔮</span>
+                            <span style="font-size:2rem;color:#9b59b6;">🔮💥 ${T('pvp_clash_skill')} 💥🔮</span>
                         </div>
                         <div style="font-size:1.2rem;margin-top:8px;color:#ffd700;animation:actionBounce 0.3s ease-out infinite;">
                             양쪽 크리티컬!
@@ -5739,7 +5739,7 @@
                     
                     resultText.innerHTML = `
                         <div style="animation: resultAppear 0.4s ease-out;">
-                            <span style="font-size:2rem;color:#3498db;">🛡️ 완벽한 교착! 🛡️</span>
+                            <span style="font-size:2rem;color:#3498db;">🛡️ ${T('pvp_standoff')} 🛡️</span>
                         </div>
                         <div style="font-size:1.2rem;margin-top:10px;color:var(--muted);">
                             양쪽 방어! 데미지 없음
@@ -5755,10 +5755,10 @@
                     
                     resultText.innerHTML = `
                         <div style="animation: resultAppear 0.4s ease-out;">
-                            <span style="font-size:2rem;color:#e67e22;">⚔️ 공격 충돌! ⚔️</span>
+                            <span style="font-size:2rem;color:#e67e22;">⚔️ ${T('pvp_clash_atk')} ⚔️</span>
                         </div>
                         <div style="font-size:1.2rem;margin-top:10px;color:${myDamage < enemyDamage ? '#4ecca3' : '#ff6b6b'};">
-                            ${damageDiff > 0 ? `${winner}의 무기가 더 강력! -${damageDiff}` : '완벽한 균형!'}
+                            ${damageDiff > 0 ? `${winner}의 무기가 더 강력! -${damageDiff}` : T('pvp_balance')}
                         </div>
                     `;
                 }
@@ -5841,7 +5841,7 @@
             } else if (action.startsWith('ultimate_lifedrain')) {
                 effect.innerHTML = `
                     <div style="font-size:4rem;animation:actionBounce 0.5s ease-out;">💚</div>
-                    <div style="position:absolute;font-size:1.2rem;color:#32cd32;margin-top:80px;">생명흡수!</div>
+                    <div style="position:absolute;font-size:1.2rem;color:#32cd32;margin-top:80px;">${T('pvp_lifedrain')}</div>
                 `;
             }
             
@@ -5989,13 +5989,13 @@
             const enemyHpPercent = Math.max(0, ((enemy?.hp || 0) / (enemy?.maxHp || 100)) * 100);
 
             const phaseText = gs.phase === 'select' 
-                ? (hasSelected ? '⏳ 상대 대기중' : '⚡ 행동 선택!')
+                ? (hasSelected ? `⏳ ${T('pvp_waiting_opp')}` : `⚡ ${T('pvp_choose_now')}`)
                 : '결과';
 
             document.getElementById('app').innerHTML = `
                 <div class="battle-screen">
                     <div class="battle-header">
-                        <div class="battle-title">⚔️ 무기 배틀</div>
+                        <div class="battle-title">⚔️ ${T('pvp_title')}</div>
                         <div class="battle-round">라운드 ${gs.round || 1} | ${phaseText}</div>
                         <div style="font-size:0.6rem;color:var(--muted);margin-top:4px;">
                             ⚔️공격→🔮스킬 이김 | 🔮스킬→🛡️방어 이김 | 🛡️방어→⚔️공격 이김
@@ -6085,12 +6085,12 @@
                     <div class="battle-actions">
                         ${hasSelected ? `
                             <div style="text-align:center;padding:20px;color:var(--muted);font-size:1.1rem;">
-                                ⏳ 상대 행동 대기중...
+                                ⏳ ${T('pvp_waiting_act')}
                             </div>
                         ` : `
                             <div class="turn-timer" style="margin:0 0 10px;">
                                 <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.72rem;color:var(--muted);margin-bottom:4px;">
-                                    <span>⏱️ 행동 선택</span>
+                                    <span>⏱️ ${T('pvp_choose')}</span>
                                     <span><b id="battle-timer-num" style="color:#fff;">${BATTLE_TURN_SECONDS}</b>초 — 시간초과 시 자동 공격</span>
                                 </div>
                                 <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.12);overflow:hidden;">
@@ -6101,29 +6101,29 @@
                                 <button class="action-btn attack" onclick="battleAction('attack')">
                                     <span class="action-icon">⚔️</span>
                                     공격
-                                    <span class="action-hint">스킬에 유리</span>
+                                    <span class="action-hint">${T('pvp_vs_skill')}</span>
                                 </button>
                                 <button class="action-btn defense" onclick="battleAction('defense')">
                                     <span class="action-icon">🛡️</span>
                                     방어
-                                    <span class="action-hint">공격에 유리</span>
+                                    <span class="action-hint">${T('pvp_vs_attack')}</span>
                                 </button>
                                 <button class="action-btn skill" onclick="battleAction('skill')">
                                     <span class="action-icon">🔮</span>
                                     스킬
-                                    <span class="action-hint">방어 관통</span>
+                                    <span class="action-hint">${T('pvp_pierce')}</span>
                                 </button>
                             </div>
                             ${canUltimate ? `
                                 <div class="ultimate-grid">
                                     <button class="ultimate-btn burst" onclick="battleUltimate('burst')">
-                                        🔥 필살<br><span style="font-size:0.55rem;">2배 데미지</span>
+                                        🔥 필살<br><span style="font-size:0.55rem;">${T('pvp_x2')}</span>
                                     </button>
                                     <button class="ultimate-btn drain" onclick="battleUltimate('lifedrain')">
-                                        💚 흡수<br><span style="font-size:0.55rem;">데미지=회복</span>
+                                        💚 흡수<br><span style="font-size:0.55rem;">${T('pvp_dmg_equal')}</span>
                                     </button>
                                     <button class="ultimate-btn shield" onclick="battleUltimate('absolute')">
-                                        🛡️ 절대방어<br><span style="font-size:0.55rem;">무효+1.5배</span>
+                                        🛡️ 절대방어<br><span style="font-size:0.55rem;">${T('pvp_nullify')}</span>
                                     </button>
                                 </div>
                             ` : ''}
@@ -6138,7 +6138,7 @@
         }
 
         function battleSurrender() {
-            if (!confirm('항복하면 패배 처리됩니다.\n정말 항복하시겠습니까?')) return;
+            if (!confirm(T('pvp_surrender_confirm'))) return;
             clearBattleTimer();
 
             // Leave room (counts as loss)
@@ -6283,12 +6283,12 @@
                 syncPvPRanking(true);
                 
                 mpUI.showResult({
-                    title: '🏆 승리!',
+                    title: `🏆 ${T('pvp_win')}`,
                     detail: `${rounds} 라운드 전투 승리!\n💰 +${goldReward.toLocaleString()} 골드\n(상대 +${enemyLevel} 무기 격파 보상)`,
                     isWin: true,
                     actions: [
-                        { label: '🔄 다시 대전', primary: true, handler: async () => { try { const pd = mpUI.getPlayerData ? mpUI.getPlayerData() : null; await mpUI.getClient().rematch(pd); mpUI.goToWaitingRoom(); } catch(e) { alert('리매치 실패: ' + e.message); } }},
-                        { label: '나가기', primary: false, handler: () => { if (mpUI.getClient()) { mpUI.getClient().leaveRoom().catch(()=>{}); MultiplayerClient.resetInstance(); } battleState = null; showMain(); }}
+                        { label: `🔄 ${T('pvp_rematch')}`, primary: true, handler: async () => { try { const pd = mpUI.getPlayerData ? mpUI.getPlayerData() : null; await mpUI.getClient().rematch(pd); mpUI.goToWaitingRoom(); } catch(e) { alert(T('pvp_rematch_fail') + e.message); } }},
+                        { label: T('pvp_exit'), primary: false, handler: () => { if (mpUI.getClient()) { mpUI.getClient().leaveRoom().catch(()=>{}); MultiplayerClient.resetInstance(); } battleState = null; showMain(); }}
                     ]
                 });
                 SFX.play('battle-win');
@@ -6344,7 +6344,7 @@
                         } else {
                             // 결과창 먼저 표시
                             mpUI.showResult({
-                                title: '💀 패배... 무기 파괴!',
+                                title: `💀 ${T('pvp_lose_break')}`,
                                 detail: `${brokenWeaponName} +${brokenWeaponLevel} 파괴됨!`,
                                 isWin: false,
                                 showRematch: false
@@ -6362,12 +6362,12 @@
                         }, 1000);
                     } else {
                         mpUI.showResult({
-                            title: '💀 패배...',
+                            title: `💀 ${T('pvp_lose')}`,
                             detail: `${rounds} 라운드 전투 패배.\n🔧 내구도 -${durabilityLoss} (${state.weapon.durability}/${MAX_DURABILITY})`,
                             isWin: false,
                             actions: [
-                        { label: '🔄 다시 대전', primary: true, handler: async () => { try { const pd = mpUI.getPlayerData ? mpUI.getPlayerData() : null; await mpUI.getClient().rematch(pd); mpUI.goToWaitingRoom(); } catch(e) { alert('리매치 실패: ' + e.message); } }},
-                        { label: '나가기', primary: false, handler: () => { if (mpUI.getClient()) { mpUI.getClient().leaveRoom().catch(()=>{}); MultiplayerClient.resetInstance(); } battleState = null; showMain(); }}
+                        { label: `🔄 ${T('pvp_rematch')}`, primary: true, handler: async () => { try { const pd = mpUI.getPlayerData ? mpUI.getPlayerData() : null; await mpUI.getClient().rematch(pd); mpUI.goToWaitingRoom(); } catch(e) { alert(T('pvp_rematch_fail') + e.message); } }},
+                        { label: T('pvp_exit'), primary: false, handler: () => { if (mpUI.getClient()) { mpUI.getClient().leaveRoom().catch(()=>{}); MultiplayerClient.resetInstance(); } battleState = null; showMain(); }}
                     ]
                         });
                         SFX.play('battle-lose');
@@ -6375,12 +6375,12 @@
                 } else {
                     // 나무막대기는 내구도 감소 없음
                     mpUI.showResult({
-                        title: '💀 패배...',
+                        title: `💀 ${T('pvp_lose')}`,
                         detail: `${rounds} 라운드 전투 패배.\n(나무막대기는 내구도 감소 없음)`,
                         isWin: false,
                         actions: [
-                        { label: '🔄 다시 대전', primary: true, handler: async () => { try { const pd = mpUI.getPlayerData ? mpUI.getPlayerData() : null; await mpUI.getClient().rematch(pd); mpUI.goToWaitingRoom(); } catch(e) { alert('리매치 실패: ' + e.message); } }},
-                        { label: '나가기', primary: false, handler: () => { if (mpUI.getClient()) { mpUI.getClient().leaveRoom().catch(()=>{}); MultiplayerClient.resetInstance(); } battleState = null; showMain(); }}
+                        { label: `🔄 ${T('pvp_rematch')}`, primary: true, handler: async () => { try { const pd = mpUI.getPlayerData ? mpUI.getPlayerData() : null; await mpUI.getClient().rematch(pd); mpUI.goToWaitingRoom(); } catch(e) { alert(T('pvp_rematch_fail') + e.message); } }},
+                        { label: T('pvp_exit'), primary: false, handler: () => { if (mpUI.getClient()) { mpUI.getClient().leaveRoom().catch(()=>{}); MultiplayerClient.resetInstance(); } battleState = null; showMain(); }}
                     ]
                     });
                     SFX.play('battle-lose');
