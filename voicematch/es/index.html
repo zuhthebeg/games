@@ -197,6 +197,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <h1 class="hero-t" id="t-hero"></h1>
       <p class="hero-s" id="t-herosub"></p>
       <div class="lineup" id="lineup"></div>
+      <div class="inapp-bar hidden" id="inapp-bar"></div>
       <div class="mode-unit" id="mode-unit-intro">
         <span class="mode-badge" id="mode-badge-intro"></span>
         <button id="btn-pool-intro" class="pool-toggle"></button>
@@ -241,6 +242,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="ft-name" id="mic-t"></div>
       <div class="ft-desc" id="mic-b"></div>
       <button class="ft-go" id="mic-go" style="border:0;width:100%;cursor:pointer;font-family:inherit"></button>
+      <button class="ft-copy hidden" id="mic-copy"></button>
       <button class="ft-close" id="mic-no"></button>
     </div>
   </div>
@@ -287,7 +289,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260803micux"></script>
+<script src="/voicematch/i18n.js?v=20260803inapp"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -298,6 +300,7 @@ let LANG=detectLang();
 const t=k=>{const v=I18N[LANG][k];return v===undefined?I18N.en[k]:v;};
 
 function applyLang(){
+  setTimeout(()=>{try{initInAppBar();}catch(e){}},0);
   // 내부 코드 tw는 BCP-47이 아니다(tw=트위어). 크롤러·광고 타게팅이 언어를 오판하므로 정식 태그로 바꾼다.
   document.documentElement.lang=({tw:'zh-Hant'})[LANG]||LANG;
   $('t-title').textContent=t('title');
@@ -365,6 +368,41 @@ function loadModel(){
 
 /* ---- 녹음 ---- */
 let audioCtx,stream,proc,pcmChunks,recRate,recTimer,recLeft;
+/* ---- 인앱 브라우저 ----
+   유입 대부분이 Threads/Instagram 링크인데, 그 앱 내장 웹뷰는 마이크 권한을 아예 안 준다.
+   유저 눈에는 "설정에 마이크 항목이 없다"로 보여서 원인을 알 방법이 없다(2026-08-03 대만 CS 제보).
+   막지는 않는다 — 일부 인앱 브라우저(안드로이드 커스텀탭 등)는 정상 동작하므로,
+   경고만 띄우고 실제로 막혔을 때 올바른 복구법을 준다. */
+// 안드로이드 웹뷰는 UA에 '; wv)'가 붙는다 — CF 로그에 실제로 이 형태가 많다.
+const INAPP_RE = /(FBAN|FBAV|FB_IAB|Instagram|Threads|Barcelona|Line\/|KAKAOTALK|NAVER\(inapp|DaumApps|Snapchat|musical_ly|TikTok|Twitter|WebView|;\s?wv\))/i;
+function isInApp(){
+  const ua = navigator.userAgent;
+  if (INAPP_RE.test(ua)) return true;
+  // iOS: 사파리가 아닌 웹뷰는 Safari 토큰이 빠진다
+  if (/(iPhone|iPad|iPod)/.test(ua) && !/Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua)) return true;
+  return false;
+}
+async function copyPageUrl(btn){
+  const url = location.href.split('#')[0];
+  try{ await navigator.clipboard.writeText(url); }
+  catch(e){
+    const ta=document.createElement('textarea');
+    ta.value=url; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e2){}
+    ta.remove();
+  }
+  if(btn) btn.textContent=t('inappCopied');
+  try{dataLayer.push({event:'vm_inapp_copy'});}catch(e){}
+}
+function initInAppBar(){
+  if(!isInApp()) return;
+  try{window.dataLayer=window.dataLayer||[];dataLayer.push({event:'vm_inapp_detected'});}catch(e){}
+  const bar=$('inapp-bar'); if(!bar) return;
+  bar.innerHTML=t('inappBanner');
+  bar.classList.remove('hidden');
+}
+
 /* ---- 마이크 권한 ---- */
 // 이미 허용된 브라우저에는 안내를 띄우지 않는다(Permissions API 없는 사파리는 localStorage로 대체).
 async function micAlreadyOk(){
@@ -375,6 +413,8 @@ async function micAlreadyOk(){
   }catch(e){ return false; }
 }
 function micHelpHtml(){
+  // 인앱 브라우저에는 "설정에서 마이크를 허용하세요"가 틀린 안내다 — 그 설정 자체가 없다.
+  if(isInApp())return t('inappB');
   const ua=navigator.userAgent;
   if(/iPad|iPhone|iPod/.test(ua))return t('micHelpIOS');
   if(/Android/.test(ua))return t('micHelpAOS');
@@ -386,12 +426,18 @@ function resetErrBtn(){
   $('btn-restart').onclick=()=>location.reload();
 }
 function showMicSheet(){
-  $('mic-t').textContent=t('micPrimeT');
-  $('mic-b').innerHTML=t('micPrimeB');
-  $('mic-go').textContent=t('micPrimeGo');
+  const inapp=isInApp();
+  $('mic-t').textContent=inapp?t('inappT'):t('micPrimeT');
+  $('mic-b').innerHTML=inapp?t('inappB'):t('micPrimeB');
+  // 인앱이어도 시도 자체는 막지 않는다(동작하는 웹뷰가 있다)
+  $('mic-go').textContent=inapp?t('inappTry'):t('micPrimeGo');
+  const cp=$('mic-copy');
+  cp.textContent=t('inappCopy');
+  cp.classList.toggle('hidden',!inapp);
+  cp.onclick=()=>copyPageUrl(cp);
   $('mic-no').textContent=t('micPrimeNo');
   $('mic-sheet').classList.remove('hidden');
-  try{dataLayer.push({event:'vm_mic_prime_shown'});}catch(e){}
+  try{dataLayer.push({event:inapp?'vm_inapp_sheet_shown':'vm_mic_prime_shown'});}catch(e){}
 }
 function hideMicSheet(){ $('mic-sheet').classList.add('hidden'); }
 document.addEventListener('DOMContentLoaded',()=>{
@@ -408,15 +454,17 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 async function startRec(primed){
   try{window.dataLayer=window.dataLayer||[];dataLayer.push({event:'vm_start_click'});}catch(e){}
-  if(!primed && !(await micAlreadyOk())){ showMicSheet(); return; }
+  if(!primed && (isInApp() || !(await micAlreadyOk()))){ showMicSheet(); return; }
   try{
     stream=await navigator.mediaDevices.getUserMedia({audio:{
       echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
   }catch(e){
     try{dataLayer.push({event:'vm_mic_denied'});}catch(e2){}
     // 거부돼도 막다른 길로 두지 않는다 — 브라우저별 복구 방법 + 재시도 버튼
-    $('err-t').innerHTML=t('errMic')+'<div style="margin-top:12px;font-size:11.5px;line-height:1.7;opacity:.85">'
-      +micHelpHtml()+'</div>';
+    $('err-t').innerHTML=(isInApp()?t('inappT'):t('errMic'))
+      +'<div style="margin-top:12px;font-size:11.5px;line-height:1.7;opacity:.85">'+micHelpHtml()+'</div>'
+      +(isInApp()?'<button class="ft-copy" id="err-copy" style="max-width:260px;margin:12px auto 0">'+t('inappCopy')+'</button>':'');
+    if(isInApp()){ const ec=$('err-copy'); if(ec) ec.onclick=()=>copyPageUrl(ec); }
     $('btn-restart').textContent=t('micRetry');
     $('btn-restart').onclick=()=>{ show('s-intro'); startRec(true); };
     show('s-err');return;
