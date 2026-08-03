@@ -691,14 +691,14 @@ const TW_NAMES = {
   'winner_kpop':'WINNER', 'huntrx':'HUNTR/X', 'younha':'高潤荷', 'lionking':'獅子王', 'moana':'海洋奇緣',
 
   // 2026-08-02 보강: ko→zh 언어링크 + zh문서 한국가수 교차검증 + zh-tw 변환
-  'aileen':'李藝真',
+  'aileen':'Ailee',
   'baekhyun':'伯賢',
   'baekjiyoung':'白智榮',
   'boa':'寶兒',
   'bol4':'臉紅的思春期',
   'byunjinsub':'卞真燮',
   'choyongpil':'趙容弼',
-  'cl':'李彩麟',
+  'cl':'CL',
   'doyoung':'道英',
   'genblue':'幻藍小熊',
   'handonggeun':'韓東根',

@@ -5,9 +5,17 @@ ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/di
 
 let session = null, singers = null, lang = 'ko';
 
-const WIN = 3 * 16000, RMS_TH = 0.008;
+const WIN = 3 * 16000;
+// 절대 하한. 에어컨·팬 소리가 이 위로 올라오는 경우가 있어 이것만으로는 부족하다(2026-08-03 제보).
+const RMS_TH = 0.012;
+// 소음 바닥 대비 배수. 목소리는 바닥보다 확실히 튀지만, 정상소음은 계속 같은 크기로 깔린다.
+const NOISE_RATIO = 2.0;
+// 바닥 자체가 이보다 크면 "계속 노래한 녹음"으로 보고 배수 조건을 걸지 않는다
+// (쉼 없이 부르면 바닥=목소리라 배수 조건에 자기 목소리가 걸린다).
+const LOUD_FLOOR = 0.03;
 
 function rms(a, s, e) { let q = 0; for (let i = s; i < e; i++) q += a[i] * a[i]; return Math.sqrt(q / (e - s)); }
+function percentile(arr, p) { const b = [...arr].sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(b.length * p))]; }
 function l2norm(v) { let n = 0; for (const x of v) n += x * x; n = Math.sqrt(n) || 1; return v.map(x => x / n); }
 
 async function embedWindow(pcm) {
@@ -17,16 +25,24 @@ async function embedWindow(pcm) {
 }
 
 async function analyze(pcm16k) {
+  // 창별 세기를 먼저 다 재고, 그 분포에서 소음 바닥을 잡는다.
+  // 에어컨처럼 일정한 소리는 모든 창이 비슷해서 바닥≈신호가 되고, 아래 조건에서 전부 걸러진다.
+  const wins = [];
+  for (let i = 0; i + WIN <= pcm16k.length; i += WIN) wins.push({ i, r: rms(pcm16k, i, i + WIN) });
+  if (!wins.length) wins.push({ i: 0, r: rms(pcm16k, 0, pcm16k.length) });
+
+  const floor = percentile(wins.map(w => w.r), 0.2);
+  const gate = floor < LOUD_FLOOR ? Math.max(RMS_TH, floor * NOISE_RATIO) : RMS_TH;
+
   const embs = [];
-  for (let i = 0; i + WIN <= pcm16k.length; i += WIN) {
-    if (rms(pcm16k, i, i + WIN) < RMS_TH) continue;
-    embs.push(await embedWindow(pcm16k.slice(i, i + WIN)));
+  for (const w of wins) {
+    if (w.r < gate) continue;
+    embs.push(await embedWindow(pcm16k.slice(w.i, Math.min(w.i + WIN, pcm16k.length))));
     postMessage({ type: 'progress', done: embs.length });
   }
-  if (!embs.length) {
-    if (rms(pcm16k, 0, pcm16k.length) < 0.003) return { error: 'silent' };
-    embs.push(await embedWindow(pcm16k.slice(0, Math.min(pcm16k.length, WIN * 2))));
-  }
+  // 목소리라고 볼 만한 구간이 하나도 없으면 결과를 만들지 않는다.
+  // 예전엔 여기서 앞부분을 억지로 임베딩해서, 에어컨 소리만 녹음해도 매칭 결과가 나왔다.
+  if (!embs.length) return { error: 'silent' };
   const d = embs[0].length, mean = new Array(d).fill(0);
   for (const e of embs) for (let i = 0; i < d; i++) mean[i] += e[i] / embs.length;
   const q = l2norm(mean);
