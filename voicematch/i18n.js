@@ -675,6 +675,9 @@ const EN_NAMES = {
 // 대만(tw) 로케일 전용 — 대만에서 실제 통용되는 정체(번체) 표기만 수동 검증해서 반영.
 // 중국 간체/대륙 표기 절대 금지, 불확실한 건 EN_NAMES 폴백(원문 로마자) 유지.
 const TW_NAMES = {
+  // cocy 확인 표기 (2026-08-03). 소향은 로마자 활동명을 쓰므로 여기에 넣지 않는다.
+  'sochanwhee':'蘇燦輝', 'taejina':'太真兒', 'utadahikaru':'宇多田光',
+  'kimyeonja':'金蓮子', 'littlemermaid':'小美人魚',
   'a_mei':'張惠妹', 'abao':'阿爆', 'suming':'舒米恩', 'samingad':'紀曉君', 'sangpuy':'桑布伊',
   'bts':'防彈少年團', 'v_bts':'V', 'jin':'Jin', 'jimin':'Jimin', 'jungkook':'柾國',
   'jhope':'j-hope', 'gdragon':'G-DRAGON', 'taeyang':'太陽', 'jaypark':'朴載範', 'zico':'ZICO',
@@ -738,7 +741,6 @@ const TW_NAMES = {
   'seoinguk':'徐仁國',
   'shinseunghun':'申昇勳',
   'simsoobong':'沈守峰',
-  'sohyang':'素香',
   'songgain':'宋歌人',
   'songsohee':'宋素喜',
   'sungsikyung':'成始璄',
