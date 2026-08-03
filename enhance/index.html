@@ -26,7 +26,8 @@
     <script src="/lib/mp-lobby.js?v=20260620A"></script>
     <script src="/lib/multiplayer-ui.js?v=20260310d"></script>
     <script>window.SharedWalletConfig = { autoGuest: true };</script>
-    <script src="/lib/shared-wallet.js?v=20260705b2a"></script>
+    <script src="i18n-ui.js?v=20260803a"></script>
+<script src="/lib/shared-wallet.js?v=20260705b2a"></script>
     <style>
         :root {
             --bg: #0d0d0d;
@@ -2191,28 +2192,28 @@
             <div class="new-weapon-title">새로운 무기 획득!</div>
             <div class="new-weapon-name" id="newWeaponName"></div>
         </div>
-        <button class="result-btn" id="resultBtn" onclick="closeResult()">확인</button>
+        <button class="result-btn" id="resultBtn" onclick="closeResult()"><span data-i18n="confirm">확인</span></button>
     </div>
     <canvas class="confetti" id="confetti"></canvas>
     <div id="soundModal">
       <div class="sound-modal-box">
-        <h3>🔊 사운드 설정</h3>
+        <h3><span data-i18n="sound_settings">🔊 사운드 설정</span></h3>
         <div class="sound-option-row">
-          <span class="sound-option-label">효과음</span>
+          <span class="sound-option-label"><span data-i18n="sfx">효과음</span></span>
           <div class="sound-btn-group">
-            <button class="sound-btn" id="snd-off" onclick="setSoundMode('off')">🔇 끄기</button>
+            <button class="sound-btn" id="snd-off" onclick="setSoundMode('off')"><span data-i18n="sound_off">🔇 끄기</span></button>
             <button class="sound-btn" id="snd-default" onclick="setSoundMode('default')">기본음</button>
-            <button class="sound-btn" id="snd-new" onclick="setSoundMode('new')">새 사운드</button>
+            <button class="sound-btn" id="snd-new" onclick="setSoundMode('new')"><span data-i18n="new_sound">새 사운드</span></button>
           </div>
         </div>
         <div class="sound-option-row">
           <span class="sound-option-label">몬스터 대사<br><small style="color:#666">AI 대사 + 음성 읽기</small></span>
           <div class="sound-btn-group">
-            <button class="sound-btn" id="dlg-on" onclick="setDialogue(true)">켜기</button>
-            <button class="sound-btn" id="dlg-off" onclick="setDialogue(false)">끄기</button>
+            <button class="sound-btn" id="dlg-on" onclick="setDialogue(true)"><span data-i18n="sound_on">켜기</span></button>
+            <button class="sound-btn" id="dlg-off" onclick="setDialogue(false)"><span data-i18n="sound_off">끄기</span></button>
           </div>
         </div>
-        <button onclick="closeSoundSettings()" style="margin-top:16px;width:100%;padding:10px;background:#333;border:none;border-radius:8px;color:#eee;cursor:pointer;">닫기</button>
+        <button onclick="closeSoundSettings()" style="margin-top:16px;width:100%;padding:10px;background:#333;border:none;border-radius:8px;color:#eee;cursor:pointer;"><span data-i18n="close">닫기</span></button>
       </div>
     </div>
 
@@ -2438,6 +2439,7 @@
             silver:    { name: '은', icon: '🌙', color: '#c0c0c0' },
             lifesteal: { name: '흡혈', icon: '🩸', color: '#8b0000' }
         };
+
         
         // 마법 무기용 속성 (silver, lifesteal 제외)
         const MAGIC_ELEMENTS = ['fire', 'ice', 'lightning', 'water', 'poison', 'holy'];
@@ -2693,6 +2695,15 @@
                 }
             }
         };
+
+        // 등급·무기타입·속성 이름은 게임 이해에 필요한 '뼈대'라 번역한다.
+        // 정의 직후 한 번만 덮어써서 개별 사용처(8곳+)를 전부 고치지 않아도 되게 한다.
+        // 무기 고유명·몬스터명 같은 콘텐츠는 건드리지 않는다.
+        // 주의: 세 테이블이 모두 정의된 뒤여야 한다 — 앞에 두면 const TDZ로 통째로 건너뛴다.
+        Object.keys(GRADES).forEach(k => { const v = T('g_' + k); if (v !== 'g_' + k) GRADES[k].name = v; });
+        Object.keys(WEAPON_TYPES).forEach(k => { const v = T('w_' + k); if (v !== 'w_' + k) WEAPON_TYPES[k].name = v; });
+        Object.keys(ELEMENTS).forEach(k => { const v = T('e_' + k); if (v !== 'e_' + k) ELEMENTS[k].name = v; });
+
 
         // 더 스릴있는 확률! +4부터 파괴 시작!
         const MAX_ENHANCE_LEVEL = 99;
@@ -3889,17 +3900,19 @@
             document.getElementById('app').innerHTML = `
                 <div class="container">
                     <header style="position:relative;">
-                        <h1>⚔️ 무기 강화 & 배틀</h1>
+                        <h1>⚔️ ${T('title')}</h1>
+                        <button onclick="enhNextLang()" title="언어 / Language / 語言"
+                          style="position:absolute;left:10px;top:10px;background:none;border:1px solid rgba(255,255,255,.35);border-radius:999px;color:#ddd;font-size:.72rem;padding:3px 9px;cursor:pointer;z-index:100">🌐 ${ENH_LANG_LABEL[ENH_LANG]}</button>
                         <button id="soundSettingsBtn" onclick="openSoundSettings()" 
                           style="position:absolute;right:10px;top:10px;background:none;border:none;font-size:1.3rem;cursor:pointer;opacity:0.7;z-index:100"
                           title="사운드 설정">🔊</button>
-                        <p class="subtitle">강화하고 싸워서 돈을 벌어라!</p>
+                        <p class="subtitle">${T('slogan')}</p>
                     </header>
 
                     <div class="gold-display">
                         <span class="gold-icon">💰</span>
                         <span class="gold-amount">${state.gold.toLocaleString()} G</span>
-                        ${cloudSyncEnabled ? '<span style="margin-left:8px;color:#4ecca3;font-size:0.8rem;">☁️ 동기화</span>' : ''}
+                        ${cloudSyncEnabled ? `<span style="margin-left:8px;color:#4ecca3;font-size:0.8rem;">☁️ ${T('synced')}</span>` : ''}
                     </div>
 
                     <div class="weapon-card ${weapon.grade} ${getLevelClass(weapon.level)}">
@@ -3911,7 +3924,7 @@
                             </div>
                             <div class="weapon-level">
                                 <div class="weapon-level-number">+${weapon.level}</div>
-                                <div class="weapon-level-label">강화</div>
+                                <div class="weapon-level-label">${T('level_label')}</div>
                             </div>
                         </div>
 
@@ -3927,28 +3940,28 @@
                                 <span class="stat-icon">${weapon.type === 'knuckle' ? '👊' : '⚔️'}</span>
                                 <div class="stat-info">
                                     <div class="stat-value damage">${stats.damageMin}-${stats.damageMax}${weapon.type === 'knuckle' ? ' <span style="color:#ff8c00;font-size:0.7em;">x2</span>' : ''}</div>
-                                    <div class="stat-label">공격력</div>
+                                    <div class="stat-label">${T('atk_power')}</div>
                                 </div>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-icon">💥</span>
                                 <div class="stat-info">
                                     <div class="stat-value crit">${stats.critChance}%${weapon.type === 'knuckle' ? ' <span style="color:#ff8c00;font-size:0.7em;">x2</span>' : ''}</div>
-                                    <div class="stat-label">크리티컬</div>
+                                    <div class="stat-label">${T('crit')}</div>
                                 </div>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-icon">🔧</span>
                                 <div class="stat-info">
                                     <div class="stat-value ${isCursed(weapon) ? 'danger' : (weapon.durability || 100) < 30 ? 'danger' : ''}">${weapon.durability || 100}%${isCursed(weapon) ? ' <span style="color:#8b00ff;font-size:0.7em;">👿</span>' : ''}</div>
-                                    <div class="stat-label">내구도</div>
+                                    <div class="stat-label">${T('durability')}</div>
                                 </div>
                             </div>
                             <div class="stat-item" onclick="showMasteryDetail()" style="cursor:pointer;">
                                 <span class="stat-icon">📈</span>
                                 <div class="stat-info">
                                     <div class="stat-value special">Lv.${getWeaponMasteryLevel(weapon)}</div>
-                                    <div class="stat-label">숙련 <span style="color:var(--success);font-size:0.7rem;">+${getWeaponMasteryBonus(weapon)}%</span></div>
+                                    <div class="stat-label">${T('mastery')} <span style="color:var(--success);font-size:0.7rem;">+${getWeaponMasteryBonus(weapon)}%</span></div>
                                 </div>
                             </div>
                         </div>
@@ -3957,15 +3970,15 @@
                     <div class="mode-grid" style="grid-template-columns: repeat(2, 1fr);">
                         <button class="mode-btn enhance" onclick="showEnhance()">
                             <span class="mode-icon">🔨</span>
-                            <span class="mode-label">강화</span>
+                            <span class="mode-label">${T('enhance')}</span>
                         </button>
                         <button class="mode-btn" onclick="showBlacksmith()" style="background:linear-gradient(135deg,#555,#333);">
                             <span class="mode-icon">🛠️</span>
-                            <span class="mode-label">대장간</span>
+                            <span class="mode-label">${T('forge')}</span>
                         </button>
                         <button class="mode-btn hunt" onclick="showHunt()">
                             <span class="mode-icon">🐉</span>
-                            <span class="mode-label">사냥</span>
+                            <span class="mode-label">${T('hunting')}</span>
                         </button>
                         <button class="mode-btn battle" onclick="showBattleLobby()">
                             <span class="mode-icon">⚔️</span>
@@ -3976,11 +3989,11 @@
                     <div style="display:flex;gap:8px;margin-bottom:8px;">
                         <button class="mode-btn" onclick="showRanking()" style="flex:1;background:linear-gradient(135deg,#ffd700,#ff8c00);padding:10px;">
                             <span class="mode-icon">🏆</span>
-                            <span class="mode-label">랭킹</span>
+                            <span class="mode-label">${T('ranking')}</span>
                         </button>
                         <button class="mode-btn" onclick="showCollection()" style="flex:1;background:linear-gradient(135deg,#6c3dff,#3d1fc8);padding:10px;">
                             <span class="mode-icon">📖</span>
-                            <span class="mode-label">컬렉션</span>
+                            <span class="mode-label">${T('collection')}</span>
                         </button>
                     </div>
 
@@ -4023,7 +4036,7 @@
                             </div>
                             <div class="weapon-level">
                                 <div class="weapon-level-number">+${weapon.level}</div>
-                                <div class="weapon-level-label">강화</div>
+                                <div class="weapon-level-label">${T('level_label')}</div>
                             </div>
                         </div>
 
@@ -4040,14 +4053,14 @@
                                 <span class="stat-icon">${weapon.type === 'knuckle' ? '👊' : '⚔️'}</span>
                                 <div class="stat-info">
                                     <div class="stat-value damage">${stats.damageMin}-${stats.damageMax}${weapon.type === 'knuckle' ? ' <span style="color:#ff8c00;font-size:0.7em;">x2</span>' : ''}</div>
-                                    <div class="stat-label">공격력</div>
+                                    <div class="stat-label">${T('atk_power')}</div>
                                 </div>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-icon">💥</span>
                                 <div class="stat-info">
                                     <div class="stat-value crit">${stats.critChance}%${weapon.type === 'knuckle' ? ' <span style="color:#ff8c00;font-size:0.7em;">x2</span>' : ''}</div>
-                                    <div class="stat-label">크리티컬</div>
+                                    <div class="stat-label">${T('crit')}</div>
                                 </div>
                             </div>
                         </div>
@@ -4130,11 +4143,11 @@
                     ` : ''}
 
                     <div class="btn-row">
-                        <button class="btn btn-secondary" onclick="sellWeapon()">💰 판매</button>
+                        <button class="btn btn-secondary" onclick="sellWeapon()">💰 ${T('sell')}</button>
                         <button class="btn btn-enhance" onclick="enhance()" ${!canEnhance ? 'disabled' : ''}>
                             ${weapon.level >= MAX_ENHANCE_LEVEL ? '🏆 MAX' : `⚡ 강화 (${rates.cost.toLocaleString()}G)`}
                         </button>
-                        <button class="btn btn-home" onclick="showMain()">홈으로</button>
+                        <button class="btn btn-home" onclick="showMain()">${T('home')}</button>
                     </div>
                     ${isParadoxBlade(weapon) ? `
                     <div style="background:rgba(100,100,255,0.1);border:1px solid rgba(100,100,255,0.3);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:0.8rem;color:#aaf;">
@@ -4886,11 +4899,11 @@
             
             document.getElementById('app').innerHTML = `
                 <div class="container blacksmith-screen">
-                    <button class="btn-back" onclick="showMain()">← 메인으로</button>
+                    <button class="btn-back" onclick="showMain()">← ${T('to_main')}</button>
                     
                     <header>
-                        <h1>🛠️ 대장간</h1>
-                        <p class="subtitle">무기 수리 및 관리</p>
+                        <h1>🛠️ ${T('forge')}</h1>
+                        <p class="subtitle">${T('blacksmith_sub')}</p>
                     </header>
                     
                     <div class="gold-display">
@@ -4990,7 +5003,7 @@
                     </div>
                     
                     <div class="btn-row" style="margin-top:16px;">
-                        <button class="btn btn-secondary" style="flex:1;" onclick="showMain()">🏠 메인으로</button>
+                        <button class="btn btn-secondary" style="flex:1;" onclick="showMain()">🏠 ${T('to_main')}</button>
                     </div>
                 </div>
             `;
@@ -5206,14 +5219,14 @@
 
             document.getElementById('app').innerHTML = `
                 <div class="container">
-                    <button class="btn-back" onclick="showMain()">← 메인으로</button>
+                    <button class="btn-back" onclick="showMain()">← ${T('to_main')}</button>
                     <header>
-                        <h1>📖 컬렉션</h1>
+                        <h1>📖 ${T('collection')}</h1>
                         <p class="subtitle">처치 ${state.mastery?.kills || 0}마리 · 보스 ${state.bossKills || 0}처치 · 도감 ${totalSeen}/${totalMonsters}</p>
                     </header>
                     <div class="col-tabs">
-                        <button class="col-tab ${tab === 'weapons' ? 'active' : ''}" onclick="showCollection('weapons')">⚔️ 무기 기록</button>
-                        <button class="col-tab ${tab === 'monsters' ? 'active' : ''}" onclick="showCollection('monsters')">👹 몬스터 도감</button>
+                        <button class="col-tab ${tab === 'weapons' ? 'active' : ''}" onclick="showCollection('weapons')">⚔️ ${T('weapon_book')}</button>
+                        <button class="col-tab ${tab === 'monsters' ? 'active' : ''}" onclick="showCollection('monsters')">👹 ${T('monster_book')}</button>
                     </div>
                     <div id="col-content">
                         ${tab === 'weapons' ? weaponsHTML() : monstersHTML()}
@@ -5225,11 +5238,11 @@
         async function showRanking() {
             document.getElementById('app').innerHTML = `
                 <div class="container">
-                    <button class="btn-back" onclick="showMain()">← 메인으로</button>
+                    <button class="btn-back" onclick="showMain()">← ${T('to_main')}</button>
                     
                     <header>
-                        <h1>🏆 랭킹</h1>
-                        <p class="subtitle">최고의 용사들</p>
+                        <h1>🏆 ${T('ranking')}</h1>
+                        <p class="subtitle">${T('ranking_sub')}</p>
                     </header>
                     
                     <div class="ranking-tabs">
@@ -5249,7 +5262,7 @@
                     </div>
                     
                     <div class="btn-row" style="margin-top:16px;">
-                        <button class="btn btn-secondary" style="flex:1;" onclick="showMain()">🏠 메인으로</button>
+                        <button class="btn btn-secondary" style="flex:1;" onclick="showMain()">🏠 ${T('to_main')}</button>
                     </div>
                 </div>
             `;
@@ -7029,7 +7042,7 @@
                     </div>
 
                     <div class="hunt-actions">
-                        <button class="btn btn-enhance" onclick="huntAttack()" ${huntState._sealing ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>⚔️ 공격!</button>
+                        <button class="btn btn-enhance" onclick="huntAttack()" ${huntState._sealing ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>⚔️ ${T('attack')}!</button>
                         <button class="btn btn-secondary" onclick="huntRunAway()" style="background:rgba(255,100,100,0.2);border:1px solid var(--fail);">
                             🏃 도망 (-${getRunPenaltyPercent(monster.tier)}%)
                         </button>
@@ -8206,8 +8219,8 @@
             document.getElementById('newWeaponPreview').style.display = 'block';
             document.getElementById('newWeaponPreview').innerHTML = `
                 <div style="display:flex;gap:10px;margin-top:10px;">
-                    <button class="btn btn-enhance" style="flex:1;" onclick="huntContinue()">🐉 다음 몬스터</button>
-                    <button class="btn btn-secondary" style="flex:1;" onclick="huntStop()">🏠 사냥 종료</button>
+                    <button class="btn btn-enhance" style="flex:1;" onclick="huntContinue()">🐉 ${T('hunt_next_btn')}</button>
+                    <button class="btn btn-secondary" style="flex:1;" onclick="huntStop()">🏠 ${T('hunt_stop')}</button>
                 </div>
             `;
             document.getElementById('resultBtn').style.display = 'none';
@@ -8353,8 +8366,8 @@
             document.getElementById('newWeaponPreview').style.display = 'block';
             document.getElementById('newWeaponPreview').innerHTML = `
                 <div style="display:flex;gap:10px;margin-top:10px;">
-                    <button class="btn btn-enhance" style="flex:1;" onclick="huntContinueAfterTreasure()">🐉 계속 사냥</button>
-                    <button class="btn btn-secondary" style="flex:1;" onclick="huntStop()">🏠 사냥 종료</button>
+                    <button class="btn btn-enhance" style="flex:1;" onclick="huntContinueAfterTreasure()">🐉 ${T('hunt_continue')}</button>
+                    <button class="btn btn-secondary" style="flex:1;" onclick="huntStop()">🏠 ${T('hunt_stop')}</button>
                 </div>
             `;
             document.getElementById('resultBtn').style.display = 'none';
@@ -8573,8 +8586,8 @@
                     <span style="color:${newGradeData.color}">[${newGradeData.name}] ${state.weapon.name}</span>
                 </div>
                 <div style="display:flex;gap:10px;margin-top:10px;">
-                    <button class="btn btn-enhance" style="flex:1;" onclick="huntRestart()">🔄 다시 사냥</button>
-                    <button class="btn btn-secondary" style="flex:1;" onclick="huntExitAfterDeath()">🏠 사냥 종료</button>
+                    <button class="btn btn-enhance" style="flex:1;" onclick="huntRestart()">🔄 ${T('hunt_again')}</button>
+                    <button class="btn btn-secondary" style="flex:1;" onclick="huntExitAfterDeath()">🏠 ${T('hunt_stop')}</button>
                 </div>
             `;
             document.getElementById('resultBtn').style.display = 'none';
