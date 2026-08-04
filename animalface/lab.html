@@ -74,6 +74,10 @@ video{display:none}
       <button class="btn sec" id="rot" disabled>🧊 3D 점구름 회전</button>
       <button class="btn sec" id="mirror" disabled>😀 표정 미러링</button>
     </div>
+    <div class="row">
+      <button class="btn sec" id="rec" disabled>🎞 GIF 녹화 (3초)</button>
+    </div>
+    <div id="gifOut"></div>
     <div class="log" id="log"></div>
   </div>
 
@@ -173,18 +177,37 @@ function computeAxes(lm) {
   const noseW = d2(g(P.noseL), g(P.noseR));
   const lipH = d2(g(P.lipUp), g(P.lipDn));
   const lipW = d2(g(P.lipL), g(P.lipR));
-  // 각 축을 사람 얼굴의 통상 범위로 0~1 스케일
-  return {
-    eyeSize:   clamp01((eyeH/faceW - 0.035) / 0.045),
-    eyeSlant:  clamp01(((slantL+slantR)/2 / faceW + 0.02) / 0.06),
-    eyeGap:    clamp01((gap/faceW - 0.22) / 0.14),
-    faceLength:clamp01((faceH/faceW - 1.15) / 0.5),
-    jawSharp:  clamp01((1 - jawW/faceW - 0.05) / 0.25),
-    cheek:     clamp01((faceW/jawW - 1.02) / 0.28),
-    noseWidth: clamp01((noseW/faceW - 0.22) / 0.16),
-    lipThick:  clamp01((lipH/lipW - 0.12) / 0.28),
+  // 원시 비율 — 상수를 감으로 찍지 말고 이 값을 실측해서 RANGE를 잡는다
+  const raw = {
+    eyeSize:   eyeH/faceW,
+    eyeSlant:  ((slantL+slantR)/2) / faceW,
+    eyeGap:    gap/faceW,
+    faceLength:faceH/faceW,
+    jawSharp:  1 - jawW/faceW,
+    cheek:     faceW/jawW,
+    noseWidth: noseW/faceW,
+    lipThick:  lipH/lipW,
   };
+  lastRaw = raw;
+  // [최소, 최대] — 이 구간을 0~1로 편다. 실측으로 계속 조정할 것.
+  const RANGE = {
+    eyeSize:   [0.055, 0.105],
+    eyeSlant:  [-0.030, 0.030],
+    eyeGap:    [0.230, 0.330],
+    faceLength:[0.900, 1.320],   // ← 1.15 하한이 너무 높아 전부 0으로 눌리던 버그(2026-08-05)
+    jawSharp:  [0.080, 0.300],
+    cheek:     [1.050, 1.330],
+    noseWidth: [0.230, 0.360],
+    lipThick:  [0.100, 0.400],
+  };
+  const out = {};
+  for (const k in raw) {
+    const [lo, hi] = RANGE[k];
+    out[k] = clamp01((raw[k] - lo) / (hi - lo));
+  }
+  return out;
 }
+let lastRaw = null;
 
 function match(ax) {
   const scored = ANIMALS.map(a => {
@@ -290,8 +313,10 @@ function renderAxes() {
   const el = $('axes'); el.innerHTML = '';
   for (const k in AX) {
     const v = AX[k];
+    const rawTxt = lastRaw ? `<span style="color:#5c6478">raw ${lastRaw[k].toFixed(3)}</span> ` : '';
+    const edge = (v <= 0.001 || v >= 0.999) ? ' ⚠' : '';   // 구간 밖으로 눌린 축은 보정 대상
     el.insertAdjacentHTML('beforeend',
-      `<div class="k">${AXIS_LABEL[k]}</div><div class="v">${v.toFixed(2)}</div>
+      `<div class="k">${AXIS_LABEL[k]}${edge}</div><div class="v">${rawTxt}${v.toFixed(2)}</div>
        <div class="bar"><i style="width:${(v*100).toFixed(0)}%"></i></div>`);
   }
 }
@@ -484,6 +509,50 @@ $('mirror').onclick = async () => {
     requestAnimationFrame(frame);
   })();
   log('표정 미러링 — 눈 감기·입 벌리기·미소를 따라합니다');
+  $('rec').disabled = false;
+};
+
+// ---- GIF 녹화 (미러링 화면 3초) : 공유용 ----
+// gif.js(MIT). 워커로 인코딩해서 UI가 안 멈춘다.
+$('rec').onclick = async () => {
+  if (!mirroring) { log('먼저 표정 미러링을 켜세요'); return; }
+  const btn = $('rec'); btn.disabled = true;
+  const SIZE = 360, FPS = 10, SEC = 3;
+  try {
+    if (!window.GIF) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js';
+        s.onload = res; s.onerror = () => rej(new Error('gif.js 로드 실패'));
+        document.head.appendChild(s);
+      });
+    }
+    const gif = new window.GIF({
+      workers: 2, quality: 12, width: SIZE, height: SIZE,
+      workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+    });
+    const tmp = document.createElement('canvas'); tmp.width = tmp.height = SIZE;
+    const tctx = tmp.getContext('2d');
+    const total = FPS * SEC;
+    for (let i = 0; i < total; i++) {
+      btn.textContent = `🎞 녹화중 ${i+1}/${total}`;
+      tctx.drawImage(cv, 0, 0, SIZE, SIZE);
+      gif.addFrame(tctx, { copy: true, delay: 1000/FPS });
+      await new Promise(r => setTimeout(r, 1000/FPS));
+    }
+    btn.textContent = '🎞 인코딩중…';
+    const blob = await new Promise(res => { gif.on('finished', res); gif.render(); });
+    const url = URL.createObjectURL(blob);
+    $('gifOut').innerHTML =
+      `<div class="hint">GIF ${(blob.size/1024).toFixed(0)}KB — 길게 눌러 저장하거나 아래 버튼</div>
+       <img src="${url}" style="width:100%;border-radius:12px;margin-top:6px">
+       <a class="btn sec" style="display:block;text-align:center;text-decoration:none"
+          href="${url}" download="animalface.gif">⬇ GIF 저장</a>`;
+    log(`GIF 완료 ${(blob.size/1024).toFixed(0)}KB`);
+  } catch (e) {
+    log('GIF 실패: ' + e.message);
+  }
+  btn.textContent = '🎞 GIF 녹화 (3초)'; btn.disabled = false;
 };
 </script>
 </body>
