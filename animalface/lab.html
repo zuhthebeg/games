@@ -510,6 +510,110 @@ function drawEyelid(dst, img, b, W, H, amount) {
   dst.restore();
 }
 
+/* ---- WebGL 워프 ----
+   캔버스 2D 방식은 "잘라낸 조각을 원본 위에 다시 얹는" 구조라 원본 눈·입이 밑에 남는다(겹침).
+   여기서는 출력 픽셀마다 원본의 어느 지점을 읽을지(uv)만 옮긴다 → 복제가 원리상 없고 경계도 안 생긴다. */
+const GLW = (() => { try {
+  const cvs = $('gl');
+  const gl = cvs.getContext('webgl', { premultipliedAlpha:false, antialias:true });
+  if (!gl) return null;
+  const VS = `attribute vec2 p; varying vec2 vUv;
+    void main(){ vUv = vec2(p.x*0.5+0.5, 0.5-p.y*0.5); gl_Position = vec4(p,0.0,1.0); }`;
+  const FS = `precision highp float;
+    varying vec2 vUv; uniform sampler2D tex;
+    uniform vec4 eyeL, eyeR, mouth;              // cx, cy, rx, ry (이미지 비율)
+    uniform float blink, jaw, smile, brow;
+    float fall(vec2 uv, vec4 b){
+      return 1.0 - smoothstep(0.55, 1.0, length((uv - b.xy) / b.zw));
+    }
+    vec2 eyeWarp(vec2 uv, vec4 b){
+      float w = fall(uv, b); if (w <= 0.0) return vec2(0.0);
+      // 눈꺼풀 = 위쪽 털을 아래로 "평행이동"시킨다.
+      // 압축/스트레치 방식은 얇은 띠를 늘려 채우느라 세로 줄무늬가 생겼다(실측 확인).
+      // 평행이동은 falloff 경사 자체가 눈을 눌러줘서 줄무늬 없이 감긴다.
+      // 변위는 falloff 반경(b.w)보다 커지면 안 된다 — 넘는 순간 영향권 밖(이마·귀)을 끌어온다.
+      float dy = -(blink * 0.85 + brow * 0.25) * b.w;
+      return vec2(0.0, clamp(dy, -b.w, b.w)) * w;
+    }
+    vec2 mouthWarp(vec2 uv, vec4 b){
+      float w = fall(uv, b); if (w <= 0.0) return vec2(0.0);
+      float top = b.y - b.w * 0.55;              // 윗입술 고정
+      vec2 off = vec2(0.0);
+      if (uv.y > top) off.y = (top + (uv.y - top) / (1.0 + jaw * 1.50)) - uv.y;
+      off.x = (b.x + (uv.x - b.x) / (1.0 + smile * 0.45)) - uv.x;
+      off.y += smile * b.w * 0.35 * smoothstep(0.2, 1.0, abs(uv.x - b.x) / b.z);
+      return off * w;
+    }
+    void main(){
+      vec2 uv = vUv + eyeWarp(vUv, eyeL) + eyeWarp(vUv, eyeR) + mouthWarp(vUv, mouth);
+      gl_FragColor = texture2D(tex, clamp(uv, 0.0, 1.0));
+    }`;
+  const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o);
+    if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+  const prog = gl.createProgram();
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, 'p');
+  gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const U = n => gl.getUniformLocation(prog, n);
+  const u = { eyeL:U('eyeL'), eyeR:U('eyeR'), mouth:U('mouth'),
+              blink:U('blink'), jaw:U('jaw'), smile:U('smile'), brow:U('brow') };
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  let texId = null;
+  // 박스[x,y,w,h] → 중심+반경. 반경을 넉넉히 잡아야 falloff가 부드럽게 사라진다.
+  // 박스[x,y,w,h] → 중심 + '반경'. w/h를 그대로 반경으로 넘기면 영향권이 2배가 돼
+  // 눈 워프가 이마·귀까지 끌어온다(실측으로 잡은 버그). 반드시 절반으로 나눌 것.
+  const box = b => [b[0]+b[2]/2, b[1]+b[3]/2, b[2]/2*1.15, b[3]/2*1.6];
+  return {
+    setImage(img, id) {
+      if (texId === id) return;
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      texId = id;
+    },
+    render(W, H, boxes, s) {
+      if (cvs.width !== W || cvs.height !== H) { cvs.width = W; cvs.height = H; }
+      gl.viewport(0, 0, W, H);
+      gl.uniform4fv(u.eyeL, box(boxes.eyeL));
+      gl.uniform4fv(u.eyeR, box(boxes.eyeR));
+      gl.uniform4fv(u.mouth, box(boxes.mouth));
+      gl.uniform1f(u.blink, s.blink); gl.uniform1f(u.jaw, s.jaw);
+      gl.uniform1f(u.smile, s.smile); gl.uniform1f(u.brow, s.brow);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      return cvs;
+    }
+  };
+} catch (e) { console.warn('WebGL warp 불가, 2D 폴백:', e); return null; } })();
+
+/* 워프 튜닝/검증용: ?warp=blink,jaw,smile,brow 로 카메라 없이 고정값 렌더.
+   예) lab.html?warp=0.9,0,0,0  (눈 감김) / ?warp=0,0.8,0.5,0 (입 벌림+미소) */
+(function debugWarp(){
+  const q = new URLSearchParams(location.search).get('warp');
+  if (!q || !GLW) return;
+  const [blink=0, jaw=0, smile=0, brow=0] = q.split(',').map(Number);
+  const A = ANIMALS[0], img = animImgs[A.id];
+  const go = () => {
+    const W = cv.width, H = cv.height;
+    GLW.setImage(img, A.id);
+    ctx.clearRect(0,0,W,H);
+    ctx.drawImage(GLW.render(W, H, A.boxes, { blink, jaw, smile, brow }), 0, 0);
+    document.body.dataset.warpReady = '1';
+    log(`warp debug blink=${blink} jaw=${jaw} smile=${smile} brow=${brow}`);
+  };
+  img.complete ? go() : img.onload = go;
+})();
+
 // ---- 표정 미러링 (blendshapes → 동물 눈/입 변형) ----
 let mirroring = false;
 $('cam').onclick = async () => {
@@ -550,32 +654,24 @@ $('mirror').onclick = async () => {
         const jaw = get('jawOpen');
         const smile = Math.max(get('mouthSmileLeft'), get('mouthSmileRight'));
         const brow = Math.max(get('browOuterUpLeft'), get('browOuterUpRight'));
-        // 동물 이미지 위에 눈/입 영역만 변형해서 다시 그림 (2.5D 퍼펫)
         const W = cv.width, H = cv.height;
         ctx.clearRect(0,0,W,H);
-        ctx.drawImage(aimg, 0, 0, W, H);
-        const IW = aimg.naturalWidth || aimg.width, IH = aimg.naturalHeight || aimg.height;
-        // 눈썹 올림: 눈 영역을 아주 살짝 위로 (페더 처리라 경계 안 보임)
-        if (brow > 0.08) {
-          [bx.eyeL, bx.eyeR].forEach(b => {
-            drawFeathered(ctx, aimg,
-              b[0]*IW, b[1]*IH, b[2]*IW, b[3]*IH,
-              b[0]*W, b[1]*H - brow*0.018*H, b[2]*W, b[3]*H, 0.45);
-          });
-        }
-        // 눈 감기: 눈꺼풀을 내린다 (찌그러뜨리지 않음)
-        drawEyelid(ctx, aimg, bx.eyeL, W, H, blink);
-        drawEyelid(ctx, aimg, bx.eyeR, W, H, blink);
-        // 입: 위쪽을 고정하고 아래로만 늘린다(턱이 내려가는 방향) + 페더
-        if (jaw > 0.04 || smile > 0.15) {
-          const b = bx.mouth;
-          const dw = b[2]*W*(1 + smile*0.14);
-          const dh = b[3]*H*(1 + jaw*0.85);
-          const dx = b[0]*W - (dw - b[2]*W)/2;
-          const dy = b[1]*H;                        // 윗입술 고정
-          drawFeathered(ctx, aimg,
-            b[0]*IW, b[1]*IH, b[2]*IW, b[3]*IH,
-            dx, dy, dw, dh, 0.38);
+        if (GLW && aimg.complete) {
+          // 워프: 원본을 통째로 변형해서 그린다 → 원본 눈·입이 밑에 남지 않는다
+          GLW.setImage(aimg, A.id);
+          ctx.drawImage(GLW.render(W, H, bx, { blink, jaw, smile, brow }), 0, 0);
+        } else {
+          // 폴백(WebGL 없는 기기): 조각 덧그리기 — 겹침이 조금 보인다
+          ctx.drawImage(aimg, 0, 0, W, H);
+          const IW = aimg.naturalWidth || aimg.width, IH = aimg.naturalHeight || aimg.height;
+          drawEyelid(ctx, aimg, bx.eyeL, W, H, blink);
+          drawEyelid(ctx, aimg, bx.eyeR, W, H, blink);
+          if (jaw > 0.04 || smile > 0.15) {
+            const b = bx.mouth;
+            const dw = b[2]*W*(1 + smile*0.14), dh = b[3]*H*(1 + jaw*0.85);
+            drawFeathered(ctx, aimg, b[0]*IW, b[1]*IH, b[2]*IW, b[3]*IH,
+              b[0]*W - (dw - b[2]*W)/2, b[1]*H, dw, dh, 0.38);
+          }
         }
         ctx.fillStyle='rgba(233,236,243,.65)'; ctx.font=`600 ${W*0.035}px ui-monospace,monospace`; ctx.textAlign='left';
         ctx.fillText(`blink ${blink.toFixed(2)}  jaw ${jaw.toFixed(2)}  smile ${smile.toFixed(2)}`, W*0.04, H*0.06);
