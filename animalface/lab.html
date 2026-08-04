@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>동물상 판독기 — 기술 데모 (lab)</title>
+<meta name="robots" content="noindex" />
+<style>
+:root{
+  --bg:#0f1117; --panel:#171a23; --panel2:#1f2430; --line:#2a3040;
+  --ink:#e9ecf3; --mut:#8b93a7; --lime:#c8f051; --pink:#ff6b9d; --cyan:#4fd6e8;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+     line-height:1.6;padding:16px;padding-bottom:60px}
+.wrap{max-width:520px;margin:0 auto}
+h1{font-size:1.15rem;font-weight:700;margin-bottom:.2rem}
+.sub{color:var(--mut);font-size:.82rem;margin-bottom:1rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{font-size:.9rem;font-weight:700;color:var(--lime);margin-bottom:.5rem;display:flex;gap:.4rem;align-items:center}
+.card h2 span.n{font-size:.7rem;color:var(--mut);font-weight:500}
+.btn{background:var(--lime);color:#0f1117;border:none;border-radius:10px;padding:11px 16px;
+     font-size:.9rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.sec{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+.stage{position:relative;width:100%;aspect-ratio:1;background:#0b0d13;border-radius:12px;overflow:hidden}
+canvas.layer{position:absolute;inset:0;width:100%;height:100%}
+.hint{font-size:.75rem;color:var(--mut);margin-top:6px}
+.axes{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:.78rem;margin-top:6px}
+.axes .k{color:var(--mut)}
+.axes .v{font-family:ui-monospace,monospace;color:var(--cyan);text-align:right}
+.bar{height:5px;background:var(--panel2);border-radius:3px;overflow:hidden;grid-column:1/-1;margin-bottom:4px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--lime))}
+.badge{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:20px;background:var(--panel2);color:var(--mut);margin-left:auto}
+.badge.ok{background:rgba(200,240,81,.15);color:var(--lime)}
+.badge.no{background:rgba(255,107,157,.15);color:var(--pink)}
+.res{display:flex;gap:12px;align-items:center;margin-top:8px}
+.res img{width:84px;height:84px;border-radius:12px;object-fit:cover;background:var(--panel2)}
+.res .nm{font-weight:700;font-size:1rem}
+.res .pc{font-size:1.6rem;font-weight:800;color:var(--lime);line-height:1}
+.res .why{font-size:.76rem;color:var(--mut);margin-top:2px}
+.row{display:flex;gap:8px}
+.row .btn{margin-top:8px}
+video{display:none}
+.log{font-family:ui-monospace,monospace;font-size:.7rem;color:var(--mut);white-space:pre-wrap;
+     max-height:80px;overflow:auto;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🦊 동물상 판독기 — 기술 데모</h1>
+  <div class="sub">코어 기술만 검증하는 실험 페이지. 디자인·동물 데이터는 아직 없음.</div>
+
+  <div class="card">
+    <h2><span class="n">STEP 1</span> 사진 넣기 <span class="badge" id="mpBadge">모델 로딩…</span></h2>
+    <input type="file" id="file" accept="image/*" style="display:none">
+    <div class="row">
+      <button class="btn" id="pick" disabled>📷 사진 선택</button>
+      <button class="btn sec" id="cam" disabled>🎥 카메라</button>
+    </div>
+    <div class="hint">사진은 이 기기 밖으로 나가지 않습니다. (네트워크 탭에 업로드 없음)</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">STEP 2</span> 분석 & 트랜지션</h2>
+    <div class="stage">
+      <canvas class="layer" id="cv"></canvas>
+    </div>
+    <video id="vid" playsinline muted></video>
+    <div class="row">
+      <button class="btn" id="run" disabled>▶ 스캔 → 동물 트랜지션</button>
+    </div>
+    <div class="row">
+      <button class="btn sec" id="rot" disabled>🧊 3D 점구름 회전</button>
+      <button class="btn sec" id="mirror" disabled>😀 표정 미러링</button>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">STEP 3</span> 특징 축 8개 (실측)</h2>
+    <div class="axes" id="axes"><div class="k">사진을 넣으면 계산됩니다</div><div class="v">—</div></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">STEP 4</span> 매칭 결과</h2>
+    <div id="result"><div class="hint">아직 없음</div></div>
+  </div>
+</div>
+
+<script type="module">
+import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18";
+
+const $ = id => document.getElementById(id);
+const logEl = $('log');
+const log = m => { logEl.textContent = (m + "\n" + logEl.textContent).slice(0, 600); };
+
+// ---- 데모용 동물 2종 (본편은 animals.json으로 분리) ----
+const ANIMALS = [
+  { id:'fox_ugly', img:'img/fox_ugly.webp', name:'허당 여우',
+    axes:{eyeSize:.62,eyeSlant:.55,eyeGap:.55,faceLength:.42,jawSharp:.62,cheek:.5,noseWidth:.42,lipThick:.55},
+    anchors:{eyeL:[.40,.40],eyeR:[.62,.40],nose:[.51,.50],mouth:[.51,.57]},
+    boxes:{eyeL:[.32,.34,.16,.12],eyeR:[.54,.34,.16,.12],mouth:[.36,.50,.30,.14]} },
+  { id:'fox_pretty', img:'img/fox_pretty.webp', name:'단정한 여우',
+    axes:{eyeSize:.72,eyeSlant:.68,eyeGap:.48,faceLength:.38,jawSharp:.78,cheek:.42,noseWidth:.32,lipThick:.35},
+    anchors:{eyeL:[.40,.42],eyeR:[.60,.42],nose:[.50,.50],mouth:[.50,.55]},
+    boxes:{eyeL:[.32,.36,.16,.12],eyeR:[.52,.36,.16,.12],mouth:[.38,.49,.26,.12]} },
+];
+const AXIS_LABEL = { eyeSize:'눈 크기', eyeSlant:'눈꼬리 올라감', eyeGap:'미간 넓이',
+  faceLength:'얼굴 길이', jawSharp:'턱 갸름함', cheek:'광대 발달', noseWidth:'코 넓이', lipThick:'입술 두께' };
+const AXIS_W = { eyeSize:1.2, eyeSlant:1.3, eyeGap:1.0, faceLength:1.4, jawSharp:1.2, cheek:1.0, noseWidth:.8, lipThick:.8 };
+
+// ---- MediaPipe ----
+let landmarker = null, mode = 'IMAGE';
+(async () => {
+  try {
+    const fs = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm");
+    landmarker = await FaceLandmarker.createFromOptions(fs, {
+      baseOptions: { modelAssetPath:
+        "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+        delegate: "GPU" },
+      outputFaceBlendshapes: true,
+      outputFacialTransformationMatrixes: true,
+      runningMode: "IMAGE", numFaces: 1
+    });
+    $('mpBadge').textContent = '준비됨 · 온디바이스';
+    $('mpBadge').className = 'badge ok';
+    $('pick').disabled = false; $('cam').disabled = false;
+    log('FaceLandmarker 로드 완료');
+  } catch (e) {
+    $('mpBadge').textContent = '로드 실패'; $('mpBadge').className = 'badge no';
+    log('ERR ' + e.message);
+  }
+})();
+
+// ---- 캔버스 ----
+const cv = $('cv'), ctx = cv.getContext('2d');
+function fit() { const r = cv.getBoundingClientRect(); const d = Math.min(devicePixelRatio||1, 2);
+  cv.width = r.width*d; cv.height = r.height*d; }
+addEventListener('resize', fit); fit();
+
+let srcImg = null, LM = null, BS = null, AX = null, best = null;
+const animImgs = {};
+ANIMALS.forEach(a => { const im = new Image(); im.src = a.img; animImgs[a.id] = im; });
+
+// ---- 8축 계산 (본편 axes.js로 분리) ----
+// MediaPipe FaceMesh 468 토폴로지 인덱스
+const P = { // 자주 쓰는 랜드마크
+  eyeL_out:33, eyeL_in:133, eyeL_up:159, eyeL_dn:145,
+  eyeR_in:362, eyeR_out:263, eyeR_up:386, eyeR_dn:374,
+  cheekL:234, cheekR:454, chin:152, forehead:10,
+  noseL:129, noseR:358, noseTip:1,
+  lipUp:13, lipDn:14, lipL:61, lipR:291,
+  jawL:172, jawR:397
+};
+const d2 = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+const clamp01 = v => Math.max(0, Math.min(1, v));
+
+function computeAxes(lm) {
+  const g = i => lm[i];
+  const faceW = d2(g(P.cheekL), g(P.cheekR));          // 정규화 기준
+  const faceH = d2(g(P.forehead), g(P.chin));
+  const eyeH = (d2(g(P.eyeL_up),g(P.eyeL_dn)) + d2(g(P.eyeR_up),g(P.eyeR_dn))) / 2;
+  const slantL = (g(P.eyeL_in).y - g(P.eyeL_out).y);   // 바깥이 위면 +
+  const slantR = (g(P.eyeR_in).y - g(P.eyeR_out).y);
+  const gap = d2(g(P.eyeL_in), g(P.eyeR_in));
+  const jawW = d2(g(P.jawL), g(P.jawR));
+  const noseW = d2(g(P.noseL), g(P.noseR));
+  const lipH = d2(g(P.lipUp), g(P.lipDn));
+  const lipW = d2(g(P.lipL), g(P.lipR));
+  // 각 축을 사람 얼굴의 통상 범위로 0~1 스케일
+  return {
+    eyeSize:   clamp01((eyeH/faceW - 0.035) / 0.045),
+    eyeSlant:  clamp01(((slantL+slantR)/2 / faceW + 0.02) / 0.06),
+    eyeGap:    clamp01((gap/faceW - 0.22) / 0.14),
+    faceLength:clamp01((faceH/faceW - 1.15) / 0.5),
+    jawSharp:  clamp01((1 - jawW/faceW - 0.05) / 0.25),
+    cheek:     clamp01((faceW/jawW - 1.02) / 0.28),
+    noseWidth: clamp01((noseW/faceW - 0.22) / 0.16),
+    lipThick:  clamp01((lipH/lipW - 0.12) / 0.28),
+  };
+}
+
+function match(ax) {
+  const scored = ANIMALS.map(a => {
+    let s = 0, wsum = 0;
+    for (const k in ax) { const w = AXIS_W[k]||1; s += w*Math.pow(ax[k]-a.axes[k],2); wsum += w; }
+    return { a, dist: Math.sqrt(s/wsum) };
+  }).sort((x,y) => x.dist - y.dist);
+  // 상대 스케일링: 1위가 75~95%에 오도록 (절대거리 쓰면 전부 40%대라 재미없음)
+  const top = scored[0].dist;
+  return scored.map((s,i) => ({ ...s, pct: Math.round(95 - (s.dist-top)*90 - i*1.5) }));
+}
+
+function whyText(ax, animal) {
+  const diffs = Object.keys(ax).map(k => ({ k, gap: Math.abs(ax[k]-animal.axes[k])*(AXIS_W[k]||1) }))
+    .sort((a,b) => a.gap - b.gap).slice(0,2);
+  return diffs.map(d => {
+    const v = ax[d.k];
+    const hi = v > .55, lo = v < .45;
+    const L = AXIS_LABEL[d.k];
+    return L + (hi ? ' 큼' : lo ? ' 작음' : ' 보통');
+  }).join(' · ');
+}
+
+// ---- 입력 ----
+$('pick').onclick = () => $('file').click();
+$('file').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const im = new Image();
+  im.onload = () => { srcImg = im; drawBase(); detect(); };
+  im.src = URL.createObjectURL(f);
+};
+
+function drawBase(alpha = 1) {
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if (!srcImg) return;
+  const s = Math.max(cv.width/srcImg.width, cv.height/srcImg.height);
+  const w = srcImg.width*s, h = srcImg.height*s;
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(srcImg, (cv.width-w)/2, (cv.height-h)/2, w, h);
+  ctx.globalAlpha = 1;
+  return { x:(cv.width-w)/2, y:(cv.height-h)/2, w, h };
+}
+let baseBox = null;
+const toPx = p => ({ x: baseBox.x + p.x*baseBox.w, y: baseBox.y + p.y*baseBox.h, z: p.z });
+
+function detect() {
+  if (!landmarker || !srcImg) return;
+  if (mode !== 'IMAGE') { landmarker.setOptions({ runningMode:'IMAGE' }); mode = 'IMAGE'; }
+  const t0 = performance.now();
+  const r = landmarker.detect(srcImg);
+  if (!r.faceLandmarks?.length) { log('얼굴을 못 찾음'); return; }
+  LM = r.faceLandmarks[0];
+  BS = r.faceBlendshapes?.[0]?.categories || null;
+  AX = computeAxes(LM);
+  baseBox = drawBase();
+  log(`검출 ${Math.round(performance.now()-t0)}ms · 랜드마크 ${LM.length} · 블렌드셰이프 ${BS?BS.length:0}`);
+  renderAxes();
+  const m = match(AX); best = m[0];
+  renderResult(m);
+  $('run').disabled = false; $('rot').disabled = false; $('mirror').disabled = false;
+  drawDots(1);
+}
+
+function renderAxes() {
+  const el = $('axes'); el.innerHTML = '';
+  for (const k in AX) {
+    const v = AX[k];
+    el.insertAdjacentHTML('beforeend',
+      `<div class="k">${AXIS_LABEL[k]}</div><div class="v">${v.toFixed(2)}</div>
+       <div class="bar"><i style="width:${(v*100).toFixed(0)}%"></i></div>`);
+  }
+}
+function renderResult(m) {
+  const b = m[0];
+  $('result').innerHTML =
+    `<div class="res">
+       <img src="${b.a.img}" alt="">
+       <div><div class="nm">${b.a.name}</div>
+         <div class="pc">${b.pct}%</div>
+         <div class="why">${whyText(AX, b.a)}</div></div>
+     </div>
+     <div class="hint">2위 ${m[1].a.name} ${m[1].pct}% — 데모라 동물 2종만 있음</div>`;
+}
+
+// ---- 점 그리기 ----
+const SAMPLE = []; for (let i=0;i<468;i+=4) SAMPLE.push(i);   // 화면엔 간추려 그림
+function drawDots(prog, color='#c8f051') {
+  if (!LM || !baseBox) return;
+  const n = Math.floor(SAMPLE.length * prog);
+  ctx.fillStyle = color;
+  for (let i=0;i<n;i++) {
+    const p = toPx(LM[SAMPLE[i]]);
+    ctx.beginPath(); ctx.arc(p.x, p.y, 2.0, 0, 6.283); ctx.fill();
+  }
+}
+
+// ---- STEP 2: 스캔 → 동물 트랜지션 ----
+const ease = t => t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+$('run').onclick = async () => {
+  if (!LM || !best) return;
+  $('run').disabled = true;
+  const A = best.a, aimg = animImgs[A.id];
+  // 동물 이미지 안에서 각 점의 목표 위치: 눈/코/입 앵커를 기준으로 얼굴 전체를 어파인 매핑
+  const srcAnchor = { eyeL: toPx(LM[P.eyeL_out]), eyeR: toPx(LM[P.eyeR_out]), mouth: toPx(LM[P.lipDn]) };
+  const dstAnchor = {
+    eyeL: { x: baseBox.x + A.anchors.eyeL[0]*baseBox.w, y: baseBox.y + A.anchors.eyeL[1]*baseBox.h },
+    eyeR: { x: baseBox.x + A.anchors.eyeR[0]*baseBox.w, y: baseBox.y + A.anchors.eyeR[1]*baseBox.h },
+    mouth:{ x: baseBox.x + A.anchors.mouth[0]*baseBox.w, y: baseBox.y + A.anchors.mouth[1]*baseBox.h },
+  };
+  const sw = srcAnchor.eyeR.x - srcAnchor.eyeL.x, dw = dstAnchor.eyeR.x - dstAnchor.eyeL.x;
+  const k = dw/sw;
+  const targets = SAMPLE.map(i => {
+    const p = toPx(LM[i]);
+    return { x: dstAnchor.eyeL.x + (p.x - srcAnchor.eyeL.x)*k,
+             y: dstAnchor.eyeL.y + (p.y - srcAnchor.eyeL.y)*k };
+  });
+  const starts = SAMPLE.map(i => toPx(LM[i]));
+
+  const T1 = 800, T2 = 400, T3 = 900, T4 = 600;
+  const t0 = performance.now();
+  await new Promise(res => {
+    (function frame(){
+      const t = performance.now() - t0;
+      if (t < T1) {                                    // 점 순차 등장
+        baseBox = drawBase(); drawDots(t/T1);
+      } else if (t < T1+T2) {                          // 메시 라인
+        baseBox = drawBase(); drawDots(1);
+        ctx.strokeStyle = 'rgba(200,240,81,.35)'; ctx.lineWidth = 1;
+        const a = (t-T1)/T2;
+        for (let i=0;i<SAMPLE.length*a;i+=3) {
+          const p1 = starts[i], p2 = starts[(i+7)%starts.length];
+          ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+        }
+      } else if (t < T1+T2+T3) {                       // 점이 동물 위치로 이동
+        const a = ease((t-T1-T2)/T3);
+        baseBox = drawBase(1-a*0.85);
+        ctx.fillStyle = '#c8f051';
+        starts.forEach((s,i) => {
+          const x = s.x + (targets[i].x-s.x)*a, y = s.y + (targets[i].y-s.y)*a;
+          ctx.beginPath(); ctx.arc(x,y,2.0,0,6.283); ctx.fill();
+        });
+      } else if (t < T1+T2+T3+T4) {                    // 동물 리빌
+        const a = (t-T1-T2-T3)/T4;
+        ctx.clearRect(0,0,cv.width,cv.height);
+        baseBox = drawBase(0.15*(1-a));
+        ctx.globalAlpha = a;
+        ctx.drawImage(aimg, 0, 0, cv.width, cv.height);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#c8f051';
+        starts.forEach((s,i) => { ctx.globalAlpha = 1-a;
+          ctx.beginPath(); ctx.arc(targets[i].x,targets[i].y,2.0,0,6.283); ctx.fill(); });
+        ctx.globalAlpha = 1;
+        // % 카운트업
+        ctx.font = `800 ${cv.width*0.13}px system-ui`; ctx.textAlign='center';
+        ctx.fillStyle = 'rgba(15,17,23,.75)';
+        ctx.fillText(Math.round(best.pct*a)+'%', cv.width/2, cv.height*0.93);
+      } else { res(); return; }
+      requestAnimationFrame(frame);
+    })();
+  });
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.drawImage(aimg, 0, 0, cv.width, cv.height);
+  $('run').disabled = false;
+  log('트랜지션 완료 (2.7초)');
+};
+
+// ---- 3D 점구름 회전 (랜드마크 z 사용, 추가 모델 0MB) ----
+let rotating = false;
+$('rot').onclick = () => {
+  if (!LM) return;
+  rotating = !rotating;
+  if (!rotating) return;
+  const t0 = performance.now();
+  (function frame(){
+    if (!rotating) return;
+    const t = (performance.now()-t0)/1000;
+    const ang = Math.sin(t*0.9) * 0.75;
+    const ca = Math.cos(ang), sa = Math.sin(ang);
+    ctx.fillStyle = '#0b0d13'; ctx.fillRect(0,0,cv.width,cv.height);
+    const cx = cv.width/2, cy = cv.height/2, S = cv.width;
+    for (let i=0;i<468;i+=2) {
+      const p = LM[i];
+      const x = (p.x-0.5), y = (p.y-0.5), z = (p.z||0);
+      const rx = x*ca - z*sa, rz = x*sa + z*ca;
+      const persp = 1/(1 + rz*1.2);
+      const px = cx + rx*S*persp, py = cy + y*S*persp;
+      const shade = Math.max(0, Math.min(1, 0.5 - rz*2));
+      ctx.fillStyle = `rgba(79,214,232,${0.25+shade*0.75})`;
+      ctx.beginPath(); ctx.arc(px, py, 1.6*persp, 0, 6.283); ctx.fill();
+    }
+    requestAnimationFrame(frame);
+  })();
+  log('3D 점구름 — 랜드마크 z좌표만으로 회전 (Depth 모델 없이)');
+};
+
+// ---- 표정 미러링 (blendshapes → 동물 눈/입 변형) ----
+let mirroring = false;
+$('cam').onclick = async () => {
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:640 } });
+    const v = $('vid'); v.srcObject = st; await v.play();
+    log('카메라 시작 — 표정 미러링 버튼을 누르세요');
+    $('mirror').disabled = false;
+    // 카메라 첫 프레임으로 분석도 한 번
+    setTimeout(() => {
+      const c = document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
+      c.getContext('2d').drawImage(v,0,0);
+      const im = new Image(); im.onload = () => { srcImg = im; drawBase(); detect(); }; im.src = c.toDataURL();
+    }, 600);
+  } catch(e) { log('카메라 실패: ' + e.message); }
+};
+
+$('mirror').onclick = async () => {
+  const v = $('vid');
+  if (!v.srcObject) { log('먼저 카메라를 켜세요'); return; }
+  mirroring = !mirroring;
+  $('mirror').textContent = mirroring ? '⏹ 미러링 중지' : '😀 표정 미러링';
+  if (!mirroring) return;
+  if (mode !== 'VIDEO') { landmarker.setOptions({ runningMode:'VIDEO' }); mode = 'VIDEO'; }
+  const A = best ? best.a : ANIMALS[0], aimg = animImgs[A.id];
+  const bx = A.boxes;
+  let last = -1;
+  (function frame(){
+    if (!mirroring) return;
+    const now = performance.now();
+    if (v.currentTime !== last) {
+      last = v.currentTime;
+      const r = landmarker.detectForVideo(v, now);
+      const cats = r.faceBlendshapes?.[0]?.categories;
+      if (cats) {
+        const get = n => (cats.find(c => c.categoryName === n)?.score) || 0;
+        const blink = Math.max(get('eyeBlinkLeft'), get('eyeBlinkRight'));
+        const jaw = get('jawOpen');
+        const smile = Math.max(get('mouthSmileLeft'), get('mouthSmileRight'));
+        const brow = Math.max(get('browOuterUpLeft'), get('browOuterUpRight'));
+        // 동물 이미지 위에 눈/입 영역만 변형해서 다시 그림 (2.5D 퍼펫)
+        const W = cv.width, H = cv.height;
+        ctx.clearRect(0,0,W,H);
+        ctx.drawImage(aimg, 0, 0, W, H);
+        // 눈: blink 만큼 세로 압축 + brow 만큼 위로
+        [bx.eyeL, bx.eyeR].forEach(b => {
+          const sx=b[0]*aimg.width, sy=b[1]*aimg.height, sw=b[2]*aimg.width, sh=b[3]*aimg.height;
+          const dx=b[0]*W, dw=b[2]*W, dh=b[3]*H*(1-blink*0.85);
+          const dy=b[1]*H + (b[3]*H-dh)/2 - brow*0.02*H;
+          ctx.drawImage(aimg, sx,sy,sw,sh, dx,dy,dw,dh);
+        });
+        // 입: jawOpen 만큼 세로 확대, smile 만큼 가로 확대
+        {
+          const b=bx.mouth;
+          const sx=b[0]*aimg.width, sy=b[1]*aimg.height, sw=b[2]*aimg.width, sh=b[3]*aimg.height;
+          const dw=b[2]*W*(1+smile*0.22), dh=b[3]*H*(1+jaw*1.4);
+          const dx=b[0]*W-(dw-b[2]*W)/2, dy=b[1]*H;
+          ctx.drawImage(aimg, sx,sy,sw,sh, dx,dy,dw,dh);
+        }
+        ctx.fillStyle='rgba(233,236,243,.65)'; ctx.font=`600 ${W*0.035}px ui-monospace,monospace`; ctx.textAlign='left';
+        ctx.fillText(`blink ${blink.toFixed(2)}  jaw ${jaw.toFixed(2)}  smile ${smile.toFixed(2)}`, W*0.04, H*0.06);
+      }
+    }
+    requestAnimationFrame(frame);
+  })();
+  log('표정 미러링 — 눈 감기·입 벌리기·미소를 따라합니다');
+};
+</script>
+</body>
+</html>
