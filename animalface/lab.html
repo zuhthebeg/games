@@ -122,7 +122,11 @@ let landmarker = null, mode = 'IMAGE';
         delegate: "GPU" },
       outputFaceBlendshapes: true,
       outputFacialTransformationMatrixes: true,
-      runningMode: "IMAGE", numFaces: 1
+      runningMode: "IMAGE", numFaces: 1,
+      // 기본값(0.5)은 너무 관대해서 얼굴 아닌 것에도 랜드마크를 찍는다 → 조임
+      minFaceDetectionConfidence: 0.7,
+      minFacePresenceConfidence: 0.7,
+      minTrackingConfidence: 0.7
     });
     $('mpBadge').textContent = '준비됨 · 온디바이스';
     $('mpBadge').className = 'badge ok';
@@ -226,13 +230,51 @@ function drawBase(alpha = 1) {
 let baseBox = null;
 const toPx = p => ({ x: baseBox.x + p.x*baseBox.w, y: baseBox.y + p.y*baseBox.h, z: p.z });
 
+// 검출은 됐지만 "진짜 사람 얼굴인가" 재검증.
+// MediaPipe는 동물·그림·패턴에도 랜드마크를 억지로 맞추는 경우가 있어서
+// 기하학적으로 말이 되는지 3가지를 본다. 하나라도 어긋나면 결과를 내지 않는다.
+function faceQuality(lm) {
+  const g = i => lm[i];
+  const faceW = d2(g(P.cheekL), g(P.cheekR));
+  const faceH = d2(g(P.forehead), g(P.chin));
+  if (faceW < 0.06) return { ok:false, reason:'얼굴이 너무 작아요 — 더 가까이 찍은 사진으로' };
+  const ratio = faceH / faceW;
+  if (ratio < 0.9 || ratio > 2.2) return { ok:false, reason:'얼굴 비율이 이상해요 — 정면 사진인지 확인해주세요' };
+  // 눈이 코보다 위, 입이 코보다 아래 — 기본 배치가 깨지면 오검출
+  const eyeY = (g(P.eyeL_up).y + g(P.eyeR_up).y)/2;
+  if (!(eyeY < g(P.noseTip).y && g(P.noseTip).y < g(P.lipDn).y)) {
+    return { ok:false, reason:'얼굴 구조를 인식하지 못했어요' };
+  }
+  // 좌우 눈 크기가 지나치게 다르면 심한 측면/오검출
+  const eL = d2(g(P.eyeL_up),g(P.eyeL_dn)), eR = d2(g(P.eyeR_up),g(P.eyeR_dn));
+  const asym = Math.abs(eL-eR) / Math.max(eL,eR,1e-6);
+  if (asym > 0.6) return { ok:false, reason:'고개를 돌린 사진이에요 — 정면으로 다시' };
+  return { ok:true };
+}
+
+function failFace(reason) {
+  LM = null; best = null;
+  $('run').disabled = true; $('rot').disabled = true;
+  baseBox = drawBase(0.35);
+  ctx.fillStyle = 'rgba(255,107,157,.95)';
+  ctx.textAlign = 'center';
+  ctx.font = `700 ${cv.width*0.05}px system-ui`;
+  ctx.fillText('✕ ' + reason, cv.width/2, cv.height/2);
+  $('axes').innerHTML = '<div class="k">얼굴 미검출 — 축 계산 안 함</div><div class="v">—</div>';
+  $('result').innerHTML = `<div class="hint" style="color:var(--pink)">${reason}<br>추측으로 결과를 만들지 않습니다.</div>`;
+  log('거부: ' + reason);
+}
+
 function detect() {
   if (!landmarker || !srcImg) return;
   if (mode !== 'IMAGE') { landmarker.setOptions({ runningMode:'IMAGE' }); mode = 'IMAGE'; }
   const t0 = performance.now();
   const r = landmarker.detect(srcImg);
-  if (!r.faceLandmarks?.length) { log('얼굴을 못 찾음'); return; }
-  LM = r.faceLandmarks[0];
+  if (!r.faceLandmarks?.length) { failFace('얼굴을 찾지 못했어요'); return; }
+  const cand = r.faceLandmarks[0];
+  const q = faceQuality(cand);
+  if (!q.ok) { failFace(q.reason); return; }
+  LM = cand;
   BS = r.faceBlendshapes?.[0]?.categories || null;
   AX = computeAxes(LM);
   baseBox = drawBase();
