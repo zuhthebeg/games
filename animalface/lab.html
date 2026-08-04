@@ -443,6 +443,72 @@ $('rot').onclick = () => {
   log('3D 점구름 — 랜드마크 z좌표만으로 회전 (Depth 모델 없이)');
 };
 
+// ---- 2.5D 퍼펫 유틸 ----
+// v1은 사각 영역을 잘라 늘려 덮었더니 경계선이 그대로 보였다(2026-08-05 cocy 지적).
+// → ① 타원 페더 마스크로 경계를 녹이고 ② 눈은 늘리는 대신 '눈꺼풀'을 내린다.
+const _fx = document.createElement('canvas');
+const _sampler = document.createElement('canvas');
+let _sctx = null, _sfor = null;
+
+function ensureSampler(img) {
+  if (_sfor === img) return;
+  _sampler.width = img.naturalWidth || img.width;
+  _sampler.height = img.naturalHeight || img.height;
+  _sctx = _sampler.getContext('2d', { willReadFrequently: true });
+  _sctx.drawImage(img, 0, 0);
+  _sfor = img;
+}
+/** 동물 그림에서 특정 지점의 색을 뽑는다(눈꺼풀을 주변 털색으로 칠하려고). */
+function sampleColor(img, nx, ny) {
+  try {
+    ensureSampler(img);
+    const x = Math.max(0, Math.min(_sampler.width-1, Math.round(nx*_sampler.width)));
+    const y = Math.max(0, Math.min(_sampler.height-1, Math.round(ny*_sampler.height)));
+    const d = _sctx.getImageData(x, y, 1, 1).data;
+    return `rgb(${d[0]},${d[1]},${d[2]})`;
+  } catch (e) { return '#d9772f'; }
+}
+/** 가장자리를 타원으로 페이드시켜 그린다 — 사각 패치 티가 안 나게. */
+function drawFeathered(dst, img, sx,sy,sw,sh, dx,dy,dw,dh, feather=0.35) {
+  const w = Math.max(2, Math.round(dw)), h = Math.max(2, Math.round(dh));
+  _fx.width = w; _fx.height = h;
+  const c = _fx.getContext('2d');
+  c.clearRect(0,0,w,h);
+  c.drawImage(img, sx,sy,sw,sh, 0,0,w,h);
+  c.globalCompositeOperation = 'destination-in';
+  c.save();
+  c.translate(w/2, h/2); c.scale(1, h/w);
+  const r = w/2;
+  const g = c.createRadialGradient(0,0,0, 0,0,r);
+  g.addColorStop(0, 'rgba(0,0,0,1)');
+  g.addColorStop(Math.max(0.01, 1-feather), 'rgba(0,0,0,1)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = g;
+  c.fillRect(-w, -h*2, w*2, h*4);
+  c.restore();
+  c.globalCompositeOperation = 'source-over';
+  dst.drawImage(_fx, dx, dy);
+}
+/** 눈 감기: 픽셀을 찌그러뜨리지 않고 눈 영역 안에서 털색 눈꺼풀을 내린다. */
+function drawEyelid(dst, img, b, W, H, amount) {
+  if (amount <= 0.02) return;
+  const cx = (b[0]+b[2]/2)*W, cy = (b[1]+b[3]/2)*H;
+  const rw = b[2]*W*0.60, rh = b[3]*H*0.62;
+  const lid = sampleColor(img, b[0]+b[2]/2, Math.max(0, b[1]-b[3]*0.45));
+  dst.save();
+  dst.beginPath();
+  dst.ellipse(cx, cy, rw, rh, 0, 0, 6.283);
+  dst.clip();
+  const top = cy - rh, span = rh*2*Math.min(1, amount*1.08);
+  const grad = dst.createLinearGradient(0, top, 0, top+span);
+  grad.addColorStop(0, lid);
+  grad.addColorStop(0.82, lid);
+  grad.addColorStop(1, lid.replace('rgb','rgba').replace(')', ',0)'));
+  dst.fillStyle = grad;
+  dst.fillRect(cx-rw, top, rw*2, span);
+  dst.restore();
+}
+
 // ---- 표정 미러링 (blendshapes → 동물 눈/입 변형) ----
 let mirroring = false;
 $('cam').onclick = async () => {
@@ -487,20 +553,28 @@ $('mirror').onclick = async () => {
         const W = cv.width, H = cv.height;
         ctx.clearRect(0,0,W,H);
         ctx.drawImage(aimg, 0, 0, W, H);
-        // 눈: blink 만큼 세로 압축 + brow 만큼 위로
-        [bx.eyeL, bx.eyeR].forEach(b => {
-          const sx=b[0]*aimg.width, sy=b[1]*aimg.height, sw=b[2]*aimg.width, sh=b[3]*aimg.height;
-          const dx=b[0]*W, dw=b[2]*W, dh=b[3]*H*(1-blink*0.85);
-          const dy=b[1]*H + (b[3]*H-dh)/2 - brow*0.02*H;
-          ctx.drawImage(aimg, sx,sy,sw,sh, dx,dy,dw,dh);
-        });
-        // 입: jawOpen 만큼 세로 확대, smile 만큼 가로 확대
-        {
-          const b=bx.mouth;
-          const sx=b[0]*aimg.width, sy=b[1]*aimg.height, sw=b[2]*aimg.width, sh=b[3]*aimg.height;
-          const dw=b[2]*W*(1+smile*0.22), dh=b[3]*H*(1+jaw*1.4);
-          const dx=b[0]*W-(dw-b[2]*W)/2, dy=b[1]*H;
-          ctx.drawImage(aimg, sx,sy,sw,sh, dx,dy,dw,dh);
+        const IW = aimg.naturalWidth || aimg.width, IH = aimg.naturalHeight || aimg.height;
+        // 눈썹 올림: 눈 영역을 아주 살짝 위로 (페더 처리라 경계 안 보임)
+        if (brow > 0.08) {
+          [bx.eyeL, bx.eyeR].forEach(b => {
+            drawFeathered(ctx, aimg,
+              b[0]*IW, b[1]*IH, b[2]*IW, b[3]*IH,
+              b[0]*W, b[1]*H - brow*0.018*H, b[2]*W, b[3]*H, 0.45);
+          });
+        }
+        // 눈 감기: 눈꺼풀을 내린다 (찌그러뜨리지 않음)
+        drawEyelid(ctx, aimg, bx.eyeL, W, H, blink);
+        drawEyelid(ctx, aimg, bx.eyeR, W, H, blink);
+        // 입: 위쪽을 고정하고 아래로만 늘린다(턱이 내려가는 방향) + 페더
+        if (jaw > 0.04 || smile > 0.15) {
+          const b = bx.mouth;
+          const dw = b[2]*W*(1 + smile*0.14);
+          const dh = b[3]*H*(1 + jaw*0.85);
+          const dx = b[0]*W - (dw - b[2]*W)/2;
+          const dy = b[1]*H;                        // 윗입술 고정
+          drawFeathered(ctx, aimg,
+            b[0]*IW, b[1]*IH, b[2]*IW, b[3]*IH,
+            dx, dy, dw, dh, 0.38);
         }
         ctx.fillStyle='rgba(233,236,243,.65)'; ctx.font=`600 ${W*0.035}px ui-monospace,monospace`; ctx.textAlign='left';
         ctx.fillText(`blink ${blink.toFixed(2)}  jaw ${jaw.toFixed(2)}  smile ${smile.toFixed(2)}`, W*0.04, H*0.06);
