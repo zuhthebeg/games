@@ -739,6 +739,114 @@
      0.123
     ]
    }
+  },
+  {
+   "id": "tiger",
+   "name": "호랑이상",
+   "tier": "cool",
+   "desc": "이목구비가 진해서 가만히 있어도 존재감이 있다. 잘생쁨 쪽.",
+   "axes": {
+    "eyeSize": 0.5,
+    "eyeSlant": 0.82,
+    "eyeGap": 0.45,
+    "faceLength": 0.55,
+    "jawSharp": 0.62,
+    "cheek": 0.65,
+    "noseWidth": 0.55,
+    "lipThick": 0.5
+   },
+   "boxes": {
+    "eyeL": [
+     0.3,
+     0.33,
+     0.13,
+     0.1
+    ],
+    "eyeR": [
+     0.57,
+     0.33,
+     0.13,
+     0.1
+    ],
+    "mouth": [
+     0.38,
+     0.5,
+     0.24,
+     0.11
+    ]
+   }
+  },
+  {
+   "id": "raccoon",
+   "name": "너구리상",
+   "tier": "cute",
+   "desc": "강아지도 햄스터도 아닌데 씩씩하다. 어딘가 능청스러운 인상.",
+   "axes": {
+    "eyeSize": 0.72,
+    "eyeSlant": 0.32,
+    "eyeGap": 0.62,
+    "faceLength": 0.33,
+    "jawSharp": 0.35,
+    "cheek": 0.72,
+    "noseWidth": 0.5,
+    "lipThick": 0.5
+   },
+   "boxes": {
+    "eyeL": [
+     0.3,
+     0.33,
+     0.13,
+     0.1
+    ],
+    "eyeR": [
+     0.57,
+     0.33,
+     0.13,
+     0.1
+    ],
+    "mouth": [
+     0.38,
+     0.5,
+     0.24,
+     0.11
+    ]
+   }
+  },
+  {
+   "id": "chick",
+   "name": "병아리상",
+   "tier": "cute",
+   "desc": "눈코입이 작고 오밀조밀. 나이를 물으면 다들 놀란다.",
+   "axes": {
+    "eyeSize": 0.45,
+    "eyeSlant": 0.35,
+    "eyeGap": 0.48,
+    "faceLength": 0.25,
+    "jawSharp": 0.42,
+    "cheek": 0.58,
+    "noseWidth": 0.25,
+    "lipThick": 0.3
+   },
+   "boxes": {
+    "eyeL": [
+     0.3,
+     0.33,
+     0.13,
+     0.1
+    ],
+    "eyeR": [
+     0.57,
+     0.33,
+     0.13,
+     0.1
+    ],
+    "mouth": [
+     0.38,
+     0.5,
+     0.24,
+     0.11
+    ]
+   }
   }
  ]
 }

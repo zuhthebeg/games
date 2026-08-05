@@ -4,9 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>동물상 판독기 — 내 얼굴은 무슨 동물?</title>
-<meta name="description" content="사진 한 장으로 얼굴 8개 축을 실측해서 20종 동물상 중 내 얼굴을 찾아줍니다. 표정 미러링·GIF 공유. 사진은 기기 밖으로 나가지 않습니다.">
+<meta name="description" content="사진 한 장으로 얼굴 8개 축을 실측해서 23종 동물상 중 내 얼굴을 찾아줍니다. 표정 미러링·GIF 공유. 사진은 기기 밖으로 나가지 않습니다.">
 <meta property="og:title" content="동물상 판독기 — 내 얼굴은 무슨 동물?">
-<meta property="og:description" content="눈·코·입 468개 점을 실측해서 20종 중 내 동물상을 찾아줍니다. 표정을 따라하는 GIF도 만들 수 있어요.">
+<meta property="og:description" content="눈·코·입 468개 점을 실측해서 23종 중 내 동물상을 찾아줍니다. 표정을 따라하는 GIF도 만들 수 있어요.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://game.cocy.io/animalface/">
 <link rel="canonical" href="https://game.cocy.io/animalface/">
@@ -29,6 +29,10 @@ h1{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
   font-size:.95rem;font-weight:700;cursor:pointer;width:100%;font-family:inherit}
 .btn:disabled{opacity:.4;cursor:default}
 .btn.sec{background:#f4efe4;color:var(--ink);border:1px solid var(--line)}
+.btn.sx{padding:9px 8px;font-size:14px}
+.btn.sx.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.celeb{margin-top:10px;font-size:13px;line-height:1.7;color:#6b6257}
+.celeb b{color:var(--ink)}
 .row{display:flex;gap:8px;margin-top:8px}
 .stage{position:relative;width:100%;aspect-ratio:1;background:#f1ece1;border-radius:14px;overflow:hidden}
 /* video도 같은 레이어다. canvas.layer로 좁혀 두면 video에 적용이 안 돼서 미리보기가 어긋난다. */
@@ -67,15 +71,18 @@ footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:14px}
 <div class="wrap">
   <header>
     <h1>🦊 동물상 판독기</h1>
-    <div class="sub">얼굴 468개 점을 실측해서 20종 중에 찾아줍니다</div>
+    <div class="sub">얼굴 468개 점을 실측해서 23종 중에 찾아줍니다</div>
   </header>
 
   <div class="card">
-    <div class="modes">
-      <button id="mSerious" class="on">진지 모드</button>
-      <button id="mFunny">웃긴 모드</button>
-    </div>
     <input type="file" id="file" accept="image/*" style="display:none">
+    <!-- 동물상 정의는 성별마다 다르다(늑대상만 봐도 남녀가 전혀 다른 얼굴을 가리킨다).
+         성별을 알면 그 성별에서 실제로 쓰이는 유형을 앞으로 당길 수 있다. -->
+    <div class="row" id="sexRow">
+      <button class="btn sec sx" data-sex="f">여자</button>
+      <button class="btn sec sx" data-sex="m">남자</button>
+      <button class="btn sec sx on" data-sex="">상관없음</button>
+    </div>
     <button class="btn" id="pick" disabled>📷 사진 선택</button>
     <div class="row"><button class="btn sec" id="cam" disabled>🎥 카메라로 찍기</button></div>
     <div class="hint" id="privacy">사진은 이 기기 안에서만 처리됩니다. 서버로 올리지 않습니다.</div>
@@ -112,7 +119,7 @@ footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:14px}
   </div>
 
   <div class="card" id="lineupCard" style="display:none">
-    <div class="hint" style="margin:0 0 8px">전체 20종 — 당신은 어디에?</div>
+    <div class="hint" style="margin:0 0 8px">전체 23종 — 당신은 어디에?</div>
     <div class="grid" id="lineup"></div>
   </div>
 
@@ -143,7 +150,7 @@ function redraw(){
   if (aimg && aimg.complete) ctx.drawImage(aimg, 0, 0, cv.width, cv.height);
 }
 
-let srcImg = null, LM = null, LM_DRAW = null, AX = null, ranked = null, mode = 'serious';
+let srcImg = null, LM = null, LM_DRAW = null, AX = null, ranked = null;
 
 // ---- 데이터 ----
 fetch('animals.json?v=1').then(r => r.json()).then(d => {
@@ -152,6 +159,17 @@ fetch('animals.json?v=1').then(r => r.json()).then(d => {
   $('lineup').innerHTML = ANIMALS.map(a =>
     `<figure><img src="img/${a.id}.webp" alt="${a.name}" loading="lazy"><figcaption>${a.name.replace('상','')}</figcaption></figure>`).join('');
 });
+
+/* 유형별 연예인 — 팬트랙(page.cocy.io) celebrities 테이블에서 뽑아온 정적 스냅샷.
+   실시간 조회를 붙이면 이 페이지가 백엔드에 묶인다. 갱신은 ops/fantrack/export-animalface.sh */
+let CELEBS = null, SEX = '';
+fetch('celebs.json?v=1').then(r => r.json()).then(d => { CELEBS = d.byAnimal; if (ranked) renderResult(); })
+  .catch(() => {});
+
+function celebsOf(id, sex) {
+  const c = CELEBS && CELEBS[id]; if (!c) return [];
+  return sex ? (c[sex] || []) : [...(c.f || []), ...(c.m || [])];
+}
 
 // ---- MediaPipe ----
 let landmarker = null, runMode = 'IMAGE';
@@ -195,9 +213,11 @@ const mediaSize = el => [el.naturalWidth || el.videoWidth || el.width,
    p10~p90에 여유를 준 값. 감으로 찍었을 때 lipThick를 [0.100,0.400]으로 잡았는데
    실제 분포는 0.003~0.101이라 전 사용자가 0으로 눌렸다. 표본 재측정 없이 손대지 말 것.
    보정 도구: ops/verify/af-calib.cjs */
-const RANGE = { eyeSize:[0.035,0.115], eyeSlant:[-0.006,0.046], eyeGap:[0.216,0.288],
-  faceLength:[1.000,1.360], jawSharp:[0.132,0.297], cheek:[1.143,1.410],
-  noseWidth:[0.250,0.318], lipThick:[0.000,0.105] };
+const RANGE = { eyeSize:[0.035,0.115], eyeSlant:[-0.006,0.050], eyeGap:[0.216,0.304],
+  faceLength:[1.000,1.360], jawSharp:[0.132,0.302], cheek:[1.143,1.425],
+  noseWidth:[0.227,0.343], lipThick:[0.000,0.349] };
+// 표본 81장 실측 union. noseWidth를 [0.250,0.318]로 좁게 잡았더니 실제 분포(0.244~0.320)가
+// 구간 밖으로 삐져나가 대부분의 얼굴이 1.00에 붙었다. lipThick도 상한이 3배 낮았다.
 
 function computeAxes(lm) {
   const g = i => lm[i];
@@ -214,12 +234,13 @@ function computeAxes(lm) {
   window.__raw = raw;              // RANGE 보정용 — 상수를 감으로 찍지 않기 위해 실측값을 노출한다
   const out = {};
   for (const k in raw) { const [lo,hi] = RANGE[k]; out[k] = clamp01((raw[k]-lo)/(hi-lo)); }
+  window.__ax = out;               // 동물 축 값 튜닝용(af-tune.cjs)
   return out;
 }
 
-// 모드는 "어느 라인업에서 고를지"만 바꾼다.
-// 거리에 상수를 더하면 tier 안에서의 변별력까지 뭉개져서(전원 같은 답) 곱셈 가중으로 간다.
-const TIER_MUL = { serious:{ cute:1, cool:1, funny:1.55 }, funny:{ cute:1.25, cool:1.35, funny:0.62 } };
+// 모드 토글은 뺐다(웃긴 모드가 늘 같은 답을 내서 재미도 없고 쓸모도 없었다).
+// 다만 못생김 라인이 아무에게나 1등으로 뜨면 기분 상하니 뒤로 미는 가중은 남긴다.
+const TIER_MUL = { cute:1, cool:1, funny:1.55 };
 
 /* 사람 얼굴은 8차원 공간의 아주 좁은 영역에 몰려 있다(다 사람이니까).
    반면 동물 축은 0~1 전체에 퍼져 있어서, 절대좌표로 거리를 재면
@@ -243,7 +264,7 @@ function animalStats() {
 }
 
 function match(ax) {
-  const mul = TIER_MUL[mode], raw = window.__raw, AS = animalStats();
+  const mul = TIER_MUL, raw = window.__raw, AS = animalStats();
   const z = {};
   for (const k in AXIS_W) {
     const [m, sd] = HUMAN_RAW[k];
@@ -259,7 +280,10 @@ function match(ax) {
       const w = AXIS_W[k]||1;
       s += w*Math.pow(z[k]-az, 2); wsum += w;
     }
-    return { a, dist: Math.sqrt(s/wsum) * (mul[a.tier]||1) };
+    // 성별을 골랐으면, 그 성별에서 실제로 쓰이는 유형을 앞으로 당긴다.
+    // 완전히 배제하진 않는다 — 라벨이 있는 남자 유형이 아직 4종뿐이라 막아버리면 결과가 단조로워진다.
+    const sexBias = !SEX ? 1 : (celebsOf(a.id, SEX).length ? 0.78 : 1.28);
+    return { a, dist: Math.sqrt(s/wsum) * (mul[a.tier]||1) * sexBias };
   }).sort((x,y) => x.dist - y.dist);
   const top = scored[0].dist;
   // 절대거리를 그대로 쓰면 전부 40%대로 나와서 재미가 없다 → 1위 기준 상대 스케일
@@ -296,6 +320,9 @@ async function openCam() {
   }
   v.style.display = ''; $('ph').style.display = 'none';
   $('shotRow').style.display = '';
+  // 결과 동물이 그려진 캔버스가 video 위를 덮고 있으면 미리보기가 안 보인다.
+  // (판독 한 번 하고 카메라를 다시 열면 재현되던 버그)
+  ctx.clearRect(0, 0, cv.width, cv.height);
   return true;
 }
 function closeCam(stopStream) {
@@ -320,14 +347,6 @@ $('shot').onclick = () => {
   im.onload = () => { srcImg = im; closeCam(false); drawBase(); detect(); };
   im.src = c.toDataURL('image/jpeg', 0.92);
 };
-for (const [id, m] of [['mSerious','serious'], ['mFunny','funny']]) {
-  $(id).onclick = () => {
-    mode = m;
-    $('mSerious').classList.toggle('on', m === 'serious');
-    $('mFunny').classList.toggle('on', m === 'funny');
-    if (AX) { ranked = match(AX); renderResult(); }
-  };
-}
 
 function drawBase(alpha = 1) {
   ctx.clearRect(0,0,cv.width,cv.height);
@@ -380,6 +399,11 @@ function detect() {
   if (!q.ok) return fail(q.reason);
   LM = lm;
   LM_DRAW = r.faceLandmarks[0];   // 화면에 점 찍을 땐 보정 안 한 원좌표를 써야 사진과 맞는다
+  window.__lm = lm.map(q => [+q.x.toFixed(5), +q.y.toFixed(5)]);   // 형상 벡터 실험용 덤프
+  // 자세 정규화 실험용: 3D 좌표 + MediaPipe가 주는 머리 자세 행렬.
+  // 같은 사람 사진끼리도 안 뭉치는 원인이 각도라서, 이걸로 정면화한 뒤 다시 잰다.
+  window.__lm3 = r.faceLandmarks[0].map(q => [+q.x.toFixed(5), +q.y.toFixed(5), +q.z.toFixed(5)]);
+  window.__mat = r.facialTransformationMatrixes?.[0]?.data || null;
   AX = computeAxes(LM);
   baseBox = drawBase();
   ranked = match(AX);
@@ -388,6 +412,14 @@ function detect() {
   $('lineupCard').style.display = '';   // 라인업은 결과를 본 뒤에 공개한다(미리 보면 김샘)
   reveal(true);
 }
+
+// 성별 선택 — 이미 판독한 뒤에 바꾸면 사진을 다시 넣게 하지 않고 그 자리에서 다시 매긴다.
+$('sexRow').addEventListener('click', e => {
+  const b = e.target.closest('.sx'); if (!b) return;
+  SEX = b.dataset.sex;
+  [...document.querySelectorAll('.sx')].forEach(x => x.classList.toggle('on', x === b));
+  if (AX) { ranked = match(AX); renderResult(); }
+});
 
 /* 결과 연출: 사진 위에 468개 점을 훑고(스캔) → 동물로 크로스페이드.
    점을 보여주는 건 장식이 아니라 "정말 얼굴을 쟀다"는 근거라서, 결과 신뢰에 직결된다. */
@@ -446,6 +478,9 @@ function renderResult() {
        </div>
      </div>
      <div class="hint" style="margin-top:8px">근거: ${whyText(AX, b.a)}</div>
+     ${(() => { const c = celebsOf(b.a.id, SEX);
+        return c.length ? `<div class="celeb">같은 ${b.a.name}: ` +
+          c.slice(0, 6).map(x => `<b>${x.name}</b>${x.group ? `(${x.group})` : ''}`).join(', ') + '</div>' : ''; })()}
      <div class="runner">${ranked.slice(1,4).map(s =>
        `<div><img src="img/${s.a.id}.webp" alt=""><div class="n">${s.a.name}</div><div class="p">${s.pct}%</div></div>`).join('')}
      </div>`;
