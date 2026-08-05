@@ -10,15 +10,28 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://game.cocy.io/animalface/">
 <link rel="canonical" href="https://game.cocy.io/animalface/">
+<link rel="alternate" hreflang="ko" href="https://game.cocy.io/animalface/">
+<link rel="alternate" hreflang="en" href="https://game.cocy.io/animalface/?lang=en">
+<link rel="alternate" hreflang="ja" href="https://game.cocy.io/animalface/?lang=ja">
+<script src="js/i18n.js?v=1"></script>
+<script>
+  // 바 이름은 페이지 언어를 따라간다. shared-wallet은 gameName 옵션을 읽는다(?v= 새 버전 필요).
+  window.SharedWalletConfig = window.SharedWalletConfig ||
+    { autoGuest: true, gameName: AF_I18N.t('title').replace('🦊 ', '') };
+</script>
+<script src="/lib/shared-wallet.js?v=20260806af"></script>
 <style>
 :root{
   --bg:#faf6ee; --card:#fff; --line:#e6ddcc; --ink:#2b2822; --mut:#8a8171;
   --acc:#f2683c; --acc2:#3ba7a0; --gold:#e8a33d;
+  /* shared-wallet이 #sw-bar를 fixed로 얹는다. 여기서 자리를 안 비우면 헤더가 가려진다. */
+  --wallet-bar-h:56px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",system-ui,sans-serif;
-  line-height:1.6;padding:14px;padding-bottom:56px}
+  line-height:1.6;padding:14px;padding-bottom:56px;
+  padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top))}
 .wrap{max-width:480px;margin:0 auto}
 header{text-align:center;margin:6px 0 14px}
 h1{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
@@ -33,6 +46,7 @@ h1{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
 .btn.sx.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 .celeb{margin-top:10px;font-size:13px;line-height:1.7;color:#6b6257}
 .celeb b{color:var(--ink)}
+.celeb a{color:var(--acc2);text-decoration:none;border-bottom:1px dotted var(--acc2)}
 .row{display:flex;gap:8px;margin-top:8px}
 .stage{position:relative;width:100%;aspect-ratio:1;background:#f1ece1;border-radius:14px;overflow:hidden}
 /* video도 같은 레이어다. canvas.layer로 좁혀 두면 video에 적용이 안 돼서 미리보기가 어긋난다. */
@@ -60,18 +74,27 @@ h1{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
 .bar{height:5px;background:#f0eade;border-radius:3px;overflow:hidden;grid-column:1/-1;margin-bottom:6px}
 .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--gold))}
 .err{color:var(--acc);font-size:.85rem;font-weight:600}
-.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:4px}
-.grid figure{text-align:center}
-.grid img{width:100%;aspect-ratio:1;border-radius:9px;object-fit:cover;background:#f1ece1}
-.grid figcaption{font-size:.6rem;color:var(--mut);margin-top:1px;line-height:1.2}
 footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:14px}
+.lang{position:absolute;right:0;top:0;background:#f4efe4;border:1px solid var(--line);border-radius:10px;
+  padding:5px 9px;font-size:.74rem;font-weight:700;color:var(--mut);cursor:pointer;font-family:inherit}
+header{position:relative}
+/* 분포 — 23종 나열(스포일러)을 걷어내고 그 자리에 "남들은 뭐가 나왔나"를 넣는다 */
+.dist{display:grid;grid-template-columns:auto 1fr auto;gap:5px 8px;align-items:center;font-size:.78rem}
+.dist img{width:22px;height:22px;border-radius:6px;object-fit:cover;background:#f1ece1}
+.dist .t{background:#f0eade;border-radius:4px;height:8px;overflow:hidden}
+.dist .t i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--gold))}
+.dist .c{color:var(--mut);font-variant-numeric:tabular-nums;font-size:.72rem}
+.dist .me .t i{background:var(--acc)}
+.dist .me{font-weight:800}
+.mine{font-size:.8rem;font-weight:700;color:var(--acc);margin-bottom:8px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>🦊 동물상 판독기</h1>
-    <div class="sub">얼굴 468개 점을 실측해서 23종 중에 찾아줍니다</div>
+    <button class="lang" id="langBtn">🌐</button>
+    <h1 data-i18n="title">🦊 동물상 판독기</h1>
+    <div class="sub" data-i18n="sub">얼굴 468개 점을 실측해서 23종 중에 찾아줍니다</div>
   </header>
 
   <div class="card">
@@ -79,13 +102,13 @@ footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:14px}
     <!-- 동물상 정의는 성별마다 다르다(늑대상만 봐도 남녀가 전혀 다른 얼굴을 가리킨다).
          성별을 알면 그 성별에서 실제로 쓰이는 유형을 앞으로 당길 수 있다. -->
     <div class="row" id="sexRow">
-      <button class="btn sec sx" data-sex="f">여자</button>
-      <button class="btn sec sx" data-sex="m">남자</button>
-      <button class="btn sec sx on" data-sex="">상관없음</button>
+      <button class="btn sec sx" data-sex="f" data-i18n="sexF">여자</button>
+      <button class="btn sec sx" data-sex="m" data-i18n="sexM">남자</button>
+      <button class="btn sec sx on" data-sex="" data-i18n="sexAny">상관없음</button>
     </div>
-    <button class="btn" id="pick" disabled>📷 사진 선택</button>
-    <div class="row"><button class="btn sec" id="cam" disabled>🎥 카메라로 찍기</button></div>
-    <div class="hint" id="privacy">사진은 이 기기 안에서만 처리됩니다. 서버로 올리지 않습니다.</div>
+    <button class="btn" id="pick" data-i18n="pick" disabled>📷 사진 선택</button>
+    <div class="row"><button class="btn sec" id="cam" data-i18n="cam" disabled>🎥 카메라로 찍기</button></div>
+    <div class="hint" id="privacy" data-i18n="privacy">사진은 이 기기 안에서만 처리됩니다. 서버로 올리지 않습니다.</div>
   </div>
 
   <div class="card">
@@ -96,15 +119,15 @@ footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:14px}
              style="display:none;object-fit:contain;background:#000;transform:scaleX(-1)"></video>
       <canvas class="layer" id="cv"></canvas>
       <canvas class="layer" id="gl" style="display:none"></canvas>
-      <div class="ph" id="ph">사진을 넣으면 여기에 결과가 나와요</div>
+      <div class="ph" id="ph" data-i18n="phEmpty">사진을 넣으면 여기에 결과가 나와요</div>
     </div>
     <div class="row" id="shotRow" style="display:none">
-      <button class="btn" id="shot">📸 찍기</button>
-      <button class="btn sec" id="camOff" style="flex:0 0 38%">닫기</button>
+      <button class="btn" id="shot" data-i18n="shot">📸 찍기</button>
+      <button class="btn sec" id="camOff" data-i18n="camClose" style="flex:0 0 38%">닫기</button>
     </div>
     <div class="row">
-      <button class="btn sec" id="mirror" disabled>😀 표정 따라하기</button>
-      <button class="btn sec" id="rec" disabled>🎞 GIF 만들기</button>
+      <button class="btn sec" id="mirror" data-i18n="mirror" disabled>😀 표정 따라하기</button>
+      <button class="btn sec" id="rec" data-i18n="gif" disabled>🎞 GIF 만들기</button>
     </div>
     <div id="gifOut"></div>
   </div>
@@ -115,23 +138,48 @@ footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:14px}
 
   <div class="card" id="axCard" style="display:none">
     <div class="axes" id="axes"></div>
-    <div class="hint">사진에서 잰 실제 비율입니다. 별점이나 랜덤이 아닙니다.</div>
+    <div class="hint" data-i18n="axisHint">사진에서 잰 실제 비율입니다. 별점이나 랜덤이 아닙니다.</div>
   </div>
 
-  <div class="card" id="lineupCard" style="display:none">
-    <div class="hint" style="margin:0 0 8px">전체 23종 — 당신은 어디에?</div>
-    <div class="grid" id="lineup"></div>
+  <div class="card" id="distCard" style="display:none">
+    <div class="hint" style="margin:0 0 8px" data-i18n="distTitle">🏆 지금까지 나온 동물상</div>
+    <div id="distMine" class="mine"></div>
+    <div class="dist" id="dist"></div>
+    <div class="hint" id="distTotal" style="margin-top:8px"></div>
   </div>
 
-  <footer>온디바이스 처리 · MediaPipe FaceLandmarker · 아트는 로컬 생성</footer>
+  <footer data-i18n="foot">온디바이스 처리 · MediaPipe FaceLandmarker · 아트는 로컬 생성</footer>
 </div>
 
 <script type="module">
 import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18";
 
 const $ = id => document.getElementById(id);
-let DATA = null, ANIMALS = [], AXIS_LABEL = {}, AXIS_W = {};
+let DATA = null, ANIMALS = [], AXIS_W = {};
 const animImgs = {};
+
+// i18n — 동물 이름/설명은 animals.json(한국어 정본)을 사전으로 덮어쓴다.
+const T = (k, p) => AF_I18N.t(k, p);
+const NAME = a => AF_I18N.animal(a.id, { name: a.name, desc: a.desc }).name;
+const DESC = a => AF_I18N.animal(a.id, { name: a.name, desc: a.desc }).desc;
+
+function applyLang() {
+  document.documentElement.lang = AF_I18N.lang();
+  document.title = T('metaTitle');
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const v = T(el.dataset.i18n);
+    if (el.dataset.i18n === 'foot' || v.includes('<br>')) el.innerHTML = v; else el.textContent = v;
+  });
+  $('langBtn').textContent = '🌐 ' + AF_I18N.next().toUpperCase();
+  if (mirroring) $('mirror').textContent = T('mirrorStop');
+  if (AX) { renderAxes(); renderResult(); }
+  if (LAST_DIST) renderDist(LAST_DIST);
+}
+$('langBtn').onclick = () => { AF_I18N.cycle(); applyLang(); };
+
+window.addEventListener('DOMContentLoaded', () => {
+  try { if (typeof SharedWallet !== 'undefined' && SharedWallet.init && !SharedWallet._initialized) SharedWallet.init(); } catch (e) {}
+});
 
 const cv = $('cv'), ctx = cv.getContext('2d');
 function fit(){ const r = cv.getBoundingClientRect(), d = Math.min(devicePixelRatio||1, 2);
@@ -156,10 +204,8 @@ let srcImg = null, LM = null, LM_DRAW = null, AX = null, ranked = null;
 fetch('animals.json?v=3').then(r => r.json()).then(d => {
   // 아트가 아직 없는 종은 후보에서 뺀다. 넣어두면 1등으로 뽑혔을 때 깨진 이미지가 보인다.
   DATA = d; ANIMALS = d.animals.filter(a => a.art !== false);
-  AXIS_LABEL = d.axisLabel; AXIS_W = d.axisWeight;
+  AXIS_W = d.axisWeight;
   ANIMALS.forEach(a => { const im = new Image(); im.src = `img/${a.id}.webp`; animImgs[a.id] = im; });
-  $('lineup').innerHTML = ANIMALS.map(a =>
-    `<figure><img src="img/${a.id}.webp" alt="${a.name}" loading="lazy"><figcaption>${a.name.replace('상','')}</figcaption></figure>`).join('');
 });
 
 /* 유형별 연예인 — 팬트랙(page.cocy.io) celebrities 테이블에서 뽑아온 정적 스냅샷.
@@ -171,6 +217,24 @@ fetch('celebs.json?v=1').then(r => r.json()).then(d => { CELEBS = d.byAnimal; if
 function celebsOf(id, sex) {
   const c = CELEBS && CELEBS[id]; if (!c) return [];
   return sex ? (c[sex] || []) : [...(c.f || []), ...(c.m || [])];
+}
+
+/* 팬트랙 링크. export 스크립트가 '실제로 존재하는 페이지'만 c/<slug>/ 로 넣고,
+   없으면 ?q=이름(팬트랙 검색)으로 준다 — 없는 슬러그로 걸면 그냥 404다.
+   개인/그룹 페이지는 언어가 경로 뒤(/c/ive/en/), 검색은 앞(/fantrack/en/?q=)에 붙는다. */
+function fantrackUrl(link) {
+  const L = AF_I18N.lang() === 'en' ? 'en/' : '';   // 팬트랙은 ko/en/tw/es — ja는 한국어로
+  const base = 'https://page.cocy.io/fantrack/';
+  return link.startsWith('?') ? base + L + link : base + link + L;
+}
+function celebChips(list, n) {
+  return list.slice(0, n).map(x => {
+    const label = (AF_I18N.lang() === 'ko' ? x.name : (x.en || x.name)) +
+                  (x.group ? `(${x.group})` : '');
+    return x.link
+      ? `<a href="${fantrackUrl(x.link)}" target="_blank" rel="noopener"><b>${label}</b></a>`
+      : `<b>${label}</b>`;
+  }).join(', ');
 }
 
 // ---- MediaPipe ----
@@ -188,7 +252,7 @@ let landmarker = null, runMode = 'IMAGE';
     });
     $('pick').disabled = false; $('cam').disabled = false;
   } catch (e) {
-    $('ph').innerHTML = `모델을 불러오지 못했어요.<br>네트워크를 확인하고 새로고침해주세요.`;
+    $('ph').innerHTML = T('errModel');
   }
 })();
 
@@ -296,7 +360,8 @@ function whyText(ax, animal) {
   return Object.keys(ax)
     .map(k => ({ k, gap: Math.abs(ax[k]-animal.axes[k])*(AXIS_W[k]||1) }))
     .sort((a,b) => a.gap-b.gap).slice(0,2)
-    .map(d => AXIS_LABEL[d.k] + (ax[d.k] > .55 ? ' 큼' : ax[d.k] < .45 ? ' 작음' : ' 보통'))
+    .map(d => AF_I18N.axis(d.k) + ' ' +
+      (ax[d.k] > .55 ? T('big') : ax[d.k] < .45 ? T('small') : T('mid')))
     .join(' · ');
 }
 
@@ -318,7 +383,7 @@ async function openCam() {
       v.srcObject = await navigator.mediaDevices.getUserMedia({
         video: { facingMode:'user', width:{ ideal:1280 } } });
       await v.play();
-    } catch (e) { $('ph').textContent = '카메라를 열 수 없어요: ' + e.message; return false; }
+    } catch (e) { $('ph').textContent = T('errCam', { msg: e.message }); return false; }
   }
   v.style.display = ''; $('ph').style.display = 'none';
   $('shotRow').style.display = '';
@@ -368,33 +433,34 @@ let baseBox = null;
 function faceQuality(lm) {
   const g = i => lm[i];
   const faceW = d2(g(P.cheekL), g(P.cheekR)), faceH = d2(g(P.forehead), g(P.chin));
-  if (faceW < 0.06) return { ok:false, reason:'얼굴이 너무 작아요 — 더 가까이 찍은 사진으로' };
+  if (faceW < 0.06) return { ok:false, reason:'errSmall' };
   const r = faceH/faceW;
-  if (r < 0.9 || r > 2.2) return { ok:false, reason:'정면 얼굴 사진인지 확인해주세요' };
+  if (r < 0.9 || r > 2.2) return { ok:false, reason:'errFront' };
   const eyeY = (g(P.eyeL_up).y + g(P.eyeR_up).y)/2;
   if (!(eyeY < g(P.noseTip).y && g(P.noseTip).y < g(P.lipDn).y))
-    return { ok:false, reason:'얼굴 구조를 인식하지 못했어요' };
+    return { ok:false, reason:'errStruct' };
   const eL = d2(g(P.eyeL_up),g(P.eyeL_dn)), eR = d2(g(P.eyeR_up),g(P.eyeR_dn));
   if (Math.abs(eL-eR)/Math.max(eL,eR,1e-6) > 0.6)
-    return { ok:false, reason:'고개를 돌린 사진이에요 — 정면으로 다시' };
+    return { ok:false, reason:'errTurned' };
   return { ok:true };
 }
 
+// reason은 i18n 키다. 문자열을 그대로 넘기면 언어 전환에서 한국어가 남는다.
 function fail(reason) {
   LM = null; AX = null; ranked = null;
   $('mirror').disabled = true; $('rec').disabled = true;
   baseBox = drawBase(0.3);
   $('axCard').style.display = 'none';
   $('resultCard').style.display = '';
-  $('result').innerHTML = `<div class="err">✕ ${reason}</div>
-    <div class="hint">추측으로 결과를 만들지 않습니다. 다른 사진으로 다시 시도해주세요.</div>`;
+  $('result').innerHTML = `<div class="err">✕ ${T(reason)}</div>
+    <div class="hint">${T('errHint')}</div>`;
 }
 
 function detect() {
   if (!landmarker || !srcImg || !ANIMALS.length) return;
   if (runMode !== 'IMAGE') { landmarker.setOptions({ runningMode:'IMAGE' }); runMode = 'IMAGE'; }
   const r = landmarker.detect(srcImg);
-  if (!r.faceLandmarks?.length) return fail('얼굴을 찾지 못했어요');
+  if (!r.faceLandmarks?.length) return fail('errNoFace');
   const [iw, ih] = mediaSize(srcImg);
   const lm = isoLandmarks(r.faceLandmarks[0], iw, ih);   // 사진 비율 보정 후 측정
   const q = faceQuality(lm);
@@ -411,8 +477,8 @@ function detect() {
   ranked = match(AX);
   renderAxes(); renderResult();
   $('mirror').disabled = false;
-  $('lineupCard').style.display = '';   // 라인업은 결과를 본 뒤에 공개한다(미리 보면 김샘)
   reveal(true);
+  submitDist(ranked[0].a.id);   // 분포 집계(동물 종류만) — 사진은 나가지 않는다
 }
 
 // 성별 선택 — 이미 판독한 뒤에 바꾸면 사진을 다시 넣게 하지 않고 그 자리에서 다시 매긴다.
@@ -496,25 +562,70 @@ function reveal(withScan = true) {
 function renderAxes() {
   $('axCard').style.display = '';
   $('axes').innerHTML = Object.keys(AX).map(k =>
-    `<div class="k">${AXIS_LABEL[k]}</div><div class="v">${AX[k].toFixed(2)}</div>
+    `<div class="k">${AF_I18N.axis(k)}</div><div class="v">${AX[k].toFixed(2)}</div>
      <div class="bar"><i style="width:${(AX[k]*100).toFixed(0)}%"></i></div>`).join('');
 }
 
 /* 연예인 라벨이 있는 유형은 23종 중 12종뿐이다. 1등에 라벨이 없다고 줄을 통째로 지우면
    "연예인 안 나오는 판독기"가 된다 → 라벨 있는 가장 가까운 순위로 내려가서 보여준다. */
 function celebLine(winner) {
-  const own = celebsOf(winner.id, SEX);
-  if (own.length) return `<div class="celeb">같은 ${winner.name} 연예인: ` +
-    own.slice(0, 6).map(x => `<b>${x.name}</b>${x.group ? `(${x.group})` : ''}`).join(', ') + '</div>';
-  // 성별을 골랐는데 그 성별 라벨이 없으면 전체에서 한 번 더 찾는다
-  const both = celebsOf(winner.id, '');
-  if (both.length) return `<div class="celeb">같은 ${winner.name} 연예인: ` +
-    both.slice(0, 6).map(x => `<b>${x.name}</b>${x.group ? `(${x.group})` : ''}`).join(', ') + '</div>';
+  const own = celebsOf(winner.id, SEX).length ? celebsOf(winner.id, SEX) : celebsOf(winner.id, '');
+  if (own.length)
+    return `<div class="celeb">${T('celebSame', { name: NAME(winner) })}: ${celebChips(own, 6)}</div>`;
   const near = ranked.slice(1).find(s => celebsOf(s.a.id, SEX).length || celebsOf(s.a.id, '').length);
   if (!near) return '';
   const c = celebsOf(near.a.id, SEX).length ? celebsOf(near.a.id, SEX) : celebsOf(near.a.id, '');
-  return `<div class="celeb">${winner.name} 연예인은 아직 정리 중 — 다음으로 가까운 <b>${near.a.name}</b>(${near.pct}%): ` +
-    c.slice(0, 5).map(x => `<b>${x.name}</b>${x.group ? `(${x.group})` : ''}`).join(', ') + '</div>';
+  return `<div class="celeb">${T('celebNear',
+    { name: NAME(winner), near: NAME(near.a), pct: near.pct })}: ${celebChips(c, 5)}</div>`;
+}
+
+/* ---- 동물상 분포(랭킹) ----
+   점수 랭킹을 두지 않는 이유는 서버 라우트 주석에 적어뒀다 — 일치율은 전원 90%대라 순위가 안 갈린다.
+   대신 "내 동물상이 전체에서 얼마나 희귀한가"를 보여준다. */
+const RANK_API = 'https://relay.cocy.io/api/rankings/animalface';
+let LAST_DIST = null;
+
+async function submitDist(animalId) {
+  try {
+    await fetch(RANK_API, { method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ animal: animalId, sex: SEX }) });
+  } catch (e) {}          // 집계 실패가 판독을 막으면 안 된다
+  loadDist(animalId);
+}
+
+async function loadDist(mineId) {
+  $('distCard').style.display = '';
+  if (!LAST_DIST) $('dist').innerHTML = `<div class="c" style="grid-column:1/-1">${T('distLoading')}</div>`;
+  try {
+    const r = await fetch(RANK_API, { cache:'no-store' });
+    const j = await r.json();
+    if (!j.success) throw new Error(j.error || 'fail');
+    LAST_DIST = { rows: j.rankings || [], total: j.total || 0, mine: mineId };
+    renderDist(LAST_DIST);
+  } catch (e) {
+    $('dist').innerHTML = `<div class="c" style="grid-column:1/-1">${T('distFail')}</div>`;
+  }
+}
+
+function renderDist(d) {
+  const byId = Object.fromEntries(ANIMALS.map(a => [a.id, a]));
+  const rows = d.rows.filter(r => byId[r.animal]);
+  const max = Math.max(1, ...rows.map(r => r.count));
+  const mineIdx = rows.findIndex(r => r.animal === d.mine);
+  $('dist').innerHTML = rows.slice(0, 10).map(r => {
+    const a = byId[r.animal], me = r.animal === d.mine;
+    return `<img src="img/${a.id}.webp" alt=""><div class="${me ? 'me' : ''}">${NAME(a)}
+      <div class="t"><i style="width:${(r.count/max*100).toFixed(0)}%"></i></div></div>
+      <div class="c">${r.count}</div>`;
+  }).join('');
+  $('distTotal').textContent = T('distTotal', { total: d.total });
+  if (mineIdx >= 0 && d.total) {
+    const share = (rows[mineIdx].count * 100 / d.total).toFixed(1);
+    // 희귀도는 '적게 나온 순' 등수 — 흔한 강아지상이 1위가 되면 말이 안 된다
+    const rarer = rows.filter(r => r.count < rows[mineIdx].count).length;
+    $('distMine').textContent = T('distMine',
+      { name: NAME(byId[d.mine]), share, rank: rarer + 1, kinds: rows.length });
+  } else $('distMine').textContent = '';
 }
 
 function renderResult(doReveal = false) {
@@ -522,17 +633,17 @@ function renderResult(doReveal = false) {
   $('resultCard').style.display = '';
   $('result').innerHTML =
     `<div class="win">
-       <img src="img/${b.a.id}.webp" alt="${b.a.name}">
+       <img src="img/${b.a.id}.webp" alt="${NAME(b.a)}">
        <div>
          <div class="pc">${b.pct}%</div>
-         <div class="nm">${b.a.name}</div>
-         <div class="ds">${b.a.desc}</div>
+         <div class="nm">${NAME(b.a)}</div>
+         <div class="ds">${DESC(b.a)}</div>
        </div>
      </div>
-     <div class="hint" style="margin-top:8px">근거: ${whyText(AX, b.a)}</div>
+     <div class="hint" style="margin-top:8px">${T('basis', { why: whyText(AX, b.a) })}</div>
      ${celebLine(b.a)}
      <div class="runner">${ranked.slice(1,4).map(s =>
-       `<div><img src="img/${s.a.id}.webp" alt=""><div class="n">${s.a.name}</div><div class="p">${s.pct}%</div></div>`).join('')}
+       `<div><img src="img/${s.a.id}.webp" alt=""><div class="n">${NAME(s.a)}</div><div class="p">${s.pct}%</div></div>`).join('')}
      </div>`;
   // 스캔·룰렛은 첫 판독에서만. 성별을 바꿔 1등이 달라졌을 때만 그림을 조용히 갈아끼운다.
   if (doReveal && LM) reveal(false);
@@ -641,7 +752,7 @@ const GLW = (() => { try {
 let mirroring = false, camStream = null;
 function stopMirror(){
   mirroring = false;
-  $('mirror').textContent = '😀 표정 따라하기';
+  $('mirror').textContent = T('mirror');
   if ($('shotRow').style.display === 'none') $('vid').style.display = 'none';
 }
 
@@ -654,14 +765,14 @@ $('mirror').onclick = async () => {
       camStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:640 } });
       v.srcObject = camStream; await v.play();
     } catch (e) {
-      $('gifOut').innerHTML = `<div class="hint err">카메라를 열 수 없어요: ${e.message}</div>`;
+      $('gifOut').innerHTML = `<div class="hint err">${T('errCam', { msg: e.message })}</div>`;
       return;
     }
   }
   // 숨긴 video는 브라우저가 프레임 갱신을 늦출 수 있다 → 보이게 두고 캔버스로 덮는다
   v.style.display = ''; $('shotRow').style.display = 'none';
   mirroring = true;
-  $('mirror').textContent = '⏹ 그만하기';
+  $('mirror').textContent = T('mirrorStop');
   $('rec').disabled = false;
   if (runMode !== 'VIDEO') { landmarker.setOptions({ runningMode:'VIDEO' }); runMode = 'VIDEO'; }
   const A = ranked[0].a, aimg = animImgs[A.id], bx = A.boxes;
@@ -695,7 +806,7 @@ $('mirror').onclick = async () => {
 
 // ---- GIF (gif.js, MIT) ----
 $('rec').onclick = async () => {
-  if (!mirroring) { $('gifOut').innerHTML = `<div class="hint">먼저 "표정 따라하기"를 켜주세요</div>`; return; }
+  if (!mirroring) { $('gifOut').innerHTML = `<div class="hint">${T('gifNeedMirror')}</div>`; return; }
   const btn = $('rec'); btn.disabled = true;
   const SIZE = 320, FPS = 9, SEC = 3;   // 360·10fps는 1.2MB라 공유용으로 무겁다
   try {
@@ -715,25 +826,28 @@ $('rec').onclick = async () => {
     const tctx = tmp.getContext('2d');
     const total = FPS*SEC;
     for (let i = 0; i < total; i++) {
-      btn.textContent = `🎞 녹화중 ${i+1}/${total}`;
+      btn.textContent = T('gifRec', { i: i+1, n: total });
       tctx.drawImage(cv, 0, 0, SIZE, SIZE);
       gif.addFrame(tctx, { copy:true, delay:1000/FPS });
       await new Promise(r => setTimeout(r, 1000/FPS));
     }
-    btn.textContent = '🎞 만드는 중…';
+    btn.textContent = T('gifMaking');
     const blob = await new Promise(res => { gif.on('finished', res); gif.render(); });
     const url = URL.createObjectURL(blob);
-    const name = ranked ? ranked[0].a.name : 'animalface';
+    const name = ranked ? NAME(ranked[0].a) : 'animalface';
     $('gifOut').innerHTML =
-      `<div class="hint">${(blob.size/1024).toFixed(0)}KB — 길게 눌러 저장하거나 아래 버튼</div>
+      `<div class="hint">${T('gifHint', { kb: (blob.size/1024).toFixed(0) })}</div>
        <img src="${url}" style="width:100%;border-radius:12px;margin-top:6px">
        <a class="btn sec" style="display:block;text-align:center;text-decoration:none;margin-top:8px"
-          href="${url}" download="${name}.gif">⬇ GIF 저장</a>`;
+          href="${url}" download="${name}.gif">${T('gifSave')}</a>`;
   } catch (e) {
-    $('gifOut').innerHTML = `<div class="hint err">GIF 실패: ${e.message}</div>`;
+    $('gifOut').innerHTML = `<div class="hint err">${T('gifFail', { msg: e.message })}</div>`;
   }
-  btn.textContent = '🎞 GIF 만들기'; btn.disabled = false;
+  btn.textContent = T('gif'); btn.disabled = false;
 };
+
+// 정적 마크업 치환은 마지막에 한 번 — 위에서 정의한 것들이 다 준비된 뒤여야 한다.
+applyLang();
 </script>
 </body>
 </html>

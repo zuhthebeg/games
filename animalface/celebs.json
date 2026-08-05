@@ -4,7 +4,9 @@
   "bear": {
    "f": [
     {
+     "id": "icharlin_juni",
      "name": "주니",
+     "link": "?q=%EC%A3%BC%EB%8B%88",
      "group": "아이칠린"
     }
    ],
@@ -13,15 +15,21 @@
   "cat": {
    "f": [
     {
+     "id": "ive_liz",
      "name": "리즈",
+     "link": "c/ive/",
      "group": "아이브"
     },
     {
+     "id": "kissoflife_julie",
      "name": "쥴리",
+     "link": "c/kissoflife/",
      "group": "키스오브라이프"
     },
     {
+     "id": "newjeans_haerin",
      "name": "해린",
+     "link": "c/newjeans/",
      "group": "뉴진스"
     }
    ],
@@ -30,7 +38,9 @@
   "chick": {
    "f": [
     {
+     "id": "tripleS_jiwoo",
      "name": "이지우",
+     "link": "?q=%EC%9D%B4%EC%A7%80%EC%9A%B0",
      "group": "트리플에스"
     }
    ],
@@ -39,11 +49,15 @@
   "deer": {
    "f": [
     {
+     "id": "lesserafim_chaewon",
      "name": "김채원",
+     "link": "c/lesserafim/",
      "group": "르세라핌"
     },
     {
+     "id": "newjeans_danielle",
      "name": "다니엘",
+     "link": "c/newjeans/",
      "group": "뉴진스"
     }
    ],
@@ -53,20 +67,30 @@
    "f": [],
    "m": [
     {
-     "name": "공유"
+     "id": "gong_yoo",
+     "name": "공유",
+     "link": "?q=%EA%B3%B5%EC%9C%A0"
     },
     {
-     "name": "김우빈"
+     "id": "kim_woobin",
+     "name": "김우빈",
+     "link": "?q=%EA%B9%80%EC%9A%B0%EB%B9%88"
     },
     {
-     "name": "이민호"
+     "id": "lee_minho",
+     "name": "이민호",
+     "link": "?q=%EC%9D%B4%EB%AF%BC%ED%98%B8"
     },
     {
+     "id": "cnblue_jungyonghwa",
      "name": "정용화",
+     "link": "c/cnblue/",
      "group": "씨엔블루"
     },
     {
+     "id": "bigbang_top",
      "name": "탑",
+     "link": "c/bigbang/",
      "group": "빅뱅"
     }
    ]
@@ -74,48 +98,71 @@
   "dog": {
    "f": [
     {
+     "id": "newjeans_minji",
      "name": "민지",
+     "link": "c/newjeans/",
      "group": "뉴진스"
     },
     {
+     "id": "ive_anyujin",
      "name": "안유진",
+     "link": "c/ive/",
      "group": "아이브"
     },
     {
+     "id": "nmixx_jiwoo",
      "name": "지우",
+     "link": "c/nmixx/",
      "group": "엔믹스"
     },
     {
+     "id": "qwer_chodan",
      "name": "쵸단",
+     "link": "c/qwer/",
      "group": "QWER"
     }
    ],
    "m": [
     {
-     "name": "강다니엘"
+     "id": "kang_daniel",
+     "name": "강다니엘",
+     "link": "?q=%EA%B0%95%EB%8B%A4%EB%8B%88%EC%97%98"
     },
     {
-     "name": "남주혁"
+     "id": "nam_joohyuk",
+     "name": "남주혁",
+     "link": "?q=%EB%82%A8%EC%A3%BC%ED%98%81"
     },
     {
-     "name": "박보검"
+     "id": "park_bogum",
+     "name": "박보검",
+     "link": "?q=%EB%B0%95%EB%B3%B4%EA%B2%80"
     },
     {
-     "name": "송중기"
+     "id": "song_joongki",
+     "name": "송중기",
+     "link": "?q=%EC%86%A1%EC%A4%91%EA%B8%B0"
     },
     {
-     "name": "정해인"
+     "id": "jung_haein",
+     "name": "정해인",
+     "link": "?q=%EC%A0%95%ED%95%B4%EC%9D%B8"
     }
    ]
   },
   "duck": {
    "f": [
     {
+     "id": "classy_boeun",
      "name": "박보은",
+     "link": "?q=%EB%B0%95%EB%B3%B4%EC%9D%80",
      "group": "클라씨"
     },
     {
-     "name": "최예나"
+     "id": "yena",
+     "name": "최예나",
+     "link": "c/yena/",
+     "en": "YENA"
     }
    ],
    "m": []
@@ -123,46 +170,67 @@
   "fennec": {
    "f": [
     {
+     "id": "ive_gaeul",
      "name": "가을",
+     "link": "c/ive/",
      "group": "아이브"
     },
     {
+     "id": "tripleS_xinyu",
      "name": "신위",
+     "link": "?q=%EC%8B%A0%EC%9C%84",
      "group": "트리플에스"
     },
     {
+     "id": "kissoflife_haneul",
      "name": "하늘",
+     "link": "c/kissoflife/",
      "group": "키스오브라이프"
     }
    ],
    "m": [
     {
-     "name": "강동원"
+     "id": "gang_dongwon",
+     "name": "강동원",
+     "link": "?q=%EA%B0%95%EB%8F%99%EC%9B%90"
     },
     {
+     "id": "winner_kangseungyoon",
      "name": "강승윤",
+     "link": "?q=%EA%B0%95%EC%8A%B9%EC%9C%A4",
      "group": "위너"
     },
     {
-     "name": "이준기"
+     "id": "lee_joongi",
+     "name": "이준기",
+     "link": "?q=%EC%9D%B4%EC%A4%80%EA%B8%B0"
     },
     {
-     "name": "지드래곤"
+     "id": "gdragon",
+     "name": "지드래곤",
+     "link": "c/gdragon/",
+     "en": "G-DRAGON"
     }
    ]
   },
   "hamster": {
    "f": [
     {
+     "id": "highkey_yel",
      "name": "옐",
+     "link": "?q=%EC%98%90",
      "group": "하이키"
     },
     {
+     "id": "illit_wonhee",
      "name": "원희",
+     "link": "c/illit/",
      "group": "아일릿"
     },
     {
+     "id": "newjeans_hyein",
      "name": "혜인",
+     "link": "c/newjeans/",
      "group": "뉴진스"
     }
    ],
@@ -171,19 +239,27 @@
   "rabbit": {
    "f": [
     {
+     "id": "illit_minju",
      "name": "민주",
+     "link": "c/illit/",
      "group": "아일릿"
     },
     {
+     "id": "lightsum_yujeong",
      "name": "유정",
+     "link": "?q=%EC%9C%A0%EC%A0%95",
      "group": "라잇썸"
     },
     {
+     "id": "ive_wonyoung",
      "name": "장원영",
+     "link": "c/ive/",
      "group": "아이브"
     },
     {
+     "id": "billlie_tsuki",
      "name": "츠키",
+     "link": "?q=%EC%B8%A0%ED%82%A4",
      "group": "빌리"
     }
    ],
@@ -192,15 +268,21 @@
   "tiger": {
    "f": [
     {
+     "id": "illit_yunah",
      "name": "윤아",
+     "link": "c/illit/",
      "group": "아일릿"
     },
     {
+     "id": "ive_leeseo",
      "name": "이서",
+     "link": "c/ive/",
      "group": "아이브"
     },
     {
+     "id": "highkey_hwiseo",
      "name": "휘서",
+     "link": "?q=%ED%9C%98%EC%84%9C",
      "group": "하이키"
     }
    ],
@@ -210,13 +292,19 @@
    "f": [],
    "m": [
     {
-     "name": "박해진"
+     "id": "park_haejin",
+     "name": "박해진",
+     "link": "?q=%EB%B0%95%ED%95%B4%EC%A7%84"
     },
     {
-     "name": "소지섭"
+     "id": "so_jisub",
+     "name": "소지섭",
+     "link": "?q=%EC%86%8C%EC%A7%80%EC%84%AD"
     },
     {
-     "name": "원빈"
+     "id": "won_bin",
+     "name": "원빈",
+     "link": "?q=%EC%9B%90%EB%B9%88"
     }
    ]
   }
