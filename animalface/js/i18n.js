@@ -36,6 +36,7 @@
       errHint: '추측으로 결과를 만들지 않습니다. 다른 사진으로 다시 시도해주세요.',
       errModel: '모델을 불러오지 못했어요.<br>네트워크를 확인하고 새로고침해주세요.',
       errCam: '카메라를 열 수 없어요: {msg}',
+      login: '로그인', logout: '로그아웃',
       foot: '온디바이스 처리 · MediaPipe FaceLandmarker · 아트는 로컬 생성',
     },
     en: {
@@ -68,6 +69,7 @@
       errHint: 'We never guess a result. Try a different photo.',
       errModel: 'Could not load the model.<br>Check your connection and reload.',
       errCam: 'Cannot open the camera: {msg}',
+      login: 'Sign in', logout: 'Sign out',
       foot: 'On-device · MediaPipe FaceLandmarker · art generated locally',
     },
     ja: {
@@ -100,6 +102,7 @@
       errHint: '推測で結果は作りません。別の写真で試してください。',
       errModel: 'モデルを読み込めませんでした。<br>通信を確認して再読み込みしてください。',
       errCam: 'カメラを開けません: {msg}',
+      login: 'ログイン', logout: 'ログアウト',
       foot: '端末内処理 · MediaPipe FaceLandmarker · アートはローカル生成',
     },
   };
