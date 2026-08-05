@@ -82,11 +82,16 @@ footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:14px}
 
   <div class="card">
     <div class="stage">
+      <video class="layer" id="vid" playsinline muted autoplay
+             style="display:none;object-fit:cover;transform:scaleX(-1)"></video>
       <canvas class="layer" id="cv"></canvas>
       <canvas class="layer" id="gl" style="display:none"></canvas>
       <div class="ph" id="ph">사진을 넣으면 여기에 결과가 나와요</div>
     </div>
-    <video id="vid" playsinline muted style="display:none"></video>
+    <div class="row" id="shotRow" style="display:none">
+      <button class="btn" id="shot">📸 찍기</button>
+      <button class="btn sec" id="camOff" style="flex:0 0 38%">닫기</button>
+    </div>
     <div class="row">
       <button class="btn sec" id="mirror" disabled>😀 표정 따라하기</button>
       <button class="btn sec" id="rec" disabled>🎞 GIF 만들기</button>
@@ -171,6 +176,18 @@ const P = { eyeL_out:33, eyeL_in:133, eyeL_up:159, eyeL_dn:145,
   noseL:129, noseR:358, noseTip:1, lipUp:13, lipDn:14, lipL:61, lipR:291, jawL:172, jawR:397 };
 const d2 = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
 const clamp01 = v => Math.max(0, Math.min(1, v));
+
+/* MediaPipe 좌표는 x=가로폭 기준, y=세로높이 기준으로 각각 0~1이다.
+   즉 정사각형이 아닌 사진에서는 x와 y의 '1'이 서로 다른 길이라서
+   그대로 거리를 재면 세로 사진은 얼굴이 납작하게, 가로 사진은 길쭉하게 측정된다.
+   실제로 같은 얼굴이 3:4에서는 "정면 아님"으로 거부되고 4:3에서는 축이 1.00에 붙었다.
+   → y에 (높이/너비)를 곱해 가로폭 기준 등방 좌표로 바꾼 뒤에 잰다. */
+function isoLandmarks(lm, srcW, srcH) {
+  const a = (srcH && srcW) ? srcH / srcW : 1;
+  return lm.map(p => ({ x: p.x, y: p.y * a, z: p.z }));
+}
+const mediaSize = el => [el.naturalWidth || el.videoWidth || el.width,
+                         el.naturalHeight || el.videoHeight || el.height];
 /* 구간은 감이 아니라 실측이다. 얼굴 표본 12개(둥근·긴·각진·통통·노년 등)를 재서
    p10~p90에 여유를 준 값. 감으로 찍었을 때 lipThick를 [0.100,0.400]으로 잡았는데
    실제 분포는 0.003~0.101이라 전 사용자가 0으로 눌렸다. 표본 재측정 없이 손대지 말 것.
@@ -263,20 +280,40 @@ $('file').onchange = e => {
   im.onload = () => { srcImg = im; drawBase(); detect(); };
   im.src = URL.createObjectURL(f);
 };
-$('cam').onclick = async () => {
-  try {
-    const st = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:720 } });
-    const v = $('vid'); v.srcObject = st; await v.play();
-    $('ph').style.display = 'none';
-    setTimeout(() => {
-      const c = document.createElement('canvas');
-      c.width = v.videoWidth; c.height = v.videoHeight;
-      c.getContext('2d').drawImage(v, 0, 0);
-      const im = new Image();
-      im.onload = () => { srcImg = im; drawBase(); detect(); };
-      im.src = c.toDataURL('image/jpeg', 0.92);
-    }, 700);
-  } catch (e) { $('ph').textContent = '카메라를 열 수 없어요: ' + e.message; }
+// 카메라는 미리보기를 띄우고 사용자가 직접 셔터를 누르게 한다.
+// (예전엔 버튼 누르면 0.7초 뒤 몰래 한 장 찍어서, 언제 찍히는지 알 수 없어 쓰기 불편했다)
+async function openCam() {
+  const v = $('vid');
+  if (!v.srcObject) {
+    try {
+      v.srcObject = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode:'user', width:{ ideal:1280 }, height:{ ideal:1280 } } });
+      await v.play();
+    } catch (e) { $('ph').textContent = '카메라를 열 수 없어요: ' + e.message; return false; }
+  }
+  v.style.display = ''; $('ph').style.display = 'none';
+  $('shotRow').style.display = '';
+  return true;
+}
+function closeCam(stopStream) {
+  const v = $('vid');
+  v.style.display = 'none';
+  $('shotRow').style.display = 'none';
+  if (stopStream && v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; }
+}
+$('cam').onclick = () => { stopMirror(); openCam(); };
+$('camOff').onclick = () => { closeCam(true); if (ranked) redraw(); else $('ph').style.display = ''; };
+$('shot').onclick = () => {
+  const v = $('vid');
+  if (!v.videoWidth) return;
+  const c = document.createElement('canvas');
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  const x = c.getContext('2d');
+  x.translate(c.width, 0); x.scale(-1, 1);        // 미리보기와 같은 좌우 반전으로 저장
+  x.drawImage(v, 0, 0);
+  const im = new Image();
+  im.onload = () => { srcImg = im; closeCam(false); drawBase(); detect(); };
+  im.src = c.toDataURL('image/jpeg', 0.92);
 };
 for (const [id, m] of [['mSerious','serious'], ['mFunny','funny']]) {
   $(id).onclick = () => {
@@ -332,9 +369,11 @@ function detect() {
   if (runMode !== 'IMAGE') { landmarker.setOptions({ runningMode:'IMAGE' }); runMode = 'IMAGE'; }
   const r = landmarker.detect(srcImg);
   if (!r.faceLandmarks?.length) return fail('얼굴을 찾지 못했어요');
-  const q = faceQuality(r.faceLandmarks[0]);
+  const [iw, ih] = mediaSize(srcImg);
+  const lm = isoLandmarks(r.faceLandmarks[0], iw, ih);   // 사진 비율 보정 후 측정
+  const q = faceQuality(lm);
   if (!q.ok) return fail(q.reason);
-  LM = r.faceLandmarks[0];
+  LM = lm;
   AX = computeAxes(LM);
   baseBox = drawBase();
   ranked = match(AX);
@@ -483,10 +522,14 @@ const GLW = (() => { try {
 
 // ---- 표정 미러링 ----
 let mirroring = false, camStream = null;
-function stopMirror(){ mirroring = false; $('mirror').textContent = '😀 표정 따라하기'; }
+function stopMirror(){
+  mirroring = false;
+  $('mirror').textContent = '😀 표정 따라하기';
+  if ($('shotRow').style.display === 'none') $('vid').style.display = 'none';
+}
 
 $('mirror').onclick = async () => {
-  if (mirroring) { stopMirror(); if (ranked) reveal(); return; }
+  if (mirroring) { stopMirror(); if (ranked) redraw(); return; }
   if (!ranked) return;
   const v = $('vid');
   if (!v.srcObject) {
@@ -498,6 +541,8 @@ $('mirror').onclick = async () => {
       return;
     }
   }
+  // 숨긴 video는 브라우저가 프레임 갱신을 늦출 수 있다 → 보이게 두고 캔버스로 덮는다
+  v.style.display = ''; $('shotRow').style.display = 'none';
   mirroring = true;
   $('mirror').textContent = '⏹ 그만하기';
   $('rec').disabled = false;
