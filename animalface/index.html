@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>동물상 판독기 — 내 얼굴은 무슨 동물?</title>
+<meta name="description" content="사진 한 장으로 얼굴 8개 축을 실측해서 20종 동물상 중 내 얼굴을 찾아줍니다. 표정 미러링·GIF 공유. 사진은 기기 밖으로 나가지 않습니다.">
+<meta property="og:title" content="동물상 판독기 — 내 얼굴은 무슨 동물?">
+<meta property="og:description" content="눈·코·입 468개 점을 실측해서 20종 중 내 동물상을 찾아줍니다. 표정을 따라하는 GIF도 만들 수 있어요.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://game.cocy.io/animalface/">
+<link rel="canonical" href="https://game.cocy.io/animalface/">
+<style>
+:root{
+  --bg:#faf6ee; --card:#fff; --line:#e6ddcc; --ink:#2b2822; --mut:#8a8171;
+  --acc:#f2683c; --acc2:#3ba7a0; --gold:#e8a33d;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",system-ui,sans-serif;
+  line-height:1.6;padding:14px;padding-bottom:56px}
+.wrap{max-width:480px;margin:0 auto}
+header{text-align:center;margin:6px 0 14px}
+h1{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
+.sub{color:var(--mut);font-size:.82rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;
+  box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.btn{background:var(--acc);color:#fff;border:none;border-radius:12px;padding:13px 16px;
+  font-size:.95rem;font-weight:700;cursor:pointer;width:100%;font-family:inherit}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.sec{background:#f4efe4;color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;gap:8px;margin-top:8px}
+.stage{position:relative;width:100%;aspect-ratio:1;background:#f1ece1;border-radius:14px;overflow:hidden}
+canvas.layer{position:absolute;inset:0;width:100%;height:100%}
+.ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:var(--mut);font-size:.85rem;text-align:center;padding:20px}
+.hint{font-size:.76rem;color:var(--mut);margin-top:8px}
+.modes{display:flex;gap:6px;background:#f4efe4;padding:4px;border-radius:12px;margin-bottom:10px}
+.modes button{flex:1;border:none;background:transparent;padding:9px;border-radius:9px;font-weight:700;
+  font-size:.85rem;color:var(--mut);cursor:pointer;font-family:inherit}
+.modes button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.win{display:flex;gap:14px;align-items:center}
+.win img{width:112px;height:112px;border-radius:16px;object-fit:cover;background:#f1ece1;flex:none}
+.win .nm{font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
+.win .pc{font-size:2.1rem;font-weight:800;color:var(--acc);line-height:1.05}
+.win .ds{font-size:.8rem;color:var(--mut);margin-top:3px}
+.runner{display:flex;gap:8px;margin-top:12px}
+.runner div{flex:1;text-align:center;background:#faf6ee;border:1px solid var(--line);border-radius:12px;padding:8px 4px}
+.runner img{width:44px;height:44px;border-radius:10px;object-fit:cover}
+.runner .n{font-size:.72rem;font-weight:700;margin-top:2px}
+.runner .p{font-size:.72rem;color:var(--acc2);font-weight:700}
+.axes{display:grid;grid-template-columns:1fr auto;gap:1px 10px;font-size:.78rem}
+.axes .k{color:var(--mut)}
+.axes .v{font-family:ui-monospace,monospace;color:var(--acc2);text-align:right}
+.bar{height:5px;background:#f0eade;border-radius:3px;overflow:hidden;grid-column:1/-1;margin-bottom:6px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--gold))}
+.err{color:var(--acc);font-size:.85rem;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:4px}
+.grid figure{text-align:center}
+.grid img{width:100%;aspect-ratio:1;border-radius:9px;object-fit:cover;background:#f1ece1}
+.grid figcaption{font-size:.6rem;color:var(--mut);margin-top:1px;line-height:1.2}
+footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🦊 동물상 판독기</h1>
+    <div class="sub">얼굴 468개 점을 실측해서 20종 중에 찾아줍니다</div>
+  </header>
+
+  <div class="card">
+    <div class="modes">
+      <button id="mSerious" class="on">진지 모드</button>
+      <button id="mFunny">웃긴 모드</button>
+    </div>
+    <input type="file" id="file" accept="image/*" style="display:none">
+    <button class="btn" id="pick" disabled>📷 사진 선택</button>
+    <div class="row"><button class="btn sec" id="cam" disabled>🎥 카메라로 찍기</button></div>
+    <div class="hint" id="privacy">사진은 이 기기 안에서만 처리됩니다. 서버로 올리지 않습니다.</div>
+  </div>
+
+  <div class="card">
+    <div class="stage">
+      <canvas class="layer" id="cv"></canvas>
+      <canvas class="layer" id="gl" style="display:none"></canvas>
+      <div class="ph" id="ph">사진을 넣으면 여기에 결과가 나와요</div>
+    </div>
+    <video id="vid" playsinline muted style="display:none"></video>
+    <div class="row">
+      <button class="btn sec" id="mirror" disabled>😀 표정 따라하기</button>
+      <button class="btn sec" id="rec" disabled>🎞 GIF 만들기</button>
+    </div>
+    <div id="gifOut"></div>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none">
+    <div id="result"></div>
+  </div>
+
+  <div class="card" id="axCard" style="display:none">
+    <div class="axes" id="axes"></div>
+    <div class="hint">사진에서 잰 실제 비율입니다. 별점이나 랜덤이 아닙니다.</div>
+  </div>
+
+  <div class="card">
+    <div class="hint" style="margin:0 0 8px">20종 라인업</div>
+    <div class="grid" id="lineup"></div>
+  </div>
+
+  <footer>온디바이스 처리 · MediaPipe FaceLandmarker · 아트는 로컬 생성</footer>
+</div>
+
+<script type="module">
+import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18";
+
+const $ = id => document.getElementById(id);
+let DATA = null, ANIMALS = [], AXIS_LABEL = {}, AXIS_W = {};
+const animImgs = {};
+
+const cv = $('cv'), ctx = cv.getContext('2d');
+function fit(){ const r = cv.getBoundingClientRect(), d = Math.min(devicePixelRatio||1, 2);
+  const w = Math.round(r.width*d), h = Math.round(r.height*d);
+  if (cv.width === w && cv.height === h) return false;
+  cv.width = w; cv.height = h;         // 크기 대입은 캔버스를 지운다
+  return true;
+}
+// 폰 회전·주소창 접힘도 resize다. 다시 그리지 않으면 결과 그림이 그대로 날아간다.
+addEventListener('resize', () => { if (fit() && !mirroring) redraw(); });
+fit();
+function redraw(){
+  if (!ranked) return;
+  const aimg = animImgs[ranked[0].a.id];
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if (aimg && aimg.complete) ctx.drawImage(aimg, 0, 0, cv.width, cv.height);
+}
+
+let srcImg = null, LM = null, AX = null, ranked = null, mode = 'serious';
+
+// ---- 데이터 ----
+fetch('animals.json?v=1').then(r => r.json()).then(d => {
+  DATA = d; ANIMALS = d.animals; AXIS_LABEL = d.axisLabel; AXIS_W = d.axisWeight;
+  ANIMALS.forEach(a => { const im = new Image(); im.src = `img/${a.id}.webp`; animImgs[a.id] = im; });
+  $('lineup').innerHTML = ANIMALS.map(a =>
+    `<figure><img src="img/${a.id}.webp" alt="${a.name}" loading="lazy"><figcaption>${a.name.replace('상','')}</figcaption></figure>`).join('');
+});
+
+// ---- MediaPipe ----
+let landmarker = null, runMode = 'IMAGE';
+(async () => {
+  try {
+    const fs = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm");
+    landmarker = await FaceLandmarker.createFromOptions(fs, {
+      baseOptions: { modelAssetPath:
+        "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+        delegate: "GPU" },
+      outputFaceBlendshapes: true, runningMode: "IMAGE", numFaces: 1,
+      minFaceDetectionConfidence: 0.7, minFacePresenceConfidence: 0.7, minTrackingConfidence: 0.7
+    });
+    $('pick').disabled = false; $('cam').disabled = false;
+  } catch (e) {
+    $('ph').innerHTML = `모델을 불러오지 못했어요.<br>네트워크를 확인하고 새로고침해주세요.`;
+  }
+})();
+
+// ---- 8축 실측 ----
+const P = { eyeL_out:33, eyeL_in:133, eyeL_up:159, eyeL_dn:145,
+  eyeR_in:362, eyeR_out:263, eyeR_up:386, eyeR_dn:374,
+  cheekL:234, cheekR:454, chin:152, forehead:10,
+  noseL:129, noseR:358, noseTip:1, lipUp:13, lipDn:14, lipL:61, lipR:291, jawL:172, jawR:397 };
+const d2 = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+const clamp01 = v => Math.max(0, Math.min(1, v));
+/* 구간은 감이 아니라 실측이다. 얼굴 표본 12개(둥근·긴·각진·통통·노년 등)를 재서
+   p10~p90에 여유를 준 값. 감으로 찍었을 때 lipThick를 [0.100,0.400]으로 잡았는데
+   실제 분포는 0.003~0.101이라 전 사용자가 0으로 눌렸다. 표본 재측정 없이 손대지 말 것.
+   보정 도구: ops/verify/af-calib.cjs */
+const RANGE = { eyeSize:[0.035,0.115], eyeSlant:[-0.006,0.046], eyeGap:[0.216,0.288],
+  faceLength:[1.000,1.360], jawSharp:[0.132,0.297], cheek:[1.143,1.410],
+  noseWidth:[0.250,0.318], lipThick:[0.000,0.105] };
+
+function computeAxes(lm) {
+  const g = i => lm[i];
+  const faceW = d2(g(P.cheekL), g(P.cheekR)), faceH = d2(g(P.forehead), g(P.chin));
+  const eyeH = (d2(g(P.eyeL_up),g(P.eyeL_dn)) + d2(g(P.eyeR_up),g(P.eyeR_dn)))/2;
+  const slant = ((g(P.eyeL_in).y - g(P.eyeL_out).y) + (g(P.eyeR_in).y - g(P.eyeR_out).y))/2;
+  const jawW = d2(g(P.jawL), g(P.jawR));
+  const raw = {
+    eyeSize: eyeH/faceW, eyeSlant: slant/faceW, eyeGap: d2(g(P.eyeL_in),g(P.eyeR_in))/faceW,
+    faceLength: faceH/faceW, jawSharp: 1 - jawW/faceW, cheek: faceW/jawW,
+    noseWidth: d2(g(P.noseL),g(P.noseR))/faceW,
+    lipThick: d2(g(P.lipUp),g(P.lipDn))/d2(g(P.lipL),g(P.lipR)),
+  };
+  window.__raw = raw;              // RANGE 보정용 — 상수를 감으로 찍지 않기 위해 실측값을 노출한다
+  const out = {};
+  for (const k in raw) { const [lo,hi] = RANGE[k]; out[k] = clamp01((raw[k]-lo)/(hi-lo)); }
+  return out;
+}
+
+// 모드는 "어느 라인업에서 고를지"만 바꾼다.
+// 거리에 상수를 더하면 tier 안에서의 변별력까지 뭉개져서(전원 같은 답) 곱셈 가중으로 간다.
+const TIER_MUL = { serious:{ cute:1, cool:1, funny:1.55 }, funny:{ cute:1.25, cool:1.35, funny:0.62 } };
+
+/* 사람 얼굴은 8차원 공간의 아주 좁은 영역에 몰려 있다(다 사람이니까).
+   반면 동물 축은 0~1 전체에 퍼져 있어서, 절대좌표로 거리를 재면
+   '사람 무리 중심에 제일 가까운 동물'이 거의 모든 사람에게 1등이 된다(실측: 별코두더지 7/12).
+   그래서 양쪽을 각자의 분포로 표준화해서 비교한다 —
+   "사람 중에서 유난히 얼굴이 긴 편" ↔ "동물 중에서 유난히 얼굴이 긴 종". */
+const HUMAN_RAW = { eyeSize:[0.0721,0.0182], eyeSlant:[0.0202,0.0107], eyeGap:[0.2563,0.0140],
+  faceLength:[1.1747,0.0842], jawSharp:[0.2104,0.0319], cheek:[1.2686,0.0516],
+  noseWidth:[0.2846,0.0149], lipThick:[0.0188,0.0296] };   // 표본 12개 실측 (af-calib.cjs)
+let ANIMAL_STATS = null;
+function animalStats() {
+  if (ANIMAL_STATS) return ANIMAL_STATS;
+  ANIMAL_STATS = {};
+  for (const k in AXIS_W) {
+    const v = ANIMALS.map(a => a.axes[k]);
+    const m = v.reduce((x,y)=>x+y,0)/v.length;
+    const sd = Math.sqrt(v.reduce((x,y)=>x+(y-m)**2,0)/v.length) || 1;
+    ANIMAL_STATS[k] = [m, sd];
+  }
+  return ANIMAL_STATS;
+}
+
+function match(ax) {
+  const mul = TIER_MUL[mode], raw = window.__raw, AS = animalStats();
+  const z = {};
+  for (const k in AXIS_W) {
+    const [m, sd] = HUMAN_RAW[k];
+    // raw가 있으면 실측 원시비율로, 없으면 정규화값으로 폴백
+    z[k] = raw ? (raw[k]-m)/(sd||1) : (ax[k]-0.5)*3;
+    z[k] = Math.max(-2.5, Math.min(2.5, z[k]));
+  }
+  const scored = ANIMALS.map(a => {
+    let s = 0, wsum = 0;
+    for (const k in AXIS_W) {
+      const [am, asd] = AS[k];
+      const az = Math.max(-2.5, Math.min(2.5, (a.axes[k]-am)/asd));
+      const w = AXIS_W[k]||1;
+      s += w*Math.pow(z[k]-az, 2); wsum += w;
+    }
+    return { a, dist: Math.sqrt(s/wsum) * (mul[a.tier]||1) };
+  }).sort((x,y) => x.dist - y.dist);
+  const top = scored[0].dist;
+  // 절대거리를 그대로 쓰면 전부 40%대로 나와서 재미가 없다 → 1위 기준 상대 스케일
+  return scored.map((s,i) => ({ ...s, pct: Math.max(41, Math.round(95 - (s.dist-top)*115 - i*1.2)) }));
+}
+
+function whyText(ax, animal) {
+  return Object.keys(ax)
+    .map(k => ({ k, gap: Math.abs(ax[k]-animal.axes[k])*(AXIS_W[k]||1) }))
+    .sort((a,b) => a.gap-b.gap).slice(0,2)
+    .map(d => AXIS_LABEL[d.k] + (ax[d.k] > .55 ? ' 큼' : ax[d.k] < .45 ? ' 작음' : ' 보통'))
+    .join(' · ');
+}
+
+// ---- 입력 ----
+$('pick').onclick = () => $('file').click();
+$('file').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  stopMirror();
+  const im = new Image();
+  im.onload = () => { srcImg = im; drawBase(); detect(); };
+  im.src = URL.createObjectURL(f);
+};
+$('cam').onclick = async () => {
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:720 } });
+    const v = $('vid'); v.srcObject = st; await v.play();
+    $('ph').style.display = 'none';
+    setTimeout(() => {
+      const c = document.createElement('canvas');
+      c.width = v.videoWidth; c.height = v.videoHeight;
+      c.getContext('2d').drawImage(v, 0, 0);
+      const im = new Image();
+      im.onload = () => { srcImg = im; drawBase(); detect(); };
+      im.src = c.toDataURL('image/jpeg', 0.92);
+    }, 700);
+  } catch (e) { $('ph').textContent = '카메라를 열 수 없어요: ' + e.message; }
+};
+for (const [id, m] of [['mSerious','serious'], ['mFunny','funny']]) {
+  $(id).onclick = () => {
+    mode = m;
+    $('mSerious').classList.toggle('on', m === 'serious');
+    $('mFunny').classList.toggle('on', m === 'funny');
+    if (AX) { ranked = match(AX); renderResult(); }
+  };
+}
+
+function drawBase(alpha = 1) {
+  ctx.clearRect(0,0,cv.width,cv.height);
+  if (!srcImg) return null;
+  $('ph').style.display = 'none';
+  const s = Math.max(cv.width/srcImg.width, cv.height/srcImg.height);
+  const w = srcImg.width*s, h = srcImg.height*s;
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(srcImg, (cv.width-w)/2, (cv.height-h)/2, w, h);
+  ctx.globalAlpha = 1;
+  return { x:(cv.width-w)/2, y:(cv.height-h)/2, w, h };
+}
+let baseBox = null;
+
+// 검출됐다고 다 사람 얼굴이 아니다 — 기하가 말이 되는지 다시 본다.
+// 억지로 맞춘 결과를 그럴듯하게 내놓는 게 신뢰에 제일 치명적이라 거부하는 쪽을 택했다.
+function faceQuality(lm) {
+  const g = i => lm[i];
+  const faceW = d2(g(P.cheekL), g(P.cheekR)), faceH = d2(g(P.forehead), g(P.chin));
+  if (faceW < 0.06) return { ok:false, reason:'얼굴이 너무 작아요 — 더 가까이 찍은 사진으로' };
+  const r = faceH/faceW;
+  if (r < 0.9 || r > 2.2) return { ok:false, reason:'정면 얼굴 사진인지 확인해주세요' };
+  const eyeY = (g(P.eyeL_up).y + g(P.eyeR_up).y)/2;
+  if (!(eyeY < g(P.noseTip).y && g(P.noseTip).y < g(P.lipDn).y))
+    return { ok:false, reason:'얼굴 구조를 인식하지 못했어요' };
+  const eL = d2(g(P.eyeL_up),g(P.eyeL_dn)), eR = d2(g(P.eyeR_up),g(P.eyeR_dn));
+  if (Math.abs(eL-eR)/Math.max(eL,eR,1e-6) > 0.6)
+    return { ok:false, reason:'고개를 돌린 사진이에요 — 정면으로 다시' };
+  return { ok:true };
+}
+
+function fail(reason) {
+  LM = null; AX = null; ranked = null;
+  $('mirror').disabled = true; $('rec').disabled = true;
+  baseBox = drawBase(0.3);
+  $('axCard').style.display = 'none';
+  $('resultCard').style.display = '';
+  $('result').innerHTML = `<div class="err">✕ ${reason}</div>
+    <div class="hint">추측으로 결과를 만들지 않습니다. 다른 사진으로 다시 시도해주세요.</div>`;
+}
+
+function detect() {
+  if (!landmarker || !srcImg || !ANIMALS.length) return;
+  if (runMode !== 'IMAGE') { landmarker.setOptions({ runningMode:'IMAGE' }); runMode = 'IMAGE'; }
+  const r = landmarker.detect(srcImg);
+  if (!r.faceLandmarks?.length) return fail('얼굴을 찾지 못했어요');
+  const q = faceQuality(r.faceLandmarks[0]);
+  if (!q.ok) return fail(q.reason);
+  LM = r.faceLandmarks[0];
+  AX = computeAxes(LM);
+  baseBox = drawBase();
+  ranked = match(AX);
+  renderAxes(); renderResult();
+  $('mirror').disabled = false;
+  reveal();
+}
+
+// 결과 동물로 부드럽게 넘어가는 연출 — 결과가 "계산됐다"는 느낌을 준다
+function reveal() {
+  const A = ranked[0].a, aimg = animImgs[A.id];
+  const t0 = performance.now(), DUR = 900;
+  (function step(){
+    const t = Math.min(1, (performance.now()-t0)/DUR);
+    const e = t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+    drawBase(1-e);
+    if (aimg.complete) { ctx.globalAlpha = e; ctx.drawImage(aimg, 0, 0, cv.width, cv.height); ctx.globalAlpha = 1; }
+    if (t < 1) requestAnimationFrame(step);
+  })();
+}
+
+function renderAxes() {
+  $('axCard').style.display = '';
+  $('axes').innerHTML = Object.keys(AX).map(k =>
+    `<div class="k">${AXIS_LABEL[k]}</div><div class="v">${AX[k].toFixed(2)}</div>
+     <div class="bar"><i style="width:${(AX[k]*100).toFixed(0)}%"></i></div>`).join('');
+}
+
+function renderResult() {
+  const b = ranked[0];
+  $('resultCard').style.display = '';
+  $('result').innerHTML =
+    `<div class="win">
+       <img src="img/${b.a.id}.webp" alt="${b.a.name}">
+       <div>
+         <div class="pc">${b.pct}%</div>
+         <div class="nm">${b.a.name}</div>
+         <div class="ds">${b.a.desc}</div>
+       </div>
+     </div>
+     <div class="hint" style="margin-top:8px">근거: ${whyText(AX, b.a)}</div>
+     <div class="runner">${ranked.slice(1,4).map(s =>
+       `<div><img src="img/${s.a.id}.webp" alt=""><div class="n">${s.a.name}</div><div class="p">${s.pct}%</div></div>`).join('')}
+     </div>`;
+  if (LM) reveal();
+}
+
+/* ---- WebGL 워프 ----
+   캔버스 2D로 조각을 덧그리면 원본 눈·입이 밑에 남는다(겹침). 여기서는 출력 픽셀마다
+   원본의 어느 지점을 읽을지만 옮긴다 → 복제가 원리상 없고 경계도 안 생긴다. */
+const GLW = (() => { try {
+  const cvs = $('gl');
+  const gl = cvs.getContext('webgl', { premultipliedAlpha:false, antialias:true });
+  if (!gl) return null;
+  const VS = `attribute vec2 p; varying vec2 vUv;
+    void main(){ vUv = vec2(p.x*0.5+0.5, 0.5-p.y*0.5); gl_Position = vec4(p,0.0,1.0); }`;
+  const FS = `precision highp float;
+    varying vec2 vUv; uniform sampler2D tex;
+    uniform vec4 eyeL, eyeR, mouth;
+    uniform float blink, jaw, smile, brow;
+    float fall(vec2 uv, vec4 b){ return 1.0 - smoothstep(0.55, 1.0, length((uv - b.xy) / b.zw)); }
+    vec2 eyeWarp(vec2 uv, vec4 b){
+      float w = fall(uv, b); if (w <= 0.0) return vec2(0.0);
+      // 변위가 falloff 반경(b.w)을 넘으면 영향권 밖(이마·귀)을 끌어온다 → 반드시 묶는다
+      float dy = -(blink * 0.85 + brow * 0.25) * b.w;
+      return vec2(0.0, clamp(dy, -b.w, b.w)) * w;
+    }
+    vec2 mouthWarp(vec2 uv, vec4 b){
+      float w = fall(uv, b); if (w <= 0.0) return vec2(0.0);
+      float top = b.y - b.w * 0.55;
+      vec2 off = vec2(0.0);
+      if (uv.y > top) off.y = (top + (uv.y - top) / (1.0 + jaw * 1.50)) - uv.y;
+      off.x = (b.x + (uv.x - b.x) / (1.0 + smile * 0.45)) - uv.x;
+      off.y += smile * b.w * 0.35 * smoothstep(0.2, 1.0, abs(uv.x - b.x) / b.z);
+      return off * w;
+    }
+    void main(){
+      vec2 uv = vUv + eyeWarp(vUv, eyeL) + eyeWarp(vUv, eyeR) + mouthWarp(vUv, mouth);
+      gl_FragColor = texture2D(tex, clamp(uv, 0.0, 1.0));
+    }`;
+  const sh = (t,s) => { const o = gl.createShader(t); gl.shaderSource(o,s); gl.compileShader(o);
+    if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+  const prog = gl.createProgram();
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, 'p');
+  gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const U = n => gl.getUniformLocation(prog, n);
+  const u = { eyeL:U('eyeL'), eyeR:U('eyeR'), mouth:U('mouth'),
+              blink:U('blink'), jaw:U('jaw'), smile:U('smile'), brow:U('brow') };
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  let texId = null;
+  // 박스[x,y,w,h] → 중심 + '반경'. w/h를 그대로 반경으로 쓰면 영향권이 2배가 된다.
+  const box = b => [b[0]+b[2]/2, b[1]+b[3]/2, b[2]/2*1.15, b[3]/2*1.6];
+  return {
+    setImage(img, id) {
+      if (texId === id) return;
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      texId = id;
+    },
+    render(W, H, boxes, s) {
+      if (cvs.width !== W || cvs.height !== H) { cvs.width = W; cvs.height = H; }
+      gl.viewport(0, 0, W, H);
+      gl.uniform4fv(u.eyeL, box(boxes.eyeL));
+      gl.uniform4fv(u.eyeR, box(boxes.eyeR));
+      gl.uniform4fv(u.mouth, box(boxes.mouth));
+      gl.uniform1f(u.blink, s.blink); gl.uniform1f(u.jaw, s.jaw);
+      gl.uniform1f(u.smile, s.smile); gl.uniform1f(u.brow, s.brow);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      return cvs;
+    }
+  };
+} catch (e) { console.warn('WebGL warp 불가:', e); return null; } })();
+
+/* 워프 튜닝/검증용: ?warp=blink,jaw,smile,brow&animal=fox 로 카메라 없이 고정값 렌더 */
+(function debugWarp(){
+  const q = new URLSearchParams(location.search);
+  if (!q.get('warp') || !GLW) return;
+  const [blink=0, jaw=0, smile=0, brow=0] = q.get('warp').split(',').map(Number);
+  const wanted = q.get('animal');
+  const iv = setInterval(() => {
+    if (!ANIMALS.length) return;
+    const A = ANIMALS.find(a => a.id === wanted) || ANIMALS[0];
+    const img = animImgs[A.id];
+    if (!img.complete) return;
+    clearInterval(iv);
+    GLW.setImage(img, A.id);
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.drawImage(GLW.render(cv.width, cv.height, A.boxes, { blink, jaw, smile, brow }), 0, 0);
+    $('ph').style.display = 'none';
+    document.body.dataset.warpReady = A.id;
+  }, 60);
+})();
+
+// ---- 표정 미러링 ----
+let mirroring = false, camStream = null;
+function stopMirror(){ mirroring = false; $('mirror').textContent = '😀 표정 따라하기'; }
+
+$('mirror').onclick = async () => {
+  if (mirroring) { stopMirror(); if (ranked) reveal(); return; }
+  if (!ranked) return;
+  const v = $('vid');
+  if (!v.srcObject) {
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:640 } });
+      v.srcObject = camStream; await v.play();
+    } catch (e) {
+      $('gifOut').innerHTML = `<div class="hint err">카메라를 열 수 없어요: ${e.message}</div>`;
+      return;
+    }
+  }
+  mirroring = true;
+  $('mirror').textContent = '⏹ 그만하기';
+  $('rec').disabled = false;
+  if (runMode !== 'VIDEO') { landmarker.setOptions({ runningMode:'VIDEO' }); runMode = 'VIDEO'; }
+  const A = ranked[0].a, aimg = animImgs[A.id], bx = A.boxes;
+  let last = -1;
+  (function frame(){
+    if (!mirroring) return;
+    if (v.currentTime !== last) {
+      last = v.currentTime;
+      const cats = landmarker.detectForVideo(v, performance.now())?.faceBlendshapes?.[0]?.categories;
+      if (cats) {
+        const get = n => (cats.find(c => c.categoryName === n)?.score) || 0;
+        const s = {
+          blink: Math.max(get('eyeBlinkLeft'), get('eyeBlinkRight')),
+          jaw:   get('jawOpen'),
+          smile: Math.max(get('mouthSmileLeft'), get('mouthSmileRight')),
+          brow:  Math.max(get('browOuterUpLeft'), get('browOuterUpRight')),
+        };
+        const W = cv.width, H = cv.height;
+        ctx.clearRect(0,0,W,H);
+        if (GLW && aimg.complete) {
+          GLW.setImage(aimg, A.id);
+          ctx.drawImage(GLW.render(W, H, bx, s), 0, 0);
+        } else if (aimg.complete) {
+          ctx.drawImage(aimg, 0, 0, W, H);   // WebGL 없는 기기: 정지 이미지로만
+        }
+      }
+    }
+    requestAnimationFrame(frame);
+  })();
+};
+
+// ---- GIF (gif.js, MIT) ----
+$('rec').onclick = async () => {
+  if (!mirroring) { $('gifOut').innerHTML = `<div class="hint">먼저 "표정 따라하기"를 켜주세요</div>`; return; }
+  const btn = $('rec'); btn.disabled = true;
+  const SIZE = 360, FPS = 10, SEC = 3;
+  try {
+    if (!window.GIF) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js';
+        s.onload = res; s.onerror = () => rej(new Error('GIF 라이브러리 로드 실패'));
+        document.head.appendChild(s);
+      });
+    }
+    const gif = new window.GIF({ workers:2, quality:12, width:SIZE, height:SIZE,
+      workerScript:'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js' });
+    const tmp = document.createElement('canvas'); tmp.width = tmp.height = SIZE;
+    const tctx = tmp.getContext('2d');
+    const total = FPS*SEC;
+    for (let i = 0; i < total; i++) {
+      btn.textContent = `🎞 녹화중 ${i+1}/${total}`;
+      tctx.drawImage(cv, 0, 0, SIZE, SIZE);
+      gif.addFrame(tctx, { copy:true, delay:1000/FPS });
+      await new Promise(r => setTimeout(r, 1000/FPS));
+    }
+    btn.textContent = '🎞 만드는 중…';
+    const blob = await new Promise(res => { gif.on('finished', res); gif.render(); });
+    const url = URL.createObjectURL(blob);
+    const name = ranked ? ranked[0].a.name : 'animalface';
+    $('gifOut').innerHTML =
+      `<div class="hint">${(blob.size/1024).toFixed(0)}KB — 길게 눌러 저장하거나 아래 버튼</div>
+       <img src="${url}" style="width:100%;border-radius:12px;margin-top:6px">
+       <a class="btn sec" style="display:block;text-align:center;text-decoration:none;margin-top:8px"
+          href="${url}" download="${name}.gif">⬇ GIF 저장</a>`;
+  } catch (e) {
+    $('gifOut').innerHTML = `<div class="hint err">GIF 실패: ${e.message}</div>`;
+  }
+  btn.textContent = '🎞 GIF 만들기'; btn.disabled = false;
+};
+</script>
+</body>
+</html>

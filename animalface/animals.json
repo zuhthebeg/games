@@ -1,0 +1,744 @@
+{
+ "axisLabel": {
+  "eyeSize": "눈 크기",
+  "eyeSlant": "눈꼬리 올라감",
+  "eyeGap": "미간 넓이",
+  "faceLength": "얼굴 길이",
+  "jawSharp": "턱 갸름함",
+  "cheek": "광대 발달",
+  "noseWidth": "코 넓이",
+  "lipThick": "입술 두께"
+ },
+ "axisWeight": {
+  "eyeSize": 1.2,
+  "eyeSlant": 1.3,
+  "eyeGap": 1.0,
+  "faceLength": 1.4,
+  "jawSharp": 1.2,
+  "cheek": 1.0,
+  "noseWidth": 0.8,
+  "lipThick": 0.8
+ },
+ "animals": [
+  {
+   "id": "dog",
+   "name": "강아지상",
+   "tier": "cute",
+   "desc": "보면 기분 좋아지는 얼굴. 첫인상에서 이미 반칙이다.",
+   "axes": {
+    "eyeSize": 0.78,
+    "eyeSlant": 0.08,
+    "eyeGap": 0.52,
+    "faceLength": 0.3,
+    "jawSharp": 0.28,
+    "cheek": 0.62,
+    "noseWidth": 0.55,
+    "lipThick": 0.62
+   },
+   "boxes": {
+    "eyeL": [
+     0.28,
+     0.28,
+     0.13,
+     0.11
+    ],
+    "eyeR": [
+     0.57,
+     0.28,
+     0.13,
+     0.11
+    ],
+    "mouth": [
+     0.38,
+     0.46,
+     0.22,
+     0.11
+    ]
+   }
+  },
+  {
+   "id": "cat",
+   "name": "고양이상",
+   "tier": "cool",
+   "desc": "눈꼬리로 먹고 들어간다. 다가오면 도망가는 쪽은 상대다.",
+   "axes": {
+    "eyeSize": 0.55,
+    "eyeSlant": 0.85,
+    "eyeGap": 0.45,
+    "faceLength": 0.42,
+    "jawSharp": 0.72,
+    "cheek": 0.45,
+    "noseWidth": 0.35,
+    "lipThick": 0.4
+   },
+   "boxes": {
+    "eyeL": [
+     0.321,
+     0.345,
+     0.125,
+     0.105
+    ],
+    "eyeR": [
+     0.55,
+     0.347,
+     0.127,
+     0.105
+    ],
+    "mouth": [
+     0.366,
+     0.541,
+     0.265,
+     0.127
+    ]
+   }
+  },
+  {
+   "id": "rabbit",
+   "name": "토끼상",
+   "tier": "cute",
+   "desc": "눈이 얼굴의 절반. 놀란 표정이 기본값이다.",
+   "axes": {
+    "eyeSize": 0.95,
+    "eyeSlant": 0.55,
+    "eyeGap": 0.35,
+    "faceLength": 0.45,
+    "jawSharp": 0.65,
+    "cheek": 0.3,
+    "noseWidth": 0.22,
+    "lipThick": 0.6
+   },
+   "boxes": {
+    "eyeL": [
+     0.345,
+     0.386,
+     0.1,
+     0.08
+    ],
+    "eyeR": [
+     0.568,
+     0.387,
+     0.1,
+     0.08
+    ],
+    "mouth": [
+     0.379,
+     0.564,
+     0.256,
+     0.122
+    ]
+   }
+  },
+  {
+   "id": "fennec",
+   "name": "사막여우상",
+   "tier": "cool",
+   "desc": "작고 또렷한 이목구비. 사진발이 유난히 잘 받는 타입.",
+   "axes": {
+    "eyeSize": 0.7,
+    "eyeSlant": 0.7,
+    "eyeGap": 0.4,
+    "faceLength": 0.38,
+    "jawSharp": 0.8,
+    "cheek": 0.35,
+    "noseWidth": 0.28,
+    "lipThick": 0.35
+   },
+   "boxes": {
+    "eyeL": [
+     0.4,
+     0.34,
+     0.07,
+     0.06
+    ],
+    "eyeR": [
+     0.51,
+     0.34,
+     0.07,
+     0.06
+    ],
+    "mouth": [
+     0.43,
+     0.43,
+     0.13,
+     0.06
+    ]
+   }
+  },
+  {
+   "id": "hamster",
+   "name": "햄스터상",
+   "tier": "cute",
+   "desc": "볼살이 인상을 다 가져간다. 나이를 안 먹는 얼굴.",
+   "axes": {
+    "eyeSize": 0.75,
+    "eyeSlant": 0.4,
+    "eyeGap": 0.6,
+    "faceLength": 0.3,
+    "jawSharp": 0.3,
+    "cheek": 0.85,
+    "noseWidth": 0.45,
+    "lipThick": 0.45
+   },
+   "boxes": {
+    "eyeL": [
+     0.31,
+     0.19,
+     0.1,
+     0.08
+    ],
+    "eyeR": [
+     0.51,
+     0.19,
+     0.1,
+     0.08
+    ],
+    "mouth": [
+     0.4,
+     0.28,
+     0.19,
+     0.09
+    ]
+   }
+  },
+  {
+   "id": "fox",
+   "name": "여우상",
+   "tier": "cool",
+   "desc": "웃지 않아도 웃는 것처럼 보인다. 그래서 오해도 많이 산다.",
+   "axes": {
+    "eyeSize": 0.5,
+    "eyeSlant": 0.9,
+    "eyeGap": 0.45,
+    "faceLength": 0.55,
+    "jawSharp": 0.82,
+    "cheek": 0.4,
+    "noseWidth": 0.35,
+    "lipThick": 0.35
+   },
+   "boxes": {
+    "eyeL": [
+     0.325,
+     0.22,
+     0.141,
+     0.119
+    ],
+    "eyeR": [
+     0.539,
+     0.22,
+     0.139,
+     0.119
+    ],
+    "mouth": [
+     0.379,
+     0.411,
+     0.244,
+     0.117
+    ]
+   }
+  },
+  {
+   "id": "bear",
+   "name": "곰상",
+   "tier": "cute",
+   "desc": "덩치와 상관없이 순해 보인다. 사람들이 자꾸 부탁을 한다.",
+   "axes": {
+    "eyeSize": 0.22,
+    "eyeSlant": 0.28,
+    "eyeGap": 0.75,
+    "faceLength": 0.22,
+    "jawSharp": 0.12,
+    "cheek": 0.8,
+    "noseWidth": 0.78,
+    "lipThick": 0.45
+   },
+   "boxes": {
+    "eyeL": [
+     0.31,
+     0.35,
+     0.11,
+     0.09
+    ],
+    "eyeR": [
+     0.58,
+     0.35,
+     0.11,
+     0.09
+    ],
+    "mouth": [
+     0.38,
+     0.51,
+     0.23,
+     0.1
+    ]
+   }
+  },
+  {
+   "id": "deer",
+   "name": "사슴상",
+   "tier": "cool",
+   "desc": "눈망울이 커서 뭘 해도 애처로워 보인다. 이득 보는 얼굴.",
+   "axes": {
+    "eyeSize": 0.88,
+    "eyeSlant": 0.6,
+    "eyeGap": 0.48,
+    "faceLength": 0.62,
+    "jawSharp": 0.75,
+    "cheek": 0.3,
+    "noseWidth": 0.32,
+    "lipThick": 0.4
+   },
+   "boxes": {
+    "eyeL": [
+     0.36,
+     0.41,
+     0.12,
+     0.1
+    ],
+    "eyeR": [
+     0.53,
+     0.41,
+     0.12,
+     0.1
+    ],
+    "mouth": [
+     0.44,
+     0.55,
+     0.12,
+     0.06
+    ]
+   }
+  },
+  {
+   "id": "wolf",
+   "name": "늑대상",
+   "tier": "cool",
+   "desc": "가만히 있어도 화난 줄 안다. 알고 보면 제일 무른 쪽.",
+   "axes": {
+    "eyeSize": 0.45,
+    "eyeSlant": 0.8,
+    "eyeGap": 0.5,
+    "faceLength": 0.6,
+    "jawSharp": 0.78,
+    "cheek": 0.55,
+    "noseWidth": 0.45,
+    "lipThick": 0.35
+   },
+   "boxes": {
+    "eyeL": [
+     0.288,
+     0.402,
+     0.152,
+     0.092
+    ],
+    "eyeR": [
+     0.554,
+     0.402,
+     0.152,
+     0.092
+    ],
+    "mouth": [
+     0.344,
+     0.613,
+     0.306,
+     0.146
+    ]
+   }
+  },
+  {
+   "id": "shihtzu",
+   "name": "시츄상",
+   "tier": "cute",
+   "desc": "눈코입이 가운데 모여 있다. 억울한 표정이 특기.",
+   "axes": {
+    "eyeSize": 0.8,
+    "eyeSlant": 0.2,
+    "eyeGap": 0.78,
+    "faceLength": 0.2,
+    "jawSharp": 0.3,
+    "cheek": 0.62,
+    "noseWidth": 0.7,
+    "lipThick": 0.45
+   },
+   "boxes": {
+    "eyeL": [
+     0.321,
+     0.404,
+     0.104,
+     0.104
+    ],
+    "eyeR": [
+     0.578,
+     0.404,
+     0.102,
+     0.105
+    ],
+    "mouth": [
+     0.354,
+     0.614,
+     0.294,
+     0.141
+    ]
+   }
+  },
+  {
+   "id": "bulldog",
+   "name": "불독상",
+   "tier": "funny",
+   "desc": "인상 하나로 자리를 정리한다. 웃으면 반전이 크다.",
+   "axes": {
+    "eyeSize": 0.4,
+    "eyeSlant": 0.15,
+    "eyeGap": 0.68,
+    "faceLength": 0.28,
+    "jawSharp": 0.2,
+    "cheek": 0.75,
+    "noseWidth": 0.75,
+    "lipThick": 0.7
+   },
+   "boxes": {
+    "eyeL": [
+     0.29,
+     0.41,
+     0.12,
+     0.09
+    ],
+    "eyeR": [
+     0.55,
+     0.41,
+     0.12,
+     0.09
+    ],
+    "mouth": [
+     0.36,
+     0.62,
+     0.27,
+     0.1
+    ]
+   }
+  },
+  {
+   "id": "pig",
+   "name": "돼지상",
+   "tier": "funny",
+   "desc": "복스럽다는 말을 평생 듣는다. 칭찬 맞다.",
+   "axes": {
+    "eyeSize": 0.3,
+    "eyeSlant": 0.3,
+    "eyeGap": 0.7,
+    "faceLength": 0.3,
+    "jawSharp": 0.25,
+    "cheek": 0.8,
+    "noseWidth": 0.85,
+    "lipThick": 0.6
+   },
+   "boxes": {
+    "eyeL": [
+     0.278,
+     0.345,
+     0.1,
+     0.08
+    ],
+    "eyeR": [
+     0.622,
+     0.345,
+     0.1,
+     0.08
+    ],
+    "mouth": [
+     0.302,
+     0.599,
+     0.396,
+     0.189
+    ]
+   }
+  },
+  {
+   "id": "gumiho",
+   "name": "구미호상",
+   "tier": "cool",
+   "desc": "예쁜데 어딘가 서늘하다. 사람 홀리는 건 얼굴 탓이 맞다.",
+   "axes": {
+    "eyeSize": 0.55,
+    "eyeSlant": 0.95,
+    "eyeGap": 0.4,
+    "faceLength": 0.6,
+    "jawSharp": 0.9,
+    "cheek": 0.35,
+    "noseWidth": 0.25,
+    "lipThick": 0.45
+   },
+   "boxes": {
+    "eyeL": [
+     0.192,
+     0.384,
+     0.221,
+     0.217
+    ],
+    "eyeR": [
+     0.597,
+     0.386,
+     0.219,
+     0.215
+    ],
+    "mouth": [
+     0.272,
+     0.743,
+     0.465,
+     0.222
+    ]
+   }
+  },
+  {
+   "id": "frog",
+   "name": "개구리상",
+   "tier": "funny",
+   "desc": "미간이 넓어서 시야가 넓다. 실제로 눈치도 빠르다.",
+   "axes": {
+    "eyeSize": 0.9,
+    "eyeSlant": 0.2,
+    "eyeGap": 0.85,
+    "faceLength": 0.25,
+    "jawSharp": 0.3,
+    "cheek": 0.55,
+    "noseWidth": 0.5,
+    "lipThick": 0.85
+   },
+   "boxes": {
+    "eyeL": [
+     0.225,
+     0.337,
+     0.203,
+     0.141
+    ],
+    "eyeR": [
+     0.591,
+     0.335,
+     0.203,
+     0.146
+    ],
+    "mouth": [
+     0.3,
+     0.635,
+     0.421,
+     0.201
+    ]
+   }
+  },
+  {
+   "id": "duck",
+   "name": "오리상",
+   "tier": "funny",
+   "desc": "입이 먼저 보인다. 말이 많다는 뜻은 아니지만 대개 맞다.",
+   "axes": {
+    "eyeSize": 0.6,
+    "eyeSlant": 0.25,
+    "eyeGap": 0.55,
+    "faceLength": 0.32,
+    "jawSharp": 0.35,
+    "cheek": 0.5,
+    "noseWidth": 0.8,
+    "lipThick": 0.8
+   },
+   "boxes": {
+    "eyeL": [
+     0.3,
+     0.36,
+     0.12,
+     0.12
+    ],
+    "eyeR": [
+     0.56,
+     0.36,
+     0.12,
+     0.12
+    ],
+    "mouth": [
+     0.38,
+     0.53,
+     0.25,
+     0.13
+    ]
+   }
+  },
+  {
+   "id": "snake",
+   "name": "뱀상",
+   "tier": "cool",
+   "desc": "눈매 하나로 분위기를 바꾼다. 첫인상과 실물 차이가 제일 큰 유형.",
+   "axes": {
+    "eyeSize": 0.3,
+    "eyeSlant": 0.95,
+    "eyeGap": 0.45,
+    "faceLength": 0.75,
+    "jawSharp": 0.88,
+    "cheek": 0.25,
+    "noseWidth": 0.2,
+    "lipThick": 0.3
+   },
+   "boxes": {
+    "eyeL": [
+     0.35,
+     0.35,
+     0.1,
+     0.09
+    ],
+    "eyeR": [
+     0.56,
+     0.35,
+     0.1,
+     0.09
+    ],
+    "mouth": [
+     0.42,
+     0.5,
+     0.17,
+     0.06
+    ]
+   }
+  },
+  {
+   "id": "squirrel",
+   "name": "다람쥐상",
+   "tier": "cute",
+   "desc": "작고 빠릿한 인상. 뭘 먹고 있으면 더 잘 어울린다.",
+   "axes": {
+    "eyeSize": 0.88,
+    "eyeSlant": 0.5,
+    "eyeGap": 0.45,
+    "faceLength": 0.22,
+    "jawSharp": 0.4,
+    "cheek": 0.85,
+    "noseWidth": 0.3,
+    "lipThick": 0.4
+   },
+   "boxes": {
+    "eyeL": [
+     0.282,
+     0.351,
+     0.135,
+     0.08
+    ],
+    "eyeR": [
+     0.605,
+     0.349,
+     0.135,
+     0.08
+    ],
+    "mouth": [
+     0.325,
+     0.59,
+     0.371,
+     0.178
+    ]
+   }
+  },
+  {
+   "id": "blobfish",
+   "name": "블롭피시상",
+   "tier": "funny",
+   "desc": "세상 다 산 표정. 아무것도 안 했는데 지쳐 보인다.",
+   "axes": {
+    "eyeSize": 0.2,
+    "eyeSlant": 0.1,
+    "eyeGap": 0.6,
+    "faceLength": 0.3,
+    "jawSharp": 0.1,
+    "cheek": 0.8,
+    "noseWidth": 0.7,
+    "lipThick": 0.75
+   },
+   "boxes": {
+    "eyeL": [
+     0.333,
+     0.308,
+     0.129,
+     0.191
+    ],
+    "eyeR": [
+     0.529,
+     0.31,
+     0.154,
+     0.189
+    ],
+    "mouth": [
+     0.382,
+     0.533,
+     0.24,
+     0.115
+    ]
+   }
+  },
+  {
+   "id": "molerat",
+   "name": "벌거숭이두더지쥐상",
+   "tier": "funny",
+   "desc": "앞니가 인상을 지배한다. 웃을 때 제일 매력 있는 얼굴.",
+   "axes": {
+    "eyeSize": 0.08,
+    "eyeSlant": 0.4,
+    "eyeGap": 0.48,
+    "faceLength": 0.78,
+    "jawSharp": 0.58,
+    "cheek": 0.2,
+    "noseWidth": 0.55,
+    "lipThick": 0.95
+   },
+   "boxes": {
+    "eyeL": [
+     0.29,
+     0.35,
+     0.08,
+     0.07
+    ],
+    "eyeR": [
+     0.42,
+     0.35,
+     0.08,
+     0.07
+    ],
+    "mouth": [
+     0.36,
+     0.44,
+     0.15,
+     0.1
+    ]
+   }
+  },
+  {
+   "id": "starnose",
+   "name": "별코두더지상",
+   "tier": "funny",
+   "desc": "코가 먼저 도착한다. 존재감으로는 20종 중 1등.",
+   "axes": {
+    "eyeSize": 0.15,
+    "eyeSlant": 0.3,
+    "eyeGap": 0.7,
+    "faceLength": 0.35,
+    "jawSharp": 0.3,
+    "cheek": 0.6,
+    "noseWidth": 0.95,
+    "lipThick": 0.55
+   },
+   "boxes": {
+    "eyeL": [
+     0.341,
+     0.294,
+     0.1,
+     0.08
+    ],
+    "eyeR": [
+     0.566,
+     0.293,
+     0.1,
+     0.08
+    ],
+    "mouth": [
+     0.375,
+     0.473,
+     0.258,
+     0.123
+    ]
+   }
+  }
+ ]
+}
