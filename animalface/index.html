@@ -153,8 +153,10 @@ function redraw(){
 let srcImg = null, LM = null, LM_DRAW = null, AX = null, ranked = null;
 
 // ---- 데이터 ----
-fetch('animals.json?v=1').then(r => r.json()).then(d => {
-  DATA = d; ANIMALS = d.animals; AXIS_LABEL = d.axisLabel; AXIS_W = d.axisWeight;
+fetch('animals.json?v=2').then(r => r.json()).then(d => {
+  // 아트가 아직 없는 종은 후보에서 뺀다. 넣어두면 1등으로 뽑혔을 때 깨진 이미지가 보인다.
+  DATA = d; ANIMALS = d.animals.filter(a => a.art !== false);
+  AXIS_LABEL = d.axisLabel; AXIS_W = d.axisWeight;
   ANIMALS.forEach(a => { const im = new Image(); im.src = `img/${a.id}.webp`; animImgs[a.id] = im; });
   $('lineup').innerHTML = ANIMALS.map(a =>
     `<figure><img src="img/${a.id}.webp" alt="${a.name}" loading="lazy"><figcaption>${a.name.replace('상','')}</figcaption></figure>`).join('');
