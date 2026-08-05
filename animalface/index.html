@@ -420,7 +420,7 @@ $('sexRow').addEventListener('click', e => {
   const b = e.target.closest('.sx'); if (!b) return;
   SEX = b.dataset.sex;
   [...document.querySelectorAll('.sx')].forEach(x => x.classList.toggle('on', x === b));
-  if (AX) { ranked = match(AX); renderResult(); }
+  if (AX) { ranked = match(AX); renderResult(true); }
 });
 
 /* 결과 연출: 사진 위에 468개 점을 훑고(스캔) → 동물로 크로스페이드.
@@ -428,12 +428,36 @@ $('sexRow').addEventListener('click', e => {
 const SAMPLE = []; for (let i = 0; i < 468; i += 3) SAMPLE.push(i);
 function toPx(p, box) { return { x: box.x + p.x*box.w, y: box.y + p.y*box.h }; }
 
+/* 후보를 한 바퀴 돌리는 룰렛 목록. 마지막 칸은 반드시 정답이라
+   감속이 끝나는 순간과 결과가 정확히 맞는다(랜덤으로 두면 마지막에 다른 게 걸린다). */
+function spinReel(winnerId, n) {
+  const pool = ANIMALS.filter(a => a.id !== winnerId && animImgs[a.id]?.complete);
+  const reel = [];
+  for (let i = 0; i < n; i++) reel.push(pool[Math.floor(Math.random()*pool.length)] || null);
+  reel.push(ANIMALS.find(a => a.id === winnerId));
+  return reel.filter(Boolean);
+}
+
+// 연출이 겹쳐 돌면(판독 직후 celebs.json 도착, 성별 변경 등) 스캔 위에 결과가 덮여 깜빡인다.
+let revealSeq = 0;
 function reveal(withScan = true) {
   if (!ranked) return;
+  const seq = ++revealSeq;
   const A = ranked[0].a, aimg = animImgs[A.id];
-  const SCAN = withScan && LM_DRAW ? 1100 : 0, FADE = 700;
+  const SCAN = withScan && LM_DRAW ? 1100 : 0;
+  const SPIN = withScan ? 1500 : 0;      // 점 찍고 → 후보를 한 바퀴 돌리고
+  const FADE = withScan ? 1100 : 700;    // → 정답이 천천히 떠오른다
+  const reel = SPIN ? spinReel(A.id, 15) : [];
   const t0 = performance.now();
+  const drawAnimal = (img, alpha, scale) => {
+    if (!img || !img.complete) return;
+    const W = cv.width, H = cv.height, w = W*scale, h = H*scale;
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(img, (W-w)/2, (H-h)/2, w, h);
+    ctx.globalAlpha = 1;
+  };
   (function step(){
+    if (seq !== revealSeq || mirroring) return;
     const el = performance.now() - t0;
     if (el < SCAN) {
       const p = el / SCAN;
@@ -452,10 +476,19 @@ function reveal(withScan = true) {
       }
       return requestAnimationFrame(step);
     }
-    const t = Math.min(1, (el - SCAN) / FADE);
+    if (el < SCAN + SPIN && reel.length) {
+      const p = (el - SCAN) / SPIN;
+      const e = 1 - Math.pow(1 - p, 3);              // 빠르게 시작해 멈추듯 감속
+      const i = Math.min(reel.length - 1, Math.floor(e * reel.length));
+      drawBase(0.28);
+      drawAnimal(animImgs[reel[i].id], 0.9, 0.86 + 0.06*e);
+      return requestAnimationFrame(step);
+    }
+    const t = Math.min(1, (el - SCAN - SPIN) / FADE);
     const e = t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
-    drawBase(1-e);
-    if (aimg.complete) { ctx.globalAlpha = e; ctx.drawImage(aimg, 0, 0, cv.width, cv.height); ctx.globalAlpha = 1; }
+    // 룰렛을 돌린 뒤엔 이미 사진이 0.28까지 내려가 있다. 스캔 없이 부를 땐 사진에서 바로 넘어간다.
+    drawBase((SPIN ? 0.28 : 1) * (1-e));
+    drawAnimal(aimg, SPIN ? 0.9 + 0.1*e : e, SPIN ? 0.92 + 0.08*e : 1);
     if (t < 1) requestAnimationFrame(step);
   })();
 }
@@ -467,7 +500,24 @@ function renderAxes() {
      <div class="bar"><i style="width:${(AX[k]*100).toFixed(0)}%"></i></div>`).join('');
 }
 
-function renderResult() {
+/* 연예인 라벨이 있는 유형은 23종 중 12종뿐이다. 1등에 라벨이 없다고 줄을 통째로 지우면
+   "연예인 안 나오는 판독기"가 된다 → 라벨 있는 가장 가까운 순위로 내려가서 보여준다. */
+function celebLine(winner) {
+  const own = celebsOf(winner.id, SEX);
+  if (own.length) return `<div class="celeb">같은 ${winner.name} 연예인: ` +
+    own.slice(0, 6).map(x => `<b>${x.name}</b>${x.group ? `(${x.group})` : ''}`).join(', ') + '</div>';
+  // 성별을 골랐는데 그 성별 라벨이 없으면 전체에서 한 번 더 찾는다
+  const both = celebsOf(winner.id, '');
+  if (both.length) return `<div class="celeb">같은 ${winner.name} 연예인: ` +
+    both.slice(0, 6).map(x => `<b>${x.name}</b>${x.group ? `(${x.group})` : ''}`).join(', ') + '</div>';
+  const near = ranked.slice(1).find(s => celebsOf(s.a.id, SEX).length || celebsOf(s.a.id, '').length);
+  if (!near) return '';
+  const c = celebsOf(near.a.id, SEX).length ? celebsOf(near.a.id, SEX) : celebsOf(near.a.id, '');
+  return `<div class="celeb">${winner.name} 연예인은 아직 정리 중 — 다음으로 가까운 <b>${near.a.name}</b>(${near.pct}%): ` +
+    c.slice(0, 5).map(x => `<b>${x.name}</b>${x.group ? `(${x.group})` : ''}`).join(', ') + '</div>';
+}
+
+function renderResult(doReveal = false) {
   const b = ranked[0];
   $('resultCard').style.display = '';
   $('result').innerHTML =
@@ -480,13 +530,12 @@ function renderResult() {
        </div>
      </div>
      <div class="hint" style="margin-top:8px">근거: ${whyText(AX, b.a)}</div>
-     ${(() => { const c = celebsOf(b.a.id, SEX);
-        return c.length ? `<div class="celeb">같은 ${b.a.name}: ` +
-          c.slice(0, 6).map(x => `<b>${x.name}</b>${x.group ? `(${x.group})` : ''}`).join(', ') + '</div>' : ''; })()}
+     ${celebLine(b.a)}
      <div class="runner">${ranked.slice(1,4).map(s =>
        `<div><img src="img/${s.a.id}.webp" alt=""><div class="n">${s.a.name}</div><div class="p">${s.pct}%</div></div>`).join('')}
      </div>`;
-  if (LM) reveal(false);   // 모드 전환 때마다 스캔을 다시 트는 건 지겹다 — 첫 판독에서만
+  // 스캔·룰렛은 첫 판독에서만. 성별을 바꿔 1등이 달라졌을 때만 그림을 조용히 갈아끼운다.
+  if (doReveal && LM) reveal(false);
 }
 
 /* ---- WebGL 워프 ----
