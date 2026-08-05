@@ -31,7 +31,8 @@ h1{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
 .btn.sec{background:#f4efe4;color:var(--ink);border:1px solid var(--line)}
 .row{display:flex;gap:8px;margin-top:8px}
 .stage{position:relative;width:100%;aspect-ratio:1;background:#f1ece1;border-radius:14px;overflow:hidden}
-canvas.layer{position:absolute;inset:0;width:100%;height:100%}
+/* video도 같은 레이어다. canvas.layer로 좁혀 두면 video에 적용이 안 돼서 미리보기가 어긋난다. */
+.layer{position:absolute;inset:0;width:100%;height:100%}
 .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   color:var(--mut);font-size:.85rem;text-align:center;padding:20px}
 .hint{font-size:.76rem;color:var(--mut);margin-top:8px}
@@ -82,8 +83,10 @@ footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:14px}
 
   <div class="card">
     <div class="stage">
+      <!-- cover로 자르면 미리보기와 저장본이 달라진다(확대돼 보이고 잘린 범위도 다름).
+           contain으로 카메라 프레임 전체를 그대로 보여주고, 저장도 같은 프레임으로 한다. -->
       <video class="layer" id="vid" playsinline muted autoplay
-             style="display:none;object-fit:cover;transform:scaleX(-1)"></video>
+             style="display:none;object-fit:contain;background:#000;transform:scaleX(-1)"></video>
       <canvas class="layer" id="cv"></canvas>
       <canvas class="layer" id="gl" style="display:none"></canvas>
       <div class="ph" id="ph">사진을 넣으면 여기에 결과가 나와요</div>
@@ -108,8 +111,8 @@ footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:14px}
     <div class="hint">사진에서 잰 실제 비율입니다. 별점이나 랜덤이 아닙니다.</div>
   </div>
 
-  <div class="card">
-    <div class="hint" style="margin:0 0 8px">20종 라인업</div>
+  <div class="card" id="lineupCard" style="display:none">
+    <div class="hint" style="margin:0 0 8px">전체 20종 — 당신은 어디에?</div>
     <div class="grid" id="lineup"></div>
   </div>
 
@@ -140,7 +143,7 @@ function redraw(){
   if (aimg && aimg.complete) ctx.drawImage(aimg, 0, 0, cv.width, cv.height);
 }
 
-let srcImg = null, LM = null, AX = null, ranked = null, mode = 'serious';
+let srcImg = null, LM = null, LM_DRAW = null, AX = null, ranked = null, mode = 'serious';
 
 // ---- 데이터 ----
 fetch('animals.json?v=1').then(r => r.json()).then(d => {
@@ -287,7 +290,7 @@ async function openCam() {
   if (!v.srcObject) {
     try {
       v.srcObject = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode:'user', width:{ ideal:1280 }, height:{ ideal:1280 } } });
+        video: { facingMode:'user', width:{ ideal:1280 } } });
       await v.play();
     } catch (e) { $('ph').textContent = '카메라를 열 수 없어요: ' + e.message; return false; }
   }
@@ -306,6 +309,8 @@ $('camOff').onclick = () => { closeCam(true); if (ranked) redraw(); else $('ph')
 $('shot').onclick = () => {
   const v = $('vid');
   if (!v.videoWidth) return;
+  // 미리보기(object-fit:contain)와 완전히 같은 프레임을 저장한다.
+  // 예전엔 미리보기는 cover로 잘라 보여주고 저장은 원본 전체라, 보이는 것과 찍히는 게 달랐다.
   const c = document.createElement('canvas');
   c.width = v.videoWidth; c.height = v.videoHeight;
   const x = c.getContext('2d');
@@ -374,20 +379,46 @@ function detect() {
   const q = faceQuality(lm);
   if (!q.ok) return fail(q.reason);
   LM = lm;
+  LM_DRAW = r.faceLandmarks[0];   // 화면에 점 찍을 땐 보정 안 한 원좌표를 써야 사진과 맞는다
   AX = computeAxes(LM);
   baseBox = drawBase();
   ranked = match(AX);
   renderAxes(); renderResult();
   $('mirror').disabled = false;
-  reveal();
+  $('lineupCard').style.display = '';   // 라인업은 결과를 본 뒤에 공개한다(미리 보면 김샘)
+  reveal(true);
 }
 
-// 결과 동물로 부드럽게 넘어가는 연출 — 결과가 "계산됐다"는 느낌을 준다
-function reveal() {
+/* 결과 연출: 사진 위에 468개 점을 훑고(스캔) → 동물로 크로스페이드.
+   점을 보여주는 건 장식이 아니라 "정말 얼굴을 쟀다"는 근거라서, 결과 신뢰에 직결된다. */
+const SAMPLE = []; for (let i = 0; i < 468; i += 3) SAMPLE.push(i);
+function toPx(p, box) { return { x: box.x + p.x*box.w, y: box.y + p.y*box.h }; }
+
+function reveal(withScan = true) {
+  if (!ranked) return;
   const A = ranked[0].a, aimg = animImgs[A.id];
-  const t0 = performance.now(), DUR = 900;
+  const SCAN = withScan && LM_DRAW ? 1100 : 0, FADE = 700;
+  const t0 = performance.now();
   (function step(){
-    const t = Math.min(1, (performance.now()-t0)/DUR);
+    const el = performance.now() - t0;
+    if (el < SCAN) {
+      const p = el / SCAN;
+      const box = drawBase(1);
+      if (box) {
+        const n = Math.floor(SAMPLE.length * Math.min(1, p*1.15));
+        ctx.fillStyle = '#3ba7a0';
+        for (let i = 0; i < n; i++) {
+          const q = toPx(LM_DRAW[SAMPLE[i]], box);
+          ctx.beginPath(); ctx.arc(q.x, q.y, Math.max(1.2, cv.width*0.0042), 0, 6.283); ctx.fill();
+        }
+        // 스캔 라인
+        const y = box.y + box.h * p;
+        ctx.strokeStyle = 'rgba(242,104,60,.9)'; ctx.lineWidth = Math.max(2, cv.width*0.006);
+        ctx.beginPath(); ctx.moveTo(box.x, y); ctx.lineTo(box.x+box.w, y); ctx.stroke();
+      }
+      return requestAnimationFrame(step);
+    }
+    const t = Math.min(1, (el - SCAN) / FADE);
     const e = t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
     drawBase(1-e);
     if (aimg.complete) { ctx.globalAlpha = e; ctx.drawImage(aimg, 0, 0, cv.width, cv.height); ctx.globalAlpha = 1; }
@@ -418,7 +449,7 @@ function renderResult() {
      <div class="runner">${ranked.slice(1,4).map(s =>
        `<div><img src="img/${s.a.id}.webp" alt=""><div class="n">${s.a.name}</div><div class="p">${s.pct}%</div></div>`).join('')}
      </div>`;
-  if (LM) reveal();
+  if (LM) reveal(false);   // 모드 전환 때마다 스캔을 다시 트는 건 지겹다 — 첫 판독에서만
 }
 
 /* ---- WebGL 워프 ----
