@@ -8,7 +8,7 @@
   var UI = {
     ko: {
       title: '🦊 동물상 판독기',
-      sub: '얼굴 468개 점을 실측해서 28종 중에 찾아줍니다',
+      sub: '얼굴 468개 점을 실측해서 39종 중에 찾아줍니다',
       rarityLegend: '전설', rarityRare: '희귀', rarityUncommon: '보통', rarityCommon: '흔함',
       rarityOf: '{label} · {share}%',
       metaTitle: '동물상 판독기 — 내 얼굴은 무슨 동물?',
@@ -52,7 +52,7 @@
     },
     en: {
       title: '🦊 Animal Face Reader',
-      sub: 'Measures 468 facial points and finds your match among 28 animals',
+      sub: 'Measures 468 facial points and finds your match among 39 animals',
       rarityLegend: 'Legendary', rarityRare: 'Rare', rarityUncommon: 'Uncommon', rarityCommon: 'Common',
       rarityOf: '{label} · {share}%',
       metaTitle: 'Animal Face Reader — which animal is your face?',
@@ -96,7 +96,7 @@
     },
     ja: {
       title: '🦊 動物顔診断',
-      sub: '顔の468点を実測して28種から探します',
+      sub: '顔の468点を実測して39種から探します',
       rarityLegend: '伝説', rarityRare: 'レア', rarityUncommon: '普通', rarityCommon: 'よくある',
       rarityOf: '{label} · {share}%',
       metaTitle: '動物顔診断 — あなたの顔はどの動物？',
@@ -140,7 +140,7 @@
     },
     tw: {
       title: '🦊 動物臉診斷',
-      sub: '實測臉部468個點，從28種動物臉中找出你的那一種',
+      sub: '實測臉部468個點，從39種動物臉中找出你的那一種',
       rarityLegend: '傳說', rarityRare: '稀有', rarityUncommon: '普通', rarityCommon: '常見',
       rarityOf: '{label} · {share}%',
       metaTitle: '動物臉診斷 — 我的臉是哪種動物？',
