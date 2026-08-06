@@ -9,6 +9,18 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://game.cocy.io/animalface/en/</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://game.cocy.io/animalface/ja/</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://game.cocy.io/animalface/tw/</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://game.cocy.io/voicematch/</loc>
     <priority>0.8</priority>
   </url>

@@ -12,6 +12,7 @@
       rarityLegend: '전설', rarityRare: '희귀', rarityUncommon: '보통', rarityCommon: '흔함',
       rarityOf: '{label} · {share}%',
       metaTitle: '동물상 판독기 — 내 얼굴은 무슨 동물?',
+      metaDesc: '사진 한 장으로 얼굴 468개 점을 실측해 39종 동물상 중 내 얼굴을 찾아줍니다. 닮은 연예인·표정 GIF까지. 사진은 기기 밖으로 나가지 않아요.',
       sexF: '여자', sexM: '남자', sexAny: '상관없음',
       pick: '📷 사진 선택', cam: '🎥 카메라로 찍기', shot: '📸 찍기', camClose: '닫기',
       privacy: '사진은 이 기기 안에서만 처리됩니다. 서버로 올리지 않습니다(결과 동물 종류만 분포 집계에 보냅니다).',
@@ -55,6 +56,7 @@
       rarityLegend: 'Legendary', rarityRare: 'Rare', rarityUncommon: 'Uncommon', rarityCommon: 'Common',
       rarityOf: '{label} · {share}%',
       metaTitle: 'Animal Face Reader — which animal is your face?',
+      metaDesc: 'One photo, 468 facial points measured on your device. Find your animal face among 39 types, see look-alike celebrities, and share a card. Your photo never leaves the device.',
       sexF: 'Female', sexM: 'Male', sexAny: 'Either',
       pick: '📷 Choose photo', cam: '🎥 Use camera', shot: '📸 Shoot', camClose: 'Close',
       privacy: 'Your photo is processed on this device only — never uploaded (only the resulting animal type is counted).',
@@ -98,6 +100,7 @@
       rarityLegend: '伝説', rarityRare: 'レア', rarityUncommon: '普通', rarityCommon: 'よくある',
       rarityOf: '{label} · {share}%',
       metaTitle: '動物顔診断 — あなたの顔はどの動物？',
+      metaDesc: '写真1枚で顔の468点を実測し、39種の動物顔から探します。似ている芸能人や表情GIFも。写真は端末から出ません。',
       sexF: '女性', sexM: '男性', sexAny: 'どちらでも',
       pick: '📷 写真を選ぶ', cam: '🎥 カメラで撮る', shot: '📸 撮影', camClose: '閉じる',
       privacy: '写真はこの端末内だけで処理します。アップロードしません（結果の動物種だけ集計に送ります）。',
@@ -141,6 +144,7 @@
       rarityLegend: '傳說', rarityRare: '稀有', rarityUncommon: '普通', rarityCommon: '常見',
       rarityOf: '{label} · {share}%',
       metaTitle: '動物臉診斷 — 我的臉是哪種動物？',
+      metaDesc: '一張照片，實測臉部468個點，從39種動物臉中找出你的那一種。還有相似藝人與表情GIF。照片不會離開你的裝置。',
       sexF: '女', sexM: '男', sexAny: '不限',
       pick: '📷 選擇照片', cam: '🎥 用相機拍', shot: '📸 拍照', camClose: '關閉',
       privacy: '照片只在這台裝置上處理，不會上傳（只把結果的動物種類送去統計）。',
@@ -314,6 +318,10 @@
   var current = null;
 
   function detect() {
+    // 경로 로케일이 최우선 — /animalface/en/ 에 들어왔는데 저장된 값 때문에 한국어가 뜨면
+    // 검색엔진이 색인한 내용과 실제 화면이 달라진다.
+    var m = location.pathname.match(/\/animalface\/(en|ja|tw)\//);
+    if (m) return m[1];
     var q = new URLSearchParams(location.search).get('lang');
     if (q && UI[q]) return q;
     try { var s = localStorage.getItem(KEY); if (s && UI[s]) return s; } catch (e) {}

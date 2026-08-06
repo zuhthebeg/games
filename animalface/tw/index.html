@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="zh-Hant">
 <head>
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -11,22 +11,22 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <!-- AdSense: managed via GTM auto-ads (ca-pub-6634731722045607) -->
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>동물상 판독기 — 내 얼굴은 무슨 동물?</title>
-<meta name="description" content="사진 한 장으로 얼굴 8개 축을 실측해서 28종 동물상(사신기 포함) 중 내 얼굴을 찾아줍니다. 표정 미러링·GIF 공유. 사진은 기기 밖으로 나가지 않습니다.">
-<meta property="og:title" content="동물상 판독기 — 내 얼굴은 무슨 동물?">
-<meta property="og:description" content="눈·코·입 468개 점을 실측해서 28종 중 내 동물상을 찾아줍니다. 표정을 따라하는 GIF도 만들 수 있어요.">
+<title>動物臉診斷 — 我的臉是哪種動物？</title>
+<meta name="description" content="一張照片，實測臉部468個點，從39種動物臉中找出你的那一種。還有相似藝人與表情GIF。照片不會離開你的裝置。">
+<meta property="og:title" content="動物臉診斷 — 我的臉是哪種動物？">
+<meta property="og:description" content="一張照片，實測臉部468個點，從39種動物臉中找出你的那一種。還有相似藝人與表情GIF。照片不會離開你的裝置。">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://game.cocy.io/animalface/">
-<link rel="canonical" href="https://game.cocy.io/animalface/">
+<meta property="og:url" content="https://game.cocy.io/animalface/tw/">
 <link rel="alternate" hreflang="ko" href="https://game.cocy.io/animalface/">
-<link rel="alternate" hreflang="en" href="https://game.cocy.io/animalface/?lang=en">
-<link rel="alternate" hreflang="ja" href="https://game.cocy.io/animalface/?lang=ja">
-<link rel="alternate" hreflang="zh-Hant" href="https://game.cocy.io/animalface/?lang=tw">
+<link rel="alternate" hreflang="en" href="https://game.cocy.io/animalface/en/">
+<link rel="alternate" hreflang="ja" href="https://game.cocy.io/animalface/ja/">
+<link rel="alternate" hreflang="zh-Hant" href="https://game.cocy.io/animalface/tw/">
 <link rel="alternate" hreflang="x-default" href="https://game.cocy.io/animalface/">
+<link rel="canonical" href="https://game.cocy.io/animalface/tw/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="동물상 판독기 — 내 얼굴은 무슨 동물?">
-<meta name="twitter:description" content="얼굴 468개 점을 실측해서 39종 동물상 중 내 얼굴을 찾아줍니다. 사진은 기기 밖으로 나가지 않아요.">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="twitter:title" content="動物臉診斷 — 我的臉是哪種動物？">
+<meta name="twitter:description" content="一張照片，實測臉部468個點，從39種動物臉中找出你的那一種。還有相似藝人與表情GIF。照片不會離開你的裝置。">
+<link rel="icon" href="/animalface/icon.svg" type="image/svg+xml">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebApplication","name":"동물상 판독기 Animal Face Reader",
 "url":"https://game.cocy.io/animalface/","applicationCategory":"EntertainmentApplication",
@@ -34,7 +34,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 "operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
 "inLanguage":["ko","en","ja","zh-Hant"],"isAccessibleForFree":true}
 </script>
-<script src="js/i18n.js?v=10"></script>
+<script src="/animalface/js/i18n.js?v=10"></script>
 <script>
   // 바 이름은 페이지 언어를 따라간다. shared-wallet은 gameName 옵션을 읽는다(?v= 새 버전 필요).
   window.SharedWalletConfig = window.SharedWalletConfig || {
@@ -294,18 +294,18 @@ function redraw(){
 let srcImg = null, LM = null, LM_DRAW = null, LM3 = null, FRONT3 = null, AX = null, ranked = null;
 
 // ---- 데이터 ----
-fetch('animals.json?v=6').then(r => r.json()).then(d => {
+fetch('/animalface/animals.json?v=6').then(r => r.json()).then(d => {
   // 아트가 아직 없는 종은 후보에서 뺀다. 넣어두면 1등으로 뽑혔을 때 깨진 이미지가 보인다.
   DATA = d; ANIMALS = d.animals.filter(a => a.art !== false);
   AXIS_W = d.axisWeight;
-  ANIMALS.forEach(a => { const im = new Image(); im.src = `img/${a.id}.webp`; animImgs[a.id] = im; });
+  ANIMALS.forEach(a => { const im = new Image(); im.src = `/animalface/img/${a.id}.webp`; animImgs[a.id] = im; });
 });
 
 /* 유형별 연예인 — 팬트랙(page.cocy.io) celebrities 테이블에서 뽑아온 정적 스냅샷.
    실시간 조회를 붙이면 이 페이지가 백엔드에 묶인다. 갱신은 ops/fantrack/export-animalface.sh */
 let CELEBS = null;
 const SEX = '';   // 성별 선택 UI를 뺐다. 연예인 목록은 남녀 구분 없이 전부 보여준다.
-fetch('celebs.json?v=1').then(r => r.json()).then(d => { CELEBS = d.byAnimal; if (ranked) renderResult(); })
+fetch('/animalface/celebs.json?v=1').then(r => r.json()).then(d => { CELEBS = d.byAnimal; if (ranked) renderResult(); })
   .catch(() => {});
 
 function celebsOf(id, sex) {
@@ -837,7 +837,7 @@ function renderDist(d) {
   const mineIdx = rows.findIndex(r => r.animal === d.mine);
   $('dist').innerHTML = rows.slice(0, 10).map((r, i) => {
     const a = byId[r.animal], me = r.animal === d.mine;
-    return `<div class="rk">${i + 1}</div><img src="img/${a.id}.webp" alt=""><div class="${me ? 'me' : ''}">${NAME(a)}
+    return `<div class="rk">${i + 1}</div><img src="/animalface/img/${a.id}.webp" alt=""><div class="${me ? 'me' : ''}">${NAME(a)}
       <div class="t"><i style="width:${(r.count/max*100).toFixed(0)}%"></i></div></div>
       <div class="c">${r.count}</div>`;
   }).join('');
@@ -863,7 +863,7 @@ function renderResult(doReveal = false) {
            <circle class="val" cx="59" cy="59" r="52"
                    stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"></circle>
          </svg>
-         <img src="img/${b.a.id}.webp" alt="${NAME(b.a)}">
+         <img src="/animalface/img/${b.a.id}.webp" alt="${NAME(b.a)}">
        </div>
        <div>
          ${rarityBadge(b.a)}
@@ -876,7 +876,7 @@ function renderResult(doReveal = false) {
      <button class="sexchip" id="sexChip">${sexChipLabel()}</button>
      ${celebLine(b.a)}
      <div class="runner">${ranked.slice(1,4).map(s =>
-       `<div><img src="img/${s.a.id}.webp" alt=""><div class="n">${NAME(s.a)}</div><div class="p">${s.pct}%</div></div>`).join('')}
+       `<div><img src="/animalface/img/${s.a.id}.webp" alt=""><div class="n">${NAME(s.a)}</div><div class="p">${s.pct}%</div></div>`).join('')}
      </div>`;
   // dashoffset을 다음 프레임에 바꿔야 트랜지션이 돈다(같은 프레임에 넣으면 즉시 점프)
   const val = $('result').querySelector('.gauge .val');
@@ -1210,13 +1210,13 @@ $('rec').onclick = async () => {
     if (!window.GIF) {
       await new Promise((res, rej) => {
         const s = document.createElement('script');
-        s.src = 'lib/gif.js?v=1';
+        s.src = '/animalface/lib/gif.js?v=1';
         s.onload = res; s.onerror = () => rej(new Error('GIF 라이브러리 로드 실패'));
         document.head.appendChild(s);
       });
     }
     const gif = new window.GIF({ workers:2, quality:15, width:SIZE, height:SIZE,
-      workerScript:'lib/gif.worker.js?v=1' });
+      workerScript:'/animalface/lib/gif.worker.js?v=1' });
     const tmp = document.createElement('canvas'); tmp.width = tmp.height = SIZE;
     const tctx = tmp.getContext('2d');
     const total = FPS*SEC;
