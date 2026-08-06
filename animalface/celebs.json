@@ -7,7 +7,10 @@
      "id": "icharlin_juni",
      "name": "주니",
      "link": "?q=%EC%A3%BC%EB%8B%88",
-     "group": "아이칠린"
+     "en": "Juni",
+     "group": "아이칠린",
+     "group_en": "ICHILLIN'",
+     "group_tw": "ICHILLIN'"
     }
    ],
    "m": []
@@ -18,19 +21,28 @@
      "id": "ive_liz",
      "name": "리즈",
      "link": "c/ive/",
-     "group": "아이브"
+     "en": "Liz",
+     "group": "아이브",
+     "group_en": "IVE",
+     "group_tw": "IVE"
     },
     {
      "id": "kissoflife_julie",
      "name": "쥴리",
      "link": "c/kissoflife/",
-     "group": "키스오브라이프"
+     "en": "Julie",
+     "group": "키스오브라이프",
+     "group_en": "KISS OF LIFE",
+     "group_tw": "KISS OF LIFE"
     },
     {
      "id": "newjeans_haerin",
      "name": "해린",
      "link": "c/newjeans/",
-     "group": "뉴진스"
+     "en": "Haerin",
+     "group": "뉴진스",
+     "group_en": "NewJeans",
+     "group_tw": "NewJeans"
     }
    ],
    "m": []
@@ -41,7 +53,10 @@
      "id": "tripleS_jiwoo",
      "name": "이지우",
      "link": "?q=%EC%9D%B4%EC%A7%80%EC%9A%B0",
-     "group": "트리플에스"
+     "en": "Jiwoo",
+     "group": "트리플에스",
+     "group_en": "tripleS",
+     "group_tw": "tripleS"
     }
    ],
    "m": []
@@ -52,13 +67,19 @@
      "id": "lesserafim_chaewon",
      "name": "김채원",
      "link": "c/lesserafim/",
-     "group": "르세라핌"
+     "en": "Kim Chae-won",
+     "group": "르세라핌",
+     "group_en": "LE SSERAFIM",
+     "group_tw": "LE SSERAFIM"
     },
     {
      "id": "newjeans_danielle",
      "name": "다니엘",
      "link": "c/newjeans/",
-     "group": "뉴진스"
+     "en": "Danielle",
+     "group": "뉴진스",
+     "group_en": "NewJeans",
+     "group_tw": "NewJeans"
     }
    ],
    "m": []
@@ -69,29 +90,43 @@
     {
      "id": "gong_yoo",
      "name": "공유",
-     "link": "?q=%EA%B3%B5%EC%9C%A0"
+     "link": "?q=%EA%B3%B5%EC%9C%A0",
+     "en": "Gong Yoo",
+     "tw": "孔劉"
     },
     {
      "id": "kim_woobin",
      "name": "김우빈",
-     "link": "?q=%EA%B9%80%EC%9A%B0%EB%B9%88"
+     "link": "?q=%EA%B9%80%EC%9A%B0%EB%B9%88",
+     "en": "Kim Woo-bin",
+     "tw": "金宇彬"
     },
     {
      "id": "lee_minho",
      "name": "이민호",
-     "link": "?q=%EC%9D%B4%EB%AF%BC%ED%98%B8"
+     "link": "?q=%EC%9D%B4%EB%AF%BC%ED%98%B8",
+     "en": "Lee Min-ho",
+     "tw": "李敏鎬"
     },
     {
      "id": "cnblue_jungyonghwa",
      "name": "정용화",
      "link": "c/cnblue/",
-     "group": "씨엔블루"
+     "en": "Jung Yong-hwa",
+     "tw": "鄭容和",
+     "group": "씨엔블루",
+     "group_en": "CNBLUE",
+     "group_tw": "CNBLUE"
     },
     {
      "id": "bigbang_top",
      "name": "탑",
      "link": "c/bigbang/",
-     "group": "빅뱅"
+     "en": "T.O.P",
+     "tw": "T.O.P",
+     "group": "빅뱅",
+     "group_en": "BIGBANG",
+     "group_tw": "BIGBANG"
     }
    ]
   },
@@ -101,52 +136,73 @@
      "id": "newjeans_minji",
      "name": "민지",
      "link": "c/newjeans/",
-     "group": "뉴진스"
+     "en": "Minji",
+     "group": "뉴진스",
+     "group_en": "NewJeans",
+     "group_tw": "NewJeans"
     },
     {
      "id": "ive_anyujin",
      "name": "안유진",
      "link": "c/ive/",
-     "group": "아이브"
+     "en": "An Yu-jin",
+     "group": "아이브",
+     "group_en": "IVE",
+     "group_tw": "IVE"
     },
     {
      "id": "nmixx_jiwoo",
      "name": "지우",
      "link": "c/nmixx/",
-     "group": "엔믹스"
+     "en": "Jiwoo",
+     "group": "엔믹스",
+     "group_en": "NMIXX",
+     "group_tw": "NMIXX"
     },
     {
      "id": "qwer_chodan",
      "name": "쵸단",
      "link": "c/qwer/",
-     "group": "QWER"
+     "en": "Chodan",
+     "group": "QWER",
+     "group_en": "QWER",
+     "group_tw": "QWER"
     }
    ],
    "m": [
     {
      "id": "kang_daniel",
      "name": "강다니엘",
-     "link": "?q=%EA%B0%95%EB%8B%A4%EB%8B%88%EC%97%98"
+     "link": "?q=%EA%B0%95%EB%8B%A4%EB%8B%88%EC%97%98",
+     "en": "Kang Daniel"
     },
     {
      "id": "nam_joohyuk",
      "name": "남주혁",
-     "link": "?q=%EB%82%A8%EC%A3%BC%ED%98%81"
+     "link": "?q=%EB%82%A8%EC%A3%BC%ED%98%81",
+     "en": "Nam Joo-hyuk",
+     "tw": "南柱赫"
     },
     {
      "id": "park_bogum",
      "name": "박보검",
-     "link": "?q=%EB%B0%95%EB%B3%B4%EA%B2%80"
+     "link": "?q=%EB%B0%95%EB%B3%B4%EA%B2%80",
+     "en": "Park Bo-gum",
+     "tw": "朴寶劍"
     },
     {
      "id": "song_joongki",
      "name": "송중기",
-     "link": "?q=%EC%86%A1%EC%A4%91%EA%B8%B0"
+     "link": "?q=%EC%86%A1%EC%A4%91%EA%B8%B0",
+     "en": "Song Joong-ki",
+     "tw": "宋仲基"
     },
     {
      "id": "jung_haein",
      "name": "정해인",
-     "link": "?q=%EC%A0%95%ED%95%B4%EC%9D%B8"
+     "link": "?q=%EC%A0%95%ED%95%B4%EC%9D%B8",
+     "en": "Jung Hae-in",
+     "tw": "丁海寅"
     }
    ]
   },
@@ -156,13 +212,17 @@
      "id": "classy_boeun",
      "name": "박보은",
      "link": "?q=%EB%B0%95%EB%B3%B4%EC%9D%80",
-     "group": "클라씨"
+     "en": "Park Bo-eun",
+     "group": "클라씨",
+     "group_en": "CLASS:y",
+     "group_tw": "CLASS:y"
     },
     {
      "id": "yena",
      "name": "최예나",
      "link": "c/yena/",
-     "en": "YENA"
+     "en": "YENA",
+     "tw": "崔叡娜"
     }
    ],
    "m": []
@@ -173,43 +233,61 @@
      "id": "ive_gaeul",
      "name": "가을",
      "link": "c/ive/",
-     "group": "아이브"
+     "en": "Gaeul",
+     "group": "아이브",
+     "group_en": "IVE",
+     "group_tw": "IVE"
     },
     {
      "id": "tripleS_xinyu",
      "name": "신위",
      "link": "?q=%EC%8B%A0%EC%9C%84",
-     "group": "트리플에스"
+     "en": "Xinyu",
+     "group": "트리플에스",
+     "group_en": "tripleS",
+     "group_tw": "tripleS"
     },
     {
      "id": "kissoflife_haneul",
      "name": "하늘",
      "link": "c/kissoflife/",
-     "group": "키스오브라이프"
+     "en": "Haneul",
+     "group": "키스오브라이프",
+     "group_en": "KISS OF LIFE",
+     "group_tw": "KISS OF LIFE"
     }
    ],
    "m": [
     {
      "id": "gang_dongwon",
      "name": "강동원",
-     "link": "?q=%EA%B0%95%EB%8F%99%EC%9B%90"
+     "link": "?q=%EA%B0%95%EB%8F%99%EC%9B%90",
+     "en": "Gang Dong-won",
+     "tw": "姜棟元"
     },
     {
      "id": "winner_kangseungyoon",
      "name": "강승윤",
      "link": "?q=%EA%B0%95%EC%8A%B9%EC%9C%A4",
-     "group": "위너"
+     "en": "Kang Seung-yoon",
+     "tw": "姜昇潤",
+     "group": "위너",
+     "group_en": "WINNER",
+     "group_tw": "WINNER"
     },
     {
      "id": "lee_joongi",
      "name": "이준기",
-     "link": "?q=%EC%9D%B4%EC%A4%80%EA%B8%B0"
+     "link": "?q=%EC%9D%B4%EC%A4%80%EA%B8%B0",
+     "en": "Lee Joon-gi",
+     "tw": "李準基"
     },
     {
      "id": "gdragon",
      "name": "지드래곤",
      "link": "c/gdragon/",
-     "en": "G-DRAGON"
+     "en": "G-DRAGON",
+     "tw": "G-DRAGON"
     }
    ]
   },
@@ -219,19 +297,28 @@
      "id": "highkey_yel",
      "name": "옐",
      "link": "?q=%EC%98%90",
-     "group": "하이키"
+     "en": "Yel",
+     "group": "하이키",
+     "group_en": "H1-KEY",
+     "group_tw": "H1-KEY"
     },
     {
      "id": "illit_wonhee",
      "name": "원희",
      "link": "c/illit/",
-     "group": "아일릿"
+     "en": "Wonhee",
+     "group": "아일릿",
+     "group_en": "ILLIT",
+     "group_tw": "ILLIT"
     },
     {
      "id": "newjeans_hyein",
      "name": "혜인",
      "link": "c/newjeans/",
-     "group": "뉴진스"
+     "en": "Hyein",
+     "group": "뉴진스",
+     "group_en": "NewJeans",
+     "group_tw": "NewJeans"
     }
    ],
    "m": []
@@ -242,25 +329,37 @@
      "id": "illit_minju",
      "name": "민주",
      "link": "c/illit/",
-     "group": "아일릿"
+     "en": "Minju",
+     "group": "아일릿",
+     "group_en": "ILLIT",
+     "group_tw": "ILLIT"
     },
     {
      "id": "lightsum_yujeong",
      "name": "유정",
      "link": "?q=%EC%9C%A0%EC%A0%95",
-     "group": "라잇썸"
+     "en": "Yujeong",
+     "group": "라잇썸",
+     "group_en": "LIGHTSUM",
+     "group_tw": "LIGHTSUM"
     },
     {
      "id": "ive_wonyoung",
      "name": "장원영",
      "link": "c/ive/",
-     "group": "아이브"
+     "en": "Jang Won-young",
+     "group": "아이브",
+     "group_en": "IVE",
+     "group_tw": "IVE"
     },
     {
      "id": "billlie_tsuki",
      "name": "츠키",
      "link": "?q=%EC%B8%A0%ED%82%A4",
-     "group": "빌리"
+     "en": "Tsuki",
+     "group": "빌리",
+     "group_en": "Billlie",
+     "group_tw": "Billlie"
     }
    ],
    "m": []
@@ -271,19 +370,28 @@
      "id": "illit_yunah",
      "name": "윤아",
      "link": "c/illit/",
-     "group": "아일릿"
+     "en": "Yunah",
+     "group": "아일릿",
+     "group_en": "ILLIT",
+     "group_tw": "ILLIT"
     },
     {
      "id": "ive_leeseo",
      "name": "이서",
      "link": "c/ive/",
-     "group": "아이브"
+     "en": "Leeseo",
+     "group": "아이브",
+     "group_en": "IVE",
+     "group_tw": "IVE"
     },
     {
      "id": "highkey_hwiseo",
      "name": "휘서",
      "link": "?q=%ED%9C%98%EC%84%9C",
-     "group": "하이키"
+     "en": "Hwiseo",
+     "group": "하이키",
+     "group_en": "H1-KEY",
+     "group_tw": "H1-KEY"
     }
    ],
    "m": []
@@ -294,17 +402,23 @@
     {
      "id": "park_haejin",
      "name": "박해진",
-     "link": "?q=%EB%B0%95%ED%95%B4%EC%A7%84"
+     "link": "?q=%EB%B0%95%ED%95%B4%EC%A7%84",
+     "en": "Park Hae-jin",
+     "tw": "朴海鎮"
     },
     {
      "id": "so_jisub",
      "name": "소지섭",
-     "link": "?q=%EC%86%8C%EC%A7%80%EC%84%AD"
+     "link": "?q=%EC%86%8C%EC%A7%80%EC%84%AD",
+     "en": "So Ji-sub",
+     "tw": "蘇志燮"
     },
     {
      "id": "won_bin",
      "name": "원빈",
-     "link": "?q=%EC%9B%90%EB%B9%88"
+     "link": "?q=%EC%9B%90%EB%B9%88",
+     "en": "Won Bin",
+     "tw": "元斌"
     }
    ]
   }

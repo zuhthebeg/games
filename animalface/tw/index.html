@@ -34,7 +34,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 "operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
 "inLanguage":["ko","en","ja","zh-Hant"],"isAccessibleForFree":true}
 </script>
-<script src="/animalface/js/i18n.js?v=10"></script>
+<script src="/animalface/js/i18n.js?v=11"></script>
 <script>
   // 바 이름은 페이지 언어를 따라간다. shared-wallet은 gameName 옵션을 읽는다(?v= 새 버전 필요).
   window.SharedWalletConfig = window.SharedWalletConfig || {
@@ -68,6 +68,12 @@ header{position:relative;text-align:center;margin:4px 0 16px}
 h1{font-size:1.5rem;font-weight:900;letter-spacing:-.03em;line-height:1.25;padding:0 76px}
 .sub{color:var(--mut);font-size:.8rem;margin-top:2px}
 .rule{height:2px;background:var(--ink);opacity:.14;margin:10px 0 0;border-radius:2px}
+.privacy-badge{display:flex;align-items:center;gap:11px;background:rgba(37,112,108,.07);
+  border:1.5px solid rgba(37,112,108,.35);border-radius:14px;padding:11px 13px;margin-bottom:14px}
+.privacy-badge .pb-ico{font-size:19px;flex:none}
+.privacy-badge span:last-child{display:flex;flex-direction:column;min-width:0}
+.privacy-badge b{font-size:.82rem;font-weight:900;color:var(--acc2);line-height:1.35}
+.privacy-badge em{font-size:.74rem;font-style:normal;color:var(--mut);line-height:1.45;margin-top:2px}
 .lang{position:absolute;right:0;top:2px;min-height:36px;background:var(--card);
   border:1.5px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.74rem;font-weight:800;min-width:66px;
   color:var(--mut);cursor:pointer;font-family:inherit;transition:background .18s,color .18s}
@@ -185,6 +191,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="rule"></div>
   </header>
 
+  <!-- 사진을 요구하는 서비스라 이 문구가 각주로 밀리면 안 된다. 대만·일본 사용자는 특히 민감하다. -->
+  <div class="privacy-badge">
+    <span class="pb-ico" aria-hidden="true">🔒</span>
+    <span><b id="pbT"></b><em id="pbS"></em></span>
+  </div>
+
   <div class="card">
     <input type="file" id="file" accept="image/*" style="display:none">
     <button class="btn" id="pick" data-i18n="pick" disabled>📷 사진 선택</button>
@@ -252,6 +264,8 @@ function applyLang() {
   document.title = T('metaTitle');
   // 정적 meta는 한국어로 박혀 있다. 언어를 바꾸면 공유 카드·검색 스니펫도 따라가야 한다.
   const setMeta = (sel, v) => { const el = document.querySelector(sel); if (el) el.setAttribute('content', v); };
+  $('pbT').textContent = T('privacyT');
+  $('pbS').textContent = T('privacyS');
   setMeta('meta[name="description"]', T('metaDesc'));
   setMeta('meta[property="og:title"]', T('metaTitle'));
   setMeta('meta[property="og:description"]', T('metaDesc'));
@@ -294,7 +308,7 @@ function redraw(){
 let srcImg = null, LM = null, LM_DRAW = null, LM3 = null, FRONT3 = null, AX = null, ranked = null;
 
 // ---- 데이터 ----
-fetch('/animalface/animals.json?v=6').then(r => r.json()).then(d => {
+fetch('/animalface/animals.json?v=8').then(r => r.json()).then(d => {
   // 아트가 아직 없는 종은 후보에서 뺀다. 넣어두면 1등으로 뽑혔을 때 깨진 이미지가 보인다.
   DATA = d; ANIMALS = d.animals.filter(a => a.art !== false);
   AXIS_W = d.axisWeight;
@@ -305,7 +319,7 @@ fetch('/animalface/animals.json?v=6').then(r => r.json()).then(d => {
    실시간 조회를 붙이면 이 페이지가 백엔드에 묶인다. 갱신은 ops/fantrack/export-animalface.sh */
 let CELEBS = null;
 const SEX = '';   // 성별 선택 UI를 뺐다. 연예인 목록은 남녀 구분 없이 전부 보여준다.
-fetch('/animalface/celebs.json?v=1').then(r => r.json()).then(d => { CELEBS = d.byAnimal; if (ranked) renderResult(); })
+fetch('/animalface/celebs.json?v=2').then(r => r.json()).then(d => { CELEBS = d.byAnimal; if (ranked) renderResult(); })
   .catch(() => {});
 
 function celebsOf(id, sex) {
@@ -321,10 +335,18 @@ function fantrackUrl(link) {
   const base = 'https://page.cocy.io/fantrack/';
   return link.startsWith('?') ? base + L + link : base + link + L;
 }
+/* 이름 표기는 언어를 따라간다. 팬트랙에 번체 한자가 없는 인물은 한글이 아니라 영문으로 떨어뜨린다
+   — 영어/일본어/번체 화면에서 연예인만 한글로 남으면 번역이 안 된 것처럼 보인다. */
+function celebName(x) {
+  const L = AF_I18N.lang();
+  if (L === 'ko') return { n: x.name, g: x.group };
+  if (L === 'tw') return { n: x.tw || x.en || x.name, g: x.group_tw || x.group_en || x.group };
+  return { n: x.en || x.name, g: x.group_en || x.group };     // en · ja
+}
 function celebChips(list, n) {
   return list.slice(0, n).map(x => {
-    const label = (AF_I18N.lang() === 'ko' ? x.name : (x.en || x.name)) +
-                  (x.group ? `(${x.group})` : '');
+    const c = celebName(x);
+    const label = c.n + (c.g ? `(${c.g})` : '');
     return x.link
       ? `<a href="${fantrackUrl(x.link)}" target="_blank" rel="noopener"><b>${label}</b></a>`
       : `<b>${label}</b>`;
