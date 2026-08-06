@@ -80,6 +80,16 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .key.start:active{box-shadow:0 1px 0 var(--pink-d)}
 .key:disabled{opacity:.45;cursor:default}
 .tip{margin-top:14px;text-align:center;font-size:11.5px;color:var(--mut);line-height:1.7}
+.xpromo{display:flex;align-items:center;gap:11px;margin-top:16px;padding:11px 13px;border-radius:14px;
+  background:oklch(0.98 0.02 90);border:2px solid oklch(0.86 0.05 85);text-decoration:none;color:inherit;
+  transition:transform .18s,box-shadow .18s}
+.xpromo:hover{transform:translateY(-1px);box-shadow:0 4px 0 oklch(0.86 0.05 85)}
+.xpromo img{border-radius:10px;flex:none}
+.xpromo span{display:flex;flex-direction:column;flex:1;min-width:0}
+.xpromo b{font-size:13px;font-weight:800;line-height:1.35}
+.xpromo em{font-size:11.5px;font-style:normal;color:var(--mut);line-height:1.4;margin-top:2px}
+.xpromo .go{flex:0 0 auto;font-size:16px;font-weight:800;color:var(--mut)}
+
 .tip b{color:var(--lime)}
 .hidden{display:none!important}
 
@@ -210,6 +220,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <button class="key start" id="btn-start"></button>
     </div>
     <p class="tip" id="t-tipintro"></p>
+    <!-- 크로스 프로모 — 같은 "내 얼굴/목소리로 나를 재본다" 결이라 이탈이 아니라 회유에 가깝다 -->
+    <a class="xpromo" id="xpromo" href="https://game.cocy.io/animalface/" target="_blank" rel="noopener">
+      <img src="https://game.cocy.io/animalface/icon.svg" alt="" width="40" height="40">
+      <span><b id="xpromo-t"></b><em id="xpromo-s"></em></span>
+      <span class="go">→</span>
+    </a>
   </section>
 
   <!-- 녹음 -->
@@ -312,6 +328,11 @@ function applyLang(){
   $('btn-start').textContent=t('start');
   $('btn-stop').textContent=t('stop');
   $('t-tipintro').innerHTML=t('tipIntro');
+  $('xpromo-t').textContent=t('xpromoT');
+  $('xpromo-s').textContent=t('xpromoS');
+  // 동물상 판독기는 ko/en/ja/tw만 있다. es·id는 영어로 보낸다(없는 로케일로 링크하면 404).
+  $('xpromo').href='https://game.cocy.io/animalface/'
+    + ({en:'en/',ja:'ja/',tw:'tw/',es:'en/',id:'en/'}[LANG]||'');
   $('t-lyric').innerHTML=t('lyric');
   $('t-tipfirst').textContent=t('tipFirst');
   $('ana-t').textContent=t('judging');

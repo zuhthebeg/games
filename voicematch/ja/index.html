@@ -207,6 +207,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <button class="key start" id="btn-start"></button>
     </div>
     <p class="tip" id="t-tipintro"></p>
+    <!-- 크로스 프로모 — 같은 "내 얼굴/목소리로 나를 재본다" 결이라 이탈이 아니라 회유에 가깝다 -->
+    <a class="xpromo" id="xpromo" href="https://game.cocy.io/animalface/" target="_blank" rel="noopener">
+      <img src="https://game.cocy.io/animalface/icon.svg" alt="" width="40" height="40">
+      <span><b id="xpromo-t"></b><em id="xpromo-s"></em></span>
+      <span class="go">→</span>
+    </a>
   </section>
 
   <!-- 녹음 -->
@@ -309,6 +315,11 @@ function applyLang(){
   $('btn-start').textContent=t('start');
   $('btn-stop').textContent=t('stop');
   $('t-tipintro').innerHTML=t('tipIntro');
+  $('xpromo-t').textContent=t('xpromoT');
+  $('xpromo-s').textContent=t('xpromoS');
+  // 동물상 판독기는 ko/en/ja/tw만 있다. es·id는 영어로 보낸다(없는 로케일로 링크하면 404).
+  $('xpromo').href='https://game.cocy.io/animalface/'
+    + ({en:'en/',ja:'ja/',tw:'tw/',es:'en/',id:'en/'}[LANG]||'');
   $('t-lyric').innerHTML=t('lyric');
   $('t-tipfirst').textContent=t('tipFirst');
   $('ana-t').textContent=t('judging');
