@@ -14,7 +14,7 @@
 <link rel="alternate" hreflang="en" href="https://game.cocy.io/animalface/?lang=en">
 <link rel="alternate" hreflang="ja" href="https://game.cocy.io/animalface/?lang=ja">
 <link rel="alternate" hreflang="zh-Hant" href="https://game.cocy.io/animalface/?lang=tw">
-<script src="js/i18n.js?v=7"></script>
+<script src="js/i18n.js?v=9"></script>
 <script>
   // 바 이름은 페이지 언어를 따라간다. shared-wallet은 gameName 옵션을 읽는다(?v= 새 버전 필요).
   window.SharedWalletConfig = window.SharedWalletConfig || {
@@ -103,6 +103,9 @@ h1{font-size:1.5rem;font-weight:900;letter-spacing:-.03em;line-height:1.25;paddi
 .badge.common{color:var(--mut);border-color:var(--line);background:#f3ecdd}
 
 .why{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.sexchip{margin-top:10px;background:#f3ecdd;border:1.5px dashed var(--line);border-radius:999px;
+  padding:6px 12px;font-size:.72rem;font-weight:800;color:var(--mut);cursor:pointer;font-family:inherit}
+.sexchip:hover{border-style:solid;color:var(--ink)}
 .why span{font-size:.72rem;font-weight:700;color:var(--acc2);background:rgba(47,143,137,.09);
   border:1px solid rgba(47,143,137,.25);border-radius:999px;padding:3px 9px}
 .celeb{margin-top:12px;font-size:.78rem;line-height:1.5;color:var(--mut)}
@@ -189,6 +192,7 @@ footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:16px}
   <div class="card" id="resultCard" style="display:none">
     <div id="result"></div>
     <button class="btn" id="share" style="margin-top:14px" data-i18n="share">📤 결과 공유하기</button>
+    <div class="row"><button class="btn sec" id="shareLink" data-i18n="shareLink">🔗 링크만 공유</button></div>
     <div id="shareOut"></div>
   </div>
 
@@ -363,6 +367,33 @@ function computeAxes(lm) {
   return out;
 }
 
+
+/* ---- 성별 추정 ----
+   추가 모델을 받지 않는다. 이미 재고 있는 8축만으로 로지스틱 회귀를 돌렸다.
+   학습: 성별 라벨이 있는 실제 인물 사진 182장(ops/verify/af-gender-collect.cjs).
+   5-fold 정확도 79.2% (전부 여자로 찍는 기준선 70.3%) — 맞히는 편이지만 확신할 수준은 아니다.
+   그래서 결과를 뒤집지 않고, 확신도에 비례해 후보를 밀어주기만 한다. */
+const G_MU = [0.071636,0.024884,0.256844,1.193856,0.213485,1.272564,0.283982,0.068112];
+const G_SD = [0.015069,0.011670,0.014354,0.082604,0.023359,0.038136,0.016277,0.094986];
+const G_W  = [0.6940,0.8173,0.8509,-0.9930,-0.1783,-0.2305,-0.2704,1.0472];
+const G_B  = 1.2015;
+const G_KEYS = ['eyeSize','eyeSlant','eyeGap','faceLength','jawSharp','cheek','noseWidth','lipThick'];
+
+function femProb(raw) {
+  if (!raw) return 0.5;
+  let z = G_B;
+  for (let i = 0; i < G_KEYS.length; i++) z += G_W[i] * ((raw[G_KEYS[i]] - G_MU[i]) / G_SD[i]);
+  return 1 / (1 + Math.exp(-z));
+}
+let SEX_MODE = 'auto';        // auto | f | m | off — 사용자가 결과에서 바꿀 수 있다
+let PFEM = 0.5;
+function femSignal() {        // -1(남) ~ +1(여). off면 0으로 눌러 가중치를 끈다
+  if (SEX_MODE === 'f') return 1;
+  if (SEX_MODE === 'm') return -1;
+  if (SEX_MODE === 'off') return 0;
+  return 2*PFEM - 1;
+}
+
 // 모드 토글은 뺐다(웃긴 모드가 늘 같은 답을 내서 재미도 없고 쓸모도 없었다).
 // 다만 못생김 라인이 아무에게나 1등으로 뜨면 기분 상하니 뒤로 미는 가중은 남긴다.
 const TIER_MUL = { cute:1, cool:1, funny:1.55, myth:1.42 };
@@ -406,7 +437,12 @@ function match(ax) {
       const w = AXIS_W[k]||1;
       s += w*Math.pow(z[k]-az, 2); wsum += w;
     }
-    return { a, dist: Math.sqrt(s/wsum) * (mul[a.tier]||1) };
+    // 여자로 보이면 토끼·사슴 쪽을, 남자로 보이면 늑대·공룡 쪽을 앞으로 당긴다.
+    // 세기는 실측으로 정했다. ±14%에서는 결과가 전혀 안 움직였고(1위 유형 fem 평균 -0.07),
+    // ±32%에서 비로소 여자/남자 사진의 결과가 갈렸다. 확신도가 낮으면 femSignal이 0에 가까워
+    // 자동으로 약해진다 — 애매한 얼굴은 원래대로 기하만 본다.
+    const gb = 1 - 0.32 * (a.fem || 0) * femSignal();
+    return { a, dist: Math.sqrt(s/wsum) * (mul[a.tier]||1) * gb };
   }).sort((x,y) => x.dist - y.dist);
   const top = scored[0].dist;
   // 절대거리를 그대로 쓰면 전부 40%대로 나와서 재미가 없다 → 1위 기준 상대 스케일
@@ -533,6 +569,7 @@ function detect() {
   window.__lm3 = LM3;
   window.__mat = r.facialTransformationMatrixes?.[0]?.data || null;
   AX = computeAxes(LM);
+  PFEM = femProb(window.__raw);
   baseBox = drawBase();
   ranked = match(AX);
   renderAxes(); renderResult();
@@ -704,6 +741,22 @@ function celebLine(winner) {
     { name: NAME(winner), near: NAME(near.a), pct: near.pct })}<div class="cs">${celebChips(c, 5)}</div></div>`;
 }
 
+
+// 성별 추정을 화면에 드러내고, 틀렸으면 사용자가 바로 바꾸게 한다.
+// 숨겨두면 "왜 여자 얼굴에 늑대상이 나왔지"를 설명할 방법이 없다.
+function sexChipLabel() {
+  const key = SEX_MODE === 'f' ? 'sexPickedF' : SEX_MODE === 'm' ? 'sexPickedM'
+    : SEX_MODE === 'off' ? 'sexOff' : (PFEM >= 0.5 ? 'sexAutoF' : 'sexAutoM');
+  return T(key, { pct: Math.round((PFEM >= 0.5 ? PFEM : 1-PFEM) * 100) });
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest || !e.target.closest('#sexChip') || !AX) return;
+  SEX_MODE = SEX_MODE === 'auto' ? (PFEM >= 0.5 ? 'm' : 'f') : SEX_MODE === 'f' ? 'm'
+           : SEX_MODE === 'm' ? 'off' : 'auto';
+  ranked = match(AX);
+  renderResult(true);
+});
+
 /* ---- 동물상 분포(랭킹) ----
    점수 랭킹을 두지 않는 이유는 서버 라우트 주석에 적어뒀다 — 일치율은 전원 90%대라 순위가 안 갈린다.
    대신 "내 동물상이 전체에서 얼마나 희귀한가"를 보여준다. */
@@ -776,6 +829,7 @@ function renderResult(doReveal = false) {
        </div>
      </div>
      <div class="why">${whyChips(AX, b.a)}</div>
+     <button class="sexchip" id="sexChip">${sexChipLabel()}</button>
      ${celebLine(b.a)}
      <div class="runner">${ranked.slice(1,4).map(s =>
        `<div><img src="img/${s.a.id}.webp" alt=""><div class="n">${NAME(s.a)}</div><div class="p">${s.pct}%</div></div>`).join('')}
@@ -926,6 +980,23 @@ $('share').onclick = async () => {
     if (e.name !== 'AbortError') $('shareOut').innerHTML = `<div class="hint err">${T('shareFail', { msg: e.message })}</div>`;
   }
   btn.disabled = false; btn.textContent = label;
+};
+
+
+/* 이미지 카드가 부담스럽거나(용량·계정) 텍스트만 보내고 싶은 경우가 있다 → 링크 공유를 따로 둔다.
+   navigator.share는 파일 없이도 되고, 안 되면 클립보드로 떨어진다. */
+$('shareLink').onclick = async () => {
+  const text = ranked ? T('shareText', { name: NAME(ranked[0].a), pct: ranked[0].pct }) : T('title');
+  try {
+    if (navigator.share) { await navigator.share({ text, url: SHARE_URL }); return; }
+    await navigator.clipboard.writeText(text + ' ' + SHARE_URL);
+    $('shareOut').innerHTML = `<div class="hint">${T('shareCopied')}</div>`;
+  } catch (e) {
+    if (e.name === 'AbortError') return;
+    // 클립보드가 막힌 브라우저를 위해 눈으로 복사할 수 있게 텍스트로 노출한다
+    $('shareOut').innerHTML =
+      `<div class="hint">${text} ${SHARE_URL}</div>`;
+  }
 };
 
 /* ---- WebGL 워프 ----
