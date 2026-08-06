@@ -263,7 +263,7 @@ function redraw(){
 let srcImg = null, LM = null, LM_DRAW = null, LM3 = null, FRONT3 = null, AX = null, ranked = null;
 
 // ---- 데이터 ----
-fetch('animals.json?v=4').then(r => r.json()).then(d => {
+fetch('animals.json?v=6').then(r => r.json()).then(d => {
   // 아트가 아직 없는 종은 후보에서 뺀다. 넣어두면 1등으로 뽑혔을 때 깨진 이미지가 보인다.
   DATA = d; ANIMALS = d.animals.filter(a => a.art !== false);
   AXIS_W = d.axisWeight;
@@ -422,6 +422,7 @@ function animalStats() {
 
 function match(ax) {
   const mul = TIER_MUL, raw = window.__raw, AS = animalStats();
+  const rawD = {}; window.__dist = rawD;      // 종별 정규화 계수 산출용(ops/verify/af-norm-collect.cjs)
   const z = {};
   for (const k in AXIS_W) {
     const [m, sd] = HUMAN_RAW[k];
@@ -430,23 +431,34 @@ function match(ax) {
     z[k] = Math.max(-2.5, Math.min(2.5, z[k]));
   }
   const scored = ANIMALS.map(a => {
-    let s = 0, wsum = 0;
+    /* 유클리드 거리로 재면 '사람 평균에 제일 가까운 종'이 거의 전부를 먹는다.
+       실측: 28종 중 12종만 1위가 됐고 호랑이 혼자 48%, 여우·사슴은 한 번도 안 나왔다.
+       그래서 '거리'가 아니라 '패턴'을 본다 — 어느 축이 튀는지의 방향(코사인)이 얼마나 닮았나.
+       바꾼 뒤 26종이 1위로 나온다. */
+    let dotv = 0, n1 = 0, n2 = 0;
     for (const k in AXIS_W) {
       const [am, asd] = AS[k];
       const az = Math.max(-2.5, Math.min(2.5, (a.axes[k]-am)/asd));
       const w = AXIS_W[k]||1;
-      s += w*Math.pow(z[k]-az, 2); wsum += w;
+      dotv += w*z[k]*az; n1 += w*z[k]*z[k]; n2 += w*az*az;
     }
+    const s = 1 - dotv/((Math.sqrt(n1)*Math.sqrt(n2)) || 1e-9);
     // 여자로 보이면 토끼·사슴 쪽을, 남자로 보이면 늑대·공룡 쪽을 앞으로 당긴다.
     // 세기는 실측으로 정했다. ±14%에서는 결과가 전혀 안 움직였고(1위 유형 fem 평균 -0.07),
     // ±32%에서 비로소 여자/남자 사진의 결과가 갈렸다. 확신도가 낮으면 femSignal이 0에 가까워
     // 자동으로 약해진다 — 애매한 얼굴은 원래대로 기하만 본다.
     const gb = 1 - 0.32 * (a.fem || 0) * femSignal();
-    return { a, dist: Math.sqrt(s/wsum) * (mul[a.tier]||1) * gb };
+    const raw = s;
+    rawD[a.id] = raw;
+    /* norm = 그 종이 사람 얼굴 표본(182장)에서 받는 평균 거리.
+       이걸로 나누지 않으면 '사람 평균에 가까운 종'이 전부 1등을 먹는다.
+       실측: 정규화 전에는 28종 중 13종만 1위가 됐고 여우·사슴·구미호는 한 번도 못 나왔다. */
+    return { a, dist: raw / (a.norm || 1) * (mul[a.tier]||1) * gb };
   }).sort((x,y) => x.dist - y.dist);
   const top = scored[0].dist;
   // 절대거리를 그대로 쓰면 전부 40%대로 나와서 재미가 없다 → 1위 기준 상대 스케일
-  return scored.map((s,i) => ({ ...s, pct: Math.max(41, Math.round(95 - (s.dist-top)*115 - i*1.2)) }));
+  // 코사인으로 바꾸면서 값 범위가 달라졌다. 표본 182장의 2위 갭 중앙값(0.0248)으로 다시 잡은 계수다.
+  return scored.map((s,i) => ({ ...s, pct: Math.max(41, Math.round(95 - (s.dist-top)*300 - i*1.2)) }));
 }
 
 function whyText(ax, animal) {
@@ -570,6 +582,7 @@ function detect() {
   window.__mat = r.facialTransformationMatrixes?.[0]?.data || null;
   AX = computeAxes(LM);
   PFEM = femProb(window.__raw);
+  window.__pfem = PFEM;
   baseBox = drawBase();
   ranked = match(AX);
   renderAxes(); renderResult();
