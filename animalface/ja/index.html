@@ -713,9 +713,12 @@ function drawCloud(x, front, cx, cy, R, yaw, color, dot) {
     if (py<minY) minY=py; if (py>maxY) maxY=py;
   }
   const mx = (minX+maxX)/2, my = (minY+maxY)/2;
-  // 세로 길이에 맞춰 채운다. 가로·세로 중 큰 쪽에 맞추면 긴 얼굴이 통째로 축소돼
-  // 폭 차이가 사라지고 결국 다 비슷한 원형으로 보인다(실제로 그렇게 보인다는 지적을 받았다).
-  const k = 2*R / (Math.max(maxY-minY, (maxX-minX)*0.88) * 1.08 || 1);
+  /* 스케일은 '눈 사이 거리'로 고정한다. 바운딩박스를 원에 꽉 맞추면 얼굴 길이 차이가
+     정규화로 지워져서 누가 넣어도 같은 넙죽한 얼굴이 된다 — 실제로 그런 지적을 받았다.
+     메시 자체는 사람마다 다르다(윤곽점 편차가 눈 거리의 7~11%). 눈 거리를 단위로 쓰면
+     긴 얼굴은 길게, 넓은 얼굴은 넓게 — 실측 비율 그대로 그려진다. */
+  const eyeD = Math.hypot(pts[33][0]-pts[263][0], pts[33][1]-pts[263][1]) || 1;
+  const k = R / (eyeD * 1.25);
   x.fillStyle = color;
   for (let i = 0; i < pts.length; i++) {         // 솎지 않는다. 솎으면 눈·입술 링이 끊긴다
     const q = pts[i], edge = OVAL.has(i);
