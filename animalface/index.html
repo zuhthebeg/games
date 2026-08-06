@@ -4,16 +4,17 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>동물상 판독기 — 내 얼굴은 무슨 동물?</title>
-<meta name="description" content="사진 한 장으로 얼굴 8개 축을 실측해서 23종 동물상 중 내 얼굴을 찾아줍니다. 표정 미러링·GIF 공유. 사진은 기기 밖으로 나가지 않습니다.">
+<meta name="description" content="사진 한 장으로 얼굴 8개 축을 실측해서 28종 동물상(사신기 포함) 중 내 얼굴을 찾아줍니다. 표정 미러링·GIF 공유. 사진은 기기 밖으로 나가지 않습니다.">
 <meta property="og:title" content="동물상 판독기 — 내 얼굴은 무슨 동물?">
-<meta property="og:description" content="눈·코·입 468개 점을 실측해서 23종 중 내 동물상을 찾아줍니다. 표정을 따라하는 GIF도 만들 수 있어요.">
+<meta property="og:description" content="눈·코·입 468개 점을 실측해서 28종 중 내 동물상을 찾아줍니다. 표정을 따라하는 GIF도 만들 수 있어요.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://game.cocy.io/animalface/">
 <link rel="canonical" href="https://game.cocy.io/animalface/">
 <link rel="alternate" hreflang="ko" href="https://game.cocy.io/animalface/">
 <link rel="alternate" hreflang="en" href="https://game.cocy.io/animalface/?lang=en">
 <link rel="alternate" hreflang="ja" href="https://game.cocy.io/animalface/?lang=ja">
-<script src="js/i18n.js?v=2"></script>
+<link rel="alternate" hreflang="zh-Hant" href="https://game.cocy.io/animalface/?lang=tw">
+<script src="js/i18n.js?v=3"></script>
 <script>
   // 바 이름은 페이지 언어를 따라간다. shared-wallet은 gameName 옵션을 읽는다(?v= 새 버전 필요).
   window.SharedWalletConfig = window.SharedWalletConfig || {
@@ -25,71 +26,127 @@
 <script src="/lib/shared-wallet.js?v=20260806af"></script>
 <style>
 :root{
-  --bg:#faf6ee; --card:#fff; --line:#e6ddcc; --ink:#2b2822; --mut:#8a8171;
-  --acc:#f2683c; --acc2:#3ba7a0; --gold:#e8a33d;
+  /* 종이+잉크. 판독기라는 성격상 '측정 도구' 쪽으로 붙인다 — 파스텔 말고 잉크와 도장. */
+  --paper:#f7f2e7; --card:#fffdf8; --line:#ded2ba; --ink:#241f1a; --mut:#7d7466;
+  --acc:#e2532f; --acc2:#2f8f89; --gold:#d9962f; --rare:#6b4fbb;
+  --shadow:3px 3px 0 rgba(36,31,26,.10);
+  --r:18px;
   /* shared-wallet이 #sw-bar를 fixed로 얹는다. 여기서 자리를 안 비우면 헤더가 가려진다. */
   --wallet-bar-h:56px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);
-  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",system-ui,sans-serif;
-  line-height:1.6;padding:14px;padding-bottom:56px;
-  padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top))}
+body{background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans TC","Segoe UI",system-ui,sans-serif;
+  line-height:1.6;font-size:16px;padding:14px;padding-bottom:64px;
+  padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));
+  /* 종이 결 — 이미지 없이 그라디언트 두 겹으로 낸다(요청 0개) */
+  background-image:radial-gradient(rgba(36,31,26,.030) 1px, transparent 1px);
+  background-size:14px 14px}
 .wrap{max-width:480px;margin:0 auto}
-header{text-align:center;margin:6px 0 14px}
-h1{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
-.sub{color:var(--mut);font-size:.82rem}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;
-  box-shadow:0 1px 2px rgba(0,0,0,.03)}
-.btn{background:var(--acc);color:#fff;border:none;border-radius:12px;padding:13px 16px;
-  font-size:.95rem;font-weight:700;cursor:pointer;width:100%;font-family:inherit}
-.btn:disabled{opacity:.4;cursor:default}
-.btn.sec{background:#f4efe4;color:var(--ink);border:1px solid var(--line)}
-.btn.sx{padding:9px 8px;font-size:14px}
-.btn.sx.on{background:var(--acc);color:#fff;border-color:var(--acc)}
-.celeb{margin-top:10px;font-size:13px;line-height:1.7;color:#6b6257}
-.celeb b{color:var(--ink)}
-.celeb a{color:var(--acc2);text-decoration:none;border-bottom:1px dotted var(--acc2)}
+
+header{position:relative;text-align:center;margin:4px 0 16px}
+h1{font-size:1.55rem;font-weight:900;letter-spacing:-.03em;line-height:1.25}
+.sub{color:var(--mut);font-size:.8rem;margin-top:2px}
+.rule{height:2px;background:var(--ink);opacity:.14;margin:10px 0 0;border-radius:2px}
+.lang{position:absolute;right:0;top:2px;min-height:36px;background:var(--card);
+  border:1.5px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.74rem;font-weight:800;
+  color:var(--mut);cursor:pointer;font-family:inherit;transition:background .18s,color .18s}
+.lang:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:var(--r);padding:16px;
+  margin-bottom:14px;box-shadow:var(--shadow)}
+.btn{background:var(--acc);color:#fff;border:1.5px solid var(--acc);border-radius:13px;
+  padding:0 16px;min-height:48px;font-size:.98rem;font-weight:800;cursor:pointer;width:100%;
+  font-family:inherit;transition:filter .18s,background .18s,color .18s}
+.btn:hover{filter:brightness(1.06)}
+.btn:disabled{opacity:.4;cursor:default;filter:none}
+.btn.sec{background:var(--card);color:var(--ink);border-color:var(--line)}
+.btn.sec:hover{background:#f1e9d8}
+:focus-visible{outline:3px solid var(--acc2);outline-offset:2px}
 .row{display:flex;gap:8px;margin-top:8px}
-.stage{position:relative;width:100%;aspect-ratio:1;background:#f1ece1;border-radius:14px;overflow:hidden}
-/* video도 같은 레이어다. canvas.layer로 좁혀 두면 video에 적용이 안 돼서 미리보기가 어긋난다. */
+.hint{font-size:.76rem;color:var(--mut);margin-top:10px;line-height:1.55}
+
+/* 스테이지 — 코너 마크를 얹어 '측정 중'인 화면처럼 보이게 한다 */
+.stage{position:relative;width:100%;aspect-ratio:1;background:#efe8d9;border-radius:14px;overflow:hidden;
+  border:1.5px solid var(--line)}
+.stage::after{content:'';position:absolute;inset:10px;pointer-events:none;border:2px solid rgba(36,31,26,.16);
+  border-radius:8px;
+  -webkit-mask:linear-gradient(#000 0 0) top left/22px 22px no-repeat,
+        linear-gradient(#000 0 0) top right/22px 22px no-repeat,
+        linear-gradient(#000 0 0) bottom left/22px 22px no-repeat,
+        linear-gradient(#000 0 0) bottom right/22px 22px no-repeat;
+  mask:linear-gradient(#000 0 0) top left/22px 22px no-repeat,
+        linear-gradient(#000 0 0) top right/22px 22px no-repeat,
+        linear-gradient(#000 0 0) bottom left/22px 22px no-repeat,
+        linear-gradient(#000 0 0) bottom right/22px 22px no-repeat}
 .layer{position:absolute;inset:0;width:100%;height:100%}
 .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  color:var(--mut);font-size:.85rem;text-align:center;padding:20px}
-.hint{font-size:.76rem;color:var(--mut);margin-top:8px}
-.modes{display:flex;gap:6px;background:#f4efe4;padding:4px;border-radius:12px;margin-bottom:10px}
-.modes button{flex:1;border:none;background:transparent;padding:9px;border-radius:9px;font-weight:700;
-  font-size:.85rem;color:var(--mut);cursor:pointer;font-family:inherit}
-.modes button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
-.win{display:flex;gap:14px;align-items:center}
-.win img{width:112px;height:112px;border-radius:16px;object-fit:cover;background:#f1ece1;flex:none}
-.win .nm{font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
-.win .pc{font-size:2.1rem;font-weight:800;color:var(--acc);line-height:1.05}
-.win .ds{font-size:.8rem;color:var(--mut);margin-top:3px}
-.runner{display:flex;gap:8px;margin-top:12px}
-.runner div{flex:1;text-align:center;background:#faf6ee;border:1px solid var(--line);border-radius:12px;padding:8px 4px}
-.runner img{width:44px;height:44px;border-radius:10px;object-fit:cover}
-.runner .n{font-size:.72rem;font-weight:700;margin-top:2px}
-.runner .p{font-size:.72rem;color:var(--acc2);font-weight:700}
+  color:var(--mut);font-size:.85rem;text-align:center;padding:24px}
+
+/* 결과 — 원형 게이지 + 아트 + 희귀도 도장 */
+.win{display:flex;gap:16px;align-items:center}
+.gauge{position:relative;flex:none;width:118px;height:118px}
+.gauge svg{width:100%;height:100%;transform:rotate(-90deg)}
+.gauge .trk{stroke:#eee3cc;stroke-width:7;fill:none}
+.gauge .val{stroke:var(--acc);stroke-width:7;fill:none;stroke-linecap:round;
+  transition:stroke-dashoffset .9s cubic-bezier(.22,1,.36,1)}
+.gauge img{position:absolute;inset:11px;width:96px;height:96px;border-radius:50%;object-fit:cover;
+  background:#efe8d9}
+.win .nm{font-size:1.45rem;font-weight:900;letter-spacing:-.03em;line-height:1.2}
+.win .pc{font-size:.95rem;font-weight:900;color:var(--acc);font-variant-numeric:tabular-nums}
+.win .ds{font-size:.82rem;color:var(--mut);margin-top:6px;line-height:1.55}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:900;
+  padding:4px 9px;border-radius:999px;border:1.5px solid;margin-bottom:6px;letter-spacing:.02em}
+.badge.legend{color:var(--rare);border-color:var(--rare);background:rgba(107,79,187,.08)}
+.badge.rare{color:var(--gold);border-color:var(--gold);background:rgba(217,150,47,.10)}
+.badge.uncommon{color:var(--acc2);border-color:var(--acc2);background:rgba(47,143,137,.09)}
+.badge.common{color:var(--mut);border-color:var(--line);background:#f3ecdd}
+
+.why{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.why span{font-size:.72rem;font-weight:700;color:var(--acc2);background:rgba(47,143,137,.09);
+  border:1px solid rgba(47,143,137,.25);border-radius:999px;padding:3px 9px}
+.celeb{margin-top:12px;font-size:.78rem;line-height:1.5;color:var(--mut)}
+.celeb .cs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.celeb a,.celeb b{display:inline-block;font-size:.76rem;font-weight:800;color:var(--ink);
+  background:#f3ecdd;border:1px solid var(--line);border-radius:999px;padding:4px 10px;text-decoration:none;
+  transition:background .18s,color .18s}
+.celeb a:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+.runner{display:flex;gap:8px;margin-top:14px}
+.runner div{flex:1;text-align:center;background:var(--paper);border:1.5px solid var(--line);
+  border-radius:14px;padding:9px 4px}
+.runner img{width:46px;height:46px;border-radius:12px;object-fit:cover}
+.runner .n{font-size:.7rem;font-weight:800;margin-top:3px;line-height:1.25}
+.runner .p{font-size:.72rem;color:var(--acc2);font-weight:900;font-variant-numeric:tabular-nums}
+
 .axes{display:grid;grid-template-columns:1fr auto;gap:1px 10px;font-size:.78rem}
 .axes .k{color:var(--mut)}
-.axes .v{font-family:ui-monospace,monospace;color:var(--acc2);text-align:right}
-.bar{height:5px;background:#f0eade;border-radius:3px;overflow:hidden;grid-column:1/-1;margin-bottom:6px}
-.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--gold))}
-.err{color:var(--acc);font-size:.85rem;font-weight:600}
-footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:14px}
-.lang{position:absolute;right:0;top:0;background:#f4efe4;border:1px solid var(--line);border-radius:10px;
-  padding:5px 9px;font-size:.74rem;font-weight:700;color:var(--mut);cursor:pointer;font-family:inherit}
-header{position:relative}
+.axes .v{font-family:ui-monospace,monospace;color:var(--acc2);text-align:right;font-variant-numeric:tabular-nums}
+.bar{height:6px;background:#eee3cc;border-radius:3px;overflow:hidden;grid-column:1/-1;margin-bottom:7px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--gold));
+  transition:width .7s cubic-bezier(.22,1,.36,1)}
+.err{color:var(--acc);font-size:.88rem;font-weight:800}
+.ttl{font-size:.72rem;font-weight:900;letter-spacing:.06em;color:var(--mut);text-transform:uppercase;
+  margin-bottom:10px}
+
 /* 분포 — 23종 나열(스포일러)을 걷어내고 그 자리에 "남들은 뭐가 나왔나"를 넣는다 */
-.dist{display:grid;grid-template-columns:auto 1fr auto;gap:5px 8px;align-items:center;font-size:.78rem}
-.dist img{width:22px;height:22px;border-radius:6px;object-fit:cover;background:#f1ece1}
-.dist .t{background:#f0eade;border-radius:4px;height:8px;overflow:hidden}
-.dist .t i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--gold))}
+.dist{display:grid;grid-template-columns:auto auto 1fr auto;gap:7px 8px;align-items:center;font-size:.78rem}
+.dist .rk{font-size:.68rem;font-weight:900;color:var(--mut);font-variant-numeric:tabular-nums;width:1.4em}
+.dist img{width:26px;height:26px;border-radius:8px;object-fit:cover;background:#efe8d9}
+.dist .t{background:#eee3cc;border-radius:4px;height:9px;overflow:hidden}
+.dist .t i{display:block;height:100%;background:var(--acc2);
+  transition:width .7s cubic-bezier(.22,1,.36,1)}
 .dist .c{color:var(--mut);font-variant-numeric:tabular-nums;font-size:.72rem}
 .dist .me .t i{background:var(--acc)}
-.dist .me{font-weight:800}
-.mine{font-size:.8rem;font-weight:700;color:var(--acc);margin-bottom:8px}
+.dist .me{font-weight:900}
+.mine{font-size:.82rem;font-weight:800;color:var(--ink);background:#f3ecdd;border:1.5px solid var(--line);
+  border-radius:12px;padding:9px 11px;margin-bottom:12px;line-height:1.45}
+footer{text-align:center;font-size:.72rem;color:var(--mut);margin-top:16px}
+
+/* 애니메이션을 끈 사용자에겐 전환을 걷어낸다(연출 자체는 캔버스에서 별도로 줄인다) */
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important;animation:none !important}
+}
 </style>
 </head>
 <body>
@@ -97,18 +154,12 @@ header{position:relative}
   <header>
     <button class="lang" id="langBtn">🌐</button>
     <h1 data-i18n="title">🦊 동물상 판독기</h1>
-    <div class="sub" data-i18n="sub">얼굴 468개 점을 실측해서 23종 중에 찾아줍니다</div>
+    <div class="sub" data-i18n="sub">얼굴 468개 점을 실측해서 28종 중에 찾아줍니다</div>
+    <div class="rule"></div>
   </header>
 
   <div class="card">
     <input type="file" id="file" accept="image/*" style="display:none">
-    <!-- 동물상 정의는 성별마다 다르다(늑대상만 봐도 남녀가 전혀 다른 얼굴을 가리킨다).
-         성별을 알면 그 성별에서 실제로 쓰이는 유형을 앞으로 당길 수 있다. -->
-    <div class="row" id="sexRow">
-      <button class="btn sec sx" data-sex="f" data-i18n="sexF">여자</button>
-      <button class="btn sec sx" data-sex="m" data-i18n="sexM">남자</button>
-      <button class="btn sec sx on" data-sex="" data-i18n="sexAny">상관없음</button>
-    </div>
     <button class="btn" id="pick" data-i18n="pick" disabled>📷 사진 선택</button>
     <div class="row"><button class="btn sec" id="cam" data-i18n="cam" disabled>🎥 카메라로 찍기</button></div>
     <div class="hint" id="privacy" data-i18n="privacy">사진은 이 기기 안에서만 처리됩니다. 서버로 올리지 않습니다.</div>
@@ -145,7 +196,7 @@ header{position:relative}
   </div>
 
   <div class="card" id="distCard" style="display:none">
-    <div class="hint" style="margin:0 0 8px" data-i18n="distTitle">🏆 지금까지 나온 동물상</div>
+    <div class="ttl" data-i18n="distTitle">🏆 지금까지 나온 동물상</div>
     <div id="distMine" class="mine"></div>
     <div class="dist" id="dist"></div>
     <div class="hint" id="distTotal" style="margin-top:8px"></div>
@@ -213,7 +264,8 @@ fetch('animals.json?v=3').then(r => r.json()).then(d => {
 
 /* 유형별 연예인 — 팬트랙(page.cocy.io) celebrities 테이블에서 뽑아온 정적 스냅샷.
    실시간 조회를 붙이면 이 페이지가 백엔드에 묶인다. 갱신은 ops/fantrack/export-animalface.sh */
-let CELEBS = null, SEX = '';
+let CELEBS = null;
+const SEX = '';   // 성별 선택 UI를 뺐다. 연예인 목록은 남녀 구분 없이 전부 보여준다.
 fetch('celebs.json?v=1').then(r => r.json()).then(d => { CELEBS = d.byAnimal; if (ranked) renderResult(); })
   .catch(() => {});
 
@@ -237,7 +289,7 @@ function celebChips(list, n) {
     return x.link
       ? `<a href="${fantrackUrl(x.link)}" target="_blank" rel="noopener"><b>${label}</b></a>`
       : `<b>${label}</b>`;
-  }).join(', ');
+  }).join('');
 }
 
 // ---- MediaPipe ----
@@ -309,7 +361,8 @@ function computeAxes(lm) {
 
 // 모드 토글은 뺐다(웃긴 모드가 늘 같은 답을 내서 재미도 없고 쓸모도 없었다).
 // 다만 못생김 라인이 아무에게나 1등으로 뜨면 기분 상하니 뒤로 미는 가중은 남긴다.
-const TIER_MUL = { cute:1, cool:1, funny:1.55 };
+const TIER_MUL = { cute:1, cool:1, funny:1.55, myth:1.42 };
+// myth(사신기)는 일부러 뒤로 민다. 신수가 흔하게 나오면 '전설'이 아니라 그냥 기본값이 된다.
 
 /* 사람 얼굴은 8차원 공간의 아주 좁은 영역에 몰려 있다(다 사람이니까).
    반면 동물 축은 0~1 전체에 퍼져 있어서, 절대좌표로 거리를 재면
@@ -349,10 +402,7 @@ function match(ax) {
       const w = AXIS_W[k]||1;
       s += w*Math.pow(z[k]-az, 2); wsum += w;
     }
-    // 성별을 골랐으면, 그 성별에서 실제로 쓰이는 유형을 앞으로 당긴다.
-    // 완전히 배제하진 않는다 — 라벨이 있는 남자 유형이 아직 4종뿐이라 막아버리면 결과가 단조로워진다.
-    const sexBias = !SEX ? 1 : (celebsOf(a.id, SEX).length ? 0.78 : 1.28);
-    return { a, dist: Math.sqrt(s/wsum) * (mul[a.tier]||1) * sexBias };
+    return { a, dist: Math.sqrt(s/wsum) * (mul[a.tier]||1) };
   }).sort((x,y) => x.dist - y.dist);
   const top = scored[0].dist;
   // 절대거리를 그대로 쓰면 전부 40%대로 나와서 재미가 없다 → 1위 기준 상대 스케일
@@ -484,14 +534,6 @@ function detect() {
   submitDist(ranked[0].a.id);   // 분포 집계(동물 종류만) — 사진은 나가지 않는다
 }
 
-// 성별 선택 — 이미 판독한 뒤에 바꾸면 사진을 다시 넣게 하지 않고 그 자리에서 다시 매긴다.
-$('sexRow').addEventListener('click', e => {
-  const b = e.target.closest('.sx'); if (!b) return;
-  SEX = b.dataset.sex;
-  [...document.querySelectorAll('.sx')].forEach(x => x.classList.toggle('on', x === b));
-  if (AX) { ranked = match(AX); renderResult(true); }
-});
-
 /* 결과 연출: 사진 위에 468개 점을 훑고(스캔) → 동물로 크로스페이드.
    점을 보여주는 건 장식이 아니라 "정말 얼굴을 쟀다"는 근거라서, 결과 신뢰에 직결된다. */
 const SAMPLE = []; for (let i = 0; i < 468; i += 3) SAMPLE.push(i);
@@ -513,9 +555,10 @@ function reveal(withScan = true) {
   if (!ranked) return;
   const seq = ++revealSeq;
   const A = ranked[0].a, aimg = animImgs[A.id];
-  const SCAN = withScan && LM_DRAW ? 1100 : 0;
-  const SPIN = withScan ? 1500 : 0;      // 점 찍고 → 후보를 한 바퀴 돌리고
-  const FADE = withScan ? 1100 : 700;    // → 정답이 천천히 떠오른다
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const SCAN = withScan && LM_DRAW && !calm ? 1100 : 0;
+  const SPIN = withScan && !calm ? 1500 : 0;   // 점 찍고 → 후보를 한 바퀴 돌리고
+  const FADE = calm ? 200 : (withScan ? 1100 : 700);   // → 정답이 천천히 떠오른다
   const reel = SPIN ? spinReel(A.id, 15) : [];
   const t0 = performance.now();
   const drawAnimal = (img, alpha, scale) => {
@@ -574,12 +617,12 @@ function renderAxes() {
 function celebLine(winner) {
   const own = celebsOf(winner.id, SEX).length ? celebsOf(winner.id, SEX) : celebsOf(winner.id, '');
   if (own.length)
-    return `<div class="celeb">${T('celebSame', { name: NAME(winner) })}: ${celebChips(own, 6)}</div>`;
+    return `<div class="celeb">${T('celebSame', { name: NAME(winner) })}<div class="cs">${celebChips(own, 6)}</div></div>`;
   const near = ranked.slice(1).find(s => celebsOf(s.a.id, SEX).length || celebsOf(s.a.id, '').length);
   if (!near) return '';
   const c = celebsOf(near.a.id, SEX).length ? celebsOf(near.a.id, SEX) : celebsOf(near.a.id, '');
   return `<div class="celeb">${T('celebNear',
-    { name: NAME(winner), near: NAME(near.a), pct: near.pct })}: ${celebChips(c, 5)}</div>`;
+    { name: NAME(winner), near: NAME(near.a), pct: near.pct })}<div class="cs">${celebChips(c, 5)}</div></div>`;
 }
 
 /* ---- 동물상 분포(랭킹) ----
@@ -605,6 +648,7 @@ async function loadDist(mineId) {
     if (!j.success) throw new Error(j.error || 'fail');
     LAST_DIST = { rows: j.rankings || [], total: j.total || 0, mine: mineId };
     renderDist(LAST_DIST);
+    if (ranked) renderResult();       // 희귀도 도장은 분포가 와야 붙는다
   } catch (e) {
     $('dist').innerHTML = `<div class="c" style="grid-column:1/-1">${T('distFail')}</div>`;
   }
@@ -615,9 +659,9 @@ function renderDist(d) {
   const rows = d.rows.filter(r => byId[r.animal]);
   const max = Math.max(1, ...rows.map(r => r.count));
   const mineIdx = rows.findIndex(r => r.animal === d.mine);
-  $('dist').innerHTML = rows.slice(0, 10).map(r => {
+  $('dist').innerHTML = rows.slice(0, 10).map((r, i) => {
     const a = byId[r.animal], me = r.animal === d.mine;
-    return `<img src="img/${a.id}.webp" alt=""><div class="${me ? 'me' : ''}">${NAME(a)}
+    return `<div class="rk">${i + 1}</div><img src="img/${a.id}.webp" alt=""><div class="${me ? 'me' : ''}">${NAME(a)}
       <div class="t"><i style="width:${(r.count/max*100).toFixed(0)}%"></i></div></div>
       <div class="c">${r.count}</div>`;
   }).join('');
@@ -634,22 +678,53 @@ function renderDist(d) {
 function renderResult(doReveal = false) {
   const b = ranked[0];
   $('resultCard').style.display = '';
+  const C = 2 * Math.PI * 52;                       // r=52 원둘레 — 게이지 dash 계산용
   $('result').innerHTML =
     `<div class="win">
-       <img src="img/${b.a.id}.webp" alt="${NAME(b.a)}">
+       <div class="gauge">
+         <svg viewBox="0 0 118 118" aria-hidden="true">
+           <circle class="trk" cx="59" cy="59" r="52"></circle>
+           <circle class="val" cx="59" cy="59" r="52"
+                   stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"></circle>
+         </svg>
+         <img src="img/${b.a.id}.webp" alt="${NAME(b.a)}">
+       </div>
        <div>
-         <div class="pc">${b.pct}%</div>
+         ${rarityBadge(b.a)}
          <div class="nm">${NAME(b.a)}</div>
+         <div class="pc">${b.pct}%</div>
          <div class="ds">${DESC(b.a)}</div>
        </div>
      </div>
-     <div class="hint" style="margin-top:8px">${T('basis', { why: whyText(AX, b.a) })}</div>
+     <div class="why">${whyChips(AX, b.a)}</div>
      ${celebLine(b.a)}
      <div class="runner">${ranked.slice(1,4).map(s =>
        `<div><img src="img/${s.a.id}.webp" alt=""><div class="n">${NAME(s.a)}</div><div class="p">${s.pct}%</div></div>`).join('')}
      </div>`;
+  // dashoffset을 다음 프레임에 바꿔야 트랜지션이 돈다(같은 프레임에 넣으면 즉시 점프)
+  const val = $('result').querySelector('.gauge .val');
+  if (val) requestAnimationFrame(() => { val.style.strokeDashoffset = (C * (1 - b.pct/100)).toFixed(1); });
   // 스캔·룰렛은 첫 판독에서만. 성별을 바꿔 1등이 달라졌을 때만 그림을 조용히 갈아끼운다.
   if (doReveal && LM) reveal(false);
+}
+
+// 근거는 문장보다 칩이 읽기 쉽다 — 두 축을 각각 하나씩
+function whyChips(ax, animal) {
+  return whyText(ax, animal).split(' · ').map(x => `<span>${x}</span>`).join('');
+}
+
+/* 희귀도 도장 — 분포가 도착하기 전에는 안 붙인다(추정치를 진짜처럼 보여주지 않는다).
+   신수(사신기)는 애초에 잘 안 나오게 눌러놨으니 여기서 '전설'이 뜬다. */
+function rarityBadge(animal) {
+  if (!LAST_DIST || !LAST_DIST.total) return '';
+  const row = LAST_DIST.rows.find(r => r.animal === animal.id);
+  const share = row ? row.count * 100 / LAST_DIST.total : 0;
+  if (!share) return '';
+  const [cls, key] = share < 2 ? ['legend', 'rarityLegend']
+    : share < 5 ? ['rare', 'rarityRare']
+    : share < 12 ? ['uncommon', 'rarityUncommon'] : ['common', 'rarityCommon'];
+  return `<div class="badge ${cls}">${T('rarityOf',
+    { label: T(key), share: share.toFixed(1) })}</div>`;
 }
 
 /* ---- WebGL 워프 ----

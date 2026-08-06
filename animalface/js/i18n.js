@@ -1,4 +1,4 @@
-/* 동물상 판독기 — i18n (ko/en/ja).
+/* 동물상 판독기 — i18n (ko/en/ja/tw).
    문자열은 전부 여기, 코드에선 AF.t(key, params) / AF.animal(id).name 로만 쓴다.
    전역은 AF_ 접두사로 감싼다 — 공용 lib(shared-wallet 등)와 이름이 겹치면
    인라인 스크립트가 통째로 죽는다(이 레포에서 반복된 사고). */
@@ -8,7 +8,9 @@
   var UI = {
     ko: {
       title: '🦊 동물상 판독기',
-      sub: '얼굴 468개 점을 실측해서 23종 중에 찾아줍니다',
+      sub: '얼굴 468개 점을 실측해서 28종 중에 찾아줍니다',
+      rarityLegend: '전설', rarityRare: '희귀', rarityUncommon: '보통', rarityCommon: '흔함',
+      rarityOf: '{label} · 상위 {share}%',
       metaTitle: '동물상 판독기 — 내 얼굴은 무슨 동물?',
       sexF: '여자', sexM: '남자', sexAny: '상관없음',
       pick: '📷 사진 선택', cam: '🎥 카메라로 찍기', shot: '📸 찍기', camClose: '닫기',
@@ -41,7 +43,9 @@
     },
     en: {
       title: '🦊 Animal Face Reader',
-      sub: 'Measures 468 facial points and finds your match among 23 animals',
+      sub: 'Measures 468 facial points and finds your match among 28 animals',
+      rarityLegend: 'Legendary', rarityRare: 'Rare', rarityUncommon: 'Uncommon', rarityCommon: 'Common',
+      rarityOf: '{label} · {share}% of readings',
       metaTitle: 'Animal Face Reader — which animal is your face?',
       sexF: 'Female', sexM: 'Male', sexAny: 'Either',
       pick: '📷 Choose photo', cam: '🎥 Use camera', shot: '📸 Shoot', camClose: 'Close',
@@ -74,7 +78,9 @@
     },
     ja: {
       title: '🦊 動物顔診断',
-      sub: '顔の468点を実測して23種から探します',
+      sub: '顔の468点を実測して28種から探します',
+      rarityLegend: '伝説', rarityRare: 'レア', rarityUncommon: '普通', rarityCommon: 'よくある',
+      rarityOf: '{label} · 全体の{share}%',
       metaTitle: '動物顔診断 — あなたの顔はどの動物？',
       sexF: '女性', sexM: '男性', sexAny: 'どちらでも',
       pick: '📷 写真を選ぶ', cam: '🎥 カメラで撮る', shot: '📸 撮影', camClose: '閉じる',
@@ -105,6 +111,41 @@
       login: 'ログイン', logout: 'ログアウト',
       foot: '端末内処理 · MediaPipe FaceLandmarker · アートはローカル生成',
     },
+    tw: {
+      title: '🦊 動物臉診斷',
+      sub: '實測臉部468個點，從28種動物臉中找出你的那一種',
+      rarityLegend: '傳說', rarityRare: '稀有', rarityUncommon: '普通', rarityCommon: '常見',
+      rarityOf: '{label} · 佔{share}%',
+      metaTitle: '動物臉診斷 — 我的臉是哪種動物？',
+      sexF: '女', sexM: '男', sexAny: '不限',
+      pick: '📷 選擇照片', cam: '🎥 用相機拍', shot: '📸 拍照', camClose: '關閉',
+      privacy: '照片只在這台裝置上處理，不會上傳（只把結果的動物種類送去統計）。',
+      phEmpty: '放入照片後，結果會顯示在這裡',
+      mirror: '😀 模仿我的表情', mirrorStop: '⏹ 停止',
+      gif: '🎞 製作 GIF', gifRec: '🎞 錄製中 {i}/{n}', gifMaking: '🎞 製作中…',
+      gifHint: '{kb}KB — 長按儲存，或用下方按鈕', gifSave: '⬇ 儲存 GIF',
+      gifFail: 'GIF 失敗：{msg}', gifNeedMirror: '請先開啟「模仿我的表情」',
+      basis: '依據：{why}',
+      axisHint: '這是從照片實際量出來的比例，不是占卜也不是亂數。',
+      big: '大', small: '小', mid: '普通',
+      celebSame: '同樣是{name}的藝人',
+      celebNear: '{name}的藝人還在整理中 — 最接近的是{near}（{pct}%）',
+      distTitle: '🏆 大家都抽到什麼',
+      distMine: '你的{name} — 佔全部的{share}%，稀有度第{rank}名 / 共{kinds}種',
+      distTotal: '累計{total}次診斷',
+      distLoading: '載入分布中…',
+      distFail: '無法載入分布',
+      errNoFace: '找不到臉',
+      errSmall: '臉太小了 — 請用更近的照片',
+      errFront: '請確認是正面的臉部照片',
+      errStruct: '無法辨識臉部結構',
+      errTurned: '臉轉向側面了 — 請正面重拍',
+      errHint: '我們不會用猜的給結果。請換一張照片再試。',
+      errModel: '無法載入模型。<br>請檢查網路後重新整理。',
+      errCam: '無法開啟相機：{msg}',
+      login: '登入', logout: '登出',
+      foot: '裝置端處理 · MediaPipe FaceLandmarker · 圖像為本地生成',
+    },
   };
 
   // 축 이름 — 결과 카드의 "근거"와 실측표에 함께 쓴다
@@ -115,6 +156,8 @@
           jawSharp:'Jaw taper', cheek:'Cheekbones', noseWidth:'Nose width', lipThick:'Lip fullness' },
     ja: { eyeSize:'目の大きさ', eyeSlant:'目尻の上がり', eyeGap:'目の間隔', faceLength:'顔の長さ',
           jawSharp:'あごの細さ', cheek:'頬骨', noseWidth:'鼻の幅', lipThick:'唇の厚み' },
+    tw: { eyeSize:'眼睛大小', eyeSlant:'眼尾上揚', eyeGap:'兩眼間距', faceLength:'臉部長度',
+          jawSharp:'下巴尖度', cheek:'顴骨發達', noseWidth:'鼻子寬度', lipThick:'嘴唇厚度' },
   };
 
   /* 동물 이름·설명. animals.json은 한국어 정본을 그대로 두고 여기서 덮어쓴다
@@ -122,77 +165,120 @@
   var A = {
     dog:      { ko:['강아지상','보면 기분 좋아지는 얼굴. 첫인상에서 이미 반칙이다.'],
                 en:['Puppy','A face that lifts the room. Unfair from the first second.'],
-                ja:['子犬顔','見ると和む顔。第一印象からもう反則。'] },
+                ja:['子犬顔','見ると和む顔。第一印象からもう反則。'],
+                tw:['狗狗臉','看到就心情變好的臉。第一印象就已經犯規了。'] },
     cat:      { ko:['고양이상','눈꼬리로 먹고 들어간다. 다가오면 도망가는 쪽은 상대다.'],
                 en:['Cat','Wins with the eyes alone. You approach, they retreat.'],
-                ja:['猫顔','目尻だけで勝負がつく。近づくと逃げるのは相手のほう。'] },
+                ja:['猫顔','目尻だけで勝負がつく。近づくと逃げるのは相手のほう。'],
+                tw:['貓咪臉','光靠眼尾就贏了。靠近的話，逃走的是對方。'] },
     rabbit:   { ko:['토끼상','눈이 얼굴의 절반. 놀란 표정이 기본값이다.'],
                 en:['Rabbit','Eyes take up half the face. Default expression: startled.'],
-                ja:['うさぎ顔','目が顔の半分。デフォルトが驚いた顔。'] },
+                ja:['うさぎ顔','目が顔の半分。デフォルトが驚いた顔。'],
+                tw:['兔子臉','眼睛佔了半張臉。預設表情就是受驚。'] },
     fennec:   { ko:['사막여우상','작고 또렷한 이목구비. 사진발이 유난히 잘 받는 타입.'],
                 en:['Fennec fox','Small, sharply drawn features. Photographs unfairly well.'],
-                ja:['フェネック顔','小づくりでくっきり。写真写りが異様にいいタイプ。'] },
+                ja:['フェネック顔','小づくりでくっきり。写真写りが異様にいいタイプ。'],
+                tw:['耳廓狐臉','五官小而分明。特別上相的類型。'] },
     hamster:  { ko:['햄스터상','볼살이 인상을 다 가져간다. 나이를 안 먹는 얼굴.'],
                 en:['Hamster','The cheeks run the whole face. Ages backwards.'],
-                ja:['ハムスター顔','頬が全部持っていく。歳をとらない顔。'] },
+                ja:['ハムスター顔','頬が全部持っていく。歳をとらない顔。'],
+                tw:['倉鼠臉','臉頰決定了整張臉。不會變老的長相。'] },
     fox:      { ko:['여우상','웃지 않아도 웃는 것처럼 보인다. 그래서 오해도 많이 산다.'],
                 en:['Fox','Looks amused even when you are not. Gets misread a lot.'],
-                ja:['きつね顔','笑ってなくても笑って見える。だから誤解も多い。'] },
+                ja:['きつね顔','笑ってなくても笑って見える。だから誤解も多い。'],
+                tw:['狐狸臉','沒笑也像在笑。所以常被誤會。'] },
     bear:     { ko:['곰상','덩치와 상관없이 순해 보인다. 사람들이 자꾸 부탁을 한다.'],
                 en:['Bear','Reads gentle regardless of size. People keep asking you for favors.'],
-                ja:['くま顔','体格に関係なく優しく見える。よく頼まれごとをされる。'] },
+                ja:['くま顔','体格に関係なく優しく見える。よく頼まれごとをされる。'],
+                tw:['熊臉','不管體型多大都顯得溫和。常常被拜託事情。'] },
     deer:     { ko:['사슴상','눈망울이 커서 뭘 해도 애처로워 보인다. 이득 보는 얼굴.'],
                 en:['Deer','Big soft eyes make everything look sincere. A useful face.'],
-                ja:['鹿顔','瞳が大きくて何をしても健気に見える。得な顔。'] },
+                ja:['鹿顔','瞳が大きくて何をしても健気に見える。得な顔。'],
+                tw:['鹿臉','眼睛大得做什麼都顯得真誠。很吃香的長相。'] },
     wolf:     { ko:['늑대상','가만히 있어도 화난 줄 안다. 알고 보면 제일 무른 쪽.'],
                 en:['Wolf','Resting face reads angry. Actually the softest one here.'],
-                ja:['狼顔','黙っていると怒っていると思われる。実は一番やわらかい。'] },
+                ja:['狼顔','黙っていると怒っていると思われる。実は一番やわらかい。'],
+                tw:['狼臉','不說話就被當成在生氣。其實是最軟的那個。'] },
     shihtzu:  { ko:['시츄상','눈코입이 가운데 모여 있다. 억울한 표정이 특기.'],
                 en:['Shih Tzu','Features gathered in the middle. Specialty: looking wronged.'],
-                ja:['シーズー顔','目鼻口が中央に集合。得意技は不服そうな顔。'] },
+                ja:['シーズー顔','目鼻口が中央に集合。得意技は不服そうな顔。'],
+                tw:['西施犬臉','五官集中在中間。擅長一臉委屈。'] },
     bulldog:  { ko:['불독상','인상 하나로 자리를 정리한다. 웃으면 반전이 크다.'],
                 en:['Bulldog','Settles a room with one look. The smile is a plot twist.'],
-                ja:['ブルドッグ顔','眼力だけで場が静まる。笑うとギャップが大きい。'] },
+                ja:['ブルドッグ顔','眼力だけで場が静まる。笑うとギャップが大きい。'],
+                tw:['鬥牛犬臉','一個眼神就能鎮住場子。笑起來反差很大。'] },
     pig:      { ko:['돼지상','복스럽다는 말을 평생 듣는다. 칭찬 맞다.'],
                 en:['Pig','You will hear "lucky face" your whole life. It is a compliment.'],
-                ja:['豚顔','「福々しい」と一生言われる。ほめ言葉です。'] },
+                ja:['豚顔','「福々しい」と一生言われる。ほめ言葉です。'],
+                tw:['豬臉','一輩子被說有福氣。那真的是稱讚。'] },
     gumiho:   { ko:['구미호상','예쁜데 어딘가 서늘하다. 사람 홀리는 건 얼굴 탓이 맞다.'],
                 en:['Nine-tailed fox','Beautiful with a chill in it. Yes, it is the face.'],
-                ja:['九尾顔','きれいなのにどこか冷たい。人を惑わすのは顔のせい。'] },
+                ja:['九尾顔','きれいなのにどこか冷たい。人を惑わすのは顔のせい。'],
+                tw:['九尾狐臉','漂亮之中帶著一點冷。會迷倒人真的是臉的錯。'] },
     frog:     { ko:['개구리상','미간이 넓어서 시야가 넓다. 실제로 눈치도 빠르다.'],
                 en:['Frog','Wide-set eyes, wide field of view. Quick to read a room, too.'],
-                ja:['カエル顔','目が離れていて視野が広い。実際に察しもいい。'] },
+                ja:['カエル顔','目が離れていて視野が広い。実際に察しもいい。'],
+                tw:['青蛙臉','兩眼距離寬，視野也寬。實際上也很會看氣氛。'] },
     duck:     { ko:['오리상','입이 먼저 보인다. 말이 많다는 뜻은 아니지만 대개 맞다.'],
                 en:['Duck','The mouth arrives first. Not necessarily talkative — usually is.'],
-                ja:['アヒル顔','まず口が目に入る。おしゃべりとは限らないが、だいたい当たる。'] },
+                ja:['アヒル顔','まず口が目に入る。おしゃべりとは限らないが、だいたい当たる。'],
+                tw:['鴨子臉','先看到的是嘴。不一定話多，但通常說中。'] },
     snake:    { ko:['뱀상','눈매 하나로 분위기를 바꾼다. 첫인상과 실물 차이가 제일 큰 유형.'],
                 en:['Snake','Changes the mood with one glance. Biggest gap between first impression and reality.'],
-                ja:['蛇顔','目つきひとつで空気を変える。第一印象と実物の差が最大。'] },
+                ja:['蛇顔','目つきひとつで空気を変える。第一印象と実物の差が最大。'],
+                tw:['蛇臉','一個眼神就能改變氣氛。第一印象和本人差最多。'] },
     squirrel: { ko:['다람쥐상','작고 빠릿한 인상. 뭘 먹고 있으면 더 잘 어울린다.'],
                 en:['Squirrel','Small and quick. Suits you even better mid-snack.'],
-                ja:['リス顔','小さくてすばしこい印象。何か食べていると似合う。'] },
+                ja:['リス顔','小さくてすばしこい印象。何か食べていると似合う。'],
+                tw:['松鼠臉','又小又靈活。嘴裡有東西時更適合。'] },
     blobfish: { ko:['블롭피시상','세상 다 산 표정. 아무것도 안 했는데 지쳐 보인다.'],
                 en:['Blobfish','Seen-it-all face. Exhausted without doing anything.'],
-                ja:['ブロブフィッシュ顔','人生を悟った表情。何もしてないのに疲れて見える。'] },
+                ja:['ブロブフィッシュ顔','人生を悟った表情。何もしてないのに疲れて見える。'],
+                tw:['水滴魚臉','一副看破紅塵的表情。什麼都沒做就很累。'] },
     molerat:  { ko:['벌거숭이두더지쥐상','앞니가 인상을 지배한다. 웃을 때 제일 매력 있는 얼굴.'],
                 en:['Naked mole-rat','The front teeth run the show. Best-looking mid-laugh.'],
-                ja:['ハダカデバネズミ顔','前歯が印象を支配。笑った時が一番魅力的。'] },
+                ja:['ハダカデバネズミ顔','前歯が印象を支配。笑った時が一番魅力的。'],
+                tw:['裸鼴鼠臉','門牙決定一切。笑起來最有魅力。'] },
     starnose: { ko:['별코두더지상','코가 먼저 도착한다. 존재감으로는 20종 중 1등.'],
                 en:['Star-nosed mole','The nose gets there first. Unbeatable presence.'],
-                ja:['ホシバナモグラ顔','鼻が先に到着する。存在感なら断トツ。'] },
+                ja:['ホシバナモグラ顔','鼻が先に到着する。存在感なら断トツ。'],
+                tw:['星鼻鼴鼠臉','鼻子先到。論存在感無人能敵。'] },
     tiger:    { ko:['호랑이상','이목구비가 진해서 가만히 있어도 존재감이 있다. 잘생쁨 쪽.'],
                 en:['Tiger','Strong features that hold a room without trying. Handsome-pretty.'],
-                ja:['虎顔','目鼻立ちが濃くて黙っていても存在感がある。'] },
+                ja:['虎顔','目鼻立ちが濃くて黙っていても存在感がある。'],
+                tw:['老虎臉','五官深邃，站著不動也有存在感。帥中帶美。'] },
     raccoon:  { ko:['너구리상','강아지도 햄스터도 아닌데 씩씩하다. 어딘가 능청스러운 인상.'],
                 en:['Raccoon','Not a puppy, not a hamster — sturdy, and quietly mischievous.'],
-                ja:['たぬき顔','子犬でもハムスターでもない、たくましさ。どこかとぼけた印象。'] },
+                ja:['たぬき顔','子犬でもハムスターでもない、たくましさ。どこかとぼけた印象。'],
+                tw:['浣熊臉','不是狗也不是倉鼠，但很有精神。帶點裝傻的味道。'] },
     chick:    { ko:['병아리상','눈코입이 작고 오밀조밀. 나이를 물으면 다들 놀란다.'],
                 en:['Chick','Small, neatly packed features. Everyone guesses younger.'],
-                ja:['ひよこ顔','目鼻口が小さくこぢんまり。年齢を聞くとみんな驚く。'] },
+                ja:['ひよこ顔','目鼻口が小さくこぢんまり。年齢を聞くとみんな驚く。'],
+                tw:['小雞臉','五官小而精緻。問年齡時大家都會嚇一跳。'] },
+    dino:     { ko:['공룡상','큰 이목구비에 여유가 있다. 급할 게 없어 보이는 얼굴.'],
+                en:['Dinosaur','Big features, zero hurry. Nothing seems urgent to this face.'],
+                ja:['恐竜顔','大きめの造作にゆとりがある。急ぐ気配のない顔。'],
+                tw:['恐龍臉','五官大而從容。看起來沒什麼好急的臉。'] },
+    baekho:   { ko:['백호상','서늘하고 또렷하다. 사신(四神) 중 서쪽을 지키는 얼굴.'],
+                en:['White Tiger','Cold and clear-cut. The guardian of the west.'],
+                ja:['白虎顔','涼しげで輪郭がはっきり。四神のうち西を守る顔。'],
+                tw:['白虎臉','清冷而分明。四神之中鎮守西方的臉。'] },
+    cheongryong: { ko:['청룡상','길고 기품 있다. 사신 중 동쪽 — 아무나 안 나오는 얼굴.'],
+                en:['Azure Dragon','Long and dignified. Guardian of the east — rarely drawn.'],
+                ja:['青龍顔','長く気品がある。四神の東 — めったに出ない顔。'],
+                tw:['青龍臉','修長而有氣度。四神之中的東方 — 不常出現的臉。'] },
+    jujak:    { ko:['주작상','눈매가 화려하고 뚜렷하다. 사신 중 남쪽, 불의 얼굴.'],
+                en:['Vermilion Bird','Brilliant, sharply drawn eyes. The south, the face of fire.'],
+                ja:['朱雀顔','目もとが華やかではっきり。四神の南、火の顔。'],
+                tw:['朱雀臉','眼神華麗而鮮明。四神之中的南方，火之臉。'] },
+    hyeonmu:  { ko:['현무상','묵직하고 흔들림이 없다. 사신 중 북쪽 — 오래 보는 얼굴.'],
+                en:['Black Tortoise','Heavy and unshaken. The north — a face that wears well.'],
+                ja:['玄武顔','どっしりして揺るがない。四神の北 — 長く見ていられる顔。'],
+                tw:['玄武臉','沉穩而不動搖。四神之中的北方 — 越看越耐看的臉。'] },
   };
 
   var KEY = 'animalface_lang';
-  var ORDER = ['ko', 'en', 'ja'];
+  var ORDER = ['ko', 'en', 'ja', 'tw'];
   var current = null;
 
   function detect() {
@@ -202,6 +288,7 @@
     var n = (navigator.language || 'ko').toLowerCase();
     if (n.indexOf('ko') === 0) return 'ko';
     if (n.indexOf('ja') === 0) return 'ja';
+    if (n.indexOf('zh') === 0) return 'tw';
     return 'en';
   }
   function lang() { if (!current) current = detect(); return current; }
@@ -209,8 +296,9 @@
     if (!UI[l]) return;
     current = l;
     try { localStorage.setItem(KEY, l); } catch (e) {}
-    document.documentElement.lang = l;
+    document.documentElement.lang = htmlLang(l);
   }
+  function htmlLang(l) { l = l || lang(); return l === 'tw' ? 'zh-Hant' : l; }
   function cycle() { setLang(ORDER[(ORDER.indexOf(lang()) + 1) % ORDER.length]); }
   function next() { return ORDER[(ORDER.indexOf(lang()) + 1) % ORDER.length]; }
 
@@ -231,6 +319,6 @@
   }
   function axis(k) { return (AXES[lang()] || AXES.ko)[k] || k; }
 
-  global.AF_I18N = { t: t, lang: lang, setLang: setLang, cycle: cycle, next: next,
-                     animal: animal, axis: axis, langs: ORDER };
+  global.AF_I18N = { t: t, lang: lang, htmlLang: htmlLang, setLang: setLang, cycle: cycle,
+                     next: next, animal: animal, axis: axis, langs: ORDER };
 })(window);

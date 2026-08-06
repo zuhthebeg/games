@@ -847,6 +847,191 @@
      0.12
     ]
    }
+  },
+  {
+   "id": "dino",
+   "name": "공룡상",
+   "tier": "cool",
+   "desc": "큰 이목구비에 여유가 있다. 급할 게 없어 보이는 얼굴.",
+   "axes": {
+    "eyeSize": 0.25,
+    "eyeSlant": 0.45,
+    "eyeGap": 0.72,
+    "faceLength": 0.72,
+    "jawSharp": 0.3,
+    "cheek": 0.45,
+    "noseWidth": 0.7,
+    "lipThick": 0.4
+   },
+   "boxes": {
+    "eyeL": [
+     0.27,
+     0.37,
+     0.15,
+     0.1
+    ],
+    "eyeR": [
+     0.58,
+     0.37,
+     0.15,
+     0.1
+    ],
+    "mouth": [
+     0.36,
+     0.59,
+     0.28,
+     0.09
+    ]
+   },
+   "art": false
+  },
+  {
+   "id": "baekho",
+   "name": "백호상",
+   "tier": "myth",
+   "desc": "서늘하고 또렷하다. 사신(四神) 중 서쪽을 지키는 얼굴.",
+   "axes": {
+    "eyeSize": 0.45,
+    "eyeSlant": 0.88,
+    "eyeGap": 0.4,
+    "faceLength": 0.52,
+    "jawSharp": 0.6,
+    "cheek": 0.7,
+    "noseWidth": 0.52,
+    "lipThick": 0.45
+   },
+   "boxes": {
+    "eyeL": [
+     0.27,
+     0.37,
+     0.15,
+     0.1
+    ],
+    "eyeR": [
+     0.58,
+     0.37,
+     0.15,
+     0.1
+    ],
+    "mouth": [
+     0.36,
+     0.59,
+     0.28,
+     0.09
+    ]
+   },
+   "art": false
+  },
+  {
+   "id": "cheongryong",
+   "name": "청룡상",
+   "tier": "myth",
+   "desc": "길고 기품 있다. 사신 중 동쪽 — 아무나 안 나오는 얼굴.",
+   "axes": {
+    "eyeSize": 0.55,
+    "eyeSlant": 0.8,
+    "eyeGap": 0.55,
+    "faceLength": 0.85,
+    "jawSharp": 0.7,
+    "cheek": 0.4,
+    "noseWidth": 0.35,
+    "lipThick": 0.35
+   },
+   "boxes": {
+    "eyeL": [
+     0.27,
+     0.37,
+     0.15,
+     0.1
+    ],
+    "eyeR": [
+     0.58,
+     0.37,
+     0.15,
+     0.1
+    ],
+    "mouth": [
+     0.36,
+     0.59,
+     0.28,
+     0.09
+    ]
+   },
+   "art": false
+  },
+  {
+   "id": "jujak",
+   "name": "주작상",
+   "tier": "myth",
+   "desc": "눈매가 화려하고 뚜렷하다. 사신 중 남쪽, 불의 얼굴.",
+   "axes": {
+    "eyeSize": 0.7,
+    "eyeSlant": 0.75,
+    "eyeGap": 0.45,
+    "faceLength": 0.6,
+    "jawSharp": 0.75,
+    "cheek": 0.5,
+    "noseWidth": 0.25,
+    "lipThick": 0.3
+   },
+   "boxes": {
+    "eyeL": [
+     0.27,
+     0.37,
+     0.15,
+     0.1
+    ],
+    "eyeR": [
+     0.58,
+     0.37,
+     0.15,
+     0.1
+    ],
+    "mouth": [
+     0.36,
+     0.59,
+     0.28,
+     0.09
+    ]
+   },
+   "art": false
+  },
+  {
+   "id": "hyeonmu",
+   "name": "현무상",
+   "tier": "myth",
+   "desc": "묵직하고 흔들림이 없다. 사신 중 북쪽 — 오래 보는 얼굴.",
+   "axes": {
+    "eyeSize": 0.3,
+    "eyeSlant": 0.25,
+    "eyeGap": 0.65,
+    "faceLength": 0.35,
+    "jawSharp": 0.2,
+    "cheek": 0.75,
+    "noseWidth": 0.6,
+    "lipThick": 0.55
+   },
+   "boxes": {
+    "eyeL": [
+     0.27,
+     0.37,
+     0.15,
+     0.1
+    ],
+    "eyeR": [
+     0.58,
+     0.37,
+     0.15,
+     0.1
+    ],
+    "mouth": [
+     0.36,
+     0.59,
+     0.28,
+     0.09
+    ]
+   },
+   "art": false
   }
  ]
 }
