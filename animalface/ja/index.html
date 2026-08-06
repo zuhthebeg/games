@@ -308,7 +308,7 @@ function redraw(){
 let srcImg = null, LM = null, LM_DRAW = null, LM3 = null, FRONT3 = null, AX = null, ranked = null;
 
 // ---- 데이터 ----
-fetch('/animalface/animals.json?v=9').then(r => r.json()).then(d => {
+fetch('/animalface/animals.json?v=10').then(r => r.json()).then(d => {
   // 아트가 아직 없는 종은 후보에서 뺀다. 넣어두면 1등으로 뽑혔을 때 깨진 이미지가 보인다.
   DATA = d; ANIMALS = d.animals.filter(a => a.art !== false);
   AXIS_W = d.axisWeight;
@@ -449,8 +449,10 @@ function femSignal() {        // -1(남) ~ +1(여). off면 0으로 눌러 가중
 
 // 모드 토글은 뺐다(웃긴 모드가 늘 같은 답을 내서 재미도 없고 쓸모도 없었다).
 // 다만 못생김 라인이 아무에게나 1등으로 뜨면 기분 상하니 뒤로 미는 가중은 남긴다.
-const TIER_MUL = { cute:1, cool:1, funny:1.55, myth:1.42 };
-// myth(사신기)는 일부러 뒤로 민다. 신수가 흔하게 나오면 '전설'이 아니라 그냥 기본값이 된다.
+/* funny(못생김·기괴 라인)는 2.2로 강하게 뒤로 민다. 균형 계수로 모든 종을 골고루 띄우려 했더니
+   블롭피시·벌거숭이두더지쥐 같은 종이 멀쩡한 얼굴에 붙어서 "왜 이게 나오는지 맥락이 없다"는 소리를 들었다.
+   별코두더지는 아예 후보에서 뺐다. myth(사신기)도 흔하면 '전설'이 아니라 기본값이 된다. */
+const TIER_MUL = { cute:1, cool:1, funny:2.2, myth:1.45 };
 
 /* 사람 얼굴은 8차원 공간의 아주 좁은 영역에 몰려 있다(다 사람이니까).
    반면 동물 축은 0~1 전체에 퍼져 있어서, 절대좌표로 거리를 재면
