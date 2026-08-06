@@ -14,7 +14,7 @@
 <link rel="alternate" hreflang="en" href="https://game.cocy.io/animalface/?lang=en">
 <link rel="alternate" hreflang="ja" href="https://game.cocy.io/animalface/?lang=ja">
 <link rel="alternate" hreflang="zh-Hant" href="https://game.cocy.io/animalface/?lang=tw">
-<script src="js/i18n.js?v=5"></script>
+<script src="js/i18n.js?v=6"></script>
 <script>
   // 바 이름은 페이지 언어를 따라간다. shared-wallet은 gameName 옵션을 읽는다(?v= 새 버전 필요).
   window.SharedWalletConfig = window.SharedWalletConfig || {
@@ -256,7 +256,7 @@ function redraw(){
   if (aimg && aimg.complete) ctx.drawImage(aimg, 0, 0, cv.width, cv.height);
 }
 
-let srcImg = null, LM = null, LM_DRAW = null, AX = null, ranked = null;
+let srcImg = null, LM = null, LM_DRAW = null, LM3 = null, AX = null, ranked = null;
 
 // ---- 데이터 ----
 fetch('animals.json?v=4').then(r => r.json()).then(d => {
@@ -527,7 +527,8 @@ function detect() {
   window.__lm = lm.map(q => [+q.x.toFixed(5), +q.y.toFixed(5)]);   // 형상 벡터 실험용 덤프
   // 자세 정규화 실험용: 3D 좌표 + MediaPipe가 주는 머리 자세 행렬.
   // 같은 사람 사진끼리도 안 뭉치는 원인이 각도라서, 이걸로 정면화한 뒤 다시 잰다.
-  window.__lm3 = r.faceLandmarks[0].map(q => [+q.x.toFixed(5), +q.y.toFixed(5), +q.z.toFixed(5)]);
+  LM3 = r.faceLandmarks[0].map(q => [q.x, q.y, q.z]);
+  window.__lm3 = LM3;
   window.__mat = r.facialTransformationMatrixes?.[0]?.data || null;
   AX = computeAxes(LM);
   baseBox = drawBase();
@@ -553,6 +554,34 @@ function spinReel(winnerId, n) {
   return reel.filter(Boolean);
 }
 
+
+/* 468점을 3D로 찍는다. MediaPipe가 주는 z를 그대로 써서 yaw만 돌리면
+   얼굴 형태가 입체로 드러난다 — "진짜 쟀다"는 근거가 가장 잘 보이는 화면이다.
+   연출(캔버스)과 공유 카드가 같은 함수를 쓴다. 두 벌로 만들면 반드시 어긋난다. */
+function drawCloud(x, lm3, cx, cy, R, yaw, color, dot) {
+  if (!lm3 || !lm3.length) return;
+  let minX = 1, maxX = 0, minY = 1, maxY = 0;
+  for (const q of lm3) { if (q[0]<minX) minX=q[0]; if (q[0]>maxX) maxX=q[0];
+                         if (q[1]<minY) minY=q[1]; if (q[1]>maxY) maxY=q[1]; }
+  const mx = (minX+maxX)/2, my = (minY+maxY)/2;
+  const span = Math.max(maxX-minX, maxY-minY) || 1;
+  const k = 2*R / (span * 1.18);
+  const cos = Math.cos(yaw), sin = Math.sin(yaw);
+  x.fillStyle = color;
+  for (let i = 0; i < lm3.length; i += 2) {
+    const q = lm3[i];
+    const px = (q[0]-mx), py = (q[1]-my), pz = q[2];
+    const rx = px*cos + pz*sin;
+    const rz = -px*sin + pz*cos;
+    const persp = 1 / (1 + rz*1.6);          // 뒤로 간 점은 작고 흐리게
+    x.globalAlpha = Math.max(.25, Math.min(1, persp));
+    x.beginPath();
+    x.arc(cx + rx*k*persp, cy + py*k*persp, dot*persp, 0, 6.283);
+    x.fill();
+  }
+  x.globalAlpha = 1;
+}
+
 // 연출이 겹쳐 돌면(판독 직후 celebs.json 도착, 성별 변경 등) 스캔 위에 결과가 덮여 깜빡인다.
 let revealSeq = 0;
 function reveal(withScan = true) {
@@ -561,8 +590,9 @@ function reveal(withScan = true) {
   const A = ranked[0].a, aimg = animImgs[A.id];
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const SCAN = withScan && LM_DRAW && !calm ? 1100 : 0;
-  const SPIN = withScan && !calm ? 1500 : 0;   // 점 찍고 → 후보를 한 바퀴 돌리고
-  const FADE = calm ? 200 : (withScan ? 1100 : 700);   // → 정답이 천천히 떠오른다
+  const D3 = SCAN && LM3 ? 1300 : 0;           // 찍은 점을 3D로 한 번 돌려 보여준다
+  const SPIN = withScan && !calm ? 1300 : 0;   // → 후보를 한 바퀴 돌리고
+  const FADE = calm ? 200 : (withScan ? 1000 : 700);   // → 정답이 천천히 떠오른다
   const reel = SPIN ? spinReel(A.id, 15) : [];
   const t0 = performance.now();
   const drawAnimal = (img, alpha, scale) => {
@@ -592,15 +622,24 @@ function reveal(withScan = true) {
       }
       return requestAnimationFrame(step);
     }
-    if (el < SCAN + SPIN && reel.length) {
-      const p = (el - SCAN) / SPIN;
+    if (el < SCAN + D3) {
+      // 사진은 서서히 빠지고 점만 남아 좌우로 한 번 스윙한다(회전각 ±42°)
+      const p = (el - SCAN) / D3;
+      const box = drawBase(0.5 * (1 - p));
+      const yaw = Math.sin(p * Math.PI * 2) * 0.73;
+      if (box) drawCloud(ctx, LM3, box.x + box.w/2, box.y + box.h*0.5,
+                         box.h * 0.34, yaw, '#25706c', Math.max(1.4, cv.width*0.0046));
+      return requestAnimationFrame(step);
+    }
+    if (el < SCAN + D3 + SPIN && reel.length) {
+      const p = (el - SCAN - D3) / SPIN;
       const e = 1 - Math.pow(1 - p, 3);              // 빠르게 시작해 멈추듯 감속
       const i = Math.min(reel.length - 1, Math.floor(e * reel.length));
       drawBase(0.28);
       drawAnimal(animImgs[reel[i].id], 0.9, 0.86 + 0.06*e);
       return requestAnimationFrame(step);
     }
-    const t = Math.min(1, (el - SCAN - SPIN) / FADE);
+    const t = Math.min(1, (el - SCAN - D3 - SPIN) / FADE);
     const e = t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
     // 룰렛을 돌린 뒤엔 이미 사진이 0.28까지 내려가 있다. 스캔 없이 부를 땐 사진에서 바로 넘어간다.
     drawBase((SPIN ? 0.28 : 1) * (1-e));
@@ -766,7 +805,10 @@ async function shareCard() {
   x.textAlign = 'center';
   x.fillText(T('title'), S/2, 96);
 
-  roundImg(x, 300, 380, 170, srcImg, '#ded2ba');
+  /* 얼굴 사진은 카드에 넣지 않는다 — 내 얼굴이 박힌 이미지를 SNS에 올릴 사람은 거의 없다.
+     대신 판독에 실제로 쓴 468점을 3D로 살짝 틀어서 그린다. 이쪽이 공유도 쉽고 그림도 산다. */
+  roundImg(x, 300, 380, 170, null, '#ded2ba');
+  drawCloud(x, LM3, 300, 380, 132, 0.42, '#25706c', 3.2);
   roundImg(x, 780, 380, 170, animImgs[A.id], '#e2532f');
   x.fillStyle = '#e2532f';
   x.font = '900 64px -apple-system, system-ui, sans-serif';
@@ -798,10 +840,13 @@ async function shareCard() {
 
   x.fillStyle = '#6b6255';
   x.font = '700 32px -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif';
-  x.fillText(DESC(A).slice(0, 34), S/2, 900);
+  x.fillText(DESC(A).slice(0, 34), S/2, 898);
+  x.fillStyle = '#6b6255';
+  x.font = '700 26px -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif';
+  x.fillText(T('shareNote'), S/2, 952);
   x.fillStyle = '#241f1a';
   x.font = '800 30px ui-monospace, monospace';
-  x.fillText('game.cocy.io/animalface', S/2, 1000);
+  x.fillText('game.cocy.io/animalface', S/2, 1010);
   return new Promise(res => c.toBlob(res, 'image/png'));
 }
 
