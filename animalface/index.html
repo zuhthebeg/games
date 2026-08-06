@@ -259,7 +259,7 @@ function redraw(){
 let srcImg = null, LM = null, LM_DRAW = null, AX = null, ranked = null;
 
 // ---- 데이터 ----
-fetch('animals.json?v=3').then(r => r.json()).then(d => {
+fetch('animals.json?v=4').then(r => r.json()).then(d => {
   // 아트가 아직 없는 종은 후보에서 뺀다. 넣어두면 1등으로 뽑혔을 때 깨진 이미지가 보인다.
   DATA = d; ANIMALS = d.animals.filter(a => a.art !== false);
   AXIS_W = d.axisWeight;
