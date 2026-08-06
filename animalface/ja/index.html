@@ -308,7 +308,7 @@ function redraw(){
 let srcImg = null, LM = null, LM_DRAW = null, LM3 = null, FRONT3 = null, AX = null, ranked = null;
 
 // ---- 데이터 ----
-fetch('/animalface/animals.json?v=8').then(r => r.json()).then(d => {
+fetch('/animalface/animals.json?v=9').then(r => r.json()).then(d => {
   // 아트가 아직 없는 종은 후보에서 뺀다. 넣어두면 1등으로 뽑혔을 때 깨진 이미지가 보인다.
   DATA = d; ANIMALS = d.animals.filter(a => a.art !== false);
   AXIS_W = d.axisWeight;
@@ -667,6 +667,11 @@ function spinReel(winnerId, n) {
 }
 
 
+/* 얼굴 윤곽선(face oval) 랜드마크. 이 점들만 굵게 찍으면 얼굴이 긴지 둥근지가 눈에 들어온다.
+   468점을 전부 같은 크기로 찍으면 실루엣이 뭉개져서 어떤 얼굴이든 비슷한 원형 덩어리가 된다. */
+const OVAL = new Set([10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,
+  148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109]);
+
 /* 468점을 3D로 찍는다. 연출(캔버스)과 공유 카드가 같은 함수를 쓴다 — 두 벌이면 반드시 어긋난다.
 
    먼저 '정면화'를 한다. 사진 속 얼굴이 이미 3/4로 돌아가 있으면 거기에 회전을 더 얹는 꼴이라
@@ -686,6 +691,9 @@ function frontalize(lm3) {
   return lm3.map(q => { const v = sub(q, o); return [dot(v,ex), dot(v,ey), dot(v,ez)]; });
 }
 
+const CLOUD_COLOR = { cute:'#2f8f5e', cool:'#25706c', funny:'#c07a1e', myth:'#6b4fbb' };
+function cloudColor() { return (ranked && CLOUD_COLOR[ranked[0].a.tier]) || '#25706c'; }
+
 function drawCloud(x, front, cx, cy, R, yaw, color, dot) {
   if (!front || !front.length) return;
   const cos = Math.cos(yaw), sin = Math.sin(yaw);
@@ -703,13 +711,15 @@ function drawCloud(x, front, cx, cy, R, yaw, color, dot) {
     if (py<minY) minY=py; if (py>maxY) maxY=py;
   }
   const mx = (minX+maxX)/2, my = (minY+maxY)/2;
-  const k = 2*R / (Math.max(maxX-minX, maxY-minY) * 1.1 || 1);
+  // 세로 길이에 맞춰 채운다. 가로·세로 중 큰 쪽에 맞추면 긴 얼굴이 통째로 축소돼
+  // 폭 차이가 사라지고 결국 다 비슷한 원형으로 보인다(실제로 그렇게 보인다는 지적을 받았다).
+  const k = 2*R / (Math.max(maxY-minY, (maxX-minX)*0.88) * 1.08 || 1);
   x.fillStyle = color;
   for (let i = 0; i < pts.length; i++) {         // 솎지 않는다. 솎으면 눈·입술 링이 끊긴다
-    const q = pts[i];
-    x.globalAlpha = Math.max(.35, Math.min(1, q[2]));   // 깊이는 크기가 아니라 농도로만
+    const q = pts[i], edge = OVAL.has(i);
+    x.globalAlpha = (edge ? 1 : 0.55) * Math.max(.35, Math.min(1, q[2]));  // 깊이는 농도로만
     x.beginPath();
-    x.arc(cx + (q[0]-mx)*k, cy + (q[1]-my)*k, dot, 0, 6.283);
+    x.arc(cx + (q[0]-mx)*k, cy + (q[1]-my)*k, edge ? dot*1.7 : dot*0.8, 0, 6.283);
     x.fill();
   }
   x.globalAlpha = 1;
@@ -766,7 +776,7 @@ function reveal(withScan = true) {
         const cy = f.cy + (box.y + box.h*0.5 - f.cy)*e;
         const R  = f.r  + (box.h*0.36 - f.r)*e;
         const yaw = Math.sin(p * Math.PI * 2) * 0.73;        // ±42° 왕복 한 번
-        drawCloud(ctx, FRONT3, cx, cy, R, yaw, '#e2532f', Math.max(2.2, cv.width*0.006));
+        drawCloud(ctx, FRONT3, cx, cy, R, yaw, cloudColor(), Math.max(2.2, cv.width*0.006));
       }
       return requestAnimationFrame(step);
     }
@@ -976,8 +986,8 @@ async function shareCard() {
 
   /* 얼굴 사진은 카드에 넣지 않는다 — 내 얼굴이 박힌 이미지를 SNS에 올릴 사람은 거의 없다.
      대신 판독에 실제로 쓴 468점을 3D로 살짝 틀어서 그린다. 이쪽이 공유도 쉽고 그림도 산다. */
-  roundImg(x, 300, 380, 170, null, '#25706c');
-  drawCloud(x, FRONT3, 300, 380, 150, 0.38, '#25706c', 3.4);
+  roundImg(x, 300, 380, 170, null, cloudColor());
+  drawCloud(x, FRONT3, 300, 380, 150, 0.38, cloudColor(), 3.4);
   roundImg(x, 780, 380, 170, animImgs[A.id], '#e2532f');
   x.fillStyle = '#e2532f';
   x.font = '900 64px -apple-system, system-ui, sans-serif';
