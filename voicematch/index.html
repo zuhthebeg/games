@@ -80,15 +80,6 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .key.start:active{box-shadow:0 1px 0 var(--pink-d)}
 .key:disabled{opacity:.45;cursor:default}
 .tip{margin-top:14px;text-align:center;font-size:11.5px;color:var(--mut);line-height:1.7}
-.xpromo{display:flex;align-items:center;gap:11px;margin-top:16px;padding:11px 13px;border-radius:14px;
-  background:oklch(0.98 0.02 90);border:2px solid oklch(0.86 0.05 85);text-decoration:none;color:inherit;
-  transition:transform .18s,box-shadow .18s}
-.xpromo:hover{transform:translateY(-1px);box-shadow:0 4px 0 oklch(0.86 0.05 85)}
-.xpromo img{border-radius:10px;flex:none}
-.xpromo span{display:flex;flex-direction:column;flex:1;min-width:0}
-.xpromo b{font-size:13px;font-weight:800;line-height:1.35}
-.xpromo em{font-size:11.5px;font-style:normal;color:var(--mut);line-height:1.4;margin-top:2px}
-.xpromo .go{flex:0 0 auto;font-size:16px;font-weight:800;color:var(--mut)}
 
 .tip b{color:var(--lime)}
 .hidden{display:none!important}
@@ -220,6 +211,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <button class="key start" id="btn-start"></button>
     </div>
     <p class="tip" id="t-tipintro"></p>
+    <style>
+/* 크로스 프로모 — 보이스매치 다크 팔레트에 맞춘다.
+   크림 배경 + 링크색(연보라) 제목으로 뒀더니 대비가 죽고 화면에서 떠 보였다. */
+.xpromo{display:flex;align-items:center;gap:12px;margin-top:18px;padding:13px 14px;border-radius:14px;
+  background:var(--panel);border:1px solid oklch(0.5 0.08 295);text-decoration:none;
+  transition:background .18s,border-color .18s}
+.xpromo:hover{background:var(--panel2);border-color:var(--lime)}
+.xpromo img{width:34px;height:34px;border-radius:9px;flex:none;background:oklch(0.98 0.02 90);padding:3px}
+.xpromo span{display:flex;flex-direction:column;flex:1;min-width:0}
+.xpromo b{font-size:13px;font-weight:800;line-height:1.35;color:var(--txt)}
+.xpromo em{font-size:11px;font-style:normal;color:var(--mut);line-height:1.45;margin-top:3px}
+.xpromo .go{flex:0 0 auto;font-size:15px;font-weight:800;color:var(--lime)}
+    </style>
     <!-- 크로스 프로모 — 같은 "내 얼굴/목소리로 나를 재본다" 결이라 이탈이 아니라 회유에 가깝다 -->
     <a class="xpromo" id="xpromo" href="https://game.cocy.io/animalface/" target="_blank" rel="noopener">
       <img src="https://game.cocy.io/animalface/icon.svg" alt="" width="40" height="40">
