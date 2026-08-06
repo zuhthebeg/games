@@ -14,7 +14,7 @@
 <link rel="alternate" hreflang="en" href="https://game.cocy.io/animalface/?lang=en">
 <link rel="alternate" hreflang="ja" href="https://game.cocy.io/animalface/?lang=ja">
 <link rel="alternate" hreflang="zh-Hant" href="https://game.cocy.io/animalface/?lang=tw">
-<script src="js/i18n.js?v=6"></script>
+<script src="js/i18n.js?v=7"></script>
 <script>
   // 바 이름은 페이지 언어를 따라간다. shared-wallet은 gameName 옵션을 읽는다(?v= 새 버전 필요).
   window.SharedWalletConfig = window.SharedWalletConfig || {
@@ -256,7 +256,7 @@ function redraw(){
   if (aimg && aimg.complete) ctx.drawImage(aimg, 0, 0, cv.width, cv.height);
 }
 
-let srcImg = null, LM = null, LM_DRAW = null, LM3 = null, AX = null, ranked = null;
+let srcImg = null, LM = null, LM_DRAW = null, LM3 = null, FRONT3 = null, AX = null, ranked = null;
 
 // ---- 데이터 ----
 fetch('animals.json?v=4').then(r => r.json()).then(d => {
@@ -528,6 +528,8 @@ function detect() {
   // 자세 정규화 실험용: 3D 좌표 + MediaPipe가 주는 머리 자세 행렬.
   // 같은 사람 사진끼리도 안 뭉치는 원인이 각도라서, 이걸로 정면화한 뒤 다시 잰다.
   LM3 = r.faceLandmarks[0].map(q => [q.x, q.y, q.z]);
+  FRONT3 = frontalize(LM3);
+  window.__front = FRONT3;   // 정면화 검증용(ops/verify/af-cloudcheck.cjs)
   window.__lm3 = LM3;
   window.__mat = r.facialTransformationMatrixes?.[0]?.data || null;
   AX = computeAxes(LM);
@@ -543,6 +545,13 @@ function detect() {
    점을 보여주는 건 장식이 아니라 "정말 얼굴을 쟀다"는 근거라서, 결과 신뢰에 직결된다. */
 const SAMPLE = []; for (let i = 0; i < 468; i += 3) SAMPLE.push(i);
 function toPx(p, box) { return { x: box.x + p.x*box.w, y: box.y + p.y*box.h }; }
+// 사진 안에서 얼굴이 차지한 실제 영역(px) — 점이 찍힌 자리 그대로다
+function faceBoxPx(box) {
+  let a = 1, b = 0, c = 1, d = 0;
+  for (const q of LM_DRAW) { if (q.x<a) a=q.x; if (q.x>b) b=q.x; if (q.y<c) c=q.y; if (q.y>d) d=q.y; }
+  return { cx: box.x + (a+b)/2*box.w, cy: box.y + (c+d)/2*box.h,
+           r: Math.max((b-a)*box.w, (d-c)*box.h)/2 };
+}
 
 /* 후보를 한 바퀴 돌리는 룰렛 목록. 마지막 칸은 반드시 정답이라
    감속이 끝나는 순간과 결과가 정확히 맞는다(랜덤으로 두면 마지막에 다른 게 걸린다). */
@@ -555,28 +564,49 @@ function spinReel(winnerId, n) {
 }
 
 
-/* 468점을 3D로 찍는다. MediaPipe가 주는 z를 그대로 써서 yaw만 돌리면
-   얼굴 형태가 입체로 드러난다 — "진짜 쟀다"는 근거가 가장 잘 보이는 화면이다.
-   연출(캔버스)과 공유 카드가 같은 함수를 쓴다. 두 벌로 만들면 반드시 어긋난다. */
-function drawCloud(x, lm3, cx, cy, R, yaw, color, dot) {
-  if (!lm3 || !lm3.length) return;
-  let minX = 1, maxX = 0, minY = 1, maxY = 0;
-  for (const q of lm3) { if (q[0]<minX) minX=q[0]; if (q[0]>maxX) maxX=q[0];
-                         if (q[1]<minY) minY=q[1]; if (q[1]>maxY) maxY=q[1]; }
-  const mx = (minX+maxX)/2, my = (minY+maxY)/2;
-  const span = Math.max(maxX-minX, maxY-minY) || 1;
-  const k = 2*R / (span * 1.18);
+/* 468점을 3D로 찍는다. 연출(캔버스)과 공유 카드가 같은 함수를 쓴다 — 두 벌이면 반드시 어긋난다.
+
+   먼저 '정면화'를 한다. 사진 속 얼굴이 이미 3/4로 돌아가 있으면 거기에 회전을 더 얹는 꼴이라
+   스윙 내내 준-측면이 되고, 점이 그냥 흩뿌린 것처럼 보인다(첫 버전이 정확히 이랬다).
+   눈 양끝과 이마-턱으로 얼굴 고유축을 만들어 그 좌표계로 옮긴 뒤에 돌린다. */
+function frontalize(lm3) {
+  const g = i => lm3[i];
+  const sub = (a,b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+  const cross = (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  const dot = (a,b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  const norm = a => { const n = Math.hypot(a[0],a[1],a[2]) || 1; return [a[0]/n, a[1]/n, a[2]/n]; };
+  const ex = norm(sub(g(263), g(33)));           // 왼눈 바깥 → 오른눈 바깥
+  const down = norm(sub(g(152), g(10)));         // 이마 → 턱
+  const ez = norm(cross(ex, down));              // 얼굴 정면 법선
+  const ey = cross(ez, ex);
+  const o = g(1);                                // 코끝을 원점으로
+  return lm3.map(q => { const v = sub(q, o); return [dot(v,ex), dot(v,ey), dot(v,ez)]; });
+}
+
+function drawCloud(x, front, cx, cy, R, yaw, color, dot) {
+  if (!front || !front.length) return;
   const cos = Math.cos(yaw), sin = Math.sin(yaw);
+  // 회전 뒤에 다시 중심·크기를 잡는다. 회전 전 기준으로 잡으면 각도가 커질수록 옆으로 밀린다.
+  const pts = new Array(front.length);
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+  for (let i = 0; i < front.length; i++) {
+    const q = front[i];
+    const rx = q[0]*cos + q[2]*sin;
+    const rz = -q[0]*sin + q[2]*cos;
+    const persp = 1 / (1 + rz*0.8);              // 원근은 약하게 — 세게 주면 실루엣이 뭉갠다
+    const px = rx*persp, py = q[1]*persp;
+    pts[i] = [px, py, persp];
+    if (px<minX) minX=px; if (px>maxX) maxX=px;
+    if (py<minY) minY=py; if (py>maxY) maxY=py;
+  }
+  const mx = (minX+maxX)/2, my = (minY+maxY)/2;
+  const k = 2*R / (Math.max(maxX-minX, maxY-minY) * 1.1 || 1);
   x.fillStyle = color;
-  for (let i = 0; i < lm3.length; i += 2) {
-    const q = lm3[i];
-    const px = (q[0]-mx), py = (q[1]-my), pz = q[2];
-    const rx = px*cos + pz*sin;
-    const rz = -px*sin + pz*cos;
-    const persp = 1 / (1 + rz*1.6);          // 뒤로 간 점은 작고 흐리게
-    x.globalAlpha = Math.max(.25, Math.min(1, persp));
+  for (let i = 0; i < pts.length; i++) {         // 솎지 않는다. 솎으면 눈·입술 링이 끊긴다
+    const q = pts[i];
+    x.globalAlpha = Math.max(.35, Math.min(1, q[2]));   // 깊이는 크기가 아니라 농도로만
     x.beginPath();
-    x.arc(cx + rx*k*persp, cy + py*k*persp, dot*persp, 0, 6.283);
+    x.arc(cx + (q[0]-mx)*k, cy + (q[1]-my)*k, dot, 0, 6.283);
     x.fill();
   }
   x.globalAlpha = 1;
@@ -623,12 +653,18 @@ function reveal(withScan = true) {
       return requestAnimationFrame(step);
     }
     if (el < SCAN + D3) {
-      // 사진은 서서히 빠지고 점만 남아 좌우로 한 번 스윙한다(회전각 ±42°)
       const p = (el - SCAN) / D3;
-      const box = drawBase(0.5 * (1 - p));
-      const yaw = Math.sin(p * Math.PI * 2) * 0.73;
-      if (box) drawCloud(ctx, LM3, box.x + box.w/2, box.y + box.h*0.5,
-                         box.h * 0.34, yaw, '#25706c', Math.max(1.4, cv.width*0.0046));
+      const box = drawBase(Math.max(0, 1 - p/0.3) * 0.45);   // 사진은 앞 30%에서 빠진다
+      if (box) {
+        // 방금 점을 찍은 '얼굴 위치'에서 무대 중앙으로 옮겨가며 돈다.
+        // 곧장 중앙에서 시작하면 점이 순간이동해 연속감이 끊긴다.
+        const f = faceBoxPx(box), t = Math.min(1, p/0.25), e = t*t*(3-2*t);
+        const cx = f.cx + (box.x + box.w/2 - f.cx)*e;
+        const cy = f.cy + (box.y + box.h*0.5 - f.cy)*e;
+        const R  = f.r  + (box.h*0.36 - f.r)*e;
+        const yaw = Math.sin(p * Math.PI * 2) * 0.73;        // ±42° 왕복 한 번
+        drawCloud(ctx, FRONT3, cx, cy, R, yaw, '#e2532f', Math.max(2.2, cv.width*0.006));
+      }
       return requestAnimationFrame(step);
     }
     if (el < SCAN + D3 + SPIN && reel.length) {
@@ -791,6 +827,19 @@ function roundImg(x, cx, cy, r, img, ring) {
   x.strokeStyle = ring; x.lineWidth = 6; x.stroke();
 }
 
+// 글자수로 자르면 영어·일본어가 단어 중간에서 끊긴다(실제로 "…hold a room w"로 나갔다)
+function wrapText(x, text, cx, y, maxW, lh, maxLines) {
+  const words = text.split(/(\s+)/);
+  const lines = []; let cur = '';
+  for (const w of words) {
+    if (x.measureText(cur + w).width > maxW && cur) { lines.push(cur.trim()); cur = w.trim(); }
+    else cur += w;
+    if (lines.length === maxLines) break;
+  }
+  if (lines.length < maxLines && cur.trim()) lines.push(cur.trim());
+  lines.slice(0, maxLines).forEach((l, i) => x.fillText(l, cx, y + i*lh));
+}
+
 async function shareCard() {
   const b = ranked[0], A = b.a;
   const S = 1080, c = document.createElement('canvas');
@@ -807,8 +856,8 @@ async function shareCard() {
 
   /* 얼굴 사진은 카드에 넣지 않는다 — 내 얼굴이 박힌 이미지를 SNS에 올릴 사람은 거의 없다.
      대신 판독에 실제로 쓴 468점을 3D로 살짝 틀어서 그린다. 이쪽이 공유도 쉽고 그림도 산다. */
-  roundImg(x, 300, 380, 170, null, '#ded2ba');
-  drawCloud(x, LM3, 300, 380, 132, 0.42, '#25706c', 3.2);
+  roundImg(x, 300, 380, 170, null, '#25706c');
+  drawCloud(x, FRONT3, 300, 380, 150, 0.38, '#25706c', 3.4);
   roundImg(x, 780, 380, 170, animImgs[A.id], '#e2532f');
   x.fillStyle = '#e2532f';
   x.font = '900 64px -apple-system, system-ui, sans-serif';
@@ -840,7 +889,7 @@ async function shareCard() {
 
   x.fillStyle = '#6b6255';
   x.font = '700 32px -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif';
-  x.fillText(DESC(A).slice(0, 34), S/2, 898);
+  wrapText(x, DESC(A), S/2, 880, S - 160, 40, 2);
   x.fillStyle = '#6b6255';
   x.font = '700 26px -apple-system, "Apple SD Gothic Neo", system-ui, sans-serif';
   x.fillText(T('shareNote'), S/2, 952);
