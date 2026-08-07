@@ -288,7 +288,8 @@
         function tt(k){ return (PORTAL_I18N[LANG]||PORTAL_I18N.ko)[k]; }
         // 게임 카드 번체중국어 번역(gameId 기준). 없으면 apps.json 한국어 폴백.
         const GAME_TW = {
-            voicematch:{title:'聲音KTV VOICE MATCH',desc:'唱10秒就好！AI幫你找出音色最像的歌手。從NewJeans到Lim Young-woong共376組，錄音絕不離開手機。支援 繁體中文/한국어/English/日本語/Español/Indonesia'},
+            animalface:{title:'動物臉診斷',desc:'一張照片，在手機上實測臉部468個點，從38種動物臉中找出你的那一種。還有相似藝人與表情GIF。照片不會離開你的裝置。支援 繁體中文/한국어/English/日本語',url:'https://game.cocy.io/animalface/tw/'},
+            voicematch:{title:'聲音KTV VOICE MATCH',desc:'唱10秒就好！AI幫你找出音色最像的歌手。從NewJeans到Lim Young-woong共376組，錄音絕不離開手機。支援 繁體中文/한국어/English/日本語/Español/Indonesia',url:'https://game.cocy.io/voicematch/tw/'},
             rhythmproto:{title:'節奏爆發 BEAT DROP',desc:'AI 打造的 K-POP 20 首節奏遊戲！4鍵·6鍵下落音符，4種難度，金幣·排行榜，支援 繁體中文/한국어/English/日本語'},
             melodyecho:{title:'旋律回聲',desc:'聽旋律用琴鍵彈回來，節奏用點擊重現！自適應聽力等級診斷，支援 繁體中文/한국어/English/日本語'},
             wrongnote:{title:'找錯音',desc:'耳朵版找不同！每日5題，耳朵年齡診斷·表情符號分享，支援 繁體中文/한국어/English/日本語'},
@@ -318,7 +319,10 @@
         };
         // 게임 카드 영어 번역(gameId 기준). 없으면 apps.json 한국어 폴백.
         const GAME_EN = {
-            voicematch:{title:'Voice Match',desc:'Sing 10 seconds — AI finds the singer whose voice matches yours. 376 artists from NewJeans to Lim Young-woong. Recording never leaves your phone.'},
+            animalface:{title:'Animal Face Reader',desc:'One photo, 468 facial points measured on your device — find your match among 38 animal faces, plus look-alike celebrities and expression GIFs. Photos never leave your phone.',url:'https://game.cocy.io/animalface/en/'},
+            melodyecho:{title:'Melody Echo',desc:'Hear a melody, play it back on the keys — rhythm mode too. Adaptive ear-training level diagnosis'},
+            wrongnote:{title:'Find the Wrong Note',desc:'Spot-the-difference for your ears! 5 daily rounds, ear-age diagnosis, emoji sharing'},
+            voicematch:{title:'Voice Match',desc:'Sing 10 seconds — AI finds the singer whose voice matches yours. 376 artists from NewJeans to Lim Young-woong. Recording never leaves your phone.',url:'https://game.cocy.io/voicematch/en/'},
             rhythmproto:{title:'Beat Drop',desc:'AI-generated K-pop rhythm game, 20 tracks! 4/6-key falling notes, 4 difficulties, gold & rankings'},
             match3:{title:'Pop Match',desc:'Anipang-style Match-3! 60-sec timer, combo blasts, gold rewards, ranking'},
             sudoku:{title:'Sudoku',desc:'Sudoku - Easy/Normal/Hard, gold rewards & ranking'},
@@ -418,7 +422,7 @@
                 const txt = appText(app);
                 const delay = (-(i * 0.37) % 3.2).toFixed(2);
                 return `
-                <a href="${app.url}" class="card">
+                <a href="${txt.url || app.url}" class="card">
                     ${app.video ? `<video class="card-video" src="${app.video}" muted loop playsinline preload="none"></video>` : ''}
                     ${app.badge ? `<span class="card-badge badge-${app.badge.toLowerCase()}">${app.badge}</span>` : ''}
                     <img class="card-icon" style="animation-delay:${delay}s" src="${app.icon}" alt="" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🎮</text></svg>'">

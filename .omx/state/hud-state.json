@@ -1,0 +1,6 @@
+{
+  "last_turn_at": "2026-04-05T13:50:33.207Z",
+  "turn_count": 1,
+  "last_progress_at": "2026-04-05T13:50:33.207Z",
+  "last_agent_output": "- `apps.json:1` is the single source of truth for the portal’s registry: it lists every game as an o"
+}

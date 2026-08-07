@@ -3,7 +3,7 @@
     "title": "동물상 판독기",
     "icon": "https://game.cocy.io/animalface/icon.svg",
     "url": "https://game.cocy.io/animalface/",
-    "desc": "사진 한 장으로 얼굴 468개 점을 실측해서 23종 동물상 중 내 얼굴을 찾아줍니다. 닮은 연예인·표정 따라하기 GIF까지. 사진은 기기 밖으로 나가지 않아요. 한국어/English/日本語",
+    "desc": "사진 한 장으로 얼굴 468개 점을 실측해서 38종 동물상 중 내 얼굴을 찾아줍니다. 닮은 연예인·표정 따라하기 GIF까지. 사진은 기기 밖으로 나가지 않아요. 한국어/English/日本語/繁體中文",
     "badge": "NEW",
     "platforms": [
       "WEB"
@@ -11,7 +11,8 @@
     "languages": [
       "ko",
       "en",
-      "ja"
+      "ja",
+      "zh-TW"
     ],
     "category": "casual"
   },
