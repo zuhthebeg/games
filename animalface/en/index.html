@@ -731,6 +731,23 @@ function drawCloud(x, front, cx, cy, R, yaw, color, dot) {
 }
 
 // 연출이 겹쳐 돌면(판독 직후 celebs.json 도착, 성별 변경 등) 스캔 위에 결과가 덮여 깜빡인다.
+/* 내 얼굴의 점 → 동물 그림에서 대응하는 자리. 눈 바깥 2점으로 배율을 잡고
+   왼눈을 원점으로 평행이동한다(랩과 같은 방식).
+   animals.json엔 anchors가 없고 boxes만 있어서 박스 중심을 앵커로 쓴다. */
+function glideTargets(box, A) {
+  if (!LM_DRAW || !A?.boxes) return null;
+  const ctr = b => [b[0] + b[2]/2, b[1] + b[3]/2];
+  const an = A.anchors || { eyeL: ctr(A.boxes.eyeL), eyeR: ctr(A.boxes.eyeR), mouth: ctr(A.boxes.mouth) };
+  const from = SAMPLE.map(i => toPx(LM_DRAW[i], box));
+  const sL = toPx(LM_DRAW[P.eyeL_out], box), sR = toPx(LM_DRAW[P.eyeR_out], box);
+  const dL = { x: box.x + an.eyeL[0]*box.w, y: box.y + an.eyeL[1]*box.h };
+  const dR = { x: box.x + an.eyeR[0]*box.w, y: box.y + an.eyeR[1]*box.h };
+  const sw = sR.x - sL.x;
+  if (!sw) return null;                       // 완전 측면 등 퇴화 케이스 — 연출을 건너뛴다
+  const k = (dR.x - dL.x) / sw;
+  return { from, to: from.map(q => ({ x: dL.x + (q.x - sL.x)*k, y: dL.y + (q.y - sL.y)*k })) };
+}
+
 let revealSeq = 0;
 function reveal(withScan = true) {
   if (!ranked) return;
@@ -739,7 +756,10 @@ function reveal(withScan = true) {
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const SCAN = withScan && LM_DRAW && !calm ? 1100 : 0;
   const MESH = SCAN ? 850 : 0;                 // 찍힌 점을 선으로 이어 '메시를 떴다'는 느낌을 준다
-  const D3 = SCAN && LM3 ? 1300 : 0;           // 찍은 점을 3D로 한 번 돌려 보여준다
+  /* 예전엔 여기서 점구름을 3D로 좌우 왕복시켰는데, 정면화 좌표라 누가 해도 비슷한 실루엣이
+     나와서 "몇 종류 돌려쓰는" 인상을 줬다. 랩처럼 '내 얼굴의 점이 동물 자리로 미끄러져 간다'로
+     바꾼다 — 내 얼굴에서 출발하니 개인차가 그대로 보이고, 판독의 인과도 눈에 들어온다. */
+  const GLIDE = SCAN ? 1000 : 0;
   const SPIN = withScan && !calm ? 1300 : 0;   // → 후보를 한 바퀴 돌리고
   const FADE = calm ? 200 : (withScan ? 1000 : 700);   // → 정답이 천천히 떠오른다
   const reel = SPIN ? spinReel(A.id, 15) : [];
@@ -803,30 +823,33 @@ function reveal(withScan = true) {
       }
       return requestAnimationFrame(step);
     }
-    if (el < SCAN + MESH + D3) {
-      const p = (el - SCAN - MESH) / D3;
-      const box = drawBase(Math.max(0, 1 - p/0.3) * 0.45);   // 사진은 앞 30%에서 빠진다
+    if (el < SCAN + MESH + GLIDE) {
+      const p = (el - SCAN - MESH) / GLIDE;
+      const e = p<.5 ? 4*p*p*p : 1-Math.pow(-2*p+2,3)/2;     // 부드럽게 출발해 부드럽게 도착
+      const box = drawBase(Math.max(0, 1 - p/0.55) * 0.9);   // 사진은 앞 55%에서 빠진다
       if (box) {
-        // 방금 점을 찍은 '얼굴 위치'에서 무대 중앙으로 옮겨가며 돈다.
-        // 곧장 중앙에서 시작하면 점이 순간이동해 연속감이 끊긴다.
-        const f = faceBoxPx(box), t = Math.min(1, p/0.25), e = t*t*(3-2*t);
-        const cx = f.cx + (box.x + box.w/2 - f.cx)*e;
-        const cy = f.cy + (box.y + box.h*0.5 - f.cy)*e;
-        const R  = f.r  + (box.h*0.36 - f.r)*e;
-        const yaw = Math.sin(p * Math.PI * 2) * 0.73;        // ±42° 왕복 한 번
-        drawCloud(ctx, FRONT3, cx, cy, R, yaw, cloudColor(), Math.max(2.2, cv.width*0.006));
+        const g = glideTargets(box, A);
+        if (g) {
+          ctx.fillStyle = '#3ba7a0';
+          const r = Math.max(1.4, cv.width*0.0046);
+          for (let i = 0; i < g.from.length; i++) {
+            const x = g.from[i].x + (g.to[i].x - g.from[i].x)*e;
+            const y = g.from[i].y + (g.to[i].y - g.from[i].y)*e;
+            ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+          }
+        }
       }
       return requestAnimationFrame(step);
     }
-    if (el < SCAN + MESH + D3 + SPIN && reel.length) {
-      const p = (el - SCAN - MESH - D3) / SPIN;
+    if (el < SCAN + MESH + GLIDE + SPIN && reel.length) {
+      const p = (el - SCAN - MESH - GLIDE) / SPIN;
       const e = 1 - Math.pow(1 - p, 3);              // 빠르게 시작해 멈추듯 감속
       const i = Math.min(reel.length - 1, Math.floor(e * reel.length));
       drawBase(0.28);
       drawAnimal(animImgs[reel[i].id], 0.9, 0.86 + 0.06*e);
       return requestAnimationFrame(step);
     }
-    const t = Math.min(1, (el - SCAN - MESH - D3 - SPIN) / FADE);
+    const t = Math.min(1, (el - SCAN - MESH - GLIDE - SPIN) / FADE);
     const e = t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
     // 룰렛을 돌린 뒤엔 이미 사진이 0.28까지 내려가 있다. 스캔 없이 부를 땐 사진에서 바로 넘어간다.
     drawBase((SPIN ? 0.28 : 1) * (1-e));
