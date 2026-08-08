@@ -241,6 +241,7 @@
         <div class="auth-area">
             <div class="gold-display" id="goldDisplay" style="display:none;">💰 <span id="goldAmt">0</span></div>
             <button class="auth-btn" id="langBtn" onclick="toggleLang()" title="언어 / 語言">🌐 繁中</button>
+            <button class="auth-btn" id="profileBtn" onclick="goProfile()" title="내 프로필">👤</button>
             <button class="auth-btn" id="authBtn" onclick="handleAuth()">로그인</button>
         </div>
     </header>
@@ -471,6 +472,19 @@
                 btn.textContent = tt('login');
                 if (gd) gd.style.display = 'none';
             }
+        }
+
+        // 프로필은 cocy.io에 있고 토큰 저장소는 도메인별로 분리돼 있다.
+        // 여기(game.cocy.io) 로그인 상태를 들고 가려면 URL 프래그먼트로 토큰을 넘긴다.
+        // 프래그먼트는 서버로 전송되지 않아 로그에 안 남고, 프로필 페이지가 읽자마자 지운다.
+        function goProfile() {
+            let url = 'https://cocy.io/profile/';
+            try {
+                const at = localStorage.getItem('cocy_auth_token');
+                const rt = localStorage.getItem('cocy_refresh_token');
+                if (at) url += '#at=' + encodeURIComponent(at) + (rt ? '&rt=' + encodeURIComponent(rt) : '');
+            } catch (e) {}
+            location.href = url;
         }
 
         function handleAuth() {
