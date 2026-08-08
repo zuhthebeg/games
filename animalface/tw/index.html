@@ -902,7 +902,12 @@ let LAST_DIST = null;
 
 async function submitDist(animalId) {
   try {
-    await fetch(RANK_API, { method:'POST', headers:{ 'Content-Type':'application/json' },
+    // 로그인돼 있으면 토큰을 실어 보낸다 — 서버가 "내 마지막 얼굴상"으로 프로필에 기록.
+    // 토큰이 없어도 집계는 그대로 익명으로 동작한다.
+    const tok = localStorage.getItem('cocy_auth_token');
+    const headers = { 'Content-Type':'application/json' };
+    if (tok) headers['Authorization'] = 'Bearer ' + tok;
+    await fetch(RANK_API, { method:'POST', headers,
       body: JSON.stringify({ animal: animalId, sex: SEX }) });
   } catch (e) {}          // 집계 실패가 판독을 막으면 안 된다
   loadDist(animalId);
