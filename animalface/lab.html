@@ -180,7 +180,7 @@ function fit() { const r = cv.getBoundingClientRect(); const d = Math.min(device
   cv.width = r.width*d; cv.height = r.height*d; }
 addEventListener('resize', fit); fit();
 
-let srcImg = null, LM = null, BS = null, AX = null, best = null;
+let srcImg = null, LM = null, LM_DRAW = null, BS = null, AX = null, best = null;
 const animImgs = {};   // 이미지 프리로드는 loadAnimals()에서
 
 // ---- 8축 계산 (본편 axes.js로 분리) ----
@@ -287,6 +287,17 @@ const toPx = p => ({ x: baseBox.x + p.x*baseBox.w, y: baseBox.y + p.y*baseBox.h,
 // 검출은 됐지만 "진짜 사람 얼굴인가" 재검증.
 // MediaPipe는 동물·그림·패턴에도 랜드마크를 억지로 맞추는 경우가 있어서
 // 기하학적으로 말이 되는지 3가지를 본다. 하나라도 어긋나면 결과를 내지 않는다.
+/* 사진 비율 보정. MediaPipe 정규화 좌표는 x가 폭, y가 높이로 각각 나뉘어 있어서
+   세로로 긴 사진일수록 y가 눌린다. 그대로 재면 얼굴이 '납작'하게 측정돼
+   faceQuality의 세로/가로 비율 게이트에 걸려 멀쩡한 사진이 거부된다.
+   (본편 index.html은 이미 이 보정을 하고 있었는데 랩에만 빠져 있었다 — 랩 전용 버그의 원인) */
+const mediaSize = el => [el.naturalWidth || el.videoWidth || el.width,
+                         el.naturalHeight || el.videoHeight || el.height];
+function isoLandmarks(lm, srcW, srcH) {
+  const a = (srcH && srcW) ? srcH / srcW : 1;
+  return lm.map(p => ({ x: p.x, y: p.y * a, z: p.z }));
+}
+
 function faceQuality(lm) {
   const g = i => lm[i];
   const faceW = d2(g(P.cheekL), g(P.cheekR));
@@ -325,10 +336,13 @@ function detect() {
   const t0 = performance.now();
   const r = landmarker.detect(srcImg);
   if (!r.faceLandmarks?.length) { failFace('얼굴을 찾지 못했어요'); return; }
-  const cand = r.faceLandmarks[0];
+  const raw = r.faceLandmarks[0];
+  const [iw, ih] = mediaSize(srcImg);
+  const cand = isoLandmarks(raw, iw, ih);      // 잴 때는 보정 좌표
   const q = faceQuality(cand);
   if (!q.ok) { failFace(q.reason); return; }
   LM = cand;
+  LM_DRAW = raw;                               // 그릴 때는 원좌표라야 사진과 맞는다
   BS = r.faceBlendshapes?.[0]?.categories || null;
   AX = computeAxes(LM);
   baseBox = drawBase();
@@ -366,11 +380,11 @@ function renderResult(m) {
 // ---- 점 그리기 ----
 const SAMPLE = []; for (let i=0;i<468;i+=4) SAMPLE.push(i);   // 화면엔 간추려 그림
 function drawDots(prog, color='#c8f051') {
-  if (!LM || !baseBox) return;
+  if (!LM_DRAW || !baseBox) return;
   const n = Math.floor(SAMPLE.length * prog);
   ctx.fillStyle = color;
   for (let i=0;i<n;i++) {
-    const p = toPx(LM[SAMPLE[i]]);
+    const p = toPx(LM_DRAW[SAMPLE[i]]);
     ctx.beginPath(); ctx.arc(p.x, p.y, 2.0, 0, 6.283); ctx.fill();
   }
 }
@@ -382,7 +396,7 @@ $('run').onclick = async () => {
   $('run').disabled = true;
   const A = best.a, aimg = animImgs[A.id];
   // 동물 이미지 안에서 각 점의 목표 위치: 눈/코/입 앵커를 기준으로 얼굴 전체를 어파인 매핑
-  const srcAnchor = { eyeL: toPx(LM[P.eyeL_out]), eyeR: toPx(LM[P.eyeR_out]), mouth: toPx(LM[P.lipDn]) };
+  const srcAnchor = { eyeL: toPx(LM_DRAW[P.eyeL_out]), eyeR: toPx(LM_DRAW[P.eyeR_out]), mouth: toPx(LM_DRAW[P.lipDn]) };
   const dstAnchor = {
     eyeL: { x: baseBox.x + A.anchors.eyeL[0]*baseBox.w, y: baseBox.y + A.anchors.eyeL[1]*baseBox.h },
     eyeR: { x: baseBox.x + A.anchors.eyeR[0]*baseBox.w, y: baseBox.y + A.anchors.eyeR[1]*baseBox.h },
@@ -391,11 +405,11 @@ $('run').onclick = async () => {
   const sw = srcAnchor.eyeR.x - srcAnchor.eyeL.x, dw = dstAnchor.eyeR.x - dstAnchor.eyeL.x;
   const k = dw/sw;
   const targets = SAMPLE.map(i => {
-    const p = toPx(LM[i]);
+    const p = toPx(LM_DRAW[i]);
     return { x: dstAnchor.eyeL.x + (p.x - srcAnchor.eyeL.x)*k,
              y: dstAnchor.eyeL.y + (p.y - srcAnchor.eyeL.y)*k };
   });
-  const starts = SAMPLE.map(i => toPx(LM[i]));
+  const starts = SAMPLE.map(i => toPx(LM_DRAW[i]));
 
   const T1 = 800, T2 = 400, T3 = 900, T4 = 600;
   const t0 = performance.now();
@@ -460,7 +474,7 @@ $('rot').onclick = () => {
     ctx.fillStyle = '#0b0d13'; ctx.fillRect(0,0,cv.width,cv.height);
     const cx = cv.width/2, cy = cv.height/2, S = cv.width;
     for (let i=0;i<468;i+=2) {
-      const p = LM[i];
+      const p = LM_DRAW[i];
       const x = (p.x-0.5), y = (p.y-0.5), z = (p.z||0);
       const rx = x*ca - z*sa, rz = x*sa + z*ca;
       const persp = 1/(1 + rz*1.2);
