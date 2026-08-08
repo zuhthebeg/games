@@ -12,9 +12,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>動物顔診断 — あなたの顔はどの動物？</title>
-<meta name="description" content="写真1枚で顔の468点を実測し、38種の動物顔から探します。似ている芸能人や表情GIFも。写真は端末から出ません。">
+<meta name="description" content="写真1枚で顔の468点を実測し、39種の動物顔から探します。似ている芸能人や表情GIFも。写真は端末から出ません。">
 <meta property="og:title" content="動物顔診断 — あなたの顔はどの動物？">
-<meta property="og:description" content="写真1枚で顔の468点を実測し、38種の動物顔から探します。似ている芸能人や表情GIFも。写真は端末から出ません。">
+<meta property="og:description" content="写真1枚で顔の468点を実測し、39種の動物顔から探します。似ている芸能人や表情GIFも。写真は端末から出ません。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://game.cocy.io/animalface/ja/">
 <link rel="alternate" hreflang="ko" href="https://game.cocy.io/animalface/">
@@ -25,7 +25,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <link rel="canonical" href="https://game.cocy.io/animalface/ja/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="動物顔診断 — あなたの顔はどの動物？">
-<meta name="twitter:description" content="写真1枚で顔の468点を実測し、38種の動物顔から探します。似ている芸能人や表情GIFも。写真は端末から出ません。">
+<meta name="twitter:description" content="写真1枚で顔の468点を実測し、39種の動物顔から探します。似ている芸能人や表情GIFも。写真は端末から出ません。">
 <link rel="icon" href="/animalface/icon.svg" type="image/svg+xml">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebApplication","name":"동물상 판독기 Animal Face Reader",
@@ -738,6 +738,7 @@ function reveal(withScan = true) {
   const A = ranked[0].a, aimg = animImgs[A.id];
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const SCAN = withScan && LM_DRAW && !calm ? 1100 : 0;
+  const MESH = SCAN ? 500 : 0;                 // 찍힌 점을 선으로 이어 '메시를 떴다'는 느낌을 준다
   const D3 = SCAN && LM3 ? 1300 : 0;           // 찍은 점을 3D로 한 번 돌려 보여준다
   const SPIN = withScan && !calm ? 1300 : 0;   // → 후보를 한 바퀴 돌리고
   const FADE = calm ? 200 : (withScan ? 1000 : 700);   // → 정답이 천천히 떠오른다
@@ -770,8 +771,29 @@ function reveal(withScan = true) {
       }
       return requestAnimationFrame(step);
     }
-    if (el < SCAN + D3) {
-      const p = (el - SCAN) / D3;
+    if (el < SCAN + MESH) {
+      // 메시 라인: 점을 i ↔ i+7로 이어 삼각망처럼 보이게 한다. 실제 위상이 아니라 연출이라
+      // 정확한 tesselation 인덱스를 들고 다닐 필요는 없다. 선이 순차로 그어지며 차오른다.
+      const p = (el - SCAN) / MESH;
+      const box = drawBase(1);
+      if (box) {
+        const pts = SAMPLE.map(i => toPx(LM_DRAW[i], box));
+        ctx.fillStyle = '#3ba7a0';
+        for (const q of pts) { ctx.beginPath(); ctx.arc(q.x, q.y, Math.max(1.2, cv.width*0.0042), 0, 6.283); ctx.fill(); }
+        ctx.strokeStyle = 'rgba(59,167,160,.42)';
+        ctx.lineWidth = Math.max(1, cv.width*0.0022);
+        ctx.beginPath();
+        const n = Math.floor(pts.length * Math.min(1, p*1.2));
+        for (let i = 0; i < n; i++) {
+          const a = pts[i], b = pts[(i+7) % pts.length];
+          ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        }
+        ctx.stroke();   // 선 전체를 한 번에 stroke — 선마다 stroke하면 프레임이 뚝뚝 끊긴다
+      }
+      return requestAnimationFrame(step);
+    }
+    if (el < SCAN + MESH + D3) {
+      const p = (el - SCAN - MESH) / D3;
       const box = drawBase(Math.max(0, 1 - p/0.3) * 0.45);   // 사진은 앞 30%에서 빠진다
       if (box) {
         // 방금 점을 찍은 '얼굴 위치'에서 무대 중앙으로 옮겨가며 돈다.
@@ -785,15 +807,15 @@ function reveal(withScan = true) {
       }
       return requestAnimationFrame(step);
     }
-    if (el < SCAN + D3 + SPIN && reel.length) {
-      const p = (el - SCAN - D3) / SPIN;
+    if (el < SCAN + MESH + D3 + SPIN && reel.length) {
+      const p = (el - SCAN - MESH - D3) / SPIN;
       const e = 1 - Math.pow(1 - p, 3);              // 빠르게 시작해 멈추듯 감속
       const i = Math.min(reel.length - 1, Math.floor(e * reel.length));
       drawBase(0.28);
       drawAnimal(animImgs[reel[i].id], 0.9, 0.86 + 0.06*e);
       return requestAnimationFrame(step);
     }
-    const t = Math.min(1, (el - SCAN - D3 - SPIN) / FADE);
+    const t = Math.min(1, (el - SCAN - MESH - D3 - SPIN) / FADE);
     const e = t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
     // 룰렛을 돌린 뒤엔 이미 사진이 0.28까지 내려가 있다. 스캔 없이 부를 땐 사진에서 바로 넘어간다.
     drawBase((SPIN ? 0.28 : 1) * (1-e));
