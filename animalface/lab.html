@@ -555,6 +555,7 @@ const GLW = (() => { try {
     // 눈은 좌우를 따로 받는다 — 하나로 묶으면(max) 윙크가 원리적으로 불가능하다.
     uniform float blinkL, blinkR, squintL, squintR, jaw, smile, brow, pucker;
     uniform vec2 gaze;                           // 시선 (-1..1, x=좌우 y=상하). 양눈 공통.
+    uniform float browIn;                        // 눈썹 안쪽 올림 (애원/걱정 표정)
     float fall(vec2 uv, vec4 b){
       return 1.0 - smoothstep(0.55, 1.0, length((uv - b.xy) / b.zw));
     }
@@ -568,6 +569,12 @@ const GLW = (() => { try {
       // 째림은 감기와 방향이 반대다. 아래쪽만 위로 올려 밑에서 좁혀야 '눈 가늘게'로 읽힌다.
       // 위에서 덮으면(=blink) 졸린 얼굴이 되고, 째리는 인상이 안 나온다.
       if (uv.y > b.y) dy += sq * 0.38 * b.w;
+      // 눈썹 안쪽 올리기: 눈 위쪽 중에서도 얼굴 중앙에 가까운 쪽만 들어올린다.
+      // 양쪽 끝까지 균일하게 올리면 그냥 '눈 커짐'이 되고 애처로운 인상이 안 산다.
+      if (uv.y < b.y) {
+        float inner = 1.0 - smoothstep(0.0, 0.35, abs(uv.x - 0.5));
+        dy += browIn * 0.30 * b.w * inner;
+      }
       // 시선: 눈 영역 픽셀을 통째로 민다. 눈동자만 도려내 옮기는 게 아니라
       // 눈 전체가 조금 움직이는 건데, 변위가 작으면 '눈알을 굴린다'로 읽힌다.
       // 크게 주면 눈이 얼굴에서 떨어져 나가 보이므로 반경의 20% 선에서 묶는다.
@@ -608,7 +615,7 @@ const GLW = (() => { try {
   const U = n => gl.getUniformLocation(prog, n);
   const u = { eyeL:U('eyeL'), eyeR:U('eyeR'), mouth:U('mouth'),
               blinkL:U('blinkL'), blinkR:U('blinkR'), squintL:U('squintL'), squintR:U('squintR'),
-              jaw:U('jaw'), smile:U('smile'), brow:U('brow'), pucker:U('pucker'), gaze:U('gaze') };
+              jaw:U('jaw'), smile:U('smile'), brow:U('brow'), pucker:U('pucker'), gaze:U('gaze'), browIn:U('browIn') };
   const tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -640,6 +647,7 @@ const GLW = (() => { try {
       gl.uniform1f(u.jaw, s.jaw); gl.uniform1f(u.smile, s.smile);
       gl.uniform1f(u.brow, s.brow); gl.uniform1f(u.pucker, s.pucker || 0);
       gl.uniform2f(u.gaze, s.gazeX || 0, s.gazeY || 0);
+      gl.uniform1f(u.browIn, s.browIn || 0);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       return cvs;
     }
@@ -665,7 +673,8 @@ function debugWarp(){
     GLW.setImage(img, A.id);
     ctx.clearRect(0,0,W,H);
     ctx.drawImage(GLW.render(W, H, A.boxes,
-      { blinkL, blinkR, squintL: squint, squintR: squint, jaw, smile, brow, pucker, gazeX, gazeY }), 0, 0);
+      { blinkL, blinkR, squintL: squint, squintR: squint, jaw, smile, brow, pucker, gazeX, gazeY,
+        browIn: Number(qp.get('bi') || 0) }), 0, 0);
     document.body.dataset.warpReady = '1';
     log(`warp debug L=${blinkL} R=${blinkR} jaw=${jaw} smile=${smile} brow=${brow} squint=${squint} pucker=${pucker} gaze=${gazeX},${gazeY}`);
   };
@@ -683,7 +692,7 @@ const BSMETER = (() => {
   // 죽은 신호(tongueOut/cheekPuff/eyeWide)는 2회 실측으로 확정돼 고정 목록에서 뺐다.
   // 지금 고정하는 건 '실제로 워프에 물려 있는' 신호들 — 튜닝할 때 이것만 보면 된다.
   const PINNED = ['jawOpen', 'eyeBlinkLeft', 'eyeBlinkRight', 'mouthPucker',
-                  'eyeSquintLeft', 'eyeSquintRight', 'mouthSmileLeft',
+                  'eyeSquintLeft', 'eyeSquintRight', 'mouthSmileLeft', 'browInnerUp',
                   'eyeLookOutLeft', 'eyeLookInLeft', 'eyeLookDownLeft', 'eyeLookUpLeft'];
 
   function feed(cats) {
@@ -768,6 +777,13 @@ $('mirror').onclick = async () => {
   log(`미러링 대상: ${A.name}${forced ? ' (수동 지정)' : ''}`);
   const bx = A.boxes;
   let last = -1;
+  /* 시선 기준선. 화면을 봐야 결과가 보이니 사용자는 늘 아래를 보고 있다
+     (실측 3차: LookDown peak 0.85 vs LookUp 0.08 — 위를 볼 일이 아예 없다).
+     절대값을 그대로 쓰면 동물이 상시 아래를 째려본다. 느린 EMA로 '평소 시선'을
+     기준선으로 잡고 거기서 벗어난 만큼만 반영한다. */
+  let gzBaseX = 0, gzBaseY = 0, gzWarm = 0;
+  const GZ_BASE_A = 0.02;   // 기준선 추종 속도(느리게) — 빠르면 시선 유지가 곧 원위치가 된다
+  const GZ_GAIN = 2.6;      // In/Out 가동폭이 0.2~0.35로 좁아서 증폭이 필요하다
   (function frame(){
     if (!mirroring) return;
     const now = performance.now();
@@ -793,17 +809,26 @@ $('mirror').onclick = async () => {
         /* 시선: eyeLook* 4방향이 전부 살아있다(실측 peak 0.72~0.83).
            In/Out은 코 방향 기준이라 눈마다 부호가 반대다 — 좌우를 각각 부호 맞춰 합쳐야 한 방향이 된다.
            화면은 거울상이므로 최종 x는 뒤집는다(윙크 좌우 교차와 같은 이유). */
-        const gazeX = -(((get('eyeLookOutLeft') + get('eyeLookInRight'))
+        const rawGX = -(((get('eyeLookOutLeft') + get('eyeLookInRight'))
                        - (get('eyeLookInLeft')  + get('eyeLookOutRight'))) / 2);
-        const gazeY = ((get('eyeLookDownLeft') + get('eyeLookDownRight'))
+        const rawGY = ((get('eyeLookDownLeft') + get('eyeLookDownRight'))
                      - (get('eyeLookUpLeft')   + get('eyeLookUpRight'))) / 2;
+        // 처음 몇 프레임은 기준선을 빠르게 잡는다(안 그러면 시작 직후 눈이 크게 튄다)
+        const a = gzWarm < 30 ? 0.2 : GZ_BASE_A; gzWarm++;
+        gzBaseX += (rawGX - gzBaseX) * a;
+        gzBaseY += (rawGY - gzBaseY) * a;
+        const clamp1 = v => Math.max(-1, Math.min(1, v));
+        const gazeX = clamp1((rawGX - gzBaseX) * GZ_GAIN);
+        const gazeY = clamp1((rawGY - gzBaseY) * GZ_GAIN);
+        // browInnerUp은 실측 peak 0.83으로 강하다. 눈썹 안쪽만 올리는 '애원' 표정.
+        const browIn = get('browInnerUp');
         const blink = Math.max(blinkL, blinkR);   // 화면 하단 수치 표시용
         const W = cv.width, H = cv.height;
         ctx.clearRect(0,0,W,H);
         if (GLW && aimg.complete) {
           // 워프: 원본을 통째로 변형해서 그린다 → 원본 눈·입이 밑에 남지 않는다
           GLW.setImage(aimg, A.id);
-          ctx.drawImage(GLW.render(W, H, bx, { blinkL, blinkR, squintL, squintR, jaw, smile, brow, pucker, gazeX, gazeY }), 0, 0);
+          ctx.drawImage(GLW.render(W, H, bx, { blinkL, blinkR, squintL, squintR, jaw, smile, brow, pucker, gazeX, gazeY, browIn }), 0, 0);
         } else {
           // 폴백(WebGL 없는 기기): 조각 덧그리기 — 겹침이 조금 보인다
           ctx.drawImage(aimg, 0, 0, W, H);
