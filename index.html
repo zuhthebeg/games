@@ -15,7 +15,7 @@
     <title>🎮 Game Portal - game.cocy.io</title>
     <link rel="icon" href="https://cocy.io/favicon.ico">
     <script src="/lib/multiplayer.js?v=20260705v1"></script>
-    <script src="/lib/shared-wallet.js?v=20260809pf"></script>
+    <script src="/lib/shared-wallet.js?v=20260809pf2"></script>
     <style>
         :root {
             --primary: #ec4899;
@@ -241,7 +241,13 @@
         <div class="auth-area">
             <div class="gold-display" id="goldDisplay" style="display:none;">💰 <span id="goldAmt">0</span></div>
             <button class="auth-btn" id="langBtn" onclick="toggleLang()" title="언어 / 語言">🌐 繁中</button>
-            <button class="auth-btn" id="profileBtn" onclick="goProfile()" title="내 프로필">👤</button>
+            <div style="position:relative;display:inline-block">
+              <button class="auth-btn" id="profileBtn" onclick="profileClick(event)" title="내 프로필">👤</button>
+              <div id="profileMenu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:#1e293b;border:1px solid rgba(255,255,255,.12);border-radius:10px;min-width:130px;z-index:999;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+                <button onclick="goProfile()" style="width:100%;text-align:left;background:none;border:none;color:#e2e8f0;padding:10px 13px;cursor:pointer;font-size:13px">👤 <span data-mi="profile">내 프로필</span></button>
+                <button onclick="menuLogout()" style="width:100%;text-align:left;background:none;border:none;color:#f87171;padding:10px 13px;cursor:pointer;font-size:13px;border-top:1px solid rgba(255,255,255,.08)">🚪 <span data-mi="logout">로그아웃</span></button>
+              </div>
+            </div>
             <button class="auth-btn" id="authBtn" onclick="handleAuth()">로그인</button>
         </div>
     </header>
@@ -279,11 +285,11 @@
             if(l.startsWith('ko')) return 'ko';
             return 'en'; })();
         const PORTAL_I18N = {
-            ko: { login:'로그인', logout:'로그아웃', logoutConfirm:'로그아웃 하시겠습니까?', empty:'표시할 게임이 없습니다',
+            ko: { login:'로그인', logout:'로그아웃', logoutConfirm:'로그아웃 하시겠습니까?', empty:'표시할 게임이 없습니다', profile:'내 프로필',
                   langBtn:'🌐 繁中', tabs:{ all:'전체', hot:'🔥 인기', new:'🆕 신규', multi:'👥 멀티', board:'♟️ 보드', card:'🃏 카드', puzzle:'🧩 퍼즐', arcade:'🕹️ 아케이드', tool:'🛠️ 도구' } },
-            'zh-TW': { login:'登入', logout:'登出', logoutConfirm:'確定要登出嗎？', empty:'沒有可顯示的遊戲',
+            'zh-TW': { login:'登入', logout:'登出', logoutConfirm:'確定要登出嗎？', empty:'沒有可顯示的遊戲', profile:'我的檔案',
                   langBtn:'🌐 EN', tabs:{ all:'全部', hot:'🔥 熱門', new:'🆕 新作', multi:'👥 多人', board:'♟️ 棋盤', card:'🃏 紙牌', puzzle:'🧩 益智', arcade:'🕹️ 街機', tool:'🛠️ 工具' } },
-            en: { login:'Log in', logout:'Log out', logoutConfirm:'Log out?', empty:'No games to show',
+            en: { login:'Log in', logout:'Log out', logoutConfirm:'Log out?', empty:'No games to show', profile:'My Profile',
                   langBtn:'🌐 한국어', tabs:{ all:'All', hot:'🔥 Hot', new:'🆕 New', multi:'👥 Multi', board:'♟️ Board', card:'🃏 Card', puzzle:'🧩 Puzzle', arcade:'🕹️ Arcade', tool:'🛠️ Tools' } }
         };
         function tt(k){ return (PORTAL_I18N[LANG]||PORTAL_I18N.ko)[k]; }
@@ -477,6 +483,8 @@
                 pf.textContent = '👤';
                 if (gd) gd.style.display = 'none';
             }
+            document.querySelectorAll('[data-mi=profile]').forEach(el => el.textContent = tt('profile'));
+            document.querySelectorAll('[data-mi=logout]').forEach(el => el.textContent = tt('logout'));
         }
 
         // 프로필은 cocy.io에 있고 토큰 저장소는 도메인별로 분리돼 있다.
@@ -493,9 +501,24 @@
         }
 
         function handleAuth() {
-            // 이 버튼은 비로그인 상태에서만 보인다. 로그아웃은 프로필 페이지로 이관.
+            // 이 버튼은 비로그인 상태에서만 보인다.
             SharedWallet.showLogin();
         }
+
+        // 로그인 상태에선 드롭다운(프로필/로그아웃), 비로그인이면 바로 프로필 페이지로.
+        function profileClick(e) {
+            e.stopPropagation();
+            if (!SharedWallet.isLoggedIn) return goProfile();
+            const m = document.getElementById('profileMenu');
+            m.style.display = m.style.display === 'none' ? 'block' : 'none';
+        }
+        function menuLogout() {
+            if (confirm(tt('logoutConfirm'))) { SharedWallet.logout(); location.reload(); }
+        }
+        document.addEventListener('click', () => {
+            const m = document.getElementById('profileMenu');
+            if (m) m.style.display = 'none';
+        });
 
         initAuth();
     </script>
