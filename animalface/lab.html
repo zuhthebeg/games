@@ -77,8 +77,19 @@ video{display:none}
     </div>
     <div class="row">
       <button class="btn sec" id="rec" disabled>🎞 GIF 녹화 (3초)</button>
+      <button class="btn sec" id="bsBtn" disabled>📊 블렌드셰이프 계측</button>
     </div>
     <div id="gifOut"></div>
+    <!-- 블렌드셰이프 계측 패널: 어떤 표정 신호가 실제로 발화하는지 실측용.
+         peak(최대값 유지)가 핵심 — 혀 내밀기처럼 순간적인 표정은 현재값만 보면 놓친다. -->
+    <div id="bsPanel" style="display:none">
+      <div class="row" style="margin-bottom:6px">
+        <button class="btn sec" id="bsReset">↺ peak 초기화</button>
+        <span class="badge" id="bsFps">–</span>
+      </div>
+      <div class="hint">peak = 측정 시작 후 최대값. 0.00이면 그 신호는 이 기기·얼굴에서 안 잡히는 것.</div>
+      <div id="bsList" style="font:600 12px ui-monospace,monospace;margin-top:8px"></div>
+    </div>
     <div class="log" id="log"></div>
   </div>
 
@@ -614,6 +625,69 @@ const GLW = (() => { try {
   img.complete ? go() : img.onload = go;
 })();
 
+// ---- 블렌드셰이프 계측 (어떤 신호가 실제로 발화하는지 실측) ----
+// 목적: tongueOut처럼 "카테고리는 있는데 정말 터지나?" 싶은 신호를 눈으로 확인.
+// 현재값만 보면 순간 표정을 놓치므로 peak(최대값)을 같이 들고 간다.
+const BS = (() => {
+  const peak = new Map();      // categoryName → 관측된 최대 점수
+  let cur = [];                // 최근 프레임 카테고리 배열
+  let on = false, frames = 0, t0 = 0, dirty = false;
+  // 항상 목록 맨 위에 고정해서 보는 신호들 (검증 대상)
+  const PINNED = ['tongueOut', 'jawOpen', 'eyeBlinkLeft', 'eyeBlinkRight',
+                  'cheekPuff', 'mouthPucker', 'eyeSquintLeft', 'eyeWideLeft'];
+
+  function feed(cats) {
+    cur = cats;
+    for (const c of cats) {
+      if (!(peak.get(c.categoryName) >= c.score)) peak.set(c.categoryName, c.score);
+    }
+    frames++; dirty = true;
+  }
+
+  function bar(v) {
+    const n = Math.round(v * 20);
+    return '█'.repeat(n) + '·'.repeat(20 - n);
+  }
+
+  function render() {
+    if (!on || !dirty) return;
+    dirty = false;
+    const score = new Map(cur.map(c => [c.categoryName, c.score]));
+    const rest = cur.map(c => c.categoryName)
+      .filter(n => !PINNED.includes(n))
+      .sort((a, b) => (peak.get(b) || 0) - (peak.get(a) || 0))
+      .slice(0, 12);
+    const row = (n, pin) => {
+      const v = score.get(n) || 0, p = peak.get(n) || 0;
+      // peak 0 = 이 신호는 안 잡힌다 → 빨강으로 즉시 눈에 띄게
+      const col = p < 0.05 ? '#e5484d' : p < 0.3 ? '#f5a524' : '#30a46c';
+      return `<div style="color:${col};opacity:${pin ? 1 : .75}">`
+        + `${pin ? '★' : ' '} ${n.padEnd(22, ' ').replace(/ /g, '&nbsp;')}`
+        + ` ${v.toFixed(2)} <span style="opacity:.5">${bar(v)}</span> peak ${p.toFixed(2)}</div>`;
+    };
+    $('bsList').innerHTML = PINNED.map(n => row(n, true)).join('')
+      + '<div style="height:8px"></div>'
+      + rest.map(n => row(n, false)).join('');
+    const sec = (performance.now() - t0) / 1000;
+    $('bsFps').textContent = `${cur.length}개 신호 · ${(frames / sec).toFixed(0)}fps`;
+  }
+
+  return {
+    feed,
+    render,
+    toggle() {
+      on = !on;
+      $('bsPanel').style.display = on ? '' : 'none';
+      $('bsBtn').textContent = on ? '📊 계측 숨기기' : '📊 블렌드셰이프 계측';
+      if (on) { frames = 0; t0 = performance.now(); }
+      return on;
+    },
+    reset() { peak.clear(); frames = 0; t0 = performance.now(); dirty = true; },
+  };
+})();
+$('bsBtn').onclick = () => log(BS.toggle() ? '계측 ON — 혀 내밀기·윙크·볼 부풀리기를 해보세요. peak가 0.00으로 남으면 그 신호는 못 씁니다.' : '계측 OFF');
+$('bsReset').onclick = () => { BS.reset(); log('peak 초기화'); };
+
 // ---- 표정 미러링 (blendshapes → 동물 눈/입 변형) ----
 let mirroring = false;
 $('cam').onclick = async () => {
@@ -622,6 +696,7 @@ $('cam').onclick = async () => {
     const v = $('vid'); v.srcObject = st; await v.play();
     log('카메라 시작 — 표정 미러링 버튼을 누르세요');
     $('mirror').disabled = false;
+    $('bsBtn').disabled = false;   // 계측은 미러링 루프에서 값을 받는다
     // 카메라 첫 프레임으로 분석도 한 번
     setTimeout(() => {
       const c = document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
@@ -649,6 +724,7 @@ $('mirror').onclick = async () => {
       const r = landmarker.detectForVideo(v, now);
       const cats = r.faceBlendshapes?.[0]?.categories;
       if (cats) {
+        BS.feed(cats); BS.render();
         const get = n => (cats.find(c => c.categoryName === n)?.score) || 0;
         const blink = Math.max(get('eyeBlinkLeft'), get('eyeBlinkRight'));
         const jaw = get('jawOpen');
