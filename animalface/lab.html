@@ -628,7 +628,7 @@ const GLW = (() => { try {
 // ---- 블렌드셰이프 계측 (어떤 신호가 실제로 발화하는지 실측) ----
 // 목적: tongueOut처럼 "카테고리는 있는데 정말 터지나?" 싶은 신호를 눈으로 확인.
 // 현재값만 보면 순간 표정을 놓치므로 peak(최대값)을 같이 들고 간다.
-const BS = (() => {
+const BSMETER = (() => {
   const peak = new Map();      // categoryName → 관측된 최대 점수
   let cur = [];                // 최근 프레임 카테고리 배열
   let on = false, frames = 0, t0 = 0, dirty = false;
@@ -685,8 +685,8 @@ const BS = (() => {
     reset() { peak.clear(); frames = 0; t0 = performance.now(); dirty = true; },
   };
 })();
-$('bsBtn').onclick = () => log(BS.toggle() ? '계측 ON — 혀 내밀기·윙크·볼 부풀리기를 해보세요. peak가 0.00으로 남으면 그 신호는 못 씁니다.' : '계측 OFF');
-$('bsReset').onclick = () => { BS.reset(); log('peak 초기화'); };
+$('bsBtn').onclick = () => log(BSMETER.toggle() ? '계측 ON — 혀 내밀기·윙크·볼 부풀리기를 해보세요. peak가 0.00으로 남으면 그 신호는 못 씁니다.' : '계측 OFF');
+$('bsReset').onclick = () => { BSMETER.reset(); log('peak 초기화'); };
 
 // ---- 표정 미러링 (blendshapes → 동물 눈/입 변형) ----
 let mirroring = false;
@@ -724,7 +724,7 @@ $('mirror').onclick = async () => {
       const r = landmarker.detectForVideo(v, now);
       const cats = r.faceBlendshapes?.[0]?.categories;
       if (cats) {
-        BS.feed(cats); BS.render();
+        BSMETER.feed(cats); BSMETER.render();
         const get = n => (cats.find(c => c.categoryName === n)?.score) || 0;
         const blink = Math.max(get('eyeBlinkLeft'), get('eyeBlinkRight'));
         const jaw = get('jawOpen');
