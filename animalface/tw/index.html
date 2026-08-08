@@ -738,7 +738,7 @@ function reveal(withScan = true) {
   const A = ranked[0].a, aimg = animImgs[A.id];
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const SCAN = withScan && LM_DRAW && !calm ? 1100 : 0;
-  const MESH = SCAN ? 500 : 0;                 // 찍힌 점을 선으로 이어 '메시를 떴다'는 느낌을 준다
+  const MESH = SCAN ? 850 : 0;                 // 찍힌 점을 선으로 이어 '메시를 떴다'는 느낌을 준다
   const D3 = SCAN && LM3 ? 1300 : 0;           // 찍은 점을 3D로 한 번 돌려 보여준다
   const SPIN = withScan && !calm ? 1300 : 0;   // → 후보를 한 바퀴 돌리고
   const FADE = calm ? 200 : (withScan ? 1000 : 700);   // → 정답이 천천히 떠오른다
@@ -775,20 +775,31 @@ function reveal(withScan = true) {
       // 메시 라인: 점을 i ↔ i+7로 이어 삼각망처럼 보이게 한다. 실제 위상이 아니라 연출이라
       // 정확한 tesselation 인덱스를 들고 다닐 필요는 없다. 선이 순차로 그어지며 차오른다.
       const p = (el - SCAN) / MESH;
-      const box = drawBase(1);
+      // 사진을 살짝 죽인다. 임의의 사진 위에 얇은 선을 그으면 무늬에 묻혀서 안 보인다
+      // (팔레트만 맞추고 대비를 안 본 게 1차 구현의 실패 원인).
+      const box = drawBase(1 - 0.35 * Math.min(1, p * 2.0));
       if (box) {
         const pts = SAMPLE.map(i => toPx(LM_DRAW[i], box));
-        ctx.fillStyle = '#3ba7a0';
-        for (const q of pts) { ctx.beginPath(); ctx.arc(q.x, q.y, Math.max(1.2, cv.width*0.0042), 0, 6.283); ctx.fill(); }
-        ctx.strokeStyle = 'rgba(59,167,160,.42)';
-        ctx.lineWidth = Math.max(1, cv.width*0.0022);
-        ctx.beginPath();
         const n = Math.floor(pts.length * Math.min(1, p*1.2));
+        // 어두운 그림자를 깔고 밝은 선을 얹는다 — 밝은 사진에서도 어두운 사진에서도 읽힌다
+        ctx.lineWidth = Math.max(2.4, cv.width*0.0052);
+        ctx.strokeStyle = 'rgba(10,30,30,.35)';
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+          const a = pts[i], b = pts[(i+7) % pts.length];
+          ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        }
+        ctx.stroke();
+        ctx.lineWidth = Math.max(1.4, cv.width*0.0030);
+        ctx.strokeStyle = 'rgba(90,230,215,.95)';
+        ctx.beginPath();
         for (let i = 0; i < n; i++) {
           const a = pts[i], b = pts[(i+7) % pts.length];
           ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
         }
         ctx.stroke();   // 선 전체를 한 번에 stroke — 선마다 stroke하면 프레임이 뚝뚝 끊긴다
+        ctx.fillStyle = '#7ff0e2';
+        for (const q of pts) { ctx.beginPath(); ctx.arc(q.x, q.y, Math.max(1.4, cv.width*0.0046), 0, 6.283); ctx.fill(); }
       }
       return requestAnimationFrame(step);
     }
