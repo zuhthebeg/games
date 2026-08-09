@@ -3215,6 +3215,8 @@
                 'attack-sword-m3':   '/enhance/sfx/attack-sword-m3.ogg',
                 'attack-sword-m4':   '/enhance/sfx/attack-sword-m4.ogg',
                 'attack-sword-m5':   '/enhance/sfx/attack-sword-m5.ogg',
+                // 럭키드로우 잭팟 골드 (MOSS-SoundEffect)
+                'lucky-gold':        '/enhance/sfx/lucky-gold.ogg',
             },
             swordPool: ['attack-sword-m1', 'attack-sword-m2', 'attack-sword-m3', 'attack-sword-m4', 'attack-sword-m5'],
             init() {
@@ -7417,6 +7419,8 @@
         }
         
         function showLuckyDrawEffect(goldAmount) {
+            // 잭팟 골드 사운드 (off 모드면 SFX.play가 알아서 무시)
+            SFX.play('lucky-gold', 0.9);
             // 황금빛 플래시
             const flash = document.createElement('div');
             flash.className = 'lucky-flash';
