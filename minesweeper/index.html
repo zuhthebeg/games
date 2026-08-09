@@ -660,6 +660,16 @@ window.addEventListener('DOMContentLoaded', function(){
       }
     }
 
+    function playBoom() {
+      /* 지뢰 폭발음 (MOSS-SoundEffect). 🔇 토글(ms-bgm) 꺼져 있으면 재생 안 함 */
+      try {
+        if (localStorage.getItem('ms-bgm') === '0') return;
+        var a = new Audio('/minesweeper/boom.mp3?v=1');
+        a.volume = 0.7;
+        var p = a.play(); if (p && p.catch) p.catch(function(){});
+      } catch (e) {}
+    }
+
     function reveal(r, c) {
       if (gameOver) return;
       const cell = grid[r][c];
@@ -677,6 +687,7 @@ window.addEventListener('DOMContentLoaded', function(){
         renderCell(cell);
         gameOver = true;
         stopTimer();
+        playBoom();
         revealAllMines();
         showModal("게임 오버", "지뢰를 밟았습니다. 다시 도전해 보세요.");
         return;

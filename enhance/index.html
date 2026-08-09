@@ -3209,7 +3209,14 @@
                 'attack-katana':     '/enhance/sfx/attack-katana.ogg',
                 'attack-bow':        '/enhance/sfx/attack-bow.ogg',
                 'attack-crossbow':   '/enhance/sfx/attack-crossbow.ogg',
+                // MOSS-SoundEffect 검격 스윙 변형 풀 (검 계열 무기 랜덤 재생)
+                'attack-sword-m1':   '/enhance/sfx/attack-sword-m1.ogg',
+                'attack-sword-m2':   '/enhance/sfx/attack-sword-m2.ogg',
+                'attack-sword-m3':   '/enhance/sfx/attack-sword-m3.ogg',
+                'attack-sword-m4':   '/enhance/sfx/attack-sword-m4.ogg',
+                'attack-sword-m5':   '/enhance/sfx/attack-sword-m5.ogg',
             },
+            swordPool: ['attack-sword-m1', 'attack-sword-m2', 'attack-sword-m3', 'attack-sword-m4', 'attack-sword-m5'],
             init() {
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 Object.entries(this.files).forEach(([key, url]) => {
@@ -3278,6 +3285,12 @@
                 if ((weaponType === 'wand' || weaponType === 'staff') && weaponElement === 'fire') {
                     this.playFireCast();
                     return;
+                }
+
+                // 검 계열은 MOSS 스윙 풀에서 매 공격 랜덤 변형 (로드 전이면 기존 음으로 폴백)
+                if (weaponType === 'sword' || weaponType === 'katana' || weaponType === 'scythe') {
+                    const key = this.swordPool[Math.floor(Math.random() * this.swordPool.length)];
+                    if (this.buffers[key]) { this.play(key, 0.8); return; }
                 }
 
                 const typeToKey = {
