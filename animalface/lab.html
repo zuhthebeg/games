@@ -108,6 +108,20 @@ video{display:none}
     <h2><span class="n">STEP 4</span> 매칭 결과</h2>
     <div id="result"><div class="hint">아직 없음</div></div>
   </div>
+
+  <div class="card">
+    <h2><span class="n">STEP 5</span> v2 실측 프로토타입 매칭 <span class="badge">실험</span></h2>
+    <div class="hint" style="margin-bottom:8px">
+      동물상 라벨된 연예인 사진을 본편 파이프라인으로 실측한 타입별 평균(프로토타입)과 비교.
+      수작업 감값이 아니라 측정 데이터 기반. 성별에 따라 정의가 달라 풀을 나눈다.
+    </div>
+    <div style="margin-bottom:8px">
+      <button class="btn sec" id="v2f">👩 여자 풀</button>
+      <button class="btn sec" id="v2m">👨 남자 풀</button>
+    </div>
+    <div id="v2out"><div class="hint">사진을 넣으면 계산됩니다</div></div>
+    <div class="hint" style="margin-top:8px" id="v2note"></div>
+  </div>
 </div>
 
 <script type="module">
@@ -240,6 +254,55 @@ function computeAxes(lm) {
 }
 let lastRaw = null;
 
+// ---- v2: 연예인 실측 프로토타입 매칭 (lab-v2.json = ops/verify/af-v2-proto.py 산출) ----
+/* 타입별 프로토타입 = 그 동물상이라 불리는 연예인들의 8축 실측 z-평균.
+   가중치는 문헌 근거의 눈 영역 강조(Nakajima 2015: 닮음 지각은 눈이 캐리).
+   ⚠ LOPO 검증 결과 top1은 아직 챈스 수준 — 수집 사진 오염(258장 중 108장 탈락)이
+   주용의자라 정제 재수집 전까지는 "방향 데모"로만 볼 것. */
+let V2 = null, v2Gender = 'f';
+fetch('lab-v2.json?v=1').then(r => r.json()).then(d => { V2 = d; log('v2 프로토타입 ' + Object.keys(d.types).length + '타입 로드'); if (lastRaw) renderV2(); });
+const V2_W = { eyeSize:1.6, eyeSlant:1.8, eyeGap:1.2, faceLength:1.0, jawSharp:0.8, cheek:0.8, noseWidth:0.6, lipThick:0.6 };
+
+function v2Match(raw) {
+  if (!V2 || !raw) return null;
+  const z = V2.axes.map((k, i) => (raw[k] - V2.human.mu[i]) / V2.human.sd[i]);
+  const out = [];
+  for (const [lb, t] of Object.entries(V2.types)) {
+    if (!lb.endsWith('_' + v2Gender)) continue;
+    let s = 0, wsum = 0;
+    const contrib = V2.axes.map((k, i) => {
+      const w = V2_W[k] || 1, d = z[i] - t.mu[i];
+      s += w * d * d; wsum += w;
+      return { k, d, w, user: z[i], proto: t.mu[i] };
+    });
+    out.push({ lb, sp: lb.split('_')[0], dist: Math.sqrt(s / wsum), contrib, t });
+  }
+  return out.sort((a, b) => a.dist - b.dist);
+}
+
+function renderV2() {
+  const el = $('v2out');
+  const m = v2Match(lastRaw);
+  if (!m) { el.innerHTML = '<div class="hint">프로토타입 로딩 전</div>'; return; }
+  const top = m[0].dist;
+  el.innerHTML = m.slice(0, 3).map((r, i) => {
+    const a = ANIMALS.find(x => x.id === r.sp);
+    const pct = Math.max(45, Math.round(93 - (r.dist - top) * 55 - i * 2));
+    const close = [...r.contrib].sort((x, y) => Math.abs(x.d) * x.w - Math.abs(y.d) * y.w);
+    const good = close.slice(0, 2).map(c => `${AXIS_LABEL[c.k]} 일치(나 ${c.user.toFixed(1)}σ ≈ 평균 ${c.proto.toFixed(1)}σ)`);
+    const bad = close[close.length - 1];
+    return `<div class="res" style="${i ? 'opacity:.75' : ''}">
+      ${a ? `<img src="${a.img}" alt="">` : ''}
+      <div><div class="nm">${i + 1}위 ${a ? a.name : r.sp} <span style="color:#5c6478;font-size:12px">(${r.t.people}명 ${r.t.photos}장 실측)</span></div>
+        <div class="pc">${pct}%</div>
+        <div class="why">${good.join(' · ')}<br>
+          <span style="color:#5c6478">차이 큰 축: ${AXIS_LABEL[bad.k]} (나 ${bad.user.toFixed(1)}σ vs 평균 ${bad.proto.toFixed(1)}σ)</span><br>
+          <span style="color:#5c6478;font-size:11px">기준 인물: ${r.t.members.map(s => s.replace(/-/g, ' ')).join(', ')}</span></div></div>
+    </div>`;
+  }).join('');
+  $('v2note').textContent = 'LOPO 검증(사진단위): top1 16% · top3 42% — 아직 챈스 수준. 원인 후보: 수집 사진 오염(정제 탈락 42%)·라벨 단일소스. 정제 재수집 후 재검증 예정.';
+}
+
 function match(ax) {
   const scored = ANIMALS.map(a => {
     let s = 0, wsum = 0;
@@ -264,6 +327,8 @@ function whyText(ax, animal) {
 
 // ---- 입력 ----
 $('pick').onclick = () => $('file').click();
+$('v2f').onclick = () => { v2Gender = 'f'; renderV2(); };
+$('v2m').onclick = () => { v2Gender = 'm'; renderV2(); };
 $('file').onchange = e => {
   const f = e.target.files[0]; if (!f) return;
   const im = new Image();
@@ -350,6 +415,7 @@ function detect() {
   renderAxes();
   const m = match(AX); best = m[0];
   renderResult(m);
+  renderV2();
   $('run').disabled = false; $('rot').disabled = false; $('mirror').disabled = false;
   drawDots(1);
 }
