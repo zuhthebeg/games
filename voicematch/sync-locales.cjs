@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const LOCALES = ['ko', 'en', 'ja', 'es', 'tw', 'id'];
+const LOCALES = ['ko', 'en', 'ja', 'es', 'pt', 'tw', 'id'];
 const ASSETS = ['i18n.js', 'analyzer.js', 'singers.json', 'ecapa_int8.onnx', 'catalog.json',
   'manifest.json', 'icon.svg', 'sw.js'];
 const CHECK = process.argv.includes('--check');

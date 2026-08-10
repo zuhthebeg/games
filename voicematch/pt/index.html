@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="pt-BR">
 <head>
 <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -11,14 +11,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <!-- AdSense: managed via GTM auto-ads (ca-pub-6634731722045607) -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Suaramu mirip penyanyi K-pop siapa?</title>
-<meta name="description" content="Nyanyi 10 detik dan AI mencari artis K-pop yang suaranya paling mirip denganmu. Berjalan penuh di browser — rekaman tidak pernah diunggah.">
-<meta name="keywords" content="tes suara, suara mirip, K-pop, analisis suara AI, penyanyi korea">
+<title>Com qual artista de K-pop sua voz se parece?</title>
+<meta name="description" content="Cante 10 segundos e a IA encontra o artista de K-pop com a voz mais parecida com a sua. Tudo roda no navegador; a gravação nunca sai do seu aparelho.">
+<meta name="keywords" content="teste de voz, voz parecida, K-pop, gêmeo vocal, análise de voz com IA, cantor coreano">
 <meta name="theme-color" content="#2a2135">
 <link rel="manifest" href="/voicematch/manifest.json">
 <link rel="apple-touch-icon" href="/voicematch/icon.svg">
 <script>if('serviceWorker'in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('/voicematch/sw.js').catch(()=>{});});</script>
-<link rel="canonical" href="https://game.cocy.io/voicematch/id/">
+<link rel="canonical" href="https://game.cocy.io/voicematch/pt/">
 <link rel="alternate" hreflang="ko" href="https://game.cocy.io/voicematch/ko/">
 <link rel="alternate" hreflang="en" href="https://game.cocy.io/voicematch/en/">
 <link rel="alternate" hreflang="es" href="https://game.cocy.io/voicematch/es/">
@@ -27,15 +27,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <link rel="alternate" hreflang="zh-Hant" href="https://game.cocy.io/voicematch/tw/">
 <link rel="alternate" hreflang="id" href="https://game.cocy.io/voicematch/id/">
 <link rel="alternate" hreflang="x-default" href="https://game.cocy.io/voicematch/">
-<meta property="og:title" content="Suaramu mirip penyanyi K-pop siapa?">
-<meta property="og:description" content="Nyanyi 10 detik dan AI mencari kembaran suaramu di K-pop. Berjalan di browser — suaramu tidak pernah keluar dari perangkat.">
-<meta property="og:url" content="https://game.cocy.io/voicematch/id/">
-<meta property="og:image" content="https://game.cocy.io/voicematch/og-id.png">
+<meta property="og:title" content="Com qual artista de K-pop sua voz se parece?">
+<meta property="og:description" content="Cante 10 segundos e a IA encontra seu gêmeo vocal do K-pop. Funciona no navegador: sua voz nunca sai do aparelho.">
+<meta property="og:url" content="https://game.cocy.io/voicematch/pt/">
+<meta property="og:image" content="https://game.cocy.io/voicematch/og-pt.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Suaramu mirip penyanyi K-pop siapa?">
-<meta name="twitter:description" content="Nyanyi 10 detik dan AI mencari kembaran suaramu di K-pop. Berjalan di browser — suaramu tidak pernah keluar dari perangkat.">
-<meta name="twitter:image" content="https://game.cocy.io/voicematch/og-id.png">
+<meta name="twitter:title" content="Com qual artista de K-pop sua voz se parece?">
+<meta name="twitter:description" content="Cante 10 segundos e a IA encontra seu gêmeo vocal do K-pop. Funciona no navegador: sua voz nunca sai do aparelho.">
+<meta name="twitter:image" content="https://game.cocy.io/voicematch/og-pt.png">
 <link rel="icon" href="/voicematch/icon.svg" type="image/svg+xml">
 <script src="/lib/shared-wallet.js?v=20260809pf2"></script>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
@@ -81,6 +81,7 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .key.start:active{box-shadow:0 1px 0 var(--pink-d)}
 .key:disabled{opacity:.45;cursor:default}
 .tip{margin-top:14px;text-align:center;font-size:11.5px;color:var(--mut);line-height:1.7}
+
 .tip b{color:var(--lime)}
 .hidden{display:none!important}
 
@@ -176,6 +177,9 @@ canvas{display:none}
 .ft-desc{font-size:12px;color:#a8a3c4;line-height:1.5;margin-bottom:16px}
 .ft-go{display:block;background:#e8c66a;color:#1a1020;border-radius:10px;padding:13px;font-size:14px;font-weight:800;text-decoration:none}
 .ft-close{display:block;width:100%;background:none;border:none;color:#8f7fa3;font-size:12px;margin-top:10px;padding:6px;cursor:pointer}
+.ft-copy{display:block;width:100%;background:none;border:1px solid #e8c66a;color:#e8c66a;border-radius:10px;font-size:12.5px;font-weight:700;margin-top:9px;padding:10px;cursor:pointer;font-family:inherit}
+.inapp-bar{margin-top:12px;background:oklch(0.3 0.09 85);border:1px solid var(--amber);border-radius:10px;padding:11px 13px;font-size:11.5px;line-height:1.6;color:var(--txt)}
+.inapp-bar b{color:var(--amber)}
 .ft-cta{display:block;margin:14px auto 0;max-width:420px;padding:12px 14px;border-radius:12px;
   background:linear-gradient(135deg,#2a1f3d,#1e1b30);border:1px solid #e8c66a;text-decoration:none;color:#f5eefb}
 .ft-cta .ft-t{display:block;font-size:13.5px;font-weight:800;color:#e8c66a}
