@@ -299,6 +299,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
     <div class="remote">
       <button class="key start" id="btn-share"></button>
+      <button class="key" id="btn-x"></button>
       <button class="key" id="btn-save"></button>
       <button class="key" id="btn-retry"></button>
       <button class="key" id="btn-more" onclick="location.href='https://game.cocy.io/'"></button>
@@ -312,7 +313,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260810jp"></script>
+<script src="i18n.js?v=20260811x"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -341,6 +342,7 @@ function applyLang(){
   $('t-tipfirst').textContent=t('tipFirst');
   $('ana-t').textContent=t('judging');
   $('btn-share').textContent=t('share');
+  $('btn-x').textContent=t('xShare')||'𝕏';
   $('btn-save').textContent=t('save');
   $('btn-retry').textContent=t('retry');
   $('btn-more').textContent=t('more');
@@ -792,6 +794,14 @@ async function cardBlob(){await document.fonts.load("40px 'Black Han Sans'");dra
   return new Promise(r=>$('card').toBlob(r,'image/png'));}
 $('btn-save').onclick=async()=>{const b=await cardBlob();const a=document.createElement('a');
   a.href=URL.createObjectURL(b);a.download='voicematch.png';a.click();};
+const X_TAGS={ko:'#목소리노래방',en:'#VoiceMatch #kpop',ja:'#声診断 #ボイスマッチ',es:'#VoiceMatch #kpop',tw:'#聲音分身',id:'#VoiceMatch #kpop'};
+$('btn-x').onclick=()=>{
+  if(!lastResult)return;
+  const top=lastResult[0];
+  const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}`;
+  const txt=I18N[LANG].shareText(singerName(top,LANG),top.pct)+'\n'+(X_TAGS[LANG]||'')+'\n'+url;
+  window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(txt),'_blank','noopener');
+};
 $('btn-share').onclick=async()=>{
   const b=await cardBlob();const f=new File([b],'voicematch.png',{type:'image/png'});
   const top=lastResult[0];
