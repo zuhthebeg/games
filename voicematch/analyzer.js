@@ -75,6 +75,8 @@ async function analyze(pcm16k) {
   // 로케일 필터로 풀이 비면 전체 풀로 폴백한다 — 화면이 죽는 것보다 낫다
   const rankKr = topRank(scored.filter(s => !s.intl && (lang === 'ko' || s.gk)))
     || topRank(scored.filter(s => !s.intl)) || rankAll;
+  // J-POP 풀: singers.json의 jp 플래그(수동 관리, merge_final PRESERVE). 비면 null — UI가 토글에서 숨긴다
+  const rankJp = topRank(scored.filter(s => s.jp));
 
   // 장르 축: 매크로 장르별 top-5 평균 cos → 상대 스케일. 순서 중요(록발라드→rock, R&B·발라드→rnb, 힙합R&B→hiphop)
   const AXES = [
@@ -104,7 +106,7 @@ async function analyze(pcm16k) {
     gs.sort((a, b) => b.raw - a.raw);
     genres = gs.map(({ raw, ...g }) => g);
   }
-  return { rank: rankKr, rankAll, genres };
+  return { rank: rankKr, rankAll, rankJp, genres };
 }
 
 onmessage = async (ev) => {

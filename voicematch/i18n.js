@@ -6,7 +6,7 @@ const I18N = {
     poolAll:'🌍 전체 아티스트에서 다시 찾기 (팝·록·J-POP 포함)', poolKr:'🎤 K-POP·가요에서 찾기',
     lowScoreHint:'K-POP 풀에선 매치가 약해요 — 전체로 넓혀서 찾아볼까요?',
     navLogin:'로그인', navLogout:'로그아웃',
-    modeNowKr:'🎤 지금 K-POP·가요 모드', modeNowAll:'🌍 지금 전체 아티스트 모드', modeSwitchKr:'⇄ K-POP으로', modeSwitchAll:'⇄ 전체로',
+    modeNowKr:'🎤 지금 K-POP·가요 모드', modeNowAll:'🌍 지금 전체 아티스트 모드', modeNowJp:'🗾 지금 J-POP 모드', modeSwitchKr:'⇄ K-POP으로', modeSwitchAll:'⇄ 전체로', modeSwitchJp:'⇄ J-POP으로',
     gaxis:'🧬 보컬 DNA', gaxisType:g=>`${g} 성향 보이스`,
     lb_btn: '🏆 닮은꼴 랭킹', lb_title: n => `${n} 닮은꼴 TOP 10`,
     lb_myrank: n => `🏆 닮은꼴 전세계 ${n}위!`, lb_login: '로그인하면 랭킹에 이름을 남길 수 있어요',
@@ -44,7 +44,7 @@ const I18N = {
     poolAll:'🌍 Search all artists (Pop·Rock·J-POP)', poolKr:'🎤 K-pop only',
     lowScoreHint:'Weak match in the K-pop pool — try searching all artists?',
     navLogin:'Login', navLogout:'Logout',
-    modeNowKr:'🎤 Now: K-pop mode', modeNowAll:'🌍 Now: All artists mode', modeSwitchKr:'⇄ Switch to K-pop', modeSwitchAll:'⇄ Switch to all',
+    modeNowKr:'🎤 Now: K-pop mode', modeNowAll:'🌍 Now: All artists mode', modeNowJp:'🗾 Now: J-pop mode', modeSwitchKr:'⇄ Switch to K-pop', modeSwitchAll:'⇄ Switch to all', modeSwitchJp:'⇄ Switch to J-pop',
     gaxis:'🧬 Vocal DNA', gaxisType:g=>`Your voice leans ${g}`,
     lb_btn: '🏆 Leaderboard', lb_title: n => `${n} Voice Twin TOP 10`,
     lb_myrank: n => `🏆 Ranked #${n} worldwide!`, lb_login: 'Log in to enter the leaderboard',
@@ -82,7 +82,7 @@ const I18N = {
     poolAll:'🌍 全アーティストから探す (Pop·Rock·J-POP)', poolKr:'🎤 K-POPのみ',
     lowScoreHint:'K-POPプールではマッチが弱いです — 全体で探してみますか?',
     navLogin:'ログイン', navLogout:'ログアウト',
-    modeNowKr:'🎤 現在:K-POPモード', modeNowAll:'🌍 現在:全アーティストモード', modeSwitchKr:'⇄ K-POPへ切替', modeSwitchAll:'⇄ 全体へ切替',
+    modeNowKr:'🎤 現在:K-POPモード', modeNowAll:'🌍 現在:全アーティストモード', modeNowJp:'🗾 現在:J-POPモード', modeSwitchKr:'⇄ K-POPへ切替', modeSwitchAll:'⇄ 全体へ切替', modeSwitchJp:'⇄ J-POPへ切替',
     gaxis:'🧬 ボーカルDNA', gaxisType:g=>`${g}系ボイス`,
     lb_btn: '🏆 そっくりランキング', lb_title: n => `${n} そっくり TOP 10`,
     lb_myrank: n => `🏆 そっくり世界${n}位!`, lb_login: 'ログインするとランキングに参加できます',
@@ -120,7 +120,7 @@ const I18N = {
     poolAll:'🌍 Buscar en todos (Pop·Rock·J-POP)', poolKr:'🎤 Solo K-pop',
     lowScoreHint:'Match débil en el grupo K-pop — ¿buscamos en todos los artistas?',
     navLogin:'Iniciar sesión', navLogout:'Cerrar sesión',
-    modeNowKr:'🎤 Modo: K-pop', modeNowAll:'🌍 Modo: Todos los artistas', modeSwitchKr:'⇄ Cambiar a K-pop', modeSwitchAll:'⇄ Cambiar a todos',
+    modeNowKr:'🎤 Modo: K-pop', modeNowAll:'🌍 Modo: Todos los artistas', modeNowJp:'🗾 Modo: J-pop', modeSwitchKr:'⇄ Cambiar a K-pop', modeSwitchAll:'⇄ Cambiar a todos', modeSwitchJp:'⇄ Cambiar a J-pop',
     gaxis:'🧬 ADN Vocal', gaxisType:g=>`Voz tipo ${g}`,
     lb_btn: '🏆 Ranking', lb_title: n => `TOP 10 gemelos de ${n}`,
     lb_myrank: n => `🏆 ¡Puesto #${n} mundial!`, lb_login: 'Inicia sesión para entrar al ranking',
@@ -158,7 +158,7 @@ const I18N = {
     poolAll:'🌍 從所有藝人中尋找 (流行·搖滾·J-POP)', poolKr:'🎤 只看K-POP',
     lowScoreHint:'K-POP範圍內配對較弱 — 要擴大到全部藝人找找看嗎?',
     navLogin:'登入', navLogout:'登出',
-    modeNowKr:'🎤 目前:K-POP模式', modeNowAll:'🌍 目前:全部藝人模式', modeSwitchKr:'⇄ 切換至K-POP', modeSwitchAll:'⇄ 切換至全部',
+    modeNowKr:'🎤 目前:K-POP模式', modeNowAll:'🌍 目前:全部藝人模式', modeNowJp:'🗾 目前:J-POP模式', modeSwitchKr:'⇄ 切換至K-POP', modeSwitchAll:'⇄ 切換至全部', modeSwitchJp:'⇄ 切換至J-POP',
     gaxis:'🧬 聲音DNA', gaxisType:g=>`偏向${g}的嗓音`,
     lb_btn: '🏆 分身排行榜', lb_title: n => `${n} 聲音分身 TOP 10`,
     lb_myrank: n => `🏆 全球排名第${n}名!`, lb_login: '登入即可參加排行榜',
@@ -196,7 +196,7 @@ const I18N = {
     poolAll:'🌍 Cari dari semua artis (Pop·Rock·J-POP)', poolKr:'🎤 Khusus K-pop',
     lowScoreHint:'Kecocokan lemah di pool K-pop — coba cari di semua artis?',
     navLogin:'Masuk', navLogout:'Keluar',
-    modeNowKr:'🎤 Mode: K-pop', modeNowAll:'🌍 Mode: Semua artis', modeSwitchKr:'⇄ Ganti ke K-pop', modeSwitchAll:'⇄ Ganti ke semua',
+    modeNowKr:'🎤 Mode: K-pop', modeNowAll:'🌍 Mode: Semua artis', modeNowJp:'🗾 Mode: J-pop', modeSwitchKr:'⇄ Ganti ke K-pop', modeSwitchAll:'⇄ Ganti ke semua', modeSwitchJp:'⇄ Ganti ke J-pop',
     gaxis:'🧬 DNA Vokal', gaxisType:g=>`Suaramu condong ke ${g}`,
     lb_btn: '🏆 Papan Peringkat', lb_title: n => `TOP 10 Mirip ${n}`,
     lb_myrank: n => `🏆 Peringkat #${n} dunia!`, lb_login: 'Masuk untuk ikut papan peringkat',
@@ -231,6 +231,12 @@ const I18N = {
 };
 
 const EN_NAMES = {
+  // J-pop 2026-08-10 배치 (공식 라틴 표기)
+  mrsgreenapple:'Mrs. GREEN APPLE', vaundy:'Vaundy', creepynuts:'Creepy Nuts', lisa_jp:'LiSA',
+  yorushika:'Yorushika', zutomayo:'ZUTOMAYO', eve_jp:'Eve', radwimps:'RADWIMPS', milet:'milet',
+  aimer:'Aimer', hoshinogen:'Gen Hoshino', backnumber:'back number', aiko_jp:'aiko', spitz:'Spitz',
+  oneokrock:'ONE OK ROCK', superfly:'Superfly', mikanakashima:'Mika Nakashima',
+  ikimonogakari:'Ikimonogakari', kessokuband:'Kessoku Band', yuuri:'Yuuri', tuki:'tuki.', reol:'Reol',
   iu:'IU',taeyeon:'Taeyeon',heize:'Heize',yerin:'Yerin Baek',bol4:'BOL4',chungha:'CHUNG HA',
   sunmi:'SUNMI',hwasa:'Hwasa',jennie:'JENNIE',rose:'ROSÉ',lisa:'LISA',aileen:'Ailee',ben:'Ben',
   gyeongseo:'Gyeongseo',lee_suhyun:'Lee Suhyun',parkjunghyun:'Lena Park',newjeans:'NewJeans',
@@ -681,6 +687,8 @@ const EN_NAMES = {
 // 대만(tw) 로케일 전용 — 대만에서 실제 통용되는 정체(번체) 표기만 수동 검증해서 반영.
 // 중국 간체/대륙 표기 절대 금지, 불확실한 건 EN_NAMES 폴백(원문 로마자) 유지.
 const TW_NAMES = {
+  // J-pop — 대만에서 확립된 공식 한자 표기만. 불확실한 건 EN 폴백 원칙
+  mikanakashima:'中島美嘉', hoshinogen:'星野源', yuuri:'優里', ikimonogakari:'生物股長', kessokuband:'團結Band',
   // cocy 확인 표기 (2026-08-03). 소향은 로마자 활동명을 쓰므로 여기에 넣지 않는다.
   'sochanwhee':'蘇燦輝', 'taejina':'太真兒', 'utadahikaru':'宇多田光',
   'kimyeonja':'金蓮子', 'littlemermaid':'小美人魚',

@@ -312,7 +312,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260806promo"></script>
+<script src="i18n.js?v=20260810jp"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -348,31 +348,36 @@ function applyLang(){
   $('r-tip').textContent=t('tipResult');
   document.querySelectorAll('.lg').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
   updateIntroPoolBtn();
-  if(lastResult)renderResult(lastResult);
+  if(lastResult)renderResult(lastRankKr||lastResult,lastRankAll,lastRankJp,lastGenres);
 }
 const LANGS=['ko','en','ja','es','tw','id'];
 $('langs').innerHTML=LANGS.map(l=>`<button class="lg" data-l="${l}">${l.toUpperCase()}</button>`).join('');
 document.querySelectorAll('.lg').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;localStorage.setItem('vm_lang',LANG);applyLang();});
 
-let poolPref=localStorage.getItem('vm_poolpref')||'kr';
+let poolPref=localStorage.getItem('vm_poolpref')||(LANG==='ja'?'jp':'kr');
+// 풀 3종 순환: K-POP → J-POP → 전체. hasJp=false면 J-POP 건너뜀(플래그 유실 등으로 풀이 빌 때)
+const POOL_ORDER=['kr','jp','all'];
+const poolNow=v=>v==='kr'?t('modeNowKr'):v==='jp'?t('modeNowJp'):t('modeNowAll');
+const poolSwitch=v=>v==='kr'?t('modeSwitchKr'):v==='jp'?t('modeSwitchJp'):t('modeSwitchAll');
+function nextPool(v,hasJp){const ord=POOL_ORDER.filter(p=>p!=='jp'||hasJp);const i=ord.indexOf(v);return ord[(i+1)%ord.length];}
 function updateIntroPoolBtn(){
-  $('mode-badge-intro').textContent=poolPref==='kr'?t('modeNowKr'):t('modeNowAll');
-  $('btn-pool-intro').textContent=poolPref==='kr'?t('modeSwitchAll'):t('modeSwitchKr');
+  $('mode-badge-intro').textContent=poolNow(poolPref);
+  $('btn-pool-intro').textContent=poolSwitch(nextPool(poolPref,true));
 }
-$('btn-pool-intro').onclick=()=>{poolPref=poolPref==='kr'?'all':'kr';localStorage.setItem('vm_poolpref',poolPref);updateIntroPoolBtn();};
+$('btn-pool-intro').onclick=()=>{poolPref=nextPool(poolPref,true);localStorage.setItem('vm_poolpref',poolPref);updateIntroPoolBtn();};
 
-const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅|Lim Young Woong','에스파|aespa','폴킴|Paul Kim','블랙핑크|BLACKPINK','박효신|Park Hyo Shin','아이브|IVE','헌트릭스|HUNTR/X','엘사|Elsa','지드래곤|G-DRAGON','테일러스위프트|Taylor Swift','조용필|Cho Yong-pil','린킨파크|Linkin Park','+304'];
+const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅|Lim Young Woong','에스파|aespa','폴킴|Paul Kim','블랙핑크|BLACKPINK','박효신|Park Hyo Shin','아이브|IVE','헌트릭스|HUNTR/X','엘사|Elsa','지드래곤|G-DRAGON','테일러스위프트|Taylor Swift','조용필|Cho Yong-pil','린킨파크|Linkin Park','요아소비|YOASOBI','미세스그린애플|Mrs. GREEN APPLE','+400'];
 function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
 for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
 
-const worker=new Worker('analyzer.js?v=20260803gate');
+const worker=new Worker('analyzer.js?v=20260810jp');
 let workerReady=false, modelLoading=null, lastResult=null;
 
 function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('singers.json?v=20260803fix').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
+      fetch('singers.json?v=20260810jp').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
       (async()=>{
         const r=await fetch('ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
@@ -556,7 +561,7 @@ async function analyzePcm(pcm,rate){
     });
     if(done.error==='silent'){try{dataLayer.push({event:'vm_silent'});}catch(e){}$('err-t').innerHTML=t('errSilent');resetErrBtn();show('s-err');return;}
     try{dataLayer.push({event:'vm_result_shown'});}catch(e){}
-    renderResult(done.rank,done.rankAll,done.genres);
+    renderResult(done.rank,done.rankAll,done.rankJp,done.genres);
   }catch(e){
     $('err-t').innerHTML=t('errAnalyze')+'<br><span style="font-size:11px;opacity:.7">'+String(e.message||e).slice(0,120)+'</span>';resetErrBtn();show('s-err');
   }
@@ -655,7 +660,7 @@ function renderGaxis(genres){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     box.querySelectorAll('.ga-tr i').forEach(b=>b.style.width=b.dataset.w+'%');}));
 }
-let lastRankKr=null,lastRankAll=null,vmView='kr';
+let lastRankKr=null,lastRankAll=null,lastRankJp=null,vmView='kr';
 function applyRank(rank){
   lastResult=rank;
   const top=rank[0];
@@ -710,8 +715,8 @@ function renderFanTrack(top){
 function updatePoolBtn(){
   const b=$('btn-pool'),hint=$('r-poolhint'),unit=$('mode-unit-result'),badge=$('mode-badge-result');
   if(!lastRankAll){unit.classList.add('hidden');hint.classList.add('hidden');return;}
-  badge.textContent=vmView==='kr'?t('modeNowKr'):t('modeNowAll');
-  b.textContent=vmView==='kr'?t('modeSwitchAll'):t('modeSwitchKr');
+  badge.textContent=poolNow(vmView);
+  b.textContent=poolSwitch(nextPool(vmView,!!lastRankJp));
   unit.classList.remove('hidden');
   const lowScore=vmView==='kr'&&lastRankKr&&lastRankKr[0].pct<80;
   unit.classList.toggle('hint',lowScore);
@@ -719,15 +724,15 @@ function updatePoolBtn(){
   hint.classList.toggle('hidden',!lowScore);
 }
 $('btn-pool').onclick=()=>{
-  vmView=vmView==='kr'?'all':'kr';
-  applyRank(vmView==='kr'?lastRankKr:lastRankAll);
+  vmView=nextPool(vmView,!!lastRankJp);
+  applyRank(vmView==='kr'?lastRankKr:vmView==='jp'?lastRankJp:lastRankAll);
   updatePoolBtn();
 };
-function renderResult(rank,rankAll,genres){
-  lastRankKr=rank;lastRankAll=rankAll||null;
-  vmView=(poolPref==='all'&&lastRankAll)?'all':'kr';
+function renderResult(rank,rankAll,rankJp,genres){
+  lastRankKr=rank;lastRankAll=rankAll||null;lastRankJp=rankJp||null;
+  vmView=(poolPref==='all'&&lastRankAll)?'all':(poolPref==='jp'&&lastRankJp)?'jp':'kr';
   lastGenres=genres||null;
-  applyRank(vmView==='all'?lastRankAll:rank);
+  applyRank(vmView==='all'?lastRankAll:vmView==='jp'?lastRankJp:rank);
   show('s-result');
   lastRank=null;
   updatePoolBtn();
@@ -740,7 +745,7 @@ let catalogCache=null;
 async function renderSetlist(rank){
   const box=$('r-setlist');
   try{
-    if(!catalogCache)catalogCache=await fetch('catalog.json?v=20260803b15').then(r=>r.json());
+    if(!catalogCache)catalogCache=await fetch('catalog.json?v=20260810jp').then(r=>r.json());
     const bySlug={};catalogCache.artists.forEach(a=>bySlug[a.slug]=a);
     const picks=[];
     rank.slice(0,3).forEach((s,i)=>{
