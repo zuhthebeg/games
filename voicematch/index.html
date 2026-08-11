@@ -357,7 +357,10 @@ const LANGS=['ko','en','ja','es','pt','tw','id'];
 $('langs').innerHTML=LANGS.map(l=>`<button class="lg" data-l="${l}">${l.toUpperCase()}</button>`).join('');
 document.querySelectorAll('.lg').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;localStorage.setItem('vm_lang',LANG);applyLang();});
 
-let poolPref=localStorage.getItem('vm_poolpref')||(LANG==='ja'?'jp':'kr');
+// ?pool=jp|kr|all — 홍보 링크가 특정 풀로 바로 열리게 하는 오버라이드(저장까지 해서 재방문에도 유지)
+const poolQ=new URLSearchParams(location.search).get('pool');
+let poolPref=(['kr','jp','all'].includes(poolQ))?poolQ:(localStorage.getItem('vm_poolpref')||(LANG==='ja'?'jp':'kr'));
+if(['kr','jp','all'].includes(poolQ))localStorage.setItem('vm_poolpref',poolQ);
 // 풀 3종 순환: K-POP → J-POP → 전체. hasJp=false면 J-POP 건너뜀(플래그 유실 등으로 풀이 빌 때)
 const POOL_ORDER=['kr','jp','all'];
 const poolNow=v=>v==='kr'?t('modeNowKr'):v==='jp'?t('modeNowJp'):t('modeNowAll');
@@ -380,7 +383,7 @@ function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('singers.json?v=20260810jp').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
+      fetch('singers.json?v=20260811lg').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
       (async()=>{
         const r=await fetch('ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
@@ -748,7 +751,7 @@ let catalogCache=null;
 async function renderSetlist(rank){
   const box=$('r-setlist');
   try{
-    if(!catalogCache)catalogCache=await fetch('catalog.json?v=20260810jp').then(r=>r.json());
+    if(!catalogCache)catalogCache=await fetch('catalog.json?v=20260811lg').then(r=>r.json());
     const bySlug={};catalogCache.artists.forEach(a=>bySlug[a.slug]=a);
     const picks=[];
     rank.slice(0,3).forEach((s,i)=>{
