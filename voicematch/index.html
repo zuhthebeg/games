@@ -383,7 +383,7 @@ function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('singers.json?v=20260811lg').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
+      fetch('singers.json?v=20260811lg2').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
       (async()=>{
         const r=await fetch('ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
@@ -751,7 +751,7 @@ let catalogCache=null;
 async function renderSetlist(rank){
   const box=$('r-setlist');
   try{
-    if(!catalogCache)catalogCache=await fetch('catalog.json?v=20260811lg').then(r=>r.json());
+    if(!catalogCache)catalogCache=await fetch('catalog.json?v=20260811lg2').then(r=>r.json());
     const bySlug={};catalogCache.artists.forEach(a=>bySlug[a.slug]=a);
     const picks=[];
     rank.slice(0,3).forEach((s,i)=>{
