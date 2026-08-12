@@ -672,3 +672,10 @@ button:active {
     margin-left: 3px;
 }
 
+
+#online-rank { margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(128,128,128,.4); }
+#online-rank h4 { margin: 0 0 6px; font-size: 14px; }
+#online-rank ul { list-style: none; padding: 0; margin: 0; font-size: 13px; }
+#online-rank li { padding: 2px 0; }
+#online-rank li.empty { color: #888; }
+#online-rank .online-me { margin-top: 6px; font-size: 12px; font-weight: 700; color: #e91e63; }

@@ -1,11 +1,11 @@
-const CACHE_NAME = 'tiles-slider-v2';
+const CACHE_NAME = 'tiles-slider-v3';
 const urlsToCache = [
   '/tileslider/',
   '/tileslider/index.html',
   '/tileslider/manifest.json',
   '/tileslider/icons/icon.svg',
-  '/tileslider/style.css?v=1.0.12',
-  '/tileslider/script.js?v=1.0.12'
+  '/tileslider/style.css?v=1.0.13',
+  '/tileslider/script.js?v=1.0.13'
 ];
 
 self.addEventListener('install', event => {

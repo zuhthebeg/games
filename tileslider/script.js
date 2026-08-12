@@ -9,37 +9,17 @@ let isGameStarted = false;
 let isGameWon = false;
 let backgroundImage = null;
 let backgroundImageMeta = null;
-const LINE_RUSH_RANDOM_IMAGES = [
-    '/linerush/img/bg1.jpg',
-    '/linerush/img/bg2.jpg',
-    '/linerush/img/bg3.jpg',
-    '/linerush/img/bg4.jpg',
-    '/linerush/img/bg5.jpg',
-    '/linerush/img/bg6.jpg',
-    '/linerush/img/bg7.jpg',
-    '/linerush/img/bg8.jpg',
-    '/linerush/img/bg9.jpg',
-    '/linerush/img/bg10.jpg',
-    '/linerush/img/bg11.jpg',
-    '/linerush/img/bg12.jpg',
-    '/linerush/img/bg13.jpg',
-    '/linerush/img/bg14.jpg',
-    '/linerush/img/bg15.jpg',
-    '/linerush/img/bg16.jpg',
-    '/linerush/img/bg17.jpg',
-    '/linerush/img/bg18.jpg',
-    '/linerush/img/bg19.jpg',
-    '/linerush/img/bg20.jpg',
-    '/linerush/img/bg21.jpg',
-    '/linerush/img/bg22.jpg',
-    '/linerush/img/bg23.jpg',
-    '/linerush/img/bg24.jpg',
-    '/linerush/img/bg25.jpg',
-    '/linerush/img/bg26.jpg',
-    '/linerush/img/bg27.jpg',
-    '/linerush/img/bg28.jpg',
-    '/linerush/img/bg29.jpg',
-    '/linerush/img/bg30.jpg'
+const RANDOM_IMAGES = [
+    '/tileslider/random-images/sq1.webp',
+    '/tileslider/random-images/sq2.webp',
+    '/tileslider/random-images/sq3.webp',
+    '/tileslider/random-images/sq4.webp',
+    '/tileslider/random-images/sq5.webp',
+    '/tileslider/random-images/sq6.webp',
+    '/tileslider/random-images/sq7.webp',
+    '/tileslider/random-images/sq8.webp',
+    '/tileslider/random-images/sq9.webp',
+    '/tileslider/random-images/sq10.webp'
 ];
 
 
@@ -112,9 +92,9 @@ function applyImageToTiles(level) {
     });
 }
 
-function pickRandomLineRushImage() {
-    const idx = Math.floor(Math.random() * LINE_RUSH_RANDOM_IMAGES.length);
-    return `${LINE_RUSH_RANDOM_IMAGES[idx]}?v=${Date.now()}`;
+function pickRandomImage() {
+    const idx = Math.floor(Math.random() * RANDOM_IMAGES.length);
+    return RANDOM_IMAGES[idx];
 }
 
 let resetClickCount = 0;
@@ -145,6 +125,7 @@ let hintClickHandler = function() {
 // 게임 초기화
 function initGame(level) {
     currentLevel = level;
+    renderOnlineRanking();
     resetGame();
     generateBoard(level);
     addEventListeners();
@@ -481,7 +462,7 @@ function addEventListeners() {
     // 수정된 랜덤 이미지 버튼 이벤트
     document.getElementById('random-image-btn').addEventListener('click', async () => {
         // backgroundImage = `https://picsum.photos/460?random=${Date.now()}`;
-        await setPuzzleImage(pickRandomLineRushImage());
+        await setPuzzleImage(pickRandomImage());
         startNewGame();
         
         // 기존 팝업 제거
@@ -653,6 +634,51 @@ function startNewGame() {
     document.getElementById('hint-count').textContent = '0';
 }
 
+
+/* ---- 온라인 단계별 랭킹 (relay.cocy.io) ---- */
+const TS_RANK_API = 'https://relay.cocy.io/api/rankings/tileslider';
+function tsUserInfo() {
+    let userId = null, nickname = null;
+    const token = localStorage.getItem('cocy_auth_token') || localStorage.getItem('accessToken');
+    if (token) {
+        try {
+            const b = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+            const p = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b), c => c.charCodeAt(0))));
+            userId = p.sub || p.userId || null; nickname = p.nickname || p.name || null;
+        } catch (e) {}
+    }
+    if (typeof SharedWallet !== 'undefined' && SharedWallet.user && !nickname) nickname = SharedWallet.user.nickname || null;
+    if (!userId) {
+        userId = localStorage.getItem('guestId');
+        if (!userId) { userId = 'guest_' + Math.random().toString(36).slice(2, 10); localStorage.setItem('guestId', userId); }
+    }
+    return { userId, nickname };
+}
+async function submitOnlineScore(level, mv, sec) {
+    try {
+        const { userId, nickname } = tsUserInfo();
+        await fetch(TS_RANK_API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, nickname, level, moves: mv, seconds: sec }) });
+    } catch (e) {}
+}
+function tsEscape(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+async function renderOnlineRanking() {
+    const box = document.getElementById('online-rank');
+    if (!box) return;
+    const level = currentLevel;
+    try {
+        const { userId } = tsUserInfo();
+        const r = await fetch(`${TS_RANK_API}?level=${level}&limit=5&userId=${encodeURIComponent(userId)}`);
+        const d = await r.json();
+        if (!d.success || level !== currentLevel) return;
+        const medal = ['🥇', '🥈', '🥉'];
+        const rows = (d.rankings || []).map((e, i) =>
+            `<li>${medal[i] || (i + 1) + '.'} ${tsEscape(e.nickname)} — ${e.moves}회 · ${e.seconds}초</li>`).join('');
+        const mine = d.me ? `<div class="online-me">내 순위: ${d.me.rank}위 (${d.me.moves}회 · ${d.me.seconds}초)</div>` : '';
+        box.innerHTML = `<h4>🌐 ${level}×${level} 글로벌 TOP 5</h4><ul>${rows || '<li class="empty">아직 기록이 없어요 — 1등 찬스!</li>'}</ul>${mine}`;
+    } catch (e) {}
+}
+
 // 점수 저장 함수
 function saveScore() {
     const now = new Date();
@@ -683,6 +709,7 @@ function saveScore() {
         
         localStorage.setItem(storageKey, JSON.stringify(scores.slice(0, 5)));
     }
+    submitOnlineScore(currentLevel, moves, timer).then(renderOnlineRanking);
 }
 
 function showHighScoreAnimation() {
