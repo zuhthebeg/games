@@ -673,9 +673,20 @@ button:active {
 }
 
 
-#online-rank { margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(128,128,128,.4); }
-#online-rank h4 { margin: 0 0 6px; font-size: 14px; }
-#online-rank ul { list-style: none; padding: 0; margin: 0; font-size: 13px; }
-#online-rank li { padding: 2px 0; }
-#online-rank li.empty { color: #888; }
-#online-rank .online-me { margin-top: 6px; font-size: 12px; font-weight: 700; color: #e91e63; }
+.rank-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: min(92vw, 380px); max-height: 78vh; overflow-y: auto; background: #fff; color: #222;
+  border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.35); z-index: 1001; padding: 14px 16px 16px; }
+.rank-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.rank-modal-head h3 { margin: 0; font-size: 16px; }
+.rank-modal-head button { background: none; border: 0; font-size: 18px; cursor: pointer; color: #666; }
+.rank-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+.rank-tabs button { border: 1px solid #ddd; background: #f6f6f6; border-radius: 8px; padding: 4px 9px;
+  font-size: 12px; cursor: pointer; }
+.rank-tabs button.on { background: #e91e63; color: #fff; border-color: #e91e63; font-weight: 700; }
+.rank-body ul { list-style: none; padding: 0; margin: 0; font-size: 14px; }
+.rank-body li { display: flex; align-items: center; gap: 6px; padding: 5px 2px; border-bottom: 1px solid #f0f0f0; }
+.rank-body li .rk { width: 26px; text-align: center; }
+.rank-body li .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-body li .sc { color: #666; font-size: 12px; }
+.rank-body .empty { color: #888; text-align: center; padding: 18px 0; }
+.rank-body .online-me { margin-top: 8px; font-size: 13px; font-weight: 700; color: #e91e63; text-align: center; }

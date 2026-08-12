@@ -7,7 +7,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon.svg">
     <meta name="theme-color" content="#2c3e50">
-    <link rel="stylesheet" href="style.css?v=1.0.13">
+    <link rel="stylesheet" href="style.css?v=1.0.14">
     <script>window.SharedWalletConfig = { autoGuest: true };</script>
     <script src="/lib/shared-wallet.js?v=20260809pf2"></script>
     <script>
@@ -54,6 +54,7 @@
             <button id="random-image-btn" title="랜덤 이미지">🎲</button>
             <button id="image-upload-btn" title="이미지 업로드">🖼️</button>
             <button onclick="startNewGameWithBlank()">♻️</button>
+            <button id="global-rank-btn" title="글로벌 랭킹">🌐</button>
         </div>
         <div id="stats">
             <div>⏳ <span id="timer">0</span></div>
@@ -75,6 +76,16 @@
         </div>
     </div>
 
+    <!-- 글로벌 랭킹 모달 -->
+    <div class="rank-modal" id="rank-modal" style="display:none;">
+        <div class="rank-modal-head">
+            <h3>🌐 글로벌 랭킹</h3>
+            <button id="rank-modal-close">✕</button>
+        </div>
+        <div class="rank-tabs" id="rank-tabs"></div>
+        <div class="rank-body" id="rank-body"></div>
+    </div>
+
     <!-- 기존 승리 팝업 아래에 추가 -->
     <div class="ad-popup" style="display: none;">
         🎲 Loading Random Image... 
@@ -83,10 +94,9 @@
     <div id="score-board">
         <h3 data-i18n="high-scores">🏆</h3>
         <ul id="high-scores"></ul>
-        <div id="online-rank"></div>
     </div>
 
-    <script src="script.js?v=1.0.13"></script>
+    <script src="script.js?v=1.0.14"></script>
         <!-- 푸터 위치 수정 -->
         <footer style="
         position: fixed;

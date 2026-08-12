@@ -125,7 +125,6 @@ let hintClickHandler = function() {
 // 게임 초기화
 function initGame(level) {
     currentLevel = level;
-    renderOnlineRanking();
     resetGame();
     generateBoard(level);
     addEventListeners();
@@ -452,7 +451,9 @@ function resetGame() {
 
 // 이벤트 리스너
 function addEventListeners() {
-    document.getElementById('level-select').addEventListener('change', (e) => {
+    document.getElementById('global-rank-btn').addEventListener('click', openRankModal);
+document.getElementById('rank-modal-close').addEventListener('click', closeRankModal);
+document.getElementById('level-select').addEventListener('change', (e) => {
         currentLevel = parseInt(e.target.value);
         initGame(currentLevel);
         updateHighScores();
@@ -662,21 +663,45 @@ async function submitOnlineScore(level, mv, sec) {
     } catch (e) {}
 }
 function tsEscape(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
-async function renderOnlineRanking() {
-    const box = document.getElementById('online-rank');
-    if (!box) return;
-    const level = currentLevel;
+function tsFlag(c) {
+    if (!c || !/^[A-Z]{2}$/.test(c)) return '';
+    return String.fromCodePoint(...[...c].map(ch => 0x1F1E6 + ch.charCodeAt(0) - 65)) + ' ';
+}
+let rankModalLevel = null;
+async function loadRankLevel(level) {
+    rankModalLevel = level;
+    document.querySelectorAll('#rank-tabs button').forEach(b => b.classList.toggle('on', Number(b.dataset.lv) === level));
+    const body = document.getElementById('rank-body');
+    body.innerHTML = '<div class="empty">불러오는 중…</div>';
     try {
         const { userId } = tsUserInfo();
-        const r = await fetch(`${TS_RANK_API}?level=${level}&limit=5&userId=${encodeURIComponent(userId)}`);
+        const r = await fetch(`${TS_RANK_API}?level=${level}&limit=10&userId=${encodeURIComponent(userId)}`);
         const d = await r.json();
-        if (!d.success || level !== currentLevel) return;
+        if (!d.success || rankModalLevel !== level) return;
         const medal = ['🥇', '🥈', '🥉'];
         const rows = (d.rankings || []).map((e, i) =>
-            `<li>${medal[i] || (i + 1) + '.'} ${tsEscape(e.nickname)} — ${e.moves}회 · ${e.seconds}초</li>`).join('');
+            `<li><span class="rk">${medal[i] || (i + 1)}</span><span class="nm">${tsFlag(e.country)}${tsEscape(e.nickname)}</span><span class="sc">${e.moves}회 · ${e.seconds}초</span></li>`).join('');
         const mine = d.me ? `<div class="online-me">내 순위: ${d.me.rank}위 (${d.me.moves}회 · ${d.me.seconds}초)</div>` : '';
-        box.innerHTML = `<h4>🌐 ${level}×${level} 글로벌 TOP 5</h4><ul>${rows || '<li class="empty">아직 기록이 없어요 — 1등 찬스!</li>'}</ul>${mine}`;
-    } catch (e) {}
+        body.innerHTML = rows ? `<ul>${rows}</ul>${mine}` : '<div class="empty">아직 기록이 없어요 — 1등 찬스!</div>';
+    } catch (e) { body.innerHTML = '<div class="empty">불러오기 실패 — 잠시 후 다시</div>'; }
+}
+function openRankModal() {
+    const tabs = document.getElementById('rank-tabs');
+    if (!tabs.childElementCount) {
+        for (let lv = 3; lv <= 9; lv++) {
+            const b = document.createElement('button');
+            b.textContent = `${lv}×${lv}`; b.dataset.lv = lv;
+            b.onclick = () => loadRankLevel(lv);
+            tabs.appendChild(b);
+        }
+    }
+    document.getElementById('rank-modal').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+    loadRankLevel(currentLevel);
+}
+function closeRankModal() {
+    document.getElementById('rank-modal').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
 }
 
 // 점수 저장 함수
@@ -709,7 +734,9 @@ function saveScore() {
         
         localStorage.setItem(storageKey, JSON.stringify(scores.slice(0, 5)));
     }
-    submitOnlineScore(currentLevel, moves, timer).then(renderOnlineRanking);
+    submitOnlineScore(currentLevel, moves, timer).then(() => {
+        if (document.getElementById('rank-modal').style.display === 'block') loadRankLevel(currentLevel);
+    });
 }
 
 function showHighScoreAnimation() {
@@ -777,7 +804,7 @@ function closeWinPopup() {
     }, 100); // 100ms 지연 추가
 }
 
-document.getElementById('overlay').addEventListener('click', closeWinPopup);
+document.getElementById('overlay').addEventListener('click', () => { closeWinPopup(); closeRankModal(); });
 // 초기화 버튼 추가
 function addResetButton() {
     const title = document.querySelector('#score-board h3');
