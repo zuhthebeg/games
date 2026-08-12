@@ -747,7 +747,7 @@ let catalogCache=null;
 async function renderSetlist(rank){
   const box=$('r-setlist');
   try{
-    if(!catalogCache)catalogCache=await fetch('/voicematch/catalog.json?v=20260811lg2').then(r=>r.json());
+    if(!catalogCache)catalogCache=await fetch('/voicematch/catalog.json?v=20260811uk').then(r=>r.json());
     const bySlug={};catalogCache.artists.forEach(a=>bySlug[a.slug]=a);
     const picks=[];
     rank.slice(0,3).forEach((s,i)=>{
