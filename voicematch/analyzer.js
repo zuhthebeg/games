@@ -9,10 +9,13 @@ const WIN = 3 * 16000;
 // 절대 하한. 에어컨·팬 소리가 이 위로 올라오는 경우가 있어 이것만으로는 부족하다(2026-08-03 제보).
 const RMS_TH = 0.012;
 // 소음 바닥 대비 배수. 목소리는 바닥보다 확실히 튀지만, 정상소음은 계속 같은 크기로 깔린다.
-const NOISE_RATIO = 2.0;
+// 2.0 → 1.5 (2026-08-12): 마이크 입력이 작은 기기에서 쉼 없이 부르면 바닥≈목소리가 돼
+// 게이트가 목소리 위로 올라가는 제보(레딧). 노래는 창 간 1.5배 정도는 자연히 출렁인다.
+const NOISE_RATIO = 1.5;
 // 바닥 자체가 이보다 크면 "계속 노래한 녹음"으로 보고 배수 조건을 걸지 않는다
 // (쉼 없이 부르면 바닥=목소리라 배수 조건에 자기 목소리가 걸린다).
-const LOUD_FLOOR = 0.03;
+// 0.03 → 0.02 (2026-08-12): 같은 제보 대응. 에어컨류 소음 바닥은 실측 0.012~0.02 아래라 유지.
+const LOUD_FLOOR = 0.02;
 
 function rms(a, s, e) { let q = 0; for (let i = s; i < e; i++) q += a[i] * a[i]; return Math.sqrt(q / (e - s)); }
 function percentile(arr, p) { const b = [...arr].sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(b.length * p))]; }
@@ -39,6 +42,17 @@ async function analyze(pcm16k) {
     if (w.r < gate) continue;
     embs.push(await embedWindow(pcm16k.slice(w.i, Math.min(w.i + WIN, pcm16k.length))));
     postMessage({ type: 'progress', done: embs.length });
+  }
+  // 구제 패스(2026-08-12): 적응 게이트가 전 구간을 걸렀어도, 절대 하한을 넘고
+  // 바닥보다 확실히 튀는(×1.3) 창이 있으면 소리 큰 순으로 최대 3개는 살린다.
+  // 에어컨류 정상소음은 모든 창이 바닥과 비슷해서(×1.05 이내) 여기서도 걸러진다.
+  if (!embs.length) {
+    const cands = wins.filter(w => w.r >= RMS_TH && w.r >= floor * 1.3)
+      .sort((a, b) => b.r - a.r).slice(0, 3);
+    for (const w of cands) {
+      embs.push(await embedWindow(pcm16k.slice(w.i, Math.min(w.i + WIN, pcm16k.length))));
+      postMessage({ type: 'progress', done: embs.length });
+    }
   }
   // 목소리라고 볼 만한 구간이 하나도 없으면 결과를 만들지 않는다.
   // 예전엔 여기서 앞부분을 억지로 임베딩해서, 에어컨 소리만 녹음해도 매칭 결과가 나왔다.
