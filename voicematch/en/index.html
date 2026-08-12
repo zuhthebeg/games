@@ -290,6 +290,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <button id="btn-pool" class="pool-toggle"></button>
       </div>
       <div id="r-gaxis" class="hidden"></div>
+      <div id="r-report" class="hidden"></div>
       <div id="r-rankline"></div>
       <div id="r-fantrack" class="hidden"></div>
       <div id="r-setlist" class="hidden"></div>
@@ -311,7 +312,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260812r"></script>
+<script src="/voicematch/i18n.js?v=20260813rp"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -373,7 +374,7 @@ const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅
 function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
 for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
 
-const worker=new Worker('/voicematch/analyzer.js?v=20260812s');
+const worker=new Worker('/voicematch/analyzer.js?v=20260813rp');
 let workerReady=false, modelLoading=null, lastResult=null;
 
 function loadModel(){
@@ -564,7 +565,7 @@ async function analyzePcm(pcm,rate){
     });
     if(done.error==='silent'){try{dataLayer.push({event:'vm_silent'});}catch(e){}$('err-t').innerHTML=t('errSilent');resetErrBtn();show('s-err');return;}
     try{dataLayer.push({event:'vm_result_shown'});}catch(e){}
-    renderResult(done.rank,done.rankAll,done.rankJp,done.genres);
+    renderResult(done.rank,done.rankAll,done.rankJp,done.genres,done.report);
   }catch(e){
     $('err-t').innerHTML=t('errAnalyze')+'<br><span style="font-size:11px;opacity:.7">'+String(e.message||e).slice(0,120)+'</span>';resetErrBtn();show('s-err');
   }
@@ -664,6 +665,29 @@ function renderGaxis(genres){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     box.querySelectorAll('.ga-tr i').forEach(b=>b.style.width=b.dataset.w+'%');}));
 }
+/* ---- 보이스 리포트: 워커가 뽑아온 실측 지표 상위 3개를 장점 카드로 ---- */
+const RP_ICON={range:'🎼',stability:'🎯',brightness:'✨',dynamics:'📈',vibrato:'🌊'};
+const RP_KEY={range:'rp_range',stability:'rp_stability',brightness:'rp_bright',dynamics:'rp_dyn',vibrato:'rp_vib'};
+function renderReport(report){
+  const box=$('r-report');
+  if(!box)return;
+  if(!report||!report.cards||report.cards.length<2){box.classList.add('hidden');box.innerHTML='';return;}
+  // 부정 프레임 금지 — 하위 지표는 아예 안 보여주고, 카드 문구는 hi/mid 두 단계 모두 칭찬 톤이다
+  const cards=report.cards.map(c=>{
+    const base=RP_KEY[c.key];if(!base)return '';
+    const copy=t(base+(c.score>=65?'_hi':'_mid'))||t(base+'_hi')||'';
+    return `<div class="rp-card"><span class="rp-ic">${RP_ICON[c.key]||'🎵'}</span><div class="rp-body">
+      <div class="rp-h"><b>${t(base)}</b><span class="rp-v">${c.val||''}</span></div>
+      <div class="rp-c">${copy}</div>
+      <div class="rp-tr"><i data-w="${c.score}"></i></div></div></div>`;
+  }).join('');
+  const hint=(report.dur&&report.dur<12)?`<div class="rp-hint">${t('rpHint')}</div>`:'';
+  box.innerHTML=`<div class="rp-t">${t('rpT')}</div>${cards}${hint}`;
+  box.classList.remove('hidden');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    box.querySelectorAll('.rp-tr i').forEach(b=>b.style.width=b.dataset.w+'%');}));
+  try{dataLayer.push({event:'vm_report',vm_report_keys:report.cards.map(c=>c.key).join(',')});}catch(e){}
+}
 let lastRankKr=null,lastRankAll=null,lastRankJp=null,vmView='kr';
 function applyRank(rank){
   lastResult=rank;
@@ -732,7 +756,7 @@ $('btn-pool').onclick=()=>{
   applyRank(vmView==='kr'?lastRankKr:vmView==='jp'?lastRankJp:lastRankAll);
   updatePoolBtn();
 };
-function renderResult(rank,rankAll,rankJp,genres){
+function renderResult(rank,rankAll,rankJp,genres,report){
   lastRankKr=rank;lastRankAll=rankAll||null;lastRankJp=rankJp||null;
   vmView=(poolPref==='all'&&lastRankAll)?'all':(poolPref==='jp'&&lastRankJp)?'jp':'kr';
   lastGenres=genres||null;
@@ -741,6 +765,7 @@ function renderResult(rank,rankAll,rankJp,genres){
   lastRank=null;
   updatePoolBtn();
   renderGaxis(genres);
+  renderReport(report);
   renderReqBox();
   rankFlow(rank[0]);
 }

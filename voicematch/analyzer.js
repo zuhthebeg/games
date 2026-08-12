@@ -21,6 +21,232 @@ function rms(a, s, e) { let q = 0; for (let i = s; i < e; i++) q += a[i] * a[i];
 function percentile(arr, p) { const b = [...arr].sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(b.length * p))]; }
 function l2norm(v) { let n = 0; for (const x of v) n += x * x; n = Math.sqrt(n) || 1; return v.map(x => x / n); }
 
+/* ---- 보이스 리포트 START (순수 JS DSP, 임베딩 루프와 완전 독립) ----
+ * 결과 화면의 "장점 카드"용 실측 지표. 음성은 여기서도 저장·전송하지 않는다.
+ * 이 블록은 /tmp 단위 검증 스크립트가 START~END 사이만 잘라 실행하므로 외부 의존을 두지 말 것
+ * (percentile만 위에서 쓰는데, 아래에 rpPct로 따로 둔다).
+ */
+const RP_FRAME = 640;      // 40ms @16k
+const RP_HOP = 160;        // 10ms @16k → 100fps
+const RP_MINLAG = 32;      // 16000/500Hz — 탐색 상한 500Hz
+const RP_MAXLAG = 320;     // 16000/50Hz  — 탐색 하한 50Hz
+const RP_CLARITY = 0.6;    // ACF peak/r0. 이 아래는 무성음·잡음으로 본다
+const RP_MIN_VOICED = 30;  // 유성 0.3초 미만이면 리포트 자체를 만들지 않는다
+const RP_RUN_STAB = 30;    // 안정성 측정용 연속 유성 구간 최소 길이(300ms)
+const RP_RUN_VIB = 60;     // 비브라토 측정용 최소 길이(600ms)
+const RP_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+function rpPct(arr, p) { const b = [...arr].sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(b.length * p))]; }
+function rpMedian(arr) { return rpPct(arr, 0.5); }
+function rpClamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+// 0~100 선형 정규화. lo/hi는 아래 지표별 주석에 근거를 남긴다.
+function rpScale(v, lo, hi) { return Math.round(rpClamp(100 * (v - lo) / (hi - lo), 0, 100)); }
+function rpNote(f) {
+  const m = Math.round(69 + 12 * Math.log2(f / 440));
+  return RP_NOTES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
+}
+
+// 반복 radix-2 FFT (in-place). 스펙트럴 센트로이드용이라 512점이면 충분.
+function rpFft(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) { const tr = re[i]; re[i] = re[j]; re[j] = tr; const ti = im[i]; im[i] = im[j]; im[j] = ti; }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1, ci = 0;
+      for (let k = 0; k < len / 2; k++) {
+        const ur = re[i + k], ui = im[i + k];
+        const vr = re[i + k + len / 2] * cr - im[i + k + len / 2] * ci;
+        const vi = re[i + k + len / 2] * ci + im[i + k + len / 2] * cr;
+        re[i + k] = ur + vr; im[i + k] = ui + vi;
+        re[i + k + len / 2] = ur - vr; im[i + k + len / 2] = ui - vi;
+        const ncr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = ncr;
+      }
+    }
+  }
+}
+
+// 프레임 하나의 F0(Hz)와 명료도. 자기상관 + 포물선 보간(정수 lag만 쓰면 고음에서 오차가 크다).
+function rpPitch(buf) {
+  let r0 = 0;
+  for (let i = 0; i < buf.length; i++) r0 += buf[i] * buf[i];
+  if (r0 <= 0) return null;
+  let best = -1, bestLag = -1;
+  const prev = new Float64Array(RP_MAXLAG + 2);
+  for (let lag = RP_MINLAG; lag <= RP_MAXLAG && lag < buf.length; lag++) {
+    let s = 0;
+    for (let i = 0; i + lag < buf.length; i++) s += buf[i] * buf[i + lag];
+    prev[lag] = s;
+    if (s > best) { best = s; bestLag = lag; }
+  }
+  if (bestLag < 0) return null;
+  const clarity = best / r0;
+  let lag = bestLag;
+  if (bestLag > RP_MINLAG && bestLag < RP_MAXLAG) {
+    const a = prev[bestLag - 1], b = prev[bestLag], c = prev[bestLag + 1];
+    const den = a - 2 * b + c;
+    if (den !== 0) lag = bestLag + rpClamp(0.5 * (a - c) / den, -0.5, 0.5);
+  }
+  return { f0: 16000 / lag, clarity };
+}
+
+// 지속 구간(연속 유성 프레임) 목록. [start, end) 인덱스 쌍.
+function rpRuns(voiced, minLen) {
+  const runs = []; let s = -1;
+  for (let i = 0; i <= voiced.length; i++) {
+    const v = i < voiced.length && voiced[i];
+    if (v && s < 0) s = i;
+    else if (!v && s >= 0) { if (i - s >= minLen) runs.push([s, i]); s = -1; }
+  }
+  return runs;
+}
+
+function extractReport(pcm16k) {
+  const n = pcm16k.length;
+  if (n < RP_FRAME * 2) return null;
+  const nf = Math.floor((n - RP_FRAME) / RP_HOP) + 1;
+  const rmsArr = new Float64Array(nf);
+  for (let k = 0; k < nf; k++) {
+    const s = k * RP_HOP; let q = 0;
+    for (let i = s; i < s + RP_FRAME; i++) q += pcm16k[i] * pcm16k[i];
+    rmsArr[k] = Math.sqrt(q / RP_FRAME);
+  }
+  // 유성 판정 기준선. 기본은 게이트와 같은 절대 하한(RMS_TH)이지만, 마이크가 작아 전체가
+  // 조용한 녹음에서 리포트만 통째로 사라지는 걸 막으려고 상위 레벨의 30%까지는 내려준다.
+  // (무음 게이트 자체는 건드리지 않는다 — 여기서 읽기만 함)
+  const hot = rpPct(Array.from(rmsArr), 0.9);
+  const vth = Math.min(RMS_TH, Math.max(hot * 0.3, 1e-4));
+
+  const voiced = new Array(nf).fill(false);
+  const f0 = new Float64Array(nf);
+  const win = new Float64Array(RP_FRAME);
+  for (let k = 0; k < nf; k++) {
+    if (rmsArr[k] < vth) continue;
+    const s = k * RP_HOP;
+    let mean = 0;
+    for (let i = 0; i < RP_FRAME; i++) mean += pcm16k[s + i];
+    mean /= RP_FRAME;
+    for (let i = 0; i < RP_FRAME; i++) win[i] = pcm16k[s + i] - mean;  // DC 제거
+    const p = rpPitch(win);
+    if (!p || p.clarity < RP_CLARITY || p.f0 < 50 || p.f0 > 500) continue;
+    voiced[k] = true; f0[k] = p.f0;
+  }
+  const vIdx = [];
+  for (let k = 0; k < nf; k++) if (voiced[k]) vIdx.push(k);
+  if (vIdx.length < RP_MIN_VOICED) return null;
+
+  const vf0 = vIdx.map(k => f0[k]);
+  const vrms = vIdx.map(k => rmsArr[k]);
+  const metrics = {};
+
+  // 1) 음역대 — F0 5~95퍼센타일의 세미톤 스팬. 아마추어 한 소절 기준 5세미톤=0, 24세미톤(2옥타브)=100.
+  const lo = rpPct(vf0, 0.05), hi = rpPct(vf0, 0.95);
+  const span = 12 * Math.log2(hi / lo);
+  metrics.range = { score: rpScale(span, 5, 24), val: rpNote(lo) + '–' + rpNote(hi), semitones: Math.round(span * 10) / 10 };
+
+  // 2) 피치 안정성 — cents 중앙절대편차(MAD).
+  //    구간 전체로 재면 "멜로디 폭"을 재게 된다(음이 바뀌는 게 불안정으로 잡힘). 실제로 사인 스윕이
+  //    MAD 600cents로 나왔다. 그래서 지속 구간 안에서 300ms 창을 100ms씩 밀며 창별 MAD를 구하고
+  //    그 중앙값을 쓴다 — "한 음을 잡고 있을 때 얼마나 흔들리나"에 가깝다.
+  //    MAD 60cents(반음 반쯤 흔들림)=0, 12cents(사람이 "정확하다"고 느끼는 수준)=100.
+  const stabRuns = rpRuns(voiced, RP_RUN_STAB);
+  const mads = [];
+  for (const [a, b] of stabRuns) {
+    for (let w = a; w + RP_RUN_STAB <= b; w += 10) {
+      const seg = []; for (let k = w; k < w + RP_RUN_STAB; k++) seg.push(f0[k]);
+      const med = rpMedian(seg);
+      mads.push(rpMedian(seg.map(f => Math.abs(1200 * Math.log2(f / med)))));
+    }
+  }
+  if (mads.length) {
+    const mad = rpMedian(mads);
+    metrics.stability = { score: rpScale(60 - mad, 0, 48), val: Math.round(mad) + ' cents' };
+  }
+
+  // 3) 음색 밝기 — 유성 프레임 스펙트럴 센트로이드 평균(FFT 512, Hann).
+  //    400Hz(어둡고 두꺼움)=0, 2200Hz(밝고 트인 톤)=100. 성인 가창 실측 대역.
+  {
+    const N = 512, re = new Float64Array(N), im = new Float64Array(N);
+    const hann = new Float64Array(N);
+    for (let i = 0; i < N; i++) hann[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
+    let csum = 0, ccnt = 0;
+    for (const k of vIdx) {
+      const s = k * RP_HOP;
+      for (let i = 0; i < N; i++) { re[i] = pcm16k[s + i] * hann[i]; im[i] = 0; }
+      rpFft(re, im);
+      let num = 0, den = 0;
+      for (let b = 1; b < N / 2; b++) {
+        const m = Math.sqrt(re[b] * re[b] + im[b] * im[b]);
+        num += m * (b * 16000 / N); den += m;
+      }
+      if (den > 0) { csum += num / den; ccnt++; }
+    }
+    if (ccnt) {
+      const cen = csum / ccnt;
+      metrics.brightness = { score: rpScale(cen, 400, 2200), val: Math.round(cen) + ' Hz' };
+    }
+  }
+
+  // 4) 다이내믹스 — 유성 프레임 RMS의 10↔90퍼센타일 차이(dB). 4dB(평평)=0, 18dB(강약 뚜렷)=100.
+  {
+    const p10 = Math.max(rpPct(vrms, 0.1), 1e-6), p90 = Math.max(rpPct(vrms, 0.9), 1e-6);
+    const db = 20 * Math.log10(p90 / p10);
+    metrics.dynamics = { score: rpScale(db, 4, 18), val: Math.round(db) + ' dB' };
+  }
+
+  // 5) 비브라토 — 600ms 이상 구간에서 detrend한 F0에 4~8Hz 주기 변조가 있으면 감지.
+  //    감지 안 되면 후보에서 빼기만 한다(부정 표현 금지).
+  //    희소성 있는 매력이라 감지되면 점수를 높게 줘서 카드에 먼저 편입한다.
+  {
+    const vibRuns = rpRuns(voiced, RP_RUN_VIB);
+    let bestVib = null;
+    for (const [a, b] of vibRuns) {
+      const seg = []; for (let k = a; k < b; k++) seg.push(f0[k]);
+      const med = rpMedian(seg);
+      const cents = seg.map(f => 1200 * Math.log2(f / med));
+      // detrend: 210ms 이동평균 제거 (프레이즈 상승/하강을 비브라토로 오인하지 않게)
+      const W = 21, half = 10, d = new Array(cents.length);
+      for (let i = 0; i < cents.length; i++) {
+        let s2 = 0, c2 = 0;
+        for (let j = Math.max(0, i - half); j <= Math.min(cents.length - 1, i + half); j++) { s2 += cents[j]; c2++; }
+        d[i] = cents[i] - s2 / c2;
+      }
+      let e0 = 0; for (const x of d) e0 += x * x;
+      const amp = Math.sqrt(e0 / d.length);
+      if (e0 <= 0 || amp < 15 || amp > 200) continue;  // 15cents 미만은 잡음, 200cents 초과는 멜로디 도약
+      let best = 0, bestLag = 0;
+      for (let lag = 12; lag <= 25; lag++) {          // 100fps 기준 8Hz~4Hz
+        if (lag >= d.length) break;
+        let s3 = 0; for (let i = 0; i + lag < d.length; i++) s3 += d[i] * d[i + lag];
+        const c3 = s3 / e0;
+        if (c3 > best) { best = c3; bestLag = lag; }
+      }
+      if (best >= 0.35 && bestLag) {
+        const cand = { rate: 100 / bestLag, amp, corr: best };
+        if (!bestVib || cand.corr > bestVib.corr) bestVib = cand;
+      }
+    }
+    if (bestVib) {
+      metrics.vibrato = {
+        score: Math.round(rpClamp(78 + (bestVib.amp - 15) / 4, 78, 100)),
+        val: (Math.round(bestVib.rate * 10) / 10) + ' Hz',
+      };
+    }
+  }
+
+  // 상위 3개만 카드로. 12점 미만은 "장점"이라 부르기 민망하니 후보에서 뺀다.
+  const cards = Object.keys(metrics).map(k => ({ key: k, ...metrics[k] }))
+    .filter(c => c.score >= 12).sort((a, b) => b.score - a.score).slice(0, 3);
+  if (cards.length < 2) return null;
+  return { cards, voiced: vIdx.length, dur: Math.round(n / 16000) };
+}
+/* ---- 보이스 리포트 END ---- */
+
 async function embedWindow(pcm) {
   const t = new ort.Tensor('float32', pcm, [1, pcm.length]);
   const out = await session.run({ wav: t });
@@ -120,7 +346,11 @@ async function analyze(pcm16k) {
     gs.sort((a, b) => b.raw - a.raw);
     genres = gs.map(({ raw, ...g }) => g);
   }
-  return { rank: rankKr, rankAll, rankJp, genres };
+  // 보이스 리포트는 부가 정보다. 여기서 터져도 매칭 결과는 그대로 나가야 한다.
+  let report = null;
+  try { report = extractReport(pcm16k); } catch (e) { report = null; }
+
+  return { rank: rankKr, rankAll, rankJp, genres, report };
 }
 
 onmessage = async (ev) => {
