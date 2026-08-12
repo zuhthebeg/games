@@ -654,6 +654,7 @@ async function rankFlow(top){
   }
 }
 let lastRank=null;let lastGenres=null;
+function vmFlag(c){return(!c||!/^[A-Z]{2}$/.test(c))?'':String.fromCodePoint(...[...c].map(ch=>0x1F1E6+ch.charCodeAt(0)-65))+' '}
 async function showBoard(slug){
   const u=authUser();
   const s=(window._singersCache||[]).find(x=>x.slug===slug)||{slug,name:slug};
@@ -665,7 +666,7 @@ async function showBoard(slug){
     if(!rows.length)html+=`<div style="text-align:center;color:var(--mut);font-size:13px;padding:14px 0">${t('lb_empty')}</div>`;
     rows.forEach((row,i)=>{
       const me=u&&row.user_id===u.userId;
-      html+=`<div class="lb-row${me?' me':''}"><span class="rk-no${i<3?' top':''}">${i+1}</span><span class="nick">${row.nickname}${me?' ('+t('lb_me')+')':''}</span><span class="pct">${row.pct}%</span></div>`;
+      html+=`<div class="lb-row${me?' me':''}"><span class="rk-no${i<3?' top':''}">${i+1}</span><span class="nick">${vmFlag(row.country)}${row.nickname}${me?' ('+t('lb_me')+')':''}</span><span class="pct">${row.pct}%</span></div>`;
     });
     if(r.myRank&&r.myRank>rows.length)html+=`<div class="lb-row me"><span class="rk-no">${r.myRank}</span><span class="nick">${t('lb_me')}</span><span class="pct">${r.myPct}%</span></div>`;
   }catch(e){html+=`<div style="text-align:center;color:var(--mut);font-size:12px">…</div>`;}

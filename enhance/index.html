@@ -5302,6 +5302,10 @@
             renderRankings(tab, rankings);
         }
         
+        function enhFlag(c) {
+            if (!c || !/^[A-Z]{2}$/.test(c)) return '';
+            return String.fromCodePoint(...[...c].map(ch => 0x1F1E6 + ch.charCodeAt(0) - 65)) + ' ';
+        }
         function renderRankings(tab, rankings) {
             const contentEl = document.getElementById('rankingContent');
             if (!contentEl) return;
@@ -5393,7 +5397,7 @@
                         <div class="ranking-rank ${rankClass}">${idx < 3 ? ['🥇','🥈','🥉'][idx] : (idx + 1)}</div>
                         ${weaponThumb}
                         <div class="ranking-info">
-                            <div class="ranking-name">${rank.nickname || '익명'}</div>
+                            <div class="ranking-name">${enhFlag(rank.country)}${rank.nickname || '익명'}</div>
                             <div class="ranking-detail">${detailHtml}</div>
                         </div>
                         <div class="ranking-value ${tab === 'weapons' ? 'weapon' : ''}">${valueHtml}</div>

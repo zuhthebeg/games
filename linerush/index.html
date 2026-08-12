@@ -739,10 +739,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           box.innerHTML = t('noRanking');
           return;
         }
+        const lrFlag = (c) => (!c || !/^[A-Z]{2}$/.test(c)) ? '' : String.fromCodePoint(...[...c].map((ch) => 0x1F1E6 + ch.charCodeAt(0) - 65)) + ' ';
         box.innerHTML = rows.slice(0, 9).map((r, i) => {
           const medal = ['🥇', '🥈', '🥉'][i] || `${i + 1}.`;
           const nick = (r.nickname || t('anonymous')).slice(0, 10);
-          return `<div class="rank-row"><span>${medal} ${nick}</span><span style="color:#79d5ff">STAGE ${r.best_stage}</span></div>`;
+          return `<div class="rank-row"><span>${medal} ${lrFlag(r.country)}${nick}</span><span style="color:#79d5ff">STAGE ${r.best_stage}</span></div>`;
         }).join('');
       })
       .catch(() => {
