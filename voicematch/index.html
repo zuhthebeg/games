@@ -138,6 +138,12 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 #r-gaxis .ga-p{font-size:11px;font-weight:800;color:var(--mut)}
 #r-setlist{margin-top:14px;border-top:1px dashed oklch(0.5 0.08 300/.6);padding-top:12px}
 #r-setlist .sl-t{font-size:12px;font-weight:800;color:var(--lime);letter-spacing:.5px;margin-bottom:8px;text-align:center}
+#r-req{margin-top:12px;border-top:1px dashed oklch(0.5 0.08 300/.6);padding-top:10px}
+#r-req .req-row{display:flex;gap:6px;margin-top:4px}
+#r-req input{flex:1;min-width:0;background:oklch(0.22 0.03 300);border:1px solid oklch(0.45 0.06 300);border-radius:8px;color:inherit;padding:8px 10px;font-size:13px}
+#r-req button{background:var(--lime);color:#111;font-weight:800;border:0;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
+#r-req button:disabled{opacity:.5}
+#req-m{font-size:12px;margin-top:6px;min-height:14px;color:var(--lime);text-align:center}
 .sl-row{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:8px;padding:8px 10px;margin-top:5px;
   text-decoration:none;color:var(--txt)}
 .sl-row .sl-song{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
@@ -297,6 +303,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div id="r-rankline"></div>
       <div id="r-fantrack" class="hidden"></div>
       <div id="r-setlist" class="hidden"></div>
+      <div id="r-req" class="hidden"></div>
     </div>
     <div class="remote">
       <button class="key start" id="btn-share"></button>
@@ -314,7 +321,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260811pt"></script>
+<script src="i18n.js?v=20260812r"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -575,6 +582,7 @@ async function analyzePcm(pcm,rate){
 
 /* ---- 랭킹 ---- */
 const RANK_API='https://relay.cocy.io/api/rankings/voicematch';
+const REQ_API='https://relay.cocy.io/api/voicematch/request';
 function rewardForRank(rank){return Math.max(0,(11-rank))*100000;}
 function claimTop10Reward(slug,rank){
   const key='vm_claimed_'+slug;
@@ -743,6 +751,7 @@ function renderResult(rank,rankAll,rankJp,genres){
   lastRank=null;
   updatePoolBtn();
   renderGaxis(genres);
+  renderReqBox();
   rankFlow(rank[0]);
 }
 
@@ -766,6 +775,22 @@ async function renderSetlist(rank){
       `<span class="sl-play">▶</span><span class="sl-song">${p.title}</span><span class="sl-artist">${p.artist}</span></a>`).join('');
     box.classList.remove('hidden');
   }catch(e){box.classList.add('hidden');}
+}
+/* ---- 가수 추가 요청 (공개 큐 → 파이프라인 cron이 드레인) ---- */
+function renderReqBox(){
+  const rq=$('r-req');
+  rq.innerHTML=`<div class="sl-t">${t('reqT')}</div><div class="req-row"><input id="req-in" maxlength="40" placeholder="${t('reqPh')}"><button id="req-b">${t('reqBtn')}</button></div><div id="req-m"></div>`;
+  rq.classList.remove('hidden');
+  $('req-b').onclick=async()=>{
+    const v=$('req-in').value.trim();if(!v)return;
+    $('req-b').disabled=true;
+    try{
+      const r=await fetch(REQ_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({artist:v})});
+      $('req-m').textContent=r.ok?t('reqOk'):r.status===409?t('reqDup'):r.status===429?t('reqMany'):t('reqErr');
+      if(r.ok){$('req-in').value='';try{dataLayer.push({event:'vm_artist_request'});}catch(e){}}
+    }catch(e){$('req-m').textContent=t('reqErr');}
+    $('req-b').disabled=false;
+  };
 }
 $('btn-start').onclick=()=>startRec();  // 이벤트 객체가 primed 인자로 들어가면 안내 시트를 건너뛴다
 $('btn-stop').onclick=stopRec;

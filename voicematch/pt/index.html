@@ -297,6 +297,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div id="r-rankline"></div>
       <div id="r-fantrack" class="hidden"></div>
       <div id="r-setlist" class="hidden"></div>
+      <div id="r-req" class="hidden"></div>
     </div>
     <div class="remote">
       <button class="key start" id="btn-share"></button>
@@ -314,7 +315,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260811pt"></script>
+<script src="/voicematch/i18n.js?v=20260812r"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -575,6 +576,7 @@ async function analyzePcm(pcm,rate){
 
 /* ---- 랭킹 ---- */
 const RANK_API='https://relay.cocy.io/api/rankings/voicematch';
+const REQ_API='https://relay.cocy.io/api/voicematch/request';
 function rewardForRank(rank){return Math.max(0,(11-rank))*100000;}
 function claimTop10Reward(slug,rank){
   const key='vm_claimed_'+slug;
@@ -743,6 +745,7 @@ function renderResult(rank,rankAll,rankJp,genres){
   lastRank=null;
   updatePoolBtn();
   renderGaxis(genres);
+  renderReqBox();
   rankFlow(rank[0]);
 }
 
@@ -766,6 +769,22 @@ async function renderSetlist(rank){
       `<span class="sl-play">▶</span><span class="sl-song">${p.title}</span><span class="sl-artist">${p.artist}</span></a>`).join('');
     box.classList.remove('hidden');
   }catch(e){box.classList.add('hidden');}
+}
+/* ---- 가수 추가 요청 (공개 큐 → 파이프라인 cron이 드레인) ---- */
+function renderReqBox(){
+  const rq=$('r-req');
+  rq.innerHTML=`<div class="sl-t">${t('reqT')}</div><div class="req-row"><input id="req-in" maxlength="40" placeholder="${t('reqPh')}"><button id="req-b">${t('reqBtn')}</button></div><div id="req-m"></div>`;
+  rq.classList.remove('hidden');
+  $('req-b').onclick=async()=>{
+    const v=$('req-in').value.trim();if(!v)return;
+    $('req-b').disabled=true;
+    try{
+      const r=await fetch(REQ_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({artist:v})});
+      $('req-m').textContent=r.ok?t('reqOk'):r.status===409?t('reqDup'):r.status===429?t('reqMany'):t('reqErr');
+      if(r.ok){$('req-in').value='';try{dataLayer.push({event:'vm_artist_request'});}catch(e){}}
+    }catch(e){$('req-m').textContent=t('reqErr');}
+    $('req-b').disabled=false;
+  };
 }
 $('btn-start').onclick=()=>startRec();  // 이벤트 객체가 primed 인자로 들어가면 안내 시트를 건너뛴다
 $('btn-stop').onclick=stopRec;
