@@ -202,6 +202,16 @@ canvas{display:none}
   background:linear-gradient(135deg,#2a1f3d,#1e1b30);border:1px solid #e8c66a;text-decoration:none;color:#f5eefb}
 .ft-cta .ft-t{display:block;font-size:13.5px;font-weight:800;color:#e8c66a}
 .ft-cta .ft-s{display:block;font-size:11px;color:#8f7fa3;margin-top:3px}
+/* 요청한 가수가 추가됐을 때 뜨는 알림 — 요청자 본인에게만 1회 */
+.req-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom));
+  z-index:60;max-width:min(92vw,420px);display:flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,#2a1f3d,#1e1b30);border:1px solid #e8c66a;border-radius:12px;
+  padding:11px 13px;box-shadow:0 8px 24px rgba(0,0,0,.45);animation:reqToastIn .28s ease-out}
+@keyframes reqToastIn{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}
+.req-toast .rt-t{flex:1;font-size:12.5px;line-height:1.5;color:#f5eefb}
+.req-toast .rt-b{flex:none;background:#e8c66a;color:#1e1b30;border:0;border-radius:9px;
+  font-size:11.5px;font-weight:800;padding:8px 11px;cursor:pointer;font-family:inherit}
+.req-toast .rt-x{flex:none;background:none;border:0;color:#8f7fa3;font-size:16px;cursor:pointer;padding:0 2px;line-height:1}
 </style>
 </head>
 <body>
@@ -334,7 +344,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260813rp"></script>
+<script src="/voicematch/i18n.js?v=20260814rq"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -654,6 +664,7 @@ async function rankFlow(top){
   }
 }
 let lastRank=null;let lastGenres=null;
+function vmFlag(c){return(!c||!/^[A-Z]{2}$/.test(c))?'':String.fromCodePoint(...[...c].map(ch=>0x1F1E6+ch.charCodeAt(0)-65))+' '}
 async function showBoard(slug){
   const u=authUser();
   const s=(window._singersCache||[]).find(x=>x.slug===slug)||{slug,name:slug};
@@ -665,7 +676,7 @@ async function showBoard(slug){
     if(!rows.length)html+=`<div style="text-align:center;color:var(--mut);font-size:13px;padding:14px 0">${t('lb_empty')}</div>`;
     rows.forEach((row,i)=>{
       const me=u&&row.user_id===u.userId;
-      html+=`<div class="lb-row${me?' me':''}"><span class="rk-no${i<3?' top':''}">${i+1}</span><span class="nick">${row.nickname}${me?' ('+t('lb_me')+')':''}</span><span class="pct">${row.pct}%</span></div>`;
+      html+=`<div class="lb-row${me?' me':''}"><span class="rk-no${i<3?' top':''}">${i+1}</span><span class="nick">${vmFlag(row.country)}${row.nickname}${me?' ('+t('lb_me')+')':''}</span><span class="pct">${row.pct}%</span></div>`;
     });
     if(r.myRank&&r.myRank>rows.length)html+=`<div class="lb-row me"><span class="rk-no">${r.myRank}</span><span class="nick">${t('lb_me')}</span><span class="pct">${r.myPct}%</span></div>`;
   }catch(e){html+=`<div style="text-align:center;color:var(--mut);font-size:12px">…</div>`;}
@@ -813,6 +824,57 @@ async function renderSetlist(rank){
     box.classList.remove('hidden');
   }catch(e){box.classList.add('hidden');}
 }
+/* ---- 내 요청 추적: 처리되면 재방문 때 알려준다 (요청자 본인에게만, 1회) ---- */
+const REQ_TRACK_KEY='vm_my_reqs';
+const REQ_STATUS_API='https://relay.cocy.io/api/voicematch/request-status';
+function loadReqs(){try{const a=JSON.parse(localStorage.getItem(REQ_TRACK_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+function saveReqs(a){try{localStorage.setItem(REQ_TRACK_KEY,JSON.stringify(a.slice(-20)));}catch(e){}}
+function trackReq(id,artist){
+  const a=loadReqs();
+  if(a.some(x=>x.id===id))return;
+  a.push({id:id,artist:artist,ts:Date.now()});
+  saveReqs(a);
+}
+function showReqToast(name){
+  if(document.querySelector('.req-toast'))return;
+  const el=document.createElement('div');el.className='req-toast';
+  const txt=document.createElement('div');txt.className='rt-t';txt.textContent=t('reqDone')(name);
+  const cta=document.createElement('button');cta.className='rt-b';cta.textContent=t('reqDoneCta');
+  const x=document.createElement('button');x.className='rt-x';x.textContent='×';x.setAttribute('aria-label','close');
+  cta.onclick=()=>{el.remove();try{dataLayer.push({event:'vm_request_done_cta'});}catch(e){}show('s-intro');};
+  x.onclick=()=>el.remove();
+  el.appendChild(txt);el.appendChild(cta);el.appendChild(x);
+  document.body.appendChild(el);
+  setTimeout(()=>{if(el.isConnected)el.remove();},12000);
+}
+async function checkMyReqs(){
+  const mine=loadReqs();
+  if(!mine.length)return;
+  // 30일 지난 건 어차피 안 알려도 되니 정리한다
+  const fresh=mine.filter(x=>Date.now()-(x.ts||0)<30*24*3600*1000);
+  if(fresh.length!==mine.length)saveReqs(fresh);
+  if(!fresh.length)return;
+  try{
+    const r=await fetch(REQ_STATUS_API+'?ids='+fresh.map(x=>x.id).join(','));
+    if(!r.ok)return;
+    const j=await r.json();
+    const rows=(j&&j.requests)||[];
+    const doneIds=[];let notify=null;
+    rows.forEach(row=>{
+      if(row.status==='done'){doneIds.push(row.id);if(!notify)notify=fresh.find(x=>x.id===row.id);}
+      else if(row.status==='failed'||row.status==='canceled')doneIds.push(row.id); // 조용히 정리
+    });
+    if(doneIds.length)saveReqs(fresh.filter(x=>doneIds.indexOf(x.id)<0));  // 한 번 알렸으면 다시 안 뜬다
+    if(notify)showReqToast(notify.artist);
+  }catch(e){}
+}
+
+// 첫 화면 로딩(모델 fetch 등)과 경합하지 않게 조금 늦춰서 확인한다
+(function(){
+  const kick=()=>setTimeout(checkMyReqs,1500);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',kick);else kick();
+})();
+
 /* ---- 가수 추가 요청 (공개 큐 → 파이프라인 cron이 드레인) ---- */
 function renderReqBox(){
   const rq=$('r-req');
@@ -824,7 +886,10 @@ function renderReqBox(){
     try{
       const r=await fetch(REQ_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({artist:v})});
       $('req-m').textContent=r.ok?t('reqOk'):r.status===409?t('reqDup'):r.status===429?t('reqMany'):t('reqErr');
-      if(r.ok){$('req-in').value='';try{dataLayer.push({event:'vm_artist_request'});}catch(e){}}
+      if(r.ok){
+        try{const j=await r.json();if(j&&j.id)trackReq(j.id,v);}catch(e){}  // 처리되면 재방문 때 알려주려고 id를 남긴다
+        $('req-in').value='';try{dataLayer.push({event:'vm_artist_request'});}catch(e){}
+      }
     }catch(e){$('req-m').textContent=t('reqErr');}
     $('req-b').disabled=false;
   };
