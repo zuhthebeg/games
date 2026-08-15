@@ -433,7 +433,7 @@ function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('singers.json?v=20260815intl').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
+      fetch('singers.json?v=20260816x10').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
       (async()=>{
         const r=await fetch('ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
@@ -825,7 +825,7 @@ function renderResult(rank,rankAll,rankJp,genres,report){
 
 /* ---- 2단계: 선곡 추천 (top3 가수의 검증곡 → 노래방 셋리스트) ---- */
 let catalogCache=null;
-const CATALOG_URL='catalog.json?v=20260815al2';
+const CATALOG_URL='catalog.json?v=20260816x10';
 async function renderSetlist(rank){
   const box=$('r-setlist');
   try{
