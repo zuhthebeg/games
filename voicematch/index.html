@@ -344,7 +344,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260814rq"></script>
+<script src="i18n.js?v=20260815dup"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -805,10 +805,11 @@ function renderResult(rank,rankAll,rankJp,genres,report){
 
 /* ---- 2단계: 선곡 추천 (top3 가수의 검증곡 → 노래방 셋리스트) ---- */
 let catalogCache=null;
+const CATALOG_URL='catalog.json?v=20260815dup';
 async function renderSetlist(rank){
   const box=$('r-setlist');
   try{
-    if(!catalogCache)catalogCache=await fetch('catalog.json?v=20260811uk').then(r=>r.json());
+    if(!catalogCache)catalogCache=await fetch(CATALOG_URL).then(r=>r.json());
     const bySlug={};catalogCache.artists.forEach(a=>bySlug[a.slug]=a);
     const picks=[];
     rank.slice(0,3).forEach((s,i)=>{
@@ -875,11 +876,50 @@ async function checkMyReqs(){
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',kick);else kick();
 })();
 
+/* ---- 이미 수록된 가수인지 대조 ----
+   요청의 63%가 이미 있는 가수였다(8/13~15 실측). 결과 상위권에 안 떴을 뿐인데
+   "없구나" 하고 요청을 쓴다. 보내기 전에 잡아준다. */
+let nameIndex=null;
+// Rosé→rose 처럼 발음기호를 벗기고, 공백·점·괄호를 없앤 뒤 비교한다
+function normName(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[\s._,'’\-()（）]/g,'');}
+async function buildNameIndex(){
+  if(nameIndex)return nameIndex;
+  if(!catalogCache)catalogCache=await fetch(CATALOG_URL).then(r=>r.json());
+  nameIndex={};
+  catalogCache.artists.forEach(a=>{
+    // 슬러그(영문)·한글명·EN/TW 표기까지 다 넣는다. 요청은 이 넷 중 아무거나로 들어온다
+    [a.slug,a.name,typeof EN_NAMES!=='undefined'&&EN_NAMES[a.slug],typeof TW_NAMES!=='undefined'&&TW_NAMES[a.slug]]
+      .forEach(k=>{const n=normName(k);if(n)nameIndex[n]=a;});
+  });
+  return nameIndex;
+}
+async function findExisting(q){
+  const n=normName(q);
+  if(n.length<2)return null;
+  try{return (await buildNameIndex())[n]||null;}catch(e){return null;}
+}
+
 /* ---- 가수 추가 요청 (공개 큐 → 파이프라인 cron이 드레인) ---- */
 function renderReqBox(){
   const rq=$('r-req');
   rq.innerHTML=`<div class="sl-t">${t('reqT')}</div><div class="req-row"><input id="req-in" maxlength="40" placeholder="${t('reqPh')}"><button id="req-b">${t('reqBtn')}</button></div><div id="req-m"></div>`;
   rq.classList.remove('hidden');
+  let checkSeq=0;
+  $('req-in').oninput=()=>{
+    const seq=++checkSeq,v=$('req-in').value.trim();
+    $('req-b').disabled=false;
+    if(!v){$('req-m').textContent='';return;}
+    setTimeout(async()=>{
+      if(seq!==checkSeq)return;                       // 타이핑 중이면 마지막 입력만 본다
+      const hit=await findExisting(v);
+      if(seq!==checkSeq)return;
+      if(hit){
+        $('req-m').textContent=t('reqHave')(singerName(hit,LANG));
+        $('req-b').disabled=true;                     // 입력을 바꾸면 다시 열린다
+        try{dataLayer.push({event:'vm_request_already_exists'});}catch(e){}
+      }else{$('req-m').textContent='';}
+    },250);
+  };
   $('req-b').onclick=async()=>{
     const v=$('req-in').value.trim();if(!v)return;
     $('req-b').disabled=true;
