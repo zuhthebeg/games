@@ -825,7 +825,7 @@ function renderResult(rank,rankAll,rankJp,genres,report){
 
 /* ---- 2단계: 선곡 추천 (top3 가수의 검증곡 → 노래방 셋리스트) ---- */
 let catalogCache=null;
-const CATALOG_URL='catalog.json?v=20260815dup';
+const CATALOG_URL='/voicematch/catalog.json?v=20260815dup';
 async function renderSetlist(rank){
   const box=$('r-setlist');
   try{

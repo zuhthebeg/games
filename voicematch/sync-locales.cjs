@@ -50,6 +50,8 @@ function absolutize(body) {
     // ('foo.json  /  ="foo.js  형태의 상대참조만 바꾼다(이미 / 나 http 로 시작하면 건드리지 않음)
     out = out.split("('" + a).join("('/voicematch/" + a);
     out = out.split('="' + a).join('="/voicematch/' + a);
+    // const X='foo.json?v=..' 처럼 변수로 빼둔 경우도 잡는다(안 잡으면 로케일에서 404)
+    out = out.split("='" + a).join("='/voicematch/" + a);
   }
   return out;
 }
