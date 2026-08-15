@@ -173,6 +173,24 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
 .lb-row .nick{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lb-row .pct{font-weight:800;color:var(--lime)}
 #lb-close{width:100%;margin-top:12px;border:none;border-radius:9px;padding:11px 0;font-weight:800;background:var(--panel2);color:var(--txt);cursor:pointer}
+/* 수록 가수 전체 목록 — "내 최애가 없다"는 오해를 푸는 게 목적이라 검색이 먼저 온다 */
+.all-btn{margin-top:12px;border:1px solid oklch(0.45 0.07 295);background:transparent;color:var(--mut);
+  border-radius:999px;padding:7px 14px;font-size:11.5px;font-weight:700;cursor:pointer}
+.all-btn:hover{border-color:var(--lime);color:var(--txt)}
+#al-modal{position:fixed;inset:0;background:rgba(10,6,16,.82);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+#al-box{width:100%;max-width:380px;background:oklch(0.2 0.04 295);border:2px solid oklch(0.5 0.1 300/.6);
+  border-radius:14px;padding:18px;max-height:82vh;display:flex;flex-direction:column}
+#al-box h3{font-family:'Black Han Sans';font-size:19px;text-align:center;color:var(--amber)}
+#al-sub{text-align:center;font-size:11px;color:var(--mut);margin:3px 0 10px}
+#al-q{width:100%;border:1px solid oklch(0.45 0.07 295);background:var(--panel);color:var(--txt);
+  border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit}
+#al-list{overflow-y:auto;flex:1;margin-top:8px;min-height:120px}
+.al-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;font-size:13px}
+.al-row:nth-child(odd){background:oklch(0.24 0.04 295/.5)}
+.al-row b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.al-row span{font-size:10.5px;color:var(--mut);flex-shrink:0}
+.al-none{text-align:center;color:var(--mut);font-size:12.5px;padding:26px 0}
+#al-close{width:100%;margin-top:12px;border:none;border-radius:9px;padding:11px 0;font-weight:800;background:var(--panel2);color:var(--txt);cursor:pointer}
 .reward-claim{border:none;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;
   background:var(--lime);color:oklch(0.25 0.06 130);margin-top:6px;margin-left:6px;animation:rewpulse 1.4s ease-in-out infinite}
 @keyframes rewpulse{0%,100%{box-shadow:0 0 0 0 oklch(0.85 0.19 130/.5)}50%{box-shadow:0 0 0 7px oklch(0.85 0.19 130/0)}}
@@ -230,6 +248,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <h1 class="hero-t" id="t-hero"></h1>
       <p class="hero-s" id="t-herosub"></p>
       <div class="lineup" id="lineup"></div>
+      <button class="all-btn" id="btn-all"></button>
       <div class="inapp-bar hidden" id="inapp-bar"></div>
       <div class="mode-unit" id="mode-unit-intro">
         <span class="mode-badge" id="mode-badge-intro"></span>
@@ -344,7 +363,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260815dup"></script>
+<script src="/voicematch/i18n.js?v=20260815list"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -364,6 +383,7 @@ function applyLang(){
   $('btn-start').textContent=t('start');
   $('btn-stop').textContent=t('stop');
   $('t-tipintro').innerHTML=t('tipIntro');
+  $('btn-all').textContent=t('alBtn');
   $('xpromo-t').textContent=t('xpromoT');
   $('xpromo-s').textContent=t('xpromoS');
   // 동물상 판독기는 ko/en/ja/tw만 있다. es·id는 영어로 보낸다(없는 로케일로 링크하면 404).
@@ -899,11 +919,49 @@ async function findExisting(q){
   try{return (await buildNameIndex())[n]||null;}catch(e){return null;}
 }
 
+/* ---- 수록 가수 전체 목록 ----
+   결과 상위 몇 팀만 보고 "내 최애는 없네" 하고 나가는 흐름을 끊는 게 목적.
+   카탈로그는 240KB라 인트로에서 미리 받지 않고, 열 때 받는다. */
+async function openArtistList(){
+  const btn=$('btn-all');
+  if(btn)btn.disabled=true;
+  try{
+    if(!catalogCache)catalogCache=await fetch(CATALOG_URL).then(r=>r.json());
+  }catch(e){if(btn)btn.disabled=false;return;}
+  if(btn)btn.disabled=false;
+  const arts=catalogCache.artists.slice()
+    .sort((a,b)=>singerName(a,LANG).localeCompare(singerName(b,LANG),LANG==='tw'?'zh-Hant':LANG));
+  const m=document.createElement('div');m.id='al-modal';
+  m.innerHTML=`<div id="al-box"><h3>${t('alT')}</h3>`
+    +`<div id="al-sub">${t('alCount')(catalogCache.artist_count||arts.length,catalogCache.song_count||'')}</div>`
+    +`<input id="al-q" placeholder="${t('alPh')}" autocomplete="off" maxlength="40">`
+    +`<div id="al-list"></div><button id="al-close">${t('lb_close')}</button></div>`;
+  document.body.appendChild(m);
+  const list=m.querySelector('#al-list');
+  const draw=q=>{
+    const n=normName(q);
+    // 부분일치로 찾는다. 여기선 오탐이 손해가 아니라 도움이다(요청 버튼과 달리 아무것도 막지 않는다)
+    const hit=n?arts.filter(a=>normName(singerName(a,LANG)).indexOf(n)>=0
+      ||normName(a.slug).indexOf(n)>=0||normName(a.name).indexOf(n)>=0):arts;
+    list.innerHTML=hit.length
+      ? hit.map(a=>`<div class="al-row"><b>${singerName(a,LANG)}</b><span>${genreLabel(a.genre,LANG)}</span></div>`).join('')
+      : `<div class="al-none">${t('alNone')}</div>`;
+  };
+  draw('');
+  m.querySelector('#al-q').oninput=e=>draw(e.target.value.trim());
+  m.querySelector('#al-close').onclick=()=>m.remove();
+  m.onclick=e=>{if(e.target===m)m.remove();};
+  try{dataLayer.push({event:'vm_artist_list_open'});}catch(e){}
+}
+$('btn-all').onclick=openArtistList;
+
 /* ---- 가수 추가 요청 (공개 큐 → 파이프라인 cron이 드레인) ---- */
 function renderReqBox(){
   const rq=$('r-req');
-  rq.innerHTML=`<div class="sl-t">${t('reqT')}</div><div class="req-row"><input id="req-in" maxlength="40" placeholder="${t('reqPh')}"><button id="req-b">${t('reqBtn')}</button></div><div id="req-m"></div>`;
+  rq.innerHTML=`<div class="sl-t">${t('reqT')}</div><div class="req-row"><input id="req-in" maxlength="40" placeholder="${t('reqPh')}"><button id="req-b">${t('reqBtn')}</button></div><div id="req-m"></div>`
+    +`<button class="all-btn" id="req-all">${t('alBtn')}</button>`;
   rq.classList.remove('hidden');
+  $('req-all').onclick=openArtistList;  // 요청을 쓰기 전에 목록에서 확인할 길을 준다
   let checkSeq=0;
   $('req-in').oninput=()=>{
     const seq=++checkSeq,v=$('req-in').value.trim();
