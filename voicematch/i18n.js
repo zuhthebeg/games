@@ -839,6 +839,11 @@ const EN_NAMES = {
   youngposse:"YOUNG POSSE",
   kiiikiii:"KiiiKiii",
   kickflip:"KickFlip",
+  // 2026-08-15 요청으로 추가된 신규 — 영문 표기가 없어 en/tw 화면에 한글이 그대로 노출되고 있었다
+  seo_yerin:"Seo Yerin", byul:"Byul", dk_svt:"DK", jeonghan_svt:"Jeonghan", joshua_svt:"Joshua",
+  yeonjun:"Yeonjun", bamby:"Bamby", minnie:"Minnie", rami:"Rami", chaeyoung:"Chaeyoung",
+  dokyungsoo:"D.O.", plave:"PLAVE", the_rose:"The Rose", wave_to_earth:"wave to earth",
+  winter:"Winter", yuqi:"Yuqi",
 };
 
 // 대만(tw) 로케일 전용 — 대만에서 실제 통용되는 정체(번체) 표기만 수동 검증해서 반영.
@@ -924,6 +929,8 @@ const TW_NAMES = {
   'yoonjongshin':'尹鍾信',
   'yoonmirae':'尹未來',
   'rescene':'RESCENE',
+  'dokyungsoo':'都暻秀', 'yuqi':'宋雨琦', 'dk_svt':'碩珉', 'jeonghan_svt':'淨漢',
+  'joshua_svt':'知秀', 'yeonjun':'然竣', 'the_rose':'The Rose', 'plave':'PLAVE',
 };
 
 const GENRE_MAP = {
