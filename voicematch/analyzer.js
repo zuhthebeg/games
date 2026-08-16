@@ -106,7 +106,8 @@ function rpRuns(voiced, minLen) {
   return runs;
 }
 
-function extractReport(pcm16k) {
+// 프레임 단위 유성 판정. 리포트와 무음 게이트가 같은 결과를 공유한다(두 번 계산하지 않는다).
+function rpFrames(pcm16k) {
   const n = pcm16k.length;
   if (n < RP_FRAME * 2) return null;
   const nf = Math.floor((n - RP_FRAME) / RP_HOP) + 1;
@@ -138,6 +139,30 @@ function extractReport(pcm16k) {
   }
   const vIdx = [];
   for (let k = 0; k < nf; k++) if (voiced[k]) vIdx.push(k);
+  return { nf, rmsArr, voiced, f0, vIdx };
+}
+
+// 사람 목소리가 실제로 들어왔는지 판정. 에너지만 보면 선풍기·에어컨이 통과한다(2026-08-16 제보 2건:
+// 노래를 안 했는데 94%, 선풍기 바람소리만 녹음됐는데 96%가 나왔다).
+// 판정 기준은 "지속되는 음정" — 목소리는 음높이가 잡히는 프레임이 이어지고, 정상소음은 안 이어진다.
+// 실측(12초 샘플): 실제 목소리 ratio 0.50~0.57 / 150ms 연속구간 10~26개,
+//                 선풍기 0.14 / 0개, 에어컨 0.01 / 0개, 룸톤·무음 0 / 0개.
+// 한 음을 길게 끄는 허밍은 연속구간이 1개뿐이라 ratio 조건으로 따로 살린다.
+const VG_RUN_MS = 15;        // 150ms 연속 유성
+const VG_MIN_RUNS = 2;
+const VG_MIN_RATIO = 0.30;   // 목소리 0.50+ vs 최악 소음 0.175 사이
+const VG_MIN_VOICED = 60;    // 0.6초
+function hasVoice(fr) {
+  if (!fr || !fr.nf) return false;
+  if (rpRuns(fr.voiced, VG_RUN_MS).length >= VG_MIN_RUNS) return true;
+  return fr.vIdx.length >= VG_MIN_VOICED && fr.vIdx.length / fr.nf >= VG_MIN_RATIO;
+}
+
+function extractReport(pcm16k, fr) {
+  const n = pcm16k.length;
+  fr = fr || rpFrames(pcm16k);
+  if (!fr) return null;
+  const { nf, rmsArr, voiced, f0, vIdx } = fr;
   if (vIdx.length < RP_MIN_VOICED) return null;
 
   const vf0 = vIdx.map(k => f0[k]);
@@ -254,6 +279,11 @@ async function embedWindow(pcm) {
 }
 
 async function analyze(pcm16k) {
+  // 0) 사람 목소리가 들어있는지부터 본다. 세기만으로는 선풍기·에어컨이 통과한다.
+  //    ONNX 추론보다 훨씬 싸므로(12초에 ~120ms) 임베딩 전에 걸러서 헛계산도 같이 줄인다.
+  const fr = rpFrames(pcm16k);
+  if (!hasVoice(fr)) return { error: 'silent' };
+
   // 창별 세기를 먼저 다 재고, 그 분포에서 소음 바닥을 잡는다.
   // 에어컨처럼 일정한 소리는 모든 창이 비슷해서 바닥≈신호가 되고, 아래 조건에서 전부 걸러진다.
   const wins = [];
@@ -280,8 +310,16 @@ async function analyze(pcm16k) {
       postMessage({ type: 'progress', done: embs.length });
     }
   }
-  // 목소리라고 볼 만한 구간이 하나도 없으면 결과를 만들지 않는다.
-  // 예전엔 여기서 앞부분을 억지로 임베딩해서, 에어컨 소리만 녹음해도 매칭 결과가 나왔다.
+  // 여기까지 왔다면 위에서 목소리는 이미 확인됐다. 그런데도 세기 게이트가 전 구간을 걸렀다면
+  // 마이크 입력이 작은 기기다(실측: 같은 목소리를 0.08배로 줄이면 통과 창 3/3 → 0/3).
+  // 예전엔 이 경우 결과가 통째로 안 나왔다. 목소리가 확인된 이상 큰 창부터 살려 쓴다.
+  if (!embs.length) {
+    const cands = wins.slice().sort((a, b) => b.r - a.r).slice(0, 3);
+    for (const w of cands) {
+      embs.push(await embedWindow(pcm16k.slice(w.i, Math.min(w.i + WIN, pcm16k.length))));
+      postMessage({ type: 'progress', done: embs.length });
+    }
+  }
   if (!embs.length) return { error: 'silent' };
   const d = embs[0].length, mean = new Array(d).fill(0);
   for (const e of embs) for (let i = 0; i < d; i++) mean[i] += e[i] / embs.length;
@@ -348,7 +386,7 @@ async function analyze(pcm16k) {
   }
   // 보이스 리포트는 부가 정보다. 여기서 터져도 매칭 결과는 그대로 나가야 한다.
   let report = null;
-  try { report = extractReport(pcm16k); } catch (e) { report = null; }
+  try { report = extractReport(pcm16k, fr); } catch (e) { report = null; }
 
   return { rank: rankKr, rankAll, rankJp, genres, report };
 }
