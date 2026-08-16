@@ -358,6 +358,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
     <div class="remote">
       <button class="key start" id="btn-share"></button>
+      <button class="key" id="btn-threads"></button>
       <button class="key" id="btn-x"></button>
       <button class="key" id="btn-save"></button>
       <button class="key" id="btn-retry"></button>
@@ -372,7 +373,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260816mt"></script>
+<script src="i18n.js?v=20260816th"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -402,6 +403,7 @@ function applyLang(){
   $('t-tipfirst').textContent=t('tipFirst');
   $('ana-t').textContent=t('judging');
   $('btn-share').textContent=t('share');
+  $('btn-threads').textContent='Threads';
   $('btn-x').textContent=t('xShare')||'𝕏';
   $('btn-save').textContent=t('save');
   $('btn-retry').textContent=t('retry');
@@ -437,7 +439,7 @@ const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅
 function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
 for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
 
-const worker=new Worker('analyzer.js?v=20260816mt');
+const worker=new Worker('analyzer.js?v=20260816th');
 let workerReady=false, modelLoading=null, lastResult=null;
 
 function loadModel(){
@@ -1074,6 +1076,17 @@ async function cardBlob(){await document.fonts.load("40px 'Black Han Sans'");dra
 $('btn-save').onclick=async()=>{const b=await cardBlob();const a=document.createElement('a');
   a.href=URL.createObjectURL(b);a.download='voicematch.png';a.click();};
 const X_TAGS={ko:'#목소리노래방',en:'#VoiceMatch #kpop',ja:'#声診断 #ボイスマッチ',es:'#VoiceMatch #kpop',tw:'#聲音分身',id:'#VoiceMatch #kpop',pt:'#VoiceMatch #kpop'};
+/* 스레드 공유 — 유입의 대부분이 Threads(대만 핀 포스트 2.6K 좋아요)인데 X 버튼만 있었다.
+   intent/post?text= 가 작성창을 문구+링크로 채워준다(2026-08-16 실제 확인, 링크 프리뷰도 붙음).
+   이미지는 인텐트로 못 붙인다 — 이미지까지 올리려면 기본 공유(btn-share)를 써야 한다. */
+$('btn-threads').onclick=()=>{
+  if(!lastResult)return;
+  const top=lastResult[0];
+  const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}`;
+  const txt=I18N[LANG].shareText(singerName(top,LANG),top.pct)+'\n'+(X_TAGS[LANG]||'')+'\n'+url;
+  window.open('https://www.threads.com/intent/post?text='+encodeURIComponent(txt),'_blank','noopener');
+  try{dataLayer.push({event:'vm_share_threads'});}catch(e){}
+};
 $('btn-x').onclick=()=>{
   if(!lastResult)return;
   const top=lastResult[0];
