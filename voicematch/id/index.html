@@ -124,6 +124,13 @@ body{font-family:Pretendard,sans-serif;background:var(--room);color:var(--txt);
   color:var(--txt);font-family:Pretendard;font-size:13px;font-weight:800;padding:11px 8px;cursor:pointer;letter-spacing:.3px}
 .pool-toggle:active{background:oklch(0.36 0.06 295)}
 .pool-hint{margin-top:10px;text-align:center;font-size:12px;font-weight:700;color:var(--amber)}
+/* 누적 녹음 — 결과 화면에서 "한 번 더" 유도. 10초 1회는 본인이 1위로 나올 확률이 51%뿐이고
+   2회 평균이면 73%, 3회면 82%라 실제로 결과가 좋아진다(2026-08-16 실측). */
+.addtake-info{margin-top:14px;text-align:center;font-size:12px;font-weight:700;color:var(--lime)}
+.addtake-btn{display:block;width:100%;margin-top:10px;border:none;border-radius:12px;
+  background:var(--panel2);color:var(--txt);font-family:Pretendard;font-size:13px;font-weight:800;
+  padding:12px 8px;cursor:pointer;letter-spacing:.3px;box-shadow:0 3px 0 oklch(0.3 0.05 295)}
+.addtake-btn:active{transform:translateY(2px);box-shadow:0 1px 0 oklch(0.3 0.05 295)}
 .mode-unit.hint{box-shadow:0 3px 0 oklch(0.6 0.12 85);animation:hintPulse 1.6s ease-in-out infinite}
 .mode-unit.hint .mode-badge{background:var(--amber)}
 .mode-unit.hint .pool-toggle{background:oklch(0.3 0.05 85)}
@@ -254,6 +261,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <span class="mode-badge" id="mode-badge-intro"></span>
         <button id="btn-pool-intro" class="pool-toggle"></button>
       </div>
+      <div class="mode-unit"><button id="btn-reclen" class="pool-toggle"></button></div>
     </div>
     <div class="remote">
       <button class="key start" id="btn-start"></button>
@@ -342,6 +350,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
       <div id="r-gaxis" class="hidden"></div>
       <div id="r-report" class="hidden"></div>
+      <div id="r-addtake" class="hidden"></div>
       <div id="r-rankline"></div>
       <div id="r-fantrack" class="hidden"></div>
       <div id="r-setlist" class="hidden"></div>
@@ -363,7 +372,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260816vg"></script>
+<script src="/voicematch/i18n.js?v=20260816mt"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -399,6 +408,8 @@ function applyLang(){
   $('btn-more').textContent=t('more');
   $('btn-restart').textContent=t('restart');
   $('r-tip').textContent=t('tipResult');
+  syncRecLenBtn();
+  if(takeCount)renderAddTake();
   document.querySelectorAll('.lg').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
   updateIntroPoolBtn();
   if(lastResult)renderResult(lastRankKr||lastResult,lastRankAll,lastRankJp,lastGenres);
@@ -426,7 +437,7 @@ const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅
 function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
 for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
 
-const worker=new Worker('/voicematch/analyzer.js?v=20260816vg');
+const worker=new Worker('/voicematch/analyzer.js?v=20260816mt');
 let workerReady=false, modelLoading=null, lastResult=null;
 
 function loadModel(){
@@ -457,6 +468,23 @@ function loadModel(){
 
 /* ---- 녹음 ---- */
 let audioCtx,stream,proc,pcmChunks,recRate,recTimer,recLeft;
+/* 녹음 길이·테이크 수.
+   실측(가수 5명 홀드아웃 곡, 본인이 1위로 나오는 비율):
+     10초 1회 51% · 20초 1회 61% · 30초 1회 65% · 10초 2회 73% · 10초 3회 82%.
+   길이를 늘리는 것보다 나눠 부르는 쪽이 확실히 낫다. 그래서 길이는 옵션으로만 두고,
+   결과 화면의 "한 번 더" 누적을 기본 동선으로 민다. */
+const REC_LENS=[10,20,30];
+let recSec=+(localStorage.getItem('vm_reclen')||10);
+if(!REC_LENS.includes(recSec))recSec=10;
+let takeCount=0, appendNext=false;
+const MAX_TAKES=3;
+function syncRecLenBtn(){const b=$('btn-reclen');if(b)b.textContent=t('recLen').replace('{n}',recSec);}
+function cycleRecLen(){
+  recSec=REC_LENS[(REC_LENS.indexOf(recSec)+1)%REC_LENS.length];
+  localStorage.setItem('vm_reclen',recSec);
+  syncRecLenBtn();
+  try{dataLayer.push({event:'vm_reclen',len:recSec});}catch(e){}
+}
 /* ---- 인앱 브라우저 ----
    유입 대부분이 Threads/Instagram 링크인데, 그 앱 내장 웹뷰는 마이크 권한을 아예 안 준다.
    유저 눈에는 "설정에 마이크 항목이 없다"로 보여서 원인을 알 방법이 없다(2026-08-03 대만 CS 제보).
@@ -575,7 +603,7 @@ async function startRec(primed){
     for(let i=0;i<bars.length;i++)bars[i].style.height=(6+lv*(18+Math.random()*32))+'px';
   };
   src.connect(proc);proc.connect(audioCtx.destination);
-  recLeft=10;$('count').innerHTML=recLeft+'<small>'+t('sec')+'</small>';
+  recLeft=recSec;$('count').innerHTML=recLeft+'<small>'+t('sec')+'</small>';
   recTimer=setInterval(()=>{recLeft--;
     if(recLeft<=0){stopRec();return;}
     $('count').innerHTML=recLeft+'<small>'+t('sec')+'</small>';},1000);
@@ -590,7 +618,7 @@ async function stopRec(){
   try{dataLayer.push({event:'vm_record_done'});}catch(e){}
   const pcm=new Float32Array(total);let o=0;for(const c of pcmChunks){pcm.set(c,o);o+=c.length;}
   show('s-ana');$('ana-t').textContent=t('judging');
-  await analyzePcm(pcm,recRate);
+  await analyzePcm(pcm,recRate,appendNext);
 }
 async function resampleTo16k(pcm,rate){
   if(rate===16000)return pcm;
@@ -601,7 +629,7 @@ async function resampleTo16k(pcm,rate){
   const s=oc.createBufferSource();s.buffer=buf;s.connect(oc.destination);s.start();
   return (await oc.startRendering()).getChannelData(0);
 }
-async function analyzePcm(pcm,rate){
+async function analyzePcm(pcm,rate,append){
   try{
     await loadModel();
     $('ana-bar').style.width='75%';$('ana-t').textContent=t('judging2');$('ana-s').textContent=t('analyzeSub');
@@ -613,14 +641,33 @@ async function analyzePcm(pcm,rate){
         if(m.type==='error'){worker.removeEventListener('message',h);rej(new Error(m.message));}};
       worker.addEventListener('message',h);
       const cp=new Float32Array(p16);
-      worker.postMessage({type:'analyze',pcm:cp},[cp.buffer]);
+      worker.postMessage({type:'analyze',pcm:cp,append:!!append},[cp.buffer]);
     });
+    // 무음이면 이번 테이크는 없던 것으로 둔다(누적 카운트도 올리지 않는다).
     if(done.error==='silent'){try{dataLayer.push({event:'vm_silent'});}catch(e){}$('err-t').innerHTML=t('errSilent');resetErrBtn();show('s-err');return;}
-    try{dataLayer.push({event:'vm_result_shown'});}catch(e){}
+    takeCount=done.takes||1; appendNext=false;
+    try{dataLayer.push({event:'vm_result_shown',takes:takeCount});}catch(e){}
     renderResult(done.rank,done.rankAll,done.rankJp,done.genres,done.report);
+    renderAddTake();
   }catch(e){
     $('err-t').innerHTML=t('errAnalyze')+'<br><span style="font-size:11px;opacity:.7">'+String(e.message||e).slice(0,120)+'</span>';resetErrBtn();show('s-err');
   }
+}
+
+/* 결과 화면의 누적 녹음 안내. 한 번 더 부르면 이전 테이크와 평균내서 다시 순위를 낸다. */
+function renderAddTake(){
+  const el=$('r-addtake'); if(!el)return;
+  el.classList.remove('hidden');
+  const info=takeCount>1?'<div class="addtake-info">'+t('takeInfo').replace('{n}',takeCount)+'</div>':'';
+  const btn=takeCount<MAX_TAKES
+    ? '<button id="btn-addtake" class="addtake-btn">'+t('addTake').replace('{n}',takeCount).replace('{m}',MAX_TAKES)+'</button>'
+    : '';
+  el.innerHTML=info+btn;
+  const b=$('btn-addtake');
+  if(b)b.onclick=()=>{
+    try{dataLayer.push({event:'vm_addtake',takes:takeCount});}catch(e){}
+    appendNext=true; startRec(true);
+  };
 }
 
 /* ---- 랭킹 ---- */
@@ -996,7 +1043,8 @@ function renderReqBox(){
 }
 $('btn-start').onclick=()=>startRec();  // 이벤트 객체가 primed 인자로 들어가면 안내 시트를 건너뛴다
 $('btn-stop').onclick=stopRec;
-$('btn-retry').onclick=()=>show('s-intro');
+$('btn-retry').onclick=()=>{takeCount=0;appendNext=false;try{worker.postMessage({type:'resetTakes'});}catch(e){}$('r-addtake').classList.add('hidden');show('s-intro');};
+$('btn-reclen').onclick=cycleRecLen;
 
 /* ---- 공유 카드 ---- */
 function drawCard(){

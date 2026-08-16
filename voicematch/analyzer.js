@@ -278,7 +278,14 @@ async function embedWindow(pcm) {
   return l2norm(Array.from(out.emb.data));
 }
 
-async function analyze(pcm16k) {
+// 여러 번 부른 녹음을 누적한다. 10초 한 번은 3초 창 3개 평균이라 임베딩이 흔들린다.
+// 실측(가수 5명 홀드아웃 곡, 본인이 1위로 나오는 비율):
+//   10초 1회 51% / 20초 1회 61% / 30초 1회 65% / 10초 2회 평균 73% / 10초 3회 평균 82%.
+// 같은 총 녹음량이면 **이어 부르는 것보다 나눠 부르는 쪽이 확실히 낫다**(20초: 61%→73%,
+// 30초: 65%→82%). 떨어진 구간이 서로 다른 음역·발성을 담아 가수 특성을 넓게 덮기 때문이다.
+let takes = [];
+
+async function analyze(pcm16k, append) {
   // 0) 사람 목소리가 들어있는지부터 본다. 세기만으로는 선풍기·에어컨이 통과한다.
   //    ONNX 추론보다 훨씬 싸므로(12초에 ~120ms) 임베딩 전에 걸러서 헛계산도 같이 줄인다.
   const fr = rpFrames(pcm16k);
@@ -323,7 +330,13 @@ async function analyze(pcm16k) {
   if (!embs.length) return { error: 'silent' };
   const d = embs[0].length, mean = new Array(d).fill(0);
   for (const e of embs) for (let i = 0; i < d; i++) mean[i] += e[i] / embs.length;
-  const q = l2norm(mean);
+
+  // 이번 테이크의 쿼리 벡터. append면 이전 테이크들과 평균낸 걸로 랭킹한다.
+  if (!append) takes = [];
+  takes.push(l2norm(mean));
+  const acc = new Array(d).fill(0);
+  for (const tk of takes) for (let i = 0; i < d; i++) acc[i] += tk[i] / takes.length;
+  const q = l2norm(acc);
 
   // hub 보정: 갤러리 중심에 있는 가수(모든 쿼리와 비슷하게 나오는 허브)의 쏠림 제거.
   // hub = 자기 제외 평균 코사인(센터링, 오프라인 계산). alpha=0.45는 보컬 20트랙 검증값
@@ -388,7 +401,7 @@ async function analyze(pcm16k) {
   let report = null;
   try { report = extractReport(pcm16k, fr); } catch (e) { report = null; }
 
-  return { rank: rankKr, rankAll, rankJp, genres, report };
+  return { rank: rankKr, rankAll, rankJp, genres, report, takes: takes.length };
 }
 
 onmessage = async (ev) => {
@@ -402,8 +415,10 @@ onmessage = async (ev) => {
     } else if (m.type === 'lang') {
       lang = m.lang || 'ko';
     } else if (m.type === 'analyze') {
-      const r = await analyze(m.pcm);
+      const r = await analyze(m.pcm, !!m.append);
       postMessage({ type: 'result', ...r });
+    } else if (m.type === 'resetTakes') {
+      takes = [];
     }
   } catch (e) {
     postMessage({ type: 'error', message: String(e && e.message || e) });
