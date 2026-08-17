@@ -462,6 +462,17 @@ const TIER_MUL = { cute:1, cool:1, funny:2.2, myth:1.45 };
 const HUMAN_RAW = { eyeSize:[0.0721,0.0182], eyeSlant:[0.0202,0.0107], eyeGap:[0.2563,0.0140],
   faceLength:[1.1747,0.0842], jawSharp:[0.2104,0.0319], cheek:[1.2686,0.0516],
   noseWidth:[0.2846,0.0149], lipThick:[0.0188,0.0296] };   // 표본 12개 실측 (af-calib.cjs)
+/* ⚠ jawSharp(=1-jawW/faceW)와 cheek(=faceW/jawW)는 같은 측정값의 변형이다.
+   cheek = 1/(1-jawSharp) — 표본 182장 실측 상관 0.999. 즉 8축은 실제로 7축이고
+   axisWeight에서 턱폭 하나가 3.52/10.02 = 35%를 두 번 먹는다.
+   그런데 고쳐도 성능은 안 변한다(실측). cheek를 빼고 norm까지 재산출하면
+   top3 21.4%→20.3%, 평균순위 12.4→13.0 — 182장에서 ±2장, 노이즈 범위다.
+   코사인 + 종별 norm 나눗셈이 축 스케일을 흡수해서 가중치 변화가 대부분 상쇄된다.
+   더 나아가 가중치를 무작위 250개로 탐색해 인물 절반으로 나눠 검증했더니
+   학습쪽 상위 설정이 홀드아웃에서 기준선보다 나을 게 없었다(상위 60개 평균 22.2% vs 기준 23.9%).
+   → 가중치는 성능 지렛대가 아니다. 손대면 1위가 51% 바뀌는데 얻는 건 없다.
+   중복을 진짜로 없애려면 cheek 자리에 독립적인 측정(예: 이마폭/광대폭)을 넣고
+   38종 축값을 다시 잡아야 한다. 재현 도구: ops/verify/af-sim.py, af-top1-collect.cjs */
 let ANIMAL_STATS = null;
 function animalStats() {
   if (ANIMAL_STATS) return ANIMAL_STATS;
@@ -640,6 +651,7 @@ function detect() {
   window.__pfem = PFEM;
   baseBox = drawBase();
   ranked = match(AX);
+  window.__top1 = ranked.map(r => r.a.id);   // 순위 전체 덤프 — 1위 분포·정답 순위 검증용(ops/verify/af-top1-collect.cjs)
   renderAxes(); renderResult();
   $('mirror').disabled = false;
   reveal(true);
