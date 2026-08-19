@@ -263,6 +263,27 @@ canvas{display:none}
 #r-duetcta .req-row{display:flex;gap:6px;margin-top:8px}
 #r-duetcta input{flex:1;min-width:0;background:oklch(0.22 0.03 300);border:1px solid oklch(0.45 0.06 300);border-radius:8px;color:inherit;padding:8px 10px;font-size:13px}
 #r-duetcta button{background:var(--pink);color:oklch(0.18 0.06 350);font-weight:800;border:0;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap}
+/* 그룹 완성 모드 — 설계: docs/design/voicematch-group-mode.md */
+#group-banner{margin-top:12px;background:oklch(0.3 0.08 85/.4);border:1px solid var(--amber);border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.6}
+#group-banner b{color:var(--amber)}
+#r-group{margin-top:14px;border:1px solid var(--amber);border-radius:12px;padding:14px 12px;background:oklch(0.22 0.04 85/.35)}
+#r-group .sl-t{font-size:12px;font-weight:800;color:var(--amber);letter-spacing:.5px;text-align:center}
+.grp-slots{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.grp-slot{background:var(--panel);border-radius:8px;padding:8px 9px;font-size:11px;color:var(--mut);display:flex;flex-direction:column;gap:2px}
+.grp-slot b{font-size:12px;color:var(--txt)}
+.grp-slot.filled{border:1px solid oklch(0.5 0.08 300)}
+.grp-slot.mine{border:1px solid var(--lime);background:oklch(0.3 0.06 130/.3)}
+.grp-you{text-align:center;font-size:12.5px;font-weight:800;color:var(--lime);margin-top:8px}
+.grp-complete{text-align:center;font-family:'Black Han Sans';font-size:22px;color:var(--amber);margin-top:6px}
+#r-group .req-row{display:flex;gap:6px;margin-top:10px}
+#r-group input{flex:1;min-width:0;background:oklch(0.22 0.03 300);border:1px solid oklch(0.45 0.06 300);border-radius:8px;color:inherit;padding:8px 10px;font-size:13px}
+#grp-join{background:var(--amber);color:oklch(0.3 0.06 85);font-weight:800;border:0;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap}
+#r-groupcta{margin-top:14px;border-top:1px dashed oklch(0.5 0.08 300/.6);padding-top:12px}
+#r-groupcta .sl-t{font-size:12px;font-weight:800;color:var(--amber);letter-spacing:.5px;text-align:center}
+#r-groupcta .req-row{display:flex;gap:6px;margin-top:8px}
+#r-groupcta input{flex:1;min-width:0;background:oklch(0.22 0.03 300);border:1px solid oklch(0.45 0.06 300);border-radius:8px;color:inherit;padding:8px 10px;font-size:13px}
+#r-groupcta .duet-btns button{background:var(--amber);color:oklch(0.3 0.06 85)}
+#grp-claim{background:var(--lime)!important;color:oklch(0.25 0.06 130)!important;animation:rewpulse 1.4s ease-in-out infinite}
 </style>
 </head>
 <body>
@@ -281,6 +302,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <h1 class="hero-t" id="t-hero"></h1>
       <p class="hero-s" id="t-herosub"></p>
       <div id="duet-banner" class="hidden"></div>
+      <div id="group-banner" class="hidden"></div>
       <div class="lineup" id="lineup"></div>
       <button class="all-btn" id="btn-all"></button>
       <div class="inapp-bar hidden" id="inapp-bar"></div>
@@ -371,6 +393,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="sub" id="r-sub"></div>
       <div class="rank" id="r-rank"></div>
       <div id="r-duet" class="hidden"></div>
+      <div id="r-group" class="hidden"></div>
       <div id="r-poolhint" class="pool-hint hidden"></div>
       <div class="mode-unit hidden" id="mode-unit-result">
         <span class="mode-badge" id="mode-badge-result"></span>
@@ -383,6 +406,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div id="r-fantrack" class="hidden"></div>
       <div id="r-setlist" class="hidden"></div>
       <div id="r-duetcta" class="hidden"></div>
+      <div id="r-groupcta" class="hidden"></div>
       <div id="r-req" class="hidden"></div>
     </div>
     <div class="remote">
@@ -402,7 +426,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260819dt2"></script>
+<script src="/voicematch/i18n.js?v=20260820g1"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -451,6 +475,7 @@ function applyLang(){
     }
     else db.classList.add('hidden');
   }
+  try{renderGroupBanner();}catch(e){}
   document.querySelectorAll('.lg').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
   updateIntroPoolBtn();
   if(lastResult)renderResult(lastRankKr||lastResult,lastRankAll,lastRankJp,lastGenres);
@@ -485,7 +510,7 @@ function loadModel(){
   if(modelLoading) return modelLoading;
   modelLoading=(async()=>{
     const [sj,mb]=await Promise.all([
-      fetch('/voicematch/singers.json?v=20260816x10').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
+      fetch('/voicematch/singers.json?v=20260820g1').then(r=>r.json()).then(j=>{window._singersCache=j;return j;}),
       (async()=>{
         const r=await fetch('/voicematch/ecapa_int8.onnx?v=20260719a');
         const total=+r.headers.get('Content-Length')||21664162;
@@ -914,12 +939,13 @@ function renderResult(rank,rankAll,rankJp,genres,report){
   renderReport(report);
   renderReqBox();
   renderDuetPanels();
+  renderGroupPanels();
   rankFlow(rank[0]);
 }
 
 /* ---- 2단계: 선곡 추천 (top3 가수의 검증곡 → 노래방 셋리스트) ---- */
 let catalogCache=null;
-const CATALOG_URL='/voicematch/catalog.json?v=20260816x10';
+const CATALOG_URL='/voicematch/catalog.json?v=20260820g1';
 async function renderSetlist(rank){
   const box=$('r-setlist');
   try{
@@ -1061,7 +1087,7 @@ async function duetInstant(){
   const s=loadDuetSelf();if(!s)return;
   // 녹음 없이 진입하면 모델 로드가 안 돼서 singers 캐시가 비어 있다 — 임베딩 DB만 따로 받는다(ONNX 불필요)
   if(!window._singersCache){
-    try{window._singersCache=await fetch('/voicematch/singers.json?v=20260816x10').then(r=>r.json());}catch(e){return;}
+    try{window._singersCache=await fetch('/voicematch/singers.json?v=20260820g1').then(r=>r.json());}catch(e){return;}
   }
   lastQ=unpackEmb(b64uDec(s.q));lastPitch=s.pitch||null;
   try{dataLayer.push({event:'vm_duet_instant'});}catch(e){}
@@ -1184,6 +1210,177 @@ function renderDuetPanels(){
   $('duet-return').onclick=sendDuetBack;
   renderDuetSetlist(box);
   try{dataLayer.push({event:'vm_duet_result',duet_pct:d.total});}catch(e){}
+}
+
+/* ---- 그룹 완성 모드 ----
+   설계 정본: workspace docs/design/voicematch-group-mode.md
+   relay 세션(#g=id)에는 이름+싱크로율 숫자만 저장 — 임베딩/음성은 클라를 떠나지 않는다.
+   멤버 슬러그는 서버 GROUPS와 반드시 일치시킬 것. */
+const GROUP_API='https://relay.cocy.io/api/voicematch/group';
+const VM_GROUPS={
+  bts:{label:'BTS',members:['rm_bts','jin_bts','suga','jhope','jimin','v_bts','jungkook']},
+  blackpink:{label:'BLACKPINK',members:['jisoo','jennie','rose','lisa']},
+};
+const GROUP={in:null,state:null};
+(function(){
+  const m=location.hash.match(/[#&]g=([a-z0-9]+)/);
+  if(m){GROUP.in=m[1];try{window.dataLayer=window.dataLayer||[];dataLayer.push({event:'vm_group_opened'});}catch(e){}}
+})();
+async function groupFetch(id){
+  try{const r=await fetch(GROUP_API+'?id='+encodeURIComponent(id));if(!r.ok)return null;return await r.json();}catch(e){return null;}
+}
+function grpName(target){return (VM_GROUPS[target]||{}).label||target;}
+function memberName(slug){
+  const s=(window._singersCache||[]).find(x=>x.slug===slug);
+  return s?singerName(s,LANG):slug;
+}
+async function ensureSingers(){
+  if(!window._singersCache){
+    try{window._singersCache=await fetch('/voicematch/singers.json?v=20260820g1').then(r=>r.json());}catch(e){}
+  }
+  return window._singersCache;
+}
+function myGroupName(){try{return localStorage.getItem('vm_duet_name')||'';}catch(e){return '';}}
+async function renderGroupBanner(){
+  const el=$('group-banner');if(!el)return;
+  if(!GROUP.in){el.classList.add('hidden');return;}
+  if(!GROUP.state)GROUP.state=await groupFetch(GROUP.in);
+  const st=GROUP.state;
+  if(!st){el.innerHTML=t('grpErr');el.classList.remove('hidden');return;}
+  const left=st.total-st.members.length;
+  el.innerHTML=t('grpBanner')(escHtml(st.teamName),grpName(st.target),left)
+    +(loadDuetSelf()?`<button id="grp-instant" class="duet-instant">${t('duetInstant')}</button>`:'');
+  el.classList.remove('hidden');
+  const bi=$('grp-instant');if(bi)bi.onclick=duetInstant;
+}
+function groupPcts(){
+  const st=GROUP.state;if(!st||!lastQ)return null;
+  const singers=window._singersCache;if(!singers)return null;
+  const dist=singers.map(s=>cosv(lastQ,s.emb));
+  const out={};
+  (VM_GROUPS[st.target]||{members:[]}).members.forEach(slug=>{
+    const s=singers.find(x=>x.slug===slug);
+    if(s)out[slug]=relPct(cosv(lastQ,s.emb),dist);
+  });
+  return out;
+}
+function joinedInfo(id){try{return JSON.parse(localStorage.getItem('vm_group_joined_'+id)||'null');}catch(e){return null;}}
+async function groupJoin(){
+  if(!GROUP.in||!lastQ)return;
+  await ensureSingers();
+  const nameInp=$('grp-name');
+  const userName=(nameInp&&nameInp.value||'').trim().slice(0,16)||myGroupName()||'?';
+  try{localStorage.setItem('vm_duet_name',userName);}catch(e){}
+  const pcts=groupPcts();if(!pcts||!Object.keys(pcts).length)return;
+  const btn=$('grp-join');if(btn)btn.disabled=true;
+  try{
+    const r=await fetch(GROUP_API,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'join',id:GROUP.in,userName,pcts})});
+    const j=await r.json().catch(()=>null);
+    if(r.status===409){GROUP.state=await groupFetch(GROUP.in);renderGroupBox(t('grpFull'));return;}
+    if(!r.ok||!j){renderGroupBox(t('grpErr'));return;}
+    GROUP.state=j;
+    try{localStorage.setItem('vm_group_joined_'+GROUP.in,JSON.stringify({slug:j.assigned,pct:j.assignedPct,name:userName}));}catch(e){}
+    try{dataLayer.push({event:'vm_group_join',grp:j.target});}catch(e){}
+    renderGroupBox();
+    if(j.completedNow){try{dataLayer.push({event:'vm_group_complete',grp:j.target});}catch(e){}}
+  }catch(e){renderGroupBox(t('grpErr'));}
+  finally{const b2=$('grp-join');if(b2)b2.disabled=false;}
+}
+function claimGroupGold(id){
+  const key='vm_group_claimed_'+id;
+  try{if(localStorage.getItem(key))return;localStorage.setItem(key,'1');}catch(e){return;}
+  try{if(typeof SharedWallet!=='undefined'&&SharedWallet.addGold)SharedWallet.addGold(100000000);}catch(e){}
+  try{dataLayer.push({event:'vm_group_claim'});}catch(e){}
+  renderGroupBox();
+}
+async function showGroupRank(target){
+  let rows=[];
+  try{const r=await fetch(GROUP_API+'?rankings='+encodeURIComponent(target));const j=await r.json();rows=j.rankings||[];}catch(e){}
+  let html=`<h3>${t('grpRankT')(grpName(target))}</h3>`;
+  if(!rows.length)html+=`<div style="text-align:center;color:var(--mut);font-size:13px;padding:14px 0">${t('lb_empty')}</div>`;
+  rows.forEach((row,i)=>{
+    html+=`<div class="lb-row"><span class="rk-no${i<3?' top':''}">${i+1}</span><span class="nick">${escHtml(row.teamName)}</span><span class="pct">${row.score}%</span></div>`;
+  });
+  html+=`<button id="lb-close" onclick="document.getElementById('lb-modal').remove()">${t('lb_close')}</button>`;
+  const m=document.createElement('div');m.id='lb-modal';m.innerHTML=`<div id="lb-box">${html}</div>`;
+  m.onclick=e=>{if(e.target===m)m.remove();};
+  document.body.appendChild(m);
+}
+async function shareGroupInvite(){
+  const st=GROUP.state;if(!st)return;
+  const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}#g=${st.id}`;
+  await shareOrCopy(t('grpInviteText')(st.teamName,grpName(st.target))+'\n'+url,'grp-share');
+}
+function renderGroupBox(msg){
+  const box=$('r-group');if(!box)return;
+  const st=GROUP.state;
+  if(!GROUP.in||!st){box.classList.add('hidden');box.innerHTML='';return;}
+  const joined=joinedInfo(st.id);
+  const bySlug={};st.members.forEach(m=>bySlug[m.member_slug]=m);
+  const slots=(VM_GROUPS[st.target]||{members:[]}).members.map(slug=>{
+    const m=bySlug[slug];
+    const mine=joined&&joined.slug===slug;
+    return `<div class="grp-slot${m?' filled':''}${mine?' mine':''}">
+      <b>${escHtml(memberName(slug))}</b>
+      <span>${m?escHtml(m.user_name)+' · '+m.pct+'%':t('grpSlotEmpty')}</span></div>`;
+  }).join('');
+  const left=st.total-st.members.length;
+  const complete=st.status==='complete';
+  const claimed=(()=>{try{return !!localStorage.getItem('vm_group_claimed_'+st.id);}catch(e){return true;}})();
+  const joinBox=(!joined&&!complete&&lastQ)?`
+    <div class="req-row"><input id="grp-name" maxlength="16" placeholder="${t('grpNamePh')}" value="${escHtml(myGroupName())}">
+    <button id="grp-join">${t('grpJoin')}</button></div>`:'';
+  box.innerHTML=`<div class="sl-t" style="margin-top:0">👑 ${escHtml(st.teamName)} · ${grpName(st.target)}</div>
+    ${complete?`<div class="grp-complete">${t('grpComplete')(grpName(st.target))}</div>`:`<div class="duet-sub">${t('grpLeft')(left)}</div>`}
+    ${joined?`<div class="grp-you">${t('grpYou')(escHtml(memberName(joined.slug)),joined.pct)}</div>`:''}
+    <div class="grp-slots">${slots}</div>
+    <div class="duet-sub">${t('grpScore')}: <b style="color:var(--lime)">${st.teamScore}%</b></div>
+    ${msg?`<div class="duet-sub" style="color:var(--amber)">${msg}</div>`:''}
+    ${joinBox}
+    <div class="duet-btns">
+      ${complete&&joined&&!claimed?`<button id="grp-claim">${t('grpReward')}</button>`:''}
+      <button id="grp-share">${t('grpShareInvite')}</button>
+      <button id="grp-rank" style="background:var(--panel2);color:var(--txt)">${t('grpRank')}</button>
+    </div>`;
+  box.classList.remove('hidden');
+  const jb=$('grp-join');if(jb)jb.onclick=groupJoin;
+  const cb=$('grp-claim');if(cb)cb.onclick=()=>claimGroupGold(st.id);
+  const sb=$('grp-share');if(sb)sb.onclick=shareGroupInvite;
+  const rb=$('grp-rank');if(rb)rb.onclick=()=>showGroupRank(st.target);
+}
+async function createGroup(target){
+  if(!lastQ)return;
+  const tn=$('grp-team');
+  const teamName=(tn&&tn.value||'').trim().slice(0,24)||((myGroupName()||'MY')+' TEAM');
+  try{
+    const r=await fetch(GROUP_API,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'create',target,teamName})});
+    if(!r.ok)return;
+    const j=await r.json();
+    GROUP.in=j.id;
+    GROUP.state=await groupFetch(j.id);
+    try{dataLayer.push({event:'vm_group_create',grp:target});}catch(e){}
+    await groupJoin();  // 방장이 첫 멤버
+    const cta=$('r-groupcta');if(cta)cta.classList.add('hidden');
+    renderGroupBox();
+    const box=$('r-group');if(box)box.scrollIntoView({behavior:'smooth',block:'center'});
+  }catch(e){}
+}
+async function renderGroupPanels(){
+  await ensureSingers();
+  const cta=$('r-groupcta');
+  if(cta){
+    if(lastQ&&!GROUP.in){
+      cta.innerHTML=`<div class="sl-t">${t('grpCtaT')}</div><div class="duet-sub">${t('grpCtaS')}</div>
+        <div class="req-row"><input id="grp-team" maxlength="24" placeholder="${t('grpTeamPh')}"></div>
+        <div class="duet-btns">${Object.keys(VM_GROUPS).map(k=>`<button data-grp="${k}">${VM_GROUPS[k].label} · ${t('grpCreate')}</button>`).join('')}</div>`;
+      cta.classList.remove('hidden');
+      cta.querySelectorAll('[data-grp]').forEach(b=>b.onclick=()=>createGroup(b.dataset.grp));
+    }else cta.classList.add('hidden');
+  }
+  if(GROUP.in&&!GROUP.state)GROUP.state=await groupFetch(GROUP.in);
+  renderGroupBox();
 }
 
 /* ---- 내 요청 추적: 처리되면 재방문 때 알려준다 (요청자 본인에게만, 1회) ---- */
