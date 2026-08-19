@@ -401,7 +401,17 @@ async function analyze(pcm16k, append) {
   let report = null;
   try { report = extractReport(pcm16k, fr); } catch (e) { report = null; }
 
-  return { rank: rankKr, rankAll, rankJp, genres, report, takes: takes.length };
+  // 듀엣 궁합용: 최종 쿼리 벡터(q)와 음역(F0 5~95퍼센타일, Hz).
+  // 음역은 이번 테이크의 것만 쓴다(누적 평균은 임베딩만) — 초대장 한 장에 담기엔 충분하다.
+  let pitch = null;
+  try {
+    if (fr && fr.vIdx.length >= RP_MIN_VOICED) {
+      const vf0 = fr.vIdx.map(k => fr.f0[k]);
+      pitch = { lo: Math.round(rpPct(vf0, 0.05)), hi: Math.round(rpPct(vf0, 0.95)) };
+    }
+  } catch (e) { pitch = null; }
+
+  return { rank: rankKr, rankAll, rankJp, genres, report, takes: takes.length, q, pitch };
 }
 
 onmessage = async (ev) => {

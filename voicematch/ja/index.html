@@ -237,6 +237,29 @@ canvas{display:none}
 .req-toast .rt-b{flex:none;background:#e8c66a;color:#1e1b30;border:0;border-radius:9px;
   font-size:11.5px;font-weight:800;padding:8px 11px;cursor:pointer;font-family:inherit}
 .req-toast .rt-x{flex:none;background:none;border:0;color:#8f7fa3;font-size:16px;cursor:pointer;padding:0 2px;line-height:1}
+/* 듀엣 궁합 — 초대장은 URL 해시에 담긴 상대 임베딩. 서버 저장 없음 */
+#duet-banner{margin-top:12px;background:oklch(0.3 0.09 350/.45);border:1px solid var(--pink);border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.6}
+#duet-banner b{color:var(--pink)}
+#r-duet{margin-top:14px;border:1px solid var(--pink);border-radius:12px;padding:14px 12px;background:oklch(0.2 0.05 340/.5)}
+#r-duet .sl-t{font-size:12px;font-weight:800;color:var(--pink);letter-spacing:.5px;margin:10px 0 4px;text-align:center}
+.duet-names{text-align:center;font-size:13.5px;font-weight:800;margin-top:2px}
+.duet-big{font-family:'Black Han Sans';font-size:62px;line-height:1.1;text-align:center;color:var(--pink);text-shadow:0 0 20px oklch(0.72 0.19 350/.45)}
+.duet-big small{font-size:22px}
+.duet-type{text-align:center;font-size:13px;font-weight:800;color:var(--amber);margin-top:2px;line-height:1.5}
+.duet-tops{text-align:center;font-size:11.5px;color:var(--mut);margin-top:6px;line-height:1.6}
+.duet-sub{text-align:center;font-size:11.5px;color:var(--mut);margin-top:4px;line-height:1.55}
+#r-duet .ga-row{display:grid;grid-template-columns:74px 1fr 30px;gap:8px;align-items:center;margin:6px 0}
+#r-duet .ga-nm{font-size:11.5px;font-weight:700;text-align:right;color:var(--mut)}
+#r-duet .ga-tr{height:9px;background:oklch(0.3 0.05 300);border-radius:99px;overflow:hidden}
+#r-duet .ga-tr i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--pink),var(--amber));width:0;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+#r-duet .ga-p{font-size:11px;font-weight:800;color:var(--mut)}
+.duet-btns{display:flex;gap:8px;margin-top:12px}
+.duet-btns button{flex:1;border:none;border-radius:10px;padding:11px 6px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:Pretendard;background:var(--pink);color:oklch(0.18 0.06 350)}
+#r-duetcta{margin-top:14px;border-top:1px dashed oklch(0.5 0.08 300/.6);padding-top:12px}
+#r-duetcta .sl-t{font-size:12px;font-weight:800;color:var(--lime);letter-spacing:.5px;text-align:center}
+#r-duetcta .req-row{display:flex;gap:6px;margin-top:8px}
+#r-duetcta input{flex:1;min-width:0;background:oklch(0.22 0.03 300);border:1px solid oklch(0.45 0.06 300);border-radius:8px;color:inherit;padding:8px 10px;font-size:13px}
+#r-duetcta button{background:var(--pink);color:oklch(0.18 0.06 350);font-weight:800;border:0;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -254,6 +277,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="badge">VOICE MATCH</div>
       <h1 class="hero-t" id="t-hero"></h1>
       <p class="hero-s" id="t-herosub"></p>
+      <div id="duet-banner" class="hidden"></div>
       <div class="lineup" id="lineup"></div>
       <button class="all-btn" id="btn-all"></button>
       <div class="inapp-bar hidden" id="inapp-bar"></div>
@@ -343,6 +367,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div class="judge" id="r-judge"></div>
       <div class="sub" id="r-sub"></div>
       <div class="rank" id="r-rank"></div>
+      <div id="r-duet" class="hidden"></div>
       <div id="r-poolhint" class="pool-hint hidden"></div>
       <div class="mode-unit hidden" id="mode-unit-result">
         <span class="mode-badge" id="mode-badge-result"></span>
@@ -354,6 +379,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div id="r-rankline"></div>
       <div id="r-fantrack" class="hidden"></div>
       <div id="r-setlist" class="hidden"></div>
+      <div id="r-duetcta" class="hidden"></div>
       <div id="r-req" class="hidden"></div>
     </div>
     <div class="remote">
@@ -373,7 +399,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260816th"></script>
+<script src="/voicematch/i18n.js?v=20260819dt"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -412,6 +438,11 @@ function applyLang(){
   $('r-tip').textContent=t('tipResult');
   syncRecLenBtn();
   if(takeCount)renderAddTake();
+  const db=$('duet-banner');
+  if(db){
+    if(DUET.in){db.innerHTML=t('duetBanner')(escHtml(DUET.in.n||DUET_ANON[LANG]||'friend'));db.classList.remove('hidden');}
+    else db.classList.add('hidden');
+  }
   document.querySelectorAll('.lg').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
   updateIntroPoolBtn();
   if(lastResult)renderResult(lastRankKr||lastResult,lastRankAll,lastRankJp,lastGenres);
@@ -439,7 +470,7 @@ const PREVIEW=['뉴진스|NewJeans','아이유|IU','정국|Jung Kook','임영웅
 function drawLineup(){$('lineup').innerHTML=PREVIEW.map(p=>{const[ko,en]=p.split('|');return `<span class="lu">${LANG==='ko'?ko:(en||ko)}</span>`;}).join('');}
 for(let i=0;i<14;i++){const b=document.createElement('i');$('eq').appendChild(b);}
 
-const worker=new Worker('/voicematch/analyzer.js?v=20260816th');
+const worker=new Worker('/voicematch/analyzer.js?v=20260819dt');
 let workerReady=false, modelLoading=null, lastResult=null;
 
 function loadModel(){
@@ -648,6 +679,8 @@ async function analyzePcm(pcm,rate,append){
     // 무음이면 이번 테이크는 없던 것으로 둔다(누적 카운트도 올리지 않는다).
     if(done.error==='silent'){try{dataLayer.push({event:'vm_silent'});}catch(e){}$('err-t').innerHTML=t('errSilent');resetErrBtn();show('s-err');return;}
     takeCount=done.takes||1; appendNext=false;
+    if(done.q)lastQ=done.q;
+    if(done.pitch)lastPitch=done.pitch;
     try{dataLayer.push({event:'vm_result_shown',takes:takeCount});}catch(e){}
     renderResult(done.rank,done.rankAll,done.rankJp,done.genres,done.report);
     renderAddTake();
@@ -869,6 +902,7 @@ function renderResult(rank,rankAll,rankJp,genres,report){
   renderGaxis(genres);
   renderReport(report);
   renderReqBox();
+  renderDuetPanels();
   rankFlow(rank[0]);
 }
 
@@ -894,6 +928,173 @@ async function renderSetlist(rank){
     box.classList.remove('hidden');
   }catch(e){box.classList.add('hidden');}
 }
+
+/* ---- 듀엣 궁합 ----
+   초대장 = URL 해시(#d=)에 담긴 상대 임베딩(int8 192B)+음역+이름. 서버 저장 없음 —
+   목소리는 물론 벡터도 어디에도 업로드되지 않고, 케미 계산은 받은 쪽 기기에서 한다. */
+let lastQ=null,lastPitch=null;
+const DUET={in:null};
+// l2norm 192차원 성분은 실측 ±0.3 안 — 이 스케일 int8 양자화의 cos 오차는 무시 수준
+const EMB_SCALE=0.35;
+const DUET_ANON={ko:'친구',en:'a friend',ja:'友達',es:'un amigo',tw:'朋友',id:'teman',pt:'um amigo'};
+function b64uEnc(u8){let s='';for(const b of u8)s+=String.fromCharCode(b);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function b64uDec(str){const b=atob(str.replace(/-/g,'+').replace(/_/g,'/'));const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
+function packEmb(q){const u=new Uint8Array(q.length);for(let i=0;i<q.length;i++){const v=Math.round(q[i]/EMB_SCALE*127)+128;u[i]=v<0?0:v>255?255:v;}return u;}
+function unpackEmb(u){const a=new Array(u.length);let n=0;for(let i=0;i<u.length;i++){a[i]=(u[i]-128)/127*EMB_SCALE;n+=a[i]*a[i];}n=Math.sqrt(n)||1;return a.map(x=>x/n);}
+function escHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+(function(){
+  const m=location.hash.match(/[#&]d=([A-Za-z0-9_-]+)/);
+  if(!m)return;
+  try{
+    const p=JSON.parse(new TextDecoder().decode(b64uDec(m[1])));
+    if(p&&p.v===1&&typeof p.e==='string'){
+      const emb=unpackEmb(b64uDec(p.e));
+      if(emb.length===192){p.emb=emb;DUET.in=p;}
+    }
+  }catch(e){}
+  if(DUET.in){try{window.dataLayer=window.dataLayer||[];dataLayer.push({event:'vm_duet_opened'});}catch(e){}}
+})();
+function cosv(a,b){let c=0;for(let i=0;i<a.length;i++)c+=a[i]*b[i];return c;}
+// 워커 topRank와 같은 tanh 상대 스케일 — "전체 가수 대비 두 사람이 얼마나 가까운가"
+function relPct(c,dist){
+  const mu=dist.reduce((a,b)=>a+b)/dist.length;
+  const sd=Math.sqrt(dist.reduce((a,b)=>a+(b-mu)**2,0)/dist.length)||1;
+  return Math.max(5,Math.min(99,Math.round(100*(0.55+0.45*Math.tanh((c-mu)/(2*sd))))));
+}
+// 워커 AXES와 같은 매크로 장르 분류(정규식 순서 중요)
+const DUET_AXES=[['trot',/트로트|국악/],['jazz',/재즈|스탠더드/],['hiphop',/힙합/],['rnb',/R&B|소울/],
+  ['rock',/록|그런지|펑크|밴드/],['dance',/댄스|케이팝/],['indie',/인디|포크|컨트리|어쿠스틱/],['ballad',/발라드|뮤지컬/]];
+function topGenres(q,singers){
+  const groups={};
+  singers.forEach(s=>{
+    let k='pop';for(const[key,re]of DUET_AXES)if(re.test(s.genre||'')){k=key;break;}
+    (groups[k]=groups[k]||[]).push(cosv(q,s.emb));
+  });
+  const gs=[];
+  for(const k in groups){
+    const arr=groups[k].sort((a,b)=>b-a);if(arr.length<4)continue;
+    gs.push({k,v:arr.slice(0,5).reduce((a,b)=>a+b)/Math.min(5,arr.length)});
+  }
+  gs.sort((a,b)=>b.v-a.v);
+  return gs.map(g=>g.k);
+}
+function computeDuet(){
+  const A=DUET.in,singers=window._singersCache;
+  if(!A||!lastQ||!singers)return null;
+  const tone=relPct(cosv(A.emb,lastQ),singers.map(s=>cosv(A.emb,s.emb)));
+  let range=null;
+  if(A.lo>0&&A.hi>A.lo&&lastPitch&&lastPitch.lo>0&&lastPitch.hi>lastPitch.lo){
+    const st=f=>12*Math.log2(f/440);
+    const a1=st(A.lo),a2=st(A.hi),b1=st(lastPitch.lo),b2=st(lastPitch.hi);
+    let best=0;
+    // 남녀 듀엣은 한 옥타브 차가 정상이라 ±12반음 시프트 중 최선의 겹침으로 잰다
+    for(const off of[-12,0,12]){
+      const o=Math.min(a2,b2+off)-Math.max(a1,b1+off);
+      best=Math.max(best,Math.max(0,o)/(Math.min(a2-a1,b2-b1)||1));
+    }
+    range=Math.round(42+56*Math.min(1,best));
+  }
+  const gA=topGenres(A.emb,singers),gB=topGenres(lastQ,singers);
+  let taste=null;
+  if(gA.length&&gB.length)
+    taste=gA[0]===gB[0]?94:(gB.slice(0,2).indexOf(gA[0])>=0||gA.slice(0,2).indexOf(gB[0])>=0)?80:63;
+  const parts=[[tone,.5],[range,.25],[taste,.25]].filter(p=>p[0]!=null);
+  const w=parts.reduce((a,p)=>a+p[1],0);
+  const raw=parts.reduce((a,p)=>a+p[0]*p[1],0)/w;
+  // 총점은 재미용 궁합 점수라 후하게 스케일(55~99). 축 바는 실측값 그대로 보여준다.
+  // (실측: 랜덤 가수쌍 절반이 raw 50 미만 — 그대로 내보내면 "궁합 43%"가 공유를 죽인다)
+  const total=Math.min(99,Math.round(55+0.45*raw));
+  return {total,tone,range,taste,type:tone>=80?'twin':tone>=55?'harmony':'contrast'};
+}
+// 듀엣곡: 두 사람 모두에게 맞아야 한다 — 가수별 z점수의 min으로 "둘 다 적합"을 재고 상위 가수의 곡을 꼽는다
+async function renderDuetSetlist(box){
+  const A=DUET.in,singers=window._singersCache;
+  if(!A||!lastQ||!singers)return;
+  try{
+    if(!catalogCache)catalogCache=await fetch(CATALOG_URL).then(r=>r.json());
+    const pool0=singers.filter(s=>!s.intl&&(LANG==='ko'||s.gk));
+    const pool=pool0.length?pool0:singers;
+    const z=q=>{const cs=pool.map(s=>cosv(q,s.emb));const mu=cs.reduce((a,b)=>a+b)/cs.length;
+      const sd=Math.sqrt(cs.reduce((a,b)=>a+(b-mu)**2,0)/cs.length)||1;return cs.map(c=>(c-mu)/sd);};
+    const zA=z(A.emb),zB=z(lastQ);
+    const ranked=pool.map((s,i)=>({s,f:Math.min(zA[i],zB[i])})).sort((a,b)=>b.f-a.f).slice(0,2);
+    const bySlug={};catalogCache.artists.forEach(a=>bySlug[a.slug]=a);
+    const picks=[];
+    ranked.forEach((r,i)=>{
+      const a=bySlug[r.s.slug];if(!a||!a.songs)return;
+      a.songs.slice(0,i===0?2:1).forEach(sg=>{if(sg.vid&&sg.title)picks.push({artist:singerName(r.s,LANG),title:sg.title,vid:sg.vid});});
+    });
+    if(!picks.length)return;
+    box.insertAdjacentHTML('beforeend',`<div class="sl-t">${t('duetSetlist')}</div>`+picks.slice(0,3).map(p=>
+      `<a class="sl-row" href="https://youtu.be/${p.vid}" target="_blank" rel="noreferrer">`+
+      `<span class="sl-play">▶</span><span class="sl-song">${p.title}</span><span class="sl-artist">${p.artist}</span></a>`).join(''));
+  }catch(e){}
+}
+async function makeInvite(){
+  if(!lastQ)return;
+  const inp=$('duet-name');
+  const name=(inp&&inp.value||'').trim().slice(0,16);
+  try{localStorage.setItem('vm_duet_name',name);}catch(e){}
+  const top=lastResult&&lastResult[0];
+  const payload={v:1,n:name,s:top?top.slug:'',p:top?top.pct:0,e:b64uEnc(packEmb(lastQ))};
+  if(lastPitch){payload.lo=lastPitch.lo;payload.hi=lastPitch.hi;}
+  const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}#d=`
+    +b64uEnc(new TextEncoder().encode(JSON.stringify(payload)));
+  try{dataLayer.push({event:'vm_duet_invite'});}catch(e){}
+  const txt=t('duetInviteText')(name);
+  if(navigator.share){try{await navigator.share({text:txt+'\n'+url});return;}catch(e){}}
+  try{await navigator.clipboard.writeText(txt+'\n'+url);}
+  catch(e){
+    const ta=document.createElement('textarea');ta.value=txt+'\n'+url;ta.style.cssText='position:fixed;opacity:0';
+    document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e2){}ta.remove();
+  }
+  const b=$('duet-make');if(b)b.textContent=t('duetCopied');
+}
+function renderDuetPanels(){
+  // 초대장 CTA — 모든 결과 화면에 노출(공유가 곧 다음 사용자 유입)
+  const cta=$('r-duetcta');
+  if(cta&&lastQ){
+    const saved=(()=>{try{return localStorage.getItem('vm_duet_name')||'';}catch(e){return '';}})();
+    cta.innerHTML=`<div class="sl-t">${t('duetCtaT')}</div><div class="duet-sub">${t('duetCtaS')}</div>
+      <div class="req-row"><input id="duet-name" maxlength="16" placeholder="${t('duetNamePh')}" value="${escHtml(saved)}"><button id="duet-make">${t('duetMake')}</button></div>`;
+    cta.classList.remove('hidden');
+    $('duet-make').onclick=makeInvite;
+  }
+  // 초대장으로 들어온 경우: 케미 결과 패널
+  const box=$('r-duet');
+  if(!box)return;
+  if(!DUET.in){box.classList.add('hidden');box.innerHTML='';return;}
+  const d=computeDuet();
+  if(!d){box.classList.add('hidden');box.innerHTML='';return;}
+  const nameA=escHtml(DUET.in.n||DUET_ANON[LANG]||'friend');
+  const sA=(window._singersCache||[]).find(x=>x.slug===DUET.in.s);
+  const tops=(sA&&DUET.in.p)
+    ?`<div class="duet-tops">${nameA}: ${escHtml(singerName(sA,LANG))} ${DUET.in.p}%`
+      +(lastResult&&lastResult[0]?` · ${t('duetMe')}: ${escHtml(singerName(lastResult[0],LANG))} ${lastResult[0].pct}%`:'')+'</div>'
+    :'';
+  const bar=(label,v)=>v==null?'':`<div class="ga-row"><span class="ga-nm">${label}</span><div class="ga-tr"><i data-w="${v}"></i></div><span class="ga-p">${v}</span></div>`;
+  box.innerHTML=`<div class="sl-t" style="margin-top:0">${t('duetT')}</div>
+    <div class="duet-names">${nameA} × ${t('duetMe')}</div>
+    <div class="duet-big">${d.total}<small>${t('pts')||'%'}</small></div>
+    <div class="duet-type">${t('duetType_'+d.type)}</div>
+    ${tops}
+    ${bar(t('duetTone'),d.tone)}${bar(t('duetRange'),d.range)}${bar(t('duetTaste'),d.taste)}
+    <div class="duet-btns"><button id="duet-share"></button></div>`;
+  $('duet-share').textContent=t('duetShare');
+  box.classList.remove('hidden');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    box.querySelectorAll('.ga-tr i').forEach(b=>b.style.width=b.dataset.w+'%');}));
+  $('duet-share').onclick=()=>{
+    const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}`;
+    const txt=t('duetShareText')(DUET.in.n||DUET_ANON[LANG]||'friend',d.total)+'\n'+url;
+    if(navigator.share){navigator.share({text:txt}).catch(()=>{});}
+    else window.open('https://www.threads.com/intent/post?text='+encodeURIComponent(txt),'_blank','noopener');
+    try{dataLayer.push({event:'vm_duet_share'});}catch(e){}
+  };
+  renderDuetSetlist(box);
+  try{dataLayer.push({event:'vm_duet_result',duet_pct:d.total});}catch(e){}
+}
+
 /* ---- 내 요청 추적: 처리되면 재방문 때 알려준다 (요청자 본인에게만, 1회) ---- */
 const REQ_TRACK_KEY='vm_my_reqs';
 const REQ_STATUS_API='https://relay.cocy.io/api/voicematch/request-status';
