@@ -1134,9 +1134,11 @@ function renderDuetPanels(){
   // 초대장 CTA — 모든 결과 화면에 노출(공유가 곧 다음 사용자 유입)
   const cta=$('r-duetcta');
   if(cta&&lastQ){
+    // 이름 기본값: 직접 쓴 값 > 로그인 닉네임 > 빈칸(플레이스홀더)
     const saved=(()=>{try{return localStorage.getItem('vm_duet_name')||'';}catch(e){return '';}})();
+    const nick=saved||(authUser()&&authUser().nickname)||'';
     cta.innerHTML=`<div class="sl-t">${t('duetCtaT')}</div><div class="duet-sub">${t('duetCtaS')}</div>
-      <div class="req-row"><input id="duet-name" maxlength="16" placeholder="${t('duetNamePh')}" value="${escHtml(saved)}"><button id="duet-make">${t('duetMake')}</button></div>`;
+      <div class="req-row"><input id="duet-name" maxlength="16" placeholder="${t('duetNamePh')}" value="${escHtml(nick)}"><button id="duet-make">${t('duetMake')}</button></div>`;
     cta.classList.remove('hidden');
     $('duet-make').onclick=makeInvite;
   }
