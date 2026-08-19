@@ -240,6 +240,9 @@ canvas{display:none}
 /* 듀엣 궁합 — 초대장은 URL 해시에 담긴 상대 임베딩. 서버 저장 없음 */
 #duet-banner{margin-top:12px;background:oklch(0.3 0.09 350/.45);border:1px solid var(--pink);border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.6}
 #duet-banner b{color:var(--pink)}
+.duet-instant{display:block;width:100%;margin-top:9px;border:none;border-radius:9px;padding:11px 8px;
+  font-size:12.5px;font-weight:800;cursor:pointer;font-family:Pretendard;background:var(--pink);color:oklch(0.18 0.06 350)}
+#duet-return{background:var(--panel2)!important;color:var(--txt)!important}
 #r-duet{margin-top:14px;border:1px solid var(--pink);border-radius:12px;padding:14px 12px;background:oklch(0.2 0.05 340/.5)}
 #r-duet .sl-t{font-size:12px;font-weight:800;color:var(--pink);letter-spacing:.5px;margin:10px 0 4px;text-align:center}
 .duet-names{text-align:center;font-size:13.5px;font-weight:800;margin-top:2px}
@@ -440,7 +443,12 @@ function applyLang(){
   if(takeCount)renderAddTake();
   const db=$('duet-banner');
   if(db){
-    if(DUET.in){db.innerHTML=t('duetBanner')(escHtml(DUET.in.n||DUET_ANON[LANG]||'friend'));db.classList.remove('hidden');}
+    if(DUET.in){
+      db.innerHTML=t('duetBanner')(escHtml(DUET.in.n||DUET_ANON[LANG]||'friend'))
+        +(loadDuetSelf()?`<button id="duet-instant" class="duet-instant">${t('duetInstant')}</button>`:'');
+      db.classList.remove('hidden');
+      const bi=$('duet-instant');if(bi)bi.onclick=duetInstant;
+    }
     else db.classList.add('hidden');
   }
   document.querySelectorAll('.lg').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
@@ -681,6 +689,9 @@ async function analyzePcm(pcm,rate,append){
     takeCount=done.takes||1; appendNext=false;
     if(done.q)lastQ=done.q;
     if(done.pitch)lastPitch=done.pitch;
+    // 듀엣 회신 루프용: 내 목소리 벡터+결과를 이 기기에 저장 —
+    // 상대가 결과 링크를 보내오면 다시 부르지 않고 바로 케미를 보여준다
+    if(done.q&&done.rank)saveDuetSelf(done);
     try{dataLayer.push({event:'vm_result_shown',takes:takeCount});}catch(e){}
     renderResult(done.rank,done.rankAll,done.rankJp,done.genres,done.report);
     renderAddTake();
@@ -1030,25 +1041,94 @@ async function renderDuetSetlist(box){
       `<span class="sl-play">▶</span><span class="sl-song">${p.title}</span><span class="sl-artist">${p.artist}</span></a>`).join(''));
   }catch(e){}
 }
+/* 회신 루프: 내 벡터+결과를 이 기기에 저장해뒀다가, 상대가 보낸 결과 링크(#d=)를 열면
+   다시 부르지 않고 즉시 케미를 계산한다. 초대한 사람도 결과를 보는 유일한 경로(서버 없음). */
+function saveDuetSelf(done){
+  try{
+    localStorage.setItem('vm_duet_self',JSON.stringify(
+      {q:b64uEnc(packEmb(done.q)),pitch:done.pitch||null,rank:done.rank,ts:Date.now()}));
+  }catch(e){}
+}
+function loadDuetSelf(){
+  try{
+    const s=JSON.parse(localStorage.getItem('vm_duet_self')||'null');
+    if(!s||!s.q||!s.rank)return null;
+    if(Date.now()-(s.ts||0)>30*24*3600*1000)return null;
+    return s;
+  }catch(e){return null;}
+}
+async function duetInstant(){
+  const s=loadDuetSelf();if(!s)return;
+  // 녹음 없이 진입하면 모델 로드가 안 돼서 singers 캐시가 비어 있다 — 임베딩 DB만 따로 받는다(ONNX 불필요)
+  if(!window._singersCache){
+    try{window._singersCache=await fetch('/voicematch/singers.json?v=20260816x10').then(r=>r.json());}catch(e){return;}
+  }
+  lastQ=unpackEmb(b64uDec(s.q));lastPitch=s.pitch||null;
+  try{dataLayer.push({event:'vm_duet_instant'});}catch(e){}
+  renderResult(s.rank,null,null,null,null);
+}
+function buildInviteUrl(name){
+  const top=lastResult&&lastResult[0];
+  const payload={v:1,n:name||'',s:top?top.slug:'',p:top?top.pct:0,e:b64uEnc(packEmb(lastQ))};
+  if(lastPitch){payload.lo=lastPitch.lo;payload.hi=lastPitch.hi;}
+  return `https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}#d=`
+    +b64uEnc(new TextEncoder().encode(JSON.stringify(payload)));
+}
+async function shareOrCopy(txt,btnId){
+  if(navigator.share){try{await navigator.share({text:txt});return;}catch(e){}}
+  try{await navigator.clipboard.writeText(txt);}
+  catch(e){
+    const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';
+    document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e2){}ta.remove();
+  }
+  const b=$(btnId);if(b)b.textContent=t('duetCopied');
+}
 async function makeInvite(){
   if(!lastQ)return;
   const inp=$('duet-name');
   const name=(inp&&inp.value||'').trim().slice(0,16);
   try{localStorage.setItem('vm_duet_name',name);}catch(e){}
-  const top=lastResult&&lastResult[0];
-  const payload={v:1,n:name,s:top?top.slug:'',p:top?top.pct:0,e:b64uEnc(packEmb(lastQ))};
-  if(lastPitch){payload.lo=lastPitch.lo;payload.hi=lastPitch.hi;}
-  const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}#d=`
-    +b64uEnc(new TextEncoder().encode(JSON.stringify(payload)));
   try{dataLayer.push({event:'vm_duet_invite'});}catch(e){}
-  const txt=t('duetInviteText')(name);
-  if(navigator.share){try{await navigator.share({text:txt+'\n'+url});return;}catch(e){}}
-  try{await navigator.clipboard.writeText(txt+'\n'+url);}
-  catch(e){
-    const ta=document.createElement('textarea');ta.value=txt+'\n'+url;ta.style.cssText='position:fixed;opacity:0';
-    document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e2){}ta.remove();
+  await shareOrCopy(t('duetInviteText')(name)+'\n'+buildInviteUrl(name),'duet-make');
+}
+// B가 A에게 결과 되돌려주기 — B의 초대 링크가 곧 회신 링크다(A는 저장된 목소리로 즉시 결과)
+async function sendDuetBack(){
+  if(!lastQ)return;
+  const myName=(()=>{try{return localStorage.getItem('vm_duet_name')||'';}catch(e){return '';}})();
+  try{dataLayer.push({event:'vm_duet_return'});}catch(e){}
+  await shareOrCopy(t('duetReturnText')(DUET.in&&DUET.in.n||'')+'\n'+buildInviteUrl(myName),'duet-return');
+}
+/* 듀엣 공유 카드 (720x900) */
+function rrPath(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath();}
+function drawDuetCard(d){
+  const c=$('card'),x=c.getContext('2d'),W=720,H=900;
+  const nameA=DUET.in?(DUET.in.n||DUET_ANON[LANG]||'friend'):'';
+  x.fillStyle='#1d1526';x.fillRect(0,0,W,H);
+  const g=x.createRadialGradient(W*.5,140,10,W*.5,140,560);
+  g.addColorStop(0,'rgba(240,110,170,.28)');g.addColorStop(1,'transparent');
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.strokeStyle='rgba(240,110,170,.55)';x.lineWidth=3;x.strokeRect(24,24,W-48,H-48);
+  x.textAlign='center';
+  x.fillStyle='#e8c66a';x.font='700 26px Pretendard';x.fillText(t('duetT'),W/2,96);
+  const pair=`${nameA} × ${t('duetMe')}`;
+  x.fillStyle='#f5eefb';x.font=(pair.length>12?"42px":"54px")+" 'Black Han Sans'";x.fillText(pair,W/2,178);
+  x.fillStyle='#f06eaa';x.font="170px 'Black Han Sans'";x.fillText(d.total,W/2,382);
+  x.font="54px 'Black Han Sans'";x.fillText(t('pts')||'%',W/2+152,382);
+  const ty=t('duetType_'+d.type).split(' — ');
+  x.fillStyle='#e8c66a';x.font="34px 'Black Han Sans'";x.fillText(ty[0],W/2,462);
+  if(ty[1]){x.fillStyle='#cdbcdd';x.font='600 24px Pretendard';x.fillText(ty[1],W/2,504);}
+  const rows=[[t('duetTone'),d.tone],[t('duetRange'),d.range],[t('duetTaste'),d.taste]].filter(r=>r[1]!=null);
+  let y=584;
+  for(const[lb,v]of rows){
+    x.textAlign='left';x.fillStyle='#cdbcdd';x.font='700 24px Pretendard';x.fillText(lb,90,y);
+    x.fillStyle='rgba(255,255,255,.12)';rrPath(x,300,y-20,290,22,11);x.fill();
+    x.fillStyle='#f06eaa';rrPath(x,300,y-20,Math.max(22,290*v/100),22,11);x.fill();
+    x.fillStyle='#b9f455';x.font='800 24px Pretendard';x.fillText(String(v),612,y);
+    y+=62;
   }
-  const b=$('duet-make');if(b)b.textContent=t('duetCopied');
+  x.textAlign='center';
+  x.fillStyle='#8f7fa3';x.font='500 22px Pretendard';x.fillText(t('cardFoot'),W/2,H-56);
+  return c;
 }
 function renderDuetPanels(){
   // 초대장 CTA — 모든 결과 화면에 노출(공유가 곧 다음 사용자 유입)
@@ -1079,18 +1159,27 @@ function renderDuetPanels(){
     <div class="duet-type">${t('duetType_'+d.type)}</div>
     ${tops}
     ${bar(t('duetTone'),d.tone)}${bar(t('duetRange'),d.range)}${bar(t('duetTaste'),d.taste)}
-    <div class="duet-btns"><button id="duet-share"></button></div>`;
+    <div class="duet-btns"><button id="duet-share"></button><button id="duet-return"></button></div>`;
   $('duet-share').textContent=t('duetShare');
+  $('duet-return').textContent=t('duetReturn')(DUET.in.n||DUET_ANON[LANG]||'friend');
   box.classList.remove('hidden');
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     box.querySelectorAll('.ga-tr i').forEach(b=>b.style.width=b.dataset.w+'%');}));
-  $('duet-share').onclick=()=>{
+  $('duet-share').onclick=async()=>{
     const url=`https://game.cocy.io/voicematch/${LANG==='ko'?'':LANG+'/'}`;
     const txt=t('duetShareText')(DUET.in.n||DUET_ANON[LANG]||'friend',d.total)+'\n'+url;
-    if(navigator.share){navigator.share({text:txt}).catch(()=>{});}
-    else window.open('https://www.threads.com/intent/post?text='+encodeURIComponent(txt),'_blank','noopener');
     try{dataLayer.push({event:'vm_duet_share'});}catch(e){}
+    try{
+      await document.fonts.load("40px 'Black Han Sans'");
+      drawDuetCard(d);
+      const bl=await new Promise(r=>$('card').toBlob(r,'image/png'));
+      const f=new File([bl],'voicematch-duet.png',{type:'image/png'});
+      if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:txt});return;}
+      const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='voicematch-duet.png';a.click();
+    }catch(e){}
+    window.open('https://www.threads.com/intent/post?text='+encodeURIComponent(txt),'_blank','noopener');
   };
+  $('duet-return').onclick=sendDuetBack;
   renderDuetSetlist(box);
   try{dataLayer.push({event:'vm_duet_result',duet_pct:d.total});}catch(e){}
 }
