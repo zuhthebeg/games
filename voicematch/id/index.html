@@ -278,6 +278,9 @@ canvas{display:none}
 #r-daily .dl-btns{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
 #r-daily .dl-btns button{border:0;border-radius:9px;padding:9px 12px;font-size:12.5px;font-weight:800;cursor:pointer;background:var(--panel2);color:var(--txt)}
 #r-daily .dl-btns .dl-main{background:var(--lime);color:#1a2210}
+#r-daily .dl-streak{margin-top:7px;font-size:13px;font-weight:800;color:var(--lime)}
+.lb-sec-t{font-size:11px;font-weight:800;color:var(--amber);letter-spacing:.5px;margin:10px 0 6px}
+.lb-divider{height:1px;background:oklch(0.45 0.07 295/.5);margin:10px 0}
 #r-group{margin-top:14px;border:1px solid var(--amber);border-radius:12px;padding:14px 12px;background:oklch(0.22 0.04 85/.35)}
 #r-group .sl-t{font-size:12px;font-weight:800;color:var(--amber);letter-spacing:.5px;text-align:center}
 .grp-slots{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
@@ -440,7 +443,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="/voicematch/i18n.js?v=20260826d1"></script>
+<script src="/voicematch/i18n.js?v=20260826d2"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -844,6 +847,9 @@ async function showBoard(slug){
  * hub 보정 + tanh 상대 스케일로 계산 — 전 세계가 같은 기준으로 겨룬다. */
 const DAILY_API='https://relay.cocy.io/api/rankings/voicematch-daily';
 function dailyDayUTC(){const d=new Date();return String(d.getUTCFullYear())+String(d.getUTCMonth()+1).padStart(2,'0')+String(d.getUTCDate()).padStart(2,'0');}
+function dailyDayUTCOffset(off){const d=new Date();d.setUTCDate(d.getUTCDate()+off);return String(d.getUTCFullYear())+String(d.getUTCMonth()+1).padStart(2,'0')+String(d.getUTCDate()).padStart(2,'0');}
+function getDailyStreak(){return{last:localStorage.getItem('vm_streak_last')||'',n:parseInt(localStorage.getItem('vm_streak_n')||'0',10)};}
+function updateDailyStreak(day){const{last,n}=getDailyStreak();if(last===day)return n;const newN=(last===dailyDayUTCOffset(-1))?n+1:1;localStorage.setItem('vm_streak_last',day);localStorage.setItem('vm_streak_n',String(newN));return newN;}
 function dailyHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h>>>0;}
 async function dailyTarget(){
   const singers=await ensureSingers();if(!singers)return null;
@@ -870,6 +876,11 @@ async function renderDailyBanner(){
     const r=await fetch(DAILY_API+'?limit=1').then(x=>x.json());
     if(r.success&&r.entries>0)el.innerHTML=t('dailyBanner')(escHtml(singerName(tgt,LANG)))+' · '+t('dailyCount')(r.entries);
   }catch(e){}
+  // 어제 참여한 사람에게 스트릭 뱃지 — 오늘 도전 동기부여
+  const{last:sl,n:sn}=getDailyStreak();
+  if(sn>=2&&sl===dailyDayUTCOffset(-1)){
+    el.innerHTML+=' <b style="color:var(--lime)">'+t('dailyStreak')(sn)+'</b>';
+  }
 }
 function claimDailyGold(btn,day,rank){
   const key='vm_daily_claimed_'+day;
@@ -908,10 +919,12 @@ async function renderDailyPanel(){
       if(r.success&&r.myRank){
         submitted=true;
         try{dataLayer.push({event:'vm_daily_submit'});}catch(e){}
+        const streakN=updateDailyStreak(r.day);
         const claimed=localStorage.getItem('vm_daily_claimed_'+r.day);
         const rewardBtn=(r.myRank<=10&&!claimed)
           ?`<button class="dl-main" onclick="claimDailyGold(this,'${r.day}',${r.myRank})">${t('rewardClaimBtn')(rewardForRank(r.myRank).toLocaleString())}</button>`:'';
         inner+=`<div class="dl-rank">${t('dailyMyRank')(r.myRank)}</div>`;
+        if(streakN>=2)inner+=`<div class="dl-streak">${t('dailyStreak')(streakN)}</div>`;
         inner+=`<div class="dl-btns">${rewardBtn}<button onclick="showDailyBoard()">${t('dailyBoardBtn')}</button><button id="dl-share" onclick="shareDaily()">${t('dailyShareBtn')}</button></div>`;
       }
     }catch(e){}
@@ -936,6 +949,18 @@ async function showDailyBoard(){
   const u=authUser();
   const tgt=await dailyTarget();
   let html=`<h3>${t('dailyBoardTitle')(tgt?singerName(tgt,LANG):'')}</h3>`;
+  // 어제의 1위 명예의전당
+  try{
+    const yr=await fetch(DAILY_API+'?day='+dailyDayUTCOffset(-1)+'&limit=3').then(x=>x.json());
+    const yrows=(yr.rankings||[]).slice(0,3);
+    if(yrows.length){
+      html+=`<div class="lb-sec-t">${t('dailyYesterday')}</div>`;
+      yrows.forEach((row,i)=>{
+        html+=`<div class="lb-row"><span class="rk-no${i<3?' top':''}">${i+1}</span><span class="nick">${vmFlag(row.country)}${row.nickname}</span><span class="pct">${row.pct}%</span></div>`;
+      });
+      html+=`<div class="lb-divider"></div>`;
+    }
+  }catch(e){}
   try{
     const q=u?`?me=${encodeURIComponent(u.userId)}`:'';
     const r=await fetch(DAILY_API+q).then(x=>x.json());
@@ -1693,7 +1718,14 @@ function drawCard(){
   x.strokeStyle='rgba(190,150,220,.4)';x.setLineDash([6,8]);x.beginPath();x.moveTo(80,650);x.lineTo(W-80,650);x.stroke();x.setLineDash([]);
   x.fillStyle='#f5eefb';x.font='700 30px Pretendard';
   lastResult.slice(1,4).forEach((s,i)=>{x.fillText(`${i+2}. ${singerName(s,LANG)}  ${s.pct}%`,W/2,712+i*46);});
-  x.fillStyle='#8f7fa3';x.font='500 22px Pretendard';x.fillText(t('cardFoot'),W/2,H-56);
+  if(_dailyLast&&_dailyLast.tgt){
+    const dnm=singerName(_dailyLast.tgt,LANG);
+    x.fillStyle='#b9f455';x.font='600 20px Pretendard';
+    x.fillText(t('cardDailyBadge')(dnm,_dailyLast.pct),W/2,H-56);
+    x.fillStyle='#8f7fa3';x.font='500 20px Pretendard';x.fillText(t('cardFoot'),W/2,H-32);
+  }else{
+    x.fillStyle='#8f7fa3';x.font='500 22px Pretendard';x.fillText(t('cardFoot'),W/2,H-56);
+  }
   return c;
 }
 async function cardBlob(){await document.fonts.load("40px 'Black Han Sans'");drawCard();
