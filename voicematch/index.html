@@ -266,6 +266,18 @@ canvas{display:none}
 /* 그룹 완성 모드 — 설계: docs/design/voicematch-group-mode.md */
 #group-banner{margin-top:12px;background:oklch(0.3 0.08 85/.4);border:1px solid var(--amber);border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.6}
 #group-banner b{color:var(--amber)}
+#daily-banner{margin-top:12px;background:oklch(0.3 0.07 145/.4);border:1px solid var(--lime);border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.6;cursor:pointer}
+#daily-banner b{color:var(--lime)}
+#r-daily{margin-top:14px;background:oklch(0.3 0.07 145/.32);border:1px solid var(--lime);border-radius:12px;padding:13px 14px;text-align:left}
+#r-daily .dl-t{font-size:12px;font-weight:800;color:var(--lime);letter-spacing:.4px;margin-bottom:8px}
+#r-daily .dl-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+#r-daily .dl-nm{font-size:15px;font-weight:800}
+#r-daily .dl-p{font-size:22px;font-weight:900;color:var(--lime)}
+#r-daily .dl-rank{margin-top:6px;font-size:13px;font-weight:700}
+#r-daily .dl-login{margin-top:6px;font-size:12px;color:var(--mut);font-weight:600}
+#r-daily .dl-btns{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+#r-daily .dl-btns button{border:0;border-radius:9px;padding:9px 12px;font-size:12.5px;font-weight:800;cursor:pointer;background:var(--panel2);color:var(--txt)}
+#r-daily .dl-btns .dl-main{background:var(--lime);color:#1a2210}
 #r-group{margin-top:14px;border:1px solid var(--amber);border-radius:12px;padding:14px 12px;background:oklch(0.22 0.04 85/.35)}
 #r-group .sl-t{font-size:12px;font-weight:800;color:var(--amber);letter-spacing:.5px;text-align:center}
 .grp-slots{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
@@ -303,6 +315,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <p class="hero-s" id="t-herosub"></p>
       <div id="duet-banner" class="hidden"></div>
       <div id="group-banner" class="hidden"></div>
+      <div id="daily-banner" class="hidden"></div>
       <div class="lineup" id="lineup"></div>
       <button class="all-btn" id="btn-all"></button>
       <div class="inapp-bar hidden" id="inapp-bar"></div>
@@ -403,6 +416,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div id="r-report" class="hidden"></div>
       <div id="r-addtake" class="hidden"></div>
       <div id="r-rankline"></div>
+      <div id="r-daily" class="hidden"></div>
       <div id="r-fantrack" class="hidden"></div>
       <div id="r-setlist" class="hidden"></div>
       <div id="r-duetcta" class="hidden"></div>
@@ -426,7 +440,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </section>
 </div>
 <canvas id="card" width="720" height="900"></canvas>
-<script src="i18n.js?v=20260820g1"></script>
+<script src="i18n.js?v=20260826d1"></script>
 <script>
 const $=id=>document.getElementById(id);
 const show=id=>{['s-intro','s-rec','s-ana','s-result','s-err'].forEach(s=>$(s).classList.toggle('hidden',s!==id));};
@@ -476,6 +490,7 @@ function applyLang(){
     else db.classList.add('hidden');
   }
   try{renderGroupBanner();}catch(e){}
+  try{renderDailyBanner();}catch(e){}
   document.querySelectorAll('.lg').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
   updateIntroPoolBtn();
   if(lastResult)renderResult(lastRankKr||lastResult,lastRankAll,lastRankJp,lastGenres);
@@ -823,6 +838,120 @@ async function showBoard(slug){
   m.onclick=e=>{if(e.target===m)m.remove();};
   document.body.appendChild(m);
 }
+/* ---- 오늘의 도전 (Daily Challenge) ----
+ * 매일 UTC 날짜 해시로 gk 풀(해외에서도 알려진 가수)에서 1명이 전 유저 공통으로 뽑힌다.
+ * 점수는 로케일과 무관하게 항상 같은 풀(gk)에서 워커 topRank와 동일한
+ * hub 보정 + tanh 상대 스케일로 계산 — 전 세계가 같은 기준으로 겨룬다. */
+const DAILY_API='https://relay.cocy.io/api/rankings/voicematch-daily';
+function dailyDayUTC(){const d=new Date();return String(d.getUTCFullYear())+String(d.getUTCMonth()+1).padStart(2,'0')+String(d.getUTCDate()).padStart(2,'0');}
+function dailyHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h>>>0;}
+async function dailyTarget(){
+  const singers=await ensureSingers();if(!singers)return null;
+  const pool=singers.filter(s=>!s.intl&&s.gk).sort((a,b)=>a.slug<b.slug?-1:a.slug>b.slug?1:0);
+  if(!pool.length)return null;
+  return pool[dailyHash('vmdaily-'+dailyDayUTC())%pool.length];
+}
+function dailyPct(target){
+  if(!lastQ||!target||!window._singersCache)return null;
+  const HUB_ALPHA=0.45;
+  const pool=window._singersCache.filter(s=>!s.intl&&s.gk);
+  if(pool.length<4)return null;
+  const cs=pool.map(s=>cosv(lastQ,s.emb)-HUB_ALPHA*(s.hub||0));
+  return relPct(cosv(lastQ,target.emb)-HUB_ALPHA*(target.hub||0),cs);
+}
+async function renderDailyBanner(){
+  const el=$('daily-banner');if(!el)return;
+  const tgt=await dailyTarget();if(!tgt){el.classList.add('hidden');return;}
+  el.innerHTML=t('dailyBanner')(escHtml(singerName(tgt,LANG)));
+  el.classList.remove('hidden');
+  el.onclick=()=>{try{dataLayer.push({event:'vm_daily_banner_tap'});}catch(e){}const b=$('btn-start');if(b)b.click();};
+  // 참여자 수는 있으면 붙이고 없으면 조용히 생략
+  try{
+    const r=await fetch(DAILY_API+'?limit=1').then(x=>x.json());
+    if(r.success&&r.entries>0)el.innerHTML=t('dailyBanner')(escHtml(singerName(tgt,LANG)))+' · '+t('dailyCount')(r.entries);
+  }catch(e){}
+}
+function claimDailyGold(btn,day,rank){
+  const key='vm_daily_claimed_'+day;
+  if(localStorage.getItem(key))return;
+  localStorage.setItem(key,'1');
+  const amount=rewardForRank(rank);
+  try{if(typeof SharedWallet!=='undefined'&&SharedWallet.addGold)SharedWallet.addGold(amount);}catch(e){}
+  if(btn)btn.remove();
+  const m=document.createElement('div');m.id='reward-modal';
+  m.innerHTML=`<div id="reward-box">
+    <div class="reward-emoji">🎁</div>
+    <div class="reward-title">${t('rewardGot')(amount.toLocaleString())}</div>
+    <div class="reward-sub">${t('rewardSub')}</div>
+    <a class="reward-btn" href="https://game.cocy.io/">${t('rewardBtn')}</a>
+    <button class="reward-close" onclick="document.getElementById('reward-modal').remove()">${t('lb_close')}</button>
+  </div>`;
+  m.onclick=e=>{if(e.target===m)m.remove();};
+  document.body.appendChild(m);
+}
+let _dailyLast=null;
+async function renderDailyPanel(){
+  const box=$('r-daily');if(!box)return;
+  const tgt=await dailyTarget();
+  const pct=tgt?dailyPct(tgt):null;
+  if(!tgt||pct==null){box.classList.add('hidden');return;}
+  _dailyLast={tgt,pct};
+  const nm=escHtml(singerName(tgt,LANG));
+  let inner=`<div class="dl-t">${t('dailyT')}</div>
+    <div class="dl-row"><span class="dl-nm">${nm}</span><span class="dl-p">${pct}%</span></div>`;
+  const u=authUser();
+  let submitted=false;
+  if(u&&u.registered){
+    try{
+      const r=await fetch(DAILY_API,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({userId:u.userId,artist:tgt.slug,pct})}).then(x=>x.json());
+      if(r.success&&r.myRank){
+        submitted=true;
+        try{dataLayer.push({event:'vm_daily_submit'});}catch(e){}
+        const claimed=localStorage.getItem('vm_daily_claimed_'+r.day);
+        const rewardBtn=(r.myRank<=10&&!claimed)
+          ?`<button class="dl-main" onclick="claimDailyGold(this,'${r.day}',${r.myRank})">${t('rewardClaimBtn')(rewardForRank(r.myRank).toLocaleString())}</button>`:'';
+        inner+=`<div class="dl-rank">${t('dailyMyRank')(r.myRank)}</div>`;
+        inner+=`<div class="dl-btns">${rewardBtn}<button onclick="showDailyBoard()">${t('dailyBoardBtn')}</button><button id="dl-share" onclick="shareDaily()">${t('dailyShareBtn')}</button></div>`;
+      }
+    }catch(e){}
+  }
+  if(!submitted){
+    // 등록계정인데 제출만 실패(네트워크 등)면 로그인 안내는 생략하고 보드/공유만 노출
+    const loginRow=(u&&u.registered)?''
+      :`<div class="dl-login">${t('lb_login')}</div>`;
+    const loginBtn=(u&&u.registered)?''
+      :`<button class="dl-main" onclick="try{SharedWallet.showLogin()}catch(e){}">${t('lb_loginBtn')}</button>`;
+    inner+=`${loginRow}<div class="dl-btns">${loginBtn}<button onclick="showDailyBoard()">${t('dailyBoardBtn')}</button><button id="dl-share" onclick="shareDaily()">${t('dailyShareBtn')}</button></div>`;
+  }
+  box.innerHTML=inner;box.classList.remove('hidden');
+}
+async function shareDaily(){
+  if(!_dailyLast)return;
+  try{dataLayer.push({event:'vm_daily_share'});}catch(e){}
+  const url='https://game.cocy.io/voicematch/'+(LANG!=='ko'?LANG+'/':'')+'?utm_source=share&utm_medium=daily&utm_campaign=voicetwin';
+  await shareOrCopy(t('dailyShareText')(singerName(_dailyLast.tgt,LANG),_dailyLast.pct)+'\n'+url,'dl-share');
+}
+async function showDailyBoard(){
+  const u=authUser();
+  const tgt=await dailyTarget();
+  let html=`<h3>${t('dailyBoardTitle')(tgt?singerName(tgt,LANG):'')}</h3>`;
+  try{
+    const q=u?`?me=${encodeURIComponent(u.userId)}`:'';
+    const r=await fetch(DAILY_API+q).then(x=>x.json());
+    const rows=r.rankings||[];
+    if(!rows.length)html+=`<div style="text-align:center;color:var(--mut);font-size:13px;padding:14px 0">${t('lb_empty')}</div>`;
+    rows.forEach((row,i)=>{
+      const me=u&&row.user_id===u.userId;
+      html+=`<div class="lb-row${me?' me':''}"><span class="rk-no${i<3?' top':''}">${i+1}</span><span class="nick">${vmFlag(row.country)}${row.nickname}${me?' ('+t('lb_me')+')':''}</span><span class="pct">${row.pct}%</span></div>`;
+    });
+    if(r.myRank&&r.myRank>rows.length)html+=`<div class="lb-row me"><span class="rk-no">${r.myRank}</span><span class="nick">${t('lb_me')}</span><span class="pct">${r.myPct}%</span></div>`;
+  }catch(e){html+=`<div style="text-align:center;color:var(--mut);font-size:12px">…</div>`;}
+  html+=`<button id="lb-close" onclick="document.getElementById('lb-modal').remove()">${t('lb_close')}</button>`;
+  const m=document.createElement('div');m.id='lb-modal';m.innerHTML=`<div id="lb-box">${html}</div>`;
+  m.onclick=e=>{if(e.target===m)m.remove();};
+  document.body.appendChild(m);
+}
 /* ---- 결과 ---- */
 function comment(s){return t('c_'+s.g+'_'+s.kind)||'';}
 function renderGaxis(genres){
@@ -940,6 +1069,7 @@ function renderResult(rank,rankAll,rankJp,genres,report){
   renderReqBox();
   renderDuetPanels();
   renderGroupPanels();
+  try{renderDailyPanel();}catch(e){}
   rankFlow(rank[0]);
 }
 
