@@ -79,6 +79,41 @@ h1{font-size:1.5rem;font-weight:900;letter-spacing:-.02em;text-align:center;marg
 .revisit-banner .rb-title{font-weight:800;font-size:.95rem}
 .revisit-banner .rb-sub{font-size:.76rem;color:var(--mut);margin-top:3px}
 
+/* compat (궁합) */
+.compat-banner{background:linear-gradient(90deg,oklch(0.30 0.08 340/.55),oklch(0.30 0.09 25/.45));
+  border:1px solid var(--neon2);border-radius:14px;padding:14px;margin-bottom:16px;text-align:center}
+.compat-banner .cb-text{font-size:.9rem}
+.compat-banner .cb-text b{color:var(--neon2)}
+.compat-card{background:var(--card);border:1px solid var(--neon2);border-radius:18px;padding:16px;margin-bottom:14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.28)}
+.compat-card .cmp-title{font-size:.78rem;font-weight:800;color:var(--neon2);letter-spacing:.4px;margin-bottom:8px}
+.compat-card .cmp-pair{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px}
+.compat-card .cmp-side{text-align:center;flex:1}
+.compat-card .cmp-side .em{font-size:2rem}
+.compat-card .cmp-side .nm{font-size:.78rem;font-weight:700;margin-top:2px}
+.compat-card .cmp-side .who{font-size:.7rem;color:var(--mut)}
+.compat-card .cmp-heart{font-size:1.2rem}
+.compat-card .cmp-score{text-align:center;font-size:1.9rem;font-weight:900;color:var(--neon2)}
+.compat-card .cmp-chem{text-align:center;font-size:1rem;font-weight:800;margin-bottom:2px}
+.compat-card .cmp-copy{text-align:center;font-size:.82rem;color:var(--mut);margin-bottom:10px}
+.compat-card .cmp-axis{display:flex;align-items:center;gap:8px;font-size:.72rem;margin-top:6px}
+.compat-card .cmp-axis .lb{width:34px;color:var(--mut);flex:none}
+.compat-card .cmp-axis .tr{flex:1;height:8px;background:var(--bg2);border-radius:4px;position:relative;overflow:hidden}
+.compat-card .cmp-axis .tr i{position:absolute;top:0;bottom:0;width:3px;border-radius:2px}
+.compat-card .cmp-axis .tr i.me{background:var(--neon1)}
+.compat-card .cmp-axis .tr i.peer{background:var(--neon2)}
+.compat-card .cmp-legend{display:flex;gap:12px;justify-content:center;font-size:.68rem;color:var(--mut);margin-top:6px}
+.compat-card .cmp-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.compat-card .cmp-comment{font-size:.78rem;color:var(--txt);background:var(--card2);border-radius:10px;padding:9px 11px;margin-top:10px}
+.compat-card .cmp-btns{display:flex;gap:8px;margin-top:12px}
+.compat-card .cmp-btns .btn{padding:11px}
+.compat-invite{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-top:14px}
+.compat-invite .ci-title{font-weight:800;font-size:.95rem;margin-bottom:4px}
+.compat-invite .ci-sub{font-size:.78rem;color:var(--mut);margin-bottom:10px}
+.compat-invite input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--txt);font-size:.95rem;margin-bottom:8px}
+.compat-invite input::placeholder{color:var(--mut)}
+
 /* game screens */
 .game-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:.82rem;color:var(--mut)}
 .game-score{font-weight:800;color:var(--neon3)}
@@ -168,6 +203,11 @@ footer{text-align:center;color:var(--mut);font-size:.7rem;margin-top:20px}
       <div class="rb-sub" id="rb-sub">탭해서 보기</div>
     </div>
 
+    <div id="compatBanner" class="compat-banner hidden">
+      <div class="cb-text" id="cb-text"></div>
+      <button class="btn btn-primary btn-sm mt hidden" id="btn-compat-instant"></button>
+    </div>
+
     <div class="card">
       <p id="t-intro-body" style="font-size:.9rem;color:var(--mut)">
         미니게임 3개, 총 3분. 정답은 없습니다 — 당신이 실제로 고르고, 반응하고, 멈추는 순간이 데이터가 됩니다.
@@ -247,6 +287,7 @@ footer{text-align:center;color:var(--mut);font-size:.7rem;margin-top:20px}
   </section>
 
   <section id="screen-result" class="screen hidden">
+    <div id="compatCard" class="compat-card hidden"></div>
     <div class="result-head">
       <div class="result-emoji" id="res-emoji">🔥</div>
       <div class="result-name" id="res-name">폭주 호랑이</div>
@@ -276,6 +317,13 @@ footer{text-align:center;color:var(--mut);font-size:.7rem;margin-top:20px}
       <div class="fortune-row"><span class="fk" id="fk-flow">오늘의 흐름</span><span id="fv-flow"></span></div>
       <div class="fortune-row"><span class="fk" id="fk-action">행운의 행동</span><span id="fv-action"></span></div>
       <div class="fortune-row"><span class="fk" id="fk-watch">조심할 것</span><span id="fv-watch"></span></div>
+    </div>
+
+    <div class="compat-invite" id="compatInvite">
+      <div class="ci-title" id="ci-title">💞 친구랑 궁합 보기</div>
+      <div class="ci-sub" id="ci-sub"></div>
+      <input id="ci-name" maxlength="16" autocomplete="off">
+      <button class="btn btn-primary" id="btn-compat-invite">초대장 보내기</button>
     </div>
 
     <div class="share-row">
@@ -334,6 +382,25 @@ var T = {
     evI_slow: function(v){ return '빨간불 오탭률 ' + v + '% — 손보다 판단이 빨랐다'; },
     evE_explore: function(v){ return '직전과 다른 문을 ' + v + '% 확률로 골랐다 — 판을 계속 바꿨다'; },
     evE_routine: function(v){ return '같은 문을 ' + v + '% 확률로 반복했다 — 루틴을 지켰다'; },
+    ciTitle: '💞 친구랑 궁합 보기',
+    ciSub: '초대장을 보내면, 친구가 게임 3개를 마친 뒤 두 사람의 케미가 나와요',
+    ciNamePh: '초대장에 쓸 내 이름',
+    ciBtn: '초대장 보내기',
+    ciCopied: '초대 링크 복사 완료 — 친구에게 붙여넣기!',
+    ciText: function(n){ return (n ? n + '의 ' : '') + '플레이DNA 궁합 초대장 💞 게임 3개만 하면 우리 케미가 나온대'; },
+    cbText: function(n){ return '💞 <b>' + n + '</b>님의 궁합 초대장 — 게임 3개만 하면 케미가 나와요'; },
+    cbInstant: '바로 궁합 보기 (이미 측정했어요)',
+    cmpTitle: '💞 궁합 결과',
+    cmpMe: '나', cmpFriend: '친구', cmpPts: '점',
+    chem3: { name:'👯 싱크로 콤비', copy:'같은 본능으로 움직인다. 말 안 해도 통하는 조합' },
+    chem2: { name:'🤝 찰떡 콤비', copy:'결정적인 순간에 방향이 같다. 팀 하면 강한 조합' },
+    chem1: { name:'⚡ 스파크 콤비', copy:'부딪히는 만큼 튄다. 지루할 틈이 없는 조합' },
+    chem0: { name:'🧲 자석 콤비', copy:'정반대라서 끌린다. 서로의 부족한 반쪽' },
+    cmpComment: function(axis, diff, who){ return axis + ' 축에서 ' + diff + '%p 차이 — 이 축에선 ' + who + ' 쪽이 세게 나간다'; },
+    cmpSame: '세 축 전부 비슷한 레벨 — 사실상 같은 본능이다',
+    cmpReturn: '결과 돌려주기',
+    cmpShare: '궁합 자랑하기',
+    cmpShareText: function(a, b, s){ return a + ' × ' + b + ' 궁합 ' + s + '점 💞 너도 해볼래?'; },
   },
   en: {
     title: '🧬 PlayDNA',
@@ -365,6 +432,25 @@ var T = {
     evI_slow: function(v){ return 'Red false-alarm rate ' + v + '% — judgment beat reflex'; },
     evE_explore: function(v){ return 'Switched doors ' + v + '% of the time — kept changing the game'; },
     evE_routine: function(v){ return 'Repeated the same door ' + v + '% of the time — stuck to routine'; },
+    ciTitle: '💞 Check chemistry with a friend',
+    ciSub: 'Send an invite — once your friend finishes the 3 games, you both see your chemistry',
+    ciNamePh: 'Your name on the invite',
+    ciBtn: 'Send invite',
+    ciCopied: 'Invite link copied — paste it to your friend!',
+    ciText: function(n){ return (n ? n + "'s " : '') + 'PlayDNA chemistry invite 💞 Play 3 mini-games and see how we match'; },
+    cbText: function(n){ return '💞 Chemistry invite from <b>' + n + '</b> — play 3 mini-games to see your match'; },
+    cbInstant: 'See chemistry now (already measured)',
+    cmpTitle: '💞 Chemistry Result',
+    cmpMe: 'Me', cmpFriend: 'Friend', cmpPts: '',
+    chem3: { name:'👯 Sync Duo', copy:'Same instincts, same moves. You get each other without a word' },
+    chem2: { name:'🤝 Perfect-fit Duo', copy:'You point the same way when it matters. Strong as a team' },
+    chem1: { name:'⚡ Spark Duo', copy:'You clash — and that is exactly why it never gets boring' },
+    chem0: { name:'🧲 Magnet Duo', copy:'Complete opposites, naturally drawn. Each other\'s missing half' },
+    cmpComment: function(axis, diff, who){ return diff + '%p apart on the ' + axis + ' axis — ' + who + ' pushes harder here'; },
+    cmpSame: 'All three axes nearly level — practically the same instincts',
+    cmpReturn: 'Send my result back',
+    cmpShare: 'Share chemistry',
+    cmpShareText: function(a, b, s){ return a + ' × ' + b + ' chemistry ' + s + ' 💞 Try it with me?'; },
   }
 };
 function t(key){ return T[LANG][key]; }
@@ -807,6 +893,7 @@ function computeResult(fromCache){
   document.getElementById('fv-watch').textContent = fortune.watch[LANG];
 
   showScreen('result');
+  renderCompatCard();
 
   if (fromCache) {
     gaPush('pd_fortune_view');
@@ -940,6 +1027,146 @@ function shareCard(){
   }, 'image/png');
 }
 
+/* ---------- compat (궁합) — URL 해시 페이로드, 서버 저장 없음 ---------- */
+var PEER = null;
+function escHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function b64uEnc(str){ return btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function b64uDec(str){ return decodeURIComponent(escape(atob(str.replace(/-/g,'+').replace(/_/g,'/')))); }
+function parseCompatHash(){
+  var m = location.hash.match(/#c=([A-Za-z0-9_-]+)/);
+  if (!m) return null;
+  try {
+    var d = JSON.parse(b64uDec(m[1]));
+    if (!d || !TYPES[d.t]) return null;
+    return { t: d.t,
+      r: clamp(Math.round(Number(d.r) || 0), 0, 100),
+      i: clamp(Math.round(Number(d.i) || 0), 0, 100),
+      e: clamp(Math.round(Number(d.e) || 0), 0, 100),
+      n: String(d.n || '').slice(0, 16) };
+  } catch(e){ return null; }
+}
+function myAxes(){ return { r: Math.round(state.R * 100), i: Math.round(state.I * 100), e: Math.round(state.E * 100) }; }
+function buildCompatUrl(name){
+  var a = myAxes();
+  var payload = JSON.stringify({ t: state.type, r: a.r, i: a.i, e: a.e, n: name || '' });
+  return 'https://game.cocy.io/playdna/' + (LANG === 'en' ? '?lang=en' : '') + '#c=' + b64uEnc(payload);
+}
+function chemistry(peer){
+  var a = myAxes();
+  var matches = 0;
+  if ((a.r >= 50) === (peer.r >= 50)) matches++;
+  if ((a.i >= 50) === (peer.i >= 50)) matches++;
+  if ((a.e >= 50) === (peer.e >= 50)) matches++;
+  var pair = [state.type, peer.t].sort();
+  // 같은 쌍은 항상 같은 점수 (62~97)
+  var score = 62 + matches * 9 + (fnv1a(pair[0] + '|' + pair[1]) % 8);
+  return { matches: matches, score: score };
+}
+function shareTextOrCopy(txt, doneMsg){
+  if (navigator.share) { navigator.share({ text: txt }).catch(function(){}); return; }
+  var done = function(){ showToast(doneMsg); };
+  if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt).then(done, done); }
+  else {
+    var ta = document.createElement('textarea'); ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch(e){}
+    ta.remove(); done();
+  }
+}
+function renderCompatCard(){
+  var box = document.getElementById('compatCard');
+  if (!box) return;
+  if (!PEER || !state.type) { box.classList.add('hidden'); return; }
+  var chem = chemistry(PEER);
+  var my = TYPES[state.type], pt = TYPES[PEER.t];
+  var a = myAxes();
+  var ct = t('chem' + chem.matches);
+  var axes = [
+    { lb: t('gaugeR'), me: a.r, peer: PEER.r },
+    { lb: t('gaugeI'), me: a.i, peer: PEER.i },
+    { lb: t('gaugeE'), me: a.e, peer: PEER.e }
+  ];
+  var maxDiff = 0, maxAxis = axes[0];
+  axes.forEach(function(x){ var d = Math.abs(x.me - x.peer); if (d > maxDiff) { maxDiff = d; maxAxis = x; } });
+  var peerName = PEER.n ? escHtml(PEER.n) : t('cmpFriend');
+  var comment = maxDiff < 12 ? t('cmpSame')
+    : t('cmpComment')(maxAxis.lb, maxDiff, (maxAxis.me >= maxAxis.peer) ? t('cmpMe') : peerName);
+  box.innerHTML = '<div class="cmp-title">' + t('cmpTitle') + '</div>'
+    + '<div class="cmp-pair">'
+    +   '<div class="cmp-side"><div class="em">' + my.emoji + '</div><div class="nm">' + my.name[LANG] + '</div><div class="who">' + t('cmpMe') + '</div></div>'
+    +   '<div class="cmp-heart">💞</div>'
+    +   '<div class="cmp-side"><div class="em">' + pt.emoji + '</div><div class="nm">' + pt.name[LANG] + '</div><div class="who">' + peerName + '</div></div>'
+    + '</div>'
+    + '<div class="cmp-score">' + chem.score + t('cmpPts') + '</div>'
+    + '<div class="cmp-chem">' + ct.name + '</div>'
+    + '<div class="cmp-copy">' + ct.copy + '</div>'
+    + axes.map(function(x){ return '<div class="cmp-axis"><span class="lb">' + x.lb + '</span><div class="tr">'
+        + '<i class="me" style="left:' + x.me + '%"></i><i class="peer" style="left:' + x.peer + '%"></i></div></div>'; }).join('')
+    + '<div class="cmp-legend"><span><i style="background:var(--neon1)"></i>' + t('cmpMe') + '</span><span><i style="background:var(--neon2)"></i>' + peerName + '</span></div>'
+    + '<div class="cmp-comment">' + comment + '</div>'
+    + '<div class="cmp-btns">'
+    +   '<button class="btn btn-primary btn-sm" id="btn-compat-back"></button>'
+    +   '<button class="btn btn-ghost btn-sm" id="btn-compat-share"></button>'
+    + '</div>';
+  document.getElementById('btn-compat-back').textContent = t('cmpReturn');
+  document.getElementById('btn-compat-share').textContent = t('cmpShare');
+  // 결과 돌려주기 = 내 페이로드로 역초대 — 초대자가 케미를 받는 유일한 경로
+  document.getElementById('btn-compat-back').addEventListener('click', function(){
+    var name = '';
+    try { name = localStorage.getItem('pd_name') || ''; } catch(e){}
+    gaPush('pd_compat_invite', { kind: 'return' });
+    shareTextOrCopy(t('ciText')(name) + '\n' + buildCompatUrl(name), t('ciCopied'));
+  });
+  document.getElementById('btn-compat-share').addEventListener('click', function(){
+    gaPush('pd_compat_share');
+    shareTextOrCopy(t('cmpShareText')(my.name[LANG], pt.name[LANG], chem.score) + '\nhttps://game.cocy.io/playdna/', t('ciCopied'));
+  });
+  box.classList.remove('hidden');
+  gaPush('pd_compat_result', { chem: chem.matches, score: chem.score });
+}
+function initCompatBanner(){
+  PEER = parseCompatHash();
+  if (!PEER) return;
+  gaPush('pd_compat_opened');
+  var banner = document.getElementById('compatBanner');
+  document.getElementById('cb-text').innerHTML = t('cbText')(PEER.n ? escHtml(PEER.n) : t('cmpFriend'));
+  banner.classList.remove('hidden');
+  var cached = null;
+  try { cached = localStorage.getItem('pd_last_type'); } catch(e){}
+  if (cached && TYPES[cached]) {
+    var btn = document.getElementById('btn-compat-instant');
+    btn.textContent = t('cbInstant');
+    btn.classList.remove('hidden');
+    btn.addEventListener('click', function(){
+      gaPush('pd_compat_instant');
+      try {
+        state.type = cached;
+        state.R = parseFloat(localStorage.getItem('pd_last_R')) || 0;
+        state.I = parseFloat(localStorage.getItem('pd_last_I')) || 0;
+        state.E = parseFloat(localStorage.getItem('pd_last_E')) || 0;
+        state.instinctScore = parseFloat(localStorage.getItem('pd_last_instinct')) || 0;
+        state.adjustedAvgPumps = state.adjustedAvgPumps || 2;
+      } catch(e){}
+      computeResult(true);
+    });
+  }
+}
+function initCompatInvite(){
+  var input = document.getElementById('ci-name');
+  document.getElementById('ci-title').textContent = t('ciTitle');
+  document.getElementById('ci-sub').textContent = t('ciSub');
+  input.placeholder = t('ciNamePh');
+  try { input.value = localStorage.getItem('pd_name') || ''; } catch(e){}
+  document.getElementById('btn-compat-invite').textContent = t('ciBtn');
+  document.getElementById('btn-compat-invite').addEventListener('click', function(){
+    if (!state.type) return;
+    var name = (input.value || '').trim().slice(0, 16);
+    try { localStorage.setItem('pd_name', name); } catch(e){}
+    gaPush('pd_compat_invite', { kind: 'new' });
+    shareTextOrCopy(t('ciText')(name) + '\n' + buildCompatUrl(name), t('ciCopied'));
+  });
+}
+
 /* ---------- revisit banner ---------- */
 function initRevisitBanner(){
   var slug;
@@ -968,6 +1195,8 @@ function initRevisitBanner(){
 document.addEventListener('DOMContentLoaded', function(){
   applyStaticI18n();
   initRevisitBanner();
+  initCompatBanner();
+  initCompatInvite();
 
   document.getElementById('btn-start').addEventListener('click', function(){
     gaPush('pd_start');
