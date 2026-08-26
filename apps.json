@@ -1,5 +1,20 @@
 [
   {
+    "title": "플레이DNA PlayDNA",
+    "icon": "https://game.cocy.io/playdna/icon.svg",
+    "url": "https://game.cocy.io/playdna/",
+    "desc": "문항 하나 없는 3분 성향 테스트. 풍선 불기·신호등 반사·세 개의 문 — 당신의 행동만 측정해 8개 유형으로 분류하고, 희소도·오늘의 운세·친구 궁합까지.",
+    "badge": "NEW",
+    "platforms": [
+      "WEB"
+    ],
+    "languages": [
+      "🇰🇷",
+      "🇺🇸"
+    ],
+    "category": "casual"
+  },
+  {
     "title": "발자국 Footprints",
     "icon": "https://page.cocy.io/footprints/icon.svg",
     "url": "https://page.cocy.io/footprints/",
