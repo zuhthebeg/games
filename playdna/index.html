@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>플레이DNA — 행동으로 읽는 3분 성향 테스트</title>
+<meta name="description" content="문항 하나 없이, 미니게임 3개로 당신의 행동만 측정합니다. 풍선 불기·신호등 반사·세 개의 문 — 8개 유형 중 당신의 플레이DNA를 찾아보세요.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"플레이DNA PlayDNA",
+"url":"https://game.cocy.io/playdna/","applicationCategory":"EntertainmentApplication",
+"description":"미니게임 3종으로 행동 데이터만 측정해 8개 성향 유형을 분류하는 심리 테스트 게임",
+"operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+"inLanguage":["ko","en"],"isAccessibleForFree":true}
+</script>
+<script>
+  // shared-wallet 상단바 이름. 언어 감지는 아래 메인 스크립트와 동일 규칙(쿼리 > navigator.language).
+  window.SharedWalletConfig = window.SharedWalletConfig || {
+    autoGuest: true,
+    gameName: (new URLSearchParams(location.search).get('lang') === 'en' ||
+      (!new URLSearchParams(location.search).get('lang') && /^en/i.test(navigator.language || '')))
+      ? 'PlayDNA' : '플레이DNA',
+  };
+</script>
+<script src="/lib/shared-wallet.js?v=20260809pf2"></script>
+<style>
+:root{
+  --wallet-bar-h:56px;
+  --bg:oklch(0.16 0.03 280);
+  --bg2:oklch(0.20 0.045 288);
+  --card:oklch(0.235 0.045 285);
+  --card2:oklch(0.28 0.05 285);
+  --line:oklch(0.36 0.05 285);
+  --neon1:oklch(0.80 0.17 195);   /* cyan */
+  --neon2:oklch(0.72 0.21 340);   /* magenta */
+  --neon3:oklch(0.85 0.17 95);    /* amber/gold */
+  --danger:oklch(0.64 0.21 27);
+  --txt:oklch(0.95 0.015 280);
+  --mut:oklch(0.68 0.03 280);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",Pretendard,system-ui,sans-serif;
+  line-height:1.5;min-height:100%;
+  padding-top:calc(var(--wallet-bar-h) + env(safe-area-inset-top));
+  padding-bottom:36px;
+  background-image:radial-gradient(circle at 85% -8%, oklch(0.72 0.21 340/.16), transparent 55%),
+                    radial-gradient(circle at 0% 105%, oklch(0.80 0.17 195/.14), transparent 50%);
+}
+.wrap{max-width:480px;margin:0 auto;padding:16px 18px 24px}
+.hidden{display:none !important}
+.screen{animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+h1{font-size:1.5rem;font-weight:900;letter-spacing:-.02em;text-align:center;margin-bottom:4px;
+  background:linear-gradient(90deg,var(--neon1),var(--neon2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--mut);font-size:.86rem;text-align:center;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.28)}
+.btn{display:block;width:100%;padding:15px;border:none;border-radius:14px;font-size:1rem;font-weight:800;
+  cursor:pointer;text-align:center;transition:transform .12s ease}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(90deg,var(--neon1),var(--neon2));color:#0e0a1e}
+.btn-ghost{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+.btn-sm{padding:10px 14px;font-size:.85rem;border-radius:10px}
+.center{text-align:center}
+.mt{margin-top:12px}
+.mb{margin-bottom:12px}
+
+/* intro */
+.pillar-row{display:flex;gap:10px;margin:16px 0}
+.pillar{flex:1;background:var(--card2);border-radius:14px;padding:12px 8px;text-align:center;border:1px solid var(--line)}
+.pillar .ico{font-size:1.5rem}
+.pillar .lb{font-size:.72rem;color:var(--mut);margin-top:4px}
+.revisit-banner{background:linear-gradient(90deg,oklch(0.30 0.08 340/.5),oklch(0.30 0.08 195/.5));
+  border:1px solid var(--neon2);border-radius:14px;padding:14px;margin-bottom:16px;cursor:pointer;text-align:center}
+.revisit-banner .rb-title{font-weight:800;font-size:.95rem}
+.revisit-banner .rb-sub{font-size:.76rem;color:var(--mut);margin-top:3px}
+
+/* game screens */
+.game-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:.82rem;color:var(--mut)}
+.game-score{font-weight:800;color:var(--neon3)}
+.game-instruction{font-size:.86rem;color:var(--mut);text-align:center;margin-bottom:14px}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:20px;min-height:340px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:20px}
+
+/* balloon */
+#balloon{width:120px;height:140px;border-radius:50% 50% 48% 48%;
+  background:radial-gradient(circle at 35% 30%, oklch(0.75 0.19 340), oklch(0.55 0.20 340));
+  box-shadow:0 0 30px oklch(0.72 0.21 340/.5);cursor:pointer;transition:transform .12s ease;
+  display:flex;align-items:center;justify-content:center;user-select:none}
+#balloon::after{content:'';position:absolute;bottom:64px;left:50%;width:2px;height:60px;background:var(--mut)}
+#balloon.pop{animation:pop .28s ease forwards}
+@keyframes pop{to{transform:scale(1.6);opacity:0}}
+.balloon-wrap{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%}
+#balloonPumpLabel{font-size:.8rem;color:var(--mut)}
+.balloon-actions{display:flex;gap:10px;width:100%}
+.balloon-actions .btn{flex:1}
+
+/* traffic light */
+#circleStage{width:100%;height:280px;display:flex;align-items:center;justify-content:center}
+#trafficCircle{width:130px;height:130px;border-radius:50%;cursor:pointer;transition:transform .08s ease;
+  display:flex;align-items:center;justify-content:center;font-size:2.2rem}
+#trafficCircle.green{background:radial-gradient(circle at 35% 30%,#8fffb0,#1fbf5c);box-shadow:0 0 40px #2ee06a99}
+#trafficCircle.red{background:radial-gradient(circle at 35% 30%,#ff9d9d,#e0281f);box-shadow:0 0 40px #ff453a99}
+#trafficCircle.idle{background:var(--card2);box-shadow:none;cursor:default}
+#trafficCircle:active{transform:scale(.94)}
+.round-dots{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;margin-top:16px;max-width:280px}
+.round-dots span{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.round-dots span.done-hit{background:var(--neon1)}
+.round-dots span.done-miss{background:var(--danger)}
+
+/* doors */
+.doors-row{display:flex;gap:10px;width:100%}
+.door{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:18px 8px;
+  text-align:center;cursor:pointer;transition:transform .1s ease}
+.door:active{transform:scale(.96)}
+.door .d-letter{font-size:1.6rem;font-weight:900}
+.door .d-desc{font-size:.68rem;color:var(--mut);margin-top:4px}
+.door .d-result{font-size:.85rem;font-weight:800;color:var(--neon3);margin-top:6px;min-height:18px}
+.doors-cum{text-align:center;color:var(--mut);font-size:.82rem;margin-top:16px}
+.doors-cum b{color:var(--neon3)}
+
+/* debug */
+.debug-skip{display:none;margin-top:14px;background:#332;color:#ffd166;border:1px dashed #ffd166}
+body.debug .debug-skip{display:block}
+
+/* result */
+.result-head{text-align:center;margin-bottom:10px}
+.result-emoji{font-size:3.4rem;line-height:1}
+.result-name{font-size:1.5rem;font-weight:900;margin-top:4px}
+.result-line{color:var(--mut);font-size:.88rem;margin-top:4px}
+.rarity-badge{display:inline-block;margin-top:10px;padding:6px 14px;border-radius:999px;
+  background:linear-gradient(90deg,var(--neon1),var(--neon2));color:#0e0a1e;font-weight:800;font-size:.82rem}
+.gauge{margin-bottom:12px}
+.gauge-lb{display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:5px}
+.gauge-lb b{color:var(--txt)}
+.gauge-track{height:12px;border-radius:8px;background:var(--card2);overflow:hidden}
+.gauge-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--neon1),var(--neon2));width:0%;transition:width .6s ease}
+.evidence-list{list-style:none;margin-top:6px}
+.evidence-list li{font-size:.8rem;color:var(--mut);padding:6px 0;border-top:1px solid var(--line)}
+.evidence-list li:first-child{border-top:none}
+.instinct-score{text-align:center;color:var(--mut);font-size:.78rem;margin-top:4px}
+.fortune-card{background:linear-gradient(135deg,oklch(0.26 0.06 300),oklch(0.24 0.06 250));
+  border:1px solid var(--neon2);border-radius:16px;padding:16px}
+.fortune-title{font-weight:800;font-size:.9rem;margin-bottom:10px;color:var(--neon3)}
+.fortune-row{font-size:.84rem;margin-bottom:8px}
+.fortune-row .fk{color:var(--mut);font-size:.72rem;display:block;margin-bottom:2px}
+.share-row{display:flex;gap:10px;margin-top:14px}
+.share-row .btn{flex:1}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#000c;color:#fff;
+  padding:10px 18px;border-radius:999px;font-size:.85rem;z-index:999;opacity:0;transition:opacity .25s ease;pointer-events:none}
+.toast.show{opacity:1}
+footer{text-align:center;color:var(--mut);font-size:.7rem;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section id="screen-intro" class="screen">
+    <h1 id="t-title">🧬 플레이DNA</h1>
+    <p class="sub" id="t-subtitle">문항 하나 없이, 당신의 행동만 잰다</p>
+
+    <div id="revisitBanner" class="revisit-banner hidden">
+      <div class="rb-title" id="rb-title">오늘의 운세</div>
+      <div class="rb-sub" id="rb-sub">탭해서 보기</div>
+    </div>
+
+    <div class="card">
+      <p id="t-intro-body" style="font-size:.9rem;color:var(--mut)">
+        미니게임 3개, 총 3분. 정답은 없습니다 — 당신이 실제로 고르고, 반응하고, 멈추는 순간이 데이터가 됩니다.
+      </p>
+      <div class="pillar-row">
+        <div class="pillar"><div class="ico">🎈</div><div class="lb" id="t-pillar1">풍선 불기</div></div>
+        <div class="pillar"><div class="ico">🚦</div><div class="lb" id="t-pillar2">신호등 반사</div></div>
+        <div class="pillar"><div class="ico">🚪</div><div class="lb" id="t-pillar3">세 개의 문</div></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-start">시작하기</button>
+    <button class="btn btn-ghost mt hidden" id="btn-remeasure">다시 측정하기</button>
+  </section>
+
+  <section id="screen-game1" class="screen hidden">
+    <div class="game-head">
+      <span id="g1-count">풍선 1 / 8</span>
+      <span class="game-score" id="g1-score">0점</span>
+    </div>
+    <p class="game-instruction" id="t-g1-instr">탭해서 풍선을 불리세요. 터지기 전에 챙기면 점수가 확정됩니다.</p>
+    <div class="stage">
+      <div class="balloon-wrap">
+        <div id="balloon">🎈</div>
+        <div id="balloonPumpLabel">0번 불었음</div>
+        <div class="balloon-actions">
+          <button class="btn btn-primary btn-sm" id="btn-pump">불기</button>
+          <button class="btn btn-ghost btn-sm" id="btn-cashout">챙기기</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn debug-skip" id="debug-skip1">⚡ DEBUG: 게임1 스킵</button>
+  </section>
+
+  <section id="screen-game2" class="screen hidden">
+    <div class="game-head">
+      <span id="g2-count">0 / 24</span>
+      <span class="game-score" id="g2-score">0점</span>
+    </div>
+    <p class="game-instruction" id="t-g2-instr">초록이면 빠르게 탭, 빨강이면 참으세요.</p>
+    <div class="stage">
+      <div id="circleStage">
+        <div id="trafficCircle" class="idle"></div>
+      </div>
+      <div class="round-dots" id="roundDots"></div>
+    </div>
+    <button class="btn debug-skip" id="debug-skip2">⚡ DEBUG: 게임2 스킵</button>
+  </section>
+
+  <section id="screen-game3" class="screen hidden">
+    <div class="game-head">
+      <span id="g3-count">0 / 12</span>
+      <span class="game-score" id="g3-score">0점</span>
+    </div>
+    <p class="game-instruction" id="t-g3-instr">문을 12번 고르세요. C는 열기 전까진 알 수 없습니다.</p>
+    <div class="stage">
+      <div class="doors-row">
+        <div class="door" data-door="A">
+          <div class="d-letter">A</div>
+          <div class="d-desc" id="t-doorA">안정</div>
+          <div class="d-result" data-r="A"></div>
+        </div>
+        <div class="door" data-door="B">
+          <div class="d-letter">B</div>
+          <div class="d-desc" id="t-doorB">도박</div>
+          <div class="d-result" data-r="B"></div>
+        </div>
+        <div class="door" data-door="C">
+          <div class="d-letter">C</div>
+          <div class="d-desc" id="t-doorC">미지</div>
+          <div class="d-result" data-r="C"></div>
+        </div>
+      </div>
+      <div class="doors-cum" id="doorsCum">누적 <b>0점</b></div>
+    </div>
+    <button class="btn debug-skip" id="debug-skip3">⚡ DEBUG: 게임3 스킵</button>
+  </section>
+
+  <section id="screen-result" class="screen hidden">
+    <div class="result-head">
+      <div class="result-emoji" id="res-emoji">🔥</div>
+      <div class="result-name" id="res-name">폭주 호랑이</div>
+      <div class="result-line" id="res-line">브레이크가 없다</div>
+      <div class="rarity-badge" id="res-rarity">계산 중…</div>
+    </div>
+
+    <div class="card">
+      <div class="gauge">
+        <div class="gauge-lb"><span id="gauge-r-lb">모험</span><b id="gauge-r-pct">0%</b></div>
+        <div class="gauge-track"><div class="gauge-fill" id="gauge-r-fill"></div></div>
+      </div>
+      <div class="gauge">
+        <div class="gauge-lb"><span id="gauge-i-lb">직진</span><b id="gauge-i-pct">0%</b></div>
+        <div class="gauge-track"><div class="gauge-fill" id="gauge-i-fill"></div></div>
+      </div>
+      <div class="gauge">
+        <div class="gauge-lb"><span id="gauge-e-lb">개척</span><b id="gauge-e-pct">0%</b></div>
+        <div class="gauge-track"><div class="gauge-fill" id="gauge-e-fill"></div></div>
+      </div>
+      <ul class="evidence-list" id="evidenceList"></ul>
+      <div class="instinct-score" id="instinctScore"></div>
+    </div>
+
+    <div class="fortune-card" id="fortuneCard">
+      <div class="fortune-title" id="fortune-title">🔮 오늘의 운세</div>
+      <div class="fortune-row"><span class="fk" id="fk-flow">오늘의 흐름</span><span id="fv-flow"></span></div>
+      <div class="fortune-row"><span class="fk" id="fk-action">행운의 행동</span><span id="fv-action"></span></div>
+      <div class="fortune-row"><span class="fk" id="fk-watch">조심할 것</span><span id="fv-watch"></span></div>
+    </div>
+
+    <div class="share-row">
+      <button class="btn btn-primary" id="btn-share">공유 카드 저장</button>
+      <button class="btn btn-ghost" id="btn-replay">다시하기</button>
+    </div>
+    <canvas id="shareCanvas" width="720" height="900" class="hidden"></canvas>
+  </section>
+
+  <footer>PlayDNA v1 · game.cocy.io</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- lang ---------- */
+var qs = new URLSearchParams(location.search);
+var DEBUG = qs.get('debug') === '1';
+var LANG = qs.get('lang') === 'en' ? 'en' : (qs.get('lang') === 'ko' ? 'ko' :
+  (/^en/i.test(navigator.language || '') ? 'en' : 'ko'));
+document.documentElement.lang = LANG === 'en' ? 'en' : 'ko';
+if (DEBUG) document.body.classList.add('debug');
+
+/* ---------- i18n static strings ---------- */
+var T = {
+  ko: {
+    title: '🧬 플레이DNA',
+    subtitle: '문항 하나 없이, 당신의 행동만 잰다',
+    introBody: '미니게임 3개, 총 3분. 정답은 없습니다 — 당신이 실제로 고르고, 반응하고, 멈추는 순간이 데이터가 됩니다.',
+    pillar1: '풍선 불기', pillar2: '신호등 반사', pillar3: '세 개의 문',
+    start: '시작하기', remeasure: '다시 측정하기',
+    g1instr: '탭해서 풍선을 불리세요. 터지기 전에 챙기면 점수가 확정됩니다.',
+    pump: '불기', cashout: '챙기기',
+    g2instr: '초록이면 빠르게 탭, 빨강이면 참으세요.',
+    g3instr: '문을 12번 고르세요. C는 열기 전까진 알 수 없습니다.',
+    doorA: '안정', doorB: '도박', doorC: '미지',
+    cum: '누적',
+    rarityCalc: '계산 중…',
+    rarityPct: function(pct){ return '지금까지 참가자 중 ' + pct + '%'; },
+    earlyTester: function(n){ return '얼리 테스터 뱃지 🧬 #' + n; },
+    gaugeR: '모험', gaugeI: '직진', gaugeE: '개척',
+    fortuneTitle: '🔮 오늘의 운세',
+    fkFlow: '오늘의 흐름', fkAction: '행운의 행동', fkWatch: '조심할 것',
+    share: '공유 카드 저장', replay: '다시하기',
+    instinct: function(n){ return '본능 점수 ' + n + '점 (재미용, 유형 판정과 무관)'; },
+    goldToast: '🎁 첫 측정 보상 +50,000골드',
+    shareSaved: '공유 카드를 저장했어요',
+    revisitTitle: function(emoji, name){ return '오늘의 ' + emoji + name + ' 운세'; },
+    revisitSub: '탭해서 보기',
+    evR_adv: function(v){ return '풍선을 평균 ' + v + '번까지 불었다 — 상위권 배짱'; },
+    evR_safe: function(v){ return '풍선을 평균 ' + v + '번에서 챙겼다 — 안전이 먼저였다'; },
+    evI_fast: function(v){ return '빨간불에서도 ' + v + '% 확률로 손이 먼저 나갔다'; },
+    evI_slow: function(v){ return '빨간불 오탭률 ' + v + '% — 손보다 판단이 빨랐다'; },
+    evE_explore: function(v){ return '직전과 다른 문을 ' + v + '% 확률로 골랐다 — 판을 계속 바꿨다'; },
+    evE_routine: function(v){ return '같은 문을 ' + v + '% 확률로 반복했다 — 루틴을 지켰다'; },
+  },
+  en: {
+    title: '🧬 PlayDNA',
+    subtitle: 'No questions. Only what you actually do.',
+    introBody: '3 mini-games, 3 minutes total. There are no right answers — only what you pick, react to, and stop at.',
+    pillar1: 'Balloon Pop', pillar2: 'Traffic Light', pillar3: 'Three Doors',
+    start: 'Start', remeasure: 'Measure again',
+    g1instr: 'Tap to pump the balloon. Cash out before it pops to lock in the score.',
+    pump: 'Pump', cashout: 'Cash out',
+    g2instr: 'Green: tap fast. Red: hold back.',
+    g3instr: 'Pick a door 12 times. Door C stays unknown until you open it.',
+    doorA: 'Safe', doorB: 'Gamble', doorC: 'Unknown',
+    cum: 'Total',
+    rarityCalc: 'Calculating…',
+    rarityPct: function(pct){ return 'You match ' + pct + '% of all participants'; },
+    earlyTester: function(n){ return 'Early Tester Badge 🧬 #' + n; },
+    gaugeR: 'Risk', gaugeI: 'Impulse', gaugeE: 'Explore',
+    fortuneTitle: "🔮 Today's Fortune",
+    fkFlow: "Today's flow", fkAction: 'Lucky action', fkWatch: 'Watch out for',
+    share: 'Save share card', replay: 'Play again',
+    instinct: function(n){ return 'Instinct score ' + n + ' (just for fun, not part of typing)'; },
+    goldToast: '🎁 First result bonus +50,000 gold',
+    shareSaved: 'Share card saved',
+    revisitTitle: function(emoji, name){ return "Today's " + emoji + name + ' fortune'; },
+    revisitSub: 'Tap to view',
+    evR_adv: function(v){ return 'Pumped balloons ' + v + ' times on average — top-tier nerve'; },
+    evR_safe: function(v){ return 'Cashed out at ' + v + ' pumps on average — safety came first'; },
+    evI_fast: function(v){ return 'Hands moved first on ' + v + '% of red lights'; },
+    evI_slow: function(v){ return 'Red false-alarm rate ' + v + '% — judgment beat reflex'; },
+    evE_explore: function(v){ return 'Switched doors ' + v + '% of the time — kept changing the game'; },
+    evE_routine: function(v){ return 'Repeated the same door ' + v + '% of the time — stuck to routine'; },
+  }
+};
+function t(key){ return T[LANG][key]; }
+
+function applyStaticI18n(){
+  var map = {
+    't-title':'title', 't-subtitle':'subtitle', 't-intro-body':'introBody',
+    't-pillar1':'pillar1', 't-pillar2':'pillar2', 't-pillar3':'pillar3',
+    't-g1-instr':'g1instr', 't-g2-instr':'g2instr', 't-g3-instr':'g3instr',
+    't-doorA':'doorA', 't-doorB':'doorB', 't-doorC':'doorC',
+    'fortune-title':'fortuneTitle', 'fk-flow':'fkFlow', 'fk-action':'fkAction', 'fk-watch':'fkWatch',
+    'gauge-r-lb':'gaugeR', 'gauge-i-lb':'gaugeI', 'gauge-e-lb':'gaugeE',
+  };
+  Object.keys(map).forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.textContent = t(map[id]);
+  });
+  document.getElementById('btn-start').textContent = t('start');
+  document.getElementById('btn-remeasure').textContent = t('remeasure');
+  document.getElementById('btn-pump').textContent = t('pump');
+  document.getElementById('btn-cashout').textContent = t('cashout');
+  document.getElementById('btn-share').textContent = t('share');
+  document.getElementById('btn-replay').textContent = t('replay');
+  document.getElementById('res-rarity').textContent = t('rarityCalc');
+}
+
+/* ---------- helpers ---------- */
+function clamp(x, lo, hi){ return Math.max(lo, Math.min(hi, x)); }
+function randInt(min, max){ return Math.floor(Math.random() * (max - min + 1)) + min; }
+function fnv1a(str){
+  var h = 0x811c9dc5;
+  for (var i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+function todayUTC(){
+  var d = new Date();
+  return String(d.getUTCFullYear()) + String(d.getUTCMonth() + 1).padStart(2, '0') + String(d.getUTCDate()).padStart(2, '0');
+}
+function gaPush(event, extra){
+  window.dataLayer = window.dataLayer || [];
+  var payload = { event: event };
+  if (extra) for (var k in extra) payload[k] = extra[k];
+  window.dataLayer.push(payload);
+}
+function showToast(msg, ms){
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(function(){ el.classList.remove('show'); }, ms || 2400);
+}
+function showScreen(name){
+  ['intro','game1','game2','game3','result'].forEach(function(s){
+    document.getElementById('screen-' + s).classList.toggle('hidden', s !== name);
+  });
+}
+
+/* ---------- type data (8종, 카피 고정) ---------- */
+var TYPES = {
+  tiger:    { emoji:'🔥', name:{ko:'폭주 호랑이', en:'Blaze Tiger'},
+              line:{ko:'브레이크가 없다. 새 판이 열리면 제일 먼저 뛰어든다', en:'No brakes. First to jump in when a new table opens.'} },
+  bulldog:  { emoji:'🎰', name:{ko:'올인 불도그', en:'All-in Bulldog'},
+              line:{ko:'아는 판에서 세게 지른다. 익숙한 무대의 승부사', en:'Goes all-in on familiar ground. A high-roller of known stages.'} },
+  hawk:     { emoji:'🦅', name:{ko:'계산된 매', en:'Calculated Hawk'},
+              line:{ko:'위험은 감수한다. 단, 타이밍은 정확히 잰 뒤에', en:'Takes the risk — but only after timing it just right.'} },
+  bear:     { emoji:'♟️', name:{ko:'한방 곰', en:'One-shot Bear'},
+              line:{ko:'조용히 준비해서 큰 한 방. 판을 뒤집는 건 늘 이 유형', en:'Quietly prepares for one big shot. Always the one who flips the table.'} },
+  dolphin:  { emoji:'🐬', name:{ko:'호기심 돌고래', en:'Curious Dolphin'},
+              line:{ko:'잃을 건 안 걸지만, 새로운 건 전부 찔러본다', en:"Never risks what it can't afford, but pokes at everything new."} },
+  squirrel: { emoji:'🐿️', name:{ko:'스피드 다람쥐', en:'Swift Squirrel'},
+              line:{ko:'빠르게 움직인다. 단, 항상 안전한 길로', en:'Moves fast — but always down the safe path.'} },
+  owl:      { emoji:'🦉', name:{ko:'관찰자 부엉이', en:'Watchful Owl'},
+              line:{ko:'지켜보고, 배우고, 확실해졌을 때만 움직인다', en:'Watches, learns, and moves only once certain.'} },
+  turtle:   { emoji:'🐢', name:{ko:'철벽 거북', en:'Ironwall Turtle'},
+              line:{ko:'흔들리지 않는다. 안정이 곧 전략이다', en:'Unshaken. Stability itself is the strategy.'} }
+};
+function typeSlug(R, I, E){
+  var r = R >= 0.5, i = I >= 0.5, e = E >= 0.5;
+  if (r && i && e) return 'tiger';
+  if (r && i && !e) return 'bulldog';
+  if (r && !i && e) return 'hawk';
+  if (r && !i && !e) return 'bear';
+  if (!r && i && e) return 'dolphin';
+  if (!r && i && !e) return 'squirrel';
+  if (!r && !i && e) return 'owl';
+  return 'turtle';
+}
+
+/* ---------- fortune pools ---------- */
+var FLOW_POOL = [
+  {ko:'오늘은 판이 빨리 도는 날 — 결정을 미루면 기회가 지나간다', en:'Today the game moves fast — hesitate and the window closes.'},
+  {ko:'차분한 흐름. 서두르지 않아도 결과는 따라온다', en:'A calm current. Results follow even without rushing.'},
+  {ko:'예상 밖의 제안이 하나 들어온다. 가볍게 들어볼 것', en:'An unexpected offer lands. Worth hearing out, lightly.'},
+  {ko:'익숙한 루틴이 오늘따라 잘 풀린다', en:'The usual routine clicks unusually well today.'},
+  {ko:'작은 선택 하나가 나중에 크게 돌아온다', en:'One small choice today returns big later.'},
+  {ko:'속도보다 타이밍이 중요한 하루', en:'A day where timing beats speed.'},
+  {ko:'혼자보다 함께일 때 흐름이 좋다', en:'The flow favors company over solo today.'},
+  {ko:'어제의 결정이 오늘 결과로 나타난다', en:"Yesterday's call shows its result today."},
+  {ko:'새로운 판이 열리지만 서두를 필요는 없다', en:'A new table opens, but no need to rush in.'},
+  {ko:'안정된 하루. 큰 변수 없이 흘러간다', en:'A stable day. Few surprises in the flow.'},
+  {ko:'직감이 평소보다 잘 맞는 날', en:'Your gut reads sharper than usual today.'},
+  {ko:'판을 읽는 눈이 밝아지는 날', en:'Your read on the room sharpens today.'}
+];
+var LUCKY_POOL = [
+  {ko:'먼저 말 걸기', en:'Speak first'},
+  {ko:'한 번 더 확인하기', en:'Double-check once more'},
+  {ko:'새로운 메뉴 골라보기', en:'Try the new menu item'},
+  {ko:'익숙한 길로 돌아가기', en:'Take the familiar route home'},
+  {ko:'잠깐 멈춰서 숨 고르기', en:'Pause and take a breath'},
+  {ko:'낯선 사람에게 인사하기', en:'Greet a stranger'},
+  {ko:'미뤄둔 일 하나 끝내기', en:'Finish one postponed task'},
+  {ko:'작게 베팅해보기', en:'Place a small bet'},
+  {ko:'물 한 잔 더 마시기', en:'Drink one more glass of water'},
+  {ko:'계획을 하루 앞당기기', en:'Move your plan up by a day'},
+  {ko:'가진 패를 다시 세보기', en:'Recount the hand you are holding'},
+  {ko:'오늘은 그냥 지켜보기', en:'Just watch today'}
+];
+var WATCH_POOL = [
+  {ko:'과신은 오늘의 적', en:"Overconfidence is today's enemy"},
+  {ko:'너무 오래 재는 것', en:'Overthinking too long'},
+  {ko:'급한 약속', en:'Rushed promises'},
+  {ko:'빈 말로 하는 확답', en:'Empty-word confirmations'},
+  {ko:'익숙함에 속는 것', en:'Being fooled by familiarity'},
+  {ko:'혼자 판단하고 끝내기', en:'Deciding alone and calling it done'},
+  {ko:'작은 신호를 무시하기', en:'Ignoring small signals'},
+  {ko:'타이밍 놓치는 것', en:'Missing the timing'},
+  {ko:'과도한 지출', en:'Overspending'},
+  {ko:'남의 페이스에 끌려가는 것', en:"Getting dragged into someone else's pace"},
+  {ko:'확인 없이 넘어가기', en:'Skipping the double-check'},
+  {ko:'너무 빨리 마음 정하기', en:'Making up your mind too fast'}
+];
+var TYPE_FLOW = {
+  tiger:    {ko:'오늘은 브레이크 없는 날 — 판이 열리는 순간 이미 몸이 먼저 움직인다', en:'A brakeless day — your body moves before the table even opens.'},
+  bulldog:  {ko:'익숙한 무대가 오늘 다시 열린다. 세게 지를 타이밍', en:'A familiar stage opens again. Time to go all-in.'},
+  hawk:     {ko:'먹잇감이 보이는 날. 다만 오늘도 타이밍은 정확히 잰다', en:'Prey is in sight today. But you still time it exactly.'},
+  bear:     {ko:'조용히 쌓아온 것이 오늘 한 방으로 터진다', en:"What you've quietly built erupts in one shot today."},
+  dolphin:  {ko:'잃을 게 없는 하루. 새로운 걸 마음껏 찔러봐도 좋다', en:'Nothing to lose today. Poke at anything new, freely.'},
+  squirrel: {ko:'빠르게 움직이되 오늘도 안전한 길을 벗어나지 않는다', en:'Move fast, but stay on the safe path as always.'},
+  owl:      {ko:'지켜보던 것이 오늘 확실해진다. 이제 움직일 차례', en:'What you have been watching becomes clear today. Time to move.'},
+  turtle:   {ko:'흔들 것이 있어도 오늘은 자리를 지키는 게 이긴다', en:'Even with reasons to shake, holding your ground wins today.'}
+};
+function getFortune(slug, dateStr){
+  var seed = fnv1a(slug + dateStr);
+  var flowIdx = seed % 12;
+  var actionIdx = Math.floor(seed / 13) % 12;
+  var watchIdx = Math.floor(seed / 169) % 12;
+  var useSpecial = (seed % 2 === 0);
+  var flow = useSpecial ? TYPE_FLOW[slug] : FLOW_POOL[flowIdx];
+  return { flow: flow, action: LUCKY_POOL[actionIdx], watch: WATCH_POOL[watchIdx] };
+}
+
+/* ---------- state ---------- */
+var state = { R: 0, I: 0, E: 0, adjustedAvgPumps: 0, falseAlarmRate: 0, meanRT: 0,
+  exploreRate: 0, unknownRate: 0, balloonScore: 0, game2Score: 0, game3Score: 0 };
+
+/* =========================================================
+   GAME 1 — Balloon BART
+   ========================================================= */
+var balloons = [], curBalloon = 0, curPumps = 0, curThreshold = 2;
+function startGame1(){
+  balloons = []; curBalloon = 0;
+  nextBalloon();
+  document.getElementById('balloon').classList.remove('pop');
+}
+function nextBalloon(){
+  curPumps = 0;
+  curThreshold = randInt(2, 12);
+  document.getElementById('balloon').style.transform = 'scale(1)';
+  document.getElementById('balloon').classList.remove('pop');
+  document.getElementById('g1-count').textContent =
+    (LANG === 'en' ? 'Balloon ' + (curBalloon + 1) + ' / 8' : '풍선 ' + (curBalloon + 1) + ' / 8');
+  document.getElementById('balloonPumpLabel').textContent =
+    (LANG === 'en' ? '0 pumps' : '0번 불었음');
+  document.getElementById('g1-score').textContent = '0' + (LANG === 'en' ? ' pts' : '점');
+}
+function pumpBalloon(){
+  curPumps++;
+  if (curPumps >= curThreshold) {
+    balloons.push({ pumps: curPumps, popped: true, score: 0 });
+    document.getElementById('balloon').classList.add('pop');
+    if (navigator.vibrate) try { navigator.vibrate(60); } catch(e){}
+    setTimeout(advanceOrFinishGame1, 380);
+  } else {
+    var scale = 1 + curPumps * 0.06;
+    document.getElementById('balloon').style.transform = 'scale(' + scale + ')';
+    document.getElementById('balloonPumpLabel').textContent =
+      curPumps + (LANG === 'en' ? ' pumps' : '번 불었음');
+    document.getElementById('g1-score').textContent = (curPumps * 10) + (LANG === 'en' ? ' pts' : '점');
+  }
+}
+function cashOutBalloon(){
+  if (curPumps === 0) return;
+  balloons.push({ pumps: curPumps, popped: false, score: curPumps * 10 });
+  advanceOrFinishGame1();
+}
+function advanceOrFinishGame1(){
+  curBalloon++;
+  if (curBalloon >= 8) finishGame1();
+  else nextBalloon();
+}
+function finishGame1(){
+  var banked = balloons.filter(function(b){ return !b.popped; });
+  var adjustedAvgPumps = banked.length ? banked.reduce(function(s,b){ return s + b.pumps; }, 0) / banked.length : 1;
+  state.adjustedAvgPumps = adjustedAvgPumps;
+  state.R = clamp((adjustedAvgPumps - 2) / 8, 0, 1);
+  state.balloonScore = balloons.reduce(function(s,b){ return s + b.score; }, 0);
+  gaPush('pd_game1_done');
+  showScreen('game2');
+  startGame2();
+}
+function simulateGame1(){
+  balloons = [];
+  for (var i = 0; i < 8; i++) {
+    var threshold = randInt(2, 12);
+    var pumps = randInt(1, 12);
+    if (pumps >= threshold) balloons.push({ pumps: pumps, popped: true, score: 0 });
+    else balloons.push({ pumps: pumps, popped: false, score: pumps * 10 });
+  }
+  finishGame1();
+}
+
+/* =========================================================
+   GAME 2 — Go/No-Go traffic light
+   ========================================================= */
+var rounds2 = [], round2Idx = 0, roundActive = false, roundStartTime = 0, currentColor = '', tappedThisRound = false, greenWindowMs = 900;
+var TOTAL_ROUNDS2 = 24;
+function startGame2(){
+  rounds2 = []; round2Idx = 0;
+  var dots = document.getElementById('roundDots');
+  dots.innerHTML = '';
+  for (var i = 0; i < TOTAL_ROUNDS2; i++) {
+    var s = document.createElement('span'); s.id = 'dot2-' + i; dots.appendChild(s);
+  }
+  document.getElementById('g2-score').textContent = '0' + (LANG === 'en' ? ' pts' : '점');
+  scheduleRound2();
+}
+function scheduleRound2(){
+  if (round2Idx >= TOTAL_ROUNDS2) { finishGame2(); return; }
+  document.getElementById('g2-count').textContent = round2Idx + ' / ' + TOTAL_ROUNDS2;
+  var isRed = Math.random() < 0.3;
+  currentColor = isRed ? 'red' : 'green';
+  var circle = document.getElementById('trafficCircle');
+  circle.className = currentColor;
+  roundStartTime = performance.now();
+  roundActive = true;
+  tappedThisRound = false;
+  var interval = 800 + Math.random() * 800;
+  greenWindowMs = Math.min(900, interval);
+  setTimeout(function(){
+    if (!tappedThisRound) rounds2.push({ color: currentColor, tapped: false, rt: null });
+    var dot = document.getElementById('dot2-' + round2Idx);
+    if (dot) {
+      var last = rounds2[rounds2.length - 1];
+      var hit = last.color === 'green' ? last.tapped : !last.tapped;
+      dot.className = hit ? 'done-hit' : 'done-miss';
+    }
+    roundActive = false;
+    circle.className = 'idle';
+    round2Idx++;
+    scheduleRound2();
+  }, interval);
+}
+function onCircleTap(){
+  if (!roundActive || tappedThisRound) return;
+  var rt = performance.now() - roundStartTime;
+  if (currentColor === 'green') {
+    if (rt <= greenWindowMs) {
+      tappedThisRound = true;
+      rounds2.push({ color: 'green', tapped: true, rt: rt });
+      bumpScore2(10);
+    }
+  } else {
+    tappedThisRound = true;
+    rounds2.push({ color: 'red', tapped: true, rt: rt });
+    bumpScore2(-15);
+  }
+}
+function bumpScore2(delta){
+  var el = document.getElementById('g2-score');
+  var cur = parseInt(el.textContent, 10) || 0;
+  el.textContent = (cur + delta) + (LANG === 'en' ? ' pts' : '점');
+}
+function finishGame2(){
+  var reds = rounds2.filter(function(r){ return r.color === 'red'; });
+  var redTapped = reds.filter(function(r){ return r.tapped; }).length;
+  var falseAlarmRate = reds.length ? redTapped / reds.length : 0;
+  var greenHits = rounds2.filter(function(r){ return r.color === 'green' && r.tapped; });
+  var meanRT = greenHits.length ? greenHits.reduce(function(s,r){ return s + r.rt; }, 0) / greenHits.length : 650;
+  state.falseAlarmRate = falseAlarmRate;
+  state.meanRT = meanRT;
+  state.I = clamp(0.7 * (falseAlarmRate / 0.5) + 0.3 * (1 - (meanRT - 250) / 400), 0, 1);
+  state.game2Score = greenHits.length * 10 - redTapped * 15;
+  gaPush('pd_game2_done');
+  showScreen('game3');
+  startGame3();
+}
+function simulateGame2(){
+  rounds2 = [];
+  for (var i = 0; i < TOTAL_ROUNDS2; i++) {
+    var isRed = Math.random() < 0.3;
+    if (isRed) {
+      var tappedR = Math.random() < 0.3;
+      rounds2.push({ color: 'red', tapped: tappedR, rt: tappedR ? randInt(200, 600) : null });
+    } else {
+      var tappedG = Math.random() < 0.85;
+      rounds2.push({ color: 'green', tapped: tappedG, rt: tappedG ? randInt(250, 650) : null });
+    }
+  }
+  finishGame2();
+}
+
+/* =========================================================
+   GAME 3 — Three doors (explore/exploit)
+   ========================================================= */
+var doorChoices = [], cumScore3 = 0;
+var TOTAL_ROUNDS3 = 12;
+function startGame3(){
+  doorChoices = []; cumScore3 = 0;
+  document.getElementById('g3-count').textContent = '0 / ' + TOTAL_ROUNDS3;
+  document.getElementById('g3-score').textContent = '0' + (LANG === 'en' ? ' pts' : '점');
+  document.getElementById('doorsCum').innerHTML = t('cum') + ' <b>0' + (LANG === 'en' ? ' pts' : '점') + '</b>';
+  ['A','B','C'].forEach(function(l){ document.querySelector('.d-result[data-r="' + l + '"]').textContent = ''; });
+}
+function chooseDoor(letter){
+  if (doorChoices.length >= TOTAL_ROUNDS3) return;
+  var val;
+  if (letter === 'A') val = 40 + randInt(0, 20);
+  else if (letter === 'B') val = Math.random() < 0.2 ? 200 : 10;
+  else val = randInt(0, 150);
+  cumScore3 += val;
+  doorChoices.push(letter);
+  var resEl = document.querySelector('.d-result[data-r="' + letter + '"]');
+  resEl.textContent = '+' + val;
+  setTimeout(function(){ if (doorChoices.length < TOTAL_ROUNDS3) resEl.textContent = ''; }, 700);
+  document.getElementById('g3-count').textContent = doorChoices.length + ' / ' + TOTAL_ROUNDS3;
+  document.getElementById('g3-score').textContent = cumScore3 + (LANG === 'en' ? ' pts' : '점');
+  document.getElementById('doorsCum').innerHTML = t('cum') + ' <b>' + cumScore3 + (LANG === 'en' ? ' pts' : '점') + '</b>';
+  if (doorChoices.length >= TOTAL_ROUNDS3) setTimeout(finishGame3, 500);
+}
+function finishGame3(){
+  var switches = 0, comparisons = 0;
+  for (var i = 3; i < doorChoices.length; i++) {
+    comparisons++;
+    if (doorChoices[i] !== doorChoices[i - 1]) switches++;
+  }
+  var exploreRate = comparisons ? switches / comparisons : 0;
+  var unknownRate = doorChoices.filter(function(d){ return d === 'C'; }).length / doorChoices.length;
+  state.exploreRate = exploreRate;
+  state.unknownRate = unknownRate;
+  state.E = clamp(0.5 * exploreRate + 0.5 * (unknownRate / 0.6), 0, 1);
+  state.game3Score = cumScore3;
+  gaPush('pd_game3_done');
+  computeResult(false);
+}
+function simulateGame3(){
+  doorChoices = []; cumScore3 = 0;
+  var letters = ['A','B','C'];
+  for (var i = 0; i < TOTAL_ROUNDS3; i++) {
+    var letter = letters[randInt(0, 2)];
+    var val;
+    if (letter === 'A') val = 40 + randInt(0, 20);
+    else if (letter === 'B') val = Math.random() < 0.2 ? 200 : 10;
+    else val = randInt(0, 150);
+    cumScore3 += val;
+    doorChoices.push(letter);
+  }
+  finishGame3();
+}
+
+/* =========================================================
+   RESULT
+   ========================================================= */
+function postStats(slug){
+  var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 4000) : null;
+  return fetch('https://relay.cocy.io/api/playdna/stats', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: slug }),
+    signal: ctrl ? ctrl.signal : undefined
+  }).then(function(r){ return r.json(); })
+    .then(function(d){ if (timer) clearTimeout(timer); return d; })
+    .catch(function(){ if (timer) clearTimeout(timer); return null; });
+}
+function renderRarity(slug, statsResult){
+  var el = document.getElementById('res-rarity');
+  if (statsResult && statsResult.success) {
+    if (statsResult.total < 30) {
+      el.textContent = t('earlyTester')(statsResult.total);
+    } else {
+      var pct = typeof statsResult.pct === 'number' ? statsResult.pct.toFixed(1) : '0.0';
+      el.textContent = t('rarityPct')(pct);
+    }
+  } else {
+    el.textContent = t('earlyTester')('•');
+  }
+}
+function computeResult(fromCache){
+  var slug = fromCache ? state.type : typeSlug(state.R, state.I, state.E);
+  state.type = slug;
+  var typeData = TYPES[slug];
+  document.getElementById('res-emoji').textContent = typeData.emoji;
+  document.getElementById('res-name').textContent = typeData.name[LANG];
+  document.getElementById('res-line').textContent = typeData.line[LANG];
+
+  var rPct = Math.round(state.R * 100), iPct = Math.round(state.I * 100), ePct = Math.round(state.E * 100);
+  document.getElementById('gauge-r-pct').textContent = rPct + '%';
+  document.getElementById('gauge-i-pct').textContent = iPct + '%';
+  document.getElementById('gauge-e-pct').textContent = ePct + '%';
+  setTimeout(function(){
+    document.getElementById('gauge-r-fill').style.width = rPct + '%';
+    document.getElementById('gauge-i-fill').style.width = iPct + '%';
+    document.getElementById('gauge-e-fill').style.width = ePct + '%';
+  }, 60);
+
+  var avgPumps1 = state.adjustedAvgPumps.toFixed(1);
+  var faPct = Math.round(state.falseAlarmRate * 100);
+  var explorePct = Math.round(state.exploreRate * 100);
+  var evR = state.R >= 0.5 ? t('evR_adv')(avgPumps1) : t('evR_safe')(avgPumps1);
+  var evI = state.I >= 0.5 ? t('evI_fast')(faPct) : t('evI_slow')(faPct);
+  var evE = state.E >= 0.5 ? t('evE_explore')(explorePct) : t('evE_routine')(100 - explorePct);
+  var list = document.getElementById('evidenceList');
+  list.innerHTML = '';
+  [evR, evI, evE].forEach(function(txt){
+    var li = document.createElement('li'); li.textContent = txt; list.appendChild(li);
+  });
+
+  var instinctTotal = fromCache ? (state.instinctScore || 0) :
+    (state.balloonScore + state.game2Score + state.game3Score);
+  state.instinctScore = instinctTotal;
+  document.getElementById('instinctScore').textContent = t('instinct')(instinctTotal);
+
+  var dateStr = todayUTC();
+  var fortune = getFortune(slug, dateStr);
+  document.getElementById('fv-flow').textContent = fortune.flow[LANG];
+  document.getElementById('fv-action').textContent = fortune.action[LANG];
+  document.getElementById('fv-watch').textContent = fortune.watch[LANG];
+
+  showScreen('result');
+
+  if (fromCache) {
+    gaPush('pd_fortune_view');
+    renderRarity(slug, state._lastStats || null);
+    return;
+  }
+
+  gaPush('pd_result', { type: slug });
+
+  // persist for revisit banner / cache view
+  try {
+    localStorage.setItem('pd_last_type', slug);
+    localStorage.setItem('pd_last_R', String(state.R));
+    localStorage.setItem('pd_last_I', String(state.I));
+    localStorage.setItem('pd_last_E', String(state.E));
+    localStorage.setItem('pd_last_instinct', String(instinctTotal));
+    localStorage.setItem('pd_last_date', dateStr);
+  } catch(e){}
+
+  // first-result gold reward (1회 가드)
+  try {
+    if (!localStorage.getItem('pd_gold_claimed')) {
+      localStorage.setItem('pd_gold_claimed', '1');
+      if (typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
+        SharedWallet.addGold(50000);
+        showToast(t('goldToast'));
+      }
+    }
+  } catch(e){}
+
+  // stats POST — dedupe per completed result via a monotonically bumped counter
+  var postKey = 'pd_posted_' + slug + '_' + dateStr + '_' + Date.now();
+  postStats(slug).then(function(d){
+    state._lastStats = d;
+    renderRarity(slug, d);
+  });
+}
+
+/* ---------- share card (canvas 720x900) ---------- */
+function drawShareCard(){
+  var canvas = document.getElementById('shareCanvas');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var slug = state.type, typeData = TYPES[slug];
+
+  var grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, '#1a1533'); grad.addColorStop(1, '#231a3d');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#8be9ff';
+  ctx.font = '700 28px sans-serif';
+  ctx.fillText(LANG === 'en' ? 'PlayDNA' : '플레이DNA', W / 2, 90);
+
+  ctx.font = '140px sans-serif';
+  ctx.fillText(typeData.emoji, W / 2, 280);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 46px sans-serif';
+  ctx.fillText(typeData.name[LANG], W / 2, 350);
+
+  ctx.fillStyle = '#c9c3e0';
+  ctx.font = '400 22px sans-serif';
+  wrapText(ctx, typeData.line[LANG], W / 2, 390, W - 120, 30);
+
+  var barY = 470, barW = W - 140, barX = 70, barH = 26, gap = 62;
+  var axes = [
+    { lb: t('gaugeR'), pct: Math.round(state.R * 100), color: '#4be3ff' },
+    { lb: t('gaugeI'), pct: Math.round(state.I * 100), color: '#ff5ec4' },
+    { lb: t('gaugeE'), pct: Math.round(state.E * 100), color: '#ffd166' }
+  ];
+  axes.forEach(function(ax, idx){
+    var y = barY + idx * gap;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#e5e0f5';
+    ctx.font = '600 20px sans-serif';
+    ctx.fillText(ax.lb + ' ' + ax.pct + '%', barX, y - 10);
+    ctx.fillStyle = '#33285a';
+    roundRect(ctx, barX, y, barW, barH, 13); ctx.fill();
+    ctx.fillStyle = ax.color;
+    roundRect(ctx, barX, y, Math.max(barW * ax.pct / 100, 14), barH, 13); ctx.fill();
+  });
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffd166';
+  ctx.font = '700 24px sans-serif';
+  var rarityTxt = document.getElementById('res-rarity').textContent;
+  ctx.fillText(rarityTxt, W / 2, barY + axes.length * gap + 40);
+
+  ctx.fillStyle = '#8a84a8';
+  ctx.font = '400 20px sans-serif';
+  ctx.fillText('game.cocy.io/playdna', W / 2, H - 50);
+}
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+  var words = text.split(' '), line = '', lines = [];
+  for (var i = 0; i < words.length; i++) {
+    var test = line + words[i] + ' ';
+    if (ctx.measureText(test).width > maxWidth && line !== '') {
+      lines.push(line); line = words[i] + ' ';
+    } else line = test;
+  }
+  lines.push(line);
+  lines.forEach(function(l, idx){ ctx.fillText(l.trim(), x, y + idx * lineHeight); });
+}
+function shareCard(){
+  drawShareCard();
+  gaPush('pd_share');
+  var canvas = document.getElementById('shareCanvas');
+  canvas.toBlob(function(blob){
+    if (!blob) return;
+    var file = new File([blob], 'playdna.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: 'PlayDNA' }).catch(function(){});
+    } else {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'playdna-' + state.type + '.png';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      showToast(t('shareSaved'));
+    }
+  }, 'image/png');
+}
+
+/* ---------- revisit banner ---------- */
+function initRevisitBanner(){
+  var slug;
+  try { slug = localStorage.getItem('pd_last_type'); } catch(e){ slug = null; }
+  if (!slug || !TYPES[slug]) return;
+  var banner = document.getElementById('revisitBanner');
+  var typeData = TYPES[slug];
+  document.getElementById('rb-title').textContent = t('revisitTitle')(typeData.emoji, typeData.name[LANG]);
+  document.getElementById('rb-sub').textContent = t('revisitSub');
+  banner.classList.remove('hidden');
+  document.getElementById('btn-remeasure').classList.remove('hidden');
+  banner.onclick = function(){
+    try {
+      state.type = slug;
+      state.R = parseFloat(localStorage.getItem('pd_last_R')) || 0;
+      state.I = parseFloat(localStorage.getItem('pd_last_I')) || 0;
+      state.E = parseFloat(localStorage.getItem('pd_last_E')) || 0;
+      state.instinctScore = parseFloat(localStorage.getItem('pd_last_instinct')) || 0;
+      state.adjustedAvgPumps = state.adjustedAvgPumps || 2;
+    } catch(e){}
+    computeResult(true);
+  };
+}
+
+/* ---------- wire up ---------- */
+document.addEventListener('DOMContentLoaded', function(){
+  applyStaticI18n();
+  initRevisitBanner();
+
+  document.getElementById('btn-start').addEventListener('click', function(){
+    gaPush('pd_start');
+    showScreen('game1');
+    startGame1();
+  });
+  document.getElementById('btn-remeasure').addEventListener('click', function(){
+    gaPush('pd_start');
+    showScreen('game1');
+    startGame1();
+  });
+
+  document.getElementById('balloon').addEventListener('click', pumpBalloon);
+  document.getElementById('btn-pump').addEventListener('click', pumpBalloon);
+  document.getElementById('btn-cashout').addEventListener('click', cashOutBalloon);
+
+  document.getElementById('trafficCircle').addEventListener('click', onCircleTap);
+
+  Array.prototype.forEach.call(document.querySelectorAll('.door'), function(el){
+    el.addEventListener('click', function(){ chooseDoor(el.getAttribute('data-door')); });
+  });
+
+  document.getElementById('btn-share').addEventListener('click', shareCard);
+  document.getElementById('btn-replay').addEventListener('click', function(){
+    showScreen('intro');
+  });
+
+  if (DEBUG) {
+    document.getElementById('debug-skip1').addEventListener('click', function(){ setTimeout(simulateGame1, 200); });
+    document.getElementById('debug-skip2').addEventListener('click', function(){ setTimeout(simulateGame2, 200); });
+    document.getElementById('debug-skip3').addEventListener('click', function(){ setTimeout(simulateGame3, 200); });
+  }
+
+  // shared-wallet init (전역 재선언 없이 안전 호출)
+  try {
+    if (typeof SharedWallet !== 'undefined' && SharedWallet.init && !SharedWallet._initialized) {
+      SharedWallet.init();
+    }
+  } catch(e){}
+});
+
+})();
+</script>
+</body>
+</html>
