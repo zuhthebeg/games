@@ -3124,11 +3124,13 @@
       <div class="stat-cell"><span data-i18n="discards_left">남은 버리기</span> <b id="discardsLabel">0</b></div>
       <div class="util-btns">
         <button id="hintBtn" class="deck-btn ic" type="button" data-i18n-title="hint_btn" aria-label="추천 패" title="추천 패"></button>
+        <button id="layaPilotBtn" type="button" hidden style="font-size:.7rem;border:1px solid #8bb5d6;border-radius:8px;background:#162537;color:#e0f2ff;padding:6px" aria-label="AI 실험">AI 실험</button>
         <button id="handsInfoBtn" class="deck-btn ic" type="button" data-i18n-title="skills" aria-label="기술"></button>
         <button id="collectionBtn" class="deck-btn ic" type="button" data-i18n-title="collection_btn" aria-label="도감"></button>
         <button id="deckBtn" class="deck-btn deck-count ic" type="button" data-i18n-title="deck" aria-label="덱"></button>
       </div>
     </section>
+    <div id="layaPilotResult" role="status" aria-live="polite" hidden style="position:absolute;bottom:76px;right:10px;max-width:85%;z-index:5;background:#162537;border:1px solid #8bb5d6;border-radius:8px;font-size:.72rem;color:#e0f2ff;padding:6px 10px;pointer-events:none">실험 — 틀릴 수 있음</div>
 
     <section class="actions">
       <button class="btn-main btn-codex" id="playBtn" data-i18n="hand_play">⚔️ 공격</button>
@@ -3399,6 +3401,7 @@
 
   <script src="/lib/shared-wallet.js?v=20260809pf2"></script>
   <script src="/lib/game-rankings.js?v=20260813"></script>
+  <script src="laya-hint.js"></script>
   <script>
     const suits = ["heart", "diamond", "club", "spade"];
     const suitSymbol = { heart: "♥", diamond: "♦", club: "♣", spade: "♠" };
@@ -8546,6 +8549,20 @@
     });
     $("#closeDeckBtn").addEventListener("click", closeDeckModal);
     $("#hintBtn").addEventListener("click", showBestHint);
+    if (new URLSearchParams(location.search).get("layaHintPilot") === "1") {
+      const pilotBtn = $("#layaPilotBtn");
+      const pilotResult = $("#layaPilotResult");
+      pilotBtn.hidden = false;
+      pilotResult.hidden = false;
+      const pilot = JokerRunLayaHint.createPilotController({
+        button: pilotBtn, output: pilotResult,
+        getState: () => ({ ...state, target: activeTarget() }),
+        getComboIds: () => state.handsLeft > 0 ? bestHintCombo().map(c => c.id) : [],
+        getToken: () => { try { return localStorage.getItem("cocy_auth_token"); } catch (_) { return null; } },
+        fetcher: (...args) => fetch(...args)
+      });
+      pilotBtn.addEventListener("click", () => { void pilot.request(); });
+    }
     $("#handsInfoBtn").addEventListener("click", openHandsModal);
     $("#closeHandsBtn").addEventListener("click", closeHandsModal);
     /* tarotInfoBtn 제거 — 도감 '타로' 탭으로 일원화 */
