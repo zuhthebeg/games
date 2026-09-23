@@ -1,0 +1,72 @@
+[
+  {
+    "id": "joker_blueprint_good",
+    "group": "joker_order",
+    "state": {
+      "phase": "combat", "hand": [{"id":"a","rank":14,"suit":"spade","enh":null},{"id":"b","rank":2,"suit":"heart","enh":null}],
+      "jokers": [{"id":"blueprint","effect":"copy right neighbor","edition":null,"counter":0},{"id":"solo","effect":"+1000 chips when exactly 1 played","edition":null,"counter":0},{"id":"flat50","effect":"+60 chips","edition":null,"counter":0}],
+      "handLevels":{"HIGH_CARD":4},"handsLeft":2,"discardsLeft":1,"deckComposition":{"remaining":12,"highCards":3},"bossModifier":null,"score":0,"target":1200,
+      "ruleNotes":["Solo applies for exactly one played card.","Blueprint copies the next joker on its right.","Joker position swaps cost no attack or discard."]
+    },
+    "choices":{"PLAY_NOW":"Play the single Ace with current joker order, Blueprint copies Solo +1000.","SWAP_THEN_PLAY":"Swap the two jokers right of Blueprint, then play the Ace; Blueprint would copy Flat50 +60."},
+    "expected":"PLAY_NOW", "label":"causal local effect only"
+  },
+  {
+    "id": "joker_blueprint_bad",
+    "group": "joker_order",
+    "state": {
+      "phase":"combat","hand":[{"id":"a","rank":14,"suit":"spade","enh":null},{"id":"b","rank":2,"suit":"heart","enh":null}],
+      "jokers":[{"id":"blueprint","effect":"copy right neighbor","edition":null,"counter":0},{"id":"flat50","effect":"+60 chips","edition":null,"counter":0},{"id":"solo","effect":"+1000 chips when exactly 1 played","edition":null,"counter":0}],
+      "handLevels":{"HIGH_CARD":4},"handsLeft":2,"discardsLeft":1,"deckComposition":{"remaining":12,"highCards":3},"bossModifier":null,"score":0,"target":1200,
+      "ruleNotes":["Solo applies for exactly one played card.","Blueprint copies the next joker on its right.","Joker position swaps cost no attack or discard."]
+    },
+    "choices":{"PLAY_NOW":"Play the single Ace now; Blueprint copies Flat50 +60.","SWAP_THEN_PLAY":"Swap the two jokers right of Blueprint, then play the Ace; Blueprint copies Solo +1000."},
+    "expected":"SWAP_THEN_PLAY", "label":"causal local effect only"
+  },
+  {
+    "id":"first_card_high",
+    "group":"card_order",
+    "state":{
+      "phase":"combat","hand":[{"id":"h","rank":10,"suit":"spade","enh":"mult"},{"id":"l","rank":10,"suit":"heart","enh":null}],
+      "jokers":[{"id":"hangingChad","effect":"first scoring card retriggers twice","edition":null,"counter":0}],
+      "handLevels":{"PAIR":3},"handsLeft":2,"discardsLeft":1,"deckComposition":{"remaining":10,"tens":2},"bossModifier":null,"score":0,"target":1000,
+      "ruleNotes":["Both pair cards score.","Hanging Chad repeats the first scoring card twice, including its enhancement.","Card reorder costs no attack or discard."]
+    },
+    "choices":{"PLAY_NOW":"Play both pair cards in current order.","SWAP_THEN_PLAY":"Swap these two hand cards, then play both as a pair."},
+    "expected":"PLAY_NOW", "label":"causal local effect only"
+  },
+  {
+    "id":"first_card_low",
+    "group":"card_order",
+    "state":{
+      "phase":"combat","hand":[{"id":"l","rank":10,"suit":"heart","enh":null},{"id":"h","rank":10,"suit":"spade","enh":"mult"}],
+      "jokers":[{"id":"hangingChad","effect":"first scoring card retriggers twice","edition":null,"counter":0}],
+      "handLevels":{"PAIR":3},"handsLeft":2,"discardsLeft":1,"deckComposition":{"remaining":10,"tens":2},"bossModifier":null,"score":0,"target":1000,
+      "ruleNotes":["Both pair cards score.","Hanging Chad repeats the first scoring card twice, including its enhancement.","Card reorder costs no attack or discard."]
+    },
+    "choices":{"PLAY_NOW":"Play both pair cards in current order.","SWAP_THEN_PLAY":"Swap these two hand cards, then play both as a pair."},
+    "expected":"SWAP_THEN_PLAY", "label":"causal local effect only"
+  },
+  {
+    "id":"pair_level_high",
+    "group":"hand_level",
+    "state":{
+      "phase":"combat","hand":[{"id":"h2","rank":2,"suit":"heart","enh":null},{"id":"h4","rank":4,"suit":"heart","enh":null},{"id":"h6","rank":6,"suit":"heart","enh":null},{"id":"h8","rank":8,"suit":"heart","enh":null},{"id":"h9","rank":9,"suit":"heart","enh":null},{"id":"s9","rank":9,"suit":"spade","enh":null}],
+      "jokers":[],"handLevels":{"PAIR":20,"FLUSH":1},"handsLeft":1,"discardsLeft":0,"deckComposition":{"remaining":0},"bossModifier":null,"score":0,"target":3000,
+      "ruleNotes":["Pair base: 10 chips x2, each extra level adds 15 chips and 1 mult.","Flush base: 35 chips x4, each extra level adds 15 chips and 2 mult.","No jokers; this is the last hand."]
+    },
+    "choices":{"PLAY_PAIR":"Play h9+s9 as a pair.","PLAY_FLUSH":"Play the five hearts as a flush."},
+    "expected":"PLAY_PAIR", "label":"strong immediate-damage anchor, not global optimality"
+  },
+  {
+    "id":"flush_level_high",
+    "group":"hand_level",
+    "state":{
+      "phase":"combat","hand":[{"id":"h2","rank":2,"suit":"heart","enh":null},{"id":"h4","rank":4,"suit":"heart","enh":null},{"id":"h6","rank":6,"suit":"heart","enh":null},{"id":"h8","rank":8,"suit":"heart","enh":null},{"id":"h9","rank":9,"suit":"heart","enh":null},{"id":"s9","rank":9,"suit":"spade","enh":null}],
+      "jokers":[],"handLevels":{"PAIR":1,"FLUSH":20},"handsLeft":1,"discardsLeft":0,"deckComposition":{"remaining":0},"bossModifier":null,"score":0,"target":3000,
+      "ruleNotes":["Pair base: 10 chips x2, each extra level adds 15 chips and 1 mult.","Flush base: 35 chips x4, each extra level adds 15 chips and 2 mult.","No jokers; this is the last hand."]
+    },
+    "choices":{"PLAY_PAIR":"Play h9+s9 as a pair.","PLAY_FLUSH":"Play the five hearts as a flush."},
+    "expected":"PLAY_FLUSH", "label":"strong immediate-damage anchor, not global optimality"
+  }
+]
