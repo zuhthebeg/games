@@ -462,18 +462,20 @@ function buildDeck(){
 }
 
 let G=null;
+// Experimental only: Laya failed order-invariance checks; never show by default.
+const HINT_PILOT = new URLSearchParams(location.search).has('layaHintPilot');
 let hintEpoch=0, hintPending=false, hintCardId=null;
 function clearGostopHint(){ hintEpoch++; hintPending=false; hintCardId=null; $('hintReason').textContent=''; renderHintControls(); }
 function renderHintControls(){
   const btn=$('hintButton'); if(!btn)return;
   const solo=$('board').style.display==='flex' && !(MP&&MP.active) && !$('board').classList.contains('mp');
-  const eligible=solo && GostopHint.canHint(G,false);
+  const eligible=HINT_PILOT && solo && GostopHint.canHint(G,false);
   btn.style.display=eligible?'':'none';
   btn.disabled=hintPending || !eligible;
   if(!eligible) { hintCardId=null; $('hintReason').textContent=''; }
 }
 async function requestGostopHint(){
-  if(hintPending || !GostopHint.canHint(G,MP.active) || $('board').classList.contains('mp'))return;
+  if(!HINT_PILOT || hintPending || !GostopHint.canHint(G,MP.active) || $('board').classList.contains('mp'))return;
   const token=localStorage.getItem('cocy_auth_token');
   if(!token){ $('hintReason').textContent='로그인 후 추천을 볼 수 있어요'; return; }
   const current=G, request=GostopHint.getHintRequest(current,score,false);

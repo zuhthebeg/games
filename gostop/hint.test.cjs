@@ -42,6 +42,8 @@ test('page exposes manual solo button, uses existing auth JWT and inert response
   assert.match(html, /src="hint\.js/);
   assert.match(html, /localStorage\.getItem\('cocy_auth_token'\)/);
   assert.match(html, /btn\.style\.display=eligible\?'':'none'/);
+  assert.match(html, /const HINT_PILOT = new URLSearchParams\(location\.search\)\.has\('layaHintPilot'\)/);
+  assert.match(html, /const eligible=HINT_PILOT && solo/);
   assert.match(html, /GostopHint\.isCurrentHint/);
   assert.match(html, /GostopHint\.validHintCard/);
   assert.match(html, /hintReason'\)\.textContent/);
