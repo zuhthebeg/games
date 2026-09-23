@@ -26,6 +26,16 @@ test('serializes only allowed fields, preserves visible order and summarizes ran
   assert.ok(!JSON.stringify(body).includes('never'));
 });
 
+test('optional joker desc is bounded plain text without markup or control characters', () => {
+  const s = state();
+  s.jokers[0].desc = '<b>오른쪽 복사</b>\n' + '효과'.repeat(100);
+  const serialized = pilot.buildPilotRequest(s, [1, 2]).state.jokers;
+  assert.equal(serialized[0].desc.length, 160);
+  assert.ok(serialized[0].desc.startsWith('오른쪽 복사 효과'));
+  assert.doesNotMatch(serialized[0].desc, /[<>\r\n]/);
+  assert.equal(Object.hasOwn(serialized[1], 'desc'), false);
+});
+
 test('legal candidates respect min4, no discard, resources and scoring count', () => {
   const s = state(); s.bossModifier = { id: 'min4cards', label: 'hidden' }; s.jokers.reverse();
   assert.deepEqual(Array.from(pilot.buildPilotRequest(s, [1, 2]).choices), ['DISCARD_ONE', 'SWAP_JOKERS']);

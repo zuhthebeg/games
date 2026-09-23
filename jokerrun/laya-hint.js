@@ -8,7 +8,10 @@
   const endpoint = 'https://llm.cocy.io/api/games/jokerrun/hint';
   const labels = { PLAY_BEST: '공격', DISCARD_ONE: '카드 버리기', SWAP_JOKERS: '조커 순서 조정', SWAP_CARDS: '카드 순서 조정' };
   const copyCard = c => ({ id: c.id, rank: c.rank, suit: c.suit, enh: c.enh ?? null });
-  const copyJoker = j => ({ id: j.id, edition: j.edition ?? null, counter: j.counter ?? 0, chipCounter: j.chipCounter ?? 0 });
+  const copyJoker = j => ({
+    id: j.id, edition: j.edition ?? null, counter: j.counter ?? 0, chipCounter: j.chipCounter ?? 0,
+    ...(typeof j.desc === 'string' ? { desc: j.desc.replace(/<[^>]*>/g, '').replace(/[<>\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) } : {})
+  });
 
   function buildPilotRequest(s, comboIds) {
     const hand = (s.hand || []).map(copyCard);
