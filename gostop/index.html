@@ -38,6 +38,10 @@ img{display:block}
 .bar .b b{color:var(--gold)}
 .bar .sp{flex:1}
 .bar button{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:4px 9px;font-size:.76rem;cursor:pointer}
+#board.mp #hintButton{display:none!important}
+#hintButton:disabled{opacity:.5;cursor:default}
+#hintReason{color:var(--gold);font-size:.74rem;max-width:45vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hcard.hint img,.hcard.hint.canplay img{box-shadow:0 0 0 3px #ffd34d,0 0 15px #ffd34d}
 /* opponent */
 .opp{padding:6px 10px;display:flex;align-items:center;gap:8px;font-size:.76rem}
 .opp .who{font-weight:700} .opp .who.turn{color:var(--gold)}
@@ -194,6 +198,7 @@ body.dealing #myHand .hcard,body.dealing #tableCards .mgroup img{animation:dealI
     <span class="b">더미 <b id="t-deck">20</b></span>
     <span class="b"><span id="t-myname">나</span> <b id="t-myscore">0</b>점</span>
     <span class="sp"></span>
+    <button id="hintButton" onclick="requestGostopHint()" style="display:none">추천 보기</button><span id="hintReason" role="status"></span>
     <button onclick="zoomCards(-1)">🔍−</button>
     <button onclick="zoomCards(1)">🔍+</button>
     <button onclick="show('settings')">⚙</button>
@@ -427,6 +432,7 @@ window.addEventListener('DOMContentLoaded', function(){
 <script src="/lib/multiplayer.js?v=20260705leave"></script>
 <script src="/lib/multiplayer-ui.js?v=20260508a"></script>
 <script src="/lib/mp-lobby.js?v=20260620A"></script>
+<script src="hint.js?v=20260923"></script>
 <script>
 const $=id=>document.getElementById(id);
 function openRanking(){ try{ if(typeof GameRankings!=='undefined') GameRankings.showModal('gostop'); else alert('랭킹 로딩 중'); }catch(e){ alert('랭킹을 열 수 없습니다'); } }
@@ -456,8 +462,46 @@ function buildDeck(){
 }
 
 let G=null;
+let hintEpoch=0, hintPending=false, hintCardId=null;
+function clearGostopHint(){ hintEpoch++; hintPending=false; hintCardId=null; $('hintReason').textContent=''; renderHintControls(); }
+function renderHintControls(){
+  const btn=$('hintButton'); if(!btn)return;
+  const solo=$('board').style.display==='flex' && !(MP&&MP.active) && !$('board').classList.contains('mp');
+  const eligible=solo && GostopHint.canHint(G,false);
+  btn.style.display=eligible?'':'none';
+  btn.disabled=hintPending || !eligible;
+  if(!eligible) { hintCardId=null; $('hintReason').textContent=''; }
+}
+async function requestGostopHint(){
+  if(hintPending || !GostopHint.canHint(G,MP.active) || $('board').classList.contains('mp'))return;
+  const token=localStorage.getItem('cocy_auth_token');
+  if(!token){ $('hintReason').textContent='로그인 후 추천을 볼 수 있어요'; return; }
+  const current=G, request=GostopHint.getHintRequest(current,score,false);
+  if(!request)return;
+  const epoch=hintEpoch, stamp=GostopHint.hintFingerprint(current,score,epoch);
+  hintPending=true; hintCardId=null; $('hintReason').textContent='추천 확인 중…'; renderHintControls();
+  try{
+    const response=await fetch('https://llm.cocy.io/api/games/gostop/hint',{
+      method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+      body:JSON.stringify(request)
+    });
+    if(!response.ok)throw new Error('hint unavailable');
+    const result=await response.json();
+    if(current!==G || !GostopHint.isCurrentHint(stamp,G,score,epoch,MP.active))return;
+    const id=GostopHint.validHintCard(result,request,G);
+    if(!id)throw new Error('invalid hint');
+    hintCardId=id;
+    $('hintReason').textContent=result.reason.slice(0,120);
+    renderMyHand();
+  }catch(e){
+    if(current===G && GostopHint.isCurrentHint(stamp,G,score,epoch,MP.active)) $('hintReason').textContent='지금은 추천을 볼 수 없어요';
+  }finally{
+    if(current===G && hintEpoch===epoch){ hintPending=false; renderHintControls(); }
+  }
+}
 function newGame(){ $('menu').style.display='none'; $('board').style.display='flex'; $('board').classList.remove('mp'); CARRY=1; G={go:0,goBy:-1}; deal(); }
 function deal(){
+  clearGostopHint();
   // 싱글 시작: 멀티 상태 완전 정리(폴링/애니큐/방연결/패널) — 안 하면 봇 패널·먹은패가 싱글에 잔존하고
   // 들어오던 WS state가 싱글 보드를 덮어씀.
   mpTeardown();
@@ -477,7 +521,8 @@ function deal(){
   G.players=[{hand:deck.splice(0,10),cap:[]},{hand:deck.splice(0,10),cap:[]}];
   G.deck=deck; G.turn=0; G.over=false; G.go=0; G.goBy=-1; G.lastScore=[0,0]; G.sel=-1; G.flip=null; G.shakeMult=[1,1,1,1]; G.ppukCount=[0,0]; G.ppukOwner={}; G.flipOwed=[0,0]; G.playCount=[0,0]; G.ppuk3x=1; G._voiced=[{},{},{},{}]; G.acting=false;
   sortHand(0); G._dealing=true; document.body.classList.add('dealing'); renderAll();
-  setTimeout(()=>{ G._dealing=false; document.body.classList.remove('dealing'); },1050);
+  const dealtGame=G;
+  setTimeout(()=>{ if(G!==dealtGame)return; G._dealing=false; document.body.classList.remove('dealing'); renderHintControls(); },1050);
   G._chongtong=null;
   for(let p=0;p<2;p++){ const cnt={}; G.players[p].hand.forEach(c=>cnt[c.m]=(cnt[c.m]||0)+1); if(Object.values(cnt).some(n=>n===4)){ G._chongtong=p; break; } }
   if(G._chongtong!=null){ const cp=G._chongtong; setTimeout(()=>{ if(!G.over){ toast((cp===0?'':'CPU ')+'총통!'); setTimeout(()=>settle(cp,score(G.players[cp].cap),{chongtong:true}),700); } },1150); }
@@ -670,7 +715,7 @@ async function takeTurn(p, handCard, opts){
   G.lastScore[p]=Math.max(prev,sc.total);
   advance();
 }
-function keepTurn(p){ G.turn=p; if(p===0){ G.acting=false; G.sel=-1; renderAll(); toast('한 번 더!'); } else { renderAll(); setTimeout(cpuTurn,900); } }
+function keepTurn(p){ clearGostopHint(); G.turn=p; if(p===0){ G.acting=false; G.sel=-1; renderAll(); toast('한 번 더!'); } else { renderAll(); setTimeout(cpuTurn,900); } }
 function advance(){
   if(G.over)return;
   const owed=G.flipOwed?(G.flipOwed[0]+G.flipOwed[1]):0;
@@ -679,6 +724,7 @@ function advance(){
   startTurn();
 }
 function startTurn(){
+  clearGostopHint();
   const p=G.turn;
   // CPU는 뒤집기탄 자동 사용. 사람은 강제 안 함 — 평소처럼 패 내거나 더미 탭해서 선택적으로 사용
   if(p===1 && G.flipOwed && G.flipOwed[p]>0){ setTimeout(()=>flipOnlyTurn(p), 850); return; }
@@ -692,7 +738,7 @@ function startTurn(){
 function onDeckClick(){
   // 멀티(DO): 내 차례 + 뒤집기탄 보유 시 FLIP 액션 전송(서버가 뒤집기 처리)
   if(MP&&MP.active){ const v=MP.view; if(v&&v.isMyTurn&&!v.pending&&v.myFlipOwed>0){ const db=$('deckBack'); if(db)db.classList.remove('await'); mpSend({type:'FLIP'}); } return; }
-  if(G.turn===0 && !G.over && !G.acting && G.flipOwed && G.flipOwed[0]>0){ G.acting=true; G.awaitFlip=false; const db=$('deckBack'); if(db)db.classList.remove('await'); flipOnlyTurn(0); }
+  if(G.turn===0 && !G.over && !G.acting && G.flipOwed && G.flipOwed[0]>0){ clearGostopHint(); G.acting=true; G.awaitFlip=false; const db=$('deckBack'); if(db)db.classList.remove('await'); flipOnlyTurn(0); }
 }
 async function flipOnlyTurn(p){
   const pl=G.players[p];
@@ -749,7 +795,7 @@ function cpuTurn(){
 }
 /* my play */
 function selectCard(i){ if(G.turn!==0||G.over)return; G.sel=(G.sel===i?-1:i); renderMyHand(); }
-function playSelected(){ if(G.sel<0||G.acting)return; G.acting=true; const c=G.players[0].hand[G.sel]; const m=c.m; G.sel=-1;
+function playSelected(){ if(G.sel<0||G.acting)return; clearGostopHint(); G.acting=true; const c=G.players[0].hand[G.sel]; const m=c.m; G.sel=-1;
   const cnt=G.players[0].hand.filter(x=>x.m===m).length;
   const canBomb = cnt>=3 && sameMonth(G.table,m).length>=1;
   const canShake = cnt>=3;
@@ -879,7 +925,7 @@ function gudeunMonths(handCards, tableCards, capCards){
   return s;
 }
 function mpGudeunMonths(v){ const caps=[]; (v.players||[]).forEach(p=>(p.cap||[]).forEach(c=>caps.push(c))); return gudeunMonths(v.myHand||[], v.table||[], caps); }
-function renderAll(){ renderTable(); renderMyHand(); renderCaptured(); renderBar(); }
+function renderAll(){ renderTable(); renderMyHand(); renderCaptured(); renderBar(); renderHintControls(); }
 function renderTable(){
   const sel=(G.turn===0&&G.sel>=0&&G.players[0].hand[G.sel])?G.players[0].hand[G.sel].m:-1;
   const by={}, order=[];
@@ -897,7 +943,7 @@ function renderMyHand(){
   const gud=gudeunMonths(G.players[0].hand, G.table, [...G.players[0].cap, ...G.players[1].cap]);
   $('myHand').innerHTML=G.players[0].hand.map((c,i)=>{
     const canPlay=(G.turn===0&&!G.over&&sameMonth(G.table,c.m).length>0);
-    return `<div class="hcard ${i===G.sel?'sel':''} ${canPlay?'canplay':''} ${gud.has(c.m)?'gudeun':''}" onclick="selectCard(${i})"${dl?` style="animation-delay:${i*55}ms"`:''}><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`;
+    return `<div class="hcard ${i===G.sel?'sel':''} ${c.id===hintCardId?'hint':''} ${canPlay?'canplay':''} ${gud.has(c.m)?'gudeun':''}" onclick="selectCard(${i})"${dl?` style="animation-delay:${i*55}ms"`:''}><img src="${c.file}"><span class="mtag">${c.m}${tchar(c)}</span></div>`;
   }).join('');
 }
 let lastTap=-1;
@@ -932,7 +978,7 @@ function renderBar(){ $('t-go').textContent=G.go; }
 /* utils */
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function show(id){ $(id).classList.add('show'); } function hide(id){ $(id).classList.remove('show'); }
-function quitMenu(){ ['gostop','result','settings','bombAsk','pickAsk','sitAsk'].forEach(hide); try{mpTeardown();}catch(e){} $('board').style.display='none'; $('board').classList.remove('mp'); $('menu').style.display='flex'; }
+function quitMenu(){ clearGostopHint(); ['gostop','result','settings','bombAsk','pickAsk','sitAsk'].forEach(hide); try{mpTeardown();}catch(e){} $('board').style.display='none'; $('board').classList.remove('mp'); $('menu').style.display='flex'; renderHintControls(); }
 function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',1200); }
 function cpuReveal(card){ if(!card)return; const el=$('cpuReveal'); if(!el)return; el.innerHTML='<img src="'+card.file+'">'; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); setTimeout(()=>{el.classList.remove('on');el.innerHTML='';},760); }
 function setSnd(s){ SND=!!s; localStorage.setItem('gostop_snd',s?'1':'0'); document.querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',+b.dataset.snd===(s?1:0))); }
@@ -1026,6 +1072,7 @@ function openMultiplayer(){
 }
 // 멀티 완전 종료: 폴링/애니타이머/애니큐 정리 + 방 떠나기 + 상대패널 숨김. 싱글 전환·메뉴복귀 시 호출.
 function mpTeardown(){
+  clearGostopHint();
   MP.active=false; MP._eventDriven=false;
   if(MP._poll){ clearInterval(MP._poll); MP._poll=null; }
   if(MP._viewTimer){ clearTimeout(MP._viewTimer); MP._viewTimer=null; }
@@ -1035,6 +1082,7 @@ function mpTeardown(){
   const op=$('mpOpps'); if(op){ op.style.display='none'; op.innerHTML=''; }
 }
 function mpStart(rs){
+  clearGostopHint();
   MP.active=true; MP.client=MP.ui.getClient(); MP.myUserId=MP.client.getMyUserId(); MP._sel=-1; MP._resultShown=false;
   MP._prevTable=null; MP._prevCap=null; MP._prevGo=undefined;
   MP.client.onEvent=()=>mpRefresh();
@@ -1373,7 +1421,7 @@ function mpResult(v){
 
   // DO/모듈 경로 게임 시작(최초/재대결). 이벤트구동 렌더 + 첫 view 적용.
   function doGameStart(rs){
-    MP.active = true; MP.myUserId = MP.ui.getMyUserId(); MP._sel = -1; MP._resultShown = false;
+    clearGostopHint(); MP.active = true; MP.myUserId = MP.ui.getMyUserId(); MP._sel = -1; MP._resultShown = false;
     MP._prevTable = null; MP._prevCap = null; MP._prevGo = undefined;
     MP._eventDriven = true; MP._voiced = [{},{},{},{}];
     var bd = document.getElementById('board'); if (bd) { bd.style.display='flex'; bd.classList.add('mp'); }
