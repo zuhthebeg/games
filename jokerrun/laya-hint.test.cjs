@@ -74,11 +74,11 @@ test('fingerprint invalidates turn, ordered hand/jokers, levels and resource cha
 test('request only uses JWT, rejects stale/unknown replies and displays text without actions', async () => {
   const s = state(); const output = { textContent: '' }; const button = { disabled: false };
   let resolveFetch; let request;
-  const controller = pilot.createPilotController({ output, button, getState: () => s, getComboIds: () => [1, 2], getToken: () => 'user-jwt', fetcher: (url, options) => { request = { url, options }; return new Promise(resolve => { resolveFetch = resolve; }); } });
+  const controller = pilot.createPilotController({ output, button, getState: () => s, getComboIds: () => [1, 2], getToken: () => 'test.user.signature', fetcher: (url, options) => { request = { url, options }; return new Promise(resolve => { resolveFetch = resolve; }); } });
   const pending = controller.request();
   assert.equal(request.url, 'https://llm.cocy.io/api/games/jokerrun/hint');
-  assert.equal(request.options.headers.Authorization, 'Bearer user-jwt');
-  assert.ok(!request.options.body.includes('user-jwt'));
+  assert.equal(request.options.headers.Authorization, 'Bearer test.user.signature');
+  assert.ok(!request.options.body.includes('test.user.signature'));
   s.hand.reverse();
   resolveFetch({ ok: true, json: async () => ({ choiceId: 'PLAY_BEST', reason: 'late' }) }); await pending;
   assert.ok(!output.textContent.includes('late'));
@@ -89,9 +89,17 @@ test('request only uses JWT, rejects stale/unknown replies and displays text wit
   assert.equal(button.disabled, false);
 });
 
+test('anonymous unsigned guest token is rejected before network request', async () => {
+  const output = { textContent: '' }; let requests = 0;
+  const controller = pilot.createPilotController({ output, button: { disabled: false }, getState: state, getComboIds: () => [1, 2], getToken: () => 'header.payload.', fetcher: async () => { requests++; } });
+  await controller.request();
+  assert.equal(requests, 0);
+  assert.match(output.textContent, /게스트 계정은 지원하지 않습니다/);
+});
+
 test('valid advice shows candidate and bounded reason without invoking game actions', async () => {
   const s = state(); const output = { textContent: '' };
-  const controller = pilot.createPilotController({ output, button: { disabled: false }, getState: () => s, getComboIds: () => [1, 2], getToken: () => 'jwt', fetcher: async () => ({ ok: true, json: async () => ({ choiceId: 'PLAY_BEST', reason: '현재 손패로 공격' }) }) });
+  const controller = pilot.createPilotController({ output, button: { disabled: false }, getState: () => s, getComboIds: () => [1, 2], getToken: () => 'test.user.signature', fetcher: async () => ({ ok: true, json: async () => ({ choiceId: 'PLAY_BEST', reason: '현재 손패로 공격' }) }) });
   await controller.request();
   assert.match(output.textContent, /공격.*현재 손패로 공격/);
   assert.match(output.textContent, /실험 — 틀릴 수 있음/);
@@ -102,7 +110,7 @@ test('valid advice shows candidate and bounded reason without invoking game acti
 test('HTTP failures stay text-only and do not propagate', async () => {
   for (const status of [401, 429, 503]) {
     const output = { textContent: '' };
-    const controller = pilot.createPilotController({ output, button: { disabled: false }, getState: state, getComboIds: () => [1, 2], getToken: () => 'jwt', fetcher: async () => ({ ok: false, status }) });
+    const controller = pilot.createPilotController({ output, button: { disabled: false }, getState: state, getComboIds: () => [1, 2], getToken: () => 'test.user.signature', fetcher: async () => ({ ok: false, status }) });
     await controller.request();
     assert.match(output.textContent, /실험 — 틀릴 수 있음/);
   }

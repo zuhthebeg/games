@@ -50,7 +50,7 @@
       output.textContent = `${warning} · 후보 순서에 편향이 있을 수 있습니다.`;
       if (!body || state.gameEnded) { output.textContent = `${warning} · 지금은 비교할 선택지가 부족합니다.`; return; }
       const token = getToken();
-      if (!token) { output.textContent = `${warning} · 로그인이 필요합니다.`; return; }
+      if (!token || token.split('.').length !== 3 || !token.split('.')[2]) { output.textContent = `${warning} · 계정 로그인이 필요합니다. 게스트 계정은 지원하지 않습니다.`; return; }
       const fingerprint = pilotFingerprint(state, combo);
       button.disabled = true;
       output.textContent = `${warning} · 분석 중…`;
