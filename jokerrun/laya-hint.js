@@ -19,10 +19,11 @@
     const bestComboIds = (comboIds || []).filter(id => hand.some(c => c.id === id));
     const boss = s.bossModifier?.id || null;
     const choices = [];
-    if (s.handsLeft > 0 && bestComboIds.length && (boss !== 'min4cards' || bestComboIds.length >= 4)) choices.push('PLAY_BEST');
+    const playable = s.handsLeft > 0 && bestComboIds.length && (boss !== 'min4cards' || bestComboIds.length >= 4) && (boss !== 'max3cards' || bestComboIds.length <= 3);
+    if (playable) choices.push('PLAY_BEST');
     if (s.discardsLeft > 0 && hand.length && boss !== 'no_discard') choices.push('DISCARD_ONE');
     if (jokers.some((j, i) => j.id === 'blueprint' && jokers.some((target, n) => n !== i && n !== i + 1 && target.id !== 'blueprint' && target.id !== 'brainstorm'))) choices.push('SWAP_JOKERS');
-    if (jokers.some(j => j.id === 'hangingChad') && bestComboIds.length >= 2 && s.handsLeft > 0 && (boss !== 'min4cards' || bestComboIds.length >= 4)) choices.push('SWAP_CARDS');
+    if (jokers.some(j => j.id === 'hangingChad') && bestComboIds.length >= 2 && playable) choices.push('SWAP_CARDS');
     if (choices.length < 2) return null;
     const deck = s.deck || [];
     const deckRanks = {};

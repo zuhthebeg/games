@@ -47,6 +47,14 @@ test('legal candidates respect min4, no discard, resources and scoring count', (
   assert.equal(pilot.buildPilotRequest(s, [1]), null);
 });
 
+test('max3 boss excludes oversized attack and card-order advice', () => {
+  const s = state(); s.bossModifier = { id: 'max3cards' }; s.jokers.reverse();
+  s.hand.push(card(3), card(4));
+  const request = pilot.buildPilotRequest(s, [1, 2, 3, 4]);
+  assert.ok(request);
+  assert.deepEqual(Array.from(request.choices), ['DISCARD_ONE', 'SWAP_JOKERS']);
+});
+
 test('blueprint needs a meaningful reorderable right neighbor and hangingChad needs two scoring cards', () => {
   const s = state(); s.jokers = [{ id: 'blueprint' }, { id: 'hangingChad' }];
   assert.ok(!pilot.buildPilotRequest(s, [1, 2]).choices.includes('SWAP_JOKERS'));
