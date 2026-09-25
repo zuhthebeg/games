@@ -1750,6 +1750,32 @@
       0%,100% { box-shadow: 0 0 0 3px #34e0c8, 0 0 12px rgba(52,224,200,0.6), 0 10px 22px rgba(0,0,0,0.45); }
       50% { box-shadow: 0 0 0 3px #5cffe6, 0 0 26px rgba(52,224,200,1), 0 10px 22px rgba(0,0,0,0.45); }
     }
+    /* AI 추천: 버릴 카드 — 주황 테두리 + ✕ 배지 */
+    .card.hint-discard:not(.selected) {
+      border-color: #ff9a4a !important;
+      animation: hintDiscardPulse 1s ease-in-out infinite !important;
+      z-index: 1;
+    }
+    .card.hint-discard:not(.selected)::before {
+      content: "✕";
+      position: absolute;
+      top: -8px; left: -8px;
+      width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 900; line-height: 1;
+      color: #2a1204;
+      background: linear-gradient(150deg,#ffc58a,#ff8a3a);
+      border: 2px solid #4a1f05;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      z-index: 4;
+      pointer-events: none;
+    }
+    @keyframes hintDiscardPulse {
+      0%,100% { box-shadow: 0 0 0 3px #ff9a4a, 0 0 12px rgba(255,140,60,0.55), 0 10px 22px rgba(0,0,0,0.45); }
+      50% { box-shadow: 0 0 0 3px #ffbb80, 0 0 24px rgba(255,150,70,0.95), 0 10px 22px rgba(0,0,0,0.45); }
+    }
+    .ai-note { opacity: .6; font-size: .9em; }
 
     .card.pick-fx {
       animation: pickFlash 260ms ease !important;
@@ -2875,6 +2901,10 @@
     #hintBtn { border:1.5px solid rgba(255,215,120,0.9); box-shadow:0 0 10px rgba(255,200,90,0.55), inset 0 0 8px rgba(255,190,80,0.25); animation:hintPulse 1.8s ease-in-out infinite; transition:background-image .12s, border-color .18s, box-shadow .18s; }
     /* 힌트 활성 시: 추천 기술의 무기 아이콘으로 전환(배경은 JS 인라인) */
     #hintBtn.wpn { background-size:70%; border-color:rgba(120,230,255,0.95); box-shadow:0 0 13px rgba(60,205,235,0.75), inset 0 0 9px rgba(60,205,235,0.3); animation:none; }
+    /* AI 추천 모드 표시 배지 / 분석 중 */
+    #hintBtn { position:relative; }
+    #hintBtn.ai-mode::after { content:"AI"; position:absolute; right:-5px; bottom:-5px; font:800 8px/1 system-ui,sans-serif; letter-spacing:.02em; color:#10233a; background:#9fd8ff; border:1px solid #0d2640; border-radius:5px; padding:2px 3px; pointer-events:none; }
+    #hintBtn.ai-busy { animation:none; opacity:.55; }
     @keyframes hintPulse {
       0%,100% { box-shadow:0 0 8px rgba(255,200,90,0.45), inset 0 0 7px rgba(255,190,80,0.22); border-color:rgba(255,215,120,0.85); }
       50%     { box-shadow:0 0 15px rgba(255,210,110,0.85), inset 0 0 10px rgba(255,200,90,0.35); border-color:rgba(255,230,150,1); }
@@ -3124,13 +3154,11 @@
       <div class="stat-cell"><span data-i18n="discards_left">남은 버리기</span> <b id="discardsLabel">0</b></div>
       <div class="util-btns">
         <button id="hintBtn" class="deck-btn ic" type="button" data-i18n-title="hint_btn" aria-label="추천 패" title="추천 패"></button>
-        <button id="layaPilotBtn" type="button" hidden style="font-size:.7rem;border:1px solid #8bb5d6;border-radius:8px;background:#162537;color:#e0f2ff;padding:6px" aria-label="AI 실험">AI 실험</button>
         <button id="handsInfoBtn" class="deck-btn ic" type="button" data-i18n-title="skills" aria-label="기술"></button>
         <button id="collectionBtn" class="deck-btn ic" type="button" data-i18n-title="collection_btn" aria-label="도감"></button>
         <button id="deckBtn" class="deck-btn deck-count ic" type="button" data-i18n-title="deck" aria-label="덱"></button>
       </div>
     </section>
-    <div id="layaPilotResult" role="status" aria-live="polite" hidden style="position:absolute;bottom:76px;right:10px;max-width:85%;z-index:5;background:#162537;border:1px solid #8bb5d6;border-radius:8px;font-size:.72rem;color:#e0f2ff;padding:6px 10px;pointer-events:none">실험 — 틀릴 수 있음</div>
 
     <section class="actions">
       <button class="btn-main btn-codex" id="playBtn" data-i18n="hand_play">⚔️ 공격</button>
@@ -3230,6 +3258,11 @@
         <div class="set-label" data-i18n="speed">⏱️ 연출 속도</div>
         <div id="setSpeedRow" class="set-seg"></div>
         <div class="set-hint" data-i18n="speed_hint">데미지 연출이 너무 빨리 지나가면 느리게, 답답하면 빠르게 / 즉시.</div>
+      </div>
+      <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div class="set-label" data-i18n="hint_mode">💡 추천 방식</div>
+        <div id="setHintModeRow" class="set-seg"></div>
+        <div class="set-hint" data-i18n="hint_mode_desc">알고리즘: 최고 데미지 조합. AI: 버릴 카드까지 골라줌(로그인 필요, 틀릴 수 있음).</div>
       </div>
       <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
         <div class="set-label" data-i18n="language">🌐 언어</div>
@@ -3401,7 +3434,7 @@
 
   <script src="/lib/shared-wallet.js?v=20260809pf2"></script>
   <script src="/lib/game-rankings.js?v=20260813"></script>
-  <script src="laya-hint.js?v=20260926b"></script>
+  <script src="laya-hint.js?v=20260926c"></script>
   <script>
     const suits = ["heart", "diamond", "club", "spade"];
     const suitSymbol = { heart: "♥", diamond: "♦", club: "♣", spade: "♠" };
@@ -4801,6 +4834,7 @@
         quit_to_menu: "🚪 게임 나가기", settings: "⚙️ 설정", sound: "🔊 사운드", card_art: "🃏 조커 아트", card_art_hint: "고양이(건전) / 클래식·오리지날 / 끄기(기호). 다른 카드 아트는 항상 표시.", art_cat: "🐱 고양이", art_classic: "🎴 클래식", art_original: "🃏 오리지날", art_off: "🔣 끄기", speed: "⏱️ 연출 속도",
         battle_layout: "🃟 전투 레이아웃", layout_classic: "클래식", layout_stage: "무대",
         speed_hint: "데미지 연출이 너무 빨리 지나가면 느리게, 답답하면 빠르게 / 즉시.",
+        hint_mode: "💡 추천 방식", hint_mode_algo: "알고리즘", hint_mode_ai: "AI", hint_mode_desc: "알고리즘: 최고 데미지 조합. AI: 버릴 카드까지 골라줌(로그인 필요, 틀릴 수 있음).", ai_hint_loading: "🤖 AI가 손패를 분석 중…", ai_hint_attack: "🤖 공격 추천: <b>{cards}</b> — 한 번 더 누르면 선택", ai_hint_discard: "🤖 버리기 추천: <b>{cards}</b> — 한 번 더 누르면 선택", ai_hint_note: "AI · 틀릴 수 있음", ai_hint_guest: "AI 추천은 로그인 계정 전용 — 알고리즘 추천을 표시합니다.", ai_hint_failed: "AI 추천을 받지 못해 알고리즘 추천을 표시합니다.", ai_hint_selected: "추천 카드를 선택했어요. 공격/버리기는 직접 누르세요.",
         language: "🌐 언어", close: "닫기", on: "켜짐", off: "꺼짐",
         cleared: "🎯 전투 승리!", my_dmg: "내 데미지", continue_run: "↩️ 이어하기 — 마지막 공격 다시",
         victory_text: "보스를 격파했습니다.", weapon_table: "기술 데미지표 — 기본 vs 무기강화",
@@ -4976,6 +5010,7 @@
         quit_to_menu: "🚪 Quit to Menu", settings: "⚙️ Settings", sound: "🔊 Sound", card_art: "🃏 Joker Art", card_art_hint: "Cat (wholesome) / Classic & Original / Off (symbols). Other card art always shows.", art_cat: "🐱 Cat", art_classic: "🎴 Classic", art_original: "🃏 Original", art_off: "🔣 Off", speed: "⏱️ Anim speed",
         battle_layout: "🃟 Battle Layout", layout_classic: "Classic", layout_stage: "Stage",
         speed_hint: "If damage animation flies by, set it slower; if it drags, faster / instant.",
+        hint_mode: "💡 Hint mode", hint_mode_algo: "Algorithm", hint_mode_ai: "AI", hint_mode_desc: "Algorithm: highest-damage combo. AI: also picks cards to discard (sign-in required, may be wrong).", ai_hint_loading: "🤖 AI is reading your hand…", ai_hint_attack: "🤖 Attack with: <b>{cards}</b> — tap again to select", ai_hint_discard: "🤖 Discard: <b>{cards}</b> — tap again to select", ai_hint_note: "AI · may be wrong", ai_hint_guest: "AI hints need a signed-in account — showing the algorithm hint.", ai_hint_failed: "AI hint unavailable — showing the algorithm hint.", ai_hint_selected: "Recommended cards selected. Press Attack/Discard yourself.",
         language: "🌐 Language", close: "Close", on: "On", off: "Off",
         cleared: "🎯 Battle won!", my_dmg: "Your damage", continue_run: "↩️ Continue — retry last attack",
         victory_text: "You defeated the boss.", weapon_table: "Skill damage table — base vs weapon",
@@ -5151,6 +5186,7 @@
         quit_to_menu: "🚪 退出至主畫面", settings: "⚙️ 設定", sound: "🔊 音效", card_art: "🃏 小丑插畫", card_art_hint: "貓咪(健全) / 經典·原創 / 關閉(符號)。其他卡牌插畫一律顯示。", art_cat: "🐱 貓咪", art_classic: "🎴 經典", art_original: "🃏 原創", art_off: "🔣 關閉", speed: "⏱️ 演出速度",
         battle_layout: "🃟 戰鬥版面", layout_classic: "經典", layout_stage: "舞台",
         speed_hint: "傷害演出太快就調慢，太拖就調快 / 立即。",
+        hint_mode: "💡 推薦方式", hint_mode_algo: "演算法", hint_mode_ai: "AI", hint_mode_desc: "演算法：最高傷害組合。AI：連要棄的牌也會推薦（需登入，可能出錯）。", ai_hint_loading: "🤖 AI 分析手牌中…", ai_hint_attack: "🤖 推薦攻擊：<b>{cards}</b> — 再按一次選取", ai_hint_discard: "🤖 推薦棄牌：<b>{cards}</b> — 再按一次選取", ai_hint_note: "AI · 可能出錯", ai_hint_guest: "AI 推薦僅限登入帳號 — 改顯示演算法推薦。", ai_hint_failed: "無法取得 AI 推薦 — 改顯示演算法推薦。", ai_hint_selected: "已選取推薦牌。攻擊/棄牌請自行按下。",
         language: "🌐 語言", close: "關閉", on: "開", off: "關",
         cleared: "🎯 戰鬥勝利！", my_dmg: "我的傷害", continue_run: "↩️ 繼續 — 重試最後一次攻擊",
         victory_text: "你擊敗了王關。", weapon_table: "技能傷害表 — 基礎 vs 武器強化",
@@ -5326,6 +5362,7 @@
         quit_to_menu: "🚪 メニューに戻る", settings: "⚙️ 設定", sound: "🔊 サウンド", card_art: "🃏 ジョーカーアート", card_art_hint: "猫(健全) / クラシック·オリジナル / オフ(記号)。他のカードアートは常に表示。", art_cat: "🐱 猫", art_classic: "🎴 クラシック", art_original: "🃏 オリジナル", art_off: "🔣 オフ", speed: "⏱️ 演出速度",
         battle_layout: "🃟 バトルレイアウト", layout_classic: "クラシック", layout_stage: "ステージ",
         speed_hint: "ダメージ演出が速すぎれば遅く、もたつけば速く / 即時。",
+        hint_mode: "💡 おすすめ方式", hint_mode_algo: "アルゴリズム", hint_mode_ai: "AI", hint_mode_desc: "アルゴリズム：最大ダメージの組合せ。AI：捨てるカードまで提案（ログイン必要・誤りあり）。", ai_hint_loading: "🤖 AIが手札を分析中…", ai_hint_attack: "🤖 攻撃おすすめ：<b>{cards}</b> — もう一度押すと選択", ai_hint_discard: "🤖 捨て札おすすめ：<b>{cards}</b> — もう一度押すと選択", ai_hint_note: "AI · 誤りの可能性あり", ai_hint_guest: "AIおすすめはログインアカウント専用 — アルゴリズムのおすすめを表示します。", ai_hint_failed: "AIおすすめを取得できず、アルゴリズムのおすすめを表示します。", ai_hint_selected: "おすすめカードを選択しました。攻撃/捨てるはご自身で。",
         language: "🌐 言語", close: "閉じる", on: "オン", off: "オフ",
         cleared: "🎯 戦闘勝利！", my_dmg: "自分のダメージ", continue_run: "↩️ 続きから — 最後の攻撃をやり直す",
         victory_text: "ボスを撃破した。", weapon_table: "スキルダメージ表 — 基本 vs 武器強化",
@@ -8548,21 +8585,89 @@
       renderDeckModal();
     });
     $("#closeDeckBtn").addEventListener("click", closeDeckModal);
-    $("#hintBtn").addEventListener("click", showBestHint);
-    if (new URLSearchParams(location.search).get("layaHintPilot") === "1") {
-      const pilotBtn = $("#layaPilotBtn");
-      const pilotResult = $("#layaPilotResult");
-      pilotBtn.hidden = false;
-      pilotResult.hidden = false;
-      const pilot = JokerRunLayaHint.createPilotController({
-        button: pilotBtn, output: pilotResult,
-        getState: () => ({ ...state, target: activeTarget() }),
-        getComboIds: () => state.handsLeft > 0 ? bestHintCombo().map(c => c.id) : [],
-        getToken: () => { try { return localStorage.getItem("cocy_auth_token"); } catch (_) { return null; } },
-        fetcher: (...args) => fetch(...args)
-      });
-      pilotBtn.addEventListener("click", () => { void pilot.request(); });
+    // 추천 방식: 알고리즘(기본) / AI(설정에서 opt-in). AI는 조언만 — 공격·버리기는 절대 자동 실행 안 함.
+    const LayaHint = window.JokerRunLayaHint || null;
+    let HINT_MODE = LayaHint ? LayaHint.getHintMode() : "algorithm";
+    let _aiHint = null;        // { kind, ids:Set, fp } — 현재 표시 중인 AI 추천
+    let _aiBusy = false;
+    const aiHintCtl = LayaHint && LayaHint.createHintController({
+      getState: () => ({ ...state, target: activeTarget() }),
+      getComboIds: () => state.handsLeft > 0 ? bestHintCombo().map(c => c.id) : [],
+      getToken: () => { try { return localStorage.getItem("cocy_auth_token"); } catch (_) { return null; } },
+      fetcher: (...args) => fetch(...args)
+    });
+    const aiFingerprint = () => LayaHint.handFingerprint(state);
+    function clearAiHint() {
+      cardsWrap.querySelectorAll(".card.hint-discard").forEach(el => el.classList.remove("hint-discard"));
+      _aiHint = null;
     }
+    function syncHintModeBtn() {
+      const btn = $("#hintBtn"); if (btn) btn.classList.toggle("ai-mode", HINT_MODE === "ai");
+    }
+    function showAiHint(kind, cardIds) {
+      const ids = new Set(cardIds.map(String));
+      const cards = cardIds.map(id => state.hand.find(c => c.id === id)).filter(Boolean);
+      _aiHint = { kind, ids, fp: aiFingerprint() };
+      const cls = kind === "DISCARD" ? "hint-discard" : "hint";
+      Array.from(cardsWrap.children).forEach(el => { if (ids.has(el.dataset.id)) el.classList.add(cls); });
+      if (kind !== "DISCARD") setHintBtnWeapon(scoreHand(cards).handType);
+      const label = cards.map(c => LayaHint.cardLabel(c)).join(" ");
+      setInfo(t(kind === "DISCARD" ? "ai_hint_discard" : "ai_hint_attack", { cards: label }) + ` <span class="ai-note">${t("ai_hint_note")}</span>`);
+      AudioFX.play("select");
+    }
+    async function requestAiHint() {
+      if (state.gameEnded || _aiBusy) return;
+      // 추천이 떠 있고 손패가 그대로면: 추천 카드를 '선택'만 한다(실행은 플레이어가 직접).
+      if (_aiHint && _aiHint.fp === aiFingerprint() && cardsWrap.querySelector(".card.hint, .card.hint-discard")) {
+        const ids = _aiHint.ids;
+        clearAiHint(); clearHintCards();
+        state.selected.clear();
+        state.hand.forEach(c => { if (ids.has(String(c.id))) state.selected.add(c.id); });
+        renderCards(); updateHandPreview();
+        setInfo(t("ai_hint_selected"));
+        AudioFX.play("select");
+        return;
+      }
+      clearAiHint(); clearHintCards();
+      const btn = $("#hintBtn");
+      _aiBusy = true; btn.classList.add("ai-busy");
+      setInfo(t("ai_hint_loading"));
+      let r;
+      try { r = await aiHintCtl.request(); } catch (_) { r = { status: "failed" }; }
+      _aiBusy = false; btn.classList.remove("ai-busy");
+      if (r.status === "stale" || HINT_MODE !== "ai") return;
+      if (r.status === "ok") return showAiHint(r.kind, r.cardIds);
+      // 실패/게스트/후보 부족 → 알고리즘 추천으로 대체(자동 제출 없음)
+      showBestHint();
+      if (r.status === "guest") setInfo(t("ai_hint_guest"));
+      else if (r.status === "failed") setInfo(t("ai_hint_failed"));
+    }
+    function onHintClick() {
+      if (HINT_MODE === "ai" && aiHintCtl) return void requestAiHint();
+      clearAiHint();
+      showBestHint();
+    }
+    function renderHintModeSeg() {
+      const row = $("#setHintModeRow");
+      if (!row) return;
+      row.innerHTML = "";
+      [{ v: "algorithm", key: "hint_mode_algo" }, { v: "ai", key: "hint_mode_ai" }].forEach(opt => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = t(opt.key);
+        if (HINT_MODE === opt.v) b.classList.add("active");
+        if (opt.v === "ai" && !aiHintCtl) b.disabled = true;
+        b.addEventListener("click", () => {
+          HINT_MODE = opt.v;
+          if (LayaHint) LayaHint.setHintMode(opt.v);
+          clearAiHint(); clearHintCards(); syncHintModeBtn(); renderHintModeSeg();
+          try { AudioFX.play("select"); } catch (_) {}
+        });
+        row.appendChild(b);
+      });
+    }
+    syncHintModeBtn();
+    $("#hintBtn").addEventListener("click", onHintClick);
     $("#handsInfoBtn").addEventListener("click", openHandsModal);
     $("#closeHandsBtn").addEventListener("click", closeHandsModal);
     /* tarotInfoBtn 제거 — 도감 '타로' 탭으로 일원화 */
@@ -8703,6 +8808,7 @@
       renderSpeedSeg();
       renderLangSeg();
       renderBattleLayoutSeg();
+      renderHintModeSeg();
       // 시작화면(메인)에서 연 설정엔 '게임 나가기'가 의미 없으므로 숨긴다(이미 메인).
       const onStart = $("#startScreen").classList.contains("show");
       const qb = $("#setQuitBtn"); if (qb) qb.style.display = onStart ? "none" : "";
