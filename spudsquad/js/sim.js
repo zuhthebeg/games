@@ -9,7 +9,9 @@
   }
   function enemyStats(type, w, n) {
     const e = D.enemies[type];
-    return { hp: e.hp * (1 + 0.35 * (w - 1)) * (1 + 0.25 * (n - 1)), dmg: e.dmg * (1 + 0.12 * (w - 1)), speed: e.speed };
+    const k = D.curve || {};
+    return { hp: e.hp * (1 + (k.hpPerWave ?? 0.35) * (w - 1)) * (1 + 0.25 * (n - 1)),
+      dmg: e.dmg * (1 + (k.dmgPerWave ?? 0.12) * (w - 1)), speed: e.speed };
   }
   function needXp(lvl) {
     return (lvl + 3) ** 2;
@@ -141,7 +143,7 @@
     }
     if (e.type.startsWith('boss_')) w.bossKills++;
     if (e.type === 'boss_2') w.bossKilled = true;
-    if (e.type === 'exploder') explode(w, e.x, e.y, 70, 3 + w.wave / 4, p?.uid, true);
+    if (e.type === 'exploder') explode(w, e.x, e.y, 70, 2 + w.wave / 5, p?.uid, true);
     if (p) {
       const trait = D.chars[p.char].trait;
       killHooks[trait]?.(w, e, p);
@@ -208,6 +210,8 @@
     const amount = damageTaken(damage, effectiveStats(p).armor);
     p.hp = Math.max(0, p.hp - amount);
     p.hurt = .1;
+    // 피격 무적(i-frame): 없으면 접촉 피해가 30Hz 매 틱 들어가 닿는 순간 녹는다(v2 밸런스 붕괴 원인).
+    p.immune = Math.max(p.immune, D.IFRAME || .45);
     w.fx.push(['hurt', p.uid, Math.ceil(amount)]);
     if (source && effectiveStats(p).thorns) hurtEnemy(w, source, effectiveStats(p).thorns, p.uid, false, '', 0);
     if (p.hp <= 0) p.alive = false;
@@ -246,7 +250,7 @@
     if (v.classes.includes('elemental')) power *= 1 + (p.char === 'science' ? .25 : 0)
       + p.items.filter(id => id === 'spark_plug').length * .15;
     if (p.char === 'gunslinger' && v.classes.includes('gun')) power *= 1.2;
-    if (p.char === 'cyclops') power *= 2.5;
+    if (p.char === 'cyclops') power *= 3;
     return { power: Math.max(1, power * (crit ? 2 : 1)), crit };
   }
   function hitWeapon(w, p, v, e, power, crit) {
@@ -352,14 +356,24 @@
     }
     w.fx.push(['sh', p.uid, id, tier, origin.x | 0, origin.y | 0, angle, slot]);
   }
-  function spawnPack(w) {
+  // 무리 스폰: 한 지점 주변에 count마리(브로테이토식 그룹). 개체 수는 step의 초당 예산이 결정.
+  function spawnPack(w, count) {
     const pool = Object.keys(D.enemies).filter((id) => !id.startsWith("boss") && D.enemies[id].first <= w.wave && id !== "elite");
-    for (let i = 0; i < Math.ceil((2 + Math.floor(w.wave * 0.8)) * (1 + 0.6 * (Object.keys(w.players).length - 1))) && w.enemies.length < 220; i++) {
-      const type = pool[Math.floor(rand(w) * pool.length)];
+    let cx, cy, ctries = 0;
+    do {
+      cx = 80 + rand(w) * (D.W - 160);
+      cy = 80 + rand(w) * (D.H - 160);
+      ctries++;
+    } while (ctries < 20 && Object.values(w.players).some((p) => dist(p, { x: cx, y: cy }) < 260));
+    for (let i = 0; i < count && w.enemies.length < 220; i++) {
+      // 신규 적은 첫 등장 웨이브에 드물게(1/3 가중) → 2웨이브에 걸쳐 정상 비중. 벽 스파이크 방지.
+      const weights = pool.map((id) => Math.min(1, (w.wave - D.enemies[id].first + 1) / 3));
+      let r = rand(w) * weights.reduce((sum, v) => sum + v, 0), type = pool[0];
+      for (let j = 0; j < pool.length; j++) { r -= weights[j]; if (r <= 0) { type = pool[j]; break; } }
       let x, y, tries = 0;
       do {
-        x = rand(w) * D.W;
-        y = rand(w) * D.H;
+        x = clamp(cx + (rand(w) - 0.5) * 120, 0, D.W);
+        y = clamp(cy + (rand(w) - 0.5) * 120, 0, D.H);
         tries++;
       } while (tries < 20 && Object.values(w.players).some((p) => dist(p, { x, y }) < 150));
       if (tries < 20) {
@@ -387,10 +401,16 @@
     }
     w.tm = Math.max(0, w.tm - dt);
     if (w.tm > 0) {
-      w.spawnClock += dt;
-      if (w.spawnClock >= 0.6 + rand(w) * 0.6) {
-        w.spawnClock = 0;
-        spawnPack(w);
+      // 초당 스폰 예산(웨이브·인원 비례)을 누적해 무리 단위로 소비.
+      const k = D.curve || {};
+      const n = Object.keys(w.players).length || 1;
+      const rate = ((k.spawnBase ?? 0.9) + (k.spawnPerWave ?? 0.33) * (w.wave - 1)) * (1 + 0.6 * (n - 1));
+      w.spawnClock += rate * dt;
+      const pack = Math.min(w.packNext || 1, 1 + Math.floor(w.wave / 3));
+      if (w.spawnClock >= pack) {
+        w.spawnClock -= pack;
+        spawnPack(w, pack);
+        w.packNext = 1 + Math.floor(rand(w) * Math.min(5, 1 + Math.floor(w.wave / 3)));
       }
     }
     if (!w.bossSpawned && (w.wave === 10 || w.wave === 20)) {
@@ -423,7 +443,7 @@
           const angle = Math.atan2(target.y - weapon.y, target.x - weapon.x);
           weaponHit(w, p, id, tier, target, angle, i);
           p.cool[i] = v.cool * .9 ** (tier - 1) / (1 + effectiveStats(p).atkSpd / 100 +
-            (p.char === 'cyclops' ? .4 : 0));
+            (p.char === 'cyclops' ? .6 : 0));
         }
       });
     }
@@ -503,7 +523,7 @@
         e.fuse -= dt;
         if (e.fuse <= 0) {
           w.enemies.splice(w.enemies.indexOf(e), 1);
-          explode(w, e.x, e.y, 70, 3 + w.wave / 4, null, true);
+          explode(w, e.x, e.y, 70, 2 + w.wave / 5, null, true);
           continue;
         }
       }
@@ -542,7 +562,7 @@
         for (let i = 0; i < count; i++) {
           const a = count === 1 ? Math.atan2(dy, dx) : Math.PI * 2 * i / count;
           const sp = e.type === "spitter" ? 260 : 260;
-          w.bullets.push({ x: e.x, y: e.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg: e.type === "spitter" ? 1 + w.wave / 5 : e.dmg, life: 4 });
+          w.bullets.push({ x: e.x, y: e.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg: e.dmg, life: 4 });
           w.fx.push(["eb", e.x | 0, e.y | 0, a, sp]);
         }
       }
@@ -556,7 +576,7 @@
       b.x += b.vx * dt;
       b.y += b.vy * dt;
       b.life -= dt;
-      for (const p of alive) if (dist(b, p) < 24) {
+      for (const p of alive) if (dist(b, p) < 18) {
         hurtPlayer(w, p, b.dmg, null);
         b.life = 0;
         break;

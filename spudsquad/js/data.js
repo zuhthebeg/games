@@ -8,16 +8,16 @@
   };
   const chars = {
     basic: { name: '기본감자', weapon: 'pistol', stats: {}, trait: 'freeReroll' },
-    muscle: { name: '근육감자', weapon: 'fist', stats: { maxHp: 5, melee: 3, speed: -5, ranged: -3 }, trait: 'strongKb' },
-    science: { name: '과학감자', weapon: 'laser', stats: { elemental: 3, range: 40, maxHp: -3 }, trait: 'elementalBoost' },
+    muscle: { name: '근육감자', weapon: 'fist', stats: { maxHp: 8, armor: 2, melee: 4, speed: -3, ranged: -3 }, trait: 'strongKb' },
+    science: { name: '과학감자', weapon: 'laser', stats: { elemental: 4, range: 40, maxHp: -2, atkSpd: 10 }, trait: 'elementalBoost' },
     lucky: { name: '행운감자', weapon: 'slingshot', stats: { luck: 25, harvest: 8, dmg: -10 }, trait: 'luckyCrate' },
     gunslinger: { name: '총잡이감자', weapon: 'pistol', weapons: [['pistol', 1], ['pistol', 1]],
-      stats: { atkSpd: 10 }, trait: 'gunOnly' },
-    berserker: { name: '광전사감자', weapon: 'stick', stats: { maxHp: 10, armor: -2 }, trait: 'rage' },
-    vampire: { name: '흡혈감자', weapon: 'dagger', stats: { lifesteal: 10 }, trait: 'noRegen' },
+      stats: { atkSpd: 5 }, trait: 'gunOnly' },
+    berserker: { name: '광전사감자', weapon: 'stick', stats: { maxHp: 12, armor: -1 }, trait: 'rage' },
+    vampire: { name: '흡혈감자', weapon: 'dagger', stats: { lifesteal: 15, maxHp: 5 }, trait: 'noRegen' },
     bomber: { name: '폭탄감자', weapon: 'rocket', stats: { explosion: 30 }, trait: 'deathBlast' },
-    cyclops: { name: '외눈감자', weapon: 'crossbow', stats: { crit: 10 }, trait: 'oneSlot' },
-    ghost: { name: '유령감자', weapon: 'staff', stats: { dodge: 30, speed: 10 }, trait: 'dodgePower' }
+    cyclops: { name: '외눈감자', weapon: 'crossbow', stats: { crit: 15, maxHp: 5, projectiles: 2 }, trait: 'oneSlot' },
+    ghost: { name: '유령감자', weapon: 'staff', stats: { dodge: 25, speed: 10 }, trait: 'dodgePower' }
   };
   const weapons = {
     fist: { name: '주먹', muzzle: [12, 0], artAngle: Math.PI / 2, classes: ['unarmed'], behavior: 'thrust', damage: 8, cool: .9, range: 110, kb: 220, price: 15 },
@@ -84,15 +84,15 @@
     treasure_map: { name: '보물 지도', tier: 2, price: 40, stats: {}, hook: 'treasure_map' }
   };
   const enemies = {
-    blob: { hp: 8, speed: 90, dmg: 1, first: 1, mats: 1, size: 40 },
-    bug: { hp: 5, speed: 170, dmg: 1, first: 2, mats: 1, size: 40 },
-    spitter: { hp: 10, speed: 60, dmg: 1, first: 3, mats: 2, size: 48 },
-    charger: { hp: 14, speed: 80, dmg: 2, first: 4, mats: 2, size: 48 },
-    exploder: { hp: 12, speed: 120, dmg: 0, first: 4, mats: 2, size: 44 },
-    splitter: { hp: 16, speed: 70, dmg: 1, first: 5, mats: 2, size: 48 },
-    tank: { hp: 40, speed: 50, dmg: 3, first: 6, mats: 4, size: 64 },
-    shielder: { hp: 30, speed: 60, dmg: 1, first: 7, mats: 3, size: 56 },
-    elite: { hp: 120, speed: 110, dmg: 3, first: 8, mats: 10, size: 72 },
+    blob: { hp: 8, speed: 90, dmg: 1, first: 1, mats: 2, size: 40 },
+    bug: { hp: 5, speed: 170, dmg: 1, first: 2, mats: 2, size: 40 },
+    spitter: { hp: 10, speed: 60, dmg: 1, first: 3, mats: 3, size: 48 },
+    charger: { hp: 14, speed: 80, dmg: 1.5, first: 5, mats: 3, size: 48 },
+    exploder: { hp: 12, speed: 120, dmg: 0, first: 7, mats: 3, size: 44 },
+    splitter: { hp: 16, speed: 70, dmg: 1, first: 5, mats: 3, size: 48 },
+    tank: { hp: 40, speed: 50, dmg: 3, first: 6, mats: 6, size: 64 },
+    shielder: { hp: 30, speed: 60, dmg: 1, first: 9, mats: 5, size: 56 },
+    elite: { hp: 120, speed: 110, dmg: 3, first: 8, mats: 15, size: 72 },
     boss_1: { hp: 1500, speed: 70, dmg: 4, first: 10, mats: 60, size: 150 },
     boss_2: { hp: 6000, speed: 80, dmg: 5, first: 20, mats: 150, size: 190 }
   };
@@ -101,7 +101,10 @@
     crit: 3, range: 25, regen: 2, dodge: 3, luck: 10, harvest: 5,
     elemental: 2, explosion: 10, thorns: 2, knockback: 15
   };
-  const D = { stats, chars, weapons, items, enemies, upgrades, W: 1600, H: 1200 };
+  // 난이도·경제 곡선(밸런스 튜닝은 여기만). spawn=초당 마리 수, hp/dmgPerWave=웨이브당 증가율.
+  const curve = { spawnBase: 0.9, spawnPerWave: 0.42, hpPerWave: 0.42, dmgPerWave: 0.14 };
+  const IFRAME = 0.45;
+  const D = { stats, chars, weapons, items, enemies, upgrades, curve, IFRAME, W: 1600, H: 1200 };
   root.SPUD = root.SPUD || {};
   root.SPUD.data = D;
   if (typeof module !== 'undefined') module.exports = D;
