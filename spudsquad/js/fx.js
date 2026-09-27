@@ -41,16 +41,23 @@
             vx: (Math.random() - .5) * 55, vy: -50, life: .6, maxLife: .6 });
           this.flashes.set(ev[5], now + 80);
           if (e) this.hitstop(now);
+          for (let i = 0; i < 4 + Math.floor(Math.random() * 3); i++) {
+            this.particles.push({ x: a, y: b, vx: (Math.random() - .5) * 200,
+              vy: (Math.random() - .5) * 200, life: .13, maxLife: .13,
+              size: 2 + Math.random() * 2, color: '#fff3c0' });
+          }
           P.sfx?.(e ? 'crit' : 'hit');
         }
         if (type === 'die') {
           this.hitstop(now);
           P.sfx?.('kill');
+          const colors = { blob: '#9ed45d', bug: '#f7bb44', exploder: '#ee8072',
+            shielder: '#66cfca', boss_1: '#ac5c7c', boss_2: '#713f70' };
           for (let i = 0; i < 8 + Math.floor(Math.random() * 7); i++) {
             const angle = Math.random() * Math.PI * 2;
             this.particles.push({ x: a, y: b, vx: Math.cos(angle) * (60 + Math.random() * 130),
               vy: Math.sin(angle) * (60 + Math.random() * 130), life: .35, maxLife: .35,
-              size: 3 + Math.random() * 5, color: ev[4] || '#a5d65f' });
+              size: 3 + Math.random() * 5, color: colors[d] || '#a5d65f' });
           }
           this.particles.push({ x: a, y: b, vx: 40, vy: -115, life: .25,
             maxLife: .25, size: 8, material: true });

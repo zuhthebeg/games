@@ -207,8 +207,7 @@
         <h2>🛒 ${esc(I.t('shop'))}</h2><span>❤️ ${Math.ceil(player.hp)}/${player.maxHp}</span>
         <b>💎 ${player.mats}</b></header>
         <div class="shop-grid">${offers}</div>
-        <div class="shop-toolbar">${button(`${I.t('reroll')} · 💎${player.char === 'basic' && !count
-          ? 0 : P.sim.rerollCost(session.wave, count)}`, 'roll')}
+        <div class="shop-toolbar">${button(`${I.t('reroll')} · 💎${P.sim.shopRerollCost(player, session.wave, count)}`, 'roll')}
           <span class="shop-roster">${roster}</span></div>
         <div class="shop-divider">${esc(I.t('slots'))} · ${player.weapons.length}/${P.sim.capacity(player)}</div>
         <div class="set-bonuses">${Object.entries(P.sim.sets(player)).map(([key, value]) =>
@@ -246,7 +245,7 @@
         } else if (act.startsWith('slot')) {
           selected = Number(act.slice(4));
         } else if (act === 'roll') {
-          const price = player.char === 'basic' && !count ? 0 : P.sim.rerollCost(session.wave, count);
+          const price = P.sim.shopRerollCost(player, session.wave, count);
           if (player.mats >= price) {
             player.mats -= price;
             count++;

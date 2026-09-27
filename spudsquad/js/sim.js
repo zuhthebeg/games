@@ -20,6 +20,9 @@
   function rerollCost(w, count) {
     return 1 + w + count;
   }
+  function shopRerollCost(p, w, count) {
+    return p.char === 'basic' && count === 0 ? 0 : rerollCost(w, count);
+  }
   function damageTaken(raw, armor) {
     return raw * (armor >= 0 ? 1 / (1 + armor / 15) : 1 + Math.abs(armor) / 15);
   }
@@ -83,7 +86,7 @@
       wave: opts.wave || 1, rng: opts.rng || Math.random, players: {}, enemies: [], drops: [],
       shots: [], bullets: [], projectiles: [], crates: [], crateCount: 0, turrets: [], fx: [],
       tick: 0, tm: waveLength(opts.wave || 1), spawnClock: 0, nextId: 1,
-      ended: false, win: false, bossKilled: false, eliteCount: 0, bossSpawned: false
+      ended: false, win: false, bossKilled: false, bossKills: 0, eliteCount: 0, bossSpawned: false
     };
     for (const [uid, v] of Object.entries(opts.players || { solo: { char: "basic" } })) {
       const p = w.players[uid] = createPlayer(uid, v.char, v);
@@ -108,6 +111,7 @@
     const s = enemyStats(type, w.wave, n);
     const e = { id: w.nextId++, type, x, y, hp: s.hp, maxHp: s.hp, dmg: s.dmg, speed: s.speed, clock: 0, charge: 0, hit: {} };
     w.enemies.push(e);
+    if (type === 'shielder') w.fx.push(['st', e.id, 'shield']);
     return e;
   }
   function drop(w, x, y, count) {
@@ -135,6 +139,7 @@
       spawn(w, 'blob', e.x - 18, e.y);
       spawn(w, 'blob', e.x + 18, e.y);
     }
+    if (e.type.startsWith('boss_')) w.bossKills++;
     if (e.type === 'boss_2') w.bossKilled = true;
     if (e.type === 'exploder') explode(w, e.x, e.y, 70, 3 + w.wave / 4, p?.uid, true);
     if (p) {
@@ -675,7 +680,7 @@
     return true;
   }
   const api = {
-    rollGrade, rollUpgrades, rollCrateItem, grantItem, sets, effectiveStats, capacity,
+    rollGrade, rollUpgrades, rollCrateItem, grantItem, sets, effectiveStats, capacity, shopRerollCost,
     behaviors, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,
     hurtPlayer, waveLength, enemyStats, needXp, price, rerollCost, damageTaken,
     rollDamage, createPlayer, createWorld, applyInput, spawn, kill, step, canEnd,

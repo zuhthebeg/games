@@ -2,14 +2,63 @@
   'use strict';
   const P = root.SPUD = root.SPUD || {};
   const stats = {
-    ko: ['최대 HP', '재생', '흡혈', '공격력', '근접 피해', '원거리 피해', '공격 속도', '치명타', '사거리', '방어력', '회피', '이동 속도', '행운', '수확', '흡수 범위', '원소 피해', '폭발 범위', '가시', '추가 탄환', '넉백'],
-    en: ['Max HP', 'Regen', 'Lifesteal', 'Damage', 'Melee', 'Ranged', 'Attack speed', 'Critical', 'Range', 'Armor', 'Dodge', 'Speed', 'Luck', 'Harvest', 'Pickup radius', 'Elemental', 'Explosion', 'Thorns', 'Projectiles', 'Knockback'],
+    ko: ['최대 HP',
+      '재생',
+      '흡혈',
+      '공격력',
+      '근접 피해',
+      '원거리 피해',
+      '공격 속도',
+      '치명타',
+      '사거리',
+      '방어력',
+      '회피',
+      '이동 속도',
+      '행운',
+      '수확',
+      '흡수 범위',
+      '원소 피해',
+      '폭발 범위',
+      '가시',
+      '추가 탄환',
+      '넉백'],
+    en: ['Max HP',
+      'Regen',
+      'Lifesteal',
+      'Damage',
+      'Melee',
+      'Ranged',
+      'Attack speed',
+      'Critical',
+      'Range',
+      'Armor',
+      'Dodge',
+      'Speed',
+      'Luck',
+      'Harvest',
+      'Pickup radius',
+      'Elemental',
+      'Explosion',
+      'Thorns',
+      'Projectiles',
+      'Knockback'],
     'zh-TW': ['最大生命', '生命回復', '吸血', '攻擊力', '近戰傷害', '遠程傷害', '攻擊速度', '暴擊', '射程', '護甲', '閃避', '移動速度', '幸運', '收穫', '拾取範圍', '元素傷害', '爆炸範圍', '反傷', '額外彈丸', '擊退']
   };
   const statKeys = Object.keys(P.data.stats);
+  const percentStats = new Set(['dmg', 'atkSpd', 'crit', 'dodge', 'speed',
+    'luck', 'pickup', 'lifesteal', 'explosion', 'knockback']);
   const names = {
     chars: {
-      en: ['Starter Spud', 'Muscle Spud', 'Science Spud', 'Lucky Spud', 'Gunslinger Spud', 'Berserker Spud', 'Vampire Spud', 'Bomber Spud', 'Cyclops Spud', 'Ghost Spud'],
+      en: ['Starter Spud',
+        'Muscle Spud',
+        'Science Spud',
+        'Lucky Spud',
+        'Gunslinger Spud',
+        'Berserker Spud',
+        'Vampire Spud',
+        'Bomber Spud',
+        'Cyclops Spud',
+        'Ghost Spud'],
       'zh-TW': ['基本馬鈴薯', '肌肉馬鈴薯', '科學馬鈴薯', '幸運馬鈴薯', '槍手馬鈴薯', '狂戰士馬鈴薯', '吸血馬鈴薯', '炸彈馬鈴薯', '獨眼馬鈴薯', '幽靈馬鈴薯']
     },
     weapons: {
@@ -17,8 +66,70 @@
       'zh-TW': ['拳頭', '匕首', '長矛', '木棍', '戰錘', '彈弓', '手槍', '霰彈槍', '衝鋒槍', '弩', '雷射', '火箭', '火焰噴射器', '閃電法杖']
     },
     items: {
-      en: ['Potato Armor', 'Hot Sauce', 'Energy Drink', 'Magnet', 'Clover', 'Bandage', 'Vampire Fang', 'Sneakers', 'Scope', 'Dumbbell', 'Battery', 'Heart Jar', 'Garden Glove', 'Helmet', 'Feather', 'Lucky Coin', 'Thorn Armor', 'Mirror', 'Firecracker', 'Jam Jar', 'Coffee', 'Piggy Bank', 'Glass Cannon', 'Bandana', 'Cactus', 'Whetstone', 'Gunpowder', 'Spark Plug', 'Medkit', 'Rabbit Foot', 'Turret', 'Treasure Map'],
-      'zh-TW': ['馬鈴薯盔甲', '辣醬', '能量飲料', '磁鐵', '四葉草', '繃帶', '吸血尖牙', '運動鞋', '瞄準鏡', '啞鈴', '電池', '愛心瓶', '園藝手套', '頭盔', '羽毛', '幸運硬幣', '荊棘盔甲', '鏡子', '鞭炮', '果醬罐', '咖啡', '撲滿', '玻璃大砲', '頭巾', '仙人掌', '磨刀石', '火藥', '火花塞', '醫療包', '兔腳', '砲塔', '藏寶圖']
+      en: ['Potato Armor',
+        'Hot Sauce',
+        'Energy Drink',
+        'Magnet',
+        'Clover',
+        'Bandage',
+        'Vampire Fang',
+        'Sneakers',
+        'Scope',
+        'Dumbbell',
+        'Battery',
+        'Heart Jar',
+        'Garden Glove',
+        'Helmet',
+        'Feather',
+        'Lucky Coin',
+        'Thorn Armor',
+        'Mirror',
+        'Firecracker',
+        'Jam Jar',
+        'Coffee',
+        'Piggy Bank',
+        'Glass Cannon',
+        'Bandana',
+        'Cactus',
+        'Whetstone',
+        'Gunpowder',
+        'Spark Plug',
+        'Medkit',
+        'Rabbit Foot',
+        'Turret',
+        'Treasure Map'],
+      'zh-TW': ['馬鈴薯盔甲',
+        '辣醬',
+        '能量飲料',
+        '磁鐵',
+        '四葉草',
+        '繃帶',
+        '吸血尖牙',
+        '運動鞋',
+        '瞄準鏡',
+        '啞鈴',
+        '電池',
+        '愛心瓶',
+        '園藝手套',
+        '頭盔',
+        '羽毛',
+        '幸運硬幣',
+        '荊棘盔甲',
+        '鏡子',
+        '鞭炮',
+        '果醬罐',
+        '咖啡',
+        '撲滿',
+        '玻璃大砲',
+        '頭巾',
+        '仙人掌',
+        '磨刀石',
+        '火藥',
+        '火花塞',
+        '醫療包',
+        '兔腳',
+        '砲塔',
+        '藏寶圖']
     }
   };
   const features = {
@@ -66,7 +177,8 @@
       shop: 'Supply Shop', buy: 'Buy', reroll: 'Reroll', stats: 'My Stats', merge: 'Merge', sell: 'Sell',
       items: 'Collected Items', locked: 'Lock', wave: 'Wave', win: 'Spud Squad Wins!', lose: 'Squad Defeated',
       back: 'Main Menu', next: 'Next Wave', left: 'Choices left', damage: 'Damage', cool: 'Cooldown', reach: 'Range',
-      weapon: 'Starting weapon', selected: 'Selected weapon', slots: 'Weapon slots', seconds: 's', empty: 'None yet', crate: 'Open crate', take: 'Take', recycle: 'Recycle'
+      weapon: 'Starting weapon', selected: 'Selected weapon', slots: 'Weapon slots', seconds: 's', empty: 'None yet',
+      crate: 'Open crate', take: 'Take', recycle: 'Recycle'
     },
     'zh-TW': {
       title: '馬鈴薯特攻隊', subtitle: '團結到底，撐過每一波！', solo: '單人遊玩', multi: '多人合作',
@@ -99,7 +211,7 @@
     grade(n) { return grades[language][n - 1] || ''; },
     effect(changes) {
       return Object.entries(changes).map(([key, n]) =>
-        `${this.stat(key)} ${n > 0 ? '+' : ''}${n}${['dmg', 'atkSpd', 'crit', 'dodge', 'speed', 'luck', 'pickup', 'lifesteal', 'explosion', 'knockback'].includes(key) ? '%' : ''}`
+        `${this.stat(key)} ${n > 0 ? '+' : ''}${n}${percentStats.has(key) ? '%' : ''}`
       );
     }
   };

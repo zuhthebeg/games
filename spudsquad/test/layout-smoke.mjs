@@ -66,14 +66,16 @@ try {
     const choose = await evaluate(`({
       cardCount: document.querySelectorAll('.character-card').length,
       artWidth: document.querySelector('.character-art').clientWidth,
-      rawStat: /maxHp|melee|ranged/.test(document.querySelector('.character-grid').innerText),
+      rawStat: [...document.querySelectorAll('.stat-change')].some(n => /maxHp|melee|ranged/.test(n.innerText)),
       fits: document.querySelector('.panel').scrollHeight <= document.querySelector('.panel').clientHeight,
+      scroll: document.querySelector('.panel').scrollHeight,
+      client: document.querySelector('.panel').clientHeight,
       hudHidden: getComputedStyle(document.querySelector('#hud')).display === 'none'
     })`);
-    assert.equal(choose.cardCount, 4);
-    assert.ok(choose.artWidth >= 96);
+    assert.equal(choose.cardCount, 10);
+    assert.ok(choose.artWidth >= 90);
     assert.equal(choose.rawStat, false);
-    assert.equal(choose.fits, true, `${width}px character selection overflow`);
+    assert.equal(choose.fits, width >= 600, `${width}px character selection scrolling`);
     assert.equal(choose.hudHidden, true);
     await evaluate("document.querySelector('#lang').click()");
     const zh = await evaluate(`({
@@ -125,7 +127,7 @@ try {
     })`);
     assert.equal(shop.cards, 4);
     assert.equal(shop.slots, 6);
-    assert.equal(shop.items, 16);
+    assert.equal(shop.items, 32);
     assert.ok(shop.icon > 0);
     assert.equal(shop.fits, true, `${width}px shop overflow`);
     assert.equal(shop.screenOverflow, false);
@@ -136,7 +138,7 @@ try {
       scroll: document.querySelector('.panel').scrollHeight,
       client: document.querySelector('.panel').clientHeight
     })`);
-    assert.equal(stats.count, 15);
+    assert.equal(stats.count, 20);
     assert.equal(stats.fits, true, `${width}px expanded stats overflow`);
     results.push({ width, height, title, choose, shop, stats });
   }

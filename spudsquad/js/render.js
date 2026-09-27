@@ -82,6 +82,12 @@
     fx(events, myUid) {
       this.effects.add(events, myUid);
       for (const event of events || []) {
+        if (event[0] === 'ex' && this.effects.shakeOn && this.lastOwn &&
+          Math.hypot(this.lastOwn.x - event[1], this.lastOwn.y - event[2]) <= event[3]) {
+          this.effects.shake = Math.max(this.effects.shake, 6);
+        }
+      }
+      for (const event of events || []) {
         const type = event[0];
         if (type === 'mark') this.marks.push({ x: event[1], y: event[2], life: 1 });
 
@@ -150,6 +156,7 @@
         [p.uid, p.x, p.y, p.hp, p.maxHp, p.alive, p.mats, p.xp, p.lvl, p.char, p.f]
       );
       const own = players.find(p => p[0] === myUid);
+      if (own) this.lastOwn = { x: own[1], y: own[2] };
       const focus = (own?.[5] ? own : players.find(p => p[5])) || own || players[0];
       if (focus) {
         this.cam.x = Math.max(0, Math.min(D.W - width, focus[1] - width / 2));
