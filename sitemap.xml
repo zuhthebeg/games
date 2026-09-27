@@ -128,4 +128,5 @@
     <loc>https://game.cocy.io/blockblast/</loc>
     <priority>0.8</priority>
   </url>
+  <url><loc>https://game.cocy.io/spudsquad/</loc><priority>0.8</priority></url>
 </urlset>

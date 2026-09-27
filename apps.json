@@ -1,4 +1,5 @@
 [
+  {"title":"감자특공대 Spud Squad","icon":"https://game.cocy.io/spudsquad/icon.svg","url":"https://game.cocy.io/spudsquad/","desc":"1~4인 실시간 협동 웨이브 서바이벌. 20웨이브를 함께 돌파하세요.","badge":"NEW","platforms":["WEB"],"languages":["🇰🇷","🇺🇸","🇹🇼"],"category":"arcade"},
   {
     "title": "플레이DNA PlayDNA",
     "icon": "https://game.cocy.io/playdna/icon.svg",
