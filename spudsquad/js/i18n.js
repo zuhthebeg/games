@@ -241,4 +241,106 @@
       );
     }
   };
+  // ---- 스탯 시트·도감·디버그 UI 문자열 (아이템 표와 분리해 둔다) ----
+  Object.assign(strings.ko, {
+    secAttack: '공격', secSurvival: '생존', secUtility: '유틸', weapons: '무기', sets: '세트 보너스',
+    close: '닫기', perHit: '1타', shots: '발사', noSets: '같은 계열 무기 2개부터 세트 보너스가 켜져요',
+    setActive: '{n}단계 활성', setNext: '{n}개부터 다음 단계', setMax: '최대 단계', tapItem: '아이템을 누르면 효과가 보여요',
+    collection: '콜렉션', tabChars: '캐릭터', tabWeapons: '무기', tabItems: '아이템', tabEnemies: '적',
+    loginBanner: '로그인하면 클리어할 때마다 도감이 채워져요',
+    collectionHint: '웨이브를 클리어하면 사용한 캐릭터·무기·아이템과 만난 적이 등록돼요',
+    best: '최고', wins: '승리', firstWave: '첫 등장', speed: '속도', debugAll: 'DEBUG · 전체 공개',
+    debug: '디버그', soloOnly: '디버그 패널은 솔로 전용이에요', grant: '지급', setMats: '재화 설정',
+    jumpWave: '웨이브 이동', god: '무적', ranges: '사거리 원', killAll: '적 전멸', spawn: '소환',
+    on: '켜짐', off: '꺼짐', waveOnly: '웨이브 중에만 가능해요', slotsFull: '무기 슬롯이 가득 찼어요',
+    capped: '더 가질 수 없는 아이템이에요', done: '완료', count: '수', tier: '등급', hp: 'HP'
+  });
+  Object.assign(strings.en, {
+    secAttack: 'Offense', secSurvival: 'Survival', secUtility: 'Utility', weapons: 'Weapons', sets: 'Set bonuses',
+    close: 'Close', perHit: 'Per hit', shots: 'Shots', noSets: 'Two weapons of the same class activate a set bonus',
+    setActive: 'Stage {n} active', setNext: 'Next stage at {n}', setMax: 'Max stage', tapItem: 'Tap an item to see its effect',
+    collection: 'Collection', tabChars: 'Heroes', tabWeapons: 'Weapons', tabItems: 'Items', tabEnemies: 'Enemies',
+    loginBanner: 'Log in and every cleared wave fills your collection',
+    collectionHint: 'Clear waves to register the hero, weapons and items you used and the enemies you met',
+    best: 'Best', wins: 'Wins', firstWave: 'First wave', speed: 'Speed', debugAll: 'DEBUG · all revealed',
+    debug: 'Debug', soloOnly: 'The debug panel is solo only', grant: 'Grant', setMats: 'Set currency',
+    jumpWave: 'Jump to wave', god: 'God mode', ranges: 'Range circles', killAll: 'Kill all', spawn: 'Spawn',
+    on: 'On', off: 'Off', waveOnly: 'Only during a wave', slotsFull: 'Weapon slots are full',
+    capped: 'You cannot hold more of this item', done: 'Done', count: 'Count', tier: 'Tier', hp: 'HP'
+  });
+  Object.assign(strings['zh-TW'], {
+    secAttack: '攻擊', secSurvival: '生存', secUtility: '輔助', weapons: '武器', sets: '套裝加成',
+    close: '關閉', perHit: '每擊', shots: '發射', noSets: '同系列武器達2把即啟動套裝加成',
+    setActive: '第{n}階段啟動', setNext: '{n}把啟動下一階段', setMax: '最高階段', tapItem: '點擊道具查看效果',
+    collection: '圖鑑', tabChars: '角色', tabWeapons: '武器', tabItems: '道具', tabEnemies: '敵人',
+    loginBanner: '登入後每次通關波次都會填滿圖鑑',
+    collectionHint: '通關波次即可登錄使用過的角色、武器、道具與遇到的敵人',
+    best: '最佳', wins: '勝利', firstWave: '首次出現', speed: '速度', debugAll: 'DEBUG · 全部公開',
+    debug: '除錯', soloOnly: '除錯面板僅限單人', grant: '給予', setMats: '設定貨幣',
+    jumpWave: '跳至波次', god: '無敵', ranges: '射程圈', killAll: '消滅全部', spawn: '召喚',
+    on: '開', off: '關', waveOnly: '僅能在波次中使用', slotsFull: '武器欄已滿',
+    capped: '此道具無法再持有', done: '完成', count: '數量', tier: '等級', hp: 'HP'
+  });
+  // 스탯 한 줄 설명(시트용). 근접 무기는 사거리 스탯의 50%만 받는다(D.MELEE_RANGE_SCALE).
+  const statDesc = {
+    ko: { maxHp: '최대 체력', regen: '초당 (수치 × 0.2) HP 회복', lifesteal: '타격마다 수치% 확률로 HP 1 회복 (초당 최대 10)',
+      dmg: '모든 무기 피해를 % 만큼 증가', melee: '근접 무기 1타에 고정 피해 추가', ranged: '원거리 무기·포탑 1타에 고정 피해 추가',
+      elemental: '화염·번개·레이저 1타와 화상 피해 추가', atkSpd: '무기 공격 간격 단축',
+      crit: '치명타 확률 · 치명타는 피해 2배', range: '원거리 사거리 증가 · 근접은 50%만 적용',
+      armor: '받는 피해 감소 (음수면 증가)', dodge: '공격을 완전히 피할 확률 (최대 60%)',
+      speed: '이동 속도 증가', luck: '처치 시 재화 추가 · 상점·상자·레벨업 등급 확률 증가',
+      harvest: '웨이브가 끝날 때마다 재화 지급 (매 웨이브 5% 성장)', pickup: '재화·상자를 끌어오는 범위 증가',
+      explosion: '폭발 범위와 폭발 피해 증가', thorns: '나를 때린 적에게 반사 피해',
+      projectiles: '원거리 무기 발사 수 추가', knockback: '적을 밀쳐내는 힘 증가' },
+    en: { maxHp: 'Maximum health', regen: 'Heal (value × 0.2) HP per second', lifesteal: 'Value % chance to heal 1 HP per hit (max 10/s)',
+      dmg: 'Increases all weapon damage by %', melee: 'Flat damage added to each melee hit', ranged: 'Flat damage added to ranged and turret hits',
+      elemental: 'Flat damage for fire, lightning, laser hits and burns', atkSpd: 'Shortens weapon cooldowns',
+      crit: 'Critical chance · crits deal double damage', range: 'Longer ranged reach · melee gets only 50%',
+      armor: 'Reduces damage taken (negative increases it)', dodge: 'Chance to fully avoid a hit (max 60%)',
+      speed: 'Faster movement', luck: 'Extra currency on kills · better shop, crate and level-up grades',
+      harvest: 'Currency paid at the end of each wave (grows 5% per wave)', pickup: 'Larger radius for pulling in currency and crates',
+      explosion: 'Bigger explosions that hit harder', thorns: 'Damage reflected to enemies that hit you',
+      projectiles: 'Extra shots for ranged weapons', knockback: 'Pushes enemies back harder' },
+    'zh-TW': { maxHp: '最大生命值', regen: '每秒回復（數值 × 0.2）生命', lifesteal: '每次命中有數值%機率回復1生命（每秒最多10）',
+      dmg: '所有武器傷害提高 %', melee: '近戰武器每擊追加固定傷害', ranged: '遠程武器與砲塔每擊追加固定傷害',
+      elemental: '火焰、閃電、雷射每擊與燃燒追加傷害', atkSpd: '縮短武器攻擊間隔',
+      crit: '暴擊機率 · 暴擊造成2倍傷害', range: '提高遠程射程 · 近戰只套用50%',
+      armor: '減少受到的傷害（負值則增加）', dodge: '完全閃避攻擊的機率（最多60%）',
+      speed: '提高移動速度', luck: '擊殺額外貨幣 · 提高商店、寶箱、升級品質機率',
+      harvest: '每波結束時獲得貨幣（每波成長5%）', pickup: '擴大吸取貨幣與寶箱的範圍',
+      explosion: '爆炸範圍與傷害提高', thorns: '對攻擊你的敵人反彈傷害',
+      projectiles: '遠程武器額外發射數', knockback: '擊退敵人的力道提高' }
+  };
+  const setNames = {
+    ko: { unarmed: '맨손', blade: '칼날', blunt: '둔기', gun: '총기', precise: '정밀', explosive: '폭발', elemental: '원소' },
+    en: { unarmed: 'Unarmed', blade: 'Blade', blunt: 'Blunt', gun: 'Gun', precise: 'Precise', explosive: 'Explosive', elemental: 'Elemental' },
+    'zh-TW': { unarmed: '徒手', blade: '刀刃', blunt: '鈍器', gun: '槍械', precise: '精準', explosive: '爆炸', elemental: '元素' }
+  };
+  const enemyText = {
+    ko: { blob: ['말랑이', '천천히 다가오는 기본 적'], bug: ['벌레', '빠르게 달려드는 약한 적'],
+      spitter: ['침뱉이', '거리를 두고 침을 쏜다'], charger: ['돌진이', '주기적으로 빠르게 돌진한다'],
+      exploder: ['폭탄이', '가까이 오면 자폭한다'], splitter: ['분열이', '쓰러지면 말랑이 둘로 갈라진다'],
+      tank: ['탱크', '단단하고 넉백에 강하다'], shielder: ['방패병', '주변 적이 받는 피해를 절반으로'],
+      elite: ['엘리트', '8방향 탄막을 뿌리는 강적'], boss_1: ['중간 보스', '10웨이브 보스 · 탄막과 부하 소환'],
+      boss_2: ['최종 보스', '20웨이브 보스 · 돌진·탄막·자폭병 소환'] },
+    en: { blob: ['Blob', 'Slow, basic chaser'], bug: ['Bug', 'Fast but fragile'],
+      spitter: ['Spitter', 'Keeps distance and spits'], charger: ['Charger', 'Dashes in bursts'],
+      exploder: ['Exploder', 'Self-destructs up close'], splitter: ['Splitter', 'Splits into two blobs'],
+      tank: ['Tank', 'Tough and hard to knock back'], shielder: ['Shielder', 'Halves damage to nearby enemies'],
+      elite: ['Elite', 'Fires 8-way bullet rings'], boss_1: ['Mid Boss', 'Wave 10 boss · bullets and minions'],
+      boss_2: ['Final Boss', 'Wave 20 boss · dashes, bullets, exploders'] },
+    'zh-TW': { blob: ['軟泥怪', '緩慢靠近的基本敵人'], bug: ['甲蟲', '衝得快但很脆弱'],
+      spitter: ['吐液怪', '保持距離吐出酸液'], charger: ['衝鋒怪', '週期性高速衝撞'],
+      exploder: ['自爆怪', '靠近後自爆'], splitter: ['分裂怪', '倒下後分裂成兩隻軟泥怪'],
+      tank: ['坦克', '堅硬且不易被擊退'], shielder: ['盾衛', '周圍敵人受到的傷害減半'],
+      elite: ['精英', '發射八方向彈幕的強敵'], boss_1: ['中頭目', '第10波頭目 · 彈幕與召喚'],
+      boss_2: ['最終頭目', '第20波頭目 · 衝撞、彈幕、召喚自爆怪'] }
+  };
+  Object.assign(P.i18n, {
+    statDesc(key) { return statDesc[language][key] || ''; },
+    percent(key) { return percentStats.has(key); },
+    setName(key) { return setNames[language][key] || key; },
+    enemy(id) { return enemyText[language][id]?.[0] || id; },
+    enemyDesc(id) { return enemyText[language][id]?.[1] || ''; }
+  });
 })(window);

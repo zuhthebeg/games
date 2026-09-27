@@ -240,7 +240,6 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .inventory > div { display: flex; flex-wrap: wrap; gap: 5px; }
 .owned-item { border: 1px solid #bc9c66; background: #fff8df; border-radius: 7px; padding: 2px 5px; }
 .owned-item img { width: 18px; height: 18px; vertical-align: middle; }
-.stat-panel { max-height: 54px; overflow: auto; grid-template-columns: repeat(4, 1fr); gap: 3px; font-size: 11px; text-align: left; }
 .ready-btn { align-self: center; min-width: 170px; }
 #music, #sound, #shake, #volume { position: absolute; top: 5px; right: 52px; z-index: 6; }
 #shake { right: 97px; }
@@ -249,6 +248,94 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 #lang { position: absolute; top: 5px; right: 6px; z-index: 6; border: 2px solid var(--brown); background: #fff6da; border-radius: 10px; }
 #notice { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); font: 20px Jua;
   color: #fff; text-shadow: 2px 2px #4c2d20; pointer-events: none; }
+/* ---- 스탯 시트 / 디버그 패널 (#sheet 레이어) ---- */
+.hud-btn { flex: none; min-width: 44px; min-height: 44px; padding: 0; font-size: 22px; line-height: 1;
+  border: 3px solid var(--brown); border-radius: 12px; background: #fff6da; box-shadow: 0 3px 0 var(--brown); }
+.hud-btn[hidden] { display: none; }
+#sheet { position: fixed; inset: calc(var(--wallet-bar-h) + env(safe-area-inset-top)) 0 0 0; z-index: 30;
+  display: flex; align-items: center; justify-content: center; padding: 12px; background: rgba(32, 24, 16, .6); }
+#sheet[hidden] { display: none; }
+.sheet { background: var(--cream); border: 5px solid var(--brown); border-radius: 22px; box-shadow: 0 8px 0 #6c4a2b;
+  width: min(1120px, 100%); max-height: 100%; display: flex; flex-direction: column; overflow: hidden;
+  font-size: 15px; color: var(--brown); }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 14px; border-bottom: 3px solid #c9aa78; }
+.sheet-head h2 { font: 28px Jua; margin: 0; }
+.sheet-close { min-width: 44px; min-height: 44px; font: 28px Jua; line-height: 1; color: var(--brown);
+  border: 3px solid var(--brown); border-radius: 12px; background: #fff6da; }
+.sheet-body { overflow: auto; padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 12px;
+  text-align: left; overscroll-behavior: contain; }
+.sheet-sec { background: #fff9e6; border: 2px solid #d5b988; border-radius: 14px; padding: 8px 10px; min-width: 0; }
+.sheet-sec h3 { font: 20px Jua; margin: 0 0 6px; }
+.stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.stat-rows, .weapon-rows, .set-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.stat-row { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: center;
+  padding: 3px 2px; border-bottom: 1px dashed #e2cfa6; }
+.stat-row:last-child { border-bottom: 0; }
+.stat-row .g { font-size: 20px; text-align: center; }
+.stat-row .n b { font: 17px Jua; display: block; }
+.stat-row .n small { font-size: 14px; color: #7a5738; line-height: 1.25; display: block; }
+.stat-row .v { font: 20px Jua; text-align: right; white-space: nowrap; }
+.stat-row .v small { display: block; font: 14px system-ui; }
+.v.pos { color: #2c8849; } .v.neg { color: #c0392b; } .v.zero { color: #9b8a70; }
+.sheet-lower { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; align-items: start; }
+.weapon-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; align-items: center;
+  border: 2px solid #8c8279; border-radius: 10px; padding: 6px 8px; background: #fff; }
+.weapon-row img { width: 44px; height: 44px; object-fit: contain; }
+.weapon-row b { font: 17px Jua; }
+.weapon-row small { display: block; font-size: 14px; color: #7a5738; }
+.weapon-nums { display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 14px; }
+.weapon-nums b { font: 17px Jua; color: #ad4f24; }
+.set-row { font-size: 14px; padding: 6px 8px; border-radius: 10px; background: #f1e6c8; display: flex; flex-direction: column; gap: 2px; }
+.set-row.on { background: #e1f5d9; }
+.set-row b { font: 17px Jua; }
+.muted { color: #8d7355; }
+.item-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; }
+.item-tile { position: relative; min-width: 0; min-height: 72px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 2px; border: 2px solid #bc9c66; border-radius: 10px; background: #fff8df;
+  color: var(--brown); font-size: 14px; padding: 4px; }
+.item-tile img { width: 36px; height: 36px; object-fit: contain; }
+.item-tile span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-tile > b { position: absolute; top: 2px; right: 5px; font: 15px Jua; color: #ad6a2f; }
+.item-tile.on { background: #ffe38f; outline: 2px solid #8b5d23; }
+.item-detail { margin: 8px 0 0; font-size: 15px; line-height: 1.35; }
+.dbg-note { margin: 0; min-height: 20px; font: 16px Jua; color: #2c8849; }
+.dbg-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0; font-size: 15px; }
+.dbg-row select, .dbg-row input { font-size: 15px; min-height: 40px; padding: 4px 6px; border: 2px solid var(--brown);
+  border-radius: 8px; background: #fff; color: var(--brown); }
+.dbg-row input { width: 84px; }
+.dbg-items { max-height: 260px; overflow: auto; }
+#debugBadge { position: fixed; left: 8px; bottom: 8px; z-index: 40; font: bold 12px system-ui; letter-spacing: .1em;
+  background: #c0392b; color: #fff; padding: 3px 8px; border-radius: 8px; pointer-events: none; }
+/* ---- 콜렉션 ---- */
+.collection-screen { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.col-head { display: flex; align-items: center; gap: 12px; }
+.col-head h2 { margin: 0; }
+.col-back { min-width: 48px; min-height: 48px; font-size: 22px; }
+.col-total { margin-left: auto; text-align: right; font: 20px Jua; }
+.col-bar { display: block; width: 180px; height: 10px; margin-top: 4px; border: 2px solid var(--brown); border-radius: 8px;
+  background: #d6c59e; overflow: hidden; }
+.col-bar > i { display: block; height: 100%; background: #86d05b; }
+.col-banner { padding: 10px 12px; border-radius: 12px; background: #ffe0a8; border: 2px dashed #b8741a;
+  font: 18px Jua; text-align: center; }
+.col-banner.debug { background: #ffd6d0; border-color: #c0392b; }
+.col-hint { font-size: 14px; color: #7a5738; text-align: center; }
+.col-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.col-tab { min-width: 0; min-height: 48px; border: 3px solid var(--brown); border-radius: 12px; background: #fff6da;
+  font: 18px Jua; color: var(--brown); }
+.col-tab.on { background: var(--orange); }
+.col-tab small { display: block; font: 13px system-ui; }
+.col-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.col-card { position: relative; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 6px; border: 3px solid #8c8279; border-radius: 14px; background: #fff9e6; text-align: center; }
+.col-card.locked { background: #e9dcbc; border-style: dashed; justify-content: center; }
+.col-card.locked strong { color: #8d7355; }
+.col-art { width: 72px; height: 72px; object-fit: contain; }
+.col-art.sil { filter: brightness(0) opacity(.35); }
+.col-card strong { font: 18px Jua; }
+.col-card small { font-size: 14px; color: #744b2e; line-height: 1.3; }
+.col-card .meta { font-size: 13px; color: #ad6a2f; font-weight: 700; }
+.col-crown { position: absolute; top: 4px; left: 6px; font-size: 20px; }
 @media (max-width: 600px) {
   #hud { min-height: 60px; padding: 4px; font-size: 12px; }
   #waveHud { font-size: 18px; }
@@ -294,7 +381,28 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
   .slot span { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .inventory { max-height: 29px; overflow: auto; font-size: 9px; }
   .inventory .owned-item img { width: 14px; height: 14px; }
-  .stat-panel { max-height: 64px; overflow: auto; grid-template-columns: repeat(3, 1fr); font-size: 9px; }
+  .hud-btn { font-size: 19px; }
+  #sheet { padding: 4px; }
+  .sheet { border-width: 3px; border-radius: 14px; font-size: 13px; box-shadow: 0 4px 0 #6c4a2b; }
+  .sheet-head { padding: 4px 8px; }
+  .sheet-head h2 { font-size: 22px; }
+  .sheet-body { padding: 8px; gap: 8px; }
+  .stat-grid, .sheet-lower { grid-template-columns: 1fr; gap: 8px; }
+  .sheet-sec h3 { font-size: 18px; }
+  .stat-row .n b { font-size: 15px; }
+  .stat-row .n small, .stat-row .v small, .weapon-row small, .weapon-nums, .set-row, .item-tile, .item-detail { font-size: 12px; }
+  .stat-row .v { font-size: 17px; }
+  .item-tiles { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
+  .dbg-row, .dbg-row select, .dbg-row input { font-size: 13px; }
+  .col-head { gap: 6px; }
+  .col-total { font-size: 16px; }
+  .col-bar { width: 96px; }
+  .col-banner { font-size: 15px; }
+  .col-tab { font-size: 15px; padding: 2px; }
+  .col-tab small { font-size: 12px; }
+  .col-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+  .col-art { width: 60px; height: 60px; }
+  .col-card small, .col-card .meta { font-size: 12px; }
   .ready-btn { min-height: 33px; padding: 4px 12px; }
 }
 </style>
@@ -321,6 +429,8 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </div>
 <div id="money">💎 <span id="mats">0</span>
 </div>
+<button type="button" id="statsBtn" class="hud-btn" title="Stats" aria-label="Stats">📊</button>
+<button type="button" id="debugBtn" class="hud-btn" title="Debug" aria-label="Debug" hidden>🐞</button>
 </div>
 <div id="field">
 <div id="pad" aria-hidden="true"><div id="padKnob"></div></div>
@@ -341,6 +451,7 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </div>
 </div>
 </div>
+<div id="sheet" hidden></div>
 <script src="/lib/shared-wallet.js?v=20260809pf2">
 </script>
 <script src="/lib/multiplayer.js?v=20260927rt">
@@ -349,21 +460,23 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </script>
 <script src="/lib/game-rankings.js?v=20260927">
 </script>
-<script src="js/data.js?v=20260927v10">
+<script src="js/data.js?v=20260928v1">
 </script>
-<script src="js/sim.js?v=20260927v10">
+<script src="js/sim.js?v=20260928v1">
 </script>
-<script src="js/net.js?v=20260927v10">
+<script src="js/net.js?v=20260928v1">
 </script>
-<script src="js/sfx.js?v=20260927v10"></script>
-<script src="js/fx.js?v=20260927v10"></script>
-<script src="js/render.js?v=20260927v10">
+<script src="js/sfx.js?v=20260928v1"></script>
+<script src="js/fx.js?v=20260928v1"></script>
+<script src="js/render.js?v=20260928v1">
 </script>
-<script src="js/i18n.js?v=20260927v10">
+<script src="js/i18n.js?v=20260928v1">
 </script>
-<script src="js/ui.js?v=20260927v10">
+<script src="js/collection.js?v=20260928v1">
 </script>
-<script src="js/main.js?v=20260927v10">
+<script src="js/ui.js?v=20260928v1">
+</script>
+<script src="js/main.js?v=20260928v1">
 </script>
 </body>
 </html>

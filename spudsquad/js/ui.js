@@ -16,8 +16,207 @@
     `<img class="${kind}" src="assets/${esc(id)}.webp" alt="" onerror="this.hidden=true">`;
   const button = (text, act, extra = '') =>
     `<button type="button" class="btn ${extra}" data-act="${act}">${esc(text)}</button>`;
+  const GLYPH = { maxHp: '❤️', dmg: '⚔️', atkSpd: '⚡', melee: '🥊',
+    ranged: '🎯', armor: '🛡️', speed: '👟', crit: '💥', range: '🔭',
+    regen: '🩹', dodge: '🪶', luck: '🍀', harvest: '🌱', elemental: '🔥',
+    explosion: '💣', thorns: '🌵', knockback: '💫', lifesteal: '🧛', pickup: '🧲', projectiles: '🔫' };
+  // 스탯 시트 구역(20개 스탯 전부)
+  const SECTIONS = [
+    ['secAttack', '⚔️', ['dmg', 'melee', 'ranged', 'elemental', 'atkSpd', 'crit', 'range', 'projectiles', 'knockback', 'explosion']],
+    ['secSurvival', '❤️', ['maxHp', 'regen', 'lifesteal', 'armor', 'dodge', 'thorns']],
+    ['secUtility', '🧰', ['speed', 'luck', 'harvest', 'pickup']]
+  ];
+  const fill = (text, n) => String(text).replace('{n}', n);
+  const num = n => n < 10 ? String(Math.round(n * 10) / 10) : String(Math.round(n));
+  const enemyArt = id => id.startsWith('boss_') ? id : 'enemy_' + id;
+  // ---- 시트 레이어(#sheet): 패널(상점 등) 위에 겹쳐 뜨는 전체 창. 솔로에선 main이 열려 있는 동안 일시정지 ----
+  const sheetEl = document.getElementById('sheet');
+  let sheetDraw = null, sheetAct = null;
+  function openSheet(draw, act) {
+    sheetDraw = draw; sheetAct = act;
+    draw();
+    sheetEl.hidden = false;
+  }
+  function closeSheet() {
+    if (!sheetEl || sheetEl.hidden) return;
+    sheetEl.hidden = true;
+    sheetEl.innerHTML = '';
+    sheetDraw = sheetAct = null;
+  }
+  function sheetFrame(title, body, extra = '') {
+    sheetEl.innerHTML = `<section class="sheet ${extra}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+      <header class="sheet-head"><h2>${esc(title)}</h2>
+      <button type="button" class="sheet-close" data-act="close" aria-label="${esc(I.t('close'))}">×</button></header>
+      <div class="sheet-body">${body}</div></section>`;
+  }
+  if (sheetEl) sheetEl.onclick = event => {
+    if (event.target === sheetEl) { closeSheet(); return; } // 바깥 어두운 영역
+    const act = event.target.closest('[data-act]')?.dataset.act;
+    if (!act) return;
+    if (act === 'close') closeSheet();
+    else sheetAct?.(act, event);
+  };
+  root.addEventListener?.('keydown', event => {
+    if (event.key === 'Escape' && sheetEl && !sheetEl.hidden) closeSheet();
+  });
+  function setLines(p) {
+    const list = Object.entries(P.sim.sets(p)).sort((a, b) => b[1].count - a[1].count);
+    return list.map(([key, v]) => {
+      const steps = [2, 3, 4, 6], next = steps.find(t => t > v.count);
+      const sample = Object.keys(D.weapons).find(id => D.weapons[id].classes.includes(key));
+      const nextStats = next && P.sim.sets({ weapons: Array.from({ length: next }, () => [sample, 1]) })[key]?.stats;
+      const now = v.stage ? `${fill(I.t('setActive'), steps.indexOf(v.stage) + 1)}: ${I.effect(v.stats).join(' · ')}` : '';
+      const later = next ? `${fill(I.t('setNext'), next)}: ${I.effect(nextStats || {}).join(' · ')}` : I.t('setMax');
+      return `<li class="set-row${v.stage ? ' on' : ''}"><b>${esc(I.setName(key))} ×${v.count}</b>
+        ${now ? `<span>✔ ${esc(now)}</span>` : ''}<span class="muted">${esc(later)}</span></li>`;
+    }).join('') || `<li class="set-row muted">${esc(I.t('noSets'))}</li>`;
+  }
+  // 내 스탯 시트. getPlayer는 열 때마다(언어 전환 포함) 최신 플레이어를 돌려준다.
+  function stats(getPlayer) {
+    let pick = null;
+    openSheet(function draw() {
+      const p = getPlayer();
+      if (!p) { closeSheet(); return; }
+      const s = P.sim.effectiveStats(p);
+      const row = key => {
+        const n = Math.round(s[key] || 0);
+        let value = `${n > 0 ? '+' : ''}${n}${I.percent(key) ? '%' : ''}`;
+        if (key === 'maxHp') value = `${shown(p.hp)}/${shown(p.maxHp)}`;
+        const taken = key === 'armor' && n ? Math.round(P.sim.damageTaken(100, s.armor)) - 100 : 0;
+        return `<li class="stat-row" data-stat="${key}"><span class="g" aria-hidden="true">${GLYPH[key]}</span>
+          <span class="n"><b>${esc(I.stat(key))}</b><small>${esc(I.statDesc(key))}</small></span>
+          <span class="v ${n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero'}">${esc(value)}${taken
+            ? `<small>${taken > 0 ? '+' : ''}${taken}%</small>` : ''}</span></li>`;
+      };
+      const sections = SECTIONS.map(([title, glyph, keys]) => `<section class="sheet-sec">
+        <h3>${glyph} ${esc(I.t(title))}</h3><ul class="stat-rows">${keys.map(row).join('')}</ul></section>`).join('');
+      const weapons = p.weapons.map(([id, tier]) => {
+        const w = P.sim.weaponSummary(p, id, tier);
+        if (!w) return '';
+        return `<li class="weapon-row tier${tier}">${icon('weapon_' + id)}<div>
+          <b>${esc(I.name('weapons', id))} · T${tier}</b><small>${esc(I.feature(id))}</small>
+          <div class="weapon-nums"><span>${esc(I.t('perHit'))} <b>${num(w.damage)}${w.shots > 1 ? ` ×${w.shots}` : ''}</b></span>
+          <span>${esc(I.t('cool'))} <b>${Math.round(w.cooldownMs)}ms</b></span>
+          <span>${esc(I.t('reach'))} <b>${Math.round(w.range)}</b></span></div></div></li>`;
+      }).join('') || `<li class="muted">${esc(I.t('empty'))}</li>`;
+      const counts = {};
+      for (const id of p.items) counts[id] = (counts[id] || 0) + 1;
+      const tiles = Object.entries(counts).map(([id, n]) => `<button type="button"
+        class="item-tile${pick === id ? ' on' : ''}" data-act="item:${esc(id)}">${icon('item_' + id)}
+        <span>${esc(I.name('items', id))}</span>${n > 1 ? `<b>×${n}</b>` : ''}</button>`).join('');
+      const detail = pick && counts[pick]
+        ? `<p class="item-detail"><b>${esc(I.name('items', pick))}</b> — ${esc(I.itemEffect(pick))}</p>`
+        : `<p class="item-detail muted">${esc(tiles ? I.t('tapItem') : I.t('empty'))}</p>`;
+      sheetFrame(`📊 ${I.t('stats')}`, `<div class="stat-grid">${sections}</div>
+        <div class="sheet-lower">
+          <section class="sheet-sec"><h3>🗡️ ${esc(I.t('weapons'))} · ${p.weapons.length}/${P.sim.capacity(p)}</h3>
+            <ul class="weapon-rows">${weapons}</ul></section>
+          <section class="sheet-sec"><h3>🧩 ${esc(I.t('sets'))}</h3><ul class="set-rows">${setLines(p)}</ul></section>
+        </div>
+        <section class="sheet-sec"><h3>🎒 ${esc(I.t('items'))} · ${p.items.length}</h3>
+          <div class="item-tiles">${tiles}</div>${detail}</section>`, 'stats-sheet');
+    }, act => {
+      if (act.startsWith('item:')) { const id = act.slice(5); pick = pick === id ? null : id; sheetDraw?.(); }
+    });
+  }
+  // ---- 디버그 패널(솔로 전용). 실제 조작은 P.main.debugAct가 한다 ----
+  const dbgForm = { weapon: 'pistol', tier: '1', mats: '500', wave: '10', enemy: 'blob', n: '5' };
+  let dbgNote = '';
+  function debugPanel() {
+    const M = P.main;
+    if (!M?.debug || !M.solo) return; // 멀티에선 열지 않는다
+    dbgNote = '';
+    const opt = (list, cur, label) => list.map(id =>
+      `<option value="${esc(id)}"${String(id) === String(cur) ? ' selected' : ''}>${esc(label(id))}</option>`).join('');
+    openSheet(function draw() {
+      const view = M.debugView || {};
+      sheetFrame(`🐞 ${I.t('debug')}`, `<p class="dbg-note" role="status">${esc(dbgNote)}</p>
+        <section class="sheet-sec"><h3>🗡️ ${esc(I.t('weapons'))}</h3><div class="dbg-row">
+          <select data-dbg="weapon" aria-label="weapon">${opt(Object.keys(D.weapons), dbgForm.weapon, id => I.name('weapons', id))}</select>
+          <select data-dbg="tier" aria-label="tier">${opt([1, 2, 3, 4], dbgForm.tier, t => 'T' + t)}</select>
+          ${button(I.t('grant'), 'dbg:weapon', 'primary')}</div></section>
+        <section class="sheet-sec"><h3>🎒 ${esc(I.t('tabItems'))}</h3><div class="item-tiles dbg-items">
+          ${Object.keys(D.items).map(id => `<button type="button" class="item-tile tier${D.items[id].tier || 1}"
+            data-act="dbg:item:${esc(id)}" title="${esc(I.itemEffect(id))}">${icon('item_' + id)}
+            <span>${esc(I.name('items', id))}</span></button>`).join('')}</div></section>
+        <section class="sheet-sec"><h3>🛠️ ${esc(I.t('debug'))}</h3>
+          <div class="dbg-row"><label>💎 <input type="number" min="0" max="99999" data-dbg="mats" value="${esc(dbgForm.mats)}"></label>
+            ${button(I.t('setMats'), 'dbg:mats')}
+            <label>🌊 <input type="number" min="1" max="20" data-dbg="wave" value="${esc(dbgForm.wave)}"></label>
+            ${button(I.t('jumpWave'), 'dbg:wave')}</div>
+          <div class="dbg-row"><select data-dbg="enemy" aria-label="enemy">${opt(Object.keys(D.enemies), dbgForm.enemy, id => I.enemy(id))}</select>
+            <label>× <input type="number" min="1" max="50" data-dbg="n" value="${esc(dbgForm.n)}"></label>
+            ${button(I.t('spawn'), 'dbg:spawn')}${button(I.t('killAll'), 'dbg:kill')}</div>
+          <div class="dbg-row">${button(`🛡️ ${I.t('god')}: ${I.t(view.god ? 'on' : 'off')}`, 'dbg:god', view.god ? 'primary' : '')}
+            ${button(`🔭 ${I.t('ranges')}: ${I.t(view.ranges ? 'on' : 'off')}`, 'dbg:ranges', view.ranges ? 'primary' : '')}</div>
+        </section>`, 'debug-sheet');
+    }, act => {
+      if (!act.startsWith('dbg:')) return;
+      for (const el of sheetEl.querySelectorAll('[data-dbg]')) dbgForm[el.dataset.dbg] = el.value;
+      const [, name, id] = act.split(':');
+      dbgNote = M.debugAct(name, { ...dbgForm, item: id }) || '';
+      if (sheetDraw) sheetDraw();
+    });
+  }
+  // ---- 콜렉션(도감) ----
+  let colTab = 'chars', activeView = '';
+  function collection(back) {
+    const C = P.collection;
+    const debugOn = !!P.main?.debug;
+    const col = debugOn ? C.all() : C.get(); // 게스트는 null → 전부 잠김
+    const prog = C.progress(col);
+    const pct = x => x.total ? Math.floor(x.n / x.total * 100) : 0;
+    const tabs = [['chars', 'tabChars'], ['weapons', 'tabWeapons'], ['items', 'tabItems'], ['enemies', 'tabEnemies']];
+    const card = id => {
+      const art = colTab === 'chars' ? 'char_' + id : colTab === 'weapons' ? 'weapon_' + id
+        : colTab === 'items' ? 'item_' + id : enemyArt(id);
+      if (!C.unlocked(col, colTab, id)) {
+        return `<article class="col-card locked">${icon(art, 'col-art sil')}<strong>???</strong></article>`;
+      }
+      let name = '', desc = '', meta = '', tier = '';
+      if (colTab === 'chars') {
+        const row = col.c[id];
+        name = I.name('chars', id); desc = I.trait(id);
+        meta = `${I.t('best')} W${row.b}${row.w ? ` · 👑×${row.w}` : ''}`;
+      } else if (colTab === 'weapons') {
+        const v = D.weapons[id];
+        name = I.name('weapons', id); desc = I.feature(id);
+        meta = `${I.t('damage')} ${shown(v.damage)} · ${I.t('cool')} ${Math.round(v.cool * 1000)}ms · ${I.t('reach')} ${shown(v.range)}`;
+      } else if (colTab === 'items') {
+        name = I.name('items', id); desc = I.itemEffect(id); tier = ' tier' + (D.items[id].tier || 1);
+      } else {
+        const e = D.enemies[id];
+        name = I.enemy(id); desc = I.enemyDesc(id);
+        meta = `HP ${e.hp} · ${I.t('speed')} ${e.speed} · ${I.t('firstWave')} W${e.first}`;
+      }
+      const crown = colTab === 'chars' && col.c[id].w ? '<span class="col-crown" aria-hidden="true">👑</span>' : '';
+      return `<article class="col-card${tier}">${crown}${icon(art, 'col-art')}<strong>${esc(name)}</strong>
+        ${desc ? `<small>${esc(desc)}</small>` : ''}${meta ? `<span class="meta">${esc(meta)}</span>` : ''}</article>`;
+    };
+    show(`<section class="collection-screen"><header class="col-head">
+        ${button('←', 'back', 'col-back')}
+        <div><span class="eyebrow">COLLECTION</span><h2>📖 ${esc(I.t('collection'))}</h2></div>
+        <div class="col-total"><b>${prog.all.n} / ${prog.all.total}</b> <span>(${pct(prog.all)}%)</span>
+          <i class="col-bar"><i style="width:${pct(prog.all)}%"></i></i></div></header>
+      ${debugOn ? `<div class="col-banner debug">🐞 ${esc(I.t('debugAll'))}</div>`
+        : !col ? `<div class="col-banner">🔒 ${esc(I.t('loginBanner'))}</div>`
+        : `<div class="col-hint">${esc(I.t('collectionHint'))}</div>`}
+      <nav class="col-tabs" role="tablist">${tabs.map(([tab, key]) => `<button type="button" role="tab"
+        aria-selected="${tab === colTab}" class="col-tab${tab === colTab ? ' on' : ''}" data-act="tab:${tab}">
+        ${esc(I.t(key))} <small>${prog[tab].n}/${prog[tab].total} (${pct(prog[tab])}%)</small></button>`).join('')}</nav>
+      <div class="col-grid">${Object.keys(D[colTab]).map(card).join('')}</div></section>`, true);
+    activeRefresh = () => collection(back);
+    activeView = 'collection';
+    panel.onclick = event => {
+      const act = event.target.closest('[data-act]')?.dataset.act;
+      if (act === 'back') back();
+      else if (act?.startsWith('tab:')) { colTab = act.slice(4); collection(back); panel.scrollTop = 0; }
+    };
+  }
+  P.collection?.onChange?.(() => { if (activeView === 'collection') activeRefresh?.(); });
 
   function show(html, menu = false) {
+    activeView = '';
     panel.innerHTML = html;
     overlay.style.display = 'flex';
     document.body.classList.toggle('menu-mode', menu);
@@ -29,6 +228,7 @@
     document.body.classList.remove('menu-mode');
     hudEl.setAttribute('aria-hidden', 'false');
     activeRefresh = null;
+    activeView = '';
     requestAnimationFrame(() => P.main?.resize?.());
   }
   function title(cb) {
@@ -38,7 +238,8 @@
       <div class="title-copy"><span class="eyebrow">1–4 PLAYER · CO-OP SURVIVAL</span>
       <h1>${esc(I.t('title'))}</h1><p>${esc(I.t('subtitle'))}</p>
       <div class="title-actions">${button(I.t('solo'), 'solo', 'primary large')}
-      ${button(I.t('multi'), 'multi', 'large')}</div></div>
+      ${button(I.t('multi'), 'multi', 'large')}
+      ${button('📖 ' + I.t('collection'), 'collection', 'large col-open')}</div></div>
     </section>`, true);
     panel.onclick = event => {
       const act = event.target.closest('[data-act]')?.dataset.act;
@@ -133,10 +334,7 @@ function hud(scene, uid) {
       const cards = choices.map(({ id, grade, value }, index) => {
         const now = Math.round(player.stats[id] || 0);
         const next = Math.round((player.stats[id] || 0) + value);
-        const glyph = { maxHp: '❤️', dmg: '⚔️', atkSpd: '⚡', melee: '🥊',
-          ranged: '🎯', armor: '🛡️', speed: '👟', crit: '💥', range: '🔭',
-          regen: '🩹', dodge: '🪶', luck: '🍀', harvest: '🌱', elemental: '🔥',
-          explosion: '💣', thorns: '🌵', knockback: '💫' }[id];
+        const glyph = GLYPH[id];
         return `<button type="button" class="upgrade-card tier${grade}" data-act="pick${index}">
           <span class="grade">${esc(I.grade(grade))}</span>
           <span class="upgrade-glyph">${glyph}</span><strong>${esc(I.stat(id))}</strong>
@@ -176,7 +374,6 @@ function hud(scene, uid) {
     P.main.offers = cards;
     let count = P.main.shopRolls || 0;
     let selected = -1;
-    let showStats = false;
     let detail = -1;
     function draw() {
       activeRefresh = draw;
@@ -208,9 +405,6 @@ function hud(scene, uid) {
       }).join('');
       const owned = player.items.map(id => `<span class="owned-item">
         ${icon('item_' + id)} ${esc(I.name('items', id))}</span>`).join('') || I.t('empty');
-      const stats = Object.entries(P.sim.effectiveStats(player)).map(([key, value]) =>
-        `<span>${esc(I.stat(key))}: <b>${Math.round(value)}</b></span>`
-      ).join('');
       const roster = Object.keys(session.players).map(id =>
         `${esc(displayName(session.players[id], id)).slice(0, 12)} ${session.ready.has(id) ? '✔' : '…'}`
       ).join('　');
@@ -222,12 +416,12 @@ function hud(scene, uid) {
           <span class="shop-roster">${roster}</span></div>
         <div class="shop-divider">${esc(I.t('slots'))} · ${player.weapons.length}/${P.sim.capacity(player)}</div>
         <div class="set-bonuses">${Object.entries(P.sim.sets(player)).map(([key, value]) =>
-          `${esc(key)} ${value.count} (${value.stage || '—'})`).join(' · ')}</div>
+          `${esc(I.setName(key))} ×${value.count}${value.stage ? ' ✔' : ''}`).join(' · ')}</div>
         <div id="shopSlots">${slots}</div>
         <div class="slot-actions">${button(I.t('merge'), 'merge')}
-          ${button(I.t('sell'), 'sell')}${button(I.t('stats'), 'stats')}</div>
+          ${button(I.t('sell'), 'sell')}${button('📊 ' + I.t('stats'), 'stats')}
+          ${P.main?.debug && P.main?.solo ? button('🐞', 'debug', 'dbg-btn') : ''}</div>
         <div class="inventory"><b>${esc(I.t('items'))}</b><div>${owned}</div></div>
-        <div id="stats" class="stat-panel" style="display:${showStats ? 'grid' : 'none'}">${stats}</div>
         ${button(I.t('ready'), 'ready', 'primary ready-btn')}
         ${detail >= 0 ? `<aside class="detail-sheet" role="dialog">
           <h3>${esc(I.name(cards[detail].weapon ? 'weapons' : 'items', cards[detail].id))}</h3>
@@ -271,7 +465,9 @@ function hud(scene, uid) {
           player.mats += Math.floor(P.sim.price(D.weapons[id].price, session.wave) * tier * .5);
           selected = -1;
         } else if (act === 'stats') {
-          showStats = !showStats;
+          stats(() => player); return;
+        } else if (act === 'debug') {
+          debugPanel(); return;
         } else if (act === 'ready') {
           hide();
           cb(player);
@@ -292,9 +488,15 @@ function hud(scene, uid) {
   }
   P.ui = {
     title, choose, hud, crates, upgrades, shop, result, hide, show,
+    stats, debugPanel, collection, closeSheet,
+    sheetOpen: () => !!sheetEl && !sheetEl.hidden,
     t: key => I.t(key),
     language: () => I.language,
-    toggle() { I.toggle(); if (activeRefresh) activeRefresh(); else P.main?.refresh(); }
+    toggle() {
+      I.toggle();
+      if (activeRefresh) activeRefresh(); else P.main?.refresh();
+      if (sheetDraw && !sheetEl.hidden) sheetDraw();
+    }
   };
   document.getElementById('lang').onclick = () => P.ui.toggle();
 })(window);

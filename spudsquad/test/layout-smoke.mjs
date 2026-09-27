@@ -124,6 +124,16 @@ try {
       `sprite orbit differs from sim.weaponPose: ${JSON.stringify(spriteMatchesPose)}`);
     assert.ok(await evaluate(`document.querySelector('#field').getBoundingClientRect().top >=
       document.querySelector('#hud').getBoundingClientRect().bottom`), 'canvas overlaps HUD');
+    // HUD 📊 버튼: 44px 이상, 솔로에선 열려 있는 동안 시뮬 정지 → 닫으면 재개
+    const hudBtn = await evaluate("(() => { const b = document.querySelector('#statsBtn').getBoundingClientRect(); return Math.min(b.width, b.height); })()");
+    assert.ok(hudBtn >= 44, `${width}px HUD stats button ${hudBtn}px`);
+    await evaluate("document.querySelector('#statsBtn').click()");
+    const pausedTick = await evaluate('SPUD.main.session.world.tick');
+    await new Promise(resolve => setTimeout(resolve, 300));
+    assert.equal(await evaluate('SPUD.main.session.world.tick'), pausedTick, 'solo sim ran while stats sheet open');
+    await evaluate("document.querySelector('#sheet .sheet-close').click()");
+    await new Promise(resolve => setTimeout(resolve, 200));
+    assert.ok(await evaluate('SPUD.main.session.world.tick') > pausedTick, 'sim did not resume after closing sheet');
     await evaluate(`(() => {
       const p = SPUD.main.session.world.players.solo;
       p.levelUps = 1;
@@ -159,14 +169,42 @@ try {
     assert.equal(shop.fits, true, `${width}px shop overflow`);
     assert.equal(shop.screenOverflow, false);
     await evaluate("document.querySelector('[data-act=stats]').click()");
-    const stats = await evaluate(`({
-      count: document.querySelectorAll('.stat-panel span').length,
-      fits: document.querySelector('.panel').scrollHeight <= document.querySelector('.panel').clientHeight,
-      scroll: document.querySelector('.panel').scrollHeight,
-      client: document.querySelector('.panel').clientHeight
-    })`);
+    const stats = await evaluate(`(() => {
+      const sheet = document.querySelector('#sheet .stats-sheet');
+      const box = sheet?.getBoundingClientRect();
+      const rows = [...document.querySelectorAll('#sheet .stat-row')];
+      // 텍스트를 직접 가진 요소들의 최소 글자 크기
+      const fonts = [...sheet.querySelectorAll('*')].filter(el => [...el.childNodes]
+        .some(n => n.nodeType === 3 && n.textContent.trim()) && el.offsetParent !== null)
+        .map(el => parseFloat(getComputedStyle(el).fontSize));
+      return {
+        open: !document.querySelector('#sheet').hidden,
+        count: rows.length,
+        unique: new Set(rows.map(r => r.dataset.stat)).size,
+        keys: Object.keys(SPUD.data.stats).every(k => rows.some(r => r.dataset.stat === k)),
+        hp: document.querySelector('#sheet .stat-row[data-stat=maxHp] .v').innerText.includes('/'),
+        weapons: document.querySelectorAll('#sheet .weapon-row').length,
+        itemTiles: document.querySelectorAll('#sheet .stats-sheet .item-tile').length,
+        inView: box.top >= 0 && box.left >= 0 && box.bottom <= innerHeight + 1 && box.right <= innerWidth + 1,
+        screenOverflow: document.documentElement.scrollWidth > innerWidth ||
+          document.documentElement.scrollHeight > innerHeight,
+        minFont: Math.min(...fonts)
+      };
+    })()`);
+    assert.equal(stats.open, true, 'stats sheet did not open');
     assert.equal(stats.count, 20);
-    assert.equal(stats.fits, true, `${width}px expanded stats overflow`);
+    assert.equal(stats.unique, 20);
+    assert.equal(stats.keys, true);
+    assert.equal(stats.hp, true);
+    assert.ok(stats.weapons >= 1);
+    assert.equal(stats.itemTiles, shop.itemDefs);
+    assert.equal(stats.inView, true, `${width}px stats sheet outside viewport`);
+    assert.equal(stats.screenOverflow, false, `${width}px stats sheet page overflow`);
+    assert.ok(stats.minFont >= (width < 600 ? 12 : 14), `${width}px stats font ${stats.minFont}px too small`);
+    await evaluate("document.querySelector('#sheet .item-tile').click()");
+    assert.ok(await evaluate("document.querySelector('#sheet .item-detail b') !== null"), 'item effect not shown');
+    await evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))");
+    assert.equal(await evaluate("document.querySelector('#sheet').hidden"), true, 'ESC did not close sheet');
     results.push({ width, height, title, choose, shop, stats });
   }
   const errors = events.filter(event =>

@@ -840,6 +840,25 @@
     rollDamage, createPlayer, createWorld, applyInput, spawn, kill, step, canEnd,
     merge, shop, buy, canBuy, clamp
   };
+  // 스탯 시트용 무기 요약(순수 함수). attackPower와 같은 식이되 RNG·치명타·nextCrit 소모 없이 비치명 1타 피해.
+  // 간격은 step의 쿨다운 식, 사거리는 weaponRange 그대로. p는 절대 변경하지 않는다.
+  api.weaponSummary = function weaponSummary(p, id, tier = 1) {
+    const v = D.weapons[id];
+    if (!v) return null;
+    const s = effectiveStats(p);
+    const kind = MELEE.includes(v.behavior) ? 'melee'
+      : ['cone', 'chain'].includes(v.behavior) ? 'elemental' : 'ranged';
+    let power = (v.damage * 1.6 ** (tier - 1) + (s[kind] || 0)) * (1 + s.dmg / 100);
+    if (v.classes.includes('elemental')) power *= 1 + (p.char === 'science' ? .25 : 0)
+      + (p.items || []).filter(x => x === 'spark_plug').length * .15;
+    if (p.char === 'gunslinger' && v.classes.includes('gun')) power *= 1.2;
+    if (p.char === 'cyclops') power *= 3;
+    const cooldown = v.cool * .9 ** (tier - 1) / (1 + s.atkSpd / 100 + (p.char === 'cyclops' ? .6 : 0));
+    return { id, tier, kind, damage: Math.max(1, power), cooldownMs: cooldown * 1000,
+      range: weaponRange(p, v), shots: v.behavior === 'projectile'
+        ? (v.count || 1) + Math.max(0, s.projectiles || 0) : 1,
+      crit: s.crit + (v.crit || 0) };
+  };
   root.SPUD = root.SPUD || {};
   root.SPUD.sim = api;
   if (typeof module !== "undefined") module.exports = api;

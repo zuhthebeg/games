@@ -486,7 +486,32 @@
         c.fillStyle = `rgba(255,255,255,${(this.effects.flashScreen - now) / 180})`;
         c.fillRect(0, 0, width, height);
       }
+      this.debugOverlay(scene, myUid);
     }
   }
+  // 디버그 오버레이(?debug=1): 내 무기별 실사거리(S.weaponRange) 원. 호스트(솔로) 월드에서만 그린다.
+  Renderer.prototype.debugOverlay = function (scene, myUid) {
+    const view = P.main?.debugView;
+    const p = view?.ranges && scene?.players?.[myUid];
+    if (!p?.weapons?.length) return;
+    const c = this.c, k = this.dpr * (this.zoom || 1);
+    const colors = ['#fff19a', '#3f9dff', '#b25cff', '#ffc93c'];
+    c.save();
+    c.setTransform(k, 0, 0, k, -this.cam.x * k, -this.cam.y * k);
+    c.lineWidth = 2;
+    c.font = 'bold 13px system-ui, sans-serif';
+    c.textAlign = 'center';
+    p.weapons.forEach(([id, tier], i) => {
+      const v = D.weapons[id];
+      if (!v) return;
+      const r = P.sim.weaponRange(p, v);
+      c.setLineDash(v.kind === 'melee' ? [4, 4] : [10, 6]);
+      c.strokeStyle = colors[(tier || 1) - 1] || colors[0];
+      c.beginPath(); c.arc(p.x, p.y, r, 0, Math.PI * 2); c.stroke();
+      c.fillStyle = '#2b1a10';
+      c.fillText(`${id} T${tier} · ${Math.round(r)}`, p.x, p.y - r - 4 - i * 14);
+    });
+    c.restore();
+  };
   P.render = { Renderer, images };
 })(window);
