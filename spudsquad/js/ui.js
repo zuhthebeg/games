@@ -186,13 +186,15 @@ function hud(scene, uid) {
              · ${I.t('cool')} ${D.weapons[offer.id].cool}${I.t('seconds')}
              · ${I.t('reach')} ${D.weapons[offer.id].range}`
           : I.effect(D.items[offer.id].stats).join(' · ') || I.name('items', offer.id);
-        return `<article class="shop-card tier${offer.tier}">
+        return `<article class="shop-card tier${offer.tier}${offer.locked ? ' is-locked' : ''}">
           ${icon((offer.weapon ? 'weapon_' : 'item_') + offer.id, 'shop-art')}
           <div class="shop-detail"><strong>${esc(name)} · ${esc(I.grade(offer.tier))}</strong>
           <small>${esc(description)}</small><span class="price">💎${offer.price}
             ${offer.weapon ? ` · T${offer.tier}` : ''}</span></div>
-          <div class="offer-actions">${button(I.t('buy'), `buy${index}`)}
-          ${button(offer.locked ? '🔓' : '🔒', `lock${index}`, 'lock-btn')}</div>
+          <div class="offer-actions">${button(offer.weapon && player.weapons.length >= P.sim.capacity(player)
+            && !P.sim.canBuy({ ...player, mats: Infinity }, offer) ? '🈵' : I.t('buy'), `buy${index}`,
+            P.sim.canBuy(player, offer) ? '' : 'cant')}
+          ${button(offer.locked ? '🔒' : '🔓', `lock${index}`, 'lock-btn' + (offer.locked ? ' locked' : ''))}</div>
         </article>`;
       }).join('');
       const slots = Array.from({ length: P.sim.capacity(player) }, (_, i) => {

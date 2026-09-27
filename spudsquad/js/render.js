@@ -49,6 +49,7 @@
       c.save();
       c.translate(x, y + Math.sin(time * 10) * 2);
       c.scale(face, 1);
+      size *= this.spriteK || 1;
       if (flash) c.filter = 'brightness(0) invert(1)';
       if (image?.ok) {
         c.drawImage(image, -size / 2, -size / 2, size, size);
@@ -158,11 +159,25 @@
       const own = players.find(p => p[0] === myUid);
       if (own) this.lastOwn = { x: own[1], y: own[2] };
       const focus = (own?.[5] ? own : players.find(p => p[5])) || own || players[0];
+      // 시야 줌: 화면 짧은 변의 절반이 (내 최대 무기 사거리 × 1.2 + 여백)을 담도록 축소. 부드럽게 보간.
+      const me = scene.players?.[myUid] || P.main?.localPlayer;
+      let reach = 420;
+      if (me?.weapons?.length) {
+        const bonus = P.sim.effectiveStats(me).range || 0;
+        reach = Math.max(...me.weapons.map(([id]) => (D.weapons[id]?.range || 300) + bonus));
+      }
+      // 세로 모바일에서 짧은 변 기준이면 과하게 작아진다 → 가로·세로 반폭 평균을 시야 반경으로 본다.
+      const wantZoom = Math.max(.55, Math.min(1, (width + height) / 4 / (reach * 1.2 + 40)));
+      this.zoom = this.zoom ? this.zoom + (wantZoom - this.zoom) * Math.min(1, elapsed * 3) : wantZoom;
+      const z = this.zoom, viewW = width / z, viewH = height / z;
+      // 줌아웃된 만큼 스프라이트를 약하게 키워 식별성 유지(판정 크기는 불변)
+      this.spriteK = Math.pow(1 / z, .4);
       if (focus) {
-        this.cam.x = Math.max(0, Math.min(D.W - width, focus[1] - width / 2));
-        this.cam.y = Math.max(0, Math.min(D.H - height, focus[2] - height / 2));
+        this.cam.x = viewW >= D.W ? (D.W - viewW) / 2 : Math.max(0, Math.min(D.W - viewW, focus[1] - viewW / 2));
+        this.cam.y = viewH >= D.H ? (D.H - viewH) / 2 : Math.max(0, Math.min(D.H - viewH, focus[2] - viewH / 2));
       }
       c.save();
+      c.scale(z, z);
       c.translate((Math.random() - .5) * this.effects.shake - this.cam.x,
         (Math.random() - .5) * this.effects.shake - this.cam.y);
       this.effects.shake *= .85;
@@ -243,7 +258,9 @@
         }
       }
       for (const player of players) {
-        if (!player[5]) continue;
+        const dead = !player[5];
+        c.save();
+        if (dead) c.globalAlpha = .38; // 사망 중에도 캐릭터·무기를 유령처럼 표시(무기는 유지됨)
         const uid = player[0];
         const live = scene.players?.[uid];
         const saved = P.main?.session?.lastPlayers?.[uid];
@@ -333,6 +350,11 @@
         c.fillStyle = '#76dd76';
         c.fillRect(player[1] - 26, player[2] + 30,
           52 * Math.max(0, player[3] / player[4]), 5);
+        if (dead) {
+          c.globalAlpha = .9; c.font = '20px sans-serif'; c.textAlign = 'center';
+          c.fillText('👻', player[1], player[2] - 42);
+        }
+        c.restore();
       }
       for (const mark of this.marks.slice()) {
         mark.life -= dt;

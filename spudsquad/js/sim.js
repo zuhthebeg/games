@@ -717,10 +717,19 @@
     }
     return true;
   }
+  // 슬롯이 가득 차도 같은 무기·같은 티어(4 미만)가 있으면 구매 즉시 합쳐 한 단계 올린다(브로테이토식).
+  function mergeTarget(p, offer) {
+    return p.weapons.findIndex(([id, tier]) => id === offer.id && tier === offer.tier && tier < 4);
+  }
+  function canBuy(p, offer) {
+    if (!offer || p.mats < offer.price) return false;
+    return !offer.weapon || p.weapons.length < capacity(p) || mergeTarget(p, offer) >= 0;
+  }
   function buy(p, offer) {
-    if (!offer || p.mats < offer.price || offer.weapon && p.weapons.length >= capacity(p)) return false;
+    if (!canBuy(p, offer)) return false;
     p.mats -= offer.price;
-    if (offer.weapon) p.weapons.push([offer.id, offer.tier]);
+    if (offer.weapon && p.weapons.length >= capacity(p)) p.weapons[mergeTarget(p, offer)][1]++;
+    else if (offer.weapon) p.weapons.push([offer.id, offer.tier]);
     else {
       grantItem(p, offer.id);
     }
@@ -731,7 +740,7 @@
     behaviors, weaponPose, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,
     hurtPlayer, waveLength, enemyStats, needXp, price, rerollCost, damageTaken,
     rollDamage, createPlayer, createWorld, applyInput, spawn, kill, step, canEnd,
-    merge, shop, buy, clamp
+    merge, shop, buy, canBuy, clamp
   };
   root.SPUD = root.SPUD || {};
   root.SPUD.sim = api;

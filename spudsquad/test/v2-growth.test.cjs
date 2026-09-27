@@ -31,3 +31,14 @@ test('snapshot with status bits and crates remains under 8KB at cap', () => {
   a.equal(encoded.e[0][5] & 9, 9);
   a.ok(Buffer.byteLength(JSON.stringify(encoded)) < 8192);
 });
+test('full slots: buying same weapon+tier auto-merges; different weapon is refused', () => {
+  const S2 = require('../js/sim.js');
+  const p = S2.createPlayer('m', 'basic');
+  p.weapons = [['pistol', 1], ['smg', 1], ['smg', 1], ['stick', 1], ['fist', 2], ['laser', 1]];
+  p.mats = 1000;
+  a.equal(S2.buy(p, { id: 'pistol', weapon: true, tier: 1, price: 10 }), true);
+  a.equal(p.weapons.length, 6);
+  a.deepEqual(p.weapons[0], ['pistol', 2]);
+  a.equal(S2.buy(p, { id: 'rocket', weapon: true, tier: 1, price: 10 }), false);
+  a.equal(p.mats, 990);
+});
