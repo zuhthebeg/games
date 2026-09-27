@@ -4,6 +4,12 @@
   const rand = (w) => w.rng();
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  // 점(px,py)과 선분(ax,ay)-(bx,by) 최단거리
+  const segDist = (ax, ay, bx, by, px, py) => {
+    const vx = bx - ax, vy = by - ay, L = vx * vx + vy * vy;
+    const t = L ? Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / L)) : 0;
+    return Math.hypot(px - ax - vx * t, py - ay - vy * t);
+  };
   function waveLength(w) {
     return Math.min(20 + 5 * (w - 1), 60);
   }
@@ -265,9 +271,11 @@
   // Slot 0 starts at +X; no camera-facing/aim rotation of the orbit itself.
   function weaponPose(p, id, slot, angle) {
     const orbit = 2 * Math.PI * slot / Math.max(1, p.weapons.length);
-    const x = p.x + 34 * Math.cos(orbit);
-    const y = p.y + 34 * Math.sin(orbit);
-    const [mx, my] = D.weapons[id].muzzle;
+    // 무기 궤도 반경·크기(렌더와 공유). muzzle은 28px 아트 기준이라 표시 크기 비율로 확대.
+    const R = D.WEAPON_ORBIT || 36, k = (D.WEAPON_SIZE || 44) / 28;
+    const x = p.x + R * Math.cos(orbit);
+    const y = p.y + R * Math.sin(orbit);
+    const mx = D.weapons[id].muzzle[0] * k, my = D.weapons[id].muzzle[1] * k;
     return { x, y, muzzleX: x + mx * Math.cos(angle) - my * Math.sin(angle),
       muzzleY: y + mx * Math.sin(angle) + my * Math.cos(angle), orbit };
   }
@@ -277,7 +285,7 @@
         const dx = target.x - origin.x, dy = target.y - origin.y;
         const along = dx * Math.cos(angle) + dy * Math.sin(angle);
         const across = Math.abs(dx * Math.sin(angle) - dy * Math.cos(angle));
-        if (along >= 0 && along <= range && across < D.enemies[target.type].size / 3 + 5) {
+        if (along >= -(origin.back || 0) && along <= range && across < D.enemies[target.type].size / 3 + 5) {
           hitWeapon(w, p, v, target, power, crit);
         }
       }
@@ -303,7 +311,7 @@
       for (const target of w.enemies.slice()) {
         const dx = target.x - origin.x, dy = target.y - origin.y;
         const along = dx * Math.cos(angle) + dy * Math.sin(angle);
-        if (along >= 0 && along <= range && Math.abs(dx * Math.sin(angle) - dy * Math.cos(angle)) < 26) {
+        if (along >= -(origin.back || 0) && along <= range && Math.abs(dx * Math.sin(angle) - dy * Math.cos(angle)) < 26) {
           hitWeapon(w, p, v, target, power, crit);
         }
       }
@@ -349,7 +357,11 @@
     const { power, crit } = attackPower(w, p, v, tier);
     const range = v.range + effectiveStats(p).range;
     const pose = weaponPose(p, id, slot, angle);
-    const origin = { x: pose.muzzleX, y: pose.muzzleY };
+    // back = 몸 중심~총구 거리. 캐릭터에 붙은 적(총구보다 가까운 적)도 맞도록 판정을 몸 쪽까지 연장.
+    const back = Math.hypot(pose.muzzleX - p.x, pose.muzzleY - p.y);
+    let origin = { x: pose.muzzleX, y: pose.muzzleY, back };
+    // 투사체: 목표가 총구보다 안쪽이면 무기 몸체에서 발사(적 뒤에서 탄이 생기는 문제 방지)
+    if (v.behavior === 'projectile' && e && dist(p, e) <= back + 10) origin = { x: pose.x, y: pose.y, back: 0 };
     behaviors[v.behavior](w, p, v, e, angle, range, power, crit, origin);
     if (['thrust', 'sweep', 'slam'].includes(v.behavior)) {
       w.fx.push(['sw', p.uid, slot, angle, v.behavior, origin.x | 0, origin.y | 0]);
@@ -449,11 +461,12 @@
     }
     for (const b of w.projectiles.slice()) {
       const travel = Math.min(b.left, 700 * dt);
+      const sx = b.x, sy = b.y; // 이동 전 위치 — 선분 충돌(스윕)로 발사 직후·고속 관통 누락 방지
       b.x += b.vx / 700 * travel;
       b.y += b.vy / 700 * travel;
       b.left -= travel;
       for (const e of w.enemies.slice()) {
-        if (b.hit.has(e.id) || dist(b, e) > D.enemies[e.type].size / 3 + 5) continue;
+        if (b.hit.has(e.id) || segDist(sx, sy, b.x, b.y, e.x, e.y) > D.enemies[e.type].size / 3 + 5) continue;
         b.hit.add(e.id);
         const weapon = D.weapons[b.id];
         if (weapon.radius) {

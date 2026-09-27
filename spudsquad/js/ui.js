@@ -65,7 +65,15 @@
       if (act) cb(act);
     };
   }
-  function hud(scene, uid) {
+  // 동료 표시명: 로그인 닉 우선. 게스트는 로비 닉이 uid(u-xxxx)로 오므로 좌석순 '감자 N'으로 대체.
+function displayName(member, id) {
+  const nick = member?.nick;
+  if (nick && nick !== id && !/^u-[a-z0-9]{6,}$/i.test(nick)) return nick;
+  const order = Object.keys(P.main?.session?.players || {});
+  const seat = Math.max(0, order.indexOf(id)) + 1;
+  return ({ ko: '감자', en: 'Spud', 'zh-TW': '馬鈴薯' }[P.i18n?.language] || '감자') + ' ' + seat;
+}
+function hud(scene, uid) {
     if (!scene) return;
     const p = scene.pl?.find(row => row[0] === uid) || scene.players?.[uid];
     if (!p) return;
@@ -90,7 +98,7 @@
       .map(v => {
         const member = P.main?.session?.players?.[v[0]];
         const char = P.main?.session?.lastPlayers?.[v[0]]?.char || 'basic';
-        return `<div>${icon('char_' + char)} ${esc(member?.nick || v[0]).slice(0, 12)}
+        return `<div>${icon('char_' + char)} ${esc(displayName(member, v[0])).slice(0, 12)}
           ${v[5] ? `❤️${Math.ceil(v[3])}/${v[4]}` : '👻'}</div>`;
       })
       .join('');
@@ -201,7 +209,7 @@
         `<span>${esc(I.stat(key))}: <b>${Math.round(value * 10) / 10}</b></span>`
       ).join('');
       const roster = Object.keys(session.players).map(id =>
-        `${esc(session.players[id]?.nick || id).slice(0, 12)} ${session.ready.has(id) ? '✔' : '…'}`
+        `${esc(displayName(session.players[id], id)).slice(0, 12)} ${session.ready.has(id) ? '✔' : '…'}`
       ).join('　');
       show(`<section class="shop-screen"><header class="shop-header">
         <h2>🛒 ${esc(I.t('shop'))}</h2><span>❤️ ${Math.ceil(player.hp)}/${player.maxHp}</span>

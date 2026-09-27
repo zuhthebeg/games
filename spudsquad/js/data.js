@@ -31,11 +31,11 @@
       cool: 2, range: 130, kb: 380, price: 38 },
     slingshot: { name: '새총', muzzle: [12, 0], artAngle: Math.PI * 3 / 4, classes: ['precise'], behavior: 'projectile', damage: 10,
       cool: 1.2, range: 380, kb: 60, bounce: 1, price: 18 },
-    pistol: { name: '권총', muzzle: [14, 0], artAngle: 0, classes: ['gun'], behavior: 'projectile', damage: 12,
+    pistol: { name: '권총', muzzle: [14, 0], artAngle: Math.PI, classes: ['gun'], behavior: 'projectile', damage: 12,
       cool: 1, range: 420, kb: 80, pierce: 1, price: 22 },
     shotgun: { name: '산탄총', muzzle: [14, 0], artAngle: Math.PI, classes: ['gun'], behavior: 'projectile', damage: 6,
       cool: 1.6, range: 280, kb: 140, count: 4, spread: 30, price: 30 },
-    smg: { name: '기관단총', muzzle: [14, 0], artAngle: 0, classes: ['gun'], behavior: 'projectile', damage: 4,
+    smg: { name: '기관단총', muzzle: [14, 0], artAngle: Math.PI, classes: ['gun'], behavior: 'projectile', damage: 4,
       cool: .25, range: 360, kb: 30, spread: 8, randomSpread: true, price: 32 },
     crossbow: { name: '석궁', muzzle: [13, 0], artAngle: -Math.PI * 3 / 4, classes: ['precise'], behavior: 'projectile', damage: 16,
       cool: 1.4, range: 480, kb: 90, pierce: 2, crit: 15, price: 34 },
@@ -104,7 +104,8 @@
   // 난이도·경제 곡선(밸런스 튜닝은 여기만). spawn=초당 마리 수, hp/dmgPerWave=웨이브당 증가율.
   const curve = { spawnBase: 0.9, spawnPerWave: 0.42, hpPerWave: 0.42, dmgPerWave: 0.14 };
   const IFRAME = 0.45;
-  const D = { stats, chars, weapons, items, enemies, upgrades, curve, IFRAME, W: 1600, H: 1200 };
+  const WEAPON_ORBIT = 36, WEAPON_SIZE = 44; // 무기 궤도 반경·표시 크기(px). sim 원점 계산과 렌더가 공유
+  const D = { stats, chars, weapons, items, enemies, upgrades, curve, IFRAME, WEAPON_ORBIT, WEAPON_SIZE, W: 1600, H: 1200 };
   root.SPUD = root.SPUD || {};
   root.SPUD.data = D;
   if (typeof module !== 'undefined') module.exports = D;

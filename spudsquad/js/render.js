@@ -89,7 +89,7 @@
       }
       for (const event of events || []) {
         const type = event[0];
-        if (type === 'mark') this.marks.push({ x: event[1], y: event[2], life: 1 });
+        if (type === 'mark') this.marks.push({ x: event[1], y: event[2], life: .9 });
 
         if (type === 'sh' && D.weapons[event[2]]?.behavior === 'projectile') {
           this.projectiles.push({ x: event[4], y: event[5],
@@ -258,9 +258,21 @@
           const motion = this.effects.motions.get(`${uid}:${index}`);
           const action = D.weapons[weapon]?.behavior;
           const age = motion ? (now - motion.at) / 1000 : Infinity;
+          // 공격 중이 아니면 가장 가까운 적을 조준(사거리+120 내). 없으면 바깥쪽.
+          // 최근 0.35s 내 공격 모션이면 그 각도, 아니면 가장 가까운 적(오래된 모션 각도에 고정되는 문제 방지)
+          let aim = age < .35 ? motion?.angle : undefined;
+          if (aim == null) {
+            const reach = (D.weapons[weapon]?.range || 300) + 120;
+            let best = reach * reach;
+            for (const e of enemies) {
+              const ex = Array.isArray(e) ? e[2] : e.x, ey = Array.isArray(e) ? e[3] : e.y;
+              const d2 = (ex - player[1]) ** 2 + (ey - player[2]) ** 2;
+              if (d2 < best) { best = d2; aim = Math.atan2(ey - player[2], ex - player[1]); }
+            }
+          }
           const pose = P.sim.weaponPose({ x: player[1], y: player[2], weapons },
-            weapon, index, motion?.angle ?? 0);
-          const direction = motion?.angle ?? pose.orbit;
+            weapon, index, aim ?? 0);
+          const direction = aim ?? pose.orbit;
           let extension = 0, angle = direction;
           if (age < .3 && motion?.action === 'thrust') {
             extension = D.weapons[weapon].range * (age < .12 ? age / .12 : ( .27 - age) / .15);
@@ -277,14 +289,26 @@
           const recoil = age < .12 && action === 'projectile' ? 6 * Math.sin(Math.PI * age / .12) : 0;
           const px = pose.x + Math.cos(direction) * (Math.max(0, extension) - recoil);
           const py = pose.y + Math.sin(direction) * (Math.max(0, extension) - recoil);
-          c.save(); c.translate(px, py); c.rotate(angle + (D.weapons[weapon].artAngle || 0));
-          this.sprite('weapon_' + weapon, 0, 0, 28);
+          // 무기: 크게(46px) + 짙은 외곽 그림자로 배경 대비, 왼쪽 조준 시 상하 반전(총이 뒤집혀 보이지 않게).
+          c.save(); c.translate(px, py); c.rotate(angle);
+          if (Math.cos(angle) < 0) c.scale(1, -1);
+          c.rotate(D.weapons[weapon].artAngle || 0);
+          c.shadowColor = 'rgba(43,26,16,.9)'; c.shadowBlur = 4;
+          this.sprite('weapon_' + weapon, 0, 0, D.WEAPON_SIZE || 46);
           c.restore();
-          if (age < .10 && action === 'projectile') {
-            c.fillStyle = '#fff2a1'; c.beginPath();
-            c.arc(motion?.origin?.x ?? pose.muzzleX, motion?.origin?.y ?? pose.muzzleY,
-              8 * (1 - age / .1), 0, 7);
-            c.fill();
+          if (age < .12 && (action === 'projectile' || action === 'beam' || action === 'cone' || action === 'chain')) {
+            const mx = motion?.origin?.x ?? pose.muzzleX, my = motion?.origin?.y ?? pose.muzzleY;
+            const f = 1 - age / .12;
+            c.save(); c.globalCompositeOperation = 'lighter';
+            const g = c.createRadialGradient(mx, my, 0, mx, my, 22 * f + 4);
+            g.addColorStop(0, 'rgba(255,255,230,1)'); g.addColorStop(.4, 'rgba(255,210,80,.8)');
+            g.addColorStop(1, 'rgba(255,120,20,0)');
+            c.fillStyle = g; c.beginPath(); c.arc(mx, my, 22 * f + 4, 0, 7); c.fill();
+            // 총구 방향 섬광 스파이크
+            c.strokeStyle = `rgba(255,240,170,${f})`; c.lineWidth = 4 * f;
+            c.beginPath(); c.moveTo(mx, my);
+            c.lineTo(mx + Math.cos(direction) * 30 * f, my + Math.sin(direction) * 30 * f); c.stroke();
+            c.restore();
           }
         });
         c.fillStyle = '#693c29';

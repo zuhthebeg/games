@@ -181,11 +181,11 @@ test('slot-fixed pistol muzzle is the projectile and FX origin, not player cente
   const w = world(), p = w.players.solo;
   p.weapons = [['pistol', 1], ['stick', 1]];
   const pose = S.weaponPose(p, 'pistol', 0, 0);
-  a.equal(pose.x, p.x + 34);
+  a.equal(pose.x, p.x + D.WEAPON_ORBIT);
   a.equal(pose.y, p.y);
   a.ok(Math.hypot(pose.muzzleX - p.x, pose.muzzleY - p.y) > 20);
   const reverse = S.weaponPose(p, 'stick', 1, Math.PI);
-  a.ok(Math.abs(reverse.x - (p.x - 34)) < 1e-9);
+  a.ok(Math.abs(reverse.x - (p.x - D.WEAPON_ORBIT)) < 1e-9);
   const target = enemy(w, pose.muzzleX + 60, pose.muzzleY);
   S.weaponHit(w, p, 'pistol', 1, target, 0, 0);
   a.equal(w.projectiles[0].x, pose.muzzleX);
@@ -206,5 +206,16 @@ test('beam and chain FX start at the same muzzle used for hit checks', () => {
     S.weaponHit(w, p, id, 1, target, 0);
     const beam = w.fx.find(event => event[0] === 'bm');
     a.deepEqual(beam.slice(1, 3), [pose.muzzleX | 0, pose.muzzleY | 0], id);
+  }
+});
+test('point-blank: enemy hugging the player (inside muzzle distance) is still hit', () => {
+  for (const id of ['pistol', 'fist', 'laser']) {
+    const w = world(), p = w.players.solo;
+    p.weapons = [[id, 1]];
+    const e = enemy(w, p.x + 30, p.y);
+    e.hp = e.maxHp = 1000;
+    S.weaponHit(w, p, id, 1, e, 0, 0);
+    for (let i = 0; i < 6; i++) S.step(w);
+    a.ok(e.hp < 1000, `${id} missed a point-blank enemy`);
   }
 });
