@@ -8,14 +8,14 @@ const world = (char = 'basic') => {
   return w;
 };
 const enemy = (w, x, y, type = 'blob') => S.spawn(w, type, x, y);
-test('14 weapons and 32 items have their exact definitions', () => {
+test('14 weapons and 36 items have their exact definitions', () => {
   a.equal(Object.keys(D.weapons).length, 14);
   for (const weapon of Object.values(D.weapons)) {
     a.equal(weapon.muzzle.length, 2);
     a.ok(weapon.muzzle.every(Number.isFinite));
   }
-  a.equal(Object.keys(D.items).length, 33);
-  a.equal(Object.keys(D.chars).length, 10);
+  a.equal(Object.keys(D.items).length, 36);
+  a.equal(Object.keys(D.chars).length, 12);
 });
 test('set bonuses use highest unlocked stage, including duplicate and multiclass weapons', () => {
   const p = S.createPlayer('x');

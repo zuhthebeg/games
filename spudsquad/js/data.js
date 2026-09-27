@@ -17,7 +17,9 @@
     vampire: { name: '흡혈감자', weapon: 'dagger', stats: { lifesteal: 15, maxHp: 5 }, trait: 'noRegen' },
     bomber: { name: '폭탄감자', weapon: 'rocket', stats: { explosion: 30 }, trait: 'deathBlast' },
     cyclops: { name: '외눈감자', weapon: 'crossbow', stats: { crit: 15, maxHp: 5, projectiles: 2 }, trait: 'oneSlot' },
-    ghost: { name: '유령감자', weapon: 'staff', stats: { dodge: 25, speed: 10 }, trait: 'dodgePower' }
+    ghost: { name: '유령감자', weapon: 'staff', stats: { dodge: 25, speed: 10 }, trait: 'dodgePower' },
+    saver: { name: '저축감자', weapon: 'pistol', stats: { dmg: -15 }, trait: 'reserveInterest' },
+    thorn: { name: '가시감자', weapon: 'fist', stats: { thorns: 6, speed: -12, dodge: -8 }, trait: 'barbedSkin' }
   };
   const weapons = {
     fist: { name: '주먹', muzzle: [12, 0], artAngle: Math.PI / 2, classes: ['unarmed'], behavior: 'thrust', damage: 8, cool: .9, range: 110, kb: 220, price: 15 },
@@ -82,7 +84,10 @@
     medkit: { name: '구급상자', tier: 2, price: 45, stats: { regen: 3, speed: -2 } },
     rabbit_foot: { name: '토끼 발', tier: 3, price: 70, stats: { luck: 20, dodge: 3 } },
     turret: { name: '포탑', tier: 3, price: 80, stats: {}, hook: 'turret' },
-    treasure_map: { name: '보물 지도', tier: 2, price: 40, stats: {}, hook: 'treasure_map' }
+    treasure_map: { name: '보물 지도', tier: 2, price: 40, stats: {}, hook: 'treasure_map' },
+    fracture_round: { name: '균열 탄심', tier: 2, price: 50, stats: { armor: -2 }, unique: true },
+    bounty_badge: { name: '회수 표식', tier: 2, price: 55, stats: { maxHp: -3 }, unique: true },
+    thorn_coil: { name: '가시 코일', tier: 2, price: 50, stats: { thorns: 5, speed: -6 }, unique: true }
   };
   const enemies = {
     blob: { hp: 8, speed: 90, dmg: 1, first: 1, mats: 2, size: 40 },

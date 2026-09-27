@@ -58,8 +58,8 @@
         'Vampire Spud',
         'Bomber Spud',
         'Cyclops Spud',
-        'Ghost Spud'],
-      'zh-TW': ['基本馬鈴薯', '肌肉馬鈴薯', '科學馬鈴薯', '幸運馬鈴薯', '槍手馬鈴薯', '狂戰士馬鈴薯', '吸血馬鈴薯', '炸彈馬鈴薯', '獨眼馬鈴薯', '幽靈馬鈴薯']
+        'Ghost Spud', 'Reserve Spud', 'Briar Spud'],
+      'zh-TW': ['基本馬鈴薯', '肌肉馬鈴薯', '科學馬鈴薯', '幸運馬鈴薯', '槍手馬鈴薯', '狂戰士馬鈴薯', '吸血馬鈴薯', '炸彈馬鈴薯', '獨眼馬鈴薯', '幽靈馬鈴薯', '儲蓄馬鈴薯', '荊棘馬鈴薯']
     },
     weapons: {
       en: ['Fist', 'Dagger', 'Spear', 'Stick', 'Hammer', 'Slingshot', 'Pistol', 'Shotgun', 'SMG', 'Crossbow', 'Laser', 'Rocket', 'Flamethrower', 'Staff'],
@@ -90,6 +90,7 @@
         'Piggy Bank',
         'Glass Cannon',
         'Bandana',
+        'Piercing Prism',
         'Cactus',
         'Whetstone',
         'Gunpowder',
@@ -97,7 +98,7 @@
         'Medkit',
         'Rabbit Foot',
         'Turret',
-        'Treasure Map'],
+        'Treasure Map', 'Fracture Core', 'Recovery Badge', 'Briar Coil'],
       'zh-TW': ['馬鈴薯盔甲',
         '辣醬',
         '能量飲料',
@@ -122,6 +123,7 @@
         '撲滿',
         '玻璃大砲',
         '頭巾',
+        '穿透稜鏡',
         '仙人掌',
         '磨刀石',
         '火藥',
@@ -129,7 +131,7 @@
         '醫療包',
         '兔腳',
         '砲塔',
-        '藏寶圖']
+        '藏寶圖', '裂痕彈芯', '回收徽章', '荊棘線圈']
     }
   };
   const features = {
@@ -148,17 +150,37 @@
       '처치 시 상자 2% 확률', '총 피해 +20% · 상점에 근접 무기 없음',
       '잃은 HP 10%마다 피해 +6% · 재생 0', '재생 0 · 웨이브 시작 HP 절반',
       '처치 시 10% 폭발 · 자폭 피해 없음', '무기 1칸 · 피해 3배, 공속 +60%, 투사체 +2',
-      '회피 시 0.5초 무적 · 다음 공격 확정 치명'],
+      '회피 시 0.5초 무적 · 다음 공격 확정 치명',
+      '웨이브 시작 시 보유 재화의 8% 추가 (최대 12) · 피해 -15%',
+      '피격 시 가시 피해 6 · 이동 속도 -12% · 회피 -8%'],
     en: ['First shop reroll free each wave', 'Knockback +50%', 'Elemental damage +25%',
       '2% crate on kill', 'Gun damage +20% · no melee in shop',
       '+6% damage per 10% HP lost · no regen', 'No regen · start waves at half HP',
       '10% death explosion · no self-damage', 'One weapon slot · 3× damage, +60% speed, +2 projectiles',
-      'Dodge grants 0.5s immunity and guaranteed crit'],
+      'Dodge grants 0.5s immunity and guaranteed crit',
+      'Gain 8% of saved currency at wave start (max 12) · damage -15%',
+      'Return 6 damage when hit · speed -12% · dodge -8%'],
     'zh-TW': ['每波商店首次重抽免費', '擊退 +50%', '元素傷害 +25%',
       '擊殺時 2% 掉落寶箱', '槍械傷害 +20% · 商店無近戰武器',
       '每失去10%生命增加6%傷害 · 無回復', '無回復 · 每波半血開始',
       '擊殺時10%爆炸 · 不會自傷', '僅一個武器欄 · 傷害3倍、攻速+60%、投射物+2',
-      '閃避後無敵0.5秒，下次攻擊必暴擊']
+      '閃避後無敵0.5秒，下次攻擊必暴擊',
+      '每波開始獲得存款8%（最多12）· 傷害 -15%',
+      '受擊反彈6點傷害 · 移速 -12% · 閃避 -8%']
+  };
+  const itemEffects = {
+    ko: { piercing_prism: '직선 투사체 추가 관통 +1 (최대 2) · 관통 후 피해 75%',
+      fracture_round: '관통 후 피해 90% 유지 (기본 75%) · 중복 불가',
+      bounty_badge: '처치 보상 재화 확률 +12%p (최대 100%) · 중복 불가',
+      thorn_coil: '피격 시 가시 반격 강화 · 중복 불가' },
+    en: { piercing_prism: '+1 straight-shot pierce (max 2) · 75% damage after each pierce',
+      fracture_round: 'Retain 90% damage after piercing (normally 75%) · unique',
+      bounty_badge: '+12 percentage points to kill-currency chance (max 100%) · unique',
+      thorn_coil: 'Stronger thorn retaliation on hit · unique' },
+    'zh-TW': { piercing_prism: '直線彈丸額外穿透 +1（最多2次）· 穿透後傷害75%',
+      fracture_round: '穿透後保留90%傷害（原為75%）· 不可重複',
+      bounty_badge: '擊殺金幣機率 +12個百分點（最多100%）· 不可重複',
+      thorn_coil: '強化受擊反傷 · 不可重複' }
   };
   const grades = { ko: ['일반', '희귀', '에픽', '전설'],
     en: ['Common', 'Rare', 'Epic', 'Legendary'], 'zh-TW': ['普通', '稀有', '史詩', '傳說'] };
@@ -208,6 +230,10 @@
     },
     feature(id) { return features[language][keys('weapons').indexOf(id)] || id; },
     trait(id) { return traits[language][keys('chars').indexOf(id)] || id; },
+    itemEffect(id) {
+      const item = P.data.items[id];
+      return [itemEffects[language][id], ...(item ? this.effect(item.stats) : [])].filter(Boolean).join(' · ');
+    },
     grade(n) { return grades[language][n - 1] || ''; },
     effect(changes) {
       return Object.entries(changes).map(([key, n]) =>

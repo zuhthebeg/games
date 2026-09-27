@@ -112,7 +112,7 @@ function hud(scene, uid) {
     activeRefresh = () => crates(session, player, count, cb, id);
     show(`<section class="upgrade-screen"><h2>📦 ${esc(I.t('crate'))}</h2>
       <article class="shop-card tier${item.tier || 1}">${icon('item_' + id, 'shop-art')}
-      <strong>${esc(I.name('items', id))}</strong><small>${esc(I.effect(item.stats).join(' · '))}</small></article>
+      <strong>${esc(I.name('items', id))}</strong><small>${esc(I.itemEffect(id))}</small></article>
       ${button(I.t('take'), 'take', 'primary')}
       ${button(`${I.t('recycle')} · 💎${Math.floor(item.price / 2)}`, 'recycle')}</section>`);
     panel.onclick = event => {
@@ -186,7 +186,7 @@ function hud(scene, uid) {
           ? `${I.feature(offer.id)} · ${I.t('damage')} ${shown(D.weapons[offer.id].damage)}
              · ${I.t('cool')} ${Math.round(D.weapons[offer.id].cool * 1000)}ms
              · ${I.t('reach')} ${shown(D.weapons[offer.id].range)}`
-          : I.effect(D.items[offer.id].stats).join(' · ') || I.name('items', offer.id);
+          : I.itemEffect(offer.id) || I.name('items', offer.id);
         return `<article class="shop-card tier${offer.tier}${offer.locked ? ' is-locked' : ''}">
           ${icon((offer.weapon ? 'weapon_' : 'item_') + offer.id, 'shop-art')}
           <div class="shop-detail"><strong>${esc(name)} · ${esc(I.grade(offer.tier))}</strong>
@@ -232,7 +232,7 @@ function hud(scene, uid) {
         ${detail >= 0 ? `<aside class="detail-sheet" role="dialog">
           <h3>${esc(I.name(cards[detail].weapon ? 'weapons' : 'items', cards[detail].id))}</h3>
           <p>${esc(cards[detail].weapon ? I.feature(cards[detail].id)
-            : I.effect(D.items[cards[detail].id].stats).join(' · '))}</p>
+            : I.itemEffect(cards[detail].id))}</p>
           ${button('×', 'closeDetail')}
         </aside>` : ''}
       </section>`);

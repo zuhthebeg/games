@@ -99,6 +99,7 @@
     for (const [uid, v] of Object.entries(opts.players || { solo: { char: "basic" } })) {
       const p = w.players[uid] = createPlayer(uid, v.char, v);
       if (p.items.includes('piggy_bank')) p.mats += Math.min(20, Math.floor(p.mats * .1));
+      if (p.char === 'saver') p.mats += Math.min(12, Math.floor((v.mats || 0) * .08));
       for (let i = 0; i < p.items.filter(id => id === 'turret').length; i++) {
         w.turrets.push({ x: p.x, y: p.y, owner: uid, cool: 1.5 });
       }
@@ -122,10 +123,11 @@
     if (type === 'shielder') w.fx.push(['st', e.id, 'shield']);
     return e;
   }
-  function drop(w, x, y, count) {
+  function drop(w, x, y, count, owner) {
     const k = D.curve;
-    const chance = w.wave < k.goldStartWave ? 1 : Math.max(k.goldFloor,
+    const base = w.wave < k.goldStartWave ? 1 : Math.max(k.goldFloor,
       1 - (w.wave - k.goldStartWave + 1) * k.goldDropPerWave);
+    const chance = Math.min(1, base + (owner?.items.includes('bounty_badge') ? .12 : 0));
     for (let i = 0; i < count; i++) w.drops.push({ id: w.nextId++,
       x: x + (rand(w) - 0.5) * 24, y: y + (rand(w) - 0.5) * 24,
       gold: chance === 1 || rand(w) < chance ? 1 : 0 });
@@ -168,7 +170,7 @@
     w.enemies.splice(w.enemies.indexOf(e), 1);
     const p = w.players[owner];
     if (p) p.kills++;
-    drop(w, e.x, e.y, D.enemies[e.type].mats + (p && rand(w) * 100 < p.stats.luck ? 1 : 0));
+    drop(w, e.x, e.y, D.enemies[e.type].mats + (p && rand(w) * 100 < p.stats.luck ? 1 : 0), p);
     w.fx.push(['die', e.x | 0, e.y | 0, e.type]);
     onKill(w, e, p);
   }
@@ -355,7 +357,8 @@
         w.projectiles.push({ id: Object.keys(D.weapons).find(id => D.weapons[id] === v),
           x: origin.x, y: origin.y, vx: Math.cos(a) * 700, vy: Math.sin(a) * 700,
           left: range, power, crit, owner: p.uid, hit: new Set(), bounces: 0,
-          pierce: v.radius || v.bounce ? 0 : p.items.reduce((n, id) => n + (D.items[id]?.pierce || 0), 0) });
+          pierce: v.radius || v.bounce ? 0 : Math.min(2,
+            p.items.reduce((n, id) => n + (D.items[id]?.pierce || 0), 0)) });
       }
     }
   };
@@ -501,7 +504,7 @@
         }
         if (!weapon.bounce && (b.pierce || 0) > 0) {
           b.pierce--;
-          b.power *= .75;
+          b.power *= w.players[b.owner]?.items.includes('fracture_round') ? .9 : .75;
           continue;
         }
         b.left = 0;
@@ -691,7 +694,8 @@
   }
   function rollCrateItem(w, p) {
     const tier = rollItemTier(w, p);
-    const options = Object.keys(D.items).filter(id => (D.items[id].tier || 1) === tier);
+    const options = Object.keys(D.items).filter(id => (D.items[id].tier || 1) === tier &&
+      (!D.items[id].unique || !p.items.includes(id)));
     return options[Math.floor(rand(w) * options.length)];
   }
   function rollItemTier(w, p) {
@@ -711,7 +715,7 @@
       })() : rollItemTier(w, p);
       const list = Object.keys(weapon ? D.weapons : D.items).filter(id => weapon
         ? p.char !== 'gunslinger' || D.weapons[id].kind !== 'melee'
-        : (D.items[id].tier || 1) === tier);
+        : (D.items[id].tier || 1) === tier && (!D.items[id].unique || !p.items.includes(id)));
       const id = list[Math.floor(rand(w) * list.length)];
       slots.push({ id, weapon, tier, price: price((weapon ? D.weapons : D.items)[id].price, w.wave)
         * (weapon ? tier : 1), locked: false });
@@ -719,7 +723,7 @@
     return slots;
   }
   function grantItem(p, id) {
-    if (!D.items[id]) return false;
+    if (!D.items[id] || (D.items[id].unique && p.items.includes(id))) return false;
     p.items.push(id);
     for (const [k, v] of Object.entries(D.items[id].stats)) {
       p.stats[k] += v;
@@ -735,7 +739,8 @@
     return p.weapons.findIndex(([id, tier]) => id === offer.id && tier === offer.tier && tier < 4);
   }
   function canBuy(p, offer) {
-    if (!offer || p.mats < offer.price) return false;
+    if (!offer || p.mats < offer.price || (!offer.weapon &&
+        (!D.items[offer.id] || (D.items[offer.id].unique && p.items.includes(offer.id))))) return false;
     return !offer.weapon || p.weapons.length < capacity(p) || mergeTarget(p, offer) >= 0;
   }
   function buy(p, offer) {
