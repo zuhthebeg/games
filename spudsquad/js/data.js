@@ -32,13 +32,13 @@
     slingshot: { name: '새총', muzzle: [12, 0], artAngle: Math.PI * 3 / 4, classes: ['precise'], behavior: 'projectile', damage: 10,
       cool: 1.2, range: 380, kb: 60, bounce: 1, price: 18 },
     pistol: { name: '권총', muzzle: [14, 0], artAngle: Math.PI, classes: ['gun'], behavior: 'projectile', damage: 12,
-      cool: 1, range: 420, kb: 80, pierce: 1, price: 22 },
+      cool: 1, range: 420, kb: 80, price: 22 },
     shotgun: { name: '산탄총', muzzle: [14, 0], artAngle: Math.PI, classes: ['gun'], behavior: 'projectile', damage: 6,
       cool: 1.6, range: 280, kb: 140, count: 4, spread: 30, price: 30 },
     smg: { name: '기관단총', muzzle: [14, 0], artAngle: Math.PI, classes: ['gun'], behavior: 'projectile', damage: 4,
       cool: .25, range: 360, kb: 30, spread: 8, randomSpread: true, price: 32 },
     crossbow: { name: '석궁', muzzle: [13, 0], artAngle: -Math.PI * 3 / 4, classes: ['precise'], behavior: 'projectile', damage: 16,
-      cool: 1.4, range: 480, kb: 90, pierce: 2, crit: 15, price: 34 },
+      cool: 1.4, range: 480, kb: 90, crit: 15, price: 34 },
     laser: { name: '레이저', muzzle: [13, 0], artAngle: Math.PI * 3 / 4, classes: ['elemental', 'precise'], behavior: 'beam', damage: 18,
       cool: 1.8, range: 520, kb: 0, price: 38 },
     rocket: { name: '로켓', muzzle: [14, 0], artAngle: Math.PI / 2, classes: ['explosive', 'gun'], behavior: 'projectile', damage: 22,
@@ -74,6 +74,7 @@
     piggy_bank: { name: '돼지 저금통', tier: 2, price: 45, stats: {}, hook: 'piggy_bank' },
     glass_cannon: { name: '유리 대포', tier: 3, price: 65, stats: { dmg: 25, armor: -3 } },
     bandana: { name: '머리띠', price: 30, stats: { crit: 6, melee: 1 } },
+    piercing_prism: { name: '관통 프리즘', tier: 2, price: 50, stats: { dmg: -8 }, pierce: 1 },
     cactus: { name: '선인장', price: 30, stats: { thorns: 3, maxHp: 3 } },
     whetstone: { name: '숫돌', tier: 2, price: 45, stats: { melee: 4, knockback: 30 } },
     gunpowder: { name: '화약', tier: 2, price: 45, stats: { explosion: 25 } },
@@ -102,7 +103,8 @@
     elemental: 2, explosion: 10, thorns: 2, knockback: 15
   };
   // 난이도·경제 곡선(밸런스 튜닝은 여기만). spawn=초당 마리 수, hp/dmgPerWave=웨이브당 증가율.
-  const curve = { spawnBase: 0.9, spawnPerWave: 0.42, hpPerWave: 0.42, dmgPerWave: 0.14 };
+  const curve = { spawnBase: 0.9, spawnPerWave: 0.42, hpPerWave: 0.42, dmgPerWave: 0.14,
+    goldStartWave: 5, goldDropPerWave: 0.04, goldFloor: 0.35 };
   const IFRAME = 0.45;
   const WEAPON_ORBIT = 36, WEAPON_SIZE = 44; // 무기 궤도 반경·표시 크기(px). sim 원점 계산과 렌더가 공유
   const D = { stats, chars, weapons, items, enemies, upgrades, curve, IFRAME, WEAPON_ORBIT, WEAPON_SIZE, W: 1600, H: 1200 };

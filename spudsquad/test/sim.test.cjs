@@ -22,3 +22,40 @@ test('dead teammate revives at half HP for shop, next wave starts full',()=>{
  const next=S.createWorld({wave:2,players:{b:{char:w.players.b.char,stats:w.players.b.stats}}});
  a.equal(next.players.b.hp,next.players.b.maxHp);
 });
+test('wave one drops pay one XP and one gold on pickup', () => {
+ const w=S.createWorld({rng:()=>.99});w.spawnClock=-100;w.players.solo.cool=[100];
+ const p=w.players.solo,e=S.spawn(w,'blob',p.x,p.y);e.hp=0;S.kill(w,e,p.uid);
+ a.ok(w.drops.every(d=>d.gold===1));S.step(w);
+ a.equal(p.mats,2);a.equal(p.xp,2);
+});
+test('zero-gold pickup still awards one XP without granting currency', () => {
+ const w=S.createWorld({wave:10,rng:()=>.99}),p=w.players.solo;
+ w.spawnClock=-100;p.cool=[100];w.bossSpawned=true;
+ w.drops=[{id:1,x:p.x,y:p.y,gold:0}];
+ S.step(w);a.equal(p.mats,0);a.equal(p.xp,1);
+});
+test('later gold chance falls monotonically but is bounded; XP is never reduced', () => {
+ const totals=[];
+ for(const wave of [1,5,10,15,20]) {
+  let n=0;const w=S.createWorld({wave,rng:()=>{n++;return (n%100)/100;}});
+  const e=S.spawn(w,'blob',100,100);e.hp=0;S.kill(w,e,'solo');
+  // Sample a deterministic grid across many kills without clearing drops.
+  for(let i=0;i<499;i++){const v=S.spawn(w,'blob',100,100);v.hp=0;S.kill(w,v,'solo');}
+  a.equal(w.drops.length,1000);totals.push(w.drops.reduce((sum,d)=>sum+d.gold,0));
+ }
+ a.equal(totals[0],1000);
+ a.ok(totals.every((v,i)=>i===0||v<=totals[i-1]),String(totals));
+ a.ok(totals[4]>=300&&totals[4]<totals[1],String(totals));
+});
+test('wave end distributes missed drops evenly and honors each saved gold value',()=>{
+ const w=S.createWorld({players:{a:{char:'basic'},b:{char:'basic'}},wave:8});
+ w.bossSpawned=true;w.tm=0;w.spawnClock=-100;
+ w.drops=[{id:1,x:0,y:0,gold:0},{id:2,x:0,y:0,gold:1},
+  {id:3,x:0,y:0,gold:0},{id:4,x:0,y:0,gold:1}];
+ S.step(w);a.deepEqual([w.players.a.xp,w.players.b.xp],[2,2]);
+ a.deepEqual([w.players.a.mats,w.players.b.mats],[0,2]);
+});
+test('duplicate piggy banks give only one bounded bonus per wave',()=>{
+ const players={solo:{char:'basic',mats:1000,items:['piggy_bank','piggy_bank']}};
+ const w=S.createWorld({wave:2,players});a.equal(w.players.solo.mats,1020);
+});

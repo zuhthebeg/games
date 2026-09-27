@@ -98,7 +98,7 @@
     };
     for (const [uid, v] of Object.entries(opts.players || { solo: { char: "basic" } })) {
       const p = w.players[uid] = createPlayer(uid, v.char, v);
-      if (p.items.includes('piggy_bank')) p.mats += Math.min(20, Math.floor(p.mats * .1)) * p.items.filter(i => i === 'piggy_bank').length;
+      if (p.items.includes('piggy_bank')) p.mats += Math.min(20, Math.floor(p.mats * .1));
       for (let i = 0; i < p.items.filter(id => id === 'turret').length; i++) {
         w.turrets.push({ x: p.x, y: p.y, owner: uid, cool: 1.5 });
       }
@@ -123,7 +123,12 @@
     return e;
   }
   function drop(w, x, y, count) {
-    for (let i = 0; i < count; i++) w.drops.push({ id: w.nextId++, x: x + (rand(w) - 0.5) * 24, y: y + (rand(w) - 0.5) * 24 });
+    const k = D.curve;
+    const chance = w.wave < k.goldStartWave ? 1 : Math.max(k.goldFloor,
+      1 - (w.wave - k.goldStartWave + 1) * k.goldDropPerWave);
+    for (let i = 0; i < count; i++) w.drops.push({ id: w.nextId++,
+      x: x + (rand(w) - 0.5) * 24, y: y + (rand(w) - 0.5) * 24,
+      gold: chance === 1 || rand(w) < chance ? 1 : 0 });
   }
   const killHooks = {
     luckyCrate(w, e, p) { if (rand(w) < .02) createCrate(w, e.x, e.y, p.uid); },
@@ -222,8 +227,8 @@
     if (source && effectiveStats(p).thorns) hurtEnemy(w, source, effectiveStats(p).thorns, p.uid, false, '', 0);
     if (p.hp <= 0) p.alive = false;
   }
-  function gain(w, p) {
-    p.mats++;
+  function gain(w, p, material) {
+    p.mats += material.gold ?? 1; // legacy SOLO drops had no currency field
     p.xp++;
     if (p.xp >= needXp(p.lvl)) {
       p.xp -= needXp(p.lvl);
@@ -349,7 +354,8 @@
         const a = angle + spread + (v.randomSpread ? (rand(w) - .5) * 8 * Math.PI / 180 : 0);
         w.projectiles.push({ id: Object.keys(D.weapons).find(id => D.weapons[id] === v),
           x: origin.x, y: origin.y, vx: Math.cos(a) * 700, vy: Math.sin(a) * 700,
-          left: range, power, crit, owner: p.uid, hit: new Set(), bounces: 0 });
+          left: range, power, crit, owner: p.uid, hit: new Set(), bounces: 0,
+          pierce: v.radius || v.bounce ? 0 : p.items.reduce((n, id) => n + (D.items[id]?.pierce || 0), 0) });
       }
     }
   };
@@ -466,8 +472,13 @@
       b.x += b.vx / 700 * travel;
       b.y += b.vy / 700 * travel;
       b.left -= travel;
-      for (const e of w.enemies.slice()) {
-        if (b.hit.has(e.id) || segDist(sx, sy, b.x, b.y, e.x, e.y) > D.enemies[e.type].size / 3 + 5) continue;
+      const hits = w.enemies.filter(e => !b.hit.has(e.id) &&
+        segDist(sx, sy, b.x, b.y, e.x, e.y) <= D.enemies[e.type].size / 3 + 5);
+      // Resolve a swept segment in travel order, not enemy spawn order.
+      const dx = b.x - sx, dy = b.y - sy;
+      hits.sort((a, c) => ((a.x - sx) * dx + (a.y - sy) * dy) -
+        ((c.x - sx) * dx + (c.y - sy) * dy));
+      for (const e of hits) {
         b.hit.add(e.id);
         const weapon = D.weapons[b.id];
         if (weapon.radius) {
@@ -477,10 +488,6 @@
           break;
         }
         hitWeapon(w, w.players[b.owner], weapon, e, b.power, b.crit);
-        if (weapon.pierce) {
-          if (b.hit.size > weapon.pierce) b.left = 0;
-          break;
-        }
         if (weapon.bounce && b.bounces === 0) {
           b.bounces++;
           const next = w.enemies.filter((v) => !b.hit.has(v.id) && dist(b, v) < 220).sort((a, c) => dist(a, b) - dist(c, b))[0];
@@ -491,6 +498,11 @@
             b.left = Math.min(b.left, 220);
           } else b.left = 0;
           break;
+        }
+        if (!weapon.bounce && (b.pierce || 0) > 0) {
+          b.pierce--;
+          b.power *= .75;
+          continue;
         }
         b.left = 0;
         break;
@@ -600,7 +612,7 @@
     for (const d of w.drops.slice()) {
       for (const p of alive) {
         if (dist(d, p) < 80 * (1 + p.stats.pickup / 100)) {
-          gain(w, p);
+          gain(w, p, d);
           if (p.items.includes('jam_jar') && rand(w) < .03 * p.items.filter(id => id === 'jam_jar').length) {
             p.hp = Math.min(p.maxHp, p.hp + 1);
           }
@@ -630,7 +642,7 @@
       turret.cool += 1.5;
     }
     if (canEnd(w)) {
-      w.drops.forEach((d, i) => gain(w, alive[i % alive.length]));
+      w.drops.forEach((d, i) => gain(w, alive[i % alive.length], d));
       w.drops = [];
       w.enemies = [];
       w.ended = true;
@@ -772,11 +784,14 @@
               D.weapons[id] && Number.isInteger(tier) && tier >= 1 && tier <= 4) ||
             !Array.isArray(p.items) || !p.items.every(id => D.items[id]) ||
             !p.stats || !Array.isArray(w.enemies) || !Array.isArray(w.drops) ||
+            !w.drops.every(d => d.gold == null || d.gold === 0 || d.gold === 1) ||
             !Array.isArray(w.shots) || !Array.isArray(w.bullets) ||
             !Array.isArray(w.projectiles) || !w.projectiles.every(b =>
               D.weapons[b.id] && Array.isArray(b.hit) &&
               b.hit.every(id => Number.isInteger(id) && id > 0) &&
-              validNumber(b.x) && validNumber(b.y) && validNumber(b.left)) ||
+              validNumber(b.x) && validNumber(b.y) && validNumber(b.left) &&
+              validNumber(b.power) && (b.pierce == null ||
+                (Number.isInteger(b.pierce) && b.pierce >= 0))) ||
             !Array.isArray(w.crates) ||
             !Array.isArray(w.turrets) || w.win || (s.mode === 'wave' && (w.ended || !p.alive)) ||
             (s.mode === 'shop' && (!w.ended || !w.reported)) ||
@@ -789,7 +804,10 @@
                 Number.isFinite(o.price) && Number.isInteger(o.tier)))))) throw Error('invalid save');
         w.rng = Math.random;
         w.fx = [];
-        for (const b of w.projectiles) b.hit = new Set(b.hit);
+        for (const b of w.projectiles) {
+          b.hit = new Set(b.hit);
+          b.pierce ??= 0; // old snapshots had no remaining-pierce field
+        }
         return s;
       } catch { clear(storage); return null; }
     }

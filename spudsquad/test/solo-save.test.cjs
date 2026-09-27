@@ -54,6 +54,39 @@ test('projectile hit Set survives refresh and does not hit the same enemy twice'
   S.step(restored, 1 / 30);
   assert.equal(restored.enemies[0].hp, hp);
 });
+test('piercing projectile keeps remaining hits and reduced damage across save/load', () => {
+  const storage = store(), w = started().world, p = w.players.solo;
+  p.cool = [100];
+  S.grantItem(p, 'piercing_prism');
+  const first = S.spawn(w, 'blob', p.x + 65, p.y);
+  first.hp = first.maxHp = 1000;
+  const second = S.spawn(w, 'blob', p.x + 115, p.y);
+  second.hp = second.maxHp = 1000;
+  S.weaponHit(w, p, 'pistol', 1, first, 0);
+  const initial = w.projectiles[0].power;
+  S.step(w, 1 / 30);
+  assert.equal(w.projectiles[0].hit.size, 1);
+  assert.ok(w.projectiles[0].power < initial);
+  S.soloSave.save(storage, { mode: 'wave', world: w, offers: [], cratesRemaining: 0, shopRolls: 0 }, 1000);
+  const restored = S.soloSave.load(storage, 1001).world;
+  assert.ok(restored.projectiles[0].hit instanceof Set);
+  assert.equal(restored.projectiles[0].pierce, 0);
+  assert.equal(restored.projectiles[0].power, w.projectiles[0].power);
+  for (let i = 0; i < 6; i++) S.step(restored);
+  assert.ok(restored.enemies[1].hp < 1000);
+  assert.equal(restored.enemies[0].hp, first.hp);
+  assert.equal(restored.projectiles.length, 0);
+});
+test('old drops missing gold field load and settle as one gold each', () => {
+  const storage = store(), w = started().world;
+  w.players.solo.cool = [100];w.spawnClock=-100;w.tm=0;
+  w.drops = [{id:10,x:0,y:0}];
+  S.soloSave.save(storage, { mode:'wave',world:w,offers:[],cratesRemaining:0,shopRolls:0 },1000);
+  const restored=S.soloSave.load(storage,1001).world;
+  S.step(restored);
+  assert.equal(restored.players.solo.mats,1);
+  assert.equal(restored.players.solo.xp,1);
+});
 test('shop snapshot retains purchases, upgrades, offers, crate progress and paid rerolls', () => {
   const storage = store(), session = started(), w = session.world;
   w.ended = true; w.reported = true;

@@ -14,7 +14,7 @@ test('14 weapons and 32 items have their exact definitions', () => {
     a.equal(weapon.muzzle.length, 2);
     a.ok(weapon.muzzle.every(Number.isFinite));
   }
-  a.equal(Object.keys(D.items).length, 32);
+  a.equal(Object.keys(D.items).length, 33);
   a.equal(Object.keys(D.chars).length, 10);
 });
 test('set bonuses use highest unlocked stage, including duplicate and multiclass weapons', () => {
@@ -217,5 +217,46 @@ test('point-blank: enemy hugging the player (inside muzzle distance) is still hi
     S.weaponHit(w, p, id, 1, e, 0, 0);
     for (let i = 0; i < 6; i++) S.step(w);
     a.ok(e.hp < 1000, `${id} missed a point-blank enemy`);
+  }
+});
+test('ordinary pistol and crossbow stop at the nearest first enemy even if spawned second', () => {
+  for (const id of ['pistol', 'crossbow']) {
+    const w = world(), p = w.players.solo;
+    p.weapons = [[id, 1]];
+    const far = enemy(w, p.x + 95, p.y), near = enemy(w, p.x + 65, p.y);
+    for (const e of [near, far]) e.hp = e.maxHp = 1000;
+    S.weaponHit(w, p, id, 1, near, 0);
+    p.cool[0] = 100;
+    for (let i = 0; i < 6; i++) S.step(w);
+    a.ok(near.hp < 1000, `${id} first enemy`);
+    a.equal(far.hp, 1000, `${id} second enemy`);
+  }
+});
+test('piercing prism grants one extra distinct hit with reduced power, bandana stays unchanged', () => {
+  a.deepEqual(D.items.bandana.stats, { crit: 6, melee: 1 });
+  a.equal(D.items.piercing_prism.stats.dmg, -8);
+  const w = world(), p = w.players.solo;
+  p.weapons = [['pistol', 1]];
+  S.grantItem(p, 'piercing_prism');
+  const targets = [65, 90, 115].map(x => enemy(w, p.x + x, p.y));
+  targets.forEach(e => { e.hp = e.maxHp = 1000; });
+  S.weaponHit(w, p, 'pistol', 1, targets[0], 0);
+  p.cool[0] = 100;
+  for (let i = 0; i < 7; i++) S.step(w);
+  const losses = targets.map(e => 1000 - e.hp);
+  a.ok(losses[0] > losses[1] && losses[1] > 0, String(losses));
+  a.equal(losses[2], 0);
+});
+test('beam and melee remain area attacks; rocket explodes once and slingshot retains bounce', () => {
+  for (const id of ['laser', 'spear', 'rocket', 'slingshot']) {
+    const w = world(), p = w.players.solo;
+    p.weapons = [[id, 1]];
+    const near = enemy(w, p.x + 70, p.y), far = enemy(w, p.x + 100, p.y);
+    near.hp = near.maxHp = far.hp = far.maxHp = 1000;
+    S.weaponHit(w, p, id, 1, near, 0);
+    p.cool[0] = 100;
+    for (let i = 0; i < 8; i++) S.step(w);
+    a.ok(near.hp < 1000 && far.hp < 1000, `${id} must hit both`);
+    if (id === 'rocket') a.equal(w.fx.filter(f => f[0] === 'ex').length, 1);
   }
 });
