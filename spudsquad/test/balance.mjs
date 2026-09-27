@@ -16,6 +16,8 @@ function aim(world, player) {
     return distance < best.distance ? { d, distance } : best;
   }, { d: null, distance: Infinity });
   let dx = 0, dy = 0;
+  // 포대감자(이동 중 공격 불가): 180px 안에 적이 없으면 제자리에 서서 쏜다(카이팅↔정지 교대).
+  if (D.chars[player.char].noMoveAttack && (!target.e || target.d > 180)) return;
   if (target.e && target.d < 400) {
     dx += (player.x - target.e.x) / Math.max(target.d, 1) * 2.5;
     dy += (player.y - target.e.y) / Math.max(target.d, 1) * 2.5;
@@ -43,6 +45,7 @@ function aim(world, player) {
   }
 }
 function between(world, player) {
+  S.enterShop(player, world.rng); // 상점 입장 훅(모루) — 게임에선 main.js WAVE_END에서 호출
   for (let i = 0; i < (player.pendingCrates?.length || 0); i++) {
     const id = S.rollCrateItem(world, player);
     S.grantItem(player, id);
@@ -84,7 +87,7 @@ function play(char, seed) {
     between(world, player);
     saved = {
       char, weapons: player.weapons, items: player.items, stats: player.stats,
-      mats: player.mats, xp: player.xp, lvl: player.lvl
+      mats: player.mats, xp: player.xp, lvl: player.lvl, pending: player.pending
     };
   }
   return { wave: 20, won: true, bosses, encountered };

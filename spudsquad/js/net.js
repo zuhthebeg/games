@@ -98,6 +98,7 @@
             player.items = loadout.items || player.items;
             player.stats = loadout.stats || player.stats;
             player.mats = loadout.mats ?? player.mats;
+            player.pending = loadout.pending || player.pending; // 다음 웨이브 1회 효과(유령 이불·미끼·공작 깃털)
           }
           if (this.ready.size >= Object.keys(this.players).length) this.next();
         }
@@ -114,7 +115,7 @@
         const prev = this.world?.players[uid];
         players[uid] = prev ? {
           char: prev.char, weapons: prev.weapons, items: prev.items,
-          stats: prev.stats, mats: prev.mats, xp: prev.xp, lvl: prev.lvl
+          stats: prev.stats, mats: prev.mats, xp: prev.xp, lvl: prev.lvl, pending: prev.pending
         } : { char: this.pick[uid] || 'basic' };
       }
       const payload = { w: wave, seed: Math.floor(this.rng() * 2 ** 31), players };
@@ -171,7 +172,8 @@
           } else {
             const players = {};
             for (const p of Object.values(this.world.players)) {
-              players[p.uid] = { mats: p.mats, xp: p.xp, lvl: p.lvl,
+              // stats: 웨이브 중 호스트가 바꾼 영구 스탯(레벨업 HP·수확 성장·웨이브 종료 훅)을 게스트 사본에 동기화
+              players[p.uid] = { mats: p.mats, xp: p.xp, lvl: p.lvl, stats: { ...p.stats },
                 levelUps: p.levelUps, crates: p.pendingCrates?.length || 0 };
             }
             this.local({ type: 'WAVE_END', payload: { w: this.wave, players } });

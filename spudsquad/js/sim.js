@@ -19,8 +19,9 @@
     return { hp: e.hp * (1 + (k.hpPerWave ?? 0.35) * (w - 1)) * (1 + 0.25 * (n - 1)),
       dmg: e.dmg * (1 + (k.dmgPerWave ?? 0.12) * (w - 1)), speed: e.speed };
   }
-  function needXp(lvl) {
-    return (lvl + 3) ** 2;
+  // 돌연변이감자 등 캐릭터 xpNeed 배율(없으면 1)
+  function needXp(lvl, char) {
+    return Math.ceil((lvl + 3) ** 2 * (D.chars[char]?.xpNeed || 1));
   }
   function price(base, w) {
     return Math.ceil(base * (1 + 0.1 * (w - 1)));
@@ -62,11 +63,26 @@
       return [name, { count: n, stage, stats: setTable[name][stage] || {} }];
     }));
   }
+  // 규칙형 효과 원천: 캐릭터 정의 + 보유 아이템 정의(data.js 규칙 필드 참고)
+  const rulesOf = p => [D.chars[p.char], ...(p.items || []).map(id => D.items[id])].filter(Boolean);
+  const ruleSum = (p, key) => rulesOf(p).reduce((n, d) => n + (d[key] || 0), 0);
+  const hasRule = (p, key) => rulesOf(p).some(d => d[key]);
   function effectiveStats(p) {
     const result = { ...p.stats };
+    const cuffed = hasRule(p, 'noMaxHp'); // 수갑: 세트 보너스의 최대HP 증가도 차단
     for (const group of Object.values(sets(p))) {
-      for (const [key, value] of Object.entries(group.stats)) result[key] = (result[key] || 0) + value;
+      for (const [key, value] of Object.entries(group.stats)) {
+        if (!(cuffed && key === 'maxHp' && value > 0)) result[key] = (result[key] || 0) + value;
+      }
     }
+    const kinds = new Set(p.weapons.map(v => v[0])).size;
+    for (const d of rulesOf(p)) {
+      if (d.still && p.still) for (const [k, v] of Object.entries(d.still)) result[k] = (result[k] || 0) + v;
+      if (d.perWeapon) for (const [k, v] of Object.entries(d.perWeapon)) result[k] = (result[k] || 0) + v * kinds;
+      // 지혜의 두루마리: 웨이브 경과 시간 기반 일시 피해(스탯에 저장 안 함)
+      if (d.ramp) result.dmg += d.ramp[0] + d.ramp[1] * Math.floor((p.waveT || 0) / d.ramp[2]);
+    }
+    result.maxHp = Math.max(1, result.maxHp);
     if (p.char === 'berserker') {
       result.regen = 0;
       result.dmg += Math.min(60, Math.floor((1 - p.hp / p.maxHp) * 10) * 6);
@@ -82,11 +98,15 @@
     if (char === 'ghost') s.maxHp = Math.round(s.maxHp * .5);
     Object.assign(s, saved.stats || {});
     const weapons = saved.weapons || c.weapons || [[c.weapon, 1]];
-    const p = { uid, char, x: 800, y: 600, f: 1, stats: s, maxHp: s.maxHp,
-      hp: s.maxHp, alive: true, weapons: weapons.map(v => [...v]), items: [...(saved.items || [])],
+    const maxHp = Math.max(1, s.maxHp);
+    // pending=상점에서 산 '다음 웨이브 1회' 효과. 웨이브 생성 시 active로 옮겨 소비한다(호스트·게스트 동일).
+    const p = { uid, char, x: 800, y: 600, f: 1, stats: s, maxHp,
+      hp: maxHp, alive: true, weapons: weapons.map(v => [...v]), items: [...(saved.items || [])],
       mats: saved.mats || 0, xp: saved.xp || 0, lvl: saved.lvl || 1, levelUps: 0,
-      kills: 0, totalDamage: 0, cool: [], hurt: 0, steal: 0, immune: 0, nextCrit: false };
-    if (char === 'vampire') p.hp = Math.ceil(p.maxHp * .5);
+      kills: 0, totalDamage: 0, cool: [], hurt: 0, steal: 0, immune: 0, nextCrit: false,
+      pending: {}, active: { ...(saved.pending || {}) }, waveT: 0 };
+    if (char === 'vampire' || hasRule(p, 'startHp')) p.hp = Math.ceil(p.maxHp * .5);
+    if (p.active.hp1) p.hp = 1;
     return p;
   }
   function createWorld(opts = {}) {
@@ -103,7 +123,17 @@
       for (let i = 0; i < p.items.filter(id => id === 'turret').length; i++) {
         w.turrets.push({ x: p.x, y: p.y, owner: uid, cool: 1.5 });
       }
+      // 미끼: 다음 웨이브 시작 시 엘리트(플레이어 반대편)
+      for (let i = 0; i < (p.active.elite || 0); i++) {
+        const x = p.x < D.W / 2 ? D.W - 120 : 120, y = 120 + rand(w) * (D.H - 240);
+        w.fx.push(['mark', x | 0, y | 0]);
+        w.shots.push({ type: 'elite', x, y, delay: 1.5 });
+      }
     }
+    // 적 수(호루라기·백기·시끌감자)·적 HP(외계 아기) 배율은 파티 전원 합산
+    const all = Object.values(w.players);
+    w.enemyMult = Math.max(.25, 1 + all.reduce((n, p) => n + ruleSum(p, 'enemies'), 0) / 100);
+    w.enemyHp = 1 + all.reduce((n, p) => n + ruleSum(p, 'enemyHp'), 0) / 100;
     return w;
   }
   function applyInput(w, uid, x, y, f) {
@@ -118,6 +148,7 @@
     if (w.enemies.length >= 220) return null;
     let n = Object.keys(w.players).length || 1;
     const s = enemyStats(type, w.wave, n);
+    s.hp *= w.enemyHp ?? 1;
     const e = { id: w.nextId++, type, x, y, hp: s.hp, maxHp: s.hp, dmg: s.dmg, speed: s.speed, clock: 0, charge: 0, hit: {} };
     w.enemies.push(e);
     if (type === 'shielder') w.fx.push(['st', e.id, 'shield']);
@@ -221,7 +252,7 @@
       }
       return;
     }
-    const amount = damageTaken(damage, effectiveStats(p).armor);
+    const amount = damageTaken(damage * (p.active?.peacock ? 1.5 : 1), effectiveStats(p).armor);
     p.hp = Math.max(0, p.hp - amount);
     p.hurt = .1;
     // 피격 무적(i-frame): 없으면 접촉 피해가 30Hz 매 틱 들어가 닿는 순간 녹는다(v2 밸런스 붕괴 원인).
@@ -232,13 +263,16 @@
   }
   function gain(w, p, material) {
     p.mats += material.gold ?? 1; // legacy SOLO drops had no currency field
-    p.xp++;
-    if (p.xp >= needXp(p.lvl)) {
-      p.xp -= needXp(p.lvl);
+    // 공작 깃털: 상시 XP +25%/개, 구매 다음 웨이브는 ×2
+    p.xp += (1 + ruleSum(p, 'xp') / 100) * (p.active?.peacock ? 2 : 1);
+    while (p.xp >= needXp(p.lvl, p.char)) {
+      p.xp -= needXp(p.lvl, p.char);
       p.lvl++;
-      p.stats.maxHp++;
-      p.maxHp++;
-      p.hp++;
+      if (!hasRule(p, 'noMaxHp')) {
+        p.stats.maxHp++;
+        p.maxHp++;
+        p.hp++;
+      }
       p.levelUps++;
       w.fx.push(["lvl", p.uid]);
     }
@@ -358,6 +392,7 @@
         w.projectiles.push({ id: Object.keys(D.weapons).find(id => D.weapons[id] === v),
           x: origin.x, y: origin.y, vx: Math.cos(a) * 700, vy: Math.sin(a) * 700,
           left: range, power, crit, owner: p.uid, hit: new Set(), bounces: 0,
+          bounce: (v.bounce || 0) + (v.radius ? 0 : ruleSum(p, 'bounce')), // 도탄 코일 +1
           pierce: v.radius || v.bounce ? 0 : Math.min(2,
             p.items.reduce((n, id) => n + (D.items[id]?.pierce || 0), 0)) });
       }
@@ -435,7 +470,8 @@
       // 초당 스폰 예산(웨이브·인원 비례)을 누적해 무리 단위로 소비.
       const k = D.curve || {};
       const n = Object.keys(w.players).length || 1;
-      const rate = ((k.spawnBase ?? 0.9) + (k.spawnPerWave ?? 0.33) * (w.wave - 1)) * (1 + 0.6 * (n - 1));
+      const rate = ((k.spawnBase ?? 0.9) + (k.spawnPerWave ?? 0.33) * (w.wave - 1)) * (1 + 0.6 * (n - 1)) *
+        (w.enemyMult ?? 1);
       w.spawnClock += rate * dt;
       const pack = Math.min(w.packNext || 1, 1 + Math.floor(w.wave / 3));
       if (w.spawnClock >= pack) {
@@ -468,6 +504,18 @@
       }
     }
     for (const p of alive) {
+      // 정지 판정: 틱당 1px 이하로 0.15초 이상(원격 입력 15Hz 간격도 '이동'으로 유지)
+      const moved = p.lx != null && Math.hypot(p.x - p.lx, p.y - p.ly) > 1;
+      p.lx = p.x; p.ly = p.y;
+      p.stillT = moved ? 0 : (p.stillT || 0) + dt;
+      p.still = p.stillT >= .15;
+      p.waveT = (p.waveT || 0) + dt;
+      const drain = ruleSum(p, 'drain'); // 헌혈 팩: 2초마다 HP-1/개, 1 미만으로는 안 내려감
+      if (drain) {
+        p.drainT = (p.drainT || 0) + dt;
+        while (p.drainT >= 2) { p.drainT -= 2; if (p.hp > 1) p.hp = Math.max(1, p.hp - drain); }
+      }
+      const pinned = hasRule(p, 'noMoveAttack') && !p.still; // 포대감자: 이동 중 공격 불가
       p.steal = Math.max(0, p.steal - 10 * dt);
       p.hurt = Math.max(0, p.hurt - dt);
       p.immune = Math.max(0, p.immune - dt);
@@ -480,11 +528,13 @@
         p.cool[i] = (p.cool[i] || 0) - dt;
         const weapon = weaponPose(p, id, i, 0);
         const target = nearest(w, weapon, weaponRange(p, v));
-        if (target && p.cool[i] <= 0) {
+        if (target && p.cool[i] <= 0 && !pinned) {
           const angle = Math.atan2(target.y - weapon.y, target.x - weapon.x);
           weaponHit(w, p, id, tier, target, angle, i);
-          p.cool[i] = v.cool * .9 ** (tier - 1) / (1 + effectiveStats(p).atkSpd / 100 +
-            (p.char === 'cyclops' ? .6 : 0));
+          const s = effectiveStats(p);
+          // 근접: 사거리 스탯 100당 쿨다운 +5%(더 멀리 뻗는 만큼 느림)
+          p.cool[i] = v.cool * .9 ** (tier - 1) / (1 + s.atkSpd / 100 + (p.char === 'cyclops' ? .6 : 0)) *
+            (MELEE.includes(v.behavior) ? 1 + Math.max(0, s.range) / 100 * .05 : 1);
         }
       });
     }
@@ -510,18 +560,18 @@
           break;
         }
         hitWeapon(w, w.players[b.owner], weapon, e, b.power, b.crit);
-        if (weapon.bounce && b.bounces === 0) {
+        if (b.bounces < (b.bounce ?? weapon.bounce ?? 0)) {
           b.bounces++;
           const next = w.enemies.filter((v) => !b.hit.has(v.id) && dist(b, v) < 220).sort((a, c) => dist(a, b) - dist(c, b))[0];
           if (next) {
             const angle = Math.atan2(next.y - b.y, next.x - b.x);
             b.vx = Math.cos(angle) * 700;
             b.vy = Math.sin(angle) * 700;
-            b.left = Math.min(b.left, 220);
+            b.left = 220; // 튕길 때마다 220px 새 사거리(연속 도탄이 사거리 부족으로 끊기지 않게)
           } else b.left = 0;
           break;
         }
-        if (!weapon.bounce && (b.pierce || 0) > 0) {
+        if ((b.pierce || 0) > 0) {
           b.pierce--;
           b.power *= w.players[b.owner]?.items.includes('fracture_round') ? .9 : .75;
           continue;
@@ -657,6 +707,13 @@
           if (p.items.includes('jam_jar') && rand(w) < .03 * p.items.filter(id => id === 'jam_jar').length) {
             p.hp = Math.min(p.maxHp, p.hp + 1);
           }
+          // 피뢰침: 개당 20% 확률로 무작위 적에게 번개(8 + 원소 피해)
+          const zap = ruleSum(p, 'zap');
+          if (zap && w.enemies.length && rand(w) < Math.min(1, zap)) {
+            const e = w.enemies[Math.floor(rand(w) * w.enemies.length)];
+            w.fx.push(['bm', p.x | 0, p.y | 0, e.x | 0, e.y | 0, 'chain']);
+            hurtEnemy(w, e, 8 + effectiveStats(p).elemental, p.uid, false, 'elemental', 0);
+          }
           w.drops.splice(w.drops.indexOf(d), 1);
           break;
         }
@@ -689,8 +746,13 @@
       w.ended = true;
       w.win = w.wave === 20;
       for (const p of players) {
-        p.mats += Math.floor(p.stats.harvest);
-        p.stats.harvest *= 1.05;
+        p.mats = Math.max(0, p.mats + Math.floor(p.stats.harvest));
+        if (p.stats.harvest > 0) p.stats.harvest *= 1.05;
+        // 웨이브 종료 훅(자경단 반지·로봇 팔·시끌감자): 스탯에 영구 반영
+        const cuffed = hasRule(p, 'noMaxHp');
+        for (const d of rulesOf(p)) for (const [k, v] of Object.entries(d.waveEnd || {})) {
+          if (!(cuffed && k === 'maxHp' && v > 0)) p.stats[k] = (p.stats[k] || 0) + v;
+        }
         if (!p.alive) {
           p.alive = true;
           p.hp = p.maxHp * 0.5;
@@ -720,7 +782,7 @@
   }
   const gradeMult = [0, 1, 1.6, 2.4, 3.5];
   function rollUpgrades(p, rng = Math.random) {
-    const pool = Object.keys(D.upgrades);
+    const pool = Object.keys(D.upgrades).filter(id => id !== 'maxHp' || !hasRule(p, 'noMaxHp'));
     const result = [];
     for (let i = 0; i < 4; i++) {
       const index = Math.floor(rng() * pool.length);
@@ -743,6 +805,7 @@
     return options[Math.floor(rand(w) * options.length)];
   }
   function rollItemTier(w, p) {
+    if (w.wave >= 10 && rand(w) < .03 + p.stats.luck / 1000) return 4;
     if (w.wave >= 8 && rand(w) < .10 + p.stats.luck / 600) return 3;
     if (w.wave >= 4 && rand(w) < .25 + p.stats.luck / 400) return 2;
     return 1;
@@ -761,15 +824,18 @@
         ? p.char !== 'gunslinger' || D.weapons[id].kind !== 'melee'
         : (D.items[id].tier || 1) === tier && !itemCapped(p, id));
       const id = list[Math.floor(rand(w) * list.length)];
-      slots.push({ id, weapon, tier, price: price((weapon ? D.weapons : D.items)[id].price, w.wave)
-        * (weapon ? tier : 1), locked: false });
+      slots.push({ id, weapon, tier, price: Math.ceil(price((weapon ? D.weapons : D.items)[id].price, w.wave)
+        * (weapon ? tier : 1) * (D.chars[p.char]?.priceMult || 1)), locked: false }); // 돌연변이 ×1.5
     }
     return slots;
   }
   function grantItem(p, id) {
     if (!D.items[id] || itemCapped(p, id)) return false;
     p.items.push(id);
+    const once = D.items[id].once;
+    if (once) (p.pending ||= {})[once] = (p.pending[once] || 0) + 1;
     for (const [k, v] of Object.entries(D.items[id].stats)) {
+      if (k === 'maxHp' && v > 0 && hasRule(p, 'noMaxHp')) continue; // 수갑 이후 최대HP 증가 차단
       p.stats[k] += v;
       if (k === 'maxHp') {
         p.maxHp += v;
@@ -777,6 +843,15 @@
       }
     }
     return true;
+  }
+  // 상점 입장 훅(클라 권위: 상점을 여는 쪽이 자기 플레이어에 1회 호출). 모루: 티어<4 무기 1개 +1.
+  function enterShop(p, rng = Math.random) {
+    if (!hasRule(p, 'anvil')) return null;
+    const open = p.weapons.map((v, i) => i).filter(i => p.weapons[i][1] < 4);
+    if (!open.length) return null;
+    const i = open[Math.floor(rng() * open.length)];
+    p.weapons[i] = [p.weapons[i][0], p.weapons[i][1] + 1];
+    return i;
   }
   // 슬롯이 가득 차도 같은 무기·같은 티어(4 미만)가 있으면 구매 즉시 합쳐 한 단계 올린다(브로테이토식).
   function mergeTarget(p, offer) {
@@ -868,7 +943,7 @@
     behaviors, weaponPose, weaponRange, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,
     hurtPlayer, waveLength, enemyStats, needXp, price, rerollCost, damageTaken,
     rollDamage, createPlayer, createWorld, applyInput, spawn, kill, step, canEnd,
-    merge, shop, buy, canBuy, clamp
+    merge, shop, buy, canBuy, clamp, enterShop
   };
   // 스탯 시트용 무기 요약(순수 함수). attackPower와 같은 식이되 RNG·치명타·nextCrit 소모 없이 비치명 1타 피해.
   // 간격은 step의 쿨다운 식, 사거리는 weaponRange 그대로. p는 절대 변경하지 않는다.

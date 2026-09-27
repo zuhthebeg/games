@@ -10,3 +10,4 @@ require('./ui-display.test.cjs');
 require('./economy-choices.test.cjs');
 require('./collection.test.cjs');
 require('./enemies-v3.test.cjs');
+require('./items-v3.test.cjs');

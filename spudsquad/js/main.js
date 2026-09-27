@@ -225,7 +225,10 @@
       if (solo()) cratesRemaining = action.payload.players?.[uid]?.crates || 0;
       if (player) {
         player.mats = action.payload.players?.[uid]?.mats ?? player.mats;
+        // 게스트 사본은 호스트가 웨이브 중 바꾼 스탯을 받아 맞춘다(READY 로드아웃이 덮어쓰므로)
+        if (!session.isHost && action.payload.players?.[uid]?.stats) player.stats = { ...action.payload.players[uid].stats };
         player.levelUps = levelUps;
+        S.enterShop(player, session.world?.rng || Math.random); // 모루 등 상점 입장 훅(자기 플레이어 1회)
         U.crates(session, player, action.payload.players?.[uid]?.crates || 0,
           () => U.upgrades(player, () => U.shop(session, uid, ready)));
       } else U.shop(session, uid, ready);
@@ -246,7 +249,8 @@
     mode = 'ready';
     if (Object.keys(session.players).length > 1) U.show(`<h2>${U.t('wait')}</h2>`);
     session.local({ type: 'READY', payload: { uid, loadout: {
-      weapons: player.weapons, items: player.items, stats: player.stats, mats: player.mats
+      weapons: player.weapons, items: player.items, stats: player.stats, mats: player.mats,
+      pending: player.pending
     } } });
   }
   function finish(data) {
