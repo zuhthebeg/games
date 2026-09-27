@@ -19,7 +19,11 @@
     cyclops: { name: '외눈감자', weapon: 'crossbow', stats: { crit: 15, maxHp: 5, projectiles: 2 }, trait: 'oneSlot' },
     ghost: { name: '유령감자', weapon: 'staff', stats: { dodge: 25, speed: 10 }, trait: 'dodgePower' },
     saver: { name: '저축감자', weapon: 'pistol', stats: { dmg: -10 }, trait: 'reserveInterest' },
-    thorn: { name: '가시감자', weapon: 'fist', stats: { thorns: 8, maxHp: 8, armor: 2, speed: -8, dodge: -8 }, trait: 'barbedSkin' }
+    thorn: { name: '가시감자', weapon: 'fist', stats: { thorns: 8, maxHp: 8, armor: 2, speed: -8, dodge: -8 }, trait: 'barbedSkin' },
+    // 규칙형 필드는 아이템과 공유(sim의 rules 합산): still=정지 중 스탯, enemies=적 수 %, waveEnd=웨이브 종료마다 영구 변화
+    soldier: { name: '포대감자', weapon: 'pistol', stats: {}, trait: 'stationary', still: { dmg: 50, atkSpd: 50 }, noMoveAttack: true },
+    loud: { name: '시끌감자', weapon: 'stick', stats: { dmg: 30 }, trait: 'loud', enemies: 50, waveEnd: { harvest: -3 } },
+    mutant: { name: '돌연변이감자', weapon: 'slingshot', stats: {}, trait: 'mutant', xpNeed: .5, priceMult: 1.5 }
   };
   const weapons = {
     fist: { name: '주먹', muzzle: [12, 0], artAngle: Math.PI / 2, classes: ['unarmed'], behavior: 'thrust', damage: 8, cool: .9, range: 110, kb: 220, price: 15 },
@@ -51,43 +55,80 @@
       cool: 1.3, range: 400, kb: 0, chains: 3, price: 36 }
   };
   for (const v of Object.values(weapons)) v.kind = ['thrust', 'sweep', 'slam'].includes(v.behavior) ? 'melee' : 'ranged';
+  // 아이템 v3(2026-09-28): 대부분 단점 동반(직교 페널티). tier 생략=1, T4=전설(10웨이브~).
+  // 규칙형 필드: hook=처치 훅, pierce/bounce=탄, enemies/enemyHp=적 수·HP %, once=다음 웨이브 1회
+  // (hp1/elite/peacock), waveEnd=웨이브 종료마다 영구, still=정지 중, perWeapon=무기 종류당,
+  // xp=경험치 %, drain=2초마다 HP-, startHp=시작 HP 비율, noMaxHp=최대HP 증가 차단,
+  // ramp=[시작 피해%, 증가%, 간격초], zap=주울 때 번개 확률, anvil=상점 입장 시 무기 티어+1
   const items = {
     potato_armor: { name: '감자갑옷', price: 25, stats: { armor: 2, speed: -3 } },
-    hot_sauce: { name: '핫소스', price: 30, stats: { dmg: 8 } },
-    energy_drink: { name: '에너지음료', price: 30, stats: { atkSpd: 10 } },
+    hot_sauce: { name: '핫소스', price: 30, stats: { dmg: 8, maxHp: -2 } },
+    energy_drink: { name: '에너지음료', price: 30, stats: { atkSpd: 10, dmg: -3 } },
     magnet: { name: '자석', price: 20, stats: { pickup: 40 } },
     clover: { name: '네잎클로버', price: 25, stats: { luck: 10 } },
     bandage: { name: '붕대', price: 25, stats: { regen: 2 } },
-    vampire_fang: { name: '흡혈송곳니', price: 35, stats: { lifesteal: 3 } },
-    sneakers: { name: '운동화', price: 25, stats: { speed: 8 } },
-    scope: { name: '조준경', price: 30, stats: { range: 40, crit: 3 } },
-    dumbbell: { name: '아령', price: 30, stats: { melee: 3, maxHp: 3 } },
-    battery: { name: '배터리', price: 30, stats: { ranged: 3 } },
-    heart_jar: { name: '하트병', price: 35, stats: { maxHp: 8 } },
+    vampire_fang: { name: '흡혈송곳니', price: 35, stats: { lifesteal: 3, maxHp: -1 } },
+    sneakers: { name: '운동화', price: 25, stats: { speed: 8, armor: -1 } },
+    scope: { name: '조준경', price: 30, stats: { range: 40, crit: 3, atkSpd: -3 } },
+    dumbbell: { name: '아령', price: 30, stats: { melee: 3, maxHp: 2, ranged: -2 } },
+    battery: { name: '배터리', price: 30, stats: { ranged: 3, melee: -2 } },
+    heart_jar: { name: '하트병', price: 35, stats: { maxHp: 6, speed: -2 } },
     garden_glove: { name: '정원장갑', price: 25, stats: { harvest: 5 } },
     helmet: { name: '헬멧', price: 30, stats: { armor: 3, dodge: -2 } },
-    feather: { name: '깃털', price: 30, stats: { dodge: 6 } },
+    feather: { name: '깃털', price: 30, stats: { dodge: 6, maxHp: -2 } },
     lucky_coin: { name: '행운의 동전', price: 30, stats: { harvest: 3, luck: 5 } },
-    thorn_armor: { name: '가시 갑옷', tier: 2, price: 45, stats: { armor: 2, thorns: 5 } },
-    mirror: { name: '거울', tier: 3, price: 70, stats: { projectiles: 1, dmg: -8 } },
+    thorn_armor: { name: '가시 갑옷', tier: 2, price: 45, stats: { armor: 2, thorns: 5, speed: -3 } },
+    mirror: { name: '거울', tier: 3, price: 70, stats: { projectiles: 1, dmg: -12 } },
     firecracker: { name: '폭죽', tier: 2, price: 50, stats: {}, hook: 'firecracker' },
     jam_jar: { name: '잼 병', price: 25, stats: {}, hook: 'jam_jar' },
     coffee: { name: '커피', price: 30, stats: { atkSpd: 15, maxHp: -2 } },
-    piggy_bank: { name: '돼지 저금통', tier: 2, price: 45, stats: {}, hook: 'piggy_bank' },
+    piggy_bank: { name: '돼지 저금통', tier: 2, price: 45, stats: {}, hook: 'piggy_bank', unique: true },
     glass_cannon: { name: '유리 대포', tier: 3, price: 65, stats: { dmg: 25, armor: -3 } },
-    bandana: { name: '머리띠', price: 30, stats: { crit: 6, melee: 1 } },
+    bandana: { name: '머리띠', price: 30, stats: { crit: 6, range: -10 } },
     piercing_prism: { name: '관통 프리즘', tier: 2, price: 50, stats: { dmg: -8 }, pierce: 1, max: 2 },
     cactus: { name: '선인장', price: 30, stats: { thorns: 3, maxHp: 3 } },
-    whetstone: { name: '숫돌', tier: 2, price: 45, stats: { melee: 4, knockback: 30 } },
-    gunpowder: { name: '화약', tier: 2, price: 45, stats: { explosion: 25 } },
+    whetstone: { name: '숫돌', tier: 2, price: 45, stats: { melee: 4, knockback: 30, ranged: -3 } },
+    gunpowder: { name: '화약', tier: 2, price: 45, stats: { explosion: 25, armor: -1 } },
     spark_plug: { name: '점화 플러그', tier: 2, price: 50, stats: { elemental: 3 }, hook: 'spark_plug' },
     medkit: { name: '구급상자', tier: 2, price: 45, stats: { regen: 3, speed: -2 } },
-    rabbit_foot: { name: '토끼 발', tier: 3, price: 70, stats: { luck: 20, dodge: 3 } },
+    rabbit_foot: { name: '토끼 발', tier: 3, price: 70, stats: { luck: 25, dodge: 3, dmg: -4 } },
     turret: { name: '포탑', tier: 3, price: 80, stats: {}, hook: 'turret' },
     treasure_map: { name: '보물 지도', tier: 2, price: 40, stats: {}, hook: 'treasure_map' },
     fracture_round: { name: '균열 탄심', tier: 2, price: 50, stats: { armor: -2 }, unique: true },
     bounty_badge: { name: '회수 표식', tier: 2, price: 55, stats: { maxHp: -3 }, unique: true },
-    thorn_coil: { name: '가시 코일', tier: 2, price: 50, stats: { thorns: 5, speed: -6 }, unique: true }
+    thorn_coil: { name: '가시 코일', tier: 2, price: 50, stats: { thorns: 5, speed: -6 }, unique: true },
+    // ── v3 신규 T1
+    glasses: { name: '안경', price: 25, stats: { range: 25 } },
+    bent_fork: { name: '휜 포크', price: 25, stats: { dmg: 6, range: -12 } },
+    beanie: { name: '털모자', price: 20, stats: { speed: 5, range: -8 } },
+    whistle: { name: '호루라기', price: 25, stats: { maxHp: 2, dmg: 5 }, enemies: 5 },
+    ghost_sheet: { name: '유령 이불', price: 20, stats: { maxHp: 3 }, once: 'hp1' },
+    // ── T2
+    sunglasses: { name: '선글라스', tier: 2, price: 45, stats: { crit: 8, armor: -1 } },
+    wheelbarrow: { name: '수레', tier: 2, price: 45, stats: { harvest: 12, armor: -1 } },
+    bait: { name: '미끼', tier: 2, price: 40, stats: { dmg: 8 }, once: 'elite' },
+    black_belt: { name: '검은 띠', tier: 2, price: 45, stats: { melee: 6, ranged: -3 } },
+    white_flag: { name: '백기', tier: 2, price: 45, stats: { harvest: 5 }, enemies: -5, unique: true },
+    vigil_ring: { name: '자경단 반지', tier: 2, price: 55, stats: {}, waveEnd: { dmg: 2 }, unique: true },
+    robot_arm: { name: '로봇 팔', tier: 2, price: 50, stats: {}, waveEnd: { melee: 2, maxHp: -1 } },
+    lightning_rod: { name: '피뢰침', tier: 2, price: 50, stats: {}, zap: .2 },
+    // ── T3
+    statue: { name: '감자 석상', tier: 3, price: 70, stats: { speed: -10 }, still: { atkSpd: 40 } },
+    barricade: { name: '바리케이드', tier: 3, price: 65, stats: { knockback: 15, speed: -5 }, still: { armor: 6 } },
+    alien_baby: { name: '외계 아기', tier: 3, price: 65, stats: { maxHp: 15 }, enemyHp: 10 },
+    blood_pack: { name: '헌혈 팩', tier: 3, price: 70, stats: { harvest: 30 }, drain: 1 },
+    handcuffs: { name: '수갑', tier: 3, price: 75, stats: { melee: 8, ranged: 8, elemental: 8 }, noMaxHp: true, unique: true },
+    sad_tomato: { name: '시든 토마토', tier: 3, price: 70, stats: { regen: 8 }, startHp: .5, unique: true },
+    wisdom_scroll: { name: '지혜의 두루마리', tier: 3, price: 75, stats: {}, ramp: [-15, 5, 5], unique: true },
+    peacock_feather: { name: '공작 깃털', tier: 3, price: 65, stats: {}, xp: 25, once: 'peacock' },
+    // ── T4 전설
+    golden_potato: { name: '황금 감자', tier: 4, price: 110, stats: { maxHp: 3, regen: 2, lifesteal: 1, dmg: 5,
+      atkSpd: 5, speed: 3, dodge: 3, armor: 1, luck: 5 } },
+    mammoth_fur: { name: '매머드 털', tier: 4, price: 110, stats: { melee: 15, regen: 4, knockback: 30, dmg: -8, speed: -3 } },
+    jetpack: { name: '제트팩', tier: 4, price: 105, stats: { speed: 15, dodge: 10, maxHp: -5, armor: -1 } },
+    ricochet_coil: { name: '도탄 코일', tier: 4, price: 110, stats: { dmg: -25 }, bounce: 1, unique: true },
+    focus_lens: { name: '집중 렌즈', tier: 4, price: 120, stats: { dmg: 30 }, perWeapon: { atkSpd: -3 } },
+    anvil: { name: '모루', tier: 4, price: 100, stats: {}, anvil: true, unique: true }
   };
   const enemies = {
     blob: { hp: 8, speed: 90, dmg: 1, first: 1, mats: 2, size: 40 },

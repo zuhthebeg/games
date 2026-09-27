@@ -85,7 +85,7 @@ function hud(scene, uid) {
     const lvl = Array.isArray(p) ? p[8] : p.lvl;
     document.getElementById('hpText').textContent = `${shown(hp)}/${shown(max)}`;
     document.getElementById('hpBar').style.width = Math.max(0, hp / max * 100) + '%';
-    document.getElementById('xpBar').style.width = xp / P.sim.needXp(lvl) * 100 + '%';
+    document.getElementById('xpBar').style.width = xp / P.sim.needXp(lvl, P.main?.session?.lastPlayers?.[uid]?.char) * 100 + '%'; // 돌연변이 XP 배율
     document.getElementById('level').textContent = shown(lvl);
     document.getElementById('mats').textContent = shown(mats);
     document.getElementById('wave').textContent = P.main?.session?.wave || 1;

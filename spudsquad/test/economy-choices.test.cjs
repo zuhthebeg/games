@@ -10,8 +10,8 @@ const world = (wave = 10, char = 'basic', rng = () => .5) => {
   return w;
 };
 test('new IDs append to existing choices and prism keeps its definition', () => {
-  a.deepEqual(Object.keys(D.chars).slice(-2), ['saver', 'thorn']);
-  a.deepEqual(Object.keys(D.items).slice(-3), ['fracture_round', 'bounty_badge', 'thorn_coil']);
+  a.deepEqual(Object.keys(D.chars).slice(10, 12), ['saver', 'thorn']);
+  a.deepEqual(Object.keys(D.items).slice(33, 36), ['fracture_round', 'bounty_badge', 'thorn_coil']);
   a.deepEqual(D.items.piercing_prism.stats, { dmg: -8 });
   a.equal(D.items.piercing_prism.pierce, 1);
 });

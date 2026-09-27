@@ -8,14 +8,14 @@ const world = (char = 'basic') => {
   return w;
 };
 const enemy = (w, x, y, type = 'blob') => S.spawn(w, type, x, y);
-test('14 weapons and 36 items have their exact definitions', () => {
+test('14 weapons and 63 items (v3) have their exact definitions', () => {
   a.equal(Object.keys(D.weapons).length, 14);
   for (const weapon of Object.values(D.weapons)) {
     a.equal(weapon.muzzle.length, 2);
     a.ok(weapon.muzzle.every(Number.isFinite));
   }
-  a.equal(Object.keys(D.items).length, 36);
-  a.equal(Object.keys(D.chars).length, 12);
+  a.equal(Object.keys(D.items).length, 63);
+  a.equal(Object.keys(D.chars).length, 15);
 });
 test('set bonuses use highest unlocked stage, including duplicate and multiclass weapons', () => {
   const p = S.createPlayer('x');
@@ -232,8 +232,8 @@ test('ordinary pistol and crossbow stop at the nearest first enemy even if spawn
     a.equal(far.hp, 1000, `${id} second enemy`);
   }
 });
-test('piercing prism grants one extra distinct hit with reduced power, bandana stays unchanged', () => {
-  a.deepEqual(D.items.bandana.stats, { crit: 6, melee: 1 });
+test('piercing prism grants one extra distinct hit with reduced power, bandana is v3 crit/range trade-off', () => {
+  a.deepEqual(D.items.bandana.stats, { crit: 6, range: -10 });
   a.equal(D.items.piercing_prism.stats.dmg, -8);
   const w = world(), p = w.players.solo;
   p.weapons = [['pistol', 1]];

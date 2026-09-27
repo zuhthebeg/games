@@ -8,3 +8,4 @@ require('./solo-save.test.cjs');
 require('./solo-main.test.cjs');
 require('./ui-display.test.cjs');
 require('./economy-choices.test.cjs');
+require('./items-v3.test.cjs');
