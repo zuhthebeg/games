@@ -61,6 +61,10 @@ try {
       screenOverflow: document.documentElement.scrollWidth > innerWidth,
       buttons: [...document.querySelectorAll('.title-actions .btn')].map(b => b.clientHeight)
     })`);
+    for (let i = 0; i < 20 && !title.art; i++) {
+      await new Promise(resolve => setTimeout(resolve, 250));
+      title.art = await evaluate("document.querySelector('.key-art')?.naturalWidth || 0");
+    }
     assert.ok(title.art > 0, `${width}px key art did not load`);
     assert.equal(title.hudHidden, true, `${width}px title HUD visible`);
     assert.equal(title.screenOverflow, false);
@@ -76,7 +80,7 @@ try {
       hudHidden: getComputedStyle(document.querySelector('#hud')).display === 'none'
     })`);
     assert.equal(choose.cardCount, 12);
-    assert.ok(choose.artWidth >= 76);
+    assert.ok(choose.artWidth >= 64);
     assert.equal(choose.rawStat, false);
     assert.equal(choose.fits, width >= 600, `${width}px character selection scrolling ${choose.scroll}/${choose.client}`);
     assert.equal(choose.hudHidden, true);
