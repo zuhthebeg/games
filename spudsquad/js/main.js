@@ -24,6 +24,31 @@
   let lastSave = 0;
   const solo = () => uid === 'solo' && session?.isHost && !lobby &&
     Object.keys(session.players).length === 1;
+  // 디버그 모드: ?debug=1(탭 세션 유지) / ?debug=0 해제. 디버그 런은 보상·랭킹·도감 기록 금지.
+  const DEBUG_RUN_KEY = 'spudsquad:solo:dbg';
+  let debugOn = false;
+  try {
+    const store = typeof sessionStorage !== 'undefined' ? sessionStorage : null;
+    debugOn = P.collection?.debugFlag ? P.collection.debugFlag(location.search, store)
+      : new URLSearchParams(location.search).get('debug') === '1';
+  } catch {}
+  let tainted = false; // 디버그로 시작/조작한 솔로 런(새로고침 후 ?debug=0이어도 보상 금지)
+  const debugView = { god: false, ranges: false };
+  const debugRun = () => debugOn || tainted;
+  function markTainted(on) {
+    tainted = on;
+    try { on ? localStorage.setItem(DEBUG_RUN_KEY, '1') : localStorage.removeItem(DEBUG_RUN_KEY); } catch {}
+  }
+  // 웨이브 클리어(또는 승리) 시 로컬 플레이어 기준으로 도감 기록. 로그인 여부는 collection.add가 판단.
+  function recordClear(wave, win = false) {
+    if (debugRun()) return;
+    const p = session?.world?.players[uid] || localPlayer;
+    if (!p?.char) return;
+    try {
+      P.collection?.add?.({ char: p.char, wave, win,
+        weapons: (p.weapons || []).map(v => v[0]), items: p.items || [] });
+    } catch (error) { console.warn('collection pending', error); }
+  }
   function checkpoint(force = false) {
     if (!solo() || !session.world || !['wave', 'shop'].includes(mode)) return;
     const now = Date.now();
@@ -38,6 +63,7 @@
     try { saved = S.soloSave.load(localStorage); } catch { return false; }
     if (!saved) return false;
     uid = 'solo';
+    try { tainted = localStorage.getItem(DEBUG_RUN_KEY) === '1'; } catch {}
     session = new N.Session({ uid, host: uid, rng: Math.random,
       onAction: handleAction, onEnd: finish, sendRt: data => renderer.fx(data.fx, uid) });
     session.roster({ players: [{ user: uid }], hostUser: uid });
@@ -87,6 +113,7 @@
     uid = 'solo';
     lobby = null;
     try { S.soloSave.clear(localStorage); } catch {} // storage disabled
+    markTainted(debugOn);
     offers = null;
     cratesRemaining = shopRolls = 0;
     session = new N.Session({
@@ -192,6 +219,7 @@
     }
     if (action.type === 'WAVE_END') {
       mode = 'shop';
+      recordClear(action.payload.w);
       const player = session.world?.players[uid] || localPlayer;
       const levelUps = action.payload.players?.[uid]?.levelUps || 0;
       if (solo()) cratesRemaining = action.payload.players?.[uid]?.crates || 0;
@@ -231,6 +259,8 @@
     });
     if (rewarded) return;
     rewarded = true;
+    if (debugRun()) return; // 디버그 런: 골드·랭킹·도감 모두 건너뜀
+    if (data.win) recordClear(data.wave || 20, true);
     const cleared = data.win ? data.wave : Math.max(0, data.wave - 1);
     const gold = cleared * 30 + (data.win ? 500 : 0);
     try {
@@ -248,7 +278,67 @@
     lobby = null;
     mode = 'title';
     rewarded = false;
-    U.title(action => action === 'solo' ? beginSolo() : connect());
+    tainted = false; // 솔로 복원 시 restoreSolo가 저장된 표시를 다시 읽는다
+    U.closeSheet?.();
+    U.title(action => action === 'solo' ? beginSolo()
+      : action === 'collection' ? U.collection(reset) : connect());
+  }
+  // 스탯 시트용 로컬 플레이어. 게스트 클라는 HP만 최신 스냅샷에서 덮어쓴 사본(원본 불변).
+  function statsPlayer() {
+    if (!session) return null;
+    if (session.isHost) return session.world?.players[uid] || null;
+    if (!localPlayer) return null;
+    const row = session.buffer.sample(Date.now())?.pl?.find(r => r[0] === uid);
+    return row ? { ...localPlayer, hp: row[3], maxHp: row[4] } : localPlayer;
+  }
+  function debugAct(name, a = {}) {
+    if (!debugOn || !solo()) return U.t('soloOnly');
+    const w = session.world, p = w?.players[uid];
+    if (!p) return '';
+    markTainted(true);
+    const int = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
+    let note = U.t('done');
+    if (name === 'weapon') {
+      const tier = int(a.tier, 1, 4);
+      if (!D.weapons[a.weapon]) return '';
+      if (p.weapons.length >= S.capacity(p)) return U.t('slotsFull');
+      p.weapons.push([a.weapon, tier]);
+      note = `+ ${P.i18n.name('weapons', a.weapon)} T${tier}`;
+    } else if (name === 'item') {
+      if (!S.grantItem(p, a.item)) return U.t('capped');
+      note = `+ ${P.i18n.name('items', a.item)}`;
+    } else if (name === 'mats') {
+      p.mats = int(a.mats, 0, 99999);
+      note = `💎 ${p.mats}`;
+    } else if (name === 'wave') {
+      // 현재 웨이브를 끝내고 지금 장비 그대로 N웨이브 시작
+      U.closeSheet();
+      session.start(int(a.wave, 1, 20));
+      return '';
+    } else if (name === 'god') {
+      debugView.god = !debugView.god;
+    } else if (name === 'ranges') {
+      debugView.ranges = !debugView.ranges;
+    } else if (name === 'kill' || name === 'spawn') {
+      if (mode !== 'wave' || w.ended) return U.t('waveOnly');
+      if (name === 'kill') {
+        for (let pass = 0; pass < 3 && w.enemies.length; pass++) {
+          for (const e of w.enemies.slice()) { e.hp = 0; S.kill(w, e, uid); }
+        }
+        w.shots.length = 0;
+        w.bullets.length = 0;
+      } else if (D.enemies[a.enemy]) {
+        const n = int(a.n, 1, 50);
+        for (let i = 0; i < n; i++) {
+          const angle = Math.PI * 2 * i / n, r = 220 + (i % 3) * 30;
+          S.spawn(w, a.enemy, S.clamp(p.x + Math.cos(angle) * r, 0, D.W),
+            S.clamp(p.y + Math.sin(angle) * r, 0, D.H));
+        }
+        note = `${P.i18n.enemy(a.enemy)} ×${n}`;
+      }
+    }
+    checkpoint(true);
+    return note;
   }
   function move(dt) {
     const player = session.isHost ? session.world?.players[uid] : localPlayer;
@@ -280,7 +370,17 @@
     last = now;
     // 배경음: 전투(10·20웨이브는 보스곡) / 그 외 화면은 상점곡. 같은 곡이면 music()이 무시.
     P.sfx?.music?.(mode === 'wave' ? ((session?.wave === 10 || session?.wave === 20) ? 'boss' : 'battle') : 'shop');
-    if (session && mode === 'wave') {
+    // 솔로에서 스탯 시트/디버그 패널이 열려 있으면 시뮬레이션 정지(그리기만)
+    const hold = solo() && U.sheetOpen?.();
+    if (debugBtn) debugBtn.hidden = !(debugOn && solo());
+    if (session && mode === 'wave' && hold) {
+      const view = scene();
+      if (view) renderer.draw(view, uid, now);
+    } else if (session && mode === 'wave') {
+      if (debugOn && debugView.god && session.isHost) {
+        const me = session.world?.players[uid]; // 무적: 피격 무적시간을 계속 채워 hurtPlayer를 막는다
+        if (me) me.immune = Math.max(me.immune || 0, .2);
+      }
       if (session.isHost) { move(dt); session.update(dt); }
       else { const input = move(dt); session.update(dt, input); }
       const view = scene();
@@ -288,9 +388,22 @@
       checkpoint();
     } else if (renderer) renderer.draw(null, uid, now);
   }
+  let debugBtn = null;
   document.addEventListener('DOMContentLoaded', () => {
     walletPromise = typeof SharedWallet !== 'undefined'
       ? SharedWallet.init() : Promise.resolve();
+    // 로그인 확인 뒤 도감(서버+로컬 병합) 로드
+    Promise.resolve(walletPromise).catch(() => {}).then(() => P.collection?.load?.()).catch(() => {});
+    const statsBtn = document.getElementById('statsBtn');
+    if (statsBtn) statsBtn.onclick = () => { if (statsPlayer()) U.stats(statsPlayer); };
+    debugBtn = document.getElementById('debugBtn');
+    if (debugBtn) debugBtn.onclick = () => U.debugPanel?.();
+    if (debugOn && document.body) {
+      const badge = document.createElement('div');
+      badge.id = 'debugBadge';
+      badge.textContent = 'DEBUG';
+      document.body.appendChild(badge);
+    }
     renderer = new P.render.Renderer(document.getElementById('canvas'));
     document.getElementById('sound').onclick = () => {
       document.getElementById('sound').textContent = P.sfx.mute() ? '🔇' : '🔊';
@@ -359,7 +472,7 @@
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) checkpoint(true);
   });
-  window.addEventListener('pagehide', () => checkpoint(true));
+  window.addEventListener('pagehide', () => { checkpoint(true); P.collection?.flush?.(); });
   // UI buttons are handled synchronously on #panel. Observe the completed action
   // without rebinding its handlers or re-running any simulation callback.
   let beforeShopOffers;
@@ -381,6 +494,10 @@
     get offers() { return offers; },
     set offers(value) { offers = value; },
     get shopRolls() { return shopRolls; },
+    get solo() { return !!solo(); },
+    get debug() { return debugOn; },
+    get debugView() { return debugOn ? debugView : null; },
+    debugAct,
     resize() { renderer?.resize(); },
     refresh() { if (mode === 'title') reset(); }
   };
