@@ -29,7 +29,10 @@
   }
   function createPlayer(uid, char = "basic", saved = {}) {
     const c = D.chars[char] || D.chars.basic;
-    const s = { ...D.stats, ...c.stats, ...saved.stats };
+    // 캐릭터 보정은 기본 스탯에 '가산'(덮어쓰기 아님). 저장된 로드아웃 스탯은 이미 최종값이라 그대로 우선.
+    const s = { ...D.stats };
+    for (const [k, v] of Object.entries(c.stats)) s[k] = (s[k] || 0) + v;
+    Object.assign(s, saved.stats || {});
     return { uid, char, x: 800, y: 600, f: 1, stats: s, maxHp: s.maxHp, hp: s.maxHp, alive: true, weapons: saved.weapons || [[c.weapon, 1]], items: saved.items || [], mats: saved.mats || 0, xp: saved.xp || 0, lvl: saved.lvl || 1, levelUps: 0, kills: 0, totalDamage: 0, cool: [], hurt: 0, steal: 0 };
   }
   function createWorld(opts = {}) {
