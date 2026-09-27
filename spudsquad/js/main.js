@@ -43,7 +43,7 @@
   }
   function selected(char) {
     mode = 'select-wait';
-    U.show(`<h2>🥔 ${U.t('wait')}</h2>`, true);
+    if (Object.keys(session.players).length > 1) U.show(`<h2>🥔 ${U.t('wait')}</h2>`, true);
     session.local({ type: 'PICK', payload: { uid, char } });
   }
   function beginSolo() {
@@ -164,15 +164,17 @@
         }, 45000);
       }
     }
-    if (action.type === 'READY' && mode === 'shop' && session.isHost &&
+    if (action.type === 'READY' && (mode === 'shop' || mode === 'ready') && session.isHost &&
         session.ready.size === Object.keys(session.players).length) session.next();
   }
   function ready(player) {
+    // 대기 화면은 READY 전송 '전에' 띄운다. 솔로는 READY가 동기로 다음 웨이브를 시작하므로
+    // 뒤에 띄우면 진행 중인 웨이브 위에 '동료를 기다리는 중'이 덮여 멈춘 것처럼 보였다.
+    mode = 'ready';
+    if (Object.keys(session.players).length > 1) U.show(`<h2>${U.t('wait')}</h2>`);
     session.local({ type: 'READY', payload: { uid, loadout: {
       weapons: player.weapons, items: player.items, stats: player.stats, mats: player.mats
     } } });
-    mode = 'ready';
-    U.show(`<h2>${U.t('wait')}</h2>`);
   }
   function finish(data) {
     if (mode === 'end') return;
