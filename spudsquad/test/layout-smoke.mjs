@@ -90,12 +90,28 @@ try {
       const original = SPUD.render.Renderer.prototype.sprite;
       window.__orbitDraws = 0;
       SPUD.render.Renderer.prototype.sprite = function (id, ...args) {
-        if (id === 'weapon_pistol') window.__orbitDraws++;
+        if (id === 'weapon_pistol') {
+          window.__orbitDraws++;
+          const matrix = this.c.getTransform();
+          window.__weaponSpriteWorld = {
+            x: matrix.e / this.dpr + this.cam.x,
+            y: matrix.f / this.dpr + this.cam.y,
+            angle: Math.atan2(matrix.b, matrix.a)
+          };
+        }
         return original.call(this, id, ...args);
       };
     })()`);
     await new Promise(resolve => setTimeout(resolve, 100));
     assert.ok(await evaluate('window.__orbitDraws > 0'), 'weapon orbit not drawn');
+    const spriteMatchesPose = await evaluate(`(() => {
+      const p = SPUD.main.session.world.players.solo;
+      const pose = SPUD.sim.weaponPose(p, 'pistol', 0, 0);
+      return Math.hypot(window.__weaponSpriteWorld.x - pose.x,
+        window.__weaponSpriteWorld.y - pose.y) < 1 &&
+        Math.abs(window.__weaponSpriteWorld.angle - pose.orbit) < .01;
+    })()`);
+    assert.equal(spriteMatchesPose, true, 'sprite orbit differs from sim.weaponPose');
     assert.ok(await evaluate(`document.querySelector('#field').getBoundingClientRect().top >=
       document.querySelector('#hud').getBoundingClientRect().bottom`), 'canvas overlaps HUD');
     await evaluate(`(() => {

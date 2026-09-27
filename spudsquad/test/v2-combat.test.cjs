@@ -10,6 +10,10 @@ const world = (char = 'basic') => {
 const enemy = (w, x, y, type = 'blob') => S.spawn(w, type, x, y);
 test('14 weapons and 32 items have their exact definitions', () => {
   a.equal(Object.keys(D.weapons).length, 14);
+  for (const weapon of Object.values(D.weapons)) {
+    a.equal(weapon.muzzle.length, 2);
+    a.ok(weapon.muzzle.every(Number.isFinite));
+  }
   a.equal(Object.keys(D.items).length, 32);
   a.equal(Object.keys(D.chars).length, 10);
 });
@@ -39,8 +43,8 @@ for (const [id, v] of Object.entries(D.weapons)) {
 }
 test('thrust line, sweep 120° arc, slam radius, cone 40° and chain damage decay', () => {
   for (const [id, inside, outside] of [
-    ['spear', [100, 0], [100, 80]], ['stick', [80, 70], [-80, 0]],
-    ['hammer', [100, 60], [-100, 0]], ['flamethrower', [100, 20], [100, 90]]
+    ['spear', [100, 0], [100, 80]], ['stick', [100, 60], [-80, 0]],
+    ['hammer', [100, 60], [-100, 0]], ['flamethrower', [120, 15], [100, 90]]
   ]) {
     const w = world(), p = w.players.solo;
     p.weapons = [[id, 1]];
@@ -58,7 +62,7 @@ test('thrust line, sweep 120° arc, slam radius, cone 40° and chain damage deca
   a.deepEqual(group.map(e => Math.round(1000 - e.hp)), [10, 8, 6, 5, 0]);
 });
 test('burn refreshes (not stacks) and bleed is applied on dagger critical', () => {
-  const w = world(), p = w.players.solo, e = enemy(w, p.x + 30, p.y);
+  const w = world(), p = w.players.solo, e = enemy(w, p.x + 80, p.y);
   e.hp = e.maxHp = 1000;
   S.weaponHit(w, p, 'flamethrower', 1, e, 0);
   a.equal(e.status.burn.left, 3);
@@ -120,19 +124,19 @@ test('basic, muscle, science, lucky, gunslinger and bomber special hooks', () =>
   a.equal(S.shopRerollCost(S.createPlayer('x', 'basic'), 4, 0), 0);
   a.equal(S.shopRerollCost(S.createPlayer('x', 'basic'), 4, 1), 6);
   const muscle = world('muscle'), m = muscle.players.solo;
-  const mTarget = enemy(muscle, m.x + 30, m.y);
+  const mTarget = enemy(muscle, m.x + 80, m.y);
   mTarget.hp = mTarget.maxHp = 100;
   S.weaponHit(muscle, m, 'fist', 1, mTarget, 0);
   const normal = world(), n = normal.players.solo;
-  const nTarget = enemy(normal, n.x + 30, n.y);
+  const nTarget = enemy(normal, n.x + 80, n.y);
   nTarget.hp = nTarget.maxHp = 100;
   S.weaponHit(normal, n, 'fist', 1, nTarget, 0);
   a.ok(mTarget.kx > nTarget.kx);
   const science = world('science'), sci = science.players.solo;
-  const sTarget = enemy(science, sci.x + 30, sci.y);
+  const sTarget = enemy(science, sci.x + 80, sci.y);
   sTarget.hp = sTarget.maxHp = 100;
   S.weaponHit(science, sci, 'laser', 1, sTarget, 0);
-  const base = enemy(normal, n.x + 30, n.y);
+  const base = enemy(normal, n.x + 80, n.y);
   base.hp = base.maxHp = 100;
   S.weaponHit(normal, n, 'laser', 1, base, 0);
   a.ok(100 - sTarget.hp > 100 - base.hp);
@@ -143,7 +147,7 @@ test('basic, muscle, science, lucky, gunslinger and bomber special hooks', () =>
   S.kill(lucky, luckTarget, l.uid);
   a.equal(lucky.crateCount, 2); // lucky 2% and independent base 1.5%
   const gun = world('gunslinger'), g = gun.players.solo;
-  const gunTarget = enemy(gun, g.x + 20, g.y);
+  const gunTarget = enemy(gun, g.x + 80, g.y);
   gunTarget.hp = gunTarget.maxHp = 100;
   S.weaponHit(gun, g, 'pistol', 1, gunTarget, 0);
   S.weaponHit(normal, n, 'pistol', 1, base, 0);
@@ -171,4 +175,36 @@ test('treasure map raises crate drop chance by 50% for each copy', () => {
   target.hp = 0;
   S.kill(withMap, target, 'solo');
   a.equal(withMap.crateCount, 1);
+});
+
+test('slot-fixed pistol muzzle is the projectile and FX origin, not player center', () => {
+  const w = world(), p = w.players.solo;
+  p.weapons = [['pistol', 1], ['stick', 1]];
+  const pose = S.weaponPose(p, 'pistol', 0, 0);
+  a.equal(pose.x, p.x + 34);
+  a.equal(pose.y, p.y);
+  a.ok(Math.hypot(pose.muzzleX - p.x, pose.muzzleY - p.y) > 20);
+  const reverse = S.weaponPose(p, 'stick', 1, Math.PI);
+  a.ok(Math.abs(reverse.x - (p.x - 34)) < 1e-9);
+  const target = enemy(w, pose.muzzleX + 60, pose.muzzleY);
+  S.weaponHit(w, p, 'pistol', 1, target, 0, 0);
+  a.equal(w.projectiles[0].x, pose.muzzleX);
+  a.equal(w.projectiles[0].y, pose.muzzleY);
+  const shot = w.fx.find(event => event[0] === 'sh');
+  a.deepEqual(shot.slice(4, 6), [pose.muzzleX | 0, pose.muzzleY | 0]);
+  const melee = enemy(w, reverse.muzzleX - 60, reverse.muzzleY);
+  S.weaponHit(w, p, 'stick', 1, melee, Math.PI, 1);
+  const sweep = w.fx.find(event => event[0] === 'sw');
+  a.deepEqual(sweep.slice(5, 7), [reverse.muzzleX | 0, reverse.muzzleY | 0]);
+});
+test('beam and chain FX start at the same muzzle used for hit checks', () => {
+  for (const id of ['laser', 'flamethrower', 'staff']) {
+    const w = world(), p = w.players.solo;
+    p.weapons = [[id, 1]];
+    const pose = S.weaponPose(p, id, 0, 0);
+    const target = enemy(w, pose.muzzleX + 40, pose.muzzleY);
+    S.weaponHit(w, p, id, 1, target, 0);
+    const beam = w.fx.find(event => event[0] === 'bm');
+    a.deepEqual(beam.slice(1, 3), [pose.muzzleX | 0, pose.muzzleY | 0], id);
+  }
 });

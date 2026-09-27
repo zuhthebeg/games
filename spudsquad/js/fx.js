@@ -74,9 +74,11 @@
           const weapon = P.data.weapons[b];
           P.sfx?.(weapon?.behavior === 'beam' || weapon?.behavior === 'chain' ? 'laser'
             : weapon?.behavior === 'projectile' ? 'shot' : 'swing');
-          this.motions.set(`${a}:${ev[7] || 0}`, { at: now, angle: ev[6], action: weapon?.behavior });
+          this.motions.set(`${a}:${ev[7] || 0}`, { at: now, angle: ev[6], action: weapon?.behavior,
+            origin: { x: ev[4], y: ev[5] } });
         }
-        if (type === 'sw') this.motions.set(`${a}:${b}`, { at: now, angle: d, action: e });
+        if (type === 'sw') this.motions.set(`${a}:${b}`, { at: now, angle: d, action: e,
+          origin: { x: ev[5], y: ev[6] } });
         if (type === 'bm') this.trails.push({ x1: a, y1: b, x2: d, y2: e, kind: ev[5], until: now + 120 });
         if (type === 'ex') {
           this.trails.push({ x: a, y: b, r: d, kind: 'ring', until: now + 220 });

@@ -91,7 +91,7 @@
         const type = event[0];
         if (type === 'mark') this.marks.push({ x: event[1], y: event[2], life: 1 });
 
-        if (type === 'sh' && D.weapons[event[2]]?.kind === 'ranged' && event[2] !== 'laser') {
+        if (type === 'sh' && D.weapons[event[2]]?.behavior === 'projectile') {
           this.projectiles.push({ x: event[4], y: event[5],
             vx: Math.cos(event[6]) * 700, vy: Math.sin(event[6]) * 700,
             life: D.weapons[event[2]].range / 700, kind: 'sh' });
@@ -255,11 +255,12 @@
           now / 1000, (live?.hurt > 0 || this.flashes.get(uid) > now));
         const weapons = data?.weapons || [];
         weapons.forEach(([weapon], index) => {
-          const orbit = index * 2 * Math.PI / weapons.length - Math.PI / 2;
           const motion = this.effects.motions.get(`${uid}:${index}`);
           const action = D.weapons[weapon]?.behavior;
           const age = motion ? (now - motion.at) / 1000 : Infinity;
-          const direction = motion?.angle ?? orbit;
+          const pose = P.sim.weaponPose({ x: player[1], y: player[2], weapons },
+            weapon, index, motion?.angle ?? 0);
+          const direction = motion?.angle ?? pose.orbit;
           let extension = 0, angle = direction;
           if (age < .3 && motion?.action === 'thrust') {
             extension = D.weapons[weapon].range * (age < .12 ? age / .12 : ( .27 - age) / .15);
@@ -273,16 +274,16 @@
           if (age < .4 && motion?.action === 'slam') {
             extension = age < .2 ? -20 * age / .2 : 35 * (1 - (age - .2) / .2);
           }
-          const recoil = age < .12 && action === 'projectile' ? 6 * (1 - age / .12) : 0;
-          const radius = 34 + Math.max(0, extension) - recoil;
-          const px = player[1] + Math.cos(orbit) * 34 + Math.cos(direction) * (radius - 34);
-          const py = player[2] + Math.sin(orbit) * 34 + Math.sin(direction) * (radius - 34);
-          c.save(); c.translate(px, py); c.rotate(angle + Math.PI / 2);
+          const recoil = age < .12 && action === 'projectile' ? 6 * Math.sin(Math.PI * age / .12) : 0;
+          const px = pose.x + Math.cos(direction) * (Math.max(0, extension) - recoil);
+          const py = pose.y + Math.sin(direction) * (Math.max(0, extension) - recoil);
+          c.save(); c.translate(px, py); c.rotate(angle + (D.weapons[weapon].artAngle || 0));
           this.sprite('weapon_' + weapon, 0, 0, 28);
           c.restore();
           if (age < .10 && action === 'projectile') {
             c.fillStyle = '#fff2a1'; c.beginPath();
-            c.arc(px + Math.cos(direction) * 18, py + Math.sin(direction) * 18, 8 * (1 - age / .1), 0, 7);
+            c.arc(motion?.origin?.x ?? pose.muzzleX, motion?.origin?.y ?? pose.muzzleY,
+              8 * (1 - age / .1), 0, 7);
             c.fill();
           }
         });

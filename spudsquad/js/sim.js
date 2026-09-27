@@ -258,10 +258,19 @@
       applyStatus(w, e, 'bleed', p.uid, power * .25);
     }
   }
+  // Slot 0 starts at +X; no camera-facing/aim rotation of the orbit itself.
+  function weaponPose(p, id, slot, angle) {
+    const orbit = 2 * Math.PI * slot / Math.max(1, p.weapons.length);
+    const x = p.x + 34 * Math.cos(orbit);
+    const y = p.y + 34 * Math.sin(orbit);
+    const [mx, my] = D.weapons[id].muzzle;
+    return { x, y, muzzleX: x + mx * Math.cos(angle) - my * Math.sin(angle),
+      muzzleY: y + mx * Math.sin(angle) + my * Math.cos(angle), orbit };
+  }
   const behaviors = {
-    thrust(w, p, v, e, angle, range, power, crit) {
+    thrust(w, p, v, e, angle, range, power, crit, origin) {
       for (const target of w.enemies.slice()) {
-        const dx = target.x - p.x, dy = target.y - p.y;
+        const dx = target.x - origin.x, dy = target.y - origin.y;
         const along = dx * Math.cos(angle) + dy * Math.sin(angle);
         const across = Math.abs(dx * Math.sin(angle) - dy * Math.cos(angle));
         if (along >= 0 && along <= range && across < D.enemies[target.type].size / 3 + 5) {
@@ -269,47 +278,47 @@
         }
       }
     },
-    sweep(w, p, v, e, angle, range, power, crit) {
+    sweep(w, p, v, e, angle, range, power, crit, origin) {
       for (const target of w.enemies.slice()) {
-        const difference = Math.atan2(Math.sin(Math.atan2(target.y - p.y, target.x - p.x) - angle),
-          Math.cos(Math.atan2(target.y - p.y, target.x - p.x) - angle));
-        if (dist(p, target) <= range && Math.abs(difference) <= Math.PI / 3) {
+        const difference = Math.atan2(Math.sin(Math.atan2(target.y - origin.y, target.x - origin.x) - angle),
+          Math.cos(Math.atan2(target.y - origin.y, target.x - origin.x) - angle));
+        if (dist(origin, target) <= range && Math.abs(difference) <= Math.PI / 3) {
           hitWeapon(w, p, v, target, power, crit);
         }
       }
     },
-    slam(w, p, v, e, angle, range, power, crit) {
-      const point = { x: p.x + Math.cos(angle) * Math.min(range, dist(p, e)),
-        y: p.y + Math.sin(angle) * Math.min(range, dist(p, e)) };
+    slam(w, p, v, e, angle, range, power, crit, origin) {
+      const point = { x: origin.x + Math.cos(angle) * Math.min(range, dist(origin, e)),
+        y: origin.y + Math.sin(angle) * Math.min(range, dist(origin, e)) };
       for (const target of w.enemies.slice()) {
         if (dist(point, target) <= 80) hitWeapon(w, p, v, target, power, crit);
       }
       w.fx.push(['ex', point.x | 0, point.y | 0, 80, p.uid]);
     },
-    beam(w, p, v, e, angle, range, power, crit) {
+    beam(w, p, v, e, angle, range, power, crit, origin) {
       for (const target of w.enemies.slice()) {
-        const dx = target.x - p.x, dy = target.y - p.y;
+        const dx = target.x - origin.x, dy = target.y - origin.y;
         const along = dx * Math.cos(angle) + dy * Math.sin(angle);
         if (along >= 0 && along <= range && Math.abs(dx * Math.sin(angle) - dy * Math.cos(angle)) < 26) {
           hitWeapon(w, p, v, target, power, crit);
         }
       }
-      w.fx.push(['bm', p.x | 0, p.y | 0, (p.x + Math.cos(angle) * range) | 0,
-        (p.y + Math.sin(angle) * range) | 0, 'beam']);
+      w.fx.push(['bm', origin.x | 0, origin.y | 0, (origin.x + Math.cos(angle) * range) | 0,
+        (origin.y + Math.sin(angle) * range) | 0, 'beam']);
     },
-    cone(w, p, v, e, angle, range, power, crit) {
+    cone(w, p, v, e, angle, range, power, crit, origin) {
       for (const target of w.enemies.slice()) {
-        const delta = Math.atan2(Math.sin(Math.atan2(target.y - p.y, target.x - p.x) - angle),
-          Math.cos(Math.atan2(target.y - p.y, target.x - p.x) - angle));
-        if (dist(p, target) <= range && Math.abs(delta) <= Math.PI * 20 / 180) {
+        const delta = Math.atan2(Math.sin(Math.atan2(target.y - origin.y, target.x - origin.x) - angle),
+          Math.cos(Math.atan2(target.y - origin.y, target.x - origin.x) - angle));
+        if (dist(origin, target) <= range && Math.abs(delta) <= Math.PI * 20 / 180) {
           hitWeapon(w, p, v, target, power, crit);
         }
       }
-      w.fx.push(['bm', p.x | 0, p.y | 0, e.x | 0, e.y | 0, 'cone']);
+      w.fx.push(['bm', origin.x | 0, origin.y | 0, e.x | 0, e.y | 0, 'cone']);
     },
-    chain(w, p, v, e, angle, range, power, crit) {
+    chain(w, p, v, e, angle, range, power, crit, origin) {
       const seen = new Set();
-      let from = p, target = e;
+      let from = origin, target = e;
       for (let i = 0; i < 4 && target; i++) {
         seen.add(target.id);
         w.fx.push(['bm', from.x | 0, from.y | 0, target.x | 0, target.y | 0, 'chain']);
@@ -319,14 +328,14 @@
           .sort((a, b) => dist(from, a) - dist(from, b))[0];
       }
     },
-    projectile(w, p, v, e, angle, range, power, crit) {
+    projectile(w, p, v, e, angle, range, power, crit, origin) {
       const count = (v.count || 1) + Math.max(0, effectiveStats(p).projectiles);
       for (let i = 0; i < count; i++) {
         const spread = v.count ? (i - (count - 1) / 2) * Math.PI * (v.spread / (v.count - 1)) / 180
           : (i - (count - 1) / 2) * 5 * Math.PI / 180;
         const a = angle + spread + (v.randomSpread ? (rand(w) - .5) * 8 * Math.PI / 180 : 0);
         w.projectiles.push({ id: Object.keys(D.weapons).find(id => D.weapons[id] === v),
-          x: p.x, y: p.y, vx: Math.cos(a) * 700, vy: Math.sin(a) * 700,
+          x: origin.x, y: origin.y, vx: Math.cos(a) * 700, vy: Math.sin(a) * 700,
           left: range, power, crit, owner: p.uid, hit: new Set(), bounces: 0 });
       }
     }
@@ -335,9 +344,13 @@
     const v = D.weapons[id];
     const { power, crit } = attackPower(w, p, v, tier);
     const range = v.range + effectiveStats(p).range;
-    behaviors[v.behavior](w, p, v, e, angle, range, power, crit);
-    if (['thrust', 'sweep', 'slam'].includes(v.behavior)) w.fx.push(['sw', p.uid, slot, angle, v.behavior]);
-    w.fx.push(['sh', p.uid, id, tier, p.x | 0, p.y | 0, angle, slot]);
+    const pose = weaponPose(p, id, slot, angle);
+    const origin = { x: pose.muzzleX, y: pose.muzzleY };
+    behaviors[v.behavior](w, p, v, e, angle, range, power, crit, origin);
+    if (['thrust', 'sweep', 'slam'].includes(v.behavior)) {
+      w.fx.push(['sw', p.uid, slot, angle, v.behavior, origin.x | 0, origin.y | 0]);
+    }
+    w.fx.push(['sh', p.uid, id, tier, origin.x | 0, origin.y | 0, angle, slot]);
   }
   function spawnPack(w) {
     const pool = Object.keys(D.enemies).filter((id) => !id.startsWith("boss") && D.enemies[id].first <= w.wave && id !== "elite");
@@ -404,9 +417,10 @@
         const v = D.weapons[id];
         if (!v) return;
         p.cool[i] = (p.cool[i] || 0) - dt;
-        const target = nearest(w, p, v.range + effectiveStats(p).range);
+        const weapon = weaponPose(p, id, i, 0);
+        const target = nearest(w, weapon, v.range + effectiveStats(p).range);
         if (target && p.cool[i] <= 0) {
-          const angle = Math.atan2(target.y - p.y, target.x - p.x);
+          const angle = Math.atan2(target.y - weapon.y, target.x - weapon.x);
           weaponHit(w, p, id, tier, target, angle, i);
           p.cool[i] = v.cool * .9 ** (tier - 1) / (1 + effectiveStats(p).atkSpd / 100 +
             (p.char === 'cyclops' ? .4 : 0));
@@ -681,7 +695,7 @@
   }
   const api = {
     rollGrade, rollUpgrades, rollCrateItem, grantItem, sets, effectiveStats, capacity, shopRerollCost,
-    behaviors, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,
+    behaviors, weaponPose, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,
     hurtPlayer, waveLength, enemyStats, needXp, price, rerollCost, damageTaken,
     rollDamage, createPlayer, createWorld, applyInput, spawn, kill, step, canEnd,
     merge, shop, buy, clamp
