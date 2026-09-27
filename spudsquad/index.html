@@ -166,7 +166,13 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 }
 .tier2 { border-color: #5b94d7 !important; }
 .tier3 { border-color: #9a60c9 !important; }
-.tier4 { border-color: #d54a47 !important; }
+.tier4 { border-color: #ed902d !important; }
+.trait { font-size: 12px; color: #744b2e; line-height: 1.25; min-height: 30px; }
+.grade { font-size: 12px; font-weight: 700; }
+.set-bonuses { font-size: 11px; color: #725132; }
+.detail-sheet { position: absolute; inset: auto 10px 10px; background: #fff7dc;
+  border: 3px solid #7c5033; border-radius: 14px; padding: 10px; z-index: 3; }
+#team img { width: 24px; height: 24px; vertical-align: middle; }
 .shop-art { width: 46px; height: 46px; object-fit: contain; }
 .shop-detail { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .shop-detail strong { font: 19px Jua; }
@@ -221,6 +227,7 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
   .btn.large { min-height: 50px; }
   .character-grid, .upgrade-grid { grid-template-columns: repeat(2, 1fr); gap: 5px; }
   .character-card { padding: 6px 3px; gap: 2px; min-height: 220px; }
+  .trait { font-size: 10px; }
   .character-art { width: 96px; height: 96px; }
   .character-card strong { font-size: 18px; }
   .starting-weapon { font-size: 10px; }
@@ -236,7 +243,8 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
   .shop-art { width: 40px; height: 40px; }
   .shop-detail { width: calc(100% - 45px); flex: none; align-items: flex-start; text-align: left; }
   .shop-detail strong { font-size: 14px; }
-  .shop-detail small { font-size: 9px; max-height: 25px; overflow: hidden; }
+  .shop-detail small { font-size: 9px; display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; line-clamp: 2; overflow: hidden; }
   .price { font-size: 11px; }
   .offer-actions { width: 100%; }
   .offer-actions .btn { min-height: 26px; font-size: 11px; }

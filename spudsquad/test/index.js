@@ -2,3 +2,5 @@
 require('./sim.test.cjs');
 require('./net.test.cjs');
 require('./char-stats.test.cjs');
+require('./v2-combat.test.cjs');
+require('./v2-growth.test.cjs');

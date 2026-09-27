@@ -154,7 +154,8 @@
       if (player) {
         player.mats = action.payload.players?.[uid]?.mats ?? player.mats;
         player.levelUps = levelUps;
-        U.upgrades(player, () => U.shop(session, uid, ready));
+        U.crates(session, player, action.payload.players?.[uid]?.crates || 0,
+          () => U.upgrades(player, () => U.shop(session, uid, ready)));
       } else U.shop(session, uid, ready);
       if (session.isHost) {
         setTimeout(() => {

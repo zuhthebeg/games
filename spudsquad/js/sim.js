@@ -79,7 +79,12 @@
     return p;
   }
   function createWorld(opts = {}) {
-    const w = { wave: opts.wave || 1, rng: opts.rng || Math.random, players: {}, enemies: [], drops: [], shots: [], bullets: [], projectiles: [], crates: [], crateCount: 0, turrets: [], fx: [], tick: 0, tm: waveLength(opts.wave || 1), spawnClock: 0, nextId: 1, ended: false, win: false, bossKilled: false, eliteCount: 0, bossSpawned: false };
+    const w = {
+      wave: opts.wave || 1, rng: opts.rng || Math.random, players: {}, enemies: [], drops: [],
+      shots: [], bullets: [], projectiles: [], crates: [], crateCount: 0, turrets: [], fx: [],
+      tick: 0, tm: waveLength(opts.wave || 1), spawnClock: 0, nextId: 1,
+      ended: false, win: false, bossKilled: false, eliteCount: 0, bossSpawned: false
+    };
     for (const [uid, v] of Object.entries(opts.players || { solo: { char: "basic" } })) {
       const p = w.players[uid] = createPlayer(uid, v.char, v);
       if (p.items.includes('piggy_bank')) p.mats += Math.min(20, Math.floor(p.mats * .1)) * p.items.filter(i => i === 'piggy_bank').length;
@@ -596,6 +601,34 @@
     p.weapons.splice(other, 1);
     return true;
   }
+  function rollGrade(rng = Math.random, luck = 0) {
+    const rare = Math.min(1, .30 * (1 + luck / 100));
+    const roll = rng();
+    if (roll >= 1 - rare) {
+      const within = (roll - (1 - rare)) / rare;
+      if (within >= 29 / 30) return 4;
+      if (within >= 22 / 30) return 3;
+      return 2;
+    }
+    return 1;
+  }
+  const gradeMult = [0, 1, 1.6, 2.4, 3.5];
+  function rollUpgrades(p, rng = Math.random) {
+    const pool = Object.keys(D.upgrades);
+    const result = [];
+    for (let i = 0; i < 4; i++) {
+      const index = Math.floor(rng() * pool.length);
+      const id = pool.splice(index, 1)[0];
+      const grade = rollGrade(rng, p.stats.luck);
+      result.push({ id, grade, value: Math.round(D.upgrades[id] * gradeMult[grade] * 10) / 10 });
+    }
+    return result;
+  }
+  function rollCrateItem(w, p) {
+    const tier = rollItemTier(w, p);
+    const options = Object.keys(D.items).filter(id => (D.items[id].tier || 1) === tier);
+    return options[Math.floor(rand(w) * options.length)];
+  }
   function rollItemTier(w, p) {
     if (w.wave >= 8 && rand(w) < .10 + p.stats.luck / 600) return 3;
     if (w.wave >= 4 && rand(w) < .25 + p.stats.luck / 400) return 2;
@@ -620,23 +653,34 @@
     }
     return slots;
   }
+  function grantItem(p, id) {
+    if (!D.items[id]) return false;
+    p.items.push(id);
+    for (const [k, v] of Object.entries(D.items[id].stats)) {
+      p.stats[k] += v;
+      if (k === 'maxHp') {
+        p.maxHp += v;
+        p.hp = Math.min(p.maxHp, p.hp + v);
+      }
+    }
+    return true;
+  }
   function buy(p, offer) {
     if (!offer || p.mats < offer.price || offer.weapon && p.weapons.length >= capacity(p)) return false;
     p.mats -= offer.price;
     if (offer.weapon) p.weapons.push([offer.id, offer.tier]);
     else {
-      p.items.push(offer.id);
-      for (const [k, v] of Object.entries(D.items[offer.id].stats)) {
-        p.stats[k] += v;
-        if (k === "maxHp") {
-          p.maxHp += v;
-          p.hp += v;
-        }
-      }
+      grantItem(p, offer.id);
     }
     return true;
   }
-  const api = { sets, effectiveStats, capacity, behaviors, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy, hurtPlayer, waveLength, enemyStats, needXp, price, rerollCost, damageTaken, rollDamage, createPlayer, createWorld, applyInput, spawn, kill, step, canEnd, merge, shop, buy, clamp };
+  const api = {
+    rollGrade, rollUpgrades, rollCrateItem, grantItem, sets, effectiveStats, capacity,
+    behaviors, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,
+    hurtPlayer, waveLength, enemyStats, needXp, price, rerollCost, damageTaken,
+    rollDamage, createPlayer, createWorld, applyInput, spawn, kill, step, canEnd,
+    merge, shop, buy, clamp
+  };
   root.SPUD = root.SPUD || {};
   root.SPUD.sim = api;
   if (typeof module !== "undefined") module.exports = api;

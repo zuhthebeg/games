@@ -8,7 +8,7 @@
     ...Object.keys(D.enemies),
     ...Object.keys(D.weapons).map(id => 'weapon_' + id),
     ...Object.keys(D.items).map(id => 'item_' + id),
-    'bg_ground', 'key_art'
+    'bg_ground', 'key_art', 'item_crate'
   ];
   for (const id of names) {
     const image = new Image();
@@ -160,6 +160,14 @@
         (Math.random() - .5) * this.effects.shake - this.cam.y);
       this.effects.shake *= .85;
       this.ground(width, height, true);
+      const crates = scene.cr || scene.crates || [];
+      for (const row of crates) {
+        const x = Array.isArray(row) ? row[1] : row.x;
+        const y = Array.isArray(row) ? row[2] : row.y;
+        this.sprite('item_crate', x, y, 32, 1, now / 1000);
+        c.fillStyle = '#fff39b';
+        c.beginPath(); c.arc(x + 18, y - 14, 3 + Math.sin(now / 170) * 2, 0, 7); c.fill();
+      }
       const drops = scene.d || scene.drops || [];
       const currentDrops = new Map();
       for (const drop of drops) {
@@ -227,9 +235,36 @@
           now / 1000, (live?.hurt > 0 || this.flashes.get(uid) > now));
         const weapons = data?.weapons || [];
         weapons.forEach(([weapon], index) => {
-          const angle = now / 800 + index * 2 * Math.PI / weapons.length;
-          this.sprite('weapon_' + weapon, player[1] + Math.cos(angle) * 42,
-            player[2] + Math.sin(angle) * 42, 28);
+          const orbit = index * 2 * Math.PI / weapons.length - Math.PI / 2;
+          const motion = this.effects.motions.get(`${uid}:${index}`);
+          const action = D.weapons[weapon]?.behavior;
+          const age = motion ? (now - motion.at) / 1000 : Infinity;
+          const direction = motion?.angle ?? orbit;
+          let extension = 0, angle = direction;
+          if (age < .3 && motion?.action === 'thrust') {
+            extension = D.weapons[weapon].range * (age < .12 ? age / .12 : ( .27 - age) / .15);
+          }
+          if (age < .18 && motion?.action === 'sweep') {
+            angle = direction + (-60 + 120 * age / .18) * Math.PI / 180;
+            c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 8;
+            c.beginPath(); c.arc(player[1], player[2], 48,
+              direction - Math.PI / 3, angle); c.stroke();
+          }
+          if (age < .4 && motion?.action === 'slam') {
+            extension = age < .2 ? -20 * age / .2 : 35 * (1 - (age - .2) / .2);
+          }
+          const recoil = age < .12 && action === 'projectile' ? 6 * (1 - age / .12) : 0;
+          const radius = 34 + Math.max(0, extension) - recoil;
+          const px = player[1] + Math.cos(orbit) * 34 + Math.cos(direction) * (radius - 34);
+          const py = player[2] + Math.sin(orbit) * 34 + Math.sin(direction) * (radius - 34);
+          c.save(); c.translate(px, py); c.rotate(angle + Math.PI / 2);
+          this.sprite('weapon_' + weapon, 0, 0, 28);
+          c.restore();
+          if (age < .10 && action === 'projectile') {
+            c.fillStyle = '#fff2a1'; c.beginPath();
+            c.arc(px + Math.cos(direction) * 18, py + Math.sin(direction) * 18, 8 * (1 - age / .1), 0, 7);
+            c.fill();
+          }
         });
         c.fillStyle = '#693c29';
         c.fillRect(player[1] - 26, player[2] + 30, 52, 5);
