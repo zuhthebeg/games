@@ -319,22 +319,41 @@
           const pose = P.sim.weaponPose({ x: player[1], y: player[2], weapons },
             weapon, index, aim ?? 0);
           const direction = aim ?? pose.orbit;
-          let extension = 0, angle = direction;
-          if (age < .3 && motion?.action === 'thrust') {
-            extension = D.weapons[weapon].range * (age < .12 ? age / .12 : ( .27 - age) / .15);
+          let extension = 0, angle = direction, sideX = 0, sideY = 0;
+          // 근접: 판정 사거리(reach)까지 무기가 실제로 날아갔다 돌아온다. 0.07s 전진·0.05s 유지·0.2s 복귀.
+          const reach = motion?.reach || D.weapons[weapon].range;
+          const out = age < .07 ? age / .07 : age < .12 ? 1 : Math.max(0, 1 - (age - .12) / .2);
+          const ease = 1 - (1 - out) ** 3;
+          if (age < .32 && motion?.action === 'thrust') {
+            extension = reach * ease;
+            if (age < .16) { // 찌르기 잔상
+              c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 6; c.lineCap = 'round';
+              c.beginPath(); c.moveTo(pose.x, pose.y);
+              c.lineTo(pose.x + Math.cos(direction) * extension, pose.y + Math.sin(direction) * extension); c.stroke();
+            }
           }
-          if (age < .18 && motion?.action === 'sweep') {
-            angle = direction + (-60 + 120 * age / .18) * Math.PI / 180;
-            c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 8;
-            c.beginPath(); c.arc(player[1], player[2], 48,
-              direction - Math.PI / 3, angle); c.stroke();
+          if (age < .3 && motion?.action === 'sweep') {
+            // 총구를 중심으로 반경 reach의 120° 호를 무기가 실제로 훑는다(판정과 동일한 원점·반경).
+            const t = Math.min(1, age / .16);
+            const swing = direction + (-60 + 120 * (1 - (1 - t) ** 2)) * Math.PI / 180;
+            const ox = motion.origin?.x ?? pose.muzzleX, oy = motion.origin?.y ?? pose.muzzleY;
+            const r = reach * (age < .16 ? 1 : Math.max(0, 1 - (age - .16) / .14));
+            angle = swing;
+            sideX = ox + Math.cos(swing) * r * .8 - pose.x; sideY = oy + Math.sin(swing) * r * .8 - pose.y;
+            if (age < .2) {
+              c.strokeStyle = `rgba(255,255,255,${.8 * (1 - age / .2)})`; c.lineWidth = 10;
+              c.beginPath(); c.arc(ox, oy, reach * .8, direction - Math.PI / 3, swing); c.stroke();
+            }
           }
           if (age < .4 && motion?.action === 'slam') {
-            extension = age < .2 ? -20 * age / .2 : 35 * (1 - (age - .2) / .2);
+            // 목표 지점까지 뛰어올라 내려찍는다: 0.15s 비행(포물선) 후 0.25s 복귀.
+            const t = age < .15 ? age / .15 : Math.max(0, 1 - (age - .15) / .25);
+            extension = reach * t;
+            sideY = age < .15 ? -Math.sin(Math.PI * t) * 30 : 0;
           }
           const recoil = age < .12 && action === 'projectile' ? 6 * Math.sin(Math.PI * age / .12) : 0;
-          const px = pose.x + Math.cos(direction) * (Math.max(0, extension) - recoil);
-          const py = pose.y + Math.sin(direction) * (Math.max(0, extension) - recoil);
+          const px = pose.x + sideX + Math.cos(direction) * (Math.max(0, extension) - recoil);
+          const py = pose.y + sideY + Math.sin(direction) * (Math.max(0, extension) - recoil);
           // 무기: 크게(46px) + 짙은 외곽 그림자로 배경 대비, 왼쪽 조준 시 상하 반전(총이 뒤집혀 보이지 않게).
           c.save(); c.translate(px, py); c.rotate(angle);
           if (Math.cos(angle) < 0) c.scale(1, -1);

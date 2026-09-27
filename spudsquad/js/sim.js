@@ -362,10 +362,15 @@
       }
     }
   };
+  const MELEE = ['thrust', 'sweep', 'slam'];
+  // 무기 실사거리. 근접은 사거리 스탯을 MELEE_RANGE_SCALE만큼만 받는다.
+  function weaponRange(p, v) {
+    return v.range + effectiveStats(p).range * (MELEE.includes(v.behavior) ? D.MELEE_RANGE_SCALE ?? .5 : 1);
+  }
   function weaponHit(w, p, id, tier, e, angle, slot = 0) {
     const v = D.weapons[id];
     const { power, crit } = attackPower(w, p, v, tier);
-    const range = v.range + effectiveStats(p).range;
+    const range = weaponRange(p, v);
     const pose = weaponPose(p, id, slot, angle);
     // back = 몸 중심~총구 거리. 캐릭터에 붙은 적(총구보다 가까운 적)도 맞도록 판정을 몸 쪽까지 연장.
     const back = Math.hypot(pose.muzzleX - p.x, pose.muzzleY - p.y);
@@ -373,10 +378,13 @@
     // 투사체: 목표가 총구보다 안쪽이면 무기 몸체에서 발사(적 뒤에서 탄이 생기는 문제 방지)
     if (v.behavior === 'projectile' && e && dist(p, e) <= back + 10) origin = { x: pose.x, y: pose.y, back: 0 };
     behaviors[v.behavior](w, p, v, e, angle, range, power, crit, origin);
-    if (['thrust', 'sweep', 'slam'].includes(v.behavior)) {
-      w.fx.push(['sw', p.uid, slot, angle, v.behavior, origin.x | 0, origin.y | 0]);
+    // reach = 모션이 총구에서 실제로 뻗어나가는 거리. 렌더가 이 값까지 무기를 날려 판정과 맞춘다.
+    let reach = 0;
+    if (MELEE.includes(v.behavior)) {
+      reach = v.behavior === 'slam' && e ? Math.min(range, dist(origin, e)) : range;
+      w.fx.push(['sw', p.uid, slot, angle, v.behavior, origin.x | 0, origin.y | 0, reach | 0]);
     }
-    w.fx.push(['sh', p.uid, id, tier, origin.x | 0, origin.y | 0, angle, slot]);
+    w.fx.push(['sh', p.uid, id, tier, origin.x | 0, origin.y | 0, angle, slot, reach | 0]);
   }
   // 무리 스폰: 한 지점 주변에 count마리(브로테이토식 그룹). 개체 수는 step의 초당 예산이 결정.
   function spawnPack(w, count) {
@@ -460,7 +468,7 @@
         if (!v) return;
         p.cool[i] = (p.cool[i] || 0) - dt;
         const weapon = weaponPose(p, id, i, 0);
-        const target = nearest(w, weapon, v.range + effectiveStats(p).range);
+        const target = nearest(w, weapon, weaponRange(p, v));
         if (target && p.cool[i] <= 0) {
           const angle = Math.atan2(target.y - weapon.y, target.x - weapon.x);
           weaponHit(w, p, id, tier, target, angle, i);
@@ -827,7 +835,7 @@
   const api = {
     rollGrade, rollUpgrades, rollCrateItem, grantItem, sets, effectiveStats, capacity,
     shopRerollCost, soloSave,
-    behaviors, weaponPose, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,
+    behaviors, weaponPose, weaponRange, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,
     hurtPlayer, waveLength, enemyStats, needXp, price, rerollCost, damageTaken,
     rollDamage, createPlayer, createWorld, applyInput, spawn, kill, step, canEnd,
     merge, shop, buy, canBuy, clamp

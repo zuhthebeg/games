@@ -111,8 +111,10 @@
   const curve = { spawnBase: 0.9, spawnPerWave: 0.42, hpPerWave: 0.42, dmgPerWave: 0.14,
     goldStartWave: 5, goldDropPerWave: 0.04, goldFloor: 0.35 };
   const IFRAME = 0.45;
+  // 근접 무기는 사거리 스탯의 절반만 받는다(브로테이토식). 판정 거리 = 모션이 실제로 뻗는 거리.
+  const MELEE_RANGE_SCALE = .5;
   const WEAPON_ORBIT = 36, WEAPON_SIZE = 44; // 무기 궤도 반경·표시 크기(px). sim 원점 계산과 렌더가 공유
-  const D = { stats, chars, weapons, items, enemies, upgrades, curve, IFRAME, WEAPON_ORBIT, WEAPON_SIZE, W: 1600, H: 1200 };
+  const D = { stats, chars, weapons, items, enemies, upgrades, curve, IFRAME, MELEE_RANGE_SCALE, WEAPON_ORBIT, WEAPON_SIZE, W: 1600, H: 1200 };
   root.SPUD = root.SPUD || {};
   root.SPUD.data = D;
   if (typeof module !== 'undefined') module.exports = D;
