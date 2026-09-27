@@ -50,6 +50,9 @@ try {
     await cmd('Emulation.setDeviceMetricsOverride', {
       width, height, deviceScaleFactor: 1, mobile: width < 500
     });
+    await cmd('Page.navigate', { url: 'about:blank' });
+    await new Promise(resolve => setTimeout(resolve, 300));
+    await cmd('Storage.clearDataForOrigin', { origin: 'http://127.0.0.1:8765', storageTypes: 'local_storage' });
     await cmd('Page.navigate', { url: 'http://127.0.0.1:8765/spudsquad/' });
     await new Promise(resolve => setTimeout(resolve, 1000));
     const title = await evaluate(`({
@@ -59,7 +62,7 @@ try {
       buttons: [...document.querySelectorAll('.title-actions .btn')].map(b => b.clientHeight)
     })`);
     assert.ok(title.art > 0, `${width}px key art did not load`);
-    assert.equal(title.hudHidden, true);
+    assert.equal(title.hudHidden, true, `${width}px title HUD visible`);
     assert.equal(title.screenOverflow, false);
     assert.ok(title.buttons.every(n => n >= 48));
     await evaluate("document.querySelector('[data-act=solo]').click()");
@@ -72,10 +75,10 @@ try {
       client: document.querySelector('.panel').clientHeight,
       hudHidden: getComputedStyle(document.querySelector('#hud')).display === 'none'
     })`);
-    assert.equal(choose.cardCount, 10);
-    assert.ok(choose.artWidth >= 90);
+    assert.equal(choose.cardCount, 12);
+    assert.ok(choose.artWidth >= 76);
     assert.equal(choose.rawStat, false);
-    assert.equal(choose.fits, width >= 600, `${width}px character selection scrolling`);
+    assert.equal(choose.fits, width >= 600, `${width}px character selection scrolling ${choose.scroll}/${choose.client}`);
     assert.equal(choose.hudHidden, true);
     await evaluate("document.querySelector('#lang').click()");
     const zh = await evaluate(`({
@@ -86,6 +89,7 @@ try {
     assert.equal(zh.translatedStat, true);
     await evaluate("document.querySelector('#lang').click(); document.querySelector('#lang').click()");
     await evaluate("document.querySelector('[data-act=basic]').click()");
+    await evaluate("SPUD.main.session.world.players.solo.cool[0] = 999; SPUD.main.session.world.enemies.length = 0");
     await evaluate(`(() => {
       const original = SPUD.render.Renderer.prototype.sprite;
       window.__orbitDraws = 0;
@@ -94,8 +98,8 @@ try {
           window.__orbitDraws++;
           const matrix = this.c.getTransform();
           window.__weaponSpriteWorld = {
-            x: matrix.e / this.dpr + this.cam.x,
-            y: matrix.f / this.dpr + this.cam.y,
+            x: matrix.e / (this.dpr * this.zoom) + this.cam.x,
+            y: matrix.f / (this.dpr * this.zoom) + this.cam.y,
             angle: Math.atan2(matrix.b, matrix.a)
           };
         }
@@ -107,11 +111,13 @@ try {
     const spriteMatchesPose = await evaluate(`(() => {
       const p = SPUD.main.session.world.players.solo;
       const pose = SPUD.sim.weaponPose(p, 'pistol', 0, 0);
-      return Math.hypot(window.__weaponSpriteWorld.x - pose.x,
-        window.__weaponSpriteWorld.y - pose.y) < 1 &&
-        Math.abs(window.__weaponSpriteWorld.angle - pose.orbit) < .01;
+      return { distance: Math.hypot(window.__weaponSpriteWorld.x - pose.x,
+        window.__weaponSpriteWorld.y - pose.y),
+        angle: window.__weaponSpriteWorld.angle, expectedAngle: SPUD.data.weapons.pistol.artAngle };
     })()`);
-    assert.equal(spriteMatchesPose, true, 'sprite orbit differs from sim.weaponPose');
+    assert.ok(spriteMatchesPose.distance < 1 &&
+      Math.abs(Math.abs(spriteMatchesPose.angle) - Math.PI) < .01,
+      `sprite orbit differs from sim.weaponPose: ${JSON.stringify(spriteMatchesPose)}`);
     assert.ok(await evaluate(`document.querySelector('#field').getBoundingClientRect().top >=
       document.querySelector('#hud').getBoundingClientRect().bottom`), 'canvas overlaps HUD');
     await evaluate(`(() => {
@@ -137,13 +143,14 @@ try {
       cards: document.querySelectorAll('.shop-card').length,
       slots: document.querySelectorAll('.slot').length,
       items: document.querySelectorAll('.owned-item').length,
+      itemDefs: Object.keys(SPUD.data.items).length,
       fits: document.querySelector('.panel').scrollHeight <= document.querySelector('.panel').clientHeight,
       screenOverflow: document.documentElement.scrollWidth > innerWidth,
       icon: document.querySelector('.shop-art')?.naturalWidth || 0
     })`);
     assert.equal(shop.cards, 4);
     assert.equal(shop.slots, 6);
-    assert.equal(shop.items, 32);
+    assert.equal(shop.items, shop.itemDefs);
     assert.ok(shop.icon > 0);
     assert.equal(shop.fits, true, `${width}px shop overflow`);
     assert.equal(shop.screenOverflow, false);

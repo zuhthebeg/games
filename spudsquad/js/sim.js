@@ -692,10 +692,16 @@
     }
     return result;
   }
+  // unique=1개, max=N개까지만 보유. 상한에 닿은 아이템은 상점·상자에서 빠진다.
+  function itemCapped(p, id) {
+    const def = D.items[id];
+    const cap = def?.unique ? 1 : def?.max;
+    return !!cap && p.items.filter(x => x === id).length >= cap;
+  }
   function rollCrateItem(w, p) {
     const tier = rollItemTier(w, p);
     const options = Object.keys(D.items).filter(id => (D.items[id].tier || 1) === tier &&
-      (!D.items[id].unique || !p.items.includes(id)));
+      !itemCapped(p, id));
     return options[Math.floor(rand(w) * options.length)];
   }
   function rollItemTier(w, p) {
@@ -715,7 +721,7 @@
       })() : rollItemTier(w, p);
       const list = Object.keys(weapon ? D.weapons : D.items).filter(id => weapon
         ? p.char !== 'gunslinger' || D.weapons[id].kind !== 'melee'
-        : (D.items[id].tier || 1) === tier && (!D.items[id].unique || !p.items.includes(id)));
+        : (D.items[id].tier || 1) === tier && !itemCapped(p, id));
       const id = list[Math.floor(rand(w) * list.length)];
       slots.push({ id, weapon, tier, price: price((weapon ? D.weapons : D.items)[id].price, w.wave)
         * (weapon ? tier : 1), locked: false });
@@ -723,7 +729,7 @@
     return slots;
   }
   function grantItem(p, id) {
-    if (!D.items[id] || (D.items[id].unique && p.items.includes(id))) return false;
+    if (!D.items[id] || itemCapped(p, id)) return false;
     p.items.push(id);
     for (const [k, v] of Object.entries(D.items[id].stats)) {
       p.stats[k] += v;
@@ -740,7 +746,7 @@
   }
   function canBuy(p, offer) {
     if (!offer || p.mats < offer.price || (!offer.weapon &&
-        (!D.items[offer.id] || (D.items[offer.id].unique && p.items.includes(offer.id))))) return false;
+        (!D.items[offer.id] || itemCapped(p, offer.id)))) return false;
     return !offer.weapon || p.weapons.length < capacity(p) || mergeTarget(p, offer) >= 0;
   }
   function buy(p, offer) {

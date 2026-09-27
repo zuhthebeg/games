@@ -1,6 +1,6 @@
 import D from '../js/data.js';
 import S from '../js/sim.js';
-const chars = Object.keys(D.chars);
+const chars = process.env.SPUD_BALANCE_CHARS?.split(',') || Object.keys(D.chars);
 const games = Number(process.argv[2] || 20);
 const rngFor = seed => {
   let value = seed >>> 0;

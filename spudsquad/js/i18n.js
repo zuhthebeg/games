@@ -136,13 +136,13 @@
   };
   const features = {
     ko: ['찌르기', '치명 출혈', '선분 관통', '120° 휘두르기', '착지 충격파',
-      '한 번 튕김', '한 명 관통', '30° 산탄 4발', '8° 탄퍼짐', '두 명 관통',
+      '한 번 튕김', '단일 표적 탄환', '30° 산탄 4발', '8° 탄퍼짐', '정밀 단일 탄환',
       '무한 관통 빔', '반경 70 폭발', '40° 원뿔 화상', '번개 3회 연쇄'],
     en: ['Thrust', 'Critical bleed', 'Piercing thrust', '120° sweep', 'Impact shockwave',
-      'One bounce', 'Pierces one', 'Four pellets', '8° spread', 'Pierces two',
+      'One bounce', 'Single-target shot', 'Four pellets', '8° spread', 'Precise single-target bolt',
       'Infinite beam', 'Radius 70 explosion', 'Burning cone', 'Three chain jumps'],
     'zh-TW': ['刺擊', '暴擊流血', '穿透刺擊', '120°橫掃', '落地衝擊波',
-      '反彈一次', '穿透一名', '四發散彈', '8°散射', '穿透兩名',
+      '反彈一次', '單體子彈', '四發散彈', '8°散射', '精準單體弩箭',
       '無限穿透光束', '半徑70爆炸', '扇形燃燒', '連鎖閃電三次']
   };
   const traits = {
@@ -151,22 +151,22 @@
       '잃은 HP 10%마다 피해 +6% · 재생 0', '재생 0 · 웨이브 시작 HP 절반',
       '처치 시 10% 폭발 · 자폭 피해 없음', '무기 1칸 · 피해 3배, 공속 +60%, 투사체 +2',
       '회피 시 0.5초 무적 · 다음 공격 확정 치명',
-      '웨이브 시작 시 보유 재화의 8% 추가 (최대 12) · 피해 -15%',
-      '피격 시 가시 피해 6 · 이동 속도 -12% · 회피 -8%'],
+      '웨이브 시작 시 보유 재화의 8% 추가 (최대 12) · 피해 -10%',
+      '피격 시 가시 피해 8 · 최대 HP +8 · 방어 +2 · 이동 속도 -8% · 회피 -8%'],
     en: ['First shop reroll free each wave', 'Knockback +50%', 'Elemental damage +25%',
       '2% crate on kill', 'Gun damage +20% · no melee in shop',
       '+6% damage per 10% HP lost · no regen', 'No regen · start waves at half HP',
       '10% death explosion · no self-damage', 'One weapon slot · 3× damage, +60% speed, +2 projectiles',
       'Dodge grants 0.5s immunity and guaranteed crit',
-      'Gain 8% of saved currency at wave start (max 12) · damage -15%',
-      'Return 6 damage when hit · speed -12% · dodge -8%'],
+      'Gain 8% of saved currency at wave start (max 12) · damage -10%',
+      'Return 8 damage when hit · Max HP +8 · armor +2 · speed -8% · dodge -8%'],
     'zh-TW': ['每波商店首次重抽免費', '擊退 +50%', '元素傷害 +25%',
       '擊殺時 2% 掉落寶箱', '槍械傷害 +20% · 商店無近戰武器',
       '每失去10%生命增加6%傷害 · 無回復', '無回復 · 每波半血開始',
       '擊殺時10%爆炸 · 不會自傷', '僅一個武器欄 · 傷害3倍、攻速+60%、投射物+2',
       '閃避後無敵0.5秒，下次攻擊必暴擊',
-      '每波開始獲得存款8%（最多12）· 傷害 -15%',
-      '受擊反彈6點傷害 · 移速 -12% · 閃避 -8%']
+      '每波開始獲得存款8%（最多12）· 傷害 -10%',
+      '受擊反彈8點傷害 · 最大HP +8 · 護甲 +2 · 移速 -8% · 閃避 -8%']
   };
   const itemEffects = {
     ko: { piercing_prism: '직선 투사체 추가 관통 +1 (최대 2) · 관통 후 피해 75%',

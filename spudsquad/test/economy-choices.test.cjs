@@ -32,10 +32,14 @@ test('thorn retaliates on hit but loses mobility and dodge', () => {
   S.hurtPlayer(w, p, 1, e);
   a.equal(e.hp, 100 - p.stats.thorns);
 });
-test('prism caps extra pierces at two even with repeated copies and keeps damage cost', () => {
+test('prism stacks to two copies only, so a third copy cannot add damage cost without pierce', () => {
   const w = world(), p = w.players.solo;
-  for (let i = 0; i < 5; i++) S.grantItem(p, 'piercing_prism');
-  a.equal(p.stats.dmg, -40);
+  const granted = [];
+  for (let i = 0; i < 5; i++) granted.push(S.grantItem(p, 'piercing_prism'));
+  a.deepEqual(granted, [true, true, false, false, false]);
+  a.equal(p.stats.dmg, -16);
+  a.equal(S.canBuy({ ...p, mats: 100 }, { id: 'piercing_prism', price: 1, weapon: false }), false);
+  for (let i = 0; i < 30; i++) a.ok(S.shop(w, p).every(o => o.weapon || o.id !== 'piercing_prism'));
   S.weaponHit(w, p, 'pistol', 1, S.spawn(w, 'tank', p.x + 80, p.y), 0);
   a.equal(w.projectiles[0].pierce, 2);
 });

@@ -18,8 +18,8 @@
     bomber: { name: '폭탄감자', weapon: 'rocket', stats: { explosion: 30 }, trait: 'deathBlast' },
     cyclops: { name: '외눈감자', weapon: 'crossbow', stats: { crit: 15, maxHp: 5, projectiles: 2 }, trait: 'oneSlot' },
     ghost: { name: '유령감자', weapon: 'staff', stats: { dodge: 25, speed: 10 }, trait: 'dodgePower' },
-    saver: { name: '저축감자', weapon: 'pistol', stats: { dmg: -15 }, trait: 'reserveInterest' },
-    thorn: { name: '가시감자', weapon: 'fist', stats: { thorns: 6, speed: -12, dodge: -8 }, trait: 'barbedSkin' }
+    saver: { name: '저축감자', weapon: 'pistol', stats: { dmg: -10 }, trait: 'reserveInterest' },
+    thorn: { name: '가시감자', weapon: 'fist', stats: { thorns: 8, maxHp: 8, armor: 2, speed: -8, dodge: -8 }, trait: 'barbedSkin' }
   };
   const weapons = {
     fist: { name: '주먹', muzzle: [12, 0], artAngle: Math.PI / 2, classes: ['unarmed'], behavior: 'thrust', damage: 8, cool: .9, range: 110, kb: 220, price: 15 },
@@ -76,7 +76,7 @@
     piggy_bank: { name: '돼지 저금통', tier: 2, price: 45, stats: {}, hook: 'piggy_bank' },
     glass_cannon: { name: '유리 대포', tier: 3, price: 65, stats: { dmg: 25, armor: -3 } },
     bandana: { name: '머리띠', price: 30, stats: { crit: 6, melee: 1 } },
-    piercing_prism: { name: '관통 프리즘', tier: 2, price: 50, stats: { dmg: -8 }, pierce: 1 },
+    piercing_prism: { name: '관통 프리즘', tier: 2, price: 50, stats: { dmg: -8 }, pierce: 1, max: 2 },
     cactus: { name: '선인장', price: 30, stats: { thorns: 3, maxHp: 3 } },
     whetstone: { name: '숫돌', tier: 2, price: 45, stats: { melee: 4, knockback: 30 } },
     gunpowder: { name: '화약', tier: 2, price: 45, stats: { explosion: 25 } },
