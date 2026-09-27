@@ -8,6 +8,7 @@
       this.flashes = new Map();
       this.motions = new Map();
       this.trails = [];
+      this.corpses = [];
       this.shake = 0;
       this.shakeOn = readShake();
       this.stopUntil = 0;
@@ -49,6 +50,7 @@
           P.sfx?.(e ? 'crit' : 'hit');
         }
         if (type === 'die') {
+          this.corpses.push({ x: a, y: b, type: d, until: now + 120 });
           this.hitstop(now);
           P.sfx?.('kill');
           const colors = { blob: '#9ed45d', bug: '#f7bb44', exploder: '#ee8072',

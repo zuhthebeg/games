@@ -198,6 +198,19 @@
         }
       }
       this.previousDrops = currentDrops;
+      for (const corpse of this.effects.corpses.slice()) {
+        const life = (corpse.until - now) / 120;
+        if (life <= 0) {
+          this.effects.corpses.splice(this.effects.corpses.indexOf(corpse), 1);
+          continue;
+        }
+        c.save();
+        c.globalAlpha = life;
+        c.translate(corpse.x, corpse.y);
+        c.scale(1 + (1 - life) * .3, 1 - (1 - life) * .35);
+        this.sprite(corpse.type, 0, 0, D.enemies[corpse.type]?.size || 40);
+        c.restore();
+      }
       const enemies = scene.e || scene.enemies || [];
       for (const enemy of enemies) {
         const id = Array.isArray(enemy) ? enemy[1] : enemy.type;
