@@ -251,8 +251,13 @@
         c.translate(x, y);
         const squash = flash ? Math.max(0, (this.effects.flashes.get(Array.isArray(enemy) ? enemy[0] : enemy.id) - now) / 80) : 0;
         c.scale(1 + squash * .25, 1 - squash * .2);
+        if (flags & 32) c.rotate(Math.sin(now / 40) * .12); // 부화 직전 알 흔들림
         this.sprite(id, 0, 0, size, 1, now / 1000, flash);
         c.restore();
+        if (flags & 16) { // 응원단장 버프: 빨간 외곽 링
+          c.strokeStyle = 'rgba(255,70,60,.85)'; c.lineWidth = 3;
+          c.beginPath(); c.arc(x, y, size * .5, 0, 7); c.stroke();
+        }
         if (flags & 4) {
           c.strokeStyle = '#46ddc8'; c.lineWidth = 3;
           c.beginPath(); c.arc(x, y, size * .55, 0, 7); c.stroke();

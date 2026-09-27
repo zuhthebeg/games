@@ -157,6 +157,7 @@
     if (e.type.startsWith('boss_')) w.bossKills++;
     if (e.type === 'boss_2') w.bossKilled = true;
     if (e.type === 'exploder') explode(w, e.x, e.y, 70, 2 + w.wave / 5, p?.uid, true);
+    if (e.type === 'looter') createCrate(w, e.x, e.y, p?.uid ?? null);
     if (p) {
       const trait = D.chars[p.char].trait;
       killHooks[trait]?.(w, e, p);
@@ -388,7 +389,7 @@
   }
   // 무리 스폰: 한 지점 주변에 count마리(브로테이토식 그룹). 개체 수는 step의 초당 예산이 결정.
   function spawnPack(w, count) {
-    const pool = Object.keys(D.enemies).filter((id) => !id.startsWith("boss") && D.enemies[id].first <= w.wave && id !== "elite");
+    const pool = Object.keys(D.enemies).filter((id) => !id.startsWith("boss") && D.enemies[id].first <= w.wave && id !== "elite" && !D.enemies[id].special);
     let cx, cy, ctries = 0;
     do {
       cx = 80 + rand(w) * (D.W - 160);
@@ -441,6 +442,16 @@
         w.spawnClock -= pack;
         spawnPack(w, pack);
         w.packNext = 1 + Math.floor(rand(w) * Math.min(5, 1 + Math.floor(w.wave / 3)));
+      }
+    }
+    // 도둑 두더지: 3웨이브부터 웨이브당 1회, 6초 경과 시 40% 확률로 플레이어에게서 먼 곳에 등장.
+    if (w.wave >= 3 && !w.looterRolled && waveLength(w.wave) - w.tm >= 6) {
+      w.looterRolled = true;
+      if (rand(w) < .4) {
+        const far = [[120, 120], [D.W - 120, 120], [120, D.H - 120], [D.W - 120, D.H - 120]]
+          .sort((a, b) => Math.min(...alive.map(p => dist(p, { x: b[0], y: b[1] }))) -
+            Math.min(...alive.map(p => dist(p, { x: a[0], y: a[1] }))))[0];
+        spawn(w, 'looter', far[0], far[1]);
       }
     }
     if (!w.bossSpawned && (w.wave === 10 || w.wave === 20)) {
@@ -526,6 +537,7 @@
       if (!grid.has(key)) grid.set(key, []);
       grid.get(key).push(e);
     }
+    const buffers = w.enemies.filter(e => e.type === 'buffer');
     for (const e of w.enemies.slice()) {
       e.flash = Math.max(0, (e.flash || 0) - dt);
       if (e.status) for (const [name, status] of Object.entries(e.status)) {
@@ -553,6 +565,24 @@
       if (!target) break;
       let dx = target.x - e.x, dy = target.y - e.y, d = Math.hypot(dx, dy) || 1;
       let speed = e.speed;
+      e.age = (e.age || 0) + dt;
+      if (e.type === 'egg' && e.age >= 6) { // 못 깨면 부화
+        w.enemies.splice(w.enemies.indexOf(e), 1);
+        spawn(w, 'charger', e.x - 20, e.y);
+        spawn(w, 'charger', e.x + 20, e.y);
+        w.fx.push(['mark', e.x | 0, e.y | 0]);
+        continue;
+      }
+      if (e.type === 'looter') {
+        if (e.age >= 12) { w.enemies.splice(w.enemies.indexOf(e), 1); continue; } // 탈출
+        speed = -speed;
+        // 벽에 몰리면 벽을 따라 옆으로 빠져나간다
+        if (e.x < 60 || e.x > D.W - 60) { dx = 0; dy = e.y < D.H / 2 ? 1 : -1; d = 1; speed = e.speed; }
+        else if (e.y < 60 || e.y > D.H - 60) { dy = 0; dx = e.x < D.W / 2 ? 1 : -1; d = 1; speed = e.speed; }
+      }
+      if (e.type === 'buffer' && d < 300) speed = -speed;
+      const buffed = e.type !== 'buffer' && buffers.some(b => dist(b, e) <= 160);
+      if (buffed) speed *= 1.3;
       if (e.type === "spitter" && d < 250) speed = -speed;
       if (e.type === 'shielder' && d < 300) speed = -speed;
       if (e.type === 'exploder' && d < 60 && e.fuse == null) e.fuse = .6;
@@ -585,11 +615,11 @@
           o.x -= (e.x - o.x) / dd * 0.6;
         }
       }
-      if (d < 23 + D.enemies[e.type].size / 3) {
+      if (e.dmg > 0 && d < 23 + D.enemies[e.type].size / 3) {
         e.hit[target.uid] = (e.hit[target.uid] || 0) - dt;
         if (e.hit[target.uid] <= 0) {
           e.hit[target.uid] = 0.7;
-          hurtPlayer(w, target, e.dmg, e);
+          hurtPlayer(w, target, e.dmg * (buffed ? 1.25 : 1), e);
         }
       }
       const interval = e.type === "spitter" ? 2.5 : e.type === "elite" ? 3 : e.type.startsWith("boss") ? 4 : 0;

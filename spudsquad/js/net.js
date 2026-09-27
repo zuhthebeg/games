@@ -9,7 +9,10 @@
         (v.status?.burn ? 1 : 0) | (v.status?.bleed ? 2 : 0) |
         (w.enemies.some(other => other !== v && other.type === 'shielder' &&
           Math.hypot(other.x - v.x, other.y - v.y) <= 140) ? 4 : 0) |
-        (v.flash > 0 ? 8 : 0)]),
+        (v.flash > 0 ? 8 : 0) |
+        (v.type !== 'buffer' && w.enemies.some(other => other.type === 'buffer' &&
+          Math.hypot(other.x - v.x, other.y - v.y) <= 160) ? 16 : 0) |
+        (v.type === 'egg' && (v.age || 0) >= 4 ? 32 : 0)]),
       d: w.drops.map(v => [v.id, Math.round(v.x), Math.round(v.y)]),
       cr: w.crates.map(v => [v.id, Math.round(v.x), Math.round(v.y)]),
       pl: Object.values(w.players).map(v => [v.uid, Math.round(v.x), Math.round(v.y),

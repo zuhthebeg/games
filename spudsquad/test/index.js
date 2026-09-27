@@ -9,3 +9,4 @@ require('./solo-main.test.cjs');
 require('./ui-display.test.cjs');
 require('./economy-choices.test.cjs');
 require('./collection.test.cjs');
+require('./enemies-v3.test.cjs');

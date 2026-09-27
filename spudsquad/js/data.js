@@ -98,6 +98,11 @@
     splitter: { hp: 16, speed: 70, dmg: 1, first: 5, mats: 3, size: 48 },
     tank: { hp: 40, speed: 50, dmg: 3, first: 6, mats: 6, size: 64 },
     shielder: { hp: 30, speed: 60, dmg: 1, first: 9, mats: 5, size: 56 },
+    // 특수 적: looter=도망가다 12초 뒤 탈출(잡으면 재료+상자, 일반 스폰 풀 제외), egg=6초 뒤 돌격병 2마리 부화,
+    // buffer=거리 유지하며 반경 160 적의 속도 ×1.3·접촉 피해 ×1.25.
+    looter: { hp: 20, speed: 150, dmg: 0, first: 3, mats: 8, size: 48, special: true },
+    egg: { hp: 22, speed: 0, dmg: 0, first: 6, mats: 2, size: 48 },
+    buffer: { hp: 30, speed: 75, dmg: 1, first: 8, mats: 4, size: 52 },
     elite: { hp: 120, speed: 110, dmg: 3, first: 8, mats: 15, size: 72 },
     boss_1: { hp: 1500, speed: 70, dmg: 4, first: 10, mats: 60, size: 150 },
     boss_2: { hp: 6000, speed: 80, dmg: 5, first: 20, mats: 150, size: 190 }
