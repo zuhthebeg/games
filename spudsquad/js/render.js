@@ -27,6 +27,7 @@
       this.canvas = canvas;
       this.c = canvas.getContext('2d');
       this.cam = { x: 0, y: 0 };
+      this.effects = new P.fx.Effects();
       this.particles = [];
       this.projectiles = [];
       this.marks = [];
@@ -79,20 +80,11 @@
       c.restore();
     }
     fx(events, myUid) {
+      this.effects.add(events, myUid);
       for (const event of events || []) {
         const type = event[0];
         if (type === 'mark') this.marks.push({ x: event[1], y: event[2], life: 1 });
-        if (type === 'hit') {
-          this.particles.push({ x: event[1], y: event[2], text: String(event[3]),
-            crit: event[4], life: .7 });
-        }
-        if (type === 'die') {
-          for (let i = 0; i < 8; i++) {
-            this.particles.push({ x: event[1], y: event[2],
-              vx: (Math.random() - .5) * 160, vy: (Math.random() - .5) * 160,
-              life: .55, size: 4 + Math.random() * 4 });
-          }
-        }
+
         if (type === 'sh' && D.weapons[event[2]]?.kind === 'ranged' && event[2] !== 'laser') {
           this.projectiles.push({ x: event[4], y: event[5],
             vx: Math.cos(event[6]) * 700, vy: Math.sin(event[6]) * 700,
@@ -105,9 +97,9 @@
         }
         if (type === 'hurt') {
           this.flashes.set(event[1], performance.now() + 100);
-          if (event[1] === myUid) this.shake = 10;
+
         }
-        if (type === 'boss') this.shake = 18;
+
       }
     }
     ground(width, height, world = false) {
@@ -142,8 +134,10 @@
       const canvas = this.canvas;
       const width = canvas.width / this.dpr;
       const height = canvas.height / this.dpr;
-      const dt = Math.min(.05, (now - this.last) / 1000 || 0);
+      const elapsed = Math.min(.05, (now - this.last) / 1000 || 0);
       this.last = now;
+      if (now < this.effects.stopUntil) return;
+      const dt = now < this.effects.slowUntil ? elapsed * .3 : elapsed;
       c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
       c.fillStyle = '#ead69c';
       c.fillRect(0, 0, width, height);
@@ -162,9 +156,9 @@
         this.cam.y = Math.max(0, Math.min(D.H - height, focus[2] - height / 2));
       }
       c.save();
-      c.translate((Math.random() - .5) * this.shake - this.cam.x,
-        (Math.random() - .5) * this.shake - this.cam.y);
-      this.shake *= .88;
+      c.translate((Math.random() - .5) * this.effects.shake - this.cam.x,
+        (Math.random() - .5) * this.effects.shake - this.cam.y);
+      this.effects.shake *= .85;
       this.ground(width, height, true);
       const drops = scene.d || scene.drops || [];
       const currentDrops = new Map();
@@ -196,7 +190,22 @@
         const y = Array.isArray(enemy) ? enemy[3] : enemy.y;
         const size = D.enemies[id]?.size || 40;
         this.shadow(x, y, size * .4);
-        this.sprite(id, x, y, size, 1, now / 1000);
+        const flags = Array.isArray(enemy) ? enemy[5] || 0 : enemy.flags || 0;
+        const flash = !!(flags & 8) || this.effects.flashes.get(Array.isArray(enemy) ? enemy[0] : enemy.id) > now;
+        c.save();
+        c.translate(x, y);
+        const squash = flash ? Math.max(0, (this.effects.flashes.get(Array.isArray(enemy) ? enemy[0] : enemy.id) - now) / 80) : 0;
+        c.scale(1 + squash * .25, 1 - squash * .2);
+        this.sprite(id, 0, 0, size, 1, now / 1000, flash);
+        c.restore();
+        if (flags & 4) {
+          c.strokeStyle = '#46ddc8'; c.lineWidth = 3;
+          c.beginPath(); c.arc(x, y, size * .55, 0, 7); c.stroke();
+        }
+        if (flags & 3) {
+          c.fillStyle = flags & 1 ? '#ff8a49' : '#e65c5c';
+          c.fillRect(x - 4, y - size * .8, 8, 8);
+        }
         const hp = Array.isArray(enemy) ? enemy[4] / 100 : enemy.hp / enemy.maxHp;
         if (hp < 1) {
           c.fillStyle = '#572b2b';
@@ -242,6 +251,8 @@
       }
       for (const bullet of this.projectiles.slice()) {
         bullet.life -= dt;
+        bullet.history = (bullet.history || []).slice(-2);
+        bullet.history.push([bullet.x, bullet.y]);
         bullet.x += bullet.vx * dt;
         bullet.y += bullet.vy * dt;
         const hit = enemies.some(enemy => Math.hypot(
@@ -252,11 +263,16 @@
           this.projectiles.splice(this.projectiles.indexOf(bullet), 1);
           continue;
         }
+        bullet.history.forEach(([hx, hy], i) => {
+          c.fillStyle = `rgba(255,245,170,${(i + 1) * .15})`;
+          c.beginPath(); c.arc(hx, hy, 2 + i, 0, 7); c.fill();
+        });
         c.fillStyle = bullet.kind === 'eb' ? '#ff7866' : '#fff19a';
         c.beginPath();
         c.arc(bullet.x, bullet.y, 5, 0, 7);
         c.fill();
       }
+      this.effects.draw(c, dt, now);
       for (const particle of this.particles.slice()) {
         particle.life -= dt;
         if (particle.kind === 'pickup') {
@@ -285,6 +301,10 @@
         if (particle.life <= 0) this.particles.splice(this.particles.indexOf(particle), 1);
       }
       c.restore();
+      if (now < this.effects.flashScreen) {
+        c.fillStyle = `rgba(255,255,255,${(this.effects.flashScreen - now) / 180})`;
+        c.fillRect(0, 0, width, height);
+      }
     }
   }
   P.render = { Renderer, images };

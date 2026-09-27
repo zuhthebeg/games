@@ -19,7 +19,7 @@
   let walletPromise;
   let roster = { players: [], hostUser: null };
   const keys = new Set();
-  P.sfx = () => {};
+
 
   function getUid() {
     try {
@@ -236,6 +236,14 @@
     walletPromise = typeof SharedWallet !== 'undefined'
       ? SharedWallet.init() : Promise.resolve();
     renderer = new P.render.Renderer(document.getElementById('canvas'));
+    document.getElementById('sound').onclick = () => {
+      document.getElementById('sound').textContent = P.sfx.mute() ? '🔇' : '🔊';
+    };
+    document.getElementById('volume').value = P.sfx.settings().volume * 100;
+    document.getElementById('volume').oninput = event => P.sfx.volume(event.target.value / 100);
+    document.getElementById('shake').onclick = () => {
+      document.getElementById('shake').textContent = renderer.effects.toggleShake() ? '📳' : '🚫';
+    };
     try { GameRankings.injectNavButton('spudsquad'); }
     catch (error) { console.warn('rank nav unavailable', error); }
     reset();
