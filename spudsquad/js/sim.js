@@ -736,8 +736,68 @@
     }
     return true;
   }
+  // Local, disposable SOLO checkpoint. Keep this here so the existing classic-script
+  // loading order needs no additional script tag (and multiplayer never calls it).
+  const soloSave = (() => {
+    const key = 'spudsquad:solo:v1', version = 1, maxAge = 24 * 60 * 60 * 1000;
+    function clear(storage) { try { storage.removeItem(key); } catch {} }
+    function save(storage, state, now = Date.now()) {
+      try {
+        if (!state || !['wave', 'shop'].includes(state.mode) ||
+            state.world?.players?.solo?.uid !== 'solo' ||
+            Object.keys(state.world.players).length !== 1) return false;
+        // JSON removes the rng function; fx is transient and must not replay on restore.
+        const world = { ...state.world, rng: undefined, fx: [],
+          projectiles: state.world.projectiles.map(b => ({ ...b, hit: [...b.hit] })) };
+        storage.setItem(key, JSON.stringify({ version, at: now, mode: state.mode,
+          world, offers: state.offers, cratesRemaining: state.cratesRemaining || 0,
+          shopRolls: state.shopRolls || 0 }));
+        return true;
+      } catch { return false; } // private browsing/quota: play continues normally
+    }
+    function load(storage, now = Date.now()) {
+      let raw;
+      try { raw = storage.getItem(key); } catch { return null; }
+      if (!raw) return null;
+      try {
+        const s = JSON.parse(raw), w = s.world, p = w?.players?.solo;
+        const validNumber = n => typeof n === 'number' && Number.isFinite(n);
+        if (s.version !== version || !validNumber(s.at) || s.at > now + 60000 ||
+            now - s.at > maxAge || !['wave', 'shop'].includes(s.mode) ||
+            !w || !Number.isInteger(w.wave) || w.wave < 1 || w.wave > 20 ||
+            Object.keys(w.players || {}).length !== 1 || p?.uid !== 'solo' ||
+            !D.chars[p.char] || !validNumber(p.hp) || !validNumber(p.x) || !validNumber(p.y) ||
+            !validNumber(w.tm) || !validNumber(w.tick) || !Number.isInteger(w.nextId) ||
+            !Array.isArray(p.weapons) || !p.weapons.every(([id, tier]) =>
+              D.weapons[id] && Number.isInteger(tier) && tier >= 1 && tier <= 4) ||
+            !Array.isArray(p.items) || !p.items.every(id => D.items[id]) ||
+            !p.stats || !Array.isArray(w.enemies) || !Array.isArray(w.drops) ||
+            !Array.isArray(w.shots) || !Array.isArray(w.bullets) ||
+            !Array.isArray(w.projectiles) || !w.projectiles.every(b =>
+              D.weapons[b.id] && Array.isArray(b.hit) &&
+              b.hit.every(id => Number.isInteger(id) && id > 0) &&
+              validNumber(b.x) && validNumber(b.y) && validNumber(b.left)) ||
+            !Array.isArray(w.crates) ||
+            !Array.isArray(w.turrets) || w.win || (s.mode === 'wave' && (w.ended || !p.alive)) ||
+            (s.mode === 'shop' && (!w.ended || !w.reported)) ||
+            !Number.isInteger(s.cratesRemaining) || s.cratesRemaining < 0 || s.cratesRemaining > 100 ||
+            !Number.isInteger(s.shopRolls) || s.shopRolls < 0 || s.shopRolls > 10000 ||
+            (s.offers != null && (!Array.isArray(s.offers) ||
+              (s.offers.length !== 4 && s.offers.length !== 0) ||
+              !s.offers.every(o => (s.mode === 'wave' && o == null) ||
+                (o && (o.weapon ? D.weapons[o.id] : D.items[o.id]) &&
+                Number.isFinite(o.price) && Number.isInteger(o.tier)))))) throw Error('invalid save');
+        w.rng = Math.random;
+        w.fx = [];
+        for (const b of w.projectiles) b.hit = new Set(b.hit);
+        return s;
+      } catch { clear(storage); return null; }
+    }
+    return { key, save, load, clear };
+  })();
   const api = {
-    rollGrade, rollUpgrades, rollCrateItem, grantItem, sets, effectiveStats, capacity, shopRerollCost,
+    rollGrade, rollUpgrades, rollCrateItem, grantItem, sets, effectiveStats, capacity,
+    shopRerollCost, soloSave,
     behaviors, weaponPose, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,
     hurtPlayer, waveLength, enemyStats, needXp, price, rerollCost, damageTaken,
     rollDamage, createPlayer, createWorld, applyInput, spawn, kill, step, canEnd,

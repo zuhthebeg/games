@@ -10,7 +10,8 @@
   const esc = value => String(value).replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[char]);
-  const label = (key, n) => `<span class="stat-change ${n < 0 ? 'negative' : 'positive'}">${esc(I.stat(key))} ${n > 0 ? '+' : ''}${n}</span>`;
+  const shown = value => Math.round(Number(value) || 0);
+  const label = (key, n) => `<span class="stat-change ${n < 0 ? 'negative' : 'positive'}">${esc(I.stat(key))} ${n > 0 ? '+' : ''}${shown(n)}</span>`;
   const icon = (id, kind = '') =>
     `<img class="${kind}" src="assets/${esc(id)}.webp" alt="" onerror="this.hidden=true">`;
   const button = (text, act, extra = '') =>
@@ -82,15 +83,15 @@ function hud(scene, uid) {
     const mats = Array.isArray(p) ? p[6] : p.mats;
     const xp = Array.isArray(p) ? p[7] : p.xp;
     const lvl = Array.isArray(p) ? p[8] : p.lvl;
-    document.getElementById('hpText').textContent = `${Math.ceil(hp)}/${max}`;
+    document.getElementById('hpText').textContent = `${shown(hp)}/${shown(max)}`;
     document.getElementById('hpBar').style.width = Math.max(0, hp / max * 100) + '%';
     document.getElementById('xpBar').style.width = xp / P.sim.needXp(lvl) * 100 + '%';
-    document.getElementById('level').textContent = lvl;
-    document.getElementById('mats').textContent = mats;
+    document.getElementById('level').textContent = shown(lvl);
+    document.getElementById('mats').textContent = shown(mats);
     document.getElementById('wave').textContent = P.main?.session?.wave || 1;
     const remaining = scene.tm ?? P.main?.session?.world?.tm ?? 0;
     document.getElementById('timer').textContent =
-      P.main?.session?.wave === 20 && remaining <= 0 ? 'BOSS' : Math.ceil(remaining);
+      P.main?.session?.wave === 20 && remaining <= 0 ? 'BOSS' : shown(remaining);
     const members = scene.pl || Object.values(scene.players || {}).map(v =>
       [v.uid, v.x, v.y, v.hp, v.maxHp, v.alive]
     );
@@ -99,7 +100,7 @@ function hud(scene, uid) {
         const member = P.main?.session?.players?.[v[0]];
         const char = P.main?.session?.lastPlayers?.[v[0]]?.char || 'basic';
         return `<div>${icon('char_' + char)} ${esc(displayName(member, v[0])).slice(0, 12)}
-          ${v[5] ? `❤️${Math.ceil(v[3])}/${v[4]}` : '👻'}</div>`;
+          ${v[5] ? `❤️${shown(v[3])}/${shown(v[4])}` : '👻'}</div>`;
       })
       .join('');
   }
@@ -173,7 +174,7 @@ function hud(scene, uid) {
     let cards = (P.main.offers || []).map((offer, index) => offer || fresh[index]);
     if (cards.length !== 4) cards = fresh;
     P.main.offers = cards;
-    let count = 0;
+    let count = P.main.shopRolls || 0;
     let selected = -1;
     let showStats = false;
     let detail = -1;
@@ -182,14 +183,14 @@ function hud(scene, uid) {
       const offers = cards.map((offer, index) => {
         const name = I.name(offer.weapon ? 'weapons' : 'items', offer.id);
         const description = offer.weapon
-          ? `${I.feature(offer.id)} · ${I.t('damage')} ${D.weapons[offer.id].damage}
+          ? `${I.feature(offer.id)} · ${I.t('damage')} ${shown(D.weapons[offer.id].damage)}
              · ${I.t('cool')} ${Math.round(D.weapons[offer.id].cool * 1000)}ms
-             · ${I.t('reach')} ${D.weapons[offer.id].range}`
+             · ${I.t('reach')} ${shown(D.weapons[offer.id].range)}`
           : I.effect(D.items[offer.id].stats).join(' · ') || I.name('items', offer.id);
         return `<article class="shop-card tier${offer.tier}${offer.locked ? ' is-locked' : ''}">
           ${icon((offer.weapon ? 'weapon_' : 'item_') + offer.id, 'shop-art')}
           <div class="shop-detail"><strong>${esc(name)} · ${esc(I.grade(offer.tier))}</strong>
-          <small>${esc(description)}</small><span class="price">💎${offer.price}
+          <small>${esc(description)}</small><span class="price">💎${shown(offer.price)}
             ${offer.weapon ? ` · T${offer.tier}` : ''}</span></div>
           <div class="offer-actions">${button(offer.weapon && player.weapons.length >= P.sim.capacity(player)
             && !P.sim.canBuy({ ...player, mats: Infinity }, offer) ? '🈵' : I.t('buy'), `buy${index}`,
@@ -214,8 +215,8 @@ function hud(scene, uid) {
         `${esc(displayName(session.players[id], id)).slice(0, 12)} ${session.ready.has(id) ? '✔' : '…'}`
       ).join('　');
       show(`<section class="shop-screen"><header class="shop-header">
-        <h2>🛒 ${esc(I.t('shop'))}</h2><span>❤️ ${Math.ceil(player.hp)}/${player.maxHp}</span>
-        <b>💎 ${player.mats}</b></header>
+        <h2>🛒 ${esc(I.t('shop'))}</h2><span>❤️ ${shown(player.hp)}/${shown(player.maxHp)}</span>
+        <b>💎 ${shown(player.mats)}</b></header>
         <div class="shop-grid">${offers}</div>
         <div class="shop-toolbar">${button(`${I.t('reroll')} · 💎${P.sim.shopRerollCost(player, session.wave, count)}`, 'roll')}
           <span class="shop-roster">${roster}</span></div>

@@ -4,3 +4,6 @@ require('./net.test.cjs');
 require('./char-stats.test.cjs');
 require('./v2-combat.test.cjs');
 require('./v2-growth.test.cjs');
+require('./solo-save.test.cjs');
+require('./solo-main.test.cjs');
+require('./ui-display.test.cjs');

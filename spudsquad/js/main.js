@@ -19,6 +19,43 @@
   let walletPromise;
   let roster = { players: [], hostUser: null };
   const keys = new Set();
+  let cratesRemaining = 0;
+  let shopRolls = 0;
+  let lastSave = 0;
+  const solo = () => uid === 'solo' && session?.isHost && !lobby &&
+    Object.keys(session.players).length === 1;
+  function checkpoint(force = false) {
+    if (!solo() || !session.world || !['wave', 'shop'].includes(mode)) return;
+    const now = Date.now();
+    if (!force && now - lastSave < 3000) return;
+    try {
+      if (S.soloSave.save(localStorage, { mode, world: session.world, offers,
+        cratesRemaining, shopRolls }, now)) lastSave = now;
+    } catch {} // blocked browser storage is non-fatal
+  }
+  function restoreSolo() {
+    let saved;
+    try { saved = S.soloSave.load(localStorage); } catch { return false; }
+    if (!saved) return false;
+    uid = 'solo';
+    session = new N.Session({ uid, host: uid, rng: Math.random,
+      onAction: handleAction, onEnd: finish, sendRt: data => renderer.fx(data.fx, uid) });
+    session.roster({ players: [{ user: uid }], hostUser: uid });
+    session.world = saved.world;
+    session.wave = saved.world.wave;
+    session.lastPlayers = { solo: { char: saved.world.players.solo.char } };
+    session.pick.solo = saved.world.players.solo.char;
+    offers = saved.offers;
+    cratesRemaining = saved.cratesRemaining;
+    shopRolls = saved.shopRolls;
+    mode = saved.mode;
+    if (mode === 'shop') {
+      const player = session.world.players.solo;
+      U.crates(session, player, cratesRemaining,
+        () => U.upgrades(player, () => U.shop(session, uid, ready)));
+    } else U.hide();
+    return true;
+  }
 
 
   function getUid() {
@@ -48,6 +85,10 @@
   }
   function beginSolo() {
     uid = 'solo';
+    lobby = null;
+    try { S.soloSave.clear(localStorage); } catch {} // storage disabled
+    offers = null;
+    cratesRemaining = shopRolls = 0;
     session = new N.Session({
       uid, host: uid, rng: Math.random, onAction: handleAction, onEnd: finish,
       sendRt: data => renderer.fx(data.fx, uid)
@@ -139,6 +180,7 @@
   function handleAction(action) {
     if (action.type === 'WAVE_START') {
       mode = 'wave';
+      cratesRemaining = shopRolls = 0;
       offers = (offers || []).map(offer => offer.locked ? offer : null);
       U.hide();
       if (!session.isHost) {
@@ -146,17 +188,20 @@
         localPlayer = S.createPlayer(uid, data?.char || 'basic', data || {});
         session.buffer.a = [];
       }
+      checkpoint(true);
     }
     if (action.type === 'WAVE_END') {
       mode = 'shop';
       const player = session.world?.players[uid] || localPlayer;
       const levelUps = action.payload.players?.[uid]?.levelUps || 0;
+      if (solo()) cratesRemaining = action.payload.players?.[uid]?.crates || 0;
       if (player) {
         player.mats = action.payload.players?.[uid]?.mats ?? player.mats;
         player.levelUps = levelUps;
         U.crates(session, player, action.payload.players?.[uid]?.crates || 0,
           () => U.upgrades(player, () => U.shop(session, uid, ready)));
       } else U.shop(session, uid, ready);
+      checkpoint(true);
       if (session.isHost) {
         setTimeout(() => {
           if (session && session.wave === action.payload.w &&
@@ -179,6 +224,7 @@
   function finish(data) {
     if (mode === 'end') return;
     mode = 'end';
+    if (solo()) { try { S.soloSave.clear(localStorage); } catch {} }
     U.result(data, () => {
       if (lobby) { lobby.goToWaitingRoom(); reset(); }
       else reset();
@@ -199,6 +245,7 @@
   }
   function reset() {
     session = null;
+    lobby = null;
     mode = 'title';
     rewarded = false;
     U.title(action => action === 'solo' ? beginSolo() : connect());
@@ -238,6 +285,7 @@
       else { const input = move(dt); session.update(dt, input); }
       const view = scene();
       if (view) { U.hud(view, uid); renderer.draw(view, uid, now); }
+      checkpoint();
     } else if (renderer) renderer.draw(null, uid, now);
   }
   document.addEventListener('DOMContentLoaded', () => {
@@ -260,6 +308,8 @@
     try { GameRankings.injectNavButton('spudsquad'); }
     catch (error) { console.warn('rank nav unavailable', error); }
     reset();
+    // A multiplayer room link always takes precedence over a local SOLO checkpoint.
+    if (!new URLSearchParams(location.search).has('room')) restoreSolo();
     requestAnimationFrame(frame);
     if (new URLSearchParams(location.search).has('room')) connect();
   });
@@ -306,11 +356,31 @@
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
   document.addEventListener('visibilitychange', () => { last = performance.now(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) checkpoint(true);
+  });
+  window.addEventListener('pagehide', () => checkpoint(true));
+  // UI buttons are handled synchronously on #panel. Observe the completed action
+  // without rebinding its handlers or re-running any simulation callback.
+  let beforeShopOffers;
+  document.addEventListener('click', event => {
+    if (!solo() || mode !== 'shop') return;
+    if (event.target.closest('[data-act="roll"]')) beforeShopOffers = offers;
+  }, true);
+  document.addEventListener('click', event => {
+    if (!solo() || mode !== 'shop') return;
+    const act = event.target.closest('[data-act]')?.dataset.act;
+    if ((act === 'take' || act === 'recycle') && cratesRemaining > 0) cratesRemaining--;
+    if (act === 'roll' && beforeShopOffers !== offers) shopRolls++;
+    beforeShopOffers = null;
+    if (act) checkpoint(true);
+  });
   P.main = {
     get session() { return session; },
     get localPlayer() { return localPlayer; },
     get offers() { return offers; },
     set offers(value) { offers = value; },
+    get shopRolls() { return shopRolls; },
     resize() { renderer?.resize(); },
     refresh() { if (mode === 'title') reset(); }
   };
