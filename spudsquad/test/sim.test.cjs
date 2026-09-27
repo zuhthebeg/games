@@ -6,3 +6,19 @@ test('weapon crit / merge / shop price and reroll',()=>{const p=S.createPlayer('
 test('splitter dies into two blobs',()=>{const w=S.createWorld({rng:()=>.99}),e=S.spawn(w,'splitter',200,200);e.hp=0;S.kill(w,e,'solo');a.equal(w.enemies.filter(v=>v.type==='blob').length,2)});
 test('wave 20 ends only with boss killed',()=>{const w=S.createWorld({wave:20});w.tm=0;w.bossKilled=false;a.equal(S.canEnd(w),false);w.bossKilled=true;a.equal(S.canEnd(w),true)});
 test('projectile flies at 700px/s before hit; final boss kill clears without timer',()=>{const w=S.createWorld({wave:20,rng:()=>.99});w.bossSpawned=true;w.spawnClock=-100;const p=w.players.solo,e=S.spawn(w,'blob',p.x+220,p.y);S.step(w,1/30);a.ok(e.hp>0,'not instantly hit');a.equal(w.projectiles.length,1);for(let i=0;i<14;i++)S.step(w,1/30);a.ok(e.hp<e.maxHp||!w.enemies.includes(e),'projectile arrived');w.bossKilled=true;a.equal(S.canEnd(w),true)});
+
+test('wave end auto pickup is even among survivors, remainder by seat',()=>{
+ const w=S.createWorld({players:{a:{char:'basic'},b:{char:'basic'},c:{char:'basic'}}});
+ w.bossSpawned=true;w.tm=0;w.spawnClock=-100;
+ w.drops=Array.from({length:8},(_,i)=>({id:i,x:0,y:0}));
+ S.step(w,1/30);
+ a.deepEqual([w.players.a.mats,w.players.b.mats,w.players.c.mats],[3,3,2]);
+});
+test('dead teammate revives at half HP for shop, next wave starts full',()=>{
+ const w=S.createWorld({players:{a:{char:'basic'},b:{char:'basic'}}});
+ w.players.b.alive=false;w.players.b.hp=0;w.tm=0;w.spawnClock=-100;
+ S.step(w,1/30);
+ a.equal(w.players.b.hp,w.players.b.maxHp*.5);
+ const next=S.createWorld({wave:2,players:{b:{char:w.players.b.char,stats:w.players.b.stats}}});
+ a.equal(next.players.b.hp,next.players.b.maxHp);
+});

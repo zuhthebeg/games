@@ -1,8 +1,230 @@
-(function(root){'use strict';const P=root.SPUD=root.SPUD||{};const D=P.data;let language=(navigator.language||'ko').startsWith('zh')?'zh-TW':(navigator.language||'ko').startsWith('en')?'en':'ko';const dict={ko:{title:'감자특공대',solo:'혼자 하기',multi:'같이 하기',choose:'감자를 골라!',ready:'준비 완료',shop:'전투 준비',reroll:'리롤',stats:'스탯',merge:'합치기',sell:'판매',next:'다음 웨이브',win:'감자특공대 승리!',lose:'전멸했다!',back:'처음으로',locked:'잠금',wave:'웨이브'},en:{title:'Spud Squad',solo:'Play solo',multi:'Co-op',choose:'Choose a spud!',ready:'Ready',shop:'Supply shop',reroll:'Reroll',stats:'Stats',merge:'Merge',sell:'Sell',next:'Next wave',win:'Victory!',lose:'Squad defeated',back:'Main menu',locked:'Lock',wave:'Wave'},'zh-TW':{title:'馬鈴薯特攻隊',solo:'單人遊玩',multi:'多人合作',choose:'選擇馬鈴薯！',ready:'準備完成',shop:'補給商店',reroll:'重抽',stats:'屬性',merge:'合併',sell:'出售',next:'下一波',win:'勝利！',lose:'全軍覆沒',back:'回主選單',locked:'鎖定',wave:'波次'}};const t=k=>dict[language][k]||k;const panel=document.getElementById('panel'),overlay=document.getElementById('overlay');const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function show(html){panel.innerHTML=html;overlay.style.display='flex'}function hide(){overlay.style.display='none'}function button(label,action){return `<button class="btn" data-act="${action}">${esc(label)}</button>`}function icon(id){return `<img src="assets/${esc(id)}.webp" onerror="this.style.display='none'" alt="">`}
-function title(cb){show(`<h1>🥔 ${t('title')}</h1><p>1–4 · WAVE 20 · SURVIVE TOGETHER</p><div class="row">${button(t('solo'),'solo')}${button(t('multi'),'multi')}</div>`);panel.onclick=e=>{const a=e.target.closest('[data-act]')?.dataset.act;if(a)cb(a)}}
-function choose(cb){show(`<h2>${t('choose')}</h2><div class="row">${Object.entries(D.chars).map(([id,v])=>`<div class="card">${icon('char_'+id)}<b>${esc(v.name)}</b><small>${esc(v.weapon)} · ${Object.entries(v.stats).map(([k,n])=>`${k} ${n>0?'+':''}${n}`).join(' ')||'balanced'}</small>${button(t('ready'),id)}</div>`).join('')}</div>`);panel.onclick=e=>{const a=e.target.closest('[data-act]')?.dataset.act;if(a)cb(a)}}
-function hud(scene,uid){if(!scene)return;const p=scene.pl?.find(v=>v[0]===uid)||scene.players?.[uid];if(!p)return;const hp=Array.isArray(p)?p[3]:p.hp,max=Array.isArray(p)?p[4]:p.maxHp,mats=Array.isArray(p)?p[6]:p.mats,xp=Array.isArray(p)?p[7]:p.xp,lvl=Array.isArray(p)?p[8]:p.lvl;document.getElementById('hpText').textContent=`${Math.ceil(hp)}/${max}`;document.getElementById('hpBar').style.width=Math.max(0,hp/max*100)+'%';document.getElementById('xpBar').style.width=(xp/P.sim.needXp(lvl)*100)+'%';document.getElementById('level').textContent=lvl;document.getElementById('mats').textContent=mats;document.getElementById('wave').textContent=P.main?.session?.wave||1;document.getElementById('timer').textContent=P.main?.session?.wave===20&&scene.tm<=0?'BOSS':Math.ceil(scene.tm??P.main?.session?.world?.tm??0);document.getElementById('team').innerHTML=(scene.pl||Object.values(scene.players||{}).map(v=>[v.uid,v.x,v.y,v.hp,v.maxHp,v.alive])).filter(v=>v[0]!==uid).map(v=>`<div>🥔 ${esc(v[0]).slice(0,8)} ${v[5]?'❤️'+Math.ceil(v[3])+'/'+v[4]:'👻'}</div>`).join('')}
-function upgrades(player,cb){if(!player.levelUps){cb();return}const keys=Object.keys(D.upgrades).sort(()=>Math.random()-.5).slice(0,4);show(`<h2>⭐ LEVEL UP</h2><p>${player.levelUps} left</p><div class="row">${keys.map(id=>button(`${id} +${D.upgrades[id]}`,id)).join('')}</div>`);panel.onclick=e=>{const id=e.target.closest('[data-act]')?.dataset.act;if(!id)return;player.stats[id]+=D.upgrades[id];if(id==='maxHp'){player.maxHp+=3;player.hp+=3}player.levelUps--;upgrades(player,cb)}}
-function shop(session,uid,cb){const p=session.world?.players[uid]||P.main.localPlayer;const w=session.world||{wave:session.wave,rng:Math.random};const fresh=P.sim.shop(w,p);let cards=(P.main.offers||[]).map((o,i)=>o||fresh[i]);if(cards.length!==4)cards=fresh;P.main.offers=cards;let count=0,selected=-1,showStats=false;function draw(){show(`<h2>🛒 ${t('shop')} · 💎${p.mats}</h2><div class="row">${cards.map((o,i)=>`<div class="card tier${o.tier}">${icon((o.weapon?'weapon_':'item_')+o.id)}<b>${esc((o.weapon?D.weapons:D.items)[o.id].name)}</b><small>${o.weapon?'T'+o.tier:'+'+Object.entries(D.items[o.id].stats).map(([k,n])=>k+n).join(' ')}</small><em>💎${o.price}</em><div>${button('구매',`buy${i}`)}${button(o.locked?'🔓':'🔒',`lock${i}`)}</div></div>`).join('')}</div><div>${button(`${t('reroll')} 💎${P.sim.rerollCost(session.wave,count)}`,'roll')}</div><div id="shopSlots">${Array.from({length:6},(_,i)=>`<button class="slot tier${p.weapons[i]?.[1]||1}" data-act="slot${i}">${p.weapons[i]?.[0]||'＋'}</button>`).join('')}</div><div>${button(t('merge'),'merge')}${button(t('sell'),'sell')}${button(t('stats'),'stats')}</div><div id="stats" style="display:${showStats?'block':'none'}">${Object.entries(p.stats).map(([k,v])=>`${k}: ${Math.round(v*10)/10}`).join(' · ')}<br>${p.items.join(' · ')}</div><p>${Object.keys(session.players).map(id=>`${esc(id).slice(0,6)} ${session.ready.has(id)?'✔':'…'}`).join('　')}</p>${button(t('ready'),'ready')}`);panel.onclick=e=>{const a=e.target.closest('[data-act]')?.dataset.act;if(!a)return;if(a.startsWith('buy')){const i=+a.slice(3);if(P.sim.buy(p,cards[i]))cards[i]=P.sim.shop(w,p)[0]}else if(a.startsWith('lock'))cards[+a.slice(4)].locked=!cards[+a.slice(4)].locked;else if(a.startsWith('slot'))selected=+a.slice(4);else if(a==='roll'){const cost=P.sim.rerollCost(session.wave,count);if(p.mats>=cost){p.mats-=cost;count++;const fresh=P.sim.shop(w,p);cards=cards.map((o,i)=>o.locked?o:fresh[i]);P.main.offers=cards}}else if(a==='merge')P.sim.merge(p,selected);else if(a==='sell'&&p.weapons[selected]){const [id,tier]=p.weapons.splice(selected,1)[0];p.mats+=Math.floor(P.sim.price(D.weapons[id].price,session.wave)*tier*.5)}else if(a==='stats')showStats=!showStats;else if(a==='ready'){hide();cb(p);return}draw()}}draw()}
-function result(data,cb){show(`<h1>${data.win?t('win'):t('lose')}</h1><p>${t('wave')} ${data.wave} · ${Object.entries(data.kills||{}).map(([u,n])=>`${esc(u).slice(0,8)} ${n} KOs`).join(' / ')}</p>${button(t('back'),'back')}`);panel.onclick=e=>{if(e.target.closest('[data-act]'))cb()}}
-P.ui={title,choose,hud,upgrades,shop,result,hide,show,t,language:()=>language,toggle(){language=language==='ko'?'en':language==='en'?'zh-TW':'ko';document.documentElement.lang=language;P.main?.refresh()}};document.getElementById('lang').onclick=()=>P.ui.toggle();})(window);
+(function (root) {
+  'use strict';
+  const P = root.SPUD = root.SPUD || {};
+  const D = P.data;
+  const I = P.i18n;
+  const panel = document.getElementById('panel');
+  const overlay = document.getElementById('overlay');
+  const hudEl = document.getElementById('hud');
+  let activeRefresh = null;
+  const esc = value => String(value).replace(/[&<>"']/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[char]);
+  const label = (key, n) => `<span class="stat-change ${n < 0 ? 'negative' : 'positive'}">${esc(I.stat(key))} ${n > 0 ? '+' : ''}${n}</span>`;
+  const icon = (id, kind = '') =>
+    `<img class="${kind}" src="assets/${esc(id)}.webp" alt="" onerror="this.hidden=true">`;
+  const button = (text, act, extra = '') =>
+    `<button type="button" class="btn ${extra}" data-act="${act}">${esc(text)}</button>`;
+
+  function show(html, menu = false) {
+    panel.innerHTML = html;
+    overlay.style.display = 'flex';
+    document.body.classList.toggle('menu-mode', menu);
+    hudEl.setAttribute('aria-hidden', String(menu));
+    requestAnimationFrame(() => P.main?.resize?.());
+  }
+  function hide() {
+    overlay.style.display = 'none';
+    document.body.classList.remove('menu-mode');
+    hudEl.setAttribute('aria-hidden', 'false');
+    activeRefresh = null;
+    requestAnimationFrame(() => P.main?.resize?.());
+  }
+  function title(cb) {
+    activeRefresh = () => title(cb);
+    show(`<section class="title-screen">
+      ${icon('key_art', 'key-art')}
+      <div class="title-copy"><span class="eyebrow">1–4 PLAYER · CO-OP SURVIVAL</span>
+      <h1>${esc(I.t('title'))}</h1><p>${esc(I.t('subtitle'))}</p>
+      <div class="title-actions">${button(I.t('solo'), 'solo', 'primary large')}
+      ${button(I.t('multi'), 'multi', 'large')}</div></div>
+    </section>`, true);
+    panel.onclick = event => {
+      const act = event.target.closest('[data-act]')?.dataset.act;
+      if (act) cb(act);
+    };
+  }
+  function choose(cb) {
+    activeRefresh = () => choose(cb);
+    const cards = Object.entries(D.chars).map(([id, char]) => {
+      const changes = Object.entries(char.stats);
+      return `<button type="button" class="character-card" data-act="${id}">
+        ${icon('char_' + id, 'character-art')}
+        <strong>${esc(I.name('chars', id))}</strong>
+        <span class="starting-weapon">${icon('weapon_' + char.weapon)}
+          ${esc(I.t('weapon'))}: ${esc(I.name('weapons', char.weapon))}</span>
+        <span class="bonuses">${changes.length ? changes.map(([key, n]) => label(key, n)).join('')
+          : `<span class="stat-change">${esc(I.t('balanced'))}</span>`}</span>
+      </button>`;
+    }).join('');
+    show(`<section class="selection-screen"><span class="eyebrow">CHOOSE YOUR HERO</span>
+      <h2>${esc(I.t('choose'))}</h2><div class="character-grid">${cards}</div></section>`, true);
+    panel.onclick = event => {
+      const act = event.target.closest('[data-act]')?.dataset.act;
+      if (act) cb(act);
+    };
+  }
+  function hud(scene, uid) {
+    if (!scene) return;
+    const p = scene.pl?.find(row => row[0] === uid) || scene.players?.[uid];
+    if (!p) return;
+    const hp = Array.isArray(p) ? p[3] : p.hp;
+    const max = Array.isArray(p) ? p[4] : p.maxHp;
+    const mats = Array.isArray(p) ? p[6] : p.mats;
+    const xp = Array.isArray(p) ? p[7] : p.xp;
+    const lvl = Array.isArray(p) ? p[8] : p.lvl;
+    document.getElementById('hpText').textContent = `${Math.ceil(hp)}/${max}`;
+    document.getElementById('hpBar').style.width = Math.max(0, hp / max * 100) + '%';
+    document.getElementById('xpBar').style.width = xp / P.sim.needXp(lvl) * 100 + '%';
+    document.getElementById('level').textContent = lvl;
+    document.getElementById('mats').textContent = mats;
+    document.getElementById('wave').textContent = P.main?.session?.wave || 1;
+    const remaining = scene.tm ?? P.main?.session?.world?.tm ?? 0;
+    document.getElementById('timer').textContent =
+      P.main?.session?.wave === 20 && remaining <= 0 ? 'BOSS' : Math.ceil(remaining);
+    const members = scene.pl || Object.values(scene.players || {}).map(v =>
+      [v.uid, v.x, v.y, v.hp, v.maxHp, v.alive]
+    );
+    document.getElementById('team').innerHTML = members.filter(v => v[0] !== uid)
+      .map(v => `<div>🥔 ${esc(v[0]).slice(0, 8)} ${v[5] ? `❤️${Math.ceil(v[3])}/${v[4]}` : '👻'}</div>`)
+      .join('');
+  }
+  function upgrades(player, cb) {
+    activeRefresh = () => upgrades(player, cb);
+    if (!player.levelUps) { cb(); return; }
+    const keys = Object.keys(D.upgrades).sort(() => Math.random() - .5).slice(0, 4);
+    const cards = keys.map(id => {
+      const now = player.stats[id];
+      const next = now + D.upgrades[id];
+      const glyph = { maxHp: '❤️', dmg: '⚔️', atkSpd: '⚡', melee: '🥊',
+        ranged: '🎯', armor: '🛡️', speed: '👟', crit: '💥', range: '🔭',
+        regen: '🩹', dodge: '🪶', luck: '🍀', harvest: '🌱' }[id];
+      return `<button type="button" class="upgrade-card" data-act="${id}">
+        <span class="upgrade-glyph">${glyph}</span><strong>${esc(I.stat(id))}</strong>
+        <span>${now} <span aria-hidden="true">→</span> <b>${next}</b></span>
+      </button>`;
+    }).join('');
+    show(`<section class="upgrade-screen"><span class="eyebrow">LEVEL UP</span>
+      <h2>⭐ ${esc(I.t('left'))}: ${player.levelUps}</h2>
+      <div class="upgrade-grid">${cards}</div></section>`);
+    panel.onclick = event => {
+      const id = event.target.closest('[data-act]')?.dataset.act;
+      if (!id) return;
+      player.stats[id] += D.upgrades[id];
+      if (id === 'maxHp') { player.maxHp += 3; player.hp += 3; }
+      player.levelUps--;
+      upgrades(player, cb);
+    };
+  }
+  function shop(session, uid, cb) {
+    const player = session.world?.players[uid] || P.main.localPlayer;
+    const world = session.world || { wave: session.wave, rng: Math.random };
+    const fresh = P.sim.shop(world, player);
+    let cards = (P.main.offers || []).map((offer, index) => offer || fresh[index]);
+    if (cards.length !== 4) cards = fresh;
+    P.main.offers = cards;
+    let count = 0;
+    let selected = -1;
+    let showStats = false;
+    function draw() {
+      activeRefresh = draw;
+      const offers = cards.map((offer, index) => {
+        const name = I.name(offer.weapon ? 'weapons' : 'items', offer.id);
+        const description = offer.weapon
+          ? `${I.feature(offer.id)} · ${I.t('damage')} ${D.weapons[offer.id].damage}
+             · ${I.t('cool')} ${D.weapons[offer.id].cool}${I.t('seconds')}
+             · ${I.t('reach')} ${D.weapons[offer.id].range}`
+          : I.effect(D.items[offer.id].stats).join(' · ');
+        return `<article class="shop-card tier${offer.tier}">
+          ${icon((offer.weapon ? 'weapon_' : 'item_') + offer.id, 'shop-art')}
+          <div class="shop-detail"><strong>${esc(name)}</strong>
+          <small>${esc(description)}</small><span class="price">💎${offer.price}
+            ${offer.weapon ? ` · T${offer.tier}` : ''}</span></div>
+          <div class="offer-actions">${button(I.t('buy'), `buy${index}`)}
+          ${button(offer.locked ? '🔓' : '🔒', `lock${index}`, 'lock-btn')}</div>
+        </article>`;
+      }).join('');
+      const slots = Array.from({ length: 6 }, (_, i) => {
+        const weapon = player.weapons[i];
+        return `<button type="button" class="slot tier${weapon?.[1] || 1}
+          ${selected === i ? 'selected' : ''}" data-act="slot${i}">
+          ${weapon ? icon('weapon_' + weapon[0]) : '＋'}
+          <span>${weapon ? `${esc(I.name('weapons', weapon[0]))} T${weapon[1]}` : '—'}</span>
+        </button>`;
+      }).join('');
+      const owned = player.items.map(id => `<span class="owned-item">
+        ${icon('item_' + id)} ${esc(I.name('items', id))}</span>`).join('') || I.t('empty');
+      const stats = Object.entries(player.stats).map(([key, value]) =>
+        `<span>${esc(I.stat(key))}: <b>${Math.round(value * 10) / 10}</b></span>`
+      ).join('');
+      const roster = Object.keys(session.players).map(id =>
+        `${esc(id).slice(0, 6)} ${session.ready.has(id) ? '✔' : '…'}`
+      ).join('　');
+      show(`<section class="shop-screen"><header class="shop-header">
+        <h2>🛒 ${esc(I.t('shop'))}</h2><span>❤️ ${Math.ceil(player.hp)}/${player.maxHp}</span>
+        <b>💎 ${player.mats}</b></header>
+        <div class="shop-grid">${offers}</div>
+        <div class="shop-toolbar">${button(`${I.t('reroll')} · 💎${P.sim.rerollCost(session.wave, count)}`, 'roll')}
+          <span class="shop-roster">${roster}</span></div>
+        <div class="shop-divider">${esc(I.t('slots'))} · ${player.weapons.length}/6</div>
+        <div id="shopSlots">${slots}</div>
+        <div class="slot-actions">${button(I.t('merge'), 'merge')}
+          ${button(I.t('sell'), 'sell')}${button(I.t('stats'), 'stats')}</div>
+        <div class="inventory"><b>${esc(I.t('items'))}</b><div>${owned}</div></div>
+        <div id="stats" class="stat-panel" style="display:${showStats ? 'grid' : 'none'}">${stats}</div>
+        ${button(I.t('ready'), 'ready', 'primary ready-btn')}
+      </section>`);
+      panel.onclick = event => {
+        const act = event.target.closest('[data-act]')?.dataset.act;
+        if (!act) return;
+        if (act.startsWith('buy')) {
+          const i = Number(act.slice(3));
+          if (P.sim.buy(player, cards[i])) cards[i] = P.sim.shop(world, player)[0];
+        } else if (act.startsWith('lock')) {
+          const i = Number(act.slice(4));
+          cards[i].locked = !cards[i].locked;
+        } else if (act.startsWith('slot')) {
+          selected = Number(act.slice(4));
+        } else if (act === 'roll') {
+          const price = P.sim.rerollCost(session.wave, count);
+          if (player.mats >= price) {
+            player.mats -= price;
+            count++;
+            const rolled = P.sim.shop(world, player);
+            cards = cards.map((offer, index) => offer.locked ? offer : rolled[index]);
+            P.main.offers = cards;
+          }
+        } else if (act === 'merge') {
+          P.sim.merge(player, selected);
+        } else if (act === 'sell' && player.weapons[selected]) {
+          const [id, tier] = player.weapons.splice(selected, 1)[0];
+          player.mats += Math.floor(P.sim.price(D.weapons[id].price, session.wave) * tier * .5);
+          selected = -1;
+        } else if (act === 'stats') {
+          showStats = !showStats;
+        } else if (act === 'ready') {
+          hide();
+          cb(player);
+          return;
+        }
+        draw();
+      };
+    }
+    draw();
+  }
+  function result(data, cb) {
+    activeRefresh = () => result(data, cb);
+    show(`<h1>${esc(I.t(data.win ? 'win' : 'lose'))}</h1>
+      <p>${esc(I.t('wave'))} ${data.wave} · ${Object.entries(data.kills || {})
+        .map(([uid, n]) => `${esc(uid).slice(0, 8)} ${n} KOs`).join(' / ')}</p>
+      ${button(I.t('back'), 'back')}`);
+    panel.onclick = event => { if (event.target.closest('[data-act]')) cb(); };
+  }
+  P.ui = {
+    title, choose, hud, upgrades, shop, result, hide, show,
+    t: key => I.t(key),
+    language: () => I.language,
+    toggle() { I.toggle(); if (activeRefresh) activeRefresh(); else P.main?.refresh(); }
+  };
+  document.getElementById('lang').onclick = () => P.ui.toggle();
+})(window);

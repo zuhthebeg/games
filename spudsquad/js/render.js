@@ -1,10 +1,291 @@
-(function(root){'use strict';const P=root.SPUD=root.SPUD||{};const D=P.data;const images={};const names=[...Object.keys(D.chars).map(x=>'char_'+x),...Object.keys(D.enemies).map(x=>x),...Object.keys(D.weapons).map(x=>'weapon_'+x),...Object.keys(D.items).map(x=>'item_'+x),'bg_ground','key_art'];for(const id of names){const img=new Image();img.onload=()=>img.ok=true;img.onerror=()=>img.ok=false;img.src='assets/'+(D.enemies[id]&&!id.startsWith('boss_')?'enemy_'+id:id)+'.webp';images[id]=img}
-const colors={blob:'#9ed45d',bug:'#f7bb44',spitter:'#c08ad8',charger:'#ee8072',splitter:'#84bbdd',tank:'#6d9f69',elite:'#d76b9e',boss_1:'#ac5c7c',boss_2:'#713f70'};
-class Renderer{constructor(canvas){this.canvas=canvas;this.c=canvas.getContext('2d');this.cam={x:0,y:0};this.particles=[];this.projectiles=[];this.marks=[];this.shake=0;this.last=0;this.resize();window.addEventListener('resize',()=>this.resize())}resize(){this.dpr=Math.min(2,devicePixelRatio||1);this.canvas.width=Math.round(this.canvas.clientWidth*this.dpr);this.canvas.height=Math.round(this.canvas.clientHeight*this.dpr)}sprite(id,x,y,size,f=1,t=0){const c=this.c,im=images[id];c.save();c.translate(x,y+Math.sin(t*10)*2);c.scale(f,1);if(im&&im.ok)c.drawImage(im,-size/2,-size/2,size,size);else{c.fillStyle=id.startsWith('char')?'#a8653a':colors[id]||'#eeb65a';c.strokeStyle='#452d23';c.lineWidth=4;c.beginPath();c.arc(0,0,size*.43,0,Math.PI*2);c.fill();c.stroke();if(id.startsWith('char')){c.fillStyle='#fff';c.beginPath();c.arc(-size*.12,-size*.07,4,0,7);c.arc(size*.12,-size*.07,4,0,7);c.fill()}}c.restore()}
-fx(events,myUid){for(const e of events||[]){if(e[0]==='mark')this.marks.push({x:e[1],y:e[2],life:1});if(e[0]==='hit')this.particles.push({x:e[1],y:e[2],text:String(e[3]),crit:e[4],life:.7});if(e[0]==='die')for(let i=0;i<7;i++)this.particles.push({x:e[1],y:e[2],vx:(Math.random()-.5)*120,vy:(Math.random()-.5)*120,life:.55});if(e[0]==='sh'&&D.weapons[e[2]]?.kind==='ranged'&&e[2]!=='laser')this.projectiles.push({x:e[4],y:e[5],vx:Math.cos(e[6])*700,vy:Math.sin(e[6])*700,life:(D.weapons[e[2]].range/700),kind:'sh'});if(e[0]==='eb')this.projectiles.push({x:e[1],y:e[2],vx:Math.cos(e[3])*e[4],vy:Math.sin(e[3])*e[4],life:2,kind:'eb'});if(e[0]==='hurt'&&e[1]===myUid)this.shake=10;if(e[0]==='boss')this.shake=18}}
-draw(scene,myUid,now=performance.now()){const c=this.c,canvas=this.canvas,dpr=this.dpr,W=canvas.width/dpr,H=canvas.height/dpr;c.setTransform(dpr,0,0,dpr,0,0);c.fillStyle='#d5bd80';c.fillRect(0,0,W,H);if(!scene)return;const players=scene.pl||Object.values(scene.players||{}).map(p=>[p.uid,p.x,p.y,p.hp,p.maxHp,p.alive,p.mats,p.xp,p.lvl,p.char,p.f,p.weapons]);const own=players.find(p=>p[0]===myUid),me=(own?.[5]?own:players.find(p=>p[5]))||own||players[0];if(me){this.cam.x=Math.max(0,Math.min(D.W-W,me[1]-W/2));this.cam.y=Math.max(0,Math.min(D.H-H,me[2]-H/2))}c.save();c.translate((Math.random()-.5)*this.shake-this.cam.x,(Math.random()-.5)*this.shake-this.cam.y);this.shake*=.88;const bg=images.bg_ground;if(bg?.ok){const pat=c.createPattern(bg,'repeat');c.fillStyle=pat;c.fillRect(0,0,D.W,D.H)}else{c.fillStyle='#ead69c';c.fillRect(0,0,D.W,D.H);c.strokeStyle='#d4b87e';c.lineWidth=2;for(let x=0;x<D.W;x+=80)for(let y=0;y<D.H;y+=80){c.beginPath();c.arc(x+40,y+40,3,0,7);c.stroke()}}c.strokeStyle='#69432a';c.lineWidth=16;c.strokeRect(0,0,D.W,D.H);
-for(const d of scene.d||scene.drops||[]){const x=Array.isArray(d)?d[1]:d.x,y=Array.isArray(d)?d[2]:d.y;c.fillStyle='#6bbf46';c.save();c.translate(x,y);c.rotate(Math.PI/4);c.fillRect(-5,-5,10,10);c.restore()}
-for(const e of scene.e||scene.enemies||[]){const id=Array.isArray(e)?e[1]:e.type,x=Array.isArray(e)?e[2]:e.x,y=Array.isArray(e)?e[3]:e.y;this.sprite(id,x,y,D.enemies[id]?.size||40,1,now/1000);const hp=Array.isArray(e)?e[4]/100:e.hp/e.maxHp;if(hp<1){c.fillStyle='#572b2b';c.fillRect(x-25,y-36,50,5);c.fillStyle='#ec6053';c.fillRect(x-25,y-36,50*hp,5)}}
-for(const p of players){if(!p[5])continue;const orig=scene.players?.[p[0]],id=p[9]||orig?.char||'basic',face=p[10]||orig?.f||1;this.sprite('char_'+id,p[1],p[2],56,face,now/1000);if(orig){orig.weapons.forEach(([wid],i)=>{const a=now/800+i*2*Math.PI/orig.weapons.length;this.sprite('weapon_'+wid,p[1]+Math.cos(a)*39,p[2]+Math.sin(a)*39,28)})}c.fillStyle='#693c29';c.fillRect(p[1]-26,p[2]+30,52,5);c.fillStyle='#76dd76';c.fillRect(p[1]-26,p[2]+30,52*Math.max(0,p[3]/p[4]),5)}
-const dt=Math.min(.05,(now-this.last)/1000||0);this.last=now;for(const m of this.marks.slice()){m.life-=dt;c.strokeStyle='#eb5548';c.lineWidth=4;c.beginPath();c.moveTo(m.x-12,m.y-12);c.lineTo(m.x+12,m.y+12);c.moveTo(m.x+12,m.y-12);c.lineTo(m.x-12,m.y+12);c.stroke();if(m.life<=0)this.marks.splice(this.marks.indexOf(m),1)}for(const b of this.projectiles.slice()){b.life-=dt;b.x+=b.vx*dt;b.y+=b.vy*dt;const nearby=(scene.e||scene.enemies||[]).some(e=>Math.hypot((Array.isArray(e)?e[2]:e.x)-b.x,(Array.isArray(e)?e[3]:e.y)-b.y)<18);if(nearby||b.life<=0){this.projectiles.splice(this.projectiles.indexOf(b),1);continue}c.fillStyle=b.kind==='eb'?'#ff7866':'#fff19a';c.beginPath();c.arc(b.x,b.y,5,0,7);c.fill()}for(const a of this.particles.slice()){a.life-=dt;a.y+=(a.vy||-40)*dt;a.x+=(a.vx||0)*dt;c.globalAlpha=Math.max(0,a.life);if(a.text){c.font=`bold ${a.crit?24:17}px Jua, sans-serif`;c.strokeStyle='#503324';c.lineWidth=3;c.strokeText(a.text,a.x,a.y);c.fillStyle=a.crit?'#fff037':'#fff';c.fillText(a.text,a.x,a.y)}else{c.fillStyle='#afdb51';c.fillRect(a.x,a.y,7,7)}c.globalAlpha=1;if(a.life<=0)this.particles.splice(this.particles.indexOf(a),1)}c.restore()}}
-P.render={Renderer,images};})(window);
+(function (root) {
+  'use strict';
+  const P = root.SPUD = root.SPUD || {};
+  const D = P.data;
+  const images = {};
+  const names = [
+    ...Object.keys(D.chars).map(id => 'char_' + id),
+    ...Object.keys(D.enemies),
+    ...Object.keys(D.weapons).map(id => 'weapon_' + id),
+    ...Object.keys(D.items).map(id => 'item_' + id),
+    'bg_ground', 'key_art'
+  ];
+  for (const id of names) {
+    const image = new Image();
+    image.onload = () => { image.ok = true; };
+    image.onerror = () => { image.ok = false; };
+    image.src = 'assets/' + (D.enemies[id] && !id.startsWith('boss_') ? 'enemy_' + id : id) + '.webp';
+    images[id] = image;
+  }
+  const colors = {
+    blob: '#9ed45d', bug: '#f7bb44', spitter: '#c08ad8', charger: '#ee8072',
+    splitter: '#84bbdd', tank: '#6d9f69', elite: '#d76b9e',
+    boss_1: '#ac5c7c', boss_2: '#713f70'
+  };
+  class Renderer {
+    constructor(canvas) {
+      this.canvas = canvas;
+      this.c = canvas.getContext('2d');
+      this.cam = { x: 0, y: 0 };
+      this.particles = [];
+      this.projectiles = [];
+      this.marks = [];
+      this.flashes = new Map();
+      this.previousDrops = new Map();
+      this.shake = 0;
+      this.last = 0;
+      this.resize();
+      window.addEventListener('resize', () => this.resize());
+    }
+    resize() {
+      this.dpr = Math.min(2, devicePixelRatio || 1);
+      this.canvas.width = Math.round(this.canvas.clientWidth * this.dpr);
+      this.canvas.height = Math.round(this.canvas.clientHeight * this.dpr);
+    }
+    sprite(id, x, y, size, face = 1, time = 0, flash = false) {
+      const c = this.c;
+      const image = images[id];
+      c.save();
+      c.translate(x, y + Math.sin(time * 10) * 2);
+      c.scale(face, 1);
+      if (flash) c.filter = 'brightness(0) invert(1)';
+      if (image?.ok) {
+        c.drawImage(image, -size / 2, -size / 2, size, size);
+      } else {
+        c.fillStyle = id.startsWith('char') ? '#a8653a' : colors[id] || '#eeb65a';
+        c.strokeStyle = '#452d23';
+        c.lineWidth = 4;
+        c.beginPath();
+        c.arc(0, 0, size * .43, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+        if (id.startsWith('char')) {
+          c.fillStyle = '#fff';
+          c.beginPath();
+          c.arc(-size * .12, -size * .07, 4, 0, 7);
+          c.arc(size * .12, -size * .07, 4, 0, 7);
+          c.fill();
+        }
+      }
+      c.restore();
+    }
+    shadow(x, y, width) {
+      const c = this.c;
+      c.save();
+      c.fillStyle = 'rgba(47, 29, 20, .21)';
+      c.beginPath();
+      c.ellipse(x, y + 22, width, 9, 0, 0, Math.PI * 2);
+      c.fill();
+      c.restore();
+    }
+    fx(events, myUid) {
+      for (const event of events || []) {
+        const type = event[0];
+        if (type === 'mark') this.marks.push({ x: event[1], y: event[2], life: 1 });
+        if (type === 'hit') {
+          this.particles.push({ x: event[1], y: event[2], text: String(event[3]),
+            crit: event[4], life: .7 });
+        }
+        if (type === 'die') {
+          for (let i = 0; i < 8; i++) {
+            this.particles.push({ x: event[1], y: event[2],
+              vx: (Math.random() - .5) * 160, vy: (Math.random() - .5) * 160,
+              life: .55, size: 4 + Math.random() * 4 });
+          }
+        }
+        if (type === 'sh' && D.weapons[event[2]]?.kind === 'ranged' && event[2] !== 'laser') {
+          this.projectiles.push({ x: event[4], y: event[5],
+            vx: Math.cos(event[6]) * 700, vy: Math.sin(event[6]) * 700,
+            life: D.weapons[event[2]].range / 700, kind: 'sh' });
+        }
+        if (type === 'eb') {
+          this.projectiles.push({ x: event[1], y: event[2],
+            vx: Math.cos(event[3]) * event[4], vy: Math.sin(event[3]) * event[4],
+            life: 2, kind: 'eb' });
+        }
+        if (type === 'hurt') {
+          this.flashes.set(event[1], performance.now() + 100);
+          if (event[1] === myUid) this.shake = 10;
+        }
+        if (type === 'boss') this.shake = 18;
+      }
+    }
+    ground(width, height, world = false) {
+      const c = this.c;
+      const areaW = world ? D.W : width;
+      const areaH = world ? D.H : height;
+      const image = images.bg_ground;
+      if (image?.ok) {
+        c.fillStyle = c.createPattern(image, 'repeat');
+        c.fillRect(0, 0, areaW, areaH);
+      } else {
+        c.fillStyle = '#ead69c';
+        c.fillRect(0, 0, areaW, areaH);
+        c.strokeStyle = '#d4b87e';
+        c.lineWidth = 2;
+        for (let x = 0; x < areaW; x += 80) {
+          for (let y = 0; y < areaH; y += 80) {
+            c.beginPath();
+            c.arc(x + 40, y + 40, 3, 0, 7);
+            c.stroke();
+          }
+        }
+      }
+      if (world) {
+        c.strokeStyle = '#69432a';
+        c.lineWidth = 16;
+        c.strokeRect(0, 0, D.W, D.H);
+      }
+    }
+    draw(scene, myUid, now = performance.now()) {
+      const c = this.c;
+      const canvas = this.canvas;
+      const width = canvas.width / this.dpr;
+      const height = canvas.height / this.dpr;
+      const dt = Math.min(.05, (now - this.last) / 1000 || 0);
+      this.last = now;
+      c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      c.fillStyle = '#ead69c';
+      c.fillRect(0, 0, width, height);
+      if (!scene) {
+        this.previousDrops.clear();
+        this.ground(width, height);
+        return;
+      }
+      const players = scene.pl || Object.values(scene.players || {}).map(p =>
+        [p.uid, p.x, p.y, p.hp, p.maxHp, p.alive, p.mats, p.xp, p.lvl, p.char, p.f]
+      );
+      const own = players.find(p => p[0] === myUid);
+      const focus = (own?.[5] ? own : players.find(p => p[5])) || own || players[0];
+      if (focus) {
+        this.cam.x = Math.max(0, Math.min(D.W - width, focus[1] - width / 2));
+        this.cam.y = Math.max(0, Math.min(D.H - height, focus[2] - height / 2));
+      }
+      c.save();
+      c.translate((Math.random() - .5) * this.shake - this.cam.x,
+        (Math.random() - .5) * this.shake - this.cam.y);
+      this.shake *= .88;
+      this.ground(width, height, true);
+      const drops = scene.d || scene.drops || [];
+      const currentDrops = new Map();
+      for (const drop of drops) {
+        const id = Array.isArray(drop) ? drop[0] : drop.id;
+        const x = Array.isArray(drop) ? drop[1] : drop.x;
+        const y = Array.isArray(drop) ? drop[2] : drop.y;
+        currentDrops.set(id, { x, y });
+        c.fillStyle = '#6bbf46';
+        c.save();
+        c.translate(x, y);
+        c.rotate(Math.PI / 4);
+        c.fillRect(-5, -5, 10, 10);
+        c.restore();
+      }
+      if (focus) {
+        for (const [id, position] of this.previousDrops) {
+          if (!currentDrops.has(id)) {
+            this.particles.push({ kind: 'pickup', x: position.x, y: position.y,
+              tx: focus[1], ty: focus[2], life: .35 });
+          }
+        }
+      }
+      this.previousDrops = currentDrops;
+      const enemies = scene.e || scene.enemies || [];
+      for (const enemy of enemies) {
+        const id = Array.isArray(enemy) ? enemy[1] : enemy.type;
+        const x = Array.isArray(enemy) ? enemy[2] : enemy.x;
+        const y = Array.isArray(enemy) ? enemy[3] : enemy.y;
+        const size = D.enemies[id]?.size || 40;
+        this.shadow(x, y, size * .4);
+        this.sprite(id, x, y, size, 1, now / 1000);
+        const hp = Array.isArray(enemy) ? enemy[4] / 100 : enemy.hp / enemy.maxHp;
+        if (hp < 1) {
+          c.fillStyle = '#572b2b';
+          c.fillRect(x - 25, y - size * .7, 50, 5);
+          c.fillStyle = '#ec6053';
+          c.fillRect(x - 25, y - size * .7, 50 * hp, 5);
+        }
+      }
+      for (const player of players) {
+        if (!player[5]) continue;
+        const uid = player[0];
+        const live = scene.players?.[uid];
+        const saved = P.main?.session?.lastPlayers?.[uid];
+        const data = live || (uid === myUid ? P.main?.localPlayer : null) || saved;
+        const char = player[9] || data?.char || 'basic';
+        const face = player[10] || data?.f || 1;
+        this.shadow(player[1], player[2], 24);
+        this.sprite('char_' + char, player[1], player[2], 56, face,
+          now / 1000, (live?.hurt > 0 || this.flashes.get(uid) > now));
+        const weapons = data?.weapons || [];
+        weapons.forEach(([weapon], index) => {
+          const angle = now / 800 + index * 2 * Math.PI / weapons.length;
+          this.sprite('weapon_' + weapon, player[1] + Math.cos(angle) * 42,
+            player[2] + Math.sin(angle) * 42, 28);
+        });
+        c.fillStyle = '#693c29';
+        c.fillRect(player[1] - 26, player[2] + 30, 52, 5);
+        c.fillStyle = '#76dd76';
+        c.fillRect(player[1] - 26, player[2] + 30,
+          52 * Math.max(0, player[3] / player[4]), 5);
+      }
+      for (const mark of this.marks.slice()) {
+        mark.life -= dt;
+        c.strokeStyle = '#eb5548';
+        c.lineWidth = 4;
+        c.beginPath();
+        c.moveTo(mark.x - 12, mark.y - 12);
+        c.lineTo(mark.x + 12, mark.y + 12);
+        c.moveTo(mark.x + 12, mark.y - 12);
+        c.lineTo(mark.x - 12, mark.y + 12);
+        c.stroke();
+        if (mark.life <= 0) this.marks.splice(this.marks.indexOf(mark), 1);
+      }
+      for (const bullet of this.projectiles.slice()) {
+        bullet.life -= dt;
+        bullet.x += bullet.vx * dt;
+        bullet.y += bullet.vy * dt;
+        const hit = enemies.some(enemy => Math.hypot(
+          (Array.isArray(enemy) ? enemy[2] : enemy.x) - bullet.x,
+          (Array.isArray(enemy) ? enemy[3] : enemy.y) - bullet.y
+        ) < 18);
+        if (hit || bullet.life <= 0) {
+          this.projectiles.splice(this.projectiles.indexOf(bullet), 1);
+          continue;
+        }
+        c.fillStyle = bullet.kind === 'eb' ? '#ff7866' : '#fff19a';
+        c.beginPath();
+        c.arc(bullet.x, bullet.y, 5, 0, 7);
+        c.fill();
+      }
+      for (const particle of this.particles.slice()) {
+        particle.life -= dt;
+        if (particle.kind === 'pickup') {
+          const move = Math.min(1, dt / Math.max(.01, particle.life + dt));
+          particle.x += (particle.tx - particle.x) * move;
+          particle.y += (particle.ty - particle.y) * move;
+          c.fillStyle = '#9bf46f';
+          c.fillRect(particle.x - 4, particle.y - 4, 8, 8);
+        } else {
+          particle.y += (particle.vy || -40) * dt;
+          particle.x += (particle.vx || 0) * dt;
+          c.globalAlpha = Math.max(0, particle.life);
+          if (particle.text) {
+            c.font = `bold ${particle.crit ? 24 : 17}px Jua, sans-serif`;
+            c.strokeStyle = '#503324';
+            c.lineWidth = 3;
+            c.strokeText(particle.text, particle.x, particle.y);
+            c.fillStyle = particle.crit ? '#fff037' : '#fff';
+            c.fillText(particle.text, particle.x, particle.y);
+          } else {
+            c.fillStyle = '#afdb51';
+            c.fillRect(particle.x, particle.y, particle.size || 7, particle.size || 7);
+          }
+          c.globalAlpha = 1;
+        }
+        if (particle.life <= 0) this.particles.splice(this.particles.indexOf(particle), 1);
+      }
+      c.restore();
+    }
+  }
+  P.render = { Renderer, images };
+})(window);
