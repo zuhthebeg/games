@@ -35,10 +35,10 @@
           const existing = this.particles.find(v => v.text && v.eid === ev[5] && now - v.at < 100);
           if (existing) {
             existing.amount += d;
-            existing.text = String(existing.amount) + (existing.crit ? '!' : '');
+            existing.text = String(Math.round(existing.amount)) + (existing.crit ? '!' : '');
             existing.at = now;
           } else this.particles.push({ x: a, y: b, eid: ev[5], at: now,
-            amount: d, text: String(d) + (e ? '!' : ''), crit: e, element: ev[6],
+            amount: d, text: String(Math.round(d)) + (e ? '!' : ''), crit: e, element: ev[6],
             vx: (Math.random() - .5) * 55, vy: -50, life: .6, maxLife: .6 });
           this.flashes.set(ev[5], now + 80);
           if (e) this.hitstop(now);

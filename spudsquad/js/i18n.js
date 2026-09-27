@@ -211,7 +211,7 @@
     grade(n) { return grades[language][n - 1] || ''; },
     effect(changes) {
       return Object.entries(changes).map(([key, n]) =>
-        `${this.stat(key)} ${n > 0 ? '+' : ''}${n}${percentStats.has(key) ? '%' : ''}`
+        `${this.stat(key)} ${n > 0 ? '+' : ''}${Math.round(n)}${percentStats.has(key) ? '%' : ''}`
       );
     }
   };

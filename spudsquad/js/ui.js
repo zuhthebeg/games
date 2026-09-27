@@ -130,8 +130,8 @@ function hud(scene, uid) {
     function draw() {
       activeRefresh = draw;
       const cards = choices.map(({ id, grade, value }, index) => {
-        const now = player.stats[id];
-        const next = now + value;
+        const now = Math.round(player.stats[id] || 0);
+        const next = Math.round((player.stats[id] || 0) + value);
         const glyph = { maxHp: '❤️', dmg: '⚔️', atkSpd: '⚡', melee: '🥊',
           ranged: '🎯', armor: '🛡️', speed: '👟', crit: '💥', range: '🔭',
           regen: '🩹', dodge: '🪶', luck: '🍀', harvest: '🌱', elemental: '🔥',
@@ -183,7 +183,7 @@ function hud(scene, uid) {
         const name = I.name(offer.weapon ? 'weapons' : 'items', offer.id);
         const description = offer.weapon
           ? `${I.feature(offer.id)} · ${I.t('damage')} ${D.weapons[offer.id].damage}
-             · ${I.t('cool')} ${D.weapons[offer.id].cool}${I.t('seconds')}
+             · ${I.t('cool')} ${Math.round(D.weapons[offer.id].cool * 1000)}ms
              · ${I.t('reach')} ${D.weapons[offer.id].range}`
           : I.effect(D.items[offer.id].stats).join(' · ') || I.name('items', offer.id);
         return `<article class="shop-card tier${offer.tier}${offer.locked ? ' is-locked' : ''}">
@@ -208,7 +208,7 @@ function hud(scene, uid) {
       const owned = player.items.map(id => `<span class="owned-item">
         ${icon('item_' + id)} ${esc(I.name('items', id))}</span>`).join('') || I.t('empty');
       const stats = Object.entries(P.sim.effectiveStats(player)).map(([key, value]) =>
-        `<span>${esc(I.stat(key))}: <b>${Math.round(value * 10) / 10}</b></span>`
+        `<span>${esc(I.stat(key))}: <b>${Math.round(value)}</b></span>`
       ).join('');
       const roster = Object.keys(session.players).map(id =>
         `${esc(displayName(session.players[id], id)).slice(0, 12)} ${session.ready.has(id) ? '✔' : '…'}`

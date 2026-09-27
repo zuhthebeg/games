@@ -187,9 +187,15 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
   align-items: center;
   gap: 3px;
 }
-.tier2 { border-color: #5b94d7 !important; }
-.tier3 { border-color: #9a60c9 !important; }
-.tier4 { border-color: #ed902d !important; }
+.tier2 { border-color: #5b94d7 !important; box-shadow: 0 0 8px rgba(63,157,255,.55); }
+.tier3 { border-color: #9a60c9 !important; box-shadow: 0 0 10px rgba(178,92,255,.65); }
+.tier4 { border-color: #ffc93c !important; position: relative;
+  box-shadow: 0 0 14px rgba(255,201,60,.9); animation: tier4glow 2.4s linear infinite; }
+.tier4::after { content: '★ MAX'; position: absolute; top: 2px; right: 4px; font: 10px Jua, sans-serif;
+  color: #7a4a00; background: linear-gradient(90deg,#ffe98a,#ffb3e6,#9fe7ff); border-radius: 6px; padding: 0 4px; }
+@keyframes tier4glow {
+  0% { box-shadow: 0 0 14px #ffc93c; } 25% { box-shadow: 0 0 14px #ff7ad9; }
+  50% { box-shadow: 0 0 14px #6fd8ff; } 75% { box-shadow: 0 0 14px #9dff7a; } 100% { box-shadow: 0 0 14px #ffc93c; } }
 .trait { font-size: 12px; color: #744b2e; line-height: 1.25; min-height: 30px; }
 .grade { font-size: 12px; font-weight: 700; }
 .set-bonuses { font-size: 11px; color: #725132; }
@@ -339,21 +345,21 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </script>
 <script src="/lib/game-rankings.js?v=20260927">
 </script>
-<script src="js/data.js?v=20260927v7">
+<script src="js/data.js?v=20260927v8">
 </script>
-<script src="js/sim.js?v=20260927v7">
+<script src="js/sim.js?v=20260927v8">
 </script>
-<script src="js/net.js?v=20260927v7">
+<script src="js/net.js?v=20260927v8">
 </script>
-<script src="js/sfx.js?v=20260927v7"></script>
-<script src="js/fx.js?v=20260927v7"></script>
-<script src="js/render.js?v=20260927v7">
+<script src="js/sfx.js?v=20260927v8"></script>
+<script src="js/fx.js?v=20260927v8"></script>
+<script src="js/render.js?v=20260927v8">
 </script>
-<script src="js/i18n.js?v=20260927v7">
+<script src="js/i18n.js?v=20260927v8">
 </script>
-<script src="js/ui.js?v=20260927v7">
+<script src="js/ui.js?v=20260927v8">
 </script>
-<script src="js/main.js?v=20260927v7">
+<script src="js/main.js?v=20260927v8">
 </script>
 </body>
 </html>

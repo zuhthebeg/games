@@ -22,6 +22,18 @@
     splitter: '#84bbdd', tank: '#6d9f69', elite: '#d76b9e',
     boss_1: '#ac5c7c', boss_2: '#713f70'
   };
+  // 무기 등급 팔레트: T1 기본 · T2 파랑 · T3 보라 · T4(만렙) 무지개/금
+  const TIER = {
+    1: { glow: 'rgba(43,26,16,.9)', blur: 4, core: '#fff19a', trail: '255,245,170' },
+    2: { glow: '#3f9dff', blur: 10, core: '#bfe3ff', trail: '110,185,255' },
+    3: { glow: '#b25cff', blur: 14, core: '#e8c8ff', trail: '195,130,255' },
+    4: { glow: '#ffc93c', blur: 18, core: '#fff6c8', trail: '255,210,80' }
+  };
+  const hueRgb = (now) => {
+    const h = (now / 6) % 360 / 60, x = 1 - Math.abs(h % 2 - 1);
+    const [r, g, b] = h < 1 ? [1, x, 0] : h < 2 ? [x, 1, 0] : h < 3 ? [0, 1, x] : h < 4 ? [0, x, 1] : h < 5 ? [x, 0, 1] : [1, 0, x];
+    return `${Math.round(155 + r * 100)},${Math.round(155 + g * 100)},${Math.round(155 + b * 100)}`;
+  };
   class Renderer {
     constructor(canvas) {
       this.canvas = canvas;
@@ -95,7 +107,7 @@
         if (type === 'sh' && D.weapons[event[2]]?.behavior === 'projectile') {
           this.projectiles.push({ x: event[4], y: event[5],
             vx: Math.cos(event[6]) * 700, vy: Math.sin(event[6]) * 700,
-            life: D.weapons[event[2]].range / 700, kind: 'sh' });
+            life: D.weapons[event[2]].range / 700, kind: 'sh', tier: event[3] || 1 });
         }
         if (type === 'eb') {
           this.projectiles.push({ x: event[1], y: event[2],
@@ -327,9 +339,35 @@
           c.save(); c.translate(px, py); c.rotate(angle);
           if (Math.cos(angle) < 0) c.scale(1, -1);
           c.rotate(D.weapons[weapon].artAngle || 0);
-          c.shadowColor = 'rgba(43,26,16,.9)'; c.shadowBlur = 4;
-          this.sprite('weapon_' + weapon, 0, 0, D.WEAPON_SIZE || 46);
+          const tier = Math.max(1, Math.min(4, weapons[index]?.[1] || 1));
+          const tv = TIER[tier];
+          const pulse = tier >= 3 ? 1 + Math.sin(now / 180 + index) * .04 : 1;
+          if (tier === 4) {
+            // 만렙: 무지개로 도는 오라 링 + 강한 발광
+            c.save(); c.globalCompositeOperation = 'lighter';
+            const g = c.createRadialGradient(0, 0, 4, 0, 0, 34);
+            g.addColorStop(0, `rgba(${hueRgb(now)},.55)`); g.addColorStop(1, 'rgba(255,200,60,0)');
+            c.fillStyle = g; c.beginPath(); c.arc(0, 0, 34, 0, 7); c.fill(); c.restore();
+          }
+          c.shadowColor = tier === 4 ? `rgb(${hueRgb(now)})` : tv.glow;
+          c.shadowBlur = tv.blur;
+          this.sprite('weapon_' + weapon, 0, 0, (D.WEAPON_SIZE || 46) * (1 + .07 * (tier - 1)) * pulse);
+          if (tier >= 2) { // 두 번 그려 발광을 더 진하게
+            c.globalAlpha *= .5; this.sprite('weapon_' + weapon, 0, 0, (D.WEAPON_SIZE || 46) * (1 + .07 * (tier - 1)) * pulse);
+          }
           c.restore();
+          if (tier === 4) { // 만렙 반짝이 3개가 무기 주위를 공전
+            c.save(); c.globalCompositeOperation = 'lighter';
+            for (let k = 0; k < 3; k++) {
+              const a = now / 260 + k * 2.094 + index;
+              const sx = px + Math.cos(a) * 26, sy = py + Math.sin(a) * 26;
+              c.fillStyle = `rgba(255,${230 - k * 30},${140 + k * 40},.95)`;
+              c.beginPath(); c.moveTo(sx, sy - 5); c.lineTo(sx + 1.6, sy - 1.6); c.lineTo(sx + 5, sy);
+              c.lineTo(sx + 1.6, sy + 1.6); c.lineTo(sx, sy + 5); c.lineTo(sx - 1.6, sy + 1.6);
+              c.lineTo(sx - 5, sy); c.lineTo(sx - 1.6, sy - 1.6); c.closePath(); c.fill();
+            }
+            c.restore();
+          }
           if (age < .12 && (action === 'projectile' || action === 'beam' || action === 'cone' || action === 'chain')) {
             const mx = motion?.origin?.x ?? pose.muzzleX, my = motion?.origin?.y ?? pose.muzzleY;
             const f = 1 - age / .12;
@@ -382,14 +420,19 @@
           this.projectiles.splice(this.projectiles.indexOf(bullet), 1);
           continue;
         }
+        const bt = bullet.kind === 'eb' ? null : TIER[bullet.tier || 1];
+        const trail = bt ? (bullet.tier === 4 ? hueRgb(now) : bt.trail) : '255,130,110';
         bullet.history.forEach(([hx, hy], i) => {
-          c.fillStyle = `rgba(255,245,170,${(i + 1) * .15})`;
-          c.beginPath(); c.arc(hx, hy, 2 + i, 0, 7); c.fill();
+          c.fillStyle = `rgba(${trail},${(i + 1) * .18})`;
+          c.beginPath(); c.arc(hx, hy, 2 + i + (bullet.tier || 1) * .5, 0, 7); c.fill();
         });
-        c.fillStyle = bullet.kind === 'eb' ? '#ff7866' : '#fff19a';
+        c.save();
+        if (bt && bullet.tier > 1) { c.shadowColor = `rgb(${trail})`; c.shadowBlur = 6 + bullet.tier * 3; }
+        c.fillStyle = bullet.kind === 'eb' ? '#ff7866' : bullet.tier === 4 ? '#fff6c8' : bt.core;
         c.beginPath();
-        c.arc(bullet.x, bullet.y, 5, 0, 7);
+        c.arc(bullet.x, bullet.y, 4.5 + (bullet.tier || 1) * .8, 0, 7);
         c.fill();
+        c.restore();
       }
       this.effects.draw(c, dt, now);
       for (const particle of this.particles.slice()) {

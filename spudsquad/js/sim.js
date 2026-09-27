@@ -272,7 +272,8 @@
   function weaponPose(p, id, slot, angle) {
     const orbit = 2 * Math.PI * slot / Math.max(1, p.weapons.length);
     // 무기 궤도 반경·크기(렌더와 공유). muzzle은 28px 아트 기준이라 표시 크기 비율로 확대.
-    const R = D.WEAPON_ORBIT || 36, k = (D.WEAPON_SIZE || 44) / 28;
+    // 무기가 많을수록 궤도를 넓혀 겹침 방지(2개까지 기본, 이후 개당 +6px)
+    const R = (D.WEAPON_ORBIT || 36) + 6 * Math.max(0, p.weapons.length - 2), k = (D.WEAPON_SIZE || 44) / 28;
     const x = p.x + R * Math.cos(orbit);
     const y = p.y + R * Math.sin(orbit);
     const mx = D.weapons[id].muzzle[0] * k, my = D.weapons[id].muzzle[1] * k;
