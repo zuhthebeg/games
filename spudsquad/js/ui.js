@@ -95,12 +95,12 @@
       })
       .join('');
   }
-  function crates(session, player, count, cb) {
+  function crates(session, player, count, cb, currentId = null) {
     if (!count) { cb(); return; }
     const world = session.world || { wave: session.wave, rng: Math.random };
-    const id = P.sim.rollCrateItem(world, player);
+    const id = currentId || P.sim.rollCrateItem(world, player);
     const item = D.items[id];
-    activeRefresh = () => crates(session, player, count, cb);
+    activeRefresh = () => crates(session, player, count, cb, id);
     show(`<section class="upgrade-screen"><h2>📦 ${esc(I.t('crate'))}</h2>
       <article class="shop-card tier${item.tier || 1}">${icon('item_' + id, 'shop-art')}
       <strong>${esc(I.name('items', id))}</strong><small>${esc(I.effect(item.stats).join(' · '))}</small></article>
