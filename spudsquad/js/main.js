@@ -210,14 +210,17 @@
       Number(keys.has('w') || keys.has('ArrowUp'));
     if (stick) { dx += stick.dx; dy += stick.dy; }
     const length = Math.hypot(dx, dy);
-    if (length > 0) {
-      dx /= Math.max(1, length);
-      dy /= Math.max(1, length);
-      player.f = dx < 0 ? -1 : 1;
-      const speed = 200 * (1 + player.stats.speed / 100);
-      player.x = S.clamp(player.x + dx * speed * dt, 0, D.W);
-      player.y = S.clamp(player.y + dy * speed * dt, 0, D.H);
-    }
+    if (length > 1) { dx /= length; dy /= length; }
+    // 가속 0.07s·감속 0.09s 관성: 즉각 반응하되 멈춤/출발이 부드럽게. 키보드는 풀속, 패드는 기울기 비례.
+    const speed = 200 * (1 + S.effectiveStats(player).speed / 100);
+    const tx = dx * speed, ty = dy * speed;
+    const k = 1 - Math.exp(-dt / (length > 0 ? .07 : .09));
+    player.vx = (player.vx || 0) + (tx - (player.vx || 0)) * k;
+    player.vy = (player.vy || 0) + (ty - (player.vy || 0)) * k;
+    if (Math.abs(player.vx) < 1 && Math.abs(player.vy) < 1 && !length) { player.vx = 0; player.vy = 0; }
+    if (dx) player.f = dx < 0 ? -1 : 1;
+    player.x = S.clamp(player.x + player.vx * dt, 0, D.W);
+    player.y = S.clamp(player.y + player.vy * dt, 0, D.H);
     if (!session.isHost) {
       return { dx, dy, x: player.x, y: player.y, f: player.f, move() {} };
     }
@@ -226,6 +229,8 @@
     requestAnimationFrame(frame);
     const dt = Math.min(.1, (now - last) / 1000 || 0);
     last = now;
+    // 배경음: 전투(10·20웨이브는 보스곡) / 그 외 화면은 상점곡. 같은 곡이면 music()이 무시.
+    P.sfx?.music?.(mode === 'wave' ? ((session?.wave === 10 || session?.wave === 20) ? 'boss' : 'battle') : 'shop');
     if (session && mode === 'wave') {
       if (session.isHost) { move(dt); session.update(dt); }
       else { const input = move(dt); session.update(dt, input); }
@@ -240,6 +245,11 @@
     document.getElementById('sound').onclick = () => {
       document.getElementById('sound').textContent = P.sfx.mute() ? '🔇' : '🔊';
     };
+    const musicBtn = document.getElementById('music');
+    const paintMusic = on => { musicBtn.textContent = on ? '🎵' : '🎵̸'; musicBtn.style.opacity = on ? 1 : .45; };
+    paintMusic(P.sfx.settings().musicOn);
+    musicBtn.onclick = () => paintMusic(P.sfx.toggleMusic());
+    if (P.sfx.settings().muted) document.getElementById('sound').textContent = '🔇';
     document.getElementById('volume').value = P.sfx.settings().volume * 100;
     document.getElementById('volume').oninput = event => P.sfx.volume(event.target.value / 100);
     document.getElementById('shake').onclick = () => {
@@ -261,16 +271,38 @@
     keys.delete(event.key.length === 1 ? event.key.toLowerCase() : event.key);
   });
   const canvas = document.getElementById('canvas');
+  // 가상 패드: 필드 아무 곳이나 누르면 그 자리에 조이스틱이 뜬다(플로팅). 손 떼면 좌하단에 옅은 힌트로 복귀.
+  // 아날로그 입력(데드존 0.12, 반경 64px), 멀티터치 중 첫 손가락만 추적.
+  const pad = document.getElementById('pad'), knob = document.getElementById('padKnob');
+  const PAD_R = 64;
+  const padHome = () => {
+    pad.classList.remove('active');
+    pad.style.left = ''; pad.style.top = '';
+    knob.style.transform = 'translate(-50%, -50%)';
+  };
   canvas.addEventListener('pointerdown', event => {
-    stick = { x: event.clientX, y: event.clientY, dx: 0, dy: 0 };
+    if (stick) return;
+    const box = canvas.getBoundingClientRect();
+    stick = { id: event.pointerId, x: event.clientX, y: event.clientY, dx: 0, dy: 0 };
     canvas.setPointerCapture(event.pointerId);
+    pad.classList.add('active');
+    pad.style.left = (event.clientX - box.left) + 'px';
+    pad.style.top = (event.clientY - box.top) + 'px';
   });
   canvas.addEventListener('pointermove', event => {
-    if (!stick) return;
-    stick.dx = S.clamp((event.clientX - stick.x) / 60, -1, 1);
-    stick.dy = S.clamp((event.clientY - stick.y) / 60, -1, 1);
+    if (!stick || event.pointerId !== stick.id) return;
+    let ox = event.clientX - stick.x, oy = event.clientY - stick.y;
+    const d = Math.hypot(ox, oy);
+    if (d > PAD_R) { ox *= PAD_R / d; oy *= PAD_R / d; }
+    const m = Math.min(1, d / PAD_R);
+    const a = m < .12 ? 0 : (m - .12) / .88; // 데드존 후 재정규화
+    stick.dx = d ? ox / Math.min(d, PAD_R) * a : 0;
+    stick.dy = d ? oy / Math.min(d, PAD_R) * a : 0;
+    knob.style.transform = `translate(calc(-50% + ${ox}px), calc(-50% + ${oy}px))`;
   });
-  canvas.addEventListener('pointerup', () => { stick = null; });
+  const release = event => { if (stick && event.pointerId === stick.id) { stick = null; padHome(); } };
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
   document.addEventListener('visibilitychange', () => { last = performance.now(); });
   P.main = {
     get session() { return session; },

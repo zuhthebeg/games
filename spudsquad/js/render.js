@@ -250,9 +250,26 @@
         const data = live || (uid === myUid ? P.main?.localPlayer : null) || saved;
         const char = player[9] || data?.char || 'basic';
         const face = player[10] || data?.f || 1;
-        this.shadow(player[1], player[2], 24);
-        this.sprite('char_' + char, player[1], player[2], 56, face,
-          now / 1000, (live?.hurt > 0 || this.flashes.get(uid) > now));
+        // 걷기 연출: 프레임간 이동량으로 속도 추정 → 이동 중엔 통통 튀는 홉 + 진행방향 기울기, 정지 시 숨쉬기.
+        this.walk = this.walk || new Map();
+        const wk = this.walk.get(uid) || { x: player[1], y: player[2], v: 0, t: 0 };
+        const moved = Math.hypot(player[1] - wk.x, player[2] - wk.y) / Math.max(dt, 1 / 120);
+        wk.v += (Math.min(260, moved) - wk.v) * Math.min(1, dt * 12);
+        const lean = Math.max(-1, Math.min(1, (player[1] - wk.x) / Math.max(dt, 1 / 120) / 200)) * .14;
+        wk.x = player[1]; wk.y = player[2];
+        const moving = wk.v > 25;
+        wk.t += dt * (moving ? 14 : 3);
+        this.walk.set(uid, wk);
+        const hop = moving ? Math.abs(Math.sin(wk.t)) * 6 : 0;
+        const breathe = moving ? 1 : 1 + Math.sin(wk.t) * .025;
+        this.shadow(player[1], player[2], 24 - hop * .8);
+        c.save();
+        c.translate(player[1], player[2] + 22);
+        c.rotate(moving ? lean : 0);
+        c.scale(moving ? 1 + (1 - Math.abs(Math.sin(wk.t))) * .06 : 1 / breathe, moving ? 1 - (1 - Math.abs(Math.sin(wk.t))) * .06 : breathe);
+        this.sprite('char_' + char, 0, -22 - hop, 56, face,
+          0, (live?.hurt > 0 || this.flashes.get(uid) > now));
+        c.restore();
         const weapons = data?.weapons || [];
         weapons.forEach(([weapon], index) => {
           const motion = this.effects.motions.get(`${uid}:${index}`);

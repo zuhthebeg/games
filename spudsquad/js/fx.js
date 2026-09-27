@@ -72,8 +72,7 @@
         }
         if (type === 'sh') {
           const weapon = P.data.weapons[b];
-          P.sfx?.(weapon?.behavior === 'beam' || weapon?.behavior === 'chain' ? 'laser'
-            : weapon?.behavior === 'projectile' ? 'shot' : 'swing');
+          P.sfx?.('w:' + b);
           this.motions.set(`${a}:${ev[7] || 0}`, { at: now, angle: ev[6], action: weapon?.behavior,
             origin: { x: ev[4], y: ev[5] } });
         }
@@ -91,7 +90,7 @@
           P.sfx?.('hurt');
         }
         if (type === 'boss' && this.shakeOn) { this.shake = 16; P.sfx?.('wave'); }
-        if (type === 'crp' && a === uid) P.sfx?.('pick');
+        if (type === 'crp' && a === uid) P.sfx?.('crate');
         if (type === 'lvl' && a === uid) P.sfx?.('lvl');
         if (type === 'bt') this.flashes.set(a, now + 500);
       }
