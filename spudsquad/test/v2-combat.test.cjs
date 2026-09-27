@@ -158,3 +158,17 @@ test('basic, muscle, science, lucky, gunslinger and bomber special hooks', () =>
   a.ok(adjacent.hp < 100);
   a.equal(b.hp, b.maxHp);
 });
+
+test('treasure map raises crate drop chance by 50% for each copy', () => {
+  const noMap = S.createWorld({ rng: () => .02 });
+  const plain = S.spawn(noMap, 'blob', 100, 100);
+  plain.hp = 0;
+  S.kill(noMap, plain, 'solo');
+  a.equal(noMap.crateCount, 0);
+  const withMap = S.createWorld({ rng: () => .02 });
+  withMap.players.solo.items.push('treasure_map');
+  const target = S.spawn(withMap, 'blob', 100, 100);
+  target.hp = 0;
+  S.kill(withMap, target, 'solo');
+  a.equal(withMap.crateCount, 1);
+});

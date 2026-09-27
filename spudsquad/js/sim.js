@@ -146,7 +146,7 @@
       const trait = D.chars[p.char].trait;
       killHooks[trait]?.(w, e, p);
       for (const item of p.items) killHooks[D.items[item]?.hook]?.(w, e, p);
-      const chance = .015 * (1 + (p.items.filter(id => id === 'treasure_map') * .5));
+      const chance = .015 * (1 + (p.items.filter(id => id === 'treasure_map').length * .5));
       if (rand(w) < chance) createCrate(w, e.x, e.y, p.uid);
     } else if (rand(w) < .015) createCrate(w, e.x, e.y);
   }
