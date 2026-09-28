@@ -415,7 +415,19 @@
       const view = scene();
       if (view) { U.hud(view, uid); renderer.draw(view, uid, now); }
       checkpoint();
-    } else if (renderer) renderer.draw(null, uid, now);
+    } else {
+      // 상점·레벨업·상자 화면에서도 상단 HUD의 재화/HP를 로컬 플레이어와 동기화(전투 중에만 갱신돼 구매 후 숫자가 어긋났음)
+      if (session && (mode === 'shop' || mode === 'ready')) {
+        const p = session.world?.players[uid] || localPlayer;
+        if (p) {
+          const mats = document.getElementById('mats'), hp = document.getElementById('hpText');
+          const m = String(Math.round(p.mats || 0)), h = `${Math.round(p.hp)}/${Math.round(p.maxHp)}`;
+          if (mats && mats.textContent !== m) mats.textContent = m;
+          if (hp && hp.textContent !== h) hp.textContent = h;
+        }
+      }
+      if (renderer) renderer.draw(null, uid, now);
+    }
   }
   let debugBtn = null;
   document.addEventListener('DOMContentLoaded', () => {
