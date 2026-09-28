@@ -16,12 +16,12 @@
     berserker: { name: '광전사감자', weapon: 'stick', stats: { maxHp: 12, armor: -1 }, trait: 'rage' },
     vampire: { name: '흡혈감자', weapon: 'dagger', stats: { lifesteal: 15, maxHp: 5 }, trait: 'noRegen' },
     bomber: { name: '폭탄감자', weapon: 'rocket', stats: { explosion: 30 }, trait: 'deathBlast' },
-    cyclops: { name: '외눈감자', weapon: 'crossbow', stats: { crit: 15, maxHp: 5, projectiles: 2 }, trait: 'oneSlot' },
-    ghost: { name: '유령감자', weapon: 'staff', stats: { dodge: 25, speed: 10 }, trait: 'dodgePower' },
-    saver: { name: '저축감자', weapon: 'pistol', stats: { dmg: -10 }, trait: 'reserveInterest' },
+    cyclops: { name: '외눈감자', weapon: 'crossbow', stats: { crit: 15, maxHp: 5, projectiles: 2 }, trait: 'oneSlot', pierce: 1 },
+    ghost: { name: '유령감자', weapon: 'staff', stats: { dodge: 22, speed: 10 }, trait: 'dodgePower' },
+    saver: { name: '저축감자', weapon: 'pistol', stats: { dmg: -5 }, trait: 'reserveInterest' },
     thorn: { name: '가시감자', weapon: 'fist', stats: { thorns: 8, maxHp: 8, armor: 2, speed: -8, dodge: -8 }, trait: 'barbedSkin' },
     // 규칙형 필드는 아이템과 공유(sim의 rules 합산): still=정지 중 스탯, enemies=적 수 %, waveEnd=웨이브 종료마다 영구 변화
-    soldier: { name: '포대감자', weapon: 'pistol', stats: {}, trait: 'stationary', still: { dmg: 50, atkSpd: 50 }, noMoveAttack: true },
+    soldier: { name: '포대감자', weapon: 'pistol', stats: {}, trait: 'stationary', still: { dmg: 50, atkSpd: 50 }, moving: { atkSpd: -50 } },
     loud: { name: '시끌감자', weapon: 'stick', stats: { dmg: 30 }, trait: 'loud', enemies: 50, waveEnd: { harvest: -3 } },
     mutant: { name: '돌연변이감자', weapon: 'slingshot', stats: {}, trait: 'mutant', xpNeed: .5, priceMult: 1.5 }
   };

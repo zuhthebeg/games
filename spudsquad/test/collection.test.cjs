@@ -84,7 +84,7 @@ test('weaponSummary matches attack formulas without mutating the player', () => 
   assert.ok(Math.abs(t2.cooldownMs - 900) < 1e-6);
   const cyclops = S.createPlayer('c', 'cyclops');
   const cw = S.weaponSummary(cyclops, 'crossbow', 1);
-  assert.equal(cw.damage, 48);
+  assert.equal(cw.damage, 40); // 석궁 16 × 2.5
   assert.equal(cw.shots, 1 + cyclops.stats.projectiles);
   // attackPower 경로(치명타 제외)와 같은 값: rng=1이면 치명타 없음
   const world = S.createWorld({ rng: () => 0.999, players: { a: { char: 'basic' } } });

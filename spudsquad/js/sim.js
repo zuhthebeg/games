@@ -78,6 +78,7 @@
     const kinds = new Set(p.weapons.map(v => v[0])).size;
     for (const d of rulesOf(p)) {
       if (d.still && p.still) for (const [k, v] of Object.entries(d.still)) result[k] = (result[k] || 0) + v;
+      if (d.moving && !p.still) for (const [k, v] of Object.entries(d.moving)) result[k] = (result[k] || 0) + v;
       if (d.perWeapon) for (const [k, v] of Object.entries(d.perWeapon)) result[k] = (result[k] || 0) + v * kinds;
       // 지혜의 두루마리: 웨이브 경과 시간 기반 일시 피해(스탯에 저장 안 함)
       if (d.ramp) result.dmg += d.ramp[0] + d.ramp[1] * Math.floor((p.waveT || 0) / d.ramp[2]);
@@ -119,7 +120,7 @@
     for (const [uid, v] of Object.entries(opts.players || { solo: { char: "basic" } })) {
       const p = w.players[uid] = createPlayer(uid, v.char, v);
       if (p.items.includes('piggy_bank')) p.mats += Math.min(20, Math.floor(p.mats * .1));
-      if (p.char === 'saver') p.mats += Math.min(12, Math.floor((v.mats || 0) * .08));
+      if (p.char === 'saver') p.mats += Math.min(15, Math.floor((v.mats || 0) * .1));
       for (let i = 0; i < p.items.filter(id => id === 'turret').length; i++) {
         w.turrets.push({ x: p.x, y: p.y, owner: uid, cool: 1.5 });
       }
@@ -298,7 +299,7 @@
     if (v.classes.includes('elemental')) power *= 1 + (p.char === 'science' ? .25 : 0)
       + p.items.filter(id => id === 'spark_plug').length * .15;
     if (p.char === 'gunslinger' && v.classes.includes('gun')) power *= 1.2;
-    if (p.char === 'cyclops') power *= 3;
+    if (p.char === 'cyclops') power *= 2.5;
     return { power: Math.max(1, power * (crit ? 2 : 1)), crit };
   }
   function hitWeapon(w, p, v, e, power, crit) {
@@ -394,7 +395,7 @@
           left: range, power, crit, owner: p.uid, hit: new Set(), bounces: 0,
           bounce: (v.bounce || 0) + (v.radius ? 0 : ruleSum(p, 'bounce')), // 도탄 코일 +1
           pierce: v.radius || v.bounce ? 0 : Math.min(2,
-            p.items.reduce((n, id) => n + (D.items[id]?.pierce || 0), 0)) });
+            ruleSum(p, 'pierce')) }); // 프리즘(아이템)·외눈(캐릭터) 관통 합산, 최대 2
       }
     }
   };
@@ -957,7 +958,7 @@
     if (v.classes.includes('elemental')) power *= 1 + (p.char === 'science' ? .25 : 0)
       + (p.items || []).filter(x => x === 'spark_plug').length * .15;
     if (p.char === 'gunslinger' && v.classes.includes('gun')) power *= 1.2;
-    if (p.char === 'cyclops') power *= 3;
+    if (p.char === 'cyclops') power *= 2.5;
     const cooldown = v.cool * .9 ** (tier - 1) / (1 + s.atkSpd / 100 + (p.char === 'cyclops' ? .6 : 0));
     return { id, tier, kind, damage: Math.max(1, power), cooldownMs: cooldown * 1000,
       range: weaponRange(p, v), shots: v.behavior === 'projectile'

@@ -20,10 +20,10 @@ test('saver earns bounded wave-start interest, sacrificing early damage', () => 
   a.ok(p.stats.dmg < 0);
   for (const mats of [0, 100, 10000]) {
     const w = S.createWorld({ wave: 2, players: { solo: { char: 'saver', mats } } });
-    a.equal(w.players.solo.mats - mats, Math.min(12, Math.floor(mats * .08)));
+    a.equal(w.players.solo.mats - mats, Math.min(15, Math.floor(mats * .1)));
   }
   const w = S.createWorld({ wave: 2, players: { solo: { char: 'saver', mats: 1000, items: ['piggy_bank', 'piggy_bank'] } } });
-  a.equal(w.players.solo.mats, 1032);
+  a.equal(w.players.solo.mats, 1035);
 });
 test('thorn retaliates on hit but loses mobility and dodge', () => {
   const w = world(1, 'thorn', () => .99), p = w.players.solo;

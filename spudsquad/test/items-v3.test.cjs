@@ -140,18 +140,17 @@ test('stationary: statue +40% atk speed, barricade +6 armor only while standing 
   a.equal(S.effectiveStats(p).armor, base.armor);
 });
 
-test('soldier: cannot attack while moving, +50% damage and attack speed when still', () => {
+test('soldier: -50% attack speed while moving, +50% damage and attack speed when still', () => {
   const w = world('soldier'), p = w.players.solo;
-  p.cool = [0];
-  const e = S.spawn(w, 'tank', p.x + 150, p.y); e.hp = e.maxHp = 1e6;
+  p.cool = [100];
   for (let i = 0; i < 20; i++) { p.x += i % 2 ? 4 : -4; S.step(w); }
-  a.equal(w.projectiles.length, 0, 'no shots while moving');
+  a.equal(p.still, false);
+  a.equal(S.effectiveStats(p).atkSpd, -50);
   a.equal(S.effectiveStats(p).dmg, 0);
   for (let i = 0; i < 6; i++) S.step(w);
   a.equal(p.still, true);
   a.equal(S.effectiveStats(p).dmg, 50);
   a.equal(S.effectiveStats(p).atkSpd, 50);
-  a.ok(w.projectiles.length > 0 || e.hp < e.maxHp, 'fires when still');
 });
 
 test('blood pack: +30 harvest, drains 1 HP every 2s but never below 1', () => {

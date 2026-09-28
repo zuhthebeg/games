@@ -2,6 +2,9 @@ import D from '../js/data.js';
 import S from '../js/sim.js';
 const chars = process.env.SPUD_BALANCE_CHARS?.split(',') || Object.keys(D.chars);
 const games = Number(process.argv[2] || 20);
+if (process.env.SPUD_NO_NEW_ENEMIES) for (const id of ['looter', 'egg', 'buffer']) D.enemies[id].first = 99;
+if (process.env.SPUD_SOLDIER) Object.assign(D.chars.soldier.stats, JSON.parse(process.env.SPUD_SOLDIER));
+if (process.env.SPUD_T1_ONLY) for (const d of Object.values(D.items)) if ((d.tier || 1) > 1) d.price = 1e9;
 const rngFor = seed => {
   let value = seed >>> 0;
   return () => ((value = (Math.imul(value, 1664525) + 1013904223) >>> 0) / 2 ** 32);
@@ -15,6 +18,8 @@ function aim(world, player) {
     const distance = Math.hypot(player.x - d.x, player.y - d.y);
     return distance < best.distance ? { d, distance } : best;
   }, { d: null, distance: Infinity });
+  // 포대감자: 이동 중엔 못 쏘므로 적이 220px 밖이면 멈춰서 쏘고, 가까우면 카이팅(사람 플레이 근사).
+  if (D.chars[player.char]?.still && (!target.e || target.d > 150)) return;
   let dx = 0, dy = 0;
   // 포대감자(이동 중 공격 불가): 180px 안에 적이 없으면 제자리에 서서 쏜다(카이팅↔정지 교대).
   if (D.chars[player.char].noMoveAttack && (!target.e || target.d > 180)) return;
@@ -45,27 +50,45 @@ function aim(world, player) {
   }
 }
 function between(world, player) {
-  S.enterShop(player, world.rng); // 상점 입장 훅(모루) — 게임에선 main.js WAVE_END에서 호출
+  S.enterShop?.(player, world.rng); // 상점 입장 훅(모루) — 게임에선 main.js WAVE_END에서 호출
   for (let i = 0; i < (player.pendingCrates?.length || 0); i++) {
     const id = S.rollCrateItem(world, player);
     S.grantItem(player, id);
   }
+  // 봇 가치 판단: 지금 무기 구성에 맞는 스탯 가중치. 사람처럼 '내 빌드에 이득인 것'만 고른다.
+  const kinds = player.weapons.map(([id]) => D.weapons[id]);
+  const share = f => kinds.filter(f).length / Math.max(1, kinds.length);
+  const melee = share(v => v.kind === 'melee'), elem = share(v => v.classes.includes('elemental'));
+  const ranged = 1 - melee - elem * .5, expl = share(v => v.classes.includes('explosive'));
+  const W = { maxHp: 2, regen: 1.5, lifesteal: 1.5, dmg: 1, melee: 3 * melee, ranged: 3 * ranged,
+    elemental: 3 * elem, atkSpd: 1, crit: .6, range: .15 * (1 - melee * .5), armor: 5, dodge: 1.2,
+    speed: .5, luck: .2, harvest: .3, pickup: .05, explosion: .2 * expl, thorns: .5,
+    projectiles: 8 * ranged, knockback: .02 };
+  const value = stats => Object.entries(stats).reduce((n, [k, v]) => n + (W[k] ?? 0) * v, 0);
   for (let i = 0; i < player.levelUps; i++) {
     const best = S.rollUpgrades(player, world.rng)
-      .sort((a, b) => b.grade - a.grade || b.value - a.value)[0];
+      .sort((a, b) => value({ [b.id]: b.value }) - value({ [a.id]: a.value }))[0];
     player.stats[best.id] += best.value;
     if (best.id === 'maxHp') { player.maxHp += best.value; player.hp += best.value; }
   }
   const slots = S.shop(world, player);
   const classCounts = S.sets(player);
-  const score = offer => {
-    const item = (offer.weapon ? D.weapons : D.items)[offer.id];
-    const relevant = offer.weapon ? Math.max(0, ...item.classes.map(c => classCounts[c]?.count || 0)) : 0;
-    return relevant * 1000 + offer.price;
+  const worth = offer => {
+    if (offer.weapon) {
+      const item = D.weapons[offer.id];
+      return 1000 * (1 + Math.max(0, ...item.classes.map(c => classCounts[c]?.count || 0))) + offer.price;
+    }
+    const d = D.items[offer.id];
+    const ruleOnly = Object.keys(d).some(k => !['name', 'tier', 'price', 'stats'].includes(k));
+    return value(d.stats) + (ruleOnly ? d.price / 5 : 0);
   };
-  for (const offer of slots.sort((a, b) => score(b) - score(a))) S.buy(player, offer);
+  // 합리적 플레이어 근사: 판 전체를 불리하게 만드는 '위험' 아이템과 빌드에 손해인 아이템은 사지 않는다.
+  const risky = offer => !offer.weapon && (() => { const d = D.items[offer.id];
+    return (d.enemies > 0) || d.enemyHp || d.drain || d.once || d.startHp || d.noMaxHp; })();
+  const wanted = offer => process.env.SPUD_BOT_NAIVE ? true : !risky(offer) && worth(offer) > 0;
+  for (const offer of slots.sort((a, b) => worth(b) - worth(a))) if (wanted(offer)) S.buy(player, offer);
   if (player.char === 'basic') {
-    for (const offer of S.shop(world, player).sort((a, b) => score(b) - score(a))) S.buy(player, offer);
+    for (const offer of S.shop(world, player).sort((a, b) => worth(b) - worth(a))) if (wanted(offer)) S.buy(player, offer);
   }
 }
 function play(char, seed) {

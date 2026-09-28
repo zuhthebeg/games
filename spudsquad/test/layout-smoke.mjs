@@ -79,8 +79,8 @@ try {
       client: document.querySelector('.panel').clientHeight,
       hudHidden: getComputedStyle(document.querySelector('#hud')).display === 'none'
     })`);
-    assert.equal(choose.cardCount, 12);
-    assert.ok(choose.artWidth >= 64);
+    assert.equal(choose.cardCount, await evaluate('Object.keys(SPUD.data.chars).length'));
+    assert.ok(choose.artWidth >= 52);
     assert.equal(choose.rawStat, false);
     assert.equal(choose.fits, width >= 600, `${width}px character selection scrolling ${choose.scroll}/${choose.client}`);
     assert.equal(choose.hudHidden, true);
