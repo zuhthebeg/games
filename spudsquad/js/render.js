@@ -7,6 +7,8 @@
     ...Object.keys(D.chars).map(id => 'char_' + id),
     ...Object.keys(D.enemies),
     ...Object.keys(D.weapons).map(id => 'weapon_' + id),
+    // 무기 티어 아트(T2 파랑·T3 보라 룬·T4 황금). 없으면 weaponArt가 기본 아트로 폴백.
+    ...Object.keys(D.weapons).flatMap(id => [2, 3, 4].map(t => `weapon_${id}_t${t}`)),
     ...Object.keys(D.items).map(id => 'item_' + id),
     'bg_ground', 'key_art', 'item_crate'
   ];
@@ -17,6 +19,7 @@
     image.src = 'assets/' + (D.enemies[id] && !id.startsWith('boss_') ? 'enemy_' + id : id) + '.webp';
     images[id] = image;
   }
+  const weaponArt = (id, tier) => tier >= 2 && images[`weapon_${id}_t${tier}`]?.ok ? `weapon_${id}_t${tier}` : 'weapon_' + id;
   const colors = {
     blob: '#9ed45d', bug: '#f7bb44', spitter: '#c08ad8', charger: '#ee8072',
     splitter: '#84bbdd', tank: '#6d9f69', elite: '#d76b9e',
@@ -397,9 +400,9 @@
           }
           c.shadowColor = tier === 4 ? `rgb(${hueRgb(now)})` : tv.glow;
           c.shadowBlur = tv.blur;
-          this.sprite('weapon_' + weapon, 0, 0, (D.WEAPON_SIZE || 46) * (1 + .07 * (tier - 1)) * pulse);
+          this.sprite(weaponArt(weapon, tier), 0, 0, (D.WEAPON_SIZE || 46) * (1 + .07 * (tier - 1)) * pulse);
           if (tier >= 2) { // 두 번 그려 발광을 더 진하게
-            c.globalAlpha *= .5; this.sprite('weapon_' + weapon, 0, 0, (D.WEAPON_SIZE || 46) * (1 + .07 * (tier - 1)) * pulse);
+            c.globalAlpha *= .5; this.sprite(weaponArt(weapon, tier), 0, 0, (D.WEAPON_SIZE || 46) * (1 + .07 * (tier - 1)) * pulse);
           }
           c.restore();
           if (tier === 4) { // 만렙 반짝이 3개가 무기 주위를 공전
@@ -540,5 +543,5 @@
     });
     c.restore();
   };
-  P.render = { Renderer, images, viewCamera };
+  P.render = { Renderer, images, viewCamera, weaponArt };
 })(window);

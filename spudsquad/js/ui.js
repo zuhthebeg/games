@@ -14,6 +14,10 @@
   const label = (key, n) => `<span class="stat-change ${n < 0 ? 'negative' : 'positive'}">${esc(I.stat(key))} ${n > 0 ? '+' : ''}${shown(n)}</span>`;
   const icon = (id, kind = '') =>
     `<img class="${kind}" src="assets/${esc(id)}.webp" alt="" onerror="this.hidden=true">`;
+  // 티어 무기 아이콘: T2~T4 전용 아트, 없으면 기본 아트로 폴백
+  const weaponIcon = (id, tier = 1, kind = '') => tier >= 2
+    ? `<img class="${kind}" src="assets/weapon_${esc(id)}_t${Number(tier) | 0}.webp" alt="" onerror="this.onerror=null;this.src='assets/weapon_${esc(id)}.webp'">`
+    : icon('weapon_' + id, kind);
   const button = (text, act, extra = '') =>
     `<button type="button" class="btn ${extra}" data-act="${act}">${esc(text)}</button>`;
   const GLYPH = { maxHp: '❤️', dmg: '⚔️', atkSpd: '⚡', melee: '🥊',
@@ -93,7 +97,7 @@
       const weapons = p.weapons.map(([id, tier]) => {
         const w = P.sim.weaponSummary(p, id, tier);
         if (!w) return '';
-        return `<li class="weapon-row tier${tier}">${icon('weapon_' + id)}<div>
+        return `<li class="weapon-row tier${tier}">${weaponIcon(id, tier)}<div>
           <b>${esc(I.name('weapons', id))} · T${tier}</b><small>${esc(I.feature(id))}</small>
           <div class="weapon-nums"><span>${esc(I.t('perHit'))} <b>${num(w.damage)}${w.shots > 1 ? ` ×${w.shots}` : ''}</b></span>
           <span>${esc(I.t('cool'))} <b>${Math.round(w.cooldownMs)}ms</b></span>
@@ -407,7 +411,7 @@ function hud(scene, uid) {
              · ${I.t('reach')} ${shown(D.weapons[offer.id].range)}`
           : I.itemEffect(offer.id) || I.name('items', offer.id);
         return `<article class="shop-card tier${offer.tier}${offer.locked ? ' is-locked' : ''}">
-          ${icon((offer.weapon ? 'weapon_' : 'item_') + offer.id, 'shop-art')}
+          ${offer.weapon ? weaponIcon(offer.id, offer.tier, 'shop-art') : icon('item_' + offer.id, 'shop-art')}
           <div class="shop-detail"><strong>${esc(name)} · ${esc(I.grade(offer.tier))}</strong>
           <small>${esc(description)}</small><span class="price">💎${shown(offer.price)}
             ${offer.weapon ? ` · T${offer.tier}` : ''}</span></div>
@@ -421,7 +425,7 @@ function hud(scene, uid) {
         const weapon = player.weapons[i];
         return `<button type="button" class="slot tier${weapon?.[1] || 1}
           ${selected === i ? 'selected' : ''}" data-act="slot${i}">
-          ${weapon ? icon('weapon_' + weapon[0]) : '＋'}
+          ${weapon ? weaponIcon(weapon[0], weapon[1]) : '＋'}
           <span>${weapon ? `${esc(I.name('weapons', weapon[0]))} T${weapon[1]}` : '—'}</span>
         </button>`;
       }).join('');
