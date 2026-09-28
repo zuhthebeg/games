@@ -250,13 +250,33 @@
       <div class="title-actions">${button(I.t('solo'), 'solo', 'primary large')}
       ${button(I.t('multi'), 'multi', 'large')}
       ${button('📖 ' + I.t('collection'), 'collection', 'large col-open')}</div>
-      <div class="mode-pick" role="radiogroup" aria-label="${esc(I.t('modeLabel'))}">
+      <div class="mode-row"><div class="mode-pick" role="radiogroup" aria-label="${esc(I.t('modeLabel'))}">
         ${button(I.t('modeNormal'), 'mode-normal', endlessMode() ? '' : 'on')}
         ${button(I.t('modeEndless'), 'mode-endless', endlessMode() ? 'on' : '')}</div>
+      ${button(I.t('landscape'), 'landscape', 'landscape-btn')}</div>
       <small class="mode-hint">${esc(I.t(endlessMode() ? 'modeEndlessHint' : 'modeNormalHint'))}</small></div>
     </section>`, true);
     panel.onclick = event => {
       const act = event.target.closest('[data-act]')?.dataset.act;
+      if (act === 'landscape') {
+        // Fullscreen first: browsers require it before a landscape orientation lock.
+        (async () => {
+          try { await document.documentElement.requestFullscreen?.(); } catch {}
+          try {
+            if (!screen.orientation?.lock) throw new Error('orientation lock unavailable');
+            await screen.orientation.lock('landscape');
+          } catch {
+            const hint = document.createElement('div');
+            hint.className = 'landscape-hint';
+            hint.setAttribute('role', 'status');
+            hint.textContent = I.t('rotateHint');
+            document.querySelector('.landscape-hint')?.remove();
+            document.body.appendChild(hint);
+            setTimeout(() => hint.remove(), 3000);
+          }
+        })();
+        return;
+      }
       if (act === 'mode-normal' || act === 'mode-endless') {
         try { localStorage.setItem('spud_mode', act === 'mode-endless' ? 'endless' : 'normal'); } catch {}
         title(cb); return;

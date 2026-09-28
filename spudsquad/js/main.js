@@ -498,6 +498,10 @@
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
   document.addEventListener('visibilitychange', () => { last = performance.now(); });
+  // Mobile fullscreen/orientation dimensions may settle after the initial resize event.
+  const remeasure = () => requestAnimationFrame(() => requestAnimationFrame(() => P.main?.resize()));
+  window.addEventListener('orientationchange', remeasure);
+  document.addEventListener('fullscreenchange', remeasure);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) checkpoint(true);
   });

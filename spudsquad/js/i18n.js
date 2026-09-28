@@ -384,6 +384,7 @@
   const strings = {
     ko: {
       title: '감자특공대', subtitle: '함께 버텨라, 끝까지!', solo: '혼자 하기', multi: '같이 하기',
+      landscape: '🔄 가로모드', rotateHint: '기기를 가로로 돌려주세요',
       choose: '특공대를 골라!', ready: '준비 완료', wait: '동료를 기다리는 중…', balanced: '균형형',
       shop: '전투 준비', buy: '구매', reroll: '다시 뽑기', stats: '내 스탯', merge: '합치기', sell: '판매',
       items: '획득한 아이템', locked: '잠금', wave: '웨이브', win: '감자특공대 승리!', lose: '전멸했다!',
@@ -392,6 +393,7 @@
     },
     en: {
       title: 'Spud Squad', subtitle: 'Stick together. Survive the horde.', solo: 'Play Solo', multi: 'Play Co-op',
+      landscape: '🔄 Landscape mode', rotateHint: 'Turn your device sideways',
       choose: 'Choose your spud!', ready: 'Ready', wait: 'Waiting for your squad…', balanced: 'Balanced',
       shop: 'Supply Shop', buy: 'Buy', reroll: 'Reroll', stats: 'My Stats', merge: 'Merge', sell: 'Sell',
       items: 'Collected Items', locked: 'Lock', wave: 'Wave', win: 'Spud Squad Wins!', lose: 'Squad Defeated',
@@ -401,6 +403,7 @@
     },
     'zh-TW': {
       title: '馬鈴薯特攻隊', subtitle: '團結到底，撐過每一波！', solo: '單人遊玩', multi: '多人合作',
+      landscape: '🔄 橫向模式', rotateHint: '請將裝置橫向旋轉',
       choose: '選擇你的馬鈴薯！', ready: '準備完成', wait: '等待隊友…', balanced: '均衡型',
       shop: '補給商店', buy: '購買', reroll: '重抽', stats: '我的屬性', merge: '合併', sell: '出售',
       items: '已獲得道具', locked: '鎖定', wave: '波次', win: '馬鈴薯特攻隊勝利！', lose: '全軍覆沒',

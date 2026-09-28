@@ -374,6 +374,7 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
   .upgrade-card { min-height: 134px; }
   .upgrade-glyph { font-size: 30px; }
   .shop-screen { gap: 3px; }
+  .set-bonuses, .tier4::after { font-size: 12px; }
   .shop-header h2 { font-size: 20px; }
   .shop-header b { font-size: 18px; }
   .shop-grid { grid-template-columns: repeat(2, 1fr); gap: 4px; }
@@ -417,6 +418,98 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
   .col-art { width: 60px; height: 60px; }
   .col-card small, .col-card .meta { font-size: 12px; }
   .ready-btn { min-height: 33px; padding: 4px 12px; }
+}
+/* Touch-only orientation affordance; portrait and desktop layouts keep their sizing. */
+.mode-row { display: flex; align-items: center; gap: 5px; }
+.mode-row .mode-pick { flex: 1; min-width: 0; }
+.landscape-btn { display: none; }
+@media (pointer: coarse) { .landscape-btn { display: block; min-height: 44px; padding: 4px 6px; font-size: 12px; } }
+.landscape-hint { position: fixed; z-index: 10001; left: 50%; bottom: 18px;
+  transform: translateX(-50%); max-width: calc(100vw - 24px); padding: 10px 16px;
+  border-radius: 12px; background: #4c2d20; color: #fff4ce; font: 16px Jua, sans-serif;
+  text-align: center; pointer-events: none; }
+@media (orientation: landscape) and (max-height: 520px) {
+  :root { --wallet-bar-h: 52px; } /* #sw-bar: content-box 40px + 6px on each edge */
+  #game { padding-top: calc(var(--wallet-bar-h) + env(safe-area-inset-top)); }
+  #hud { position: absolute; z-index: 4; top: calc(var(--wallet-bar-h) + env(safe-area-inset-top));
+    left: max(4px, env(safe-area-inset-left)); width: calc(100% - 220px - env(safe-area-inset-left) - env(safe-area-inset-right));
+    min-height: 44px; height: 44px; padding: 2px 5px; gap: 4px;
+    border: 0; border-radius: 0 0 12px 12px; background: rgba(255,241,198,.84);
+    font-size: 12px; white-space: nowrap; }
+  #hud > div { flex: 0 1 auto; min-width: 0; }
+  #hud > div:first-child { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; width: 112px; }
+  #hud .bar { width: 36px; height: 7px; margin: 0; border-width: 1px; }
+  #waveHud, #waveHud b, #money { font-size: 14px; line-height: 1; }
+  #waveHud br { display: none; }
+  .hud-btn { min-width: 44px; min-height: 44px; box-shadow: none; }
+  #field { min-height: 0; }
+  #lang, #music, #sound, #shake { top: 0; width: 44px; height: 44px;
+    padding: 0; border: 2px solid var(--brown); border-radius: 10px; background: #fff6dadd; font-size: 18px; }
+  #lang { right: max(4px, env(safe-area-inset-right)); }
+  #sound { right: calc(48px + env(safe-area-inset-right)); }
+  #music { right: calc(96px + env(safe-area-inset-right)); }
+  #shake { right: calc(144px + env(safe-area-inset-right)); }
+  #volume { display: none; }
+  #team { left: auto; right: 10px; bottom: 8px; }
+  #notice { top: 48px; font-size: 16px; }
+  #overlay { padding: 4px max(4px, env(safe-area-inset-right)) 4px max(4px, env(safe-area-inset-left)); backdrop-filter: none; }
+  .panel, .panel:has(.shop-screen) { min-width: 0; padding: 7px; border-width: 3px; border-radius: 14px;
+    box-shadow: 0 3px 0 #6c4a2b; overscroll-behavior: contain; }
+  .panel h1 { font-size: clamp(28px, 5vw, 40px); margin-bottom: 2px; }
+  .panel h2 { font-size: 23px; margin: 2px 0 5px; }
+  .panel p { margin: 3px 0 7px; font-size: 14px; }
+  .btn { padding: 4px 8px; font-size: 12px; }
+  .btn.large { min-height: 44px; padding: 4px 6px; font-size: 16px; }
+  .title-screen { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .key-art { max-height: min(65dvh, 246px); }
+  .title-copy { padding: 2px; }
+  .title-copy p { font-size: 14px; margin: 1px 0; }
+  .title-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; max-width: none; margin: 6px auto; }
+  .mode-pick { max-width: none; margin: 5px auto 0; }
+  .mode-pick .btn { min-height: 44px; font-size: 13px; }
+  .mode-hint { font-size: 12px; line-height: 1.1; margin-top: 3px; }
+  .selection-screen .character-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+  .selection-screen .character-card { min-height: 110px; padding: 3px; gap: 2px; border-width: 2px; border-radius: 10px; }
+  .selection-screen .character-art { width: 38px; height: 38px; }
+  .selection-screen .character-card strong { font-size: 14px; line-height: 1; }
+  .selection-screen .starting-weapon, .selection-screen .trait,
+  .selection-screen .bonuses .stat-change { font-size: 12px; line-height: 1.05; }
+  .selection-screen .starting-weapon img { width: 18px; height: 18px; }
+  .upgrade-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+  .upgrade-card { min-height: 126px; padding: 4px; font-size: 14px; }
+  .upgrade-card strong { font-size: 16px; } .upgrade-glyph { font-size: 26px; }
+  .shop-screen { gap: 3px; }
+  .set-bonuses, .tier4::after { font-size: 12px; }
+  .shop-header h2 { font-size: 20px; }
+  .shop-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+  .shop-card { min-height: 116px; padding: 3px; gap: 1px; border-width: 2px; border-radius: 10px; }
+  .shop-art { width: 24px; height: 24px; }
+  .shop-detail { min-width: 0; width: 100%; gap: 1px; }
+  .shop-detail strong { max-width: 100%; font-size: 13px; line-height: 1; overflow-wrap: anywhere; }
+  .shop-detail small { font-size: 12px; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; line-clamp: 2; overflow: hidden; }
+  .price { font-size: 12px; } .offer-actions { width: 100%; gap: 2px; margin-top: auto; }
+  .offer-actions .btn { min-height: 29px; padding: 1px 4px; font-size: 12px; }
+  .shop-toolbar { min-height: 30px; gap: 4px; } .shop-toolbar .btn, .slot-actions .btn { font-size: 12px; }
+  .shop-divider { font-size: 14px; padding-top: 1px; }
+  #shopSlots { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
+  .slot { min-height: 42px; font-size: 12px; } .slot img { width: 22px; height: 22px; }
+  .inventory { max-height: 34px; font-size: 12px; }
+  .ready-btn { min-height: 40px; }
+  #sheet { padding: 4px; }
+  .sheet { min-width: 0; border-width: 3px; border-radius: 13px; font-size: 12px; }
+  .sheet-head { padding: 2px 8px; } .sheet-head h2 { font-size: 20px; }
+  .sheet-body { padding: 7px; gap: 7px; }
+  .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .sheet-lower { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 6px; }
+  .col-head { gap: 6px; } .col-head h2 { font-size: 20px; }
+  .col-banner { padding: 4px; font-size: 14px; }
+  .col-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+  .col-art { width: 45px; height: 45px; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (pointer: coarse) {
+  #pad { left: max(14px, env(safe-area-inset-left)); bottom: 12px; width: 112px; height: 112px; margin: 0; }
+  #pad.active { margin: -56px 0 0 -56px; }
 }
 </style>
 </head>
