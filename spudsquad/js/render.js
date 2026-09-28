@@ -34,6 +34,27 @@
     const [r, g, b] = h < 1 ? [1, x, 0] : h < 2 ? [x, 1, 0] : h < 3 ? [0, 1, x] : h < 4 ? [0, x, 1] : h < 5 ? [x, 0, 1] : [1, 0, x];
     return `${Math.round(155 + r * 100)},${Math.round(155 + g * 100)},${Math.round(155 + b * 100)}`;
   };
+  // 카메라 계산(순수 함수, 테스트용 노출). players 행 = [uid, x, y, hp, maxHp, alive, ...]
+  const MIN_VIEW_AREA = .5, TEAM_MARGIN = 220;
+  function viewCamera(width, height, players, focus, reach) {
+    const fitMap = Math.min(width / D.W, height / D.H);
+    let areaZoom = Math.sqrt(width * height / (MIN_VIEW_AREA * D.W * D.H));
+    // 한 축이 맵 밖으로 넘치면 그 축은 맵 크기로 잘리므로, 남은 축만으로 50%를 채우게 더 줌아웃한다.
+    if (height / areaZoom > D.H) areaZoom = Math.min(areaZoom, width / (MIN_VIEW_AREA * D.W));
+    if (width / areaZoom > D.W) areaZoom = Math.min(areaZoom, height / (MIN_VIEW_AREA * D.H));
+    const rangeZoom = (width + height) / 4 / (reach * 1.2 + 40);
+    let zoom = Math.min(1, areaZoom, rangeZoom);
+    let cx = focus?.[1] ?? D.W / 2, cy = focus?.[2] ?? D.H / 2;
+    const alive = (players || []).filter(p => p[5]);
+    if (alive.length > 1) {
+      const xs = alive.map(p => p[1]), ys = alive.map(p => p[2]);
+      const x0 = Math.min(...xs) - TEAM_MARGIN, x1 = Math.max(...xs) + TEAM_MARGIN;
+      const y0 = Math.min(...ys) - TEAM_MARGIN, y1 = Math.max(...ys) + TEAM_MARGIN;
+      zoom = Math.min(zoom, width / (x1 - x0), height / (y1 - y0));
+      cx = (x0 + x1) / 2; cy = (y0 + y1) / 2;
+    }
+    return { zoom: Math.max(fitMap, zoom), cx, cy };
+  }
   class Renderer {
     constructor(canvas) {
       this.canvas = canvas;
@@ -171,22 +192,23 @@
       const own = players.find(p => p[0] === myUid);
       if (own) this.lastOwn = { x: own[1], y: own[2] };
       const focus = (own?.[5] ? own : players.find(p => p[5])) || own || players[0];
-      // 시야 줌: 화면 짧은 변의 절반이 (내 최대 무기 사거리 × 1.2 + 여백)을 담도록 축소. 부드럽게 보간.
+      // 시야: 내 최대 무기 사거리 기준 줌 + (1) 맵 면적 최소 50% 보장 (2) 멀티는 살아있는 동료 전원이 보이게.
+      // 하한은 '맵 전체가 화면에 들어오는 줌' — 양 끝에 흩어지면 맵 전체가 보인다.
       const me = scene.players?.[myUid] || P.main?.localPlayer;
       let reach = 420;
       if (me?.weapons?.length) {
         const bonus = P.sim.effectiveStats(me).range || 0;
-        reach = Math.max(...me.weapons.map(([id]) => (D.weapons[id]?.range || 300) + bonus));
+        reach = Math.max(...me.weapons.filter(([id]) => D.weapons[id]).map(([id]) =>
+          P.sim.weaponRange ? P.sim.weaponRange(me, D.weapons[id]) : D.weapons[id].range + bonus), 100);
       }
-      // 세로 모바일에서 짧은 변 기준이면 과하게 작아진다 → 가로·세로 반폭 평균을 시야 반경으로 본다.
-      const wantZoom = Math.max(.55, Math.min(1, (width + height) / 4 / (reach * 1.2 + 40)));
-      this.zoom = this.zoom ? this.zoom + (wantZoom - this.zoom) * Math.min(1, elapsed * 3) : wantZoom;
+      const view = viewCamera(width, height, players, focus, reach);
+      this.zoom = this.zoom ? this.zoom + (view.zoom - this.zoom) * Math.min(1, elapsed * 3) : view.zoom;
       const z = this.zoom, viewW = width / z, viewH = height / z;
       // 줌아웃된 만큼 스프라이트를 약하게 키워 식별성 유지(판정 크기는 불변)
       this.spriteK = Math.pow(1 / z, .4);
       if (focus) {
-        this.cam.x = viewW >= D.W ? (D.W - viewW) / 2 : Math.max(0, Math.min(D.W - viewW, focus[1] - viewW / 2));
-        this.cam.y = viewH >= D.H ? (D.H - viewH) / 2 : Math.max(0, Math.min(D.H - viewH, focus[2] - viewH / 2));
+        this.cam.x = viewW >= D.W ? (D.W - viewW) / 2 : Math.max(0, Math.min(D.W - viewW, view.cx - viewW / 2));
+        this.cam.y = viewH >= D.H ? (D.H - viewH) / 2 : Math.max(0, Math.min(D.H - viewH, view.cy - viewH / 2));
       }
       c.save();
       c.scale(z, z);
@@ -518,5 +540,5 @@
     });
     c.restore();
   };
-  P.render = { Renderer, images };
+  P.render = { Renderer, images, viewCamera };
 })(window);
