@@ -69,6 +69,7 @@
     session.roster({ players: [{ user: uid }], hostUser: uid });
     session.world = saved.world;
     session.wave = saved.world.wave;
+    session.endless = !!saved.world.endless;
     session.lastPlayers = { solo: { char: saved.world.players.solo.char } };
     session.pick.solo = saved.world.players.solo.char;
     offers = saved.offers;
@@ -121,6 +122,7 @@
       sendRt: data => renderer.fx(data.fx, uid)
     });
     session.roster({ players: [{ user: uid }], hostUser: uid });
+    session.endless = !!U.endlessMode?.();
     mode = 'select';
     U.choose(selected);
   }
@@ -171,6 +173,7 @@
       onAction: handleAction, onEnd: finish
     });
     session.sendAction.echo = true;
+    session.endless = !!U.endlessMode?.(); // 방장 설정만 WAVE_START로 전파된다
     session.roster(roster.players?.length ? roster : {
       players: (data.players || [uid]).map(user => ({ user })), hostUser: host
     });
@@ -219,7 +222,8 @@
     }
     if (action.type === 'WAVE_END') {
       mode = 'shop';
-      recordClear(action.payload.w);
+      // 무한 모드에서 20웨이브(보스) 돌파 = 해당 캐릭터 클리어로 기록
+      recordClear(action.payload.w, !!session?.endless && action.payload.w === 20);
       const player = session.world?.players[uid] || localPlayer;
       const levelUps = action.payload.players?.[uid]?.levelUps || 0;
       if (solo()) cratesRemaining = action.payload.players?.[uid]?.crates || 0;
@@ -266,7 +270,7 @@
     if (debugRun()) return; // 디버그 런: 골드·랭킹·도감 모두 건너뜀
     if (data.win) recordClear(data.wave || 20, true);
     const cleared = data.win ? data.wave : Math.max(0, data.wave - 1);
-    const gold = cleared * 30 + (data.win ? 500 : 0);
+    const gold = cleared * 30 + (data.win || (session?.endless && cleared >= 20) ? 500 : 0);
     try {
       if (typeof SharedWallet !== 'undefined' && SharedWallet.addGold) {
         SharedWallet.addGold(gold, 'spudsquad');
@@ -317,7 +321,7 @@
     } else if (name === 'wave') {
       // 현재 웨이브를 끝내고 지금 장비 그대로 N웨이브 시작
       U.closeSheet();
-      session.start(int(a.wave, 1, 20));
+      session.start(int(a.wave, 1, session.endless ? 99 : 20));
       return '';
     } else if (name === 'god') {
       debugView.god = !debugView.god;
@@ -373,7 +377,7 @@
     const dt = Math.min(.1, (now - last) / 1000 || 0);
     last = now;
     // 배경음: 전투(10·20웨이브는 보스곡) / 그 외 화면은 상점곡. 같은 곡이면 music()이 무시.
-    P.sfx?.music?.(mode === 'wave' ? ((session?.wave === 10 || session?.wave === 20) ? 'boss' : 'battle') : 'shop');
+    P.sfx?.music?.(mode === 'wave' ? ((session?.wave % 10 === 0) ? 'boss' : 'battle') : 'shop');
     // 솔로에서 스탯 시트/디버그 패널이 열려 있으면 시뮬레이션 정지(그리기만)
     const hold = solo() && U.sheetOpen?.();
     if (debugBtn) debugBtn.hidden = !(debugOn && solo());

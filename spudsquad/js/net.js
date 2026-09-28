@@ -50,6 +50,7 @@
     constructor({ uid, host, sendAction = () => {}, sendRt = () => {}, onAction = () => {},
       onSnapshot = () => {}, onEnd = () => {}, rng = Math.random }) {
       Object.assign(this, { uid, host, sendAction, sendRt, onAction, onSnapshot, onEnd, rng });
+      this.endless = false; // 무한 모드(방장 설정 → WAVE_START payload로 전파)
       this.isHost = uid === host;
       this.players = {};
       this.ready = new Set();
@@ -83,8 +84,10 @@
       } else if (a.type === 'WAVE_START') {
         this.lastPlayers = p.players || {};
         this.wave = p.w;
+        this.endless = !!p.endless;
         this.ready.clear();
-        this.world = this.isHost ? S.createWorld({ wave: p.w, players: p.players, rng: this.rng }) : null;
+        this.world = this.isHost ? S.createWorld({ wave: p.w, players: p.players, rng: this.rng,
+          endless: this.endless }) : null;
         this.onAction(a);
       } else if (a.type === 'WAVE_END') {
         this.shopDeadline = 45;
@@ -118,7 +121,7 @@
           stats: prev.stats, mats: prev.mats, xp: prev.xp, lvl: prev.lvl, pending: prev.pending
         } : { char: this.pick[uid] || 'basic' };
       }
-      const payload = { w: wave, seed: Math.floor(this.rng() * 2 ** 31), players };
+      const payload = { w: wave, seed: Math.floor(this.rng() * 2 ** 31), players, endless: this.endless };
       this.local({ type: 'WAVE_START', payload, __snapshot: payload });
     }
     next() { this.start(this.wave + 1); }

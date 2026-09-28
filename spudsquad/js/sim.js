@@ -16,8 +16,9 @@
   function enemyStats(type, w, n) {
     const e = D.enemies[type];
     const k = D.curve || {};
-    return { hp: e.hp * (1 + (k.hpPerWave ?? 0.35) * (w - 1)) * (1 + 0.25 * (n - 1)),
-      dmg: e.dmg * (1 + (k.dmgPerWave ?? 0.12) * (w - 1)), speed: e.speed };
+    // 21웨이브 이후(무한 모드)는 HP ×1.1·피해 ×1.06 복리로 더 가파르게 → 언젠가는 끝난다.
+    return { hp: e.hp * (1 + (k.hpPerWave ?? 0.35) * (w - 1)) * (1 + 0.25 * (n - 1)) * 1.1 ** Math.max(0, w - 20),
+      dmg: e.dmg * (1 + (k.dmgPerWave ?? 0.12) * (w - 1)) * 1.06 ** Math.max(0, w - 20), speed: e.speed };
   }
   // 돌연변이감자 등 캐릭터 xpNeed 배율(없으면 1)
   function needXp(lvl, char) {
@@ -115,7 +116,7 @@
       wave: opts.wave || 1, rng: opts.rng || Math.random, players: {}, enemies: [], drops: [],
       shots: [], bullets: [], projectiles: [], crates: [], crateCount: 0, turrets: [], fx: [],
       tick: 0, tm: waveLength(opts.wave || 1), spawnClock: 0, nextId: 1,
-      ended: false, win: false, bossKilled: false, bossKills: 0, eliteCount: 0, bossSpawned: false
+      endless: !!opts.endless, ended: false, win: false, bossKilled: false, bossKills: 0, eliteCount: 0, bossSpawned: false
     };
     for (const [uid, v] of Object.entries(opts.players || { solo: { char: "basic" } })) {
       const p = w.players[uid] = createPlayer(uid, v.char, v);
@@ -491,9 +492,10 @@
         spawn(w, 'looter', far[0], far[1]);
       }
     }
-    if (!w.bossSpawned && (w.wave === 10 || w.wave === 20)) {
+    // 보스: 10·20웨이브, 무한 모드는 이후 10웨이브마다(20의 배수=boss_2). 처치 필수는 20웨이브뿐.
+    if (!w.bossSpawned && w.wave % 10 === 0) {
       w.bossSpawned = true;
-      const b = w.wave === 20 ? "boss_2" : "boss_1";
+      const b = w.wave % 20 === 0 ? "boss_2" : "boss_1";
       spawn(w, b, 800, 90);
       w.fx.push(["boss", 800, 90]);
     }
@@ -745,7 +747,7 @@
       w.drops = [];
       w.enemies = [];
       w.ended = true;
-      w.win = w.wave === 20;
+      w.win = w.wave === 20 && !w.endless;
       for (const p of players) {
         p.mats = Math.max(0, p.mats + Math.floor(p.stats.harvest));
         if (p.stats.harvest > 0) p.stats.harvest *= 1.05;
@@ -901,7 +903,7 @@
         const validNumber = n => typeof n === 'number' && Number.isFinite(n);
         if (s.version !== version || !validNumber(s.at) || s.at > now + 60000 ||
             now - s.at > maxAge || !['wave', 'shop'].includes(s.mode) ||
-            !w || !Number.isInteger(w.wave) || w.wave < 1 || w.wave > 20 ||
+            !w || !Number.isInteger(w.wave) || w.wave < 1 || w.wave > (w.endless ? 999 : 20) ||
             Object.keys(w.players || {}).length !== 1 || p?.uid !== 'solo' ||
             !D.chars[p.char] || !validNumber(p.hp) || !validNumber(p.x) || !validNumber(p.y) ||
             !validNumber(w.tm) || !validNumber(w.tick) || !Number.isInteger(w.nextId) ||

@@ -239,10 +239,18 @@
       <h1>${esc(I.t('title'))}</h1><p>${esc(I.t('subtitle'))}</p>
       <div class="title-actions">${button(I.t('solo'), 'solo', 'primary large')}
       ${button(I.t('multi'), 'multi', 'large')}
-      ${button('📖 ' + I.t('collection'), 'collection', 'large col-open')}</div></div>
+      ${button('📖 ' + I.t('collection'), 'collection', 'large col-open')}</div>
+      <div class="mode-pick" role="radiogroup" aria-label="${esc(I.t('modeLabel'))}">
+        ${button(I.t('modeNormal'), 'mode-normal', endlessMode() ? '' : 'on')}
+        ${button(I.t('modeEndless'), 'mode-endless', endlessMode() ? 'on' : '')}</div>
+      <small class="mode-hint">${esc(I.t(endlessMode() ? 'modeEndlessHint' : 'modeNormalHint'))}</small></div>
     </section>`, true);
     panel.onclick = event => {
       const act = event.target.closest('[data-act]')?.dataset.act;
+      if (act === 'mode-normal' || act === 'mode-endless') {
+        try { localStorage.setItem('spud_mode', act === 'mode-endless' ? 'endless' : 'normal'); } catch {}
+        title(cb); return;
+      }
       if (act) cb(act);
     };
   }
@@ -293,6 +301,7 @@ function hud(scene, uid) {
     const remaining = scene.tm ?? P.main?.session?.world?.tm ?? 0;
     document.getElementById('timer').textContent =
       P.main?.session?.wave === 20 && remaining <= 0 ? 'BOSS' : shown(remaining);
+    document.getElementById('waveMax').textContent = P.main?.session?.endless ? '∞' : 20;
     const members = scene.pl || Object.values(scene.players || {}).map(v =>
       [v.uid, v.x, v.y, v.hp, v.maxHp, v.alive]
     );
@@ -478,16 +487,22 @@ function hud(scene, uid) {
     }
     draw();
   }
+  // 무한 모드 선택(로컬 설정). 솔로·방장이 게임 시작 시 읽는다.
+  function endlessMode() {
+    try { return localStorage.getItem('spud_mode') === 'endless'; } catch { return false; }
+  }
   function result(data, cb) {
     activeRefresh = () => result(data, cb);
-    show(`<h1>${esc(I.t(data.win ? 'win' : 'lose'))}</h1>
+    const endless = P.main?.session?.endless;
+    show(`<h1>${esc(I.t(data.win ? 'win' : endless ? 'endlessOver' : 'lose'))}</h1>
+      ${endless ? `<p class="endless-best">∞ ${esc(I.t('modeEndless'))} · WAVE ${data.wave}</p>` : ''}
       <p>${esc(I.t('wave'))} ${data.wave} · ${Object.entries(data.kills || {})
         .map(([uid, n]) => `${esc(uid).slice(0, 8)} ${n} KOs`).join(' / ')}</p>
       ${button(I.t('back'), 'back')}`);
     panel.onclick = event => { if (event.target.closest('[data-act]')) cb(); };
   }
   P.ui = {
-    title, choose, hud, crates, upgrades, shop, result, hide, show,
+    endlessMode, title, choose, hud, crates, upgrades, shop, result, hide, show,
     stats, debugPanel, collection, closeSheet,
     sheetOpen: () => !!sheetEl && !sheetEl.hidden,
     t: key => I.t(key),

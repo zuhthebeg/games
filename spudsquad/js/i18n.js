@@ -442,6 +442,8 @@
   };
   // ---- 스탯 시트·도감·디버그 UI 문자열 (아이템 표와 분리해 둔다) ----
   Object.assign(strings.ko, {
+    modeLabel: '모드', modeNormal: '🏁 20웨이브', modeEndless: '♾️ 무한', endlessOver: '무한 모드 종료!',
+    modeNormalHint: '20웨이브 보스를 잡으면 클리어', modeEndlessHint: '20웨이브 이후에도 끝없이 · 10웨이브마다 보스, 적이 점점 가파르게 강해진다',
     secAttack: '공격', secSurvival: '생존', secUtility: '유틸', weapons: '무기', sets: '세트 보너스',
     close: '닫기', perHit: '1타', shots: '발사', noSets: '같은 계열 무기 2개부터 세트 보너스가 켜져요',
     setActive: '{n}단계 활성', setNext: '{n}개부터 다음 단계', setMax: '최대 단계', tapItem: '아이템을 누르면 효과가 보여요',
@@ -455,6 +457,8 @@
     capped: '더 가질 수 없는 아이템이에요', done: '완료', count: '수', tier: '등급', hp: 'HP'
   });
   Object.assign(strings.en, {
+    modeLabel: 'Mode', modeNormal: '🏁 20 Waves', modeEndless: '♾️ Endless', endlessOver: 'Endless Run Over!',
+    modeNormalHint: 'Beat the wave 20 boss to win', modeEndlessHint: 'Keeps going past wave 20 · a boss every 10 waves, enemies ramp up fast',
     secAttack: 'Offense', secSurvival: 'Survival', secUtility: 'Utility', weapons: 'Weapons', sets: 'Set bonuses',
     close: 'Close', perHit: 'Per hit', shots: 'Shots', noSets: 'Two weapons of the same class activate a set bonus',
     setActive: 'Stage {n} active', setNext: 'Next stage at {n}', setMax: 'Max stage', tapItem: 'Tap an item to see its effect',
@@ -468,6 +472,8 @@
     capped: 'You cannot hold more of this item', done: 'Done', count: 'Count', tier: 'Tier', hp: 'HP'
   });
   Object.assign(strings['zh-TW'], {
+    modeLabel: '模式', modeNormal: '🏁 20波', modeEndless: '♾️ 無盡', endlessOver: '無盡模式結束！',
+    modeNormalHint: '擊敗第20波頭目即通關', modeEndlessHint: '20波後持續進行 · 每10波出現頭目，敵人越來越強',
     secAttack: '攻擊', secSurvival: '生存', secUtility: '輔助', weapons: '武器', sets: '套裝加成',
     close: '關閉', perHit: '每擊', shots: '發射', noSets: '同系列武器達2把即啟動套裝加成',
     setActive: '第{n}階段啟動', setNext: '{n}把啟動下一階段', setMax: '最高階段', tapItem: '點擊道具查看效果',

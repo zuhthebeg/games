@@ -145,6 +145,11 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .title-copy { padding: 20px 14px; }
 .title-copy p { font: 24px Jua; }
 .title-actions { display: grid; gap: 12px; max-width: 310px; margin: 20px auto 0; }
+.mode-pick { display: flex; gap: 8px; max-width: 310px; margin: 12px auto 0; }
+.mode-pick .btn { flex: 1; min-height: 44px; padding: 6px 8px; font-size: 16px; opacity: .6; }
+.mode-pick .btn.on { opacity: 1; background: #ffd35c; border-color: #79492e; box-shadow: inset 0 -3px 0 rgba(0,0,0,.15); }
+.mode-hint { display: block; margin-top: 6px; font-size: 13px; color: #7a5438; }
+.endless-best { font: 22px Jua; color: #7a3fb0; }
 .character-grid, .upgrade-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .character-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
 .selection-screen .character-card { gap: 4px; padding: 6px 5px; }
@@ -426,7 +431,7 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </i>
 </div>
 </div>
-<div id="waveHud">WAVE <span id="wave">1</span>/20<br>
+<div id="waveHud">WAVE <span id="wave">1</span>/<span id="waveMax">20</span><br>
 <b id="timer">20</b>
 </div>
 <div id="money">💎 <span id="mats">0</span>
@@ -462,23 +467,23 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </script>
 <script src="/lib/game-rankings.js?v=20260927">
 </script>
-<script src="js/data.js?v=20260928v1">
+<script src="js/data.js?v=20260928v2">
 </script>
-<script src="js/sim.js?v=20260928v1">
+<script src="js/sim.js?v=20260928v2">
 </script>
-<script src="js/net.js?v=20260928v1">
+<script src="js/net.js?v=20260928v2">
 </script>
-<script src="js/sfx.js?v=20260928v1"></script>
-<script src="js/fx.js?v=20260928v1"></script>
-<script src="js/render.js?v=20260928v1">
+<script src="js/sfx.js?v=20260928v2"></script>
+<script src="js/fx.js?v=20260928v2"></script>
+<script src="js/render.js?v=20260928v2">
 </script>
-<script src="js/i18n.js?v=20260928v1">
+<script src="js/i18n.js?v=20260928v2">
 </script>
-<script src="js/collection.js?v=20260928v1">
+<script src="js/collection.js?v=20260928v2">
 </script>
-<script src="js/ui.js?v=20260928v1">
+<script src="js/ui.js?v=20260928v2">
 </script>
-<script src="js/main.js?v=20260928v1">
+<script src="js/main.js?v=20260928v2">
 </script>
 </body>
 </html>
