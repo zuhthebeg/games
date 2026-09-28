@@ -456,6 +456,8 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
   #team { left: auto; right: 10px; bottom: 8px; }
   #notice { top: 48px; font-size: 16px; }
   #overlay { padding: 4px max(4px, env(safe-area-inset-right)) 4px max(4px, env(safe-area-inset-left)); backdrop-filter: none; }
+  /* 상점·메뉴 패널이 떠 있을 땐 우상단 사운드/언어 버튼이 헤더(💎 재화)를 가리지 않게 패널을 위로 */
+  #overlay { z-index: 12; }
   .panel, .panel:has(.shop-screen) { min-width: 0; padding: 7px; border-width: 3px; border-radius: 14px;
     box-shadow: 0 3px 0 #6c4a2b; overscroll-behavior: contain; }
   .panel h1 { font-size: clamp(28px, 5vw, 40px); margin-bottom: 2px; }
@@ -569,23 +571,23 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </script>
 <script src="/lib/game-rankings.js?v=20260927">
 </script>
-<script src="js/data.js?v=20260928v4">
+<script src="js/data.js?v=20260929v1">
 </script>
-<script src="js/sim.js?v=20260928v4">
+<script src="js/sim.js?v=20260929v1">
 </script>
-<script src="js/net.js?v=20260928v4">
+<script src="js/net.js?v=20260929v1">
 </script>
-<script src="js/sfx.js?v=20260928v4"></script>
-<script src="js/fx.js?v=20260928v4"></script>
-<script src="js/render.js?v=20260928v4">
+<script src="js/sfx.js?v=20260929v1"></script>
+<script src="js/fx.js?v=20260929v1"></script>
+<script src="js/render.js?v=20260929v1">
 </script>
-<script src="js/i18n.js?v=20260928v4">
+<script src="js/i18n.js?v=20260929v1">
 </script>
-<script src="js/collection.js?v=20260928v4">
+<script src="js/collection.js?v=20260929v1">
 </script>
-<script src="js/ui.js?v=20260928v4">
+<script src="js/ui.js?v=20260929v1">
 </script>
-<script src="js/main.js?v=20260928v4">
+<script src="js/main.js?v=20260929v1">
 </script>
 </body>
 </html>
