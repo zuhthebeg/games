@@ -102,3 +102,13 @@ test('shop resumes at the saved phase and READY advances once to the next wave',
   resumed.main.session.receive({ type: 'GAME_OVER', payload: { win: false, wave: 2 } });
   assert.equal(localStorage.getItem(sim.soloSave.key), null);
 });
+test('consecutive WAVE_STARTs without opening the shop (45s auto-advance) do not crash on empty offer slots', () => {
+  const h = harness(storage());
+  h.ui.titleClick('solo'); h.ui.pick('basic');
+  const session = h.main.session;
+  h.main.offers = [null, { id: 'magnet', weapon: false, tier: 1, price: 1, locked: true }, null, null];
+  assert.doesNotThrow(() => session.start(2));
+  assert.doesNotThrow(() => session.start(3));
+  assert.equal(h.main.mode, 'wave');
+  assert.equal(h.main.offers[1]?.id, 'magnet', 'locked offer survives');
+});

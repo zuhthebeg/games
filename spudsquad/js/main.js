@@ -211,7 +211,7 @@
     if (action.type === 'WAVE_START') {
       mode = 'wave';
       cratesRemaining = shopRolls = 0;
-      offers = (offers || []).map(offer => offer.locked ? offer : null);
+      offers = (offers || []).map(offer => offer?.locked ? offer : null);
       U.hide();
       if (!session.isHost) {
         const data = action.payload.players[uid];
@@ -498,6 +498,7 @@
   });
   P.main = {
     get session() { return session; },
+    get mode() { return mode; },
     get localPlayer() { return localPlayer; },
     get offers() { return offers; },
     set offers(value) { offers = value; },
