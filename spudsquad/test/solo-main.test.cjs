@@ -30,10 +30,11 @@ function harness(storage, search = '') {
     music() {}, mute: () => false, toggleMusic: () => false, volume() {} });
   const window = { addEventListener(type, cb) { (events['window:' + type] ||= []).push(cb); } };
   let frames = 0;
+  const timers = [];
   const context = { window, document, localStorage: storage, location: { search },
     URLSearchParams, performance: { now: () => 0 }, Date, Math, console,
     requestAnimationFrame: () => { frames++; }, setInterval: () => 1,
-    clearInterval() {}, setTimeout() {}, GameRankings: { injectNavButton() {}, submit() {} },
+    clearInterval() {}, setTimeout: (fn, ms) => { timers.push(ms); return timers.length; }, clearTimeout() {}, GameRankings: { injectNavButton() {}, submit() {} },
     MultiplayerLobby: class { constructor() {} }, SharedWallet: undefined };
   window.SPUD = { data, sim, net, ui, sfx, render: { Renderer: class {
     constructor() { this.effects = { toggleShake: () => false }; }
@@ -43,7 +44,7 @@ function harness(storage, search = '') {
   vm.runInNewContext(source, context);
   function emit(type) { for (const cb of events[type] || []) cb(); }
   emit('DOMContentLoaded');
-  return { ui, emit, get main() { return window.SPUD.main; }, get frames() { return frames; } };
+  return { ui, emit, timers, get main() { return window.SPUD.main; }, get frames() { return frames; } };
 }
 const storage = () => {
   const map = new Map();
@@ -111,4 +112,15 @@ test('consecutive WAVE_STARTs without opening the shop (45s auto-advance) do not
   assert.doesNotThrow(() => session.start(3));
   assert.equal(h.main.mode, 'wave');
   assert.equal(h.main.offers[1]?.id, 'magnet', 'locked offer survives');
+});
+test('solo shop never auto-starts the next wave (no long timer after WAVE_END)', () => {
+  const h = harness(storage());
+  h.ui.titleClick('solo'); h.ui.pick('basic');
+  const session = h.main.session;
+  session.world.ended = true; session.world.reported = true;
+  h.timers.length = 0;
+  session.receive({ type: 'WAVE_END', payload: { w: 1, players: { solo: { mats: 5, levelUps: 0, crates: 0 } } } });
+  assert.equal(h.main.mode, 'shop');
+  assert.ok(!h.timers.some(ms => ms >= 10000), `unexpected timers: ${h.timers}`);
+  assert.equal(session.wave, 1);
 });

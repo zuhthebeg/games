@@ -209,6 +209,7 @@
   }
   function handleAction(action) {
     if (action.type === 'WAVE_START') {
+      clearShopTimer();
       mode = 'wave';
       cratesRemaining = shopRolls = 0;
       offers = (offers || []).map(offer => offer?.locked ? offer : null);
@@ -237,21 +238,41 @@
           () => U.upgrades(player, () => U.shop(session, uid, ready)));
       } else U.shop(session, uid, ready);
       checkpoint(true);
-      if (session.isHost) {
-        setTimeout(() => {
-          if (session && session.wave === action.payload.w &&
-              (mode === 'shop' || mode === 'ready')) session.next();
-        }, 45000);
-      }
     }
-    if (action.type === 'READY' && (mode === 'shop' || mode === 'ready') && session.isHost &&
-        session.ready.size === Object.keys(session.players).length) session.next();
+    if (action.type === 'READY' && (mode === 'shop' || mode === 'ready')) {
+      if (session.ready.size >= Object.keys(session.players).length) { if (session.isHost) session.next(); }
+      else startShopTimer(session.wave); // 멀티: 누군가 준비하면 그때부터 유예 카운트다운
+    }
+  }
+  // 상점 자동 시작: 싱글은 절대 없음(준비 버튼으로만 시작). 멀티는 누군가 준비한 뒤 SHOP_GRACE_MS가 지나면
+  // 방장이 다음 웨이브를 연다(잠수 방지). 모든 클라가 READY를 받으므로 카운트다운을 각자 표시한다.
+  const SHOP_GRACE_MS = 60000;
+  let shopTimer = null;
+  function clearShopTimer() {
+    if (shopTimer) { clearInterval(shopTimer.iv); clearTimeout(shopTimer.to); }
+    shopTimer = null;
+  }
+  function shopTick() {
+    if (!shopTimer) return;
+    const left = Math.max(0, Math.ceil((shopTimer.until - Date.now()) / 1000));
+    for (const el of document.querySelectorAll?.('.shop-timer') || []) el.textContent = U.t('autoStart').replace('{n}', left);
+  }
+  function startShopTimer(wave) {
+    if (solo() || !session || shopTimer?.wave === wave) return;
+    const until = Date.now() + SHOP_GRACE_MS;
+    shopTimer = { wave, until, iv: setInterval(shopTick, 500), to: session.isHost ? setTimeout(() => {
+      if (session && session.wave === wave && (mode === 'shop' || mode === 'ready')) session.next();
+    }, SHOP_GRACE_MS) : null };
+    shopTick();
   }
   function ready(player) {
     // 대기 화면은 READY 전송 '전에' 띄운다. 솔로는 READY가 동기로 다음 웨이브를 시작하므로
     // 뒤에 띄우면 진행 중인 웨이브 위에 '동료를 기다리는 중'이 덮여 멈춘 것처럼 보였다.
     mode = 'ready';
-    if (Object.keys(session.players).length > 1) U.show(`<h2>${U.t('wait')}</h2>`);
+    if (Object.keys(session.players).length > 1) {
+      U.show(`<h2>${U.t('wait')}</h2><p class="shop-timer" aria-live="polite"></p>`);
+      shopTick();
+    }
     session.local({ type: 'READY', payload: { uid, loadout: {
       weapons: player.weapons, items: player.items, stats: player.stats, mats: player.mats,
       pending: player.pending

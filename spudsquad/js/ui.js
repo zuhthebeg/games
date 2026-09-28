@@ -107,7 +107,17 @@
       const detail = pick && counts[pick]
         ? `<p class="item-detail"><b>${esc(I.name('items', pick))}</b> — ${esc(I.itemEffect(pick))}</p>`
         : `<p class="item-detail muted">${esc(tiles ? I.t('tapItem') : I.t('empty'))}</p>`;
-      sheetFrame(`📊 ${I.t('stats')}`, `<div class="stat-grid">${sections}</div>
+      // 캐릭터 특성 헤더: 초상화·이름·특성·기본 보정 + 현재 걸린 조건/다음 웨이브 효과
+      const c = D.chars[p.char] || {};
+      const states = [];
+      if (c.still || c.moving || p.items.some(id => D.items[id]?.still)) states.push(I.t(p.still ? 'stateStill' : 'stateMoving'));
+      for (const [k, n] of Object.entries(p.pending || {})) if (n) states.push(`${I.t('nextWave')}: ${I.t('once_' + k)}${n > 1 ? ' ×' + n : ''}`);
+      for (const [k, n] of Object.entries(p.active || {})) if (n) states.push(`${I.t('thisWave')}: ${I.t('once_' + k)}`);
+      const charHead = `<section class="sheet-char">${icon('char_' + p.char, 'sheet-char-art')}<div>
+        <b>${esc(I.name('chars', p.char))}</b><p>${esc(I.trait(p.char))}</p>
+        ${Object.keys(c.stats || {}).length ? `<span class="char-bonus">${I.effect(c.stats).map(esc).join(' · ')}</span>` : ''}
+        ${states.length ? `<span class="char-state">${states.map(esc).join(' · ')}</span>` : ''}</div></section>`;
+      sheetFrame(`📊 ${I.t('stats')}`, `${charHead}<div class="stat-grid">${sections}</div>
         <div class="sheet-lower">
           <section class="sheet-sec"><h3>🗡️ ${esc(I.t('weapons'))} · ${p.weapons.length}/${P.sim.capacity(p)}</h3>
             <ul class="weapon-rows">${weapons}</ul></section>
@@ -422,7 +432,7 @@ function hud(scene, uid) {
         <b>💎 ${shown(player.mats)}</b></header>
         <div class="shop-grid">${offers}</div>
         <div class="shop-toolbar">${button(`${I.t('reroll')} · 💎${P.sim.shopRerollCost(player, session.wave, count)}`, 'roll')}
-          <span class="shop-roster">${roster}</span></div>
+          <span class="shop-roster">${roster}</span><span class="shop-timer" aria-live="polite"></span></div>
         <div class="shop-divider">${esc(I.t('slots'))} · ${player.weapons.length}/${P.sim.capacity(player)}</div>
         <div class="set-bonuses">${Object.entries(P.sim.sets(player)).map(([key, value]) =>
           `${esc(I.setName(key))} ×${value.count}${value.stage ? ' ✔' : ''}`).join(' · ')}</div>
