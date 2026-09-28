@@ -275,7 +275,7 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .sheet-char { display: flex; gap: 12px; align-items: center; background: #fff3cf; border: 2px solid #d5b988; border-radius: 14px; padding: 8px 12px; margin-bottom: 8px; }
 .sheet-char-art { width: 64px; height: 64px; object-fit: contain; flex: none; }
 .sheet-char b { font: 20px Jua; } .sheet-char p { margin: 2px 0; font-size: 14px; color: #5d3d2b; }
-.char-bonus, .char-state { display: block; font-size: 13px; color: #7a5438; } .char-state { color: #2f6b4f; font-weight: 700; }
+.char-bonus, .char-state { display: block; font-size: 14px; color: #7a5438; } .char-state { color: #2f6b4f; font-weight: 700; }
 .shop-timer { font-size: 13px; font-weight: 700; color: #b0412b; margin-left: 8px; }
 .sheet-sec { background: #fff9e6; border: 2px solid #d5b988; border-radius: 14px; padding: 8px 10px; min-width: 0; }
 .sheet-sec h3 { font: 20px Jua; margin: 0 0 6px; }
@@ -349,6 +349,7 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .col-card .meta { font-size: 13px; color: #ad6a2f; font-weight: 700; }
 .col-crown { position: absolute; top: 4px; left: 6px; font-size: 20px; }
 @media (max-width: 600px) {
+  .sheet-char { gap: 8px; padding: 6px 8px; } .sheet-char-art { width: 48px; height: 48px; } .sheet-char p, .char-bonus, .char-state { font-size: 12px; }
   #hud { min-height: 60px; padding: 4px; font-size: 12px; }
   #waveHud { font-size: 18px; }
   #waveHud b { font-size: 24px; }
