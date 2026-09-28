@@ -926,7 +926,7 @@
             !Number.isInteger(s.shopRolls) || s.shopRolls < 0 || s.shopRolls > 10000 ||
             (s.offers != null && (!Array.isArray(s.offers) ||
               (s.offers.length !== 4 && s.offers.length !== 0) ||
-              !s.offers.every(o => (s.mode === 'wave' && o == null) ||
+              !s.offers.every(o => (s.mode === 'wave' && o == null) || o?.sold === true ||
                 (o && (o.weapon ? D.weapons[o.id] : D.items[o.id]) &&
                 Number.isFinite(o.price) && Number.isInteger(o.tier)))))) throw Error('invalid save');
         w.rng = Math.random;

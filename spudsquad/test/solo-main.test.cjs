@@ -124,3 +124,15 @@ test('solo shop never auto-starts the next wave (no long timer after WAVE_END)',
   assert.ok(!h.timers.some(ms => ms >= 10000), `unexpected timers: ${h.timers}`);
   assert.equal(session.wave, 1);
 });
+test('a bought shop slot stays sold until reroll and survives a refresh', () => {
+  const localStorage = storage(), h = harness(localStorage);
+  h.ui.titleClick('solo'); h.ui.pick('basic');
+  const session = h.main.session;
+  h.main.offers = [{ sold: true }, { id: 'magnet', weapon: false, tier: 1, price: 1 }, { sold: true }, { id: 'coffee', weapon: false, tier: 1, price: 1 }];
+  session.world.ended = true; session.world.reported = true;
+  session.receive({ type: 'WAVE_END', payload: { w: 1, players: { solo: { mats: 5, levelUps: 0, crates: 0 } } } });
+  const resumed = harness(localStorage);
+  assert.equal(resumed.main.offers?.[0]?.sold, true, 'sold slot kept after refresh');
+  resumed.main.session.start(2);
+  assert.equal(resumed.main.offers[0], null, 'sold slot cleared for the next wave shop');
+});

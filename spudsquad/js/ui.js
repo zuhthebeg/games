@@ -397,6 +397,9 @@ function hud(scene, uid) {
     function draw() {
       activeRefresh = draw;
       const offers = cards.map((offer, index) => {
+        // 구매한 칸은 리롤 전까지 비워 둔다(원작 방식 — 같은 상점에서 무한 구매로 능력치가 부풀지 않게).
+        if (offer.sold) return `<article class="shop-card sold" aria-label="${esc(I.t('soldOut'))}">
+          <div class="sold-mark">✔ ${esc(I.t('soldOut'))}</div><small>${esc(I.t('soldHint'))}</small></article>`;
         const name = I.name(offer.weapon ? 'weapons' : 'items', offer.id);
         const description = offer.weapon
           ? `${I.feature(offer.id)} · ${I.t('damage')} ${shown(D.weapons[offer.id].damage)}
@@ -442,7 +445,7 @@ function hud(scene, uid) {
           ${P.main?.debug && P.main?.solo ? button('🐞', 'debug', 'dbg-btn') : ''}</div>
         <div class="inventory"><b>${esc(I.t('items'))}</b><div>${owned}</div></div>
         ${button(I.t('ready'), 'ready', 'primary ready-btn')}
-        ${detail >= 0 ? `<aside class="detail-sheet" role="dialog">
+        ${detail >= 0 && cards[detail] && !cards[detail].sold ? `<aside class="detail-sheet" role="dialog">
           <h3>${esc(I.name(cards[detail].weapon ? 'weapons' : 'items', cards[detail].id))}</h3>
           <p>${esc(cards[detail].weapon ? I.feature(cards[detail].id)
             : I.itemEffect(cards[detail].id))}</p>
@@ -459,13 +462,13 @@ function hud(scene, uid) {
         if (act === 'closeDetail') detail = -1;
         else if (act.startsWith('buy')) {
           const i = Number(act.slice(3));
-          if (P.sim.buy(player, cards[i])) {
+          if (!cards[i]?.sold && P.sim.buy(player, cards[i])) {
             P.sfx?.('buy');
-            cards[i] = P.sim.shop(world, player)[0];
+            cards[i] = { sold: true };
           }
         } else if (act.startsWith('lock')) {
           const i = Number(act.slice(4));
-          cards[i].locked = !cards[i].locked;
+          if (!cards[i]?.sold) cards[i].locked = !cards[i].locked;
         } else if (act.startsWith('slot')) {
           selected = Number(act.slice(4));
         } else if (act === 'roll') {
