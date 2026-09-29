@@ -270,6 +270,8 @@
             if (!screen.orientation?.lock) throw new Error('orientation lock unavailable');
             await screen.orientation.lock('landscape');
           } catch {
+            // Already sideways (e.g. iOS, which has no orientation lock): nothing to ask for.
+            if (innerWidth > innerHeight) return;
             const hint = document.createElement('div');
             hint.className = 'landscape-hint';
             hint.setAttribute('role', 'status');

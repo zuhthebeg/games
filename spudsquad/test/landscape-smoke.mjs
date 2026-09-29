@@ -82,11 +82,10 @@ try {
     assert.ok(metrics.reservation >= 52 && (!metrics.walletHeight || metrics.reservation >= metrics.walletHeight - 1),
       `wallet not reserved ${JSON.stringify(metrics)}`);
     await screenshot(width, height, 'title');
-    // Unsupported orientation lock must give an actionable localized hint.
+    // Unsupported orientation lock while already sideways (iOS): no "rotate your device" nag.
     await evaluate("Object.defineProperty(screen.orientation, 'lock', { value: undefined, configurable: true }); document.querySelector('[data-act=landscape]').click()");
-    await until("!!document.querySelector('.landscape-hint')", 'unsupported-lock hint');
-    assert.equal(await evaluate("document.querySelector('.landscape-hint').textContent"),
-      await evaluate("SPUD.i18n.t('rotateHint')"));
+    await pause(300);
+    assert.equal(await evaluate("!!document.querySelector('.landscape-hint')"), false, 'rotate hint shown while already landscape');
     for (let i = 0; i < 3; i++) {
       await evaluate("document.querySelector('#lang').click()");
       assert.equal(await evaluate("document.querySelector('[data-act=landscape]').textContent"),
