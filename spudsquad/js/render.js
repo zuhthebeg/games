@@ -16,7 +16,7 @@
     const image = new Image();
     image.onload = () => { image.ok = true; };
     image.onerror = () => { image.ok = false; };
-    image.src = 'assets/' + (D.enemies[id] && !id.startsWith('boss_') ? 'enemy_' + id : id) + '.webp';
+    image.src = 'assets/' + (D.enemies[id] && !id.startsWith('boss_') ? 'enemy_' + id : id) + '.webp?v=20260930v4';
     images[id] = image;
   }
   const weaponArt = (id, tier) => tier >= 2 && images[`weapon_${id}_t${tier}`]?.ok ? `weapon_${id}_t${tier}` : 'weapon_' + id;
@@ -66,6 +66,7 @@
       this.effects = new P.fx.Effects();
       this.particles = [];
       this.projectiles = [];
+      this.chilled = new Map();
       this.marks = [];
       this.flashes = new Map();
       this.previousDrops = new Map();
@@ -126,12 +127,25 @@
       }
       for (const event of events || []) {
         const type = event[0];
+        if (type === 'st' && event[2] === 'chill') this.chilled.set(event[1], performance.now() + 2000);
+        if (type === 'ex') {
+          const cannon = this.projectiles.find(b => b.id === 'potato_cannon' &&
+            Math.hypot(b.x - event[1], b.y - event[2]) < 100);
+          const owner = P.main?.session?.world?.players[event[4]] ||
+            (event[4] === myUid ? P.main?.localPlayer : P.main?.session?.lastPlayers?.[event[4]]);
+          if (cannon || owner?.items?.includes('shrapnel')) {
+            for (let i = 0; i < 3; i++) this.projectiles.push({ x: event[1], y: event[2],
+              vx: Math.cos(i * Math.PI * 2 / 3) * 700, vy: Math.sin(i * Math.PI * 2 / 3) * 700,
+              life: 180 / 700, kind: 'fragment', tier: cannon?.tier || 1 });
+          }
+        }
         if (type === 'mark') this.marks.push({ x: event[1], y: event[2], life: .9 });
 
         if (type === 'sh' && D.weapons[event[2]]?.behavior === 'projectile') {
           this.projectiles.push({ x: event[4], y: event[5],
             vx: Math.cos(event[6]) * 700, vy: Math.sin(event[6]) * 700,
-            life: D.weapons[event[2]].range / 700, kind: 'sh', tier: event[3] || 1 });
+            life: D.weapons[event[2]].range / 700, kind: 'sh', tier: event[3] || 1,
+            id: event[2], owner: event[1], returning: false });
         }
         if (type === 'eb') {
           this.projectiles.push({ x: event[1], y: event[2],
@@ -290,6 +304,10 @@
         if (flags & 3) {
           c.fillStyle = flags & 1 ? '#ff8a49' : '#e65c5c';
           c.fillRect(x - 4, y - size * .8, 8, 8);
+        }
+        if (this.chilled.get(Array.isArray(enemy) ? enemy[0] : enemy.id) > now || enemy.status?.chill?.left > 0) {
+          c.strokeStyle = '#86dcff'; c.lineWidth = 3;
+          c.beginPath(); c.arc(x, y, size * .55, 0, 7); c.stroke();
         }
         const hp = Array.isArray(enemy) ? enemy[4] / 100 : enemy.hp / enemy.maxHp;
         if (hp < 1) {
@@ -455,7 +473,20 @@
         c.stroke();
         if (mark.life <= 0) this.marks.splice(this.marks.indexOf(mark), 1);
       }
+      for (const [id, until] of this.chilled) if (until <= now) this.chilled.delete(id);
       for (const bullet of this.projectiles.slice()) {
+        const returningWeapon = D.weapons[bullet.id]?.returning;
+        if (returningWeapon && bullet.life <= dt && !bullet.returning) {
+          bullet.returning = true; bullet.life = (D.weapons[bullet.id].range + 200) / 700;
+        }
+        if (bullet.returning) {
+          const owner = players.find(p => p[0] === bullet.owner);
+          if (owner) {
+            const a = Math.atan2(owner[2] - bullet.y, owner[1] - bullet.x);
+            bullet.vx = Math.cos(a) * 700; bullet.vy = Math.sin(a) * 700;
+            if (Math.hypot(owner[1] - bullet.x, owner[2] - bullet.y) <= 700 * dt + 1) bullet.life = 0;
+          }
+        }
         bullet.life -= dt;
         bullet.history = (bullet.history || []).slice(-2);
         bullet.history.push([bullet.x, bullet.y]);
@@ -465,7 +496,7 @@
           (Array.isArray(enemy) ? enemy[2] : enemy.x) - bullet.x,
           (Array.isArray(enemy) ? enemy[3] : enemy.y) - bullet.y
         ) < 18);
-        if (hit || bullet.life <= 0) {
+        if ((!returningWeapon && hit) || bullet.life <= 0) {
           this.projectiles.splice(this.projectiles.indexOf(bullet), 1);
           continue;
         }
@@ -477,6 +508,11 @@
         });
         c.save();
         if (bt && bullet.tier > 1) { c.shadowColor = `rgb(${trail})`; c.shadowBlur = 6 + bullet.tier * 3; }
+        if (returningWeapon) {
+          c.translate(bullet.x, bullet.y); c.rotate(now / 60);
+          this.sprite(weaponArt(bullet.id, bullet.tier), 0, 0, 28);
+          c.restore(); continue;
+        }
         c.fillStyle = bullet.kind === 'eb' ? '#ff7866' : bullet.tier === 4 ? '#fff6c8' : bt.core;
         c.beginPath();
         c.arc(bullet.x, bullet.y, 4.5 + (bullet.tier || 1) * .8, 0, 7);

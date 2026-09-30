@@ -52,7 +52,15 @@
     flamethrower: { name: '화염방사기', muzzle: [12, 0], artAngle: Math.PI * 3 / 4, classes: ['elemental'], behavior: 'cone', damage: 3,
       cool: .15, range: 190, kb: 20, spread: 40, status: 'burn', price: 40 },
     staff: { name: '번개 지팡이', muzzle: [13, 0], artAngle: Math.PI / 2, classes: ['elemental'], behavior: 'chain', damage: 10,
-      cool: 1.3, range: 400, kb: 0, chains: 3, price: 36 }
+      cool: 1.3, range: 400, kb: 0, chains: 3, price: 36 },
+    boomerang: { name: '부메랑', muzzle: [13, 0], artAngle: 0, classes: ['precise'], behavior: 'projectile', damage: 9,
+      cool: 1.4, range: 340, kb: 40, returning: true, price: 30 },
+    hoe: { name: '괭이', muzzle: [13, 0], artAngle: Math.PI * 3 / 4, classes: ['blunt'], behavior: 'sweep', damage: 11,
+      cool: 1.3, range: 145, kb: 200, killMat: .15, price: 24 },
+    potato_cannon: { name: '감자 대포', muzzle: [14, 0], artAngle: Math.PI, classes: ['explosive', 'gun'], behavior: 'projectile', damage: 18,
+      cool: 2.2, range: 400, kb: 140, radius: 42, split: .35, price: 42 },
+    frost_wand: { name: '서리 지팡이', muzzle: [13, 0], artAngle: Math.PI / 2, classes: ['elemental'], behavior: 'projectile', damage: 9,
+      cool: 1.3, range: 380, kb: 20, status: 'chill', price: 36 }
   };
   for (const v of Object.values(weapons)) v.kind = ['thrust', 'sweep', 'slam'].includes(v.behavior) ? 'melee' : 'ranged';
   // 아이템 v3(2026-09-28): 대부분 단점 동반(직교 페널티). tier 생략=1, T4=전설(10웨이브~).
@@ -60,6 +68,10 @@
   // (hp1/elite/peacock), waveEnd=웨이브 종료마다 영구, still=정지 중, perWeapon=무기 종류당,
   // xp=경험치 %, drain=2초마다 HP-, startHp=시작 HP 비율, noMaxHp=최대HP 증가 차단,
   // ramp=[시작 피해%, 증가%, 간격초], zap=주울 때 번개 확률, anvil=상점 입장 시 무기 티어+1
+  // v4: chill=적중 확률(2초, 이동 -35%, 보스 절반), returnDmg=부메랑 귀환 피해 %,
+  // chilledDmg=냉각된 적에게 피해 %, fragments=폭발 파편 피해 비율(3개, 재폭발 없음),
+  // killMat=처치 재료 1 추가 확률, priceMult=상점 가격 배율, revive=웨이브당 1회 부활 HP 비율.
+  // 무기 returning=왕복 각 1타, split=착탄 분열 비율(3개, 재분열 없음), killMat=괭이 처치 드롭(행운 적용).
   const items = {
     potato_armor: { name: '감자갑옷', price: 25, stats: { armor: 2, speed: -3 } },
     hot_sauce: { name: '핫소스', price: 30, stats: { dmg: 8, maxHp: -2 } },
@@ -128,7 +140,19 @@
     jetpack: { name: '제트팩', tier: 4, price: 105, stats: { speed: 15, dodge: 10, maxHp: -5, armor: -1 } },
     ricochet_coil: { name: '도탄 코일', tier: 4, price: 110, stats: { dmg: -25 }, bounce: 1, unique: true },
     focus_lens: { name: '집중 렌즈', tier: 4, price: 120, stats: { dmg: 30 }, perWeapon: { atkSpd: -3 } },
-    anvil: { name: '모루', tier: 4, price: 100, stats: {}, anvil: true, unique: true }
+    anvil: { name: '모루', tier: 4, price: 100, stats: {}, anvil: true, unique: true },
+    salt_shaker: { name: '소금통', price: 25, stats: { crit: 4, regen: -1 } },
+    raincoat: { name: '우비', price: 25, stats: { armor: 1, dodge: 3, harvest: -3 } },
+    birdseed: { name: '새 모이', price: 25, stats: { pickup: 30, luck: 3, dmg: -2 } },
+    ice_pack: { name: '얼음 주머니', tier: 2, price: 45, stats: { elemental: 2, atkSpd: -3 }, chill: .10 },
+    seed_potato: { name: '씨감자', tier: 2, price: 45, stats: { harvest: -2 }, waveEnd: { maxHp: 1 } },
+    smoke_bomb: { name: '연막탄', tier: 2, price: 45, stats: { dodge: 10, range: -15 } },
+    boomerang_strap: { name: '부메랑 끈', tier: 2, price: 45, stats: { atkSpd: -2 }, returnDmg: 30 },
+    frost_crown: { name: '서리 왕관', tier: 3, price: 70, stats: { speed: -4 }, chilledDmg: 20, unique: true },
+    shrapnel: { name: '파편 수류탄', tier: 3, price: 70, stats: { armor: -1 }, fragments: .20 },
+    harvest_sickle: { name: '수확 낫', tier: 3, price: 70, stats: { harvest: 10, dmg: -5 }, hook: 'harvest_sickle', killMat: .05 },
+    potato_crown: { name: '감자 왕관', tier: 4, price: 115, stats: { dmg: 20, atkSpd: 10 }, priceMult: 1.2, unique: true },
+    phoenix_feather: { name: '불사조 깃털', tier: 4, price: 110, stats: { maxHp: -10 }, revive: .5, unique: true }
   };
   const enemies = {
     blob: { hp: 8, speed: 90, dmg: 1, first: 1, mats: 2, size: 40 },

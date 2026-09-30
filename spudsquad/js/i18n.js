@@ -86,11 +86,23 @@
       }
     },
     weapons: {
-      en: ['Fist', 'Dagger', 'Spear', 'Stick', 'Hammer', 'Slingshot', 'Pistol', 'Shotgun', 'SMG', 'Crossbow', 'Laser', 'Rocket', 'Flamethrower', 'Staff'],
-      'zh-TW': ['拳頭', '匕首', '長矛', '木棍', '戰錘', '彈弓', '手槍', '霰彈槍', '衝鋒槍', '弩', '雷射', '火箭', '火焰噴射器', '閃電法杖']
+      en: ['Fist', 'Dagger', 'Spear', 'Stick', 'Hammer', 'Slingshot', 'Pistol', 'Shotgun', 'SMG', 'Crossbow', 'Laser', 'Rocket', 'Flamethrower', 'Staff', 'Boomerang', 'Hoe', 'Potato Cannon', 'Frost Wand'],
+      'zh-TW': ['拳頭', '匕首', '長矛', '木棍', '戰錘', '彈弓', '手槍', '霰彈槍', '衝鋒槍', '弩', '雷射', '火箭', '火焰噴射器', '閃電法杖', '迴旋鏢', '鋤頭', '馬鈴薯大砲', '冰霜法杖']
     },
     items: {
       en: {
+        salt_shaker: 'Salt Shaker',
+        raincoat: 'Raincoat',
+        birdseed: 'Birdseed',
+        ice_pack: 'Ice Pack',
+        seed_potato: 'Seed Potato',
+        smoke_bomb: 'Smoke Bomb',
+        boomerang_strap: 'Boomerang Strap',
+        frost_crown: 'Frost Crown',
+        shrapnel: 'Shrapnel Grenade',
+        harvest_sickle: 'Harvest Sickle',
+        potato_crown: 'Potato Crown',
+        phoenix_feather: 'Phoenix Feather',
         potato_armor: 'Potato Armor',
         hot_sauce: 'Hot Sauce',
         energy_drink: 'Energy Drink',
@@ -156,6 +168,18 @@
         anvil: 'Anvil'
       },
       'zh-TW': {
+        salt_shaker: '鹽罐',
+        raincoat: '雨衣',
+        birdseed: '鳥飼料',
+        ice_pack: '冰袋',
+        seed_potato: '種薯',
+        smoke_bomb: '煙霧彈',
+        boomerang_strap: '迴旋鏢背帶',
+        frost_crown: '冰霜王冠',
+        shrapnel: '破片手榴彈',
+        harvest_sickle: '收穫鐮刀',
+        potato_crown: '馬鈴薯王冠',
+        phoenix_feather: '鳳凰羽毛',
         potato_armor: '馬鈴薯盔甲',
         hot_sauce: '辣醬',
         energy_drink: '能量飲料',
@@ -225,13 +249,13 @@
   const features = {
     ko: ['찌르기', '치명 출혈', '선분 관통', '120° 휘두르기', '착지 충격파',
       '한 번 튕김', '단일 표적 탄환', '30° 산탄 4발', '8° 탄퍼짐', '정밀 단일 탄환',
-      '무한 관통 빔', '반경 70 폭발', '40° 원뿔 화상', '번개 3회 연쇄'],
+      '무한 관통 빔', '반경 70 폭발', '40° 원뿔 화상', '번개 3회 연쇄', '최대 사거리에서 귀환 · 왕복 각각 1타', '120° 휘두르기 · 처치 시 재료 +1 확률 15% (행운 적용)', '반경 42 폭발 · 피해 35% 감자탄 3개 분열 (재분열 없음)', '냉각 2초 · 이동 -35%, 보스 -17.5% (중첩 없음)'],
     en: ['Thrust', 'Critical bleed', 'Piercing thrust', '120° sweep', 'Impact shockwave',
       'One bounce', 'Single-target shot', 'Four pellets', '8° spread', 'Precise single-target bolt',
-      'Infinite beam', 'Radius 70 explosion', 'Burning cone', 'Three chain jumps'],
+      'Infinite beam', 'Radius 70 explosion', 'Burning cone', 'Three chain jumps', 'Returns at max range · one hit per leg', '120° sweep · 15% chance of +1 material on kill (Luck scales)', 'Radius 42 explosion · three 35% potato fragments (no re-splitting)', 'Chill for 2s · movement -35%, bosses -17.5% (no stacking)'],
     'zh-TW': ['刺擊', '暴擊流血', '穿透刺擊', '120°橫掃', '落地衝擊波',
       '反彈一次', '單體子彈', '四發散彈', '8°散射', '精準單體弩箭',
-      '無限穿透光束', '半徑70爆炸', '扇形燃燒', '連鎖閃電三次']
+      '無限穿透光束', '半徑70爆炸', '扇形燃燒', '連鎖閃電三次', '最大射程後返回 · 去回各命中一次', '120°橫掃 · 擊殺15%機率多掉1材料（受幸運影響）', '半徑42爆炸 · 分裂3顆35%傷害馬鈴薯（不再分裂）', '冷卻2秒 · 移速-35%，頭目-17.5%（不疊加）']
   };
   const traits = {
     ko: {
@@ -289,6 +313,14 @@
   // 규칙 설명(스탯이 아닌 효과). 스탯 줄은 itemEffect가 자동으로 뒤에 붙인다.
   const itemEffects = {
     ko: {
+      ice_pack: '모든 적중 시 10% 냉각: 2초 이동 -35%, 보스 -17.5% (중첩 없음, 개당 +10%p)',
+      seed_potato: '웨이브 종료마다 최대 HP +1 영구',
+      boomerang_strap: '부메랑 귀환 피해 +30% (개당)',
+      frost_crown: '냉각 중인 적에게 피해 +20% · 중복 불가',
+      shrapnel: '폭발마다 피해 20% 파편 3개 방사 (개당, 재폭발 없음)',
+      harvest_sickle: '처치 시 5% 확률로 재료 +1 (개당)',
+      potato_crown: '모든 상점 가격 +20% · 중복 불가',
+      phoenix_feather: '웨이브당 1회 사망 시 HP 50%로 즉시 부활 · 0.8초 무적 · 중복 불가',
       piercing_prism: '직선 투사체 추가 관통 +1 (최대 2) · 관통 후 피해 75%',
       fracture_round: '관통 후 피해 90% 유지 (기본 75%) · 중복 불가',
       bounty_badge: '처치 보상 재화 확률 +12%p (최대 100%) · 중복 불가',
@@ -319,6 +351,14 @@
       anvil: '상점에 들어갈 때마다 T4 미만 무기 1개가 무작위로 1티어 상승 · 중복 불가'
     },
     en: {
+      ice_pack: 'All hits have a 10% chance to chill: 2s, movement -35%, bosses -17.5% (no stacking; +10%p per copy)',
+      seed_potato: 'Permanently gain +1 Max HP at each wave end',
+      boomerang_strap: 'Boomerang return damage +30% (per copy)',
+      frost_crown: 'Deal +20% damage to chilled enemies · unique',
+      shrapnel: 'Each explosion fires three 20% damage fragments (per copy, no re-explosion)',
+      harvest_sickle: '5% chance of +1 material on kill (per copy)',
+      potato_crown: 'All shop prices +20% · unique',
+      phoenix_feather: 'Once per wave: instantly revive at 50% HP on death · immune for 0.8s · unique',
       piercing_prism: '+1 straight-shot pierce (max 2) · 75% damage after each pierce',
       fracture_round: 'Retain 90% damage after piercing (normally 75%) · unique',
       bounty_badge: '+12 percentage points to kill-currency chance (max 100%) · unique',
@@ -349,6 +389,14 @@
       anvil: 'Each time you enter the shop, a random weapon below T4 gains +1 tier · unique'
     },
     'zh-TW': {
+      ice_pack: '所有命中10%機率冷卻：2秒移速-35%，頭目-17.5%（不疊加，每個+10個百分點）',
+      seed_potato: '每波結束永久最大生命+1',
+      boomerang_strap: '迴旋鏢返回傷害+30%（每個）',
+      frost_crown: '對冷卻敵人傷害+20% · 不可重複',
+      shrapnel: '每次爆炸發射3顆20%傷害破片（每個，不再爆炸）',
+      harvest_sickle: '擊殺時5%機率多掉1材料（每個）',
+      potato_crown: '所有商店價格+20% · 不可重複',
+      phoenix_feather: '每波一次：死亡立即以50%生命復活 · 無敵0.8秒 · 不可重複',
       piercing_prism: '直線彈丸額外穿透 +1（最多2次）· 穿透後傷害75%',
       fracture_round: '穿透後保留90%傷害（原為75%）· 不可重複',
       bounty_badge: '擊殺金幣機率 +12個百分點（最多100%）· 不可重複',

@@ -170,10 +170,16 @@
     deathBlast(w, e, p) {
       if (rand(w) < .1) explode(w, e.x, e.y, 60, 8 * (1 + effectiveStats(p).explosion / 100), p.uid);
     },
+    harvest_sickle(w, e, p) {
+      if (rand(w) < D.items.harvest_sickle.killMat) bonusMaterial(w, e, p);
+    },
     firecracker(w, e, p) {
       if (rand(w) < .08) explode(w, e.x, e.y, 60, 8, p.uid);
     }
   };
+  function bonusMaterial(w, e, p) {
+    w.drops.push({ id: w.nextId++, x: e.x, y: e.y, gold: 1 });
+  }
   function createCrate(w, x, y, owner = null) {
     if (w.crateCount >= 2) return null;
     const crate = { id: w.nextId++, x, y, owner };
@@ -213,22 +219,36 @@
     e.status[type] = { left: type === 'burn' ? 3 : 2, owner, power, tick: 0 };
     w.fx.push(['st', e.id, type]);
   }
+  // Host-only simulation state; fragments reuse a valid weapon id for SOLO saves.
+  // No new realtime rows/events: existing explosion FX render the cosmetic burst.
+  function fragments(w, x, y, damage, owner, id = 'potato_cannon', exclude = null) {
+    for (let i = 0; i < 3; i++) {
+      const a = Math.PI * 2 * i / 3;
+      w.projectiles.push({ id, x, y, vx: Math.cos(a) * 700, vy: Math.sin(a) * 700,
+        left: 180, power: damage, crit: false, owner, fragment: true,
+        hit: new Set(exclude == null ? [] : [exclude]), bounces: 0, bounce: 0, pierce: 0 });
+    }
+  }
   function explode(w, x, y, radius, damage, owner, friendly = false) {
     w.fx.push(['ex', x | 0, y | 0, radius, owner]);
     for (const e of w.enemies.slice()) {
       if (dist(e, { x, y }) < radius) hurtEnemy(w, e, damage, owner, false, 'explosion', 0);
     }
+    const source = w.players[owner];
+    const shard = source && ruleSum(source, 'fragments');
+    if (shard) fragments(w, x, y, damage * shard, owner);
     if (friendly) for (const p of Object.values(w.players)) {
       if (p.alive && dist(p, { x, y }) < radius) hurtPlayer(w, p, damage, null);
     }
   }
-  function hurtEnemy(w, e, dmg, uid, crit = false, element = '', kb = 0) {
+  function hurtEnemy(w, e, dmg, uid, crit = false, element = '', kb = 0, dot = false) {
     if (!w.enemies.includes(e)) return;
     const protectedBy = w.enemies.some(v => v !== e && v.type === 'shielder' && dist(v, e) <= 140);
-    const actual = dmg * (protectedBy ? .5 : 1);
+    const p = w.players[uid];
+    const chilled = e.status?.chill?.left > 0;
+    const actual = dmg * (protectedBy ? .5 : 1) * (chilled && p ? 1 + ruleSum(p, 'chilledDmg') / 100 : 1);
     e.hp -= actual;
     e.flash = .08;
-    const p = w.players[uid];
     const knock = kb * (1 + (p ? effectiveStats(p).knockback : 0) / 100) * (p?.char === 'muscle' ? 1.5 : 1);
     const resist = ['tank', 'shielder', 'boss_1', 'boss_2'].includes(e.type) ? .25 : 1;
     const angle = p ? Math.atan2(e.y - p.y, e.x - p.x) : 0;
@@ -237,6 +257,8 @@
     w.fx.push(['hit', e.x | 0, e.y | 0, Math.ceil(actual), !!crit, e.id, element]);
     if (p) {
       p.totalDamage += actual;
+      const chill = ruleSum(p, 'chill');
+      if (!dot && chill && rand(w) < Math.min(1, chill) && e.hp > 0) applyStatus(w, e, 'chill', uid);
       if (rand(w) * 100 < effectiveStats(p).lifesteal && p.steal < 10) {
         p.hp = Math.min(p.maxHp, p.hp + 1);
         p.steal++;
@@ -261,7 +283,14 @@
     p.immune = Math.max(p.immune, D.IFRAME || .45);
     w.fx.push(['hurt', p.uid, Math.ceil(amount)]);
     if (source && effectiveStats(p).thorns) hurtEnemy(w, source, effectiveStats(p).thorns, p.uid, false, '', 0);
-    if (p.hp <= 0) p.alive = false;
+    if (p.hp <= 0) {
+      const revive = ruleSum(p, 'revive');
+      if (revive && !p.revived) {
+        p.revived = true; // world recreation resets it each wave; SOLO checkpoint preserves it.
+        p.hp = p.maxHp * revive;
+        p.immune = .8;
+      } else p.alive = false;
+    }
   }
   function gain(w, p, material) {
     p.mats += material.gold ?? 1; // legacy SOLO drops had no currency field
@@ -293,7 +322,7 @@
   function attackPower(w, p, v, tier) {
     const s = effectiveStats(p);
     const kind = ['thrust', 'sweep', 'slam'].includes(v.behavior) ? 'melee'
-      : ['cone', 'chain'].includes(v.behavior) ? 'elemental' : 'ranged';
+      : ['cone', 'chain'].includes(v.behavior) || v.status === 'chill' ? 'elemental' : 'ranged';
     let power = (v.damage * 1.6 ** (tier - 1) + (s[kind] || 0)) * (1 + s.dmg / 100);
     const crit = p.nextCrit || rand(w) * 100 < s.crit + (v.crit || 0);
     p.nextCrit = false;
@@ -305,6 +334,10 @@
   }
   function hitWeapon(w, p, v, e, power, crit) {
     hurtEnemy(w, e, power, p.uid, crit, v.classes.includes('elemental') ? 'elemental' : '', v.kb);
+    if (!w.enemies.includes(e) && v.killMat && rand(w) < Math.min(1, v.killMat * (1 + effectiveStats(p).luck / 100))) {
+      bonusMaterial(w, e, p);
+    }
+    if (w.enemies.includes(e) && v.status === 'chill') applyStatus(w, e, 'chill', p.uid);
     if (w.enemies.includes(e) && v.status === 'burn') {
       applyStatus(w, e, 'burn', p.uid, 2);
     }
@@ -394,8 +427,8 @@
         w.projectiles.push({ id: Object.keys(D.weapons).find(id => D.weapons[id] === v),
           x: origin.x, y: origin.y, vx: Math.cos(a) * 700, vy: Math.sin(a) * 700,
           left: range, power, crit, owner: p.uid, hit: new Set(), bounces: 0,
-          bounce: (v.bounce || 0) + (v.radius ? 0 : ruleSum(p, 'bounce')), // 도탄 코일 +1
-          pierce: v.radius || v.bounce ? 0 : Math.min(2,
+          bounce: (v.bounce || 0) + (v.radius || v.returning ? 0 : ruleSum(p, 'bounce')), // 도탄 코일 +1
+          pierce: v.radius || v.bounce || v.returning ? 0 : Math.min(2,
             ruleSum(p, 'pierce')) }); // 프리즘(아이템)·외눈(캐릭터) 관통 합산, 최대 2
       }
     }
@@ -524,7 +557,7 @@
       p.immune = Math.max(0, p.immune - dt);
       const bonusHp = effectiveStats(p).maxHp - p.maxHp;
       if (bonusHp) { p.maxHp += bonusHp; p.hp = Math.min(p.maxHp, p.hp + Math.max(0, bonusHp)); }
-      p.hp = Math.min(p.maxHp, p.hp + effectiveStats(p).regen * .2 * dt);
+      p.hp = Math.min(p.maxHp, p.hp + Math.max(0, effectiveStats(p).regen) * .2 * dt);
       p.weapons.forEach(([id, tier], i) => {
         const v = D.weapons[id];
         if (!v) return;
@@ -542,7 +575,16 @@
       });
     }
     for (const b of w.projectiles.slice()) {
-      const travel = Math.min(b.left, 700 * dt);
+      const def = D.weapons[b.id];
+      let distance = Infinity;
+      if (b.returning) {
+        const p = w.players[b.owner];
+        if (!p) { w.projectiles.splice(w.projectiles.indexOf(b), 1); continue; } // 주인 퇴장(협동)
+        distance = Math.hypot(p.x - b.x, p.y - b.y);
+        const a = Math.atan2(p.y - b.y, p.x - b.x);
+        b.vx = Math.cos(a) * 700; b.vy = Math.sin(a) * 700;
+      }
+      const travel = Math.min(b.left, distance, 700 * dt);
       const sx = b.x, sy = b.y; // 이동 전 위치 — 선분 충돌(스윕)로 발사 직후·고속 관통 누락 방지
       b.x += b.vx / 700 * travel;
       b.y += b.vy / 700 * travel;
@@ -556,13 +598,15 @@
       for (const e of hits) {
         b.hit.add(e.id);
         const weapon = D.weapons[b.id];
-        if (weapon.radius) {
+        if (weapon.radius && !b.fragment) {
           explode(w, e.x, e.y, weapon.radius * (1 + effectiveStats(w.players[b.owner]).explosion / 100),
             b.power * (1 + effectiveStats(w.players[b.owner]).explosion / 100), b.owner);
+          if (weapon.split) fragments(w, e.x, e.y, b.power * weapon.split, b.owner, b.id, e.id);
           b.left = 0;
           break;
         }
-        hitWeapon(w, w.players[b.owner], weapon, e, b.power, b.crit);
+        hitWeapon(w, w.players[b.owner], b.fragment ? { ...weapon, status: null, kb: 0 } : weapon, e, b.power, b.crit);
+        if (weapon.returning && !b.fragment) continue; // one hit per leg; reset only on turnaround
         if (b.bounces < (b.bounce ?? weapon.bounce ?? 0)) {
           b.bounces++;
           const next = w.enemies.filter((v) => !b.hit.has(v.id) && dist(b, v) < 220).sort((a, c) => dist(a, b) - dist(c, b))[0];
@@ -582,7 +626,11 @@
         b.left = 0;
         break;
       }
-      if (b.left <= 0) w.projectiles.splice(w.projectiles.indexOf(b), 1);
+      if (b.returning && distance <= travel + 1) b.left = 0;
+      if (b.left <= 0 && def.returning && !b.returning && !b.fragment) {
+        b.returning = true; b.hit.clear(); b.left = def.range + 200;
+        b.power *= 1 + ruleSum(w.players[b.owner], 'returnDmg') / 100;
+      } else if (b.left <= 0) w.projectiles.splice(w.projectiles.indexOf(b), 1);
     }
     const grid = /* @__PURE__ */ new Map();
     for (const e of w.enemies) {
@@ -596,12 +644,12 @@
       if (e.status) for (const [name, status] of Object.entries(e.status)) {
         status.left -= dt;
         status.tick += dt;
-        if (status.tick >= 1) {
+        if (name !== 'chill' && status.tick >= 1) {
           status.tick -= 1;
           const owner = w.players[status.owner];
           const extra = owner && name === 'burn' ? effectiveStats(owner).elemental : 0;
           hurtEnemy(w, e, status.power + extra, status.owner, false,
-            name === 'burn' ? 'fire' : 'bleed', 0);
+            name === 'burn' ? 'fire' : 'bleed', 0, true);
         }
         if (status.left <= 0) delete e.status[name];
       }
@@ -657,6 +705,8 @@
         if (e.charge % 6 < 0.6) speed = 450;
       }
       ;
+      // Apply after charge/retreat overrides so chill also slows a charging boss.
+      if (e.status?.chill?.left > 0) speed *= 1 - (e.type.startsWith('boss_') ? .175 : .35);
       e.x = clamp(e.x + dx / d * speed * dt, 0, D.W);
       e.y = clamp(e.y + dy / d * speed * dt, 0, D.H);
       const cx = e.x / 60 | 0, cy = e.y / 60 | 0;
@@ -828,7 +878,7 @@
         : (D.items[id].tier || 1) === tier && !itemCapped(p, id));
       const id = list[Math.floor(rand(w) * list.length)];
       slots.push({ id, weapon, tier, price: Math.ceil(price((weapon ? D.weapons : D.items)[id].price, w.wave)
-        * (weapon ? tier : 1) * (D.chars[p.char]?.priceMult || 1)), locked: false }); // 돌연변이 ×1.5
+        * (weapon ? tier : 1) * rulesOf(p).reduce((mult, d) => mult * (d.priceMult || 1), 1)), locked: false }); // 돌연변이 ×1.5
     }
     return slots;
   }
@@ -841,8 +891,8 @@
       if (k === 'maxHp' && v > 0 && hasRule(p, 'noMaxHp')) continue; // 수갑 이후 최대HP 증가 차단
       p.stats[k] += v;
       if (k === 'maxHp') {
-        p.maxHp += v;
-        p.hp = Math.min(p.maxHp, p.hp + v);
+        p.maxHp = Math.max(1, p.maxHp + v);
+        p.hp = clamp(p.hp + v, 1, p.maxHp);
       }
     }
     return true;
@@ -955,7 +1005,7 @@
     if (!v) return null;
     const s = effectiveStats(p);
     const kind = MELEE.includes(v.behavior) ? 'melee'
-      : ['cone', 'chain'].includes(v.behavior) ? 'elemental' : 'ranged';
+      : ['cone', 'chain'].includes(v.behavior) || v.status === 'chill' ? 'elemental' : 'ranged';
     let power = (v.damage * 1.6 ** (tier - 1) + (s[kind] || 0)) * (1 + s.dmg / 100);
     if (v.classes.includes('elemental')) power *= 1 + (p.char === 'science' ? .25 : 0)
       + (p.items || []).filter(x => x === 'spark_plug').length * .15;
