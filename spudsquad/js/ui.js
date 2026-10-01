@@ -460,8 +460,8 @@ function hud(scene, uid) {
         <h2>🛒 ${esc(I.t('shop'))}</h2><span>❤️ ${shown(player.hp)}/${shown(player.maxHp)}</span>
         <b>💎 ${shown(player.mats)}</b></header>
         <div class="shop-grid">${offers}</div>
-        <div class="shop-toolbar">${button(`${I.t('reroll')} · 💎${P.sim.shopRerollCost(player, session.wave, count)}`, 'roll')}
-          <span class="shop-roster">${roster}</span><span class="shop-timer" aria-live="polite"></span></div>
+        <div class="shop-toolbar">${button(`${I.t('reroll')} · 💎${P.sim.shopRerollCost(player, session.wave, count, cards)}`, 'roll')}
+          <small>${esc(I.t('freeRefill'))}</small><span class="shop-roster">${roster}</span><span class="shop-timer" aria-live="polite"></span></div>
         <div class="shop-divider">${esc(I.t('slots'))} · ${player.weapons.length}/${P.sim.capacity(player)}</div>
         <div class="set-bonuses">${Object.entries(P.sim.sets(player)).map(([key, value]) =>
           `${esc(I.setName(key))} ×${value.count}${value.stage ? ' ✔' : ''}`).join(' · ')}</div>
@@ -498,7 +498,7 @@ function hud(scene, uid) {
         } else if (act.startsWith('slot')) {
           selected = Number(act.slice(4));
         } else if (act === 'roll') {
-          const price = P.sim.shopRerollCost(player, session.wave, count);
+          const price = P.sim.shopRerollCost(player, session.wave, count, cards);
           if (player.mats >= price) {
             player.mats -= price;
             count++;

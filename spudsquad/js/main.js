@@ -380,7 +380,7 @@
     const length = Math.hypot(dx, dy);
     if (length > 1) { dx /= length; dy /= length; }
     // 가속 0.07s·감속 0.09s 관성: 즉각 반응하되 멈춤/출발이 부드럽게. 키보드는 풀속, 패드는 기울기 비례.
-    const speed = 200 * (1 + S.effectiveStats(player).speed / 100);
+    const speed = 240 * (1 + S.effectiveStats(player).speed / 100);
     const tx = dx * speed, ty = dy * speed;
     const k = 1 - Math.exp(-dt / (length > 0 ? .07 : .09));
     player.vx = (player.vx || 0) + (tx - (player.vx || 0)) * k;

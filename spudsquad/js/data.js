@@ -45,7 +45,7 @@
       cool: .25, range: 360, kb: 30, spread: 8, randomSpread: true, price: 32 },
     crossbow: { name: '석궁', muzzle: [13, 0], artAngle: -Math.PI * 3 / 4, classes: ['precise'], behavior: 'projectile', damage: 16,
       cool: 1.4, range: 480, kb: 90, crit: 15, price: 34 },
-    laser: { name: '레이저', muzzle: [13, 0], artAngle: Math.PI * 3 / 4, classes: ['elemental', 'precise'], behavior: 'beam', damage: 18,
+    laser: { name: '레이저', muzzle: [13, 0], artAngle: Math.PI * 3 / 4, classes: ['elemental', 'precise'], behavior: 'beam', damage: 16.2,
       cool: 1.8, range: 520, kb: 0, price: 38 },
     rocket: { name: '로켓', muzzle: [14, 0], artAngle: Math.PI / 2, classes: ['explosive', 'gun'], behavior: 'projectile', damage: 22,
       cool: 2.2, range: 450, kb: 200, radius: 70, price: 45 },

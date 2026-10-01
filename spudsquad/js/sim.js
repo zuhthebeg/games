@@ -34,10 +34,11 @@
     return Math.ceil(base * (1 + 0.1 * (w - 1)));
   }
   function rerollCost(w, count) {
-    return 1 + w + count;
+    return Math.ceil((1 + w + count) * 1.2);
   }
-  function shopRerollCost(p, w, count) {
-    return p.char === 'basic' && count === 0 ? 0 : rerollCost(w, count);
+  function shopRerollCost(p, w, count, offers = []) {
+    const cleared = offers.length === 4 && offers.every(o => o?.sold === true);
+    return cleared || (p.char === 'basic' && count === 0) ? 0 : rerollCost(w, count);
   }
   function damageTaken(raw, armor) {
     return raw * (armor >= 0 ? 1 / (1 + armor / 15) : 1 + Math.abs(armor) / 15);
@@ -247,7 +248,7 @@
       if (p.alive && dist(p, { x, y }) < radius) hurtPlayer(w, p, damage, null);
     }
   }
-  function hurtEnemy(w, e, dmg, uid, crit = false, element = '', kb = 0, dot = false) {
+  function hurtEnemy(w, e, dmg, uid, crit = false, element = '', kb = 0, dot = false, allowSteal = true) {
     if (!w.enemies.includes(e)) return;
     const protectedBy = w.enemies.some(v => v !== e && v.type === 'shielder' && dist(v, e) <= 140);
     const p = w.players[uid];
@@ -265,7 +266,7 @@
       p.totalDamage += actual;
       const chill = ruleSum(p, 'chill');
       if (!dot && chill && rand(w) < Math.min(1, chill) && e.hp > 0) applyStatus(w, e, 'chill', uid);
-      if (rand(w) * 100 < effectiveStats(p).lifesteal && p.steal < 10) {
+      if (allowSteal && rand(w) * 100 < effectiveStats(p).lifesteal && p.steal < 10) {
         p.hp = Math.min(p.maxHp, p.hp + 1);
         p.steal++;
       }
@@ -338,8 +339,8 @@
     if (p.char === 'cyclops') power *= 2.5;
     return { power: Math.max(1, power * (crit ? 2 : 1)), crit };
   }
-  function hitWeapon(w, p, v, e, power, crit) {
-    hurtEnemy(w, e, power, p.uid, crit, v.classes.includes('elemental') ? 'elemental' : '', v.kb);
+  function hitWeapon(w, p, v, e, power, crit, allowSteal = true) {
+    hurtEnemy(w, e, power, p.uid, crit, v.classes.includes('elemental') ? 'elemental' : '', v.kb, false, allowSteal);
     if (!w.enemies.includes(e) && v.killMat && rand(w) < Math.min(1, v.killMat * (1 + effectiveStats(p).luck / 100))) {
       bonusMaterial(w, e, p);
     }
@@ -400,7 +401,7 @@
         }
       }
       w.fx.push(['bm', origin.x | 0, origin.y | 0, (origin.x + Math.cos(angle) * range) | 0,
-        (origin.y + Math.sin(angle) * range) | 0, 'beam']);
+        (origin.y + Math.sin(angle) * range) | 0, 'beam', origin.tier]);
     },
     cone(w, p, v, e, angle, range, power, crit, origin) {
       for (const target of w.enemies.slice()) {
@@ -454,7 +455,18 @@
     let origin = { x: pose.muzzleX, y: pose.muzzleY, back };
     // 투사체: 목표가 총구보다 안쪽이면 무기 몸체에서 발사(적 뒤에서 탄이 생기는 문제 방지)
     if (v.behavior === 'projectile' && e && dist(p, e) <= back + 10) origin = { x: pose.x, y: pose.y, back: 0 };
-    behaviors[v.behavior](w, p, v, e, angle, range, power, crit, origin);
+    origin.tier = tier;
+    if (p.char === 'vampire' && MELEE.includes(v.behavior)) {
+      // 흡혈감자 근접: 몸 중심의 실제 근접 사거리. 범위가 넓어져도 흡혈 판정은 공격당 1회.
+      let first = true;
+      for (const target of w.enemies.slice()) {
+        if (dist(p, target) <= range) {
+          hitWeapon(w, p, v, target, power, crit, first);
+          first = false;
+        }
+      }
+      w.fx.push(['va', p.x | 0, p.y | 0, range | 0]);
+    } else behaviors[v.behavior](w, p, v, e, angle, range, power, crit, origin);
     // reach = 모션이 총구에서 실제로 뻗어나가는 거리. 렌더가 이 값까지 무기를 날려 판정과 맞춘다.
     let reach = 0;
     if (MELEE.includes(v.behavior)) {
@@ -572,7 +584,7 @@
         if (!v) return;
         p.cool[i] = (p.cool[i] || 0) - dt;
         const weapon = weaponPose(p, id, i, 0);
-        const target = nearest(w, weapon, weaponRange(p, v));
+        const target = nearest(w, p.char === 'vampire' && MELEE.includes(v.behavior) ? p : weapon, weaponRange(p, v));
         if (target && p.cool[i] <= 0 && !pinned) {
           const angle = Math.atan2(target.y - weapon.y, target.x - weapon.x);
           weaponHit(w, p, id, tier, target, angle, i);

@@ -122,7 +122,7 @@ test('crate cap, exploder friendly fire and shielder damage reduction', () => {
 });
 test('basic, muscle, science, lucky, gunslinger and bomber special hooks', () => {
   a.equal(S.shopRerollCost(S.createPlayer('x', 'basic'), 4, 0), 0);
-  a.equal(S.shopRerollCost(S.createPlayer('x', 'basic'), 4, 1), 6);
+  a.equal(S.shopRerollCost(S.createPlayer('x', 'basic'), 4, 1), 8);
   const muscle = world('muscle'), m = muscle.players.solo;
   const mTarget = enemy(muscle, m.x + 80, m.y);
   mTarget.hp = mTarget.maxHp = 100;

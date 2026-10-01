@@ -78,7 +78,8 @@
         }
         if (type === 'sw') this.motions.set(`${a}:${b}`, { at: now, angle: d, action: e,
           origin: { x: ev[5], y: ev[6] }, reach: ev[7] || 0 });
-        if (type === 'bm') this.trails.push({ x1: a, y1: b, x2: d, y2: e, kind: ev[5], until: now + 120 });
+        if (type === 'bm') this.trails.push({ x1: a, y1: b, x2: d, y2: e, kind: ev[5], tier: ev[6] || 1, until: now + 120 });
+        if (type === 'va') this.trails.push({ x: a, y: b, r: d, kind: 'ring', color: '#ed7398', until: now + 220 });
         if (type === 'ex') {
           this.trails.push({ x: a, y: b, r: d, kind: 'ring', until: now + 220 });
           if (ev[4] === uid && this.shakeOn) this.shake = Math.max(this.shake, 6);
@@ -99,7 +100,8 @@
       for (const v of this.trails.slice()) {
         c.save();
         c.globalAlpha = Math.max(0, (v.until - now) / 220);
-        c.strokeStyle = v.kind === 'ring' ? '#fff3b2' : '#e8f9ff';
+        c.strokeStyle = v.color || (v.kind === 'ring' ? '#fff3b2' : v.kind === 'beam'
+          ? ['#e8f9ff', '#69b7ff', '#c18aff', '#ffd35a'][Math.max(1, Math.min(4, v.tier)) - 1] : '#e8f9ff');
         c.lineWidth = v.kind === 'ring' ? 4 : 7;
         c.beginPath();
         if (v.kind === 'ring') c.arc(v.x, v.y, v.r * (1 - c.globalAlpha * .4), 0, 7);
