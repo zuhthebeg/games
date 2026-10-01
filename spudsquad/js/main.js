@@ -112,6 +112,7 @@
     session.local({ type: 'PICK', payload: { uid, char } });
   }
   function beginSolo() {
+    clearRevive(true);
     uid = 'solo';
     lobby = null;
     try { S.soloSave.clear(localStorage); } catch {} // storage disabled
@@ -128,6 +129,7 @@
     U.choose(selected);
   }
   function connect() {
+    clearRevive(true);
     uid = getUid();
     mode = 'lobby';
     lobby = new MultiplayerLobby({
@@ -166,6 +168,7 @@
     }, 50);
   }
   function onStarted(data) {
+    clearRevive(true);
     const host = roster.hostUser || data.players?.[0] || uid;
     session = new N.Session({
       uid, host, sendAction: action => lobby._ws.sendAction(action),
@@ -200,6 +203,7 @@
     session?.roster(data);
     if (!session?.wave) return;
     if (oldHost && oldHost !== data.hostUser && uid !== oldHost) {
+      clearRevive(true);
       mode = 'end';
       U.show('<h2>호스트가 나갔습니다</h2><button class="btn" id="returnLobby">대기실로</button>');
       document.getElementById('returnLobby').onclick = () => {
@@ -210,6 +214,7 @@
   }
   function handleAction(action) {
     if (action.type === 'WAVE_START') {
+      clearRevive();
       clearShopTimer();
       mode = 'wave';
       cratesRemaining = shopRolls = 0;
@@ -223,6 +228,7 @@
       checkpoint(true);
     }
     if (action.type === 'WAVE_END') {
+      clearRevive();
       mode = 'shop';
       // 무한 모드에서 20웨이브(보스) 돌파 = 해당 캐릭터 클리어로 기록
       recordClear(action.payload.w, !!session?.endless && action.payload.w === 20);
@@ -280,6 +286,7 @@
     } } });
   }
   function finish(data) {
+    clearRevive();
     if (mode === 'end') return;
     mode = 'end';
     if (solo()) { try { S.soloSave.clear(localStorage); } catch {} }
@@ -304,6 +311,7 @@
     } catch (error) { console.warn('rank pending', error); }
   }
   function reset() {
+    clearRevive(true);
     session = null;
     lobby = null;
     mode = 'title';
@@ -435,6 +443,7 @@
       updateRevive(view);
       checkpoint();
     } else {
+      updateRevive(null);
       // 상점·레벨업·상자 화면에서도 상단 HUD의 재화/HP를 로컬 플레이어와 동기화(전투 중에만 갱신돼 구매 후 숫자가 어긋났음)
       if (session && (mode === 'shop' || mode === 'ready')) {
         const p = session.world?.players[uid] || localPlayer;
@@ -450,10 +459,25 @@
   }
   // 흔들어 부활(모바일 멀티): 사망 중 폰을 S.REVIVE_SHAKES회 흔들면 호스트에 부활 요청(웨이브당 1회).
   // iOS는 DeviceMotionEvent.requestPermission()을 사용자 탭 안에서 불러야 해서 버튼을 둔다.
-  const shake = { count: 0, last: 0, on: false, usedWave: -1, wave: -1 };
+  const shake = { count: 0, last: 0, on: false, usedWave: -1, wave: -1, epoch: 0 };
   const canShake = () => typeof DeviceMotionEvent !== 'undefined' &&
     matchMedia('(pointer: coarse)').matches;
+  function shakeEligible(view = scene()) {
+    if (mode !== 'wave' || session?.phase !== 'wave' || document.hidden ||
+        session.world?.ended || session.world?.reported || !canShake() || solo()) return false;
+    const players = view?.pl || (view?.players ? Object.values(view.players).map(p => [p.uid, 0, 0, 0, 0, p.alive]) : []);
+    const me = players.find(r => r[0] === uid);
+    return players.length > 1 && !!me && !me[5];
+  }
+  function clearRevive(resetUsage = false) {
+    stopShake();
+    const btn = document.getElementById('reviveBtn');
+    if (btn) btn.hidden = true;
+    shake.count = shake.last = 0;
+    if (resetUsage) shake.usedWave = shake.wave = -1;
+  }
   function onMotion(e) {
+    if (!shake.on || !shakeEligible() || shake.usedWave === session.wave) return;
     const a = e.acceleration?.x != null ? e.acceleration : null;
     const g = e.accelerationIncludingGravity;
     const mag = a ? Math.hypot(a.x, a.y, a.z) : g?.x != null ? Math.abs(Math.hypot(g.x, g.y, g.z) - 9.81) : 0;
@@ -470,13 +494,18 @@
     reviveLabel();
   }
   function startShake() {
-    if (shake.on) return;
-    const go = () => { shake.on = true; window.addEventListener('devicemotion', onMotion); reviveLabel(); };
+    if (shake.on || !shakeEligible() || shake.usedWave === session.wave) return;
+    const owner = session, wave = session.wave, epoch = ++shake.epoch;
+    const go = () => {
+      if (session !== owner || session.wave !== wave || shake.epoch !== epoch || !shakeEligible()) return;
+      shake.on = true; window.addEventListener('devicemotion', onMotion); reviveLabel();
+    };
     if (typeof DeviceMotionEvent.requestPermission === 'function') {
       DeviceMotionEvent.requestPermission().then(r => { if (r === 'granted') go(); }).catch(() => {});
     } else go();
   }
   function stopShake() {
+    shake.epoch++;
     shake.on = false;
     window.removeEventListener('devicemotion', onMotion);
   }
@@ -489,14 +518,9 @@
   function updateRevive(view) {
     const btn = document.getElementById('reviveBtn');
     if (!btn) return;
-    const players = view?.pl || (view?.players ? Object.values(view.players).map(p => [p.uid, 0, 0, 0, 0, p.alive]) : []);
-    const me = players.find(r => r[0] === uid);
-    const dead = mode === 'wave' && !solo() && players.length > 1 && me && !me[5] && canShake();
+    const dead = shakeEligible(view);
     if (session && session.wave !== shake.wave) { shake.wave = session.wave; shake.count = 0; }
-    if (!dead) {
-      if (!btn.hidden) { btn.hidden = true; stopShake(); shake.count = 0; }
-      return;
-    }
+    if (!dead) { clearRevive(); return; }
     if (btn.hidden) {
       btn.hidden = false;
       // 안드로이드 등 권한이 필요 없는 브라우저는 바로 감지 시작, iOS는 버튼 탭 대기
@@ -607,9 +631,9 @@
   window.addEventListener('orientationchange', remeasure);
   document.addEventListener('fullscreenchange', remeasure);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) checkpoint(true);
+    if (document.hidden) { checkpoint(true); clearRevive(); }
   });
-  window.addEventListener('pagehide', () => { checkpoint(true); P.collection?.flush?.(); });
+  window.addEventListener('pagehide', () => { checkpoint(true); clearRevive(); P.collection?.flush?.(); });
   // UI buttons are handled synchronously on #panel. Observe the completed action
   // without rebinding its handlers or re-running any simulation callback.
   let beforeShopOffers;

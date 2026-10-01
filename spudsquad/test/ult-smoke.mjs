@@ -132,7 +132,7 @@ try {
     return { ok, duplicate, requests: packets.length, guestWorld: g.world, hp: row[3], maxHp: row[4],
       used: row[11], bossHp: e.hp, buttonDisabled: document.getElementById('ultBtn').disabled };
   })()`);
-  assert.deepEqual(results.localTransport, { ok: true, duplicate: false, requests: 1, guestWorld: null, hp: 15, maxHp: 15, used: true, bossHp: 40, buttonDisabled: true });
+  assert.deepEqual(results.localTransport, { ok: true, duplicate: false, requests: 1, guestWorld: null, hp: 17, maxHp: 17, used: true, bossHp: 40, buttonDisabled: true });
   assert.deepEqual(errors, []); results.runtimeExceptions = errors;
   console.log(JSON.stringify({ passed: true, ...results }));
 } finally {

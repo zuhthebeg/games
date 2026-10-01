@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
   const stats = {
-    maxHp: 10, regen: 0, lifesteal: 0, dmg: 0, melee: 0, ranged: 0,
+    maxHp: 12, regen: 0, lifesteal: 0, dmg: 0, melee: 0, ranged: 0,
     atkSpd: 0, crit: 0, range: 0, armor: 0, dodge: 0, speed: 0,
     luck: 0, harvest: 0, pickup: 0, elemental: 0, explosion: 0,
     thorns: 0, projectiles: 0, knockback: 0

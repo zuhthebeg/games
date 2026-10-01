@@ -28,7 +28,7 @@ function harness(storage, search = '') {
   } };
   const sfx = Object.assign(() => {}, { settings: () => ({ musicOn: true, volume: .3 }),
     music() {}, mute: () => false, toggleMusic: () => false, volume() {} });
-  const window = { addEventListener(type, cb) { (events['window:' + type] ||= []).push(cb); } };
+  const window = { removeEventListener() {}, addEventListener(type, cb) { (events['window:' + type] ||= []).push(cb); } };
   let frames = 0;
   const timers = [];
   const context = { window, document, localStorage: storage, location: { search },

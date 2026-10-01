@@ -96,7 +96,7 @@ test('character rules: two pistols, no melee shop, berserker, vampire, cyclops, 
   cyclops.mats = 100;
   a.equal(S.buy(cyclops, { weapon: true, id: 'pistol', tier: 1, price: 1 }), false);
   const ghost = world('ghost'), g = ghost.players.solo;
-  a.equal(g.maxHp, 5);
+  a.equal(g.maxHp, 6);
   ghost.rng = () => 0;
   S.hurtPlayer(ghost, g, 100, null);
   a.equal(g.immune, .5);

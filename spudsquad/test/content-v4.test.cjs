@@ -124,7 +124,7 @@ test('phoenix revives at 50% HP, immune 0.8s, only once per wave; normal co-op d
 });
 
 test('phoenix max HP penalty is safely clamped even for starter spud', () => {
-  const p=S.createPlayer('solo'); give(p,'phoenix_feather'); a.equal(p.maxHp,1); a.equal(p.hp,1);
+  const p=S.createPlayer('solo','basic',{stats:{...D.stats,maxHp:10}}); give(p,'phoenix_feather'); a.equal(p.maxHp,1); a.equal(p.hp,1);
 });
 
 test('potato crown raises item and weapon shop prices 20%, multiplies mutant cost, unique', () => {

@@ -57,7 +57,7 @@ test('bounty badge adds bounded kill currency chance, not XP or a new drop; uniq
   const w = world(20, 'basic', () => .4), p = w.players.solo;
   a.equal(S.grantItem(p, 'bounty_badge'), true);
   a.equal(S.grantItem(p, 'bounty_badge'), false);
-  a.equal(p.stats.maxHp, 7);
+  a.equal(p.stats.maxHp, D.stats.maxHp - 3);
   const e = S.spawn(w, 'blob', 100, 100); e.hp = 0; S.kill(w, e, p.uid);
   a.equal(w.drops.length, 2);
   a.ok(w.drops.every(d => d.gold === 1)); // wave 20 base .36, +.12 => .48

@@ -2,16 +2,19 @@
   'use strict';
   const P = root.SPUD = root.SPUD || {};
   const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
-  let context = null, master = null, sfxBus = null, musicBus = null;
+  let context = null, master = null, sfxBus = null, weaponBus = null, musicBus = null;
   let volume = read('spud_volume', .35);
   let muted = read('spud_mute', false);
   let musicOn = read('spud_music', true);
   let picks = 0, lastPick = 0;
   const history = new Map();
   const limits = { shot: 12, hit: 16 };
-  const AUDIO_V = '20260927a';
+  const AUDIO_V = '20261001b';
+  const shotGap = { pistol: .10, smg: .09, shotgun: .18, bow: .14 };
+  const lastShot = new Map(), voices = [];
+  const firearms = new Set(['pistol', 'smg', 'shotgun']);
 
-  // 샘플 뱅크(로컬 AI 생성: MOSS-SoundEffect 효과음, ACE-Step 배경음). 없으면 합성음 폴백.
+  // 샘플 뱅크(MOSS-SoundEffect/ACE-Step; 총·석궁은 짧은 로컬 DSP 합성으로 교체). 없으면 합성음 폴백.
   const SAMPLE_FILES = {
     pistol: 'sfx_pistol', smg: 'sfx_smg', shotgun: 'sfx_shotgun', laser: 'sfx_laser', rocket: 'sfx_rocket',
     boom: 'sfx_explosion', swing: 'sfx_swing', slam: 'sfx_slam', punch: 'sfx_punch', kill: 'sfx_squish',
@@ -25,7 +28,7 @@
     stick: 'swing', hammer: 'slam'
   };
   // 샘플별 음량 보정(생성물 레벨 편차)
-  const GAIN = { smg: .6, flame: .55, pistol: .75, swing: .8, kill: .7, boom: .9, zap: .7 };
+  const GAIN = { smg: .32, flame: .55, pistol: .5, shotgun: .55, bow: .65, swing: .8, kill: .7, boom: .9, zap: .7 };
   const buffers = {};
   let loading = null;
 
@@ -49,6 +52,10 @@
       master = context.createGain();
       master.connect(context.destination);
       sfxBus = context.createGain(); sfxBus.connect(master);
+      // Limit only the new gun/string mix; unrelated SFX and BGM retain their path/gain.
+      weaponBus = context.createDynamicsCompressor();
+      weaponBus.threshold.value = -6; weaponBus.knee.value = 6; weaponBus.ratio.value = 12;
+      weaponBus.attack.value = .003; weaponBus.release.value = .08; weaponBus.connect(sfxBus);
       musicBus = context.createGain(); musicBus.connect(master);
       applyGains();
       load();
@@ -68,12 +75,25 @@
   function playSample(key, pitch, gain = 1) {
     const buf = buffers[key];
     if (!buf) return false;
+    // Short firearm voices are bounded separately; never steal a BGM voice.
+    const group = firearms.has(key) ? voices.filter(v => firearms.has(v.key)) : voices.filter(v => v.key === key);
+    const cap = firearms.has(key) ? 3 : key === 'bow' ? 2 : 4;
+    const retire = voice => {
+      voices.splice(voices.indexOf(voice), 1); voice.src.stop();
+    };
+    if (group.length >= cap) retire(group[0]);
+    if (voices.length >= 16) retire(voices[0]);
     const src = context.createBufferSource();
     src.buffer = buf;
     src.playbackRate.value = pitch;
     const g = context.createGain();
     g.gain.value = gain * (GAIN[key] || 1);
-    src.connect(g); g.connect(sfxBus);
+    src.connect(g); g.connect(firearms.has(key) || key === 'bow' ? weaponBus : sfxBus);
+    const voice = { key, src }; voices.push(voice);
+    src.onended = () => {
+      const i = voices.indexOf(voice); if (i >= 0) voices.splice(i, 1);
+      src.disconnect(); g.disconnect();
+    };
     src.start();
     return true;
   }
@@ -81,7 +101,7 @@
   function synth(name, pitchMul) {
     const now = context.currentTime;
     const config = {
-      shot: [440, .07, 'noise'], laser: [960, .19, 'sine'], boom: [110, .28, 'noise'],
+      shot: [440, .07, 'noise'], softshot: [1100, .065, 'noise'], bow: [420, .22, 'triangle'], laser: [960, .19, 'sine'], boom: [110, .28, 'noise'],
       swing: [380, .13, 'noise'], hit: [590, .055, 'square'], crit: [920, .11, 'triangle'],
       kill: [390, .12, 'sine'], pick: [660, .10, 'sine'], hurt: [170, .18, 'sawtooth'],
       lvl: [900, .30, 'triangle'], buy: [600, .16, 'sine'], wave: [520, .35, 'triangle']
@@ -90,9 +110,9 @@
     const [hz, length, wave] = config;
     const amp = context.createGain();
     amp.gain.setValueAtTime(.0001, now);
-    amp.gain.exponentialRampToValueAtTime(.18, now + .008);
+    amp.gain.exponentialRampToValueAtTime(name === 'softshot' || name === 'bow' ? .10 : .18, now + .008);
     amp.gain.exponentialRampToValueAtTime(.0001, now + length);
-    amp.connect(sfxBus);
+    amp.connect(name === 'softshot' || name === 'bow' ? weaponBus : sfxBus);
     let source;
     if (wave === 'noise') {
       const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * length), context.sampleRate);
@@ -101,7 +121,7 @@
       source = context.createBufferSource();
       source.buffer = buffer;
       const filter = context.createBiquadFilter();
-      filter.type = name === 'boom' ? 'lowpass' : 'bandpass';
+      filter.type = name === 'boom' || name === 'softshot' ? 'lowpass' : 'bandpass';
       filter.frequency.value = hz * pitchMul;
       source.connect(filter);
       filter.connect(amp);
@@ -120,9 +140,12 @@
   function sfx(name, options = {}) {
     if (!context || muted || volume <= 0) return;
     const now = context.currentTime;
+    const weaponKey = name.startsWith('w:') ? WEAPON_SOUND[name.slice(2)] : null;
+    if (weaponKey && now - (lastShot.get(weaponKey) ?? -Infinity) < (shotGap[weaponKey] || 0)) return;
     const limitKey = name.startsWith('w:') ? 'shot' : name;
     const times = (history.get(limitKey) || []).filter(t => now - t < 1);
     if (times.length >= (limits[limitKey] || 24)) return;
+    if (weaponKey) lastShot.set(weaponKey, now);
     times.push(now);
     history.set(limitKey, times);
     if (name === 'pick') {
@@ -133,7 +156,7 @@
     if (name.startsWith('w:')) {
       const key = WEAPON_SOUND[name.slice(2)];
       if (key && playSample(key, pitch, .8)) return;
-      return synth(key === 'swing' || key === 'punch' || key === 'slam' ? 'swing' : key === 'laser' || key === 'zap' ? 'laser' : 'shot', pitch);
+      return synth(firearms.has(key) ? 'softshot' : key === 'bow' ? 'bow' : key === 'swing' || key === 'punch' || key === 'slam' ? 'swing' : key === 'laser' || key === 'zap' ? 'laser' : 'shot', pitch);
     }
     const sampleFor = { boom: 'boom', kill: 'kill', hurt: 'hurt', crate: 'crate' }[name];
     if (sampleFor && playSample(sampleFor, pitch, name === 'kill' ? .55 : .9)) return;

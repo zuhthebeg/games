@@ -76,10 +76,13 @@ test('net: guest rv packet revives on host', () => {
   const host = new N.Session({ uid: 'a', host: 'a' });
   host.world = S.createWorld({ players: { a: { char: 'basic' }, b: { char: 'basic' } }, rng: () => .5 });
   host.world.players.b.alive = false;
-  host.rt('b', { t: 'rv' });
+  host.players = { a: {}, b: {} }; host.wave = 1; host.phase = 'wave';
+  host.rt('b', { t: 'rv', w: 1 });
   a.equal(host.world.players.b.alive, true);
   const sent = [];
   const guest = new N.Session({ uid: 'b', host: 'a', sendRt: d => sent.push(d) });
+  guest.wave = 1; guest.phase = 'wave'; host.world.players.b.alive = false;
+  guest.buffer.push(N.encode(host.world), 1000);
   guest.requestRevive();
-  a.deepEqual(sent, [{ t: 'rv' }]);
+  a.deepEqual(sent, [{ t: 'rv', w: 1 }]);
 });

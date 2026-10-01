@@ -148,8 +148,11 @@
       return true;
     }
     requestRevive() {
+      if (this.phase !== 'wave') return false;
       if (this.isHost) return !!this.world && S.shakeRevive(this.world, this.uid);
-      this.sendRt({ t: 'rv' });
+      const row = this.buffer.a.at(-1)?.s.pl.find(p => p[0] === this.uid);
+      if (!row || row[5]) return false;
+      this.sendRt({ t: 'rv', w: this.wave });
       return true;
     }
     roster(data) {
@@ -182,7 +185,9 @@
       } else if (data.t === 'p' && this.isHost && this.world) {
         S.applyInput(this.world, from, data.x, data.y, data.f);
       } else if (data.t === 'rv' && this.isHost && this.world) {
-        S.shakeRevive(this.world, from); // 게스트의 흔들어 부활 요청(호스트가 조건 검증)
+        if (this.phase !== 'wave' || !Object.hasOwn(this.players, from) ||
+            Object.keys(data).length !== 2 || !Number.isInteger(data.w) || data.w !== this.wave) return false;
+        return S.shakeRevive(this.world, from); // 게스트의 흔들어 부활 요청(호스트가 조건 검증)
       } else if (data.t === 's' && !this.isHost && from === this.host &&
           data.w === this.wave) {
         const previous = this.buffer.a.at(-1)?.s;

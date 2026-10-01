@@ -114,7 +114,7 @@ function runMain(search) {
     setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; };
   const sfx = Object.assign(() => {}, { settings: () => ({ musicOn: true, volume: .3 }),
     music() {}, mute: () => false, toggleMusic: () => false, volume() {} });
-  const window = { addEventListener(type, cb) { (events['window:' + type] ||= []).push(cb); } };
+  const window = { removeEventListener() {}, addEventListener(type, cb) { (events['window:' + type] ||= []).push(cb); } };
   const collection = { ...C, add() { calls.collect++; return true; }, load: () => Promise.resolve(), flush() {} };
   const context = { window, document, localStorage: mem(), sessionStorage: mem(), location: { search },
     URLSearchParams, performance: { now: () => 0 }, Date, Math, console, Promise,

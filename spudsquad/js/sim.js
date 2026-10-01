@@ -236,10 +236,10 @@
         hit: new Set(exclude == null ? [] : [exclude]), bounces: 0, bounce: 0, pierce: 0 });
     }
   }
-  function explode(w, x, y, radius, damage, owner, friendly = false) {
+  function explode(w, x, y, radius, damage, owner, friendly = false, kb = 0) {
     w.fx.push(['ex', x | 0, y | 0, radius, owner]);
     for (const e of w.enemies.slice()) {
-      if (dist(e, { x, y }) < radius) hurtEnemy(w, e, damage, owner, false, 'explosion', 0);
+      if (dist(e, { x, y }) < radius) hurtEnemy(w, e, damage, owner, false, 'explosion', kb);
     }
     const source = w.players[owner];
     const shard = source && ruleSum(source, 'fragments');
@@ -259,8 +259,11 @@
     const knock = kb * (1 + (p ? effectiveStats(p).knockback : 0) / 100) * (p?.char === 'muscle' ? 1.5 : 1);
     const resist = ['tank', 'shielder', 'boss_1', 'boss_2'].includes(e.type) ? .25 : 1;
     const angle = p ? Math.atan2(e.y - p.y, e.x - p.x) : 0;
-    e.kx = Math.cos(angle) * knock * resist;
-    e.ky = Math.sin(angle) * knock * resist;
+    // Non-impulse hits (DoT, fragments, passives) must not cancel a live impulse.
+    if (knock > 0) {
+      e.kx = Math.cos(angle) * knock * resist;
+      e.ky = Math.sin(angle) * knock * resist;
+    }
     w.fx.push(['hit', e.x | 0, e.y | 0, Math.ceil(actual), !!crit, e.id, element]);
     if (p) {
       p.totalDamage += actual;
@@ -654,7 +657,7 @@
         const weapon = D.weapons[b.id];
         if (weapon.radius && !b.fragment) {
           explode(w, e.x, e.y, weapon.radius * (1 + effectiveStats(w.players[b.owner]).explosion / 100),
-            b.power * (1 + effectiveStats(w.players[b.owner]).explosion / 100), b.owner);
+            b.power * (1 + effectiveStats(w.players[b.owner]).explosion / 100), b.owner, false, weapon.kb);
           if (weapon.split) fragments(w, e.x, e.y, b.power * weapon.split, b.owner, b.id, e.id);
           b.left = 0;
           break;
@@ -1052,7 +1055,7 @@
   const REVIVE_SHAKES = 20;
   function shakeRevive(w, uid) {
     const p = w?.players[uid];
-    if (!p || p.alive || w.ended || p.shakeRevived || Object.keys(w.players).length < 2) return false;
+    if (!p || p.alive || w.ended || w.reported || canEnd(w) || p.shakeRevived || Object.keys(w.players).length < 2) return false;
     p.alive = true;
     p.shakeRevived = true;
     p.hp = Math.max(1, p.maxHp * .5);
