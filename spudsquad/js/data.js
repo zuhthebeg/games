@@ -163,6 +163,8 @@
     splitter: { hp: 16, speed: 70, dmg: 1, first: 5, mats: 3, size: 48 },
     tank: { hp: 40, speed: 50, dmg: 3, first: 6, mats: 6, size: 64 },
     shielder: { hp: 30, speed: 60, dmg: 1, first: 9, mats: 5, size: 56 },
+    // 고추 총잡이: 11웨이브부터. 거리 320 유지, 2.8초마다 3발 부채꼴(빠른 탄). 후반일수록 비중↑(sim spawnPack).
+    gunner: { hp: 18, speed: 70, dmg: 1.5, first: 11, mats: 4, size: 50 },
     // 특수 적: looter=도망가다 12초 뒤 탈출(잡으면 재료+상자, 일반 스폰 풀 제외), egg=6초 뒤 돌격병 2마리 부화,
     // buffer=거리 유지하며 반경 160 적의 속도 ×1.3·접촉 피해 ×1.25.
     looter: { hp: 20, speed: 150, dmg: 0, first: 3, mats: 8, size: 48, special: true },
@@ -179,7 +181,10 @@
   };
   // 난이도·경제 곡선(밸런스 튜닝은 여기만). spawn=초당 마리 수, hp/dmgPerWave=웨이브당 증가율.
   const curve = { spawnBase: 0.9, spawnPerWave: 0.42, hpPerWave: 0.42, dmgPerWave: 0.14,
-    goldStartWave: 5, goldDropPerWave: 0.04, goldFloor: 0.35 };
+    goldStartWave: 5, goldDropPerWave: 0.04, goldFloor: 0.35,
+    // 멀티 인원 보정(n=인원): 마리 수 ×(1+mpCount·(n-1)), HP ×(1+mpHp·(n-1)), 피해 ×(1+mpDmg·(n-1)).
+    // 4인 렉 대응(2026-10-01): 마리 수는 줄이고(0.6→0.3) 개체를 강하게. 동시 생존 상한 솔로 220 / 멀티 150.
+    mpCount: 0.3, mpHp: 0.6, mpDmg: 0.2, capSolo: 220, capMulti: 150 };
   const IFRAME = 0.45;
   // 근접 무기는 사거리 스탯의 절반만 받는다(브로테이토식). 판정 거리 = 모션이 실제로 뻗는 거리.
   const MELEE_RANGE_SCALE = .5;

@@ -13,3 +13,4 @@ require('./enemies-v3.test.cjs');
 require('./items-v3.test.cjs');
 require('./endless.test.cjs');
 require('./content-v4.test.cjs');
+require('./v5-multi.test.cjs');

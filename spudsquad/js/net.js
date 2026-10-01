@@ -125,6 +125,11 @@
       this.local({ type: 'WAVE_START', payload, __snapshot: payload });
     }
     next() { this.start(this.wave + 1); }
+    requestRevive() {
+      if (this.isHost) return !!this.world && S.shakeRevive(this.world, this.uid);
+      this.sendRt({ t: 'rv' });
+      return true;
+    }
     roster(data) {
       this.players = Object.fromEntries((data.players || []).map(p => [
         typeof p === 'string' ? p : p.user || p.uid, p
@@ -144,6 +149,8 @@
     rt(from, data, now = Date.now()) {
       if (data.t === 'p' && this.isHost && this.world) {
         S.applyInput(this.world, from, data.x, data.y, data.f);
+      } else if (data.t === 'rv' && this.isHost && this.world) {
+        S.shakeRevive(this.world, from); // 게스트의 흔들어 부활 요청(호스트가 조건 검증)
       } else if (data.t === 's' && !this.isHost) {
         this.buffer.push(data, now);
         this.onSnapshot(data);

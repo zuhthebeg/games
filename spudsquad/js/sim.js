@@ -17,8 +17,14 @@
     const e = D.enemies[type];
     const k = D.curve || {};
     // 21웨이브 이후(무한 모드)는 HP ×1.1·피해 ×1.06 복리로 더 가파르게 → 언젠가는 끝난다.
-    return { hp: e.hp * (1 + (k.hpPerWave ?? 0.35) * (w - 1)) * (1 + 0.25 * (n - 1)) * 1.1 ** Math.max(0, w - 20),
-      dmg: e.dmg * (1 + (k.dmgPerWave ?? 0.12) * (w - 1)) * 1.06 ** Math.max(0, w - 20), speed: e.speed };
+    return { hp: e.hp * (1 + (k.hpPerWave ?? 0.35) * (w - 1)) * (1 + (k.mpHp ?? 0.25) * (n - 1)) * 1.1 ** Math.max(0, w - 20),
+      dmg: e.dmg * (1 + (k.dmgPerWave ?? 0.12) * (w - 1)) * (1 + (k.mpDmg ?? 0) * (n - 1)) * 1.06 ** Math.max(0, w - 20),
+      speed: e.speed };
+  }
+  // 동시 생존 적 상한: 멀티는 렌더·스냅샷 부하 때문에 낮게(4인 렉 대응).
+  function enemyCap(w) {
+    const k = D.curve || {};
+    return Object.keys(w.players).length > 1 ? (k.capMulti ?? 220) : (k.capSolo ?? 220);
   }
   // 돌연변이감자 등 캐릭터 xpNeed 배율(없으면 1)
   function needXp(lvl, char) {
@@ -147,7 +153,7 @@
     }
   }
   function spawn(w, type, x, y) {
-    if (w.enemies.length >= 220) return null;
+    if (w.enemies.length >= enemyCap(w)) return null;
     let n = Object.keys(w.players).length || 1;
     const s = enemyStats(type, w.wave, n);
     s.hp *= w.enemyHp ?? 1;
@@ -457,6 +463,7 @@
     }
     w.fx.push(['sh', p.uid, id, tier, origin.x | 0, origin.y | 0, angle, slot, reach | 0]);
   }
+  const RANGED = new Set(['spitter', 'gunner']);
   // 무리 스폰: 한 지점 주변에 count마리(브로테이토식 그룹). 개체 수는 step의 초당 예산이 결정.
   function spawnPack(w, count) {
     const pool = Object.keys(D.enemies).filter((id) => !id.startsWith("boss") && D.enemies[id].first <= w.wave && id !== "elite" && !D.enemies[id].special);
@@ -466,9 +473,11 @@
       cy = 80 + rand(w) * (D.H - 160);
       ctries++;
     } while (ctries < 20 && Object.values(w.players).some((p) => dist(p, { x: cx, y: cy }) < 260));
-    for (let i = 0; i < count && w.enemies.length < 220; i++) {
+    for (let i = 0; i < count && w.enemies.length < enemyCap(w); i++) {
       // 신규 적은 첫 등장 웨이브에 드물게(1/3 가중) → 2웨이브에 걸쳐 정상 비중. 벽 스파이크 방지.
-      const weights = pool.map((id) => Math.min(1, (w.wave - D.enemies[id].first + 1) / 3));
+      // 원거리(침뱉이·총잡이)는 12웨이브부터 웨이브당 +15% 비중 → 후반일수록 원거리 압박.
+      const weights = pool.map((id) => Math.min(1, (w.wave - D.enemies[id].first + 1) / 3) *
+        (RANGED.has(id) ? 1 + Math.max(0, w.wave - 11) * .15 : 1));
       let r = rand(w) * weights.reduce((sum, v) => sum + v, 0), type = pool[0];
       for (let j = 0; j < pool.length; j++) { r -= weights[j]; if (r <= 0) { type = pool[j]; break; } }
       let x, y, tries = 0;
@@ -505,7 +514,7 @@
       // 초당 스폰 예산(웨이브·인원 비례)을 누적해 무리 단위로 소비.
       const k = D.curve || {};
       const n = Object.keys(w.players).length || 1;
-      const rate = ((k.spawnBase ?? 0.9) + (k.spawnPerWave ?? 0.33) * (w.wave - 1)) * (1 + 0.6 * (n - 1)) *
+      const rate = ((k.spawnBase ?? 0.9) + (k.spawnPerWave ?? 0.33) * (w.wave - 1)) * (1 + (k.mpCount ?? 0.6) * (n - 1)) *
         (w.enemyMult ?? 1);
       w.spawnClock += rate * dt;
       const pack = Math.min(w.packNext || 1, 1 + Math.floor(w.wave / 3));
@@ -685,6 +694,7 @@
       const buffed = e.type !== 'buffer' && buffers.some(b => dist(b, e) <= 160);
       if (buffed) speed *= 1.3;
       if (e.type === "spitter" && d < 250) speed = -speed;
+      if (e.type === "gunner" && d < 320) speed = -speed;
       if (e.type === 'shielder' && d < 300) speed = -speed;
       if (e.type === 'exploder' && d < 60 && e.fuse == null) e.fuse = .6;
       if (e.fuse != null) {
@@ -725,13 +735,14 @@
           hurtPlayer(w, target, e.dmg * (buffed ? 1.25 : 1), e);
         }
       }
-      const interval = e.type === "spitter" ? 2.5 : e.type === "elite" ? 3 : e.type.startsWith("boss") ? 4 : 0;
+      const interval = e.type === "spitter" ? 2.5 : e.type === "gunner" ? 2.8 : e.type === "elite" ? 3 : e.type.startsWith("boss") ? 4 : 0;
       if (interval && e.clock >= interval) {
         e.clock = 0;
-        const count = e.type === "elite" ? 8 : e.type.startsWith("boss") ? 12 : 1;
+        const count = e.type === "elite" ? 8 : e.type.startsWith("boss") ? 12 : e.type === "gunner" ? 3 : 1;
         for (let i = 0; i < count; i++) {
-          const a = count === 1 ? Math.atan2(dy, dx) : Math.PI * 2 * i / count;
-          const sp = e.type === "spitter" ? 260 : 260;
+          const a = e.type === "gunner" ? Math.atan2(dy, dx) + (i - 1) * .22 // 3발 부채꼴(±12.6°)
+            : count === 1 ? Math.atan2(dy, dx) : Math.PI * 2 * i / count;
+          const sp = e.type === "gunner" ? 340 : 260;
           w.bullets.push({ x: e.x, y: e.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg: e.dmg, life: 4 });
           w.fx.push(["eb", e.x | 0, e.y | 0, a, sp]);
         }
@@ -990,7 +1001,21 @@
     }
     return { key, save, load, clear };
   })();
+  // 흔들어 부활(멀티 전용): 죽은 플레이어가 폰을 20회 흔들면 호스트가 이 함수로 되살린다.
+  // 웨이브당 1회, 최대 HP 50%, 2초 무적. 솔로는 사망 즉시 판이 끝나므로 해당 없음.
+  const REVIVE_SHAKES = 20;
+  function shakeRevive(w, uid) {
+    const p = w?.players[uid];
+    if (!p || p.alive || w.ended || p.shakeRevived || Object.keys(w.players).length < 2) return false;
+    p.alive = true;
+    p.shakeRevived = true;
+    p.hp = Math.max(1, p.maxHp * .5);
+    p.immune = 2;
+    w.fx.push(['rv', uid]);
+    return true;
+  }
   const api = {
+    shakeRevive, REVIVE_SHAKES, spawnPack,
     rollGrade, rollUpgrades, rollCrateItem, grantItem, sets, effectiveStats, capacity,
     shopRerollCost, soloSave,
     behaviors, weaponPose, weaponRange, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,

@@ -433,6 +433,7 @@
     ko: {
       title: '감자특공대', subtitle: '함께 버텨라, 끝까지!', solo: '혼자 하기', multi: '같이 하기',
       landscape: '🔄 가로모드', rotateHint: '기기를 가로로 돌려주세요',
+      reviveShake: '📳 폰을 흔들어 부활!', reviveTap: '📳 눌러서 흔들기 부활 켜기', reviveUsed: '이번 웨이브 부활은 썼어',
       choose: '특공대를 골라!', ready: '준비 완료', wait: '동료를 기다리는 중…', balanced: '균형형',
       shop: '전투 준비', buy: '구매', reroll: '다시 뽑기', stats: '내 스탯', merge: '합치기', sell: '판매',
       items: '획득한 아이템', locked: '잠금', wave: '웨이브', win: '감자특공대 승리!', lose: '전멸했다!',
@@ -442,6 +443,7 @@
     en: {
       title: 'Spud Squad', subtitle: 'Stick together. Survive the horde.', solo: 'Play Solo', multi: 'Play Co-op',
       landscape: '🔄 Landscape mode', rotateHint: 'Turn your device sideways',
+      reviveShake: '📳 Shake your phone to revive!', reviveTap: '📳 Tap to enable shake revive', reviveUsed: 'Revive already used this wave',
       choose: 'Choose your spud!', ready: 'Ready', wait: 'Waiting for your squad…', balanced: 'Balanced',
       shop: 'Supply Shop', buy: 'Buy', reroll: 'Reroll', stats: 'My Stats', merge: 'Merge', sell: 'Sell',
       items: 'Collected Items', locked: 'Lock', wave: 'Wave', win: 'Spud Squad Wins!', lose: 'Squad Defeated',
@@ -452,6 +454,7 @@
     'zh-TW': {
       title: '馬鈴薯特攻隊', subtitle: '團結到底，撐過每一波！', solo: '單人遊玩', multi: '多人合作',
       landscape: '🔄 橫向模式', rotateHint: '請將裝置橫向旋轉',
+      reviveShake: '📳 搖晃手機復活！', reviveTap: '📳 點擊開啟搖晃復活', reviveUsed: '本波已使用過復活',
       choose: '選擇你的馬鈴薯！', ready: '準備完成', wait: '等待隊友…', balanced: '均衡型',
       shop: '補給商店', buy: '購買', reroll: '重抽', stats: '我的屬性', merge: '合併', sell: '出售',
       items: '已獲得道具', locked: '鎖定', wave: '波次', win: '馬鈴薯特攻隊勝利！', lose: '全軍覆沒',
@@ -582,20 +585,20 @@
     ko: { blob: ['말랑이', '천천히 다가오는 기본 적'], bug: ['벌레', '빠르게 달려드는 약한 적'],
       spitter: ['침뱉이', '거리를 두고 침을 쏜다'], charger: ['돌진이', '주기적으로 빠르게 돌진한다'],
       exploder: ['폭탄이', '가까이 오면 자폭한다'], splitter: ['분열이', '쓰러지면 말랑이 둘로 갈라진다'],
-      tank: ['탱크', '단단하고 넉백에 강하다'], shielder: ['방패병', '주변 적이 받는 피해를 절반으로'], looter: ['도둑 두더지', '도망다니다 12초 뒤 사라진다 · 잡으면 재료 8개와 상자'], egg: ['괴물 알', '6초 안에 못 깨면 돌격병 2마리가 부화한다'], buffer: ['응원단장', '거리를 두고 주변 적의 속도·피해를 올린다(빨간 테두리)'],
-      elite: ['엘리트', '8방향 탄막을 뿌리는 강적'], boss_1: ['중간 보스', '10웨이브 보스 · 탄막과 부하 소환'],
+      tank: ['탱크', '단단하고 넉백에 강하다'], shielder: ['방패병', '주변 적이 받는 피해를 절반으로'], gunner: ['고추 총잡이', '11웨이브부터 · 거리를 두고 3발 부채꼴 사격'], looter: ['도둑 두더지', '도망다니다 12초 뒤 사라진다 · 잡으면 재료 8개와 상자'], egg: ['괴물 알', '6초 안에 못 깨면 돌격병 2마리가 부화한다'], buffer: ['응원단장', '거리를 두고 주변 적의 속도·피해를 올린다(빨간 테두리)'],
+      elite: ['엘리트', '8방향 탄막을 뿌리는 강적'], boss_1: ['슬라임 킹', '10웨이브 보스 · 탄막과 부하 소환'],
       boss_2: ['최종 보스', '20웨이브 보스 · 돌진·탄막·자폭병 소환'] },
     en: { blob: ['Blob', 'Slow, basic chaser'], bug: ['Bug', 'Fast but fragile'],
       spitter: ['Spitter', 'Keeps distance and spits'], charger: ['Charger', 'Dashes in bursts'],
       exploder: ['Exploder', 'Self-destructs up close'], splitter: ['Splitter', 'Splits into two blobs'],
-      tank: ['Tank', 'Tough and hard to knock back'], shielder: ['Shielder', 'Halves damage to nearby enemies'], looter: ['Looter Mole', 'Flees and escapes after 12s · drops 8 materials and a crate'], egg: ['Monster Egg', 'Hatches two chargers unless broken within 6s'], buffer: ['Cheerleader', 'Keeps away and boosts nearby enemies\' speed and damage (red ring)'],
-      elite: ['Elite', 'Fires 8-way bullet rings'], boss_1: ['Mid Boss', 'Wave 10 boss · bullets and minions'],
+      tank: ['Tank', 'Tough and hard to knock back'], shielder: ['Shielder', 'Halves damage to nearby enemies'], gunner: ['Chili Gunner', 'From wave 11 · keeps distance and fires 3-shot spreads'], looter: ['Looter Mole', 'Flees and escapes after 12s · drops 8 materials and a crate'], egg: ['Monster Egg', 'Hatches two chargers unless broken within 6s'], buffer: ['Cheerleader', 'Keeps away and boosts nearby enemies\' speed and damage (red ring)'],
+      elite: ['Elite', 'Fires 8-way bullet rings'], boss_1: ['Slime King', 'Wave 10 boss · bullets and minions'],
       boss_2: ['Final Boss', 'Wave 20 boss · dashes, bullets, exploders'] },
     'zh-TW': { blob: ['軟泥怪', '緩慢靠近的基本敵人'], bug: ['甲蟲', '衝得快但很脆弱'],
       spitter: ['吐液怪', '保持距離吐出酸液'], charger: ['衝鋒怪', '週期性高速衝撞'],
       exploder: ['自爆怪', '靠近後自爆'], splitter: ['分裂怪', '倒下後分裂成兩隻軟泥怪'],
-      tank: ['坦克', '堅硬且不易被擊退'], shielder: ['盾衛', '周圍敵人受到的傷害減半'], looter: ['小偷鼴鼠', '到處逃跑，12秒後消失 · 擊倒掉落8個素材和寶箱'], egg: ['怪物蛋', '6秒內未打破會孵出2隻衝鋒者'], buffer: ['啦啦隊長', '保持距離並強化周圍敵人的速度與傷害（紅圈）'],
-      elite: ['精英', '發射八方向彈幕的強敵'], boss_1: ['中頭目', '第10波頭目 · 彈幕與召喚'],
+      tank: ['坦克', '堅硬且不易被擊退'], shielder: ['盾衛', '周圍敵人受到的傷害減半'], gunner: ['辣椒槍手', '第11波起 · 保持距離發射三連扇形彈'], looter: ['小偷鼴鼠', '到處逃跑，12秒後消失 · 擊倒掉落8個素材和寶箱'], egg: ['怪物蛋', '6秒內未打破會孵出2隻衝鋒者'], buffer: ['啦啦隊長', '保持距離並強化周圍敵人的速度與傷害（紅圈）'],
+      elite: ['精英', '發射八方向彈幕的強敵'], boss_1: ['史萊姆王', '第10波頭目 · 彈幕與召喚'],
       boss_2: ['最終頭目', '第20波頭目 · 衝撞、彈幕、召喚自爆怪'] }
   };
   Object.assign(P.i18n, {

@@ -414,6 +414,7 @@
       else { const input = move(dt); session.update(dt, input); }
       const view = scene();
       if (view) { U.hud(view, uid); renderer.draw(view, uid, now); }
+      updateRevive(view);
       checkpoint();
     } else {
       // 상점·레벨업·상자 화면에서도 상단 HUD의 재화/HP를 로컬 플레이어와 동기화(전투 중에만 갱신돼 구매 후 숫자가 어긋났음)
@@ -429,6 +430,65 @@
       if (renderer) renderer.draw(null, uid, now);
     }
   }
+  // 흔들어 부활(모바일 멀티): 사망 중 폰을 S.REVIVE_SHAKES회 흔들면 호스트에 부활 요청(웨이브당 1회).
+  // iOS는 DeviceMotionEvent.requestPermission()을 사용자 탭 안에서 불러야 해서 버튼을 둔다.
+  const shake = { count: 0, last: 0, on: false, usedWave: -1, wave: -1 };
+  const canShake = () => typeof DeviceMotionEvent !== 'undefined' &&
+    matchMedia('(pointer: coarse)').matches;
+  function onMotion(e) {
+    const a = e.acceleration?.x != null ? e.acceleration : null;
+    const g = e.accelerationIncludingGravity;
+    const mag = a ? Math.hypot(a.x, a.y, a.z) : g?.x != null ? Math.abs(Math.hypot(g.x, g.y, g.z) - 9.81) : 0;
+    const now = performance.now();
+    if (mag < 13 || now - shake.last < 220) return; // 한 번 흔들 때 여러 번 세지 않게 220ms 간격
+    shake.last = now;
+    shake.count++;
+    navigator.vibrate?.(25);
+    if (shake.count >= S.REVIVE_SHAKES) {
+      shake.usedWave = session?.wave;
+      stopShake();
+      session?.requestRevive();
+    }
+    reviveLabel();
+  }
+  function startShake() {
+    if (shake.on) return;
+    const go = () => { shake.on = true; window.addEventListener('devicemotion', onMotion); reviveLabel(); };
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission().then(r => { if (r === 'granted') go(); }).catch(() => {});
+    } else go();
+  }
+  function stopShake() {
+    shake.on = false;
+    window.removeEventListener('devicemotion', onMotion);
+  }
+  function reviveLabel() {
+    const btn = document.getElementById('reviveBtn');
+    if (!btn) return;
+    btn.textContent = shake.usedWave === session?.wave ? U.t('reviveUsed')
+      : shake.on ? `${U.t('reviveShake')} ${shake.count}/${S.REVIVE_SHAKES}` : U.t('reviveTap');
+  }
+  function updateRevive(view) {
+    const btn = document.getElementById('reviveBtn');
+    if (!btn) return;
+    const players = view?.pl || (view?.players ? Object.values(view.players).map(p => [p.uid, 0, 0, 0, 0, p.alive]) : []);
+    const me = players.find(r => r[0] === uid);
+    const dead = mode === 'wave' && !solo() && players.length > 1 && me && !me[5] && canShake();
+    if (session && session.wave !== shake.wave) { shake.wave = session.wave; shake.count = 0; }
+    if (!dead) {
+      if (!btn.hidden) { btn.hidden = true; stopShake(); shake.count = 0; }
+      return;
+    }
+    if (btn.hidden) {
+      btn.hidden = false;
+      // 안드로이드 등 권한이 필요 없는 브라우저는 바로 감지 시작, iOS는 버튼 탭 대기
+      if (shake.usedWave !== session.wave && typeof DeviceMotionEvent.requestPermission !== 'function') startShake();
+      reviveLabel();
+    }
+  }
+  document.addEventListener('click', e => {
+    if (e.target?.id === 'reviveBtn' && shake.usedWave !== session?.wave) startShake();
+  });
   let debugBtn = null;
   document.addEventListener('DOMContentLoaded', () => {
     walletPromise = typeof SharedWallet !== 'undefined'

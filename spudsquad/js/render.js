@@ -16,14 +16,14 @@
     const image = new Image();
     image.onload = () => { image.ok = true; };
     image.onerror = () => { image.ok = false; };
-    image.src = 'assets/' + (D.enemies[id] && !id.startsWith('boss_') ? 'enemy_' + id : id) + '.webp?v=20260930v4';
+    image.src = 'assets/' + (D.enemies[id] && !id.startsWith('boss_') ? 'enemy_' + id : id) + '.webp?v=20261001v5';
     images[id] = image;
   }
   const weaponArt = (id, tier) => tier >= 2 && images[`weapon_${id}_t${tier}`]?.ok ? `weapon_${id}_t${tier}` : 'weapon_' + id;
   const colors = {
     blob: '#9ed45d', bug: '#f7bb44', spitter: '#c08ad8', charger: '#ee8072',
     splitter: '#84bbdd', tank: '#6d9f69', elite: '#d76b9e',
-    boss_1: '#ac5c7c', boss_2: '#713f70'
+    gunner: '#e0483a', boss_1: '#ac5c7c', boss_2: '#713f70'
   };
   // 무기 등급 팔레트: T1 기본 · T2 파랑 · T3 보라 · T4(만렙) 무지개/금
   const TIER = {
@@ -69,6 +69,7 @@
       this.chilled = new Map();
       this.marks = [];
       this.flashes = new Map();
+      this.revives = new Map(); // uid → 부활 연출 종료 시각
       this.previousDrops = new Map();
       this.shake = 0;
       this.last = 0;
@@ -154,6 +155,10 @@
         }
         if (type === 'hurt') {
           this.flashes.set(event[1], performance.now() + 100);
+        }
+        if (type === 'rv') {
+          this.revives.set(event[1], performance.now() + 1600);
+          P.sfx?.('lvl');
 
         }
 
@@ -248,11 +253,16 @@
         const x = Array.isArray(drop) ? drop[1] : drop.x;
         const y = Array.isArray(drop) ? drop[2] : drop.y;
         currentDrops.set(id, { x, y });
-        c.fillStyle = '#6bbf46';
+        // 바닥 재화: 파란 보석(2026-10-01, 초록 바닥과 구분되게). 테두리로 밝은 바닥에서도 보이게.
         c.save();
         c.translate(x, y);
         c.rotate(Math.PI / 4);
-        c.fillRect(-5, -5, 10, 10);
+        c.fillStyle = '#1f5fd6';
+        c.fillRect(-6, -6, 12, 12);
+        c.fillStyle = '#4da3ff';
+        c.fillRect(-4.5, -4.5, 9, 9);
+        c.fillStyle = '#c9e6ff';
+        c.fillRect(-4.5, -4.5, 3, 3);
         c.restore();
       }
       if (focus) {
@@ -459,6 +469,13 @@
           c.globalAlpha = .9; c.font = '20px sans-serif'; c.textAlign = 'center';
           c.fillText('👻', player[1], player[2] - 42);
         }
+        const revive = this.revives.get(uid);
+        if (revive && revive > now) { // 흔들어 부활: 퍼지는 금빛 고리
+          const k = 1 - (revive - now) / 1600;
+          c.globalAlpha = 1 - k;
+          c.strokeStyle = '#ffd84a'; c.lineWidth = 5;
+          c.beginPath(); c.arc(player[1], player[2], 30 + k * 60, 0, 7); c.stroke();
+        } else if (revive) this.revives.delete(uid);
         c.restore();
       }
       for (const mark of this.marks.slice()) {
@@ -526,7 +543,7 @@
           const move = Math.min(1, dt / Math.max(.01, particle.life + dt));
           particle.x += (particle.tx - particle.x) * move;
           particle.y += (particle.ty - particle.y) * move;
-          c.fillStyle = '#9bf46f';
+          c.fillStyle = '#6fb8ff';
           c.fillRect(particle.x - 4, particle.y - 4, 8, 8);
         } else {
           particle.y += (particle.vy || -40) * dt;
