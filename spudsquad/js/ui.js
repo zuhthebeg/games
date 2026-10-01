@@ -540,8 +540,21 @@ function hud(scene, uid) {
       ${button(I.t('back'), 'back')}`);
     panel.onclick = event => { if (event.target.closest('[data-act]')) cb(); };
   }
+  function ultimate(player, mode, blocked = false) {
+    const btn = document.getElementById('ultBtn');
+    if (!btn) return;
+    const u = D.ults[player?.char], lang = I.language;
+    const label = I.t?.('ultLabel') || (lang === 'ko' ? '필살기' : lang === 'zh-TW' ? '必殺技' : 'Ultimate');
+    const name = u ? (lang === 'ko' ? u.name : lang === 'zh-TW' ? u.zh : u.en) : label;
+    const text = `⚡ ${name} · U${player?.ultUsed ? ' · ' + (I.t?.('ultUsed') || 'Used') : ''}`;
+    if (btn.textContent !== text) btn.textContent = text;
+    btn.title = u ? `${name}: ${u.text?.[lang] || u.effect}${u.damage ? ' · DMG ' + u.damage : ''} · R ${u.radius}px · ${I.t?.('ultRule') || '1 / WAVE'}` : label;
+    btn.setAttribute('aria-label', btn.title);
+    btn.hidden = false;
+    btn.disabled = !u || mode !== 'wave' || blocked || !player?.alive || !(player.hp > 0) || !!player.ultUsed;
+  }
   P.ui = {
-    endlessMode, title, choose, hud, crates, upgrades, shop, result, hide, show,
+    ultimate, endlessMode, title, choose, hud, crates, upgrades, shop, result, hide, show,
     stats, debugPanel, collection, closeSheet,
     sheetOpen: () => !!sheetEl && !sheetEl.hidden,
     t: key => I.t(key),

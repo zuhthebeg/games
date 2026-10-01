@@ -112,7 +112,7 @@
     const p = { uid, char, x: 800, y: 600, f: 1, stats: s, maxHp,
       hp: maxHp, alive: true, weapons: weapons.map(v => [...v]), items: [...(saved.items || [])],
       mats: saved.mats || 0, xp: saved.xp || 0, lvl: saved.lvl || 1, levelUps: 0,
-      kills: 0, totalDamage: 0, cool: [], hurt: 0, steal: 0, immune: 0, nextCrit: false,
+      ultUsed: false, kills: 0, totalDamage: 0, cool: [], hurt: 0, steal: 0, immune: 0, nextCrit: false,
       pending: {}, active: { ...(saved.pending || {}) }, waveT: 0 };
     if (char === 'vampire' || hasRule(p, 'startHp')) p.hp = Math.ceil(p.maxHp * .5);
     if (p.active.hp1) p.hp = 1;
@@ -272,6 +272,39 @@
       }
     }
     kill(w, e, uid);
+  }
+  function useUlt(w, uid, wave) {
+    const p = w?.players[uid], u = D.ults[p?.char];
+    if (!p || !u || !p.alive || !(p.hp > 0) || p.ultUsed ||
+        wave !== w.wave || w.ended || w.reported || canEnd(w)) return false;
+    // Consume before any kill hooks: duplicate commands cannot re-enter the effect.
+    p.ultUsed = true;
+    const startFx = w.fx.length;
+    let targets = w.enemies.filter(e => e.hp > 0 && dist(p, e) <= u.radius);
+    if (u.limit) targets = targets.sort((a, b) => dist(p, a) - dist(p, b)).slice(0, u.limit);
+    const damage = p.char === 'berserker' ? 30 + 60 * (1 - p.hp / p.maxHp)
+      : p.char === 'thorn' ? 30 + 3 * effectiveStats(p).thorns : u.damage;
+    for (const e of targets) {
+      if (p.char === 'vampire') {
+        // Exact current-HP reduction: no armor, shield, lifesteal, or max-HP rewrite.
+        const amount = e.hp / 2;
+        e.hp -= amount; e.flash = .08; p.totalDamage += amount;
+      } else {
+        hurtEnemy(w, e, damage, uid, false, '', u.kb || 0, true, false);
+        if (u.chill && e.hp > 0 && w.enemies.includes(e)) applyStatus(w, e, 'chill', uid);
+      }
+    }
+    if (p.char === 'vampire') p.hp = p.maxHp;
+    if (u.heal) p.hp = Math.min(p.maxHp, p.hp + p.maxHp * u.heal);
+    if (u.immune) p.immune = Math.max(p.immune, u.immune);
+    if (u.mats) p.mats += u.mats;
+    if (p.char === 'saver') p.mats += Math.min(40, 10 + Math.floor(p.mats * .1));
+    if (u.resetCool) p.cool = p.cool.map(() => 0);
+    // Keep gameplay hooks, crate/level signals; collapse cosmetic burst fanout to one pulse.
+    const effects = w.fx.splice(startFx).filter(e => !['hit', 'die', 'st', 'ex', 'bm'].includes(e[0]));
+    w.fx.push(...effects);
+    w.fx.push(['ult', p.x | 0, p.y | 0, u.radius, p.char]);
+    return true;
   }
   function hurtPlayer(w, p, damage, source) {
     if (!p.alive || p.immune > 0) return;
@@ -978,7 +1011,7 @@
             now - s.at > maxAge || !['wave', 'shop'].includes(s.mode) ||
             !w || !Number.isInteger(w.wave) || w.wave < 1 || w.wave > (w.endless ? 999 : 20) ||
             Object.keys(w.players || {}).length !== 1 || p?.uid !== 'solo' ||
-            !D.chars[p.char] || !validNumber(p.hp) || !validNumber(p.x) || !validNumber(p.y) ||
+            !D.chars[p.char] || (p.ultUsed != null && typeof p.ultUsed !== 'boolean') || !validNumber(p.hp) || !validNumber(p.x) || !validNumber(p.y) ||
             !validNumber(w.tm) || !validNumber(w.tick) || !Number.isInteger(w.nextId) ||
             !Array.isArray(p.weapons) || !p.weapons.every(([id, tier]) =>
               D.weapons[id] && Number.isInteger(tier) && tier >= 1 && tier <= 4) ||
@@ -1003,6 +1036,7 @@
                 (o && (o.weapon ? D.weapons[o.id] : D.items[o.id]) &&
                 Number.isFinite(o.price) && Number.isInteger(o.tier)))))) throw Error('invalid save');
         w.rng = Math.random;
+        p.ultUsed ??= false; // checkpoints made before ultimates were introduced
         w.fx = [];
         for (const b of w.projectiles) {
           b.hit = new Set(b.hit);
@@ -1027,7 +1061,7 @@
     return true;
   }
   const api = {
-    shakeRevive, REVIVE_SHAKES, spawnPack,
+    useUlt, shakeRevive, REVIVE_SHAKES, spawnPack,
     rollGrade, rollUpgrades, rollCrateItem, grantItem, sets, effectiveStats, capacity,
     shopRerollCost, soloSave,
     behaviors, weaponPose, weaponRange, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,

@@ -79,6 +79,8 @@
         if (type === 'sw') this.motions.set(`${a}:${b}`, { at: now, angle: d, action: e,
           origin: { x: ev[5], y: ev[6] }, reach: ev[7] || 0 });
         if (type === 'bm') this.trails.push({ x1: a, y1: b, x2: d, y2: e, kind: ev[5], tier: ev[6] || 1, until: now + 120 });
+        if (type === 'ult') this.trails.push({ x: a, y: b, r: d, kind: 'ring',
+          color: e === 'vampire' ? '#ed7398' : '#a8edff', until: now + 220 });
         if (type === 'va') this.trails.push({ x: a, y: b, r: d, kind: 'ring', color: '#ed7398', until: now + 220 });
         if (type === 'ex') {
           this.trails.push({ x: a, y: b, r: d, kind: 'ring', until: now + 220 });

@@ -76,6 +76,7 @@
     cratesRemaining = saved.cratesRemaining;
     shopRolls = saved.shopRolls;
     mode = saved.mode;
+    session.phase = mode === 'wave' ? 'wave' : 'shop';
     if (mode === 'shop') {
       const player = session.world.players.solo;
       U.crates(session, player, cratesRemaining,
@@ -393,6 +394,22 @@
       return { dx, dy, x: player.x, y: player.y, f: player.f, move() {} };
     }
   }
+  function ultPlayer() {
+    if (session?.isHost) return session.world?.players[uid];
+    // Discrete authority state from newest snapshot, never interpolated/predicted.
+    const snap = session?.buffer.a.at(-1)?.s;
+    const row = snap?.pl.find(p => p[0] === uid);
+    if (!row || !localPlayer) return null;
+    // Do not overwrite shop-owned upgrades with the previous combat snapshot.
+    return { ...localPlayer, hp: row[3], maxHp: row[4], alive: row[5], ultUsed: !!row[11] };
+  }
+  function useUlt() {
+    const p = ultPlayer();
+    if (mode !== 'wave' || U.sheetOpen?.() || !p?.alive || !(p.hp > 0) || p.ultUsed || session?.ultPending) return false;
+    const used = session?.requestUlt();
+    if (used) checkpoint(true);
+    return !!used;
+  }
   function frame(now) {
     requestAnimationFrame(frame);
     const dt = Math.min(.1, (now - last) / 1000 || 0);
@@ -401,6 +418,7 @@
     P.sfx?.music?.(mode === 'wave' ? ((session?.wave % 10 === 0) ? 'boss' : 'battle') : 'shop');
     // 솔로에서 스탯 시트/디버그 패널이 열려 있으면 시뮬레이션 정지(그리기만)
     const hold = solo() && U.sheetOpen?.();
+    U.ultimate?.(ultPlayer(), mode, !!U.sheetOpen?.() || !!session?.world?.ended || !!session?.ultPending);
     if (debugBtn) debugBtn.hidden = !(debugOn && solo());
     if (session && mode === 'wave' && hold) {
       const view = scene();
@@ -528,6 +546,10 @@
     if (new URLSearchParams(location.search).has('room')) connect();
   });
   window.addEventListener('keydown', event => {
+    if (event.key.toLowerCase() === 'u' && !event.repeat &&
+        !/^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName || '')) {
+      if (useUlt()) event.preventDefault();
+    }
     keys.add(event.key.length === 1 ? event.key.toLowerCase() : event.key);
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key)) {
       event.preventDefault();
@@ -536,6 +558,8 @@
   window.addEventListener('keyup', event => {
     keys.delete(event.key.length === 1 ? event.key.toLowerCase() : event.key);
   });
+  const ultBtn = document.getElementById('ultBtn');
+  if (ultBtn) ultBtn.onclick = () => useUlt();
   const canvas = document.getElementById('canvas');
   // 가상 패드: 필드 아무 곳이나 누르면 그 자리에 조이스틱이 뜬다(플로팅). 손 떼면 좌하단에 옅은 힌트로 복귀.
   // 아날로그 입력(데드존 0.12, 반경 64px), 멀티터치 중 첫 손가락만 추적.
@@ -611,7 +635,7 @@
     get solo() { return !!solo(); },
     get debug() { return debugOn; },
     get debugView() { return debugOn ? debugView : null; },
-    debugAct,
+    useUlt, debugAct,
     resize() { renderer?.resize(); },
     refresh() { if (mode === 'title') reset(); }
   };

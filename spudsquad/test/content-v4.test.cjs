@@ -162,5 +162,5 @@ test('v4 in-flight return/fragment and phoenix-used state survive solo checkpoin
   a.equal(loaded.world.projectiles[0].returning,true); a.ok(loaded.world.projectiles[0].hit instanceof Set);
   for(let i=0;i<220;i++) S.spawn(w,'blob',i*7,10); w.fx=[];
   const snap=N.encode(w); a.ok(Buffer.byteLength(JSON.stringify(snap))<8192);
-  a.deepEqual(Object.keys(snap),['t','k','tm','e','d','cr','pl','fx']);
+  a.deepEqual(Object.keys(snap),['t','w','k','tm','e','d','cr','pl','fx']);
 });

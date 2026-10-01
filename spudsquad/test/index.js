@@ -15,3 +15,5 @@ require('./endless.test.cjs');
 require('./content-v4.test.cjs');
 require('./v5-multi.test.cjs');
 require('./balance-v6.test.cjs');
+
+require('./ult.test.cjs');

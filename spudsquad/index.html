@@ -256,6 +256,12 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 #notice { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); font: 20px Jua;
   color: #fff; text-shadow: 2px 2px #4c2d20; pointer-events: none; }
 /* ---- 스탯 시트 / 디버그 패널 (#sheet 레이어) ---- */
+#ultBtn { position: fixed; right: max(14px, env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 41; min-height: 48px; max-width: 40vw; padding: 6px 12px; border: 3px solid #69432a;
+  border-radius: 16px; background: #ffe98a; color: #503324; font: 16px Jua, sans-serif; touch-action: manipulation; }
+#field:has(#reviveBtn:not([hidden])) #ultBtn { bottom: calc(78px + env(safe-area-inset-bottom)); }
+#ultBtn:disabled { opacity: .35; cursor: default; }
+#ultBtn:focus-visible { outline: 3px solid #2585cf; outline-offset: 3px; }
 #reviveBtn { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%);
   z-index: 40; min-height: 48px; padding: 0 22px; border: 3px solid #69432a; border-radius: 24px;
   background: #ffd84a; color: #3b2414; font: 700 17px/1 Jua, system-ui, sans-serif; box-shadow: 0 6px 0 #69432a;
@@ -551,6 +557,7 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </div>
 <div id="field">
 <div id="pad" aria-hidden="true"><div id="padKnob"></div></div>
+<button type="button" id="ultBtn" aria-keyshortcuts="U" disabled>⚡ 필살기 · U</button>
 <button type="button" id="reviveBtn" hidden></button>
 <canvas id="canvas">
 </canvas>
@@ -578,23 +585,23 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </script>
 <script src="/lib/game-rankings.js?v=20260927">
 </script>
-<script src="js/data.js?v=20261001balance1">
+<script src="js/data.js?v=20261001ult1">
 </script>
-<script src="js/sim.js?v=20261001balance1">
+<script src="js/sim.js?v=20261001ult1">
 </script>
-<script src="js/net.js?v=20261001v6">
+<script src="js/net.js?v=20261001ult1">
 </script>
 <script src="js/sfx.js?v=20261001v6"></script>
-<script src="js/fx.js?v=20261001balance1"></script>
+<script src="js/fx.js?v=20261001ult1"></script>
 <script src="js/render.js?v=20261001v6">
 </script>
-<script src="js/i18n.js?v=20261001balance1">
+<script src="js/i18n.js?v=20261001ult1">
 </script>
 <script src="js/collection.js?v=20261001v6">
 </script>
-<script src="js/ui.js?v=20261001balance1">
+<script src="js/ui.js?v=20261001ult1">
 </script>
-<script src="js/main.js?v=20261001balance1">
+<script src="js/main.js?v=20261001ult1">
 </script>
 </body>
 </html>
