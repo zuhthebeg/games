@@ -16,7 +16,7 @@
     const image = new Image();
     image.onload = () => { image.ok = true; };
     image.onerror = () => { image.ok = false; };
-    image.src = 'assets/' + (D.enemies[id] && !id.startsWith('boss_') ? 'enemy_' + id : id) + '.webp?v=20261001v5';
+    image.src = 'assets/' + (D.enemies[id] && !id.startsWith('boss_') ? 'enemy_' + id : id) + '.webp?v=20261001v6';
     images[id] = image;
   }
   const weaponArt = (id, tier) => tier >= 2 && images[`weapon_${id}_t${tier}`]?.ok ? `weapon_${id}_t${tier}` : 'weapon_' + id;

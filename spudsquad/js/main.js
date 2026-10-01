@@ -559,7 +559,15 @@
     if (!stick || event.pointerId !== stick.id) return;
     let ox = event.clientX - stick.x, oy = event.clientY - stick.y;
     const d = Math.hypot(ox, oy);
-    if (d > PAD_R) { ox *= PAD_R / d; oy *= PAD_R / d; }
+    if (d > PAD_R) {
+      // 따라오는 패드: 손가락이 반경 밖으로 나가면 중심을 끌고 온다. 고정 중심이면 왼쪽으로 멀리 민 뒤
+      // 오른쪽으로 가려면 중심까지 되돌아와야 해서 '다시 터치해야 하는' 느낌이 났다(2026-10-01 버그).
+      ox *= PAD_R / d; oy *= PAD_R / d;
+      stick.x = event.clientX - ox; stick.y = event.clientY - oy;
+      const box = canvas.getBoundingClientRect();
+      pad.style.left = (stick.x - box.left) + 'px';
+      pad.style.top = (stick.y - box.top) + 'px';
+    }
     const m = Math.min(1, d / PAD_R);
     const a = m < .12 ? 0 : (m - .12) / .88; // 데드존 후 재정규화
     stick.dx = d ? ox / Math.min(d, PAD_R) * a : 0;
