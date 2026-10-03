@@ -19,6 +19,7 @@ try{
  await p.evaluate(()=>{const ses=SPUD.main.session;ses.players.ally={user:'ally'};ses.world.players.ally=SPUD.sim.createPlayer('ally');ses.world.players.ally.immune=1e9;});
  await p.locator('#statsBtn').click();const before=await p.evaluate(()=>SPUD.main.session.world.tick);await p.locator('[data-act="item:whistle"]').click();
  assert.ok(await p.locator('.item-detail .negative').count());assert.ok(await p.locator('.item-detail .positive').count());
+ await p.waitForFunction(before=>SPUD.main.session.world.tick>before,before,{timeout:3000}); // wait for a real simulation tick, not immediate click timing
  const tickAfter=await p.evaluate(()=>SPUD.main.session.world.tick);assert.ok(tickAfter>before,'host dialog does not pause simulation');
  await p.keyboard.press('Escape');assert.equal(await p.evaluate(()=>document.activeElement.id),'statsBtn');
  // Finish an actual wave, then drive shop handlers.
