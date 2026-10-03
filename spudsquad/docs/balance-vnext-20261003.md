@@ -37,7 +37,7 @@ Browser fixtures block non-GET HTTP writes and run debug-only; no screenshots, a
 
 Full same-policy20seed×15character growth comparison and idle-CPU paired replay results follow below. The historical kiting bot uses200px/s movement (not a human or real-device proxy); `growth-vnext.mjs` uses explicit legal merge/recycle purchases and actual boss floor, optional same-policy ultimate usage. Do not label its old basic9–14/all±40% heuristic as a user-approved acceptance requirement or a measured human success rate.
 
-`mature-vnext.cjs` isolates one boss (summons disabled equally,120s cap), six T6 ranged weapons,20 seeds per solo/4p/W18/20/21/25/30. Existing baseline4pW30 ordinary20/20 kills vs new20/20 deaths; extreme1000HP/200regen can still kill17/20 or censor3/20 atW30. Additional final-code W35/W40/W50 stress: extreme build censors20/20 atW35, W40 dies18/20 solo and15/20 4p, W50 dies20/20 both. Censor means still fighting at120s, **not immortality**, death or victory. No arbitrary regen nerf or forced-death rule is introduced. Fresh isolated-wave stress is not a complete natural endless run.
+`mature-vnext.cjs` initially isolates fixed `boss_2` stress at every tested wave (even where the natural boss is `boss_1`; summons disabled equally,120s cap), six T6 ranged weapons,20 seeds per solo/4p/W18/20/21/25/30. Existing baseline4pW30 ordinary20/20 kills vs new20/20 deaths; extreme1000HP/200regen can still kill17/20 or censor3/20 atW30. Additional final-code W35/W40/W50 stress: extreme build censors20/20 atW35, W40 dies18/20 solo and15/20 4p, W50 dies20/20 both. Censor means still fighting at120s, **not immortality**, death or victory. No arbitrary regen nerf or forced-death rule is introduced. Fresh isolated-wave stress is not a complete natural endless run.
 
 Real4-phone FPS, visual screenshot review, physical fullscreen/rotation acceptance and human balance acceptance are unverified. No60FPS or all-builds-dead-by-W30 promise.
 
@@ -79,3 +79,11 @@ Final frame p95 is modestly higher, not a performance improvement/zero-cost or60
 ### Seeded rarity observed frequencies
 
 W10/luck0/100,000 draws: T1–T4 75.082%, 19.948%, 4.458%, 0.512% (target75/20/4.5/.5). Weapon mean1/100,000 draws: T2–T6 79.908%, 15.985%, 3.073%, 0.824%, 0.210%. Mean5 and mean6 both returnT6 in100,000/100,000 trials (cap exception). Wave gates, luck clamp, exhausted unique pools and boss floor additionally pass unit assertions.
+
+### Natural-boss follow-up (300s cap, no universal termination promise)
+
+The initial fixed-boss2 stress is intentionally heavier than natural W21/25/30/35. A final source fixture also supports `SPUD_NATURAL_BOSS=1 SPUD_MATURE_WAVES=25,30,35,40,50 SPUD_COMBAT_CAP=300`, matching actual boss1 except multiples of20. With20 seeds each and the same fixed builds, W30 ordinary solo dies20/20 but ordinary4p kills20/20 (mean33.08s); extreme1000HP/200regen kills20/20 atW35 (solo96.37s/4p73.40s), then dies20/20 at actual boss2W40 in both solo/4p. All these natural-policy rows have0 censors at300s. Thus the120s W35 stress censors are not evidence of a required-boss softlock. Full natural runs with continuing item/stat accumulation and every possible build remain unverified; do not claim all T6/regen builds die byW30. No extra damage/regen nerf was needed to manufacture this result.
+
+### Production probe fixture clarification
+
+The first live settings probe reached valid geometry/preferences but its old randomized quote fixture could generate four weapon offers and then dereference a nonexistent item offer (probability.35^4). The quote subcase now sets the world RNG to.99 before generating offers, making an actual item quote deterministic; it does not change gameplay RNG or skip an assertion. Existing local-only CDP smoke intentionally blocks every HTTPS URL and is not a production harness. Separate guarded production copies use the already established own-origin GET-only Fetch policy, retain WSS blocking for solo tests and never allow account/rank writes. Actual relay checks use a disposable room and explicitly leave both contexts.

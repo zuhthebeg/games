@@ -9,13 +9,14 @@ if(variant==='before'){
 }else S=require('../js/sim.js');
 const rng=seed=>()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/2**32);
 const rows=[];
-for(const n of [1,4])for(const wave of [18,20,21,25,30])for(const durable of [false,true]){
+for(const n of [1,4])for(const wave of (process.env.SPUD_MATURE_WAVES||'18,20,21,25,30').split(',').map(Number))for(const durable of [false,true]){
  const results=[];
  for(let seed=0;seed<20;seed++){
   const stats={...D.stats,maxHp:durable?1000:120,regen:durable?200:25,atkSpd:60,dmg:100,crit:20,ranged:30,elemental:30,armor:15,lifesteal:10,speed:10};
   const players=Object.fromEntries(Array.from({length:n},(_,i)=>['p'+i,{char:'gunslinger',stats,weapons:[['smg',6],['shotgun',6],['laser',6],['pistol',6],['crossbow',6],['potato_cannon',6]]}]));
   const w=S.createWorld({wave,endless:true,players,rng:rng(1001+seed*9173)});w.spawnClock=-1e9;w.bossSpawned=true;w.looterRolled=true;w.tm=cap;
-  const b=S.spawn(w,'boss_2',800,250);b.summon=-1e9; // isolate boss TTK, same disabled summons both variants
+  const bossType=process.env.SPUD_NATURAL_BOSS?(wave%20===0?'boss_2':'boss_1'):'boss_2';
+  const b=S.spawn(w,bossType,800,250);b.summon=-1e9; // isolate boss TTK, same disabled summons both variants
   const initialBossHp=b.hp;Object.values(w.players).forEach((p,i)=>{p.x=700+i*60;p.y=580;});
   let killAt=null,deadAt=null;
   for(let tick=0;tick<cap*30&&!w.ended;tick++){
@@ -35,4 +36,4 @@ for(const n of [1,4])for(const wave of [18,20,21,25,30])for(const durable of [fa
  rows.push({wave,n,durable,killCount:kills.length,deathCount:deaths.length,censored:20-kills.length-deaths.length,meanTTK:kills.length?kills.reduce((s,r)=>s+r.killAt,0)/kills.length:null,results});
  console.log(JSON.stringify({...rows.at(-1),results:undefined}));
 }
-if(out)fs.writeFileSync(out,JSON.stringify({variant,controlledBot:true,summons:false,durationCap:cap,rows},null,2));
+if(out)fs.writeFileSync(out,JSON.stringify({variant,controlledBot:true,bossPolicy:process.env.SPUD_NATURAL_BOSS?'natural':'fixed-boss2-stress',summons:false,durationCap:cap,rows},null,2));

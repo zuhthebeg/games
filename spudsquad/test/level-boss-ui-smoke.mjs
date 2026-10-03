@@ -37,7 +37,7 @@ try{
    await p.keyboard.press('Escape');assert.equal(await p.locator('#settingsBtn').getAttribute('aria-expanded'),'false');assert.equal(await p.evaluate(()=>document.activeElement.id),'settingsBtn');
    await p.locator('#settingsBtn').click();await p.locator('#canvas').click({position:{x:15,y:160}});assert.ok(!(await p.locator('#volume').isVisible()));
    // Authoritative wave-end level must update guest local shop, not stale WAVE_START level.
-   const guest=await p.evaluate(()=>{const session=SPUD.main.session,player=session.world.players.solo;session.isHost=false;player.lvl=1;
+   const guest=await p.evaluate(()=>{const session=SPUD.main.session,player=session.world.players.solo;session.isHost=false;player.lvl=1;session.world.rng=()=>.99; // deterministic item quote, not a random all-weapon stock
     session.local({type:'WAVE_END',payload:{w:1,players:{solo:{mats:10000,xp:12,lvl:7,levelUps:0,crates:0,crateRewards:[]}}}});
     const o=SPUD.main.offers.find(o=>!o.weapon);return {lvl:player.lvl,xp:player.xp,price:o.price,expected:Math.ceil(SPUD.sim.price(SPUD.data.items[o.id].price,1)*1.3)};});
    assert.equal(guest.lvl,7);assert.equal(guest.xp,12);assert.equal(guest.price,guest.expected);
