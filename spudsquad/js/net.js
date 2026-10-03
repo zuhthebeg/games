@@ -1,5 +1,6 @@
 (function (root) {
   'use strict';
+  const D = root.SPUD?.data || (typeof require === 'function' ? require('./data.js') : null);
   const S = root.SPUD?.sim || (typeof require === 'function' ? require('./sim.js') : null);
   function encode(w) {
     return {
@@ -105,7 +106,9 @@
         if (this.isHost) {
           if (this.world?.players[p.uid]) {
             const player = this.world.players[p.uid], loadout = p.loadout || {};
-            player.weapons = (loadout.weapons || player.weapons).slice(0, S.capacity(player));
+            if (Array.isArray(loadout.weapons) && loadout.weapons.every(v => Array.isArray(v) &&
+                D.weapons[v[0]] && Number.isInteger(v[1]) && v[1] >= 1 && v[1] <= D.MAX_WEAPON_TIER))
+              player.weapons = loadout.weapons.slice(0, S.capacity(player)).map(v => [...v]);
             player.items = loadout.items || player.items;
             player.stats = loadout.stats || player.stats;
             player.mats = loadout.mats ?? player.mats;

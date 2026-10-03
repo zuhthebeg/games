@@ -31,18 +31,20 @@
     image.src = 'assets/' + (D.enemies[id] && !id.startsWith('boss_') ? 'enemy_' + id : id) + '.webp?v=20261001v6';
     images[id] = image;
   }
-  const weaponArt = (id, tier) => tier >= 2 && images[`weapon_${id}_t${tier}`]?.ok ? `weapon_${id}_t${tier}` : 'weapon_' + id;
+  const weaponArt = (id, tier) => (tier = Math.min(4, tier)) >= 2 && images[`weapon_${id}_t${tier}`]?.ok ? `weapon_${id}_t${tier}` : 'weapon_' + id;
   const colors = {
     blob: '#9ed45d', bug: '#f7bb44', spitter: '#c08ad8', charger: '#ee8072',
     splitter: '#84bbdd', tank: '#6d9f69', elite: '#d76b9e',
     gunner: '#e0483a', boss_1: '#ac5c7c', boss_2: '#713f70'
   };
-  // 무기 등급 팔레트: T1 기본 · T2 파랑 · T3 보라 · T4(만렙) 무지개/금
+  // T1 base, T2 blue, T3 purple, T4 rainbow/gold, T5 orange, T6 teal.
   const TIER = {
     1: { glow: 'rgba(43,26,16,.9)', blur: 4, core: '#fff19a', trail: '255,245,170' },
     2: { glow: '#3f9dff', blur: 10, core: '#bfe3ff', trail: '110,185,255' },
     3: { glow: '#b25cff', blur: 14, core: '#e8c8ff', trail: '195,130,255' },
-    4: { glow: '#ffc93c', blur: 18, core: '#fff6c8', trail: '255,210,80' }
+    4: { glow: '#ffc93c', blur: 18, core: '#fff6c8', trail: '255,210,80' },
+    5: { glow: '#ff704d', blur: 18, core: '#ffdfc8', trail: '255,112,77' },
+    6: { glow: '#4debd9', blur: 18, core: '#c8fff8', trail: '77,235,217' }
   };
   const hueRgb = (now) => {
     const h = (now / 6) % 360 / 60, x = 1 - Math.abs(h % 2 - 1);
@@ -447,7 +449,7 @@
           c.save(); c.translate(px, py); c.rotate(angle);
           if (Math.cos(angle) < 0) c.scale(1, -1);
           c.rotate(D.weapons[weapon].artAngle || 0);
-          const tier = Math.max(1, Math.min(4, weapons[index]?.[1] || 1));
+          const tier = Math.max(1, Math.min(D.MAX_WEAPON_TIER, weapons[index]?.[1] || 1));
           const tv = TIER[tier];
           const pulse = tier >= 3 ? 1 + Math.sin(now / 180 + index) * .04 : 1;
           if (tier === 4) {
@@ -460,6 +462,7 @@
           c.shadowColor = tier === 4 ? `rgb(${hueRgb(now)})` : tv.glow;
           c.shadowBlur = tv.blur;
           this.sprite(weaponArt(weapon, tier), 0, 0, (D.WEAPON_SIZE || 46) * (1 + .07 * (tier - 1)) * pulse);
+          if (tier >= 5) { c.fillStyle = tv.core; c.font = 'bold 12px sans-serif'; c.fillText('T' + tier, -10, -22); }
           if (tier >= 2) { // 두 번 그려 발광을 더 진하게
             c.globalAlpha *= .5; this.sprite(weaponArt(weapon, tier), 0, 0, (D.WEAPON_SIZE || 46) * (1 + .07 * (tier - 1)) * pulse);
           }
@@ -566,6 +569,11 @@
         c.arc(bullet.x, bullet.y, 4.5 + (bullet.tier || 1) * .8, 0, 7);
         c.fill();
         c.restore();
+      }
+      // Ghost immunity follows its owner; chill stays at its cast area (not DoT).
+      for (const trail of this.effects.trails || []) if (trail.kind === 'ult' && trail.style.shape === 'veil' && trail.uid) {
+        const owner = players.find(p => p[0] === trail.uid);
+        if (owner) { trail.x = owner[1]; trail.y = owner[2]; }
       }
       this.effects.draw(c, dt, now);
       for (const particle of this.particles.slice()) {

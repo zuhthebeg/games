@@ -12,11 +12,23 @@
   })[char]);
   const shown = value => Math.round(Number(value) || 0);
   const label = (key, n) => `<span class="stat-change ${n < 0 ? 'negative' : 'positive'}">${esc(I.stat(key))} ${n > 0 ? '+' : ''}${shown(n)}</span>`;
+  const itemMarkup = id => I.itemParts(id).map(part => {
+    const words = { ko: ['이점', '불이익', '조건'], en: ['Benefit', 'Penalty', 'Condition'], 'zh-TW': ['增益', '懲罰', '條件'] }[I.language];
+    const tag = words[part.tone === 'positive' ? 0 : part.tone === 'negative' ? 1 : 2];
+    return `<span class="stat-change ${part.tone}" aria-label="${esc(tag + ': ' + part.text)}">${part.tone === 'positive' ? '＋' : part.tone === 'negative' ? '−' : '·'} ${esc(part.text)}</span>`;
+  }).join(' · ');
+  function ultDescription(char) {
+    const u = D.ults[char], lang = I.language;
+    if (!u) return '';
+    const name = lang === 'ko' ? u.name : lang === 'zh-TW' ? u.zh : u.en;
+    const modifiers = { ko: '즉시 1회 피해 · 보호막 피해½ · 냉각피해 아이템 적용', en: 'Instant damage once · shield damage ½ · chilled-damage items apply', 'zh-TW': '瞬間一次傷害 · 護盾傷害½ · 冷卻增傷道具生效' }[lang];
+    return `${name}: ${u.text?.[lang] || u.effect} · R ${u.radius}px · ${u.duration}s · ${I.t?.('ultRule') || '1 / WAVE'}${char === 'vampire' ? '' : ' · ' + modifiers}`;
+  }
   const icon = (id, kind = '') =>
     `<img class="${kind}" src="assets/${esc(id)}.webp" alt="" onerror="this.hidden=true">`;
-  // 티어 무기 아이콘: T2~T4 전용 아트, 없으면 기본 아트로 폴백
+  // T2–T4 dedicated art; T5/T6 reuse T4 art with separate tier badge/color.
   const weaponIcon = (id, tier = 1, kind = '') => tier >= 2
-    ? `<img class="${kind}" src="assets/weapon_${esc(id)}_t${Number(tier) | 0}.webp" alt="" onerror="this.onerror=null;this.src='assets/weapon_${esc(id)}.webp'">`
+    ? `<img class="${kind}" src="assets/weapon_${esc(id)}_t${Math.min(4, Number(tier)) | 0}.webp" alt="" onerror="this.onerror=null;this.src='assets/weapon_${esc(id)}.webp'">`
     : icon('weapon_' + id, kind);
   const button = (text, act, extra = '') =>
     `<button type="button" class="btn ${extra}" data-act="${act}">${esc(text)}</button>`;
@@ -35,17 +47,21 @@
   const enemyArt = id => id.startsWith('boss_') ? id : 'enemy_' + id;
   // ---- 시트 레이어(#sheet): 패널(상점 등) 위에 겹쳐 뜨는 전체 창. 솔로에선 main이 열려 있는 동안 일시정지 ----
   const sheetEl = document.getElementById('sheet');
-  let sheetDraw = null, sheetAct = null;
+  let sheetDraw = null, sheetAct = null, sheetReturnFocus = null;
   function openSheet(draw, act) {
+    sheetReturnFocus = document.activeElement;
+    P.main?.clearInput?.();
     sheetDraw = draw; sheetAct = act;
     draw();
     sheetEl.hidden = false;
+    sheetEl.querySelector?.('.sheet-close')?.focus();
   }
   function closeSheet() {
     if (!sheetEl || sheetEl.hidden) return;
     sheetEl.hidden = true;
     sheetEl.innerHTML = '';
     sheetDraw = sheetAct = null;
+    sheetReturnFocus?.focus?.(); sheetReturnFocus = null;
   }
   function sheetFrame(title, body, extra = '') {
     sheetEl.innerHTML = `<section class="sheet ${extra}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
@@ -62,6 +78,12 @@
   };
   root.addEventListener?.('keydown', event => {
     if (event.key === 'Escape' && sheetEl && !sheetEl.hidden) closeSheet();
+    if (event.key === 'Tab' && sheetEl && !sheetEl.hidden) {
+      const nodes = [...sheetEl.querySelectorAll('button:not(:disabled),select,input,[tabindex="0"]')];
+      const first = nodes[0], last = nodes[nodes.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    }
   });
   function setLines(p) {
     const list = Object.entries(P.sim.sets(p)).sort((a, b) => b[1].count - a[1].count);
@@ -76,8 +98,8 @@
     }).join('') || `<li class="set-row muted">${esc(I.t('noSets'))}</li>`;
   }
   // 내 스탯 시트. getPlayer는 열 때마다(언어 전환 포함) 최신 플레이어를 돌려준다.
-  function stats(getPlayer) {
-    let pick = null;
+  function stats(getPlayer, initialPick = null) {
+    let pick = initialPick;
     openSheet(function draw() {
       const p = getPlayer();
       if (!p) { closeSheet(); return; }
@@ -109,7 +131,7 @@
         class="item-tile${pick === id ? ' on' : ''}" data-act="item:${esc(id)}">${icon('item_' + id)}
         <span>${esc(I.name('items', id))}</span>${n > 1 ? `<b>×${n}</b>` : ''}</button>`).join('');
       const detail = pick && counts[pick]
-        ? `<p class="item-detail"><b>${esc(I.name('items', pick))}</b> — ${esc(I.itemEffect(pick))}</p>`
+        ? `<p class="item-detail"><b>${esc(I.name('items', pick))}</b> — ${itemMarkup(pick)} · ×${counts[pick]}</p>`
         : `<p class="item-detail muted">${esc(tiles ? I.t('tapItem') : I.t('empty'))}</p>`;
       // 캐릭터 특성 헤더: 초상화·이름·특성·기본 보정 + 현재 걸린 조건/다음 웨이브 효과
       const c = D.chars[p.char] || {};
@@ -118,7 +140,7 @@
       for (const [k, n] of Object.entries(p.pending || {})) if (n) states.push(`${I.t('nextWave')}: ${I.t('once_' + k)}${n > 1 ? ' ×' + n : ''}`);
       for (const [k, n] of Object.entries(p.active || {})) if (n) states.push(`${I.t('thisWave')}: ${I.t('once_' + k)}`);
       const charHead = `<section class="sheet-char">${icon('char_' + p.char, 'sheet-char-art')}<div>
-        <b>${esc(I.name('chars', p.char))}</b><p>${esc(I.trait(p.char))}</p>
+        <b>${esc(I.name('chars', p.char))}</b><p>${esc(I.trait(p.char))}</p><p class="ult-description">⚡ ${esc(ultDescription(p.char))}</p>
         ${Object.keys(c.stats || {}).length ? `<span class="char-bonus">${I.effect(c.stats).map(esc).join(' · ')}</span>` : ''}
         ${states.length ? `<span class="char-state">${states.map(esc).join(' · ')}</span>` : ''}</div></section>`;
       sheetFrame(`📊 ${I.t('stats')}`, `${charHead}<div class="stat-grid">${sections}</div>
@@ -130,7 +152,7 @@
         <section class="sheet-sec"><h3>🎒 ${esc(I.t('items'))} · ${p.items.length}</h3>
           <div class="item-tiles">${tiles}</div>${detail}</section>`, 'stats-sheet');
     }, act => {
-      if (act.startsWith('item:')) { const id = act.slice(5); pick = pick === id ? null : id; sheetDraw?.(); }
+      if (act.startsWith('item:')) { const id = act.slice(5); pick = pick === id ? null : id; sheetDraw?.(); sheetEl.querySelector?.(`[data-act="item:${id}"]`)?.focus(); }
     });
   }
   // ---- 디버그 패널(솔로 전용). 실제 조작은 P.main.debugAct가 한다 ----
@@ -147,7 +169,7 @@
       sheetFrame(`🐞 ${I.t('debug')}`, `<p class="dbg-note" role="status">${esc(dbgNote)}</p>
         <section class="sheet-sec"><h3>🗡️ ${esc(I.t('weapons'))}</h3><div class="dbg-row">
           <select data-dbg="weapon" aria-label="weapon">${opt(Object.keys(D.weapons), dbgForm.weapon, id => I.name('weapons', id))}</select>
-          <select data-dbg="tier" aria-label="tier">${opt([1, 2, 3, 4], dbgForm.tier, t => 'T' + t)}</select>
+          <select data-dbg="tier" aria-label="tier">${opt([1, 2, 3, 4, 5, 6], dbgForm.tier, t => 'T' + t)}</select>
           ${button(I.t('grant'), 'dbg:weapon', 'primary')}</div></section>
         <section class="sheet-sec"><h3>🎒 ${esc(I.t('tabItems'))}</h3><div class="item-tiles dbg-items">
           ${Object.keys(D.items).map(id => `<button type="button" class="item-tile tier${D.items[id].tier || 1}"
@@ -205,7 +227,7 @@
       }
       const crown = colTab === 'chars' && col.c[id].w ? '<span class="col-crown" aria-hidden="true">👑</span>' : '';
       return `<article class="col-card${tier}">${crown}${icon(art, 'col-art')}<strong>${esc(name)}</strong>
-        ${desc ? `<small>${esc(desc)}</small>` : ''}${meta ? `<span class="meta">${esc(meta)}</span>` : ''}</article>`;
+        ${desc ? `<small>${colTab === 'items' ? itemMarkup(id) : esc(desc)}</small>` : ''}${meta ? `<span class="meta">${esc(meta)}</span>` : ''}</article>`;
     };
     show(`<section class="collection-screen"><header class="col-head">
         ${button('←', 'back', 'col-back')}
@@ -230,6 +252,7 @@
   P.collection?.onChange?.(() => { if (activeView === 'collection') activeRefresh?.(); });
 
   function show(html, menu = false) {
+    ultimate(null, 'shop'); // synchronous noncombat hide; never wait for next RAF
     activeView = '';
     panel.innerHTML = html;
     overlay.style.display = 'flex';
@@ -378,7 +401,7 @@ function hud(scene, uid) {
     activeRefresh = () => crates(session, player, count, cb, id);
     show(`<section class="upgrade-screen"><h2>📦 ${esc(I.t('crate'))}</h2>
       <article class="shop-card tier${item.tier || 1}">${icon('item_' + id, 'shop-art')}
-      <strong>${esc(I.name('items', id))}</strong><small>${esc(I.itemEffect(id))}</small></article>
+      <strong>${esc(I.name('items', id))}</strong><small>${itemMarkup(id)}</small></article>
       ${button(I.t('take'), 'take', 'primary')}
       ${button(`${I.t('recycle')} · 💎${Math.floor(item.price / 2)}`, 'recycle')}</section>`);
     panel.onclick = event => {
@@ -456,7 +479,7 @@ function hud(scene, uid) {
         return `<article class="shop-card tier${offer.tier}${offer.locked ? ' is-locked' : ''}">
           ${offer.weapon ? weaponIcon(offer.id, offer.tier, 'shop-art') : icon('item_' + offer.id, 'shop-art')}
           <div class="shop-detail"><strong>${esc(name)} · ${esc(I.grade(offer.tier))}</strong>
-          <small>${esc(description)}</small><span class="price">💎${shown(offer.price)}
+          <small>${offer.weapon ? esc(description) : itemMarkup(offer.id)}</small><span class="price">💎${shown(offer.price)}
             ${offer.weapon ? ` · T${offer.tier}` : ''}</span></div>
           <div class="offer-actions">${button(offer.weapon && player.weapons.length >= P.sim.capacity(player)
             && !P.sim.canBuy({ ...player, mats: Infinity }, offer) ? '🈵' : I.t('buy'), `buy${index}`,
@@ -469,18 +492,18 @@ function hud(scene, uid) {
         return `<button type="button" class="slot tier${weapon?.[1] || 1}
           ${selected === i ? 'selected' : ''}" data-act="slot${i}">
           ${weapon ? weaponIcon(weapon[0], weapon[1]) : '＋'}
-          <span>${weapon ? `${esc(I.name('weapons', weapon[0]))} T${weapon[1]}` : '—'}</span>
+          <span>${weapon ? `${esc(I.name('weapons', weapon[0]))} T${weapon[1]}${weapon[1] === D.MAX_WEAPON_TIER ? ' MAX' : ''}` : '—'}</span>
         </button>`;
       }).join('');
-      const owned = player.items.map(id => `<span class="owned-item">
-        ${icon('item_' + id)} ${esc(I.name('items', id))}</span>`).join('') || I.t('empty');
+      const owned = [...new Set(player.items)].map(id => `<button type="button" class="owned-item" data-act="owned:${esc(id)}">
+        ${icon('item_' + id)} ${esc(I.name('items', id))} ×${player.items.filter(x => x === id).length}</button>`).join('') || I.t('empty');
       const roster = Object.keys(session.players).map(id =>
         `${esc(displayName(session.players[id], id)).slice(0, 12)} ${session.ready.has(id) ? '✔' : '…'}`
       ).join('　');
       show(`<section class="shop-screen"><header class="shop-header">
         <h2>🛒 ${esc(I.t('shop'))}</h2><span>❤️ ${shown(player.hp)}/${shown(player.maxHp)}</span>
         <b>💎 ${shown(player.mats)}</b></header>
-        <div class="shop-grid">${offers}</div>
+        <div class="shop-grid">${offers}</div><small class="weapon-min-tier">${esc(I.t('weapons'))}: avg T${num(P.sim.weaponMean(player))} → T${Math.min(6, Math.floor(P.sim.weaponMean(player)) + 1)}–T6 · ${esc(I.t('slotsFull'))}</small>
         <div class="shop-toolbar">${button(`${I.t('reroll')} · 💎${P.sim.shopRerollCost(player, session.wave, count, cards)}`, 'roll')}
           <small>${esc(I.t('freeRefill'))}</small><span class="shop-roster">${roster}</span><span class="shop-timer" aria-live="polite"></span></div>
         <div class="shop-divider">${esc(I.t('slots'))} · ${player.weapons.length}/${P.sim.capacity(player)}</div>
@@ -494,8 +517,7 @@ function hud(scene, uid) {
         ${button(I.t('ready'), 'ready', 'primary ready-btn')}
         ${detail >= 0 && cards[detail] && !cards[detail].sold ? `<aside class="detail-sheet" role="dialog">
           <h3>${esc(I.name(cards[detail].weapon ? 'weapons' : 'items', cards[detail].id))}</h3>
-          <p>${esc(cards[detail].weapon ? I.feature(cards[detail].id)
-            : I.itemEffect(cards[detail].id))}</p>
+          <p>${cards[detail].weapon ? esc(I.feature(cards[detail].id)) : itemMarkup(cards[detail].id)}</p>
           ${button('×', 'closeDetail')}
         </aside>` : ''}
       </section>`);
@@ -507,6 +529,7 @@ function hud(scene, uid) {
         }
         if (!act) return;
         if (act === 'closeDetail') detail = -1;
+        else if (act.startsWith('owned:')) { stats(() => player, act.slice(6)); return; }
         else if (act.startsWith('buy')) {
           const i = Number(act.slice(3));
           if (!cards[i]?.sold && P.sim.buy(player, cards[i])) {
@@ -569,9 +592,10 @@ function hud(scene, uid) {
     const name = u ? (lang === 'ko' ? u.name : lang === 'zh-TW' ? u.zh : u.en) : label;
     const text = `⚡ ${name} · U${player?.ultUsed ? ' · ' + (I.t?.('ultUsed') || 'Used') : ''}`;
     if (btn.textContent !== text) btn.textContent = text;
-    btn.title = u ? `${name}: ${u.text?.[lang] || u.effect}${u.damage ? ' · DMG ' + u.damage : ''} · R ${u.radius}px · ${I.t?.('ultRule') || '1 / WAVE'}` : label;
+    btn.title = u ? ultDescription(player.char) : label;
     btn.setAttribute('aria-label', btn.title);
-    btn.hidden = false;
+    btn.hidden = mode !== 'wave';
+    btn.style.display = mode === 'wave' ? '' : 'none';
     btn.disabled = !u || mode !== 'wave' || blocked || !player?.alive || !(player.hp > 0) || !!player.ultUsed;
   }
   const settingsBtn = document.getElementById('settingsBtn');

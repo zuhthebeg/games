@@ -342,7 +342,7 @@
     const int = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.floor(Number(v) || 0)));
     let note = U.t('done');
     if (name === 'weapon') {
-      const tier = int(a.tier, 1, 4);
+      const tier = int(a.tier, 1, D.MAX_WEAPON_TIER);
       if (!D.weapons[a.weapon]) return '';
       if (p.weapons.length >= S.capacity(p)) return U.t('slotsFull');
       p.weapons.push([a.weapon, tier]);

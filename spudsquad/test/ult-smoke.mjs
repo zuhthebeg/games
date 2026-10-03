@@ -49,7 +49,7 @@ try {
   await until("!!document.querySelector('[data-act=solo]')");
   await until("document.getElementById('ultBtn').disabled");
   results.titleVisible = await ev("getComputedStyle(document.getElementById('ultBtn')).display !== 'none'");
-  assert.equal(results.titleVisible, true);
+  assert.equal(results.titleVisible, false); // confirmed combat-only visibility requirement
   await click('solo'); await click('vampire');
   await until('!!window.SPUD?.main?.session?.world && !document.getElementById("ultBtn").disabled');
   await ev('SPUD.main.session.world.spawnClock = -1e9; SPUD.main.session.world.players.solo.immune = 1e9; SPUD.main.session.world.players.solo.cool = [1e9]');
@@ -93,6 +93,7 @@ try {
   await ev('SPUD.main.session.world.players.solo.mats = 1000; SPUD.main.session.world.tm = 0');
   await until("!!document.querySelector('.shop-screen')");
   assert.equal(await ev('document.getElementById("ultBtn").disabled && !SPUD.main.useUlt()'), true); results.shopBlocked = true;
+  assert.equal(await ev('document.getElementById("ultBtn").hidden && getComputedStyle(document.getElementById("ultBtn")).display === "none"'),true);
   await click('ready'); await until('SPUD.main.session.wave === 2 && !document.getElementById("ultBtn").disabled');
   results.nextWaveReady = true;
   await cmd('Emulation.setDeviceMetricsOverride', { width: 844, height: 390, deviceScaleFactor: 1, mobile: true });

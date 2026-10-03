@@ -170,8 +170,8 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 .starting-weapon img { width: 30px; height: 30px; object-fit: contain; }
 .bonuses { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
 .stat-change { padding: 3px 6px; border-radius: 7px; background: #e4d7ae; font-size: 11px; }
-.stat-change.positive { background: #e1f5d9; color: #286c3a; }
-.stat-change.negative { background: #ffe0d6; color: #a63225; }
+.stat-change.positive { background: #e1f5d9; color: #15733a; }
+.stat-change.negative { background: #ffe0d6; color: #b42328; }
 .upgrade-card { min-height: 166px; justify-content: center; font: 18px Jua; }
 .upgrade-card b { color: #2c8849; }
 .upgrade-glyph { font-size: 38px; }
@@ -253,6 +253,10 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
   z-index: 41; min-height: 48px; max-width: 40vw; padding: 6px 12px; border: 3px solid #69432a;
   border-radius: 16px; background: #ffe98a; color: #503324; font: 16px Jua, sans-serif; touch-action: manipulation; }
 #field:has(#reviveBtn:not([hidden])) #ultBtn { bottom: calc(78px + env(safe-area-inset-bottom)); }
+.stat-change.neutral { color: #6b5140; }
+#ultBtn[hidden] { display: none; }
+.tier5 { border-color: #ff704d !important; }
+.tier6 { border-color: #19b9a5 !important; }
 #ultBtn:disabled { opacity: .35; cursor: default; }
 #ultBtn:focus-visible { outline: 3px solid #2585cf; outline-offset: 3px; }
 #reviveBtn { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%);
@@ -572,7 +576,7 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </div>
 <div id="field">
 <div id="pad" aria-hidden="true"><div id="padKnob"></div></div>
-<button type="button" id="ultBtn" aria-keyshortcuts="U" disabled>⚡ 필살기 · U</button>
+<button type="button" id="ultBtn" aria-keyshortcuts="U" hidden disabled>⚡ 필살기 · U</button>
 <button type="button" id="reviveBtn" hidden></button>
 <canvas id="canvas">
 </canvas>
@@ -605,23 +609,23 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </script>
 <script src="/lib/game-rankings.js?v=20260927">
 </script>
-<script src="js/data.js?v=20261001followup1">
+<script src="js/data.js?v=20261003balancevnext1">
 </script>
-<script src="js/sim.js?v=20261003levelboss1">
+<script src="js/sim.js?v=20261003balancevnext1">
 </script>
-<script src="js/net.js?v=20261003levelboss1">
+<script src="js/net.js?v=20261003balancevnext1">
 </script>
 <script src="js/sfx.js?v=20261001followup1"></script>
-<script src="js/fx.js?v=20261001ult1"></script>
-<script src="js/render.js?v=20261003levelboss1">
+<script src="js/fx.js?v=20261003balancevnext1"></script>
+<script src="js/render.js?v=20261003balancevnext1">
 </script>
-<script src="js/i18n.js?v=20261001ult1">
+<script src="js/i18n.js?v=20261003balancevnext1">
 </script>
 <script src="js/collection.js?v=20261001v6">
 </script>
-<script src="js/ui.js?v=20261003levelboss1">
+<script src="js/ui.js?v=20261003balancevnext1">
 </script>
-<script src="js/main.js?v=20261003levelboss1">
+<script src="js/main.js?v=20261003balancevnext1">
 </script>
 </body>
 </html>

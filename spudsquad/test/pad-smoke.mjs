@@ -37,6 +37,8 @@ try {
   }
   await command('Runtime.enable');
   await command('Page.enable');
+  await command('Network.enable');
+  await command('Network.setBlockedURLs', { urls: ['https://*', 'wss://*'] }); // local-only smoke
   await command('Emulation.setDeviceMetricsOverride', { width: 844, height: 390, deviceScaleFactor: 1, mobile: true });
   await command('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
   await command('Page.navigate', { url: process.argv[2] || 'http://127.0.0.1:8765/spudsquad/' });

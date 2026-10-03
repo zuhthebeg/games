@@ -11,7 +11,7 @@ test('upgrade grades distribution over 100k rolls within 1 percentage point', ()
   a.equal(S.rollGrade(() => .8, 0), 2);
 });
 test('tier gated by wave and roll; crate item gated to the same tier', () => {
-  const w = S.createWorld({ rng: () => .01 });
+  const w = S.createWorld({ rng: () => .999 });
   const p = w.players.solo;
   a.equal(S.rollItemTier(w, p), 1);
   w.wave = 4;

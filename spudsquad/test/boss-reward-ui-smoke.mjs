@@ -6,7 +6,7 @@ const report={screenshots:0,blockedWrites:0,errors:[]};
 try{
  const ctx=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
  await ctx.route('**/*',r=>{if(r.request().method()!=='GET'){report.blockedWrites++;return r.abort();}return r.continue();});
- const p=await ctx.newPage();p.on('pageerror',e=>report.errors.push(e.message));await p.goto('http://127.0.0.1:8772/spudsquad/?debug=1');await p.waitForFunction(()=>SPUD.main&&document.querySelector('[data-act=solo]'));await p.locator('[data-act=solo]').click();await p.locator('[data-act=basic]').click();await p.waitForFunction(()=>SPUD.main.mode==='wave');
+ const p=await ctx.newPage();p.on('pageerror',e=>report.errors.push(e.message));await p.goto((process.env.SPUD_URL||'http://127.0.0.1:8772/spudsquad/')+'?debug=1');await p.waitForFunction(()=>SPUD.main&&document.querySelector('[data-act=solo]'));await p.locator('[data-act=solo]').click();await p.locator('[data-act=basic]').click();await p.waitForFunction(()=>SPUD.main.mode==='wave');
  await p.evaluate(()=>{const w=SPUD.main.session.world,S=SPUD.sim;SPUD.main.session.wave=w.wave=10;w.rng=()=>.99;w.bossSpawned=true;w.spawnClock=-1e9;w.enemies=[];w.players.solo.immune=1e9;w.players.solo.lvl=100;
   for(let i=0;i<2;i++){const e=S.spawn(w,'boss_1',10+i*100,10);e.hp=0;S.kill(w,e,'solo');}w.tm=0;});
  await p.waitForFunction(()=>SPUD.main.mode==='shop'&&document.querySelector('[data-act=take]'));

@@ -13,12 +13,21 @@
   function waveLength(w) {
     return Math.min(20 + 5 * (w - 1), 60);
   }
+  function lateScale(w) {
+    // Replace the old post-20 1.10/1.06 exponent, never multiply both ramps.
+    const t = Math.min(80, Math.max(0, w - 20));
+    return w >= 20 ? { hp: 2 * 1.18 ** t, dmg: 1.5 * 1.12 ** t } : { hp: 1, dmg: 1 };
+  }
+  function bossWave(w) { return w.wave % 10 === 0 || (w.endless && w.wave >= 20); }
   function enemyStats(type, w, n) {
     const e = D.enemies[type];
     const k = D.curve || {};
-    // 21웨이브 이후(무한 모드)는 HP ×1.1·피해 ×1.06 복리로 더 가파르게 → 언젠가는 끝난다.
-    return { hp: e.hp * (1 + (k.hpPerWave ?? 0.35) * (w - 1)) * (1 + (k.mpHp ?? 0.25) * (n - 1)) * 1.1 ** Math.max(0, w - 20),
-      dmg: e.dmg * (1 + (k.dmgPerWave ?? 0.12) * (w - 1)) * (1 + (k.mpDmg ?? 0) * (n - 1)) * 1.06 ** Math.max(0, w - 20),
+    const late = lateScale(w);
+    // Avoid the W1 starter one-shot -> two-shot income cliff. Requested strength
+    // rises linearly through the normal run, reaching +15% HP/+10% damage at W20.
+    const early = clamp((w - 1) / 19, 0, 1);
+    return { hp: e.hp * (1 + (k.hpPerWave ?? 0.35) * (w - 1)) * (1 + (k.mpHp ?? 0.25) * (n - 1)) * late.hp * (1 + .15 * early),
+      dmg: e.dmg * (1 + (k.dmgPerWave ?? 0.12) * (w - 1)) * (1 + (k.mpDmg ?? 0) * (n - 1)) * late.dmg * (1 + .10 * early),
       speed: e.speed };
   }
   // 동시 생존 적 상한: 멀티는 렌더·스냅샷 부하 때문에 낮게(4인 렉 대응).
@@ -28,7 +37,7 @@
   }
   // 돌연변이감자 등 캐릭터 xpNeed 배율(없으면 1)
   function needXp(lvl, char) {
-    return Math.ceil((lvl + 3) ** 2 * (D.chars[char]?.xpNeed || 1));
+    return Math.ceil(Math.ceil((lvl + 3) ** 2 * (D.chars[char]?.xpNeed || 1)) * 1.25);
   }
   function price(base, w) {
     return Math.ceil(base * (1 + 0.1 * (w - 1)));
@@ -154,7 +163,9 @@
     }
   }
   function spawn(w, type, x, y) {
-    if (w.enemies.length >= enemyCap(w)) return null;
+    // Keep the same total cap; reserve one slot for a due boss, not extra mobs.
+    const reserved = bossWave(w) && !w.bossSpawned && !type.startsWith('boss_') ? 1 : 0;
+    if (w.enemies.length >= enemyCap(w) - reserved) return null;
     let n = Object.keys(w.players).length || 1;
     const s = enemyStats(type, w.wave, n);
     s.hp *= w.enemyHp ?? 1;
@@ -313,7 +324,7 @@
     // Keep gameplay hooks, crate/level signals; collapse cosmetic burst fanout to one pulse.
     const effects = w.fx.splice(startFx).filter(e => !['hit', 'die', 'st', 'ex', 'bm'].includes(e[0]));
     w.fx.push(...effects);
-    w.fx.push(['ult', p.x | 0, p.y | 0, u.radius, p.char]);
+    w.fx.push(['ult', p.x | 0, p.y | 0, u.radius, p.char, uid]);
     return true;
   }
   function hurtPlayer(w, p, damage, source) {
@@ -552,6 +563,8 @@
     }
   }
   function canEnd(w) {
+    if (w.endless && w.wave >= 20) return w.bossSpawned && w.bossKills > 0 &&
+      !w.enemies.some(e => e.type.startsWith('boss_') && e.hp > 0);
     return w.wave === 20 ? w.bossKilled : w.tm <= 0;
   }
   function step(w, dt = 1 / 30) {
@@ -589,12 +602,11 @@
         spawn(w, 'looter', far[0], far[1]);
       }
     }
-    // 보스: 10·20웨이브, 무한 모드는 이후 10웨이브마다(20의 배수=boss_2). 처치 필수는 20웨이브뿐.
-    if (!w.bossSpawned && w.wave % 10 === 0) {
-      w.bossSpawned = true;
-      const b = w.wave % 20 === 0 ? "boss_2" : "boss_1";
-      spawn(w, b, 800, 90);
-      w.fx.push(["boss", 800, 90]);
+    // Normal 10/20; endless >=20 every wave. Retry a full legacy cap without
+    // marking a nonexistent boss spawned (prevents a required-boss softlock).
+    if (!w.bossSpawned && bossWave(w)) {
+      const b = w.wave % 20 === 0 ? 'boss_2' : 'boss_1';
+      if (spawn(w, b, 800, 90)) { w.bossSpawned = true; w.fx.push(['boss', 800, 90]); }
     }
     for (const s of w.shots.slice()) {
       s.delay -= dt;
@@ -902,7 +914,7 @@
   }
   function merge(p, index) {
     const [id, tier] = p.weapons[index] || [];
-    if (!id || tier >= 4) return false;
+    if (!id || tier >= D.MAX_WEAPON_TIER) return false;
     const other = p.weapons.findIndex((v, i) => i !== index && v[0] === id && v[1] === tier);
     if (other < 0) return false;
     p.weapons[index] = [id, tier + 1];
@@ -938,31 +950,42 @@
     const cap = def?.unique ? 1 : def?.max;
     return !!cap && p.items.filter(x => x === id).length >= cap;
   }
+  // Choose rarity before catalogue entry; luck scales upper tiers by at most 2x.
+  function weightedTier(w, tiers, weights) {
+    if (!tiers.length) return null;
+    let r = rand(w) * weights.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < tiers.length; i++) { r -= weights[i]; if (r < 0) return tiers[i]; }
+    return tiers[tiers.length - 1];
+  }
+  function itemTiers(w, p, minTier = 1) {
+    const cap = Math.max(minTier, w.wave >= 10 ? 4 : w.wave >= 8 ? 3 : w.wave >= 4 ? 2 : 1);
+    return [1, 2, 3, 4].filter(t => t >= minTier && t <= cap && Object.keys(D.items).some(id =>
+      (D.items[id].tier || 1) === t && !itemCapped(p, id)));
+  }
+  function rollItemTier(w, p, minTier = 1) {
+    const tiers = itemTiers(w, p, minTier), luck = 1 + clamp(p.stats.luck || 0, 0, 100) / 100;
+    return weightedTier(w, tiers, tiers.map(t => [75, 20, 4.5, .5][t - 1] * (t > 1 ? luck : 1)));
+  }
   function rollCrateItem(w, p, minTier = 1) {
-    const tier = Math.max(minTier, rollItemTier(w, p));
-    const eligible = Object.keys(D.items).filter(id =>
-      (D.items[id].tier || 1) >= minTier && !itemCapped(p, id));
-    const exact = eligible.filter(id => (D.items[id].tier || 1) === tier);
-    // Exhausted unique/max pool: use another eligible tier, never lower the floor.
-    const options = exact.length ? exact : eligible;
+    const tier = rollItemTier(w, p, minTier);
+    const options = Object.keys(D.items).filter(id => (D.items[id].tier || 1) === tier && !itemCapped(p, id));
     return options.length ? options[Math.floor(rand(w) * options.length)] : null;
   }
-  function rollItemTier(w, p) {
-    if (w.wave >= 10 && rand(w) < .03 + p.stats.luck / 1000) return 4;
-    if (w.wave >= 8 && rand(w) < .10 + p.stats.luck / 600) return 3;
-    if (w.wave >= 4 && rand(w) < .25 + p.stats.luck / 400) return 2;
-    return 1;
+  function weaponMean(p) {
+    return p.weapons.length ? p.weapons.reduce((n, v) => n + v[1], 0) / p.weapons.length : 1;
+  }
+  function rollWeaponTier(w, p) {
+    const min = Math.min(D.MAX_WEAPON_TIER, Math.floor(weaponMean(p)) + 1);
+    const tiers = Array.from({ length: D.MAX_WEAPON_TIER - min + 1 }, (_, i) => min + i);
+    return weightedTier(w, tiers, tiers.map((_, i) => [80, 16, 3, .8, .2][i]));
   }
   function shop(w, p) {
     const slots = [];
     for (let i = 0; i < 4; i++) {
       let weapon = rand(w) < .35;
-      const tier = weapon ? (() => {
-        let t = 1;
-        const cap = w.wave >= 15 ? 4 : w.wave >= 10 ? 3 : w.wave >= 5 ? 2 : 1;
-        while (t < cap && rand(w) < Math.min(.75, .15 + p.stats.luck / 200)) t++;
-        return t;
-      })() : rollItemTier(w, p);
+      let tier = weapon ? rollWeaponTier(w, p) : rollItemTier(w, p);
+      // An exhausted item catalogue offers a weapon rather than spinning forever.
+      if (tier == null) { weapon = true; tier = rollWeaponTier(w, p); }
       const list = Object.keys(weapon ? D.weapons : D.items).filter(id => weapon
         ? p.char !== 'gunslinger' || D.weapons[id].kind !== 'melee'
         : (D.items[id].tier || 1) === tier && !itemCapped(p, id));
@@ -987,20 +1010,23 @@
     }
     return true;
   }
-  // 상점 입장 훅(클라 권위: 상점을 여는 쪽이 자기 플레이어에 1회 호출). 모루: 티어<4 무기 1개 +1.
+  // 상점 입장 훅(클라 권위: 상점을 여는 쪽이 자기 플레이어에 1회 호출). 모루: 티어<6 무기 1개 +1.
   function enterShop(p, rng = Math.random) {
     if (!hasRule(p, 'anvil')) return null;
-    const open = p.weapons.map((v, i) => i).filter(i => p.weapons[i][1] < 4);
+    const open = p.weapons.map((v, i) => i).filter(i => p.weapons[i][1] < D.MAX_WEAPON_TIER);
     if (!open.length) return null;
     const i = open[Math.floor(rng() * open.length)];
     p.weapons[i] = [p.weapons[i][0], p.weapons[i][1] + 1];
     return i;
   }
-  // 슬롯이 가득 차도 같은 무기·같은 티어(4 미만)가 있으면 구매 즉시 합쳐 한 단계 올린다(브로테이토식).
+  // 슬롯이 가득 차도 같은 무기·같은 티어(6 미만)가 있으면 구매 즉시 합쳐 한 단계 올린다(브로테이토식).
   function mergeTarget(p, offer) {
-    return p.weapons.findIndex(([id, tier]) => id === offer.id && tier === offer.tier && tier < 4);
+    return p.weapons.findIndex(([id, tier]) => id === offer.id && tier === offer.tier && tier < D.MAX_WEAPON_TIER);
   }
   function canBuy(p, offer) {
+    if (!offer || !Number.isInteger(offer.tier) || offer.tier < 1 ||
+        offer.tier > (offer.weapon ? D.MAX_WEAPON_TIER : D.MAX_ITEM_TIER) ||
+        (offer.weapon && !D.weapons[offer.id]) || !Number.isFinite(offer.price) || offer.price < 0) return false;
     if (!offer || p.mats < offer.price || (!offer.weapon &&
         (!D.items[offer.id] || itemCapped(p, offer.id)))) return false;
     return !offer.weapon || p.weapons.length < capacity(p) || mergeTarget(p, offer) >= 0;
@@ -1056,7 +1082,7 @@
             (p.ultUsed != null && typeof p.ultUsed !== 'boolean') || !validNumber(p.hp) || !validNumber(p.x) || !validNumber(p.y) ||
             !validNumber(w.tm) || !validNumber(w.tick) || !Number.isInteger(w.nextId) ||
             !Array.isArray(p.weapons) || !p.weapons.every(([id, tier]) =>
-              D.weapons[id] && Number.isInteger(tier) && tier >= 1 && tier <= 4) ||
+              D.weapons[id] && Number.isInteger(tier) && tier >= 1 && tier <= D.MAX_WEAPON_TIER) ||
             !Array.isArray(p.items) || !p.items.every(id => D.items[id]) ||
             !p.stats || !Array.isArray(w.enemies) || !Array.isArray(w.drops) ||
             !w.drops.every(d => d.gold == null || d.gold === 0 || d.gold === 1) ||
@@ -1076,8 +1102,13 @@
               (s.offers.length !== 4 && s.offers.length !== 0) ||
               !s.offers.every(o => (s.mode === 'wave' && o == null) || o?.sold === true ||
                 (o && (o.weapon ? D.weapons[o.id] : D.items[o.id]) &&
-                Number.isFinite(o.price) && Number.isInteger(o.tier)))))) throw Error('invalid save');
+                Number.isFinite(o.price) && Number.isInteger(o.tier) && o.tier >= 1 && o.tier <= (o.weapon ? D.MAX_WEAPON_TIER : D.MAX_ITEM_TIER)))))) throw Error('invalid save');
         w.rng = Math.random;
+        w.bossKills ??= w.bossKilled ? 1 : 0;
+        w.bossSpawned ??= !!w.bossKilled || w.enemies.some(e => e.type.startsWith('boss_'));
+        // Older full-cap saves could claim a boss spawned although spawn failed.
+        if (bossWave(w) && !w.bossKills && !w.bossKilled &&
+            !w.enemies.some(e => e.type.startsWith('boss_'))) w.bossSpawned = false;
         p.lvl ??= 1; // pre-level checkpoints
         p.ultUsed ??= false; // checkpoints made before ultimates were introduced
         w.fx = [];
@@ -1106,9 +1137,9 @@
   const api = {
     useUlt, shakeRevive, REVIVE_SHAKES, spawnPack,
     rollGrade, rollUpgrades, rollCrateItem, grantItem, sets, effectiveStats, capacity,
-    shopRerollCost, soloSave,
+    shopRerollCost, soloSave, weaponMean, rollWeaponTier,
     behaviors, weaponPose, weaponRange, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,
-    hurtPlayer, waveLength, enemyStats, needXp, price, rerollCost, damageTaken,
+    hurtPlayer, waveLength, enemyStats, lateScale, needXp, price, rerollCost, damageTaken,
     rollDamage, createPlayer, createWorld, applyInput, spawn, kill, step, canEnd,
     merge, shop, buy, canBuy, clamp, enterShop
   };

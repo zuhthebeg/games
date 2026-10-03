@@ -125,7 +125,7 @@ test('vampire area range respects melee range stats and bleed retains existing c
 });
 test('laser loses 10% base damage at every actual weapon tier; beam tier survives network and FX draw', () => {
   const colors = [];
-  for (const tier of [1, 2, 3, 4]) {
+  for (const tier of [1, 2, 3, 4, 5, 6]) {
     const w = world('basic'), p = w.players.hero, e = S.spawn(w, 'tank', p.x + 200, p.y); e.hp = 1000;
     p.weapons = [['laser', tier]];
     S.weaponHit(w, p, ...p.weapons[0], e, 0);
@@ -139,8 +139,8 @@ test('laser loses 10% base damage at every actual weapon tier; beam tier survive
     const ctx = { save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() { drawn.push(this.strokeStyle); } };
     fx.draw(ctx, 0, 1); colors.push(drawn[0]);
   }
-  a.equal(new Set(colors).size, 4);
-  a.deepEqual(colors, ['#e8f9ff', '#69b7ff', '#c18aff', '#ffd35a']);
+  a.equal(new Set(colors).size, 6);
+  a.deepEqual(colors, ['#e8f9ff', '#69b7ff', '#c18aff', '#ffd35a', '#ff704d', '#4debd9']);
 });
 test('actual main movement is +20% for solo/host and guest, preserves modifiers, inertia, diagonal and half stick', () => {
   const main = source('main');

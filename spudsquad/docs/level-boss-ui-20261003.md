@@ -1,5 +1,7 @@
 # Level price / boss gem / compact settings — local-only evidence
 
+Historical checkpoint at4e5c052. The integrated successor [balance-vnext-20261003.md](balance-vnext-20261003.md) supersedes its rarity/roll and approval-status statements; this original evidence is retained unchanged below.
+
 Base: `3886195b452984f6a2fb1fbb2c5cbea62720cfce` (clean original main).
 Branch: `feature/spudsquad-level-boss-ui-20261003`.
 Worktree: `/home/cocy/.openclaw/workspace/tmp/worktrees/spudsquad-level-boss-ui-20261003`.

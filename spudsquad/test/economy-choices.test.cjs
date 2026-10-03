@@ -82,7 +82,7 @@ test('unique effects are not rerolled when owned; new pierce and item IDs surviv
   for (const id of ['fracture_round', 'bounty_badge', 'thorn_coil']) S.grantItem(p, id);
   // Force item slots and tier 2, and sample the same tier for a crate.
   let rolls = 0;
-  w.rng = () => (++rolls % 2 ? .5 : 0);
+  w.rng = () => ([.5, .99, 0][rolls++ % 3]);
   const choices = S.shop(w, p);
   a.ok(choices.some(o => !o.weapon && o.tier === 2));
   a.ok(choices.every(o => o.weapon || !p.items.includes(o.id)));

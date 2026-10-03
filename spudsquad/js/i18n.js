@@ -348,7 +348,7 @@
       peacock_feather: '획득 XP +25% · 획득 후 다음 웨이브는 XP 2배, 받는 피해 1.5배 (1회)',
       ricochet_coil: '직선 탄(폭발 제외)이 적 사이를 1번 더 튕김 · 중복 불가',
       focus_lens: '보유 무기 종류 1개마다 공격 속도 -3%',
-      anvil: '상점에 들어갈 때마다 T4 미만 무기 1개가 무작위로 1티어 상승 · 중복 불가'
+      anvil: '상점에 들어갈 때마다 T6 미만 무기 1개가 무작위로 1티어 상승 · 중복 불가'
     },
     en: {
       ice_pack: 'All hits have a 10% chance to chill: 2s, movement -35%, bosses -17.5% (no stacking; +10%p per copy)',
@@ -386,7 +386,7 @@
       peacock_feather: 'XP gained +25% · the next wave gives 2× XP but you take 1.5× damage (once)',
       ricochet_coil: 'Straight projectiles (non-explosive) bounce 1 more time between enemies · unique',
       focus_lens: 'Attack speed -3% per distinct weapon type held',
-      anvil: 'Each time you enter the shop, a random weapon below T4 gains +1 tier · unique'
+      anvil: 'Each time you enter the shop, a random weapon below T6 gains +1 tier · unique'
     },
     'zh-TW': {
       ice_pack: '所有命中10%機率冷卻：2秒移速-35%，頭目-17.5%（不疊加，每個+10個百分點）',
@@ -424,7 +424,7 @@
       peacock_feather: '獲得經驗 +25% · 取得後下一波經驗2倍、承受傷害1.5倍（一次）',
       ricochet_coil: '直線彈丸（爆炸除外）在敵人之間多反彈1次 · 不可重複',
       focus_lens: '每持有一種不同武器，攻擊速度 -3%',
-      anvil: '每次進入商店，隨機一把T4以下的武器提升1階 · 不可重複'
+      anvil: '每次進入商店，隨機一把T6以下的武器提升1階 · 不可重複'
     }
   };
   const grades = { ko: ['일반', '희귀', '에픽', '전설'],
@@ -487,7 +487,31 @@
       const item = P.data.items[id];
       return [itemEffects[language][id], ...(item ? this.effect(item.stats) : [])].filter(Boolean).join(' · ');
     },
-    grade(n) { return grades[language][n - 1] || ''; },
+    itemParts(id) {
+      const d = P.data.items[id];
+      if (!d) return [];
+      const out = Object.entries(d.stats).map(([key, value]) => ({
+        tone: value < 0 ? 'negative' : value > 0 ? 'positive' : 'neutral',
+        text: this.effect({ [key]: value })[0]
+      }));
+      const mixed = {
+        robot_arm: { ko: ['웨이브 종료마다 근접 피해 +2 영구', '웨이브 종료마다 최대 HP -1 영구'], en: ['Wave end: permanently +2 Melee', 'Wave end: permanently -1 Max HP'], 'zh-TW': ['每波結束永久近戰傷害+2', '每波結束永久最大生命-1'] },
+        wisdom_scroll: { ko: ['웨이브 중 5초마다 공격력 +5% (웨이브마다 초기화)', '웨이브 시작 공격력 -15%'], en: ['Damage +5% every 5s (resets each wave)', 'Damage -15% at wave start'], 'zh-TW': ['波次中每5秒傷害+5%（每波重置）', '波次開始傷害-15%'] },
+        peacock_feather: { ko: ['획득 XP +25% · 다음 웨이브 XP 2배 (1회)', '다음 웨이브 받는 피해 1.5배 (1회)'], en: ['XP gained +25% · next wave 2× XP (once)', 'Next wave: take 1.5× damage (once)'], 'zh-TW': ['取得經驗+25% · 下一波經驗2倍（一次）', '下一波受到傷害1.5倍（一次）'] }
+      };
+      if (mixed[id]) mixed[id][language].forEach((text, i) => out.push({ tone: i ? 'negative' : 'positive', text }));
+      else if (itemEffects[language][id]) {
+        // Classify actual mechanic, not the sign of a number inside translated prose.
+        const bad = d.enemies > 0 || d.enemyHp > 0 || d.priceMult > 1 || d.drain > 0 ||
+          d.noMaxHp || d.startHp < 1 || ['hp1', 'elite'].includes(d.once) ||
+          Object.values(d.perWeapon || {}).some(v => v < 0);
+        out.push({ tone: bad ? 'negative' : 'positive', text: itemEffects[language][id] });
+      }
+      const caps = { ko: ['중복 불가', '최대 {n}개'], en: ['Unique', 'Max {n} copies'], 'zh-TW': ['不可重複', '最多{n}個'] }[language];
+      if (d.unique || d.max) out.push({ tone: 'neutral', text: d.unique ? caps[0] : caps[1].replace('{n}', d.max) });
+      return out;
+    },
+    grade(n) { return grades[language][n - 1] || (n >= 5 && n <= 6 ? 'T' + n : ''); },
     effect(changes) {
       return Object.entries(changes).map(([key, n]) =>
         `${this.stat(key)} ${n > 0 ? '+' : ''}${Math.round(n)}${percentStats.has(key) ? '%' : ''}`
@@ -497,7 +521,7 @@
   // ---- 스탯 시트·도감·디버그 UI 문자열 (아이템 표와 분리해 둔다) ----
   Object.assign(strings.ko, {
     modeLabel: '모드', modeNormal: '🏁 20웨이브', modeEndless: '♾️ 무한', endlessOver: '무한 모드 종료!',
-    modeNormalHint: '20웨이브 보스를 잡으면 클리어', modeEndlessHint: '20웨이브 이후에도 끝없이 · 10웨이브마다 보스, 적이 점점 가파르게 강해진다',
+    modeNormalHint: '20웨이브 보스를 잡으면 클리어', modeEndlessHint: '20웨이브부터 매 웨이브 보스 처치 필수 · 적 HP·피해가 급격히 상승',
     secAttack: '공격', secSurvival: '생존', secUtility: '유틸', weapons: '무기', sets: '세트 보너스',
     close: '닫기', perHit: '1타', shots: '발사', noSets: '같은 계열 무기 2개부터 세트 보너스가 켜져요',
     setActive: '{n}단계 활성', setNext: '{n}개부터 다음 단계', setMax: '최대 단계', tapItem: '아이템을 누르면 효과가 보여요',
@@ -514,7 +538,7 @@
   });
   Object.assign(strings.en, {
     modeLabel: 'Mode', modeNormal: '🏁 20 Waves', modeEndless: '♾️ Endless', endlessOver: 'Endless Run Over!',
-    modeNormalHint: 'Beat the wave 20 boss to win', modeEndlessHint: 'Keeps going past wave 20 · a boss every 10 waves, enemies ramp up fast',
+    modeNormalHint: 'Beat the wave 20 boss to win', modeEndlessHint: 'From wave 20: defeat one boss every wave to advance · HP and damage ramp up fast',
     secAttack: 'Offense', secSurvival: 'Survival', secUtility: 'Utility', weapons: 'Weapons', sets: 'Set bonuses',
     close: 'Close', perHit: 'Per hit', shots: 'Shots', noSets: 'Two weapons of the same class activate a set bonus',
     setActive: 'Stage {n} active', setNext: 'Next stage at {n}', setMax: 'Max stage', tapItem: 'Tap an item to see its effect',
@@ -531,7 +555,7 @@
   });
   Object.assign(strings['zh-TW'], {
     modeLabel: '模式', modeNormal: '🏁 20波', modeEndless: '♾️ 無盡', endlessOver: '無盡模式結束！',
-    modeNormalHint: '擊敗第20波頭目即通關', modeEndlessHint: '20波後持續進行 · 每10波出現頭目，敵人越來越強',
+    modeNormalHint: '擊敗第20波頭目即通關', modeEndlessHint: '第20波起每波必須擊敗一名頭目 · 敵人生命與傷害急遽提升',
     secAttack: '攻擊', secSurvival: '生存', secUtility: '輔助', weapons: '武器', sets: '套裝加成',
     close: '關閉', perHit: '每擊', shots: '發射', noSets: '同系列武器達2把即啟動套裝加成',
     setActive: '第{n}階段啟動', setNext: '{n}把啟動下一階段', setMax: '最高階段', tapItem: '點擊道具查看效果',

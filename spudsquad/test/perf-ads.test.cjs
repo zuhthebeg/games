@@ -41,6 +41,7 @@ test('jittered, delayed, duplicate and stale snapshots retain monotonic position
 });
 function packetWithHits(count) {
  const w=S.createWorld({wave:20,players:Object.fromEntries(['a','b','c','d'].map(uid=>[uid,{char:'gunslinger'}]))});
+ w.bossSpawned=true; // dense snapshot fixture: due boss slot already settled
  for(let i=0;i<150;i++)S.spawn(w,['tank','gunner','shielder','buffer'][i%4],i*7,600);
  w.fx=Array.from({length:count},(_,i)=>['hit',800,600,12,false,i%150]);return N.encode(w);
 }

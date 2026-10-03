@@ -28,21 +28,26 @@
   // Fixed instant ultimates: world-pixel radius, once per combat wave, host executes.
   const ults = {
     basic: { name: '감자 충격파', en: 'Spud Shockwave', zh: '馬鈴薯衝擊波', text: { ko: '피해30', 'zh-TW': '傷害30' }, effect: 'damage', radius: 180, damage: 30 },
-    muscle: { name: '근육 강타', en: 'Muscle Slam', zh: '肌肉重擊', text: { ko: '피해60 · 넉백600', 'zh-TW': '傷害60 · 擊退600' }, effect: 'damage + knockback', radius: 140, damage: 60, kb: 600 },
-    science: { name: '냉각 펄스', en: 'Cryo Pulse', zh: '冷凍脈衝', text: { ko: '피해40 · 냉각2초', 'zh-TW': '傷害40 · 冷卻2秒' }, effect: 'damage + chill 2s', radius: 300, damage: 40, chill: true },
-    lucky: { name: '행운 잭팟', en: 'Lucky Jackpot', zh: '幸運大獎', text: { ko: '피해20 · 재화+15', 'zh-TW': '傷害20 · 材料+15' }, effect: 'damage + gems 15', radius: 220, damage: 20, mats: 15 },
-    gunslinger: { name: '육연발', en: 'Six Shooter', zh: '六連發', text: { ko: '가까운6명 피해45', 'zh-TW': '最近6名傷害45' }, effect: 'nearest 6 damage', radius: 480, damage: 45, limit: 6 },
+    muscle: { name: '근육 강타', en: 'Muscle Slam', zh: '肌肉重擊', text: { ko: '피해60 · 넉백600×근육1.5×스탯(저항 적¼)', 'zh-TW': '傷害60 · 擊退600×肌肉1.5×屬性(抗性敵¼)' }, effect: '60 damage + knockback 600 × muscle 1.5 × stat (resistant enemies ¼)', radius: 140, damage: 60, kb: 600 },
+    science: { name: '냉각 펄스', en: 'Cryo Pulse', zh: '冷凍脈衝', text: { ko: '피해40 · 2초 이동속도 -35%(보스 -17.5%)', 'zh-TW': '傷害40 · 2秒移速-35%(首領-17.5%)' }, effect: '40 damage + 2s movement -35% (boss -17.5%)', radius: 300, damage: 40, chill: true },
+    lucky: { name: '행운 잭팟', en: 'Lucky Jackpot', zh: '幸運大獎', text: { ko: '피해20 · 재화+15', 'zh-TW': '傷害20 · 材料+15' }, effect: '20 damage + 15 materials', radius: 220, damage: 20, mats: 15 },
+    gunslinger: { name: '육연발', en: 'Six Shooter', zh: '六連發', text: { ko: '가까운6명 피해45', 'zh-TW': '最近6名傷害45' }, effect: '45 damage each to nearest 6 enemies', radius: 480, damage: 45, limit: 6 },
     berserker: { name: '분노 해방', en: 'Rage Release', zh: '狂怒釋放', text: { ko: '피해30+잃은HP비율×60 · 최대HP25% 회복', 'zh-TW': '傷害30+已失生命比例×60 · 回復最大生命25%' }, effect: '30 + missing HP ratio * 60 damage; heal 25%', radius: 200, damage: 30, heal: .25 },
     vampire: { name: '혈월', en: 'Blood Moon', zh: '血月', text: { ko: '적 현재HP 절반(보스 포함) · 본인 완전 회복', 'zh-TW': '敵人當前生命減半(含首領) · 自身完全回復' }, effect: 'current enemy HP / 2; self full HP', radius: 220 },
     bomber: { name: '대폭발', en: 'Mega Blast', zh: '大爆破', text: { ko: '피해70', 'zh-TW': '傷害70' }, effect: 'damage', radius: 320, damage: 70 },
-    cyclops: { name: '외눈 저격', en: 'Cyclops Snipe', zh: '獨眼狙擊', text: { ko: '가까운1명 피해180', 'zh-TW': '最近1名傷害180' }, effect: 'nearest 1 damage', radius: 600, damage: 180, limit: 1 },
-    ghost: { name: '유령 장막', en: 'Ghost Veil', zh: '幽靈帷幕', text: { ko: '피해25 · 본인4초 무적', 'zh-TW': '傷害25 · 自身無敵4秒' }, effect: 'damage + self immunity 4s', radius: 180, damage: 25, immune: 4 },
-    saver: { name: '비상 저금통', en: 'Emergency Savings', zh: '緊急存款', text: { ko: '피해20 · 재화+min(40,10+현재재화10%)', 'zh-TW': '傷害20 · 材料+min(40,10+持有量10%)' }, effect: 'damage + gems min(40, 10 + floor(gems * 10%))', radius: 200, damage: 20 },
+    cyclops: { name: '외눈 저격', en: 'Cyclops Snipe', zh: '獨眼狙擊', text: { ko: '가까운1명 피해180', 'zh-TW': '最近1名傷害180' }, effect: '180 damage to nearest enemy', radius: 600, damage: 180, limit: 1 },
+    ghost: { name: '유령 장막', en: 'Ghost Veil', zh: '幽靈帷幕', text: { ko: '피해25 · 본인4초 무적', 'zh-TW': '傷害25 · 自身無敵4秒' }, effect: '25 damage + self immunity 4s', radius: 180, damage: 25, immune: 4 },
+    saver: { name: '비상 저금통', en: 'Emergency Savings', zh: '緊急存款', text: { ko: '피해20 · 재화+min(40,10+floor(현재재화10%))', 'zh-TW': '傷害20 · 材料+min(40,10+floor(持有量10%))' }, effect: '20 damage + materials min(40, 10 + floor(gems * 10%))', radius: 200, damage: 20 },
     thorn: { name: '가시 폭풍', en: 'Thorn Storm', zh: '荊棘風暴', text: { ko: '피해30+가시×3', 'zh-TW': '傷害30+荊棘×3' }, effect: '30 + thorns * 3 damage', radius: 180, damage: 30 },
     soldier: { name: '포대 일제사격', en: 'Battery Salvo', zh: '砲台齊射', text: { ko: '피해65 · 이동 중에도 사용 가능', 'zh-TW': '傷害65 · 移動中也能使用' }, effect: 'damage (also while moving)', radius: 360, damage: 65 },
-    loud: { name: '고막 파괴', en: 'Sonic Boom', zh: '音爆', text: { ko: '피해20 · 넉백800', 'zh-TW': '傷害20 · 擊退800' }, effect: 'damage + knockback', radius: 400, damage: 20, kb: 800 },
-    mutant: { name: '급속 재생', en: 'Rapid Mutation', zh: '快速再生', text: { ko: '피해35 · 최대HP50% 회복 · 무기 재장전', 'zh-TW': '傷害35 · 回復最大生命50% · 武器裝填' }, effect: 'damage + heal 50% + weapon cooldown reset', radius: 220, damage: 35, heal: .5, resetCool: true }
+    loud: { name: '고막 파괴', en: 'Sonic Boom', zh: '音爆', text: { ko: '피해20 · 넉백800×스탯(저항 적¼)', 'zh-TW': '傷害20 · 擊退800×屬性(抗性敵¼)' }, effect: '20 damage + knockback 800 × stat (resistant enemies ¼)', radius: 400, damage: 20, kb: 800 },
+    mutant: { name: '급속 재생', en: 'Rapid Mutation', zh: '快速再生', text: { ko: '피해35 · 최대HP50% 회복 · 무기 재장전', 'zh-TW': '傷害35 · 回復最大生命50% · 武器裝填' }, effect: '35 damage + heal 50% max HP + weapon cooldown reset', radius: 220, damage: 35, heal: .5, resetCool: true }
   };
+  for (const u of Object.values(ults)) {
+    u.duration = u.immune || (u.chill ? 2 : 0);
+    u.text.en = u.effect.startsWith('damage') ? u.effect.replace('damage', u.damage + ' damage') : u.effect;
+    u.text.en += ' · instant cast';
+  }
   const weapons = {
     fist: { name: '주먹', muzzle: [12, 0], artAngle: Math.PI / 2, classes: ['unarmed'], behavior: 'thrust', damage: 8, cool: .9, range: 110, kb: 220, price: 15 },
     dagger: { name: '단검', muzzle: [13, 0], artAngle: -Math.PI / 4, classes: ['blade', 'precise'], behavior: 'thrust', damage: 6,
@@ -207,7 +212,8 @@
   // 근접 무기는 사거리 스탯의 절반만 받는다(브로테이토식). 판정 거리 = 모션이 실제로 뻗는 거리.
   const MELEE_RANGE_SCALE = .5;
   const WEAPON_ORBIT = 36, WEAPON_SIZE = 44; // 무기 궤도 반경·표시 크기(px). sim 원점 계산과 렌더가 공유
-  const D = { stats, chars, ults, weapons, items, enemies, upgrades, curve, IFRAME, MELEE_RANGE_SCALE, WEAPON_ORBIT, WEAPON_SIZE, W: 1600, H: 1200 };
+  const MAX_WEAPON_TIER = 6, MAX_ITEM_TIER = 4;
+  const D = { MAX_WEAPON_TIER, MAX_ITEM_TIER, stats, chars, ults, weapons, items, enemies, upgrades, curve, IFRAME, MELEE_RANGE_SCALE, WEAPON_ORBIT, WEAPON_SIZE, W: 1600, H: 1200 };
   root.SPUD = root.SPUD || {};
   root.SPUD.data = D;
   if (typeof module !== 'undefined') module.exports = D;

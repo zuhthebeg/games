@@ -1,6 +1,21 @@
 (function (root) {
   'use strict';
   const P = root.SPUD = root.SPUD || {};
+  // One immutable, bounded line geometry per character; no filters/emitters.
+  const MAX_ULT_FX = 4;
+  const ultStyles = Object.freeze(Object.fromEntries([
+    ['basic', '#a8edff', 8, 'shock'], ['muscle', '#ff9966', 4, 'slam'],
+    ['science', '#80dfff', 6, 'beam'], ['lucky', '#ffe76a', 5, 'star'],
+    ['gunslinger', '#ffc58a', 6, 'beam'], ['berserker', '#ff6565', 10, 'shock'],
+    ['vampire', '#ed7398', 8, 'absorb'], ['bomber', '#ffad42', 12, 'shock'],
+    ['cyclops', '#d3a5ff', 1, 'beam'], ['ghost', '#a0ffd8', 6, 'veil'],
+    ['saver', '#ffd950', 4, 'star'], ['thorn', '#9dde6e', 14, 'star'],
+    ['soldier', '#edcb84', 9, 'beam'], ['loud', '#fc94e7', 3, 'shock'],
+    ['mutant', '#9effa0', 7, 'absorb']
+  ].map(([id, color, n, shape]) => [id, Object.freeze({ color, shape,
+    points: Object.freeze(Array.from({ length: n }, (_, i) => Object.freeze([
+      Math.cos(i * Math.PI * 2 / n), Math.sin(i * Math.PI * 2 / n)
+    ]))) })])));
   const readShake = () => { try { return localStorage.getItem('spud_shake') !== 'false'; } catch { return true; } };
   class Effects {
     constructor() {
@@ -79,8 +94,14 @@
         if (type === 'sw') this.motions.set(`${a}:${b}`, { at: now, angle: d, action: e,
           origin: { x: ev[5], y: ev[6] }, reach: ev[7] || 0 });
         if (type === 'bm') this.trails.push({ x1: a, y1: b, x2: d, y2: e, kind: ev[5], tier: ev[6] || 1, until: now + 120 });
-        if (type === 'ult') this.trails.push({ x: a, y: b, r: d, kind: 'ring',
-          color: e === 'vampire' ? '#ed7398' : '#a8edff', until: now + 220 });
+        if (type === 'ult' && ultStyles[e]) {
+          // Four simultaneous casts is the multiplayer ceiling. Preserve other FX.
+          const casts = this.trails.filter(v => v.kind === 'ult');
+          if (casts.length >= MAX_ULT_FX) this.trails.splice(this.trails.indexOf(casts[0]), 1);
+          this.trails.push({ x: a, y: b, r: d, kind: 'ult', style: ultStyles[e],
+            uid: ev[5], at: now, duration: Math.max(750, (P.data.ults?.[e]?.duration || 0) * 1000),
+            until: now + Math.max(750, (P.data.ults?.[e]?.duration || 0) * 1000) });
+        }
         if (type === 'va') this.trails.push({ x: a, y: b, r: d, kind: 'ring', color: '#ed7398', until: now + 220 });
         if (type === 'ex') {
           this.trails.push({ x: a, y: b, r: d, kind: 'ring', until: now + 220 });
@@ -100,10 +121,29 @@
     }
     draw(c, dt, now) {
       for (const v of this.trails.slice()) {
+        if (v.kind === 'ult') {
+          if (now >= v.until) { this.trails.splice(this.trails.indexOf(v), 1); continue; }
+          const t = Math.max(0, (now - v.at) / v.duration), style = v.style;
+          const scale = style.shape === 'absorb' ? 1 - .75 * t : .25 + .75 * Math.min(1, t * 2);
+          c.save(); c.globalAlpha = Math.min(1, t * 8) * Math.min(1, (1 - t) * 3);
+          c.strokeStyle = style.color; c.lineWidth = t < .2 ? 6 : 3;
+          c.beginPath(); c.arc(v.x, v.y, v.r * scale, 0, Math.PI * 2); c.stroke();
+          c.beginPath();
+          for (const [x, y] of style.points) {
+            const inner = style.shape === 'beam' ? .08 : style.shape === 'star' ? .55 : .8;
+            c.moveTo(v.x + x * v.r * scale * inner, v.y + y * v.r * scale * inner);
+            c.lineTo(v.x + x * v.r * scale, v.y + y * v.r * scale);
+          }
+          c.stroke();
+          if (style.shape === 'shock' || style.shape === 'veil') {
+            c.beginPath(); c.arc(v.x, v.y, v.r * scale * .65, 0, Math.PI * 2); c.stroke();
+          }
+          c.restore(); continue;
+        }
         c.save();
         c.globalAlpha = Math.max(0, (v.until - now) / 220);
         c.strokeStyle = v.color || (v.kind === 'ring' ? '#fff3b2' : v.kind === 'beam'
-          ? ['#e8f9ff', '#69b7ff', '#c18aff', '#ffd35a'][Math.max(1, Math.min(4, v.tier)) - 1] : '#e8f9ff');
+          ? ['#e8f9ff', '#69b7ff', '#c18aff', '#ffd35a', '#ff704d', '#4debd9'][Math.max(1, Math.min(P.data.MAX_WEAPON_TIER || 6, v.tier)) - 1] : '#e8f9ff');
         c.lineWidth = v.kind === 'ring' ? 4 : 7;
         c.beginPath();
         if (v.kind === 'ring') c.arc(v.x, v.y, v.r * (1 - c.globalAlpha * .4), 0, 7);
@@ -132,5 +172,5 @@
       }
     }
   }
-  P.fx = { Effects };
+  P.fx = { Effects, MAX_ULT_FX };
 })(window);

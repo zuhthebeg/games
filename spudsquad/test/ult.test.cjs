@@ -82,13 +82,13 @@ test('host authoritative RT: bound sender, duplicates/replay/dead/shop rejected,
   h.world.players.guest.alive = true; h.world.ended = true; h.rt('guest', { t: 'ult', w: 5 }); a.equal(h.world.players.guest.ultUsed, false);
   h.world.ended = false; a.equal(h.requestUlt(), true); a.equal(h.world.players.host.ultUsed, true);
 });
-test('UI always-visible button, real disabled states and synchronized guest state', () => {
-  const btn = { setAttribute(k, v) { this[k] = v; } }, stub = { classList: { toggle() {} } };
+test('UI combat-only button, real disabled states and synchronized guest state', () => {
+  const btn = { style: {}, setAttribute(k, v) { this[k] = v; } }, stub = { classList: { toggle() {} } };
   const window = { SPUD: { data: D, sim: S, i18n: { language: 'ko' } } };
   vm.runInNewContext(fs.readFileSync(require.resolve('../js/ui.js'), 'utf8'), { window, document: { getElementById: id => id === 'ultBtn' ? btn : stub } });
   const p = S.createPlayer('solo', 'vampire');
   window.SPUD.ui.ultimate(p, 'wave'); a.equal(btn.disabled, false); a.match(btn.title, /220/);
-  for (const mode of ['shop', 'ready', 'title', 'select', 'over']) { window.SPUD.ui.ultimate(p, mode); a.equal(btn.disabled, true); }
+  for (const mode of ['shop', 'ready', 'title', 'select', 'over']) { window.SPUD.ui.ultimate(p, mode); a.equal(btn.disabled, true); a.equal(btn.hidden, true); a.equal(btn.style.display, 'none'); }
   p.ultUsed = true; window.SPUD.ui.ultimate(p, 'wave'); a.equal(btn.disabled, true);
   p.ultUsed = false; p.alive = false; window.SPUD.ui.ultimate(p, 'wave'); a.equal(btn.disabled, true);
   p.alive = true; window.SPUD.ui.ultimate(p, 'wave', true); a.equal(btn.disabled, true);

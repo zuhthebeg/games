@@ -44,13 +44,13 @@ test('v3 catalogue: every spec item/char exists with its tier, T4 legendary tier
     a.equal(D.items[id].unique, true, id);
 });
 
-test('T4 rolls only from wave 10 at 3% + luck/1000; crates can yield T4', () => {
-  const w = world('basic', { rng: () => .025 }), p = w.players.solo;
+test('T4 gate stays wave10; baseline weight .5%, bounded luck and crates', () => {
+  const w = world('basic', { rng: () => .999 }), p = w.players.solo;
   w.wave = 9; a.equal(S.rollItemTier(w, p), 3);
   w.wave = 10; a.equal(S.rollItemTier(w, p), 4);
-  w.rng = () => .035; a.equal(S.rollItemTier(w, p), 3);
-  p.stats.luck = 10; a.equal(S.rollItemTier(w, p), 4);
-  w.rng = () => .01;
+  w.rng = () => .994; a.equal(S.rollItemTier(w, p), 3);
+  p.stats.luck = 100; a.equal(S.rollItemTier(w, p), 4);
+  w.rng = () => .999;
   a.equal(D.items[S.rollCrateItem(w, p)].tier, 4);
 });
 
@@ -246,25 +246,25 @@ test('focus lens: +30% damage, -3% attack speed per distinct weapon type', () =>
   a.equal(S.effectiveStats(p).atkSpd, -9);
 });
 
-test('anvil: entering the shop upgrades one random weapon below T4; nothing without anvil', () => {
+test('anvil: entering the shop upgrades one random weapon below T6; nothing without anvil', () => {
   const p = S.createPlayer('x');
   p.weapons = [['pistol', 4], ['smg', 2]];
   a.equal(S.enterShop(p, () => 0), null);
   give(p, 'anvil');
-  a.equal(S.enterShop(p, () => 0), 1);
-  a.deepEqual(p.weapons, [['pistol', 4], ['smg', 3]]);
-  p.weapons = [['pistol', 4]];
+  a.equal(S.enterShop(p, () => 0), 0);
+  a.deepEqual(p.weapons, [['pistol', 5], ['smg', 2]]);
+  p.weapons = [['pistol', 6]];
   a.equal(S.enterShop(p, () => 0), null);
 });
 
 test('mutant: half XP needed per level, 1.5x shop prices for items and weapons', () => {
-  a.equal(S.needXp(1, 'mutant'), 8);
-  a.equal(S.needXp(1), 16);
+  a.equal(S.needXp(1, 'mutant'), 10);
+  a.equal(S.needXp(1), 20);
   const w = world('mutant', { wave: 3, rng: () => .2 }), p = w.players.solo;
   const b = world('basic', { wave: 3, rng: () => .2 });
   const mo = S.shop(w, p), bo = S.shop(b, b.players.solo);
   mo.forEach((o, i) => { a.equal(o.id, bo[i].id); a.equal(o.price, Math.ceil(bo[i].price * 1.5)); });
-  for (let i = 0; i < 8; i++) w.drops.push({ id: 1000 + i, x: p.x, y: p.y, gold: 1 });
+  for (let i = 0; i < 10; i++) w.drops.push({ id: 1000 + i, x: p.x, y: p.y, gold: 1 });
   S.step(w);
   a.equal(p.lvl, 2);
 });

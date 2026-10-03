@@ -15,7 +15,7 @@ test('normal mode wins on the wave-20 boss; endless keeps going', () => {
   const endless = bossWorld(true); killBoss(endless); S.step(endless, 1 / 30);
   a.equal(endless.ended, true); a.equal(endless.win, false, 'endless does not end the run at 20');
 });
-test('endless waves past 20 spawn a boss every 10 waves and scale enemies with compounding', () => {
+test('endless waves past 20 spawn a required boss every wave and scale enemies with compounding', () => {
   const w = S.createWorld({ wave: 30, endless: true, players: { solo: { char: 'basic' } }, rng: () => .5 });
   w.spawnClock = -1e9; w.players.solo.immune = 1e9; S.step(w, 1 / 30);
   a.ok(w.enemies.some(e => e.type === 'boss_1'));
