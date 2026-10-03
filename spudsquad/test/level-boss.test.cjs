@@ -89,5 +89,5 @@ test('JSON host/guest transport retains owner XP level and boss queue; guest REA
 });
 test('changed feature scripts use a new cache key, unchanged shared scripts stay untouched',()=>{
  const html=require('node:fs').readFileSync(require.resolve('../index.html'),'utf8');for(const name of ['data','fx','i18n','sim','net','render','ui','main'])a.ok(html.includes(`js/${name}.js?v=20261003artshield1`),name);
- a.ok(html.includes('/lib/shared-wallet.js?v=20260809pf2'));a.ok(html.includes('js/sfx.js?v=20261001followup1'));
+ a.ok(html.includes('/lib/shared-wallet.js?v=20260809pf2'));a.ok(html.includes('js/sfx.js?v=20261003artshield1'));
 });
