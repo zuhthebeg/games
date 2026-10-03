@@ -8,8 +8,8 @@ const world = (char = 'basic') => {
   return w;
 };
 const enemy = (w, x, y, type = 'blob') => S.spawn(w, type, x, y);
-test('18 weapons and 75 items (v4) have their exact definitions', () => {
-  a.equal(Object.keys(D.weapons).length, 18);
+test('19 weapons and 75 items (v4) have their exact definitions', () => {
+  a.equal(Object.keys(D.weapons).length, 19);
   for (const weapon of Object.values(D.weapons)) {
     a.equal(weapon.muzzle.length, 2);
     a.ok(weapon.muzzle.every(Number.isFinite));

@@ -86,6 +86,8 @@
   const hasRule = (p, key) => rulesOf(p).some(d => d[key]);
   function effectiveStats(p) {
     const result = { ...p.stats };
+    // Armor belongs to equipped slots only: T1 +3, +1/tier. Never stored in p.stats.
+    for (const [id, tier] of p.weapons) if (D.weapons[id]?.armor) result.armor += D.weapons[id].armor + tier - 1;
     const cuffed = hasRule(p, 'noMaxHp'); // 수갑: 세트 보너스의 최대HP 증가도 차단
     for (const group of Object.values(sets(p))) {
       for (const [key, value] of Object.entries(group.stats)) {
@@ -407,14 +409,26 @@
     }
   }
   // Slot 0 starts at +X; no camera-facing/aim rotation of the orbit itself.
-  function weaponPose(p, id, slot, angle) {
+  const weaponGeometryCache = {}; // Immutable art geometry, computed once per weapon/tier.
+  function weaponGeometry(id, tier = 1) {
+    const key = id + ":" + tier;
+    if (weaponGeometryCache[key]) return weaponGeometryCache[key];
+    const v = D.weapons[id], art = v.art?.[Math.min(4, tier) - 1];
+    const size = (D.WEAPON_SIZE || 44) * (1 + .07 * (tier - 1));
+    if (!art) return weaponGeometryCache[key] = Object.freeze({ size, rotation: v.artAngle || 0, flipY: false, muzzle: Object.freeze(v.muzzle.map(n => n * (D.WEAPON_SIZE || 44) / 28)) });
+    const rotation = -art.axis, x = (art.muzzle[0] - 128) * size / 256, y = (art.muzzle[1] - 128) * size / 256;
+    return weaponGeometryCache[key] = Object.freeze({ size, rotation, flipY: art.flipY, muzzle: Object.freeze([x * Math.cos(rotation) - y * Math.sin(rotation),
+      0]), anchorY: -(x * Math.sin(rotation) + y * Math.cos(rotation)) * (art.flipY ? -1 : 1) });
+  }
+  function weaponPose(p, id, slot, angle, tier = p.weapons[slot]?.[1] || 1) {
     const orbit = 2 * Math.PI * slot / Math.max(1, p.weapons.length);
     // 무기 궤도 반경·크기(렌더와 공유). muzzle은 28px 아트 기준이라 표시 크기 비율로 확대.
     // 무기가 많을수록 궤도를 넓혀 겹침 방지(2개까지 기본, 이후 개당 +6px)
-    const R = (D.WEAPON_ORBIT || 36) + 6 * Math.max(0, p.weapons.length - 2), k = (D.WEAPON_SIZE || 44) / 28;
+    const R = (D.WEAPON_ORBIT || 36) + 6 * Math.max(0, p.weapons.length - 2);
     const x = p.x + R * Math.cos(orbit);
     const y = p.y + R * Math.sin(orbit);
-    const mx = D.weapons[id].muzzle[0] * k, my = D.weapons[id].muzzle[1] * k;
+    const geometry = weaponGeometry(id, tier);
+    const mx = geometry.muzzle[0], my = geometry.muzzle[1] * (Math.cos(angle) < 0 && D.weapons[id].art ? -1 : 1);
     return { x, y, muzzleX: x + mx * Math.cos(angle) - my * Math.sin(angle),
       muzzleY: y + mx * Math.sin(angle) + my * Math.cos(angle), orbit };
   }
@@ -503,7 +517,7 @@
     const v = D.weapons[id];
     const { power, crit } = attackPower(w, p, v, tier);
     const range = weaponRange(p, v);
-    const pose = weaponPose(p, id, slot, angle);
+    const pose = weaponPose(p, id, slot, angle, tier);
     // back = 몸 중심~총구 거리. 캐릭터에 붙은 적(총구보다 가까운 적)도 맞도록 판정을 몸 쪽까지 연장.
     const back = Math.hypot(pose.muzzleX - p.x, pose.muzzleY - p.y);
     let origin = { x: pose.muzzleX, y: pose.muzzleY, back };
@@ -1138,7 +1152,7 @@
     useUlt, shakeRevive, REVIVE_SHAKES, spawnPack,
     rollGrade, rollUpgrades, rollCrateItem, grantItem, sets, effectiveStats, capacity,
     shopRerollCost, soloSave, weaponMean, rollWeaponTier,
-    behaviors, weaponPose, weaponRange, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,
+    behaviors, weaponGeometry, weaponPose, weaponRange, applyStatus, explode, createCrate, rollItemTier, weaponHit, hurtEnemy,
     hurtPlayer, waveLength, enemyStats, lateScale, needXp, price, rerollCost, damageTaken,
     rollDamage, createPlayer, createWorld, applyInput, spawn, kill, step, canEnd,
     merge, shop, buy, canBuy, clamp, enterShop
@@ -1160,7 +1174,7 @@
     return { id, tier, kind, damage: Math.max(1, power), cooldownMs: cooldown * 1000,
       range: weaponRange(p, v), shots: v.behavior === 'projectile'
         ? (v.count || 1) + Math.max(0, s.projectiles || 0) : 1,
-      crit: s.crit + (v.crit || 0) };
+      crit: s.crit + (v.crit || 0), armor: v.armor ? v.armor + tier - 1 : 0 };
   };
   root.SPUD = root.SPUD || {};
   root.SPUD.sim = api;

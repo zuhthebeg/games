@@ -17,7 +17,7 @@ function dummy(w, type = 'tank', x = 1000, y = 600) {
 const ticks = (w, n) => { for (let i = 0; i < n; i++) S.step(w, 1/30); };
 
 test('v4 schema: 4 tier-ready weapons and 12 tradeoff items', () => {
-  a.equal(Object.keys(D.weapons).length, 18); a.equal(Object.keys(D.items).length, 75);
+  a.equal(Object.keys(D.weapons).length, 19); a.equal(Object.keys(D.items).length, 75);
   for (const id of weapons) {
     const v = D.weapons[id]; a.ok(v, id); a.equal(v.muzzle.length, 2); a.ok(Number.isFinite(v.artAngle));
     a.ok(['melee','ranged'].includes(v.kind)); a.ok(v.classes.length); a.ok(v.price > 0);

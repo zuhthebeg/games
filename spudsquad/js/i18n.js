@@ -86,8 +86,8 @@
       }
     },
     weapons: {
-      en: ['Fist', 'Dagger', 'Spear', 'Stick', 'Hammer', 'Slingshot', 'Pistol', 'Shotgun', 'SMG', 'Crossbow', 'Laser', 'Rocket', 'Flamethrower', 'Staff', 'Boomerang', 'Hoe', 'Potato Cannon', 'Frost Wand'],
-      'zh-TW': ['拳頭', '匕首', '長矛', '木棍', '戰錘', '彈弓', '手槍', '霰彈槍', '衝鋒槍', '弩', '雷射', '火箭', '火焰噴射器', '閃電法杖', '迴旋鏢', '鋤頭', '馬鈴薯大砲', '冰霜法杖']
+      en: ['Fist', 'Dagger', 'Spear', 'Stick', 'Hammer', 'Slingshot', 'Pistol', 'Shotgun', 'SMG', 'Crossbow', 'Laser', 'Rocket', 'Flamethrower', 'Staff', 'Boomerang', 'Hoe', 'Potato Cannon', 'Frost Wand', 'Shield'],
+      'zh-TW': ['拳頭', '匕首', '長矛', '木棍', '戰錘', '彈弓', '手槍', '霰彈槍', '衝鋒槍', '弩', '雷射', '火箭', '火焰噴射器', '閃電法杖', '迴旋鏢', '鋤頭', '馬鈴薯大砲', '冰霜法杖', '盾牌']
     },
     items: {
       en: {
@@ -249,13 +249,13 @@
   const features = {
     ko: ['찌르기', '치명 출혈', '선분 관통', '120° 휘두르기', '착지 충격파',
       '한 번 튕김', '단일 표적 탄환', '30° 산탄 4발', '8° 탄퍼짐', '정밀 단일 탄환',
-      '무한 관통 빔', '반경 70 폭발', '40° 원뿔 화상', '번개 3회 연쇄', '최대 사거리에서 귀환 · 왕복 각각 1타', '120° 휘두르기 · 처치 시 재료 +1 확률 15% (행운 적용)', '반경 42 폭발 · 피해 35% 감자탄 3개 분열 (재분열 없음)', '냉각 2초 · 이동 -35%, 보스 -17.5% (중첩 없음)'],
+      '무한 관통 빔', '반경 70 폭발', '40° 원뿔 화상', '번개 3회 연쇄', '최대 사거리에서 귀환 · 왕복 각각 1타', '120° 휘두르기 · 처치 시 재료 +1 확률 15% (행운 적용)', '반경 42 폭발 · 피해 35% 감자탄 3개 분열 (재분열 없음)', '냉각 2초 · 이동 -35%, 보스 -17.5% (중첩 없음)', '방패 밀치기 · 슬롯마다 방어 +3~8 (T1~T6) · 중첩 합산'],
     en: ['Thrust', 'Critical bleed', 'Piercing thrust', '120° sweep', 'Impact shockwave',
       'One bounce', 'Single-target shot', 'Four pellets', '8° spread', 'Precise single-target bolt',
-      'Infinite beam', 'Radius 70 explosion', 'Burning cone', 'Three chain jumps', 'Returns at max range · one hit per leg', '120° sweep · 15% chance of +1 material on kill (Luck scales)', 'Radius 42 explosion · three 35% potato fragments (no re-splitting)', 'Chill for 2s · movement -35%, bosses -17.5% (no stacking)'],
+      'Infinite beam', 'Radius 70 explosion', 'Burning cone', 'Three chain jumps', 'Returns at max range · one hit per leg', '120° sweep · 15% chance of +1 material on kill (Luck scales)', 'Radius 42 explosion · three 35% potato fragments (no re-splitting)', 'Chill for 2s · movement -35%, bosses -17.5% (no stacking)', 'Shield bash · armor +3–8 per slot (T1–T6), additive'],
     'zh-TW': ['刺擊', '暴擊流血', '穿透刺擊', '120°橫掃', '落地衝擊波',
       '反彈一次', '單體子彈', '四發散彈', '8°散射', '精準單體弩箭',
-      '無限穿透光束', '半徑70爆炸', '扇形燃燒', '連鎖閃電三次', '最大射程後返回 · 去回各命中一次', '120°橫掃 · 擊殺15%機率多掉1材料（受幸運影響）', '半徑42爆炸 · 分裂3顆35%傷害馬鈴薯（不再分裂）', '冷卻2秒 · 移速-35%，頭目-17.5%（不疊加）']
+      '無限穿透光束', '半徑70爆炸', '扇形燃燒', '連鎖閃電三次', '最大射程後返回 · 去回各命中一次', '120°橫掃 · 擊殺15%機率多掉1材料（受幸運影響）', '半徑42爆炸 · 分裂3顆35%傷害馬鈴薯（不再分裂）', '冷卻2秒 · 移速-35%，頭目-17.5%（不疊加）', '盾擊 · 每欄防禦+3~8（T1~T6），加算疊加']
   };
   const traits = {
     ko: {

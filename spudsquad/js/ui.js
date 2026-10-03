@@ -25,10 +25,10 @@
     return `${name}: ${u.text?.[lang] || u.effect} · R ${u.radius}px · ${u.duration}s · ${I.t?.('ultRule') || '1 / WAVE'}${char === 'vampire' ? '' : ' · ' + modifiers}`;
   }
   const icon = (id, kind = '') =>
-    `<img class="${kind}" src="assets/${esc(id)}.webp" alt="" onerror="this.hidden=true">`;
+    `<img class="${kind}" src="assets/${esc(id)}.webp?v=20261003artshield1" alt="" onerror="this.hidden=true">`;
   // T2–T4 dedicated art; T5/T6 reuse T4 art with separate tier badge/color.
   const weaponIcon = (id, tier = 1, kind = '') => tier >= 2
-    ? `<img class="${kind}" src="assets/weapon_${esc(id)}_t${Math.min(4, Number(tier)) | 0}.webp" alt="" onerror="this.onerror=null;this.src='assets/weapon_${esc(id)}.webp'">`
+    ? `<img class="${kind}" src="assets/weapon_${esc(id)}_t${Math.min(4, Number(tier)) | 0}.webp?v=20261003artshield1" alt="" onerror="this.onerror=null;this.src='assets/weapon_${esc(id)}.webp?v=20261003artshield1'">`
     : icon('weapon_' + id, kind);
   const button = (text, act, extra = '') =>
     `<button type="button" class="btn ${extra}" data-act="${act}">${esc(text)}</button>`;
@@ -123,7 +123,7 @@
           <b>${esc(I.name('weapons', id))} · T${tier}</b><small>${esc(I.feature(id))}</small>
           <div class="weapon-nums"><span>${esc(I.t('perHit'))} <b>${num(w.damage)}${w.shots > 1 ? ` ×${w.shots}` : ''}</b></span>
           <span>${esc(I.t('cool'))} <b>${Math.round(w.cooldownMs)}ms</b></span>
-          <span>${esc(I.t('reach'))} <b>${Math.round(w.range)}</b></span></div></div></li>`;
+          <span>${esc(I.t('reach'))} <b>${Math.round(w.range)}</b></span>${w.armor ? `<span>${esc(I.stat('armor'))} <b>+${w.armor}</b></span>` : ''}</div></div></li>`;
       }).join('') || `<li class="muted">${esc(I.t('empty'))}</li>`;
       const counts = {};
       for (const id of p.items) counts[id] = (counts[id] || 0) + 1;
@@ -257,7 +257,7 @@
     panel.innerHTML = html;
     overlay.style.display = 'flex';
     document.body.classList.toggle('menu-mode', menu);
-    hudEl.setAttribute('aria-hidden', String(menu));
+    hudEl.setAttribute('aria-hidden', 'false'); // Settings remains accessible in zero-height menu HUD.
     requestAnimationFrame(() => P.main?.resize?.());
   }
   function hide() {
@@ -606,10 +606,19 @@ function hud(scene, uid) {
     settingsBtn.setAttribute('aria-expanded', 'false');
     if (focus) settingsBtn.focus();
   }
+  function placeSettings() {
+    const field = document.getElementById('field').getBoundingClientRect();
+    const button = settingsBtn.getBoundingClientRect();
+    settingsPanel.style.top = Math.max(0, button.bottom - field.top + 4) + 'px';
+    const panelWidth = Math.min(280, field.width - 16);
+    settingsPanel.style.right = Math.max(4, Math.min(field.width - panelWidth - 4, field.right - button.right)) + 'px';
+  }
   if (settingsBtn && settingsPanel) {
+    root.addEventListener?.('resize', () => { if (!settingsPanel.hidden) placeSettings(); });
     settingsBtn.onclick = () => {
       if (!settingsPanel.hidden) { closeSettings(); return; }
       P.main?.clearInput?.();
+      placeSettings();
       settingsPanel.hidden = false;
       settingsBtn.setAttribute('aria-expanded', 'true');
       document.getElementById('settingsClose').focus();

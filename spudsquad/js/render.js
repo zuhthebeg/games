@@ -28,7 +28,7 @@
       image.flash = flash;
     };
     image.onerror = () => { image.ok = false; };
-    image.src = 'assets/' + (D.enemies[id] && !id.startsWith('boss_') ? 'enemy_' + id : id) + '.webp?v=20261001v6';
+    image.src = 'assets/' + (D.enemies[id] && !id.startsWith('boss_') ? 'enemy_' + id : id) + '.webp?v=20261003artshield1';
     images[id] = image;
   }
   const weaponArt = (id, tier) => (tier = Math.min(4, tier)) >= 2 && images[`weapon_${id}_t${tier}`]?.ok ? `weapon_${id}_t${tier}` : 'weapon_' + id;
@@ -111,13 +111,13 @@
       this.canvas.width = Math.round(this.canvas.clientWidth * this.dpr);
       this.canvas.height = Math.round(this.canvas.clientHeight * this.dpr);
     }
-    sprite(id, x, y, size, face = 1, time = 0, flash = false) {
+    sprite(id, x, y, size, face = 1, time = 0, flash = false, fixedSize = false) {
       const c = this.c;
       const image = images[id];
       c.save();
       c.translate(x, y + Math.sin(time * 10) * 2);
       c.scale(face, 1);
-      size *= this.spriteK || 1;
+      if (!fixedSize) size *= this.spriteK || 1;
       if (image?.ok) {
         c.drawImage(flash && image.flash ? image.flash : image, -size / 2, -size / 2, size, size);
       } else {
@@ -392,6 +392,9 @@
         c.restore();
         const weapons = data?.weapons || [];
         weapons.forEach(([weapon], index) => {
+          const tier = Math.max(1, Math.min(D.MAX_WEAPON_TIER, weapons[index]?.[1] || 1));
+          const geometry = P.sim.weaponGeometry(weapon, tier);
+          const slotPose = P.sim.weaponPose({ x: player[1], y: player[2], weapons }, weapon, index, 0, tier);
           const motion = this.effects.motions.get(`${uid}:${index}`);
           const action = D.weapons[weapon]?.behavior;
           const age = motion ? (now - motion.at) / 1000 : Infinity;
@@ -403,12 +406,12 @@
             let best = reach * reach;
             for (const e of enemies) {
               const ex = Array.isArray(e) ? e[2] : e.x, ey = Array.isArray(e) ? e[3] : e.y;
-              const d2 = (ex - player[1]) ** 2 + (ey - player[2]) ** 2;
-              if (d2 < best) { best = d2; aim = Math.atan2(ey - player[2], ex - player[1]); }
+              const d2 = (ex - slotPose.x) ** 2 + (ey - slotPose.y) ** 2;
+              if (d2 < best) { best = d2; aim = Math.atan2(ey - slotPose.y, ex - slotPose.x); }
             }
           }
           const pose = P.sim.weaponPose({ x: player[1], y: player[2], weapons },
-            weapon, index, aim ?? 0);
+            weapon, index, aim ?? slotPose.orbit, tier);
           const direction = aim ?? pose.orbit;
           let extension = 0, angle = direction, sideX = 0, sideY = 0;
           // 근접: 판정 사거리(reach)까지 무기가 실제로 날아갔다 돌아온다. 0.07s 전진·0.05s 유지·0.2s 복귀.
@@ -448,10 +451,11 @@
           // 무기: 크게(46px) + 짙은 외곽 그림자로 배경 대비, 왼쪽 조준 시 상하 반전(총이 뒤집혀 보이지 않게).
           c.save(); c.translate(px, py); c.rotate(angle);
           if (Math.cos(angle) < 0) c.scale(1, -1);
-          c.rotate(D.weapons[weapon].artAngle || 0);
-          const tier = Math.max(1, Math.min(D.MAX_WEAPON_TIER, weapons[index]?.[1] || 1));
+          if (geometry.anchorY) c.translate(0, geometry.anchorY);
+          if (geometry.flipY) c.scale(1, -1);
+          c.rotate(geometry.rotation);
           const tv = TIER[tier];
-          const pulse = tier >= 3 ? 1 + Math.sin(now / 180 + index) * .04 : 1;
+          const pulse = !D.weapons[weapon].art && tier >= 3 ? 1 + Math.sin(now / 180 + index) * .04 : 1;
           if (tier === 4) {
             // 만렙: 무지개로 도는 오라 링 + 강한 발광
             c.save(); c.globalCompositeOperation = 'lighter';
@@ -461,10 +465,10 @@
           }
           c.shadowColor = tier === 4 ? `rgb(${hueRgb(now)})` : tv.glow;
           c.shadowBlur = tv.blur;
-          this.sprite(weaponArt(weapon, tier), 0, 0, (D.WEAPON_SIZE || 46) * (1 + .07 * (tier - 1)) * pulse);
+          this.sprite(weaponArt(weapon, tier), 0, 0, geometry.size * pulse, 1, 0, false, !!D.weapons[weapon].art);
           if (tier >= 5) { c.fillStyle = tv.core; c.font = 'bold 12px sans-serif'; c.fillText('T' + tier, -10, -22); }
           if (tier >= 2) { // 두 번 그려 발광을 더 진하게
-            c.globalAlpha *= .5; this.sprite(weaponArt(weapon, tier), 0, 0, (D.WEAPON_SIZE || 46) * (1 + .07 * (tier - 1)) * pulse);
+            c.globalAlpha *= .5; this.sprite(weaponArt(weapon, tier), 0, 0, geometry.size * pulse, 1, 0, false, !!D.weapons[weapon].art);
           }
           c.restore();
           if (tier === 4) { // 만렙 반짝이 3개가 무기 주위를 공전

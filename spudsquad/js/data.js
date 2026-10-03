@@ -83,8 +83,61 @@
     potato_cannon: { name: '감자 대포', muzzle: [14, 0], artAngle: Math.PI, classes: ['explosive', 'gun'], behavior: 'projectile', damage: 18,
       cool: 2.2, range: 400, kb: 140, radius: 42, split: .35, price: 42 },
     frost_wand: { name: '서리 지팡이', muzzle: [13, 0], artAngle: Math.PI / 2, classes: ['elemental'], behavior: 'projectile', damage: 9,
-      cool: 1.3, range: 380, kb: 20, status: 'chill', price: 36 }
+      cool: 1.3, range: 380, kb: 20, status: 'chill', price: 36 },
+    shield: { name: '방패', muzzle: [10, 0], artAngle: 0, classes: ['blunt'], behavior: 'thrust',
+      damage: 5, cool: 1.8, range: 90, kb: 150, price: 30, armor: 3 }
   };
+  // Source 256px art: muzzle center and bore axis, T1–T4; T5/6 use T4.
+  // Barrel-left guns need a canonical Y reflection after alignment to keep the grip below the bore.
+  weapons.pistol.art = [
+    { muzzle: [8, 79], axis: 180 * Math.PI / 180, flipY: true },
+    { muzzle: [6, 66], axis: 180 * Math.PI / 180, flipY: true },
+    { muzzle: [7, 67], axis: 180 * Math.PI / 180, flipY: true },
+    { muzzle: [8, 66], axis: 180 * Math.PI / 180, flipY: true },
+  ];
+  weapons.smg.art = [
+    { muzzle: [7, 81], axis: 180 * Math.PI / 180, flipY: true },
+    { muzzle: [7, 91], axis: 180 * Math.PI / 180, flipY: true },
+    { muzzle: [9, 85], axis: 180 * Math.PI / 180, flipY: true },
+    { muzzle: [8, 72], axis: 184 * Math.PI / 180, flipY: true },
+  ];
+  weapons.shotgun.art = [
+    { muzzle: [7, 124], axis: 177 * Math.PI / 180, flipY: true },
+    { muzzle: [7, 103], axis: 180 * Math.PI / 180, flipY: true },
+    { muzzle: [7, 110], axis: 184 * Math.PI / 180, flipY: true },
+    { muzzle: [9, 64], axis: 202 * Math.PI / 180, flipY: true },
+  ];
+  weapons.rocket.art = [
+    { muzzle: [128, 5], axis: -90 * Math.PI / 180, flipY: false },
+    { muzzle: [128, 5], axis: -90 * Math.PI / 180, flipY: false },
+    { muzzle: [128, 5], axis: -90 * Math.PI / 180, flipY: false },
+    { muzzle: [128, 5], axis: -90 * Math.PI / 180, flipY: false },
+  ];
+  weapons.potato_cannon.art = [
+    { muzzle: [45, 89], axis: 185 * Math.PI / 180, flipY: true },
+    { muzzle: [41, 89], axis: 190 * Math.PI / 180, flipY: true },
+    { muzzle: [41, 110], axis: 187 * Math.PI / 180, flipY: true },
+    { muzzle: [43, 73], axis: 197 * Math.PI / 180, flipY: true },
+  ];
+  weapons.crossbow.art = [
+    { muzzle: [20, 234], axis: 135 * Math.PI / 180, flipY: false },
+    { muzzle: [66, 205], axis: 135 * Math.PI / 180, flipY: false },
+    { muzzle: [59, 204], axis: 135 * Math.PI / 180, flipY: false },
+    { muzzle: [76, 177], axis: 135 * Math.PI / 180, flipY: false },
+  ];
+  weapons.laser.art = [
+    { muzzle: [39, 42], axis: 225 * Math.PI / 180, flipY: true },
+    { muzzle: [40, 56], axis: 201 * Math.PI / 180, flipY: true },
+    { muzzle: [38, 58], axis: 201 * Math.PI / 180, flipY: true },
+    { muzzle: [36, 55], axis: 202 * Math.PI / 180, flipY: true },
+  ];
+  weapons.flamethrower.art = [
+    { muzzle: [73, 58], axis: 205 * Math.PI / 180, flipY: true },
+    { muzzle: [38, 62], axis: 200 * Math.PI / 180, flipY: true },
+    { muzzle: [45, 85], axis: 200 * Math.PI / 180, flipY: true },
+    { muzzle: [35, 68], axis: 204 * Math.PI / 180, flipY: true },
+  ];
+  weapons.stick.artAngle = 0;
   for (const v of Object.values(weapons)) v.kind = ['thrust', 'sweep', 'slam'].includes(v.behavior) ? 'melee' : 'ranged';
   // 아이템 v3(2026-09-28): 대부분 단점 동반(직교 페널티). tier 생략=1, T4=전설(10웨이브~).
   // 규칙형 필드: hook=처치 훅, pierce/bounce=탄, enemies/enemyHp=적 수·HP %, once=다음 웨이브 1회

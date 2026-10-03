@@ -25,7 +25,7 @@
   const WEAPON_SOUND = {
     pistol: 'pistol', smg: 'smg', shotgun: 'shotgun', laser: 'laser', rocket: 'rocket', crossbow: 'bow',
     slingshot: 'sling', flamethrower: 'flame', staff: 'zap', fist: 'punch', dagger: 'swing', spear: 'swing',
-    stick: 'swing', hammer: 'slam'
+    stick: 'swing', hammer: 'slam', shield: 'punch'
   };
   // 샘플별 음량 보정(생성물 레벨 편차)
   const GAIN = { smg: .32, flame: .55, pistol: .5, shotgun: .55, bow: .65, swing: .8, kill: .7, boom: .9, zap: .7 };
