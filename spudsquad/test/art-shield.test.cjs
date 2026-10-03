@@ -50,6 +50,8 @@ test('shield 3-language collection/name/description and four on-disk lossless sp
 });
 test('settings button next sibling of stats in HUD, not absolute field control',()=>{
  const html=fs.readFileSync(require.resolve('../index.html'),'utf8');a.match(html,/id="statsBtn"[^>]*>[^<]*<\/button>\s*<button[^>]*id="settingsBtn"/);a.match(html,/#settingsBtn\s*\{\s*position:\s*static/);
+ // Every changed runtime script must bypass the pre-shield browser cache.
+ for(const id of ['data','sim','sfx','render','i18n','ui'])a.ok(html.includes(`js/${id}.js?v=20261003artshield1`),id+' cache version');
 });
 
 test('shield wave-end, collection, natural shop stock and finite damage through six slots',()=>{
