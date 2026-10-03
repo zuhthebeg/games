@@ -319,6 +319,16 @@ function displayName(member, id) {
   const seat = Math.max(0, order.indexOf(id)) + 1;
   return ({ ko: '감자', en: 'Spud', 'zh-TW': '馬鈴薯' }[P.i18n?.language] || '감자') + ' ' + seat;
 }
+  // Write only changed values; rebuilding #team every frame forces DOM/style
+  // work and image churn even when the team HUD is unchanged.
+  function hudValue(id, key, value) {
+    const el = document.getElementById(id);
+    if (String(el[key]) !== String(value)) el[key] = value;
+  }
+  function hudWidth(id, value) {
+    const style = document.getElementById(id).style;
+    if (style.width !== value) style.width = value;
+  }
 function hud(scene, uid) {
     if (!scene) return;
     const p = scene.pl?.find(row => row[0] === uid) || scene.players?.[uid];
@@ -328,20 +338,19 @@ function hud(scene, uid) {
     const mats = Array.isArray(p) ? p[6] : p.mats;
     const xp = Array.isArray(p) ? p[7] : p.xp;
     const lvl = Array.isArray(p) ? p[8] : p.lvl;
-    document.getElementById('hpText').textContent = `${shown(hp)}/${shown(max)}`;
-    document.getElementById('hpBar').style.width = Math.max(0, hp / max * 100) + '%';
-    document.getElementById('xpBar').style.width = xp / P.sim.needXp(lvl, P.main?.session?.lastPlayers?.[uid]?.char) * 100 + '%'; // 돌연변이 XP 배율
-    document.getElementById('level').textContent = shown(lvl);
-    document.getElementById('mats').textContent = shown(mats);
-    document.getElementById('wave').textContent = P.main?.session?.wave || 1;
+    hudValue('hpText', 'textContent', `${shown(hp)}/${shown(max)}`);
+    hudWidth('hpBar', Math.max(0, hp / max * 100) + '%');
+    hudWidth('xpBar', xp / P.sim.needXp(lvl, P.main?.session?.lastPlayers?.[uid]?.char) * 100 + '%'); // 돌연변이 XP 배율
+    hudValue('level', 'textContent', shown(lvl));
+    hudValue('mats', 'textContent', shown(mats));
+    hudValue('wave', 'textContent', P.main?.session?.wave || 1);
     const remaining = scene.tm ?? P.main?.session?.world?.tm ?? 0;
-    document.getElementById('timer').textContent =
-      P.main?.session?.wave === 20 && remaining <= 0 ? 'BOSS' : shown(remaining);
-    document.getElementById('waveMax').textContent = P.main?.session?.endless ? '∞' : 20;
+    hudValue('timer', 'textContent', P.main?.session?.wave === 20 && remaining <= 0 ? 'BOSS' : shown(remaining));
+    hudValue('waveMax', 'textContent', P.main?.session?.endless ? '∞' : 20);
     const members = scene.pl || Object.values(scene.players || {}).map(v =>
       [v.uid, v.x, v.y, v.hp, v.maxHp, v.alive]
     );
-    document.getElementById('team').innerHTML = members.filter(v => v[0] !== uid)
+    const team = members.filter(v => v[0] !== uid)
       .map(v => {
         const member = P.main?.session?.players?.[v[0]];
         const char = P.main?.session?.lastPlayers?.[v[0]]?.char || 'basic';
@@ -349,6 +358,9 @@ function hud(scene, uid) {
           ${v[5] ? `❤️${shown(v[3])}/${shown(v[4])}` : '👻'}</div>`;
       })
       .join('');
+    // Cache the source string: browsers normalize innerHTML on read.
+    const teamNode = document.getElementById('team');
+    if (teamNode._spudHud !== team) { teamNode.innerHTML = team; teamNode._spudHud = team; }
   }
   function crates(session, player, count, cb, currentId = null) {
     if (!count) { cb(); return; }

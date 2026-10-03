@@ -22,16 +22,9 @@
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <script>window.SharedWalletConfig={autoGuest:true};</script>
-<script>
-(function(w,d,s,l,i){
-  w[l]=w[l]||[];
-  w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});
-  var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
-  j.async=true;
-  j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
-  f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-MV8KQGJF');
-</script>
+<!-- This game intentionally omits the shared tag container: its automatic
+     advertising cannot be isolated from combat/shop. No ad SDK is loaded here;
+     other games and the central container remain unchanged. -->
 <style>
 :root {
   --wallet-bar-h: 56px;
@@ -444,7 +437,7 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
   border-radius: 12px; background: #4c2d20; color: #fff4ce; font: 16px Jua, sans-serif;
   text-align: center; pointer-events: none; }
 @media (orientation: landscape) and (max-height: 520px) {
-  :root { --wallet-bar-h: 52px; } /* #sw-bar: content-box 40px + 6px on each edge */
+  :root { --wallet-bar-h: 56px; } /* Reserve the same safe header clearance in landscape. */
   #game { padding-top: calc(var(--wallet-bar-h) + env(safe-area-inset-top)); }
   #hud { position: absolute; z-index: 4; top: calc(var(--wallet-bar-h) + env(safe-area-inset-top));
     left: max(4px, env(safe-area-inset-left)); width: calc(100% - 220px - env(safe-area-inset-left) - env(safe-area-inset-right));
@@ -531,10 +524,6 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </style>
 </head>
 <body>
-<noscript>
-<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden">
-</iframe>
-</noscript>
 <div id="game">
 <div id="hud">
 <div>❤️ <span id="hpText">10/10</span>
@@ -593,13 +582,13 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </script>
 <script src="js/sfx.js?v=20261001followup1"></script>
 <script src="js/fx.js?v=20261001ult1"></script>
-<script src="js/render.js?v=20261001v6">
+<script src="js/render.js?v=20261003perf1">
 </script>
 <script src="js/i18n.js?v=20261001ult1">
 </script>
 <script src="js/collection.js?v=20261001v6">
 </script>
-<script src="js/ui.js?v=20261001ult1">
+<script src="js/ui.js?v=20261003perf1">
 </script>
 <script src="js/main.js?v=20261001followup1">
 </script>

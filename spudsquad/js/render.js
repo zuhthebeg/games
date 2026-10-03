@@ -14,7 +14,19 @@
   ];
   for (const id of names) {
     const image = new Image();
-    image.onload = () => { image.ok = true; };
+    image.onload = () => {
+      image.ok = true;
+      if (!D.enemies[id] && !id.startsWith('char_')) return;
+      // Cache the white alpha mask once. A per-sprite Canvas filter forces
+      // expensive offscreen raster work during dense hit bursts.
+      const flash = document.createElement('canvas');
+      flash.width = image.naturalWidth; flash.height = image.naturalHeight;
+      const fc = flash.getContext('2d');
+      fc.drawImage(image, 0, 0);
+      fc.globalCompositeOperation = 'source-in';
+      fc.fillStyle = '#fff'; fc.fillRect(0, 0, flash.width, flash.height);
+      image.flash = flash;
+    };
     image.onerror = () => { image.ok = false; };
     image.src = 'assets/' + (D.enemies[id] && !id.startsWith('boss_') ? 'enemy_' + id : id) + '.webp?v=20261001v6';
     images[id] = image;
@@ -88,9 +100,8 @@
       c.translate(x, y + Math.sin(time * 10) * 2);
       c.scale(face, 1);
       size *= this.spriteK || 1;
-      if (flash) c.filter = 'brightness(0) invert(1)';
       if (image?.ok) {
-        c.drawImage(image, -size / 2, -size / 2, size, size);
+        c.drawImage(flash && image.flash ? image.flash : image, -size / 2, -size / 2, size, size);
       } else {
         c.fillStyle = id.startsWith('char') ? '#a8653a' : colors[id] || '#eeb65a';
         c.strokeStyle = '#452d23';
@@ -198,7 +209,8 @@
       const height = canvas.height / this.dpr;
       const elapsed = Math.min(.05, (now - this.last) / 1000 || 0);
       this.last = now;
-      if (now < this.effects.stopUntil) return;
+      // Hit feedback must not freeze world/camera paints while authoritative
+      // simulation and local movement continue between animation frames.
       const dt = now < this.effects.slowUntil ? elapsed * .3 : elapsed;
       c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
       c.fillStyle = '#ead69c';
