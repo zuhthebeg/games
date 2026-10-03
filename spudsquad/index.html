@@ -521,6 +521,32 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
   #pad { left: max(14px, env(safe-area-inset-left)); bottom: 12px; width: 112px; height: 112px; margin: 0; }
   #pad.active { margin: -56px 0 0 -56px; }
 }
+/* One compact settings affordance. Keep every existing control and preference. */
+#settingsBtn { position: absolute; top: 4px; right: max(4px, env(safe-area-inset-right));
+  width: 44px; height: 44px; z-index: 20; border: 2px solid var(--brown);
+  border-radius: 10px; background: #fff6da; font-size: 24px; }
+#settingsPanel { position: absolute; top: 52px; right: max(4px, env(safe-area-inset-right));
+  z-index: 21; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  width: min(280px, calc(100% - 16px)); padding: 10px; border: 3px solid var(--brown);
+  border-radius: 14px; background: #fff4ce; }
+#settingsPanel[hidden] { display: none; }
+#settingsPanel #lang, #settingsPanel #music, #settingsPanel #sound, #settingsPanel #shake,
+#settingsPanel #settingsClose, #settingsPanel #settingsLandscape {
+  position: static; min-width: 44px; width: 44px; height: 44px; padding: 0;
+  border: 2px solid var(--brown); border-radius: 10px; background: #fff6da; font-size: 18px; }
+#settingsPanel #volume { position: static; display: block; width: 180px; height: 44px; margin: 0; }
+#hud { min-height: 56px; height: 56px; flex-shrink: 0; padding: 3px 8px; gap: 4px; border-bottom-width: 3px; }
+#hud > div { min-width: 0; }
+#hud > div:first-child { font-size: 11px; }
+#hud .bar { width: min(80px, 100%); height: 8px; margin: 2px 0; }
+#waveHud { font-size: 16px; line-height: 1; } #waveHud b { font-size: 20px; }
+#money { font-size: 16px; }
+@media (orientation: landscape) and (max-height: 520px) {
+  #hud { width: calc(100% - 60px - env(safe-area-inset-left) - env(safe-area-inset-right));
+    height: 44px; min-height: 44px; padding: 2px 5px; border: 0; }
+  #hud .bar { width: 36px; height: 7px; margin: 0; }
+  #waveHud, #waveHud b, #money { font-size: 14px; }
+}
 </style>
 </head>
 <body>
@@ -554,11 +580,16 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </div>
 <div id="notice">
 </div>
-<button id="lang">🌐</button>
+<button type="button" id="settingsBtn" title="Settings" aria-label="Settings" aria-expanded="false" aria-controls="settingsPanel" aria-haspopup="dialog">⚙</button>
+<div id="settingsPanel" role="dialog" aria-label="Settings" hidden>
+<button type="button" id="settingsClose" aria-label="Close settings">×</button>
+<button id="lang" aria-label="Language">🌐</button>
 <button id="music" title="Music">🎵</button>
 <button id="sound" title="Sound">🔊</button>
 <button id="shake" title="Screen shake">📳</button>
 <input id="volume" type="range" min="0" max="100" value="35" aria-label="Volume">
+<button type="button" id="settingsLandscape" aria-label="Fullscreen and landscape">⛶ ↔</button>
+</div>
 <div id="overlay">
 <div id="panel" class="panel">
 </div>
@@ -576,21 +607,21 @@ canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 </script>
 <script src="js/data.js?v=20261001followup1">
 </script>
-<script src="js/sim.js?v=20261001followup1">
+<script src="js/sim.js?v=20261003levelboss1">
 </script>
-<script src="js/net.js?v=20261001followup1">
+<script src="js/net.js?v=20261003levelboss1">
 </script>
 <script src="js/sfx.js?v=20261001followup1"></script>
 <script src="js/fx.js?v=20261001ult1"></script>
-<script src="js/render.js?v=20261003perf1">
+<script src="js/render.js?v=20261003levelboss1">
 </script>
 <script src="js/i18n.js?v=20261001ult1">
 </script>
 <script src="js/collection.js?v=20261001v6">
 </script>
-<script src="js/ui.js?v=20261003perf1">
+<script src="js/ui.js?v=20261003levelboss1">
 </script>
-<script src="js/main.js?v=20261001followup1">
+<script src="js/main.js?v=20261003levelboss1">
 </script>
 </body>
 </html>

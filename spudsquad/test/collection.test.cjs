@@ -105,7 +105,7 @@ function runMain(search) {
     shop() {}, result() {}, hud() {}, t: x => x };
   const node = id => {
     if (!nodes.has(id)) nodes.set(id, { textContent: '', style: {}, classList: { add() {}, remove() {} },
-      addEventListener() {}, setPointerCapture() {}, getBoundingClientRect: () => ({ left: 0, top: 0 }) });
+      addEventListener() {}, setAttribute(k, v) { this[k] = v; }, setPointerCapture() {}, getBoundingClientRect: () => ({ left: 0, top: 0 }) });
     return nodes.get(id);
   };
   const document = { hidden: false, getElementById: node,

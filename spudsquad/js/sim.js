@@ -200,7 +200,14 @@
       spawn(w, 'blob', e.x - 18, e.y);
       spawn(w, 'blob', e.x + 18, e.y);
     }
-    if (e.type.startsWith('boss_')) w.bossKills++;
+    if (e.type.startsWith('boss_')) {
+      w.bossKills++;
+      // One reward per removed boss; independent of the two ordinary-crate budget.
+      const crate = { id: w.nextId++, x: e.x, y: e.y, owner: p?.uid ?? null,
+        bossReward: true, minTier: 2 };
+      w.crates.push(crate);
+      w.fx.push(['cr', crate.id, e.x | 0, e.y | 0]);
+    }
     if (e.type === 'boss_2') w.bossKilled = true;
     if (e.type === 'exploder') explode(w, e.x, e.y, 70, 2 + w.wave / 5, p?.uid, true);
     if (e.type === 'looter') createCrate(w, e.x, e.y, p?.uid ?? null);
@@ -834,7 +841,7 @@
     for (const crate of w.crates.slice()) for (const p of alive) {
       if (crate.owner && crate.owner !== p.uid) continue;
       if (dist(crate, p) < 80 * (1 + effectiveStats(p).pickup / 100)) {
-        (p.pendingCrates ||= []).push(crate.id);
+        (p.pendingCrates ||= []).push(crate.bossReward ? { id: crate.id, bossReward: true, minTier: 2 } : crate.id);
         w.crates.splice(w.crates.indexOf(crate), 1);
         w.fx.push(['crp', crate.id, p.uid]);
         break;
@@ -854,9 +861,30 @@
     if (canEnd(w)) {
       w.drops.forEach((d, i) => gain(w, alive[i % alive.length], d));
       w.drops = [];
+      // Ordinary missed crates retain their old semantics. Boss rewards cannot
+      // disappear at the wave boundary: credit their living owner, else survivors
+      // round-robin (never a dead/disconnected owner, never duplicate a pickup).
+      let recipient = 0;
+      for (const crate of w.crates.filter(c => c.bossReward)) {
+        const owner = w.players[crate.owner];
+        const p = owner?.alive ? owner : alive[recipient++ % alive.length];
+        (p.pendingCrates ||= []).push({ id: crate.id, bossReward: true, minTier: 2 });
+      }
+      w.crates = w.crates.filter(c => !c.bossReward);
       w.enemies = [];
       w.ended = true;
       w.win = w.wave === 20 && !w.endless;
+      // A final victory has no shop. Grant pending boss items automatically;
+      // losing runs do not reach this settlement and receive no consolation loot.
+      if (w.win) for (const p of players) {
+        p.bossItems = [];
+        p.pendingCrates = (p.pendingCrates || []).filter(reward => {
+          if (!reward?.bossReward) return true;
+          const id = rollCrateItem(w, p, 2);
+          if (id && grantItem(p, id)) p.bossItems.push(id);
+          return false;
+        });
+      }
       for (const p of players) {
         p.mats = Math.max(0, p.mats + Math.floor(p.stats.harvest));
         if (p.stats.harvest > 0) p.stats.harvest *= 1.05;
@@ -910,11 +938,14 @@
     const cap = def?.unique ? 1 : def?.max;
     return !!cap && p.items.filter(x => x === id).length >= cap;
   }
-  function rollCrateItem(w, p) {
-    const tier = rollItemTier(w, p);
-    const options = Object.keys(D.items).filter(id => (D.items[id].tier || 1) === tier &&
-      !itemCapped(p, id));
-    return options[Math.floor(rand(w) * options.length)];
+  function rollCrateItem(w, p, minTier = 1) {
+    const tier = Math.max(minTier, rollItemTier(w, p));
+    const eligible = Object.keys(D.items).filter(id =>
+      (D.items[id].tier || 1) >= minTier && !itemCapped(p, id));
+    const exact = eligible.filter(id => (D.items[id].tier || 1) === tier);
+    // Exhausted unique/max pool: use another eligible tier, never lower the floor.
+    const options = exact.length ? exact : eligible;
+    return options.length ? options[Math.floor(rand(w) * options.length)] : null;
   }
   function rollItemTier(w, p) {
     if (w.wave >= 10 && rand(w) < .03 + p.stats.luck / 1000) return 4;
@@ -937,7 +968,7 @@
         : (D.items[id].tier || 1) === tier && !itemCapped(p, id));
       const id = list[Math.floor(rand(w) * list.length)];
       slots.push({ id, weapon, tier, price: Math.ceil(price((weapon ? D.weapons : D.items)[id].price, w.wave)
-        * (weapon ? tier : 1) * rulesOf(p).reduce((mult, d) => mult * (d.priceMult || 1), 1)), locked: false }); // 돌연변이 ×1.5
+        * (weapon ? tier : 1 + .05 * (Math.max(1, Math.floor(Number.isFinite(p.lvl) ? p.lvl : 1)) - 1)) * rulesOf(p).reduce((mult, d) => mult * (d.priceMult || 1), 1)), locked: false }); // 돌연변이 ×1.5
     }
     return slots;
   }
@@ -1010,11 +1041,19 @@
       try {
         const s = JSON.parse(raw), w = s.world, p = w?.players?.solo;
         const validNumber = n => typeof n === 'number' && Number.isFinite(n);
+        const validReward = r => Number.isSafeInteger(r) && r >= 0 ||
+          r && typeof r === 'object' && Number.isSafeInteger(r.id) && r.id >= 0 &&
+          (r.bossReward == null || typeof r.bossReward === 'boolean') &&
+          (!r.bossReward || r.minTier === 2) &&
+          (r.minTier == null || r.minTier === 1 || r.minTier === 2) &&
+          (r.itemId == null || D.items[r.itemId] && (!r.bossReward || (D.items[r.itemId].tier || 1) >= 2));
         if (s.version !== version || !validNumber(s.at) || s.at > now + 60000 ||
             now - s.at > maxAge || !['wave', 'shop'].includes(s.mode) ||
             !w || !Number.isInteger(w.wave) || w.wave < 1 || w.wave > (w.endless ? 999 : 20) ||
             Object.keys(w.players || {}).length !== 1 || p?.uid !== 'solo' ||
-            !D.chars[p.char] || (p.ultUsed != null && typeof p.ultUsed !== 'boolean') || !validNumber(p.hp) || !validNumber(p.x) || !validNumber(p.y) ||
+            !D.chars[p.char] || (p.lvl != null && (!Number.isSafeInteger(p.lvl) || p.lvl < 1)) ||
+            (p.pendingCrates != null && (!Array.isArray(p.pendingCrates) || !p.pendingCrates.every(validReward))) ||
+            (p.ultUsed != null && typeof p.ultUsed !== 'boolean') || !validNumber(p.hp) || !validNumber(p.x) || !validNumber(p.y) ||
             !validNumber(w.tm) || !validNumber(w.tick) || !Number.isInteger(w.nextId) ||
             !Array.isArray(p.weapons) || !p.weapons.every(([id, tier]) =>
               D.weapons[id] && Number.isInteger(tier) && tier >= 1 && tier <= 4) ||
@@ -1028,7 +1067,7 @@
               validNumber(b.x) && validNumber(b.y) && validNumber(b.left) &&
               validNumber(b.power) && (b.pierce == null ||
                 (Number.isInteger(b.pierce) && b.pierce >= 0))) ||
-            !Array.isArray(w.crates) ||
+            !Array.isArray(w.crates) || !w.crates.every(c => validReward(c) && validNumber(c.x) && validNumber(c.y) && (c.owner == null || typeof c.owner === 'string')) ||
             !Array.isArray(w.turrets) || w.win || (s.mode === 'wave' && (w.ended || !p.alive)) ||
             (s.mode === 'shop' && (!w.ended || !w.reported)) ||
             !Number.isInteger(s.cratesRemaining) || s.cratesRemaining < 0 || s.cratesRemaining > 100 ||
@@ -1039,6 +1078,7 @@
                 (o && (o.weapon ? D.weapons[o.id] : D.items[o.id]) &&
                 Number.isFinite(o.price) && Number.isInteger(o.tier)))))) throw Error('invalid save');
         w.rng = Math.random;
+        p.lvl ??= 1; // pre-level checkpoints
         p.ultUsed ??= false; // checkpoints made before ultimates were introduced
         w.fx = [];
         for (const b of w.projectiles) {

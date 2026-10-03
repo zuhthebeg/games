@@ -17,3 +17,6 @@ require('./v5-multi.test.cjs');
 require('./balance-v6.test.cjs');
 
 require('./ult.test.cjs');
+
+require('./level-boss.test.cjs');
+require('./boss-render.test.cjs');

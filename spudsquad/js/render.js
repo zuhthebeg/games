@@ -70,6 +70,22 @@
     }
     return { zoom: Math.max(fitMap, zoom), cx, cy };
   }
+  let bossGemImage = null;
+  function bossGem() {
+    if (bossGemImage) return bossGemImage;
+    // Immutable 72px vector cache: no Canvas filters/shadows or particle emitter.
+    const image = document.createElement('canvas'); image.width = image.height = 72;
+    const c = image.getContext('2d');
+    c.strokeStyle = '#ffd34d'; c.lineWidth = 3;
+    c.beginPath(); c.arc(36, 36, 30, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = '#fff39b'; c.fillRect(33, 3, 6, 6); c.fillRect(33, 63, 6, 6);
+    c.translate(36, 36); c.rotate(Math.PI / 4);
+    c.fillStyle = '#dba42a'; c.fillRect(-15, -15, 30, 30);
+    c.fillStyle = '#1f5fd6'; c.fillRect(-13, -13, 26, 26);
+    c.fillStyle = '#4da3ff'; c.fillRect(-10, -10, 20, 20);
+    c.fillStyle = '#c9e6ff'; c.fillRect(-10, -10, 7, 7);
+    bossGemImage = image; return image;
+  }
   class Renderer {
     constructor(canvas) {
       this.canvas = canvas;
@@ -254,6 +270,9 @@
       for (const row of crates) {
         const x = Array.isArray(row) ? row[1] : row.x;
         const y = Array.isArray(row) ? row[2] : row.y;
+        if (Array.isArray(row) ? row[3] === 1 : row.bossReward) {
+          c.drawImage(bossGem(), x - 36, y - 36); continue;
+        }
         this.sprite('item_crate', x, y, 32, 1, now / 1000);
         c.fillStyle = '#fff39b';
         c.beginPath(); c.arc(x + 18, y - 14, 3 + Math.sin(now / 170) * 2, 0, 7); c.fill();

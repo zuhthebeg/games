@@ -237,6 +237,10 @@
       if (solo()) cratesRemaining = action.payload.players?.[uid]?.crates || 0;
       if (player) {
         player.mats = action.payload.players?.[uid]?.mats ?? player.mats;
+        player.lvl = action.payload.players?.[uid]?.lvl ?? player.lvl;
+        player.xp = action.payload.players?.[uid]?.xp ?? player.xp;
+        const rewards = action.payload.players?.[uid]?.crateRewards;
+        if (Array.isArray(rewards)) player.pendingCrates = rewards.map(r => typeof r === 'object' ? { ...r } : r);
         // 게스트 사본은 호스트가 웨이브 중 바꾼 스탯을 받아 맞춘다(READY 로드아웃이 덮어쓰므로)
         if (!session.isHost && action.payload.players?.[uid]?.stats) player.stats = { ...action.payload.players[uid].stats };
         player.levelUps = levelUps;
@@ -288,6 +292,7 @@
   function finish(data) {
     clearRevive();
     if (mode === 'end') return;
+    if (!session?.isHost && localPlayer) for (const id of data.bossItems?.[uid] || []) S.grantItem(localPlayer, id);
     mode = 'end';
     if (solo()) { try { S.soloSave.clear(localStorage); } catch {} }
     U.result(data, () => {
@@ -548,19 +553,26 @@
       document.body.appendChild(badge);
     }
     renderer = new P.render.Renderer(document.getElementById('canvas'));
-    document.getElementById('sound').onclick = () => {
-      document.getElementById('sound').textContent = P.sfx.mute() ? '🔇' : '🔊';
+    const soundBtn = document.getElementById('sound');
+    const paintSound = muted => {
+      soundBtn.textContent = muted ? '🔇' : '🔊';
+      soundBtn.setAttribute('aria-pressed', String(!muted));
     };
+    paintSound(P.sfx.settings().muted);
+    soundBtn.onclick = () => paintSound(P.sfx.mute());
     const musicBtn = document.getElementById('music');
-    const paintMusic = on => { musicBtn.textContent = on ? '🎵' : '🎵̸'; musicBtn.style.opacity = on ? 1 : .45; };
+    const paintMusic = on => {
+      musicBtn.textContent = on ? '🎵' : '🎵̸'; musicBtn.style.opacity = on ? 1 : .45;
+      musicBtn.setAttribute('aria-pressed', String(on));
+    };
     paintMusic(P.sfx.settings().musicOn);
     musicBtn.onclick = () => paintMusic(P.sfx.toggleMusic());
-    if (P.sfx.settings().muted) document.getElementById('sound').textContent = '🔇';
     document.getElementById('volume').value = P.sfx.settings().volume * 100;
     document.getElementById('volume').oninput = event => P.sfx.volume(event.target.value / 100);
-    document.getElementById('shake').onclick = () => {
-      document.getElementById('shake').textContent = renderer.effects.toggleShake() ? '📳' : '🚫';
-    };
+    const shakeBtn = document.getElementById('shake');
+    const paintShake = on => { shakeBtn.textContent = on ? '📳' : '🚫'; shakeBtn.setAttribute('aria-pressed', String(on)); };
+    paintShake(renderer.effects.shakeOn);
+    shakeBtn.onclick = () => paintShake(renderer.effects.toggleShake());
     try { GameRankings.injectNavButton('spudsquad'); }
     catch (error) { console.warn('rank nav unavailable', error); }
     reset();
@@ -570,6 +582,7 @@
     if (new URLSearchParams(location.search).has('room')) connect();
   });
   window.addEventListener('keydown', event => {
+    if (U.settingsOpen?.() || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName || '')) return;
     if (event.key.toLowerCase() === 'u' && !event.repeat &&
         !/^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName || '')) {
       if (useUlt()) event.preventDefault();
@@ -660,6 +673,7 @@
     get debug() { return debugOn; },
     get debugView() { return debugOn ? debugView : null; },
     useUlt, debugAct,
+    clearInput() { keys.clear(); stick = null; padHome(); },
     resize() { renderer?.resize(); },
     refresh() { if (mode === 'title') reset(); }
   };

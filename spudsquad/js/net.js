@@ -14,7 +14,7 @@
           Math.hypot(other.x - v.x, other.y - v.y) <= 160) ? 16 : 0) |
         (v.type === 'egg' && (v.age || 0) >= 4 ? 32 : 0)]),
       d: w.drops.map(v => [v.id, Math.round(v.x), Math.round(v.y)]),
-      cr: w.crates.map(v => [v.id, Math.round(v.x), Math.round(v.y)]),
+      cr: w.crates.map(v => v.bossReward ? [v.id, Math.round(v.x), Math.round(v.y), 1, v.owner, 2] : [v.id, Math.round(v.x), Math.round(v.y)]),
       pl: Object.values(w.players).map(v => [v.uid, Math.round(v.x), Math.round(v.y),
         Math.round(v.hp * 10) / 10, v.maxHp, v.alive, v.mats, v.xp, v.lvl, v.char, v.f, !!v.ultUsed]),
       fx: w.fx.splice(0)
@@ -219,13 +219,14 @@
               dmg[p.uid] = Math.round(p.totalDamage);
             }
             this.local({ type: 'GAME_OVER', payload: { win: this.world.win,
-              wave: this.wave, kills, dmg }, __final: true });
+              wave: this.wave, kills, dmg, bossItems: Object.fromEntries(Object.values(this.world.players).map(p => [p.uid, p.bossItems || []])) }, __final: true });
           } else {
             const players = {};
             for (const p of Object.values(this.world.players)) {
               // stats: 웨이브 중 호스트가 바꾼 영구 스탯(레벨업 HP·수확 성장·웨이브 종료 훅)을 게스트 사본에 동기화
               players[p.uid] = { mats: p.mats, xp: p.xp, lvl: p.lvl, stats: { ...p.stats },
-                levelUps: p.levelUps, crates: p.pendingCrates?.length || 0 };
+                levelUps: p.levelUps, crates: p.pendingCrates?.length || 0,
+                crateRewards: p.pendingCrates || [] };
             }
             this.local({ type: 'WAVE_END', payload: { w: this.wave, players } });
           }

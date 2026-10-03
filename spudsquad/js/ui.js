@@ -245,6 +245,26 @@
     activeView = '';
     requestAnimationFrame(() => P.main?.resize?.());
   }
+  function landscape() {
+    // Fullscreen first: browsers require it before a landscape orientation lock.
+    (async () => {
+      try { await document.documentElement.requestFullscreen?.(); } catch {}
+      try {
+        if (!screen.orientation?.lock) throw new Error('orientation lock unavailable');
+        await screen.orientation.lock('landscape');
+      } catch {
+        // Already sideways (e.g. iOS, which has no orientation lock): nothing to ask for.
+        if (innerWidth > innerHeight) return;
+        const hint = document.createElement('div');
+        hint.className = 'landscape-hint';
+        hint.setAttribute('role', 'status');
+        hint.textContent = I.t('rotateHint');
+        document.querySelector('.landscape-hint')?.remove();
+        document.body.appendChild(hint);
+        setTimeout(() => hint.remove(), 3000);
+      }
+    })();
+  }
   function title(cb) {
     activeRefresh = () => title(cb);
     show(`<section class="title-screen">
@@ -263,24 +283,7 @@
     panel.onclick = event => {
       const act = event.target.closest('[data-act]')?.dataset.act;
       if (act === 'landscape') {
-        // Fullscreen first: browsers require it before a landscape orientation lock.
-        (async () => {
-          try { await document.documentElement.requestFullscreen?.(); } catch {}
-          try {
-            if (!screen.orientation?.lock) throw new Error('orientation lock unavailable');
-            await screen.orientation.lock('landscape');
-          } catch {
-            // Already sideways (e.g. iOS, which has no orientation lock): nothing to ask for.
-            if (innerWidth > innerHeight) return;
-            const hint = document.createElement('div');
-            hint.className = 'landscape-hint';
-            hint.setAttribute('role', 'status');
-            hint.textContent = I.t('rotateHint');
-            document.querySelector('.landscape-hint')?.remove();
-            document.body.appendChild(hint);
-            setTimeout(() => hint.remove(), 3000);
-          }
-        })();
+        landscape();
         return;
       }
       if (act === 'mode-normal' || act === 'mode-endless') {
@@ -365,7 +368,12 @@ function hud(scene, uid) {
   function crates(session, player, count, cb, currentId = null) {
     if (!count) { cb(); return; }
     const world = session.world || { wave: session.wave, rng: Math.random };
-    const id = currentId || P.sim.rollCrateItem(world, player);
+    player.pendingCrates ||= [];
+    let reward = player.pendingCrates[0];
+    if (!reward || typeof reward !== 'object') reward = player.pendingCrates[0] = { id: reward || 0, minTier: 1 };
+    const id = currentId || reward.itemId || P.sim.rollCrateItem(world, player, reward.bossReward ? 2 : 1);
+    reward.itemId = id; // stable on refresh and SOLO checkpoint restore
+    if (!id) { player.pendingCrates.shift(); crates(session, player, count - 1, cb); return; }
     const item = D.items[id];
     activeRefresh = () => crates(session, player, count, cb, id);
     show(`<section class="upgrade-screen"><h2>📦 ${esc(I.t('crate'))}</h2>
@@ -379,6 +387,7 @@ function hud(scene, uid) {
       if (act === 'take') P.sim.grantItem(player, id);
       else player.mats += Math.floor(item.price / 2);
       P.sfx?.('buy');
+      player.pendingCrates.shift();
       crates(session, player, count - 1, cb);
     };
   }
@@ -565,7 +574,33 @@ function hud(scene, uid) {
     btn.hidden = false;
     btn.disabled = !u || mode !== 'wave' || blocked || !player?.alive || !(player.hp > 0) || !!player.ultUsed;
   }
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsPanel = document.getElementById('settingsPanel');
+  function closeSettings(focus = true) {
+    if (!settingsPanel || settingsPanel.hidden) return;
+    settingsPanel.hidden = true;
+    settingsBtn.setAttribute('aria-expanded', 'false');
+    if (focus) settingsBtn.focus();
+  }
+  if (settingsBtn && settingsPanel) {
+    settingsBtn.onclick = () => {
+      if (!settingsPanel.hidden) { closeSettings(); return; }
+      P.main?.clearInput?.();
+      settingsPanel.hidden = false;
+      settingsBtn.setAttribute('aria-expanded', 'true');
+      document.getElementById('settingsClose').focus();
+    };
+    document.getElementById('settingsClose').onclick = () => closeSettings();
+    document.getElementById('settingsLandscape').onclick = landscape;
+    document.addEventListener?.('pointerdown', event => {
+      if (!settingsPanel.hidden && !settingsPanel.contains(event.target) && !settingsBtn.contains(event.target)) closeSettings(false);
+    });
+    root.addEventListener?.('keydown', event => {
+      if (event.key === 'Escape' && !settingsPanel.hidden) { event.preventDefault(); closeSettings(); }
+    });
+  }
   P.ui = {
+    settingsOpen: () => !!settingsPanel && !settingsPanel.hidden,
     ultimate, endlessMode, title, choose, hud, crates, upgrades, shop, result, hide, show,
     stats, debugPanel, collection, closeSheet,
     sheetOpen: () => !!sheetEl && !sheetEl.hidden,
