@@ -1,10 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <!-- Google Tag Manager -->
-  <script>
-    if(typeof confetti==="undefined"){window.confetti=function(){}};(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-MV8KQGJF');</script>
-  <!-- End Google Tag Manager -->
+  <script>if(typeof confetti==="undefined"){window.confetti=function(){}};</script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6M5ZYHVM5T"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-6M5ZYHVM5T");</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>블록 블라스트 Block Blast</title>
@@ -21,8 +19,7 @@
   <meta name="twitter:image" content="https://game.cocy.io/blockblast/icon.svg" />
   <link rel="canonical" href="https://game.cocy.io/blockblast/" />
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"블록 블라스트 Block Blast","applicationCategory":"GameApplication","operatingSystem":"Any","url":"https://game.cocy.io/blockblast/","image":"https://game.cocy.io/blockblast/icon.svg","description":"8x8 블록 퍼즐! 드래그로 블록을 배치하고 줄을 지우는 중독성 퍼즐 게임.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
-  <!-- AdSense: managed via GTM auto-ads (ca-pub-6634731722045607) -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1/dist/confetti.browser.min.js"></script>
   <script src="/lib/shared-wallet.js?v=20260809pf2"></script>
   <style>
     :root{--bg:#0a0b1e;--panel:#14172c;--text:#ecf2ff;--muted:#9ca7d1}
@@ -53,10 +50,7 @@
   </style>
 </head>
 <body>
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MV8KQGJF" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
-  <div class="app" id="app">
+    <div class="app" id="app">
     <div id="titleScreen"><h1 style="font-size:36px;margin-bottom:8px">BLOCK BLAST</h1><div class="rank" style="width:min(320px,90vw)"><h3 style="text-align:center">🏆 TOP 5</h3><div id="rankList">불러오는 중...</div></div><button class="btn" id="startBtn">▶ 게임 시작</button></div>
     <h1>BLOCK BLAST</h1>
     <div class="top"><div><div class="score" id="score">0</div><div class="best">BEST <span id="best">0</span></div></div><div class="combo" id="combo"></div></div>
