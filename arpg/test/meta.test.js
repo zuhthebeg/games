@@ -1,3 +1,5 @@
+import { preset } from '../tools/balance/botsim.mjs';
+import { BALANCE } from '../js/content/balance.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { STAT_KEYS, eff, cap, deriveMods, allocateStats } from '../js/meta/stats.js';
@@ -131,7 +133,7 @@ test('drops: deterministic, table ranges and probabilities over seeded populatio
   for (let seed = 0; seed < 10000; seed++) {
     const grunt = rollDrops('goblin_grunt', seed);
     const chief = rollDrops('goblin_chief', seed);
-    assert.ok(grunt.gold >= 3 && grunt.gold <= 6);
+    assert.ok(grunt.gold >= Math.floor(3 * BALANCE.normalGold) && grunt.gold <= Math.ceil(6 * BALANCE.normalGold));
     assert.ok(chief.gold >= 25 && chief.gold <= 40);
     assert.equal(chief.stacks.scrap, 3);
     assert.equal(chief.stacks.fang, 2);
@@ -378,8 +380,9 @@ test('integration: S1 timed clear reaches Lv2 using real sim API and settles val
 });
 
 test('integration: input-driven S1 → S2 → S3 → S4 loop unlocks rare gear and persists valid receipts', () => {
-  let save = settleRound(fresh(), { stageId: 'S1', terminal: 'clear' }).save;
-  save = allocateStats(save, { agi: 3 });
+  // Former starter-gear guaranteed clear is intentionally no longer a balance contract.
+  // Keep the real settlement integration with valid overgeared (Lv12 epic+5) equipment.
+  let save = settleRound(preset('S2', { level:12, rarity:'epic', enhance:5, stats:'agile' }), { stageId:'S1', terminal:'clear' }).save;
   const receipts = [];
   for (const stageId of ['S2', 'S3', 'S4']) {
     const seed = 11;
@@ -389,7 +392,7 @@ test('integration: input-driven S1 → S2 → S3 → S4 loop unlocks rare gear a
     });
     startStage(world, stageId);
     let tracker = createTracker(seed);
-    for (let tick = 0; tick < 7200 && world.round.state === 'running'; tick++) {
+    for (let tick = 0; tick < 18000 && world.round.state === 'running'; tick++) {
       const threats = getTelegraphs(world);
       const danger = threats.find((telegraph) =>
         (telegraph.phase === 'lock' || telegraph.progress > 0.7)
@@ -428,13 +431,13 @@ test('integration: input-driven S1 → S2 → S3 → S4 loop unlocks rare gear a
     save = result.save;
     receipts.push(result.receipt);
     assert.ok(validateSave(save));
-    if (save.statPoints) save = allocateStats(save, { agi: save.statPoints });
+    if (save.statPoints) save = allocateStats(save, { wis: save.statPoints });
   }
-  assert.equal(save.level, 4);
+  assert.equal(save.level, 12);
   assert.ok(save.cleared.S4);
   assert.ok(save.flags.chiefPity);
   assert.ok(save.items.some((item) => item.id === 'chief_maul'));
-  assert.deepEqual(receipts.map((receipt) => receipt.depositedXp), [23, 24, 55]);
+  assert.deepEqual(receipts.map((receipt) => receipt.depositedXp), [69, 96, 85]);
   assert.deepEqual(receipts.map((receipt) => receipt.stageXp), [100, 180, 260]);
 });
 

@@ -9,12 +9,12 @@ export const BALANCE = {
   normalGold: 2.5, rewardCurve: 1.3,
   stages: {
     S1: { hp:1, damage:1, eliteChance:0, waves:1, waveMs:0, concurrent:1 },
-    S2: { hp:16, damage:1.6, eliteChance:.08, waves:3, waveMs:30000, concurrent:2 },
+    S2: { hp:17, damage:1.6, eliteChance:.08, waves:3, waveMs:30000, concurrent:3 },
     S3: { hp:12, damage:2, eliteChance:.10, waves:4, waveMs:30000, concurrent:2 },
-    S4: { hp:15, damage:1.15, eliteChance:.10, waves:3, waveMs:40000, concurrent:3 },
-    S5: { hp:16, damage:4.7, eliteChance:.10, waves:4, waveMs:35000, concurrent:3 },
-    S6: { hp:12, damage:.85, eliteChance:.12, waves:3, waveMs:40000, concurrent:2 },
-    S7: { hp:12, damage:1.25, eliteChance:.12, waves:4, waveMs:30000, concurrent:2 },
+    S4: { hp:15, damage:1.05, eliteChance:.10, waves:3, waveMs:40000, concurrent:3 },
+    S5: { hp:16, damage:5.2, eliteChance:.10, waves:4, waveMs:35000, concurrent:3 },
+    S6: { hp:12, damage:.9, eliteChance:.12, waves:3, waveMs:40000, concurrent:2 },
+    S7: { hp:12, damage:2.5, eliteChance:.12, waves:4, waveMs:30000, concurrent:1 },
   },
 };
 export function threatMultipliers(threat = 1) {

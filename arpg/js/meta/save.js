@@ -14,7 +14,7 @@ export function createSave({ name, answers, weapon, createdAt }) {
   if (Array.from(cleanName).length < 1 || Array.from(cleanName).length > 12) throw new Error('이름은 1~12자입니다.');
   if (!FAMILIES.includes(chosen)) throw new Error('시작 무기가 올바르지 않습니다.');
   return {
-    version: 2, threat: 1, stageThreat: Object.fromEntries(Object.keys(STAGE_XP).map(id => [id, 1])),
+    version: 2, threat: 1, stageThreat: Object.fromEntries(Object.keys(STAGE_XP).map(id => [id, 0])),
     completedRounds: 0, shopRefresh: 0, paidRefreshes: 0, shopBought: [], rarelessRounds: 0,
     createdAt,
     name: cleanName,
@@ -76,7 +76,8 @@ export function validateSave(save) {
     if (!Number.isInteger(save.xp * 2) || (save.level === MAX_LEVEL && save.xp !== 0)) return false;
     if (save.threat !== undefined && !integer(save.threat, 1, 3)) return false;
     if (save.stageThreat !== undefined && (!record(save.stageThreat)
-      || !Object.entries(save.stageThreat).every(([id, value]) => Object.hasOwn(STAGE_XP, id) && integer(value, 1, 3)))) return false;
+      || !Object.entries(save.stageThreat).every(([id, value]) => Object.hasOwn(STAGE_XP, id) && integer(value, 0, 3)
+        && (value === 0 || save.cleared?.[id] === true)))) return false;
     if (!record(save.stats) || Object.keys(save.stats).length !== 5) return false;
     if (!STAT_KEYS.every((key) => integer(save.stats[key], 5, cap(save.level)))) return false;
     const spent = STAT_KEYS.reduce((sum, key) => sum + save.stats[key] - 5, 0);

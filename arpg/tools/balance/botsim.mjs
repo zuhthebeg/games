@@ -1,4 +1,5 @@
-import { writeFileSync } from 'node:fs';
+import { writeFileSync,readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { createWorld,addPlayer,startStage,step,setLoad,emptyInput } from '../../js/sim/world.js';
@@ -7,6 +8,7 @@ import { createSave,validateSave } from '../../js/meta/save.js';
 import { allocateStats,cap } from '../../js/meta/stats.js';
 import { buildRoundMods,createTracker,trackRound,usedConsumables,currentLoad } from '../../js/meta/run.js';
 import { ITEMS,instance } from '../../js/meta/items.js';
+import { ECONOMY } from '../../js/meta/economy.js';
 import { gearPrice } from '../../js/meta/shop.js';
 import { botInput } from './bot.js';
 
@@ -58,7 +60,7 @@ export function simulate({stage='S2',threat=1,seed=1,maxTicks=30*60*10,...option
   const loot=tracker.tempLoot,gear={common:0,fine:0,rare:0,epic:0};
   for(const item of loot.items) gear[ITEMS[item.id].rarity]++;
   const stones=[1,2,3].map(i=>loot.stacks[`enhance_stone_${i}`]||0);
-  const sale=loot.items.reduce((sum,item)=>sum+Math.floor(gearPrice(item)*.25),0);
+  const sale=loot.items.reduce((sum,item)=>sum+Math.floor(gearPrice(item)*ECONOMY.sellFraction),0);
   return {seed,state:world.round.state,ticks:world.tick,minutes:world.tick/SIM_HZ/60,clear,death,timeout:!clear&&!death,
     potions,kills,elites,generatedGold:loot.gold,gold:clear?loot.gold:0,gear:clear?gear:{common:0,fine:0,rare:0,epic:0},
     stones:clear?stones:[0,0,0],skipped:tracker.skipped,
@@ -82,11 +84,13 @@ if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href) {
   const n=Number(args.n||200),threat=Number(args.threat||1),firstSeed=Number(args.seed||1);
   if(!Number.isSafeInteger(n)||n<1||!Number.isInteger(threat)||threat<1||threat>3) throw new Error('Invalid n/threat');
   const config={rarity:args.rarity||'fine',enhance:Number(args.enhance||0),weapon:args.weapon||'blade',stats:args.stats||'balanced',...(args.level?{level:Number(args.level)}:{})};
+  console.error('stage threat clear% death% mean/median(min) potions kills gold gear(C/F/R/E) stones(L/M/H) netValue');
   const rows=(args.stage?[args.stage]:['S1','S2','S3','S4','S5','S6','S7']).map(stage=>{
     const runs=Array.from({length:n},(_,i)=>simulate({stage,threat,seed:firstSeed+i,...config}));
     const row={stage,threat,preset:config,...summarize(runs),runs};
-    console.error(`${stage} T${threat} clear=${(row.clearRate*100).toFixed(1)}% death=${(row.deathRate*100).toFixed(1)}% min=${row.meanClearMinutes?.toFixed(2)} potion=${row.potions.toFixed(2)} gold=${row.gold.toFixed(1)}`);return row;
+    console.error(`${stage} T${threat} ${(row.clearRate*100).toFixed(1)} ${(row.deathRate*100).toFixed(1)} ${row.meanClearMinutes?.toFixed(2)??'—'}/${row.medianClearMinutes?.toFixed(2)??'—'} ${row.potions.toFixed(2)} ${row.kills.toFixed(2)} ${row.gold.toFixed(1)} ${Object.values(row.gear).map(v=>v.toFixed(2)).join('/')} ${row.stones.map(v=>v.toFixed(2)).join('/')} ${row.expectedValue.toFixed(1)}`);return row;
   });
-  const result={schema:1,sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seeds:{first:firstSeed,n},limitation:LIMITATION,valueDefinition:'retained gold + vendor gear value - HP potion cost; stones/materials reported separately',rows};
+  const sourceHashes=Object.fromEntries(['js/sim/core.js','js/sim/world.js','js/content/combat.js','js/content/balance.js','js/meta/economy.js','js/meta/items.js','js/meta/run.js','js/meta/stats.js','js/meta/save.js','tools/balance/bot.js','tools/balance/botsim.mjs'].map(file=>[file,createHash('sha256').update(readFileSync(new URL('../../'+file,import.meta.url))).digest('hex')]));
+  const result={schema:1,sourceHashes,sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),seeds:{first:firstSeed,n},limitation:LIMITATION,valueDefinition:'retained kill-drop gold + vendor gear value - HP potion cost; stones/materials reported separately; one-time first-chief pity and XP excluded',rows};
   const json=JSON.stringify(result,null,2)+'\n';if(args.out)writeFileSync(args.out,json);else console.log(json);
 }

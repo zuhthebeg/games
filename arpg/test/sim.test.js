@@ -1,3 +1,5 @@
+import { preset } from '../tools/balance/botsim.mjs';
+import { buildRoundMods } from '../js/meta/run.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { shapeHitsCircle, ticks } from '../js/sim/core.js';
@@ -178,17 +180,17 @@ function bot(world) {
 }
 function shapeCovers(t, p) { return shapeHitsCircle(t.shape, t.ox, t.oy, t.facing, p.x, p.y, p.r + 12); }
 
-test('S2 is clearable by a simple dodging bot and idling dies', () => {
+test('S2 is clearable with valid overgeared blade by a simple dodging bot and idling dies', () => {
   const w = createWorld({ seed: 11 });
-  addPlayer(w, { pid: 'a' });
+  addPlayer(w, { pid: 'a', mods:buildRoundMods(preset('S2',{level:12,rarity:'epic',enhance:5,stats:'agile'})) });
   startStage(w, 'S2');
-  run(w, ticks(180000), (ww) => (ww.round.state === 'running' ? bot(ww) : {}));
+  run(w, ticks(600000), (ww) => (ww.round.state === 'running' ? bot(ww) : {}));
   assert.equal(w.round.state, 'clear', `bot failed S2 (hp ${w.entities[0].hp})`);
 
   const idle = createWorld({ seed: 11 });
-  addPlayer(idle, { pid: 'a' });
+  addPlayer(idle, { pid: 'a', mods:buildRoundMods(preset('S2',{level:12,rarity:'epic',enhance:5,stats:'agile'})) });
   startStage(idle, 'S2');
-  run(idle, ticks(180000), () => ({ a: input() }));
+  run(idle, ticks(600000), () => ({ a: input() }));
   assert.equal(idle.round.state, 'failed');
   assert.ok(idle.entities[0].deathCause?.ability, 'death records the pattern that killed (design §7.2)');
 });

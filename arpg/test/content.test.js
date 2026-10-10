@@ -1,3 +1,4 @@
+import { BALANCE } from '../js/content/balance.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -141,7 +142,7 @@ test('new seeded tables always award region materials, stay bounded and never ad
     for (let seed = 0; seed < 100; seed++) {
       const result = rollDrops(id, seed);
       assert.deepEqual(result, rollDrops(id, seed));
-      assert.ok(result.gold >= table.gold[0] && result.gold <= table.gold[1]);
+      assert.ok(result.gold >= Math.floor(table.gold[0] * BALANCE.normalGold) && result.gold <= Math.ceil(table.gold[1] * BALANCE.normalGold));
       for (const stack of table.stacks.filter((entry) => entry.chance === undefined)) {
         assert.equal(result.stacks[stack.id], stack.count);
       }

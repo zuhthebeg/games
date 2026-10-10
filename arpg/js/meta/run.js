@@ -7,8 +7,10 @@ import { ITEMS, carriedWeight, capacity, rollDrops, dropSeed, cloneSave, uniqueU
 export const emptyLoot = () => ({ gold: 0, items: [], stacks: {} });
 const USED_KEYS = { potions: 'potion', manaPotions: 'mana_potion', scrolls: 'return_scroll' };
 
-// stageThreat stores the highest selectable tier (1 absent); only clears promote it.
-export const unlockedThreat = (save, stageId) => save.stageThreat?.[stageId] ?? 1;
+// stageThreat stores the highest CLEARED tier; absent historical clears count as tier 1.
+// An uncleared stage always starts at tier 1, never gains a free higher-tier unlock.
+export const clearedThreat = (save, stageId) => save.stageThreat?.[stageId] ?? (save.cleared[stageId] ? 1 : 0);
+export const unlockedThreat = (save, stageId) => stageId === 'S1' ? 1 : Math.min(3, clearedThreat(save, stageId) + 1);
 export function selectThreat(save, stageId, threat) {
   threatMultipliers(threat);
   if (!Object.hasOwn(STAGE_XP, stageId) || threat > unlockedThreat(save, stageId)
@@ -141,8 +143,7 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
     receipt.xpDiscarded = offeredXp - receipt.xpGained;
     next = addXp(next, offeredXp);
     next.cleared[stageId] = true;
-    next.stageThreat = { ...(save.stageThreat || {}), [stageId]: stageId === 'S1' ? 1
-      : Math.max(unlockedThreat(save, stageId), Math.min(3, threat + 1)) };
+    next.stageThreat = { ...(save.stageThreat || {}), [stageId]: Math.max(clearedThreat(save, stageId), threat) };
     next.completedRounds++;
     if (next.completedRounds % ECONOMY.refreshRounds === 0) {
       next.shopRefresh++; next.paidRefreshes = 0; next.shopBought = [];

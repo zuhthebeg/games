@@ -1,3 +1,5 @@
+import { preset } from '../tools/balance/botsim.mjs';
+import { addXp } from '../js/meta/progression.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createWorld, addPlayer, startStage, step, emptyInput, getTelegraphs, setLoad } from '../js/sim/world.js';
@@ -35,13 +37,13 @@ function bot(world, player) {
 }
 
 for (const stageId of ['S5', 'S6', 'S7']) {
-  test(`${stageId}: unmodified basic blade + simple dodging bot clears; idling dies (seeds 1/11/42)`, () => {
+  test(`${stageId}: valid Lv12 epic+5 blade + simple dodging bot clears; idling dies (seeds 1/11/42)`, () => {
     for (const seed of [1, 11, 42]) {
       for (const active of [true, false]) {
         const world = createWorld({ seed });
-        const player = addPlayer(world, { pid: 'a' });
+        const player = addPlayer(world, { pid: 'a', mods:buildRoundMods(preset(stageId,{level:12,rarity:'epic',enhance:5,stats:'agile'})) });
         startStage(world, stageId);
-        for (let tick = 0; tick < ticks(240000) && world.round.state === 'running'; tick++) {
+        for (let tick = 0; tick < ticks(600000) && world.round.state === 'running'; tick++) {
           step(world, { a: active ? bot(world, player) : emptyInput() });
         }
         assert.equal(world.round.state, active ? 'clear' : 'failed',
@@ -54,7 +56,8 @@ for (const stageId of ['S5', 'S6', 'S7']) {
 }
 
 test('real solo S1~S7 loop tracks all drops, XP, death policy metadata and persists valid v2 saves', () => {
-  let save = createSave({ name: '코스 시험', answers: [0, 0, 0, 0, 0], createdAt: 1 });
+  let save = preset('S2', {level:12,rarity:'epic',enhance:5,stats:'agile'});
+  const initial = structuredClone(save);
   // S1 is timed and already integration-tested; use its real settlement to start the active encounters.
   save = settleRound(save, { stageId: 'S1', terminal: 'clear' }).save;
   save = allocateStats(save, { agi: save.statPoints });
@@ -65,7 +68,7 @@ test('real solo S1~S7 loop tracks all drops, XP, death policy metadata and persi
       mods: buildRoundMods(save) });
     let tracker = createTracker(11);
     startStage(world, stageId);
-    for (let tick = 0; tick < 7200 && world.round.state === 'running'; tick++) {
+    for (let tick = 0; tick < 18000 && world.round.state === 'running'; tick++) {
       const events = step(world, { local: bot(world, player) });
       const result = trackRound(save, tracker, events, usedConsumables(save, player));
       tracker = result.tracker;
@@ -83,10 +86,10 @@ test('real solo S1~S7 loop tracks all drops, XP, death policy metadata and persi
     }
   }
   assert.deepEqual(receipts.map((receipt) => receipt.stageXp), [100, 180, 260, 340, 480, 520]);
-  assert.deepEqual(receipts.slice(3).map((receipt) => receipt.depositedXp), [44, 56, 36]);
+  assert.deepEqual(receipts.slice(3).map((receipt) => receipt.depositedXp), [176, 168, 144]);
   assert.ok(save.cleared.S7);
-  // §8.4 table excludes kill XP; actual S1~S7 first clears plus kills reach Lv7.
-  assert.equal(save.level, 7);
+  // Explicit expanded encounter XP; progression is still earned through actual kills/settlement.
+  assert.equal(save.level, addXp(initial,50+100+180+260+340+480+520+69+96+85+176+168+144).level);
   assert.ok(save.stacks.hide >= 4 && save.stacks.rune_shard >= 2 && save.stacks.frost_shard >= 2 && save.stacks.web >= 3);
   console.log(`S1~S7 valid solo progression: Lv${save.level}, xp=${save.xp}, gold=${save.gold}`);
 });

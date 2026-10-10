@@ -400,6 +400,7 @@ try {
     const fixture=addXp(createSave({name:'신규 코스 시험',answers:[0,0,0,0,0],createdAt:1}),451);
     fixture.cleared={S1:true,S2:true,S3:true,S4:true};
     fixture.stacks.return_scroll=2;
+    fixture.stageThreat.S2=1;
     new SaveStore(localStorage).save(fixture);
   })()`);
   await command('Page.reload');
@@ -408,6 +409,17 @@ try {
   assert.ok(await evaluate(`!document.querySelector('[data-stage="S5"]').disabled
     && document.querySelector('[data-stage="S6"]').disabled
     && document.querySelector('[data-stage="S7"]').disabled`));
+  // P3: real segment selection -> launch -> frozen world config -> return -> persisted selection.
+  await click('[data-action="sortie"][data-stage="S2"]');
+  assert.equal(await evaluate(`document.querySelector('[data-threat="3"]').disabled`),true);
+  await click('[data-action="threat"][data-threat="2"]');
+  assert.equal(await evaluate(`document.querySelector('[data-threat="2"]').getAttribute('aria-pressed')`),'true');
+  await click('#sortie-confirm');
+  await waitFor('__arpg.world.round.stageId==="S2" && __arpg.world.round.threat===2 && __arpg.world.tick>0');
+  assert.equal(await evaluate('__arpg.save.threat'),2);
+  await key('KeyR');await key('KeyR','keyUp');
+  await waitFor('__arpg.world.round.state==="returned"',6000);
+  await backToInn();await click('[data-action="board"]');
   await click('[data-action="sortie"][data-stage="S5"]');
   await click('#sortie-confirm');
   await waitFor('__arpg.world.round.stageId==="S5" && __arpg.world.tick>0');
@@ -506,7 +518,7 @@ try {
     ok: true, canvas: true, sprites: artEvidence,
     onboarding: 'name → 5 answers → S1 clear@900 → allocate 3 → inn',
     shop: 'supplies + scroll cap; seeded gear buy → sold-out → sell at loss → paid refresh → reload',
-    S2: 'sortie confirmed → reload → inn',
+    S2: 'sortie confirmed → reload → inn; threat2 segment → launch frozen T2 → return',
     newStages: 'pre-S5 v1 → S5 board unlock → wolf ×2 / S6 guardian+spirit / S7 spider procedural → return',
     persisted, fullSaveRestored: true, lastReceiptRestored: true,
     mobile: { width: 390, height: 844, hotspots: 5, buttons: 6, inside: true, noOverlap: true },
