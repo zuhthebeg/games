@@ -57,3 +57,10 @@ Procedural placeholder art only; no audio or Blender atlases. Mid-Android 60fps,
 thermal behavior, real-device touch and OS backgrounding remain hardware checks.
 No sim/content changes requested. No portal registration, analytics, ads,
 commits or deployment.
+
+## Cache busting (required after any js/css change)
+
+game.cocy.io caches JS for 4h but HTML for 10min, so a new `index.html` can boot
+against stale modules. `node arpg/tools/stamp-assets.mjs` rewrites the import map
+and entry/stylesheet URLs with per-file content hashes. `test/stamp.test.js`
+fails when the stamps are stale.
