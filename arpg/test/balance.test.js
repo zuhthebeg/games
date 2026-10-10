@@ -22,7 +22,7 @@ test('elite spawn is seeded, 8~12% content policy; variant rank is separate from
     const world=firstSpawn(seed),other=firstSpawn(seed);
     assert.deepEqual(world,other);
     const m=world.entities[1];elite+=+m.eliteVariant;
-    assert.equal(m.maxHp,Math.round(MONSTERS[m.type].hp*STAGES.S2.hpMult*(m.eliteVariant?BALANCE.elite.hp:1)));
+    assert.equal(m.maxHp,Math.round(MONSTERS[m.type].hp*STAGES.S2.hpMult*(m.eliteVariant?BALANCE.elite.hp:1)*m.sizeHpMult));
     assert.equal(m.dmgMult,STAGES.S2.dmgMult*(m.eliteVariant?BALANCE.elite.damage:1));
     assert.equal(world.events[0].elite,m.eliteVariant);
   }
@@ -35,7 +35,7 @@ test('threat 1~3 applies HP/damage once at spawn, frozen round survives snapshot
   for(let threat=1;threat<=3;threat++) {
     const world=firstSpawn(11,threat),m=world.entities[1],mult=threatMultipliers(threat);
     assert.equal(world.round.threat,threat);
-    assert.equal(m.maxHp,Math.round(MONSTERS[m.type].hp*STAGES.S2.hpMult*mult.hp*(m.eliteVariant?BALANCE.elite.hp:1)));
+    assert.equal(m.maxHp,Math.round(MONSTERS[m.type].hp*STAGES.S2.hpMult*mult.hp*(m.eliteVariant?BALANCE.elite.hp:1)*m.sizeHpMult));
     assert.equal(m.dmgMult,STAGES.S2.dmgMult*mult.damage*(m.eliteVariant?BALANCE.elite.damage:1));
     const replay=structuredClone(world);
     world.threat=1; // frozen stage value, not mutable selection, drives later spawn waves

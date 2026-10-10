@@ -1,3 +1,4 @@
+import { BALANCE } from '../content/balance.js';
 // Pure display decisions. No simulation mutation or combat/telegraph geometry.
 export const ATLAS_IDS = Object.freeze({
   blade: 'hero-sword',
@@ -11,7 +12,7 @@ export const ATLAS_IDS = Object.freeze({
 export const DIRECTIONS = Object.freeze(['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE']);
 
 export function atlasScale(entity) {
-  return entity.type === 'goblin_chief' ? 1.3 : 1;
+  return (entity.type === 'goblin_chief' ? BALANCE.size.bossBase : 1) * (entity.sizeScale || 1);
 }
 
 export function visualKey(entity) {

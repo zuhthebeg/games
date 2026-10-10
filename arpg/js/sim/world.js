@@ -9,7 +9,7 @@ import {
 } from './core.js';
 import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE } from '../content/combat.js';
 
-import { BALANCE, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE } from '../content/balance.js';
+import { BALANCE, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, monsterSizeProfile } from '../content/balance.js';
 
 const PB = PLAYER_BASE;
 const KNOCK_DECAY = 0.82; // per tick
@@ -65,10 +65,12 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
 export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1, elite = false, threat = 1, stageId = null } = {}) {
   const def = MONSTERS[type];
   if (!def) throw new Error(`unknown monster ${type}`);
+  const size = stageId ? monsterSizeProfile(stageId, elite, type === 'goblin_chief', rand(world))
+    : { scale: 1, mean: 1, hp: 1 };
   const ent = {
     id: world.nextId++, kind: 'monster', type, team: TEAM_MONSTER,
-    x, y, r: def.r, facing: Math.PI, kx: 0, ky: 0, moving: false,
-    hp: Math.round(def.hp * hpMult), maxHp: Math.round(def.hp * hpMult),
+    x, y, r: def.r * size.scale, sizeScale: size.scale, sizeMean: size.mean, sizeHpMult: size.hp, facing: Math.PI, kx: 0, ky: 0, moving: false,
+    hp: Math.max(1, Math.round(def.hp * hpMult * size.hp)), maxHp: Math.max(1, Math.round(def.hp * hpMult * size.hp)),
     dmgMult, eliteVariant: elite, threat, stageId, poise: def.poise, maxPoise: def.poise,
     act: null, cds: {}, lastActs: [], thinkLeft: ticks(400 + rand(world) * 400),
     targetId: 0, strafe: rand(world) < 0.5 ? -1 : 1, staggerLeft: 0,

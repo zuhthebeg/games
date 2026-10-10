@@ -57,7 +57,7 @@ function spriteVisual(entity, { color }, asset) {
   const sprite = new Sprite(asset.animations.idle_E[0]);
   sprite.anchor.set(asset.anchor.x, asset.anchor.y);
   sprite.tint = entity.kind === 'monster' ? (entity.eliteVariant ? BALANCE.elite.tint : color) : 0xffffff;
-  sprite.scale.set(atlasScale(entity) * (entity.eliteVariant ? BALANCE.elite.scale : 1));
+  sprite.scale.set(atlasScale(entity));
   // Same atlas geometry, additive bright impact; no filters or base-palette tint changes.
   const flash = new Sprite(sprite.texture);
   flash.anchor.copyFrom(sprite.anchor);

@@ -9,6 +9,7 @@ export const BALANCE = {
     { hp: 2.1, damage: 1.7, gold: 2.4, drop: 1.9, rarity: {common:40,fine:43,rare:14,epic:3}, bossRarity:{fine:20,rare:55,epic:25} },
   ],
   normalGold: 2.5, rewardCurve: 1.3,
+  size: { step: .035, spread: .1, max: 1.35, elite: 1.12, hpCoupling: .5, bossBase: 1.3 },
   stages: {
     S1: { hp:1, damage:1, eliteChance:0, waves:1, waveMs:0, concurrent:1 },
     S2: { hp:17, damage:1.6, eliteChance:.08, waves:3, waveMs:30000, concurrent:3 },
@@ -22,4 +23,16 @@ export const BALANCE = {
 export function threatMultipliers(threat = 1) {
   if (!Number.isInteger(threat) || threat < 1 || threat > 3) throw new Error('Invalid threat');
   return BALANCE.threats[threat - 1];
+}
+
+// [제안] Absolute rendered enlargement is capped at 1.35, including the legacy chief scale.
+// Return a multiplier relative to each archetype's existing visual/physical base.
+export function monsterSizeProfile(stageId, elite, boss, roll) {
+  const stage = Number(String(stageId).match(/^S(\d+)$/)?.[1] || 1);
+  const mu = Math.min(BALANCE.size.max, 1 + Math.max(0, stage - 1) * BALANCE.size.step);
+  const variant = elite ? BALANCE.size.elite : 1;
+  const limit = BALANCE.size.max / (boss ? BALANCE.size.bossBase : 1);
+  const mean = Math.min(limit, mu * variant);
+  const scale = Math.min(limit, mu * (1 - BALANCE.size.spread + 2 * BALANCE.size.spread * roll) * variant);
+  return { scale, mean, hp: 1 + BALANCE.size.hpCoupling * (scale - mean) };
 }
