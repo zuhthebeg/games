@@ -1,0 +1,274 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "screenshots": 0,
+  "errors": [],
+  "networkErrors": [],
+  "states": [
+    {
+      "name": "inn",
+      "controls": 14,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 558,
+        "scrollHeight": 558
+      }
+    },
+    {
+      "name": "shop",
+      "controls": 14,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 558,
+        "scrollHeight": 558
+      }
+    },
+    {
+      "name": "forge",
+      "controls": 14,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 558,
+        "scrollHeight": 558
+      }
+    },
+    {
+      "name": "board",
+      "controls": 13,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 558,
+        "scrollHeight": 558
+      }
+    },
+    {
+      "name": "combat",
+      "controls": 18,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": null
+    },
+    {
+      "name": "result",
+      "controls": 10,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 571,
+        "scrollHeight": 571
+      }
+    },
+    {
+      "name": "combat/blade",
+      "controls": 18,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": null
+    },
+    {
+      "name": "combat/bow",
+      "controls": 17,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": null
+    },
+    {
+      "name": "combat/focus",
+      "controls": 19,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": null
+    },
+    {
+      "name": "result/clear",
+      "controls": 10,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 571,
+        "scrollHeight": 571
+      }
+    },
+    {
+      "name": "result/death",
+      "controls": 10,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 571,
+        "scrollHeight": 571
+      }
+    },
+    {
+      "name": "shop/potion",
+      "controls": 14,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 558,
+        "scrollHeight": 558
+      }
+    },
+    {
+      "name": "shop/mana",
+      "controls": 14,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 558,
+        "scrollHeight": 558
+      }
+    },
+    {
+      "name": "shop/scroll",
+      "controls": 14,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 558,
+        "scrollHeight": 558
+      }
+    },
+    {
+      "name": "forge/iron",
+      "controls": 14,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 558,
+        "scrollHeight": 558
+      }
+    },
+    {
+      "name": "forge/bow",
+      "controls": 14,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 558,
+        "scrollHeight": 558
+      }
+    },
+    {
+      "name": "forge/staff",
+      "controls": 14,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 558,
+        "scrollHeight": 558
+      }
+    },
+    {
+      "name": "board/S1",
+      "controls": 13,
+      "outside": [],
+      "undersized": [],
+      "overlaps": [],
+      "horizontalOverflow": false,
+      "content": {
+        "height": 558,
+        "scrollHeight": 558
+      }
+    }
+  ],
+  "checks": [
+    "HP / potions / return / dodge coordinates identical across 3 kits; all 3 hero atlases decode",
+    "Merchant limits, total, balance, weight; gear variants; contract selection; confirm dialogs",
+    "6 source-linked rationale disclosures, Arrow/Home/End tab keyboard navigation, synthetic swipe",
+    "Reduced motion, noindex, no external asset requests, no localStorage/sessionStorage writes",
+    "8 key text/background contrast pairs ≥ 4.5:1; all 18 default state bodies fit without scrolling"
+  ],
+  "chromium": "149.0.7827.55",
+  "contrast": [
+    {
+      "name": "body ink / ash",
+      "foreground": "#efe6d2",
+      "background": "#141916",
+      "ratio": 14.33
+    },
+    {
+      "name": "muted / raised",
+      "foreground": "#b8b39f",
+      "background": "#30362b",
+      "ratio": 5.92
+    },
+    {
+      "name": "primary text / brass",
+      "foreground": "#1b211a",
+      "background": "#d3ad6d",
+      "ratio": 7.79
+    },
+    {
+      "name": "brass / selected",
+      "foreground": "#d3ad6d",
+      "background": "#33392b",
+      "ratio": 5.66
+    },
+    {
+      "name": "gain / ash",
+      "foreground": "#adc6a0",
+      "background": "#141916",
+      "ratio": 9.63
+    },
+    {
+      "name": "loss / surface",
+      "foreground": "#e9a294",
+      "background": "#222821",
+      "ratio": 7.22
+    },
+    {
+      "name": "HP meter text / fill",
+      "foreground": "#f8ecd6",
+      "background": "#914740",
+      "ratio": 5.65
+    },
+    {
+      "name": "MP meter text / fill",
+      "foreground": "#f8ecd6",
+      "background": "#456879",
+      "ratio": 5.12
+    }
+  ],
+  "passed": true
+}

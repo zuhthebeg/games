@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="description" content="잿빛 여관 UI 검토용 정적 목업. 실제 게임이나 저장 데이터를 변경하지 않습니다.">
+  <title>잿빛 여관 · UI 검토 B</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="mock.css">
+  <script src="mock.js" defer></script>
+</head>
+<body>
+  <svg class="symbol-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-sword" viewBox="0 0 24 24"><path d="m6 18 11-11 3-4-4 1L5 15m-2-2 8 8M3 21l4-4"/></symbol>
+    <symbol id="i-bow" viewBox="0 0 24 24"><path d="M5 3q20 9 0 18V3m0 9h15m-4-3 4 3-4 3"/></symbol>
+    <symbol id="i-staff" viewBox="0 0 24 24"><path d="m4 21 11-11m0-7 5 5-5 5-5-5z"/></symbol>
+    <symbol id="i-potion" viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3M9 15h6m-3-3v6"/></symbol>
+    <symbol id="i-mana" viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3m-2 9-3 4h4l-2 3"/></symbol>
+    <symbol id="i-scroll" viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 12h6m-3-3-3 3 3 3"/></symbol>
+    <symbol id="i-forge" viewBox="0 0 24 24"><path d="m5 4 7 7m-4-9 6 6-4 4-6-6zm4 11 8 8m-5-14 4-4 3 3-4 4M3 21l7-7"/></symbol>
+    <symbol id="i-board" viewBox="0 0 24 24"><path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M5 21v-3a7 7 0 0 1 14 0v3M8 21v-4m8 4v-4"/></symbol>
+    <symbol id="i-trainer" viewBox="0 0 24 24"><path d="m12 3 8 9-8 9-8-9zM8 12h8m-4-4v8"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M14 8h-4v8h4v-4h-3"/></symbol>
+    <symbol id="i-bag" viewBox="0 0 24 24"><path d="M7 7h10l3 13H4zM9 7V5a3 3 0 0 1 6 0v2"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M20 12H4m6-6-6 6 6 6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 5"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-dodge" viewBox="0 0 24 24"><path d="m3 16 7-8 3 5 8-9m-5 0h5v5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v7q-1 6-8 9-7-3-8-9V6zM12 7v10"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2q3 5 1 9 4-1 4-5 7 8 2 13-6 6-13-1-4-6 6-16z"/></symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 9q3-4 6 0t6 0 6 0M3 15q3-4 6 0t6 0 6 0"/></symbol>
+    <symbol id="i-rune" viewBox="0 0 24 24"><path d="m12 2 8 10-8 10-8-10zM8 12h8m-4-6v12"/></symbol>
+    <symbol id="i-skull" viewBox="0 0 24 24"><path d="M5 15v-5a7 7 0 0 1 14 0v5l-3 2v4H8v-4zM12 17v4"/><circle cx="9" cy="11" r="1"/><circle cx="15" cy="11" r="1"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4M5 5l3 3m8 8 3 3M5 19l3-3m8-8 3-3"/></symbol>
+  </defs></svg>
+  <div class="prototype">
+    <header class="review-bar">
+      <div class="review-label"><span>UI STUDY / B</span><span>정적 목업 · 저장 없음</span></div>
+      <nav class="screen-tabs" role="tablist" aria-label="목업 화면">
+        <button role="tab" id="tab-inn" aria-controls="screen-inn" aria-selected="true" data-screen="inn">여관</button>
+        <button role="tab" id="tab-shop" aria-controls="screen-shop" aria-selected="false" tabindex="-1" data-screen="shop">상점</button>
+        <button role="tab" id="tab-forge" aria-controls="screen-forge" aria-selected="false" tabindex="-1" data-screen="forge">장비</button>
+        <button role="tab" id="tab-board" aria-controls="screen-board" aria-selected="false" tabindex="-1" data-screen="board">출정</button>
+        <button role="tab" id="tab-combat" aria-controls="screen-combat" aria-selected="false" tabindex="-1" data-screen="combat">전투</button>
+        <button role="tab" id="tab-result" aria-controls="screen-result" aria-selected="false" tabindex="-1" data-screen="result">결과</button>
+      </nav>
+    </header>
+    <main id="screens">
+      <section id="screen-inn" class="screen" role="tabpanel" aria-labelledby="tab-inn" data-view="inn">
+        <header class="game-header"><div class="identity"><span class="seal">IV</span><div><strong>잿빛 기사 <span class="muted">Lv.4</span></strong><div class="xp-line"><i></i></div><small>인장의 경험치 42 / 100</small></div></div><span class="money"><svg aria-hidden="true" focusable="false"><use href="#i-coin"/></svg>240</span><button class="icon-button" data-info="settings" aria-label="목업 설정"><svg aria-hidden="true" focusable="false"><use href="#i-settings"/></svg></button></header>
+        <div class="content inn-content">
+          <div class="location-title"><span class="eyebrow">길이 끊긴 밤, 돌아올 곳</span><h1>잿빛 여관</h1></div>
+          <div class="inn-scene" aria-label="여관 공간의 NPC 핫스폿">
+            <svg class="room-art" viewBox="0 0 358 250" aria-hidden="true"><defs><pattern id="floor" width="80" height="30" patternUnits="userSpaceOnUse" patternTransform="skewX(-25)"><rect width="80" height="30" fill="#292822"/><path d="M0 0h80v30H0z" stroke="#403d32" stroke-width="1"/></pattern></defs><path d="M0 0h358v172L180 239 0 174z" fill="#20231e"/><path d="M0 174 178 118 358 172v78H0z" fill="url(#floor)"/><path d="M0 19 179 0l179 19M40 0v153M312 0v153M0 105l178-28 180 28" stroke="#4c493a" fill="none" stroke-width="10"/><path d="M149 29h69v110h-69z" fill="#413e33" stroke="#6c6450" stroke-width="3"/><path d="M160 83q24-33 47 0v48h-47z" fill="#141712"/><path d="M173 125q-8-18 4-32-2 17 8 15 9-9 6-21 22 22 8 39z" fill="#c18a4f"/><path d="M181 125q-5-12 6-22 10 11 5 22z" fill="#efcc88"/><path d="M148 139h74M141 145h88" stroke="#78705b" stroke-width="6"/><path d="M20 119 92 113l21 25-72 8z" fill="#4a4030" stroke="#8a7250"/><path d="m40 147 2 28m60-35 1 29" stroke="#4a4030" stroke-width="8"/><path d="M268 117h55v43h-55z" fill="#3a3226" stroke="#8a7250"/><path d="M274 126h42m-42 9h28m-28 9h34" stroke="#beaa7e"/><path d="m115 217 58-24 64 20-59 27z" fill="#574936" stroke="#7c674b"/></svg>
+            <div class="sprite hero-inn" role="img" aria-label="실제 게임의 KayKit 검 기사 스프라이트"></div>
+            <button class="hotspot owner" data-info="owner"><svg aria-hidden="true" focusable="false"><use href="#i-person"/></svg><span>여관 주인</span></button>
+            <button class="hotspot pharmacist" data-go="shop"><svg aria-hidden="true" focusable="false"><use href="#i-potion"/></svg><span>행상 약사</span></button>
+            <button class="hotspot guild" data-go="board"><svg aria-hidden="true" focusable="false"><use href="#i-board"/></svg><span>계약 게시판</span></button>
+            <span class="scene-caption">난로의 인장이 당신을 기억한다.</span>
+          </div>
+          <p class="recovery"><svg aria-hidden="true" focusable="false"><use href="#i-check"/></svg><strong>HP·MP 회복 완료</strong><span>무료 · 자동</span></p>
+          <div class="service-list">
+            <button data-go="forge"><svg aria-hidden="true" focusable="false"><use href="#i-forge"/></svg><span><strong>대장장이</strong><small>비교 · 장착 · 강화</small></span><svg aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button>
+            <button data-info="trainer"><svg aria-hidden="true" focusable="false"><use href="#i-trainer"/></svg><span><strong>교관</strong><small>능력치 분배 · 무기 연습</small></span><span class="badge">2점</span></button>
+          </div>
+          <div class="load-note"><svg aria-hidden="true" focusable="false"><use href="#i-bag"/></svg><span>가방 <b>21.0 / 108 kg</b> · 가벼움</span></div>
+        </div>
+        <footer class="action-footer"><button class="primary" data-go="board"><span>다음 계약 고르기</span><svg aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button></footer>
+        <details class="rationale"><summary>왜 이렇게? <span>공간으로 기억하는 허브</span></summary><p><a href="https://en.wikipedia.org/wiki/Hades_(video_game)" target="_blank" rel="noopener noreferrer">Hades의 귀환·준비 루프</a>를 차용하되, 설계 §3.2에 따라 이동 노동 대신 NPC를 바로 누른다.</p></details>
+      </section>
+      <section id="screen-shop" class="screen" role="tabpanel" aria-labelledby="tab-shop" data-view="shop" hidden>
+        <header class="game-header panel-header"><button class="icon-button" data-go="inn" aria-label="상점에서 여관으로"><svg aria-hidden="true" focusable="false"><use href="#i-back"/></svg></button><div><small>행상 약사</small><h2>살아서 돌아올 준비</h2></div><span class="money"><svg aria-hidden="true" focusable="false"><use href="#i-coin"/></svg>240</span></header>
+        <div class="content shop-content">
+          <p class="npc-line">“약병 하나가, 한 번의 밤을 더 주지.”</p>
+          <div class="shop-items" aria-label="보급품 선택">
+            <button class="shop-item selected" data-item="potion" aria-pressed="true"><span class="item-emblem hp-tone"><svg aria-hidden="true" focusable="false"><use href="#i-potion"/></svg></span><span class="item-name"><strong>HP 물약</strong><small>보유 3 · 1 kg / 개</small></span><span class="item-price">10 G<small>선택됨</small></span></button>
+            <button class="shop-item" data-item="mana" aria-pressed="false"><span class="item-emblem mp-tone"><svg aria-hidden="true" focusable="false"><use href="#i-mana"/></svg></span><span class="item-name"><strong>마나 물약</strong><small>보유 1 · 1 kg / 개</small></span><span class="item-price">12 G<small>보급품</small></span></button>
+            <button class="shop-item" data-item="scroll" aria-pressed="false"><span class="item-emblem"><svg aria-hidden="true" focusable="false"><use href="#i-scroll"/></svg></span><span class="item-name"><strong>귀환 주문서</strong><small>보유 1 / 최대 2 · 1 kg</small></span><span class="item-price">6 G<small>소지 제한</small></span></button>
+          </div>
+          <div class="quantity-row"><label for="quantity">구매 수량</label><div class="stepper"><button data-count="-1" aria-label="구매 수량 줄이기"><svg aria-hidden="true" focusable="false"><use href="#i-minus"/></svg></button><output id="quantity" aria-live="polite">3</output><button data-count="1" aria-label="구매 수량 늘리기"><svg aria-hidden="true" focusable="false"><use href="#i-plus"/></svg></button></div></div>
+          <div class="ledger"><div><span>총액</span><strong id="shop-total">30 G</strong></div><div><span>구매 후 골드</span><span id="shop-balance">210 G</span></div><div><span>구매 후 가방</span><span id="shop-weight">24.0 / 108 kg</span></div></div>
+          <p class="safe-note" id="shop-note"><svg aria-hidden="true" focusable="false"><use href="#i-check"/></svg>가벼움 유지 · 회피에 영향 없음</p>
+          <p class="minor">수량을 먼저 고르고, 총액과 무게를 확인해.</p>
+        </div>
+        <footer class="action-footer"><button class="primary" id="buy-preview" data-buy>30 G · 구매 확인</button></footer>
+        <details class="rationale"><summary>왜 이렇게? <span>구매 전에 결과를 함께</span></summary><p><a href="https://www.levelwinner.com/archero-beginners-guide-tips-cheats-strategies/" target="_blank" rel="noopener noreferrer">Archero의 런 준비 분리</a> + 설계 §3.2: 보유량·총액·구매 후 무게를 한 장부에서 판단한다.</p></details>
+      </section>
+      <section id="screen-forge" class="screen" role="tabpanel" aria-labelledby="tab-forge" data-view="forge" hidden>
+        <header class="game-header panel-header"><button class="icon-button" data-go="inn" aria-label="대장장이에서 여관으로"><svg aria-hidden="true" focusable="false"><use href="#i-back"/></svg></button><div><small>대장장이</small><h2>무엇을 쥐고 나갈까</h2></div><span class="money"><svg aria-hidden="true" focusable="false"><use href="#i-coin"/></svg>240</span></header>
+        <div class="content forge-content">
+          <div class="section-caption"><span>가방의 무기</span><span>후보를 누르면 비교</span></div>
+          <div class="gear-picker" aria-label="비교할 무기"><button class="selected" data-gear="iron" aria-pressed="true"><svg aria-hidden="true" focusable="false"><use href="#i-sword"/></svg><span>철검 +1</span></button><button data-gear="bow" aria-pressed="false"><svg aria-hidden="true" focusable="false"><use href="#i-bow"/></svg><span>사냥꾼 활</span></button><button data-gear="staff" aria-pressed="false"><svg aria-hidden="true" focusable="false"><use href="#i-staff"/></svg><span>불씨 지팡이</span></button></div>
+          <div class="comparison-heading"><div><span class="eyebrow">현재 장착</span><h3>수련용 검</h3><small>일반 · +0</small></div><svg aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg><div><span class="eyebrow">선택한 후보</span><h3 id="gear-name">철검 +1</h3><small id="gear-kind">양질 · 검</small></div></div>
+          <table class="comparison"><caption class="sr-only">현재 장비와 후보 장비의 비교</caption><thead><tr><th scope="col">항목</th><th scope="col">현재</th><th scope="col">후보 / 변화</th></tr></thead><tbody><tr><th scope="row">위력 배율</th><td>×1.00</td><td><b id="gear-power">×1.20</b><small class="gain" id="gear-gain">+0.20 증가</small></td></tr><tr><th scope="row">장비 무게</th><td>8 kg</td><td><b id="gear-weight">12 kg</b><small class="loss" id="gear-delta">+4 kg 무거움</small></td></tr><tr><th scope="row">요구 레벨</th><td>Lv.1</td><td>Lv.2 <small class="gain">장착 가능</small></td></tr></tbody></table>
+          <div class="forge-load"><svg aria-hidden="true" focusable="false"><use href="#i-bag"/></svg><span>장착 후 <b id="gear-load">25.0 / 108 kg</b><small>가벼움 유지</small></span></div>
+          <p class="minor" id="gear-advice">더 강하지만 더 무거워. 두 값을 함께 비교해.</p>
+          <div class="secondary-actions"><button data-forge="enhance"><svg aria-hidden="true" focusable="false"><use href="#i-forge"/></svg><span>강화<small id="enhance-cost">94 G · 고철 5</small></span></button><button class="quiet-danger" data-forge="dismantle">분해<small id="dismantle-refund">고철 +5 · 확인 필요</small></button></div>
+          <div class="material-note">보유 고철 12 · 강화 비용은 후보 기준</div>
+        </div>
+        <footer class="action-footer"><button class="primary" id="equip-preview" data-equip>철검 +1 장착 확인</button></footer>
+        <details class="rationale"><summary>왜 이렇게? <span>좋다는 화살표 대신 차이</span></summary><p><a href="https://www.reddit.com/r/DiabloImmortal/comments/vjl9f3/does_more_score_equal_better_itemupgrade/" target="_blank" rel="noopener noreferrer">Diablo Immortal 장비 점수에 대한 사용자 사례</a>: 종합 점수 대신 실제 위력·무게의 이득과 손해를 함께 표시한다. 사례는 사용성 실험이 아니다.</p></details>
+      </section>
+      <section id="screen-board" class="screen" role="tabpanel" aria-labelledby="tab-board" data-view="board" hidden>
+        <header class="game-header panel-header"><button class="icon-button" data-go="inn" aria-label="게시판에서 여관으로"><svg aria-hidden="true" focusable="false"><use href="#i-back"/></svg></button><div><small>길드 계약 게시판</small><h2>여관 밖으로</h2></div><span class="chapter">01 / 04</span></header>
+        <div class="content board-content">
+          <div class="contracts"><button class="contract" data-contract="S1" aria-pressed="false"><svg aria-hidden="true" focusable="false"><use href="#i-check"/></svg><span><strong>S1 · 소환 시험</strong><small>완료 · 다시 연습 가능</small></span><span>Lv.1</span></button><button class="contract selected" data-contract="S2" aria-pressed="true"><svg aria-hidden="true" focusable="false"><use href="#i-board"/></svg><span><strong>S2 · 끊긴 여관길</strong><small>고블린 2 · 투석병 1</small></span><span>Lv.2</span></button><button class="contract" disabled aria-label="S3 무너진 수레 잠김, S2 완료 필요"><svg aria-hidden="true" focusable="false"><use href="#i-lock"/></svg><span><strong>S3 · 무너진 수레</strong><small>S2 완료 후 열림</small></span><span>Lv.3</span></button></div>
+          <div class="departure-check"><span class="eyebrow">출정 전, 마지막 확인</span><h3 id="contract-name">S2 · 끊긴 여관길</h3><div class="supply-check"><span><svg aria-hidden="true" focusable="false"><use href="#i-potion"/></svg>HP 물약 <b>3</b></span><span><svg aria-hidden="true" focusable="false"><use href="#i-mana"/></svg>마나 <b>1</b></span><span><svg aria-hidden="true" focusable="false"><use href="#i-scroll"/></svg>귀환서 <b>1</b></span></div><div class="weight-meter"><span>21.0 / 108 kg <b>가벼움</b></span><div><i></i></div></div><p class="risk-note">완료: 전리품·킬 XP 확보<br>귀환: 전리품만 확보 · 사망: 이번 전리품 상실</p></div>
+          <button class="text-action" data-go="shop">보급이 부족하다면, 약사에게 <svg aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button>
+        </div>
+        <footer class="action-footer"><button class="primary" data-go="combat" id="depart-preview"><span>S2로 출정 · HUD 보기</span><svg aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button></footer>
+        <details class="rationale"><summary>왜 이렇게? <span>선택과 확정을 분리</span></summary><p><a href="https://en.wikipedia.org/wiki/Hades_(video_game)" target="_blank" rel="noopener noreferrer">Hades의 다음 런 준비</a> + 현행 출정 확인 흐름: 계약을 누르는 것만으로 출발하지 않고 보급·손실 규칙을 먼저 보여준다.</p></details>
+      </section>
+      <section id="screen-combat" class="screen" role="tabpanel" aria-labelledby="tab-combat" data-view="combat" hidden>
+        <header class="combat-review"><div><span class="eyebrow">HUD STUDY</span><span>무기 토글은 검토용 · 실제 스왑 아님</span></div><div class="kit-tabs" role="group" aria-label="무기별 HUD 변형"><button data-kit="blade" aria-pressed="true"><svg aria-hidden="true" focusable="false"><use href="#i-sword"/></svg>검</button><button data-kit="bow" aria-pressed="false"><svg aria-hidden="true" focusable="false"><use href="#i-bow"/></svg>활</button><button data-kit="focus" aria-pressed="false"><svg aria-hidden="true" focusable="false"><use href="#i-staff"/></svg>지팡이</button></div></header>
+        <div class="arena" data-kit="blade" aria-label="더미 전투장, 전투 실행 없음">
+          <svg class="arena-art" viewBox="0 0 390 540" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path fill="#282f27" d="M0 0h390v540H0z"/><path d="m0 193 121-69 85 68 184-73v139L202 321 78 261 0 321z" fill="#343a2e"/><path d="m0 285 149-70 68 47 173-83" fill="none" stroke="#585542" stroke-width="55"/><path d="m0 285 149-70 68 47 173-83" fill="none" stroke="#66604a" stroke-width="1" stroke-dasharray="10 26"/><path d="M12 45h27l5 145H0zm320 0h48l10 132h-58z" fill="#1e271f"/><path d="M35 112h10m297 57h15m-18 258h23M61 423h27" stroke="#a59e74" stroke-width="3"/><path d="m32 357 18-13 23 10-11 22-24-1zm298-70 25-7 21 20-28 18-20-9z" fill="#45483a" stroke="#646650"/></svg>
+          <div class="battle-top"><div class="battle-vitals"><div class="hud-meter health"><i></i><span>HP 96 / 128</span></div><div class="hud-meter mana"><i></i><span>MP 32 / 48</span></div></div><div class="battle-objective"><strong id="battle-stage">S2 · 여관길</strong><span>남은 적 2</span></div></div>
+          <div class="battle-loot"><svg aria-hidden="true" focusable="false"><use href="#i-bag"/></svg>23 / 108 kg · 임시 전리품 18 G</div>
+          <div class="sprite enemy" role="img" aria-label="실제 게임의 고블린 스프라이트"></div>
+          <div class="enemy-health" aria-hidden="true"><i></i></div>
+          <div class="telegraph" aria-hidden="true"></div>
+          <div class="sprite battle-hero" role="img" aria-label="실제 게임의 검 기사 스프라이트"></div>
+          <div class="kit-widget blade-widget"><span>연속 타격 <b>03</b></span><span>스태미나 <b>68 / 100</b></span><div class="stamina-track"><i></i></div></div>
+          <div class="kit-widget bow-widget" hidden><span>화살 <b>12 / 20</b></span><span>차지 <b>72%</b></span><div class="stamina-track"><i></i></div></div>
+          <div class="reticle bow-widget" aria-hidden="true" hidden><i></i><b>약점</b></div>
+          <div class="mana-circle focus-widget" aria-hidden="true" hidden><span>MP 32</span></div>
+          <div class="focus-caption focus-widget" hidden>서클 I · 룬 시전 준비</div>
+          <p class="battle-guidance" id="battle-guidance">검 · 콤보와 가드에 집중</p>
+          <div class="common-supplies" aria-label="공통 고정 보급 위치"><button class="combat-control hp-tone" data-hud="HP 물약" aria-label="HP 물약 3개"><svg aria-hidden="true" focusable="false"><use href="#i-potion"/></svg><span>3</span></button><button class="combat-control mp-tone" data-hud="마나 물약" aria-label="마나 물약 1개"><svg aria-hidden="true" focusable="false"><use href="#i-mana"/></svg><span>1</span></button><button class="combat-control" data-hud="귀환 주문서" aria-label="귀환 주문서 1개"><svg aria-hidden="true" focusable="false"><use href="#i-scroll"/></svg><span>귀환 1</span></button></div>
+          <div class="movement-pad" aria-hidden="true"><i></i><span>이동</span></div>
+          <button class="combat-control fixed-dodge" data-hud="회피" aria-label="회피 준비 완료"><svg aria-hidden="true" focusable="false"><use href="#i-dodge"/></svg><span>회피</span></button>
+          <div class="blade-widget kit-actions"><button class="combat-control guard" data-hud="가드"><svg aria-hidden="true" focusable="false"><use href="#i-shield"/></svg><span>가드</span></button><button class="combat-control heavy" data-hud="강공격"><svg aria-hidden="true" focusable="false"><use href="#i-sword"/></svg><span>강공격</span></button><button class="combat-control attack" data-hud="검 베기"><svg aria-hidden="true" focusable="false"><use href="#i-sword"/></svg><span>베기</span></button></div>
+          <div class="bow-widget kit-actions" hidden><button class="combat-control charged" data-hud="차지 조준"><svg aria-hidden="true" focusable="false"><use href="#i-bow"/></svg><span>차지 조준</span></button><button class="combat-control attack" data-hud="활 발사"><svg aria-hidden="true" focusable="false"><use href="#i-bow"/></svg><span>발사</span></button></div>
+          <div class="focus-widget kit-actions spell-ring" hidden><div class="ring-decoration" aria-hidden="true"></div><button class="combat-control spell spell-fire" data-hud="불의 문장" aria-label="불의 문장"><svg aria-hidden="true" focusable="false"><use href="#i-flame"/></svg></button><button class="combat-control spell spell-water" data-hud="물의 문장" aria-label="물의 문장"><svg aria-hidden="true" focusable="false"><use href="#i-wave"/></svg></button><button class="combat-control spell spell-rune" data-hud="보호 문장" aria-label="보호 문장"><svg aria-hidden="true" focusable="false"><use href="#i-rune"/></svg></button><button class="combat-control attack cast" data-hud="룬 시전"><svg aria-hidden="true" focusable="false"><use href="#i-staff"/></svg><span>시전</span></button></div>
+        </div>
+        <footer class="battle-footer"><span>가드·화살·주문 링은 §26.2 후속 제안</span><button data-go="result">결과 보기 <svg aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button></footer>
+        <details class="rationale"><summary>왜 이렇게? <span>변하는 무기, 유지되는 손</span></summary><p><a href="https://news.blizzard.com/en-us/article/23805083/making-a-game-for-everyonediablo-immortals-accessibility-features" target="_blank" rel="noopener noreferrer">Diablo Immortal 조작 접근성</a> + §26.2: HP·회피·보급·귀환 좌표는 그대로, 키트 정보와 공격만 바꾼다. 자동 공격 게임의 조작을 그대로 복제하지 않는다.</p></details>
+      </section>
+      <section id="screen-result" class="screen" role="tabpanel" aria-labelledby="tab-result" data-view="result" hidden>
+        <header class="result-review"><span class="eyebrow">정산 화면 검토</span><div class="result-tabs" role="group" aria-label="결과 변형"><button data-terminal="clear" aria-pressed="true">클리어</button><button data-terminal="death" aria-pressed="false">사망</button></div></header>
+        <div class="content result-content">
+          <div class="result-intro"><span class="result-stamp" id="result-stamp"><svg aria-hidden="true" focusable="false"><use href="#i-check"/></svg></span><span class="eyebrow" id="result-eyebrow">S2 · 계약 완료</span><h1 id="result-title">길이 다시 열렸다.</h1><p id="result-story">오늘 밤, 여관의 불빛은 조금 더 멀리 닿는다.</p></div>
+          <div class="result-ledger"><div class="section-caption"><strong id="reward-heading">이번 여정에서 확보</strong><span>02:18</span></div><div class="reward-pair"><div><small>경험치</small><strong id="reward-xp">+50 XP</strong></div><div><small>골드</small><strong id="reward-gold">+36 G</strong></div></div><div class="kept-loot" id="kept-loot"><svg aria-hidden="true" focusable="false"><use href="#i-forge"/></svg><span>고철 ×3 <small>창고에 확보</small></span><svg aria-hidden="true" focusable="false"><use href="#i-check"/></svg></div><p id="loss-explanation" hidden>사망 원인: 고블린 · 베기<br>상실: 이번 골드 36 G · 고철 3<br>킬 XP 예치분은 확보하지 못했다.</p></div>
+          <div class="next-step"><span class="eyebrow">다음 여정의 실마리</span><p id="next-hint">S3 · 무너진 수레 계약이 열렸어.<br>가방과 보급은 난로 곁에서 정리하자.</p></div>
+          <p class="minor">정산은 더미 예시. 실제 보상·해금은 바뀌지 않아.</p>
+        </div>
+        <footer class="action-footer"><button class="primary" data-go="inn"><span>여관으로 돌아가기</span><svg aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button></footer>
+        <details class="rationale"><summary>왜 이렇게? <span>정산하고, 다음 준비로</span></summary><p><a href="https://en.wikipedia.org/wiki/Hades_(video_game)" target="_blank" rel="noopener noreferrer">Hades의 실패 뒤 귀환 루프</a>: 사망을 즉시 재시도 유도로 덮지 않고 원인·확보·상실을 나눠 보여준다. 보상 규칙은 기존 ARPG를 유지한다.</p></details>
+      </section>
+    </main>
+    <div class="toast" role="status" aria-live="polite" hidden></div>
+    <dialog class="mock-dialog" aria-labelledby="dialog-title"><header><h2 id="dialog-title"></h2><button class="icon-button" data-close aria-label="안내 닫기"><svg aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button></header><div id="dialog-content"></div><button class="primary" data-close>확인</button></dialog>
+  </div>
+</body>
+</html>
