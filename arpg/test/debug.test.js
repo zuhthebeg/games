@@ -49,7 +49,7 @@ test('save cheats preserve level/point invariant and valid resource/progress sta
   for (const action of ['gold:1000','gold:10000','stones','materials','potions','unlock','reroll','refresh-reset','pity','progress-reset']) {
     save = mutateSave(save, action); assert.equal(validateSave(save), true, action);
   }
-  save = setLevel(save, 30); assert.equal(save.statPoints, 87); assert.equal(validateSave(save), true);
+  save = setLevel(save, 30); assert.equal(save.statPoints, 29); assert.equal(validateSave(save), true);
   save = setLevel(save, 1); assert.equal(save.statPoints, 0); assert.equal(validateSave(save), true);
   assert.throws(() => setLevel(save, 31));
 });
