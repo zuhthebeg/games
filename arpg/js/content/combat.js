@@ -1,3 +1,5 @@
+import { BALANCE } from './balance.js';
+
 // Combat content. Every number here is a design proposal ([제안]) to be tuned by playtest.
 // Ability phases: windup -> lock -> active -> recovery (design §7.2).
 //   delivery 'shape'      : hit test `shape` from the actor each active tick (one hit per target per act)
@@ -155,7 +157,7 @@ export const MONSTERS = {
   },
   goblin_chief: {
     hp: 320, r: 28, speed: 104, poise: 120, kbResist: 0.7, abilities: ['chief_cleave', 'chief_charge', 'chief_slam'],
-    xp: 40, keepRange: [60, 110], elite: true,
+    xp: 40, keepRange: [60, 110], elite: true // archetype rank only; random spawn variants use entity.eliteVariant,
   },
   wolf: {
     hp: 110, r: 19, speed: 172, poise: 35, kbResist: 0.1,
@@ -163,7 +165,7 @@ export const MONSTERS = {
   },
   rune_guardian: {
     hp: 280, r: 30, speed: 68, poise: 90, kbResist: 0.65,
-    abilities: ['guardian_crush', 'guardian_ring'], xp: 36, keepRange: [60, 110], elite: true,
+    abilities: ['guardian_crush', 'guardian_ring'], xp: 36, keepRange: [60, 110], elite: true // archetype rank only; random spawn variants use entity.eliteVariant,
   },
   spirit: {
     hp: 90, r: 17, speed: 100, poise: 25, kbResist: 0.15,
@@ -227,6 +229,17 @@ export const STAGES = {
     ],
   },
 };
+
+// P3 encounters are data only. Chief appears once; additional waves contain its escorts.
+for (const [id, stage] of Object.entries(STAGES)) {
+  const tuning = BALANCE.stages[id];
+  Object.assign(stage, { hpMult: tuning.hp, dmgMult: tuning.damage,
+    eliteChance: tuning.eliteChance, maxConcurrent: tuning.concurrent });
+  const original = stage.spawns;
+  stage.spawns = Array.from({ length: tuning.waves }, (_, wave) => original
+    .filter(spawn => wave === 0 || spawn.monster !== 'goblin_chief')
+    .map(spawn => ({ ...spawn, at: spawn.at + wave * tuning.waveMs }))).flat();
+}
 
 export const PLAYER_BASE = {
   r: 17, speed: 230, hp: 100, mp: 100, mpRegen: 5,

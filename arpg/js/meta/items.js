@@ -3,6 +3,7 @@ import { SLOTS, SALVAGE, ECONOMY, enhanceCost, rng, weighted, SLOT_BIASES, RECIP
 import { rollAffixes, affixTotals } from './affixes.js';
 export { ENHANCE_GOLD, enhanceCost } from './economy.js';
 export { rollAffixes, DEFERRED_AFFIXES } from './affixes.js';
+import { BALANCE, threatMultipliers } from '../content/balance.js';
 import { NEW_MONSTER_DROPS } from '../content/loot.js';
 
 const weapon = (name, family, rarity, power, weight, form) => ({
@@ -175,7 +176,7 @@ export function dropSeed(roundSeed, killIndex) {
   return (roundSeed ^ Math.imul(killIndex + 1, 0x9e3779b9)) >>> 0;
 }
 
-function legacyDrops(monsterType, seed, materialBonus = 0) {
+function legacyDrops(monsterType, seed, materialBonus = 0, gearMultiplier = 1) {
   let state = seed >>> 0;
   const random = () => {
     let value = state = (state + 0x6d2b79f5) >>> 0;
@@ -189,7 +190,7 @@ function legacyDrops(monsterType, seed, materialBonus = 0) {
     if (random() < Math.min(1, chance + (ITEMS[id].kind === 'material' ? materialBonus / 100 : 0))) loot.stacks[id] = count;
   };
   const gear = (id, chance) => {
-    if (random() < chance) loot.items.push(instance(`drop:${seed >>> 0}:${id}`, id, seed));
+    if (random() < Math.min(1, chance * gearMultiplier)) loot.items.push(instance(`drop:${seed >>> 0}:${id}`, id, seed));
   };
   const table = NEW_MONSTER_DROPS[monsterType];
   if (table) {
@@ -238,18 +239,18 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   const bonusSum = Math.max(0, (ctx.goldBonus || 0) + (ctx.materialBonus || 0));
   const capScale = bonusSum > ECONOMY.dropBonusCap ? ECONOMY.dropBonusCap / bonusSum : 1;
   const materialBonus = Math.max(0, ctx.materialBonus || 0) * capScale;
-  const loot = legacyDrops(monsterType, seed, materialBonus);
+  const threat = threatMultipliers(ctx.threat ?? 1);
+  const loot = legacyDrops(monsterType, seed, materialBonus, threat.drop);
   if (monsterType === 'scarecrow') return loot;
   const random = rng(seed ^ 0xa521d937);
   const tier = Math.max(1, Math.min(3, ctx.huntTier ?? (NEW_MONSTER_DROPS[monsterType] ? 2 : 1)));
   const boss = monsterType === 'goblin_chief' || ctx.boss === true;
   const elite = ctx.elite ?? false;
-  // ctx.threat is accepted for the P3 integration; no speculative threat rebalance here.
   const chance = boss ? 1 : elite ? ECONOMY.eliteGearChance : ECONOMY.gearChance;
-  if (random() < chance) {
+  if (random() < Math.min(1, chance * threat.drop)) {
     const count = boss ? 1 + (random() < ECONOMY.bossExtraChance ? 1 : 0) : 1;
     for (let i = 0; i < count; i++) {
-      let rarity = weighted(Object.entries(boss ? ECONOMY.bossRarity : ECONOMY.normalRarity), random);
+      let rarity = weighted(Object.entries((ctx.threat ?? 1) === 1 ? (boss ? ECONOMY.bossRarity : ECONOMY.normalRarity) : (boss ? threat.bossRarity : threat.rarity)), random);
       if (boss && i === 0 && (ctx.rarelessRounds || 0) >= ECONOMY.pityRounds && rarity === 'fine') rarity = 'rare';
       const slot = weighted(SLOTS.map((slot) => [slot, SLOT_BIASES[monsterType]?.[slot] || 1]), random);
       let pool = Object.entries(ITEMS).filter(([, item]) => item.slot === slot && item.rarity === rarity
@@ -261,7 +262,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
     }
   }
   const stoneChance = boss ? 1 : elite ? ECONOMY.eliteStoneChance : ECONOMY.stoneChance;
-  if (random() < Math.min(1, stoneChance + materialBonus / 100)) {
+  if (random() < Math.min(1, stoneChance * threat.drop + materialBonus / 100)) {
     const count = boss ? 1 + (random() < ECONOMY.bossExtraChance ? 1 : 0) : 1;
     for (let i = 0; i < count; i++) {
       const stone = weighted(ECONOMY.stoneWeights[tier].map((weight, i) => [`enhance_stone_${i + 1}`, weight]), random);
@@ -269,7 +270,10 @@ export function rollDrops(monsterType, seed, ctx = {}) {
     }
   }
   // Seeded stochastic rounding retains small bonuses without fractional save currency.
-  const gold = loot.gold * (1 + Math.max(0, ctx.goldBonus || 0) * capScale / 100);
+  const stage = BALANCE.stages[ctx.stageId];
+  const curve = stage ? BALANCE.rewardCurve ** (Number(ctx.stageId.slice(1)) - 1) : 1;
+  const gold = loot.gold * (boss ? 1 : BALANCE.normalGold) * curve * threat.gold
+    * (1 + Math.max(0, ctx.goldBonus || 0) * capScale / 100);
   loot.gold = Math.floor(gold) + (random() < gold % 1 ? 1 : 0);
   return loot;
 }

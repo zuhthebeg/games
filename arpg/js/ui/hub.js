@@ -1,3 +1,4 @@
+import { unlockedThreat, selectThreat } from '../meta/run.js';
 import { SLOTS, ECONOMY } from '../meta/economy.js';
 import { shopStock, buyGear, sellItem, refreshShop, refreshPrice, gearPrice } from '../meta/shop.js';
 import { compareItems } from '../meta/compare.js';
@@ -331,6 +332,7 @@ export class HubUI {
   }
 
   showSortie(stage, devWeapon = null) {
+    if (this.sortieStage !== stage) this.sortieThreat = 1;
     this.sortieStage = stage;
     this.devWeapon = devWeapon;
     const weight = carriedWeight(this.save);
@@ -341,6 +343,10 @@ export class HubUI {
       <div class="sortie-supplies">${supplies}<div class="sortie-weight ${tier.tier}" title="${tier.text}">
         <span class="icon-count">${icon('load')}${amount(weight)}/${capacity(this.save)}</span>
         <meter min="0" max="1.2" value="${weight / capacity(this.save)}" aria-label="출정 무게"></meter></div></div>
+      <div class="allocation-actions" role="group" aria-label="위협도 선택">${[1,2,3].map(threat =>
+        button(`위협 ${threat}`, 'threat', `data-threat="${threat}" aria-pressed="${(this.sortieThreat || 1) === threat}" class="${(this.sortieThreat || 1) === threat ? 'primary' : 'secondary'}"`,
+          stage === 'S1' ? threat > 1 : threat > unlockedThreat(this.save, stage))).join('')}</div>
+      <p>다음 위협도는 현재 위협도 완료 시 해금. 위협 2/3: HP ×1.5/2.1 · 골드 ×1.6/2.4.</p>
       ${button(`${icon('depart')}출정`, 'launch', 'id="sortie-confirm" class="primary"')}
       <details class="help"><summary aria-label="출정 안내">ⓘ</summary>
         <p>${tier.text}. 킬 XP는 완료할 때만 지급. 귀환은 전리품만, 사망은 이번 전리품도 잃는다.</p>
@@ -349,6 +355,7 @@ export class HubUI {
   }
 
   launch(stage, reduced = false, weapon = null) {
+    this.commit(selectThreat(this.save, stage, stage === 'S1' ? 1 : this.sortieThreat || 1));
     this.root.hidden = true;
     this.startRound(stage, reduced, weapon);
   }
@@ -476,6 +483,10 @@ export class HubUI {
         return this.allocationRequired ? this.showReceipt() : this.showInn();
       case 'board': return this.showBoard();
       case 'sortie': return this.showSortie(data.stage);
+      case 'threat':
+        selectThreat(this.save, this.sortieStage, Number(data.threat));
+        this.sortieThreat = Number(data.threat);
+        return this.showSortie(this.sortieStage, this.devWeapon);
       case 'launch':
         return this.launch(this.sortieStage, this.root.querySelector('#sortie-reduced').checked, this.devWeapon);
       case 'settings':

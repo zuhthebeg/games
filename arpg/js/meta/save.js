@@ -14,7 +14,7 @@ export function createSave({ name, answers, weapon, createdAt }) {
   if (Array.from(cleanName).length < 1 || Array.from(cleanName).length > 12) throw new Error('이름은 1~12자입니다.');
   if (!FAMILIES.includes(chosen)) throw new Error('시작 무기가 올바르지 않습니다.');
   return {
-    version: 2,
+    version: 2, threat: 1, stageThreat: Object.fromEntries(Object.keys(STAGE_XP).map(id => [id, 1])),
     completedRounds: 0, shopRefresh: 0, paidRefreshes: 0, shopBought: [], rarelessRounds: 0,
     createdAt,
     name: cleanName,
@@ -42,6 +42,7 @@ const record = (value) => value !== null && typeof value === 'object' && !Array.
 function validReceipt(receipt) {
   if (!record(receipt) || !Object.hasOwn(STAGE_XP, receipt.stageId)
     || !['clear', 'return_scroll', 'death'].includes(receipt.terminal)) return false;
+  if (receipt.threat !== undefined && !integer(receipt.threat, 1, 3)) return false;
   for (const key of ['depositedXp', 'xpForfeited', 'stageXp', 'levelsGained',
     'statPointsGained', 'goldGained']) {
     if (!integer(receipt[key])) return false;
@@ -73,6 +74,9 @@ export function validateSave(save) {
     if (!integer(save.level, 1, MAX_LEVEL) || !integer(save.statPoints) || !integer(save.gold)) return false;
     if (!Number.isFinite(save.xp) || save.xp < 0 || save.xp >= xpSpan(save.level)) return false;
     if (!Number.isInteger(save.xp * 2) || (save.level === MAX_LEVEL && save.xp !== 0)) return false;
+    if (save.threat !== undefined && !integer(save.threat, 1, 3)) return false;
+    if (save.stageThreat !== undefined && (!record(save.stageThreat)
+      || !Object.entries(save.stageThreat).every(([id, value]) => Object.hasOwn(STAGE_XP, id) && integer(value, 1, 3)))) return false;
     if (!record(save.stats) || Object.keys(save.stats).length !== 5) return false;
     if (!STAT_KEYS.every((key) => integer(save.stats[key], 5, cap(save.level)))) return false;
     const spent = STAT_KEYS.reduce((sum, key) => sum + save.stats[key] - 5, 0);

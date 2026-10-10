@@ -9,6 +9,8 @@ import {
 } from './core.js';
 import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE } from '../content/combat.js';
 
+import { BALANCE, threatMultipliers } from '../content/balance.js';
+
 const PB = PLAYER_BASE;
 const KNOCK_DECAY = 0.82; // per tick
 const AUTO_AIM_RANGE = 560;
@@ -18,9 +20,10 @@ export function emptyInput() {
   return { mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, skillEdge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false };
 }
 
-export function createWorld({ seed = 1, arena = { w: 1400, h: 860 } } = {}) {
+export function createWorld({ seed = 1, threat = 1, arena = { w: 1400, h: 860 } } = {}) {
+  threatMultipliers(threat);
   return {
-    tick: 0, rng: seed >>> 0, nextId: 1, arena,
+    tick: 0, rng: seed >>> 0, nextId: 1, arena, threat,
     entities: [], projectiles: [], events: [],
     majorBusyBy: 0, // EncounterDirector majorAttackToken: one big attack at a time early on (design §7.1)
     round: null,
@@ -29,6 +32,12 @@ export function createWorld({ seed = 1, arena = { w: 1400, h: 860 } } = {}) {
 
 // mods come from the meta layer (level, stats, gear). The sim never reads stats directly.
 export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
+  // The existing launcher already passes meta mods. Freeze threat before startStage, not in step().
+  if (mods.threat !== undefined) {
+    if (world.round) throw new Error('Threat is frozen after stage start');
+    threatMultipliers(mods.threat);
+    world.threat = mods.threat;
+  }
   const maxHp = mods.maxHp ?? PB.hp;
   const maxMp = mods.maxMp ?? PB.mp;
   const ent = {
@@ -53,20 +62,20 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
   return ent;
 }
 
-export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1 } = {}) {
+export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1, elite = false, threat = 1, stageId = null } = {}) {
   const def = MONSTERS[type];
   if (!def) throw new Error(`unknown monster ${type}`);
   const ent = {
     id: world.nextId++, kind: 'monster', type, team: TEAM_MONSTER,
     x, y, r: def.r, facing: Math.PI, kx: 0, ky: 0, moving: false,
     hp: Math.round(def.hp * hpMult), maxHp: Math.round(def.hp * hpMult),
-    dmgMult, poise: def.poise, maxPoise: def.poise,
+    dmgMult, eliteVariant: elite, threat, stageId, poise: def.poise, maxPoise: def.poise,
     act: null, cds: {}, lastActs: [], thinkLeft: ticks(400 + rand(world) * 400),
     targetId: 0, strafe: rand(world) < 0.5 ? -1 : 1, staggerLeft: 0,
     spawnLeft: ticks(SPAWN_IN_MS), dead: false,
   };
   world.entities.push(ent);
-  world.events.push({ type: 'spawn', id: ent.id, monster: type, x, y });
+  world.events.push({ type: 'spawn', id: ent.id, monster: type, elite, threat, x, y });
   return ent;
 }
 
@@ -74,7 +83,7 @@ export function startStage(world, stageId) {
   const st = STAGES[stageId];
   if (!st) throw new Error(`unknown stage ${stageId}`);
   world.round = {
-    stageId, state: 'running', t: 0, goal: st.goal,
+    stageId, threat: st.goal === 'timer' ? 1 : world.threat, state: 'running', t: 0, goal: st.goal,
     timerTicks: st.timerMs ? ticks(st.timerMs) : 0, maxConcurrent: st.maxConcurrent,
     pending: st.spawns.map((s) => ({ ...s, atTicks: ticks(s.at) })),
   };
@@ -539,7 +548,7 @@ function applyHit(world, t, hit) {
     t.hp = 0;
     t.dead = true;
     if (t.act) endAct(world, t, true);
-    world.events.push({ type: 'kill', id: t.id, monster: t.type, by: hit.srcId, xp: mdef.xp, x: t.x, y: t.y });
+    world.events.push({ type: 'kill', id: t.id, monster: t.type, elite: t.eliteVariant, threat: t.threat, stageId: t.stageId, by: hit.srcId, xp: mdef.xp, x: t.x, y: t.y });
   }
 }
 
@@ -646,7 +655,16 @@ function stepRound(world) {
   let aliveCount = monsters.length;
   rd.pending = rd.pending.filter((s) => {
     if (s.atTicks > rd.t || aliveCount >= rd.maxConcurrent) return true;
-    spawnMonster(world, s.monster, s.fx * world.arena.w, s.fy * world.arena.h);
+    const stage = STAGES[rd.stageId];
+    const threat = threatMultipliers(rd.threat);
+    // Random damage variant, not the old archetype classification. No new attack or AI loop.
+    const elite = !MONSTERS[s.monster].invulnerable && s.monster !== 'goblin_chief'
+      && stage.eliteChance > 0 && rand(world) < stage.eliteChance;
+    spawnMonster(world, s.monster, s.fx * world.arena.w, s.fy * world.arena.h, {
+      hpMult: (stage.hpMult || 1) * threat.hp * (elite ? BALANCE.elite.hp : 1),
+      dmgMult: (stage.dmgMult || 1) * threat.damage * (elite ? BALANCE.elite.damage : 1),
+      elite, threat: rd.threat, stageId: rd.stageId,
+    });
     aliveCount++;
     return false;
   });

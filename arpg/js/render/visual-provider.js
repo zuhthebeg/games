@@ -1,3 +1,4 @@
+import { BALANCE } from '../content/balance.js';
 import { Container, Graphics } from '../../vendor/pixi-8.22.0.min.mjs';
 import { registerAtlasFactories } from './atlas-visual.js';
 import { visualKey } from './atlas-state.js';
@@ -138,6 +139,10 @@ function procedural(entity, { color }) {
   health.rect(-radius, -66, radius * 2, 4).fill(0xb26d50);
   flash.ellipse(0, -20, radius * .8, 16).circle(0, -36, radius * .58).fill(0xffffff);
   flash.visible = false;
+  if (entity.eliteVariant) {
+    body.scale.set(BALANCE.elite.scale);
+    silhouette.tint = BALANCE.elite.tint;
+  }
   body.addChild(silhouette, weapon, flash, stars);
   container.addChild(body, face, bar, health);
   return {

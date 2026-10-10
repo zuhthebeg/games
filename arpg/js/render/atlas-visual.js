@@ -1,3 +1,4 @@
+import { BALANCE } from '../content/balance.js';
 import { Assets, Container, Graphics, Sprite } from '../../vendor/pixi-8.22.0.min.mjs';
 import { AtlasLibrary } from './atlas-library.js';
 import { ATLAS_IDS, visualKey, atlasDirection, atlasAnimation, atlasFrame, atlasScale } from './atlas-state.js';
@@ -55,8 +56,8 @@ function spriteVisual(entity, { color }, asset) {
   const container = new Container();
   const sprite = new Sprite(asset.animations.idle_E[0]);
   sprite.anchor.set(asset.anchor.x, asset.anchor.y);
-  sprite.tint = entity.kind === 'monster' ? color : 0xffffff;
-  sprite.scale.set(atlasScale(entity));
+  sprite.tint = entity.kind === 'monster' ? (entity.eliteVariant ? BALANCE.elite.tint : color) : 0xffffff;
+  sprite.scale.set(atlasScale(entity) * (entity.eliteVariant ? BALANCE.elite.scale : 1));
   // Same atlas geometry, additive bright impact; no filters or base-palette tint changes.
   const flash = new Sprite(sprite.texture);
   flash.anchor.copyFrom(sprite.anchor);
@@ -95,7 +96,7 @@ function spriteVisual(entity, { color }, asset) {
       frame = atlasFrame(stateName, textures.length, age, asset.fps, state);
       sprite.texture = textures[frame];
       flash.texture = sprite.texture;
-      sprite.tint = state.kind === 'monster' ? color : 0xffffff;
+      sprite.tint = state.kind === 'monster' ? (state.eliteVariant ? BALANCE.elite.tint : color) : 0xffffff;
       sprite.alpha = state.spawnLeft > 0 ? .45 : 1;
       stars.visible = state.staggerLeft > 0;
       stars.rotation = Math.sin(animation.age * 6) * .05;
