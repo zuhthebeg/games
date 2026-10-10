@@ -8,6 +8,8 @@
   <title>잿빛 여관 · UI 검토 B</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="mock.css">
+  <link rel="stylesheet" href="p2.css">
+  <script src="p2.js" defer></script>
   <script src="mock.js" defer></script>
 </head>
 <body>
@@ -42,6 +44,7 @@
   <div class="prototype">
     <header class="review-bar">
       <div class="review-label"><span>UI STUDY / B</span><span>정적 목업 · 저장 없음</span></div>
+      <div class="nav-caption">B · 기존 6화면 (구 경제 예시)</div>
       <nav class="screen-tabs" role="tablist" aria-label="목업 화면">
         <button role="tab" id="tab-inn" aria-controls="screen-inn" aria-selected="true" data-screen="inn">여관</button>
         <button role="tab" id="tab-shop" aria-controls="screen-shop" aria-selected="false" tabindex="-1" data-screen="shop">상점</button>
@@ -50,6 +53,8 @@
         <button role="tab" id="tab-combat" aria-controls="screen-combat" aria-selected="false" tabindex="-1" data-screen="combat">전투</button>
         <button role="tab" id="tab-result" aria-controls="screen-result" aria-selected="false" tabindex="-1" data-screen="result">결과</button>
       </nav>
+      <div class="nav-caption">M1.5 · 아이템 루프 승인안</div>
+      <nav class="screen-tabs p2-tabs" role="tablist" aria-label="M1.5 아이템 화면"><button role="tab" id="tab-equipment" aria-controls="screen-equipment" aria-selected="false" tabindex="-1" data-screen="equipment">착용</button><button role="tab" id="tab-inventory" aria-controls="screen-inventory" aria-selected="false" tabindex="-1" data-screen="inventory">가방</button><button role="tab" id="tab-merchant" aria-controls="screen-merchant" aria-selected="false" tabindex="-1" data-screen="merchant">장비상</button><button role="tab" id="tab-comparison" aria-controls="screen-comparison" aria-selected="false" tabindex="-1" data-screen="comparison">비교</button><button role="tab" id="tab-reveal" aria-controls="screen-reveal" aria-selected="false" tabindex="-1" data-screen="reveal">획득</button><button role="tab" id="tab-upgrade" aria-controls="screen-upgrade" aria-selected="false" tabindex="-1" data-screen="upgrade">강화</button></nav>
     </header>
     <main id="screens">
       <section id="screen-inn" class="screen" role="tabpanel" aria-labelledby="tab-inn" data-view="inn">
