@@ -1,4 +1,5 @@
 import { eff } from './stats.js';
+import { NEW_MONSTER_DROPS } from '../content/loot.js';
 
 const weapon = (name, family, rarity, power, weight, form) => ({
   name, kind: 'weapon', family, rarity, power, weight, form,
@@ -21,9 +22,18 @@ export const ITEMS = {
   cloth_tunic: armor('천 튜닉', 'common', 0, 4),
   leather_vest: armor('가죽 조끼', 'fine', 20, 8),
   boar_hide_armor: armor('멧돼지 가죽 갑옷', 'fine', 35, 12),
+  // [제안] Next hunting tier, independent of rarity/enhancement; no old gear rebalance.
+  rune_blade: { ...weapon('룬철 검', 'blade', 'fine', 1.35, 13), huntTier: 2, requiredLevel: 5 },
+  pack_bow: { ...weapon('늑대 사냥 활', 'bow', 'fine', 1.35, 8), huntTier: 2, requiredLevel: 5 },
+  altar_staff: { ...weapon('제단 지팡이', 'focus', 'fine', 1.35, 6, 'staff'), huntTier: 2, requiredLevel: 5 },
+  woven_armor: { ...armor('거미줄 가죽 갑옷', 'fine', 50, 10), huntTier: 2, requiredLevel: 5 },
   scrap: { name: '고철', kind: 'material', weight: 0.2 },
   hide: { name: '가죽', kind: 'material', weight: 0.5 },
   fang: { name: '송곳니', kind: 'material', weight: 0.3 },
+  // [제안] One rune material and one web material; §10.2 frost_shard is shared with spirit drops.
+  rune_shard: { name: '룬 조각', kind: 'material', weight: 0.3 },
+  frost_shard: { name: '서리 파편', kind: 'material', weight: 0.3 },
+  web: { name: '거미줄', kind: 'material', weight: 0.2 },
   potion: { name: 'HP 물약', kind: 'consumable', weight: 1, price: 10 },
   mana_potion: { name: '마나 물약', kind: 'consumable', weight: 1, price: 12 },
   return_scroll: { name: '귀환 주문서', kind: 'consumable', weight: 1, price: 6, maxCarry: 2 },
@@ -36,6 +46,11 @@ export const RECIPES = {
   ember_wand: { scrap: 8, fang: 3, gold: 60 },
   boar_hide_armor: { scrap: 6, hide: 4, gold: 50 },
   leather_vest: { scrap: 5, hide: 3, gold: 40 },
+  // [제안] Scrap remains the common sink; craft salvage refunds only 25% of scrap.
+  rune_blade: { scrap: 16, rune_shard: 2, fang: 2, gold: 140 },
+  pack_bow: { scrap: 16, hide: 4, web: 2, gold: 140 },
+  altar_staff: { scrap: 16, rune_shard: 2, frost_shard: 3, gold: 140 },
+  woven_armor: { scrap: 16, hide: 4, web: 4, gold: 140 },
 };
 export const ENHANCE_SCRAP = [4, 5, 7, 8, 10];
 export const ENHANCE_GOLD = [60, 94, 135, 184, 240];
@@ -155,6 +170,13 @@ export function rollDrops(monsterType, seed) {
   const gear = (id, chance) => {
     if (random() < chance) loot.items.push({ uid: `drop:${seed >>> 0}:${id}`, id, enhance: 0 });
   };
+  const table = NEW_MONSTER_DROPS[monsterType];
+  if (table) {
+    loot.gold = integer(...table.gold);
+    for (const entry of table.stacks) stack(entry.id, entry.count, entry.chance ?? 1);
+    for (const entry of table.items) gear(entry.id, entry.chance);
+    return loot;
+  }
   switch (monsterType) {
     case 'goblin_grunt':
       loot.gold = integer(3, 6);

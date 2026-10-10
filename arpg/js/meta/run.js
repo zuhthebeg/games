@@ -1,5 +1,5 @@
 import { deriveMods } from './stats.js';
-import { addXp, stageXp, deathLoss, MAX_LEVEL, xpSpan } from './progression.js';
+import { addXp, stageXp, deathLoss, MAX_LEVEL, xpSpan, STAGE_XP } from './progression.js';
 import { ITEMS, carriedWeight, capacity, rollDrops, dropSeed, cloneSave, uniqueUid } from './items.js';
 
 export const emptyLoot = () => ({ gold: 0, items: [], stacks: {} });
@@ -72,7 +72,7 @@ export function trackRound(save, tracker, events, used = {}) {
 }
 
 export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot = emptyLoot(), used = {} }) {
-  if (!['S1', 'S2', 'S3', 'S4'].includes(stageId)
+  if (!Object.hasOwn(STAGE_XP, stageId)
     || !['clear', 'return_scroll', 'death'].includes(terminal)) throw new Error('Invalid settlement');
   if (!Number.isSafeInteger(depositedXp) || depositedXp < 0) throw new Error('Invalid XP deposit');
   let next = cloneSave(save);

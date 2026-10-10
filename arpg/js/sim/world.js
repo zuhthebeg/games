@@ -125,6 +125,8 @@ function stepPlayer(world, p, inp) {
   if (p.bufferDodge > 0) p.bufferDodge--;
   for (const k in p.cds) if (p.cds[k] > 0) p.cds[k]--;
   if (!alive(p)) return;
+  stepPoison(world, p);
+  if (!alive(p)) return;
 
   p.mp = Math.min(p.maxMp, p.mp + p.mpRegen * DT);
   const mlen = Math.hypot(inp.mx, inp.my);
@@ -348,7 +350,9 @@ function skipEmptyPhases(world, ent) {
     if (i === PHASES.length - 1) { endAct(world, ent, false); return; }
     act.phase = PHASES[i + 1];
     act.left = ticks(act.def[`${act.phase}Ms`] || 0);
-    if (act.phase === 'lock' || act.phase === 'active') { act.ox = ent.x; act.oy = ent.y; }
+    if (act.phase === 'lock' || (act.phase === 'active' && !act.def.anchored)) {
+      act.ox = ent.x; act.oy = ent.y;
+    }
     if (act.phase === 'active' && act.def.delivery === 'dash') {
       act.dashStep = act.def.dash.distance / Math.max(1, act.left);
     }
@@ -391,7 +395,9 @@ function advanceAct(world, ent, target) {
 function doActive(world, ent, act) {
   const def = act.def;
   if (def.delivery === 'shape') {
-    hitShape(world, ent, act, def.shape, ent.x, ent.y);
+    const activeTick = ticks(def.activeMs) - act.left;
+    if (def.repeatHitMs && activeTick > 0 && activeTick % ticks(def.repeatHitMs) === 0) act.hit = [];
+    hitShape(world, ent, act, def.shape, def.anchored ? act.ox : ent.x, def.anchored ? act.oy : ent.y);
   } else if (def.delivery === 'dash') {
     ent.x += Math.cos(act.facing) * act.dashStep;
     ent.y += Math.sin(act.facing) * act.dashStep;
@@ -437,10 +443,26 @@ function hitShape(world, ent, act, shape, ox, oy) {
 
 // ---------------------------------------------------------------- damage
 
+// [제안] One strongest-only poison slot, refresh duration without delaying its next pulse.
+// Contact can be dodged. Once applied, DoT is not a new attack and ignores hit/dodge invulnerability.
+function stepPoison(world, p) {
+  const poison = p.poison;
+  if (!poison) return;
+  poison.left--;
+  if (--poison.next === 0) {
+    applyHit(world, p, poison.hit);
+    poison.next = poison.interval;
+  }
+  if (poison.left === 0 || !alive(p)) {
+    p.poison = null;
+    world.events.push({ type: 'poisonEnd', id: p.id });
+  }
+}
+
 function applyHit(world, t, hit) {
   const def = hit.def;
   if (t.kind === 'player') {
-    if (t.dodge.iframeLeft > 0) {
+    if (!hit.periodic && t.dodge.iframeLeft > 0) {
       const sinceDodge = world.tick - t.dodge.startedTick;
       if (!t.dodge.perfectPaid && sinceDodge <= ticks(PB.dodge.perfectMs)) {
         t.dodge.perfectPaid = true;
@@ -450,7 +472,7 @@ function applyHit(world, t, hit) {
       }
       return;
     }
-    if (t.hurtInvuln > 0) return;
+    if (!hit.periodic && t.hurtInvuln > 0) return;
   }
   const mdef = t.kind === 'monster' ? MONSTERS[t.type] : null;
   let dmg = def.damage * hit.mult;
@@ -471,7 +493,23 @@ function applyHit(world, t, hit) {
   world.events.push({ type: 'hit', src: hit.srcId, dst: t.id, dmg, x: t.x, y: t.y, exposed, ability: hit.abilityId });
 
   if (t.kind === 'player') {
-    t.hurtInvuln = ticks(PB.hurtInvulnMs);
+    if (!hit.periodic) t.hurtInvuln = ticks(PB.hurtInvulnMs);
+    if (def.poison && t.hp > 0) {
+      const status = def.poison;
+      const left = ticks(status.durationMs);
+      const interval = ticks(status.intervalMs);
+      const dotHit = { ...hit, periodic: true, def: { damage: status.damage, knockback: 0 } };
+      if (!t.poison) {
+        t.poison = { left, interval, next: interval, hit: dotHit };
+        world.events.push({ type: 'poison', id: t.id, ability: hit.abilityId });
+      } else {
+        t.poison.left = Math.max(t.poison.left, left);
+        if (status.damage * hit.mult > t.poison.hit.def.damage * t.poison.hit.mult) {
+          t.poison.hit = dotHit;
+          t.poison.interval = interval;
+        }
+      }
+    }
     if (t.channel > 0) {
       t.channel = 0;
       t.scrollRetry = ticks(PB.scroll.retryMs);
@@ -635,7 +673,8 @@ export function getTelegraphs(world) {
     const progress = act.total ? Math.min(1, act.elapsed / act.total) : 1;
     const base = { id: m.id, ability: act.id, phase: act.phase, progress, facing: act.facing, major: !!def.major };
     if (def.delivery === 'shape') {
-      out.push({ ...base, shape: def.shape, ox: m.x, oy: m.y });
+      out.push({ ...base, shape: def.shape,
+        ox: def.anchored ? act.ox : m.x, oy: def.anchored ? act.oy : m.y });
     } else if (def.delivery === 'dash') {
       if (act.phase === 'active') continue;
       out.push({ ...base, shape: { type: 'rect', length: def.dash.distance + m.r, width: (m.r + def.dash.bodyPad) * 2, offset: 0 }, ox: act.ox, oy: act.oy });

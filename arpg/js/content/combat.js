@@ -86,6 +86,46 @@ export const ABILITIES = {
     delivery: 'shape', shape: { type: 'circle', radius: 150, offset: 0 },
     damage: 22, knockback: 300, rangeMin: 0, rangeMax: 150, weight: 2, major: true,
   },
+  wolf_dash: {
+    windupMs: 500, lockMs: 180, activeMs: 300, recoveryMs: 2500, cooldownMs: 2700,
+    delivery: 'dash', dash: { distance: 250, bodyPad: 6 }, trackTurnDeg: 160,
+    damage: 17, knockback: 180, rangeMin: 100, rangeMax: 390, weight: 3, major: true,
+  },
+  wolf_bite: {
+    windupMs: 420, lockMs: 160, activeMs: 100, recoveryMs: 2500, cooldownMs: 1400,
+    delivery: 'shape', shape: { type: 'cone', range: 80, arc: 85 }, trackTurnDeg: 220,
+    damage: 14, knockback: 100, rangeMin: 0, rangeMax: 85, weight: 2, major: true,
+  },
+  guardian_crush: {
+    windupMs: 1100, lockMs: 300, activeMs: 150, recoveryMs: 2600, cooldownMs: 2000,
+    delivery: 'shape', shape: { type: 'cone', range: 140, arc: 120 }, trackTurnDeg: 90,
+    damage: 24, knockback: 200, rangeMin: 0, rangeMax: 145, weight: 3, major: true,
+  },
+  guardian_ring: {
+    windupMs: 1200, lockMs: 300, activeMs: 150, recoveryMs: 2800, cooldownMs: 4800,
+    delivery: 'shape', shape: { type: 'circle', radius: 175, offset: 0 },
+    damage: 27, knockback: 230, rangeMin: 0, rangeMax: 175, weight: 2, major: true,
+  },
+  spirit_bolt: {
+    windupMs: 800, lockMs: 240, activeMs: 34, recoveryMs: 2500, cooldownMs: 1600,
+    delivery: 'projectile', trackTurnDeg: 150, element: 'frost',
+    projectile: { speed: 360, radius: 11, rangePx: 540, count: 1, spreadDeg: 0, pierce: 0 },
+    damage: 16, knockback: 70, rangeMin: 0, rangeMax: 480, weight: 3, major: true,
+  },
+  spider_bite: {
+    windupMs: 550, lockMs: 180, activeMs: 100, recoveryMs: 2500, cooldownMs: 1800,
+    delivery: 'shape', shape: { type: 'cone', range: 90, arc: 90 }, trackTurnDeg: 180,
+    damage: 10, knockback: 70, rangeMin: 0, rangeMax: 90, weight: 2, major: true,
+    poison: { durationMs: 4000, intervalMs: 1000, damage: 3 },
+  },
+  // [제안] The puddle is an anchored, interruptible active phase, not a second invisible attack.
+  spider_puddle: {
+    windupMs: 900, lockMs: 250, activeMs: 4500, recoveryMs: 2600, cooldownMs: 5200,
+    delivery: 'shape', shape: { type: 'circle', radius: 115, offset: 85 },
+    anchored: true, repeatHitMs: 1000,
+    damage: 4, knockback: 0, rangeMin: 0, rangeMax: 190, weight: 3, major: true,
+    poison: { durationMs: 4000, intervalMs: 1000, damage: 3 },
+  },
 };
 
 // Weapon kits (design §9.1: the weapon decides the job). One character, swappable at the inn.
@@ -117,6 +157,22 @@ export const MONSTERS = {
     hp: 320, r: 28, speed: 104, poise: 120, kbResist: 0.7, abilities: ['chief_cleave', 'chief_charge', 'chief_slam'],
     xp: 40, keepRange: [60, 110], elite: true,
   },
+  wolf: {
+    hp: 110, r: 19, speed: 172, poise: 35, kbResist: 0.1,
+    abilities: ['wolf_dash', 'wolf_bite'], xp: 22, keepRange: [45, 75],
+  },
+  rune_guardian: {
+    hp: 280, r: 30, speed: 68, poise: 90, kbResist: 0.65,
+    abilities: ['guardian_crush', 'guardian_ring'], xp: 36, keepRange: [60, 110], elite: true,
+  },
+  spirit: {
+    hp: 90, r: 17, speed: 100, poise: 25, kbResist: 0.15,
+    abilities: ['spirit_bolt'], xp: 20, keepRange: [210, 300],
+  },
+  poison_spider: {
+    hp: 170, r: 23, speed: 115, poise: 50, kbResist: 0.25,
+    abilities: ['spider_bite', 'spider_puddle'], xp: 28, keepRange: [45, 85],
+  },
 };
 
 // Stage encounters (design §4). Positions are fractions of the arena.
@@ -146,6 +202,28 @@ export const STAGES = {
       { monster: 'goblin_chief', at: 0, fx: 0.78, fy: 0.5 },
       { monster: 'goblin_grunt', at: 4000, fx: 0.85, fy: 0.25 },
       { monster: 'goblin_slinger', at: 9000, fx: 0.9, fy: 0.75 },
+    ],
+  },
+  S5: {
+    name: '외로운 사냥개', goal: 'killAll', maxConcurrent: 2,
+    spawns: [
+      { monster: 'wolf', at: 0, fx: 0.72, fy: 0.38 },
+      { monster: 'wolf', at: 0, fx: 0.82, fy: 0.65 },
+    ],
+  },
+  S6: {
+    name: '꺼진 길의 제단', goal: 'killAll', maxConcurrent: 2,
+    spawns: [
+      { monster: 'rune_guardian', at: 0, fx: 0.72, fy: 0.5 },
+      { monster: 'spirit', at: 3000, fx: 0.85, fy: 0.28 },
+    ],
+  },
+  S7: {
+    // [제안] Sequential spawns teach poison without overlapping the first puddle with goblin attacks.
+    name: '오염된 숲길', goal: 'killAll', maxConcurrent: 1,
+    spawns: [
+      { monster: 'poison_spider', at: 0, fx: 0.74, fy: 0.5 },
+      { monster: 'goblin_grunt', at: 0, fx: 0.82, fy: 0.35 },
     ],
   },
 };

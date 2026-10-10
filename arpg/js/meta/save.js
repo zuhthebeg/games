@@ -1,7 +1,7 @@
 import { BASE_STATS, STAT_KEYS, cap } from './stats.js';
 import { ITEMS, START_WEAPONS, RECIPES, carriedWeight, capacity } from './items.js';
 import { resolve, FAMILIES } from './quiz.js';
-import { xpSpan, MAX_LEVEL } from './progression.js';
+import { xpSpan, MAX_LEVEL, STAGE_XP } from './progression.js';
 
 export const SAVE_KEY = 'arpg.save.v1';
 
@@ -26,7 +26,7 @@ export function createSave({ name, answers, weapon, createdAt }) {
       { uid: 'starter:armor', id: 'cloth_tunic', enhance: 0 },
     ],
     stacks: { potion: 3, mana_potion: 1, return_scroll: 1 },
-    cleared: { S1: false, S2: false, S3: false, S4: false },
+    cleared: Object.fromEntries(Object.keys(STAGE_XP).map((id) => [id, false])),
     flags: { chiefPity: false, starterRestoreUsed: false },
     quiz: { answers: [...answers], weapon: chosen, overridden: chosen !== result.weapon },
   };
@@ -37,7 +37,7 @@ const integer = (value, min = 0, max = Number.MAX_SAFE_INTEGER) =>
 const record = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 function validReceipt(receipt) {
-  if (!record(receipt) || !['S1', 'S2', 'S3', 'S4'].includes(receipt.stageId)
+  if (!record(receipt) || !Object.hasOwn(STAGE_XP, receipt.stageId)
     || !['clear', 'return_scroll', 'death'].includes(receipt.terminal)) return false;
   for (const key of ['depositedXp', 'xpForfeited', 'stageXp', 'levelsGained',
     'statPointsGained', 'goldGained']) {
@@ -96,6 +96,9 @@ export function validateSave(save) {
     if (!record(save.cleared) || !['S1', 'S2', 'S3', 'S4'].every((id) => typeof save.cleared[id] === 'boolean')) {
       return false;
     }
+    // v1 saves made before S5~S7 have no new keys. Missing means not yet cleared; no migration needed.
+    if (!Object.keys(STAGE_XP).every((id) => save.cleared[id] === undefined
+      || typeof save.cleared[id] === 'boolean')) return false;
     if (!record(save.flags) || typeof save.flags.chiefPity !== 'boolean'
       || typeof save.flags.starterRestoreUsed !== 'boolean') return false;
     if (!record(save.quiz) || !FAMILIES.includes(save.quiz.weapon) || typeof save.quiz.overridden !== 'boolean') {

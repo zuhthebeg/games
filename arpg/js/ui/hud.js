@@ -1,6 +1,7 @@
 import { WEAPONS, ABILITIES, PLAYER_BASE } from '../content/combat.js';
 import { ticks } from '../sim/core.js';
 import { weightDescription } from './hub.js';
+import { MONSTER_NAMES } from '../content/monsters.js';
 
 const $ = (selector) => document.querySelector(selector);
 const PATTERN_NAMES = {
@@ -12,9 +13,9 @@ const PATTERN_NAMES = {
   chief_cleave: '대장의 가르기',
   chief_charge: '대장의 돌진',
   chief_slam: '대장의 내려찍기',
-};
-const MONSTER_NAMES = {
-  goblin_grunt: '고블린', goblin_slinger: '고블린 투석병', iron_boar: '철갑 멧돼지', goblin_chief: '고블린 대장',
+  wolf_dash: '늑대의 돌진', wolf_bite: '늑대의 물기',
+  guardian_crush: '룬 수호자의 강타', guardian_ring: '룬 수호자의 광역 강타',
+  spirit_bolt: '정령의 원소탄', spider_bite: '독거미의 물기 · 중독', spider_puddle: '독 장판 · 중독',
 };
 const seconds = (value) => `${(value / 30).toFixed(1)}`;
 
@@ -48,6 +49,8 @@ export class HUD {
       channelBroken: '귀환 중단',
       channelCancel: '귀환 취소',
       perfectDodge: '완벽 회피',
+      poison: '중독 · 장판을 벗어나면 독은 잠시 후 끝난다',
+      poisonEnd: '중독 종료',
     };
     for (const event of events) {
       const message = event.type === 'drop' && event.rejected ? '무게 초과' : messages[event.type];

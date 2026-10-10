@@ -297,6 +297,39 @@ try {
   await evaluate("delete document.hidden;document.dispatchEvent(new Event('visibilitychange'))");
   await waitFor(`__arpg.world.tick>${pausedTick}`);
 
+  // A pre-expansion v1 fixture exercises the real S4→S5 board gate and all new procedural silhouettes.
+  await evaluate(`(async () => {
+    const {createSave,SaveStore}=await import('./js/meta/save.js');
+    const {addXp}=await import('./js/meta/progression.js');
+    const fixture=addXp(createSave({name:'신규 코스 시험',answers:[0,0,0,0,0],createdAt:1}),451);
+    fixture.cleared={S1:true,S2:true,S3:true,S4:true};
+    fixture.stacks.return_scroll=2;
+    new SaveStore(localStorage).save(fixture);
+  })()`);
+  await command('Page.reload');
+  await waitFor(page('inn'));
+  await click('[data-action="board"]');
+  assert.ok(await evaluate(`!document.querySelector('[data-stage="S5"]').disabled
+    && document.querySelector('[data-stage="S6"]').disabled
+    && document.querySelector('[data-stage="S7"]').disabled`));
+  await click('[data-action="sortie"][data-stage="S5"]');
+  await click('#sortie-confirm');
+  await waitFor('__arpg.world.round.stageId==="S5" && __arpg.world.tick>0');
+  await waitFor('__arpg.art.visuals.filter(v=>v.key==="wolf" && v.mode==="procedural").length===2');
+  await key('KeyR');
+  await key('KeyR', 'keyUp');
+  await waitFor('__arpg.world.round.state==="returned"', 6000);
+  await backToInn();
+  assert.equal(await evaluate('__arpg.save.cleared.S5'), undefined, 'return must not unlock S6');
+  for (const [stage, types] of [['S6', ['rune_guardian', 'spirit']], ['S7', ['poison_spider']]]) {
+    await devStart(stage);
+    await waitFor(`${JSON.stringify(types)}.every(type=>__arpg.art.visuals.some(v=>v.key===type && v.mode==="procedural"))`);
+    await key('KeyR');
+    await key('KeyR', 'keyUp');
+    await waitFor('__arpg.world.round.state==="returned"', 6000);
+    await backToInn();
+  }
+
   // An isolated rich fixture exercises real forge DOM actions without altering the sim.
   await evaluate(`(async () => {
     const {createSave,SaveStore}=await import('./js/meta/save.js');
@@ -360,6 +393,7 @@ try {
     onboarding: 'name → 5 answers → S1 clear@900 → allocate 3 → inn',
     shop: 'potion +1 / mana +1 / scroll +1 / potion ×2; scroll cap enforced',
     S2: 'sortie confirmed → reload → inn',
+    newStages: 'pre-S5 v1 → S5 board unlock → wolf ×2 / S6 guardian+spirit / S7 spider procedural → return',
     persisted, fullSaveRestored: true, lastReceiptRestored: true,
     mobile: { width: 390, height: 844, hotspots: 5, buttons: 6, inside: true, noOverlap: true },
     combat, touch: true, edgeLatch: true, readonlyDebug: true,

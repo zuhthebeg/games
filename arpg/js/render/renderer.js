@@ -2,6 +2,7 @@ import { Container, Graphics, Text } from '../../vendor/pixi-8.22.0.min.mjs';
 import { getTelegraphs } from '../sim/world.js';
 import { shapePath, pattern } from './shapes.js';
 import { VisualProvider } from './visual-provider.js';
+import { DANGER_COLORS } from '../content/monsters.js';
 const clamp = (view, a, b) => Math.max(a, Math.min(b, view));
 export class ArenaRenderer {
   constructor(app, provider = new VisualProvider()) {
@@ -290,7 +291,7 @@ export class ArenaRenderer {
       graphic.visible = true;
       graphic.clear().position.set(telegraph.ox, telegraph.oy);
       graphic.rotation = telegraph.facing;
-      const locked = telegraph.phase !== 'windup', color = locked ? 0xf0655e : 0xe7ad47;
+      const locked = telegraph.phase !== 'windup', color = locked ? DANGER_COLORS.active : DANGER_COLORS.preparation;
       shapePath(graphic, telegraph.shape).fill({ color, alpha: locked ? .27 : .07 })
         .stroke({ color, width: telegraph.major ? 4 : 2, alpha: 1 });
       if (!locked && telegraph.progress > 0)
