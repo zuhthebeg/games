@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir, stat } from 'node:fs/promises';
-import { ATLAS_IDS, DIRECTIONS, atlasDirection, atlasAnimation, atlasFrame } from '../js/render/atlas-state.js';
+import { ATLAS_IDS, DIRECTIONS, atlasDirection, atlasAnimation, atlasFrame, atlasScale } from '../js/render/atlas-state.js';
 import { AtlasLibrary } from '../js/render/atlas-library.js';
 
 const base = new URL('../assets/sprites/', import.meta.url);
@@ -83,7 +83,7 @@ test('every registered content key has eight-direction WebP clips and <=1.5MB ki
     assert.ok(bytes <= 1_500_000, `${id}: ${bytes}`);
     assert.equal(bytes, entry.bytes);
   }
-  assert.equal(ATLAS_IDS.iron_boar, 'skeleton', 'fallback must not rename the combat ID');
+  assert.equal(ATLAS_IDS.iron_boar, undefined, 'boar must keep its silhouette, not be disguised as a skeleton');
   assert.equal(ATLAS_IDS.scarecrow, undefined);
 });
 
@@ -129,4 +129,12 @@ test('atlas failure returns a stable procedural fallback, not endless download a
   assert.equal(calls.length, 1);
   assert.deepEqual(library.status().failed, { blade: 'offline' });
   assert.deepEqual(library.status().loading, []);
+});
+
+
+test('chief display scale is 1.3x without changing its collision radius', () => {
+  const chief = deepFreeze({ type: 'goblin_chief', r: 25 });
+  assert.equal(atlasScale(chief), 1.3);
+  assert.equal(atlasScale(deepFreeze({ type: 'goblin_grunt', r: 17 })), 1);
+  assert.equal(chief.r, 25);
 });

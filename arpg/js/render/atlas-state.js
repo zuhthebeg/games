@@ -6,10 +6,13 @@ export const ATLAS_IDS = Object.freeze({
   goblin_grunt: 'goblin-grunt',
   goblin_slinger: 'goblin-archer',
   goblin_chief: 'goblin-chief',
-  // Temporary CC0 Skeleton Minion exterior; the content/combat ID stays intact.
-  iron_boar: 'skeleton',
+  // No verified boar artwork yet: keep its distinct procedural silhouette.
 });
 export const DIRECTIONS = Object.freeze(['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE']);
+
+export function atlasScale(entity) {
+  return entity.type === 'goblin_chief' ? 1.3 : 1;
+}
 
 export function visualKey(entity) {
   return entity.kind === 'player' ? entity.weapon : entity.type;

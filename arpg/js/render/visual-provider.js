@@ -8,7 +8,7 @@ const COLORS = {
   goblin_grunt: 0x73934c,
   goblin_slinger: 0x547c50,
   iron_boar: 0x79573f,
-  goblin_chief: 0x577447,
+  goblin_chief: 0xe58b70,
   scarecrow: 0xae8e53
 };
 // Atlas providers can register the same key and return this contract unchanged.
@@ -111,6 +111,7 @@ function procedural(entity, { color }) {
   container.addChild(body, face, bar, health);
   return {
     container,
+    get debug() { return { mode: 'procedural', key: visualKey }; },
     update(state, animation, deltaTime) {
       animation.age += deltaTime;
       if (state.dead)

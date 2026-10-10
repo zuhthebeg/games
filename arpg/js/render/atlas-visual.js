@@ -1,6 +1,6 @@
 import { Assets, Container, Graphics, Sprite } from '../../vendor/pixi-8.22.0.min.mjs';
 import { AtlasLibrary } from './atlas-library.js';
-import { ATLAS_IDS, visualKey, atlasDirection, atlasAnimation, atlasFrame } from './atlas-state.js';
+import { ATLAS_IDS, visualKey, atlasDirection, atlasAnimation, atlasFrame, atlasScale } from './atlas-state.js';
 
 export function registerAtlasFactories(provider, fallbackFactory) {
   const library = new AtlasLibrary({
@@ -56,7 +56,7 @@ function spriteVisual(entity, { color }, asset) {
   const sprite = new Sprite(asset.animations.idle_E[0]);
   sprite.anchor.set(asset.anchor.x, asset.anchor.y);
   sprite.tint = entity.kind === 'monster' ? color : 0xffffff;
-  sprite.scale.set(entity.type === 'goblin_chief' ? 1.35 : entity.type === 'iron_boar' ? 1.2 : 1);
+  sprite.scale.set(atlasScale(entity));
   const stars = new Graphics();
   for (let index = 0; index < 3; index++)
     stars.star((index - 1) * 14, -62 - (index % 2) * 6, 4, 4, 2).fill(0xffd57a);
@@ -67,7 +67,7 @@ function spriteVisual(entity, { color }, asset) {
   return {
     container,
     get debug() {
-      return { id: asset.id, state: stateName, direction, frame, tint: sprite.tint,
+      return { id: asset.id, state: stateName, direction, frame, tint: sprite.tint, scale: sprite.scale.x,
         textureLoaded: sprite.texture.source.width > 0 && sprite.texture.source.height > 0 };
     },
     update(state, animation, deltaTime) {

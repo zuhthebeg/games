@@ -6,7 +6,7 @@ const debug = window.__ART_VIEWER__ = { ready: false, loadedSheets: 0, frameAdva
 let app, models, ring = [], big, shadow, ground, heading, ringGroup, asset, color = 0xffffff;
 let direction = 'S', actualAnimation = 'idle', input = { x: 0, y: 0 }, normalized = { x: .62, y: .5 }, moving = false;
 const keys = new Set();
-function selectedID() { return $('character').value === 'skeleton' ? 'skeleton' : `hero-${$('weapon').value}`; }
+function selectedID() { return $('character').value === 'hero' ? `hero-${$('weapon').value}` : $('character').value; }
 function tint() {
   const t = Number($('tint').value) / 100;
   const mul = (c) => Math.round(255 + (c - 255) * t);
@@ -38,6 +38,7 @@ function refresh() {
     item.sprite.animationSpeed = asset.fps / 60; item.sprite.loop = true; item.sprite.gotoAndPlay(0);
   }
   big.anchor.set(asset.anchor.x, asset.anchor.y);
+  big.scale.set(asset.id === 'goblin-chief' ? 1.55 * 1.3 : 1.55);
   setBig($('animation').value, direction, true); tint(); debug.character = selectedID();
   debug.frames = Object.fromEntries(Object.entries(asset.animations).map(([k, v]) => [k, v.length]));
   $('status').textContent = `${asset.label} · ${asset.fps}fps · ${Object.values(asset.animations).reduce((n, a) => n + a.length, 0)}프레임 · 8방향 · ${debug.loadedSheets}개 atlas 로드`;
