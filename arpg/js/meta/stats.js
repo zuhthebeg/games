@@ -1,3 +1,5 @@
+import { SLOTS } from './economy.js';
+import { affixTotals } from './affixes.js';
 import { ITEMS, equippedItem, enhanceMultiplier, cloneSave } from './items.js';
 
 export const STAT_KEYS = ['str', 'agi', 'int', 'wis', 'cha'];
@@ -30,22 +32,24 @@ export function allocateStats(save, allocation) {
 export function deriveMods(save) {
   const stats = save.stats;
   const weapon = equippedItem(save, 'weapon');
-  const armor = equippedItem(save, 'armor');
-  const family = ITEMS[weapon.id].family;
-  const damage = ITEMS[weapon.id].power * enhanceMultiplier(weapon.enhance)
+  const gear = SLOTS.map((slot) => equippedItem(save, slot)).filter(Boolean);
+  const affixes = affixTotals(gear);
+  const family = ITEMS[weapon?.id]?.family || 'blade';
+  const damage = (ITEMS[weapon?.id]?.power || 1) * enhanceMultiplier(weapon?.enhance || 0) * (1 + affixes.atk_pct / 100)
     * (1 + 0.03 * (save.level - 1)) * (family === 'focus' ? 1 + 0.02 * eff(stats.int) : 1);
   return {
-    maxHp: 100 + 8 * save.level + ITEMS[armor.id].hp * enhanceMultiplier(armor.enhance),
+    maxHp: 100 + 8 * save.level + gear.reduce((sum, item) => sum + (ITEMS[item.id].hp || 0) * enhanceMultiplier(item.enhance), 0) + affixes.hp_flat,
     maxMp: 100 + 4 * eff(stats.int),
-    mpRegen: 5 * (1 + 0.03 * eff(stats.wis)),
-    speedMult: 1 + Math.min(0.1, 0.005 * eff(stats.agi)),
-    dodgeCdMult: Math.max(0.8 / 1.15, 1 - 0.015 * eff(stats.agi)),
+    mpRegen: 5 * (1 + 0.03 * eff(stats.wis)) * (1 + affixes.mana_pct / 100),
+    speedMult: (1 + Math.min(0.1, 0.005 * eff(stats.agi))) * (1 + affixes.speed_pct / 100),
+    dodgeCdMult: Math.max(0.8 / 1.15, 1 - 0.015 * eff(stats.agi)) * (1 - Math.min(50, affixes.dodge_pct) / 100),
     iframeBonusMs: Math.min(60, 3 * eff(stats.agi)),
-    potionHealMult: 1 + Math.min(0.25, 0.01 * eff(stats.wis)),
-    poiseMult: 1 + 0.02 * eff(stats.str),
+    potionHealMult: (1 + Math.min(0.25, 0.01 * eff(stats.wis))) * (1 + affixes.potion_pct / 100),
+    poiseMult: (1 + 0.02 * eff(stats.str)) * (1 + affixes.poise_pct / 100),
     dmgMult: { blade: 1, bow: 1, focus: 1, [family]: damage },
     cdMult: 1,
-    capacity: 100 + stats.str - 5,
+    capacity: 100 + stats.str - 5 + affixes.capacity_flat,
+    goldBonus: affixes.gold_pct, materialBonus: affixes.material_pct,
     shopDiscount: Math.min(0.1, 0.005 * eff(stats.cha)),
     family,
   };
