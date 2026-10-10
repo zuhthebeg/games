@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:,">
+<title>ARPG 렌더 A/B 측정</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#10191e;color:#eef4f7;font:14px system-ui,sans-serif}#stage{position:fixed;inset:0;pointer-events:none}#stage canvas{display:block}main{position:relative;z-index:1;max-width:780px;margin:12px;padding:14px;background:#0b131bea;border:1px solid #425665;border-radius:12px}body.running main{background:#0b131bcc}h1{font-size:19px;margin:0 0 10px}p{line-height:1.5}button{background:#23394a;color:white;border:1px solid #668293;border-radius:7px;padding:10px;margin:3px;min-height:44px}button:disabled{opacity:.45}label{display:inline-block;margin:8px}#status{font-weight:700;color:#9ce7d2;margin:10px 0;white-space:pre-wrap}textarea{width:100%;min-height:240px;background:#111d28;color:#eef4f7;padding:10px;border:1px solid #577084;font:12px ui-monospace,monospace}#results{white-space:pre-wrap;line-height:1.6;overflow-wrap:anywhere}body.running .idle-only{display:none}.small{font-size:12px;color:#bdcbd6}details{margin-top:10px}input{font:inherit}#note{max-width:100%;background:#152332;color:white;border:1px solid #577084;padding:7px}footer{margin-top:8px}
+</style>
+</head>
+<body>
+<div id="stage" aria-hidden="true"></div>
+<main>
+<h1>ARPG 렌더링 A/B · 실기기 측정</h1>
+<div id="controls">
+<button data-run="A">A · PixiJS 실행</button><button data-run="B">B · Canvas 실행</button>
+<button data-run="A,B">A → B 연속</button><button data-run="B,A,B">발열 비교 B → A → B</button>
+<label><input id="stress" type="checkbox"> 부하 ×2</label><button id="stop" disabled>중지</button>
+</div>
+<div id="status" role="status" aria-live="polite">준비 · 예열 3초 + 측정 30초</div>
+<div class="idle-only">
+<p>폰 브라우저와 카카오톡 등 인앱 WebView에서 각각 실행한 뒤 결과를 복사해 줘. 화면을 켜 두고 탭 전환·회전·스크롤은 피한다. 동일 밝기·충전 상태로 비교한다. 탭 숨김/화면 크기 변경은 측정을 무효로 처리한다.</p>
+<p class="small">발열 비교는 쉬지 않고 B → A → B 실행. 마지막 B의 p95 상승은 드리프트 단서일 뿐 온도 측정이 아니다. 120Hz 기기는 60fps 이상이어도 정상. rAF 간격은 GPU 완료 시간이 아니다. 엔진 선택은 실제 중저가 안드로이드 결과로만 한다.</p>
+<label>기기/앱·충전/밝기 메모 <input id="note" maxlength="160" placeholder="예: Galaxy A… / 카톡 / 충전 안 함"></label>
+<button id="copy">결과 복사</button><button id="clear">결과 지우기</button>
+<div id="results">결과 없음</div>
+<details><summary>측정 방식·JSON / 복사 실패 시 직접 선택</summary>
+<p class="small">고정 시드, 1400×860 월드, 화면 크기 CSS 픽셀, DPR 최대 2. 기본 4인+20몬스터 / 파티클 200 / 숫자 30 / 장판 3; ×2는 전부 두 배. A: 회색 몬스터에 Sprite.tint 곱셈(필터 없음), BitmapText, ParticleContainer. B: 동일 곱셈을 사전 구운 팔레트 6개, fillText. 두 렌더러 모두 매 프레임 같은 장면 상태를 계산하며 월드 전체 제출(화면 밖은 클립). 폰 크기에 따라 보이는 개체 수는 다르다.</p>
+<p class="small">초기화 시간은 모듈 import + 아틀라스 생성 + 렌더러 생성 + 첫 렌더 포함. 반복 A는 Pixi 모듈 캐시 사용: 첫 A만 콜드 로드 근사. JS heap은 탭 전체의 비표준 관측값이며 Canvas/GPU 메모리를 포함하지 않는다. RGBA 바이트는 생성된 backing store 하한 추정(드라이버·프레임버퍼 제외).</p>
+<textarea id="export" readonly aria-label="복사용 결과"></textarea>
+</details>
+<footer class="small">외부 요청·분석·광고 없음 · headless/소프트웨어 GL 수치는 성능 판단에 사용하지 않음</footer>
+</div>
+</main>
+<script type="module" src="./measure.js"></script>
+</body></html>

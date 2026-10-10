@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>Untitled · 잿빛 여관</title><link rel="icon" href="data:,"><link rel="stylesheet" href="css/game.css"></head>
+<body>
+<main id="surface" aria-label="전투장"></main><div id="vignette"></div>
+<section id="hud" hidden aria-label="전투 상태">
+ <div class="vitals"><div class="bar hp"><i id="hp-fill"></i><span id="hp-text"></span></div><div class="bar mp"><i id="mp-fill"></i><span id="mp-text"></span></div></div>
+ <div class="stage"><b id="stage-name"></b><span id="objective"></span></div>
+ <div id="notice" role="status" aria-live="polite"></div>
+ <div id="joystick" hidden><i></i></div>
+ <div id="actions" aria-label="전투 조작">
+  <button data-input="potionEdge" class="small" id="potion">물약 Q<small></small></button>
+  <button data-input="scrollEdge" class="small ring" id="scroll">귀환 R<small></small></button>
+  <button data-input="skillEdge" class="ring" id="skill">스킬 K<small></small></button>
+  <button data-input="dodgeEdge" id="dodge">회피 ⇧<small></small></button>
+  <button data-input="attack" id="attack">공격 J<small>길게 누르기</small></button>
+ </div>
+ <div class="move-hint">왼쪽 드래그 · WASD 이동</div>
+</section>
+<section class="overlay" id="menu"><form id="start-form" class="panel">
+ <p class="eyebrow">M0 · 전투 프로토타입</p><h1>UNTITLED</h1><p class="subtitle">잿빛 여관 밖, 돌아올 길을 남겨라.</p>
+ <label>무기<select id="weapon"><option value="blade">검 · 선봉</option><option value="bow">활 · 사수</option><option value="focus">마법 무기 · 비전</option></select></label>
+ <label>여정<select id="stage"><option value="S1">S1 · 소환 시험 (30초)</option><option value="S2">S2 · 끊긴 여관길</option><option value="S3">S3 · 무너진 수레</option><option value="S3E">S3E · 고블린 대장</option></select></label>
+ <label class="check"><input id="reduced-fx" type="checkbox"> 흔들림·섬광 줄이기</label>
+ <button id="start" type="submit" disabled>준비 중…</button><p class="help">WASD / 방향키 이동 · J / 좌클릭 공격<br>Space / Shift 회피 · K / 우클릭 스킬<br>Q 물약 · R 귀환 (2초, 피격 시 중단)<br>터치: 왼쪽 조이스틱 / 오른쪽 버튼, 자동 조준</p><p id="boot-error" role="alert"></p>
+</form></section>
+<section class="overlay" id="result" hidden><div class="panel"><p class="eyebrow">여정의 끝</p><h2 id="result-title"></h2><p id="cause"></p><button id="next">다음 스테이지</button><button id="back">메뉴</button></div></section>
+<section class="overlay" id="pause" hidden><div class="panel"><h2>일시정지</h2><p>탭으로 돌아오면 전투가 재개됩니다.</p></div></section>
+<script type="module" src="js/main.js"></script></body></html>
