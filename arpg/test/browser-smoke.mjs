@@ -645,5 +645,5 @@ try {
     if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
   });
   await Promise.all(stopped);
-  await rm(profile, { recursive: true, force: true });
+  await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 }
