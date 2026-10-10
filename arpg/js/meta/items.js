@@ -3,6 +3,7 @@ import { SLOTS, SALVAGE, ECONOMY, enhanceCost, rng, weighted, SLOT_BIASES, RECIP
 import { rollAffixes, affixTotals } from './affixes.js';
 export { ENHANCE_GOLD, enhanceCost } from './economy.js';
 export { rollAffixes, DEFERRED_AFFIXES } from './affixes.js';
+import { BALANCE, threatMultipliers } from '../content/balance.js';
 import { NEW_MONSTER_DROPS } from '../content/loot.js';
 
 const weapon = (name, family, rarity, power, weight, form) => ({
@@ -31,6 +32,11 @@ export const ITEMS = {
   pack_bow: { ...weapon('늑대 사냥 활', 'bow', 'fine', 1.35, 8), huntTier: 2, requiredLevel: 5 },
   altar_staff: { ...weapon('제단 지팡이', 'focus', 'fine', 1.35, 6, 'staff'), huntTier: 2, requiredLevel: 5 },
   woven_armor: { ...armor('거미줄 가죽 갑옷', 'fine', 50, 10), huntTier: 2, requiredLevel: 5 },
+  // [제안] Hunting tier 3 for S11~S20: +0.25 power / +25 HP over tier 2, Lv10 gate.
+  warden_blade: { ...weapon('파수꾼의 대검', 'blade', 'fine', 1.6, 15), huntTier: 3, requiredLevel: 10 },
+  frost_bow: { ...weapon('서리 장궁', 'bow', 'fine', 1.6, 9), huntTier: 3, requiredLevel: 10 },
+  seal_staff: { ...weapon('봉인의 지팡이', 'focus', 'fine', 1.6, 7, 'staff'), huntTier: 3, requiredLevel: 10 },
+  warden_plate: { ...armor('파수꾼 판금 갑옷', 'fine', 75, 13), huntTier: 3, requiredLevel: 10 },
   scrap: { name: '고철', kind: 'material', weight: 0.2 },
   hide: { name: '가죽', kind: 'material', weight: 0.5 },
   fang: { name: '송곳니', kind: 'material', weight: 0.3 },
@@ -42,15 +48,16 @@ export const ITEMS = {
   mana_potion: { name: '마나 물약', kind: 'consumable', weight: 1, price: 12 },
   return_scroll: { name: '귀환 주문서', kind: 'consumable', weight: 1, price: 6, maxCarry: 2 },
 };
+const TIER_LEVEL = { 2: 5, 3: 10 };
 // Tables are base stats; instances vary only through affixes, never hidden stat rolls.
 for (const [slot, hp, weight] of [['head', 4, 2], ['hands', 3, 1.5], ['feet', 3, 1.5]]) {
   for (const [armorClass, scale] of [['light', 1], ['medium', 1.5], ['heavy', 2]]) {
-    for (const [rarity, tier] of [['common', 1], ['fine', 1], ['fine', 2]]) {
+    for (const [rarity, tier] of [['common', 1], ['fine', 1], ['fine', 2], ['fine', 3]]) {
       const id = `${slot}_${armorClass}_${rarity}_t${tier}`;
       ITEMS[id] = { name: `${{head:'머리',hands:'장갑',feet:'신발'}[slot]} · ${armorClass} T${tier}`,
         kind: slot, slot, armorClass, rarity, huntTier: tier,
         hp: Math.round(hp * scale * tier * ECONOMY.rarityPower[rarity]),
-        weight: weight * scale, requiredLevel: tier === 2 ? 5 : rarity === 'common' ? 1 : 2 };
+        weight: weight * scale, requiredLevel: TIER_LEVEL[tier] ?? (rarity === 'common' ? 1 : 2) };
     }
   }
 }
@@ -64,7 +71,7 @@ for (const [id, base] of Object.entries(ITEMS)) {
     const ratio = ECONOMY.rarityPower[rarity] / ECONOMY.rarityPower[base.rarity];
     ITEMS[`${id}_${rarity}`] = { ...base, rarity,
       ...(base.power !== undefined ? { power: base.power * ratio } : { hp: base.hp ? Math.round(base.hp * ratio) : ECONOMY.starterBodyHp[rarity] }),
-      requiredLevel: base.huntTier === 2 ? 5 : { common: 1, fine: 2, rare: 4, epic: 6 }[rarity] };
+      requiredLevel: TIER_LEVEL[base.huntTier] ?? { common: 1, fine: 2, rare: 4, epic: 6 }[rarity] };
   }
 }
 for (let tier = 1; tier <= 3; tier++) {
@@ -80,7 +87,7 @@ export const cloneSave = (save) => structuredClone(save);
 export const equippedItem = (save, slot) => save.items.find((item) => item.uid === save.equipped[slot]);
 
 export function capacity(save) {
-  return 100 + save.stats.str - 5 + affixTotals(SLOTS.map((slot) => equippedItem(save, slot))).capacity_flat;
+  return 100 + BALANCE.stats.capacity * eff(save.stats.str) + affixTotals(SLOTS.map((slot) => equippedItem(save, slot))).capacity_flat;
 }
 
 export function lootWeight(loot) {
@@ -158,7 +165,7 @@ export function enhance(save, uid) {
 
 export function shopPrice(save, id) {
   if (!CONSUMABLES.includes(id)) throw new Error('판매하지 않는 물품입니다.');
-  const discount = Math.min(0.1, 0.005 * eff(save.stats.cha));
+  const discount = Math.min(BALANCE.stats.discountCap, BALANCE.stats.discount * eff(save.stats.cha));
   return Math.max(1, Math.ceil(ITEMS[id].price * (1 - discount)));
 }
 
@@ -175,7 +182,7 @@ export function dropSeed(roundSeed, killIndex) {
   return (roundSeed ^ Math.imul(killIndex + 1, 0x9e3779b9)) >>> 0;
 }
 
-function legacyDrops(monsterType, seed, materialBonus = 0) {
+function legacyDrops(monsterType, seed, materialBonus = 0, gearMultiplier = 1) {
   let state = seed >>> 0;
   const random = () => {
     let value = state = (state + 0x6d2b79f5) >>> 0;
@@ -189,7 +196,7 @@ function legacyDrops(monsterType, seed, materialBonus = 0) {
     if (random() < Math.min(1, chance + (ITEMS[id].kind === 'material' ? materialBonus / 100 : 0))) loot.stacks[id] = count;
   };
   const gear = (id, chance) => {
-    if (random() < chance) loot.items.push(instance(`drop:${seed >>> 0}:${id}`, id, seed));
+    if (random() < Math.min(1, chance * gearMultiplier)) loot.items.push(instance(`drop:${seed >>> 0}:${id}`, id, seed));
   };
   const table = NEW_MONSTER_DROPS[monsterType];
   if (table) {
@@ -238,22 +245,22 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   const bonusSum = Math.max(0, (ctx.goldBonus || 0) + (ctx.materialBonus || 0));
   const capScale = bonusSum > ECONOMY.dropBonusCap ? ECONOMY.dropBonusCap / bonusSum : 1;
   const materialBonus = Math.max(0, ctx.materialBonus || 0) * capScale;
-  const loot = legacyDrops(monsterType, seed, materialBonus);
+  const threat = threatMultipliers(ctx.threat ?? 1);
+  const loot = legacyDrops(monsterType, seed, materialBonus, threat.drop);
   if (monsterType === 'scarecrow') return loot;
   const random = rng(seed ^ 0xa521d937);
   const tier = Math.max(1, Math.min(3, ctx.huntTier ?? (NEW_MONSTER_DROPS[monsterType] ? 2 : 1)));
   const boss = monsterType === 'goblin_chief' || ctx.boss === true;
   const elite = ctx.elite ?? false;
-  // ctx.threat is accepted for the P3 integration; no speculative threat rebalance here.
   const chance = boss ? 1 : elite ? ECONOMY.eliteGearChance : ECONOMY.gearChance;
-  if (random() < chance) {
+  if (random() < Math.min(1, chance * threat.drop)) {
     const count = boss ? 1 + (random() < ECONOMY.bossExtraChance ? 1 : 0) : 1;
     for (let i = 0; i < count; i++) {
-      let rarity = weighted(Object.entries(boss ? ECONOMY.bossRarity : ECONOMY.normalRarity), random);
+      let rarity = weighted(Object.entries((ctx.threat ?? 1) === 1 ? (boss ? ECONOMY.bossRarity : ECONOMY.normalRarity) : (boss ? threat.bossRarity : threat.rarity)), random);
       if (boss && i === 0 && (ctx.rarelessRounds || 0) >= ECONOMY.pityRounds && rarity === 'fine') rarity = 'rare';
       const slot = weighted(SLOTS.map((slot) => [slot, SLOT_BIASES[monsterType]?.[slot] || 1]), random);
       let pool = Object.entries(ITEMS).filter(([, item]) => item.slot === slot && item.rarity === rarity
-        && item.huntTier === Math.min(2, tier));
+        && item.huntTier === tier);
       if (monsterType === 'spirit' && slot === 'weapon') pool = pool.filter(([, item]) => item.family === 'focus');
       const [id] = pool[Math.floor(random() * pool.length)];
       const rollSeed = (seed ^ Math.imul(i + 1, 0x7f4a7c15)) >>> 0;
@@ -261,7 +268,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
     }
   }
   const stoneChance = boss ? 1 : elite ? ECONOMY.eliteStoneChance : ECONOMY.stoneChance;
-  if (random() < Math.min(1, stoneChance + materialBonus / 100)) {
+  if (random() < Math.min(1, stoneChance * threat.drop + materialBonus / 100)) {
     const count = boss ? 1 + (random() < ECONOMY.bossExtraChance ? 1 : 0) : 1;
     for (let i = 0; i < count; i++) {
       const stone = weighted(ECONOMY.stoneWeights[tier].map((weight, i) => [`enhance_stone_${i + 1}`, weight]), random);
@@ -269,7 +276,13 @@ export function rollDrops(monsterType, seed, ctx = {}) {
     }
   }
   // Seeded stochastic rounding retains small bonuses without fractional save currency.
-  const gold = loot.gold * (1 + Math.max(0, ctx.goldBonus || 0) * capScale / 100);
-  loot.gold = Math.floor(gold) + (random() < gold % 1 ? 1 : 0);
+  const stage = BALANCE.stages[ctx.stageId];
+  const curve = stage ? BALANCE.rewardCurve ** (Number(ctx.stageId.slice(1)) - 1) : 1;
+  const scaled = loot.gold * (boss ? 1 : BALANCE.normalGold) * curve * threat.gold;
+  // Dedicated stream: material/gear bonus branches must not alter baseline gold rounding.
+  const goldRandom = rng(seed ^ 0x43e7a129);
+  const baseGold = Math.floor(scaled) + (goldRandom() < scaled % 1 ? 1 : 0);
+  const gold = baseGold * (1 + Math.max(0, ctx.goldBonus || 0) * capScale / 100);
+  loot.gold = Math.floor(gold) + (goldRandom() < gold % 1 ? 1 : 0);
   return loot;
 }

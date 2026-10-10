@@ -1,3 +1,4 @@
+import { BALANCE } from '../content/balance.js';
 // M1.5 proposal constants: P3 tunes this file, not simulation code.
 export const SLOTS = ['weapon', 'head', 'body', 'hands', 'feet'];
 export const ENHANCE_GOLD = [45, 71, 101, 138, 180];
@@ -6,7 +7,7 @@ export const ENHANCE_STONE_IDS = ['enhance_stone_1', 'enhance_stone_1', 'enhance
 export const SALVAGE = { common: 2, fine: 5, rare: 12, epic: 30 };
 export const ECONOMY = {
   gearChance: 0.1, eliteGearChance: 0.35, stoneChance: 0.125, eliteStoneChance: 0.4,
-  normalRarity: { common: 70, fine: 27, rare: 3 }, bossRarity: { fine: 50, rare: 40, epic: 10 },
+  normalRarity: BALANCE.threats[0].rarity, bossRarity: BALANCE.threats[0].bossRarity,
   stoneWeights: { 1: [85, 14, 1], 2: [45, 45, 10], 3: [20, 45, 35] },
   rarityPrice: { common: 1, fine: 1.6, rare: 3, epic: 5 },
   rarityPower: { common: 1, fine: 1.15, rare: 1.32, epic: 1.5 },

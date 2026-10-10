@@ -4,10 +4,12 @@
 // (the input layer latches presses until the next sim tick consumes them).
 
 import {
-  DT, ticks, rand, pickWeighted, turnToward, dist2, shapeHitsCircle,
+  DT, ticks, rand, pickWeighted, turnToward, dist2, shapeHitsCircle, segmentCircleEntry,
   TEAM_PLAYER, TEAM_MONSTER,
 } from './core.js';
 import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE } from '../content/combat.js';
+
+import { BALANCE, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, monsterSizeProfile } from '../content/balance.js';
 
 const PB = PLAYER_BASE;
 const KNOCK_DECAY = 0.82; // per tick
@@ -18,9 +20,10 @@ export function emptyInput() {
   return { mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, skillEdge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false };
 }
 
-export function createWorld({ seed = 1, arena = { w: 1400, h: 860 } } = {}) {
+export function createWorld({ seed = 1, threat = 1, arena = { w: 1400, h: 860 } } = {}) {
+  threatMultipliers(threat);
   return {
-    tick: 0, rng: seed >>> 0, nextId: 1, arena,
+    tick: 0, rng: seed >>> 0, nextId: 1, arena, threat,
     entities: [], projectiles: [], events: [],
     majorBusyBy: 0, // EncounterDirector majorAttackToken: one big attack at a time early on (design §7.1)
     round: null,
@@ -29,6 +32,12 @@ export function createWorld({ seed = 1, arena = { w: 1400, h: 860 } } = {}) {
 
 // mods come from the meta layer (level, stats, gear). The sim never reads stats directly.
 export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
+  // The existing launcher already passes meta mods. Freeze threat before startStage, not in step().
+  if (mods.threat !== undefined) {
+    if (world.round) throw new Error('Threat is frozen after stage start');
+    threatMultipliers(mods.threat);
+    world.threat = mods.threat;
+  }
   const maxHp = mods.maxHp ?? PB.hp;
   const maxMp = mods.maxMp ?? PB.mp;
   const ent = {
@@ -53,20 +62,22 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
   return ent;
 }
 
-export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1 } = {}) {
+export function spawnMonster(world, type, x, y, { hpMult = 1, dmgMult = 1, elite = false, threat = 1, stageId = null } = {}) {
   const def = MONSTERS[type];
   if (!def) throw new Error(`unknown monster ${type}`);
+  const size = stageId ? monsterSizeProfile(stageId, elite, type === 'goblin_chief', rand(world))
+    : { scale: 1, mean: 1, hp: 1 };
   const ent = {
     id: world.nextId++, kind: 'monster', type, team: TEAM_MONSTER,
-    x, y, r: def.r, facing: Math.PI, kx: 0, ky: 0, moving: false,
-    hp: Math.round(def.hp * hpMult), maxHp: Math.round(def.hp * hpMult),
-    dmgMult, poise: def.poise, maxPoise: def.poise,
+    x, y, r: def.r * size.scale, sizeScale: size.scale, sizeMean: size.mean, sizeHpMult: size.hp, facing: Math.PI, kx: 0, ky: 0, moving: false,
+    hp: Math.max(1, Math.round(def.hp * hpMult * size.hp)), maxHp: Math.max(1, Math.round(def.hp * hpMult * size.hp)),
+    dmgMult, eliteVariant: elite, threat, stageId, poise: def.poise, maxPoise: def.poise,
     act: null, cds: {}, lastActs: [], thinkLeft: ticks(400 + rand(world) * 400),
     targetId: 0, strafe: rand(world) < 0.5 ? -1 : 1, staggerLeft: 0,
     spawnLeft: ticks(SPAWN_IN_MS), dead: false,
   };
   world.entities.push(ent);
-  world.events.push({ type: 'spawn', id: ent.id, monster: type, x, y });
+  world.events.push({ type: 'spawn', id: ent.id, monster: type, elite, threat, x, y });
   return ent;
 }
 
@@ -74,7 +85,7 @@ export function startStage(world, stageId) {
   const st = STAGES[stageId];
   if (!st) throw new Error(`unknown stage ${stageId}`);
   world.round = {
-    stageId, state: 'running', t: 0, goal: st.goal,
+    stageId, threat: st.goal === 'timer' ? 1 : world.threat, state: 'running', t: 0, goal: st.goal,
     timerTicks: st.timerMs ? ticks(st.timerMs) : 0, maxConcurrent: st.maxConcurrent,
     pending: st.spawns.map((s) => ({ ...s, atTicks: ticks(s.at) })),
   };
@@ -539,7 +550,7 @@ function applyHit(world, t, hit) {
     t.hp = 0;
     t.dead = true;
     if (t.act) endAct(world, t, true);
-    world.events.push({ type: 'kill', id: t.id, monster: t.type, by: hit.srcId, xp: mdef.xp, x: t.x, y: t.y });
+    world.events.push({ type: 'kill', id: t.id, monster: t.type, elite: t.eliteVariant, threat: t.threat, stageId: t.stageId, by: hit.srcId, xp: mdef.xp, x: t.x, y: t.y });
   }
 }
 
@@ -549,26 +560,47 @@ function stepProjectiles(world) {
   const keep = [];
   for (const pr of world.projectiles) {
     const def = ABILITIES[pr.abilityId];
-    pr.x += pr.vx * DT;
-    pr.y += pr.vy * DT;
-    pr.travelled += Math.hypot(pr.vx, pr.vy) * DT;
-    let gone = pr.travelled >= pr.range || pr.x < 0 || pr.y < 0 || pr.x > world.arena.w || pr.y > world.arena.h;
-    if (!gone) {
-      for (const t of world.entities) {
-        if (t.team === pr.team || !isTargetable(t) || pr.hit.includes(t.id)) continue;
-        if (dist2(pr.x, pr.y, t.x, t.y) > (pr.r + t.r) ** 2) continue;
-        pr.hit.push(t.id);
+    const ax = pr.x, ay = pr.y, dx = pr.vx * DT, dy = pr.vy * DT;
+    const distance = Math.hypot(dx, dy);
+    // Clip the sweep at range/arena expiry: final-tick hits cannot tunnel or overshoot range.
+    let limit = distance ? Math.min(1, Math.max(0, pr.range - pr.travelled) / distance) : 1;
+    if (dx > 0) limit = Math.min(limit, (world.arena.w - ax) / dx);
+    else if (dx < 0) limit = Math.min(limit, -ax / dx);
+    if (dy > 0) limit = Math.min(limit, (world.arena.h - ay) / dy);
+    else if (dy < 0) limit = Math.min(limit, -ay / dy);
+    limit = Math.max(0, limit);
+    const bx = ax + dx * limit, by = ay + dy * limit;
+    const contacts = [];
+    for (const target of world.entities) {
+      if (target.id === pr.ownerId || !isTargetable(target) || pr.hit.includes(target.id)) continue;
+      const t = segmentCircleEntry(ax, ay, bx, by, target.x, target.y, target.r + pr.r);
+      if (t !== null) contacts.push({ target, t });
+    }
+    contacts.sort((a, b) => a.t - b.t || a.target.id - b.target.id);
+    let gone = false, stop = 1;
+    for (const { target, t } of contacts) {
+      pr.x = ax + (bx - ax) * t; pr.y = ay + (by - ay) * t;
+      const friendly = target.team === pr.team;
+      if (friendly) world.events.push({ type: 'projectileBlocked', id: pr.id, blockerId: target.id, x: pr.x, y: pr.y });
+      if (!friendly || FRIENDLY_PROJECTILE_DAMAGE > 0) {
+        pr.hit.push(target.id);
         const facing = Math.atan2(pr.vy, pr.vx);
-        applyHit(world, t, {
+        applyHit(world, target, {
           srcId: pr.ownerId, srcKind: pr.ownerKind, srcType: pr.ownerType, abilityId: pr.abilityId, def,
-          mult: pr.dmgMult, poiseMult: pr.poiseMult, fromX: pr.x - Math.cos(facing) * 10, fromY: pr.y - Math.sin(facing) * 10,
+          mult: pr.dmgMult * (friendly ? FRIENDLY_PROJECTILE_DAMAGE : 1), poiseMult: pr.poiseMult,
+          fromX: pr.x - Math.cos(facing) * 10, fromY: pr.y - Math.sin(facing) * 10,
           cause: { shape: { type: 'circle', radius: pr.r, offset: 0 }, ox: pr.x, oy: pr.y, facing },
         });
-        if (pr.pierce-- <= 0) { gone = true; break; }
       }
+      // Allied bodies always stop the shot, even a piercing one, without spending pierce.
+      if (friendly || pr.pierce-- <= 0) { gone = true; stop = t; break; }
     }
+    pr.x = ax + (bx - ax) * stop; pr.y = ay + (by - ay) * stop;
+    pr.travelled += distance * limit * stop;
+    gone ||= limit < 1 || pr.travelled >= pr.range
+      || pr.x <= 0 || pr.y <= 0 || pr.x >= world.arena.w || pr.y >= world.arena.h;
     if (gone) {
-      if (def.projectile.explode && (pr.hit.length || pr.travelled >= pr.range)) explode(world, pr, def);
+      if (def.projectile.explode) explode(world, pr, def);
       world.events.push({ type: 'projectileEnd', id: pr.id, x: pr.x, y: pr.y, ability: pr.abilityId });
     } else keep.push(pr);
   }
@@ -646,7 +678,16 @@ function stepRound(world) {
   let aliveCount = monsters.length;
   rd.pending = rd.pending.filter((s) => {
     if (s.atTicks > rd.t || aliveCount >= rd.maxConcurrent) return true;
-    spawnMonster(world, s.monster, s.fx * world.arena.w, s.fy * world.arena.h);
+    const stage = STAGES[rd.stageId];
+    const threat = threatMultipliers(rd.threat);
+    // Random damage variant, not the old archetype classification. No new attack or AI loop.
+    const elite = !MONSTERS[s.monster].invulnerable && s.monster !== 'goblin_chief'
+      && stage.eliteChance > 0 && rand(world) < stage.eliteChance;
+    spawnMonster(world, s.monster, s.fx * world.arena.w, s.fy * world.arena.h, {
+      hpMult: (stage.hpMult || 1) * threat.hp * (elite ? BALANCE.elite.hp : 1) * (s.monster === 'goblin_chief' ? (stage.bossHpMult || 1) : 1),
+      dmgMult: (stage.dmgMult || 1) * threat.damage * (elite ? BALANCE.elite.damage : 1),
+      elite, threat: rd.threat, stageId: rd.stageId,
+    });
     aliveCount++;
     return false;
   });

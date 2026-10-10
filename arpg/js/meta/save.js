@@ -1,3 +1,5 @@
+import { BALANCE } from '../content/balance.js';
+export const SAVE_VERSION = 3;
 import { SLOTS } from './economy.js';
 import { validAffixes } from './affixes.js';
 import { BASE_STATS, STAT_KEYS, cap } from './stats.js';
@@ -14,7 +16,7 @@ export function createSave({ name, answers, weapon, createdAt }) {
   if (Array.from(cleanName).length < 1 || Array.from(cleanName).length > 12) throw new Error('이름은 1~12자입니다.');
   if (!FAMILIES.includes(chosen)) throw new Error('시작 무기가 올바르지 않습니다.');
   return {
-    version: 2,
+    version: SAVE_VERSION, threat: 1, stageThreat: Object.fromEntries(Object.keys(STAGE_XP).map(id => [id, 0])),
     completedRounds: 0, shopRefresh: 0, paidRefreshes: 0, shopBought: [], rarelessRounds: 0,
     createdAt,
     name: cleanName,
@@ -42,6 +44,7 @@ const record = (value) => value !== null && typeof value === 'object' && !Array.
 function validReceipt(receipt) {
   if (!record(receipt) || !Object.hasOwn(STAGE_XP, receipt.stageId)
     || !['clear', 'return_scroll', 'death'].includes(receipt.terminal)) return false;
+  if (receipt.threat !== undefined && !integer(receipt.threat, 1, 3)) return false;
   for (const key of ['depositedXp', 'xpForfeited', 'stageXp', 'levelsGained',
     'statPointsGained', 'goldGained']) {
     if (!integer(receipt[key])) return false;
@@ -67,16 +70,20 @@ function validReceipt(receipt) {
 
 export function validateSave(save) {
   try {
-    if (!record(save) || save.version !== 2 || !integer(save.createdAt)) return false;
+    if (!record(save) || save.version !== SAVE_VERSION || !integer(save.createdAt)) return false;
     if (typeof save.name !== 'string' || save.name !== save.name.trim()) return false;
     if (Array.from(save.name).length < 1 || Array.from(save.name).length > 12) return false;
     if (!integer(save.level, 1, MAX_LEVEL) || !integer(save.statPoints) || !integer(save.gold)) return false;
     if (!Number.isFinite(save.xp) || save.xp < 0 || save.xp >= xpSpan(save.level)) return false;
     if (!Number.isInteger(save.xp * 2) || (save.level === MAX_LEVEL && save.xp !== 0)) return false;
+    if (save.threat !== undefined && !integer(save.threat, 1, 3)) return false;
+    if (save.stageThreat !== undefined && (!record(save.stageThreat)
+      || !Object.entries(save.stageThreat).every(([id, value]) => Object.hasOwn(STAGE_XP, id) && integer(value, 0, 3)
+        && (value === 0 || save.cleared?.[id] === true)))) return false;
     if (!record(save.stats) || Object.keys(save.stats).length !== 5) return false;
     if (!STAT_KEYS.every((key) => integer(save.stats[key], 5, cap(save.level)))) return false;
     const spent = STAT_KEYS.reduce((sum, key) => sum + save.stats[key] - 5, 0);
-    if (spent + save.statPoints !== 6 + 3 * (save.level - 1)) return false;
+    if (spent + save.statPoints !== 6 + BALANCE.stats.pointsPerLevel * (save.level - 1)) return false;
     if (!Array.isArray(save.items) || !save.items.length || !record(save.equipped)) return false;
     const uids = new Set();
     for (const item of save.items) {
@@ -123,22 +130,6 @@ export function validateSave(save) {
   }
 }
 
-// Clone-only migration. The storage key remains v1 so old browser saves are discoverable.
-export function migrateSave(data) {
-  if (!record(data) || data.version !== 1) return structuredClone(data);
-  const next = structuredClone(data);
-  next.version = 2;
-  next.equipped = { weapon: data.equipped?.weapon ?? null, head: null,
-    body: data.equipped?.armor ?? null, hands: null, feet: null };
-  const upgrade = (item) => ({ ...item, affixes: [], rolledAt: 0 });
-  if (Array.isArray(next.items)) next.items = next.items.map(upgrade);
-  if (next.lastReceipt) for (const key of ['lootKept', 'lootLost']) {
-    if (Array.isArray(next.lastReceipt[key]?.items)) next.lastReceipt[key].items = next.lastReceipt[key].items.map(upgrade);
-  }
-  Object.assign(next, { completedRounds: 0, shopRefresh: 0, paidRefreshes: 0, shopBought: [], rarelessRounds: 0 });
-  return next;
-}
-
 // Only this adapter knows about browser storage. Inject storage/clock in tests or future adapters.
 export class SaveStore {
   constructor(storage, now = () => Date.now()) {
@@ -154,14 +145,6 @@ export class SaveStore {
       data = JSON.parse(raw);
     } catch {
       data = null;
-    }
-    if (data?.version === 1) {
-      const migrated = migrateSave(data);
-      if (!validateSave(migrated)) throw new Error('v1 마이그레이션 검증 실패: 원본 저장을 보존했습니다.');
-      // Backup and write must both succeed before the in-memory upgrade is exposed.
-      this.storage.setItem(`${SAVE_KEY}.migration.v1`, raw);
-      this.storage.setItem(SAVE_KEY, JSON.stringify(migrated));
-      return migrated;
     }
     if (validateSave(data)) return structuredClone(data);
     // Back up before removing. A quota/storage failure leaves the original untouched.

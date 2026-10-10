@@ -31,6 +31,13 @@ export class HUD {
 
   begin(world) {
     this.stage = world.round.stageId;
+    const name = { blade: '돌진 베기', bow: '산개 사격', focus: '화염탄' }[world.entities[0].weapon];
+    const skill = this.nodes.skill;
+    skill.setAttribute('aria-label', name);
+    skill.title = `${name} · K`;
+    let label = skill.querySelector('.skill-label');
+    if (!label) { label = document.createElement('span'); label.className = 'skill-label'; skill.insertBefore(label, skill.lastElementChild); }
+    label.textContent = name;
     $('#hud').hidden = false;
     $('#pause').hidden = true;
     this.nodes.notice.textContent = '';
