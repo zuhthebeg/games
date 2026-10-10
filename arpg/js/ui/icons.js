@@ -1,5 +1,6 @@
 // One stroke-only icon set; labels stay on the containing control for screen readers.
 const paths = {
+  sound: '<path d="M3 9h4l5-5v16l-5-5H3zM16 8q6 4 0 8"/>',
   owner: '<path d="M8 20v-5a4 4 0 0 1 8 0v5M5 20h14"/><circle cx="12" cy="7" r="3"/>',
   potion: '<path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3M9 15h6m-3-3v6"/>',
   mana_potion: '<path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3m-2 9-3 4h4l-2 3"/>',
@@ -27,12 +28,29 @@ const paths = {
   back: '<path d="M20 12H4m6-6-6 6 6 6"/>',
 };
 
+// Approved 14 silhouettes, embedded locally (no reference-folder dependency).
+const silhouettes = {
+  "sword": "<path fill=\"currentColor\" d=\"m22 2 6-1-1 7-13 14-4-4zM6 16l12 12 3-3L9 13zM3 26l6-6 3 3-6 6-4 1z\"/>",
+  "bow": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" d=\"M8 3q27 13 0 26M8 3v26M3 16h26m-5-5 5 5-5 5\"/>",
+  "wand": "<path fill=\"currentColor\" d=\"m5 28 15-18 3 3L8 30zM23 1l2 5 6 1-5 4 1 6-5-3-5 3 1-6-5-4 6-1z\"/>",
+  "staff": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" d=\"M13 30 19 12q-9-2-5-8t11 0q3 5-2 8\"/><path fill=\"currentColor\" d=\"m19 2 5 5-5 4-4-4z\"/>",
+  "head": "<path fill=\"currentColor\" d=\"M5 27V14C5-1 27-1 27 14v13l-8 3V19h-6v11z\"/><path stroke=\"#141916\" stroke-width=\"3\" d=\"M9 15h14M16 3v12\"/>",
+  "body": "<path fill=\"currentColor\" d=\"m3 7 7-5 6 4 6-4 7 5-4 9-4-2v16H11V14l-4 2z\"/><path fill=\"none\" stroke=\"#141916\" stroke-width=\"2\" d=\"M16 8v18M11 19h10\"/>",
+  "hands": "<path fill=\"currentColor\" d=\"M6 29V16L3 9q-1-4 2-4l4 6V4q0-4 3-2l1 8V3q1-4 3-1l1 8 1-5q2-3 3 0l1 10 4-4q4-2 3 2l-7 13v3z\"/>",
+  "feet": "<path fill=\"currentColor\" d=\"M9 2h13v15l6 7v5H4v-7l5-7z\"/><path fill=\"none\" stroke=\"#141916\" stroke-width=\"2\" d=\"M10 7h11M10 12h11M5 25h22\"/>",
+  "stone-low": "<path fill=\"currentColor\" d=\"m16 2 12 10-4 15-13 3L3 17z\"/><path fill=\"none\" stroke=\"#141916\" stroke-width=\"2\" d=\"m16 8-6 9 9 6 5-10zM14 16h6\"/>",
+  "stone-mid": "<path fill=\"currentColor\" d=\"m16 1 12 9-2 17-16 4-8-15z\"/><path fill=\"none\" stroke=\"#141916\" stroke-width=\"2\" d=\"m16 7-7 9 9 9 6-13zM12 15h8m-7 5h6\"/>",
+  "stone-high": "<path fill=\"currentColor\" d=\"m16 1 14 13-6 15H8L2 14z\"/><path fill=\"none\" stroke=\"#141916\" stroke-width=\"2\" d=\"m16 6-9 9 9 11 9-11zM12 12h8m-8 5h8m-6 5h4\"/>",
+  "scrap": "<path fill=\"currentColor\" d=\"m2 15 10-7 7 5-5 9zM15 3l12 2 3 11-8-3zM18 21l10-5 2 11-9 3z\"/>",
+  "leather": "<path fill=\"currentColor\" d=\"m6 2 8 4 11-3 4 8-5 8 2 10-11-3-9 4-4-10 4-9z\"/><path fill=\"none\" stroke=\"#141916\" stroke-width=\"2\" stroke-dasharray=\"2 2\" d=\"m9 8 12 1-2 13-10 1z\"/>",
+  "ore": "<path fill=\"currentColor\" d=\"m3 24 4-15 13-6 9 14-5 12H9z\"/><path fill=\"none\" stroke=\"#141916\" stroke-width=\"2\" d=\"m7 9 11 10 11-2M18 19l-3 9\"/>"
+};
+const aliases = { weapon:'sword', blade:'sword', focus:'wand', armor:'body', hide:'leather', fang:'ore', rune_shard:'ore', frost_shard:'ore', web:'leather', enhance_stone_1:'stone-low', enhance_stone_2:'stone-mid', enhance_stone_3:'stone-high' };
 export function icon(name) {
-  return `<svg class="icon icon-${name}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths[name] || paths.weapon}</svg>`;
+  const shape = silhouettes[aliases[name] || name];
+  return `<svg class="icon icon-${name} ${shape ? 'silhouette' : ''}" viewBox="0 0 ${shape ? '32 32' : '24 24'}" aria-hidden="true" focusable="false">${shape || paths[name] || paths.load}</svg>`;
 }
-
 export function itemIcon(id, definition) {
-  return icon(paths[id] ? id : ['head', 'body', 'hands', 'feet'].includes(definition.kind) ? 'armor'
-    : definition.family === 'blade' ? 'weapon' : definition.family);
+  if (definition.slot === 'weapon') return icon(definition.family === 'focus' ? definition.form || 'wand' : definition.family);
+  return icon(definition.slot || id);
 }
-
