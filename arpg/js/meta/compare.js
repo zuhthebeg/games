@@ -1,4 +1,4 @@
-import { ITEMS, equippedItem, enhanceMultiplier, carriedWeight, capacity } from './items.js';
+import { ITEMS, carriedWeight, capacity } from './items.js';
 import { deriveMods } from './stats.js';
 import { AFFIX_LABELS } from './affixes.js';
 

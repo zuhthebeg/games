@@ -1,5 +1,5 @@
 import { eff } from './stats.js';
-import { SLOTS, SALVAGE, ECONOMY, ENHANCE_GOLD, enhanceCost, rng, weighted, SLOT_BIASES } from './economy.js';
+import { SLOTS, SALVAGE, ECONOMY, enhanceCost, rng, weighted, SLOT_BIASES, RECIPES, enhanceMultiplier } from './economy.js';
 import { rollAffixes, affixTotals } from './affixes.js';
 export { ENHANCE_GOLD, enhanceCost } from './economy.js';
 export { rollAffixes, DEFERRED_AFFIXES } from './affixes.js';
@@ -63,7 +63,7 @@ for (const [id, base] of Object.entries(ITEMS)) {
     if (rarity === base.rarity) continue;
     const ratio = ECONOMY.rarityPower[rarity] / ECONOMY.rarityPower[base.rarity];
     ITEMS[`${id}_${rarity}`] = { ...base, rarity,
-      ...(base.power !== undefined ? { power: base.power * ratio } : { hp: Math.round(base.hp * ratio) }),
+      ...(base.power !== undefined ? { power: base.power * ratio } : { hp: Math.round((base.hp || (rarity === 'common' ? 0 : 20)) * ratio) }),
       requiredLevel: base.huntTier === 2 ? 5 : { common: 1, fine: 2, rare: 4, epic: 6 }[rarity] };
   }
 }
@@ -75,20 +75,7 @@ export const instance = (uid, id, seed = 0, affixes = rollAffixes(ITEMS[id].rari
 
 export const START_WEAPONS = { blade: 'training_sword', bow: 'short_bow', focus: 'apprentice_wand' };
 export const CONSUMABLES = ['potion', 'mana_potion', 'return_scroll'];
-export const RECIPES = {
-  iron_sword: { scrap: 8, fang: 2, gold: 60 },
-  hunter_bow: { scrap: 8, hide: 2, gold: 60 },
-  ember_wand: { scrap: 8, fang: 3, gold: 60 },
-  boar_hide_armor: { scrap: 6, hide: 4, gold: 50 },
-  leather_vest: { scrap: 5, hide: 3, gold: 40 },
-  // [제안] Scrap remains the common sink; craft salvage refunds only 25% of scrap.
-  rune_blade: { scrap: 16, rune_shard: 2, fang: 2, gold: 140 },
-  pack_bow: { scrap: 16, hide: 4, web: 2, gold: 140 },
-  altar_staff: { scrap: 16, rune_shard: 2, frost_shard: 3, gold: 140 },
-  woven_armor: { scrap: 16, hide: 4, web: 4, gold: 140 },
-};
-export const ENHANCE_SCRAP = [4, 5, 7, 8, 10];
-export const enhanceMultiplier = (level) => 1 + 0.04 * level + 0.002 * level ** 2;
+export { RECIPES, enhanceMultiplier } from './economy.js';
 export const cloneSave = (save) => structuredClone(save);
 export const equippedItem = (save, slot) => save.items.find((item) => item.uid === save.equipped[slot]);
 
@@ -126,8 +113,8 @@ export function equip(save, uid) {
 }
 
 export function dismantleRefund(item) {
-  // Provenance is encoded in the UID so the instance contract stays {uid, id, enhance}.
-  if (item.uid.startsWith('craft:')) return Math.floor(RECIPES[item.id].scrap * 0.25);
+  // Craft provenance stays in the UID; enhancement/affixes never increase salvage.
+  if (item.uid.startsWith('craft:')) return Math.floor(RECIPES[item.id].scrap * ECONOMY.craftRefundFraction);
   return SALVAGE[ITEMS[item.id].rarity];
 }
 
@@ -257,10 +244,10 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   const tier = Math.max(1, Math.min(3, ctx.huntTier ?? (NEW_MONSTER_DROPS[monsterType] ? 2 : 1)));
   const boss = monsterType === 'goblin_chief' || ctx.boss === true;
   const elite = ctx.elite ?? false;
-  const threat = Math.max(1, Math.min(3, ctx.threat ?? 1));
+  // ctx.threat is accepted for the P3 integration; no speculative threat rebalance here.
   const chance = boss ? 1 : elite ? ECONOMY.eliteGearChance : ECONOMY.gearChance;
   if (random() < chance) {
-    const count = boss ? 1 + (random() < 0.5 ? 1 : 0) : 1;
+    const count = boss ? 1 + (random() < ECONOMY.bossExtraChance ? 1 : 0) : 1;
     for (let i = 0; i < count; i++) {
       let rarity = weighted(Object.entries(boss ? ECONOMY.bossRarity : ECONOMY.normalRarity), random);
       if (boss && i === 0 && (ctx.rarelessRounds || 0) >= ECONOMY.pityRounds && rarity === 'fine') rarity = 'rare';
@@ -275,12 +262,14 @@ export function rollDrops(monsterType, seed, ctx = {}) {
   }
   const stoneChance = boss ? 1 : elite ? ECONOMY.eliteStoneChance : ECONOMY.stoneChance;
   if (random() < Math.min(1, stoneChance + materialBonus / 100)) {
-    const count = boss ? 1 + (random() < 0.5 ? 1 : 0) : 1;
+    const count = boss ? 1 + (random() < ECONOMY.bossExtraChance ? 1 : 0) : 1;
     for (let i = 0; i < count; i++) {
       const stone = weighted(ECONOMY.stoneWeights[tier].map((weight, i) => [`enhance_stone_${i + 1}`, weight]), random);
       loot.stacks[stone] = (loot.stacks[stone] || 0) + 1;
     }
   }
-  loot.gold = Math.floor(loot.gold * threat * (1 + Math.max(0, ctx.goldBonus || 0) * capScale / 100));
+  // Seeded stochastic rounding retains small bonuses without fractional save currency.
+  const gold = loot.gold * (1 + Math.max(0, ctx.goldBonus || 0) * capScale / 100);
+  loot.gold = Math.floor(gold) + (random() < gold % 1 ? 1 : 0);
   return loot;
 }

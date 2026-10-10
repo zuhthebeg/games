@@ -1,4 +1,4 @@
-import { SLOTS } from '../meta/economy.js';
+import { SLOTS, ECONOMY } from '../meta/economy.js';
 import { shopStock, buyGear, sellItem, refreshShop, refreshPrice, gearPrice } from '../meta/shop.js';
 import { compareItems } from '../meta/compare.js';
 import { STAGES } from '../content/combat.js';
@@ -7,7 +7,7 @@ import { QUESTIONS, resolve, FAMILIES, WEAPON_NAMES } from '../meta/quiz.js';
 import { STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats } from '../meta/stats.js';
 import { xpSpan, MAX_LEVEL } from '../meta/progression.js';
 import {
-  ITEMS, RECIPES, ENHANCE_GOLD, enhanceCost, equippedItem, carriedWeight, capacity,
+  ITEMS, RECIPES, enhanceCost, equippedItem, carriedWeight, capacity,
   buy, equip, craft, enhance, dismantle, dismantleRefund, shopPrice,
 } from '../meta/items.js';
 import { createSave } from '../meta/save.js';
@@ -227,7 +227,7 @@ export class HubUI {
       ${button(`재고 갱신 ${refreshPrice(this.save)} G`, 'refresh-shop', '', this.save.gold < refreshPrice(this.save))}
       <p class="muted">완료 ${this.save.completedRounds}판 · 3판마다 무료 갱신. 장비는 창고로 구매(레벨 잠금은 장착 시 적용).</p>
       <h3>판매</h3>${this.save.items.filter((item) => !Object.values(this.save.equipped).includes(item.uid)).map((item) =>
-        button(`${escape(itemLabel(item))} 판매 ${Math.floor(gearPrice(item) * 0.25)} G`, 'sell-shop', `data-uid="${escape(item.uid)}"`)).join('')}`;
+        button(`${escape(itemLabel(item))} 판매 ${Math.floor(gearPrice(item) * ECONOMY.sellFraction)} G`, 'sell-shop', `data-uid="${escape(item.uid)}"`)).join('')}`;
   }
 
   showShop() {
@@ -282,25 +282,14 @@ export class HubUI {
     if (!item) return '';
     const definition = ITEMS[item.id];
     const equipped = item.uid === equippedItem(this.save, definition.kind)?.uid;
-    const candidate = structuredClone(this.save);
-    candidate.equipped[definition.kind] = item.uid;
-    const before = deriveMods(this.save);
-    const after = deriveMods(candidate);
-    const weapon = definition.kind === 'weapon';
-    const left = weapon ? before.dmgMult[before.family] : before.maxHp;
-    const right = weapon ? after.dmgMult[after.family] : after.maxHp;
-    const diff = right - left;
+    const comparison = compareItems(equippedItem(this.save, definition.slot), item, this.save);
     const uid = `data-uid="${escape(item.uid)}"`;
     const maxed = item.enhance >= 5;
     const cost = maxed ? {} : enhanceCost(item.enhance);
     const canEnhance = !maxed && Object.entries(cost).every(([id, count]) => (id === 'gold' ? this.save.gold : this.save.stacks[id] || 0) >= count);
-    const canEquip = !equipped && this.save.level >= definition.requiredLevel
-      && carriedWeight(candidate) <= capacity(candidate) * 1.2;
+    const canEquip = !equipped && !comparison.locked;
     return `<section class="gear-sheet" aria-label="장비 작업"><header><h3>${itemLabel(item)}</h3>
       ${button('×', 'close-gear', 'aria-label="닫기"')}</header>
-      <div class="gear-comparison"><span>${weapon ? '위력' : 'HP'} ${amount(right)}</span>
-        <b class="${diff > 0 ? 'gain' : diff < 0 ? 'loss' : ''}">${diff > 0 ? '▲' : diff < 0 ? '▼' : '＝'}${amount(Math.abs(diff))}</b>
-        <small>Lv.${definition.requiredLevel} · ${definition.weight}kg</small></div>
       ${this.comparisonHtml(item)}<div class="inline-actions">
         ${button('장착', 'equip', `${uid} ${!equipped ? 'class="primary"' : ''}`, !canEquip)}
         ${button('강화', 'enhance', `${uid} ${equipped ? 'class="primary"' : ''}`, !canEnhance)}

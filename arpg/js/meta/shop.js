@@ -4,7 +4,7 @@ import { affixRange } from './affixes.js';
 
 export function gearPrice(item) {
   const base = ITEMS[item.id];
-  const value = (item.affixes || []).reduce((sum, { k, v }) => sum + v / affixRange(k, base.huntTier)[1] * 0.2, 0);
+  const value = (item.affixes || []).reduce((sum, { k, v }) => sum + v / affixRange(k, base.huntTier)[1] * ECONOMY.optionPriceFactor, 0);
   return Math.ceil(base.basePrice * ECONOMY.rarityPrice[base.rarity] * (1 + value));
 }
 export function shopStock(accountSeed, refreshIndex) {

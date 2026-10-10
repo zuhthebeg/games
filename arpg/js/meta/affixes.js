@@ -1,11 +1,11 @@
 import { AFFIX_RANGES, ECONOMY, rng } from './economy.js';
 
 // grep -Rn crit js/sim js/content: no critical-hit consumer; do not ship inert rolls.
-export const DEFERRED_AFFIXES = ['crit_chance', 'crit_damage'];
+export const DEFERRED_AFFIXES = ['crit_chance', 'crit_damage', 'poise_resist'];
 export const AFFIX_LABELS = {
   atk_pct: '공격력 %', hp_flat: '최대 HP', speed_pct: '이동속도 %', dodge_pct: '회피 재사용 감소 %',
   potion_pct: '물약 효율 %', mana_pct: '마나 재생 %', capacity_flat: '소지 한도',
-  gold_pct: '골드 획득 %', material_pct: '재료 드랍 %', poise_pct: '넉백 저항 %',
+  gold_pct: '골드 획득 %', material_pct: '재료 드랍 %',
 };
 export function rollAffixes(rarity, huntTier, seed) {
   const random = rng(seed);

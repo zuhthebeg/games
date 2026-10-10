@@ -431,7 +431,7 @@ try {
     const {createSave,SaveStore}=await import('./js/meta/save.js');
     const {addXp}=await import('./js/meta/progression.js');
     const base=addXp(createSave({name:'대장장이 시험',answers:[0,0,0,0,0],createdAt:1}),451);
-    const fixture={...base,gold:3000,stacks:{...base.stacks,scrap:100,hide:100,fang:100}};
+    const fixture={...base,gold:3000,stacks:{...base.stacks,scrap:100,hide:100,fang:100,enhance_stone_1:2}};
     new SaveStore(localStorage).save(fixture);
   })()`);
   await command('Page.reload');
@@ -448,12 +448,12 @@ try {
   await click('[data-action="equip"][data-uid="starter:weapon"]');
   await click('[data-action="select-gear"][data-uid="craft:iron_sword:1"]');
   await click('[data-action="dismantle"][data-uid="craft:iron_sword:1"]');
-  assert.equal(await evaluate('__arpg.save.stacks.scrap'), 90);
-  assert.equal(await evaluate('__arpg.save.gold'), 2880);
+  assert.equal(await evaluate('__arpg.save.stacks.scrap'), 94);
+  assert.equal(await evaluate('__arpg.save.gold'), 2895);
   await command('Page.reload');
   await waitFor(page('inn'));
-  assert.equal(await evaluate('__arpg.save.gold'), 2880);
-  assert.equal(await evaluate('__arpg.save.stacks.scrap'), 90);
+  assert.equal(await evaluate('__arpg.save.gold'), 2895);
+  assert.equal(await evaluate('__arpg.save.stacks.scrap'), 94);
   await click('[data-action="shop"]');
   await click('[data-action="shop-select"][data-id="mana_potion"]');
   await click('#shop-buy');
@@ -466,7 +466,25 @@ try {
   await evaluate("document.querySelector('#shop-count').value=2;document.querySelector('#shop-count').dispatchEvent(new Event('change',{bubbles:true}))");
   await click('#shop-buy');
   assert.equal(await evaluate('__arpg.save.stacks.potion'), 5);
-  assert.equal(await evaluate('__arpg.save.gold'), 2842);
+  assert.equal(await evaluate('__arpg.save.gold'), 2857);
+  // P1 gear stock uses actual buy/sell/refresh controls; no sim fixture writes.
+  assert.ok(await evaluate("document.querySelector('[data-action=\"buy-gear\"]')!==null"));
+  const beforeGearGold = await evaluate('__arpg.save.gold');
+  const stockUid = await evaluate("document.querySelector('[data-action=\"buy-gear\"]').dataset.uid");
+  await click(`[data-action="buy-gear"][data-uid="${stockUid}"]`);
+  const boughtUid = await evaluate('__arpg.save.items.at(-1).uid');
+  assert.ok(await evaluate(`document.querySelector('[data-action="buy-gear"][data-uid="${stockUid}"]').disabled`));
+  await click(`[data-action="sell-shop"][data-uid="${boughtUid}"]`);
+  assert.ok(await evaluate('__arpg.save.gold') < beforeGearGold);
+  const refreshGold = await evaluate('__arpg.save.gold');
+  await click('[data-action="refresh-shop"]');
+  assert.equal(await evaluate('__arpg.save.gold'), refreshGold - 20);
+  assert.equal(await evaluate('__arpg.save.shopRefresh'), 1);
+  assert.equal(await evaluate('__arpg.save.paidRefreshes'), 1);
+  await command('Page.reload'); await waitFor(page('inn'));
+  assert.equal(await evaluate('__arpg.save.shopRefresh'), 1);
+  assert.equal(await evaluate('__arpg.save.items.some(item=>item.uid=== ' + JSON.stringify(boughtUid) + ')'), false);
+  assert.equal(await evaluate('__arpg.save.version'), 2);
   await click('[data-action="settings"]');
   await click('[data-action="reset-first"]');
   assert.ok(await evaluate("localStorage.getItem('arpg.save.v1')!==null"));
@@ -487,7 +505,7 @@ try {
   console.log(JSON.stringify({
     ok: true, canvas: true, sprites: artEvidence,
     onboarding: 'name → 5 answers → S1 clear@900 → allocate 3 → inn',
-    shop: 'potion +1 / mana +1 / scroll +1 / potion ×2; scroll cap enforced',
+    shop: 'supplies + scroll cap; seeded gear buy → sold-out → sell at loss → paid refresh → reload',
     S2: 'sortie confirmed → reload → inn',
     newStages: 'pre-S5 v1 → S5 board unlock → wolf ×2 / S6 guardian+spirit / S7 spider procedural → return',
     persisted, fullSaveRestored: true, lastReceiptRestored: true,

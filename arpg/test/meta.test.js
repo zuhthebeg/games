@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { STAT_KEYS, eff, cap, deriveMods, allocateStats } from '../js/meta/stats.js';
 import { xpSpan, addXp, deathLoss, stageXp } from '../js/meta/progression.js';
 import {
-  ITEMS, RECIPES, ENHANCE_SCRAP, ENHANCE_GOLD, enhanceMultiplier, rollDrops, dropSeed,
+  ITEMS, RECIPES, ENHANCE_GOLD, enhanceMultiplier, rollDrops, dropSeed,
   equip, craft, dismantle, dismantleRefund, enhance, buy, shopPrice, carriedWeight, capacity,
 } from '../js/meta/items.js';
 import { resolve } from '../js/meta/quiz.js';
@@ -135,8 +135,8 @@ test('drops: deterministic, table ranges and probabilities over seeded populatio
     assert.ok(chief.gold >= 25 && chief.gold <= 40);
     assert.equal(chief.stacks.scrap, 3);
     assert.equal(chief.stacks.fang, 2);
-    cleavers += grunt.items.length;
-    mauls += chief.items.length;
+    cleavers += grunt.items.filter((item) => !item.uid.includes(':rolled:')).length;
+    mauls += chief.items.filter((item) => !item.uid.includes(':rolled:')).length;
     const boar = rollDrops('iron_boar', seed);
     assert.equal(boar.stacks.hide, 2);
     assert.ok(boar.stacks.scrap >= 1 && boar.stacks.scrap <= 2);
@@ -168,7 +168,10 @@ test('economy: every craft/dismantle cycle loses resources; enhance never refund
     for (let level = 0; level < 5; level++) upgraded = enhance(upgraded, item.uid);
     assert.equal(upgraded.items.at(-1).enhance, 5);
     assert.equal(upgraded.gold, crafted.gold - ENHANCE_GOLD.reduce((sum, value) => sum + value, 0));
-    assert.equal(upgraded.stacks.scrap, crafted.stacks.scrap - ENHANCE_SCRAP.reduce((sum, value) => sum + value, 0));
+    assert.equal(upgraded.stacks.scrap, crafted.stacks.scrap);
+    assert.equal(upgraded.stacks.enhance_stone_1, 98);
+    assert.equal(upgraded.stacks.enhance_stone_2, 97);
+    assert.equal(upgraded.stacks.enhance_stone_3, 98);
     near(enhanceMultiplier(5), 1.25);
     const refund = dismantle(upgraded, item.uid);
     assert.equal(refund.stacks.scrap - upgraded.stacks.scrap, dismantleRefund(item));
@@ -181,13 +184,13 @@ test('economy: every craft/dismantle cycle loses resources; enhance never refund
   assert.throws(() => craft(poor, 'iron_sword'));
   assert.throws(() => enhance(poor, poor.equipped.weapon));
   assert.throws(() => dismantle(poor, poor.equipped.weapon));
-  assert.throws(() => dismantle(poor, poor.equipped.armor));
+  assert.throws(() => dismantle(poor, poor.equipped.body));
 });
 
 test('equipment, shop, storage weight, carry limit and no creation on failure', () => {
   const base = fresh();
   const weight = carriedWeight(base);
-  base.items.push({ uid: 'loot', id: 'chief_maul', enhance: 0 });
+  base.items.push({ uid: 'loot', id: 'chief_maul', enhance: 0, affixes: [], rolledAt: 0 });
   base.stacks.scrap = 5000;
   assert.equal(carriedWeight(base), weight);
   assert.throws(() => equip(base, 'loot'));
@@ -211,7 +214,7 @@ test('equipment, shop, storage weight, carry limit and no creation on failure', 
 
 const loot = () => ({
   gold: 10, stacks: { scrap: 2, hide: 1, potion: 1 },
-  items: [{ uid: 'drop:123', id: 'goblin_cleaver', enhance: 0 }],
+  items: [{ uid: 'drop:123', id: 'goblin_cleaver', enhance: 0, affixes: [], rolledAt: 0 }],
 });
 
 test('settlement clear promotes loot and XP, first/replay rewards and pity only once', () => {
@@ -242,7 +245,7 @@ test('settlement clear promotes loot and XP, first/replay rewards and pity only 
   const second = settleRound(pity.save, { stageId: 'S4', terminal: 'clear' });
   assert.equal(second.save.items.filter((item) => item.id === 'chief_maul').length, 1);
   const natural = loot();
-  natural.items = [{ uid: 'drop:chief', id: 'chief_maul', enhance: 0 }];
+  natural.items = [{ uid: 'drop:chief', id: 'chief_maul', enhance: 0, affixes: [], rolledAt: 0 }];
   const rolled = settleRound(first.save, { stageId: 'S4', terminal: 'clear', tempLoot: natural });
   assert.equal(rolled.save.items.filter((item) => item.id === 'chief_maul').length, 1);
   assert.equal(rolled.receipt.pityGranted, false);

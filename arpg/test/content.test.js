@@ -7,7 +7,7 @@ import { ABILITIES, MONSTERS, STAGES } from '../js/content/combat.js';
 import { DANGER_COLORS, MONSTER_PALETTES, MONSTER_VARIANTS } from '../js/content/monsters.js';
 import { NEW_MONSTER_DROPS } from '../js/content/loot.js';
 import { ITEMS, RECIPES, CONSUMABLES, craft, equip, enhance, dismantle, rollDrops } from '../js/meta/items.js';
-import { createSave, validateSave, SaveStore, SAVE_KEY } from '../js/meta/save.js';
+import { createSave, validateSave, SaveStore, SAVE_KEY, migrateSave } from '../js/meta/save.js';
 import { STAGE_XP, stageXp, deathLoss, addXp } from '../js/meta/progression.js';
 import { settleRound } from '../js/meta/run.js';
 import { HubUI } from '../js/ui/hub.js';
@@ -72,8 +72,8 @@ test('new monsters keep explicit orthogonal identity and procedural-only model k
   assert.equal(MONSTER_VARIANTS.spirit.lifeState, 'spirit');
 });
 
-test('S5~S7 exact first-clear XP, repeat rewards and half death loss preserve valid v1 receipts', () => {
-  let save = oldSave();
+test('S5~S7 exact first-clear XP, repeat rewards and half death loss preserve valid v2 receipts', () => {
+  let save = migrateSave(oldSave());
   for (const id of ['S5', 'S6', 'S7']) {
     assert.equal(stageXp(save, id), STAGE_XP[id]);
     const settled = settleRound(save, { stageId: id, terminal: 'clear' });
@@ -93,15 +93,18 @@ test('S5~S7 exact first-clear XP, repeat rewards and half death loss preserve va
   assert.deepEqual([STAGE_XP.S5, STAGE_XP.S6, STAGE_XP.S7], [340, 480, 520]);
 });
 
-test('static pre-S5 v1 save loads unchanged, unlocks S5 and accepts later clear without migration', () => {
+test('static pre-S5 v1 save migrates losslessly, unlocks S5 and accepts later clear', () => {
   const fixture = oldSave();
   assert.equal(fixture.cleared.S5, undefined);
-  assert.ok(validateSave(fixture));
+  assert.equal(validateSave(fixture), false);
+  const upgraded = migrateSave(fixture);
+  assert.ok(validateSave(upgraded));
   const data = new Map([[SAVE_KEY, JSON.stringify(fixture)]]);
   const store = new SaveStore({ getItem: (id) => data.get(id) ?? null,
     setItem: (id, value) => data.set(id, value), removeItem: (id) => data.delete(id) });
-  assert.deepEqual(store.load(), fixture);
-  const next = settleRound(fixture, { stageId: 'S5', terminal: 'clear' }).save;
+  assert.deepEqual(store.load(), upgraded);
+  assert.equal(data.get(`${SAVE_KEY}.migration.v1`), JSON.stringify(fixture));
+  const next = settleRound(upgraded, { stageId: 'S5', terminal: 'clear' }).save;
   store.save(next);
   assert.deepEqual(store.load(), next);
   for (const value of ['yes', 1, null]) {
@@ -147,20 +150,20 @@ test('new seeded tables always award region materials, stay bounded and never ad
   }
 });
 
-test('four next-tier recipes equip/enhance/salvage with a loss and save format unchanged', () => {
+test('four next-tier recipes equip/enhance/salvage with a loss and v2 instances', () => {
   const base = addXp(fresh(), 1200);
   base.gold = 10000;
-  base.stacks = { ...base.stacks, scrap: 1000, hide: 100, fang: 100, rune_shard: 100, frost_shard: 100, web: 100 };
+  base.stacks = { ...base.stacks, scrap: 1000, hide: 100, fang: 100, rune_shard: 100, frost_shard: 100, web: 100, enhance_stone_1: 100 };
   for (const id of ['rune_blade', 'pack_bow', 'altar_staff', 'woven_armor']) {
     assert.equal(ITEMS[id].huntTier, 2);
     assert.equal(ITEMS[id].requiredLevel, 5);
     let save = craft(base, id);
     const item = save.items.find((entry) => entry.id === id);
-    assert.deepEqual(Object.keys(item).sort(), ['enhance', 'id', 'uid']);
+    assert.deepEqual(Object.keys(item).sort(), ['affixes', 'enhance', 'id', 'rolledAt', 'uid']);
     assert.ok(validateSave(equip(save, item.uid)));
     save = enhance(save, item.uid);
     const salvage = dismantle(save, item.uid);
-    assert.equal(salvage.stacks.scrap, base.stacks.scrap - RECIPES[id].scrap - 4 + Math.floor(RECIPES[id].scrap / 4));
+    assert.equal(salvage.stacks.scrap, base.stacks.scrap - RECIPES[id].scrap + Math.floor(RECIPES[id].scrap / 4));
     assert.ok(salvage.gold < base.gold);
     assert.ok(validateSave(salvage));
     assert.throws(() => equip({ ...save, level: 4 }, item.uid), /Lv5/);

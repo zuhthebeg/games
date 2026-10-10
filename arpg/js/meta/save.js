@@ -60,7 +60,7 @@ function validReceipt(receipt) {
       && ['material', 'consumable'].includes(ITEMS[id].kind) && integer(count))) return false;
     if (!loot.items.every((item) => record(item) && typeof item.uid === 'string'
       && Object.hasOwn(ITEMS, item.id) && SLOTS.includes(ITEMS[item.id].kind)
-      && integer(item.enhance, 0, 5))) return false;
+      && integer(item.enhance, 0, 5) && validAffixes(item, ITEMS[item.id]) && integer(item.rolledAt, 0, 0xffffffff))) return false;
   }
   return true;
 }
@@ -86,7 +86,8 @@ export function validateSave(save) {
       if (!integer(item.enhance, 0, 5) || (item.uid.startsWith('craft:') && !RECIPES[item.id])) return false;
       uids.add(item.uid);
     }
-    if (!SLOTS.every((slot) => Object.hasOwn(save.equipped, slot))) return false;
+    // A weapon is still mandatory to launch main.js; newly added armor slots may be empty.
+    if (save.equipped.weapon === null || !SLOTS.every((slot) => Object.hasOwn(save.equipped, slot))) return false;
     for (const slot of SLOTS) {
       if (save.equipped[slot] === null) continue;
       const item = save.items.find((candidate) => candidate.uid === save.equipped[slot]);
@@ -105,7 +106,7 @@ export function validateSave(save) {
     if (!record(save.cleared) || !['S1', 'S2', 'S3', 'S4'].every((id) => typeof save.cleared[id] === 'boolean')) {
       return false;
     }
-    // v1 saves made before S5~S7 have no new keys. Missing means not yet cleared; no migration needed.
+    // v1 saves made before S5~S7 have no new keys. Missing means not yet cleared; preserve those flags during v2 migration.
     if (!Object.keys(STAGE_XP).every((id) => save.cleared[id] === undefined
       || typeof save.cleared[id] === 'boolean')) return false;
     if (!record(save.flags) || typeof save.flags.chiefPity !== 'boolean'

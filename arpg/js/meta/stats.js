@@ -45,7 +45,7 @@ export function deriveMods(save) {
     dodgeCdMult: Math.max(0.8 / 1.15, 1 - 0.015 * eff(stats.agi)) * (1 - Math.min(50, affixes.dodge_pct) / 100),
     iframeBonusMs: Math.min(60, 3 * eff(stats.agi)),
     potionHealMult: (1 + Math.min(0.25, 0.01 * eff(stats.wis))) * (1 + affixes.potion_pct / 100),
-    poiseMult: (1 + 0.02 * eff(stats.str)) * (1 + affixes.poise_pct / 100),
+    poiseMult: 1 + 0.02 * eff(stats.str),
     dmgMult: { blade: 1, bow: 1, focus: 1, [family]: damage },
     cdMult: 1,
     capacity: 100 + stats.str - 5 + affixes.capacity_flat,

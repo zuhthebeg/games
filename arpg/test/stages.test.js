@@ -53,7 +53,7 @@ for (const stageId of ['S5', 'S6', 'S7']) {
   });
 }
 
-test('real solo S1~S7 loop tracks all drops, XP, death policy metadata and persists valid v1 saves', () => {
+test('real solo S1~S7 loop tracks all drops, XP, death policy metadata and persists valid v2 saves', () => {
   let save = createSave({ name: '코스 시험', answers: [0, 0, 0, 0, 0], createdAt: 1 });
   // S1 is timed and already integration-tested; use its real settlement to start the active encounters.
   save = settleRound(save, { stageId: 'S1', terminal: 'clear' }).save;
