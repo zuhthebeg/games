@@ -18,6 +18,7 @@ let lastTime = performance.now();
 let tracker = null;
 let roundSave = null;
 let developmentRound = false;
+let debug = null;
 
 // Live read-only debug view. Even nested objects cannot mutate authoritative simulation/meta state.
 const proxies = new WeakMap();
@@ -127,6 +128,18 @@ try {
   });
   document.querySelector('#boot').hidden = true;
   hub.ready();
+  const debugQuery = new URLSearchParams(location.search).get('debug');
+  let debugEnabled = debugQuery === '1';
+  try {
+    if (debugQuery === '0' || debugQuery === '1') localStorage.setItem('arpg.debug', debugQuery);
+    debugEnabled = debugQuery === '1' || (debugQuery !== '0' && localStorage.getItem('arpg.debug') === '1');
+  } catch { /* Storage denied: explicit URL still works. */ }
+  if (debugEnabled) {
+    const { mountDebug } = await import('./debug/index.js');
+    debug = mountDebug({ hub, store, renderer, input,
+      get world() { return world; }, get save() { return hub.save; },
+      get running() { return running; }, get tracker() { return tracker; } });
+  }
   const inputs = { local: null };
   document.addEventListener('visibilitychange', () => {
     hidden = document.hidden;
@@ -160,9 +173,10 @@ try {
     const elapsed = Math.min(250, Math.max(0, now - lastTime));
     lastTime = now;
     if (!hidden && world && running) {
-      accumulator += elapsed;
+      accumulator += elapsed * (debug?.speed || 1);
       let count = 0;
       while (accumulator >= TICK_MS && count < 5) {
+        debug?.beforeTick();
         renderer.snapshot(world);
         inputs.local = input.consume();
         const events = step(world, inputs);
@@ -189,6 +203,7 @@ try {
       renderer.render(world, running ? accumulator / TICK_MS : 1, elapsed / 1000);
       if (running) hud.update(world, elapsed / 1000);
     }
+    debug?.frame(now);
     if (!hidden) app.render();
     requestAnimationFrame(frame);
   }

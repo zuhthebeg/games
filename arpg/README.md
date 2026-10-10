@@ -119,3 +119,81 @@ fails when the stamps are stale.
 - Save stays v2/key `arpg.save.v1`. Optional `threat` is selected run tier; optional `stageThreat` stores **highest cleared** tier per stage (0=uncleared, 1~3=completed). Missing historical entries count as tier1 **only if that stage is already cleared**; otherwise selection starts at tier1. Next tier requires current-tier clear, capped at 3. Death/return never unlock it. Persisted selection goes through `buildRoundMods → addPlayer → startStage`; the frozen `world.round.threat` and kill event `threat/stageId/elite` reach `trackRound → rollDrops`. No `main.js` change is needed. S1 has no selectable higher threat; unimplemented PK/echo content receives no P3 encounters/rewards.
 - `MONSTERS[type].elite` remains the legacy archetype rank used by content validation. Random stronger spawns are explicitly **`entity.eliteVariant`** (HP×2.2, damage×1.3); their kill event uses `elite:true` for the drop contract. Purple tint/visual scale×1.15 distinguish them in both existing atlas and procedural paths, without changing collision radius or adding an aura/render system. S7 keeps sequential appearances to protect the first poison pattern.
 - Guaranteed-clear regression fixtures now use legal Lv12 epic+5 equipment, while idle/death, actual kills/XP/settlement, S1 timer, economy property tests and combat phase/shape assertions are retained. Fine+0 first-challenge clear rates are measured separately, not asserted to be 100%.
+
+## Developer debug mode (local testing only)
+
+- Open `/arpg/?debug=1`. The flag persists as `localStorage['arpg.debug']='1'`.
+  `/arpg/?debug=0` disables it persistently. With debug off, **no debug module is
+  imported**, no debug DOM/CSS or combat mutation is installed. Existing readonly
+  `window.__arpg` remains unchanged; no writable global is exposed.
+- Phone: tap the 48×44px **DBG** button at the bottom right (above combat controls).
+  The scrollable panel has ≥44px controls. PC: DBG or **backtick (`)** toggles it;
+  typing in panel fields does not control the game. The rest of the canvas remains
+  playable while the panel is open. Close it before normal HUD interaction.
+- Inn: gold +1,000/+10,000; lower/middle/upper stones +10 each; every material +20;
+  HP/MP potions +5; slot × rarity × hunt tier gear, or a 20-item set (all five slots
+  × all four rarities). Gear uses P1 `instance`/`rollAffixes` and goes to storage,
+  never auto-equips. Current content has no T3 gear templates: T3 falls back to T2
+  **including affix ranges**, not an invented T3 item ID.
+- Level setting 1–30 grants the valid level's remaining stat points. “포인트 회수”
+  resets stats to 5 and returns all points available at that level. Arbitrary extra
+  points would violate `validateSave` and are intentionally not issued. Lowering
+  level removes level-locked equipment (and supplies a valid starter weapon).
+- Unlock stages; reset clear/progression flags; free shop reroll; reset paid refresh
+  and completed-round counters; prepare the *next boss's* pity roll. P1 tests the
+  incoming counter `>= ECONOMY.pityRounds`, so preparation uses that threshold,
+  not threshold minus one. All inn edits use `SaveStore.save` then `hub.showInn`;
+  validation failures (including carry capacity) leave the previous save intact.
+- Save reset asks once. JSON copy writes the clipboard when available and always
+  fills the textarea (manual-copy fallback). Paste/import validates with SaveStore.
+  Save mutation/import/reset is blocked during combat to prevent settlement
+  overwriting edits. Only the current save key is reset; debug flag/backups remain.
+- Combat: invulnerability restores HP before each tick, blocks ordinary hits and
+  removes poison; one-hit multiplies the original player's damage by 100 (no
+  compounding, reversible, carried into new runs); infinite MP restores each tick.
+  Visible-monster wipe uses real simulation projectile collision/kill events and
+  the usual trackRound drop reducer, never fabricated loot. It ignores immortal
+  scarecrows and offscreen monsters; repeat after later spawns appear. Instant clear
+  uses the normal next-tick terminal/settlement path, but bypasses stage objectives
+  and grants normal clear rewards. Existing `?dev=1` weapon-override runs still do
+  **not** persist rewards; test economy with a normal board sortie.
+- Speed 0.5/1/2/4 scales accumulator ticks; the existing five-tick-per-frame safety
+  cap remains (very slow rendering can prevent the full requested acceleration).
+  Info overlay: frame FPS, tick, living-monster count, HP/MP, accumulated picked-up
+  gold/gear by rarity/stones (capacity-rejected loot is not counted as received).
+- Drop preview: monster, normal/elite/boss, 100/1000 seeds (0..N−1), hunt tier and
+  threat. It calls pure `rollDrops` with `elite`, `boss`, `threat`, `huntTier` context,
+  shows totals and average gold, and does not alter save/world. P3 owns rebalance.
+- This is a cheat/testing surface, not anti-cheat or an authoritative economy.
+  Debug runs break normal determinism and write real local progression.
+
+### P3 extension registry
+
+Register after debug has been enabled (do **not** statically import the debug
+module into normal gameplay). Late registration updates the open panel; return
+value unregisters the action. `run(ctx)` gets live world/save/tracker/running
+getters, hub/store/renderer/input and `enqueue`/`persistSave` helpers. Queue combat state
+writes for the next tick. Save helpers validate and reject combat-time changes.
+
+```js
+if (new URLSearchParams(location.search).get('debug') === '1') {
+  const { registerDebugAction } = await import('./debug/index.js');
+  registerDebugAction({ group: 'P3', label: '위협도 확인', run(ctx) {
+    // Read the current P3 state, not a stale world captured at registration time.
+    console.info(ctx.world?.round);
+  } });
+}
+```
+
+Verification (isolated debug ports):
+
+```sh
+node arpg/tools/stamp-assets.mjs
+node --test arpg/test/*.test.js
+ARPG_HTTP_PORT=8791 ARPG_CDP_PORT=9361 node arpg/test/browser-smoke.mjs
+```
+
+Smoke retains all prior cases, checks a disabled session's absence of DBG/debug
+requests, and adds phone layout/touch-sized controls, gold/set grants, a normal
+S2 sortie, invulnerability/visible wipe with real drops, clear settlement, live
+registry, persisted activation/explicit disable, and desktop backtick toggling.
