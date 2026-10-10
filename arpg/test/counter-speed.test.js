@@ -78,7 +78,7 @@ test('ordinary late iframe dodge, empty dodge, and periodic poison never counter
   assert.ok(late.some(e => e.type === 'miss'));
   assert.equal(f.p.dodge.perfectPaid, false);
   assert.equal(run(f.w, 40).some(e => e.type === 'counter'), false);
-  const empty = fixture(); perfect({ ...empty, g: { ...empty.g, team: empty.p.team } }, 0);
+  const empty = fixture(); perfect(empty, 0);
   assert.equal(run(empty.w, 40).some(e => e.type === 'counter'), false);
   const poison = fixture();
   poison.p.poison = { left: 10, next: 1, interval: 30, hit: { periodic: true,
@@ -254,4 +254,77 @@ test('same seed/input timeline produces identical counter, projectiles and timin
     return { world: f.w, events };
   }
   assert.deepEqual(replay(), replay());
+});
+
+test('AGI iframe extension finishes before counter; overlapping later contacts still pay once', () => {
+  const f = fixture('blade', { iframeBonusMs: 42 });
+  const evs = perfect(f);
+  for (let i = 0; i < 30; i++) {
+    if (i < 4) shot(f.w, f.g, f.p.x + 25, f.p.y);
+    const tick = f.w.tick, ev = step(f.w);
+    if (ev.some(e => e.type === 'counter')) {
+      assert.equal(tick, ticks(PLAYER_BASE.dodge.iframeMs + 42));
+      assert.equal(f.p.dodge.iframeLeft, 0);
+    }
+    evs.push(...ev);
+  }
+  assert.equal(evs.filter(e => e.type === 'perfectDodge').length, 1);
+  assert.equal(evs.filter(e => e.type === 'counter').length, 1);
+});
+
+test('unknown projectile owner is never inferred; an expired pending cannot fire', () => {
+  const unknown = fixture();
+  shot(unknown.w, unknown.g, 425, 400, { ownerId: 999999 });
+  const ev = step(unknown.w, { a: input({ dodgeEdge: true, mx: 1 }) });
+  assert.ok(ev.some(e => e.type === 'miss')); assert.equal(unknown.p.pendingCounter, null);
+  const f = fixture(); perfect(f); run(f.w, 5);
+  f.p.bufferDodge = 30; // existing dodge buffer blocks counter without manufacturing a new hit
+  run(f.w, 25);
+  assert.equal(f.p.pendingCounter, null);
+  assert.equal(run(f.w, 20).some(e => e.type === 'counter'), false);
+});
+
+test('normal damage/poise per hit unchanged by attack rate; counter poise boost only on its own act', () => {
+  for (const weapon of ['blade', 'bow', 'focus']) {
+    function hit(f, isCounter) {
+      const evs = isCounter ? perfect(f) : [];
+      if (!isCounter) f.p.x = 550;
+      f.g.staggerLeft = 0; f.g.poise = f.g.maxPoise = 1000; f.g.thinkLeft = 9999;
+      const def = ABILITIES[WEAPONS[weapon].basic];
+      for (let i = 0; i < 35; i++) {
+        f.g.x = 610; f.g.y = 400;
+        const before = f.g.poise;
+        const ev = step(f.w, { a: input({ attack: !isCounter && i === 0, aimX: 1 }) });
+        evs.push(...ev);
+        const landed = ev.find(e => e.type === 'hit' && e.src === f.p.id);
+        if (landed) {
+          assert.equal(landed.dmg, Math.round(def.damage * (isCounter ? 1.35 : 1)));
+          // Shapes hit before monster idle regen; projectiles sweep after monster stepping.
+          const regen = def.delivery === 'shape' ? 5 : 0;
+          assert.equal(f.g.poise, before - def.poise * (isCounter ? 1.5 : 1) + regen);
+          return;
+        }
+      }
+      assert.fail(`expected real ${weapon} hit`);
+    }
+    hit(fixture(weapon, { attackSpeedBonus: 0 }), false);
+    hit(fixture(weapon, { attackSpeedBonus: .2 }), false);
+    hit(fixture(weapon, { attackSpeedBonus: .2 }), true);
+  }
+});
+
+test('monster complete phase timeline and cooldown are identical with different player attack rate', () => {
+  const timelines = [];
+  for (const bonus of [0, .2]) {
+    const f = fixture('blade', { attackSpeedBonus: bonus, maxHp: 10000 });
+    f.g.x = 460; f.g.staggerLeft = 0; f.g.thinkLeft = 0;
+    step(f.w); const phases = [];
+    while (f.g.act) {
+      phases.push([f.g.act.phase, f.g.act.left, getTelegraphs(f.w)]);
+      step(f.w);
+    }
+    assert.equal(f.g.cds.goblin_slash, ticks(ABILITIES.goblin_slash.cooldownMs));
+    timelines.push(phases);
+  }
+  assert.deepEqual(timelines[0], timelines[1]);
 });
