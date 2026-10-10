@@ -1,4 +1,6 @@
-// One stroke-only icon set; labels stay on the containing control for screen readers.
+import { itemArtKey, itemArtPath } from './item-art.js';
+
+// Local art with SVG fallback; labels stay on the containing controls.
 const paths = {
   sound: '<path d="M3 9h4l5-5v16l-5-5H3zM16 8q6 4 0 8"/>',
   owner: '<path d="M8 20v-5a4 4 0 0 1 8 0v5M5 20h14"/><circle cx="12" cy="7" r="3"/>',
@@ -46,11 +48,23 @@ const silhouettes = {
   "ore": "<path fill=\"currentColor\" d=\"m3 24 4-15 13-6 9 14-5 12H9z\"/><path fill=\"none\" stroke=\"#141916\" stroke-width=\"2\" d=\"m7 9 11 10 11-2M18 19l-3 9\"/>"
 };
 const aliases = { weapon:'sword', blade:'sword', focus:'wand', armor:'body', hide:'leather', fang:'ore', rune_shard:'ore', frost_shard:'ore', web:'leather', enhance_stone_1:'stone-low', enhance_stone_2:'stone-mid', enhance_stone_3:'stone-high' };
-export function icon(name) {
+function svgIcon(name) {
   const shape = silhouettes[aliases[name] || name];
   return `<svg class="icon icon-${name} ${shape ? 'silhouette' : ''}" viewBox="0 0 ${shape ? '32 32' : '24 24'}" aria-hidden="true" focusable="false">${shape || paths[name] || paths.load}</svg>`;
 }
-export function itemIcon(id, definition) {
-  if (definition.slot === 'weapon') return icon(definition.family === 'focus' ? definition.form || 'wand' : definition.family);
-  return icon(definition.slot || id);
+function pictureIcon(key, fallback) {
+  const src = itemArtPath(key);
+  if (!src) return fallback;
+  return `<span class="icon item-art" aria-hidden="true"><picture><img class="item-art-image" src="${src}" width="96" height="96" alt="" loading="lazy" decoding="async"></picture>${fallback}</span>`;
+}
+export function icon(name) {
+  // Forge stone rows call icon(), not itemIcon(). Empty sockets remain SVG.
+  return /^enhance_stone_[123]$/.test(name)
+    ? pictureIcon(itemArtKey(name), svgIcon(name)) : svgIcon(name);
+}
+export function itemIcon(id, definition = {}) {
+  const glyph = definition.slot === 'weapon'
+    ? (definition.family === 'focus' ? definition.form || 'wand' : definition.family)
+    : definition.slot || id;
+  return pictureIcon(itemArtKey(id, definition), svgIcon(glyph));
 }

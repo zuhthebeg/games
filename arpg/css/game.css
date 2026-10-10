@@ -548,3 +548,15 @@ select, input:not([type="checkbox"]) {
 @media(max-height:740px){.p2-room{height:300px;min-height:300px}.p2-sheet-body{padding-block:12px}.p2-sheet>header{padding-block:8px}.p2-lines>div{padding-block:6px}.p2-sheet>footer{padding-block:10px}.arena{min-height:410px}.screen[data-view="combat"]{overflow:auto}.battle-footer,.combat-review{flex-shrink:0}}
 @media(min-width:600px){.p2-sheet{width:390px}}
 @media(prefers-reduced-motion:reduce){.p2-loot-card.sheen{background:#25302c}}
+
+/* Item pictures occupy existing icon boxes; labels/badges/targets are unchanged. */
+.item-art{position:relative;line-height:0;overflow:hidden}
+.item-art picture,.item-art-image{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.item-art:not(.art-ready) picture{visibility:hidden}
+.item-art.art-ready>svg{visibility:hidden}
+.item-art>svg{position:absolute;inset:0;width:100%!important;height:100%!important;margin:0!important}
+.p2-emblem .item-art{width:48px;height:48px;flex-basis:48px;margin-bottom:12px}
+.p2-socket .p2-emblem .item-art{width:38px;height:38px;flex-basis:38px}
+.item-emblem .item-art{width:32px;height:32px}
+.recipe .item-emblem .item-art{width:24px;height:24px}
+.p2-stones .item-art{width:32px;height:32px;flex:0 0 32px}
