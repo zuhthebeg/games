@@ -106,6 +106,25 @@ for (const state of ['dead', 'far', 'removed', 'playerDeath', 'terminal', 'chann
   });
 }
 
+for (const weapon of ['blade', 'bow', 'focus']) {
+  test(`${weapon}: invalid original source consumes pending and permits held basic without counter`, () => {
+    for (const state of ['dead', 'far', 'removed']) {
+      const f = fixture(weapon); perfect(f);
+      if (state === 'dead') f.g.dead = true;
+      if (state === 'far') f.g.x = 1300;
+      if (state === 'removed') f.w.entities = f.w.entities.filter(e => e !== f.g);
+      run(f.w, ticks(PLAYER_BASE.dodge.iframeMs) - 1);
+      const events = step(f.w, { a: input({ attack: true, aimX: -1 }) });
+      assert.equal(events.some(e => e.type === 'counter'), false);
+      assert.equal(f.p.pendingCounter, null);
+      assert.equal(f.p.act.id, WEAPONS[weapon].basic);
+      assert.equal(f.p.act.counter, undefined);
+      assert.equal(f.p.act.facing, Math.PI);
+      assert.equal(events.filter(e => e.type === 'act' && e.id === f.p.id).length, 1);
+    }
+  });
+}
+
 test('projectile source wins over nearer decoy; allied body still blocks counter shot', () => {
   const f = fixture('bow'); perfect(f);
   const ally = addPlayer(f.w, { pid: 'b', x: 585, y: 400 });
@@ -117,27 +136,70 @@ test('projectile source wins over nearer decoy; allied body still blocks counter
   assert.equal(ally.hp, ally.maxHp);
 });
 
-test('manual attack/aim and skill are not overridden; pending expires within grace', () => {
-  for (const skill of [false, true]) {
-    const f = fixture(); perfect(f);
-    run(f.w, 5);
-    const events = run(f.w, 35, { a: input({ attack: !skill, skillEdge: skill, aimX: -1 }) });
-    assert.equal(events.some(e => e.type === 'counter'), false);
-    assert.ok(events.some(e => e.type === 'act' && e.ability === (skill ? 'lunge' : 'slash')));
-    assert.equal(f.p.pendingCounter, null);
+for (const weapon of ['blade', 'bow', 'focus']) {
+  for (const iframeBonusMs of [0, 42]) {
+    test(`${weapon}: held basic throughout perfect dodge yields one counter (iframe bonus ${iframeBonusMs})`, () => {
+      const f = fixture(weapon, { iframeBonusMs, mpRegen: 0 });
+      shot(f.w, f.g, 425, 400);
+      const held = { a: input({ attack: true, aimX: -1 }) };
+      const events = step(f.w, { a: input({ dodgeEdge: true, mx: 1, attack: true, aimX: -1 }) });
+      let counterTick;
+      while (counterTick === undefined && f.w.tick < 40) {
+        const tick = f.w.tick, ev = step(f.w, held);
+        events.push(...ev);
+        if (ev.some(e => e.type === 'counter')) {
+          counterTick = tick;
+          assert.equal(f.p.act.id, WEAPONS[weapon].basic);
+          assert.equal(f.p.act.counter, true);
+          assert.equal(f.p.act.facing, 0, 'original source wins over held aim');
+          assert.equal(f.p.dodge.dashLeft, 0); assert.equal(f.p.dodge.iframeLeft, 0);
+        }
+      }
+      assert.equal(counterTick, ticks(PLAYER_BASE.dodge.iframeMs + iframeBonusMs));
+      // Keep holding for the entire counter: no extra basic may start in parallel.
+      while (f.p.act) events.push(...step(f.w, held));
+      assert.equal(events.filter(e => e.type === 'act' && e.id === f.p.id).length, 1);
+      events.push(...run(f.w, 20)); // release, allowing the real projectile to finish
+      assert.equal(events.filter(e => e.type === 'counter').length, 1);
+      const hits = events.filter(e => e.type === 'hit' && e.src === f.p.id);
+      assert.equal(hits.length, 1); assert.equal(hits[0].dst, f.g.id);
+      assert.equal(f.p.pendingCounter, null); assert.equal(f.p.mp, f.p.maxMp);
+      const resumed = step(f.w, held);
+      assert.equal(resumed.filter(e => e.type === 'act' && e.id === f.p.id).length, 1);
+      assert.equal(f.p.act.counter, undefined, 'held basic resumes normally after counter');
+    });
   }
+  test(`${weapon}: explicit skill edge wins over ready counter and held basic`, () => {
+    const f = fixture(weapon); perfect(f);
+    run(f.w, ticks(PLAYER_BASE.dodge.iframeMs) - 1);
+    const events = step(f.w, { a: input({ attack: true, skillEdge: true, aimX: -1 }) });
+    assert.equal(events.some(e => e.type === 'counter'), false);
+    assert.equal(f.p.act.id, WEAPONS[weapon].skill);
+    assert.equal(f.p.act.facing, Math.PI);
+    assert.equal(events.filter(e => e.type === 'act' && e.id === f.p.id).length, 1);
+  });
+}
+
+test('pending counter never interrupts a running act; deadline still expires under held basic', () => {
+  const f = fixture('focus'); perfect(f); run(f.w, 5);
+  step(f.w, { a: input({ skillEdge: true, aimX: -1 }) });
+  const act = f.p.act;
+  const events = run(f.w, 12, { a: input({ attack: true }) });
+  assert.equal(f.p.act, act);
+  assert.equal(events.some(e => e.type === 'counter' || e.type === 'actCancel'), false);
+  assert.equal(f.p.pendingCounter, null);
 });
 
 test('return channel and new dodge clear pending; standard counter windup is dodge-cancelable', () => {
   const scroll = fixture(); perfect(scroll); run(scroll.w, 5);
-  step(scroll.w, { a: input({ scrollEdge: true }) });
+  step(scroll.w, { a: input({ scrollEdge: true, attack: true }) });
   assert.ok(scroll.p.channel > 0); assert.equal(scroll.p.pendingCounter, null);
   const again = fixture(); perfect(again); run(again.w, 5); again.p.dodge.cdLeft = 0;
-  step(again.w, { a: input({ dodgeEdge: true, mx: -1 }) });
+  step(again.w, { a: input({ dodgeEdge: true, mx: -1, attack: true }) });
   assert.equal(again.p.pendingCounter, null); assert.equal(again.p.act, null);
   const cancel = fixture(); perfect(cancel); run(cancel.w, 7); assert.ok(cancel.p.act.counter);
   cancel.p.dodge.cdLeft = 0;
-  const ev = step(cancel.w, { a: input({ dodgeEdge: true, mx: -1 }) });
+  const ev = step(cancel.w, { a: input({ dodgeEdge: true, mx: -1, attack: true }) });
   assert.ok(ev.some(e => e.type === 'actCancel')); assert.equal(cancel.p.act, null);
 });
 

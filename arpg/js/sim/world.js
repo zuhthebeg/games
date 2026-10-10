@@ -228,13 +228,10 @@ function stepPlayer(world, p, inp) {
       startAct(world, p, w.skill, resolveAim(world, p, inp, mlen));
     }
   }
-  if (!p.act && inp.attack && !(p.cds[w.basic] > 0)) {
-    startAct(world, p, w.basic, resolveAim(world, p, inp, mlen));
-  }
-
-  // Manual actions win. Never cancel an action or a dodge to deliver the bonus.
+  // Explicit controls win; a pending counter reserves the next basic slot,
+  // including the iframe tail after dash movement. Never cancel a running act.
   if (!p.act && p.pendingCounter && d.iframeLeft === 0 && p.bufferDodge === 0
-    && !inp.attack && !inp.skillEdge && !inp.scrollEdge) {
+    && !inp.skillEdge && !inp.scrollEdge) {
     const pending = p.pendingCounter;
     const target = world.entities.find((e) => e.id === pending.attackerId);
     const def = ABILITIES[w.basic];
@@ -250,6 +247,11 @@ function stepPlayer(world, p, inp) {
       world.events.push({ type: 'counter', id: p.id, pid: p.pid, attackerId: target.id,
         dodgeTick: pending.dodgeTick, ability: w.basic });
     }
+  }
+
+  if (!p.act && inp.attack && !(p.cds[w.basic] > 0)
+    && (!p.pendingCounter || p.bufferDodge > 0 || inp.skillEdge || inp.scrollEdge)) {
+    startAct(world, p, w.basic, resolveAim(world, p, inp, mlen));
   }
 
   if (p.act) advanceAct(world, p);

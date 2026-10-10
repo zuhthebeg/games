@@ -225,13 +225,16 @@ no stat key or save-schema migration was added. Constants are proposals in
   pending counter without selecting a substitute. No teleport, range extension,
   forced hit, or projectile-blocking bypass. Facing locks at action start;
   ordinary windup/shape/sweep mechanics can still miss or hit an intervening body.
-- Manual attacks, skill edges, scroll edges and buffered dodges win. A pending
+- A valid pending counter takes precedence over held basic attack on the first
+  free post-dodge tick. Held basic waits through any remaining iframe tail, then
+  resumes normally after the counter; no duplicate basic starts alongside it.
+  Explicit skill edges, scroll edges and buffered dodges retain priority. A
   counter never cancels an existing act, changes input, or forces movement.
   Its basic action retains ordinary movement slowdown and cancellation rules.
   Death, terminal state, return channel and a newly started dodge discard it.
   Expiry is `dodgeTick + max(dashTicks, iframeTicks) + ticks(300ms)`;
-  after that tick no deferred counter starts. Held manual attack can suppress
-  it entirely. HUD only shows “완벽 회피 · 반격 준비” and “자동 반격”; no render edits.
+  after that tick no deferred counter starts. Invalid sources consume pending
+  and allow held basic normally. HUD only shows “완벽 회피 · 반격 준비” and “자동 반격”; no render edits.
 
 ### Attack-rate formula and phase snapshot
 
