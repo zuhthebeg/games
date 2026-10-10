@@ -76,3 +76,17 @@ export function shapeHitsCircle(shape, ox, oy, facing, cx, cy, cr) {
       throw new Error(`unknown shape ${shape.type}`);
   }
 }
+
+// Earliest entry of a finite segment into a circle (0..1), null on a miss.
+// Starting inside counts as contact; callers exclude the projectile owner.
+export function segmentCircleEntry(ax, ay, bx, by, cx, cy, radius) {
+  const dx = bx - ax, dy = by - ay, ox = ax - cx, oy = ay - cy;
+  const c = ox * ox + oy * oy - radius * radius;
+  if (c <= 0) return 0;
+  const a = dx * dx + dy * dy;
+  if (a === 0) return null;
+  const b = ox * dx + oy * dy, discriminant = b * b - a * c;
+  if (discriminant < 0) return null;
+  const t = (-b - Math.sqrt(discriminant)) / a;
+  return t >= 0 && t <= 1 ? t : null;
+}

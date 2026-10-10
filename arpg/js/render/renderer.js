@@ -272,6 +272,8 @@ export class ArenaRenderer {
         this.number(`${event.dmg}${event.exposed ? '!' : ''}`, event.x, event.y, color, size);
         this.burst(event.x, event.y, tier, color, source?.facing);
       }
+      else if (event.type === 'projectileBlocked')
+        this.burst(event.x, event.y, FEEL.impact.normal, FEEL.colors.normal);
       else if (event.type === 'kill') {
         this.impact(entity, world.entities.find(candidate => candidate.id === event.by), FEEL.impact.kill);
         this.burst(event.x, event.y, FEEL.impact.kill, FEEL.colors.weak);

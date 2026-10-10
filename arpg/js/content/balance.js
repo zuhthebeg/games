@@ -1,3 +1,5 @@
+// [제안] Fraction of normal direct projectile damage on an allied blocker; 0 = no team kill.
+export const FRIENDLY_PROJECTILE_DAMAGE = 0;
 // [제안] P3 single source for encounter/reward tuning. Telegraph phase timings are NEVER scaled.
 export const BALANCE = {
   elite: { hp: 2.2, damage: 1.3, tint: 0xb994ed, scale: 1.15 },

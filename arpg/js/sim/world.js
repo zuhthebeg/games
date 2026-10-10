@@ -4,12 +4,12 @@
 // (the input layer latches presses until the next sim tick consumes them).
 
 import {
-  DT, ticks, rand, pickWeighted, turnToward, dist2, shapeHitsCircle,
+  DT, ticks, rand, pickWeighted, turnToward, dist2, shapeHitsCircle, segmentCircleEntry,
   TEAM_PLAYER, TEAM_MONSTER,
 } from './core.js';
 import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE } from '../content/combat.js';
 
-import { BALANCE, threatMultipliers } from '../content/balance.js';
+import { BALANCE, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE } from '../content/balance.js';
 
 const PB = PLAYER_BASE;
 const KNOCK_DECAY = 0.82; // per tick
@@ -558,26 +558,47 @@ function stepProjectiles(world) {
   const keep = [];
   for (const pr of world.projectiles) {
     const def = ABILITIES[pr.abilityId];
-    pr.x += pr.vx * DT;
-    pr.y += pr.vy * DT;
-    pr.travelled += Math.hypot(pr.vx, pr.vy) * DT;
-    let gone = pr.travelled >= pr.range || pr.x < 0 || pr.y < 0 || pr.x > world.arena.w || pr.y > world.arena.h;
-    if (!gone) {
-      for (const t of world.entities) {
-        if (t.team === pr.team || !isTargetable(t) || pr.hit.includes(t.id)) continue;
-        if (dist2(pr.x, pr.y, t.x, t.y) > (pr.r + t.r) ** 2) continue;
-        pr.hit.push(t.id);
+    const ax = pr.x, ay = pr.y, dx = pr.vx * DT, dy = pr.vy * DT;
+    const distance = Math.hypot(dx, dy);
+    // Clip the sweep at range/arena expiry: final-tick hits cannot tunnel or overshoot range.
+    let limit = distance ? Math.min(1, Math.max(0, pr.range - pr.travelled) / distance) : 1;
+    if (dx > 0) limit = Math.min(limit, (world.arena.w - ax) / dx);
+    else if (dx < 0) limit = Math.min(limit, -ax / dx);
+    if (dy > 0) limit = Math.min(limit, (world.arena.h - ay) / dy);
+    else if (dy < 0) limit = Math.min(limit, -ay / dy);
+    limit = Math.max(0, limit);
+    const bx = ax + dx * limit, by = ay + dy * limit;
+    const contacts = [];
+    for (const target of world.entities) {
+      if (target.id === pr.ownerId || !isTargetable(target) || pr.hit.includes(target.id)) continue;
+      const t = segmentCircleEntry(ax, ay, bx, by, target.x, target.y, target.r + pr.r);
+      if (t !== null) contacts.push({ target, t });
+    }
+    contacts.sort((a, b) => a.t - b.t || a.target.id - b.target.id);
+    let gone = false, stop = 1;
+    for (const { target, t } of contacts) {
+      pr.x = ax + (bx - ax) * t; pr.y = ay + (by - ay) * t;
+      const friendly = target.team === pr.team;
+      if (friendly) world.events.push({ type: 'projectileBlocked', id: pr.id, blockerId: target.id, x: pr.x, y: pr.y });
+      if (!friendly || FRIENDLY_PROJECTILE_DAMAGE > 0) {
+        pr.hit.push(target.id);
         const facing = Math.atan2(pr.vy, pr.vx);
-        applyHit(world, t, {
+        applyHit(world, target, {
           srcId: pr.ownerId, srcKind: pr.ownerKind, srcType: pr.ownerType, abilityId: pr.abilityId, def,
-          mult: pr.dmgMult, poiseMult: pr.poiseMult, fromX: pr.x - Math.cos(facing) * 10, fromY: pr.y - Math.sin(facing) * 10,
+          mult: pr.dmgMult * (friendly ? FRIENDLY_PROJECTILE_DAMAGE : 1), poiseMult: pr.poiseMult,
+          fromX: pr.x - Math.cos(facing) * 10, fromY: pr.y - Math.sin(facing) * 10,
           cause: { shape: { type: 'circle', radius: pr.r, offset: 0 }, ox: pr.x, oy: pr.y, facing },
         });
-        if (pr.pierce-- <= 0) { gone = true; break; }
       }
+      // Allied bodies always stop the shot, even a piercing one, without spending pierce.
+      if (friendly || pr.pierce-- <= 0) { gone = true; stop = t; break; }
     }
+    pr.x = ax + (bx - ax) * stop; pr.y = ay + (by - ay) * stop;
+    pr.travelled += distance * limit * stop;
+    gone ||= limit < 1 || pr.travelled >= pr.range
+      || pr.x <= 0 || pr.y <= 0 || pr.x >= world.arena.w || pr.y >= world.arena.h;
     if (gone) {
-      if (def.projectile.explode && (pr.hit.length || pr.travelled >= pr.range)) explode(world, pr, def);
+      if (def.projectile.explode) explode(world, pr, def);
       world.events.push({ type: 'projectileEnd', id: pr.id, x: pr.x, y: pr.y, ability: pr.abilityId });
     } else keep.push(pr);
   }

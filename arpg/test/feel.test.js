@@ -145,3 +145,10 @@ test('telegraphs stay authoritative during sprite freeze and rebuild only on new
   assert.equal(graphic.rotation, next.entities[1].act.facing);
   assert.equal(JSON.stringify(next), before);
 });
+
+test('projectileBlocked reuses bounded spark pool without damage number or player trauma',()=>{
+  const {world,renderer}=fixture();
+  renderer.events(world,[{type:'projectileBlocked',id:999,blockerId:world.entities[0].id,x:200,y:300}]);
+  assert.ok(renderer.particles.some(p=>p.left>0));
+  assert.equal(renderer.trauma,0);assert.equal(renderer.numbers.filter(n=>n.left>0).length,0);
+});
