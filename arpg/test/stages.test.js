@@ -86,10 +86,10 @@ test('real solo S1~S7 loop tracks all drops, XP, death policy metadata and persi
     }
   }
   assert.deepEqual(receipts.map((receipt) => receipt.stageXp), [100, 180, 260, 340, 480, 520]);
-  assert.deepEqual(receipts.slice(3).map((receipt) => receipt.depositedXp), [176, 168, 144]);
+  assert.deepEqual(receipts.slice(3).map((receipt) => receipt.depositedXp), [616, 560, 432]);
   assert.ok(save.cleared.S7);
   // Explicit expanded encounter XP; progression is still earned through actual kills/settlement.
-  assert.equal(save.level, addXp(initial,50+100+180+260+340+480+520+69+96+85+176+168+144).level);
+  assert.equal(save.level, addXp(initial,50+100+180+260+340+480+520+receipts.reduce((sum, receipt) => sum + receipt.depositedXp, 0)).level);
   assert.ok(save.stacks.hide >= 4 && save.stacks.rune_shard >= 2 && save.stacks.frost_shard >= 2 && save.stacks.web >= 3);
   console.log(`S1~S7 valid solo progression: Lv${save.level}, xp=${save.xp}, gold=${save.gold}`);
 });

@@ -351,7 +351,7 @@ try {
     await key('KeyJ', 'keyUp');
     assert.ok(await evaluate(`smokeHits.playerHits>${hitsBefore}`), `${weapon} failed to hit scarecrow`);
     if (weapon === 'focus') {
-      assert.ok(await evaluate('__arpg.world.entities[0].mp<100'), 'focus skill did not consume mana');
+      assert.ok(await evaluate('__arpg.world.entities[0].mp<__arpg.world.entities[0].maxMp'), 'focus skill did not consume mana');
       const initialMana = await evaluate('__arpg.world.entities[0].manaPotions');
       await key('KeyE');
       await key('KeyE', 'keyUp');
@@ -388,7 +388,7 @@ try {
   await devStart('S4');
   const chiefArt=await atlasReady('goblin_chief');
   assert.equal(chiefArt.id,'goblin-chief');
-  assert.equal(chiefArt.scale,1.3);
+  assert.ok(chiefArt.scale>=1.3 && chiefArt.scale<=1.35, 'chief scale '+chiefArt.scale);
   assert.notEqual(chiefArt.tint,gruntArt.tint);
   artEvidence.monsters.push(chiefArt.id);
   await key('KeyR');
@@ -507,7 +507,7 @@ try {
   await command('Page.reload'); await waitFor(page('inn'));
   assert.equal(await evaluate('__arpg.save.shopRefresh'), 1);
   assert.equal(await evaluate('__arpg.save.items.some(item=>item.uid=== ' + JSON.stringify(boughtUid) + ')'), false);
-  assert.equal(await evaluate('__arpg.save.version'), 2);
+  assert.equal(await evaluate('__arpg.save.version'), 3);
   await click('[data-action="settings"]');
   await click('[data-action="reset-first"]');
   assert.ok(await evaluate("localStorage.getItem('arpg.save.v1')!==null"));

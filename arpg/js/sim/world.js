@@ -684,7 +684,7 @@ function stepRound(world) {
     const elite = !MONSTERS[s.monster].invulnerable && s.monster !== 'goblin_chief'
       && stage.eliteChance > 0 && rand(world) < stage.eliteChance;
     spawnMonster(world, s.monster, s.fx * world.arena.w, s.fy * world.arena.h, {
-      hpMult: (stage.hpMult || 1) * threat.hp * (elite ? BALANCE.elite.hp : 1),
+      hpMult: (stage.hpMult || 1) * threat.hp * (elite ? BALANCE.elite.hp : 1) * (s.monster === 'goblin_chief' ? (stage.bossHpMult || 1) : 1),
       dmgMult: (stage.dmgMult || 1) * threat.damage * (elite ? BALANCE.elite.damage : 1),
       elite, threat: rd.threat, stageId: rd.stageId,
     });

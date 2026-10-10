@@ -233,7 +233,7 @@ export const STAGES = {
 // P3 encounters are data only. Chief appears once; additional waves contain its escorts.
 for (const [id, stage] of Object.entries(STAGES)) {
   const tuning = BALANCE.stages[id];
-  Object.assign(stage, { hpMult: tuning.hp, dmgMult: tuning.damage,
+  Object.assign(stage, { hpMult: tuning.hp, dmgMult: tuning.damage, bossHpMult: tuning.bossHp || 1,
     eliteChance: tuning.eliteChance, maxConcurrent: tuning.concurrent });
   const original = stage.spawns;
   stage.spawns = Array.from({ length: tuning.waves }, (_, wave) => original

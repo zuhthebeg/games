@@ -437,7 +437,7 @@ test('integration: input-driven S1 → S2 → S3 → S4 loop unlocks rare gear a
   assert.ok(save.cleared.S4);
   assert.ok(save.flags.chiefPity);
   assert.ok(save.items.some((item) => item.id === 'chief_maul'));
-  assert.deepEqual(receipts.map((receipt) => receipt.depositedXp), [69, 96, 85]);
+  assert.deepEqual(receipts.map((receipt) => receipt.depositedXp), [230, 288, 175]);
   assert.deepEqual(receipts.map((receipt) => receipt.stageXp), [100, 180, 260]);
 });
 

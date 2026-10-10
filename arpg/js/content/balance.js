@@ -8,7 +8,7 @@ export const BALANCE = {
     { hp: 1.5, damage: 1.3, gold: 1.6, drop: 1.4, rarity: {common:55,fine:37,rare:7,epic:1}, bossRarity:{fine:35,rare:50,epic:15} },
     { hp: 2.1, damage: 1.7, gold: 2.4, drop: 1.9, rarity: {common:40,fine:43,rare:14,epic:3}, bossRarity:{fine:20,rare:55,epic:25} },
   ],
-  normalGold: 2.5, rewardCurve: 1.3,
+  normalGold: 1.2, rewardCurve: 1.12,
   // [제안] 1 level point, ~2x early point effect, earlier soft knee: balanced Lv30 stat impact ~69% old.
   stats: { pointsPerLevel: 1, knee: 4, slope: .5, capBase: 9, capEvery: 3, capMax: 19,
     focusDamage: .04, mp: 8, regen: .06, speed: .01, speedCap: .07,
@@ -17,12 +17,12 @@ export const BALANCE = {
   size: { step: .035, spread: .1, max: 1.35, elite: 1.12, hpCoupling: .5, bossBase: 1.3 },
   stages: {
     S1: { hp:1, damage:1, eliteChance:0, waves:1, waveMs:0, concurrent:1 },
-    S2: { hp:17, damage:1.6, eliteChance:.08, waves:3, waveMs:30000, concurrent:3 },
-    S3: { hp:12, damage:2, eliteChance:.10, waves:4, waveMs:30000, concurrent:2 },
-    S4: { hp:15, damage:1.05, eliteChance:.10, waves:3, waveMs:40000, concurrent:3 },
-    S5: { hp:16, damage:5.2, eliteChance:.10, waves:4, waveMs:35000, concurrent:3 },
-    S6: { hp:12, damage:.9, eliteChance:.12, waves:3, waveMs:40000, concurrent:2 },
-    S7: { hp:12, damage:2.5, eliteChance:.12, waves:4, waveMs:30000, concurrent:1 },
+    S2: { hp:4, damage:1.6, eliteChance:.08, waves:10, waveMs:15000, concurrent:4 },
+    S3: { hp:3, damage:1.8, eliteChance:.10, waves:12, waveMs:12000, concurrent:3 },
+    S4: { hp:2.5, bossHp:6, damage:1.15, eliteChance:.10, waves:9, waveMs:16000, concurrent:3 },
+    S5: { hp:5, damage:4.2, eliteChance:.10, waves:14, waveMs:12000, concurrent:4 },
+    S6: { hp:3, damage:1.35, eliteChance:.12, waves:10, waveMs:13000, concurrent:3 },
+    S7: { hp:3, damage:1.4, eliteChance:.12, waves:12, waveMs:13000, concurrent:2 },
   },
 };
 export function threatMultipliers(threat = 1) {
