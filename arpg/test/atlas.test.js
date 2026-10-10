@@ -138,3 +138,20 @@ test('chief display scale is 1.3x without changing its collision radius', () => 
   assert.equal(atlasScale(deepFreeze({ type: 'goblin_grunt', r: 17 })), 1);
   assert.equal(chief.r, 25);
 });
+
+
+test('registered goblin variants retain exact CC0 source and byte-match evidence', async () => {
+  const ledger = await readFile(new URL('../assets-ledger.md', import.meta.url), 'utf8');
+  const evidence = JSON.parse(await readFile(new URL('../tools/art/goblin-license-evidence.json', import.meta.url), 'utf8'));
+  const model = evidence.find((entry) => entry.saved === 'Quaternius-Goblin.glb');
+  assert.equal(model.model_page, 'https://poly.pizza/m/OdCOFSmEhl');
+  assert.equal(model.download_url, 'https://static.poly.pizza/54e0fd61-6898-4b17-b039-8fa656d02954.glb.br');
+  assert.equal(model.byte_match, true);
+  assert.equal(model.bytes, 215420);
+  assert.equal(model.sha256, '189c34c4ae369d0e722f5555fc214fd6a3757f4babc71b864c3a5d686d3cae14');
+  assert.ok(ledger.includes(model.model_page));
+  assert.ok(ledger.includes(model.sha256));
+  assert.ok(ledger.includes('Public Domain (CC0)'));
+  assert.ok(ledger.includes('even for commercial purposes'));
+  assert.ok(ledger.includes('NOT the Ultimate Monsters'));
+});

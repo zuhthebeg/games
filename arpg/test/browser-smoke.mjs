@@ -6,7 +6,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 
-const root = resolve(fileURLToPath(new URL('../../', import.meta.url)));
+const root = resolve(process.env.ARPG_ROOT || fileURLToPath(new URL('../../', import.meta.url)));
 const port = Number(process.env.ARPG_CDP_PORT || 19097);
 const httpPort = Number(process.env.ARPG_HTTP_PORT || 8731);
 const profile = await mkdtemp(join(tmpdir(), 'arpg-smoke-'));
@@ -115,6 +115,13 @@ try {
       }
     }
   };
+  const artEvidence = { playerKits: [], monsters: [], procedural: [], rendererReadonly: false, fallback: false };
+  const atlasReady = async (key) => {
+    await waitFor(`__arpg.art.visuals.some(v=>v.key===${JSON.stringify(key)} && v.mode==='atlas' && v.textureLoaded)`, 20000);
+    return evaluate(`JSON.parse(JSON.stringify(__arpg.art.visuals.find(v=>v.key===${JSON.stringify(key)} && v.mode==='atlas')))`);
+  };
+  const requestedArt = () => events.filter(event => event.method === 'Network.requestWillBeSent')
+    .map(event => event.params.request.url).filter(url => url.includes('/assets/sprites/'));
   const devStart = async (stage, weapon = 'blade') => {
     await waitFor(page('inn'));
     await evaluate(`document.querySelector('#dev-stage').value=${JSON.stringify(stage)};
@@ -136,6 +143,7 @@ try {
   await command('Runtime.enable');
   await command('Page.enable');
   await command('Log.enable');
+  await command('Network.enable');
   await command('Emulation.setDeviceMetricsOverride', {
     width: 390, height: 844, deviceScaleFactor: 1, mobile: true,
   });
@@ -155,6 +163,46 @@ try {
   assert.equal(await evaluate('__arpg.save'), null);
   await click('#quiz-start');
   await waitFor('__arpg.world?.round.stageId==="S1" && __arpg.world.tick>0');
+  const firstArt = await atlasReady('blade');
+  assert.equal(firstArt.id, 'hero-sword');
+  artEvidence.playerKits.push(firstArt.id);
+  assert.ok(await evaluate("__arpg.art.visuals.some(v=>v.key==='scarecrow' && v.mode==='procedural')"));
+  assert.ok(requestedArt().every(url => url.includes('manifest.json') || url.includes('/hero-sword/')),
+    'S1 fetched an unequipped kit or future monster');
+  const initialFrame = await evaluate('__arpg.art.visuals.find(v=>v.key===\"blade\").frame');
+  await waitFor(`__arpg.art.visuals.find(v=>v.key==='blade').frame!==${initialFrame}`);
+
+  // Exercise the full atlas renderer on frozen state, plus the real lazy failure factory.
+  // Deliberately fail an injected loader rather than creating HTTP console errors.
+  const rendererChecks = await evaluate(`(async () => {
+    const {Container}=await import('./vendor/pixi-8.22.0.min.mjs');
+    const {ArenaRenderer}=await import('./js/render/renderer.js');
+    const {VisualProvider}=await import('./js/render/visual-provider.js');
+    const freeze=value=>{if(value && typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value);}return value;};
+    const frozen=freeze(JSON.parse(JSON.stringify(__arpg.world)));
+    const before=JSON.stringify(frozen);
+    const stage=new Container();
+    const atlasProvider=new VisualProvider();
+    const renderer=new ArenaRenderer({stage,screen:{width:390,height:844}},atlasProvider);
+    renderer.reset(frozen);
+    await atlasProvider.atlases.load(frozen.entities[0].weapon);
+    const spriteReadonly=renderer.views.get(frozen.entities[0].id).visual.debug.mode==='atlas';
+    renderer.events(frozen,frozen.events);
+    renderer.render(frozen,.5,1/60);
+    const provider=new VisualProvider();
+    provider.atlases.fetchManifest=async()=>{throw new Error('smoke offline');};
+    const view=provider.createVisual(frozen.entities[0]);
+    await provider.atlases.load(frozen.entities[0].weapon);
+    view.update(frozen.entities[0],{age:0,deadAge:0,hurt:0,reduced:false},1/60);
+    const fallback=view.debug.mode==='procedural' && Object.keys(provider.atlases.status().failed).length===1;
+    view.destroy();
+    for(const item of renderer.views.values()){item.visual.destroy();item.shadow.destroy();item.portal.destroy();}
+    renderer.root.destroy({children:true});renderer.warning.destroy();stage.destroy({children:true});
+    return {readonly:before===JSON.stringify(frozen),spriteReadonly,fallback};
+  })()`);
+  assert.deepEqual(rendererChecks,{readonly:true,spriteReadonly:true,fallback:true});
+  artEvidence.rendererReadonly=rendererChecks.readonly;
+  artEvidence.fallback=rendererChecks.fallback;
   const roundMobile = await rectangles('#actions button');
   validateRects(roundMobile);
   assert.equal(roundMobile.rects.length, 6);
@@ -203,6 +251,10 @@ try {
   await command('Page.navigate', { url: `http://127.0.0.1:${httpPort}/arpg/?dev=1` });
   await waitFor(page('inn'));
   await devStart('S2');
+  const gruntArt=await atlasReady('goblin_grunt');
+  assert.equal(gruntArt.id,'goblin-grunt');
+  artEvidence.monsters.push(gruntArt.id);
+  assert.ok(!requestedArt().some(url=>/goblin-archer|goblin-chief/.test(url)), 'future monster loaded before spawning');
   await evaluate(`window.smokeHits={tick:-1,hits:0,playerHits:0};
     window.watchHits=()=>{
       const world=__arpg.world;
@@ -248,6 +300,10 @@ try {
   await sleep(700);
   await touch('touchEnd', []);
   assert.ok(await evaluate(`__arpg.world.entities[0].x>${beforeTouch}`), 'touch joystick did not move');
+  const archerArt=await atlasReady('goblin_slinger');
+  assert.equal(archerArt.id,'goblin-archer');
+  assert.notEqual(archerArt.tint,gruntArt.tint);
+  artEvidence.monsters.push(archerArt.id);
   await waitFor('__arpg.world.round.state==="failed"', 120000);
   assert.ok(await evaluate("document.querySelector('#cause').textContent.includes('고블린')"));
   await backToInn();
@@ -263,6 +319,10 @@ try {
   await backToInn();
   for (const weapon of ['bow', 'focus']) {
     await devStart('S1', weapon);
+    const playerArt=await atlasReady(weapon);
+    assert.equal(playerArt.id, weapon==='bow' ? 'hero-bow' : 'hero-focus');
+    artEvidence.playerKits.push(playerArt.id);
+    assert.deepEqual(await evaluate('JSON.parse(JSON.stringify(__arpg.art.loaded))'),[weapon], 'prior-round assets were not released');
     const hitsBefore = await evaluate('smokeHits.playerHits');
     await key('KeyD');
     await key('KeyJ');
@@ -296,6 +356,29 @@ try {
   assert.ok(await evaluate("!document.querySelector('#pause').hidden"));
   await evaluate("delete document.hidden;document.dispatchEvent(new Event('visibilitychange'))");
   await waitFor(`__arpg.world.tick>${pausedTick}`);
+
+  await key('KeyR');
+  await key('KeyR','keyUp');
+  await waitFor('__arpg.world.round.state==="returned"',6000);
+  await backToInn();
+  await devStart('S3');
+  await waitFor("__arpg.art.visuals.some(v=>v.key==='iron_boar' && v.mode==='procedural')");
+  artEvidence.procedural.push('iron_boar');
+  assert.ok(!requestedArt().some(url=>url.includes('/skeleton/')), 'boar was incorrectly replaced by skeleton');
+  await key('KeyR');
+  await key('KeyR','keyUp');
+  await waitFor('__arpg.world.round.state==="returned"',6000);
+  await backToInn();
+  await devStart('S4');
+  const chiefArt=await atlasReady('goblin_chief');
+  assert.equal(chiefArt.id,'goblin-chief');
+  assert.equal(chiefArt.scale,1.3);
+  assert.notEqual(chiefArt.tint,gruntArt.tint);
+  artEvidence.monsters.push(chiefArt.id);
+  await key('KeyR');
+  await key('KeyR','keyUp');
+  await waitFor('__arpg.world.round.state==="returned"',6000);
+  await backToInn();
 
   // An isolated rich fixture exercises real forge DOM actions without altering the sim.
   await evaluate(`(async () => {
@@ -356,7 +439,7 @@ try {
     || event.method === 'Log.entryAdded' && event.params.entry.level === 'error');
   assert.equal(errors.length, 0, JSON.stringify(errors.slice(0, 3)));
   console.log(JSON.stringify({
-    ok: true, canvas: true,
+    ok: true, canvas: true, sprites: artEvidence,
     onboarding: 'name → 5 answers → S1 clear@900 → allocate 3 → inn',
     shop: 'potion +1 / mana +1 / scroll +1 / potion ×2; scroll cap enforced',
     S2: 'sortie confirmed → reload → inn',

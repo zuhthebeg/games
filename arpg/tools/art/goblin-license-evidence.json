@@ -1,0 +1,40 @@
+[
+  {
+    "url": "https://poly.pizza/m/OdCOFSmEhl",
+    "saved": "poly-goblin-cc0.html",
+    "http": 200,
+    "bytes": 111688,
+    "sha256": "54deadc18b648f4d75fbb58827c38b8790315c4bbbcbefaf722c5fae094da4ee"
+  },
+  {
+    "url": "https://poly.pizza/bundle/Cube-World-Kit-DwDr8493Fw",
+    "saved": "poly-cube-world-cc0.html",
+    "http": 200,
+    "bytes": 258735,
+    "sha256": "0ecc19424e12677b812d188f5d5de730bd6eef1139d21acecdeceb6c48ab458b"
+  },
+  {
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "saved": "cc0-1.0-deed.html",
+    "http": 200,
+    "bytes": 30248,
+    "sha256": "abb4d48fc8b85de52b377dd105532c6c549f515d492a8e1712bc99e7316a1f12"
+  },
+  {
+    "url": "https://quaternius.com/license.html",
+    "saved": "quaternius-current-license.html",
+    "http": 200,
+    "bytes": 10301,
+    "sha256": "d1b56be5228d372b049b45cc7447a823da7989a6cf7036f60cfac2284c8fcb0d"
+  },
+  {
+    "model_page": "https://poly.pizza/m/OdCOFSmEhl",
+    "download_url": "https://static.poly.pizza/54e0fd61-6898-4b17-b039-8fa656d02954.glb.br",
+    "saved": "Quaternius-Goblin.glb",
+    "download_verification_copy": "Goblin-poly-download.glb.br",
+    "bytes": 215420,
+    "sha256": "189c34c4ae369d0e722f5555fc214fd6a3757f4babc71b864c3a5d686d3cae14",
+    "byte_match": true,
+    "verified_utc": "2026-10-10T08:22:09.812331+00:00"
+  }
+]
