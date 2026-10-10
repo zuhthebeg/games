@@ -1,0 +1,250 @@
+[
+  {
+    "file": "sword.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "2d998792d392a8c708599a1f59014a96fd4604b1206ea723c6ce59b6506c516f",
+    "bytes": 2754
+  },
+  {
+    "file": "sword-t2.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "da782b7719e108c599635a84bb7fcaf50e4f0b01cb99cd69d2d7181f5080f85a",
+    "bytes": 3340
+  },
+  {
+    "file": "sword-t3.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "cba8ec182d6d7c3654a4cfdfe5f53b76e107b3402f12c78a03163c0dad6b8eb8",
+    "bytes": 3728
+  },
+  {
+    "file": "bow.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "86dd56eca2e82e4b9ef3622ba77ce296f7081d51ea03f5284880a54cca53c602",
+    "bytes": 3434
+  },
+  {
+    "file": "bow-t2.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "aef4ebc8a04726000fb99c3a73de39e4e2f5db9fb5d5d63b38ff2a2791c85240",
+    "bytes": 3444
+  },
+  {
+    "file": "bow-t3.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "9cf36d50125caf4a4f5c4635658dd9a95e076f7cab4d49d508e9ceb6d6da0bd0",
+    "bytes": 3818
+  },
+  {
+    "file": "cleaver.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "deb69f45cdc9774f777ad2e19a9aa520a14b485e03a4e224b4deea02add291b4",
+    "bytes": 2904
+  },
+  {
+    "file": "maul.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "b9e4311fefb850cd2c4d303b79c07e9cea6ab896d2f12c08ddaf8fdbb40cbd15",
+    "bytes": 4206
+  },
+  {
+    "file": "head.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "c349c87fee5d8cef02d3f87e0ca386bb2a7ad4516d9ba056eb6effbe9737bee6",
+    "bytes": 6566
+  },
+  {
+    "file": "head-light.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "491eafab4ab7732d11296bae6eb538e51a24bb4cf832aa94636bbc19fa11ef96",
+    "bytes": 5206
+  },
+  {
+    "file": "body.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "310c88c5b3cae5f3067ea261bcd2767c56cf652f5d9eaf3fcf161c9302e84ac8",
+    "bytes": 5574
+  },
+  {
+    "file": "body-cloth.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "e742b690649ca96bd7fcf1efb12a3b0a824c59a7591e70ef1c4a1685e6af301e",
+    "bytes": 5750
+  },
+  {
+    "file": "body-plate.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "2802c9765ef7fae848954aa32c7534d89da8315ad85527672efc238836d8738b",
+    "bytes": 6182
+  },
+  {
+    "file": "hands.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "a97305e972a86a4b2637f798eeb548059c43e9ffde4c37cd0e12319499f6e8b4",
+    "bytes": 6514
+  },
+  {
+    "file": "hands-heavy.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "2ae87c078430e945d5958077d3916df8fc38ad1f2d8e4fc397cc1971d73753e0",
+    "bytes": 6490
+  },
+  {
+    "file": "feet.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "5956ff56fbd6f579c6601e67cba3ca1a62a081845c75b6b99c09f33520eca893",
+    "bytes": 4200
+  },
+  {
+    "file": "feet-heavy.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "ea3ce3b8234e5f580415ed97e5ff65f716da8d9708bafc810f130d7db426e40f",
+    "bytes": 4626
+  },
+  {
+    "file": "stone-low.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "96c36999944b132ec5d2be16deb4763c5c7df590098c07d46d7ca806bd6913a1",
+    "bytes": 5292
+  },
+  {
+    "file": "stone-mid.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "5bb0db3cda35d1d9b0ef9054ebda0abb292892f7264fc8a27a0b4891ed112d15",
+    "bytes": 5980
+  },
+  {
+    "file": "stone-high.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "5d462f6acf87978653d19bcb4cfe333206f95624193e3df2e8e1c686eddc522f",
+    "bytes": 5788
+  },
+  {
+    "file": "potion.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "7432d9739c4a077c5b5ec14d3dbe9853bd1f25e412755527e553f1fcda84dadf",
+    "bytes": 3870
+  },
+  {
+    "file": "mana-potion.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "79f5e54523954d6f80575bea128f9f7b3623c6a5458bba958ecd530aaf513f78",
+    "bytes": 4058
+  },
+  {
+    "file": "scrap.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "e6e24cc6ea5cee89ed076aa673937a8a39ec754ae0424c0517370d77531259bc",
+    "bytes": 6278
+  },
+  {
+    "file": "leather.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "e2b7f5fad0e0c6f376c5be07defb915c84b207f0c81fc1740d3971a1298d1512",
+    "bytes": 5190
+  },
+  {
+    "file": "ore.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "1094e6e53769541b091f62bbde851e6f9b891923c9fd972e3f8561781bf79c23",
+    "bytes": 5898
+  },
+  {
+    "file": "web.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/arpg/tools/item-art-build.py",
+    "sourceSha256": "cdf283f3b6035a734d99f0952f35cac8768c7736e513b50b23251838be460908",
+    "method": "original locally drawn 2D; Pillow 4x supersampling, fit 84px, 96px lossless WebP; no AI",
+    "sha256": "e951a94480847bbc319aa71e3c2afcf8cd4e4f645aa39b1685c3ae1113c13ef6",
+    "bytes": 7224
+  },
+  {
+    "file": "wand.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/spudsquad/assets/weapon_staff.webp",
+    "sourceSha256": "51be6bf2cab275cb14c5df13ab440c431d1dd4226976c6a4654f19f6432fb7f1",
+    "method": "reviewed existing spudsquad art; alpha crop, Lanczos fit 84px, 96px lossless WebP",
+    "sha256": "93dab149f77ba45f2483db2d42f038811716b3c2290eeac3bb29fbbb0324f1d0",
+    "bytes": 5206
+  },
+  {
+    "file": "staff-t2.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/spudsquad/assets/weapon_staff_t3.webp",
+    "sourceSha256": "1a98a9d8e4d052e95ccfa2ec5d0437c0b7de0e66e56cbd6cef54f6eadf1ca496",
+    "method": "reviewed existing spudsquad art; alpha crop, Lanczos fit 84px, 96px lossless WebP",
+    "sha256": "c9c68b9c8082ec1c4dd8017d510d47113d70cada48647993262fa98d17710940",
+    "bytes": 4008
+  },
+  {
+    "file": "staff-t3.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/spudsquad/assets/weapon_staff_t4.webp",
+    "sourceSha256": "1c500337b6c6ea4ddb117d597938b0b0fecc2444eb53d32545d6472336b7f8f6",
+    "method": "reviewed existing spudsquad art; alpha crop, Lanczos fit 84px, 96px lossless WebP",
+    "sha256": "61ec13ecb06e275806070490330f0c9eddab5b8b5ae09125783e85f9b44d07ef",
+    "bytes": 4182
+  },
+  {
+    "file": "fang.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/spudsquad/assets/item_vampire_fang.webp",
+    "sourceSha256": "5feaa948be24d3148b417f78e539f60fd6fcb543da317555519f1668eee354a0",
+    "method": "reviewed existing spudsquad art; alpha crop, Lanczos fit 84px, 96px lossless WebP",
+    "sha256": "f436584317fbd057baa008cf5a61febb749d3f9790ef4ac31b00b4a8708c5125",
+    "bytes": 5872
+  },
+  {
+    "file": "scroll.webp",
+    "source": "/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/spudsquad/assets/item_wisdom_scroll.webp",
+    "sourceSha256": "62cde2a4a5deee9ccbf328fb50657fe00ed3ea6f174a7df89a9a3e13948a7d52",
+    "method": "reviewed existing spudsquad art; alpha crop, Lanczos fit 84px, 96px lossless WebP",
+    "sha256": "fda4bd928107a031b0daf9f3925cfd170653380afe11e4e0275c6fe646dff556",
+    "bytes": 9532
+  }
+]
