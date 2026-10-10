@@ -55,7 +55,8 @@ export class HUD {
       channelStart: '귀환 중',
       channelBroken: '귀환 중단',
       channelCancel: '귀환 취소',
-      perfectDodge: '완벽 회피',
+      perfectDodge: '완벽 회피 · 반격 준비',
+      counter: '자동 반격',
       poison: '중독 · 장판을 벗어나면 독은 잠시 후 끝난다',
       poisonEnd: '중독 종료',
     };

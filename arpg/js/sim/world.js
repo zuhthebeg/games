@@ -9,7 +9,7 @@ import {
 } from './core.js';
 import { ABILITIES, WEAPONS, MONSTERS, STAGES, PLAYER_BASE } from '../content/combat.js';
 
-import { BALANCE, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, monsterSizeProfile } from '../content/balance.js';
+import { BALANCE, attackRate, threatMultipliers, FRIENDLY_PROJECTILE_DAMAGE, monsterSizeProfile } from '../content/balance.js';
 
 const PB = PLAYER_BASE;
 const KNOCK_DECAY = 0.82; // per tick
@@ -48,6 +48,8 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
     speed: PB.speed * (mods.speedMult ?? 1),
     dmgMult: { blade: 1, bow: 1, focus: 1, ...(mods.dmgMult || {}) },
     cdMult: mods.cdMult ?? 1,
+    attackSpeedBonus: mods.attackSpeedBonus ?? 0, weaponWeight: mods.weaponWeight ?? 8,
+    pendingCounter: null,
     dodgeCdMult: mods.dodgeCdMult ?? 1, iframeBonusMs: mods.iframeBonusMs ?? 0,
     potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0,
     weapon, act: null, cds: {},
@@ -135,9 +137,10 @@ function stepPlayer(world, p, inp) {
   if (p.scrollRetry > 0) p.scrollRetry--;
   if (p.bufferDodge > 0) p.bufferDodge--;
   for (const k in p.cds) if (p.cds[k] > 0) p.cds[k]--;
-  if (!alive(p)) return;
+  if (!alive(p)) { p.pendingCounter = null; return; }
   stepPoison(world, p);
-  if (!alive(p)) return;
+  if (!alive(p)) { p.pendingCounter = null; return; }
+  if (p.pendingCounter && world.tick > p.pendingCounter.expiresTick) p.pendingCounter = null;
 
   p.mp = Math.min(p.maxMp, p.mp + p.mpRegen * DT);
   const mlen = Math.hypot(inp.mx, inp.my);
@@ -151,6 +154,7 @@ function stepPlayer(world, p, inp) {
 
   // return scroll channel (design §6.2): no move/attack; dodge cancels it voluntarily.
   if (p.channel > 0) {
+    p.pendingCounter = null;
     if (p.bufferDodge > 0) {
       p.channel = 0;
       world.events.push({ type: 'channelCancel', id: p.id });
@@ -177,6 +181,7 @@ function stepPlayer(world, p, inp) {
     d.cdLeft = ticks(PB.dodge.cooldownMs * p.dodgeCdMult * loadEffects(p.loadRatio).dodgeCd);
     d.startedTick = world.tick;
     d.perfectPaid = false;
+    p.pendingCounter = null;
     p.bufferDodge = 0;
     p.facing = Math.atan2(dy, dx);
     world.events.push({ type: 'dodge', id: p.id });
@@ -206,6 +211,7 @@ function stepPlayer(world, p, inp) {
     world.events.push({ type: 'manaPotion', id: p.id, gain });
   }
   if (inp.scrollEdge && p.scrolls > 0 && p.scrollRetry === 0 && !p.act) {
+    p.pendingCounter = null;
     p.channel = ticks(PB.scroll.channelMs);
     world.events.push({ type: 'channelStart', id: p.id, ticks: p.channel });
     p.moving = false;
@@ -224,6 +230,26 @@ function stepPlayer(world, p, inp) {
   }
   if (!p.act && inp.attack && !(p.cds[w.basic] > 0)) {
     startAct(world, p, w.basic, resolveAim(world, p, inp, mlen));
+  }
+
+  // Manual actions win. Never cancel an action or a dodge to deliver the bonus.
+  if (!p.act && p.pendingCounter && d.iframeLeft === 0 && p.bufferDodge === 0
+    && !inp.attack && !inp.skillEdge && !inp.scrollEdge) {
+    const pending = p.pendingCounter;
+    const target = world.entities.find((e) => e.id === pending.attackerId);
+    const def = ABILITIES[w.basic];
+    const facing = target ? Math.atan2(target.y - p.y, target.x - p.x) : p.facing;
+    const inRange = target && isTargetable(target) && target.team !== p.team
+      && (def.delivery === 'shape'
+        ? shapeHitsCircle(def.shape, p.x, p.y, facing, target.x, target.y, target.r)
+        : dist2(p.x, p.y, target.x, target.y) <= def.projectile.rangePx ** 2);
+    p.pendingCounter = null; // consume even when the original attacker is gone/out of reach
+    if (inRange && !(p.cds[w.basic] > 0)) {
+      startAct(world, p, w.basic, facing);
+      p.act.counter = true;
+      world.events.push({ type: 'counter', id: p.id, pid: p.pid, attackerId: target.id,
+        dodgeTick: pending.dodgeTick, ability: w.basic });
+    }
   }
 
   if (p.act) advanceAct(world, p);
@@ -343,9 +369,16 @@ const PHASES = ['windup', 'lock', 'active', 'recovery'];
 
 function startAct(world, ent, abilityId, facing) {
   const def = ABILITIES[abilityId];
+  const rate = ent.kind === 'player' && [WEAPONS[ent.weapon].basic, WEAPONS[ent.weapon].skill].includes(abilityId)
+    ? attackRate(ent.attackSpeedBonus, ent.weaponWeight, ent.loadRatio) : 1;
+  const phaseTicks = Object.fromEntries(PHASES.map((phase) => {
+    const ms = def[`${phase}Ms`] || 0;
+    return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / rate)) : 0];
+  }));
   ent.act = {
-    id: abilityId, def, phase: 'windup', left: ticks(def.windupMs), elapsed: 0,
-    total: ticks(def.windupMs) + ticks(def.lockMs || 0),
+    rate, phaseTicks,
+    id: abilityId, def, phase: 'windup', left: phaseTicks.windup, elapsed: 0,
+    total: phaseTicks.windup + phaseTicks.lock,
     facing, ox: ent.x, oy: ent.y, hit: [], fired: false, dashStep: 0,
   };
   ent.facing = facing;
@@ -360,7 +393,7 @@ function skipEmptyPhases(world, ent) {
     const i = PHASES.indexOf(act.phase);
     if (i === PHASES.length - 1) { endAct(world, ent, false); return; }
     act.phase = PHASES[i + 1];
-    act.left = ticks(act.def[`${act.phase}Ms`] || 0);
+    act.left = act.phaseTicks[act.phase];
     if (act.phase === 'lock' || (act.phase === 'active' && !act.def.anchored)) {
       act.ox = ent.x; act.oy = ent.y;
     }
@@ -406,7 +439,7 @@ function advanceAct(world, ent, target) {
 function doActive(world, ent, act) {
   const def = act.def;
   if (def.delivery === 'shape') {
-    const activeTick = ticks(def.activeMs) - act.left;
+    const activeTick = act.phaseTicks.active - act.left;
     if (def.repeatHitMs && activeTick > 0 && activeTick % ticks(def.repeatHitMs) === 0) act.hit = [];
     hitShape(world, ent, act, def.shape, def.anchored ? act.ox : ent.x, def.anchored ? act.oy : ent.y);
   } else if (def.delivery === 'dash') {
@@ -426,7 +459,8 @@ function doActive(world, ent, act) {
         x: ent.x + Math.cos(a) * (ent.r + 4), y: ent.y + Math.sin(a) * (ent.r + 4),
         vx: Math.cos(a) * pr.speed, vy: Math.sin(a) * pr.speed, r: pr.radius,
         travelled: 0, range: pr.rangePx, pierce: pr.pierce, hit: [],
-        dmgMult: sourceMult(ent, def), poiseMult: ent.poiseMult ?? 1,
+        dmgMult: sourceMult(ent, def) * (act.counter ? BALANCE.counter.damage : 1),
+        poiseMult: (ent.poiseMult ?? 1) * (act.counter ? BALANCE.counter.poise : 1), counter: !!act.counter,
       });
     }
     world.events.push({ type: 'projectile', id: ent.id, ability: act.id });
@@ -445,7 +479,9 @@ function hitShape(world, ent, act, shape, ox, oy) {
     act.hit.push(t.id);
     applyHit(world, t, {
       srcId: ent.id, srcKind: ent.kind, srcType: ent.type || ent.weapon, abilityId: act.id,
-      def: act.def, mult: sourceMult(ent, act.def), poiseMult: ent.poiseMult ?? 1, fromX: ent.x, fromY: ent.y,
+      def: act.def, counter: !!act.counter,
+      mult: sourceMult(ent, act.def) * (act.counter ? BALANCE.counter.damage : 1),
+      poiseMult: (ent.poiseMult ?? 1) * (act.counter ? BALANCE.counter.poise : 1), fromX: ent.x, fromY: ent.y,
       cause: { shape, ox: act.ox, oy: act.oy, facing: act.facing },
     });
     if (!ent.act) return; // attacker got interrupted by its own hit side-effects (not expected, defensive)
@@ -475,9 +511,15 @@ function applyHit(world, t, hit) {
   if (t.kind === 'player') {
     if (!hit.periodic && t.dodge.iframeLeft > 0) {
       const sinceDodge = world.tick - t.dodge.startedTick;
-      if (!t.dodge.perfectPaid && sinceDodge <= ticks(PB.dodge.perfectMs)) {
+      const attacker = world.entities.find((e) => e.id === hit.srcId);
+      if (!hit.counter && attacker && attacker.team !== t.team && !t.dodge.perfectPaid
+        && sinceDodge >= 0 && sinceDodge <= ticks(PB.dodge.perfectMs)) {
         t.dodge.perfectPaid = true;
-        world.events.push({ type: 'perfectDodge', id: t.id, ability: hit.abilityId });
+        t.pendingCounter = { attackerId: hit.srcId, dodgeTick: t.dodge.startedTick,
+          expiresTick: t.dodge.startedTick + Math.max(ticks(PB.dodge.dashMs),
+            ticks(PB.dodge.iframeMs + t.iframeBonusMs)) + ticks(BALANCE.counter.graceMs) };
+        world.events.push({ type: 'perfectDodge', id: t.id, pid: t.pid, attackerId: hit.srcId,
+          srcId: hit.srcId, dodgeTick: t.dodge.startedTick, ability: hit.abilityId });
       } else {
         world.events.push({ type: 'miss', id: t.id, ability: hit.abilityId });
       }
@@ -529,6 +571,7 @@ function applyHit(world, t, hit) {
     if (t.hp <= 0) {
       t.hp = 0;
       t.dead = true;
+      t.pendingCounter = null;
       t.terminal = 'death';
       if (t.act) endAct(world, t, true);
       t.deathCause = { ability: hit.abilityId, by: hit.srcType, tick: world.tick, ...hit.cause };
@@ -587,7 +630,7 @@ function stepProjectiles(world) {
         const facing = Math.atan2(pr.vy, pr.vx);
         applyHit(world, target, {
           srcId: pr.ownerId, srcKind: pr.ownerKind, srcType: pr.ownerType, abilityId: pr.abilityId, def,
-          mult: pr.dmgMult * (friendly ? FRIENDLY_PROJECTILE_DAMAGE : 1), poiseMult: pr.poiseMult,
+          mult: pr.dmgMult * (friendly ? FRIENDLY_PROJECTILE_DAMAGE : 1), poiseMult: pr.poiseMult, counter: !!pr.counter,
           fromX: pr.x - Math.cos(facing) * 10, fromY: pr.y - Math.sin(facing) * 10,
           cause: { shape: { type: 'circle', radius: pr.r, offset: 0 }, ox: pr.x, oy: pr.y, facing },
         });
@@ -616,7 +659,7 @@ function explode(world, pr, def) {
     pr.hit.push(t.id);
     applyHit(world, t, {
       srcId: pr.ownerId, srcKind: pr.ownerKind, srcType: pr.ownerType, abilityId: pr.abilityId,
-      def: { ...def, damage: def.damage * 0.6 }, mult: pr.dmgMult, poiseMult: pr.poiseMult, fromX: pr.x, fromY: pr.y,
+      counter: !!pr.counter, def: { ...def, damage: def.damage * 0.6 }, mult: pr.dmgMult, poiseMult: pr.poiseMult, fromX: pr.x, fromY: pr.y,
       cause: { shape: { type: 'circle', radius, offset: 0 }, ox: pr.x, oy: pr.y, facing: 0 },
     });
   }
@@ -694,7 +737,7 @@ function stepRound(world) {
   const players = world.entities.filter((e) => e.kind === 'player');
   const cleared = rd.goal === 'timer' ? rd.t >= rd.timerTicks : !rd.pending.length && aliveCount === 0;
   if (cleared) {
-    for (const p of players) if (!p.terminal) p.terminal = 'clear';
+    for (const p of players) if (!p.terminal) { p.terminal = 'clear'; p.pendingCounter = null; }
   }
   if (players.length && players.every((p) => p.terminal)) {
     rd.state = players.some((p) => p.terminal === 'clear') ? 'clear'

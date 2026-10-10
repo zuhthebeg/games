@@ -2,6 +2,10 @@
 export const FRIENDLY_PROJECTILE_DAMAGE = 0;
 // [제안] P3 single source for encounter/reward tuning. Telegraph phase timings are NEVER scaled.
 export const BALANCE = {
+  // [제안] Player actions only; no cooldown/telegraph scaling.
+  attackSpeed: { agiPerEff: .02, agiCap: .2, weightReference: 8, weightPerUnit: .0125,
+    weightCap: 24, loadStart: .8, loadCap: 1.2, loadSlope: .5, min: .7, max: 1.2 },
+  counter: { damage: 1.35, poise: 1.5, graceMs: 300 },
   elite: { hp: 2.2, damage: 1.3, tint: 0xb994ed, scale: 1.15 },
   threats: [
     { hp: 1, damage: 1, gold: 1, drop: 1, rarity: {common:70,fine:27,rare:3}, bossRarity:{fine:50,rare:40,epic:10} },
@@ -53,4 +57,13 @@ export function monsterSizeProfile(stageId, elite, boss, roll) {
   const mean = Math.min(limit, mu * variant);
   const scale = Math.min(limit, mu * (1 - BALANCE.size.spread + 2 * BALANCE.size.spread * roll) * variant);
   return { scale, mean, hp: 1 + BALANCE.size.hpCoupling * (scale - mean) };
+}
+
+// Rate, not duration multiplier. Live load is sampled once by the act machine.
+export function attackRate(agiBonus = 0, weaponWeight = 8, loadRatio = 0) {
+  const a = BALANCE.attackSpeed;
+  const weight = Math.max(0, Math.min(a.weightCap, weaponWeight));
+  const load = Math.max(0, Math.min(a.loadCap, loadRatio) - a.loadStart);
+  return Math.max(a.min, Math.min(a.max, (1 + Math.max(0, Math.min(a.agiCap, agiBonus)))
+    / (1 + a.weightPerUnit * (weight - a.weightReference) + a.loadSlope * load)));
 }
