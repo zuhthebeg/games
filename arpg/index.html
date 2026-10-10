@@ -10,9 +10,10 @@
     <script type="importmap">
     {
       "imports": {
+        "./js/audio.js": "./js/audio.js?v=f6736d0190",
         "./js/content/combat.js": "./js/content/combat.js?v=95875bad40",
         "./js/input.js": "./js/input.js?v=fb40ab1d9a",
-        "./js/main.js": "./js/main.js?v=f5823b4feb",
+        "./js/main.js": "./js/main.js?v=7f05327380",
         "./js/meta/items.js": "./js/meta/items.js?v=ffba0864c8",
         "./js/meta/progression.js": "./js/meta/progression.js?v=5a88d9f0f8",
         "./js/meta/quiz.js": "./js/meta/quiz.js?v=9019dae2b1",
@@ -21,20 +22,21 @@
         "./js/meta/stats.js": "./js/meta/stats.js?v=7b38876eef",
         "./js/render/atlas-library.js": "./js/render/atlas-library.js?v=6c0628e3b1",
         "./js/render/atlas-state.js": "./js/render/atlas-state.js?v=727eee5375",
-        "./js/render/atlas-visual.js": "./js/render/atlas-visual.js?v=f4039a4435",
-        "./js/render/renderer.js": "./js/render/renderer.js?v=b177c096f6",
+        "./js/render/atlas-visual.js": "./js/render/atlas-visual.js?v=ee8c184cb8",
+        "./js/render/feel.js": "./js/render/feel.js?v=6bbba1ce51",
+        "./js/render/renderer.js": "./js/render/renderer.js?v=3a4e2ed030",
         "./js/render/shapes.js": "./js/render/shapes.js?v=1f3d9c4a35",
-        "./js/render/visual-provider.js": "./js/render/visual-provider.js?v=0c0088b4af",
+        "./js/render/visual-provider.js": "./js/render/visual-provider.js?v=6f20ffe15b",
         "./js/sim/core.js": "./js/sim/core.js?v=41f1313400",
         "./js/sim/world.js": "./js/sim/world.js?v=1825d15521",
-        "./js/ui/hub.js": "./js/ui/hub.js?v=74f7dee216",
+        "./js/ui/hub.js": "./js/ui/hub.js?v=fa05ba3f1b",
         "./js/ui/hud.js": "./js/ui/hud.js?v=def515e875",
         "./js/ui/icons.js": "./js/ui/icons.js?v=4bb21d55b8",
         "./vendor/pixi-8.22.0.min.mjs": "./vendor/pixi-8.22.0.min.mjs?v=66257bc467"
       }
     }
     </script>
-    <link rel="stylesheet" href="css/game.css?v=646e29f416">
+    <link rel="stylesheet" href="css/game.css?v=5bf47ab799">
   </head>
   <body>
     <main id="surface" aria-label="전투장"></main>
@@ -46,6 +48,7 @@
         <div class="bar load"><i id="load-fill"></i><span id="load-text"></span></div>
       </div>
       <div class="stage"><b id="stage-name"></b><span id="objective"></span></div>
+      <button data-sound-toggle class="battle-sound" aria-label="음소거" aria-pressed="false">🔊</button>
       <div id="temp-loot"></div>
       <div id="notice" role="status" aria-live="polite"></div>
       <div id="joystick" hidden><i></i></div>
@@ -66,6 +69,6 @@
     <section class="overlay" id="pause" hidden>
       <div class="story-panel"><h2>일시정지</h2><p>탭으로 돌아오면 전투가 재개됩니다.</p></div>
     </section>
-    <script type="module" src="js/main.js?v=f5823b4feb"></script>
+    <script type="module" src="js/main.js?v=7f05327380"></script>
   </body>
 </html>

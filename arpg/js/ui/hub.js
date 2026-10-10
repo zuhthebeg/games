@@ -168,6 +168,7 @@ export class HubUI {
       <div class="xp-track" role="meter" aria-label="경험치" aria-valuemin="0" aria-valuemax="100"
         aria-valuenow="${Math.round(ratio * 100)}" title="XP ${amount(save.xp)}"><i style="width:${ratio * 100}%"></i></div></div>
       <b id="inn-gold" class="icon-count" aria-label="골드 ${save.gold}">${icon('gold')}${save.gold}</b>
+      <button data-sound-toggle class="settings-button" aria-label="음소거" aria-pressed="false">🔊</button>
       ${button(icon('settings'), 'settings', 'class="settings-button" aria-label="설정"')}</header>`;
   }
 
@@ -334,7 +335,7 @@ export class HubUI {
       <details class="help"><summary aria-label="출정 안내">ⓘ</summary>
         <p>${tier.text}. 킬 XP는 완료할 때만 지급. 귀환은 전리품만, 사망은 이번 전리품도 잃는다.</p>
         <label class="check"><input id="sortie-reduced" type="checkbox"
-          ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'checked' : ''}>효과 줄이기</label></details>`, 'sortie');
+          ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'checked' : ''}>흔들림·섬광 줄이기</label></details>`, 'sortie');
   }
 
   launch(stage, reduced = false, weapon = null) {

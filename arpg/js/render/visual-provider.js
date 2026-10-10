@@ -113,6 +113,9 @@ function procedural(entity, { color }) {
     container,
     get debug() { return { mode: 'procedural', key: visualKey }; },
     update(state, animation, deltaTime) {
+      flash.visible = animation.flash > 0 && !animation.reduced;
+      flash.alpha = animation.flash || 0;
+      if (animation.frozen) return;
       animation.age += deltaTime;
       if (state.dead)
         animation.deadAge += deltaTime;
@@ -125,8 +128,6 @@ function procedural(entity, { color }) {
       stars.visible = state.staggerLeft > 0;
       stars.rotation = Math.sin(animation.age * 6) * .05;
       body.alpha = state.spawnLeft > 0 ? .45 : .95;
-      flash.visible = animation.hurt > 0;
-      flash.alpha = animation.reduced ? .25 : .85;
       container.alpha = state.dead ? Math.max(0, 1 - animation.deadAge / .7)
         : state.terminal === 'return_scroll' ? .35 : 1;
       bar.visible = health.visible = state.kind === 'monster' && !state.dead && state.type !== 'scarecrow';

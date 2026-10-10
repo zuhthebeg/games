@@ -203,9 +203,13 @@ try {
   await command('Page.navigate', { url: `http://127.0.0.1:${httpPort}/arpg/?dev=1` });
   await waitFor(page('inn'));
   await devStart('S2');
-  await evaluate(`window.smokeHits={tick:-1,hits:0,playerHits:0};
+  await evaluate(`window.smokeHits={tick:-1,hits:0,playerHits:0,maxFrozen:0,maxParticles:0,maxVoices:0};
     window.watchHits=()=>{
       const world=__arpg.world;
+      const feedback=__arpg.feedback;
+      smokeHits.maxFrozen=Math.max(smokeHits.maxFrozen,feedback.frozen.length);
+      smokeHits.maxParticles=Math.max(smokeHits.maxParticles,feedback.particles);
+      smokeHits.maxVoices=Math.max(smokeHits.maxVoices,feedback.audio.voices);
       if(world && smokeHits.tick!==world.tick){
         smokeHits.tick=world.tick;
         for(const event of world.events) if(event.type==='hit'){
@@ -225,6 +229,7 @@ try {
   await sleep(2800);
   await key('KeyD', 'keyUp');
   await key('KeyJ', 'keyUp');
+  await waitFor('__arpg.feedback.audio.state==="running" && __arpg.feedback.audio.loaded.length===7');
   const combat = await evaluate(`(() => {
     const world=__arpg.world;
     const player=world.entities[0];
@@ -233,6 +238,15 @@ try {
   })()`);
   assert.ok(combat.tick >= 100 && combat.hits > 0 && combat.playerHits > 0, JSON.stringify(combat));
   assert.ok(combat.dodgeTick >= 0, '5ms dodge tap lost');
+  const feedback = await evaluate(`({...smokeHits,pools:{...__arpg.feedback.pools},
+    audio:{...__arpg.feedback.audio,loaded:[...__arpg.feedback.audio.loaded]}})`);
+  assert.ok(feedback.maxFrozen >= 2 && feedback.maxParticles > 0 && feedback.maxVoices > 0, JSON.stringify(feedback));
+  assert.deepEqual(feedback.pools, { particles: 56, numbers: 32, effects: 40 });
+  assert.ok(feedback.maxVoices <= 6);
+  await click('#hud [data-sound-toggle]');
+  assert.equal(await evaluate('__arpg.feedback.audio.muted'), true);
+  assert.equal(await evaluate('localStorage.getItem("arpg.audio.muted")'), '1');
+  await click('#hud [data-sound-toggle]');
   assert.ok(await evaluate(`(() => {
     try {__arpg.world.entities[0].hp=999;return false;}catch{return true;}
   })()`), 'debug world writable');
@@ -362,7 +376,7 @@ try {
     S2: 'sortie confirmed → reload → inn',
     persisted, fullSaveRestored: true, lastReceiptRestored: true,
     mobile: { width: 390, height: 844, hotspots: 5, buttons: 6, inside: true, noOverlap: true },
-    combat, touch: true, edgeLatch: true, readonlyDebug: true,
+    combat, feedback, touch: true, edgeLatch: true, readonlyDebug: true,
     weapons: ['blade', 'bow', 'focus'], manaPotionE: true,
     innAutoRecovery: ['clear', 'death', 'return_scroll', 'reload'],
     deathCause: true, scroll: 'progress → returned', visibilityPause: true,
