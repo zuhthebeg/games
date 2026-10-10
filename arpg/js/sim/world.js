@@ -15,7 +15,7 @@ const AUTO_AIM_RANGE = 560;
 const SPAWN_IN_MS = 700;
 
 export function emptyInput() {
-  return { mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, skillEdge: false, dodgeEdge: false, potionEdge: false, scrollEdge: false };
+  return { mx: 0, my: 0, aimX: 0, aimY: 0, attack: false, skillEdge: false, dodgeEdge: false, potionEdge: false, manaEdge: false, scrollEdge: false };
 }
 
 export function createWorld({ seed = 1, arena = { w: 1400, h: 860 } } = {}) {
@@ -39,11 +39,13 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
     speed: PB.speed * (mods.speedMult ?? 1),
     dmgMult: { blade: 1, bow: 1, focus: 1, ...(mods.dmgMult || {}) },
     cdMult: mods.cdMult ?? 1,
+    dodgeCdMult: mods.dodgeCdMult ?? 1, iframeBonusMs: mods.iframeBonusMs ?? 0,
+    potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0,
     weapon, act: null, cds: {},
     dodge: { cdLeft: 0, iframeLeft: 0, dashLeft: 0, dx: 0, dy: 0, startedTick: -9999, perfectPaid: false },
     bufferDodge: 0, bufferDodgeDir: [0, 0],
     hurtInvuln: 0,
-    potions: mods.potions ?? 3, potionCd: 0,
+    potions: mods.potions ?? 3, manaPotions: mods.manaPotions ?? 0, potionCd: 0,
     scrolls: mods.scrolls ?? 1, scrollRetry: 0, channel: 0,
     dead: false, terminal: null, deathCause: null,
   };
@@ -76,6 +78,18 @@ export function startStage(world, stageId) {
     timerTicks: st.timerMs ? ticks(st.timerMs) : 0, maxConcurrent: st.maxConcurrent,
     pending: st.spawns.map((s) => ({ ...s, atTicks: ticks(s.at) })),
   };
+}
+
+// Carry weight (design §8.3). The meta layer owns the weight math; the sim only applies the tier effects.
+export function setLoad(world, pid, ratio) {
+  const p = world.entities.find((e) => e.kind === 'player' && e.pid === pid);
+  if (p) p.loadRatio = ratio;
+}
+
+export function loadEffects(ratio) {
+  if (ratio < 0.8) return { speed: 1, dodgeCd: 1 };
+  if (ratio <= 1) return { speed: 1, dodgeCd: 1.15 };
+  return { speed: 1 - 0.25 * Math.min(1, (ratio - 1) / 0.2), dodgeCd: 1.3 };
 }
 
 const alive = (e) => !e.dead && !e.terminal;
@@ -146,8 +160,8 @@ function stepPlayer(world, p, inp) {
     d.dashLeft = dashTicks;
     d.dx = (dx * PB.dodge.distance) / dashTicks;
     d.dy = (dy * PB.dodge.distance) / dashTicks;
-    d.iframeLeft = ticks(PB.dodge.iframeMs);
-    d.cdLeft = ticks(PB.dodge.cooldownMs);
+    d.iframeLeft = ticks(PB.dodge.iframeMs + p.iframeBonusMs);
+    d.cdLeft = ticks(PB.dodge.cooldownMs * p.dodgeCdMult * loadEffects(p.loadRatio).dodgeCd);
     d.startedTick = world.tick;
     d.perfectPaid = false;
     p.bufferDodge = 0;
@@ -167,9 +181,16 @@ function stepPlayer(world, p, inp) {
   if (inp.potionEdge && p.potions > 0 && p.potionCd === 0 && p.hp < p.maxHp) {
     p.potions--;
     p.potionCd = ticks(PB.potion.cooldownMs);
-    const heal = Math.round(p.maxHp * PB.potion.healFrac);
+    const heal = Math.round(p.maxHp * PB.potion.healFrac * p.potionHealMult);
     p.hp = Math.min(p.maxHp, p.hp + heal);
     world.events.push({ type: 'potion', id: p.id, heal });
+  }
+  if (inp.manaEdge && p.manaPotions > 0 && p.potionCd === 0 && p.mp < p.maxMp) {
+    p.manaPotions--;
+    p.potionCd = ticks(PB.potion.cooldownMs);
+    const gain = Math.round(PB.manaPotion * p.potionHealMult);
+    p.mp = Math.min(p.maxMp, p.mp + gain);
+    world.events.push({ type: 'manaPotion', id: p.id, gain });
   }
   if (inp.scrollEdge && p.scrolls > 0 && p.scrollRetry === 0 && !p.act) {
     p.channel = ticks(PB.scroll.channelMs);
@@ -196,8 +217,9 @@ function stepPlayer(world, p, inp) {
 
   const phase = p.act ? p.act.phase : null;
   const f = !phase ? 1 : phase === 'recovery' ? 0.55 : p.act.def.delivery === 'dash' ? 0 : 0.3;
-  p.x += mx * p.speed * f * DT;
-  p.y += my * p.speed * f * DT;
+  const sp = p.speed * loadEffects(p.loadRatio).speed;
+  p.x += mx * sp * f * DT;
+  p.y += my * sp * f * DT;
   p.moving = mlen > 0.15 && f > 0;
   if (!p.act) {
     const ax = inp.aimX, ay = inp.aimY;
@@ -387,7 +409,7 @@ function doActive(world, ent, act) {
         x: ent.x + Math.cos(a) * (ent.r + 4), y: ent.y + Math.sin(a) * (ent.r + 4),
         vx: Math.cos(a) * pr.speed, vy: Math.sin(a) * pr.speed, r: pr.radius,
         travelled: 0, range: pr.rangePx, pierce: pr.pierce, hit: [],
-        dmgMult: sourceMult(ent, def),
+        dmgMult: sourceMult(ent, def), poiseMult: ent.poiseMult ?? 1,
       });
     }
     world.events.push({ type: 'projectile', id: ent.id, ability: act.id });
@@ -406,7 +428,7 @@ function hitShape(world, ent, act, shape, ox, oy) {
     act.hit.push(t.id);
     applyHit(world, t, {
       srcId: ent.id, srcKind: ent.kind, srcType: ent.type || ent.weapon, abilityId: act.id,
-      def: act.def, mult: sourceMult(ent, act.def), fromX: ent.x, fromY: ent.y,
+      def: act.def, mult: sourceMult(ent, act.def), poiseMult: ent.poiseMult ?? 1, fromX: ent.x, fromY: ent.y,
       cause: { shape, ox: act.ox, oy: act.oy, facing: act.facing },
     });
     if (!ent.act) return; // attacker got interrupted by its own hit side-effects (not expected, defensive)
@@ -467,7 +489,7 @@ function applyHit(world, t, hit) {
   }
 
   if (mdef.poise > 0 && t.staggerLeft === 0) {
-    t.poise -= def.poise || 0;
+    t.poise -= (def.poise || 0) * (hit.poiseMult ?? 1);
     if (t.poise <= 0) {
       t.poise = 0;
       t.staggerLeft = ticks(1200);
@@ -501,7 +523,7 @@ function stepProjectiles(world) {
         const facing = Math.atan2(pr.vy, pr.vx);
         applyHit(world, t, {
           srcId: pr.ownerId, srcKind: pr.ownerKind, srcType: pr.ownerType, abilityId: pr.abilityId, def,
-          mult: pr.dmgMult, fromX: pr.x - Math.cos(facing) * 10, fromY: pr.y - Math.sin(facing) * 10,
+          mult: pr.dmgMult, poiseMult: pr.poiseMult, fromX: pr.x - Math.cos(facing) * 10, fromY: pr.y - Math.sin(facing) * 10,
           cause: { shape: { type: 'circle', radius: pr.r, offset: 0 }, ox: pr.x, oy: pr.y, facing },
         });
         if (pr.pierce-- <= 0) { gone = true; break; }
@@ -524,7 +546,7 @@ function explode(world, pr, def) {
     pr.hit.push(t.id);
     applyHit(world, t, {
       srcId: pr.ownerId, srcKind: pr.ownerKind, srcType: pr.ownerType, abilityId: pr.abilityId,
-      def: { ...def, damage: def.damage * 0.6 }, mult: pr.dmgMult, fromX: pr.x, fromY: pr.y,
+      def: { ...def, damage: def.damage * 0.6 }, mult: pr.dmgMult, poiseMult: pr.poiseMult, fromX: pr.x, fromY: pr.y,
       cause: { shape: { type: 'circle', radius, offset: 0 }, ox: pr.x, oy: pr.y, facing: 0 },
     });
   }

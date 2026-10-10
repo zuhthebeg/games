@@ -140,7 +140,7 @@ export const STAGES = {
       { monster: 'goblin_grunt', at: 6000, fx: 0.85, fy: 0.25 },
     ],
   },
-  S3E: {
+  S4: {
     name: '고블린 대장', goal: 'killAll', maxConcurrent: 3,
     spawns: [
       { monster: 'goblin_chief', at: 0, fx: 0.78, fy: 0.5 },
@@ -151,9 +151,10 @@ export const STAGES = {
 };
 
 export const PLAYER_BASE = {
-  r: 17, speed: 230, hp: 100, mp: 60, mpRegen: 4,
+  r: 17, speed: 230, hp: 100, mp: 100, mpRegen: 5,
   dodge: { distance: 150, dashMs: 200, iframeMs: 233, cooldownMs: 1150, perfectMs: 150 },
   bufferMs: 120, hurtInvulnMs: 260,
   potion: { healFrac: 0.35, cooldownMs: 1500 },
+  manaPotion: 30,
   scroll: { channelMs: 2000, retryMs: 1000 },
 };

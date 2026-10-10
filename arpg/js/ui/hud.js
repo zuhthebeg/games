@@ -9,7 +9,7 @@ export class HUD {
     this.nodes={};for(const id of ['hp-fill','hp-text','mp-fill','mp-text','stage-name','objective','potion','scroll','skill','dodge','attack','notice'])this.nodes[id]=$(`#${id}`);
     $('#start-form').addEventListener('submit',e=>{e.preventDefault();start($('#weapon').value,$('#stage').value,$('#reduced-fx').checked);$('#start').blur();});
     $('#back').addEventListener('click',()=>menu());
-    $('#next').addEventListener('click',()=>{const order=['S1','S2','S3','S3E'];const next=order[order.indexOf(this.stage)+1];if(next)start(this.weapon,next,$('#reduced-fx').checked);});
+    $('#next').addEventListener('click',()=>{const order=['S1','S2','S3','S4'];const next=order[order.indexOf(this.stage)+1];if(next)start(this.weapon,next,$('#reduced-fx').checked);});
   }
   ready(){$('#start').disabled=false;$('#start').textContent='시작';}
   begin(world){this.stage=world.round.stageId;this.weapon=world.entities[0].weapon;$('#menu').hidden=true;$('#result').hidden=true;$('#hud').hidden=false;$('#pause').hidden=true;this.nodes.notice.textContent='';this.noticeLeft=0;this.nodes['stage-name'].textContent=`${this.stage} · ${STAGES[this.stage].name}`;}
@@ -42,6 +42,6 @@ export class HUD {
     $('#result-title').textContent={clear:'여정 완료',returned:'귀환 성공',failed:'여정 실패'}[state];
     const c=p.deathCause;
     $('#cause').textContent=state==='failed'&&c?`왜 죽었나: ${monsters[c.by]||c.by} — ${names[c.ability]||c.ability}. 회피 가능했던 공격 · 붉은 위험 영역에서 벗어나거나 타격 전에 회피하세요.`:state==='returned'?'주문서의 빛이 당신을 여관으로 이끌었습니다.':'다음 길로 나아갈 준비가 되었습니다.';
-    $('#next').hidden=state!=='clear'||this.stage==='S3E';(state==='clear'&&this.stage!=='S3E'?$('#next'):$('#back')).focus();
+    $('#next').hidden=state!=='clear'||this.stage==='S4';(state==='clear'&&this.stage!=='S4'?$('#next'):$('#back')).focus();
   }
 }

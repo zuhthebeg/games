@@ -192,3 +192,19 @@ test('S2 is clearable by a simple dodging bot and idling dies', () => {
   assert.equal(idle.round.state, 'failed');
   assert.ok(idle.entities[0].deathCause?.ability, 'death records the pattern that killed (design §7.2)');
 });
+
+test('weight tiers and stat mods reach the sim', async () => {
+  const { loadEffects, setLoad } = await import('../js/sim/world.js');
+  assert.deepEqual(loadEffects(0.5), { speed: 1, dodgeCd: 1 });
+  assert.equal(loadEffects(0.9).dodgeCd, 1.15);
+  assert.equal(loadEffects(1.2).speed, 0.75);
+  const w = createWorld({ seed: 1 });
+  const p = addPlayer(w, { pid: 'a', mods: { manaPotions: 1, dodgeCdMult: 0.8 } });
+  setLoad(w, 'a', 1.1);
+  p.mp = 10;
+  const evs = run(w, 1, () => ({ a: input({ manaEdge: true }) }));
+  assert.ok(evs.some((e) => e.type === 'manaPotion'));
+  assert.equal(p.manaPotions, 0);
+  step(w, { a: input({ dodgeEdge: true }) });
+  assert.equal(p.dodge.cdLeft, ticks(1150 * 0.8 * 1.3));
+});
