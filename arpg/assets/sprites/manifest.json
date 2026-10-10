@@ -1,0 +1,180 @@
+[
+  {
+    "id": "hero-sword",
+    "label": "기사 · 검",
+    "monster": false,
+    "content_ids": [
+      "blade"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "dodge",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6759566366672516
+    },
+    "bytes": 443312
+  },
+  {
+    "id": "hero-bow",
+    "label": "기사 · 활",
+    "monster": false,
+    "content_ids": [
+      "bow"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "dodge",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7021825015544891
+    },
+    "bytes": 493054
+  },
+  {
+    "id": "hero-focus",
+    "label": "기사 · 지팡이",
+    "monster": false,
+    "content_ids": [
+      "focus"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "dodge",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7021825015544891
+    },
+    "bytes": 450046
+  },
+  {
+    "id": "skeleton",
+    "label": "해골 미니언 (멧돼지 대체)",
+    "monster": true,
+    "content_ids": [
+      "iron_boar"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7218370139598846
+    },
+    "bytes": 503862
+  },
+  {
+    "id": "goblin-grunt",
+    "label": "고블린 근접",
+    "monster": true,
+    "content_ids": [
+      "goblin_grunt"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7022122442722321
+    },
+    "bytes": 445308
+  },
+  {
+    "id": "goblin-archer",
+    "label": "고블린 궁수",
+    "monster": true,
+    "content_ids": [
+      "goblin_slinger"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.7022122442722321
+    },
+    "bytes": 490142
+  },
+  {
+    "id": "goblin-chief",
+    "label": "고블린 대장",
+    "monster": true,
+    "content_ids": [
+      "goblin_chief"
+    ],
+    "sheets": [
+      "atlas-0.webp.json",
+      "atlas-1.webp.json"
+    ],
+    "animations": [
+      "idle",
+      "run",
+      "attack",
+      "hit",
+      "death"
+    ],
+    "fps": 10,
+    "anchor": {
+      "x": 0.5,
+      "y": 0.6945566534996033
+    },
+    "bytes": 439844
+  }
+]

@@ -104,6 +104,12 @@ try {
       get world() { return readonly(world); },
       get save() { return readonly(hub.save); },
       get tracker() { return readonly(tracker); },
+      get art() {
+        return readonly({
+          ...renderer.provider.atlases.status(),
+          visuals: [...renderer.views].map(([id, view]) => ({ id, ...view.visual.debug })),
+        });
+      },
     }),
   });
   document.querySelector('#boot').hidden = true;

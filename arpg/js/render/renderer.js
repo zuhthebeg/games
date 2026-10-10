@@ -65,6 +65,7 @@ export class ArenaRenderer {
       view.portal.destroy();
     }
     this.views.clear();
+    this.provider.beginRound?.(world.entities);
     for (const graphic of this.projectiles.values())
       graphic.destroy();
     this.projectiles.clear();

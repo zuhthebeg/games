@@ -1,4 +1,6 @@
 import { Container, Graphics } from '../../vendor/pixi-8.22.0.min.mjs';
+import { registerAtlasFactories } from './atlas-visual.js';
+import { visualKey } from './atlas-state.js';
 const COLORS = {
   blade: 0x7c9fa2,
   bow: 0x819768,
@@ -12,9 +14,14 @@ const COLORS = {
 // Atlas providers can register the same key and return this contract unchanged.
 // update(entityState, animState, deltaTime) never writes to the simulation.
 export class VisualProvider {
-  constructor({ palette = {} } = {}) {
+  constructor({ palette = {}, atlases = true } = {}) {
     this.palette = palette;
     this.factories = new Map();
+    if (atlases) registerAtlasFactories(this, procedural);
+  }
+
+  beginRound(entities) {
+    this.atlases?.beginRound(entities.map(visualKey));
   }
 
   register(key, factory) {
@@ -22,7 +29,7 @@ export class VisualProvider {
   }
 
   createVisual(entity) {
-    const key = entity.kind === 'player' ? entity.weapon : entity.type;
+    const key = visualKey(entity);
     const color = this.palette[key] ?? COLORS[key];
     return this.factories.has(key) ? this.factories.get(key)(entity, { color }) : procedural(entity, { color });
   }
