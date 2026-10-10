@@ -68,6 +68,9 @@ try {
     for(const i of ['blade','bow','focus']){await page.locator(`button[data-kit="${i}"]`).click();await audit('combat/'+i);anchors.push(await page.locator('.battle-vitals,.common-supplies button,.fixed-dodge').evaluateAll(nodes=>nodes.map(el=>{const r=el.getBoundingClientRect();return [r.x,r.y,r.width,r.height];})));}
     assert.deepEqual(anchors[0],anchors[1]);assert.deepEqual(anchors[0],anchors[2]);
     await tab('result');for(const i of ['clear','death']){await page.locator(`button[data-terminal="${i}"]`).click();await audit('result/'+i);}
+    await tab('board');await page.locator('[data-contract="S1"]').click();assert.match(await page.locator('#depart-preview').innerText(),/S1/);await page.locator('#depart-preview').click();assert.equal(await page.locator('#battle-stage').innerText(),'S1 · 소환 시험');
+    for(const view of views.slice(0,6)){await tab(view);await page.locator(`#screen-${view} .rationale summary`).click();assert.equal(await page.locator(`#screen-${view} .rationale`).getAttribute('open'),'');await audit('legacy-rationale/'+view);await page.locator(`#screen-${view} .rationale summary`).click();}
+    await tab('inn');await page.evaluate(()=>{const el=document.querySelector('#screens');const a=new Event('touchstart',{bubbles:true});Object.defineProperty(a,'touches',{value:[{clientX:310,clientY:220}]});const b=new Event('touchend',{bubbles:true});Object.defineProperty(b,'changedTouches',{value:[{clientX:90,clientY:225}]});el.dispatchEvent(a);el.dispatchEvent(b);});assert.equal(await page.locator('[data-screen="shop"]').getAttribute('aria-selected'),'true');
     // Schema and sample invariants: five slots, four grades, affix counts, shop cap.
     const data=await page.evaluate(()=>{
       const {compareItems,save,equipped,bag,stock}=window.P2Mock;
@@ -105,6 +108,9 @@ try {
     await page.close();
     report.checks.push(`${prefix}: 12 screens + scroll reachability, legacy variants, 5 sockets, filters/sort/long press, 8 stock + buy/sell, 3 comparison states, 3 stone tiers × 2 availability states, 3 sequential reveals, keyboard focus/reduced-motion/local assets/storage`);
   }
+  function lum(hex){const c=hex.slice(1).match(/../g).map(n=>parseInt(n,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return c[0]*.2126+c[1]*.7152+c[2]*.0722;}
+  report.contrast=[['body','#efe6d2','#141916'],['muted','#b8b39f','#30362b'],['CTA','#1b211a','#d3ad6d'],['brass selected','#d3ad6d','#33392b'],['gain','#adc6a0','#141916'],['loss','#e9a294','#222821'],['HP','#f8ecd6','#914740'],['MP','#f8ecd6','#456879'],['common','#a9aba5','#292e29'],['fine','#b5cda0','#293526'],['rare','#a4c8e6','#243442'],['epic','#d1b7e5','#332b40']].map(([name,fg,bg])=>{const a=lum(fg),b=lum(bg),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);assert(ratio>=4.5,`contrast ${name}`);return {name,foreground:fg,background:bg,ratio:Number(ratio.toFixed(2))};});
+  report.checks.push('12 text/background contrast pairs ≥ 4.5:1 including 4 rarity labels; original contract/rationale/synthetic swipe regression preserved');
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.networkErrors,[]);
   report.passed=true;report.limitations=['DOM geometry and local Chromium, not real-device thumb reach or aesthetic approval','Scroll containers are intentional; visible clipped intersections audited at top/middle/bottom','Gameplay formulas and stock rolls are fixtures, not production implementations'];
   await writeFile(path.join(dir,'verification.json'),JSON.stringify(report,null,2)+'\n');

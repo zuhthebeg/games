@@ -195,3 +195,5 @@ compareItems(equipped, candidate, save) => ({
 `node arpg/ui-mock/verify.mjs`가 **390×844 / 360×640 / 1280×900**의 원본 6+신규6화면, 상태별 비교/가방/상점/공개/강화, 원본 HUD 변형까지 확인한다. 콘솔/pageerror/4xx/5xx/외부 리소스/저장 쓰기 없음, 44px 표적·보이는 버튼의 겹침·가로 넘침·고정 CTA 범위, 스크롤 상/중/하, 긴누름/Escape/포커스 복귀/reduced-motion·SVG 14종·idle atlas decode·계약 키·등급/affix/재고 상한을 assert한다. 전체 결과는 `verification.json`.
 
 스크린샷은 요청자가 승인한 **검증용만** `MOCK_SCREENSHOTS=/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification` 옵션으로 tmp에 남긴다. 문서/보고서에 이미지 임베드 없음. DOM 측정은 미감 승인/색각 테스트/실제 폰 엄지 사용성 검증을 대체하지 않는다. 기하 audit는 정상 scroll clipping을 viewport overflow로 오인하지 않으며 상/중/하의 **보이는 교차 영역**을 비교한다. 완전한 스크린 리더/확대 검증은 후속이다.
+
+최종 실행 증거: Chromium **149.0.7827.55**, **397 기하 상태**(390×844=127 / 360×640=143 / 1280×900=127) PASS. console/pageerror=0, HTTP 오류=0, 겹침=0, 44px 미만=0, 가로 넘침=0, 외부 자산/저장 쓰기=0. 12개 대비 조합 최저 **5.12:1**. 검증 이미지 **21장**은 `/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/`에만 저장. `tmp/arpg-p2mock-verify.log`는 실행 요약. cocy 승인/실제 폰 사용성/실제 파츠 교체는 여전히 미완료 게이트다.

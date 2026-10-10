@@ -57,4 +57,3 @@ font-size: clamp(3rem 10vw 12rem), font-weight: 900, letter-spacing: -0.05em, ma
 - [ ] Focus states visible for keyboard nav
 - [ ] prefers-reduced-motion respected
 - [ ] Responsive: 375px, 768px, 1024px, 1440px
-
