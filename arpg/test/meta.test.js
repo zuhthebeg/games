@@ -149,7 +149,8 @@ test('economy: every craft/dismantle cycle loses resources; enhance never refund
   for (const [id, recipe] of Object.entries(RECIPES)) {
     const base = fresh();
     base.gold = 10000;
-    base.stacks = { ...base.stacks, scrap: 100, hide: 100, fang: 100 };
+    base.stacks = { ...base.stacks, ...Object.fromEntries(Object.entries(ITEMS)
+      .filter(([, item]) => item.kind === 'material').map(([material]) => [material, 100])) };
     freeze(base);
     const crafted = craft(base, id);
     const item = crafted.items.at(-1);
@@ -159,7 +160,9 @@ test('economy: every craft/dismantle cycle loses resources; enhance never refund
     assert.ok(cycle.gold < base.gold);
     assert.ok(cycle.stacks.scrap < base.stacks.scrap);
     assert.deepEqual(cycle.items, base.items);
-    for (const material of ['hide', 'fang']) assert.ok(cycle.stacks[material] <= base.stacks[material]);
+    for (const material of Object.keys(recipe).filter((key) => key !== 'gold')) {
+      assert.ok(cycle.stacks[material] <= base.stacks[material]);
+    }
     assert.throws(() => dismantle(cycle, item.uid));
     let upgraded = crafted;
     for (let level = 0; level < 5; level++) upgraded = enhance(upgraded, item.uid);

@@ -3,6 +3,7 @@ import { getTelegraphs } from '../sim/world.js';
 import { shapePath, pattern } from './shapes.js';
 import { VisualProvider } from './visual-provider.js';
 import { FEEL, impactTier, numberScale, kickEnvelope } from './feel.js';
+import { DANGER_COLORS } from '../content/monsters.js';
 const clamp = (view, a, b) => Math.max(a, Math.min(b, view));
 export class ArenaRenderer {
   constructor(app, provider = new VisualProvider()) {
@@ -379,7 +380,7 @@ export class ArenaRenderer {
       graphic.visible = true;
       graphic.position.set(telegraph.ox, telegraph.oy);
       graphic.rotation = telegraph.facing;
-      const locked = telegraph.phase !== 'windup', color = locked ? 0xf0655e : 0xe7ad47;
+      const locked = telegraph.phase !== 'windup', color = locked ? DANGER_COLORS.active : DANGER_COLORS.preparation;
       // Geometry changes at sim snapshots, not at 60Hz interpolated sprite frames.
       if (graphic.telegraph !== telegraph) {
         graphic.clear();

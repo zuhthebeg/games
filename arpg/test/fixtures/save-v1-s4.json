@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "createdAt": 1,
+  "name": "구 세이브",
+  "level": 4,
+  "xp": 139,
+  "statPoints": 9,
+  "stats": {
+    "str": 8,
+    "agi": 6,
+    "int": 6,
+    "wis": 6,
+    "cha": 5
+  },
+  "gold": 30,
+  "equipped": {
+    "weapon": "starter:weapon",
+    "armor": "starter:armor"
+  },
+  "items": [
+    {
+      "uid": "starter:weapon",
+      "id": "training_sword",
+      "enhance": 0
+    },
+    {
+      "uid": "starter:armor",
+      "id": "cloth_tunic",
+      "enhance": 0
+    },
+    {
+      "uid": "pity:chief_maul:1",
+      "id": "chief_maul",
+      "enhance": 0
+    }
+  ],
+  "stacks": {
+    "potion": 3,
+    "mana_potion": 1,
+    "return_scroll": 1
+  },
+  "cleared": {
+    "S1": true,
+    "S2": true,
+    "S3": true,
+    "S4": true
+  },
+  "flags": {
+    "chiefPity": true,
+    "starterRestoreUsed": false
+  },
+  "quiz": {
+    "answers": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "weapon": "blade",
+    "overridden": false
+  },
+  "lastReceipt": {
+    "stageId": "S4",
+    "terminal": "clear",
+    "firstClear": true,
+    "xpGained": 260,
+    "xpLost": 0,
+    "xpDiscarded": 0,
+    "depositedXp": 0,
+    "xpForfeited": 0,
+    "stageXp": 260,
+    "levelsGained": 1,
+    "statPointsGained": 3,
+    "goldGained": 0,
+    "lootKept": {
+      "gold": 0,
+      "items": [
+        {
+          "uid": "pity:chief_maul:1",
+          "id": "chief_maul",
+          "enhance": 0
+        }
+      ],
+      "stacks": {}
+    },
+    "lootLost": {
+      "gold": 0,
+      "items": [],
+      "stacks": {}
+    },
+    "used": {
+      "potion": 0,
+      "mana_potion": 0,
+      "return_scroll": 0
+    },
+    "restored": {},
+    "pityGranted": true
+  }
+}
