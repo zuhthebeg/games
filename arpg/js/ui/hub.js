@@ -322,7 +322,7 @@ export class HubUI {
   }
 
   showBoard() {
-    const recommended = [1, 2, 3, 4, 4, 5, 6]; // [제안] Level at entry, before first-clear XP.
+    const recommended = Object.keys(STAGES).map((id, i) => BALANCE.stages[id]?.rec?.[0] ?? [1, 2, 3, 4, 4, 5, 6][i]); // [제안] Level at entry.
     const stages = Object.keys(STAGES).map((id, index, order) => {
       const unlocked = index === 0 || this.save.cleared[order[index - 1]];
       const state = this.save.cleared[id] ? 'clear' : unlocked ? 'depart' : 'lock';

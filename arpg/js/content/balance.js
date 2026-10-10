@@ -8,7 +8,7 @@ export const BALANCE = {
     { hp: 1.5, damage: 1.3, gold: 1.6, drop: 1.4, rarity: {common:55,fine:37,rare:7,epic:1}, bossRarity:{fine:35,rare:50,epic:15} },
     { hp: 2.1, damage: 1.7, gold: 2.4, drop: 1.9, rarity: {common:40,fine:43,rare:14,epic:3}, bossRarity:{fine:20,rare:55,epic:25} },
   ],
-  normalGold: 1.2, rewardCurve: 1.12,
+  normalGold: 1.2, rewardCurve: 1.06,
   // [제안] 1 level point, ~2x early point effect, earlier soft knee: balanced Lv30 stat impact ~69% old.
   stats: { pointsPerLevel: 1, knee: 4, slope: .5, capBase: 9, capEvery: 3, capMax: 19,
     focusDamage: .04, mp: 8, regen: .06, speed: .01, speedCap: .07,
@@ -23,6 +23,19 @@ export const BALANCE = {
     S5: { hp:5, damage:4.2, eliteChance:.10, waves:14, waveMs:12000, concurrent:4 },
     S6: { hp:3, damage:1.35, eliteChance:.12, waves:10, waveMs:13000, concurrent:3 },
     S7: { hp:3, damage:1.4, eliteChance:.12, waves:12, waveMs:13000, concurrent:2 },
+    S8: { hp:3.6, damage:2.2, eliteChance:.12, waves:9, waveMs:14000, concurrent:4, huntTier:2, rec:[7,'fine',1] },
+    S9: { hp:3.2, damage:1.18, eliteChance:.12, waves:9, waveMs:14000, concurrent:3, huntTier:2, rec:[8,'fine',2] },
+    S10: { hp:2.8, bossHp:7, damage:1.28, eliteChance:.12, waves:8, waveMs:16000, concurrent:4, huntTier:2, rec:[9,'fine',2] },
+    S11: { hp:3.8, damage:6, eliteChance:.14, waves:9, waveMs:13000, concurrent:4, huntTier:3, rec:[10,'fine',2] },
+    S12: { hp:3.5, damage:2.4, eliteChance:.14, waves:9, waveMs:14000, concurrent:4, huntTier:3, rec:[11,'fine',3] },
+    S13: { hp:4.2, damage:2.7, eliteChance:.14, waves:10, waveMs:13000, concurrent:3, huntTier:3, rec:[12,'rare',2] },
+    S14: { hp:3.2, damage:1.2, eliteChance:.15, waves:9, waveMs:15000, concurrent:3, huntTier:3, rec:[13,'rare',3] },
+    S15: { hp:4, bossHp:12, damage:2.3, eliteChance:.15, waves:8, waveMs:16000, concurrent:4, huntTier:3, rec:[14,'rare',3] },
+    S16: { hp:3.6, damage:2.2, eliteChance:.16, waves:9, waveMs:13000, concurrent:4, huntTier:3, rec:[15,'rare',4] },
+    S17: { hp:4, damage:2.3, eliteChance:.16, waves:9, waveMs:14000, concurrent:4, huntTier:3, rec:[16,'rare',4] },
+    S18: { hp:5, damage:3.2, eliteChance:.17, waves:9, waveMs:13000, concurrent:4, huntTier:3, rec:[17,'rare',5] },
+    S19: { hp:5, damage:2.5, eliteChance:.18, waves:9, waveMs:14000, concurrent:4, huntTier:3, rec:[18,'epic',3] },
+    S20: { hp:4.4, bossHp:16, damage:2.9, eliteChance:.18, waves:8, waveMs:16000, concurrent:5, huntTier:3, rec:[20,'epic',4] },
   },
 };
 export function threatMultipliers(threat = 1) {

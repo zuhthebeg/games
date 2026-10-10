@@ -14,10 +14,11 @@ import { gearPrice } from '../../js/meta/shop.js';
 import { botInput } from './bot.js';
 
 export const LIMITATION='봇은 정확한 경고 도형과 모든 적 위치를 읽으며 사람보다 낙관적이다. 200ms 판단 간격에도 터치·시야·실수·폰 성능을 재현하지 않는다. S1은 무적 허수아비 30초 계약으로 사망/3~6분 목표의 예외다.';
-export function preset(stageId,{level,rarity='fine',enhance=0,weapon='blade',stats='balanced'}={}) {
+export function preset(stageId,{level,rarity,enhance,weapon='blade',stats='balanced'}={}) {
   const s=Number(stageId.slice(1));
+  const rec=BALANCE.stages[stageId]?.rec;rarity??=rec?.[1]??'fine';enhance??=rec?.[2]??0;
   const save=createSave({name:'봇',answers:[0,0,0,0,0],weapon,createdAt:1});
-  save.level=level??[1,2,3,4,5,5,6][s-1];save.statPoints=BALANCE.stats.pointsPerLevel*(save.level-1);
+  save.level=level??rec?.[0]??[1,2,3,4,5,5,6][s-1];save.statPoints=BALANCE.stats.pointsPerLevel*(save.level-1);
   const allocation={};let left=save.statPoints;
   const keys=stats==='agile'?['agi','str','wis']:['str','agi','wis','int','cha'];
   while(left) for(const key of keys) if(left && save.stats[key]+(allocation[key]||0)<cap(save.level)) {
@@ -25,9 +26,9 @@ export function preset(stageId,{level,rarity='fine',enhance=0,weapon='blade',sta
   }
   const next=allocateStats(save,allocation);
   if(s!==1) {
-    const tier=save.level>=5?2:1;
-    const bases={weapon:tier===2?{blade:'rune_blade',bow:'pack_bow',focus:'altar_staff'}[weapon]:{blade:'iron_sword',bow:'hunter_bow',focus:'ember_wand'}[weapon],
-      body:tier===2?'woven_armor':'leather_vest',head:`head_medium_fine_t${tier}`,hands:`hands_medium_fine_t${tier}`,feet:`feet_medium_fine_t${tier}`};
+    const tier=save.level>=10?3:save.level>=5?2:1;
+    const bases={weapon:[{blade:'iron_sword',bow:'hunter_bow',focus:'ember_wand'},{blade:'rune_blade',bow:'pack_bow',focus:'altar_staff'},{blade:'warden_blade',bow:'frost_bow',focus:'seal_staff'}][tier-1][weapon],
+      body:['leather_vest','woven_armor','warden_plate'][tier-1],head:`head_medium_fine_t${tier}`,hands:`hands_medium_fine_t${tier}`,feet:`feet_medium_fine_t${tier}`};
     next.items=[];
     for(const [slot,base] of Object.entries(bases)) {
       const id=ITEMS[base].rarity===rarity?base:`${base}_${rarity}`;
@@ -84,9 +85,9 @@ if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href) {
   const args=Object.fromEntries(process.argv.slice(2).map(a=>{const [k,v]=a.replace(/^--/,'').split('=');return [k,v];}));
   const n=Number(args.n||200),threat=Number(args.threat||1),firstSeed=Number(args.seed||1);
   if(!Number.isSafeInteger(n)||n<1||!Number.isInteger(threat)||threat<1||threat>3) throw new Error('Invalid n/threat');
-  const config={rarity:args.rarity||'fine',enhance:Number(args.enhance||0),weapon:args.weapon||'blade',stats:args.stats||'balanced',...(args.level?{level:Number(args.level)}:{})};
+  const config={...(args.rarity?{rarity:args.rarity}:{}),...(args.enhance!==undefined?{enhance:Number(args.enhance)}:{}),weapon:args.weapon||'blade',stats:args.stats||'balanced',...(args.level?{level:Number(args.level)}:{})};
   console.error('stage threat clear% death% mean/median(min) potions kills gold gear(C/F/R/E) stones(L/M/H) netValue');
-  const rows=(args.stage?[args.stage]:['S1','S2','S3','S4','S5','S6','S7']).map(stage=>{
+  const rows=(args.stage?[args.stage]:Object.keys(BALANCE.stages)).map(stage=>{
     const runs=Array.from({length:n},(_,i)=>simulate({stage,threat,seed:firstSeed+i,...config}));
     const row={stage,threat,preset:config,...summarize(runs),runs};
     console.error(`${stage} T${threat} ${(row.clearRate*100).toFixed(1)} ${(row.deathRate*100).toFixed(1)} ${row.meanClearMinutes?.toFixed(2)??'—'}/${row.medianClearMinutes?.toFixed(2)??'—'} ${row.potions.toFixed(2)} ${row.kills.toFixed(2)} ${row.gold.toFixed(1)} ${Object.values(row.gear).map(v=>v.toFixed(2)).join('/')} ${row.stones.map(v=>v.toFixed(2)).join('/')} ${row.expectedValue.toFixed(1)}`);return row;

@@ -177,6 +177,10 @@ export const MONSTERS = {
   },
 };
 
+// Compact stage constructor for S8+: [monster, atMs, fx, fy]. goal killAll; concurrency comes from BALANCE.
+const stage = (name, spawns) => ({ name, goal: 'killAll', maxConcurrent: 3,
+  spawns: spawns.map(([monster, at, fx, fy]) => ({ monster, at, fx, fy })) });
+
 // Stage encounters (design §4). Positions are fractions of the arena.
 export const STAGES = {
   S1: {
@@ -228,6 +232,20 @@ export const STAGES = {
       { monster: 'goblin_grunt', at: 0, fx: 0.82, fy: 0.35 },
     ],
   },
+  // [제안] S8~S20: remixes of existing archetypes (§4 구현 원칙: 변주 우선). Bosses at S10/S15/S20.
+  S8: stage('잿빛 고개', [['goblin_grunt', 0, .78, .35], ['goblin_grunt', 2000, .82, .65], ['goblin_slinger', 4000, .9, .5], ['wolf', 6000, .86, .2]]),
+  S9: stage('봉인문 경비', [['rune_guardian', 0, .76, .5], ['spirit', 2000, .86, .28], ['goblin_slinger', 4000, .9, .72]]),
+  S10: stage('길을 막은 군주', [['goblin_chief', 0, .78, .5], ['goblin_grunt', 3000, .85, .25], ['goblin_slinger', 5000, .9, .75], ['iron_boar', 8000, .88, .5]]),
+  S11: stage('늑대 무리의 언덕', [['wolf', 0, .74, .3], ['wolf', 0, .8, .7], ['wolf', 3000, .88, .5], ['spirit', 6000, .9, .2]]),
+  S12: stage('녹슨 광산 입구', [['iron_boar', 0, .78, .35], ['iron_boar', 3000, .84, .7], ['goblin_grunt', 2000, .88, .5], ['goblin_slinger', 5000, .92, .25]]),
+  S13: stage('독안개 늪', [['poison_spider', 0, .76, .4], ['poison_spider', 3000, .84, .7], ['spirit', 5000, .9, .25]]),
+  S14: stage('무너진 성채', [['rune_guardian', 0, .76, .35], ['rune_guardian', 4000, .82, .7], ['goblin_slinger', 2000, .9, .5], ['goblin_slinger', 6000, .92, .2]]),
+  S15: stage('서리 제단의 군주', [['goblin_chief', 0, .78, .5], ['spirit', 2000, .86, .25], ['spirit', 4000, .86, .75], ['wolf', 7000, .9, .5]]),
+  S16: stage('사냥꾼의 숲', [['wolf', 0, .76, .3], ['wolf', 2000, .8, .72], ['poison_spider', 4000, .88, .5], ['goblin_slinger', 6000, .92, .2]]),
+  S17: stage('철갑 돌격대', [['iron_boar', 0, .76, .3], ['iron_boar', 2000, .8, .7], ['rune_guardian', 4000, .88, .5], ['goblin_grunt', 6000, .92, .25]]),
+  S18: stage('거미 여왕의 둥지', [['poison_spider', 0, .74, .3], ['poison_spider', 2000, .8, .7], ['poison_spider', 4000, .88, .5], ['spirit', 6000, .92, .2]]),
+  S19: stage('봉인의 회랑', [['rune_guardian', 0, .76, .5], ['spirit', 2000, .84, .25], ['spirit', 4000, .84, .75], ['goblin_slinger', 6000, .92, .5]]),
+  S20: stage('왕좌의 문', [['goblin_chief', 0, .78, .5], ['rune_guardian', 3000, .86, .25], ['wolf', 5000, .86, .75], ['wolf', 7000, .9, .4], ['spirit', 9000, .92, .6]]),
 };
 
 // P3 encounters are data only. Chief appears once; additional waves contain its escorts.

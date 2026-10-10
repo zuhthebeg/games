@@ -32,6 +32,11 @@ export const ITEMS = {
   pack_bow: { ...weapon('늑대 사냥 활', 'bow', 'fine', 1.35, 8), huntTier: 2, requiredLevel: 5 },
   altar_staff: { ...weapon('제단 지팡이', 'focus', 'fine', 1.35, 6, 'staff'), huntTier: 2, requiredLevel: 5 },
   woven_armor: { ...armor('거미줄 가죽 갑옷', 'fine', 50, 10), huntTier: 2, requiredLevel: 5 },
+  // [제안] Hunting tier 3 for S11~S20: +0.25 power / +25 HP over tier 2, Lv10 gate.
+  warden_blade: { ...weapon('파수꾼의 대검', 'blade', 'fine', 1.6, 15), huntTier: 3, requiredLevel: 10 },
+  frost_bow: { ...weapon('서리 장궁', 'bow', 'fine', 1.6, 9), huntTier: 3, requiredLevel: 10 },
+  seal_staff: { ...weapon('봉인의 지팡이', 'focus', 'fine', 1.6, 7, 'staff'), huntTier: 3, requiredLevel: 10 },
+  warden_plate: { ...armor('파수꾼 판금 갑옷', 'fine', 75, 13), huntTier: 3, requiredLevel: 10 },
   scrap: { name: '고철', kind: 'material', weight: 0.2 },
   hide: { name: '가죽', kind: 'material', weight: 0.5 },
   fang: { name: '송곳니', kind: 'material', weight: 0.3 },
@@ -43,15 +48,16 @@ export const ITEMS = {
   mana_potion: { name: '마나 물약', kind: 'consumable', weight: 1, price: 12 },
   return_scroll: { name: '귀환 주문서', kind: 'consumable', weight: 1, price: 6, maxCarry: 2 },
 };
+const TIER_LEVEL = { 2: 5, 3: 10 };
 // Tables are base stats; instances vary only through affixes, never hidden stat rolls.
 for (const [slot, hp, weight] of [['head', 4, 2], ['hands', 3, 1.5], ['feet', 3, 1.5]]) {
   for (const [armorClass, scale] of [['light', 1], ['medium', 1.5], ['heavy', 2]]) {
-    for (const [rarity, tier] of [['common', 1], ['fine', 1], ['fine', 2]]) {
+    for (const [rarity, tier] of [['common', 1], ['fine', 1], ['fine', 2], ['fine', 3]]) {
       const id = `${slot}_${armorClass}_${rarity}_t${tier}`;
       ITEMS[id] = { name: `${{head:'머리',hands:'장갑',feet:'신발'}[slot]} · ${armorClass} T${tier}`,
         kind: slot, slot, armorClass, rarity, huntTier: tier,
         hp: Math.round(hp * scale * tier * ECONOMY.rarityPower[rarity]),
-        weight: weight * scale, requiredLevel: tier === 2 ? 5 : rarity === 'common' ? 1 : 2 };
+        weight: weight * scale, requiredLevel: TIER_LEVEL[tier] ?? (rarity === 'common' ? 1 : 2) };
     }
   }
 }
@@ -65,7 +71,7 @@ for (const [id, base] of Object.entries(ITEMS)) {
     const ratio = ECONOMY.rarityPower[rarity] / ECONOMY.rarityPower[base.rarity];
     ITEMS[`${id}_${rarity}`] = { ...base, rarity,
       ...(base.power !== undefined ? { power: base.power * ratio } : { hp: base.hp ? Math.round(base.hp * ratio) : ECONOMY.starterBodyHp[rarity] }),
-      requiredLevel: base.huntTier === 2 ? 5 : { common: 1, fine: 2, rare: 4, epic: 6 }[rarity] };
+      requiredLevel: TIER_LEVEL[base.huntTier] ?? { common: 1, fine: 2, rare: 4, epic: 6 }[rarity] };
   }
 }
 for (let tier = 1; tier <= 3; tier++) {
@@ -254,7 +260,7 @@ export function rollDrops(monsterType, seed, ctx = {}) {
       if (boss && i === 0 && (ctx.rarelessRounds || 0) >= ECONOMY.pityRounds && rarity === 'fine') rarity = 'rare';
       const slot = weighted(SLOTS.map((slot) => [slot, SLOT_BIASES[monsterType]?.[slot] || 1]), random);
       let pool = Object.entries(ITEMS).filter(([, item]) => item.slot === slot && item.rarity === rarity
-        && item.huntTier === Math.min(2, tier));
+        && item.huntTier === tier);
       if (monsterType === 'spirit' && slot === 'weapon') pool = pool.filter(([, item]) => item.family === 'focus');
       const [id] = pool[Math.floor(random() * pool.length)];
       const rollSeed = (seed ^ Math.imul(i + 1, 0x7f4a7c15)) >>> 0;

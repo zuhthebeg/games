@@ -66,7 +66,7 @@ export function trackRound(save, tracker, events, used = {}) {
     const seed = dropSeed(next.seed, next.killIndex++);
     const mods = deriveMods(save);
     const drop = rollDrops(event.monster, seed, { elite: event.elite === true, threat: event.threat ?? save.threat ?? 1,
-      stageId: event.stageId, rarelessRounds: save.rarelessRounds,
+      stageId: event.stageId, huntTier: BALANCE.stages[event.stageId]?.huntTier, rarelessRounds: save.rarelessRounds,
       goldBonus: mods.goldBonus, materialBonus: mods.materialBonus });
     next.tempLoot.gold += drop.gold;
     const picked = [];
