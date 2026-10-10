@@ -12,10 +12,10 @@
       "imports": {
         "./js/content/combat.js": "./js/content/combat.js?v=95875bad40",
         "./js/input.js": "./js/input.js?v=fb40ab1d9a",
-        "./js/main.js": "./js/main.js?v=143e9c8231",
+        "./js/main.js": "./js/main.js?v=2fe573cfb9",
         "./js/meta/items.js": "./js/meta/items.js?v=ffba0864c8",
         "./js/meta/progression.js": "./js/meta/progression.js?v=5a88d9f0f8",
-        "./js/meta/quiz.js": "./js/meta/quiz.js?v=590df20bb9",
+        "./js/meta/quiz.js": "./js/meta/quiz.js?v=9019dae2b1",
         "./js/meta/run.js": "./js/meta/run.js?v=1bd06dbeff",
         "./js/meta/save.js": "./js/meta/save.js?v=3524d0688b",
         "./js/meta/stats.js": "./js/meta/stats.js?v=7b38876eef",
@@ -24,13 +24,14 @@
         "./js/render/visual-provider.js": "./js/render/visual-provider.js?v=09c70131d9",
         "./js/sim/core.js": "./js/sim/core.js?v=41f1313400",
         "./js/sim/world.js": "./js/sim/world.js?v=1825d15521",
-        "./js/ui/hub.js": "./js/ui/hub.js?v=0a75c7f7ba",
-        "./js/ui/hud.js": "./js/ui/hud.js?v=10dbe870cb",
+        "./js/ui/hub.js": "./js/ui/hub.js?v=74f7dee216",
+        "./js/ui/hud.js": "./js/ui/hud.js?v=def515e875",
+        "./js/ui/icons.js": "./js/ui/icons.js?v=4bb21d55b8",
         "./vendor/pixi-8.22.0.min.mjs": "./vendor/pixi-8.22.0.min.mjs?v=66257bc467"
       }
     }
     </script>
-    <link rel="stylesheet" href="css/game.css?v=8412a860bf">
+    <link rel="stylesheet" href="css/game.css?v=646e29f416">
   </head>
   <body>
     <main id="surface" aria-label="전투장"></main>
@@ -46,14 +47,14 @@
       <div id="notice" role="status" aria-live="polite"></div>
       <div id="joystick" hidden><i></i></div>
       <div id="actions" aria-label="전투 조작">
-        <button data-input="potionEdge" class="small" id="potion">물약 Q<small></small></button>
-        <button data-input="manaEdge" class="small" id="mana">마나 E<small></small></button>
-        <button data-input="scrollEdge" class="small ring" id="scroll">귀환 R<small></small></button>
-        <button data-input="skillEdge" class="ring" id="skill">스킬 K<small></small></button>
-        <button data-input="dodgeEdge" id="dodge">회피 ⇧<small></small></button>
-        <button data-input="attack" id="attack">공격 J<small>길게 누르기</small></button>
+        <button data-input="potionEdge" class="small" id="potion" aria-label="물약" title="물약 · Q"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3M9 15h6m-3-3v6"/></svg><kbd>Q</kbd><small></small></button>
+        <button data-input="manaEdge" class="small" id="mana" aria-label="마나" title="마나 · E"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v5l-4 6v6h12v-6l-4-6V3m-2 9-3 4h4l-2 3"/></svg><kbd>E</kbd><small></small></button>
+        <button data-input="scrollEdge" class="small ring" id="scroll" aria-label="귀환" title="귀환 · R"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16H6zM9 12h6m-3-3-3 3 3 3"/></svg><kbd>R</kbd><small></small></button>
+        <button data-input="skillEdge" class="ring" id="skill" aria-label="스킬" title="스킬 · K"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 2-9 12h6l-1 8 9-13h-6z"/></svg><kbd>K</kbd><small></small></button>
+        <button data-input="dodgeEdge" id="dodge" aria-label="회피" title="회피 · ⇧"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 16 7-8 3 5 8-9m-5 0h5v5"/></svg><kbd>⇧</kbd><small></small></button>
+        <button data-input="attack" id="attack" aria-label="공격" title="공격 · J"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 18 11-11 3-4-4 1L5 15m-2-2 8 8M3 21l4-4"/></svg><kbd>J</kbd><small></small></button>
       </div>
-      <div class="move-hint">왼쪽 드래그 · WASD 이동</div>
+      <div class="move-hint">WASD</div>
     </section>
     <section id="meta-screen" class="overlay" hidden aria-label="소환과 여관"></section>
     <section class="overlay" id="boot">
@@ -62,6 +63,6 @@
     <section class="overlay" id="pause" hidden>
       <div class="story-panel"><h2>일시정지</h2><p>탭으로 돌아오면 전투가 재개됩니다.</p></div>
     </section>
-    <script type="module" src="js/main.js?v=143e9c8231"></script>
+    <script type="module" src="js/main.js?v=2fe573cfb9"></script>
   </body>
 </html>

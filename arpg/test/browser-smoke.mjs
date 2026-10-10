@@ -7,9 +7,10 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 
 const root = resolve(fileURLToPath(new URL('../../', import.meta.url)));
-const port = 19097;
+const port = Number(process.env.ARPG_CDP_PORT || 19097);
+const httpPort = Number(process.env.ARPG_HTTP_PORT || 8731);
 const profile = await mkdtemp(join(tmpdir(), 'arpg-smoke-'));
-const server = spawn('python3', ['-m', 'http.server', '8731', '--bind', '127.0.0.1'], {
+const server = spawn('python3', ['-m', 'http.server', String(httpPort), '--bind', '127.0.0.1'], {
   cwd: root, stdio: 'ignore',
 });
 const chrome = spawn('/home/cocy/bin/chromium', [
@@ -34,7 +35,7 @@ try {
     await sleep(100);
   }
   assert.ok(targets?.[0]?.webSocketDebuggerUrl, 'Chromium CDP unavailable');
-  assert.equal(server.exitCode, null, 'static server could not bind (8731 already occupied?)');
+  assert.equal(server.exitCode, null, `static server could not bind (${httpPort} already occupied?)`);
   socket = new WebSocket(targets[0].webSocketDebuggerUrl);
   await new Promise((resolveOpen, reject) => {
     socket.onopen = resolveOpen;
@@ -127,6 +128,9 @@ try {
     await waitFor(page('receipt'));
     await click('#result-back');
     await waitFor(page('inn'));
+    assert.ok(await evaluate('__arpg.world.entities[0].hp===__arpg.world.entities[0].maxHp'
+      + ' && __arpg.world.entities[0].mp===__arpg.world.entities[0].maxMp'), 'inn did not auto-heal');
+    assert.ok(await evaluate("!!document.querySelector('.inn-recovery') && !document.querySelector('[data-action=rest]')"));
   };
 
   await command('Runtime.enable');
@@ -136,7 +140,7 @@ try {
     width: 390, height: 844, deviceScaleFactor: 1, mobile: true,
   });
   await command('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 2 });
-  await command('Page.navigate', { url: 'http://127.0.0.1:8731/arpg/' });
+  await command('Page.navigate', { url: `http://127.0.0.1:${httpPort}/arpg/` });
   await waitFor(page('intro'));
   assert.equal(await evaluate("document.querySelector('#boot-error').textContent"), '');
   assert.ok(await evaluate("!!document.querySelector('canvas')"));
@@ -167,7 +171,7 @@ try {
   assert.equal(innMobile.rects.length, 5);
   assert.ok(await evaluate("!document.querySelector('.dev-menu')"), 'dev menu leaked without query flag');
   await click('[data-action="shop"]');
-  assert.ok(await evaluate("document.querySelector('#shop-total').textContent.includes('10 G')"));
+  assert.ok(await evaluate("document.querySelector('#shop-total').textContent.trim()==='10'"));
   await click('#shop-buy');
   const beforeReload = await evaluate(`({
     gold:__arpg.save.gold,potions:__arpg.save.stacks.potion,level:__arpg.save.level,
@@ -191,12 +195,12 @@ try {
   assert.equal(await evaluate('JSON.stringify(__arpg.save)'), entireSave);
   assert.equal(await evaluate('__arpg.world'), null);
   await click('[data-action="owner"]');
-  assert.ok(await evaluate("document.querySelector('.receipt').textContent.includes('XP +50')"),
+  assert.ok(await evaluate(`document.querySelector('.receipt [aria-label="획득 경험치"]').textContent.includes('+50')`),
     'innkeeper lost the persisted last-run summary');
   await click('[data-action="inn"]');
 
   // Preserve M0 movement/hit/dodge/touch/death/scroll/weapon/visibility regression checks behind dev menu.
-  await command('Page.navigate', { url: 'http://127.0.0.1:8731/arpg/?dev=1' });
+  await command('Page.navigate', { url: `http://127.0.0.1:${httpPort}/arpg/?dev=1` });
   await waitFor(page('inn'));
   await devStart('S2');
   await evaluate(`window.smokeHits={tick:-1,hits:0,playerHits:0};
@@ -245,7 +249,7 @@ try {
   await touch('touchEnd', []);
   assert.ok(await evaluate(`__arpg.world.entities[0].x>${beforeTouch}`), 'touch joystick did not move');
   await waitFor('__arpg.world.round.state==="failed"', 120000);
-  assert.ok(await evaluate("document.querySelector('#cause').textContent.includes('회피 가능했던 공격')"));
+  assert.ok(await evaluate("document.querySelector('#cause').textContent.includes('고블린')"));
   await backToInn();
   await devStart('S1');
   const scroll = roundMobile.rects.find((rect) => rect.id === 'scroll');
@@ -304,13 +308,16 @@ try {
   await command('Page.reload');
   await waitFor(page('inn'));
   await click('[data-action="forge"]');
+  await evaluate("document.querySelector('.craft-list').open=true");
   await click('[data-action="craft"][data-id="iron_sword"]');
   await click('[data-action="enhance"][data-uid="craft:iron_sword:1"]');
   await click('[data-action="equip"][data-uid="craft:iron_sword:1"]');
   assert.equal(await evaluate('__arpg.save.equipped.weapon'), 'craft:iron_sword:1');
   assert.ok(await evaluate(
     "document.querySelector('[data-action=\"dismantle\"][data-uid=\"craft:iron_sword:1\"]').disabled"));
+  await click('[data-action="select-gear"][data-uid="starter:weapon"]');
   await click('[data-action="equip"][data-uid="starter:weapon"]');
+  await click('[data-action="select-gear"][data-uid="craft:iron_sword:1"]');
   await click('[data-action="dismantle"][data-uid="craft:iron_sword:1"]');
   assert.equal(await evaluate('__arpg.save.stacks.scrap'), 90);
   assert.equal(await evaluate('__arpg.save.gold'), 2880);
@@ -318,6 +325,19 @@ try {
   await waitFor(page('inn'));
   assert.equal(await evaluate('__arpg.save.gold'), 2880);
   assert.equal(await evaluate('__arpg.save.stacks.scrap'), 90);
+  await click('[data-action="shop"]');
+  await click('[data-action="shop-select"][data-id="mana_potion"]');
+  await click('#shop-buy');
+  assert.equal(await evaluate('__arpg.save.stacks.mana_potion'), 2);
+  await click('[data-action="shop-select"][data-id="return_scroll"]');
+  await click('#shop-buy');
+  assert.equal(await evaluate('__arpg.save.stacks.return_scroll'), 2);
+  assert.ok(await evaluate("document.querySelector('#shop-buy').disabled"), 'scroll cap not enforced');
+  await click('[data-action="shop-select"][data-id="potion"]');
+  await evaluate("document.querySelector('#shop-count').value=2;document.querySelector('#shop-count').dispatchEvent(new Event('change',{bubbles:true}))");
+  await click('#shop-buy');
+  assert.equal(await evaluate('__arpg.save.stacks.potion'), 5);
+  assert.equal(await evaluate('__arpg.save.gold'), 2842);
   await click('[data-action="settings"]');
   await click('[data-action="reset-first"]');
   assert.ok(await evaluate("localStorage.getItem('arpg.save.v1')!==null"));
@@ -338,12 +358,13 @@ try {
   console.log(JSON.stringify({
     ok: true, canvas: true,
     onboarding: 'name → 5 answers → S1 clear@900 → allocate 3 → inn',
-    shop: 'potion +1, gold −10',
+    shop: 'potion +1 / mana +1 / scroll +1 / potion ×2; scroll cap enforced',
     S2: 'sortie confirmed → reload → inn',
     persisted, fullSaveRestored: true, lastReceiptRestored: true,
     mobile: { width: 390, height: 844, hotspots: 5, buttons: 6, inside: true, noOverlap: true },
     combat, touch: true, edgeLatch: true, readonlyDebug: true,
     weapons: ['blade', 'bow', 'focus'], manaPotionE: true,
+    innAutoRecovery: ['clear', 'death', 'return_scroll', 'reload'],
     deathCause: true, scroll: 'progress → returned', visibilityPause: true,
     forge: 'craft → enhance → equip → unequip → dismantle → reload',
     resetDoubleConfirm: true, corruptBackup: true, consoleErrors: errors.length,

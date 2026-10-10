@@ -4,7 +4,7 @@ import { TICK_MS } from './sim/core.js';
 import { InputLayer } from './input.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { HUD } from './ui/hud.js';
-import { HubUI } from './ui/hub.js';
+import { HubUI, restoreInnVitals } from './ui/hub.js';
 import { SaveStore } from './meta/save.js';
 import { equippedItem, ITEMS } from './meta/items.js';
 import { buildRoundMods, createTracker, trackRound, usedConsumables, settleRound, currentLoad } from './meta/run.js';
@@ -63,6 +63,7 @@ try {
   const hud = new HUD();
   const hub = new HubUI({
     save: saved,
+    recoverVitals: () => restoreInnVitals(world?.entities[0]),
     persist: (save) => store.save(save),
     resetSave: () => {
       store.reset();

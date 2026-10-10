@@ -1,4 +1,4 @@
-import { STAGES, WEAPONS, ABILITIES, PLAYER_BASE } from '../content/combat.js';
+import { WEAPONS, ABILITIES, PLAYER_BASE } from '../content/combat.js';
 import { ticks } from '../sim/core.js';
 import { weightDescription } from './hub.js';
 
@@ -16,7 +16,7 @@ const PATTERN_NAMES = {
 const MONSTER_NAMES = {
   goblin_grunt: '고블린', goblin_slinger: '고블린 투석병', iron_boar: '철갑 멧돼지', goblin_chief: '고블린 대장',
 };
-const seconds = (value) => `${(value / 30).toFixed(1)}초`;
+const seconds = (value) => `${(value / 30).toFixed(1)}`;
 
 export class HUD {
   constructor() {
@@ -34,7 +34,7 @@ export class HUD {
     $('#pause').hidden = true;
     this.nodes.notice.textContent = '';
     this.noticeLeft = 0;
-    this.nodes['stage-name'].textContent = `${this.stage} · ${STAGES[this.stage].name}`;
+    this.nodes['stage-name'].textContent = this.stage;
     this.update(world, 0);
   }
 
@@ -44,13 +44,13 @@ export class HUD {
 
   events(events) {
     const messages = {
-      channelStart: '귀환 중 · 이동·공격 불가, 회피로 취소',
-      channelBroken: '피격으로 귀환이 중단되었습니다',
-      channelCancel: '회피로 귀환을 취소했습니다',
+      channelStart: '귀환 중',
+      channelBroken: '귀환 중단',
+      channelCancel: '귀환 취소',
       perfectDodge: '완벽 회피',
     };
     for (const event of events) {
-      const message = event.type === 'drop' && event.rejected ? '너무 무거워 두고 왔다' : messages[event.type];
+      const message = event.type === 'drop' && event.rejected ? '무게 초과' : messages[event.type];
       if (!message) continue;
       this.nodes.notice.textContent = message;
       this.noticeLeft = 2;
@@ -63,10 +63,10 @@ export class HUD {
     bar.style.transform = `scaleX(${Math.min(1, load.ratio / 1.2)})`;
     bar.parentElement.className = `bar load ${tier.tier}`;
     bar.parentElement.title = tier.text;
-    this.text(this.nodes['load-text'], `${load.weight.toFixed(1)} / ${load.capacity} kg`);
+    this.text(this.nodes['load-text'], `${load.weight.toFixed(1)}/${load.capacity}`);
     const count = tracker.tempLoot.items.length
       + Object.values(tracker.tempLoot.stacks).reduce((sum, value) => sum + value, 0);
-    this.text(this.nodes['temp-loot'], `임시 전리품 ${count} · ${tracker.tempLoot.gold} G · 예치 XP ${tracker.depositedXp}`);
+    this.text(this.nodes['temp-loot'], `◇ ${count} · ${tracker.tempLoot.gold} G · ${tracker.depositedXp} XP`);
   }
 
   update(world, dt) {
@@ -74,17 +74,17 @@ export class HUD {
     const nodes = this.nodes;
     nodes['hp-fill'].style.transform = `scaleX(${player.hp / player.maxHp})`;
     nodes['mp-fill'].style.transform = `scaleX(${player.mp / player.maxMp})`;
-    this.text(nodes['hp-text'], `HP ${Math.ceil(player.hp)} / ${Math.ceil(player.maxHp)}`);
-    this.text(nodes['mp-text'], `MP ${Math.floor(player.mp)} / ${Math.ceil(player.maxMp)}`);
+    this.text(nodes['hp-text'], `${Math.ceil(player.hp)}/${Math.ceil(player.maxHp)}`);
+    this.text(nodes['mp-text'], `${Math.floor(player.mp)}/${Math.ceil(player.maxMp)}`);
     const alive = world.entities.filter((entity) => entity.kind === 'monster' && !entity.dead).length;
     this.text(nodes.objective, world.round.goal === 'timer'
-      ? `${Math.max(0, Math.ceil((world.round.timerTicks - world.round.t) / 30))}초 · 연습 표적 ${alive}`
-      : `남은 적 ${alive + world.round.pending.length} · 대기 ${world.round.pending.length}`);
+      ? `${Math.max(0, Math.ceil((world.round.timerTicks - world.round.t) / 30))}s`
+      : `◇ ${alive + world.round.pending.length}`);
     const potionCooldown = player.potionCd > 0 ? ` · ${seconds(player.potionCd)}` : '';
-    this.text(nodes.potion.lastElementChild, `${player.potions}개${potionCooldown}`);
-    this.text(nodes.mana.lastElementChild, `${player.manaPotions}개${potionCooldown}`);
+    this.text(nodes.potion.lastElementChild, `${player.potions}${potionCooldown}`);
+    this.text(nodes.mana.lastElementChild, `${player.manaPotions}${potionCooldown}`);
     this.text(nodes.scroll.lastElementChild, player.channel > 0 ? seconds(player.channel)
-      : `${player.scrolls}개${player.scrollRetry > 0 ? ` · ${seconds(player.scrollRetry)}` : ''}`);
+      : `${player.scrolls}${player.scrollRetry > 0 ? ` · ${seconds(player.scrollRetry)}` : ''}`);
     nodes.scroll.style.setProperty('--progress',
       `${player.channel > 0 ? (1 - player.channel / ticks(PLAYER_BASE.scroll.channelMs)) * 100 : 0}%`);
     const skill = WEAPONS[player.weapon].skill;
@@ -92,9 +92,9 @@ export class HUD {
     const skillAct = player.act?.id === skill;
     const needsMana = player.mp < (ABILITIES[skill].manaCost || 0);
     this.text(nodes.skill.lastElementChild, cooldown > 0 ? seconds(cooldown)
-      : skillAct ? '사용 중' : needsMana ? 'MP 부족' : '준비');
+      : skillAct ? '…' : needsMana ? '−' : '');
     nodes.skill.style.setProperty('--progress', `${cooldown / ticks(ABILITIES[skill].cooldownMs) * 100}%`);
-    this.text(nodes.dodge.lastElementChild, player.dodge.cdLeft > 0 ? seconds(player.dodge.cdLeft) : '준비');
+    this.text(nodes.dodge.lastElementChild, player.dodge.cdLeft > 0 ? seconds(player.dodge.cdLeft) : '');
     nodes.dodge.className = player.dodge.cdLeft > 0 ? 'cooling' : 'ready';
     // Held attack is never disabled: release must always reach InputLayer.
     nodes.potion.disabled = player.potions === 0 || player.potionCd > 0 || player.hp === player.maxHp;
@@ -115,8 +115,7 @@ export class HUD {
     const player = world.entities[0];
     const cause = player.deathCause;
     if (player.terminal === 'death' && cause) {
-      return `왜 죽었나: ${MONSTER_NAMES[cause.by] || cause.by} — ${PATTERN_NAMES[cause.ability] || cause.ability}. `
-        + '회피 가능했던 공격 · 붉은 위험 영역에서 벗어나거나 타격 전에 회피하세요.';
+      return `${MONSTER_NAMES[cause.by] || cause.by} · ${PATTERN_NAMES[cause.ability] || cause.ability}`;
     }
     return player.terminal === 'return_scroll' ? '주문서의 빛이 당신을 여관으로 이끌었습니다.'
       : '인장에 힘이 깃들었다. 난로 곁에서 다음 길을 준비하자.';
