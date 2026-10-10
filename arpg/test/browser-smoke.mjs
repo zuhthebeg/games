@@ -150,6 +150,8 @@ try {
   await command('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 2 });
   await command('Page.navigate', { url: `http://127.0.0.1:${httpPort}/arpg/` });
   await waitFor(page('intro'));
+  assert.equal(await evaluate("document.querySelector('#arpg-debug-toggle')"), null);
+  assert.equal(events.some(event => event.method === 'Network.requestWillBeSent' && event.params.request.url.includes('/js/debug/')), false);
   assert.equal(await evaluate("document.querySelector('#boot-error').textContent"), '');
   assert.ok(await evaluate("!!document.querySelector('canvas')"));
   await click('[data-action="name"]');
@@ -498,6 +500,94 @@ try {
   await waitFor(page('intro'));
   assert.ok(await evaluate(`Object.keys(localStorage).some(key=>key.startsWith('arpg.save.v1.corrupt.'))`));
 
+  // Debug scenario uses only the new panel plus real sortie/settlement controls.
+  await evaluate(`(async () => {
+    const {createSave,SaveStore}=await import('./js/meta/save.js');
+    const {setLevel}=await import('./js/debug/actions.js');
+    const save=setLevel(createSave({name:'디버그 시험',answers:[0,0,0,0,0],weapon:'blade',createdAt:123}),30);
+    new SaveStore(localStorage).save(save);
+  })()`);
+  await command('Page.navigate', { url: `http://127.0.0.1:${httpPort}/arpg/?debug=1` });
+  await waitFor("!!document.querySelector('#arpg-debug-toggle')");
+  await waitFor(page('inn'));
+  await sleep(100);
+  validateRects(await rectangles('#arpg-debug-toggle'));
+  const dbgTouch = (await rectangles('#arpg-debug-toggle')).rects[0];
+  await touch('touchStart', [{x:dbgTouch.x+dbgTouch.w/2,y:dbgTouch.y+dbgTouch.h/2,id:41}]);
+  await touch('touchEnd', []);
+  await waitFor("!document.querySelector('#arpg-debug-panel').hidden");
+  assert.ok(await evaluate("!document.querySelector('#arpg-debug-panel').hidden"));
+  const debugGold = await evaluate('__arpg.save.gold');
+  await click('[data-debug="gold:1000"]');
+  await waitFor(`__arpg.save.gold===${debugGold + 1000}`);
+  const debugGear = await evaluate('__arpg.save.items.length');
+  await click('[data-debug="set"]');
+  await waitFor(`__arpg.save.items.length===${debugGear + 20}`);
+  assert.ok(await evaluate(`(async()=>{const {validateSave}=await import('./js/meta/save.js');return validateSave(JSON.parse(localStorage.getItem('arpg.save.v1')))})()`));
+  await click('[data-debug="unlock"]');
+  await click('[data-debug="god"]');
+  await click('[data-debug="oneHit"]');
+  await click('[data-debug="mana"]');
+  await evaluate("document.querySelector('#dbg-speed').value='4';document.querySelector('#dbg-speed').dispatchEvent(new Event('change',{bubbles:true}))");
+  await click('[data-debug="close"]');
+  await click('[data-action="board"]');
+  await click('[data-action="sortie"][data-stage="S2"]');
+  await click('#sortie-confirm');
+  await waitFor('__arpg.world?.round.state==="running" && __arpg.world.entities.some(e=>e.kind==="monster"&&!e.dead)');
+  validateRects(await rectangles('#arpg-debug-toggle, #actions button, .vitals, .stage'));
+  assert.ok(await evaluate('__arpg.world.entities[0].dmgMult.blade>=100'));
+  await click('#arpg-debug-toggle');
+  const debugLayout = await rectangles('#arpg-debug-panel'); validateRects(debugLayout);
+  assert.ok(await evaluate("[...document.querySelectorAll('#arpg-debug-panel button,#arpg-debug-panel input,#arpg-debug-panel select')].every(n=>n.getBoundingClientRect().height>=44)"));
+  const beforeCanvasKey = await evaluate('__arpg.world.entities[0].x');
+  await key('KeyD'); await sleep(150); await key('KeyD', 'keyUp');
+  await sleep(100);
+  assert.ok(await evaluate('__arpg.world.entities[0].x') > beforeCanvasKey, 'open panel blocked outside keyboard input');
+  const beforePanelKey = await evaluate('__arpg.world.entities[0].x');
+  await evaluate("document.querySelector('#dbg-json').dispatchEvent(new KeyboardEvent('keydown',{code:'KeyD',bubbles:true}));document.querySelector('#dbg-json').dispatchEvent(new KeyboardEvent('keyup',{code:'KeyD',bubbles:true}))");
+  await sleep(200);
+  assert.equal(await evaluate('__arpg.world.entities[0].x'), beforePanelKey, 'panel typing leaked to game input');
+  await waitFor('__arpg.world.entities.some(e=>e.kind==="monster"&&!e.dead&&Math.abs(e.x-__arpg.world.entities[0].x)<200&&Math.abs(e.y-__arpg.world.entities[0].y)<300)');
+  await click('[data-debug="kill"]');
+  await waitFor('__arpg.tracker.killIndex>0 && __arpg.tracker.tempLoot.gold>0');
+  assert.ok(await evaluate('__arpg.world.entities[0].hp===__arpg.world.entities[0].maxHp'));
+  await click('[data-debug="info"]');
+  await waitFor("document.querySelector('#arpg-debug-info').textContent.includes('gold')");
+  await click('[data-debug="clear"]');
+  await waitFor(page('receipt'));
+  const debugReceipt = await evaluate('JSON.parse(JSON.stringify(__arpg.save.lastReceipt))');
+  assert.equal(debugReceipt.terminal, 'clear'); assert.ok(debugReceipt.goldGained>0);
+  await click('[data-debug="close"]'); await click('#result-back'); await waitFor(page('inn'));
+  // Registry updates an already-mounted panel and preserves live reference getters.
+  await evaluate(`(async()=>{const {registerDebugAction}=await import('./js/debug/index.js');registerDebugAction({group:'P3',label:'테스트',run:ctx=>{document.body.dataset.debugExtension=String(ctx.running);document.body.dataset.debugSave=ctx.save.name;document.body.dataset.debugPersist=typeof ctx.persistSave}})})()`);
+  await click('#arpg-debug-toggle'); await click('#dbg-extensions button');
+  await waitFor("document.body.dataset.debugExtension==='false'");
+  assert.equal(await evaluate('document.body.dataset.debugSave'), '디버그 시험');
+  assert.equal(await evaluate('document.body.dataset.debugPersist'), 'function');
+  const previewSave = await evaluate("localStorage.getItem('arpg.save.v1')");
+  await evaluate("document.querySelector('#dbg-monster').value='goblin_grunt';document.querySelector('#dbg-count').value='1000';document.querySelector('#dbg-kind').value='elite';document.querySelector('#dbg-threat').value='3'");
+  await click('[data-debug="preview"]');
+  const debugPreview = await evaluate("document.querySelector('#dbg-preview').textContent");
+  assert.ok(JSON.parse(debugPreview).goldAverage > 0);
+  await click('[data-debug="preview"]');
+  assert.equal(await evaluate("document.querySelector('#dbg-preview').textContent"), debugPreview);
+  assert.equal(await evaluate("localStorage.getItem('arpg.save.v1')"), previewSave);
+  await command('Page.reload'); await waitFor("!!document.querySelector('#arpg-debug-toggle')");
+  assert.equal(await evaluate("localStorage.getItem('arpg.debug')"), '1');
+  await command('Page.navigate', { url: `http://127.0.0.1:${httpPort}/arpg/` });
+  await waitFor("!!document.querySelector('#arpg-debug-toggle')");
+  await command('Page.navigate', { url: `http://127.0.0.1:${httpPort}/arpg/?debug=0` });
+  await waitFor(page('inn')); assert.equal(await evaluate("document.querySelector('#arpg-debug-toggle')"), null);
+  await command('Page.navigate', { url: `http://127.0.0.1:${httpPort}/arpg/?debug=1` });
+  await waitFor("!!document.querySelector('#arpg-debug-toggle')");
+  await command('Emulation.setDeviceMetricsOverride', {width:1280,height:800,deviceScaleFactor:1,mobile:false});
+  await command('Input.dispatchKeyEvent', {type:'keyDown',code:'Backquote',key:'`',windowsVirtualKeyCode:192});
+  await command('Input.dispatchKeyEvent', {type:'keyUp',code:'Backquote',key:'`',windowsVirtualKeyCode:192});
+  assert.equal(await evaluate("document.querySelector('#arpg-debug-panel').hidden"), false);
+  await command('Input.dispatchKeyEvent', {type:'keyDown',code:'Backquote',key:'`',windowsVirtualKeyCode:192});
+  await command('Input.dispatchKeyEvent', {type:'keyUp',code:'Backquote',key:'`',windowsVirtualKeyCode:192});
+  assert.equal(await evaluate("document.querySelector('#arpg-debug-panel').hidden"), true);
+
   const errors = events.filter((event) => event.method === 'Runtime.exceptionThrown'
     || event.method === 'Runtime.consoleAPICalled' && event.params.type === 'error'
     || event.method === 'Log.entryAdded' && event.params.entry.level === 'error');
@@ -515,6 +605,7 @@ try {
     innAutoRecovery: ['clear', 'death', 'return_scroll', 'reload'],
     deathCause: true, scroll: 'progress → returned', visibilityPause: true,
     forge: 'craft → enhance → equip → unequip → dismantle → reload',
+    debugMode: { mobile: true, desktopBackquote: true, gearSet:20, receiptGold:debugReceipt.goldGained, disabledNoImport:true },
     resetDoubleConfirm: true, corruptBackup: true, consoleErrors: errors.length,
   }));
 } finally {

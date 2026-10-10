@@ -45,11 +45,11 @@ export function mountDebug(context) {
   toggle.addEventListener('click', togglePanel);
   // Only events originating inside this UI stop; canvas input stays enabled while open.
   for (const node of [panel, toggle]) for (const name of ['pointerdown', 'pointermove', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchmove', 'touchend', 'keydown', 'keyup', 'wheel']) node.addEventListener(name, event => {
-    if (event.code === 'Backquote' && name === 'keydown' && !event.target.closest('input,textarea,select')) { event.preventDefault(); togglePanel(); }
+    if (event.code === 'Backquote' && name === 'keydown' && !event.target.closest?.('input,textarea,select')) { event.preventDefault(); togglePanel(); }
     event.stopPropagation();
   });
   window.addEventListener('keydown', event => {
-    if (event.code !== 'Backquote' || event.repeat || event.target.closest('input,textarea,select')) return;
+    if (event.code !== 'Backquote' || event.repeat || event.target.closest?.('input,textarea,select')) return;
     event.preventDefault(); togglePanel();
   });
   const requireInn = () => { if (context.running) throw new Error('전투 중 저장 수정 불가. 정산 후 여관에서 사용.'); };
@@ -102,7 +102,7 @@ export function mountDebug(context) {
     extensions.replaceChildren();
     for (const action of debugActions) {
       const button = document.createElement('button'); button.textContent = `${action.group} · ${action.label}`;
-      button.addEventListener('click', () => Promise.resolve().then(() => action.run(Object.assign(Object.create(context), { enqueue: combat.enqueue, save }))).catch(error => status(error.message)));
+      button.addEventListener('click', () => Promise.resolve().then(() => action.run(Object.assign(Object.create(context), { enqueue: combat.enqueue, persistSave: save }))).catch(error => status(error.message)));
       extensions.append(button);
     }
   };
@@ -116,8 +116,9 @@ export function mountDebug(context) {
       if (now - last >= 1000) { fps = frames * 1000 / (now - last); frames = 0; last = now; }
       // Keep DBG clear of action buttons + movement hint without changing their CSS.
       const actions = document.querySelector('#actions').getBoundingClientRect();
-      toggle.style.bottom = `${Math.max(8, innerHeight - actions.top + 8)}px`;
-      const panelBottom = Math.max(60, innerHeight - actions.top + 60);
+      const actionHeight = actions.height > 0 ? innerHeight - actions.top : 0;
+      toggle.style.bottom = `calc(${actionHeight + 8}px + env(safe-area-inset-bottom))`;
+      const panelBottom = actionHeight + 60;
       panel.style.bottom = `${panelBottom}px`;
       panel.style.maxHeight = `${Math.max(44, innerHeight - panelBottom - 12)}px`;
       if (info.hidden || now < nextInfo) return;
