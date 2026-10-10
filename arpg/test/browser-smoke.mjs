@@ -218,7 +218,7 @@ try {
   await backToInn();
   const innMobile = await rectangles('.hotspot');
   validateRects(innMobile);
-  assert.equal(innMobile.rects.length, 5);
+  assert.equal(innMobile.rects.length, 6);
   assert.ok(await evaluate("!document.querySelector('.dev-menu')"), 'dev menu leaked without query flag');
   await click('[data-action="shop"]');
   assert.ok(await evaluate("document.querySelector('#shop-total').textContent.trim()==='10'"));
@@ -471,6 +471,8 @@ try {
   await click('[data-action="equip"][data-uid="starter:weapon"]');
   await click('[data-action="select-gear"][data-uid="craft:iron_sword:1"]');
   await click('[data-action="dismantle"][data-uid="craft:iron_sword:1"]');
+  assert.ok(await evaluate("!!document.querySelector('dialog[open]')"), 'dismantle must ask for confirmation');
+  await click('[data-action="confirm-dismantle"][data-uid="craft:iron_sword:1"]');
   assert.equal(await evaluate('__arpg.save.stacks.scrap'), 94);
   assert.equal(await evaluate('__arpg.save.gold'), 2895);
   await command('Page.reload');
@@ -490,15 +492,20 @@ try {
   await click('#shop-buy');
   assert.equal(await evaluate('__arpg.save.stacks.potion'), 5);
   assert.equal(await evaluate('__arpg.save.gold'), 2857);
-  // P1 gear stock uses actual buy/sell/refresh controls; no sim fixture writes.
-  assert.ok(await evaluate("document.querySelector('[data-action=\"buy-gear\"]')!==null"));
+  // P2 cards open the shared comparison sheet before buying/selling.
+  await click('[data-action="inn"]');
+  await click('[data-action="merchant"]');
   const beforeGearGold = await evaluate('__arpg.save.gold');
-  const stockUid = await evaluate("document.querySelector('[data-action=\"buy-gear\"]').dataset.uid");
+  const stockUid = await evaluate("document.querySelector('[data-action=\"open-item\"]').dataset.uid");
+  await click(`[data-action="open-item"][data-uid="${stockUid}"]`);
   await click(`[data-action="buy-gear"][data-uid="${stockUid}"]`);
   const boughtUid = await evaluate('__arpg.save.items.at(-1).uid');
-  assert.ok(await evaluate(`document.querySelector('[data-action="buy-gear"][data-uid="${stockUid}"]').disabled`));
+  assert.ok(await evaluate(`document.querySelector('[data-action="open-item"][data-uid="${stockUid}"]').disabled`));
+  await click('[data-action="merchant-tab"][data-tab="sell"]');
+  await click(`[data-action="open-item"][data-uid="${boughtUid}"]`);
   await click(`[data-action="sell-shop"][data-uid="${boughtUid}"]`);
   assert.ok(await evaluate('__arpg.save.gold') < beforeGearGold);
+  await click('[data-action="merchant-tab"][data-tab="weapon"]');
   const refreshGold = await evaluate('__arpg.save.gold');
   await click('[data-action="refresh-shop"]');
   assert.equal(await evaluate('__arpg.save.gold'), refreshGold - 20);
@@ -620,7 +627,7 @@ try {
     S2: 'sortie confirmed → reload → inn; threat2 segment → launch frozen T2 → return',
     newStages: 'pre-S5 v1 → S5 board unlock → wolf ×2 / S6 guardian+spirit / S7 spider procedural → return',
     persisted, fullSaveRestored: true, lastReceiptRestored: true,
-    mobile: { width: 390, height: 844, hotspots: 5, buttons: 6, inside: true, noOverlap: true },
+    mobile: { width: 390, height: 844, hotspots: 6, buttons: 6, inside: true, noOverlap: true },
     combat, feedback, touch: true, edgeLatch: true, readonlyDebug: true,
     weapons: ['blade', 'bow', 'focus'], manaPotionE: true,
     innAutoRecovery: ['clear', 'death', 'return_scroll', 'reload'],
