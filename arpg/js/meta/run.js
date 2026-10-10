@@ -154,10 +154,9 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
       next.flags.starterRestoreUsed = true;
     }
   }
-  if (terminal === 'clear' && stageId !== 'S1') {
-    const rare = receipt.lootKept.items.some((item) => ['rare', 'epic'].includes(ITEMS[item.id].rarity));
-    next.rarelessRounds = rare ? 0 : save.rarelessRounds + 1;
-  }
+  const receivedRare = receipt.lootKept.items.some((item) => ['rare', 'epic'].includes(ITEMS[item.id].rarity));
+  if (receivedRare) next.rarelessRounds = 0;
+  else if (terminal === 'clear' && stageId !== 'S1') next.rarelessRounds = save.rarelessRounds + 1;
   receipt.levelsGained = next.level - save.level;
   receipt.statPointsGained = receipt.levelsGained * 3;
   // Optional v1 metadata keeps the innkeeper's last-run summary across browser reloads.

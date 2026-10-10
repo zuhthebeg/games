@@ -63,7 +63,7 @@ for (const [id, base] of Object.entries(ITEMS)) {
     if (rarity === base.rarity) continue;
     const ratio = ECONOMY.rarityPower[rarity] / ECONOMY.rarityPower[base.rarity];
     ITEMS[`${id}_${rarity}`] = { ...base, rarity,
-      ...(base.power !== undefined ? { power: base.power * ratio } : { hp: Math.round((base.hp || (rarity === 'common' ? 0 : 20)) * ratio) }),
+      ...(base.power !== undefined ? { power: base.power * ratio } : { hp: base.hp ? Math.round(base.hp * ratio) : ECONOMY.starterBodyHp[rarity] }),
       requiredLevel: base.huntTier === 2 ? 5 : { common: 1, fine: 2, rare: 4, epic: 6 }[rarity] };
   }
 }

@@ -10,6 +10,8 @@ import { shopStock, gearPrice, buyGear, sellItem, refreshShop, refreshPrice } fr
 import { compareItems } from '../js/meta/compare.js';
 import { settleRound, trackRound, createTracker } from '../js/meta/run.js';
 import { HubUI } from '../js/ui/hub.js';
+import { createWorld, addPlayer } from '../js/sim/world.js';
+import { buildRoundMods } from '../js/meta/run.js';
 
 const fresh = () => createSave({ name: 'P1', answers: [0, 0, 0, 0, 0], createdAt: 123 });
 const freeze = (value) => { if (value && typeof value === 'object') { Object.freeze(value); Object.values(value).forEach(freeze); } return value; };
@@ -85,6 +87,20 @@ test('five slots: empty defaults preserve Lv1 numbers, all pieces/affixes/enhanc
   const empty = structuredClone(save); empty.equipped = Object.fromEntries(SLOTS.map((slot) => [slot, null]));
   assert.equal(deriveMods(empty).maxHp, 108); assert.equal(carriedWeight(empty), 5);
   assert.equal(capacity(five), deriveMods(five).capacity);
+  const savedFive = SLOTS.slice(1).reduce((next, slot) => equip(next, next.equipped[slot]), five);
+  assert.ok(validateSave(savedFive));
+  assert.deepEqual(storeWith(JSON.stringify(savedFive)).store.load(), savedFive);
+  const modded = structuredClone(five);
+  modded.items[0].affixes = [{ k: 'atk_pct', v: 6 }];
+  modded.items[1].affixes = [{ k: 'mana_pct', v: 8 }, { k: 'potion_pct', v: 8 }];
+  modded.items[2].affixes = [{ k: 'speed_pct', v: 4 }, { k: 'dodge_pct', v: 6 }];
+  const mods = buildRoundMods(modded);
+  const world = createWorld({ seed: 1 });
+  const player = addPlayer(world, { pid: 'P1', mods });
+  assert.equal(player.maxHp, mods.maxHp); assert.equal(player.mpRegen, mods.mpRegen);
+  assert.equal(player.dmgMult.blade, mods.dmgMult.blade); assert.equal(player.dodgeCdMult, mods.dodgeCdMult);
+  assert.equal(player.potionHealMult, mods.potionHealMult);
+  assert.ok(player.speed > addPlayer(createWorld({ seed: 1 }), { pid: 'base', mods: buildRoundMods(save) }).speed);
   for (const slot of ['head', 'hands', 'feet']) for (const armorClass of ['light', 'medium', 'heavy']) {
     for (const [rarity, tier] of [['common', 1], ['fine', 1], ['fine', 2]]) {
       const item = ITEMS[`${slot}_${armorClass}_${rarity}_t${tier}`];
@@ -158,6 +174,22 @@ test('10,000 seeded kills: additive equipment rates, normal/boss rarity, stones 
   assert.ok(mixes[0] < mixes[1] && mixes[1] < mixes[2]);
 });
 
+test('monster themes bias slots rather than force them; spirit weapons are focus', () => {
+  for (const monster of ['wolf', 'rune_guardian', 'spirit']) {
+    const slots = Object.fromEntries(SLOTS.map((slot) => [slot, 0]));
+    for (let seed = 0; seed < 10000; seed++) {
+      for (const item of rollDrops(monster, seed, { boss: true }).items.filter((item) => item.uid.includes(':rolled:'))) {
+        slots[ITEMS[item.id].slot]++;
+        if (monster === 'spirit' && ITEMS[item.id].slot === 'weapon') assert.equal(ITEMS[item.id].family, 'focus');
+      }
+    }
+    assert.ok(Object.values(slots).every((count) => count > 0));
+    if (monster === 'wolf') assert.ok(slots.feet > slots.body * 3 && slots.hands > slots.body * 3);
+    if (monster === 'rune_guardian') assert.ok(slots.body > slots.hands * 3 && slots.head > slots.hands * 3);
+    if (monster === 'spirit') assert.ok(slots.weapon > slots.body * 3);
+  }
+});
+
 test('pity survives saves, guarantees next boss rare+, resets on received rare and never promotes lost temporary gear', () => {
   let save = fresh(); save.flags.chiefPity = true;
   for (let i = 0; i < 6; i++) save = settleRound(save, { stageId: 'S2', terminal: 'clear' }).save;
@@ -170,6 +202,7 @@ test('pity survives saves, guarantees next boss rare+, resets on received rare a
   }
   const loot = rollDrops('goblin_chief', 1, { rarelessRounds: 6 });
   assert.equal(settleRound(save, { stageId: 'S4', terminal: 'clear', tempLoot: loot }).save.rarelessRounds, 0);
+  assert.equal(settleRound(save, { stageId: 'S4', terminal: 'return_scroll', tempLoot: loot }).save.rarelessRounds, 0);
   const dead = settleRound(save, { stageId: 'S4', terminal: 'death', tempLoot: loot });
   assert.deepEqual(dead.save.items, save.items); assert.equal(dead.save.rarelessRounds, 6);
   const tracker = trackRound(save, createTracker(1), [{ type: 'kill', monster: 'goblin_chief', xp: 40 }]).tracker;

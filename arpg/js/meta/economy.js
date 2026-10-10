@@ -10,6 +10,7 @@ export const ECONOMY = {
   stoneWeights: { 1: [85, 14, 1], 2: [45, 45, 10], 3: [20, 45, 35] },
   rarityPrice: { common: 1, fine: 1.6, rare: 3, epic: 5 },
   rarityPower: { common: 1, fine: 1.15, rare: 1.32, epic: 1.5 },
+  starterBodyHp: { common: 0, fine: 12, rare: 20, epic: 28 },
   slotPrice: { weapon: 60, head: 24, body: 50, hands: 22, feet: 22 },
   craftRefundFraction: 0.25, optionPriceFactor: 0.2, bossExtraChance: 0.5, sellFraction: 0.25, dropBonusCap: 15, pityRounds: 6, refreshRounds: 3, refreshGold: 20,
   affixCount: { common: 0, fine: 1, rare: 2, epic: 3 },
