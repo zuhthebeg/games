@@ -3,7 +3,7 @@
 (() => {
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => [...document.querySelectorAll(s)];
-  const views = ['inn', 'shop', 'forge', 'board', 'combat', 'result'];
+  const views = ['inn', 'shop', 'forge', 'board', 'combat', 'result', 'equipment', 'inventory', 'merchant', 'comparison', 'reveal', 'upgrade'];
   let current = 'inn';
   let selectedItem = 'potion';
   let quantity = 3;
@@ -30,6 +30,8 @@
   function show(view, focusTab = false) {
     if (!views.includes(view)) return;
     current = view;
+    document.querySelector('#compare-sheet')?.close();
+    history.replaceState(null, '', '#' + view);
     $$('.screen').forEach(node => { node.hidden = node.dataset.view !== view; });
     $$('.screen-tabs button').forEach(node => {
       const selected = node.dataset.screen === view;
@@ -141,7 +143,7 @@
     }
     else if ('close' in d) $('.mock-dialog').close();
   });
-  $('.screen-tabs').addEventListener('keydown', event => {
+  $('.review-bar').addEventListener('keydown', event => {
     const index = views.indexOf(current);
     let next;
     if (event.key === 'ArrowRight') next = (index + 1) % views.length;
@@ -170,4 +172,5 @@
   renderGear('iron');
   kit('blade');
   terminal('clear');
+  show(location.hash.slice(1) || 'inn');
 })();

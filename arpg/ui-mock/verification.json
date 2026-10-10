@@ -1,274 +1,4100 @@
 {
-  "viewport": {
-    "width": 390,
-    "height": 844
-  },
-  "screenshots": 0,
+  "viewports": [
+    {
+      "width": 390,
+      "height": 844
+    },
+    {
+      "width": 360,
+      "height": 640
+    },
+    {
+      "width": 1280,
+      "height": 900
+    }
+  ],
   "errors": [],
   "networkErrors": [],
   "states": [
     {
+      "viewport": "390x844",
       "name": "inn",
-      "controls": 14,
-      "outside": [],
+      "controls": 20,
+      "visibleControls": 20,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 558,
-        "scrollHeight": 558
-      }
+      "horizontal": [],
+      "outside": []
     },
     {
+      "viewport": "390x844",
+      "name": "inn/middle",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inn/bottom",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
       "name": "shop",
-      "controls": 14,
-      "outside": [],
+      "controls": 20,
+      "visibleControls": 20,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 558,
-        "scrollHeight": 558
-      }
+      "horizontal": [],
+      "outside": []
     },
     {
+      "viewport": "390x844",
+      "name": "shop/middle",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "shop/bottom",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
       "name": "forge",
-      "controls": 14,
-      "outside": [],
+      "controls": 20,
+      "visibleControls": 20,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 558,
-        "scrollHeight": 558
-      }
+      "horizontal": [],
+      "outside": []
     },
     {
+      "viewport": "390x844",
+      "name": "forge/middle",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "forge/bottom",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
       "name": "board",
-      "controls": 13,
-      "outside": [],
-      "undersized": [],
-      "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 558,
-        "scrollHeight": 558
-      }
-    },
-    {
-      "name": "combat",
-      "controls": 18,
-      "outside": [],
-      "undersized": [],
-      "overlaps": [],
-      "horizontalOverflow": false,
-      "content": null
-    },
-    {
-      "name": "result",
-      "controls": 10,
-      "outside": [],
-      "undersized": [],
-      "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 571,
-        "scrollHeight": 571
-      }
-    },
-    {
-      "name": "combat/blade",
-      "controls": 18,
-      "outside": [],
-      "undersized": [],
-      "overlaps": [],
-      "horizontalOverflow": false,
-      "content": null
-    },
-    {
-      "name": "combat/bow",
-      "controls": 17,
-      "outside": [],
-      "undersized": [],
-      "overlaps": [],
-      "horizontalOverflow": false,
-      "content": null
-    },
-    {
-      "name": "combat/focus",
       "controls": 19,
-      "outside": [],
+      "visibleControls": 18,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": null
+      "horizontal": [],
+      "outside": []
     },
     {
-      "name": "result/clear",
-      "controls": 10,
-      "outside": [],
+      "viewport": "390x844",
+      "name": "board/middle",
+      "controls": 19,
+      "visibleControls": 19,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 571,
-        "scrollHeight": 571
-      }
+      "horizontal": [],
+      "outside": []
     },
     {
-      "name": "result/death",
-      "controls": 10,
-      "outside": [],
+      "viewport": "390x844",
+      "name": "board/bottom",
+      "controls": 19,
+      "visibleControls": 19,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 571,
-        "scrollHeight": 571
-      }
+      "horizontal": [],
+      "outside": []
     },
     {
-      "name": "shop/potion",
-      "controls": 14,
-      "outside": [],
+      "viewport": "390x844",
+      "name": "combat",
+      "controls": 24,
+      "visibleControls": 24,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 558,
-        "scrollHeight": 558
-      }
+      "horizontal": [],
+      "outside": []
     },
     {
-      "name": "shop/mana",
-      "controls": 14,
-      "outside": [],
+      "viewport": "390x844",
+      "name": "result",
+      "controls": 16,
+      "visibleControls": 16,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 558,
-        "scrollHeight": 558
-      }
+      "horizontal": [],
+      "outside": []
     },
     {
-      "name": "shop/scroll",
-      "controls": 14,
-      "outside": [],
+      "viewport": "390x844",
+      "name": "result/middle",
+      "controls": 16,
+      "visibleControls": 16,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 558,
-        "scrollHeight": 558
-      }
+      "horizontal": [],
+      "outside": []
     },
     {
-      "name": "forge/iron",
-      "controls": 14,
-      "outside": [],
+      "viewport": "390x844",
+      "name": "result/bottom",
+      "controls": 16,
+      "visibleControls": 16,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 558,
-        "scrollHeight": 558
-      }
+      "horizontal": [],
+      "outside": []
     },
     {
-      "name": "forge/bow",
-      "controls": 14,
-      "outside": [],
+      "viewport": "390x844",
+      "name": "equipment",
+      "controls": 18,
+      "visibleControls": 18,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 558,
-        "scrollHeight": 558
-      }
+      "horizontal": [],
+      "outside": []
     },
     {
-      "name": "forge/staff",
-      "controls": 14,
-      "outside": [],
+      "viewport": "390x844",
+      "name": "equipment/middle",
+      "controls": 18,
+      "visibleControls": 18,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 558,
-        "scrollHeight": 558
-      }
+      "horizontal": [],
+      "outside": []
     },
     {
-      "name": "board/S1",
+      "viewport": "390x844",
+      "name": "equipment/bottom",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/middle",
+      "controls": 32,
+      "visibleControls": 32,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/bottom",
+      "controls": 32,
+      "visibleControls": 26,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "merchant",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "comparison",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "reveal",
       "controls": 13,
-      "outside": [],
+      "visibleControls": 13,
       "undersized": [],
       "overlaps": [],
-      "horizontalOverflow": false,
-      "content": {
-        "height": 558,
-        "scrollHeight": 558
-      }
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/middle",
+      "controls": 18,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "shop",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-shop/potion",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-shop/mana",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-shop/scroll",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-confirm",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "forge",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-gear/iron",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-gear/bow",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-gear/staff",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "combat",
+      "controls": 24,
+      "visibleControls": 24,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "combat/blade",
+      "controls": 24,
+      "visibleControls": 24,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "combat/bow",
+      "controls": 23,
+      "visibleControls": 23,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "combat/focus",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "result",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "result/clear",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "result/death",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "board",
+      "controls": 19,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inn",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-rationale/inn",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "shop",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-rationale/shop",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "forge",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-rationale/forge",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "board",
+      "controls": 19,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-rationale/board",
+      "controls": 19,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "combat",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-rationale/combat",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "result",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "legacy-rationale/result",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inn",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "equipment",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "socket/weapon",
+      "controls": 7,
+      "visibleControls": 7,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "socket/head",
+      "controls": 4,
+      "visibleControls": 4,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "socket/body",
+      "controls": 5,
+      "visibleControls": 5,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "socket/hands",
+      "controls": 3,
+      "visibleControls": 3,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "socket/feet",
+      "controls": 3,
+      "visibleControls": 3,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/all",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/weapon",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/head",
+      "controls": 22,
+      "visibleControls": 22,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/body",
+      "controls": 23,
+      "visibleControls": 23,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/hands",
+      "controls": 21,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/feet",
+      "controls": 21,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/sort0",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/sort1",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/sort2",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/longpress",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory/tap",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "icon-catalog/middle",
+      "controls": 32,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "icon-catalog/bottom",
+      "controls": 32,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "merchant",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "merchant/weapon",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "merchant/weapon/sheet",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "merchant/armor",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "merchant/armor/sheet",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "merchant/sell",
+      "controls": 28,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "merchant/sell/middle",
+      "controls": 28,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "merchant/sell/bottom",
+      "controls": 28,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "merchant/sell/sheet",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "merchant/refreshed-sheet",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "comparison",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "comparison/iron",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "comparison/heavy",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "comparison/locked",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/iron/missing",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/iron/missing/middle",
+      "controls": 18,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/iron/missing/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/iron/ready",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/iron/ready/middle",
+      "controls": 18,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/iron/ready/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/staff/missing",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/staff/missing/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/staff/missing/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/staff/ready",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/staff/ready/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/staff/ready/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/locked/missing",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/locked/missing/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/locked/missing/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/locked/ready",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/locked/ready/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/locked/ready/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade/confirm",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "reveal",
+      "controls": 13,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "reveal/1",
+      "controls": 17,
+      "visibleControls": 17,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "reveal/2",
+      "controls": 21,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "reveal/3",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "reveal/3/middle",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "reveal/3/bottom",
+      "controls": 25,
+      "visibleControls": 24,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "reveal/dismantle-confirm",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inn",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "equipment",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "inventory",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "merchant",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "comparison",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "reveal",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "upgrade",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "390x844",
+      "name": "comparison",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inn",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inn/middle",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inn/bottom",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "shop",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "shop/middle",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "shop/bottom",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "forge",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "forge/middle",
+      "controls": 20,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "forge/bottom",
+      "controls": 20,
+      "visibleControls": 17,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "board",
+      "controls": 19,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "board/middle",
+      "controls": 19,
+      "visibleControls": 17,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "board/bottom",
+      "controls": 19,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "combat",
+      "controls": 24,
+      "visibleControls": 22,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "result",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "result/middle",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "result/bottom",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "equipment",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "equipment/middle",
+      "controls": 18,
+      "visibleControls": 17,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "equipment/bottom",
+      "controls": 18,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/middle",
+      "controls": 32,
+      "visibleControls": 24,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/bottom",
+      "controls": 32,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/middle",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/bottom",
+      "controls": 20,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison/middle",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison/bottom",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "reveal",
+      "controls": 13,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "shop",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-shop/potion",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-shop/mana",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-shop/scroll",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-confirm",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "forge",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-gear/iron",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-gear/bow",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-gear/staff",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "combat",
+      "controls": 24,
+      "visibleControls": 22,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "combat/blade",
+      "controls": 24,
+      "visibleControls": 22,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "combat/bow",
+      "controls": 23,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "combat/focus",
+      "controls": 25,
+      "visibleControls": 23,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "result",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "result/clear",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "result/death",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "board",
+      "controls": 19,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inn",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-rationale/inn",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "shop",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-rationale/shop",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "forge",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-rationale/forge",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "board",
+      "controls": 19,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-rationale/board",
+      "controls": 19,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "combat",
+      "controls": 25,
+      "visibleControls": 23,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-rationale/combat",
+      "controls": 25,
+      "visibleControls": 22,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "result",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "legacy-rationale/result",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inn",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "equipment",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "socket/weapon",
+      "controls": 7,
+      "visibleControls": 7,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "socket/weapon/middle",
+      "controls": 7,
+      "visibleControls": 7,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "socket/weapon/bottom",
+      "controls": 7,
+      "visibleControls": 7,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "socket/head",
+      "controls": 4,
+      "visibleControls": 4,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "socket/body",
+      "controls": 5,
+      "visibleControls": 5,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "socket/hands",
+      "controls": 3,
+      "visibleControls": 3,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "socket/feet",
+      "controls": 3,
+      "visibleControls": 3,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/all",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/weapon",
+      "controls": 25,
+      "visibleControls": 24,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/head",
+      "controls": 22,
+      "visibleControls": 22,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/body",
+      "controls": 23,
+      "visibleControls": 23,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/hands",
+      "controls": 21,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/feet",
+      "controls": 21,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/sort0",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/sort1",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/sort2",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/longpress",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory/tap",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "icon-catalog/middle",
+      "controls": 32,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "icon-catalog/bottom",
+      "controls": 32,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/weapon",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/weapon/middle",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/weapon/bottom",
+      "controls": 20,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/weapon/sheet",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/armor",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/armor/middle",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/armor/bottom",
+      "controls": 20,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/armor/sheet",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/sell",
+      "controls": 28,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/sell/middle",
+      "controls": 28,
+      "visibleControls": 17,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/sell/bottom",
+      "controls": 28,
+      "visibleControls": 17,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/sell/sheet",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant/refreshed-sheet",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison/iron",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison/heavy",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison/heavy/middle",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison/heavy/bottom",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison/locked",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison/locked/middle",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison/locked/bottom",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/iron/missing",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/iron/missing/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/iron/missing/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/iron/ready",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/iron/ready/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/iron/ready/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/staff/missing",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/staff/missing/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/staff/missing/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/staff/ready",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/staff/ready/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/staff/ready/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/locked/missing",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/locked/missing/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/locked/missing/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/locked/ready",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/locked/ready/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/locked/ready/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade/confirm",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "reveal",
+      "controls": 13,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "reveal/1",
+      "controls": 17,
+      "visibleControls": 17,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "reveal/2",
+      "controls": 21,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "reveal/2/middle",
+      "controls": 21,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "reveal/2/bottom",
+      "controls": 21,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "reveal/3",
+      "controls": 25,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "reveal/3/middle",
+      "controls": 25,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "reveal/3/bottom",
+      "controls": 25,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "reveal/dismantle-confirm",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inn",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "equipment",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "inventory",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "merchant",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "reveal",
+      "controls": 25,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "upgrade",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "360x640",
+      "name": "comparison",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inn",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inn/middle",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inn/bottom",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "shop",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "shop/middle",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "shop/bottom",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "forge",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "forge/middle",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "forge/bottom",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "board",
+      "controls": 19,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "board/middle",
+      "controls": 19,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "board/bottom",
+      "controls": 19,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "combat",
+      "controls": 24,
+      "visibleControls": 24,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "result",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "result/middle",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "result/bottom",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "equipment",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "equipment/middle",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "equipment/bottom",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/middle",
+      "controls": 32,
+      "visibleControls": 32,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/bottom",
+      "controls": 32,
+      "visibleControls": 26,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "merchant",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "comparison",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "reveal",
+      "controls": 13,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/middle",
+      "controls": 18,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "shop",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-shop/potion",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-shop/mana",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-shop/scroll",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-confirm",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "forge",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-gear/iron",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-gear/bow",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-gear/staff",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "combat",
+      "controls": 24,
+      "visibleControls": 24,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "combat/blade",
+      "controls": 24,
+      "visibleControls": 24,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "combat/bow",
+      "controls": 23,
+      "visibleControls": 23,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "combat/focus",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "result",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "result/clear",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "result/death",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "board",
+      "controls": 19,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inn",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-rationale/inn",
+      "controls": 20,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "shop",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-rationale/shop",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "forge",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-rationale/forge",
+      "controls": 20,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "board",
+      "controls": 19,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-rationale/board",
+      "controls": 19,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "combat",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-rationale/combat",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "result",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "legacy-rationale/result",
+      "controls": 16,
+      "visibleControls": 16,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inn",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "equipment",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "socket/weapon",
+      "controls": 7,
+      "visibleControls": 7,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "socket/head",
+      "controls": 4,
+      "visibleControls": 4,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "socket/body",
+      "controls": 5,
+      "visibleControls": 5,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "socket/hands",
+      "controls": 3,
+      "visibleControls": 3,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "socket/feet",
+      "controls": 3,
+      "visibleControls": 3,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/all",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/weapon",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/head",
+      "controls": 22,
+      "visibleControls": 22,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/body",
+      "controls": 23,
+      "visibleControls": 23,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/hands",
+      "controls": 21,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/feet",
+      "controls": 21,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/sort0",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/sort1",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/sort2",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/longpress",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory/tap",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "icon-catalog/middle",
+      "controls": 32,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "icon-catalog/bottom",
+      "controls": 32,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "merchant",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "merchant/weapon",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "merchant/weapon/sheet",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "merchant/armor",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "merchant/armor/sheet",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "merchant/sell",
+      "controls": 28,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "merchant/sell/middle",
+      "controls": 28,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "merchant/sell/bottom",
+      "controls": 28,
+      "visibleControls": 19,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "merchant/sell/sheet",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "merchant/refreshed-sheet",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "comparison",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "comparison/iron",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "comparison/heavy",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "comparison/locked",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/iron/missing",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/iron/missing/middle",
+      "controls": 18,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/iron/missing/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/iron/ready",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/iron/ready/middle",
+      "controls": 18,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/iron/ready/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/staff/missing",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/staff/missing/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/staff/missing/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/staff/ready",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/staff/ready/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/staff/ready/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/locked/missing",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/locked/missing/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/locked/missing/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/locked/ready",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/locked/ready/middle",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/locked/ready/bottom",
+      "controls": 18,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade/confirm",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "reveal",
+      "controls": 13,
+      "visibleControls": 13,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "reveal/1",
+      "controls": 17,
+      "visibleControls": 17,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "reveal/2",
+      "controls": 21,
+      "visibleControls": 21,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "reveal/3",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "reveal/3/middle",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "reveal/3/bottom",
+      "controls": 25,
+      "visibleControls": 24,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "reveal/dismantle-confirm",
+      "controls": 2,
+      "visibleControls": 2,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inn",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "equipment",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "inventory",
+      "controls": 32,
+      "visibleControls": 31,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "merchant",
+      "controls": 20,
+      "visibleControls": 20,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "comparison",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "reveal",
+      "controls": 25,
+      "visibleControls": 25,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "upgrade",
+      "controls": 18,
+      "visibleControls": 18,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
+    },
+    {
+      "viewport": "1280x900",
+      "name": "comparison",
+      "controls": 15,
+      "visibleControls": 15,
+      "undersized": [],
+      "overlaps": [],
+      "horizontal": [],
+      "outside": []
     }
   ],
   "checks": [
-    "HP / potions / return / dodge coordinates identical across 3 kits; all 3 hero atlases decode",
-    "Merchant limits, total, balance, weight; gear variants; contract selection; confirm dialogs",
-    "6 source-linked rationale disclosures, Arrow/Home/End tab keyboard navigation, synthetic swipe",
-    "Reduced motion, noindex, no external asset requests, no localStorage/sessionStorage writes",
-    "8 key text/background contrast pairs ≥ 4.5:1; all 18 default state bodies fit without scrolling"
+    "390x844: 12 screens + scroll reachability, legacy variants, 5 sockets, filters/sort/long press, 8 stock + buy/sell, 3 comparison states, 3 stone tiers × 2 availability states, 3 sequential reveals, keyboard focus/reduced-motion/local assets/storage",
+    "360x640: 12 screens + scroll reachability, legacy variants, 5 sockets, filters/sort/long press, 8 stock + buy/sell, 3 comparison states, 3 stone tiers × 2 availability states, 3 sequential reveals, keyboard focus/reduced-motion/local assets/storage",
+    "1280x900: 12 screens + scroll reachability, legacy variants, 5 sockets, filters/sort/long press, 8 stock + buy/sell, 3 comparison states, 3 stone tiers × 2 availability states, 3 sequential reveals, keyboard focus/reduced-motion/local assets/storage",
+    "12 text/background contrast pairs ≥ 4.5:1 including 4 rarity labels; original contract/rationale/synthetic swipe regression preserved"
+  ],
+  "screenshots": [
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/390x844-equipment.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/390x844-inventory.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/390x844-merchant.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/390x844-comparison.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/390x844-reveal.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/390x844-upgrade.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/390x844-tradeoff-sheet.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/360x640-equipment.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/360x640-inventory.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/360x640-merchant.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/360x640-comparison.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/360x640-reveal.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/360x640-upgrade.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/360x640-tradeoff-sheet.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/1280x900-equipment.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/1280x900-inventory.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/1280x900-merchant.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/1280x900-comparison.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/1280x900-reveal.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/1280x900-upgrade.png",
+    "/home/cocy/.openclaw/workspace/tmp/arpg-p2mock-verification/1280x900-tradeoff-sheet.png"
   ],
   "chromium": "149.0.7827.55",
   "contrast": [
     {
-      "name": "body ink / ash",
+      "name": "body",
       "foreground": "#efe6d2",
       "background": "#141916",
       "ratio": 14.33
     },
     {
-      "name": "muted / raised",
+      "name": "muted",
       "foreground": "#b8b39f",
       "background": "#30362b",
       "ratio": 5.92
     },
     {
-      "name": "primary text / brass",
+      "name": "CTA",
       "foreground": "#1b211a",
       "background": "#d3ad6d",
       "ratio": 7.79
     },
     {
-      "name": "brass / selected",
+      "name": "brass selected",
       "foreground": "#d3ad6d",
       "background": "#33392b",
       "ratio": 5.66
     },
     {
-      "name": "gain / ash",
+      "name": "gain",
       "foreground": "#adc6a0",
       "background": "#141916",
       "ratio": 9.63
     },
     {
-      "name": "loss / surface",
+      "name": "loss",
       "foreground": "#e9a294",
       "background": "#222821",
       "ratio": 7.22
     },
     {
-      "name": "HP meter text / fill",
+      "name": "HP",
       "foreground": "#f8ecd6",
       "background": "#914740",
       "ratio": 5.65
     },
     {
-      "name": "MP meter text / fill",
+      "name": "MP",
       "foreground": "#f8ecd6",
       "background": "#456879",
       "ratio": 5.12
+    },
+    {
+      "name": "common",
+      "foreground": "#a9aba5",
+      "background": "#292e29",
+      "ratio": 5.97
+    },
+    {
+      "name": "fine",
+      "foreground": "#b5cda0",
+      "background": "#293526",
+      "ratio": 7.48
+    },
+    {
+      "name": "rare",
+      "foreground": "#a4c8e6",
+      "background": "#243442",
+      "ratio": 7.28
+    },
+    {
+      "name": "epic",
+      "foreground": "#d1b7e5",
+      "background": "#332b40",
+      "ratio": 7.44
     }
   ],
-  "passed": true
+  "passed": true,
+  "limitations": [
+    "DOM geometry and local Chromium, not real-device thumb reach or aesthetic approval",
+    "Scroll containers are intentional; visible clipped intersections audited at top/middle/bottom",
+    "Gameplay formulas and stock rolls are fixtures, not production implementations"
+  ]
 }
