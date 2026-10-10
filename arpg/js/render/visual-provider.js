@@ -1,3 +1,4 @@
+import { BALANCE } from '../content/balance.js';
 import { Container, Graphics } from '../../vendor/pixi-8.22.0.min.mjs';
 import { registerAtlasFactories } from './atlas-visual.js';
 import { visualKey } from './atlas-state.js';
@@ -41,7 +42,7 @@ function procedural(entity, { color }) {
   const bar = new Graphics();
   const health = new Graphics();
   const flash = new Graphics();
-  const radius = entity.r, visualKey = entity.kind === 'player' ? entity.weapon : entity.type;
+  const radius = entity.r / (entity.sizeScale || 1), visualKey = entity.kind === 'player' ? entity.weapon : entity.type;
   silhouette.ellipse(-6, -2, 6, 4).ellipse(7, -2, 6, 4).fill(0x242722);
   if (visualKey === 'iron_boar') {
     silhouette.ellipse(0, -16, radius + 7, radius * .7).fill(color).ellipse(18, -15, 12, 10).fill(0x3a3027);
@@ -138,8 +139,14 @@ function procedural(entity, { color }) {
   health.rect(-radius, -66, radius * 2, 4).fill(0xb26d50);
   flash.ellipse(0, -20, radius * .8, 16).circle(0, -36, radius * .58).fill(0xffffff);
   flash.visible = false;
+  if (entity.eliteVariant) {
+    silhouette.tint = BALANCE.elite.tint;
+  }
   body.addChild(silhouette, weapon, flash, stars);
-  container.addChild(body, face, bar, health);
+  const sized = new Container();
+  sized.scale.set(entity.sizeScale || 1);
+  sized.addChild(body, face, bar, health);
+  container.addChild(sized);
   return {
     container,
     get debug() { return { mode: 'procedural', key: visualKey }; },

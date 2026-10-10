@@ -1,4 +1,5 @@
 import { ECONOMY } from './economy.js';
+import { threatMultipliers, BALANCE } from '../content/balance.js';
 import { deriveMods } from './stats.js';
 import { addXp, stageXp, deathLoss, MAX_LEVEL, xpSpan, STAGE_XP } from './progression.js';
 import { ITEMS, carriedWeight, capacity, rollDrops, dropSeed, cloneSave, uniqueUid, instance } from './items.js';
@@ -6,10 +7,21 @@ import { ITEMS, carriedWeight, capacity, rollDrops, dropSeed, cloneSave, uniqueU
 export const emptyLoot = () => ({ gold: 0, items: [], stacks: {} });
 const USED_KEYS = { potions: 'potion', manaPotions: 'mana_potion', scrolls: 'return_scroll' };
 
+// stageThreat stores the highest CLEARED tier; absent historical clears count as tier 1.
+// An uncleared stage always starts at tier 1, never gains a free higher-tier unlock.
+export const clearedThreat = (save, stageId) => save.stageThreat?.[stageId] ?? (save.cleared[stageId] ? 1 : 0);
+export const unlockedThreat = (save, stageId) => stageId === 'S1' ? 1 : Math.min(3, clearedThreat(save, stageId) + 1);
+export function selectThreat(save, stageId, threat) {
+  threatMultipliers(threat);
+  if (!Object.hasOwn(STAGE_XP, stageId) || threat > unlockedThreat(save, stageId)
+    || (stageId === 'S1' && threat !== 1)) throw new Error('위협도가 잠겨 있습니다.');
+  return { ...cloneSave(save), threat };
+}
+
 export function buildRoundMods(save) {
   const { capacity: ignoredCapacity, shopDiscount, family, ...mods } = deriveMods(save);
   return {
-    ...mods,
+    ...mods, threat: save.threat ?? 1,
     potions: save.stacks.potion || 0,
     manaPotions: save.stacks.mana_potion || 0,
     scrolls: save.stacks.return_scroll || 0,
@@ -53,7 +65,8 @@ export function trackRound(save, tracker, events, used = {}) {
     next.depositedXp += event.xp;
     const seed = dropSeed(next.seed, next.killIndex++);
     const mods = deriveMods(save);
-    const drop = rollDrops(event.monster, seed, { rarelessRounds: save.rarelessRounds,
+    const drop = rollDrops(event.monster, seed, { elite: event.elite === true, threat: event.threat ?? save.threat ?? 1,
+      stageId: event.stageId, huntTier: BALANCE.stages[event.stageId]?.huntTier, rarelessRounds: save.rarelessRounds,
       goldBonus: mods.goldBonus, materialBonus: mods.materialBonus });
     next.tempLoot.gold += drop.gold;
     const picked = [];
@@ -78,6 +91,8 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
   if (!Object.hasOwn(STAGE_XP, stageId)
     || !['clear', 'return_scroll', 'death'].includes(terminal)) throw new Error('Invalid settlement');
   if (!Number.isSafeInteger(depositedXp) || depositedXp < 0) throw new Error('Invalid XP deposit');
+  const threat = stageId === 'S1' ? 1 : save.threat ?? 1;
+  selectThreat(save, stageId, threat);
   let next = cloneSave(save);
   const consumption = {};
   for (const [key, id] of Object.entries(USED_KEYS)) {
@@ -90,7 +105,7 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
   }
   const kept = terminal !== 'death';
   const receipt = {
-    stageId, terminal,
+    stageId, threat, terminal,
     firstClear: terminal === 'clear' && !save.cleared[stageId],
     xpGained: 0,
     xpLost: 0,
@@ -128,6 +143,7 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
     receipt.xpDiscarded = offeredXp - receipt.xpGained;
     next = addXp(next, offeredXp);
     next.cleared[stageId] = true;
+    next.stageThreat = { ...(save.stageThreat || {}), [stageId]: Math.max(clearedThreat(save, stageId), threat) };
     next.completedRounds++;
     if (next.completedRounds % ECONOMY.refreshRounds === 0) {
       next.shopRefresh++; next.paidRefreshes = 0; next.shopBought = [];
@@ -158,7 +174,7 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
   if (receivedRare) next.rarelessRounds = 0;
   else if (terminal === 'clear' && stageId !== 'S1') next.rarelessRounds = save.rarelessRounds + 1;
   receipt.levelsGained = next.level - save.level;
-  receipt.statPointsGained = receipt.levelsGained * 3;
+  receipt.statPointsGained = receipt.levelsGained * BALANCE.stats.pointsPerLevel;
   // Optional v1 metadata keeps the innkeeper's last-run summary across browser reloads.
   next.lastReceipt = structuredClone(receipt);
   return { save: next, receipt };

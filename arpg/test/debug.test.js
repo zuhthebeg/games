@@ -38,7 +38,7 @@ test('gear all slots/rarities/tiers uses P1 rolls and persists valid save', () =
     assert.equal(validateSave(save), true);
     const item = save.items.at(-1); assert.equal(ITEMS[item.id].rarity, rarity);
     if (slot !== 'random') assert.equal(ITEMS[item.id].slot, slot);
-    assert.equal(ITEMS[item.id].huntTier, Math.min(huntTier, 2));
+    assert.equal(ITEMS[item.id].huntTier, huntTier);
     assert.equal(item.affixes.length, {common:0,fine:1,rare:2,epic:3}[rarity]);
   }
   const full = grantSet(save, 3, 42); assert.equal(full.items.length, save.items.length + 20);
@@ -49,7 +49,7 @@ test('save cheats preserve level/point invariant and valid resource/progress sta
   for (const action of ['gold:1000','gold:10000','stones','materials','potions','unlock','reroll','refresh-reset','pity','progress-reset']) {
     save = mutateSave(save, action); assert.equal(validateSave(save), true, action);
   }
-  save = setLevel(save, 30); assert.equal(save.statPoints, 87); assert.equal(validateSave(save), true);
+  save = setLevel(save, 30); assert.equal(save.statPoints, 29); assert.equal(validateSave(save), true);
   save = setLevel(save, 1); assert.equal(save.statPoints, 0); assert.equal(validateSave(save), true);
   assert.throws(() => setLevel(save, 31));
 });

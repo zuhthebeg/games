@@ -211,9 +211,9 @@ try {
   await waitFor(page('level-up'), 38000);
   assert.equal(await evaluate('__arpg.world.round.t'), 900);
   assert.equal(await evaluate('__arpg.save.level'), 2);
-  assert.equal(await evaluate('__arpg.save.statPoints'), 3);
+  assert.equal(await evaluate('__arpg.save.statPoints'), 1);
   assert.ok(await evaluate("document.querySelector('#allocation-confirm').disabled"));
-  for (let point = 0; point < 3; point++) await click('[data-action="stat-plus"][data-key="agi"]');
+  for (let point = 0; point < 1; point++) await click('[data-action="stat-plus"][data-key="agi"]');
   await click('#allocation-confirm');
   await backToInn();
   const innMobile = await rectangles('.hotspot');
@@ -351,7 +351,7 @@ try {
     await key('KeyJ', 'keyUp');
     assert.ok(await evaluate(`smokeHits.playerHits>${hitsBefore}`), `${weapon} failed to hit scarecrow`);
     if (weapon === 'focus') {
-      assert.ok(await evaluate('__arpg.world.entities[0].mp<100'), 'focus skill did not consume mana');
+      assert.ok(await evaluate('__arpg.world.entities[0].mp<__arpg.world.entities[0].maxMp'), 'focus skill did not consume mana');
       const initialMana = await evaluate('__arpg.world.entities[0].manaPotions');
       await key('KeyE');
       await key('KeyE', 'keyUp');
@@ -388,7 +388,7 @@ try {
   await devStart('S4');
   const chiefArt=await atlasReady('goblin_chief');
   assert.equal(chiefArt.id,'goblin-chief');
-  assert.equal(chiefArt.scale,1.3);
+  assert.ok(chiefArt.scale>=1.3 && chiefArt.scale<=1.35, 'chief scale '+chiefArt.scale);
   assert.notEqual(chiefArt.tint,gruntArt.tint);
   artEvidence.monsters.push(chiefArt.id);
   await key('KeyR');
@@ -402,6 +402,7 @@ try {
     const fixture=addXp(createSave({name:'신규 코스 시험',answers:[0,0,0,0,0],createdAt:1}),451);
     fixture.cleared={S1:true,S2:true,S3:true,S4:true};
     fixture.stacks.return_scroll=2;
+    fixture.stageThreat.S2=1;
     new SaveStore(localStorage).save(fixture);
   })()`);
   await command('Page.reload');
@@ -410,6 +411,17 @@ try {
   assert.ok(await evaluate(`!document.querySelector('[data-stage="S5"]').disabled
     && document.querySelector('[data-stage="S6"]').disabled
     && document.querySelector('[data-stage="S7"]').disabled`));
+  // P3: real segment selection -> launch -> frozen world config -> return -> persisted selection.
+  await click('[data-action="sortie"][data-stage="S2"]');
+  assert.equal(await evaluate(`document.querySelector('[data-threat="3"]').disabled`),true);
+  await click('[data-action="threat"][data-threat="2"]');
+  assert.equal(await evaluate(`document.querySelector('[data-threat="2"]').getAttribute('aria-pressed')`),'true');
+  await click('#sortie-confirm');
+  await waitFor('__arpg.world.round.stageId==="S2" && __arpg.world.round.threat===2 && __arpg.world.tick>0');
+  assert.equal(await evaluate('__arpg.save.threat'),2);
+  await key('KeyR');await key('KeyR','keyUp');
+  await waitFor('__arpg.world.round.state==="returned"',6000);
+  await backToInn();await click('[data-action="board"]');
   await click('[data-action="sortie"][data-stage="S5"]');
   await click('#sortie-confirm');
   await waitFor('__arpg.world.round.stageId==="S5" && __arpg.world.tick>0');
@@ -419,6 +431,15 @@ try {
   await waitFor('__arpg.world.round.state==="returned"', 6000);
   await backToInn();
   assert.equal(await evaluate('__arpg.save.cleared.S5'), undefined, 'return must not unlock S6');
+  // The extra real T2 round consumes the second scroll. Buy a replacement through meta,
+  // preserving the two-scroll cap before development kit rounds (which never settle supplies).
+  await evaluate(`(async () => {
+    const {buy}=await import('./js/meta/items.js');
+    const {SaveStore}=await import('./js/meta/save.js');
+    const store=new SaveStore(localStorage);
+    store.save(buy(store.load(),'return_scroll'));
+  })()`);
+  await command('Page.reload');await waitFor(page('inn'));
   for (const [stage, types] of [['S6', ['rune_guardian', 'spirit']], ['S7', ['poison_spider']]]) {
     await devStart(stage);
     await waitFor(`${JSON.stringify(types)}.every(type=>__arpg.art.visuals.some(v=>v.key===type && v.mode==="procedural"))`);
@@ -486,7 +507,7 @@ try {
   await command('Page.reload'); await waitFor(page('inn'));
   assert.equal(await evaluate('__arpg.save.shopRefresh'), 1);
   assert.equal(await evaluate('__arpg.save.items.some(item=>item.uid=== ' + JSON.stringify(boughtUid) + ')'), false);
-  assert.equal(await evaluate('__arpg.save.version'), 2);
+  assert.equal(await evaluate('__arpg.save.version'), 3);
   await click('[data-action="settings"]');
   await click('[data-action="reset-first"]');
   assert.ok(await evaluate("localStorage.getItem('arpg.save.v1')!==null"));
@@ -594,9 +615,9 @@ try {
   assert.equal(errors.length, 0, JSON.stringify(errors.slice(0, 3)));
   console.log(JSON.stringify({
     ok: true, canvas: true, sprites: artEvidence,
-    onboarding: 'name → 5 answers → S1 clear@900 → allocate 3 → inn',
+    onboarding: 'name → 5 answers → S1 clear@900 → allocate 1 → inn',
     shop: 'supplies + scroll cap; seeded gear buy → sold-out → sell at loss → paid refresh → reload',
-    S2: 'sortie confirmed → reload → inn',
+    S2: 'sortie confirmed → reload → inn; threat2 segment → launch frozen T2 → return',
     newStages: 'pre-S5 v1 → S5 board unlock → wolf ×2 / S6 guardian+spirit / S7 spider procedural → return',
     persisted, fullSaveRestored: true, lastReceiptRestored: true,
     mobile: { width: 390, height: 844, hotspots: 5, buttons: 6, inside: true, noOverlap: true },
