@@ -15,7 +15,7 @@
   };
   const bag = [
     item('iron', '철검', 'weapon', 'sword', 'fine', 27, 0, 8, 2, 80, 1, [{ k: 'atk_pct', v: 4 }]),
-    item('heavy', '거친 전투검', 'weapon', 'sword', 'fine', 34, -12, 14, 3, 100, 0, [{ k: 'hp_flat', v: -12 }]),
+    item('heavy', '공격형 경갑', 'body', 'body', 'fine', 4, 48, 18, 3, 100, 0, [{ k: 'atk_pct', v: 4 }]),
     item('locked', '수호자의 검', 'weapon', 'sword', 'rare', 40, 12, 10, 7, 160, 2, [{ k: 'hp_flat', v: 12 }, { k: 'poise', v: 4 }]),
     item('bow', '사냥꾼 활', 'weapon', 'bow', 'fine', 23, 0, 7, 2, 72, 0, [{ k: 'crit_chance', v: 2 }]),
     item('wand', '불씨 마법봉', 'weapon', 'wand', 'common', 19, 0, 4, 1, 48),
@@ -67,6 +67,7 @@
   document.body.insertAdjacentHTML('beforeend', `<dialog id="compare-sheet" class="p2-sheet" aria-labelledby="p2-sheet-title"><header><h2 id="p2-sheet-title">비교</h2><button data-p2-close aria-label="비교 시트 닫기">닫기</button></header><div id="p2-sheet-body" class="p2-sheet-body"></div><footer id="p2-sheet-footer"></footer></dialog>`);
   let filter = 'all', sort = 0, shop = 'weapon', refresh = 0, revealed = 0, target = 'iron', stones = 'ready', opener;
   const allItems = [...bag, ...stock];
+  let displayedStock = stock;
   function renderBag() {
     const list = bag.filter(i => filter === 'all' || i.slot === filter).slice();
     if (sort === 0) list.sort((a, b) => Object.keys(grades).indexOf(b.rarity) - Object.keys(grades).indexOf(a.rarity));
@@ -76,14 +77,16 @@
     $('#bag-count').textContent = `보유 ${list.length}개`;
   }
   function renderStock() {
-    $('#p2-stock').innerHTML = (shop === 'sell' ? bag : stock.filter(i => shop === 'weapon' ? i.slot === 'weapon' : i.slot !== 'weapon')).map(i => card(i, shop === 'sell' ? '판매' : '구매')).join('');
+    // Three authored stock-roll snapshots; not the production RNG or economy.
+    displayedStock = stock.map((it, n) => refresh === 0 ? it : ({ ...it, uid: `stock-${refresh}-${n}`, affixes: it.affixes.map(a => ({ ...a, v: Math.max(1, a.v - (refresh % 3)) })), power: it.power > 0 && it.rarity === 'fine' ? it.power - (refresh % 3) : it.power }));
+    $('#p2-stock').innerHTML = (shop === 'sell' ? bag : displayedStock.filter(i => shop === 'weapon' ? i.slot === 'weapon' : i.slot !== 'weapon')).map(i => card(i, shop === 'sell' ? '판매' : '구매')).join('');
     $('#p2-shop-note').textContent = shop === 'sell' ? '매입가 = 구매가의 25% · 장착품 제외 · 저장 없는 예시' : '재고 총 8종 · 일반/양질만 · 나머지는 드랍·제작';
   }
   function openSheet(it, mode = '장착') {
     const c = compareItems(equipped[it.slot], it, save);
     opener = document.activeElement;
     $('#p2-sheet-title').textContent = `${mode} 전 비교`;
-    $('#p2-sheet-body').innerHTML = `<div class="p2-item-heading">${emblem(it)}<div><h3>${it.name} +${it.enhance}</h3><small>${grades[it.rarity]} · ${slots[it.slot]} · 필요 Lv.${it.requiredLevel}</small></div></div><p class="minor">현재: ${equipped[it.slot]?.name || '빈 슬롯'} → 후보 · ${it.slot === 'weapon' && ['bow','wand','staff'].includes(it.icon) ? '계열 변경: 실전 피해 우열 아님' : '캐릭터 총 능력치 비교'}</p>${linesHtml(c)}<div class="p2-weight-after">장착 후 무게 <b>${c.weightAfter.toFixed(1)} / ${save.capacity} kg</b><small>${c.weightAfter / save.capacity < .8 ? '가벼움 · 기동성 정상' : '짐이 많음 · 회피 재사용 +15%'}</small></div>${c.locked ? `<p class="p2-lock">잠금 · 필요 Lv.${it.requiredLevel}, 현재 Lv.${save.level}<br>${mode === '구매' ? '구매 가능 · 지금은 장착 불가' : mode === '판매' ? '판매 가능 · 레벨 제한은 장착에만 적용' : '레벨이 부족해 장착할 수 없음'}</p>` : ''}<p class="minor">${mode === '구매' ? `${it.price} G · 구매 후 ${save.gold - it.price} G · 가방 무게 ${(save.weight + it.weight).toFixed(1)} / 108 kg` : mode === '판매' ? `매입 ${it.price / 4} G = 구매가 ${it.price} G의 25%` : '가방의 같은 부위 장비와 비교 · 목업 수치 [제안]'}</p>`;
+    $('#p2-sheet-body').innerHTML = `<div class="p2-item-heading">${emblem(it)}<div><h3>${it.name} +${it.enhance}</h3><small>${grades[it.rarity]} · ${slots[it.slot]} · 필요 Lv.${it.requiredLevel}</small></div></div><p class="minor">현재: ${equipped[it.slot]?.name || '빈 슬롯'} → 후보 · ${it.slot === 'weapon' && ['bow','wand','staff'].includes(it.icon) ? '계열 변경: 실전 피해 우열 아님' : '캐릭터 총 능력치 비교 [제안]'}</p>${linesHtml(c)}<div class="p2-weight-after">장착 후 무게 <b>${c.weightAfter.toFixed(1)} / ${save.capacity} kg</b><small>${c.weightAfter / save.capacity < .8 ? '가벼움 · 기동성 정상' : '짐이 많음 · 회피 재사용 +15%'}</small></div>${c.locked ? `<p class="p2-lock">잠금 · 필요 Lv.${it.requiredLevel}, 현재 Lv.${save.level}<br>${mode === '구매' ? '구매 가능 · 지금은 장착 불가' : mode === '판매' ? '판매 가능 · 레벨 제한은 장착에만 적용' : '레벨이 부족해 장착할 수 없음'}</p>` : ''}<p class="minor">${mode === '구매' ? `${it.price} G · 구매 후 ${save.gold - it.price} G · 가방 무게 ${(save.weight + it.weight).toFixed(1)} / 108 kg` : mode === '판매' ? `매입 ${it.price / 4} G = 구매가 ${it.price} G의 25%` : '가방의 같은 부위 장비와 비교 · 목업 수치 [제안]'}</p>`;
     $('#p2-sheet-footer').innerHTML = `<button class="primary" data-p2-confirm ${c.locked && mode === '장착' ? 'disabled' : ''}>${mode}${mode === '구매' ? ` · ${it.price} G` : mode === '판매' ? ` · ${it.price / 4} G` : ''}${c.locked && mode === '장착' ? ' 불가 · 레벨 부족' : ' 확인'}</button>`;
     if (!$('#compare-sheet').open) $('#compare-sheet').showModal();
   }
@@ -122,13 +125,13 @@
   document.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b || b.disabled) return;
     const d = b.dataset;
-    if (d.p2Item) openSheet(allItems.find(i => i.uid === d.p2Item), d.p2Mode);
+    if (d.p2Item) openSheet([...allItems, ...displayedStock].find(i => i.uid === d.p2Item), d.p2Mode);
     else if (d.p2Slot) openSlot(d.p2Slot);
     else if (d.p2Case) openSheet(bag.find(i => i.uid === d.p2Case));
     else if (d.p2Filter) { filter = d.p2Filter; document.querySelectorAll('[data-p2-filter]').forEach(n => n.setAttribute('aria-pressed', String(n.dataset.p2Filter === filter))); renderBag(); }
     else if ('p2Sort' in d) { sort = (sort + 1) % 3; b.textContent = '정렬: ' + ['등급','최근','무게'][sort]; renderBag(); }
     else if (d.p2Shop) { shop = d.p2Shop; document.querySelectorAll('[data-p2-shop]').forEach(n => n.setAttribute('aria-pressed', String(n.dataset.p2Shop === shop))); renderStock(); }
-    else if ('p2Refresh' in d) { const paid = 20 * 2 ** refresh; refresh = Math.min(2, refresh + 1); b.textContent = `골드로 갱신 (${20 * 2 ** refresh}G)`; $('#p2-refresh-note').textContent = `목업 갱신 ${paid} G · 판 갱신 시 20G`; }
+    else if ('p2Refresh' in d) { refresh++; b.textContent = `골드로 갱신 (${20 * 2 ** refresh}G)`; $('#p2-refresh-note').textContent = `다음 갱신: 2판 · 목업 재고 ${refresh + 1}`; renderStock(); }
     else if ('p2Reveal' in d) reveal();
     else if (d.p2Target) { target = d.p2Target; document.querySelectorAll('[data-p2-target]').forEach(n => n.setAttribute('aria-pressed', String(n.dataset.p2Target === target))); renderUpgrade(); }
     else if (d.p2Stones) { stones = d.p2Stones; document.querySelectorAll('[data-p2-stones]').forEach(n => n.setAttribute('aria-pressed', String(n.dataset.p2Stones === stones))); renderUpgrade(); }
