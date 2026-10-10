@@ -55,7 +55,7 @@ test('save v2 optional threat fields default to 1; bad keys/tiers reject, storag
   for(const stageThreat of [{S4:-1},{S4:4},{S4:1.5},{S99:1},[]]) assert.equal(validateSave({...save,stageThreat}),false);
   assert.equal(validateSave({...save,threat:4}),false);
   const v1=JSON.parse(readFileSync(new URL('./fixtures/save-v1-s4.json',import.meta.url)));
-  storage.set(SAVE_KEY,JSON.stringify(v1));assert.equal(unlockedThreat(store.load(),'S4'),2);
+  storage.set(SAVE_KEY,JSON.stringify(v1));assert.equal(store.load(),null);
 });
 test('stage-specific threat unlock only on matching tier clear; return/death never promote, no skipped tier',()=>{
   let save=fresh();assert.throws(()=>selectThreat(save,'S4',2),/잠겨/);

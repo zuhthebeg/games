@@ -1,5 +1,5 @@
 import { ECONOMY } from './economy.js';
-import { threatMultipliers } from '../content/balance.js';
+import { threatMultipliers, BALANCE } from '../content/balance.js';
 import { deriveMods } from './stats.js';
 import { addXp, stageXp, deathLoss, MAX_LEVEL, xpSpan, STAGE_XP } from './progression.js';
 import { ITEMS, carriedWeight, capacity, rollDrops, dropSeed, cloneSave, uniqueUid, instance } from './items.js';
@@ -174,7 +174,7 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
   if (receivedRare) next.rarelessRounds = 0;
   else if (terminal === 'clear' && stageId !== 'S1') next.rarelessRounds = save.rarelessRounds + 1;
   receipt.levelsGained = next.level - save.level;
-  receipt.statPointsGained = receipt.levelsGained * 3;
+  receipt.statPointsGained = receipt.levelsGained * BALANCE.stats.pointsPerLevel;
   // Optional v1 metadata keeps the innkeeper's last-run summary across browser reloads.
   next.lastReceipt = structuredClone(receipt);
   return { save: next, receipt };

@@ -81,7 +81,7 @@ export const cloneSave = (save) => structuredClone(save);
 export const equippedItem = (save, slot) => save.items.find((item) => item.uid === save.equipped[slot]);
 
 export function capacity(save) {
-  return 100 + save.stats.str - 5 + affixTotals(SLOTS.map((slot) => equippedItem(save, slot))).capacity_flat;
+  return 100 + BALANCE.stats.capacity * eff(save.stats.str) + affixTotals(SLOTS.map((slot) => equippedItem(save, slot))).capacity_flat;
 }
 
 export function lootWeight(loot) {
@@ -159,7 +159,7 @@ export function enhance(save, uid) {
 
 export function shopPrice(save, id) {
   if (!CONSUMABLES.includes(id)) throw new Error('판매하지 않는 물품입니다.');
-  const discount = Math.min(0.1, 0.005 * eff(save.stats.cha));
+  const discount = Math.min(BALANCE.stats.discountCap, BALANCE.stats.discount * eff(save.stats.cha));
   return Math.max(1, Math.ceil(ITEMS[id].price * (1 - discount)));
 }
 

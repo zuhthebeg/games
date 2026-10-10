@@ -1,3 +1,4 @@
+import { BALANCE } from '../content/balance.js';
 export const MAX_LEVEL = 30;
 export const STAGE_XP = { S1: 50, S2: 100, S3: 180, S4: 260, S5: 340, S6: 480, S7: 520 };
 export const xpSpan = (level) => Math.round(50 * level ** 1.5);
@@ -14,7 +15,7 @@ export function addXp(save, amount) {
   while (next.level < MAX_LEVEL && next.xp >= xpSpan(next.level)) {
     next.xp -= xpSpan(next.level);
     next.level++;
-    next.statPoints += 3;
+    next.statPoints += BALANCE.stats.pointsPerLevel;
   }
   if (next.level === MAX_LEVEL) next.xp = 0;
   return next;

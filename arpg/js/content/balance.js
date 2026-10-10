@@ -9,6 +9,11 @@ export const BALANCE = {
     { hp: 2.1, damage: 1.7, gold: 2.4, drop: 1.9, rarity: {common:40,fine:43,rare:14,epic:3}, bossRarity:{fine:20,rare:55,epic:25} },
   ],
   normalGold: 2.5, rewardCurve: 1.3,
+  // [제안] 1 level point, ~2x early point effect, earlier soft knee: balanced Lv30 stat impact ~69% old.
+  stats: { pointsPerLevel: 1, knee: 4, slope: .5, capBase: 9, capEvery: 3, capMax: 19,
+    focusDamage: .04, mp: 8, regen: .06, speed: .01, speedCap: .07,
+    dodge: .03, dodgeFloor: .79, iframe: 6, iframeCap: 42,
+    potion: .02, potionCap: .18, poise: .04, capacity: 2, discount: .01, discountCap: .07 },
   size: { step: .035, spread: .1, max: 1.35, elite: 1.12, hpCoupling: .5, bossBase: 1.3 },
   stages: {
     S1: { hp:1, damage:1, eliteChance:0, waves:1, waveMs:0, concurrent:1 },

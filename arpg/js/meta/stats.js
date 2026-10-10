@@ -1,3 +1,5 @@
+import { BALANCE } from '../content/balance.js';
+const S = BALANCE.stats;
 import { SLOTS } from './economy.js';
 import { affixTotals } from './affixes.js';
 import { ITEMS, equippedItem, enhanceMultiplier, cloneSave } from './items.js';
@@ -5,11 +7,11 @@ import { ITEMS, equippedItem, enhanceMultiplier, cloneSave } from './items.js';
 export const STAT_KEYS = ['str', 'agi', 'int', 'wis', 'cha'];
 export const BASE_STATS = Object.fromEntries(STAT_KEYS.map((key) => [key, 5]));
 export const STAT_NAMES = { str: '힘', agi: '민첩', int: '지능', wis: '지혜', cha: '카리스마' };
-export const cap = (level) => Math.max(20, Math.min(40, 10 + level));
+export const cap = (level) => Math.min(S.capMax, S.capBase + Math.floor(level / S.capEvery));
 
 export function eff(value) {
   const delta = Math.max(0, value - 5);
-  return delta <= 10 ? delta : 10 + (delta - 10) * 0.7;
+  return delta <= S.knee ? delta : S.knee + (delta - S.knee) * S.slope;
 }
 
 export function allocateStats(save, allocation) {
@@ -36,21 +38,21 @@ export function deriveMods(save) {
   const affixes = affixTotals(gear);
   const family = ITEMS[weapon?.id]?.family || 'blade';
   const damage = (ITEMS[weapon?.id]?.power || 1) * enhanceMultiplier(weapon?.enhance || 0) * (1 + affixes.atk_pct / 100)
-    * (1 + 0.03 * (save.level - 1)) * (family === 'focus' ? 1 + 0.02 * eff(stats.int) : 1);
+    * (1 + 0.03 * (save.level - 1)) * (family === 'focus' ? 1 + S.focusDamage * eff(stats.int) : 1);
   return {
     maxHp: 100 + 8 * save.level + gear.reduce((sum, item) => sum + (ITEMS[item.id].hp || 0) * enhanceMultiplier(item.enhance), 0) + affixes.hp_flat,
-    maxMp: 100 + 4 * eff(stats.int),
-    mpRegen: 5 * (1 + 0.03 * eff(stats.wis)) * (1 + affixes.mana_pct / 100),
-    speedMult: (1 + Math.min(0.1, 0.005 * eff(stats.agi))) * (1 + affixes.speed_pct / 100),
-    dodgeCdMult: Math.max(0.8 / 1.15, 1 - 0.015 * eff(stats.agi)) * (1 - Math.min(50, affixes.dodge_pct) / 100),
-    iframeBonusMs: Math.min(60, 3 * eff(stats.agi)),
-    potionHealMult: (1 + Math.min(0.25, 0.01 * eff(stats.wis))) * (1 + affixes.potion_pct / 100),
-    poiseMult: 1 + 0.02 * eff(stats.str),
+    maxMp: 100 + S.mp * eff(stats.int),
+    mpRegen: 5 * (1 + S.regen * eff(stats.wis)) * (1 + affixes.mana_pct / 100),
+    speedMult: (1 + Math.min(S.speedCap, S.speed * eff(stats.agi))) * (1 + affixes.speed_pct / 100),
+    dodgeCdMult: Math.max(S.dodgeFloor, 1 - S.dodge * eff(stats.agi)) * (1 - Math.min(50, affixes.dodge_pct) / 100),
+    iframeBonusMs: Math.min(S.iframeCap, S.iframe * eff(stats.agi)),
+    potionHealMult: (1 + Math.min(S.potionCap, S.potion * eff(stats.wis))) * (1 + affixes.potion_pct / 100),
+    poiseMult: 1 + S.poise * eff(stats.str),
     dmgMult: { blade: 1, bow: 1, focus: 1, [family]: damage },
     cdMult: 1,
-    capacity: 100 + stats.str - 5 + affixes.capacity_flat,
+    capacity: 100 + S.capacity * eff(stats.str) + affixes.capacity_flat,
     goldBonus: affixes.gold_pct, materialBonus: affixes.material_pct,
-    shopDiscount: Math.min(0.1, 0.005 * eff(stats.cha)),
+    shopDiscount: Math.min(S.discountCap, S.discount * eff(stats.cha)),
     family,
   };
 }

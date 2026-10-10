@@ -209,9 +209,9 @@ try {
   await waitFor(page('level-up'), 38000);
   assert.equal(await evaluate('__arpg.world.round.t'), 900);
   assert.equal(await evaluate('__arpg.save.level'), 2);
-  assert.equal(await evaluate('__arpg.save.statPoints'), 3);
+  assert.equal(await evaluate('__arpg.save.statPoints'), 1);
   assert.ok(await evaluate("document.querySelector('#allocation-confirm').disabled"));
-  for (let point = 0; point < 3; point++) await click('[data-action="stat-plus"][data-key="agi"]');
+  for (let point = 0; point < 1; point++) await click('[data-action="stat-plus"][data-key="agi"]');
   await click('#allocation-confirm');
   await backToInn();
   const innMobile = await rectangles('.hotspot');
@@ -525,7 +525,7 @@ try {
   assert.equal(errors.length, 0, JSON.stringify(errors.slice(0, 3)));
   console.log(JSON.stringify({
     ok: true, canvas: true, sprites: artEvidence,
-    onboarding: 'name → 5 answers → S1 clear@900 → allocate 3 → inn',
+    onboarding: 'name → 5 answers → S1 clear@900 → allocate 1 → inn',
     shop: 'supplies + scroll cap; seeded gear buy → sold-out → sell at loss → paid refresh → reload',
     S2: 'sortie confirmed → reload → inn; threat2 segment → launch frozen T2 → return',
     newStages: 'pre-S5 v1 → S5 board unlock → wolf ×2 / S6 guardian+spirit / S7 spider procedural → return',

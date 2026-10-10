@@ -8,13 +8,14 @@ import { ABILITIES, MONSTERS, STAGES } from '../js/content/combat.js';
 import { DANGER_COLORS, MONSTER_PALETTES, MONSTER_VARIANTS } from '../js/content/monsters.js';
 import { NEW_MONSTER_DROPS } from '../js/content/loot.js';
 import { ITEMS, RECIPES, CONSUMABLES, craft, equip, enhance, dismantle, rollDrops } from '../js/meta/items.js';
-import { createSave, validateSave, SaveStore, SAVE_KEY, migrateSave } from '../js/meta/save.js';
+import { createSave, validateSave, SaveStore, SAVE_KEY } from '../js/meta/save.js';
 import { STAGE_XP, stageXp, deathLoss, addXp } from '../js/meta/progression.js';
 import { settleRound } from '../js/meta/run.js';
 import { HubUI } from '../js/ui/hub.js';
 import { ATLAS_IDS } from '../js/render/atlas-state.js';
 
 const oldSave = () => JSON.parse(readFileSync(new URL('./fixtures/save-v1-s4.json', import.meta.url)));
+const courseSave = () => ['S1','S2','S3','S4'].reduce((save,stageId) => settleRound(save,{stageId,terminal:'clear'}).save,fresh());
 const fresh = () => createSave({ name: '콘텐츠 시험', answers: [0, 0, 0, 0, 0], createdAt: 1 });
 
 test('§11.4 content CLI is a failing-build gate integrated into node tests', () => {
@@ -74,7 +75,7 @@ test('new monsters keep explicit orthogonal identity and procedural-only model k
 });
 
 test('S5~S7 exact first-clear XP, repeat rewards and half death loss preserve valid v2 receipts', () => {
-  let save = migrateSave(oldSave());
+  let save = courseSave();
   for (const id of ['S5', 'S6', 'S7']) {
     assert.equal(stageXp(save, id), STAGE_XP[id]);
     const settled = settleRound(save, { stageId: id, terminal: 'clear' });
@@ -94,17 +95,17 @@ test('S5~S7 exact first-clear XP, repeat rewards and half death loss preserve va
   assert.deepEqual([STAGE_XP.S5, STAGE_XP.S6, STAGE_XP.S7], [340, 480, 520]);
 });
 
-test('static pre-S5 v1 save migrates losslessly, unlocks S5 and accepts later clear', () => {
+test('static old v1 save resets with backup; current course save unlocks S5 and accepts later clear', () => {
   const fixture = oldSave();
   assert.equal(fixture.cleared.S5, undefined);
   assert.equal(validateSave(fixture), false);
-  const upgraded = migrateSave(fixture);
+  const upgraded = courseSave();
   assert.ok(validateSave(upgraded));
   const data = new Map([[SAVE_KEY, JSON.stringify(fixture)]]);
   const store = new SaveStore({ getItem: (id) => data.get(id) ?? null,
-    setItem: (id, value) => data.set(id, value), removeItem: (id) => data.delete(id) });
-  assert.deepEqual(store.load(), upgraded);
-  assert.equal(data.get(`${SAVE_KEY}.migration.v1`), JSON.stringify(fixture));
+    setItem: (id, value) => data.set(id, value), removeItem: (id) => data.delete(id) }, () => 1);
+  assert.equal(store.load(), null);
+  assert.equal(data.get(`${SAVE_KEY}.corrupt.1`), JSON.stringify(fixture));
   const next = settleRound(upgraded, { stageId: 'S5', terminal: 'clear' }).save;
   store.save(next);
   assert.deepEqual(store.load(), next);

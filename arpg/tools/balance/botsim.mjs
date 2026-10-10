@@ -1,3 +1,4 @@
+import { BALANCE } from '../../js/content/balance.js';
 import { writeFileSync,readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
@@ -16,7 +17,7 @@ export const LIMITATION='봇은 정확한 경고 도형과 모든 적 위치를 
 export function preset(stageId,{level,rarity='fine',enhance=0,weapon='blade',stats='balanced'}={}) {
   const s=Number(stageId.slice(1));
   const save=createSave({name:'봇',answers:[0,0,0,0,0],weapon,createdAt:1});
-  save.level=level??[1,2,3,4,5,5,6][s-1];save.statPoints=3*(save.level-1);
+  save.level=level??[1,2,3,4,5,5,6][s-1];save.statPoints=BALANCE.stats.pointsPerLevel*(save.level-1);
   const allocation={};let left=save.statPoints;
   const keys=stats==='agile'?['agi','str','wis']:['str','agi','wis','int','cha'];
   while(left) for(const key of keys) if(left && save.stats[key]+(allocation[key]||0)<cap(save.level)) {

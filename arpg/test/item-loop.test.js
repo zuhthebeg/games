@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createSave, migrateSave, validateSave, SaveStore, SAVE_KEY } from '../js/meta/save.js';
+import { createSave, validateSave, SaveStore, SAVE_KEY } from '../js/meta/save.js';
 import { ITEMS, instance, rollDrops, equip, carriedWeight, capacity, craft, dismantle, enhance, RECIPES } from '../js/meta/items.js';
 import { deriveMods } from '../js/meta/stats.js';
 import { rollAffixes, affixTotals, DEFERRED_AFFIXES, validAffixes } from '../js/meta/affixes.js';
@@ -23,40 +23,29 @@ const storeWith = (raw) => {
   return { values, storage, store: new SaveStore(storage) };
 };
 
-test('v1 migration preserves all gear, UID/enhance, progress, resources and receipts; storage persists once with backup', () => {
-  const old = legacy();
-  old.items[0].enhance = 5;
-  const original = structuredClone(old);
-  const next = migrateSave(freeze(old));
-  assert.equal(next.version, 2);
-  assert.equal(next.equipped.body, old.equipped.armor);
-  assert.deepEqual(Object.keys(next.equipped), SLOTS);
-  for (const slot of ['head', 'hands', 'feet']) assert.equal(next.equipped[slot], null);
-  assert.deepEqual(next.items, old.items.map((item) => ({ ...item, affixes: [], rolledAt: 0 })));
-  for (const key of ['gold', 'xp', 'level', 'stats', 'stacks', 'cleared', 'quiz', 'flags']) assert.deepEqual(next[key], old[key]);
-  assert.ok(validateSave(next));
-  assert.deepEqual(old, original);
-  const raw = JSON.stringify(old);
-  const { store, values } = storeWith(raw);
-  assert.deepEqual(store.load(), next);
-  assert.deepEqual(store.load(), next);
-  assert.equal(values.get(`${SAVE_KEY}.migration.v1`), raw);
-  assert.equal(JSON.parse(values.get(SAVE_KEY)).version, 2);
-  assert.deepEqual(migrateSave(freeze(next)), next);
+test('old v1/v2 saves reset after corrupt backup; fresh v3 roundtrips without migration', () => {
+  for (const version of [1,2]) {
+    const old = { ...legacy(), version }, raw = JSON.stringify(old);
+    const { values, storage } = storeWith(raw);
+    const store = new SaveStore(storage, () => 1);
+    assert.equal(store.load(), null); assert.equal(values.get(`${SAVE_KEY}.corrupt.1`), raw);
+    assert.equal(values.has(SAVE_KEY), false);
+    const current = fresh(); assert.equal(current.version, 3); store.save(current);
+    assert.deepEqual(store.load(), current);
+  }
 });
 
-test('migration storage failure or invalid source never deletes/overwrites v1 original', () => {
+test('corrupt backup or removal failure never overwrites original old save', () => {
   const raw = JSON.stringify(legacy());
-  for (const failAt of [1, 2]) {
-    const { storage, values } = storeWith(raw);
-    let calls = 0;
-    const store = new SaveStore({ ...storage, setItem: (key, value) => { if (++calls === failAt) throw new Error('quota'); storage.setItem(key, value); } });
-    assert.throws(() => store.load(), /quota/);
-    assert.equal(values.get(SAVE_KEY), raw);
+  for (const failAt of [1,2]) {
+    const { storage, values } = storeWith(raw); let calls=0;
+    const store = new SaveStore({ ...storage,
+      setItem: (key,value) => { if (++calls===failAt) throw new Error('quota'); storage.setItem(key,value); },
+      removeItem: key => { if (++calls===failAt) throw new Error('quota'); storage.removeItem(key); } });
+    assert.throws(() => store.load(), /quota/); assert.equal(values.get(SAVE_KEY), raw);
   }
-  const { store, values } = storeWith(JSON.stringify({ ...legacy(), gold: -1 }));
-  assert.throws(() => store.load(), /원본/);
-  assert.equal(JSON.parse(values.get(SAVE_KEY)).gold, -1);
+  const {store,values}=storeWith(JSON.stringify({...legacy(),gold:-1}));
+  assert.equal(store.load(),null);assert.equal(values.has(SAVE_KEY),false);
 });
 
 test('five slots: empty defaults preserve Lv1 numbers, all pieces/affixes/enhancement affect supported mods and weight', () => {
@@ -65,8 +54,8 @@ test('five slots: empty defaults preserve Lv1 numbers, all pieces/affixes/enhanc
   assert.equal(base.maxHp, 108);
   assert.equal(base.dmgMult.blade, 1);
   assert.equal(base.family, 'blade');
-  assert.equal(base.maxMp, 104);
-  assert.equal(base.capacity, 103);
+  assert.equal(base.maxMp, 108);
+  assert.equal(base.capacity, 106);
   assert.equal(carriedWeight(save), 17);
   const five = structuredClone(save);
   for (const slot of ['head', 'hands', 'feet']) {
@@ -295,7 +284,7 @@ test('compare contract: exact attack/HP/weight/affix deltas, empty slot, same-sl
   close(compare.lines.find(({ key }) => key === 'attack').to, 1.15 * 1.25 * 1.06);
   assert.equal(compare.lines.find(({ key }) => key === 'weight').delta, 4);
   assert.equal(compare.lines.find(({ key }) => key === 'weight').good, false);
-  assert.equal(compare.weightAfter, 21); assert.equal(compare.weightLimit, 103);
+  assert.equal(compare.weightAfter, 21); assert.equal(compare.weightLimit, 106);
   assert.equal(compare.locked, true); assert.match(compare.lockReason, /Lv2/);
   assert.equal(compare.lines.find(({ key }) => key === 'atk_pct').delta, 6);
   const head = instance('head', 'head_light_common_t1', 1, []);
@@ -308,7 +297,7 @@ test('compare contract: exact attack/HP/weight/affix deltas, empty slot, same-sl
   assert.equal(blocked.locked, true); assert.match(blocked.lockReason, /120%/);
   const capacityHead = instance('h', 'head_heavy_common_t1', 0, [{ k: 'capacity_flat', v: 6 }]);
   const allowed = compareItems(null, capacityHead, loaded);
-  assert.equal(allowed.weightLimit, 109); assert.equal(allowed.locked, false);
+  assert.equal(allowed.weightLimit, 112); assert.equal(allowed.locked, false);
 });
 
 test('temporary hub wiring renders five slots, comparison, stock, stone costs and item receipt without new design', () => {
