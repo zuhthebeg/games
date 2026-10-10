@@ -39,10 +39,12 @@ export class PaperdollLibrary {
     } catch (error) { record.refs--; this.trim(1); throw error; }
   }
   trim(limit) {
-    const loaded = [...this.entries].filter(([, r]) => r.asset).sort((a,b) => b[1].age-a[1].age);
-    for (const [key, record] of loaded.slice(limit)) {
+    const loaded = [...this.entries].filter(([, r]) => r.asset).sort((a,b) => a[1].age-b[1].age);
+    let count = loaded.length;
+    for (const [key, record] of loaded) {
+      if (count <= limit) break;
       if (record.refs) continue;
-      this.entries.delete(key); this.dispose(record.asset);
+      this.entries.delete(key); this.dispose(record.asset); count--;
     }
   }
   status() {
@@ -62,6 +64,11 @@ async function manifestFor(kit) {
     if (manifest.version !== 'b1' || manifest.kit !== kit || manifest.size !== 128
       || manifest.layout.size[0] > 2048 || manifest.layout.size[1] > 4096
       || Object.keys(manifest.animations).length !== 48) throw new Error('Invalid paperdoll manifest');
+    for (const layer of Object.values(manifest.layers)) if (Array.isArray(layer.frames)) {
+      layer.frames=Object.fromEntries(manifest.frames.map((name,index)=>{
+        const f=layer.frames[index];return [name,f ? {index:f[0],offset:[f[1],f[2]]} : null];
+      }));
+    }
     return manifest;
   }).catch(error => { manifests.delete(kit); throw error; }));
   return manifests.get(kit);
@@ -79,7 +86,7 @@ async function compose(descriptor) {
   const weaponKey = `weapon-${descriptor.weapon}-${descriptor.head}`;
   const keys = ['base', ...(descriptor.colours.some(Boolean) ? ['mask'] : []),
     ...(descriptor.head !== 'none' ? [`head-${descriptor.head}`] : []), weaponKey];
-  const bitmaps = {}; let output, sourceRGBABytes = 0, stagingRGBABytes = 0;
+  const bitmaps = {}; let output, weaponCanvas, sourceRGBABytes = 0, stagingRGBABytes = 0;
   try {
     // Serial decoding also bounds transient fetch/blob ownership.
     for (const key of keys) {
@@ -91,6 +98,14 @@ async function compose(descriptor) {
       sourceRGBABytes += bitmaps[key].width*bitmaps[key].height*4;
     }
     const decodedMs = performance.now()-started;
+    if (descriptor.weaponColour) {
+      const bitmap=bitmaps[weaponKey];weaponCanvas=canvas(bitmap.width,bitmap.height);
+      const context=weaponCanvas.getContext('2d');context.drawImage(bitmap,0,0);
+      context.globalCompositeOperation='multiply';context.fillStyle=`rgb(${descriptor.weaponColour.join(',')})`;
+      context.fillRect(0,0,weaponCanvas.width,weaponCanvas.height);
+      context.globalCompositeOperation='destination-in';context.drawImage(bitmap,0,0);
+      stagingRGBABytes+=weaponCanvas.width*weaponCanvas.height*4;
+    }
     const frameCanvas = canvas(128,128), ctx = frameCanvas.getContext('2d',{willReadFrequently:true});
     ctx.imageSmoothingEnabled=false;
     let basePixels, maskPixels;
@@ -116,8 +131,8 @@ async function compose(descriptor) {
             const mx=x+b.offset[0]-m.offset[0], my=y+b.offset[1]-m.offset[1];
             if(mx>=0&&my>=0&&mx<mr[2]&&my<mr[3]) {
               const p=((mr[1]+my)*maskPixels.width+mr[0]+mx)*4;
-              const slot=[0,1,2].find(c=>maskPixels.data[p+c]>128);
-              colour=descriptor.colours[slot];
+              const slot=maskPixels.data[p]>128 ? 0 : maskPixels.data[p+1]>128 ? 1 : maskPixels.data[p+2]>128 ? 2 : -1;
+              colour=slot < 0 ? null : descriptor.colours[slot];
             }
           }
           const grey=basePixels.data[src]*.2126+basePixels.data[src+1]*.7152+basePixels.data[src+2]*.0722;
@@ -126,7 +141,7 @@ async function compose(descriptor) {
         }
         ctx.putImageData(pixels,b.offset[0],b.offset[1]);
       }
-      for (const key of keys.filter(k=>k!=='base'&&k!=='mask')) drawLayer(ctx,bitmaps[key],manifest.layers[key],name,0,0);
+      for (const key of keys.filter(k=>k!=='base'&&k!=='mask')) drawLayer(ctx,key===weaponKey && weaponCanvas ? weaponCanvas : bitmaps[key],manifest.layers[key],name,0,0);
       const {rect,trim}=manifest.layout.frames[name];
       target.drawImage(frameCanvas,...trim,...rect);
     }
@@ -139,7 +154,7 @@ async function compose(descriptor) {
         stagingRGBABytes,readbackRGBABytes:output.width*output.height*4,outputRGBABytes:output.width*output.height*4,frames:manifest.frames.length,
         sourceImages:keys.length,phoneEvidence:false} };
   } catch(error) { if(output) output.width=output.height=1; throw error; }
-  finally { Object.values(bitmaps).forEach(bitmap=>bitmap.close()); }
+  finally { if(weaponCanvas) weaponCanvas.width=weaponCanvas.height=1; Object.values(bitmaps).forEach(bitmap=>bitmap.close()); }
 }
 export const paperdolls = new PaperdollLibrary({compose,dispose:asset=>{
   asset.disposeTextures?.(); asset.canvas.width=asset.canvas.height=1;

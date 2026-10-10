@@ -26,6 +26,6 @@ function scan() {
       const {rect,trim}=asset.manifest.layout.frames.idle_SW_000;
       ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,128,128);ctx.drawImage(asset.canvas,...rect,...trim);
       canvas.hidden=false;node.style.backgroundImage='none';node.dataset.paperdollReady=descriptor.key;
-    }).catch(()=>{ if(node.isConnected) node.dataset.paperdollFailed='true'; });
+    }).catch(()=>{ if(node.isConnected) {node.dataset.paperdollFailed='true';node.style.backgroundImage=`url("${node.dataset.paperdollFallback}")`;} });
   }
 }

@@ -30,17 +30,16 @@ function lazyVisual(entity, options, library, fallbackFactory) {
   let lease;
   const controller = new AbortController();
   container.addChild(current.container);
-  const load = async () => {
-    if (entity.kind === 'player' && options.equipment && paperdollEnabled()) {
+  const load = entity.kind === 'player' && options.equipment && paperdollEnabled()
+    ? (async () => {
       try {
         lease = await paperdolls.acquire(options.equipment, controller.signal);
         if (destroyed) { lease.release(); lease = null; return null; }
         return paperdollTextures(lease.asset);
-      } catch { if (destroyed) return null; }
-    }
-    return library.load(visualKey(entity));
-  };
-  load().then((asset) => {
+      } catch { lease?.release(); lease = null; if (destroyed) return null; }
+      return library.load(visualKey(entity));
+    })() : library.load(visualKey(entity));
+  load.then((asset) => {
     if (destroyed || !asset) return;
     const next = spriteVisual(entity, options, asset);
     current.destroy();

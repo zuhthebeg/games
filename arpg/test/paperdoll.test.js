@@ -52,3 +52,19 @@ test('live third atlas never exceeds budget or destroys referenced sprites',asyn
   await assert.rejects(cache.acquire({key:'C'}),/budget/);assert.deepEqual(disposed,[]);
   a.release();b.release();assert.equal(cache.status().outputs,1);
 });
+test('a canceled portrait does not poison a concurrent combat request for same key',async()=>{
+  const {cache,calls}=cacheFixture();const controller=new AbortController();
+  const portrait=cache.acquire({key:'shared'},controller.signal);const combat=cache.acquire({key:'shared'});
+  controller.abort();await assert.rejects(portrait,/superseded/);const lease=await combat;lease.release();
+  assert.deepEqual(calls,['shared']);assert.equal(cache.status().references,0);
+});
+test('a pinned combat output cannot prevent eviction of a newer unused portrait',async()=>{
+  const {cache,disposed}=cacheFixture();const combat=await cache.acquire({key:'combat'});
+  const portrait=await cache.acquire({key:'portrait'});portrait.release();assert.deepEqual(disposed,['portrait']);
+  const next=await cache.acquire({key:'next'});next.release();combat.release();assert.equal(cache.status().references,0);
+});
+test('every current base weapon changes geometry or baked palette, without extra sources',()=>{
+  const bases=Object.entries(ITEMS).filter(([id,d])=>d.slot==='weapon'&&d.baseId===id);
+  const signatures=bases.map(([id])=>{const d=equipmentVisual(wear(save(),id));return JSON.stringify([d.kit,d.weapon,d.weaponColour]);});
+  assert.equal(new Set(signatures).size,bases.length);
+});

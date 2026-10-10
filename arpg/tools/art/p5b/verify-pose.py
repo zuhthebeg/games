@@ -12,7 +12,7 @@ for name in ['hero-sword','hero-bow','hero-focus']:
  skin=[o for o in scene.objects if o.type=='MESH' and not o.name.endswith('_outline') and o.name.startswith(('Knight_Body','Knight_Arm','Knight_Leg'))]
  assert len(skin)==5 and all(any(m.type=='ARMATURE' and m.object==rig for m in o.modifiers) for o in skin)
  action=bpy.data.actions['T-Pose'];rig.animation_data.action=action;rig.animation_data.action_slot=action.slots[0];scene.frame_set(0);bpy.context.view_layer.update();defaults={b.name:b.matrix_basis.copy() for b in rig.pose.bones};bind=points(skin)
- records=json.loads((root/'frames'/name/'frames.json').read_text())['frames'];rows=[]
+ records=json.loads((root.parent/'output'/'frames'/name/'frames.json').read_text())['frames'];rows=[]
  for r in records:
   for b in rig.pose.bones:b.matrix_basis=defaults[b.name]
   action=bpy.data.actions[r['source']];assert action.name!='T-Pose';rig.animation_data.action=action;rig.animation_data.action_slot=action.slots[0];sf=r['source_frame'];scene.frame_set(math.floor(sf),subframe=sf%1);bpy.context.view_layer.update()

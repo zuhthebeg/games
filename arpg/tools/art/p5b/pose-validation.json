@@ -1,0 +1,5872 @@
+[
+  {
+    "kit": "hero-sword",
+    "checked": 392,
+    "tPoses": 0,
+    "frozenSkin": 0,
+    "minArmDegrees": 38.60476194366733,
+    "minSkinRMSHeight": 0.07796985488730962,
+    "rows": [
+      {
+        "frame": "idle_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_E_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_E_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_E_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_E_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_E_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_E_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_E_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_E_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_E_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_E_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_SE_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_SE_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_SE_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_SE_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_SE_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_SE_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_SE_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_SE_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_SE_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_SE_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_S_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_S_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_S_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_S_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_S_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_S_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_S_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_S_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_S_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_S_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_SW_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_SW_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_SW_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_SW_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_SW_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_SW_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_SW_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_SW_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_SW_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_SW_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_W_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_W_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_W_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_W_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_W_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_W_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_W_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_W_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_W_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_W_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_NW_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_NW_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_NW_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_NW_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_NW_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_NW_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_NW_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_NW_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_NW_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_NW_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_N_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_N_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_N_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_N_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_N_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_N_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_N_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_N_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_N_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_N_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_NE_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_NE_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_NE_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_NE_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_NE_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_NE_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_NE_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_NE_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_NE_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_NE_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "run_E_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_E_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_E_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_E_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_E_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_E_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_E_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_E_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_SE_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_SE_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_SE_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_SE_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_SE_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_SE_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_SE_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_SE_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_S_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_S_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_S_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_S_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_S_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_S_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_S_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_S_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_SW_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_SW_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_SW_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_SW_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_SW_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_SW_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_SW_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_SW_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_W_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_W_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_W_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_W_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_W_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_W_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_W_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_W_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_NW_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_NW_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_NW_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_NW_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_NW_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_NW_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_NW_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_NW_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_N_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_N_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_N_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_N_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_N_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_N_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_N_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_N_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_NE_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_NE_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_NE_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_NE_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_NE_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_NE_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_NE_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_NE_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "attack_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08516772782990857
+      },
+      {
+        "frame": "attack_E_001",
+        "armDegrees": 54.07156822481029,
+        "skinRMSHeight": 0.10906174388222327
+      },
+      {
+        "frame": "attack_E_002",
+        "armDegrees": 57.55741673942883,
+        "skinRMSHeight": 0.1512199895365103
+      },
+      {
+        "frame": "attack_E_003",
+        "armDegrees": 88.8413292136772,
+        "skinRMSHeight": 0.09692420091759849
+      },
+      {
+        "frame": "attack_E_004",
+        "armDegrees": 95.33526134066106,
+        "skinRMSHeight": 0.09544435303763116
+      },
+      {
+        "frame": "attack_E_005",
+        "armDegrees": 97.22796823137412,
+        "skinRMSHeight": 0.09414550310735308
+      },
+      {
+        "frame": "attack_E_006",
+        "armDegrees": 96.44450455243864,
+        "skinRMSHeight": 0.09257547473627574
+      },
+      {
+        "frame": "attack_E_007",
+        "armDegrees": 94.37079764872024,
+        "skinRMSHeight": 0.09227604708306404
+      },
+      {
+        "frame": "attack_E_008",
+        "armDegrees": 83.39450606759132,
+        "skinRMSHeight": 0.09009393941902126
+      },
+      {
+        "frame": "attack_E_009",
+        "armDegrees": 75.64846366196073,
+        "skinRMSHeight": 0.08576258368652831
+      },
+      {
+        "frame": "attack_E_010",
+        "armDegrees": 61.17426145213904,
+        "skinRMSHeight": 0.08252399321925362
+      },
+      {
+        "frame": "attack_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08516772782990857
+      },
+      {
+        "frame": "attack_SE_001",
+        "armDegrees": 54.07156822481029,
+        "skinRMSHeight": 0.10906174388222327
+      },
+      {
+        "frame": "attack_SE_002",
+        "armDegrees": 57.55741673942883,
+        "skinRMSHeight": 0.1512199895365103
+      },
+      {
+        "frame": "attack_SE_003",
+        "armDegrees": 88.8413292136772,
+        "skinRMSHeight": 0.09692420091759849
+      },
+      {
+        "frame": "attack_SE_004",
+        "armDegrees": 95.33526134066106,
+        "skinRMSHeight": 0.09544435303763116
+      },
+      {
+        "frame": "attack_SE_005",
+        "armDegrees": 97.22796823137412,
+        "skinRMSHeight": 0.09414550310735308
+      },
+      {
+        "frame": "attack_SE_006",
+        "armDegrees": 96.44450455243864,
+        "skinRMSHeight": 0.09257547473627574
+      },
+      {
+        "frame": "attack_SE_007",
+        "armDegrees": 94.37079764872024,
+        "skinRMSHeight": 0.09227604708306404
+      },
+      {
+        "frame": "attack_SE_008",
+        "armDegrees": 83.39450606759132,
+        "skinRMSHeight": 0.09009393941902126
+      },
+      {
+        "frame": "attack_SE_009",
+        "armDegrees": 75.64846366196073,
+        "skinRMSHeight": 0.08576258368652831
+      },
+      {
+        "frame": "attack_SE_010",
+        "armDegrees": 61.17426145213904,
+        "skinRMSHeight": 0.08252399321925362
+      },
+      {
+        "frame": "attack_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08516772782990857
+      },
+      {
+        "frame": "attack_S_001",
+        "armDegrees": 54.07156822481029,
+        "skinRMSHeight": 0.10906174388222327
+      },
+      {
+        "frame": "attack_S_002",
+        "armDegrees": 57.55741673942883,
+        "skinRMSHeight": 0.1512199895365103
+      },
+      {
+        "frame": "attack_S_003",
+        "armDegrees": 88.8413292136772,
+        "skinRMSHeight": 0.09692420091759849
+      },
+      {
+        "frame": "attack_S_004",
+        "armDegrees": 95.33526134066106,
+        "skinRMSHeight": 0.09544435303763116
+      },
+      {
+        "frame": "attack_S_005",
+        "armDegrees": 97.22796823137412,
+        "skinRMSHeight": 0.09414550310735308
+      },
+      {
+        "frame": "attack_S_006",
+        "armDegrees": 96.44450455243864,
+        "skinRMSHeight": 0.09257547473627574
+      },
+      {
+        "frame": "attack_S_007",
+        "armDegrees": 94.37079764872024,
+        "skinRMSHeight": 0.09227604708306404
+      },
+      {
+        "frame": "attack_S_008",
+        "armDegrees": 83.39450606759132,
+        "skinRMSHeight": 0.09009393941902126
+      },
+      {
+        "frame": "attack_S_009",
+        "armDegrees": 75.64846366196073,
+        "skinRMSHeight": 0.08576258368652831
+      },
+      {
+        "frame": "attack_S_010",
+        "armDegrees": 61.17426145213904,
+        "skinRMSHeight": 0.08252399321925362
+      },
+      {
+        "frame": "attack_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08516772782990857
+      },
+      {
+        "frame": "attack_SW_001",
+        "armDegrees": 54.07156822481029,
+        "skinRMSHeight": 0.10906174388222327
+      },
+      {
+        "frame": "attack_SW_002",
+        "armDegrees": 57.55741673942883,
+        "skinRMSHeight": 0.1512199895365103
+      },
+      {
+        "frame": "attack_SW_003",
+        "armDegrees": 88.8413292136772,
+        "skinRMSHeight": 0.09692420091759849
+      },
+      {
+        "frame": "attack_SW_004",
+        "armDegrees": 95.33526134066106,
+        "skinRMSHeight": 0.09544435303763116
+      },
+      {
+        "frame": "attack_SW_005",
+        "armDegrees": 97.22796823137412,
+        "skinRMSHeight": 0.09414550310735308
+      },
+      {
+        "frame": "attack_SW_006",
+        "armDegrees": 96.44450455243864,
+        "skinRMSHeight": 0.09257547473627574
+      },
+      {
+        "frame": "attack_SW_007",
+        "armDegrees": 94.37079764872024,
+        "skinRMSHeight": 0.09227604708306404
+      },
+      {
+        "frame": "attack_SW_008",
+        "armDegrees": 83.39450606759132,
+        "skinRMSHeight": 0.09009393941902126
+      },
+      {
+        "frame": "attack_SW_009",
+        "armDegrees": 75.64846366196073,
+        "skinRMSHeight": 0.08576258368652831
+      },
+      {
+        "frame": "attack_SW_010",
+        "armDegrees": 61.17426145213904,
+        "skinRMSHeight": 0.08252399321925362
+      },
+      {
+        "frame": "attack_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08516772782990857
+      },
+      {
+        "frame": "attack_W_001",
+        "armDegrees": 54.07156822481029,
+        "skinRMSHeight": 0.10906174388222327
+      },
+      {
+        "frame": "attack_W_002",
+        "armDegrees": 57.55741673942883,
+        "skinRMSHeight": 0.1512199895365103
+      },
+      {
+        "frame": "attack_W_003",
+        "armDegrees": 88.8413292136772,
+        "skinRMSHeight": 0.09692420091759849
+      },
+      {
+        "frame": "attack_W_004",
+        "armDegrees": 95.33526134066106,
+        "skinRMSHeight": 0.09544435303763116
+      },
+      {
+        "frame": "attack_W_005",
+        "armDegrees": 97.22796823137412,
+        "skinRMSHeight": 0.09414550310735308
+      },
+      {
+        "frame": "attack_W_006",
+        "armDegrees": 96.44450455243864,
+        "skinRMSHeight": 0.09257547473627574
+      },
+      {
+        "frame": "attack_W_007",
+        "armDegrees": 94.37079764872024,
+        "skinRMSHeight": 0.09227604708306404
+      },
+      {
+        "frame": "attack_W_008",
+        "armDegrees": 83.39450606759132,
+        "skinRMSHeight": 0.09009393941902126
+      },
+      {
+        "frame": "attack_W_009",
+        "armDegrees": 75.64846366196073,
+        "skinRMSHeight": 0.08576258368652831
+      },
+      {
+        "frame": "attack_W_010",
+        "armDegrees": 61.17426145213904,
+        "skinRMSHeight": 0.08252399321925362
+      },
+      {
+        "frame": "attack_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08516772782990857
+      },
+      {
+        "frame": "attack_NW_001",
+        "armDegrees": 54.07156822481029,
+        "skinRMSHeight": 0.10906174388222327
+      },
+      {
+        "frame": "attack_NW_002",
+        "armDegrees": 57.55741673942883,
+        "skinRMSHeight": 0.1512199895365103
+      },
+      {
+        "frame": "attack_NW_003",
+        "armDegrees": 88.8413292136772,
+        "skinRMSHeight": 0.09692420091759849
+      },
+      {
+        "frame": "attack_NW_004",
+        "armDegrees": 95.33526134066106,
+        "skinRMSHeight": 0.09544435303763116
+      },
+      {
+        "frame": "attack_NW_005",
+        "armDegrees": 97.22796823137412,
+        "skinRMSHeight": 0.09414550310735308
+      },
+      {
+        "frame": "attack_NW_006",
+        "armDegrees": 96.44450455243864,
+        "skinRMSHeight": 0.09257547473627574
+      },
+      {
+        "frame": "attack_NW_007",
+        "armDegrees": 94.37079764872024,
+        "skinRMSHeight": 0.09227604708306404
+      },
+      {
+        "frame": "attack_NW_008",
+        "armDegrees": 83.39450606759132,
+        "skinRMSHeight": 0.09009393941902126
+      },
+      {
+        "frame": "attack_NW_009",
+        "armDegrees": 75.64846366196073,
+        "skinRMSHeight": 0.08576258368652831
+      },
+      {
+        "frame": "attack_NW_010",
+        "armDegrees": 61.17426145213904,
+        "skinRMSHeight": 0.08252399321925362
+      },
+      {
+        "frame": "attack_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08516772782990857
+      },
+      {
+        "frame": "attack_N_001",
+        "armDegrees": 54.07156822481029,
+        "skinRMSHeight": 0.10906174388222327
+      },
+      {
+        "frame": "attack_N_002",
+        "armDegrees": 57.55741673942883,
+        "skinRMSHeight": 0.1512199895365103
+      },
+      {
+        "frame": "attack_N_003",
+        "armDegrees": 88.8413292136772,
+        "skinRMSHeight": 0.09692420091759849
+      },
+      {
+        "frame": "attack_N_004",
+        "armDegrees": 95.33526134066106,
+        "skinRMSHeight": 0.09544435303763116
+      },
+      {
+        "frame": "attack_N_005",
+        "armDegrees": 97.22796823137412,
+        "skinRMSHeight": 0.09414550310735308
+      },
+      {
+        "frame": "attack_N_006",
+        "armDegrees": 96.44450455243864,
+        "skinRMSHeight": 0.09257547473627574
+      },
+      {
+        "frame": "attack_N_007",
+        "armDegrees": 94.37079764872024,
+        "skinRMSHeight": 0.09227604708306404
+      },
+      {
+        "frame": "attack_N_008",
+        "armDegrees": 83.39450606759132,
+        "skinRMSHeight": 0.09009393941902126
+      },
+      {
+        "frame": "attack_N_009",
+        "armDegrees": 75.64846366196073,
+        "skinRMSHeight": 0.08576258368652831
+      },
+      {
+        "frame": "attack_N_010",
+        "armDegrees": 61.17426145213904,
+        "skinRMSHeight": 0.08252399321925362
+      },
+      {
+        "frame": "attack_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08516772782990857
+      },
+      {
+        "frame": "attack_NE_001",
+        "armDegrees": 54.07156822481029,
+        "skinRMSHeight": 0.10906174388222327
+      },
+      {
+        "frame": "attack_NE_002",
+        "armDegrees": 57.55741673942883,
+        "skinRMSHeight": 0.1512199895365103
+      },
+      {
+        "frame": "attack_NE_003",
+        "armDegrees": 88.8413292136772,
+        "skinRMSHeight": 0.09692420091759849
+      },
+      {
+        "frame": "attack_NE_004",
+        "armDegrees": 95.33526134066106,
+        "skinRMSHeight": 0.09544435303763116
+      },
+      {
+        "frame": "attack_NE_005",
+        "armDegrees": 97.22796823137412,
+        "skinRMSHeight": 0.09414550310735308
+      },
+      {
+        "frame": "attack_NE_006",
+        "armDegrees": 96.44450455243864,
+        "skinRMSHeight": 0.09257547473627574
+      },
+      {
+        "frame": "attack_NE_007",
+        "armDegrees": 94.37079764872024,
+        "skinRMSHeight": 0.09227604708306404
+      },
+      {
+        "frame": "attack_NE_008",
+        "armDegrees": 83.39450606759132,
+        "skinRMSHeight": 0.09009393941902126
+      },
+      {
+        "frame": "attack_NE_009",
+        "armDegrees": 75.64846366196073,
+        "skinRMSHeight": 0.08576258368652831
+      },
+      {
+        "frame": "attack_NE_010",
+        "armDegrees": 61.17426145213904,
+        "skinRMSHeight": 0.08252399321925362
+      },
+      {
+        "frame": "dodge_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_E_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_E_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_E_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_SE_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_SE_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_SE_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_S_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_S_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_S_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_SW_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_SW_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_SW_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_W_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_W_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_W_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_NW_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_NW_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_NW_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_N_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_N_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_N_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_NE_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_NE_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_NE_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "hit_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_E_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_E_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_E_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_E_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_E_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_E_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_SE_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_SE_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_SE_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_SE_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_SE_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_SE_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_S_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_S_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_S_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_S_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_S_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_S_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_SW_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_SW_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_SW_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_SW_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_SW_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_SW_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_W_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_W_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_W_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_W_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_W_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_W_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_NW_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_NW_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_NW_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_NW_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_NW_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_NW_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_N_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_N_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_N_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_N_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_N_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_N_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_NE_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_NE_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_NE_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_NE_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_NE_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_NE_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "death_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_E_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_E_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_E_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_E_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_E_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_E_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_E_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_SE_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_SE_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_SE_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_SE_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_SE_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_SE_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_SE_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_S_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_S_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_S_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_S_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_S_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_S_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_S_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_SW_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_SW_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_SW_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_SW_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_SW_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_SW_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_SW_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_W_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_W_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_W_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_W_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_W_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_W_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_W_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_NW_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_NW_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_NW_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_NW_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_NW_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_NW_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_NW_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_N_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_N_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_N_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_N_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_N_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_N_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_N_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_NE_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_NE_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_NE_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_NE_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_NE_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_NE_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_NE_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      }
+    ]
+  },
+  {
+    "kit": "hero-bow",
+    "checked": 392,
+    "tPoses": 0,
+    "frozenSkin": 0,
+    "minArmDegrees": 38.60476194366733,
+    "minSkinRMSHeight": 0.07796985488730962,
+    "rows": [
+      {
+        "frame": "idle_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_E_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_E_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_E_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_E_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_E_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_E_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_E_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_E_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_E_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_E_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_SE_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_SE_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_SE_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_SE_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_SE_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_SE_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_SE_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_SE_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_SE_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_SE_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_S_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_S_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_S_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_S_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_S_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_S_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_S_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_S_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_S_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_S_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_SW_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_SW_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_SW_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_SW_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_SW_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_SW_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_SW_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_SW_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_SW_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_SW_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_W_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_W_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_W_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_W_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_W_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_W_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_W_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_W_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_W_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_W_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_NW_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_NW_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_NW_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_NW_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_NW_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_NW_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_NW_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_NW_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_NW_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_NW_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_N_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_N_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_N_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_N_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_N_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_N_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_N_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_N_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_N_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_N_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_NE_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_NE_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_NE_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_NE_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_NE_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_NE_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_NE_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_NE_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_NE_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_NE_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "run_E_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_E_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_E_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_E_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_E_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_E_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_E_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_E_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_SE_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_SE_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_SE_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_SE_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_SE_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_SE_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_SE_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_SE_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_S_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_S_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_S_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_S_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_S_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_S_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_S_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_S_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_SW_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_SW_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_SW_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_SW_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_SW_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_SW_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_SW_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_SW_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_W_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_W_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_W_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_W_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_W_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_W_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_W_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_W_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_NW_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_NW_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_NW_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_NW_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_NW_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_NW_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_NW_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_NW_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_N_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_N_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_N_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_N_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_N_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_N_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_N_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_N_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_NE_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_NE_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_NE_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_NE_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_NE_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_NE_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_NE_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_NE_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "attack_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_E_001",
+        "armDegrees": 50.15161679220784,
+        "skinRMSHeight": 0.08918998234221806
+      },
+      {
+        "frame": "attack_E_002",
+        "armDegrees": 55.01757674561374,
+        "skinRMSHeight": 0.1475268721556323
+      },
+      {
+        "frame": "attack_E_003",
+        "armDegrees": 68.71125225784306,
+        "skinRMSHeight": 0.17134802260743134
+      },
+      {
+        "frame": "attack_E_004",
+        "armDegrees": 66.7687532880806,
+        "skinRMSHeight": 0.17193186064029614
+      },
+      {
+        "frame": "attack_E_005",
+        "armDegrees": 68.30910437989104,
+        "skinRMSHeight": 0.1705051014044054
+      },
+      {
+        "frame": "attack_E_006",
+        "armDegrees": 69.34124158612835,
+        "skinRMSHeight": 0.17011356381968282
+      },
+      {
+        "frame": "attack_E_007",
+        "armDegrees": 69.14138342082461,
+        "skinRMSHeight": 0.17001811216947424
+      },
+      {
+        "frame": "attack_E_008",
+        "armDegrees": 69.08369564309469,
+        "skinRMSHeight": 0.16989881927318917
+      },
+      {
+        "frame": "attack_E_009",
+        "armDegrees": 69.69853561180089,
+        "skinRMSHeight": 0.16996084581312887
+      },
+      {
+        "frame": "attack_E_010",
+        "armDegrees": 70.61077567734779,
+        "skinRMSHeight": 0.17015335994344338
+      },
+      {
+        "frame": "attack_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_SE_001",
+        "armDegrees": 50.15161679220784,
+        "skinRMSHeight": 0.08918998234221806
+      },
+      {
+        "frame": "attack_SE_002",
+        "armDegrees": 55.01757674561374,
+        "skinRMSHeight": 0.1475268721556323
+      },
+      {
+        "frame": "attack_SE_003",
+        "armDegrees": 68.71125225784306,
+        "skinRMSHeight": 0.17134802260743134
+      },
+      {
+        "frame": "attack_SE_004",
+        "armDegrees": 66.7687532880806,
+        "skinRMSHeight": 0.17193186064029614
+      },
+      {
+        "frame": "attack_SE_005",
+        "armDegrees": 68.30910437989104,
+        "skinRMSHeight": 0.1705051014044054
+      },
+      {
+        "frame": "attack_SE_006",
+        "armDegrees": 69.34124158612835,
+        "skinRMSHeight": 0.17011356381968282
+      },
+      {
+        "frame": "attack_SE_007",
+        "armDegrees": 69.14138342082461,
+        "skinRMSHeight": 0.17001811216947424
+      },
+      {
+        "frame": "attack_SE_008",
+        "armDegrees": 69.08369564309469,
+        "skinRMSHeight": 0.16989881927318917
+      },
+      {
+        "frame": "attack_SE_009",
+        "armDegrees": 69.69853561180089,
+        "skinRMSHeight": 0.16996084581312887
+      },
+      {
+        "frame": "attack_SE_010",
+        "armDegrees": 70.61077567734779,
+        "skinRMSHeight": 0.17015335994344338
+      },
+      {
+        "frame": "attack_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_S_001",
+        "armDegrees": 50.15161679220784,
+        "skinRMSHeight": 0.08918998234221806
+      },
+      {
+        "frame": "attack_S_002",
+        "armDegrees": 55.01757674561374,
+        "skinRMSHeight": 0.1475268721556323
+      },
+      {
+        "frame": "attack_S_003",
+        "armDegrees": 68.71125225784306,
+        "skinRMSHeight": 0.17134802260743134
+      },
+      {
+        "frame": "attack_S_004",
+        "armDegrees": 66.7687532880806,
+        "skinRMSHeight": 0.17193186064029614
+      },
+      {
+        "frame": "attack_S_005",
+        "armDegrees": 68.30910437989104,
+        "skinRMSHeight": 0.1705051014044054
+      },
+      {
+        "frame": "attack_S_006",
+        "armDegrees": 69.34124158612835,
+        "skinRMSHeight": 0.17011356381968282
+      },
+      {
+        "frame": "attack_S_007",
+        "armDegrees": 69.14138342082461,
+        "skinRMSHeight": 0.17001811216947424
+      },
+      {
+        "frame": "attack_S_008",
+        "armDegrees": 69.08369564309469,
+        "skinRMSHeight": 0.16989881927318917
+      },
+      {
+        "frame": "attack_S_009",
+        "armDegrees": 69.69853561180089,
+        "skinRMSHeight": 0.16996084581312887
+      },
+      {
+        "frame": "attack_S_010",
+        "armDegrees": 70.61077567734779,
+        "skinRMSHeight": 0.17015335994344338
+      },
+      {
+        "frame": "attack_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_SW_001",
+        "armDegrees": 50.15161679220784,
+        "skinRMSHeight": 0.08918998234221806
+      },
+      {
+        "frame": "attack_SW_002",
+        "armDegrees": 55.01757674561374,
+        "skinRMSHeight": 0.1475268721556323
+      },
+      {
+        "frame": "attack_SW_003",
+        "armDegrees": 68.71125225784306,
+        "skinRMSHeight": 0.17134802260743134
+      },
+      {
+        "frame": "attack_SW_004",
+        "armDegrees": 66.7687532880806,
+        "skinRMSHeight": 0.17193186064029614
+      },
+      {
+        "frame": "attack_SW_005",
+        "armDegrees": 68.30910437989104,
+        "skinRMSHeight": 0.1705051014044054
+      },
+      {
+        "frame": "attack_SW_006",
+        "armDegrees": 69.34124158612835,
+        "skinRMSHeight": 0.17011356381968282
+      },
+      {
+        "frame": "attack_SW_007",
+        "armDegrees": 69.14138342082461,
+        "skinRMSHeight": 0.17001811216947424
+      },
+      {
+        "frame": "attack_SW_008",
+        "armDegrees": 69.08369564309469,
+        "skinRMSHeight": 0.16989881927318917
+      },
+      {
+        "frame": "attack_SW_009",
+        "armDegrees": 69.69853561180089,
+        "skinRMSHeight": 0.16996084581312887
+      },
+      {
+        "frame": "attack_SW_010",
+        "armDegrees": 70.61077567734779,
+        "skinRMSHeight": 0.17015335994344338
+      },
+      {
+        "frame": "attack_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_W_001",
+        "armDegrees": 50.15161679220784,
+        "skinRMSHeight": 0.08918998234221806
+      },
+      {
+        "frame": "attack_W_002",
+        "armDegrees": 55.01757674561374,
+        "skinRMSHeight": 0.1475268721556323
+      },
+      {
+        "frame": "attack_W_003",
+        "armDegrees": 68.71125225784306,
+        "skinRMSHeight": 0.17134802260743134
+      },
+      {
+        "frame": "attack_W_004",
+        "armDegrees": 66.7687532880806,
+        "skinRMSHeight": 0.17193186064029614
+      },
+      {
+        "frame": "attack_W_005",
+        "armDegrees": 68.30910437989104,
+        "skinRMSHeight": 0.1705051014044054
+      },
+      {
+        "frame": "attack_W_006",
+        "armDegrees": 69.34124158612835,
+        "skinRMSHeight": 0.17011356381968282
+      },
+      {
+        "frame": "attack_W_007",
+        "armDegrees": 69.14138342082461,
+        "skinRMSHeight": 0.17001811216947424
+      },
+      {
+        "frame": "attack_W_008",
+        "armDegrees": 69.08369564309469,
+        "skinRMSHeight": 0.16989881927318917
+      },
+      {
+        "frame": "attack_W_009",
+        "armDegrees": 69.69853561180089,
+        "skinRMSHeight": 0.16996084581312887
+      },
+      {
+        "frame": "attack_W_010",
+        "armDegrees": 70.61077567734779,
+        "skinRMSHeight": 0.17015335994344338
+      },
+      {
+        "frame": "attack_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_NW_001",
+        "armDegrees": 50.15161679220784,
+        "skinRMSHeight": 0.08918998234221806
+      },
+      {
+        "frame": "attack_NW_002",
+        "armDegrees": 55.01757674561374,
+        "skinRMSHeight": 0.1475268721556323
+      },
+      {
+        "frame": "attack_NW_003",
+        "armDegrees": 68.71125225784306,
+        "skinRMSHeight": 0.17134802260743134
+      },
+      {
+        "frame": "attack_NW_004",
+        "armDegrees": 66.7687532880806,
+        "skinRMSHeight": 0.17193186064029614
+      },
+      {
+        "frame": "attack_NW_005",
+        "armDegrees": 68.30910437989104,
+        "skinRMSHeight": 0.1705051014044054
+      },
+      {
+        "frame": "attack_NW_006",
+        "armDegrees": 69.34124158612835,
+        "skinRMSHeight": 0.17011356381968282
+      },
+      {
+        "frame": "attack_NW_007",
+        "armDegrees": 69.14138342082461,
+        "skinRMSHeight": 0.17001811216947424
+      },
+      {
+        "frame": "attack_NW_008",
+        "armDegrees": 69.08369564309469,
+        "skinRMSHeight": 0.16989881927318917
+      },
+      {
+        "frame": "attack_NW_009",
+        "armDegrees": 69.69853561180089,
+        "skinRMSHeight": 0.16996084581312887
+      },
+      {
+        "frame": "attack_NW_010",
+        "armDegrees": 70.61077567734779,
+        "skinRMSHeight": 0.17015335994344338
+      },
+      {
+        "frame": "attack_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_N_001",
+        "armDegrees": 50.15161679220784,
+        "skinRMSHeight": 0.08918998234221806
+      },
+      {
+        "frame": "attack_N_002",
+        "armDegrees": 55.01757674561374,
+        "skinRMSHeight": 0.1475268721556323
+      },
+      {
+        "frame": "attack_N_003",
+        "armDegrees": 68.71125225784306,
+        "skinRMSHeight": 0.17134802260743134
+      },
+      {
+        "frame": "attack_N_004",
+        "armDegrees": 66.7687532880806,
+        "skinRMSHeight": 0.17193186064029614
+      },
+      {
+        "frame": "attack_N_005",
+        "armDegrees": 68.30910437989104,
+        "skinRMSHeight": 0.1705051014044054
+      },
+      {
+        "frame": "attack_N_006",
+        "armDegrees": 69.34124158612835,
+        "skinRMSHeight": 0.17011356381968282
+      },
+      {
+        "frame": "attack_N_007",
+        "armDegrees": 69.14138342082461,
+        "skinRMSHeight": 0.17001811216947424
+      },
+      {
+        "frame": "attack_N_008",
+        "armDegrees": 69.08369564309469,
+        "skinRMSHeight": 0.16989881927318917
+      },
+      {
+        "frame": "attack_N_009",
+        "armDegrees": 69.69853561180089,
+        "skinRMSHeight": 0.16996084581312887
+      },
+      {
+        "frame": "attack_N_010",
+        "armDegrees": 70.61077567734779,
+        "skinRMSHeight": 0.17015335994344338
+      },
+      {
+        "frame": "attack_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_NE_001",
+        "armDegrees": 50.15161679220784,
+        "skinRMSHeight": 0.08918998234221806
+      },
+      {
+        "frame": "attack_NE_002",
+        "armDegrees": 55.01757674561374,
+        "skinRMSHeight": 0.1475268721556323
+      },
+      {
+        "frame": "attack_NE_003",
+        "armDegrees": 68.71125225784306,
+        "skinRMSHeight": 0.17134802260743134
+      },
+      {
+        "frame": "attack_NE_004",
+        "armDegrees": 66.7687532880806,
+        "skinRMSHeight": 0.17193186064029614
+      },
+      {
+        "frame": "attack_NE_005",
+        "armDegrees": 68.30910437989104,
+        "skinRMSHeight": 0.1705051014044054
+      },
+      {
+        "frame": "attack_NE_006",
+        "armDegrees": 69.34124158612835,
+        "skinRMSHeight": 0.17011356381968282
+      },
+      {
+        "frame": "attack_NE_007",
+        "armDegrees": 69.14138342082461,
+        "skinRMSHeight": 0.17001811216947424
+      },
+      {
+        "frame": "attack_NE_008",
+        "armDegrees": 69.08369564309469,
+        "skinRMSHeight": 0.16989881927318917
+      },
+      {
+        "frame": "attack_NE_009",
+        "armDegrees": 69.69853561180089,
+        "skinRMSHeight": 0.16996084581312887
+      },
+      {
+        "frame": "attack_NE_010",
+        "armDegrees": 70.61077567734779,
+        "skinRMSHeight": 0.17015335994344338
+      },
+      {
+        "frame": "dodge_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_E_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_E_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_E_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_SE_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_SE_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_SE_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_S_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_S_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_S_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_SW_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_SW_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_SW_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_W_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_W_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_W_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_NW_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_NW_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_NW_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_N_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_N_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_N_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_NE_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_NE_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_NE_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "hit_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_E_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_E_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_E_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_E_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_E_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_E_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_SE_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_SE_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_SE_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_SE_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_SE_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_SE_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_S_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_S_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_S_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_S_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_S_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_S_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_SW_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_SW_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_SW_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_SW_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_SW_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_SW_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_W_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_W_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_W_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_W_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_W_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_W_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_NW_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_NW_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_NW_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_NW_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_NW_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_NW_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_N_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_N_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_N_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_N_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_N_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_N_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_NE_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_NE_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_NE_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_NE_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_NE_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_NE_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "death_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_E_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_E_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_E_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_E_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_E_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_E_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_E_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_SE_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_SE_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_SE_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_SE_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_SE_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_SE_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_SE_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_S_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_S_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_S_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_S_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_S_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_S_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_S_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_SW_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_SW_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_SW_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_SW_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_SW_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_SW_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_SW_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_W_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_W_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_W_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_W_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_W_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_W_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_W_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_NW_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_NW_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_NW_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_NW_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_NW_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_NW_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_NW_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_N_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_N_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_N_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_N_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_N_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_N_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_N_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_NE_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_NE_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_NE_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_NE_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_NE_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_NE_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_NE_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      }
+    ]
+  },
+  {
+    "kit": "hero-focus",
+    "checked": 384,
+    "tPoses": 0,
+    "frozenSkin": 0,
+    "minArmDegrees": 38.60476194366733,
+    "minSkinRMSHeight": 0.07796985488730962,
+    "rows": [
+      {
+        "frame": "idle_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_E_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_E_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_E_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_E_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_E_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_E_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_E_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_E_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_E_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_E_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_SE_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_SE_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_SE_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_SE_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_SE_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_SE_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_SE_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_SE_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_SE_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_SE_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_S_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_S_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_S_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_S_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_S_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_S_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_S_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_S_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_S_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_S_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_SW_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_SW_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_SW_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_SW_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_SW_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_SW_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_SW_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_SW_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_SW_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_SW_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_W_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_W_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_W_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_W_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_W_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_W_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_W_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_W_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_W_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_W_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_NW_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_NW_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_NW_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_NW_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_NW_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_NW_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_NW_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_NW_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_NW_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_NW_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_N_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_N_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_N_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_N_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_N_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_N_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_N_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_N_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_N_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_N_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "idle_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "idle_NE_001",
+        "armDegrees": 52.676785539685746,
+        "skinRMSHeight": 0.08493674312653678
+      },
+      {
+        "frame": "idle_NE_002",
+        "armDegrees": 52.71552295756347,
+        "skinRMSHeight": 0.08554668661858474
+      },
+      {
+        "frame": "idle_NE_003",
+        "armDegrees": 52.77003128223476,
+        "skinRMSHeight": 0.08641927302232141
+      },
+      {
+        "frame": "idle_NE_004",
+        "armDegrees": 52.82908168270411,
+        "skinRMSHeight": 0.08736992656759222
+      },
+      {
+        "frame": "idle_NE_005",
+        "armDegrees": 52.87902061082065,
+        "skinRMSHeight": 0.08816273248687236
+      },
+      {
+        "frame": "idle_NE_006",
+        "armDegrees": 52.90926127337088,
+        "skinRMSHeight": 0.08856337098607388
+      },
+      {
+        "frame": "idle_NE_007",
+        "armDegrees": 52.92246061394194,
+        "skinRMSHeight": 0.08853662709247724
+      },
+      {
+        "frame": "idle_NE_008",
+        "armDegrees": 52.91383066992562,
+        "skinRMSHeight": 0.08809043697499931
+      },
+      {
+        "frame": "idle_NE_009",
+        "armDegrees": 52.80827351139766,
+        "skinRMSHeight": 0.08662701090423372
+      },
+      {
+        "frame": "idle_NE_010",
+        "armDegrees": 52.69199295587278,
+        "skinRMSHeight": 0.08511080270784711
+      },
+      {
+        "frame": "run_E_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_E_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_E_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_E_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_E_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_E_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_E_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_E_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_SE_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_SE_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_SE_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_SE_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_SE_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_SE_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_SE_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_SE_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_S_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_S_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_S_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_S_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_S_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_S_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_S_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_S_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_SW_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_SW_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_SW_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_SW_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_SW_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_SW_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_SW_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_SW_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_W_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_W_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_W_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_W_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_W_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_W_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_W_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_W_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_NW_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_NW_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_NW_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_NW_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_NW_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_NW_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_NW_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_NW_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_N_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_N_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_N_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_N_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_N_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_N_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_N_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_N_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "run_NE_000",
+        "armDegrees": 66.73206151185929,
+        "skinRMSHeight": 0.1269122672274987
+      },
+      {
+        "frame": "run_NE_001",
+        "armDegrees": 60.40336532127638,
+        "skinRMSHeight": 0.11313582764900124
+      },
+      {
+        "frame": "run_NE_002",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287210428898847
+      },
+      {
+        "frame": "run_NE_003",
+        "armDegrees": 60.04680212584504,
+        "skinRMSHeight": 0.12714611780508325
+      },
+      {
+        "frame": "run_NE_004",
+        "armDegrees": 66.73204785148094,
+        "skinRMSHeight": 0.12532153282462055
+      },
+      {
+        "frame": "run_NE_005",
+        "armDegrees": 60.403378981654726,
+        "skinRMSHeight": 0.11182609586147584
+      },
+      {
+        "frame": "run_NE_006",
+        "armDegrees": 52.52556173636708,
+        "skinRMSHeight": 0.12287209656211633
+      },
+      {
+        "frame": "run_NE_007",
+        "armDegrees": 60.04682944660172,
+        "skinRMSHeight": 0.1283482725137085
+      },
+      {
+        "frame": "attack_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_E_001",
+        "armDegrees": 54.051265487502434,
+        "skinRMSHeight": 0.09028901809742733
+      },
+      {
+        "frame": "attack_E_002",
+        "armDegrees": 56.75835632352362,
+        "skinRMSHeight": 0.10638695495291184
+      },
+      {
+        "frame": "attack_E_003",
+        "armDegrees": 66.17850883057561,
+        "skinRMSHeight": 0.11479948468549606
+      },
+      {
+        "frame": "attack_E_004",
+        "armDegrees": 64.40925760911053,
+        "skinRMSHeight": 0.11165337458964174
+      },
+      {
+        "frame": "attack_E_005",
+        "armDegrees": 60.88174494055491,
+        "skinRMSHeight": 0.10526715120476032
+      },
+      {
+        "frame": "attack_E_006",
+        "armDegrees": 58.69703380244546,
+        "skinRMSHeight": 0.0991312312714311
+      },
+      {
+        "frame": "attack_E_007",
+        "armDegrees": 56.497245021743204,
+        "skinRMSHeight": 0.09192809141817149
+      },
+      {
+        "frame": "attack_E_008",
+        "armDegrees": 54.17112164705782,
+        "skinRMSHeight": 0.08660400658949771
+      },
+      {
+        "frame": "attack_E_009",
+        "armDegrees": 52.77159881064928,
+        "skinRMSHeight": 0.08479839711825814
+      },
+      {
+        "frame": "attack_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_SE_001",
+        "armDegrees": 54.051265487502434,
+        "skinRMSHeight": 0.09028901809742733
+      },
+      {
+        "frame": "attack_SE_002",
+        "armDegrees": 56.75835632352362,
+        "skinRMSHeight": 0.10638695495291184
+      },
+      {
+        "frame": "attack_SE_003",
+        "armDegrees": 66.17850883057561,
+        "skinRMSHeight": 0.11479948468549606
+      },
+      {
+        "frame": "attack_SE_004",
+        "armDegrees": 64.40925760911053,
+        "skinRMSHeight": 0.11165337458964174
+      },
+      {
+        "frame": "attack_SE_005",
+        "armDegrees": 60.88174494055491,
+        "skinRMSHeight": 0.10526715120476032
+      },
+      {
+        "frame": "attack_SE_006",
+        "armDegrees": 58.69703380244546,
+        "skinRMSHeight": 0.0991312312714311
+      },
+      {
+        "frame": "attack_SE_007",
+        "armDegrees": 56.497245021743204,
+        "skinRMSHeight": 0.09192809141817149
+      },
+      {
+        "frame": "attack_SE_008",
+        "armDegrees": 54.17112164705782,
+        "skinRMSHeight": 0.08660400658949771
+      },
+      {
+        "frame": "attack_SE_009",
+        "armDegrees": 52.77159881064928,
+        "skinRMSHeight": 0.08479839711825814
+      },
+      {
+        "frame": "attack_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_S_001",
+        "armDegrees": 54.051265487502434,
+        "skinRMSHeight": 0.09028901809742733
+      },
+      {
+        "frame": "attack_S_002",
+        "armDegrees": 56.75835632352362,
+        "skinRMSHeight": 0.10638695495291184
+      },
+      {
+        "frame": "attack_S_003",
+        "armDegrees": 66.17850883057561,
+        "skinRMSHeight": 0.11479948468549606
+      },
+      {
+        "frame": "attack_S_004",
+        "armDegrees": 64.40925760911053,
+        "skinRMSHeight": 0.11165337458964174
+      },
+      {
+        "frame": "attack_S_005",
+        "armDegrees": 60.88174494055491,
+        "skinRMSHeight": 0.10526715120476032
+      },
+      {
+        "frame": "attack_S_006",
+        "armDegrees": 58.69703380244546,
+        "skinRMSHeight": 0.0991312312714311
+      },
+      {
+        "frame": "attack_S_007",
+        "armDegrees": 56.497245021743204,
+        "skinRMSHeight": 0.09192809141817149
+      },
+      {
+        "frame": "attack_S_008",
+        "armDegrees": 54.17112164705782,
+        "skinRMSHeight": 0.08660400658949771
+      },
+      {
+        "frame": "attack_S_009",
+        "armDegrees": 52.77159881064928,
+        "skinRMSHeight": 0.08479839711825814
+      },
+      {
+        "frame": "attack_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_SW_001",
+        "armDegrees": 54.051265487502434,
+        "skinRMSHeight": 0.09028901809742733
+      },
+      {
+        "frame": "attack_SW_002",
+        "armDegrees": 56.75835632352362,
+        "skinRMSHeight": 0.10638695495291184
+      },
+      {
+        "frame": "attack_SW_003",
+        "armDegrees": 66.17850883057561,
+        "skinRMSHeight": 0.11479948468549606
+      },
+      {
+        "frame": "attack_SW_004",
+        "armDegrees": 64.40925760911053,
+        "skinRMSHeight": 0.11165337458964174
+      },
+      {
+        "frame": "attack_SW_005",
+        "armDegrees": 60.88174494055491,
+        "skinRMSHeight": 0.10526715120476032
+      },
+      {
+        "frame": "attack_SW_006",
+        "armDegrees": 58.69703380244546,
+        "skinRMSHeight": 0.0991312312714311
+      },
+      {
+        "frame": "attack_SW_007",
+        "armDegrees": 56.497245021743204,
+        "skinRMSHeight": 0.09192809141817149
+      },
+      {
+        "frame": "attack_SW_008",
+        "armDegrees": 54.17112164705782,
+        "skinRMSHeight": 0.08660400658949771
+      },
+      {
+        "frame": "attack_SW_009",
+        "armDegrees": 52.77159881064928,
+        "skinRMSHeight": 0.08479839711825814
+      },
+      {
+        "frame": "attack_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_W_001",
+        "armDegrees": 54.051265487502434,
+        "skinRMSHeight": 0.09028901809742733
+      },
+      {
+        "frame": "attack_W_002",
+        "armDegrees": 56.75835632352362,
+        "skinRMSHeight": 0.10638695495291184
+      },
+      {
+        "frame": "attack_W_003",
+        "armDegrees": 66.17850883057561,
+        "skinRMSHeight": 0.11479948468549606
+      },
+      {
+        "frame": "attack_W_004",
+        "armDegrees": 64.40925760911053,
+        "skinRMSHeight": 0.11165337458964174
+      },
+      {
+        "frame": "attack_W_005",
+        "armDegrees": 60.88174494055491,
+        "skinRMSHeight": 0.10526715120476032
+      },
+      {
+        "frame": "attack_W_006",
+        "armDegrees": 58.69703380244546,
+        "skinRMSHeight": 0.0991312312714311
+      },
+      {
+        "frame": "attack_W_007",
+        "armDegrees": 56.497245021743204,
+        "skinRMSHeight": 0.09192809141817149
+      },
+      {
+        "frame": "attack_W_008",
+        "armDegrees": 54.17112164705782,
+        "skinRMSHeight": 0.08660400658949771
+      },
+      {
+        "frame": "attack_W_009",
+        "armDegrees": 52.77159881064928,
+        "skinRMSHeight": 0.08479839711825814
+      },
+      {
+        "frame": "attack_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_NW_001",
+        "armDegrees": 54.051265487502434,
+        "skinRMSHeight": 0.09028901809742733
+      },
+      {
+        "frame": "attack_NW_002",
+        "armDegrees": 56.75835632352362,
+        "skinRMSHeight": 0.10638695495291184
+      },
+      {
+        "frame": "attack_NW_003",
+        "armDegrees": 66.17850883057561,
+        "skinRMSHeight": 0.11479948468549606
+      },
+      {
+        "frame": "attack_NW_004",
+        "armDegrees": 64.40925760911053,
+        "skinRMSHeight": 0.11165337458964174
+      },
+      {
+        "frame": "attack_NW_005",
+        "armDegrees": 60.88174494055491,
+        "skinRMSHeight": 0.10526715120476032
+      },
+      {
+        "frame": "attack_NW_006",
+        "armDegrees": 58.69703380244546,
+        "skinRMSHeight": 0.0991312312714311
+      },
+      {
+        "frame": "attack_NW_007",
+        "armDegrees": 56.497245021743204,
+        "skinRMSHeight": 0.09192809141817149
+      },
+      {
+        "frame": "attack_NW_008",
+        "armDegrees": 54.17112164705782,
+        "skinRMSHeight": 0.08660400658949771
+      },
+      {
+        "frame": "attack_NW_009",
+        "armDegrees": 52.77159881064928,
+        "skinRMSHeight": 0.08479839711825814
+      },
+      {
+        "frame": "attack_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_N_001",
+        "armDegrees": 54.051265487502434,
+        "skinRMSHeight": 0.09028901809742733
+      },
+      {
+        "frame": "attack_N_002",
+        "armDegrees": 56.75835632352362,
+        "skinRMSHeight": 0.10638695495291184
+      },
+      {
+        "frame": "attack_N_003",
+        "armDegrees": 66.17850883057561,
+        "skinRMSHeight": 0.11479948468549606
+      },
+      {
+        "frame": "attack_N_004",
+        "armDegrees": 64.40925760911053,
+        "skinRMSHeight": 0.11165337458964174
+      },
+      {
+        "frame": "attack_N_005",
+        "armDegrees": 60.88174494055491,
+        "skinRMSHeight": 0.10526715120476032
+      },
+      {
+        "frame": "attack_N_006",
+        "armDegrees": 58.69703380244546,
+        "skinRMSHeight": 0.0991312312714311
+      },
+      {
+        "frame": "attack_N_007",
+        "armDegrees": 56.497245021743204,
+        "skinRMSHeight": 0.09192809141817149
+      },
+      {
+        "frame": "attack_N_008",
+        "armDegrees": 54.17112164705782,
+        "skinRMSHeight": 0.08660400658949771
+      },
+      {
+        "frame": "attack_N_009",
+        "armDegrees": 52.77159881064928,
+        "skinRMSHeight": 0.08479839711825814
+      },
+      {
+        "frame": "attack_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "attack_NE_001",
+        "armDegrees": 54.051265487502434,
+        "skinRMSHeight": 0.09028901809742733
+      },
+      {
+        "frame": "attack_NE_002",
+        "armDegrees": 56.75835632352362,
+        "skinRMSHeight": 0.10638695495291184
+      },
+      {
+        "frame": "attack_NE_003",
+        "armDegrees": 66.17850883057561,
+        "skinRMSHeight": 0.11479948468549606
+      },
+      {
+        "frame": "attack_NE_004",
+        "armDegrees": 64.40925760911053,
+        "skinRMSHeight": 0.11165337458964174
+      },
+      {
+        "frame": "attack_NE_005",
+        "armDegrees": 60.88174494055491,
+        "skinRMSHeight": 0.10526715120476032
+      },
+      {
+        "frame": "attack_NE_006",
+        "armDegrees": 58.69703380244546,
+        "skinRMSHeight": 0.0991312312714311
+      },
+      {
+        "frame": "attack_NE_007",
+        "armDegrees": 56.497245021743204,
+        "skinRMSHeight": 0.09192809141817149
+      },
+      {
+        "frame": "attack_NE_008",
+        "armDegrees": 54.17112164705782,
+        "skinRMSHeight": 0.08660400658949771
+      },
+      {
+        "frame": "attack_NE_009",
+        "armDegrees": 52.77159881064928,
+        "skinRMSHeight": 0.08479839711825814
+      },
+      {
+        "frame": "dodge_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_E_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_E_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_E_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_SE_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_SE_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_SE_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_S_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_S_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_S_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_SW_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_SW_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_SW_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_W_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_W_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_W_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_NW_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_NW_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_NW_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_N_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_N_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_N_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "dodge_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "dodge_NE_001",
+        "armDegrees": 66.05858436912852,
+        "skinRMSHeight": 0.11705472582399915
+      },
+      {
+        "frame": "dodge_NE_002",
+        "armDegrees": 63.26145797946822,
+        "skinRMSHeight": 0.12169928257510822
+      },
+      {
+        "frame": "dodge_NE_003",
+        "armDegrees": 60.52439627336901,
+        "skinRMSHeight": 0.12589437434811754
+      },
+      {
+        "frame": "hit_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_E_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_E_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_E_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_E_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_E_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_E_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_SE_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_SE_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_SE_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_SE_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_SE_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_SE_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_S_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_S_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_S_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_S_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_S_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_S_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_SW_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_SW_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_SW_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_SW_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_SW_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_SW_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_W_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_W_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_W_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_W_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_W_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_W_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_NW_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_NW_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_NW_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_NW_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_NW_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_NW_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_N_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_N_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_N_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_N_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_N_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_N_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "hit_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "hit_NE_001",
+        "armDegrees": 42.470748051637514,
+        "skinRMSHeight": 0.07805060189932332
+      },
+      {
+        "frame": "hit_NE_002",
+        "armDegrees": 38.60476194366733,
+        "skinRMSHeight": 0.07796985488730962
+      },
+      {
+        "frame": "hit_NE_003",
+        "armDegrees": 46.07749432965986,
+        "skinRMSHeight": 0.07860222619542444
+      },
+      {
+        "frame": "hit_NE_004",
+        "armDegrees": 49.03806373106398,
+        "skinRMSHeight": 0.08048928728997216
+      },
+      {
+        "frame": "hit_NE_005",
+        "armDegrees": 51.172665186327635,
+        "skinRMSHeight": 0.08263918419618822
+      },
+      {
+        "frame": "hit_NE_006",
+        "armDegrees": 52.41278506788641,
+        "skinRMSHeight": 0.0843155594826079
+      },
+      {
+        "frame": "death_E_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_E_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_E_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_E_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_E_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_E_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_E_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_E_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_SE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_SE_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_SE_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_SE_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_SE_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_SE_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_SE_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_SE_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_S_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_S_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_S_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_S_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_S_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_S_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_S_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_S_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_SW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_SW_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_SW_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_SW_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_SW_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_SW_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_SW_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_SW_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_W_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_W_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_W_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_W_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_W_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_W_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_W_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_W_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_NW_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_NW_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_NW_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_NW_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_NW_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_NW_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_NW_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_NW_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_N_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_N_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_N_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_N_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_N_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_N_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_N_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_N_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      },
+      {
+        "frame": "death_NE_000",
+        "armDegrees": 52.66220650090235,
+        "skinRMSHeight": 0.08471149122969925
+      },
+      {
+        "frame": "death_NE_001",
+        "armDegrees": 57.24461456600976,
+        "skinRMSHeight": 0.0947701361274167
+      },
+      {
+        "frame": "death_NE_002",
+        "armDegrees": 68.57031813450901,
+        "skinRMSHeight": 0.13144584041113616
+      },
+      {
+        "frame": "death_NE_003",
+        "armDegrees": 62.56819377871192,
+        "skinRMSHeight": 0.1888485531515632
+      },
+      {
+        "frame": "death_NE_004",
+        "armDegrees": 53.01787835664701,
+        "skinRMSHeight": 0.2636509880887246
+      },
+      {
+        "frame": "death_NE_005",
+        "armDegrees": 54.58659863917511,
+        "skinRMSHeight": 0.3437955736264618
+      },
+      {
+        "frame": "death_NE_006",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.3509565406588899
+      },
+      {
+        "frame": "death_NE_007",
+        "armDegrees": 55.1485524531379,
+        "skinRMSHeight": 0.35095655025808287
+      }
+    ]
+  }
+]

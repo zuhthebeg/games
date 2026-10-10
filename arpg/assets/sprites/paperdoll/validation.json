@@ -1,0 +1,148 @@
+{
+  "status": "PARTIAL",
+  "totalSourceBytes": 1289610,
+  "gate": "B AA1 full6x8 with <=4px reference-derived boundary reconciliation, corrected premultiplied RGBA exact; delivered WebP quality70, exact alpha/lossless masks; not A or real phone",
+  "kits": [
+    {
+      "kit": "blade",
+      "frames": 392,
+      "clips": 48,
+      "combinations": 3136,
+      "rawMismatchFrames": 12,
+      "rawWorstPixels": 1,
+      "correctedHeadPixels": 706,
+      "correctedWeaponPixels": 8,
+      "mismatchedFrames": 0,
+      "worstPixels": 0,
+      "cropped": 0,
+      "tPoseFrames": 0,
+      "maskPixels": [
+        148082,
+        13300,
+        14621
+      ],
+      "headDodgeDeathNonempty": 288,
+      "layoutRGBABytes": 6782976,
+      "layers": [
+        {
+          "layer": "base",
+          "bytes": 171908,
+          "rgbaBytes": 3031040,
+          "unique": 366,
+          "alphaExact": true,
+          "colourPixelsOver24": 73017,
+          "maxPremultipliedColourError": 256
+        },
+        {
+          "layer": "mask",
+          "bytes": 65324,
+          "rgbaBytes": 3031040,
+          "unique": 366,
+          "alphaExact": true,
+          "colourPixelsOver24": 0,
+          "maxPremultipliedColourError": 0
+        },
+        {
+          "layer": "head-knight",
+          "bytes": 92806,
+          "rgbaBytes": 1802240,
+          "unique": 360,
+          "alphaExact": true,
+          "colourPixelsOver24": 25265,
+          "maxPremultipliedColourError": 256
+        },
+        {
+          "layer": "head-barbarian",
+          "bytes": 72056,
+          "rgbaBytes": 1556480,
+          "unique": 360,
+          "alphaExact": true,
+          "colourPixelsOver24": 8158,
+          "maxPremultipliedColourError": 256
+        },
+        {
+          "layer": "head-mage",
+          "bytes": 152550,
+          "rgbaBytes": 3506176,
+          "unique": 360,
+          "alphaExact": true,
+          "colourPixelsOver24": 73534,
+          "maxPremultipliedColourError": 256
+        },
+        {
+          "layer": "weapon-standard-none",
+          "bytes": 39362,
+          "rgbaBytes": 1556480,
+          "unique": 355,
+          "alphaExact": true,
+          "colourPixelsOver24": 8015,
+          "maxPremultipliedColourError": 256
+        },
+        {
+          "layer": "weapon-standard-knight",
+          "bytes": 38608,
+          "rgbaBytes": 1441792,
+          "unique": 336,
+          "alphaExact": true,
+          "colourPixelsOver24": 7987,
+          "maxPremultipliedColourError": 256
+        },
+        {
+          "layer": "weapon-standard-barbarian",
+          "bytes": 38408,
+          "rgbaBytes": 1507328,
+          "unique": 348,
+          "alphaExact": true,
+          "colourPixelsOver24": 7922,
+          "maxPremultipliedColourError": 256
+        },
+        {
+          "layer": "weapon-standard-mage",
+          "bytes": 32030,
+          "rgbaBytes": 1392640,
+          "unique": 336,
+          "alphaExact": true,
+          "colourPixelsOver24": 6628,
+          "maxPremultipliedColourError": 256
+        },
+        {
+          "layer": "weapon-alternate-none",
+          "bytes": 68036,
+          "rgbaBytes": 1753088,
+          "unique": 353,
+          "alphaExact": true,
+          "colourPixelsOver24": 23589,
+          "maxPremultipliedColourError": 256
+        },
+        {
+          "layer": "weapon-alternate-knight",
+          "bytes": 64940,
+          "rgbaBytes": 1654784,
+          "unique": 350,
+          "alphaExact": true,
+          "colourPixelsOver24": 21823,
+          "maxPremultipliedColourError": 256
+        },
+        {
+          "layer": "weapon-alternate-barbarian",
+          "bytes": 65800,
+          "rgbaBytes": 1720320,
+          "unique": 353,
+          "alphaExact": true,
+          "colourPixelsOver24": 22795,
+          "maxPremultipliedColourError": 256
+        },
+        {
+          "layer": "weapon-alternate-mage",
+          "bytes": 56274,
+          "rgbaBytes": 1556480,
+          "unique": 333,
+          "alphaExact": true,
+          "colourPixelsOver24": 17229,
+          "maxPremultipliedColourError": 256
+        }
+      ],
+      "manifestBytes": 331508
+    }
+  ]
+}

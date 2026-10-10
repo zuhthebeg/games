@@ -64,9 +64,9 @@ export function portraitHtml(save) {
   const p = getHeroPortrait(save);
   const enabled = paperdollEnabled();
   if (enabled) installPaperdollPortraits();
-  const parts = enabled ? ` data-paperdoll="${escape(JSON.stringify(equipmentVisual(save)))}"` : '';
+  const parts = enabled ? ` data-paperdoll-fallback="${p.url}" data-paperdoll="${escape(JSON.stringify(equipmentVisual(save)))}"` : '';
   const canvas = enabled ? '<canvas width="128" height="128" style="width:100%;height:100%" hidden></canvas>' : '';
-  return `<div class="sprite p2-hero"${parts} role="img" aria-label="현재 장비의 기사" style="background-image:url('${p.url}');background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}</div>`;
+  return `<div class="sprite p2-hero"${parts} role="img" aria-label="현재 장비의 기사" style="background-image:${enabled ? 'none' : `url('${p.url}')`};background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}</div>`;
 }
 
 export function socketsHtml(save) {
