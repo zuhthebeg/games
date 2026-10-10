@@ -73,14 +73,14 @@ export class ArenaRenderer {
     }
   }
 
-  reset(world, reduced = false) {
+  reset(world, reduced = false, equipmentSave) {
     for (const view of this.views.values()) {
       view.visual.destroy();
       view.shadow.destroy();
       view.portal.destroy();
     }
     this.views.clear();
-    this.provider.beginRound?.(world.entities);
+    this.provider.beginRound?.(world.entities, equipmentSave);
     for (const graphic of this.projectiles.values())
       graphic.destroy();
     this.projectiles.clear();

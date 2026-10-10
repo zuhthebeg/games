@@ -93,7 +93,7 @@ try {
       tracker = createTracker(seed);
       const load = currentLoad(roundSave, tracker);
       setLoad(world, 'local', load.ratio);
-      renderer.reset(world, reduced);
+      renderer.reset(world, reduced, roundSave);
       renderer.root.visible = true;
       renderer.warning.visible = true;
       input.enabled = true;
