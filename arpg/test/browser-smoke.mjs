@@ -429,6 +429,15 @@ try {
   await waitFor('__arpg.world.round.state==="returned"', 6000);
   await backToInn();
   assert.equal(await evaluate('__arpg.save.cleared.S5'), undefined, 'return must not unlock S6');
+  // The extra real T2 round consumes the second scroll. Buy a replacement through meta,
+  // preserving the two-scroll cap before development kit rounds (which never settle supplies).
+  await evaluate(`(async () => {
+    const {buy}=await import('./js/meta/items.js');
+    const {SaveStore}=await import('./js/meta/save.js');
+    const store=new SaveStore(localStorage);
+    store.save(buy(store.load(),'return_scroll'));
+  })()`);
+  await command('Page.reload');await waitFor(page('inn'));
   for (const [stage, types] of [['S6', ['rune_guardian', 'spirit']], ['S7', ['poison_spider']]]) {
     await devStart(stage);
     await waitFor(`${JSON.stringify(types)}.every(type=>__arpg.art.visuals.some(v=>v.key===type && v.mode==="procedural"))`);
