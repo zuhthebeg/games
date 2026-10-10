@@ -2,6 +2,7 @@ import { Application } from '../vendor/pixi-8.22.0.min.mjs';
 import { createWorld, addPlayer, startStage, step, setLoad } from './sim/world.js';
 import { TICK_MS } from './sim/core.js';
 import { InputLayer } from './input.js';
+import { CombatAudio, bindAudioControls } from './audio.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { HUD } from './ui/hud.js';
 import { HubUI, restoreInnVitals } from './ui/hub.js';
@@ -61,6 +62,8 @@ try {
     (x, y, vector) => renderer.aim(x, y, vector),
   );
   const hud = new HUD();
+  const audio = new CombatAudio();
+  bindAudioControls(audio, document);
   const hub = new HubUI({
     save: saved,
     recoverVitals: () => restoreInnVitals(world?.entities[0]),
@@ -77,6 +80,7 @@ try {
       renderer.warning.visible = false;
     },
     startRound: (stageId, reduced, overrideWeapon) => {
+      audio.stop();
       input.reset();
       roundSave = structuredClone(hub.save);
       developmentRound = Boolean(overrideWeapon);
@@ -104,6 +108,15 @@ try {
       get world() { return readonly(world); },
       get save() { return readonly(hub.save); },
       get tracker() { return readonly(tracker); },
+      get feedback() {
+        return readonly({
+          trauma: renderer.trauma, slowLeft: renderer.slowLeft,
+          frozen: [...renderer.views].filter(([, view]) => view.anim.frozen).map(([id]) => id),
+          particles: renderer.particles.filter(particle => particle.left > 0).length,
+          pools: { particles: renderer.particles.length, numbers: renderer.numbers.length, effects: renderer.effects.length },
+          audio: { muted: audio.muted, state: audio.context?.state || 'locked', loaded: [...audio.buffers.keys()], voices: audio.voices.size },
+        });
+      },
       get art() {
         return readonly({
           ...renderer.provider.atlases.status(),
@@ -120,6 +133,7 @@ try {
     accumulator = 0;
     lastTime = performance.now();
     input.reset();
+    if (hidden) audio.stop();
     hud.pause(hidden && running);
   });
 
@@ -139,6 +153,7 @@ try {
     const nextSave = developmentRound ? hub.save : result.save;
     store.save(nextSave);
     hub.finish(nextSave, result.receipt, hud.deathExplanation(world));
+    if (result.receipt.levelsGained > 0) audio.play('level-up');
   }
 
   function frame(now) {
@@ -155,6 +170,7 @@ try {
         tracker = progress.tracker;
         setLoad(world, 'local', progress.load.ratio);
         renderer.events(world, [...events, ...progress.fx]);
+        audio.events(events, world.entities[0].id);
         hud.events([...events, ...progress.fx]);
         hud.meta(progress.load, tracker);
         accumulator -= TICK_MS;

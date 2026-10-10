@@ -1,0 +1,93 @@
+[
+  {
+    "name": "swing.ogg",
+    "prompt": "A single short sharp sword swing whoosh slicing air, close dry recording, no music no ambience no speech.",
+    "seconds": 3,
+    "steps": 100,
+    "seed": 50,
+    "sourceSha256": "ba76f337e24169ef556416f04f726048b1ec968106554a88ca3bb91884ecd0f8",
+    "trimStart": 0.095,
+    "duration": 0.24,
+    "sampleRate": 48000,
+    "channels": 1,
+    "bytes": 5608
+  },
+  {
+    "name": "hit.ogg",
+    "prompt": "A single punchy sword impact on leather armor with crisp metallic tick and low thud, dry close recording, no music no voice.",
+    "seconds": 3,
+    "steps": 100,
+    "seed": 51,
+    "sourceSha256": "3fb69941497a6e9f348c2d66660beff111e460f4539184c635cd4656b2bc85d8",
+    "trimStart": 0.995,
+    "duration": 0.26,
+    "sampleRate": 48000,
+    "channels": 1,
+    "bytes": 5778
+  },
+  {
+    "name": "critical.ogg",
+    "prompt": "A single emphatic blade impact with bright metallic crack and heavy crunchy low thump, dry game sound, no music no speech.",
+    "seconds": 3,
+    "steps": 100,
+    "seed": 52,
+    "sourceSha256": "cb4e0543d487d8b3b4364b37fc66c5077f78ab78a77881e9b716e30558d55971",
+    "trimStart": 0,
+    "duration": 0.36,
+    "sampleRate": 48000,
+    "channels": 1,
+    "bytes": 6445
+  },
+  {
+    "name": "dodge.ogg",
+    "prompt": "A short fast cloth movement and air swoosh of a combat dodge, dry soft clean recording, no music no speech.",
+    "seconds": 3,
+    "steps": 100,
+    "seed": 53,
+    "sourceSha256": "1e4b9ebf515545bc67e57b78cdbcc417a254434618e993800f8719918f4932b7",
+    "trimStart": 0.615,
+    "duration": 0.28,
+    "sampleRate": 48000,
+    "channels": 1,
+    "bytes": 5334
+  },
+  {
+    "name": "hurt.ogg",
+    "prompt": "A short blunt armor hit, heavy muffled thud and small metal clank, no vocal sound no music no ambience.",
+    "seconds": 3,
+    "steps": 100,
+    "seed": 54,
+    "sourceSha256": "7ee5ab9649dbc57b40c8481651e9b60610add304f2d8af8407999ea322f703c4",
+    "trimStart": 0.34,
+    "duration": 0.3,
+    "sampleRate": 48000,
+    "channels": 1,
+    "bytes": 5967
+  },
+  {
+    "name": "kill.ogg",
+    "prompt": "A short fantasy enemy defeat crunch with a falling metallic clatter and low impact, no voice no music no ambience.",
+    "seconds": 3,
+    "steps": 100,
+    "seed": 55,
+    "sourceSha256": "5f0e6ec879cab6f40e967c0b637eedcc2ecf71920317832a64349abcb2ab28cd",
+    "trimStart": 0,
+    "duration": 0.55,
+    "sampleRate": 48000,
+    "channels": 1,
+    "bytes": 8369
+  },
+  {
+    "name": "level-up.ogg",
+    "prompt": "A brief magical ascending three note crystalline chime, sparkling achievement reward sound, no music bed no voice.",
+    "seconds": 3,
+    "steps": 100,
+    "seed": 56,
+    "sourceSha256": "53adcea44c9b06d0691ce13db5b8e5ad73dd995fb0958dd5bd6cd7ec6ce1757e",
+    "trimStart": 0,
+    "duration": 1.15,
+    "sampleRate": 48000,
+    "channels": 1,
+    "bytes": 13112
+  }
+]

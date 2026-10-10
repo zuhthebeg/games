@@ -489,6 +489,14 @@ select, input:not([type="checkbox"]) {
   font-size: 20px;
 }
 
+.battle-sound {
+  position: absolute;
+  top: calc(76px + env(safe-area-inset-top));
+  right: calc(14px + env(safe-area-inset-right));
+  width: 44px;
+  pointer-events: auto;
+}
+
 .xp-track {
   height: 4px;
   background: #3a392d;

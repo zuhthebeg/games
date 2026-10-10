@@ -44,3 +44,6 @@ Verified 2026-10-10. All baked images are local copies, never runtime-hotlinked.
 
 ## Existing viewer dependency (not downloaded/modified)
 - PixiJS v8.22.0, MIT. Relative import of `arpg/vendor/pixi-8.22.0.min.mjs`; included `PIXI-LICENSE.txt` remains untouched.
+
+## Combat SFX — local generation (2026-10-10)
+- **Locally generated with MOSS-SoundEffect v2**, `/home/cocy/ai-local/moss-sfx-out/gen.py` and local model `moss-soundeffect-v2`, not sampled/downloaded third-party audio: `arpg/assets/audio/{swing,hit,critical,dodge,hurt,kill,level-up}.ogg` (mono 48kHz, 0.24–1.15s, **50,613 bytes total**). Prompts, seeds, generation settings, source WAV SHA-256 and trim offsets: `assets/audio/generation.json`; trimming/compression: `tools/trim-sfx.py`. `critical` is used for actual `exposed` weak-point hits; this spike has no critical-roll mechanic and none was added.
