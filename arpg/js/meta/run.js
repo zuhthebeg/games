@@ -1,6 +1,7 @@
+import { ECONOMY } from './economy.js';
 import { deriveMods } from './stats.js';
 import { addXp, stageXp, deathLoss, MAX_LEVEL, xpSpan, STAGE_XP } from './progression.js';
-import { ITEMS, carriedWeight, capacity, rollDrops, dropSeed, cloneSave, uniqueUid } from './items.js';
+import { ITEMS, carriedWeight, capacity, rollDrops, dropSeed, cloneSave, uniqueUid, instance } from './items.js';
 
 export const emptyLoot = () => ({ gold: 0, items: [], stacks: {} });
 const USED_KEYS = { potions: 'potion', manaPotions: 'mana_potion', scrolls: 'return_scroll' };
@@ -51,7 +52,9 @@ export function trackRound(save, tracker, events, used = {}) {
     if (event.type !== 'kill') continue;
     next.depositedXp += event.xp;
     const seed = dropSeed(next.seed, next.killIndex++);
-    const drop = rollDrops(event.monster, seed);
+    const mods = deriveMods(save);
+    const drop = rollDrops(event.monster, seed, { rarelessRounds: save.rarelessRounds,
+      goldBonus: mods.goldBonus, materialBonus: mods.materialBonus });
     next.tempLoot.gold += drop.gold;
     const picked = [];
     let rejected = false;
@@ -125,9 +128,13 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
     receipt.xpDiscarded = offeredXp - receipt.xpGained;
     next = addXp(next, offeredXp);
     next.cleared[stageId] = true;
+    next.completedRounds++;
+    if (next.completedRounds % ECONOMY.refreshRounds === 0) {
+      next.shopRefresh++; next.paidRefreshes = 0; next.shopBought = [];
+    }
     if (stageId === 'S4' && !save.flags.chiefPity) {
       if (!tempLoot.items.some((item) => item.id === 'chief_maul')) {
-        const item = { uid: uniqueUid(next, 'pity:chief_maul'), id: 'chief_maul', enhance: 0 };
+        const item = instance(uniqueUid(next, 'pity:chief_maul'), 'chief_maul', save.createdAt >>> 0);
         next.items.push(item);
         receipt.lootKept.items.push(item);
         receipt.pityGranted = true;
@@ -146,6 +153,10 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
       }
       next.flags.starterRestoreUsed = true;
     }
+  }
+  if (terminal === 'clear' && stageId !== 'S1') {
+    const rare = receipt.lootKept.items.some((item) => ['rare', 'epic'].includes(ITEMS[item.id].rarity));
+    next.rarelessRounds = rare ? 0 : save.rarelessRounds + 1;
   }
   receipt.levelsGained = next.level - save.level;
   receipt.statPointsGained = receipt.levelsGained * 3;

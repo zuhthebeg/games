@@ -32,7 +32,7 @@ export function icon(name) {
 }
 
 export function itemIcon(id, definition) {
-  return icon(paths[id] ? id : definition.kind === 'armor' ? 'armor'
+  return icon(paths[id] ? id : ['head', 'body', 'hands', 'feet'].includes(definition.kind) ? 'armor'
     : definition.family === 'blade' ? 'weapon' : definition.family);
 }
 

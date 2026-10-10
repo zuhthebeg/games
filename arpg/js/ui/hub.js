@@ -1,10 +1,13 @@
+import { SLOTS } from '../meta/economy.js';
+import { shopStock, buyGear, sellItem, refreshShop, refreshPrice, gearPrice } from '../meta/shop.js';
+import { compareItems } from '../meta/compare.js';
 import { STAGES } from '../content/combat.js';
 import { loadEffects } from '../sim/world.js';
 import { QUESTIONS, resolve, FAMILIES, WEAPON_NAMES } from '../meta/quiz.js';
 import { STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats } from '../meta/stats.js';
 import { xpSpan, MAX_LEVEL } from '../meta/progression.js';
 import {
-  ITEMS, RECIPES, ENHANCE_GOLD, ENHANCE_SCRAP, equippedItem, carriedWeight, capacity,
+  ITEMS, RECIPES, ENHANCE_GOLD, enhanceCost, equippedItem, carriedWeight, capacity,
   buy, equip, craft, enhance, dismantle, dismantleRefund, shopPrice,
 } from '../meta/items.js';
 import { createSave } from '../meta/save.js';
@@ -209,6 +212,24 @@ export class HubUI {
     this.showInnPanel('주인', summary, 'owner');
   }
 
+  comparisonHtml(item) {
+    const compare = compareItems(equippedItem(this.save, ITEMS[item.id].slot), item, this.save);
+    return `<div class="gear-comparison">${compare.lines.map((line) =>
+      `<p class="${line.good === true ? 'gain' : line.good === false ? 'loss' : ''}">${escape(line.label)} ${amount(line.from)} → ${amount(line.to)} ${line.delta > 0 ? '▲' : line.delta < 0 ? '▼' : '＝'}${amount(Math.abs(line.delta))}</p>`).join('')}
+      <small>장착 후 ${amount(compare.weightAfter)}/${compare.weightLimit} kg ${escape(compare.lockReason)}</small></div>`;
+  }
+
+  gearShopHtml() {
+    return `<h3>장비 상점</h3><div class="gear-grid">${shopStock(this.save.createdAt >>> 0, this.save.shopRefresh)
+      .map((item) => `<article class="gear-card"><b>${escape(itemLabel(item))}</b><small>${ITEMS[item.id].rarity}</small>
+        ${this.comparisonHtml(item)}${button(`구매 ${item.price} G`, 'buy-gear', `data-uid="${escape(item.uid)}"`,
+          this.save.shopBought.includes(item.uid) || this.save.gold < item.price)}</article>`).join('')}</div>
+      ${button(`재고 갱신 ${refreshPrice(this.save)} G`, 'refresh-shop', '', this.save.gold < refreshPrice(this.save))}
+      <p class="muted">완료 ${this.save.completedRounds}판 · 3판마다 무료 갱신. 장비는 창고로 구매(레벨 잠금은 장착 시 적용).</p>
+      <h3>판매</h3>${this.save.items.filter((item) => !Object.values(this.save.equipped).includes(item.uid)).map((item) =>
+        button(`${escape(itemLabel(item))} 판매 ${Math.floor(gearPrice(item) * 0.25)} G`, 'sell-shop', `data-uid="${escape(item.uid)}"`)).join('')}`;
+  }
+
   showShop() {
     const price = shopPrice(this.save, this.shopId) * this.shopCount;
     const weight = carriedWeight(this.save) + ITEMS[this.shopId].weight * this.shopCount;
@@ -229,7 +250,7 @@ export class HubUI {
       <details class="help"><summary aria-label="구매 안내">ⓘ</summary>
         <p>구매 후 ${this.save.gold - price} G · ${amount(weight)} / ${capacity(this.save)} kg.
         귀환서는 최대 2장. 무게 120%까지 구매 가능. 할인 ${Math.round(deriveMods(this.save).shopDiscount * 100)}%.</p>
-      </details>`, 'shop');
+      </details>${this.gearShopHtml()}`, 'shop');
     if (disabled) this.error(this.save.gold < price ? '골드 부족' : tooMany ? '최대 2장' : '무게 초과');
   }
 
@@ -248,9 +269,9 @@ export class HubUI {
       return `<article class="recipe"><b>${itemIcon(id, ITEMS[id])}${ITEMS[id].name}</b>
         <div class="recipe-cost">${cost}</div>${button('제작', 'craft', `data-id="${id}"`, !available)}</article>`;
     }).join('');
-    const materials = ['scrap', 'hide', 'fang'].map((id) =>
+    const materials = ['scrap', 'hide', 'fang', 'enhance_stone_1', 'enhance_stone_2', 'enhance_stone_3'].map((id) =>
       `<span class="icon-count" aria-label="${ITEMS[id].name} ${this.save.stacks[id] || 0}">${icon(id)}${this.save.stacks[id] || 0}</span>`).join('');
-    this.showInnPanel('대장장이', `<div class="material-strip">${materials}</div>
+    this.showInnPanel('대장장이', `<p>${SLOTS.map((slot) => `${slot}: ${equippedItem(this.save, slot) ? escape(itemLabel(equippedItem(this.save, slot))) : '빈 슬롯'}`).join(' · ')}</p><div class="material-strip">${materials}</div>
       <div class="gear-grid">${cards}</div>
       <details class="craft-list"><summary>제작</summary><div class="recipe-grid">${recipes}</div></details>
       ${this.gearSheet()}`, 'forge');
@@ -260,7 +281,7 @@ export class HubUI {
     const item = this.save.items.find((candidate) => candidate.uid === this.selectedUid);
     if (!item) return '';
     const definition = ITEMS[item.id];
-    const equipped = item.uid === equippedItem(this.save, definition.kind).uid;
+    const equipped = item.uid === equippedItem(this.save, definition.kind)?.uid;
     const candidate = structuredClone(this.save);
     candidate.equipped[definition.kind] = item.uid;
     const before = deriveMods(this.save);
@@ -271,8 +292,8 @@ export class HubUI {
     const diff = right - left;
     const uid = `data-uid="${escape(item.uid)}"`;
     const maxed = item.enhance >= 5;
-    const canEnhance = !maxed && this.save.gold >= ENHANCE_GOLD[item.enhance]
-      && (this.save.stacks.scrap || 0) >= ENHANCE_SCRAP[item.enhance];
+    const cost = maxed ? {} : enhanceCost(item.enhance);
+    const canEnhance = !maxed && Object.entries(cost).every(([id, count]) => (id === 'gold' ? this.save.gold : this.save.stacks[id] || 0) >= count);
     const canEquip = !equipped && this.save.level >= definition.requiredLevel
       && carriedWeight(candidate) <= capacity(candidate) * 1.2;
     return `<section class="gear-sheet" aria-label="장비 작업"><header><h3>${itemLabel(item)}</h3>
@@ -280,11 +301,11 @@ export class HubUI {
       <div class="gear-comparison"><span>${weapon ? '위력' : 'HP'} ${amount(right)}</span>
         <b class="${diff > 0 ? 'gain' : diff < 0 ? 'loss' : ''}">${diff > 0 ? '▲' : diff < 0 ? '▼' : '＝'}${amount(Math.abs(diff))}</b>
         <small>Lv.${definition.requiredLevel} · ${definition.weight}kg</small></div>
-      <div class="inline-actions">
+      ${this.comparisonHtml(item)}<div class="inline-actions">
         ${button('장착', 'equip', `${uid} ${!equipped ? 'class="primary"' : ''}`, !canEquip)}
         ${button('강화', 'enhance', `${uid} ${equipped ? 'class="primary"' : ''}`, !canEnhance)}
-        ${button('분해', 'dismantle', uid, equipped)}</div>
-      <div class="gear-cost"><span>강화 ${maxed ? 'MAX' : `${icon('scrap')}${ENHANCE_SCRAP[item.enhance]} ${icon('gold')}${ENHANCE_GOLD[item.enhance]}`}</span>
+        ${button('분해', 'dismantle', uid, equipped)}${button('판매', 'sell', uid, equipped)}</div>
+      <div class="gear-cost"><span>강화 ${maxed ? 'MAX' : Object.entries(cost).map(([id, count]) => `${id === 'gold' ? '골드' : ITEMS[id].name} ${count}`).join(' · ')}</span>
         <span>분해 ${icon('scrap')}+${dismantleRefund(item)}</span></div>
     </section>`;
   }
@@ -352,7 +373,7 @@ export class HubUI {
     return `<div class="receipt"><div class="reward-row">
       <span class="reward" aria-label="획득 경험치">${icon('xp')}+${amount(receipt.xpGained)}</span>
       ${receipt.xpLost ? `<span class="reward loss" aria-label="손실 경험치">${icon('xp')}−${amount(receipt.xpLost)}</span>` : ''}
-      <span class="reward" aria-label="획득 골드">${icon('gold')}+${loot.gold}</span>${rewards.join('')}</div>
+      <span class="reward" aria-label="획득 골드">${icon('gold')}+${loot.gold}</span>${rewards.join('')}</div>${loot.items.map((item) => `<article class="gear-card"><b>${escape(itemLabel(item))}</b>${this.comparisonHtml(item)}</article>`).join('')}
       <details class="help"><summary aria-label="상세 정산">ⓘ</summary>${this.receiptDetails(receipt)}</details></div>`;
   }
 
@@ -426,6 +447,14 @@ export class HubUI {
       case 'buy':
         this.commit(buy(this.save, this.shopId, this.shopCount));
         return this.showShop();
+      case 'buy-gear':
+        this.commit(buyGear(this.save, data.uid)); return this.showShop();
+      case 'refresh-shop':
+        this.commit(refreshShop(this.save)); return this.showShop();
+      case 'sell-shop':
+        this.commit(sellItem(this.save, data.uid)); return this.showShop();
+      case 'sell':
+        this.commit(sellItem(this.save, data.uid)); return this.showForge();
       case 'forge':
         this.selectedUid = null;
         return this.showForge();
