@@ -96,7 +96,7 @@ try {
     await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});
     await command('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
     for(const fallback of [false,true]) {
-      await command('Page.navigate',{url:`http://127.0.0.1:${httpPort}/arpg/?dev=1${fallback?'&paperdoll=0':''}`});await waitFor('window.__arpg');
+      await command('Page.navigate',{url:`${process.env.ARPG_TEST_URL || `http://127.0.0.1:${httpPort}/arpg/?dev=1`}${fallback?'&paperdoll=0':''}`});await waitFor('window.__arpg');
       await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js');const {instance}=await import('./js/meta/items.js');const s=createSave({name:'H1',answers:[0,0,0,0,0],createdAt:1});const armor=instance('h1-head','head_light_common_t1');s.items.push(armor);s.equipped.head=armor.uid;new SaveStore(localStorage).save(s);})()`);
       await command('Page.reload');await sleep(350);await waitFor(page('inn'));
       if(!fallback) await waitFor(`document.querySelector('.p2-hero')?.dataset.paperdollReady`);
