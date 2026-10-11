@@ -158,7 +158,7 @@ test('four next-tier recipes equip/enhance/salvage with a loss and v2 instances'
   base.stacks = { ...base.stacks, scrap: 1000, hide: 100, fang: 100, rune_shard: 100, frost_shard: 100, web: 100, enhance_stone_1: 100 };
   for (const id of ['rune_blade', 'pack_bow', 'altar_staff', 'woven_armor']) {
     assert.equal(ITEMS[id].huntTier, 2);
-    assert.equal(ITEMS[id].requiredLevel, 5);
+    assert.equal(ITEMS[id].requiredLevel, ITEMS[id].kind === 'weapon' ? 1 : 5); // weapons ungated (cocy 10-11)
     let save = craft(base, id);
     const item = save.items.find((entry) => entry.id === id);
     assert.deepEqual(Object.keys(item).sort(), ['affixes', 'enhance', 'id', 'rolledAt', 'uid']);
@@ -168,6 +168,7 @@ test('four next-tier recipes equip/enhance/salvage with a loss and v2 instances'
     assert.equal(salvage.stacks.scrap, base.stacks.scrap - RECIPES[id].scrap + Math.floor(RECIPES[id].scrap / 4));
     assert.ok(salvage.gold < base.gold);
     assert.ok(validateSave(salvage));
-    assert.throws(() => equip({ ...save, level: 4 }, item.uid), /Lv5/);
+    if (ITEMS[id].kind !== 'weapon') assert.throws(() => equip({ ...save, level: 4 }, item.uid), /Lv5/);
+    else assert.ok(equip({ ...save, level: 1 }, item.uid));
   }
 });

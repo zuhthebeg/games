@@ -285,7 +285,7 @@ test('compare contract: exact attack/HP/weight/affix deltas, empty slot, same-sl
   assert.equal(compare.lines.find(({ key }) => key === 'weight').delta, 4);
   assert.equal(compare.lines.find(({ key }) => key === 'weight').good, false);
   assert.equal(compare.weightAfter, 21); assert.equal(compare.weightLimit, 106);
-  assert.equal(compare.locked, true); assert.match(compare.lockReason, /Lv2/);
+  assert.equal(compare.locked, false); // weapons have no level gate (cocy 10-11)
   assert.equal(compare.lines.find(({ key }) => key === 'atk_pct').delta, 6);
   const head = instance('head', 'head_light_common_t1', 1, []);
   const empty = compareItems(null, head, save);

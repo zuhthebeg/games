@@ -6,6 +6,8 @@ export const BALANCE = {
   attackSpeed: { agiPerEff: .02, agiCap: .2, weightReference: 8, weightPerUnit: .0125,
     weightCap: 24, loadStart: .8, loadCap: 1.2, loadSlope: .5, min: .7, max: 1.2 },
   counter: { damage: 1.35, poise: 1.5, graceMs: 300 },
+  // cocy 10-11: monsters felt too spongy — global stage-spawn HP ×0.7 (bosses included).
+  monsterHp: 0.7,
   elite: { hp: 2.2, damage: 1.3, tint: 0xb994ed, scale: 1.15 },
   threats: [
     { hp: 1, damage: 1, gold: 1, drop: 1, rarity: {common:70,fine:27,rare:3}, bossRarity:{fine:50,rare:40,epic:10} },

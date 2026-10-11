@@ -74,6 +74,8 @@ for (const [id, base] of Object.entries(ITEMS)) {
       requiredLevel: TIER_LEVEL[base.huntTier] ?? { common: 1, fine: 2, rare: 4, epic: 6 }[rarity] };
   }
 }
+// cocy 10-11: no level gate on weapons (armor keeps its gate).
+for (const item of Object.values(ITEMS)) if (item.kind === 'weapon') item.requiredLevel = 1;
 for (let tier = 1; tier <= 3; tier++) {
   ITEMS[`enhance_stone_${tier}`] = { name: ['하급', '중급', '상급'][tier - 1] + ' 강화석', kind: 'material', weight: 0.1 };
 }

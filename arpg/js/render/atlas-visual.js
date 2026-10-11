@@ -68,7 +68,9 @@ function spriteVisual(entity, { color }, asset) {
   for (let index = 0; index < 3; index++)
     stars.star((index - 1) * 14, -62 - (index % 2) * 6, 4, 4, 2).fill(0xffd57a);
   const bar = new Graphics().rect(-entity.r, -66, entity.r * 2, 4).fill(0x1b1b18);
-  const health = new Graphics().rect(-entity.r, -66, entity.r * 2, 4).fill(0xb26d50);
+  // Drawn from x=0 and shifted left so scale.x drains right-to-left, not toward the middle.
+  const health = new Graphics().rect(0, -66, entity.r * 2, 4).fill(0xb26d50);
+  health.x = -entity.r;
   container.addChild(sprite, flash, stars, bar, health);
   let stateName = '', direction = 'E', age = 0, previousAct = null, previousDodge = null, frame = 0;
   return {

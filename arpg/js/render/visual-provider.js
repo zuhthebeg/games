@@ -136,7 +136,8 @@ function procedural(entity, { color }) {
   for (let i = 0; i < 3; i++)
     stars.star((i - 1) * 14, -62 - (i % 2) * 6, 4, 4, 2).fill(0xffd57a);
   bar.rect(-radius, -66, radius * 2, 4).fill(0x1b1b18);
-  health.rect(-radius, -66, radius * 2, 4).fill(0xb26d50);
+  health.rect(0, -66, radius * 2, 4).fill(0xb26d50); // left-anchored drain
+  health.x = -radius;
   flash.ellipse(0, -20, radius * .8, 16).circle(0, -36, radius * .58).fill(0xffffff);
   flash.visible = false;
   if (entity.eliteVariant) {
