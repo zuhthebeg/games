@@ -4,6 +4,7 @@ import { CoopLobby } from './net/lobby.js';
 import { equipmentVisual } from './render/paperdoll-state.js';
 import { emptyInput } from './sim/world.js';
 import { selectThreat, unlockedThreat } from './meta/run.js';
+import { availableStages, arrivalNotice } from './content/world-map.js';
 import { STAGES } from './content/combat.js';
 import { TICK_MS } from './sim/core.js';
 import { InputLayer } from './input.js';
@@ -117,6 +118,7 @@ try {
       renderer.warning.visible = true;
       input.enabled = true;
       hud.begin(world);
+      showArrival(roundSave, stageId);
       hud.meta(load, tracker);
       running = true;
       accumulator = 0;
@@ -150,6 +152,14 @@ try {
       hub.root.prepend(note);
     }
   }
+  // Presentation only; no new sim event or save schema. Cleared maps retain historical replay state.
+  const arrivedMaps = new Set();
+  function showArrival(save, stageId) {
+    const seen = arrivedMaps.has(stageId);
+    arrivedMaps.add(stageId);
+    hud.nodes.notice.textContent = arrivalNotice(seen ? { cleared: { [stageId]: true } } : save, stageId);
+    hud.noticeLeft = 4;
+  }
   function startCoop(stageId, threat) {
     closeCoop();
     if (!hub.save) return;
@@ -160,7 +170,7 @@ try {
     const profile = { name: localSave.name, level: localSave.level, weapon,
       mods: buildRoundMods(localSave), equipmentVisual: equipmentVisual(localSave, weapon), load: load.ratio,
       threats: Object.fromEntries(Object.keys(STAGES).map(id => [id, unlockedThreat(localSave, id)])),
-      stages: Object.keys(STAGES).filter((id, i, all) => i === 0 || localSave.cleared[all[i - 1]]) };
+      stages: availableStages(localSave) };
     coopResult = null; coopNote = ''; coopRenderReady = false; coopFinished = false; developmentRound = false;
     world = null; tracker = null; roundSave = null;
     running = false; input.reset(); input.enabled = false; renderer.root.visible = false;
@@ -188,7 +198,7 @@ try {
         if (!coopRenderReady) {
           renderer.reset(view, matchMedia('(prefers-reduced-motion: reduce)').matches);
           renderer.root.visible = renderer.warning.visible = true;
-          hud.begin(view); input.enabled = true; coopRenderReady = true;
+          hud.begin(view); showArrival(roundSave, view.round.stageId); input.enabled = true; coopRenderReady = true;
         }
         const progress = trackRound(roundSave, tracker, events, usedConsumables(roundSave, view.entities[0]));
         tracker = progress.tracker; coopLoad = progress.load.ratio;

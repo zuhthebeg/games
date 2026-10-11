@@ -1,4 +1,5 @@
-import { ITEMS, equippedItem, meetsRequirement } from '../meta/items.js';
+import { ITEMS, equippedItem, meetsRequirement, enhanceMultiplier } from '../meta/items.js';
+import { AFFIX_LABELS } from '../meta/affixes.js';
 import { compareItems } from '../meta/compare.js';
 import { icon, itemIcon } from './icons.js';
 import { equipmentVisual, paperdollEnabled } from '../render/paperdoll-state.js';
@@ -80,4 +81,23 @@ export function socketsHtml(save) {
       + ` aria-label="${SLOT_NAMES[slot]} · ${item ? escape(itemLabel(item)) : '비어 있음'}">${face}`
       + `<span>${item ? escape(ITEMS[item.id].name) : `${SLOT_NAMES[slot]} · 비어 있음`}</span></button>`;
   }).join('');
+}
+
+// Actual model contributions, including zeros: own-item details must not disappear into deltas.
+export function itemDetailsHtml(item) {
+  const def = ITEMS[item.id], mult = enhanceMultiplier(item.enhance);
+  const row = (key, label, value) => `<div data-detail="${escape(key)}"><dt>${escape(label)}</dt><dd>${escape(value)}</dd></div>`;
+  const rows = [row('family', '무기 계열 / 방어구', def.family ? {blade:'검',bow:'활',focus:'지팡이'}[def.family] : {light:'경장',medium:'중장',heavy:'중갑'}[def.armorClass] || SLOT_NAMES[def.slot]),
+    row('rarity', '등급', GRADES[def.rarity]), row('str', '필요 힘', def.requiredStr || 0), row('weight', '무게', `${amount(def.weight)} kg`)];
+  if (def.power !== undefined) {
+    rows.push(row('power', '기본 공격 배율', `×${amount(def.power)}`),
+      row('enhance', `강화 +${item.enhance} 공격 기여`, `+${amount(def.power * (mult - 1))} 배율`),
+      row('attack', '강화 포함 공격 배율', `×${amount(def.power * mult)}`));
+  } else {
+    rows.push(row('hp-base', '기본 HP 보호 기여', `${amount(def.hp || 0)} HP`),
+      row('enhance', `강화 +${item.enhance} HP 기여`, `+${amount((def.hp || 0) * (mult - 1))} HP`),
+      row('hp', '강화 포함 HP 보호 기여', `${amount((def.hp || 0) * mult)} HP`));
+  }
+  const affixes = (item.affixes || []).map(({k,v}) => row(k, AFFIX_LABELS[k] || k, `+${amount(v)}${k.endsWith('_pct') ? '%' : k === 'capacity_flat' ? ' kg' : k === 'hp_flat' ? ' HP' : ''}`));
+  return `<section class="item-details"><h3>장비 상세</h3><dl class="p2-lines">${rows.join('')}</dl><h3>전체 옵션</h3>${affixes.length ? `<dl class="p2-lines">${affixes.join('')}</dl>` : '<p class="minor">추가 옵션 없음</p>'}<p class="minor">방어구는 최대 HP를 더한다. 피해 감소 DEF 수치는 없다.${def.power !== undefined ? ' 실전 피해는 기술 기본 피해 × 캐릭터 공격 배율(레벨·능력치·전체 착용 옵션 포함).' : ''}</p></section>`;
 }
