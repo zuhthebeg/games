@@ -1,0 +1,107 @@
+{
+  "phoneEvidence": false,
+  "query": "paperdoll=0",
+  "existingFullRegression": {
+    "ok": true,
+    "canvas": true,
+    "sprites": {
+      "playerKits": [
+        "hero-sword",
+        "hero-bow",
+        "hero-focus"
+      ],
+      "monsters": [
+        "goblin-grunt",
+        "goblin-archer",
+        "goblin-chief"
+      ],
+      "procedural": [
+        "iron_boar"
+      ],
+      "rendererReadonly": true,
+      "fallback": true
+    },
+    "onboarding": "name \u2192 5 answers \u2192 S1 clear@900 \u2192 allocate 1 \u2192 inn",
+    "shop": "supplies + scroll cap; seeded gear buy \u2192 sold-out \u2192 sell at loss \u2192 paid refresh \u2192 reload",
+    "S2": "sortie confirmed \u2192 reload \u2192 inn; threat2 segment \u2192 launch frozen T2 \u2192 return",
+    "newStages": "pre-S5 v1 \u2192 S5 board unlock \u2192 wolf \u00d72 / S6 guardian+spirit / S7 spider procedural \u2192 return",
+    "persisted": {
+      "gold": 20,
+      "potions": 4,
+      "level": 2
+    },
+    "fullSaveRestored": true,
+    "lastReceiptRestored": true,
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "hotspots": 6,
+      "buttons": 6,
+      "inside": true,
+      "noOverlap": true
+    },
+    "combat": {
+      "tick": 166,
+      "hp": 116,
+      "dodgeTick": 81,
+      "hits": 4,
+      "playerHits": 4
+    },
+    "feedback": {
+      "tick": 166,
+      "hits": 4,
+      "playerHits": 4,
+      "maxFrozen": 2,
+      "maxParticles": 9,
+      "maxVoices": 2,
+      "pools": {
+        "particles": 56,
+        "numbers": 32,
+        "effects": 40
+      },
+      "audio": {
+        "muted": false,
+        "state": "running",
+        "loaded": [
+          "swing",
+          "hit",
+          "critical",
+          "dodge",
+          "hurt",
+          "kill",
+          "level-up"
+        ],
+        "voices": 1
+      }
+    },
+    "touch": true,
+    "edgeLatch": true,
+    "readonlyDebug": true,
+    "weapons": [
+      "blade",
+      "bow",
+      "focus"
+    ],
+    "manaPotionE": true,
+    "innAutoRecovery": [
+      "clear",
+      "death",
+      "return_scroll",
+      "reload"
+    ],
+    "deathCause": true,
+    "scroll": "progress \u2192 returned",
+    "visibilityPause": true,
+    "forge": "craft \u2192 enhance \u2192 equip \u2192 unequip \u2192 dismantle \u2192 reload",
+    "debugMode": {
+      "mobile": true,
+      "desktopBackquote": true,
+      "gearSet": 20,
+      "receiptGold": 5,
+      "disabledNoImport": true
+    },
+    "resetDoubleConfirm": true,
+    "corruptBackup": true,
+    "consoleErrors": 0
+  }
+}

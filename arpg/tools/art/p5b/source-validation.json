@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "offlineSources": [
+    {
+      "model": "Knight",
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+      "matchesPriorOfficialBytes": true
+    },
+    {
+      "model": "Barbarian",
+      "sha256": "cefc311a0e10c7858b6141f5ada7e33268727564fb8ac1347aab97d000669cc6",
+      "matchesPriorOfficialBytes": true
+    },
+    {
+      "model": "Mage",
+      "sha256": "cf898585da33fab50c724d31605fb931eb2912e6d2280092141e98ca81ad507d",
+      "matchesPriorOfficialBytes": true
+    }
+  ],
+  "licenseSHA256": "ae322141814056dda0deea7540d74c41d87aee1da319977cd1bd84ee5a923629",
+  "newNetworkModels": 0
+}

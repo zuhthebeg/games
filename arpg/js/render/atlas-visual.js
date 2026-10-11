@@ -1,5 +1,7 @@
 import { BALANCE } from '../content/balance.js';
-import { Assets, Container, Graphics, Sprite } from '../../vendor/pixi-8.22.0.min.mjs';
+import { Assets, Container, Graphics, Sprite, Texture, Rectangle } from '../../vendor/pixi-8.22.0.min.mjs';
+import { paperdolls } from './paperdoll-library.js';
+import { paperdollEnabled } from './paperdoll-state.js';
 import { AtlasLibrary } from './atlas-library.js';
 import { ATLAS_IDS, visualKey, atlasDirection, atlasAnimation, atlasFrame, atlasScale } from './atlas-state.js';
 
@@ -25,13 +27,24 @@ function lazyVisual(entity, options, library, fallbackFactory) {
   let current = fallbackFactory(entity, options);
   let destroyed = false;
   let mode = 'procedural';
+  let lease;
+  const controller = new AbortController();
   container.addChild(current.container);
-  library.load(visualKey(entity)).then((asset) => {
+  const load = entity.kind === 'player' && options.equipment && paperdollEnabled()
+    ? (async () => {
+      try {
+        lease = await paperdolls.acquire(options.equipment, controller.signal);
+        if (destroyed) { lease.release(); lease = null; return null; }
+        return paperdollTextures(lease.asset);
+      } catch { lease?.release(); lease = null; if (destroyed) return null; }
+      return library.load(visualKey(entity));
+    })() : library.load(visualKey(entity));
+  load.then((asset) => {
     if (destroyed || !asset) return;
     const next = spriteVisual(entity, options, asset);
     current.destroy();
     current = next;
-    mode = 'atlas';
+    mode = asset.descriptor ? 'paperdoll' : 'atlas';
     container.addChild(current.container);
   }).catch(() => {
     // Invalid/unsupported art is never a fatal gameplay error.
@@ -45,11 +58,28 @@ function lazyVisual(entity, options, library, fallbackFactory) {
     },
     destroy() {
       destroyed = true;
+      controller.abort();
       current.destroy();
+      lease?.release();
       container.removeFromParent();
       container.destroy({ children: true });
     },
   };
+}
+
+function paperdollTextures(asset) {
+  if (asset.animations) return asset;
+  const source = Texture.from(asset.canvas), textures = {};
+  for (const name of asset.manifest.frames) {
+    const {rect,trim} = asset.manifest.layout.frames[name];
+    textures[name] = new Texture({source:source.source,frame:new Rectangle(...rect),
+      orig:new Rectangle(0,0,128,128),trim:new Rectangle(...trim)});
+  }
+  asset.animations = Object.fromEntries(Object.entries(asset.manifest.animations)
+    .map(([name,frames])=>[name,frames.map(frame=>textures[frame])]));
+  asset.anchor=asset.manifest.anchor;asset.fps=asset.manifest.fps;
+  asset.disposeTextures = () => { Object.values(textures).forEach(texture=>texture.destroy()); source.destroy(true); };
+  return asset;
 }
 
 function spriteVisual(entity, { color }, asset) {
@@ -77,6 +107,7 @@ function spriteVisual(entity, { color }, asset) {
     container,
     get debug() {
       return { id: asset.id, state: stateName, direction, frame, tint: sprite.tint, scale: sprite.scale.x,
+        equipment: asset.descriptor || null,
         textureLoaded: sprite.texture.source.width > 0 && sprite.texture.source.height > 0 };
     },
     update(state, animation, deltaTime) {
