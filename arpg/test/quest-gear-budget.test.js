@@ -99,6 +99,20 @@ test('weight overflow spends slots once; training/empty abort grant no gear and 
   }
 });
 
+test('selling/storing already-awarded chief cannot mint a third gear at clear settlement', () => {
+  const save = rewardSave('S4', 3, true);
+  const seed = Array.from({ length: 100 }, (_, i) => i + 1).find(i => createTracker(i).gearBudget === 2);
+  const tracker = trackRound(save, createTracker(seed), questEvents('S4', seed, 3, true)).tracker;
+  assert.equal(tracker.gearAwarded, 2);
+  assert.equal(tracker.tempLoot.chiefAwarded, true);
+  tracker.tempLoot.items = []; // both already-awarded items sold/stored, not a fresh budget
+  const result = settle(save, JSON.parse(JSON.stringify(tracker)), 'S4');
+  assert.equal(result.receipt.lootKept.items.length, 0);
+  assert.deepEqual(result.save.items, save.items);
+  assert.equal(result.save.flags.chiefPity, true);
+  assert.ok(validateSave(result.save));
+});
+
 test('settlement boundary includes chief fallback in hard cap, replaces weaker gear only', () => {
   const save = rewardSave('S4', 1, true);
   const items = [instance('a','iron_sword'), instance('b','seal_staff_epic'), instance('c','cloth_tunic')];

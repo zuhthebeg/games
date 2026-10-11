@@ -329,3 +329,10 @@ exercise boss-last ordering, overflow, empty aborts, JSON tracker continuation,
 SaveStore reload, repeated-seed UID collisions, unchanged non-gear rolls and
 actual 2/4-player loopback event-journal settlement/duplicate delivery.
 No parent main hook, networking authority or save migration is required.
+
+An optional round-loot `chiefAwarded` marker travels through the unchanged main
+settlement API. It records a successfully accepted S4 chief maul even if its
+item is subsequently sold/stored, preventing the clear fallback from minting a
+third piece. It adds no required save fields or schema version; persisted receipt
+validation accepts optional loot metadata. The budget counter remains on the
+tracker, and never uses the currently carried item count to refill slots.

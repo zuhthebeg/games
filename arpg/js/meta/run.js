@@ -100,8 +100,12 @@ export function trackRound(save, tracker, events, used = {}) {
     for (const item of gear) {
       next.gearAwarded++;
       if (boss) next.bossGearAwarded = true;
-      if (pickup(item.id, 1, item)) picked.push(item.id);
-      else rejected = true;
+      if (pickup(item.id, 1, item)) {
+        picked.push(item.id);
+        // Main settles tempLoot, not the whole tracker. Keep this earned guarantee marker
+        // with the loot so sale/storage cannot trigger another chief award at settlement.
+        if (event.stageId === 'S4' && item.id === 'chief_maul') next.tempLoot.chiefAwarded = true;
+      } else rejected = true;
     }
     fx.push({ type: 'drop', x: event.x, y: event.y, gold: drop.gold, picked, rejected });
   }
@@ -174,7 +178,7 @@ export function settleRound(save, { stageId, terminal, depositedXp = 0, tempLoot
       next.shopRefresh++; next.paidRefreshes = 0; next.shopBought = [];
     }
     if (stageId === 'S4' && !save.flags.chiefPity) {
-      if (!tempLoot.items.some((item) => item.id === 'chief_maul')) {
+      if (!tempLoot.chiefAwarded && !tempLoot.items.some((item) => item.id === 'chief_maul')) {
         const item = instance(uniqueUid(next, 'pity:chief_maul'), 'chief_maul', save.createdAt >>> 0);
         if (receipt.lootKept.items.length === 2) {
           // Legacy/direct callers may provide two items. Replace the weaker one within the cap.
