@@ -5,6 +5,7 @@ import { VisualProvider } from './visual-provider.js';
 import { FEEL, impactTier, numberScale, kickEnvelope } from './feel.js';
 import { DANGER_COLORS } from '../content/monsters.js';
 import { ABILITIES } from '../content/combat.js';
+import { bakeBiome } from './biome-map.js';
 const clamp = (view, a, b) => Math.max(a, Math.min(b, view));
 export class ArenaRenderer {
   constructor(app, provider = new VisualProvider()) {
@@ -109,22 +110,37 @@ export class ArenaRenderer {
     this.numberSerial = this.burstSerial = 0;
     this.camera.x = world.entities[0].x;
     this.camera.y = world.entities[0].y;
-    const { w, h } = world.arena, graphic = this.ground;
-    graphic.clear().rect(0, 0, w, h).fill(0x202923);
-    for (let y = 0; y < h; y += 64)
-      for (let x = 0; x < w; x += 64)
-        graphic.rect(x + 1, y + 1, 62, 62).fill((x / 64 + y / 64) % 2 ? 0x222b25 : 0x1e2722);
-    for (let i = 0; i < 100; i++) {
-      const x = (i * 431) % w, y = (i * 167) % h;
-      graphic.moveTo(x, y).lineTo(x + 8, y + 3).stroke({ color: 0x394034, width: 1 });
+    // Dispose the previous map before allocating the next one: never accumulate stage textures.
+    if (this.biomeMap) {
+      this.biomeMap.sprite.destroy();
+      this.biomeMap.texture.destroy(true);
+      this.biomeMap = null;
     }
-    graphic
-      .rect(5, 5, w - 10, h - 10)
-      .stroke({ color: 0x716447, width: 10 })
-      .rect(18, 18, w - 36, h - 36)
-      .stroke({ color: 0x3e493b, width: 2 });
-    for (let x = 42; x < w; x += 120)
-      graphic.circle(x, 26, 3).circle(x, h - 26, 3).fill(0xae8545);
+    const { w, h } = world.arena;
+    const legacy = !this.app.renderer || new URLSearchParams(globalThis.location?.search || '').get('biome') === '0';
+    this.ground.visible = legacy;
+    this.ground.clear();
+    if (!legacy) {
+      this.biomeMap = bakeBiome(this.app.renderer, world.round?.stageId || 'S1', w, h);
+      this.layers.ground.addChild(this.biomeMap.sprite);
+    } else {
+      const graphic = this.ground;
+      graphic.clear().rect(0, 0, w, h).fill(0x202923);
+      for (let y = 0; y < h; y += 64)
+        for (let x = 0; x < w; x += 64)
+          graphic.rect(x + 1, y + 1, 62, 62).fill((x / 64 + y / 64) % 2 ? 0x222b25 : 0x1e2722);
+      for (let i = 0; i < 100; i++) {
+        const x = (i * 431) % w, y = (i * 167) % h;
+        graphic.moveTo(x, y).lineTo(x + 8, y + 3).stroke({ color: 0x394034, width: 1 });
+      }
+      graphic
+        .rect(5, 5, w - 10, h - 10)
+        .stroke({ color: 0x716447, width: 10 })
+        .rect(18, 18, w - 36, h - 36)
+        .stroke({ color: 0x3e493b, width: 2 });
+      for (let x = 42; x < w; x += 120)
+        graphic.circle(x, 26, 3).circle(x, h - 26, 3).fill(0xae8545);
+    }
     this.snapshot(world);
   }
 
