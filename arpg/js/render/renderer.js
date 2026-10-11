@@ -4,6 +4,7 @@ import { shapePath, pattern } from './shapes.js';
 import { VisualProvider } from './visual-provider.js';
 import { FEEL, impactTier, numberScale, kickEnvelope } from './feel.js';
 import { DANGER_COLORS } from '../content/monsters.js';
+import { ABILITIES } from '../content/combat.js';
 const clamp = (view, a, b) => Math.max(a, Math.min(b, view));
 export class ArenaRenderer {
   constructor(app, provider = new VisualProvider()) {
@@ -419,7 +420,7 @@ export class ArenaRenderer {
         if (!graphic) {
           graphic = new Graphics();
           const abilityId = particle.abilityId;
-          if (abilityId === 'arrow' || abilityId === 'volley')
+          if (ABILITIES[abilityId]?.family === 'bow' && !ABILITIES[abilityId].element)
             graphic
               .moveTo(-FEEL.trail.tailLength, 0).lineTo(-12, 0)
               .stroke({ color: 0xd2c497, width: 3, alpha: FEEL.trail.tailAlpha })
@@ -431,7 +432,8 @@ export class ArenaRenderer {
           else if (abilityId === 'sling_stone')
             graphic.circle(0, 0, particle.r).fill(0xa29c86).circle(-2, -2, 2).fill(0xc9c5b3);
           else {
-            const color = abilityId === 'ember_bolt' ? 0xff9856 : 0xa5e8ef;
+            const element = ABILITIES[abilityId]?.element;
+            const color = element === 'fire' ? 0xff9856 : element === 'frost' ? 0x9fd8ff : 0xa5e8ef;
             graphic
               .poly([-FEEL.trail.tailLength, 0, -3, -particle.r * .6, -3, particle.r * .6])
               .fill({ color, alpha: FEEL.trail.tailAlpha })

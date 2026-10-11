@@ -15,7 +15,7 @@ export const ABILITIES = {
     damage: 14, poise: 14, knockback: 140, family: 'blade', cancelInto: ['windup', 'recovery'],
   },
   lunge: {
-    windupMs: 160, lockMs: 0, activeMs: 170, recoveryMs: 260, cooldownMs: 5000,
+    name: '돌진 베기', windupMs: 160, lockMs: 0, activeMs: 170, recoveryMs: 260, cooldownMs: 5000,
     delivery: 'dash', dash: { distance: 190, bodyPad: 14 },
     damage: 26, poise: 40, knockback: 260, family: 'blade', cancelInto: ['recovery'],
   },
@@ -27,7 +27,7 @@ export const ABILITIES = {
     damage: 10, poise: 6, knockback: 60, family: 'bow', cancelInto: ['windup', 'recovery'],
   },
   volley: {
-    windupMs: 240, lockMs: 0, activeMs: 34, recoveryMs: 260, cooldownMs: 5000,
+    name: '산개 사격', windupMs: 240, lockMs: 0, activeMs: 34, recoveryMs: 260, cooldownMs: 5000,
     delivery: 'projectile',
     projectile: { speed: 700, radius: 7, rangePx: 520, count: 5, spreadDeg: 44, pierce: 0 },
     damage: 9, poise: 8, knockback: 80, family: 'bow', cancelInto: ['recovery'],
@@ -40,10 +40,45 @@ export const ABILITIES = {
     damage: 8, poise: 5, knockback: 40, family: 'focus', cancelInto: ['windup', 'recovery'],
   },
   ember_bolt: {
-    windupMs: 380, lockMs: 0, activeMs: 34, recoveryMs: 240, cooldownMs: 2600, manaCost: 14,
+    name: '화염탄', windupMs: 380, lockMs: 0, activeMs: 34, recoveryMs: 240, cooldownMs: 2600, manaCost: 14,
     delivery: 'projectile',
     projectile: { speed: 520, radius: 12, rangePx: 560, count: 1, spreadDeg: 0, pierce: 0, explode: { radius: 78 } },
     damage: 30, poise: 30, knockback: 180, family: 'focus', element: 'fire', cancelInto: ['recovery'],
+  },
+
+  // ---------- learnable skills (교관 기술교본 / 마법교본, cocy 10-11). One skill slot per weapon family.
+  whirl: {
+    name: '회전 베기', windupMs: 220, lockMs: 0, activeMs: 120, recoveryMs: 300, cooldownMs: 6000,
+    delivery: 'shape', shape: { type: 'circle', radius: 105, offset: 0 },
+    damage: 22, poise: 30, knockback: 200, family: 'blade', cancelInto: ['recovery'],
+  },
+  heavy_cleave: {
+    name: '내려찍기', windupMs: 420, lockMs: 0, activeMs: 80, recoveryMs: 380, cooldownMs: 6500,
+    delivery: 'shape', shape: { type: 'cone', range: 135, arc: 70 },
+    damage: 48, poise: 70, knockback: 300, family: 'blade', cancelInto: ['recovery'],
+  },
+  pierce_shot: {
+    name: '관통 화살', windupMs: 300, lockMs: 0, activeMs: 34, recoveryMs: 240, cooldownMs: 5000,
+    delivery: 'projectile',
+    projectile: { speed: 1000, radius: 8, rangePx: 720, count: 1, spreadDeg: 0, pierce: 4 },
+    damage: 24, poise: 18, knockback: 90, family: 'bow', cancelInto: ['recovery'],
+  },
+  blast_arrow: {
+    name: '폭발 화살', windupMs: 320, lockMs: 0, activeMs: 34, recoveryMs: 260, cooldownMs: 6000,
+    delivery: 'projectile',
+    projectile: { speed: 640, radius: 9, rangePx: 560, count: 1, spreadDeg: 0, pierce: 0, explode: { radius: 80 } },
+    damage: 26, poise: 26, knockback: 160, family: 'bow', element: 'fire', cancelInto: ['recovery'],
+  },
+  frost_lance: {
+    name: '서리 창', windupMs: 300, lockMs: 0, activeMs: 34, recoveryMs: 220, cooldownMs: 2400, manaCost: 12,
+    delivery: 'projectile',
+    projectile: { speed: 820, radius: 10, rangePx: 620, count: 1, spreadDeg: 0, pierce: 2 },
+    damage: 24, poise: 20, knockback: 100, family: 'focus', element: 'frost', cancelInto: ['recovery'],
+  },
+  flame_ring: {
+    name: '화염 고리', windupMs: 360, lockMs: 0, activeMs: 100, recoveryMs: 280, cooldownMs: 5500, manaCost: 18,
+    delivery: 'shape', shape: { type: 'circle', radius: 130, offset: 0 },
+    damage: 34, poise: 40, knockback: 240, family: 'focus', element: 'fire', cancelInto: ['recovery'],
   },
 
   // ---------- monsters

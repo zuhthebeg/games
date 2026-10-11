@@ -52,6 +52,8 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
     pendingCounter: null,
     dodgeCdMult: mods.dodgeCdMult ?? 1, iframeBonusMs: mods.iframeBonusMs ?? 0,
     potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0,
+    // Equipped skill (skill books): must belong to the weapon family, else the kit default.
+    skill: ABILITIES[mods.skill]?.family === weapon ? mods.skill : WEAPONS[weapon].skill,
     weapon, act: null, cds: {},
     dodge: { cdLeft: 0, iframeLeft: 0, dashLeft: 0, dx: 0, dy: 0, startedTick: -9999, perfectPaid: false },
     bufferDodge: 0, bufferDodgeDir: [0, 0],
@@ -221,11 +223,11 @@ function stepPlayer(world, p, inp) {
 
   const w = WEAPONS[p.weapon];
   if (inp.skillEdge && canCancel(p.act)) {
-    const def = ABILITIES[w.skill];
-    if (!(p.cds[w.skill] > 0) && p.mp >= (def.manaCost || 0)) {
+    const def = ABILITIES[p.skill];
+    if (!(p.cds[p.skill] > 0) && p.mp >= (def.manaCost || 0)) {
       if (p.act) endAct(world, p, true);
       p.mp -= def.manaCost || 0;
-      startAct(world, p, w.skill, resolveAim(world, p, inp, mlen));
+      startAct(world, p, p.skill, resolveAim(world, p, inp, mlen));
     }
   }
   // Explicit controls win; a pending counter reserves the next basic slot,
@@ -371,7 +373,7 @@ const PHASES = ['windup', 'lock', 'active', 'recovery'];
 
 function startAct(world, ent, abilityId, facing) {
   const def = ABILITIES[abilityId];
-  const rate = ent.kind === 'player' && [WEAPONS[ent.weapon].basic, WEAPONS[ent.weapon].skill].includes(abilityId)
+  const rate = ent.kind === 'player' && [WEAPONS[ent.weapon].basic, ent.skill].includes(abilityId)
     ? attackRate(ent.attackSpeedBonus, ent.weaponWeight, ent.loadRatio) : 1;
   const phaseTicks = Object.fromEntries(PHASES.map((phase) => {
     const ms = def[`${phase}Ms`] || 0;
