@@ -62,5 +62,13 @@ test('delivered WebPs match source manifest and stay below 200 KiB total', () =>
   }
   assert.equal(records.filter(r=>r.method.startsWith('original')).length, 26);
   assert.equal(records.filter(r=>r.method.startsWith('reviewed')).length, 5);
+  assert.equal(records.filter(r=>r.method.startsWith('derived')).length, 4);
+  assert.equal(records.length, 35);
   assert.ok(bytes < 200*1024, `${bytes} bytes`);
+});
+
+test('four enchant scrolls use distinct art and never share the return-scroll icon', () => {
+  const paths = ['scroll_enchant_weapon', 'scroll_enchant_armor', 'scroll_blessed_weapon', 'scroll_blessed_armor'].map(id => itemArtPath(itemArtKey(id, ITEMS[id])));
+  assert.equal(new Set(paths).size, 4);
+  assert.ok(paths.every(path=>path !== itemArtPath('return_scroll')));
 });

@@ -33,5 +33,6 @@ export function equipmentVisual(save, overrideKit) {
     weaponColour: weapon?.family === kit ? WEAPON_COLOURS[base] || [255,255,255] : [255,255,255],
     colours: ['body', 'hands', 'feet'].map(slot => slotColour(def(slot))),
   };
-  return { ...descriptor, key: JSON.stringify(descriptor) };
+  // Enhancement is presentation metadata, not a baked atlas/cache-key variant.
+  return { ...descriptor, key: JSON.stringify(descriptor), enhance: equippedItem(save, 'weapon')?.enhance || 0 };
 }

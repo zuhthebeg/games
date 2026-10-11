@@ -246,5 +246,37 @@
     "method": "reviewed existing spudsquad art; alpha crop, Lanczos fit 84px, 96px lossless WebP",
     "sha256": "fda4bd928107a031b0daf9f3925cfd170653380afe11e4e0275c6fe646dff556",
     "bytes": 9532
+  },
+  {
+    "file": "scroll-enchant-weapon.webp",
+    "source": "arpg/assets/items/scroll.webp",
+    "sourceSha256": "fda4bd928107a031b0daf9f3925cfd170653380afe11e4e0275c6fe646dff556",
+    "method": "derived local scroll.webp; Pillow 4x red weapon/blue armor wax seal, sword/shield motif; blessed inner gold alpha border; 96px lossless WebP; no AI",
+    "sha256": "1d14758beefbb37bbe07c68949ca6208f3e1be8b0885816e671aa03e3c06b4de",
+    "bytes": 10820
+  },
+  {
+    "file": "scroll-enchant-armor.webp",
+    "source": "arpg/assets/items/scroll.webp",
+    "sourceSha256": "fda4bd928107a031b0daf9f3925cfd170653380afe11e4e0275c6fe646dff556",
+    "method": "derived local scroll.webp; Pillow 4x red weapon/blue armor wax seal, sword/shield motif; blessed inner gold alpha border; 96px lossless WebP; no AI",
+    "sha256": "f2799ff27937101f27a283c62002acfa08f1df7ca4ec1f4fd8d4536665f1b504",
+    "bytes": 10920
+  },
+  {
+    "file": "scroll-blessed-weapon.webp",
+    "source": "arpg/assets/items/scroll.webp",
+    "sourceSha256": "fda4bd928107a031b0daf9f3925cfd170653380afe11e4e0275c6fe646dff556",
+    "method": "derived local scroll.webp; Pillow 4x red weapon/blue armor wax seal, sword/shield motif; blessed inner gold alpha border; 96px lossless WebP; no AI",
+    "sha256": "5027d952b12cf3bfdf43540b1a5107ffc820afd79cbdd8f34eb9314ed9dfe085",
+    "bytes": 11580
+  },
+  {
+    "file": "scroll-blessed-armor.webp",
+    "source": "arpg/assets/items/scroll.webp",
+    "sourceSha256": "fda4bd928107a031b0daf9f3925cfd170653380afe11e4e0275c6fe646dff556",
+    "method": "derived local scroll.webp; Pillow 4x red weapon/blue armor wax seal, sword/shield motif; blessed inner gold alpha border; 96px lossless WebP; no AI",
+    "sha256": "13cd4ef63d9ad8eb2c2d30d618cff3a341d6a74e421fb4bdf09e42028711ba30",
+    "bytes": 11678
   }
 ]

@@ -17,6 +17,7 @@ import { enchant, enchantPreview, scrollsFor, craftScroll, crackGreaterStone } f
 import { ENCHANT, STONE, GREATER_STONE, SCROLLS } from '../meta/economy.js';
 import { createSave } from '../meta/save.js';
 import { icon, itemIcon } from './icons.js';
+import { playEnchantFx } from './enchant-fx.js';
 import {
   escape, amount, itemLabel, emblem, isWorn, SLOT_NAMES, GRADES, GRADE_ORDER,
   linesHtml, comparisonFor, cardHtml, portraitHtml, socketsHtml,
@@ -133,6 +134,7 @@ export class HubUI {
   }
 
   show(html, page, { shell = false } = {}) {
+    this.enchantFx?.close();
     this.root.querySelectorAll('dialog[open]').forEach(dialog => dialog.close());
     this.onOverlay();
     document.querySelector('#hud').hidden = true;
@@ -553,7 +555,7 @@ export class HubUI {
       : preview.risky ? `성공 ${pct(preview.chance)} · 실패 시 장비 파괴 (강화석 ${preview.refund[STONE]}개 남음)`
         : `안전 구간 · 성공 확정${preview.blessed ? ' · 축복: 무작위 +1~+3 (최대 +' + ENCHANT.safe + ')' : ''}`;
     const html = `<section class="forge-work ${preview.risky ? 'risky' : ''}"><div class="p2-item-heading">${emblem(item)}<div><h3>${escape(itemLabel(item))}${target}</h3>`
-      + `<small class="${preview.risky ? 'loss' : ''}">${odds}</small></div></div>`
+      + `<small class="${preview.risky ? 'loss' : ''}">${odds}</small>${!preview.maxed ? `<strong class="forge-odds">${pct(preview.chance)}<span> 성공 확률</span></strong>` : ''}</div></div>`
       + `${preview.maxed ? '' : linesHtml(compareItems(item, projected, this.save))}<div class="p2-stones scroll-picker" role="group" aria-label="사용할 주문서">${picker}</div>`
       + `${!preview.maxed && preview.have < 1 ? `<p class="p2-hint">주문서 부족 · 아래에서 강화석으로 제작</p>` : ''}`
       + `<div class="p2-three">${button('장착', 'equip', uid, worn || comparisonFor(item, this.save).locked)}`
@@ -755,6 +757,7 @@ export class HubUI {
   }
 
   action(action, data) {
+    if (this.enchantFx?.active) return;
     switch (action) {
       case 'name': return this.showName();
       case 'answer':
@@ -849,11 +852,14 @@ export class HubUI {
         return this.showForge();
       case 'enhance': {
         // Commit first: the outcome is saved before any animation, so reload cannot reroll it.
-        const { save, result } = enchant(this.save, data.uid, data.scroll || this.forgeScroll);
+        const scrollId = data.scroll || this.forgeScroll;
+        const { save, result } = enchant(this.save, data.uid, scrollId);
         this.commit(save);
         this.lastEnchant = result;
         if (result.outcome === 'destroyed') this.selectedUid = null;
-        return this.showForge();
+        this.showForge();
+        this.enchantFx = playEnchantFx(this.root, result, scrollId);
+        return;
       }
       case 'craft-scroll':
         this.commit(craftScroll(this.save, data.family));
@@ -862,7 +868,9 @@ export class HubUI {
         const { save, result } = crackGreaterStone(this.save, data.family);
         this.commit(save);
         this.lastCrack = result;
-        return this.showForge();
+        this.showForge();
+        this.enchantFx = playEnchantFx(this.root, result);
+        return;
       }
       case 'craft':
         this.commit(craft(this.save, data.id));

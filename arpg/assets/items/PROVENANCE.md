@@ -2,7 +2,7 @@
 
 ## Scope and actual method
 
-31 delivered transparent 96×96 local lossless WebPs, **157,114 encoded bytes** (153.43 KiB). 26 original locally illustrated 2D pictures + 5 reused spudsquad pictures. **New AI/SDXL images: 0.** No external URLs, paid provider, downloads, screenshots, shared assets-ledger writes, or spudsquad changes.
+35 delivered transparent 96×96 local lossless WebPs, **202,112 encoded bytes**. 26 original locally illustrated 2D pictures + 5 reused spudsquad pictures + 4 local enchant-scroll derivatives. **New AI/SDXL images: 0.** No external URLs, paid provider, downloads, screenshots, shared assets-ledger writes, or spudsquad changes.
 
 The Windows native diffusion-win Python was reachable, but the generation preflight failed because `C:\Users\user\ai-tools\models\luminarqmix-v7\model_index.json` was absent. `arpg/tools/item-art-generate.py` records the unexecuted prompt/seed contract and requires the local model; its prompts were **not** used to produce delivered pixels. No WSL SDXL or alternate-model inference occurred.
 
@@ -22,7 +22,7 @@ Repository sources resolved under `/home/cocy/.openclaw/workspace/tmp/worktrees/
 | fang.webp | `/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/spudsquad/assets/item_vampire_fang.webp` | `5feaa948be24d3148b417f78e539f60fd6fcb543da317555519f1668eee354a0` |
 | scroll.webp | `/home/cocy/.openclaw/workspace/tmp/worktrees/arpg-p2impl/spudsquad/assets/item_wisdom_scroll.webp` | `62cde2a4a5deee9ccbf328fb50657fe00ed3ea6f174a7df89a9a3e13948a7d52` |
 
-Every output SHA-256, source SHA-256, absolute source path, exact encoded bytes and processing method is in `manifest.json`. Original drawings reference the builder script SHA; there is no hidden source PNG. Reused pictures keep their original colours and shape, alpha-crop to the nontransparent bounds, Lanczos-fit to 84px and center in a 96px square with transparent margin. Lossless WebP preserves the resulting RGBA pixels.
+Every output SHA-256, source SHA-256, source path, exact encoded bytes and processing method is in `manifest.json`. Original drawings reference the builder script SHA; there is no hidden source PNG. Reused pictures keep their original colours and shape, alpha-crop to the nontransparent bounds, Lanczos-fit to 84px and center in a 96px square with transparent margin. Lossless WebP preserves the resulting RGBA pixels.
 
 ## Mapping and limitations
 
@@ -46,4 +46,10 @@ node arpg/test/item-art-browser-smoke.mjs
 
 Source-only contact-sheet review at actual 48/64px: consistent dark outlines/brass and readable distinct bow strings, blades, helmet/hood, torso, pairs of gloves/boots, I/II/III stones, potion colours, scrap/leather/mineral/web. Reused staffs have a more rounded painted style but remain readable. No screenshots were taken. Automated checks cover RGBA decode, dimensions, fully transparent outer rows/columns, visibility at 48/64px, budget, all real item IDs, existing UI paths in Chromium at 360×640/390×844/1280×900 and actual decoder-failure recovery. Machine geometry and source-art review do not claim real-phone thumb or screen-reader testing.
 
-Final verification: 123/123 Node tests; stamp check PASS; 31/31 RGBA/transparent-border/48·64px checks; Chromium P2 real UI at all three viewports, 43 image/geometry audits, all 232 item IDs resolving 31 decoded paths, purchase/enhance/dismantle-cancel, native touch inventory + Enter comparison + Escape close, and real invalid-byte SVG fallback/recovery PASS. Receipt/reveal picture decode uses the existing builders with an isolated receipt fixture (3 images), not a new live reward settlement. Normal console/HTTP errors 0, screenshots 0. Evidence logs/report are recorded in the integration result, not the shared ledger.
+Prior base-art verification (before enchant variants): 123/123 Node tests; stamp check PASS; 31/31 RGBA/transparent-border/48·64px checks; Chromium P2 real UI at all three viewports, 43 image/geometry audits, all 232 item IDs resolving 31 decoded paths, purchase/enhance/dismantle-cancel, native touch inventory + Enter comparison + Escape close, and real invalid-byte SVG fallback/recovery PASS. Receipt/reveal picture decode uses the existing builders with an isolated receipt fixture (3 images), not a new live reward settlement. Normal console/HTTP errors 0, screenshots 0. Evidence logs/report are recorded in the integration result, not the shared ledger.
+
+## Enchant-scroll derivatives (2026-10-11)
+
+`enchant-variants.py` in this directory takes the existing reviewed `scroll.webp` only. It preserves parchment/roll geometry, overlays red wax plus a sword for weapon scrolls and blue wax plus a shield for armor scrolls. Blessed versions add a gold inner alpha-contour border and gold seal trim. Pillow 4× processing, Lanczos downsample, lossless 96×96 WebP; no AI, downloads or external URLs. Original scroll reuse provenance limitations above still apply. The four derived records in manifest.json record the local source hash, method, output hash and bytes. Rebuild with `python3 arpg/assets/items/enchant-variants.py` (after the base builder if used).
+
+All four real enchant item IDs now have distinct local paths; the return scroll keeps its original art. Enhancement grade remains HTML presentation metadata, not item stats inferred from art.
