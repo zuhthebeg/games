@@ -63,6 +63,8 @@ export function addPlayer(world, { pid, weapon = 'blade', x, y, mods = {} }) {
     dmgMult: { blade: 1, bow: 1, focus: 1, ...(mods.dmgMult || {}) },
     cdMult: mods.cdMult ?? 1,
     attackSpeedBonus: mods.attackSpeedBonus ?? 0, weaponWeight: mods.weaponWeight ?? 8,
+    // Keep legacy no-armor serialized traces byte-identical.
+    ...(mods.armorWeight ? { armorWeight: mods.armorWeight } : {}),
     pendingCounter: null,
     dodgeCdMult: mods.dodgeCdMult ?? 1, iframeBonusMs: mods.iframeBonusMs ?? 0,
     potionHealMult: mods.potionHealMult ?? 1, poiseMult: mods.poiseMult ?? 1, loadRatio: 0, ac: Math.max(0, mods.ac ?? 0),
@@ -384,7 +386,7 @@ const PHASES = ['windup', 'lock', 'active', 'recovery'];
 function startAct(world, ent, abilityId, facing) {
   const def = ABILITIES[abilityId];
   const rate = ent.kind === 'player' && (abilityId === WEAPONS[ent.weapon].basic || ent.skills.includes(abilityId))
-    ? attackRate(ent.attackSpeedBonus, ent.weaponWeight, ent.loadRatio) : 1;
+    ? attackRate(ent.attackSpeedBonus, ent.weaponWeight, ent.loadRatio, ent.armorWeight, ent.weapon) : 1;
   const phaseTicks = Object.fromEntries(PHASES.map((phase) => {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / rate)) : 0];

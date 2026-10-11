@@ -40,7 +40,7 @@ function skipEmptyPhases(p) {
 function startAct(p, abilityId, facing) {
   const def = ABILITIES[abilityId];
   const rate = abilityId === WEAPONS[p.weapon].basic || p.skills.includes(abilityId)
-    ? attackRate(p.attackSpeedBonus, p.weaponWeight, p.loadRatio) : 1;
+    ? attackRate(p.attackSpeedBonus, p.weaponWeight, p.loadRatio, p.armorWeight, p.weapon) : 1;
   const phaseTicks = Object.fromEntries(PHASES.map(phase => {
     const ms = def[`${phase}Ms`] || 0;
     return [phase, ms > 0 || phase === 'active' ? Math.max(1, ticks(ms / rate)) : 0];

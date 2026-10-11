@@ -45,7 +45,7 @@ export function compareItems(equipped, candidate, save) {
   }
   line('capacity', '최대 휴대 무게', before.capacity, after.capacity, false, { unit:'kg', section:'derived' });
   const beforeRatio = carriedWeight(beforeSave) / capacity(beforeSave), afterRatio = carriedWeight(afterSave) / capacity(afterSave);
-  line('attackRate', '공격 속도', attackRate(before.attackSpeedBonus,before.weaponWeight,beforeRatio), attackRate(after.attackSpeedBonus,after.weaponWeight,afterRatio), false, { unit:'배율', prefix:'×', section:'derived' });
+  line('attackRate', '공격 속도', attackRate(before.attackSpeedBonus,before.weaponWeight,beforeRatio,before.armorWeight,before.family), attackRate(after.attackSpeedBonus,after.weaponWeight,afterRatio,after.armorWeight,after.family), false, { unit:'배율', prefix:'×', section:'derived' });
   line('moveSpeed', '이동속도', before.speedMult * loadEffects(beforeRatio).speed, after.speedMult * loadEffects(afterRatio).speed, false, { unit:'배율', prefix:'×', section:'derived' });
   line('dodgeCooldown', '회피 재사용', before.dodgeCdMult * loadEffects(beforeRatio).dodgeCd, after.dodgeCdMult * loadEffects(afterRatio).dodgeCd, true, { unit:'배율', prefix:'×', section:'derived' });
   line('potionEfficiency', '물약 회복 배율', before.potionHealMult, after.potionHealMult, false, { unit:'배율', prefix:'×', section:'derived' });

@@ -4,6 +4,7 @@ export const FRIENDLY_PROJECTILE_DAMAGE = 0;
 export const BALANCE = {
   // [제안] Player actions only; no cooldown/telegraph scaling.
   attackSpeed: { agiPerEff: .02, agiCap: .2, weightReference: 8, weightPerUnit: .0125,
+    armorFreeWeight: 6, armorPerKg: { bow: .04, focus: .025, blade: .015 },
     weightCap: 24, loadStart: .8, loadCap: 1.2, loadSlope: .5, min: .7, max: 1.2 },
   // cocy 10-11: dodge is the one manual skill auto-attack players keep, so the counter must pay off.
   counter: { damage: 2.2, poise: 3, graceMs: 300 },
@@ -72,10 +73,11 @@ export function monsterSizeProfile(stageId, elite, boss, roll) {
 }
 
 // Rate, not duration multiplier. Live load is sampled once by the act machine.
-export function attackRate(agiBonus = 0, weaponWeight = 8, loadRatio = 0) {
+export function attackRate(agiBonus = 0, weaponWeight = 8, loadRatio = 0, armorWeight = 0, family = 'blade') {
   const a = BALANCE.attackSpeed;
   const weight = Math.max(0, Math.min(a.weightCap, weaponWeight));
   const load = Math.max(0, Math.min(a.loadCap, loadRatio) - a.loadStart);
+  const armor = Math.max(0, armorWeight - a.armorFreeWeight) * a.armorPerKg[family];
   return Math.max(a.min, Math.min(a.max, (1 + Math.max(0, Math.min(a.agiCap, agiBonus)))
-    / (1 + a.weightPerUnit * (weight - a.weightReference) + a.loadSlope * load)));
+    / (1 + a.weightPerUnit * (weight - a.weightReference) + a.loadSlope * load + armor)));
 }

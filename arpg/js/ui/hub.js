@@ -323,7 +323,7 @@ export class HubUI {
   characterHtml() {
     const mods = deriveMods(this.save);
     const weight = carriedWeight(this.save), limit = capacity(this.save);
-    const rate = attackRate(mods.attackSpeedBonus, mods.weaponWeight, weight / limit);
+    const rate = attackRate(mods.attackSpeedBonus, mods.weaponWeight, weight / limit, mods.armorWeight, mods.family);
     return `<section class="character-summary"><h3>${escape(this.save.name)} · Lv.${this.save.level}</h3>
       <p class="minor">XP ${amount(this.save.xp)} / ${this.save.level === MAX_LEVEL ? 'MAX' : xpSpan(this.save.level)}</p>
       <div class="ledger"><div><span>HP / MP</span><b>${amount(mods.maxHp)} / ${amount(mods.maxMp)}</b></div>

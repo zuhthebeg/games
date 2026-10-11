@@ -65,7 +65,7 @@ test('derived comparison uses real capped drop bonuses and load-aware attack/mov
   close(row(c,'goldBonus').to,7*15/26);close(row(c,'materialBonus').to,19*15/26);close(row(c,'goldBonus').to+row(c,'materialBonus').to,15);
   for(const [save,mods,side] of [[s,beforeMods,'from'],[after,afterMods,'to']]) {
     const ratio=carriedWeight(save)/capacity(save),load=loadEffects(ratio);
-    close(row(c,'attackRate')[side],attackRate(mods.attackSpeedBonus,mods.weaponWeight,ratio));
+    close(row(c,'attackRate')[side],attackRate(mods.attackSpeedBonus,mods.weaponWeight,ratio,mods.armorWeight,mods.family));
     close(row(c,'moveSpeed')[side],mods.speedMult*load.speed);close(row(c,'dodgeCooldown')[side],mods.dodgeCdMult*load.dodgeCd);
     close(row(c,'manaRegen')[side],mods.mpRegen);close(row(c,'potionEfficiency')[side],mods.potionHealMult);
   }

@@ -71,6 +71,7 @@ export function deriveMods(save) {
     poiseMult: 1 + S.poise * eff(stats.str),
     dmgMult: Object.fromEntries(Object.keys(SKILL_USE).map((f) => [f, familyDamage(f)])),
     attackSpeedBonus: Math.min(BALANCE.attackSpeed.agiCap, BALANCE.attackSpeed.agiPerEff * eff(stats.agi)),
+    armorWeight: effectiveWeight(equippedItem(save, 'body')),
     weaponWeight: weapon ? effectiveWeight(weapon) : BALANCE.attackSpeed.weightReference,
     cdMult: 1,
     capacity: 100 + S.capacity * eff(stats.str) + affixes.capacity_flat,
