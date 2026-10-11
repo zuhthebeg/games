@@ -278,5 +278,13 @@
     "method": "derived local scroll.webp; Pillow 4x red weapon/blue armor wax seal, sword/shield motif; blessed inner gold alpha border; 96px lossless WebP; no AI",
     "sha256": "13cd4ef63d9ad8eb2c2d30d618cff3a341d6a74e421fb4bdf09e42028711ba30",
     "bytes": 11678
+  },
+  {
+    "file": "wood.webp",
+    "source": "arpg/assets/items/wood-art.py",
+    "sourceSha256": "24c7c8f3663318589ec676f5fa6af805d4ce8931c7640c20dfa90d1988430a43",
+    "method": "original locally drawn 2D timber; Pillow 4x supersampling, fit 84px, 64-color RGBA quantization, 96px lossless WebP; no AI",
+    "sha256": "712fc91c18bb1d41fc7368ecb0a63ee9d39c63d0b1fb9fc414fc21af49c0bbf3",
+    "bytes": 2140
   }
 ]

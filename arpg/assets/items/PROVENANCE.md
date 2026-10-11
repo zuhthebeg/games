@@ -2,7 +2,7 @@
 
 ## Scope and actual method
 
-35 delivered transparent 96×96 local lossless WebPs, **202,112 encoded bytes**. 26 original locally illustrated 2D pictures + 5 reused spudsquad pictures + 4 local enchant-scroll derivatives. **New AI/SDXL images: 0.** No external URLs, paid provider, downloads, screenshots, shared assets-ledger writes, or spudsquad changes.
+36 delivered transparent 96×96 local lossless WebPs, **204,252 encoded bytes**. 27 original locally illustrated 2D pictures + 5 reused spudsquad pictures + 4 local enchant-scroll derivatives. **New AI/SDXL images: 0.** No external URLs, paid provider, downloads, screenshots, or spudsquad changes. Original wood provenance is also recorded in assets-ledger.md.
 
 The Windows native diffusion-win Python was reachable, but the generation preflight failed because `C:\Users\user\ai-tools\models\luminarqmix-v7\model_index.json` was absent. `arpg/tools/item-art-generate.py` records the unexecuted prompt/seed contract and requires the local model; its prompts were **not** used to produce delivered pixels. No WSL SDXL or alternate-model inference occurred.
 
@@ -53,3 +53,31 @@ Prior base-art verification (before enchant variants): 123/123 Node tests; stamp
 `enchant-variants.py` in this directory takes the existing reviewed `scroll.webp` only. It preserves parchment/roll geometry, overlays red wax plus a sword for weapon scrolls and blue wax plus a shield for armor scrolls. Blessed versions add a gold inner alpha-contour border and gold seal trim. Pillow 4× processing, Lanczos downsample, lossless 96×96 WebP; no AI, downloads or external URLs. Original scroll reuse provenance limitations above still apply. The four derived records in manifest.json record the local source hash, method, output hash and bytes. Rebuild with `python3 arpg/assets/items/enchant-variants.py` (after the base builder if used).
 
 All four real enchant item IDs now have distinct local paths; the return scroll keeps its original art. Enhancement grade remains HTML presentation metadata, not item stats inferred from art.
+
+
+## ART-W original wood (2026-10-12)
+
+`wood-art.py` here adds only `wood.webp`: two locally authored cut timber logs,
+faceted brown bark, pale cut ends and growth rings. It follows the approved
+item builder's dark `#38271e` outline, earthy wood palette, Pillow 4× supersampling,
+alpha crop, 84px fit and 96×96 transparent canvas. 64-color RGBA quantization
+before lossless WebP encoding bounds the new icon to **2,140 bytes** and keeps
+all 36 icons below the unchanged **200 KiB** budget. No AI inference, external
+source, downloaded asset, model, API or cost. Original source-art inspection
+confirms timber rather than leather/mineral; this is not a screenshot or a new
+human visual approval claim. The original contribution is dedicated to CC0 1.0
+by cocy/Untitled's local pipeline; no third-party license is inferred.
+
+Rebuild only this icon with `python3 arpg/assets/items/wood-art.py`. It preserves
+all prior manifest records and WebP bytes, adds its own source/output SHA-256,
+and is deterministic in the tested Pillow 12.1.1 environment. The base builder
+predates this addition; if rebuilding everything, run base builder, enchant
+variants, then wood-art.py. `wood` now maps exactly to `assets/items/wood.webp`,
+with a timber SVG fallback instead of the generic bag glyph. Unknown items and
+empty equipment sockets retain their old fallback behavior. Item definitions,
+materials, economics, save logic, drops and simulation are untouched.
+
+The actual index browser smoke now requires every real item (including wood)
+to have and decode a local image at each mobile/desktop viewport, explicitly
+checks a labelled wood material row via native touch/keyboard activation and
+checks wood in receipt/reveal builders. No coverage exclusion for wood remains.

@@ -30,8 +30,9 @@ const paths = {
   back: '<path d="M20 12H4m6-6-6 6 6 6"/>',
 };
 
-// Approved 14 silhouettes, embedded locally (no reference-folder dependency).
+// Approved item silhouettes, embedded locally (no reference-folder dependency).
 const silhouettes = {
+  "wood": '<path fill="currentColor" d="m4 15 13-12 9 3 4 9-14 14-9-3z"/><ellipse cx="10" cy="22" rx="7" ry="6" fill="currentColor" stroke="#141916" stroke-width="2"/><ellipse cx="10" cy="22" rx="3" ry="2" fill="none" stroke="#141916" stroke-width="1.5"/><path fill="none" stroke="#141916" stroke-width="2" d="m12 15 12-10m-8 15 12-11"/>',
   "sword": "<path fill=\"currentColor\" d=\"m22 2 6-1-1 7-13 14-4-4zM6 16l12 12 3-3L9 13zM3 26l6-6 3 3-6 6-4 1z\"/>",
   "bow": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" d=\"M8 3q27 13 0 26M8 3v26M3 16h26m-5-5 5 5-5 5\"/>",
   "wand": "<path fill=\"currentColor\" d=\"m5 28 15-18 3 3L8 30zM23 1l2 5 6 1-5 4 1 6-5-3-5 3 1-6-5-4 6-1z\"/>",

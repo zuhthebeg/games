@@ -9,17 +9,10 @@ import { itemIcon, icon } from '../js/ui/icons.js';
 const assets = new URL('../assets/items/', import.meta.url);
 const records = JSON.parse(readFileSync(new URL('manifest.json', assets)));
 
-test('existing item IDs retain reviewed art; C1 wood uses the existing SVG fallback without new assets', () => {
+test('all existing item IDs including wood resolve local reviewed art', () => {
   const used = new Set();
   for (const [id, definition] of Object.entries(ITEMS)) {
     const key = itemArtKey(id, definition);
-    if (id === 'wood') {
-      assert.equal(key, null);
-      const fallback = itemIcon(id, definition);
-      assert.match(fallback, /<svg[^>]*aria-hidden="true"/);
-      assert.doesNotMatch(fallback, /<img|<picture|https:/);
-      continue;
-    }
     assert.ok(key, `uncovered item ${id}`);
     const path = itemArtPath(key);
     assert.ok(/^assets\/items\/[a-z0-9-]+\.webp$/.test(path), path);
@@ -67,10 +60,10 @@ test('delivered WebPs match source manifest and stay below 200 KiB total', () =>
     assert.ok(/^[a-f0-9]{64}$/.test(record.sourceSha256));
     bytes += data.length;
   }
-  assert.equal(records.filter(r=>r.method.startsWith('original')).length, 26);
+  assert.equal(records.filter(r=>r.method.startsWith('original')).length, 27);
   assert.equal(records.filter(r=>r.method.startsWith('reviewed')).length, 5);
   assert.equal(records.filter(r=>r.method.startsWith('derived')).length, 4);
-  assert.equal(records.length, 35);
+  assert.equal(records.length, 36);
   assert.ok(bytes < 200*1024, `${bytes} bytes`);
 });
 
@@ -78,4 +71,18 @@ test('four enchant scrolls use distinct art and never share the return-scroll ic
   const paths = ['scroll_enchant_weapon', 'scroll_enchant_armor', 'scroll_blessed_weapon', 'scroll_blessed_armor'].map(id => itemArtPath(itemArtKey(id, ITEMS[id])));
   assert.equal(new Set(paths).size, 4);
   assert.ok(paths.every(path=>path !== itemArtPath('return_scroll')));
+});
+
+test('wood has its own timber picture and matching SVG fallback, not leather/ore/load', () => {
+  assert.equal(itemArtKey('wood', ITEMS.wood), 'wood');
+  assert.equal(itemArtPath('wood'), 'assets/items/wood.webp');
+  const record = records.find(r => r.file === 'wood.webp');
+  assert.equal(record.source, 'arpg/assets/items/wood-art.py');
+  assert.equal(record.sourceSha256, createHash('sha256').update(readFileSync(new URL('wood-art.py', assets))).digest('hex'));
+  const html = itemIcon('wood', ITEMS.wood);
+  assert.match(html, /src="assets\/items\/wood.webp"/);
+  assert.match(html, /icon-wood silhouette/);
+  assert.notEqual(html.match(/<svg.*<\/svg>/)[0], icon('load'));
+  assert.notEqual(itemArtPath('wood'), itemArtPath('hide'));
+  assert.notEqual(itemArtPath('wood'), itemArtPath('rune_shard'));
 });

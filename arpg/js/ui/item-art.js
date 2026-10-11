@@ -11,7 +11,7 @@ const artwork = {
   potion: 'potion.webp', mana_potion: 'mana-potion.webp', return_scroll: 'scroll.webp',
   scroll_enchant_weapon: 'scroll-enchant-weapon.webp', scroll_enchant_armor: 'scroll-enchant-armor.webp',
   scroll_blessed_weapon: 'scroll-blessed-weapon.webp', scroll_blessed_armor: 'scroll-blessed-armor.webp',
-  scrap: 'scrap.webp', hide: 'leather.webp', fang: 'fang.webp', web: 'web.webp',
+  wood: 'wood.webp', scrap: 'scrap.webp', hide: 'leather.webp', fang: 'fang.webp', web: 'web.webp',
   rune_shard: 'ore.webp', frost_shard: 'ore.webp',
 };
 
