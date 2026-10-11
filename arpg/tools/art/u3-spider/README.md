@@ -57,6 +57,28 @@ The local recoil authorship is separately dedicated to CC0 in the asset ledger.
    and require empty `git diff -- arpg/js/sim`. Commit scoped files only;
    parent performs review, merge, push and deployment.
 
+## Ground-anchor correction (shadow diagnosis)
+
+The final camera transform must be evaluated before `world_to_camera_view` in
+`bake.py`. The old `frames-v2` anchor was exported from the pre-fit camera matrix:
+`y=0.5740587711334229`, versus the actual rendered origin
+`y=0.6975164711475372` (15.8026px at 128px). This placed the runtime shadow above
+its intended ground origin. No ground plane or baked shadow exists in the scene;
+only `Cube`/`Cube_outline` render, with light shadows disabled.
+
+`ground-anchor-validation.json` records an exact no-render bake reproduction
+and independent saved-camera verification across all 592 samples/40 clips.
+Run Windows Blender with `--python verify-ground-anchor.py -- <offline>/config.json`
+for the read-only geometry proof. Existing WebP pixels, animation timing and
+runtime ellipse are unchanged; only spider manifest/sheet anchors are corrected.
+The offline `frames-v2/frames.json` retains the historical erroneous anchor.
+Do not repack that metadata uncorrected: use a fresh bake with the fixed exporter,
+or explicitly apply the recorded correction while preserving those raw pixels.
+Other kits are preserved; their smaller anchor discrepancies are not fixed here.
+The existing boar preservation gate permits only this exact metadata scalar and
+still verifies every historical pixel byte. Parent must stamp the merged index.
+Numerical/native-render evidence is not human screenshot approval.
+
 ## Arachnid verification — separate from humanoids
 
 Same approved pipeline camera (40°), orthographic framing, Standard color,

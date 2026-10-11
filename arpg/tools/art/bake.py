@@ -420,6 +420,9 @@ for job in config['characters']:
         bpy.context.collection.objects.link(light)
         light.location = location
         aim(light, (0, 0, bind_height / 2))
+    # Final framing changed camera.location/rotation after the last sample update.
+    # Evaluate its matrix before exporting the ground anchor used by runtime shadows.
+    bpy.context.view_layer.update()
     origin = world_to_camera_view(scene, camera, Vector((0, 0, 0)))
     anchor = {'x': origin.x, 'y': 1 - origin.y}
     records = []

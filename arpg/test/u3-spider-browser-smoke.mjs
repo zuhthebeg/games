@@ -148,12 +148,42 @@ try {
       }
       if(new Set(attackFrames).size<2)throw Error('static Pixi attack');motion.attack={frames:attackFrames};
       view.destroy();
+      // Real renderer shadow layer + Sprite geometry, using only frozen host copies.
+      const {ArenaRenderer}=await import('./js/render/renderer.js');
+      const {Container,Sprite}=await import('./vendor/pixi-8.22.0.min.mjs');
+      const geometry=[];
+      for(const sizeScale of [1,1.5]) {
+        const copied=JSON.parse(JSON.stringify(__arpg.world));
+        const index=copied.entities.findIndex(e=>e.type==='poison_spider');
+        copied.entities[index]={...copied.entities[index],sizeScale,act:null,moving:false,dead:false,staggerLeft:0};
+        const world=freeze(copied),before=JSON.stringify(world),stage=new Container(),p=new VisualProvider();
+        const renderer=new ArenaRenderer({stage,screen:{width:innerWidth,height:innerHeight}},p);
+        renderer.reset(world);await p.atlases.load('poison_spider');await new Promise(resolve=>setTimeout(resolve,0));
+        const drawn=renderer.views.get(world.entities[index].id);
+        const findSprite=node=>node instanceof Sprite?node:node.children?.map(findSprite).find(Boolean);
+        for(const state of ['idle','run','attack','hit','death'])for(let octant=0;octant<8;octant++) {
+          const model=freeze({...world.entities[index],facing:octant*Math.PI/4,moving:state==='run',dead:state==='death',
+            staggerLeft:state==='hit'?1:0,act:state==='attack'?{elapsed:8,def:{windupMs:400,lockMs:100,activeMs:100,recoveryMs:400}}:null});
+          const sample=freeze({...world,entities:world.entities.map((e,i)=>i===index?model:e)});
+          renderer.render(sample,1,1/60);
+          const sprite=findSprite(drawn.visual.container);
+          if(!sprite||Math.abs(sprite.anchor.y-.6975164711475372)>1e-7||drawn.visual.debug.state!==state)throw Error('anchor/state regression');
+          const ground=sprite.toGlobal({x:0,y:(.6975165005009811-sprite.anchor.y)*128});
+          const shadow=drawn.shadow.getGlobalPosition();
+          const error=Math.hypot(ground.x-shadow.x,ground.y-shadow.y);
+          if(error>.001||sprite.scale.x!==sizeScale||!drawn.shadow.visible)throw Error('shadow ground geometry regression '+error);
+          geometry.push({state,direction:drawn.visual.debug.direction,sizeScale,errorPx:error});
+        }
+        if(JSON.stringify(world)!==before)throw Error('renderer mutated host copy');
+        for(const v of renderer.views.values()){v.visual.destroy();v.shadow.destroy();v.portal.destroy();}
+        renderer.root.destroy({children:true});renderer.warning.destroy();stage.destroy({children:true});
+      }
       const offline=new VisualProvider();offline.atlases.fetchManifest=async()=>{throw Error('intentional offline')};
       const fallback=offline.createVisual(freeze(entity));await offline.atlases.load('poison_spider');
       const procedural=fallback.debug.mode==='procedural';fallback.destroy();
-      return {samples,procedural,motion};
+      return {samples,procedural,motion,geometry};
     })()`);
-    assert.equal(proof.samples.length,40);assert.equal(proof.procedural,true);
+    assert.equal(proof.samples.length,40);assert.equal(proof.procedural,true);assert.equal(proof.geometry.length,80);
     for(const state of ['idle','run','attack','hit','death'])assert.deepEqual(proof.samples.filter(s=>s.state===state).map(s=>s.direction),['E','SE','S','SW','W','NW','N','NE']);
     // Native battle input also reaches the current index UI.
     if(desktop){await command('Input.dispatchKeyEvent',{type:'keyDown',key:'j',code:'KeyJ',windowsVirtualKeyCode:74});await sleep(100);await command('Input.dispatchKeyEvent',{type:'keyUp',key:'j',code:'KeyJ',windowsVirtualKeyCode:74});}
@@ -161,7 +191,7 @@ try {
     assert.equal(await evaluate("document.querySelector('#boot-error').textContent"),'');
     const gpu=await evaluate(`(()=>{const canvas=document.querySelector('canvas');const gl=canvas.getContext('webgl2')||canvas.getContext('webgl');if(!gl)throw Error('No active WebGL context');return {maxTextureSize:gl.getParameter(gl.MAX_TEXTURE_SIZE),version:gl.getParameter(gl.VERSION),contextLost:gl.isContextLost()};})()`);
     assert.ok(gpu.maxTextureSize>=2048);assert.equal(gpu.contextLost,false);
-    results.push({gpu,viewport:[width,height],native:desktop?'keyboard Enter/J':'touch',spiderCount:live.length,states:proof.samples,motion:proof.motion,fallback:true,frozenHostUnchanged:true});
+    results.push({gpu,viewport:[width,height],native:desktop?'keyboard Enter/J':'touch',spiderCount:live.length,states:proof.samples,motion:proof.motion,shadowGeometry:{samples:proof.geometry.length,maxErrorPx:Math.max(...proof.geometry.map(g=>g.errorPx)),sizes:[1,1.5]},fallback:true,frozenHostUnchanged:true});
   }
   const errors=events.filter(e=>e.method==='Runtime.exceptionThrown'||e.method==='Log.entryAdded'&&e.params.entry.level==='error'||e.method==='Runtime.consoleAPICalled'&&e.params.type==='error');
   assert.equal(errors.length,0,JSON.stringify(errors));

@@ -28,14 +28,28 @@ test('boar four articulated legs, five moving bone-mounted accessories, eight fa
  assert.equal(delivered.clipped_frames,0);assert.ok(delivered.max_idle_center_drift_px<6);assert.ok(delivered.alpha_coverage_percent[0]>=3.125);
  assert.ok(delivered.total_bytes<=1500000);assert.equal(entry.bytes,delivered.total_bytes);for(const size of delivered.atlas_dimensions)assert.ok(size.every(n=>n<=2048));
 });
-test('boar retains readonly attack timing, full hit/death windows and every prior 9-kit byte',()=>{
+test('boar retains readonly timing and prior kit bytes except verified spider ground-anchor metadata',()=>{
  const entry=manifest.find(e=>e.id==='iron-boar');assert.deepEqual(entry.animation_durations,{hit:.15,death:.6});
  const entity=Object.freeze({kind:'monster',type:'iron_boar',act:Object.freeze({elapsed:8,def:Object.freeze({windupMs:400,lockMs:100,activeMs:100,recoveryMs:400})})});
  const before=JSON.stringify(entity);assert.equal(atlasAnimation(entity,{hurt:0}),'attack');assert.equal(atlasFrame('attack',7,100,10,entity,.1),1);
  assert.equal(atlasFrame('death',9,.59,10,{},.6),8);assert.equal(atlasFrame('hit',4,.14,10,{},.15),3);assert.equal(JSON.stringify(entity),before);
  const prior=read('../tools/art/u3-boar/preservation-validation.json');assert.equal(prior.baseline,'f3a6100');assert.equal(prior.manifest.length,9);
- for(const old of prior.manifest)assert.deepEqual(manifest.find(e=>e.id===old.id),old);
- for(const [path,hash] of Object.entries(prior.file_sha256))assert.equal(createHash('sha256').update(readFileSync(new URL('../assets/sprites/'+path,import.meta.url))).digest('hex'),hash,path);
+ const correction=read('../tools/art/u3-spider/ground-anchor-validation.json');
+ for(const old of prior.manifest){
+  const current=manifest.find(e=>e.id===old.id);
+  if(old.id==='poison-spider'){
+   assert.deepEqual(current.anchor,correction.correct_anchor);
+   assert.deepEqual({...current,anchor:old.anchor},old);
+  }else assert.deepEqual(current,old);
+ }
+ for(const [path,hash] of Object.entries(prior.file_sha256)){
+  let bytes=readFileSync(new URL('../assets/sprites/'+path,import.meta.url));
+  if(/^poison-spider\/atlas-\d+\.webp\.json$/.test(path)){
+   // Restore ONLY the independently verified scalar for the historical byte gate.
+   bytes=Buffer.from(bytes.toString().replaceAll(String(correction.correct_anchor.y),String(correction.old_anchor.y)));
+  }
+  assert.equal(createHash('sha256').update(bytes).digest('hex'),hash,path);
+ }
 });
 test('boar profile does not weaken existing humanoid, wolf, spider or unknown-profile gates',()=>{
  const script=new URL('../tools/art/verify_atlases.py',import.meta.url).pathname;
