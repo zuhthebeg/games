@@ -1,0 +1,76 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { STAGES, ABILITIES } from '../js/content/combat.js';
+import { REGIONS, MAPS, availableStages, mapUnlocked, arrivalNotice } from '../js/content/world-map.js';
+import { createSave, SaveStore, validateSave } from '../js/meta/save.js';
+import { ITEMS, instance, enhanceMultiplier } from '../js/meta/items.js';
+import { SKILL_DISPLAY, characterSkills, learnSkill, equipSkill } from '../js/meta/skills.js';
+import { settleRound } from '../js/meta/run.js';
+import { gearPrice } from '../js/meta/shop.js';
+import { ECONOMY } from '../js/meta/economy.js';
+import { itemDetailsHtml, amount } from '../js/ui/gear-view.js';
+import { HubUI } from '../js/ui/hub.js';
+const fresh = () => createSave({name:'월드 시험',answers:[0,0,0,0,0],createdAt:1});
+const hubFor = save => Object.assign(Object.create(HubUI.prototype), {save, persist:()=>{}, show:(html,page)=>{}, lootState:{}, revealed:1, closeSheet:()=>{}, showReceipt:()=>{}});
+
+test('W2 owns exactly 20 existing quests in the approved six-region graph', () => {
+  assert.deepEqual([...REGIONS.flatMap(r=>r.maps)].sort(),Object.keys(STAGES).sort());
+  assert.equal(REGIONS.length,6);
+  assert.deepEqual(MAPS.S14.requires,['S17','S18']);
+  for(const [id,prior] of Object.entries({S2:'S1',S5:'S4',S8:'S7',S12:'S10',S11:'S10',S17:'S12',S13:'S11',S16:'S13',S18:'S16',S15:'S14',S19:'S15',S20:'S19'})) assert.deepEqual(MAPS[id].requires,[prior]);
+});
+test('both fork entrances open at S10, castle unlock is OR and neither branch skips later castle quests', () => {
+  const s=fresh(); assert.deepEqual(availableStages(s),['S1']); s.cleared.S10=true;
+  assert.ok(mapUnlocked(s,'S11')&&mapUnlocked(s,'S12')); assert.ok(!mapUnlocked(s,'S14'));
+  for(const end of ['S17','S18']) {const branch=structuredClone(s);branch.cleared[end]=true;assert.ok(mapUnlocked(branch,'S14'));assert.ok(!mapUnlocked(branch,'S15'));assert.ok(!mapUnlocked(branch,'S20'));assert.ok(!mapUnlocked(branch,end==='S17'?'S18':'S17'));}
+  s.cleared.S14=true;assert.ok(mapUnlocked(s,'S15'));s.cleared.S15=true;assert.ok(mapUnlocked(s,'S19'));s.cleared.S19=true;assert.ok(mapUnlocked(s,'S20'));
+});
+test('historical out-of-order clears remain replayable, debug all-clears open every node, without migration or mutation', () => {
+  const s=fresh();s.cleared.S20=true;const before=structuredClone(s);assert.ok(mapUnlocked(s,'S20'));assert.deepEqual(s,before);assert.ok(validateSave(s));
+  const old=JSON.parse(readFileSync(new URL('./fixtures/save-v1-s4.json',import.meta.url),'utf8'));
+  const v3={...fresh(),version:3,cleared:{...fresh().cleared,...old.cleared}};delete v3.stash;delete v3.learned;delete v3.skills;
+  const storage={getItem:()=>JSON.stringify(v3),setItem:()=>{},removeItem:()=>{}};const migrated=new SaveStore(storage).load();assert.ok(migrated);
+  for(const [id,clear] of Object.entries(old.cleared)) if(clear) assert.ok(mapUnlocked(migrated,id));
+  s.cleared=Object.fromEntries(Object.keys(STAGES).map(id=>[id,true]));assert.equal(availableStages(s).length,20);
+});
+test('locked sortie and launch reject action dispatch; coop fallback uses the same graph', () => {
+  const h=hubFor(fresh());assert.throws(()=>h.showSortie('S14'),/잠긴/);assert.throws(()=>h.launch('S14'),/잠긴/);
+  h.save.cleared.S17=true;h.sortieStage='S14';h.startCoop=(stage)=>assert.equal(stage,'S14');h.action('coop',{});
+});
+test('board retains 20 data-stage hooks and marks locked/completed/current independently', () => {
+  const h=hubFor(fresh());h.showInnPanel=(title,html)=>h.html=html;h.showBoard();
+  assert.equal((h.html.match(/data-stage=/g)||[]).length,20);assert.match(h.html,/data-stage="S1" class="contract depart" aria-current="step"/);assert.match(h.html,/data-stage="S14" class="contract lock" disabled/);
+  h.save.cleared.S17=true;h.mapRegion='castle';h.showBoard();assert.match(h.html,/data-stage="S14" class="contract depart"/);
+});
+test('arrival notice contains actual region and quest, cleared maps are not called new', () => {
+  const s=fresh();assert.equal(arrivalNotice(s,'S12'),`녹슨 광산 · 새 퀘스트: ${STAGES.S12.name}`);s.cleared.S12=true;assert.ok(!arrivalNotice(s,'S12').includes('새 퀘스트'));
+});
+test('display-only catalog sorts learned + default grades descending and same-grade order stays stable', () => {
+  let s={...fresh(),gold:10000};for(const id of ['flame_ring','whirl','heavy_cleave','frost_lance'])s=learnSkill(s,id);
+  assert.deepEqual(characterSkills(s),['heavy_cleave','flame_ring','whirl','frost_lance','lunge','volley','ember_bolt']);
+  assert.deepEqual(characterSkills(fresh()),['lunge','volley','ember_bolt']);assert.equal(SKILL_DISPLAY.heavy_cleave.label,'상급');assert.equal(SKILL_DISPLAY.whirl.label,'숙련');assert.equal(SKILL_DISPLAY.lunge.label,'입문');
+});
+test('every learned skill detail uses real damage/range/MP/cooldown/effects and equipped marker', () => {
+  let s={...fresh(),gold:10000};for(const id of Object.keys(SKILL_DISPLAY).filter(id=>!['lunge','volley','ember_bolt'].includes(id)))s=learnSkill(s,id);
+  s=equipSkill(s,'focus','frost_lance');const h=hubFor(s);h.mountSheet=html=>h.html=html;
+  for(const id of characterSkills(s)) {h.openSkill(id);const a=ABILITIES[id];assert.ok(h.html.includes(`>${a.damage}</dd>`));assert.ok(h.html.includes(`${a.manaCost||0} MP`));assert.ok(h.html.includes(`${amount(a.cooldownMs/1000)}초`));assert.ok(h.html.includes(`${a.projectile?.rangePx||a.dash?.distance||a.shape?.range||a.shape?.radius} px`));assert.ok(h.html.includes(`경직 위력 ${a.poise}`));}
+  h.openSkill('frost_lance');assert.match(h.html,/장착 중/);assert.match(h.html,/관통 2회/);
+});
+test('full item details show actual base/enhancement/HP and every option with honest units even own item zero-deltas', () => {
+  const weapon={...instance('detail','iron_sword_epic',0,[]),enhance:4,affixes:[{k:'atk_pct',v:6},{k:'capacity_flat',v:3},{k:'mana_pct',v:4}]};
+  const html=itemDetailsHtml(weapon);assert.ok(html.includes(`×${amount(ITEMS[weapon.id].power*enhanceMultiplier(4))}`));assert.match(html,/\+6%/);assert.match(html,/\+3 kg/);assert.match(html,/\+4%/);assert.match(html,/必要|필요 힘/);
+  const armor=itemDetailsHtml({...instance('armor','leather_vest'),enhance:2});assert.ok(armor.includes(`${amount(20*enhanceMultiplier(2))} HP`));assert.match(armor,/피해 감소 DEF 수치는 없다/);
+  for(const k of ['hp_flat','speed_pct','dodge_pct','potion_pct','gold_pct','material_pct']) assert.ok(itemDetailsHtml({...weapon,affixes:[{k,v:2}]}).includes(`data-detail="${k}"`));
+  const h=hubFor(fresh());h.mountSheet=html=>h.html=html;h.showSocket('weapon');assert.match(h.html,/data-detail="attack"/);assert.match(h.html,/= 유지/);assert.match(h.html,/장비 변경 · 보유 목록/);
+  h.openItem('starter:weapon');assert.match(h.html,/data-detail="power"/);assert.match(h.html,/추가 옵션 없음/);
+});
+test('reveal sale uses actual owned settled loot, pays once, blocks worn and missing items, receipt reload never resurrects gear', () => {
+  const drop=instance('drop:test','iron_sword',1,[]),base=fresh();
+  const settled=settleRound(base,{stageId:'S2',terminal:'return_scroll',tempLoot:{items:[drop],stacks:{},gold:0}});
+  const h=hubFor(settled.save);h.pendingReceipt={receipt:settled.receipt};h.showReceipt=()=>{};
+  const html=h.revealHtml(settled.receipt);assert.match(html,/loot-sell/);assert.match(html,/마을로 돌아가면 자동 보관/);assert.ok(!html.includes('loot-keep'));
+  const gold=h.save.gold;h.action('loot-sell',{uid:drop.uid});assert.equal(h.save.gold,gold+Math.floor(gearPrice(drop)*ECONOMY.sellFraction));assert.ok(!h.save.items.some(i=>i.uid===drop.uid));assert.throws(()=>h.action('loot-sell',{uid:drop.uid}));assert.equal(h.save.gold,gold+Math.floor(gearPrice(drop)*ECONOMY.sellFraction));assert.throws(()=>h.action('loot-sell',{uid:'starter:weapon'}),/装|장착/);
+  let raw;const storage={setItem:(_,v)=>raw=v,getItem:()=>raw};new SaveStore(storage).save(h.save);const reloaded=new SaveStore(storage).load();assert.ok(reloaded);assert.ok(!reloaded.items.some(i=>i.uid===drop.uid));
+  const loadedHub=hubFor(reloaded);assert.match(loadedHub.revealHtml(reloaded.lastReceipt),/보유하지 않음/);assert.ok(!loadedHub.revealHtml(reloaded.lastReceipt).includes('loot-sell'));
+});
