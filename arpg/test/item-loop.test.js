@@ -302,14 +302,15 @@ test('compare contract: exact attack/HP/weight/affix deltas, empty slot, same-sl
   assert.equal(allowed.weightLimit, 112); assert.equal(allowed.locked, false);
 });
 
-test('temporary hub wiring renders five slots, comparison, stock, stone costs and item receipt without new design', () => {
+test('forge tabs preserve five-slot overview, scroll costs, stock comparison and item receipts', () => {
   const hub = Object.create(HubUI.prototype);
   hub.save = fresh(); hub.save.gold = 10000;
   hub.selectedUid = hub.save.equipped.weapon;
   hub.showInnPanel = (_title, html) => { hub.html = html; };
   hub.showForge();
-  for (const slot of SLOTS) assert.match(hub.html, new RegExp(slot));
-  assert.match(hub.html, /무기 강화 주문서/); assert.match(hub.html, /강화석 5 → 1장/); assert.match(hub.html, /성공 확정/);
+  assert.match(hub.html, /무기 강화 주문서/); assert.match(hub.html, /성공 확정/);
+  hub.action('forge-tab', {tab:'scrolls'});assert.match(hub.html, /강화석 5 → 1장/);
+  hub.action('forge-tab', {tab:'salvage'});for (const slot of SLOTS) assert.match(hub.html, new RegExp(slot));
   assert.match(hub.gearShopHtml(), /refresh-shop/);
   assert.match(hub.gearShopHtml(), /공격력/);
   const receipt = settleRound(hub.save, { stageId: 'S2', terminal: 'clear', tempLoot: { gold: 1, stacks: {}, items: [instance('drop', 'iron_sword', 1)] } }).receipt;
