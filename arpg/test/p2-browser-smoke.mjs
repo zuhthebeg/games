@@ -160,7 +160,7 @@ try {
     await click('[data-action="close-sheet"]');assert.ok(await evaluate("__arpg.save.items.some(i=>i.uid==='starter:weapon')"));
     await click('[data-action="inn"]');await click('[data-action="shop"]');await audit();
     await click('[data-action="inn"]');await click('[data-action="board"]');await audit();assert.equal(await evaluate("document.querySelectorAll('[data-action=\"sortie\"]').length"),20);
-    await click('[data-action="sortie"][data-stage="S20"]');await audit();states.push({width,height,ok:true});
+    await click('[data-action="map-region"][data-region="castle"]');await click('[data-action="sortie"][data-stage="S20"]');await audit();states.push({width,height,ok:true});
   }
   const errors=events.filter(e=>e.method==='Runtime.exceptionThrown'||e.method==='Log.entryAdded'&&e.params.entry.level==='error');
   assert.equal(errors.length,0,JSON.stringify(errors.slice(0,3)));console.log(JSON.stringify({ok:true,states,equipment:5,stages:20,purchase:true,enhance:true,dismantleCancel:true,consoleErrors:errors.length}));
