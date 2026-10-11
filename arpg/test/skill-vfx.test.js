@@ -16,10 +16,13 @@ for (const [ability, profile] of Object.entries(SKILL_VFX)) {
   test(`${ability}: profile dimensions use authoritative combat content`, () => {
     if (profile.style === 'cleave') {
       assert.equal(profile.shape, ABILITIES[ability].shape);
-      assert.equal(profile.shape.range, 135); assert.equal(profile.shape.arc, 70);
+      assert.equal(profile.shape.range, 168.75); assert.equal(profile.shape.arc, 70);
     } else if (profile.style === 'ember') {
       assert.equal(profile.radius, ABILITIES[ability].projectile.explode.radius);
       assert.equal(profile.projectileRadius, ABILITIES[ability].projectile.radius);
+    } else if (profile.style === 'ring') {
+      assert.equal(profile.shape, ABILITIES[ability].shape);
+      assert.equal(profile.radius, ABILITIES[ability].shape.radius);
     } else assert.equal(profile.radius, ABILITIES[ability].heal.radius);
   });
   test(`${ability}: reduced particle count is substantially smaller, still readable`, () => {
@@ -52,7 +55,7 @@ for (const [ability, profile] of Object.entries(SKILL_VFX)) {
     freeze(world); const before = JSON.stringify(world);
     vfx.update(world, 1, .016, false);
     assert.ok(vfx.actors[0].node.visible);
-    const event = profile.style === 'cleave' ? { type: 'hit', ability, x: 350, y: 300 } :
+    const event = profile.style === 'cleave' || profile.style === 'ring' ? { type: 'hit', ability, x: 350, y: 300 } :
       { type: profile.style === 'ember' ? 'explode' : 'healCast', ability, x: 300, y: 300, radius: profile.radius };
     vfx.event(freeze(event), world, false);
     if (profile.style === 'heal') vfx.event(freeze({ type: 'heal', ability, x: 300, y: 300 }), world, false);
@@ -70,13 +73,13 @@ test('windup progress uses only guest snapshot total/elapsed and handles speed r
   }
 });
 
-test('cleave full-size boundary stays 135px/70deg while interior grows, residue lasts .65s', () => {
+test('cleave full-size boundary stays 168.75px/70deg while interior grows, residue lasts .65s', () => {
   const vfx = fixture(), actor = entity(1, 'heavy_cleave', 'active', 18);
   vfx.update({ tick: 100, entities: [actor], projectiles: [] }, 1, .016, false);
   const wave = vfx.effects.find(p => p.kind === 'wave'), residue = vfx.effects.find(p => p.kind === 'residue');
   assert.equal(wave.node.scale.x, 1); assert.ok(wave.wave.scale.x < 1);
   const arc = wave.node.context.instructions[0].data.path.instructions.find(p => p.action === 'arc');
-  assert.equal(arc.data[2], 135); assert.equal((arc.data[4] - arc.data[3]) * 180 / Math.PI, 70);
+  assert.equal(arc.data[2], 168.75); assert.equal((arc.data[4] - arc.data[3]) * 180 / Math.PI, 70);
   assert.equal(residue.total, .65); assert.equal(wave.node.rotation, .4);
   const before = vfx.effects.filter(p => p.left > 0).length;
   const clone = structuredClone(actor); clone.act.elapsed++; clone.act.phase = 'recovery';
@@ -101,7 +104,7 @@ test('four players repeatedly cast all three skills: fixed allocation, caps, res
   const vfx = new SkillVfx(CountGraphics, new Container()), initial = allocations;
   const ids = Object.keys(SKILL_VFX);
   for (let cycle = 0; cycle < 36; cycle++) {
-    const ability = ids[cycle % 3], actors = Array.from({ length: 4 }, (_, i) => entity(i, ability, 'active', 18));
+    const ability = ids[cycle % ids.length], actors = Array.from({ length: 4 }, (_, i) => entity(i, ability, 'active', 18));
     const world = { tick: 100 + cycle * 18, entities: actors,
       projectiles: ability === 'ember_bolt' ? actors.map((e, i) => ({ id: i, abilityId: ability, r: 12, x: 300 + cycle, y: 300, vx: 520, vy: 0 })) : [] };
     vfx.update(world, 1, .016, false);
@@ -148,5 +151,6 @@ test('renderer integration preserves danger priority, legacy skills, heal number
   assert.ok(renderer.numbers.some(p => p.node.text === '+5'));
   assert.equal(renderer.effects.filter(p => p.left > 0).length, 0, 'no duplicate expanding legacy healing ring');
   renderer.reset(world); player.act = entity(player.id, 'whirl', 'active', 18).act;
-  renderer.render(world, 1, .016); assert.equal(renderer.effects.filter(p => p.left > 0).length, 1);
+  renderer.render(world, 1, .016); assert.equal(renderer.effects.filter(p => p.left > 0).length, 0);
+  assert.equal(renderer.skillVfx.effects.filter(p => p.left > 0).length, 1);
 });

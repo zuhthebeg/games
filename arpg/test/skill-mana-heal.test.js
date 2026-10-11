@@ -25,10 +25,15 @@ const fixture = (id = 'healing_light') => {
 const boosted = (id, dmg) => id === 'blast_arrow' ? 54 : dmg * 2;
 const advance = (world, count, inputs = {}) => Array.from({ length: count }, () => step(world, inputs)).flat();
 
-test('only nine damage values and six mana costs change; basics, monsters, kits and counter data untouched', () => {
+test('nine damage values, six mana costs and R1 area sizes change; basics, monsters, kits and counter data untouched', () => {
   for (const [id, old] of Object.entries(before.ABILITIES)) {
     const expected = structuredClone(old);
     if (Object.hasOwn(costs, id)) { expected.damage = boosted(id, old.damage); expected.manaCost = costs[id]; }
+    // R1 only expands these four hit dimensions; all other content remains exact.
+    if (id === 'whirl') expected.shape.radius = 136.5;
+    if (id === 'heavy_cleave') expected.shape.range = 168.75;
+    if (id === 'blast_arrow') expected.projectile.explode.radius = 108;
+    if (id === 'flame_ring') expected.shape.radius = 169;
     assert.deepEqual(ABILITIES[id], expected, id);
   }
   assert.deepEqual(WEAPONS, before.WEAPONS);

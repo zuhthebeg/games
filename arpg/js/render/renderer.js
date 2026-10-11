@@ -2,7 +2,7 @@ import { Container, Graphics, Text } from '../../vendor/pixi-8.22.0.min.mjs';
 import { getTelegraphs } from '../sim/world.js';
 import { shapePath, pattern } from './shapes.js';
 import { VisualProvider } from './visual-provider.js';
-import { FEEL, impactTier, numberScale, kickEnvelope } from './feel.js';
+import { FEEL, impactTier, numberScale, kickEnvelope, AreaImpact } from './feel.js';
 import { DANGER_COLORS } from '../content/monsters.js';
 import { ABILITIES } from '../content/combat.js';
 import { healingFeedback } from './healing-feedback.js';
@@ -41,6 +41,7 @@ export class ArenaRenderer {
     this.burstSerial = 0;
     this.trauma = 0;
     this.reduced = false;
+    this.areaImpact = new AreaImpact();
     // Friendly skill graphics stay below authoritative danger outlines/fills.
     this.skillVfx = new SkillVfx(Graphics, this.layers.skillFx);
     this.ground = new Graphics();
@@ -81,6 +82,7 @@ export class ArenaRenderer {
 
   reset(world, reduced = false, equipmentSave) {
     this.skillVfx.reset();
+    this.areaImpact.reset();
     for (const view of this.views.values()) {
       view.visual.destroy();
       view.shadow.destroy();
@@ -282,13 +284,14 @@ export class ArenaRenderer {
   }
 
   events(world, events) {
+    const areaTiers = this.areaImpact.tiers(events, world);
     this.telegraphs = world.telegraphs ?? getTelegraphs(world);
     for (const event of events) {
       const entity = world.entities.find(entity => entity.id === (event.dst ?? event.id));
       if (this.skillVfx.event(event, world, this.reduced)) continue;
       if (healingFeedback(this, event)) continue;
       if (event.type === 'hit') {
-        const tier = impactTier(event);
+        const tier = areaTiers.get(event) || impactTier(event);
         const source = world.entities.find(candidate => candidate.id === event.src);
         const color = entity?.kind === 'player' ? FEEL.colors.hurt : event.counter ? FEEL.colors.counter
           : event.critical ? FEEL.colors.critical : event.exposed ? FEEL.colors.weak : FEEL.colors.normal;

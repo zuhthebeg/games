@@ -1,3 +1,5 @@
+import { ABILITIES } from '../content/combat.js';
+
 // Presentation-only tuning, seconds and arena pixels. Never changes the combat clock or RNG.
 export const FEEL = Object.freeze({
   impact: Object.freeze({
@@ -9,6 +11,7 @@ export const FEEL = Object.freeze({
     // cocy 10-11: the counter is the reward for the one manual skill left in auto mode.
     counter: Object.freeze({ stop: .14, trauma: .55, kick: 16, sparks: 22 }),
   }),
+  area: Object.freeze({ stop: 1 / 60, trauma: .025 }),
   heavyDamage: 20,
   hurtLife: .12,
   flash: Object.freeze({ life: .033, killLife: .05, alpha: .85, killAlpha: 1 }),
@@ -41,4 +44,40 @@ export function numberScale(age) {
 export function kickEnvelope(age) {
   const progress = Math.max(0, Math.min(1, age / FEEL.kick.life));
   return Math.sin(Math.PI * progress) * (1 - progress) ** 2;
+}
+
+// One source/ability entry per living player. Accepted act events delimit casts;
+// distinct hostile targets accumulate across active ticks and guest journal batches.
+// No event/world mutation and no simulation clock or RNG access.
+export class AreaImpact {
+  constructor() { this.casts = new Map(); }
+  reset() { this.casts.clear(); }
+  tiers(events, world) {
+    const groups = new Map();
+    const players = new Set(world.entities.filter(e => e.kind === 'player').map(e => e.id));
+    for (const [key, cast] of this.casts) if (!players.has(cast.src)) this.casts.delete(key);
+    for (const event of events) {
+      const def = ABILITIES[event.ability];
+      const area = def && !def.heal && def.cooldownMs > 0
+        && (def.shape?.type === 'circle' || def.shape?.type === 'cone' || def.projectile?.explode);
+      if (!area) continue;
+      const src = event.type === 'act' ? event.id : event.src;
+      if (!players.has(src)) continue;
+      const key = `${src}:${event.ability}`;
+      if (event.type === 'act') { this.casts.delete(key); continue; }
+      if (event.type !== 'hit' || world.entities.find(e => e.id === event.dst)?.kind !== 'monster') continue;
+      let cast = this.casts.get(key);
+      if (!cast) { cast = { src, targets: new Set() }; this.casts.set(key, cast); }
+      cast.targets.add(event.dst);
+      let group = groups.get(cast);
+      if (!group) { group = []; groups.set(cast, group); }
+      group.push(event);
+    }
+    const tiers = new Map();
+    for (const [cast, hits] of groups) if (cast.targets.size >= 2) for (const event of hits) {
+      const tier = impactTier(event);
+      tiers.set(event, { ...tier, stop: tier.stop + FEEL.area.stop, trauma: tier.trauma + FEEL.area.trauma });
+    }
+    return tiers;
+  }
 }
