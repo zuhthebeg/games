@@ -56,7 +56,7 @@ test('every learned skill detail uses real damage/range/MP/cooldown/effects and 
   let s={...fresh(),gold:10000};for(const id of Object.keys(SKILL_DISPLAY).filter(id=>!['lunge','volley','ember_bolt'].includes(id)))s=learnSkill(s,id);
   s=equipSkill(s,'focus','frost_lance');const h=hubFor(s);h.mountSheet=html=>h.html=html;
   for(const id of characterSkills(s)) {h.openSkill(id);const a=ABILITIES[id];assert.ok(h.html.includes(a.heal?`최대 HP ${Math.round(a.heal.maxHpFrac*100)}%</dd>`:`>${a.damage}</dd>`));assert.ok(h.html.includes(`${a.manaCost||0} MP`));assert.ok(h.html.includes(`${amount(a.cooldownMs/1000)}초`));assert.ok(h.html.includes(`${a.projectile?.rangePx||a.dash?.distance||a.heal?.radius||a.shape?.range||a.shape?.radius} px`));assert.ok(a.heal?!h.html.includes('기본 피해'):h.html.includes(`경직 위력 ${a.poise}`));}
-  h.openSkill('frost_lance');assert.match(h.html,/장착 중/);assert.match(h.html,/관통 2회/);
+  h.openSkill('frost_lance');assert.match(h.html,/id="skill-slot-\d" data-id="frost_lance" data-slot="\d" aria-pressed="true"/);assert.match(h.html,/관통 2회/);
 });
 test('full item details show actual base/enhancement/HP and every option with honest units even own item zero-deltas', () => {
   const weapon={...instance('detail','iron_sword_epic',0,[]),enhance:4,affixes:[{k:'atk_pct',v:6},{k:'capacity_flat',v:3},{k:'mana_pct',v:4}]};

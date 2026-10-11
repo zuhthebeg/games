@@ -144,12 +144,13 @@ test('heal book learn/equip/save/load works without schema changes; one focus sl
   assert.equal(original.gold, 500); assert.equal(learned.gold, 300); assert.equal(BOOKS.healing_light.price, 200);
   assert.throws(() => learnSkill(learned, 'healing_light'));
   const equipped = equipSkill(learned, 'focus', 'healing_light');
-  assert.equal(buildRoundMods(equipped).skills[0], 'healing_light');
-  assert.throws(() => equipSkill(learned, 'blade', 'healing_light'));
+  // Fresh focus save: slot 1 ember_bolt, the learned heal goes to the first empty slot.
+  assert.deepEqual(buildRoundMods(equipped).skills, ['ember_bolt', 'healing_light', null]);
+  assert.throws(() => equipSkill(original, 'focus', 'healing_light'), /배우지/);
   const storage = new Map(); const store = new SaveStore({ getItem: k => storage.get(k) ?? null, setItem: (k,v) => storage.set(k,v), removeItem: k => storage.delete(k) });
   store.save(equipped); assert.deepEqual(store.load(), equipped); assert.ok(validateSave(store.load()));
   const replaced = equipSkill(equipSkill(learnSkill(equipped, 'frost_lance'), 'focus', 'frost_lance'), 'focus', 'healing_light');
-  assert.equal(replaced.skills.focus, 'healing_light'); assert.equal(replaced.version, original.version);
+  assert.deepEqual(replaced.loadout, ['ember_bolt', 'healing_light', 'frost_lance']); assert.equal(replaced.version, original.version);
 });
 
 test('co-op guest cast uses host only, HP/MP personal snapshots and heal journal arrive once through dropped/repeated packets', () => {

@@ -131,7 +131,9 @@ try {
     await command('Input.dispatchKeyEvent',{type:'keyDown',key:'End',code:'End'});
     assert.equal(await evaluate(`document.querySelector('[role="tab"][aria-selected="true"]').dataset.family`),'focus');
     await nativeActivate('[data-action="learn-skill"][data-id="healing_light"]',desktop);assert.ok(await evaluate(`__arpg.save.learned.includes('healing_light')`));
-    await nativeActivate('[data-action="equip-skill"][data-id="healing_light"]',desktop);assert.equal(await evaluate(`__arpg.save.skills.focus`),'healing_light');await audit();
+    // K2: learning drops the skill into the first empty slot, so the academy shows it equipped.
+    assert.equal(await evaluate(`__arpg.save.loadout.includes('healing_light')`),true);
+    assert.equal(await evaluate(`document.querySelector('[data-action="equip-skill"][data-id="healing_light"]').getAttribute('aria-pressed')`),'true');await audit();
     await nativeActivate('[data-action="inn"]',desktop);await nativeActivate('[data-action="character"]',desktop);await nativeActivate('[data-action="character-tab"][data-tab="skills"]',desktop);
     await nativeActivate('[data-action="skill-detail"][data-id="healing_light"]',desktop);await audit();assert.ok(await evaluate(`document.querySelector('dialog[open]').textContent.includes('최대 HP 30%')`));await close();
     await nativeActivate('[data-action="inn"]',desktop);await nativeActivate('[data-action="shop"]',desktop);await audit();

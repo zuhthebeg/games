@@ -1,5 +1,5 @@
 import { ABILITIES } from '../content/combat.js';
-import { BOOKS, SKILL_DISPLAY, hasSkill, equippedSkill } from '../meta/skills.js';
+import { BOOKS, SKILL_DISPLAY, hasSkill, slotOf } from '../meta/skills.js';
 import { escape, amount } from './gear-view.js';
 
 // Register generated local art here only when the file ships; absent entries never request an image.
@@ -33,8 +33,8 @@ export function skillIcon(id, art = SKILL_ART) {
   return `<span class="skill-icon faculty-${family}" data-skill-icon="${id}">${face}</span>`;
 }
 export function skillCardHtml(id, save, { context = 'academy' } = {}) {
-  const a = ABILITIES[id], book = BOOKS[id], known = hasSkill(save,id), selected = equippedSkill(save,a.family) === id;
-  const state = selected ? '장착 중' : known ? '배움' : `미습득 · ${book.price} G`;
+  const a = ABILITIES[id], book = BOOKS[id], known = hasSkill(save,id), slot = slotOf(save,id), selected = slot >= 0;
+  const state = selected ? `슬롯 ${slot + 1}` : known ? '배움' : `미습득 · ${book.price} G`;
   const stats = [a.heal ? `회복 최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%` : `피해 ${a.damage}`, `${a.manaCost || 0} MP`, `재사용 ${amount(a.cooldownMs / 1000)}초`];
   const copy = `${skillIcon(id)}<span class="skill-copy"><strong>${escape(a.name)}</strong><span class="skill-type">${SKILL_TYPES[id]}</span><span class="skill-chips">${stats.map(s=>`<span>${s}</span>`).join('')}</span><small class="skill-state">${SKILL_DISPLAY[id].label} · ${state}</small></span>`;
   if (context === 'character') return `<button type="button" class="skill-card character-skill faculty-${a.family}" data-action="skill-detail" data-id="${id}" data-grade="${SKILL_DISPLAY[id].grade}">${copy}</button>`;

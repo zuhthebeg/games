@@ -9,6 +9,7 @@ import { STAGES } from './content/combat.js';
 import { TICK_MS } from './sim/core.js';
 import { InputLayer } from './input.js';
 import { applyAutoUse, autoUseSettings } from './meta/auto-use.js';
+import { loadoutOf } from './meta/skills.js';
 import { CombatAudio, bindAudioControls } from './audio.js';
 import { ArenaRenderer } from './render/renderer.js';
 import { HUD } from './ui/hud.js';
@@ -127,7 +128,7 @@ try {
       renderer.root.visible = true;
       renderer.warning.visible = true;
       input.enabled = true;
-      hud.begin(world);
+      hud.begin(world, loadoutOf(roundSave));
       showArrival(roundSave, stageId);
       hud.meta(load, tracker);
       running = true;
@@ -208,7 +209,7 @@ try {
         if (!coopRenderReady) {
           renderer.reset(view, matchMedia('(prefers-reduced-motion: reduce)').matches);
           renderer.root.visible = renderer.warning.visible = true;
-          hud.begin(view); showArrival(roundSave, view.round.stageId); input.enabled = true; coopRenderReady = true;
+          hud.begin(view, loadoutOf(roundSave)); showArrival(roundSave, view.round.stageId); input.enabled = true; coopRenderReady = true;
         }
         const progress = trackRound(roundSave, tracker, events, usedConsumables(roundSave, view.entities[0]));
         tracker = progress.tracker; coopLoad = progress.load.ratio;

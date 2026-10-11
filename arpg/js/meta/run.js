@@ -4,6 +4,7 @@ import { threatMultipliers, BALANCE } from '../content/balance.js';
 import { deriveMods } from './stats.js';
 import { addXp, stageXp, deathLoss, MAX_LEVEL, xpSpan, STAGE_XP } from './progression.js';
 import { ITEMS, carriedWeight, capacity, rollDrops, dropSeed, cloneSave, uniqueUid, instance } from './items.js';
+import { loadoutOf } from './skills.js';
 
 export const emptyLoot = () => ({ gold: 0, items: [], stacks: {} });
 const USED_KEYS = { potions: 'potion', manaPotions: 'mana_potion', scrolls: 'return_scroll' };
@@ -23,7 +24,7 @@ export function buildRoundMods(save) {
   const { capacity: ignoredCapacity, shopDiscount, family, ...mods } = deriveMods(save);
   return {
     ...mods, threat: save.threat ?? 1,
-    skills: [save.skills?.[family]], // sim drops weapon-forbidden ids; empty slot 1 = kit default
+    skills: loadoutOf(save, family), // sim drops weapon-forbidden ids; empty slot 1 = kit default
     potions: save.stacks.potion || 0,
     manaPotions: save.stacks.mana_potion || 0,
     scrolls: save.stacks.return_scroll || 0,

@@ -7,7 +7,7 @@ import { ITEMS, START_WEAPONS, CONSUMABLES, RECIPES, carriedWeight, capacity } f
 import { ENCHANT } from './economy.js';
 import { resolve, FAMILIES } from './quiz.js';
 import { xpSpan, MAX_LEVEL, STAGE_XP } from './progression.js';
-import { BOOKS, DEFAULT_SKILLS, hasSkill } from './skills.js';
+import { BOOKS, DEFAULT_SKILLS, hasSkill, validLoadout, loadoutOf } from './skills.js';
 import { ABILITIES } from '../content/combat.js';
 import { DEFAULT_AUTO_USE, validAutoUse } from './auto-use.js';
 
@@ -36,7 +36,7 @@ export function createSave({ name, answers, weapon, createdAt }) {
       { uid: 'starter:armor', id: 'cloth_tunic', enhance: 0, affixes: [], rolledAt: 0 },
     ],
     stacks: { potion: 3, mana_potion: 1, return_scroll: 1 },
-    stash: { stacks: {} }, learned: [], skills: {}, autoBuy: { ...DEFAULT_AUTO_BUY }, autoUse: { ...DEFAULT_AUTO_USE },
+    stash: { stacks: {} }, learned: [], skills: {}, loadout: [DEFAULT_SKILLS[chosen], null, null], autoBuy: { ...DEFAULT_AUTO_BUY }, autoUse: { ...DEFAULT_AUTO_USE },
     cleared: Object.fromEntries(Object.keys(STAGE_XP).map((id) => [id, false])),
     flags: { chiefPity: false, starterRestoreUsed: false },
     quiz: { answers: [...answers], weapon: chosen, overridden: chosen !== result.weapon },
@@ -114,6 +114,7 @@ export function validateSave(save) {
     if (save.autoBuy !== undefined && (!record(save.autoBuy)
       || !Object.entries(save.autoBuy).every(([id, target]) => CONSUMABLES.includes(id) && integer(target)))) return false;
     if (save.autoUse !== undefined && !validAutoUse(save.autoUse)) return false;
+    if (save.loadout !== undefined && !validLoadout(save, save.loadout)) return false;
     if (!record(save.stacks)) return false;
     if (!record(save.stash) || !record(save.stash.stacks)
       || !Object.entries(save.stash.stacks).every(([id, count]) => Object.hasOwn(ITEMS, id)
@@ -189,7 +190,11 @@ export class SaveStore {
       data = { ...data, stacks: { ...data.stacks, enhance_stone_1: (data.stacks.enhance_stone_1 || 0) + 2 * data.stacks.enhance_stone_2 } };
       delete data.stacks.enhance_stone_2;
     }
-    if (validateSave(data)) return structuredClone({ ...data, autoBuy: { ...DEFAULT_AUTO_BUY, ...data.autoBuy }, autoUse: { ...DEFAULT_AUTO_USE, ...data.autoUse } });
+    if (validateSave(data)) {
+      const family = ITEMS[data.items.find(item => item.uid === data.equipped.weapon)?.id]?.family || 'blade';
+      return structuredClone({ ...data, autoBuy: { ...DEFAULT_AUTO_BUY, ...data.autoBuy }, autoUse: { ...DEFAULT_AUTO_USE, ...data.autoUse },
+        loadout: loadoutOf(data, family) });
+    }
     // Back up before removing. A quota/storage failure leaves the original untouched.
     this.storage.setItem(`${SAVE_KEY}.corrupt.${this.now()}`, raw);
     this.storage.removeItem(SAVE_KEY);

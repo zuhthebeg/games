@@ -79,7 +79,7 @@ test('books permanently learn at exact prices, defaults always known, equip per 
   let base = rich();
   assert.deepEqual(Object.fromEntries(Object.entries(BOOKS).map(([id, b]) => [id, b.price])), { whirl:150, heavy_cleave:250, pierce_shot:150, blast_arrow:250, healing_light:200, frost_lance:180, flame_ring:280 });
   for (const [family, id] of Object.entries(DEFAULT_SKILLS)) {
-    assert.equal(hasSkill(base, id), true); assert.equal(equipSkill(base, family, id).skills[family], id);
+    assert.equal(hasSkill(base, id), true); assert.ok(equipSkill(base, family, id).loadout.includes(id));
   }
   for (const [id, book] of Object.entries(BOOKS)) {
     const next = learnSkill(base, id);
@@ -87,20 +87,21 @@ test('books permanently learn at exact prices, defaults always known, equip per 
     assert.equal(base.learned.includes(id), false); assert.equal(carriedWeight(next), carriedWeight(base));
     assert.deepEqual(next.stacks, base.stacks); assert.deepEqual(next.items, base.items);
     assert.throws(() => learnSkill(next, id), /이미/);
-    base = equipSkill(next, book.family, id); assert.equal(base.skills[book.family], id);
+    base = equipSkill(next, book.family, id); assert.ok(base.loadout.includes(id)); assert.equal(base.loadout.length, 3);
     assert.ok(validateSave(base));
   }
   assert.throws(() => learnSkill(fresh(), 'whirl'), /골드/);
   assert.throws(() => learnSkill(base, 'nope'));
   assert.throws(() => learnSkill(base, 'lunge'));
   assert.throws(() => equipSkill(fresh(), 'blade', 'whirl'), /배우지/);
-  assert.throws(() => equipSkill(base, 'blade', 'frost_lance'));
+  // K2: slots are family-free; the sim decides per weapon what can fire.
+  assert.ok(equipSkill(base, 'blade', 'frost_lance').loadout.includes('frost_lance'));
   assert.throws(() => equipSkill(base, 'other', 'whirl'));
   assert.throws(() => equipSkill(base, 'blade', 'slash'));
-  assert.equal(buildRoundMods(base).skills[0], base.skills.blade);
+  assert.deepEqual(buildRoundMods(base).skills, base.loadout);
   for (const [family, weapon] of [['bow','short_bow'], ['focus','apprentice_wand']]) {
     base.items.push(instance(family, weapon)); base = equip(base, family);
-    assert.equal(buildRoundMods(base).skills[0], base.skills[family]);
+    assert.deepEqual(buildRoundMods(base).skills, base.loadout);
   }
 });
 

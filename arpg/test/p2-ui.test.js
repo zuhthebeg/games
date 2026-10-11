@@ -57,7 +57,7 @@ test('inn NPC contract has no owner; unspent points badge lives on the character
   assert.doesNotMatch(h.html, /data-action="owner"|약사|교관 · 미분배/);
   for(const name of ['만물상','장비상','대장장이','아카데미','창고','가방']) assert.ok(h.html.includes(`<strong>${name}</strong>`));
   h.action('character',{});assert.equal(h.page,'character');
-  for(const label of ['XP','HP / MP','공격 배율','공격 속도','장착 기술','지난 여정','allocation-confirm']) assert.ok(h.html.includes(label));
+  for(const label of ['XP','HP / MP','공격 배율','공격 속도','<span>기술</span>','지난 여정','allocation-confirm']) assert.ok(h.html.includes(label));
   const mods=deriveMods(h.save), rate=attackRate(mods.attackSpeedBonus,mods.weaponWeight,carriedWeight(h.save)/capacity(h.save));
   assert.ok(h.html.includes(`공격 속도</span><b>×${amount(rate)}`));
   h.showAllocation(true);assert.equal(h.page,'level-up');assert.ok(!h.html.includes('character-summary'));

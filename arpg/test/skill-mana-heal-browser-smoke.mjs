@@ -56,7 +56,7 @@ try {
   const installSave=async(c,name)=>c.eval(`(async()=>{
     const {createSave,SaveStore}=await import('./js/meta/save.js');
     const s=createSave({name:${JSON.stringify(name)},answers:[0,0,0,0,0],weapon:'focus',createdAt:1});
-    s.gold=600;s.cleared.S1=true;s.learned=['healing_light'];s.skills.focus='healing_light';
+    s.gold=600;s.cleared.S1=true;s.learned=['healing_light'];s.skills.focus='healing_light';s.loadout=['healing_light',null,null];s.autoUse={potion:false,hp:50,mp:50,recall:false};
     new SaveStore(localStorage).save(s);
   })()`);
   await installSave(host,'host');
@@ -97,16 +97,18 @@ try {
   await probe(host);await prepare(host);
   const initialMp=await host.eval('__arpg.world.entities[0].maxMp');
   await cast(host);await host.wait('__arpg.world.entities[0].act?.phase==="windup"');
-  assert.equal(await host.eval('__arpg.world.entities[0].hp'),10);
+  // CON regen (ST1) adds a few hundredths before windup.
+  { const hp=await host.eval('__arpg.world.entities[0].hp'); assert.ok(hp>=10&&hp<10.5,String(hp)); }
   await host.wait('healSmokeEvents.some(e=>e.type==="heal")');
   await host.wait('__arpg.world.entities[0].cds.healing_light>0');
   assert.equal(await host.eval('__arpg.world.entities[0].mp'),initialMp-28);
   const singleHp=await host.eval('__arpg.world.entities[0].hp');
-  assert.equal(singleHp,10+Math.round(await host.eval('__arpg.world.entities[0].maxHp')*.3));
+  const healedTo=10+Math.round(await host.eval('__arpg.world.entities[0].maxHp')*.3);
+  assert.ok(singleHp>=healedTo&&singleHp<healedTo+1,String(singleHp));
   assert.equal(await host.eval('healSmokeEvents.filter(e=>e.type==="heal").length'),1);
   assert.equal(await host.eval('document.querySelector("#skill").getAttribute("aria-label")'),'회복의 빛');
   assert.ok(await host.eval('__arpg.feedback.pools.effects>0 && __arpg.feedback.pools.numbers>0'));
-  assert.match(await host.eval('document.querySelector("#hp-text").textContent'),new RegExp('^'+singleHp+'/'));
+  assert.match(await host.eval('document.querySelector("#hp-text").textContent'),new RegExp('^'+Math.ceil(singleHp)+'/'));
   const room=`heal-smoke-${Date.now()}`;
   await host.navigate(`${origin}/arpg/?dev=1&debug=1&room=${room}&coopTest=host`);
   await host.wait('!!window.__arpg && document.querySelector("#boot").hidden');
@@ -120,7 +122,7 @@ try {
   await host.wait('__arpg.world?.entities.filter(e=>e.kind==="player").length===2');
   assert.equal(await guest.eval('__arpg.multi.ownsSim'),false);
   await probe(host);await probe(guest);await prepare(host);
-  await guest.wait('__arpg.world.entities[0].hp===10');
+  await guest.wait('__arpg.world.entities[0].hp>=10&&__arpg.world.entities[0].hp<10.5');
   const guestUid=await guest.eval('__arpg.multi.uid');
   const guestSelector=`__arpg.world.entities.find(e=>e.pid===${JSON.stringify(guestUid)})`;
   const maxHp=await guest.eval('__arpg.world.entities[0].maxHp');
@@ -130,13 +132,13 @@ try {
   await host.wait(`${guestSelector}.act?.phase==='windup'`);
   await guest.wait('healSmokeEvents.filter(e=>e.type==="heal").length===2');
   await guest.wait('__arpg.world.entities[0].hp>10');
-  assert.equal(await guest.eval('__arpg.world.entities[0].hp'),10+Math.round(maxHp*.3));
+  const guestHp=await guest.eval('__arpg.world.entities[0].hp');assert.ok(guestHp>=10+Math.round(maxHp*.3)&&guestHp<11+Math.round(maxHp*.3),String(guestHp));
   assert.equal(await guest.eval('__arpg.world.entities[0].mp'),maxMp-28);
   assert.equal(await host.eval(`${guestSelector}.mp`),maxMp-28);
   assert.equal(await guest.eval('healSmokeEvents.filter(e=>e.type==="healCast").length'),1);
   assert.equal(await host.eval('healSmokeEvents.filter(e=>e.type==="heal").length'),2);
   assert.equal(await guest.eval('localStorage.getItem("arpg.save.v1")'),saved,'heal cannot write guest rewards/save');
-  assert.match(await guest.eval('document.querySelector("#hp-text").textContent'),new RegExp('^'+(10+Math.round(maxHp*.3))+'/'));
+  assert.match(await guest.eval('document.querySelector("#hp-text").textContent'),new RegExp('^'+Math.ceil(await guest.eval('__arpg.world.entities[0].hp'))+'/'));
   assert.match(await guest.eval('document.querySelector("#mp-text").textContent'),new RegExp('^'+Math.floor(maxMp-28)+'/'));
   await guest.wait('__arpg.world.entities[0].cds.healing_light>0');
   assert.equal(await guest.eval('document.querySelector("#skill").disabled'),true);

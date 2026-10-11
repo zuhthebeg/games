@@ -4,8 +4,8 @@ import { unlockedThreat, clearedThreat, selectThreat } from '../meta/run.js';
 import { SLOTS, ECONOMY } from '../meta/economy.js';
 import { shopStock, buyGear, sellItem, refreshShop, refreshPrice, gearPrice, stackSellPrice, sellStack } from '../meta/shop.js';
 import { compareItems } from '../meta/compare.js';
-import { STAGES, ABILITIES } from '../content/combat.js';
-import { BOOKS, DEFAULT_SKILLS, hasSkill, equippedSkill, learnSkill, equipSkill, SKILL_DISPLAY, characterSkills } from '../meta/skills.js';
+import { STAGES, ABILITIES, canUseSkill } from '../content/combat.js';
+import { BOOKS, DEFAULT_SKILLS, hasSkill, learnSkill, equipSkill, SKILL_DISPLAY, characterSkills, loadoutOf, setSlot, slotOf, weaponFamily } from '../meta/skills.js';
 import { loadEffects } from '../sim/world.js';
 import { QUESTIONS, resolve, FAMILIES, WEAPON_NAMES } from '../meta/quiz.js';
 import { STAT_KEYS, STAT_NAMES, cap, deriveMods, allocateStats, effectiveStats } from '../meta/stats.js';
@@ -329,7 +329,7 @@ export class HubUI {
       <div class="ledger"><div><span>HP / MP</span><b>${amount(mods.maxHp)} / ${amount(mods.maxMp)}</b></div>
       <div><span>공격 배율</span><b>×${amount(mods.dmgMult[mods.family])}</b></div>
       <div><span>공격 속도</span><b>×${amount(rate)}</b></div>
-      <div><span>장착 기술</span><b>${escape(ABILITIES[equippedSkill(this.save, mods.family)].name)}</b></div></div>${this.weightHtml()}</section>
+      <div><span>기술</span><b>${loadoutOf(this.save).filter(Boolean).map(id => escape(ABILITIES[id].name)).join(' · ')}</b></div></div>${this.weightHtml()}</section>
       <h3 class="section-title">능력치 분배</h3>`;
   }
 
@@ -659,7 +659,11 @@ export class HubUI {
   showCharacterSkills() {
     this.panel = 'character-skills';
     const rows = characterSkills(this.save).map(id => skillCardHtml(id,this.save,{context:'character'})).join('');
-    this.showInnPanel('캐릭터', `${this.characterTabs('skills')}<div class="character-skills">${rows}</div>`, 'character-skills');
+    const weapon = weaponFamily(this.save);
+    const slots = loadoutOf(this.save).map((id, i) => id
+      ? button(`<b>${i + 1}</b>${skillIcon(id)}<span>${escape(ABILITIES[id].name)}</span>${canUseSkill(id, weapon) ? '' : '<i class="slot-blocked" aria-label="이 무기로 사용 불가">✕</i>'}`, 'skill-detail', `id="loadout-slot-${i + 1}" data-id="${id}" class="loadout-slot${canUseSkill(id, weapon) ? '' : ' blocked'}"`)
+      : `<div class="loadout-slot empty" id="loadout-slot-${i + 1}"><b>${i + 1}</b><span>—</span></div>`).join('');
+    this.showInnPanel('캐릭터', `${this.characterTabs('skills')}<div class="loadout" aria-label="기술 슬롯">${slots}</div><div class="character-skills">${rows}</div>`, 'character-skills');
   }
 
   openSkill(id) {
@@ -670,8 +674,9 @@ export class HubUI {
       : a.dash ? `돌진 거리 ${a.dash.distance} px · 몸 판정 여유 ${a.dash.bodyPad} px`
       : shape.type === 'circle' ? `반경 ${shape.radius} px` : `사거리 ${shape.range} px · 부채꼴 ${shape.arc}°`;
     const effects = a.heal ? '대상별 최대 HP 비례 회복 · 부활 불가 · 적 회복 없음' : `경직 위력 ${a.poise} · 넉백 ${a.knockback}${a.element ? ` · ${a.element === 'fire' ? '화염' : '서리'} 속성` : ''}`;
-    const selected = equippedSkill(this.save,a.family) === id;
-    this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열${selected ? ' · 장착 중' : ''}</p><dl class="p2-lines"><div>${a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>피해</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p>`, button(selected ? '장착 중' : '기술 장착', 'equip-character-skill', `data-id="${id}" data-family="${a.family}" class="primary"`, selected)));
+    const slot = slotOf(this.save,id);
+    const slotButtons = `<div class="p2-three" role="group" aria-label="슬롯">${[0, 1, 2].map(i => button(`슬롯 ${i + 1}`, 'skill-slot', `id="skill-slot-${i + 1}" data-id="${id}" data-slot="${i}" aria-pressed="${slot === i}"`)).join('')}</div>`;
+    this.mountSheet(this.dialogHtml(a.name, `${skillCardHtml(id,this.save,{context:'detail'})}<p>${SKILL_DISPLAY[id].label} · ${WEAPON_NAMES[a.family]} 계열</p><dl class="p2-lines"><div>${a.heal ? `<dt>회복량</dt><dd>최대 HP ${Math.round(a.heal.maxHpFrac * 100)}%</dd>` : `<dt>피해</dt><dd>${a.damage}</dd>`}</div><div><dt>소모 MP</dt><dd>${a.manaCost || 0} MP</dd></div><div><dt>재사용</dt><dd>${amount(a.cooldownMs / 1000)}초</dd></div></dl><p>${range}</p><p>${effects}</p>`, slotButtons));
   }
 
   showTrainer() {
@@ -883,9 +888,13 @@ export class HubUI {
       case 'result-inn': return this.showInn();
       case 'character-tab': return data.tab === 'skills' ? this.showCharacterSkills() : this.showAllocation(false);
       case 'skill-detail': return this.openSkill(data.id);
-      case 'equip-character-skill':
-        this.commit(equipSkill(this.save, data.family, data.id));
-        return this.showCharacterSkills();
+      case 'skill-slot': {
+        const slot = Number(data.slot);
+        // Tapping the slot a skill already occupies takes it out.
+        this.commit(setSlot(this.save, weaponFamily(this.save), slot, slotOf(this.save, data.id) === slot ? null : data.id));
+        this.showCharacterSkills();
+        return this.openSkill(data.id);
+      }
       case 'character': return this.showAllocation(false);
       case 'close-sheet': return this.closeSheet();
       case 'noop': return undefined;
@@ -1043,6 +1052,7 @@ export class HubUI {
         return;
       case 'learn-skill':
         this.commit(learnSkill(this.save, data.id));
+        if (loadoutOf(this.save).includes(null)) this.commit(equipSkill(this.save, data.family || ABILITIES[data.id].family, data.id));
         return this.showTrainer();
       case 'equip-skill':
         this.commit(equipSkill(this.save, data.family, data.id));

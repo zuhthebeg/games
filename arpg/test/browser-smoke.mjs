@@ -92,7 +92,7 @@ try {
   });
   const touch = (type, points) => command('Input.dispatchTouchEvent', { type, touchPoints: points });
   const rectangles = (selector) => evaluate(`(() => {
-    const rects = [...document.querySelectorAll(${JSON.stringify(selector)})].map(node => {
+    const rects = [...document.querySelectorAll(${JSON.stringify(selector)})].filter(node => !node.hidden).map(node => {
       const rect = node.getBoundingClientRect();
       return {id:node.id || node.dataset.action,x:rect.x,y:rect.y,w:rect.width,h:rect.height};
     });

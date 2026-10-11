@@ -1,5 +1,5 @@
-import { ABILITIES, WEAPONS } from '../content/combat.js';
-import { cloneSave } from './items.js';
+import { ABILITIES, WEAPONS, SKILL_SLOTS } from '../content/combat.js';
+import { cloneSave, equippedItem, ITEMS } from './items.js';
 
 export const DEFAULT_SKILLS = Object.fromEntries(Object.entries(WEAPONS).map(([family, kit]) => [family, kit.skill]));
 export const BOOKS = {
@@ -26,14 +26,45 @@ export function learnSkill(save, id) {
   return next;
 }
 
-export function equipSkill(save, family, id) {
-  if (!Object.hasOwn(DEFAULT_SKILLS, family) || !Object.hasOwn(ABILITIES, id) || ABILITIES[id].family !== family) {
-    throw new Error('무기 계열에 맞지 않는 기술입니다.');
-  }
-  if (!hasSkill(save, id)) throw new Error('아직 배우지 않은 기술입니다.');
+// skills-v2 §2: three family-free slots that survive weapon swaps. The sim drops ids the
+// current weapon cannot use; an empty or dropped slot 1 falls back to the kit skill.
+export const validLoadout = (save, loadout) => Array.isArray(loadout) && loadout.length === SKILL_SLOTS
+  && loadout.every(id => id === null || (typeof id === 'string' && Object.hasOwn(ABILITIES, id) && hasSkill(save, id)))
+  && new Set(loadout.filter(Boolean)).size === loadout.filter(Boolean).length;
+
+// Saves before K2 had one skill per weapon family: keep that pick in slot 1 and fill the
+// other slots with the same family's learned skills, strongest first.
+export function migrateLoadout(save, family) {
+  const ids = [equippedSkill(save, family), ...characterSkills(save).filter(id => ABILITIES[id].family === family)];
+  const unique = [...new Set(ids)].slice(0, SKILL_SLOTS);
+  return Array.from({ length: SKILL_SLOTS }, (_, i) => unique[i] ?? null);
+}
+
+export const weaponFamily = save => ITEMS[equippedItem(save, 'weapon')?.id]?.family || 'blade';
+export const loadoutOf = (save, family = weaponFamily(save)) => (validLoadout(save, save.loadout) ? save.loadout : migrateLoadout(save, family));
+export const slotOf = (save, id) => loadoutOf(save).indexOf(id);
+
+// Put a learned skill into a slot (moving it if already slotted). null clears the slot.
+export function setSlot(save, family, slot, id) {
+  if (!Number.isInteger(slot) || slot < 0 || slot >= SKILL_SLOTS) throw new Error('없는 슬롯입니다.');
+  if (id !== null && !hasSkill(save, id)) throw new Error('아직 배우지 않은 기술입니다.');
+  const loadout = [...loadoutOf(save, family)];
+  const from = id === null ? -1 : loadout.indexOf(id);
+  if (from >= 0) loadout[from] = loadout[slot];
+  loadout[slot] = id;
   const next = cloneSave(save);
-  next.skills[family] = id;
+  next.loadout = loadout;
   return next;
+}
+
+// Academy "장착": first empty slot, otherwise slot 1. Already slotted skills stay where they are.
+export function equipSkill(save, family, id) {
+  if (!Object.hasOwn(DEFAULT_SKILLS, family) || !Object.hasOwn(ABILITIES, id)) throw new Error('없는 기술입니다.');
+  if (!hasSkill(save, id)) throw new Error('아직 배우지 않은 기술입니다.');
+  const loadout = loadoutOf(save, family);
+  if (loadout.includes(id)) return save;
+  const empty = loadout.indexOf(null);
+  return setSlot(save, family, empty >= 0 ? empty : 0, id);
 }
 
 // Display-only grades. No combat, book-price or learning requirement changes.

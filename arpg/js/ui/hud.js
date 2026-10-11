@@ -18,6 +18,8 @@ const PATTERN_NAMES = {
   spirit_bolt: '정령의 원소탄', spider_bite: '독거미의 물기 · 중독', spider_puddle: '독 장판 · 중독',
 };
 const seconds = (value) => `${(value / 30).toFixed(1)}`;
+const SLOT_NODES = ['skill', 'skill2', 'skill3'];
+const SLOT_KEYS = ['K', 'L', ';'];
 
 export class HUD {
   constructor() {
@@ -25,19 +27,28 @@ export class HUD {
     this.nodes = {};
     for (const id of [
       'hp-fill', 'hp-text', 'mp-fill', 'mp-text', 'stage-name', 'objective', 'potion', 'mana',
-      'scroll', 'skill', 'dodge', 'attack', 'notice', 'load-fill', 'load-text', 'temp-loot',
+      'scroll', 'skill', 'skill2', 'skill3', 'dodge', 'attack', 'notice', 'load-fill', 'load-text', 'temp-loot',
     ]) this.nodes[id] = $(`#${id}`);
   }
 
-  begin(world) {
+  // `loadout` is the saved slot list; a slot the sim emptied for this weapon shows ✕.
+  begin(world, loadout = []) {
     this.stage = world.round.stageId;
-    const name = ABILITIES[world.entities[0].skills[0]].name;
-    const skill = this.nodes.skill;
-    skill.setAttribute('aria-label', name);
-    skill.title = `${name} · K`;
-    let label = skill.querySelector('.skill-label');
-    if (!label) { label = document.createElement('span'); label.className = 'skill-label'; skill.insertBefore(label, skill.lastElementChild); }
-    label.textContent = name;
+    const skills = world.entities[0].skills;
+    SLOT_NODES.forEach((key, i) => {
+      const node = this.nodes[key], id = skills[i] || loadout[i] || null;
+      node.hidden = !id;
+      node.classList.toggle('blocked', !skills[i] && !!id);
+      node.querySelector('.slot-blocked')?.remove();
+      if (!id) return;
+      const name = ABILITIES[id].name;
+      node.setAttribute('aria-label', name);
+      node.title = `${name} · ${SLOT_KEYS[i]}`;
+      let label = node.querySelector('.skill-label');
+      if (!label) { label = document.createElement('span'); label.className = 'skill-label'; node.insertBefore(label, node.lastElementChild); }
+      label.textContent = name;
+      if (!skills[i]) node.insertAdjacentHTML('afterbegin', '<i class="slot-blocked" aria-hidden="true">✕</i>');
+    });
     $('#hud').hidden = false;
     $('#pause').hidden = true;
     this.nodes.notice.textContent = '';
@@ -98,20 +109,22 @@ export class HUD {
       : `${player.scrolls}${player.scrollRetry > 0 ? ` · ${seconds(player.scrollRetry)}` : ''}`);
     nodes.scroll.style.setProperty('--progress',
       `${player.channel > 0 ? (1 - player.channel / ticks(PLAYER_BASE.scroll.channelMs)) * 100 : 0}%`);
-    const skill = player.skills[0];
-    const cooldown = player.cds[skill] || 0;
-    const skillAct = player.act?.id === skill;
-    const needsMana = player.mp < (ABILITIES[skill].manaCost || 0);
-    this.text(nodes.skill.lastElementChild, cooldown > 0 ? seconds(cooldown)
-      : skillAct ? '…' : needsMana ? '−' : '');
-    nodes.skill.style.setProperty('--progress', `${cooldown / ticks(ABILITIES[skill].cooldownMs) * 100}%`);
+    SLOT_NODES.forEach((key, i) => {
+      const node = nodes[key], skill = player.skills[i];
+      if (!skill) { node.disabled = true; return; }
+      const cooldown = player.cds[skill] || 0;
+      const skillAct = player.act?.id === skill;
+      const needsMana = player.mp < (ABILITIES[skill].manaCost || 0);
+      this.text(node.lastElementChild, cooldown > 0 ? seconds(cooldown) : skillAct ? '…' : needsMana ? '−' : '');
+      node.style.setProperty('--progress', `${cooldown / ticks(ABILITIES[skill].cooldownMs) * 100}%`);
+      node.disabled = cooldown > 0 || skillAct || player.channel > 0 || needsMana;
+    });
     this.text(nodes.dodge.lastElementChild, player.dodge.cdLeft > 0 ? seconds(player.dodge.cdLeft) : '');
     nodes.dodge.className = player.dodge.cdLeft > 0 ? 'cooling' : 'ready';
     // Held attack is never disabled: release must always reach InputLayer.
     nodes.potion.disabled = player.potions === 0 || player.potionCd > 0 || player.hp === player.maxHp;
     nodes.mana.disabled = player.manaPotions === 0 || player.potionCd > 0 || player.mp === player.maxMp;
     nodes.scroll.disabled = player.scrolls === 0 || player.scrollRetry > 0 || player.channel > 0 || !!player.act;
-    nodes.skill.disabled = cooldown > 0 || skillAct || player.channel > 0 || needsMana;
     if (this.noticeLeft > 0) {
       this.noticeLeft -= dt;
       if (this.noticeLeft <= 0) nodes.notice.textContent = '';
