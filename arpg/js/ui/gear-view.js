@@ -110,7 +110,8 @@ export function portraitHtml(save, direction = 'SW') {
   const canvas = enabled ? '<canvas width="128" height="128" style="width:100%;height:100%" hidden></canvas>' : '';
   const enhance = Math.min(10, equippedItem(save, 'weapon')?.enhance || 0);
   const kit = ITEMS[equippedItem(save, 'weapon')?.id]?.family || 'blade';
-  const glow = enhance >= 6 ? `<span class="portrait-weapon-glow" data-enhance="${enhance}" data-kit="${kit}" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>` : '';
+  // With paperdoll art the glow is drawn from the weapon silhouette once composed (pending until then).
+  const glow = enhance >= 6 ? `<span class="portrait-weapon-glow" data-enhance="${enhance}" data-kit="${kit}"${enabled ? ' data-pending' : ''} aria-hidden="true">${enabled ? '<canvas width="128" height="128"></canvas>' : ''}<i></i><i></i><i></i><i></i><i></i><i></i></span>` : '';
   return `<div class="sprite p2-hero" data-direction="${p.frame.split('_')[1]}"${parts} role="img" aria-label="현재 장비의 기사" style="background-image:${enabled ? 'none' : `url('${p.url}')`};background-position:-${p.x}px -${p.y}px;background-size:${p.atlasWidth}px ${p.atlasHeight}px">${canvas}${glow}</div>`;
 }
 

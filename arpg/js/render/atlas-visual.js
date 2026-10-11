@@ -53,6 +53,7 @@ function lazyVisual(entity, options, library, fallbackFactory) {
   return {
     container,
     get debug() { return { mode, key: visualKey(entity), ...current.debug }; },
+    weaponPose() { return current.weaponPose?.() || null; },
     update(state, animation, deltaTime) {
       if (!destroyed) current.update(state, animation, deltaTime);
     },
@@ -77,8 +78,24 @@ function paperdollTextures(asset) {
   }
   asset.animations = Object.fromEntries(Object.entries(asset.manifest.animations)
     .map(([name,frames])=>[name,frames.map(frame=>textures[frame])]));
+  // Weapon-only silhouette frames share the body frame's 128px origin, so they
+  // overlay the drawn weapon exactly with the same anchor/scale. null = no weapon drawn.
+  const mask = asset.weaponMask, weaponTextures = {};
+  const maskSource = mask?.canvas && mask.layer ? Texture.from(mask.canvas) : null;
+  if (maskSource) for (const name of asset.manifest.frames) {
+    const frame = mask.layer.frames[name]; if (!frame) continue;
+    const [x,y,w,h] = mask.layer.rects[frame.index];
+    weaponTextures[name] = { texture:new Texture({source:maskSource.source,frame:new Rectangle(x,y,w,h),
+      orig:new Rectangle(0,0,128,128),trim:new Rectangle(frame.offset[0],frame.offset[1],w,h)}),
+      cx:frame.offset[0]+w/2, cy:frame.offset[1]+h/2 };
+  }
+  asset.weaponAnimations = maskSource ? Object.fromEntries(Object.entries(asset.manifest.animations)
+    .map(([name,frames])=>[name,frames.map(frame=>weaponTextures[frame] || null)])) : null;
   asset.anchor=asset.manifest.anchor;asset.fps=asset.manifest.fps;
-  asset.disposeTextures = () => { Object.values(textures).forEach(texture=>texture.destroy()); source.destroy(true); };
+  asset.disposeTextures = () => {
+    Object.values(textures).forEach(texture=>texture.destroy()); source.destroy(true);
+    Object.values(weaponTextures).forEach(w=>w.texture.destroy()); maskSource?.destroy(true);
+  };
   return asset;
 }
 
@@ -105,6 +122,14 @@ function spriteVisual(entity, { color }, asset) {
   let stateName = '', direction = 'E', age = 0, previousAct = null, previousDodge = null, frame = 0;
   return {
     container,
+    // Current drawn-weapon pose in this container's local space, for presentation overlays.
+    weaponPose() {
+      const pose = asset.weaponAnimations?.[`${stateName}_${direction}`]?.[frame];
+      if (!pose) return asset.weaponAnimations ? { hidden:true } : null;
+      const scale = sprite.scale.x;
+      return { texture:pose.texture, anchor:sprite.anchor, scale,
+        x:(pose.cx - sprite.anchor.x*128)*scale, y:(pose.cy - sprite.anchor.y*128)*scale };
+    },
     get debug() {
       return { id: asset.id, state: stateName, direction, frame, tint: sprite.tint, scale: sprite.scale.x,
         equipment: asset.descriptor || null,

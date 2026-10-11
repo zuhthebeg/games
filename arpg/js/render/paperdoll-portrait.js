@@ -16,6 +16,32 @@ export function setPortraitDirection(node, direction) {
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0,0,128,128);
   ctx.drawImage(asset.canvas,...rect,...trim);
+  drawPortraitGlow(node, asset, `idle_${direction}_000`);
+}
+
+const HALO = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]];
+// Enhancement glow traced from the same frame's weapon silhouette, so it sits on the weapon.
+function drawPortraitGlow(node, asset, name) {
+  const glow = node.querySelector('.portrait-weapon-glow'), mask = asset.weaponMask;
+  const target = glow?.querySelector('canvas');
+  if (!glow || !target || !mask?.canvas) return;
+  const frame = mask.layer.frames[name], g = target.getContext('2d');
+  g.clearRect(0,0,128,128);
+  delete glow.dataset.pending; glow.dataset.anchored = 'true';
+  glow.hidden = !frame;
+  if (!frame) return;
+  const [x,y,w,h] = mask.layer.rects[frame.index], [ox,oy] = frame.offset;
+  g.save(); g.imageSmoothingEnabled = false;
+  for (const [dx,dy] of HALO) g.drawImage(mask.canvas,x,y,w,h,ox+dx,oy+dy,w,h);
+  g.globalCompositeOperation = 'source-in';
+  g.fillStyle = getComputedStyle(glow).getPropertyValue('--enhance-color').trim() || '#cde8ee';
+  g.fillRect(0,0,128,128);
+  // Keep the weapon's own pixels readable: only a light tint over them, full halo around.
+  g.globalCompositeOperation = 'destination-out'; g.globalAlpha = .6;
+  g.drawImage(mask.canvas,x,y,w,h,ox,oy,w,h);
+  g.restore();
+  glow.style.setProperty('--cx', `${(ox + w/2) / 1.28}%`);
+  glow.style.setProperty('--cy', `${(oy + h/2) / 1.28}%`);
 }
 
 let observer;
@@ -43,6 +69,7 @@ function scan() {
       const canvas=node.querySelector('canvas');
       setPortraitDirection(node, node.dataset.direction || 'SW');
       canvas.hidden=false;node.style.backgroundImage='none';node.dataset.paperdollReady=descriptor.key;
-    }).catch(()=>{ if(node.isConnected) {node.dataset.paperdollFailed='true';node.style.backgroundImage=`url("${node.dataset.paperdollFallback}")`;} });
+    }).catch(()=>{ if(node.isConnected) {node.dataset.paperdollFailed='true';node.style.backgroundImage=`url("${node.dataset.paperdollFallback}")`;
+      const glow=node.querySelector('.portrait-weapon-glow');if(glow) delete glow.dataset.pending;} });
   }
 }

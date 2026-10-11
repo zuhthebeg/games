@@ -86,7 +86,7 @@ async function compose(descriptor) {
   const weaponKey = `weapon-${descriptor.weapon}-${descriptor.head}`;
   const keys = ['base', ...(descriptor.colours.some(Boolean) ? ['mask'] : []),
     ...(descriptor.head !== 'none' ? [`head-${descriptor.head}`] : []), weaponKey];
-  const bitmaps = {}; let output, weaponCanvas, sourceRGBABytes = 0, stagingRGBABytes = 0;
+  const bitmaps = {}; let output, weaponCanvas, weaponMask, sourceRGBABytes = 0, stagingRGBABytes = 0;
   try {
     // Serial decoding also bounds transient fetch/blob ownership.
     for (const key of keys) {
@@ -106,6 +106,12 @@ async function compose(descriptor) {
       context.globalCompositeOperation='destination-in';context.drawImage(bitmap,0,0);
       stagingRGBABytes+=weaponCanvas.width*weaponCanvas.height*4;
     }
+    // White weapon-only silhouette in the packed layer space. Enhancement glow is
+    // drawn from this per frame, so it follows the drawn weapon (not a guessed offset).
+    const weaponBitmap=bitmaps[weaponKey];weaponMask=canvas(weaponBitmap.width,weaponBitmap.height);
+    const maskContext=weaponMask.getContext('2d');maskContext.drawImage(weaponBitmap,0,0);
+    maskContext.globalCompositeOperation='source-in';maskContext.fillStyle='#fff';
+    maskContext.fillRect(0,0,weaponMask.width,weaponMask.height);
     const frameCanvas = canvas(128,128), ctx = frameCanvas.getContext('2d',{willReadFrequently:true});
     ctx.imageSmoothingEnabled=false;
     let basePixels, maskPixels;
@@ -150,12 +156,15 @@ async function compose(descriptor) {
     frameCanvas.width=frameCanvas.height=1;
     const totalMs=performance.now()-started;
     return { id:`paperdoll-${descriptor.kit}`, descriptor, manifest, canvas:output,
+      weaponMask:{canvas:weaponMask,layer:manifest.layers[weaponKey]},
       metrics:{totalMs,decodeMs:decodedMs,composeMs:totalMs-decodedMs,sourceRGBABytes,
-        stagingRGBABytes,readbackRGBABytes:output.width*output.height*4,outputRGBABytes:output.width*output.height*4,frames:manifest.frames.length,
+        stagingRGBABytes,readbackRGBABytes:output.width*output.height*4,
+        outputRGBABytes:output.width*output.height*4+weaponMask.width*weaponMask.height*4,frames:manifest.frames.length,
         sourceImages:keys.length,phoneEvidence:false} };
-  } catch(error) { if(output) output.width=output.height=1; throw error; }
+  } catch(error) { if(output) output.width=output.height=1; if(weaponMask) weaponMask.width=weaponMask.height=1; throw error; }
   finally { if(weaponCanvas) weaponCanvas.width=weaponCanvas.height=1; Object.values(bitmaps).forEach(bitmap=>bitmap.close()); }
 }
 export const paperdolls = new PaperdollLibrary({compose,dispose:asset=>{
   asset.disposeTextures?.(); asset.canvas.width=asset.canvas.height=1;
+  if (asset.weaponMask?.canvas) asset.weaponMask.canvas.width=asset.weaponMask.canvas.height=1;
 }});
