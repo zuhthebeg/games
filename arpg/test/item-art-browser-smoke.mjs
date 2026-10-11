@@ -123,7 +123,7 @@ try {
     await command('Page.navigate',{url:process.env.ARPG_TEST_URL || `http://127.0.0.1:${httpPort}/arpg/?dev=1`});
     await waitFor('window.__arpg');
     await evaluate(`(async()=>{const {createSave,SaveStore}=await import('./js/meta/save.js'); const {addXp}=await import('./js/meta/progression.js'); const {craft}=await import('./js/meta/items.js');
-      let s=addXp(createSave({name:'장비 UI 시험',answers:[0,0,0,0,0],createdAt:1}),451);s={...s,gold:10000,stacks:{...s.stacks,scrap:100,hide:100,fang:100,enhance_stone_1:10}};s=craft(s,'iron_sword');s.cleared=Object.fromEntries(Object.keys(s.cleared).map(k=>[k,true]));new SaveStore(localStorage).save(s);})()`);
+      let s=addXp(createSave({name:'장비 UI 시험',answers:[0,0,0,0,0],createdAt:1}),451);s={...s,gold:10000,stacks:{...s.stacks,scrap:100,hide:100,fang:100,enhance_stone_1:10,scroll_enchant_weapon:3}};s=craft(s,'iron_sword');s.cleared=Object.fromEntries(Object.keys(s.cleared).map(k=>[k,true]));new SaveStore(localStorage).save(s);})()`);
     await command('Page.reload'); await waitFor(page('inn')); await audit();
     assert.equal(await evaluate("document.querySelectorAll('.p2-socket').length"),5);
     await click('[data-action="socket"][data-slot="weapon"]'); await audit();
@@ -181,7 +181,7 @@ try {
     assert.equal(await evaluate('__arpg.save.stash.stacks.potion'),0);
     const materialGold=await evaluate('__arpg.save.gold');
     await click('[data-action="sell-stack"][data-id="enhance_stone_1"][data-count="5"]');
-    assert.equal(await evaluate('__arpg.save.gold'),materialGold+25);
+    assert.equal(await evaluate('__arpg.save.gold'),materialGold+10); // 강화석 2 G × 5 (cocy 10-11)
     await click('[data-action="sell-stack"][data-id="scrap"]:last-child');await audit();
     assert.equal(await evaluate('__arpg.save.stacks.scrap'),0);
     await click('[data-action="shop-tab"][data-tab="buy"]');
