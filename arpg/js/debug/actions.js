@@ -1,4 +1,4 @@
-import { ITEMS, instance, uniqueUid, rollDrops } from '../meta/items.js';
+import { ITEMS, instance, uniqueUid, rollDrops, meetsRequirement } from '../meta/items.js';
 import { SLOTS, ECONOMY } from '../meta/economy.js';
 import { MAX_LEVEL, STAGE_XP } from '../meta/progression.js';
 import { STAT_KEYS, cap } from '../meta/stats.js';
@@ -49,7 +49,7 @@ export function setLevel(save, level) {
   next.statPoints = budget - spent;
   for (const slot of SLOTS) {
     const item = next.items.find(item => item.uid === next.equipped[slot]);
-    if (item && ITEMS[item.id].requiredLevel > level) next.equipped[slot] = null;
+    if (item && !meetsRequirement(next, ITEMS[item.id])) next.equipped[slot] = null;
   }
   if (!next.equipped.weapon) {
     const gear = instance(uniqueUid(next, 'debug:starter'), 'training_sword', 0);

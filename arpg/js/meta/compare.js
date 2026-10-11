@@ -1,4 +1,4 @@
-import { ITEMS, carriedWeight, capacity } from './items.js';
+import { ITEMS, carriedWeight, capacity, meetsRequirement } from './items.js';
 import { deriveMods } from './stats.js';
 import { AFFIX_LABELS } from './affixes.js';
 
@@ -33,7 +33,7 @@ export function compareItems(equipped, candidate, save) {
     candidate.affixes?.find(({ k }) => k === key)?.v || 0);
   const weightAfter = carriedWeight(afterSave);
   const weightLimit = capacity(afterSave);
-  const lockReason = save.level < definition.requiredLevel ? `Lv${definition.requiredLevel} 필요`
+  const lockReason = !meetsRequirement(save, definition) ? `힘 ${definition.requiredStr} 필요`
     : weightAfter > weightLimit * 1.2 ? '무게 120% 초과' : '';
   return { lines, weightAfter, weightLimit, locked: !!lockReason, lockReason };
 }

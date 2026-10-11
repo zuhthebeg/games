@@ -73,8 +73,22 @@ for (const [id, base] of Object.entries(ITEMS)) {
       requiredLevel: TIER_LEVEL[base.huntTier] ?? { common: 1, fine: 2, rare: 4, epic: 6 }[rarity] };
   }
 }
-// cocy 10-11: no level gate on weapons (armor keeps its gate).
-for (const item of Object.values(ITEMS)) if (item.kind === 'weapon') item.requiredLevel = 1;
+// cocy 10-11 16:04: no level gates at all. Heavy gear asks for strength instead — the weight is the reason.
+// [제안] Weapons from 12 kg, heavy armor of any slot; the hunting tier adds 2 per tier so tier-3 heavy
+// gear still lands mid-game (STR cap = 9 + level/3). Light/medium gear and bows/wands stay free.
+export function strRequirement(def) {
+  const tierStep = 2 * ((def?.huntTier || 1) - 1);
+  if (def?.kind === 'weapon') return def.weight >= 12 ? 4 + (def.weight - 10) + tierStep : 0;
+  if (def?.armorClass !== 'heavy') return 0;
+  return def.kind === 'body' ? 4 + (def.weight - 8) + tierStep : 6 + tierStep;
+}
+for (const item of Object.values(ITEMS)) {
+  if (!SLOTS.includes(item.kind)) continue;
+  item.requiredLevel = 1;
+  item.requiredStr = strRequirement(item);
+}
+export const meetsRequirement = (save, def) => (save.stats?.str ?? 5) >= (def?.requiredStr || 0);
+export const requirementLabel = (def) => def?.requiredStr ? `힘 ${def.requiredStr}` : '';
 // cocy 10-11: one ungraded stone + the greater stone. enhance_stone_2 is legacy only (old receipts);
 // SaveStore.load converts held mid stones into plain stones.
 ITEMS.enhance_stone_1 = { name: '강화석', kind: 'material', weight: 0.1, sell: 2 };
@@ -119,7 +133,7 @@ export function equip(save, uid) {
   if (!item) throw new Error('장비를 찾을 수 없습니다.');
   const definition = ITEMS[item.id];
   if (!SLOTS.includes(definition.kind)) throw new Error('장비가 아닙니다.');
-  if (save.level < definition.requiredLevel) throw new Error(`Lv${definition.requiredLevel}부터 장착할 수 있습니다.`);
+  if (!meetsRequirement(save, definition)) throw new Error(`힘 ${definition.requiredStr} 이상이어야 장착할 수 있습니다.`);
   const next = cloneSave(save);
   next.equipped[definition.kind] = uid;
   if (carriedWeight(next) > capacity(next) * 1.2) throw new Error('장착 후 무게가 120%를 넘습니다.');

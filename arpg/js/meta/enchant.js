@@ -2,7 +2,7 @@
 // Outcomes are seeded by (account, item, attempt counter), and the result is part of the
 // returned save, so a reload during the animation cannot reroll an attempt.
 import { SLOTS, ENCHANT, STONE, GREATER_STONE, SCROLLS, rng } from './economy.js';
-import { ITEMS, START_WEAPONS, cloneSave, dismantleStones, uniqueUid } from './items.js';
+import { ITEMS, START_WEAPONS, cloneSave, dismantleStones, uniqueUid, meetsRequirement } from './items.js';
 
 export const scrollFamily = (item) => (ITEMS[item.id].slot === 'weapon' ? 'weapon' : 'armor');
 export const scrollsFor = (item) => SCROLLS[scrollFamily(item)];
@@ -53,7 +53,7 @@ export function enchant(save, uid, scrollId) {
     // A round cannot start without a weapon: fall back to the strongest owned one, else a fresh starter.
     if (next.equipped.weapon === null) {
       const spare = next.items.filter((candidate) => ITEMS[candidate.id].slot === 'weapon'
-        && ITEMS[candidate.id].requiredLevel <= next.level)
+        && meetsRequirement(next, ITEMS[candidate.id]))
         .sort((a, b) => ITEMS[b.id].power - ITEMS[a.id].power || b.enhance - a.enhance)[0];
       if (spare) next.equipped.weapon = spare.uid;
       else {

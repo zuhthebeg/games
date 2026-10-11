@@ -197,8 +197,10 @@ test('equipment, shop, storage weight, carry limit and no creation on failure', 
   base.items.push({ uid: 'loot', id: 'chief_maul', enhance: 0, affixes: [], rolledAt: 0 });
   base.stacks.scrap = 5000;
   assert.equal(carriedWeight(base), weight);
-  // weapons are not level-gated (cocy 10-11)
+  // no level gates; chief_maul asks STR 12 (cocy 10-11)
   const leveled = addXp(base, 1000);
+  assert.throws(() => equip(leveled, 'loot'), /힘 12/);
+  leveled.stats = { ...leveled.stats, str: 12 };
   const changed = equip(leveled, 'loot');
   assert.equal(carriedWeight(changed), weight + 10);
   assert.equal(dismantleRefund({ uid: 'drop:1', id: 'chief_maul', enhance: 5 }), 12);

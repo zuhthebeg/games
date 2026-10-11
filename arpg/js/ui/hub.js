@@ -412,7 +412,7 @@ export class HubUI {
     }
     const otherFamily = def.family && current && ITEMS[current.id].family !== def.family;
     const body = `<div class="p2-item-heading">${emblem(item)}<div><h3>${escape(itemLabel(item))}</h3>`
-      + `<small>${GRADES[def.rarity]} · ${SLOT_NAMES[def.slot]} · Lv${def.requiredLevel} · ${def.weight} kg</small></div></div>`
+      + `<small>${GRADES[def.rarity]} · ${SLOT_NAMES[def.slot]}${def.requiredStr ? ` · 힘 ${def.requiredStr}` : ''} · ${def.weight} kg</small></div></div>`
       + `<p class="compare-from">${current ? escape(itemLabel(current)) : '빈 슬롯'} → 이것</p>${this.comparisonHtml(item)}`
       + `${otherFamily ? '<p class="p2-hint">다른 무기 계열 · 조작이 바뀐다</p>' : ''}`
       + `${mode === 'buy' ? `<p class="minor">구매 후 ${this.save.gold - item.price} G · 창고 보관</p>` : ''}`;

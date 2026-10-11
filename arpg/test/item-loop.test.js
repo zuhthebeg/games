@@ -95,7 +95,8 @@ test('five slots: empty defaults preserve Lv1 numbers, all pieces/affixes/enhanc
     for (const [rarity, tier] of [['common', 1], ['fine', 1], ['fine', 2]]) {
       const item = ITEMS[`${slot}_${armorClass}_${rarity}_t${tier}`];
       assert.equal(item.slot, slot); assert.equal(item.armorClass, armorClass);
-      assert.equal(item.requiredLevel, tier === 2 ? 5 : rarity === 'fine' ? 2 : 1);
+      assert.equal(item.requiredLevel, 1); // cocy 10-11: no level gates
+      assert.equal(item.requiredStr, armorClass === 'heavy' ? 6 + 2 * (tier - 1) : 0);
     }
   }
 });

@@ -102,7 +102,7 @@ export function validateSave(save) {
     for (const slot of SLOTS) {
       if (save.equipped[slot] === null) continue;
       const item = save.items.find((candidate) => candidate.uid === save.equipped[slot]);
-      if (!item || ITEMS[item.id].kind !== slot || ITEMS[item.id].requiredLevel > save.level) return false;
+      if (!item || ITEMS[item.id].kind !== slot) return false;
     }
     if (!['completedRounds', 'shopRefresh', 'paidRefreshes', 'rarelessRounds'].every((key) => integer(save[key]))) return false;
     if (save.enchantCount !== undefined && !integer(save.enchantCount)) return false;

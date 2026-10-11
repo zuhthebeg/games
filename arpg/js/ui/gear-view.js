@@ -1,4 +1,4 @@
-import { ITEMS, equippedItem } from '../meta/items.js';
+import { ITEMS, equippedItem, meetsRequirement } from '../meta/items.js';
 import { compareItems } from '../meta/compare.js';
 import { icon, itemIcon } from './icons.js';
 import { equipmentVisual, paperdollEnabled } from '../render/paperdoll-state.js';
@@ -43,14 +43,14 @@ export function summaryHtml(item, save) {
 
 export function cardHtml(item, save, { action = 'open-item', compact = false, extra = '', note = '', disabled = false } = {}) {
   const def = ITEMS[item.id];
-  const locked = save.level < def.requiredLevel;
+  const locked = !meetsRequirement(save, def);
   const worn = isWorn(save, item.uid);
   const meta = compact ? (note || GRADES[def.rarity]) : `${SLOT_NAMES[def.slot]} · ${note || `${def.weight} kg`}`;
   return `<button type="button" class="p2-card ${compact ? 'compact' : ''} ${worn ? 'worn' : ''}" data-action="${action}" data-uid="${escape(item.uid)}" ${extra} ${disabled ? 'disabled' : ''}`
     + ` aria-label="${escape(itemLabel(item))}, ${GRADES[def.rarity]}${worn ? ', 착용 중' : ''}">${emblem(item)}`
     + `<span class="p2-card-copy"><strong>${escape(def.name)}</strong><small>${escape(meta)}</small>`
     + `${compact ? '' : `<span class="p2-delta">${summaryHtml(item, save)}</span>`}`
-    + `${locked ? `<small class="loss">${icon('lock')}Lv${def.requiredLevel}</small>` : ''}</span></button>`;
+    + `${locked ? `<small class="loss">${icon('lock')}힘 ${def.requiredStr}</small>` : ''}</span></button>`;
 }
 
 // P5 replacement seam: return a portrait descriptor, never mutate save or choose gear visuals elsewhere.
