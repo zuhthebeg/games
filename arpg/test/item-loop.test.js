@@ -68,7 +68,7 @@ test('five slots: empty defaults preserve Lv1 numbers, all pieces/affixes/enhanc
   const ac = ['head', 'hands', 'feet'].reduce((sum, slot) => sum + ITEMS[`${slot}_heavy_common_t1`].ac + 5, 0);
   assert.equal(deriveMods(five).maxHp, 108);
   assert.equal(deriveMods(five).ac, ac); assert.ok(ac > 15);
-  assert.equal(carriedWeight(five), 22.41);
+  assert.equal(carriedWeight(five), 20.91); // U0 consumables + E1 enhance lightening (27 − 4.59 − 1.5)
   for (const [key, field] of Object.entries({ hp_flat: 'maxHp', speed_pct: 'speedMult', dodge_pct: 'dodgeCdMult', potion_pct: 'potionHealMult', mana_pct: 'mpRegen', capacity_flat: 'capacity', gold_pct: 'goldBonus', material_pct: 'materialBonus' })) {
     const changed = structuredClone(save);
     changed.items[1].affixes = [{ k: key, v: 4 }];
@@ -287,9 +287,9 @@ test('compare contract: exact attack/HP/weight/affix deltas, empty slot, same-sl
   const candidate = instance('candidate', 'iron_sword', 1, [{ k: 'atk_pct', v: 6 }]); candidate.enhance = 5;
   const compare = compareItems(freeze(old), freeze(candidate), freeze(save));
   close(compare.lines.find(({ key }) => key === 'attack').to, 1.15 * 1.25 * 1.06);
-  assert.equal(compare.lines.find(({ key }) => key === 'weight').delta, 4);
+  close(compare.lines.find(({ key }) => key === 'weight').delta, 2.2);
   assert.equal(compare.lines.find(({ key }) => key === 'weight').good, false);
-  assert.equal(compare.weightAfter, 16.41); assert.equal(compare.weightLimit, 106);
+  assert.equal(compare.weightAfter, 14.61); assert.equal(compare.weightLimit, 106);
   assert.equal(compare.locked, false); // weapons have no level gate (cocy 10-11)
   assert.equal(compare.lines.find(({ key }) => key === 'atk_pct').delta, 6);
   const head = instance('head', 'head_light_common_t1', 1, []);
@@ -312,7 +312,7 @@ test('forge tabs preserve five-slot overview, scroll costs, stock comparison and
   hub.selectedUid = hub.save.equipped.weapon;
   hub.showInnPanel = (_title, html) => { hub.html = html; };
   hub.showForge();
-  assert.match(hub.html, /무기 강화 주문서/); assert.match(hub.html, /성공 확정/);
+  assert.match(hub.html, /무기 강화 주문서/); assert.match(hub.html, /forge-progress[\s\S]*?\+1/);
   hub.action('forge-tab', {tab:'scrolls'});assert.match(hub.html, /강화석 5 → 1장/);
   hub.action('forge-tab', {tab:'salvage'});for (const slot of SLOTS) assert.match(hub.html, new RegExp(slot));
   assert.match(hub.gearShopHtml(), /refresh-shop/);

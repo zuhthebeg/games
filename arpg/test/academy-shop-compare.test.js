@@ -104,18 +104,18 @@ function pair() {
 test('split comparison has matching left/right row labels and preserves every existing numeric line', () => {
   const {s,current,candidate}=pair(),before=structuredClone(s),c=compareItems(current,candidate,s),html=splitComparisonHtml(candidate,s);
   assert.match(html,/<th scope="col">현재 착용/);assert.match(html,/<th scope="col">후보/);
-  // Unchanged derived rows are hidden (cocy 10-11: no noise); every changed or primary line keeps exact data.
-  for(const line of c.lines.filter(l=>l.delta!==0||['attack','basePower','weight'].includes(l.key))) {
+  // All unchanged rows are hidden; every changed line keeps exact data.
+  for(const line of c.lines.filter(l=>l.delta!==0)) {
     assert.ok(html.includes(`data-line="${line.key}" data-from="${line.from}" data-to="${line.to}" data-delta="${line.delta}"`));
     const row=html.match(new RegExp(`<tr data-line="${line.key}"[^>]*>([\\s\\S]*?)</tr>`))[1];
     assert.equal((row.match(/<td>/g)||[]).length,2);const labels=[...row.matchAll(/<td><span>([^<]*)<\/span>/g)].map(m=>m[1]);assert.equal(labels[0],labels[1]);
   }
-  assert.match(html,/data-line="enhance"/);assert.match(html,/data-line="requiredStr"/);assert.match(html,/최종 캐릭터 변화/);assert.deepEqual(s,before);
+  assert.match(html,/data-line="enhance"/);assert.doesNotMatch(html,/data-line="requiredStr"/);assert.match(html,/최종 캐릭터 변화/);assert.deepEqual(s,before);
 });
 
-test('split comparison shows signed gain/loss, neutral, missing options and all long options folded', () => {
+test('split comparison shows signed gain/loss, no neutral, missing options and all long options folded', () => {
   const {s,candidate}=pair(),html=splitComparisonHtml(candidate,s);
-  assert.match(html,/compare-delta gain[^>]*aria-label="▲\+/);assert.match(html,/compare-delta loss[^>]*aria-label="▼−/);assert.match(html,/compare-delta neutral/);
+  assert.match(html,/compare-delta gain[^>]*aria-label="▲\+/);assert.match(html,/compare-delta loss[^>]*aria-label="▼−/);assert.doesNotMatch(html,/compare-delta neutral|data-delta="0"/);
   assert.match(html,/data-line="hp_flat"[^>]*><td><span>최대 HP<\/span><b>10 HP<\/b><\/td><td><span>최대 HP<\/span><b>—<\/b>/);
   assert.match(html,/<details class="compare-more"><summary>옵션 3개 더/);assert.doesNotMatch(html,/<details[^>]+open/);
   const h=hub(s);h.openItem(candidate.uid);assert.match(h.sheet,/<details class="compare-more own-details"/);

@@ -105,15 +105,16 @@ try {
     await evaluate("window.__fxSounds=[];document.addEventListener('arpg:presentation-sound',e=>__fxSounds.push(e.detail));");
     await click('[data-debug="close"]');
   };
-  const fixture = async (level, outcome = null) => evaluate(`(async()=>{
+  const fixture = async (level, outcome = null, scrollId = 'scroll_enchant_weapon', target = null) => evaluate(`(async()=>{
     const {createSave}=await import('./js/meta/save.js'); const {enchant}=await import('./js/meta/enchant.js');
     let s,expected;
-    for(let seed=1;seed<200;seed++) {
+    for(let seed=1;seed<10000;seed++) {
       s=createSave({name:'강화 연출 시험',answers:[0,0,0,0,0],createdAt:seed});
       s.items.find(i=>i.uid===s.equipped.weapon).enhance=${level};
       s.stacks.scroll_enchant_weapon=20;s.stacks.scroll_blessed_weapon=2;s.stacks.scroll_enchant_armor=20;s.stacks.enhance_stone_3=2;
-      expected=${level}<10?enchant(s,s.equipped.weapon,'scroll_enchant_weapon').result:null;
-      if(!${JSON.stringify(outcome)}||expected.outcome===${JSON.stringify(outcome)})break;
+      expected=${level}<12?enchant(s,s.equipped.weapon,${JSON.stringify(scrollId)}).result:null;
+      if((!${JSON.stringify(outcome)}||expected.outcome===${JSON.stringify(outcome)})
+        && (${target}===null||expected.to===${target}))break;
     }
     __fxContext.persistSave(s);__fxContext.hub.forgeTab='enhance';__fxContext.hub.selectedUid=null;__fxContext.hub.forgeScroll='scroll_enchant_weapon';__fxContext.hub.showForge();return {expected,seed:s.createdAt,uid:s.equipped.weapon};
   })()`);
@@ -235,6 +236,22 @@ try {
     await waitFor("!document.querySelector('[data-enchant-fx]')");
     const counts=await evaluate('__countObserver.disconnect();__fxCounts');assert.ok(counts.length>=3,JSON.stringify(counts));
     await cleaned();scenarios.push({width,height,kind:'crack',count:crack.count,countup:counts});
+    // E1: actual blessed selection, candidates, preview, committed result and max lock.
+    for (const [from,to] of [[5,8],[9,12],[10,11],[11,12]]) {
+      const f=await fixture(from,'success','scroll_blessed_weapon',to);
+      assert.equal(f.expected.to,to);
+      await click('[data-action="pick-scroll"][data-id="scroll_blessed_weapon"]');
+      const view=await evaluate(`(()=>{const work=document.querySelector('.forge-work');return {blessing:work.querySelector('.forge-blessing').textContent,targets:work.querySelector('.forge-progress strong').textContent,odds:work.querySelector('.forge-odds')?.textContent||'',unchanged:work.querySelectorAll('[data-delta="0"]').length};})()`);
+      assert.equal(view.blessing,'축복 · +1~3');assert.equal(view.unchanged,0);
+      assert.equal(view.targets,from===5?'+6 / +7 / +8':from===9?'+10 / +11 / +12':from===10?'+11 / +12':'+12');
+      assert.equal(view.odds,from===5?'':from===9?'성공 20%':from===10?'성공 15%':'성공 10%');
+      await audit();await click('[data-action="enhance"]');
+      assert.equal(await evaluate('__arpg.save.items[0].enhance'),to);
+      await tapFx();assert.equal(await evaluate("document.querySelector('.enchant-result').textContent"),`+${to}${from>=6?' 강화 성공!':''}`);
+      await tapFx();await waitFor("!document.querySelector('[data-enchant-fx]')");await cleaned();
+      assert.equal(await evaluate("document.querySelector('[data-action=\"enhance\"]').disabled"),to===12);
+      scenarios.push({width,height,kind:'E1-blessed',from,to,seed:f.seed,view});
+    }
   }
   await command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
   await fixture(6,'destroyed');await click('[data-action="enhance"]');

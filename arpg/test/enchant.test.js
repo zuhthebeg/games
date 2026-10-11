@@ -23,7 +23,7 @@ test('safe line: +0→+6 always succeeds, costs exactly one scroll and no gold',
   assert.equal(enchantPreview(save, 'starter:weapon', W).risky, true);
 });
 
-test('scroll family must match the slot; no scroll or +10 refuses without spending', () => {
+test('scroll family must match the slot; no scroll or +12 refuses without spending', () => {
   const save = withScrolls(fresh());
   assert.throws(() => enchant(save, 'starter:weapon', A), /쓸 수 없는/);
   assert.throws(() => enchant(save, 'starter:armor', W), /쓸 수 없는/);
@@ -33,7 +33,7 @@ test('scroll family must match the slot; no scroll or +10 refuses without spendi
   assert.equal(scrollsFor(save.items[1]).normal, A);
 });
 
-test('risky rates over 4,000 accounts match 50/40/30/20 within ±3σ; failure destroys and refunds half the stones', () => {
+test('risky rates over 4,000 accounts match 50/40/30/20/15/10 within ±3σ; failure destroys and refunds half the stones', () => {
   for (const [level, rate] of Object.entries(ENCHANT.rates).map(([l, r]) => [Number(l), r])) {
     let kept = 0;
     const n = 4000;
@@ -81,20 +81,65 @@ test('outcome is fixed by the saved attempt counter: replaying the same save nev
   assert.deepEqual(store.load(), first.save);
 });
 
-test('blessed scroll: Lineage jumps inside the safe line, capped at +6; plain +1 above it', () => {
+test('safe blessed starts +0..+5 always gain uniformly +1/+2/+3, including +5→+8', () => {
   for (let level = 0; level < ENCHANT.safe; level++) {
-    const seen = new Set();
-    for (let seed = 1; seed <= 300; seed++) {
-      const { result } = enchant(weaponAt(withScrolls(fresh(seed)), level), 'starter:weapon', BW);
-      assert.equal(result.outcome, 'success');
-      seen.add(result.to - level);
-      assert.ok(result.to <= ENCHANT.safe);
+    const counts = [0, 0, 0], n = 1500;
+    for (let seed = 1; seed <= n; seed++) {
+      const { save, result } = enchant(weaponAt(withScrolls(fresh(seed)), level), 'starter:weapon', BW);
+      assert.equal(result.outcome, 'success'); assert.equal(result.risky, false);
+      counts[result.to - level - 1]++;
+      assert.ok(validateSave(save));
     }
-    const expected = new Set((level <= 2 ? [1, 2, 3] : [1, 2]).map((step) => Math.min(level + step, ENCHANT.safe) - level));
-    assert.deepEqual([...seen].sort(), [...expected].sort());
+    for (const count of counts) assert.ok(Math.abs(count - n / 3) < 4 * Math.sqrt(n * 2 / 9), counts.join('/'));
+    assert.deepEqual(enchantPreview(weaponAt(withScrolls(fresh()), level), 'starter:weapon', BW).outcomes, [level+1, level+2, level+3]);
   }
-  const risky = enchantPreview(weaponAt(withScrolls(fresh()), 7), 'starter:weapon', BW);
-  assert.deepEqual(risky.outcomes, [8]); assert.equal(risky.chance, ENCHANT.rates[7]);
+});
+
+test('risky blessed successes use 70/25/5 on the same stream and normal success rates; +9→+12 is possible', () => {
+  for (let level = 6; level <= 9; level++) {
+    const counts = [0, 0, 0], n = 8000;
+    let kept = 0;
+    for (let seed = 1; seed <= n; seed++) {
+      const base = weaponAt(withScrolls(fresh(seed)), level);
+      const attempt = enchant(base, 'starter:weapon', BW), normal = enchant(base, 'starter:weapon', W);
+      assert.equal(attempt.result.outcome, normal.result.outcome);
+      if (attempt.result.outcome === 'destroyed') {
+        assert.deepEqual(attempt.result.refund, normal.result.refund);
+        assert.equal(attempt.save.items.some(i => i.uid === 'starter:weapon'), false);
+        continue;
+      }
+      kept++; counts[attempt.result.to - level - 1]++;
+      assert.deepEqual(enchant(base, 'starter:weapon', BW), attempt, 'replay cannot reroll the step');
+      assert.ok(validateSave(attempt.save));
+    }
+    const rate = ENCHANT.rates[level];
+    assert.ok(Math.abs(kept - n * rate) < 4 * Math.sqrt(n * rate * (1-rate)));
+    for (const [i, p] of [0.70, 0.25, 0.05].entries()) assert.ok(Math.abs(counts[i] - kept*p) < 4 * Math.sqrt(kept*p*(1-p)), `+${level}: ${counts}`);
+    assert.ok(counts[2] > 0);
+  }
+});
+
+test('+12 caps all jumps and save validation while +10 and older saves still roundtrip', () => {
+  assert.equal(ENCHANT.max, 12);
+  for (const level of [10, 11]) {
+    const base = weaponAt(withScrolls(fresh()), level);
+    assert.deepEqual(enchantPreview(base, 'starter:weapon', BW).outcomes, level === 10 ? [11,12] : [12]);
+    const seen = new Set();
+    for (let seed = 1; seed <= 1000; seed++) {
+      const { save, result } = enchant(weaponAt(withScrolls(fresh(seed)), level), 'starter:weapon', BW);
+      assert.ok(validateSave(save));
+      if (result.outcome === 'success') {assert.ok(result.to <= 12);seen.add(result.to);}
+    }
+    assert.deepEqual([...seen].sort(), level === 10 ? [11,12] : [12]);
+  }
+  const storage = new Map();
+  const store = new SaveStore({getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)});
+  for (let level = 0; level <= 12; level++) {
+    const save = weaponAt(withScrolls(fresh()), level);
+    store.save(save);assert.deepEqual(store.load(),save);
+  }
+  for (const scroll of [W,BW]) assert.throws(()=>enchant(weaponAt(withScrolls(fresh()),12),'starter:weapon',scroll), /최대/);
+  assert.equal(validateSave(weaponAt(withScrolls(fresh()),13)),false);
 });
 
 test('stones become scrolls: 5 → 1, greater stone → 5~10 seeded; never the other way', () => {
@@ -156,7 +201,7 @@ test('forge renders risky odds, danger button and a one-shot result line for suc
   hub.selectedUid = 'starter:weapon';
   hub.showInnPanel = (_title, html, _panel, footer) => { hub.html = html; hub.footer = footer; };
   hub.showForge();
-  assert.match(hub.html, /성공 40% · 실패 시 장비 파괴/); assert.match(hub.footer, /danger/); assert.match(hub.footer, /성공 40%/);
+  assert.match(hub.html, /성공 40%/); assert.match(hub.footer, /danger/); assert.match(hub.footer, /성공 40%/);
   hub.forgeNotice = { outcome: 'destroyed', id: 'training_sword', from: 7, to: null, refund: { enhance_stone_1: 5 } };
   hub.showForge();
   assert.match(hub.html, /산산조각.*강화석 5개/);

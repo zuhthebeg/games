@@ -514,7 +514,8 @@ try {
   await click('[data-action="shop-select"][data-id="return_scroll"]');
   await click('#shop-buy');
   assert.equal(await evaluate('__arpg.save.stacks.return_scroll'), 2);
-  assert.ok(await evaluate("document.querySelector('#shop-buy').disabled"), 'scroll cap not enforced');
+  // U0 (cocy 10-11): no return-scroll purchase cap; buying stays available.
+  assert.ok(!(await evaluate("document.querySelector('#shop-buy').disabled")), 'return scroll must stay purchasable (no cap)');
   await click('[data-action="close-sheet"]');
   await click('[data-action="shop-select"][data-id="potion"]');
   await evaluate("document.querySelector('#shop-count').value=2;document.querySelector('#shop-count').dispatchEvent(new Event('change',{bubbles:true}))");

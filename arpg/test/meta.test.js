@@ -343,7 +343,7 @@ test('save adapter: roundtrip, reset, corrupt/unknown versions back up before fr
     assert.equal(storage.getItem(SAVE_KEY), null);
   }
   for (const mutate of [
-    (save) => save.items[0].enhance = 11,
+    (save) => save.items[0].enhance = 13,
     (save) => save.equipped.weapon = 'missing',
     (save) => save.stacks.return_scroll = -1,
     (save) => save.stats.str = 99,
